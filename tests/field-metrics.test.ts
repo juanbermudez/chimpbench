@@ -322,3 +322,35 @@ test('a not-scorable target is reported with its verdict but counted apart', () 
   assert.equal(s['held-out'].unscorable, 1);
   assert.equal(s['held-out'].pass, 0);
 });
+
+test('C7a review: every flag a protocolLog entry sets is on its row (replayed in order; "-flag" withdraws)', async () => {
+  const { readFileSync } = await import('node:fs');
+  const file = JSON.parse(readFileSync(new URL('../data/targets.json', import.meta.url), 'utf8')) as { targets: Record<string, unknown>[]; protocolLog: { flags?: Record<string, string | string[]> }[] };
+  const rows = new Map(file.targets.map(r => [r.id as string, r]));
+  const want = new Map<string, Set<string>>();
+  for (const e of file.protocolLog) for (const [id, v] of Object.entries(e.flags ?? {})) for (const f of Array.isArray(v) ? v : [v]) {
+    const s = want.get(id) ?? want.set(id, new Set()).get(id)!;
+    if (f.startsWith('-')) s.delete(f.slice(1)); else s.add(f);
+  }
+  const known = ['compromised', 'encoded', 'protocolRevisedPostHoc', 'revisedPostFreeze', 'partiallyEncoded', 'notScorable', 'heldAsFail', 'tuned'];
+  for (const [id, fs] of want) for (const f of fs) {
+    assert.ok(known.includes(f), `${f} is a known flag`);
+    const r = rows.get(id);
+    assert.ok(r, `${id} exists`);
+    assert.ok(r![f] === true || (typeof r![f] === 'string' && (r![f] as string).length > 0), `${id} carries ${f}`);
+  }
+  assert.ok(want.size >= 30);
+});
+
+test('C7a review: encounter recall counts only episodes the team could observe (a followed-party member saw or heard strangers)', async () => {
+  const { encounterAccuracy } = await import('../src/field/run');
+  const r = emptyRecords();
+  r.encounters.push({ team: 0, troop: 1, other: 2, t0: 10, t1: 10.5, modality: 'heard', ownSize: 3, ownAM: 1, otherSize: 0, otherAM: 0, approach: false, avoid: false, called: false, x: 0, z: 0, patrolling: false });
+  r.truth.encounterLog.push({ t: 10.2, a: 1, b: 2 }, { t: 30, a: 1, b: 2 }, { t: 50, a: 2, b: 1 });
+  r.truth.followedEncounters.push({ team: 0, other: 2, t: 10.2, heard: true, caller: false }, { team: 0, other: 2, t: 30, heard: false, caller: false }, { team: 0, other: 2, t: 50, heard: true, caller: true });
+  const a = encounterAccuracy(r);
+  assert.equal(a.observableTruth, 2);
+  assert.equal(a.recall, 0.5);
+  assert.ok(Math.abs(a.recallAll - 1 / 3) < 1e-12);
+  assert.equal(a.precision, 1);
+});

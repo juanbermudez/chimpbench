@@ -180,19 +180,27 @@ export function summarize(rows: ScoreRow[]): Record<string, Record<SummaryKey, n
 }
 
 /**
- * Instrument bar (C3; applied mechanically from stage C6): rows scored by the patrol classifier count only when the
- * classifier on the team set that scores them reaches precision and recall >= 0.8 against truth in the same run;
- * otherwise they are flagged 'instrument below bar' (reported, not scored).
+ * Instrument bar (C3; applied mechanically from stage C6; extended to the encounter classifier after the C7a review):
+ * rows scored by the patrol or encounter classifier count only when the classifier on the team set that scores them
+ * reaches precision and recall >= 0.8 against truth in the same run; otherwise they are flagged 'instrument below bar'
+ * (reported, not scored). A missing measurement (older results) leaves the rows unflagged.
  */
 export const INSTRUMENT_BAR = 0.8;
 export const PATROL_ROWS: Readonly<Record<'focal' | 'males', readonly string[]>> = {
   focal: ['T-PAT-1', 'T-PAT-2', 'T-PAT-3', 'T-PAT-4', 'T-PAT-5', 'T-PAT-7', 'T-PAT-8', 'T-LET-6'],
   males: ['T-PAT-6'],
 };
-export function applyInstrumentBar(rows: ScoreRow[], acc: Record<'focal' | 'males', { precision: number; recall: number }>): void {
-  for (const set of ['focal', 'males'] as const) {
-    const a = acc[set], ok = a.precision >= INSTRUMENT_BAR && a.recall >= INSTRUMENT_BAR;
-    if (ok) continue;
-    for (const r of rows) if (PATROL_ROWS[set].includes(r.id) && !r.flags.includes('instrument below bar')) r.flags.push('instrument below bar');
-  }
+/** Rows scored by the encounter classifier (C7a review, finding 5): the focal team set, and the party follows for T-IGE-1. */
+export const ENCOUNTER_ROWS: Readonly<Record<'focal' | 'party', readonly string[]>> = {
+  focal: ['T-IGE-2', 'T-IGE-3', 'T-IGE-5', 'T-PAT-7'],
+  party: ['T-IGE-1'],
+};
+type Acc = { precision: number; recall: number };
+export function applyInstrumentBar(rows: ScoreRow[], acc: Record<'focal' | 'males', Acc>, enc?: Partial<Record<'focal' | 'party', Acc>>): void {
+  const flag = (ids: readonly string[], a: Acc | undefined) => {
+    if (!a || (a.precision >= INSTRUMENT_BAR && a.recall >= INSTRUMENT_BAR)) return;
+    for (const r of rows) if (ids.includes(r.id) && !r.flags.includes('instrument below bar')) r.flags.push('instrument below bar');
+  };
+  for (const set of ['focal', 'males'] as const) flag(PATROL_ROWS[set], acc[set]);
+  if (enc) for (const set of ['focal', 'party'] as const) flag(ENCOUNTER_ROWS[set], enc[set]);
 }

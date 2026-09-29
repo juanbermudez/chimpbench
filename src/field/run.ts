@@ -33,14 +33,19 @@ export interface Accuracy {
   /** The same classifier on the male-party follows that score T-PAT-1 and T-PAT-6 (stage C6). */
   patrolMales?: { precision: number; recall: number; truthEpisodes: number; classified: number };
   /**
-   * Encounter classifier against truth (C5a): recall = truth encounter episodes in which a followed-party member took
-   * part and the team classified an encounter with that community within ±60 min; precision = classified encounters
-   * with a truth episode of the same community pair within the simulation's episode gap (12 h). Detection = classified ÷ truth episodes.
+   * Encounter classifier against truth (C5a; reference corrected after the C7a review): recall = observable truth
+   * episodes (a followed-party member saw strangers, or heard their long calls) that the team classified as an
+   * encounter with that community within ±60 min; `recallAll` keeps the earlier reference, which also counted acoustic
+   * episodes in which only the stranger heard the followed party (nothing reaches the team's ears; wilson2012 scores
+   * foreign calls heard by the observers' party). Precision = classified encounters with a truth episode of the same
+   * community pair within the simulation's episode gap (12 h). Detection = classified ÷ truth episodes.
    */
-  encounter: { recall: number; precision: number; followedTruth: number; classified: number; truthEpisodes: number };
+  encounter: EncounterAccuracy;
   /** Hunt classifier: hunts detected by a team ÷ hunts by followed communities (truth). */
   hunt: { detected: number; truth: number };
 }
+
+export interface EncounterAccuracy { recall: number; recallAll: number; precision: number; followedTruth: number; observableTruth: number; classified: number; truthEpisodes: number }
 
 export interface FieldResult {
   seed: number; days: number; profile: ProfileName; hash: string;
@@ -48,6 +53,8 @@ export interface FieldResult {
   values: Record<string, SeedValue>;
   s18: Record<string, S18Value>;
   accuracy: Accuracy;
+  /** The encounter classifier on the party follows that score T-IGE-1 (C7a review; kept outside `accuracy`, whose shape other runners reproduce). */
+  encounterParty?: EncounterAccuracy;
   counts: Record<string, number>;
 }
 
@@ -98,7 +105,7 @@ export function runFieldJob(job: FieldJob, keepRecords = false): FieldResult & {
     detectedHunts: rec.hunts.filter(h => h.detected).length, patrols: d.patrols.length, truthPatrols: rec.truth.patrols.length, calls: rec.calls.length, visits: rec.visits.length,
     births: rec.births.length, deaths: rec.deaths.length, transfers: rec.transfers.length, experiments: rec.experiments.length };
   const out: FieldResult & { records?: Records } = { seed: job.seed, days: job.days, profile: job.profile, hash: `${recordsHash(rec)}/${recordsHash(prec)}/${recordsHash(mrec)}`, wallMs: performance.now() - t0, simMs, observerMs: obsMs, experimentMs: expMs, metricsMs,
-    values, s18, accuracy, counts };
+    values, s18, accuracy, encounterParty: encounterAccuracy(prec), counts };
   if (keepRecords) out.records = rec;
   return out;
 }
@@ -111,13 +118,20 @@ export function accuracyOf(rec: Records, d: ReturnType<typeof derive>): Accuracy
     for (let c = 0; c < k; c++) { tru[c] += f.truthTicks[c]; ticks += f.truthTicks[c]; }
   });
   const o = obs.map(v => (samples ? v / samples : NaN)), t = tru.map(v => (ticks ? v / ticks : NaN));
-  const H = 1, gap = 12, E = rec.encounters, T = rec.truth;
-  const found = T.followedEncounters.filter(f => E.some(e => e.team === f.team && e.other === f.other && e.t0 - H <= f.t && f.t <= e.t1 + H)).length;
-  const real = E.filter(e => T.encounterLog.some(l => ((l.a === e.troop && l.b === e.other) || (l.b === e.troop && l.a === e.other)) && l.t >= e.t0 - gap && l.t <= e.t1 + gap)).length;
   return {
     activity: { observed: o, truth: t, maxAbsDiff: Math.max(...o.map((v, i) => Math.abs(v - t[i]))), samples, ticks },
     patrol: patrolAccuracy(rec, d.followPts, d.patrols),
-    encounter: { recall: T.followedEncounters.length ? found / T.followedEncounters.length : NaN, precision: E.length ? real / E.length : NaN, followedTruth: T.followedEncounters.length, classified: E.length, truthEpisodes: T.encounterLog.length },
+    encounter: encounterAccuracy(rec),
     hunt: { detected: rec.hunts.filter(h => h.detected).length, truth: rec.truth.hunts },
   };
+}
+
+/** Encounter classifier vs truth on one team set's records (see Accuracy.encounter). */
+export function encounterAccuracy(rec: Records): EncounterAccuracy {
+  const H = 1, gap = 12, E = rec.encounters, T = rec.truth;
+  const hit = (f: { team: number; other: number; t: number }) => E.some(e => e.team === f.team && e.other === f.other && e.t0 - H <= f.t && f.t <= e.t1 + H);
+  const all = T.followedEncounters, observable = all.filter(f => !f.caller);
+  const real = E.filter(e => T.encounterLog.some(l => ((l.a === e.troop && l.b === e.other) || (l.b === e.troop && l.a === e.other)) && l.t >= e.t0 - gap && l.t <= e.t1 + gap)).length;
+  return { recall: observable.length ? observable.filter(hit).length / observable.length : NaN, recallAll: all.length ? all.filter(hit).length / all.length : NaN, precision: E.length ? real / E.length : NaN,
+    followedTruth: all.length, observableTruth: observable.length, classified: E.length, truthEpisodes: T.encounterLog.length };
 }

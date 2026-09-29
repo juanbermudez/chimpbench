@@ -91,7 +91,7 @@ function statsMinute(o: Observer, world: World): void {
       for (const tm of o.teams) {
         if (tm.state !== 2) continue;
         const inA = tm.mark[a.id] === tm.partyStamp && a.troopId === tm.troop, inB = tm.mark[b.id] === tm.partyStamp && b.troopId === tm.troop;
-        if (inA || inB) T.followedEncounters.push({ team: tm.index, other: inA ? b.troopId : a.troopId, t: e.time });
+        if (inA || inB) T.followedEncounters.push({ team: tm.index, other: inA ? b.troopId : a.troopId, t: e.time, heard: e.severity < 1, caller: e.severity < 1 && !inA });
       }
       k++;
     }

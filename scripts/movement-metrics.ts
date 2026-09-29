@@ -205,7 +205,7 @@ export function report(o: MoveResult, seeds: number[], fittedOnly = false): stri
     const fo = Object.values(o.followOf).reduce((a, b) => a + b, 0);
     L.push(`Party follows per adult-day ${f2((o.endings['follow:PARTY'] ? Object.values(o.endings['follow:PARTY']).reduce((a, b) => a + b, 0) : 0) / o.adultDays)}; share targeting a follower ${f2((o.followOf['follow:PARTY'] ?? 0) / (fo || 1))}.`);
     const mf = [...o.crop.maxFruit].sort((a, b) => b - a), tot = mf.reduce((a, b) => a + b, 0);
-    L.push(`Largest 10% of fruiting crowns hold ${f2(mf.slice(0, Math.ceil(mf.length / 10)).reduce((a, b) => a + b, 0) / (tot || 1))} of the crop capacity; feeding trees per adult-day ${f2((o.feed.minutes.length) / o.adultDays)}; feeding bout median ${f0(q(o.feed.minutes, 0.5))} min.`);
+    L.push(`Largest 10% of fruiting crowns hold ${f2(mf.slice(0, Math.ceil(mf.length / 10)).reduce((a, b) => a + b, 0) / (tot || 1))} of the crop capacity; feeding bout median ${f0(q(o.feed.minutes, 0.5))} min.`);
     return L.join('\n');
   }
   L.push(`30-min steps: median ${f0(q(o.steps30, 0.5))} m, p75 ${f0(q(o.steps30, 0.75))}, p90 ${f0(q(o.steps30, 0.9))}; < 15 m ${f2(o.steps30.filter(s => s < 15).length / o.steps30.length)}; reversals (> 2.5 rad, steps ≥ 15 m) ${f2(Object.values(o.reversals).reduce((a, b) => a + b, 0) / Math.max(1, o.turns))} of ${o.turns} turns.`, '');

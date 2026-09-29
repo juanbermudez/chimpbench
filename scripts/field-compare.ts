@@ -63,7 +63,7 @@ const acc = B.accuracy as { patrol?: { precision: number; recall: number; classi
 o.push('## Instruments against truth (after)', '');
 if (acc.activityMaxAbsDiff) o.push(`- Activity shares, 1-min points vs per-tick truth: max |Δ| ${acc.activityMaxAbsDiff.map(x => x.toFixed(4)).join(', ')}.`);
 if (acc.patrol) o.push(`- Patrol classifier: precision ${f(acc.patrol.precision)}, recall ${f(acc.patrol.recall)} (${acc.patrol.classified} classified, ${acc.patrol.truthEpisodes} truth episodes).`);
-if (acc.encounter) o.push(`- Encounter classifier (focal teams): recall ${f(acc.encounter.recall)} of ${acc.encounter.followedTruth} truth episodes involving a followed party, precision ${f(acc.encounter.precision)} of ${acc.encounter.classified} classified, detection ${f(acc.encounter.detection)} of ${acc.encounter.truthEpisodes} truth episodes.`);
+if (acc.encounter) o.push(`- Encounter classifier (focal teams): recall ${f(acc.encounter.recall)} of ${acc.encounter.observableTruth ?? acc.encounter.followedTruth} observable truth episodes (earlier reference ${f(acc.encounter.recallAll ?? NaN)} of ${acc.encounter.followedTruth}), precision ${f(acc.encounter.precision)} of ${acc.encounter.classified} classified, detection ${f(acc.encounter.detection)} of ${acc.encounter.truthEpisodes} truth episodes.`);
 if (acc.hunt) o.push(`- Hunt classifier: ${acc.hunt.detected} of ${acc.hunt.truth} hunts detected (${f(acc.hunt.detection)}).`);
 o.push('');
 const extra = flag('extra', '');
