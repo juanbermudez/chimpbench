@@ -396,3 +396,43 @@ The branch is `main` at 762a259 (C7c merged: joint trips and the energetic dista
 - trips starting in company and companions kept.
 
 Any crown-sharing mechanism that follows is pre-registered separately (§8.3) before it is run.
+
+### 8.2 Straightness diagnosis (measurement only; seeds 3707 and 3808, K, 372 adult-days)
+
+These measures were added to `party-food-metrics.ts` before any C7d mechanism existed: tick path by activity, day-end → nest distance, nest → last crown distance, distance from the community centre over the day, and goal order. Output: `artifacts/validation/c7d/diag-food.txt` (worktree).
+
+| Measure (K) | Value |
+| --- | --- |
+| Straightness / turning (30-min fixes, full days) | 0.21 / 0.87 rad |
+| Tick path between patches | 0.99. Trips to trees 0.62, **trips toward callers 0.20**, drinking 0.10, party follows 0.04. Within-patch wandering is negligible. |
+| 18:00 position → night nest | 5 m median (p90 349 m) |
+| Night nest → last crown fed | 39 m median |
+| Distance from the community centre at 07:00 / 12:00 / 18:00 | 384 / 395 / 385 m |
+| Furthest point of the day / net 07:00 → 18:00 | 683 m / 365 m (37% of the excursion given back) |
+| Goal order (initiators) | chosen tree 318 m away vs the nearest remembered or known tree believed at least 0.8 as good 122 m; ratio median **1.88**; within 1.2× only 35% |
+| Consecutive trips | median turn 1.93 rad (uniform 1.57), 34% reversals (uniform 20%) |
+
+**Diagnosis:**
+1. **Not a nightly return.** Nests are where the day ends and next to the last crown, and there is no central place: distance from the centre is flat through the day. Nest-site choice is not the lever.
+2. **Not within-patch wandering.** Almost all path is travel between patches.
+3. **Goal order is effectively random among comparable trees.** The candidate jitter (±0.12) is much larger than the energetic distance cost (~0.005 score per 300 m), so an initiator picks among comparable known trees almost blind to distance. Successive trips then point anywhere, with a backward bias.
+4. **A fifth of the path is travel toward callers,** in directions unrelated to the day's route; a tenth is trips to water.
+
+### 8.3 Route chaining (`routeChain`, field; stated before any run of it)
+
+**Rule.** Among out-of-sight goals (remembered and community-known trees), the animal ranks trees by believed value per metre, worth ÷ max(d, `memoryTreeMinM`). Only the best-ranked tree is offered, at its usual score (worth − the energetic distance cost − revisit), instead of the four best by score.
+- This is the nearest-unused-known-resource rule, weighted by value. It is the simplest rule consistent with the efficient paths of primates choosing among many remembered goals [janson2014] [M].
+- Trees believed empty stay out through the C7a crop beliefs; trees just fed in stay out through the C6b revisit penalty. So a day chains nearby trees without going back.
+- No free parameter.
+- Crowns in sight keep their scoring.
+
+**Expected direction** vs K, same seeds:
+- primary: straightness ↑ and turning ↓;
+- mechanism check: goal-order ratio falls and the share within 1.2× rises;
+- guards: T-RNG-1 not down by more than 10%, diagnostic party size not down by more than 0.10.
+
+**Keep only if the primary directions and both guards hold.**
+
+**Not built:**
+- **Crown-sharing capacity from crown area.** No source gives a feeding area per animal, and a party-size rule tied to crown size would encode the held-out T-PTY-2 (party size vs patch size).
+- **Changes to caller or water trips.** No source-grounded rule is in hand. They are reported as open.
