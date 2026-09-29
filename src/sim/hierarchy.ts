@@ -35,11 +35,22 @@ export function maternalKin(a: Chimp, b: Chimp): boolean {
  * age-rank pattern at Gombe/Ngogo [M]); body size varies individually; condition and wounds reduce it.
  */
 export function strength(c: Chimp): number {
-  const a = c.age;
-  let base: number;
-  if (c.sex === 'male') base = a < 10 ? a / 25 : a < 24 ? 0.4 + (a - 10) * 0.043 : a <= 28 ? 1 : Math.max(0.3, 1 - (a - 28) * 0.035);
-  else base = a < 12 ? a / 30 : a < 35 ? 0.5 : Math.max(0.3, 0.5 - (a - 35) * 0.012);
-  return base * (0.85 + 0.3 * c.appearance.build) * (0.4 + 0.6 * c.health) * (1 - 0.7 * c.injury);
+  return strengthAgeBase(c.age, c.sex) * (0.85 + 0.3 * c.appearance.build) * (0.4 + 0.6 * c.health) * (1 - 0.7 * c.injury);
+}
+
+/**
+ * Lean-mass proxy read by the field observer's urine samples (stage C8, early-life-prereg §1.6; T-DEM-19, -20): the age
+ * part of strength scaled by the growth record as strength will be. Pure; the simulation never reads it.
+ */
+export function leanIndex(c: Chimp, P: Params): number {
+  const w = P.growStrengthW;
+  return strengthAgeBase(c.age, c.sex) * ((1 - w) + w * ix(c).grow);
+}
+
+/** The age part of strength() (design curve above); also the base of the observer's lean-mass proxy (C8). */
+export function strengthAgeBase(a: number, sex: Chimp['sex']): number {
+  if (sex === 'male') return a < 10 ? a / 25 : a < 24 ? 0.4 + (a - 10) * 0.043 : a <= 28 ? 1 : Math.max(0.3, 1 - (a - 28) * 0.035);
+  return a < 12 ? a / 30 : a < 35 ? 0.5 : Math.max(0.3, 0.5 - (a - 35) * 0.012);
 }
 
 /** Contest power: strength, a modest incumbency edge from rank, and nearby coalition partners. */

@@ -12,9 +12,11 @@
 // --observer-seed N · --params '{"id": value}' (registry overrides, calibration and sensitivity runs) · --burn-in N (days before the observer starts) · --life-years N and --life-seeds (life-course demography rows; default off) ·
 // --solo-baseline (time the first seed alone first, to report the pool's wall-time ratio) ·
 // --rescore file.json (re-score saved per-seed values against data/targets.json without running; rewrites --json/--md) ·
-// --protocol-hash (print the protocol fingerprint and the frozen one from data/targets.json, then exit).
-import { createHash } from 'node:crypto';
-import { readFileSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs';
+// --protocol-hash (print the protocol fingerprint and the frozen one from data/targets.json, then exit) ·
+// --demography (stage C8 long natural-aging runs: no field experiments, no party-follow team sets, the observer stores only
+// what the demography rows read) · --unseal (stage C8 proof only: also compute the sealed rows T-DEM-14…24 and T-LET-5;
+// refused unless data/targets.json logs a C8 freeze whose protocol and registry hashes equal the current ones).
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { availableParallelism } from 'node:os';
 import { dirname } from 'node:path';
 import { defaultConfig, type ProfileName } from '../src/field/config';
@@ -22,8 +24,10 @@ import { lifeRows, type LifeResult } from '../src/field/lifecourse';
 import { runFieldJob, type FieldJob, type FieldResult } from '../src/field/run';
 import { S18 } from '../src/field/section18';
 import { mean } from '../src/field/stats';
-import { applyInstrumentBar, scoreTargets, summarize, type ScoreRow, type TargetFile } from '../src/field/targets';
+import { applyInstrumentBar, publicRow, scoreTargets, summarize, unsealRefusal, type ScoreRow, type TargetFile } from '../src/field/targets';
+import { REGISTRY_HASH } from '../src/sim/params';
 import { runPool } from './lib/pool';
+import { WORKER_FILE, frozen, protocolHash } from './lib/protocol-hash';
 import { PHENOLOGY_DATA } from '../src/sim/phenology.gen';
 
 const args = process.argv.slice(2);
@@ -35,39 +39,29 @@ const DAYS = has('years') ? 365 * +flag('years', '1') : +flag('days', '365');
 const SEEDS = flag('seeds', '48,7,21,5,11').split(',').map(Number);
 const JSON_OUT = flag('json', ''), MD_OUT = flag('md', '');
 const WORKERS = +flag('workers', String(availableParallelism()));
-const EXP_EVERY = +flag('experiments-every', '30');
+const DEMOGRAPHY = has('demography'), UNSEAL = has('unseal');
+const EXP_EVERY = DEMOGRAPHY ? 0 : +flag('experiments-every', '30');
 const TRUTH = !has('no-truth');
 const OBS_SEED = +flag('observer-seed', '1');
 const PARAMS = JSON.parse(flag('params', '{}')) as Record<string, number>;
 const BURN_IN = +flag('burn-in', '0');
 const LIFE_YEARS = +flag('life-years', '0');
 const LIFE_SEEDS = flag('life-seeds', SEEDS.join(',')).split(',').map(Number);
-const workerFile = new URL('./lib/field-worker.ts', import.meta.url);
-
-/**
- * Protocol fingerprint (C3 review): sha256 over every observer source file, the worker, and each target's id, role,
- * band and observer protocol. data/targets.json protocolFreeze.hash records the frozen value; a mismatch means the
- * protocol changed after the freeze and must have a protocolLog entry (held-out targets it touches become compromised).
- */
-function protocolHash(): string {
-  const h = createHash('sha256');
-  const dir = new URL('../src/field/', import.meta.url);
-  for (const f of readdirSync(dir).filter(x => x.endsWith('.ts')).sort()) { h.update(f); h.update(readFileSync(new URL(f, dir))); }
-  h.update(readFileSync(workerFile));
-  const t = JSON.parse(readFileSync(new URL('../data/targets.json', import.meta.url), 'utf8')) as { targets: { id: string; role: string; encoded: boolean; accept: unknown; observer: unknown }[] };
-  h.update(JSON.stringify(t.targets.map(x => [x.id, x.role, x.encoded, x.accept, x.observer])));
-  return h.digest('hex').slice(0, 16);
-}
-function frozenHash(): { hash: string | null; stage: string | null } {
-  const t = JSON.parse(readFileSync(new URL('../data/targets.json', import.meta.url), 'utf8')) as { protocolFreeze?: { hash: string; stage: string } };
-  return { hash: t.protocolFreeze?.hash ?? null, stage: t.protocolFreeze?.stage ?? null };
-}
+const workerFile = WORKER_FILE;
+// Protocol fingerprint (C3 review) and the logged freeze: scripts/lib/protocol-hash.ts. A mismatch means the protocol
+// changed after the freeze and must have a protocolLog entry (held-out targets it touches become compromised).
+const frozenHash = frozen;
 
 const f = (v: number | null | undefined, d = 2) => (v === null || v === undefined || !Number.isFinite(v) ? '—' : Math.abs(v) >= 1000 ? v.toFixed(0) : v.toFixed(d));
-const jobs: FieldJob[] = SEEDS.map(seed => ({ seed, days: DAYS, profile: PROFILE, params: PARAMS, burnInDays: BURN_IN, observerSeed: OBS_SEED, experimentEveryDays: EXP_EVERY, truth: TRUTH }));
+const jobs: FieldJob[] = SEEDS.map(seed => ({ seed, days: DAYS, profile: PROFILE, params: PARAMS, burnInDays: BURN_IN, observerSeed: OBS_SEED, experimentEveryDays: EXP_EVERY, truth: TRUTH, demography: DEMOGRAPHY, unseal: UNSEAL }));
 
 async function main() {
   const t0 = performance.now();
+  if (UNSEAL) {
+    const fz = frozenHash(), why = unsealRefusal({ stage: fz.stage ?? undefined, hash: fz.hash ?? undefined, registryHash: fz.registryHash ?? undefined }, protocolHash(), REGISTRY_HASH);
+    if (why) { console.error(`--unseal refused: ${why}. The sealed rows (T-DEM-14…24, T-LET-5) are computed only in the hash-bound C8 proof run.`); process.exit(3); }
+    console.error(`--unseal: hashes match the logged C8 freeze (${fz.stage}); computing the sealed rows`);
+  }
   if (has('rescore')) return rescore(flag('rescore', ''));
   if (has('protocol-hash')) { const fz = frozenHash(); console.log(`${protocolHash()} (frozen: ${fz.hash ?? 'none'})`); return; }
   let solo: { wallMs: number } | null = null;
@@ -118,11 +112,11 @@ async function main() {
   const obsShare = results.map(r => r.observerMs / r.simMs);
 
   // console report
-  const line = (r: ScoreRow) => `| ${r.id}${r.encoded ? ' (enc.)' : ''}${r.flags.map(x => ` *${x}*`).join('')} | ${r.metric} | ${r.band} | ${r.perSeed.map(v => f(v)).join(' / ') || '—'} | ${f(r.pooled)}${r.sd !== null ? ` ± ${f(r.sd)}` : ''} | ${f(r.truth)} | **${r.verdict}**${r.scaleSensitive ? ' ᶜ' : ''} | ${r.note} |`;
+  const line = (r: ScoreRow) => r.verdict === 'sealed' ? `| ${r.id} | ${r.metric} | ${r.note} |` : `| ${r.id}${r.encoded ? ' (enc.)' : ''}${r.flags.map(x => ` *${x}*`).join('')} | ${r.metric} | ${r.band} | ${r.perSeed.map(v => f(v)).join(' / ') || '—'} | ${f(r.pooled)}${r.sd !== null ? ` ± ${f(r.sd)}` : ''} | ${f(r.truth)} | **${r.verdict}**${r.scaleSensitive ? ' ᶜ' : ''} | ${r.note} |`;
   console.log(`\nMGOGO field-observer scorecard — profile ${PROFILE}, natural aging ${DAYS} days × seeds ${SEEDS.join(', ')} (${((performance.now() - t0) / 1000).toFixed(0)} s)\n`);
   for (const role of ['fitted', 'held-out'] as const) {
     const s = summary[role];
-    console.log(`### ${role === 'fitted' ? 'Fitted' : 'Held-out'} targets: ${s.pass} pass, ${s.tuned} tuned pass, ${s.fail} fail, ${s.inconclusive} inconclusive, ${s.insufficient} insufficient data, ${s['n/a']} n/a (mechanism missing)${s.scale ? `, ${s.scale} not scored (scale)` : ''}${s.structural ? `, ${s.structural} structural` : ''}${s.compromised ? `, ${s.compromised} compromised` : ''}${s.instrument ? `, ${s.instrument} instrument below bar` : ''}${s.encoded ? `, ${s.encoded} encoded (counted apart)` : ''}\n`);
+    console.log(`### ${role === 'fitted' ? 'Fitted' : 'Held-out'} targets: ${s.pass} pass, ${s.tuned} tuned pass, ${s.fail} fail, ${s.inconclusive} inconclusive, ${s.insufficient} insufficient data, ${s['n/a']} n/a (mechanism missing)${s.scale ? `, ${s.scale} not scored (scale)` : ''}${s.structural ? `, ${s.structural} structural` : ''}${s.compromised ? `, ${s.compromised} compromised` : ''}${s.instrument ? `, ${s.instrument} instrument below bar` : ''}${s.encoded ? `, ${s.encoded} encoded (counted apart)` : ''}${s.sealed ? `, ${s.sealed} sealed (C8 proof)` : ''}\n`);
     console.log('| Target | Metric | Band | Per seed | Pooled ± sd | Truth | Verdict | Note |');
     console.log('| --- | --- | --- | --- | --- | --- | --- | --- |');
     for (const r of rows.filter(x => x.role === role)) console.log(line(r));
@@ -153,7 +147,7 @@ async function main() {
   const hashes = results.map(r => ({ seed: r.seed, hash: r.hash }));
   if (JSON_OUT) {
     mkdirSync(dirname(JSON_OUT), { recursive: true });
-    writeFileSync(JSON_OUT, JSON.stringify({ manifest, summary, rows, s18, life: lrows, accuracy, timing, counts: results.map(r => ({ seed: r.seed, ...r.counts })), values }, null, 1));
+    writeFileSync(JSON_OUT, JSON.stringify({ manifest, summary, rows: rows.map(publicRow), s18, life: lrows, accuracy, timing, counts: results.map(r => ({ seed: r.seed, ...r.counts })), values }, null, 1));
   }
   if (MD_OUT) { mkdirSync(dirname(MD_OUT), { recursive: true }); writeFileSync(MD_OUT, markdown(manifest, rows, summary, s18, lrows, accuracy, timing, hashes)); }
 }
@@ -166,10 +160,10 @@ function rescore(file: string) {
   if (saved.accuracy?.patrol) applyInstrumentBar(rows, { focal: saved.accuracy.patrol, males: saved.accuracy.patrolMales ?? { precision: NaN, recall: NaN } });
   const summary = summarize(rows);
   const hashes = (saved.manifest.seeds as number[]).map(seed => ({ seed, hash: saved.manifest.hashes[seed] as string }));
-  const out = { ...saved, summary, rows };
+  const out = { ...saved, summary, rows: rows.map(publicRow) };
   if (JSON_OUT) writeFileSync(JSON_OUT, JSON.stringify(out, null, 1));
   if (MD_OUT) writeFileSync(MD_OUT, markdown(saved.manifest, rows, summary, saved.s18, saved.life, saved.accuracy, saved.timing, hashes));
-  for (const role of ['fitted', 'held-out'] as const) { const s = summary[role]; console.log(`${role}: ${s.pass} pass, ${s.tuned} tuned pass, ${s.fail} fail, ${s.inconclusive} inconclusive, ${s.insufficient} insufficient, ${s['n/a']} n/a, ${s.scale} scale, ${s.compromised} compromised, ${s.instrument} instrument below bar, ${s.encoded ?? 0} encoded`); }
+  for (const role of ['fitted', 'held-out'] as const) { const s = summary[role]; console.log(`${role}: ${s.pass} pass, ${s.tuned} tuned pass, ${s.fail} fail, ${s.inconclusive} inconclusive, ${s.insufficient} insufficient, ${s['n/a']} n/a, ${s.scale} scale, ${s.compromised} compromised, ${s.instrument} instrument below bar, ${s.encoded ?? 0} encoded, ${s.sealed ?? 0} sealed`); }
 }
 
 function markdown(manifest: Record<string, unknown>, rows: ScoreRow[], summary: ReturnType<typeof summarize>, s18: { label: string; field: string; protocol: string; truthProtocol: string; observed: (number | null)[]; truth: (number | null)[]; observedMean: number | null; truthMean: number | null }[],
@@ -182,8 +176,8 @@ function markdown(manifest: Record<string, unknown>, rows: ScoreRow[], summary: 
   o.push('Verdicts: **pass** (pooled value in the accept band; pattern targets: the pattern holds in most seeds), **fail**, **inconclusive** (the 95% interval over seeds crosses a band edge, or a rare-event rate outside the band has a 95% Poisson interval that still overlaps it: not established either way), **insufficient** (the run is too short or the event did not occur), **n/a** (mechanism missing), **structural** (checked by a unit test, not by observation), **scale** (a length or area under the compressed profile: reported ×50 as field-equivalent but not scored, because walking speed, sight and party links are not scaled by the same factor; scored from C5a). ᶜ marks scale-sensitive metrics.', '');
   o.push(`Protocol: hash \`${manifest.protocolHash}\`${manifest.frozenProtocolHash ? (manifest.frozenProtocolHash === manifest.protocolHash ? ` (frozen at ${manifest.frozenAt})` : ` (differs from the ${manifest.frozenAt} freeze \`${manifest.frozenProtocolHash}\`: see data/targets.json protocolLog)`) : ''}. Rows flagged *revised post hoc* had their protocol corrected after their value was seen (source text or bug; logged); *compromised* held-out rows are reported but never count as validation; *tuned* rows reached their value by tuning on the scoring seeds (their passes are counted as tuned, not as passes); *instrument below bar* rows are reported, not scored; *encoded* rows (enc.; a match is weak evidence) are counted apart; *held as fail* rows are reported as failed whatever their value; *model revised post-freeze* rows were re-tested on fresh seeds after a model change and count only if no parameter was set by looking at them; *partially encoded* rows are scored with that caveat; cell-based rows on fewer than 20 cells of 500 m per community-year are **scale** (reported, not scored).`, '');
   o.push('## Summary', '');
-  o.push('| Role | Targets | Pass | Tuned pass | Fail | Inconclusive | Insufficient data | Not scored (scale) | n/a (mechanism missing) | Structural | Compromised | Instrument below bar | Encoded |', '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
-  for (const role of ['fitted', 'held-out', 'all'] as const) { const s = summary[role]; o.push(`| ${role} | ${Object.values(s).reduce((a, b) => a + b, 0)} | ${s.pass} | ${s.tuned ?? 0} | ${s.fail} | ${s.inconclusive} | ${s.insufficient} | ${s.scale ?? 0} | ${s['n/a']} | ${s.structural} | ${s.compromised ?? 0} | ${s.instrument ?? 0} | ${s.encoded ?? 0} |`); }
+  o.push('| Role | Targets | Pass | Tuned pass | Fail | Inconclusive | Insufficient data | Not scored (scale) | n/a (mechanism missing) | Structural | Compromised | Instrument below bar | Encoded | Sealed |', '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+  for (const role of ['fitted', 'held-out', 'all'] as const) { const s = summary[role]; o.push(`| ${role} | ${Object.values(s).reduce((a, b) => a + b, 0)} | ${s.pass} | ${s.tuned ?? 0} | ${s.fail} | ${s.inconclusive} | ${s.insufficient} | ${s.scale ?? 0} | ${s['n/a']} | ${s.structural} | ${s.compromised ?? 0} | ${s.instrument ?? 0} | ${s.encoded ?? 0} | ${s.sealed ?? 0} |`); }
   o.push('');
   // the stage plan's expected baseline failures, with observed and omniscient values side by side
   const expected = ['T-IGE-1', 'T-IGE-2', 'T-ACT-2', 'T-ACT-3', 'T-HUN-2', 'T-HUN-7', 'T-PAT-1'];
@@ -195,6 +189,7 @@ function markdown(manifest: Record<string, unknown>, rows: ScoreRow[], summary: 
     o.push(`## ${role === 'fitted' ? 'Fitted targets (may be used for calibration)' : 'Held-out targets (validation only; never tuned)'}`, '');
     o.push('| Target | Metric | Field band | Sim per seed | Mean | Spread | Truth | Verdict | Protocol | Note |', '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
     for (const r of rows.filter(x => x.role === role)) {
+      if (r.verdict === 'sealed') { o.push(`| ${r.id} | ${r.metric} | ${r.note} | | | | | | | |`); continue; }
       o.push(`| ${r.id}${r.encoded ? ' (encoded)' : ''}${(r.flags ?? []).map(x => ` *${x}*`).join('')} | ${r.metric} (${r.units}) | ${r.band} | ${r.perSeed.map(v => f(v)).join(' / ') || '—'} | ${f(r.pooled)} | ${spread(r)} | ${f(r.truth)} | **${r.verdict}**${r.scaleSensitive ? ' ᶜ' : ''} | ${r.protocol} | ${r.note}${Object.keys(r.parts).length ? ` Parts: ${Object.entries(r.parts).map(([k, v]) => `${k} ${f(v)}`).join(', ')}.` : ''} |`);
     }
     o.push('');

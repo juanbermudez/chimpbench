@@ -127,12 +127,18 @@ export interface ObserverConfig {
    * no truth series, phenology transects or PC–MC observations (observer cost, C5a review).
    */
   lite: boolean;
+  /**
+   * Long demography runs (stage C8, `scripts/field-metrics.ts --demography`): every protocol runs, but only the records the
+   * demography and early-life rows read are stored: point samples at the fix interval only, no call, interaction-event or
+   * tree-visit records (memory over 40-year runs).
+   */
+  demography: boolean;
 }
 
 export function defaultConfig(profile: ProfileName = 'compressed', over: Partial<ObserverConfig> = {}): ObserverConfig {
   return {
     seed: 1, profile: PROFILES[profile], pointIntervalMin: 1, scanIntervalMin: 15, fixIntervalMin: 5, rotationBlockDays: 10,
     loseHazardPerH: 0.05, loseFactor: 4, ageErrorY: 2, transectTreesPerSpecies: 20, transectLines: 4, pcWindowMin: 10,
-    heardNeedsResponse: false, heardResponseMin: 10, encounterResponseMin: 60, fullCadence: false, encounterGapMin: 60, disappearDays: 30, truth: true, followMode: 'focal', lite: false, ...over,
+    heardNeedsResponse: false, heardResponseMin: 10, encounterResponseMin: 60, fullCadence: false, encounterGapMin: 60, disappearDays: 30, truth: true, followMode: 'focal', lite: false, demography: false, ...over,
   };
 }

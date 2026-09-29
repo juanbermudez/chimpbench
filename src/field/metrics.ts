@@ -2,6 +2,7 @@ import { SOURCE_EFFORT_H_PER_YEAR } from './config';
 import { CAT_FEED, CAT_GROOM, CAT_REST, CAT_TRAVEL, FEED_FRUIT, FEED_GROUND, FEED_MEAT } from './categories';
 import { MONTH_H, shares, type Derived } from './derive';
 import { P_LACT, type Records } from './records';
+import { EARLY_LIFE_METRICS, SEALED } from './early-life';
 import { cellOf, cellRange, isoplethArea, kde } from './space';
 import { conciliatoryTendency, dispersion, finite, hwi, kendall, logistic, mean, median, ols, pearson, poissonInterval, spearman, steepness } from './stats';
 
@@ -49,6 +50,11 @@ export interface MetricDef {
    * but not scored (verdict 'scale'), because a single cell then moves it a lot. Seeds report `cells`.
    */
   cellBased?: boolean;
+  /**
+   * Stage C8 sealing (docs/staging/early-life-prereg.md §1.2): never computed unless the run is unsealed
+   * (`scripts/field-metrics.ts --unseal`, hash-bound to the logged C8 freeze); reports show only the id, the metric and this text.
+   */
+  sealed?: string;
 }
 /** Fewest 500 m cells a community-year must use for a cell-based metric to be scored (C6 review; design). */
 export const CELL_MIN = 20;
@@ -199,6 +205,40 @@ function e15From(exp: number[], dth: number[]): number {
   return e;
 }
 const addArr = (a: number[], b: number[]) => a.map((v, i) => v + (b[i] ?? 0));
+
+/** Census time (eco-hours) of a world day's 21:00 census. */
+const censusTime = (day: number) => (day - 1) * 24 + 14.5;
+const OUTBREAK_GAP_D = 30, OUTBREAK_WINDOW_D = 91, OUTBREAK_MIN_SHARE = 0.2;
+
+/**
+ * Respiratory outbreaks from health monitoring (stage C8): per community, clusters of census days with individuals seen
+ * with respiratory signs, split by gaps of more than 30 days (design); a cluster is an outbreak when the distinct individuals
+ * seen ill within 91 days of its first sighting reach 20% of the community alive at its start (T-DEM-5's definition).
+ * Deaths are community members seen ill, or with a respiratory necropsy, from the start to 30 d after the last sighting.
+ */
+function outbreaks(d: Derived): { troop: number; t0: number; t1: number; ill: Set<number>; size: number; deaths: number[] }[] {
+  const out: { troop: number; t0: number; t1: number; ill: Set<number>; size: number; deaths: number[] }[] = [];
+  for (const troop of d.troops) {
+    const days = d.rec.health.filter(h => h.troop === troop).sort((a, b) => a.day - b.day);
+    let k = 0;
+    while (k < days.length) {
+      let j = k;
+      while (j + 1 < days.length && days[j + 1].day - days[j].day <= OUTBREAK_GAP_D) j++;
+      const t0 = censusTime(days[k].day), t1 = censusTime(days[j].day), early = new Set<number>(), ill = new Set<number>();
+      for (let i = k; i <= j; i++) for (const id of days[i].ids) { ill.add(id); if (days[i].day - days[k].day < OUTBREAK_WINDOW_D) early.add(id); }
+      const size = d.rec.roster.filter(r => r.troop === troop && d.aliveAt(r.id, t0 - 24)).length;
+      if (size > 0 && early.size / size >= OUTBREAK_MIN_SHARE) {
+        const deaths = d.rec.deaths.filter(x => x.troop === troop && x.tEst >= t0 - 24 && x.tEst <= t1 + OUTBREAK_GAP_D * 24 && (x.ill || x.respiratory || ill.has(x.id))).map(x => x.id);
+        out.push({ troop, t0, t1, ill, size, deaths });
+      }
+      k = j + 1;
+    }
+  }
+  return out;
+}
+
+/** Deaths attributed to respiratory illness: a respiratory necropsy, or a disappearance after respiratory signs were seen (T-DEM-8). */
+function respiratoryDeaths(d: Derived) { return d.rec.deaths.filter(x => x.tEst >= d.t0 && x.tEst <= d.t1 && (x.respiratory || (x.how === 'disappeared' && x.ill))); }
 
 // ---------------------------------------------------------------------------
 // Target metrics
@@ -603,7 +643,7 @@ export const METRICS: MetricDef[] = [
     pooled: s => { const v = s.flatMap(x => x.raw?.ratio ?? []); return v.length ? { value: median(v), n: v.length } : none('no killings'); },
   },
   { id: 'T-LET-4', protocol: 'range gain after killings (scenario)', na: 'ranges are fixed circles that relax back after a killing; living territories and the expansion scenario arrive in C6' },
-  { id: 'T-LET-5', protocol: 'fertility and infant survival after expansion (scenario)', na: 'no expansion scenario or territory-dependent fertility (C6, C8)' },
+  { id: 'T-LET-5', protocol: 'scripts/field-scenario.ts expansion --unseal (sealed; early-life.ts letFiveSeed): births and infant deaths before 3 in the 3 years before vs after the winner\'s expansion, against the paired baseline', sealed: SEALED },
   {
     id: 'T-LET-6', protocol: 'share of observed killings that happened during a classified patrol of the observing team (mitani2010)', pool: 'ratio',
     compute: d => {
@@ -985,12 +1025,70 @@ export const METRICS: MetricDef[] = [
       return { value: Math.exp(-cum), n };
     },
   },
-  { id: 'T-DEM-4', protocol: 'causes of death', na: 'no disease or snare mortality; causes are not separated from the fitted all-cause hazard (C8)' },
-  { id: 'T-DEM-5', protocol: 'epidemics per community-year', na: 'no epidemics (C8)' },
-  { id: 'T-DEM-6', protocol: 'outbreak attack rate and mortality', na: 'no epidemics (C8)' },
-  { id: 'T-DEM-7', protocol: 'who dies in epidemics', na: 'no epidemics (C8)' },
-  { id: 'T-DEM-8', protocol: 'respiratory death rate', na: 'no respiratory disease (C8)' },
-  { id: 'T-DEM-9', protocol: 'snare injury prevalence', na: 'no snares (C8)' },
+  {
+    id: 'T-DEM-4', protocol: 'census + necropsy truth: shares of known-cause deaths (carcasses found by the teams) due to disease and to conspecific aggression; disappearances have unknown cause (williams2008); respiratory share of all deaths as a part (emeryThompson2018)', pool: 'custom',
+    compute: d => {
+      const known = d.rec.deaths.filter(x => x.cause !== 'unknown' && x.tEst >= d.t0 && x.tEst <= d.t1);
+      return { value: null, n: known.length, raw: { k: [known.length, known.filter(x => x.cause === 'disease').length, known.filter(x => x.cause === 'aggression').length, d.rec.deaths.filter(x => x.tEst >= d.t0 && x.tEst <= d.t1).length, respiratoryDeaths(d).length] } };
+    },
+    pooled: s => {
+      const k = s.reduce((a, v) => addArr(a, v.raw?.k ?? []), [0, 0, 0, 0, 0]);
+      if (k[0] < 10) return none(`only ${k[0]} known-cause deaths`, k[0]);
+      return { value: k[1] / k[0], n: k[0], parts: { disease: k[1] / k[0], aggression: k[2] / k[0], knownCauseDeaths: k[0], respiratoryOfAll: k[3] ? k[4] / k[3] : null } };
+    },
+  },
+  {
+    id: 'T-DEM-5', protocol: 'health monitoring: respiratory outbreaks per community-year; an outbreak is a cluster of daily respiratory-sign sightings (gaps <= 30 d) in which >= 20% of the community is seen ill within 91 days of the first sighting (the registered definition)', pool: 'ratio', poisson: true,
+    compute: d => { const n = outbreaks(d).length; return d.communityYears > 0 ? { value: n / d.communityYears, num: n, den: d.communityYears, n } : none('no observation time'); },
+  },
+  {
+    id: 'T-DEM-6', protocol: 'health monitoring: per outbreak, attack = distinct individuals seen ill ÷ community size at its start; mortality = deaths of community members seen ill (or with respiratory necropsy) from its start to 30 d after its last sighting ÷ community size; means over outbreaks (negrey2019; williams2008)', pool: 'custom',
+    compute: d => { const o = outbreaks(d); return { value: null, n: o.length, raw: { attack: o.map(x => x.ill.size / x.size), mortality: o.map(x => x.deaths.length / x.size) } }; },
+    pooled: s => {
+      const a = s.flatMap(v => v.raw?.attack ?? []), m = s.flatMap(v => v.raw?.mortality ?? []);
+      if (a.length < 3) return none(`only ${a.length} outbreaks (rare events: natural-aging runs of decades)`, a.length);
+      return { value: mean(a), n: a.length, parts: { attack: mean(a), mortality: mean(m), maxMortality: Math.max(...m) } };
+    },
+  },
+  {
+    id: 'T-DEM-7', protocol: 'health monitoring: logistic regression of dying in an outbreak (as in T-DEM-6) on infant (estimated age < 5) and age >= 30, over community members alive at the outbreak start; both odds ratios > 1 (negrey2019)', pool: 'custom',
+    compute: d => {
+      const inf: number[] = [], old: number[] = [], died: number[] = [];
+      for (const o of outbreaks(d)) for (const r of d.rec.roster) {
+        if (r.troop !== o.troop || !d.aliveAt(r.id, o.t0)) continue;
+        const a = d.ageAt(r.id, o.t0);
+        inf.push(a < 5 ? 1 : 0); old.push(a >= 30 ? 1 : 0); died.push(o.deaths.includes(r.id) ? 1 : 0);
+      }
+      return { value: null, n: died.reduce((x, y) => x + y, 0), raw: { inf, old, died } };
+    },
+    pooled: s => {
+      const inf = s.flatMap(v => v.raw?.inf ?? []), old = s.flatMap(v => v.raw?.old ?? []), died = s.flatMap(v => v.raw?.died ?? []);
+      const deaths = died.reduce((a, b) => a + b, 0);
+      if (deaths < 10) return none(`only ${deaths} outbreak deaths`, deaths);
+      const f = logistic(inf.map((x, i) => [x, old[i]]), died);
+      const orInf = Math.exp(f.beta[1]), orOld = Math.exp(f.beta[2]);
+      return { value: orInf, n: deaths, parts: { orInfant: orInf, orOld: orOld }, pass: f.beta[1] > 0 && f.beta[2] > 0 };
+    },
+  },
+  {
+    id: 'T-DEM-8', protocol: 'census + necropsy: respiratory deaths (respiratory necropsy, or a disappearance after respiratory signs in the previous 30 d) per 1,000 chimp-years of census exposure (emeryThompson2018)', pool: 'ratio', poisson: true,
+    compute: d => {
+      const lt = lifeTable(d), ex = [...lt.exp.male, ...lt.exp.female].reduce((a, b) => a + b, 0), n = respiratoryDeaths(d).length;
+      return ex > 0 ? { value: n / ex * 1000, num: n, den: ex / 1000, n } : none('no exposure');
+    },
+  },
+  {
+    id: 'T-DEM-9', protocol: 'census: at the end of each observation year, share of individuals alive in the roster with estimated age > 3 whose snare injury the teams had recorded (wood2017; emeryThompson2020)', pool: 'ratio',
+    compute: d => {
+      const Y = 365.25 * 24, snared = new Map(d.rec.snared.map(x => [x.id, x.t]));
+      let num = 0, den = 0;
+      for (let t = d.t0 + Y; t <= d.t1 + 1e-6; t += Y) for (const r of d.rec.roster) {
+        if (!d.aliveAt(r.id, t) || d.ageAt(r.id, t) <= 3) continue;
+        den++; if ((snared.get(r.id) ?? Infinity) <= t) num++;
+      }
+      return den ? { value: num / den, num, den, n: den } : none('needs a full observation year');
+    },
+  },
   {
     id: 'T-DEM-10', protocol: 'census: detected births ÷ female-years at estimated ages 20–30 (emeryThompson2007)', pool: 'custom',
     compute: d => {
@@ -1035,8 +1133,8 @@ export const METRICS: MetricDef[] = [
     compute: d => ({ value: null, n: 0, raw: { ibi: interbirth(d, false) } }),
     pooled: s => { const v = s.flatMap(x => x.raw?.ibi ?? []); return v.length >= 3 ? { value: mean(v), n: v.length } : none('fewer than 3 intervals (needs multi-year runs)', v.length); },
   },
-  { id: 'T-DEM-14', protocol: 'female rank and fertility', na: 'no path from female rank to fertility or infant survival (C8)' },
-  { id: 'T-DEM-15', protocol: 'maternal loss after weaning', na: 'no post-weaning maternal effects on sons (C8)' },
+  // T-DEM-14, T-DEM-15 and the stage C8 early-life rows T-DEM-16…24: sealed until the C8 proof (early-life.ts)
+  ...EARLY_LIFE_METRICS,
 
   // Communication
   {

@@ -28,7 +28,7 @@ export interface TargetSpec {
 export interface TargetFile { targets: TargetSpec[] }
 
 /** scale: a length or area target under the compressed profile, reported but not scored until C5a (C3 review). */
-export type Verdict = 'pass' | 'fail' | 'inconclusive' | 'insufficient' | 'n/a' | 'structural' | 'scale';
+export type Verdict = 'pass' | 'fail' | 'inconclusive' | 'insufficient' | 'n/a' | 'structural' | 'scale' | 'sealed';
 
 export interface ScoreRow {
   id: string; metric: string; role: 'fitted' | 'held-out'; encoded: boolean; evidence: string;
@@ -51,7 +51,12 @@ export function seedInterval(v: number[]): [number, number] | null {
 }
 
 /** Part bands where the target's band is written per sex (lo/hi null in the JSON). */
-const PART_BANDS: Record<string, Record<string, [number, number]>> = { 'T-DEM-2': { female: [31, 39], male: [18, 24] } };
+const PART_BANDS: Record<string, Record<string, [number, number]>> = {
+  'T-DEM-2': { female: [31, 39], male: [18, 24] },
+  // stage C8: the bands written in the rows' basis text
+  'T-DEM-4': { disease: [0.25, 0.6], aggression: [0.1, 0.25] },
+  'T-DEM-6': { attack: [0.4, 0.9], mortality: [0, 0.17] },
+};
 
 /** One seed's value as the pooled rule would compute it from that seed alone. */
 function seedValue(def: MetricDef, s: SeedValue): SeedValue {
@@ -101,6 +106,8 @@ export function scoreTargets(file: TargetFile, values: Record<string, SeedValue[
     if (!def || def.na) { rows.push({ ...base, ...empty, band, verdict: 'n/a', note: `n/a (mechanism missing${def?.na ? `: ${def.na}` : ''})` }); continue; }
     if (def.structural) { rows.push({ ...base, ...empty, band, verdict: 'structural', note: def.structural }); continue; }
     const seeds = values[t.id] ?? [];
+    // stage C8 sealing: a sealed metric has no values unless the run was unsealed; its row carries nothing but the id and metric
+    if (def.sealed && !seeds.length) { rows.push({ ...base, ...empty, protocol: '', band: '', verdict: 'sealed', note: def.sealed }); continue; }
     const per = seeds.map(s => seedValue(def, s));
     const perSeed = per.map(s => (s.value !== null && finite(s.value) ? s.value : null));
     const got = perSeed.filter((x): x is number => x !== null);
@@ -159,13 +166,32 @@ export function scoreTargets(file: TargetFile, values: Record<string, SeedValue[
 }
 
 export type SummaryKey = Verdict | 'compromised' | 'instrument' | 'tuned' | 'encoded';
+
+/**
+ * A row as written to JSON and Markdown: sealed rows (stage C8) keep only the id, the metric, the role and the sealing
+ * text: no value, n, parts, interval, verdict or note (early-life-prereg §1.2).
+ */
+export function publicRow(r: ScoreRow): ScoreRow | { id: string; metric: string; role: string; encoded: boolean; sealed: string } {
+  return r.verdict === 'sealed' ? { id: r.id, metric: r.metric, role: r.role, encoded: r.encoded, sealed: r.note } : r;
+}
+
+/**
+ * `--unseal` binding (early-life-prereg §1.2): allowed only when data/targets.json records a C8 freeze whose protocol hash
+ * and parameter-registry hash equal the current ones. Returns the refusal reason, or null when unsealing is allowed.
+ */
+export function unsealRefusal(freeze: { stage?: string; hash?: string; registryHash?: string } | undefined, protocolHash: string, registryHash: string): string | null {
+  if (!freeze || !/^C8\b/.test(freeze.stage ?? '')) return `no C8 freeze is logged (protocolFreeze.stage is "${freeze?.stage ?? 'none'}")`;
+  if (freeze.hash !== protocolHash) return `the protocol hash ${protocolHash} differs from the C8 freeze ${freeze.hash}`;
+  if (freeze.registryHash !== registryHash) return `the parameter-registry hash ${registryHash} differs from the C8 freeze ${freeze.registryHash ?? 'none'}`;
+  return null;
+}
 /**
  * Counts by role and verdict. Compromised rows and rows whose instrument is below its bar are counted apart (never as
  * a pass or fail), passes of tuned rows are counted as 'tuned', not as passes (C5a review), and encoded rows (a match
  * is weak evidence; data/targets.json) are counted as 'encoded' whatever their verdict (C6 review).
  */
 export function summarize(rows: ScoreRow[]): Record<string, Record<SummaryKey, number>> {
-  const z = (): Record<SummaryKey, number> => ({ pass: 0, fail: 0, inconclusive: 0, insufficient: 0, 'n/a': 0, structural: 0, scale: 0, compromised: 0, instrument: 0, tuned: 0, encoded: 0 });
+  const z = (): Record<SummaryKey, number> => ({ pass: 0, fail: 0, inconclusive: 0, insufficient: 0, 'n/a': 0, structural: 0, scale: 0, sealed: 0, compromised: 0, instrument: 0, tuned: 0, encoded: 0 });
   const out: Record<string, Record<SummaryKey, number>> = { fitted: z(), 'held-out': z(), all: z() };
   for (const r of rows) {
     const counted = r.verdict === 'pass' || r.verdict === 'fail' || r.verdict === 'inconclusive';

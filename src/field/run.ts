@@ -24,6 +24,13 @@ export interface FieldJob {
   truth?: boolean;
   /** Other observer settings (sensitivity runs); the proof run uses the defaults. */
   observer?: Partial<ObserverConfig>;
+  /**
+   * Stage C8: compute the sealed metrics too. Only scripts/field-metrics.ts --unseal sets it, after checking the hashes
+   * against the logged C8 freeze; otherwise sealed metric functions are never called (early-life-prereg §1.2).
+   */
+  unseal?: boolean;
+  /** Stage C8 long demography runs: no party-follow team sets, and the observer stores only what demography rows read. */
+  demography?: boolean;
 }
 
 export interface Accuracy {
@@ -55,7 +62,7 @@ export function runFieldJob(job: FieldJob, keepRecords = false): FieldResult & {
   const t0 = performance.now();
   const world = createWorld(job.seed, { profile: job.profile, params: job.params ?? {} });
   for (let i = 0, n = Math.round((job.burnInDays ?? 0) * 5760); i < n; i++) tickWorld(world);
-  const obs = createObserver(world, { ...job.observer, seed: job.observerSeed ?? 1, profile: PROFILES[job.profile], truth: job.truth ?? true });
+  const obs = createObserver(world, { ...job.observer, seed: job.observerSeed ?? 1, profile: PROFILES[job.profile], truth: job.truth ?? true, demography: !!job.demography });
   // further team sets on party follows for the targets whose source followed parties (config.ts TARGET_FOLLOW): the
   // larger subgroup (2-min points suffice for party size and encounters), and male parties at 1-min points (listening
   // stops of 2–5 min must be resolved by the patrol classifier)
@@ -70,8 +77,7 @@ export function runFieldJob(job: FieldJob, keepRecords = false): FieldResult & {
     tickWorld(world);
     const b = performance.now();
     observerStep(obs, world);
-    observerStep(pobs, world);
-    observerStep(mobs, world);
+    if (!job.demography) { observerStep(pobs, world); observerStep(mobs, world); }
     const c = performance.now();
     simMs += b - a; obsMs += c - b;
     // field experiments at 10:00 on every `every`-th day, on copies of the world
@@ -85,7 +91,7 @@ export function runFieldJob(job: FieldJob, keepRecords = false): FieldResult & {
   const m0 = performance.now();
   const d = derive(rec), pd = derive(prec), md = derive(mrec);
   const values: Record<string, SeedValue> = {};
-  for (const m of METRICS) if (m.compute) { const mode = TARGET_FOLLOW[m.id]; values[m.id] = m.compute(mode === 'party-larger' ? pd : mode === 'party-males' ? md : d); }
+  for (const m of METRICS) if (m.compute && (!m.sealed || job.unseal)) { const mode = TARGET_FOLLOW[m.id]; values[m.id] = m.compute(mode === 'party-larger' ? pd : mode === 'party-males' ? md : d); }
   // T-PAT-1 is scored on focal follows (its band comes from Gombe and Taï); the Ngogo-style male-party value is reported beside it (C6 review)
   const pat1 = METRICS.find(m => m.id === 'T-PAT-1');
   if (pat1?.compute && values['T-PAT-1']) values['T-PAT-1'].parts = { ...values['T-PAT-1'].parts, maleParties: pat1.compute(md).value };

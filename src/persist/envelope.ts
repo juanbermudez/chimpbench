@@ -48,8 +48,10 @@ function shape(v: unknown): string {
   if (v !== null && typeof v === 'object') return `{${Object.keys(v).sort().map(k => `${k}:${shape((v as Record<string, unknown>)[k])}`).join(',')}}`;
   return typeof v;
 }
+/** Layout fingerprint of a ChimpX-like and a SimState-like object at a state version (STATE_SHAPE; tests build older layouts with it). */
+export function shapeFingerprint(x: object, w: object, version = STATE_VERSION): string { return fnv(`${version}|x${shape(x)}|w${shape(w)}`); }
 /** Fingerprint of the hidden simulation state layout (ChimpX and SimState defaults) plus STATE_VERSION. */
-export const STATE_SHAPE = fnv(`${STATE_VERSION}|x${shape(newX())}|w${shape(newSimState())}`);
+export const STATE_SHAPE = shapeFingerprint(newX(), newSimState());
 
 export type Compat = { ok: true } | { ok: false; reason: string };
 

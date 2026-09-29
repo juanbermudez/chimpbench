@@ -8,8 +8,9 @@ import type { World } from '../src/types';
 import { REGISTRY_HASH } from '../src/sim/params';
 import {
   APP_VERSION, SAVE_FORMAT, STATE_SHAPE, STATE_VERSION, SaveError, captureDecider, compatibility, envelopeChunks, needsParamsChoice, paramsChange,
-  jsonPieces, paramsNote, parseEnvelope, plainDataProblems, restoreDecider, takeSlice, type SaveEnvelope,
+  jsonPieces, paramsNote, parseEnvelope, plainDataProblems, restoreDecider, shapeFingerprint, takeSlice, type SaveEnvelope,
 } from '../src/persist/envelope';
+import { ix, newSimState, newX } from '../src/sim/state';
 
 function world(seed: number, pop = 0, ageRate = 1): World {
   const w = createWorld(seed);
@@ -130,4 +131,15 @@ test('a save from an older parameter registry opens only by choice, and is label
   // A world without a recorded registry counts as older too.
   delete (env.world as World & { sim: { params: { registry?: string } } }).sim.params.registry;
   assert.deepEqual(paramsChange(env.world), { saved: '', current: REGISTRY_HASH });
+});
+
+test('stage C8 hidden state: the new fields are finite numbers, and saves from before C8 are incompatible (STATE_SHAPE changed, by design)', () => {
+  const C8 = ['cond', 'grow', 'bereft', 'gestCond', 'ill', 'outbreak', 'snare', 'trX', 'trZ'] as const;
+  const w = run(world(21, 0, 365), 2000);
+  for (const c of w.chimps) { if (!c.alive) continue; const x = ix(c); for (const k of C8) assert.ok(Number.isFinite(x[k]), `${c.name} ${k} = ${x[k]}`); }
+  const legacy: Record<string, unknown> = { ...newX() };
+  for (const k of C8) delete legacy[k];
+  const old = shapeFingerprint(legacy, newSimState());
+  assert.notEqual(old, STATE_SHAPE);
+  assert.equal(compatibility({ format: SAVE_FORMAT, stateVersion: STATE_VERSION, stateShape: old }).ok, false);
 });

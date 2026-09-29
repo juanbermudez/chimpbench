@@ -1,6 +1,7 @@
 import type { Chimp, World } from '../types';
 import { paramsOf } from '../sim/params';
 import { TICK_HOURS, index, treesNear, type SimWorld } from '../sim/state';
+import { leanIndex } from '../sim/hierarchy';
 
 const _near: number[] = [];
 import { CHANNEL, streamCell } from '../sim/stream';
@@ -29,6 +30,21 @@ const RESPONSE: Record<string, true> = { patrol: true, flee: true, call: true, d
 const RUNNING: Record<string, true> = { charge: true, attack: true, flee: true, display: true };
 const RIPE = 0.06; // a crop the chimps treat as worth feeding in (src/sim/perception.ts keeps trees with fruit >= 0.06)
 const MIN = 1 / 60;
+const YEAR_H = 365.25 * 24;
+/** A death counts as preceded by illness when respiratory signs were seen in the 30 days before the last sighting (design). */
+const ILL_WINDOW_H = 30 * 24;
+
+/**
+ * Necropsy truth for a carcass (stage C8, T-DEM-4, T-DEM-8): the simulation's cause of death as a field category.
+ * Wound complications count as aggression: in the simulation wounds come only from conspecific conflicts (snare injuries
+ * are a separate, permanent state), and williams2008 counts deaths from conspecific wounds as aggression.
+ */
+export function necropsy(cause: string): { cause: 'disease' | 'aggression' | 'other'; respiratory: boolean } {
+  if (cause.startsWith('respiratory')) return { cause: 'disease', respiratory: true };
+  if (cause.startsWith('illness')) return { cause: 'disease', respiratory: false };
+  if (cause.startsWith('killed') || cause.startsWith('infanticide') || cause.startsWith('wounds from a fight') || cause.startsWith('complications of wounds')) return { cause: 'aggression', respiratory: false };
+  return { cause: 'other', respiratory: false };
+}
 
 const isAdultMale = (c: Chimp) => c.sex === 'male' && c.age >= 15;
 const isAdultFemale = (c: Chimp) => c.sex === 'female' && c.age >= 15;
@@ -102,7 +118,8 @@ function statsMinute(o: Observer, world: World): void {
       if (c.alive || c.deathTime === null || c.deathTime <= since) continue;
       const cause = c.causeOfDeath ?? '';
       const violent = cause.startsWith('killed') || cause.startsWith('infanticide') || cause.startsWith('wounds from a fight');
-      o.recentDead.push({ id: c.id, troop: c.troopId, x: c.position[0], z: c.position[2], t: c.deathTime, violent, found: false });
+      const n = necropsy(cause);
+      o.recentDead.push({ id: c.id, troop: c.troopId, x: c.position[0], z: c.position[2], t: c.deathTime, violent, found: false, cause: n.cause, respiratory: n.respiratory });
     }
   }
   if (st.births !== S.births) {
@@ -257,7 +274,7 @@ function processCalls(o: Observer, world: World): void {
       if (dd > call.radius * call.radius) continue; // observers hear what the chimps hear
       if (recorded) {
         const context = caller ? (caller.id === tm.focal ? lastFocalCategory(o, tm) : categoryOf(o, world, caller)) : CAT_NONE;
-        o.rec.calls.push({ t: call.time, team: tm.index, caller: call.callerId, kind: call.kind, troop: call.troopId, dist: Math.sqrt(dd), context });
+        if (!o.cfg.demography) o.rec.calls.push({ t: call.time, team: tm.index, caller: call.callerId, kind: call.kind, troop: call.troopId, dist: Math.sqrt(dd), context });
       }
       // Acoustic encounter (wilson2012): foreign long calls heard by the team, with or without a response. The caller's
       // community is taken from the call (the field attributes calls by distance and direction: an optimistic proxy).
@@ -308,7 +325,7 @@ function processInteractions(o: Observer, world: World): void {
     let ev: EventRec | null = null;
     if (detect > 0 && !UNRECORDED[it.kind]) {
       ev = { id: it.id, t: it.start, end: it.end !== null && it.end <= time ? it.end : -1, kind: it.kind, actor: it.actorId, target: it.targetId, parts: it.participants.slice(), troop: it.troopId, team, detect, x: it.position[0], z: it.position[2] };
-      o.rec.events.push(ev);
+      if (!o.cfg.demography) o.rec.events.push(ev);
     }
     if (it.end === null || it.end > time) o.open.push({ it, ev });
     if (it.kind === 'hunt') {
@@ -458,11 +475,14 @@ function pointSample(o: Observer, world: World, tm: Team, c: Chimp): void {
   if (c.position[1] < 0.6) { flags |= P_GROUND; if (streamCell(world, cx, cz) === CHANNEL) flags |= P_CHANNEL; }
   let truthPatrol = 0;
   if (c.action === 'patrol') for (const e of o.open) if (e.it.kind === 'patrol' && e.it.participants.includes(c.id)) { truthPatrol = 1; break; }
-  P.t.push(world.tick); P.team.push(tm.index); P.focal.push(c.id); P.cat.push(cat); P.action.push(ACTION_CODE[c.action]);
-  P.height.push(c.position[1] < 0.5 ? 0 : c.position[1] < 5 ? 1 : c.position[1] < 15 ? 2 : 3);
-  P.party.push(Math.min(255, party.length)); P.partyInd.push(Math.min(255, tm.pInd)); P.partyAM.push(Math.min(255, tm.pAM));
-  P.n5.push(Math.min(255, tm.pN5)); P.n10.push(Math.min(255, tm.pN10)); P.flags.push(flags); P.feed.push(feed); P.tree.push(feed === FEED_FRUIT ? c.targetId : -1);
-  P.x.push(cx); P.z.push(cz); P.truthPatrol.push(truthPatrol);
+  // demography runs keep only the 5-min location fixes (ranges and the neighbour-pressure kernels read those)
+  if (!o.cfg.demography || world.tick % Math.round(5 / 60 / TICK_HOURS) === 0) {
+    P.t.push(world.tick); P.team.push(tm.index); P.focal.push(c.id); P.cat.push(cat); P.action.push(ACTION_CODE[c.action]);
+    P.height.push(c.position[1] < 0.5 ? 0 : c.position[1] < 5 ? 1 : c.position[1] < 15 ? 2 : 3);
+    P.party.push(Math.min(255, party.length)); P.partyInd.push(Math.min(255, tm.pInd)); P.partyAM.push(Math.min(255, tm.pAM));
+    P.n5.push(Math.min(255, tm.pN5)); P.n10.push(Math.min(255, tm.pN10)); P.flags.push(flags); P.feed.push(feed); P.tree.push(feed === FEED_FRUIT ? c.targetId : -1);
+    P.x.push(cx); P.z.push(cz); P.truthPatrol.push(truthPatrol);
+  }
   // tree visits (T-FOOD-4..7) and the first feeding tree of the day (T-FOOD-10)
   if (feed === FEED_FRUIT) {
     const t = index(world).treeById.get(c.targetId);
@@ -475,7 +495,7 @@ function pointSample(o: Observer, world: World, tm: Team, c: Chimp): void {
       // only trees within `dist` can be nearer: the tree grid gives exactly those (the same answer as scanning all trees)
       const n = treesNear(world, tm.departX, tm.departZ, dist, _near);
       for (let k = 0; k < n; k++) { const u = trees[_near[k]]; if (u !== t && u.fruit >= RIPE && d2(u.position[0], u.position[2], tm.departX, tm.departZ) < lim) { nearest = false; break; } }
-      o.rec.visits.push({ team: tm.index, focal: c.id, tree: t.id, t: time, fromX: tm.departX, fromZ: tm.departZ, dist, nearest, outOfSight: dist > prof.treeDetectM });
+      if (!o.cfg.demography) o.rec.visits.push({ team: tm.index, focal: c.id, tree: t.id, t: time, fromX: tm.departX, fromZ: tm.departZ, dist, nearest, outOfSight: dist > prof.treeDetectM });
     }
     tm.visitTree = c.targetId; tm.departX = cx; tm.departZ = cz; tm.departT = time;
   }
@@ -483,7 +503,11 @@ function pointSample(o: Observer, world: World, tm: Team, c: Chimp): void {
   for (const b of o.recentDead) {
     if (b.found || time - b.t > 30 * 24 || d2(cx, cz, b.x, b.z) > vis2) continue;
     b.found = true;
-    if (o.status.get(b.id) === 'alive') { o.status.set(b.id, 'dead'); o.id.ok[b.id] = 0; o.rec.deaths.push({ id: b.id, troop: b.troop, tEst: time, how: 'body', truthTime: b.t, violent: b.violent }); }
+    if (o.status.get(b.id) === 'alive') {
+      o.status.set(b.id, 'dead'); o.id.ok[b.id] = 0;
+      const last = Math.max(o.id.seen[b.id] ?? -1e9, o.roster.get(b.id)?.firstSeen ?? -1e9);
+      o.rec.deaths.push({ id: b.id, troop: b.troop, tEst: time, how: 'body', truthTime: b.t, violent: b.violent, cause: b.cause, respiratory: b.respiratory, last, ill: o.id.ill[b.id] >= last - ILL_WINDOW_H });
+    }
   }
 }
 
@@ -519,15 +543,42 @@ function partyUpdate(o: Observer, world: World, tm: Team, c: Chimp): void {
     if (inParty[i] || dd <= vis2) markSeen(o, world, tm, m);
     if (dd <= 100 && m !== c && indep[m.id] === 1) { n10++; if (dd <= 25) n5++; }
   }
+  if (!o.cfg.lite) earlyLifeSamples(o, world, q);
   // strangers in sight of the focal party (encounter classifier); strangers within 10 m count as neighbours too
   const near = seenStrangers(o, world, tm, vis2, q);
   tm.pInd = ind; tm.pAM = am; tm.pN5 = n5 + (near & 0xff); tm.pN10 = n10 + (near >> 8);
+}
+
+/**
+ * Stage C8 truth reads on the focal party (early-life-prereg §1.5, §1.6), by estimated age: one early-morning stress
+ * reading (06:00–08:00) per day for each immature under 12 and each male of 12 or more (the sim has no diurnal rhythm,
+ * so the window only fixes when); and follow-days in the party at 4–15 y, with a urine lean-mass sample (leanIndex, no
+ * noise) on every 10th such day (samuni2020: 18.8 ± 19.2 samples per subject; the sampling rule is design).
+ */
+function earlyLifeSamples(o: Observer, world: World, q: Chimp[]): void {
+  const day = world.day, time = world.time, early = world.hour >= 6 && world.hour < 8;
+  for (let i = 0; i < q.length; i++) {
+    const m = q[i], id = m.id, r = o.roster.get(id);
+    if (!r) continue;
+    const age = (time - r.birthEst) / YEAR_H;
+    if (early && o.id.stressDay[id] !== day && (age < 12 || m.sex === 'male')) { o.id.stressDay[id] = day; o.rec.stress.push({ t: time, id, v: m.stress }); }
+    if (o.id.presentDay[id] !== day && age >= 4 && age < 16) {
+      o.id.presentDay[id] = day;
+      if (++o.id.present[id] % 10 === 0 && sim(m)) o.rec.lean.push({ t: time, id, v: leanIndex(m, paramsOf(world)) });
+    }
+  }
 }
 
 function markSeen(o: Observer, world: World, tm: Team, m: Chimp): void {
   const time = world.time, id = m.id;
   o.id.seen[id] = time;
   if (tm.seenMark[id] !== world.day) { tm.seenMark[id] = world.day; tm.seenToday.push(id); }
+  // stage C8 health monitoring: respiratory signs (coughing, lethargy) and visible snare injuries, as field staff record them
+  const hx = sim(m);
+  if (hx) {
+    if (hx.ill > time) { if (!tm.illToday.includes(id)) tm.illToday.push(id); o.id.ill[id] = time; }
+    if (hx.snare > 0 && !o.id.snared[id]) { o.id.snared[id] = 1; o.rec.snared.push({ id, t: time }); }
+  }
   if (o.id.ok[id] === tm.troop) return;
   const r = o.roster.get(m.id);
   if (r && r.troop === tm.troop && o.status.get(m.id) === 'alive') { o.id.ok[id] = tm.troop; return; }
@@ -844,6 +895,8 @@ export function dayStep(o: Observer, world: World, init: boolean): void {
     tm.state = 0;
     o.rec.census.push({ day: world.day, troop: tm.troop, ids: tm.seenToday.slice().sort((a, b) => a - b) });
     tm.seenToday.length = 0;
+    if (tm.illToday.length) o.rec.health.push({ day: world.day, troop: tm.troop, ids: tm.illToday.slice().sort((a, b) => a - b) });
+    tm.illToday.length = 0;
   }
   // disappearances: not seen for disappearDays and not a natal female of dispersal age (design §3.5)
   for (const [id, st] of o.status) {
@@ -856,7 +909,8 @@ export function dayStep(o: Observer, world: World, init: boolean): void {
     if (!disperser) {
       const c = byId.get(id);
       const b = o.recentDead.find(d => d.id === id);
-      o.rec.deaths.push({ id, troop: r.troop, tEst: (last + time) / 2, how: 'disappeared', truthTime: c && !c.alive ? c.deathTime ?? -1 : -1, violent: b ? b.violent : false });
+      o.rec.deaths.push({ id, troop: r.troop, tEst: (last + time) / 2, how: 'disappeared', truthTime: c && !c.alive ? c.deathTime ?? -1 : -1, violent: b ? b.violent : false,
+        cause: 'unknown', respiratory: false, last, ill: o.id.ill[id] >= last - ILL_WINDOW_H });
     }
   }
   for (const t of world.troops) {

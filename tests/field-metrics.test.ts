@@ -6,8 +6,12 @@ import { METRICS, type SeedValue } from '../src/field/metrics';
 import { hash01 } from '../src/sim/rng';
 import { cellRange, convexHullArea, coreShare, hRef, isoplethArea, isoplethLevels, kde, levelAt } from '../src/field/space';
 import { conciliatoryTendency, dispersion, hwi, kendall, ldaLeaveOneOut, logistic, ols, pearson, quantile, steepness } from '../src/field/stats';
-import { poissonInterval, scoreTargets, type TargetFile } from '../src/field/targets';
+import { poissonInterval, publicRow, scoreTargets, summarize, unsealRefusal, type TargetFile } from '../src/field/targets';
 import { emptyRecords, type Records } from '../src/field/records';
+import { clusterBootstrap, cox, poissonGlm, seededRng, type CoxRow } from '../src/field/survival';
+import { SEALED } from '../src/field/early-life';
+import { runFieldJob } from '../src/field/run';
+import { spawnSync } from 'node:child_process';
 
 const metric = (id: string) => METRICS.find(m => m.id === id)!;
 /** Deterministic standard normal from a hash (Box–Muller). */
@@ -194,8 +198,12 @@ test('every target in data/targets.json has a metric definition or an explicit n
   const file = JSON.parse(readFileSync(new URL('../data/targets.json', import.meta.url), 'utf8')) as TargetFile;
   const ids = new Set(METRICS.map(m => m.id));
   for (const t of file.targets) assert.ok(ids.has(t.id), `${t.id} is covered`);
-  for (const m of METRICS) assert.ok(m.compute || m.na || m.structural, `${m.id} computes or says why not`);
-  assert.equal(METRICS.length, file.targets.length);
+  for (const m of METRICS) assert.ok(m.compute || m.na || m.structural || m.sealed, `${m.id} computes or says why not`);
+  // stage C8 rows staged in docs/staging/c8-targets.patch.json (registered by the integrator) may precede their rows
+  const staged = new Set(Array.from({ length: 9 }, (_, i) => `T-DEM-${16 + i}`));
+  const extra = METRICS.filter(m => !file.targets.some(t => t.id === m.id));
+  assert.ok(extra.every(m => staged.has(m.id) && m.sealed), `unregistered metrics: ${extra.map(m => m.id)}`);
+  assert.equal(METRICS.length, file.targets.length + extra.length);
 });
 
 test('C3 review: killings count observed and carcass-inferred cases; violent disappearances are only "suspected" (wilson2014)', () => {
@@ -328,4 +336,102 @@ test('C8 bug fix: demography exposure is measured from time0 when observation st
   assert.equal(fert.num, 1);
   const q1 = metric('T-DEM-1').compute!(d);
   assert.ok(Math.abs(q1.den! - 1) < 1e-9, `infant-years from birth to age 1 inside the window, got ${q1.den}`);
+});
+
+
+// ---------------------------------------------------------------------------
+// Stage C8: survival tools, sealing, summary counts (docs/staging/early-life-prereg.md §4.1)
+// ---------------------------------------------------------------------------
+
+test('C8 survival tools: stratified Cox recovers a known hazard ratio with a time-varying covariate; Poisson GLM a rate ratio', () => {
+  const rnd = seededRng(11), rows: CoxRow[] = [];
+  // exponential lifetimes on an age scale with baseline hazard 0.1 (stratum 0) or 0.3 (stratum 1); the covariate switches
+  // on at age 2 for half the individuals and multiplies the hazard by exp(0.7); censoring at 15
+  for (let i = 0; i < 4000; i++) {
+    const st = i % 2, h0 = st ? 0.3 : 0.1, sw = i % 4 < 2;
+    let t = -Math.log(1 - rnd()) / h0, event = 1;
+    if (sw && t > 2) t = 2 + (t - 2) / Math.exp(0.7);
+    if (t > 15) { t = 15; event = 0; }
+    if (sw && t > 2) { rows.push({ start: 0, stop: 2, event: 0, x: [0], stratum: st }, { start: 2, stop: t, event, x: [1], stratum: st }); }
+    else rows.push({ start: 0, stop: t, event, x: [0], stratum: st });
+  }
+  const f = cox(rows, 1);
+  assert.ok(f.converged);
+  assert.ok(Math.abs(f.beta[0] - 0.7) < 0.15, `log HR ${f.beta[0].toFixed(3)} (about 2.5 standard errors; 0.70–0.72 at n = 20,000)`);
+  const X: number[][] = [], y: number[] = [], off: number[] = [];
+  for (let i = 0; i < 3000; i++) { const g = i % 2, e = 1 + (i % 7); const lam = e * 0.2 * Math.exp(-0.5 * g); let k = 0, p = Math.exp(-lam), c = p; const u = rnd(); while (u > c) { k++; p *= lam / k; c += p; } X.push([g]); y.push(k); off.push(Math.log(e)); }
+  const g = poissonGlm(X, y, off);
+  assert.ok(g.converged && Math.abs(g.beta[1] + 0.5) < 0.08, `log rate ratio ${g.beta[1].toFixed(3)}`);
+  const cl = Array.from({ length: 200 }, (_, i) => Math.floor(i / 4)), v = cl.map((_, i) => (i % 3) + 1);
+  const b = clusterBootstrap(cl, idx => idx.reduce((a, i) => a + v[i], 0) / idx.length, 400);
+  assert.ok(b.lo < b.est && b.est < b.hi && b.mde > 0 && b.boot === 400);
+});
+
+test('C8 sealing: a sealed metric is never computed unless the run is unsealed (spy)', () => {
+  const m = METRICS.find(x => x.id === 'T-DEM-15')!;
+  assert.equal(m.sealed, SEALED);
+  for (const id of ['T-DEM-14', 'T-DEM-15', 'T-LET-5', ...Array.from({ length: 9 }, (_, i) => `T-DEM-${16 + i}`)]) assert.ok(METRICS.find(x => x.id === id)?.sealed, `${id} is sealed`);
+  const orig = m.compute!;
+  let calls = 0;
+  m.compute = d => { calls++; return orig(d); };
+  try {
+    const job = { seed: 3, days: 0.05, profile: 'compressed' as const, experimentEveryDays: 0 };
+    const a = runFieldJob(job);
+    assert.equal(calls, 0, 'not called in an ordinary run');
+    assert.ok(!('T-DEM-15' in a.values), 'no value leaves the worker');
+    runFieldJob({ ...job, unseal: true });
+    assert.equal(calls, 1, 'called only when unsealed');
+  } finally { m.compute = orig; }
+});
+
+test('C8 sealing: sealed rows publish only the id, the metric, the role and "sealed"; --unseal is hash-bound', () => {
+  const t = { id: 'T-DEM-15', metric: 'Maternal loss after weaning', role: 'held-out' as const, encoded: false, evidence: 'M', accept: { lo: null, hi: null, units: 'pattern', basis: 'b' }, observer: { protocol: 'p', interval_min: null, unit: 'male' } };
+  const [row] = scoreTargets({ targets: [t] }, {});
+  assert.equal(row.verdict, 'sealed');
+  const pub = publicRow(row), json = JSON.stringify(pub);
+  assert.deepEqual(Object.keys(pub).sort(), ['encoded', 'id', 'metric', 'role', 'sealed']);
+  for (const k of ['value', '"n"', 'parts', 'interval', 'verdict', 'note', 'would be', 'pooled', 'perSeed']) assert.ok(!json.includes(k), `no ${k}`);
+  assert.equal(summarize([row])['held-out'].sealed, 1);
+  assert.match(unsealRefusal({ stage: 'C6 patrol corrections', hash: 'a', registryHash: 'r' }, 'a', 'r')!, /no C8 freeze/);
+  assert.match(unsealRefusal({ stage: 'C8', hash: 'a', registryHash: 'r' }, 'b', 'r')!, /protocol hash/);
+  assert.match(unsealRefusal({ stage: 'C8', hash: 'a', registryHash: 'r' }, 'a', 's')!, /registry hash/);
+  assert.equal(unsealRefusal({ stage: 'C8 proof freeze', hash: 'a', registryHash: 'r' }, 'a', 'r'), null);
+  const r = spawnSync(process.execPath, ['--import', 'tsx', 'scripts/field-metrics.ts', '--unseal', '--days', '0.01', '--seeds', '3', '--no-pool'], { encoding: 'utf8', timeout: 60000 });
+  assert.notEqual(r.status, 0, 'the script refuses');
+  assert.match(r.stderr, /--unseal refused/);
+});
+
+test('C8 summary counts: encoded rows land in "encoded" whatever their verdict; counted rows in their verdict (WP3 finding 2)', () => {
+  const t = (id: string, encoded: boolean) => ({ id, metric: id, role: 'held-out' as const, encoded, evidence: 'M', accept: { lo: 0, hi: 1, units: 'u', basis: 'b' }, observer: { protocol: 'p', interval_min: null, unit: 'u' } });
+  const file: TargetFile = { targets: [t('T-PTY-1', true), t('T-ACT-4', false), t('T-COM-1', true), t('T-SOC-3', false)] };
+  const rows = scoreTargets(file, { 'T-PTY-1': [{ value: 0.5, n: 1 }], 'T-ACT-4': [{ value: 0.5, n: 1 }], 'T-COM-1': [{ value: 5, n: 1 }], 'T-SOC-3': [{ value: 5, n: 1 }] });
+  assert.deepEqual(rows.map(r => r.verdict), ['pass', 'pass', 'fail', 'fail']);
+  const s = summarize(rows)['held-out'];
+  const counted = rows.filter(r => !r.encoded).map(r => r.verdict);
+  assert.equal(s.encoded, rows.filter(r => r.encoded && ['pass', 'fail', 'inconclusive'].includes(r.verdict)).length);
+  for (const v of counted) assert.ok(s[v] >= 1, `counted verdict ${v}`);
+  assert.equal(s.encoded, 2); assert.equal(s.pass, 1); assert.equal(s.fail, 1);
+});
+
+test('C8 health rows: outbreaks, attack and mortality, respiratory deaths and snare prevalence from constructed records', () => {
+  const Y = 365.25 * 24, r = emptyRecords();
+  r.days = 365.25 * 2; r.troops = [1];
+  for (let i = 1; i <= 20; i++) r.roster.push({ id: i, sex: i % 2 ? 'male' : 'female', troop: 1, natal: 1, mother: -1, birthEst: -(2 + i) * Y, knownAge: false, founder: true, firstSeen: 0 });
+  // an outbreak: 8 of 20 seen ill over 3 weeks from day 100; two of them die (one carcass with respiratory necropsy, one disappears after signs)
+  for (let k = 0; k < 21; k++) r.health.push({ day: 100 + k, troop: 1, ids: [1 + (k % 8)] });
+  // isolated sightings later (1 individual): not an outbreak
+  r.health.push({ day: 400, troop: 1, ids: [9] });
+  const t = (day: number) => (day - 1) * 24 + 14.5;
+  r.deaths.push({ id: 2, troop: 1, tEst: t(110), how: 'body', truthTime: t(109), violent: false, cause: 'disease', respiratory: true, last: t(108), ill: true },
+    { id: 3, troop: 1, tEst: t(140), how: 'disappeared', truthTime: t(118), violent: false, cause: 'unknown', respiratory: false, last: t(118), ill: true },
+    { id: 11, troop: 1, tEst: t(500), how: 'body', truthTime: t(499), violent: true, cause: 'aggression', respiratory: false, last: t(498), ill: false });
+  r.snared.push({ id: 12, t: 10 }, { id: 13, t: 1.5 * Y });
+  const d = derive(r);
+  const f5 = metric('T-DEM-5').compute!(d), f6 = metric('T-DEM-6').compute!(d), f8 = metric('T-DEM-8').compute!(d), f9 = metric('T-DEM-9').compute!(d), f4 = metric('T-DEM-4').compute!(d);
+  assert.equal(f5.num, 1, 'one outbreak'); assert.ok(Math.abs(f5.den! - r.days / 365) < 1e-9, 'community-years');
+  assert.deepEqual(f6.raw!.attack, [8 / 20]); assert.deepEqual(f6.raw!.mortality, [2 / 20]);
+  assert.equal(f8.n, 2, 'the carcass and the disappearance after signs');
+  // year 1: 20 alive minus... ids 2, 3 died in year 1 (18 alive), 1 snared; year 2: id 11 died too (17 alive), 2 snared
+  assert.equal(f9.num, 1 + 2); assert.equal(f9.den, 18 + 17);
+  assert.deepEqual(f4.raw!.k.slice(0, 3), [2, 1, 1], 'two known-cause deaths: one disease, one aggression');
 });

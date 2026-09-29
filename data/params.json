@@ -54,6 +54,78 @@
    "notes": "Bond needed for adoption by a non-sibling."
   },
   {
+   "id": "adoptInfantAgeY",
+   "group": "mortality",
+   "value": 3,
+   "units": "y",
+   "range": [
+    2,
+    4
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    60
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": null,
+   "file": null,
+   "planned": "C8",
+   "notes": "Stage C8 moved literal (life.ts adopt; value unchanged): below this age the infant sibling probability applies and unrelated adoption is not rolled. It no longer weans the orphan."
+  },
+  {
+   "id": "adoptMaxAgeY",
+   "group": "mortality",
+   "value": 8,
+   "units": "y",
+   "range": [
+    8,
+    12
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    60
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": null,
+   "file": null,
+   "planned": "C8",
+   "notes": "Stage C8 moved literal (life.ts killChimp; value unchanged): orphans under this age, or unweaned, get an adoption roll after the mother's or the caretaker's death. hobaiter2014 counts immatures under 12."
+  },
+  {
+   "id": "adoptOtherMinAgeY",
+   "group": "mortality",
+   "value": 12,
+   "units": "y",
+   "range": [
+    12,
+    20
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    60
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [],
+   "refs": [
+    "hobaiter2014 (docs/research.md, Early life; Table 1): unrelated adopters 13-35+ y (Taï), 20-26 (Gombe), 30 (Sonso)"
+   ],
+   "clock": "none",
+   "symbol": null,
+   "file": null,
+   "planned": "C8",
+   "notes": "Stage C8 moved literal (life.ts adopt; value unchanged): the youngest unrelated adopter."
+  },
+  {
    "id": "adoptOtherP",
    "group": "mortality",
    "value": 0.3,
@@ -96,6 +168,32 @@
    "symbol": "adopt",
    "file": "src/sim/life.ts",
    "notes": "Adoption by an older maternal sibling for orphans under 3 y."
+  },
+  {
+   "id": "adoptSiblingMinAgeY",
+   "group": "mortality",
+   "value": 8,
+   "units": "y",
+   "range": [
+    6,
+    11
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    60
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [],
+   "refs": [
+    "hobaiter2014 (docs/research.md, Early life): sibling carers 8-10 y at Gombe, 9-11 at Sonso, 6-11 at Taï"
+   ],
+   "clock": "none",
+   "symbol": null,
+   "file": null,
+   "planned": "C8",
+   "notes": "Stage C8 moved literal (life.ts adopt; value unchanged): youngest sibling adopter. The adopter must also be older than the orphan."
   },
   {
    "id": "adoptSiblingP",
@@ -647,6 +745,106 @@
    "symbol": "computeCandidates",
    "file": "src/sim/candidates.ts",
    "notes": "Begging score lost per unit tension toward the holder."
+  },
+  {
+   "id": "bereaveHalfLifeD",
+   "group": "needs",
+   "value": 180,
+   "units": "bio-days",
+   "range": [
+    90,
+    365
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    3650
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "bio",
+   "symbol": null,
+   "file": null,
+   "planned": "C8",
+   "notes": "Stage C8 (life.ts slowLife): half-life of the bereavement stress. Bounded by girardButtoz2021's 2-year window: 6% remains at 2 y (25% at the upper bound). No permanent offset."
+  },
+  {
+   "id": "bereaveMaxAgeY",
+   "group": "needs",
+   "value": 12,
+   "units": "y",
+   "range": [
+    10,
+    12
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    60
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [],
+   "refs": [
+    "girardButtoz2021 (docs/research.md, Early life): immatures under 12",
+    "samuni2020 (docs/research.md, Early life): orphans lost the mother before 10"
+   ],
+   "clock": "none",
+   "symbol": null,
+   "file": null,
+   "planned": "C8",
+   "notes": "Stage C8 (life.ts killChimp): offspring under this age in the mother's community get the bereavement stress when she dies."
+  },
+  {
+   "id": "bereaveStress",
+   "group": "needs",
+   "value": 0.2,
+   "units": "stress",
+   "range": [
+    0.1,
+    0.4
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "stylized",
+   "sources": [],
+   "refs": [
+    "girardButtoz2021 (docs/research.md, Early life): steeper diurnal cortisol slope within 2 y of the loss"
+   ],
+   "clock": "none",
+   "symbol": null,
+   "file": null,
+   "planned": "C8",
+   "notes": "Stage C8 (life.ts): added to the resting stress floor at the loss, then halves every bereaveHalfLifeD. Direction from girardButtoz2021; the all-day floor is a stylization (the sim has no diurnal rhythm); the magnitude is design."
+  },
+  {
+   "id": "birthCondFromMother",
+   "group": "reproduction",
+   "value": 1,
+   "units": "flag",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": null,
+   "file": null,
+   "integer": true,
+   "planned": "C8",
+   "notes": "Stage C8 (reproduction.ts giveBirth): 1 = the newborn's condition is the mother's mean condition over the pregnancy and its growth record min(1, gestCond / condGood); 0 = it starts as a founder. Motivation: lemoine2020a's hypothesis (proposed, not measured)."
   },
   {
    "id": "bodyChildBase",
@@ -3129,6 +3327,75 @@
     "compressed": 18,
     "field": 100
    }
+  },
+  {
+   "id": "condGood",
+   "group": "needs",
+   "value": 0.5,
+   "units": "condition",
+   "range": [
+    0.25,
+    0.75
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.01,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": null,
+   "file": null,
+   "planned": "C8",
+   "notes": "Stage C8 (life.ts, reproduction.ts): growth is limited, and conception reduced, only below this condition. Subject to the pre-run condition check (early-life-prereg §2.6)."
+  },
+  {
+   "id": "condLow",
+   "group": "needs",
+   "value": 0.3,
+   "units": "condition",
+   "range": [
+    0.15,
+    0.45
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.01,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": null,
+   "file": null,
+   "planned": "C8",
+   "notes": "Stage C8 (life.ts slowLife): the health target falls linearly to 0 as condition falls from this to 0. Subject to the pre-run condition check (early-life-prereg §2.6)."
+  },
+  {
+   "id": "condTauD",
+   "group": "needs",
+   "value": 30,
+   "units": "eco-days",
+   "range": [
+    15,
+    60
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    1,
+    365
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "eco",
+   "symbol": null,
+   "file": null,
+   "planned": "C8",
+   "notes": "Stage C8 (life.ts slowLife): body condition is an exponential average of (1 − hunger) with this time constant."
   },
   {
    "id": "consoleBondMin",
@@ -7050,6 +7317,74 @@
    "notes": "Grooming score lost per unit tension."
   },
   {
+   "id": "growEndY",
+   "group": "needs",
+   "value": 15,
+   "units": "y",
+   "range": [
+    12,
+    16
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    60
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": null,
+   "file": null,
+   "planned": "C8",
+   "notes": "Stage C8 (life.ts slowLife): the growth record freezes after this age."
+  },
+  {
+   "id": "growStrengthW",
+   "group": "dominance",
+   "value": 0.5,
+   "units": "fraction",
+   "range": [
+    0.25,
+    1
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.growStrengthW (leanIndex; strength from the mechanism commit)",
+   "file": "src/sim/hierarchy.ts",
+   "notes": "Stage C8 (hierarchy.ts strength): strength × ((1 − w) + w × grow); ratio-invariant except at the strength floors (early-life-prereg F8)."
+  },
+  {
+   "id": "growTauY",
+   "group": "needs",
+   "value": 3,
+   "units": "bio-years",
+   "range": [
+    1.5,
+    6
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0.1,
+    30
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "bio",
+   "symbol": null,
+   "file": null,
+   "planned": "C8",
+   "notes": "Stage C8 (life.ts slowLife): time constant of the growth record, an average of min(1, cond / condGood)."
+  },
+  {
    "id": "grudgeAggrW",
    "group": "decision",
    "value": 0.25,
@@ -7210,6 +7545,81 @@
     "field": 35
    },
    "notes": "A guarding male chases a rival within this distance. Compressed stand-in scaled with sight (field ≈ compressed × 35/15, design)."
+  },
+  {
+   "id": "guardDeterW",
+   "group": "conflict",
+   "value": 0.3,
+   "units": "score",
+   "range": [
+    0.15,
+    0.6
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    5
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": null,
+   "file": null,
+   "planned": "C8",
+   "notes": "Stage C8 (early-life-prereg §2.3; candidates.ts aggression()): the same guardian presence test lowers other within-community charges on the ward (redirect, grudge, status, coercion, female dominance, immigrant); not infanticide or escalation."
+  },
+  {
+   "id": "guardFeedDeterW",
+   "group": "conflict",
+   "value": 0.3,
+   "units": "score",
+   "range": [
+    0.15,
+    0.6
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    5
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": null,
+   "file": null,
+   "planned": "C8",
+   "notes": "Stage C8 (docs/staging/early-life-prereg.md §2.2; candidates.ts aggression()): lowers a feeding-supplant score on a ward under guardMaxAgeY whose guardian is seen, within defendRangeM of the ward and not dominated by the supplanter. Motivation: agonistic support at food, proposed (not measured) in crockford2020 and samuni2020. Builds a maternal-rank gradient (T-DEM-20 encoded)."
+  },
+  {
+   "id": "guardMaxAgeY",
+   "group": "social",
+   "value": 12,
+   "units": "y",
+   "range": [
+    10,
+    15
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    60
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "crockford2020"
+   ],
+   "refs": [
+    "hobaiter2014 (docs/research.md, Early life): adoption counts immatures under 12",
+    "stanton2020 (docs/research.md, Early life): upper age class 10-14.99 y"
+   ],
+   "clock": "none",
+   "symbol": null,
+   "file": null,
+   "planned": "C8",
+   "notes": "Stage C8 (candidates.ts guardianOf, conflict.ts notifyAllies): the oldest protected ward, and the end of caretaker kinship. 12 is social independence at Taï (crockford2020) and the immature limit (hobaiter2014); 15 is stanton2020's upper class. Partly encodes T-DEM-15's window (report note)."
   },
   {
    "id": "guardRivalRangeM",
@@ -9121,6 +9531,29 @@
    "notes": "Juveniles follow their mother beyond this distance. Compressed stand-in scaled with sight (field ≈ compressed × 35/15, design)."
   },
   {
+   "id": "juvenileFollowMaxAgeY",
+   "group": "social",
+   "value": 10,
+   "units": "y",
+   "range": [
+    8,
+    12
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    60
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": null,
+   "file": null,
+   "planned": "C8",
+   "notes": "Stage C8 moved literal (candidates.ts juvenile follow; value unchanged): weaned juveniles under this age follow their guardian. Upper bound from crockford2020's age 12. Orphaned siblings associate more after the loss (reddyMitani2019, 4 pairs; table value 6.05, SE 1.79)."
+  },
+  {
    "id": "juvenileFollowScaleM",
    "group": "social",
    "value": 15,
@@ -9430,6 +9863,31 @@
     "field": 50
    },
    "notes": "Males court swollen females within this distance. Compressed stand-in scaled with sight (field ≈ compressed × 35/15, design)."
+  },
+  {
+   "id": "maternalLevers",
+   "group": "social",
+   "value": 1,
+   "units": "flag",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "calibrationExcluded": "ablation switch (early-life-prereg §4.4); never 0 in validation runs",
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": null,
+   "file": null,
+   "integer": true,
+   "planned": "C8",
+   "notes": "Stage C8: 0 disables every post-weaning maternal pathway (guardian feeding tolerance and protection, the guardian follow, caretaker kinship and plant sharing by caretakers), C8 and pre-existing; care of dependents is kept."
   },
   {
    "id": "matingAssocWeight",
@@ -13361,6 +13819,29 @@
    "symbol": "salience() threat",
    "file": "src/sim/relations.ts",
    "notes": "Salience weight of threat tallies (grooming per hour)."
+  },
+  {
+   "id": "selfFeedStartY",
+   "group": "feeding",
+   "value": 0.5,
+   "units": "y",
+   "range": [
+    0.25,
+    1.5
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    10
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": null,
+   "file": null,
+   "planned": "C8",
+   "notes": "Stage C8 (execution.ts feeding): an unweaned animal's intake ramps from 0 at this age to 1 at its own weaning age. hobaiter2014: 42% of orphans under 4 survived a year vs 95% at 4 or more. nakamura2014's 'under 4.5–5 cannot survive' is the abstract's premise, not data. Replaces hazardOrphan."
   },
   {
    "id": "seriousInjuryAdd",

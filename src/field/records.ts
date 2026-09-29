@@ -72,7 +72,19 @@ export interface HuntRec {
 }
 export interface CallRec { t: number; team: number; caller: number; kind: string; troop: number; dist: number; context: number; }
 export interface CensusRec { day: number; troop: number; ids: number[]; }
-export interface DeathRec { id: number; troop: number; tEst: number; how: 'body' | 'disappeared'; truthTime: number; violent: boolean; }
+export interface DeathRec {
+  id: number; troop: number; tEst: number; how: 'body' | 'disappeared'; truthTime: number; violent: boolean;
+  /**
+   * Stage C8. Necropsy truth for carcasses ('disease' | 'aggression' | 'other'; 'unknown' for disappearances), and whether it
+   * was a respiratory outbreak death; the last sighting before the loss (a disappearance's window opens there); and whether
+   * the individual was seen ill in the 30 days before it (health monitoring).
+   */
+  cause: string; respiratory: boolean; last: number; ill: boolean;
+}
+/** Stage C8 health monitoring: community members seen with respiratory signs on a census day. */
+export interface HealthRec { day: number; troop: number; ids: number[]; }
+/** Stage C8 truth-read samples (early-life-prereg §1.5, §1.6): value of an individual at time t. */
+export interface SampleRec { t: number; id: number; v: number; }
 export interface BirthRec { id: number; mother: number; troop: number; tSeen: number; truthBirth: number; father: number; }
 export interface TransferRec { id: number; from: number; to: number; tSeen: number; }
 export interface PhenologyRec { month: number; tree: number; species: string; fruit: number; ripe: boolean; }
@@ -115,6 +127,8 @@ export interface Records {
   census: CensusRec[]; deaths: DeathRec[]; births: BirthRec[]; transfers: TransferRec[];
   phenology: PhenologyRec[]; transects: TransectRec[]; visits: TreeVisitRec[]; experiments: ExperimentRec[];
   alpha: { day: number; troop: number; id: number }[];
+  /** Stage C8: daily respiratory-sign censuses, first sightings of a snare injury, early-morning stress readings and urine lean-mass samples. */
+  health: HealthRec[]; snared: { id: number; t: number }[]; stress: SampleRec[]; lean: SampleRec[];
   femaleOrder: { day: number; troop: number; ids: number[] }[];
   /** environment.fruitIndex at each monthly phenology round, and that round's observation month (T-PAT-8). */
   fruitIndex: number[]; fruitMonth: number[];
@@ -169,7 +183,7 @@ export function recordsHash(r: Records): string {
 export function emptyRecords(profile = 'compressed'): Records {
   return {
     profile, seed: 1, worldSeed: 1, tickHours: 15 / 3600, ticks: 0, days: 0, time0: 0, troops: [1, 2, 3], mapSize: 160, points: pointTable(), scans: scanTable(), follows: [], roster: [], events: [], conflicts: [],
-    encounters: [], hunts: [], calls: [], census: [], deaths: [], births: [], transfers: [], phenology: [], transects: [], visits: [], experiments: [], alpha: [], femaleOrder: [], fruitIndex: [], fruitMonth: [],
+    encounters: [], hunts: [], calls: [], census: [], deaths: [], births: [], transfers: [], phenology: [], transects: [], visits: [], experiments: [], alpha: [], health: [], snared: [], stress: [], lean: [], femaleOrder: [], fruitIndex: [], fruitMonth: [],
     weather: { rainMm: 0, afternoonMm: 0, tmin: [], tmax: [] },
     truth: { activity: { male: [0, 0, 0, 0, 0, 0], female: [0, 0, 0, 0, 0, 0] }, pathM: {}, largestFrac: [], wholeFrac: [], nestFrac: [], wakeMin: [], settleMin: [], ground: 0, channel: 0, swollenDayHours: 0, mates: 0,
       encounters: 0, encountersHeard: 0, encountersSeen: 0, encounterLog: [], followedEncounters: [], patrols: [], groomMin: [], interactions: {}, conflicts: 0, fights: 0, reconciliations: 0, consolations: 0, killings: 0, hunts: 0, huntSuccesses: 0,

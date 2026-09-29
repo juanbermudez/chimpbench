@@ -2,7 +2,7 @@
 /* eslint-disable */
 export const REGISTRY_VERSION = 1;
 /** Content hash of every live default, hard range, profile value and integer flag. Stored with each world. */
-export const REGISTRY_HASH = '788f57db65a17956';
+export const REGISTRY_HASH = 'aabe82dc7fb6168d';
 
 /** Registry defaults (the compressed profile). */
 export const DEFAULTS = {
@@ -304,6 +304,7 @@ export const DEFAULTS = {
   groomRangeM: 20,
   groomTensionRepairPerH: 0.15,
   groomTensionW: 0.5,
+  growStrengthW: 0.5,
   grudgeAggrW: 0.25,
   grudgeBase: 0.1,
   grudgeHungerW: 0.25,
@@ -977,6 +978,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   groomRangeM: [0, 1000000],
   groomTensionRepairPerH: [0, 1000000],
   groomTensionW: [-10, 10],
+  growStrengthW: [0, 1],
   grudgeAggrW: [-10, 10],
   grudgeBase: [-10, 10],
   grudgeHungerW: [-10, 10],

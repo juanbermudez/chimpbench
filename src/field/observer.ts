@@ -34,6 +34,8 @@ export interface Team {
   visitTree: number; departX: number; departZ: number; departT: number;
   /** Ids seen today (census), and the day each id was last added. */
   seenToday: number[]; seenMark: number[];
+  /** Stage C8: ids seen with respiratory signs today (health monitoring). */
+  illToday: number[];
 }
 
 export interface PcState { conflict: number; a: number; b: number; t: number; until: number; }
@@ -53,7 +55,7 @@ export interface Observer {
   roster: Map<number, RosterEntry>;
   status: Map<number, 'alive' | 'dead' | 'gone'>;
   pendingBirths: Map<number, BirthRec>;
-  recentDead: { id: number; troop: number; x: number; z: number; t: number; violent: boolean; found: boolean }[];
+  recentDead: { id: number; troop: number; x: number; z: number; t: number; violent: boolean; found: boolean; cause: string; respiratory: boolean }[];
   pc: PcState[]; mc: McState[]; mcRun: McState[];
   /** Per-sample probability of losing the follow: normally, and while the focal runs or is above 15 m. */
   pLose: number; pLoseHard: number;
@@ -89,12 +91,20 @@ export interface IdScratch {
   seen: number[]; ok: number[];
   /** Truth: path length, last position (NaN before the first sample), last day left the nest / settled, last cycle day, cycle wraps. */
   path: number[]; px: number[]; pz: number[]; left: number[]; settled: number[]; cycle: number[]; wraps: number[];
+  /**
+   * Stage C8: last time seen with respiratory signs, snare injury already recorded (1), day of the last early-morning stress
+   * reading, days in a followed party at estimated ages 4–15 (urine samples every 10th) and the last such day counted.
+   */
+  ill: number[]; snared: number[]; stressDay: number[]; present: number[]; presentDay: number[];
 }
 
 /** Grows the id-indexed scratch so ids below n are valid. */
 export function ensureIds(o: Observer, n: number): void {
   const s = o.id;
-  while (s.indep.length < n) { s.indep.push(0); s.groomed.push(0); s.seen.push(-1e9); s.ok.push(0); s.path.push(0); s.px.push(NaN); s.pz.push(NaN); s.left.push(-1); s.settled.push(-1); s.cycle.push(-1); s.wraps.push(0); }
+  while (s.indep.length < n) {
+    s.indep.push(0); s.groomed.push(0); s.seen.push(-1e9); s.ok.push(0); s.path.push(0); s.px.push(NaN); s.pz.push(NaN); s.left.push(-1); s.settled.push(-1); s.cycle.push(-1); s.wraps.push(0);
+    s.ill.push(-1e9); s.snared.push(0); s.stressDay.push(-1); s.present.push(0); s.presentDay.push(-1);
+  }
 }
 
 /** Next observer random number in [0, 1). */
@@ -115,7 +125,7 @@ export function createObserver(world: World, over: Partial<ObserverConfig> = {})
     statsStart: { ...world.stats }, tick0: world.tick, time0: world.time, statsTime: world.time, wx: { day: -1, min: 99, max: -99 }, nestDay: -1, finished: false,
     prevHour: world.hour, prevAlt: world.environment.sunAltitude, sunrise: 6.8, sunset: 18.8, lastMonth: -1, monthPending: false, lastTick: world.tick,
     phenTrees: [], lines: {}, alphaPrev: new Map(world.troops.map(t => [t.id, t.alphaId])), byTroop: [], stamp: 0, aliveVer: -1, transfers: -1, rebuiltAt: -1e9,
-    id: { indep: [], groomed: [], seen: [], ok: [], path: [], px: [], pz: [], left: [], settled: [], cycle: [], wraps: [] },
+    id: { indep: [], groomed: [], seen: [], ok: [], path: [], px: [], pz: [], left: [], settled: [], cycle: [], wraps: [], ill: [], snared: [], stressDay: [], present: [], presentDay: [] },
     vis: cfg.profile.visibilityM, pLose: 1 - Math.exp(-cfg.loseHazardPerH * cfg.pointIntervalMin / 60), pLoseHard: 1 - Math.exp(-cfg.loseHazardPerH * cfg.loseFactor * cfg.pointIntervalMin / 60),
     pointEvery: Math.max(1, Math.round(cfg.pointIntervalMin / 60 / TICK_HOURS)), scanEvery: Math.max(1, Math.round(cfg.scanIntervalMin / 60 / TICK_HOURS)),
     start: { centers: world.troops.map(t => [t.center[0], t.center[2]]), alive: 0 },
@@ -154,7 +164,7 @@ export function createObserver(world: World, over: Partial<ObserverConfig> = {})
   }
   for (const t of world.troops) {
     o.teams.push({ index: o.teams.length, mark: [], partyStamp: -1, members: [], pInd: 0, pAM: 0, pN5: 0, pN10: 0, troop: t.id, state: 0, focal: -1, follow: null, rotation: [], rotIdx: 0, blockStart: -1e9, x: t.center[0], z: t.center[2], party: [], called: false,
-      encounters: new Map(), heard: [], visitTree: -1, departX: 0, departZ: 0, departT: 0, seenToday: [], seenMark: [] });
+      encounters: new Map(), heard: [], visitTree: -1, departX: 0, departZ: 0, departT: 0, seenToday: [], seenMark: [], illToday: [] });
   }
   dayStep(o, world, true);
   return o;

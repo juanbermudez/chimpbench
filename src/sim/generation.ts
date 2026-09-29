@@ -113,6 +113,8 @@ export function makeChimp(world: World, troopId: number, sex: Sex, age: number, 
   x.weaned = age >= x.weanAge;
   x.caretaker = motherId;
   x.disperser = !male && r() < P.disperserP;
+  // stage C8: founders start in the condition their hunger implies, fully grown for their age (early-life-prereg §2.6)
+  x.cond = 1 - chimp.hunger; x.gestCond = x.cond; x.trX = position[0]; x.trZ = position[2];
   return chimp;
 }
 

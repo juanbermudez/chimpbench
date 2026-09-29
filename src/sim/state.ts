@@ -63,6 +63,18 @@ export interface ChimpX {
   fedTree?: number[]; fedAt?: number[];
   /** Stage C7a (field): crop this individual last saw (or left) in each remembered fruit tree, by tree id; absent until first used. */
   treeCrop?: Record<number, number>;
+  /**
+   * Stage C8 (docs/staging/early-life-prereg.md §2.6–2.9): body condition 0..1 (a slow average of 1 − hunger), the growth
+   * record 0..1 (scales strength), a transient bereavement stress added to the resting stress floor, and a mother's mean
+   * condition over her current pregnancy.
+   */
+  cond: number; grow: number; bereft: number; gestCond: number;
+  /**
+   * Stage C8 health (docs/realism-design.md §5.7): eco-hour when the current respiratory illness ends (NEVER when well),
+   * the outbreak that last infected this individual (-1 none; immune to it afterwards), a permanent snare injury
+   * (0 none, else its severity 0..1), and the last slow-step position on the ground (snare exposure per metre walked).
+   */
+  ill: number; outbreak: number; snare: number; trX: number; trZ: number;
 }
 
 /** The memory month in progress: tallies accumulate on events and are finalized into a MemoryDigest every 30 eco-days. */
@@ -127,6 +139,7 @@ export function newX(): ChimpX {
     impulse: 0, impulseTarget: -1, impulseUntil: NEVER, mateAsk: -1, mateAskAt: NEVER, recon: NEVER, gangAt: NEVER, v: 0, aux: -1, flag: 0, lastIntr: '', lastIntrAt: NEVER, consoleAt: NEVER, visibleOwn: 0,
     metAt: {}, coreX: 0, coreZ: 0, lastHuntAt: NEVER, near: {}, gangRoll: NEVER, consoledAt: NEVER, joinRich: 0,
     tension: {}, incident: {}, month: { start: 0, startRank: 0, partners: {}, events: [], encounters: 0, lastEncounter: NEVER }, monthsSinceYear: 0, slide: 0, patrolRoll: NEVER, contacts: [], contactSeenAt: NEVER,
+    cond: 0.7, grow: 1, bereft: 0, gestCond: 0.7, ill: NEVER, outbreak: -1, snare: 0, trX: 0, trZ: 0,
   };
 }
 

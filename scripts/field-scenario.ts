@@ -9,6 +9,9 @@
 // expansion (T-LET-4, held out): the West community gets extra adult males at the start (a large community next to
 //           smaller ones), and its range change is measured against the same seed's baseline: area gain from year 1 to
 //           the last year, and the shift of its centre toward the neighbours. Killings are counted. Reported either way.
+// --unseal (stage C8 proof only; T-LET-5, sealed): also keeps a complete census (births, deaths, the West range each month)
+//           and scores births and infant survival before vs after the expansion (src/field/early-life.ts letFiveSeed).
+//           Refused unless data/targets.json logs a C8 freeze whose protocol and registry hashes equal the current ones.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { deflateSync } from 'node:zlib';
 import { createWorld, tickWorld } from '../src/simulation';
@@ -17,7 +20,11 @@ import { ix, markAliveChanged, simOf } from '../src/sim/state';
 import { cellAt, gridOf, useLevels } from '../src/sim/territory';
 import { paramsOf } from '../src/sim/params';
 import type { Chimp, World } from '../src/types';
+import { letFivePooled, letFiveSeed, type ScenarioCensus } from '../src/field/early-life';
+import { unsealRefusal } from '../src/field/targets';
+import { REGISTRY_HASH } from '../src/sim/params';
 import { runPool } from './lib/pool';
+import { frozen, protocolHash } from './lib/protocol-hash';
 
 const args = process.argv.slice(2);
 const flag = (n: string, d: string) => { const i = args.indexOf(`--${n}`); return i >= 0 && i + 1 < args.length ? args[i + 1] : d; };
@@ -27,7 +34,7 @@ export interface YearRow {
   /** Simulation truth for the year: patrols started per community, and those whose leader entered a neighbour's 95% isopleth. */
   patrols: Record<number, number>; incursions: Record<number, number>; encounters: number;
 }
-export interface ScenarioResult { seed: number; kind: string; start: Record<number, number>; years: YearRow[]; pngs: string[] }
+export interface ScenarioResult { seed: number; kind: string; start: Record<number, number>; years: YearRow[]; pngs: string[]; census?: ScenarioCensus }
 
 /** Minimal PNG (RGB, 8-bit) encoder: zlib from node, CRC-32 by table. */
 const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
@@ -110,28 +117,46 @@ function boostWest(world: World, n: number): void {
   markAliveChanged(world);
 }
 
-export function runScenario(job: { seed: number; kind: string; years: number; profile: Profile; out: string; extraMales: number }): ScenarioResult {
+export function runScenario(job: { seed: number; kind: string; years: number; profile: Profile; out: string; extraMales: number; unseal?: boolean }): ScenarioResult {
   const world = createWorld(job.seed, { profile: job.profile });
   if (job.kind === 'expansion') boostWest(world, job.extraMales);
   const kills0 = world.stats.killings, years: YearRow[] = [], pngs: string[] = [];
   const start: Record<number, number> = {};
   for (const t of world.troops) start[t.id] = t.range ? t.range.cells.length * t.range.cell ** 2 / 1e6 : 0;
   if (job.out) mkdirSync(job.out, { recursive: true });
+  // T-LET-5 (sealed): the census is kept only in the hash-bound --unseal run (no births-around-expansion tally otherwise)
+  const census: ScenarioCensus | undefined = job.unseal ? { births: [], deaths: {}, end: 0, area: [] } : undefined;
+  const seen = new Set(world.chimps.map(c => c.id)), MONTH_TICKS = Math.round(365 / 12 * 5760);
   for (let y = 1; y <= job.years; y++) {
     const pat = new Map<string, { troop: number; inc: boolean }>(), enc0 = world.stats.intergroupEncounters;
-    for (let i = 0; i < 365 * 5760; i++) { tickWorld(world); if (world.tick % 8 === 0) trackPatrols(world, pat); }
+    for (let i = 0; i < 365 * 5760; i++) {
+      tickWorld(world); if (world.tick % 8 === 0) trackPatrols(world, pat);
+      if (census && world.tick % 20 === 0) {
+        for (const c of world.chimps) {
+          if (!seen.has(c.id)) { seen.add(c.id); census.births.push({ id: c.id, troop: c.troopId, t: c.birthTime }); }
+          if (!c.alive && c.deathTime !== null && census.deaths[c.id] === undefined) census.deaths[c.id] = c.deathTime;
+        }
+        if (world.tick % MONTH_TICKS < 20) { const w = world.troops.find(t => t.id === 1); census.area.push({ t: world.time, km2: w?.range ? w.range.cells.length * w.range.cell ** 2 / 1e6 : 0 }); }
+      }
+    }
     years.push(yearRow(world, y, kills0, pat, enc0));
     if (job.out) { const f = `${job.out}/${job.kind}-seed${job.seed}-year${String(y).padStart(2, '0')}.png`; writeFileSync(f, udMap(world)); pngs.push(f); }
   }
-  return { seed: job.seed, kind: job.kind, start, years, pngs };
+  if (census) census.end = world.time;
+  return { seed: job.seed, kind: job.kind, start, years, pngs, ...(census ? { census } : {}) };
 }
 
 async function main() {
   const kind = args[0] ?? 'baseline';
   const years = +flag('years', '10'), seeds = flag('seeds', '48,7,21,5,11').split(',').map(Number), profile = flag('profile', 'field') as Profile;
   const out = flag('out', `artifacts/validation/c6`), extraMales = +flag('extra-males', '6'), workers = +flag('workers', '4'), tag = flag('tag', '');
+  const unseal = args.includes('--unseal');
+  if (unseal) {
+    const fz = frozen(), why = kind !== 'expansion' ? 'T-LET-5 needs the expansion scenario' : unsealRefusal({ stage: fz.stage ?? undefined, hash: fz.hash ?? undefined, registryHash: fz.registryHash ?? undefined }, protocolHash(), REGISTRY_HASH);
+    if (why) { console.error(`--unseal refused: ${why}`); process.exit(3); }
+  }
   const kinds = kind === 'expansion' ? ['baseline', 'expansion'] : [kind];
-  const jobs = kinds.flatMap(k => seeds.map(seed => ({ seed, kind: k, years, profile, out, extraMales })));
+  const jobs = kinds.flatMap(k => seeds.map(seed => ({ seed, kind: k, years, profile, out, extraMales, unseal })));
   const res = await runPool<typeof jobs[number], ScenarioResult>(new URL('./lib/scenario-worker.ts', import.meta.url), jobs, { size: workers, onDone: (i, ms) => console.error(`${jobs[i].kind} seed ${jobs[i].seed}: ${years} years in ${(ms / 1000).toFixed(0)} s`) });
   const by = (k: string, seed: number) => res.find(r => r.kind === k && r.seed === seed)!;
   const lines: string[] = [];
@@ -154,9 +179,14 @@ async function main() {
       lines.push(`expansion seed ${seed}: West area ${e1.area[1].toPrecision(3)} → ${eN.area[1].toPrecision(3)} km² (${(gain * 100).toFixed(1)}% from year 1; baseline ${(base * 100).toFixed(1)}%; relative to the baseline ${(rel * 100).toFixed(1)}%), centre shift toward the neighbours ${shift.toFixed(0)} m, killings ${eN.killings}; T-LET-4 (+10–35% relative to the baseline after lethal wins): ${!tested ? 'not tested (no killings)' : rel >= 0.1 && rel <= 0.35 && shift > 0 ? 'in band' : 'out of band'}`);
     }
   }
+  if (unseal) {
+    const per = seeds.map(seed => { const e = by('expansion', seed).census, b = by('baseline', seed).census; return e && b ? letFiveSeed(e, b, 1) : null; });
+    const p = letFivePooled(per);
+    lines.push(`T-LET-5 (unsealed, C8 proof): ${p.pass === null ? 'insufficient' : p.pass ? 'pass' : 'fail'}; seeds with an expansion ${p.seedsWithExpansion} of ${seeds.length} (${seeds.filter((_, i) => per[i] === null).join(', ') || 'none'} without); ${Object.entries(p.parts).map(([k, v]) => `${k} ${Number.isFinite(v) ? +v.toFixed(3) : '—'}`).join(', ')}`);
+  }
   console.log(lines.join('\n'));
   const base = `${out}/${kind}-summary${tag ? `-${tag}` : ''}`;
-  writeFileSync(`${base}.json`, JSON.stringify({ kind, years, seeds, profile, extraMales, results: res.map(r => ({ ...r, pngs: r.pngs.length })) }, null, 1));
+  writeFileSync(`${base}.json`, JSON.stringify({ kind, years, seeds, profile, extraMales, results: res.map(r => ({ ...r, pngs: r.pngs.length, census: undefined })) }, null, 1));
   writeFileSync(`${base}.txt`, lines.join('\n') + '\n');
 }
 
