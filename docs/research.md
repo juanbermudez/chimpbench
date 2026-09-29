@@ -238,10 +238,10 @@ Downloaded with the user's approval into `data/raw/`, which is never published. 
   - Associated paper: *Science*, https://doi.org/10.1126/science.adz4944.
   - Coverage: 166,826 GPS fixes (1–2 per individual-day), 162 individuals, 2011–2023.
   - Supports home-range kernels, core fraction, year-to-year overlap and fission divergence.
-- **Lemoine et al. 2023, Taï border movement.** Lemoine, S., Samuni, L., Crockford, C. & Wittig, R. M. Chimpanzees make tactical use of high elevation in territorial contexts. *PLOS Biology* 21(11): e3002350, https://doi.org/10.1371/journal.pbio.3002350 (CC BY 4.0).
+- **Lemoine et al. 2023, Taï border movement** [lemoine2023]. Lemoine, S., Samuni, L., Crockford, C. & Wittig, R. M. Chimpanzees make tactical use of high elevation in territorial contexts. *PLOS Biology* 21(11): e3002350, https://doi.org/10.1371/journal.pbio.3002350 (CC BY 4.0).
   - Supplementary data s015–s017: time-ordered focal records with binned positions and rest/travel labels, plus border-related hill climbs.
   - Taï is the western subspecies (*P. t. verus*), not Kibale.
-- **Lemoine et al. 2020, Taï territory size.** Lemoine, S., Boesch, C., Preis, A., Samuni, L., Crockford, C. & Wittig, R. M. Group dominance increases territory size and reduces neighbour pressure in wild chimpanzees. *Royal Society Open Science* 7: 200577, https://doi.org/10.1098/rsos.200577 (CC BY 4.0).
+- **Lemoine et al. 2020, Taï territory size** [lemoine2020b]. Lemoine, S., Boesch, C., Preis, A., Samuni, L., Crockford, C. & Wittig, R. M. Group dominance increases territory size and reduces neighbour pressure in wild chimpanzees. *Royal Society Open Science* 7: 200577, https://doi.org/10.1098/rsos.200577 (CC BY 4.0).
   - Yearly 95% kernel territory sizes, 1997–2016.
 
 - **Pusey & Schroepfer-Walker 2013, Gombe female ranges and 15-min focal paths** [puseySchroepferWalker2013]. Pusey, A. E. & Schroepfer-Walker, K. Female competition in chimpanzees. *Phil. Trans. R. Soc. B* 368: 20130077, https://doi.org/10.1098/rstb.2013.0077.
