@@ -2,11 +2,11 @@
  "about": "Golden world hashes (compressed profile). First recorded before the parameter registry migration (stage C4); re-recorded for intended changes at C6 (territories, 29 Sep 2026), C6b (incursion geometry, 29 Sep 2026) and the C6 patrol corrections (docs/realism-design.md §5.3.1: per-chimp contact memory, single file, release, no heard boost or energy gate; 29 Sep 2026). tests/fixtures/golden.ts computes them; world.sim.params is excluded.",
  "recorded": "2026-09-29",
  "hashes": {
-  "seed48-rate1-2d": "c851a9af4cc6cda4",
-  "seed48-rate365-3d": "b33a29fb9308e204",
-  "seed7-rate1-2d": "121a8c96ac36008d",
-  "seed7-rate365-3d": "8e94e34922648a32",
-  "seed21-rate1-2d": "6c27c01d71069298",
-  "seed21-rate365-3d": "850b74cc81990f23"
+  "seed48-rate1-2d": "8bacaf03e3ddda74",
+  "seed48-rate365-3d": "4f3fbb6c70f0af27",
+  "seed7-rate1-2d": "60e2430e059ab04f",
+  "seed7-rate365-3d": "732d6a4937272440",
+  "seed21-rate1-2d": "505ac2e83ea78cfb",
+  "seed21-rate365-3d": "5544fa01b95e5610"
  }
 }
