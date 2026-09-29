@@ -7,7 +7,7 @@ Working plan for the current program. Objectives: `docs/realism-roadmap.md`. Del
 ## Parallel tracks (from 2026-09-29, local git; the integrator merges into `main`)
 | Track | Owner | Where | Scope |
 | --- | --- | --- | --- |
-| Patrol corrections (C6p) | science agent | `main` checkout | **Code done** (292 tests; freeze d2da54f2925425e2 with T-PAT-8, T-BRD-1 and T-PAT-9 rows; pre-registered labels set; bands T-PAT-8 ρ 0.059 [−0.057, 0.170], T-BRD-1 0.448 and slope +0.072 per adult). Proof held for the merge. Now: golden-neutral field performance work. |
+| Patrol corrections (C6p), then performance, then C10 | science agent | `main` checkout | Patrol code done (proof held for the merge). Performance done (f9d66b0): about 20% faster per field eco-day, identical results. C7b round 1 merged (ee02b82; field hashes unchanged). Next: the C12 relabel freeze (Gombe as held-out), then **C10 communication** (pre-registered, switchable for ablation). |
 | C7a review | independent reviewer | snapshot | verdict, fixes, bench A/B vs C6 |
 | C7b party size and range gap | C7b agent | worktree branch `worktree-agent-ad55593a1d1d4fcb6` | **Round 1 done (20092c7):** party size fell because distant goals were chosen per animal with no distance cost (companions still together at arrival fell 74% → 40%); there is no feeding competition (2% of the ripe crop eaten per day), and unlimited fallback food lets animals sit. Four mechanisms failed the direction check and are off by default, so the field hash matches C7a. `travelDistScaleM` is declared 'no distance cost' (design). The science agent merges it into `main` after its performance work. **Round 2 (C7c) In Progress:** limited fallback foods (the project's single fallback mechanism, which C8 reads), joint travel without dropouts, shared party goals, and a distance cost from travel energetics. |
 | C8 demography and early life | C8 agent | worktree branch | the C8 spec + docs/staging/early-life-prereg.md; T-DEM-14/15 and T-LET-5 sealed; target rows in docs/staging/c8-targets.patch.json |
@@ -15,6 +15,8 @@ Working plan for the current program. Objectives: `docs/realism-roadmap.md`. Del
 | Patrol data and guide | data agent | done (2980c8e) | real patrol statistics (Ngogo 0.76/wk observed, 33% per-male participation; Gombe 180 patrols, median 88.5 min, 8 males, 3 females; post-split West 17.4/yr vs Central 5.0/yr); T-BRD-1 reproduced; T-PAT-8 not comparable; Gombe 15-min paths (1,330 follows; straightness 0.47, turning 0.55 rad at 30 min, daily path 2.3 km). The 30-min step is method-sensitive (Taï 95 m vs Gombe 2.8 m), so it's no longer a headline gap. |
 
 Validation structure (from 2026-09-29): the Taï and Ngogo C12 comparisons are development diagnostics (seen). The Gombe 15-min paths (jg05d) are the held-out movement validation, withheld from every designer.
+
+Ablation rule (from 2026-09-29): every stage's mechanisms are switchable by registry parameters, so the combined proof can attribute changes (all on vs one stage off).
 
 Merge plan: once C7a is reviewed and patrols are green, merge C7b, then C8. Then WP0 (freeze) and WP4 (register the B7 targets), then **one combined proof** on merged `main` (patrols, C7b, C8), then independent reviews.
 
