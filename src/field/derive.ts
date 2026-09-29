@@ -18,6 +18,8 @@ export interface Range {
 
 export interface Derived {
   rec: Records; profile: FieldProfile; tH: number; days: number; years: number;
+  /** Observation window in world hours: start (rec.time0, after any burn-in), end and mid-point. */
+  t0: number; t1: number; mid: number;
   troops: number[]; communityYears: number;
   roster: Map<number, RosterEntry>;
   followPts: number[][]; followScans: number[][];
@@ -119,7 +121,7 @@ export function derive(rec: Records): Derived {
     return false;
   };
   const d: Derived = {
-    rec, profile, tH, days, years, troops, communityYears: troops.length * years, roster, followPts, followScans, followDays, followHours, ranges, phen,
+    rec, profile, tH, days, years, t0: rec.time0, t1: rec.time0 + days * 24, mid: rec.time0 + days * 12, troops, communityYears: troops.length * years, roster, followPts, followScans, followDays, followHours, ranges, phen,
     patrols: [], callsBy, calledNear, level, ageAt, isAdultMale, aliveAt, adultMales, month: (tick: number) => Math.floor(tick * tH / MONTH_H),
   };
   d.patrols = classifyPatrols(rec, followPts, level);

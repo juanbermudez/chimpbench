@@ -129,7 +129,7 @@ function colobusEncounters(d: Derived): { t: number; troop: number; prey: number
 /** Dominance interactions among adult males per community: decided conflicts (winner beats loser) and, unless `conflictsOnly`, pant-grunts (recipient beats giver). */
 function maleDominance(d: Derived, conflictsOnly = false): Map<number, { ids: number[]; wins: number[][]; pantGrunts: Map<number, number>; allPG: number }> {
   const out = new Map<number, { ids: number[]; wins: number[][]; pantGrunts: Map<number, number>; allPG: number }>();
-  const mid = d.days * 12;
+  const mid = d.mid;
   for (const troop of d.troops) {
     const ids = d.adultMales(troop, mid).sort((a, b) => a - b);
     const ix = new Map(ids.map((id, i) => [id, i]));
@@ -177,7 +177,7 @@ const maternalKin = (d: Derived, a: number, b: number) => {
 /** Life table from the census: exposure (years) and deaths per age bin by sex, with estimated ages. */
 const BINS = [0, 1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 80];
 function lifeTable(d: Derived) {
-  const t0 = 0, t1 = d.days * 24;
+  const t0 = d.t0, t1 = d.t1;
   const exp = { male: BINS.map(() => 0), female: BINS.map(() => 0) }, dth = { male: BINS.map(() => 0), female: BINS.map(() => 0) };
   const deathT = new Map(d.rec.deaths.map(x => [x.id, x.tEst]));
   for (const r of d.rec.roster) {
@@ -304,7 +304,7 @@ export const METRICS: MetricDef[] = [
   {
     id: 'T-RNG-2', protocol: 'between-community OLS slope of the 98%-cell range (km², field-equivalent) on weaned individuals (lemoine2020b)', scaleSensitive: true, cellBased: true,
     compute: d => {
-      const x: number[] = [], y: number[] = [], mid = d.days * 12, s2 = d.profile.lengthScale ** 2 / 1e6;
+      const x: number[] = [], y: number[] = [], mid = d.mid, s2 = d.profile.lengthScale ** 2 / 1e6;
       for (const [t, r] of d.ranges) { if (!r.fixes) continue; x.push(d.rec.roster.filter(e => e.troop === t && d.aliveAt(e.id, mid) && d.ageAt(e.id, mid) >= 5).length); y.push(r.area98 * s2); }
       if (x.length < 3) return none('needs 3 communities with fixes');
       return { value: ols(x, y).slope, n: x.length, cells: fewestCells(d) };
@@ -409,7 +409,7 @@ export const METRICS: MetricDef[] = [
   {
     id: 'T-PAT-2', protocol: 'classified patrols joined per adult male (scan membership during the patrol) ÷ his community\'s follow days × 365 (langergraber2017)',
     compute: d => {
-      const per = patrolMembers(d), rates: number[] = [], mid = d.days * 12;
+      const per = patrolMembers(d), rates: number[] = [], mid = d.mid;
       for (const troop of d.troops) {
         const fd = d.followDays.get(troop) ?? 0;
         if (!fd) continue;
@@ -730,7 +730,7 @@ export const METRICS: MetricDef[] = [
       const months = Math.max(1, Math.floor(d.days * 24 / MONTH_H)), v: number[] = [];
       for (const troop of d.troops) {
         const c = new Array(months).fill(0);
-        for (const h of hunts(d)) if (h.troop === troop) { const m = Math.floor(h.t0 / MONTH_H); if (m < months) c[m]++; }
+        for (const h of hunts(d)) if (h.troop === troop) { const m = Math.floor((h.t0 - d.t0) / MONTH_H); if (m >= 0 && m < months) c[m]++; }
         if (c.some(x => x > 0)) v.push(dispersion(c));
       }
       return v.length ? { value: mean(v), n: v.length } : none('no hunts');
@@ -790,7 +790,7 @@ export const METRICS: MetricDef[] = [
     id: 'T-SOC-3', protocol: 'OLS slope of grooming given (h) on grooming received over ordered adult-male dyads, detected bouts with known ends (kaburuNewtonFisher2015 studied adult males; approximate: the source fitted an LMM on log durations with rank, support, association and aggression as covariates)',
     compute: d => {
       const g = groomHours(d), x: number[] = [], y: number[] = [];
-      const seen = new Set<string>(), mid = d.days * 12, males = new Set(d.troops.flatMap(t => d.adultMales(t, mid)).map(String));
+      const seen = new Set<string>(), mid = d.mid, males = new Set(d.troops.flatMap(t => d.adultMales(t, mid)).map(String));
       for (const k of g.keys()) { const [a, b] = k.split('>'); if (!males.has(a) || !males.has(b)) continue; for (const [p, q] of [[a, b], [b, a]]) { const kk = `${p}>${q}`; if (seen.has(kk)) continue; seen.add(kk); y.push(g.get(kk) ?? 0); x.push(g.get(`${q}>${p}`) ?? 0); } }
       return x.length >= 10 ? { value: ols(x, y).slope, n: x.length } : none('needs >= 10 dyads');
     },
@@ -798,7 +798,7 @@ export const METRICS: MetricDef[] = [
   {
     id: 'T-SOC-4', protocol: '15-min scans: half-weight index for adult female dyads (co-membership in the focal party), mean; male mean HWI must exceed it (foerster2015; gilbyWrangham2008)', pool: 'pattern',
     compute: d => {
-      const S = d.rec.scans, mid = d.days * 12;
+      const S = d.rec.scans, mid = d.mid;
       const res: Record<string, number | null> = {};
       for (const sex of ['female', 'male'] as const) {
         const v: number[] = [];
@@ -995,7 +995,7 @@ export const METRICS: MetricDef[] = [
     id: 'T-DEM-10', protocol: 'census: detected births ÷ female-years at estimated ages 20–30 (emeryThompson2007)', pool: 'custom',
     compute: d => {
       let births = 0, fy = 0;
-      const t1 = d.days * 24;
+      const t1 = d.t1;
       for (const r of d.rec.roster) {
         if (r.sex !== 'female') continue;
         const from = r.firstSeen, dt = d.rec.deaths.find(x => x.id === r.id)?.tEst ?? t1, to = Math.min(t1, dt);

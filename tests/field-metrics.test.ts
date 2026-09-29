@@ -312,3 +312,20 @@ test('C6 patrol corrections: T-PAT-8 pools community-months and needs >= 24 of t
   assert.ok(up > 0.5, `${up}`);
   assert.ok(Math.abs(flat) < 0.3, `${flat}`);
 });
+
+test('C8 bug fix: demography exposure is measured from time0 when observation starts after a burn-in', () => {
+  const Y = 365.25 * 24, burn = 180 * 24;
+  const r = emptyRecords();
+  r.time0 = burn; r.days = 365.25 * 2;
+  // a founder female aged 20 at the observer start, alive for the whole 2-year window; an infant born 0.5 y in, alive to the end
+  r.roster.push({ id: 1, sex: 'female', troop: 1, natal: 1, mother: -1, birthEst: burn - 20 * Y, knownAge: false, founder: true, firstSeen: burn },
+    { id: 2, sex: 'male', troop: 1, natal: 1, mother: 1, birthEst: burn + 0.5 * Y, knownAge: true, founder: false, firstSeen: burn + 0.5 * Y });
+  r.births.push({ id: 2, mother: 1, troop: 1, tSeen: burn + 0.5 * Y, truthBirth: burn + 0.5 * Y, father: -1 });
+  const d = derive(r);
+  assert.equal(d.t0, burn); assert.equal(d.t1, burn + r.days * 24); assert.equal(d.mid, burn + r.days * 12);
+  const fert = metric('T-DEM-10').compute!(d);
+  assert.ok(Math.abs(fert.den! - 2) < 1e-9, `female-years 20–30 over the whole window, got ${fert.den}`);
+  assert.equal(fert.num, 1);
+  const q1 = metric('T-DEM-1').compute!(d);
+  assert.ok(Math.abs(q1.den! - 1) < 1e-9, `infant-years from birth to age 1 inside the window, got ${q1.den}`);
+});

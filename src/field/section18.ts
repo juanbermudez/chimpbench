@@ -45,7 +45,7 @@ export const S18: S18Def[] = [
   {
     key: 'rangeShift', label: 'Max range-center shift (m)', field: 'only after killings', protocol: 'shift of the fix centroid between the first and second half of the run (logical m)', truthProtocol: 'troop.center vs start',
     compute: d => {
-      const P = d.rec.points, half = d.days * 12, shifts: number[] = [];
+      const P = d.rec.points, half = d.mid, shifts: number[] = [];
       for (const troop of d.troops) {
         const a = [0, 0, 0], b = [0, 0, 0];
         d.rec.follows.forEach((f, fi) => { if (f.troop !== troop) return; const acc = f.start < half ? a : b; for (const i of d.followPts[fi]) { acc[0] += P.x.data[i]; acc[1] += P.z.data[i]; acc[2]++; } });
@@ -115,7 +115,7 @@ export const S18: S18Def[] = [
   {
     key: 'largestParty', label: 'Largest party, share of community', field: 'fission-fusion', protocol: 'focal party share of the community\'s independent individuals at 15-min scans (one team sees only its party)', truthProtocol: 'largest party of each community every 2 min',
     compute: d => {
-      const S = d.rec.scans, v2: number[] = [], mid = d.days * 12;
+      const S = d.rec.scans, v2: number[] = [], mid = d.mid;
       const size = new Map(d.troops.map(t => [t, d.rec.roster.filter(r => r.troop === t && d.aliveAt(r.id, mid) && d.ageAt(r.id, mid) >= 6).length]));
       for (let i = 0; i < S.t.n; i++) { const n = size.get(d.troops[S.team.data[i]]) ?? 0; if (n) v2.push(Math.min(1, S.ind.data[i] / n)); }
       return v(v2.length ? mean(v2) : null, d.rec.truth.largestFrac.length ? mean(d.rec.truth.largestFrac) : null, 'fraction', v2.length);
@@ -124,7 +124,7 @@ export const S18: S18Def[] = [
   {
     key: 'wholeCommunity', label: '  whole community together', field: 'rare', protocol: 'scans where the focal party holds every independent member', truthProtocol: 'every 2 min',
     compute: d => {
-      const S = d.rec.scans, mid = d.days * 12;
+      const S = d.rec.scans, mid = d.mid;
       const size = new Map(d.troops.map(t => [t, d.rec.roster.filter(r => r.troop === t && d.aliveAt(r.id, mid) && d.ageAt(r.id, mid) >= 6).length]));
       let n = 0, w = 0;
       for (let i = 0; i < S.t.n; i++) { const k = size.get(d.troops[S.team.data[i]]) ?? 0; if (!k) continue; n++; if (S.ind.data[i] >= k) w++; }
