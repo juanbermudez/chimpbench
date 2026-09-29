@@ -11,6 +11,7 @@ import { dailyLife, hourlyLife, needs, slowLife } from './life';
 import { computeParties, updatePatrols } from './parties';
 import { IMPULSE_RAIN, dailyBeliefs } from './perception';
 import { dailyKnownTrees } from './foraging';
+import { fallbackOn, pruneFallback } from './fallback';
 import { shareContacts } from './contact';
 import { materializeFruit } from './phenology';
 import { dailyTerritory } from './territory';
@@ -104,7 +105,7 @@ function slowStep(world: World): void {
     shareContacts(world); // contact memory spreads within parties (§5.3.1 P2)
   }
   if (time - s.lastSummary >= 6) summary(world);
-  if (time - s.lastDaily >= 24) { s.lastDaily = time; dailyLife(world); dailyTerritory(world); dailyBeliefs(world); huntingDays(world); if (paramsOf(world).patchEcology === 1) materializeFruit(world); dailyKnownTrees(world); }
+  if (time - s.lastDaily >= 24) { s.lastDaily = time; dailyLife(world); dailyTerritory(world); dailyBeliefs(world); huntingDays(world); if (paramsOf(world).patchEcology === 1) materializeFruit(world); dailyKnownTrees(world); if (fallbackOn(paramsOf(world))) pruneFallback(world); }
 }
 
 function summary(world: World): void {
