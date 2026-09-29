@@ -2,7 +2,7 @@ import type { Tree, World } from '../types';
 import { paramsOf, type Params } from './params';
 import { PHENOLOGY_DATA } from './phenology.gen';
 import { clamp, hash01 } from './rng';
-import { START_DOY, START_HOUR, simOf } from './state';
+import { START_DOY, START_HOUR, TREE_ID0, simOf } from './state';
 
 // Patch ecology (docs/realism-design.md §5.1 "Food", §5.6): each sim Tree is a food patch whose crop follows a
 // phenology record, evaluated lazily from time and depletion state when read. Only used when P.patchEcology is 1
@@ -169,7 +169,28 @@ function episode(tb: Tables, t: Table, id: number, y: number, d: number, D: numb
 }
 
 /** Phenology crop of a patch now (fruit units), before depletion; drought and fig-mast interventions included. */
+// Memo of cropTarget (performance only, same values): many animals look at the same crowns in a tick. An entry is valid
+// for one world, one time and the fig-mast and drought state it was computed under (the only other inputs; the
+// species tables and parameters are fixed per world, maxFruit and species per tree).
+let _mw: World | null = null, _mFig = NaN, _mFigU = NaN, _mDry = NaN;
+let _mv = new Float64Array(0), _mt = new Float64Array(0);
 export function cropTarget(world: World, t: Tree, time: number): number {
+  const s = simOf(world), k = t.id - TREE_ID0;
+  if (world !== _mw || s.figTree !== _mFig || s.figUntil !== _mFigU || s.droughtUntil !== _mDry || _mt.length < world.trees.length) {
+    _mw = world; _mFig = s.figTree; _mFigU = s.figUntil; _mDry = s.droughtUntil;
+    if (_mt.length < world.trees.length) { _mv = new Float64Array(world.trees.length); _mt = new Float64Array(world.trees.length); }
+    _mt.fill(NaN);
+  }
+  if (k >= 0 && k < _mt.length) {
+    if (_mt[k] === time) return _mv[k];
+    const v = cropTargetOf(world, t, time);
+    _mt[k] = time; _mv[k] = v;
+    return v;
+  }
+  return cropTargetOf(world, t, time);
+}
+
+function cropTargetOf(world: World, t: Tree, time: number): number {
   const P = paramsOf(world), s = simOf(world);
   if (t.id === s.figTree && s.figUntil > time) return t.maxFruit * P.figMastLevel;
   const tb = tables(world);

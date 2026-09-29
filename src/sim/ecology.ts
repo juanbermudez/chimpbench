@@ -3,9 +3,24 @@ import { addEvent, emitCall, endInteraction, episode, flashInteraction, interrup
 import { spawnPrey } from './generation';
 import { hash01, random } from './rng';
 import { paramsOf } from './params';
-import { SLOW_HOURS, TICK_SECONDS, index, simOf, type HuntState } from './state';
+import { PREY_ID0, SLOW_HOURS, TICK_SECONDS, index, simOf, type HuntState } from './state';
 
 /** Red colobus groups drift through the canopy; alarmed groups move fast. Per tick, no rng. */
+// sin and cos of each group's heading, recomputed only when the heading changes (every slow step or at a border);
+// keyed by prey id and checked against the heading itself, so a stale entry can never be used (performance only)
+let _pH = new Float64Array(0), _pS = new Float64Array(0), _pC = new Float64Array(0);
+function headingTrig(id: number, h: number): number {
+  const k = id - PREY_ID0;
+  if (k < 0 || k >= 1 << 20) return -1;
+  if (k >= _pH.length) {
+    const n = Math.max(1024, 1 << Math.ceil(Math.log2(k + 1)));
+    const a = new Float64Array(n).fill(NaN), b = new Float64Array(n), c = new Float64Array(n);
+    a.set(_pH); b.set(_pS); c.set(_pC); _pH = a; _pS = b; _pC = c;
+  }
+  if (_pH[k] !== h) { _pH[k] = h; _pS[k] = Math.sin(h); _pC[k] = Math.cos(h); }
+  return k;
+}
+
 export function movePrey(world: World): void {
   const lim = world.size / 2 - 6;
   // field profile: ~160 groups move in turns, every preyMoveEveryTicks ticks by that many ticks' distance (performance)
@@ -13,8 +28,9 @@ export function movePrey(world: World): void {
   for (const p of world.prey) {
     if (every > 1 && p.id % every !== turn) continue;
     const speed = 0.025 + p.alert * 0.1;
-    p.position[0] += Math.sin(p.heading) * speed * TICK_SECONDS * every;
-    p.position[2] += Math.cos(p.heading) * speed * TICK_SECONDS * every;
+    const k = headingTrig(p.id, p.heading);
+    p.position[0] += (k >= 0 ? _pS[k] : Math.sin(p.heading)) * speed * TICK_SECONDS * every;
+    p.position[2] += (k >= 0 ? _pC[k] : Math.cos(p.heading)) * speed * TICK_SECONDS * every;
     if (p.position[0] < -lim || p.position[0] > lim) { p.heading = -p.heading; p.position[0] = Math.max(-lim, Math.min(lim, p.position[0])); }
     if (p.position[2] < -lim || p.position[2] > lim) { p.heading = Math.PI - p.heading; p.position[2] = Math.max(-lim, Math.min(lim, p.position[2])); }
   }

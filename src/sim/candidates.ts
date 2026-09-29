@@ -5,7 +5,7 @@ import { cellAt, gridOf, levels, pressureAt, territoryCost } from './territory';
 import { clamp, hash01, smoothstep } from './rng';
 import { paramsOf, type Params } from './params';
 import { fruitAt } from './phenology';
-import { byIdIn, index, isTreeId, ix, NEVER, treesNear, simOf } from './state';
+import { byIdIn, index, isTreeId, ix, NEVER, TREE_ID0, treesNear, simOf } from './state';
 
 // Variants refine an action's meaning (why a charge happens) for execution and reason text.
 export const V = {
@@ -96,11 +96,27 @@ const dcc = (c: Chimp, o: Chimp) => Math.hypot(o.position[0] - c.position[0], o.
 function coreCostOf(t: Tree, coreW: number, troop: Troop | undefined, x: ReturnType<typeof ix>): number {
   return coreW && troop ? coreW * Math.hypot(t.position[0] - x.coreX, t.position[2] - x.coreZ) / troop.radius : 0;
 }
-function remembersTree(c: Chimp, id: number): boolean {
+// Per-decision membership stamps over tree ids (performance only; same answers as scanning the lists): trees in
+// sight, trees in memory, and the last index of a tree in the fed-tree list. A stamp marks the entries of the
+// decision in progress, so nothing has to be cleared.
+let _stamp = 0;
+let _sight = new Int32Array(0), _mem2 = new Int32Array(0), _fed = new Int32Array(0), _fedK = new Int32Array(0);
+function stampTrees(world: World, c: Chimp, x: ReturnType<typeof ix>): number {
+  const n = world.trees.length;
+  if (_sight.length < n) { _sight = new Int32Array(n); _mem2 = new Int32Array(n); _fed = new Int32Array(n); _fedK = new Int32Array(n); _stamp = 0; }
+  if (++_stamp >= 0x7fffffff) { _sight.fill(0); _mem2.fill(0); _fed.fill(0); _stamp = 1; }
+  const st = _stamp;
+  for (let i = 0; i < x.trees.length; i++) { const k = x.trees[i] - TREE_ID0; if (k >= 0 && k < n) _sight[k] = st; }
   const mem = c.memory;
-  for (let i = 0; i < mem.length; i++) if (mem[i].kind === 'tree' && mem[i].entityId === id) return true;
-  return false;
+  for (let i = 0; i < mem.length; i++) if (mem[i].kind === 'tree') { const k = mem[i].entityId - TREE_ID0; if (k >= 0 && k < n) _mem2[k] = st; }
+  const ft = x.fedTree;
+  if (ft) for (let i = 0; i < ft.length; i++) { const k = ft[i] - TREE_ID0; if (k >= 0 && k < n) { _fed[k] = st; _fedK[k] = i; } }
+  return st;
 }
+/** Tree `id` is stamped in `arr` for the current decision (ids outside the tree range never are). */
+const stamped = (arr: Int32Array, id: number, st: number) => { const k = id - TREE_ID0; return k >= 0 && k < arr.length && arr[k] === st; };
+/** Known-tree Tree objects per knownTrees list (the list is rebuilt daily; performance only). */
+const _knownTrees = new WeakMap<number[], (Tree | undefined)[]>();
 function remembersChimp(c: Chimp, id: number): boolean {
   const mem = c.memory;
   for (let i = 0; i < mem.length; i++) if (mem[i].kind === 'chimp' && mem[i].entityId === id) return true;
@@ -120,6 +136,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   curEnd = x.actEnd; curDone = x.finished;
   curSilent = c.action === 'patrol' && x.v !== V.APPROACH && !!simOf(world).patrols[c.troopId];
   if (!c.alive) { out.push({ action: 'dead', targetId: -1, score: 1, reason: 'Life ended' }); return out; }
+  const st = stampTrees(world, c, x);
   const idx = index(world);
   const byId = idx.byId;
   const s = simOf(world);
@@ -195,7 +212,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     const shortlist = P.patchEcology === 1; // field: many remembered trees; score the few best by distance and hunger
     _mem.length = 0;
     for (let _i3 = 0; _i3 < c.memory.length; _i3++) { const m = c.memory[_i3];
-      if (m.kind === 'tree' && time - m.seenAt < P.memTravelHorizonH && x.trees.indexOf(m.entityId) < 0) {
+      if (m.kind === 'tree' && time - m.seenAt < P.memTravelHorizonH && !stamped(_sight, m.entityId, st)) {
         const t = idx.treeById.get(m.entityId); if (!t) continue;
         const d = Math.hypot(m.position[0] - px, m.position[2] - pz);
         if (d < P.memoryTreeMinM) continue;
@@ -210,10 +227,12 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     }
     // stage C7a (field): the community's best-known productive trees, valued by expectation unless seen (foraging.ts)
     const known = s.knownTrees?.[c.troopId];
-    if (known && shortlist && c.age >= 10) for (let i = 0; i < known.length; i += 2) {
+    let kt = known && _knownTrees.get(known);
+    if (known && !kt) { kt = []; for (let i = 0; i < known.length; i += 2) kt.push(idx.treeById.get(known[i])); _knownTrees.set(known, kt); }
+    if (known && kt && shortlist && c.age >= 10) for (let i = 0; i < known.length; i += 2) {
       const id = known[i];
-      if (x.trees.indexOf(id) >= 0 || remembersTree(c, id)) continue;
-      const t = idx.treeById.get(id); if (!t) continue;
+      if (stamped(_sight, id, st) || stamped(_mem2, id, st)) continue;
+      const t = kt[i >> 1]; if (!t) continue;
       const d = dxz(t, px, pz);
       if (d < P.memoryTreeMinM) continue;
       const q = Math.min(1, (x.treeCrop?.[id] ?? known[i + 1]) / P.fruitValueRef);
@@ -369,8 +388,9 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
 function revisit(x: ReturnType<typeof ix>, id: number, time: number, P: Params): number {
   const ft = x.fedTree;
   if (!ft || P.revisitW <= 0) return 0;
-  const k = ft.lastIndexOf(id);
-  return k < 0 ? 0 : P.revisitW * Math.exp(-(time - x.fedAt![k]) / P.revisitTauH);
+  // fed-tree ids are unique (execution.ts), so the stamped index is the list's lastIndexOf; valid for the decision in progress
+  if (!stamped(_fed, id, _stamp)) return 0;
+  return P.revisitW * Math.exp(-(time - x.fedAt![_fedK[id - TREE_ID0]]) / P.revisitTauH);
 }
 
 /** Stage C7a (field): the animal a party follower is ultimately following, if in sight (up to three links), else `o`. */
