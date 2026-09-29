@@ -168,6 +168,17 @@ function episode(tb: Tables, t: Table, id: number, y: number, d: number, D: numb
   return Math.min(ss(x / ramp), ss((D - x) / ramp));
 }
 
+/**
+ * Stage C7b (field; docs/staging/c7b-prereg.md 3.2): the share of a crown filled with ripe fruit at the peak of episode
+ * `k` of tree `id`, f = min + (1 - min) u^exp with u a hash (no rng). Crowns more than half filled are at least 9x scarcer
+ * than other fruit-bearing crowns (janmaat2016) [M]; cropFullExp sets P(f > 1/2) = 0.1. 1 when off (cropFullExp 0).
+ */
+export function cropFullness(P: Params, id: number, k: number): number {
+  return P.cropFullExp > 0 ? P.cropFullMin + (1 - P.cropFullMin) * hash01(id, k, 55) ** P.cropFullExp : 1;
+}
+/** Mean of cropFullness over trees and episodes: min + (1 - min) / (exp + 1). */
+export function meanFullness(P: Params): number { return P.cropFullExp > 0 ? P.cropFullMin + (1 - P.cropFullMin) / (P.cropFullExp + 1) : 1; }
+
 /** Phenology crop of a patch now (fruit units), before depletion; drought and fig-mast interventions included. */
 export function cropTarget(world: World, t: Tree, time: number): number {
   const P = paramsOf(world), s = simOf(world);
@@ -180,11 +191,13 @@ export function cropTarget(world: World, t: Tree, time: number): number {
   if (table.fig) {
     // asynchronous per-tree fig cycles (P-FOOD-3); the share of the cycle in fruit follows the record's fig share
     const period = P.figCycleDays, D = Math.min(period, P.figEpisodeDays);
-    const local = ((day + hash01(t.id, 7, 3) * period) % period + period) % period;
+    const phase = day + hash01(t.id, 7, 3) * period, local = (phase % period + period) % period;
     shape = local < D ? Math.min(ss(local / P.ripeRampDays), ss((D - local) / P.ripeRampDays)) : 0;
+    if (shape > 0 && P.cropFullExp > 0) shape *= cropFullness(P, t.id, Math.floor(phase / period) + 1000);
   } else {
     const y = Math.floor(day / 365), d = day - 365 * y;
-    shape = Math.max(episode(tb, table, t.id, y, d, P.episodeDays, P.ripeRampDays), episode(tb, table, t.id, y - 1, d + 365, P.episodeDays, P.ripeRampDays));
+    const a = episode(tb, table, t.id, y, d, P.episodeDays, P.ripeRampDays), b = episode(tb, table, t.id, y - 1, d + 365, P.episodeDays, P.ripeRampDays);
+    shape = P.cropFullExp > 0 ? Math.max(a > 0 ? a * cropFullness(P, t.id, y) : 0, b > 0 ? b * cropFullness(P, t.id, y - 1) : 0) : Math.max(a, b);
   }
   let v = t.maxFruit * shape;
   if (s.droughtUntil > time) v *= table.fig ? P.droughtFigFactor : P.droughtFruitFactor;
