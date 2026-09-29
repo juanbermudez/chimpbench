@@ -11,6 +11,7 @@ Working plan for the current program. Objectives: `docs/realism-roadmap.md`. Del
 | C7a review | independent reviewer | snapshot | verdict, fixes, bench A/B vs C6 |
 | C7b party size and range gap | C7b agent | worktree branch | diagnosis, pre-registration (docs/staging/c7b-prereg.md), field-only mechanisms, direction checks only |
 | C8 demography and early life | C8 agent | worktree branch | the C8 spec + docs/staging/early-life-prereg.md; T-DEM-14/15 and T-LET-5 sealed; target rows in docs/staging/c8-targets.patch.json |
+| Visual data guide | visual guide agent (Opus) | `main`: docs/guide/*, scripts/guide-data.ts, docs/data/guide-*.json, docs/guide-preview.html; owns docs/architecture.html once the data agent finishes | visuals for everything integrated: fruit calendar, normalized maps, paths, patrols, activity, validation grid, pipeline and decision-loop diagrams; offline, no raw coordinates |
 | Patrol data and guide | data agent | `main`, new files only | real patrol statistics, T-PAT-8 and T-BRD-1 bands, Gombe 15-min paths (jg05d), guide sections |
 
 Merge plan: once C7a is reviewed and patrols are green, merge C7b, then C8. Then WP0 (freeze) and WP4 (register the B7 targets), then **one combined proof** on merged `main` (patrols, C7b, C8), then independent reviews.
@@ -199,4 +200,43 @@ Each stage:
 **Success Criteria**: adapters beat the untuned model on their own labels on test; temperament effects in society runs keep their direction; night nesting holds.
 **Tests**: labeling validator (all batches valid); offline eval on the round-2 test split; paired society report.
 **Status**: Complete — docs/decide-finetune.md §10. Offline: each adapter best on its own labels (0.735 / 0.65 / 0.74). Society: aggressive +6.6 charges/adult-day vs rules, collaborative +16.2 grooming bouts, baseline and collaborative make no charges; the untuned model turned more aggressive under v2 inputs (+1.8 charges). RunPod $1.27 (project $2.50 of $5), Jev $1.24.
+
+## Track P: Trained populations vs wild chimpanzees (owner: decide-ft)
+Compares model-driven populations (untuned, baseline, aggressive, collaborative) with rules and with field data, through the virtual field observer and data/targets.json. New code stays in `scripts/ft-*`, `training/decide_ft/*` and `tests/ft-*`; `src/field`, `src/sim`, the guide and `scripts/compare-*` belong to other stages and are only imported or fed data.
+
+### Stage P1: Round-3 adapters (field + compressed inputs)
+**Goal**: adapters that are in-distribution for the field profile (the round-2 ones see 9.7% unseen option wordings and ~12× larger distances there).
+**Success Criteria**: each adapter best on its own labels on the round-3 test split, reported separately for compressed and field rows.
+**Tests**: labeling validator; offline eval on round-3 test.
+**Status**: In Progress — 1,200 contexts from snapshot-v3 (hash 1c20a219db3e; 600 field, 600 compressed); labeling.
+
+### Stage P2: Model-driven field observer and GPU batching server
+**Goal**: `scripts/ft-field.ts` (observer + model decisions, field-metrics JSON shape, all-one-policy conditions); `training/decide_ft/server.py` (one model per GPU, cross-run batching).
+**Success Criteria**: `--cond rules` reproduces field-metrics values exactly for the same seed and window; server throughput measured against per-run workers.
+**Tests**: tests/ft-field.test.ts (rules equivalence); bench_batch.py.
+**Status**: In Progress.
+
+### Stage P3: Behaviour scorecards for trained populations
+**Goal**: 30 observed days (after a 180-day rules burn-in), field profile, 5 seeds × {rules, untuned, baseline, aggressive, collaborative}; scored against the field targets.
+**Success Criteria**: per-condition scorecards with seed spread; differences between conditions with intervals.
+**Tests**: rescore through field-compare; per-run code and adapter hashes recorded.
+**Status**: Not Started.
+
+### Stage P4: Distilled stand-ins for long runs
+**Goal**: a fast linear imitation of each adapter over per-option features (action, class, rules score, needs, phase, relation to target), fitted to adapter probabilities on tens of thousands of contexts, run in-process at rules speed.
+**Success Criteria**: top-1 agreement with its adapter on held-out contexts reported; 3-day society metrics of stand-in vs adapter agree within intervals for charges, fights, grooming and coalitions. Every figure that uses a stand-in says so.
+**Tests**: agreement report; paired stand-in vs adapter society runs.
+**Status**: Not Started.
+
+### Stage P5: Long-horizon and study-mirroring scenarios
+**Goal**: 10 years × 5 seeds per condition with stand-ins: population growth, first-year mortality (T-DEM-1), e15 (T-DEM-2), birth interval, home ranges (T-RNG-1), encounters and killings (T-IGE-1, T-LET-1); plus scenarios mirroring field studies (Ngogo expansion after killings, T-LET-4; Taï patrol preset; Kanyawara baseline).
+**Success Criteria**: per-condition values with seed spread against the field bands.
+**Tests**: scenario summaries reproducible from seeds; code hash per run.
+**Status**: Not Started.
+
+### Stage P6: Tracking and visualization
+**Goal**: a run registry (every eval run with condition, seed, profile, window, code and adapter hashes) and a dashboard comparing synthetic and wild populations (scorecards, behaviour deltas, population and mortality curves, conflict, ranges); guide-ready JSON and SVG (src/compare/svg.ts) handed to the guide owner.
+**Success Criteria**: the dashboard rebuilds from the registry after each new run; no raw field coordinates published.
+**Tests**: registry schema check; privacy guard (assertNonSensitive) on exports.
+**Status**: Not Started.
 
