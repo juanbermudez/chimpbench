@@ -30,7 +30,7 @@ test('the field profile builds a real-scale world and the compressed default is 
   // ranges are seeded from the nominal circles (stage C6); the kernel-smoothed 95% isopleth is about as wide
   const nominal = [P.rangeRadiusWestM, P.rangeRadiusEastM, P.rangeRadiusNorthM];
   f.troops.forEach((t, i) => assert.ok(t.range && t.radius >= 0.9 * nominal[i] && t.radius <= 1.3 * nominal[i], `${t.name}: ${t.radius} m vs ${nominal[i]} m`));
-  assert.ok(f.trees.length > 20000, `${f.trees.length} food patches`);
+  assert.ok(f.trees.length > 12000, `${f.trees.length} food patches`); // 5.9 food trees/ha since C7b
   assert.ok(f.stream!.crossings.length > 10 && f.water.length > 50 && f.prey.length === P.preyMinGroups);
   // every founder sleeps in a nest on dry ground inside its range, and no patch stands in the channel
   for (const ch of f.chimps) assert.ok(ch.nest && streamCell(f, ch.position[0], ch.position[2]) <= BANK_B);

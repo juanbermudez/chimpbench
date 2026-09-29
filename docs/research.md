@@ -331,6 +331,45 @@ Proposed by the patrol evidence check (29 September 2026, C6 Step 1). Adopted by
 - *new* gruberZuberbuhler2013: Gruber T, Zuberbühler K 2013. Vocal recruitment for joint travel in wild chimpanzees. *PLoS ONE* 8(9):e76073. [doi:10.1371/journal.pone.0076073](https://doi.org/10.1371/journal.pone.0076073) (FT, PMC3783376).
 - *new* sobolewski2012: Sobolewski ME, Brown JL, Mitani JC 2012. Territoriality, tolerance and testosterone in wild chimpanzees. *Animal Behaviour* 84(6):1469–1474. [doi:10.1016/j.anbehav.2012.09.018](https://doi.org/10.1016/j.anbehav.2012.09.018) (indexed excerpt only; unverified).
 
+## Food competition and party size (stage C7b, 29 September 2026)
+
+Evidence for the C7b mechanisms ([staging/c7b-prereg.md](staging/c7b-prereg.md)). Bibliographic data checked against Crossref on 29 September 2026. "Abs" means abstract text only (publisher page or indexed abstract).
+
+- **Ecological constraints on party size, Kanyawara** [chapman1995] (Abs) [M].
+  - Setup: chimpanzees at Kibale and spider monkeys at Santa Rosa, 6 years each.
+  - Adults spent their time in small subgroups that changed size and composition often.
+  - The monthly size, density and distribution of food patches predicted subgroup size (multiple regression).
+  - The model tested: group size is limited by travel costs, because larger groups deplete patches faster.
+- **Party size tracks patch size, not habitat-wide food, Budongo** [newtonFisher2000] (Abs) [M].
+  - Setup: 4 years of food-supply and party-size data.
+  - Foraging party size fluctuated with the size of food patches.
+  - Relation to habitat-wide food abundance: negative or none.
+- **A feeding cost of grouping, Kanyawara** [emeryThompson2014] (Abs) [M].
+  - Setup: over 11 years.
+  - Receptive females raised the number of males in parties.
+  - Females had lower urinary C-peptide, a sign of lower energy balance, when they associated with more males.
+- **Patch residency and feeding parties, Kibale** [potts2011] (full text, author copy) [H].
+  - Patch residency per visit: 27.0 min at Ngogo vs 46.2 min at Kanyawara (Mann–Whitney Z = −9.188).
+  - Feeding party: 7.29 (1–40) at Ngogo, 8.39 (1–32) at Kanyawara.
+  - Patch size: 63.38 vs 66.87 cm DBH.
+  - The authors discuss giving-up densities and possible over-exploitation of patches at Kanyawara.
+  - Not a target; C7b uses it as a consistency check, not a fit.
+- **Crown fullness and food-tree density** [janmaat2016].
+  - Among trees bearing ripe fruit, crowns more than half filled were at least 9× scarcer than others (abstract; confirmed in full text by the C7a review).
+  - Old-growth transects meet one large ripe crop per 10 km; 21 km is the figure over all transects, logged forest included.
+  - 58–62% of mature transect trees were chimpanzee food species (full text, C7a review finding 10). With Table I's 9.81 feeding-size trees/ha, that is ≈ 5.9 food-species trees of feeding size per ha (derived).
+- **Marginal value theorem** [charnov1976] (theory) [M as applied].
+  - A forager maximizing its long-term intake rate values a patch by its gain over travel plus handling time.
+  - C7b applies it to trips to trees. The need cap is a design assumption.
+
+**New sources:**
+
+- *new* chapman1995: Chapman CA, Chapman LJ, Wrangham RW 1995. Ecological constraints on group size: an analysis of spider monkey and chimpanzee subgroups. *Behavioral Ecology and Sociobiology* 36(1):59–70. [doi:10.1007/BF00175729](https://doi.org/10.1007/BF00175729) (Abs).
+- *new* newtonFisher2000: Newton-Fisher NE, Reynolds V, Plumptre AJ 2000. Food supply and chimpanzee (*Pan troglodytes schweinfurthii*) party size in the Budongo Forest Reserve, Uganda. *International Journal of Primatology* 21(4):613–628. [doi:10.1023/A:1005561203763](https://doi.org/10.1023/A:1005561203763) (Abs).
+- *new* emeryThompson2014: Emery Thompson M, Muller MN, Wrangham RW 2014. Male chimpanzees compromise the foraging success of their mates in Kibale National Park, Uganda. *Behavioral Ecology and Sociobiology* 68(12):1973–1983. [doi:10.1007/s00265-014-1803-y](https://doi.org/10.1007/s00265-014-1803-y) (Abs).
+- *new* charnov1976: Charnov EL 1976. Optimal foraging, the marginal value theorem. *Theoretical Population Biology* 9(2):129–136. [doi:10.1016/0040-5809(76)90040-X](https://doi.org/10.1016/0040-5809(76)90040-X) (theory; standard reference).
+- potts2011 and janmaat2016 are already in the realism-design.md source table; the lines above add findings, not sources.
+
 ## Early life and maternal effects (chimpanzees)
 
 Stage B7, WP1 research pass, 29 September 2026. This is evidence for stage C8 ([realism-design.md](realism-design.md) §5, row "Maternal care", and §8 Stage C8) and for T-DEM-14 and T-DEM-15. Nothing here is implemented. Today the code models losing the mother only as extra death risk for unweaned orphans under 3 (`hazardOrphan`, `src/sim/life.ts`).

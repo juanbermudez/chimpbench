@@ -217,9 +217,10 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
         const d = Math.hypot(m.position[0] - px, m.position[2] - pz);
         if (d < P.memoryTreeMinM) continue;
         // stage C7a (field): a remembered tree is worth what the animal last saw in it
-        const worth = P.memCropBelief === 1 ? h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, (x.treeCrop?.[t.id] ?? 0.2) / P.fruitValueRef)) : h * P.memTravelHungerW;
-        if (shortlist) { _mem.push(t, worth - d / P.travelDistScaleM - revisit(x, t.id, time, P)); continue; }
-        offer('travel', t.id, worth - d / P.travelDistScaleM - revisit(x, t.id, time, P) - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + pers.sociability * env.fruitIndex * 0.1 - stay, V.TREE);
+        const crop = x.treeCrop?.[t.id] ?? 0.2;
+        const worth = P.memCropBelief === 1 ? h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) : h * P.memTravelHungerW;
+        if (shortlist) { _mem.push(t, worth - tripCost(worth, crop, d, h, P) - revisit(x, t.id, time, P)); continue; }
+        offer('travel', t.id, worth - tripCost(worth, crop, d, h, P) - revisit(x, t.id, time, P) - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + pers.sociability * env.fruitIndex * 0.1 - stay, V.TREE);
       } else if (m.kind === 'water' && c.thirst > 0.25 && c.age >= 3) {
         const d = Math.hypot(m.position[0] - px, m.position[2] - pz);
         offer('drink', m.entityId, c.thirst * 1.5 - d / P.drinkDistScaleM - 0.05);
@@ -235,8 +236,8 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       const t = kt[i >> 1]; if (!t) continue;
       const d = dxz(t, px, pz);
       if (d < P.memoryTreeMinM) continue;
-      const q = Math.min(1, (x.treeCrop?.[id] ?? known[i + 1]) / P.fruitValueRef);
-      _mem.push(t, h * P.memTravelHungerW * (0.55 + 0.45 * q) - d / P.travelDistScaleM - revisit(x, id, time, P));
+      const crop = x.treeCrop?.[id] ?? known[i + 1], worth = h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef));
+      _mem.push(t, worth - tripCost(worth, crop, d, h, P) - revisit(x, id, time, P));
     }
     if (shortlist) for (let k = 0; k < 4 && _mem.length; k++) {
       let bi = 1;
@@ -391,6 +392,18 @@ function revisit(x: ReturnType<typeof ix>, id: number, time: number, P: Params):
   // fed-tree ids are unique (execution.ts), so the stamped index is the list's lastIndexOf; valid for the decision in progress
   if (!stamped(_fed, id, _stamp)) return 0;
   return P.revisitW * Math.exp(-(time - x.fedAt![_fedK[id - TREE_ID0]]) / P.revisitTauH);
+}
+
+/**
+ * The distance cost of a trip to a tree worth `worth` holding `crop`, d metres away. Compressed: linear, d / travelDistScaleM.
+ * Stage C7b (field, tripRateValue; docs/staging/c7b-prereg.md 3.4): the value lost to walking time at the intake rate of
+ * the marginal value theorem (charnov1976), worth × Tw / (Tw + Tf): Tw the walk, Tf the feeding the tree offers up to the
+ * animal's need (design cap). Only registry values, so no free parameter.
+ */
+export function tripCost(worth: number, crop: number, d: number, h: number, P: Params): number {
+  if (P.tripRateValue !== 1) return d / P.travelDistScaleM;
+  const tf = Math.min(crop, h / P.fruitHungerFactor) / P.fruitIntakePerH, tw = d / P.walkMps / 3600;
+  return tf > 0 ? worth * tw / (tw + tf) : worth;
 }
 
 /** Stage C7a (field): the animal a party follower is ultimately following, if in sight (up to three links), else `o`. */

@@ -3648,6 +3648,60 @@
    "notes": "Rate at which a crop falls toward its target."
   },
   {
+   "id": "cropFullExp",
+   "group": "phenology",
+   "value": 0,
+   "units": "exponent",
+   "range": [
+    0,
+    20
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    100
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "janmaat2016"
+   ],
+   "clock": "none",
+   "symbol": "P.cropFullExp",
+   "file": "src/sim/phenology.ts",
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage C7b (field; docs/staging/c7b-prereg.md 3.2): at an episode's peak a crown is filled to f = cropFullMin + (1 - cropFullMin) u^this of its capacity, u = hash(tree, year; figs: cycle). 11.9 sets P(f > 1/2) = 0.1 among fruiting crowns: crowns more than half filled are at least 9x scarcer than other fruit-bearing crowns (janmaat2016; abstract, full text per the C7a review). k = ln((0.5 - 0.3) / 0.7) / ln 0.9. Mean fullness 0.354. 0 = off, every crown full at peak (the C7a model). Pre-registered field value 11.9; off by default after the C7b direction check (c7b-prereg addendum): with unlimited fallback foods, smaller crops moved feeding to the ground (fruit share 0.42) and parties apart."
+  },
+  {
+   "id": "cropFullMin",
+   "group": "phenology",
+   "value": 0,
+   "units": "fraction of capacity",
+   "range": [
+    0.15,
+    0.5
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.cropFullMin",
+   "file": "src/sim/phenology.ts",
+   "profiles": {
+    "compressed": 0,
+    "field": 0.3
+   },
+   "notes": "Stage C7b (field; c7b-prereg 3.2): the least fullness of a fruiting crown at its peak, so the smallest crop capacity (~0.2) still reaches the feeding threshold (0.06, perception.ts) and every fruiting crown counts as fruiting. Design. Unused while cropFullExp is 0. Read only when cropFullExp > 0 (off by default since the C7b direction check)."
+  },
+  {
    "id": "cropRiseRate",
    "group": "phenology",
    "value": 2,
@@ -6108,6 +6162,36 @@
     "field": 40
    },
    "notes": "Flight heads for a point this far away, re-aimed every tick. Field: about one tick of running (design)."
+  },
+  {
+   "id": "followCommit",
+   "group": "movement",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/research.md (patrols): gruberZuberbuhler2013, travel initiations recruit followers for joint travel (Budongo, 456 travel events)"
+   ],
+   "clock": "none",
+   "symbol": "P.followCommit",
+   "file": "src/sim/execution.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage C7b (field; c7b-prereg 3.1): a party follow of a companion on a committed trip to a tree (travelCommit) lasts until that trip ends, instead of a 4-8 min follow bout that drops followers halfway (C7b diagnosis: 22% following 5 min after a departure, 40% of companions kept). Interrupts still apply. Joint travel after recruitment (gruberZuberbuhler2013) [M]; following to the destination is a design assumption. 0 = off. Pre-registered field value 1; off by default after the C7b direction check (c7b-prereg addendum): party size fell (2.38 -> 2.13 on C7a) because long follows end alone when the traveller gets more than 1.6 x sight ahead."
   },
   {
    "id": "followMotherDistScaleM",
@@ -10903,7 +10987,7 @@
    "value": 0,
    "units": "per ha",
    "range": [
-    8,
+    4,
     24
    ],
    "rangeBasis": "assumed",
@@ -10923,7 +11007,7 @@
     "compressed": 0,
     "field": 9.8
    },
-   "notes": "Food patches (feeding-size fruit trees) per hectare inside community ranges. Field: P-FOOD-1 gives 9.8/ha at Kanyawara; set so a transect walk meets a fruiting tree every ~97 m (T-FOOD-11, fitted). Field value 18 was tuned against T-FOOD-11 (16 in the 10-seed development run; labelled tuned, C5a review). Stage C7a: field value set to the P-FOOD-1 prior, 9.8 feeding-size trees per ha (Kanyawara, janmaat2016), instead of the C5a value 18 tuned against T-FOOD-11 (docs/realism-design.md C7a rule 6)."
+   "notes": "Food patches (feeding-size fruit trees) per hectare inside community ranges. Field: P-FOOD-1 gives 9.8/ha at Kanyawara; set so a transect walk meets a fruiting tree every ~97 m (T-FOOD-11, fitted). Field value 18 was tuned against T-FOOD-11 (16 in the 10-seed development run; labelled tuned, C5a review). Stage C7a: field value set to the P-FOOD-1 prior, 9.8 feeding-size trees per ha (Kanyawara, janmaat2016), instead of the C5a value 18 tuned against T-FOOD-11 (docs/realism-design.md C7a rule 6). Stage C7b (c7b-prereg 3.3): the source-correct food-species density is 5.9 (9.81 feeding-size trees/ha x 0.60 food species, janmaat2016 full text, C7a review finding 10); pre-registered as the field value but kept at 9.8 after the direction check, because with unlimited fallback foods less fruit moves feeding to the ground. Enable 5.9 together with a fallback-food limit."
   },
   {
    "id": "patrolAlertM",
@@ -15262,8 +15346,8 @@
    "value": 60,
    "units": "m",
    "range": [
-    750.0,
-    3000
+    750,
+    100000
    ],
    "rangeBasis": "assumed-x2",
    "hardRange": [
@@ -15271,7 +15355,7 @@
     1000000.0
    ],
    "calibrate": false,
-   "evidence": "stylized",
+   "evidence": "design",
    "sources": [],
    "clock": "none",
    "symbol": "P.travelDistScaleM",
@@ -15280,8 +15364,7 @@
     "compressed": 60,
     "field": 60000
    },
-   "notes": "Travel to a remembered tree: score falls by 1 per this many metres. Travel-cost scale (score falls by 1 per this many metres). Compressed literal before C5a; field value set for real distances between food patches (design, tuned to T-ACT-2 and T-RNG-4 in stage C5a). Field value tuned in C5a against T-ACT-2 and T-RNG-4 (with the cohesion weights); both targets are labelled tuned (C5a review). Stage C7a: field value 60,000 m, fitted against the two C12 statistics declared fitted (path per hour, Taï; same-day displacement, Ngogo) on proof seeds 48 and 7 (probes 2,000 / 6,000 / 20,000 / 60,000 m: 101 / 148 / 186 / 214 m/h, 0.20 / 0.29 / 0.31 / 0.34 km); the knob saturates below the field values. Distance then barely matters within a range, as field chimpanzees skip the nearest productive tree 70% of the time (normand2009).",
-   "outOfRange": "C7a: fitted to the two C12 statistics declared fitted; the assumed band (×2 around the C5a value) did not anticipate value-driven goal choice."
+   "notes": "Travel to a remembered tree: score falls by 1 per this many metres. Travel-cost scale (score falls by 1 per this many metres). Compressed literal before C5a; field value set for real distances between food patches (design, tuned to T-ACT-2 and T-RNG-4 in stage C5a). Field value tuned in C5a against T-ACT-2 and T-RNG-4 (with the cohesion weights); both targets are labelled tuned (C5a review). Stage C7a: field value 60,000 m, fitted against the two C12 statistics declared fitted (path per hour, Taï; same-day displacement, Ngogo) on proof seeds 48 and 7 (probes 2,000 / 6,000 / 20,000 / 60,000 m: 101 / 148 / 186 / 214 m/h, 0.20 / 0.29 / 0.31 / 0.34 km); the knob saturates below the field values. Distance then barely matters within a range, as field chimpanzees skip the nearest productive tree 70% of the time (normand2009). Stage C7b (C7a review finding 4; c7b-prereg addendum): declared, not fitted: the field value 60,000 m switches the distance cost off within a range (at most ~0.05 score across it), a design choice. The pre-registered alternative, intake-rate trip values (tripRateValue), is implemented but off by default after its direction check. Range widened to hold the declared value."
   },
   {
    "id": "treeGridCellM",
@@ -15387,6 +15470,36 @@
     "field": 60
    },
    "notes": "Visible fruit trees are ranked by crop / (1 + d / this). Compressed stand-in scaled with sight (field ≈ compressed × 35/15, design)."
+  },
+  {
+   "id": "tripRateValue",
+   "group": "movement",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/research.md (C7b): charnov1976, the marginal value theorem (gain over travel plus handling time)"
+   ],
+   "clock": "none",
+   "symbol": "P.tripRateValue",
+   "file": "src/sim/candidates.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage C7b (field; c7b-prereg 3.4): a trip to a remembered or known tree is worth worth x Tf / (Tw + Tf) instead of worth - d / travelDistScaleM, with Tw = d / walkMps and Tf = min(believed crop, hunger / fruitHungerFactor) / fruitIntakePerH: the marginal value theorem's intake rate (charnov1976) with a need cap (design). No free parameter. Replaces the C7a linear cost fitted to 60,000 m (C7a review finding 4). 0 = linear cost. Pre-registered field value 1; off by default after the C7b direction check (c7b-prereg addendum): on C7a it raised straightness (0.19 -> 0.25) and party size (2.38 -> 2.70) but shortened days (30-min path 2,133 -> 1,389 m) and the furthest point of the day (628 -> 454 m)."
   },
   {
    "id": "udCellM",
