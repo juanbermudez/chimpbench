@@ -367,6 +367,26 @@ test('C8 survival tools: stratified Cox recovers a known hazard ratio with a tim
   assert.ok(b.lo < b.est && b.est < b.hi && b.mde > 0 && b.boot === 400);
 });
 
+test('C8 Cox fit: the risk-set sweep maximizes the brute-force Breslow partial likelihood (ties, left truncation, strata)', () => {
+  const rnd = seededRng(5), rows: CoxRow[] = [];
+  for (let i = 0; i < 400; i++) { const start = Math.floor(rnd() * 5), stop = start + 1 + Math.floor(rnd() * 10); rows.push({ start, stop, event: rnd() < 0.6 ? 1 : 0, x: [rnd() < 0.5 ? 1 : 0, rnd() * 2 - 1], stratum: i % 3 }); }
+  const ll = (b: number[]) => {
+    let s = 0;
+    for (const st of [0, 1, 2]) {
+      const rs = rows.filter(r => r.stratum === st);
+      for (const t of new Set(rs.filter(r => r.event).map(r => r.stop))) {
+        let s0 = 0, sd = 0, d = 0;
+        for (const r of rs) { const e = b[0] * r.x[0] + b[1] * r.x[1]; if (r.start < t && t <= r.stop) s0 += Math.exp(e); if (r.event && r.stop === t) { sd += e; d++; } }
+        s += sd - d * Math.log(s0);
+      }
+    }
+    return s;
+  };
+  const f = cox(rows, 2), eps = 1e-5;
+  assert.ok(f.converged);
+  for (const k of [0, 1]) { const bp = [...f.beta], bm = [...f.beta]; bp[k] += eps; bm[k] -= eps; assert.ok(Math.abs((ll(bp) - ll(bm)) / (2 * eps)) < 1e-4, `gradient ${k}`); }
+});
+
 test('C8 sealing: a sealed metric is never computed unless the run is unsealed (spy)', () => {
   const m = METRICS.find(x => x.id === 'T-DEM-15')!;
   assert.equal(m.sealed, SEALED);

@@ -12,36 +12,44 @@ export interface Fit { beta: number[]; se: number[]; converged: boolean }
 /**
  * Cox proportional hazards by Newton–Raphson on the partial likelihood, stratified (each stratum has its own baseline),
  * Breslow ties. `p` covariates per row. Step halving keeps the log partial likelihood rising; a tiny ridge keeps
- * separated data finite.
+ * separated data finite. Risk-set sums are kept by one sweep over event times (O(n p²) per iteration).
  */
 export function cox(rows: CoxRow[], p: number, iters = 40): Fit & { events: number } {
   const beta = new Array(p).fill(0);
   const byStratum = new Map<number, CoxRow[]>();
   let events = 0;
   for (const r of rows) { if (!(r.stop > r.start)) continue; let l = byStratum.get(r.stratum); if (!l) byStratum.set(r.stratum, l = []); l.push(r); if (r.event) events++; }
-  const groups = [...byStratum.values()].map(l => ({ rows: l, times: [...new Set(l.filter(r => r.event).map(r => r.stop))].sort((a, b) => a - b) }));
+  // per stratum: rows by stop and by start (descending) and the event rows at each distinct event time (descending), so one
+  // sweep over event times adds rows entering the risk set (stop >= t) and removes those not yet at risk (start >= t)
+  const groups = [...byStratum.values()].map(l => {
+    const byStop = l.map((_, i) => i).sort((a, b) => l[b].stop - l[a].stop), byStart = l.map((_, i) => i).sort((a, b) => l[b].start - l[a].start);
+    const at = new Map<number, number[]>();
+    l.forEach((r, i) => { if (r.event) { const q = at.get(r.stop); if (q) q.push(i); else at.set(r.stop, [i]); } });
+    return { rows: l, byStop, byStart, times: [...at.keys()].sort((a, b) => b - a), at };
+  });
   const RIDGE = 1e-6;
   const evaluate = (b: number[]) => {
     let ll = -RIDGE * b.reduce((a, v) => a + v * v, 0) / 2;
     const g = b.map(v => -RIDGE * v), H = b.map((_, i) => b.map((__, j) => (i === j ? RIDGE : 0)));
-    for (const { rows: rs, times } of groups) {
-      const eta = rs.map(r => { let e = 0; for (let k = 0; k < p; k++) e += b[k] * r.x[k]; return e; });
+    const s1 = new Array(p).fill(0), s2 = Array.from({ length: p }, () => new Array(p).fill(0));
+    for (const { rows: rs, byStop, byStart, times, at } of groups) {
+      const w = rs.map(r => { let e = 0; for (let k = 0; k < p; k++) e += b[k] * r.x[k]; return e; });
+      let s0 = 0, ia = 0, ir = 0;
+      s1.fill(0); for (const row of s2) row.fill(0);
+      const move = (i: number, sign: number) => {
+        const r = rs[i], e = sign * Math.exp(w[i]);
+        s0 += e;
+        for (let a = 0; a < p; a++) { s1[a] += e * r.x[a]; for (let c = 0; c < p; c++) s2[a][c] += e * r.x[a] * r.x[c]; }
+      };
       for (const t of times) {
-        let s0 = 0, d = 0;
-        const s1 = new Array(p).fill(0), s2 = Array.from({ length: p }, () => new Array(p).fill(0)), xd = new Array(p).fill(0);
-        let etad = 0;
-        for (let i = 0; i < rs.length; i++) {
-          const r = rs[i];
-          if (!(r.start < t && t <= r.stop)) continue;
-          const w = Math.exp(eta[i]);
-          s0 += w;
-          for (let a = 0; a < p; a++) { s1[a] += w * r.x[a]; for (let c = 0; c < p; c++) s2[a][c] += w * r.x[a] * r.x[c]; }
-          if (r.event && r.stop === t) { d++; etad += eta[i]; for (let a = 0; a < p; a++) xd[a] += r.x[a]; }
-        }
-        if (!d || !(s0 > 0)) continue;
-        ll += etad - d * Math.log(s0);
+        while (ia < byStop.length && rs[byStop[ia]].stop >= t) move(byStop[ia++], 1);
+        while (ir < byStart.length && rs[byStart[ir]].start >= t) move(byStart[ir++], -1);
+        if (!(s0 > 0)) continue;
+        const dead = at.get(t)!, d = dead.length;
+        for (const i of dead) { ll += w[i]; for (let a = 0; a < p; a++) g[a] += rs[i].x[a]; }
+        ll -= d * Math.log(s0);
         for (let a = 0; a < p; a++) {
-          g[a] += xd[a] - d * s1[a] / s0;
+          g[a] -= d * s1[a] / s0;
           for (let c = 0; c < p; c++) H[a][c] += d * (s2[a][c] / s0 - s1[a] * s1[c] / (s0 * s0));
         }
       }
