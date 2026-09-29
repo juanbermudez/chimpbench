@@ -18,12 +18,12 @@
   "Instrument validation against truth (sampling accuracy, classifier precision and recall) is allowed at any time, because truth is not a field target; each validation run is logged."
  ],
  "protocolFreeze": {
-  "stage": "C7a review findings 9-12",
+  "stage": "C10",
   "date": "2026-09-29",
-  "hash": "f29c8b0773effa06",
+  "hash": "fe5c3af51005d776",
   "previous": {
-   "stage": "C12 relabel",
-   "hash": "e88dcd8f700a2997"
+   "stage": "C7a review findings 9-12",
+   "hash": "f29c8b0773effa06"
   }
  },
  "protocolLog": [
@@ -938,6 +938,18 @@
    ],
    "verdicts": "combined proof",
    "class": "model change"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C10 implementer",
+   "seen": "the C10 direction checks (C10 rows only)",
+   "param": "freeze C10: f29c8b0773effa06 -> fe5c3af51005d776 (bioacoustic recorder, T-COM-5 and T-COM-6 metrics, T-COM-5 tuned flag; merged with main at C7c)",
+   "reason": "stage C10",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "combined proof",
+   "class": "freeze"
   }
  ],
  "targets": [

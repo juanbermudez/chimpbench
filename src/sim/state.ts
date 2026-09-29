@@ -99,6 +99,8 @@ export interface SimState {
   udNew: Record<number, Record<number, number>>;
   /** Stage C7a (field): per community, the day's best-known productive trees as flat [treeId, expected crop, …] pairs; absent when off. */
   knownTrees?: Record<number, number[]>;
+  /** Stage C7c (field, fallback.ts): depleted fallback-forage cells as [deficit in feeding-hours, time]; absent when off. */
+  fallback?: Record<number, [number, number]>;
   kills: Record<string, number>;
   vacantUntil: Record<number, number>;
   /** Community hunting day (daily draw) until this time. */

@@ -393,6 +393,43 @@ Evidence for the C7b mechanisms ([staging/c7b-prereg.md](staging/c7b-prereg.md))
 - *new* charnov1976: Charnov EL 1976. Optimal foraging, the marginal value theorem. *Theoretical Population Biology* 9(2):129–136. [doi:10.1016/0040-5809(76)90040-X](https://doi.org/10.1016/0040-5809(76)90040-X) (theory; standard reference).
 - potts2011 and janmaat2016 are already in the realism-design.md source table; the lines above add findings, not sources.
 
+## Fallback foods, joint travel and travel energetics (stage C7c, 29 September 2026)
+
+Evidence for the C7c mechanisms ([staging/c7b-prereg.md](staging/c7b-prereg.md) §6). Bibliographic data checked against Crossref on 29 September 2026.
+
+- **Energy intake rates by food, Kanyawara females** [uwimbabazi2019] (full text, PMC7450825) [H].
+  - Energy intake: ripe fruit 10.7 ± 1.3 kcal/min (figs 12.5, drupes 9.9), young leaves 6.2 ± 0.6, pith 3.4 ± 2.2.
+  - Dry-matter feeding rate: 3.4, 2.1 and 1.8 g/min respectively.
+  - Daily metabolisable energy intake ≈ 2,500 kcal, the same in drupe and fig months.
+  - Feeding time 308.7 ± 85 min per day.
+- **Fallback shares, Kibale** [potts2011] (full text, author copy) [H]: pith and stems 17.4% of feeding time at Kanyawara vs 1.0% at Ngogo; young leaves ~6.9% at Kanyawara. At Ngogo, leaves (mainly *Pterygota* saplings, 8.5% of feeding) are the fallback and pith is not [watts2012b].
+- **Pith as the fallback energy source, Kanyawara** [wrangham1991] (Abs) [M].
+  - Pith intake fell as fruit abundance rose and rose with rainfall; leaf intake did not track fruit.
+  - Piths are low in sugar and protein and high in hemicellulose and cellulose, partly digestible.
+  - They offer an alternative energy supply when fruit is scarce.
+- **Herbs at Kibale are scarcer than at Lomako; party size is restricted while feeding on them** [malenky1994] (Abs) [M].
+  - Kibale chimpanzees eat herbs as a fallback source of carbohydrate.
+  - Party size while feeding on terrestrial herbs is restricted at both sites, but the relative strength of that constraint could not be determined.
+- **Joint travel, Budongo Sonso** [gruberZuberbuhler2013] (full text, PLoS ONE) [H].
+  - 166 travel initiations. Vocal initiations (with "travel hoos") recruited at least one follower in 55 of 77 (71.4%); silent ones in 30 of 89 (33.7%).
+  - Initiators waited (stood motionless ≥ 5 s) in 58.4% of vocal and 53.9% of silent initiations.
+  - They checked back (gazed 90–180° behind toward others) in 39.0% and 25.8%.
+- **Cost of walking.**
+  - Net cost of transport across 62 bird and mammal species: 10.7 · M^−0.316 J kg⁻¹ m⁻¹ (M in kg) [taylor1982] (Abs) [H as an equation].
+  - Adult chimpanzees measured 0.14–0.29 ml O₂ kg⁻¹ m⁻¹ walking quadrupedally (individual values from the paper's table, seen only through an index snippet) [sockol2007] [M].
+  - Taylor's equation gives 0.17 ml O₂ kg⁻¹ m⁻¹ (3.3 J kg⁻¹ m⁻¹) at 40 kg, inside that range.
+- **Daily locomotor cost, Kanyawara** [pontzerWrangham2004] (Abs; the day ranges come from an indexed excerpt) [M]: wild chimpanzees spend about 10× more energy per day walking than climbing. Male day range was 2.4 km, and adult females and mothers about 2.0 and 1.9 km.
+
+**New sources:**
+
+- *new* wrangham1991: Wrangham RW, Conklin NL, Chapman CA, Hunt KD 1991. The significance of fibrous foods for Kibale Forest chimpanzees. *Philosophical Transactions of the Royal Society B* 334(1270):171–178. [doi:10.1098/rstb.1991.0106](https://doi.org/10.1098/rstb.1991.0106) (Abs).
+- *new* malenky1994: Malenky RK, Wrangham RW 1994. A quantitative comparison of terrestrial herbaceous food consumption by *Pan paniscus* in the Lomako Forest, Zaire, and *Pan troglodytes* in the Kibale Forest, Uganda. *American Journal of Primatology* 32(1):1–12. [doi:10.1002/ajp.1350320102](https://doi.org/10.1002/ajp.1350320102) (Abs).
+- *new* taylor1982: Taylor CR, Heglund NC, Maloiy GMO 1982. Energetics and mechanics of terrestrial locomotion. I. Metabolic energy consumption as a function of speed and body size in birds and mammals. *Journal of Experimental Biology* 97(1):1–21. [doi:10.1242/jeb.97.1.1](https://doi.org/10.1242/jeb.97.1.1) (Abs).
+- *new* sockol2007: Sockol MD, Raichlen DA, Pontzer H 2007. Chimpanzee locomotor energetics and the origin of human bipedalism. *PNAS* 104(30):12265–12269. [doi:10.1073/pnas.0703267104](https://doi.org/10.1073/pnas.0703267104) (Abs; table values via index snippet, PMC1941460).
+- *new* pontzerWrangham2004: Pontzer H, Wrangham RW 2004. Climbing and the daily energy cost of locomotion in wild chimpanzees: implications for hominoid locomotor evolution. *Journal of Human Evolution* 46(3):315–333. [doi:10.1016/j.jhevol.2003.12.006](https://doi.org/10.1016/j.jhevol.2003.12.006) (Abs).
+- uwimbabazi2019, potts2011, watts2012b and gruberZuberbuhler2013 are already cited; the lines above add findings.
+- **Unverified and not used as a value:** adult body mass. C7c uses 40 kg as a design value and reports 33–45 kg as a sensitivity range.
+
 ## Early life and maternal effects (chimpanzees)
 
 Stage B7, WP1 research pass, 29 September 2026. This is evidence for stage C8 ([realism-design.md](realism-design.md) §5, row "Maternal care", and §8 Stage C8) and for T-DEM-14 and T-DEM-15. Nothing here is implemented. Today the code models losing the mother only as extra death risk for unweaned orphans under 3 (`hazardOrphan`, `src/sim/life.ts`).
