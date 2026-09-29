@@ -2387,6 +2387,29 @@
    "notes": "How long a Scream call is shown and audible."
   },
   {
+   "id": "callSignatures",
+   "group": "communication",
+   "value": 1,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.callSignatures",
+   "file": "src/sim/events.ts",
+   "integer": true,
+   "notes": "Stage C10 switch (docs/realism-design.md 'C10 pre-registration'): pant-hoots carry six signature features and drums their inter-hit intervals (Call.features; src/sim/signals.ts). 0 = no features (the key is omitted), T-COM-5 and T-COM-6 n/a. Ablation switch."
+  },
+  {
    "id": "callSuppressW",
    "group": "communication",
    "value": 0.3,
@@ -2429,6 +2452,29 @@
    "symbol": "CALL_MINUTES (Whimper)",
    "file": "src/sim/events.ts",
    "notes": "How long a Whimper call is shown and audible."
+  },
+  {
+   "id": "callerDiscrim",
+   "group": "communication",
+   "value": 1,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.callerDiscrim",
+   "file": "src/sim/perception.ts",
+   "integer": true,
+   "notes": "Stage C10 switch: a listener counts stranger callers (heardN) by their perceived pant-hoot features (a new caller when the perceived vector differs from every caller already counted by more than discrimThreshold); drums carry no identity. 0 = the C6 rule (distinct true caller ids). Needs callSignatures. Ablation switch."
   },
   {
    "id": "candidateJitterSpan",
@@ -4269,6 +4315,72 @@
    "notes": "Mothers charge an aggressor of their offspring within this distance. Compressed stand-in scaled with sight (field ≈ compressed × 35/15, design)."
   },
   {
+   "id": "discrimDistW",
+   "group": "communication",
+   "value": 1,
+   "units": "feature SD per hearing radius",
+   "range": [
+    0,
+    3
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    10
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.discrimDistW",
+   "file": "src/sim/signals.ts",
+   "notes": "Stage C10: growth of perception noise with distance, per hearing radius of the call kind (design [L])."
+  },
+  {
+   "id": "discrimNoise0",
+   "group": "communication",
+   "value": 0.3,
+   "units": "feature SD",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    10
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.discrimNoise0",
+   "file": "src/sim/signals.ts",
+   "notes": "Stage C10: perception noise SD added to a heard call's features at zero distance (design [L]; callers are only partly distinguishable, desai2022)."
+  },
+  {
+   "id": "discrimThreshold",
+   "group": "communication",
+   "value": 1.5,
+   "units": "RMS feature difference",
+   "range": [
+    0.5,
+    3
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    10
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.discrimThreshold",
+   "file": "src/sim/perception.ts",
+   "notes": "Stage C10: a heard stranger pant-hoot counts as a new caller when its perceived features differ from every caller already counted in the window by more than this root-mean-square difference (design [L])."
+  },
+  {
    "id": "dispersalHazardPerY",
    "group": "reproduction",
    "value": 3,
@@ -4638,6 +4750,122 @@
    "symbol": "applyIntervention drought / fruitIndexNow",
    "file": "src/sim/interventions.ts",
    "notes": "Fruit index multiplier during a drought."
+  },
+  {
+   "id": "drumHitsMedian",
+   "group": "communication",
+   "value": 4,
+   "units": "hits",
+   "range": [
+    3,
+    6
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    2,
+    20
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "eleuteri2025"
+   ],
+   "clock": "none",
+   "symbol": "P.drumHitsMedian",
+   "file": "src/sim/signals.ts",
+   "notes": "Stage C10: median hits per drumming bout (eastern chimpanzees: median 4, mode 3; eleuteri2025)."
+  },
+  {
+   "id": "drumHitsSigma",
+   "group": "communication",
+   "value": 0.45,
+   "units": "log SD",
+   "range": [
+    0.2,
+    0.8
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    3
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "eleuteri2025"
+   ],
+   "clock": "none",
+   "symbol": "P.drumHitsSigma",
+   "file": "src/sim/signals.ts",
+   "notes": "Stage C10: log-normal spread of hits per bout; 0.45 with median 4 puts the mode at 3 after rounding (eleuteri2025; derived)."
+  },
+  {
+   "id": "drumIntervalMs",
+   "group": "communication",
+   "value": 229,
+   "units": "ms",
+   "range": [
+    150,
+    350
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    20,
+    2000
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "eleuteri2025"
+   ],
+   "clock": "none",
+   "symbol": "P.drumIntervalMs",
+   "file": "src/sim/signals.ts",
+   "notes": "Stage C10: mean inter-hit interval of a drumming bout (eleuteri2025: ~229 ms)."
+  },
+  {
+   "id": "drumJitter",
+   "group": "communication",
+   "value": 0.1,
+   "units": "fraction",
+   "range": [
+    0,
+    0.3
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.drumJitter",
+   "file": "src/sim/signals.ts",
+   "notes": "Stage C10: relative SD of each inter-hit interval (design)."
+  },
+  {
+   "id": "drumSwing",
+   "group": "communication",
+   "value": 0.3,
+   "units": "fraction",
+   "range": [
+    0,
+    0.5
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    0.9
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.drumSwing",
+   "file": "src/sim/signals.ts",
+   "notes": "Stage C10: eastern drummers alternate short and long intervals (eleuteri2025); intervals are mean x (1 -/+ this). The size is design."
   },
   {
    "id": "eloK",
@@ -6218,6 +6446,126 @@
     "field": 10
    },
    "notes": "Dependents follow the caretaker with urgency 1.3 + d / this. Body-scale distance: the same in both profiles (design)."
+  },
+  {
+   "id": "foodCallBase",
+   "group": "communication",
+   "value": 0.35,
+   "units": "probability",
+   "range": [
+    0.1,
+    0.7
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": true,
+   "evidence": "M",
+   "sources": [
+    "kalanBoesch2015"
+   ],
+   "clock": "none",
+   "symbol": "P.foodCallBase",
+   "file": "src/sim/execution.ts",
+   "notes": "Stage C10: base probability of a food grunt on arriving in a crown with crop > 0.3 (Taï: food calls at about half of feeding events, kalanBoesch2015, abstract, P. t. verus). May be refitted once to T-COM-8's band centre on development seeds (logged).",
+   "prior": {
+    "dist": "uniform"
+   }
+  },
+  {
+   "id": "foodCallCropW",
+   "group": "communication",
+   "value": 0.3,
+   "units": "probability per crop unit",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    5
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.foodCallCropW",
+   "file": "src/sim/execution.ts",
+   "notes": "Stage C10: food-call probability added per unit of crop above 0.3 (direction from docs/realism-design.md 5.8; design)."
+  },
+  {
+   "id": "foodCallMaleW",
+   "group": "communication",
+   "value": 0.05,
+   "units": "probability per male",
+   "range": [
+    0,
+    0.2
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "kalanBoesch2015"
+   ],
+   "clock": "none",
+   "symbol": "P.foodCallMaleW",
+   "file": "src/sim/execution.ts",
+   "notes": "Stage C10: food-call probability added per other adult male in sight, up to 3 (more calling with more males present, kalanBoesch2015; magnitude design)."
+  },
+  {
+   "id": "foodCallPartnerW",
+   "group": "communication",
+   "value": 0.15,
+   "units": "probability",
+   "range": [
+    0,
+    0.4
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "slocombe2010"
+   ],
+   "clock": "none",
+   "symbol": "P.foodCallPartnerW",
+   "file": "src/sim/execution.ts",
+   "notes": "Stage C10: food-call probability added when a bonded partner (bond >= 0.5) or the alpha is in sight (calls depend on an important social partner nearby, slocombe2010; magnitude design)."
+  },
+  {
+   "id": "foodCallRule",
+   "group": "communication",
+   "value": 1,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.foodCallRule",
+   "file": "src/sim/execution.ts",
+   "integer": true,
+   "notes": "Stage C10 switch: food grunts at arrival in a fruiting crown are probabilistic and audience-dependent (foodCall*; kalanBoesch2015, slocombe2010). 0 = the C7a rule (a grunt whenever the crop exceeds 0.3). Ablation switch."
   },
   {
    "id": "foodTreeDensityPerHa",
@@ -13735,6 +14083,54 @@
    "symbol": "computeCandidates",
    "file": "src/sim/candidates.ts",
    "notes": "Meat-share score lost per unit tension."
+  },
+  {
+   "id": "sigCommunitySD",
+   "group": "communication",
+   "value": 0.241,
+   "units": "feature SD (call noise = 1)",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    10
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "desai2022"
+   ],
+   "clock": "none",
+   "symbol": "P.sigCommunitySD",
+   "file": "src/sim/signals.ts",
+   "notes": "Stage C10: SD of the natal-community offset of the pant-hoot signature. Set by the same offline Monte Carlo so that community discriminant accuracy for two communities is about 1.3x chance (group differences weaker than individual ones, desai2022; the 1.3x reading is design, docs/realism-design.md 5.8). Result (--reps 16): 0.241 with sigIdentitySD 0.308."
+  },
+  {
+   "id": "sigIdentitySD",
+   "group": "communication",
+   "value": 0.308,
+   "units": "feature SD (call noise = 1)",
+   "range": [
+    0.1,
+    2
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    10
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "desai2022"
+   ],
+   "clock": "none",
+   "symbol": "P.sigIdentitySD",
+   "file": "src/sim/signals.ts",
+   "notes": "Stage C10: SD of a chimpanzee's individual signature offset per standardized pant-hoot feature, in units of the call-to-call SD. Set by the offline Monte Carlo of the recorder protocol (scripts/signals-metrics.ts --calibrate; no simulation run) so that leave-one-out discriminant accuracy for 18 callers x 20 calls is 2.8x chance (desai2022: 19.5% vs 6.9%). T-COM-5 is tuned by construction. Result (--reps 16): 0.308 gives identity 2.80x and community 1.30x chance with sigCommunitySD 0.241."
   },
   {
    "id": "sightDayM",

@@ -1,12 +1,12 @@
 {
- "about": "Golden world hashes (compressed profile). First recorded before the parameter registry migration (stage C4); re-recorded for intended changes at C6 (territories, 29 Sep 2026), C6b (incursion geometry, 29 Sep 2026) and the C6 patrol corrections (docs/realism-design.md §5.3.1: per-chimp contact memory, single file, release, no heard boost or energy gate; 29 Sep 2026). tests/fixtures/golden.ts computes them; world.sim.params is excluded.",
+ "about": "Golden world hashes (compressed profile). First recorded before the parameter registry migration (stage C4); re-recorded for intended changes at C6 (territories, 29 Sep 2026), C6b (incursion geometry, 29 Sep 2026) and the C6 patrol corrections (docs/realism-design.md §5.3.1: per-chimp contact memory, single file, release, no heard boost or energy gate; 29 Sep 2026) and C10 (call signatures, caller discrimination, audience-dependent food calls; on by default; with the C10 switches off the old hashes reproduce, tests/sim-signals.test.ts; 29 Sep 2026). tests/fixtures/golden.ts computes them; world.sim.params is excluded.",
  "recorded": "2026-09-29",
  "hashes": {
-  "seed48-rate1-2d": "292affa6f213e9cd",
-  "seed48-rate365-3d": "4e3b3c395f58afa0",
-  "seed7-rate1-2d": "0905b95ee9a982dd",
-  "seed7-rate365-3d": "0b19ce6092915343",
-  "seed21-rate1-2d": "1c0c0ff2c4a64c51",
-  "seed21-rate365-3d": "88f820dfb5ecd096"
+  "seed48-rate1-2d": "e6e4209f3c793aa4",
+  "seed48-rate365-3d": "4bc4412a853a920f",
+  "seed7-rate1-2d": "41c18197676490e2",
+  "seed7-rate365-3d": "63cb39071d6a84f6",
+  "seed21-rate1-2d": "ac846b81c739c02c",
+  "seed21-rate365-3d": "5d1379fc96b05627"
  }
 }
