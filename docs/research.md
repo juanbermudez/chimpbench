@@ -227,8 +227,17 @@ Proposed additions from the realism research pass. They are **not yet merged** i
 - Kibale phenology: Ngogo 1998–2017 mean 8.7% of stems with ripe fruit [potts2020]; Kanyawara 1998–2013 mean 8.4% (data) [chapman2018]; diet 72% fruit at Ngogo [watts2012a] and 64% at Kanyawara [emeryThompson2020].
 - Respiratory epidemics of human origin: Ngogo 2017 metapneumovirus killed 25 of 205 (12.2%); Kanyawara respirovirus 3 sickened 69% with no deaths [negrey2019]; Kanyawara rhinovirus C 2013 killed 5 of ~56 [scully2018].
 - Spatial memory at Taï (*P. t. verus*): travel linearity 0.962 [normandBoesch2009]; nearest productive tree chosen only 30% of the time [normand2009]; approach to out-of-sight trees from a mean 537.5 m [ban2014].
-- Food landscape (stage C7a): along transects a fruiting chimpanzee food tree every 97 m but a large crop only every 21 km; 9.8 feeding-size trees (DBH > 67 cm) per ha at Kanyawara [janmaat2016]. Large fruit trees are monitored with long-term spatial memory across seasons [janmaat2013a].
 - Hunting at Kanyawara vs Gombe: hunts on 7.9% vs 64.7% of colobus encounters; success 61.3% vs 62.3% [gilby2015].
+
+## Food landscape and tree knowledge (stage C7a; accepted after the C7a review, 29 September 2026)
+
+- **Transect rates and feeding-tree density** [janmaat2016] (full text, verified by the C7a review) [M].
+  - Kanyawara transects meet a fruiting chimpanzee food tree every 97 m.
+  - A large ripe crop turns up every 21 km over all transects, logged forest included; old-growth transects alone give one per 10 km.
+  - Table I: 9.81 average-sized chimpanzee feeding trees per ha (DBH > 67 cm). The Discussion describes these as trees of at least feeding-tree size, not only food species. 58–62% of mature transect trees were food species, so food-species trees of that size are ≈ 6/ha (derived).
+- **Long-term spatial memory of large fruit trees** [janmaat2013a] (full text) [M]: Taï chimpanzees monitor large fruit trees and remember feeding experiences across seasons.
+- **Botanical skills and inspection mistakes** [janmaat2013b] (full text) [M]: Janmaat KRL, Ban SD, Boesch C 2013. Taï chimpanzees use botanical skills to discover fruit: what we can learn from their mistakes. *Animal Cognition* 16(6):851–860. [doi:10.1007/s10071-013-0617-z](https://doi.org/10.1007/s10071-013-0617-z). Chimpanzees inspect empty trees of species that are fruiting synchronously, so a species' fruiting state is learned and an empty tree is learned on arrival (cited by `knownTreesK` and C7a rule 8).
+- **Stylization (C7a rule 8):** the daily list of the 40 best-known trees uses the true share of each species' trees in fruit and every tree's capacity, including trees no animal has seen: community omniscience about those 40 trees, labelled as such in `src/sim/foraging.ts`.
 
 ## Real-data comparison sources (stage C12, 29 September 2026)
 

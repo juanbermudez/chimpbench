@@ -155,3 +155,15 @@ test('phenology ingest parses per-tree (long and wide) and site-level files', ()
   const site = siteSeries(parseCsv('year,month,trees_monitored,n_ripe\n1998,Jan,100,8\n1998,Feb,100,12\n'), [])!;
   assert.deepEqual(site.years, [1998]); assert.equal(site.share[0][0], 0.08); assert.equal(site.share[0][1], 0.12);
 });
+
+test('C7a review finding 12: phenology ingest merges spelling variants and warns when one month holds most rows', async () => {
+  const { canonicalSpecies, monthSkewWarning } = await import('../scripts/ingest-phenology');
+  assert.equal(canonicalSpecies(' Ficus  cyathistupula'), 'Ficus cyathistipula');
+  assert.equal(canonicalSpecies('Ficus cyanthstipula'), 'Ficus cyathistipula');
+  assert.equal(canonicalSpecies('Premana angolensis'), 'Premna angolensis');
+  assert.equal(canonicalSpecies('Celtis durandii'), 'Celtis durandii');
+  const skewed = { years: [2000], bySpecies: new Map([['A b', new Map<string, [number, number]>([['2000-0', [1, 90]], ['2000-5', [1, 10]]])]]) };
+  const even = { years: [2000], bySpecies: new Map([['A b', new Map<string, [number, number]>([['2000-0', [1, 50]], ['2000-5', [1, 50]]])]]) };
+  assert.match(monthSkewWarning(skewed as never) ?? '', /90% of rows fall in jan/i);
+  assert.equal(monthSkewWarning(even as never), null);
+});

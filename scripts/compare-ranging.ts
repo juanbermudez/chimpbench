@@ -20,7 +20,7 @@ import { NORM_HALF, NORM_N, meanNorm, normAffinity, normMass, type NormGrid } fr
 import { analyseYear, byYear, fixedBandwidth, pooledOverlap, yearToYear, type YearAnalysis, type YearPair } from '../src/compare/ranging';
 import { checkSampling, monthOfDoy, mulberry32, qualify, schedulesOf, simDayOf, simDoy, type Fix, type Schedule } from '../src/compare/sampling';
 import { MIN_SEEDS, distanceVerdict } from '../src/compare/score';
-import { assertNonSensitive, scalarRow as mkScalar, scorecardMd, type ScoreRow } from '../src/compare/report';
+import { assertNonSensitive, C12_DEV_ROLE, scalarRow as mkScalar, scorecardMd, type ScoreRow } from '../src/compare/report';
 import { heatmapFigure, forestFigure, lineFigure, REAL, SIM, INK2, type ForestRow, type Series } from '../src/compare/svg';
 import { histogram, ks2, median, quantile } from '../src/compare/stats';
 import { createWorld, tickWorld } from '../src/simulation';
@@ -311,7 +311,7 @@ async function main() {
   ];
   const verdictRules = 'Scalar: similar if the sim median lies inside the range of real annual medians; different if no seed does; otherwise inconclusive. Distribution / map: distance ≤ the largest real leave-one-year-out distance is similar, > 2× it is different, otherwise inconclusive. Fewer than 5 seeds: inconclusive.';
   const guide = {
-    title: 'Real vs simulated home ranges', attribution, provenance, method, verdictRules, caveats,
+    title: 'Real vs simulated home ranges', role: C12_DEV_ROLE, attribution, provenance, method, verdictRules, caveats,
     privacy: 'No coordinates, positions, names or orientations: maps are centred, scaled by range radius, rotated and reflected; statistics are areas, ratios and distances in range radii.',
     scorecard: rows.map(r => ({ ...r, real: { ...r.real, value: r4(r.real.value), lo: r4(r.real.lo), hi: r4(r.real.hi), preFission: r.real.preFission === undefined ? undefined : r4(r.real.preFission) },
       sim: { ...r.sim, value: r4(r.sim.value), lo: r4(r.sim.lo), hi: r4(r.sim.hi), seeds: r.sim.seeds.map(r4) }, dist: r4(r.dist), distSeeds: r.distSeeds?.map(r4), baseline: r.baseline === undefined ? undefined : r4(r.baseline) })),
@@ -339,10 +339,10 @@ async function main() {
   // artifacts (gitignored): per-individual-year stats with names (no coordinates), the full result, the scorecard
   writeFileSync(rel(`${OUT}/real-indyears.json`), JSON.stringify(realYears.flatMap(y => y.inds), null, 1));
   writeFileSync(rel(`${OUT}/result.json`), JSON.stringify({ ...guide, sim: simAn.map(s => ({ seed: s.seed, h: s.h, sampling: s.sampling, between: s.between, indYears: s.years.flatMap(y => y.inds.map(i => ({ ...i, community: y.name }))) })) }, null, 1));
-  writeFileSync(rel(`${OUT}/scorecard.md`), scorecardMd('Real vs simulated home ranges: similarity scorecard', [`Sim: field profile, seeds ${SEEDS.join(', ')}, ${YEARS} sampled years after a ${BURN}-day burn-in; registry ${provenance.sim.registry}, sim code ${provenance.sim.simCodeHash}.`], rows, attribution, verdictRules, 'Real 2011–14', caveats));
+  writeFileSync(rel(`${OUT}/scorecard.md`), scorecardMd('Real vs simulated home ranges: similarity scorecard', [`Role: ${C12_DEV_ROLE}.`, `Sim: field profile, seeds ${SEEDS.join(', ')}, ${YEARS} sampled years after a ${BURN}-day burn-in; registry ${provenance.sim.registry}, sim code ${provenance.sim.simCodeHash}.`], rows, attribution, verdictRules, 'Real 2011–14', caveats));
   writeFigures(rel(`${OUT}/figures/`), { realIndMap, simIndMap, realCommMap, simCommMap, guide, fission, rows, simAn: simAn.map(s => ({ between: s.between, splits: s.years.filter(y => y.split).map(y => y.split!) })) });
   console.error(`done in ${((performance.now() - t0) / 1000).toFixed(0)} s → ${GUIDE}, ${OUT}/`);
-  console.log(scorecardMd('Real vs simulated home ranges: similarity scorecard', [`Sim: field profile, seeds ${SEEDS.join(', ')}, ${YEARS} sampled years after a ${BURN}-day burn-in; registry ${provenance.sim.registry}, sim code ${provenance.sim.simCodeHash}.`], rows, attribution, verdictRules, 'Real 2011–14', caveats));
+  console.log(scorecardMd('Real vs simulated home ranges: similarity scorecard', [`Role: ${C12_DEV_ROLE}.`, `Sim: field profile, seeds ${SEEDS.join(', ')}, ${YEARS} sampled years after a ${BURN}-day burn-in; registry ${provenance.sim.registry}, sim code ${provenance.sim.simCodeHash}.`], rows, attribution, verdictRules, 'Real 2011–14', caveats));
 }
 
 /** Real West vs Central divergence per year: spatial split labelled by network-cluster majority (see method.split). */

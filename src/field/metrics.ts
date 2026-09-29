@@ -54,6 +54,8 @@ export interface MetricDef {
 export const CELL_MIN = 20;
 
 const none = (note: string, n = 0): SeedValue => ({ value: null, n, note });
+/** Observation year of a time (hours): years count from the observer's start, after any burn-in (bug fix, C7a review round). */
+const obsYear = (d: Derived, h: number) => Math.floor((h - d.rec.time0) / (365 * 24));
 const H = (d: Derived, tick: number) => tick * d.tH;
 const MIN_SAMPLES = 300; // individuals need >= 5 h of 1-min samples to enter a budget (design)
 const NULLIPAROUS_BEFORE_Y = 12; // youngest Kibale mother 14.1 y (emeryThompson2007) minus the ±2 y founder age error (design)
@@ -1178,7 +1180,7 @@ function dayRange(d: Derived, who: 'male' | 'lact'): SeedValue {
 function yearKernel(d: Derived, troop: number, y: number): number {
   const P = d.rec.points, every = Math.round(30 / 60 / d.tH), xs: number[] = [], zs: number[] = [];
   d.rec.follows.forEach((f, fi) => {
-    if (f.troop !== troop || f.start < y * 365 * 24 || f.start >= (y + 1) * 365 * 24) return;
+    if (f.troop !== troop || obsYear(d, f.start) !== y) return;
     for (const i of d.followPts[fi]) if (P.t.data[i] % every === 0) { xs.push(P.x.data[i]); zs.push(P.z.data[i]); }
   });
   if (xs.length < 20) return 0;
@@ -1196,7 +1198,7 @@ function fewestCells(d: Derived): number {
   for (const troop of d.troops) for (let y = 0; y < Math.max(1, Math.floor(d.years + 1e-9)); y++) {
     const cells = new Set<string>();
     d.rec.follows.forEach((f, fi) => {
-      if (f.troop !== troop || f.start < y * 365 * 24 || f.start >= (y + 1) * 365 * 24) return;
+      if (f.troop !== troop || obsYear(d, f.start) !== y) return;
       for (const i of d.followPts[fi]) if (P.t.data[i] % every === 0) cells.add(cellOf(P.x.data[i], P.z.data[i], d.profile.cellM));
     });
     if (cells.size && cells.size < fewest) fewest = cells.size;
@@ -1210,7 +1212,7 @@ function fewestCells(d: Derived): number {
 function yearRange(d: Derived, troop: number, y: number): number {
   const P = d.rec.points, every = Math.round(5 / 60 / d.tH), cellDays = new Map<string, number>(), seen = new Set<string>();
   d.rec.follows.forEach((f, fi) => {
-    if (f.troop !== troop || f.start < y * 365 * 24 || f.start >= (y + 1) * 365 * 24) return;
+    if (f.troop !== troop || obsYear(d, f.start) !== y) return;
     const day = Math.floor((f.start + 6.5) / 24);
     for (const i of d.followPts[fi]) { if (P.t.data[i] % every !== 0) continue; const k = cellOf(P.x.data[i], P.z.data[i], d.profile.cellM); if (!seen.has(`${day}|${k}`)) { seen.add(`${day}|${k}`); cellDays.set(k, (cellDays.get(k) ?? 0) + 1); } }
   });
@@ -1284,7 +1286,7 @@ function strongBonds(d: Derived, year = -1): { a: number; b: number; index: numb
   const S = d.rec.scans, out: { a: number; b: number; index: number }[] = [];
   const scansOf = new Map<number, number[]>();
   for (let i = 0; i < S.t.n; i++) {
-    if (year >= 0 && Math.floor(H(d, S.t.data[i]) / (365 * 24)) !== year) continue;
+    if (year >= 0 && obsYear(d, H(d, S.t.data[i])) !== year) continue;
     const f = S.focal.data[i]; let l = scansOf.get(f); if (!l) scansOf.set(f, l = []); l.push(i);
   }
   for (const [a, idx] of scansOf) {

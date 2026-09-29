@@ -354,3 +354,50 @@ test('C7a review: encounter recall counts only episodes the team could observe (
   assert.ok(Math.abs(a.recallAll - 1 / 3) < 1e-12);
   assert.equal(a.precision, 1);
 });
+
+// C7a review finding 9: tests for the scoring rules added in C6/C7a.
+const spec = (id: string, extra: Record<string, unknown> = {}, lo = 0, hi = 1) => ({ id, metric: 'x', role: 'held-out' as const, encoded: false, evidence: 'M', accept: { lo, hi, units: '', basis: '' }, observer: { protocol: '', interval_min: null, unit: '' }, ...extra });
+const seeds3 = (v: number, extra: Partial<SeedValue> = {}): SeedValue[] => [0, 1, 2].map(() => ({ value: v, n: 10, ...extra }));
+
+test('C7a review: summarize counts encoded rows apart whatever their verdict', () => {
+  const rows = scoreTargets({ targets: [spec('T-PAT-5', { encoded: true }, 60, 240), spec('T-PAT-6', {}, 0.4, 0.7)] }, { 'T-PAT-5': seeds3(100), 'T-PAT-6': seeds3(0.5, { num: 5, den: 10 }) }, 'field');
+  assert.deepEqual(rows.map(r => r.verdict), ['pass', 'pass']);
+  const s = summarize(rows)['held-out'];
+  assert.equal(s.encoded, 1);
+  assert.equal(s.pass, 1);
+});
+
+test('C7a review: a cell-based row on fewer than CELL_MIN cells is scale in the field profile, scored otherwise', () => {
+  const file = { targets: [spec('T-RNG-3', {}, 0.75, 0.9)] };
+  assert.equal(scoreTargets(file, { 'T-RNG-3': seeds3(0.8, { cells: 12 }) }, 'field')[0].verdict, 'scale');
+  assert.equal(scoreTargets(file, { 'T-RNG-3': seeds3(0.8, { cells: 40 }) }, 'field')[0].verdict, 'pass');
+});
+
+test('C7a review: heldAsFail turns a pass into a fail and says why', () => {
+  const r = scoreTargets({ targets: [spec('T-PAT-5', { heldAsFail: 'paths inflated' }, 60, 240)] }, { 'T-PAT-5': seeds3(100) }, 'field')[0];
+  assert.equal(r.verdict, 'fail');
+  assert.ok(r.flags.includes('held as fail') && r.note.includes('paths inflated') && r.note.includes('would be pass'));
+});
+
+test('C7a review: T-RNG-1 is the median of annual kernels, with years counted from the observer start (after a burn-in)', () => {
+  const r = emptyRecords();
+  const time0 = 180 * 24;
+  r.days = 730; r.time0 = time0;
+  const T = 240, sig = [8, 16];
+  const xs: number[][] = [[], []], zs: number[][] = [[], []];
+  for (let y = 0; y < 2; y++) {
+    const start = time0 + y * 365 * 24 + 10;
+    r.follows.push({ team: 0, troop: 1, focal: 1, sex: 'male', lactating: false, start, end: start + 300, complete: true, lost: false, sunrise: 6.8, sunset: 18.8, truthTicks: [0, 0, 0, 0, 0, 0], nestTree: -1, firstTree: -1 });
+    for (let k = 0; k < 600; k++) {
+      const x = sig[y] * normal(k, 11 + y), z = sig[y] * normal(k, 21 + y), P = r.points;
+      P.t.push(Math.round(start * T) + k * 120); P.team.push(0); P.focal.push(1); P.cat.push(CAT_REST); P.action.push(0); P.height.push(0); P.party.push(3); P.partyInd.push(3); P.partyAM.push(1);
+      P.n5.push(0); P.n10.push(0); P.flags.push(0); P.feed.push(0); P.tree.push(-1); P.x.push(x); P.z.push(z); P.truthPatrol.push(0);
+      xs[y].push(Math.fround(x)); zs[y].push(Math.fround(z));
+    }
+  }
+  const d = derive(r), v = metric('T-RNG-1').compute!(d);
+  const half = r.mapSize / 2, pad = 4 * d.profile.kdeCellM, s2 = d.profile.lengthScale ** 2 / 1e6;
+  const annual = [0, 1].map(y => isoplethArea(kde(xs[y], zs[y], d.profile.kdeCellM, [-half - pad, -half - pad, half + pad, half + pad]), 0.95) * s2);
+  assert.ok(annual[1] > 2 * annual[0], `${annual}`);
+  assert.ok(Math.abs(v.value! - quantile(annual, 0.5)) < 1e-9 * annual[1], `${v.value} vs ${annual}`);
+});

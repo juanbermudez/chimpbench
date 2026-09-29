@@ -19,6 +19,8 @@ export interface ScoreRow {
  * The C12 statistics declared fitted in stage C7a before tuning (docs/realism-design.md "C7a mechanisms"); every other
  * statistic is held out. The label goes into the row note, the scorecard and the guide JSON.
  */
+/** Role of the Taï and Ngogo C12 scorecards since the C12 relabel (integrator, 2026-09-29); the Gombe 15-min paths are the held-out movement validation. */
+export const C12_DEV_ROLE = 'development diagnostic (seen): looked at repeatedly during development and used for direction checks; not validation (integrator ruling, 2026-09-29)';
 export const C12_FITTED: Readonly<Record<string, string>> = { dispKm: 'fitted in C7a: tuned against Ngogo GPS', pathRate: 'fitted in C7a: tuned against Taï' };
 /** C12 statistics seen before a model choice (C7a review finding 3): reported as diagnostic, not held out. */
 export const C12_SEEN: Readonly<Record<string, string>> = Object.fromEntries(['area95', 'area50', 'area95M', 'area95F', 'commArea95', 'territory']

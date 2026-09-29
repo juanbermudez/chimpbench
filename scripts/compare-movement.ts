@@ -24,7 +24,7 @@ import { PROFILES } from '../src/field/config';
 import { sim as simX } from '../src/field/observer';
 import { independent } from '../src/field/protocols';
 import { meanNorm, normAffinity, normalizeUD, type NormGrid } from '../src/compare/normalize';
-import { assertNonSensitive, distanceRow, scalarRow, scorecardMd, type ScoreRow } from '../src/compare/report';
+import { assertNonSensitive, C12_DEV_ROLE, distanceRow, scalarRow, scorecardMd, type ScoreRow } from '../src/compare/report';
 import { MIN_SEEDS } from '../src/compare/score';
 import { forestFigure, heatmapFigure, lineFigure, scatterFigure, REAL, SIM, type ForestRow, type Series } from '../src/compare/svg';
 import { histogram, ks2, median, quantile } from '../src/compare/stats';
@@ -286,7 +286,7 @@ async function main() {
       territoryRadiusKm: Object.fromEntries(ingest.groups.map(g => [g, r4(rReal(g) / 1000)])), territoryAreaKm2: Object.fromEntries(ingest.groups.map(g => [g, r4(realTerr.get(g)!.shape.area95 / 1e6)])),
       publishedTerritoryKm2: Object.fromEntries(ingest.groups.map(g => [g, terrRows.filter(r => r.group === g[0] && r.year >= 2014).map(r => ({ year: r.year, km2: r4(r.territoryKm2) }))])) } };
   const guide = {
-    title: 'Real vs simulated movement (Taï follows)', attribution, provenance, verdictRules, caveats,
+    title: 'Real vs simulated movement (Taï follows)', role: C12_DEV_ROLE, attribution, provenance, verdictRules, caveats,
     privacy: 'No coordinates or identities: step lengths, angles, rates, shares and normalized maps only. Taï territory sizes are the published group-year aggregates.',
     scorecard: rows.map(r => ({ ...r, real: { ...r.real, value: r4(r.real.value), lo: r4(r.real.lo), hi: r4(r.real.hi), preFission: r.real.preFission === undefined ? undefined : r4(r.real.preFission) }, sim: { ...r.sim, value: r4(r.sim.value), lo: r4(r.sim.lo), hi: r4(r.sim.hi), seeds: r.sim.seeds.map(r4) }, dist: r4(r.dist), distSeeds: r.distSeeds?.map(r4), baseline: r.baseline === undefined ? undefined : r4(r.baseline) })),
     profile: profileOut,
@@ -300,7 +300,7 @@ async function main() {
   mkdirSync(dirname(rel(GUIDE).pathname), { recursive: true });
   writeFileSync(rel(GUIDE), JSON.stringify(guide) + '\n');
   const header = [`Real: Taï East and South groups (P. t. verus), ${ingest.dateRange.join(' to ')}, ${ingest.follows} focal follows. Sim: field profile, seeds ${SEEDS.join(', ')}, ${YEARS} sampled year(s) after a ${BURN}-day burn-in; registry ${simProv.registry}, sim code ${simProv.simCodeHash}.`];
-  const md = scorecardMd('Real (Taï) vs simulated movement: similarity scorecard', header, rows, attribution, verdictRules, 'Real pooled', caveats);
+  const md = scorecardMd('Real (Taï) vs simulated movement: similarity scorecard', [`Role: ${C12_DEV_ROLE}.`, ...header], rows, attribution, verdictRules, 'Real pooled', caveats);
   writeFileSync(rel(`${OUT}/scorecard.md`), md);
   writeFileSync(rel(`${OUT}/result.json`), JSON.stringify({ ...guide, units: unitStats.map(u => ({ unit: u.unit, follows: u.s.follows, records: u.s.records, shares: u.s.shares, stepMedian: median(u.s.stepM), rate: median(u.s.rate), zoneRatio: u.s.zoneRatio })) }, null, 1));
 

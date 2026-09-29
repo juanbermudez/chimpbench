@@ -185,3 +185,16 @@ test('no scripted range shifts remain', async () => {
   const dir = new URL('../src/sim/', import.meta.url);
   for (const f of readdirSync(dir)) if (f.endsWith('.ts')) assert.ok(!/shiftRange|rangeRelaxPerDay/.test(readFileSync(new URL(f, dir), 'utf8')), f);
 });
+
+test('C7a review: familiarFullLevel sets where the familiarity cost starts (0.95 field: none inside the range; 0.5: from the core outward)', async () => {
+  const { territoryCost, gridOf, cellAt } = await import('../src/sim/territory');
+  const w = createWorld(21, { profile: 'field' });
+  const P = paramsOf(w), g = gridOf(w, P), c = w.chimps.find(ch => ch.alive && ch.troopId === 1 && ch.age >= 20 && ch.natalTroopId === 1)!;
+  const n = g.n * g.n, own = new Float32Array(n).fill(1), k = cellAt(g, c.position[0], c.position[2]);
+  own[k] = 0.8; // inside the 95% isopleth, outside the 50% core
+  const lv = { [c.troopId]: own } as Record<number, Float32Array>;
+  const at = (full: number) => territoryCost(w, c, c.position[0], c.position[2], { ...P, familiarFullLevel: full, territoryCostB: 0 }, lv, g);
+  assert.equal(P.familiarFullLevel, 0.95);
+  assert.equal(at(0.95), 0);
+  assert.ok(Math.abs(at(0.5) - P.territoryCostA * (1 - (P.udOuterLevel - 0.8) / (P.udOuterLevel - 0.5))) < 1e-6, `${at(0.5)}`);
+});
