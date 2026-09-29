@@ -12,6 +12,7 @@ import type { ParamId } from './params.gen';
 import { TICK_HOURS, TICK_SECONDS, byIdIn, huntOf, index, isTreeId, ix, simOf } from './state';
 import { resolveHunt } from './ecology';
 import { eatFruit, forageYield, fruitAt } from './phenology';
+import { bestFallbackNear, eatFallback, fallbackOn, fallbackStock, fallbackValue } from './fallback';
 import { recordAggression, recordConsolation, recordGrooming, recordMating, recordMeat, recordReconciliation, recordSupport } from './relations';
 import { BANK_A, BANK_B, CHANNEL, FORD, bankOf, bestFord, dryPoint, fordExits, streamCell, tangentNear } from './stream';
 import { noteContact, sectorContact } from './contact';
@@ -369,6 +370,32 @@ function startPatrol(world: World, c: Chimp): void {
   }
 }
 
+/**
+ * Stage C7c (field; docs/staging/c7b-prereg.md §6.2): the initiator of a committed trip stands and waits while a companion
+ * joining it (same tree) or following it is more than sightDayM behind and farther from the goal, up to partyWaitMaxMin per
+ * trip; the bout end moves with the wait. Initiators waited in 54-58% of travel initiations (gruberZuberbuhler2013) [H].
+ */
+function waitForParty(world: World, c: Chimp, gx: number, gz: number): boolean {
+  const P = paramsOf(world), x = ix(c);
+  if (x.prog >= P.partyWaitMaxMin * 60 || c.position[1] > 0.3) return false;
+  const lim2 = P.sightDayM * P.sightDayM, mine = (c.position[0] - gx) ** 2 + (c.position[2] - gz) ** 2;
+  const alive = index(world).alive;
+  for (let i = 0; i < alive.length; i++) {
+    const o = alive[i];
+    if (o === c || !o.alive || o.troopId !== c.troopId) continue;
+    const ox = ix(o);
+    const joiner = (o.action === 'travel' && o.targetId === c.targetId && ox.aux === c.id) || (o.action === 'follow' && o.targetId === c.id && ox.v === V.PARTY);
+    if (!joiner) continue;
+    const dx = o.position[0] - c.position[0], dz = o.position[2] - c.position[2];
+    if (dx * dx + dz * dz > lim2 && (o.position[0] - gx) ** 2 + (o.position[2] - gz) ** 2 > mine) {
+      x.prog += TICK_SECONDS; x.actEnd += TICK_HOURS; c.nextDecision = x.actEnd;
+      face(c, o);
+      return true;
+    }
+  }
+  return false;
+}
+
 /** Per-tick execution of the current action. */
 export function executeAction(world: World, c: Chimp): void {
   const P = paramsOf(world), WALK = P.walkMps, RUN = P.runMps, MATE_INTERVAL_H = P.mateIntervalH;
@@ -404,6 +431,7 @@ export function executeAction(world: World, c: Chimp): void {
       if (x.v === V.CALLER) { gx = x.joinX; gz = x.joinZ; stop = P.joinCallStopM; }
       else if (x.v === V.HOME || c.targetId < 0) { const t = idx.troopById.get(c.troopId)!; gx = t.center[0]; gz = t.center[2]; stop = t.radius * 0.6; }
       else { const t = idx.treeById.get(c.targetId); if (!t) return finish(world, c); gx = t.position[0]; gz = t.position[2]; stop = 3; }
+      if (x.v === V.TREE && x.aux < 0 && P.partyJoinTrip === 1 && waitForParty(world, c, gx, gz)) return;
       if (moveTo(world, c, gx, 0, gz, WALK, stop)) finish(world, c);
       return;
     }
@@ -673,6 +701,7 @@ function forageTick(world: World, c: Chimp): void {
   const idx = index(world);
   if (c.targetId < 0) {
     if (c.position[1] > 0.05) { moveTo(world, c, c.position[0], 0, c.position[2], WALK, 0.1); return; }
+    if (fallbackOn(P)) return fallbackTick(world, c);
     if (world.tick % 16 === (c.id % 16)) {
       const a = hash01(c.id, world.tick, 3) * Math.PI * 2;
       x.gx = c.position[0] + Math.sin(a) * 0.8; x.gz = c.position[2] + Math.cos(a) * 0.8;
@@ -715,6 +744,27 @@ function forageTick(world: World, c: Chimp): void {
   else if (t.fruit < 0.02) { forget(c, t.id, 'tree'); finish(world, c); } // eatFruit leaves the current crop in t.fruit
   // stage C7a (field): feed until the crown is emptied or the animal is sated (up to feedMaxMin in one crown)
   else if (P.feedMaxMin > 0 && c.nextDecision <= world.time + TICK_HOURS && c.actionTime < P.feedMaxMin * 60) { x.actEnd = c.nextDecision = world.time + 2 * TICK_HOURS; }
+}
+
+const _fbPt: [number, number] = [0, 0];
+/**
+ * Stage C7c (field; c7b-prereg §6.1): feeding on patchy, depletable fallback foods while walking at the forage pace, toward
+ * a visible better cell, or on along the current heading once the own cell is below fallbackMoveOnFrac of its stock
+ * (dependants stay by their caretaker). Intake and depletion: fallback.ts.
+ */
+function fallbackTick(world: World, c: Chimp): void {
+  const P = paramsOf(world), x = ix(c), px = c.position[0], pz = c.position[2];
+  if (world.tick % 16 === (c.id % 16)) {
+    const here = fallbackValue(world, px, pz), best = dependentOn(world, c) ? here : bestFallbackNear(world, px, pz, x.sight, _fbPt);
+    if (best > here) { x.gx = _fbPt[0]; x.gz = _fbPt[1]; }
+    else if (!dependentOn(world, c) && fallbackStock(world, px, pz) < P.fallbackMoveOnFrac) {
+      // walk on through the forest on a wandering heading (a point ahead; design)
+      const a = c.heading + (hash01(c.id, world.tick, 4) - 0.5);
+      x.gx = px + Math.sin(a) * 30; x.gz = pz + Math.cos(a) * 30;
+    } else { const a = hash01(c.id, world.tick, 3) * Math.PI * 2; x.gx = px + Math.sin(a) * 0.8; x.gz = pz + Math.cos(a) * 0.8; }
+  }
+  if (x.gx !== 0 || x.gz !== 0) moveTo(world, c, x.gx, 0, x.gz, P.walkMps * 0.3, 0.2);
+  c.hunger = clamp(c.hunger - eatFallback(world, c, TICK_HOURS));
 }
 
 function pairTick(world: World, c: Chimp, o: Chimp | undefined): void {
