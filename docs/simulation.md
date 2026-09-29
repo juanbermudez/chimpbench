@@ -838,8 +838,9 @@ Cycling starts at the first-swelling age (10.2–11.4 y) once lactational amenor
 
 **Conception** (`ovulate`), decided once per cycle at ovulation [M]:
 - `mating = min(1, (copulation weight + 0.6 × association days) / 3)`.
-- `P = fecundity(age) × mating × (0.5 if health ≤ 0.6) × (0 at the population cap)`.
-- `fecundity` is 0 below 13 y, ramps to 0.22 at 14.5 y (adolescent subfecundity), stays 0.22 to 35 y, falls 0.013 per year to 45 y, is 0.04 to 50 y, then 0.
+- `P = fecundity(age) × conditionFertility(cond) × mating × (0.5 if health ≤ 0.6) × (0 at the population cap)`.
+- `fecundity` (stage C8) is 0 below 13 y, ramps to 0.22 at 14.5 y (adolescent subfecundity), stays 0.22 to 25 y, then falls linearly to 0 at 50 y (about 4% of the peak per year: emeryThompson2007 report fertility falling ~0.008 births/y per year after 25; no births after 50 at Ngogo, wood2023) [M].
+- `conditionFertility` = 0.5 + 0.5 × min(1, cond / condGood): body condition scales conception (design). No rank term: female rank reaches fertility only through feeding and condition (`tests/sim-reproduction.test.ts`; T-DEM-14 held out and sealed).
 - With ample mating an adult conceives in about 1 of 4–5 cycles (design target ~4).
 - **Paternity:** the sire is drawn in proportion to copulation weights, or to association if there were no copulations. Mate-guarding high-rankers therefore sire a disproportionate share [M]. A "(Genetic record)" event notes conception; chimps do not know paternity.
 
@@ -847,6 +848,7 @@ Cycling starts at the first-swelling age (10.2–11.4 y) once lactational amenor
 - Gestation is 222–232 bio-days (Gombe mean 225.3 d, research.md §8).
 - At the population cap (120 living) the pregnancy ends without a live birth.
 - The infant's appearance mixes the parents'. Its bonds are 0.95 with the mother and 0.5 with maternal siblings.
+- **Prenatal condition** (C8): the mother keeps a running mean of her condition over the pregnancy (`gestCond`); the newborn starts at that condition, with a growth record of min(1, gestCond / condGood) (`birthCondFromMother`; lemoine2020a's hypothesis, design).
 - **After birth:** the mother lactates, and lactational amenorrhea lasts 3.5–4.5 y. If an unweaned infant dies, cycling resumes about 0.15 y later.
 - **Weaning** happens at the individual weaning age (4.1–5.2 y; Kanyawara mean suckling end 4.8 y, research.md §2). Nursing refusals start at 3.2 y.
 
@@ -857,7 +859,7 @@ Cycling starts at the first-swelling age (10.2–11.4 y) once lactational amenor
 - On joining she enters at the bottom of the female queue (lowest resident Elo − 30). Her bonds to non-members fall to 35%, allies are cleared, and `immigrantAge` is set.
 - For about 2 years residents may target her and she stays near adult males.
 
-**Mortality** (`hazard`, `slowLife`, [life.ts](../src/sim/life.ts)). Annual hazards are fitted to Ngogo (Wood et al. 2017) [M]:
+**Mortality** (`hazard`, `slowLife`, [life.ts](../src/sim/life.ts)). The registry's annual hazards are all-cause hazards fitted to Ngogo (Wood et al. 2017) [M]:
 
 | Age | Female | Male |
 | --- | --- | --- |
@@ -869,10 +871,26 @@ Cycling starts at the first-swelling age (10.2–11.4 y) once lactational amenor
 | 35–45 | 0.017 | 0.042·e^(0.08(age−35)) |
 | ≥ 45 | 0.017·e^(0.12(age−45)) | (same curve) |
 
-- The hazard is multiplied by `1 + 8·max(0, 0.6 − health) + 3·injury`. Unweaned orphans under 3 y without a caretaker add 2.5 per year.
+- **Re-fitted baseline (C8).** The baseline is the all-cause value minus the expected epidemic hazard at the registry's epidemic parameters (arrival × the SIR final size at `epidemicR0` × the mean case fatality, by age class: infants, 5–29 y, 30 y and over), floored at 20% of the all-cause value, so epidemic deaths, now modelled explicitly, are not counted twice. Baseline deaths are recorded as illness (old age after 45).
+- The hazard is multiplied by `1 + 8·max(0, 0.6 − health) + 3·injury`. The old orphan hazard is gone (C8): losing the mother acts through feeding, condition and protection.
 - The death probability per slow step is `1 − exp(−h × bioDays/365.25)`.
-- With health 1 and no injury this gives q1 = 0.15 and e15 ≈ 35 y (female) / 21 y (male), as in the test.
-- Violence and poor condition come on top. The simulated life course gives e15 = 32.6 / 19.5 y, below Ngogo's 35.1 / 21.0 ([§18](#18-validation)).
+- With health 1 and no injury the baseline plus the expected epidemic hazard gives q1 = 0.15 and e15 ≈ 35 y (female) / 21 y (male), as in the test (analytic life table).
+- Violence, poor condition, snares and the realized epidemics come on top of the baseline. Before C8 the simulated life course gave e15 = 32.6 / 19.5 y, below Ngogo's 35.1 / 21.0 ([§18](#18-validation)).
+
+**Body condition and growth** (C8, [life.ts](../src/sim/life.ts); docs/staging/early-life-prereg.md §2.6):
+- Condition `cond` is an exponential average of (1 − hunger) with a 30 eco-day time constant. Below `condLow` (0.3) the health target falls linearly (to 0 at condition 0), on top of the old −0.3 when hunger is above 0.9.
+- The growth record `grow` averages min(1, cond / condGood) with a 3-year time constant until 15 y, then freezes. `strength` is multiplied by 0.5 + 0.5 × grow ([hierarchy.ts](../src/sim/hierarchy.ts)); contests and orders use ratios, so an equal record changes nothing except at the strength floors.
+- A pre-run check with every maternal channel off (field, 2 years) found a pooled juvenile median condition of 0.60 (p5 0.52), inside the design band 0.55–0.85, so `condGood` and `condLow` kept their design values.
+- Unweaned animals feed themselves only partly: their fruit and fallback intake ramps from 0 at 0.5 y to 1 at their own weaning age ([execution.ts](../src/sim/execution.ts) `selfFeed`). A motherless unweaned infant starves in about 55 eco-days; a weaned juvenile orphan keeps its condition.
+
+**Respiratory epidemics** (C8, [disease.ts](../src/sim/disease.ts)) [M rates, design mechanism]:
+- A human-origin respiratory virus reaches a community without a running outbreak at 0.1 per community-year (Poisson, ecological clock; T-DEM-5 fitted).
+- It spreads within parties: at each slow step every susceptible party member catches it with probability 1 − (1 − p)^(ill members), p = 1 − exp(−β·Δt). A case lasts 3.2 eco-days (infectious throughout), then recovers (immune to that outbreak) or dies: case fatality 0.04 at 5–29 y at median virulence, odds × 5.01 for infants and × 3.86 at 30 y or more (negrey2019 as priors; T-DEM-7 held out), with a per-outbreak log-normal virulence (sd 0.8). Sick animals rest more (rest +0.5) and their health target drops 0.25. The observer's health monitoring sees who is ill (`chimp.sim.ill`).
+- In life-course mode (ageRate 365) outbreaks are rare per biological year: a known distortion ([§3](#3-time)).
+
+**Snare injuries** (C8, [snares.ts](../src/sim/snares.ts)) [design; T-DEM-9 fitted]:
+- Risk is 0.2 in the interior and rises to 1 at the map edge over the outer quarter of the half-width (park-boundary proxy). Independent walkers on the ground are caught at `snareHazardPerKm` × risk per km walked (slow-step displacement).
+- An injury is permanent: severity 0.3–1, feeding intake × (1 − 0.2 × severity); an acute wound of 0.3; death risk 2% (Ngogo reports no known snare deaths). Slower climbing is not modelled (stylization).
 
 **Death** (`killChimp`, `slimDead` in [life.ts](../src/sim/life.ts)):
 - The chimp stays in `world.chimps` with `deathTime` and `causeOfDeath`. Its spatial memory and perception snapshot are dropped at once (nothing reads them).
@@ -880,10 +898,13 @@ Cycling starts at the first-swelling age (10.2–11.4 y) once lactational amenor
 - Kin get episodes.
 - A mother whose unweaned infant under 3 y dies carries the body for 1–4 days in 35% of cases [M]. While she does, `mother.carryingDeadId` holds the infant's id (−1 once she leaves the body or dies). The renderer draws the body limp against her chest (stylization) and, when she leaves it, lays it where she was and fades it out; the dead infant's own `position` never moves.
 
-**Orphans** (`adopt`) [M]:
-- Offspring under 8 y, or unweaned, may be adopted by a maternal sibling of 8 y or over (sisters first, then the oldest). The probability is 0.15 if the orphan is under 3 y and 0.6 otherwise.
+**Orphans** (`adopt`; stage C8 fixes, docs/staging/early-life-prereg.md §2.11) [M ages; design rates]:
+- Offspring under 8 y, or unweaned, may be adopted by an older maternal sibling of 8 y or over (sisters first, then the oldest). The probability is 0.15 if the orphan is under 3 y and 0.6 otherwise.
 - Otherwise, orphans of 3 y and over are adopted with probability 0.3 by their most-bonded community member of 12 y and over (bond > 0.35).
-- Orphans of 3 y and over are treated as weaned. Younger unweaned orphans without a caretaker lose health when hungry and rarely survive.
+- When a caretaker dies, adoption re-runs only for wards the same rule covers (no RNG is drawn otherwise, and the link is cleared). Adoption no longer weans: unweaned orphans stay on the self-feeding ramp.
+- The offspring of a mother who dies, under 12 y and in her community, get a bereavement stress of +0.2 on the resting stress floor that halves every 180 bio-days (girardButtoz2021's 2-year window; no permanent offset).
+
+**Guardians** (C8, [candidates.ts](../src/sim/candidates.ts) `guardianOf`, [conflict.ts](../src/sim/conflict.ts)): after weaning the mother, or an adoptive caretaker while the ward is under 12, acts only through existing levers. (1) Feeding tolerance: a within-community feeding supplant of a ward is less likely (−0.3) while the guardian is seen, within the defence range and not dominated by the supplanter; a guardian never supplants its ward. (2) Protection: the same test lowers status, redirect, grudge, coercion and immigrant charges (−0.3); guardians defend. (3) Association: weaned juveniles under 10 follow the guardian. (4) Coalition support: caretakers count as kin until the ward is 12 (mothers at any age, as before). Guardians share plant food. No rule reads the ward's sex or keys paternity, rank or fertility on orphan status (`tests/sim-orphan-blind.test.ts`). `maternalLevers` 0 is the ablation switch. With today's unlimited fallback food the feeding lever is weak: a supplanted juvenile loses little intake (see the C8 report).
 
 **Population cap:** 120 living (`POP_CAP`). It blocks conception and live birth only; nobody is culled.
 

@@ -323,3 +323,19 @@ test('C8 snare hazard only on the ground in risky cells', async () => {
   assert.equal(ix(inner).snare, 0, 'no risk in the interior (interior risk 0)');
   assert.equal(ix(tree).snare, 0, 'no snares in the trees');
 });
+
+test('C8 an introduction exposes the index case\'s whole party; outbreaks arrive per community at the registry rate', async () => {
+  const { dailyDisease } = await import('../src/sim/disease');
+  const w = createWorld(48, { params: { epidemicArrivalPerY: 10 } });
+  for (let i = 0; i < 240; i++) tickWorld(w);
+  const s = simOf(w);
+  let days = 0;
+  while (!Object.keys(s.outbreaks).length && days < 2000) { dailyDisease(w); days++; }
+  const [troop] = Object.keys(s.outbreaks).map(Number), ob = s.outbreaks[troop];
+  assert.ok(ob, 'an outbreak arrived');
+  const ill = w.chimps.filter(c => c.alive && ix(c).outbreak === ob.id);
+  assert.ok(ill.length >= 1 && ill.every(c => c.troopId === troop && ix(c).ill > w.time));
+  const party = w.parties.find(p => p.members.includes(ill[0].id))!;
+  assert.deepEqual(ill.map(c => c.id).sort((a, b) => a - b), party.members.filter(id => w.chimps.find(c => c.id === id)!.alive).sort((a, b) => a - b), 'the whole party');
+  assert.ok(days < 400, `${days} days at 10 per community-year`);
+});

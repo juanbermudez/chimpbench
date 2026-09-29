@@ -26,9 +26,12 @@ export function dailyDisease(world: World): void {
     // per-outbreak virulence on the odds scale, log-normal around 1 (design spread)
     const v = Math.exp(P.epidemicVirulenceSd * gauss(world));
     byTroop[t.id] = { id, start: world.time, v };
+    // the virus arrives through human contact with a party (researchers, tourists, neighbours of the park: design), so the
+    // index case's whole party is exposed at once; a single isolated case would mostly fizzle out unseen
     const index0 = members[Math.floor(random(world) * members.length)];
-    infect(world, index0, id);
-    addEvent(world, `A respiratory illness appeared in the ${t.name}: ${index0.name} is coughing`, 'life', [index0.id], t.id, 1);
+    const party = world.parties.find(p => p.id === index0.partyId && p.troopId === t.id);
+    for (const pid of party ? party.members : [index0.id]) { const c = index(world).byId.get(pid); if (c && c.alive) infect(world, c, id); }
+    addEvent(world, `A respiratory illness appeared in the ${t.name}: ${index0.name}'s party is coughing`, 'life', [index0.id], t.id, 1);
   }
 }
 
