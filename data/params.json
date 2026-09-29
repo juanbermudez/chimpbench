@@ -5337,7 +5337,7 @@
    "value": 0,
    "units": "feeding-hours per cell",
    "range": [
-    0.5,
+    0,
     2
    ],
    "rangeBasis": "assumed",
@@ -5353,9 +5353,9 @@
    "file": "src/sim/fallback.ts",
    "profiles": {
     "compressed": 0,
-    "field": 1.0
+    "field": 0
    },
-   "notes": "Stage C7c (field; c7b-prereg 6.1): fallback foods (pith, herbs, sapling leaves) are depletable: a forageCellM cell holds this many animal-hours of feeding at the full rate when full, on average (skewed by fallbackPatchExp); feeding removes stock in proportion to what is left and a deficit regrows over fallbackRegrowDays. Design: a mean hectare holds about one animal-hour; herb feeding restricts party size (malenky1994). Consistency, not the setting: a 20-member community eating ~1.2 h of fallback per animal-day needs ~7 km2 at steady state. 0 = off, the unlimited field (compressed; C7a-C7b field)."
+   "notes": "Stage C7c (field; c7b-prereg 6.1): fallback foods (pith, herbs, sapling leaves) are depletable: a forageCellM cell holds this many animal-hours of feeding at the full rate when full, on average (skewed by fallbackPatchExp); feeding removes stock in proportion to what is left and a deficit regrows over fallbackRegrowDays. Design: a mean hectare holds about one animal-hour; herb feeding restricts party size (malenky1994). Consistency, not the setting: a 20-member community eating ~1.2 h of fallback per animal-day needs ~7 km2 at steady state. 0 = off, the unlimited field. Pre-registered field value 1.0; off by default after the C7c direction check (c7b-prereg section 7): the range kernel fell (2.13 -> 1.83 km2) and fallback nearly vanished (fruit share 0.84 -> 0.95), with party size cancelling the joint-trip gain when both are on."
   },
   {
    "id": "fallbackForageW",

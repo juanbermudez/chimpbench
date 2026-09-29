@@ -312,3 +312,59 @@ A direction "holds" when the paired change has the expected sign. No significanc
 - §6.1's capacity is design. Its consistency check uses a range size inside T-RNG-1's band, so a T-RNG-1 pass after C7c is partly encoded.
 - Fallback cells are seen up to `sightDayM` beyond their edge. Knowledge stays local.
 - §6.2 changes `candidates.ts` (the party-follow offer) and `execution.ts` (travel tick), both shared files.
+
+---
+
+## 7. C7c direction check and keep/drop decisions (29 September 2026, after the check)
+
+**Run setup:**
+- Seeds 3505 and 3606, paired, as in §6.5.
+- `main` was merged at 78356ee first. With every C7c switch off, a field world is hash-identical to that `main` after 3 days (seeds 48 and 3303).
+- Development diagnostics only: C12 definitions on 30-min fixes; not a proof.
+- Raw output in `artifacts/validation/c7c/` (C7b worktree): `diag*.txt`, `field-*.md`.
+
+**`party-food-metrics.ts`** (60-day burn-in + 6 days, ~370 adult-days each):
+
+| Variant | Party size | Straightness | Turning (rad) | Path (m/day) | Stationary half-hours | Companions kept | Fruit eaten |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| A, C7a | 2.34 | 0.19 | 1.19 | 1,948 | 0.50 | 0.46 | 5.7 |
+| B, + fallback limits | 2.27 | 0.18 | 1.14 | 2,112 | 0.47 | 0.39 | 6.3 |
+| C, + joint trips | 2.82 | 0.19 | 1.00 | 2,038 | 0.53 | 0.96 | 5.8 |
+| D, + energetic distance | 2.40 | 0.18 | 1.14 | 1,917 | 0.52 | 0.48 | 5.7 |
+| E, all three | 2.35 | 0.18 | 1.09 | 2,148 | 0.47 | 0.99 | 6.1 |
+| F, E + C7b food package | 1.34 | 0.15 | 1.33 | 4,065 | 0.26 | 0.88 | 3.9 |
+| **G, kept (C + D)** | **2.66** | **0.19** | **1.01** | **2,180** | **0.50** | **0.97** | **5.7** |
+
+**Field observer** (`field-metrics.ts`, 60-day burn-in + 120 days):
+
+| Variant | T-RNG-1 West 95% kernel (km²) | T-FOOD-2 fruit share | T-PTY-1 |
+| --- | --- | --- | --- |
+| A | 2.13 | 0.84 | 2.73 |
+| B | 1.83 | 0.95 | 2.71 |
+| C | 2.50 | 0.83 | 3.07 |
+| D | 2.00 | 0.82 | 2.96 |
+| E | 2.72 | 0.96 | 2.90 |
+| F | 7.33 | 0.93 | 2.05 (travel share 0.55, feeding 0.25) |
+| **G** | **2.23** | **0.82** | **3.16** |
+
+**Bench** (`scripts/bench-ab.ts`, seed 48, days 31–33 after a 30-day burn-in, 3 interleaved rounds, load 12–25): A 251 vs G 257 ms CPU per eco-day, **1.02×**.
+
+**Decisions** (each mechanism against A, by the rule stated in §6):
+
+| Mechanism | Rule | Result | Decision |
+| --- | --- | --- | --- |
+| §6.1 fallback limits | stationary ↓, fruit share ↑, range ↑ | 0.50 → 0.47; 0.84 → 0.95; **2.13 → 1.83** | **Dropped** (`fallbackCapH` 0) |
+| §6.2 joint trips | party ↑, companions kept ↑, straightness not down > 0.02 | 2.34 → 2.82; 0.46 → 0.96; 0.19 → 0.19 | **Kept** (`partyJoinTrip` 1) |
+| §6.3 energetic distance | no material change | Δ party +0.06, Δ straightness −0.01 | **Kept** (62,900 m, derived) |
+| §6.4 C7b food package | range ↑, party not ↓, fruit share ≥ 0.60 | 2.72 → 7.33; **2.35 → 1.34**; 0.93 | **Dropped** |
+
+**Reading:**
+- **Fallback limits.** At the design capacity (one animal-hour per hectare), fallback nearly disappears: ground foraging falls from 6% of half-hours to ~0, and fruit share rises above its band. So the limit removes a food rather than forcing animals to range for it.
+  - Combined with joint trips, walk-on ground foragers leave their parties, and party size falls back (E 2.35 vs C 2.82).
+  - A workable fallback needs a larger capacity and a tie between party travel and fallback walking. That is a C8 input, not settled here.
+- **Food package.** It again makes animals range (T-RNG-1 7.33, inside its band) but as lone searchers: 76% alone, 55% of the day travelling. Scarce fruit with no shared-goal pull toward rich crops breaks parties apart.
+- **Kept model (G) vs C7a:**
+  - Movers: party size 2.34 → 2.66 (observer 2.73 → 3.16), turning 1.19 → 1.01 rad, 30-min path +12%.
+  - Unchanged: straightness 0.19, range kernel 2.13 → 2.23 km², stationary 0.50.
+  - Fruit share 0.84 → 0.82.
+  - Straightness and range area remain the main open gaps.

@@ -13,10 +13,12 @@ import type { Candidate, Chimp, World } from '../src/types';
 // Stage C7c (field profile): patchy, depletable fallback foods; joint trips with a shared goal; an energetic distance cost
 // (docs/staging/c7b-prereg.md §6).
 
+// The fallback limits are implemented but off by default after the C7c direction check (c7b-prereg §7): tests switch them on.
+const FB = { fallbackCapH: 1 };
 const adults = (w: World, troop = 1) => w.chimps.filter(ch => ch.alive && ch.age >= 15 && ch.troopId === troop);
 
 test('fallback: full-stock intake is 0.39 of the ripe-fruit rate × habitat; feeding depletes a cell and it regrows', () => {
-  const w = createWorld(3505, { profile: 'field' }), P = paramsOf(w);
+  const w = createWorld(3505, { profile: 'field', params: FB }), P = paramsOf(w);
   const [c] = adults(w);
   c.position = [123.4, 0, -456.7];
   const mean = (P.forageYieldMin + P.forageYieldMax) / 2;
@@ -44,7 +46,7 @@ test('fallback: full-stock intake is 0.39 of the ripe-fruit rate × habitat; fee
 });
 
 test('fallback cells are patchy (mean capacity fallbackCapH) and off in compressed worlds', () => {
-  const w = createWorld(3505, { profile: 'field' }), P = paramsOf(w), [c] = adults(w);
+  const w = createWorld(3505, { profile: 'field', params: FB }), P = paramsOf(w), [c] = adults(w);
   let sum = 0, n = 0, low = 0;
   for (let i = 0; i < 400; i++) {
     c.position = [-3000 + (i % 20) * 100 + 50, 0, -3000 + Math.floor(i / 20) * 100 + 50];
@@ -57,6 +59,7 @@ test('fallback cells are patchy (mean capacity fallbackCapH) and off in compress
   }
   assert.ok(Math.abs(sum / n / P.fallbackCapH - 1) < 0.15, `mean capacity ${(sum / n).toFixed(2)} h`);
   assert.ok(low / n > 0.35, `share of poor cells ${(low / n).toFixed(2)}`);
+  assert.equal(paramsOf(createWorld(3505, { profile: 'field' })).fallbackCapH, 0, 'off by default in the field');
   const cw = createWorld(3505);
   assert.equal(paramsOf(cw).fallbackCapH, 0);
   assert.equal(fallbackStock(cw, 10, 10), 1);
@@ -65,7 +68,7 @@ test('fallback cells are patchy (mean capacity fallbackCapH) and off in compress
 });
 
 test('the ground-forage candidate falls when the patches in view are depleted, and the animal can see a better cell', () => {
-  const w = createWorld(3505, { profile: 'field' });
+  const w = createWorld(3505, { profile: 'field', params: FB });
   for (let i = 0; i < 5760 / 4; i++) tickWorld(w);
   const [c] = adults(w);
   c.position = [c.position[0], 0, c.position[2]];
