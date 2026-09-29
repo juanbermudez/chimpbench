@@ -18,12 +18,12 @@
   "Instrument validation against truth (sampling accuracy, classifier precision and recall) is allowed at any time, because truth is not a field target; each validation run is logged."
  ],
  "protocolFreeze": {
-  "stage": "C7a review fixes",
+  "stage": "C7a review fixes + data-agent comparison code",
   "date": "2026-09-29",
-  "hash": "871be7b837c511b8",
+  "hash": "73904dcee230404f",
   "previous": {
-   "stage": "C6 patrol corrections (T-PAT-8 not scorable)",
-   "hash": "03b2eca979c0e7fa"
+   "stage": "C7a review fixes",
+   "hash": "871be7b837c511b8"
   }
  },
  "protocolLog": [
@@ -823,6 +823,18 @@
     "all"
    ],
    "verdicts": "next proof (patrols, C7b, C8 combined)",
+   "class": "freeze"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C7a implementer",
+   "seen": "no new results",
+   "param": "freeze: 871be7b837c511b8 -> 73904dcee230404f. Commit 2980c8e (data agent) added comparison code, new files only: src/compare/patrols.ts, src/compare/gombe-paths.ts, scripts/compare-patrols.ts, scripts/compare-gombe-paths.ts; no existing statistic's code changed. The fingerprint now lists files committed at HEAD (git ls-tree) and reads their contents from disk",
+   "reason": "the wider fingerprint (C7a review finding 8) covers comparison code; new comparison files move it",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "none",
    "class": "freeze"
   }
  ],

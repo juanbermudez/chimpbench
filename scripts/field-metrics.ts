@@ -57,13 +57,13 @@ const workerFile = new URL('./lib/field-worker.ts', import.meta.url);
 const FLAG_FIELDS = ['compromised', 'protocolRevisedPostHoc', 'revisedPostFreeze', 'tuned', 'heldAsFail', 'instrumentWarning', 'partiallyEncoded', 'notScorable'] as const;
 function protocolHash(): string {
   const h = createHash('sha256');
-  // committed files only (git ls-files), so parallel agents' untracked work in the same checkout cannot move the hash;
-  // without git, every file in the directory
+  // files committed at HEAD only (git ls-tree), so parallel agents' untracked or staged work in the same checkout cannot
+  // move the hash (contents are read from disk); without git, every file in the directory
   const hashDir = (rel: string, keep: (f: string) => boolean) => {
     const dir = new URL(rel, import.meta.url);
     let files = readdirSync(dir).filter(keep);
     try {
-      const tracked = new Set(execFileSync('git', ['ls-files', '--', '.'], { cwd: fileURLToPath(dir), encoding: 'utf8' }).split('\n').filter(Boolean));
+      const tracked = new Set(execFileSync('git', ['ls-tree', '-r', '--name-only', 'HEAD', '--', '.'], { cwd: fileURLToPath(dir), encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).split('\n').filter(Boolean));
       if (tracked.size) files = files.filter(f => tracked.has(f));
     } catch { /* not a git checkout */ }
     for (const f of files.sort()) { h.update(`${rel}${f}`); h.update(readFileSync(new URL(f, dir))); }
