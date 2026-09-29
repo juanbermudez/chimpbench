@@ -178,7 +178,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     else if (nestDrive > 0.25 && (hour >= 12 || night)) { const t = c.action === 'nest' && isTreeId(c.targetId) ? idx.treeById.get(c.targetId) : chooseNestTree(world, c); if (t) offer('nest', t.id, nestDrive); }
   }
   const midday = hour >= 11.5 && hour < 14.5 ? 0.3 : 0;
-  offer('rest', -1, 0.12 + (1 - e) * 0.9 + midday + (h < 0.2 ? 0.2 : 0) + (env.temperature > 23 ? 0.1 : 0) + c.injury * 0.5 + (night ? 0.4 : 0) + (caretaker ? 0.1 : 0));
+  offer('rest', -1, 0.12 + (1 - e) * 0.9 + midday + (h < 0.2 ? 0.2 : 0) + (env.temperature > 23 ? 0.1 : 0) + c.injury * 0.5 + (night ? 0.4 : 0) + (caretaker ? 0.1 : 0) + (x.ill > time ? P.epidemicRestW : 0));
   if (rain >= 0.3 && !inNest && !night && !carried) offer('shelter', -1, 0.2 + rain * 1.6 - h * 0.2);
 
   // --- dependents -------------------------------------------------------------

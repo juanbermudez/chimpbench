@@ -28,14 +28,20 @@ export function inPeriovulatory(c: Chimp, P: Params): boolean {
   return u >= P.cyclePeriovulatoryDay && u < P.cycleMaxEndDay;
 }
 
-/** Adolescent subfecundity, then decline after ~35 (design curve; first births ~14-15.5 y in Kibale [M]). */
+/**
+ * Per-cycle conception by age (stage C8): adolescent subfecundity (first births ~14-15.5 y in Kibale [M]), full from
+ * fecundityFullY, then a linear fall from fecundityDeclineY to none at fecundityEndY: emeryThompson2007 report fertility
+ * falling ~0.008 births/y per year after 25 (about 4% of the peak per year), none after 50 at Ngogo (wood2023) [M].
+ */
 export function fecundity(age: number, P: Params): number {
-  if (age < P.fecundityStartY) return 0;
+  if (age < P.fecundityStartY || age >= P.fecundityEndY) return 0;
   if (age < P.fecundityFullY) return P.fecundityMax * (age - P.fecundityStartY) / (P.fecundityFullY - P.fecundityStartY);
   if (age < P.fecundityDeclineY) return P.fecundityMax;
-  if (age < P.fecundityLateY) return P.fecundityMax - (age - P.fecundityDeclineY) * P.fecundityDeclinePerY;
-  return age < P.fecundityEndY ? P.fecundityLate : 0;
+  return P.fecundityMax * (P.fecundityEndY - age) / (P.fecundityEndY - P.fecundityDeclineY);
 }
+
+/** Body condition scales conception (stage C8): full at condGood or above, falling linearly to fertilityCondFloor at 0 (design). */
+export const conditionFertility = (cond: number, P: Params) => P.fertilityCondFloor + (1 - P.fertilityCondFloor) * Math.min(1, cond / P.condGood);
 
 /** Copulations during maximal swelling count toward paternity; periovulatory ones count double. */
 export function recordCopulation(world: World, f: Chimp, m: Chimp): void {
@@ -107,7 +113,7 @@ function ovulate(world: World, c: Chimp): void {
   const mating = Math.min(1, (cops + near * P.matingAssocWeight) / P.matingSaturation);
   if (mating <= 0) return;
   const living = index(world).alive.length;
-  const p = fecundity(c.age, P) * mating * (c.health > 0.6 ? 1 : 0.5) * (living < P.popCap ? 1 : 0);
+  const p = fecundity(c.age, P) * conditionFertility(x.cond, P) * mating * (c.health > 0.6 ? 1 : 0.5) * (living < P.popCap ? 1 : 0);
   if (random(world) >= p) return;
   // paternity follows periovulatory-weighted copulation counts, so mate-guarding alphas sire a disproportionate share [M]
   const pool = cops > 0 ? x.cops : x.near;

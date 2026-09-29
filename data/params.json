@@ -5071,6 +5071,176 @@
    "notes": "Energy spent in walking actions (subtracted)."
   },
   {
+   "id": "epidemicArrivalPerY",
+   "group": "disease",
+   "value": 0.1,
+   "units": "per community-year",
+   "range": [
+    0.07,
+    0.15
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    10
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "emeryThompson2018",
+    "williams2008"
+   ],
+   "population": "Kanyawara; Gombe",
+   "clock": "eco",
+   "symbol": "P.epidemicArrivalPerY (dailyDisease)",
+   "file": "src/sim/disease.ts",
+   "notes": "Stage C8: Poisson arrival of a human-origin respiratory virus in each community without a running outbreak (Kanyawara 3 epidemics in 30 y; Gombe 5 in 35 y; T-DEM-5 band 0.07–0.15, fitted). Ecological clock."
+  },
+  {
+   "id": "epidemicBetaPerH",
+   "group": "disease",
+   "value": 0.004,
+   "units": "per infectious co-member per h",
+   "range": [
+    0.002,
+    0.008
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "P.epidemicBetaPerH (slowDisease)",
+   "file": "src/sim/disease.ts",
+   "notes": "Stage C8: transmission to each susceptible party co-member per infectious member and hour (SIR through party co-membership). Fitted so outbreak attack rates fall in 0.4–0.9 (T-DEM-6) and R0 near 1.27–1.83 (P-DEM-1; R0 itself is emergent, see epidemicR0)."
+  },
+  {
+   "id": "epidemicFatality",
+   "group": "disease",
+   "value": 0.04,
+   "units": "probability per case",
+   "range": [
+    0,
+    0.15
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.epidemicFatality (slowDisease)",
+   "file": "src/sim/disease.ts",
+   "notes": "Stage C8: death probability at the end of a case for ages 5–29 at median virulence; infants and ages 30 or more have higher odds (epidemicInfantOR, epidemicOldOR). Fitted to outbreak mortality 0–0.17, median ~0.08 (T-DEM-6)."
+  },
+  {
+   "id": "epidemicHealthDrop",
+   "group": "disease",
+   "value": 0.25,
+   "units": "health",
+   "range": [
+    0.125,
+    0.5
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.epidemicHealthDrop (slowLife)",
+   "file": "src/sim/life.ts",
+   "notes": "Stage C8: lowers the health target while ill (sick animals are weaker; death risk itself is the per-case fatality)."
+  },
+  {
+   "id": "epidemicIllDays",
+   "group": "disease",
+   "value": 3.2,
+   "units": "eco-days",
+   "range": [
+    2,
+    6
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.1,
+    60
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "negrey2019",
+    "scully2018"
+   ],
+   "population": "Ngogo; Kanyawara",
+   "clock": "eco",
+   "symbol": "P.epidemicIllDays (disease.ts infect)",
+   "file": "src/sim/disease.ts",
+   "notes": "Stage C8: length of a case, infectious throughout (illness ~3.2 days, P-DEM-1; the infectious period equal to the illness is design)."
+  },
+  {
+   "id": "epidemicInfantOR",
+   "group": "disease",
+   "value": 5.01,
+   "units": "odds ratio",
+   "range": [
+    1.53,
+    19.56
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    1,
+    100
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "negrey2019"
+   ],
+   "population": "Ngogo",
+   "years": "2016-2017",
+   "clock": "none",
+   "symbol": "P.epidemicInfantOR (slowDisease)",
+   "file": "src/sim/disease.ts",
+   "notes": "Stage C8: odds ratio of dying of a case for infants (under 5 y), as a prior (the resulting pattern T-DEM-7 is still checked, held out)."
+  },
+  {
+   "id": "epidemicOldOR",
+   "group": "disease",
+   "value": 3.86,
+   "units": "odds ratio",
+   "range": [
+    1.16,
+    15.15
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    1,
+    100
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "negrey2019"
+   ],
+   "population": "Ngogo",
+   "years": "2016-2017",
+   "clock": "none",
+   "symbol": "P.epidemicOldOR (slowDisease)",
+   "file": "src/sim/disease.ts",
+   "notes": "Stage C8: odds ratio of dying of a case at 30 y or more, as a prior (T-DEM-7 held out)."
+  },
+  {
    "id": "epidemicR0",
    "group": "disease",
    "value": 1.55,
@@ -5092,13 +5262,56 @@
    ],
    "population": "Kanyawara",
    "clock": "none",
-   "symbol": null,
-   "file": null,
+   "symbol": "P.epidemicR0 (expectedEpidemicHazard)",
+   "file": "src/sim/disease.ts",
    "constraints": [
     "P-DEM-1"
    ],
-   "planned": "C8",
-   "notes": "Human-origin respiratory viruses: R0 1.27-1.83, illness ~3.2 days."
+   "notes": "Human-origin respiratory viruses: R0 1.27-1.83, illness ~3.2 days. Stage C8: the expected attack rate used to remove modelled epidemic deaths from the fitted all-cause hazard is the SIR final size at this R0 (0.62 at 1.55); the simulated R0 is emergent (epidemicBetaPerH), and epidemicBetaPerH is fitted so simulated attack rates match."
+  },
+  {
+   "id": "epidemicRestW",
+   "group": "disease",
+   "value": 0.5,
+   "units": "score",
+   "range": [
+    0.25,
+    1
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    5
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.epidemicRestW (computeCandidates rest)",
+   "file": "src/sim/candidates.ts",
+   "notes": "Stage C8: sick animals rest more and travel less (rest score bonus while ill)."
+  },
+  {
+   "id": "epidemicVirulenceSd",
+   "group": "disease",
+   "value": 0.8,
+   "units": "log odds",
+   "range": [
+    0,
+    1.6
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    5
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.epidemicVirulenceSd (dailyDisease)",
+   "file": "src/sim/disease.ts",
+   "notes": "Stage C8: spread of per-outbreak virulence on the fatality odds (outbreaks killed 0% to 17%: negrey2019, scully2018, williams2008)."
   },
   {
    "id": "episodeCap",
@@ -5655,37 +5868,15 @@
    "notes": "Years of tenure until an immigrant knows the range fully (design, §5.2)."
   },
   {
-   "id": "fecundityDeclinePerY",
-   "group": "reproduction",
-   "value": 0.013,
-   "units": "per y",
-   "range": [
-    0.0065,
-    0.026
-   ],
-   "rangeBasis": "assumed-x2",
-   "hardRange": [
-    0,
-    1
-   ],
-   "calibrate": false,
-   "evidence": "design",
-   "sources": [],
-   "clock": "bio",
-   "symbol": "fecundity",
-   "file": "src/sim/reproduction.ts",
-   "notes": "Linear decline per year after the start of decline."
-  },
-  {
    "id": "fecundityDeclineY",
    "group": "reproduction",
-   "value": 35,
+   "value": 25,
    "units": "y",
    "range": [
-    17.5,
-    70
+    25,
+    30
    ],
-   "rangeBasis": "assumed-x2",
+   "rangeBasis": "source",
    "hardRange": [
     0,
     1000000
@@ -5693,12 +5884,13 @@
    "calibrate": false,
    "evidence": "M",
    "sources": [
-    "emeryThompson2007"
+    "emeryThompson2007",
+    "wood2023"
    ],
    "clock": "bio",
    "symbol": "fecundity",
    "file": "src/sim/reproduction.ts",
-   "notes": "Decline starts."
+   "notes": "Stage C8: per-cycle conception falls linearly from this age to none at fecundityEndY (fertility falls ~0.008 births/y per year after 25, emeryThompson2007; after ~30 at Ngogo, wood2023). Replaces the flat plateau to 35."
   },
   {
    "id": "fecundityEndY",
@@ -5706,21 +5898,24 @@
    "value": 50,
    "units": "y",
    "range": [
-    25,
-    100
+    50,
+    55
    ],
-   "rangeBasis": "assumed-x2",
+   "rangeBasis": "source",
    "hardRange": [
     0,
     1000000
    ],
    "calibrate": false,
-   "evidence": "design",
-   "sources": [],
+   "evidence": "M",
+   "sources": [
+    "wood2023",
+    "emeryThompson2007"
+   ],
    "clock": "bio",
    "symbol": "fecundity",
    "file": "src/sim/reproduction.ts",
-   "notes": "No conception from this age."
+   "notes": "No conception from this age (no births after 50 at Ngogo, wood2023; oldest Kibale mother 55.0 y, emeryThompson2007)."
   },
   {
    "id": "fecundityFullY",
@@ -5745,50 +5940,6 @@
    "symbol": "fecundity",
    "file": "src/sim/reproduction.ts",
    "notes": "Plateau reached at this age (first births ~14-15.5 y)."
-  },
-  {
-   "id": "fecundityLate",
-   "group": "reproduction",
-   "value": 0.04,
-   "units": "per cycle",
-   "range": [
-    0.02,
-    0.08
-   ],
-   "rangeBasis": "assumed-x2",
-   "hardRange": [
-    0,
-    1
-   ],
-   "calibrate": false,
-   "evidence": "design",
-   "sources": [],
-   "clock": "none",
-   "symbol": "fecundity",
-   "file": "src/sim/reproduction.ts",
-   "notes": "Late fecundity until cycling stops."
-  },
-  {
-   "id": "fecundityLateY",
-   "group": "reproduction",
-   "value": 45,
-   "units": "y",
-   "range": [
-    22.5,
-    90
-   ],
-   "rangeBasis": "assumed-x2",
-   "hardRange": [
-    0,
-    1000000
-   ],
-   "calibrate": false,
-   "evidence": "design",
-   "sources": [],
-   "clock": "bio",
-   "symbol": "fecundity",
-   "file": "src/sim/reproduction.ts",
-   "notes": "From this age a low late fecundity applies."
   },
   {
    "id": "fecundityMax",
@@ -6030,6 +6181,28 @@
    "symbol": "femaleQueue",
    "file": "src/sim/hierarchy.ts",
    "notes": "Time constant of the female queue (females queue, males compete). The source supports the mechanism; the value is a design choice."
+  },
+  {
+   "id": "fertilityCondFloor",
+   "group": "reproduction",
+   "value": 0.5,
+   "units": "fraction",
+   "range": [
+    0.25,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.fertilityCondFloor (conditionFertility)",
+   "file": "src/sim/reproduction.ts",
+   "notes": "Stage C8: conception scales with body condition, full at condGood and above, down to this fraction at condition 0 (design; rank effects on fertility pass only through condition, T-DEM-14 held out)."
   },
   {
    "id": "figCycleDays",
@@ -7681,6 +7854,28 @@
     "field": 30
    },
    "notes": "A dominant guard within this distance blocks courtship. Compressed stand-in scaled with sight (field ≈ compressed × 35/15, design)."
+  },
+  {
+   "id": "hazardBaseFloor",
+   "group": "mortality",
+   "value": 0.2,
+   "units": "fraction",
+   "range": [
+    0.1,
+    0.5
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.hazardBaseFloor (hazard)",
+   "file": "src/sim/life.ts",
+   "notes": "Stage C8: the re-fitted baseline (all-cause hazard minus the expected epidemic hazard) never falls below this fraction of the all-cause value."
   },
   {
    "id": "hazardFemaleAdult",
@@ -14460,6 +14655,164 @@
     "field": 12
    },
    "notes": "A snake model is seen within this distance. Body-scale distance: the same in both profiles (design)."
+  },
+  {
+   "id": "snareDeathP",
+   "group": "mortality",
+   "value": 0.02,
+   "units": "probability",
+   "range": [
+    0,
+    0.05
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.snareDeathP (slowSnares)",
+   "file": "src/sim/snares.ts",
+   "notes": "Stage C8: death risk when caught in a snare. Small: Ngogo reports no known snare deaths (wood2017)."
+  },
+  {
+   "id": "snareEdgeBandFrac",
+   "group": "mortality",
+   "value": 0.25,
+   "units": "fraction of the half-width",
+   "range": [
+    0.1,
+    0.5
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.01,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.snareEdgeBandFrac (snareRisk)",
+   "file": "src/sim/snares.ts",
+   "notes": "Stage C8: snare risk rises to its maximum at the map edge over this outer band (park-boundary proxy, design)."
+  },
+  {
+   "id": "snareHazardPerKm",
+   "group": "mortality",
+   "value": 6e-05,
+   "units": "per km on the ground at risk 1",
+   "range": [
+    3e-05,
+    0.00012
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.snareHazardPerKm (slowSnares)",
+   "file": "src/sim/snares.ts",
+   "profiles": {
+    "compressed": 0.0023,
+    "field": 6e-05
+   },
+   "notes": "Stage C8: snare injuries per km walked on the ground at full risk. Fitted to T-DEM-9 (10–30% of individuals over 3 y injured; wood2017, emeryThompson2020, fedurek2022) through an injury rate of ~0.015 per individual-year: development runs (seeds 48, 7, 21; 20 days) measured ~238 risk-weighted ground km per individual-year in the field profile (1,188 km walked) and ~6.5 in the compressed profile (30 km), hence the compressed value."
+  },
+  {
+   "id": "snareIntakeLoss",
+   "group": "feeding",
+   "value": 0.2,
+   "units": "fraction per severity",
+   "range": [
+    0.1,
+    0.4
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.snareIntakeLoss (snareIntake)",
+   "file": "src/sim/snares.ts",
+   "notes": "Stage C8: a permanent snare injury lowers feeding intake by this fraction times its severity (0.3–1)."
+  },
+  {
+   "id": "snareInteriorRisk",
+   "group": "mortality",
+   "value": 0.2,
+   "units": "fraction",
+   "range": [
+    0.05,
+    0.5
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.snareInteriorRisk (snareRisk)",
+   "file": "src/sim/snares.ts",
+   "notes": "Stage C8: snare risk in the interior relative to the boundary (snares are set throughout Kibale; design)."
+  },
+  {
+   "id": "snareSeverityMin",
+   "group": "mortality",
+   "value": 0.3,
+   "units": "severity",
+   "range": [
+    0.1,
+    0.6
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.snareSeverityMin (slowSnares)",
+   "file": "src/sim/snares.ts",
+   "notes": "Stage C8: a snare injury's severity is uniform between this and 1 (a hand or foot partly or wholly disabled; design spread)."
+  },
+  {
+   "id": "snareWound",
+   "group": "mortality",
+   "value": 0.3,
+   "units": "injury",
+   "range": [
+    0.15,
+    0.6
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.snareWound (slowSnares)",
+   "file": "src/sim/snares.ts",
+   "notes": "Stage C8: the acute wound of a snare (heals like other wounds; the disability stays)."
   },
   {
    "id": "socialAwakePerH",

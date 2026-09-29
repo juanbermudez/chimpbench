@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createWorld, getEligibleActions, tickWorld } from '../src/simulation';
 import { IMPULSE_TRANSFER, perceive } from '../src/sim/perception';
-import { fecundity, inPeriovulatory, recordCopulation, reproSlow, swellingAt } from '../src/sim/reproduction';
+import { conditionFertility, fecundity, inPeriovulatory, recordCopulation, reproSlow, swellingAt } from '../src/sim/reproduction';
 import { ix } from '../src/sim/state';
 import { paramsOf } from '../src/sim/params';
 import { DEFAULT_PARAMS } from '../src/sim/params';
@@ -128,4 +128,30 @@ test('C8 prenatal condition: the newborn\'s condition is the mother\'s pregnancy
   reproSlow(w, f, 1);
   assert.equal(ix(w.chimps[n]).grow, 1);
   assert.ok(Math.abs(ix(w.chimps[n]).cond - (1 - w.chimps[n].hunger)) < 1e-12);
+});
+
+
+test('C8 fertility curve: adolescent ramp, full to fecundityDeclineY, linear fall to none at fecundityEndY; condition scales conception', () => {
+  const P = DEFAULT_PARAMS;
+  assert.equal(fecundity(P.fecundityStartY - 0.01, P), 0);
+  assert.ok(fecundity(P.fecundityStartY + 0.5, P) < fecundity(P.fecundityFullY, P));
+  assert.equal(fecundity(P.fecundityFullY + 1, P), P.fecundityMax);
+  assert.equal(fecundity(P.fecundityDeclineY, P), P.fecundityMax);
+  assert.ok(Math.abs(fecundity(30, P) - P.fecundityMax * (P.fecundityEndY - 30) / (P.fecundityEndY - P.fecundityDeclineY)) < 1e-12);
+  for (let a = P.fecundityDeclineY; a < P.fecundityEndY - 0.5; a += 0.5) assert.ok(fecundity(a + 0.5, P) < fecundity(a, P));
+  assert.equal(fecundity(P.fecundityEndY, P), 0);
+  assert.equal(conditionFertility(0, P), P.fertilityCondFloor);
+  assert.equal(conditionFertility(P.condGood, P), 1);
+  assert.equal(conditionFertility(1, P), 1);
+});
+
+test('C8 no direct rank term in conception: two copies differing only in the female\'s rank conceive alike, with the same sire', () => {
+  const w = createWorld(21);
+  const f = w.chimps.find(c => c.alive && c.sex === 'female' && c.age > 18 && c.age < 30 && c.pregnancy === 0)!;
+  const m = w.chimps.find(c => c.alive && c.sex === 'male' && c.age > 18 && c.troopId === f.troopId)!;
+  maxSwell(f); f.health = 1; ix(f).cops = { [m.id]: 4 };
+  const w2 = structuredClone(w), f2 = w2.chimps.find(c => c.id === f.id)!;
+  f2.elo = f.elo + 400; f2.rank = 1 - f.rank; f2.rankOrder = 1;
+  for (let d = 0; d < 40; d++) { reproSlow(w, f, 1); reproSlow(w2, f2, 1); }
+  assert.equal(f.pregnancy, f2.pregnancy); assert.equal(ix(f).sireId, ix(f2).sireId); assert.equal(w.rng, w2.rng);
 });

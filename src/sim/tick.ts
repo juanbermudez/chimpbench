@@ -14,6 +14,8 @@ import { dailyKnownTrees } from './foraging';
 import { shareContacts } from './contact';
 import { materializeFruit } from './phenology';
 import { dailyTerritory } from './territory';
+import { dailyDisease, slowDisease } from './disease';
+import { slowSnares } from './snares';
 import { random } from './rng';
 import { paramsOf } from './params';
 import { PARTY_EVERY, SLOW_EVERY, SLOW_HOURS, TICK_HOURS, TICK_SECONDS, index, ix, simOf } from './state';
@@ -84,6 +86,8 @@ function slowStep(world: World): void {
   updateSeason(world);
   updateFruit(world);
   slowLife(world);
+  slowDisease(world, SLOW_HOURS); // stage C8: epidemics spread through parties; snares on the ground
+  slowSnares(world);
   maleStrengthDrift(world, SLOW_HOURS / 24 * Math.max(0, world.ageRate));
   slowPrey(world);
   const time = world.time;
@@ -104,7 +108,7 @@ function slowStep(world: World): void {
     shareContacts(world); // contact memory spreads within parties (§5.3.1 P2)
   }
   if (time - s.lastSummary >= 6) summary(world);
-  if (time - s.lastDaily >= 24) { s.lastDaily = time; dailyLife(world); dailyTerritory(world); dailyBeliefs(world); huntingDays(world); if (paramsOf(world).patchEcology === 1) materializeFruit(world); dailyKnownTrees(world); }
+  if (time - s.lastDaily >= 24) { s.lastDaily = time; dailyLife(world); dailyTerritory(world); dailyBeliefs(world); huntingDays(world); if (paramsOf(world).patchEcology === 1) materializeFruit(world); dailyKnownTrees(world); dailyDisease(world); }
 }
 
 function summary(world: World): void {

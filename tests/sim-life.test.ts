@@ -70,12 +70,16 @@ test('orphans lose their caretaker; older orphans may be adopted by kin', () => 
   assert.ok(w.events.some(e => /orphaned/.test(e.text)));
 });
 
-test('mortality hazards reproduce Ngogo life expectancy: q1 ~0.15, e15 ~35 y (females) and ~21 y (males)', async () => {
+test('analytic life table (C8): the re-fitted baseline plus the expected epidemic hazard reproduces Ngogo: q1 ~0.15, e15 ~35 y (females) and ~21 y (males)', async () => {
   const { hazard } = await import('../src/sim/life');
+  const { expectedEpidemicHazard } = await import('../src/sim/disease');
   const { DEFAULT_PARAMS } = await import('../src/sim/params');
   const make = (sex: 'female' | 'male', age: number) => ({ sex, age, health: 1, injury: 0 }) as unknown as Chimp;
-  const e = (sex: 'female' | 'male', from: number) => { let l = 1, sum = 0; for (let a = from; a < 90; a += 0.05) { sum += l * 0.05; l *= Math.exp(-hazard(make(sex, a), DEFAULT_PARAMS) * 0.05); } return sum; };
-  const q1 = 1 - Math.exp(-hazard(make("female", 0.5), DEFAULT_PARAMS));
+  const total = (sex: 'female' | 'male', a: number) => hazard(make(sex, a), DEFAULT_PARAMS) + expectedEpidemicHazard(a, DEFAULT_PARAMS);
+  const e = (sex: 'female' | 'male', from: number) => { let l = 1, sum = 0; for (let a = from; a < 90; a += 0.05) { sum += l * 0.05; l *= Math.exp(-total(sex, a) * 0.05); } return sum; };
+  const q1 = 1 - Math.exp(-total('female', 0.5));
+  assert.ok(expectedEpidemicHazard(0.5, DEFAULT_PARAMS) > expectedEpidemicHazard(10, DEFAULT_PARAMS) && expectedEpidemicHazard(35, DEFAULT_PARAMS) > expectedEpidemicHazard(10, DEFAULT_PARAMS), 'infants and older adults carry more epidemic risk');
+  assert.ok(hazard(make('female', 10), DEFAULT_PARAMS) < DEFAULT_PARAMS.hazardJuvenile, 'the baseline no longer counts epidemic deaths');
   assert.ok(Math.abs(q1 - 0.15) < 0.02, `q1 ${q1.toFixed(3)}`);
   assert.ok(Math.abs(e('female', 15) - 35.1) < 2.5, `female e15 ${e('female', 15).toFixed(1)}`);
   assert.ok(Math.abs(e('male', 15) - 21.0) < 2.5, `male e15 ${e('male', 15).toFixed(1)}`);
@@ -283,4 +287,39 @@ test('C8 adoption fixes: no re-adoption of an adult ward (no RNG drawn); no wean
   const P4 = paramsOf(w4);
   ward.age = P4.guardMaxAgeY - 0.1; assert.equal(coalitionKin(k4, ward, P4), true);
   ward.age = P4.guardMaxAgeY; assert.equal(coalitionKin(k4, ward, P4), false);
+});
+
+
+test('C8 epidemics spread only through party co-membership; a case ends in recovery (immune to that outbreak) or death', async () => {
+  const { slowDisease } = await import('../src/sim/disease');
+  const w = createWorld(7, { params: { epidemicBetaPerH: 1, epidemicArrivalPerY: 0, epidemicFatality: 0.000001, epidemicVirulenceSd: 0 } });
+  const t = w.troops[0], mem = w.chimps.filter(c => c.alive && c.troopId === t.id && c.age > 10);
+  const [I, J, K] = mem;
+  const s = simOf(w);
+  s.outbreaks[t.id] = { id: 9, start: w.time, v: 1 };
+  ix(I).outbreak = 9; ix(I).ill = w.time + 24;
+  w.parties = [{ id: I.id, troopId: t.id, members: [I.id, J.id], center: [0, 0, 0], kind: 'social' }, { id: K.id, troopId: t.id, members: [K.id], center: [0, 0, 0], kind: 'social' }];
+  for (let i = 0; i < 20; i++) slowDisease(w, 1);
+  assert.equal(ix(J).outbreak, 9, 'the party co-member caught it');
+  assert.ok(ix(J).ill > w.time, 'and is ill');
+  assert.notEqual(ix(K).outbreak, 9, 'the member in another party did not');
+  w.time += 48;
+  slowDisease(w, 5 / 60);
+  assert.ok(I.alive && ix(I).ill < 0 && ix(I).outbreak === 9, 'recovered, immune to this outbreak');
+});
+
+test('C8 snare hazard only on the ground in risky cells', async () => {
+  const { slowSnares } = await import('../src/sim/snares');
+  const w = createWorld(21, { params: { snareHazardPerKm: 1, snareInteriorRisk: 0 } });
+  const [edge, inner, tree] = w.chimps.filter(c => c.alive && c.age > 10);
+  const half = w.size / 2;
+  for (const c of [edge, inner, tree]) { ix(c).snare = 0; c.injury = 0; }
+  for (let i = 0; i < 3000; i++) {
+    const z = i % 2 ? 10 : -10;
+    edge.position = [half - 1, 0, z]; inner.position = [0, 0, z]; tree.position = [half - 1, 8, z];
+    slowSnares(w);
+  }
+  assert.ok(ix(edge).snare > 0, 'walking at the edge');
+  assert.equal(ix(inner).snare, 0, 'no risk in the interior (interior risk 0)');
+  assert.equal(ix(tree).snare, 0, 'no snares in the trees');
 });

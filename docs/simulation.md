@@ -1009,7 +1009,9 @@ Every evidence-tagged constant and every distance lives in the parameter registr
 | Fallback food | 0.11 | hunger/h | `fallbackHungerPerH` | design [H for fallback use] |  |
 | Drinking | 1.4 | thirst/h | `drinkThirstPerH` | design |  |
 | Wound healing | 0.075 | per eco-day | `woundHealPerDay` | assumed |  |
-| Baseline hazards | table in [§13](#13-reproduction-and-life-history) | per bio-year | `hazardInfant` `hazardYoung` `hazardJuvenile` `hazardFemale*` `hazardMale*` `hazardHealth*` `hazardInjuryWeight` | [M] | Wood et al. 2017 q1, e15 |
+| Baseline hazards | table in [§13](#13-reproduction-and-life-history); C8: minus the expected epidemic hazard, floored at 20% | per bio-year | `hazardInfant` `hazardYoung` `hazardJuvenile` `hazardFemale*` `hazardMale*` `hazardHealth*` `hazardInjuryWeight` `hazardBaseFloor` | [M] | Wood et al. 2017 q1, e15 |
+| Respiratory epidemics (C8) | arrival 0.1 per community-year; transmission per infectious party co-member per h; cases 3.2 eco-days; case fatality 0.04 at 5–29 y, odds × 5.01 infants, × 3.86 at 30+, per-outbreak virulence sd 0.8; sick animals rest more; expected attack = SIR final size at R0 1.55 | per year, per h, eco-days | `epidemicArrivalPerY` `epidemicBetaPerH` `epidemicIllDays` `epidemicFatality` `epidemicInfantOR` `epidemicOldOR` `epidemicVirulenceSd` `epidemicRestW` `epidemicHealthDrop` `epidemicR0` | [M] rates, ORs; design | emeryThompson2018, williams2008, negrey2019, scully2018 (T-DEM-5, -6 fitted) |
+| Snare injuries (C8) | hazard per ground km 6e-5 → field (0.0023 compressed) × risk (0.2 interior, rising to 1 at the map edge over the outer quarter); permanent intake loss 0.2 × severity; wound 0.3; death 2% | per km, fraction | `snareHazardPerKm` `snareEdgeBandFrac` `snareInteriorRisk` `snareIntakeLoss` `snareWound` `snareDeathP` `snareSeverityMin` | design | T-DEM-9 fitted (wood2017, emeryThompson2020) |
 | Guardian levers (C8) | feeding supplant −0.3, other charges −0.3 while the ward's guardian is seen, within the defence range and not dominated; guardians defend, share plant food and are followed to 10 y; caretakers count as coalition kin and guardians to 12 y; `maternalLevers` 0 = ablation | score, y | `guardFeedDeterW` `guardDeterW` `guardMaxAgeY` `juvenileFollowMaxAgeY` `maternalLevers` | design; [M] 12 y | early-life-prereg §2.2–2.5 (crockford2020, hobaiter2014) |
 | Body condition and growth (C8) | condition τ 30 eco-days; health falls below 0.3; growth record τ 3 y, limited below 0.5, frozen at 15 y | eco-days, condition, y | `condTauD` `condLow` `condGood` `growTauY` `growEndY` | design | early-life-prereg §2.6 |
 | Bereavement stress (C8) | +0.2 on the stress floor for offspring under 12, half-life 180 bio-days | stress, bio-days | `bereaveStress` `bereaveMaxAgeY` `bereaveHalfLifeD` | stylized; [M] 12 y | girardButtoz2021 (2-year window) |
@@ -1078,7 +1080,7 @@ Every evidence-tagged constant and every distance lives in the parameter registr
 | Weaning age | 4.1–5.2 | y | `weanAge*` | [M] | Kanyawara 4.8 y |
 | Disperser share | 87% | females | `disperserP` | design |  |
 | Dispersal hazard | 3 | per bio-year while swollen, 10.8–15 y | `dispersal*` | design | ~11–13 y transfers |
-| Fecundity | 0.22 plateau, 13–50 y curve | per cycle | `fecundity*` | [M] | first births ~14–15.5 y |
+| Fecundity | 0.22 from 14.5 y, falling linearly from 25 y to none at 50 (C8); × condition (0.5 at condition 0, full at condGood) | per cycle | `fecundity*` `fertilityCondFloor` | [M] | first births ~14–15.5 y; emeryThompson2007, wood2023 |
 | Mating saturation | (cops + 0.6·assoc)/3 |  | `matingAssocWeight` `matingSaturation` | design |  |
 | Per-male mating interval | 1.5 | h | `mateIntervalH` | [M] | Taï 0.14 – Ngogo 3.5 /h |
 | Lactational amenorrhea | 3.5–4.5 | y | `amenorrhea*` | [M] | IBI 5.15 y (Gombe) |

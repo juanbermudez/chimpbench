@@ -5,6 +5,7 @@ import { addEvent, emitCall, endInteraction, episode, findInteraction, flashInte
 import { nestPoint } from './generation';
 import { addBond, dominates, eloUpdate, rankedMale } from './hierarchy';
 import { paramsOf, type Params } from './params';
+import { snareIntake } from './snares';
 import { doTransfer, recordCopulation } from './reproduction';
 import { forget } from './perception';
 import { clamp, hash01, random } from './rng';
@@ -682,7 +683,7 @@ function forageTick(world: World, c: Chimp): void {
     }
     if (x.gx !== 0 || x.gz !== 0) moveTo(world, c, x.gx, 0, x.gz, WALK * 0.3, 0.2);
     // leaves, pith and herbs: lower-quality fallback foods [H]; the field profile's forage field varies by habitat and season
-    const self = selfFeed(c, P);
+    const self = selfFeed(c, P) * snareIntake(c, P);
     if (P.patchEcology === 1) c.hunger = clamp(c.hunger - P.fallbackHungerPerH * TICK_HOURS * forageYield(world, c.position[0], c.position[2]) * self);
     else c.hunger = clamp(c.hunger - P.fallbackHungerPerH * TICK_HOURS * self);
     return;
@@ -708,7 +709,7 @@ function forageTick(world: World, c: Chimp): void {
     } else if (time - x.lastFoodCall > 0.3 && crop > 0.3) { x.lastFoodCall = time; emitCall(world, c, 'food-grunt'); }
   }
   // feeding: up to fruitIntakePerH (0.055 fruit units/h, scaled by foraging skill), x4.4 = up to ~0.24 hunger/h, so chimps feed about half the day (design; field feeding shares are 33-50% of daytime, docs/realism-design.md T-ACT-1)
-  const want = P.fruitIntakePerH * TICK_HOURS * (P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging) * (c.age < 5 ? P.fruitIntakeYoungFactor : 1) * selfFeed(c, P);
+  const want = P.fruitIntakePerH * TICK_HOURS * (P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging) * (c.age < 5 ? P.fruitIntakeYoungFactor : 1) * selfFeed(c, P) * snareIntake(c, P);
   let intake: number;
   if (lazy) intake = eatFruit(world, t, want);
   else { intake = Math.min(t.fruit, want); t.fruit -= intake; }

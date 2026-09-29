@@ -115,6 +115,8 @@ export interface SimState {
   vacantUntil: Record<number, number>;
   /** Community hunting day (daily draw) until this time. */
   huntDay: Record<number, number>;
+  /** Stage C8 (disease.ts): the respiratory outbreak running in each community (id, start, virulence on the odds scale), and the next id. */
+  outbreaks: Record<number, { id: number; start: number; v: number }>; nextOutbreak: number;
   /** Registry hash, scale profile and parameter overrides this world was created with (params.ts). Small plain data. */
   params: ParamSettings;
 }
@@ -155,7 +157,7 @@ export function newSimState(): SimState {
     droughtUntil: NEVER, figTree: -1, figUntil: NEVER,
     patrols: {}, hunts: [], lastHunt: {}, encounters: {},
     nextPreyId: PREY_ID0, preyAt: 0, gates: {}, groomTally: {}, playTally: {}, lastSummary: 0, aware: {}, names: {},
-    unstableUntil: {}, lastDaily: 0, lastHourly: 0, alphaHow: {}, ud: {}, sectorVisit: {}, udStamp: 0, udNew: {}, kills: {}, vacantUntil: {}, huntDay: {}, params: defaultSettings(),
+    unstableUntil: {}, lastDaily: 0, lastHourly: 0, alphaHow: {}, ud: {}, sectorVisit: {}, udStamp: 0, udNew: {}, kills: {}, vacantUntil: {}, huntDay: {}, outbreaks: {}, nextOutbreak: 1, params: defaultSettings(),
   };
 }
 

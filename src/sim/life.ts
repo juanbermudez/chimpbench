@@ -3,6 +3,7 @@ import { addEvent, endInteraction, episode } from './events';
 import { bond, femaleQueue, lifeStage } from './hierarchy';
 import { dailyRelations, noteEvent } from './relations';
 import { reproSlow } from './reproduction';
+import { expectedEpidemicHazard } from './disease';
 import { clamp, random } from './rng';
 import { paramsOf, type Params } from './params';
 import { NEVER, SLOW_HOURS, TICK_HOURS, index, ix, markAliveChanged, simOf, type SimChimp } from './state';
@@ -143,9 +144,12 @@ function moodFor(c: Chimp, a: string): Mood {
 }
 
 /**
- * Annual baseline mortality hazard, fitted to Ngogo (Wood et al. 2017) [M]: first-year mortality ~0.15, and
- * remaining life expectancy at 15 of ~35 y for females and ~20 y for males (e15 35.1 / 21.0 reported).
- * Aggression, poor condition (health) and wounds add to it; losing the mother acts through feeding and protection (C8).
+ * Annual baseline mortality hazard. The registry values are all-cause hazards fitted to Ngogo (Wood et al. 2017) [M]:
+ * first-year mortality ~0.15, and remaining life expectancy at 15 of ~35 y for females and ~20 y for males (e15 35.1 /
+ * 21.0 reported). Stage C8 re-fits the baseline by removing the expected epidemic hazard (modelled explicitly in
+ * disease.ts), floored at hazardBaseFloor of the all-cause value, so the total matches the life table without counting
+ * those deaths twice. Aggression, poor condition (health) and wounds add to it; losing the mother acts through feeding
+ * and protection (C8).
  */
 export function hazard(c: Chimp, P: Params): number {
   const a = c.age;
@@ -155,6 +159,7 @@ export function hazard(c: Chimp, P: Params): number {
   else if (a < 15) h = P.hazardJuvenile;
   else if (c.sex === 'female') h = a < 35 ? P.hazardFemaleAdult : a < 45 ? P.hazardFemaleMid : P.hazardFemaleMid * Math.exp(P.hazardFemaleSenescence * (a - 45));
   else h = a < 25 ? P.hazardMaleYoungAdult : a < 35 ? P.hazardMalePrime : P.hazardMalePrime * Math.exp(P.hazardMaleSenescence * (a - 35));
+  h = Math.max(h * P.hazardBaseFloor, h - expectedEpidemicHazard(a, P));
   h *= 1 + Math.max(0, P.hazardHealthThreshold - c.health) * P.hazardHealthWeight + c.injury * P.hazardInjuryWeight;
   return h;
 }
@@ -188,7 +193,7 @@ export function slowLife(world: World): void {
     c.injury = Math.max(0, c.injury - P.woundHealPerDay * ecoDays);
     // stage C8 body condition: a slow average of (1 − hunger); health falls as condition drops below condLow (early-life-prereg §2.6)
     x.cond += ((1 - c.hunger) - x.cond) * (1 - Math.exp(-ecoDays / P.condTauD));
-    const target = 1 - 0.45 * c.injury - Math.max(0, c.age - 45) * 0.015 - (c.hunger > 0.9 ? 0.3 : 0) - Math.max(0, P.condLow - x.cond) / P.condLow;
+    const target = 1 - 0.45 * c.injury - Math.max(0, c.age - 45) * 0.015 - (c.hunger > 0.9 ? 0.3 : 0) - Math.max(0, P.condLow - x.cond) / P.condLow - (x.ill > world.time ? P.epidemicHealthDrop : 0);
     c.health = clamp(c.health + (target - c.health) * (1 - Math.exp(-ecoDays * 2)));
     // the growth record (scales strength) follows condition until growEndY; bereavement stress decays (no permanent offset)
     if (c.age < P.growEndY) x.grow += (Math.min(1, x.cond / P.condGood) - x.grow) * (1 - Math.exp(-bioDays / 365.25 / P.growTauY));
