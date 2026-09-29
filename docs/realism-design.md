@@ -1143,6 +1143,41 @@ Shape statistics that were similar stay similar (core fraction, edge and centre 
 **Effort / risk**: M (3–5 days). Risk: low.
 **Status**: Not Started
 
+#### C10 pre-registration (29 September 2026, before any C10 run)
+
+Rules, values and sources are fixed here before any simulation run with C10 code. Sources are added to docs/research.md ("Communication, stage C10"). Evidence tags follow AGENTS.md.
+
+**Ablation switches (new rule for every stage).** Each C10 mechanism has a registry switch; with all of them 0 the model is the pre-C10 model (goldens reproduce). Defaults are on in both profiles, so the combined proof can run "all on" against "C10 off".
+
+| Switch | Mechanism | Off (0) means |
+| --- | --- | --- |
+| `callSignatures` | pant-hoot feature vectors and drum structure on calls | calls carry no features; T-COM-5 and T-COM-6 are n/a |
+| `callerDiscrim` | listeners count stranger callers by their perceived features | `heardN` counts distinct true caller ids (C6 rule) |
+| `foodCallRule` | probabilistic, audience-dependent food grunts at arrival | the C7a rule (a grunt whenever the crop exceeds 0.3) |
+| `gestureRequests` | gestures before social actions (C10b, below) | no gestures |
+
+**Rules and values.**
+1. **Pant-hoot signatures** (`callSignatures`). Each chimpanzee has a constant mean signature over six standardized features (build-up duration, climax peak frequency, element count, inter-element interval, let-down strength, overall duration): `s_i = c_k + δ_i`, with `c_k ~ N(0, sigCommunitySD²)` for its natal community and `δ_i ~ N(0, sigIdentitySD²)`, both drawn from hashes of the ids (no RNG, constant over a life). Each call adds call-to-call variation `ε ~ N(0, 1)` per feature, hashed from the call id. No context shift: desai2022 shows context adds variation, but its size is not transcribed (design 0, labelled). The features go on the call (`Call.features`, contract request below) for listeners, the observer and the audio layer. Individual signatures exist but are noisy: identity 19.5% vs 6.9% chance, group differences weaker [desai2022] [M]. Feature choice follows §5.8 (design).
+   - **Values, fixed by an offline Monte Carlo of the observer's recorder protocol, with no simulation run:** `sigIdentitySD` so that leave-one-out discriminant accuracy for 18 callers × 20 calls is 2.8× chance (desai2022: 19.5 ÷ 6.9); `sigCommunitySD` so that community accuracy for two communities is ~1.3× chance (the §5.8 reading of desai2022, "less reliably than group differences"). T-COM-5 is then tuned by construction and labelled so.
+2. **Caller discrimination** (`callerDiscrim`). A listener perceives a call's features with extra noise `σ_p = discrimNoise0 + discrimDistW · d / hearing radius`, hashed per listener and call. Within the stranger-caller window it counts a new caller only when the perceived vector's root-mean-square distance to every caller already counted exceeds `discrimThreshold`; `heardN` ≥ 1. Values: `discrimNoise0` 0.3, `discrimDistW` 1, `discrimThreshold` 1.5 (design [L]; the premise, that callers are only partly distinguishable, is desai2022 [M]).
+3. **Food calls** (`foodCallRule`). On arrival in a crown with crop > 0.3 (the existing condition, when no arrival pant-hoot is given, 0.3 h since the last food call), a food grunt with probability `clamp01(foodCallBase + foodCallCropW · (crop − 0.3) + foodCallMaleW · min(3, other adult males within sight) + foodCallPartnerW · [a partner with bond ≥ 0.5, or the alpha, in sight])`, drawn from `world.rng`. Values: `foodCallBase` 0.35, `foodCallCropW` 0.3, `foodCallMaleW` 0.05, `foodCallPartnerW` 0.15, which gives about one call per two feeding arrivals: food calls at about half of feeding events, more with more males present [kalanBoesch2015] (Taï, *P. t. verus*; abstract) [M]; more with an important partner nearby [slocombe2010] (abstract) [M]; the crop term and all magnitudes are design. `foodCallBase` may be refitted once to T-COM-8's band centre (0.45) on development seeds, logged. T-COM-8's audience part would be encoded; the current protocol does not measure it.
+4. **Drum structure** (`callSignatures`). Each drum call carries its inter-hit intervals. Hits per bout = max(2, round(exp(ln `drumHitsMedian` + `drumHitsSigma` · z))), z hashed from the call id: median 4, and σ 0.45 puts the mode at 3 (eastern chimpanzees: median 4 hits per bout, mode 3, mean inter-hit interval 229 ms [eleuteri2025] [M]). Intervals alternate short and long around `drumIntervalMs` 229 with swing `drumSwing` 0.3 (the alternation is eleuteri2025; the swing size is design) and 10% jitter. No individual offset: Kanyawara drumming shows no individual signature [clarkArcadi2004] [M]. Who drums and when is unchanged (adult males in displays, counter-calls and patrol releases).
+5. **Gestures (C10b, after the contract fields and a transcription of hobaiterByrne2014).** A core subset of Sonso gesture types with their meanings, used as requests before grooming, play, travelling together and "stop", recorded as interactions; they raise the partner's acceptance, and a chimpanzee's repertoire grows with use (T-COM-10: 66 types, individual mean 10.0, juveniles 15.1 vs adults 5.1 [hobaiterByrne2011]; 19 meanings, 4.6 per gesture [hobaiterByrne2014]). Rules and values will be fixed in an addendum before any C10b run.
+
+**Deliberately not implemented.** §5.8 also lists a rank term and a males-in-party term on pant-hoot rates, status-dependent arrival calls and a party-size term on drumming. Each would be built from the pattern of a held-out target (T-COM-2 [mitaniNishida1993] [wilson2007], T-COM-9 [clarkWrangham1994], T-COM-7 [eleuteri2022]). C10 leaves these patterns to emerge or fail, so the targets stay held out.
+
+**Observer (protocol additions, frozen with the rows).**
+- *Recorder (T-COM-5):* every pant-hoot of an adult male heard by a following team within 100 m is recorded with its features. Per seed: leave-one-out linear discriminant accuracy over callers with ≥ 10 recorded calls, ÷ chance (1/callers); part: community accuracy ÷ chance.
+- *Drums (T-COM-6):* drums heard by a team. Median hits per bout, mean inter-hit interval, share of male bouts without the drummer's pant-hoot within 1 min (reported), share of bouts by females (must be 0). Pass: median 3–5 hits and no female bouts.
+
+**Targets.** Fitted: T-COM-5 (tuned by construction, above), T-COM-6, T-COM-8, T-COM-10 (C10b). Held out: T-COM-2, T-COM-7, T-COM-9; T-COM-3 and T-COM-4 have been encoded since C6. T-COM-1 and T-COM-11 are unchanged.
+
+**Direction checks** (not proof). Seeds 31, 32 and 33 (outside 606–1010, 1111–2525 and the proof seeds), 120 field days. Checks: signatures are constant per chimpanzee, recognition errors rise with distance, the food-call share moves toward 0.3–0.6, and the drum median is 3–5. The proof runs combined after the merges.
+
+**Contract request (src/types.ts, integrator):** `Call.features?: number[]` (pant-hoot: six standardized features; drum: inter-hit intervals in ms), and for C10b `InteractionKind` 'gesture' with `Interaction.gesture?: string`.
+
+**Shared files.** `events.ts` (`emitCall` features), `perception.ts` (`hear`), `execution.ts` (the food-call lines of the arrival block only), a new `src/sim/signals.ts`, and `src/field` (recorder, drums). No `candidates.ts` edits before C10b.
+
 ### Stage C11: Calibration and validation report (O12)
 **Goal**: sensitivity analysis, history matching, ABC posterior, held-out posterior predictive checks, ODD document, validation report.
 **Success Criteria**:
