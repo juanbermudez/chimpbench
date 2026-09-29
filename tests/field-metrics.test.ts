@@ -9,7 +9,7 @@ import { conciliatoryTendency, dispersion, hwi, kendall, ldaLeaveOneOut, logisti
 import { poissonInterval, publicRow, scoreTargets, summarize, unsealRefusal, type TargetFile } from '../src/field/targets';
 import { emptyRecords, type Records } from '../src/field/records';
 import { clusterBootstrap, cox, poissonGlm, seededRng, type CoxRow } from '../src/field/survival';
-import { SEALED } from '../src/field/early-life';
+import { SEALED, letFivePooled, letFiveSeed, type ScenarioCensus } from '../src/field/early-life';
 import { runFieldJob } from '../src/field/run';
 import { spawnSync } from 'node:child_process';
 
@@ -543,4 +543,21 @@ test('C7a review: T-RNG-1 is the median of annual kernels, with years counted fr
   const annual = [0, 1].map(y => isoplethArea(kde(xs[y], zs[y], d.profile.kdeCellM, [-half - pad, -half - pad, half + pad, half + pad]), 0.95) * s2);
   assert.ok(annual[1] > 2 * annual[0], `${annual}`);
   assert.ok(Math.abs(v.value! - quantile(annual, 0.5)) < 1e-9 * annual[1], `${v.value} vs ${annual}`);
+});
+
+test('C8 T-LET-5 (sealed; constructed census): expansion month, 3-year windows around it, infant deaths before 3, paired baseline', () => {
+  const Y = 365.25 * 24, M = Y / 12;
+  // the winner's range: 10 km² in year 1, 12 km² from month 20 (the first month >= 10% above the year-1 mean)
+  const area = Array.from({ length: 120 }, (_, m) => ({ t: m * M, km2: m >= 20 ? 12 : 10 }));
+  const births = (n: number, from: number, to: number, troop = 1) => Array.from({ length: n }, (_, i) => ({ id: Math.round(from * 100) + i, troop, t: from + (to - from) * (i + 0.5) / n }));
+  const E = 20 * M, G = 228 * 24;
+  const exp: ScenarioCensus = { births: [...births(4, E - 3 * Y, E), ...births(9, E + G, E + G + 3 * Y)], deaths: {}, end: 10 * Y, area };
+  exp.deaths[exp.births[0].id] = exp.births[0].t + Y; // one pre-expansion infant death
+  const base: ScenarioCensus = { births: [...births(4, E - 3 * Y, E), ...births(4, E + G, E + G + 3 * Y)], deaths: {}, end: 10 * Y, area };
+  const r = letFiveSeed(exp, base, 1)!;
+  assert.ok(Math.abs(r.expansionT - E) < 1e-6);
+  assert.equal(r.expPreBirths, 4); assert.equal(r.expPostBirths, 9); assert.equal(r.expPreDied, 1); assert.equal(r.basePostBirths, 4);
+  assert.equal(letFiveSeed({ ...exp, area: area.map(a => ({ ...a, km2: 10 })) }, base, 1), null, 'no expansion');
+  assert.equal(letFivePooled([r]).pass, null, 'insufficient with one seed');
+  assert.equal(letFivePooled([r, r]).pass, true);
 });
