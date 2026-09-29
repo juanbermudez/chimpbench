@@ -11,19 +11,19 @@
  },
  "protocolPolicy": [
   "Every protocol parameter (observer settings, classifier rules, metric windows and thresholds, scoring rules) is set from the source's methods text or by validating the instrument against simulation truth, never by looking at a field-target verdict.",
-  "The protocol is frozen with a hash (protocolFreeze): sha256 over src/field/*.ts, scripts/lib/field-worker.ts and each target's id, role, band and observer protocol. scripts/field-metrics.ts prints whether the current hash matches.",
+  "The protocol is frozen with a hash (protocolFreeze): sha256 over src/field/*.ts, scripts/lib/field-worker.ts, each target's id, role, encoded flag, band and observer protocol and its verdict-changing flags (compromised, protocolRevisedPostHoc, revisedPostFreeze, tuned, heldAsFail, instrumentWarning, partiallyEncoded, notScorable), the c12Fitted declarations, and the comparison code (src/compare/*.ts, scripts/compare-*.ts; since the C7a review). scripts/field-metrics.ts prints whether the current hash matches.",
   "Any change needs a protocolLog entry: date, parameter, old -> new, reason (source text with page, bug, or truth accuracy), which results had been seen, and verdicts before -> after. A change after the freeze also needs a new freeze hash.",
   "A held-out target touched by a change made after its value was seen is compromised (reported, never counted as validation) unless the change is a bug fix or follows the source's methods text and was made before the freeze; those are flagged protocolRevisedPostHoc and reported with before/after values. After the freeze, any change that touches a held-out target compromises it.",
   "A fitted target whose protocol was changed after its value was seen without such a reason reverts to the source value.",
   "Instrument validation against truth (sampling accuracy, classifier precision and recall) is allowed at any time, because truth is not a field target; each validation run is logged."
  ],
  "protocolFreeze": {
-  "stage": "C6 patrol corrections",
+  "stage": "C7a review findings 9-12",
   "date": "2026-09-29",
-  "hash": "d2da54f2925425e2",
+  "hash": "f29c8b0773effa06",
   "previous": {
-   "stage": "C7a",
-   "hash": "4e8a1df9e91bb81d"
+   "stage": "C12 relabel",
+   "hash": "e88dcd8f700a2997"
   }
  },
  "protocolLog": [
@@ -102,7 +102,13 @@
     "T-IGE-5"
    ],
    "verdicts": "T-IGE-1 9.87 -> 10.33 (pass, then inconclusive by the seed rule); T-IGE-2 0.13 -> 0.17 fail; T-IGE-3 0.47 -> 0.55 pass (then inconclusive); T-IGE-5 0.598 fail -> 0.624 pass (then inconclusive). 3 seeds x 60 days showed identical values; the 365-day runs picked up a few more heard encounters",
-   "class": "source text (protocolRevisedPostHoc)"
+   "class": "source text (protocolRevisedPostHoc)",
+   "flags": {
+    "T-IGE-1": "protocolRevisedPostHoc",
+    "T-IGE-2": "protocolRevisedPostHoc",
+    "T-IGE-3": "protocolRevisedPostHoc",
+    "T-IGE-5": "protocolRevisedPostHoc"
+   }
   },
   {
    "date": "2026-09-29",
@@ -126,7 +132,10 @@
     "T-IGE-4"
    ],
    "verdicts": "pass -> fail (call3plus 0.80 at 10 min -> 0.38 within 5 min; approach3plus 0.81; call1to2 0.11; female-only 0.01)",
-   "class": "source text (protocolRevisedPostHoc)"
+   "class": "source text (protocolRevisedPostHoc)",
+   "flags": {
+    "T-IGE-4": "protocolRevisedPostHoc"
+   }
   },
   {
    "date": "2026-09-29",
@@ -138,7 +147,10 @@
     "T-COM-11"
    ],
    "verdicts": "fail -> pass (0.91 per trial, any call anywhere -> 0.31 per individual encounter, n = 1,076)",
-   "class": "bug + source text (protocolRevisedPostHoc)"
+   "class": "bug + source text (protocolRevisedPostHoc)",
+   "flags": {
+    "T-COM-11": "protocolRevisedPostHoc"
+   }
   },
   {
    "date": "2026-09-29",
@@ -151,7 +163,11 @@
     "T-LET-2"
    ],
    "verdicts": "no change (no killings)",
-   "class": "source text (protocolRevisedPostHoc)"
+   "class": "source text (protocolRevisedPostHoc)",
+   "flags": {
+    "T-LET-1": "protocolRevisedPostHoc",
+    "T-LET-2": "protocolRevisedPostHoc"
+   }
   },
   {
    "date": "2026-09-29",
@@ -163,7 +179,10 @@
     "T-DEM-11"
    ],
    "verdicts": "fail -> insufficient (18.4 y from 19 births -> 0 qualifying births in 1-year runs)",
-   "class": "bug + source text (protocolRevisedPostHoc)"
+   "class": "bug + source text (protocolRevisedPostHoc)",
+   "flags": {
+    "T-DEM-11": "protocolRevisedPostHoc"
+   }
   },
   {
    "date": "2026-09-29",
@@ -175,7 +194,10 @@
     "T-SOC-9"
    ],
    "verdicts": "pass -> pass (0.112 -> 0.113; 208 -> 207 individuals)",
-   "class": "truth-proxy removal (protocolRevisedPostHoc)"
+   "class": "truth-proxy removal (protocolRevisedPostHoc)",
+   "flags": {
+    "T-SOC-9": "protocolRevisedPostHoc"
+   }
   },
   {
    "date": "2026-09-29",
@@ -218,7 +240,10 @@
     "T-SOC-3"
    ],
    "verdicts": "fail -> fail (0.91 -> 0.90)",
-   "class": "source text (protocolRevisedPostHoc)"
+   "class": "source text (protocolRevisedPostHoc)",
+   "flags": {
+    "T-SOC-3": "protocolRevisedPostHoc"
+   }
   },
   {
    "date": "2026-09-29",
@@ -230,7 +255,10 @@
     "T-SOC-5"
    ],
    "verdicts": "fail -> fail (0.98 -> 0.95; with pant-grunts 0.98)",
-   "class": "source text (protocolRevisedPostHoc)"
+   "class": "source text (protocolRevisedPostHoc)",
+   "flags": {
+    "T-SOC-5": "protocolRevisedPostHoc"
+   }
   },
   {
    "date": "2026-09-29",
@@ -243,7 +271,11 @@
     "T-SOC-10"
    ],
    "verdicts": "T-SOC-9 pass -> pass (0.113); T-SOC-10 0.296 pass -> 0.285 inconclusive (seed interval 0.27-0.30 crosses 0.3)",
-   "class": "truth-proxy removal (protocolRevisedPostHoc)"
+   "class": "truth-proxy removal (protocolRevisedPostHoc)",
+   "flags": {
+    "T-SOC-9": "protocolRevisedPostHoc",
+    "T-SOC-10": "protocolRevisedPostHoc"
+   }
   },
   {
    "date": "2026-09-29",
@@ -255,7 +287,10 @@
     "T-LET-3"
    ],
    "verdicts": "no change (no killings)",
-   "class": "truth-proxy removal (protocolRevisedPostHoc)"
+   "class": "truth-proxy removal (protocolRevisedPostHoc)",
+   "flags": {
+    "T-LET-3": "protocolRevisedPostHoc"
+   }
   },
   {
    "date": "2026-09-29",
@@ -353,7 +388,17 @@
     "T-LET-6"
    ],
    "verdicts": "no verdict value changes; T-IGE-5, T-PTY-4 and T-SOC-4 now carry the compromised flag (reported, not counted); the protocol hash is unchanged (e32903a5319deff5): the new fields are outside the hashed fields",
-   "class": "review labels"
+   "class": "review labels",
+   "flags": {
+    "T-IGE-5": "compromised",
+    "T-PTY-4": "compromised",
+    "T-SOC-4": "compromised",
+    "T-IGE-1": "tuned",
+    "T-PTY-1": "tuned",
+    "T-ACT-2": "tuned",
+    "T-RNG-4": "tuned",
+    "T-FOOD-11": "tuned"
+   }
   },
   {
    "date": "2026-09-29",
@@ -396,7 +441,11 @@
     "T-PAT-6"
    ],
    "verdicts": "development run: T-PAT-1 0.08 -> expected ~0.8 x truth; T-PAT-6 unchanged (see the next entry)",
-   "class": "source methods (post hoc, fitted targets)"
+   "class": "source methods (post hoc, fitted targets)",
+   "flags": {
+    "T-PAT-1": "protocolRevisedPostHoc",
+    "T-PAT-6": "protocolRevisedPostHoc"
+   }
   },
   {
    "date": "2026-09-29",
@@ -423,7 +472,12 @@
     "T-PAT-1"
    ],
    "verdicts": "no value changes",
-   "class": "labels"
+   "class": "labels",
+   "flags": {
+    "T-IGE-1": "-tuned",
+    "T-PAT-1": "tuned",
+    "T-COM-4": "encoded"
+   }
   },
   {
    "date": "2026-09-29",
@@ -473,7 +527,10 @@
     "T-RNG-1"
    ],
    "verdicts": "C6 proof 5.40 (inconclusive) → reported as fail by the review; C6b 2.35 (fail); kernel ~0.5 km² (fail)",
-   "class": "source methods (post hoc, fitted target)"
+   "class": "source methods (post hoc, fitted target)",
+   "flags": {
+    "T-RNG-1": "protocolRevisedPostHoc"
+   }
   },
   {
    "date": "2026-09-29",
@@ -526,7 +583,10 @@
     "T-RNG-4"
    ],
    "verdicts": "pass (tuned) → fail (held)",
-   "class": "labels"
+   "class": "labels",
+   "flags": {
+    "T-RNG-4": "heldAsFail"
+   }
   },
   {
    "date": "2026-09-29T19:40Z",
@@ -538,7 +598,10 @@
     "T-PAT-4"
    ],
    "verdicts": "reported, never counted",
-   "class": "labels"
+   "class": "labels",
+   "flags": {
+    "T-PAT-4": "compromised"
+   }
   },
   {
    "date": "2026-09-29T19:40Z",
@@ -555,7 +618,15 @@
     "T-LET-6"
    ],
    "verdicts": "pending",
-   "class": "labels"
+   "class": "labels",
+   "flags": {
+    "T-LET-4": "partiallyEncoded",
+    "T-PAT-2": "revisedPostFreeze",
+    "T-PAT-3": "revisedPostFreeze",
+    "T-PAT-5": "revisedPostFreeze",
+    "T-PAT-7": "revisedPostFreeze",
+    "T-LET-6": "revisedPostFreeze"
+   }
   },
   {
    "date": "2026-09-29T19:40Z",
@@ -587,7 +658,7 @@
   {
    "date": "2026-09-29",
    "by": "C7a implementer",
-   "seen": "C6/C6b results; C7a development checks (fitted statistics only)",
+   "seen": "C6/C6b results; C7a development checks (fitted statistics only) [corrected 2026-09-29 after the C7a review: the development checks also printed feeding trees per adult-day (T-FOOD-4's quantity, used to withdraw rule 7) and measured the source quantities of T-FOOD-5 and T-FOOD-7]",
    "param": "field profile phenology: the ingested Ngogo record (Potts et al. 2020, Dryad gf1vhhmk8, CC0; data/phenology/ngogo.json, src/sim/phenology.gen.ts) replaces the synthetic record (phenologyForcing 1). The ingest now detects month/day/year dates (the full set is M/D/YYYY; day-first parsing had kept only January rows)",
    "reason": "real food landscape requested by the integrator (C7a); inputs of every field-profile target change",
    "targets": [
@@ -600,7 +671,7 @@
   {
    "date": "2026-09-29",
    "by": "C7a implementer",
-   "seen": "C6/C6b results, the C6 review, C7a development checks (fitted statistics only)",
+   "seen": "C6/C6b results, the C6 review, C7a development checks (fitted statistics only) [corrected 2026-09-29 after the C7a review: the development checks also printed feeding trees per adult-day (T-FOOD-4's quantity, used to withdraw rule 7) and measured the source quantities of T-FOOD-5 and T-FOOD-7]",
    "param": "freeze C7a: 6892380336dcd836 -> 4e8a1df9e91bb81d (T-RNG-1 kernel and annual, cell-based scale verdict, encoded counted apart, T-PAT-1 focal revert, T-RNG-4 held as fail; logged above)",
    "reason": "C6 review fixes before the C7a proof",
    "targets": [
@@ -628,7 +699,17 @@
     "T-LET-4"
    ],
    "verdicts": "new / labels",
-   "class": "new targets"
+   "class": "new targets",
+   "flags": {
+    "T-PAT-9": "encoded",
+    "T-PAT-4": "compromised",
+    "T-LET-4": "partiallyEncoded",
+    "T-PAT-2": "revisedPostFreeze",
+    "T-PAT-3": "revisedPostFreeze",
+    "T-PAT-5": "revisedPostFreeze",
+    "T-PAT-7": "revisedPostFreeze",
+    "T-LET-6": "revisedPostFreeze"
+   }
   },
   {
    "date": "2026-09-29",
@@ -640,6 +721,192 @@
     "all"
    ],
    "verdicts": "patrol proof (held until the C7a review returns)",
+   "class": "freeze"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "patrol-corrections implementer (integrator ruling)",
+   "seen": "no simulated value exists (patrol proof not run); real-data statistics only (data agent: June-July share 0.43, 113 of 211 months empty, gaps 286-367 d, 2,621 observation days; sensitivity rho -0.054 over the 98 months with a patrol, rechecked here: -0.054 on counts, -0.073 per 30 d)",
+   "param": "T-PAT-8 demoted to not scorable (flag notScorable; summary key 'not scorable', counted apart); definition and band -0.057..0.170 kept for the record",
+   "reason": "instrument limitation: the Ngogo patrol record has no observation-effort column and is not continuous observation, so a monthly patrol rate cannot be computed; the simulated follows are continuous and not sampled like it",
+   "targets": [
+    "T-PAT-8"
+   ],
+   "verdicts": "not scorable",
+   "class": "instrument limitation",
+   "flags": {
+    "T-PAT-8": "notScorable"
+   }
+  },
+  {
+   "date": "2026-09-29",
+   "by": "patrol-corrections implementer",
+   "seen": "no simulated value of the corrected model",
+   "param": "freeze: d2da54f2925425e2 -> 03b2eca979c0e7fa (T-PAT-8 not scorable; 'not scorable' flag and summary column)",
+   "reason": "integrator ruling on T-PAT-8 (instrument limitation)",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "patrol proof (held)",
+   "class": "freeze"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C7a implementer (C7a review fixes, finding 2, 3, 4, 7)",
+   "seen": "the C7a review (artifacts/validation/c7a-review.md) and every C7a result",
+   "param": "labels: T-FOOD-4 compromised; T-FOOD-5 and T-FOOD-7 encoded; protocolRevisedPostHoc set on T-LET-2, T-PTY-1, T-HUN-1, T-PAT-2, T-PAT-3, T-PAT-5, T-PAT-7, T-LET-6, T-RNG-1, T-RNG-2, T-RNG-3 and T-RNG-6 where earlier log entries changed their protocol without a flag; T-FOOD-11 tuned flag withdrawn (patchesPerHa back at the P-FOOD-1 prior); T-ACT-2 and T-RNG-4 tuned notes updated for travelDistScaleM 60,000; c12Fitted: path per hour relabelled 'tuned against Taï', and the C12 range-area rows (area95, area50, area95M, area95F, commArea95, territory) labelled 'diagnostic, seen'. Corrects the 'fitted statistics only' claims of the phenology-ingest and C7a-freeze entries: the C7a mechanism checks also saw T-FOOD-4's quantity (feeding trees per adult-day) and measured T-FOOD-5's and T-FOOD-7's source quantities",
+   "reason": "C7a review findings 2, 3, 4 and 7",
+   "targets": [
+    "T-FOOD-4",
+    "T-FOOD-5",
+    "T-FOOD-7",
+    "T-HUN-1",
+    "T-LET-2",
+    "T-LET-6",
+    "T-PAT-2",
+    "T-PAT-3",
+    "T-PAT-5",
+    "T-PAT-7",
+    "T-PTY-1",
+    "T-RNG-1",
+    "T-RNG-2",
+    "T-RNG-3",
+    "T-RNG-6",
+    "T-FOOD-11",
+    "T-ACT-2",
+    "T-RNG-4"
+   ],
+   "verdicts": "C7a held-out passes 8 -> 7 (T-FOOD-4 compromised); T-FOOD-5 and T-FOOD-7 counted as encoded",
+   "class": "labels",
+   "flags": {
+    "T-FOOD-4": "compromised",
+    "T-FOOD-5": "encoded",
+    "T-FOOD-7": "encoded",
+    "T-LET-2": "protocolRevisedPostHoc",
+    "T-PTY-1": "protocolRevisedPostHoc",
+    "T-HUN-1": "protocolRevisedPostHoc",
+    "T-PAT-2": "protocolRevisedPostHoc",
+    "T-PAT-3": "protocolRevisedPostHoc",
+    "T-PAT-5": "protocolRevisedPostHoc",
+    "T-PAT-7": "protocolRevisedPostHoc",
+    "T-LET-6": "protocolRevisedPostHoc",
+    "T-RNG-1": "protocolRevisedPostHoc",
+    "T-RNG-2": "protocolRevisedPostHoc",
+    "T-RNG-3": "protocolRevisedPostHoc",
+    "T-RNG-6": "protocolRevisedPostHoc",
+    "T-FOOD-11": "-tuned"
+   }
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C7a implementer (C7a review fix 2)",
+   "seen": "the C7a review (recall 0.63 -> 0.25, detection 0.44 -> 0.11, truth 21.6 -> 78 per community-year); instrument validation runs printing classifier accuracy only (seeds 48, 21, 5, 11; 100-day burn-in + 100 days; patrol-corrected model); no target value printed",
+   "param": "encounter classifier validation reference: recall counts only observable truth episodes (strangers seen by a followed-party member, or stranger long calls heard by one); the earlier reference, which also counted acoustic episodes in which only the stranger heard the followed party, is kept as recallAll. Truth records mark each followed episode as heard and caller-only. Party-follow accuracy (encounterParty) added. The 0.8 instrument bar now applies to the encounter rows: T-IGE-1 (party follows), T-IGE-2, T-IGE-3, T-IGE-5 and T-PAT-7 (focal). The classifier itself is unchanged",
+   "reason": "instrument validation against truth (protocolPolicy: allowed at any time). Validation: focal recall 1.00 on 10 observable episodes (earlier reference 0.32 of 34), party follows 1.00 on 7 (earlier 0.45 of 20), precision 1.00; 24 of 34 focal followed episodes were caller-only, which the field protocol cannot observe (wilson2012 scores foreign calls heard by the observers' party)",
+   "targets": [
+    "T-IGE-1",
+    "T-IGE-2",
+    "T-IGE-3",
+    "T-IGE-5",
+    "T-PAT-7"
+   ],
+   "verdicts": "no value changes; rows are flagged 'instrument below bar' only if the classifier falls below 0.8 in a run",
+   "class": "instrument validation"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C7a implementer (C7a review fixes 1-3)",
+   "seen": "the C7a review and every C7a result; the encounter validation runs (accuracy only)",
+   "param": "freeze: 03b2eca979c0e7fa -> 871be7b837c511b8. The fingerprint now also covers each target's verdict-changing flags, the c12Fitted declarations (fitted and seen rows) and the comparison code (src/compare/*.ts, scripts/compare-*.ts) (C7a review finding 8); includes the flag reconciliation, the C12 labels and the encounter validation reference logged above (the party-follow encounter accuracy is kept outside FieldResult.accuracy so other runners that reproduce that object stay equal); the fingerprint hashes committed files only (git ls-files), so untracked work of parallel agents in the same checkout does not move it",
+   "reason": "C7a review findings 7 and 8",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "next proof (patrols, C7b, C8 combined)",
+   "class": "freeze"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C7a implementer",
+   "seen": "no new results",
+   "param": "freeze: 871be7b837c511b8 -> 73904dcee230404f. Commit 2980c8e (data agent) added comparison code, new files only: src/compare/patrols.ts, src/compare/gombe-paths.ts, scripts/compare-patrols.ts, scripts/compare-gombe-paths.ts; no existing statistic's code changed. The fingerprint now lists files committed at HEAD (git ls-tree) and reads their contents from disk",
+   "reason": "the wider fingerprint (C7a review finding 8) covers comparison code; new comparison files move it",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "none",
+   "class": "freeze"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C7a implementer (C12 relabel)",
+   "seen": "Taï and Ngogo C12 comparisons (repeatedly, during C6-C7b development); the Gombe path values have not been seen by any designer",
+   "param": "C12 roles: Taï movement and Ngogo ranging scorecards -> 'development diagnostic (seen)' (role field in both JSON outputs and scorecards, src/compare/report.ts C12_DEV_ROLE); Gombe 15-min paths -> 'held-out movement validation' (role in scripts/compare-gombe-paths.ts and its JSON); declared in c12Fitted.roles, which the fingerprint hashes with the comparison code",
+   "reason": "integrator ruling: the Taï and Ngogo rows were used for direction checks; Gombe is unseen",
+   "targets": [
+    "C12 comparisons"
+   ],
+   "verdicts": "Taï and Ngogo rows never counted as validation; Gombe rows held out",
+   "class": "labels"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C7a implementer",
+   "seen": "as above",
+   "param": "freeze: 73904dcee230404f -> e88dcd8f700a2997 (C12 roles in c12Fitted and the comparison scripts; the Gombe path code was already in the fingerprint since commit 2980c8e)",
+   "reason": "C12 relabel",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "combined proof",
+   "class": "freeze"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C7a implementer (C7a review finding 9)",
+   "seen": "no new results (found while writing the T-RNG-1 test)",
+   "param": "bug fix: observation years for the annual range, cell-count and bond metrics (yearKernel, yearRange, fewestCells, strongBonds) now count from the observer's start (records.time0) instead of world time 0; with a burn-in the first 'year' held only the part of the first observation year that fell before day 365 of world time and later years were misaligned. Rows: T-RNG-1 (annual kernel median), T-RNG-6 (annual cell ranges), the CELL_MIN scale check (T-RNG-2, T-RNG-3, T-RNG-6, T-IGE-5) and T-SOC-1 (bond runs)",
+   "reason": "bug (protocolPolicy: bug fixes are allowed and flagged revised post hoc); values before/after are reported at the combined proof. The life table and other demography helpers that assume observation starts at time 0 were reported to the C8 owner",
+   "targets": [
+    "T-RNG-1",
+    "T-RNG-2",
+    "T-RNG-3",
+    "T-RNG-6",
+    "T-IGE-5",
+    "T-SOC-1"
+   ],
+   "verdicts": "to be reported at the combined proof",
+   "class": "bug fix (protocolRevisedPostHoc)",
+   "flags": {
+    "T-RNG-1": "protocolRevisedPostHoc",
+    "T-RNG-2": "protocolRevisedPostHoc",
+    "T-RNG-3": "protocolRevisedPostHoc",
+    "T-RNG-6": "protocolRevisedPostHoc",
+    "T-SOC-1": "protocolRevisedPostHoc"
+   }
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C7a implementer (C7a review finding 12)",
+   "seen": "no simulated results; the ingest output only",
+   "param": "phenology ingest: species names normalized and spelling variants merged (Ficus cyathistipula, cyathistupula and cyanthstipula; Premna and Premana angolensis): 42 names -> 39 species; a warning when one calendar month holds > 50% of rows. Re-ingested data/phenology/ngogo.json and src/sim/phenology.gen.ts: only the two merged series change; all 8 matched sim species are unchanged, the fig class mean used by the unmatched Ficus sansibarica changes",
+   "reason": "data quality (C7a review finding 12)",
+   "targets": [
+    "all field-profile targets (fig trees of the unmatched species)"
+   ],
+   "verdicts": "field world hashes change; compressed goldens unchanged",
+   "class": "model input (data)"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C7a implementer",
+   "seen": "no new results",
+   "param": "freeze: e88dcd8f700a2997 -> f29c8b0773effa06 (observation-year bug fix in src/field/metrics.ts; T-SOC-1 flag)",
+   "reason": "C7a review findings 9-12",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "combined proof",
    "class": "freeze"
   }
  ],
@@ -740,7 +1007,7 @@
     "amsler2010",
     "villioth2025"
    ],
-   "tuned": "C5a review (2026-09-29; artifacts/validation/c5a-review.md): tuned (joinCallDistScaleM, travelDistScaleM, memTravelHungerW, fruit intake and the party-cohesion weights were set in C5a sweeps against T-ACT-2, T-RNG-4 and T-PTY-1). Replicates on 5 fresh seeds (0.17)."
+   "tuned": "C5a review (2026-09-29; artifacts/validation/c5a-review.md): tuned (joinCallDistScaleM, travelDistScaleM, memTravelHungerW, fruit intake and the party-cohesion weights were set in C5a sweeps against T-ACT-2, T-RNG-4 and T-PTY-1). Replicates on 5 fresh seeds (0.17). C7a: travelDistScaleM (field) is now 60,000 m, refitted to the two C12 statistics (path per hour, tuned against Taï; displacement, tuned against Ngogo GPS); the C5a value 2,000 no longer applies, and this row keeps the tuned flag because the other C5a parameters stay."
   },
   {
    "id": "T-ACT-3",
@@ -917,12 +1184,13 @@
    "evidence": "M",
    "role": "fitted",
    "encoded": false,
-   "notes": "",
+   "notes": "C7a review (finding 7): flagged revised post hoc; log: C5a party-follow team set (source methods, post-freeze, fitted) and the C6 lite party follows at 2-min points.",
    "sources": [
     "potts2011",
     "wilson2012"
    ],
-   "tuned": "C5a review (2026-09-29; artifacts/validation/c5a-review.md): tuned. Three party-cohesion mechanisms (partyFollow*, partyStayW, joinSocialW/joinMaleW, contactCall*) were added and weighted after field runs gave mean party size 1.5-2; the pass is a calibration result, not evidence. Focal-mode value on the same world is also in band (seed 48, 120 d: 4.28 focal vs 4.90 party follow)."
+   "tuned": "C5a review (2026-09-29; artifacts/validation/c5a-review.md): tuned. Three party-cohesion mechanisms (partyFollow*, partyStayW, joinSocialW/joinMaleW, contactCall*) were added and weighted after field runs gave mean party size 1.5-2; the pass is a calibration result, not evidence. Focal-mode value on the same world is also in band (seed 48, 120 d: 4.28 focal vs 4.90 party follow).",
+   "protocolRevisedPostHoc": true
   },
   {
    "id": "T-PTY-2",
@@ -1139,13 +1407,14 @@
    "evidence": "M",
    "role": "fitted",
    "encoded": false,
-   "notes": "",
+   "notes": "C7a review (finding 7): flagged revised post hoc; log: C6 review fix, annual 95% fixed kernel of 30-min fixes (source methods, post hoc, fitted).",
    "sources": [
     "lemoine2020b",
     "newtonFisher2003",
     "villioth2025",
     "wilson2012"
-   ]
+   ],
+   "protocolRevisedPostHoc": true
   },
   {
    "id": "T-RNG-2",
@@ -1188,11 +1457,12 @@
    "evidence": "M",
    "role": "held-out",
    "encoded": false,
-   "notes": "",
+   "notes": "C7a review (finding 7): flagged revised post hoc; log: C6 review fix, cell-based 'scale' verdict under 20 cells of 500 m (instrument validity, after values were seen); the rule only withholds verdicts, and rows it withholds are never counted.",
    "sources": [
     "lemoine2020b",
     "williams2004"
-   ]
+   ],
+   "protocolRevisedPostHoc": true
   },
   {
    "id": "T-RNG-3",
@@ -1235,11 +1505,12 @@
    "evidence": "M",
    "role": "fitted",
    "encoded": false,
-   "notes": "",
+   "notes": "C7a review (finding 7): flagged revised post hoc; log: C6 review fix, cell-based 'scale' verdict under 20 cells of 500 m (instrument validity, after values were seen).",
    "sources": [
     "jang2019",
     "wilson2007"
-   ]
+   ],
+   "protocolRevisedPostHoc": true
   },
   {
    "id": "T-RNG-4",
@@ -1287,7 +1558,7 @@
     "batesByrne2009",
     "jang2019"
    ],
-   "tuned": "C5a review (2026-09-29; artifacts/validation/c5a-review.md): tuned with T-ACT-2 (same parameters). Fresh seeds, 180 d: 1.65 inconclusive.",
+   "tuned": "C5a review (2026-09-29; artifacts/validation/c5a-review.md): tuned with T-ACT-2 (same parameters). Fresh seeds, 180 d: 1.65 inconclusive. C7a: travelDistScaleM (field) is now 60,000 m, refitted to the two C12 statistics (path per hour, tuned against Taï; displacement, tuned against Ngogo GPS); the C5a value 2,000 no longer applies, and this row keeps the tuned flag because the other C5a parameters stay.",
    "reviewNote": "C6b (2026-09-29, integrator after the C12 comparison): reported as failed until trajectories are goal-directed. The 5-min path is inflated by back-and-forth movement (Tai 30-min steps: sim 3 m vs 95 m; straightness 0.23 vs 0.50); parts path30Km, netKm and straightness30 are reported alongside.",
    "heldAsFail": "the 5-min path is inflated by back-and-forth movement; reported as failed until trajectories are goal-directed (integrator, C7a; parts path30Km, netKm and straightness30)"
   },
@@ -1361,10 +1632,11 @@
    "evidence": "M",
    "role": "held-out",
    "encoded": false,
-   "notes": "",
+   "notes": "C7a review (finding 7): flagged revised post hoc; log: C6 review fix, cell-based 'scale' verdict under 20 cells of 500 m (instrument validity, after values were seen); the rule only withholds verdicts, and rows it withholds are never counted.",
    "sources": [
     "wilson2012"
-   ]
+   ],
+   "protocolRevisedPostHoc": true
   },
   {
    "id": "T-IGE-1",
@@ -1683,11 +1955,12 @@
    "evidence": "M",
    "role": "held-out",
    "encoded": false,
-   "notes": "C6: the C5a instrumentWarning is replaced by the mechanical instrument bar (src/field/targets.ts applyInstrumentBar): the row is scored only if the patrol classifier on its team set reaches precision and recall >= 0.8 against truth in the same run.",
+   "notes": "C6: the C5a instrumentWarning is replaced by the mechanical instrument bar (src/field/targets.ts applyInstrumentBar): the row is scored only if the patrol classifier on its team set reaches precision and recall >= 0.8 against truth in the same run. C7a review (finding 7): flagged revised post hoc; log: C6 PATROL_RULE.minStops 0 -> 2 (the source's >= 2 listening stops, post-freeze, requested by the C5a review, validated against truth).",
    "sources": [
     "langergraber2017"
    ],
-   "revisedPostFreeze": "C6 patrol corrections (§5.3.1 P1–P4a, Amendment A): model revised post-freeze; re-tested on fresh seeds 606, 707, 808, 909, 1010; counts as validation only if no parameter was set by looking at it"
+   "revisedPostFreeze": "C6 patrol corrections (§5.3.1 P1–P4a, Amendment A): model revised post-freeze; re-tested on fresh seeds 606, 707, 808, 909, 1010; counts as validation only if no parameter was set by looking at it",
+   "protocolRevisedPostHoc": true
   },
   {
    "id": "T-PAT-3",
@@ -1739,13 +2012,14 @@
    "evidence": "M",
    "role": "held-out",
    "encoded": false,
-   "notes": "C6: the C5a instrumentWarning is replaced by the mechanical instrument bar (src/field/targets.ts applyInstrumentBar): the row is scored only if the patrol classifier on its team set reaches precision and recall >= 0.8 against truth in the same run.",
+   "notes": "C6: the C5a instrumentWarning is replaced by the mechanical instrument bar (src/field/targets.ts applyInstrumentBar): the row is scored only if the patrol classifier on its team set reaches precision and recall >= 0.8 against truth in the same run. C7a review (finding 7): flagged revised post hoc; log: C6 PATROL_RULE.minStops 0 -> 2 (the source's >= 2 listening stops, post-freeze, requested by the C5a review, validated against truth).",
    "sources": [
     "langergraber2017",
     "massaro2022",
     "wattsMitani2001"
    ],
-   "revisedPostFreeze": "C6 patrol corrections (§5.3.1 P1–P4a, Amendment A): model revised post-freeze; re-tested on fresh seeds 606, 707, 808, 909, 1010; counts as validation only if no parameter was set by looking at it"
+   "revisedPostFreeze": "C6 patrol corrections (§5.3.1 P1–P4a, Amendment A): model revised post-freeze; re-tested on fresh seeds 606, 707, 808, 909, 1010; counts as validation only if no parameter was set by looking at it",
+   "protocolRevisedPostHoc": true
   },
   {
    "id": "T-PAT-4",
@@ -1818,11 +2092,12 @@
    "evidence": "M",
    "role": "held-out",
    "encoded": false,
-   "notes": "C6: the C5a instrumentWarning is replaced by the mechanical instrument bar (src/field/targets.ts applyInstrumentBar): the row is scored only if the patrol classifier on its team set reaches precision and recall >= 0.8 against truth in the same run.",
+   "notes": "C6: the C5a instrumentWarning is replaced by the mechanical instrument bar (src/field/targets.ts applyInstrumentBar): the row is scored only if the patrol classifier on its team set reaches precision and recall >= 0.8 against truth in the same run. C7a review (finding 7): flagged revised post hoc; log: C6 PATROL_RULE.minStops 0 -> 2 (the source's >= 2 listening stops, post-freeze, requested by the C5a review, validated against truth).",
    "sources": [
     "amsler2010"
    ],
-   "revisedPostFreeze": "C6 patrol corrections (§5.3.1 P1–P4a, Amendment A): model revised post-freeze; re-tested on fresh seeds 606, 707, 808, 909, 1010; counts as validation only if no parameter was set by looking at it"
+   "revisedPostFreeze": "C6 patrol corrections (§5.3.1 P1–P4a, Amendment A): model revised post-freeze; re-tested on fresh seeds 606, 707, 808, 909, 1010; counts as validation only if no parameter was set by looking at it",
+   "protocolRevisedPostHoc": true
   },
   {
    "id": "T-PAT-6",
@@ -1894,11 +2169,12 @@
    "evidence": "M",
    "role": "held-out",
    "encoded": false,
-   "notes": "C6: the C5a instrumentWarning is replaced by the mechanical instrument bar (src/field/targets.ts applyInstrumentBar): the row is scored only if the patrol classifier on its team set reaches precision and recall >= 0.8 against truth in the same run.",
+   "notes": "C6: the C5a instrumentWarning is replaced by the mechanical instrument bar (src/field/targets.ts applyInstrumentBar): the row is scored only if the patrol classifier on its team set reaches precision and recall >= 0.8 against truth in the same run. C7a review (finding 7): flagged revised post hoc; log: C6 PATROL_RULE.minStops 0 -> 2 (the source's >= 2 listening stops, post-freeze, requested by the C5a review, validated against truth).",
    "sources": [
     "watts2006"
    ],
-   "revisedPostFreeze": "C6 patrol corrections (§5.3.1 P1–P4a, Amendment A): model revised post-freeze; re-tested on fresh seeds 606, 707, 808, 909, 1010; counts as validation only if no parameter was set by looking at it"
+   "revisedPostFreeze": "C6 patrol corrections (§5.3.1 P1–P4a, Amendment A): model revised post-freeze; re-tested on fresh seeds 606, 707, 808, 909, 1010; counts as validation only if no parameter was set by looking at it",
+   "protocolRevisedPostHoc": true
   },
   {
    "id": "T-PAT-8",
@@ -1933,12 +2209,13 @@
    "evidence": "M",
    "role": "held-out",
    "encoded": false,
-   "notes": "C6 patrol corrections P5 (non-circular). mitaniWatts2005: fruit was higher on patrol days, but the effect vanished once male party size was in the model; since A2 the sim hazard has no fruit or energy term, so any fruit effect must come through party size.",
+   "notes": "C6 patrol corrections P5 (non-circular). mitaniWatts2005: fruit was higher on patrol days, but the effect vanished once male party size was in the model; since A2 the sim hazard has no fruit or energy term, so any fruit effect must come through party size. Not scorable (integrator ruling 2026-09-29, data agent finding): kk33f is not continuous observation. 43% of the 284 patrols fall in June-July, 113 of 211 months have no patrol, gaps between patrols reach 286-367 d in 8 years, and Langergraber et al. 2017 report 284 patrols over 2,621 observation days against ~6,900 calendar days; the file has no effort column, so zero months are mostly unobserved and the band measures observation effort as much as patrolling. Sensitivity over the 98 months with >= 1 patrol: rho -0.054 on monthly counts (-0.073 per 30 d). Definition and band kept for the record; never counted.",
    "sources": [
     "langergraber2017",
     "potts2020",
     "mitaniWatts2005"
-   ]
+   ],
+   "notScorable": "real record lacks observation effort; instrument limitation found before any simulated value existed (integrator ruling 2026-09-29). Returns if monthly observation days are obtained (Mitani/Watts data request)"
   },
   {
    "id": "T-BRD-1",
@@ -2086,10 +2363,11 @@
    "evidence": "H",
    "role": "held-out",
    "encoded": false,
-   "notes": "",
+   "notes": "C7a review (finding 7): flagged revised post hoc; log: C3 review, violent disappearances counted as suspected, not inferred killings (source text, wilson2014).",
    "sources": [
     "wilson2014"
-   ]
+   ],
+   "protocolRevisedPostHoc": true
   },
   {
    "id": "T-LET-3",
@@ -2237,11 +2515,12 @@
    "evidence": "M",
    "role": "held-out",
    "encoded": false,
-   "notes": "C6: the C5a instrumentWarning is replaced by the mechanical instrument bar (src/field/targets.ts applyInstrumentBar): the row is scored only if the patrol classifier on its team set reaches precision and recall >= 0.8 against truth in the same run.",
+   "notes": "C6: the C5a instrumentWarning is replaced by the mechanical instrument bar (src/field/targets.ts applyInstrumentBar): the row is scored only if the patrol classifier on its team set reaches precision and recall >= 0.8 against truth in the same run. C7a review (finding 7): flagged revised post hoc; log: C6 PATROL_RULE.minStops 0 -> 2 (the source's >= 2 listening stops, post-freeze, requested by the C5a review, validated against truth).",
    "sources": [
     "mitani2010"
    ],
-   "revisedPostFreeze": "C6 patrol corrections (§5.3.1 P1–P4a, Amendment A): model revised post-freeze; re-tested on fresh seeds 606, 707, 808, 909, 1010; counts as validation only if no parameter was set by looking at it"
+   "revisedPostFreeze": "C6 patrol corrections (§5.3.1 P1–P4a, Amendment A): model revised post-freeze; re-tested on fresh seeds 606, 707, 808, 909, 1010; counts as validation only if no parameter was set by looking at it",
+   "protocolRevisedPostHoc": true
   },
   {
    "id": "T-FIS-1",
@@ -2625,11 +2904,12 @@
    "evidence": "M",
    "role": "held-out",
    "encoded": false,
-   "notes": "",
+   "notes": "C7a review (finding 2): compromised. Its quantity (feeding trees per adult-day, printed by movement-metrics --fitted-only) was used to withdraw C7a rule 7.",
    "sources": [
     "janmaat2013b",
     "normand2009"
-   ]
+   ],
+   "compromised": true
   },
   {
    "id": "T-FOOD-5",
@@ -2662,8 +2942,8 @@
    },
    "evidence": "M",
    "role": "held-out",
-   "encoded": false,
-   "notes": "",
+   "encoded": true,
+   "notes": "C7a review (finding 2): encoded. C7a rules 1 and 8 were built to reproduce its source value (normand2009: nearest productive tree taken 30% of the time).",
    "sources": [
     "normand2009"
    ]
@@ -2746,8 +3026,8 @@
    },
    "evidence": "M",
    "role": "held-out",
-   "encoded": false,
-   "notes": "",
+   "encoded": true,
+   "notes": "C7a review (finding 2): encoded. C7a rules 1 and 8 were built to reproduce its source value (ban2014: out-of-sight approaches from a mean 537.5 m).",
    "sources": [
     "ban2014"
    ]
@@ -2906,11 +3186,10 @@
    "evidence": "M",
    "role": "fitted",
    "encoded": false,
-   "notes": "",
+   "notes": "C7a rule 6 set patchesPerHa (field) to the P-FOOD-1 prior (9.8/ha, janmaat2016), so the C5a tuning against this target is withdrawn and the 'tuned' flag removed (C7a review, finding 7); the value is now a consequence (would-be fail 201 m in the C7a proof).",
    "sources": [
     "janmaat2016"
-   ],
-   "tuned": "C5a review (2026-09-29; artifacts/validation/c5a-review.md): tuned. patchesPerHa 18 is 1.8x the P-FOOD-1 prior (9.8 feeding-size trees/ha), set to hit this target."
+   ]
   },
   {
    "id": "T-HUN-1",
@@ -2953,11 +3232,12 @@
    "evidence": "M",
    "role": "fitted",
    "encoded": false,
-   "notes": "The code comment \"62 hunts in 471 days with ~24 males\" counts 62 hunting episodes and attempts, of which 13 were finds of chimpanzees already eating meat or carrying carcasses; the paper reports 26 adult males.",
+   "notes": "The code comment \"62 hunts in 471 days with ~24 males\" counts 62 hunting episodes and attempts, of which 13 were finds of chimpanzees already eating meat or carrying carcasses; the paper reports 26 adult males. C7a review (finding 7): flagged revised post hoc; log: C5a party-follow team set (source methods, post-freeze, fitted) and the C6 lite party follows at 2-min points.",
    "sources": [
     "gilby2015",
     "wattsMitani2002"
-   ]
+   ],
+   "protocolRevisedPostHoc": true
   },
   {
    "id": "T-HUN-2",
@@ -3455,10 +3735,11 @@
    "evidence": "H",
    "role": "held-out",
    "encoded": false,
-   "notes": "",
+   "notes": " C7a review round: observation years counted from the observer's start (bug fix, logged).",
    "sources": [
     "mitani2009"
-   ]
+   ],
+   "protocolRevisedPostHoc": true
   },
   {
    "id": "T-SOC-2",
@@ -6956,13 +7237,31 @@
    {
     "id": "pathRate",
     "label": "Path per hour over full-day follows (Taï)",
-    "tag": "tuned against Taï follows"
+    "tag": "tuned against Taï"
    },
    {
     "id": "dispKm",
     "label": "Displacement between an individual's two same-day fixes ≥ 3 h apart (Ngogo)",
     "tag": "tuned against Ngogo GPS"
    }
-  ]
+  ],
+  "seen": {
+   "ids": [
+    "area95",
+    "area50",
+    "area95M",
+    "area95F",
+    "commArea95",
+    "territory"
+   ],
+   "tag": "diagnostic, seen: rule 9 chosen after a range-size sensitivity run",
+   "note": "C7a review finding 3: rule 9 (familiarFullLevel 0.95) was adopted after the 15:44 territory-sensitivity run showed the familiarity term halves the community 95% kernel; these C12 range-area statistics measure the same quantity and are reported as seen, not held out."
+  },
+  "roles": {
+   "tai-movement": "development diagnostic (seen)",
+   "ngogo-ranging": "development diagnostic (seen)",
+   "gombe-paths": "held-out movement validation",
+   "note": "C12 relabel (integrator ruling, 2026-09-29): the Taï movement (docs/data/movement-compare.json) and Ngogo ranging (docs/data/ranging-compare.json) comparisons were looked at repeatedly during development and used for direction checks, so every row is a development diagnostic, not validation. The Gombe 15-min focal paths (src/compare/gombe-paths.ts, scripts/compare-gombe-paths.ts, docs/data/gombe-paths.json; Pusey & Schroepfer-Walker 2013, Dryad jg05d) are the held-out movement validation: no designer has seen them; their code is in the protocol fingerprint."
+  }
  }
 }

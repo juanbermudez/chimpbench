@@ -22,6 +22,8 @@ export interface TargetSpec {
   revisedPostFreeze?: string;
   /** Partly encoded by a later model change (label with its reason); still scored, against the paired baseline where stated. */
   partiallyEncoded?: string;
+  /** The real record cannot support the comparison (instrument limitation on the field side): reported, never counted. */
+  notScorable?: string;
   accept: { lo: number | null; hi: number | null; units: string; basis: string };
   observer: { protocol: string; interval_min: number | null; unit: string };
 }
@@ -98,7 +100,8 @@ export function scoreTargets(file: TargetFile, values: Record<string, SeedValue[
   for (const t of file.targets) {
     const def = METRICS.find(m => m.id === t.id);
     const flags = [...(t.protocolRevisedPostHoc ? ['revised post hoc'] : []), ...(t.compromised ? ['compromised'] : []), ...(t.tuned ? ['tuned'] : []), ...(t.instrumentWarning ? ['instrument below bar'] : []), ...(t.heldAsFail ? ['held as fail'] : []),
-      ...(t.revisedPostFreeze ? ['model revised post-freeze'] : []), ...(t.partiallyEncoded ? ['partially encoded'] : [])];
+      ...(t.revisedPostFreeze ? ['model revised post-freeze'] : []), ...(t.partiallyEncoded ? ['partially encoded'] : []),
+      ...(t.notScorable ? ['not scorable'] : [])];
     const base = { id: t.id, metric: t.metric, role: t.role, encoded: t.encoded, evidence: t.evidence, units: t.accept.units, protocol: def?.protocol ?? t.observer.protocol, scaleSensitive: !!def?.scaleSensitive, flags };
     const partBands = PART_BANDS[t.id];
     const band = partBands ? Object.entries(partBands).map(([k, [a, b]]) => `${k} ${a}–${b}`).join(', ') : t.accept.lo === null && t.accept.hi === null ? t.accept.basis : fmtBand(t.accept.lo, t.accept.hi);
@@ -165,7 +168,7 @@ export function scoreTargets(file: TargetFile, values: Record<string, SeedValue[
   return rows;
 }
 
-export type SummaryKey = Verdict | 'compromised' | 'instrument' | 'tuned' | 'encoded';
+export type SummaryKey = Verdict | 'compromised' | 'instrument' | 'unscorable' | 'tuned' | 'encoded';
 
 /**
  * A row as written to JSON and Markdown: sealed rows (stage C8) keep only the id, the metric, the role and the sealing
@@ -188,33 +191,42 @@ export function unsealRefusal(freeze: { stage?: string; hash?: string; registryH
 /**
  * Counts by role and verdict. Compromised rows and rows whose instrument is below its bar are counted apart (never as
  * a pass or fail), passes of tuned rows are counted as 'tuned', not as passes (C5a review), and encoded rows (a match
- * is weak evidence; data/targets.json) are counted as 'encoded' whatever their verdict (C6 review).
+ * is weak evidence; data/targets.json) are counted as 'encoded' whatever their verdict (C6 review). Rows whose real
+ * record cannot support the comparison ('not scorable', e.g. T-PAT-8 without observation effort) are counted apart.
  */
 export function summarize(rows: ScoreRow[]): Record<string, Record<SummaryKey, number>> {
-  const z = (): Record<SummaryKey, number> => ({ pass: 0, fail: 0, inconclusive: 0, insufficient: 0, 'n/a': 0, structural: 0, scale: 0, sealed: 0, compromised: 0, instrument: 0, tuned: 0, encoded: 0 });
+  const z = (): Record<SummaryKey, number> => ({ pass: 0, fail: 0, inconclusive: 0, insufficient: 0, 'n/a': 0, structural: 0, scale: 0, sealed: 0, compromised: 0, instrument: 0, unscorable: 0, tuned: 0, encoded: 0 });
   const out: Record<string, Record<SummaryKey, number>> = { fitted: z(), 'held-out': z(), all: z() };
   for (const r of rows) {
     const counted = r.verdict === 'pass' || r.verdict === 'fail' || r.verdict === 'inconclusive';
-    const k: SummaryKey = r.flags.includes('compromised') ? 'compromised' : r.flags.includes('instrument below bar') ? 'instrument' : r.encoded && counted ? 'encoded' : r.flags.includes('tuned') && r.verdict === 'pass' ? 'tuned' : r.verdict;
+    const k: SummaryKey = r.flags.includes('compromised') ? 'compromised' : r.flags.includes('not scorable') ? 'unscorable' : r.flags.includes('instrument below bar') ? 'instrument' : r.encoded && counted ? 'encoded' : r.flags.includes('tuned') && r.verdict === 'pass' ? 'tuned' : r.verdict;
     out[r.role][k]++; out.all[k]++;
   }
   return out;
 }
 
 /**
- * Instrument bar (C3; applied mechanically from stage C6): rows scored by the patrol classifier count only when the
- * classifier on the team set that scores them reaches precision and recall >= 0.8 against truth in the same run;
- * otherwise they are flagged 'instrument below bar' (reported, not scored).
+ * Instrument bar (C3; applied mechanically from stage C6; extended to the encounter classifier after the C7a review):
+ * rows scored by the patrol or encounter classifier count only when the classifier on the team set that scores them
+ * reaches precision and recall >= 0.8 against truth in the same run; otherwise they are flagged 'instrument below bar'
+ * (reported, not scored). A missing measurement (older results) leaves the rows unflagged.
  */
 export const INSTRUMENT_BAR = 0.8;
 export const PATROL_ROWS: Readonly<Record<'focal' | 'males', readonly string[]>> = {
   focal: ['T-PAT-1', 'T-PAT-2', 'T-PAT-3', 'T-PAT-4', 'T-PAT-5', 'T-PAT-7', 'T-PAT-8', 'T-LET-6'],
   males: ['T-PAT-6'],
 };
-export function applyInstrumentBar(rows: ScoreRow[], acc: Record<'focal' | 'males', { precision: number; recall: number }>): void {
-  for (const set of ['focal', 'males'] as const) {
-    const a = acc[set], ok = a.precision >= INSTRUMENT_BAR && a.recall >= INSTRUMENT_BAR;
-    if (ok) continue;
-    for (const r of rows) if (PATROL_ROWS[set].includes(r.id) && !r.flags.includes('instrument below bar')) r.flags.push('instrument below bar');
-  }
+/** Rows scored by the encounter classifier (C7a review, finding 5): the focal team set, and the party follows for T-IGE-1. */
+export const ENCOUNTER_ROWS: Readonly<Record<'focal' | 'party', readonly string[]>> = {
+  focal: ['T-IGE-2', 'T-IGE-3', 'T-IGE-5', 'T-PAT-7'],
+  party: ['T-IGE-1'],
+};
+type Acc = { precision: number; recall: number };
+export function applyInstrumentBar(rows: ScoreRow[], acc: Record<'focal' | 'males', Acc>, enc?: Partial<Record<'focal' | 'party', Acc>>): void {
+  const flag = (ids: readonly string[], a: Acc | undefined) => {
+    if (!a || (a.precision >= INSTRUMENT_BAR && a.recall >= INSTRUMENT_BAR)) return;
+    for (const r of rows) if (ids.includes(r.id) && !r.flags.includes('instrument below bar')) r.flags.push('instrument below bar');
+  };
+  for (const set of ['focal', 'males'] as const) flag(PATROL_ROWS[set], acc[set]);
+  if (enc) for (const set of ['focal', 'party'] as const) flag(ENCOUNTER_ROWS[set], enc[set]);
 }

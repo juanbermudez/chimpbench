@@ -30,7 +30,7 @@ test('the field profile builds a real-scale world and the compressed default is 
   // ranges are seeded from the nominal circles (stage C6); the kernel-smoothed 95% isopleth is about as wide
   const nominal = [P.rangeRadiusWestM, P.rangeRadiusEastM, P.rangeRadiusNorthM];
   f.troops.forEach((t, i) => assert.ok(t.range && t.radius >= 0.9 * nominal[i] && t.radius <= 1.3 * nominal[i], `${t.name}: ${t.radius} m vs ${nominal[i]} m`));
-  assert.ok(f.trees.length > 20000, `${f.trees.length} food patches`);
+  assert.ok(f.trees.length > 12000, `${f.trees.length} food patches`); // 5.9 food trees/ha since C7b
   assert.ok(f.stream!.crossings.length > 10 && f.water.length > 50 && f.prey.length === P.preyMinGroups);
   // every founder sleeps in a nest on dry ground inside its range, and no patch stands in the channel
   for (const ch of f.chimps) assert.ok(ch.nest && streamCell(f, ch.position[0], ch.position[2]) <= BANK_B);
@@ -154,4 +154,16 @@ test('phenology ingest parses per-tree (long and wide) and site-level files', ()
   assert.equal(toData(tw, { source: 't', license: 'x', citation: 'y' }).species['Celtis durandii'].months[0][2], 1);
   const site = siteSeries(parseCsv('year,month,trees_monitored,n_ripe\n1998,Jan,100,8\n1998,Feb,100,12\n'), [])!;
   assert.deepEqual(site.years, [1998]); assert.equal(site.share[0][0], 0.08); assert.equal(site.share[0][1], 0.12);
+});
+
+test('C7a review finding 12: phenology ingest merges spelling variants and warns when one month holds most rows', async () => {
+  const { canonicalSpecies, monthSkewWarning } = await import('../scripts/ingest-phenology');
+  assert.equal(canonicalSpecies(' Ficus  cyathistupula'), 'Ficus cyathistipula');
+  assert.equal(canonicalSpecies('Ficus cyanthstipula'), 'Ficus cyathistipula');
+  assert.equal(canonicalSpecies('Premana angolensis'), 'Premna angolensis');
+  assert.equal(canonicalSpecies('Celtis durandii'), 'Celtis durandii');
+  const skewed = { years: [2000], bySpecies: new Map([['A b', new Map<string, [number, number]>([['2000-0', [1, 90]], ['2000-5', [1, 10]]])]]) };
+  const even = { years: [2000], bySpecies: new Map([['A b', new Map<string, [number, number]>([['2000-0', [1, 50]], ['2000-5', [1, 50]]])]]) };
+  assert.match(monthSkewWarning(skewed as never) ?? '', /90% of rows fall in jan/i);
+  assert.equal(monthSkewWarning(even as never), null);
 });

@@ -82,6 +82,26 @@ function add(t: Table, sp: string, y: number, m: number, ripe: boolean) {
 }
 
 /** Per-tree records (long or wide) into per-species monthly shares. Returns null when the columns are not recognised. */
+/**
+ * Species names as the dataset spells them, normalized (C7a review finding 12): whitespace and case trimmed, and known
+ * spelling variants of one species merged (the Ngogo full set spells Ficus cyathistipula three ways and Premna
+ * angolensis two ways). Returns the canonical name.
+ */
+const SPECIES_ALIASES: Record<string, string> = { 'ficus cyathistupula': 'Ficus cyathistipula', 'ficus cyanthstipula': 'Ficus cyathistipula', 'premana angolensis': 'Premna angolensis' };
+export function canonicalSpecies(raw: string): string {
+  const s = raw.trim().replace(/\s+/g, ' ');
+  return SPECIES_ALIASES[s.toLowerCase()] ?? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+}
+
+/** Warns when one calendar month holds more than half of the rows (a symptom of a wrong day/month order). */
+export function monthSkewWarning(t: Table): string | null {
+  const byMonth = new Array<number>(12).fill(0);
+  let total = 0;
+  for (const m of t.bySpecies.values()) for (const [k, v] of m) { const mi = +k.split('-')[1]; byMonth[mi] += v[1]; total += v[1]; }
+  const top = byMonth.indexOf(Math.max(...byMonth));
+  return total && byMonth[top] / total > 0.5 ? `WARNING: ${(100 * byMonth[top] / total).toFixed(0)}% of rows fall in ${MONTHS[top]}; check the date order` : null;
+}
+
 export function perTree(rows: string[][], report: string[]): Table | null {
   const h = rows[0].map(x => x.toLowerCase());
   const sp = col(h, /^(species|sp|taxon|scientific[ ._]?name|genus[ ._]?species|species[ ._]?name)$/);
@@ -90,7 +110,7 @@ export function perTree(rows: string[][], report: string[]): Table | null {
   const dateCols = h.map((x, i) => [i, parseMonth(x)] as const).filter(([, v]) => v !== null) as [number, [number, number]][];
   if (dateCols.length >= 6) {
     report.push(`wide format: species "${rows[0][sp]}", ${dateCols.length} month columns (${rows[0][dateCols[0][0]]} … ${rows[0][dateCols[dateCols.length - 1][0]]})`);
-    for (const r of rows.slice(1)) for (const [i, [y, m]] of dateCols) { const v = num(r[i]); if (Number.isFinite(v)) add(t, r[sp].trim(), y, m, v > 0); }
+    for (const r of rows.slice(1)) for (const [i, [y, m]] of dateCols) { const v = num(r[i]); if (Number.isFinite(v)) add(t, canonicalSpecies(r[sp]), y, m, v > 0); }
     return t;
   }
   const date = col(h, /^(date|month[ ._]?year|year[ ._]?month|yyyymm|period)$/), year = col(h, /^(year|yr)$/), month = col(h, /^(month|mo|mon)$/);
@@ -103,8 +123,10 @@ export function perTree(rows: string[][], report: string[]): Table | null {
     if (date >= 0) ym = parseMonth(r[date], order);
     else { const y = num(r[year]), mv = r[month].trim().toLowerCase(), mi = MONTHS.indexOf(mv.slice(0, 3)); ym = Number.isFinite(y) ? [y, mi >= 0 ? mi : num(mv) - 1] : null; }
     const v = num(r[ripe]);
-    if (ym && ym[1] >= 0 && ym[1] < 12 && Number.isFinite(v)) add(t, r[sp].trim(), ym[0], ym[1], v > 0);
+    if (ym && ym[1] >= 0 && ym[1] < 12 && Number.isFinite(v)) add(t, canonicalSpecies(r[sp]), ym[0], ym[1], v > 0);
   }
+  const skew = monthSkewWarning(t);
+  if (skew) report.push(skew);
   return t;
 }
 

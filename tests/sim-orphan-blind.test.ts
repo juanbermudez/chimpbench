@@ -8,7 +8,7 @@ import { contest } from '../src/sim/conflict';
 import { dominates, eloUpdate, femaleQueue, maleStrengthDrift, power, recomputeHierarchies, strength } from '../src/sim/hierarchy';
 import { paramsOf } from '../src/sim/params';
 import { reproSlow } from '../src/sim/reproduction';
-import { index, ix, markAliveChanged } from '../src/sim/state';
+import { index, ix, markAliveChanged, NEVER } from '../src/sim/state';
 import type { Candidate, Chimp, World } from '../src/types';
 
 // Stage C8 structural test (docs/staging/early-life-prereg.md §4.3): no code path keys paternity, rank or fertility on
@@ -31,7 +31,7 @@ function sceneA(): Scene {
   fem.cycleDay = 15 * ix(fem).cycleLen / 36; fem.swelling = 1; fem.pregnancy = 0; fem.health = 1;
   fem.position = [son.position[0] + 2, 0, son.position[2]]; rival.position = [son.position[0] - 3, 0, son.position[2]];
   mother.position = [son.position[0] + P.defendRangeM * 4 + 60, 0, son.position[2] + 60];
-  ix(fem).cops = { [son.id]: 2 };
+  ix(fem).cops = { [son.id]: 2 }; ix(fem).guardBy = -1; ix(son).lastMate = NEVER; ix(fem).lastMate = NEVER; ix(rival).lastMate = NEVER;
   for (const c of [son, fem, rival]) { c.action = 'rest'; c.targetId = -1; c.hunger = 0.3; ix(c).seen = [son, fem, rival].filter(o => o !== c).map(o => o.id); }
   return { w, son, fem, rival, mother };
 }

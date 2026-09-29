@@ -5,7 +5,7 @@
 // species' trees in fruit today, are listed as flat [treeId, expected crop, …] pairs in world.sim.knownTrees.
 import type { World } from '../types';
 import { paramsOf } from './params';
-import { cropTarget } from './phenology';
+import { cropTarget, meanFullness } from './phenology';
 import { simOf } from './state';
 import { cellAt, gridOf, levels } from './territory';
 
@@ -25,6 +25,8 @@ export function dailyKnownTrees(world: World): void {
   }
   const share = new Map<string, number>();
   for (const [sp, n] of all) share.set(sp, (ripe.get(sp) ?? 0) / n);
+  // stage C7b: this year's fullness of a crown is learned only by seeing it, so the expectation uses the mean (ranking unchanged)
+  const full = meanFullness(P);
   const g = gridOf(world, P), L = levels(world), known: Record<number, number[]> = {};
   for (const troop of world.troops) {
     const lv = L[troop.id];
@@ -33,7 +35,7 @@ export function dailyKnownTrees(world: World): void {
     for (let i = 0; i < world.trees.length; i++) {
       const t = world.trees[i], sh = share.get(t.species) ?? 0;
       if (sh <= 0 || lv[cellAt(g, t.position[0], t.position[2])] > P.udRangeLevel) continue;
-      const e = Math.round(t.maxFruit * sh * 1000) / 1000;
+      const e = Math.round(t.maxFruit * sh * full * 1000) / 1000;
       if (top.length === K && e <= top[K - 1].e) continue;
       let j = top.length < K ? top.length : K - 1;
       if (top.length < K) top.push({ id: t.id, e }); else top[j] = { id: t.id, e };

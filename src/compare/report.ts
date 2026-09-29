@@ -19,10 +19,16 @@ export interface ScoreRow {
  * The C12 statistics declared fitted in stage C7a before tuning (docs/realism-design.md "C7a mechanisms"); every other
  * statistic is held out. The label goes into the row note, the scorecard and the guide JSON.
  */
-export const C12_FITTED: Readonly<Record<string, string>> = { dispKm: 'fitted in C7a: tuned against Ngogo GPS', pathRate: 'fitted in C7a: tuned against Taï follows' };
+/** Role of the Taï and Ngogo C12 scorecards since the C12 relabel (integrator, 2026-09-29); the Gombe 15-min paths are the held-out movement validation. */
+export const C12_DEV_ROLE = 'development diagnostic (seen): looked at repeatedly during development and used for direction checks; not validation (integrator ruling, 2026-09-29)';
+export const C12_FITTED: Readonly<Record<string, string>> = { dispKm: 'fitted in C7a: tuned against Ngogo GPS', pathRate: 'fitted in C7a: tuned against Taï' };
+/** C12 statistics seen before a model choice (C7a review finding 3): reported as diagnostic, not held out. */
+export const C12_SEEN: Readonly<Record<string, string>> = Object.fromEntries(['area95', 'area50', 'area95M', 'area95F', 'commArea95', 'territory']
+  .map(id => [id, 'diagnostic, seen: rule 9 chosen after a range-size sensitivity run']));
+const c12Label = (id: string, note: string) => { const l = C12_FITTED[id] ?? C12_SEEN[id]; return l ? (note ? `${l}. ${note}` : l) : note; };
 
 export function scalarRow(id: string, label: string, unit: string, level: string, kind: 'ratio' | 'difference', realAll: number[], realUnits: number[], seedVals: number[], simN: number, note = '', pre?: number): ScoreRow {
-  if (C12_FITTED[id]) note = note ? `${C12_FITTED[id]}. ${note}` : C12_FITTED[id];
+  note = c12Label(id, note);
   const rv = median(realAll), sv = median(seedVals), fin = seedVals.filter(Number.isFinite);
   return { id, label, unit, level, distance: kind, real: { value: rv, lo: Math.min(...realUnits), hi: Math.max(...realUnits), spreadOf: 'unit medians', n: realAll.length, preFission: pre },
     sim: { value: sv, lo: fin.length ? Math.min(...fin) : NaN, hi: fin.length ? Math.max(...fin) : NaN, seeds: seedVals, n: simN }, dist: kind === 'ratio' ? sv / rv : sv - rv,
@@ -30,8 +36,9 @@ export function scalarRow(id: string, label: string, unit: string, level: string
 }
 
 /** A distance row: distance sim vs real, per-seed distances, and the real leave-one-unit-out baseline. */
-export function distanceRow(id: string, label: string, unit: string, level: string, kind: ScoreRow['distance'], d: number, perSeed: number[], baseline: number[], real: ScoreRow['real'], sim: ScoreRow['sim'], nSeeds: number, note: string): ScoreRow {
-  return { id, label, unit, level, distance: kind, real, sim, dist: d, distSeeds: perSeed.length ? [Math.min(...perSeed), Math.max(...perSeed)] : undefined,
+export function distanceRow(id: string, name: string, unit: string, level: string, kind: ScoreRow['distance'], d: number, perSeed: number[], baseline: number[], real: ScoreRow['real'], sim: ScoreRow['sim'], nSeeds: number, note: string): ScoreRow {
+  note = c12Label(id, note);
+  return { id, label: name, unit, level, distance: kind, real, sim, dist: d, distSeeds: perSeed.length ? [Math.min(...perSeed), Math.max(...perSeed)] : undefined,
     baseline: baseline.length ? Math.max(...baseline) : undefined, verdict: sim.n ? distanceVerdict(d, baseline, nSeeds) : 'not comparable', note };
 }
 

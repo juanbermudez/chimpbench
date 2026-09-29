@@ -187,6 +187,12 @@ export function startAction(world: World, c: Chimp, cand: Candidate, source: Dec
     const t = index(world).treeById.get(cand.targetId);
     if (t) x.actEnd = Math.max(x.actEnd, world.time + (Math.hypot(t.position[0] - c.position[0], t.position[2] - c.position[2]) / paramsOf(world).walkMps / 60 + 5) / 60);
   }
+  // stage C7b (field; docs/staging/c7b-prereg.md 3.1): a party follower of a companion on such a trip stays with it until
+  // the trip ends (joint travel after recruitment, gruberZuberbuhler2013 [M]; to the destination: design)
+  if (cand.action === 'follow' && meta.v === V.PARTY && paramsOf(world).followCommit === 1) {
+    const o = index(world).byId.get(cand.targetId);
+    if (o && o.action === 'travel' && ix(o).v === V.TREE) x.actEnd = Math.max(x.actEnd, ix(o).actEnd);
+  }
   c.nextDecision = x.actEnd;
   if (c.nest && cand.action !== 'nest') c.nest = null;
   if (x.impulse !== 0 && (cand.action === 'attack' || cand.action === 'transfer' || (cand.action === 'patrol' && x.v === V.LEAD) || (cand.action === 'display' && x.v === V.RAIN))) { x.impulse = 0; x.impulseUntil = -1e9; }

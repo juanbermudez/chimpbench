@@ -2,7 +2,7 @@ import type { Tree, World } from '../types';
 import { paramsOf, type Params } from './params';
 import { PHENOLOGY_DATA } from './phenology.gen';
 import { clamp, hash01 } from './rng';
-import { START_DOY, START_HOUR, simOf } from './state';
+import { START_DOY, START_HOUR, TREE_ID0, simOf } from './state';
 
 // Patch ecology (docs/realism-design.md §5.1 "Food", §5.6): each sim Tree is a food patch whose crop follows a
 // phenology record, evaluated lazily from time and depletion state when read. Only used when P.patchEcology is 1
@@ -168,8 +168,40 @@ function episode(tb: Tables, t: Table, id: number, y: number, d: number, D: numb
   return Math.min(ss(x / ramp), ss((D - x) / ramp));
 }
 
+/**
+ * Stage C7b (field; docs/staging/c7b-prereg.md 3.2): the share of a crown filled with ripe fruit at the peak of episode
+ * `k` of tree `id`, f = min + (1 - min) u^exp with u a hash (no rng). Crowns more than half filled are at least 9x scarcer
+ * than other fruit-bearing crowns (janmaat2016) [M]; cropFullExp sets P(f > 1/2) = 0.1. 1 when off (cropFullExp 0).
+ */
+export function cropFullness(P: Params, id: number, k: number): number {
+  return P.cropFullExp > 0 ? P.cropFullMin + (1 - P.cropFullMin) * hash01(id, k, 55) ** P.cropFullExp : 1;
+}
+/** Mean of cropFullness over trees and episodes: min + (1 - min) / (exp + 1). */
+export function meanFullness(P: Params): number { return P.cropFullExp > 0 ? P.cropFullMin + (1 - P.cropFullMin) / (P.cropFullExp + 1) : 1; }
+
 /** Phenology crop of a patch now (fruit units), before depletion; drought and fig-mast interventions included. */
+// Memo of cropTarget (performance only, same values): many animals look at the same crowns in a tick. An entry is valid
+// for one world, one time and the fig-mast and drought state it was computed under (the only other inputs; the
+// species tables and parameters are fixed per world, maxFruit and species per tree).
+let _mw: World | null = null, _mFig = NaN, _mFigU = NaN, _mDry = NaN;
+let _mv = new Float64Array(0), _mt = new Float64Array(0);
 export function cropTarget(world: World, t: Tree, time: number): number {
+  const s = simOf(world), k = t.id - TREE_ID0;
+  if (world !== _mw || s.figTree !== _mFig || s.figUntil !== _mFigU || s.droughtUntil !== _mDry || _mt.length < world.trees.length) {
+    _mw = world; _mFig = s.figTree; _mFigU = s.figUntil; _mDry = s.droughtUntil;
+    if (_mt.length < world.trees.length) { _mv = new Float64Array(world.trees.length); _mt = new Float64Array(world.trees.length); }
+    _mt.fill(NaN);
+  }
+  if (k >= 0 && k < _mt.length) {
+    if (_mt[k] === time) return _mv[k];
+    const v = cropTargetOf(world, t, time);
+    _mt[k] = time; _mv[k] = v;
+    return v;
+  }
+  return cropTargetOf(world, t, time);
+}
+
+function cropTargetOf(world: World, t: Tree, time: number): number {
   const P = paramsOf(world), s = simOf(world);
   if (t.id === s.figTree && s.figUntil > time) return t.maxFruit * P.figMastLevel;
   const tb = tables(world);
@@ -180,11 +212,13 @@ export function cropTarget(world: World, t: Tree, time: number): number {
   if (table.fig) {
     // asynchronous per-tree fig cycles (P-FOOD-3); the share of the cycle in fruit follows the record's fig share
     const period = P.figCycleDays, D = Math.min(period, P.figEpisodeDays);
-    const local = ((day + hash01(t.id, 7, 3) * period) % period + period) % period;
+    const phase = day + hash01(t.id, 7, 3) * period, local = (phase % period + period) % period;
     shape = local < D ? Math.min(ss(local / P.ripeRampDays), ss((D - local) / P.ripeRampDays)) : 0;
+    if (shape > 0 && P.cropFullExp > 0) shape *= cropFullness(P, t.id, Math.floor(phase / period) + 1000);
   } else {
     const y = Math.floor(day / 365), d = day - 365 * y;
-    shape = Math.max(episode(tb, table, t.id, y, d, P.episodeDays, P.ripeRampDays), episode(tb, table, t.id, y - 1, d + 365, P.episodeDays, P.ripeRampDays));
+    const a = episode(tb, table, t.id, y, d, P.episodeDays, P.ripeRampDays), b = episode(tb, table, t.id, y - 1, d + 365, P.episodeDays, P.ripeRampDays);
+    shape = P.cropFullExp > 0 ? Math.max(a > 0 ? a * cropFullness(P, t.id, y) : 0, b > 0 ? b * cropFullness(P, t.id, y - 1) : 0) : Math.max(a, b);
   }
   let v = t.maxFruit * shape;
   if (s.droughtUntil > time) v *= table.fig ? P.droughtFigFactor : P.droughtFruitFactor;

@@ -77,6 +77,8 @@ export function recall(world: World, c: Chimp, entityId: number, kind: Memory['k
 
 const _trees: number[] = [];
 const _d2: number[] = [];
+/** Values of the trees kept in x.trees during one perception (performance: treeValue would recompute the same numbers). */
+const _tv: number[] = [];
 const _near: number[] = [];
 
 /** Local perception at a decision point: sight radius shrinks at night and in rain. No global knowledge. */
@@ -165,8 +167,12 @@ export function perceive(world: World, c: Chimp): void {
     const dx = t.position[0] - px, dz = t.position[2] - pz;
     const v = f / (1 + Math.sqrt(dx * dx + dz * dz) / P.treeValueDistScaleM);
     let pos = x.trees.length;
-    while (pos > 0 && treeValue(world, x.trees[pos - 1], px, pz, P, lazy) < v) pos--;
-    if (pos < 5) { const tr = x.trees; tr.push(0); for (let j = tr.length - 1; j > pos; j--) tr[j] = tr[j - 1]; tr[pos] = t.id; if (tr.length > 5) tr.length = 5; }
+    while (pos > 0 && _tv[pos - 1] < v) pos--;
+    if (pos < 5) {
+      const tr = x.trees; tr.push(0); _tv.length = tr.length;
+      for (let j = tr.length - 1; j > pos; j--) { tr[j] = tr[j - 1]; _tv[j] = _tv[j - 1]; }
+      tr[pos] = t.id; _tv[pos] = v; if (tr.length > 5) { tr.length = 5; _tv.length = 5; }
+    }
   }
   for (let k = 0; k < x.trees.length && k < 4; k++) {
     const t = index(world).treeById.get(x.trees[k])!, f = lazy ? fruitAt(world, t) : t.fruit;
@@ -201,12 +207,6 @@ export function perceive(world: World, c: Chimp): void {
     if (st.kind === 'snake-model' && d2 < P.snakeVisualM * P.snakeVisualM) { const a = s.aware[st.id] ?? (s.aware[st.id] = []); if (!a.includes(c.id)) a.push(c.id); }
   }
   rollImpulses(world, c);
-}
-
-function treeValue(world: World, id: number, px: number, pz: number, P: Params, lazy: boolean): number {
-  const t = index(world).treeById.get(id)!;
-  const dx = t.position[0] - px, dz = t.position[2] - pz;
-  return (lazy ? fruitAt(world, t) : t.fruit) / (1 + Math.sqrt(dx * dx + dz * dz) / P.treeValueDistScaleM);
 }
 
 /** Rare behaviors start as impulses drawn at perception, so pure candidate scoring stays rng-free. */

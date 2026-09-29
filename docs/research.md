@@ -227,8 +227,17 @@ Proposed additions from the realism research pass. They are **not yet merged** i
 - Kibale phenology: Ngogo 1998–2017 mean 8.7% of stems with ripe fruit [potts2020]; Kanyawara 1998–2013 mean 8.4% (data) [chapman2018]; diet 72% fruit at Ngogo [watts2012a] and 64% at Kanyawara [emeryThompson2020].
 - Respiratory epidemics of human origin: Ngogo 2017 metapneumovirus killed 25 of 205 (12.2%); Kanyawara respirovirus 3 sickened 69% with no deaths [negrey2019]; Kanyawara rhinovirus C 2013 killed 5 of ~56 [scully2018].
 - Spatial memory at Taï (*P. t. verus*): travel linearity 0.962 [normandBoesch2009]; nearest productive tree chosen only 30% of the time [normand2009]; approach to out-of-sight trees from a mean 537.5 m [ban2014].
-- Food landscape (stage C7a): along transects a fruiting chimpanzee food tree every 97 m but a large crop only every 21 km; 9.8 feeding-size trees (DBH > 67 cm) per ha at Kanyawara [janmaat2016]. Large fruit trees are monitored with long-term spatial memory across seasons [janmaat2013a].
 - Hunting at Kanyawara vs Gombe: hunts on 7.9% vs 64.7% of colobus encounters; success 61.3% vs 62.3% [gilby2015].
+
+## Food landscape and tree knowledge (stage C7a; accepted after the C7a review, 29 September 2026)
+
+- **Transect rates and feeding-tree density** [janmaat2016] (full text, verified by the C7a review) [M].
+  - Kanyawara transects meet a fruiting chimpanzee food tree every 97 m.
+  - A large ripe crop turns up every 21 km over all transects, logged forest included; old-growth transects alone give one per 10 km.
+  - Table I: 9.81 average-sized chimpanzee feeding trees per ha (DBH > 67 cm). The Discussion describes these as trees of at least feeding-tree size, not only food species. 58–62% of mature transect trees were food species, so food-species trees of that size are ≈ 6/ha (derived).
+- **Long-term spatial memory of large fruit trees** [janmaat2013a] (full text) [M]: Taï chimpanzees monitor large fruit trees and remember feeding experiences across seasons.
+- **Botanical skills and inspection mistakes** [janmaat2013b] (full text) [M]: Janmaat KRL, Ban SD, Boesch C 2013. Taï chimpanzees use botanical skills to discover fruit: what we can learn from their mistakes. *Animal Cognition* 16(6):851–860. [doi:10.1007/s10071-013-0617-z](https://doi.org/10.1007/s10071-013-0617-z). Chimpanzees inspect empty trees of species that are fruiting synchronously, so a species' fruiting state is learned and an empty tree is learned on arrival (cited by `knownTreesK` and C7a rule 8).
+- **Stylization (C7a rule 8):** the daily list of the 40 best-known trees uses the true share of each species' trees in fruit and every tree's capacity, including trees no animal has seen: community omniscience about those 40 trees, labelled as such in `src/sim/foraging.ts`.
 
 ## Real-data comparison sources (stage C12, 29 September 2026)
 
@@ -238,11 +247,21 @@ Downloaded with the user's approval into `data/raw/`, which is never published. 
   - Associated paper: *Science*, https://doi.org/10.1126/science.adz4944.
   - Coverage: 166,826 GPS fixes (1–2 per individual-day), 162 individuals, 2011–2023.
   - Supports home-range kernels, core fraction, year-to-year overlap and fission divergence.
-- **Lemoine et al. 2023, Taï border movement.** Lemoine, S., Samuni, L., Crockford, C. & Wittig, R. M. Chimpanzees make tactical use of high elevation in territorial contexts. *PLOS Biology* 21(11): e3002350, https://doi.org/10.1371/journal.pbio.3002350 (CC BY 4.0).
+- **Lemoine et al. 2023, Taï border movement** [lemoine2023]. Lemoine, S., Samuni, L., Crockford, C. & Wittig, R. M. Chimpanzees make tactical use of high elevation in territorial contexts. *PLOS Biology* 21(11): e3002350, https://doi.org/10.1371/journal.pbio.3002350 (CC BY 4.0).
   - Supplementary data s015–s017: time-ordered focal records with binned positions and rest/travel labels, plus border-related hill climbs.
   - Taï is the western subspecies (*P. t. verus*), not Kibale.
-- **Lemoine et al. 2020, Taï territory size.** Lemoine, S., Boesch, C., Preis, A., Samuni, L., Crockford, C. & Wittig, R. M. Group dominance increases territory size and reduces neighbour pressure in wild chimpanzees. *Royal Society Open Science* 7: 200577, https://doi.org/10.1098/rsos.200577 (CC BY 4.0).
+- **Lemoine et al. 2020, Taï territory size** [lemoine2020b]. Lemoine, S., Boesch, C., Preis, A., Samuni, L., Crockford, C. & Wittig, R. M. Group dominance increases territory size and reduces neighbour pressure in wild chimpanzees. *Royal Society Open Science* 7: 200577, https://doi.org/10.1098/rsos.200577 (CC BY 4.0).
   - Yearly 95% kernel territory sizes, 1997–2016.
+
+- **Pusey & Schroepfer-Walker 2013, Gombe female ranges and 15-min focal paths** [puseySchroepferWalker2013]. Pusey, A. E. & Schroepfer-Walker, K. Female competition in chimpanzees. *Phil. Trans. R. Soc. B* 368: 20130077, https://doi.org/10.1098/rstb.2013.0077.
+  - Data: Dryad, https://doi.org/10.5061/dryad.jg05d (CC0; downloaded by the user, `data/raw/dryad-jg05d/`).
+  - Coverage: Kasekela community, 2000–2003. Locations of focal adults every 15 min during day-long follows (UTM), plus each female's first daily location when alone, by rank class (H/M/L).
+  - Supports 15-min step lengths, turning angles, straightness, daily path length, and female core areas by rank class. Bibliographic details were checked on DataCite.
+- **Patrol and phenology datasets** (all CC0, downloaded by the user; bibliographic details checked on DataCite):
+  - Ngogo patrol dates: Dryad https://doi.org/10.5061/dryad.kk33f [langergraber2017]. The record has no observation effort, so monthly rates aren't comparable (T-PAT-8 not scorable).
+  - Gombe patrols 1978–2007: Dryad https://doi.org/10.5061/dryad.z8w9ghxdb [massaro2022].
+  - Ngogo post-fission quarterly patrols and male networks: Dryad https://doi.org/10.5061/dryad.sf7m0cgkg [sandel2026].
+  - Ngogo tree phenology 1998–2017: Dryad https://doi.org/10.5061/dryad.gf1vhhmk8 [potts2020].
 
 ## Patrols (verified 29 Sep 2026; adopted for the C6 patrol corrections)
 
@@ -320,6 +339,45 @@ Proposed by the patrol evidence check (29 September 2026, C6 Step 1). Adopted by
 - *new* samuni2021: Samuni L, Crockford C, Wittig RM 2021. Group-level cooperation in chimpanzees is shaped by strong social ties. *Nature Communications* 12:539. [doi:10.1038/s41467-020-20709-9](https://doi.org/10.1038/s41467-020-20709-9) (FT, PMC7822919).
 - *new* gruberZuberbuhler2013: Gruber T, Zuberbühler K 2013. Vocal recruitment for joint travel in wild chimpanzees. *PLoS ONE* 8(9):e76073. [doi:10.1371/journal.pone.0076073](https://doi.org/10.1371/journal.pone.0076073) (FT, PMC3783376).
 - *new* sobolewski2012: Sobolewski ME, Brown JL, Mitani JC 2012. Territoriality, tolerance and testosterone in wild chimpanzees. *Animal Behaviour* 84(6):1469–1474. [doi:10.1016/j.anbehav.2012.09.018](https://doi.org/10.1016/j.anbehav.2012.09.018) (indexed excerpt only; unverified).
+
+## Food competition and party size (stage C7b, 29 September 2026)
+
+Evidence for the C7b mechanisms ([staging/c7b-prereg.md](staging/c7b-prereg.md)). Bibliographic data checked against Crossref on 29 September 2026. "Abs" means abstract text only (publisher page or indexed abstract).
+
+- **Ecological constraints on party size, Kanyawara** [chapman1995] (Abs) [M].
+  - Setup: chimpanzees at Kibale and spider monkeys at Santa Rosa, 6 years each.
+  - Adults spent their time in small subgroups that changed size and composition often.
+  - The monthly size, density and distribution of food patches predicted subgroup size (multiple regression).
+  - The model tested: group size is limited by travel costs, because larger groups deplete patches faster.
+- **Party size tracks patch size, not habitat-wide food, Budongo** [newtonFisher2000] (Abs) [M].
+  - Setup: 4 years of food-supply and party-size data.
+  - Foraging party size fluctuated with the size of food patches.
+  - Relation to habitat-wide food abundance: negative or none.
+- **A feeding cost of grouping, Kanyawara** [emeryThompson2014] (Abs) [M].
+  - Setup: over 11 years.
+  - Receptive females raised the number of males in parties.
+  - Females had lower urinary C-peptide, a sign of lower energy balance, when they associated with more males.
+- **Patch residency and feeding parties, Kibale** [potts2011] (full text, author copy) [H].
+  - Patch residency per visit: 27.0 min at Ngogo vs 46.2 min at Kanyawara (Mann–Whitney Z = −9.188).
+  - Feeding party: 7.29 (1–40) at Ngogo, 8.39 (1–32) at Kanyawara.
+  - Patch size: 63.38 vs 66.87 cm DBH.
+  - The authors discuss giving-up densities and possible over-exploitation of patches at Kanyawara.
+  - Not a target; C7b uses it as a consistency check, not a fit.
+- **Crown fullness and food-tree density** [janmaat2016].
+  - Among trees bearing ripe fruit, crowns more than half filled were at least 9× scarcer than others (abstract; confirmed in full text by the C7a review).
+  - Old-growth transects meet one large ripe crop per 10 km; 21 km is the figure over all transects, logged forest included.
+  - 58–62% of mature transect trees were chimpanzee food species (full text, C7a review finding 10). With Table I's 9.81 feeding-size trees/ha, that is ≈ 5.9 food-species trees of feeding size per ha (derived).
+- **Marginal value theorem** [charnov1976] (theory) [M as applied].
+  - A forager maximizing its long-term intake rate values a patch by its gain over travel plus handling time.
+  - C7b applies it to trips to trees. The need cap is a design assumption.
+
+**New sources:**
+
+- *new* chapman1995: Chapman CA, Chapman LJ, Wrangham RW 1995. Ecological constraints on group size: an analysis of spider monkey and chimpanzee subgroups. *Behavioral Ecology and Sociobiology* 36(1):59–70. [doi:10.1007/BF00175729](https://doi.org/10.1007/BF00175729) (Abs).
+- *new* newtonFisher2000: Newton-Fisher NE, Reynolds V, Plumptre AJ 2000. Food supply and chimpanzee (*Pan troglodytes schweinfurthii*) party size in the Budongo Forest Reserve, Uganda. *International Journal of Primatology* 21(4):613–628. [doi:10.1023/A:1005561203763](https://doi.org/10.1023/A:1005561203763) (Abs).
+- *new* emeryThompson2014: Emery Thompson M, Muller MN, Wrangham RW 2014. Male chimpanzees compromise the foraging success of their mates in Kibale National Park, Uganda. *Behavioral Ecology and Sociobiology* 68(12):1973–1983. [doi:10.1007/s00265-014-1803-y](https://doi.org/10.1007/s00265-014-1803-y) (Abs).
+- *new* charnov1976: Charnov EL 1976. Optimal foraging, the marginal value theorem. *Theoretical Population Biology* 9(2):129–136. [doi:10.1016/0040-5809(76)90040-X](https://doi.org/10.1016/0040-5809(76)90040-X) (theory; standard reference).
+- potts2011 and janmaat2016 are already in the realism-design.md source table; the lines above add findings, not sources.
 
 ## Early life and maternal effects (chimpanzees)
 

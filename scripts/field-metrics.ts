@@ -19,9 +19,10 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { availableParallelism } from 'node:os';
 import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defaultConfig, type ProfileName } from '../src/field/config';
 import { lifeRows, type LifeResult } from '../src/field/lifecourse';
-import { runFieldJob, type FieldJob, type FieldResult } from '../src/field/run';
+import { runFieldJob, type EncounterAccuracy, type FieldJob, type FieldResult } from '../src/field/run';
 import { S18 } from '../src/field/section18';
 import { mean } from '../src/field/stats';
 import { applyInstrumentBar, publicRow, scoreTargets, summarize, unsealRefusal, type ScoreRow, type TargetFile } from '../src/field/targets';
@@ -102,12 +103,19 @@ async function main() {
   };
   const pat = pool(r => r.accuracy.patrol), patM = pool(r => r.accuracy.patrolMales);
   const precision = pat.precision, recall = pat.recall;
-  applyInstrumentBar(rows, { focal: pat, males: patM });
+  // encounter classifier against truth (C5a re-check at field scale; observable reference after the C7a review); older results lack these fields
+  const encPool = (get: (r: typeof results[number]) => EncounterAccuracy | undefined) => {
+    const a = results.reduce((a, r) => { const e = get(r); if (!e) return a; const obsN = e.observableTruth ?? e.followedTruth; a.found += Number.isFinite(e.recall) ? e.recall * obsN : 0; a.obs += obsN;
+      a.foundAll += Number.isFinite(e.recallAll ?? e.recall) ? (e.recallAll ?? e.recall) * e.followedTruth : 0; a.followed += e.followedTruth; a.real += Number.isFinite(e.precision) ? e.precision * e.classified : 0; a.classified += e.classified; a.truth += e.truthEpisodes; a.any = true; return a; },
+      { found: 0, obs: 0, foundAll: 0, followed: 0, real: 0, classified: 0, truth: 0, any: false });
+    return a.any ? { recall: a.obs ? a.found / a.obs : NaN, recallAll: a.followed ? a.foundAll / a.followed : NaN, precision: a.classified ? a.real / a.classified : NaN, detection: a.truth ? a.classified / a.truth : NaN,
+      observableTruth: a.obs, followedTruth: a.followed, classified: a.classified, truthEpisodes: a.truth } : undefined;
+  };
+  const encounter = encPool(r => r.accuracy.encounter) ?? { recall: NaN, recallAll: NaN, precision: NaN, detection: NaN, observableTruth: 0, followedTruth: 0, classified: 0, truthEpisodes: 0 };
+  const encounterParty = encPool(r => r.encounterParty);
+  applyInstrumentBar(rows, { focal: pat, males: patM }, { focal: encounter.observableTruth ? encounter : undefined, party: encounterParty });
   const summary = summarize(rows);
-  // encounter and hunt classifiers against truth (C5a re-check at field scale); older results lack these fields
-  const enc = results.reduce((a, r) => { const e = r.accuracy.encounter; if (!e) return a; a.found += Number.isFinite(e.recall) ? e.recall * e.followedTruth : 0; a.followed += e.followedTruth; a.real += Number.isFinite(e.precision) ? e.precision * e.classified : 0; a.classified += e.classified; a.truth += e.truthEpisodes; return a; }, { found: 0, followed: 0, real: 0, classified: 0, truth: 0 });
   const hun = results.reduce((a, r) => { const h = r.accuracy.hunt; if (h) { a.detected += h.detected; a.truth += h.truth; } return a; }, { detected: 0, truth: 0 });
-  const encounter = { recall: enc.followed ? enc.found / enc.followed : NaN, precision: enc.classified ? enc.real / enc.classified : NaN, detection: enc.truth ? enc.classified / enc.truth : NaN, followedTruth: enc.followed, classified: enc.classified, truthEpisodes: enc.truth };
   const hunt = { detection: hun.truth ? hun.detected / hun.truth : NaN, detected: hun.detected, truth: hun.truth };
   const obsShare = results.map(r => r.observerMs / r.simMs);
 
@@ -116,7 +124,7 @@ async function main() {
   console.log(`\nMGOGO field-observer scorecard — profile ${PROFILE}, natural aging ${DAYS} days × seeds ${SEEDS.join(', ')} (${((performance.now() - t0) / 1000).toFixed(0)} s)\n`);
   for (const role of ['fitted', 'held-out'] as const) {
     const s = summary[role];
-    console.log(`### ${role === 'fitted' ? 'Fitted' : 'Held-out'} targets: ${s.pass} pass, ${s.tuned} tuned pass, ${s.fail} fail, ${s.inconclusive} inconclusive, ${s.insufficient} insufficient data, ${s['n/a']} n/a (mechanism missing)${s.scale ? `, ${s.scale} not scored (scale)` : ''}${s.structural ? `, ${s.structural} structural` : ''}${s.compromised ? `, ${s.compromised} compromised` : ''}${s.instrument ? `, ${s.instrument} instrument below bar` : ''}${s.encoded ? `, ${s.encoded} encoded (counted apart)` : ''}${s.sealed ? `, ${s.sealed} sealed (C8 proof)` : ''}\n`);
+    console.log(`### ${role === 'fitted' ? 'Fitted' : 'Held-out'} targets: ${s.pass} pass, ${s.tuned} tuned pass, ${s.fail} fail, ${s.inconclusive} inconclusive, ${s.insufficient} insufficient data, ${s['n/a']} n/a (mechanism missing)${s.scale ? `, ${s.scale} not scored (scale)` : ''}${s.structural ? `, ${s.structural} structural` : ''}${s.compromised ? `, ${s.compromised} compromised` : ''}${s.instrument ? `, ${s.instrument} instrument below bar` : ''}${s.unscorable ? `, ${s.unscorable} not scorable` : ''}${s.encoded ? `, ${s.encoded} encoded (counted apart)` : ''}${s.sealed ? `, ${s.sealed} sealed (C8 proof)` : ''}\n`);
     console.log('| Target | Metric | Band | Per seed | Pooled ± sd | Truth | Verdict | Note |');
     console.log('| --- | --- | --- | --- | --- | --- | --- | --- |');
     for (const r of rows.filter(x => x.role === role)) console.log(line(r));
@@ -129,7 +137,7 @@ async function main() {
   for (const s of s18) console.log(`| ${s.label} | ${f(s.observedMean)} | ${f(s.truthMean)} | ${s.field} | ${s.protocol} |`);
   for (const l of lrows) console.log(`| ${l.label} | ${l.value} | (complete census) | ${l.field} | life course, census every slow step |`);
   console.log(`\nSampling accuracy: activity shares from 1-min points vs per-tick truth, max |Δ| per seed ${act.map(x => x.toFixed(4)).join(', ')}; patrol classifier precision ${f(precision)} recall ${f(recall)} (${pat.classified} classified, ${pat.episodes} truth episodes); on male-party follows (T-PAT-1, T-PAT-6) precision ${f(patM.precision)} recall ${f(patM.recall)} (${patM.classified} classified, ${patM.episodes} truth episodes)`);
-  console.log(`Encounter classifier (focal teams) vs truth: recall ${f(encounter.recall)} of ${encounter.followedTruth} episodes involving a followed party, precision ${f(encounter.precision)} of ${encounter.classified} classified, detection ${f(encounter.detection)} of ${encounter.truthEpisodes} truth episodes; hunts detected ${hunt.detected} of ${hunt.truth} (${f(hunt.detection)})`);
+  console.log(`Encounter classifier vs truth: focal teams recall ${f(encounter.recall)} of ${encounter.observableTruth} observable episodes (earlier reference ${f(encounter.recallAll)} of ${encounter.followedTruth}); party follows recall ${f(encounterParty?.recall)}, precision ${f(encounterParty?.precision)}; focal precision ${f(encounter.precision)} of ${encounter.classified} classified, detection ${f(encounter.detection)} of ${encounter.truthEpisodes} truth episodes; hunts detected ${hunt.detected} of ${hunt.truth} (${f(hunt.detection)})`);
   console.log(`Observer CPU ÷ sim CPU per seed: ${obsShare.map(x => (x * 100).toFixed(1) + '%').join(', ')}`);
   console.log(`Pool: ${results.length} seeds on ${has('no-pool') ? 1 : Math.min(WORKERS, jobs.length)} workers in ${(poolMs / 1000).toFixed(0)} s; job walls ${results.map(r => (r.wallMs / 1000).toFixed(0)).join(', ')} s${solo ? `; solo seed ${(solo.wallMs / 1000).toFixed(0)} s → ratio ${(poolMs / solo.wallMs).toFixed(2)}` : ''}`);
   console.log(`Record hashes: ${results.map(r => `${r.seed}:${r.hash}`).join(' ')}`);
@@ -143,7 +151,7 @@ async function main() {
     hashes: Object.fromEntries(results.map(r => [r.seed, r.hash])),
   };
   const timing = { poolMs, soloMs: solo?.wallMs ?? null, ratio: solo ? poolMs / solo.wallMs : null, jobWallMs: results.map(r => r.wallMs), simMs: results.map(r => r.simMs), observerMs: results.map(r => r.observerMs), experimentMs: results.map(r => r.experimentMs), observerShare: obsShare };
-  const accuracy = { activityMaxAbsDiff: act, activity: results.map(r => r.accuracy.activity), patrol: { precision, recall, classified: pat.classified, truthEpisodes: pat.episodes, perSeed: results.map(r => r.accuracy.patrol) }, patrolMales: { precision: patM.precision, recall: patM.recall, classified: patM.classified, truthEpisodes: patM.episodes, perSeed: results.map(r => r.accuracy.patrolMales ?? null) }, encounter, hunt };
+  const accuracy = { activityMaxAbsDiff: act, activity: results.map(r => r.accuracy.activity), patrol: { precision, recall, classified: pat.classified, truthEpisodes: pat.episodes, perSeed: results.map(r => r.accuracy.patrol) }, patrolMales: { precision: patM.precision, recall: patM.recall, classified: patM.classified, truthEpisodes: patM.episodes, perSeed: results.map(r => r.accuracy.patrolMales ?? null) }, encounter, encounterParty, hunt };
   const hashes = results.map(r => ({ seed: r.seed, hash: r.hash }));
   if (JSON_OUT) {
     mkdirSync(dirname(JSON_OUT), { recursive: true });
@@ -163,21 +171,21 @@ function rescore(file: string) {
   const out = { ...saved, summary, rows: rows.map(publicRow) };
   if (JSON_OUT) writeFileSync(JSON_OUT, JSON.stringify(out, null, 1));
   if (MD_OUT) writeFileSync(MD_OUT, markdown(saved.manifest, rows, summary, saved.s18, saved.life, saved.accuracy, saved.timing, hashes));
-  for (const role of ['fitted', 'held-out'] as const) { const s = summary[role]; console.log(`${role}: ${s.pass} pass, ${s.tuned} tuned pass, ${s.fail} fail, ${s.inconclusive} inconclusive, ${s.insufficient} insufficient, ${s['n/a']} n/a, ${s.scale} scale, ${s.compromised} compromised, ${s.instrument} instrument below bar, ${s.encoded ?? 0} encoded, ${s.sealed ?? 0} sealed`); }
+  for (const role of ['fitted', 'held-out'] as const) { const s = summary[role]; console.log(`${role}: ${s.pass} pass, ${s.tuned} tuned pass, ${s.fail} fail, ${s.inconclusive} inconclusive, ${s.insufficient} insufficient, ${s['n/a']} n/a, ${s.scale} scale, ${s.compromised} compromised, ${s.instrument} instrument below bar, ${s.unscorable ?? 0} not scorable, ${s.encoded ?? 0} encoded, ${s.sealed ?? 0} sealed`); }
 }
 
 function markdown(manifest: Record<string, unknown>, rows: ScoreRow[], summary: ReturnType<typeof summarize>, s18: { label: string; field: string; protocol: string; truthProtocol: string; observed: (number | null)[]; truth: (number | null)[]; observedMean: number | null; truthMean: number | null }[],
   life: ReturnType<typeof lifeRows>, accuracy: { activityMaxAbsDiff: number[]; patrol: { precision: number; recall: number; classified: number; truthEpisodes: number };
-    encounter?: { recall: number; precision: number; detection: number; followedTruth: number; classified: number; truthEpisodes: number }; hunt?: { detection: number; detected: number; truth: number } }, timing: { poolMs: number; soloMs: number | null; ratio: number | null; observerShare: number[] }, hashes: { seed: number; hash: string }[]): string {
+    encounter?: { recall: number; recallAll?: number; precision: number; detection: number; followedTruth: number; observableTruth?: number; classified: number; truthEpisodes: number }; encounterParty?: { recall: number; precision: number; observableTruth: number }; hunt?: { detection: number; detected: number; truth: number } }, timing: { poolMs: number; soloMs: number | null; ratio: number | null; observerShare: number[] }, hashes: { seed: number; hash: string }[]): string {
   const o: string[] = [];
   const spread = (r: ScoreRow) => r.perSeed.filter(v => v !== null).length > 1 ? `${f(r.min)}–${f(r.max)} (sd ${f(r.sd)})` : '—';
   o.push(`# Field-observer scorecard (${manifest.profile} profile)`, '');
   o.push(`Today's model measured by the virtual field observer (\`src/field/\`): profile **${manifest.profile}**, natural aging **${manifest.days} days × seeds ${(manifest.seeds as number[]).join(', ')}**, generated ${manifest.date} by \`scripts/field-metrics.ts\`. Targets and bands: \`data/targets.json\` (docs/realism-design.md §2). Phenology: ${manifest.phenology ?? 'compressed eager model'}.`, '');
   o.push('Verdicts: **pass** (pooled value in the accept band; pattern targets: the pattern holds in most seeds), **fail**, **inconclusive** (the 95% interval over seeds crosses a band edge, or a rare-event rate outside the band has a 95% Poisson interval that still overlaps it: not established either way), **insufficient** (the run is too short or the event did not occur), **n/a** (mechanism missing), **structural** (checked by a unit test, not by observation), **scale** (a length or area under the compressed profile: reported ×50 as field-equivalent but not scored, because walking speed, sight and party links are not scaled by the same factor; scored from C5a). ᶜ marks scale-sensitive metrics.', '');
-  o.push(`Protocol: hash \`${manifest.protocolHash}\`${manifest.frozenProtocolHash ? (manifest.frozenProtocolHash === manifest.protocolHash ? ` (frozen at ${manifest.frozenAt})` : ` (differs from the ${manifest.frozenAt} freeze \`${manifest.frozenProtocolHash}\`: see data/targets.json protocolLog)`) : ''}. Rows flagged *revised post hoc* had their protocol corrected after their value was seen (source text or bug; logged); *compromised* held-out rows are reported but never count as validation; *tuned* rows reached their value by tuning on the scoring seeds (their passes are counted as tuned, not as passes); *instrument below bar* rows are reported, not scored; *encoded* rows (enc.; a match is weak evidence) are counted apart; *held as fail* rows are reported as failed whatever their value; *model revised post-freeze* rows were re-tested on fresh seeds after a model change and count only if no parameter was set by looking at them; *partially encoded* rows are scored with that caveat; cell-based rows on fewer than 20 cells of 500 m per community-year are **scale** (reported, not scored).`, '');
+  o.push(`Protocol: hash \`${manifest.protocolHash}\`${manifest.frozenProtocolHash ? (manifest.frozenProtocolHash === manifest.protocolHash ? ` (frozen at ${manifest.frozenAt})` : ` (differs from the ${manifest.frozenAt} freeze \`${manifest.frozenProtocolHash}\`: see data/targets.json protocolLog)`) : ''}. Rows flagged *revised post hoc* had their protocol corrected after their value was seen (source text or bug; logged); *compromised* held-out rows are reported but never count as validation; *tuned* rows reached their value by tuning on the scoring seeds (their passes are counted as tuned, not as passes); *instrument below bar* rows are reported, not scored; *encoded* rows (enc.; a match is weak evidence) are counted apart; *held as fail* rows are reported as failed whatever their value; *model revised post-freeze* rows were re-tested on fresh seeds after a model change and count only if no parameter was set by looking at them; *partially encoded* rows are scored with that caveat; *not scorable* rows have a real record that cannot support the comparison and never count; cell-based rows on fewer than 20 cells of 500 m per community-year are **scale** (reported, not scored).`, '');
   o.push('## Summary', '');
-  o.push('| Role | Targets | Pass | Tuned pass | Fail | Inconclusive | Insufficient data | Not scored (scale) | n/a (mechanism missing) | Structural | Compromised | Instrument below bar | Encoded | Sealed |', '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
-  for (const role of ['fitted', 'held-out', 'all'] as const) { const s = summary[role]; o.push(`| ${role} | ${Object.values(s).reduce((a, b) => a + b, 0)} | ${s.pass} | ${s.tuned ?? 0} | ${s.fail} | ${s.inconclusive} | ${s.insufficient} | ${s.scale ?? 0} | ${s['n/a']} | ${s.structural} | ${s.compromised ?? 0} | ${s.instrument ?? 0} | ${s.encoded ?? 0} | ${s.sealed ?? 0} |`); }
+  o.push('| Role | Targets | Pass | Tuned pass | Fail | Inconclusive | Insufficient data | Not scored (scale) | n/a (mechanism missing) | Structural | Compromised | Instrument below bar | Not scorable | Encoded | Sealed |', '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+  for (const role of ['fitted', 'held-out', 'all'] as const) { const s = summary[role]; o.push(`| ${role} | ${Object.values(s).reduce((a, b) => a + b, 0)} | ${s.pass} | ${s.tuned ?? 0} | ${s.fail} | ${s.inconclusive} | ${s.insufficient} | ${s.scale ?? 0} | ${s['n/a']} | ${s.structural} | ${s.compromised ?? 0} | ${s.instrument ?? 0} | ${s.unscorable ?? 0} | ${s.encoded ?? 0} | ${s.sealed ?? 0} |`); }
   o.push('');
   // the stage plan's expected baseline failures, with observed and omniscient values side by side
   const expected = ['T-IGE-1', 'T-IGE-2', 'T-ACT-2', 'T-ACT-3', 'T-HUN-2', 'T-HUN-7', 'T-PAT-1'];
@@ -203,7 +211,7 @@ function markdown(manifest: Record<string, unknown>, rows: ScoreRow[], summary: 
   o.push(`- Activity shares from 1-min point samples vs per-tick truth over the same focal time, max |Δ| per seed: ${accuracy.activityMaxAbsDiff.map(x => x.toFixed(4)).join(', ')} (criterion ≤ 0.02).`);
   o.push(`- Patrol classifier vs patrol interactions (focal on patrol): precision ${f(accuracy.patrol.precision)}, recall ${f(accuracy.patrol.recall)} (${accuracy.patrol.classified} classified, ${accuracy.patrol.truthEpisodes} truth episodes; criterion ≥ 0.8 each).`);
   if (accuracy.patrolMales) o.push(`- The same classifier on male-party follows (scores T-PAT-1 and T-PAT-6): precision ${f(accuracy.patrolMales.precision)}, recall ${f(accuracy.patrolMales.recall)} (${accuracy.patrolMales.classified} classified, ${accuracy.patrolMales.truthEpisodes} truth episodes).`);
-  if (accuracy.encounter) o.push(`- Encounter classifier (focal teams) vs truth: recall ${f(accuracy.encounter.recall)} of ${accuracy.encounter.followedTruth} truth episodes involving a followed party (±60 min), precision ${f(accuracy.encounter.precision)} of ${accuracy.encounter.classified} classified (a truth episode of the pair within 12 h), detection ${f(accuracy.encounter.detection)} of ${accuracy.encounter.truthEpisodes} truth episodes.`);
+  if (accuracy.encounter) o.push(`- Encounter classifier (focal teams) vs truth: recall ${f(accuracy.encounter.recall)} of ${accuracy.encounter.observableTruth ?? accuracy.encounter.followedTruth} observable truth episodes (a followed-party member saw strangers or heard them; ±60 min; earlier reference counting episodes where only the stranger heard the followed party: ${f(accuracy.encounter.recallAll)} of ${accuracy.encounter.followedTruth}); party follows (T-IGE-1) recall ${f(accuracy.encounterParty?.recall)}, precision ${f(accuracy.encounterParty?.precision)}; precision ${f(accuracy.encounter.precision)} of ${accuracy.encounter.classified} classified (a truth episode of the pair within 12 h), detection ${f(accuracy.encounter.detection)} of ${accuracy.encounter.truthEpisodes} truth episodes.`);
   if (accuracy.hunt) o.push(`- Hunt classifier: ${accuracy.hunt.detected} of ${accuracy.hunt.truth} hunts detected by a following team (${f(accuracy.hunt.detection)}).`);
   o.push(`- Observer CPU ÷ simulation CPU in the same loop, per seed: ${timing.observerShare.map(x => (x * 100).toFixed(1) + '%').join(', ')}.`);
   o.push(`- Pool: ${hashes.length} seeds in ${(timing.poolMs / 1000).toFixed(0)} s${timing.soloMs ? `; one seed alone ${(timing.soloMs / 1000).toFixed(0)} s; ratio ${timing.ratio!.toFixed(2)} (criterion ≤ 1.5)` : ''}.`);

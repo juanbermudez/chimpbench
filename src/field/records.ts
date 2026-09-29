@@ -104,7 +104,9 @@ export interface TruthRecords {
   ground: number; channel: number; swollenDayHours: number; mates: number;
   encounters: number; encountersHeard: number; encountersSeen: number;
   /** Truth encounter episodes (the simulation's, one per community pair per gap): time and pair; and those in which a member of a followed party took part (classifier check at field scale, C5a). */
-  encounterLog: { t: number; a: number; b: number }[]; followedEncounters: { team: number; other: number; t: number }[];
+  encounterLog: { t: number; a: number; b: number }[];
+  /** `heard`: the episode was acoustic; `caller`: in an acoustic episode the followed party only called and the stranger heard it (nothing reaches the team's ears). */
+  followedEncounters: { team: number; other: number; t: number; heard: boolean; caller: boolean }[];
   /** Patrol episodes; `sector` is the patrol's target compass sector at its start and `facing` the community's neighbour-facing sectors then (T-PAT-9 check). */
   patrols: { troop: number; t0: number; t1: number; parts: number[]; sector: number; facing: number[] }[];
   groomMin: number[]; interactions: Record<string, number>;
