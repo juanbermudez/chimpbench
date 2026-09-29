@@ -5,11 +5,22 @@ import { bond, dominates, eloUpdate, isAdultMale, power, strength, tryTakeover }
 import { killChimp } from './life';
 import { clamp, random } from './rng';
 import { noteEvent, recordAggression, recordWound, tensionOf } from './relations';
-import { paramsOf } from './params';
+import { paramsOf, type Params } from './params';
 import { noteContact, witnesses } from './contact';
 import { index, ix, simOf } from './state';
 
 const hd = (a: Chimp, b: Chimp) => Math.hypot(a.position[0] - b.position[0], a.position[2] - b.position[2]);
+
+/**
+ * Coalition kin of `w` (stage C8, early-life-prereg §2.5): its mother (for weaned offspring only while maternalLevers is on,
+ * the ablation switch), its maternal siblings, and an adoptive caretaker while the ward is under guardMaxAgeY.
+ */
+export function coalitionKin(o: Chimp, w: Chimp, P: Params): boolean {
+  const wx = ix(w);
+  if (w.motherId === o.id) return P.maternalLevers === 1 || (!wx.weaned && w.age < 6);
+  if (w.motherId > 0 && o.motherId === w.motherId) return true;
+  return wx.caretaker === o.id && w.age < P.guardMaxAgeY && (P.maternalLevers === 1 || (!wx.weaned && w.age < 6));
+}
 
 /** Nearby bonded individuals are alerted and may join either side (coalitions). [M-H] */
 export function notifyAllies(world: World, a: Chimp, v: Chimp): void {
@@ -19,8 +30,7 @@ export function notifyAllies(world: World, a: Chimp, v: Chimp): void {
     if (o.action === 'nest' && ix(o).phase >= 2) continue;
     const dv = hd(o, v);
     if (dv > maxRange) continue;
-    const kinOfV = v.motherId === o.id || o.motherId === v.motherId && v.motherId > 0;
-    const kinOfA = a.motherId === o.id || o.motherId === a.motherId && a.motherId > 0;
+    const kinOfV = coalitionKin(o, v, P), kinOfA = coalitionKin(o, a, P);
     if (o.age < 10 && !kinOfA && !kinOfV) continue;
     const ox = ix(o);
     if (((o.action === 'charge' || o.action === 'attack') && (o.targetId === v.id || o.targetId === a.id)) || (world.time - ox.coalAt < 0.1 && (ox.coalB === v.id || ox.coalB === a.id))) continue;
@@ -83,7 +93,7 @@ function decided(world: World, w: Chimp, l: Chimp, how: 'charge' | 'fight', inju
 }
 
 /** Probability that a beats b in a contest, from relative power (strength, rank edge, coalition partners). */
-function contest(world: World, a: Chimp, b: Chimp): boolean {
+export function contest(world: World, a: Chimp, b: Chimp): boolean {
   const P = paramsOf(world);
   const pa = power(a, b, supporters(world, a, b), P), pb = power(b, a, supporters(world, b, a), P);
   return random(world) < pa ** P.contestExponent / Math.max(1e-6, pa ** P.contestExponent + pb ** P.contestExponent);
@@ -114,7 +124,7 @@ export function resolveCharge(world: World, c: Chimp, o: Chimp): boolean {
   }
   if ((o.action === 'charge' || o.action === 'attack') && responded) {
     // evenly matched opponents escalate to contact more often (design) [M for rarity of contact]
-    const pa = strength(c), pb = strength(o);
+    const pa = strength(c, P), pb = strength(o, P);
     const even = Math.min(pa, pb) / Math.max(0.05, pa, pb);
     if (random(world) < P.escalationBaseP + P.escalationEvenP * even ** P.escalationEvenExp) { escalate(world, c, o); return true; }
     if (contest(world, c, o)) decided(world, c, o, 'charge', 0); else decided(world, o, c, 'charge', 0);
@@ -203,7 +213,8 @@ function infanticide(world: World, c: Chimp, infant: Chimp): void {
   let defended = false;
   if (mother && mother.alive && hd(mother, infant) < 3) {
     const help = supporters(world, mother, c).length;
-    defended = random(world) < 0.35 * (strength(mother) / Math.max(0.1, strength(c))) + help * 0.2;
+    const P = paramsOf(world);
+    defended = random(world) < 0.35 * (strength(mother, P) / Math.max(0.1, strength(c, P))) + help * 0.2;
   }
   emitCall(world, infant, 'scream');
   if (mother) emitCall(world, mother, 'scream');

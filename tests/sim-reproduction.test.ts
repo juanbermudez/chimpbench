@@ -4,6 +4,7 @@ import { createWorld, getEligibleActions, tickWorld } from '../src/simulation';
 import { IMPULSE_TRANSFER, perceive } from '../src/sim/perception';
 import { fecundity, inPeriovulatory, recordCopulation, reproSlow, swellingAt } from '../src/sim/reproduction';
 import { ix } from '../src/sim/state';
+import { paramsOf } from '../src/sim/params';
 import { DEFAULT_PARAMS } from '../src/sim/params';
 import type { Chimp, World } from '../src/types';
 
@@ -103,4 +104,28 @@ test('with ample mating a fertile adult conceives in about one of four to five c
   }
   const perCycle = conceptions / cycles;
   assert.ok(perCycle > 0.12 && perCycle < 0.35, `conception per cycle ${perCycle.toFixed(2)}`);
+});
+
+
+test('C8 prenatal condition: the newborn\'s condition is the mother\'s pregnancy mean and its growth record min(1, gestCond / condGood)', () => {
+  for (const gest of [0.3, 0.8]) {
+    const w = createWorld(21), P = paramsOf(w);
+    const f = w.chimps.find(c => c.alive && c.sex === 'female' && c.age > 18 && c.age < 30)!;
+    const x = ix(f);
+    f.pregnancy = x.gestation - 0.5; f.cycleDay = -1; x.cond = gest; x.gestCond = gest;
+    const n = w.chimps.length;
+    reproSlow(w, f, 1);
+    assert.equal(w.chimps.length, n + 1, 'born');
+    const baby = w.chimps[n];
+    assert.ok(Math.abs(ix(baby).cond - gest) < 1e-12);
+    assert.ok(Math.abs(ix(baby).grow - Math.min(1, gest / P.condGood)) < 1e-12);
+  }
+  // with the switch off the newborn starts as a founder does
+  const w = createWorld(21, { params: { birthCondFromMother: 0 } });
+  const f = w.chimps.find(c => c.alive && c.sex === 'female' && c.age > 18 && c.age < 30)!;
+  f.pregnancy = ix(f).gestation - 0.5; f.cycleDay = -1; ix(f).gestCond = 0.2; ix(f).cond = 0.2;
+  const n = w.chimps.length;
+  reproSlow(w, f, 1);
+  assert.equal(ix(w.chimps[n]).grow, 1);
+  assert.ok(Math.abs(ix(w.chimps[n]).cond - (1 - w.chimps[n].hunger)) < 1e-12);
 });

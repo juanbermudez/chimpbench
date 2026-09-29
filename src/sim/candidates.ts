@@ -64,6 +64,28 @@ export function dependentOn(world: World, c: Chimp): Chimp | undefined {
   return m && m.alive ? m : undefined;
 }
 
+/**
+ * A juvenile's guardian (stage C8, docs/staging/early-life-prereg.md §2.1): its mother while she is alive and in its
+ * community, else its adoptive caretaker while the ward is under guardMaxAgeY and the caretaker is alive and in the
+ * community. With maternalLevers 0 (ablation) only dependents keep one. Pure: no RNG, no perception (callers check it).
+ */
+export function guardianOf(world: World, c: Chimp): Chimp | undefined {
+  const P = paramsOf(world), byId = index(world).byId, x = ix(c);
+  if (P.maternalLevers !== 1 && (x.weaned || c.age >= 6)) return undefined;
+  const m = byId.get(c.motherId);
+  if (m && m.alive && m.troopId === c.troopId) return m;
+  if (x.caretaker < 0 || x.caretaker === c.motherId || c.age >= P.guardMaxAgeY) return undefined;
+  const k = byId.get(x.caretaker);
+  return k && k.alive && k.troopId === c.troopId ? k : undefined;
+}
+
+/** The guardian presence test (early-life-prereg §2.2–2.3): o's guardian is seen by c, within defendRangeM of o and not dominated by c. */
+function guarded(world: World, c: Chimp, o: Chimp, seen: number[], P: Params): boolean {
+  if (o.age >= P.guardMaxAgeY) return false;
+  const g = guardianOf(world, o);
+  return !!g && g !== c && seen.includes(g.id) && hd2(g, o) < P.defendRangeM * P.defendRangeM && !dominates(c, g);
+}
+
 const AFFILIATIVE: Partial<Record<Action, true>> = { reconcile: true, groom: true, console: true, play: true, share: true };
 const TRAVELING: Partial<Record<Action, true>> = { travel: true, patrol: true, flee: true, consort: true, transfer: true, hunt: true, charge: true, follow: true };
 /** Infants ride: ventral/dorsal carrying always below ~1.2 y, and until 4 y while the mother travels or nests. [H] */
@@ -168,10 +190,11 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     if (isMother && c.age < x.weanAge + 0.3) offer('nurse', caretaker.id, 0.25 + h * 1.5 * (c.age < 0.5 ? 1.3 : 1) * (1 - c.age / 7) - (d > P.nurseRangeM ? 0.5 : 0));
     if (c.age >= 1 && !carried && caretaker.action === 'forage' && d < P.begPlantRangeM && h > 0.35) offer('beg', caretaker.id, 0.25 + h * 0.45, V.PLANT);
     if (c.age >= 1.2 && !carried) offer('forage', -1, h * 0.5 - 0.05);
-  } else if (c.age < 10 && c.motherId > 0) {
-    const m = byId.get(c.motherId);
+  } else if (c.age < P.juvenileFollowMaxAgeY) {
+    // weaned juveniles keep up with their guardian: the mother, or an adoptive caretaker (C8 association lever) [M: reddyMitani2019, hobaiter2014]
+    const m = guardianOf(world, c);
     const known = m && (x.seen.includes(m.id) || remembersChimp(c, m.id));
-    if (m && m.alive && m.troopId === c.troopId && known) { const d = dxz(m, px, pz); offer('follow', m.id, d > P.juvenileFollowM ? 0.8 + Math.min(0.6, (d - P.juvenileFollowM) / P.juvenileFollowScaleM) : 0.05, V.JUVENILE); }
+    if (m && known) { const d = dxz(m, px, pz); offer('follow', m.id, d > P.juvenileFollowM ? 0.8 + Math.min(0.6, (d - P.juvenileFollowM) / P.juvenileFollowScaleM) : 0.05, V.JUVENILE); }
   }
 
   // --- feeding, drinking, travel ------------------------------------------------
@@ -400,9 +423,9 @@ function aggression(world: World, c: Chimp, rival: number, rivalCloseness: numbe
     const o = byId.get(rival)!;
     // challenges upward need a strength edge; dominants reassert more readily [M]
     const up = o.elo > c.elo;
-    const sc = up ? pers.aggression * 0.3 + (strength(c) / Math.max(0.1, strength(o)) - 1) * 0.9 + alliesNear * 0.1 + unstable * 0.45 - 0.3
+    const sc = up ? pers.aggression * 0.3 + (strength(c, P) / Math.max(0.1, strength(o, P)) - 1) * 0.9 + alliesNear * 0.1 + unstable * 0.45 - 0.3
       : pers.aggression * 0.25 + rivalCloseness * 0.15 + unstable * 0.3 - 0.12;
-    if (dcc(c, o) < P.chargeRangeM) offer('charge', o.id, sc + (x.tension[o.id] ?? 0) * P.statusTensionW - h * 0.25, V.STATUS);
+    if (dcc(c, o) < P.chargeRangeM) offer('charge', o.id, sc + (x.tension[o.id] ?? 0) * P.statusTensionW - h * 0.25 - (guarded(world, c, o, x.seen, P) ? P.guardDeterW : 0), V.STATUS);
   }
   if (x.impulse === IMPULSE_ESCALATE && x.impulseUntil > time) {
     const o = byId.get(x.impulseTarget);
@@ -419,34 +442,37 @@ function aggression(world: World, c: Chimp, rival: number, rivalCloseness: numbe
     const dist = dcc(c, o);
     const kin = maternalKin(c, o);
     const tn = (x.tension[o.id] ?? 0);
+    // stage C8 guardian levers: a ward's guardian in sight and close by deters charges from animals it is not dominated by
+    const deter = guarded(world, c, o, x.seen, P) ? P.guardDeterW : 0;
     // redirected aggression toward a lower-ranked bystander after losing [M], preferably one it already has tension with (design)
     if (time - x.lostAt < P.redirectWindowH && x.lastAgg < x.lostAt && dist < P.redirectRangeM && o.age >= 5 && !kin && dominates(c, o))
-      offer('charge', o.id, P.redirectBase + pers.aggression * P.redirectAggrW + c.stress * P.redirectStressW + tn * P.redirectTensionW, V.REDIRECT);
+      offer('charge', o.id, P.redirectBase + pers.aggression * P.redirectAggrW + c.stress * P.redirectStressW + tn * P.redirectTensionW - deter, V.REDIRECT);
     // a grudge: a dominant may charge a subordinate whose own aggression toward it is unrepaired (last incident received) (design) [M: compatibility]
     if (tn >= P.rivalTension && cooled && dist < P.grudgeRangeM && o.age >= 5 && !kin && dominates(c, o) && (x.incident[o.id]?.[1] ?? 0) % 2 === 1)
-      offer('charge', o.id, P.grudgeTensionW * (tn - P.grudgeTensionFloor) + pers.aggression * P.grudgeAggrW - P.grudgeBase - h * P.grudgeHungerW, V.TENSION);
+      offer('charge', o.id, P.grudgeTensionW * (tn - P.grudgeTensionFloor) + pers.aggression * P.grudgeAggrW - P.grudgeBase - h * P.grudgeHungerW - deter, V.TENSION);
     // male aggression toward maximally swollen females; linked to mating success (Muller et al.) [M-H]
     if (male && c.age >= 15 && o.sex === 'female' && o.swelling >= P.coerceSwellingMin && dist < P.coerceRangeM && !kin && cooled && (ix(o).coerce[c.id] ?? 0) < P.coerceMaxRepeats)
-      offer('charge', o.id, pers.aggression * 0.35 + c.rank * 0.1 - 0.12, V.COERCE);
+      offer('charge', o.id, pers.aggression * 0.35 + c.rank * 0.1 - 0.12 - deter, V.COERCE);
     // resident females target recent immigrants [M]
     if (!male && c.age >= 15 && o.sex === 'female' && dist < P.immigrantChargeRangeM && time - x.lastAgg > P.immigrantChargeGapH) {
       const ox = ix(o);
       const tenureC = ix(c).immigrantAge < 0 ? c.age - 10 : c.age - ix(c).immigrantAge;
       if (ox.immigrantAge >= 0 && o.age - ox.immigrantAge < 2 && tenureC >= 3)
-        offer('charge', o.id, 0.06 + pers.aggression * 0.45 + (forageTree > 0 && o.targetId === forageTree ? 0.3 : 0) + (c.rank > o.rank ? 0.1 : 0), V.IMMIGRANT);
+        offer('charge', o.id, 0.06 + pers.aggression * 0.45 + (forageTree > 0 && o.targetId === forageTree ? 0.3 : 0) + (c.rank > o.rank ? 0.1 : 0) - deter, V.IMMIGRANT);
     }
     // feeding competition when fruit is scarce [H for contest competition; strength L]
-    if (o.action === 'forage' && o.targetId > 0 && (o.targetId === forageTree || (h > P.feedChargeHungerMin && x.trees.includes(o.targetId))) && dist < P.feedChargeRangeM && time - x.lastAgg > P.feedChargeGapH && o.age >= 5 && !kin && dominates(c, o)) {
+    // (a guardian never supplants its ward; a seen guardian deters supplants of its ward: C8 feeding-tolerance lever)
+    if (o.action === 'forage' && o.targetId > 0 && (o.targetId === forageTree || (h > P.feedChargeHungerMin && x.trees.includes(o.targetId))) && dist < P.feedChargeRangeM && time - x.lastAgg > P.feedChargeGapH && o.age >= 5 && !kin && dominates(c, o) && guardianOf(world, o) !== c) {
       const t = idx.treeById.get(o.targetId);
       const scarce = world.environment.fruitIndex < 0.4 || (t !== undefined && (P.patchEcology === 1 ? fruitAt(world, t) : t.fruit) < 0.3);
-      if (t && scarce) offer('charge', o.id, (0.55 - world.environment.fruitIndex) * 0.9 + pers.aggression * 0.3 + h * 0.35 + tn * P.feedTensionW - 0.12, V.FEED);
+      if (t && scarce) offer('charge', o.id, (0.55 - world.environment.fruitIndex) * 0.9 + pers.aggression * 0.3 + h * 0.35 + tn * P.feedTensionW - 0.12 - (deter ? P.guardFeedDeterW : 0), V.FEED);
     }
     // adolescent males establishing dominance over females [H]
     if (male && c.age >= 12 && c.age < P.femaleDomMaxAgeY && o.sex === 'female' && o.age >= 15 && dist < P.femaleDomRangeM && cooled && !kin)
       offer('charge', o.id, 0.03 + pers.aggression * 0.3 + (dominates(c, o) ? 0 : 0.1), V.FEMALE_DOM);
-    // mothers and relatives defend offspring
+    // guardians (mothers, or caretakers of wards under guardMaxAgeY) defend them
     const ox = ix(o);
-    if (o.motherId === c.id && time - ox.victimAt < 0.05) {
+    if (time - ox.victimAt < 0.05 && guardianOf(world, o) === c) {
       const ag = byId.get(ox.victimOf);
       if (ag && ag.alive && ag.id !== c.id && dcc(c, ag) < P.defendRangeM && ag.troopId === c.troopId && hd2(ag, o) < P.defendAggressorNearM * P.defendAggressorNearM) offer('charge', ag.id, 0.4 + bond(c, o) * 0.2 - (dominates(ag, c) ? 0.45 : 0), V.DEFEND, o.id);
     }
@@ -476,7 +502,7 @@ function threatResponses(world: World, c: Chimp, carried: boolean): void {
   if (d > P.threatResponseRangeM) return;
   const stranger = ag.troopId !== c.troopId;
   const dom = stranger || dominates(ag, c);
-  const ratio = strength(c) / Math.max(0.05, strength(ag));
+  const ratio = strength(c, P) / Math.max(0.05, strength(ag, P));
   if (!carried) {
     offer('submit', ag.id, (dom ? 1.5 : 0.25) + c.stress * 0.3 - (ratio > 1.1 ? 0.4 : 0) - (stranger ? 0.9 : 0), V.AGGRESSOR);
     offer('flee', ag.id, (dom ? 1.2 : 0.2) + c.injury * 0.4 + (ag.action === 'attack' ? 0.4 : 0) + (stranger ? 0.8 : 0), V.AGGRESSOR);
@@ -581,7 +607,7 @@ function meatAndHunting(world: World, c: Chimp): void {
         // Sharing favors allies and grooming partners (Mitani & Watts 2001) [M]; the "meat-for-sex" effect is contested, so kept weak.
         offer('share', o.id, P.shareBase + bond(c, o) * P.shareBondW + (c.allies.includes(o.id) ? P.shareAllyW : 0) + (maternalKin(c, o) ? P.shareKinW : 0) + (o.swelling > P.shareSwollenMin ? P.shareSwollenW : 0)
           - (x.tension[o.id] ?? 0) * P.shareTensionW - c.hunger * P.shareHungerW, V.MEAT);
-      else if (o.motherId === c.id && c.action === 'forage') offer('share', o.id, P.sharePlantBase + bond(c, o) * P.sharePlantBondW, V.PLANT); // mothers share plant food with offspring [M]
+      else if (c.action === 'forage' && guardianOf(world, o) === c) offer('share', o.id, P.sharePlantBase + bond(c, o) * P.sharePlantBondW, V.PLANT); // guardians share plant food with their young [M]; adoption includes sharing (hobaiter2014)
     }
   }
   if (x.preyId > 0 && c.age >= 12 && world.environment.rain < 0.3 && c.energy > 0.35) {

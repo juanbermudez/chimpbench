@@ -2,13 +2,17 @@
 /* eslint-disable */
 export const REGISTRY_VERSION = 1;
 /** Content hash of every live default, hard range, profile value and integer flag. Stored with each world. */
-export const REGISTRY_HASH = 'aabe82dc7fb6168d';
+export const REGISTRY_HASH = '845ba253b0056943';
 
 /** Registry defaults (the compressed profile). */
 export const DEFAULTS = {
   adoptBondMin: 0.35,
+  adoptInfantAgeY: 3,
+  adoptMaxAgeY: 8,
+  adoptOtherMinAgeY: 12,
   adoptOtherP: 0.3,
   adoptSiblingInfantP: 0.15,
+  adoptSiblingMinAgeY: 8,
   adoptSiblingP: 0.6,
   alarmSnakeLinkM: 25,
   allyCount: 3,
@@ -32,6 +36,10 @@ export const DEFAULTS = {
   begMeatRangeM: 12,
   begPlantRangeM: 5,
   begTensionW: 0.4,
+  bereaveHalfLifeD: 180,
+  bereaveMaxAgeY: 12,
+  bereaveStress: 0.2,
+  birthCondFromMother: 1,
   bodyChildBase: 0.6,
   bodyChildGain: 0.4,
   bondBaselineKin: 0.6,
@@ -140,6 +148,9 @@ export const DEFAULTS = {
   colobusDurationH: 1,
   colobusHuntDayH: 6,
   colobusRadiusM: 18,
+  condGood: 0.5,
+  condLow: 0.3,
+  condTauD: 30,
   consoleBondMin: 0.55,
   consoleDistScaleM: 30,
   consoleRangeM: 6,
@@ -304,7 +315,9 @@ export const DEFAULTS = {
   groomRangeM: 20,
   groomTensionRepairPerH: 0.15,
   groomTensionW: 0.5,
+  growEndY: 15,
   growStrengthW: 0.5,
+  growTauY: 3,
   grudgeAggrW: 0.25,
   grudgeBase: 0.1,
   grudgeHungerW: 0.25,
@@ -312,6 +325,9 @@ export const DEFAULTS = {
   grudgeTensionFloor: 0.3,
   grudgeTensionW: 0.9,
   guardChaseRangeM: 15,
+  guardDeterW: 0.3,
+  guardFeedDeterW: 0.3,
+  guardMaxAgeY: 12,
   guardRivalRangeM: 14,
   guardSwellingMin: 0.9,
   guardedRangeM: 14,
@@ -326,7 +342,6 @@ export const DEFAULTS = {
   hazardMalePrime: 0.042,
   hazardMaleSenescence: 0.08,
   hazardMaleYoungAdult: 0.03,
-  hazardOrphan: 2.5,
   hazardYoung: 0.027,
   hearAlarmHooM: 15,
   hearBarkM: 18,
@@ -388,6 +403,7 @@ export const DEFAULTS = {
   joinSocialInPartyF: 0.4,
   joinSocialW: 0,
   juvenileFollowM: 8,
+  juvenileFollowMaxAgeY: 10,
   juvenileFollowScaleM: 15,
   knownTreesK: 0,
   layoutScale: 1,
@@ -400,6 +416,7 @@ export const DEFAULTS = {
   mateIntervalH: 1.5,
   mateNearM: 12,
   mateRangeM: 25,
+  maternalLevers: 1,
   matingAssocWeight: 0.6,
   matingSaturation: 3,
   meatAlertM: 25,
@@ -566,6 +583,7 @@ export const DEFAULTS = {
   salienceReconcile: 1.5,
   salienceSupport: 1.5,
   salienceThreat: 0.5,
+  selfFeedStartY: 0.5,
   seriousInjuryAdd: 0.3,
   seriousInjuryP: 0.05,
   shareAllyW: 0.35,
@@ -681,8 +699,12 @@ export type ParamId = keyof typeof DEFAULTS;
 /** Physical or logical limits; overrides outside them are rejected. */
 export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] } = {
   adoptBondMin: [0, 1],
+  adoptInfantAgeY: [0, 60],
+  adoptMaxAgeY: [0, 60],
+  adoptOtherMinAgeY: [0, 60],
   adoptOtherP: [0, 1],
   adoptSiblingInfantP: [0, 1],
+  adoptSiblingMinAgeY: [0, 60],
   adoptSiblingP: [0, 1],
   alarmSnakeLinkM: [0, 1000000],
   allyCount: [1, 1000000],
@@ -706,6 +728,10 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   begMeatRangeM: [0, 1000000],
   begPlantRangeM: [0, 1000000],
   begTensionW: [-10, 10],
+  bereaveHalfLifeD: [1, 3650],
+  bereaveMaxAgeY: [0, 60],
+  bereaveStress: [0, 1],
+  birthCondFromMother: [0, 1],
   bodyChildBase: [0, 1],
   bodyChildGain: [0, 1],
   bondBaselineKin: [0, 1],
@@ -814,6 +840,9 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   colobusDurationH: [0, 1000000],
   colobusHuntDayH: [0, 1000000],
   colobusRadiusM: [0, 1000000],
+  condGood: [0.01, 1],
+  condLow: [0.01, 1],
+  condTauD: [1, 365],
   consoleBondMin: [0, 1],
   consoleDistScaleM: [0, 1000000],
   consoleRangeM: [0, 1000000],
@@ -978,7 +1007,9 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   groomRangeM: [0, 1000000],
   groomTensionRepairPerH: [0, 1000000],
   groomTensionW: [-10, 10],
+  growEndY: [0, 60],
   growStrengthW: [0, 1],
+  growTauY: [0.1, 30],
   grudgeAggrW: [-10, 10],
   grudgeBase: [-10, 10],
   grudgeHungerW: [-10, 10],
@@ -986,6 +1017,9 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   grudgeTensionFloor: [0, 1],
   grudgeTensionW: [-10, 10],
   guardChaseRangeM: [0, 1000000],
+  guardDeterW: [0, 5],
+  guardFeedDeterW: [0, 5],
+  guardMaxAgeY: [0, 60],
   guardRivalRangeM: [0, 1000000],
   guardSwellingMin: [0, 1],
   guardedRangeM: [0, 1000000],
@@ -1000,7 +1034,6 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   hazardMalePrime: [0, 10],
   hazardMaleSenescence: [0, 10],
   hazardMaleYoungAdult: [0, 10],
-  hazardOrphan: [0, 100],
   hazardYoung: [0, 10],
   hearAlarmHooM: [0, 1000000],
   hearBarkM: [0, 1000000],
@@ -1062,6 +1095,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   joinSocialInPartyF: [0, 1],
   joinSocialW: [0, 100],
   juvenileFollowM: [0, 1000000],
+  juvenileFollowMaxAgeY: [0, 60],
   juvenileFollowScaleM: [0, 1000000],
   knownTreesK: [0, 10000],
   layoutScale: [0, 1000000],
@@ -1074,6 +1108,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   mateIntervalH: [0, 1000000],
   mateNearM: [0, 1000000],
   mateRangeM: [0, 1000000],
+  maternalLevers: [0, 1],
   matingAssocWeight: [0, 1],
   matingSaturation: [0, 1000000],
   meatAlertM: [0, 1000000],
@@ -1240,6 +1275,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   salienceReconcile: [0, 1000000],
   salienceSupport: [0, 1000000],
   salienceThreat: [0, 1000000],
+  selfFeedStartY: [0, 10],
   seriousInjuryAdd: [0, 1],
   seriousInjuryP: [0, 1],
   shareAllyW: [-10, 10],
@@ -1351,7 +1387,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
 };
 
 /** Parameters that must stay whole numbers. */
-export const INTEGER_IDS: readonly ParamId[] = ['allyCount', 'attentionN', 'chimpGridCellM', 'coerceMaxRepeats', 'contactSlots', 'cycleLenMinDays', 'cycleLenSpanDays', 'deadSlimDays', 'episodeCap', 'eventCap', 'eventPriorityAlpha', 'eventPriorityBirth', 'eventPriorityDeath', 'eventPriorityInfanticide', 'eventPriorityInjury', 'eventPriorityIntergroup', 'eventPriorityRank', 'eventPriorityTransfer', 'fordSpacingM', 'gangMinOwnMales', 'historyFacts', 'historyMaxChars', 'historyMaxLines', 'huntMinMales', 'infanticideMaleMargin', 'knownTreesK', 'layoutScale', 'mapSizeM', 'memCropBelief', 'memKeepMonths', 'memLedgerEvents', 'memMonthEvents', 'memMonthPartners', 'memTreeCap', 'memYearEvents', 'memYearPartners', 'memoryCap', 'memoryMonthDays', 'partyEveryTicks', 'partyLeaderFollow', 'partyStayMaxN', 'patchEcology', 'patrolMinMales', 'phenologyForcing', 'popCap', 'preyMinGroups', 'preyMoveEveryTicks', 'siteTzH', 'slotsForage', 'slotsMulti', 'slowEveryTicks', 'startDoy', 'streamAnalytic', 'synthYears', 'tickSeconds', 'travelCommit', 'treeGridCellM', 'udCellM', 'udKernelRef'];
+export const INTEGER_IDS: readonly ParamId[] = ['allyCount', 'attentionN', 'birthCondFromMother', 'chimpGridCellM', 'coerceMaxRepeats', 'contactSlots', 'cycleLenMinDays', 'cycleLenSpanDays', 'deadSlimDays', 'episodeCap', 'eventCap', 'eventPriorityAlpha', 'eventPriorityBirth', 'eventPriorityDeath', 'eventPriorityInfanticide', 'eventPriorityInjury', 'eventPriorityIntergroup', 'eventPriorityRank', 'eventPriorityTransfer', 'fordSpacingM', 'gangMinOwnMales', 'historyFacts', 'historyMaxChars', 'historyMaxLines', 'huntMinMales', 'infanticideMaleMargin', 'knownTreesK', 'layoutScale', 'mapSizeM', 'maternalLevers', 'memCropBelief', 'memKeepMonths', 'memLedgerEvents', 'memMonthEvents', 'memMonthPartners', 'memTreeCap', 'memYearEvents', 'memYearPartners', 'memoryCap', 'memoryMonthDays', 'partyEveryTicks', 'partyLeaderFollow', 'partyStayMaxN', 'patchEcology', 'patrolMinMales', 'phenologyForcing', 'popCap', 'preyMinGroups', 'preyMoveEveryTicks', 'siteTzH', 'slotsForage', 'slotsMulti', 'slowEveryTicks', 'startDoy', 'streamAnalytic', 'synthYears', 'tickSeconds', 'travelCommit', 'treeGridCellM', 'udCellM', 'udKernelRef'];
 
 /** Scale-profile values that differ from DEFAULTS (docs/realism-design.md §5.1). */
 export const PROFILE_VALUES: { readonly compressed: Partial<Record<ParamId, number>>; readonly field: Partial<Record<ParamId, number>> } = {

@@ -4,7 +4,7 @@ import { notifyAllies, resolveCharge, resolveFight } from './conflict';
 import { addEvent, emitCall, endInteraction, episode, findInteraction, flashInteraction, gate, interrupt, startInteraction } from './events';
 import { nestPoint } from './generation';
 import { addBond, dominates, eloUpdate, rankedMale } from './hierarchy';
-import { paramsOf } from './params';
+import { paramsOf, type Params } from './params';
 import { doTransfer, recordCopulation } from './reproduction';
 import { forget } from './perception';
 import { clamp, hash01, random } from './rng';
@@ -661,6 +661,15 @@ function nestTick(world: World, c: Chimp): void {
   if (c.nest) { c.position[0] = c.nest.position[0]; c.position[1] = c.nest.position[1]; c.position[2] = c.nest.position[2]; }
 }
 
+/**
+ * Stage C8 self-feeding ramp (early-life-prereg §2.7): an unweaned animal can feed itself only partly, from 0 at
+ * selfFeedStartY to 1 at its own weaning age (design; hobaiter2014: 42% of orphans under 4 survived a year vs 95% older).
+ */
+export function selfFeed(c: Chimp, P: Params): number {
+  const x = ix(c);
+  return x.weaned ? 1 : clamp((c.age - P.selfFeedStartY) / Math.max(1e-6, x.weanAge - P.selfFeedStartY));
+}
+
 function forageTick(world: World, c: Chimp): void {
   const P = paramsOf(world), WALK = P.walkMps;
   const x = ix(c);
@@ -673,8 +682,9 @@ function forageTick(world: World, c: Chimp): void {
     }
     if (x.gx !== 0 || x.gz !== 0) moveTo(world, c, x.gx, 0, x.gz, WALK * 0.3, 0.2);
     // leaves, pith and herbs: lower-quality fallback foods [H]; the field profile's forage field varies by habitat and season
-    if (P.patchEcology === 1) c.hunger = clamp(c.hunger - P.fallbackHungerPerH * TICK_HOURS * forageYield(world, c.position[0], c.position[2]));
-    else c.hunger = clamp(c.hunger - P.fallbackHungerPerH * TICK_HOURS);
+    const self = selfFeed(c, P);
+    if (P.patchEcology === 1) c.hunger = clamp(c.hunger - P.fallbackHungerPerH * TICK_HOURS * forageYield(world, c.position[0], c.position[2]) * self);
+    else c.hunger = clamp(c.hunger - P.fallbackHungerPerH * TICK_HOURS * self);
     return;
   }
   const t = idx.treeById.get(c.targetId);
@@ -698,7 +708,7 @@ function forageTick(world: World, c: Chimp): void {
     } else if (time - x.lastFoodCall > 0.3 && crop > 0.3) { x.lastFoodCall = time; emitCall(world, c, 'food-grunt'); }
   }
   // feeding: up to fruitIntakePerH (0.055 fruit units/h, scaled by foraging skill), x4.4 = up to ~0.24 hunger/h, so chimps feed about half the day (design; field feeding shares are 33-50% of daytime, docs/realism-design.md T-ACT-1)
-  const want = P.fruitIntakePerH * TICK_HOURS * (P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging) * (c.age < 5 ? P.fruitIntakeYoungFactor : 1);
+  const want = P.fruitIntakePerH * TICK_HOURS * (P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging) * (c.age < 5 ? P.fruitIntakeYoungFactor : 1) * selfFeed(c, P);
   let intake: number;
   if (lazy) intake = eatFruit(world, t, want);
   else { intake = Math.min(t.fruit, want); t.fruit -= intake; }

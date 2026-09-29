@@ -34,8 +34,10 @@ export function maternalKin(a: Chimp, b: Chimp): boolean {
  * Fighting ability: males rise through adolescence, peak ~24-28 y and decline after (design curve after the
  * age-rank pattern at Gombe/Ngogo [M]); body size varies individually; condition and wounds reduce it.
  */
-export function strength(c: Chimp): number {
-  return strengthAgeBase(c.age, c.sex) * (0.85 + 0.3 * c.appearance.build) * (0.4 + 0.6 * c.health) * (1 - 0.7 * c.injury);
+export function strength(c: Chimp, P: Params): number {
+  // stage C8: the growth record scales strength; ratio-invariant when everyone's record is equal, except at the floors (F8)
+  const w = P.growStrengthW;
+  return strengthAgeBase(c.age, c.sex) * (0.85 + 0.3 * c.appearance.build) * (0.4 + 0.6 * c.health) * (1 - 0.7 * c.injury) * ((1 - w) + w * ix(c).grow);
 }
 
 /**
@@ -55,8 +57,8 @@ export function strengthAgeBase(a: number, sex: Chimp['sex']): number {
 
 /** Contest power: strength, a modest incumbency edge from rank, and nearby coalition partners. */
 export function power(c: Chimp, rival: Chimp, allies: Chimp[], P: Params): number {
-  let p = strength(c) * (c.sex === rival.sex ? 1 + P.powerRankEdge * Math.tanh((c.elo - rival.elo) / P.powerEloScale) : 1);
-  for (const a of allies) p += strength(a) * P.powerAllyWeight;
+  let p = strength(c, P) * (c.sex === rival.sex ? 1 + P.powerRankEdge * Math.tanh((c.elo - rival.elo) / P.powerEloScale) : 1);
+  for (const a of allies) p += strength(a, P) * P.powerAllyWeight;
   return p;
 }
 
@@ -113,12 +115,12 @@ function tenureYears(c: Chimp): number {
  */
 export function maleStrengthDrift(world: World, bioDays: number): void {
   if (bioDays <= 0) return;
-  const k = 1 - Math.exp(-bioDays / paramsOf(world).maleDriftTauDays);
+  const P = paramsOf(world), k = 1 - Math.exp(-bioDays / P.maleDriftTauDays);
   const byId = index(world).byId;
   for (const troop of world.troops) {
     const males = troop.maleHierarchy.map(id => byId.get(id)!).filter(m => m && m.alive);
     if (males.length < 2) continue;
-    const order = males.slice().sort((a, b) => strength(b) - strength(a) || a.id - b.id);
+    const order = males.slice().sort((a, b) => strength(b, P) - strength(a, P) || a.id - b.id);
     order.forEach((m, i) => { m.elo += (1000 + 150 * (order.length - 1 - i) - m.elo) * k; });
     simOf(world).hierDirty = true;
   }

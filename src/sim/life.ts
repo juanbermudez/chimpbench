@@ -1,5 +1,4 @@
 import type { Chimp, Mood, World } from '../types';
-import { dependentOn } from './candidates';
 import { addEvent, endInteraction, episode } from './events';
 import { bond, femaleQueue, lifeStage } from './hierarchy';
 import { dailyRelations, noteEvent } from './relations';
@@ -42,33 +41,45 @@ export function killChimp(world: World, c: Chimp, cause: string, severity = 2, t
       }
     }
   }
+  const P = paramsOf(world);
   for (const k of idx.alive) {
     if (!k.alive || k === c) continue;
-    if (k.motherId === c.id) { episode(world, k, 'life', `My mother ${c.name} died`, c.id); noteEvent(world, k, 'death', `My mother ${c.name} died`, c.id); if (!ix(k).weaned || k.age < 8) adopt(world, k); }
-    else if (ix(k).caretaker === c.id) adopt(world, k);
+    if (k.motherId === c.id) {
+      episode(world, k, 'life', `My mother ${c.name} died`, c.id); noteEvent(world, k, 'death', `My mother ${c.name} died`, c.id);
+      // stage C8: a transient bereavement stress for offspring under bereaveMaxAgeY in her community (girardButtoz2021; halves every bereaveHalfLifeD)
+      const kx = ix(k);
+      if (k.troopId === c.troopId && k.age < P.bereaveMaxAgeY) kx.bereft = Math.max(kx.bereft, P.bereaveStress);
+      if (!kx.weaned || k.age < P.adoptMaxAgeY) adopt(world, k);
+    } else if (ix(k).caretaker === c.id) {
+      // a caretaker's death re-runs adoption only for wards the mother-death rule would cover (early-life-prereg §2.11 fix 2)
+      if (!ix(k).weaned || k.age < P.adoptMaxAgeY) adopt(world, k); else ix(k).caretaker = -1;
+    }
     else if (k.motherId > 0 && k.motherId === c.motherId) { episode(world, k, 'life', `My ${c.sex === 'male' ? 'brother' : 'sister'} ${c.name} died`, c.id); noteEvent(world, k, 'death', `My ${c.sex === 'male' ? 'brother' : 'sister'} ${c.name} died`, c.id); }
   }
 }
 
-/** Orphans under ~3 rarely survive; older orphans are sometimes adopted by siblings or others. [M] */
+/**
+ * Older orphans are sometimes adopted by older maternal siblings or bonded adults (hobaiter2014) [M]. Adoption does not
+ * wean: an unweaned orphan stays on the self-feeding ramp until its own weaning age (early-life-prereg §2.11 fix 4).
+ */
 function adopt(world: World, o: Chimp): void {
   const x = ix(o);
   const idx = index(world);
-  const sibs = idx.alive.filter(k => k.alive && k !== o && k.troopId === o.troopId && k.motherId > 0 && k.motherId === o.motherId && k.age >= 8)
+  const P = paramsOf(world);
+  // a sibling carer must be older than the orphan (fix 1)
+  const sibs = idx.alive.filter(k => k.alive && k !== o && k.troopId === o.troopId && k.motherId > 0 && k.motherId === o.motherId && k.age >= P.adoptSiblingMinAgeY && k.age > o.age)
     .sort((a, b) => (a.sex === 'female' ? 0 : 1) - (b.sex === 'female' ? 0 : 1) || b.age - a.age);
   let carer: Chimp | undefined;
-  const P = paramsOf(world);
-  if (sibs.length && random(world) < (o.age < 3 ? P.adoptSiblingInfantP : P.adoptSiblingP)) carer = sibs[0];
-  else if (o.age >= 3 && random(world) < P.adoptOtherP) {
+  if (sibs.length && random(world) < (o.age < P.adoptInfantAgeY ? P.adoptSiblingInfantP : P.adoptSiblingP)) carer = sibs[0];
+  else if (o.age >= P.adoptInfantAgeY && random(world) < P.adoptOtherP) {
     let best = P.adoptBondMin;
-    for (const k of idx.alive) if (k.alive && k.troopId === o.troopId && k.age >= 12 && bond(o, k) > best && k !== o) { best = bond(o, k); carer = k; }
+    for (const k of idx.alive) if (k.alive && k.troopId === o.troopId && k.age >= P.adoptOtherMinAgeY && bond(o, k) > best && k !== o) { best = bond(o, k); carer = k; }
   }
   x.caretaker = carer ? carer.id : -1;
-  if (o.age >= 3) x.weaned = true;
   if (carer) {
     addEvent(world, `${o.name}, orphaned at ${o.age.toFixed(1)} y, is now cared for by ${carer.name}`, 'social', [o.id, carer.id], o.troopId, 1);
     episode(world, carer, 'social', `Adopted the orphan ${o.name}`, o.id);
-  } else if (o.age < 8) addEvent(world, `${o.name} (${o.age.toFixed(1)} y) is orphaned with no caretaker`, 'life', [o.id], o.troopId, 1);
+  } else if (o.age < P.adoptMaxAgeY) addEvent(world, `${o.name} (${o.age.toFixed(1)} y) is orphaned with no caretaker`, 'life', [o.id], o.troopId, 1);
 }
 
 const RUNNING: Record<string, 1> = { charge: 1, attack: 1, flee: 1, display: 1 };
@@ -107,7 +118,7 @@ export function needs(world: World, c: Chimp): void {
   c.thirst += (sleeping ? r.tSleep : r.tAwake + (env.temperature > r.tHotC ? r.tHot : 0) - env.rain * r.tRain) * h;
   c.energy += (sleeping ? r.eSleep : a === 'rest' || a === 'shelter' || a === 'groom' || a === 'nurse' ? r.eRest : RUNNING[a] ? -r.eRun : WALKING[a] ? -r.eWalk : -r.eOther) * h;
   c.social -= (sleeping ? r.sSleep : r.sAwake) * h;
-  c.stress -= (c.stress - r.stressFloor) * r.stressRelax * h;
+  c.stress -= (c.stress - (r.stressFloor + x.bereft)) * r.stressRelax * h;
   if (c.carryingMeat > 0 && !sleeping) {
     const eat = Math.min(c.carryingMeat, r.meatEat * h);
     c.carryingMeat -= eat; c.hunger -= eat * r.meatHunger;
@@ -134,9 +145,9 @@ function moodFor(c: Chimp, a: string): Mood {
 /**
  * Annual baseline mortality hazard, fitted to Ngogo (Wood et al. 2017) [M]: first-year mortality ~0.15, and
  * remaining life expectancy at 15 of ~35 y for females and ~20 y for males (e15 35.1 / 21.0 reported).
- * Aggression, orphaning and poor condition add to it.
+ * Aggression, poor condition (health) and wounds add to it; losing the mother acts through feeding and protection (C8).
  */
-export function hazard(c: Chimp, orphanUnder3: boolean, P: Params): number {
+export function hazard(c: Chimp, P: Params): number {
   const a = c.age;
   let h: number;
   if (a < 1) h = P.hazardInfant;
@@ -145,7 +156,6 @@ export function hazard(c: Chimp, orphanUnder3: boolean, P: Params): number {
   else if (c.sex === 'female') h = a < 35 ? P.hazardFemaleAdult : a < 45 ? P.hazardFemaleMid : P.hazardFemaleMid * Math.exp(P.hazardFemaleSenescence * (a - 45));
   else h = a < 25 ? P.hazardMaleYoungAdult : a < 35 ? P.hazardMalePrime : P.hazardMalePrime * Math.exp(P.hazardMaleSenescence * (a - 35));
   h *= 1 + Math.max(0, P.hazardHealthThreshold - c.health) * P.hazardHealthWeight + c.injury * P.hazardInjuryWeight;
-  if (orphanUnder3) h += P.hazardOrphan;
   return h;
 }
 
@@ -176,8 +186,13 @@ export function slowLife(world: World): void {
     } else if ((c.sex === 'male' && Math.floor(c.age - bioDays / 365.25) < 10 && c.age >= 10)) s.hierDirty = true;
     // wounds heal over days of ecological time [assumed rate]
     c.injury = Math.max(0, c.injury - P.woundHealPerDay * ecoDays);
-    const target = 1 - 0.45 * c.injury - Math.max(0, c.age - 45) * 0.015 - (c.hunger > 0.9 ? 0.3 : 0);
+    // stage C8 body condition: a slow average of (1 − hunger); health falls as condition drops below condLow (early-life-prereg §2.6)
+    x.cond += ((1 - c.hunger) - x.cond) * (1 - Math.exp(-ecoDays / P.condTauD));
+    const target = 1 - 0.45 * c.injury - Math.max(0, c.age - 45) * 0.015 - (c.hunger > 0.9 ? 0.3 : 0) - Math.max(0, P.condLow - x.cond) / P.condLow;
     c.health = clamp(c.health + (target - c.health) * (1 - Math.exp(-ecoDays * 2)));
+    // the growth record (scales strength) follows condition until growEndY; bereavement stress decays (no permanent offset)
+    if (c.age < P.growEndY) x.grow += (Math.min(1, x.cond / P.condGood) - x.grow) * (1 - Math.exp(-bioDays / 365.25 / P.growTauY));
+    if (x.bereft > 0) { x.bereft *= 0.5 ** (bioDays / P.bereaveHalfLifeD); if (x.bereft < 1e-4) x.bereft = 0; }
     c.cooldown = Math.max(0, c.cooldown - bioDays);
     if (c.sex === 'female') { reproSlow(world, c, bioDays); femaleQueue(world, c, bioDays); }
     if (!x.weaned && c.age >= x.weanAge) {
@@ -187,12 +202,11 @@ export function slowLife(world: World): void {
       if (m && m.alive) m.lactating = world.chimps.some(k => k.alive && k.motherId === m.id && !ix(k).weaned);
     }
     if (x.carryDead !== NEVER && x.carryDead <= world.time) { x.carryDead = NEVER; c.carryingDeadId = -1; episode(world, c, 'life', 'Left the body of my infant behind'); }
-    const orphan = !x.weaned && c.age < 3 && !dependentOn(world, c);
-    if (orphan && c.hunger > 0.8) c.health = clamp(c.health - 0.02);
-    const p = 1 - Math.exp(-hazard(c, orphan, P) * bioDays / 365.25);
+    const p = 1 - Math.exp(-hazard(c, P) * bioDays / 365.25);
     if (c.health <= 0.02 || random(world) < p) {
-      const cause = causeFor(c, orphan);
-      killChimp(world, c, cause, 2);
+      // the orphan cause is kept for unweaned motherless deaths (T-DEM-4's classification does not shift)
+      const m = index(world).byId.get(c.motherId);
+      killChimp(world, c, causeFor(c, !x.weaned && !(m && m.alive)), 2);
     }
   }
 }

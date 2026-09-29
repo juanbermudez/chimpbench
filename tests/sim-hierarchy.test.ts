@@ -4,7 +4,9 @@ import { applyDecision, applyIntervention, createWorld, getEligibleActions, tick
 import { resolveCharge } from '../src/sim/conflict';
 import { startAction } from '../src/sim/execution';
 import { perceive } from '../src/sim/perception';
-import { dominates } from '../src/sim/hierarchy';
+import { dominates, power, strength } from '../src/sim/hierarchy';
+import { slowLife } from '../src/sim/life';
+import { paramsOf } from '../src/sim/params';
 import { ix } from '../src/sim/state';
 import type { Chimp, World } from '../src/types';
 
@@ -123,4 +125,29 @@ test('a counter-charge can escalate into a contact fight that is resolved by pow
   // say that counter-charges sometimes, but not always, escalate
   assert.ok(fights >= 2 && fights <= 25, `${fights}/30 counter-charges escalated`);
   assert.ok(upsets >= 1, 'the higher-ranked male does not always win');
+});
+
+
+test('C8 growth record: strength × ((1 − w) + w × grow); grow changes only below growEndY; contest odds are invariant to an equal growth record', () => {
+  const w = createWorld(48), P = paramsOf(w);
+  const males = w.chimps.filter(c => c.alive && c.sex === 'male' && c.age >= 18 && c.age < 30);
+  const [a, b, ally] = males;
+  assert.ok(a && b && ally, 'three prime males');
+  const s1 = strength(a, P);
+  ix(a).grow = 0.4;
+  assert.ok(Math.abs(strength(a, P) / s1 - ((1 - P.growStrengthW) + P.growStrengthW * 0.4)) < 1e-12);
+  // equal records: every strength scales by the same factor, so win odds do not change (strengths far above the 0.1 / 0.05 floors)
+  for (const c of [a, b, ally]) ix(c).grow = 1;
+  const odds = () => { const pa = power(a, b, [ally], P), pb = power(b, a, [], P); return pa ** P.contestExponent / (pa ** P.contestExponent + pb ** P.contestExponent); };
+  const o1 = odds();
+  for (const c of [a, b, ally]) ix(c).grow = 0.6;
+  assert.ok(strength(b, P) > 0.1, 'above the floors');
+  assert.ok(Math.abs(odds() - o1) < 1e-12);
+  // the record freezes at growEndY
+  const kid = w.chimps.find(c => c.alive && c.age > 6 && c.age < P.growEndY - 1)!, adult = a;
+  ix(kid).grow = 1; ix(kid).cond = 0.1; ix(adult).grow = 1; ix(adult).cond = 0.1;
+  w.ageRate = 365;
+  for (let i = 0; i < 20; i++) { ix(kid).cond = 0.1; ix(adult).cond = 0.1; kid.hunger = 0.9; adult.hunger = 0.9; slowLife(w); }
+  assert.ok(ix(kid).grow < 1, 'a juvenile\'s record follows condition');
+  assert.equal(ix(adult).grow, 1, 'an adult\'s record is frozen');
 });

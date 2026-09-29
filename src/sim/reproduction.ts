@@ -68,6 +68,8 @@ export function reproSlow(world: World, c: Chimp, bioDays: number): void {
   const x = ix(c);
   if (c.pregnancy > 0) {
     c.pregnancy += bioDays;
+    // stage C8: the mother's mean condition over the pregnancy (the prenatal channel, early-life-prereg §2.8)
+    x.gestCond += (x.cond - x.gestCond) * Math.min(1, bioDays / c.pregnancy);
     c.swelling = Math.max(0, c.swelling - bioDays / 3);
     if (c.pregnancy >= x.gestation) giveBirth(world, c);
     return;
@@ -81,7 +83,7 @@ export function reproSlow(world: World, c: Chimp, bioDays: number): void {
     let wrapped = false;
     if (c.cycleDay >= x.cycleLen) { c.cycleDay -= x.cycleLen; wrapped = true; }
     const after = templateDay(c, P);
-    if ((before < OVULATION && (after >= OVULATION || wrapped)) || (wrapped && after >= OVULATION)) ovulate(world, c);
+    if ((before < OVULATION && (after >= OVULATION || wrapped)) || (wrapped && after >= OVULATION)) { ovulate(world, c); if (c.pregnancy > 0) x.gestCond = x.cond; }
     if (wrapped && c.pregnancy === 0) { x.cops = {}; x.coerce = {}; x.near = {}; }
     if (c.pregnancy === 0 && c.cycleDay >= 0 && c.swelling >= 0.9) recordAssociation(world, c, bioDays);
     if (c.pregnancy === 0) c.swelling = swellingAt(templateDay(c, P), P);
@@ -140,6 +142,10 @@ export function giveBirth(world: World, mother: Chimp): void {
     brow: mix(mother.appearance.brow, fa.brow), ears: mix(mother.appearance.ears, fa.ears) };
   const bx = ix(baby);
   bx.caretaker = mother.id; bx.weaned = false;
+  // stage C8 prenatal condition (early-life-prereg §2.8; lemoine2020a's hypothesis): the newborn starts in its mother's
+  // pregnancy condition, with a growth record on the same scale; with the switch off it starts as a founder does
+  if (P.birthCondFromMother === 1) { bx.cond = x.gestCond; bx.grow = Math.min(1, x.gestCond / P.condGood); } else { bx.cond = 1 - baby.hunger; bx.grow = 1; }
+  bx.gestCond = bx.cond;
   baby.bonds[mother.id] = 0.95; mother.bonds[baby.id] = 0.95;
   for (const k of idx.alive) if (k.motherId === mother.id && k.alive) { baby.bonds[k.id] = 0.5; k.bonds[baby.id] = 0.5; }
   if (mother.nest) baby.nest = { treeId: mother.nest.treeId, position: [mother.nest.position[0], mother.nest.position[1], mother.nest.position[2]] };

@@ -1010,7 +1010,10 @@ Every evidence-tagged constant and every distance lives in the parameter registr
 | Drinking | 1.4 | thirst/h | `drinkThirstPerH` | design |  |
 | Wound healing | 0.075 | per eco-day | `woundHealPerDay` | assumed |  |
 | Baseline hazards | table in [§13](#13-reproduction-and-life-history) | per bio-year | `hazardInfant` `hazardYoung` `hazardJuvenile` `hazardFemale*` `hazardMale*` `hazardHealth*` `hazardInjuryWeight` | [M] | Wood et al. 2017 q1, e15 |
-| Orphan hazard | +2.5 | per bio-year | `hazardOrphan` | design |  |
+| Guardian levers (C8) | feeding supplant −0.3, other charges −0.3 while the ward's guardian is seen, within the defence range and not dominated; guardians defend, share plant food and are followed to 10 y; caretakers count as coalition kin and guardians to 12 y; `maternalLevers` 0 = ablation | score, y | `guardFeedDeterW` `guardDeterW` `guardMaxAgeY` `juvenileFollowMaxAgeY` `maternalLevers` | design; [M] 12 y | early-life-prereg §2.2–2.5 (crockford2020, hobaiter2014) |
+| Body condition and growth (C8) | condition τ 30 eco-days; health falls below 0.3; growth record τ 3 y, limited below 0.5, frozen at 15 y | eco-days, condition, y | `condTauD` `condLow` `condGood` `growTauY` `growEndY` | design | early-life-prereg §2.6 |
+| Bereavement stress (C8) | +0.2 on the stress floor for offspring under 12, half-life 180 bio-days | stress, bio-days | `bereaveStress` `bereaveMaxAgeY` `bereaveHalfLifeD` | stylized; [M] 12 y | girardButtoz2021 (2-year window) |
+| Self-feeding ramp and prenatal condition (C8) | unweaned intake 0 at 0.5 y → 1 at weaning; newborn condition = the mother's pregnancy mean | y, flag | `selfFeedStartY` `birthCondFromMother` | design | replaces the orphan hazard; hobaiter2014, lemoine2020a |
 | Elo k (contest / greeting) | 100 / 20 | Elo | `eloK` `eloKGreeting` | [M] / design | Neumann et al. 2011 |
 | Elo logistic scale | 0.01 | 1/Elo | `eloLogisticScale` | design |  |
 | Male strength drift τ | 500 | bio-days | `maleDriftTauDays` | design | tenures ~1.7–8 y (Gombe) |
@@ -1080,7 +1083,7 @@ Every evidence-tagged constant and every distance lives in the parameter registr
 | Per-male mating interval | 1.5 | h | `mateIntervalH` | [M] | Taï 0.14 – Ngogo 3.5 /h |
 | Lactational amenorrhea | 3.5–4.5 | y | `amenorrhea*` | [M] | IBI 5.15 y (Gombe) |
 | Dead-infant carrying | 35%, 1–4 days |  | `carryDead*` | [M] |  |
-| Adoption | sibling 0.15 / 0.6; other 0.3 |  | `adopt*` | [M] |  |
+| Adoption | sibling 0.15 / 0.6 (older siblings of 8 y or more); other 0.3 (bonded, 12 y or more) from 3 y; rolled for orphans under 8 or unweaned, also when a caretaker dies; no weaning | probability, y | `adopt*` | design, stylized; [M] ages | hobaiter2014 (C8 fixes, early-life-prereg §2.11) |
 | Dead-record slimming delay | 30 eco-days or 1 bio-year dead |  | `deadSlimDays` | design | no reader of the dropped fields |
 | Call radii, durations | table in [§15](#15-communication) | m, min | `hear*` `call*` | stylized |  |
 | Intervention geometry | table in [§16](#16-field-experiments) |  | `playback*` `snake*` `figMast*` `storm*` `drought*` `removeAlpha*` `colobus*` | design |  |

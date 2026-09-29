@@ -51,7 +51,7 @@
    "clock": "none",
    "symbol": "adopt",
    "file": "src/sim/life.ts",
-   "notes": "Bond needed for adoption by a non-sibling."
+   "notes": "Bond needed for adoption by a non-sibling. No source gives a bond threshold for adoption."
   },
   {
    "id": "adoptInfantAgeY",
@@ -71,9 +71,8 @@
    "evidence": "design",
    "sources": [],
    "clock": "none",
-   "symbol": null,
-   "file": null,
-   "planned": "C8",
+   "symbol": "P.adoptInfantAgeY (adopt)",
+   "file": "src/sim/life.ts",
    "notes": "Stage C8 moved literal (life.ts adopt; value unchanged): below this age the infant sibling probability applies and unrelated adoption is not rolled. It no longer weans the orphan."
   },
   {
@@ -94,9 +93,8 @@
    "evidence": "design",
    "sources": [],
    "clock": "none",
-   "symbol": null,
-   "file": null,
-   "planned": "C8",
+   "symbol": "P.adoptMaxAgeY (killChimp)",
+   "file": "src/sim/life.ts",
    "notes": "Stage C8 moved literal (life.ts killChimp; value unchanged): orphans under this age, or unweaned, get an adoption roll after the mother's or the caretaker's death. hobaiter2014 counts immatures under 12."
   },
   {
@@ -120,9 +118,8 @@
     "hobaiter2014 (docs/research.md, Early life; Table 1): unrelated adopters 13-35+ y (Taï), 20-26 (Gombe), 30 (Sonso)"
    ],
    "clock": "none",
-   "symbol": null,
-   "file": null,
-   "planned": "C8",
+   "symbol": "P.adoptOtherMinAgeY (adopt)",
+   "file": "src/sim/life.ts",
    "notes": "Stage C8 moved literal (life.ts adopt; value unchanged): the youngest unrelated adopter."
   },
   {
@@ -140,12 +137,15 @@
     1
    ],
    "calibrate": false,
-   "evidence": "design",
+   "evidence": "stylized",
    "sources": [],
    "clock": "none",
    "symbol": "adopt",
    "file": "src/sim/life.ts",
-   "notes": "Adoption by the most-bonded adult for orphans of 3 y and over."
+   "notes": "Adoption by a bonded non-sibling (12 y or older) for orphans of 3 y and over. Unrelated adoption is common at Taï (13 of 20 pooled unrelated cases) and a minority in East Africa; it starts after 5.2 ± 6.6 months (siblings 0.3 ± 0.2) (hobaiter2014). The sim adopts at once (stylization).",
+   "refs": [
+    "hobaiter2014 (docs/research.md, Early life): unrelated adoption in 20 of 36 pooled cases, 13 of them at Taï"
+   ]
   },
   {
    "id": "adoptSiblingInfantP",
@@ -167,7 +167,7 @@
    "clock": "none",
    "symbol": "adopt",
    "file": "src/sim/life.ts",
-   "notes": "Adoption by an older maternal sibling for orphans under 3 y."
+   "notes": "Adoption by an older maternal sibling for orphans under 3 y. hobaiter2014 reports one-year survival by age (42% under 4), not adoption by age."
   },
   {
    "id": "adoptSiblingMinAgeY",
@@ -190,9 +190,8 @@
     "hobaiter2014 (docs/research.md, Early life): sibling carers 8-10 y at Gombe, 9-11 at Sonso, 6-11 at Taï"
    ],
    "clock": "none",
-   "symbol": null,
-   "file": null,
-   "planned": "C8",
+   "symbol": "P.adoptSiblingMinAgeY (adopt)",
+   "file": "src/sim/life.ts",
    "notes": "Stage C8 moved literal (life.ts adopt; value unchanged): youngest sibling adopter. The adopter must also be older than the orphan."
   },
   {
@@ -215,7 +214,7 @@
    "clock": "none",
    "symbol": "adopt",
    "file": "src/sim/life.ts",
-   "notes": "Adoption by an older maternal sibling for orphans of 3 y and over."
+   "notes": "Adoption by an older maternal sibling (8 y or older) for orphans of 3 y and over. Where an older maternal sibling exists, siblings adopt (no unrelated adoption in 16 such cases); at Sonso, 3 older immature siblings (9–11 y) cared for 3 younger ones (4–6 y) (hobaiter2014). Pooled, unrelated adults adopted more often (20 vs 14 of 36), mostly at Taï. The value is design."
   },
   {
    "id": "alarmSnakeLinkM",
@@ -764,9 +763,8 @@
    "evidence": "design",
    "sources": [],
    "clock": "bio",
-   "symbol": null,
-   "file": null,
-   "planned": "C8",
+   "symbol": "P.bereaveHalfLifeD (slowLife)",
+   "file": "src/sim/life.ts",
    "notes": "Stage C8 (life.ts slowLife): half-life of the bereavement stress. Bounded by girardButtoz2021's 2-year window: 6% remains at 2 y (25% at the upper bound). No permanent offset."
   },
   {
@@ -791,9 +789,8 @@
     "samuni2020 (docs/research.md, Early life): orphans lost the mother before 10"
    ],
    "clock": "none",
-   "symbol": null,
-   "file": null,
-   "planned": "C8",
+   "symbol": "P.bereaveMaxAgeY (killChimp)",
+   "file": "src/sim/life.ts",
    "notes": "Stage C8 (life.ts killChimp): offspring under this age in the mother's community get the bereavement stress when she dies."
   },
   {
@@ -817,9 +814,8 @@
     "girardButtoz2021 (docs/research.md, Early life): steeper diurnal cortisol slope within 2 y of the loss"
    ],
    "clock": "none",
-   "symbol": null,
-   "file": null,
-   "planned": "C8",
+   "symbol": "P.bereaveStress (killChimp)",
+   "file": "src/sim/life.ts",
    "notes": "Stage C8 (life.ts): added to the resting stress floor at the loss, then halves every bereaveHalfLifeD. Direction from girardButtoz2021; the all-day floor is a stylization (the sim has no diurnal rhythm); the magnitude is design."
   },
   {
@@ -840,10 +836,9 @@
    "evidence": "design",
    "sources": [],
    "clock": "none",
-   "symbol": null,
-   "file": null,
+   "symbol": "P.birthCondFromMother (giveBirth)",
+   "file": "src/sim/reproduction.ts",
    "integer": true,
-   "planned": "C8",
    "notes": "Stage C8 (reproduction.ts giveBirth): 1 = the newborn's condition is the mother's mean condition over the pregnancy and its growth record min(1, gestCond / condGood); 0 = it starts as a founder. Motivation: lemoine2020a's hypothesis (proposed, not measured)."
   },
   {
@@ -3346,9 +3341,8 @@
    "evidence": "design",
    "sources": [],
    "clock": "none",
-   "symbol": null,
-   "file": null,
-   "planned": "C8",
+   "symbol": "P.condGood (slowLife, giveBirth)",
+   "file": "src/sim/life.ts",
    "notes": "Stage C8 (life.ts, reproduction.ts): growth is limited, and conception reduced, only below this condition. Subject to the pre-run condition check (early-life-prereg §2.6)."
   },
   {
@@ -3369,9 +3363,8 @@
    "evidence": "design",
    "sources": [],
    "clock": "none",
-   "symbol": null,
-   "file": null,
-   "planned": "C8",
+   "symbol": "P.condLow (slowLife)",
+   "file": "src/sim/life.ts",
    "notes": "Stage C8 (life.ts slowLife): the health target falls linearly to 0 as condition falls from this to 0. Subject to the pre-run condition check (early-life-prereg §2.6)."
   },
   {
@@ -3392,9 +3385,8 @@
    "evidence": "design",
    "sources": [],
    "clock": "eco",
-   "symbol": null,
-   "file": null,
-   "planned": "C8",
+   "symbol": "P.condTauD (slowLife)",
+   "file": "src/sim/life.ts",
    "notes": "Stage C8 (life.ts slowLife): body condition is an exponential average of (1 − hunger) with this time constant."
   },
   {
@@ -4479,7 +4471,7 @@
     "compressed": 20,
     "field": 45
    },
-   "notes": "Mothers charge an aggressor of their offspring within this distance. Compressed stand-in scaled with sight (field ≈ compressed × 35/15, design)."
+   "notes": "Mothers charge an aggressor of their offspring within this distance. Compressed stand-in scaled with sight (field ≈ compressed × 35/15, design). Also the radius at which a guardian's presence deters charges on its ward (C8)."
   },
   {
    "id": "dispersalHazardPerY",
@@ -7334,9 +7326,8 @@
    "evidence": "design",
    "sources": [],
    "clock": "none",
-   "symbol": null,
-   "file": null,
-   "planned": "C8",
+   "symbol": "P.growEndY (slowLife)",
+   "file": "src/sim/life.ts",
    "notes": "Stage C8 (life.ts slowLife): the growth record freezes after this age."
   },
   {
@@ -7357,7 +7348,7 @@
    "evidence": "design",
    "sources": [],
    "clock": "none",
-   "symbol": "P.growStrengthW (leanIndex; strength from the mechanism commit)",
+   "symbol": "P.growStrengthW (strength, leanIndex)",
    "file": "src/sim/hierarchy.ts",
    "notes": "Stage C8 (hierarchy.ts strength): strength × ((1 − w) + w × grow); ratio-invariant except at the strength floors (early-life-prereg F8)."
   },
@@ -7379,9 +7370,8 @@
    "evidence": "design",
    "sources": [],
    "clock": "bio",
-   "symbol": null,
-   "file": null,
-   "planned": "C8",
+   "symbol": "P.growTauY (slowLife)",
+   "file": "src/sim/life.ts",
    "notes": "Stage C8 (life.ts slowLife): time constant of the growth record, an average of min(1, cond / condGood)."
   },
   {
@@ -7564,10 +7554,9 @@
    "evidence": "design",
    "sources": [],
    "clock": "none",
-   "symbol": null,
-   "file": null,
-   "planned": "C8",
-   "notes": "Stage C8 (early-life-prereg §2.3; candidates.ts aggression()): the same guardian presence test lowers other within-community charges on the ward (redirect, grudge, status, coercion, female dominance, immigrant); not infanticide or escalation."
+   "symbol": "P.guardDeterW (aggression)",
+   "file": "src/sim/candidates.ts",
+   "notes": "Stage C8 (early-life-prereg §2.3; candidates.ts aggression()): the same guardian presence test lowers other within-community charges on the ward (status, redirect, grudge, coercion, immigrant); not infanticide or escalation."
   },
   {
    "id": "guardFeedDeterW",
@@ -7587,9 +7576,8 @@
    "evidence": "design",
    "sources": [],
    "clock": "none",
-   "symbol": null,
-   "file": null,
-   "planned": "C8",
+   "symbol": "P.guardFeedDeterW (aggression V.FEED)",
+   "file": "src/sim/candidates.ts",
    "notes": "Stage C8 (docs/staging/early-life-prereg.md §2.2; candidates.ts aggression()): lowers a feeding-supplant score on a ward under guardMaxAgeY whose guardian is seen, within defendRangeM of the ward and not dominated by the supplanter. Motivation: agonistic support at food, proposed (not measured) in crockford2020 and samuni2020. Builds a maternal-rank gradient (T-DEM-20 encoded)."
   },
   {
@@ -7616,9 +7604,8 @@
     "stanton2020 (docs/research.md, Early life): upper age class 10-14.99 y"
    ],
    "clock": "none",
-   "symbol": null,
-   "file": null,
-   "planned": "C8",
+   "symbol": "P.guardMaxAgeY (guardianOf, notifyAllies)",
+   "file": "src/sim/candidates.ts",
    "notes": "Stage C8 (candidates.ts guardianOf, conflict.ts notifyAllies): the oldest protected ward, and the end of caretaker kinship. 12 is social independence at Taï (crockford2020) and the immature limit (hobaiter2014); 15 is stanton2020's upper class. Partly encodes T-DEM-15's window (report note)."
   },
   {
@@ -7963,28 +7950,6 @@
    "symbol": "hazard",
    "file": "src/sim/life.ts",
    "notes": "Male baseline hazard at 15-25 y (e15 ~21 y)."
-  },
-  {
-   "id": "hazardOrphan",
-   "group": "mortality",
-   "value": 2.5,
-   "units": "per bio-year",
-   "range": [
-    1.25,
-    5
-   ],
-   "rangeBasis": "assumed-x2",
-   "hardRange": [
-    0,
-    100
-   ],
-   "calibrate": false,
-   "evidence": "design",
-   "sources": [],
-   "clock": "bio",
-   "symbol": "hazard",
-   "file": "src/sim/life.ts",
-   "notes": "Added hazard for unweaned orphans under 3 y without a caretaker."
   },
   {
    "id": "hazardYoung",
@@ -9548,9 +9513,8 @@
    "evidence": "design",
    "sources": [],
    "clock": "none",
-   "symbol": null,
-   "file": null,
-   "planned": "C8",
+   "symbol": "P.juvenileFollowMaxAgeY",
+   "file": "src/sim/candidates.ts",
    "notes": "Stage C8 moved literal (candidates.ts juvenile follow; value unchanged): weaned juveniles under this age follow their guardian. Upper bound from crockford2020's age 12. Orphaned siblings associate more after the loss (reddyMitani2019, 4 pairs; table value 6.05, SE 1.79)."
   },
   {
@@ -9883,10 +9847,9 @@
    "evidence": "design",
    "sources": [],
    "clock": "none",
-   "symbol": null,
-   "file": null,
+   "symbol": "P.maternalLevers (guardianOf, notifyAllies)",
+   "file": "src/sim/candidates.ts",
    "integer": true,
-   "planned": "C8",
    "notes": "Stage C8: 0 disables every post-weaning maternal pathway (guardian feeding tolerance and protection, the guardian follow, caretaker kinship and plant sharing by caretakers), C8 and pre-existing; care of dependents is kept."
   },
   {
@@ -13838,9 +13801,8 @@
    "evidence": "design",
    "sources": [],
    "clock": "none",
-   "symbol": null,
-   "file": null,
-   "planned": "C8",
+   "symbol": "P.selfFeedStartY (forageTick)",
+   "file": "src/sim/execution.ts",
    "notes": "Stage C8 (execution.ts feeding): an unweaned animal's intake ramps from 0 at this age to 1 at its own weaning age. hobaiter2014: 42% of orphans under 4 survived a year vs 95% at 4 or more. nakamura2014's 'under 4.5–5 cannot survive' is the abstract's premise, not data. Replaces hazardOrphan."
   },
   {
@@ -14017,7 +13979,7 @@
    "clock": "none",
    "symbol": "computeCandidates",
    "file": "src/sim/candidates.ts",
-   "notes": "Mothers share plant food with begging offspring [M]: base."
+   "notes": "Mothers share plant food with begging offspring [M]: base. The offer now comes from the guardian (the mother, or a caretaker; hobaiter2014 adoption includes food sharing)."
   },
   {
    "id": "sharePlantBondW",
@@ -14039,7 +14001,7 @@
    "clock": "none",
    "symbol": "computeCandidates",
    "file": "src/sim/candidates.ts",
-   "notes": "Plant-share score per unit bond."
+   "notes": "Plant-share score per unit bond. The offer now comes from the guardian (the mother, or a caretaker; hobaiter2014 adoption includes food sharing)."
   },
   {
    "id": "shareRangeM",
