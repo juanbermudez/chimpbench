@@ -673,6 +673,32 @@
    "targets": [],
    "verdicts": "no target value",
    "class": "labels"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C8 implementer (worktree branch; entered by the integrator at registration)",
+   "seen": "truth reads on development seeds only: outbreak attack and mortality after seeded introductions; ground km walked; no observer value of any T-DEM row",
+   "param": "Fitted-row development calibration (registry notes carry the numbers): epidemicBetaPerH 0.03 field / 0.001 compressed (mean attack ~0.64 per introduction, seeds 48, 7, 21, 5, 11; matches the SIR final size 0.62 at epidemicR0 1.55 used by the baseline refit); epidemicFatality 0.07 (mean outbreak mortality ~0.08 with the virulence spread); snareHazardPerKm 6e-5 field / 0.0023 compressed (an injury rate ~0.015 per individual-year from measured risk-weighted ground km). An introduction exposes the index case's party (single index cases mostly fizzled). Baseline refit: all-cause hazard minus the analytic expected epidemic hazard, floored at 20% (binds for females at 30-45 y); analytic q1 0.150, e15 34.3 / 20.2 y",
+   "reason": "docs/realism-design.md §5.7 and §8 C8 step 2 (fitted rows only: T-DEM-5, -6, -9; held-out rows not used)",
+   "targets": [
+    "T-DEM-1",
+    "T-DEM-2",
+    "T-DEM-5",
+    "T-DEM-6",
+    "T-DEM-9"
+   ],
+   "verdicts": "development (fitted)",
+   "class": "calibration"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C8 implementer (worktree branch; entered by the integrator at registration)",
+   "seen": "pooled juvenile (5-11.99 y) truth diagnostics only; never split by orphan status, maternal rank or sex",
+   "param": "Feeding-tolerance lever strength with today's unlimited fallback food (coordinator request): field, seeds 48 and 7, 60 days after a 30-day burn-in, maternalLevers 1 vs 0: feeding supplants of juveniles 0 and 0.33 per juvenile-day, identical with the levers on and off (the deterrence never changed a choice: supplanters are adult males or females dominating the mother); juveniles fed on fruit in 99.7-99.9% of feeding ticks; pooled juvenile condition 0.61-0.62 either way, above condGood 0.5, so the growth record is not limited. What the lever needs from the C7b fallback change: a real intake cost of losing a contested crown (depleting, patchier, lower-rate fallback), condition that can fall below condGood, and the food model's intake at contested crowns (the lever only lowers the supplant score)",
+   "reason": "pre-registered risk (early-life-prereg §5.5: the energy lever may be weak; not to be fixed by raising guardFeedDeterW)",
+   "targets": [],
+   "verdicts": "no target value",
+   "class": "diagnostic"
   }
  ],
  "registryRefsToSources": {
