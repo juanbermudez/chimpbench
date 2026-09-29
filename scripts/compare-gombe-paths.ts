@@ -80,7 +80,7 @@ if (existsSync(rel(SIM))) {
 const bins = 40, dens = (v: number[], lo: number, hi: number) => (v.length ? histogram(v, lo, hi, bins).density.map(r4) : null);
 const out = {
   title: 'Gombe 15-min focal paths (second real site for path metrics)',
-  generated: new Date().toISOString(), script: 'scripts/compare-gombe-paths.ts', role: 'C12 comparison metrics, held out: reported, never tuned against.',
+  generated: new Date().toISOString(), script: 'scripts/compare-gombe-paths.ts', role: 'held-out movement validation: no designer has seen these values; reported, never tuned against (integrator ruling, 2026-09-29)',
   attribution: 'Real data: Pusey AE, Schroepfer-Walker K (2013) Female competition in chimpanzees. Phil Trans R Soc B 368: 20130077. Data: Dryad doi:10.5061/dryad.jg05d, CC0. Kasekela community, Gombe National Park, Tanzania, 2000–2003 (eastern chimpanzees). Derived statistics by MGOGO; not endorsed by the authors.',
   privacy: 'No coordinates, dates finer than a year, or identities: step lengths, angles, ratios, distances in range radii and rank-class aggregates only.',
   real: {

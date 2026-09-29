@@ -18,12 +18,12 @@
   "Instrument validation against truth (sampling accuracy, classifier precision and recall) is allowed at any time, because truth is not a field target; each validation run is logged."
  ],
  "protocolFreeze": {
-  "stage": "C7a review fixes + data-agent comparison code",
+  "stage": "C12 relabel",
   "date": "2026-09-29",
-  "hash": "73904dcee230404f",
+  "hash": "e88dcd8f700a2997",
   "previous": {
-   "stage": "C7a review fixes",
-   "hash": "871be7b837c511b8"
+   "stage": "C7a review fixes + data-agent comparison code",
+   "hash": "73904dcee230404f"
   }
  },
  "protocolLog": [
@@ -835,6 +835,30 @@
     "all"
    ],
    "verdicts": "none",
+   "class": "freeze"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C7a implementer (C12 relabel)",
+   "seen": "Taï and Ngogo C12 comparisons (repeatedly, during C6-C7b development); the Gombe path values have not been seen by any designer",
+   "param": "C12 roles: Taï movement and Ngogo ranging scorecards -> 'development diagnostic (seen)' (role field in both JSON outputs and scorecards, src/compare/report.ts C12_DEV_ROLE); Gombe 15-min paths -> 'held-out movement validation' (role in scripts/compare-gombe-paths.ts and its JSON); declared in c12Fitted.roles, which the fingerprint hashes with the comparison code",
+   "reason": "integrator ruling: the Taï and Ngogo rows were used for direction checks; Gombe is unseen",
+   "targets": [
+    "C12 comparisons"
+   ],
+   "verdicts": "Taï and Ngogo rows never counted as validation; Gombe rows held out",
+   "class": "labels"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C7a implementer",
+   "seen": "as above",
+   "param": "freeze: 73904dcee230404f -> e88dcd8f700a2997 (C12 roles in c12Fitted and the comparison scripts; the Gombe path code was already in the fingerprint since commit 2980c8e)",
+   "reason": "C12 relabel",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "combined proof",
    "class": "freeze"
   }
  ],
@@ -7183,6 +7207,12 @@
    ],
    "tag": "diagnostic, seen: rule 9 chosen after a range-size sensitivity run",
    "note": "C7a review finding 3: rule 9 (familiarFullLevel 0.95) was adopted after the 15:44 territory-sensitivity run showed the familiarity term halves the community 95% kernel; these C12 range-area statistics measure the same quantity and are reported as seen, not held out."
+  },
+  "roles": {
+   "tai-movement": "development diagnostic (seen)",
+   "ngogo-ranging": "development diagnostic (seen)",
+   "gombe-paths": "held-out movement validation",
+   "note": "C12 relabel (integrator ruling, 2026-09-29): the Taï movement (docs/data/movement-compare.json) and Ngogo ranging (docs/data/ranging-compare.json) comparisons were looked at repeatedly during development and used for direction checks, so every row is a development diagnostic, not validation. The Gombe 15-min focal paths (src/compare/gombe-paths.ts, scripts/compare-gombe-paths.ts, docs/data/gombe-paths.json; Pusey & Schroepfer-Walker 2013, Dryad jg05d) are the held-out movement validation: no designer has seen them; their code is in the protocol fingerprint."
   }
  }
 }
