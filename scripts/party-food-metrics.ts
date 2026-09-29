@@ -42,6 +42,8 @@ interface Result {
   legTurn: number[]; legReturn: number; legs: number; legLen: number[];
   still: Record<string, number>; halfHours: number; steps30: number[]; dayPath: number[]; dayNet: number[]; dayMaxR: number[];
   visitMin: number[]; visitWhy: Record<string, number>;
+  /** C12 definitions on 30-min fixes 07:00–18:00: path (sum of steps), straightness (net ÷ path), turns between steps both ≥ 15 m. */
+  path30: number[]; straight30: number[]; turn30: number[];
 }
 
 const vName = (v: number) => Object.entries(V).find(([, n]) => n === v)?.[0] ?? String(v);
@@ -70,7 +72,7 @@ export function run(job: Job): Result {
   const P = paramsOf(w), link = P.partyLinkM;
   const r: Result = { seed: job.seed, variant: job.variant, adultDays: 0, party: [], partyBy: {}, sep: {}, sepLeftBehind: 0, scansWithCompany: 0,
     recruit: { trips: 0, withCompany: 0, companions: 0, kept: 0, sameGoal: 0, followed: 0 }, crowd: [], crowdHours: [], eaten: [], standing: [], potential: [], rangeTrees: [], fedTrees: [], deficit: [],
-    legTurn: [], legReturn: 0, legs: 0, legLen: [], still: {}, halfHours: 0, steps30: [], dayPath: [], dayNet: [], dayMaxR: [], visitMin: [], visitWhy: {} };
+    legTurn: [], legReturn: 0, legs: 0, legLen: [], still: {}, halfHours: 0, steps30: [], dayPath: [], dayNet: [], dayMaxR: [], visitMin: [], visitWhy: {}, path30: [], straight30: [], turn30: [] };
   const want = (c: Chimp) => P.fruitIntakePerH * TICK_HOURS * (P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging) * (c.age < 5 ? P.fruitIntakeYoungFactor : 1);
   const prevParty = new Map<number, Set<number>>(), prevPos = new Map<number, [number, number]>();
   const trips = new Map<number, { dv: number; tree: number; comp: number[]; t0: number }>();
@@ -79,6 +81,7 @@ export function run(job: Job): Result {
   const half = new Map<number, { x: number; z: number; acts: Record<string, number> }>();
   const day0 = new Map<number, { x: number; z: number; path: number; maxR: number }>();
   const visit = new Map<number, { tree: number; t0: number; pause: number; why: string }>();
+  const fixes = new Map<number, [number, number][]>();
   const lastTick = new Map<number, [number, number]>();
   const fedToday = new Map<number, Set<number>>();
   for (let day = 0; day < job.days; day++) {
@@ -93,7 +96,7 @@ export function run(job: Job): Result {
         eatenBy.set(c.troopId, (eatenBy.get(c.troopId) ?? 0) + Math.min(want(c), fruitAt(w, t) + want(c)));
         let s = fedToday.get(c.troopId); if (!s) fedToday.set(c.troopId, s = new Set()); s.add(t.id);
       }
-      if (h < 7 || h >= 18) { if (h >= 18 && h < 18 + TICK_HOURS) { for (const [id, d] of day0) { const c = idx.byId.get(id); if (c) { r.dayPath.push(d.path); r.dayNet.push(Math.hypot(c.position[0] - d.x, c.position[2] - d.z)); r.dayMaxR.push(d.maxR); } } day0.clear(); prevParty.clear(); prevPos.clear(); trips.clear(); lastLeg.clear(); legStart.clear(); half.clear(); visit.clear(); lastTick.clear(); } continue; }
+      if (h < 7 || h >= 18) { if (h >= 18 && h < 18 + TICK_HOURS) { for (const [id, d] of day0) { const c = idx.byId.get(id); if (c) { r.dayPath.push(d.path); r.dayNet.push(Math.hypot(c.position[0] - d.x, c.position[2] - d.z)); r.dayMaxR.push(d.maxR); } } day0.clear(); dayFixes(r, fixes); fixes.clear(); prevParty.clear(); prevPos.clear(); trips.clear(); lastLeg.clear(); legStart.clear(); half.clear(); visit.clear(); lastTick.clear(); } continue; }
       const adults = idx.alive.filter(c => c.alive && c.age >= 15 && independent(c));
       for (const c of adults) {
         const x = ix(c);
@@ -203,6 +206,7 @@ export function run(job: Job): Result {
             if (s < 15) { const top = Object.entries(hh.acts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '?'; inc(r.still, top); }
           }
           half.set(c.id, { x: c.position[0], z: c.position[2], acts: {} });
+          let fx = fixes.get(c.id); if (!fx) fixes.set(c.id, fx = []); fx.push([c.position[0], c.position[2]]);
         }
       }
     }
@@ -226,6 +230,21 @@ export function run(job: Job): Result {
   return r;
 }
 
+/** Full-day follows (≥ 21 of 23 fixes, 07:00–18:00): C12's path, straightness and turning (src/compare/tracks.ts). */
+function dayFixes(r: Result, fixes: Map<number, [number, number][]>): void {
+  for (const f of fixes.values()) {
+    if (f.length < 21) continue;
+    let path = 0, prev: [number, number] | null = null;
+    for (let k = 1; k < f.length; k++) {
+      const dx = f[k][0] - f[k - 1][0], dz = f[k][1] - f[k - 1][1], d = Math.hypot(dx, dz);
+      path += d;
+      if (d >= 15) { if (prev) { let da = Math.atan2(dz, dx) - Math.atan2(prev[1], prev[0]); da = Math.atan2(Math.sin(da), Math.cos(da)); r.turn30.push(Math.abs(da)); } prev = [dx, dz]; } else prev = null;
+    }
+    const net = Math.hypot(f[f.length - 1][0] - f[0][0], f[f.length - 1][1] - f[0][1]);
+    r.path30.push(path); if (path > 0) r.straight30.push(net / path);
+  }
+}
+
 const q = (a: number[], p: number) => { if (!a.length) return NaN; const s = [...a].sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor(p * s.length))]; };
 const mean = (a: number[]) => a.reduce((x, y) => x + y, 0) / (a.length || 1);
 const f0 = (v: number) => (Number.isFinite(v) ? v.toFixed(0) : '—'), f1 = (v: number) => (Number.isFinite(v) ? v.toFixed(1) : '—'), f2 = (v: number) => (Number.isFinite(v) ? v.toFixed(2) : '—');
@@ -236,7 +255,7 @@ function merge(rs: Result[]): Result {
   for (const r of rs.slice(1)) {
     o.adultDays += r.adultDays; o.sepLeftBehind += r.sepLeftBehind; o.scansWithCompany += r.scansWithCompany; o.legReturn += r.legReturn; o.legs += r.legs; o.halfHours += r.halfHours;
     for (const k of Object.keys(o.recruit) as (keyof Result['recruit'])[]) o.recruit[k] += r.recruit[k];
-    for (const f of ['party', 'crowd', 'crowdHours', 'eaten', 'standing', 'potential', 'rangeTrees', 'fedTrees', 'deficit', 'legTurn', 'legLen', 'steps30', 'dayPath', 'dayNet', 'dayMaxR', 'visitMin'] as const) o[f] = o[f].concat(r[f]);
+    for (const f of ['party', 'crowd', 'crowdHours', 'eaten', 'standing', 'potential', 'rangeTrees', 'fedTrees', 'deficit', 'legTurn', 'legLen', 'steps30', 'dayPath', 'dayNet', 'dayMaxR', 'visitMin', 'path30', 'straight30', 'turn30'] as const) o[f] = o[f].concat(r[f]);
     for (const [k, v] of Object.entries(r.partyBy)) o.partyBy[k] = (o.partyBy[k] ?? []).concat(v);
     for (const f of ['sep', 'still', 'visitWhy'] as const) for (const [k, n] of Object.entries(r[f])) o[f][k] = (o[f][k] ?? 0) + n;
   }
@@ -259,6 +278,7 @@ function report(o: Result, name: string): string {
   L.push(`Food budget per community-day: eaten ${f1(eaten)} fruit units; ripe crop standing in the 95% range ${f0(standing)} (uneaten potential ${f0(pot)}); eaten ÷ standing ${f2(eaten / (standing || 1))}; mean deficit of fruiting crowns in range ${f2(mean(o.deficit))}; crowns fed in per day ${f0(mean(o.fedTrees))} of ${f0(mean(o.rangeTrees))} trees in range.`);
   const lt = o.legTurn;
   L.push(`Trips to trees ≥ 50 m: ${o.legs}, length median ${f0(q(o.legLen, 0.5))} m; turn between consecutive trips median ${f2(q(lt, 0.5))} rad, reversals (> 2.5 rad) ${f2(lt.filter(a => a > 2.5).length / (lt.length || 1))}, returns to within 150 m of the previous trip's start ${f2(o.legReturn / (lt.length || 1))}.`);
+  L.push(`30-min fixes, full days (C12 definitions): path ${f0(q(o.path30, 0.5))} m/day (${f0(q(o.path30, 0.5) / 11)} m/h), straightness median ${f2(q(o.straight30, 0.5))}, turning angle median ${f2(q(o.turn30, 0.5))} rad (steps ≥ 15 m; ${o.turn30.length} turns).`);
   L.push(`Day (07:00–18:00): path median ${f0(q(o.dayPath, 0.5))} m, net ${f0(q(o.dayNet, 0.5))} m, furthest from the start ${f0(q(o.dayMaxR, 0.5))} m; 30-min step median ${f0(q(o.steps30, 0.5))} m, < 15 m ${f2(o.steps30.filter(s => s < 15).length / (o.steps30.length || 1))}; still half-hours are mostly: ${top(o.still, 6).map(([k, n]) => `${k} ${f2(n / (o.halfHours || 1))}`).join(', ')} (share of all half-hours).`);
   return L.join('\n');
 }

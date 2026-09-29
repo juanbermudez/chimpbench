@@ -78,7 +78,9 @@ One C7a mechanism at a time, party size mean:
 
 ## 2. Review item 1: `travelDistScaleM` at 60,000 m
 
-**Chose:** a pre-stated rule with a source (§3.4) replaces the linear distance cost for trips to trees in the field. `travelDistScaleM` field returns into its range, to 2,000 m (its last in-range value, C5a–C6b), with a note that the field does not read it while `tripRateValue` is 1. The compressed profile keeps its literal, 60 m. The 60,000 m fit and its two fitted statistics are superseded; they are reported, not refitted.
+*Superseded by the addendum (§5): the field declares no distance cost (60,000 m, design), and §3.4 is implemented but off by default.*
+
+**Chose (pre-registration):** a pre-stated rule with a source (§3.4) replaces the linear distance cost for trips to trees in the field. `travelDistScaleM` field returns into its range, to 2,000 m (its last in-range value, C5a–C6b), with a note that the field does not read it while `tripRateValue` is 1. The compressed profile keeps its literal, 60 m. The 60,000 m fit and its two fitted statistics are superseded; they are reported, not refitted.
 
 ---
 
@@ -146,3 +148,77 @@ This is the marginal value theorem's rate: gain over travel plus handling time [
 - C12 compare scripts are not run.
 
 **Expected direction** (C7b vs C7a on the same seeds): party size up; trips starting in company and companions kept up; adults per fed-in crown up; eaten ÷ standing up; stationary half-hours down; reversals and returns between trips down; day net displacement and furthest distance up; T-RNG-1 kernel up. Each is reported as moved in the expected direction, not moved, or moved against, with no claim of significance.
+
+---
+
+## 5. Addendum: direction check results and decision (29 September 2026, after the check)
+
+**Brief corrections received during the check (integrator):**
+- The 30-min step is dropped as a gap, because it depends on the recording method.
+- The robust gaps are straightness (~0.5), turning angle (lower than the sim's), daily path (somewhat short), range area and party size (~6).
+- Range size-matched: the gap is 2.5–4× (T-RNG-1 5–16 km² vs 1.9–2.3 km²), not 8–12×. Size-free range shape already matches.
+
+The rows below use C12's definitions on 30-min fixes: full days 07:00–18:00, straightness = net ÷ path, and turns between steps that are both ≥ 15 m. They were added to `scripts/party-food-metrics.ts` after the pre-registration, as a measurement only. On the diagnosis seeds, C6b-like / C7a / C7a with 2,000 m give:
+
+| Configuration | Straightness | Turning (rad) | Path (m/day) | Party size |
+| --- | --- | --- | --- | --- |
+| C6b-like | 0.22 | 1.59 | 851 | 3.19 |
+| C7a | 0.20 | 1.22 | 1,865 | 2.29 |
+| C7a, 2,000 m | 0.29 | 1.36 | 986 | 2.97 |
+
+### 5.1 Direction check (seeds 3303, 3404; paired; not a proof)
+
+`party-food-metrics.ts`, 60-day burn-in + 6 days, C7a values vs C7b:
+
+| Measure | C7a | C7b | Direction |
+| --- | --- | --- | --- |
+| Party size, mean (independents, 50 m chain) | 2.38 | 1.79 | **against** |
+| Straightness, full days | 0.19 | 0.28 | expected |
+| Turning angle, median | 1.18 rad | 1.37 rad | **against** |
+| Path, 30-min fixes | 2,133 m/day | 1,911 m/day | against (slight) |
+| Net displacement 07:00 → 18:00 | 385 m | 452 m | expected |
+| Furthest from the 07:00 position | 628 m | 640 m | not moved |
+| Trips to trees starting in company | 0.33 | 0.26 | against |
+| Companions still in the party at a trip's end | 0.46 | 0.64 | expected |
+| Adults per fed-in crown | 1.16 | 1.12 | not moved |
+| Eaten ÷ ripe crop standing in the range, per day | 0.02 | 0.04 | expected (still a large surplus) |
+| Reversals / returns between consecutive trips | 0.28 / 0.15 | 0.45 / 0.49 | **against** |
+
+**Field observer**, C7b only: `field-metrics.ts --days 120 --burn-in 60 --seeds 3303,3404`, in `artifacts/validation/c7b/check-field.*` (worktree). The comparison is unpaired, against C7a fresh (5 seeds × 365 days), and the windows differ:
+
+| Target | C7b check | C7a fresh |
+| --- | --- | --- |
+| T-RNG-1 West 95% kernel | 5.25 km² | 2.27 km² |
+| T-PTY-1 | 2.58 | 3.24 |
+| T-FOOD-2 fruit share | **0.42** | 0.77 |
+| T-FOOD-4 | 2.52 | 4.75 |
+| T-RNG-4 | 4.37 km/day | 3.59 km/day |
+| T-FOOD-11 | 501 m | 213 m |
+
+### 5.2 Attribution (each mechanism added to C7a alone; same seeds)
+
+| Configuration | Party size | Straightness | Turning | Path (m/day) | Furthest (m) |
+| --- | --- | --- | --- | --- | --- |
+| C7a | 2.38 | 0.19 | 1.18 | 2,133 | 628 |
+| + joint travel (§3.1) | 2.13 | 0.20 | 1.14 | 2,131 | 678 |
+| + intake-rate trip values (§3.4) | 2.70 | 0.25 | 1.24 | 1,389 | 454 |
+| + crown fullness and 5.9 trees/ha (§3.2–3.3) | 1.37 | 0.17 | 1.37 | 3,564 | 952 |
+| all four (C7b) | 1.79 | 0.28 | 1.37 | 1,911 | 640 |
+
+**Why:**
+- **Food (§3.2–3.3).** Depletion now bites: 54% of crown visits end with the crop gone. But fallback foods are unlimited and pay 0.07–0.14 hunger/h anywhere, against 0.24/h for fruit, and are never exhausted (`forageYield`).
+  - Animals either sit on ground foods (ground foraging fills 7% → 23% of half-hours in C7b, and fruit eaten falls 5.4 → 3.0 units per community-day) or run alone between small crowns (C7a + food: 74% alone, path 3.6 km/day).
+  - So scarcer fruit does not create scramble competition that pushes parties outward together. It creates sitting, or solitary search.
+- **Joint travel (§3.1).** Committed followers still lose the traveller. A party follow ends when the traveller is more than 1.6 × sight (~56 m) ahead, and each follower walks at its own speed factor. Companions still with the traveller at the trip's end did not rise (0.46 → 0.44), and a follower that drops out ends alone.
+- **Rate values (§3.4).** Nearer goals keep parties together and straighten days, but days get shorter and the furthest point comes in.
+
+### 5.3 Decision (post hoc, labelled)
+- **All four switches are off by default** in the field: `cropFullExp` 0, `patchesPerHa` 9.8, `followCommit` 0, `tripRateValue` 0. Code, registry entries (with the pre-registered values in their notes) and tests stay. This decision declines to adopt changes that failed their pre-registered direction; it tunes nothing.
+- **Review item 1:** the field declares no distance cost. `travelDistScaleM` stays at 60,000 m, now evidence "design", with its range widened and the out-of-range flag removed. This replaces §2's choice.
+- **Held-out exposure:** party size, straightness, turning and ranges were seen on the check seeds only. No value was chosen from them.
+
+### 5.4 Next levers (diagnosed, not implemented)
+1. **Limit or deplete fallback foods** (stage C7's "fallback forage field"). §3.2–3.3 can work only once fruit scarcity costs more than sitting on leaves and pith.
+2. **Joint travel that holds.** A follow of a committed traveller should not end at 1.6 × sight; followers should match the traveller's speed. §3.1 fails without this.
+3. **Shared goals.** Companions almost never choose the same tree (0–2% in every configuration): each re-decides alone with a ±0.12 candidate jitter, which is larger than the value gaps among the community's known trees.
+4. **The landscape cap** (§1.2(3)). Dense food exists only within 1.1 × the nominal radius.
