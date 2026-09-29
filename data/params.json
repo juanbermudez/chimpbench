@@ -3749,7 +3749,7 @@
     "compressed": 0,
     "field": 2
    },
-   "notes": "Stage C7a (field): a patch's crop capacity scales with (crown radius / species mean)^this, renormalized so each species' mean is unchanged; 2 = crown area (allometric design assumption). Large crops become rare, as in the field (a fruiting tree every 97 m of transect but a large crop every 21 km, janmaat2016). 0 = off (compressed)."
+   "notes": "Stage C7a (field): a patch's crop capacity scales with (crown radius / species mean)^this, renormalized so each species' mean is unchanged; 2 = crown area (allometric design assumption). Large crops become rare, as in the field (a fruiting tree every 97 m of transect but a large crop every 21 km, janmaat2016). 0 = off (compressed). janmaat2016 supports only the rarity of large full crops (crown size combined with >= 50% fullness; fullness alone is at least 9x rarer); the area scaling is a design assumption."
   },
   {
    "id": "crowdCompeteW",
@@ -9259,7 +9259,7 @@
     "compressed": 0,
     "field": 40
    },
-   "notes": "Stage C7a (field): per community, the day's this many trees inside the familiar range with the highest expected crop (capacity x the share of the species' trees in fruit today) are travel goals for adults, valued like remembered trees; an individual's own sighting overrides the expectation. Long-term memory of many trees (normand2009), monitoring and species synchrony (janmaat2013a), learning from empty trees (janmaat2013b). 0 = off (compressed). Design value."
+   "notes": "Stage C7a (field): per community, the day's this many trees inside the familiar range with the highest expected crop (capacity x the share of the species' trees in fruit today) are travel goals for independent animals aged >= 10 (adolescents and adults), valued like remembered trees; an individual's own sighting overrides the expectation. Long-term memory of many trees (normand2009), monitoring and species synchrony (janmaat2013a), learning from empty trees (janmaat2013b). 0 = off (compressed). Design value. Stylization: the list uses the true fruiting share of each species and every tree's capacity, including trees no animal has seen (community omniscience about the top K trees)."
   },
   {
    "id": "layoutScale",
@@ -11850,7 +11850,7 @@
    "constraints": [
     "P-FOOD-5"
    ],
-   "notes": "Patch ecology uses the ingested Kibale phenology (Ngogo 1998-2017, CC0; Kanyawara 1998-2013, CC BY 4.0; scripts/ingest-phenology.ts) when present (1), or always the labelled synthetic record (0). A switch, not an evidence claim; no Kibale dataset is ingested yet, so the synthetic record is in use (C5a review).",
+   "notes": "Patch ecology uses the ingested Kibale phenology (Ngogo 1998-2017, CC0; Kanyawara 1998-2013, CC BY 4.0; scripts/ingest-phenology.ts) when present (1), or always the labelled synthetic record (0). A switch, not an evidence claim; since C7a the Ngogo record (Potts et al. 2020, Dryad gf1vhhmk8) is ingested (data/phenology/ngogo.json, src/sim/phenology.gen.ts), so the field profile runs on it; 0 forces the synthetic record.",
    "integer": true
   },
   {

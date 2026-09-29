@@ -18,12 +18,12 @@
   "Instrument validation against truth (sampling accuracy, classifier precision and recall) is allowed at any time, because truth is not a field target; each validation run is logged."
  ],
  "protocolFreeze": {
-  "stage": "C12 relabel",
+  "stage": "C7a review findings 9-12",
   "date": "2026-09-29",
-  "hash": "e88dcd8f700a2997",
+  "hash": "f29c8b0773effa06",
   "previous": {
-   "stage": "C7a review fixes + data-agent comparison code",
-   "hash": "73904dcee230404f"
+   "stage": "C12 relabel",
+   "hash": "e88dcd8f700a2997"
   }
  },
  "protocolLog": [
@@ -855,6 +855,54 @@
    "seen": "as above",
    "param": "freeze: 73904dcee230404f -> e88dcd8f700a2997 (C12 roles in c12Fitted and the comparison scripts; the Gombe path code was already in the fingerprint since commit 2980c8e)",
    "reason": "C12 relabel",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "combined proof",
+   "class": "freeze"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C7a implementer (C7a review finding 9)",
+   "seen": "no new results (found while writing the T-RNG-1 test)",
+   "param": "bug fix: observation years for the annual range, cell-count and bond metrics (yearKernel, yearRange, fewestCells, strongBonds) now count from the observer's start (records.time0) instead of world time 0; with a burn-in the first 'year' held only the part of the first observation year that fell before day 365 of world time and later years were misaligned. Rows: T-RNG-1 (annual kernel median), T-RNG-6 (annual cell ranges), the CELL_MIN scale check (T-RNG-2, T-RNG-3, T-RNG-6, T-IGE-5) and T-SOC-1 (bond runs)",
+   "reason": "bug (protocolPolicy: bug fixes are allowed and flagged revised post hoc); values before/after are reported at the combined proof. The life table and other demography helpers that assume observation starts at time 0 were reported to the C8 owner",
+   "targets": [
+    "T-RNG-1",
+    "T-RNG-2",
+    "T-RNG-3",
+    "T-RNG-6",
+    "T-IGE-5",
+    "T-SOC-1"
+   ],
+   "verdicts": "to be reported at the combined proof",
+   "class": "bug fix (protocolRevisedPostHoc)",
+   "flags": {
+    "T-RNG-1": "protocolRevisedPostHoc",
+    "T-RNG-2": "protocolRevisedPostHoc",
+    "T-RNG-3": "protocolRevisedPostHoc",
+    "T-RNG-6": "protocolRevisedPostHoc",
+    "T-SOC-1": "protocolRevisedPostHoc"
+   }
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C7a implementer (C7a review finding 12)",
+   "seen": "no simulated results; the ingest output only",
+   "param": "phenology ingest: species names normalized and spelling variants merged (Ficus cyathistipula, cyathistupula and cyanthstipula; Premna and Premana angolensis): 42 names -> 39 species; a warning when one calendar month holds > 50% of rows. Re-ingested data/phenology/ngogo.json and src/sim/phenology.gen.ts: only the two merged series change; all 8 matched sim species are unchanged, the fig class mean used by the unmatched Ficus sansibarica changes",
+   "reason": "data quality (C7a review finding 12)",
+   "targets": [
+    "all field-profile targets (fig trees of the unmatched species)"
+   ],
+   "verdicts": "field world hashes change; compressed goldens unchanged",
+   "class": "model input (data)"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C7a implementer",
+   "seen": "no new results",
+   "param": "freeze: e88dcd8f700a2997 -> f29c8b0773effa06 (observation-year bug fix in src/field/metrics.ts; T-SOC-1 flag)",
+   "reason": "C7a review findings 9-12",
    "targets": [
     "all"
    ],
@@ -3687,10 +3735,11 @@
    "evidence": "H",
    "role": "held-out",
    "encoded": false,
-   "notes": "",
+   "notes": " C7a review round: observation years counted from the observer's start (bug fix, logged).",
    "sources": [
     "mitani2009"
-   ]
+   ],
+   "protocolRevisedPostHoc": true
   },
   {
    "id": "T-SOC-2",
