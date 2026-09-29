@@ -1,6 +1,6 @@
 # AGENTS.md
 
-MGOGO is a 3D eastern-chimpanzee society simulation (Kibale-inspired) and a live demo of a local decision model, GLiNER2.5-Decide, choosing actions from the state a chimp perceives. Vite 8, TypeScript 7 strict, three.js 0.186 (WebGL), vanilla DOM UI, `node:test` via tsx. Not a git repo.
+MGOGO is a 3D eastern-chimpanzee society simulation (Kibale-inspired) and a live demo of a local decision model, GLiNER2.5-Decide, choosing actions from the state a chimp perceives. Vite 8, TypeScript 7 strict, three.js 0.186 (WebGL), vanilla DOM UI, `node:test` via tsx. Local git repo (no remote, `main`); parallel agents work in git worktrees and the integrator merges.
 
 ## Commands
 
@@ -108,6 +108,8 @@ Frame loop order (in `src/main.ts`): `pumpDecisions` → `advance` (clock runs `
 - Creature playback trails the sim by 2 ticks (`motion.ts` needs a sample on both sides of the drawn segment). Per-animal shader params live in texels P0..P5 (`ROW_TEXELS` 132); a new texel means raising it.
 
 - `data/raw/` holds downloaded field datasets with their `PROVENANCE.md` (source, license, checksum). Raw chimpanzee coordinates are location-sensitive: never publish them or copy them into `public/`, `docs/` or `dist/`; the app and guide show only normalized maps, credited per license.
+
+- Worktrees (parallel work): `node_modules` and `data/raw/` are not tracked. Symlink them from the main checkout (`ln -s /Users/juanbermudez/Desktop/MGOGO/node_modules node_modules`). Commit on your branch in small steps. Never commit to `main` from a worktree. Proof runs count only on merged `main`.
 
 ## Docs
 
