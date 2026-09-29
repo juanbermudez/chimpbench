@@ -5153,11 +5153,11 @@
   {
    "id": "epidemicBetaPerH",
    "group": "disease",
-   "value": 0.004,
+   "value": 0.03,
    "units": "per infectious co-member per h",
    "range": [
-    0.002,
-    0.008
+    0.015,
+    0.06
    ],
    "rangeBasis": "assumed-x2",
    "hardRange": [
@@ -5170,12 +5170,16 @@
    "clock": "eco",
    "symbol": "P.epidemicBetaPerH (slowDisease)",
    "file": "src/sim/disease.ts",
-   "notes": "Stage C8: transmission to each susceptible party co-member per infectious member and hour (SIR through party co-membership). Fitted so outbreak attack rates fall in 0.4–0.9 (T-DEM-6) and R0 near 1.27–1.83 (P-DEM-1; R0 itself is emergent, see epidemicR0)."
+   "notes": "Stage C8: transmission to each susceptible party co-member per infectious member and hour (SIR through party co-membership). Fitted on development seeds (48, 7, 21, 5, 11; an outbreak seeded in each community's index party, 45 eco-days, median virulence) so the mean attack rate is ~0.62, the SIR final size at epidemicR0 1.55 and inside T-DEM-6's 0.4–0.9: field 0.016 → 0.43, 0.03 → 0.64, 0.06 → 0.78; compressed 0.001 → 0.64, 0.002 → 0.78 (the compressed map's denser parties). R0 itself is emergent.",
+   "profiles": {
+    "compressed": 0.001,
+    "field": 0.03
+   }
   },
   {
    "id": "epidemicFatality",
    "group": "disease",
-   "value": 0.04,
+   "value": 0.07,
    "units": "probability per case",
    "range": [
     0,
@@ -5192,7 +5196,7 @@
    "clock": "none",
    "symbol": "P.epidemicFatality (slowDisease)",
    "file": "src/sim/disease.ts",
-   "notes": "Stage C8: death probability at the end of a case for ages 5–29 at median virulence; infants and ages 30 or more have higher odds (epidemicInfantOR, epidemicOldOR). Fitted to outbreak mortality 0–0.17, median ~0.08 (T-DEM-6)."
+   "notes": "Stage C8: death probability at the end of a case for ages 5–29 at median virulence; infants and ages 30 or more have higher odds (epidemicInfantOR, epidemicOldOR). Fitted to outbreak mortality 0–0.17 with mean ~0.08 (T-DEM-6: 12.2%, 0%, 8.9%, 8%, 17%, 4%): development runs at 0.04 gave 0.047 (field) and 0.038 (compressed) at median virulence, so 0.07 with the virulence spread gives a mean near 0.08."
   },
   {
    "id": "epidemicHealthDrop",
