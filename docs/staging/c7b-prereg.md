@@ -368,3 +368,31 @@ A direction "holds" when the paired change has the expected sign. No significanc
   - Unchanged: straightness 0.19, range kernel 2.13 → 2.23 km², stationary 0.50.
   - Fruit share 0.84 → 0.82.
   - Straightness and range area remain the main open gaps.
+
+---
+
+## 8. C7d: the food package with joint trips; straightness (pre-registration, 29 September 2026)
+
+The branch is `main` at 762a259 (C7c merged: joint trips and the energetic distance cost on; fallback limits and the food package off). Metric roles are as in §6: development diagnostics only, no Gombe files, nothing fitted. New development seeds: **3707 and 3808**, never run before.
+
+### 8.1 The missing combination: food package + joint trips (stated before any run)
+
+**Variants** (paired, seeds 3707 and 3808):
+- K: `main` as merged.
+- K + food: `cropFullExp` 11.9, `cropFullMin` 0.3, `patchesPerHa` 5.9, as pre-registered in §3.2–3.3.
+
+**Tools:**
+- `party-food-metrics.ts`, 60-day burn-in + 6 days.
+- `field-metrics.ts --days 120 --burn-in 60`.
+
+**Expected direction:** T-RNG-1 West kernel ↑ vs K, while party size holds. **Keep the food package only if all three hold:**
+- T-PTY-1 (observer) ≥ 2.8;
+- diagnostic party size (independents, 50 m chain) ≥ K − 0.10;
+- T-FOOD-2 ≥ 0.60.
+
+**If party size collapses anyway,** these measures, already in the script, diagnose why:
+- adults per fed-in crown, and the hours a crown's crop lasts its feeders;
+- visit endings (crop gone vs social);
+- trips starting in company and companions kept.
+
+Any crown-sharing mechanism that follows is pre-registered separately (§8.3) before it is run.
