@@ -12,7 +12,7 @@ Working plan for the current program. Objectives: `docs/realism-roadmap.md`. Del
 | C7b party size and range gap | C7b agent | worktree branch | diagnosis, pre-registration (docs/staging/c7b-prereg.md), field-only mechanisms, direction checks only |
 | C8 demography and early life | C8 agent | worktree branch | the C8 spec + docs/staging/early-life-prereg.md; T-DEM-14/15 and T-LET-5 sealed; target rows in docs/staging/c8-targets.patch.json |
 | Visual data guide | visual guide agent (Opus) | `main`: docs/guide/*, scripts/guide-data.ts, docs/data/guide-*.json, docs/guide-preview.html; owns docs/architecture.html once the data agent finishes | visuals for everything integrated: fruit calendar, normalized maps, paths, patrols, activity, validation grid, pipeline and decision-loop diagrams; offline, no raw coordinates |
-| Patrol data and guide | data agent | `main`, new files only | real patrol statistics, T-PAT-8 and T-BRD-1 bands, Gombe 15-min paths (jg05d), guide sections |
+| Patrol data and guide | data agent | done (2980c8e) | real patrol statistics (Ngogo 0.76/wk observed, 33% per-male participation; Gombe 180 patrols, median 88.5 min, 8 males, 3 females; post-split West 17.4/yr vs Central 5.0/yr); T-BRD-1 reproduced; T-PAT-8 not comparable; Gombe 15-min paths (1,330 follows; straightness 0.47, turning 0.55 rad at 30 min, daily path 2.3 km). The 30-min step is method-sensitive (Taï 95 m vs Gombe 2.8 m), so it's no longer a headline gap. |
 
 Merge plan: once C7a is reviewed and patrols are green, merge C7b, then C8. Then WP0 (freeze) and WP4 (register the B7 targets), then **one combined proof** on merged `main` (patrols, C7b, C8), then independent reviews.
 
@@ -208,13 +208,13 @@ Compares model-driven populations (untuned, baseline, aggressive, collaborative)
 **Goal**: adapters that are in-distribution for the field profile (the round-2 ones see 9.7% unseen option wordings and ~12× larger distances there).
 **Success Criteria**: each adapter best on its own labels on the round-3 test split, reported separately for compressed and field rows.
 **Tests**: labeling validator; offline eval on round-3 test.
-**Status**: In Progress — 1,200 contexts from snapshot-v3 (hash 1c20a219db3e; 600 field, 600 compressed); labeling.
+**Status**: Complete — 1,200 contexts from snapshot-v3 (hash 1c20a219db3e; 600 field, 600 compressed), 120 double-labeled (agreement base 0.83, agg 0.77, coop 0.87). Test accuracy on own labels: baseline 0.735, aggressive 0.715, collaborative 0.805 (field rows 0.82 / 0.78 / 0.76). Adapters in artifacts/decide-ft/round3/adapters.
 
 ### Stage P2: Model-driven field observer and GPU batching server
 **Goal**: `scripts/ft-field.ts` (observer + model decisions, field-metrics JSON shape, all-one-policy conditions); `training/decide_ft/server.py` (one model per GPU, cross-run batching).
 **Success Criteria**: `--cond rules` reproduces field-metrics values exactly for the same seed and window; server throughput measured against per-run workers.
 **Tests**: tests/ft-field.test.ts (rules equivalence); bench_batch.py.
-**Status**: In Progress.
+**Status**: Complete — rules condition deep-equal to field-metrics on 79 target values (compressed and field). GPU finding: the Decide forward pass is compute-bound at ~60-67 decisions/s on an RTX A6000 whatever the batch (35/s at batch 1); CPU preparation is ~3 ms per decision. Cross-run batching therefore adds at most ~1.5x over per-run workers, and FlashDeBERTa failed to load on the pod (torch 2.4 API mismatch). Real-model runs cost ~17 GPU-minutes per population-day on the field map.
 
 ### Stage P3: Behaviour scorecards for trained populations
 **Goal**: 30 observed days (after a 180-day rules burn-in), field profile, 5 seeds × {rules, untuned, baseline, aggressive, collaborative}; scored against the field targets.
@@ -238,5 +238,5 @@ Compares model-driven populations (untuned, baseline, aggressive, collaborative)
 **Goal**: a run registry (every eval run with condition, seed, profile, window, code and adapter hashes) and a dashboard comparing synthetic and wild populations (scorecards, behaviour deltas, population and mortality curves, conflict, ranges); guide-ready JSON and SVG (src/compare/svg.ts) handed to the guide owner.
 **Success Criteria**: the dashboard rebuilds from the registry after each new run; no raw field coordinates published.
 **Tests**: registry schema check; privacy guard (assertNonSensitive) on exports.
-**Status**: Not Started.
+**Status**: In Progress — dashboard v1 published (https://claude.ai/artifact/RtLvuv3bUrcb7s77dsvkty) from training/decide_ft/dashboard_data.py; rebuild and republish after each batch of runs.
 
