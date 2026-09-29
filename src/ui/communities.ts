@@ -1,0 +1,63 @@
+import type { Ctx } from './app';
+import type { Troop, World } from '../types';
+import { icon } from './icons';
+import { duration, emblemText, esc, nameOf, troopShort } from './format';
+import { morph } from './morph';
+
+// Three community cards: identity, alpha + tenure, demography, strength
+// (adult males, the best single predictor of intergroup dominance at Ngogo
+// and Kanyawara) and current party count.
+
+export function demography(world: World, t: Troop) {
+  const m = world.chimps.filter(c => c.alive && c.troopId === t.id);
+  return {
+    total: m.length,
+    am: m.filter(c => c.sex === 'male' && (c.stage === 'adult' || c.stage === 'elder')).length,
+    af: m.filter(c => c.sex === 'female' && (c.stage === 'adult' || c.stage === 'elder')).length,
+    adol: m.filter(c => c.stage === 'adolescent').length,
+    juv: m.filter(c => c.stage === 'juvenile').length,
+    inf: m.filter(c => c.stage === 'infant').length,
+    parties: world.parties.filter(p => p.troopId === t.id && p.members.length > 0).length,
+  };
+}
+
+export function emblem(t: Troop, cls = '') {
+  return `<span class="emblem ${cls}" style="--c:${esc(t.color)}" aria-hidden="true"><svg viewBox="0 0 24 28"><path d="M12 1 22 5v8c0 7-4.5 11.5-10 14C6.5 24.5 2 20 2 13V5Z"/></svg><b>${esc(emblemText(t))}</b></span>`;
+}
+
+export function createCommunities(root: HTMLElement, ctx: Ctx) {
+  root.innerHTML = `<div class="sec-head"><h2 class="eyebrow">Communities</h2><span class="sec-actions"><button class="link-btn" data-act="society">${icon('tree')}Society<kbd>T</kbd></button><button class="icon-btn sm side-collapse" data-act="collapse-sidebar" aria-controls="left-sidebar" aria-keyshortcuts="B" aria-label="Hide sidebar (B)" title="Hide sidebar (B)">${icon('chevronL')}</button></span></div><div class="cards" role="list"></div>`;
+  const list = root.querySelector<HTMLElement>('.cards')!;
+  root.querySelector<HTMLButtonElement>('[data-act="society"]')!.onclick = () => ctx.openSociety();
+  list.addEventListener('click', e => {
+    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-troop]'); if (!b) return;
+    const id = Number(b.dataset.troop);
+    ctx.highlight(ctx.state.highlightTroopId === id ? null : id);
+  });
+  list.addEventListener('pointerover', e => { const b = (e.target as HTMLElement).closest<HTMLElement>('[data-troop]'); ctx.hoverTroop(b ? Number(b.dataset.troop) : null); });
+  list.addEventListener('pointerleave', () => ctx.hoverTroop(null));
+  let key = '';
+  return {
+    update(force = false) {
+      const w = ctx.world();
+      const rows = w.troops.map(t => ({ t, d: demography(w, t) }));
+      const maxAm = Math.max(1, ...rows.map(r => r.d.am));
+      const tenures = rows.map(({ t }) => t.alphaId >= 0 ? `${t.alphaSince < 0 ? '≥' : ''}${duration(Math.max(0, w.time - t.alphaSince))}` : '');
+      // Keyed on what the cards display (the tenure as its rounded text), so the clock alone never re-renders them.
+      const k = JSON.stringify([ctx.state.highlightTroopId, tenures, rows.map(r => [r.t.alphaId, r.d])]);
+      if (!force && k === key) return; key = k;
+      morph(list, rows.map(({ t, d }, ri) => {
+        const on = ctx.state.highlightTroopId === t.id;
+        const tenure = tenures[ri];
+        return `<button class="card ${on ? 'on' : ''}" role="listitem" data-troop="${t.id}" data-focus-key="troop-${t.id}" style="--c:${esc(t.color)}" aria-pressed="${on}" aria-label="${esc(t.name)}: ${d.total} members, ${d.am} adult males. ${on ? 'Highlighted' : 'Highlight in world'}">
+          ${emblem(t)}
+          <span class="card-body">
+            <span class="card-top"><b class="card-name">${esc(troopShort(t))}</b><span class="card-total" title="Living members">${d.total}</span></span>
+            <span class="card-alpha" title="${t.alphaId >= 0 ? `Alpha male, ${tenure}` : 'Alpha position contested'}">${icon('crown')}${t.alphaId >= 0 ? `${esc(nameOf(w, t.alphaId))}<i>${tenure}</i>` : '<i>contested</i>'}</span>
+            <span class="card-demo" title="Adult males · adult females · adolescents · juveniles · infants"><span>${d.am}<em>♂</em></span><span>${d.af}<em>♀</em></span><span>${d.adol}<em>adol</em></span><span>${d.juv}<em>juv</em></span><span>${d.inf}<em>inf</em></span></span>
+            <span class="card-strength" title="Adult males: numerical strength in intergroup encounters"><span class="meter"><i style="width:${(d.am / maxAm) * 100}%"></i></span><span>${d.parties} ${d.parties === 1 ? 'party' : 'parties'}</span></span>
+          </span></button>`;
+      }).join(''));
+    },
+  };
+}

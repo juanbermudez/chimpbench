@@ -1,0 +1,306 @@
+import type { Chimp, DigestEvent, PartnerTally, Troop, Tree, Water, Weather, World } from '../types';
+import { DEFAULTS } from './params.gen';
+import { defaultSettings, paramsOf, type ParamSettings } from './params';
+
+// Clock and scale. Every behavioral constant lives in the parameter registry (data/params.json, generated into
+// params.gen.ts); hot code reads the resolved values through paramsOf(world) (params.ts). These exports are the
+// registry defaults for code outside the simulation. Tick length, start time and cadences are fixed (not overridable).
+export const TICK_SECONDS = DEFAULTS.tickSeconds;
+export const TICK_HOURS = TICK_SECONDS / 3600;
+export const START_HOUR = DEFAULTS.startHour;        // the run opens at 06:30 EAT, civil twilight
+export const START_DOY = DEFAULTS.startDoy;          // 28 September, Kibale's second wet season
+export const SLOW_EVERY = DEFAULTS.slowEveryTicks;   // physiology/life-history/ecology every 5 eco-minutes
+export const SLOW_HOURS = SLOW_EVERY * TICK_HOURS;
+export const PARTY_EVERY = DEFAULTS.partyEveryTicks; // fission-fusion parties every 2 eco-minutes
+// Overridable values (sight, speeds, caps, ...) have no module constants: a copy of a default would silently ignore a
+// world's overrides and profile (C4 review). Read them with paramsOf(world); tests/sim-params.test.ts enforces this.
+
+// Disjoint id ranges so a targetId is unambiguous.
+export const TREE_ID0 = 100001;
+export const WATER_ID0 = 200001;
+export const PREY_ID0 = 300001;
+export const DYN_ID0 = 1_000_000;
+export const NEVER = -1e9;
+
+export const isTreeId = (id: number) => id >= TREE_ID0 && id < WATER_ID0;
+export const isWaterId = (id: number) => id >= WATER_ID0 && id < PREY_ID0;
+export const isPreyId = (id: number) => id >= PREY_ID0 && id < DYN_ID0;
+export const isChimpId = (id: number) => id > 0 && id < TREE_ID0;
+
+/** Hidden per-individual state that has no field in the shared contract. Plain data, serializable. */
+export interface ChimpX {
+  actEnd: number; phase: number; prog: number; gx: number; gy: number; gz: number;
+  intr: string; finished: boolean; interId: number;
+  // perception snapshot, refreshed at decision points
+  seen: number[]; seenAt: number; sight: number;
+  ownMales: number; strangers: number; strangerMales: number; strangerTroop: number; isolated: number; nearestStranger: number;
+  heardN: number; heardAt: number; heardX: number; heardZ: number; heardTroop: number; heardStim: number;
+  joinCall: number; joinCaller: number; joinAt: number; joinX: number; joinZ: number;
+  trees: number[]; fruitNear: number; preyId: number; stims: number[];
+  newcomers: number;
+  // social bookkeeping
+  greet: Record<number, number>; support: Record<number, number>; groomRecv: Record<number, number>; coerce: Record<number, number>;
+  lastDisplay: number; lastCall: number; lastMate: number; lastAgg: number; lastFoodCall: number; lastHeard: number;
+  victimOf: number; victimAt: number; lostAt: number;
+  coalA: number; coalB: number; coalAt: number;
+  rivalId: number;
+  // reproduction and life history
+  cycleLen: number; cops: Record<number, number>; sireId: number; amenUntil: number; firstSwell: number; gestation: number;
+  weanAge: number; weaned: boolean; caretaker: number; immigrantAge: number; disperser: boolean; transferTo: number;
+  consortId: number; guardBy: number; carryDead: number; nestTree: number;
+  impulse: number; impulseTarget: number; impulseUntil: number;
+  mateAsk: number; mateAskAt: number; recon: number; gangAt: number; v: number; aux: number; flag: number; lastIntr: string; lastIntrAt: number; consoleAt: number; visibleOwn: number;
+  metAt: Record<number, number>; coreX: number; coreZ: number; lastHuntAt: number; near: Record<number, number>; gangRoll: number; consoledAt: number; joinRich: number;
+  // relationships and long-term memory (relations.ts): directed tension 0..1, last incident [time, code], month in progress
+  tension: Record<number, number>; incident: Record<number, [number, number]>; month: MonthLedger; monthsSinceYear: number;
+  /** Committed direction (+1/-1 along the stream polyline) while following a bank around a bend; 0 when walking straight. */
+  slide: number;
+  /** Last time this male rolled the patrol hazard (territory.ts, perception.ts). */
+  patrolRoll: number;
+  /** Contact memory (§5.3.1 P2): flat [x, z, contact, loss, eco-hour] per hot spot (contact.ts), and the last time strangers seen were noted. */
+  contacts: number[]; contactSeenAt: number;
+  /** Stage C6b (field): crowns this individual recently fed in and when it left them (≤ 6, newest last); absent until first used. */
+  fedTree?: number[]; fedAt?: number[];
+  /** Stage C7a (field): crop this individual last saw (or left) in each remembered fruit tree, by tree id; absent until first used. */
+  treeCrop?: Record<number, number>;
+}
+
+/** The memory month in progress: tallies accumulate on events and are finalized into a MemoryDigest every 30 eco-days. */
+export interface MonthLedger { start: number; startRank: number; partners: Record<number, PartnerTally>; events: DigestEvent[]; encounters: number; lastEncounter: number }
+
+export interface PatrolState {
+  leaderId: number; neighborId: number; start: number; phase: number; wx: number; wz: number; until: number; interId: number;
+  /** Stage C6: the periphery sector patrolled, whether this patrol pushes into the neighbour's range, and listening stops. */
+  sector: number; incursion: boolean; stopUntil: number; lastStop: number; stops: number;
+  /** §5.3.1 P4a: members in join order (leader first; single file), and whether the patrol met or heard strangers (release). */
+  file: number[]; contact: boolean;
+}
+export interface HuntState { preyId: number; troopId: number; start: number; resolveAt: number; hunters: number[]; interId: number }
+
+/** Hidden world-level state (weather chain, patrols, hunts, counters). Plain data, serializable. */
+export interface SimState {
+  carry: number; nextChimpId: number; aliveVersion: number; hierDirty: boolean;
+  weather: { state: Weather; rainTarget: number; since: number; heavy: boolean; rainMm: number; forcedUntil: number };
+  droughtUntil: number; figTree: number; figUntil: number;
+  patrols: Record<number, PatrolState | null>;
+  hunts: HuntState[]; lastHunt: Record<number, number>;
+  encounters: Record<string, number>;
+  nextPreyId: number; preyAt: number;
+  gates: Record<string, number>;
+  groomTally: Record<number, number>; playTally: Record<number, number>; lastSummary: number;
+  aware: Record<number, number[]>;
+  names: Record<number, number>;
+  unstableUntil: Record<number, number>;
+  lastDaily: number; lastHourly: number;
+  alphaHow: Record<number, string>;
+  /** Stage C6 territories (territory.ts): utilization and danger grids per community, periphery sector visits, isopleth stamp. */
+  ud: Record<number, number[]>; sectorVisit: Record<number, number[]>; udStamp: number;
+  /** Use added since the last daily update (sparse, by cell), merged into `ud` daily so isopleths depend only on saved state. */
+  udNew: Record<number, Record<number, number>>;
+  /** Stage C7a (field): per community, the day's best-known productive trees as flat [treeId, expected crop, …] pairs; absent when off. */
+  knownTrees?: Record<number, number[]>;
+  kills: Record<string, number>;
+  vacantUntil: Record<number, number>;
+  /** Community hunting day (daily draw) until this time. */
+  huntDay: Record<number, number>;
+  /** Registry hash, scale profile and parameter overrides this world was created with (params.ts). Small plain data. */
+  params: ParamSettings;
+}
+
+export type SimChimp = Chimp & { sim: ChimpX };
+export type SimWorld = World & { sim: SimState };
+
+export function newX(): ChimpX {
+  return {
+    actEnd: 0, phase: 0, prog: 0, gx: 0, gy: 0, gz: 0, intr: '', finished: false, interId: -1,
+    seen: [], seenAt: NEVER, sight: 0,
+    ownMales: 0, strangers: 0, strangerMales: 0, strangerTroop: -1, isolated: -1, nearestStranger: -1,
+    heardN: 0, heardAt: NEVER, heardX: 0, heardZ: 0, heardTroop: -1, heardStim: -1,
+    joinCall: -1, joinCaller: -1, joinAt: NEVER, joinX: 0, joinZ: 0,
+    trees: [], fruitNear: 0, preyId: -1, stims: [], newcomers: 0,
+    greet: {}, support: {}, groomRecv: {}, coerce: {},
+    lastDisplay: NEVER, lastCall: NEVER, lastMate: NEVER, lastAgg: NEVER, lastFoodCall: NEVER, lastHeard: NEVER,
+    victimOf: -1, victimAt: NEVER, lostAt: NEVER, coalA: -1, coalB: -1, coalAt: NEVER, rivalId: -1,
+    cycleLen: 36, cops: {}, sireId: -1, amenUntil: 0, firstSwell: 10.5, gestation: 228,
+    weanAge: 4.5, weaned: false, caretaker: -1, immigrantAge: -1, disperser: true, transferTo: -1,
+    consortId: -1, guardBy: -1, carryDead: NEVER, nestTree: -1,
+    impulse: 0, impulseTarget: -1, impulseUntil: NEVER, mateAsk: -1, mateAskAt: NEVER, recon: NEVER, gangAt: NEVER, v: 0, aux: -1, flag: 0, lastIntr: '', lastIntrAt: NEVER, consoleAt: NEVER, visibleOwn: 0,
+    metAt: {}, coreX: 0, coreZ: 0, lastHuntAt: NEVER, near: {}, gangRoll: NEVER, consoledAt: NEVER, joinRich: 0,
+    tension: {}, incident: {}, month: { start: 0, startRank: 0, partners: {}, events: [], encounters: 0, lastEncounter: NEVER }, monthsSinceYear: 0, slide: 0, patrolRoll: NEVER, contacts: [], contactSeenAt: NEVER,
+  };
+}
+
+export function ix(chimp: Chimp): ChimpX {
+  const c = chimp as SimChimp;
+  return c.sim ?? (c.sim = newX());
+}
+
+export function newSimState(): SimState {
+  return {
+    carry: 0, nextChimpId: 1, aliveVersion: 0, hierDirty: true,
+    weather: { state: 'cloudy', rainTarget: 0, since: 0, heavy: false, rainMm: 0, forcedUntil: NEVER },
+    droughtUntil: NEVER, figTree: -1, figUntil: NEVER,
+    patrols: {}, hunts: [], lastHunt: {}, encounters: {},
+    nextPreyId: PREY_ID0, preyAt: 0, gates: {}, groomTally: {}, playTally: {}, lastSummary: 0, aware: {}, names: {},
+    unstableUntil: {}, lastDaily: 0, lastHourly: 0, alphaHow: {}, ud: {}, sectorVisit: {}, udStamp: 0, udNew: {}, kills: {}, vacantUntil: {}, huntDay: {}, params: defaultSettings(),
+  };
+}
+
+export function simOf(world: World): SimState {
+  const w = world as SimWorld;
+  if (!w.sim) {
+    w.sim = newSimState();
+    w.sim.nextChimpId = world.chimps.reduce((m, c) => Math.max(m, c.id), 0) + 1;
+  }
+  return w.sim;
+}
+
+// ---------------------------------------------------------------------------
+// Derived indexes, cached per world and rebuilt when arrays change.
+// ---------------------------------------------------------------------------
+
+export interface Index {
+  chimps: Chimp[]; len: number; ver: number; trees: Tree[]; treeLen: number;
+  byId: Map<number, Chimp>; alive: Chimp[]; treeById: Map<number, Tree>; waterById: Map<number, Water>; troopById: Map<number, Troop>;
+  /** Tree grid: cell (P.treeGridCellM: 16 m compressed, 64 m field), cells of indexes into world.trees. */
+  grid: number[][]; gridN: number; half: number; cell: number;
+}
+
+const cache = new WeakMap<World, Index>();
+// Fast path for the world being ticked: index() runs thousands of times per tick, and the WeakMap lookup was
+// most of its cost. Pure caching; the validity checks are the same as below.
+let lastWorld: World | null = null, lastIdx: Index | null = null;
+
+export function index(world: World): Index {
+  const li = lastIdx;
+  if (world === lastWorld && li !== null && li.chimps === world.chimps && li.len === world.chimps.length && li.ver === (world as SimWorld).sim.aliveVersion
+    && li.trees === world.trees && li.treeLen === world.trees.length) return li;
+  const s = simOf(world);
+  let idx = cache.get(world);
+  if (idx && idx.chimps === world.chimps && idx.len === world.chimps.length && idx.ver === s.aliveVersion && idx.trees === world.trees && idx.treeLen === world.trees.length) { lastWorld = world; lastIdx = idx; return idx; }
+  if (!idx || idx.trees !== world.trees || idx.treeLen !== world.trees.length) {
+    const half = world.size / 2;
+    const cell = paramsOf(world).treeGridCellM;
+    const gridN = Math.max(1, Math.ceil(world.size / cell));
+    const grid: number[][] = Array.from({ length: gridN * gridN }, () => []);
+    const treeById = new Map<number, Tree>();
+    world.trees.forEach((t, i) => {
+      treeById.set(t.id, t);
+      const cx = Math.min(gridN - 1, Math.max(0, Math.floor((t.position[0] + half) / cell)));
+      const cz = Math.min(gridN - 1, Math.max(0, Math.floor((t.position[2] + half) / cell)));
+      grid[cz * gridN + cx].push(i);
+    });
+    idx = { chimps: world.chimps, len: 0, ver: -1, trees: world.trees, treeLen: world.trees.length, byId: new Map(), alive: [], treeById,
+      waterById: new Map(), troopById: new Map(), grid, gridN, half, cell };
+  }
+  idx.chimps = world.chimps; idx.len = world.chimps.length; idx.ver = s.aliveVersion;
+  idx.byId.clear(); idx.alive.length = 0;
+  for (const c of world.chimps) { idx.byId.set(c.id, c); if (c.alive) idx.alive.push(c); }
+  idx.waterById.clear(); for (const w of world.water) idx.waterById.set(w.id, w);
+  idx.troopById.clear(); for (const t of world.troops) idx.troopById.set(t.id, t);
+  cache.set(world, idx);
+  lastWorld = world; lastIdx = idx;
+  return idx;
+}
+
+export function markAliveChanged(world: World): void { const s = simOf(world); s.aliveVersion++; s.hierDirty = true; }
+
+export function chimpById(world: World, id: number): Chimp | undefined { return index(world).byId.get(id); }
+export function living(world: World, id: number): Chimp | undefined { const c = index(world).byId.get(id); return c && c.alive ? c : undefined; }
+export function treeById(world: World, id: number): Tree | undefined { return index(world).treeById.get(id); }
+export function troopById(world: World, id: number): Troop | undefined { return index(world).troopById.get(id); }
+
+/** Fills out with indexes into world.trees within r of (x, z). Returns the count. */
+export function treesNear(world: World, x: number, z: number, r: number, out: number[]): number {
+  const idx = index(world);
+  out.length = 0;
+  const r2 = r * r;
+  const cell = idx.cell;
+  const x0 = Math.max(0, Math.floor((x - r + idx.half) / cell)), x1 = Math.min(idx.gridN - 1, Math.floor((x + r + idx.half) / cell));
+  const z0 = Math.max(0, Math.floor((z - r + idx.half) / cell)), z1 = Math.min(idx.gridN - 1, Math.floor((z + r + idx.half) / cell));
+  const trees = world.trees;
+  for (let cz = z0; cz <= z1; cz++) for (let cx = x0; cx <= x1; cx++) {
+    const cell = idx.grid[cz * idx.gridN + cx];
+    for (let k = 0; k < cell.length; k++) {
+      const t = trees[cell[k]];
+      const dx = t.position[0] - x, dz = t.position[2] - z;
+      if (dx * dx + dz * dz <= r2) out.push(cell[k]);
+    }
+  }
+  return out.length;
+}
+
+export function dist2(a: Chimp, b: Chimp): number {
+  const dx = a.position[0] - b.position[0], dz = a.position[2] - b.position[2];
+  return dx * dx + dz * dz;
+}
+export function hdist(ax: number, az: number, bx: number, bz: number): number { const dx = ax - bx, dz = az - bz; return Math.sqrt(dx * dx + dz * dz); }
+
+// ---------------------------------------------------------------------------
+// Chimp grid (field profile, P.chimpGridCellM > 0): living individuals bucketed by cell, rebuilt once per tick when
+// used. Queries return indexes into index(world).alive in ascending order, so a loop over them visits individuals in
+// exactly the order of a scan over all living (perception and parties give the same results as the brute-force scan).
+// ---------------------------------------------------------------------------
+
+interface ChimpGrid { tick: number; ver: number; cell: number; n: number; half: number; cells: number[][]; used: number[] }
+const chimpGrids = new WeakMap<World, ChimpGrid>();
+
+function chimpGrid(world: World, cell: number, fresh = false): ChimpGrid {
+  let g = chimpGrids.get(world);
+  const idx = index(world);
+  if (!g || g.cell !== cell) {
+    const n = Math.max(1, Math.ceil(world.size / cell));
+    g = { tick: -1, ver: -1, cell, n, half: world.size / 2, cells: Array.from({ length: n * n }, () => []), used: [] };
+    chimpGrids.set(world, g);
+  }
+  if (fresh || g.tick !== world.tick || g.ver !== idx.ver) {
+    for (const k of g.used) g.cells[k].length = 0;
+    g.used.length = 0;
+    const alive = idx.alive;
+    for (let i = 0; i < alive.length; i++) {
+      const p = alive[i].position;
+      const cx = Math.min(g.n - 1, Math.max(0, Math.floor((p[0] + g.half) / cell))), cz = Math.min(g.n - 1, Math.max(0, Math.floor((p[2] + g.half) / cell)));
+      const k = cz * g.n + cx;
+      if (g.cells[k].length === 0) g.used.push(k);
+      g.cells[k].push(i);
+    }
+    g.tick = world.tick; g.ver = idx.ver;
+  }
+  return g;
+}
+
+/**
+ * Indexes into index(world).alive of individuals possibly within r of (x, z), ascending; `out` is reused. Returns
+ * false (and leaves out empty) when the world has no chimp grid, in which case callers scan all living.
+ */
+export function aliveNear(world: World, x: number, z: number, r: number, out: number[]): boolean {
+  out.length = 0;
+  const P = paramsOf(world), cell = P.chimpGridCellM;
+  if (!(cell > 0)) return false;
+  const g = chimpGrid(world, cell);
+  // the grid is built once per tick; anyone may have moved since by at most a run step (twice, for safety)
+  r += 2 * P.runMps * TICK_SECONDS + 2;
+  const x0 = Math.max(0, Math.floor((x - r + g.half) / cell)), x1 = Math.min(g.n - 1, Math.floor((x + r + g.half) / cell));
+  const z0 = Math.max(0, Math.floor((z - r + g.half) / cell)), z1 = Math.min(g.n - 1, Math.floor((z + r + g.half) / cell));
+  for (let cz = z0; cz <= z1; cz++) for (let cx = x0; cx <= x1; cx++) { const c = g.cells[cz * g.n + cx]; for (let k = 0; k < c.length; k++) out.push(c[k]); }
+  if (x1 > x0 || z1 > z0) out.sort((a, b) => a - b);
+  return true;
+}
+
+/** Cells of the chimp grid (for pairwise party links); null without a grid. */
+export function chimpCells(world: World): { cells: number[][]; n: number; used: number[] } | null {
+  const cell = paramsOf(world).chimpGridCellM;
+  if (!(cell > 0)) return null;
+  const g = chimpGrid(world, cell, true);
+  return g;
+}
+
+/** Allocation-free lookups for hot paths (Array.find with a closure allocates per call). */
+export function byIdIn<T extends { id: number }>(list: readonly T[], id: number): T | undefined {
+  for (let i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+  return undefined;
+}
+export function huntOf(hunts: readonly HuntState[], preyId: number, troopId: number): HuntState | undefined {
+  for (let i = 0; i < hunts.length; i++) if (hunts[i].preyId === preyId && hunts[i].troopId === troopId) return hunts[i];
+  return undefined;
+}

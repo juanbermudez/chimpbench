@@ -1,0 +1,2382 @@
+{
+ "version": 1,
+ "generated": "2026-09-29",
+ "about": "Wild chimpanzee datasets for MGOGO, ranked by value for comparing real vs simulated ranging, movement trajectories, patrols and territory change (docs/datasets.md). Every entry was verified from its landing page or repository API on the date given; entries marked by 'helper' were verified by a scouting agent in the same session. Nothing here was downloaded except where status is 'downloaded'.",
+ "metricCodes": {
+  "DPL": "daily path length",
+  "SLTA": "step-length and turning-angle distributions",
+  "STR": "straightness / tortuosity",
+  "NET": "net displacement",
+  "TOD": "time-of-day movement profile",
+  "REV": "revisitation",
+  "EDGE": "distance-to-range-edge distribution",
+  "INC": "excursion depth beyond the own boundary (incursions)",
+  "PSPD": "speed and distance during patrols",
+  "KDE": "50/95% home-range kernels",
+  "CORE": "core fraction",
+  "UDO": "year-to-year UD overlap or shift"
+ },
+ "metricLevels": {
+  "yes": "directly",
+  "coarse": "only at the dataset's coarse fix schedule",
+  "yes*": "needs an extra layer the file lacks (boundary, neighbour range, labels)",
+  "no": "not possible",
+  "unknown": "not visible without opening the file"
+ },
+ "locationPolicy": "Real coordinates stay in data/raw/ and never reach public/, docs/ or dist/. The guide shows only normalized maps: origin at the community UD centroid, distances in units of the equal-area radius R, arbitrary rotation, cells >= 0.1 R with fewer than 10 fixes or 3 days suppressed, no basemap, no dates finer than a month, anonymized individuals.",
+ "answers": {
+  "gpsQualifiedColumns": [
+   "Individual",
+   "GPS_date",
+   "DateTime",
+   "Lat",
+   "Lon",
+   "n_obs_at_time",
+   "Sex",
+   "Year",
+   "Month",
+   "Age_at_sampling"
+  ],
+  "gpsQualifiedHas": {
+   "timestamps": true,
+   "individualIds": true,
+   "partyIds": false,
+   "followOrDayIds": false,
+   "activityOrPatrolLabels": false,
+   "coordinates": "raw WGS84 lat/lon"
+  },
+  "openPatrolRoutesExist": false,
+  "openPatrolRoutesNote": "No open dataset has labelled patrol tracks or mapped routes. Routes exist with the Ngogo, Gombe (ASU), Kanyawara (KCP) and Tai projects; raw unlabelled tracks exist on Movebank (Kanyawara 2017, Loango 2017-2019) behind owner permission."
+ },
+ "datasets": [
+  {
+   "id": "ngogo-spaceuse-gps",
+   "rank": 1,
+   "category": "movement",
+   "title": "Space Use Analysis for \"Lethal conflict after group fission in wild chimpanzees\"",
+   "site": "Kibale NP, Uganda",
+   "community": "Ngogo (West and Central after 2018)",
+   "taxon": "Pan troglodytes schweinfurthii",
+   "years": "2011-2023 (daily follows 2012-2022 per the Dryad methods)",
+   "doi": "10.5281/zenodo.18603419",
+   "url": "https://doi.org/10.5281/zenodo.18603419",
+   "repository": "Zenodo",
+   "license": "CC BY 4.0",
+   "access": "open",
+   "status": "downloaded",
+   "localPath": "data/raw/zenodo-18603419/ (PROVENANCE.md; never copy to public/, docs/ or dist/)",
+   "sizeBytes": 3129869,
+   "files": [
+    {
+     "name": "space-use-archive.zip",
+     "bytes": 3129869,
+     "format": "zip"
+    },
+    {
+     "name": "data/gps_qualified.csv",
+     "bytes": 14956428,
+     "format": "csv",
+     "note": "166,826 fixes, 162 individuals (integrator's PROVENANCE.md)"
+    },
+    {
+     "name": "data/cluster_membership_by_year.csv",
+     "bytes": 17715,
+     "format": "csv"
+    },
+    {
+     "name": "README.md",
+     "bytes": 7290,
+     "format": "md"
+    },
+    {
+     "name": "01-data-preparation.Rmd, 02-space-use-analysis.Rmd, 03-figures.Rmd",
+     "bytes": 44452,
+     "format": "R Markdown"
+    }
+   ],
+   "fields": {
+    "gps_qualified.csv": [
+     "Individual",
+     "GPS_date",
+     "DateTime",
+     "Lat",
+     "Lon",
+     "n_obs_at_time",
+     "Sex",
+     "Year",
+     "Month",
+     "Age_at_sampling"
+    ],
+    "cluster_membership_by_year.csv": [
+     "year",
+     "cluster",
+     "region_name",
+     "n_individuals",
+     "all_members"
+    ]
+   },
+   "spatial": {
+    "type": "individual GPS fixes",
+    "crs": "WGS84 decimal degrees, raw (analysis converts to UTM 36N, EPSG:32636)",
+    "fixSchedule": "subsampled from 15-min focal-follow fixes to 1-2 fixes per individual-day, >= 3 h apart, 08:00-17:59, random (set.seed 42); individual-years with >= 30 points over >= 4 months",
+    "labels": "no party, follow or day ID; no activity or patrol label; no researcher column"
+   },
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "coarse",
+    "TOD": "coarse",
+    "REV": "coarse",
+    "EDGE": "yes",
+    "INC": "yes*",
+    "PSPD": "no",
+    "KDE": "yes",
+    "CORE": "yes",
+    "UDO": "yes"
+   },
+   "metricNotes": "NET only between the 1-2 daily fixes (>= 3 h apart). INC: depth of West fixes inside Central's kernel and vice versa after 2018 (incursion-like excursions, not labelled patrols).",
+   "validates": [
+    "O4",
+    "O6",
+    "T-RNG-1",
+    "T-RNG-3",
+    "T-RNG-6",
+    "T-IGE-5 (proxy)",
+    "T-FIS-1",
+    "T-FIS-2"
+   ],
+   "value": "high",
+   "effort": "low",
+   "ingestPlan": "scripts/ingest-ngogo-gps.ts: per year and per cluster, 95/50% kernels (h ~420 m as in the source), core fraction, distance-to-centroid in R units, pairwise and year-to-year Bhattacharyya affinity; write only normalized summaries to data/validation/ngogo-space.json.",
+   "restrictions": "Raw coordinates of wild chimpanzees: keep local, never publish; show only normalized, rotated maps (PROVENANCE.md).",
+   "paper": "Sandel AA et al. 2026, Science 392:216-220, doi:10.1126/science.adz4944",
+   "verified": {
+    "on": "2026-09-29",
+    "how": "Zenodo API + per-file README and Rmd via the zip container endpoint (CSV not opened before the integrator's approved download)"
+   },
+   "known": true,
+   "change": "Record is one 3.1 MB zip (the 15 MB figure is the unzipped CSV). Downloaded with approval on 2026-09-29."
+  },
+  {
+   "id": "ngogo-gps-15min-raw",
+   "rank": 2,
+   "category": "movement",
+   "title": "Ngogo raw GPS of mature chimpanzees, one fix per 15 min during focal follows (gps-mature-chimps.csv)",
+   "site": "Kibale NP, Uganda",
+   "community": "Ngogo",
+   "taxon": "Pan troglodytes schweinfurthii",
+   "years": "2011-2023 (as the subsample)",
+   "doi": null,
+   "url": "https://doi.org/10.5281/zenodo.18603419 (README names the file)",
+   "repository": "held by the authors",
+   "license": "none yet (request)",
+   "access": "on request",
+   "status": "request",
+   "fields": {
+    "gps-mature-chimps.csv": [
+     "Individual",
+     "DateTime",
+     "Lat",
+     "Lon",
+     "n_obs_at_time",
+     "Researcher",
+     "Sex",
+     "Year",
+     "Month",
+     "GPS_date",
+     "Age_at_sampling"
+    ]
+   },
+   "spatial": {
+    "type": "individual GPS tracks",
+    "crs": "WGS84",
+    "fixSchedule": "15 min during focal follows"
+   },
+   "metrics": {
+    "DPL": "yes",
+    "SLTA": "yes",
+    "STR": "yes",
+    "NET": "yes",
+    "TOD": "yes",
+    "REV": "yes",
+    "EDGE": "yes",
+    "INC": "yes*",
+    "PSPD": "yes*",
+    "KDE": "yes",
+    "CORE": "yes",
+    "UDO": "yes"
+   },
+   "metricNotes": "PSPD needs patrol dates (Dryad kk33f covers Sep 1996-Aug 2015, so 2011-2015 overlap) or a patrol log; 15-min fixes cannot resolve listening stops.",
+   "validates": [
+    "O3",
+    "O4",
+    "O5",
+    "O7",
+    "T-RNG-4",
+    "T-ACT-2",
+    "T-PAT-5",
+    "T-PAT-6",
+    "T-IGE-5"
+   ],
+   "value": "very high",
+   "effort": "low (once received)",
+   "ingestPlan": "Same loader as ngogo-spaceuse-gps plus per-follow tracks: DPL, step/turn distributions, straightness, hourly speed; label patrol days by joining kk33f dates and test a GPS patrol classifier (docs/datasets.md §6).",
+   "restrictions": "Raw coordinates; same rules as the subsample.",
+   "paper": "Sandel AA et al. 2026, Science, doi:10.1126/science.adz4944",
+   "verified": {
+    "on": "2026-09-29",
+    "how": "README in Zenodo 18603419 ('available upon request')"
+   }
+  },
+  {
+   "id": "movebank-kanyawara-2017",
+   "rank": 3,
+   "category": "movement",
+   "title": "Pan troglodytes schweinfurthii (Eastern Chimpanzee) - Movebank study 1366417288",
+   "site": "Kibale NP, Uganda (reference point 0.560 N, 30.357 E)",
+   "community": "Kanyawara (acknowledgement: Kibale Chimpanzee Project)",
+   "taxon": "Pan troglodytes schweinfurthii",
+   "years": "2017-01-03 to 2017-12-31",
+   "doi": null,
+   "url": "https://www.movebank.org/cms/webapp?gwt_fragment=page=studies,path=study1366417288",
+   "repository": "Movebank",
+   "license": "Custom; terms not set",
+   "access": "owner permission (Movebank login + request)",
+   "status": "request",
+   "sizeBytes": null,
+   "spatial": {
+    "type": "GPS tracks",
+    "counts": "4 animals, 936 tags/deployments, 3,774,415 locations",
+    "fixSchedule": "not stated; ~10 s implied by 3.77 M fixes / 936 deployments if each is one ~11 h follow (inference)"
+   },
+   "metrics": {
+    "DPL": "yes",
+    "SLTA": "yes",
+    "STR": "yes",
+    "NET": "yes",
+    "TOD": "yes",
+    "REV": "yes",
+    "EDGE": "yes*",
+    "INC": "yes*",
+    "PSPD": "yes*",
+    "KDE": "yes",
+    "CORE": "yes",
+    "UDO": "no"
+   },
+   "metricNotes": "Same forest and study community MGOGO is modeled on. One year only (no UDO). EDGE/INC need a boundary (own kernel). PSPD needs patrol labels (KCP notes).",
+   "validates": [
+    "O3",
+    "O4",
+    "O5",
+    "O7",
+    "T-RNG-1",
+    "T-RNG-3",
+    "T-RNG-4",
+    "T-ACT-2",
+    "T-PAT-5"
+   ],
+   "value": "very high",
+   "effort": "medium",
+   "ingestPlan": "Movebank CSV export -> per-deployment tracks resampled to 1 and 5 min; same metric suite; normalized summaries only.",
+   "restrictions": "Custom terms: ask explicitly for permission to publish derived, normalized statistics and figures.",
+   "paper": "none linked; see Emery Thompson et al. 2020 Biol Conserv doi:10.1016/j.biocon.2020.108857 (focal GPS at Kanyawara since 2010)",
+   "contact": "Jillian Rutherford (contact and PI on the study page)",
+   "verified": {
+    "on": "2026-09-29",
+    "how": "study page opened logged-out by a helper; public JSON empty and direct-read 401 (confirmed here)"
+   }
+  },
+  {
+   "id": "movebank-loango-rekambo",
+   "rank": 4,
+   "category": "movement",
+   "title": "Home range of the Rekambo community of central chimpanzees, Loango NP, Gabon (Jan 2017-Apr 2019) - Movebank study 1280077382",
+   "site": "Loango NP, Gabon",
+   "community": "Rekambo",
+   "taxon": "Pan troglodytes troglodytes",
+   "years": "2017-01-10 to 2019-04-30",
+   "doi": null,
+   "url": "https://www.movebank.org/cms/webapp?gwt_fragment=page=studies,path=study1280077382",
+   "repository": "Movebank",
+   "license": "Custom; terms not set",
+   "access": "owner permission",
+   "status": "request",
+   "spatial": {
+    "type": "party-level GPS track (1 'animal' = followed party)",
+    "counts": "724,477 locations (paper: 670,616 over 640 days)",
+    "fixSchedule": "every 1-60 s (Garmin Rino 750, per paper)"
+   },
+   "metrics": {
+    "DPL": "yes",
+    "SLTA": "yes",
+    "STR": "yes",
+    "NET": "yes",
+    "TOD": "yes",
+    "REV": "yes",
+    "EDGE": "yes*",
+    "INC": "yes*",
+    "PSPD": "no",
+    "KDE": "yes",
+    "CORE": "yes",
+    "UDO": "yes"
+   },
+   "metricNotes": "Party-level, not individual. UDO 2017 vs 2018. Published: MCP100 59.03 km2, KDE95 30.39 km2, BRB95 27.64 km2.",
+   "validates": [
+    "O3",
+    "O4",
+    "O7",
+    "T-RNG-1",
+    "T-RNG-4",
+    "T-RNG-6"
+   ],
+   "value": "high",
+   "effort": "medium",
+   "ingestPlan": "Movebank export -> daily tracks; DPL, step/turn, straightness, 2017 vs 2018 UD overlap.",
+   "restrictions": "Custom terms; different subspecies and a coastal forest-savanna mosaic (cross-site check, not a Kibale target).",
+   "paper": "Martinez-Inigo L et al. 2021, Primates, doi:10.1007/s10329-021-00927-5 ('Travel routes are available through Movebank')",
+   "contact": "Laura Martinez-Inigo (contact), Tobias Deschner (PI)",
+   "verified": {
+    "on": "2026-09-29",
+    "how": "study page by a helper; paper values by a helper"
+   }
+  },
+  {
+   "id": "ngogo-patrol-participation",
+   "rank": 5,
+   "category": "patrol",
+   "title": "Data from: Group augmentation, collective action, and territorial boundary patrols by male chimpanzees",
+   "site": "Kibale NP",
+   "community": "Ngogo",
+   "taxon": "Pan troglodytes schweinfurthii",
+   "years": "Sep 1996-Aug 2015 (284 patrols over 2,621 days)",
+   "doi": "10.5061/dryad.kk33f",
+   "url": "https://doi.org/10.5061/dryad.kk33f",
+   "repository": "Dryad",
+   "license": "CC0",
+   "access": "open",
+   "status": "pending download",
+   "sizeBytes": 430862,
+   "files": [
+    {
+     "name": "Patrol data.xlsx",
+     "bytes": 430862,
+     "format": "xlsx"
+    }
+   ],
+   "fields": {
+    "Patrol data.xlsx": [
+     "Patrol #",
+     "Date",
+     "Male",
+     "Patrol participation (0/1)",
+     "Age squared",
+     "Rank",
+     "Paternity success",
+     "Maternal relatedness"
+    ]
+   },
+   "spatial": {
+    "type": "none (dates only)"
+   },
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "no",
+    "REV": "no",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "no",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "metricNotes": "No locations. Its dates label patrol days for the raw Ngogo GPS (2011-2015 overlap).",
+   "validates": [
+    "T-PAT-1",
+    "T-PAT-2",
+    "T-PAT-3"
+   ],
+   "value": "high (as labels)",
+   "effort": "low",
+   "ingestPlan": "Summaries into data/validation/ngogo-patrols.json; export the patrol-date list for joining with GPS days.",
+   "paper": "Langergraber KE et al. 2017, PNAS, doi:10.1073/pnas.1701582114",
+   "verified": {
+    "on": "2026-09-29",
+    "how": "Dryad API (files, usage notes)"
+   },
+   "known": true,
+   "change": "none"
+  },
+  {
+   "id": "ngogo-fission-dryad",
+   "rank": 6,
+   "category": "patrol",
+   "title": "Data from: Lethal conflict after group fission in wild chimpanzees",
+   "site": "Kibale NP",
+   "community": "Ngogo; West and Central after fission",
+   "taxon": "Pan troglodytes schweinfurthii",
+   "years": "1998-2022",
+   "doi": "10.5061/dryad.sf7m0cgkg",
+   "url": "https://doi.org/10.5061/dryad.sf7m0cgkg",
+   "repository": "Dryad",
+   "license": "CC0",
+   "access": "open",
+   "status": "pending download",
+   "sizeBytes": 5342209,
+   "files": [
+    {
+     "name": "patrol-data-quarterly.csv",
+     "bytes": 2713,
+     "format": "csv"
+    },
+    {
+     "name": "population_snapshots.csv",
+     "bytes": 19640,
+     "format": "csv"
+    },
+    {
+     "name": "combined_membership_labels.csv",
+     "bytes": 2523,
+     "format": "csv"
+    },
+    {
+     "name": "chimp_behav_data.csv",
+     "bytes": 4912225,
+     "format": "csv"
+    },
+    {
+     "name": "learned_graphs_csv.zip",
+     "bytes": 266174,
+     "format": "zip"
+    },
+    {
+     "name": "77_focal_graph.zip",
+     "bytes": 32686,
+     "format": "zip"
+    },
+    {
+     "name": "0_threshold.zip",
+     "bytes": 101651,
+     "format": "zip"
+    },
+    {
+     "name": "README.md",
+     "bytes": 4597,
+     "format": "md"
+    }
+   ],
+   "fields": {
+    "patrol-data-quarterly.csv": [
+     "Year",
+     "Quarter",
+     "Group (Western/Central)",
+     "Period",
+     "PeriodDate",
+     "Count"
+    ],
+    "chimp_behav_data.csv": [
+     "date",
+     "code",
+     "prox2",
+     "prox5",
+     "gdyad",
+     "party (males seen in the 1-h session)",
+     "year",
+     "season",
+     "grooming",
+     "groomer",
+     "groomee",
+     "focal_id",
+     "scan_id"
+    ],
+    "population_snapshots.csv": [
+     "community",
+     "age_class",
+     "sex",
+     "count",
+     "year",
+     "snapshot_date"
+    ]
+   },
+   "spatial": {
+    "type": "none"
+   },
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "no",
+    "REV": "no",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "no",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "metricNotes": "Quarterly patrol counts by group after fission; cluster labels join to the GPS file.",
+   "validates": [
+    "T-PAT-1",
+    "T-FIS-1..4",
+    "T-SOC-1"
+   ],
+   "value": "medium",
+   "effort": "low",
+   "ingestPlan": "Quarterly patrol rate per group and group sizes into data/validation/ngogo-fission.json.",
+   "paper": "Sandel AA et al. 2026, Science, doi:10.1126/science.adz4944",
+   "verified": {
+    "on": "2026-09-29",
+    "how": "Dryad API + landing-page README"
+   },
+   "known": true,
+   "change": "none; README confirms no GPS in this package"
+  },
+  {
+   "id": "tai-high-ground-2023",
+   "rank": 7,
+   "category": "patrol",
+   "title": "S1-S3 Data: Chimpanzees make tactical use of high elevation in territorial contexts",
+   "site": "Tai NP, Cote d'Ivoire",
+   "community": "South and East",
+   "taxon": "Pan troglodytes verus",
+   "years": "Dec 2013-Oct 2016",
+   "doi": "10.1371/journal.pbio.3002350",
+   "url": "https://doi.org/10.1371/journal.pbio.3002350",
+   "repository": "PLOS Biology supplementary files",
+   "license": "CC BY 4.0",
+   "access": "open",
+   "status": "pending download",
+   "sizeBytes": 3686181,
+   "files": [
+    {
+     "name": "journal.pbio.3002350.s015.xlsx (S1 Data: stops at peripheral hills)",
+     "bytes": 91101,
+     "url": "https://journals.plos.org/plosbiology/article/file?type=supplementary&id=10.1371/journal.pbio.3002350.s015"
+    },
+    {
+     "name": "journal.pbio.3002350.s016.xlsx (S2 Data: activity by location and elevation)",
+     "bytes": 3493387,
+     "url": "https://journals.plos.org/plosbiology/article/file?type=supplementary&id=10.1371/journal.pbio.3002350.s016"
+    },
+    {
+     "name": "journal.pbio.3002350.s017.xlsx (S3 Data: advance toward rivals)",
+     "bytes": 101693,
+     "url": "https://journals.plos.org/plosbiology/article/file?type=supplementary&id=10.1371/journal.pbio.3002350.s017"
+    }
+   ],
+   "spatial": {
+    "type": "derived tables from 1-min GPS tracklogs (58 individuals, 21,186 h)",
+    "precision": "whether x/y are included is not stated"
+   },
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "unknown",
+    "REV": "no",
+    "EDGE": "yes",
+    "INC": "unknown",
+    "PSPD": "no",
+    "KDE": "no",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "metricNotes": "Border-directed movement: stop probability on hills toward vs away from the border (57.73% vs 25.09%), stop durations, advance/retreat after stops. Operational rules: periphery = kernel value >= 75, stop >= 5 min.",
+   "validates": [
+    "O5",
+    "T-PAT (border behaviour, held out)",
+    "T-COM-3 (qualitative)"
+   ],
+   "value": "medium-high",
+   "effort": "medium",
+   "ingestPlan": "Read the three tables; reproduce toward-border vs toward-centre stop rates; compute the same statistic from sim tracks with the same rules.",
+   "paper": "Lemoine SRT, Samuni L, Crockford C, Wittig RM 2023, PLOS Biol 21:e3002350",
+   "verified": {
+    "on": "2026-09-29",
+    "how": "HTTP HEAD on each file (sizes, xlsx) + article methods text"
+   }
+  },
+  {
+   "id": "tai-territory-2020",
+   "rank": 8,
+   "category": "territory",
+   "title": "Supplementary data: Group dominance increases territory size and reduces neighbour pressure in wild chimpanzees",
+   "site": "Tai NP",
+   "community": "North, South, Middle, East",
+   "taxon": "Pan troglodytes verus",
+   "years": "1997-2016",
+   "doi": "10.6084/m9.figshare.c.4988834",
+   "url": "https://doi.org/10.6084/m9.figshare.c.4988834",
+   "repository": "figshare",
+   "license": "CC BY 4.0",
+   "access": "open",
+   "status": "pending download",
+   "sizeBytes": 268743,
+   "files": [
+    {
+     "name": "rsos200577_si_002.xlsx (territory sizes)",
+     "bytes": 15260,
+     "url": "https://ndownloader.figshare.com/files/22768838"
+    },
+    {
+     "name": "rsos200577_si_003.xlsx (neighbour pressure, months with encounters)",
+     "bytes": 28000,
+     "url": "https://ndownloader.figshare.com/files/22768844"
+    },
+    {
+     "name": "rsos200577_si_004.xlsx (neighbour pressure, all months)",
+     "bytes": 54884,
+     "url": "https://ndownloader.figshare.com/files/22768841"
+    },
+    {
+     "name": "rsos200577_si_001.docx (demography and ranging tables, model results, territory map)",
+     "bytes": 170599,
+     "url": "https://ndownloader.figshare.com/files/22768847"
+    }
+   ],
+   "spatial": {
+    "type": "yearly 95% kernel areas (no polygons)",
+    "precision": "500 m grid cells until Nov 2013, then 1-min GPS"
+   },
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "no",
+    "REV": "no",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "area only",
+    "CORE": "no",
+    "UDO": "area change only"
+   },
+   "validates": [
+    "T-RNG-1",
+    "T-RNG-2",
+    "T-RNG-6",
+    "T-IGE-1"
+   ],
+   "value": "medium",
+   "effort": "low",
+   "ingestPlan": "Year x group areas and group sizes -> year-to-year area ratio distribution and area vs group size slope; compare with sim 10-year runs.",
+   "paper": "Lemoine S et al. 2020, R Soc Open Sci 7:200577, doi:10.1098/rsos.200577",
+   "verified": {
+    "on": "2026-09-29",
+    "how": "figshare API (files, sizes, license)"
+   }
+  },
+  {
+   "id": "gombe-female-ranges",
+   "rank": 9,
+   "category": "movement",
+   "title": "Data from: Female competition in chimpanzees (UTM locations, Kasekela)",
+   "site": "Gombe NP, Tanzania",
+   "community": "Kasekela",
+   "taxon": "Pan troglodytes schweinfurthii",
+   "years": "2000-2003",
+   "doi": "10.5061/dryad.jg05d",
+   "url": "https://doi.org/10.5061/dryad.jg05d",
+   "repository": "Dryad",
+   "license": "CC0",
+   "access": "open",
+   "status": "pending download",
+   "sizeBytes": 2967474,
+   "files": [
+    {
+     "name": "ChimpanzeeRanges.xlsx",
+     "bytes": 1469806,
+     "format": "xlsx"
+    },
+    {
+     "name": "README_for_ChimpanzeeRanges.docx",
+     "bytes": 13931,
+     "format": "docx"
+    }
+   ],
+   "spatial": {
+    "type": "individual locations",
+    "crs": "UTM",
+    "precision": "raw; timestamps and fix schedule unknown until the README is read"
+   },
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "unknown",
+    "REV": "no",
+    "EDGE": "yes",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "yes",
+    "CORE": "yes",
+    "UDO": "unknown"
+   },
+   "metricNotes": "Female core areas within the community range.",
+   "validates": [
+    "O4",
+    "T-RNG-3",
+    "T-SOC (female cores)"
+   ],
+   "value": "medium",
+   "effort": "low",
+   "ingestPlan": "Per-female kernels and core overlap; community UD from all females; normalized summaries only.",
+   "restrictions": "Raw coordinates: same rules as Ngogo.",
+   "paper": "Pusey AE, Schroepfer-Walker K 2013, Phil Trans R Soc B, doi:10.1098/rstb.2013.0077",
+   "verified": {
+    "on": "2026-09-29",
+    "how": "Dryad API (the API lists the two files twice)"
+   },
+   "known": true,
+   "change": "none"
+  },
+  {
+   "id": "gombe-patrols-massaro",
+   "rank": 10,
+   "category": "patrol",
+   "title": "Data and code from: Correlates of individual participation in boundary patrols by male chimpanzees",
+   "site": "Gombe NP",
+   "community": "Kasekela",
+   "taxon": "Pan troglodytes schweinfurthii",
+   "years": "summaries 1998-2007 (paper 1978-2007)",
+   "doi": "10.5061/dryad.z8w9ghxdb",
+   "url": "https://doi.org/10.5061/dryad.z8w9ghxdb",
+   "repository": "Dryad",
+   "license": "CC0",
+   "access": "open",
+   "status": "pending download",
+   "sizeBytes": 174036,
+   "files": [
+    {
+     "name": "PatrolsandPeriph.xlsx",
+     "bytes": 36504
+    },
+    {
+     "name": "PPdata.xlsx",
+     "bytes": 89626
+    },
+    {
+     "name": "PP5yearPlots.xlsx",
+     "bytes": 24179
+    },
+    {
+     "name": "WholeStudyPatrolRate.xlsx",
+     "bytes": 15787
+    },
+    {
+     "name": "README_MASSARO_2022_DATA_updated04mar2022.txt",
+     "bytes": 7940
+    }
+   ],
+   "spatial": {
+    "type": "none evident"
+   },
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "no",
+    "REV": "no",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "no",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "metricNotes": "Patrols and 'periphery visits' (party >= 3 SD north or south of the yearly range centre) as counts and participation.",
+   "validates": [
+    "T-PAT-1",
+    "T-PAT-2",
+    "T-PAT-3"
+   ],
+   "value": "medium",
+   "effort": "low",
+   "ingestPlan": "Patrol rate, participation and periphery-visit counts into data/validation/gombe-patrols.json.",
+   "restrictions": "Raw data on reasonable request from the corresponding author.",
+   "paper": "Massaro AP et al. 2022, Phil Trans R Soc B 377:20210151, doi:10.1098/rstb.2021.0151",
+   "verified": {
+    "on": "2026-09-29",
+    "how": "Dryad API (files, usage notes)"
+   }
+  },
+  {
+   "id": "kibale-geography",
+   "rank": 11,
+   "category": "geography",
+   "title": "Kibale real-map layers: OSM park boundary, Copernicus GLO-30 DEM, Hansen GFC v1.13",
+   "site": "Kibale NP",
+   "community": null,
+   "taxon": null,
+   "years": "DEM 2011-2015 acquisitions; forest loss 2001-2025",
+   "doi": null,
+   "url": "see files",
+   "repository": "OSM / AWS Open Data / Google Cloud",
+   "license": "ODbL 1.0 (OSM); Copernicus GLO-30 licence (free, redistribution allowed, mandatory notice); CC BY 4.0 (Hansen)",
+   "access": "open",
+   "status": "pending download",
+   "files": [
+    {
+     "name": "OSM way 220701103 (Kibale NP boundary, 580 nodes)",
+     "bytes": null,
+     "url": "https://www.openstreetmap.org/api/0.6/way/220701103/full",
+     "license": "ODbL 1.0"
+    },
+    {
+     "name": "Copernicus_DSM_COG_10_N00_00_E030_00_DEM.tif",
+     "bytes": 40214167,
+     "url": "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N00_00_E030_00_DEM/Copernicus_DSM_COG_10_N00_00_E030_00_DEM.tif",
+     "license": "Copernicus GLO-30"
+    },
+    {
+     "name": "Hansen_GFC-2025-v1.13_lossyear_10N_030E.tif",
+     "bytes": 46488388,
+     "url": "https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13/Hansen_GFC-2025-v1.13_lossyear_10N_030E.tif",
+     "license": "CC BY 4.0"
+    },
+    {
+     "name": "Hansen_GFC-2025-v1.13_datamask_10N_030E.tif",
+     "bytes": 15521528,
+     "url": "https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13/Hansen_GFC-2025-v1.13_datamask_10N_030E.tif",
+     "license": "CC BY 4.0"
+    },
+    {
+     "name": "Hansen_GFC-2025-v1.13_treecover2000_10N_030E.tif (optional)",
+     "bytes": 553234238,
+     "url": "https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13/Hansen_GFC-2025-v1.13_treecover2000_10N_030E.tif",
+     "license": "CC BY 4.0"
+    },
+    {
+     "name": "OSM waterways, Overpass bbox 0.20-0.72 N, 30.25-30.60 E (135 river/stream ways)",
+     "bytes": null,
+     "url": "https://overpass-api.de/api/interpreter",
+     "license": "ODbL 1.0"
+    }
+   ],
+   "spatial": {
+    "type": "rasters and vectors",
+    "precision": "~30 m (1 arc-second)"
+   },
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "no",
+    "REV": "no",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "no",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "metricNotes": "Context for a real-map mode with simulated chimps only. Never overlay real chimp positions on it.",
+   "validates": [
+    "visual only"
+   ],
+   "value": "medium (visual)",
+   "effort": "medium",
+   "ingestPlan": "scripts/build-kibale-map.mjs: crop to the OSM bbox, resample DEM to the render grid, mask loss years; store attribution strings next to the assets.",
+   "restrictions": "WDPA polygon (WDPA ID 40002) is NOT redistributable (no redistribution, no commercial use without permission); use OSM. Copernicus DEM is a surface model (canopy included). HydroRIVERS (~500 m) may ship only inside a derived product.",
+   "verified": {
+    "on": "2026-09-29",
+    "how": "HTTP HEAD for the DEM and Hansen tiles; OSM tags and licences by a helper"
+   }
+  },
+  {
+   "id": "green-2020-least-cost",
+   "rank": 12,
+   "category": "movement",
+   "title": "Chimpanzees use least-cost routes to out-of-sight goals",
+   "site": "montane Rwanda (community not confirmed)",
+   "taxon": "Pan troglodytes schweinfurthii",
+   "years": "not stated",
+   "doi": "10.5061/dryad.wdbrv15m7",
+   "url": "https://doi.org/10.5061/dryad.wdbrv15m7",
+   "repository": "Dryad (mirror Borealis 10.5683/SP3/YOFEIR)",
+   "license": "CC0",
+   "access": "open",
+   "status": "pending download (optional)",
+   "sizeBytes": 23055,
+   "files": [
+    {
+     "name": "Greenetal2020_LCP_Data.csv",
+     "bytes": 23055
+    }
+   ],
+   "spatial": {
+    "type": "route-level table (probably cost metrics, coordinates not stated)"
+   },
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "route-level",
+    "NET": "no",
+    "TOD": "no",
+    "REV": "no",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "no",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "validates": [
+    "O7 (route efficiency)"
+   ],
+   "value": "low",
+   "effort": "low",
+   "paper": "Green SJ, Boruff BJ, Bonnell TR, Grueter CC 2020, Curr Biol, doi:10.1016/j.cub.2020.08.076",
+   "verified": {
+    "on": "2026-09-29",
+    "how": "Dryad API"
+   }
+  },
+  {
+   "id": "kcp-dataverse",
+   "rank": 13,
+   "category": "movement",
+   "title": "Kibale Chimpanzee Project Dataverse (monthly party-composition and field-note scans)",
+   "site": "Kibale NP",
+   "community": "Kanyawara",
+   "taxon": "Pan troglodytes schweinfurthii",
+   "years": "1987-2011 (166 monthly datasets)",
+   "doi": null,
+   "url": "https://dataverse.harvard.edu/dataverse/kibale",
+   "repository": "Harvard Dataverse",
+   "license": "CC0 label",
+   "access": "mixed: 2009 months public (verified: KPC April 2009, 46 PDFs, 0 restricted); other years restricted per a helper (March 2007 44/44)",
+   "status": "request (for digitized tables)",
+   "files": [
+    {
+     "name": "e.g. KPC April 2009, doi:10.7910/DVN/XNTDTY",
+     "bytes": 270549470,
+     "format": "46 scanned PDFs"
+    }
+   ],
+   "spatial": {
+    "type": "handwritten scans; whether locations are recorded is unknown"
+   },
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "unknown",
+    "REV": "unknown",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "unknown",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "value": "low as is",
+   "effort": "high (transcription)",
+   "validates": [
+    "T-PTY-1 (party composition)"
+   ],
+   "ingestPlan": "Do not transcribe; ask KCP for digitized party and GPS tables instead.",
+   "contact": "Zarin Machanda (dataset contact on each record)",
+   "verified": {
+    "on": "2026-09-29",
+    "how": "Dataverse API (collection list; one dataset's files and licence)"
+   }
+  },
+  {
+   "id": "movebank-ngogo-levang",
+   "rank": 14,
+   "category": "movement",
+   "title": "Ngogo Habitat Use - Feeding (Movebank study 106092533)",
+   "site": "Kibale NP (30.400 E, 0.500 N)",
+   "community": "Ngogo (probably)",
+   "taxon": "not set",
+   "years": "not stated",
+   "url": "https://www.movebank.org/cms/webapp?gwt_fragment=page=studies,path=study106092533",
+   "repository": "Movebank",
+   "license": "Custom; terms not set",
+   "access": "owner permission",
+   "status": "request (low priority)",
+   "spatial": {
+    "type": "655 GPS records, 310 tags, 0 animals (likely feeding-tree points)"
+   },
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "no",
+    "REV": "unknown",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "no",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "value": "low",
+   "effort": "low",
+   "validates": [
+    "O7 (feeding-tree layout)"
+   ],
+   "paper": "probably Potts KB, Baken E, Levang A, Watts DP 2016, AJP, doi:10.1002/ajp.22513 (low confidence)",
+   "contact": "Ashley Levang",
+   "verified": {
+    "on": "2026-09-29",
+    "how": "study page by a helper"
+   }
+  },
+  {
+   "id": "tai-encounters-2021",
+   "rank": 15,
+   "category": "encounter",
+   "title": "Supplementary Data 1 and Source Data: Samuni, Crockford & Wittig 2021 (intergroup encounters)",
+   "site": "Tai NP",
+   "community": "North, South, East",
+   "taxon": "Pan troglodytes verus",
+   "years": "1997-2018 (491 encounters)",
+   "doi": "10.1038/s41467-020-20709-9 (paper, Nat Commun 12:539, 'Group-level cooperation in chimpanzees is shaped by strong social ties')",
+   "url": "journal supplementary files (PMC listing)",
+   "repository": "journal",
+   "license": "journal CC BY (article)",
+   "access": "open",
+   "status": "optional",
+   "files": [
+    {
+     "name": "Supplementary Data 1 (xlsx, ~549 KB)"
+    },
+    {
+     "name": "Source Data (~36.3 KB)"
+    },
+    {
+     "name": "Supplementary Code 1 (~6 KB)"
+    }
+   ],
+   "spatial": {
+    "type": "none stated"
+   },
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "no",
+    "REV": "no",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "no",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "validates": [
+    "T-IGE-1",
+    "T-IGE-3"
+   ],
+   "value": "low-medium",
+   "effort": "low",
+   "verified": {
+    "on": "2026-09-29",
+    "how": "helper (PMC listing); paper DOI checked on Crossref"
+   }
+  },
+  {
+   "id": "ngogo-fertility-wood2025",
+   "rank": 16,
+   "category": "territory",
+   "title": "OSF project for Wood et al. 2025 (fertility and survival after the 2009 expansion)",
+   "site": "Kibale NP",
+   "community": "Ngogo",
+   "taxon": "Pan troglodytes schweinfurthii",
+   "years": "3 y before vs after 2009",
+   "doi": "10.17605/OSF.IO/JG9MB",
+   "url": "https://doi.org/10.17605/OSF.IO/JG9MB",
+   "repository": "OSF",
+   "license": "none set (ask before reuse)",
+   "access": "public",
+   "status": "optional",
+   "spatial": {
+    "type": "none"
+   },
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "no",
+    "REV": "no",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "no",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "validates": [
+    "T-LET-5"
+   ],
+   "value": "low for maps",
+   "effort": "low",
+   "paper": "Wood BM, Watts DP, Langergraber KE, Mitani JC 2025, PNAS, doi:10.1073/pnas.2524502122",
+   "verified": {
+    "on": "2026-09-29",
+    "how": "helper"
+   }
+  },
+  {
+   "id": "ngogo-immigrant-status",
+   "rank": 17,
+   "category": "dispersal",
+   "title": "Code and data for White et al. 2024 (Ngogo inbreeding avoidance)",
+   "site": "Kibale NP",
+   "community": "Ngogo",
+   "taxon": "Pan troglodytes schweinfurthii",
+   "years": "not stated",
+   "doi": "10.5281/zenodo.10032093",
+   "url": "https://doi.org/10.5281/zenodo.10032093",
+   "repository": "Zenodo",
+   "license": "CC BY 4.0",
+   "access": "open",
+   "status": "pending download (optional)",
+   "sizeBytes": null,
+   "files": [
+    {
+     "name": "zip (~70.3 MB); only InbAvd_Input.csv (~139 KB) is needed"
+    }
+   ],
+   "spatial": {
+    "type": "none"
+   },
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "no",
+    "REV": "no",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "no",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "metricNotes": "Female status Immigrant/Natal/Unknown; no dates or origins; immigrants assigned age 13.",
+   "validates": [
+    "dispersal (share of immigrant females)"
+   ],
+   "value": "low",
+   "effort": "low",
+   "paper": "White et al. 2024, R Soc Open Sci 11:230967",
+   "verified": {
+    "on": "2026-09-29",
+    "how": "helper"
+   }
+  },
+  {
+   "id": "gombe-transfer-walker2015",
+   "rank": 18,
+   "category": "dispersal",
+   "title": "Walker KK 2015, Dispersal and Integration in Female Chimpanzees (PhD thesis, Duke), Table 20",
+   "site": "Gombe NP",
+   "community": "Kasekela, Mitumba, Kalande",
+   "taxon": "Pan troglodytes schweinfurthii",
+   "years": "long-term records to ~2014",
+   "url": "https://dukespace.lib.duke.edu/server/api/core/bitstreams/0b353222-2c48-46da-b37f-40ef4bfa3729/content",
+   "repository": "DukeSpace",
+   "license": "author copyright (facts citable, table not copyable)",
+   "access": "open PDF",
+   "status": "read and cite numbers",
+   "spatial": {
+    "type": "none"
+   },
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "no",
+    "REV": "no",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "no",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "metricNotes": "~74 females: birth date, emigration/immigration date, birth and adult community, natal vs breeding dispersal, certainty.",
+   "validates": [
+    "dispersal: age at transfer, share transferring, destinations"
+   ],
+   "value": "medium (dispersal)",
+   "effort": "medium",
+   "verified": {
+    "on": "2026-09-29",
+    "how": "helper (landing page failed a bot check; PDF URL found)"
+   }
+  },
+  {
+   "id": "budongo-sonso-list",
+   "rank": 19,
+   "category": "dispersal",
+   "title": "Sonso Community Chimpanzees list (Budongo Conservation Field Station, updated Nov 2014)",
+   "site": "Budongo",
+   "community": "Sonso",
+   "taxon": "Pan troglodytes schweinfurthii",
+   "years": "to 2014",
+   "url": "http://www.budongo.org/media/1106/chimplist.pdf",
+   "repository": "BCFS website",
+   "license": "none stated",
+   "access": "open PDF (142 KB)",
+   "status": "read and cite numbers",
+   "spatial": {
+    "type": "none"
+   },
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "no",
+    "REV": "no",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "no",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "validates": [
+    "dispersal (immigration/emigration, some destinations e.g. Waibira 2009-2010)"
+   ],
+   "value": "low",
+   "effort": "medium",
+   "verified": {
+    "on": "2026-09-29",
+    "how": "helper"
+   }
+  },
+  {
+   "id": "gombe-presence-grids",
+   "rank": 20,
+   "category": "dispersal",
+   "title": "Data from: Chimpanzee females queue but males compete for social status",
+   "site": "Gombe NP",
+   "community": "Kasekela",
+   "taxon": "Pan troglodytes schweinfurthii",
+   "years": "see paper",
+   "doi": "10.5061/dryad.r4g74",
+   "url": "https://doi.org/10.5061/dryad.r4g74",
+   "repository": "Dryad",
+   "license": "CC0",
+   "access": "open",
+   "status": "optional",
+   "sizeBytes": 8338209,
+   "files": [
+    {
+     "name": "female_presence.xls (~5.29 MB)"
+    },
+    {
+     "name": "male_presence.xls (~2.59 MB)"
+    },
+    {
+     "name": "female_ago.xls, male_ago.xls, Elo code"
+    }
+   ],
+   "spatial": {
+    "type": "none"
+   },
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "no",
+    "REV": "no",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "no",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "metricNotes": "Arrival/departure dates only inferable from daily presence.",
+   "validates": [
+    "dispersal (tenure)",
+    "T-SOC dominance"
+   ],
+   "value": "low",
+   "effort": "medium",
+   "paper": "Foerster S et al. 2016, Sci Rep, doi:10.1038/srep35404",
+   "verified": {
+    "on": "2026-09-29",
+    "how": "Dryad API"
+   }
+  },
+  {
+   "id": "gombe-audio-adults",
+   "rank": null,
+   "category": "audio",
+   "title": "Data from: An archive of longitudinal recordings of the vocalizations of adult Gombe chimpanzees",
+   "site": "Gombe NP",
+   "community": "Kasekela",
+   "taxon": "Pan troglodytes schweinfurthii",
+   "years": "1971-1973",
+   "doi": "10.5061/dryad.sd15m",
+   "url": "https://doi.org/10.5061/dryad.sd15m (Zenodo mirror 10.5281/zenodo.4979944)",
+   "repository": "Dryad / Zenodo",
+   "license": "CC0",
+   "access": "open",
+   "status": "pending download (metadata first, then chosen tapes)",
+   "sizeBytes": 3875259380,
+   "files": [
+    {
+     "name": "AdultDirSounds11Dec14Final.xls",
+     "bytes": 561664
+    },
+    {
+     "name": "LIst of adult chimpanzee sounds.xlsx",
+     "bytes": 41869
+    },
+    {
+     "name": "Gombe_biography-for_1971-3.xls",
+     "bytes": 44544
+    },
+    {
+     "name": "Dryad Readme file adults.docx",
+     "bytes": 132987
+    },
+    {
+     "name": "Adults 1.wav",
+     "bytes": 1044426268
+    },
+    {
+     "name": "Adults 2.wav",
+     "bytes": 537494750
+    },
+    {
+     "name": "Adults 3.wav",
+     "bytes": 279137860
+    },
+    {
+     "name": "Adults 4.wav",
+     "bytes": 399928618
+    },
+    {
+     "name": "Adults 5.wav",
+     "bytes": 627091216
+    },
+    {
+     "name": "Adults 6.wav",
+     "bytes": 627867530
+    },
+    {
+     "name": "Adults 7.wav",
+     "bytes": 358532074
+    }
+   ],
+   "spatial": {
+    "type": "none"
+   },
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "no",
+    "REV": "no",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "no",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "metricNotes": "605 recordings; call tallies (Sci Data table): pant-hoot 303, grunt 223, tonal grunt 141, hoot 125, scream 85, bark 67, rough grunt 66, food bark 38, waa-bark 35, pant-grunt 32, drumming 20, laugh 17. Wild, eastern subspecies; Nagra mono, digitized 96 kHz/24-bit.",
+   "validates": [
+    "O10 audio realism (replaces proxy alarm-hoo, low-confidence food grunts, synthesized drumming and laughter)"
+   ],
+   "value": "high (audio)",
+   "effort": "high (tapes carry spoken Dutch commentary; cut clips by the Macaulay catalog numbers in the metadata)",
+   "paper": "Plooij FX et al. 2015, Sci Data 2:150027, doi:10.1038/sdata.2015.27",
+   "verified": {
+    "on": "2026-09-29",
+    "how": "Dryad and Zenodo APIs (files, sizes, licence)"
+   }
+  },
+  {
+   "id": "gombe-audio-immatures",
+   "rank": null,
+   "category": "audio",
+   "title": "Data from: Longitudinal recordings of the vocalizations of immature Gombe chimpanzees for developmental studies",
+   "site": "Gombe NP",
+   "community": "Kasekela",
+   "taxon": "Pan troglodytes schweinfurthii",
+   "years": "1971-1973",
+   "doi": "10.5061/dryad.5tq80",
+   "url": "https://doi.org/10.5061/dryad.5tq80 (Zenodo mirror 10.5281/zenodo.4986320)",
+   "repository": "Dryad / Zenodo",
+   "license": "CC0",
+   "access": "open",
+   "status": "optional (metadata first)",
+   "sizeBytes": 9090712890,
+   "files": [
+    {
+     "name": "All Infants_3July2014final_v2.xlsx",
+     "bytes": 544534
+    },
+    {
+     "name": "List of names of infant vocalizations.doc",
+     "bytes": 25088
+    },
+    {
+     "name": "23 WAVs (per individual and demo tapes), ~9.09 GB in total"
+    }
+   ],
+   "spatial": {
+    "type": "none"
+   },
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "no",
+    "REV": "no",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "no",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "metricNotes": "1,136 recordings of 17 immatures; laughter ~361, whimper 173, scream 111, pant-hoot 87, pant-grunt 56. Zenodo 9.09 GB; Dryad API reports 17.0 GB.",
+   "validates": [
+    "O10 (laughter, whimpers)"
+   ],
+   "value": "medium (audio)",
+   "effort": "high",
+   "paper": "Plooij FX et al. 2014, Sci Data 1:140025, doi:10.1038/sdata.2014.25",
+   "verified": {
+    "on": "2026-09-29",
+    "how": "Dryad and Zenodo APIs"
+   }
+  },
+  {
+   "id": "budongo-audio-clips",
+   "rank": null,
+   "category": "audio",
+   "title": "Schel et al. 2013 (soft hoo, alarm hoo, waa-bark) and Fedurek et al. 2017 (pant-hoot) audio supplements",
+   "site": "Budongo",
+   "community": "Sonso",
+   "taxon": "Pan troglodytes schweinfurthii",
+   "years": "~2010s",
+   "doi": "10.1371/journal.pone.0076674; 10.1186/s12983-017-0235-8",
+   "url": "PMC3797826; PMC5674848",
+   "repository": "journal supplements",
+   "license": "CC BY 4.0 (articles; Commons copies of the Schel clips are labelled CC BY 2.5)",
+   "access": "open",
+   "status": "pending download",
+   "files": [
+    {
+     "name": "pone.0076674.s004.wav (soft hoo, 1.08 s)"
+    },
+    {
+     "name": "pone.0076674.s005.wav (alarm hoo, 1.20 s)"
+    },
+    {
+     "name": "pone.0076674.s006.wav (waa-bark, 0.76 s)"
+    },
+    {
+     "name": "12983_2017_235_MOESM1_ESM.wav (adult male pant-hoot, 1,077 kB)"
+    }
+   ],
+   "spatial": {
+    "type": "none"
+   },
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "no",
+    "REV": "no",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "no",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "validates": [
+    "O10 (a real alarm hoo replaces the proxy)"
+   ],
+   "value": "high (audio, small)",
+   "effort": "low",
+   "verified": {
+    "on": "2026-09-29",
+    "how": "Europe PMC full-text XML (supplement names, licence)"
+   }
+  },
+  {
+   "id": "audio-noncommercial",
+   "rank": null,
+   "category": "audio",
+   "title": "Non-commercial chimpanzee audio: Desai/Wilson Gombe 2016-17 (Internet Archive), xeno-canto (62 recordings), Tierstimmenarchiv (captive)",
+   "site": "Gombe, Budongo, Tai",
+   "taxon": "Pan troglodytes",
+   "years": "2016-2025",
+   "url": "https://archive.org/details/chimpanzee-vocalizations ; https://xeno-canto.org/explore?query=Pan%20troglodytes",
+   "repository": "Internet Archive / xeno-canto",
+   "license": "CC BY-NC-SA 4.0",
+   "access": "open, non-commercial only",
+   "status": "not recommended unless the app stays non-commercial",
+   "spatial": {
+    "type": "none"
+   },
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "no",
+    "REV": "no",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "no",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "value": "medium (audio) if non-commercial",
+   "effort": "medium",
+   "verified": {
+    "on": "2026-09-29",
+    "how": "helper"
+   }
+  },
+  {
+   "id": "panaf20k",
+   "rank": null,
+   "category": "camera",
+   "title": "PanAf20K (wild camera-trap videos, behaviour labels)",
+   "site": "14 sites, 6 countries",
+   "taxon": "Pan troglodytes, Gorilla",
+   "doi": "10.5523/bris.1h73erszj3ckn2qjwm4sqmr2wt",
+   "url": "https://data.bris.ac.uk/data/dataset/1h73erszj3ckn2qjwm4sqmr2wt",
+   "repository": "University of Bristol",
+   "license": "Non-Commercial Government Licence",
+   "access": "open, non-commercial",
+   "status": "not needed",
+   "sizeBytes": null,
+   "sizeNote": "42.2 GiB",
+   "spatial": {
+    "type": "none (no site or GPS fields)"
+   },
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "no",
+    "REV": "no",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "no",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "value": "low for MGOGO",
+   "effort": "high",
+   "verified": {
+    "on": "2026-09-29",
+    "how": "helper"
+   }
+  },
+  {
+   "id": "point-occurrence-misc",
+   "rank": null,
+   "category": "occurrence",
+   "title": "Nest, sign and detection points (Dja, Kalinzu/Maramagambo, Greater Mahale, Mahale census, Bili-Uele, Liberia GBIF, Issa, Sebitoli, A.P.E.S. rarefied)",
+   "site": "various",
+   "taxon": "Pan troglodytes (several subspecies)",
+   "url": "Dryad f4qrfj6sk, 4j0zpc8nz, 5dv41ns34, h18931zks; figshare 19137509, 13019792; Mendeley ssdftsv88y; GBIF grxior, 52ubri, rpmxoz; Zenodo 17700299",
+   "license": "CC0 / CC BY 4.0 / some CC BY-NC",
+   "access": "open",
+   "status": "not needed",
+   "spatial": {
+    "type": "points or transect bins; no trajectories"
+   },
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "no",
+    "REV": "no",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "nest density only",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "value": "low",
+   "effort": "low-medium",
+   "verified": {
+    "on": "2026-09-29",
+    "how": "helpers (Dryad API for f4qrfj6sk and 4j0zpc8nz confirmed here)"
+   }
+  },
+  {
+   "id": "ngogo-phenology",
+   "rank": null,
+   "category": "known (non-spatial)",
+   "doi": "10.5061/dryad.gf1vhhmk8",
+   "url": "https://doi.org/10.5061/dryad.gf1vhhmk8",
+   "license": "CC0",
+   "access": "open",
+   "status": "pending download (see docs/realism-design.md §9)",
+   "sizeBytes": 15199625,
+   "files": [
+    {
+     "name": "Ngogo_phenology_data_full_set.csv 15,187,609 B; phenology_file_Jan2020.csv 12,016 B"
+    }
+   ],
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "no",
+    "REV": "no",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "no",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "verified": {
+    "on": "2026-09-29",
+    "how": "Dryad or Zenodo API"
+   },
+   "known": true,
+   "change": "none"
+  },
+  {
+   "id": "kanyawara-phenology",
+   "rank": null,
+   "category": "known (non-spatial)",
+   "doi": "10.5281/zenodo.1194839",
+   "url": "https://doi.org/10.5281/zenodo.1194839",
+   "license": "CC BY 4.0",
+   "access": "open",
+   "status": "pending download (see docs/realism-design.md §9)",
+   "sizeBytes": 25004,
+   "files": [
+    {
+     "name": "forest.csv 24,232 B; forest_description.txt 772 B"
+    }
+   ],
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "no",
+    "REV": "no",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "no",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "verified": {
+    "on": "2026-09-29",
+    "how": "Dryad or Zenodo API"
+   },
+   "known": true,
+   "change": "none"
+  },
+  {
+   "id": "kibale-phenology-federman",
+   "rank": null,
+   "category": "known (non-spatial)",
+   "doi": "10.5281/zenodo.192841",
+   "url": "https://doi.org/10.5281/zenodo.192841",
+   "license": "CC BY 4.0",
+   "access": "open",
+   "status": "pending download (see docs/realism-design.md §9)",
+   "sizeBytes": 125245,
+   "files": [
+    {
+     "name": "SUPPLEMENT.zip 125,245 B (kibale.csv is inside the zip)"
+    }
+   ],
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "no",
+    "REV": "no",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "no",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "verified": {
+    "on": "2026-09-29",
+    "how": "Dryad or Zenodo API"
+   },
+   "known": true,
+   "change": "file is inside SUPPLEMENT.zip, not a top-level CSV"
+  },
+  {
+   "id": "ngogo-fission-network-code",
+   "rank": null,
+   "category": "known (non-spatial)",
+   "doi": "10.5281/zenodo.18626723",
+   "url": "https://doi.org/10.5281/zenodo.18626723",
+   "license": "CC BY 4.0",
+   "access": "open",
+   "status": "pending download (see docs/realism-design.md §9)",
+   "sizeBytes": 1097952,
+   "files": [
+    {
+     "name": "chimp-network-analysis.zip 1,097,952 B (yearly graphs 1998-2022; no 2020 file)"
+    }
+   ],
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "no",
+    "REV": "no",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "no",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "verified": {
+    "on": "2026-09-29",
+    "how": "Dryad or Zenodo API"
+   },
+   "known": true,
+   "change": "no graph for 2020 in the listing"
+  },
+  {
+   "id": "gombe-life-tables",
+   "rank": null,
+   "category": "known (non-spatial)",
+   "doi": "10.5061/dryad.v28t5",
+   "url": "https://doi.org/10.5061/dryad.v28t5",
+   "license": "CC0",
+   "access": "open",
+   "status": "pending download (see docs/realism-design.md §9)",
+   "sizeBytes": 158292,
+   "files": [
+    {
+     "name": "Bronikowski.LifeTables.SciData2016.xlsx 158,292 B"
+    }
+   ],
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "no",
+    "REV": "no",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "no",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "verified": {
+    "on": "2026-09-29",
+    "how": "Dryad or Zenodo API"
+   },
+   "known": true,
+   "change": "none"
+  },
+  {
+   "id": "kanyawara-female-relationships",
+   "rank": null,
+   "category": "known (non-spatial)",
+   "doi": "10.5061/dryad.44j0zpchh",
+   "url": "https://doi.org/10.5061/dryad.44j0zpchh",
+   "license": "CC0",
+   "access": "open",
+   "status": "pending download (see docs/realism-design.md §9)",
+   "sizeBytes": 275155,
+   "files": [
+    {
+     "name": "analysis1_datashare.csv 66,664 B; analysis2_datashare.csv 193,254 B; README docx 15,237 B"
+    }
+   ],
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "no",
+    "REV": "no",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "no",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "verified": {
+    "on": "2026-09-29",
+    "how": "Dryad or Zenodo API"
+   },
+   "known": true,
+   "change": "none"
+  },
+  {
+   "id": "budongo-party-scans",
+   "rank": null,
+   "category": "known (non-spatial)",
+   "doi": "10.5061/dryad.51b68",
+   "url": "https://doi.org/10.5061/dryad.51b68",
+   "license": "CC0",
+   "access": "open",
+   "status": "pending download (see docs/realism-design.md §9)",
+   "sizeBytes": 3014832,
+   "files": [
+    {
+     "name": "subgroup_composition_chimpanzees_2008.csv 698,344 B; _2009.csv 882,159 B (plus gelada and spider-monkey files)"
+    }
+   ],
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "no",
+    "REV": "no",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "no",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "verified": {
+    "on": "2026-09-29",
+    "how": "Dryad or Zenodo API"
+   },
+   "known": true,
+   "change": "none; chimp files are Budongo, 15-min"
+  },
+  {
+   "id": "chimp-drumming",
+   "rank": null,
+   "category": "known (non-spatial)",
+   "doi": "10.5281/zenodo.15175482",
+   "url": "https://doi.org/10.5281/zenodo.15175482",
+   "license": "CC BY 4.0",
+   "access": "open",
+   "status": "pending download (see docs/realism-design.md §9)",
+   "sizeBytes": 13082149,
+   "files": [
+    {
+     "name": "drumming_long.csv 512,706 B; drumming_wide.csv 104,634 B; drumming_raw.csv 98,511 B; drumming_ratios.csv 189,839 B; R/Python"
+    }
+   ],
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "no",
+    "REV": "no",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "no",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "verified": {
+    "on": "2026-09-29",
+    "how": "Dryad or Zenodo API"
+   },
+   "known": true,
+   "change": "none; timing only, no audio"
+  },
+  {
+   "id": "kanyawara-respiratory",
+   "rank": null,
+   "category": "known (non-spatial)",
+   "doi": "10.5061/dryad.1m004jc",
+   "url": "https://doi.org/10.5061/dryad.1m004jc",
+   "license": "CC0",
+   "access": "open",
+   "status": "pending download (see docs/realism-design.md §9)",
+   "sizeBytes": 808957,
+   "files": [
+    {
+     "name": "Kanyawara Respiratory Data Public.csv 808,957 B"
+    }
+   ],
+   "metrics": {
+    "DPL": "no",
+    "SLTA": "no",
+    "STR": "no",
+    "NET": "no",
+    "TOD": "no",
+    "REV": "no",
+    "EDGE": "no",
+    "INC": "no",
+    "PSPD": "no",
+    "KDE": "no",
+    "CORE": "no",
+    "UDO": "no"
+   },
+   "verified": {
+    "on": "2026-09-29",
+    "how": "Dryad or Zenodo API"
+   },
+   "known": true,
+   "change": "none"
+  }
+ ],
+ "paperTargets": [
+  {
+   "source": "amsler2010",
+   "site": "Ngogo 2004-2006",
+   "n": "29 patrols vs matched controls",
+   "values": "134 min (15-348, SD 88); 2,456 m (SD 1,492); travel 58% of patrol time vs 14% on control days",
+   "derived": "~18 m/min overall; ~32 m/min (~0.53 m/s) while travelling (2,456 m / (0.58 x 134 min))",
+   "metric": [
+    "PSPD",
+    "DPL (patrol)"
+   ],
+   "target": "T-PAT-5"
+  },
+  {
+   "source": "mitaniWatts2005",
+   "site": "Ngogo 1999-2003",
+   "n": "72 patrols",
+   "values": "58% entered neighbours' ranges, 42% along the boundary (p.1081); males per party 18.1 +/- 6.2 on patrol days vs 11.0 +/- 6.8; +17% odds per extra male (p.1082)",
+   "metric": [
+    "INC"
+   ],
+   "target": "T-PAT-6, T-PAT-4"
+  },
+  {
+   "source": "wattsMitani2001",
+   "site": "Ngogo 1998-1999",
+   "n": "52 patrols",
+   "values": "0.72/week; 13.0 +/- 5.6 members, 9.4 +/- 3.8 adult males; sector revisit intervals median 9-27 d (1-158) (pp.309-310); neighbours met or heard on 19/52 (Table 1)",
+   "metric": [
+    "EDGE (sector revisits)"
+   ],
+   "target": "T-PAT-1, T-PAT-3"
+  },
+  {
+   "source": "langergraber2017",
+   "site": "Ngogo Sep 1996-Aug 2015",
+   "n": "284 patrols / 2,621 days",
+   "values": "13.2 +/- 5.4 per patrol (2-29); mean male participation 33%",
+   "metric": [],
+   "target": "T-PAT-2, T-PAT-3"
+  },
+  {
+   "source": "massaro2022",
+   "site": "Gombe Kasekela 1978-2007",
+   "n": "180 patrols + 147 periphery visits",
+   "values": "median 88.5 min (3-595); median 8 males (1-13); 74.5 +/- 11.1% of males; annual median 4.5 (0-19); periphery visit = party >= 3 SD N or S of the yearly range centre",
+   "metric": [
+    "PSPD (duration only)",
+    "EDGE"
+   ],
+   "target": "T-PAT-1, T-PAT-3"
+  },
+  {
+   "source": "gilby2013 (Gilby, Wilson & Pusey 2013, Anim Behav 86:61-74; add to docs/research.md)",
+   "site": "Gombe 1976-2007",
+   "n": "232 patrols",
+   "values": "7.3 patrols/year; each km the focal male travelled raised patrol odds by 1.63",
+   "metric": [
+    "DPL"
+   ],
+   "target": "new (patrol-day travel)"
+  },
+  {
+   "source": "lemoine2023 (add to docs/research.md)",
+   "site": "Tai South/East 2013-2016",
+   "n": "717 hill climbs; 21,186 h of 1-min tracks",
+   "values": "patrol parties travel 2,500 +/- 2,300 m (South), 2,400 +/- 1,725 m (East); hill stops on 57.73% of moves toward the border vs 25.09% toward the centre; stops 38 +/- 65 min (hills), 30 +/- 32 min (low)",
+   "metric": [
+    "DPL (patrol)",
+    "EDGE"
+   ],
+   "target": "T-PAT-5 (cross-site)"
+  },
+  {
+   "source": "wilson2004",
+   "site": "Gombe 1990s",
+   "n": "attack cases",
+   "values": "attack sites a median 2,105 m (1,370-2,850) outside the 80% range polygon and 495 m (410 m inside to 960 m outside) outside the 99% polygon (p.543); deep incursion = >= 1 km into the neighbour's range",
+   "metric": [
+    "INC"
+   ],
+   "target": "T-LET-6 (location)"
+  },
+  {
+   "source": "wilson2012",
+   "site": "Kanyawara 1992-2006",
+   "n": "120 encounters",
+   "values": "median 1,867 m (288-4,406) from centre = 0.82 R; 85% acoustic only; 63% in the SE quadrant; 500 m grid",
+   "metric": [
+    "EDGE"
+   ],
+   "target": "T-IGE-5, T-IGE-2"
+  },
+  {
+   "source": "wilson2007",
+   "site": "Kanyawara 1996-1998",
+   "n": "7,385 h",
+   "values": "core 36% of area holds 85% of time; periphery 39.9% of area, 11% of time; periphery parties 5.9 vs 2.2 males",
+   "metric": [
+    "CORE",
+    "EDGE"
+   ],
+   "target": "T-RNG-3, T-PTY-3"
+  },
+  {
+   "source": "mitani2010",
+   "site": "Ngogo 1999-2009",
+   "n": "21 killings",
+   "values": "+6.4 km2 (+22.3%); 13 of 21 killings in the NE; NE used on 32.6% of days after June 2009",
+   "metric": [
+    "UDO"
+   ],
+   "target": "T-LET-4"
+  },
+  {
+   "source": "samuni2020 (add to docs/research.md)",
+   "site": "Tai 2013-2015",
+   "n": "",
+   "values": "East 34 patrols / 39 encounters, South 6 / 27; home ranges East 32 km2, South 35 km2; border proximity as kernel %",
+   "metric": [
+    "EDGE"
+   ],
+   "target": "T-PAT-1 (cross-site)"
+  }
+ ],
+ "patrolCriteria": {
+  "sources": {
+   "mitaniWatts2005 p.1081": "two parts: (1) spatial - party moves to and along the boundary or into a neighbour's range; (2) behavioural - single file, close, silent, scanning stops, inspecting nests/wadges/faeces, rare feeding (paraphrase)",
+   "wattsMitani2001 p.305": "file formation, silent, not feeding, vigilant clusters that look and listen; vigilance until well back toward the centre (paraphrase)",
+   "massaro2022": "explicit note or cautious travel with looking/listening; spatial 'periphery visit' rule (>= 3 SD N or S of the yearly centre)",
+   "lemoine2023": "GPS rules: periphery = kernel value >= 75; stop = pause >= 5 min; direction toward border vs centre; advance/retreat in the 30 min after a stop",
+   "wilson2004": "deep incursion >= 1 km into the neighbour's range"
+  },
+  "noSpeedThreshold": "No source gives a speed or straightness threshold; any such cut-off must be fitted on labelled patrol days, never on held-out targets.",
+  "gpsProxy": [
+   "outbound leg from core to >= own 90-95% isopleth, then along or across it",
+   "party of >= 3 adult males (needs party membership or simultaneous fixes within ~50 m)",
+   "sustained travel, few feeding stops",
+   "pauses >= 5 min near the edge (needs <= 1-min fixes)",
+   "entry beyond the own 95% isopleth into a neighbour's kernel (needs neighbour ranges)"
+  ],
+  "extraFieldsNeeded": [
+   "party membership per fix or simultaneous multi-individual fixes",
+   "activity code (travel/feed/rest)",
+   "neighbour community ranges",
+   "patrol log dates (and ideally start/end times) for validation",
+   "fix interval <= 1 min for stops"
+  ]
+ },
+ "downloadList": [
+  {
+   "tier": "A",
+   "dataset": "ngogo-patrol-participation",
+   "file": "Patrol data.xlsx",
+   "url": "https://doi.org/10.5061/dryad.kk33f",
+   "bytes": 430862,
+   "license": "CC0",
+   "why": "patrol-date labels for Ngogo GPS"
+  },
+  {
+   "tier": "A",
+   "dataset": "ngogo-fission-dryad",
+   "file": "patrol-data-quarterly.csv; combined_membership_labels.csv; population_snapshots.csv",
+   "url": "https://doi.org/10.5061/dryad.sf7m0cgkg",
+   "bytes": 24876,
+   "license": "CC0",
+   "why": "quarterly patrol rate by group; cluster labels"
+  },
+  {
+   "tier": "A",
+   "dataset": "tai-high-ground-2023",
+   "file": "journal.pbio.3002350.s015/.s016/.s017.xlsx",
+   "url": "https://journals.plos.org/plosbiology/article/file?type=supplementary&id=10.1371/journal.pbio.3002350.s015 (s016, s017)",
+   "bytes": 3686181,
+   "license": "CC BY 4.0",
+   "why": "border-directed movement rules and rates"
+  },
+  {
+   "tier": "A",
+   "dataset": "gombe-patrols-massaro",
+   "file": "5 files",
+   "url": "https://doi.org/10.5061/dryad.z8w9ghxdb",
+   "bytes": 174036,
+   "license": "CC0",
+   "why": "Gombe patrol and periphery-visit rates"
+  },
+  {
+   "tier": "B",
+   "dataset": "tai-territory-2020",
+   "file": "rsos200577_si_001..004",
+   "url": "https://ndownloader.figshare.com/files/22768838 (22768841, 22768844, 22768847)",
+   "bytes": 268743,
+   "license": "CC BY 4.0",
+   "why": "20 years of yearly territory sizes, 4 groups"
+  },
+  {
+   "tier": "B",
+   "dataset": "gombe-female-ranges",
+   "file": "ChimpanzeeRanges.xlsx; README_for_ChimpanzeeRanges.docx",
+   "url": "https://doi.org/10.5061/dryad.jg05d",
+   "bytes": 1483737,
+   "license": "CC0",
+   "why": "second open location dataset (Gombe females)"
+  },
+  {
+   "tier": "B",
+   "dataset": "green-2020-least-cost",
+   "file": "Greenetal2020_LCP_Data.csv",
+   "url": "https://doi.org/10.5061/dryad.wdbrv15m7",
+   "bytes": 23055,
+   "license": "CC0",
+   "why": "optional: route efficiency"
+  },
+  {
+   "tier": "C",
+   "dataset": "kibale-geography",
+   "file": "Copernicus_DSM_COG_10_N00_00_E030_00_DEM.tif",
+   "url": "https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N00_00_E030_00_DEM/Copernicus_DSM_COG_10_N00_00_E030_00_DEM.tif",
+   "bytes": 40214167,
+   "license": "Copernicus GLO-30 (notice required)",
+   "why": "real-map terrain"
+  },
+  {
+   "tier": "C",
+   "dataset": "kibale-geography",
+   "file": "OSM way 220701103 (full)",
+   "url": "https://www.openstreetmap.org/api/0.6/way/220701103/full",
+   "bytes": null,
+   "license": "ODbL 1.0",
+   "why": "park boundary (WDPA not redistributable)"
+  },
+  {
+   "tier": "C",
+   "dataset": "kibale-geography",
+   "file": "Hansen lossyear + datamask 10N_030E",
+   "url": "https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13/",
+   "bytes": 62009916,
+   "license": "CC BY 4.0",
+   "why": "forest loss 2001-2025"
+  },
+  {
+   "tier": "C",
+   "dataset": "kibale-geography",
+   "file": "Hansen treecover2000 10N_030E (optional)",
+   "url": "https://storage.googleapis.com/earthenginepartners-hansen/GFC-2025-v1.13/Hansen_GFC-2025-v1.13_treecover2000_10N_030E.tif",
+   "bytes": 553234238,
+   "license": "CC BY 4.0",
+   "why": "canopy cover; large, crop after download"
+  },
+  {
+   "tier": "C",
+   "dataset": "kibale-geography",
+   "file": "OSM waterways (Overpass bbox query)",
+   "url": "https://overpass-api.de/api/interpreter",
+   "bytes": null,
+   "license": "ODbL 1.0",
+   "why": "streams (Dura, Mpanga, Mahoma)"
+  },
+  {
+   "tier": "D",
+   "dataset": "budongo-audio-clips",
+   "file": "pone.0076674.s004-.s006.wav; 12983_2017_235_MOESM1_ESM.wav",
+   "url": "PMC3797826; PMC5674848 supplementary files",
+   "bytes": null,
+   "license": "CC BY 4.0",
+   "why": "real alarm hoo, waa-bark, pant-hoot"
+  },
+  {
+   "tier": "D",
+   "dataset": "gombe-audio-adults",
+   "file": "4 metadata files",
+   "url": "https://doi.org/10.5281/zenodo.4979944",
+   "bytes": 781064,
+   "license": "CC0",
+   "why": "pick clips by catalog number"
+  },
+  {
+   "tier": "D",
+   "dataset": "gombe-audio-adults",
+   "file": "chosen tapes (Adults 1-7.wav, 0.28-1.04 GB each)",
+   "url": "https://doi.org/10.5281/zenodo.4979944",
+   "bytes": 3874478316,
+   "license": "CC0",
+   "why": "wild eastern-chimp calls; cut clips"
+  },
+  {
+   "tier": "E",
+   "dataset": "ngogo-immigrant-status",
+   "file": "InbAvd_Input.csv (~139 KB) from the zip, or the whole ~70.3 MB zip",
+   "url": "https://doi.org/10.5281/zenodo.10032093",
+   "bytes": null,
+   "license": "CC BY 4.0",
+   "why": "optional: immigrant share"
+  }
+ ],
+ "requestList": [
+  {
+   "priority": 1,
+   "holder": "Aaron Sandel (UT Austin) and co-authors, Ngogo Chimpanzee Project",
+   "route": "corresponding author of Sandel et al. 2026 (Science); Zenodo 18603419 creator",
+   "ask": "gps-mature-chimps.csv (15-min focal fixes 2011-2023) plus follow/party identifiers and the patrol log with start/end times for the same years",
+   "metrics": [
+    "DPL",
+    "SLTA",
+    "STR",
+    "TOD",
+    "PSPD",
+    "INC"
+   ]
+  },
+  {
+   "priority": 2,
+   "holder": "Jillian Rutherford (Movebank 1366417288; Kibale Chimpanzee Project)",
+   "route": "Movebank study page contact / request access",
+   "ask": "read access to the 2017 Kanyawara tracks with deployment metadata (focal ID, sex, follow date), fix interval, and permission for normalized derived figures",
+   "metrics": [
+    "DPL",
+    "SLTA",
+    "STR",
+    "TOD",
+    "REV",
+    "KDE",
+    "CORE"
+   ]
+  },
+  {
+   "priority": 3,
+   "holder": "Ngogo Chimpanzee Project: John Mitani, David Watts (Amsler 2010 patrols)",
+   "route": "https://campuspress.yale.edu/ngogochimp/",
+   "ask": "patrol routes or GPS on patrol days (Amsler's 29 patrols 2004-2006; later patrols with sector, incursion flag, start/end), and pre/post-2009 range polygons in relative coordinates",
+   "metrics": [
+    "PSPD",
+    "INC",
+    "UDO"
+   ]
+  },
+  {
+   "priority": 4,
+   "holder": "Laura Martinez-Inigo, Tobias Deschner (Loango Chimpanzee Project)",
+   "route": "Movebank 1280077382 contact; 1000PAN database request page",
+   "ask": "read access to Rekambo party tracks 2017-2019 and permission for normalized derived figures; encounter locations in relative form",
+   "metrics": [
+    "DPL",
+    "SLTA",
+    "STR",
+    "UDO"
+   ]
+  },
+  {
+   "priority": 5,
+   "holder": "Tai Chimpanzee Project: Roman Wittig, Catherine Crockford (Lemoine, Samuni)",
+   "route": "https://www.taichimpproject.org",
+   "ask": "1-min tracklogs for South and East 2013-2016 with patrol and encounter labels; encounter start points (500 m grid, 1997-2016)",
+   "metrics": [
+    "PSPD",
+    "INC",
+    "EDGE",
+    "SLTA"
+   ]
+  },
+  {
+   "priority": 6,
+   "holder": "Ian Gilby (Arizona State University; Gombe long-term archive)",
+   "route": "ASU faculty page / Gombe research archive",
+   "ask": "digitized focal day paths (hand-drawn, median error ~109 m vs GPS) on patrol and non-patrol days, raw patrol records 1978-2007, Wilson et al. 2004 attack-day paths",
+   "metrics": [
+    "DPL",
+    "PSPD",
+    "INC"
+   ]
+  },
+  {
+   "priority": 7,
+   "holder": "Kibale Chimpanzee Project: Zarin Machanda (with Emery Thompson, Muller, Wrangham)",
+   "route": "dataset contact on the KCP Dataverse records",
+   "ask": "digitized focal GPS since 2010, encounter locations 1992-2006 (Wilson et al. 2012), and access to restricted Dataverse months",
+   "metrics": [
+    "DPL",
+    "EDGE",
+    "KDE"
+   ]
+  },
+  {
+   "priority": 8,
+   "holder": "Karline Janmaat / Simone Ban (Tai spatial memory)",
+   "route": "corresponding authors of Ban et al. 2016",
+   "ask": "275 full-day female paths (2009-2011) with feeding-tree visits",
+   "metrics": [
+    "DPL",
+    "SLTA",
+    "REV"
+   ]
+  },
+  {
+   "priority": 9,
+   "holder": "Nicholas Newton-Fisher (Budongo Waibira)",
+   "route": "corresponding author of Villioth et al. 2025",
+   "ask": "430 GPS foraging points (2016-2017) or their kernel",
+   "metrics": [
+    "KDE",
+    "CORE"
+   ]
+  }
+ ],
+ "requestTemplate": "See docs/datasets.md section 8 (draft request text and Movebank add-on). Promise: only normalized statistics and maps (distance in units of range radius, rotated, cells >= 0.1 R, no coordinates, basemaps, place names, fine dates or names); raw files stay local, are not redistributed and are deleted on request; the source is cited on every figure; code and results shared before publication.",
+ "guideSection": "docs/datasets.md section 9: Real chimps vs my chimps: ranging, patrols and territory change",
+ "newSourcesForResearchMd": [
+  "lemoine2023 (PLOS Biol 21:e3002350)",
+  "gilby2013b (Gilby, Wilson & Pusey 2013, Anim Behav 86:61-74)",
+  "samuni2020 (IJP, doi:10.1007/s10764-019-00112-y)",
+  "martinezInigo2021 (Primates, doi:10.1007/s10329-021-00927-5)",
+  "plooij2014 / plooij2015 (Sci Data)",
+  "schel2013 (PLOS ONE)",
+  "fedurek2017 (Front Zool)",
+  "hansen2013 (Science 342:850)"
+ ]
+}

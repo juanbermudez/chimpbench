@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MGOGO creature harness</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #16261f; color: #e8e2d0; font: 12px/1.4 ui-sans-serif, system-ui, sans-serif; overflow: hidden; }
+    #stage { position: absolute; inset: 0; }
+    #hud { position: absolute; left: 10px; top: 8px; z-index: 5; pointer-events: none; white-space: pre; font: 11px/1.35 ui-monospace, monospace; text-shadow: 0 1px 2px #000; }
+    .cell-label { position: absolute; transform: translate(-50%, 0); font: 600 12px/1 ui-sans-serif, system-ui; letter-spacing: 0.04em; color: #f3e6c4; text-shadow: 0 1px 3px #000, 0 0 2px #000; pointer-events: none; z-index: 4; white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <div id="stage"></div>
+  <div id="hud"></div>
+  <script type="module" src="./harness.ts"></script>
+</body>
+</html>

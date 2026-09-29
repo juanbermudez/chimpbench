@@ -1,0 +1,1531 @@
+# MGOGO simulation reference
+
+How the MGOGO world model works, derived from the code in [src/sim/](../src/sim/) behind [src/simulation.ts](../src/simulation.ts). It is for developers and scientists who are new to the code. Every mechanism names its function and links to its file. Numbers were checked against the code, `pnpm test` (53 passing) and a default [scripts/sim-metrics.ts](../scripts/sim-metrics.ts) run (seeds 48, 7, 21) on 28 September 2026.
+
+[docs/research.md](research.md) holds the evidence: sources, what they show, and open questions. This document holds the mechanisms. Where they meet, research.md is the authority on what the literature says and this file is the authority on what the code does.
+
+**Find it fast**
+
+| I want to know… | Go to |
+| --- | --- |
+| How one tick runs, in order | [§4 Tick pipeline](#4-tick-pipeline) |
+| How a chimp decides what to do | [§7 Perception](#7-perception-and-memory) → [§8 Decision making](#8-decision-making) → [§9 Action catalog](#9-action-catalog) |
+| Every constant, with file and line | [§17 Parameter table](#17-parameter-table) |
+| How the output compares with field data | [§18 Validation](#18-validation) |
+| What is stylized or missing | [§19 Limitations](#19-stylizations-limitations-and-calibration-needs) |
+| How to add an action, mechanism, experiment or call | [§20 Extending safely](#20-extending-safely) |
+
+**Contents:** 1 [Scope and evidence](#1-scope-and-evidence-vocabulary) · 2 [Mental model](#2-mental-model) · 3 [Time](#3-time) · 4 [Tick pipeline](#4-tick-pipeline) · 5 [State reference](#5-state-reference) · 6 [Individuals](#6-individuals) · 7 [Perception and memory](#7-perception-and-memory) · 8 [Decision making](#8-decision-making) · 9 [Action catalog](#9-action-catalog) · 10 [Social systems](#10-social-systems) · 11 [Territory](#11-territory) · 12 [Ecology](#12-ecology) · 13 [Reproduction and life history](#13-reproduction-and-life-history) · 14 [Environment](#14-environment) · 15 [Communication](#15-communication) · 16 [Field experiments](#16-field-experiments) · 17 [Parameters](#17-parameter-table) · 18 [Validation](#18-validation) · 19 [Limitations](#19-stylizations-limitations-and-calibration-needs) · 20 [Extending](#20-extending-safely) · 21 [Glossary](#21-glossary) · 22 [Field profile](#22-field-profile-c5a)
+
+---
+
+## 1. Scope and evidence vocabulary
+
+**In scope:** everything that changes `World` state. That is the files in `src/sim/`, re-exported by `src/simulation.ts`.
+
+**Out of scope, owned elsewhere:**
+- the renderer (`src/render/`, `src/scene.ts`)
+- the UI (`src/ui/`)
+- the fixed-step clock that decides how many ticks run per frame ([src/clock.ts](../src/clock.ts))
+- the model decision loop ([src/decision.ts](../src/decision.ts))
+- the shared type contract ([src/types.ts](../src/types.ts))
+
+These layers only read the world or call the public API, with the three exceptions listed in [§2](#2-mental-model).
+
+**What the world is.** Eastern chimpanzees in a synthetic, Kibale-inspired forest: three invented communities on a 160 m map. It is not a reconstruction of Ngogo or Kanyawara. **No behavior is calibrated** in the research.md sense, meaning fitted to a dataset and checked on held-out data. A few rates are fitted to published summary values (mortality, for example). Those are marked [M].
+
+Evidence tags used in code comments and in this document:
+
+| Tag | Meaning |
+| --- | --- |
+| **[H]** | The *pattern* is well documented in wild chimpanzees (research.md "observed / high confidence"). The number that implements it is still a design choice unless stated. |
+| **[M]**, **[M-H]** | A reasonable mechanism or value consistent with published observations, or a value fitted to a published summary figure. Needs behavioral comparison. |
+| **[L]**, **[M/L]** | Weak or indirect support; a plausible starting value. |
+| **design** / **assumed** | A constant chosen to make the mechanism work. There is no direct evidence behind it. |
+| **stylized** | A deliberate distortion, usually for the compressed map or to keep behavior visible. It is labelled in the code comment. |
+
+Citations below come only from research.md, code comments or the target registry in [realism-design.md](realism-design.md). The code-comment figure "62 hunts in 471 days with ~24 males" (Mitani & Watts 1999) was misread: the 62 are hunting episodes and attempts (13 were finds of chimpanzees already eating meat) and the paper reports 26 adult males (research.md). Section 12 says so where it is used.
+
+---
+
+## 2. Mental model
+
+- **The world is plain data.** A `World` ([src/types.ts](../src/types.ts)) is a JSON-like tree: arrays of chimps, trees, troops, water, parties, interactions, calls, prey and stimuli, plus an environment record and counters. Hidden simulation state also lives on the objects as plain data: `world.sim` (`SimState`) and `chimp.sim` (`ChimpX`), both declared in [state.ts](../src/sim/state.ts). The only non-data pieces are caches keyed by object identity, and they rebuild themselves. Those are:
+  - `WeakMap` indexes (`index()`)
+  - the stream occupancy grid (`streamCell()`)
+  - `candidateMeta`
+- **The simulation is the only writer.** The renderer and UI read. Other layers write only these control fields:
+
+  | Field | Written by | Read by the sim in |
+  | --- | --- | --- |
+  | `chimp.controller` (`'rules'` or `'model'`) | UI and decision loop | `isModelControlled()` in [decide.ts](../src/sim/decide.ts) |
+  | `world.modelPolicy` (`mode` off/async/lockstep, `asyncGraceMinutes`) | decision loop (`setPolicy` in [src/decision.ts](../src/decision.ts)) | `decisionPoint()` |
+  | `world.ageRate` (1 natural, 365 life course) | settings UI ([src/ui/settings.ts](../src/ui/settings.ts)) | `slowStep()` / `slowLife()` / `maleStrengthDrift()` |
+
+  All other changes go through the public API below.
+- **One source of randomness.** `random(world)` in [rng.ts](../src/sim/rng.ts) is xorshift32 over the integer `world.rng`, which is seeded by `mixSeed(seed)`. Code that must not consume random numbers, such as rule scoring and layout offsets, uses the stateless hash `hash01(a, b, c, d)` instead. There is no `Math.random` and no wall-clock read (`Date.now`, `performance.now`) in `src/sim/`. `Date.UTC` appears only in one constant, the moon-phase epoch.
+- **Fixed 15 s ticks.** `tickWorld` advances exactly `TICK_SECONDS = 15` ecological seconds. Playback speed only changes how many ticks run per real second ([src/clock.ts](../src/clock.ts)). The tick length never changes.
+
+### Public API ([src/simulation.ts](../src/simulation.ts))
+
+| Export | Semantics |
+| --- | --- |
+| `TICK_SECONDS` | 15. Ecological seconds per tick. |
+| `createWorld(seed = 48, {profile?, params?})` | Builds the founding world: 49 chimps, 240 trees, stream, 6 water sites, 3 colobus groups. Opens at 06:30 on 28 September with everyone in night nests ([generation.ts](../src/sim/generation.ts)). `params` overrides registry values ([§17](#17-parameter-table)); an unknown id, a non-finite value, a value outside the hard range or a fraction for a whole-number entry throws `RangeError`. `profile` is `'compressed'` (default); `'field'` throws until stage C5a. |
+| `tickWorld(world)` | Advances exactly one tick ([tick.ts](../src/sim/tick.ts)). |
+| `stepWorld(world, dtSeconds)` | Legacy entry. Takes real seconds at 1× (×60 = ecological seconds), runs whole ticks and carries the remainder in `world.sim.carry`. Throws `RangeError` unless `dtSeconds` is finite and in [0, 60]. |
+| `getEligibleActions(world, chimp)` | Recomputes and returns `chimp.candidates` (sorted, best first) from the chimp's last perception and current body. No rng. Overwrites `chimp.candidates`. |
+| `rulesChoice(world, chimp)` | Pure. Returns a copy of the top candidate, or `null` if dead. Does not touch `chimp.candidates`, the rng or the world. |
+| `applyDecision(world, chimpId, {action, targetId}, source, expectedVersion?)` | Validates the pair against a fresh candidate list and starts it. Returns `false` if the chimp is dead or missing, `expectedVersion ≠ chimp.decisionVersion`, or the pair is no longer eligible. |
+| `resolveByRules(world, chimpId)` | Applies `rulesChoice` now. Used when a model answer is late. |
+| `observe(world, chimp)` | Pure. Returns the chimp's local `DecisionContext` for the model ([§8](#8-decision-making)). |
+| `applyIntervention(world, kind, {troopId?, position?})` | Starts a field experiment and returns the `Stimulus`, or `null` ([§16](#16-field-experiments)). |
+| `lifeStage(age)` | infant < 5, juvenile < 10, adolescent < 15, adult < 40, elder ≥ 40 years. |
+| `relationOf(world, a, b)` | What `b` is to `a`: mother, offspring, maternal-sibling, stranger, ally, rival or community, checked in that order. A rival is a community member `a` feels tension ≥ 0.35 toward, or an adult male within 120 Elo who is not an ally ([§10](#10-social-systems)). |
+| `relationshipOf(world, a, b)` | Pure. `a`'s view of `b`: `{bond, tension, lastIncident, counts: {month, year}}`, where `counts` are `PartnerTally` records for this month so far and for the remembered past year ([relations.ts](../src/sim/relations.ts), [§10](#10-social-systems)). |
+
+Conventions ([src/simulation.ts](../src/simulation.ts)):
+- **Axes:** +x is east, −z is north, y is height above local ground in metres. `heading` is `atan2(dx, dz)`. `sunAzimuth` is measured clockwise from north.
+- **Id ranges:** chimps from 1 (below 100000), trees from 100001, water from 200001, prey from 300001. Interactions, calls and stimuli draw from `world.nextId` starting at 1,000,000, so a `targetId` is never ambiguous.
+
+---
+
+## 3. Time
+
+| Quantity | Definition ([environment.ts](../src/sim/environment.ts) `updateClock`) |
+| --- | --- |
+| `world.tick` | Ticks since creation. |
+| `world.time` | `tick × 15 / 3600` ecological hours since the run opened. 5,760 ticks = 1 ecological day. |
+| `world.hour` | `(6.5 + time) mod 24`. The run opens at **06:30 EAT** (UTC+3), civil twilight. |
+| `world.day` | `floor((6.5 + time) / 24) + 1`. |
+| `environment.dayOfYear` | `((270 + floor((6.5 + time) / 24)) mod 365) + 1`. Starts at **271 = 28 September**. No leap years. No calendar year is tracked, except that the moon phase is anchored to 2026-09-28. |
+| season | `wet` in Mar–May and Sep–Nov, else `dry` (`isWetSeason`). |
+
+At the 1× preset one real second is 60 ecological seconds (4 ticks). Presets run from 1 min/s to 1 day/s, plus Max, which runs as many ticks as the frame budget allows ([src/clock.ts](../src/clock.ts) `SPEED_PRESETS`).
+
+### Two clocks
+
+- **Ecological clock** (`world.time`). Needs, movement, bouts, weather, fruit, prey, patrols, hunts, grooming credit, bonds, wound healing and health recovery all run on it.
+- **Life-history clock.** Each slow step (every 20 ticks = 5 eco-minutes) advances biology by `bioDays = (5/1440) × world.ageRate` days. That value is 0.00347 days at `ageRate` 1 and 1.27 days at 365. The life-history clock drives:
+  - age and life stage
+  - the ovarian cycle, gestation, lactational amenorrhea, weaning age and first swelling
+  - the dispersal hazard
+  - baseline mortality
+  - the male strength drift and the female queue in the hierarchy
+
+  At `ageRate` 365 one ecological day is about one biological year. A 36-day ovarian cycle then lasts about 2.4 eco-hours, and a ~228-day gestation about 15 eco-hours. Ecological rates such as feeding stay per eco-hour, so energy budgets and life history no longer match ([§19](#19-stylizations-limitations-and-calibration-needs)).
+- `chimp.birthTime` is in ecological hours: founders get `−age × 365.25 × 24`, infants get the birth tick. Age advances on the life-history clock, so `birthTime` and `age` disagree whenever `ageRate ≠ 1`.
+
+### Determinism
+
+**Guaranteed.** The same seed and the same sequence of external inputs at the same ticks give an identical world. External inputs are:
+- interventions
+- `applyDecision` / `resolveByRules` calls
+- writes to `controller`, `modelPolicy` and `ageRate`
+
+This holds regardless of how ticks are batched. `stepWorld(w, 60)`, 240 × `stepWorld(w, 0.25)` and 240 × `tickWorld` produce deep-equal worlds ([tests/simulation.test.ts](../tests/simulation.test.ts)). `rulesChoice` and `observe` consume no random numbers and do not mutate the world ([tests/sim-model.test.ts](../tests/sim-model.test.ts)).
+
+**What breaks it:**
+- **Model decisions.** In async mode, whether an answer arrives before the grace period depends on wall-clock latency and speed preset. A seed alone cannot replay a live model.
+- **Interventions and UI writes at different ticks.** Several interventions consume `world.rng`: `colobus-troop` spawns prey, and `remove-alpha` can roll a carried-infant event.
+- **Different JavaScript engines.** ECMAScript does not require `Math.sin/exp/pow/atan2` to be correctly rounded, so bit-identical results are only expected on the same engine.
+- **Mutating world state outside the API**, for example moving a chimp from the console.
+- **Update order matters.** Chimps are updated sequentially in `world.chimps` order within a tick, so each one sees the already-updated state of those before it. This is deterministic, but it is part of the model.
+
+**Serialization.** World state is designed to survive a JSON round trip. Continuing a round-tripped world identically is not covered by a test.
+
+---
+
+## 4. Tick pipeline
+
+`tickWorld` in [tick.ts](../src/sim/tick.ts), in exact order:
+
+```mermaid
+flowchart TD
+  A["Advance tick and time by 15 s"] --> B["updateClock, updateSun, updateWeatherValues"]
+  B --> C{"Every 20th tick?"}
+  C -- yes --> D["slowStep, see table"]
+  C -- no --> E{"Heavy rain began this tick?"}
+  D --> E
+  E -- yes --> F["rainOnset: interrupts and rain displays"]
+  E -- no --> G["movePrey"]
+  F --> G
+  G --> H["Next chimp alive at tick start, in array order"]
+  H --> I["needs"]
+  I --> J{"Bout over or interrupted?"}
+  J -- yes --> K["decisionPoint"]
+  J -- no --> L["executeAction"]
+  K --> L
+  L --> M{"Bout finished this tick?"}
+  M -- yes --> N["decisionPoint again"]
+  M -- no --> O{"More chimps?"}
+  N --> O
+  O -- yes --> H
+  O -- no --> P["carryInfants"]
+  P --> Q{"Every 8th tick?"}
+  Q -- yes --> R["computeParties, detectEncounters, updatePatrols"]
+  Q -- no --> S["Tick done"]
+  R --> S
+```
+
+| Step | Function (file) | Cadence |
+| --- | --- | --- |
+| Clock, sun, weather values | `updateClock`, `updateSun`, `updateWeatherValues` ([environment.ts](../src/sim/environment.ts)) | every tick |
+| Weather state transition | `weatherTransition` (skipped while a forced storm runs) | slow step |
+| Season, fruit | `updateSeason`, `updateFruit` ([environment.ts](../src/sim/environment.ts)) | slow step |
+| Aging, physiology, mortality, reproduction, female queue, weaning | `slowLife` ([life.ts](../src/sim/life.ts)) → `reproSlow` ([reproduction.ts](../src/sim/reproduction.ts)), `femaleQueue` ([hierarchy.ts](../src/sim/hierarchy.ts)) | slow step |
+| Male strength drift | `maleStrengthDrift` ([hierarchy.ts](../src/sim/hierarchy.ts)) | slow step |
+| Prey heading, alert decay, respawn, stale hunts | `slowPrey` ([ecology.ts](../src/sim/ecology.ts)) | slow step |
+| Prune interactions (30 min after end), calls (after 10 min), stimuli (15 min after end) | `slowStep`, `pruneStimuli` ([interventions.ts](../src/sim/interventions.ts)) | slow step |
+| Recompute hierarchies and alpha | `recomputeHierarchies` | slow step, when dirty (in practice every slow step, because the strength drift marks it dirty) |
+| Allies, grooming-credit decay | `recomputeAllies`, `hourlyLife` | hourly (eco) |
+| 6-hour grooming/play summary event | `summary` | every 6 eco-hours |
+| Bond upkeep; range decay and isopleths; hunting-day draw; patch ecology | `dailyLife`, `dailyTerritory` ([territory.ts](../src/sim/territory.ts)), `huntingDays`, `materializeFruit` | daily (eco) |
+| Heavy-rain onset | `rainOnset` | when rain crosses 0.35, in daylight ≥ 0.1 |
+| Prey movement | `movePrey` ([ecology.ts](../src/sim/ecology.ts)) | every tick, no rng |
+| Needs and mood | `needs` ([life.ts](../src/sim/life.ts)) | every tick, per chimp |
+| Decision point | `decisionPoint` ([decide.ts](../src/sim/decide.ts)) | bout end, interrupt, or finished bout |
+| Action execution | `executeAction` ([execution.ts](../src/sim/execution.ts)) | every tick, per chimp |
+| Infant carrying | `carryInfants` ([tick.ts](../src/sim/tick.ts)) | every tick |
+| Parties, range use, intergroup sightings, patrol waypoints and listening stops | `computeParties`, `recordUse`, `detectEncounters`, `updatePatrols` ([parties.ts](../src/sim/parties.ts)) | every 8 ticks (2 eco-min) |
+
+The slow step runs *before* the chimps in its tick. A chimp that dies in `slowLife` is skipped for the rest of the tick. The loop iterates over a snapshot of the living, so infants born this tick start acting on the next.
+
+---
+
+## 5. State reference
+
+"Who updates" names the writer function. "Units" are ecological unless marked *bio*. Everything in 0..1 is a unitless level.
+
+### World
+
+| Field | Meaning, units | Who updates |
+| --- | --- | --- |
+| `seed` | Creation seed (uint32). | `createWorld` |
+| `time`, `tick`, `hour`, `day` | See [§3](#3-time). | `tickWorld`, `updateClock` |
+| `size` | Map side, 160 m (x and z in −80..80). | `createWorld` |
+| `chimps` | All individuals ever, dead included (genealogy). | `createWorld`, `giveBirth` |
+| `trees` | 240 trees; `fruit` changes. | `makeTrees`, `updateFruit`, `forageTick` |
+| `troops` | 3 communities. | see Troop |
+| `water` | 6 drinking sites on the stream banks (radius 1.2 m). | `createWorld` |
+| `stream` | Channel polyline and fords ([§14](#14-environment)). | `createWorld` |
+| `events` | Feed of `SimEvent`s, newest last, capped at 200. | `addEvent` ([events.ts](../src/sim/events.ts)) |
+| `parties` | Derived fission-fusion subgroups. | `computeParties` |
+| `interactions` | Observable episodes (`Interaction`). | `startInteraction`, `flashInteraction`, `endInteraction`, pruned in `slowStep` |
+| `calls` | Vocalizations of the last 10 min. | `emitCall`, playback, pruned in `slowStep` |
+| `prey` | Red colobus groups. | `spawnPrey`, `movePrey`, `slowPrey`, `resolveHunt` |
+| `stimuli` | Active interventions. | `applyIntervention`, `pruneStimuli` |
+| `environment` | See Environment. | [environment.ts](../src/sim/environment.ts) |
+| `rng` | xorshift32 state. | `random` |
+| `nextId` | Next dynamic id (≥ 1,000,000). | `nextId()` |
+| `births`, `deaths` | Legacy mirrors of `stats`. | `giveBirth`, `killChimp` |
+| `stats` | Cumulative counters: births, deaths, conflicts (decided within-community contests), injuries, groomingBouts, playBouts, hunts, huntSuccesses, intergroupEncounters, killings, takeovers, transfers, reconciliations. | various |
+| `ageRate` | Life-history days per ecological day (1 or 365). | UI (control field) |
+| `modelPolicy` | `{mode, asyncGraceMinutes}`, default `{async, 6}`. | decision loop (control field) |
+
+### Chimp
+
+| Field | Meaning, units, range | Who updates |
+| --- | --- | --- |
+| `id`, `name` | Unique id; invented name from a 40-name pool per community (then "Name 2"). | `makeChimp`, `nextName` |
+| `troopId`, `natalTroopId` | Current and birth community. | `doTransfer` |
+| `sex`, `age`, `stage` | Age in *bio* years. | `slowLife` |
+| `position`, `heading` | Metres; y is height above ground. Radians. | `moveTo`, `carryInfants`, `nestTick` |
+| `action`, `targetId`, `actionTime`, `reason` | Current bout. Target is a chimp, tree, water or prey id, or −1. `actionTime` counts eco-seconds in the bout. `reason` is one plain sentence. | `startAction`, `executeAction` |
+| `hunger`, `thirst` | 0..1, 1 = maximal need. | `needs`, feeding, drinking, nursing |
+| `energy` | 0..1, 1 = rested. | `needs` |
+| `social` | 0..1 contact satisfaction; social need is `1 − social`. | `needs`, grooming, play, nursing |
+| `stress` | 0..1. Relaxes toward 0.05. | `needs`, conflicts, reconciliation |
+| `health` | 0..1. Relaxes toward a condition target. | `slowLife` |
+| `injury` | 0..1 wound severity. Heals 0.075 per eco-day. | conflicts, `slowLife` |
+| `elo`, `rankOrder`, `rank` | Dominance Elo; rank within own sex hierarchy (1 = top, 0 = unranked); legacy 0..1 standing. | `eloUpdate`, `recomputeHierarchies` |
+| `motherId`, `fatherId` | −1 when unknown. `fatherId` is the genetic sire; chimps do not know it. | `makeChimp`, `giveBirth` |
+| `birthTime`, `deathTime`, `causeOfDeath` | Ecological hours (see [§3](#3-time)). | `makeChimp`, `killChimp` |
+| `skills` | 0..1: climbing (grows in play), foraging (grows while feeding), hunting (+0.01 per capture a hunter took part in), social (grows while grooming). | execution |
+| `bonds` | Directed 0..1 by id. Missing = 0.15 same community, 0 otherwise. | grooming, sharing, coalitions, `dailyLife` |
+| `personality`, `appearance` | Stable 0..1 seeds. Build scales strength. | `makeChimp` |
+| `memory` | ≤ 36 `Memory` records ([§7](#7-perception-and-memory)). | `perceive` |
+| `episodes` | ≤ 12 first-person episodes. | `episode()` |
+| `candidates` | Last candidate list, best first. | `getEligibleActions` |
+| `decisionSource`, `decisionVersion`, `nextDecision` | Who chose the current bout; a counter bumped by every start (and by an interrupt while waiting for the model); bout end time (eco-hours). | `startAction`, `interrupt` |
+| `controller`, `awaitingDecisionSince` | Control field; time a model-controlled chimp began waiting, or null. | UI / `decisionPoint` |
+| `alive` | False after death. The chimp stays in `chimps`; after a while its record is slimmed (see Death in [§13](#13-reproduction-and-life-history)). | `killChimp`, `slimDead` |
+| `pregnancy` | *Bio* days since conception, 0 = not pregnant. | `reproSlow` |
+| `swelling`, `cycleDay`, `lactating` | 0..1 anogenital swelling; *bio* day in the cycle or −1; nursing an unweaned infant. | `reproSlow`, `giveBirth`, `slowLife` |
+| `carryingMeat` | 0..1 meat units. Eaten at 0.35/h. | `resolveHunt`, sharing, `needs` |
+| `nest` | Tree id and nest point, or null. | `nestTick`, `startAction` |
+| `mood`, `vocal`, `vocalUntil` | Derived each tick from action and state; current call and its end. | `needs`, `emitCall` |
+| `partyId` | Smallest member id of the chimp's party (−1 when dead). | `computeParties` |
+| `lastConflict`, `allies` | Last decided conflict; up to 3 coalition partners. | `decided`, `recomputeAllies` |
+| `digests` | Optional `MemoryDigest[]`, ordered by end time: yearly digests for life plus monthly digests for the last 12 months ([§7](#7-perception-and-memory)). The month in progress lives in `chimp.sim.month`. | `finalizeMonth`, `compressYear` ([relations.ts](../src/sim/relations.ts)) |
+| `carryingDeadId` | Optional. Id of the dead infant a mother is carrying; absent or −1 when none. Plain-data mirror of hidden `carryDead` (its end time) so the renderer need not read `chimp.sim`. Set without any extra RNG draw. | `killChimp` (set; cleared if the mother dies), `slowLife` (cleared when she leaves the body) |
+| `cooldown` | Vestigial. Decremented in `slowLife`, never set. | — |
+
+### Troop (community)
+
+| Field | Meaning | Who updates |
+| --- | --- | --- |
+| `center`, `radius` | Use-weighted centre of the range and the radius of a circle with the range's area, metres. Created at West (−46, 18) r 32; East (48, 14) r 27; North (2, −50) r 25 (field: centres × 33.63, radii 1,600 / 1,350 / 1,250). | `dailyTerritory` ([§11](#11-territory)) |
+| `range` | Optional. The 95% isopleth of the community's utilization distribution: grid `cell` (m) and `n`, row-major cell indices `cells`, and the 50% `core`. | `dailyTerritory` |
+| `alphaId`, `alphaSince`, `alphaHistory` | Alpha male (−1 vacant) and tenures `{id, from, to, how}`. Founding alphas' tenures are back-dated 2–4.6 years. | `changeAlpha` |
+| `maleHierarchy`, `femaleHierarchy` | Living ids by Elo: males ≥ 10 y, females ≥ 15 y. | `recomputeHierarchies` |
+| `adultMales` | Living males ≥ 15 y. The type comment says "each tick", but it is refreshed at each hierarchy recompute (every slow step in practice). | `recomputeHierarchies` |
+| `name`, `color`, `emblem` | Presentation. | `createWorld` |
+
+### Other records
+
+| Record | Fields and meaning | Who updates |
+| --- | --- | --- |
+| `Party` | `id` (smallest member id), `troopId`, sorted `members`, `center` (y = 0), `kind`: patrol if ≥ 40% patrolling, hunting ≥ 30%, nesting ≥ 50%, consort if ≤ 3 members with ≥ 2 consorting, foraging ≥ 40%, traveling if travel+follow+transfer ≥ 40%, else social (checked in that order). | `computeParties` |
+| `Interaction` | `kind`, actor, target, participants, `start`/`end` (eco-hours, `end` null while open), midpoint `position`, `intensity` 0..1. Emitted kinds: groom, play, reconcile, console, display, rain-display, charge, chase, fight, intergroup, coalition, infanticide, kill, pant-grunt, share, beg, hunt, mate, guard, consort, nurse, patrol, transfer, takeover. The contract's `alarm` kind is never emitted. | [events.ts](../src/sim/events.ts) helpers |
+| `Call` | `kind`, `callerId` (−1 for playback), `troopId`, `position`, `time`, `radius` (m). | `emitCall` |
+| `PreyGroup` | Red colobus: `position` (y = 17 m), `heading`, `size` (14–37 individuals), `alert` 0..1. | [ecology.ts](../src/sim/ecology.ts) |
+| `Environment` | See [§14](#14-environment). `moonPhase`, `lightningAt`, `humidity` and `wind` are computed for rendering; no behavior reads them. | [environment.ts](../src/sim/environment.ts) |
+| `Stimulus` | `kind`, `position`, `radius` (m), `start`/`end` (eco-hours), target `troopId`, `label`. | `applyIntervention` |
+| `Stream` | `points` (~2 m spacing), `halfWidth` 1.8 m, 3 `crossings` (fords). | `createWorld` |
+
+### Hidden state
+
+**`world.sim` (`SimState`, [state.ts](../src/sim/state.ts))**
+
+| Field | Holds |
+| --- | --- |
+| `carry` | `stepWorld` remainder, eco-seconds |
+| `nextChimpId`, `aliveVersion`, `hierDirty` | index and hierarchy bookkeeping |
+| `weather` | Markov state, rain target, heavy-rain latch, cumulative `rainMm`, `forcedUntil` |
+| `droughtUntil`, `figTree`/`figUntil` | intervention timers |
+| `patrols` | active patrol per community: leader, neighbor, phase, waypoint, `until`, `sector`, `incursion`, listening stop `stopUntil`/`lastStop`, `stops` |
+| `ud`, `danger`, `sectorVisit`, `udStamp` | per community: utilization distribution (independent member-hours per cell, daytime, not nesting), danger marks, last periphery visit per compass octant, isopleth version ([§11](#11-territory)) |
+| `hunts`, `lastHunt`, `huntDay` | active hunts, last hunt start, end of the current hunting day |
+| `encounters` | deduplication keys for encounter episodes |
+| `nextPreyId`, `preyAt` | prey id counter and respawn time |
+| `gates` | event rate limiters |
+| `groomTally`, `playTally`, `lastSummary` | 6-hour summary |
+| `aware` | chimps aware of each snake stimulus |
+| `names` | per-community name counters |
+| `unstableUntil`, `vacantUntil`, `alphaHow` | hierarchy upheaval |
+| `kills` | killings per "A>B" community pair |
+| `lastDaily`, `lastHourly` | cadence timers |
+| `params` | `{registry, profile, overrides}`: the registry hash at creation, the profile and the override set (usually `{}`). The resolved values are derived per world by `paramsOf(world)` ([params.ts](../src/sim/params.ts)) and never stored. |
+
+**`chimp.sim` (`ChimpX`)**, grouped:
+
+| Group | Fields |
+| --- | --- |
+| Bout | `actEnd`, `phase`, `prog`, goal `gx/gy/gz`, `intr` (pending interrupt reason), `lastIntr`/`lastIntrAt` (last interrupt, for spacing and `observe().recent`), `finished`, `interId`, variant `v`, `aux`, `flag` |
+| Perception snapshot | `seen` (attended ids), `seenAt`, `sight`, `ownMales`, `visibleOwn`, `strangers`, `strangerMales`, `nearestStranger`, `isolated`, `newcomers`, `metAt`, `trees`, `fruitNear`, `preyId`, `stims` |
+| Hearing | `heardN/At/X/Z/Troop/Stim`, `lastHeard`; same-community call to join: `joinCall/Caller/At/X/Z/Rich` |
+| Social bookkeeping | `greet`, `support`, `groomRecv`, `coerce`, `lastDisplay/Call/Mate/Agg/FoodCall`, `victimOf/At`, `lostAt`, `coalA/B/At`, `rivalId`, `recon`, `consoleAt`, `consoledAt`, `gangAt`, `gangRoll` |
+| Impulses | `impulse`, `impulseTarget`, `impulseUntil`, `patrolRoll` (last patrol-hazard roll) |
+| Life history | `cycleLen`, `cops`, `near`, `sireId`, `amenUntil`, `firstSwell`, `gestation`, `weanAge`, `weaned`, `caretaker`, `immigrantAge`, `disperser`, `transferTo`, `guardBy`, `carryDead`, `nestTree` |
+| Space | female core area `coreX/coreZ` |
+| Relationships and memory ([relations.ts](../src/sim/relations.ts)) | `tension` (directed 0..1 by partner id), `incident` (last incident per partner: `[time, code]`, code 0 threat given, 1 threat received, 2 attack given, 3 attack received), `month` (the memory month in progress: `start`, `startRank`, per-partner `partners` tallies, `events`, `encounters`, `lastEncounter`), `monthsSinceYear` |
+
+A few `ChimpX` fields are written but never read (`mateAsk/mateAskAt`, `strangerTroop`, `consortId`), and `lastHuntAt` is never used at all. They are harmless leftovers.
+
+---
+
+## 6. Individuals
+
+**Founders** (`buildCommunity`, [generation.ts](../src/sim/generation.ts)):
+
+| Community | Chimps | Adult males | Adolescent males |
+| --- | --- | --- | --- |
+| West | 22 | 7 | 1 |
+| East | 15 | 4 | 1 |
+| North | 12 | 3 | 1 |
+
+- **Structure:** matrilines, male philopatry, and mostly immigrant adult females (`immigrantAge` 12.5–14.5 y). Immature founders get synthetic sires weighted toward high rank (`pickSire`).
+- **Starting Elo** comes from rank hints. Adult male build, and hence strength, falls with rank hint, so the alpha starts as the strongest male. That is a design choice so that later aging and contests, not a bad start, reorder ranks.
+- **Starting bonds** by relationship:
+
+  | Relationship | Bond |
+  | --- | --- |
+  | Mother–offspring | 0.88–0.96 |
+  | Maternal siblings | 0.5–0.7 |
+  | Male–male (≥ 12 y) | 0.28–0.61 |
+  | Immature pairs | 0.3–0.5 |
+  | Others | 0.12–0.34 |
+
+  A few strong male pairs are set per community.
+- **06:30 start:** everyone is in a night nest in 2–3 sleeping clusters, and dependents share the mother's nest. First decisions come 3–39 eco-min in.
+- **Starting knowledge:** each chimp remembers its community's water sites and 8 fruiting trees. For females these are weighted toward their core area.
+
+**Individual constants** (`makeChimp`):
+
+| Constant | Range |
+| --- | --- |
+| Cycle length | 34–38 bio-days |
+| First swelling | 10.2–11.4 y |
+| Gestation | 222–232 bio-days |
+| Weaning age | 4.1–5.2 y |
+| Female disperser | 87% of females are |
+| Personality | 0..1 on each axis; males get +0.1 boldness and +0.15 aggression; under-10s get +0.15 playfulness |
+| Skills | start near `age/22` |
+
+**Needs per eco-hour** (`needs`, [life.ts](../src/sim/life.ts)). "Sleeping" means in a finished nest, or riding in the mother's nest. "Running" is charge, attack, flee or display.
+
+| Need | Rate |
+| --- | --- |
+| Hunger | +0.06 awake, +0.09 running, +0.022 sleeping. Times a body factor of 0.6–1 below 12 y. Plus 0.012 when lactating and 0.008 when pregnant. |
+| Thirst | +0.026 awake (+0.008 above 22 °C, −0.03 × rain), +0.008 sleeping |
+| Energy | +0.1 sleeping; +0.06 resting, sheltering, grooming or nursing; −0.25 running; −0.05 walking actions; −0.02 otherwise |
+| Social | −0.035 awake, −0.01 sleeping |
+| Stress | relaxes toward 0.05 at 25% per hour |
+| Meat | eaten at 0.35 units/h; each unit lowers hunger by 1.2 |
+
+At +0.06/h, hunger climbs from a typical 0.3 to 1 in about 12 waking hours without food. Mood is derived each tick from action and state (`moodFor`).
+
+**Condition** (`slowLife`):
+- Wounds heal 0.075 per eco-day.
+- Health relaxes (time constant 0.5 eco-day) toward `1 − 0.45·injury − 0.015·max(0, age − 45) − (0.3 if hunger > 0.9)`.
+- Death occurs when health ≤ 0.02 or a hazard draw succeeds ([§13](#13-reproduction-and-life-history)).
+
+**Strength** (`strength`, [hierarchy.ts](../src/sim/hierarchy.ts)) is fighting ability. It follows a design curve after the age–rank pattern at Gombe and Ngogo [M]:
+- **Males:** `age/25` below 10 y; rises 0.043 per year from 0.4 at 10 y to 1.0 at 24 y; stays 1.0 to 28 y; then falls 0.035 per year (floor 0.3).
+- **Females:** `age/30` below 12 y; 0.5 from 12 to 35 y; then −0.012 per year (floor 0.3).
+- **Modifiers:** multiplied by `(0.85 + 0.3·build)·(0.4 + 0.6·health)·(1 − 0.7·injury)`.
+
+**Movement** (`moveTo`, `speedFactor`, [execution.ts](../src/sim/execution.ts)):
+
+| Speed | Value |
+| --- | --- |
+| Walk | 0.04 m/s (0.6 m per tick, 144 m per eco-hour) |
+| Run | 0.3 m/s |
+| Climb | 0.22 m/s |
+
+These are stylized for the compressed map. The speed factor multiplies them by:
+- age: 0.55 under 2 y, 0.7 under 5 y, 0.88 under 10 y, 0.82 at 40 y and over, else 1
+- `(1 − 0.6·injury)`
+- `(0.7 + 0.3·energy)`
+- `(1 − 0.3·rain)`
+
+Chimps in a tree climb down before walking more than 3 m, and climb once within 3 m of an elevated goal. On the ground the stream channel is impassable except at fords ([§14](#14-environment)). Positions are clamped 1 m inside the map edge.
+
+**Infant carrying** (`carryInfants`, `isCarried` [H]):
+- Infants under 1.2 y always ride.
+- Infants under 4 y ride while the mother travels, patrols, flees, consorts, transfers, hunts, charges, follows or nests.
+- Ventral below 0.45 y, dorsal after. Riders copy the mother's position and heading, and take her nest.
+
+**Night nests** (`chooseNestTree` in [candidates.ts](../src/sim/candidates.ts), `nestTick` in execution.ts) [H]:
+- Chimps of 3 y and over build their own nest in a tree at least 9 m tall within 16 m. Last night's tree is penalized, so it is a new nest most nights.
+- The nest sits at 60–80% of tree height.
+- Construction takes 3–5 eco-min, after which the chimp stays in place.
+- Dependents sleep in the caretaker's nest.
+
+---
+
+## 7. Perception and memory
+
+`perceive` ([perception.ts](../src/sim/perception.ts)) runs at every decision point and only then; model-controlled chimps waiting for an answer re-perceive each eco-minute. It fills the perception snapshot in `chimp.sim`. There is no global knowledge.
+
+| Sense | Rule |
+| --- | --- |
+| Sight radius (`sightRadius`) | `5 + 10·daylight` m, × `(1 − 0.3·rain)`, × 1.15 when more than 4 m up, × 0.8 under 3 y. That is 15 m by day and 5 m at night (stylized; a third of a range width). |
+| Individuals | All chimps in radius are scanned. The nearest **16** are attended (`seen`). Strangers and adult males in radius are counted (`strangers`, `strangerMales`, `ownMales` including self). `newcomers` counts adolescents and adults not seen for more than 1 h (reunions). `isolated` is an attended stranger of 10 y or more with no other stranger of 5 y or more within 15 m. |
+| Trees | Within `min(1.6 × sight, 26)` m. The best 5 by `fruit / (1 + d/25)` are kept (`trees`). `fruitNear` is the best crop seen. Trees seen with fruit below 0.04 are forgotten. |
+| Water | Sites within `1.22 × sight` are remembered permanently. |
+| Prey | The nearest group within `1.2 × sight` in daylight above 0.3, or the prey of the chimp's own community's ongoing hunt within 30 m ("the hunt is loud"). |
+| Stimuli | Snake model within 12 m (or already aware); colobus within `1.2 × sight`; fig mast within `sight`; storm and drought everywhere (radius = map). Seeing a snake within 12 m adds the chimp to `sim.aware`. |
+| Hearing | Pushed by the caller ([§15](#15-communication)); stored in `heard*` / `join*`. |
+
+**Memory** (`remember`, `recall`, `forget`):
+- Each perception stores the 10 nearest attended chimps, up to 4 top fruit trees with fruit above 0.2, water, and prey.
+- Lifetimes: chimp 15 min, tree 72 h, prey 30 min, water permanent. Expired memories are dropped at each perception.
+- The cap is 36 (field 48); when full the stalest non-water memory goes. In the field profile (stage C6b) fruit trees have a separate cap of 60, so remembered trees are not pushed out by animals.
+- Remembered trees drive `travel` candidates, and remembered water drives `drink`.
+
+**Episodes** (`episode`, [events.ts](../src/sim/events.ts)) are first-person sentences ("Lost a fight with …"), up to 12 per chimp. A repeat of the same text within 15 min only updates the time. They feed `observe().recent` and the inspector.
+
+**Long-term social memory: monthly and yearly digests** ([relations.ts](../src/sim/relations.ts)). Chimpanzees and bonobos recognize former groupmates after decades apart, and attend more to those they had positive histories with (Lewis et al. 2023) [M]. The simulation keeps a bounded, structured record of each individual's social life on top of the 12 recent episodes:
+
+- **Tallies accumulate as things happen** (cheap increments on existing events), per partner, from the owner's point of view (`PartnerTally` in [src/types.ts](../src/types.ts)):
+
+  | Tally | Recorded in | When |
+  | --- | --- | --- |
+  | `groomGiven`, `groomReceived` (hours) | `recordGrooming` | every tick of grooming contact (`pairTick`) |
+  | `supportGiven`, `supportReceived` | `recordSupport` | a coalition charge starts (`onStart`, variant COALITION) |
+  | `threatsGiven`/`Received`, `attacksGiven`/`Received` | `recordAggression` | a charge, targeted display or attack starts within the community; both sides of an escalated fight count an attack |
+  | `reconciliations` | `recordReconciliation` | a reconciliation reaches contact (both partners) |
+  | `consoledThem`, `consoledMe` | `recordConsolation` | a consolation reaches contact |
+  | `matings` | `recordMating` | each copulation (both partners) |
+  | `meatGiven`, `meatReceived` | `recordMeat` | each meat share |
+
+- **Notable events** go into the month in progress through `noteEvent` (at most 16 held; the least important are dropped first). Priority, highest first: death of kin or infanticide (6); birth of own infant or a maternal sibling, transfer (5); alpha change (4, for the new and old alpha and every community member of 5 y or more); serious injury (3: a fight wound ≥ 0.3, or being wounded in a gang attack); rank change (2, a move of 2 or more places, checked when the month closes); intergroup (1: the first encounter of the month, or joining a killing). `encounters` counts intergroup encounters seen or heard, at most one per 6 h.
+- **Every 30 ecological days** (checked once a day in `dailyRelations`, from the individual's creation) `finalizeMonth` turns the month into a `MemoryDigest`: the 10 most salient partners, totals over all partners, the encounter count, the 8 most important events, and one text line such as "Days 1–30: groomed most with Sanaki (87.0 h); backed by Sanaki 19×; threatened Mbelo 60×; made up 33×; mated 142×; 3 intergroup encounters". Salience weights (design): grooming hours ×2, support ×1.5, threats ×0.5, attacks ×2, reconciliations ×1.5, consolations, meat and matings ×0.5–1.
+- **Every 12 monthly digests** `compressYear` merges them into a yearly digest: summed totals, the 5 most salient partners, at most 5 events. Monthly digests older than the latest 12 are dropped; yearly digests are kept for life. A 40-year life therefore holds at most 12 monthly and 40 yearly digests (tested: under 80 KB of JSON).
+- **Clocks.** Digests follow ecological time, like the interactions they count. In life-course mode (`ageRate` 365) one 30-day month spans ~30 biological years, so a 40-year life course produces about one monthly digest; use natural aging to see memory build up. A "year" is 12 digest months (360 ecological days).
+- The founding world starts with empty ledgers (`resetMemory`, so the initial alpha assignment is not remembered).
+
+**Impulses** (`rollImpulses`). Rare behaviors are drawn with the rng *at perception*, so candidate scoring stays rng-free. An impulse lasts 6 eco-min and adds a high-scoring candidate. Only adult males roll them.
+- **Gang attack:** needs an isolated stranger of 10 y or more (not a swollen, non-lactating female) within 15 m, at least 3 own adult males in view, at most 1 stranger male, and the chimp on patrol or in the outer 30% of its range. The victim must not have been attacked in the last 24 h, and each chimp rolls at most once per 6 h. Probability 0.5.
+- **Escalation:** for each attended adult male within 15 m and within 90 Elo, probability `0.002 + 0.006·aggression`.
+- **Infanticide:** for each attended infant under 1.5 y. Probability 0.004 if it is a stranger's infant and own adult males outnumber stranger males by 3 or more; 0.0005 if the chimp is a community alpha of under 30 days who did not sire the infant (or the mother's current pregnancy).
+- **Patrol** ([§11](#11-territory)): an hourly hazard for adult males with ≥ 3 own adult males in view, 08:00–15:30, no patrol running, rain < 0.3.
+- **Rain display:** drawn in `rainOnset` at storm onset for 12% of males of 15 y and over.
+- **Transfer:** drawn in `reproSlow` ([§13](#13-reproduction-and-life-history)).
+
+---
+
+## 8. Decision making
+
+### Decision points
+
+A chimp decides only at a decision point (`decisionPoint`, [decide.ts](../src/sim/decide.ts)). There are three kinds:
+
+1. **Bout end.** `nextDecision ≤ time`. `startAction` sets `nextDecision = actEnd = now + bout length`. Bout lengths are drawn deterministically from the action's range by `hash01(id, decisionVersion, …)` (`DUR` and `boutHours` in [execution.ts](../src/sim/execution.ts)).
+2. **Interrupt.** `interrupt(world, chimp, reason, urgent)` ([events.ts](../src/sim/events.ts)) sets `nextDecision = now`. Non-urgent interrupts are dropped while one is pending or within 2 eco-min of the last. An interrupt on a chimp waiting for the model bumps `decisionVersion`, which invalidates the pending request. Interrupt sources:
+   - **Urgent:** being charged or attacked, losing a fight, strangers in sight, stranger pant-hoots (at most once per ~5 min per listener), playback, a snake within 8 m.
+   - **Group events:** a dominant displaying within 12 m, a patrol or hunt starting nearby, a capture with meat within 25 m.
+   - **Weather:** heavy-rain onset.
+   - **Partners:** a grooming, play, begging, mating or consort partner acting on you; an alarm hoo; the scream of your offspring or ally; a coalition alert; a partner walking away; a rival approaching the female one is guarding; the alpha's removal (for top males); fig mast within 15 m; colobus within 18 m.
+3. **Finished bout.** An action calls `finish()`, for example the tree is empty or the target left. A new decision point follows in the same tick.
+
+At a decision point the chimp perceives, `getEligibleActions` builds the list, and then:
+- **Rules:** `startAction(candidates[0])`.
+- **Model control:** see below.
+
+### Candidate generation
+
+`computeCandidates` in [candidates.ts](../src/sim/candidates.ts) is **pure**: no rng and no world mutation. Its inputs are:
+- **The perception snapshot:** who is attended, which trees and prey, impulses.
+- **Live values:** the current positions and actions of those attended individuals, the chimp's own body, memory, and community state.
+
+Each behavior calls `offer(action, target, score, variant, aux)`. The rules are:
+- Scores of −0.4 or less are dropped.
+- **Jitter:** `± 0.12` from `hash01(id, decisionVersion, actionCode, target)`. It is reproducible, and changes with every decision.
+- **Continuation:** +0.25 for the current action and target while the bout is still running; −0.5 for an action that just finished.
+- **Per-action slot limits** (the best targets are kept): forage 3; groom, play, charge, travel, mate, follow, flee, share, attack and patrol 2; everything else 1. At most 48 candidates.
+- **Variants** (`V` codes such as STATUS, COERCE, FEED, STRANGER or MOTHER) record *why* an action is offered. They are stored in the `candidateMeta` WeakMap and change execution and the reason text.
+- **Output:** sorted by raw score (ties by target id, then action code). `score` is published clamped to 0..3 and rounded to 0.001. Each candidate carries a verb-first `reason` of at most 120 characters that uses names, not ids (`reasonFor`).
+
+**Who gets which behavior blocks:**
+
+| Chimps | Blocks |
+| --- | --- |
+| Everyone | sleep and rest, shelter (if not carried), threat responses when a dominant or stranger aggressor targets them (submit, flee; counter-charge and fight back from 12 y) |
+| Dependents: unweaned, under 6 y, with a living mother or caretaker (`dependentOn`) | follow caretaker, nurse, beg plant food, forage |
+| Everyone else | feeding, travel, drinking, climbing |
+| Everyone who is not carried, within each behavior's age limits | social blocks toward attended community members: groom (≥ 2 y), play (≥ 1 y), pant-grunt (≥ 5 y), rivalry bookkeeping |
+| Chimps of 12 y and over who are not dependents | displays (males), `aggression`, `intergroup`, `reproduction`, `meatAndHunting`, `affiliationRepair`, `patrolAndCalls` |
+| Younger chimps who are not carried | `affiliationRepair`, `meatAndHunting` |
+| Chimps aware of a snake | alarm and flee |
+| Natal females with a transfer impulse or intent | transfer |
+
+### Rules choice
+
+The rules take the **argmax**. `rulesChoice` computes the same list into a scratch array and returns a copy of the top candidate. It is used by `resolveByRules` and by the decision loop to report "the rules' pick".
+
+`startAction` ([execution.ts](../src/sim/execution.ts)) is the single commit path for both rules and model. It does the following:
+- **Same action and target:** it only extends the bout.
+- **New action:** it cleans up the old bout (ends its interaction, releases guarding or consortship), resets progress, and runs `onStart` side effects: interactions, calls, victim marking, coalition alerts, patrol and hunt creation.
+- **Always:** it bumps `decisionVersion` and clears `awaitingDecisionSince`.
+
+### Model control
+
+`isModelControlled` is `controller === 'model' && modelPolicy.mode !== 'off'`. When such a chimp reaches a decision point:
+- It perceives, builds candidates, and sets `awaitingDecisionSince`.
+- It keeps doing its current action if that is still a candidate and not finished. Otherwise it rests with the reason "Waiting for a decision".
+- It re-checks every eco-minute.
+
+| Mode | Behavior |
+| --- | --- |
+| `off` | Everyone is decided by rules. |
+| `async` | After `asyncGraceMinutes` (default 6 eco-min) of waiting, rules decide (`decideByRules`). A late model answer then fails `applyDecision` because the version changed. |
+| `lockstep` | The sim never falls back by itself. The clock stops ticking while any model-controlled chimp is waiting (`advance(…, isBlocked)` in [src/clock.ts](../src/clock.ts)). The decision loop falls back to `resolveByRules` after its own 6 s wall-clock timeout (`timeoutMs` in [src/decision.ts](../src/decision.ts)). |
+
+`applyDecision` re-validates against a fresh list, so a model can only pick an action–target pair the rules would also consider eligible *now*.
+
+### What the model sees
+
+`observe` ([observe.ts](../src/sim/observe.ts)) returns a `DecisionContext` built only from the focal chimp's own perception, memory and body:
+
+| Part | Contents |
+| --- | --- |
+| `focal` | Body, needs, rank, swelling, lactation, dependent infant, meat, current action, mood, personality, skills. Values rounded to 0.01. |
+| `environment` | Hour, day phase (night if daylight ≤ 0.03, day if ≥ 0.97), weather, rain, temperature, best fruit in view, party size (1 + visible community members), adult males in view, near-edge flag (beyond 0.8 × range radius), strangers seen, strangers heard (last 15 min). |
+| `social` | At most 8 individuals. First, perceivable targets of candidates in score order. Then attended individuals ranked by relevance: mother or offspring 10, stranger 7, ally or rival 5, maternal sibling 4, other 1; +6 for the alpha, +4 for swollen females (to males), +4.5 for meat holders, +5 for the last conflict opponent, + closeness and bond. Strangers carry `rankOrder` 0. Own-community members carry `tension` (the focal animal's view, 0..1, rounded to 0.01). |
+| `candidates` | The full list, minus chimp-targeted candidates whose target is not in `social`. |
+| `recent` | At most 5 plain sentences: the interrupt if within 3 min ("Just now: …" in its own tick, then "N min ago: …" with progressive verbs in the past, since the act may be over), the coalition pair ("N min ago: A clashed with B") when a later conflict reset it while its interrupt was throttled, then episodes, newest first, with "N min ago". |
+| `stimuli` | Plain-word descriptions of perceived interventions and of heard stranger calls. |
+| `history` | Optional, at most 3 lines of long-term memory about individuals in `social` only (`historyLines`): "This month: …" from the month in progress, "Last month: …" from the latest monthly digest, "Last year: …" from the latest yearly digest. Each line holds the 2 most salient facts (for example "Kato attacked me 3×; Sanaki backed me twice", "groomed with Mbelo 7.5 h") and at most 110 characters. Omitted when nothing relevant is remembered. |
+
+**On the way to the model** ([server/decide.ts](../server/decide.ts)): the server accepts `history` (≤ 3 lines of ≤ 120 characters, no control characters) and `tension` (0..1) as optional keys and still rejects any other key. The packet names tension only when marked ("tense" from 0.25, "very tense" from 0.5) and adds `history` to the state. An offline token estimate (`estimateInputTokens`: 2.127 × words − 85.8, a least-squares fit on 3,129 real receipts, residual sd 12, worst under-estimate 38) keeps each packet at or under 612 estimated tokens (about 650 real): history lines are dropped first, oldest last, then the oldest memories. Measured on seed 7 at days 2–400, history and tension words add 18–49 tokens on average (at most 81); the largest packet estimated 601 and none needed trimming.
+
+`observe` computes its own candidate list rather than reading `chimp.candidates`, so calling it never changes what the chimp will do.
+
+---
+
+## 9. Action catalog
+
+All 30 actions. "Offered when" gives the main eligibility and score terms; `h` = hunger, `e` = energy, `d` = distance in m. Candidate code is in [candidates.ts](../src/sim/candidates.ts). Execution is `executeAction` / `onStart` in [execution.ts](../src/sim/execution.ts). Bout = the `DUR` range in eco-minutes; the bout ends early on `finish()`.
+
+| Action | Offered when (main score terms) | Execution and effects | Bout |
+| --- | --- | --- | --- |
+| `rest` | Always. 0.12 + 0.9(1−e) + 0.3 at 11:30–14:30 + 0.2 if sated (h < 0.2) + 0.1 above 23 °C + 0.5·injury + 0.4 at night + 0.1 for dependents. | Stationary. Energy +0.06/h. | 8–20 (15–30 midday) |
+| `forage` | Tree (≤ 3 perceived fruiting trees): (1.6h+0.1)(0.55+0.45·q), with q = min(1, fruit/0.45), − d/55 − crowding (scarcity-weighted) − 0.45·rain − 0.6 × territory cost ([§11](#11-territory)) − female core-area cost + fig-mast bonus. Ground (target −1): 0.65h + 0.03 − 0.3·rain. Dependents: ground from 1.2 y; mother's tree from 1.5 y. | Walk and climb into the crown, then eat ≤ 0.055 fruit/h (× skill; × 0.4 under 5 y). Hunger −4.4 × intake, thirst −1.1 × intake. Arrival pant-hoot at rich figs (50%) or food-grunt. Ground: hunger −0.11/h. Ends when hunger < 0.06 or crop < 0.02 (tree forgotten). | 20–45 |
+| `drink` | Remembered water, thirst > 0.25, age ≥ 3: 1.5·thirst − d/80 − 0.05. | Walk to the bank site. Thirst −1.4/h; ends below 0.05. | 6–10 |
+| `travel` | To a remembered tree (≤ 72 h, ≥ 12 m away), toward a community member's pant-hoots (≤ 18 min ago, > 8 m; stronger if the caller is at food), or home when outside the own 97% isopleth (score rises toward the 100% edge; +0.5 beyond 2 × radius). Remembered trees carry 0.8 × the territory cost. | Walk. Stop 3 m from a tree, 6 m from a caller, 0.6 × radius from the center. Adult males pant-hoot while travelling or following ([§15](#15-communication)). | 12–22 |
+| `groom` | A settled (resting, grooming, sheltering or nursing) community member within 20 m; actor ≥ 2 y. + social need, bond, kin, reciprocity, up-rank, alpha grooming allies, invitation; −0.5·tension, −h, −rain, −night. Adult females are less keen on non-kin (−0.12). | Approach to 1.05 m. Per hour: actor social +0.18 and stress −0.1; recipient social +0.3 and stress −0.25; bonds +0.012 (actor) and +0.02 (recipient toward actor); grooming credit; tension both ways falls 15% per hour of contact. Ends if the partner moves more than 2.6 m away. | 5–18 |
+| `play` | Partners within 14 m: ages 1–15 within 7 y of each other, or adults with young aged 1–8. + playfulness, energy, invitation. | Circling chase with laughs. Energy −0.03/h, social +0.15/h, climbing skill up. Rough play escalates at 0.0015 per tick (to a screaming victim) when the partner is more than 2 years younger. | 3–9 |
+| `follow` | Carried or dependent young → caretaker; juvenile under 10 y more than 8 m from its mother; recent immigrant female → adult male 3–15 m away. | Walk (or run after a fleeing or charging target). Stop at 1, 3 or 2.5 m. | 4–8 |
+| `climb` | Ages 1.5–16 into the best perceived fruit tree: 0.06 + playfulness + youth − rain; not at night. | Climb to 40% of tree height. | 4–10 |
+| `patrol` | **Lead:** adult male holding a patrol impulse (hourly hazard, [§11](#11-territory)), ≥ 3 adult males in view, h < 0.75, rain < 0.3. **Join:** leader in view (males keen; lactating females not). **Approach:** silent advance on heard strangers ([§11](#11-territory)). | Silent (no vocal). Leader follows waypoints (`updatePatrols`) and stops to listen; members keep about 2.5 m from the leader. At most 2.5 h. | 12–20 |
+| `display` | Males ≥ 12 y, e > 0.3, ≥ 45 min since last: aggression, boldness, rival closeness, reunion, instability, alpha. Also toward strangers, and the storm rain display (1.5). | Run 7 m (or to 2.5 m short of a rival), drum at start, pant-hoot at end. Interrupts subordinates within 12 m, who are then likely to pant-grunt. | 0.75–1.25 |
+| `flee` | Dominant or stranger aggressor, outnumbering strangers, heard stranger calls while outnumbered, snake within 6 m. **Avoidance** (variant AVOID): a chimp of 5 y or more with tension ≥ 0.35 toward a dominant community member who comes within 2.5 m, approaches it or displays within 4 m: 1.5·(tension − 0.3) + 0.05. | Move 8 m away per step. Retreat from strangers is silent at 1.8 × walk and biased homeward. Avoidance is silent at 1.2 × walk, biased homeward, and ends beyond 8 m. Scream when fleeing an aggressor. | 1–2.5 |
+| `hunt` | **Lead:** male ≥ 12 y, community hunting day, prey perceived, ≥ 3 adult males in view, ≥ 6 h since the community's last hunt, rain < 0.3, e > 0.35. **Join:** anyone ≥ 12 y near the ongoing hunt (females −0.8). | Converge under the prey. Resolves 5–11 min after start (`resolveHunt`, [§12](#12-ecology)). | 8–14 |
+| `mate` | Male ≥ 10 y → unrelated community female ≥ 10 y with swelling ≥ 0.75 within 25 m, ≥ 1.5 h since his last mating; −1 if guarded by a dominant. Female ≥ 0.75 swollen → male within 14 m (rank, coercion history, bond, his approach). | Approach to 1 m. Copulate if the female is not refusing (fleeing, charging, attacking, submitting) and swelling ≥ 0.6. | 2–4 |
+| `nurse` | Infant with its mother, age < weaning age + 0.3 y: 0.25 + 1.5h (× 1.3 under 0.5 y) × (1 − age/7). | Refusal from 3.2 y, probability rising linearly to 0.8 at 5 y (whimper, stress). Otherwise hunger −0.5(1 − age/6)/h, thirst −0.4/h, social +0.2/h, mother's energy −0.02/h. Ends when hunger < 0.08. | 3–8 |
+| `dead` | Only candidate after death. | Nothing. | — |
+| `nest` | Nest drive: 2.2 × smoothstep(17.9–18.9 h) + 0.6 at night (afternoon); 2.6 × (1 − smoothstep(daylight 0.05–0.4)) (morning); + 0.3(1−e); + 0.3 for rain at night. Dependents join the caretaker's nest (+0.4). | Choose a tree, climb, build for 3–5 min, then stay in the nest. | 60–100 at night (capped at 05:45); 4–9 morning; 12–20 day |
+| `pant-grunt` | Chimp ≥ 5 y → the single best dominant within 9 m (males ≥ 13 y or anyone ≥ 15 y) not greeted in 8 h: 0.3 + 0.4 for the alpha + 0.8 if displaying + stress + reunion + female-to-male 0.1. | Approach to 1.4 m, call, Elo update with k = 20 (recipient wins). | 0.75–1.25 |
+| `charge` | Variants: status rival, redirected after a loss, coercion of a swollen female, resident female vs immigrant, feeding supplant when fruit is scarce, adolescent male vs adult female, mother defending offspring, coalition support (−0.6·tension toward the one supported), stranger (outnumbering), mate-guard rival, counter-charge, **grudge** (variant TENSION: a dominant with tension ≥ 0.35 toward a subordinate whose aggression toward it was the last incident: 0.9·(tension − 0.3) + 0.25·aggression − 0.1 − 0.25h). Tension also raises status (+0.25·t), redirected (+0.6·t) and feeding-supplant (+0.5·t) charges. | Run to 1.3 m. Resolves on arrival, after 60 s, or after 30 s if the target is more than 14 m away (`resolveCharge`, [§10](#10-social-systems)). Bark, or pant-hoot for status. | 0.75–1.5 |
+| `attack` | Escalation impulse (close-Elo males), infanticide impulse, gang impulse (intergroup), fight back when attacked within 4 m. | Run in, grapple 30 s, then `resolveFight`. | 0.75–1.25 |
+| `submit` | Target of a dominant or stranger aggressor within 20 m, not carried. | Face the aggressor, scream. | 0.5–1 |
+| `reconcile` | Within 18 min of a decided conflict, the opponent in view within 25 m and calm: 0.9·bond + kin + loser bonus − stress − 0.29. | Approach, 60 s of contact. Both stress −0.2 and bond +0.03; each side's tension falls by 35% + 45% × its bond ([§10](#10-social-systems)). | 1.5–3 |
+| `console` | Bystander ≥ 5 y with bond ≥ 0.55 or kin to a victim within 6 m, within 9 min of the attack, if not yet consoled: 0.6·bond + kin − d/30 − 0.27. | 60 s of contact. Victim stress −0.15; victim's bond to the consoler +0.04. | 1.5–3 |
+| `share` | Meat holder (> 0.25) begged by someone within 5 m: 0.15 + 0.8·bond + 0.35 ally + 0.5 kin + 0.08 swollen − 0.8·tension − 0.3h. A mother foraging, begged by her offspring, shares plant food. | Give 0.2 meat (or −0.08 hunger for plant food). Bonds +0.03 and +0.05. | 1–2 |
+| `beg` | Meat holder (> 0.15) within 12 m (−0.4·tension toward the holder); dependents ≥ 1 y beg a foraging caretaker within 5 m when h > 0.35. | Approach to 1 m, then wait. Ends when meat is received or the holder runs out. | 2–4 |
+| `guard` | Male ≥ 15 y, rank ≤ 2 or alpha, female within 25 m with swelling ≥ 0.9, not guarded by another: 0.55 + (0.35 alpha, else 0.15) + 0.2·swelling − 0.9h. | Stay within 2 m. Every 4 ticks, a subordinate male courting her or within 2.5 m triggers a guard charge (score 1.3). Copulates when possible. | 8–15 |
+| `consort` | Non-alpha male ≥ 15 y with bond ≥ 0.35 to a female swollen ≥ 0.6, before 16:00; she accepts (0.6 + 0.5·bond). | Male leads to a point at 0.85 × radius in the periphery; the female follows; copulations. Ends if swelling < 0.3 or she stops reciprocating. | 30–60 |
+| `shelter` | Rain ≥ 0.3, daytime, not carried: 0.2 + 1.6·rain − 0.2h. | Sit hunched. Ends when rain < 0.12. | 8–15 |
+| `call` | Food call (foraging with best crop ≥ 0.6, 30 min since last call), dawn and dusk chorus (06:24–07:24, 18:00–19:00, 1.5 h since last), reunion (males), counter-call to strangers. | Pant-hoot; ranked males ≥ 15 y add drumming on counter-calls and reunions. | 0.5–1 |
+| `transfer` | Transfer impulse or intent (natal females, [§13](#13-reproduction-and-life-history)). | Walk to 0.3 × radius of the neighbor's center; `doTransfer` inside 0.7 × radius. | 20–30 |
+| `alarm` | Aware of a snake within 20 m, age ≥ 5 y: 0.2 + 0.32 × min(unaware community members in view, 5). | Face the snake; alarm-hoo at start and every 60 s. | 1–2 |
+
+---
+
+## 10. Social systems
+
+**Bonds** (`bond`, `addBond`, `dailyLife`, [hierarchy.ts](../src/sim/hierarchy.ts), [life.ts](../src/sim/life.ts)):
+- Bonds are directed.
+- **Growth:** grooming; sharing (+0.03 giver, +0.05 receiver); reconciliation (+0.03 each); consolation (+0.04 victim to consoler); coalition support (+0.05 helped to helper, +0.02 back).
+- **Decay:** each eco-day bonds relax 1.5% toward 0.6 (maternal kin) or 0.2 (others).
+- **The dead:** bonds to dead non-kin are dropped after 30 days.
+- **Grooming credit:** `groomRecv`, the hours of grooming received per partner, decays 3% per hour. It raises reciprocal grooming.
+
+**Tension** ([relations.ts](../src/sim/relations.ts)). Relationship quality has separable components, value, compatibility and security; in captive chimpanzees aggression loaded on compatibility and grooming on value (Fraser, Schino & Aureli 2008) [M]. Here `bond` stands for value and `tension` for the inverse of compatibility: recent aggression that has not been repaired. Security is not modelled separately. Every number below is a design assumption.
+- Tension is directed (a's view of b), 0..1, stored per partner in `chimp.sim.tension`, and only arises within a community. It rises by `t += inc × (1 − t)` (`recordAggression`, `recordWound`). The aggressor's own view rises little, so habitual aggression does not feed on itself:
+
+  | Incident | Aggressor's view | Target's view |
+  | --- | --- | --- |
+  | Display aimed at a target | +0.01 | +0.05 |
+  | Charge | +0.02 | +0.10 |
+  | Coercive charge (at a swollen female) | +0.02 | +0.12 |
+  | Feeding supplant | +0.015 | +0.08 |
+  | Attack (in an escalated fight both sides count as attacker and target) | +0.06 | +0.25 |
+  | Fight wound (loser only) | — | +0.3 × injury |
+
+- **Repair:** reconciliation removes 35% + 45% × bond of each side's tension (44–80%), so it repairs valuable relationships most; grooming removes 15% per hour of contact, both ways; coalition support 10% (the helped one's view of the helper) and 5% (the helper's view); a meat share 10% (receiver) and 5% (giver); consolation 5% (victim's view of the consoler).
+- **Decay:** half-life 21 ecological days without incidents (`dailyRelations`, ×0.967 per day). Entries below 0.005, or toward partners dead for 30 days, are dropped; the last incident per partner (`relationshipOf().lastIncident`) is kept 90 days.
+- **Bonds are unchanged by fights** (there is no evidence here for a direct cost); tension changes bonds only indirectly, through less grooming.
+- **Effects on behavior** (candidate weights, [candidates.ts](../src/sim/candidates.ts); t = the actor's tension toward the other):
+
+  | Behavior | Effect |
+  | --- | --- |
+  | Grooming | −0.5·t |
+  | Coalition support | alert probability × (1 − t) toward the one needing help (`notifyAllies`); supporting charge −0.6·t |
+  | Tolerance | meat share −0.8·t; begging for meat −0.4·t; feeding supplant charge +0.5·t |
+  | Avoidance | from t ≥ 0.35, keep away from a dominant who comes within 2.5 m, approaches or displays (flee, variant AVOID); not from one approaching to reconcile, groom, console, play or share, nor from the last opponent within 18 min when their bond is ≥ 0.35 |
+  | Reconciliation | +0.4·t·bond: the more a valuable relationship is strained, the stronger the pull to repair it |
+  | Aggression | status charge +0.25·t; redirected aggression after a loss +0.6·t, so the loser picks a tense bystander; grudge charge by a dominant (t ≥ 0.35, the other's aggression was the last incident) |
+  | Relation | `relationOf` returns `rival` for t ≥ 0.35 (after kin and allies); adult males within 120 Elo who are not allies stay rivals as before |
+
+- Reconciliation stays driven by value (score 0.9·bond + …, with the repair term above), as in the valuable-relationship hypothesis.
+- Measured effect on the default run: decided conflicts −9%, reconciled share 17% → 16%, adult male grooming 26% → 24% of the day, 5% of directed community pairs tense at year end ([§18](#18-validation)).
+
+**Allies** (`recomputeAllies`, hourly):
+- For chimps of 10 y and over, the ally score of a community partner of 8 y and over is `bond + 0.06 × min(6, mutual support count)`.
+- Scores of 0.42 and above qualify; the top 3 become allies [M-H].
+
+**Dominance** (`dominates`):
+- Within a sex, ranked individuals are ordered by Elo. Ranked means males ≥ 10 y and females ≥ 15 y.
+- Adult males (≥ 15 y) dominate all females [H].
+- Adolescent males (10–15 y) dominate all females under 15 y and progressively dominate adult females, low-ranking ones first. A female of rank n is dominated once `(age − 10)/5 > 1 − min(1, n/8)`.
+- Within a sex, a ranked chimp outranks an unranked one; unranked chimps are ordered by age. Across sexes below 10 y, the older chimp dominates.
+
+**Elo** (`eloUpdate`), a progressive Elo after Neumann et al. 2011:
+- Updates only within a community, within a sex, and between ranked individuals.
+- Expected win probability is `1 / (1 + e^(−0.01·ΔElo))`. The winner gains and the loser loses `k(1 − p)`.
+- k = 100 for decided contests and 20 for pant-grunts, which express existing dominance.
+
+**Slow hierarchy drifts:**
+- **Male strength drift** (`maleStrengthDrift`, design). Each slow step, male Elo relaxes toward `1000 + 150 × (position in the order of current strength, from the bottom)` with time constant 500 bio-days (~1.4 years). This runs at every `ageRate`, so aging alphas are overtaken alive after some years even when few contests fit into accelerated time.
+- **Female queue** (`femaleQueue`), after Foerster et al. 2016 "females queue, males compete" [M]:
+  - Target Elo is `1000 + 12·min(age − 15, 20) + 18·min(tenure, 12)`, minus 80 if tenure is under 2 y, minus `8(age − 45)` above 45.
+  - Tenure counts from 10 y for natal females and from immigration for immigrants.
+  - Time constant 150 bio-days.
+
+**Alpha** (`recomputeHierarchies`, `changeAlpha`, `tryTakeover`):
+- The alpha is the top-Elo adult male.
+- A change closes the old tenure, logs how it happened, and marks the community *unstable* for 48 h, which boosts displays and status charges.
+- **Coalition takeover** [M]: a male who wins a decided conflict against the alpha while at least one ally charges or attacks the alpha within 8 m, and whose Elo is within 220 of the alpha's, takes over at once. He goes to at least alpha + 25, the alpha loses 40, and a `takeover` interaction is emitted.
+- **Vacancy:** after `remove-alpha` the position stays vacant for up to 48 h while the top two adult males are within 100 Elo. Their Elo gaps were flattened to ±25, so contests decide.
+
+**Conflict resolution** ([conflict.ts](../src/sim/conflict.ts)):
+- **Contest** (`contest`): `P(a beats b) = pa³ / (pa³ + pb³)`.
+  - Power `p = strength × (1 + 0.2·tanh(ΔElo/400))` within a sex, plus `0.6 × strength` of each community member charging or attacking the same target within 8 m.
+- **Charge** (`resolveCharge`):
+  - Charges at strangers never touch Elo.
+  - **Target gave way** (submitted, fled or pant-grunted toward the charger): the charger wins. In 12% of those cases a brief hit lands if within 1.6 m (injury 0.01–0.05). Contact is the exception [H].
+  - **Target counter-charged or attacked:** escalation to a contact fight with probability `0.08 + 0.3·even⁴`, where `even` is the weaker/stronger strength ratio. Otherwise a contest decides.
+  - **Target stood its ground:** the charger wins if dominant, else a contest decides.
+- **Fight** (`resolveFight`):
+  - A contest decides.
+  - The loser takes injury 0.04–0.16, plus 0.3 with 5% probability; serious injury is rare [H].
+  - The winner is lightly injured in 20% of fights.
+  - A loser at injury ≥ 0.98 dies with 10% probability.
+- **Decided outcome** (`decided`):
+  - Elo update with k = 100 and `lastConflict` set for both.
+  - Loser stress +0.2 (+0.35 after a fight).
+  - With probability `0.08 + 0.15·aggression` the loser is primed to redirect aggression at a lower-ranked bystander [M].
+  - `stats.conflicts++` and the takeover check.
+- **Coalitions** (`notifyAllies`) [M-H]. When a charge or attack starts, bystanders who are awake, within 25 m of the victim, and either males of 12 y and over or kin of either party may be alerted:
+  - **Aggressor's side:** members of the aggressor's community with bond > 0.45 to the aggressor (or kin), within 15 m of the victim (25 m if the victim is a stranger). Probability `0.5 × bond`, or 0.8 against a stranger.
+  - **Victim's side:** members of the victim's community with bond > 0.45 to the victim (or kin), within 15 m. Probability `0.5 × bond`.
+  - An alerted chimp may then offer a coalition charge.
+
+**Reconciliation and consolation** (`affiliationRepair`) [M-H]:
+- Both are offered for minutes after a conflict and favor valuable relationships.
+- Across three 365-day runs (seeds 48, 7, 21), 16% of decided conflicts were reconciled (14–18% per seed; field: 14–22%) and 11% were followed by consolation ([§18](#18-validation)).
+- Tension adds a repair motive: the reconciliation score gains 0.4 × tension × bond, and a chimp does not avoid its last opponent within the 18-minute window if their bond is ≥ 0.35.
+
+**Grooming, play, sharing:** see the action catalog. Mothers share plant food with begging offspring [M]. Meat sharing favors allies, kin and bonded partners; the "meat-for-sex" effect is kept weak because it is contested [M].
+
+**Parties** (`computeParties`, [parties.ts](../src/sim/parties.ts)):
+- Every 2 eco-min, living members of each community are joined by union-find when within **9 m** (chained).
+- A party is a connected component. Its id is the smallest member id; its kind is classified from members' actions.
+- **Fission-fusion** emerges from the cues below; it is not scripted [H].
+  - food: crowding costs rise when fruit is scarce; calls at rich trees attract
+  - reunions and calls
+  - patrols
+  - female core areas
+
+---
+
+## 11. Territory
+
+Stage C6 ([realism-design.md §5.2–5.3](realism-design.md)) replaced the fixed range circles with ranges that come from use ([territory.ts](../src/sim/territory.ts)). There are no scripted range shifts: a range moves only because the community uses different places.
+
+**Utilization distribution (UD)** per community, on a grid of `udCellM` cells (4 m compressed, 100 m field):
+- **Use:** at every party update (2 eco-min), each non-nesting party adds (independent members × Δt) to the cell of its centre, only in daylight ≥ 0.3 (ranges are estimated from daytime locations, not night nests). Adult-male parties in the periphery (isopleth ≥ 0.8) refresh the last-visit time of their compass octant (`sectorVisit`).
+- **Seed:** at creation, a Gaussian whose 95% isopleth is the nominal circle, worth 30 days of use (field: 3 days since C6b, so the starting circle is forgotten within weeks).
+- **Daily** (`dailyTerritory`): the day's use (buffered in `udNew`) is merged, use decays with a 180-day time constant, danger with 60 days. Two isopleth maps are ranked from the UD (0 = densest cell, 1 = unused):
+  - **familiarity** (`levels`): smoothed with σ `udKernelM` (8 → 400 m). Animals know more than the places they spent time in, so the territory cost, call suppression and the pull home read it.
+  - **use** (`useLevels`, stage C6b, field): smoothed with the reference bandwidth of the community's own use (Worton 1989, as the observer estimates ranges), 100–400 m. The **range** (95% isopleth), **core** (50%), `troop.center` (use-weighted), `troop.radius` (equal-area), range edges, incursion depths and periphery visits read it. In the compressed profile both maps are the familiarity map.
+
+**Contact memory** (`contact.ts`, §5.3.1 P2; replaced the community-wide danger map). Each animal keeps up to 8 hot spots with a contact weight (a stranger chorus heard +1, strangers seen +1 at most every 15 min, a stranger killed by own members in view +5) and a loss weight (its own retreat from strangers or a patrol turning back +1, a wound from strangers +2, a group member killed by strangers in view +5). Weights decay with a 60-day time constant; places within 2 cells merge; the weakest spot is evicted when full. Every hour, party members share spots at half weight, taking the max with their own, never the sum. The territory cost and call suppression read the animal's own losses (÷ 3, capped at 1).
+
+**Foraging between crowns** (stage C6b, field; design): remembered fruit trees keep a memory of their own (60 records) and a crown the individual has just fed in scores 0.5 × exp(−hours since / 12 h) less for forage and travel, so parties move on instead of returning to the same few trees (Taï chimpanzees pick the nearest productive tree only 30% of the time, normand2009, and approach out-of-sight trees from a mean 537.5 m, ban2014). This is a light stand-in for stage C7's long-term tree memory.
+
+**Goal-directed foraging** (stage C7a, field; docs/realism-design.md "C7a mechanisms"). Crowns are valued by their crop (up to a full crown, `fruitValueRef` 1), and remembered trees by the crop the animal last saw there (`treeCrop`, pruned daily to remembered trees). Each day every community lists its 40 trees with the highest expected crop (capacity × the share of that species' trees in fruit) inside its familiar range; adults treat them as goals, overridden by their own sightings. Distance barely matters within the range (`travelDistScaleM` 60 km, fitted), trips to remembered trees are not re-decided on the way (`travelCommit`), crops scale with crown area within a species (`cropSkewExp` 2), only goal-directed departures alert companions and a party member follows the leader rather than a follower (`partyLeaderFollow`), food trees stand at 9.8 per ha (P-FOOD-1), and familiarity is full inside the 95% familiarity isopleth (`familiarFullLevel`). Effects and remaining gaps: realism-design.md "C7a results".
+
+**Territory cost** of a place for a community member (`territoryCost`), subtracted from forage (× 0.6) and remembered-tree travel (× 0.8) scores:
+`a·(1 − f) + b·g·risk`, with `f` the familiarity-weighted own-range percentile (1 inside the 50% core, falling linearly to 0 at the 99% isopleth; immigrants know their new range from 30% to fully over 2 years), `g` the neighbours' use (sum of 1 − their levels) plus own danger (÷ 3, capped at 1), and `risk = 1 / (1 + 0.3 × own adult males in view)`. `a` (`territoryCostA`) = 1 and `b` = 0.5 (design; `a` was planned as fitted but was not, see realism-design.md "C6 review fixes"). Beyond 2 range radii from the centre the pull home gains 0.5.
+- Adult females also forage within individual **core areas** (random points at 15–55% of the radius; offspring share their mother's): 0.35 per range-radius of distance, 0.6 when lactating [H].
+- Outside the own 97% isopleth a chimp gets a `travel` home candidate, stronger toward the edge.
+- Food calls, reunion and contact pant-hoots and choruses score lower where `g` is high (0.3 × pressure) [M: quiet at edges], and travel pant-hoots are suppressed with that probability.
+
+**Border patrols** (`rollImpulses`, `startPatrol`, `updatePatrols`) [H for the pattern]:
+- **Hazard:** every adult male with ≥ 3 own adult males in view rolls, between 08:00 and 15:30 with no patrol running and rain < 0.3, a patrol impulse with hourly hazard `h = h0 · 1.17^(males − 3) · S · (1 + β·heard24h)`, β = 0 and no energy gate since the §5.3.1 corrections (P1, A2). **Who initiates a patrol is weakly evidenced**: the lead score (party males, boldness) is design; there is no alpha bonus (A4). `1.17` is the per-male odds ratio of Mitani & Watts 2005 [M]; `S = 1 − exp(−days since the stalest neighbour-facing octant was visited / 7)` is boundary staleness; `E` falls below mean energy 0.4 (food); `heard24h` is 1 if a neighbour was heard in the last 24 h. `h0` (`patrolH0`) was set on simulation truth against the T-PAT-1 band in development (tuned). No patrol is rolled or led at rain ≥ 0.3 or (leading) hunger ≥ 0.75.
+- **Route:** out to the own range edge in the neighbour-facing octant with the best score `0.25·S + min(1, C/3) − min(1, L/3)·risk` from the leader's contact memory (§5.3.1 A1: contested edges attract, losses repel unless many males are present); then either sweep to the range edge in the adjacent octant or, with probability `patrolIncursionP` (0.4, design; not fitted), push into the neighbour's range, past its 95% edge, to a depth drawn between that edge and its core (50% isopleth); then home.
+- **Listening stops:** the leader stops silently for 2–4 min every 15 min of travel and at each waypoint (Watts & Mitani 2001 describe patrollers pausing to listen); the party waits.
+- **Rules:** patrollers travel in single file (3 m behind the member ahead, in join order), make no calls or displays until the release, move at 0.6 × walking speed outside their own 95% isopleth and at 1.3 × on the way home until back in the core. A patrol turns home (a loss in every member's contact memory) when stranger males in sight match its males, or a neighbour chorus of at least that size was heard within 6 min. It ends when the leader completes the route, after 6 h (§5.3.1 A3), or when no patroller is left; after contact (P 1) or on returning home (P 0.5) the males pant-hoot in chorus, drum and display. The patrol party carries `patrolPhase` ('out', 'listen', 'incursion', 'return') with members in file order.
+
+**Encounters.** Encounter episodes are counted once per community pair per 12 h, in `stats.intergroupEncounters`.
+- **Seen** (`detectEncounters`, in daylight ≥ 0.15): parties of different communities whose closest members are within the current sight distance (`15 × daylight × (1 − 0.3·rain)`).
+  - All members within 1.2 × that distance of the other party's closest member get an urgent interrupt, except sleepers.
+  - A party pair re-triggers at most every 12 min.
+- **Heard** (`hear`, [perception.ts](../src/sim/perception.ts)): stranger pant-hoots or drums within 36 m (30 m for drums), in daylight > 0.1. The listener counts distinct callers of that community in the last 3 min.
+
+**Numerical assessment** (`intergroup` in candidates.ts), after Wilson, Hauser & Wrangham 2001 and Watts & Mitani 2001 [M-H]:
+
+| Situation | Response |
+| --- | --- |
+| Strangers in sight; males with ≥ 3 own adult males in view and at least 2 more than the strangers | Charge the nearest stranger. A gang-attack impulse can add an attack ([§7](#7-perception-and-memory)). |
+| Outnumbered, alone, or a female (especially a lactating one) | Flee silently toward home. |
+| Evenly matched | Males display and counter-call; females retreat. |
+| Swollen, non-lactating stranger females (potential immigrants) | Males tolerate them. |
+| Heard only (in the last 12 min, no strangers in sight), ≥ 3 own adult males | Males silently approach the calls (up to 15 → 60 min, `approachTimeoutS`, to within 4 → 25 m) and counter-call. Females join only when the calls come from inside their own range; otherwise they stay quiet with the males. |
+| Heard only, fewer than 3 own adult males | Retreat silently. |
+
+This is tested with playback ([§16](#16-field-experiments)).
+
+**Gang attacks and killings** (`gangAttack`) [M]:
+- **Attackers** are the actor plus every community member charging or attacking the victim within 8 m.
+- **Injury:** with fewer than 3 attackers the victim takes 0.05–0.10, capped at 0.85. With 3 or more it takes `0.08 + 0.06 × n × U`.
+- **Kill probability,** rolled at most once per 30 min per victim, needs n ≥ 3:
+
+  | Victim | Probability |
+  | --- | --- |
+  | Male ≥ 10 y | `min(0.45, 0.12(n − 2))` |
+  | Infant < 5 y | 0.3 |
+  | Anyone else | 0.03 |
+  | Any victim whose injury reaches 1 | certain |
+
+- **Range change after killings** is not scripted: a killing marks danger for the losers where it happened, so they avoid the place and their patrols turn back there, and winners can use the vacated ground. Ngogo's range grew ~22% after 18 killings over ~10 years (Mitani et al. 2010); the expansion scenario (`scripts/field-scenario.ts expansion`, T-LET-4) is a held-out test of whether this emerges.
+
+**Infanticide** (`infanticide`) [H occurs, L rates]:
+- A mother within 3 m defends with probability `0.35 × strength ratio + 0.2 × helpers`.
+- Undefended attacks kill in 70% of cases; otherwise the infant is wounded (+0.2).
+
+---
+
+## 12. Ecology
+
+**Trees** (`makeTrees`, [generation.ts](../src/sim/generation.ts)):
+- 240 trees of the nine source-recorded species (research.md §1), weighted: *Celtis durandii* 0.24, *Uvariopsis congensis* 0.2, three figs 0.16 in total, others 0.1 each.
+- Placement: 150 are spread over the three ranges (50 each, within 0.95 × radius) and 90 anywhere. Trunks stand at least 2 m from the channel edge and clear of drinking spots.
+- Each species has a height, canopy and `maxFruit` range.
+
+**Fruit** (`fruitIndexNow`, `updateFruit`, [environment.ts](../src/sim/environment.ts)) [L for rates]:
+- The habitat index is `clamp(0.32 + 0.38 × rainfall(day − 45)/185 + 0.08 × sin(6π·day/365), 0.12, 0.95)`. Fruit lags rainfall by 45 days (design). A drought multiplies it by 0.25.
+- **Figs** fruit asynchronously [H for asynchrony]. Availability is `0.12 + 0.88 × max(0, sin(2π(days/120 + phase)))²`, on a 120-day cycle with a per-tree phase.
+- **Other trees** follow `index × (0.35 + 0.65 × max(0, sin(2π(days/200 + phase))))`.
+- Each crop approaches `maxFruit × availability`, rising with rate 2/day and falling with 0.5/day.
+- Feeding depletes crops. Empty trees are forgotten. Scarcity raises contest competition and splits parties.
+- Ground foraging on leaves and pith is a low-yield fallback that never runs out [H].
+
+**Water:** 6 drinking sites, two per community, on the stream bank on the community's side, radius 1.2 m. There is no finite stock or refill.
+
+**Red colobus** ([ecology.ts](../src/sim/ecology.ts)):
+- About 3 groups. When fewer than 3 remain, a new one spawns, at most one per 12 h. Groups have 14–37 individuals and are removed at 3 or fewer.
+- Groups drift at `0.025 + 0.1 × alert` m/s with a random-walk heading. Alert decays 0.6 per hour.
+
+**Hunting** (`huntingDays`, `meatAndHunting`, `onStart` / `hunt`, `resolveHunt`) [M-H for the pattern]:
+- **Hunting days:** once per eco-day each community draws one with probability `0.0045 × adult males`. That is ≈ 11.5 per year for West (7 males), 6.6 for East and 4.9 for North. A hunting day lasts 13 h.
+  - The rate was derived from reading Mitani & Watts 1999 (Ngogo) as "62 hunts in 471 days with ~24 males". That is a misreading: the 62 are hunting episodes and attempts, 13 of them finds of chimpanzees already eating meat, and the paper reports 26 adult males (research.md). The rate is a design value; an encounter-based hunt decision is planned (realism stage C7).
+- **Starting a hunt** requires all of: a male of 12 y or over, a hunting day, prey in view, at least 3 adult males together (no solo colobus hunts at Ngogo), 6 h since the community's last hunt, light rain at most, and enough energy.
+- **During the hunt:** starting it alerts the prey and interrupts community members of 12 y and over within 25 m, who may join.
+- **Resolution:** after 5–11 min. Hunters count if they are still hunting within 12 m of the prey. Success needs at least 2 hunters and has probability `0.8 × (1 − e^(−0.3(n − 1)))`:
+
+  | Hunters | Success probability |
+  | --- | --- |
+  | 2 | 0.21 |
+  | 3 | 0.36 |
+  | 5 | 0.56 |
+  | 13 | 0.78 |
+
+  Success rises with hunters, as at Ngogo.
+- **Capture:** the captor is chosen by hunting skill plus a hash draw. He gets 1 meat unit, prey size drops by 1, and community members within 25 m are interrupted and may beg.
+- **Measured:** 11.4 hunts per community-year (8.7–16.0 per seed) at 34% success ([§18](#18-validation)). That is more than the ≈ 7.7 hunting days drawn per community-year, because one 13 h hunting day can hold more than one hunt at least 6 h apart.
+
+---
+
+## 13. Reproduction and life history
+
+All durations here are on the life-history clock ([§3](#3-time)). Code is in [reproduction.ts](../src/sim/reproduction.ts) unless noted.
+
+**Ovarian cycle** [M-H]. Each female's cycle (34–38 bio-days) is mapped onto a 36-day template:
+
+| Template days | Phase |
+| --- | --- |
+| 0–5 | No swelling |
+| 5–12 | Swelling rises (smoothstep) |
+| 12–23 | Maximal swelling (~11 days) |
+| 23–25.5 | Detumescence |
+| 17.5–23 | Periovulatory window |
+| 22 | Ovulation |
+
+Cycling starts at the first-swelling age (10.2–11.4 y) once lactational amenorrhea is over, and stops at 50 y.
+
+**Mating record** (`recordCopulation`, `recordAssociation`):
+- Copulations from template day 11 to 23 are counted per male, and count double in the periovulatory window.
+- While swelling is 0.9 or more, time spent within 12 m of unrelated males of 12 y and over accumulates as "association" in bio-days.
+- **Association stands in for copulations** that do not fit into accelerated ecological time (stylized).
+
+**Conception** (`ovulate`), decided once per cycle at ovulation [M]:
+- `mating = min(1, (copulation weight + 0.6 × association days) / 3)`.
+- `P = fecundity(age) × mating × (0.5 if health ≤ 0.6) × (0 at the population cap)`.
+- `fecundity` is 0 below 13 y, ramps to 0.22 at 14.5 y (adolescent subfecundity), stays 0.22 to 35 y, falls 0.013 per year to 45 y, is 0.04 to 50 y, then 0.
+- With ample mating an adult conceives in about 1 of 4–5 cycles (design target ~4).
+- **Paternity:** the sire is drawn in proportion to copulation weights, or to association if there were no copulations. Mate-guarding high-rankers therefore sire a disproportionate share [M]. A "(Genetic record)" event notes conception; chimps do not know paternity.
+
+**Birth** (`giveBirth`):
+- Gestation is 222–232 bio-days (Gombe mean 225.3 d, research.md §8).
+- At the population cap (120 living) the pregnancy ends without a live birth.
+- The infant's appearance mixes the parents'. Its bonds are 0.95 with the mother and 0.5 with maternal siblings.
+- **After birth:** the mother lactates, and lactational amenorrhea lasts 3.5–4.5 y. If an unweaned infant dies, cycling resumes about 0.15 y later.
+- **Weaning** happens at the individual weaning age (4.1–5.2 y; Kanyawara mean suckling end 4.8 y, research.md §2). Nursing refusals start at 3.2 y.
+
+**Female dispersal** (`reproSlow` → transfer impulse, `doTransfer`) [M-H]:
+- 87% of females are dispersers.
+- A natal disperser aged 10.8–15 y and swollen ≥ 0.5 draws a transfer impulse with hazard 3 per bio-year.
+- She travels to the nearest neighbor community and joins inside 0.7 × its radius.
+- On joining she enters at the bottom of the female queue (lowest resident Elo − 30). Her bonds to non-members fall to 35%, allies are cleared, and `immigrantAge` is set.
+- For about 2 years residents may target her and she stays near adult males.
+
+**Mortality** (`hazard`, `slowLife`, [life.ts](../src/sim/life.ts)). Annual hazards are fitted to Ngogo (Wood et al. 2017) [M]:
+
+| Age | Female | Male |
+| --- | --- | --- |
+| < 1 | 0.1625 | 0.1625 |
+| 1–5 | 0.027 | 0.027 |
+| 5–15 | 0.011 | 0.011 |
+| 15–25 | 0.011 | 0.03 |
+| 25–35 | 0.011 | 0.042 |
+| 35–45 | 0.017 | 0.042·e^(0.08(age−35)) |
+| ≥ 45 | 0.017·e^(0.12(age−45)) | (same curve) |
+
+- The hazard is multiplied by `1 + 8·max(0, 0.6 − health) + 3·injury`. Unweaned orphans under 3 y without a caretaker add 2.5 per year.
+- The death probability per slow step is `1 − exp(−h × bioDays/365.25)`.
+- With health 1 and no injury this gives q1 = 0.15 and e15 ≈ 35 y (female) / 21 y (male), as in the test.
+- Violence and poor condition come on top. The simulated life course gives e15 = 32.6 / 19.5 y, below Ngogo's 35.1 / 21.0 ([§18](#18-validation)).
+
+**Death** (`killChimp`, `slimDead` in [life.ts](../src/sim/life.ts)):
+- The chimp stays in `world.chimps` with `deathTime` and `causeOfDeath`. Its spatial memory and perception snapshot are dropped at once (nothing reads them).
+- **Slim dead records.** After 30 ecological days dead, or one biological year dead (one ecological day in life-course mode), whichever comes first, `slimDead` keeps only what genealogy, the society views, names in the digests of the living, `relationOf` and the renderer need: identity, sex, community and natal community, parents, birth, death, cause, final age, stage, rank, appearance and position. Numbers are rounded to display precision. Memory, episodes, candidates, bonds, allies, digests and all hidden state (`chimp.sim`) are removed, and the living drop their per-individual scratch about the dead (`metAt`, `greet`, `support`). Event gates older than 48 h and encounter keys older than 24 h are pruned from `world.sim` (their longest gaps are 24 h and 12 h). None of this is read by the model, so behavior is unchanged: a life-course and a natural run are identical to a no-slimming build. A 40-year life course (seed 48, 108 dead) serializes to 1.6 MB instead of 2.5 MB; a slimmed record is ~1 KB instead of ~9 KB, and each additional death adds ~1.2 KB. The record count still grows linearly with deaths, only with a much smaller slope. `tensionOf` and `relationshipOf` read slim records without re-creating hidden state.
+- Kin get episodes.
+- A mother whose unweaned infant under 3 y dies carries the body for 1–4 days in 35% of cases [M]. While she does, `mother.carryingDeadId` holds the infant's id (−1 once she leaves the body or dies). The renderer draws the body limp against her chest (stylization) and, when she leaves it, lays it where she was and fades it out; the dead infant's own `position` never moves.
+
+**Orphans** (`adopt`) [M]:
+- Offspring under 8 y, or unweaned, may be adopted by a maternal sibling of 8 y or over (sisters first, then the oldest). The probability is 0.15 if the orphan is under 3 y and 0.6 otherwise.
+- Otherwise, orphans of 3 y and over are adopted with probability 0.3 by their most-bonded community member of 12 y and over (bond > 0.35).
+- Orphans of 3 y and over are treated as weaned. Younger unweaned orphans without a caretaker lose health when hungry and rarely survive.
+
+**Population cap:** 120 living (`POP_CAP`). It blocks conception and live birth only; nobody is culled.
+
+---
+
+## 14. Environment
+
+**Location:** 0.5° N, 30.4° E, East Africa Time (UTC+3) ([environment.ts](../src/sim/environment.ts)).
+
+**Sun and light** (`updateSun`):
+- NOAA-style solar position.
+- In late September, sunrise is ≈ 06:49 and sunset ≈ 18:49 EAT; days are ~12 h all year.
+- `daylight` is a smoothstep of sun altitude from −8° (0) to +12° (1). Full daylight arrives ≈ 07:29 and night (≤ 0.03) falls ≈ 19:13 at the start date.
+- Daylight scales sight, nest drive, calls and encounter detection.
+- `moonPhase` comes from a reference new moon (2000-01-06 18:14 UTC) with synodic month 29.530588853 d. It is ≈ 0.55 (just past full) at the start, and is used only for rendering.
+
+**Weather** (`weatherTransition`, `setWeather`, `updateWeatherValues`) [M]. A seeded Markov chain over clear, cloudy, rain and storm, stepped every 5 eco-min. It is modulated by `wet = monthly rainfall / 120` and an hour factor:
+
+| Hour factor | Value |
+| --- | --- |
+| 12:30–19:00 (afternoon convection) | 2.6 |
+| Night | 0.55 |
+| Morning | 0.4 |
+
+| Transition | Probability per step |
+| --- | --- |
+| clear → cloudy | `0.012 (0.6 + wet) × (1.8 at 10–18 h else 0.7)` |
+| cloudy → rain or storm | `0.0015 × wet × hour factor` (40% storm in the afternoon) |
+| cloudy → clear | `0.03 (1.5 − min(1, wet))` |
+| rain → cloudy / storm | 0.07 / 0.006 (afternoon only) |
+| storm → rain | 0.1 |
+
+- **Rain intensity:** rain 0.12–0.40, storm 0.55–0.90, with 1.0 ≈ 30 mm/h (design). Values are smoothed per tick.
+- **Monthly rainfall table:** 62, 78, 150, 185, 160, 78, 60, 110, 155, 185, 180, 95 mm, bimodal with Mar–May and Sep–Nov wet. It shapes the chain; the chain itself yields ≈ 1,650 mm/yr (Kanyawara ~1,570).
+- **Temperature** relaxes 4% per tick toward `15.8 + 8.6·diurnal − night cooling (≤ 0.8) − 1.6·cloud·diurnal − 3·rain`. That is ≈ 15 °C before dawn and ≈ 24 °C in the early afternoon.
+- **Humidity, wind and lightning** are for rendering.
+
+**Behavioral effects of weather:**
+- Rain shrinks sight, slows movement, and lowers foraging, travel, grooming and play scores.
+- Rain of 0.3 or more offers `shelter`.
+- **Heavy-rain onset** (rain crossing 0.35, `rainOnset`) interrupts everyone awake in daylight. In storms, 12% of adult males get a rain-display impulse (Goodall's "rain dance" [M/L]).
+
+**Stream** ([stream.ts](../src/sim/stream.ts)):
+- **Geometry** (`generateStreamPath`): a Catmull-Rom polyline through 15 control points jittered ±2 m per seed, at ~2 m spacing. It crosses the map west to east, separates part of the West–North boundary and loops into North's range, so all three communities drink from it.
+- **Channel:** half-width 1.8 m.
+- **Fords** (`makeCrossings`): three, each 4 points from where the stream passes closest to a community center, radius 2.6 m.
+- **Occupancy grid** (`streamCell`): a 1 m grid labels bank A, bank B, channel and ford. It is derived and cached.
+- **Movement** (`moveTo`):
+  - On the ground, a goal on the other bank is reached through the ford with the shortest detour (`bestFord`, `fordExits`).
+  - A straight step that would enter the channel follows the bank instead, in one committed direction along the stream (`ChimpX.slide`), until the straight way to the goal (checked 15 m ahead with `clearOfChannel`) stays on the bank. A goal on the same bank behind the northern loop is therefore reached by walking around the loop. Before this, a chimp east of the loop's eastern arm heading west could pace at one spot indefinitely; in the seed-48 year run a West male stuck there from day 78 inflated intergroup encounters threefold (fixed with the tension work; tested in [sim-stream.test.ts](../tests/sim-stream.test.ts)).
+  - Chimps up a tree above the channel move through the crown until they are over dry ground.
+- **Placement:** feeding and nest points are pulled out of the channel (`dryPoint`).
+- Measured ground time inside the channel: 0% ([§18](#18-validation)).
+
+---
+
+## 15. Communication
+
+`emitCall` ([events.ts](../src/sim/events.ts)) records a `Call` and sets the caller's `vocal` for rendering. Radii are stylized to about a third of a range (real pant-hoots carry 1–2 km). Only pant-hoot, drum, alarm-hoo and scream are *heard* by the simulation; the others are for rendering and the feed.
+
+| Call | Radius (m) | Duration (min) | Emitted by | Heard effect (`hear`, [perception.ts](../src/sim/perception.ts)) |
+| --- | --- | --- | --- | --- |
+| pant-hoot | 36 | 0.75 | `call`; display end; status charges; arrival at rich figs; adult males while travelling or following (hazard 3 per travel-hour, ≥ 6 min apart, suppressed near neighbours; 1.40 calls per male-hour with 43% after travel, Mitani & Nishida 1993 [M]; stage C6) | Community member: stores a join cue (`travel` toward the caller). Stranger: `heard*`, encounter episode, urgent interrupt, numerical assessment. |
+| drum | 30 | 0.5 | display start; ranked males' counter-calls and reunions | As for a pant-hoot. |
+| scream | 20 | 0.75 | submit, flee from aggressor, fight loser, gang or infanticide victims, captor, rough play | Interrupts the screamer's mother and allies. |
+| bark | 18 | 0.5 | charges and attacks (except status charges, gang attacks and infanticide), hunt start | — |
+| alarm-hoo | 15 | 0.75 | `alarm` | Listeners become aware of a snake within 25 m of the caller; community members are interrupted. |
+| food-grunt | 10 | 0.75 | arrival at a fruiting tree | — |
+| pant-grunt | 8 | 0.5 | `pant-grunt` | — |
+| whimper | 6 | 1 | nursing refusal | — |
+| laugh | 5 | 1 | play | — |
+
+Stranger-call listeners count distinct callers of the calling community heard in the last 3 minutes (`heardN`). Same-community calls carry whether the caller is feeding at a tree (`joinRich`), and a rich call pulls harder when fruit is plentiful [M].
+
+---
+
+## 16. Field experiments
+
+`applyIntervention(world, kind, {troopId?, position?})` ([interventions.ts](../src/sim/interventions.ts)).
+- **Target community:** `troopId`, or else the largest community (adult males plus ranked females).
+- **Focus:** `position` is the observer's focus, for example the selected chimp. Without it, the focus is the center of the community's largest party, or else the range center.
+- **Placement:** each protocol places its stimulus relative to the focus.
+- Only chimps who can perceive a stimulus react. Each stimulus appears in `observe().stimuli` as plain words.
+
+| Kind | Protocol | Duration | Who reacts |
+| --- | --- | --- | --- |
+| `playback-stranger` | Speaker 18 m from the focus, outward toward the range edge (toward the nearest neighbor if the focus is at the center), after Wilson, Hauser & Wrangham 2001. Emits a pant-hoot attributed to the neighbor nearest the speaker. | 0.4 h | Everyone within 30 m except that neighbor's members: `heard*` set, urgent interrupt. Parties with ≥ 3 adult males approach and counter-call; outnumbered parties retreat silently (tested). |
+| `snake-model` | Placed 4 m from the focus (or from a middle party member), after Crockford et al. 2012. | 1.5 h | Chimps within 8 m are aware at once; others become aware by seeing it (≤ 12 m) or hearing alarm hoos. Alarm scores rise with *unaware* community members in view [M]. |
+| `fig-mast` | The fig nearest the focus fills to 1.6 × `maxFruit` and is held there. | 72 h | Chimps within 15 m are interrupted; others find it by sight or join calls. |
+| `storm` | Forces a storm at intensity 0.95 (≈ 28.5 mm/h) and blocks weather transitions. | 1.2 h | Everyone (heavy-rain onset). |
+| `drought` | All crops × 0.3; fruit index × 0.25 while it lasts; fig availability halved. | 72 h | Everyone, through food scarcity. |
+| `remove-alpha` | The alpha "disappears" (dies, cause recorded). The top 3 remaining adult males' Elo is flattened to ±25 around their mean. Vacant for up to 48 h; unstable for 72 h. | instant | Top males are interrupted; contests decide the new alpha (tested: within 2 days). |
+| `colobus-troop` | A colobus group spawns 10 m from the focus; the community gets a 6 h hunting day. | 1 h | Chimps within 18 m are interrupted; hunts need ≥ 3 males as usual. |
+
+---
+
+## 17. Parameter table
+
+Every evidence-tagged constant and every distance lives in the parameter registry, [data/params.json](../data/params.json) (stages C4 and C5a, [realism-design.md §4](realism-design.md#4-parameter-registry-o2)): value, plausible range and its basis (`rangeBasis`: `source`, or an assumed band that calibration treats as a weak prior), hard limits, units, evidence, sources, clock, code symbol and file. Untagged score weights in `candidates.ts` (for example `0.3 + pers.sociability * 0.25`) are still literals (design). This table groups them and names their registry ids (`prefix*` means every id with that prefix); `tests/sim-params.test.ts` checks that every row resolves to registry ids and that every live registry id appears in some row. Evidence tags as in [§1](#1-scope-and-evidence-vocabulary). The registry also holds 10 *planned* entries, parameter constraints (P-* in realism-design.md §2) whose mechanisms arrive in stages C6–C8. Values written a → b are compressed → field profile (stage C5a, `createWorld(seed, { profile: 'field' })`, [§22](#22-field-profile-c5a)); a single value is the same in both.
+
+| Parameter | Value | Units | Registry ids | Evidence | Basis |
+| --- | --- | --- | --- | --- | --- |
+| Tick | 15 | eco-s | `tickSeconds` | design | resolution vs cost |
+| Start | 06:30, day 271 | EAT, DOY | `startHour` `startDoy` | design | Kibale second wet season |
+| Slow step | 20 | ticks (5 eco-min) | `slowEveryTicks` | design |  |
+| Party update | 8 | ticks (2 eco-min) | `partyEveryTicks` | design |  |
+| Population cap | 120 | living | `popCap` | design | performance |
+| Map | 160 × 160 → 8,000 × 8,000 | m | `mapSizeM` | stylized → design | compressed ranges; field = layout × 50 |
+| Starting range radii | 32 / 27 / 25 → 1,600 / 1,350 / 1,250 (seed of the UD; ranges then follow use, [§11](#11-territory)) | m | `rangeRadius*` | stylized → design | field: community size at Kanyawara density |
+| Sight day / night | 15 / 5 → 35 / 10 | m | `sightDayM` `sightNightM` | stylized → [M] | ≈ ⅓ range width; field P-SCALE-2 |
+| Party link | 9 → 50 | m | `partyLinkM` | stylized → [M] | field P-SCALE-1 (wilson2001) |
+| Walk / run / climb | 0.04 / 0.3 / 0.22 → 0.35 / 2.5 / 0.22 | m/s | `walkMps` `runMps` `climbMps` | stylized → [M] walk | field walk P-SCALE-6 |
+| Attention | 16 | nearest chimps | `attentionN` | design |  |
+| Memory lifetimes | chimp 0.25, tree 72, prey 0.5, water ∞ | h | `memTtl*` | design |  |
+| Memory / episode / event caps | 36 → 48 / 12 / 200 | records | `memoryCap` `episodeCap` `eventCap` | design |  |
+| Candidate jitter | ±0.12 | score | `candidateJitterSpan` | design | variety without rng |
+| Continuation / just-finished | +0.25 / −0.5 | score | `continueBonus` `finishedPenalty` | design | bout persistence |
+| Per-action slot limits | forage 3; 10 actions 2 (see [§8](#candidate-generation)); others 1 | candidates | `slotsForage` `slotsMulti` | design |  |
+| Bout durations | see [§9](#9-action-catalog) | eco-min | `bout*` `nestWakeHour` | design |  |
+| Async grace | 6 | eco-min | `asyncGraceMin` | design |  |
+| Non-urgent interrupt spacing | 2 | eco-min | `interruptSpacingMin` | design |  |
+| Hunger / thirst / energy rates | see [§6](#6-individuals) | per eco-h | `hunger*` `thirst*` `energy*` `social*` `stress*` `meat*` `bodyChild*` | design |  |
+| Fruit intake | 0.055 × (0.75 + 0.25·skill) | fruit/h | `fruitIntake*` | design | feed ~½ day |
+| Fruit → hunger | ×4.4 |  | `fruitHungerFactor` `fruitThirstFactor` | design |  |
+| Fallback food | 0.11 | hunger/h | `fallbackHungerPerH` | design [H for fallback use] |  |
+| Drinking | 1.4 | thirst/h | `drinkThirstPerH` | design |  |
+| Wound healing | 0.075 | per eco-day | `woundHealPerDay` | assumed |  |
+| Baseline hazards | table in [§13](#13-reproduction-and-life-history) | per bio-year | `hazardInfant` `hazardYoung` `hazardJuvenile` `hazardFemale*` `hazardMale*` `hazardHealth*` `hazardInjuryWeight` | [M] | Wood et al. 2017 q1, e15 |
+| Orphan hazard | +2.5 | per bio-year | `hazardOrphan` | design |  |
+| Elo k (contest / greeting) | 100 / 20 | Elo | `eloK` `eloKGreeting` | [M] / design | Neumann et al. 2011 |
+| Elo logistic scale | 0.01 | 1/Elo | `eloLogisticScale` | design |  |
+| Male strength drift τ | 500 | bio-days | `maleDriftTauDays` | design | tenures ~1.7–8 y (Gombe) |
+| Female queue τ | 150 | bio-days | `femaleQueueTauDays` | [M] pattern | Foerster et al. 2016 |
+| Rank edge / ally weight in power | 0.2·tanh(ΔElo/400) / 0.6 |  | `power*` | design |  |
+| Takeover window | alpha Elo − 220 | Elo | `takeoverEloWindow` | design |  |
+| Vacancy gap | 100 | Elo | `vacancyEloGap` | design |  |
+| Instability after an alpha change | 48 | h | `instabilityH` | design |  |
+| Ally threshold, count | 0.42, 3 | bond | `allyThreshold` `allyCount` | design |  |
+| Contest exponent | 3 |  | `contestExponent` | design |  |
+| Brief hit on giving way | 12% |  | `hitRangeM` `hitP` | design [H: contact rare] |  |
+| Escalation | 0.08 + 0.3·even⁴ |  | `escalation*` | design [M: contact rare] |  |
+| Fight injury | 0.04–0.16, +0.3 at 5% | injury | `fightInjury*` `seriousInjury*` | design [H: serious injury rare] |  |
+| Redirect after loss | 0.08 + 0.15·aggression |  | `redirectBaseP` `redirectAggrP` | [M] |  |
+| Coalition alert | 0.5·bond / 0.8 vs strangers |  | `coalitionBondMin` `coalitionRange*` `coalitionStrangerP` `coalitionBondP` | [M-H] |  |
+| Gang kill probability | ≤ 0.45 males, 0.3 infants, 0.03 others | per roll | `gangKill*` | [M] |  |
+| Utilization distribution | cell 4 → 100 m; kernel σ 8 → the reference bandwidth of the community's own use, 100–400 m (C6b); seed 30 → 3 days; use decays τ 180 d; daylight ≥ 0.3; range 95%, core 50%, familiarity 0 beyond 99%, periphery ≥ 80% isopleth | m, d |  `udCellM` `udKernelM` `udKernelRef` `udOuterLevel` `udSeedDays` `udTauDays` `udMinDaylight` `udRangeLevel` `udCoreLevel` `peripheryLevel` | design | stage C6, [§11](#11-territory) |
+| Contact memory | ≤ 8 spots per chimp; contact +1 (heard, seen ≥ 0.25 h apart), +5 for a stranger killed by own members; loss: flee 1, injury 2, group member killed 5; τ 60 d; shared hourly in parties at 0.5× (max); normalised ÷ 3 | weight, d | `contactSlots` `contactShareFrac` `contactSeenGapH` `dangerFleeW` `dangerInjuryW` `dangerDeathW` `dangerTauDays` `dangerScale` | design | §5.3.1 P2 |
+| Territory cost | a·(1 − f) + b·g·risk: a 1.0, b 0.5, risk 1/(1 + 0.3 × own males); immigrants' familiarity 0.3 → 1 over 2 y; home travel beyond the 97% isopleth × 1.0, +0.5 beyond 2 radii; call suppression 0.3 × pressure | score | `territoryCostA` `territoryCostB` `riskMaleW` `familiarityStart` `familiarityYears` `homeLevel` `homeW` `homeFarRadii` `homeFarW` `callSuppressW` | design (a not fitted) | C6 review finding 2 |
+| Infanticide success | 0.7 undefended |  | `infanticideKillP` | [L] |  |
+| Gang impulse | 0.5, ≥ 6 h between rolls |  | `gangImpulseP` `gangRollGapH` `gangMinOwnMales` `gangEdgeFrac` `gangVictimGapH` `gangMaxDistM` | design [M-H pattern] |  |
+| Escalation impulse | 0.002 + 0.006·aggression | per perception | `escalateImpulse*` `escalateEloGap` `escalateDistM` | design |  |
+| Infanticide impulse | 0.004 stranger / 0.0005 new alpha | per perception | `infanticideStrangerP` `infanticideNewAlpha*` `infanticideMaxAgeY` `infanticideMaleMargin` | [L] |  |
+| Rain display | 12% of adult males | per storm onset | `rainDisplay*` `impulseDurationH` | [M/L] | Goodall |
+| Reconciliation window | 0.3 | h | `reconcileWindowH` | design | wild 14–22% reconciled |
+| Consolation window, bond | 0.15 h, ≥ 0.55 |  | `consoleWindowH` `consoleBondMin` | design [M] |  |
+| Pant-grunt repeat | 8 | h per dyad | `pantGruntRepeatH` | design |  |
+| Bond relaxation | 1.5% toward 0.6 kin / 0.2 | per eco-day | `bond*` | design |  |
+| Grooming-credit decay | 3% | per h | `groomCreditRetainPerH` | design |  |
+| Rough-play escalation | 0.0015 | per tick | `roughPlayP` | [H] occurs, rate design |  |
+| Nursing refusal onset | 3.2 | y | `weanRefuse*` | [H] conflict, [L] rate |  |
+| Patrol hazard | h0 0.004 per h (tuned on truth) × 1.17^(males − 3) × staleness (τ 7 d) × (1 + 0 × heard in 24 h: P1); no energy gate (A2); rolled at most 1 h apart; lead score 1.1 + 0.15 per male beyond 3 + 0.3 × boldness, no alpha bonus (A4; who leads is weakly evidenced); none at rain ≥ 0.3, none led at hunger ≥ 0.75 | per h, score | `patrolH0` `patrolMaleOddsRatio` `patrolStaleTauDays` `patrolHeardBeta` `patrolRollMaxH` `patrolLeadScore` `patrolLeadMaleW` `patrolLeadBoldW` `patrolAlphaLeadBonus` `patrolMaxRain` `patrolMaxHunger` | [M] odds ratio, P1, A4; design | Mitani & Watts 2005; §5.3.1 |
+| Patrol route, file and release (§5.3.1) | route score 0.25 × staleness + 1 × min(1, contact ÷ 3) − 1 × min(1, loss ÷ 3) × risk; single file 3 m behind the member ahead; 0.6 × walk outside the own 95% isopleth, 1.3 × on the way home until the core; release (chorus, drumming, display) P 1 after contact, 0.5 on return; up to 6 h; female join 0.2, lactating −1, female stay −0.3 (Taï preset `data/presets/tai-patrols.json`: 0.85 / 0.85 / 0) | score, m, × walk, P | `patrolStaleW` `patrolContactW` `patrolLossW` `patrolFileGapM` `patrolEdgeSpeed` `patrolReturnSpeed` `patrolReleaseContactP` `patrolReleaseP` `patrolFemaleJoin` `patrolLactatingJoin` `patrolFemaleStay` | [H] single file, silence; [M] release, female site difference, A3; design weights | patrol-evidence.md |
+| Patrol listening stops; outnumbered by heard chorus | 2–4 min every 15 min of travel and at waypoints; heard within 0.1 h | min, h | `patrolStopEveryMin` `patrolStopMinMin` `patrolStopMaxMin` `patrolHeardWindowH` | design [H: patrols pause to listen] | Watts & Mitani 2001 |
+| Approach caps | heard strangers 900 → 3,600 s; mating approach 150 → 240 s | eco-s | `approachTimeoutS` `mateApproachS` | design | field: ≈ hearing distance ÷ walking speed |
+| Tree memory and harvested crowns (C6b) | field: trees keep their own 60-record memory (compressed: shared cap); a crown just fed in scores 0.5 × exp(−h / 12 h) less (compressed: off) | records, score, h | `memTreeCap` `revisitW` `revisitTauH` | design | ban2014, normand2009; docs/realism-design.md C6b |
+| Goal-directed foraging (C7a) | field: crown value rises with the crop up to 1 (compressed 0.45); remembered trees valued by the crop last seen there; crops ∝ (crown radius)² within species; trips to remembered trees last the walk + 5 min; party members follow the leader, not a follower; adults also consider the community's 40 best-known productive trees (capacity × species' ripe share) as goals; feeding-to-depletion withdrawn (`feedMaxMin` 0); familiarity full inside the 95% familiarity isopleth (compressed: the 50% core); compressed: off | fruit, switch, exponent | `fruitValueRef` `memCropBelief` `cropSkewExp` `travelCommit` `partyLeaderFollow` `feedMaxMin` `knownTreesK` `familiarFullLevel` | design (travel distance: fitted) | normand2009, ban2014, janmaat2013a, janmaat2016, normandBoesch2009; docs/realism-design.md C7a |
+| Travel pant-hoots | 3 per travel-hour, ≥ 0.1 h apart (adult males) | per h | `travelCallPerH` `travelCallGapH` | [M] | Mitani & Nishida 1993 |
+| Patrol window, males | 08:00–15:30, ≥ 3 |  | `patrolStartH` `patrolEndH` `patrolMinMales` | design |  |
+| Patrol max length | 2.5 | h | `patrolMaxH` | design |  |
+| Patrol incursion share | 40% |  | `patrolIncursionP` | design [H: incursions occur] | Watts & Mitani 2001; T-PAT-6 |
+| Encounter episode spacing | 12 | h per pair | `encounterGapH` | design |  |
+| Stranger-caller window | 3 | min | `strangerCallerWindowH` | design |  |
+| Hunting-day probability | 0.0045 × adult males | per day | `huntDayPerMale` `huntDayDurationH` | design | derived from a misreading of Mitani & Watts 1999 (§12) |
+| Hunts per community | ≥ 6 h apart |  | `huntGapH` `huntMinMales` | design |  |
+| Hunt duration | 5–11 | min | `huntResolve*` | design |  |
+| Hunt success | 0.8(1 − e^(−0.3(n−1))), n ≥ 2 |  | `huntSuccess*` | [M-H] shape, design curve |  |
+| Prey respawn | 12 | h | `preyRespawnH` `preyMinGroups` | design |  |
+| Fruit lag | 45 | days | `fruitLagDays` | design [L] |  |
+| Fig / other crop cycles | 120 / 200 | days | `figCycleDays` `fruitCycleDays` | design [H fig asynchrony] |  |
+| Crop approach rates | 2 up / 0.5 down | per day | `cropRiseRate` `cropFallRate` | design |  |
+| Monthly rainfall | 62 … 95 | mm | `rain*Mm` | [M] | Kibale bimodal |
+| Rain scale | 30 | mm/h at intensity 1 | `rainMmPerH` | design |  |
+| Afternoon storm factor | 2.6 |  | `weather*` | [M] |  |
+| Temperature curve | 15.8 + 8.6·diurnal … | °C | `temp*` `diurnal*` | [M] | ~15–24 °C at ~1,500 m |
+| Daylight ramp | −8° → +12° | sun altitude | `daylightLowDeg` `daylightHighDeg` | design |  |
+| Cycle template | rise 5–12, max 12–23, ovulation 22 | template days | `cycleTemplateDays` `cycleRiseDay` `cycleMaxDay` `cycleMaxEndDay` `cycleFallEndDay` `cycleOvulationDay` `cyclePeriovulatoryDay` | [M-H] | ~10–12 d maximal swelling |
+| Cycle length | 34–38 | bio-days | `cycleLen*` | [M] |  |
+| First swelling | 10.2–11.4 | y | `firstSwell*` | [M] | Gombe maturity 11.5 y |
+| Gestation | 222–232 | bio-days | `gestation*` | [H] | Gombe 225.3 d |
+| Weaning age | 4.1–5.2 | y | `weanAge*` | [M] | Kanyawara 4.8 y |
+| Disperser share | 87% | females | `disperserP` | design |  |
+| Dispersal hazard | 3 | per bio-year while swollen, 10.8–15 y | `dispersal*` | design | ~11–13 y transfers |
+| Fecundity | 0.22 plateau, 13–50 y curve | per cycle | `fecundity*` | [M] | first births ~14–15.5 y |
+| Mating saturation | (cops + 0.6·assoc)/3 |  | `matingAssocWeight` `matingSaturation` | design |  |
+| Per-male mating interval | 1.5 | h | `mateIntervalH` | [M] | Taï 0.14 – Ngogo 3.5 /h |
+| Lactational amenorrhea | 3.5–4.5 | y | `amenorrhea*` | [M] | IBI 5.15 y (Gombe) |
+| Dead-infant carrying | 35%, 1–4 days |  | `carryDead*` | [M] |  |
+| Adoption | sibling 0.15 / 0.6; other 0.3 |  | `adopt*` | [M] |  |
+| Dead-record slimming delay | 30 eco-days or 1 bio-year dead |  | `deadSlimDays` | design | no reader of the dropped fields |
+| Call radii, durations | table in [§15](#15-communication) | m, min | `hear*` `call*` | stylized |  |
+| Intervention geometry | table in [§16](#16-field-experiments) |  | `playback*` `snake*` `figMast*` `storm*` `drought*` `removeAlpha*` `colobus*` | design |  |
+| Tension increments | aggressor +0.01–0.06, target +0.05–0.25 | tension | `tensionGiven*` `tensionRecv*` | design [M: compatibility] | Fraser, Schino & Aureli 2008 (components) |
+| Wound tension | +0.3 × injury (loser) | tension | `tensionWound` | design |  |
+| Tension half-life | 21 | eco-days | `tensionHalfLifeDays` | design |  |
+| Reconciliation repair | 35% + 45% × bond | of tension | `reconcileRepairBase` `reconcileRepairBond` | design [M-H: valuable relationships] |  |
+| Mild repair | groom 15%/h; support 10/5%; meat 10/5%; consolation 5% | of tension | `groomTensionRepairPerH` `supportRepair*` `meatRepair*` `consoleRepair` | design |  |
+| Rival / avoidance threshold | 0.35 | tension | `rivalTension` | design |  |
+| Tension effects on candidates | groom −0.5·t; reconcile +0.4·t·bond; share −0.8·t; beg −0.4·t; status +0.25·t; redirect +0.6·t; supplant +0.5·t | score | `groomTensionW` `reconcileRepairW` `shareTensionW` `begTensionW` `statusTensionW` `redirectTensionW` `feedTensionW` | design |  |
+| Avoidance | 1.5·(t − 0.3) + 0.05 within 4 m | score | `avoid*` | design |  |
+| Grudge charge | 0.9·(t − 0.3) + 0.25·aggression − 0.1 | score | `grudge*` | design |  |
+| Support under tension | alert probability × (1 − t) |  | `coalitionTensionW` `coalitionChargeTensionW` | design |  |
+| Memory month / caps | 30 days; 10 / 5 partners, 8 / 5 events, 12 months kept | eco-days | `memoryMonthDays` `memMonth*` `memYear*` `memLedgerEvents` `memKeepMonths` | design | Lewis et al. 2023 (long-term memory) |
+| Event priority | death 6 … intergroup 1 |  | `eventPriority*` | design |  |
+| Partner salience | groom h ×2, support ×1.5, attacks ×2, threats ×0.5 … |  | `salience*` | design |  |
+| History lines | ≤ 3 lines, 2 facts, 110 chars |  | `history*` | design |  |
+| Stream geometry | 1.8 half-width; 2.6 ford radius | m | `streamHalfWidthM` `fordRadiusM` | stylized |  |
+| Site | 0.5° N, 30.4° E, UTC+3 | degrees, h | `siteLatDeg` `siteLonDeg` `siteTzH` | [M] | Kibale (Ngogo) |
+| Founder build | 0.85 − 0.07·(rank − 1) ± 0.03 | build | `founderBuild*` | design | stronger founders hold higher rank |
+| Tree perception | 1.6 × sight, ≤ 26 m | m | `treeSightFactor` `treeSightMaxM` | design / stylized | fruiting crowns are conspicuous |
+| Rival Elo gap (males) | 120 | Elo | `rivalEloGap` | design |  |
+| Heat threshold for thirst | 22 | °C | `thirstHotC` | design |  |
+| Nest-tree choice | distance −0.1/m, hash 1.5, height 0.03/m; within 16 m, ≥ 9 m tall | score, m | `nestTree*` | design [H: a new nest most nights] |  |
+| Nest construction | 3–5 | eco-min | `nestBuild*` | design [H: a few minutes] |  |
+| Nest drive | evening 17.9–18.9 h × 2.2 (+0.6 at night); morning daylight 0.05–0.4 × 2.6 | score | `nestEvening*` `nestNightBonus` `nestMorning*` | design [H: nest at sunset, leave at sunrise] |  |
+| Female core-area cost | 0.35 (lactating 0.6) per R | score | `coreCost*` | design [M/H] |  |
+| Crowding at food | 0.1 per co-feeder × (1.3 − fruit index), ×0.5 above standing 0.6 | score | `crowd*` | design [H: contest competition] |  |
+| Grooming and play | non-kin offset 0.12 (adult females); play within 14 m | score, m | `groomFemaleNonKinOffset` `playRangeM` | design [H] |  |
+| Immigrants | follow males 3–15 m; residents charge within 12 m, ≥ 0.75 h apart; swollen strangers ≥ 0.5 tolerated | m, h | `immigrant*` | [M] |  |
+| Pant-grunt range | 9 m; males from 13 y | m, y | `pantGruntRangeM` `pantGruntMaleAgeY` | design [H] |  |
+| Redirected aggression score | within 0.1 h and 12 m: 0.2 + 0.6·aggression + 0.3·stress + 0.6·t | score | `redirectWindowH` `redirectRangeM` `redirectBase` `redirectAggrW` `redirectStressW` | [M] / design |  |
+| Coercion, supplants, female dominance | swelling ≥ 0.85 within 15 m, ≤ 3 per cycle; supplant hunger ≥ 0.55 within 15 m, ≥ 0.75 h apart; adolescent males to 16 y within 12 m | m, h | `coerce*` `feedCharge*` `femaleDom*` | [M-H] / [H] |  |
+| Coalition window | 0.05 | h | `coalitionWindowH` | [M-H] |  |
+| Mate-guarding and consortships | guard swelling ≥ 0.9, rival within 14 m; consort swelling ≥ 0.6, bond ≥ 0.35, before 16:00 | swelling, m, h | `guard*` `consort*` | [M] |  |
+| Meat and plant sharing | meat 0.15 + 0.8·bond + 0.35 ally + 0.5 kin (+0.08 swollen ≥ 0.8) − 0.3h; plant 0.4 + 0.4·bond | score | `share*` | [M] | Mitani & Watts 2001 |
+| Hunt joining | hunting skill × 0.3 | score | `huntJoinSkillW` | design |  |
+| Reconciliation score | 0.9·bond + 0.2 kin + 0.05 loser − 0.2·stress − 0.29 | score | `reconcileBondW` `reconcileKinW` `reconcileLoserW` `reconcileStressW` `reconcileBase` | [M-H] | valuable relationships |
+| Field layout (C5a) | field: map and stream × 50, community centres × 33.63; stream points every 2 → 10 m; fords every 400 m (compressed: one per community); 4 extra drinking spots per km² of range | x, m | `layoutScale` `centerScale` `streamPointSpacingM` `fordSpacingM` `waterSitesPerKm2` | design | docs/realism-design.md §5.1; centre spacing from a rule stated in advance: neighbouring nominal ranges tangent on average (C5a review response) |
+| Stream classification | 0 → 1 (1 = segment grid, 50 m cells, analytic distance and side) | switch | `streamAnalytic` | design | a 1 m grid of 8 km would need 64 M cells |
+| Spatial indexes | tree cell 16 → 64; chimp cell 0 → 50 (0 = scan all) | m | `treeGridCellM` `chimpGridCellM` | design | performance; same results as the full scan (tests/sim-scale.test.ts) |
+| Colobus movement turns | every 1 tick (both profiles; 4 is a performance option for many groups) | ticks | `preyMoveEveryTicks` | design | not used in the C5a proof |
+| Food patches | field: patch ecology on; 9.8 per ha inside 1.1 × range radius (18 before C7a), 0.5 per ha outside; a deficit recovers at 0.7 per day | per ha, per day | `patchEcology` `patchesPerHa` `patchesOutsidePerHa` `patchRangeFactor` `patchRecoverPerDay` | [M] P-FOOD-1 (since C7a) | janmaat2016 |
+| Phenology record | Kibale data when ingested (1), else synthetic: mean 0.087 of stems ripe, seasonal amplitude 0.8, between-year CV 0.25 shared + 0.2 per species, 20 years | share, CV, years | `phenologyForcing` `synthRipeMean` `synthSeasonAmp` `synthYearCv` `synthSpeciesYearCv` `synthYears` | [M] mean and CV; stylized shape | potts2020, chapman2018, watts2012b |
+| Fruiting episodes | non-fig episode 45 d, fig episode 30 d in a 240 d per-tree cycle, ramps 7 d; habitat index 0.6 at the mean ripe share | days, index | `episodeDays` `figEpisodeDays` `ripeRampDays` `fruitIndexAtMean` | design [H: fig asynchrony, P-FOOD-3] | watts2012b |
+| Forage field | field: 100 m cells, yield 0.6–1.3 × fallback intake, young-leaf season ±0.25 peaking day 126; fallback score 0.65 → 0.45 × hunger | m, x, score | `forageCellM` `forageYieldMin` `forageYieldMax` `youngLeafAmp` `youngLeafPeakDoy` `fallbackForageW` | design | docs/realism-design.md §5.6 |
+| Travel-cost scales | forageDistScaleM 55 → 400; travelDistScaleM 60 → 60,000 (C7a, fitted to path per hour and same-day displacement; 2,000 before); drinkDistScaleM 80 → 2000; joinCallDistScaleM 60 → 1500; huntDistScaleM 60 → 250; memory travel 0.95 → 1.25 × hunger for 72 → 240 h | m per score unit | `forageDistScaleM` `travelDistScaleM` `drinkDistScaleM` `joinCallDistScaleM` `huntDistScaleM` `memTravelHungerW` `memTravelHorizonH` | stylized; field tuned | T-ACT-2, T-RNG-4 (fitted) |
+| Party cohesion | field: follow a departing companion 0.7 + 1 × bond + 0.25 × sociability + 0.4 (adult male) − 0 × hunger, beyond 5 m; leaving costs 0.05 per companion in sight (max 3); compressed: off | score | `partyFollow*` `partyStay*` | design; field tuned | T-PTY-1 (fitted) |
+| Joining and contact calls | field: social pull 0.55 (× 0.4 with ≥ 2 companions), males to males +0.2; contact pant-hoots 0.05 + 0.5 × social need (+0.1 males), every ≥ 0.75 h above daylight 0.3; compressed: off | score, h | `joinSocial*` `joinMaleW` `contactCall*` | design | T-PTY-1 |
+| Social and alert radii (sight-scaled stand-ins) | compressed → field: juvenileFollowM 8 → 15; juvenileFollowScaleM 15 → 35; memoryTreeMinM 12 → 35; joinCallMinM 8 → 50; joinCallStopM 6 → 25; allyNearM 15 → 35; groomRangeM 20 → 45; displayNearM 15 → 35; chargeRangeM 20 → 45; escalateAttackRangeM 15 → 35; infanticideAttackRangeM 20 → 45; defendRangeM 20 → 45; coalitionChargeRangeM 25 → 60; guardChaseRangeM 15 → 35; threatResponseRangeM 20 → 45; strangerCloseScaleM 20 → 45; mateRangeM 25 → 50; guardedRangeM 14 → 30; mateFemaleRangeM 14 → 30; begMeatRangeM 12 → 25; reconcileRangeM 25 → 50; displayRunM 7 → 15; chargeGiveUpM 14 → 30; avoidDoneM 8 → 20; fleeStepM 8 → 40; consortWaitM 8 → 20; approachStopM 4 → 25; patrolFollowM 30 → 70; displayAlertM 12 → 30; patrolAlertM 25 → 60; chaseOffM 8 → 20; supporterNearM 8 → 15; mateNearM 12 → 25; isolatedStrangerM 15 → 35; patrolWaypointM 5 → 25; huntCaptureRangeM 12 → 30; meatAlertM 25 → 50; bankLookaheadM 15 → 60; nestClusterJitterM 12 → 60 | m | `juvenileFollowM` `juvenileFollowScaleM` `memoryTreeMinM` `joinCallMinM` `joinCallStopM` `allyNearM` `groomRangeM` `displayNearM` `chargeRangeM` `escalateAttackRangeM` `infanticideAttackRangeM` `defendRangeM` `coalitionChargeRangeM` `guardChaseRangeM` `threatResponseRangeM` `strangerCloseScaleM` `mateRangeM` `guardedRangeM` `mateFemaleRangeM` `begMeatRangeM` `reconcileRangeM` `displayRunM` `chargeGiveUpM` `avoidDoneM` `fleeStepM` `consortWaitM` `approachStopM` `patrolFollowM` `displayAlertM` `patrolAlertM` `chaseOffM` `supporterNearM` `mateNearM` `isolatedStrangerM` `patrolWaypointM` `huntCaptureRangeM` `meatAlertM` `bankLookaheadM` `nestClusterJitterM` | stylized | field ≈ compressed × 35/15 (sight ratio), design |
+| Social score distance scales | compressed → field: groomDistScaleM 45 → 105; playDistScaleM 35 → 80; playAdultDistScaleM 30 → 70; pantGruntDistScaleM 40 → 90; mateDistScaleM 35 → 75; mateFemaleDistScaleM 40 → 90; begDistScaleM 40 → 90; treeValueDistScaleM 25 → 60 | m per score unit | `groomDistScaleM` `playDistScaleM` `playAdultDistScaleM` `pantGruntDistScaleM` `mateDistScaleM` `mateFemaleDistScaleM` `begDistScaleM` `treeValueDistScaleM` | stylized | as the radii |
+| Body-scale distances | followMotherDistScaleM 10; nurseRangeM 5; begPlantRangeM 5; snakeAlarmRangeM 20; snakeFleeM 6; defendAggressorNearM 8; fightBackRangeM 4; shareRangeM 5; consoleRangeM 6; consoleDistScaleM 30; snakeVisualM 12; alarmSnakeLinkM 25 | m | `followMotherDistScaleM` `nurseRangeM` `begPlantRangeM` `snakeAlarmRangeM` `snakeFleeM` `defendAggressorNearM` `fightBackRangeM` `shareRangeM` `consoleRangeM` `consoleDistScaleM` `snakeVisualM` `alarmSnakeLinkM` | design | the same in both profiles |
+| Perception scales | prey within 1.2 → 2.86 × sight (field 100 m); a hunt heard within 30 → 500 m; hunts alert within 25 → 100 m; encounter search margin 60 → 300 m; heard-call response within 36 → 1000 m | x, m | `preySightFactor` `huntEarshotM` `huntAlertM` `encounterPartyMarginM` `heardResponseRangeM` | [M] gilby2015 (prey); design | gilby2015, wilson2001 |
+
+---
+
+## 18. Validation
+
+### Tests
+
+`pnpm test` runs 223 tests (at stage C5a). The 69 simulation tests are:
+
+| File | Tests | What they establish |
+| --- | --- | --- |
+| [simulation.test.ts](../tests/simulation.test.ts) | 4 | Determinism across batching; `stepWorld` guards; the 06:30 / 28 September opening in nests with three unequal communities; every contract field populated; life stages, kin relations and `applyDecision` validation. |
+| [sim-environment.test.ts](../tests/sim-environment.test.ts) | 4 | Equatorial day length and moon phase; waking after first light and new nests at dusk; ~1,500–1,700 mm/yr with afternoon rain and ~15–24 °C; a storm makes chimps shelter and travel less. |
+| [sim-hierarchy.test.ts](../tests/sim-hierarchy.test.ts) | 6 | Elo order and adult-male dominance; pant-grunt direction and recipient Elo gain; coalition takeover; a single upset does not topple an alpha; remove-alpha gives a contested vacancy and a new alpha within 2 days; counter-charges escalate in 2–25 of 30 seeds with upsets possible. |
+| [sim-life.test.ts](../tests/sim-life.test.ts) | 9 | Long accelerated runs keep physiology bounded, ids unique and the dead in the genealogy; the cap counts only the living; orphans and adoption; analytic q1 ≈ 0.15 and e15 ≈ 35.1 / 21.0 ± 2.5 y; 20 days at natural aging give ≤ 1 killing, ≤ 12 encounters, 45–54 alive, ranges within 3 m, no solo captures and ≤ 6 hunts; `carryingDeadId` is set with the carry (same RNG draws, same result per seed) and cleared when she leaves the body or dies; a 40-year life course adds < 2 KB per death, slim records are < 1.2 KB with genealogy and relation reads intact; slimming is deterministic across tick batching. |
+| [sim-params.test.ts](../tests/sim-params.test.ts) | 11 | The registry is valid and every P-* constraint is attached with its sources and range; `params.gen.ts` matches `data/params.json`; the lint finds no evidence-tagged literal outside the registry (and catches a planted one); every live id is read in `src/sim`, overridable ones through a world's resolved parameters, and named in §17; golden hashes equal those recorded before the registry (seeds 48, 7, 21 at ageRate 1 and 365); wiring (below); tracing reads leaves the world unchanged; no code outside the registry reads an overridable default or falls back to one, and the field observer reads the world's rain rate (C4 review); `createWorld` stores small plain settings and rejects bad overrides and unknown profiles; overrides are deterministic and survive a JSON round trip. |
+| [sim-model.test.ts](../tests/sim-model.test.ts) | 6 | Async waiting and grace fallback; lockstep never falls back and versioned `applyDecision`; mode off; `rulesChoice` / `observe` purity; `observe` is local-only; a snake near a model-controlled chimp creates a decision point. |
+| [sim-relations.test.ts](../tests/sim-relations.test.ts) | 8 | Tension rises after an attack (more for the victim) and reconciliation removes at least a third of it, more in high-bond pairs; a 21-day half-life without incidents; tension lowers grooming, triggers avoidance of a dominant and grudge charges, and makes a rival; a monthly digest closes at day 30 and its tallies match the recorded copulations, reconciliations and consolations, with given = received for threats, attacks, support, meat and grooming hours; `observe().history` names only perceived individuals, ≤ 3 lines of ≤ 110 characters; `relationshipOf` sums this month and the kept months; 40 ecological years of month-long clock jumps leave 12 monthly + 40 yearly digests (≤ 5 partners and events each, under 80 KB); tick-batching determinism through a month boundary. |
+| [sim-reproduction.test.ts](../tests/sim-reproduction.test.ts) | 5 | Cycle template (~11 days maximal) and adolescent subfecundity; cycle → conception → ~228-day gestation → birth with the sire from copulations; female dispersal (males stay); no mating between maternal kin; conception in about 1 of 4–5 cycles with ample mating. |
+| [sim-stream.test.ts](../tests/sim-stream.test.ts) | 4 | Stream geometry, water on banks, fords, trees and range centers clear of the channel; channel occupancy < 0.2%; routing to the far bank through a ford; a same-bank goal behind the northern loop is reached by following the bank around it (seeds 48, 7, 21). |
+| [sim-territory.test.ts](../tests/sim-territory.test.ts) | 9 | Playback: ≥ 3 males approach and call back; outnumbered parties retreat silently; a lone stranger facing several males is chased and flees; stimuli are perceived only locally. Stage C6 on constructed tracks: daytime party use adds independent members × Δt to the day's buffer, merged daily, so the busier cell lies inside the lower isopleth and the centre moves toward it; night and nesting use do not count; a retreat from outnumbering strangers marks danger; the patrol impulse goes only to eligible adult males inside the window; a field patrol makes ≥ 2 listening stops and its incursion point lies inside the neighbour's range; no `shiftRange` remains in `src/sim`. |
+| [sim-scale.test.ts](../tests/sim-scale.test.ts) | 8 | The field profile builds an 8 km world (≈ 43,000 food patches, fords, pools, prey at field density; seeded ranges 1–1.3 × the nominal radii) and the compressed default is unchanged; the stream segment grid classifies every 1 m cell of the compressed map exactly as the occupancy grid (seeds 48, 7, 21); field banks are consistent along the stream and fords are fords; the chimp grid gives the same world as scanning all living; refreshing every patch hourly changes nothing the chimps do (lazy fruit) and depleted patches recover; the synthetic phenology gives ~6–11% of stems ripe with seasonality; field worlds are deterministic and resume from JSON; the phenology ingest parses long, wide and site-level files. |
+
+The other 154 belong to the decision loop and server boundary (`decision.test.ts`, including the optional `history` and `tension` fields, their rejection when malformed, and the token budget), the clock, persistence, the virtual field observer, rendering and audio.
+
+The wiring test picks 10 overridable entries by a fixed hash (`fnv('c4-wiring:' + id)`) among those the scenario reads (a natural day, all seven experiments on community 1, another day; plus three life-course years), and requires each override to change the world hash. It tries +10% first, then the plausible-range ends, then the hard-range ends. +10% suffices for 5 of the 10 (`tensionRecvCoerce`, `boutNurseMax`, `boutClimbMin`, `callPantGruntMin`, `eloKGreeting`). The others are rare-event rates and thresholds (`hazardInfant`, `immigrantFollowMaxM`, `gangImpulseP`, `fecundityLateY`, `reconcileRepairW`) where +10% flips no draw in days. The same holds across the registry: +10% changes this scenario for 275 of 485 overridable entries.
+
+### Metrics vs field values
+
+Reproduce with [scripts/sim-metrics.ts](../scripts/sim-metrics.ts). It uses rules only and is deterministic for a seed list. The defaults (365 days × 3 seeds, 40 life-years × 3 seeds, 4 weather-years × 3 seeds) take ≈ 4 min on an Apple M3 Pro with Node 22:
+
+```sh
+pnpm exec tsx scripts/sim-metrics.ts                              # defaults
+pnpm exec tsx scripts/sim-metrics.ts --days 60 --seeds 48         # quick natural-aging run
+pnpm exec tsx scripts/sim-metrics.ts --days 10 --seeds 48,7,21 --life-years 0 --weather-years 0
+pnpm exec tsx scripts/sim-metrics.ts --life-years 40 --life-seeds 48 --json out.json
+```
+
+Flags:
+- `--days` natural-aging days per seed (default 365)
+- `--seeds` comma list (default 48,7,21)
+- `--life-years` life-course years at `ageRate` 365 (default 40; 0 skips)
+- `--life-seeds` (default = seeds)
+- `--weather-years` weather-only years (default 4; 0 skips)
+- `--json` writes raw per-seed results
+
+The current output of the default run (natural aging 365 days × seeds 48, 7, 21; life course 40 y × seeds 48, 7, 21; weather 4 y × seeds 48, 7, 21), reproduced on 29 September 2026 after stage C6 (living territories; `artifacts/validation/c6-sim-metrics.json`). Every number about simulated behavior in this repository's docs comes from this run. Values are pooled over seeds; per-seed ranges are given where they matter.
+
+| Metric | Simulated | Field value / target | Evidence |
+| --- | --- | --- | --- |
+| Population after the run | 49→53, 49→54, 49→54 | stable | design |
+| Intergroup encounters per community-year | 47.1 | O(10); Kanyawara 120 in 15 y | [M] |
+|   share heard only | 71% | 85% acoustic (Kanyawara) | [M] |
+| Killings per community-year | 0.00 | O(0.1–1); Ngogo 18 in ~10 y | [M] |
+| Max range-center shift (m) | 8.5 | ranges follow use (stage C6) | design |
+| Days between patrols (per community) | 13.2 | Ngogo 9.7 d | [H] |
+| Hunts per community-year | 15.3 | scaled from Ngogo (docs/simulation.md §12) | [M] |
+|   hunt success | 39% | 53–82% (field); rises with hunters | [M-H] |
+|   fewest hunters in a capture | 2 | ≥2 (no solo colobus kills) | [M-H] |
+| Decided conflicts per day (49 founders) | 42.7 | mostly non-contact | [H] |
+|   contact (fight) share of conflicts | 5% | a minority | [H] |
+|   reconciled | 16% | 14–22% (wild, corrected) | [M-H] |
+|   consoled | 11% | a minority | [M] |
+| Tense dyads at run end (tension ≥ 0.35, directed) | 5% | a minority | design |
+| Grooming bout, median (min) | 13.2 | minutes-long bouts | [L] |
+| Adult male day: feed / rest / groom / travel | 41% / 24% / 23% / 5% | feed 33–50%, groom 8–18%, travel 12–25% | [M] |
+| Adult female day: feed / rest / groom / travel | 60% / 20% / 15% / 4% | feed 33–50%, groom 8–18%, travel 12–25% | [M] |
+| Daily path, adults (m/day) | 133 | ~0.4 range diameters (stylized here) | [M] |
+| Largest party, share of community | 67% | fission-fusion | [H] |
+|   whole community together | 7% | rare | [H] |
+| Weaned in a nest at 22:00 | 100% | nearly all | [H] |
+| Leave nest vs sunrise, median (min) | -2 | around sunrise | [H] |
+| Settle in nest vs sunset, median (min) | -30 | around sunset | [H] |
+| Ground time inside the stream channel | 0% | 0 | design |
+| Copulations per daylight hour per max-swollen female | 1.68 | Taï 0.14 – Ngogo 3.5 | [M] |
+| Cycles to conception (natural aging) | 3.1 (n=16) | ~4 (design target) | [M] |
+| Alpha changes | 0 | tenures of years | [M] |
+| Life course (40 y × 3): population | 49→120, 49→120, 49→120 | cap 120 living | design |
+|   first-year mortality | 0.14 | 0.15 (Ngogo) | [M] |
+|   e15 female / male (y) | 33.9 / 19.7 | 35.1 / 21.0 (Ngogo) | [M] |
+|   interbirth interval, median (y) | 5.16 | 5.15 (Gombe) | [M] |
+|   age at first birth, mean (y) | 15.0 | 14–15.5 (Kibale); 14.9 (Gombe) | [M] |
+|   cycles to conception, mean | 14.1 | ~4 (design target) | [M] |
+|   alpha tenure, mean (y) | 4.5 | ~1.7–8 (Gombe) | [M] |
+|   alphas deposed alive | 66/80 | usually | [M] |
+|   female transfer age, mean (y) | 11.9 | ~11–13 | [M-H] |
+| Rainfall (4 y × 3 seeds), mm/yr | 1649 | ~1,500–1,700 (Kanyawara ~1,570) | [M] |
+|   share falling 13:00–19:00 | 68% | afternoon storms | [M] |
+|   mean daily min / max (°C) | 15.0 / 23.9 | ~15 / ~24 | [M] |
+
+Where the field values come from:
+- research.md: Gombe interbirth interval (Wallis 1997) and age at first birth (Walker et al.), Ngogo first-year mortality and e15 (Wood et al. 2017).
+- Code comments, not yet sourced in research.md: Kanyawara encounters (`perception.ts`, Wilson et al. 2012), Ngogo patrol interval (`candidates.ts`, Watts & Mitani 2001), Ngogo killings (`conflict.ts`, Mitani et al. 2010), Kanyawara rainfall (`environment.ts`), reconciliation range (`candidates.ts`), copulation rates (`state.ts`), tenures (`hierarchy.ts`), transfer ages and Kibale first births (`reproduction.ts`).
+- The script itself: the orders of magnitude "O(10)" encounters and "O(0.1–1)" killings per community-year are rough plausibility bands, not published values.
+- Activity budgets and hunt success: the target registry in [realism-design.md](realism-design.md) (T-ACT-1 to T-ACT-3: Budongo Waibira males feed 36% and females 37% of daytime, Kanyawara females ~43%; travel 12–25%; grooming 8–18%; hunt success 53–82% across sites). The earlier "~45–55% feeding" target restated a design note in `forageTick` and is not supported by field data.
+- Design targets: "~4 cycles" is the conception design target.
+
+**How each metric is measured:**
+
+| Metric | Definition |
+| --- | --- |
+| Encounters | `stats.intergroupEncounters` × 2 / community-years. Each episode involves two communities. |
+| Heard only | The share of encounter events with the "heard … pant-hoots" wording. |
+| Conflicts | `stats.conflicts`, decided within-community contests. |
+| Contact share | `fight` interactions / conflicts. |
+| Reconciled, consoled | Bouts / conflicts. |
+| Tense dyads | At the end of each run, the share of directed same-community pairs with tension ≥ 0.35. |
+| Activity budget | Adults, daylight > 0.5, sampled every 4 ticks. Forage counts as travel until the chimp reaches the crown. |
+| Daily path | Summed horizontal movement of adults, excluding carried riding. |
+| Party shares | Sampled every 8 ticks in daylight > 0.9, excluding dependents. |
+| Nest share | At 22:00, weaned chimps in a finished nest more than 4 m up. |
+| Wake / settle | First non-nest action between 04:00 and 12:00, and first finished nest after 15:00, relative to computed sunrise and sunset. |
+| Cycles to conception | Completed cycles (wraps of `cycleDay`) plus one, counted per conception from the start of cycling. |
+| Life-course demography | Pooled exposure and deaths by age bin from the founding ages, with piecewise-constant hazards for e15. The interbirth interval counts only intervals whose first infant survived to the next birth. Age at first birth counts nulliparous females. Alpha tenure is community-years divided by alpha changes. Alpha changes count as "deposed alive" when the logged cause is a contest or takeover. |
+
+**Reading the table:**
+- **Close to field values:** reconciliation (15–19% per seed), copulation rate, nests and wake/settle, rainfall and temperature, q1, interbirth interval, age at first birth, transfer age, alpha tenure (4.5 y). Patrols now come from the hourly hazard (13.2 days apart per community, Ngogo 9.7; no window is imposed). Several of these are tuning targets, not independent checks.
+- **e15:** 33.9 / 19.7 y against 35.1 / 21.0; earlier runs gave 34.1 / 22.5 and 32.6 / 19.5. Life-course runs are chaotic, so differences of a year or two between runs are not meaningful on their own.
+- **Too many encounters, too few acoustic:** 47.1 per community-year (22–78 per seed) against ~8 at Kanyawara (120 in 15 y), and 71% heard only against 85%. The compressed map puts ranges within earshot of each other.
+- **No killings** in 9 community-years. Ngogo's ~1.8 per year comes from one unusually large community and smaller communities kill far less, but this simulation still likely under-produces killings.
+- **Activity budgets:** male feeding (41%) is inside the field band (33–50%); female feeding (60%) is above it. The real misses are **travel**, far too little (5% and 4% against 12–25%), and **male grooming**, too much (23% against 8–18%; females 15%). Earlier versions of this document called male feeding too low against an unsupported ~45–55% target.
+- **Hunt success is low:** 39% against 53–82% in the field, and each success takes exactly one prey (small communities take 1.3–1.9).
+- **Cycles to conception in life-course mode are inflated:** 14.1 against the design target of ~4 (natural aging gives 3.1, n = 16). At `ageRate` 365 a whole cycle passes in ~2.4 eco-hours, half of it often at night. The interbirth interval still matches because amenorrhea dominates it.
+- **No alpha changes in a natural year.** This is consistent with multi-year tenures, but it is one year × 3 seeds. The remove-alpha experiment produced a new alpha 1–35 h later in 15 trials (5 seeds × 3 communities, day 9; median ~6 h).
+
+**Effect of tension and memory.** The same code with every tension and memory hook disabled (the "before" column; it includes the bank-following fix of [§14](#14-environment)), against the full model, 365 days × seeds 48, 7, 21:
+
+| Metric | Before | With tension and memory |
+| --- | --- | --- |
+| Decided conflicts per day | 42.8 | 39.0 |
+| Reconciled / consoled | 17% / 11% | 16% / 11% |
+| Adult male grooming share of the day | 26% | 24% |
+| Daily path, adults (m/day) | 117 | 123 |
+| Intergroup encounters per community-year | 52.4 | 42.9 |
+| Tense dyads (≥ 0.35) | 0% | 5% |
+
+Encounter counts are the least stable number here: the bank-following fix alone moved them from 35.3 to 52.4 by changing trajectories, so shifts of this size are not attributable to tension. In the life course, alpha tenure rose from 4.0 y (previous run) to 5.4 y and 82% of deposed alphas lived on (55 of 67); fewer coalition interventions between tense partners may contribute, but the life-course runs are chaotic. Tuning notes: the first version (aggressor increments twice as large, grudges fed by one's own aggression) raised conflicts by up to 27% in 30-day runs; the next one lowered the reconciled share to 12% (avoidance fired even at partners approaching to reconcile, and several small penalties on low-value, tense pairs added up; no single effect explained it in 60-day probes). Exempting affiliative approaches and valuable last opponents from avoidance, softening the grooming penalty (0.7 → 0.5) and adding the repair motive (0.4 × tension × bond) brought it back to 16%.
+
+### Virtual field observer
+
+[src/field/](../src/field/) measures the simulation the way a field team measures chimpanzees (docs/realism-design.md §3; Altmann 1974 sampling). It only reads the world: `createObserver(world, cfg)` then `observerStep(obs, world)` after every `tickWorld`, and `finishObserver(obs, world)` for the records. It draws its own random numbers (focal rotation, lost follows) from its own xorshift32, never from `world.rng`, and never creates hidden state (`chimp.sim`) on slimmed dead records. Tested: a run with the observer deep-equals a run without it (seeds 48, 7, 21; 3 eco-days; `ageRate` 1 and 365), records hash identically on rerun, and field experiments run on world copies leave the observed run unchanged ([tests/field-observer.test.ts](../tests/field-observer.test.ts)).
+
+| Protocol | What it does |
+| --- | --- |
+| Focal follows | One team per community follows one independent adult nest to nest; focals rotate in a balanced random order (males and females interleaved, redrawn every 10 days). A follow is lost at 0.05/h (×4 while the focal runs or is above 15 m; design) and a lost follow ends that focal day. |
+| Party follows | Two further team sets where the source followed parties (`TARGET_FOLLOW` in [config.ts](../src/field/config.ts)): the larger subgroup (Kanyawara, wilson2012) for T-IGE-1, T-PTY-1 and T-HUN-1, at 2-min points; and male parties (Ngogo, wattsMitani2001) for T-PAT-1 and T-PAT-6 (stage C6), at 1-min points so listening stops are resolved. Both run `lite` (no per-tick truth, month step or PC–MC). |
+| Point samples | Every minute: the focal's field category (`categories.ts` maps all 30 actions and bout phases to feed, rest, travel, groom given or received, other social, agonistic), feeding type, height, flags and position. Party composition (chain rule), 5 m and 10 m neighbours, census sightings and strangers in sight are updated every 2 minutes. |
+| Scans and fixes | Party composition every 15 min (members, adult males, swollen females, colobus within the encounter distance, feeding-party size); location fixes are the 5-min and 30-min thinning of the point positions. |
+| All-occurrence | Interactions and calls within visibility or hearing of a following team (seen, heard, or involving the focal), read every 2 minutes through id cursors; decided conflicts every tick. No event text is parsed. |
+| Classifiers | Encounters (strangers seen by the focal party, or stranger pant-hoots or drums heard by the team, with or without a response, as Wilson et al. 2012 scored acoustic encounters; responses scored within 1 h; one encounter per neighbour until 60 min without a detection), patrols (silent travel of ≥ 2 adult males beyond the own 90% kernel isopleth for ≥ 20 min with ≥ 2 listening stops of ≤ 5 min, offline; the stop criterion is on since stage C6, when simulated patrols began to stop; patrol rows count only while the classifier reaches precision and recall ≥ 0.8 in the same run), hunts, PC–MC reconciliation windows (post-conflict and matched-control affiliation count only when a team saw it), carcasses and 30-day disappearances (a violent disappearance is only a "suspected" killing). |
+| Patrol held-outs (C6 patrol corrections) | T-PAT-8: classified patrols on focal follows per community-month (≥ 5 follow-days) against the month's `environment.fruitIndex`, Spearman ρ over pooled community-months (band from Ngogo patrol dates × the Ngogo ripe fruit score, `scripts/patrol-bands-metrics.ts`). T-BRD-1: halts of the focal (still ≥ 1 min, entered from travel, not feeding) at 0.8–1.0 of the own equal-area 95% radius from the observer's range centroid; advance = net displacement in the next 30 min toward the nearest neighbour range's centroid; logistic slope on adults present (adult males + females of the nearest scan), as Taï S3 Data count adults. T-PAT-9 (encoded-descriptive check, never counted): per community-year, the top patrol sector's share and a neighbour-facing sector left ≥ 100 d without a patrol, from simulation truth (patrol sector and facing sectors recorded at each patrol start). |
+| Census and ecology | Daily census, alpha and female-order records; monthly phenology transect (20 trees per species; "ripe" = a crop the chimps feed in, fruit ≥ 0.06) and transect walks; a weather station. |
+| Experiments | Playback and snake-model trials on copies of the world every 30 days. Playback (Wilson, Hauser & Wrangham 2001): calm, stationary parties; counter-call = a party pant-hoot, waa-bark or scream within 5 min; approach within 20 min (T-IGE-4). Snake model (Crockford et al. 2012): per individual that comes within 12 m of the model, whether it gives alert hoos (T-COM-11). |
+| Truth | Next to each observed metric the observer keeps the omniscient value the old script measured, so the observation bias is reported. |
+
+**Scale.** Perception-scale protocol distances take the simulation's values for the profile (the observer sees what the chimps see): compressed visibility 15 m, party chain 9 m, prey encounter 18 m. Territory-scale lengths are reported ×50 as field-equivalent (the field profile is today's layout ×50, docs/realism-design.md §5.1). Because sight and party links are not compressed by the same factor, spatial targets under the compressed profile mix two scales until C5a and are flagged in the scorecard.
+
+**Running it.**
+
+```sh
+pnpm exec tsx scripts/field-metrics.ts --profile compressed --days 365 --seeds 48,7,21,5,11 --json artifacts/validation/c3-baseline.json --md artifacts/validation/c3-scorecard.md
+pnpm exec tsx scripts/field-metrics.ts --days 30 --seeds 48 --no-pool     # quick, in-process
+pnpm exec tsx scripts/bench-field.ts [--no-truth]                         # observer overhead against the sim bench
+```
+
+Flags: `--days` / `--years`, `--seeds`, `--json`, `--md`, `--workers` (default `os.availableParallelism()`; one world per `node:worker_threads` worker, [scripts/lib/pool.ts](../scripts/lib/pool.ts)), `--no-pool`, `--experiments-every N` (0 = off), `--no-truth`, `--life-years N` (life-course rows), `--solo-baseline` (times one seed alone to report the pool's wall-time ratio), `--rescore file.json` (re-score saved values), `--protocol-hash` (print the protocol fingerprint and the frozen one). Every target in `data/targets.json` gets a per-seed value, spread, pooled value and verdict, fitted and held-out apart; targets whose mechanism does not exist print "n/a (mechanism missing)". The script also prints every metric of the table above with its observed protocol next to the truth value.
+
+**Protocol freeze.** The observer protocol is frozen (`data/targets.json` `protocolFreeze`). The fingerprint is a sha256 over `src/field/*.ts`, the worker, and each target's band and protocol; `scripts/field-metrics.ts --protocol-hash` prints it, and every run reports whether it matches. A change needs a `protocolLog` entry with its source or truth justification and the verdicts before and after. A held-out target touched after its value was seen is `compromised` unless the change is a bug fix or follows the source text and was made before the freeze. Rows changed that way are flagged *revised post hoc* in the scorecard (policy: `protocolPolicy`; review: docs/realism-design.md, "C3 review").
+
+**Baseline (C3 after review; 5 seeds × 365 days, compressed profile; [artifacts/validation/c3-scorecard.md](../artifacts/validation/c3-scorecard.md)).**
+
+| Role | Pass | Fail | Inconclusive | Insufficient | Not scored (scale) | n/a | Structural |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Fitted | 8 | 10 | 6 | 4 | 3 | 6 | 0 |
+| Held out | 6 | 21 | 9 | 7 | 2 | 14 | 1 |
+
+- **Inconclusive** means the 95% interval over seeds crosses a band edge (8 former held-out passes), or a rare-event Poisson interval overlaps the band.
+- **Not scored (scale)** applies to lengths and areas reported ×50: walking speed, sight and party links are not scaled by the same factor, so they are scored only from C5a.
+- **Confirmed failures:**
+  - heard-only share of encounters 0.17 (0.70–0.90)
+  - travel 0.05 (0.12–0.25)
+  - grooming 0.20 (0.08–0.18)
+  - one kill per successful hunt (1.2–2.0)
+  - playback: parties with 3 or more males counter-call within 5 min in 38% of trials (field 12 of 13). Simulated responses come minutes later; field responses come within seconds.
+- **Effort-dependent rates:** the observer logs ~3,100 follow-hours per community-year, against Kanyawara's ~2,340.
+  - Encounters: 10.3 per community-year observed (61 truth), 0.33 per 100 h (Kanyawara 0.34). The total matches only by coincidence: 8.6 seen per year against Kanyawara's 1.2, and 1.7 heard against 6.8.
+  - Patrols: 0.20 per week (0.42 per week of male follows) against 0.65 truth. Almost none meets the full field definition with listening stops (0.004 per week).
+  - Colobus encounters: 45 per 100 h against Kanyawara's 3.7, so hunting per encounter (0.005) has an inflated denominator.
+- **Largest misses:** phenology index 0.94, male hierarchy steepness 0.95, nest departures before sunrise 0.65.
+- **Observer checks:**
+  - Activity shares from 1-min samples are within 0.001 of per-tick truth (sampling error only).
+  - Patrol classifier: precision 0.89, recall 0.85.
+  - Observer CPU is 4.0–4.3% of `tickWorld` in year runs.
+  - Records are byte-identical on rerun (same hashes in two 5-seed runs).
+  - The pool ran at 1.57× the wall time of one seed on a machine at load ~21. The ≤ 1.5 target holds only on an idle machine; the implementer measured 1.16×.
+
+**Stage C6 (territories and patrols; field profile).** Proof: 5 seeds × 10 years after a 180-day burn-in, fresh seeds 101–505 × 1 year, baseline and expansion scenarios with yearly UD maps ([artifacts/validation/c6-scorecard.md](../artifacts/validation/c6-scorecard.md); results and decisions in [realism-design.md](realism-design.md), "C6 results" and "C6b"). Patrols pass the classifier bar on 1-year runs and the rate is in band (tuned); incursions as the observer measures them (0.16–0.18) fall short of Ngogo's 0.58; encounters are inconclusive with a wide seed spread; 3 of 5 expansion runs gain 10–35%. Ranging is the main failure: communities use ~1 km² (C12 comparison with Ngogo and Taï), and the light C6b foraging change does not fix it (stage C7).
+
+### Performance
+
+`pnpm exec tsx scripts/bench-sim.ts` ([scripts/bench-sim.ts](../scripts/bench-sim.ts)) targets ≤ 0.8 s per ecological day (5,760 ticks) for the default world. Measured on 28 September 2026 on an Apple M3 Pro with Node 22.22:
+- **Default world:** median 127–134 ms per eco-day across two runs (≈ 43,000–45,000 ticks/s). It was 161–184 ms before `index()` got a last-world fast path (the `WeakMap` lookup dominated a call made thousands of times per tick); the world after two days is bit-identical.
+- **120 living:** 0.72–0.88 s per eco-day (`growPopulation` in [debug.ts](../src/sim/debug.ts)), above the default-world target.
+- **Tension and memory:** three interleaved runs of the full model and of the same build with the relationship hooks disabled, on a loaded machine (load average 16–22): medians 187–232 ms against 176–187 ms per eco-day, roughly 5–15% overhead (tallies on every grooming tick, tension lookups in candidate scoring, the daily upkeep). Absolute numbers from that session are slower than the quiet-machine figures above.
+- **Allocation** (29 September 2026, after stage C6; V8 sampling heap profiler including collected objects, compressed default world, seed 48, days 2–3): 37–38 → 26.5 KB per tick (220 → 157 MB per eco-day). Changes, all without changing any world (golden hashes identical): no per-call closures, `for…of` iterators or `Array.find` closures in candidate generation and hot lookups, an in-place insertion sort of candidate slots, allocation-free distance and direction helpers in the reason text, spatial-memory records recycled instead of re-allocated, cached grid and sector lookups. Part of the drop (~15–20 MB per day) is `tsx`'s `__name` helper, absent from the Vite build. Remaining: candidate objects and reason strings (stored in the World, so lazy reasons would change saves and golden hashes), interrupt and event strings in `executeAction`, party member sorting, and `Math.hypot` (switching to `Math.sqrt` changes last bits, so it was not adopted).
+- `scripts/bench-ticks.ts` splits tick cost by cadence: plain ticks carry ~76% of the time; slow, hourly and daily steps add no frame-sized spikes (daily ≈ 0.2 ms at 49 living, 0.8 ms at 120).
+- In the browser the clock's tick budget adapts per frame (`frameBudget` in [src/clock.ts](../src/clock.ts)): about 65% of a display frame minus the recent rendering and UI cost, 2–12 ms, never more than a 60 Hz frame allows.
+
+---
+
+## 19. Stylizations, limitations and calibration needs
+
+**Stylized on purpose** (labelled in the code):
+- **Space is compressed.** Ranges are 50–64 m across instead of several km². Sight (15 m), hearing (pant-hoot 36 m), party links (9 m) and walking speed (0.04 m/s) are scaled to match. Daily paths come out at ≈ 2 range diameters (123 m/day) versus ~0.4 in the field (research.md §12). The high encounter rate follows from this compression.
+- **Two clocks.** At `ageRate` 365, life history runs 365× faster than ecology:
+  - energy budgets are meaningless over a lifetime
+  - cycles are short
+  - association with males stands in for unobserved copulations (`recordAssociation`)
+  - dispersal happens within eco-hours.
+
+  Use natural aging for behavior metrics and the life course only for demography.
+- **Rare-event gates.** Hunting days (0.0045 per adult male per day), the hourly patrol hazard, and the impulses behind gang attacks, escalations and infanticide are explicit rate gates, not emergent. Demonstrations use the speed presets and field experiments, not inflated base rates.
+- **Ranges emerge from use, but use is too concentrated.** Since stage C6 ranges are kernel-smoothed utilization isopleths ([§11](#11-territory)). In the field profile about 95% of fixes fall in the densest 36% of cells (Kanyawara 85%). The observed annual range (98% of daily 500 m cells) is ~3–7 km² for West against a 5–16 km² band, but a 95% kernel from positions gives only ~0.9 km² per community: animals shuttle between nearby patches (80 m between same-day fixes ≥ 3 h apart, Ngogo 660 m; `artifacts/compare/scorecard.md`). The territory cost does not set this (development runs with the cost off give the same numbers); the food landscape and memory do (stage C7). Each member knows its community's UD exactly (stylization).
+- **Two range estimates disagree.** The simulation's own 95% isopleth is smoothed with a 400 m kernel and is wider than the observer's 95% reference-bandwidth kernel (0.2–1.6 km² per community per year). Patrols aim at the simulation's range edge, so incursions that enter the neighbour's simulated range often stay outside the observer's estimate of it (T-PAT-6).
+- **Tension and memory are bookkeeping, not cognition.** Tension is one number per directed pair with hand-set increments, repair shares and a 21-day half-life; security (consistency of a relationship) is not modelled. Digests are exact tallies, trimmed by salience; real recall is selective and emotional. Digests run on ecological time, so in life-course mode a monthly digest covers ~30 biological years.
+
+**Missing** (research.md §12 and §13):
+- finite water and drinking tools
+- learned tool repertoires and learning beyond scalar skill growth
+- occlusion-aware sight and hearing
+- disease
+- prey demography beyond group size
+- community fission
+- heritable personality
+- female mate choice beyond scoring
+- full event replay
+
+**Model structure caveats:**
+- Sequential in-tick updates make outcomes order-dependent (deterministic).
+- The attention cap of 16 hides crowds.
+- Candidate scores are hand-weighted sums, not fitted utilities.
+- The "rules" policy is a deterministic argmax with hash jitter, not a stochastic behavior model.
+
+**Code notes found while writing this:**
+- `Troop.adultMales` is refreshed at hierarchy recomputes, not literally each tick (in practice every 5 eco-min).
+- `chimp.cooldown` is vestigial.
+- The contract's `alarm` `InteractionKind` is never emitted.
+- `mateAsk`, `mateAskAt`, `strangerTroop` and `consortId` in `ChimpX` are write-only; `lastHuntAt` is unused.
+- `observe()` recomputes candidates itself instead of reading `chimp.candidates`.
+
+**Calibration needs**, most important first. Each needs a chosen site dataset, exposure, and held-out comparison:
+1. Encounter and killing rates, together with an uncompressed map scale.
+2. Activity budgets by age and sex: feeding rates, grooming propensity, bout lengths.
+3. Hunt frequency and success by party composition (field success 53–82%; the Ngogo rate behind the hunting-day gate was misread, §12).
+4. Party-size distributions against fruit availability.
+5. Aggression rates by dyad type, and contact rates; how long post-conflict tension lasts, and how much reconciliation, grooming and support repair it (the tension parameters).
+6. Conception per cycle and mating rates.
+7. Fruit phenology per species.
+8. Travel distances.
+
+---
+
+## 20. Extending safely
+
+**Rules that keep the world deterministic:**
+- Use only `random(world)` for chance in state-changing code, and `hash01` for variety in pure code.
+- Never call `random` inside `computeCandidates`, `reasonFor`, `observe` or `rulesChoice`. Draw rare decisions as impulses in `perceive`/`rollImpulses` or in slow steps.
+- No `Math.random`, `Date.now`, `performance.now` or async code in `src/sim/`.
+- Keep sort comparators total, with an id tie-break.
+- Iterate arrays or `index()` lists, not object key sets whose insertion order depends on history. Integer-keyed objects iterate in ascending key order, which is deterministic.
+- Keep all state plain data: new hidden fields go in `ChimpX` / `SimState` with defaults in `newX()` / `newSimState()`.
+- Derived caches must be `WeakMap`s keyed by the object they derive from.
+- Constants come from the registry: read `P.id` from `const P = paramsOf(world)`, never a literal next to an evidence tag (the lint in `scripts/gen-params.ts` fails) and never `DEFAULTS.id` for an entry that can be overridden.
+
+**Performance rules:**
+- The per-tick loop is O(n) with local O(n²) pieces: perception, parties, coalition alerts.
+- Use `treesNear` (16 m grid) and `index(world)` rather than scanning `world.trees` or searching `world.chimps`.
+- Reuse module-level scratch arrays in hot paths.
+- Heavy work belongs in the slow, hourly or daily steps.
+- Re-run `scripts/bench-sim.ts`: keep the default world ≤ 0.8 s per eco-day (currently 0.13 s).
+- Call `paramsOf(world)` once per function (it is cached, with a last-world fast path) and pass `P` down tight loops.
+- Keep tests fast; prefer `tickWorld` loops of hours or days over years.
+
+**Which clock?** Life-history processes scale with `bioDays = SLOW_HOURS/24 × ageRate` in `slowLife` or `reproSlow`. Ecological processes use `TICK_HOURS` or `ecoDays`. Never convert a per-tick probability without `1 − exp(−rate × dt)`.
+
+**Recipe: new or changed parameter**
+1. Add or edit the entry in [data/params.json](../data/params.json) (ids sorted, camelCase): value, plausible `range`, `hardRange`, units, evidence, sources (keys in `data/targets.json`), clock, symbol and file. A `calibrate: true` entry needs a `prior`.
+2. Run `pnpm exec tsx scripts/gen-params.ts` to regenerate [params.gen.ts](../src/sim/params.gen.ts), then read `P.newId` in the code.
+3. Name the id in a §17 row and run `pnpm exec tsx scripts/gen-params.ts --check` (validity, drift, lint).
+4. A new default value changes the golden hashes on purpose: re-record them with `pnpm exec tsx tests/fixtures/golden.ts --record` and say so in the change. A pure migration must leave [golden-world.json](../tests/fixtures/golden-world.json) unchanged.
+
+**Recipe: new action**
+1. Add it to the `Action` union in [src/types.ts](../src/types.ts). That file is owned by the integrator, so coordinate. Also add a renderer pose: every action has one.
+2. In [candidates.ts](../src/sim/candidates.ts):
+   - add a unique `CODE` (it feeds the jitter hash and tie-breaks)
+   - add a `LIMIT` if it takes several targets
+   - add `offer(...)` calls in the right behavior block, with a `V` variant if the meaning varies
+   - add a `reasonFor` case: verb-first, ≤ 120 characters, names not ids.
+3. In [execution.ts](../src/sim/execution.ts):
+   - add a `DUR` range
+   - add `onStart` side effects (interaction kind, calls, mood)
+   - add an `executeAction` case that calls `finish()` when done or invalid
+   - add cleanup in `cleanupPrevious` if it holds a partner.
+4. In [life.ts](../src/sim/life.ts): add it to `RUNNING` or `WALKING` if it costs energy, and to `moodFor`.
+5. Map it to an activity category in `scripts/sim-metrics.ts`.
+6. Test that it is offered only when eligible and that its effect happens.
+
+**Recipe: new mechanism**
+1. Decide its cadence and clock (above), and whether it reacts at decision points (candidates), per tick (execution) or in a slow step.
+2. Put state on `ChimpX` or `SimState`.
+3. Put every constant in the registry (recipe above) with an evidence tag and, if possible, a source already in research.md.
+4. If it changes a published behavior rate, add a row to `scripts/sim-metrics.ts` and update [§18](#18-validation).
+5. If it is a social interaction worth remembering, record it where it happens with the helpers in [relations.ts](../src/sim/relations.ts) (`recordAggression`, `recordSupport`, … or `noteEvent` for a life event), so tension, digests and `observe().history` see it. A new tally needs a field in `PartnerTally` ([src/types.ts](../src/types.ts)), in `TALLY_KEYS`, and a phrase in `facts` / `digestText`.
+
+**Recipe: new intervention**
+1. Add the kind to `InterventionKind` ([src/types.ts](../src/types.ts), integrator).
+2. Add a case in `applyIntervention` that places the stimulus relative to the focus (`anchor`), sets radius and duration, and interrupts only those who can perceive it.
+3. Add its perception radius in `perceive`, its words in `observe`, and its candidate responses.
+4. Add the UI entry (UI owner).
+5. Test that distant chimps ignore it.
+
+**Recipe: new call type**
+1. Add it to `CallKind` ([src/types.ts](../src/types.ts)).
+2. Add radius and duration to `CALL_RADIUS` and `CALL_MINUTES` ([events.ts](../src/sim/events.ts)).
+3. If the simulation should respond, add it to the pushed kinds in `emitCall` and handle it in `hear` ([perception.ts](../src/sim/perception.ts)).
+4. Add rendering support (renderer owner).
+
+---
+
+## 21. Glossary
+
+| Term | Meaning here |
+| --- | --- |
+| Tick | 15 ecological seconds; one call to `tickWorld`. |
+| Eco-hour, eco-day | Ecological time (`world.time`). |
+| Bio-day, bio-year | Life-history time; equal to ecological time at `ageRate` 1. |
+| Slow step | Every 20 ticks (5 eco-min): weather, fruit, aging, reproduction, hierarchy. |
+| Community (troop) | Persistent group sharing a range. The contract type is `Troop`. |
+| Party | Temporary subgroup: same-community chimps chained within 9 m (50 m in the field profile; fission-fusion). |
+| Fission-fusion | Communities split into and merge from changing parties. |
+| Alpha | Top-ranked adult male of a community. |
+| Elo | Dominance score updated by contest outcomes (progressive Elo). |
+| Female queue | Female rank rising with age and tenure rather than through fights. |
+| Pant-grunt | Submissive greeting call given to a dominant. |
+| Pant-hoot | Long-distance call; heard by the sim within 36 m. |
+| Display | Charging display with branch-dragging and drumming, usually non-contact. |
+| Coalition | Two or more individuals acting together against a third. |
+| Patrol | Silent, male-biased trip to or across the range boundary. |
+| Numerical assessment | Approach or retreat depending on own versus stranger male numbers. |
+| Gang attack | Several males attacking an isolated stranger; sometimes lethal. |
+| Maximal swelling | Peak anogenital swelling (~11 days of the cycle), when males compete for mating. |
+| Periovulatory window | Last days of maximal swelling, around ovulation; copulations there weigh double for paternity. |
+| Mate-guarding | A high-ranking male keeping rivals from a maximally swollen female. |
+| Consortship | A male and a female leaving the party together for the periphery. |
+| Lactational amenorrhea | No cycling while nursing (3.5–4.5 y here). |
+| IBI | Interbirth interval: years between successive births to one mother. |
+| AFB | Age at first birth. |
+| q1 | Probability of dying in the first year. |
+| e15 | Remaining life expectancy at age 15. |
+| Decision point | A moment when a chimp chooses its next bout: bout end, interrupt, or finished bout. |
+| Interrupt | External event that forces a decision point now. |
+| Candidate | An eligible `{action, targetId, score, reason}` at a decision point. |
+| Variant (`V`) | Why a candidate is offered, for example a status charge versus a coercive charge. |
+| Impulse | Rare behavior drawn with the rng at perception, offered as a high-scoring candidate for 6 min. |
+| Stimulus | An active field experiment in `world.stimuli`. |
+| Episode | First-person memory sentence on a chimp (the last 12 are kept). |
+| Tension | Directed 0..1 measure of unrepaired recent aggression between two community members; roughly the inverse of relationship compatibility. |
+| Digest | A `MemoryDigest`: one month (30 eco-days) or one year (12 months) of an individual's social tallies, notable events and a summary line. |
+| Tally | `PartnerTally`: counts and grooming hours with one partner over a digest period, from the owner's point of view. |
+| Event | A feed line in `world.events`. |
+| Interaction | An observable social episode in `world.interactions`. |
+| Gate | Rate limiter for routine events (`gate(world, key, hours)`). |
+| `hash01` | Stateless integer hash to [0, 1), for variety without consuming the rng. |
+| xorshift32 | The world's pseudo-random generator (`world.rng`). |
+
+---
+
+## 22. Field profile (C5a)
+
+`createWorld(seed, { profile: 'field' })` builds the same society in real metres ([realism-design.md §5.1](realism-design.md#51-o3-logical-vs-visual-scale)). It is headless: the app, the renderer and saved simulations stay on the compressed profile until stage C5b. Every value that differs is a registry profile value (§17, written a → b); field-only mechanisms are switched on by parameters that are 0 in the compressed profile, so compressed worlds and their golden hashes are unchanged.
+
+**Layout.** The map (8 km) and the stream are the compressed layout × 50 (`layoutScale`). Community centres are × 33.63 (`centerScale`) and range radii come from community size at Kanyawara density (West 1.6 km for 22 members, East 1.35, North 1.25), so neighbouring ranges meet at their edges instead of lying 1.3 km apart. The spacing follows a rule stated before any run (West–North and East–North nominal ranges tangent on average); the C5a value (31.9) was swept against T-IGE-1 and is withdrawn. Small streams are crossable in many places: fords every 400 m. Pools and tree holes add 4 drinking spots per km² of range; each founder remembers the 6 nearest its core area.
+
+**Stream.** A 1 m occupancy grid of an 8 km map would need 64 M cells, so the field map classifies points from the polyline through a segment grid (50 m cells, `streamAnalytic`): channel and fords by distance, banks by the side of the nearest segment, far cells by flood fill. On the compressed map it gives exactly the occupancy grid's classes for every 1 m cell (tests/sim-scale.test.ts). `bankOf`, `tangentNear` and `streamDistance` use it.
+
+**Food patches and phenology** ([phenology.ts](../src/sim/phenology.ts)). Each tree is a food patch: 9.8 per ha inside 1.1 × each range radius (P-FOOD-1, Kanyawara feeding-size trees; stage C7a; 18 per ha before, fitted to T-FOOD-11) and 0.5 per ha outside. A patch's crop follows a phenology record: Kibale data when `scripts/ingest-phenology.ts` has found it, otherwise a **synthetic** record (stylized, labelled in the world's opening event and in every scorecard) with the Kibale mean of 8.7% of stems ripe, seasonal peaks after the rains and a between-year CV of 0.25. Since stage C7a the Ngogo record (Potts et al. 2020, Dryad gf1vhhmk8, CC0; 8 of the 9 simulated species matched, figs of the ninth by class mean) is ingested and used (`phenologyForcing` 1; 0 forces the synthetic record). A non-fig tree fruits at most once per record year, in a 45-day episode placed from that year's monthly shares; figs fruit asynchronously in 30-day windows of a 240-day per-tree cycle (P-FOOD-3). Each world starts at a record year chosen from its seed (no rng), steps through the record and resamples after its end. Crops are **lazy**: the simulation reads `fruitAt(world, tree)` (phenology crop minus a deficit that recovers at 0.7 per day), `eatFruit` records depletion in `tree.depletion`, and `tree.fruit` is refreshed once a day for readers outside the simulation (the observer, a future renderer). The habitat fruit index for behaviour is the site's ripe share relative to its mean (stylized mapping to the compressed index's scale). Drought and fig-mast experiments act through the crop target.
+
+**Forage field.** Leaves, pith and herbs (fallback foraging) yield 0.6–1.3 × the fallback intake by 100 m habitat cell, ±25% with the young-leaf seasons; never exhausted. The fallback score weight is lower (0.45 instead of 0.65 × hunger), so hungry chimps walk to remembered fruit.
+
+**Perception and grids.** Sight 35 m, party link 50 m, pant-hoots and drums heard at 1 km, walking 0.35 m/s (P-SCALE-1..6). Fruit crowns are seen within 35 m, prey within 100 m. The tree grid has 64 m cells; a per-tick chimp grid (50 m cells) feeds perception and parties and visits individuals in the same order as a full scan, so results are identical (tests/sim-scale.test.ts). Social and alert radii that were compressed stand-ins (8–30 m) scale with sight (× 35/15); body-scale distances stay.
+
+**Travel and party cohesion.** Travel to remembered trees costs 1 score per 2 km (per 55–80 m in the compressed profile), remembered trees are travel targets for 10 days (tree memories last 60 days, P-FOOD-4), and the few best are scored. Three field-only mechanisms keep parties together at real distances: companions notice a departure and may follow a travelling party member (bond, sociability, adult males); leaving companions for a tree of one's own costs a little per companion in sight; individuals with few companions pant-hoot to find others and travel toward calling community members (males to males). Food patches deplete about twice as fast as compressed trees (intake per hour × 2, hunger per fruit unit ÷ 2), so parties move between patches.
+
+**What is not yet real-scale.** Territories and patrols are real-scale since C6 ([§11](#11-territory)); fruit-tree memory is short and has no phenology beliefs (C7); hunting uses community hunting days and 159 colobus groups at Ngogo density (2.48 per km², P-HUN-1) spread over the whole map (C7); the renderer draws only compressed worlds (C5b). Field worlds serialize like compressed ones (trees may carry `depletion`; C6 adds the per-community UD, danger and sector grids to `world.sim`) but are ~7 MB of JSON.
+
+**Validation.** `pnpm exec tsx scripts/field-metrics.ts --profile field --days 365 --seeds … --workers 4` scores every target through the virtual observer; the C5a scorecard and its comparison with the C3 baseline are in `artifacts/validation/c5a-scorecard.md` and [realism-design.md Stage C5](realism-design.md#stage-c5-logical-vs-visual-scale-o3). At C5a (10 seeds × 365 days): adult male day range 1.69 km, travel share 0.17, party size 4.5, one fruiting tree per 125 m walked and 8% of transect stems ripe (all in band); intergroup encounters 10.4 per community-year (inconclusive: 3.7–25.8 by seed), almost all heard (held-out T-IGE-2 0.99 against 0.70–0.90); nests at 22:00, waking and settling within 35 min of sunrise and sunset, no time in the channel. The fruit share of feeding (0.89) and hunting (1.3 hunts per community-year) are off until stage C7.

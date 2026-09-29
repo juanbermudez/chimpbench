@@ -1,0 +1,81 @@
+/* Saved simulations (src/ui/simulations.ts): menu-bar indicator and the Simulations dialog.
+   Same neutral near-black chrome as the rest of the UI: no hue except the shared --warn / --bad status tokens,
+   opaque surfaces, no gradients. Gold stays reserved for the model, the focal individual and the alpha crown. */
+
+/* ---------- Menu bar: simulation name + save state ---------- */
+.bar-sim { gap: 8px; min-width: 0; }
+.sim-btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; max-width: 220px; padding: 0 8px 0 10px; border-radius: var(--r); font-size: 12.5px; font-weight: 500; color: var(--ink); transition: background .15s; }
+.sim-btn:hover, .sim-btn[aria-expanded="true"] { background: var(--hover); }
+.sim-btn .sim-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sim-btn svg.i { width: 14px; height: 14px; color: var(--ink-3); }
+.save-ind { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--ink-3); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.save-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-4); flex-shrink: 0; }
+.save-ind[data-tone="ok"] .save-dot { background: var(--ink-3); }
+.save-ind[data-tone="busy"] .save-dot { background: var(--ink-2); animation: pulse 1s infinite; }
+.save-ind[data-tone="warn"] { color: var(--ink-2); } .save-ind[data-tone="warn"] .save-dot { background: var(--warn); }
+.save-ind[data-tone="bad"] { color: var(--ink); } .save-ind[data-tone="bad"] .save-dot { background: var(--bad); }
+.save-ind[data-tone="off"] .save-dot { background: transparent; box-shadow: inset 0 0 0 1px var(--ink-4); }
+@media (max-width: 1360px) { .save-ind .save-text { display: none; } .sim-btn { max-width: 160px; } }
+@media (max-width: 900px) { .bar-sim .sim-name { display: none; } }
+
+/* ---------- Dialog ---------- */
+dialog.sims { width: min(720px, calc(100% - 32px)); max-height: calc(100% - 48px); padding: 0; color: var(--ink); border: 1px solid var(--line-2); border-radius: 14px; background: var(--overlay); box-shadow: var(--shadow-lg); overflow-y: auto; }
+dialog.sims::backdrop { background: rgba(0, 0, 0, .6); }
+.sims-dlg.busy { cursor: progress; } .sims-dlg.busy button { pointer-events: none; }
+.sims-dlg section { margin-top: 18px; }
+.sims-dlg section:first-of-type { margin-top: 0; }
+.sims-dlg h3.eyebrow { display: block; margin-bottom: 10px; }
+.sims-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; padding: 10px 12px; border-radius: 10px; font-size: 12.5px; line-height: 1.45; color: var(--ink-2); background: var(--well); border: 1px solid var(--line-2); border-left: 3px solid var(--warn); }
+.sims-banner[data-tone="bad"] { border-left-color: var(--bad); color: var(--ink); }
+
+.sims-current { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px 16px; align-items: center; padding: 14px 16px; border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--raised); }
+.sc-main { display: grid; gap: 4px; min-width: 0; }
+.sc-name { font-family: var(--font-display); font-size: 19px; font-weight: 500; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sc-meta { font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.sc-actions { display: flex; gap: 6px; }
+.sims-switch { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--ink-3); cursor: pointer; padding-top: 10px; border-top: 1px solid var(--line); }
+.sims-switch .switch input:checked + .sw { background: var(--ink-2); }
+
+.sn-row { display: flex; gap: 6px; align-items: center; }
+.sn-row input { height: 32px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--line-2); background: var(--well); color: var(--ink); font-size: 12.5px; }
+.sn-row input:hover { border-color: var(--line-3); }
+.sn-row input[type="text"] { flex: 1 1 auto; min-width: 0; }
+.sn-row input[type="number"] { width: 108px; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.sims-new .subtle { margin-top: 8px; font-size: 11.5px; color: var(--ink-4); }
+
+.sims-list { display: grid; gap: 6px; }
+.sl-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 10px 10px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--raised); }
+.sl-row.current { border-color: var(--line-3); }
+.sl-row.incompatible .sl-name { color: var(--ink-3); }
+.sl-main { display: grid; gap: 3px; min-width: 0; }
+.sl-title { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.sl-name { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sl-badge { flex-shrink: 0; font-size: 10px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); padding: 2px 6px; border-radius: var(--r-xs); border: 1px solid var(--line-2); }
+.sl-badge.warn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, transparent); }
+.sl-meta, .sl-sub { font-size: 11.5px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.sl-sub { color: var(--ink-4); }
+.sl-rename { height: 28px; width: min(320px, 100%); padding: 0 8px; border-radius: var(--r-sm); border: 1px solid var(--line-3); background: var(--well); color: var(--ink); font-size: 13px; font-weight: 600; }
+.sl-actions { display: flex; align-items: center; gap: 4px; }
+.btn.sm { height: 26px; padding: 0 9px; font-size: 12px; gap: 5px; } .btn.sm svg.i { width: 13px; height: 13px; }
+.btn:disabled { opacity: .45; cursor: default; } .btn:disabled:hover { background: var(--hover); border-color: var(--line-2); }
+.icon-btn.danger:hover { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 40%, transparent); }
+.sims-list .empty { margin-top: 0; }
+
+.sims-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+.sims-foot .subtle { font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.sf-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* "Created with an older parameter set" choice. */
+dialog.sims-choice { width: min(560px, calc(100% - 32px)); }
+.sims-choice code { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-2); }
+.sims-choice .choice-actions { flex-wrap: wrap; margin-top: 4px; }
+
+/* Toast action ("New simulation" after a resume). */
+.toast-act { height: 28px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--line-2); background: var(--hover); font-size: 12px; font-weight: 500; color: var(--ink); white-space: nowrap; }
+.toast-act:hover { background: var(--pressed); border-color: var(--line-3); }
+
+@media (max-width: 720px) {
+  .sims-current { grid-template-columns: minmax(0, 1fr); }
+  .sl-row { grid-template-columns: minmax(0, 1fr); }
+  .sn-row { flex-wrap: wrap; } .sn-row input[type="text"] { flex-basis: 100%; }
+}

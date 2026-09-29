@@ -1,0 +1,4 @@
+{
+ "about": "Taï override for female patrol participation (docs/realism-design.md §5.3.1 P3, Amendment A5): pass as createWorld params or --params to the field scripts. Females join at the male base score and do not pay the continuation penalty; lactating females are not excluded (samuni2021; wattsMitani2001 as cited). Swelling and gestation effects are direction-only in samuni2021 and are not implemented.",
+ "params": { "patrolFemaleJoin": 0.85, "patrolFemaleStay": 0, "patrolLactatingJoin": 0.85 }
+}

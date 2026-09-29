@@ -1,0 +1,25 @@
+{
+  "name": "mgogo",
+  "version": "0.2.0",
+  "private": true,
+  "packageManager": "pnpm@8.15.9",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build",
+    "test": "tsx --test tests/*.test.ts",
+    "preview": "vite preview --host 127.0.0.1"
+  },
+  "dependencies": {
+    "@sqlite.org/sqlite-wasm": "3.53.4-build1",
+    "math": "0.1.0",
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.3",
+    "@types/three": "0.186.0",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vite": "8.3.1"
+  }
+}
