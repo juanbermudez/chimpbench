@@ -5,7 +5,8 @@
 //   pnpm exec tsx scripts/patrol-bands-metrics.ts [--out artifacts/validation/patrol]
 //
 // Rules (stated before the first run; the §5.3.1 definitions, made operational):
-// T-PAT-8, patrols and fruit (Ngogo).
+// T-PAT-8, patrols and fruit (Ngogo). Not scorable since the integrator ruling of 2026-09-29: the patrol file has no
+// observation effort (zero months are mostly unobserved), so the band below is kept for the record only.
 //   - Patrols: the distinct Patrol# of Langergraber et al. 2017 (Dryad kk33f, sheet "data"), each with its date.
 //   - Fruit: the monthly ripe fruit score (RFS) of Potts et al. 2020 (Dryad gf1vhhmk8, phenology_file_Jan2020.csv), the site's
 //     fruit-availability index. The share of trees with fruit in the same file is reported, not scored.

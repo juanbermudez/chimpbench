@@ -18,12 +18,12 @@
   "Instrument validation against truth (sampling accuracy, classifier precision and recall) is allowed at any time, because truth is not a field target; each validation run is logged."
  ],
  "protocolFreeze": {
-  "stage": "C6 patrol corrections",
+  "stage": "C6 patrol corrections (T-PAT-8 not scorable)",
   "date": "2026-09-29",
-  "hash": "d2da54f2925425e2",
+  "hash": "03b2eca979c0e7fa",
   "previous": {
-   "stage": "C7a",
-   "hash": "4e8a1df9e91bb81d"
+   "stage": "C6 patrol corrections",
+   "hash": "d2da54f2925425e2"
   }
  },
  "protocolLog": [
@@ -640,6 +640,30 @@
     "all"
    ],
    "verdicts": "patrol proof (held until the C7a review returns)",
+   "class": "freeze"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "patrol-corrections implementer (integrator ruling)",
+   "seen": "no simulated value exists (patrol proof not run); real-data statistics only (data agent: June-July share 0.43, 113 of 211 months empty, gaps 286-367 d, 2,621 observation days; sensitivity rho -0.054 over the 98 months with a patrol, rechecked here: -0.054 on counts, -0.073 per 30 d)",
+   "param": "T-PAT-8 demoted to not scorable (flag notScorable; summary key 'not scorable', counted apart); definition and band -0.057..0.170 kept for the record",
+   "reason": "instrument limitation: the Ngogo patrol record has no observation-effort column and is not continuous observation, so a monthly patrol rate cannot be computed; the simulated follows are continuous and not sampled like it",
+   "targets": [
+    "T-PAT-8"
+   ],
+   "verdicts": "not scorable",
+   "class": "instrument limitation"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "patrol-corrections implementer",
+   "seen": "no simulated value of the corrected model",
+   "param": "freeze: d2da54f2925425e2 -> 03b2eca979c0e7fa (T-PAT-8 not scorable; 'not scorable' flag and summary column)",
+   "reason": "integrator ruling on T-PAT-8 (instrument limitation)",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "patrol proof (held)",
    "class": "freeze"
   }
  ],
@@ -1933,12 +1957,13 @@
    "evidence": "M",
    "role": "held-out",
    "encoded": false,
-   "notes": "C6 patrol corrections P5 (non-circular). mitaniWatts2005: fruit was higher on patrol days, but the effect vanished once male party size was in the model; since A2 the sim hazard has no fruit or energy term, so any fruit effect must come through party size.",
+   "notes": "C6 patrol corrections P5 (non-circular). mitaniWatts2005: fruit was higher on patrol days, but the effect vanished once male party size was in the model; since A2 the sim hazard has no fruit or energy term, so any fruit effect must come through party size. Not scorable (integrator ruling 2026-09-29, data agent finding): kk33f is not continuous observation. 43% of the 284 patrols fall in June-July, 113 of 211 months have no patrol, gaps between patrols reach 286-367 d in 8 years, and Langergraber et al. 2017 report 284 patrols over 2,621 observation days against ~6,900 calendar days; the file has no effort column, so zero months are mostly unobserved and the band measures observation effort as much as patrolling. Sensitivity over the 98 months with >= 1 patrol: rho -0.054 on monthly counts (-0.073 per 30 d). Definition and band kept for the record; never counted.",
    "sources": [
     "langergraber2017",
     "potts2020",
     "mitaniWatts2005"
-   ]
+   ],
+   "notScorable": "real record lacks observation effort; instrument limitation found before any simulated value existed (integrator ruling 2026-09-29). Returns if monthly observation days are obtained (Mitani/Watts data request)"
   },
   {
    "id": "T-BRD-1",

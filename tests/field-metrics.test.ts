@@ -6,7 +6,7 @@ import { METRICS, type SeedValue } from '../src/field/metrics';
 import { hash01 } from '../src/sim/rng';
 import { cellRange, convexHullArea, coreShare, hRef, isoplethArea, isoplethLevels, kde, levelAt } from '../src/field/space';
 import { conciliatoryTendency, dispersion, hwi, kendall, ldaLeaveOneOut, logistic, ols, pearson, quantile, steepness } from '../src/field/stats';
-import { poissonInterval, scoreTargets, type TargetFile } from '../src/field/targets';
+import { poissonInterval, scoreTargets, summarize, type TargetFile } from '../src/field/targets';
 import { emptyRecords, type Records } from '../src/field/records';
 
 const metric = (id: string) => METRICS.find(m => m.id === id)!;
@@ -311,4 +311,14 @@ test('C6 patrol corrections: T-PAT-8 pools community-months and needs >= 24 of t
   const up = v.pooled!([months(15, 1), months(15, 1)]).value!, flat = v.pooled!([months(30, 0)]).value!;
   assert.ok(up > 0.5, `${up}`);
   assert.ok(Math.abs(flat) < 0.3, `${flat}`);
+});
+
+test('a not-scorable target is reported with its verdict but counted apart', () => {
+  const file: TargetFile = { targets: [{ id: 'T-PAT-5', metric: 'x', role: 'held-out', encoded: false, evidence: 'M', notScorable: 'no effort in the real record', accept: { lo: 60, hi: 240, units: 'min', basis: '' }, observer: { protocol: '', interval_min: null, unit: '' } }] };
+  const rows = scoreTargets(file, { 'T-PAT-5': [{ value: 100, n: 5 }, { value: 110, n: 5 }, { value: 120, n: 5 }] }, 'field');
+  assert.equal(rows[0].verdict, 'pass');
+  assert.ok(rows[0].flags.includes('not scorable'));
+  const s = summarize(rows);
+  assert.equal(s['held-out'].unscorable, 1);
+  assert.equal(s['held-out'].pass, 0);
 });

@@ -22,6 +22,8 @@ export interface TargetSpec {
   revisedPostFreeze?: string;
   /** Partly encoded by a later model change (label with its reason); still scored, against the paired baseline where stated. */
   partiallyEncoded?: string;
+  /** The real record cannot support the comparison (instrument limitation on the field side): reported, never counted. */
+  notScorable?: string;
   accept: { lo: number | null; hi: number | null; units: string; basis: string };
   observer: { protocol: string; interval_min: number | null; unit: string };
 }
@@ -93,7 +95,8 @@ export function scoreTargets(file: TargetFile, values: Record<string, SeedValue[
   for (const t of file.targets) {
     const def = METRICS.find(m => m.id === t.id);
     const flags = [...(t.protocolRevisedPostHoc ? ['revised post hoc'] : []), ...(t.compromised ? ['compromised'] : []), ...(t.tuned ? ['tuned'] : []), ...(t.instrumentWarning ? ['instrument below bar'] : []), ...(t.heldAsFail ? ['held as fail'] : []),
-      ...(t.revisedPostFreeze ? ['model revised post-freeze'] : []), ...(t.partiallyEncoded ? ['partially encoded'] : [])];
+      ...(t.revisedPostFreeze ? ['model revised post-freeze'] : []), ...(t.partiallyEncoded ? ['partially encoded'] : []),
+      ...(t.notScorable ? ['not scorable'] : [])];
     const base = { id: t.id, metric: t.metric, role: t.role, encoded: t.encoded, evidence: t.evidence, units: t.accept.units, protocol: def?.protocol ?? t.observer.protocol, scaleSensitive: !!def?.scaleSensitive, flags };
     const partBands = PART_BANDS[t.id];
     const band = partBands ? Object.entries(partBands).map(([k, [a, b]]) => `${k} ${a}–${b}`).join(', ') : t.accept.lo === null && t.accept.hi === null ? t.accept.basis : fmtBand(t.accept.lo, t.accept.hi);
@@ -158,18 +161,19 @@ export function scoreTargets(file: TargetFile, values: Record<string, SeedValue[
   return rows;
 }
 
-export type SummaryKey = Verdict | 'compromised' | 'instrument' | 'tuned' | 'encoded';
+export type SummaryKey = Verdict | 'compromised' | 'instrument' | 'unscorable' | 'tuned' | 'encoded';
 /**
  * Counts by role and verdict. Compromised rows and rows whose instrument is below its bar are counted apart (never as
  * a pass or fail), passes of tuned rows are counted as 'tuned', not as passes (C5a review), and encoded rows (a match
- * is weak evidence; data/targets.json) are counted as 'encoded' whatever their verdict (C6 review).
+ * is weak evidence; data/targets.json) are counted as 'encoded' whatever their verdict (C6 review). Rows whose real
+ * record cannot support the comparison ('not scorable', e.g. T-PAT-8 without observation effort) are counted apart.
  */
 export function summarize(rows: ScoreRow[]): Record<string, Record<SummaryKey, number>> {
-  const z = (): Record<SummaryKey, number> => ({ pass: 0, fail: 0, inconclusive: 0, insufficient: 0, 'n/a': 0, structural: 0, scale: 0, compromised: 0, instrument: 0, tuned: 0, encoded: 0 });
+  const z = (): Record<SummaryKey, number> => ({ pass: 0, fail: 0, inconclusive: 0, insufficient: 0, 'n/a': 0, structural: 0, scale: 0, compromised: 0, instrument: 0, unscorable: 0, tuned: 0, encoded: 0 });
   const out: Record<string, Record<SummaryKey, number>> = { fitted: z(), 'held-out': z(), all: z() };
   for (const r of rows) {
     const counted = r.verdict === 'pass' || r.verdict === 'fail' || r.verdict === 'inconclusive';
-    const k: SummaryKey = r.flags.includes('compromised') ? 'compromised' : r.flags.includes('instrument below bar') ? 'instrument' : r.encoded && counted ? 'encoded' : r.flags.includes('tuned') && r.verdict === 'pass' ? 'tuned' : r.verdict;
+    const k: SummaryKey = r.flags.includes('compromised') ? 'compromised' : r.flags.includes('not scorable') ? 'unscorable' : r.flags.includes('instrument below bar') ? 'instrument' : r.encoded && counted ? 'encoded' : r.flags.includes('tuned') && r.verdict === 'pass' ? 'tuned' : r.verdict;
     out[r.role][k]++; out.all[k]++;
   }
   return out;
