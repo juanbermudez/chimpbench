@@ -2,7 +2,7 @@
 /* eslint-disable */
 export const REGISTRY_VERSION = 1;
 /** Content hash of every live default, hard range, profile value and integer flag. Stored with each world. */
-export const REGISTRY_HASH = '2c806e8335aef657';
+export const REGISTRY_HASH = 'c9e826b661ad17c6';
 
 /** Registry defaults (the compressed profile). */
 export const DEFAULTS = {
@@ -111,8 +111,10 @@ export const DEFAULTS = {
   callPantGruntMin: 0.5,
   callPantHootMin: 0.75,
   callScreamMin: 0.75,
+  callSignatures: 1,
   callSuppressW: 0.3,
   callWhimperMin: 1,
+  callerDiscrim: 1,
   candidateJitterSpan: 0.24,
   carryDeadMaxAgeY: 3,
   carryDeadMinDays: 1,
@@ -189,6 +191,9 @@ export const DEFAULTS = {
   deadSlimDays: 30,
   defendAggressorNearM: 8,
   defendRangeM: 20,
+  discrimDistW: 1,
+  discrimNoise0: 0.3,
+  discrimThreshold: 1.5,
   dispersalHazardPerY: 3,
   dispersalMinAgeY: 10.8,
   dispersalMinSwelling: 0.5,
@@ -205,6 +210,11 @@ export const DEFAULTS = {
   droughtDurationH: 72,
   droughtFigFactor: 0.5,
   droughtFruitFactor: 0.25,
+  drumHitsMedian: 4,
+  drumHitsSigma: 0.45,
+  drumIntervalMs: 229,
+  drumJitter: 0.1,
+  drumSwing: 0.3,
   eloK: 100,
   eloKGreeting: 20,
   eloLogisticScale: 0.01,
@@ -275,6 +285,11 @@ export const DEFAULTS = {
   fleeStepM: 8,
   followCommit: 0,
   followMotherDistScaleM: 10,
+  foodCallBase: 0.35,
+  foodCallCropW: 0.3,
+  foodCallMaleW: 0.05,
+  foodCallPartnerW: 0.15,
+  foodCallRule: 1,
   forageCellM: 100,
   forageDistScaleM: 55,
   forageYieldMax: 1,
@@ -588,6 +603,8 @@ export const DEFAULTS = {
   shareSwollenMin: 0.8,
   shareSwollenW: 0.08,
   shareTensionW: 0.8,
+  sigCommunitySD: 0.241,
+  sigIdentitySD: 0.308,
   sightDayM: 15,
   sightNightM: 5,
   siteLatDeg: 0.5,
@@ -795,8 +812,10 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   callPantGruntMin: [0, 1000000],
   callPantHootMin: [0, 1000000],
   callScreamMin: [0, 1000000],
+  callSignatures: [0, 1],
   callSuppressW: [0, 1000000],
   callWhimperMin: [0, 1000000],
+  callerDiscrim: [0, 1],
   candidateJitterSpan: [0, 10],
   carryDeadMaxAgeY: [0, 1000000],
   carryDeadMinDays: [0, 1000000],
@@ -873,6 +892,9 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   deadSlimDays: [1, 1000000],
   defendAggressorNearM: [0, 1000000],
   defendRangeM: [0, 1000000],
+  discrimDistW: [0, 10],
+  discrimNoise0: [0, 10],
+  discrimThreshold: [0, 10],
   dispersalHazardPerY: [0, 1000000],
   dispersalMinAgeY: [0, 1000000],
   dispersalMinSwelling: [0, 1],
@@ -889,6 +911,11 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   droughtDurationH: [0, 1000000],
   droughtFigFactor: [0, 1],
   droughtFruitFactor: [0, 1],
+  drumHitsMedian: [2, 20],
+  drumHitsSigma: [0, 3],
+  drumIntervalMs: [20, 2000],
+  drumJitter: [0, 1],
+  drumSwing: [0, 0.9],
   eloK: [0, 1000000],
   eloKGreeting: [0, 1000000],
   eloLogisticScale: [0, 1000000],
@@ -959,6 +986,11 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   fleeStepM: [0, 1000000],
   followCommit: [0, 1],
   followMotherDistScaleM: [0, 1000000],
+  foodCallBase: [0, 1],
+  foodCallCropW: [0, 5],
+  foodCallMaleW: [0, 1],
+  foodCallPartnerW: [0, 1],
+  foodCallRule: [0, 1],
   forageCellM: [0, 1000000],
   forageDistScaleM: [0, 1000000],
   forageYieldMax: [0, 1000000],
@@ -1272,6 +1304,8 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   shareSwollenMin: [0, 1],
   shareSwollenW: [-10, 10],
   shareTensionW: [-10, 10],
+  sigCommunitySD: [0, 10],
+  sigIdentitySD: [0, 10],
   sightDayM: [1, 200],
   sightNightM: [0, 1000000],
   siteLatDeg: [0.5, 0.5],
@@ -1371,7 +1405,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
 };
 
 /** Parameters that must stay whole numbers. */
-export const INTEGER_IDS: readonly ParamId[] = ['allyCount', 'attentionN', 'chimpGridCellM', 'coerceMaxRepeats', 'contactSlots', 'cycleLenMinDays', 'cycleLenSpanDays', 'deadSlimDays', 'episodeCap', 'eventCap', 'eventPriorityAlpha', 'eventPriorityBirth', 'eventPriorityDeath', 'eventPriorityInfanticide', 'eventPriorityInjury', 'eventPriorityIntergroup', 'eventPriorityRank', 'eventPriorityTransfer', 'followCommit', 'fordSpacingM', 'gangMinOwnMales', 'historyFacts', 'historyMaxChars', 'historyMaxLines', 'huntMinMales', 'infanticideMaleMargin', 'knownTreesK', 'layoutScale', 'mapSizeM', 'memCropBelief', 'memKeepMonths', 'memLedgerEvents', 'memMonthEvents', 'memMonthPartners', 'memTreeCap', 'memYearEvents', 'memYearPartners', 'memoryCap', 'memoryMonthDays', 'partyEveryTicks', 'partyJoinTrip', 'partyLeaderFollow', 'partyStayMaxN', 'patchEcology', 'patrolMinMales', 'phenologyForcing', 'popCap', 'preyMinGroups', 'preyMoveEveryTicks', 'siteTzH', 'slotsForage', 'slotsMulti', 'slowEveryTicks', 'startDoy', 'streamAnalytic', 'synthYears', 'tickSeconds', 'travelCommit', 'treeGridCellM', 'tripRateValue', 'udCellM', 'udKernelRef'];
+export const INTEGER_IDS: readonly ParamId[] = ['allyCount', 'attentionN', 'callSignatures', 'callerDiscrim', 'chimpGridCellM', 'coerceMaxRepeats', 'contactSlots', 'cycleLenMinDays', 'cycleLenSpanDays', 'deadSlimDays', 'episodeCap', 'eventCap', 'eventPriorityAlpha', 'eventPriorityBirth', 'eventPriorityDeath', 'eventPriorityInfanticide', 'eventPriorityInjury', 'eventPriorityIntergroup', 'eventPriorityRank', 'eventPriorityTransfer', 'followCommit', 'foodCallRule', 'fordSpacingM', 'gangMinOwnMales', 'historyFacts', 'historyMaxChars', 'historyMaxLines', 'huntMinMales', 'infanticideMaleMargin', 'knownTreesK', 'layoutScale', 'mapSizeM', 'memCropBelief', 'memKeepMonths', 'memLedgerEvents', 'memMonthEvents', 'memMonthPartners', 'memTreeCap', 'memYearEvents', 'memYearPartners', 'memoryCap', 'memoryMonthDays', 'partyEveryTicks', 'partyJoinTrip', 'partyLeaderFollow', 'partyStayMaxN', 'patchEcology', 'patrolMinMales', 'phenologyForcing', 'popCap', 'preyMinGroups', 'preyMoveEveryTicks', 'siteTzH', 'slotsForage', 'slotsMulti', 'slowEveryTicks', 'startDoy', 'streamAnalytic', 'synthYears', 'tickSeconds', 'travelCommit', 'treeGridCellM', 'tripRateValue', 'udCellM', 'udKernelRef'];
 
 /** Scale-profile values that differ from DEFAULTS (docs/realism-design.md §5.1). */
 export const PROFILE_VALUES: { readonly compressed: Partial<Record<ParamId, number>>; readonly field: Partial<Record<ParamId, number>> } = {

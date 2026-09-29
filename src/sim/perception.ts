@@ -8,6 +8,7 @@ import { stalestSector } from './territory';
 import { paramsOf, type Params } from './params';
 import { fruitAt } from './phenology';
 import { noteContact } from './contact';
+import { featureDistance, perceivedFeatures } from './signals';
 import { NEVER, aliveNear, byIdIn, index, ix, simOf, treesNear } from './state';
 
 export const IMPULSE_TRANSFER = 1, IMPULSE_ESCALATE = 2, IMPULSE_INFANTICIDE = 3, IMPULSE_RAIN = 4, IMPULSE_GANG = 5, IMPULSE_PATROL = 6;
@@ -287,12 +288,16 @@ function hear(world: World, o: Chimp, callId: number, kind: CallKind, caller: Ch
   }
   // Stranger pant-hoots or drumming: count distinct callers of that community heard in the last 3 minutes.
   let n = 0;
-  const seenCallers: number[] = [];
-  for (let i = world.calls.length - 1; i >= 0; i--) {
-    const call = world.calls[i];
-    if (world.time - call.time > paramsOf(world).strangerCallerWindowH) break;
-    if (call.troopId !== caller.troopId || (call.kind !== 'pant-hoot' && call.kind !== 'drum')) continue;
-    if (seenCallers.indexOf(call.callerId) < 0) { seenCallers.push(call.callerId); n++; }
+  const P = paramsOf(world);
+  if (P.callerDiscrim === 1 && P.callSignatures === 1) n = discriminatedCallers(world, o, caller.troopId, P);
+  else {
+    const seenCallers: number[] = [];
+    for (let i = world.calls.length - 1; i >= 0; i--) {
+      const call = world.calls[i];
+      if (world.time - call.time > P.strangerCallerWindowH) break;
+      if (call.troopId !== caller.troopId || (call.kind !== 'pant-hoot' && call.kind !== 'drum')) continue;
+      if (seenCallers.indexOf(call.callerId) < 0) { seenCallers.push(call.callerId); n++; }
+    }
   }
   // contact memory (§5.3.1 P2): a new stranger chorus heard adds contact at the caller's place
   if (world.time - x.heardAt > paramsOf(world).strangerCallerWindowH) noteContact(world, o, caller.position[0], caller.position[2], 1, 0);
@@ -309,6 +314,30 @@ function hear(world: World, o: Chimp, callId: number, kind: CallKind, caller: Ch
   }
   if (world.environment.daylight > 0.1 && world.time - x.lastHeard > 0.08) { x.lastHeard = world.time; interrupt(world, o, `heard ${x.heardN} stranger${x.heardN > 1 ? 's' : ''} pant-hoot`, true); }
   if (world.environment.daylight > 0.1) noteEncounter(world, o, (index(world).troopById.get(caller.troopId)?.name ?? 'stranger').replace(' community', ''), false);
+}
+
+/**
+ * Stage C10 (callerDiscrim): the stranger callers of community `troop` a listener can tell apart in the window. Each
+ * heard pant-hoot is perceived with distance-dependent noise (signals.ts); it counts as a new caller when its perceived
+ * features differ from every caller already counted by more than discrimThreshold (design [L]). Drums, playbacks and
+ * other calls without features carry no identity: they count as one caller only when no pant-hoot is counted. Pure.
+ */
+const _perc: number[][] = [];
+function discriminatedCallers(world: World, o: Chimp, troop: number, P: Params): number {
+  let counted = 0, anon = false;
+  for (let i = world.calls.length - 1; i >= 0; i--) {
+    const call = world.calls[i];
+    if (world.time - call.time > P.strangerCallerWindowH) break;
+    if (call.troopId !== troop || (call.kind !== 'pant-hoot' && call.kind !== 'drum')) continue;
+    const d2 = (call.position[0] - o.position[0]) ** 2 + (call.position[2] - o.position[2]) ** 2;
+    if (d2 > call.radius * call.radius) continue; // out of this listener's earshot
+    if (call.kind !== 'pant-hoot' || !call.features) { anon = true; continue; }
+    const v = perceivedFeatures(P, call.features, o.id, call.id, Math.sqrt(d2), call.radius, _perc[counted] ?? (_perc[counted] = []));
+    let fresh = true;
+    for (let k = 0; k < counted; k++) if (featureDistance(v, _perc[k]) <= P.discrimThreshold) { fresh = false; break; }
+    if (fresh) counted++;
+  }
+  return counted > 0 ? counted : anon ? 1 : 0;
 }
 
 setHearHook(hear);

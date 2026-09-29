@@ -70,7 +70,8 @@ export interface HuntRec {
   id: number; team: number; troop: number; t0: number; t1: number; prey: number; hunters: number[]; captures: number; captors: number[];
   detected: boolean; partyAM: number; present: number[];
 }
-export interface CallRec { t: number; team: number; caller: number; kind: string; troop: number; dist: number; context: number; }
+/** `f` (stage C10): a pant-hoot's signature features when recorded within 10% of its hearing radius (the bioacoustic recorder), or a drum's inter-hit intervals (ms). */
+export interface CallRec { t: number; team: number; caller: number; kind: string; troop: number; dist: number; context: number; f?: number[] }
 export interface CensusRec { day: number; troop: number; ids: number[]; }
 export interface DeathRec { id: number; troop: number; tEst: number; how: 'body' | 'disappeared'; truthTime: number; violent: boolean; }
 export interface BirthRec { id: number; mother: number; troop: number; tSeen: number; truthBirth: number; father: number; }
