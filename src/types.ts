@@ -211,16 +211,26 @@ export interface Party {
 export type InteractionKind =
   | 'groom' | 'play' | 'display' | 'charge' | 'chase' | 'fight' | 'pant-grunt' | 'reconcile' | 'console'
   | 'mate' | 'share' | 'beg' | 'hunt' | 'kill' | 'patrol' | 'intergroup' | 'nurse' | 'guard' | 'consort'
-  | 'alarm' | 'coalition' | 'infanticide' | 'transfer' | 'rain-display' | 'takeover';
+  | 'alarm' | 'coalition' | 'infanticide' | 'transfer' | 'rain-display' | 'takeover'
+  | 'gesture';     // C10b: an intentional gesture aimed at one recipient (the meaning is in Interaction.gesture)
 
 /** An observable social episode for the renderer and the feed. Pruned soon after it ends. */
 export interface Interaction {
   id: number; kind: InteractionKind; actorId: number; targetId: number; participants: number[];
   start: number; end: number | null; position: Vec3; intensity: number; troopId: number;
+  /** Optional, kind 'gesture' only (stage C10b): the gesture's meaning, e.g. a request word from hobaiterByrne2014. */
+  gesture?: string;
 }
 
 /** A vocalization or drum sequence. Others within radius can hear it. */
-export interface Call { id: number; kind: CallKind; callerId: number; troopId: number; position: Vec3; time: number; radius: number; }
+export interface Call {
+  id: number; kind: CallKind; callerId: number; troopId: number; position: Vec3; time: number; radius: number;
+  /**
+   * Optional acoustic structure (stage C10). For 'pant-hoot': six standardized signature features of the caller.
+   * For 'drum': inter-hit intervals in ms. Listeners, the field observer and audio read it; omitted when C10 is off.
+   */
+  features?: number[];
+}
 
 /** Abstract arboreal prey group (Ngogo chimpanzees mainly hunt red colobus). */
 export interface PreyGroup { id: number; species: string; position: Vec3; heading: number; size: number; alert: number; }
