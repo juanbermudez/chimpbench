@@ -367,7 +367,7 @@ A few `ChimpX` fields are written but never read (`mateAsk/mateAskAt`, `stranger
 
 | Need | Rate |
 | --- | --- |
-| Hunger | +0.06 awake, +0.09 running, +0.022 sleeping. Times a body factor of 0.6–1 below 12 y. Plus 0.012 when lactating and 0.008 when pregnant. |
+| Hunger | +0.06 awake, +0.09 running, +0.022 sleeping. Times a body factor of 0.6–1 below 12 y. Plus 0.012 when lactating (C8c, `lactTaper` on: full until the youngest unweaned offspring is 0.5 y, then falling linearly to 30% at 2 y and level until weaning) and 0.008 when pregnant. |
 | Thirst | +0.026 awake (+0.008 above 22 °C, −0.03 × rain), +0.008 sleeping |
 | Energy | +0.1 sleeping; +0.06 resting, sheltering, grooming or nursing; −0.25 running; −0.05 walking actions; −0.02 otherwise |
 | Social | −0.035 awake, −0.01 sleeping |
@@ -1050,6 +1050,7 @@ Every evidence-tagged constant and every distance lives in the parameter registr
 | Guardian levers (C8) | feeding supplant −0.3, other charges −0.3 while the ward's guardian is seen, within the defence range and not dominated; guardians defend, share plant food and are followed to 10 y; caretakers count as coalition kin and guardians to 12 y; `maternalLevers` 0 = ablation | score, y | `guardFeedDeterW` `guardDeterW` `guardMaxAgeY` `juvenileFollowMaxAgeY` `maternalLevers` | design; [M] 12 y | early-life-prereg §2.2–2.5 (crockford2020, hobaiter2014) |
 | Body condition and growth (C8) | condition τ 30 eco-days; health falls below 0.3; growth record τ 3 y, limited below 0.5, frozen at 15 y | eco-days, condition, y | `condTauD` `condLow` `condGood` `growTauY` `growEndY` | design | early-life-prereg §2.6 |
 | Bereavement stress (C8) | +0.2 on the stress floor for offspring under 12, half-life 180 bio-days | stress, bio-days | `bereaveStress` `bereaveMaxAgeY` `bereaveHalfLifeD` | stylized; [M] 12 y | girardButtoz2021 (2-year window) |
+| Lactation-cost taper (C8c) | lactation hunger × 1 until the youngest unweaned offspring is 0.5 y, linear to 0.3 at 2 y, then 0.3 until weaning; 0 = constant cost | flag, y, fraction | `lactTaper` `lactTaperStartY` `lactTaperEndY` `lactTaperFloor` | [M] knots; design floor and peak | emeryThompson2012 (C-peptide time course), badescu2022 (nursing continues to 5 y) |
 | Self-feeding ramp and prenatal condition (C8) | unweaned intake 0 at 0.5 y → 1 at weaning; newborn condition = the mother's pregnancy mean | y, flag | `selfFeedStartY` `birthCondFromMother` | design | replaces the orphan hazard; hobaiter2014, lemoine2020a |
 | Elo k (contest / greeting) | 100 / 20 | Elo | `eloK` `eloKGreeting` | [M] / design | Neumann et al. 2011 |
 | Elo logistic scale | 0.01 | 1/Elo | `eloLogisticScale` | design |  |

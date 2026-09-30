@@ -9671,7 +9671,7 @@
    "clock": "eco",
    "symbol": "needs() hungerLactationPerH",
    "file": "src/sim/life.ts",
-   "notes": "Extra hunger while lactating."
+   "notes": "Extra hunger while lactating (design; the peak value when lactTaper is on, stage C8c)."
   },
   {
    "id": "hungerPregnancyPerH",
@@ -10790,6 +10790,103 @@
     "field": 40
    },
    "notes": "Stage C7a (field): per community, the day's this many trees inside the familiar range with the highest expected crop (capacity x the share of the species' trees in fruit today) are travel goals for independent animals aged >= 10 (adolescents and adults), valued like remembered trees; an individual's own sighting overrides the expectation. Long-term memory of many trees (normand2009), monitoring and species synchrony (janmaat2013a), learning from empty trees (janmaat2013b). 0 = off (compressed). Design value. Stylization: the list uses the true fruiting share of each species and every tree's capacity, including trees no animal has seen (community omniscience about the top K trees)."
+  },
+  {
+   "id": "lactTaper",
+   "group": "needs",
+   "value": 1,
+   "units": "flag",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.lactTaper (life.ts lactationTaper)",
+   "file": "src/sim/life.ts",
+   "integer": true,
+   "notes": "Stage C8c (docs/staging/c8c-lactation-taper.md): 1 = the lactation hunger cost falls with the youngest unweaned offspring's age (full to lactTaperStartY, linear to lactTaperFloor at lactTaperEndY, then level until weaning); 0 = the constant cost of C8 and before (hash-identical). The constant cost contradicted emeryThompson2012's time course."
+  },
+  {
+   "id": "lactTaperEndY",
+   "group": "needs",
+   "value": 2,
+   "units": "y (offspring age)",
+   "range": [
+    1.5,
+    2.5
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    10
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Lactation energetics): emeryThompson2012, nursing mothers’ energy balance (C-peptide) depressed for ~6 months postpartum, net gain through the second year (Kanyawara, 17 mothers)"
+   ],
+   "population": "Kanyawara",
+   "clock": "none",
+   "symbol": "P.lactTaperEndY (lactationTaper)",
+   "file": "src/sim/life.ts",
+   "notes": "Stage C8c: the lactation cost reaches its floor when the youngest unweaned offspring is this old (energy balance shows a net gain through the second year, emeryThompson2012; the knot at 2 y is read from that time course)."
+  },
+  {
+   "id": "lactTaperFloor",
+   "group": "needs",
+   "value": 0.3,
+   "units": "fraction of hungerLactationPerH",
+   "range": [
+    0.15,
+    0.6
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.lactTaperFloor (lactationTaper)",
+   "file": "src/sim/life.ts",
+   "notes": "Stage C8c: the residual lactation cost from lactTaperEndY to weaning. No source gives the late-lactation cost; the value only keeps a residual while nursing continues (badescu2022: nursing time level from 6 months to 5 years). Design, not tuned."
+  },
+  {
+   "id": "lactTaperStartY",
+   "group": "needs",
+   "value": 0.5,
+   "units": "y (offspring age)",
+   "range": [
+    0.3,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    10
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Lactation energetics): emeryThompson2012, nursing mothers’ energy balance (C-peptide) depressed for ~6 months postpartum, net gain through the second year (Kanyawara, 17 mothers)"
+   ],
+   "population": "Kanyawara",
+   "clock": "none",
+   "symbol": "P.lactTaperStartY (lactationTaper)",
+   "file": "src/sim/life.ts",
+   "notes": "Stage C8c: the full lactation cost lasts until the youngest unweaned offspring is this old (energy balance depressed for about 6 months postpartum, emeryThompson2012)."
   },
   {
    "id": "layoutScale",

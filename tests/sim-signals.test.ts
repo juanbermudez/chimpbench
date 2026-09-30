@@ -10,7 +10,7 @@ import { canonical, fnv, runCase } from './fixtures/golden';
 
 // Stage C10 (docs/realism-design.md "C10 pre-registration").
 
-const OFF = { callSignatures: 0, callerDiscrim: 0, foodCallRule: 0, travelHoo: 0, rgOn: 0, intakeValue: 0 }; // the pre-C10 model had no C13 either
+const OFF = { callSignatures: 0, callerDiscrim: 0, foodCallRule: 0, travelHoo: 0, rgOn: 0, intakeValue: 0, lactTaper: 0 }; // the pre-C10 model had no C13 or C8c either
 
 test('C10 off reproduces the pre-C10 model exactly (compressed golden seed 48, 2 days)', () => {
   const w = runCase({ seed: 48, ageRate: 1, days: 2 }, seed => createWorld(seed, { params: OFF }));
@@ -19,8 +19,8 @@ test('C10 off reproduces the pre-C10 model exactly (compressed golden seed 48, 2
 });
 
 test('travel hoo off reproduces the C10 model before addendum 1 (compressed golden seed 48, 2 days)', () => {
-  const w = runCase({ seed: 48, ageRate: 1, days: 2 }, seed => createWorld(seed, { params: { travelHoo: 0, rgOn: 0, intakeValue: 0 } }));
-  assert.equal(fnv(canonical(w)), '588ada70e9edfb09'); // re-recorded with C8 merged (intended); C13 off
+  const w = runCase({ seed: 48, ageRate: 1, days: 2 }, seed => createWorld(seed, { params: { travelHoo: 0, rgOn: 0, intakeValue: 0, lactTaper: 0 } }));
+  assert.equal(fnv(canonical(w)), '588ada70e9edfb09'); // re-recorded with C8 merged (intended); C13 and C8c off
 });
 
 test('a signature is constant for a chimpanzee; calls vary around it; features ride on pant-hoots and drums', () => {

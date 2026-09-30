@@ -95,7 +95,7 @@ const ALLOW: Record<string, Record<string, string>> = {
   'state.ts': { '*': 'declarations and defaults' },
   'generation.ts': { makeChimp: 'founder initialization (caretaker = mother; founders\' condition)' },
   'reproduction.ts': { giveBirth: 'the existing newborn caretaker write; the newborn\'s cond, grow and gestCond', reproSlow: 'the gestCond running mean and its reset at conception' },
-  'life.ts': { killChimp: 'bereavement, adoption and the caretaker-death branch', adopt: 'adoption', slowLife: 'condition, growth, bereavement decay; the orphan cause of death; weaning', needs: 'stress relaxes toward the floor plus bereavement' },
+  'life.ts': { killChimp: 'bereavement, adoption and the caretaker-death branch', adopt: 'adoption', slowLife: 'condition, growth, bereavement decay; the orphan cause of death; weaning', needs: 'stress relaxes toward the floor plus bereavement', lactationTaper: 'C8c: a mother\'s youngest unweaned offspring, for her lactation cost (no orphan status read)' },
   'candidates.ts': {
     dependentOn: 'care of dependents', guardianOf: 'the guardian', guarded: 'the guardian presence test',
     computeCandidates: 'dependent care, the juvenile follow and play with carried infants (the mating offers are in reproduction(), not allowed)',

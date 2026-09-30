@@ -109,6 +109,28 @@ function needRates(P: Params): NeedRates {
   return R;
 }
 
+/**
+ * Stage C8c (lactTaper): the lactation hunger cost as a fraction of hungerLactationPerH, by the age of the mother's
+ * youngest unweaned offspring: 1 until lactTaperStartY, linear to lactTaperFloor at lactTaperEndY, then level until
+ * weaning. Knots [M] emeryThompson2012 (energy balance depressed ~6 months postpartum, net gain through year 2); floor
+ * design. Pure: the youngest ages are rebuilt from the world each tick (a derived cache, like index()), never saved.
+ */
+const _youngest = new WeakMap<World, { tick: number; ver: number; age: Map<number, number> }>();
+export function lactationTaper(world: World, c: Chimp, P: Params): number {
+  if (P.lactTaper !== 1) return 1;
+  const ver = simOf(world).aliveVersion;
+  let e = _youngest.get(world);
+  if (!e) { e = { tick: -1, ver: -1, age: new Map() }; _youngest.set(world, e); }
+  if (e.tick !== world.tick || e.ver !== ver) {
+    e.tick = world.tick; e.ver = ver; e.age.clear();
+    for (const k of index(world).alive) if (!ix(k).weaned) { const a = e.age.get(k.motherId); if (a === undefined || k.age < a) e.age.set(k.motherId, k.age); }
+  }
+  const a = e.age.get(c.id);
+  if (a === undefined || a < P.lactTaperStartY) return 1;
+  if (a >= P.lactTaperEndY) return P.lactTaperFloor;
+  return 1 - (1 - P.lactTaperFloor) * (a - P.lactTaperStartY) / (P.lactTaperEndY - P.lactTaperStartY);
+}
+
 export function needs(world: World, c: Chimp): void {
   const x = ix(c);
   const a = c.action;
@@ -116,7 +138,7 @@ export function needs(world: World, c: Chimp): void {
   const env = world.environment;
   const h = TICK_HOURS, r = needRates(paramsOf(world));
   const body = c.age < 12 ? r.bodyBase + r.bodyGain * c.age / 12 : 1;
-  c.hunger += ((sleeping ? r.hSleep : RUNNING[a] ? r.hRun : r.hAwake) * body + (c.lactating ? r.hLact : 0) + (c.pregnancy > 0 ? r.hPreg : 0)) * h;
+  c.hunger += ((sleeping ? r.hSleep : RUNNING[a] ? r.hRun : r.hAwake) * body + (c.lactating ? r.hLact * lactationTaper(world, c, paramsOf(world)) : 0) + (c.pregnancy > 0 ? r.hPreg : 0)) * h;
   c.thirst += (sleeping ? r.tSleep : r.tAwake + (env.temperature > r.tHotC ? r.tHot : 0) - env.rain * r.tRain) * h;
   c.energy += (sleeping ? r.eSleep : a === 'rest' || a === 'shelter' || a === 'groom' || a === 'nurse' ? r.eRest : RUNNING[a] ? -r.eRun : WALKING[a] ? -r.eWalk : -r.eOther) * h;
   c.social -= (sleeping ? r.sSleep : r.sAwake) * h;

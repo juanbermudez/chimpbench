@@ -364,9 +364,14 @@ test('C8 an introduction exposes the index case\'s whole party; outbreaks arrive
 });
 
 test('C7a amendment (C8): an adult female\'s core-area cost relaxes with hunger; the switch at 0 restores the old cost', () => {
+  // one world state, scored under both settings (separate runs would diverge before the scene)
+  const base = createWorld(48);
+  while (base.hour < 10) tickWorld(base);
+  const snap = JSON.stringify(base);
   const score = (relief: number, hunger: number) => {
-    const w = createWorld(48, { params: { coreHungerRelief: relief } });
-    while (w.hour < 10) tickWorld(w);
+    const w = JSON.parse(snap) as typeof base;
+    const settings = (w as unknown as { sim: { params: { overrides: Record<string, number> } } }).sim.params;
+    settings.overrides = { ...settings.overrides, coreHungerRelief: relief };
     const f = w.chimps.find(c => c.alive && c.sex === 'female' && c.age > 20 && !w.chimps.some(k => k.alive && k.motherId === c.id && !ix(k).weaned))!;
     const t = w.trees.reduce((a, b) => (Math.hypot(b.position[0] - f.position[0], b.position[2] - f.position[2]) < 3 && b.fruit > a.fruit ? b : a), w.trees[0]);
     const x = ix(f);
@@ -378,4 +383,28 @@ test('C7a amendment (C8): an adult female\'s core-area cost relaxes with hunger;
   const off = score(0, 0.8), on = score(1, 0.8), sated = [score(0, 0), score(1, 0)];
   assert.ok(off !== null && on !== null && on > off, `relief raises the score of a tree off the core (${off} → ${on})`);
   assert.equal(sated[0], sated[1], 'no relief when sated');
+});
+
+test('C8c lactation taper: full cost to 0.5 y, linear to the floor at 2 y, then level; the switch at 0 restores the constant cost exactly', async () => {
+  const { lactationTaper } = await import('../src/sim/life');
+  const { worldHash } = await import('./fixtures/golden');
+  const w = createWorld(48), P = paramsOf(w);
+  const mother = w.chimps.find(c => c.alive && c.sex === 'female' && c.age >= 20)!;
+  const kids = w.chimps.filter(c => c.motherId === mother.id);
+  for (const k of kids) ix(k).weaned = true; // only the child placed below counts
+  const child = w.chimps.find(c => c.alive && c.id !== mother.id && c.motherId !== mother.id && c.age < 12)!;
+  const saved = { motherId: child.motherId, age: child.age, weaned: ix(child).weaned };
+  child.motherId = mother.id; ix(child).weaned = false;
+  const at = (age: number) => { child.age = age; w.tick++; return lactationTaper(w, mother, P); };
+  assert.equal(at(0.3), 1, 'full cost before 6 months');
+  assert.ok(Math.abs(at(1.25) - (1 - (1 - P.lactTaperFloor) * 0.75 / 1.5)) < 1e-12, 'linear between the knots');
+  assert.equal(at(3), P.lactTaperFloor, 'the floor from 2 y to weaning');
+  ix(child).weaned = true; w.tick++;
+  assert.equal(lactationTaper(w, mother, P), 1, 'no unweaned offspring: the plain cost');
+  Object.assign(child, { motherId: saved.motherId, age: saved.age }); ix(child).weaned = saved.weaned;
+  assert.equal(lactationTaper(w, mother, { ...P, lactTaper: 0 }), 1, 'off');
+  // the compressed golden of seed 48, natural aging, 2 days, recorded before C8c (tests/fixtures/golden-world.json at 506a65e)
+  const off = createWorld(48, { params: { lactTaper: 0 } });
+  for (let i = 0; i < 2 * 5760; i++) tickWorld(off);
+  assert.equal(worldHash(off), '330e4f797ca75f22');
 });

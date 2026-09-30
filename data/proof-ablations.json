@@ -35,6 +35,10 @@
    "params": { "maternalLevers": 0, "bereaveStress": 0, "birthCondFromMother": 0, "epidemicArrivalPerY": 0, "snareHazardPerKm": 0, "fertilityCondFloor": 1, "growStrengthW": 0 },
    "note": "Declared by the C8 owner: every C8 switch off (the guardian levers and bereavement: A2 of docs/staging/early-life-prereg.md; the prenatal channel; epidemics; snares; condition in fertility; growth in strength). The C7a amendment of the core cost (coreHungerRelief) is switched in the C7a set. Not exactly pre-C8: the condition -> health term, the self-feeding ramp (which replaced hazardOrphan), the adoption fixes, the fertility curve and the re-fitted baseline (minus an epidemic hazard of 0 when arrivals are 0) have no switch."
   },
+  "C8c": {
+   "params": { "lactTaper": 0 },
+   "note": "The C8c lactation-cost taper off: the constant lactation hunger cost of C8 (hash-identical to the model before C8c; docs/staging/c8c-lactation-taper.md)."
+  },
   "C10": {
    "params": {
     "callSignatures": 0,

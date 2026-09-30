@@ -16,7 +16,7 @@ const same = (a: { action: string; targetId: number }, b: { action: string; targ
 test('both C13 parts off reproduce the model before C13 (hash-identical), and C13 worlds are deterministic', () => {
   // the compressed golden of seed 48, natural aging, 2 days, recorded before C13 (tests/fixtures/golden-world.json at 647dbdc;
   // re-recorded with C8 merged, intended: the C8 branch's golden at 24dc7b2)
-  assert.equal(worldHash(run(createWorld(48, { params: { rgOn: 0, intakeValue: 0 } }), 2)), '588ada70e9edfb09');
+  assert.equal(worldHash(run(createWorld(48, { params: { rgOn: 0, intakeValue: 0, lactTaper: 0 } }), 2)), '588ada70e9edfb09'); // C8c off too (recorded before it)
   const a = run(createWorld(21), 1), b = run(createWorld(21), 1);
   assert.equal(worldHash(a), worldHash(b));
   assert.notEqual(worldHash(a), worldHash(run(createWorld(21, { params: { rgOn: 0 } }), 1)));
@@ -111,7 +111,7 @@ test('C13b: leaves count at their intake rate against fruit; a trip counts its w
 test('C13c: its ablation set reproduces C13 (hash-identical); crop-only feeding time; the Jev gate constant is unchanged', async () => {
   // the compressed golden of seed 48, natural aging, 2 days, recorded at the C13 merge (68e0dfb); re-recorded with C8 merged
   // (intended), checked equal to the merged code with the C13c diff to candidates.ts, intake.ts and rg.ts reversed
-  assert.equal(worldHash(run(createWorld(48, { params: { rgMaxAgeH: 1.5, intakeCropOnly: 0 } }), 2)), '936cbfae70c7158b');
+  assert.equal(worldHash(run(createWorld(48, { params: { rgMaxAgeH: 1.5, intakeCropOnly: 0, lactTaper: 0 } }), 2)), '936cbfae70c7158b'); // C8c off too (recorded before it)
   const { treeIntake } = await import('../src/sim/intake');
   const { paramsOf } = await import('../src/sim/params');
   const { GATE } = await import('../src/decide/gate');
