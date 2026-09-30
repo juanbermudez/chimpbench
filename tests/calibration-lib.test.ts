@@ -135,19 +135,20 @@ test('fitted statistics follow the pre-registration: exclusions, midpoints, band
 });
 
 test('seed sets: pre-registered values, disjoint from each other and from every earlier set; steps take only their own', () => {
-  assert.deepEqual(SEED_SETS.C, Array.from({ length: 20 }, (_, i) => 7001 + i));
+  assert.deepEqual(SEED_SETS.C, Array.from({ length: 20 }, (_, i) => 7004 + i));
   assert.deepEqual(SEED_SETS.V1, [8101, 8202, 8303, 8404, 8505]);
   assert.deepEqual(SEED_SETS.V2, [8606, 8707, 8808, 8909, 9010]);
-  assert.deepEqual(SEED_SETS.V3, [9101, 9202, 9303, 9404, 9505]);
+  assert.deepEqual(SEED_SETS.V3, [9202, 9303, 9404, 9505, 9606]);
   const all = [...SEED_SETS.C, ...SEED_SETS.V1, ...SEED_SETS.V2, ...SEED_SETS.V3, ...SMOKE_SEEDS];
   assert.equal(new Set(all).size, all.length);
-  const earlier = (s: number) => [48, 7, 21, 5, 11].includes(s) || (s >= 101 && s <= 505) || (s >= 606 && s <= 1010) || (s >= 1111 && s <= 2525) || (s >= 5101 && s <= 5505);
+  const earlier = (s: number) => [48, 7, 21, 5, 11, 707, 808, 909, 1013, 1014, 2626, 5606, 5707].includes(s) || (s >= 101 && s <= 505) || (s >= 1111 && s <= 2525) || (s >= 5303 && s <= 5505)
+    || [606, 1010, 1616, 5101, 5202, 7001, 7002, 7003, 9101].includes(s); // retired seeds too
   assert.ok(all.every(s => !earlier(s)));
-  assert.doesNotThrow(() => assertSeeds('hm', [7001, 7002, 7003, 7004, 7005], false));
-  assert.throws(() => assertSeeds('hm', [7001, 7002, 7003, 7004, 7006], false));
-  assert.throws(() => assertSeeds('validate', [7001], false));
+  assert.doesNotThrow(() => assertSeeds('hm', [7021, 7022, 7023, 7004, 7005], false));
+  assert.throws(() => assertSeeds('hm', [7001, 7002, 7003, 7004, 7005], false));
+  assert.throws(() => assertSeeds('validate', [7021], false));
   assert.throws(() => assertSeeds('hm', [9901], false));
-  assert.throws(() => assertSeeds('hm', [7001], true), /smoke/);
+  assert.throws(() => assertSeeds('hm', [7021], true), /smoke/);
 });
 
 test('history matching, emulator ABC and the direct confirmation recover a known point of a toy simulator', async () => {

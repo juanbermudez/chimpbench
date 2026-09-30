@@ -4,10 +4,11 @@ import type { StatRules } from './calib';
 
 /** Reserved seed sets, never run before C11 (AGENTS.md reserved list). */
 export const SEED_SETS = {
-  C: Array.from({ length: 20 }, (_, i) => 7001 + i),
+  // 7001–7003 were replaced by 7021–7023 and 9101 by 9606 on 30 September (the decide-ft track had run them; protocolLog)
+  C: Array.from({ length: 20 }, (_, i) => 7004 + i),
   V1: [8101, 8202, 8303, 8404, 8505],
   V2: [8606, 8707, 8808, 8909, 9010],
-  V3: [9101, 9202, 9303, 9404, 9505],
+  V3: [9202, 9303, 9404, 9505, 9606],
 } as const;
 
 /** Plumbing-only seeds for `--smoke` (outside every reserved and development set). */
@@ -15,7 +16,8 @@ export const SMOKE_SEEDS = [9901, 9902, 9903, 9904, 9905];
 
 /** The seeds each step may use (§2). */
 export const STEP_SEEDS: Record<string, readonly number[]> = {
-  noise: SEED_SETS.C, morris: SEED_SETS.C.slice(0, 2), oat: SEED_SETS.C.slice(0, 2), hm: SEED_SETS.C.slice(0, 5), confirm: SEED_SETS.C.slice(0, 5),
+  // 7021–7023 take the roles of the replaced 7001–7003: screening on the first two, history matching on those three plus 7004, 7005
+  noise: SEED_SETS.C, morris: [7021, 7022], oat: [7021, 7022], hm: [7021, 7022, 7023, 7004, 7005], confirm: [7021, 7022, 7023, 7004, 7005],
   validate: SEED_SETS.V1, scenario: SEED_SETS.V2, demography: SEED_SETS.V3,
 };
 
