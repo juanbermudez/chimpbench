@@ -37,7 +37,7 @@ export interface DeciderView {
 
 /** Optional scene extra (not in the shared SceneAPI contract): where the camera looks, for the range map. The ground
  * corners (x0, z0 … x3, z3) of the part of the view not under panels, the focus, a version bumped when it moves, and
- * the animal the close view follows (−1 = free camera). One object, rewritten in place. */
+ * the animal the camera follows in the strategy or close view (−1 = free camera). One object, rewritten in place. */
 export interface FootprintView { pts: ArrayLike<number>; fx: number; fz: number; version: number; followId: number; }
 
 /** Everything the UI needs from the outside world, injected by main.ts (or the preview). */
@@ -46,7 +46,8 @@ export interface UiDeps {
   clock: ClockView;
   speedPresets: SpeedPresetView[];
   decider: DeciderView;
-  getScene(): (SceneAPI & { getFootprint?(): FootprintView }) | null;
+  /** followChimp (optional extra): make the camera follow an animal without zooming; focusChimp also zooms in. */
+  getScene(): (SceneAPI & { getFootprint?(): FootprintView; followChimp?(id: number): void }) | null;
   setSpeed(id: string): void;
   setPlaying(playing: boolean): void;
   setPolicy(mode: ModelPolicy['mode']): void;
@@ -145,8 +146,12 @@ export interface UiState {
   mobileSheet: boolean;
   /** Inspector docked open; defaults closed below 1440 px so the forest keeps the frame. */
   inspectorOpen: boolean;
-  /** Left sidebar (communities, field log) shown; B toggles it. The range map stays. Remembered per browser. */
+  /** Left sidebar (field log) shown; B toggles it. The range map stays. Remembered per browser. */
   sidebarOpen: boolean;
+  /** What the right-hand panel shows: the communities (list, the chosen community, its unit grid) or the selected chimp. */
+  panel: 'community' | 'chimp';
+  /** Community shown in the community panel (null: none chosen yet; the selected chimp's is used). */
+  panelTroopId: number | null;
   /** Experiments target picking: the next click on a chimp (forest or range map) aims the experiment. */
   picking: boolean;
 }

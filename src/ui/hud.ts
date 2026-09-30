@@ -23,7 +23,7 @@ export function createHud(root: HTMLElement, ctx: Ctx) {
   root.setAttribute('data-occluder', '');
   root.innerHTML = `
   <div class="bar-group bar-brand">
-    <div class="brandmark" aria-hidden="true">${icon('leaf')}</div><span class="wordmark">ChimpBench</span>
+    <span class="wordmark">ChimpBench</span>
   </div>
   <div class="bar-sep"></div>
   <div class="bar-group bar-sim" data-sim>

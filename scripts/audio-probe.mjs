@@ -20,7 +20,7 @@ const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, dev
 const errors = [];
 page.on('pageerror', e => errors.push(`pageerror: ${e.message}`));
 page.on('console', m => { if (m.type() === 'error') errors.push(`console.error: ${m.text()}`); if (m.type() === 'warning' && /sound|audio/i.test(m.text())) errors.push(`console.warn: ${m.text()}`); });
-await page.goto(`${base}/?perf=1&audiodebug=1`, { waitUntil: 'load' });
+await page.goto(`${base}/?perf=1&audiodebug=1&profile=compressed`, { waitUntil: 'load' }); // the app's default is the field profile
 await page.waitForFunction(() => document.querySelector('.loading.done') && window.__MGOGO_AUDIO__, null, { timeout: 120000 });
 await page.evaluate(() => window.__MGOGO_AUDIO__.unlock());
 await page.waitForFunction(() => { const a = window.__MGOGO_AUDIO__.snapshot(); return a.contextState === 'running' && a.loaded.manifest && a.loaded.decoded >= a.loaded.expected; }, null, { timeout: 120000 });

@@ -71,3 +71,7 @@ const P: Record<string, string> = {
 
 export const icon = (name: string, cls = '') =>
   `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${P[name] ?? P.leaf}</svg>`;
+
+/** The icon as a CSS url() (black strokes) for mask-image: a state glyph that changes by attribute, with no DOM nodes. */
+export const iconMask = (name: string, stroke = 2) =>
+  `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round">${P[name] ?? P.leaf}</svg>`)}")`;

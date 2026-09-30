@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Credits for the ChimpBench Primate Decision Simulator: the tools, decision models, sound and field data it uses, and the studies it draws on.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230c0c0e'/%3E%3Cpath d='M22.5 11.2A8 8 0 1 0 22.5 20.8' fill='none' stroke='%23e2bf79' stroke-width='2.8' stroke-linecap='round'/%3E%3C/svg%3E">
+<title>Credits · ChimpBench Primate Decision Simulator</title>
+<link rel="stylesheet" href="guide/fonts.css">
+<style>
+/* The guide's frame (docs/architecture.html), trimmed to what this page uses: tokens, top bar, page column, section header,
+   credit lists, footer. */
+:root {
+  --bg: #0a0a0b; --surface: #101012; --surface-2: #151517;
+  --ink: #f2f2f3; --ink-2: #a9a9b0; --ink-3: #87878e;
+  --line: rgba(255,255,255,.07); --line-2: rgba(255,255,255,.1); --line-3: rgba(255,255,255,.17);
+  --sans: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-title: var(--sans);
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scrollbar-color: rgba(255,255,255,.16) transparent; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.65 var(--sans); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; font-synthesis: none; text-rendering: optimizeLegibility; overflow-x: hidden; }
+h1, p, ul { margin: 0; }
+ul { padding: 0; list-style: none; }
+a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+::selection { background: rgba(226,191,121,.28); color: var(--ink); }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 6px; }
+.i { width: 18px; height: 18px; stroke: currentColor; stroke-width: 1.6; fill: none; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.skip { position: fixed; left: 16px; top: -80px; z-index: 60; padding: 9px 14px; border-radius: 8px; background: var(--ink); color: var(--bg); font-size: 14px; font-weight: 600; text-decoration: none; }
+.skip:focus { top: 10px; }
+.top { position: sticky; top: 0; z-index: 40; height: 52px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 max(24px, calc((100vw - 1160px) / 2 + 32px)); background: rgba(10,10,11,.82); -webkit-backdrop-filter: saturate(140%) blur(14px); backdrop-filter: saturate(140%) blur(14px); border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 12px; text-decoration: none; font-size: 13.5px; color: var(--ink-3); }
+.brand b { font-family: var(--font-title); font-weight: 600; letter-spacing: .16em; font-size: 13px; color: var(--ink); }
+.brand i { width: 1px; height: 14px; background: var(--line-3); }
+.top-link { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 8px; font-size: 13.5px; font-weight: 500; color: var(--ink); text-decoration: none; border: 1px solid var(--line-2); background: var(--surface); transition: border-color .15s, background .15s; }
+.top-link:hover { border-color: var(--line-3); background: var(--surface-2); }
+.top-link .i { width: 15px; height: 15px; color: var(--ink-3); }
+.page { max-width: 1160px; margin: 0 auto; padding: 0 32px; }
+.sec { padding-top: 112px; }
+.sh { display: grid; gap: 14px; max-width: 640px; margin-bottom: 48px; }
+h1 { font: 500 clamp(27px, 3vw, 34px)/1.15 var(--font-title); letter-spacing: -.026em; text-wrap: balance; }
+h2 { margin: 0 0 12px; font: 500 18px/1.3 var(--font-title); letter-spacing: -.015em; }
+.cr { margin-top: 56px; } .cr:first-of-type { margin-top: 0; }
+.cr > p { max-width: 720px; margin: -4px 0 14px; font-size: 14.5px; line-height: 1.6; color: var(--ink-2); }
+.sources b { font-weight: 500; color: var(--ink-2); }
+.sources .lic { color: var(--ink-3); white-space: nowrap; }
+.mono { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .92em; }
+.sh p { font-size: 17px; line-height: 1.65; color: var(--ink-2); text-wrap: pretty; }
+.sh p a { text-decoration-color: var(--line-3); } .sh p a:hover { text-decoration-color: var(--ink-2); }
+.sources { columns: 2; column-gap: 48px; font-size: 13.5px; color: var(--ink-3); }
+.sources li { break-inside: avoid; padding: 8px 0; border-top: 1px solid var(--line); line-height: 1.5; }
+.sources a { color: var(--ink-2); text-decoration: none; } .sources a:hover { color: var(--ink); text-decoration: underline; text-decoration-color: var(--line-3); }
+.sources span { color: var(--ink-3); }
+footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; padding: 24px 0 40px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; font-size: 13px; color: var(--ink-3); border-top: 1px solid var(--line); }
+footer.end a { color: var(--ink-2); text-decoration-color: var(--line-3); } footer.end a:hover { color: var(--ink); }
+@media (max-width: 759px) {
+  body { font-size: 15.5px; }
+  .top { padding: 0 16px; } .brand span, .brand i { display: none; }
+  .page { padding: 0 16px; }
+  .sec { padding-top: 72px; } .sh { margin-bottom: 32px; } .sh p { font-size: 16px; }
+  .sources { columns: 1; } .brand b { letter-spacing: .08em; }
+  footer.end { width: calc(100% - 32px); }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="M19 12H5m5-5-5 5 5 5"/></symbol>
+</svg>
+
+<a class="skip" href="#main">Skip to the credits</a>
+
+<header class="top">
+  <a class="brand" href="architecture.html" aria-label="ChimpBench Primate Decision Simulator"><b>ChimpBench</b><i></i><span>Primate Decision Simulator</span></a>
+  <a class="top-link" href="architecture.html"><svg class="i" aria-hidden="true"><use href="#i-left"/></svg> Back to the guide</a>
+</header>
+
+<div class="page">
+  <main id="main">
+    <section class="sec" aria-labelledby="h-cr">
+      <header class="sh"><h1 id="h-cr">Credits</h1><p>The tools, decision models, sound and field data behind ChimpBench, then the studies it draws on. Full notes are in <a href="research.md">research.md</a> and <a href="simulation.md">simulation.md</a>.</p></header>
+
+      <section class="cr" aria-labelledby="h-built">
+        <h2 id="h-built">Built with</h2>
+        <ul class="sources">
+          <li><a href="https://threejs.org/">three.js</a> <span>· 3D rendering <span class="lic">· MIT</span></span></li>
+          <li><a href="https://sqlite.org/wasm/doc/trunk/index.md">SQLite WASM</a> <span>· <span class="mono">@sqlite.org/sqlite-wasm</span>, saves in the browser</span></li>
+          <li><a href="https://github.com/pmndrs/math">math (pmndrs)</a> <span>· small vector helpers, used for the Vec3 type <span class="lic">· MIT</span></span></li>
+          <li><a href="https://vite.dev/">Vite</a> <span>· build and dev server</span></li>
+          <li><a href="https://www.typescriptlang.org/">TypeScript</a> <span>· the language</span></li>
+          <li><a href="https://gpuopen.com/fidelityfx-superresolution/">AMD FidelityFX Super Resolution 1</a> <span>· upscaling, ported to WebGL in <span class="mono">src/render/env/post.ts</span>; © 2021 Advanced Micro Devices <span class="lic">· MIT</span></span></li>
+          <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API">Web Audio</a> <span>· the browser API that mixes the sound</span></li>
+          <li><a href="https://fonts.google.com/specimen/Fraunces">Fraunces</a> <span>· display font, from Google Fonts <span class="lic">· SIL OFL</span></span></li>
+          <li><a href="https://fonts.google.com/specimen/Instrument+Sans">Instrument Sans</a> <span>· interface font, from Google Fonts <span class="lic">· SIL OFL</span></span></li>
+          <li><a href="https://fonts.google.com/specimen/JetBrains+Mono">JetBrains Mono</a> <span>· numbers and code, from Google Fonts <span class="lic">· SIL OFL</span></span></li>
+        </ul>
+      </section>
+
+      <section class="cr" aria-labelledby="h-models">
+        <h2 id="h-models">Decision models</h2>
+        <ul class="sources">
+          <li><b>Rules</b> <span>· built into ChimpBench: a simple recipe scores each legal option</span></li>
+          <li><a href="https://huggingface.co/fastino/GLiNER2.5-Decide">GLiNER2.5-Decide by Fastino</a> <span>· the small model the app runs live, on your computer <span class="lic">· Apache 2.0</span></span></li>
+          <li><a href="https://github.com/fastino-ai/GLiNER2">gliner2</a> <span>· Fastino's library that loads and runs it</span></li>
+          <li><a href="https://huggingface.co/microsoft/deberta-v3-large">DeBERTa-v3-large by Microsoft</a> <span>· the encoder GLiNER2.5-Decide is built on</span></li>
+          <li><a href="https://pytorch.org/">PyTorch</a> <span>· runs the model</span></li>
+          <li><a href="https://github.com/huggingface/transformers">Hugging Face Transformers</a> <span>· model code underneath</span></li>
+          <li><a href="https://arxiv.org/abs/2106.09685">Trained adapters (LoRA)</a> <span>· three temperaments of GLiNER trained for this project, with <a href="https://github.com/huggingface/peft">Hugging Face PEFT</a></span></li>
+          <li><a href="https://docs.typesafe.ai/">Jev by TypeSafe</a> <span>· a System One model, tested offline only; its answers are never used for training</span></li>
+        </ul>
+      </section>
+
+      <section class="cr" aria-labelledby="h-sound">
+        <h2 id="h-sound">Sound</h2>
+        <p>The chimpanzee calls and the rainforest ambience in the app and in the guide come from the Epidemic Sound library, under the project owner's licence. Buttress drumming is synthesized in code.</p>
+        <ul class="sources">
+          <li><a href="https://www.epidemicsound.com/">Epidemic Sound</a> <span>· recorded calls and forest ambience <span class="lic">· licensed</span></span></li>
+        </ul>
+      </section>
+
+      <section class="cr" aria-labelledby="h-data">
+        <h2 id="h-data">Field data</h2>
+        <p>Open datasets the simulation and the guide use, credited under their licences. Only derived statistics and normalized maps are published, never raw records or locations, and the authors have not endorsed these uses.</p>
+        <ul class="sources">
+          <li><a href="https://doi.org/10.5061/dryad.gf1vhhmk8">Potts, Watts, Langergraber &amp; Mitani 2020, Dryad</a> <span>· Ngogo tree phenology and rain 1998–2017; builds the simulated forest's fruit calendar (<a href="https://doi.org/10.1111/btp.12764">Biotropica</a>) <span class="lic">· CC0</span></span></li>
+          <li><a href="https://doi.org/10.5061/dryad.kk33f">Langergraber, Watts, Vigilant &amp; Mitani 2018, Dryad</a> <span>· Ngogo boundary patrols 1996–2015 (<a href="https://doi.org/10.1073/pnas.1701582114">PNAS</a>) <span class="lic">· CC0</span></span></li>
+          <li><a href="https://doi.org/10.5061/dryad.sf7m0cgkg">Sandel, Mitani, Langergraber et al. 2026, Dryad</a> <span>· Ngogo patrols after the split (<a href="https://doi.org/10.1126/science.adz4944">Science</a>) <span class="lic">· CC0</span></span></li>
+          <li><a href="https://doi.org/10.5061/dryad.z8w9ghxdb">Massaro, Gilby, Desai et al. 2022, Dryad</a> <span>· Gombe boundary patrols and edge visits 1978–2007 (<a href="https://doi.org/10.1098/rstb.2021.0151">Phil Trans R Soc B</a>) <span class="lic">· CC0</span></span></li>
+          <li><a href="https://doi.org/10.5061/dryad.jg05d">Pusey &amp; Schroepfer-Walker 2014, Dryad</a> <span>· Gombe 15-minute focal follows 2000–2003, the held-out movement check (<a href="https://doi.org/10.1098/rstb.2013.0077">Phil Trans R Soc B</a>) <span class="lic">· CC0</span></span></li>
+          <li><a href="https://doi.org/10.5281/zenodo.18603419">Sandel, Lee, Angedakin et al. 2026, Zenodo</a> <span>· Ngogo GPS space use, for the home-range comparison <span class="lic">· CC BY 4.0</span></span></li>
+          <li><a href="https://doi.org/10.1371/journal.pbio.3002350">Lemoine, Samuni, Crockford &amp; Wittig 2023, PLOS Biology</a> <span>· S1–S3 Data: Taï movement, activity and border stops <span class="lic">· CC BY 4.0</span></span></li>
+          <li><a href="https://doi.org/10.6084/m9.figshare.c.4988834">Lemoine, Boesch, Preis et al. 2020, figshare</a> <span>· Taï territory sizes (<a href="https://doi.org/10.1098/rsos.200577">R. Soc. Open Sci.</a>) <span class="lic">· CC BY 4.0</span></span></li>
+        </ul>
+      </section>
+
+      <section class="cr" aria-labelledby="h-src">
+        <h2 id="h-src">Sources</h2>
+        <ul class="sources">
+          <li><a href="https://doi.org/10.1111/j.1365-2656.2009.01578.x">Potts, Chapman &amp; Lwanga 2009</a> <span>· food trees at Ngogo vs. Kanyawara</span></li>
+          <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5526083/">Wood et al. 2017</a> <span>· Ngogo life expectancy</span></li>
+          <li><a href="https://sites.lsa.umich.edu/mitani/wp-content/uploads/sites/152/2014/08/watts_and_mitani_2001.pdf">Watts &amp; Mitani 2001</a> <span>· boundary patrols at Ngogo</span></li>
+          <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5514721/">Langergraber et al. 2017</a> <span>· who joins patrols</span></li>
+          <li><a href="https://doi.org/10.1016/j.cub.2010.04.021">Mitani, Watts &amp; Amsler 2010</a> <span>· territorial expansion after lethal aggression</span></li>
+          <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8277110/">Sandel &amp; Watts 2021</a> <span>· lethal aggression after the Ngogo fission</span></li>
+          <li><a href="https://doi.org/10.1006/anbe.2000.1706">Wilson, Hauser &amp; Wrangham 2001</a> <span>· playback and numerical assessment</span></li>
+          <li><a href="https://doi.org/10.1016/j.anbehav.2011.11.004">Wilson et al. 2012</a> <span>· intergroup encounters at Kanyawara</span></li>
+          <li><a href="https://doi.org/10.1038/nature13727">Wilson et al. 2014</a> <span>· lethal aggression across communities</span></li>
+          <li><a href="https://sites.lsa.umich.edu/mitani/wp-content/uploads/sites/152/2014/08/mitani_and_watts_1999.pdf">Mitani &amp; Watts 1999</a> <span>· what drives hunting</span></li>
+          <li><a href="https://sites.lsa.umich.edu/mitani/wp-content/uploads/sites/152/2014/08/mitani_and_watts_2001.pdf">Mitani &amp; Watts 2001</a> <span>· why chimps hunt and share meat</span></li>
+          <li><a href="https://sites.lsa.umich.edu/mitani/wp-content/uploads/sites/152/2014/08/watts_and_mitani_2002.pdf">Watts &amp; Mitani 2002</a> <span>· hunting at Ngogo</span></li>
+          <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC4633842/">Gilby et al. 2015</a> <span>· impact hunters and hunt success</span></li>
+          <li><a href="https://doi.org/10.1016/j.cub.2011.11.053">Crockford et al. 2012</a> <span>· alarm calls for ignorant group members</span></li>
+          <li><a href="https://doi.org/10.1007/s10329-004-0082-z">Kutsukake &amp; Castles 2004</a> <span>· reconciliation and consolation</span></li>
+          <li><a href="https://doi.org/10.1111/j.1439-0310.2008.01527.x">Fraser, Schino &amp; Aureli 2008</a> <span>· components of relationship quality</span></li>
+          <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10756267/">Lewis et al. 2023</a> <span>· remembering groupmates for decades</span></li>
+          <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5064376/">Foerster et al. 2016</a> <span>· females queue, males compete</span></li>
+          <li><a href="https://doi.org/10.1016/j.anbehav.2011.07.016">Neumann et al. 2011</a> <span>· Elo-rated dominance</span></li>
+          <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5739981/">Bray et al. 2017</a> <span>· how infants learn to feed</span></li>
+          <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9352031/">Bădescu et al. 2022</a> <span>· nursing and weaning at Ngogo</span></li>
+          <li><a href="https://pubmed.ncbi.nlm.nih.gov/29447755/">Walker et al. 2018</a> <span>· female maturation at Gombe</span></li>
+          <li><a href="https://pubmed.ncbi.nlm.nih.gov/9155740/">Wallis 1997</a> <span>· gestation and birth spacing at Gombe</span></li>
+          <li><a href="https://doi.org/10.1371/journal.pone.0095361">Samson &amp; Hunt 2014</a> <span>· how chimps pick nest trees</span></li>
+          <li><a href="https://doi.org/10.1163/156853974x00534">Altmann 1974</a> <span>· sampling methods for watching behavior</span></li>
+          <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12701709/">Villioth et al. 2025</a> <span>· diet and feeding time at Budongo</span></li>
+          <li><a href="https://pubmed.ncbi.nlm.nih.gov/17352572/">Parr et al. 2007</a> <span>· chimp facial expressions</span></li>
+          <li><a href="https://doi.org/10.1126/science.adz4944">Sandel et al. 2026, Science</a> <span>· lethal conflict after the Ngogo fission</span></li>
+          <li><a href="https://doi.org/10.1371/journal.pbio.3002350">Lemoine et al. 2023, PLOS Biology</a> <span>· Taï movement and elevation</span></li>
+          <li><a href="https://doi.org/10.1098/rsos.200577">Lemoine et al. 2020, R. Soc. Open Sci.</a> <span>· Taï territory size and dominance</span></li>
+        </ul>
+      </section>
+    </section>
+  </main>
+</div>
+
+<footer class="end"><span>© <span data-year>2026</span> <a data-x-link>Juan Bermudez</a></span><span><a data-x-link data-x-text>x.com/HANDLE</a></span></footer>
+<script type="module" src="guide/site.js"></script>
+</body>
+</html>

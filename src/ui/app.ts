@@ -5,7 +5,9 @@ import { icon } from './icons';
 import { actionVerb, cap, esc, hhmm, troopShort, type FeedCat } from './format';
 import { createHud } from './hud';
 import { createTimebar } from './timebar';
-import { createCommunities, emblem } from './communities';
+import { emblem } from './communities';
+import { createCommunityPanel, panelTroop } from './community-panel';
+import { memberOrder } from './unit-view';
 import { createFeed, CAT_ICON } from './feed';
 import { createMinimap } from './minimap';
 import { createInspector } from './inspector';
@@ -18,6 +20,7 @@ import { tracesFor } from './mind';
 import { toggleSound } from './sound';
 import { morph, setAttr, setText } from './morph';
 import { createSimulations } from './simulations';
+import { createScaleBar } from './scalebar';
 
 // UI composition root. Owns UI state and wires components; knows nothing
 // about how the world is simulated or rendered (see UiDeps). main.ts and the
@@ -29,6 +32,8 @@ export interface Ctx {
   select(id: number, o?: { focus?: boolean; tab?: InspectorTab }): void;
   highlight(troopId: number | null): void; hoverTroop(troopId: number | null): void;
   setTab(tab: InspectorTab): void;
+  /** Right panel: show a community (list, details, unit grid) instead of the selected chimp. */
+  showCommunity(troopId: number): void;
   /** fromScene: the scene already changed view itself (wheel zoom-through); only the UI follows. */
   setView(v: ViewMode, o?: { fromScene?: boolean }): void; toggleLayer(l: Layer, on?: boolean): void;
   openSociety(troop?: number | 'all'): void; closeSociety(): void;
@@ -74,8 +79,8 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     <div id="viewport" class="viewport" role="application" aria-label="3D forest. Drag to pan, scroll to zoom, click a chimp to select it." tabindex="0"></div>
     <div class="grade" aria-hidden="true"></div>
     <header class="hud" aria-label="Status"></header>
-    <aside class="left" id="left-sidebar" aria-label="Communities, field log and map">
-      <section class="panel glass p-side" data-occluder><div class="side-sec p-communities"></div><div class="side-sec p-feed"></div></section>
+    <aside class="left" id="left-sidebar" aria-label="Field log and map">
+      <section class="panel glass p-side" data-occluder><div class="side-sec p-feed"></div></section>
       <aside class="dock glass" hidden data-occluder><div data-dock="experiments" role="dialog" aria-label="Field experiments" tabindex="-1"></div><div data-dock="model" role="dialog" aria-label="Decision model" tabindex="-1"></div></aside>
       <section class="panel glass p-map" data-occluder aria-label="Range map, camera and layers">
         <div class="map-top"><h2 class="eyebrow">Range map</h2>
@@ -86,19 +91,22 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
         </div>
       </section>
     </aside>
-    <button class="side-peek glass" data-act="open-sidebar" aria-controls="left-sidebar" aria-keyshortcuts="B" aria-label="Show sidebar: communities, field log and map (B)" title="Show sidebar (B)" data-occluder>${icon('chevronR')}<span>Communities</span><span class="sp-dots"></span><kbd>B</kbd></button>
+    <button class="side-peek glass" data-act="open-sidebar" aria-controls="left-sidebar" aria-keyshortcuts="B" aria-label="Show sidebar: field log and map (B)" title="Show sidebar (B)" data-occluder>${icon('chevronR')}<span>Field log</span><kbd>B</kbd></button>
     <div class="tdrop glass" id="time-drop" role="dialog" aria-label="Time controls and decision model" hidden data-occluder></div>
-    <aside class="inspector glass" aria-label="Selected chimp" data-occluder></aside>
+    <aside class="inspector glass" aria-label="Communities and the selected chimp" data-occluder><section class="rp-comm" aria-label="Communities"></section><section class="rp-chimp" aria-label="Selected chimp"></section></aside>
+    <button class="rp-back glass" data-act="panel-back" data-occluder>${icon('chevronL')}</button>
+    <div class="follow-ind" role="status" hidden data-occluder><i class="fi-dot" aria-hidden="true"></i><span>Following <b></b></span></div>
     <button class="insp-peek glass" data-act="open-inspector" aria-keyshortcuts="I" data-occluder></button>
     <div class="cine-cap" aria-live="polite" data-occluder><b class="cine-title"></b><span class="cine-where"></span><span class="cine-meta"></span></div>
     <div class="cine-exit" data-occluder><kbd>Esc</kbd> exit · <kbd>V</kbd> toggle</div>
+    <div class="scalebar" role="img" hidden data-occluder><i class="sb-rule" aria-hidden="true"></i><span class="sb-label" aria-hidden="true"></span></div>
     <div class="prologue" hidden data-occluder><b>Dawn in Kibale</b><span>Fast-forwarding at 10 min/s until 07:15</span></div>
-    <div class="mobile-bar" data-occluder><button data-mobile="left">${icon('users')}<span>Society</span></button><button data-mobile="sheet">${icon('person')}<span>Inspector</span></button></div>
+    <div class="mobile-bar" data-occluder><button data-mobile="left">${icon('history')}<span>Field log</span></button><button data-mobile="sheet">${icon('person')}<span>Inspector</span></button></div>
     <div class="toasts" aria-live="polite"></div>
     <div class="society" hidden data-occluder></div>
     <dialog class="settings glass" data-occluder></dialog>
     <dialog class="sims" aria-label="Simulations" data-occluder></dialog>
-    <div class="loading" role="status"><div class="load-mark">${icon('leaf')}</div><span>Growing a living forest…</span></div>
+    <div class="loading" role="status"><span class="load-name">ChimpBench</span><span>Growing a living forest…</span></div>
   </div>`;
   const app = root.querySelector<HTMLElement>('.app')!;
   const q = <T extends HTMLElement = HTMLElement>(s: string) => root.querySelector<T>(s)!;
@@ -108,6 +116,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     society: { open: false, troop: 'all', view: 'kinship' }, dock: null, feedMuted: new Set(), pinnedTraceId: null, experiment: null, mobileSheet: false,
     inspectorOpen: window.innerWidth >= 1440,
     sidebarOpen: readPref('mgogo.sidebar') !== '0', picking: false,
+    panel: 'community', panelTroopId: null,
   };
   const ranks = createRankTracker();
   let timeOpen = false;
@@ -124,7 +133,12 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
       if (state.selectedId !== id) state.pinnedTraceId = null;
       state.selectedId = id;
       if (o.tab) { state.tab = o.tab; state.inspectorOpen = true; }
-      if (o.focus || state.view === 'close') deps.getScene()?.focusChimp(id);
+      state.panel = 'chimp';
+      // focus: the camera glides to the animal and follows it (F, tiles, the field log). While the camera already
+      // follows someone, it follows the new selection too; after the user panned away it stays put.
+      const s = deps.getScene();
+      if (o.focus || state.view === 'close') s?.focusChimp(id);
+      else if (s && (s.getFootprint?.().followId ?? -1) >= 0) s.followChimp?.(id);
       if (window.matchMedia('(max-width: 720px)').matches && o.tab) state.mobileSheet = true;
       ctx.refresh();
     },
@@ -135,7 +149,13 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
       ctx.refresh();
     },
     hoverTroop(id) { if (state.hoverTroopId !== id) { state.hoverTroopId = id; app.dataset.hoverTroop = id === null ? '' : String(id); minimap.update(); } },
-    setTab(tab) { state.tab = tab; ctx.refresh(); },
+    setTab(tab) { state.tab = tab; state.panel = 'chimp'; ctx.refresh(); },
+    showCommunity(troopId) {
+      state.panel = 'community'; state.panelTroopId = troopId;
+      // A world highlight follows the community shown (it never pans the camera from here).
+      if (state.highlightTroopId !== null) state.highlightTroopId = troopId;
+      ctx.refresh();
+    },
     setView(v, o = {}) {
       state.view = v; app.dataset.view = v;
       // A zoom-through has already placed the camera (on the animal or ground under the cursor): pushing the view back
@@ -153,7 +173,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     setInspector(open) { state.inspectorOpen = open; syncPanels(); if (open) inspector.update(true); },
     setSidebar(open) {
       state.sidebarOpen = open; writePref('mgogo.sidebar', open ? '1' : '0'); syncPanels();
-      if (open) { communities.update(true); feed.update(true, true); minimap.update(); }
+      if (open) { feed.update(true, true); minimap.update(); }
       // Keep keyboard focus on the control that now stands where the old one was.
       requestAnimationFrame(() => { const f = document.activeElement; if (f && (f.closest('.left') || f.closest('.side-peek'))) q<HTMLElement>(open ? '[data-act="collapse-sidebar"]' : '.side-peek').focus({ preventScroll: true }); });
     },
@@ -184,10 +204,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     },
     cycle(dir) {
       const w = deps.getWorld(), c = ctx.selected(); if (!c) return;
-      const t = w.troops.find(tt => tt.id === c.troopId);
-      const ranked = t ? [...t.maleHierarchy, ...t.femaleHierarchy] : [];
-      const rest = w.chimps.filter(x => x.alive && x.troopId === c.troopId && !ranked.includes(x.id)).sort((a, b) => b.age - a.age).map(x => x.id);
-      const order = [...ranked.filter(id => w.chimps.some(x => x.id === id && x.alive)), ...rest];
+      const order = memberOrder(w, c.troopId).map(x => x.id);
       if (!order.length) return;
       const i = order.indexOf(c.id);
       ctx.select(order[(i + dir + order.length) % order.length], { focus: state.view !== 'rts' });
@@ -225,24 +242,17 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
 
   const hud = createHud(q('.hud'), ctx);
   const timebar = createTimebar(q('.tdrop'), ctx);
-  const communities = createCommunities(q('.p-communities'), ctx);
   const feed = createFeed(q('.p-feed'), ctx);
   const minimap = createMinimap(q('.map-host'), ctx);
-  const inspector = createInspector(q('.inspector'), ctx);
+  const scaleBar = createScaleBar(q('.scalebar'), q('#viewport'), () => deps.getScene());
+  const inspector = createInspector(q('.rp-chimp'), ctx);
+  const commPanel = createCommunityPanel(q('.rp-comm'), ctx);
   const society = createSociety(q('.society'), ctx);
   const experiments = createExperiments(q('[data-dock="experiments"]'), ctx);
   const modelPanel = createModelPanel(q('[data-dock="model"]'), ctx);
   const settings = createSettings(q<HTMLDialogElement>('dialog.settings'), ctx);
   const sims = createSimulations(q<HTMLDialogElement>('dialog.sims'), ctx);
   feed.prime();
-  let dotsKey = '';
-  /** Community colour dots on the collapsed-sidebar button (rebuilt only when the communities change). */
-  function syncPeekDots() {
-    const w = deps.getWorld(), k = w.troops.map(t => t.color).join();
-    if (k === dotsKey) return; dotsKey = k;
-    q('.side-peek .sp-dots').innerHTML = w.troops.map(t => `<i style="--c:${esc(t.color)}"></i>`).join('');
-  }
-  syncPeekDots();
 
   function syncDock() {
     root.querySelectorAll<HTMLElement>('[data-viewmode]').forEach(b => { const on = b.dataset.viewmode === state.view; b.setAttribute('aria-checked', String(on)); b.tabIndex = on ? 0 : -1; });
@@ -261,6 +271,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     app.classList.toggle('side-closed', !state.sidebarOpen);
     setAttr(q('.left'), 'aria-hidden', String(!state.sidebarOpen && !leftOpen));
     app.classList.toggle('dock-open', !!state.dock);
+    setAttr(app, 'data-panel', state.panel);
     setAttr(q('.inspector'), 'aria-hidden', String(!state.inspectorOpen && !state.mobileSheet));
     setAttr(q('[data-mobile="sheet"]'), 'aria-pressed', String(state.mobileSheet)); setAttr(q('[data-mobile="left"]'), 'aria-pressed', String(leftOpen));
     queueLayout();
@@ -340,6 +351,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     const w = deps.getWorld();
     if (resumed || w.day !== 1 || w.hour >= 7.25 || !deps.speedPresets.some(p => p.id === '10x')) return;
     prologue = true; deps.setSpeed('10x'); q('.prologue').hidden = false;
+    if (w.size > 1000) setText(q('.prologue span'), 'Fast-forwarding at 10 min/s until the party wakes');
   }
   function endPrologue(settle: boolean) {
     if (!prologue) return;
@@ -398,6 +410,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     if (el.closest('[data-act="reset-camera"]')) { ctx.setView('rts'); deps.getScene()?.resetCamera(); return; }
     if (el.closest('.tdrop [data-act="model"]')) { ctx.toggleTimePanel(false); ctx.setDock(state.dock === 'model' ? null : 'model'); return; }
     if (el.closest('[data-act="collapse-sidebar"]')) { ctx.setSidebar(false); return; }
+    if (el.closest('[data-act="panel-back"]')) { panelBack(e.detail === 0); return; }
     const m = el.closest<HTMLElement>('[data-mobile]');
     if (m) { if (m.dataset.mobile === 'sheet') { state.mobileSheet = !state.mobileSheet; leftOpen = false; } else { leftOpen = !leftOpen; state.mobileSheet = false; } syncPanels(); }
   });
@@ -463,16 +476,17 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
   // The 4 Hz refresh is split into steps, one per animation frame, so no single frame pays for every panel.
   const STEPS: ((force: boolean) => void)[] = [
     force => { if (force || visibility().bar) { hud.update(); if (timeOpen) timebar.update(); } },
-    force => { if (visibility().left) communities.update(force || !shown.left); },
     force => feed.update(visibility().left, force || !shown.left),
     () => { const v = visibility().left; if (v) minimap.update(); shown.left = v; },
-    force => { const v = visibility().insp; if (v) inspector.update(force || !shown.insp); else if (state.view !== 'cinematic') updatePeek(); shown.insp = v; },
+    force => { const v = visibility().insp; if (v) updateRight(force || !shown.insp); else if (state.view !== 'cinematic') updatePeek(); shown.insp = v; },
     force => {
       const w = deps.getWorld();
       if (state.society.open) society.update(force);
       if (state.dock === 'experiments') experiments.update();
       if (state.dock === 'model') modelPanel.update();
-      if (prologue && (w.day > 1 || w.hour >= 7.25)) endPrologue(true);
+      // Field profile: the close view follows the selected animal, and at 10 min/s a travelling party outruns the
+      // streamed forest window, so the fast-forward stops once it leaves its nest.
+      if (prologue && (w.day > 1 || w.hour >= 7.25 || (w.size > 1000 && ctx.selected()?.action !== 'nest'))) endPrologue(true);
       updateCaption();
       syncPanels();
     },
@@ -483,6 +497,32 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     prepare();
     for (const run of STEPS) run(force);
     step = STEPS.length;
+  }
+  // Right panel: the community view or the chimp view. A switch renders the incoming view in full at once.
+  let shownPanel = '', backKey = '';
+  function updateRight(force: boolean) {
+    const changed = state.panel !== shownPanel; shownPanel = state.panel;
+    if (state.panel === 'chimp') {
+      inspector.update(force || changed);
+      const c = ctx.selected(), t = c ? deps.getWorld().troops.find(x => x.id === c.troopId) : undefined;
+      const k = t ? `Back to the ${troopShort(t)} community` : 'Back to the communities';
+      if (k !== backKey) { backKey = k; setAttr(q('.rp-back'), 'aria-label', k); setAttr(q('.rp-back'), 'title', k); }
+    } else commPanel.update(force || changed);
+  }
+  /** Back (chimp view → community view): the chimp's community, its tile keeps keyboard focus when Back was a key press. */
+  function panelBack(keyboard: boolean) {
+    const c = ctx.selected();
+    ctx.showCommunity(c?.troopId ?? panelTroop(ctx)?.id ?? deps.getWorld().troops[0]?.id ?? 0);
+    if (keyboard && c) requestAnimationFrame(() => commPanel.focusTile(c.id));
+  }
+  // "Following …" over the forest while the camera follows an animal (read from the scene each frame, written on change).
+  let followShown = -2;
+  function syncFollow() {
+    const id = state.view === 'cinematic' ? -1 : deps.getScene()?.getFootprint?.().followId ?? -1;
+    if (id === followShown) return; followShown = id;
+    const c = id >= 0 ? deps.getWorld().chimps.find(x => x.id === id) : undefined, el = q('.follow-ind');
+    if (c) setText(q('.follow-ind b'), c.name);
+    el.hidden = !c;
   }
   let peekKey = '';
   function updatePeek() {
@@ -501,7 +541,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
 
   /** View state worth resuming with a saved simulation. Layout preferences (sidebar, inspector) stay per browser. */
   function captureUi(): Record<string, unknown> {
-    return { selectedId: state.selectedId, highlightTroopId: state.highlightTroopId, tab: state.tab, view: state.view, layers: { ...state.layers },
+    return { selectedId: state.selectedId, highlightTroopId: state.highlightTroopId, tab: state.tab, view: state.view, layers: { ...state.layers }, panel: state.panel, panelTroopId: state.panelTroopId,
       society: { troop: state.society.troop, view: state.society.view }, feedMuted: [...state.feedMuted] };
   }
   /** Applies saved view state defensively: unknown or stale values keep the current ones. */
@@ -519,13 +559,16 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     if (soc && (soc.troop === 'all' || w.troops.some(t => t.id === soc.troop))) state.society.troop = soc.troop as number | 'all';
     if (soc && typeof soc.view === 'string' && ['kinship', 'dominance', 'alliances', 'alphas'].includes(soc.view)) state.society.view = soc.view as UiState['society']['view'];
     if (Array.isArray(ui.feedMuted)) state.feedMuted = new Set(ui.feedMuted.filter((x): x is string => typeof x === 'string'));
+    if (ui.panel === 'community' || ui.panel === 'chimp') state.panel = ui.panel;
+    const pt = ui.panelTroopId;
+    state.panelTroopId = typeof pt === 'number' && w.troops.some(t => t.id === pt) ? pt : null;
   }
   /** After main.ts swapped the world (new or opened simulation): reset UI caches, then apply saved view state if any. */
   function worldReplaced(ui: Record<string, unknown> | null) {
     state.selectedId = defaultSelection(deps.getWorld()); state.highlightTroopId = null; state.experiment = null; state.pinnedTraceId = null;
-    state.society.open = false; state.dock = null;
+    state.society.open = false; state.dock = null; state.panel = 'community'; state.panelTroopId = null;
     if (ui) { applyUi(ui); resumed = true; endPrologue(false); }
-    ranks.reset(); feed.reset(); feed.prime(); applySceneState(); syncPeekDots(); syncDock(); syncPanels();
+    ranks.reset(); feed.reset(); feed.prime(); applySceneState(); syncDock(); syncPanels();
     ctx.refresh();
   }
 
@@ -548,6 +591,8 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     /** Call every animation frame; DOM work runs at ~4 Hz, one panel step per frame. */
     tick(now: number) {
       if (state.view !== 'cinematic') hud.frame(now);
+      scaleBar.frame();
+      syncFollow();
       if (shown.left) minimap.frame();
       if (step >= STEPS.length) { if (now - lastUi < 250) return; lastUi = now; prepare(); step = 0; }
       STEPS[step++](false);

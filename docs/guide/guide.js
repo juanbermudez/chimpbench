@@ -425,59 +425,47 @@ function activity(fig, [M]) {
   table(fig, ['Activity', 'Taï', 'Simulated', 'Verdict'], () => cats.map(c => [c[1], pct(val(m[c[0]], 'real')), pct(val(m[c[0]], 'sim')), VN[m[c[0]] && m[c[0]].verdict] || '']));
 }
 
-// ---------- Patrol timeline: patrols per 10 males per year, three records on one time axis.
-function timeline(fig, [PT]) {
-  const el = plotOf(fig);
-  if (!PT || !PT.timeline) return pending(el, 'The patrol records are not available.');
-  let per = fig.dataset.per !== 'count';
-  const T = PT.timeline, y0 = 1978, y1 = 2024;
+// ---------- Patrols by month of the year, averaged over each site's study years (never matched year to year).
+// Gombe comes from year-round daily follows, so it is the fair seasonal reference; Ngogo's months carry its observers'
+// field seasons. No simulated line is drawn until the patrol proof writes `seasonality.sim`.
+function seasonal(fig, [PC]) {
+  const el = plotOf(fig), S = PC && PC.seasonality;
+  if (!S || !S.gombePatrols || !S.ngogoPatrols) return pending(el, 'The patrol records are not available.');
+  const span = y => (Array.isArray(y) && y.length === 2 ? y[1] - y[0] + 1 : null);
+  const yg = span(PC.gombe && PC.gombe.years), yn = PC.ngogo && PC.ngogo.perYear ? PC.ngogo.perYear.length : null;
+  const tg = sum(S.gombePatrols), tn = sum(S.ngogoPatrols);
+  let share = fig.dataset.per === 'share';
+  const series = () => [
+    { name: 'Gombe', color: 'var(--gombe)', n: S.gombePatrols, v: S.gombePatrols.map(c => (share ? c / tg : c / yg)), years: yg, dash: '', w: 2.4, r: 3.6, op: 1 },
+    { name: 'Ngogo', color: 'var(--ngogo)', n: S.ngogoPatrols, v: S.ngogoPatrols.map(c => (share ? c / tn : c / yn)), years: yn, dash: '5 4', w: 1.8, r: 2.8, op: 0.8 },
+  ];
+  const fmt = v => (share ? pct(v) : v.toFixed(v < 1 ? 2 : 1));
   const draw = () => {
-    const W = Math.max(280, el.clientWidth), narrow = W < 560, labW = narrow ? 0 : 130, plotW = W - labW - 8, bw = plotW / (y1 - y0 + 1);
-    const X = y => labW + (y - y0) * bw;
-    const lanes = [
-      { name: 'Gombe', sub: 'daily follows, all year', color: 'var(--gombe)', rows: T.gombe.map(r => ({ year: r.year, n: r.n, males: r.males })) },
-      { name: 'Ngogo', sub: 'observed patrols only', color: 'var(--ngogo)', rows: T.ngogo.map(r => ({ year: r.year, n: r.n, males: r.males })) },
-      { name: 'Ngogo after the split', sub: 'solid: West · faded: Central', color: 'var(--ngogo)', split: true, rows: T.split.filter(r => r.quarters === 4) },
-    ];
-    const v = (n, males) => (per ? (fin(males) && males > 0 ? n / males * 10 : null) : n);
-    const all = lanes.flatMap(l => l.split ? l.rows.flatMap(r => [v(r.west, r.westMales ?? r.ngogoMales), v(r.central, r.centralMales)]) : l.rows.map(r => v(r.n, r.males))).filter(fin);
-    const top = Math.max(...all), LH = narrow ? 44 : 54;
-    let s = svgOpen(W, lanes.length * (LH + 26) + 44, per ? 'Patrols per 10 adult males per year at Gombe, Ngogo, and Ngogo West and Central after the split.' : 'Patrols per year at Gombe, Ngogo, and Ngogo West and Central after the split.');
-    lanes.forEach((l, i) => {
-      const base = 18 + i * (LH + 26) + LH;
-      s += `<text x="${narrow ? 0 : 0}" y="${base - LH + (narrow ? -6 : 10)}" class="gv-lab hi">${esc(l.name)}</text>` + (narrow ? '' : `<text x="0" y="${base - LH + 25}" class="gv-note">${esc(l.sub)}</text>`);
-      s += `<line x1="${labW}" x2="${W - 8}" y1="${base}" y2="${base}" class="gv-axis"/>`;
-      const barAt = (year, value, color, opacity, dx, w, t) => { if (!fin(value)) return ''; const h = Math.max(value > 0 ? 1.5 : 0, value / top * LH); return `<rect x="${(X(year) + dx).toFixed(1)}" y="${(base - h).toFixed(1)}" width="${Math.max(1, w).toFixed(1)}" height="${h.toFixed(1)}" rx="1.5" style="fill:${color}" fill-opacity="${opacity}" data-tip="${t}"/>`; };
-      l.rows.forEach(r => {
-        if (l.split) {
-          const wm = r.westMales ?? r.ngogoMales, w = (bw - 2) / 2;
-          s += barAt(r.year, v(r.west, wm), l.color, 1, 1, w, `<b>${r.year}</b> West: ${r.west} patrols${fin(wm) ? `, ${wm} males` : ''}`);
-          s += barAt(r.year, v(r.central, r.centralMales), l.color, 0.35, 1 + w, w, `<b>${r.year}</b> Central: ${r.central} patrols${fin(r.centralMales) ? `, ${r.centralMales} males` : ''}`);
-        } else s += barAt(r.year, v(r.n, r.males), l.color, 0.9, 1, bw - 2, `<b>${l.name}, ${r.year}</b>: ${r.n} patrols${fin(r.males) ? `, ${num(r.males, 0)} adult males` : ''}`);
-      });
-      const lm = maxOf(l.split ? l.rows.flatMap(r => [v(r.west, r.westMales ?? r.ngogoMales), v(r.central, r.centralMales)]) : l.rows.map(r => v(r.n, r.males)));
-      s += `<text x="${W - 8}" y="${base - LH - 2}" text-anchor="end" class="gv-tick">max ${per ? lm.toFixed(1) : lm}</text>`;
+    const W = Math.max(280, el.clientWidth), narrow = W < 480, H = narrow ? 220 : 260, L = 38, R = 12, T = 18, B = 26;
+    const ser = series(), mx = maxOf(ser.flatMap(x => x.v));
+    const step = share ? 0.05 : mx > 2 ? 1 : 0.5, top = Math.ceil(mx / step) * step;
+    const X = m => L + (m + 0.5) / 12 * (W - L - R), Y = v => T + (1 - v / top) * (H - T - B);
+    let s = svgOpen(W, H, share ? 'Share of each site\'s patrols in each calendar month: Gombe spread through the year, Ngogo piled up in June and July.' : 'Patrols per month, averaged over the study years, at Gombe and Ngogo.');
+    // Ngogo's field season: June and July hold most of its patrols.
+    const jj = (S.ngogoPatrols[5] + S.ngogoPatrols[6]) / tn;
+    s += `<rect x="${(X(5) - (W - L - R) / 24).toFixed(1)}" y="${T}" width="${((W - L - R) / 6).toFixed(1)}" height="${H - T - B}" fill="rgba(255,255,255,.04)"/>`;
+    s += `<text x="${(X(5) - (W - L - R) / 24 + 4).toFixed(1)}" y="${T + 10}" class="gv-note">${narrow ? pct(jj) + ' Ngogo' : pct(jj) + ' of Ngogo patrols'}</text>`;
+    for (let v = 0; v <= top + 1e-9; v += step) s += `<line x1="${L}" x2="${W - R}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" class="${v ? 'gv-grid' : 'gv-axis'}"/><text x="${L - 8}" y="${(Y(v) + 4).toFixed(1)}" text-anchor="end" class="gv-tick">${share ? Math.round(v * 100) + '%' : +v.toFixed(1)}</text>`;
+    if (share) s += `<line x1="${L}" x2="${W - R}" y1="${Y(1 / 12).toFixed(1)}" y2="${Y(1 / 12).toFixed(1)}" stroke="var(--ink-3)" stroke-dasharray="1 4" stroke-linecap="round"/><text x="${W - R}" y="${(Y(1 / 12) - 5).toFixed(1)}" text-anchor="end" class="gv-note">even through the year</text>`;
+    MONTHS.forEach((m, i) => { s += `<text x="${X(i).toFixed(1)}" y="${H - 8}" text-anchor="middle" class="gv-tick">${narrow ? m[0] : m}</text>`; });
+    ser.slice().reverse().forEach(x => {
+      s += `<path d="${x.v.map((v, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1)).join('')}" fill="none" style="stroke:${x.color}" stroke-width="${x.w}" stroke-opacity="${x.op}" stroke-linejoin="round"${x.dash ? ` stroke-dasharray="${x.dash}"` : ''}/>`;
+      x.v.forEach((v, i) => { s += `<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="${x.r}" style="fill:${x.color}" fill-opacity="${x.op}" stroke="var(--surface)" stroke-width="1.5" data-tip="<b>${x.name}, ${MONTHS[i]}</b><br>${share ? pct(v, 1) + ' of its patrols' : fmt(v) + ' patrols per month'} (${x.n[i]} in ${x.years} years)"/>`; });
     });
-    const by = 18 + lanes.length * (LH + 26);
-    s += `<text x="0" y="${by - 4}" class="gv-lab hi">Simulated</text><rect x="${labW}" y="${by - 16}" width="${plotW}" height="16" rx="3" fill="none" stroke="var(--line-3)" stroke-dasharray="3 3"/><text x="${labW + plotW / 2}" y="${by - 4}" text-anchor="middle" class="gv-note">pending: the patrol proof has not run</text>`;
-    [1980, 1990, 2000, 2010, 2020].forEach(y => { s += `<text x="${(X(y) + bw / 2).toFixed(1)}" y="${by + 18}" text-anchor="middle" class="gv-tick">${y}</text>`; });
     paint(el, s + '</svg>');
   };
   draw();
-  fig.querySelectorAll('[data-per]').forEach(b => { b.onclick = () => { per = b.dataset.per === 'male'; fig.dataset.per = per ? 'male' : 'count'; fig.querySelectorAll('[data-per]').forEach(x => x.setAttribute('aria-selected', String(x === b))); draw(); }; });
-  const w = T.split.filter(r => r.quarters === 4 && fin(r.westMales) && fin(r.centralMales));
-  const wr = sum(w.map(r => r.west)) / sum(w.map(r => r.westMales)) * 10, cr = sum(w.map(r => r.central)) / sum(w.map(r => r.centralMales)) * 10;
-  const g = T.gombe.filter(r => fin(r.males)), gr = sum(g.map(r => r.n)) / sum(g.map(r => r.males)) * 10;
-  set(fig, 'sub', `Per 10 males per year: Gombe ${gr.toFixed(1)} over ${g.length} years; after the Ngogo split, West ${wr.toFixed(1)} and Central ${cr.toFixed(1)}, so patrolling is not proportional to size. The 1996–2015 Ngogo record has no observation effort: a quiet year may be a year with few observers.`);
-  table(fig, ['Year', 'Gombe patrols', 'Gombe males', 'Ngogo patrols', 'Ngogo males', 'West', 'West males', 'Central', 'Central males'], () => {
-    const out = [];
-    for (let y = y0; y <= y1; y++) {
-      const a = T.gombe.find(r => r.year === y), b = T.ngogo.find(r => r.year === y), c = T.split.find(r => r.year === y);
-      if (!a && !b && !c) continue;
-      out.push([y, a ? a.n : '', a && fin(a.males) ? num(a.males, 0) : '', b ? b.n : '', b ? b.males : '', c ? c.west : '', c ? c.westMales ?? c.ngogoMales ?? '' : '', c ? c.central : '', c ? c.centralMales ?? '' : '']);
-    }
-    return out;
-  });
+  fig.querySelectorAll('[data-per]').forEach(b => { b.onclick = () => { share = b.dataset.per === 'share'; fig.dataset.per = share ? 'share' : 'month'; fig.querySelectorAll('[data-per]').forEach(x => x.setAttribute('aria-selected', String(x === b))); draw(); }; });
+  const hi = a => MONTHS[a.indexOf(Math.max(...a))], lo = a => MONTHS[a.indexOf(Math.min(...a))];
+  set(fig, 'sub', `Averaged over ${yg} years at Gombe (${nf.format(tg)} patrols) and ${yn} at Ngogo (${nf.format(tn)}). Gombe patrols most in ${hi(S.gombePatrols)} and least in ${lo(S.gombePatrols)}, and no month is empty. At Ngogo, ${pct((S.ngogoPatrols[5] + S.ngogoPatrols[6]) / tn)} of patrols fall in June and July, which mostly reflects when observers were in the field.`);
+  const leg = fig.querySelector('.gv-legend');
+  if (leg) leg.innerHTML = `<span><i class="gv-sw" style="--k:var(--gombe)"></i>Gombe, daily follows all year</span><span><i class="gv-sw dash" style="--k:var(--ngogo)"></i>Ngogo, observed patrols only</span>`;   // no simulated line until the patrol proof writes one
+  table(fig, ['Month', 'Gombe patrols', 'Gombe per month', 'Ngogo patrols', 'Ngogo per month'], () => MONTHS.map((m, i) => [m, S.gombePatrols[i], (S.gombePatrols[i] / yg).toFixed(2), S.ngogoPatrols[i], (S.ngogoPatrols[i] / yn).toFixed(2)]));
 }
 
 // ---------- Per-male participation as a beeswarm.
@@ -525,7 +513,7 @@ const COMPONENTS = {
   turns: { need: ['movement', 'gombe'], draw: turns, responsive: true },
   scale: { need: ['ranging', 'movement', 'validation'], draw: scale },
   activity: { need: ['movement'], draw: activity },
-  timeline: { need: ['patrols'], draw: timeline, responsive: true },
+  seasonal: { need: ['patrol'], draw: seasonal, responsive: true },
   males: { need: ['patrols'], draw: males, responsive: true },
   rvlead: { need: ['validation'], draw: rvlead },
 };

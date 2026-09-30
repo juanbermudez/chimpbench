@@ -298,6 +298,10 @@ export function installAtmosphere() {
 `;
 }
 
+/** Perspective views: no haze, mist or shaft glow within this distance (m) of the camera, so the followed animal (close
+ * orbit ~8–14 m) is never veiled. The fog (sky.ts) and the sun shafts (weather.ts) share it. Design assumption. */
+export const HAZE_START_PERSPECTIVE = 15;
+
 export function setAtmosphere(fog: THREE.Fog, density: number, start: number, mist: number) {
   fog.near = density;
   fog.far = Math.max(0, Math.floor(start)) + THREE.MathUtils.clamp(mist, 0, 0.995);

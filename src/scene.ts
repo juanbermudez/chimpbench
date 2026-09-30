@@ -7,7 +7,7 @@ import { createVegetation, type Vegetation } from './render/env/vegetation';
 import { createWater, type WaterSurface } from './render/env/water';
 import { createFieldEnv, type EnvWindow, type FieldEnv } from './render/env/field-env';
 import { createOverview, type Overview } from './render/env/overview';
-import { approach, needsRecentre, overviewWeight, runSteps, stepFor, windowCentre } from './render/env/field';
+import { FIELD_START_ORBIT, FIELD_START_PITCH, FIELD_START_ZOOM, approach, needsRecentre, overviewWeight, partyFocus, runSteps, stepFor, windowCentre } from './render/env/field';
 import { createSky } from './render/env/sky';
 import { createWeather } from './render/env/weather';
 import { createTerritory } from './render/env/territory';
@@ -50,13 +50,18 @@ export interface CameraFootprint {
   fx: number; fz: number;
   /** Bumped whenever the footprint moves by more than 1/1500 of the map, so the map redraws only then. */
   version: number;
-  /** The animal the close view follows, or −1 (free camera). */
+  /** The animal the camera follows (strategy or close view), or −1 (free camera). */
   followId: number;
 }
-export type Scene = SceneAPI & { getFootprint(): CameraFootprint };
+/** followChimp: attach the camera follow without zooming (the UI retargets an attached follow to a new selection). */
+export type Scene = SceneAPI & { getFootprint(): CameraFootprint; followChimp(id: number): void };
+/** Scene options (outside the shared contract), field profile only. focusId: the animal whose party the strategy view
+ * frames at start (the whole-map overview when absent, as in the env harness). view 'close': open in the close view on
+ * that animal instead, at a low orbit (a new world); the strategy view keeps the party framing for the R key. */
+export interface SceneOptions { focusId?: number; view?: 'close' }
 
 /** Synthetic Kibale-inspired habitat. Rendering observes World and never edits simulation state. */
-export function createScene(container: HTMLElement, world: World, onSelect: (id: number) => void): Scene {
+export function createScene(container: HTMLElement, world: World, onSelect: (id: number) => void, opts: SceneOptions = {}): Scene {
   installAtmosphere();
   const owner = new Owner();
   const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false, powerPreference: 'high-performance', stencil: false });
@@ -86,6 +91,8 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
   // Field profile (C5b, a ~8 km map in real metres): the environment is a window rebuilt around the camera focus
   // (render-env/field-env.ts), and a whole-map overview takes over as the strategy view zooms out.
   const field = world.size > 1000;
+  // Field profile: where the first frame looks (the focus animal's party), so the forest shows at real scale at once.
+  const start = field ? partyFocus(world, opts.focusId) : null;
   let fieldEnv: FieldEnv | null = null, win: EnvWindow | null = null, overview: Overview | null = null;
   if (!field) {
     owner.own(culler);
@@ -94,9 +101,11 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
     water = createWater(terrain, uniforms, owner);
   } else {
     fieldEnv = createFieldEnv(world, uniforms, owner);
-    // First window (built now, behind the loading screen, so warm-up compiles every program): the first living animal.
+    // First window (built now, behind the loading screen, so warm-up compiles every program): the opening focus, else
+    // the first living animal.
     const c0 = world.chimps.find(c => c.alive) ?? world.chimps[0];
-    const o0 = windowCentre(c0 ? c0.position[0] : 0, c0 ? c0.position[2] : 0, 0, 0, [0, 0], 0, world.size / 2);
+    const f0 = start ?? (c0 ? [c0.position[0], c0.position[2]] : [0, 0]);
+    const o0 = windowCentre(f0[0], f0[1], 0, 0, [0, 0], 0, world.size / 2);
     win = runSteps(fieldEnv.build(o0[0], o0[1]));
     occTable = win.occ; culler = win.culler; terrain = win.terrain; vegetation = win.vegetation; water = win.water;
     uniforms.uOrigin.value.set(win.origin[0], win.origin[1]);
@@ -160,6 +169,12 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
   (renderer.domElement as HTMLCanvasElement & { __env?: unknown }).__env = { scene, renderer, sky, uniforms, env };
   const rig = createCameraRig(renderer.domElement, world, (x, z) => terrain.walkable(x, z), getPosition, vegetation.lobes, vegetation.trunkList, { mapSize: world.size });
   if (win) rig.setObstacles(vegetation.lobes, vegetation.trunkList, win.origin[0], win.origin[1]);
+  // Field profile: the strategy view frames the focus party (not the 8 km overview), and a new world starts in a low
+  // close view on the focus animal. Zooming out still reaches the overview; Reset camera shows the whole map.
+  if (start) {
+    rig.panTo(start[0], start[1]); rig.setZoomNow(FIELD_START_ZOOM);
+    if (opts.view === 'close' && opts.focusId !== undefined) { rig.setView('close', opts.focusId); rig.setOrbit(FIELD_START_ORBIT, FIELD_START_PITCH, null, true); }
+  }
   const creatureRoot = scene.getObjectByName('creatures');
   const post = createPost(renderer, scene, rig.camera);
   const gpuTimer = perf.gpu ? createGpuTimer(renderer.getContext() as WebGL2RenderingContext) : null;
@@ -227,8 +242,9 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
   // --- Picking (forgiving, render/creatures/pick.ts): a name label first (labels take no pointer events, so drags and
   // the wheel still reach the canvas), then the animals' own pick volumes (foliage never steals a click), then the
   // nearest animal within ~28 CSS px of the cursor. Between clicks the same pick runs once a frame as the hover (pointer
-  // cursor, highlighted label), and the hovered animal wins close calls. A second click on the same animal within 0.4 s
-  // (double-click) also brings the camera to it: with F, the explicit way back to an animal after panning away.
+  // cursor, highlighted label), and the hovered animal wins close calls. A click selects the animal and the camera
+  // follows it (render/env/follow.ts: a glide, then tracking, until the user pans); a second click within 0.4 s
+  // (double-click) or F also zooms the strategy view in on it.
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
   const hits: THREE.Intersection[] = [];
@@ -268,15 +284,14 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
     // Field overview: a click on a party marker selects a member and flies the strategy view to it.
     if (overviewOn()) {
       const id = overview!.pick(x, y, rig.camera, width, height);
-      if (id !== null) { onSelect(id); rig.focusChimp(id); return; }
+      if (id !== null) { onSelect(id); rig.follow(id, true); return; }
     }
     const id = pickAt(x, y, pickRadius(e.pointerType));
     if (id < 0) return;
     const now = performance.now(), again = id === lastClickId && now - lastClickAt < 400;
     lastClickId = again ? -1 : id; lastClickAt = now;
-    if (rig.mode === 'close') rig.followId = id;
     onSelect(id);
-    if (again) rig.focusChimp(id);
+    rig.follow(id, again);
   };
   const onPointerCancel = () => { held = false; };
   const onContextMenu = (e: Event) => e.preventDefault();
@@ -302,7 +317,7 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
     const reach = perspective ? THREE.MathUtils.clamp(rig.frameHeight() * 4, 30, 150) : world.size * 2;
     camera.updateMatrixWorld();
     cameraFootprint(camera, x0, x1, y0, y1, terrain.walkable(t.x, t.z), reach, fpNext);
-    const eps = world.size / 1500, follow = rig.mode === 'close' && rig.followId !== null ? rig.followId : -1;
+    const eps = world.size / 1500, follow = rig.mode !== 'cinematic' && rig.followId !== null ? rig.followId : -1;
     if (footprintMoved(fpNext, footprint.pts, eps) || Math.abs(t.x - footprint.fx) > eps || Math.abs(t.z - footprint.fz) > eps || follow !== footprint.followId) {
       footprint.pts.set(fpNext); footprint.fx = t.x; footprint.fz = t.z; footprint.followId = follow; footprint.version++;
     }
@@ -777,7 +792,10 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
     setQuality(next: Quality) { requested = next; upgradeBlockedUntil = -1e9; if (next !== quality || highStep) { highStep = false; applyQuality(next); } },
     setFrameCap(on: boolean) { debug.frameCap = on; try { if (on) localStorage.removeItem(FRAME_CAP_KEY); else localStorage.setItem(FRAME_CAP_KEY, '1'); } catch { /* storage blocked: the setting lasts for this page */ } },
     getFrameCap() { return debug.frameCap; },
-    focusChimp(id: number) { rig.focusChimp(id); },
+    // Before the first frame (setup, harnesses) the camera is placed on the animal; afterwards it glides there and
+    // follows (the strategy view also zooms in to the party framing).
+    focusChimp(id: number) { if (warming) rig.focusChimp(id); else rig.follow(id, true); },
+    followChimp(id: number) { rig.follow(id); },
     panTo(x: number, z: number) { rig.panTo(x, z); },
     resetCamera() { rig.reset(); },
     getDiagnostics() { return { ...diagnostics }; },

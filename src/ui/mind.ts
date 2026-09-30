@@ -5,9 +5,10 @@ import { icon } from './icons';
 import { actionLabel, ago, cap, esc, hhmm, pct, RELATION_LABEL, relationClass, stamp } from './format';
 import { bar, empty } from './parts';
 
-// Mind tab: the decision loop made visible. Who controls the chimp, the exact
-// percept the model saw, options with model probabilities beside rules scores,
-// the pick, agreement, cost, and a scrollable history of past decisions.
+// Mind tab: the decision loop made visible. The exact percept the model saw, options with model probabilities beside
+// rules scores, the pick, agreement, cost, and a scrollable history of past decisions. The latest-decision header
+// carries a compact switch that hands this chimp to the model (the demo's per-chimp control); the model's readiness
+// lives in the time menu under the clock and in the model panel (M).
 
 export function targetName(world: World, cand: Candidate, trace?: DecisionTraceView): string {
   if (cand.targetId < 0) return '';
@@ -120,10 +121,10 @@ function storyStrip(ctx: Ctx, tr: DecisionTraceView): string {
   </ol>`;
 }
 
-export function traceCard(ctx: Ctx, tr: DecisionTraceView, pinned: boolean): string {
+export function traceCard(ctx: Ctx, tr: DecisionTraceView, pinned: boolean, control = ''): string {
   const w = ctx.world();
   return `<article class="trace ${pinned ? 'pinned' : ''}">
-    <header class="trace-head"><h3 class="eyebrow">${pinned ? 'Pinned decision' : 'Latest decision'}</h3><b class="mono">${stamp(w, tr.time)}</b><span class="muted">${ago(w, tr.time)}</span></header>
+    <header class="trace-head"><h3 class="eyebrow">${pinned ? 'Pinned decision' : 'Latest decision'}</h3><b class="mono">${stamp(w, tr.time)}</b><span class="muted">${ago(w, tr.time)}</span>${control}</header>
     ${storyStrip(ctx, tr)}
     <h4 class="eyebrow opts-title">Options offered <span class="muted"><i class="mk-model">●</i> chosen · <i class="mk-rules">◆</i> rules pick</span></h4>
     ${optionsTable(w, tr)}
@@ -156,17 +157,12 @@ export function mindHtml(ctx: Ctx, c: Chimp): string {
   const shown = pinned ?? traces.at(-1);
   const inflight = d.inflightChimpId === c.id;
   const waiting = c.awaitingDecisionSince !== null && c.awaitingDecisionSince !== undefined;
-  const status = !c.alive ? 'Deceased' : !controlled ? (mode === 'off' ? 'Model policy is Off — rules decide for everyone.' : `Rules decide. Roster: ${d.roster === 'focal-set' ? 'focal set' : d.roster}.`)
-    : !d.ready ? `Model not ready (${esc(d.phase)}). ${mode === 'async' ? 'Rules fill in after the grace period.' : 'Lockstep will hold the clock.'}`
-    : inflight ? '<span class="pulse">Deciding now…</span>' : waiting ? `<span class="pulse">At a decision point · waiting ${ago(w, c.awaitingDecisionSince!).replace(' ago', '')}</span>` : 'Executing its last choice until the next decision point.';
+  // One word of live state beside the switch, only while the model has this chimp (readiness in full: time menu, M).
+  const note = !controlled || !c.alive ? '' : !d.ready ? (d.phase === 'loading' ? 'loading' : 'offline') : inflight ? '<span class="pulse">deciding</span>' : waiting ? '<span class="pulse">waiting</span>' : '';
+  const control = `<label class="mctl" title="${controlled ? 'The decision model chooses this chimp’s actions' : 'Let the decision model choose this chimp’s actions'}"><span>Model${note ? ` <i>· ${note}</i>` : ''}</span><span class="switch sm"><input type="checkbox" role="switch" data-act="control" ${controlled ? 'checked' : ''} ${c.alive ? '' : 'disabled'} aria-label="Model decides for ${esc(c.name)}"><span class="sw"></span></span></label>`;
   return `<div class="mind">
-    <section class="ctl ${controlled ? 'on' : ''}">
-      <div class="ctl-top"><span class="ctl-ic">${icon(controlled ? 'spark' : 'ladder')}</span><div class="ctl-txt"><b>${controlled ? 'GLiNER2.5-Decide' : 'Rule baseline'}</b><span>${controlled ? `chooses ${esc(c.name)}’s actions · ${mode}` : 'deterministic utility rules'}</span></div>
-      <label class="switch" title="Let GLiNER control this chimp"><input type="checkbox" role="switch" data-act="control" ${controlled ? 'checked' : ''} ${c.alive ? '' : 'disabled'} aria-label="Let GLiNER control this chimp"><span class="sw"></span></label></div>
-      <p class="ctl-status">${status}</p>
-    </section>
     ${shiftCard(ctx, c, traces)}
-    ${shown ? traceCard(ctx, shown, !!pinned) : empty('No decisions recorded yet', controlled ? 'The model is consulted at decision points: when an action ends, a need crosses a threshold, or something new is perceived. Traces appear here.' : 'Turn on “Let GLiNER control this chimp” to watch the model decide. The rule baseline keeps running for everyone else.', 'brain')}
+    ${shown ? traceCard(ctx, shown, !!pinned, control) : `<header class="trace-head"><h3 class="eyebrow">Latest decision</h3><span class="muted">none yet</span>${control}</header>${empty('No decisions recorded yet', controlled ? 'The model is consulted at decision points: when an action ends, a need crosses a threshold, or something new is perceived. Traces appear here.' : 'Switch Model on to watch the decision model choose for this chimp. The rule baseline keeps running for everyone else.', 'brain')}`}
     ${traces.length ? `<section class="history"><div class="sec-head"><h3 class="eyebrow">History <span class="muted">${traces.length} decision${traces.length === 1 ? '' : 's'}</span></h3>${pinned ? '<button class="link-btn" data-act="follow">Follow latest</button>' : ''}</div>
       <ol>${[...traces].reverse().slice(0, 40).map(t => {
         const agree = t.choiceIndex === t.rulesIndex;
