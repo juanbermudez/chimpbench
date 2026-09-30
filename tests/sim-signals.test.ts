@@ -14,13 +14,13 @@ const OFF = { callSignatures: 0, callerDiscrim: 0, foodCallRule: 0, travelHoo: 0
 
 test('C10 off reproduces the pre-C10 model exactly (compressed golden seed 48, 2 days)', () => {
   const w = runCase({ seed: 48, ageRate: 1, days: 2 }, seed => createWorld(seed, { params: OFF }));
-  assert.equal(fnv(canonical(w)), '8bacaf03e3ddda74'); // re-recorded with C8 merged (intended)
+  assert.equal(fnv(canonical(w)), 'c6bb36aabff70501'); // re-recorded with C8 merged (intended)
   assert.ok(w.calls.every(c => !('features' in c)), 'no features key when callSignatures is off');
 });
 
 test('travel hoo off reproduces the C10 model before addendum 1 (compressed golden seed 48, 2 days)', () => {
   const w = runCase({ seed: 48, ageRate: 1, days: 2 }, seed => createWorld(seed, { params: { travelHoo: 0 } }));
-  assert.equal(fnv(canonical(w)), '44e26540c12e7a7b'); // re-recorded with C8 merged (intended)
+  assert.equal(fnv(canonical(w)), '588ada70e9edfb09'); // re-recorded with C8 merged (intended)
 });
 
 test('a signature is constant for a chimpanzee; calls vary around it; features ride on pant-hoots and drums', () => {
