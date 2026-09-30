@@ -1545,6 +1545,26 @@ The diagnostic probe with both changes gave about 5 trips per day and 2.2–2.7 
   - decisions per chimp-day and the male day range rise slightly;
   - the viability guard of §5 holds.
 
+**5f. C13d direction check result** (30 September 2026; seeds 48, 7 and 21; field; 1 year; `artifacts/validation/c13/`). Not a proof.
+
+| | C13c | C13d |
+| --- | --- | --- |
+| T-PTY-1 party size | 2.90 | 2.90 |
+| Initiations recruiting ≥ 1 companion within 5 min, hooed / silent | 0.50–0.56 / 0.37–0.40 | 0.53–0.56 / 0.42–0.44 |
+| Recruitment ratio, hooed ÷ silent | 1.35–1.41 | 1.27–1.29 |
+| Companions joining within 5 min | 0.39–0.44 | 0.43–0.45 |
+| Male day range, T-RNG-4 (km, observer) | 2.59 | 2.53 |
+| T-ACT-2 travel (male / female) | 0.22 / 0.15 | 0.21 / 0.15 |
+| Decisions per chimp-day | 74–76 | 74–76 |
+| Fitted rows passing | 9 | 9 |
+
+- **Viability guard: passes.**
+- **All four predictions failed.** Party size did not move. The recruitment ratio fell. Decisions and day range did not rise.
+- **Why.** Companions now get the decision point, but when C13a samples their choice they rarely pick joining. Silent initiations gained the most, so the ratio fell. The missing cohesion is in the choice among options, not in the timing of decision points.
+- **Measurement note.** The "deciding within 5 min" share measured 0.55–0.61. It undercounts, because decisions made in the initiation's own tick are missed.
+- **T-PAT-6** (0.06, n = 17 patrols) is too noisy to read.
+- **Default.** Merged and on by default, as the rule was to merge if the guard passes. Its ablation row lets the lean proof attribute its null effect.
+
 **6. Proof.** The lean proof (`scripts/proof.ts --plan lean`) with both parts on. `data/proof-ablations.json` has an ablation set per part, `C13a` (`rgOn` 0) and `C13b` (`intakeValue` 0), so each is attributed.
 
 **7. Handoffs.**

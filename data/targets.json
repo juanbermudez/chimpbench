@@ -1208,6 +1208,20 @@
    ],
    "verdicts": "none (no proof value exists)",
    "class": "model change"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "science/simulation owner (stage C13d)",
+   "seen": "fitted rows on development seeds 48, 7, 21 (field, 1 year): T-PTY-1 2.90 (C13c 2.90), T-RNG-4 2.53 (2.59), T-ACT-2 0.21 / 0.15; sim truth: recruitment ratio 1.27-1.29 (C13c 1.35-1.41), companions joining 0.43-0.45 (0.39-0.44), decisions 74-76 per chimp-day (74-76); no held-out value",
+   "param": "C13d direction check: viability guard passes; all four pre-registered predictions failed (party size unchanged, recruitment ratio down, decisions and day range unchanged). departCue stays on by default (merge rule: the guard); the ablation row C13d attributes its effect in the lean proof. Nothing tuned after the check",
+   "reason": "C13d pre-registration (6e9ec52)",
+   "targets": [
+    "T-PTY-1",
+    "T-RNG-4",
+    "T-ACT-2"
+   ],
+   "verdicts": "none (direction check, not a proof)",
+   "class": "model change"
   }
  ],
  "targets": [
