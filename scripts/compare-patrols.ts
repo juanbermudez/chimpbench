@@ -1,5 +1,5 @@
 // Real vs simulated boundary patrols and territory change (realism C6 patrol corrections, docs/realism-design.md §5.3.1;
-// guide section "Real chimps vs my chimps: patrols and territory"). Real side: open field data, parsed here; simulated
+// guide section on real vs simulated patrols and territory). Real side: open field data, parsed here; simulated
 // side: read from the patrol proof's field-metrics and scenario outputs when they exist (this script never runs the sim).
 //
 //   pnpm exec tsx scripts/compare-patrols.ts [--B 10000] [--out docs/data/patrol-compare.json]
@@ -183,7 +183,7 @@ const table = [
     ] as RealCell[], paper: 'Ngogo 14.2, Gombe 14.4, Taï ~10 per male per year (Watts & Mitani 2001).', sim: sim('T-PAT-2') },
   { id: 'T-PAT-3', label: "Share of the community's males on a patrol", unit: 'fraction', band: band('T-PAT-3'), labels: labels('T-PAT-3'),
     real: [
-      { site: 'Ngogo', value: ng.shareOfListedMales.mean, text: `${pct(ng.shareOfListedMales.mean)} (median ${ng.malesPerPatrol.median} males)`, source: `mean over ${ng.patrols} patrols; males ${ng.malesPerPatrol.min}–${ng.malesPerPatrol.max} per patrol; a community far larger than mine`, open: true },
+      { site: 'Ngogo', value: ng.shareOfListedMales.mean, text: `${pct(ng.shareOfListedMales.mean)} (median ${ng.malesPerPatrol.median} males)`, source: `mean over ${ng.patrols} patrols; males ${ng.malesPerPatrol.min}–${ng.malesPerPatrol.max} per patrol; a community far larger than the simulated communities`, open: true },
       { site: 'Gombe', value: gp.participationWholeStudy.mean, text: `${pct(gp.participationWholeStudy.mean)} (median ${g.patrol.males.median} males)`, source: `share of patrol opportunities each male joined, mean over ${gp.participationWholeStudy.n} males (Massaro et al. report 74.5%); community of about ${Math.round(gp.communityMalesPerYear.median ?? NaN)} adult males`, open: true },
     ] as RealCell[], paper: 'Taï 72% of males per patrol (Boesch & Boesch-Achermann 2000, as cited by Watts & Mitani 2001).', sim: sim('T-PAT-3') },
   { id: 'females', label: 'Females on patrols', unit: 'share of patrols', band: null, labels: ['reported'],

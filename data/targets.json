@@ -18,12 +18,12 @@
   "Instrument validation against truth (sampling accuracy, classifier precision and recall) is allowed at any time, because truth is not a field target; each validation run is logged."
  ],
  "protocolFreeze": {
-  "stage": "ChimpBench rename",
+  "stage": "Neutral-voice strings",
   "date": "2026-09-30",
-  "hash": "400aa83eac468b54",
+  "hash": "3c7b860f2833d182",
   "previous": {
-   "stage": "Seed replacement",
-   "hash": "839e47235ca4b43f"
+   "stage": "ChimpBench rename",
+   "hash": "400aa83eac468b54"
   }
  },
  "protocolLog": [
@@ -1130,6 +1130,31 @@
   },
   {
    "date": "2026-09-30",
+   "by": "science/simulation owner",
+   "seen": "none",
+   "param": "cosmetic string rename (neutral voice): T-IGE-1's accept basis 'ChimpBench communities are small' -> 'the simulated communities are small'; scripts/compare-patrols.ts T-PAT-3 Ngogo source 'far larger than mine' -> 'far larger than the simulated communities'; the fruit-guide note in guide-data.ts; the same strings in docs/data; no metric, band or rule change; observer record hashes and the goldens unchanged (scripts/remote/verify.ts)",
+   "reason": "the guide is neutral-voice ChimpBench (user decision)",
+   "targets": [
+    "T-IGE-1",
+    "T-PAT-3"
+   ],
+   "verdicts": "none",
+   "class": "cosmetic"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "science/simulation owner",
+   "seen": "none",
+   "param": "freeze: 400aa83eac468b54 -> 3c7b860f2833d182 (cosmetic string rename only)",
+   "reason": "neutral-voice strings",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "combined proof (lean plan), C9 proof",
+   "class": "freeze"
+  },
+  {
+   "date": "2026-09-30",
    "by": "science/simulation owner (stage C13, user-approved)",
    "seen": "C13a: fitted rows T-ACT-1 to 4, T-PTY-1 and T-RNG-4 on simulation truth in the Jev free arms (seeds 6501-6905, field, 5 scored days; artifacts/decide-ft/jev-test/free-arms.md); C13b: the U arm's hunger medians there and the C8 agent's fallback share of lactating females; no held-out value",
    "param": "model change before the proof, two switchable parts, pre-registered in docs/realism-design.md \"C13 pre-registration\" before any C13 run. C13a (rgOn 1): rules-driven chimps aged 8+ hold an intention (the Jev free arms' gate) and otherwise sample the bounded menu by a softmax of the rules scores at rgTemperature (0.152 compressed, 0.164 field; design rule: median top-option probability 0.77 on dev seed 6301), drawing from world.rng. C13b (intakeValue 1): feeding and trip worth scale with expected intake per hour, walk included, relative to the animal's ripe-fruit rate (leaves at their lower rate). Both profiles; ablation sets C13a (rgOn 0) and C13b (intakeValue 0); both off is hash-identical to before. Fitted rows tuned under the argmax rules (T-ACT-2, T-PTY-1, T-RNG-4, T-PAT-1) will shift and are not re-tuned; the lean proof judges them.",
@@ -1916,7 +1941,7 @@
     "lo": 5,
     "hi": 12,
     "units": "per community-year",
-    "basis": "Kanyawara and Taï; ChimpBench communities are small"
+    "basis": "Kanyawara and Taï; the simulated communities are small"
    },
    "evidence": "H",
    "role": "fitted",

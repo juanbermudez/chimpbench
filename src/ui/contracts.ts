@@ -35,13 +35,18 @@ export interface DeciderView {
   revalidated?: number; fallbacks?: number; waiting?: number; inflightChimpId?: number;
 }
 
+/** Optional scene extra (not in the shared SceneAPI contract): where the camera looks, for the range map. The ground
+ * corners (x0, z0 … x3, z3) of the part of the view not under panels, the focus, a version bumped when it moves, and
+ * the animal the close view follows (−1 = free camera). One object, rewritten in place. */
+export interface FootprintView { pts: ArrayLike<number>; fx: number; fz: number; version: number; followId: number; }
+
 /** Everything the UI needs from the outside world, injected by main.ts (or the preview). */
 export interface UiDeps {
   getWorld(): World;
   clock: ClockView;
   speedPresets: SpeedPresetView[];
   decider: DeciderView;
-  getScene(): SceneAPI | null;
+  getScene(): (SceneAPI & { getFootprint?(): FootprintView }) | null;
   setSpeed(id: string): void;
   setPlaying(playing: boolean): void;
   setPolicy(mode: ModelPolicy['mode']): void;

@@ -20,6 +20,8 @@ import { HIGH_STEP_RATIO, INTERNAL_RATIO, createPace, observeInterval, outputSiz
 import { FADE_CAPACITY, FADE_WIDTH, MARGIN_IN, MAX_TARGETS, classify, createOccluderTable, nearRadius, selectTargets, smooth, writeFade, type KeepCandidate, type KeepTarget, type OccView } from './render/env/occluders';
 import { createGpuTimer, perf, perfEnd, perfNow } from './perf';
 import { hyp2 } from './render/fastmath';
+import { pickRadius } from './render/creatures/pick';
+import { cameraFootprint, footprintMoved } from './render/env/footprint';
 
 // Scene orchestrator. The environment (terrain, forest, water, sky, weather,
 // territory, cameras, post) lives in src/render/env; animals come from the
@@ -39,8 +41,22 @@ const RANK: Record<Quality, number> = { low: 0, medium: 1, high: 2 };
 const FRAME_CAP_KEY = 'mgogo:uncapped';
 function readFrameCap(): boolean { try { return localStorage.getItem(FRAME_CAP_KEY) !== '1'; } catch { return true; } }
 
+/** Scene extra outside the shared contract (types.ts): where the camera looks, for the range map. One object, rewritten in place. */
+export interface CameraFootprint {
+  /** Ground corners of the part of the view not under UI panels (x0, z0 … x3, z3: bottom-left, bottom-right, top-right,
+   * top-left on screen), world metres. Perspective views are capped short of the horizon. */
+  pts: Float32Array;
+  /** Camera focus on the ground (m). */
+  fx: number; fz: number;
+  /** Bumped whenever the footprint moves by more than 1/1500 of the map, so the map redraws only then. */
+  version: number;
+  /** The animal the close view follows, or −1 (free camera). */
+  followId: number;
+}
+export type Scene = SceneAPI & { getFootprint(): CameraFootprint };
+
 /** Synthetic Kibale-inspired habitat. Rendering observes World and never edits simulation state. */
-export function createScene(container: HTMLElement, world: World, onSelect: (id: number) => void): SceneAPI {
+export function createScene(container: HTMLElement, world: World, onSelect: (id: number) => void): Scene {
   installAtmosphere();
   const owner = new Owner();
   const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false, powerPreference: 'high-performance', stencil: false });
@@ -162,6 +178,9 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
 
   let quality: Quality = 'high';
   let width = 1, height = 1;
+  // Canvas origin for picking, read on resize and pointerdown (no layout reads per pointer move).
+  let originX = 0, originY = 0;
+  function readOrigin() { const r = renderer.domElement.getBoundingClientRect(); originX = r.left; originY = r.top; }
   const layers = { canopy: true, territory: false, perception: false, labels: true, social: false, weather: true };
   let disposed = false;
   let first = true;
@@ -188,6 +207,7 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
   function resize() {
     width = Math.max(1, container.clientWidth);
     height = Math.max(1, container.clientHeight);
+    readOrigin();
     rig.resize(width, height);
     applyQuality(quality);
   }
@@ -204,40 +224,93 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
 
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-  // --- Picking: only creature pick volumes are raycast, so foliage never steals a click.
+  // --- Picking (forgiving, render/creatures/pick.ts): a name label first (labels take no pointer events, so drags and
+  // the wheel still reach the canvas), then the animals' own pick volumes (foliage never steals a click), then the
+  // nearest animal within ~28 CSS px of the cursor. Between clicks the same pick runs once a frame as the hover (pointer
+  // cursor, highlighted label), and the hovered animal wins close calls. A second click on the same animal within 0.4 s
+  // (double-click) also brings the camera to it: with F, the explicit way back to an animal after panning away.
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
   const hits: THREE.Intersection[] = [];
-  let downX = 0, downY = 0, downButton = 0;
-  const onPointerDown = (e: PointerEvent) => { downX = e.clientX; downY = e.clientY; downButton = e.button; };
-  const onPointerUp = (e: PointerEvent) => {
-    if (downButton !== 0 || hyp2(e.clientX - downX, e.clientY - downY) > 6) return;
-    const rect = renderer.domElement.getBoundingClientRect();
-    // Field overview: a click on a party marker selects a member and flies the strategy view to it.
-    if (overview && overviewWeight(rig.frameHeight(), (rig.camera as THREE.PerspectiveCamera).isPerspectiveCamera === true) > 0.3) {
-      const id = overview.pick(e.clientX - rect.left, e.clientY - rect.top, rig.camera, rect.width, rect.height);
-      if (id !== null) { onSelect(id); rig.focusChimp(id); return; }
-    }
-    if (!creatures) return;
-    pointer.set((e.clientX - rect.left) / rect.width * 2 - 1, -(e.clientY - rect.top) / rect.height * 2 + 1);
+  let downX = 0, downY = 0, downButton = 0, held = false;
+  let hoverX = 0, hoverY = 0, pointerIn = false, pointerKind = 'mouse', hoverId = -1, cursor = '';
+  let lastClickId = -1, lastClickAt = -1e9;
+  const overviewOn = () => overview !== null && overviewWeight(rig.frameHeight(), (rig.camera as THREE.PerspectiveCamera).isPerspectiveCamera === true) > 0.3;
+  function pickAt(x: number, y: number, radius: number): number {
+    if (!creatures) return -1;
+    const label = creatures.labelAt?.(x, y) ?? -1;
+    if (label >= 0) return label;
+    pointer.set(x / width * 2 - 1, -y / height * 2 + 1);
     raycaster.setFromCamera(pointer, rig.camera);
     hits.length = 0;
     raycaster.intersectObjects(creatures.picks, false, hits);
-    const hit = hits.find(h => h.object.userData.chimpId !== undefined);
-    if (hit) {
-      const id = Number(hit.object.userData.chimpId);
-      if (rig.mode === 'close') rig.followId = id;
-      onSelect(id);
+    for (const h of hits) if (h.object.userData.chimpId !== undefined) return Number(h.object.userData.chimpId);
+    return creatures.nearestAt?.(x, y, rig.camera, radius, hoverId) ?? -1;
+  }
+  function updateHover() {
+    let id = -1;
+    if (pointerIn && !held) {
+      if (overviewOn()) id = overview!.pick(hoverX, hoverY, rig.camera, width, height) ?? -1;
+      if (id < 0) id = pickAt(hoverX, hoverY, pickRadius(pointerKind));
     }
+    hoverId = id;
+    creatureFrame.hoverId = id;
+    const c = id >= 0 ? 'pointer' : '';
+    if (c !== cursor) { cursor = c; renderer.domElement.style.cursor = c; }
+  }
+  const onPointerDown = (e: PointerEvent) => { readOrigin(); downX = e.clientX; downY = e.clientY; downButton = e.button; held = true; };
+  const onPointerMove = (e: PointerEvent) => { hoverX = e.clientX - originX; hoverY = e.clientY - originY; pointerIn = true; pointerKind = e.pointerType; held = e.buttons !== 0; };
+  const onPointerLeave = () => { pointerIn = false; };
+  const onPointerUp = (e: PointerEvent) => {
+    held = false;
+    if (downButton !== 0 || hyp2(e.clientX - downX, e.clientY - downY) > 6) return;
+    const x = e.clientX - originX, y = e.clientY - originY;
+    // Field overview: a click on a party marker selects a member and flies the strategy view to it.
+    if (overviewOn()) {
+      const id = overview!.pick(x, y, rig.camera, width, height);
+      if (id !== null) { onSelect(id); rig.focusChimp(id); return; }
+    }
+    const id = pickAt(x, y, pickRadius(e.pointerType));
+    if (id < 0) return;
+    const now = performance.now(), again = id === lastClickId && now - lastClickAt < 400;
+    lastClickId = again ? -1 : id; lastClickAt = now;
+    if (rig.mode === 'close') rig.followId = id;
+    onSelect(id);
+    if (again) rig.focusChimp(id);
   };
+  const onPointerCancel = () => { held = false; };
   const onContextMenu = (e: Event) => e.preventDefault();
   renderer.domElement.addEventListener('pointerdown', onPointerDown);
+  renderer.domElement.addEventListener('pointermove', onPointerMove);
+  renderer.domElement.addEventListener('pointerleave', onPointerLeave);
   renderer.domElement.addEventListener('pointerup', onPointerUp);
+  renderer.domElement.addEventListener('pointercancel', onPointerCancel);
   renderer.domElement.addEventListener('contextmenu', onContextMenu);
+
+  // --- Camera ground footprint for the range map (src/ui/minimap.ts redraws it only when the version changes).
+  const footprint: CameraFootprint = { pts: new Float32Array(8), fx: 0, fz: 0, version: 0, followId: -1 };
+  const fpNext = new Float32Array(8);
+  const viewInsets = { left: 0, right: 0, top: 0, bottom: 0 };
+  function updateFootprint(camera: THREE.Camera, perspective: boolean) {
+    // The part of the canvas not under UI panels, in NDC (the rig's view offset centres the focus in it).
+    let x0 = -1 + 2 * viewInsets.left / width, x1 = 1 - 2 * viewInsets.right / width;
+    let y0 = -1 + 2 * viewInsets.bottom / height, y1 = 1 - 2 * viewInsets.top / height;
+    if (x1 - x0 < 0.1) { x0 = -1; x1 = 1; }
+    if (y1 - y0 < 0.1) { y0 = -1; y1 = 1; }
+    const t = rig.target;
+    // Perspective views see to the horizon: the map shows four frame heights (30–150 m) of it, a display choice.
+    const reach = perspective ? THREE.MathUtils.clamp(rig.frameHeight() * 4, 30, 150) : world.size * 2;
+    camera.updateMatrixWorld();
+    cameraFootprint(camera, x0, x1, y0, y1, terrain.walkable(t.x, t.z), reach, fpNext);
+    const eps = world.size / 1500, follow = rig.mode === 'close' && rig.followId !== null ? rig.followId : -1;
+    if (footprintMoved(fpNext, footprint.pts, eps) || Math.abs(t.x - footprint.fx) > eps || Math.abs(t.z - footprint.fz) > eps || follow !== footprint.followId) {
+      footprint.pts.set(fpNext); footprint.fx = t.x; footprint.fz = t.z; footprint.followId = follow; footprint.version++;
+    }
+  }
 
   // --- Frame loop
   const envFrame: EnvFrame = { dt: 0, elapsed: 0, camera: rig.camera, target: new THREE.Vector3(), env, quality, mode: 'rts', weatherLayer: true, pixelWorld: 0.1 };
-  const creatureFrame: CreatureFrame = { dt: 0, elapsed: 0, selectedId: null, simRate: 0, camera: rig.camera, daylight: 1, rain: 0, highlightTroopId: null, layers: { labels: true, social: false, perception: false }, closeView: false };
+  const creatureFrame: CreatureFrame = { dt: 0, elapsed: 0, selectedId: null, simRate: 0, camera: rig.camera, daylight: 1, rain: 0, highlightTroopId: null, layers: { labels: true, social: false, perception: false }, closeView: false, hoverId: -1 };
   let lastNow = performance.now();
   let frameIndex = 0;
   let fps = 60;
@@ -314,12 +387,14 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
       creatureFrame.quality = quality;
       creatureFrame.lens = uniforms.uLens.value;
       creatureFrame.aspect = width / height;
+      if (!warming) updateHover();
       creatures.update(creatureFrame);
       // Field overview: animals are sub-pixel at km scale; party markers stand in for them.
       if (creatureRoot) creatureRoot.visible = ow < 1;
     }
     overview?.update(world, { weight: ow, camera, dt, selectedId: frame.selectedId, highlightTroopId: frame.highlightTroopId, viewW: width, viewH: height });
     updateKeepClear(camera, perspective, frame.selectedId, dt);
+    updateFootprint(camera, perspective);
     perfEnd('creatures', c0);
     // Understory parting around the animals nearest the near-field tile (perspective views only).
     uniforms.uBendCount.value = perspective && creatures?.bendSources ? creatures.bendSources(camera.position.x + tmpDir.x * 12, camera.position.z + tmpDir.z * 12, uniforms.uBend.value) : 0;
@@ -675,7 +750,10 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
     disposed = true;
     resizeObserver.disconnect();
     renderer.domElement.removeEventListener('pointerdown', onPointerDown);
+    renderer.domElement.removeEventListener('pointermove', onPointerMove);
+    renderer.domElement.removeEventListener('pointerleave', onPointerLeave);
     renderer.domElement.removeEventListener('pointerup', onPointerUp);
+    renderer.domElement.removeEventListener('pointercancel', onPointerCancel);
     renderer.domElement.removeEventListener('contextmenu', onContextMenu);
     creatures?.dispose();
     overview?.dispose();
@@ -704,9 +782,10 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
     resetCamera() { rig.reset(); },
     getDiagnostics() { return { ...diagnostics }; },
     getQuality() { return quality; },
-    setInsets(insets) { rig.setInsets(insets); },
+    setInsets(insets) { rig.setInsets(insets); Object.assign(viewInsets, insets); },
     getListener,
     getZoom() { return rig.zoom(); },
+    getFootprint() { return footprint; },
     dispose,
   };
 }

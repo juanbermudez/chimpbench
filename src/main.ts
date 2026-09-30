@@ -1,6 +1,6 @@
 import './style.css';
 import { applyIntervention, createWorld, relationOf, relationshipOf, tickWorld, type Profile } from './simulation';
-import { createScene } from './scene';
+import { createScene, type Scene } from './scene';
 import { advance, createClock, frameBudget, SPEED_PRESETS, setSpeed, subTick } from './clock';
 import { cancelDecisionRequests, createDecisionController, isBlocking, pumpDecisions, refreshDecideStatus, setPolicy, setRoster, startLocalModel } from './decision';
 import { createApp, defaultSelection } from './ui/app';
@@ -38,7 +38,7 @@ function makeWorld(seed: number, profile: Profile | undefined = urlProfile): Wor
 let world!: World;
 const clock = createClock();
 const decider = createDecisionController();
-let scene: SceneAPI | null = null;
+let scene: Scene | null = null;
 let audio: AudioEngine | null = null;
 let elapsed = 0;
 /** Bumped by every world or decision-loop change made outside a tick, so a streamed save can tell it was torn. */
@@ -183,7 +183,7 @@ const ps = persist.status;
 if (ps.mode === 'locked') notifyUi(ps.message, 2, () => persist.requestHandoff(), 'Use this tab');
 else if (ps.mode === 'memory' || ps.mode === 'error' || ps.mode === 'readonly') notifyUi(ps.message, 2);
 
-function startScene(): SceneAPI | null {
+function startScene(): Scene | null {
   try { return createScene(app.viewport, world, id => app.ctx.select(id)); }
   catch (error) { app.showError(error instanceof Error ? error.message : String(error)); return null; }
 }
@@ -233,7 +233,7 @@ function frame(now: number) {
   // has pushed its state into the scene (a restored close view must not be overwritten by a fresh scene's default).
   if (scene !== zoomScene) { zoomScene = scene; lastZoomView = undefined; }
   const zoomView = scene?.getZoom?.().view;
-  if (zoomView && zoomView !== lastZoomView) { if (revealed && lastZoomView && zoomView !== app.state.view) app.ctx.setView(zoomView); lastZoomView = zoomView; }
+  if (zoomView && zoomView !== lastZoomView) { if (revealed && lastZoomView && zoomView !== app.state.view) app.ctx.setView(zoomView, { fromScene: true }); lastZoomView = zoomView; }
   const a0 = perfNow();
   audio?.update(world, scene?.getListener?.() ?? null, clock.playing ? clock.effectiveRate : 0, selectedId);
   perfEnd('audio', a0);
