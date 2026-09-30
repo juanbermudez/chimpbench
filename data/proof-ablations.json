@@ -31,8 +31,8 @@
    "note": "C7d route chaining and the C7e goal-distance scale. The C7d direction check and the C7e fit (against Taï) dropped both, so both are 0 by default and this set equals the defaults. Checked: the C7d/C7e branch with this set is hash-identical to main 342baa9 (seeds 48 and 3303, 5 days). The C7b switches (followCommit, tripRateValue, cropFullExp) and the C7c fallback limits (fallbackCapH) are also 0 by default."
   },
   "C8": {
-   "params": null,
-   "note": "To be declared by the C8 owner at merge (the guardian levers A1 and A2 of docs/staging/early-life-prereg.md)."
+   "params": { "maternalLevers": 0, "bereaveStress": 0, "birthCondFromMother": 0, "epidemicArrivalPerY": 0, "snareHazardPerKm": 0, "fertilityCondFloor": 1, "growStrengthW": 0, "coreHungerRelief": 0 },
+   "note": "Declared by the C8 owner: every C8 switch off (the guardian levers and bereavement: A2 of docs/staging/early-life-prereg.md; the prenatal channel; epidemics; snares; condition in fertility; growth in strength; the C7a amendment of the core cost). Not exactly pre-C8: the condition -> health term, the self-feeding ramp (which replaced hazardOrphan), the adoption fixes, the fertility curve and the re-fitted baseline (minus an epidemic hazard of 0 when arrivals are 0) have no switch."
   },
   "C10": {
    "params": {
