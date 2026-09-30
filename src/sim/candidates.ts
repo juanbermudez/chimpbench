@@ -75,7 +75,7 @@ export function isCarried(c: Chimp, mother: Chimp | undefined): boolean {
 
 const _near: number[] = [];
 const _mem: (Tree | number)[] = [];
-const _rk: number[] = []; // stage C7d: value per metre of each shortlist entry (route chaining)
+const _rk: number[] = [], _dk: number[] = []; // stages C7d-C7e: believed value (worth − revisit) and distance of each shortlist entry
 const _fb: [number, number] = [0, 0];
 
 function chooseNestTree(world: World, c: Chimp): Tree | undefined {
@@ -214,7 +214,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     // field profile: leaving companions for a food tree of one's own has a cost (parties travel together; design, T-PTY-1)
     const stay = P.partyStayW > 0 ? P.partyStayW * Math.min(x.visibleOwn, P.partyStayMaxN) : 0;
     const shortlist = P.patchEcology === 1; // field: many remembered trees; score the few best by distance and hunger
-    _mem.length = 0; _rk.length = 0;
+    _mem.length = 0; _rk.length = 0; _dk.length = 0;
     const minD = P.memoryTreeMinM;
     for (let _i3 = 0; _i3 < c.memory.length; _i3++) { const m = c.memory[_i3];
       if (m.kind === 'tree' && time - m.seenAt < P.memTravelHorizonH && !stamped(_sight, m.entityId, st)) {
@@ -224,7 +224,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
         // stage C7a (field): a remembered tree is worth what the animal last saw in it
         const crop = x.treeCrop?.[t.id] ?? 0.2;
         const worth = P.memCropBelief === 1 ? h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) : h * P.memTravelHungerW;
-        if (shortlist) { const rv = revisit(x, t.id, time, P); _mem.push(t, worth - tripCost(worth, crop, d, h, P) - rv); _rk.push((worth - rv) / Math.max(d, minD)); continue; }
+        if (shortlist) { const rv = revisit(x, t.id, time, P); _mem.push(t, worth - tripCost(worth, crop, d, h, P) - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD)); continue; }
         offer('travel', t.id, worth - tripCost(worth, crop, d, h, P) - revisit(x, t.id, time, P) - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + pers.sociability * env.fruitIndex * 0.1 - stay, V.TREE);
       } else if (m.kind === 'water' && c.thirst > 0.25 && c.age >= 3) {
         const d = Math.hypot(m.position[0] - px, m.position[2] - pz);
@@ -243,13 +243,15 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       if (d < P.memoryTreeMinM) continue;
       const crop = x.treeCrop?.[id] ?? known[i + 1], worth = h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef));
       const rv = revisit(x, id, time, P);
-      _mem.push(t, worth - tripCost(worth, crop, d, h, P) - rv); _rk.push((worth - rv) / Math.max(d, minD));
+      _mem.push(t, worth - tripCost(worth, crop, d, h, P) - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD));
     }
     // stage C7d (field; c7b-prereg §8.3): route chaining, the nearest unused known resource weighted by value (janson2014) [M]:
-    // offer only the tree with the most believed value per metre, at its usual score
-    if (shortlist && P.routeChain === 1 && _rk.length) {
-      let bi = 0;
-      for (let i = 1; i < _rk.length; i++) if (_rk[i] > _rk[bi]) bi = i;
+    // offer only the tree with the most believed value per metre, at its usual score. Stage C7e (§9): with goalDistScaleM D > 0
+    // the rank is value × D / (D + d) instead, between route chaining (D → 0) and no distance preference (D → ∞); fitted (C7e) against Taï
+    const D = P.goalDistScaleM;
+    if (shortlist && (D > 0 || P.routeChain === 1) && _rk.length) {
+      let bi = -1, br = -Infinity;
+      for (let i = 0; i < _rk.length; i++) { const r = D > 0 ? _rk[i] * D / (D + _dk[i]) : _rk[i] / _dk[i]; if (r > br) { br = r; bi = i; } }
       const t = _mem[2 * bi] as Tree, base = _mem[2 * bi + 1] as number;
       _mem.length = 0;
       offer('travel', t.id, base - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + pers.sociability * env.fruitIndex * 0.1 - stay, V.TREE);

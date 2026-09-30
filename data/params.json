@@ -7500,6 +7500,35 @@
    "notes": "Spread of gestation lengths (222-232 days). The 222–232 d span is narrower than the cited 208–235 d, so the level is not claimed (C5a review)."
   },
   {
+   "id": "goalDistScaleM",
+   "group": "movement",
+   "value": 0,
+   "units": "m",
+   "range": [
+    0,
+    3200
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1000000
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/research.md (C7c-C7d): janson2014 (the D -> 0 limit, nearest unused known resource weighted by value)"
+   ],
+   "clock": "none",
+   "symbol": "P.goalDistScaleM",
+   "file": "src/sim/candidates.ts",
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage C7e (field; c7b-prereg 9): goal order among out-of-sight trees by (worth - revisit) x D / (D + max(d, memoryTreeMinM)); only the top-ranked tree is offered, at its usual score. D -> 0 is route chaining, D -> infinity no distance preference. 0 = off (the C7c-C7d four-best shortlist; compressed). Declared calibration against Taï straightness, turning and path rate (loss and seeds in c7b-prereg 9.2); field value set by the fit. Prior for the fit: 50-3,200 m (0 = off)."
+  },
+  {
    "id": "groomCreditRetainPerH",
    "group": "social",
    "value": 0.97,

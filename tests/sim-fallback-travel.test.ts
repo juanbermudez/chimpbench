@@ -178,3 +178,26 @@ test('route chaining: only the out-of-sight tree with the most believed value pe
   assert.equal(paramsOf(createWorld(3707)).routeChain, 0, 'compressed: off');
   assert.equal(paramsOf(createWorld(3707, { profile: 'field' })).routeChain, 0, 'field: off by default after the C7d check');
 });
+
+test('goal-distance scale (C7e): a short scale picks the near tree, a long one the far richer tree; one goal offered', () => {
+  const pick = (D: number) => {
+    const w = createWorld(3707, { profile: 'field', params: { goalDistScaleM: D, routeChain: 0 } });
+    for (let i = 0; i < 5760 / 4; i++) tickWorld(w);
+    const [c] = adults(w);
+    c.position = [c.position[0], 0, c.position[2]]; c.hunger = 0.7; c.action = 'rest'; c.targetId = -1;
+    const byD = (m: number) => w.trees.reduce((p, t) => (Math.abs(Math.hypot(t.position[0] - c.position[0], t.position[2] - c.position[2]) - m) < Math.abs(Math.hypot(p.position[0] - c.position[0], p.position[2] - c.position[2]) - m) ? t : p));
+    const near = byD(120), far = byD(800);
+    perceive(w, c);
+    ix(c).trees.length = 0;
+    simOf(w).knownTrees = {};
+    c.memory = c.memory.filter(m => m.kind !== 'tree');
+    for (const t of [near, far]) c.memory.push({ entityId: t.id, kind: 'tree', seenAt: w.time, position: [t.position[0], t.position[1], t.position[2]] });
+    ix(c).treeCrop = { [near.id]: 0.3, [far.id]: 1.0 };
+    const trips = computeCandidates(w, c, []).filter(k => k.action === 'travel' && candidateMeta.get(k)?.v === V.TREE).map(k => k.targetId);
+    return { trips, near: near.id, far: far.id };
+  };
+  const short = pick(50), long = pick(3200);
+  assert.deepEqual(short.trips, [short.near]);
+  assert.deepEqual(long.trips, [long.far]);
+  assert.equal(paramsOf(createWorld(3707)).goalDistScaleM, 0, 'compressed: off');
+});
