@@ -207,6 +207,59 @@ Change per adult-day against rules (n = 24 community-seed pairs; Jev n = 6):
 
 **Cost:** RunPod $1.27 for round 2 ($2.50 for the whole project, of the $5 approved). Jev society runs $1.24 (21,835 calls, median 1,457 input tokens).
 
+## 11. Round 3 and trained populations vs wild chimpanzees (Track P)
+
+**Why round 3:** the round-2 adapters still fit the current compressed sim (0.2% unseen option wordings against 1.2% within round 2 itself; pick rates within a few points of their test set). The field profile, where the science stages validate, is different: 9.7% of option wordings are unseen (following companions who move off, pant-hooting to find others, eating leaves and pith) and distances in options are about 12x larger (median 168 m against 14 m).
+
+**Round-3 data:** 1,200 contexts from a frozen copy of the code (`artifacts/decide-ft/snapshot-v3`, sim hash `1c20a219db3e`), half field profile and half compressed (`scripts/ft-contexts.ts --profile field`), same seeds, splits and quotas as before. 120 double-labeled: agreement base 0.83, agg 0.77, coop 0.87. Training as in §5 but batch 8 with no accumulation (same effective batch): 127 s per epoch for the three adapters in parallel on one RTX A6000.
+
+**Round-3 test (n = 200; own-persona accuracy in bold):**
+
+| policy | base labels | agg labels | coop labels | aggression when offered | field rows (own labels) |
+|---|---|---|---|---|---|
+| untuned | 0.40 | 0.41 | 0.54 | 0.22 | — |
+| baseline | **0.735** | 0.59 | 0.69 | 0.05 | 0.82 |
+| aggressive | 0.59 | **0.715** | 0.51 | 0.43 | 0.78 |
+| collaborative | 0.60 | 0.45 | **0.805** | 0.01 | 0.76 |
+
+**Tooling:**
+- `scripts/ft-field.ts` runs the virtual field observer on model-driven worlds and writes the field-metrics JSON shape. With `--cond rules` it reproduces `field-metrics` exactly (79 target values, compressed and field). `all-<policy>` conditions put all three communities on one policy, which is what the pooled observer can compare with wild data. `--log-decisions` logs a hash-selected share of decisions (features and probabilities) without touching world.rng; `--stand-ins` swaps the model for fitted stand-ins; runs record a weekly census.
+- **GPU capacity:** the Decide forward pass is compute-bound on an RTX A6000 at about 60-67 decisions/s whatever the batch size (35/s at batch 1); CPU preparation is about 3 ms per decision. Per-run workers at 8+ concurrent runs already reach about 70% of that, so cross-run batching (`training/decide_ft/server.py`) adds at most ~1.5x. FlashDeBERTa (`MGOGO_FLASHDEBERTA=1`) did not load on torch 2.4. A model-driven population costs about 17 GPU-minutes per simulated field day, so years of real-model runs cost tens of dollars per seed.
+
+**Real models against the field targets** (field map, 180-day rules burn-in, 3 observed days, seeds 7001-7002; rules 3 seeds; means with the seed range in the dashboard). Three days speak to activity, party size and day range only:
+
+| target (wild band) | rules | untuned | baseline | aggressive | collaborative |
+|---|---|---|---|---|---|
+| feeding share (0.33-0.5) | 0.46 | 0.41 | 0.71 | 0.59 | 0.62 |
+| travel share (0.12-0.25) | 0.26 | 0.07 | 0.13 | 0.16 | 0.09 |
+| grooming share (0.08-0.18) | 0.07 | 0.28 | 0.07 | 0.10 | 0.20 |
+| male day range, km (1.5-3.5) | 3.6 | 0.15 | 1.2 | 2.1 | 2.2 |
+| party size (3-9) | 2.8 | 3.3 | 2.8 | 2.05 | 4.5 |
+
+- The model-driven populations travel less than wild chimpanzees and than rules; the untuned model barely moves (0.15 km/day) and grooms 28% of the day. The adapters feed more than the wild band (0.59-0.71).
+- The collaborative population has the largest parties (4.5, inside the band) and grooms at the top of the band; the aggressive one has the smallest parties (2.05, below the band).
+- Two seeds and three days: seed ranges are wide (for example aggressive grooming 0.04-0.16). Treat these as directions.
+
+**Stand-ins (Stage P4):** a one-hidden-layer network (96 units) over 437 per-option features (`scripts/ft-features.ts`: action, variant, social class crossed with the chimp's needs, time of day, party and mood, and target relation, bond, tension and rank), fitted to each adapter's probabilities on 12,000 unlabeled contexts (`training/decide_ft/distill.py`). Standardization is folded into the first layer so TypeScript scores sparse rows in 0.12 ms per decision.
+- Agreement with the adapter's pick on worlds the fit never saw: untuned 0.67, baseline 0.76, aggressive 0.75, collaborative 0.77 (a linear fit reached 0.66). On the adapters' own on-policy decisions from the real runs: baseline 0.76-0.79, aggressive 0.73-0.75, collaborative 0.72-0.75, untuned 0.54-0.60.
+- Population check (same seeds, map and window as the real runs): directions hold, levels do not always. The baseline stand-in grooms about twice as much as the baseline adapter (0.13-0.15 against 0.07), stand-in parties are smaller, and the untuned stand-in feeds too much. Every figure that uses stand-ins says so.
+
+**Long runs (Stage P5):** 5 years on the field map, 3 seeds (8001-8003), rules and the four stand-ins, weekly census, on a 28-vCPU pod (`artifacts/decide-ft/field-longrun-5y`). Judged on the middle seed against 11 targets a 5-year run can judge: rules 5, baseline 5, untuned 2, collaborative 2, aggressive 0 inside the wild band.
+- Trained troops feed 71-82% of daylight (wild 33-50%) and travel 2-9% (wild 12-25%); only baseline reaches the wild day range (1.9 km).
+- Encounters per community-year: rules 79, untuned 14, aggressive 4.0, baseline 1.6, collaborative 0.75 (wild 5-12); seeds disagree up to 20x (baseline 1.4 / 31.6 / 1.6), so single means mislead. Killings: 1 in 45 community-years for rules and collaborative, none otherwise.
+- Trained troops make up after 29-100% of fights (wild 8-22%); the collaborative troop's male hierarchy is flat (0.08; wild 0.2-0.7).
+- Every population grew 18-24% in 5 years; first-year infant deaths 10% (aggressive) to 26% (collaborative), wild 11-19%.
+- Rules encounters here (79) are far above the science stages' own rules runs (8.7 over 10 years in c6-field10y): different code (snapshot-v3, mid-C6p) and no field experiments; comparisons between troops share the code, comparisons with the science scorecards do not.
+
+**Comparison page:** https://claude.ai/artifact/RtLvuv3bUrcb7s77dsvkty (private), in the field guide's visual language, rebuilt from `training/decide_ft/report_data.py` (one JSON, troops judged on the middle seed): seven findings, one figure each, and a troop key that highlights one troop across every figure.
+
+**Field-study scenarios (Stage P5):** `scripts/ft-scenario.ts` runs the C6 territory scenarios (`scripts/field-scenario.ts`) with every community on rules or one stand-in, no burn-in, a census every 73 days (area of the 95% isopleth, members, counters, patrols, incursions, patrol members by sex, patrols with females, share of the community's adult males per patrol). Two 32-vCPU pods ran 77 runs in 30 minutes (`artifacts/decide-ft/scenarios`, snapshot-v3 code).
+- Ngogo expansion (T-LET-4, held out, +10-35%): West starts with 6 extra adult males; its range against the same seed without them after 2 years, median of 5 seeds: rules +18%, untuned +10%, baseline +2%, aggressive +17%, collaborative +20%. Single seeds swing from -33% to +67%, so no troop's gain is distinguishable from seed noise at 5 seeds (low confidence). 2 killings in 50 runs (1 with extra males): the target's premise, gains after lethal wins, is not met, and 2 years is a fifth of Ngogo's 10.
+- Taï patrols (T-PAT-3 parts, T-PAT-1, T-PAT-6; data/presets/tai-patrols.json, 1 year, 3 seeds): under rules, patrols with females 0% -> 29% (Taï 57%, Ngogo about 0), share of the community's males per patrol 63% -> 56% (band 55-85%), patrols 0.15 -> 0.11 per community-week (band 0.1-0.5). Aggressive: females on 30% -> 45% of patrols, males 40% -> 45% (below band), 0.06 -> 0.05 patrols a week. Untuned, baseline and collaborative almost never patrol (0.002-0.019 a week), so the preset has nothing to act on; incursion shares are 0-37% against 40-70%.
+- Both are on the comparison page (sections 7 and 8).
+
+**Cost:** RunPod about $4.05 of the $5 approved for the whole project (round 3 pod $0.86; long-run CPU pod about $0.3; scenario pods about $0.70).
+
 ## 8. Constraints kept
 
 - GHN and its Python environment are not modified. The live app, `server/*` and `src/sim/*` are unchanged until an optional integration stage.

@@ -50,13 +50,13 @@ def rates(rows, picks, probs) -> dict:
             "pick_c0": round(sum(k == 0 for k in picks) / len(rows), 4)}
 
 
-def scorers(models: list[str]):
+def scorers(models: list[str], device: str = "mps"):
     """name -> fn(packets) -> probabilities. GLiNER loads only if a GLiNER model is asked for; Jev is called concurrently."""
     out, hashes = {}, {}
     local = [m for m in models if m != "jev"]
     if local:
         from adapters import AdapterModel
-        am = AdapterModel()
+        am = AdapterModel(device)
         hashes.update(am.hashes)
         for name in local:
             if name == "base" or name in am.names:
@@ -70,10 +70,10 @@ def scorers(models: list[str]):
     return out, hashes
 
 
-def main(split: str, models: list[str], merge: bool) -> None:
+def main(split: str, models: list[str], merge: bool, device: str = "mps") -> None:
     labels = load_labels()
     rows = [r for r in load_split(split) if r["id"] in labels]
-    score_fns, hashes = scorers(models)
+    score_fns, hashes = scorers(models, device)
     packets = [r["packet"] for r in rows]
     # Permuted menus test whether a policy follows option content rather than position.
     perm = []
@@ -110,6 +110,13 @@ def main(split: str, models: list[str], merge: bool) -> None:
         out["permutation_consistency"] = round(same / len(rows), 4)
         out.update(rates(rows, picks, probs))
         out["mean_confidence"] = round(sum(max(p) for p in probs) / len(probs), 4)
+        # Mixed-profile rounds (round 3): accuracy per profile, from the manifest's seed -> profile map.
+        profiles = json.loads((FT / "contexts/manifest.json").read_text())["splits"].get(split, {}).get("profiles")
+        if profiles:
+            for prof in sorted(set(profiles.values())):
+                idx = [i for i, r in enumerate(rows) if profiles.get(str(r["seed"])) == prof]
+                for p in ("base", "agg", "coop"):
+                    out[f"acc_{p}_{prof}"] = round(sum(f"c{picks[i]}" == labels[rows[i]["id"]][p] for i in idx) / max(1, len(idx)), 4)
         report["models"][name] = out
         print(name, json.dumps(out), flush=True)
     dest.mkdir(parents=True, exist_ok=True)
@@ -128,4 +135,4 @@ def main(split: str, models: list[str], merge: bool) -> None:
 
 if __name__ == "__main__":
     arg = lambda flag, default: sys.argv[sys.argv.index(flag) + 1] if flag in sys.argv else default
-    main(arg("--split", "test"), arg("--models", "base,baseline,aggressive,collaborative").split(","), "--merge" in sys.argv)
+    main(arg("--split", "test"), arg("--models", "base,baseline,aggressive,collaborative").split(","), "--merge" in sys.argv, arg("--device", "mps"))

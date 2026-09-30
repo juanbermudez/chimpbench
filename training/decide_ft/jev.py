@@ -4,27 +4,22 @@ Jev gets MGOGO's own packet (buildLocalQuestion in server/decide.ts): the same l
 GLiNER worker sees. The state goes as Jev's native JSON object, not the YAML rendering GLiNER needs. The model
 still only chooses: the harness re-checks legality before applying an answer.
 
-Spend is capped. Every call is booked from Jev's reported input tokens at PRICE_IN, and a call that could cross the
-cap is refused before it is sent. Each call appends one receipt line (tokens, latency, choice, probabilities).
+Spend goes through the run-wide guard (spend_guard.py): one persistent ledger shared by every process, an explicit
+per-run cap with no default, reservations sized from the request and settled atomically, unknown billing booked as
+spent, retries only on 429/529, a hard stop at the cap, jev-1.13.0 pinned, a receipt per attempt, dry-run mode and a
+kill switch. Every receipt and answer carries the do-not-train marker (TypeSafe MCA §2.3(b)).
 """
 from __future__ import annotations
 
-import json
 import math
-import os
 import ssl
-import threading
-import time
-import urllib.error
-import urllib.request
 from pathlib import Path
 
 from common import FT, GHN  # GHN is on sys.path after this import
+from spend_guard import DO_NOT_TRAIN, PINNED_MODEL, PRICE_IN, GuardedJev, Ledger, http_sender
 
 ENDPOINT = "https://api.typesafe.ai/v1/systemone"
-MODEL = "jev-latest"
-PRICE_IN = 0.042 / 1_000_000  # $ per input token; output is free. From GHN's JevProvider runs (experiments/jev_live_smoke.py).
-RESERVE_TOKENS = 4096  # booked before a call so concurrent calls cannot overshoot the cap (packets are ~450-600 tokens)
+MODEL = PINNED_MODEL
 
 
 class JevBudgetError(RuntimeError):
@@ -46,43 +41,33 @@ def read_key() -> str:
 
 
 class JevClient:
-    def __init__(self, max_dollars: float = 1.0, receipts: Path | None = None, timeout: float = 30.0, retries: int = 6):
-        if not (max_dollars > 0 and math.isfinite(max_dollars)):
-            raise ValueError("max_dollars must be finite and positive")
-        self.max_dollars, self.timeout, self.retries = max_dollars, timeout, retries
+    def __init__(self, *, ledger: str | Path, run_id: str, cap_dollars: float, receipts: Path | None = None, timeout: float = 30.0,
+                 dry_run: bool = False, kill_file: Path | None = None):
+        """No default cap: every paid run names its ledger, its run id and its approved cap in dollars."""
+        self.ledger = Ledger(ledger)
+        self.ledger.open_run(run_id, cap_dollars)  # refuses a missing, non-positive or changed cap
+        self.run_id = run_id
         self.receipts = receipts or FT / "jev" / "receipts.jsonl"
-        self.receipts.parent.mkdir(parents=True, exist_ok=True)
-        self._key = read_key()
-        self._tls = tls_context()
-        self._lock = threading.Lock()
-        self.spent = 0.0
-        self.reserved = 0.0
-        self.calls = 0
+        self._key = "" if dry_run else read_key()  # a dry run never reads the credential
+        self.guard = GuardedJev(self.ledger, run_id, http_sender(ENDPOINT, lambda: self._key, timeout, tls_context()), self.receipts,
+                                dry_run=dry_run, kill_file=kill_file or FT / "jev" / "KILL")
 
-    def _book(self, reserve: float) -> None:
-        with self._lock:
-            if self.spent + self.reserved + reserve > self.max_dollars:
-                raise JevBudgetError(f"Jev cap ${self.max_dollars:.2f} reached (spent ${self.spent:.4f})")
-            self.reserved += reserve
+    @property
+    def spent(self) -> float:
+        return self.ledger.totals(self.run_id)["spent"]
+
+    @property
+    def calls(self) -> int:
+        return self.ledger.totals(self.run_id)["attempts"]
 
     def choose(self, packet: dict, tag: str = "") -> list[float]:
-        """Probabilities over the packet's options, in criteria order."""
+        """Probabilities over the packet's options, in criteria order. CapReached, KillSwitch and BillingUnknown propagate:
+        the caller stops the world and marks it incomplete (never fills the rest with rules)."""
         question = packet["questions"]["action"]
         labels = list(question["criteria"])
-        body = json.dumps({"state": packet["state"], "model": MODEL, "questions": {"action": question}}).encode()
-        reserve = RESERVE_TOKENS * PRICE_IN
-        self._book(reserve)
-        try:
-            raw, seconds = self._post(body)
-        finally:
-            with self._lock:
-                self.reserved -= reserve
-        tokens = raw.get("usage", {}).get("input_tokens")
-        if type(tokens) is not int or tokens < 0:
-            raise RuntimeError("Jev response has no input token usage")
-        with self._lock:
-            self.spent += tokens * PRICE_IN
-            self.calls += 1
+        raw = self.guard.ask({"state": packet["state"], "questions": {"action": question}}, tag=tag)
+        if raw.get("dry_run"):
+            raise JevBudgetError("dry run: no answer (estimated tokens are in the receipts)")
         answer = (raw.get("answers") or {}).get("action") or {}
         probs = answer.get("probabilities") or {}
         if answer.get("type") != "choice" or set(probs) != set(labels) or answer.get("choice") not in labels:
@@ -91,37 +76,20 @@ class JevClient:
         total = math.fsum(values)
         if not all(math.isfinite(v) and 0 <= v <= 1 for v in values) or not 0.98 <= total <= 1.02:
             raise RuntimeError("Jev probabilities are not a distribution")
-        values = [v / total for v in values]
-        with self._lock, open(self.receipts, "a") as f:
-            f.write(json.dumps({"t": round(time.time(), 3), "tag": tag, "model": raw.get("model"), "seconds": round(seconds, 3),
-                                "input_tokens": tokens, "choice": answer["choice"], "probabilities": probs}) + "\n")
-        return values
-
-    def _post(self, body: bytes) -> tuple[dict, float]:
-        delay = 1.0
-        for attempt in range(self.retries + 1):
-            req = urllib.request.Request(ENDPOINT, data=body, method="POST", headers={
-                "Content-Type": "application/json", "Authorization": f"Bearer {self._key}", "User-Agent": "mgogo-decide-ft/1.0"})
-            began = time.monotonic()
-            try:
-                with urllib.request.urlopen(req, timeout=self.timeout, context=self._tls) as resp:
-                    return json.loads(resp.read()), time.monotonic() - began
-            except urllib.error.HTTPError as err:
-                if err.code in (401, 403, 422) or attempt == self.retries:  # not retryable, or out of retries
-                    raise RuntimeError(f"Jev HTTP {err.code}: {err.read()[:200]!r}") from None
-            except (urllib.error.URLError, TimeoutError) as err:
-                if isinstance(getattr(err, "reason", None), ssl.SSLError) or attempt == self.retries:  # TLS failures are not transient
-                    raise RuntimeError(f"Jev unreachable: {err}") from None
-            time.sleep(delay)  # 429 overload, 5xx and network errors back off exponentially
-            delay = min(delay * 2, 30.0)
-        raise AssertionError("unreachable")
+        return [v / total for v in values]
 
 
-if __name__ == "__main__":  # one live call on a dev context: latency, tokens and cost
+if __name__ == "__main__":  # one live call on a dev context: needs --ledger, --run and --cap
+    import argparse
+    import time
     from common import load_split
-    client = JevClient(max_dollars=0.01)
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--ledger", required=True); ap.add_argument("--run", required=True); ap.add_argument("--cap", type=float, required=True)
+    ap.add_argument("--dry-run", action="store_true")
+    a = ap.parse_args()
+    client = JevClient(ledger=a.ledger, run_id=a.run, cap_dollars=a.cap, dry_run=a.dry_run)
     row = load_split("dev")[0]
     began = time.monotonic()
     probs = client.choose(row["packet"], tag="smoke")
-    print(f"{row['id']}: {time.monotonic() - began:.2f} s, spent ${client.spent:.6f}, picks c{max(range(len(probs)), key=probs.__getitem__)}, "
-          f"probs {[round(p, 3) for p in probs]}")
+    print(f"{row['id']}: {time.monotonic() - began:.2f} s, spent ${client.spent:.6f} ({DO_NOT_TRAIN}), "
+          f"picks c{max(range(len(probs)), key=probs.__getitem__)}, probs {[round(p, 3) for p in probs]}")

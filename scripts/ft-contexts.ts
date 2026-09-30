@@ -6,6 +6,7 @@
 //   pnpm exec tsx scripts/ft-contexts.ts                          # default splits -> artifacts/decide-ft/contexts/
 //   pnpm exec tsx scripts/ft-contexts.ts --split test --seeds 3001 --per-world 20 --days 6 --out /tmp/x
 //   ... --profile field   sample the 8 km field profile (default compressed)
+//   ... --feats   also record per-option stand-in features;  --capture-p p --per-chimp n   denser sampling (distillation)
 //   ... --v1    also record the pre-context-aware inputs (full night menu, fixed prompt) for an A/B
 import { createHash } from 'node:crypto';
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -15,6 +16,7 @@ import { buildRequest } from '../src/decision';
 import { applyDecision, createWorld, rulesChoice, tickWorld } from '../src/simulation';
 import { computeCandidates, candidateMeta, V } from '../src/sim/candidates';
 import { TICK_HOURS } from '../src/sim/state';
+import { optionFeatures } from './ft-features';
 import type { Action, Candidate, Chimp, World } from '../src/types';
 
 export type OptionClass = 'aggressive' | 'protective' | 'collective' | 'affiliative' | 'avoidant' | 'mating' | 'maintenance';
@@ -54,6 +56,8 @@ export interface ContextRecord {
   jev: Omit<ReturnType<typeof buildJevQuestion>, 'keys'>;
   /** With { v1: true }: the pre-context-aware inputs for the same moment (full menu, fixed prompt), to A/B them. */
   v1?: { options: ContextRecord['options']; rulesIndex: number; packet: ReturnType<typeof buildLocalQuestion> };
+  /** With { feats: true }: per-option features for the distilled stand-ins (scripts/ft-features.ts), in option order. */
+  feats?: number[][];
 }
 
 function mulberry32(seed: number) {
@@ -77,7 +81,7 @@ function describe(world: World, c: Chimp, options: Candidate[]): ContextRecord['
  * record is kept when the old menu is a real choice even if the night or dusk menu leaves fewer than two options (then
  * rules decide in v2, and `options` holds what is left).
  */
-export function capture(world: World, c: Chimp, split: string, seed: number, opts: { v1?: boolean } = {}): ContextRecord | null {
+export function capture(world: World, c: Chimp, split: string, seed: number, opts: { v1?: boolean; feats?: boolean } = {}): ContextRecord | null {
   const cur = buildRequest(world, c);
   const old = opts.v1 ? buildRequest(world, c, { phaseMenu: false }) : null;
   const gate = old ?? cur;
@@ -92,10 +96,11 @@ export function capture(world: World, c: Chimp, split: string, seed: number, opt
     chimpId: c.id, name: c.name, community: c.troopId, sex: c.sex, age: +c.age.toFixed(2),
     bucket: bucketOf((v1 ?? { options: described }).options.map(d => d.cls)), options: described, rulesIndex: cur.rulesIndex, packet, jev,
     ...(v1 ? { v1 } : {}),
+    ...(opts.feats ? { feats: optionFeatures(cur.context, cur.options, cur.rulesIndex) } : {}),
   };
 }
 
-export interface SampleOptions { split: string; seed: number; days: number; warmupDays: number; perWorld: number; minAge: number; captureP: number; spacingH: number; perChimp: number; v1?: boolean; profile?: 'compressed' | 'field' }
+export interface SampleOptions { split: string; seed: number; days: number; warmupDays: number; perWorld: number; minAge: number; captureP: number; spacingH: number; perChimp: number; v1?: boolean; feats?: boolean; profile?: 'compressed' | 'field' }
 
 /** Run one world, pool candidate contexts at decision points, then draw a stratified sample. */
 export function sampleWorld(o: SampleOptions): ContextRecord[] {
@@ -111,7 +116,7 @@ export function sampleWorld(o: SampleOptions): ContextRecord[] {
     for (const c of world.chimps) {
       if (!c.alive || c.awaitingDecisionSince === null) continue;
       if (t >= warm && c.age >= o.minAge && world.time - (lastTaken.get(c.id) ?? -1e9) >= o.spacingH && rand() < o.captureP) {
-        const rec = capture(world, c, o.split, o.seed, { v1: o.v1 });
+        const rec = capture(world, c, o.split, o.seed, { v1: o.v1, feats: o.feats });
         if (rec) { pool.push(rec); lastTaken.set(c.id, world.time); }
       }
       const pick = rulesChoice(world, c);
@@ -148,6 +153,8 @@ const SPLITS: Record<string, { seeds: number[]; perWorld: number }> = {
   train: { seeds: [1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012], perWorld: 75 },
   dev: { seeds: [2001, 2002], perWorld: 50 },
   test: { seeds: [3001, 3002, 3003, 3004], perWorld: 50 },
+  // Unlabeled contexts for the stand-in fits (Stage P4); run only with --split distill --seeds ...
+  distill: { seeds: [], perWorld: 300 },
 };
 
 if (process.argv[1]?.endsWith('ft-contexts.ts')) {
@@ -165,7 +172,7 @@ if (process.argv[1]?.endsWith('ft-contexts.ts')) {
     const rows: ContextRecord[] = [];
     for (const seed of seeds) {
       const t0 = Date.now();
-      const got = sampleWorld({ split, seed, days, warmupDays, perWorld, minAge: 8, captureP: 0.08, spacingH: 2, perChimp: 6, v1: args.includes('--v1'), profile: flag('profile', 'compressed') === 'field' ? 'field' : 'compressed' });
+      const got = sampleWorld({ split, seed, days, warmupDays, perWorld, minAge: 8, captureP: +flag('capture-p', '0.08'), spacingH: 2, perChimp: +flag('per-chimp', '6'), v1: args.includes('--v1'), feats: args.includes('--feats'), profile: flag('profile', 'compressed') === 'field' ? 'field' : 'compressed' });
       rows.push(...got);
       const mix = Object.fromEntries((Object.keys(QUOTA) as Bucket[]).map(b => [b, got.filter(r => r.bucket === b).length]));
       console.log(`${split} seed ${seed}: ${got.length} contexts ${JSON.stringify(mix)} in ${((Date.now() - t0) / 1000).toFixed(1)} s`);

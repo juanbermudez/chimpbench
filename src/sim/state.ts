@@ -140,6 +140,13 @@ export interface SimState {
 export type SimChimp = Chimp & { sim: ChimpX };
 export type SimWorld = World & { sim: SimState };
 
+/**
+ * ChimpX and SimState keys that exist only once their mechanism has fired (so worlds with the switch off keep their
+ * shape and hashes). The save check (src/persist/envelope.ts worldShapeProblem) ignores them.
+ */
+export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt'];
+export const OPTIONAL_SIM: readonly string[] = ['fission'];
+
 export function newX(): ChimpX {
   return {
     actEnd: 0, phase: 0, prog: 0, gx: 0, gy: 0, gz: 0, intr: '', finished: false, interId: -1,

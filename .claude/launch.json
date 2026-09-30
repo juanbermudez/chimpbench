@@ -4,8 +4,38 @@
     {
       "name": "mgogo-dev",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["dev"],
+      "runtimeArgs": [
+        "dev"
+      ],
       "port": 5173
+    },
+    {
+      "name": "ft-dashboard",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "5199",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "artifacts/decide-ft/dashboard"
+      ],
+      "port": 5199
+    },
+    {
+      "name": "ft-guide",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "5198",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "docs"
+      ],
+      "port": 5198
     }
   ]
 }

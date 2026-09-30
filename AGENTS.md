@@ -19,7 +19,7 @@ pnpm exec tsx scripts/field-metrics.ts [--profile field] --days 365 [--burn-in 1
 pnpm exec tsx scripts/field-scenario.ts baseline|expansion --years 10 --seeds 48,7,21,5,11 --workers 4 --out artifacts/validation/c6   # territory scenarios (UD maps, stability, T-LET-4)
 pnpm exec tsx scripts/movement-metrics.ts [--seeds 48,7,21] [--burn-in 120] [--days 8] [--workers 2] [--fitted-only] [--params '{…}']   # field movement diagnosis (targets, endings, feeding bouts, reversals); --fitted-only hides held-out C12 statistics
 pnpm exec tsx scripts/territory-sensitivity-metrics.ts [--seeds 48,7,21]   # one-at-a-time territory-cost sensitivity (C6 review)
-pnpm exec tsx scripts/proof.ts --list|--estimate|--dry-run|--run [--workers 6] [--from step]   # combined proof (docs/simulation.md "Combined proof"); ablation sets in data/proof-ablations.json
+pnpm exec tsx scripts/proof.ts --list|--estimate|--dry-run|--run [--plan lean|full] [--parallel] [--workers 6] [--from step]   # combined proof (lean: 3 × 75-year generation worlds, the default) (docs/simulation.md "Combined proof"); ablation sets in data/proof-ablations.json
 pnpm exec tsx scripts/c9-scenario.ts [--kinds baseline,large,large-off] [--years 40] [--seeds 5101,5202,5303,5404,5505] [--workers 6]   # C9 fission scenarios, T-FIS scoring (truth); --days for dry runs
 pnpm exec tsx scripts/fission-bands-metrics.ts   # T-FIS-5 band from the Ngogo post-fission patrols (derived statistics only)
 pnpm exec tsx scripts/patrol-bands-metrics.ts   # real-data bands of T-PAT-8 (Ngogo patrols × fruit) and T-BRD-1 (Taï border stops); derived statistics only

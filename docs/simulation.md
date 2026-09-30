@@ -1393,10 +1393,36 @@ One command runs the whole proof once C8 and C7e are merged: `scripts/proof.ts`.
 
 ```sh
 pnpm exec tsx scripts/proof.ts --list                  # steps, commands and whether a full run may start
-pnpm exec tsx scripts/proof.ts --estimate              # wall time per step at 2 and 6 workers
-pnpm exec tsx scripts/proof.ts --dry-run --workers 2   # every step for 1 seed x a few days, into artifacts/validation/proof-dry/
-pnpm exec tsx scripts/proof.ts --run --workers 6       # the proof; resume a failed run with --from <step>, or run a subset with --only a,b
+pnpm exec tsx scripts/proof.ts --estimate              # wall time per step at 2 and 6 workers (and with --parallel)
+pnpm exec tsx scripts/proof.ts --dry-run --workers 2   # every step on seed 48 x a few days, into artifacts/validation/proof-dry/
+pnpm exec tsx scripts/proof.ts --run --parallel --workers 6   # the proof; resume with --resume or --from <step>, or run a subset with --only a,b
 ```
+
+Two plans: `--plan lean` (the default) and `--plan full`.
+
+**Lean plan** (29 September 2026, user decision: the proof runs locally on 4–6 cores; declared and logged in `data/targets.json` `protocolLog` before any proof value existed).
+
+| Step | What it runs |
+| --- | --- |
+| `generations` | Three generation worlds, set B's 1616, 1717 and 1818, × 75 years (≈ 3 chimpanzee generations) at natural aging, C8 demography, hash-bound `--unseal` (T-DEM-14, T-DEM-15 and the other sealed rows, on these seeds only). They carry every demography row. |
+| `scenario` | The expansion scenario and its paired baseline on the same three seeds × 10 years: T-LET-4 relative to the baseline, T-LET-5 with `--unseal`. A 1-year behaviour run cannot test T-LET-4, which needs lethal wins and years of range change. |
+| `c9-large` | The C9 `large` scenario on 5101 × 75 years (fission on). No generation world runs with fission: C9's setting includes `assocBondW` 0.3, which changes party joining from the first day, and a split would re-form communities, hierarchies and demographic denominators. T-FIS-3 has no paired `large-off` run in this plan and is reported insufficient. |
+| `dev-field` | Behaviour: the development seeds × 1 year after a 180-day burn-in. All non-demography rows, patrol rows with male-party follows where their protocol says so, T-BRD-1. |
+| `fresh-field` | Fresh seeds 606–1010 × 1 year after the burn-in: the fitted rows and the re-tested patrol rows. |
+| `ablation-*` | All on and each stage off on seed 48 × 1 year after the burn-in, each followed by a diff. |
+| `compare-*`, `guide-data` | As in the full plan, locally afterwards. |
+
+**Wall time of the lean plan** (`--estimate`, idle machine). The C9 large world is the long pole: about 10 h on one core, a lower bound, because its population can grow toward `popCap` 180. Every other simulation step together takes about 1.5 h at 4 or 6 workers with `--parallel`, and the local steps another 0.1–0.2 h. The costs per seed-day: demography 0.20 s (the C8 branch's 40-year runs in demography mode), fission 1.3 s (4.3 s measured at load ~35 on 12 cores).
+
+**Power of the lean plan.** Three long worlds give many births and deaths (≈ 675 community-years), so the rate rows are well powered. Likely **insufficient** or wide:
+- T-DEM-15: orphaned sons who reach adulthood are few.
+- T-DEM-14: weak power.
+- T-LET-4 and T-LET-5: need lethal wins in the 10-year scenario on only three seeds.
+- T-FIS-3: no paired baseline. T-FIS-2, -4 and -5: at most a split or two in one world.
+- The killing rows from 1-year behaviour runs (T-LET-1, -2, -3, -6): about 15 community-years, so a few killings at most.
+- T-BRD-1: probably a wide interval from one year of border stops.
+
+**Full plan** (the original):
 
 | Step | What it runs |
 | --- | --- |
@@ -1417,9 +1443,9 @@ pnpm exec tsx scripts/proof.ts --run --workers 6       # the proof; resume a fai
 - C8 is merged.
 - There are no uncommitted changes under `src/`, `scripts/`, `data/` or `tests/`.
 
-**Dry run.** It uses one seed per set and a few days. The scenario uses the compressed profile for 1 year. The C8 steps run without `--unseal` and are skipped until C8 is merged. Every output goes to the dry directory, and `guide-data` writes there with `--out-dir`. The first dry run on 29 September passed every step except the C8 ones, which were skipped.
+**Dry run.** It uses development seed 48 for every step (never a reserved proof seed) and a few days. The scenario uses the compressed profile for 1 year. The C8 steps run without `--unseal` and are skipped until C8 is merged. Every output goes to the dry directory, and `guide-data` writes there with `--out-dir`. The first dry run on 29 September passed every step except the C8 ones, which were skipped.
 
-**Wall time** (`--estimate`, idle machine). About 22 h at 2 workers and 8.5 h at 6. The two C8 40-year steps are three quarters of it (16 h and 6 h). On a loaded machine, or with more workers than performance cores, expect 1.3–1.6× longer: about 29–36 h and 11–14 h. The costs per seed-day are planning figures: field 0.30 s, scenario 0.25 s, demography 0.50 s (population near the cap), comparisons 0.28 s.
+**Wall time of the full plan** (`--estimate --plan full`, idle machine). One step at a time, about 12.5 h at 2 workers and 4.8 h at 6. With `--parallel`, the simulation steps take about 11 h and 3.7 h. The two C8 40-year steps are most of it. On a loaded machine, or with more workers than performance cores, expect 1.3–1.6× longer. The costs per seed-day: field 0.30 s, scenario 0.25 s, comparisons 0.28 s (planning figures); demography 0.20 s, measured. Before 29 September the planned figure was 0.50 s, which gave about 22 h at 2 workers and 8.5 h at 6. The C9 proof is not part of this plan (`scripts/c9-scenario.ts`, 5 seeds × 3 kinds × 40 years).
 
 ## 19. Stylizations, limitations and calibration needs
 
