@@ -127,6 +127,32 @@ The pre-C7a female core-area cost amplifies the effect. With it removed (not a C
 - Compared with the run before the amendment (seeds 48 and 7: q1 0.61, female e15 2.3 y), the amendment helps. Adult-female mortality still drives the decline, consistent with the residual lactation deficit above.
 - The C13 rules policy and intake valuation (merged after this run) change the food choices this deficit depends on. The post-C13 check follows.
 
+**Post-C13 check (development; C8 merged with main b4cca94, branch a395708; field, natural aging, 10 years, seeds 48, 7, 21; truth reads).**
+- Paired arms on the same code. "On" is the merged default. "Off" is `rgOn` 0 and `intakeValue` 0, which is hash-identical to the pre-C13 C8 model (tests/sim-rg.test.ts).
+- Script: `artifacts/validation/c8/sanity/c8-sanity.ts`.
+  - Adult females (15 y or older) are sampled hourly in daylight.
+  - Lean days are the lowest quartile of the daily fruit index.
+  - Adult-female mortality is deaths at 15 y or older per female-year.
+  - The script that produced the earlier "0.95–1.00 in lean periods" figure was lost with /tmp at a reboot, so only the paired arms compare like with like.
+
+| Seed | Arm | Living, year 0 → 10 | Births / deaths | Growth per year | Adult-female mortality per year (starvation deaths) | Lactating median hunger (lean days) | Other adult females (lean days) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 48 | off | 49 → 36 | 35 / 48 = 0.73 | −3.1% | 0.096 (10) | 0.67 (0.74) | 0.61 (0.69) |
+| 48 | on | 49 → 65 | 37 / 21 = 1.76 | +2.8% | 0.025 (0) | 0.63 (0.71) | 0.42 (0.52) |
+| 7 | off | 49 → 42 | 31 / 38 = 0.82 | −1.5% | 0.047 (2) | 0.64 (0.67) | 0.51 (0.50) |
+| 7 | on | 49 → 68 | 41 / 22 = 1.86 | +3.3% | 0.006 (0) | 0.64 (0.67) | 0.44 (0.45) |
+| 21 | off | 49 → 53 | 36 / 32 = 1.12 | +0.8% | 0.045 (1) | 0.63 (0.68) | 0.52 (0.56) |
+| 21 | on | 49 → 74 | 42 / 17 = 2.47 | +4.1% | 0.000 (0) | 0.65 (0.70) | 0.45 (0.52) |
+
+- **Pooled, on:** births / deaths 120 / 60. Adult-female mortality 5 in 522 female-years (0.010 per year), no starvation deaths.
+- **Pooled, off:** births / deaths 102 / 118. Adult-female mortality 26 in 440 female-years (0.059 per year), 13 starvation deaths.
+- **What C13 changes:** the starvation tail disappears and non-lactating females are fed better.
+- **What it does not change:** the lactating median hunger. That median is still set by the energy budget (the lactation term, about +0.29 hunger per day), as diagnosed above.
+- **New issue:** with starvation gone, adult-female mortality in these windows is below the life-table level (about 0.03 per year for e15 ≈ 35).
+  - Two reasons: epidemic deaths are lumpy, and the non-epidemic adult-female baseline is small because the floor binds at 30–45 y.
+  - Populations grow 3–4% per year and would reach the cap of 120 in about 25 years.
+  - A 40-year check is needed before T-DEM-2 or T-DEM-10 can be read on the merged model.
+
 ## The food-valuation clue (Jev free-arms test; integrator's note)
 
 - On `main` without the amendment (seeds 6501–6905, field, 5 days after a 180-day burn-in), median hunger was:
