@@ -1285,6 +1285,105 @@ T-COM-10 stays n/a until then.
 **Effort / risk**: L (5–8 days plus 2–4 nights of compute). Risk: medium (emulator quality on noisy ABM outputs; ten Broeke et al. warn variance-based indices can mislead on skewed outputs).
 **Status**: Not Started
 
+
+#### C11 pre-registration (29 September 2026, docs only; nothing built, no run)
+
+This fixes C11's rules before any calibration code or run. It refines §7, and where the two differ, this text applies. C11 starts after the combined proof, and the proof's scorecard is the pre-calibration reference.
+
+**1. What is calibrated.**
+- **Candidates.** Registry entries with `calibrate: true` at the C11 freeze, plus the knobs below. Registry flags change before the freeze only, each change logged.
+  - The 16 now flagged: `amenorrheaMinY`, `dispersalHazardPerY`, `fecundityMax`, `foodCallBase`, `fruitIntakePerH`, `gangImpulseP`, `hazardInfant`, `hearPantHootM`, `huntDayPerMale`, `huntSuccessMax`, `huntSuccessRate`, `partyLinkM`, `patrolH0`, `sightDayM`, `tensionHalfLifeDays`, `walkMps`.
+  - Proposed additions, knobs that stages set by design: `territoryCostA`, `territoryCostB`, `patrolIncursionP`, `partyFollowW`, `partyFollowBase`, `joinSocialW`, `crowdCompeteW`, `memTravelHungerW`, `contactCallW`, `partyStayW`, `revisitW`, `fallbackForageW`, `forageDistScaleM`, `joinCallDistScaleM`, `riskMaleW`, `encounterGapH`. Each stage owner confirms or strikes its knobs before the freeze. C8 names its demography parameters; they are refitted only in step 5b.
+  - About 32 candidates in all, plus C8's.
+- **Never calibrated.**
+  - Ablation switches.
+  - Values taken from data: phenology, P-FOOD-1 density, T-FIS-5's band.
+  - The C10 signature SDs, fitted offline to T-COM-5.
+  - Parameters whose registry `range` is a hard physical bound.
+- **Priors.** Uniform over each registry `range`, or the registry `prior` where one is given. A prior is never widened after any held-out value from C11 has been seen. A posterior piled against a range edge is reported, not fixed.
+- **Statistics used.** Fitted rows of data/targets.json only, with these exclusions:
+  - flagged compromised, not scorable or held as fail (T-RNG-4);
+  - fixed by construction: T-FOOD-1 (the ingested phenology) and T-COM-5 (the offline fit);
+  - pattern rows with no numeric band. These are checked at the end as constraints and reported pass or fail.
+- **Encoded fitted rows** (T-IGE-4, T-SOC-8, T-COM-1, T-COM-11) enter the fit like any other (§7.3) and are never cited as validation. Held-out rows, C12 development diagnostics and the Gombe paths never enter priors, distances or any decision.
+- **Field value and uncertainty per statistic.**
+  - z is the band midpoint, and Var_obs = ((hi − lo) / 4)², treating the band as ±2 SD (§7.3). One-sided bands are checked as constraints.
+  - Discrepancy variance: 10% of z², or 25% for the hunting rows (T-HUN-1, -2, -3, -7), whose rates differ strongly among Kibale sites.
+  - Stochastic variance comes from the noise floor (step 0).
+
+**2. Seeds, all reserved and never run before C11.**
+- Calibration pool C: 7001–7020.
+  - Step 0 uses all 20.
+  - Design points use common random numbers: screening on 7001 and 7002; history matching and the direct confirmation on 7001–7005.
+- Validation set V1: 8101, 8202, 8303, 8404, 8505, for the posterior predictive field rows and the Gombe paths.
+- Scenario set V2: 8606, 8707, 8808, 8909, 9010, for the expansion scenario (T-LET-4, T-LET-5) and the C9 scenario at the posterior median.
+- Demography set V3: 9101, 9202, 9303, 9404, 9505 (step 5b).
+- None overlaps 48/7/21/5/11, 101–505, 606–1010, 1111–2525, 5101–5505 or any direction-check seed. The sets go into AGENTS.md's reserved list at the C11 freeze.
+
+**3. Method** (§7.2, with the budget fixed now). Field profile, observer on, 180-day burn-in.
+- **Step 0, noise floor.** Default parameters on the 20 C seeds × 1 year. Gives the per-statistic SD, which feeds the emulator nugget and the distance.
+- **Step 1, Morris screening** [morris1991] [campolongo2007]. r = 16 trajectories picked for spread from 500 candidates, 4 levels, 2 seeds, 1-year runs. A parameter is frozen at its default when its μ* is below 5% of the largest μ* on every fitted statistic; μ* comes with bootstrap intervals. One-at-a-time sweeps of the top 5 show response shape [tenBroeke2016].
+- **Step 2, history matching** [vernon2010] [andrianakis2015]. Three waves of 200 maximin Latin-hypercube points over the region not yet ruled out, 5 seeds, 2-year runs.
+  - One Gaussian-process emulator per statistic: squared-exponential kernel, maximum-likelihood length scales, nugget from step 0.
+  - Implausibility I = |z − E[f(x)]| / √(Var_em + Var_obs + Var_disc).
+  - Waves 1–2 rule out points with max I > 3. Wave 3 adds the second- and third-maximum tests (> 2.5 and > 2.0).
+  - A statistic joins the maximum only once its emulator's leave-one-out diagnostics pass: ≥ 90% of standardized LOO errors within ±2.
+- **Step 3, posterior.**
+  - ABC rejection on 100,000 emulator draws from the final non-implausible region. Distance = Σ ((E[f(x)] − z) / √(Var_obs + Var_sim))² [vanderVaart2015]. Tolerance: accept the closest 1%.
+  - Then local-linear regression adjustment [beaumont2002].
+  - Confirmed with direct runs: 100 posterior draws × 5 C seeds. The emulator is trusted only if the direct runs' distance distribution matches it within a two-sample KS test at p > 0.05; otherwise another wave runs.
+  - The calibrated model is the posterior median. Its registry hash is logged at the C11 freeze.
+- **Step 4, Sobol indices** on the emulators [saltelli2010], with ten Broeke's caveat on skewed outputs noted per statistic.
+- **Step 5, held-out validation** on V1 at the posterior: 50 posterior draws × 5 seeds × 1 year, the full observer.
+- **Step 5b, demography.** 40-year natural-aging runs on V3: the C8 demography parameters refitted within their priors (about 60 runs), then 10 posterior draws × 5 seeds.
+
+**4. How held-out targets are reported.**
+- **For each held-out row:** field value and uncertainty; predictive median and 90% interval over draws × seeds; standardized error (z − median) / √(Var_pred + Var_obs); covered if |z − median| ≤ 1.645 √(Var_pred + Var_obs); and the band verdict at the posterior median.
+- **Headline:** coverage over the counted held-out rows. Counted rows exclude those flagged compromised, encoded, not scorable or partially encoded. Rows labelled model revised post-freeze count, with the label shown.
+- **Scenario rows** (T-LET-4, T-LET-5, T-FIS-1…5) run once at the posterior median on V2, because they are too costly per draw. They are scored by their frozen scripts and reported beside, not in, the coverage number.
+- **Gombe 15-min paths:** the held-out movement validation. Fresh follows come from `compare-movement.ts` on V1 at the posterior median, then `compare-gombe-paths.ts`. The verdict rules are those of the script; its paired seed rule is extended to V1.
+- **C12 Taï and Ngogo comparisons:** re-run at the posterior median and shown as development diagnostics, never counted.
+- **Pre-calibration reference:** every row also shows the combined proof's value, so the calibration's effect is visible.
+
+**5. Report format.** `artifacts/validation/c11-<date>/report.md` and `.json`: §7.5 with these sections.
+1. Manifest: code hashes of `src/sim` and `src/field`, registry hash before and after, protocol freeze, profile, seed sets, run lengths, observer config.
+2. Fitted table.
+3. Held-out table, with the headline coverage and each label's rows listed apart.
+4. Scenario rows.
+5. Gombe paths.
+6. Parameters: prior, posterior median and 90% interval, Morris μ*, Sobol total index, edge flags, and whether frozen at screening.
+7. Observation bias: observed vs truth.
+8. Ablation table from the combined proof, re-run at the posterior median for C7a, C7c, C7e, C8, C10 and the patrol corrections on V1 × 2 years.
+9. Off-target list, with suspected mechanisms.
+
+A condensed copy regenerates docs/simulation.md §18 and the guide JSON (`guide-data.ts`). `docs/odd.md` follows [grimm2020].
+
+**6. Reuse and scripts.**
+- `scripts/lib/design.ts`, `scripts/lib/gp.ts`, `scripts/sa-morris.ts` and `scripts/calibrate.ts` as in §7.4. Every simulation job goes through `runFieldJob` in the worker pool.
+- `scripts/validate.ts` runs the posterior predictive.
+- The posterior-median runs reuse the proof runner: `scripts/proof.ts` gains `--params-file` and `--seed-set` overrides, then `proof.ts --run --params-file posterior-median.json --seed-set V1,V2` covers the ablations, the comparisons, compare-patrols and guide-data.
+- `--dry-run` carries over.
+- Tests: `tests/calibration-lib.test.ts` (§8).
+
+**7. Compute budget** (estimates at the combined proof's planning costs).
+
+| Step | Wall time at 6 workers |
+| --- | --- |
+| Step 0 | 10 min |
+| Step 1 | about 6 h |
+| Step 2 | about 15 h |
+| Step 3 | about 6 h |
+| Step 5 | about 2 h |
+| Posterior-median runs | about 8 h |
+| Step 5b | about 30 h |
+
+About 67 h in all, or 3–4 nights at 6 workers, and about 3× that at 2. If the budget must shrink, the order is fixed now: first r = 12, then 2 history-matching waves plus a smaller third, and step 5b last.
+
+**8. Guardrails.**
+- The protocol and registry hashes are frozen before step 1. Any change after that is logged under the protocol policy.
+- No parameter is changed outside the design.
+- Held-out outputs are computed only in step 5 and after, and are never looked at before the posterior is frozen.
+- If the posterior-median model fails a fitted row that passed before calibration, it is reported, and nothing is re-tuned after validation.
 ---
 
 ## 9. Datasets

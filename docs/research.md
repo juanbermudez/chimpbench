@@ -239,6 +239,10 @@ Proposed additions from the realism research pass. They are **not yet merged** i
 - **Botanical skills and inspection mistakes** [janmaat2013b] (full text) [M]: Janmaat KRL, Ban SD, Boesch C 2013. Taï chimpanzees use botanical skills to discover fruit: what we can learn from their mistakes. *Animal Cognition* 16(6):851–860. [doi:10.1007/s10071-013-0617-z](https://doi.org/10.1007/s10071-013-0617-z). Chimpanzees inspect empty trees of species that are fruiting synchronously, so a species' fruiting state is learned and an empty tree is learned on arrival (cited by `knownTreesK` and C7a rule 8).
 - **Stylization (C7a rule 8):** the daily list of the 40 best-known trees uses the true share of each species' trees in fruit and every tree's capacity, including trees no animal has seen: community omniscience about those 40 trees, labelled as such in `src/sim/foraging.ts`.
 
+## Calibration and validation methods (stage C11 pre-registration, 29 September 2026)
+
+Method sources for docs/realism-design.md "C11 pre-registration" (bibliographies Crossref-checked in `data/targets.json`): pattern-oriented modelling [grimm2005] and the ODD protocol [grimm2020]; Morris screening [morris1991] with the improved design [campolongo2007]; method choice for agent-based models [tenBroeke2016]; history matching with emulators [vernon2010] [andrianakis2015]; ABC with regression adjustment [beaumont2002] and for individual-based models [vanderVaart2015]; Sobol total indices [saltelli2010]. These are methods, not evidence about chimpanzees.
+
 ## Community fission (stage C9 pre-registration, 29 September 2026)
 
 Sources for docs/realism-design.md "C9 pre-registration". Bibliographies are Crossref-checked in `data/targets.json`.
