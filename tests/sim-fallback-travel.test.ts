@@ -153,3 +153,27 @@ test('the field distance cost is the energetic derivation (daily energy ÷ hunge
   assert.ok(Math.abs(P.travelDistScaleM / L - 1) < 0.01, `${P.travelDistScaleM} vs ${L.toFixed(0)}`);
   assert.equal(paramsOf(createWorld(3)).travelDistScaleM, 60, 'compressed literal unchanged');
 });
+
+test('route chaining: only the out-of-sight tree with the most believed value per metre is offered (field); off lists several', () => {
+  const pick = (params: Record<string, number>) => {
+    const w = createWorld(3707, { profile: 'field', params: { routeChain: 1, ...params } });
+    for (let i = 0; i < 5760 / 4; i++) tickWorld(w);
+    const [c] = adults(w);
+    c.position = [c.position[0], 0, c.position[2]]; c.hunger = 0.7; c.action = 'rest'; c.targetId = -1;
+    const byD = (m: number) => w.trees.reduce((p, t) => (Math.abs(Math.hypot(t.position[0] - c.position[0], t.position[2] - c.position[2]) - m) < Math.abs(Math.hypot(p.position[0] - c.position[0], p.position[2] - c.position[2]) - m) ? t : p));
+    const near = byD(120), far = byD(800);
+    perceive(w, c);
+    ix(c).trees.length = 0;
+    simOf(w).knownTrees = {};
+    c.memory = c.memory.filter(m => m.kind !== 'tree');
+    for (const t of [near, far]) c.memory.push({ entityId: t.id, kind: 'tree', seenAt: w.time, position: [t.position[0], t.position[1], t.position[2]] });
+    ix(c).treeCrop = { [near.id]: 0.3, [far.id]: 0.5 };
+    const trips = computeCandidates(w, c, []).filter(k => k.action === 'travel' && candidateMeta.get(k)?.v === V.TREE).map(k => k.targetId);
+    return { trips, near: near.id, far: far.id };
+  };
+  const on = pick({});
+  assert.deepEqual(on.trips, [on.near], 'the nearer tree, worth more per metre');
+  const off = pick({ routeChain: 0 });
+  assert.ok(off.trips.includes(off.near) && off.trips.includes(off.far));
+  assert.equal(paramsOf(createWorld(3707)).routeChain, 0, 'compressed: off');
+});

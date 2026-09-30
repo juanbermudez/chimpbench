@@ -13437,6 +13437,36 @@
    "notes": "Rough play escalates (partner more than 2 y younger) [H occurs; rate design]."
   },
   {
+   "id": "routeChain",
+   "group": "movement",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [],
+   "refs": [
+    "docs/research.md (C7c-C7d): janson2014, efficient primate paths match visiting the nearest unused known resource"
+   ],
+   "clock": "none",
+   "symbol": "P.routeChain",
+   "file": "src/sim/candidates.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 1
+   },
+   "notes": "Stage C7d (field; c7b-prereg 8.3): among out-of-sight goals only the tree with the most believed value per metre (worth / max(d, memoryTreeMinM)) is offered, at its usual score, instead of the four best by score: the nearest unused known resource weighted by value (janson2014) [M]; crop beliefs and the revisit penalty keep emptied and just-used trees out, so a day chains nearby trees. No free parameter. 0 = off (compressed)."
+  },
+  {
    "id": "runMps",
    "group": "movement",
    "value": 0.3,

@@ -428,6 +428,12 @@ Evidence for the C7c mechanisms ([staging/c7b-prereg.md](staging/c7b-prereg.md) 
 - *new* sockol2007: Sockol MD, Raichlen DA, Pontzer H 2007. Chimpanzee locomotor energetics and the origin of human bipedalism. *PNAS* 104(30):12265–12269. [doi:10.1073/pnas.0703267104](https://doi.org/10.1073/pnas.0703267104) (Abs; table values via index snippet, PMC1941460).
 - *new* pontzerWrangham2004: Pontzer H, Wrangham RW 2004. Climbing and the daily energy cost of locomotion in wild chimpanzees: implications for hominoid locomotor evolution. *Journal of Human Evolution* 46(3):315–333. [doi:10.1016/j.jhevol.2003.12.006](https://doi.org/10.1016/j.jhevol.2003.12.006) (Abs).
 - uwimbabazi2019, potts2011, watts2012b and gruberZuberbuhler2013 are already cited; the lines above add findings.
+- **Route choice among many remembered goals** [janson2014] (Abs) [M] (stage C7d).
+  - A review of three captive studies in which primates visited arrays of equally valuable goals.
+  - The efficient paths observed are largely consistent with the simplest rule, visiting the nearest unused known resource.
+  - Movement sequences fit best a rule that sums spatial information from all unused resources into one "gravity" measure, which guides travel to one destination at a time.
+  - The review finds no clear evidence of multi-step route planning.
+- *new* janson2014: Janson C 2014. Death of the (traveling) salesman: primates do not show clear evidence of multi-step route planning. *American Journal of Primatology* 76(5):410–420. [doi:10.1002/ajp.22186](https://doi.org/10.1002/ajp.22186) (Abs).
 - **Unverified and not used as a value:** adult body mass. C7c uses 40 kg as a design value and reports 33–45 kg as a sensitivity range.
 
 ## Early life and maternal effects (chimpanzees)
