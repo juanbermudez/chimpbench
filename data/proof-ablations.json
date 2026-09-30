@@ -10,11 +10,11 @@
   },
   "C7c": {
    "params": { "partyJoinTrip": 0, "partyWaitMaxMin": 0, "travelDistScaleM": 60000 },
-   "note": "Joint trips and waiting off; the energetic distance scale (62,900 m) back to the C7a fit (60,000 m). Depletable fallback foods are already off by default (fallbackCapH 0). Proposed by the C7a implementer; the C7c owner confirms."
+   "note": "Joint trips and waiting off; the energetic distance scale (62,900 m) back to the C7a fit (60,000 m). Depletable fallback foods are already off by default (fallbackCapH 0). Confirmed by the C7c owner: with this set the C7c merge (762a259) gives field worlds hash-identical to main before it (cacf3e7), seeds 48 and 3303 after 5 days."
   },
   "C7e": {
-   "params": null,
-   "note": "To be declared by the C7e owner at merge."
+   "params": { "goalDistScaleM": 0, "routeChain": 0 },
+   "note": "C7d route chaining and the C7e goal-distance scale. The C7d direction check and the C7e fit (against Taï) dropped both, so both are 0 by default and this set equals the defaults. Checked: the C7d/C7e branch with this set is hash-identical to main 342baa9 (seeds 48 and 3303, 5 days). The C7b switches (followCommit, tripRateValue, cropFullExp) and the C7c fallback limits (fallbackCapH) are also 0 by default."
   },
   "C8": {
    "params": null,
