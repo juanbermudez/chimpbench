@@ -18,11 +18,11 @@
   "Instrument validation against truth (sampling accuracy, classifier precision and recall) is allowed at any time, because truth is not a field target; each validation run is logged."
  ],
  "protocolFreeze": {
-  "stage": "Lean proof plan",
-  "date": "2026-09-29",
-  "hash": "c6dc9be135771d16",
+  "stage": "Seed replacement",
+  "date": "2026-09-30",
+  "hash": "839e47235ca4b43f",
   "previous": {
-   "stage": "C9 proof seeds",
+   "stage": "Lean proof plan",
    "hash": "c6dc9be135771d16"
   }
  },
@@ -1091,6 +1091,18 @@
    ],
    "verdicts": "none",
    "class": "protocol (seeds)"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "science/simulation owner",
+   "seen": "none",
+   "param": "freeze: c6dc9be135771d16 -> 839e47235ca4b43f (scripts/c9-scenario.ts default seeds; the fresh-set labels of T-PAT-2, -3, -5, -7 and T-LET-6)",
+   "reason": "reserved seed replacement",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "combined proof (lean plan), C9 proof",
+   "class": "freeze"
   }
  ],
  "targets": [
