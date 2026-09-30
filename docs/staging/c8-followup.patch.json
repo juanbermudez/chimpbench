@@ -1,5 +1,5 @@
 {
- "about": "C8 follow-up staging for data/targets.json (applied by the integrator; this branch never edits targets.json). Append `protocolLog` in order.",
+ "about": "C8 follow-up staging for data/targets.json (applied by the integrator; this branch never edits targets.json). Append `protocolLog` in order; apply `targetEdits` (set each field on the named target).",
  "protocolLog": [
   {
    "date": "2026-09-30",
@@ -7,9 +7,46 @@
    "seen": "development truth reads only (seeds 48, 7, 21; 10 field years, C13 on): adult-female deaths by age band against age-standardized expectations; no target row computed",
    "param": "No baseline-hazard change. Logged as a source mismatch: for females aged 30-47 the expected epidemic hazard (0.0154/y = epidemicArrivalPerY 0.1 x SIR final size 0.62 at epidemicR0 1.55 x mean case fatality ~0.25 at epidemicOldOR 3.86) exceeds wood2017's all-cause hazard (hazardFemaleAdult 0.011, hazardFemaleMid 0.017), so the re-fitted baseline sits at hazardBaseFloor (20%) and the model's expected mortality there is ~11% above the life table (analytic female e15 34.3 y, in band). Likely cause: wood2017's life table (Ngogo 1995-2016) largely predates Ngogo's 2016-17 outbreak (negrey2019), while the arrival and fatality parameters come from Kanyawara, Gombe and Ngogo 2017 (emeryThompson2018, williams2008, negrey2019, scully2018). Measured: 5 adult-female deaths in 522 female-years against 7.2 expected from the all-cause hazards at the observed ages and 8.0 from the model (P(<=5) 0.28 and 0.19). docs/simulation.md §13 notes it",
    "reason": "integrator ruling on the C8b design (docs/staging/c8-lactation-diagnosis.md)",
-   "targets": ["T-DEM-2", "T-DEM-3"],
+   "targets": [
+    "T-DEM-2",
+    "T-DEM-3"
+   ],
    "verdicts": "no change (no model or protocol change)",
    "class": "source mismatch (not fixed)"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "C8 implementer (integrator approval of the C8c design)",
+   "seen": "no value of any row under the taper (nothing run or coded); T-RNG-5 and T-ACT-5 values were seen in the C5a-C7a scorecards; development truth energetics of the current model (lactating lean-day median hunger 0.67-0.71)",
+   "param": "C8c pre-registration, fixed before any code or run. Rule: hunger += hungerLactationPerH x taper(a), a = age of the youngest unweaned offspring; taper 1 below lactTaperStartY 0.5 y, linear to lactTaperFloor 0.3 at lactTaperEndY 2 y, then 0.3 until weaning. Knots [M] emeryThompson2012 (C-peptide depressed ~6 months postpartum, net gain in year 2); peak 0.012/h unchanged (design); floor 0.3 design, not tuned. Switch lactTaper (1 on; 0 restores the constant cost exactly) with its own ablation row. Rows touched: held-out T-RNG-5, T-ACT-5 (direct), T-DEM-3, T-DEM-13 (indirect) are labelled 'model revised post-freeze' and scored on set B only; sealed T-DEM-22 (encoded) stays sealed, its expected direction (weaker lactation-window effect) favours its encoded pattern; T-DEM-21, -19, -20 untouched (pregnancy cost and offspring condition unchanged; nursing never reads maternal condition). Check (development, seeds 48, 7, 21, 10 field years, paired lactTaper 1 vs 0 on the same code, <= 3 workers): fitted rows T-DEM-1, -2, -10, -12 from scripts/field-metrics.ts --demography (only fitted rows are read; held-out rows in the output are not read) and truth energetics and viability from a truth script. Guard (merge gate): G1 lactTaper 0 hash-identical to the model before C8c (unit test); G2 viability with lactTaper 1: pooled births >= deaths and no seed below 80% of its start after 10 years; G3 mechanism: lactating median hunger with the youngest offspring aged 2 y or more lower with lactTaper 1 than 0 in each seed. Predictions (reported pass/fail, not a gate; no value is tuned on them): lactating lean-day median hunger 0.58-0.64 (from 0.67-0.71); lactating median condition 0.35-0.42 (from ~0.30); female e15 +0 to +1 y and inside 31-39; male e15 unchanged; T-DEM-1 unchanged beyond noise; T-DEM-12 0.1-0.3 y shorter; T-DEM-10 slightly higher; growth +0.2 to +0.5% per year. A fitted row that leaves its band only under the taper is reported before any merge",
+   "reason": "the constant lactation cost contradicts emeryThompson2012's time course (docs/research.md 'Lactation energetics')",
+   "targets": [
+    "T-RNG-5",
+    "T-ACT-5",
+    "T-DEM-3",
+    "T-DEM-13",
+    "T-DEM-22",
+    "T-DEM-1",
+    "T-DEM-2",
+    "T-DEM-10",
+    "T-DEM-12"
+   ],
+   "verdicts": "held-out rows relabelled 'model revised post-freeze' (set B only); sealed rows unchanged; fitted rows development only",
+   "class": "pre-registration"
   }
- ]
+ ],
+ "targetEdits": {
+  "T-RNG-5": {
+   "revisedPostFreeze": "C8c lactation-cost taper (docs/staging/c8c-lactation-taper.md; lactation-specific model-input correction made after this row's values were seen): model revised post-freeze; scored only on the fresh C8 set B (1717-2626, step 101); counts as validation only if no parameter was set by looking at it"
+  },
+  "T-ACT-5": {
+   "revisedPostFreeze": "C8c lactation-cost taper (docs/staging/c8c-lactation-taper.md; lactation-specific model-input correction made after this row's values were seen): model revised post-freeze; scored only on the fresh C8 set B (1717-2626, step 101); counts as validation only if no parameter was set by looking at it"
+  },
+  "T-DEM-3": {
+   "revisedPostFreeze": "C8c lactation-cost taper (docs/staging/c8c-lactation-taper.md; lactation-specific model-input correction made after this row's values were seen): model revised post-freeze; scored only on the fresh C8 set B (1717-2626, step 101); counts as validation only if no parameter was set by looking at it"
+  },
+  "T-DEM-13": {
+   "revisedPostFreeze": "C8c lactation-cost taper (docs/staging/c8c-lactation-taper.md; lactation-specific model-input correction made after this row's values were seen): model revised post-freeze; scored only on the fresh C8 set B (1717-2626, step 101); counts as validation only if no parameter was set by looking at it"
+  }
+ }
 }
