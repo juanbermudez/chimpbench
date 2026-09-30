@@ -87,7 +87,8 @@ function gate(world: World, c: Chimp, it: Intent | undefined, list: Candidate[])
   const x = ix(c);
   if (x.lastIntrAt > it.chosenAt) return null;
   if (bucketOf(c.hunger) !== it.buckets.hunger || bucketOf(c.thirst) !== it.buckets.thirst || bucketOf(1 - c.energy) !== it.buckets.fatigue || bucketOf(1 - c.social) !== it.buckets.loneliness) return null;
-  if (periodNow(world) !== it.period || world.time - it.chosenAt > GATE.maxAgeH) return null;
+  // stage C13c: the in-sim maximum intention age (rgMaxAgeH, 30 min); the Jev gate keeps GATE.maxAgeH (90 min)
+  if (periodNow(world) !== it.period || world.time - it.chosenAt > paramsOf(world).rgMaxAgeH) return null;
   const current = findCandidate(list, it.action, it.targetId);
   const ongoing = !x.finished && c.action === it.action && c.targetId === it.targetId && !!current;
   if (!ongoing) {

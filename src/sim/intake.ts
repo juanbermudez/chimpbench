@@ -31,13 +31,18 @@ export interface TreeIntake {
   thirstPerHInclWalk: number;
 }
 
-/** A fruit tree at `distM` with a believed `crop` shared with `feeders` others. */
-export function treeIntake(c: Chimp, P: Params, crop: number, feeders: number, distM: number): TreeIntake {
+/**
+ * A fruit tree at `distM` with a believed `crop` shared with `feeders` others. `hungerCap` false: the feeding time is the
+ * crop share alone (stage C13c, `intakeCropOnly`: the rules' food worth already scales with hunger, so capping the time
+ * by hunger too counted it twice). The Jev facts keep the cap.
+ */
+export function treeIntake(c: Chimp, P: Params, crop: number, feeders: number, distM: number, hungerCap = true): TreeIntake {
   const { fruitPerH, hungerPerH } = fruitRate(c, P);
   const walkH = distM / P.walkMps / 3600;
   // feeding lasts until the crown's share is eaten or the hunger is gone, whichever comes first
   const share = crop / (1 + feeders);
-  const feedH = Math.max(0, Math.min(share / Math.max(1e-9, fruitPerH), c.hunger / Math.max(1e-9, hungerPerH)));
+  const byCrop = share / Math.max(1e-9, fruitPerH);
+  const feedH = Math.max(0, hungerCap ? Math.min(byCrop, c.hunger / Math.max(1e-9, hungerPerH)) : byCrop);
   const frac = feedH > 0 ? feedH / (walkH + feedH) : 0;
   return { rateH: hungerPerH, feedH, walkH, perHourInclWalk: hungerPerH * frac, thirstPerHInclWalk: fruitPerH * P.fruitThirstFactor * frac };
 }

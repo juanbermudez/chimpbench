@@ -1164,6 +1164,36 @@
    ],
    "verdicts": "none (no proof value exists)",
    "class": "model change"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "science/simulation owner (stage C13c, coordinator-approved)",
+   "seen": "fitted rows T-ACT-2, T-PTY-1, T-RNG-4 and T-PAT-6 in the C13 direction check (seeds 48, 7, 21, field, 1 year) and diagnostic movement probes on the same development seeds (trips per adult-day, trip length, male path, party size; sim truth); no held-out value",
+   "param": "C13c pre-registration, before any C13c run. Two changes, each switchable: (1) rgMaxAgeH 0.5: the in-sim gate's maximum intention age is 30 min (was the Jev gate's 90 min; GATE.maxAgeH in src/decide/gate.ts stays 1.5 for the Jev test); design assumption. (2) intakeCropOnly 1: the C13b feeding time of a fruit tree is its crop share at the animal's intake, no longer also capped by its hunger (hunger already scales the food worth, so it was counted twice); design. Ablation set C13c = {rgMaxAgeH 1.5, intakeCropOnly 0}, hash-identical to C13. Predictions (direction check on development seeds 48, 7, 21, field, 1 year after the 180-day burn-in, against C13 on the same seeds): trips to trees back to about 5 per adult-day (C13: about 3.8; before C13: 5-6); male day range (T-RNG-4, observer) up into 1.5-3.5 km (C13: 1.58); trip length up; party size (T-PTY-1) about unchanged. Viability guard as in C13 section 5: C13c stays off by default if, against both C13 parts off, median adult hunger rises by more than 0.10 or the lactating-female median reaches 0.95. T-RNG-4 is touched (fitted, tuned, held as fail); nothing is tuned after the check.",
+   "reason": "C13 moved the movement rows the wrong way: the gate cut trips from 5-6 to about 3.8 per adult-day by holding daytime rest (median 36 min), and counting hunger twice shortened C13b trips (median 300 -> 170 m); diagnostic probes with both changes restored about 5 trips per day and a 2.2-2.7 km male day range",
+   "targets": [
+    "T-RNG-4",
+    "T-ACT-2",
+    "T-PTY-1",
+    "T-PAT-6"
+   ],
+   "verdicts": "none (no proof value exists)",
+   "class": "model change"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "science/simulation owner (stage C13c)",
+   "seen": "fitted rows on development seeds 48, 7, 21 (field, 1 year): T-RNG-4 2.59 km (C13 1.58), T-ACT-2 0.22 / 0.15, T-PTY-1 2.90, T-PAT-6 0.44; sim truth: trips 4.9-5.1 per adult-day, adult hunger 0.45-0.51, lactating 0.75-0.79; no held-out value",
+   "param": "C13c direction check: viability guard passes; every pre-registered prediction held; rgMaxAgeH 0.5 and intakeCropOnly 1 stay on by default. T-RNG-4 touched (fitted, tuned, still held as fail); nothing tuned after the check",
+   "reason": "C13c pre-registration (f43722e)",
+   "targets": [
+    "T-RNG-4",
+    "T-ACT-2",
+    "T-PTY-1",
+    "T-PAT-6"
+   ],
+   "verdicts": "none (direction check, not a proof)",
+   "class": "model change"
   }
  ],
  "targets": [

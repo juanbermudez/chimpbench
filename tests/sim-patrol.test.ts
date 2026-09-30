@@ -33,7 +33,7 @@ test('P1: with patrolHeardBeta 0, hearing strangers does not change the patrol h
 
 test('P3: the female join, lactating join and female stay scores are registry settings', () => {
   const score = (params: Record<string, number>) => {
-    const w = createWorld(7, { params });
+    const w = createWorld(7, { params: { rgOn: 0, intakeValue: 0, ...params } }); // the recorded scenario (pre-C13)
     for (let i = 0; i < 5760 / 3; i++) tickWorld(w);
     const leader = adultMales(w, 1)[0], f = w.chimps.find(c => c.alive && c.troopId === 1 && c.sex === 'female' && c.age >= 15 && !c.lactating)!;
     f.position = [leader.position[0] + 3, 0, leader.position[2]];

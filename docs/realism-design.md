@@ -1396,7 +1396,7 @@ About 67 h in all, or 3–4 nights at 6 workers, and about 3× that at 2. If the
 - **C13b.** The rules value food by its intake rate, walk included, so leaves count at their lower rate against remembered fruit.
 **Why**: the Jev decisive test's free arms (artifacts/decide-ft/jev-test/free-arms.md; docs/staging/jev-decisive-test.md) ran the same gate and sampling as a control. On simulation truth over T-ACT-1 to 4, party size and male day range, RG cut the summed band distance from 2.04 to 0.93 and did better than rules on 5 of 5 seeds (6501–6905, field, 5 scored days), with no hunger cost (median adult hunger 0.64 vs 0.66; lactating females 0.89 vs 0.91). The rules are over-deterministic.
 **Why C13b**: the rules value fallback food (leaves, pith, herbs) without its lower intake rate, so hungry animals eat leaves in place rather than walk to remembered fruit. Design A diagnosed it (docs/decide-jev-design.md §4). The C8 agent confirmed it: lactating females spend 16% of daylight on fallback at half the fruit rate. In the free arms, U, a utility over intake rate minus walking cost, lowered median hunger from 0.89 to 0.70 in lactating females and from 0.64 to 0.39 in all adults.
-**Status**: built; direction check done (30 September 2026); both parts on by default.
+**Status**: built; direction checks done (30 September 2026); C13a, C13b and the C13c follow-up on by default.
 
 #### C13 pre-registration (29 September 2026, before any C13 run; C13b added the same day, before any C13 or C13b run)
 
@@ -1493,6 +1493,41 @@ The registry holds 0.164 and 0.152. 0.77 was Jev's median top-option probability
   - Decisions per chimp-day dropped from about 100 to 75, with 53% of RG decisions kept by the gate.
 - **Consequences.** Nothing is re-tuned. Both parts stay on, and the lean proof judges the rows; the tuned rows (T-ACT-2, T-PTY-1, T-RNG-4, T-PAT-1) are expected to move there too.
 - **Compressed guard** (seed 48, 60 days): passes. Adult hunger 0.44 with both off, 0.48 with both on; lactating females 0.58 and 0.64.
+
+**5c. C13c pre-registration** (30 September 2026, before any C13c run; logged in protocolLog). The direction check and the probes in `artifacts/validation/c13/` (development seeds) showed why C13 shrank movement:
+- The gate cut trips to trees from 5–6 to about 3.8 per adult-day. It held daytime rest for a median of 36 min, where the argmax rules re-decided at every bout end. Sampling alone would have raised the male day range to about 4.9 km.
+- C13b halved trip length (median 300 to 170 m). It counts hunger twice: once in the food worth, and again in the feeding time, which is capped by hunger.
+
+Two changes, each switchable, with their own ablation set `C13c` (`rgMaxAgeH` 1.5 and `intakeCropOnly` 0, hash-identical to C13):
+1. **`rgMaxAgeH` 0.5.** The in-sim gate re-decides an intention after 30 min, not 90 (design assumption). The Jev gate constant stays 90 min.
+2. **`intakeCropOnly` 1.** A fruit tree's feeding time in the C13b valuation is its crop share at the animal's intake, without the hunger cap (design). The Jev facts keep the capped time.
+
+Predictions, against C13 on seeds 48, 7 and 21 (field, 1 year after the burn-in):
+- trips to trees back to about 5 per adult-day;
+- male day range (T-RNG-4) up into 1.5–3.5 km;
+- trips longer;
+- party size (T-PTY-1) about unchanged.
+
+The diagnostic probe with both changes gave about 5 trips per day and 2.2–2.7 km. The viability guard of §5 applies against both C13 parts off. T-RNG-4 is logged as touched. Nothing is tuned after the check.
+
+**5d. C13c direction check result** (30 September 2026; seeds 48, 7 and 21; field; 1 year after the burn-in; `artifacts/validation/c13/`). Not a proof.
+
+| | Both C13 parts off | C13 | C13c |
+| --- | --- | --- | --- |
+| Trips to trees per adult-day | 5.3–5.5 | 3.9–4.1 | 4.9–5.1 |
+| Trip median (m) | 298–381 | 173–195 | 215–233 |
+| Male day range, T-RNG-4 (km, observer) | 4.21 | 1.58 | 2.59 |
+| T-ACT-2 travel (male / female) | 0.33 / 0.17 | 0.15 / 0.12 | 0.22 / 0.15 |
+| T-PTY-1 party size | 3.48 | 2.63 | 2.90 |
+| T-PAT-6 incursion share | 0.60 | 0.18 | 0.44 |
+| Median adult hunger | 0.60–0.68 | 0.46–0.51 | 0.45–0.51 |
+| Lactating-female hunger | 0.88–0.90 | 0.74–0.81 | 0.75–0.79 |
+| Fitted rows passing | 5 | 8 | 9 |
+
+- **Viability guard: passes.**
+- **Predictions:** all four held. Trips returned to about 5 per adult-day, the male day range rose into its band, and trips got longer. Party size rose slightly, 2.63 to 2.90, which is still below its band. The gate now keeps 35% of RG decisions instead of 53%.
+- **T-RNG-4** is touched (fitted, tuned, held as fail); it is still held as fail.
+- **T-IGE-1:** seed 48 partly saturated again, at 63 per community-year (§18 note).
 
 **6. Proof.** The lean proof (`scripts/proof.ts --plan lean`) with both parts on. `data/proof-ablations.json` has an ablation set per part, `C13a` (`rgOn` 0) and `C13b` (`intakeValue` 0), so each is attributed.
 

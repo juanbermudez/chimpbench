@@ -133,7 +133,7 @@ Frame loop order (in `src/main.ts`): `pumpDecisions` → `advance` (clock runs `
 - Lockstep throughput is about 5.7 simulated min/s with 1 model-driven chimp, and about 2.3 with 6.
 - The model agrees with the rules about 40–65% of the time and leans toward social options.
 - Off-target metrics (default `scripts/sim-metrics.ts` run, seeds 48, 7, 21; see `docs/simulation.md` §18):
-  - intergroup encounters 47 per community-year (compressed) vs ~8 at Kanyawara; the field profile gives ~5–10 through the observer, with large between-seed spread
+  - intergroup encounters 47 per community-year (compressed) vs ~8 at Kanyawara; the field profile gives ~5–10 through the observer, but a community pair whose ranges drift within earshot (1 km) records a heard contact almost daily, so single seeds can reach hundreds (docs/simulation.md §18)
   - no killings in 9 community-years: plausible at the median field rate (happens ~half the time); use experiments or 1 day/s to see conflict
   - activity budget (compressed): travel 5% of daylight vs 12–25%, male grooming 23% vs 8–18% (male feeding 41% is within 33–50%)
   - e15 33.9 / 19.7 y vs Ngogo 35.1 / 21.0
