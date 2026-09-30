@@ -18,12 +18,12 @@
   "Instrument validation against truth (sampling accuracy, classifier precision and recall) is allowed at any time, because truth is not a field target; each validation run is logged."
  ],
  "protocolFreeze": {
-  "stage": "C9 proof preparation",
+  "stage": "C9 proof seeds",
   "date": "2026-09-29",
-  "hash": "7d80a5a2c7c40da1",
+  "hash": "c6dc9be135771d16",
   "previous": {
-   "stage": "C9 build (fission off)",
-   "hash": "ad788552f11082eb"
+   "stage": "C9 proof preparation",
+   "hash": "7d80a5a2c7c40da1"
   }
  },
  "protocolLog": [
@@ -1030,6 +1030,18 @@
    ],
    "verdicts": "none",
    "class": "protocol (seeds)"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C9 implementer",
+   "seen": "none",
+   "param": "freeze: 7d80a5a2c7c40da1 -> c6dc9be135771d16 (scripts/c9-scenario.ts default seeds)",
+   "reason": "C9 proof seeds",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "C9 proof",
+   "class": "freeze"
   }
  ],
  "targets": [
