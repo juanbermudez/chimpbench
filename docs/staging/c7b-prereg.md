@@ -436,3 +436,33 @@ These measures were added to `party-food-metrics.ts` before any C7d mechanism ex
 **Not built:**
 - **Crown-sharing capacity from crown area.** No source gives a feeding area per animal, and a party-size rule tied to crown size would encode the held-out T-PTY-2 (party size vs patch size).
 - **Changes to caller or water trips.** No source-grounded rule is in hand. They are reported as open.
+
+### 8.4 C7d results and decisions (after the check)
+
+Seeds 3707 and 3808, paired. `party-food-metrics.ts` ran 60-day burn-in + 6 days; `field-metrics.ts` ran 60-day burn-in + 120 days. Every variant passes `routeChain` explicitly. A first field run was stopped and discarded because it would have loaded the route-chaining code mid-run. Output: `artifacts/validation/c7d/` (worktree). Development diagnostics only.
+
+| Variant | T-RNG-1 (km²) | T-PTY-1 | Party size (diagnostic) | T-FOOD-2 | Straightness | Turning (rad) | Path (m/day) | Goal-order ratio |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| K (`main`) | 2.71 | 2.90 | 2.14 | 0.79 | 0.21 | 0.87 | 2,014 | 1.88 |
+| K + food package | 7.53 | **2.26** | **1.59** | 0.66 | 0.18 | 1.30 | 3,629 | 1.30 |
+| K + route chaining | 2.58 | 4.27 | 4.43 | **0.53** | 0.26 | **1.59** | **795** | 1.00 |
+
+Other effects:
+- The food package's travel share is 0.52.
+- Route chaining shrinks trips to a median 59 m and cuts fruit eaten from 5.8 to 4.3 units per community-day.
+
+**Decisions:**
+- **§8.1 food package with joint trips: dropped.** Range rose into the band, but T-PTY-1 is 2.26 (< 2.8) and the diagnostic party size fell 0.55.
+  - **Why party size still collapses.** Joint trips still bring companions to the same tree: 97% are still together at arrival. Then they cannot feed together.
+    - Crowd: adults per fed-in crown 1.06 (1.13 in K).
+    - Crop life: a crown's crop lasts its feeders 1.1 h (3.8 h in K).
+    - Endings: 58% of visits end with the crop gone.
+  - **Against the field.** In K a median crown holds ~4 feeding-hours, which would feed a party of 7 for ~35 min, in line with Kibale patch residency of 27–46 min per visit for feeding parties of 7–8 [potts2011]. With the package, it would feed them for ~10 min.
+  - So the package makes crowns too small for a party's visit. Crowns in K are already about the right size for real parties; what K lacks is parties feeding together, not food.
+  - A crown-sharing capacity was not built: no source gives a feeding area per animal, and it would encode T-PTY-2.
+- **§8.3 route chaining: dropped.** Straightness rose (0.21 → 0.26) and both guards held (T-RNG-1 −5%; party size +2.3), but turning rose (0.87 → 1.59 rad). The mechanism worked as intended (goal-order ratio 1.88 → 1.00); strict value-per-metre ranking just makes trips so short (59 m) that the day collapses (795 m/day) and animals fall back on ground food (fruit share 0.53).
+
+**Straightness, where it stands:**
+- The diagnosis stands: goals are chosen almost blind to distance, and a fifth of the path is travel toward callers (§8.2).
+- Neither extreme works. A near-flat distance cost (energetic) leaves goal order random; ranking by value per metre over-chains.
+- An intermediate rule would need a distance-value trade-off with a free scale, which this stage does not fit. The time-rate rule (§3.4) is the only scale-free candidate so far, and it shortened days in C7b. Open for the integrator.

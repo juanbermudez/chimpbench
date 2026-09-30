@@ -13462,9 +13462,9 @@
    "integer": true,
    "profiles": {
     "compressed": 0,
-    "field": 1
+    "field": 0
    },
-   "notes": "Stage C7d (field; c7b-prereg 8.3): among out-of-sight goals only the tree with the most believed value per metre (worth / max(d, memoryTreeMinM)) is offered, at its usual score, instead of the four best by score: the nearest unused known resource weighted by value (janson2014) [M]; crop beliefs and the revisit penalty keep emptied and just-used trees out, so a day chains nearby trees. No free parameter. 0 = off (compressed)."
+   "notes": "Stage C7d (field; c7b-prereg 8.3): among out-of-sight goals only the tree with the most believed value per metre (worth / max(d, memoryTreeMinM)) is offered, at its usual score, instead of the four best by score: the nearest unused known resource weighted by value (janson2014) [M]; crop beliefs and the revisit penalty keep emptied and just-used trees out, so a day chains nearby trees. No free parameter. 0 = off. Pre-registered field value 1; off by default after the C7d direction check (c7b-prereg 8.4): straightness rose (0.21 -> 0.26) but turning rose too (0.87 -> 1.59 rad), trips shrank to ~60 m, the 30-min path fell 2,014 -> 795 m/day and fruit share 0.79 -> 0.53."
   },
   {
    "id": "runMps",

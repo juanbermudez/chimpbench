@@ -176,4 +176,5 @@ test('route chaining: only the out-of-sight tree with the most believed value pe
   const off = pick({ routeChain: 0 });
   assert.ok(off.trips.includes(off.near) && off.trips.includes(off.far));
   assert.equal(paramsOf(createWorld(3707)).routeChain, 0, 'compressed: off');
+  assert.equal(paramsOf(createWorld(3707, { profile: 'field' })).routeChain, 0, 'field: off by default after the C7d check');
 });
