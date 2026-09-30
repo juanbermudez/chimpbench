@@ -78,7 +78,7 @@ const HATCH = '<defs><pattern id="gv-hatch" width="4" height="4" patternUnits="u
 // Verdict display
 const VLABEL = { pass: 'Pass', fail: 'Fail', inconclusive: 'Too close to call', insufficient: 'Not enough data yet', scale: 'Not scored at this scale', 'n/a': 'Mechanism not built yet', structural: 'Checked by a unit test', unscored: 'Not scored in this run', unscorable: 'Not scorable' };
 const cellClass = v => (v === 'pass' || v === 'fail' || v === 'inconclusive' ? v : v === 'insufficient' || v === 'scale' ? 'nodata' : v === 'n/a' ? 'notbuilt' : 'unscored');
-const WEAK = { encoded: 'encoded: the mechanism was designed from this very pattern, so a match is weak evidence', tuned: 'tuned: I adjusted parameters until it passed, so the pass does not count', compromised: 'compromised: the protocol changed after the value was seen' };
+const WEAK = { encoded: 'encoded: the mechanism was designed from this very pattern, so a match is weak evidence', tuned: 'tuned: parameters were adjusted until it passed, so the pass does not count', compromised: 'compromised: the protocol changed after the value was seen' };
 
 // ================================================================================================ components
 
@@ -103,7 +103,7 @@ function datasets(fig, [V]) {
   const SITE = { Ngogo: 'var(--ngogo)', Gombe: 'var(--gombe)', 'Taï': 'var(--tai)' };
   const rows = [...V.datasets].sort((a, b) => a.years[0] - b.years[0]).map(d => {
     const a = at(d.years[0]), w = ((d.years[1] - d.years[0] + 1) / (y1 - y0) * 100).toFixed(2) + '%', late = d.years[1] > 2012;
-    return `<li><span class="nm"><a href="${esc(d.url)}">${esc(d.name)}</a><small>${esc(d.site)} · ${esc(d.cite)}<span class="lic${d.use === 'build' ? ' use-build' : ''}">${d.use === 'build' ? 'builds my forest' : esc(d.licence)}</span></small></span>` +
+    return `<li><span class="nm"><a href="${esc(d.url)}">${esc(d.name)}</a><small>${esc(d.site)} · ${esc(d.cite)}<span class="lic${d.use === 'build' ? ' use-build' : ''}">${d.use === 'build' ? 'builds the forest' : esc(d.licence)}</span></small></span>` +
       `<span class="tr"><i class="bar${d.use === 'build' ? ' build' : ''}" style="--a:${a};--w:${w};--k:${SITE[d.site] || 'var(--ink-2)'}" data-tip="<b>${esc(d.name)}</b><br>${esc(d.site)}, ${d.years[0]}–${d.years[1]} · ${esc(d.licence)}" tabindex="-1"></i><span class="yr${late ? ' l' : ''}" style="--a:${a};--w:${w}">${d.years[0]}–${d.years[1]}</span></span>` +
       `<span class="sz"><b>${esc(d.size.split(', ')[0])}</b>${esc(d.size.split(', ').slice(1).join(', '))}</span></li>`;
   }).join('');
@@ -139,7 +139,7 @@ function validation(fig, [V]) {
     return `<button type="button" class="vg-c ${cellClass(v)}${weak}" data-id="${esc(t.id)}" tabindex="-1" aria-pressed="false" aria-label="${esc(`${t.id}, ${t.metric}: ${VLABEL[v] || v}${weak ? ', weak evidence' : ''}`)}"></button>`;
   }
   function drawPanels() {
-    panels.innerHTML = [['fitted', 'Fitted', 'I may tune against these'], ['held-out', 'Held out', 'never tuned: the real test']].map(([role, name, sub]) => {
+    panels.innerHTML = [['fitted', 'Fitted', 'may be tuned against'], ['held-out', 'Held out', 'never tuned: the real test']].map(([role, name, sub]) => {
       const mine = T.filter(t => t.role === role), doms = DOMAIN_ORDER.filter(d => mine.some(t => t.domain === d));
       return `<div class="vg-panel"><h4>${name} · ${mine.length}<span>${sub}</span></h4>` + doms.map(d => `<div class="vg-dom"><span>${esc(d)}</span><div class="vg-cells">${mine.filter(t => t.domain === d).map(cell).join('')}</div></div>`).join('') + `</div>`;
     }).join('');
@@ -153,7 +153,7 @@ function validation(fig, [V]) {
     if (!r || !fin(m) && !seeds.length) return '';
     const vals = [r.lo, r.hi, m, ...seeds].filter(fin), lo = Math.min(0, ...vals), hi = Math.max(...vals) * 1.12 || 1, W = 460, H = 34, L = 6, R = 6;
     const X = v => L + (v - lo) / (hi - lo) * (W - L - R);
-    let s = svgOpen(W, H, `${t.metric}: band ${r.lo} to ${r.hi}; mine ${num(m, 3)}`);
+    let s = svgOpen(W, H, `${t.metric}: band ${r.lo} to ${r.hi}; simulated ${num(m, 3)}`);
     s += `<line x1="${L}" x2="${W - R}" y1="14" y2="14" class="gv-axis"/><rect x="${X(r.lo).toFixed(1)}" y="7" width="${Math.max(2, X(r.hi) - X(r.lo)).toFixed(1)}" height="14" rx="3" fill="rgba(255,255,255,.14)"/>`;
     seeds.forEach(v => { s += `<circle cx="${X(v).toFixed(1)}" cy="14" r="3.5" fill="var(--ink-2)" stroke="var(--well)" stroke-width="1.5"/>`; });
     if (fin(m)) s += `<circle cx="${X(m).toFixed(1)}" cy="14" r="5" fill="var(--mine)" stroke="var(--well)" stroke-width="2"/>`;
@@ -168,7 +168,7 @@ function validation(fig, [V]) {
     const field = (t.field || []).map(f => `${esc(f.population)}${f.years ? ` (${esc(f.years)})` : ''}: ${esc(f.value)}`).join('<br>');
     const src = (t.sources || []).map(k2 => S[k2] ? (S[k2].url ? `<a href="${esc(S[k2].url)}">${esc(S[k2].short)}</a>` : esc(S[k2].short)) : esc(k2)).join(', ');
     detail.innerHTML = `<div class="d-h"><code>${esc(t.id)}</code><b>${esc(t.metric)}</b>${tag}<span class="vtag soft">${t.role === 'fitted' ? 'fitted' : 'held out'}</span>${WEAK[k] ? `<span class="vtag soft">${esc(k)}</span>` : ''}${other}</div>` +
-      `<p>Band <b>${esc(t.band || '—')}</b> ${esc(t.units)}${t.basis ? ` <small>(${esc(t.basis)})</small>` : ''} · mine <b>${fin(m) ? num(m, 3) : '—'}</b>${t.perSeed && t.perSeed.length && mode === 'standard' ? ` <small>(${t.perSeed.filter(fin).length} seeds)</small>` : ''}</p>` +
+      `<p>Band <b>${esc(t.band || '—')}</b> ${esc(t.units)}${t.basis ? ` <small>(${esc(t.basis)})</small>` : ''} · simulated <b>${fin(m) ? num(m, 3) : '—'}</b>${t.perSeed && t.perSeed.length && mode === 'standard' ? ` <small>(${t.perSeed.filter(fin).length} seeds)</small>` : ''}</p>` +
       strip(t) + (field ? `<p><small>Field:</small><br>${field}</p>` : '') + (t.note ? `<p><small>${esc(t.note)}</small></p>` : '') +
       (WEAK[k] ? `<p><small>${esc(WEAK[k])}.</small></p>` : '') + (src ? `<p><small>Sources: ${src}</small></p>` : '');
   }
@@ -193,15 +193,15 @@ function validation(fig, [V]) {
     drawTiles(); drawPanels(); showDetail(sel || firstFail);
     set(fig, 'runinfo', runText());
   }));
-  const runText = () => { const r = runs[mode] || runs.standard; return `${mode === 'fresh' ? 'Fresh seeds, never used while building' : 'The five seeds I develop with'} (${r.seeds.join(', ')}), ${r.days} observed days each after a ${r.burnInDays}-day burn-in, field profile, run ${r.date}.`; };
+  const runText = () => { const r = runs[mode] || runs.standard; return `${mode === 'fresh' ? 'Fresh seeds, never used while building' : 'The five tuning seeds'} (${r.seeds.join(', ')}), ${r.days} observed days each after a ${r.burnInDays}-day burn-in, field profile, run ${r.date}.`; };
   el.querySelector('.vg-key').innerHTML = [['pass', 'Pass'], ['fail', 'Fail'], ['inconclusive', 'Too close to call'], ['nodata', 'Not enough data yet'], ['notbuilt', 'Mechanism not built yet'], ['unscored', 'Not scored'], ['pass weak', 'Weak evidence (tuned, encoded, compromised): not counted']]
     .map(k => `<span><i class="vg-c ${k[0]}" aria-hidden="true"></i>${k[1]}</span>`).join('');
   const firstFail = (T.find(t => t.role === 'held-out' && t.verdict === 'fail') || T[0]).id;
   drawTiles(); drawPanels(); select(firstFail, false);
   set(fig, 'runinfo', runText());
   const hs = V.summary.standard['held-out'], hf = V.summary.fresh['held-out'];
-  set(fig, 'take', `Of ${V.counts.heldOut} held-out targets, ${hs.pass || 0} pass and ${hs.fail || 0} fail on the seeds I build with; on fresh seeds it's ${hf.pass || 0} and ${hf.fail || 0}.`);
-  table(fig, ['Target', 'Metric', 'Role', 'Band', 'Mine', 'Verdict', 'Fresh seeds'], () => T.map(t => [t.id, t.metric, t.role, t.band || '', fin(t.mean) ? num(t.mean, 3) : '', VLABEL[t.verdict] || t.verdict, t.fresh ? VLABEL[t.fresh.verdict] || t.fresh.verdict : '']), 'All targets as a table');
+  set(fig, 'take', `Of ${V.counts.heldOut} held-out targets, ${hs.pass || 0} pass and ${hs.fail || 0} fail on the tuning seeds; on fresh seeds it's ${hf.pass || 0} and ${hf.fail || 0}.`);
+  table(fig, ['Target', 'Metric', 'Role', 'Band', 'Simulated', 'Verdict', 'Fresh seeds'], () => T.map(t => [t.id, t.metric, t.role, t.band || '', fin(t.mean) ? num(t.mean, 3) : '', VLABEL[t.verdict] || t.verdict, t.fresh ? VLABEL[t.fresh.verdict] || t.fresh.verdict : '']), 'All targets as a table');
 }
 
 // ---------- Behaviour strips: band, each seed and the mean, for a curated set of targets.
@@ -225,13 +225,13 @@ function behaviours(fig, [V]) {
     else seeds.forEach((v, i) => { s += `<circle cx="${X(v).toFixed(1)}" cy="11" r="4" fill="${inBand(v) ? 'var(--mine)' : 'var(--warn)'}" fill-opacity=".9" stroke="var(--surface)" stroke-width="2" data-tip="Seed ${i + 1}: <b>${num(v, 3)}</b>"/>`; });
     s += '</svg>';
     const weak = WEAK[t.key] ? ` · ${t.key}` : '';
-    const mine = P ? `males ${num(P.male, 2)}, females ${num(P.female, 2)}` : `mine ${num(m, 2)}`;
+    const mine = P ? `males ${num(P.male, 2)}, females ${num(P.female, 2)}` : `simulated ${num(m, 2)}`;
     // A tuned or encoded pass is not a pass: it shows as its label, not as "Pass".
     const tag = WEAK[t.key] && t.verdict === 'pass' ? `<span class="vtag soft">${esc(t.key[0].toUpperCase() + t.key.slice(1))}</span>` : `<span class="vtag ${['pass', 'fail', 'inconclusive'].includes(t.verdict) ? t.verdict : 'soft'}">${esc(t.verdict === 'inconclusive' ? 'Too close' : VLABEL[t.verdict] || t.verdict)}</span>`;
     return `<li><span>${esc(label)}<small>field ${esc(t.band)} · ${mine}${weak} · ${esc(t.field?.[0]?.population || '')}</small></span>${s}${tag}</li>`;
   }).join('');
   paint(el, `<ul class="bs">${rows}</ul>`);
-  table(fig, ['Target', 'Behaviour', 'Field band', 'Mine (mean of seeds)', 'Seeds', 'Verdict'], () => BEHAVIOURS.filter(b => T[b[0]]).map(([id, label]) => { const t = T[id]; return [id, label, t.band, num(t.mean, 3), (t.perSeed || []).map(v => num(v, 3)).join(' · '), VLABEL[t.verdict] || t.verdict]; }));
+  table(fig, ['Target', 'Behaviour', 'Field band', 'Simulated (mean of seeds)', 'Seeds', 'Verdict'], () => BEHAVIOURS.filter(b => T[b[0]]).map(([id, label]) => { const t = T[id]; return [id, label, t.band, num(t.mean, 3), (t.perSeed || []).map(v => num(v, 3)).join(' · '), VLABEL[t.verdict] || t.verdict]; }));
 }
 
 // ---------- Fruit calendar: 20 years × 12 months of ripe fruit, rain in the margins.
@@ -326,23 +326,23 @@ function paths(fig, [P]) {
   const X = v => L + v * (Wh - L - R), mx = Math.max(...P.gombe.straightHist, ...P.sim.straightHist);
   const Y = v => top + (1 - v / mx) * (Hh - top - B);
   const step = (h, cls) => { let d = `M${X(0)} ${Y(0)}`; h.forEach((v, i) => { d += `L${X(i / bins).toFixed(1)} ${Y(v).toFixed(1)}L${X((i + 1) / bins).toFixed(1)} ${Y(v).toFixed(1)}`; }); return `<path d="${d}L${X(1)} ${Y(0)}" ${cls}/>`; };
-  let hs = svgOpen(Wh, Hh, `Straightness of every full day: Gombe median ${P.gombe.straight}, mine ${P.sim.straight}.`);
+  let hs = svgOpen(Wh, Hh, `Straightness of every full day: Gombe median ${P.gombe.straight}, simulated ${P.sim.straight}.`);
   hs += `<line x1="${L}" x2="${Wh - R}" y1="${Y(0)}" y2="${Y(0)}" class="gv-axis"/>`;
   hs += step(P.gombe.straightHist, 'fill="var(--gombe)" fill-opacity=".14" style="stroke:var(--gombe)" stroke-width="2" stroke-linejoin="round"');
   hs += step(P.sim.straightHist, 'fill="none" style="stroke:var(--mine)" stroke-width="2" stroke-dasharray="5 3" stroke-linejoin="round"');
   // Median labels sit above the plot, the lower median to the left of its line and the higher to the right, so they never collide.
-  [[P.gombe.straight, 'var(--gombe)', 'Gombe median'], [P.sim.straight, 'var(--mine)', 'mine median']].forEach(([v, c, n]) => {
+  [[P.gombe.straight, 'var(--gombe)', 'Gombe median'], [P.sim.straight, 'var(--mine)', 'simulated median']].forEach(([v, c, n]) => {
     const right = v === Math.max(P.gombe.straight, P.sim.straight), tw = (n.length + 5) * 6.4;
     const x = right ? Math.min(X(v) + 5, Wh - R - tw) : Math.max(X(v) - 5, L + tw);
     hs += `<line x1="${X(v)}" x2="${X(v)}" y1="${top - 10}" y2="${Y(0)}" style="stroke:${c}" stroke-dasharray="1 3" stroke-width="1.5"/><text x="${x}" y="${top - 12}" text-anchor="${right ? 'start' : 'end'}" class="gv-lab">${n} ${v.toFixed(2)}</text>`;
   });
   [0, 0.25, 0.5, 0.75, 1].forEach(v => { hs += `<text x="${X(v)}" y="${Hh - 6}" text-anchor="${v === 0 ? 'start' : v === 1 ? 'end' : 'middle'}" class="gv-tick">${v}</text>`; });
   hs += `<text x="${Wh / 2}" y="${Hh - 6}" text-anchor="middle" class="gv-tick" dy="0"></text></svg>`;
-  paint(el, defs + `<div class="dp">${row(P.gombe, 'var(--gombe)', 'Gombe', `r = ${P.gombe.rKm} km`)}${row(P.sim, 'var(--mine)', 'Mine', `r = ${P.sim.rKm} km`)}</div>` +
-    `<div class="gv-fade" style="margin-top:14px"><p class="gv-sub" style="margin-bottom:4px">Straightness of every full day: ${nf.format(P.gombe.fullDays)} at Gombe, ${nf.format(P.sim.fullDays)} of mine (0 = back where it started, 1 = a straight line)</p>${hs}</div>`);
-  set(fig, 'sub', `Each tile starts at the ring and ends at the dot, turned so the day's net move points up and snapped to a grid of 0.1 range radius (r) for privacy. Median day: Gombe walks ${num(P.gombe.pathR, 2)} r and ends ${num(P.gombe.netR, 2)} r away; mine walk ${num(P.sim.pathR, 2)} r and end ${num(P.sim.netR, 2)} r away. The number under each tile is its straightness.`);
+  paint(el, defs + `<div class="dp">${row(P.gombe, 'var(--gombe)', 'Gombe', `r = ${P.gombe.rKm} km`)}${row(P.sim, 'var(--mine)', 'Simulated', `r = ${P.sim.rKm} km`)}</div>` +
+    `<div class="gv-fade" style="margin-top:14px"><p class="gv-sub" style="margin-bottom:4px">Straightness of every full day: ${nf.format(P.gombe.fullDays)} at Gombe, ${nf.format(P.sim.fullDays)} simulated (0 = back where it started, 1 = a straight line)</p>${hs}</div>`);
+  set(fig, 'sub', `Each tile starts at the ring and ends at the dot, turned so the day's net move points up and snapped to a grid of 0.1 range radius (r) for privacy. Median day: Gombe walks ${num(P.gombe.pathR, 2)} r and ends ${num(P.gombe.netR, 2)} r away; simulated chimps walk ${num(P.sim.pathR, 2)} r and end ${num(P.sim.netR, 2)} r away. The number under each tile is its straightness.`);
   if (P.sim.status !== 'measured') set(fig, 'simstatus', 'Simulated follows from the C7a build (sim code ' + P.sim.simCodeHash + '); a re-run is due.');
-  table(fig, ['Side', 'Day', 'Straightness', 'Walked (r)', 'Net move (r)', 'Hours'], () => [...P.gombe.paths.map((p, i) => ['Gombe', i + 1, p.straight, p.pathR, p.netR, p.hours]), ...P.sim.paths.map((p, i) => ['Mine', i + 1, p.straight, p.pathR, p.netR, p.hours])]);
+  table(fig, ['Side', 'Day', 'Straightness', 'Walked (r)', 'Net move (r)', 'Hours'], () => [...P.gombe.paths.map((p, i) => ['Gombe', i + 1, p.straight, p.pathR, p.netR, p.hours]), ...P.sim.paths.map((p, i) => ['Simulated', i + 1, p.straight, p.pathR, p.netR, p.hours])]);
 }
 
 // ---------- Turning angles as a rose: straight on at the top, doubling back at the bottom.
@@ -354,18 +354,18 @@ function turns(fig, [M, G]) {
   const series = [
     { name: 'Taï', color: 'var(--tai)', d: merge(D.real), dash: '' },
     ...(GD && GD.gombe ? [{ name: 'Gombe', color: 'var(--gombe)', d: merge(GD.gombe), dash: '' }] : []),
-    { name: 'Mine', color: 'var(--mine)', d: merge(D.sim), dash: '5 3' },
+    { name: 'Simulated', color: 'var(--mine)', d: merge(D.sim), dash: '5 3' },
   ];
   const n = series[0].d.length, mx = Math.max(...series.flatMap(s => s.d));
   const W = Math.min(420, Math.max(260, el.clientWidth)), H = W, cx = W / 2, cy = H / 2, R = W / 2 - 34;
   const pt = (k, f) => { const th = (k + 0.5) / n * Math.PI; return [cx + Math.sin(th) * R * f, cy - Math.cos(th) * R * f]; };
-  let s = svgOpen(W, H, 'Rose of turning angles between consecutive steps: Taï and Gombe chimps mostly continue straight on; MGOGO chimps often turn back.');
+  let s = svgOpen(W, H, 'Rose of turning angles between consecutive steps: Taï and Gombe chimps mostly continue straight on; simulated chimps often turn back.');
   [0.25, 0.5, 0.75, 1].forEach(f => { s += `<circle cx="${cx}" cy="${cy}" r="${(R * f).toFixed(1)}" fill="none" class="gv-grid"/>`; });
   s += `<line x1="${cx}" x2="${cx}" y1="${cy - R}" y2="${cy + R}" class="gv-grid"/><line x1="${cx - R}" x2="${cx + R}" y1="${cy}" y2="${cy}" class="gv-grid"/>`;
   series.forEach(se => {
     const right = se.d.map((v, k) => pt(k, Math.sqrt(v / mx))), left = right.map(([x, y]) => [2 * cx - x, y]).reverse();
     const d = 'M' + [...right, ...left].map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('L') + 'Z';
-    s += `<path d="${d}" style="stroke:${se.color};fill:${se.color}" fill-opacity="${se.name === 'Mine' ? 0 : 0.08}" stroke-width="2" stroke-linejoin="round"${se.dash ? ` stroke-dasharray="${se.dash}"` : ''}/>`;
+    s += `<path d="${d}" style="stroke:${se.color};fill:${se.color}" fill-opacity="${se.name === 'Simulated' ? 0 : 0.08}" stroke-width="2" stroke-linejoin="round"${se.dash ? ` stroke-dasharray="${se.dash}"` : ''}/>`;
   });
   s += `<text x="${cx}" y="${cy - R - 12}" text-anchor="middle" class="gv-lab">straight on</text><text x="${cx}" y="${cy + R + 22}" text-anchor="middle" class="gv-lab">turns back</text>`;
   s += `<text x="${cx + R + 4}" y="${cy - 6}" class="gv-tick" text-anchor="end">90°</text><text x="${cx - R - 4}" y="${cy - 6}" class="gv-tick">90°</text>`;
@@ -374,7 +374,7 @@ function turns(fig, [M, G]) {
   const back = a => { const k0 = Math.floor(a.length * 0.75); return sum(a.slice(k0)) / sum(a); };
   const m = byId(M.scorecard), tr = m.turn, gm = G && G.real && G.real.at30 && G.real.at30.turn;
   const deg = v => Math.round(v * 180 / Math.PI) + '°';
-  const rows = [['Taï', val(tr, 'real'), back(D.real), 'steps ≥ 15 m'], ...(gm ? [['Gombe', gm.median, back(GD.gombe), '30-min records']] : []), ['Mine', val(tr, 'sim'), back(D.sim), 'as Taï']];
+  const rows = [['Taï', val(tr, 'real'), back(D.real), 'steps ≥ 15 m'], ...(gm ? [['Gombe', gm.median, back(GD.gombe), '30-min records']] : []), ['Simulated', val(tr, 'sim'), back(D.sim), 'as Taï']];
   set(fig, 'sub', rows.map(r => `${r[0]}: median turn ${deg(r[1])}, ${pct(r[2])} of turns sharper than 135°`).join(' · ') + '.');
   const leg = fig.querySelector('.gv-legend');
   if (leg) leg.innerHTML = series.map(se => `<span><i class="gv-sw${se.dash ? ' dash' : ''}" style="--k:${se.color}"></i>${se.name}</span>`).join('') + '<span>radius: √share of turns</span>';
@@ -388,9 +388,9 @@ function scale(fig, [R, M, V]) {
   const r = byId(R.scorecard), m = byId(M.scorecard), t1 = V.targets.find(t => t.id === 'T-RNG-1');
   const terr = m.territory, comm = r.commArea95;
   const sets = [
-    t1 && t1.range && fin(t1.mean) ? { title: 'Wild communities of about 22', lo: t1.range.lo, hi: t1.range.hi, mine: t1.mean, note: `${t1.range.lo}–${t1.range.hi} km²`, mineNote: `my West (22): ${num(t1.mean, 1)} km²` } : null,
-    terr ? { title: 'Taï groups of 11–23', lo: terr.real.lo, hi: terr.real.hi, mid: terr.real.value, mine: terr.sim.value, note: `${num(terr.real.lo, 1)}–${num(terr.real.hi, 1)} km², median ${num(terr.real.value, 1)}`, mineNote: `mine: ${num(terr.sim.value, 1)} km²` } : null,
-    comm ? { title: 'Ngogo, about 200 members', mid: comm.real.value, mine: comm.sim.value, note: `${num(comm.real.value, 1)} km²: not a size match`, mineNote: `mine: ${num(comm.sim.value, 1)} km²`, faint: true } : null,
+    t1 && t1.range && fin(t1.mean) ? { title: 'Wild communities of about 22', lo: t1.range.lo, hi: t1.range.hi, mine: t1.mean, note: `${t1.range.lo}–${t1.range.hi} km²`, mineNote: `simulated West (22): ${num(t1.mean, 1)} km²` } : null,
+    terr ? { title: 'Taï groups of 11–23', lo: terr.real.lo, hi: terr.real.hi, mid: terr.real.value, mine: terr.sim.value, note: `${num(terr.real.lo, 1)}–${num(terr.real.hi, 1)} km², median ${num(terr.real.value, 1)}`, mineNote: `simulated: ${num(terr.sim.value, 1)} km²` } : null,
+    comm ? { title: 'Ngogo, about 200 members', mid: comm.real.value, mine: comm.sim.value, note: `${num(comm.real.value, 1)} km²: not a size match`, mineNote: `simulated: ${num(comm.sim.value, 1)} km²`, faint: true } : null,
   ].filter(Boolean);
   const top = Math.max(...sets.map(x => Math.max(x.hi || 0, x.mid || 0)));
   const S = 200, rOf = a => Math.sqrt(a / top) * (S / 2 - 4);
@@ -406,7 +406,7 @@ function scale(fig, [R, M, V]) {
   paint(el, `<div class="discs">${sets.map(disc).join('')}</div>`);
   const edge = r.edge, core = r.commCore || r.core;
   set(fig, 'sub', `All three drawn to one scale. The pattern of use, measured in range radii, does match: fixes sit ${num(val(edge, 'sim'), 2)} r inside the edge (Ngogo ${num(val(edge, 'real'), 2)}), and the core holds ${pct(val(core, 'sim'))} of the area (Ngogo ${pct(val(core, 'real'))}). The shape is right; the area is too small.`);
-  table(fig, ['Yardstick', 'Wild, km²', 'Mine, km²', 'Mine smaller by'], () => sets.map(x => [x.title, x.lo ? `${x.lo}–${x.hi}` : num(x.mid, 1), num(x.mine, 2), (x.lo ? '≥ ' : '') + ((x.lo || x.mid) / x.mine).toFixed(1) + '×']));
+  table(fig, ['Yardstick', 'Wild, km²', 'Simulated, km²', 'Simulated smaller by'], () => sets.map(x => [x.title, x.lo ? `${x.lo}–${x.hi}` : num(x.mid, 1), num(x.mine, 2), (x.lo ? '≥ ' : '') + ((x.lo || x.mid) / x.mine).toFixed(1) + '×']));
 }
 
 // ---------- Activity budget as stacked bars (Taï follow records vs my follows, same sampling).
@@ -419,10 +419,10 @@ function activity(fig, [M]) {
     return `<div class="stk-row"><span>${name}</span><div class="stk-bar" role="img" aria-label="${esc(name + ': ' + cats.map((c, i) => `${c[1]} ${pct(v[i])}`).join(', '))}">${cats.map((c, i) => `<i class="${side === 'sim' ? 'mine-seg' : ''}" style="flex:${(v[i] || 0) / tot};background-color:${c[2]}" data-tip="<b>${esc(name)}</b>: ${esc(c[1].toLowerCase())} ${pct(v[i])}">${(v[i] || 0) / tot > 0.12 ? pct(v[i]) : ''}</i>`).join('')}</div></div>`;
   };
   const VN = { similar: 'similar', different: 'different', inconclusive: 'too close to call' };
-  paint(el, `<div class="stk">${bar('real', 'Taï')}${bar('sim', 'Mine')}</div>`);
+  paint(el, `<div class="stk">${bar('real', 'Taï')}${bar('sim', 'Simulated')}</div>`);
   const leg = fig.querySelector('.gv-legend');
-  if (leg) leg.innerHTML = cats.map(c => `<span><i class="gv-sq" style="--k:${c[2]}"></i>${c[1]}: ${VN[m[c[0]] && m[c[0]].verdict] || '—'}</span>`).join('') + '<span>hatched: mine</span>';
-  table(fig, ['Activity', 'Taï', 'Mine', 'Verdict'], () => cats.map(c => [c[1], pct(val(m[c[0]], 'real')), pct(val(m[c[0]], 'sim')), VN[m[c[0]] && m[c[0]].verdict] || '']));
+  if (leg) leg.innerHTML = cats.map(c => `<span><i class="gv-sq" style="--k:${c[2]}"></i>${c[1]}: ${VN[m[c[0]] && m[c[0]].verdict] || '—'}</span>`).join('') + '<span>hatched: simulated</span>';
+  table(fig, ['Activity', 'Taï', 'Simulated', 'Verdict'], () => cats.map(c => [c[1], pct(val(m[c[0]], 'real')), pct(val(m[c[0]], 'sim')), VN[m[c[0]] && m[c[0]].verdict] || '']));
 }
 
 // ---------- Patrol timeline: patrols per 10 males per year, three records on one time axis.
@@ -459,7 +459,7 @@ function timeline(fig, [PT]) {
       s += `<text x="${W - 8}" y="${base - LH - 2}" text-anchor="end" class="gv-tick">max ${per ? lm.toFixed(1) : lm}</text>`;
     });
     const by = 18 + lanes.length * (LH + 26);
-    s += `<text x="0" y="${by - 4}" class="gv-lab hi">Mine</text><rect x="${labW}" y="${by - 16}" width="${plotW}" height="16" rx="3" fill="none" stroke="var(--line-3)" stroke-dasharray="3 3"/><text x="${labW + plotW / 2}" y="${by - 4}" text-anchor="middle" class="gv-note">pending: the patrol proof has not run</text>`;
+    s += `<text x="0" y="${by - 4}" class="gv-lab hi">Simulated</text><rect x="${labW}" y="${by - 16}" width="${plotW}" height="16" rx="3" fill="none" stroke="var(--line-3)" stroke-dasharray="3 3"/><text x="${labW + plotW / 2}" y="${by - 4}" text-anchor="middle" class="gv-note">pending: the patrol proof has not run</text>`;
     [1980, 1990, 2000, 2010, 2020].forEach(y => { s += `<text x="${(X(y) + bw / 2).toFixed(1)}" y="${by + 18}" text-anchor="middle" class="gv-tick">${y}</text>`; });
     paint(el, s + '</svg>');
   };
@@ -497,7 +497,7 @@ function males(fig, [PT]) {
     s += `<line x1="${X(d.median)}" x2="${X(d.median)}" y1="${cy - spans[i] - 4}" y2="${cy + spans[i] + 4}" stroke="var(--ink)" stroke-width="1.5"/><text x="${X(d.median) + 5}" y="${cy - spans[i] - 5}" class="gv-lab hi">median ${pct(d.median)}</text>`;
     y += h + 18;
   });
-  s += `<text x="0" y="${y + 4}" class="gv-lab hi">Mine</text><rect x="${L}" y="${y - 8}" width="${W - L - R}" height="16" rx="3" fill="none" stroke="var(--line-3)" stroke-dasharray="3 3"/><text x="${L + (W - L - R) / 2}" y="${y + 4}" text-anchor="middle" class="gv-note">pending: the patrol proof has not run</text>`;
+  s += `<text x="0" y="${y + 4}" class="gv-lab hi">Simulated</text><rect x="${L}" y="${y - 8}" width="${W - L - R}" height="16" rx="3" fill="none" stroke="var(--line-3)" stroke-dasharray="3 3"/><text x="${L + (W - L - R) / 2}" y="${y + 4}" text-anchor="middle" class="gv-note">pending: the patrol proof has not run</text>`;
   y += 30;
   s += `<line x1="${L}" x2="${W - R}" y1="${y - 10}" y2="${y - 10}" class="gv-axis"/>` + [0, 0.25, 0.5, 0.75, 1].map(v => `<text x="${X(v)}" y="${y + 4}" text-anchor="middle" class="gv-tick">${v * 100}%</text>`).join('');
   paint(el, svgOpen(W, y + 12, `Share of patrols each male joined: Gombe median ${pct(PT.gombe.median)} of ${PT.gombe.males} males, Ngogo median ${pct(PT.ngogo.median)} of ${PT.ngogo.males}.`) + s + '</svg>');
