@@ -94,3 +94,28 @@ The pre-C7a female core-area cost amplifies the effect. With it removed (not a C
 - It will move T-RNG-5 (held out, lactating vs male day range), because hungry mothers range farther. The rule was designed from the energy diagnosis, not from T-RNG-5, and T-RNG-5 is reported with that caveat.
 - The value is not tuned.
 - Checks: the decomposition again; population over 10 years (field, seeds 48, 7, 21); fitted demography rows over 40 years (development seeds).
+
+## Checks after the amendment (development)
+
+**Days 30–60, seeds 48, 7, 21.**
+- Lactating hunger 0.67 → 0.55, condition 0.39 → 0.47.
+- Fallback use 16.4% → 3.2%; travel 9.5% → 14.5% of daylight; 1.7 → 2.3 km per 12 daylight hours.
+- With `coreHungerRelief` 0, the numbers are identical to those before the amendment.
+
+**Days 180–545, seeds 48, 7, 21 (amended).** Lactating hunger and condition by the youngest infant's age:
+
+| Youngest infant | Hunger | Condition |
+| --- | --- | --- |
+| Under 0.5 y | 0.56 | 0.40 |
+| 0.5–2 y | 0.63 | 0.33 |
+| 2 y or more | 0.61 | 0.34 |
+
+- Other adult females: hunger 0.46, condition 0.50.
+- On top of the amendment, the stage ablations now move lactating hunger by 0.05 or less: C7a off 0.55–0.58, C7c off 0.57–0.61, C8's mechanisms off 0.59–0.65. No stage is implicated.
+- The residual deficit comes from the older energy budget. The lactation term runs through the night and adds about 29% to the daily hunger budget, and mothers' deficit grows with infant age. That is the reverse of emeryThompson2012's recovery during the second year.
+- No source gives a magnitude, so the term stays unchanged (not tuned, per the ruling).
+
+**10-year truth runs (seeds 48, 7, 21):**
+- living 49 → 41, 67 and 49; births 25 / 41 / 35; deaths 33 / 23 / 35.
+- Before the amendment the field population collapsed (seed 48: 37 living by year 2).
+- Lactating females still reach median hunger 0.95–1.00 and condition 0.26–0.30 in lean periods, and seed 48 still loses 11 females to starvation over 10 years.
