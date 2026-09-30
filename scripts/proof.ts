@@ -9,9 +9,9 @@
 //
 // --plan lean (default) | full. The lean plan (29 September 2026, user decision: the proof runs locally on 4–6 cores;
 // declared and logged in data/targets.json protocolLog before any proof value existed): 3 generation worlds (set B's
-// 1616, 1717, 1818) × 75 years of natural aging with C8 demography, the sealed rows unsealed on these seeds only; the
+// 1717, 1818, 1919) × 75 years of natural aging with C8 demography, the sealed rows unsealed on these seeds only; the
 // paired expansion scenario on the same seeds × 10 years (T-LET-4 against its baseline, T-LET-5 unsealed); the C9
-// large scenario on 5101 × 75 years; behaviour on the development seeds and fresh replication on 606–1010, 1 year after
+// large scenario on 5606 × 75 years; behaviour on the development seeds and fresh replication on the fresh set, 1 year after
 // a 180-day burn-in each; ablations 1 seed × 1 year per stage; the comparisons locally afterwards. The full plan is the
 // original one (docs/simulation.md "Combined proof").
 //
@@ -42,11 +42,13 @@ if (PLAN !== 'lean' && PLAN !== 'full') { console.error(`--plan must be lean or 
 const LEAN = PLAN === 'lean';
 const SEEDS = {
   dev: [48, 7, 21, 5, 11],
-  fresh: [606, 707, 808, 909, 1010],              // patrol re-tests and fitted-row replication (never used before the patrol corrections)
+  // Reserved sets, never run before (AGENTS.md). Replaced 30 September 2026 (protocolLog): 606 and 1616 ran in the 29 September
+  // proof dry runs; 1010 and 5101 were run by the decide-ft track.
+  fresh: [707, 808, 909, 1013, 1014],             // patrol re-tests and fitted-row replication (never used before the patrol corrections)
   setA: [1111, 1212, 1313, 1414, 1515],           // C8 fitted replication
-  setB: [1616, 1717, 1818, 1919, 2020, 2121, 2222, 2323, 2424, 2525], // C8 held out, hash-bound --unseal
-  generations: [1616, 1717, 1818],                // lean plan: set B's first three (generation worlds and the paired scenario)
-  c9: [5101],                                     // lean plan: the first C9 proof seed (the large scenario)
+  setB: [1717, 1818, 1919, 2020, 2121, 2222, 2323, 2424, 2525, 2626], // C8 held out, hash-bound --unseal
+  generations: [1717, 1818, 1919],                // lean plan: set B's first three (generation worlds and the paired scenario)
+  c9: [5606],                                     // lean plan: a C9 proof seed (the large scenario)
 };
 interface Ablations { seeds: number[]; years: number; burnInDays: number; stages: Record<string, { params: Record<string, number> | null; note: string }> }
 const ABL = JSON.parse(readFileSync(new URL('../data/proof-ablations.json', import.meta.url), 'utf8')) as Ablations;
@@ -123,7 +125,7 @@ function leanSteps(): Step[] {
       argv: () => tsx('c9-scenario.ts', '--kinds', 'large', '--seeds', seedsOf(SEEDS.c9), ...(DRY ? ['--days', 3] : ['--years', 75]), '--workers', 1, '--out', `${OUT}/c9`), outputs: [`${OUT}/c9/c9-summary.json`], memGb: 1.5 },
     { id: 'dev-field', what: 'behaviour: development seeds × 1 year after the burn-in (all non-demography rows; patrol rows with male-party follows where specified; T-BRD-1)', kind: 'field', jobs: n(SEEDS.dev), seedDays: yearDays,
       argv: w => tsx('field-metrics.ts', '--profile', 'field', ...yearSpan, '--seeds', seedsOf(SEEDS.dev), '--workers', w, '--json', `${OUT}/dev-field.json`, '--md', `${OUT}/dev-field.md`), outputs: [`${OUT}/dev-field.json`], memGb: 0.8 },
-    { id: 'fresh-field', what: 'fresh-seed replication (606–1010) × 1 year after the burn-in: fitted rows and the re-tested patrol rows', kind: 'field', jobs: n(SEEDS.fresh), seedDays: yearDays,
+    { id: 'fresh-field', what: 'fresh-seed replication (707, 808, 909, 1013, 1014) × 1 year after the burn-in: fitted rows and the re-tested patrol rows', kind: 'field', jobs: n(SEEDS.fresh), seedDays: yearDays,
       argv: w => tsx('field-metrics.ts', '--profile', 'field', ...yearSpan, '--seeds', seedsOf(SEEDS.fresh), '--workers', w, '--json', `${OUT}/fresh-field.json`, '--md', `${OUT}/fresh-field.md`), outputs: [`${OUT}/fresh-field.json`], memGb: 0.8 },
   ];
   out.push(...ablationSteps([ABL.seeds[0]], DRY ? ['--days', 2, '--burn-in', 1] : ['--years', 1, '--burn-in', ABL.burnInDays], DRY ? 3 : 365 + ABL.burnInDays, 1));
@@ -137,7 +139,7 @@ function fullSteps(): Step[] {
   const out: Step[] = [
     { id: 'dev-field', what: 'field targets, development seeds × 10 years (fitted rows; patrol rows with male-party follows where specified)', kind: 'field', jobs: n(SEEDS.dev), seedDays: DRY ? 4 : 3830,
       argv: w => tsx('field-metrics.ts', '--profile', 'field', ...fieldSpan, '--seeds', seedsOf(SEEDS.dev), '--workers', w, '--json', `${OUT}/dev-field.json`, '--md', `${OUT}/dev-field.md`), outputs: [`${OUT}/dev-field.json`], memGb: 2 },
-    { id: 'fresh-field', what: 'fresh-seed replication (606–1010): fitted rows and the patrol rows re-tested after the patrol corrections', kind: 'field', jobs: n(SEEDS.fresh), seedDays: DRY ? 4 : 3830,
+    { id: 'fresh-field', what: 'fresh-seed replication (707, 808, 909, 1013, 1014): fitted rows and the patrol rows re-tested after the patrol corrections', kind: 'field', jobs: n(SEEDS.fresh), seedDays: DRY ? 4 : 3830,
       argv: w => tsx('field-metrics.ts', '--profile', 'field', ...fieldSpan, '--seeds', seedsOf(SEEDS.fresh), '--workers', w, '--json', `${OUT}/fresh-field.json`, '--md', `${OUT}/fresh-field.md`), outputs: [`${OUT}/fresh-field.json`], memGb: 2 },
     { id: 'scenario', what: 'expansion scenario with its paired baseline on set B × 10 years: T-LET-4 (relative to the baseline) and, with --unseal, T-LET-5', kind: 'scenario', jobs: 2 * n(SEEDS.setB), seedDays: 3650,
       argv: w => tsx('field-scenario.ts', 'expansion', ...(DRY ? ['--profile', 'compressed', '--years', 1] : ['--profile', 'field', '--years', 10]), '--seeds', seedsOf(SEEDS.setB), '--workers', w, '--out', `${OUT}/scenario`, ...(DRY || !C8 ? [] : ['--unseal'])),

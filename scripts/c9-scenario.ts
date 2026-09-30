@@ -1,6 +1,6 @@
 // Stage C9 fission scenarios and the T-FIS scoring (docs/realism-design.md "C9 pre-registration"), simulation truth.
 //
-//   pnpm exec tsx scripts/c9-scenario.ts [--kinds baseline,large,large-off] [--years 40] [--seeds 5101,5202,5303,5404,5505]
+//   pnpm exec tsx scripts/c9-scenario.ts [--kinds baseline,large,large-off] [--years 40] [--seeds 5303,5404,5505,5606,5707]
 //                                        [--profile field] [--workers 2] [--out artifacts/validation/c9] [--days N]
 //
 // Kinds (all at natural aging):
@@ -196,7 +196,7 @@ export function score(res: JobResult[]) {
 
 async function main() {
   const args = process.argv.slice(2), flag = (n: string, d: string) => { const i = args.indexOf(`--${n}`); return i >= 0 && i + 1 < args.length ? args[i + 1] : d; };
-  const kinds = flag('kinds', 'baseline,large,large-off').split(',') as Job['kind'][], seeds = flag('seeds', '5101,5202,5303,5404,5505').split(',').map(Number);
+  const kinds = flag('kinds', 'baseline,large,large-off').split(',') as Job['kind'][], seeds = flag('seeds', '5303,5404,5505,5606,5707').split(',').map(Number);
   const days = args.includes('--days') ? +flag('days', '5') : 365 * +flag('years', '40'), profile = flag('profile', 'field') as Profile, out = flag('out', 'artifacts/validation/c9');
   mkdirSync(out, { recursive: true });
   const jobs: Job[] = kinds.flatMap(kind => seeds.map(seed => ({ seed, kind, days, profile })));

@@ -10,3 +10,9 @@ test('adapter rotations form a Latin square over the three communities', () => {
   assert.deepEqual(assignment('jev2'), { 1: null, 2: 'jev', 3: null });
   assert.throws(() => assignment('rot'));
 });
+
+test('all-<policy> conditions give every community the same policy', () => {
+  for (const p of ['base', 'baseline', 'aggressive', 'collaborative']) assert.deepEqual(assignment(`all-${p}`), { 1: p, 2: p, 3: p });
+  assert.throws(() => assignment('all-jev'));
+  assert.throws(() => assignment('all-'));
+});
