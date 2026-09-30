@@ -18,12 +18,12 @@
   "Instrument validation against truth (sampling accuracy, classifier precision and recall) is allowed at any time, because truth is not a field target; each validation run is logged."
  ],
  "protocolFreeze": {
-  "stage": "C9 build (fission off)",
+  "stage": "C9 proof preparation",
   "date": "2026-09-29",
-  "hash": "ad788552f11082eb",
+  "hash": "7d80a5a2c7c40da1",
   "previous": {
-   "stage": "C10",
-   "hash": "fe5c3af51005d776"
+   "stage": "C9 build (fission off)",
+   "hash": "ad788552f11082eb"
   }
  },
  "protocolLog": [
@@ -1002,6 +1002,18 @@
    ],
    "verdicts": "new / pending (C9 proof)",
    "class": "new targets"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C9 implementer",
+   "seen": "no C9 scenario result",
+   "param": "freeze: ad788552f11082eb -> 7d80a5a2c7c40da1 (T-FIS-5 row, T-FIS metric stubs, the fingerprint now also covers scripts/field-scenario.ts and scripts/c9-scenario.ts)",
+   "reason": "C9 proof preparation",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "C9 proof, combined proof",
+   "class": "freeze"
   }
  ],
  "targets": [
