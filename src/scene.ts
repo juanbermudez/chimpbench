@@ -50,10 +50,11 @@ export interface CameraFootprint {
   fx: number; fz: number;
   /** Bumped whenever the footprint moves by more than 1/1500 of the map, so the map redraws only then. */
   version: number;
-  /** The animal the close view follows, or −1 (free camera). */
+  /** The animal the camera follows (strategy or close view), or −1 (free camera). */
   followId: number;
 }
-export type Scene = SceneAPI & { getFootprint(): CameraFootprint };
+/** followChimp: attach the camera follow without zooming (the UI retargets an attached follow to a new selection). */
+export type Scene = SceneAPI & { getFootprint(): CameraFootprint; followChimp(id: number): void };
 /** Scene options (outside the shared contract), field profile only. focusId: the animal whose party the strategy view
  * frames at start (the whole-map overview when absent, as in the env harness). view 'close': open in the close view on
  * that animal instead, at a low orbit (a new world); the strategy view keeps the party framing for the R key. */
@@ -241,8 +242,9 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
   // --- Picking (forgiving, render/creatures/pick.ts): a name label first (labels take no pointer events, so drags and
   // the wheel still reach the canvas), then the animals' own pick volumes (foliage never steals a click), then the
   // nearest animal within ~28 CSS px of the cursor. Between clicks the same pick runs once a frame as the hover (pointer
-  // cursor, highlighted label), and the hovered animal wins close calls. A second click on the same animal within 0.4 s
-  // (double-click) also brings the camera to it: with F, the explicit way back to an animal after panning away.
+  // cursor, highlighted label), and the hovered animal wins close calls. A click selects the animal and the camera
+  // follows it (render/env/follow.ts: a glide, then tracking, until the user pans); a second click within 0.4 s
+  // (double-click) or F also zooms the strategy view in on it.
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
   const hits: THREE.Intersection[] = [];
@@ -282,15 +284,14 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
     // Field overview: a click on a party marker selects a member and flies the strategy view to it.
     if (overviewOn()) {
       const id = overview!.pick(x, y, rig.camera, width, height);
-      if (id !== null) { onSelect(id); rig.focusChimp(id); return; }
+      if (id !== null) { onSelect(id); rig.follow(id, true); return; }
     }
     const id = pickAt(x, y, pickRadius(e.pointerType));
     if (id < 0) return;
     const now = performance.now(), again = id === lastClickId && now - lastClickAt < 400;
     lastClickId = again ? -1 : id; lastClickAt = now;
-    if (rig.mode === 'close') rig.followId = id;
     onSelect(id);
-    if (again) rig.focusChimp(id);
+    rig.follow(id, again);
   };
   const onPointerCancel = () => { held = false; };
   const onContextMenu = (e: Event) => e.preventDefault();
@@ -316,7 +317,7 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
     const reach = perspective ? THREE.MathUtils.clamp(rig.frameHeight() * 4, 30, 150) : world.size * 2;
     camera.updateMatrixWorld();
     cameraFootprint(camera, x0, x1, y0, y1, terrain.walkable(t.x, t.z), reach, fpNext);
-    const eps = world.size / 1500, follow = rig.mode === 'close' && rig.followId !== null ? rig.followId : -1;
+    const eps = world.size / 1500, follow = rig.mode !== 'cinematic' && rig.followId !== null ? rig.followId : -1;
     if (footprintMoved(fpNext, footprint.pts, eps) || Math.abs(t.x - footprint.fx) > eps || Math.abs(t.z - footprint.fz) > eps || follow !== footprint.followId) {
       footprint.pts.set(fpNext); footprint.fx = t.x; footprint.fz = t.z; footprint.followId = follow; footprint.version++;
     }
@@ -791,7 +792,10 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
     setQuality(next: Quality) { requested = next; upgradeBlockedUntil = -1e9; if (next !== quality || highStep) { highStep = false; applyQuality(next); } },
     setFrameCap(on: boolean) { debug.frameCap = on; try { if (on) localStorage.removeItem(FRAME_CAP_KEY); else localStorage.setItem(FRAME_CAP_KEY, '1'); } catch { /* storage blocked: the setting lasts for this page */ } },
     getFrameCap() { return debug.frameCap; },
-    focusChimp(id: number) { rig.focusChimp(id); },
+    // Before the first frame (setup, harnesses) the camera is placed on the animal; afterwards it glides there and
+    // follows (the strategy view also zooms in to the party framing).
+    focusChimp(id: number) { if (warming) rig.focusChimp(id); else rig.follow(id, true); },
+    followChimp(id: number) { rig.follow(id); },
     panTo(x: number, z: number) { rig.panTo(x, z); },
     resetCamera() { rig.reset(); },
     getDiagnostics() { return { ...diagnostics }; },
