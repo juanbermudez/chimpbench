@@ -16,7 +16,7 @@ import { activityCategory, CAT_FEED, CAT_GROOM, CAT_NONE, CAT_REST, CAT_TRAVEL, 
 import { PROFILES, TARGET_FOLLOW, type ProfileName } from '../../src/field/config';
 import { derive } from '../../src/field/derive';
 import { METRICS } from '../../src/field/metrics';
-import { createObserver, finishObserver, observerStep } from '../../src/field/observer';
+import { createObserver, finishObserver, observerStep, type Observer } from '../../src/field/observer';
 import { buildLocalQuestion, decisionContextError, estimateInputTokens, TOKEN_BUDGET } from '../../server/decide';
 
 export const FREE_ARMS = ['R', 'RG', 'U', 'X'] as const;
@@ -26,7 +26,8 @@ export type FreeArm = typeof FREE_ARMS[number];
 export const MIN_AGE = 8;
 /** Adults for truth tallies: 15+ (the field observer's focal and truth age, src/field/protocols.ts). */
 export const ADULT_AGE = 15;
-const TICKS_PER_DAY = 5760, TICK_MIN = 0.25;
+export const TICKS_PER_DAY = 5760;
+const TICK_MIN = 0.25;
 
 export interface SeedJob {
   seed: number; arms: FreeArm[]; profile: ProfileName;
@@ -38,7 +39,7 @@ export interface SeedJob {
 type Group = 'male' | 'femaleNonLact' | 'femaleLact';
 type HungerGroup = 'male' | 'lactating' | 'pregnant' | 'cycling';
 export interface ArmResult {
-  arm: FreeArm; seed: number;
+  arm: string; seed: number;
   /** Simulation truth over the scored days (lactating females apart). */
   truth: {
     /** Daylight activity counts per group (1-min samples of every adult, daylight > 0.5, the observer truth's classifier). */
@@ -77,7 +78,7 @@ export function runSeed(job: SeedJob): SeedResult {
   return { seed: job.seed, burnInHash, alive: alive.length, policyDriven: alive.filter(c => c.age >= MIN_AGE).length, arms, burnInMs };
 }
 
-const inc = (r: Record<string, number>, k: string, n = 1) => { r[k] = (r[k] ?? 0) + n; };
+export const inc = (r: Record<string, number>, k: string, n = 1) => { r[k] = (r[k] ?? 0) + n; };
 
 /** Every living chimp aged MIN_AGE+ is policy-driven in non-R arms; everyone else follows rules (call before each tick). */
 export function setControllers(world: World, arm: FreeArm): void {
@@ -141,7 +142,7 @@ function groupOf(c: Chimp): Group { return c.sex === 'male' ? 'male' : c.lactati
 function hungerGroupOf(c: Chimp): HungerGroup { return c.sex === 'male' ? 'male' : c.lactating ? 'lactating' : c.pregnancy > 0 ? 'pregnant' : 'cycling'; }
 
 /** Simulation-truth tallies over the scored window (reads the world only). */
-class Truth {
+export class Truth {
   activity: Record<Group, number[]> = { male: CATEGORIES.map(() => 0), femaleNonLact: CATEGORIES.map(() => 0), femaleLact: CATEGORIES.map(() => 0) };
   party = { endpoint: { sum: 0, n: 0 }, lactFocal: { sum: 0, n: 0 } };
   maleDayKm: number[] = []; lactDayKm: number[] = [];
@@ -224,7 +225,44 @@ class Truth {
   }
 }
 
-/** One arm on its copy of the burned-in world. */
+/** Observers and truth tallies over the scored days, shared by the free and the paid arms. */
+export class Scoring {
+  readonly ticks: number;
+  private obs: Observer; private pobs: Observer; private mobs: Observer; private truth: Truth;
+  constructor(world: World, job: Pick<SeedJob, 'profile' | 'scoredDays'>) {
+    // observers start with the scored days (as scripts/ft-field.ts starts them with the model), truth tallies too
+    const prof = PROFILES[job.profile];
+    this.obs = createObserver(world, { seed: 1, profile: prof, truth: true });
+    this.pobs = createObserver(world, { seed: 1 + 7919, profile: prof, truth: true, followMode: 'party-larger', lite: true, pointIntervalMin: 2 });
+    this.mobs = createObserver(world, { seed: 1 + 2 * 7919, profile: prof, truth: true, followMode: 'party-males', lite: true, pointIntervalMin: 1 });
+    this.truth = new Truth(world, paramsOf(world).partyLinkM, prof.lengthScale);
+    this.ticks = Math.round(job.scoredDays * TICKS_PER_DAY);
+  }
+  /** After scored tick i (1-based) and its answers. */
+  step(world: World, i: number): void {
+    observerStep(this.obs, world); observerStep(this.pobs, world); observerStep(this.mobs, world);
+    this.truth.tick(world, i);
+  }
+  finish(world: World, arm: string, seed: number, stats: Stats, t0: number): ArmResult {
+    const truth = this.truth;
+    truth.finish(world);
+    const rec = finishObserver(this.obs, world), prec = finishObserver(this.pobs, world), mrec = finishObserver(this.mobs, world);
+    const d = derive(rec), pd = derive(prec), md = derive(mrec);
+    const observer: ArmResult['observer'] = {};
+    for (const id of ['T-ACT-1', 'T-ACT-2', 'T-ACT-3', 'T-ACT-4', 'T-PTY-1', 'T-RNG-4']) {
+      const m = METRICS.find(x => x.id === id)!, mode = TARGET_FOLLOW[id];
+      const v = m.compute!(mode === 'party-larger' ? pd : mode === 'party-males' ? md : d);
+      observer[id] = { value: v.value, ...(v.parts && 'male' in v.parts ? { male: v.parts.male, female: v.parts.female } : {}), n: v.n };
+    }
+    const chimpDays = truth.chimpTicks * TICK_MIN / 60 / 24;
+    return { arm, seed, truth: { activity: truth.activity, party: truth.party, maleDayKm: truth.maleDayKm, lactDayKm: truth.lactDayKm },
+      hunger: truth.hunger, thirst: truth.thirst, calls: truth.calls, chimpDays, decisionPoints: truth.decisionPoints,
+      decisions: stats.decisions, kept: stats.kept, triggers: stats.triggers, fallbacks: stats.fallbacks, glinerOverBudget: stats.glinerOverBudget, glinerChecked: stats.glinerChecked,
+      kinds: stats.kinds, rulesAgree: stats.rulesAgree, topProb: stats.topProb, observer, wallMs: performance.now() - t0 };
+  }
+}
+
+/** One free arm on its copy of the burned-in world. */
 export function runArm(world: World, arm: FreeArm, job: SeedJob): ArmResult {
   const t0 = performance.now();
   world.modelPolicy = { ...world.modelPolicy, mode: arm === 'R' ? 'off' : 'async' };
@@ -235,32 +273,9 @@ export function runArm(world: World, arm: FreeArm, job: SeedJob): ArmResult {
     if (arm !== 'R') answerWaiting(world, arm, gate, stats, record);
   };
   for (let i = 0, n = Math.round(job.warmupDays * TICKS_PER_DAY); i < n; i++) step(false);
-  // scored days: observers start here (as scripts/ft-field.ts starts them with the model), truth tallies too
-  const prof = PROFILES[job.profile];
-  const obs = createObserver(world, { seed: 1, profile: prof, truth: true });
-  const pobs = createObserver(world, { seed: 1 + 7919, profile: prof, truth: true, followMode: 'party-larger', lite: true, pointIntervalMin: 2 });
-  const mobs = createObserver(world, { seed: 1 + 2 * 7919, profile: prof, truth: true, followMode: 'party-males', lite: true, pointIntervalMin: 1 });
-  const truth = new Truth(world, paramsOf(world).partyLinkM, prof.lengthScale);
-  const ticks = Math.round(job.scoredDays * TICKS_PER_DAY);
-  for (let i = 1; i <= ticks; i++) {
-    step(true);
-    observerStep(obs, world); observerStep(pobs, world); observerStep(mobs, world);
-    truth.tick(world, i);
-  }
-  truth.finish(world);
-  const rec = finishObserver(obs, world), prec = finishObserver(pobs, world), mrec = finishObserver(mobs, world);
-  const d = derive(rec), pd = derive(prec), md = derive(mrec);
-  const observer: ArmResult['observer'] = {};
-  for (const id of ['T-ACT-1', 'T-ACT-2', 'T-ACT-3', 'T-ACT-4', 'T-PTY-1', 'T-RNG-4']) {
-    const m = METRICS.find(x => x.id === id)!, mode = TARGET_FOLLOW[id];
-    const v = m.compute!(mode === 'party-larger' ? pd : mode === 'party-males' ? md : d);
-    observer[id] = { value: v.value, ...(v.parts && 'male' in v.parts ? { male: v.parts.male, female: v.parts.female } : {}), n: v.n };
-  }
-  const chimpDays = truth.chimpTicks * TICK_MIN / 60 / 24;
-  return { arm, seed: job.seed, truth: { activity: truth.activity, party: truth.party, maleDayKm: truth.maleDayKm, lactDayKm: truth.lactDayKm },
-    hunger: truth.hunger, thirst: truth.thirst, calls: truth.calls, chimpDays, decisionPoints: truth.decisionPoints,
-    decisions: stats.decisions, kept: stats.kept, triggers: stats.triggers, fallbacks: stats.fallbacks, glinerOverBudget: stats.glinerOverBudget, glinerChecked: stats.glinerChecked,
-    kinds: stats.kinds, rulesAgree: stats.rulesAgree, topProb: stats.topProb, observer, wallMs: performance.now() - t0 };
+  const sc = new Scoring(world, job);
+  for (let i = 1; i <= sc.ticks; i++) { step(true); sc.step(world, i); }
+  return sc.finish(world, arm, job.seed, stats, t0);
 }
 
 // ---------------------------------------------------------------------------

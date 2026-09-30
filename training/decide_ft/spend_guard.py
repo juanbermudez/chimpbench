@@ -27,6 +27,7 @@ training a model to imitate the Services' output).
 
   python3 spend_guard.py init --ledger L --run RUN --cap 10     # a run with its explicit cap (no default)
   python3 spend_guard.py status --ledger L [--run RUN]
+  python3 spend_guard.py daily-cap --ledger L --dollars 10          # a ceiling over every run per UTC day
 """
 from __future__ import annotations
 
@@ -96,7 +97,9 @@ def estimate_tokens(body: bytes) -> int:
 
 
 def canonical(request: dict) -> bytes:
-    return json.dumps(request, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    """The exact body sent: compact JSON in the packet's own key order. Keys are not sorted, because the order of the
+    options is part of what Jev reads (the shipped client sent them in menu order); the SHA-256 is of these bytes."""
+    return json.dumps(request, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
 
 
 SCHEMA = """
@@ -382,11 +385,15 @@ def main() -> None:
     sub = ap.add_subparsers(dest="cmd", required=True)
     i = sub.add_parser("init"); i.add_argument("--ledger", required=True); i.add_argument("--run", required=True); i.add_argument("--cap", type=float, required=True); i.add_argument("--note", default="")
     s = sub.add_parser("status"); s.add_argument("--ledger", required=True); s.add_argument("--run")
+    d = sub.add_parser("daily-cap"); d.add_argument("--ledger", required=True); d.add_argument("--dollars", type=float, required=True)
     a = ap.parse_args()
     led = Ledger(a.ledger)
     if a.cmd == "init":
         led.open_run(a.run, a.cap, a.note)
         print(json.dumps(led.totals(a.run)))
+    elif a.cmd == "daily-cap":
+        led.set_daily_cap(a.dollars)
+        print(json.dumps({"daily_cap": a.dollars}))
     else:
         runs = [a.run] if a.run else [r[0] for r in led._db().execute("SELECT run_id FROM runs ORDER BY created")]
         for r in runs:

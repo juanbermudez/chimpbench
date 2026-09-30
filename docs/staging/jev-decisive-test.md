@@ -130,3 +130,32 @@ The endpoint can be improved by dilution: random choice beats rules. And gate pl
 1. **"Jev helps"** now also requires J2 to beat **RG** by ≥ 0.05 on ≥ 4 of 5 seeds. RG is the strongest free control.
 2. **Viability guard:** an arm whose median adult hunger exceeds R's by more than 0.10, or whose lactating-female median is ≥ 0.95, is "non-viable" and can't count as "helps". X fails this guard.
 3. **"No difference"** now covers J2 matching RG, and the conclusion is then that "sampling and intention holding explain the gain, not Jev".
+
+## Paid-arm settings (fixed before any paid call)
+
+Code: `src/decide/jev-packet.ts` (packet v3), `scripts/lib/jev-paid.ts` (runner), `scripts/lib/jev-paid-report.ts` (budget and scoring), `training/decide_ft/jev_fake_worker.py` (dry runs). Nothing here changes a threshold.
+
+**Arms.**
+- **J1:** `server/decide.ts` `buildJevQuestion`, unchanged, at every decision point, argmax. No gate.
+- **J2:** packet v3 from the situation facts, sampled with the same uniform as RG and U, behind the same gate.
+  - Blocks: needs as buckets; day; here_now; remembered food and water (the animal's own memory, each with its age); estimates as buckets vs here; nearby.
+  - Options are what / gives / costs, one register.
+  - No urgency echo, no reconcile line, no lactation line.
+  - The question reads "What will X do next?".
+- **J2s (seed 6501):** J2 with every option's gives/costs moved to another option (a hashed derangement) and the estimates rotated across places; "what" stays.
+  - The shuffled packet drives the world.
+  - A hashed quarter of its states is also asked unshuffled. These are the matched states of the J2s check (total variation < 0.05 means Jev is not reading the facts).
+- **Shared with the free arms:** population (8+), bounded menu, legality re-check, fallback reasons, truth scorer and observers.
+- An earlier answer in the same batch may interrupt a later chimp. That chimp's choice is still applied only if legal now, and the case is counted.
+
+**Budget.**
+- One ledger for the whole test, with a ceiling of $10 per day, and one ledger run per world.
+- Per-world caps are proportional to each world's cost estimated in the fake dry run, and sum to at most $10.
+- A world whose guard refuses stops at once and is marked incomplete. Refusal covers the cap, the kill switch, unknown billing, and a malformed answer or worker failure.
+- A stopped world is never continued by rules.
+
+**Scoring.**
+- **"By ≥ 0.05 on ≥ 4 of 5 seeds"** (vs U and vs RG) is read per seed: Δ ≤ −0.05 on at least 4 seeds. The R condition is the pre-registered one: mean Δ ≤ −0.10 and Δ < 0 on ≥ 4 seeds.
+- **Incomplete worlds** are excluded from means and cannot satisfy an "on ≥ 4 of 5 seeds" condition.
+- **The viability guard** uses hunger pooled over complete worlds against R's pooled median.
+- **"Hurts"** is the original rule with the sign reversed (vs R and U).

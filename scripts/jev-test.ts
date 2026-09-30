@@ -8,7 +8,11 @@
 //   pnpm exec tsx scripts/jev-test.ts --dry-run                       # plan, snapshot and hashes; runs nothing
 //   pnpm exec tsx scripts/jev-test.ts --arms R,RG,U,X --workers 4     # the free arms on 6501, 6602, 6703, 6804, 6905
 //   pnpm exec tsx scripts/jev-test.ts --calibrate                     # the RG and U temperatures (dev seed 6301)
-//   pnpm exec tsx scripts/jev-test.ts --arms J1 --paid --cap 10 --ledger <file>   # refuses: the paid path is not built
+//   pnpm exec tsx scripts/jev-test.ts --arms J1,J2,J2s --paid --cap 10 --bridge fake [--workers 11]
+//        # paid arms, dry run end to end against a local fake TypeSafe server (no paid call); writes paid-plan.json
+//   pnpm exec tsx scripts/jev-test.ts --arms J1,J2,J2s --paid --cap 10 --bridge worker --ledger <db> --plan <paid-plan.json>
+//        # the real run through TRAINING's spend-guarded worker.py (per-world caps from the plan); writes paid-arms.{json,md}
+//   pnpm exec tsx scripts/jev-test.ts --kill                          # touches every paid world's kill file
 //
 // Development runs (--seeds other than the decisive set, --burn-in/--warmup/--scored/--profile) are labelled
 // non-standard and written to free-arms-dev-*.{json,md}, never over free-arms.{json,md}. A standard run needs a clean
@@ -16,8 +20,8 @@
 // Output: artifacts/decide-ft/jev-test/free-arms.{json,md} (or --out dir).
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { join, relative, resolve } from 'node:path';
 import { createWorld, resolveByRules, tickWorld } from '../src/simulation';
 import type { World } from '../src/types';
 import { buildFacts } from '../src/decide/facts';
@@ -26,37 +30,14 @@ import { softmax, TEMPERATURE, U_WEIGHTS, utilities } from '../src/decide/polici
 import type { ProfileName } from '../src/field/config';
 import { runPool } from './lib/pool';
 import { ENDPOINT_ROWS, endpoint, FREE_ARMS, MIN_AGE, PAID_ARMS, rowKey, runSeed, setControllers, truthValues, type ArmResult, type Band, type FreeArm, type SeedJob, type SeedResult, menuSample } from './lib/jev-arm';
+import { PRICE_IN, type Bridge, type PaidArm, type PaidJob, type PaidResult } from './lib/jev-paid';
+import { paidFlagsError, paidMarkdown, plannedWorlds, runIdOf, scorePaid, splitBudget, type FreeDoc } from './lib/jev-paid-report';
 
 export const DECISIVE_SEEDS = [6501, 6602, 6703, 6804, 6905];
 export const STANDARD = { profile: 'field' as ProfileName, burnInDays: 180, warmupDays: 2, scoredDays: 5 };
 /** Pre-registered stop rule: R within this distance of the band on every row makes "Jev helps" unreachable. */
 export const STOP_ROW_DISTANCE = 0.10;
 const DEV_SEED = 6301;
-
-// ---------------------------------------------------------------------------
-// Paid arms: refused here
-// ---------------------------------------------------------------------------
-
-/**
- * J1, J2 and J2s need a paid model. This harness never builds or instantiates the Jev client (its constructor reads the
- * credential). They refuse without --paid, an explicit --cap in dollars and an initialized spend-guard ledger
- * (training/decide_ft/spend_guard.py); and with all three they still refuse, because the paid path is not built yet.
- */
-export function refusePaidArms(arms: string[], flags: { paid: boolean; cap: string; ledger: string }): string {
-  const paid = arms.filter(a => (PAID_ARMS as readonly string[]).includes(a));
-  if (!paid.length) return '';
-  const missing: string[] = [];
-  if (!flags.paid) missing.push('--paid');
-  const cap = Number(flags.cap);
-  if (!flags.cap || !Number.isFinite(cap) || cap <= 0) missing.push('--cap <dollars> (explicit, finite, > 0; there is no default)');
-  if (!flags.ledger) missing.push('--ledger <spend-guard ledger file>');
-  else if (!existsSync(flags.ledger) || !isSqlite(flags.ledger)) missing.push(`--ledger ${flags.ledger} (not an initialized spend-guard ledger: run training/decide_ft/spend_guard.py init)`);
-  if (missing.length) return `${paid.join(', ')} refused: missing ${missing.join('; ')}.`;
-  return `${paid.join(', ')} refused: the paid path is not built in this harness (the spend guard must first be wired into the Jev client; see training/decide_ft/jev_spend_guard.patch). No request was made.`;
-}
-function isSqlite(file: string): boolean {
-  try { return statSync(file).size >= 100 && readFileSync(file).subarray(0, 16).toString('latin1') === 'SQLite format 3\0'; } catch { return false; }
-}
 
 // ---------------------------------------------------------------------------
 // Snapshot
@@ -274,6 +255,80 @@ function calibrationRun(days: number, burnIn: number) {
 }
 
 // ---------------------------------------------------------------------------
+// Paid arms (J1, J2, J2s): per-world caps, fake dry run, real run, scoring
+// ---------------------------------------------------------------------------
+
+interface PaidOpts { cap: number; bridge: Bridge; ledger: string; plan: string; workers: number; out: string; repo: string; dryRun: boolean; allowDirty: boolean; scored: number; warmup: number; burnIn: number }
+const PAID_LATENCY_S = 0.25; // median Jev latency per request in the round-2 receipts (judge 3: 0.218–0.228 s median, p95 0.35 s)
+
+function ledgerTotals(ledger: string, repo: string): { runs: Record<string, unknown>[]; spent: number } {
+  const txt = execFileSync('python3', ['-B', join(repo, 'training/decide_ft/spend_guard.py'), 'status', '--ledger', ledger], { encoding: 'utf8' });
+  const runs = txt.split('\n').filter(Boolean).map(l => JSON.parse(l) as { run_id: string; spent: number });
+  const mine = runs.filter(r => r.run_id.startsWith('jev-test/'));
+  return { runs: mine, spent: mine.reduce((a, r) => a + r.spent, 0) };
+}
+
+export async function runPaid(arms: PaidArm[], o: PaidOpts): Promise<void> {
+  const snap = snapshot(), real = o.bridge === 'worker';
+  const freeFile = join(o.out, 'free-arms.json');
+  if (!existsSync(freeFile)) throw new Error(`${freeFile} is missing: the paid arms pair with the free arms`);
+  const free = JSON.parse(readFileSync(freeFile, 'utf8')) as FreeDoc & { snapshot: { simHash: string; commit: string } };
+  if (free.snapshot.simHash !== snap.simHash) throw new Error(`the simulation changed since the free arms (sim ${free.snapshot.simHash} → ${snap.simHash}): pairing would be invalid`);
+  const expect = Object.fromEntries(free.seedInfo.map(s => [s.seed, s.burnInHash]));
+  const worlds = plannedWorlds(arms);
+  const standard = o.scored === STANDARD.scoredDays && o.warmup === STANDARD.warmupDays && o.burnIn === STANDARD.burnInDays;
+  let caps: Record<string, number>, ledger = o.ledger;
+  if (real) {
+    if (!standard) throw new Error('the real run uses the pre-registered 180 + 2 + 5 days only');
+    if (snap.dirty.length && !o.allowDirty) throw new Error(`the tree is dirty (${snap.dirty.join(', ')}): commit first`);
+    const plan = JSON.parse(readFileSync(o.plan, 'utf8')) as { snapshot: { simHash: string; decideHash: string }; proposedCaps: Record<string, number> };
+    if (plan.snapshot.simHash !== snap.simHash || plan.snapshot.decideHash !== snap.decideHash) throw new Error('the plan was made on other code: redo the fake dry run');
+    caps = plan.proposedCaps;
+    const total = worlds.reduce((a, w) => a + (caps[w.runId] ?? NaN), 0);
+    if (!(total <= o.cap + 1e-9)) throw new Error(`the plan's caps sum to $${total} (> --cap $${o.cap}) or miss a world`);
+    execFileSync('python3', ['-B', join(o.repo, 'training/decide_ft/spend_guard.py'), 'daily-cap', '--ledger', ledger, '--dollars', String(o.cap)]);
+  } else {
+    ledger = ledger || join(o.out, `dryrun-ledger-${new Date().toISOString().replace(/[:.]/g, '-')}.db`);
+    caps = splitBudget(o.cap, worlds).caps; // provisional: weighted equal split (J2s double); the dry run proposes cost-based caps
+  }
+  const kind = real ? 'paid' : 'dryrun';
+  const jobs: (PaidJob & { repo: string })[] = worlds.map(w => ({ seed: w.seed, arm: w.arm, profile: STANDARD.profile, burnInDays: o.burnIn, warmupDays: o.warmup, scoredDays: o.scored,
+    bridge: o.bridge, ledger, runId: w.runId, capDollars: caps[w.runId], ftRoot: relative(o.repo, join(o.out, kind, `${w.arm}-${w.seed}`)),
+    expectBurnInHash: o.burnIn === STANDARD.burnInDays ? expect[w.seed] : undefined, repo: o.repo }));
+  if (o.dryRun) { console.log(JSON.stringify({ plan: jobs.map(j => ({ arm: j.arm, seed: j.seed, runId: j.runId, cap: j.capDollars })), capTotal: o.cap, bridge: o.bridge, ledger, snapshot: snap }, null, 1)); return; }
+  const t0 = performance.now();
+  console.log(`jev-test ${kind}: ${worlds.length} worlds (${arms.join(', ')}), bridge ${o.bridge}, ${o.workers} at a time, cap $${o.cap} split per world; ledger ${ledger}`);
+  const results = await runPool<PaidJob & { repo: string }, PaidResult>(new URL('./lib/jev-paid-worker.ts', import.meta.url), jobs, { size: o.workers,
+    onDone: (i, ms) => console.log(`  ${jobs[i].runId} done in ${Math.round(ms / 1000)} s`) });
+  const wallS = Math.round((performance.now() - t0) / 1000);
+  const lt = ledgerTotals(ledger, o.repo);
+  const score = scorePaid(results, free, bands());
+  const est: Record<string, number> = Object.fromEntries(results.map(r => [r.runId, r.jev.estTokens * PRICE_IN]));
+  const proposed = splitBudget(o.cap, worlds, est);
+  const perWorld = results.map(r => ({ runId: r.runId, arm: r.arm, seed: r.seed, complete: r.complete, stopReason: r.stopReason, stoppedAt: r.stoppedAt, calls: r.jev.calls, batches: r.jev.batches,
+    estTokens: r.jev.estTokens, tokensPerCall: r.jev.calls ? Math.round(r.jev.estTokens / r.jev.calls) : null, estDollars: est[r.runId], billedDollars: r.jev.spent, capUsed: caps[r.runId], proposedCap: proposed.caps[r.runId],
+    wallMin: +(r.wallMs / 60000).toFixed(1), projectedRealWallMin: +((r.wallMs / 1000 + r.jev.batches * PAID_LATENCY_S) / 60).toFixed(0) }));
+  const doc = { test: 'jev-decisive-test paid arms', preregistration: 'docs/staging/jev-decisive-test.md (+ Amendment 1)', bridge: o.bridge, dryRun: !real, doNotTrain: results[0]?.doNotTrain,
+    snapshot: snap, freeArmsCommit: free.snapshot.commit, capTotal: o.cap, caps, ledger, ledgerTotal: lt.spent, ledgerRuns: lt.runs, perWorld, score, results, wallS };
+  mkdirSync(o.out, { recursive: true });
+  const tag = real ? 'paid-arms' : 'paid-arms-dryrun';
+  writeFileSync(join(o.out, `${tag}.json`), JSON.stringify(doc, null, 1) + '\n');
+  writeFileSync(join(o.out, `${tag}.md`), paidMarkdown({ bridge: o.bridge, snapshot: { commit: snap.commit.slice(0, 12), simHash: snap.simHash, decideHash: snap.decideHash, dirty: snap.dirty.length },
+    ledgerTotal: lt.spent, capTotal: o.cap, caps, score, paid: results, wallS }) + planMarkdown(perWorld, proposed, o));
+  if (!real) writeFileSync(join(o.out, 'paid-plan.json'), JSON.stringify({ madeBy: `fake dry run, bridge ${o.bridge}`, snapshot: snap, capTotal: o.cap, factor: proposed.factor, proposedCaps: proposed.caps, perWorld }, null, 1) + '\n');
+  console.log(`wrote ${join(o.out, tag)}.{json,md}${real ? '' : ' and paid-plan.json'} (${wallS} s); ledger total $${lt.spent.toFixed(4)}`);
+}
+
+function planMarkdown(perWorld: { runId: string; complete: boolean; calls: number; batches: number; tokensPerCall: number | null; estDollars: number; capUsed: number; proposedCap: number; projectedRealWallMin: number }[], proposed: { caps: Record<string, number>; factor: number | null }, o: PaidOpts): string {
+  const out = ['', '## Plan for the paid run', '', '| World | complete | calls | batches | tokens/call | est. $ | cap used $ | proposed cap $ | projected real wall (min) |', '| --- | --- | --- | --- | --- | --- | --- | --- | --- |'];
+  for (const w of perWorld) out.push(`| ${w.runId} | ${w.complete ? 'yes' : 'no'} | ${w.calls} | ${w.batches} | ${w.tokensPerCall ?? '—'} | ${w.estDollars.toFixed(4)} | ${w.capUsed.toFixed(4)} | ${w.proposedCap.toFixed(4)} | ${w.projectedRealWallMin} |`);
+  const est = perWorld.reduce((a, w) => a + w.estDollars, 0), calls = perWorld.reduce((a, w) => a + w.calls, 0);
+  const wall = Math.max(...perWorld.map(w => w.projectedRealWallMin));
+  out.push('', `Total: ${calls} calls, estimated $${est.toFixed(2)} against the $${o.cap.toFixed(2)} cap (headroom factor ${proposed.factor?.toFixed(2) ?? '—'} per world). With all ${perWorld.length} worlds at once the longest world takes about ${wall} min at ${PAID_LATENCY_S} s per batch (about ${(calls / (wall * 60)).toFixed(1)} requests/s overall against TypeSafe's 40/s).`);
+  return out.join('\n') + '\n';
+}
+
+// ---------------------------------------------------------------------------
 // CLI
 // ---------------------------------------------------------------------------
 
@@ -294,11 +349,24 @@ if (process.argv[1]?.endsWith('jev-test.ts')) {
     console.log(JSON.stringify(res, null, 1));
     process.exit(0);
   }
+  if (has('kill')) {
+    // the kill switch of every paid and dry-run world: the guard refuses every later call (the world stops, incomplete)
+    let n = 0;
+    for (const kind of ['paid', 'dryrun']) { const d = join(out, kind); if (!existsSync(d)) continue; for (const w of readdirSync(d)) { mkdirSync(join(d, w, 'jev'), { recursive: true }); writeFileSync(join(d, w, 'jev', 'KILL'), 'kill\n'); n++; } }
+    console.log(`kill files written for ${n} worlds`);
+    process.exit(0);
+  }
   const arms = flag('arms', FREE_ARMS.join(',')).split(',').map(s => s.trim()).filter(Boolean);
   const unknown = arms.filter(a => !(FREE_ARMS as readonly string[]).includes(a) && !(PAID_ARMS as readonly string[]).includes(a));
   if (unknown.length) { console.error(`unknown arm(s) ${unknown.join(', ')} (free: ${FREE_ARMS.join(', ')}; paid: ${PAID_ARMS.join(', ')})`); process.exit(2); }
-  const refusal = refusePaidArms(arms, { paid: has('paid'), cap: flag('cap', ''), ledger: flag('ledger', '') });
+  const repo = resolve('.');
+  const refusal = paidFlagsError(arms, { paid: has('paid'), cap: flag('cap', ''), ledger: flag('ledger', ''), bridge: flag('bridge', ''), plan: flag('plan', ''), repo });
   if (refusal) { console.error(refusal); process.exit(2); }
+  if (arms.some(a => (PAID_ARMS as readonly string[]).includes(a))) {
+    runPaid(arms as PaidArm[], { cap: +flag('cap', '0'), bridge: flag('bridge', '') as Bridge, ledger: flag('ledger', ''), plan: flag('plan', ''), workers: +flag('workers', '11'),
+      out, repo, dryRun: has('dry-run'), allowDirty: has('allow-dirty'), scored: +flag('scored', String(STANDARD.scoredDays)), warmup: +flag('warmup', String(STANDARD.warmupDays)), burnIn: +flag('burn-in', String(STANDARD.burnInDays)) })
+      .catch(err => { console.error(err); process.exit(1); });
+  } else {
   const seeds = flag('seeds', DECISIVE_SEEDS.join(',')).split(',').map(Number);
   if (seeds.some(s => !Number.isInteger(s))) { console.error('--seeds must be integers'); process.exit(2); }
   const cfg = { profile: flag('profile', STANDARD.profile) as ProfileName, burnInDays: +flag('burn-in', String(STANDARD.burnInDays)), warmupDays: +flag('warmup', String(STANDARD.warmupDays)), scoredDays: +flag('scored', String(STANDARD.scoredDays)) };
@@ -334,4 +402,5 @@ if (process.argv[1]?.endsWith('jev-test.ts')) {
     for (const a of free) console.log(`  ${a}: mean D ${(summary.perArm as any)[a].meanD.toFixed(3)} [${(summary.perArm as any)[a].perSeed.map((x: any) => x.D.toFixed(3)).join(', ')}]`);
     if (st?.conclusion) console.log(`  stop rule: ${st.conclusion}`);
   })().catch(err => { console.error(err); process.exit(1); });
+  }
 }

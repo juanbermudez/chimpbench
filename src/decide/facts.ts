@@ -61,6 +61,8 @@ export interface FoodPlace {
   /** Believed crop (fruit units): seen now, last seen (memory), or the rules' prior for an unknown belief. */
   crop: number; cropKnown: boolean;
   distM: number; walkMin: number;
+  /** Compass direction from the animal (north is −z). */
+  dir: string;
   /** Hours since the memory was last refreshed (memory only). */
   memoryAgeH: number | null;
   /** Community members seen feeding in it now (sight only); they share the crop. */
@@ -102,7 +104,7 @@ export interface Situation {
   inSight: FoodPlace[];
   /** Out-of-sight remembered fruit trees, best three by food per hour including the walk (design A: at most 3). */
   remembered: FoodPlace[];
-  water: { waterId: number; distM: number; walkMin: number; memoryAgeH: number } | null;
+  water: { waterId: number; distM: number; walkMin: number; dir: string; memoryAgeH: number } | null;
   /** Community members in view who are walking off (travel or follow, not toward this animal), nearest first. */
   movingOff: { id: number; bond: number; distM: number; adultMale: boolean }[];
   party: { size: number; adultMales: number };
@@ -153,14 +155,19 @@ export function leafRate(world: World, x: number, z: number, P: Params): number 
   return P.fallbackHungerPerH * (P.patchEcology === 1 ? forageYield(world, x, z) : 1);
 }
 
-function place(c: Chimp, P: Params, R: Rates, treeId: number, species: string, source: FoodPlace['source'], crop: number, cropKnown: boolean, distM: number, memoryAgeH: number | null, feeders: number): FoodPlace {
+const COMPASS = ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest'];
+/** Compass word for an offset (+x east, −z north), as the sim's reason texts. */
+export function compass(dx: number, dz: number): string { return COMPASS[Math.round(((Math.atan2(dx, -dz) * 180 / Math.PI + 360) % 360) / 45) % 8]; }
+
+function place(c: Chimp, P: Params, R: Rates, treeId: number, species: string, source: FoodPlace['source'], crop: number, cropKnown: boolean, dx: number, dz: number, memoryAgeH: number | null, feeders: number): FoodPlace {
+  const distM = Math.hypot(dx, dz);
   const { fruitPerH, hungerPerH } = fruitRate(c, P);
   const walkH = distM / R.walk / 3600;
   // feeding lasts until the crown's share is eaten or the hunger is gone, whichever comes first
   const share = crop / (1 + feeders);
   const feedH = Math.max(0, Math.min(share / Math.max(1e-9, fruitPerH), c.hunger / Math.max(1e-9, hungerPerH)));
   const frac = feedH > 0 ? feedH / (walkH + feedH) : 0;
-  return { treeId, species, source, crop, cropKnown, distM, walkMin: walkH * 60, memoryAgeH, feeders, rateH: hungerPerH, feedH, perHourInclWalk: hungerPerH * frac, thirstPerHInclWalk: fruitPerH * P.fruitThirstFactor * frac };
+  return { treeId, species, source, crop, cropKnown, distM, walkMin: walkH * 60, dir: compass(dx, dz), memoryAgeH, feeders, rateH: hungerPerH, feedH, perHourInclWalk: hungerPerH * frac, thirstPerHInclWalk: fruitPerH * P.fruitThirstFactor * frac };
 }
 
 function periodOf(phase: Situation['phase'], hour: number): Situation['period'] {
@@ -186,7 +193,7 @@ export function buildFacts(world: World, c: Chimp, options: Candidate[]): Situat
     if (!t) continue;
     let feeders = 0;
     for (const sid of x.seen) { const o = idx.byId.get(sid); if (o && o.alive && o.id !== c.id && o.action === 'forage' && o.targetId === t.id) feeders++; }
-    inSight.push(place(c, P, R, t.id, t.species, 'sight', P.patchEcology === 1 ? fruitAt(world, t) : t.fruit, true, dist(t.position[0], t.position[2], px, pz), null, feeders));
+    inSight.push(place(c, P, R, t.id, t.species, 'sight', P.patchEcology === 1 ? fruitAt(world, t) : t.fruit, true, t.position[0] - px, t.position[2] - pz, null, feeders));
   }
   const leafRateH = leafRate(world, px, pz, P);
   const inCrown = c.action === 'forage' && isTreeId(c.targetId) && x.phase === 2;
@@ -206,10 +213,10 @@ export function buildFacts(world: World, c: Chimp, options: Candidate[]): Situat
       const d = dist(m.position[0], m.position[2], px, pz);
       if (d < P.memoryTreeMinM) continue;
       const belief = x.treeCrop?.[t.id];
-      remembered.push(place(c, P, R, t.id, t.species, 'memory', belief ?? UNKNOWN_CROP, belief !== undefined, d, age, 0));
+      remembered.push(place(c, P, R, t.id, t.species, 'memory', belief ?? UNKNOWN_CROP, belief !== undefined, m.position[0] - px, m.position[2] - pz, age, 0));
     } else if (m.kind === 'water') {
       const d = dist(m.position[0], m.position[2], px, pz);
-      if (!water || d < water.distM) water = { waterId: m.entityId, distM: d, walkMin: d / R.walk / 60, memoryAgeH: age };
+      if (!water || d < water.distM) water = { waterId: m.entityId, distM: d, walkMin: d / R.walk / 60, dir: compass(m.position[0] - px, m.position[2] - pz), memoryAgeH: age };
     }
   }
   remembered.sort((a, b) => b.perHourInclWalk - a.perHourInclWalk || a.treeId - b.treeId);
@@ -287,9 +294,9 @@ function optionFact(world: World, c: Chimp, x: ChimpX, P: Params, R: Rates, s: S
         if (!t) break;
         const mem = c.memory.find(m => m.kind === 'tree' && m.entityId === t.id);
         const belief = x.treeCrop?.[t.id];
-        const d = mem ? dist(mem.position[0], mem.position[2], px, pz) : dist(t.position[0], t.position[2], px, pz);
+        const pos = mem ? mem.position : t.position;
         const pl = s.remembered.find(p => p.treeId === t.id) ?? s.inSight.find(p => p.treeId === t.id)
-          ?? place(c, P, R, t.id, t.species, mem ? 'memory' : 'menu', belief ?? UNKNOWN_CROP, belief !== undefined, d, mem ? world.time - mem.seenAt : null, 0);
+          ?? place(c, P, R, t.id, t.species, mem ? 'memory' : 'menu', belief ?? UNKNOWN_CROP, belief !== undefined, pos[0] - px, pos[2] - pz, mem ? world.time - mem.seenAt : null, 0);
         f.place = pl; f.walkMin = pl.walkMin; f.hungerPerH = pl.perHourInclWalk; f.thirstPerH = pl.thirstPerHInclWalk;
         const walkH = pl.walkMin / 60;
         f.energyPerH = -walkEnergy * (pl.feedH > 0 ? walkH / (walkH + pl.feedH) : 1);
