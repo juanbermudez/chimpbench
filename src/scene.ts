@@ -7,7 +7,7 @@ import { createVegetation, type Vegetation } from './render/env/vegetation';
 import { createWater, type WaterSurface } from './render/env/water';
 import { createFieldEnv, type EnvWindow, type FieldEnv } from './render/env/field-env';
 import { createOverview, type Overview } from './render/env/overview';
-import { approach, needsRecentre, overviewWeight, runSteps, stepFor, windowCentre } from './render/env/field';
+import { FIELD_START_ORBIT, FIELD_START_PITCH, FIELD_START_ZOOM, approach, needsRecentre, overviewWeight, partyFocus, runSteps, stepFor, windowCentre } from './render/env/field';
 import { createSky } from './render/env/sky';
 import { createWeather } from './render/env/weather';
 import { createTerritory } from './render/env/territory';
@@ -54,9 +54,13 @@ export interface CameraFootprint {
   followId: number;
 }
 export type Scene = SceneAPI & { getFootprint(): CameraFootprint };
+/** Scene options (outside the shared contract), field profile only. focusId: the animal whose party the strategy view
+ * frames at start (the whole-map overview when absent, as in the env harness). view 'close': open in the close view on
+ * that animal instead, at a low orbit (a new world); the strategy view keeps the party framing for the R key. */
+export interface SceneOptions { focusId?: number; view?: 'close' }
 
 /** Synthetic Kibale-inspired habitat. Rendering observes World and never edits simulation state. */
-export function createScene(container: HTMLElement, world: World, onSelect: (id: number) => void): Scene {
+export function createScene(container: HTMLElement, world: World, onSelect: (id: number) => void, opts: SceneOptions = {}): Scene {
   installAtmosphere();
   const owner = new Owner();
   const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false, powerPreference: 'high-performance', stencil: false });
@@ -86,6 +90,8 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
   // Field profile (C5b, a ~8 km map in real metres): the environment is a window rebuilt around the camera focus
   // (render-env/field-env.ts), and a whole-map overview takes over as the strategy view zooms out.
   const field = world.size > 1000;
+  // Field profile: where the first frame looks (the focus animal's party), so the forest shows at real scale at once.
+  const start = field ? partyFocus(world, opts.focusId) : null;
   let fieldEnv: FieldEnv | null = null, win: EnvWindow | null = null, overview: Overview | null = null;
   if (!field) {
     owner.own(culler);
@@ -94,9 +100,11 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
     water = createWater(terrain, uniforms, owner);
   } else {
     fieldEnv = createFieldEnv(world, uniforms, owner);
-    // First window (built now, behind the loading screen, so warm-up compiles every program): the first living animal.
+    // First window (built now, behind the loading screen, so warm-up compiles every program): the opening focus, else
+    // the first living animal.
     const c0 = world.chimps.find(c => c.alive) ?? world.chimps[0];
-    const o0 = windowCentre(c0 ? c0.position[0] : 0, c0 ? c0.position[2] : 0, 0, 0, [0, 0], 0, world.size / 2);
+    const f0 = start ?? (c0 ? [c0.position[0], c0.position[2]] : [0, 0]);
+    const o0 = windowCentre(f0[0], f0[1], 0, 0, [0, 0], 0, world.size / 2);
     win = runSteps(fieldEnv.build(o0[0], o0[1]));
     occTable = win.occ; culler = win.culler; terrain = win.terrain; vegetation = win.vegetation; water = win.water;
     uniforms.uOrigin.value.set(win.origin[0], win.origin[1]);
@@ -160,6 +168,12 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
   (renderer.domElement as HTMLCanvasElement & { __env?: unknown }).__env = { scene, renderer, sky, uniforms, env };
   const rig = createCameraRig(renderer.domElement, world, (x, z) => terrain.walkable(x, z), getPosition, vegetation.lobes, vegetation.trunkList, { mapSize: world.size });
   if (win) rig.setObstacles(vegetation.lobes, vegetation.trunkList, win.origin[0], win.origin[1]);
+  // Field profile: the strategy view frames the focus party (not the 8 km overview), and a new world starts in a low
+  // close view on the focus animal. Zooming out still reaches the overview; Reset camera shows the whole map.
+  if (start) {
+    rig.panTo(start[0], start[1]); rig.setZoomNow(FIELD_START_ZOOM);
+    if (opts.view === 'close' && opts.focusId !== undefined) { rig.setView('close', opts.focusId); rig.setOrbit(FIELD_START_ORBIT, FIELD_START_PITCH, null, true); }
+  }
   const creatureRoot = scene.getObjectByName('creatures');
   const post = createPost(renderer, scene, rig.camera);
   const gpuTimer = perf.gpu ? createGpuTimer(renderer.getContext() as WebGL2RenderingContext) : null;

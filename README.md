@@ -26,6 +26,7 @@ pnpm exec tsx scripts/bench-sim.ts
 - **The good and the bad.** Grooming, play, reconciliation, consolation, meat sharing, mothers carrying infants. Also displays, charges, fights, redirected aggression, coercion of cycling females, silent border patrols, and rare lethal gang attacks and infanticide.
 - **Hierarchy.** Male rank is a progressive Elo score updated by decided contests. Alphas rise with coalition support and are usually deposed alive. Female rank follows age and tenure.
 - **Kinship.** Mothers, maternal siblings and genetic sires are recorded. Females transfer between communities in adolescence; males stay.
+- **Scale.** A new world is the field profile: about 8 km across in real metres, with the three communities' ranges at field sizes. It opens in a low close view on the West alpha at dawn; zoom out (or press `R`, then Reset camera) for the whole map. The 160 m compressed map is still there: Simulations › New › Compressed, or `?profile=compressed`. Saved simulations keep their own profile.
 - **Environment.** Kibale's two wet seasons, afternoon storms, 15–24 °C, a real sun path near the equator, moon phases, night nests in the canopy, and a stream crossed only at fords.
 
 ## Time
@@ -76,7 +77,7 @@ Model scores are softmax scores, uncalibrated for chimpanzee behavior. A working
 
 - **Mouse:** drag to pan, right-drag to orbit, scroll to zoom. Click a chimp, roster entry, event or minimap point to select.
 - **Playback:** Space pauses; `1`–`6` pick speeds.
-- **Camera:** `F` focuses, `C` toggles close view, `V` toggles the cinematic director, `R` returns to the overview.
+- **Camera:** `F` focuses, `C` toggles close view, `V` toggles the cinematic director, `R` returns to the overview (strategy view). The overview shows a map scale bar; Reset camera frames the whole map.
 - **Panels:** `T` opens the society overlay (kinship forest, dominance ladders, bond network, alpha history). `E` opens experiments, `M` the model panel, `I` the inspector. `L` toggles labels. `[` and `]` cycle chimps. Esc closes.
 - **Sound:** starts on your first click or key (browser autoplay rule). `S` or the speaker button mutes; Settings › Sound has Master, Ambience, Animals and Weather volumes.
 - **Simulations:** the name in the menu bar opens Simulations (new, open, rename, duplicate, delete, export, import). `Ctrl`/`⌘`+`S` saves now.
@@ -99,7 +100,7 @@ Reloading the page brings back the last simulation where you left it, **paused**
 - **Where saves live:** this browser profile, per site address (`127.0.0.1:5173` and `localhost:5173` are different). Export to back up or move them. "Keep saves" asks the browser not to clear them under storage pressure.
 - **One tab at a time:** a second tab shows "open in another tab" and runs unsaved; "Use this tab" asks the first tab to save and hand over.
 - **Old saves:** while the simulation's state layout keeps changing, saves from an older layout are marked incompatible: listed, exportable, but not openable by this build.
-- **Debug URLs:** `?seed=N`, `?pop=N` and `?fresh=1` open an unsaved scratch world (Simulations › Save as simulation keeps it); `?perf=1` and `?persist=0` turn saving off.
+- **Debug URLs:** `?seed=N`, `?pop=N` and `?fresh=1` open an unsaved scratch world (field profile; Simulations › Save as simulation keeps it); `?profile=compressed` or `?profile=field` opens an unsaved world of that profile; `?perf=1` and `?persist=0` turn saving off.
 
 ## Code map
 

@@ -25,12 +25,16 @@ const params = new URLSearchParams(location.search);
 perf.on = params.get('perf') === '1' || params.get('perf') === 'gpu';
 perf.gpu = params.get('perf') === 'gpu';
 const debugSeed = Number(params.get('seed') ?? 48), debugPop = Number(params.get('pop') ?? 0);
-// ?profile=field opens an unsaved real-metre world (C5b); new simulations pick their profile in the Simulations dialog.
+// New and scratch worlds use the real-metre field profile (C5b, ~8 km); ?profile=compressed opens an unsaved 160 m world
+// (?profile=field an unsaved field one). New simulations pick their profile in the Simulations dialog; saves keep theirs.
+// createWorld's own default stays compressed (tests, golden hashes and scripts rely on it).
+const APP_PROFILE: Profile = 'field';
 const profileParam = params.get('profile');
 const urlProfile: Profile | undefined = profileParam === 'field' || profileParam === 'compressed' ? profileParam : undefined;
 const scratch = params.has('seed') || params.has('pop') || params.has('fresh') || urlProfile !== undefined;
-function makeWorld(seed: number, profile: Profile | undefined = urlProfile): World {
-  const w = createWorld(seed, profile ? { profile } : {});
+const profileOf = (w: World): Profile => w.size > 1000 ? 'field' : 'compressed';
+function makeWorld(seed: number, profile: Profile = urlProfile ?? APP_PROFILE): World {
+  const w = createWorld(seed, { profile });
   if (debugPop > 0) growPopulation(w, debugPop);
   return w;
 }
@@ -80,26 +84,28 @@ function applyClock(saved: PersistedSession['clock'] | undefined) {
   clock.playing = false;
 }
 
-world = resumed ? resumed.env.world : makeWorld(olderParams ? olderParams.seed : Number.isFinite(debugSeed) ? debugSeed : 48);
+// A save waiting on the older-parameters choice keeps its profile for the stand-in world ("start new" reuses it).
+world = resumed ? resumed.env.world : olderParams && opened?.ok ? makeWorld(olderParams.seed, profileOf(opened.env.world)) : makeWorld(Number.isFinite(debugSeed) ? debugSeed : 48);
 setPolicy(decider, world, resumed ? world.modelPolicy.mode : 'async');
 if (resumed) restoreDecider(decider, resumed.env.decider, resumed.env.savedAt);
 setRoster(decider, world, resumed?.env.decider.roster ?? 'selected', savedSelection(resumed?.env.session.ui) ?? defaultSelection(world));
 
-/** Swap in another world (new or opened simulation): cancel model requests, rebuild the scene. */
-function replaceWorld(next: World, mode: ModelPolicy['mode']) {
+/** Swap in another world (new or opened simulation): cancel model requests, rebuild the scene around the selection
+ * the UI will show (the saved one, else the default). */
+function replaceWorld(next: World, mode: ModelPolicy['mode'], ui: Record<string, unknown> | null = null) {
   cancelDecisionRequests(decider);
   epoch++;
   world = next;
   setPolicy(decider, world, mode);
   scene?.dispose();
-  scene = startScene();
+  scene = startScene(savedSelection(ui) ?? defaultSelection(world), ui === null);
   elapsed = 0;
 }
 function newSimulation(seed: number, name?: string, profile?: Profile) {
   persist.flushBeforeSwitch();
   const ageRate = world.ageRate, mode = world.modelPolicy.mode;
   // Default: the current world's scale profile (field maps are ~8 km across).
-  replaceWorld(makeWorld(seed, profile ?? (world.size > 1000 ? 'field' : 'compressed')), mode);
+  replaceWorld(makeWorld(seed, profile ?? profileOf(world)), mode);
   world.ageRate = ageRate;
   setRoster(decider, world, decider.roster, defaultSelection(world));
   if (persist.canWrite()) void persist.adopt(name ?? `Seed ${seed}`, seed); else persist.attach(null);
@@ -118,7 +124,7 @@ async function openSimulation(id: string, acceptOlderParams = false): Promise<Ol
     if (!acceptOlderParams) return { id: r.sim.id, name: r.sim.name, seed: r.sim.seed, saved: r.params.saved, current: r.params.current };
     await persist.acceptParams(r.sim.id, r.params);
   }
-  replaceWorld(r.env.world, r.env.world.modelPolicy.mode);
+  replaceWorld(r.env.world, r.env.world.modelPolicy.mode, r.env.session.ui);
   restoreDecider(decider, r.env.decider, r.env.savedAt);
   setRoster(decider, world, r.env.decider.roster, savedSelection(r.env.session.ui) ?? defaultSelection(world));
   applyClock(r.env.session.clock);
@@ -183,8 +189,17 @@ const ps = persist.status;
 if (ps.mode === 'locked') notifyUi(ps.message, 2, () => persist.requestHandoff(), 'Use this tab');
 else if (ps.mode === 'memory' || ps.mode === 'error' || ps.mode === 'readonly') notifyUi(ps.message, 2);
 
-function startScene(): Scene | null {
-  try { return createScene(app.viewport, world, id => app.ctx.select(id)); }
+/**
+ * focusId: the field profile opens on this animal's party (the selected one). fresh (no saved view): a field world opens
+ * in a low close view on it, and the UI adopts that view before its first push into the scene.
+ */
+function startScene(focusId: number, fresh: boolean): Scene | null {
+  const view = fresh && profileOf(world) === 'field' ? 'close' : undefined;
+  try {
+    const s = createScene(app.viewport, world, id => app.ctx.select(id), { focusId, view });
+    if (view) app.ctx.setView(view, { fromScene: true });
+    return s;
+  }
   catch (error) { app.showError(error instanceof Error ? error.message : String(error)); return null; }
 }
 
@@ -249,7 +264,7 @@ function frame(now: number) {
   requestAnimationFrame(frame);
 }
 
-scene = startScene();
+scene = startScene(app.state.selectedId, !resumed);
 // Sound starts silent and locked; the first click or key unlocks it, and assets load once the forest is on screen.
 // ?audiodebug=1 exposes window.__MGOGO_AUDIO__ (lossless output capture) for scripts/audio-probe.mjs.
 audio = createAudioEngine({ debug: params.get('audiodebug') === '1' });
@@ -282,7 +297,7 @@ if (perf.on) (window as unknown as { __MGOGO_PERF__: object }).__MGOGO_PERF__ = 
     const modelTraces = traces.filter(t => t.source === 'model');
     const last = traces.at(-1);
     return {
-      seed: world.seed, time: world.time, day: world.day, hour: world.hour, tick: world.tick,
+      seed: world.seed, profile: profileOf(world), size: world.size, time: world.time, day: world.day, hour: world.hour, tick: world.tick,
       selectedId: app.state.selectedId, highlightTroopId: app.state.highlightTroopId, tab: app.state.tab, view: app.state.view,
       societyOpen: app.state.society.open, dock: app.state.dock, ageRate: world.ageRate,
       environment: { ...world.environment },

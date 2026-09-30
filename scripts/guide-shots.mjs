@@ -87,7 +87,7 @@ const want = name => !only || only.includes(name);
 const box = async sel => { const b = await page.locator(sel).first().boundingBox(); return b && { x: Math.max(0, b.x - 1), y: Math.max(0, b.y - 1), width: b.width + 2, height: b.height + 2 }; };
 
 try {
-  await page.goto(`${base}/?perf=1&seed=${seed}`, { waitUntil: 'load' });
+  await page.goto(`${base}/?perf=1&seed=${seed}&profile=compressed`, { waitUntil: 'load' }); // the guide shows the compressed map
   await until(() => document.querySelector('.loading')?.classList.contains('done'), null, 90000);
   await until(() => window.__MGOGO__?.snapshot().tick > 0);
   // Transient toasts are not part of the views being documented.

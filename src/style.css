@@ -86,6 +86,11 @@ body.preview .viewport { background: #3a3d38; }
 .cine-where { font-size: 12px; font-weight: 500; letter-spacing: .02em; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .cine-meta { font-family: var(--font-display); font-style: italic; font-size: 15px; color: var(--ink-2); text-wrap: pretty; }
 .cine-exit { right: 5vw; bottom: calc(2.5vh - 7px); font-family: var(--font-ui); font-size: 11px; color: var(--ink-3); }
+/* Map scale (src/ui/scalebar.ts): strategy view only, bottom right of the open forest, clear of the inspector. */
+.scalebar { position: absolute; z-index: 4; right: calc(var(--insp-space) + var(--gap)); bottom: var(--gap); display: flex; align-items: center; gap: 8px; height: 26px; padding: 0 10px;
+  border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); pointer-events: none;
+  font-size: 11px; font-weight: 500; color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sb-rule { display: block; height: 6px; border: 1.5px solid var(--ink-3); border-top: 0; }
 .prologue { position: absolute; z-index: 9; top: var(--top); left: 50%; transform: translateX(-50%); display: grid; justify-items: center; gap: 2px; padding: 9px 18px 10px; border-radius: var(--r-lg);
   background: var(--surface); border: 1px solid var(--line-2); box-shadow: var(--shadow); animation: toastIn .8s var(--ease); transition: opacity .8s; }
 .prologue b { font-family: var(--font-display); font-weight: 500; font-size: 17px; color: var(--ink); } .prologue span { font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
@@ -767,6 +772,7 @@ dialog.settings::backdrop { background: rgba(0, 0, 0, .6); }
   .app.dock-open .p-map { display: none; }
   .dock { border-radius: 16px 16px 0 0; }
   .toasts { top: calc(var(--top) + 44px + var(--gap)); }
+  .scalebar { right: var(--gap); bottom: calc(var(--gap) + 44px); }
   .soc-panel { width: 100%; height: 100%; border-radius: 0; }
   .soc-head { padding: 12px 12px 6px; gap: 8px; } .soc-title h2 { font-size: 22px; }
   .soc-views button span { display: none; } .soc-body { padding: 0 10px 12px; } .soc-blurb { padding: 0 12px 8px; }

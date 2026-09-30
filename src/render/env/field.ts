@@ -1,4 +1,5 @@
 import { hyp2 } from '../fastmath';
+import type { World } from '../../types';
 // Field view (realism stage C5b; docs/realism-design.md §5.1): pure helpers for the real-metre profile. No three.js,
 // no DOM. The field world is ~8 km across in logical metres; the renderer draws it at 1:1 (render = logical) with a
 // detailed *window* (terrain, forest, water, rocks and logs within ~130 m of a centre) that is rebuilt around the
@@ -14,6 +15,16 @@ export const RECENTRE_M = 40;
 export const CENTRE_SNAP = 16;
 /** Frame height (m) band over which the overview replaces the window when zooming out (strategy camera). */
 export const OVERVIEW_IN = 260, OVERVIEW_FULL = 700;
+/**
+ * Strategy-camera zoom a field scene opens at (frame height ≈ 64 m at 1440 × 900, the party framing of
+ * scripts/field-probe.mjs): the forest at real scale around the focus animal's party, not the 8 km overview.
+ */
+export const FIELD_START_ZOOM = 1.6;
+/**
+ * A new field world opens in the close view on the focus animal: a low orbit (m, elevation rad) with crowns and trunks
+ * filling the frame and its party readable. Design choice (user feedback: "closer to the jungle"), not a measurement.
+ */
+export const FIELD_START_ORBIT = 8, FIELD_START_PITCH = 0.3;
 
 /** 32-bit hash of a world seed, a tile and a salt (stable across windows and sessions). */
 export function tileSeed(seed: number, tx: number, tz: number, salt = 0): number {
@@ -41,6 +52,14 @@ export function windowCentre(fx: number, fz: number, vx: number, vz: number, out
   out[0] = Math.max(-lim, Math.min(lim, Math.round((fx + dx) / CENTRE_SNAP) * CENTRE_SNAP));
   out[1] = Math.max(-lim, Math.min(lim, Math.round((fz + dz) / CENTRE_SNAP) * CENTRE_SNAP));
   return out;
+}
+
+/** Ground point (x, z) a field scene opens on: the centre of the animal's party, else the animal; null if it is unknown. */
+export function partyFocus(world: World, id: number | undefined): [number, number] | null {
+  const c = id === undefined ? undefined : world.chimps.find(x => x.id === id);
+  if (!c) return null;
+  const p = world.parties.find(q => q.id === c.partyId && q.troopId === c.troopId);
+  return p ? [p.center[0], p.center[2]] : [c.position[0], c.position[2]];
 }
 
 /** True when a focus at (fx, fz) has drifted far enough from the window centre (ox, oz) to rebuild. */

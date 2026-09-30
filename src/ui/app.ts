@@ -18,6 +18,7 @@ import { tracesFor } from './mind';
 import { toggleSound } from './sound';
 import { morph, setAttr, setText } from './morph';
 import { createSimulations } from './simulations';
+import { createScaleBar } from './scalebar';
 
 // UI composition root. Owns UI state and wires components; knows nothing
 // about how the world is simulated or rendered (see UiDeps). main.ts and the
@@ -92,6 +93,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     <button class="insp-peek glass" data-act="open-inspector" aria-keyshortcuts="I" data-occluder></button>
     <div class="cine-cap" aria-live="polite" data-occluder><b class="cine-title"></b><span class="cine-where"></span><span class="cine-meta"></span></div>
     <div class="cine-exit" data-occluder><kbd>Esc</kbd> exit · <kbd>V</kbd> toggle</div>
+    <div class="scalebar" role="img" hidden data-occluder><i class="sb-rule" aria-hidden="true"></i><span class="sb-label" aria-hidden="true"></span></div>
     <div class="prologue" hidden data-occluder><b>Dawn in Kibale</b><span>Fast-forwarding at 10 min/s until 07:15</span></div>
     <div class="mobile-bar" data-occluder><button data-mobile="left">${icon('users')}<span>Society</span></button><button data-mobile="sheet">${icon('person')}<span>Inspector</span></button></div>
     <div class="toasts" aria-live="polite"></div>
@@ -228,6 +230,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
   const communities = createCommunities(q('.p-communities'), ctx);
   const feed = createFeed(q('.p-feed'), ctx);
   const minimap = createMinimap(q('.map-host'), ctx);
+  const scaleBar = createScaleBar(q('.scalebar'), q('#viewport'), () => deps.getScene());
   const inspector = createInspector(q('.inspector'), ctx);
   const society = createSociety(q('.society'), ctx);
   const experiments = createExperiments(q('[data-dock="experiments"]'), ctx);
@@ -340,6 +343,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     const w = deps.getWorld();
     if (resumed || w.day !== 1 || w.hour >= 7.25 || !deps.speedPresets.some(p => p.id === '10x')) return;
     prologue = true; deps.setSpeed('10x'); q('.prologue').hidden = false;
+    if (w.size > 1000) setText(q('.prologue span'), 'Fast-forwarding at 10 min/s until the party wakes');
   }
   function endPrologue(settle: boolean) {
     if (!prologue) return;
@@ -472,7 +476,9 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
       if (state.society.open) society.update(force);
       if (state.dock === 'experiments') experiments.update();
       if (state.dock === 'model') modelPanel.update();
-      if (prologue && (w.day > 1 || w.hour >= 7.25)) endPrologue(true);
+      // Field profile: the close view follows the selected animal, and at 10 min/s a travelling party outruns the
+      // streamed forest window, so the fast-forward stops once it leaves its nest.
+      if (prologue && (w.day > 1 || w.hour >= 7.25 || (w.size > 1000 && ctx.selected()?.action !== 'nest'))) endPrologue(true);
       updateCaption();
       syncPanels();
     },
@@ -548,6 +554,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     /** Call every animation frame; DOM work runs at ~4 Hz, one panel step per frame. */
     tick(now: number) {
       if (state.view !== 'cinematic') hud.frame(now);
+      scaleBar.frame();
       if (shown.left) minimap.frame();
       if (step >= STEPS.length) { if (now - lastUi < 250) return; lastUi = now; prepare(); step = 0; }
       STEPS[step++](false);

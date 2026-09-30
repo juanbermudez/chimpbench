@@ -1,6 +1,7 @@
 // End-to-end browser verification against a running `pnpm dev` (real GLiNER worker).
 // Usage: node scripts/verify-browser.mjs [url] [--no-model]   (default http://127.0.0.1:5173)
 //   --no-model: for a MGOGO_NO_MODEL=1 server; skips the model and lockstep steps, runs everything else.
+// The run uses the app's default new world (the 8 km field profile) and ends with a ?profile=compressed check.
 // Writes screenshots and a PASS/FAIL log to artifacts/.
 import { mkdir, writeFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
@@ -49,8 +50,13 @@ try {
   assert.ok(s0.chimps.filter(c => c.alive).length >= 40, 'population');
   assert.ok(s0.troops.every(t => t.alphaId > 0 && t.maleHierarchy.length > 0), 'every community has an alpha and a male hierarchy');
   assert.ok(s0.hour >= 6.4 && s0.hour < 8, `opens at dawn (${s0.hour})`);
+  // A new world is the field profile, opened in a low close view on the selected animal (not the 8 km overview).
+  assert.equal(s0.profile, 'field', 'default new world is the field profile');
+  const cam0 = await page.evaluate(() => { const r = document.querySelector('canvas').__env.rig; return { view: window.__MGOGO__.snapshot().view, mode: r.mode, d: r.focusDistance, hf: r.frameHeight() }; });
+  assert.ok(cam0.view === 'close' && cam0.mode === 'close' && cam0.d > 3 && cam0.d < 20, `opens close on the selected animal (${JSON.stringify(cam0)})`);
+  assert.ok(await page.locator('.scalebar').isHidden(), 'no scale bar in the close view');
   await shot('e2e-dawn');
-  pass('startup: 3 communities with alphas, dawn opening, live ticks');
+  pass(`startup: field profile, 3 communities with alphas, dawn opening in the close view (${cam0.d.toFixed(1)} m), live ticks`);
 
   // The dawn prologue runs fast, then settles to 1 min/s by 07:15 unless the user changes speed.
   await until(() => window.__MGOGO__.snapshot().hour > 7.3, null, 90000);
@@ -138,6 +144,16 @@ try {
   assert.equal((await snap()).societyOpen, true);
   await shot('e2e-society');
   await key('Escape');
+  // Strategy view: a map scale bar that reads the zoom; Reset camera shows the whole 8 km map.
+  await key('r'); await page.waitForTimeout(1500);
+  assert.equal((await snap()).view, 'rts');
+  const barNear = await page.locator('.scalebar').textContent();
+  assert.ok(await page.locator('.scalebar').isVisible() && / m$/.test(barNear), `strategy scale bar (${barNear})`);
+  await page.locator('[data-act="reset-camera"]').click(); await page.waitForTimeout(1500);
+  const barFar = await page.locator('.scalebar').textContent();
+  assert.equal(barFar, '1 km', 'whole-map scale bar');
+  await shot('e2e-overview');
+  pass(`strategy view scale bar ${barNear}; whole map ${barFar}`);
   await key('c'); await page.waitForTimeout(2500);
   assert.equal((await snap()).view, 'close');
   await shot('e2e-close');
@@ -160,6 +176,7 @@ try {
   assert.equal((await snap()).clock.playing, false, 'paused before saving');
   await page.locator('[data-act="sims"]').click();
   await page.locator('dialog.sims[open] .sl-row.current').waitFor({ timeout: 10000 });
+  assert.equal(await page.locator('dialog.sims [data-profile="field"]').getAttribute('aria-checked'), 'true', 'New simulation preselects the field profile');
   await page.locator('dialog.sims [data-act="save"]').click();
   await until(n => window.__MGOGO__.snapshot().persistence.saves > n, p0.saves, 30000);
   const saved = await snap();
@@ -218,6 +235,15 @@ try {
   assert.ok(t2.scratch && /another tab/.test(t2.message), 'second tab says why it is not saving');
   await tab2.close();
   pass('second tab: library owned by the first tab, clear message, no errors');
+  // ?profile=compressed still opens the small map (an unsaved world, in its own context: no save library involved).
+  const small = await (await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 })).newPage();
+  watch(small);
+  await small.goto(new URL('?profile=compressed', url).href, { waitUntil: 'load' });
+  await small.waitForFunction(() => document.querySelector('.loading')?.classList.contains('done'), null, { timeout: 60000 });
+  const c0 = await small.evaluate(() => { const s = window.__MGOGO__.snapshot(); return { profile: s.profile, size: s.size, view: s.view, scratch: s.persistence.scratch, bar: document.querySelector('.scalebar').textContent }; });
+  assert.ok(c0.profile === 'compressed' && c0.size === 160 && c0.view === 'rts' && c0.scratch, `?profile=compressed opens the 160 m map (${JSON.stringify(c0)})`);
+  await small.close();
+  pass(`?profile=compressed: 160 m map, unsaved, strategy view (scale bar ${c0.bar})`);
   assert.deepEqual(errors, [], `console/page errors: ${errors.join(' | ')}`);
   pass('no page or console errors');
 } catch (error) {

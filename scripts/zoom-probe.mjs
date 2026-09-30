@@ -37,7 +37,7 @@ try {
   if (scenes.includes('A10')) {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
     page.on('pageerror', e => console.log('pageerror', e.message));
-    await page.goto(`${app}/?perf=1&fresh=1`, { waitUntil: 'load' });
+    await page.goto(`${app}/?perf=1&fresh=1&profile=compressed`, { waitUntil: 'load' }); // the app's default is the field profile
     await page.waitForFunction(() => { const p = window.__MGOGO_PERF__; if (!p) return false; const d = p.dump(); const i = d.phases.indexOf('render'); return d.data[i].some(v => v > 0); }, null, { timeout: 60000 });
     await page.evaluate(() => window.__MGOGO_PERF__.quality('high'));
     await page.waitForTimeout(3000);
