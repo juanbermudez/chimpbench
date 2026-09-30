@@ -70,3 +70,51 @@ All arms run on one frozen snapshot of `main`, with its commit and sim hash reco
    - tested against a fake server.
 3. **Paid, only with the user's explicit approval: hard cap $10.** J1 and J2 × 5 seeds, plus J2s × 1 seed. A world that hits its share of the cap stops, and is marked incomplete.
 4. **No distillation or training on Jev outputs.** Outputs carry a do-not-train marker.
+
+## Free-arm settings (fixed 2026-09-29, before any run on the decisive seeds)
+
+Code: `src/decide/facts.ts` (situation facts), `src/decide/gate.ts` (intention gate), `src/decide/policies.ts` (RG, U, X), `scripts/jev-test.ts` and `scripts/lib/jev-arm.ts` (harness and scorer). Nothing below changes a threshold or the endpoint above; it states how each is computed.
+
+**Who and what.**
+- Every living chimp aged 8+ in all three communities follows the arm's policy (the model-eligible age of every decide-ft harness); younger ones follow rules. R runs rules as shipped, with no gate.
+- A policy chooses from the legal bounded menu a model would see (`src/decision.ts` `buildRequest`: at most 8 options, night and dusk menus applied). A menu with fewer than 2 options, an invalid context or a choice the engine refuses goes to rules, counted by reason. `applyDecision` re-checks legality before anything is applied.
+- The GLiNER 613-token fallback (judge 2) is counted as a would-be fallback on every policy decision; the free arms never use GLiNER, so none is applied.
+
+**Gate (design A §3), shared by RG, U and X.** A waiting chimp keeps its intent (same act and target, re-applied through `applyDecision`) unless: an interrupt fired since it was chosen; hunger, thirst, fatigue or loneliness changed bucket (mild ≥ 0.4, moderate ≥ 0.55, strong ≥ 0.7, severe ≥ 0.88, the packet's words); the period changed (night, dawn, morning, midday 11:30–14:30, afternoon, dusk); the intent is older than 90 min; the intent ended or became illegal; or it is feeding, hunger is at least mild, and a tree in view or in memory offers ≥ 2× the food per hour here, walk included. A trip that arrives (within 6 m) becomes feeding at that tree if that is legal. All gate constants are design assumptions.
+
+**Sampling.** u = hash01(world seed, chimp id, decision version, 0x5eed) (design A §5), then the cumulative pick. `world.rng` and `Math.random` are never used, so runs are reproducible and arms share random numbers.
+- **RG:** softmax over the rules' own scores on the menu, T = 0.164.
+- **U:** softmax over the utilities below, T = 0.0892.
+- **X:** uniform over the menu.
+- Both temperatures give a median top-option probability of 0.77 on 5,635 rules-world menus of development seed 6301 (180-day burn-in, 2 days; `scripts/jev-test.ts --calibrate`). 0.77 is Jev's median in design A's H1 table (round-2 receipts). So RG and U are as soft as the sampled Jev they control for. Design assumption; calibrated on menus, never on the endpoint.
+
+**U weights (from design A's energy numbers; not tuned).** U(option) = Σ_n 2·n × relief_n(option) + social and safety terms, where n is each need in [0, 1] (hunger, thirst, fatigue = 1 − energy, loneliness = 1 − social). A need costs n², so relieving it is worth 2n per unit: that is the urgency weight (design assumption). The reliefs are per hour, walk included, and use only the sim's own rates:
+
+| Option | Relief per hour | Source |
+| --- | --- | --- |
+| Leaves, pith, herbs here | hunger 0.11 × local yield (0.6–1.3) | `fallbackHungerPerH`, `forageYield` (design A: "leaves −0.11/h × yield") |
+| Fruit in view or remembered | hunger r × Tf / (Tw + Tf), with r = 0.11 × (0.75 + 0.25 × skill) × 2.2 = 0.18–0.24; Tf = hours of feeding the crop (shared with feeders in view) or the hunger allows; Tw = distance / 0.35 m/s; thirst likewise × 0.55 per fruit unit | `fruitIntakePerH`, `fruitHungerFactor`, `fruitThirstFactor`, `walkMps`; the marginal-value currency [charnov1976] |
+| Crop believed | seen now (in view), last seen (the animal's own memory), else 0.2 (the rules' prior); never the community's known-tree list | C7a rule 8 (omniscient list excluded) |
+| Drink | thirst 1.4 × Td / (Tw + Td), Td = thirst / 1.4 | `drinkThirstPerH` |
+| Rest, shelter | energy +0.08 (0.06 recovered vs 0.02 spent idling) | `energyRestPerH`, `energyOtherPerH` |
+| Nest (asleep) | hunger +0.038, thirst +0.018, energy +0.12, loneliness +0.025 vs awake | `hungerSleepPerH` etc. |
+| Groom | energy +0.08, social +0.18 × (0.5 + 0.5 × bond) | `execution.ts` groom rate; relationship value (Fraser, Schino & Aureli 2008) |
+| Play | social +0.15 × (0.5 + 0.5 × bond), energy −0.06 | `execution.ts` |
+| Walking acts; running acts | energy −0.03; energy −0.23 and hunger −0.03 | `energyWalkPerH`, `energyRunPerH`, `hungerRunPerH` |
+
+Social and safety terms (design assumptions):
+- keeping with a companion, or joining callers: 2·loneliness × 0.18 × 0.5 × (0.5 + 0.5 × bond) / (1 + walk h);
+- making up: 2·loneliness × 0.18 × (0.5 + 0.5 × bond);
+- answering a threat present now: +1;
+- defending or backing an ally: +0.5, or +0.1 when the opponent dominates;
+- confronting strangers seen or heard now: +0.3;
+- heading home from outside the range: +0.1.
+
+Every other option gets its need terms only.
+
+**Truth definitions (the endpoint's "simulation truth").**
+- **Activity (T-ACT-1 to 4):** 1-min samples of every adult (15+) in daylight (> 0.5), classified by `src/field/categories.ts`, as the observer's own truth series does. Shares are pooled by sex. Female parts exclude lactating females. T-ACT-4 = (male + female) / 2, as the metric's truth.
+- **Party size (T-PTY-1):** 15-min daylight scans with every adult as focal (lactating females excluded as focals, but counted as members). Parties by the chain rule at the profile's party link (50 m); all community members count.
+- **Day range (T-RNG-4):** adult males, 5-min fixes, path per 24-h window from the start of scoring (km).
+- **Observer:** the three observer team sets start at the first scored day, and their field-metric values are printed beside truth.
+- **Stop rule, as operated:** R's seed-mean distance is ≤ 0.10 on all 9 rows (T-ACT-1 to 3 by sex, T-ACT-4, party size, day range).
