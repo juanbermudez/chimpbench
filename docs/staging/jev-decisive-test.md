@@ -159,3 +159,11 @@ Code: `src/decide/jev-packet.ts` (packet v3), `scripts/lib/jev-paid.ts` (runner)
 - **Incomplete worlds** are excluded from means and cannot satisfy an "on ≥ 4 of 5 seeds" condition.
 - **The viability guard** uses hunger pooled over complete worlds against R's pooled median.
 - **"Hurts"** is the original rule with the sign reversed (vs R and U).
+
+## Deviation 1 (2026-09-30, before any paid call): J2s pairs a quarter of its states
+
+- **Pre-registered:** J2s is J2 with the facts shuffled, on 1 seed. The J2s check needs matched states: the same state answered with and without shuffling.
+- **As run:** the shuffled packet drives the J2s world. A hashed 25% of its states is also asked with the unshuffled packet. The hash is of (seed, chimp, decision version, salt), not `world.rng`. Those pairs are the matched states for the total-variation check.
+- **Why:** pairing every state doubles the J2s world's calls. A short fake-server smoke put the full paid set at about the $10 cap. With a 25% subsample, J2s costs about 1.25× a J2 world and still yields thousands of matched states.
+- **When:** decided and coded before any paid call, and before the full dry run's cost estimate.
+- **What it does not change:** the endpoint, every threshold, and the J2s criterion (mean TV < 0.05 means Jev is not reading the facts).
