@@ -19,6 +19,7 @@ pnpm exec tsx scripts/field-metrics.ts [--profile field] --days 365 [--burn-in 1
 pnpm exec tsx scripts/field-scenario.ts baseline|expansion --years 10 --seeds 48,7,21,5,11 --workers 4 --out artifacts/validation/c6   # territory scenarios (UD maps, stability, T-LET-4)
 pnpm exec tsx scripts/movement-metrics.ts [--seeds 48,7,21] [--burn-in 120] [--days 8] [--workers 2] [--fitted-only] [--params '{…}']   # field movement diagnosis (targets, endings, feeding bouts, reversals); --fitted-only hides held-out C12 statistics
 pnpm exec tsx scripts/territory-sensitivity-metrics.ts [--seeds 48,7,21]   # one-at-a-time territory-cost sensitivity (C6 review)
+pnpm exec tsx scripts/proof.ts --list|--estimate|--dry-run|--run [--workers 6] [--from step]   # combined proof (docs/simulation.md "Combined proof"); ablation sets in data/proof-ablations.json
 pnpm exec tsx scripts/patrol-bands-metrics.ts   # real-data bands of T-PAT-8 (Ngogo patrols × fruit) and T-BRD-1 (Taï border stops); derived statistics only
 pnpm exec tsx scripts/gen-params.ts [--check]   # regenerate src/sim/params.gen.ts from data/params.json; --check validates, detects drift and lints src/sim for evidence-tagged literals outside the registry
 pnpm exec tsx scripts/ingest-phenology.ts [--dir d] [--site ngogo|kanyawara] [--synthetic]   # Kibale phenology CSVs (~/Downloads) → data/phenology/*.json + src/sim/phenology.gen.ts

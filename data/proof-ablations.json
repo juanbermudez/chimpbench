@@ -1,0 +1,32 @@
+{
+ "about": "Ablation sets for the combined proof (scripts/proof.ts): each stage's mechanisms switched off with everything else on, run against an all-on baseline at the same settings. A stage owner declares its set; null means not declared yet, and the full proof refuses to start until every set is declared. Values are registry overrides (createWorld params).",
+ "seeds": [48, 7, 21],
+ "years": 2,
+ "burnInDays": 180,
+ "stages": {
+  "C7a": {
+   "params": { "fruitValueRef": 0.45, "memCropBelief": 0, "cropSkewExp": 0, "travelCommit": 0, "partyLeaderFollow": 0, "knownTreesK": 0, "patchesPerHa": 18, "familiarFullLevel": 0.5, "travelDistScaleM": 2000 },
+   "note": "The C6b values of the C7a knobs (artifacts/validation/c7a/pipeline.log); C7c's joint trips build on C7a's committed trips, so this ablation also weakens C7c."
+  },
+  "C7c": {
+   "params": { "partyJoinTrip": 0, "partyWaitMaxMin": 0, "travelDistScaleM": 60000 },
+   "note": "Joint trips and waiting off; the energetic distance scale (62,900 m) back to the C7a fit (60,000 m). Depletable fallback foods are already off by default (fallbackCapH 0). Proposed by the C7a implementer; the C7c owner confirms."
+  },
+  "C7e": {
+   "params": null,
+   "note": "To be declared by the C7e owner at merge."
+  },
+  "C8": {
+   "params": null,
+   "note": "To be declared by the C8 owner at merge (the guardian levers A1 and A2 of docs/staging/early-life-prereg.md)."
+  },
+  "C10": {
+   "params": { "callSignatures": 0, "callerDiscrim": 0, "foodCallRule": 0, "travelHoo": 0 },
+   "note": "All C10 switches; off reproduces the pre-C10 world exactly (tests/sim-signals.test.ts)."
+  },
+  "patrols": {
+   "params": { "patrolHeardBeta": 1, "patrolContactW": 0, "patrolLossW": 0, "patrolMaxH": 2.5, "patrolAlphaLeadBonus": 0.1, "patrolEdgeSpeed": 1, "patrolReturnSpeed": 1, "patrolReleaseP": 0, "patrolReleaseContactP": 0 },
+   "note": "Partial: the C6 patrol corrections predate the ablation rule. This set restores the heard-strangers boost (P1), staleness-only routes (A1), the 2.5 h cap (A3), the alpha lead bonus (A4), uniform pace and no release (P4a). Per-chimp contact memory (P2), single file and the removed energy gate (A2) have no switch."
+  }
+ }
+}

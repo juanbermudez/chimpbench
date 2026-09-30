@@ -8,7 +8,7 @@
 //   docs/data/guide-validation.json  every target with its latest verdict (standard and fresh seeds), the dataset
 //                                    inventory and the parameter registry's evidence mix
 //
-//   pnpm exec tsx scripts/guide-data.ts [--scorecard <field json>] [--fresh <field json>] [--check]
+//   pnpm exec tsx scripts/guide-data.ts [--scorecard <field json>] [--fresh <field json>] [--check] [--out-dir <dir>]
 //
 // --check recomputes everything and fails if a committed file differs (numbers only; `generated` is ignored).
 //
@@ -338,7 +338,7 @@ const DATASETS = [
 function main() {
   const args = process.argv.slice(2);
   const flag = (n: string) => { const i = args.indexOf(`--${n}`); return i >= 0 && i + 1 < args.length ? args[i + 1] : null; };
-  const CHECK = args.includes('--check');
+  const CHECK = args.includes('--check'), OUT_DIR = flag('out-dir'); // --out-dir: write there instead of docs/data (proof dry runs)
   const dir = 'artifacts/validation/', files = readdirSync(rel(dir)).filter(f => f.endsWith('.json')).map(f => dir + f);
   const std = [48, 7, 21, 5, 11].join();
   const scoreFile = flag('scorecard') ?? latest(files.filter(f => /-field[^/]*\.json$/.test(f) && !/review/.test(f)), m => m.profile === 'field' && m.days === 365 && (m.seeds ?? []).join() === std);
@@ -366,7 +366,7 @@ function main() {
       const strip = (s: string) => { const o = JSON.parse(s); delete o.generated; return JSON.stringify(o); };
       const same = existsSync(rel(file)) && strip(readFileSync(rel(file), 'utf8')) === strip(text);
       if (!same) { drift++; console.error(`${file}: differs from a fresh derivation`); }
-    } else writeFileSync(rel(file), text);
+    } else writeFileSync(rel(OUT_DIR ? `${OUT_DIR}/${file.split('/').pop()}` : file), text);
     console.log(`${CHECK ? 'checked' : 'wrote'} ${file} (${(Buffer.byteLength(text) / 1024).toFixed(1)} KB)`);
   }
   console.log(`scorecards: ${scoreFile}${freshFile ? `, fresh ${freshFile}` : ''}`);
