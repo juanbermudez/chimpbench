@@ -154,7 +154,17 @@ Each stage:
 
 `src/sim` stages run one at a time. C4 touches every sim file.
 
-**Status**: C3–C5a Complete; C5b built (fps proof open); C6 Complete (reviewed, fixes in C7a); C7a in review; patrol corrections In Progress
+**Status** (2026-09-30):
+- C3–C5a Complete; C5b built (fps proof open); C6 Complete; C7a Complete (reviewed, PASS WITH FIXES).
+- C7b–e merged: C7c joint trips kept; C7b, C7d and C7e mechanisms off by default (ablation rows in data/proof-ablations.json).
+- C10 communication merged, plus travel hoos (addendum 1); gestures blocked on the lexicon source.
+- C9 fission scenario and its proof preparation merged (T-FIS-5 band, c9-scenario); proof not run.
+- C13 rules policy merged (68e0dfb): intention gate and sampling (C13a), intake-rate food value (C13b); viability guard passes, fitted rows 5 → 8.
+- C13c merged (86cf4b5): 30-min intention age, hunger counted once; male day range 1.58 → 2.59 km, fitted rows 9.
+- C13d (departure decision point) merged, then switched off: pre-registered null result (b4cca94).
+- C8 demography merged (f5d9cba): with C13 on, births ÷ deaths 120/60 over 10 years, no starvation deaths; the pre-C13 40-year decline is superseded. C8b (adult-female baseline hazard) in diagnosis.
+- Next: party cohesion (the 5 m join bug, then noticing and deciding; awaiting the user's choice); C8b; re-freeze; lean proof; C11 calibration (seed sets pre-registered).
+- T-IGE-1 encounter inflation is real and seed-sensitive (docs/simulation.md §18).
 
 ## Track F: Decide fine-tuning experiment (design: docs/decide-finetune.md; touches no `src/sim`, `server` or GHN file)
 
