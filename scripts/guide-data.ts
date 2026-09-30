@@ -160,7 +160,7 @@ function fruit() {
   return {
     title: 'Ngogo ripe fruit and rain by month',
     script: 'scripts/guide-data.ts',
-    attribution: 'Real data: Potts KB, Watts DP, Langergraber KE, Mitani JC (2020) Biotropica 52: 521–532. Data: Dryad doi:10.5061/dryad.gf1vhhmk8, CC0. Ngogo, Kibale National Park, Uganda. Derived monthly aggregates by MGOGO; not endorsed by the authors.',
+    attribution: 'Real data: Potts KB, Watts DP, Langergraber KE, Mitani JC (2020) Biotropica 52: 521–532. Data: Dryad doi:10.5061/dryad.gf1vhhmk8, CC0. Ngogo, Kibale National Park, Uganda. Derived monthly aggregates by ChimpBench; not endorsed by the authors.',
     privacy: 'Site-level monthly values and species shares only; no tree positions or trail labels.',
     site: { ...site, annualRain, monthlyRfs: monthlyMedian(site.rfs).map(v => round(v, 0)), monthlyRain: monthlyMedian(site.rain).map(v => round(v, 1)),
       note: 'RFS is the site ripe fruit score of the source file (a crop-weighted index); rain in mm per month.' },
@@ -204,7 +204,7 @@ function paths() {
   return {
     title: 'Day paths, Gombe vs simulated',
     script: 'scripts/guide-data.ts',
-    attribution: 'Real data: Pusey AE, Schroepfer-Walker K (2013) Female competition in chimpanzees. Phil Trans R Soc B 368: 20130077. Data: Dryad doi:10.5061/dryad.jg05d, CC0. Kasekela community, Gombe National Park, Tanzania, 2000–2003. Derived, normalized paths by MGOGO; not endorsed by the authors.',
+    attribution: 'Real data: Pusey AE, Schroepfer-Walker K (2013) Female competition in chimpanzees. Phil Trans R Soc B 368: 20130077. Data: Dryad doi:10.5061/dryad.jg05d, CC0. Kasekela community, Gombe National Park, Tanzania, 2000–2003. Derived, normalized paths by ChimpBench; not endorsed by the authors.',
     privacy: 'Each path starts at the origin, is scaled by its community range radius r, rotated so its net displacement points up and snapped to a 0.1 r lattice. No coordinates, dates or identities.',
     method: 'Full-day follows (≥ 8 h, no gap > 1 h) at 30-min records. Six per side at evenly spaced straightness ranks (quantiles 1/12, 3/12 … 11/12), so neither side is cherry-picked. Straightness = net displacement ÷ summed 30-min steps, before snapping.',
     cell: 0.1,

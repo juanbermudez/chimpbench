@@ -1,7 +1,7 @@
 {
  "version": 1,
  "generated": "2026-09-29",
- "about": "Wild chimpanzee datasets for MGOGO, ranked by value for comparing real vs simulated ranging, movement trajectories, patrols and territory change (docs/datasets.md). Every entry was verified from its landing page or repository API on the date given; entries marked by 'helper' were verified by a scouting agent in the same session. Nothing here was downloaded except where status is 'downloaded'.",
+ "about": "Wild chimpanzee datasets for ChimpBench, ranked by value for comparing real vs simulated ranging, movement trajectories, patrols and territory change (docs/datasets.md). Every entry was verified from its landing page or repository API on the date given; entries marked by 'helper' were verified by a scouting agent in the same session. Nothing here was downloaded except where status is 'downloaded'.",
  "metricCodes": {
   "DPL": "daily path length",
   "SLTA": "step-length and turning-angle distributions",
@@ -264,7 +264,7 @@
     "CORE": "yes",
     "UDO": "no"
    },
-   "metricNotes": "Same forest and study community MGOGO is modeled on. One year only (no UDO). EDGE/INC need a boundary (own kernel). PSPD needs patrol labels (KCP notes).",
+   "metricNotes": "Same forest and study community ChimpBench is modeled on. One year only (no UDO). EDGE/INC need a boundary (own kernel). PSPD needs patrol labels (KCP notes).",
    "validates": [
     "O3",
     "O4",
@@ -1596,7 +1596,7 @@
     "CORE": "no",
     "UDO": "no"
    },
-   "value": "low for MGOGO",
+   "value": "low for ChimpBench",
    "effort": "high",
    "verified": {
     "on": "2026-09-29",
