@@ -11649,6 +11649,29 @@
    "notes": "§5.3.1 Amendment A4: the alpha's extra score to lead a patrol, 0.1 → 0: rank does not predict patrolling (wattsMitani2001, massaro2022; langergraber2017 found a rank effect on participation, so mixed). The other lead terms (party males, boldness) are weakly evidenced (design)."
   },
   {
+   "id": "patrolContactMemory",
+   "group": "patrol",
+   "value": 1,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.patrolContactMemory",
+   "file": "src/sim/contact.ts",
+   "integer": true,
+   "notes": "Ablation switch (C6 patrol corrections, P2): 1 = per-chimp contact memory shared by travelling together (default); 0 = the C6 community-wide danger grid (flight shared among those retreating, a patrol turning back, wounds and deaths; 8-neighbour spread; daily decay), no contact writes, routes by staleness only."
+  },
+  {
    "calibrate": false,
    "clock": "none",
    "id": "patrolContactW",
@@ -11713,6 +11736,51 @@
    "symbol": "patrolAndCalls",
    "file": "src/sim/candidates.ts",
    "notes": "Patrols start before this hour. The 08:00–15:30 start window stays design (unverified; docs/realism-design.md §5.3.1 Amendment A7)."
+  },
+  {
+   "id": "patrolEnergyGate",
+   "group": "patrol",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.patrolEnergyGate",
+   "file": "src/sim/perception.ts",
+   "integer": true,
+   "notes": "Ablation switch (A2): 0 = no energy gate on the patrol hazard (default, mitaniWatts2005); 1 = the C6 gate E, rising from patrolEnergyLow to 1 with the party's mean energy."
+  },
+  {
+   "id": "patrolEnergyLow",
+   "group": "patrol",
+   "value": 0.4,
+   "units": "energy",
+   "range": [
+    0.2,
+    0.8
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.patrolEnergyLow",
+   "file": "src/sim/perception.ts",
+   "notes": "Read only when patrolEnergyGate is 1 (ablation): party mean energy below which no patrol starts; E rises linearly to 1 at full energy (the C6 value, design)."
   },
   {
    "calibrate": false,
@@ -12228,6 +12296,52 @@
    "symbol": "P.patrolRollMaxH",
    "file": "src/sim/perception.ts",
    "notes": "Longest interval credited to one patrol-hazard roll (design)."
+  },
+  {
+   "id": "patrolSilence",
+   "group": "patrol",
+   "value": 1,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.patrolSilence",
+   "file": "src/sim/candidates.ts",
+   "integer": true,
+   "notes": "Ablation switch (P4a): 1 = patrol members make no calls or displays (default; silence [H], patrol-evidence.md); 0 = the C6 candidates."
+  },
+  {
+   "id": "patrolSingleFile",
+   "group": "patrol",
+   "value": 1,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.patrolSingleFile",
+   "file": "src/sim/execution.ts",
+   "integer": true,
+   "notes": "Ablation switch (P4a): 1 = patrol members follow the member ahead in join order (default); 0 = the C6 cluster around the leader."
   },
   {
    "id": "patrolStaleTauDays",

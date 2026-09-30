@@ -130,7 +130,7 @@ export function perceive(world: World, c: Chimp): void {
   if (x.strangers > 0) {
     // contact memory (§5.3.1 P2): strangers seen add contact where the nearest one stands, at most once per contactSeenGapH
     const ns = x.nearestStranger >= 0 ? index(world).byId.get(x.nearestStranger) : undefined;
-    if (ns && time - x.contactSeenAt >= P.contactSeenGapH) { x.contactSeenAt = time; noteContact(world, c, ns.position[0], ns.position[2], 1, 0); }
+    if (ns && P.patrolContactMemory === 1 && time - x.contactSeenAt >= P.contactSeenGapH) { x.contactSeenAt = time; noteContact(world, c, ns.position[0], ns.position[2], 1, 0); }
     // An isolated stranger: no other perceived stranger within 15 m of it.
     const byId = index(world).byId;
     let bestD = Infinity;
@@ -242,7 +242,12 @@ function rollImpulses(world: World, c: Chimp): void {
       // no energy gate (§5.3.1 A2: fruit acts through male party size; lean periods did not deter patrols, mitaniWatts2005) [M]
       const S = 1 - Math.exp(-stalestSector(world, troop).days / P.patrolStaleTauDays);
       const heard = world.time - x.heardAt < 24 ? 1 : 0;
-      const h = P.patrolH0 * Math.pow(P.patrolMaleOddsRatio, x.ownMales - 3) * S * (1 + P.patrolHeardBeta * heard);
+      let h = P.patrolH0 * Math.pow(P.patrolMaleOddsRatio, x.ownMales - 3) * S * (1 + P.patrolHeardBeta * heard);
+      if (P.patrolEnergyGate === 1) { // ablation: the C6 energy gate E, rising from patrolEnergyLow to full party mean energy
+        let e = c.energy, k = 1;
+        for (const id of x.seen) { const o = byId.get(id)!; if (o.troopId === c.troopId && isAdultMale(o)) { e += o.energy; k++; } }
+        h *= Math.max(0, Math.min(1, (e / k - P.patrolEnergyLow) / (1 - P.patrolEnergyLow)));
+      }
       if (random(world) < 1 - Math.exp(-h * dt)) { x.impulse = IMPULSE_PATROL; x.impulseTarget = -1; x.impulseUntil = world.time + P.impulseDurationH; return; }
     }
   }
@@ -304,7 +309,7 @@ function hear(world: World, o: Chimp, callId: number, kind: CallKind, caller: Ch
     }
   }
   // contact memory (§5.3.1 P2): a new stranger chorus heard adds contact at the caller's place
-  if (world.time - x.heardAt > paramsOf(world).strangerCallerWindowH) noteContact(world, o, caller.position[0], caller.position[2], 1, 0);
+  if (P.patrolContactMemory === 1 && world.time - x.heardAt > P.strangerCallerWindowH) noteContact(world, o, caller.position[0], caller.position[2], 1, 0);
   x.heardN = Math.max(1, n); x.heardAt = world.time; x.heardX = caller.position[0]; x.heardZ = caller.position[2]; x.heardTroop = caller.troopId; x.heardStim = -1;
   // most intergroup encounters are acoustic only (Kanyawara: 85% of 120 encounters in 15 y; Wilson et al. 2012) [M]
   const s = simOf(world);

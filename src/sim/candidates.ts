@@ -136,7 +136,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   curP = P;
   const x = ix(c);
   curEnd = x.actEnd; curDone = x.finished;
-  curSilent = c.action === 'patrol' && x.v !== V.APPROACH && !!simOf(world).patrols[c.troopId];
+  curSilent = P.patrolSilence === 1 && c.action === 'patrol' && x.v !== V.APPROACH && !!simOf(world).patrols[c.troopId];
   if (!c.alive) { out.push({ action: 'dead', targetId: -1, score: 1, reason: 'Life ended' }); return out; }
   const st = stampTrees(world, c, x);
   const idx = index(world);

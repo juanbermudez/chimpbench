@@ -1,7 +1,7 @@
 import type { Chimp, Troop, World } from '../types';
 import { paramsOf, type Params } from './params';
 import { hash01 } from './rng';
-import { lossAt } from './contact';
+import { decayDanger, lossAt } from './contact';
 import { index, ix, simOf } from './state';
 
 // Living territories (docs/realism-design.md §5.2, stage C6). Each community's range is its utilization distribution
@@ -139,6 +139,7 @@ function levelOf(raw: number[], n: number, sigma: number): Float32Array {
 /** Daily: decay use, merge the day's use, recompute isopleths, and set each community's range circle and `range`. */
 export function dailyTerritory(world: World): void {
   const s = simOf(world), P = paramsOf(world);
+  decayDanger(world); // ablation grids only (patrolContactMemory 0)
   const du = Math.exp(-1 / P.udTauDays);
   for (const t of world.troops) {
     const ud = s.ud[t.id];

@@ -15,7 +15,7 @@ import { eatFruit, forageYield, fruitAt } from './phenology';
 import { bestFallbackNear, eatFallback, fallbackOn, fallbackStock, fallbackValue } from './fallback';
 import { recordAggression, recordConsolation, recordGrooming, recordMating, recordMeat, recordReconciliation, recordSupport } from './relations';
 import { BANK_A, BANK_B, CHANNEL, FORD, bankOf, bestFord, dryPoint, fordExits, streamCell, tangentNear } from './stream';
-import { noteContact, sectorContact } from './contact';
+import { markDanger, noteContact, sectorContact } from './contact';
 import { cellAt, gridOf, neighbourSectors, pressureAt, rangeEdge, sectorDir, useLevels } from './territory';
 
 // Bout durations in eco-minutes [min, max] (registry bout*Min / bout*Max).
@@ -253,7 +253,10 @@ function onStart(world: World, c: Chimp): void {
     case 'flee':
       if (x.v === V.AGGRESSOR) emitCall(world, c, 'scream');
       // retreating from strangers seen or heard: a loss in the animal's own contact memory (§5.3.1 P2)
-      if (x.v === V.STRANGERS || x.v === V.HEARD) noteContact(world, c, c.position[0], c.position[2], 0, P.dangerFleeW);
+      if (x.v === V.STRANGERS || x.v === V.HEARD) {
+        if (P.patrolContactMemory === 1) noteContact(world, c, c.position[0], c.position[2], 0, P.dangerFleeW);
+        else markDanger(world, c.troopId, c.position[0], c.position[2], P.dangerFleeW / Math.max(1, x.visibleOwn + 1)); // C6: shared among those retreating
+      }
       c.mood = 'fearful';
       break;
     case 'call':
@@ -685,7 +688,11 @@ export function executeAction(world: World, c: Chimp): void {
       // edge caution and hurried return (§5.3.1 P4a): slower outside the own 95% isopleth, faster home until the core
       const lv = useLevels(world)[c.troopId], here = lv ? lv[cellAt(gridOf(world, P), c.position[0], c.position[2])] : 0;
       const pace = pt.phase === 2 && here > P.udCoreLevel ? P.patrolReturnSpeed : here > P.udRangeLevel ? P.patrolEdgeSpeed : 1;
-      if (leader && leader.alive && leader !== c && hd(leader, c) < P.patrolFollowM) {
+      if (leader && leader.alive && leader !== c && hd(leader, c) < P.patrolFollowM && P.patrolSingleFile !== 1) {
+        // ablation (patrolSingleFile 0): the C6 cluster around the leader
+        const a = hash01(c.id, 8, 8) * Math.PI * 2;
+        moveTo(world, c, leader.position[0] + Math.cos(a) * 2.5, 0, leader.position[2] + Math.sin(a) * 2.5, WALK * 1.05 * pace, 0.8);
+      } else if (leader && leader.alive && leader !== c && hd(leader, c) < P.patrolFollowM) {
         // single file in join order: follow the member ahead, patrolFileGapM behind
         let ahead = leader;
         for (let i = pt.file.indexOf(c.id) - 1; i >= 0; i--) { const a = idx.byId.get(pt.file[i]); if (a && a.alive && a.action === 'patrol') { ahead = a; break; } }

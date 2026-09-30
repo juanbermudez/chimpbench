@@ -9,7 +9,7 @@
 // State: chimp.sim.contacts, a flat plain array of [x, z, c, l, t] per spot (t = eco-hour the weights refer to).
 import type { Chimp, Troop, World } from '../types';
 import { paramsOf, type Params } from './params';
-import { index, ix } from './state';
+import { index, ix, simOf } from './state';
 import { SECTORS, gridOf, cellAt, sectorOf, useLevels } from './territory';
 
 const W = 5;
@@ -46,8 +46,33 @@ export function noteContact(world: World, c: Chimp, x: number, z: number, dc: nu
   slots.push(Math.round(x * 100) / 100, Math.round(z * 100) / 100, dc, dl, now);
 }
 
-/** The animal's own losses at a place (sum of decayed loss weights of spots within 2 × udCellM). */
+/**
+ * Ablation (patrolContactMemory 0): the C6 community-wide danger grid, where a community lost (flight, a patrol turning
+ * back, a wound, a death), spread to the 8 neighbouring cells at a quarter weight and decayed daily with dangerTauDays.
+ */
+export function markDanger(world: World, troopId: number, x: number, z: number, w: number): void {
+  const s = simOf(world), P = paramsOf(world), g = gridOf(world, P);
+  const dg = ((s.danger ??= {})[troopId] ??= new Array<number>(g.n * g.n).fill(0));
+  const k = cellAt(g, x, z), cx = k % g.n, cz = (k - cx) / g.n;
+  for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+    const nx = cx + dx, nz = cz + dz;
+    if (nx < 0 || nz < 0 || nx >= g.n || nz >= g.n) continue;
+    const j = nz * g.n + nx;
+    dg[j] = Math.round((dg[j] + (dx === 0 && dz === 0 ? w : w / 4)) * 1e4) / 1e4;
+  }
+}
+
+/** Daily decay of the ablation danger grids (no-op when they do not exist). */
+export function decayDanger(world: World): void {
+  const s = simOf(world);
+  if (!s.danger) return;
+  const f = Math.exp(-1 / paramsOf(world).dangerTauDays);
+  for (const k in s.danger) { const dg = s.danger[k]; for (let i = 0; i < dg.length; i++) if (dg[i] > 0) dg[i] = Math.round(dg[i] * f * 1e4) / 1e4; }
+}
+
+/** The animal's own losses at a place (sum of decayed loss weights of spots within 2 × udCellM); with patrolContactMemory 0, its community's danger. */
 export function lossAt(world: World, c: Chimp, x: number, z: number, P: Params): number {
+  if (P.patrolContactMemory !== 1) { const dg = simOf(world).danger?.[c.troopId]; return dg ? dg[cellAt(gridOf(world, P), x, z)] : 0; }
   const slots = ix(c).contacts, now = world.time, r2 = (2 * P.udCellM) ** 2;
   let l = 0;
   for (let i = 0; i < slots.length; i += W) if ((slots[i] - x) ** 2 + (slots[i + 1] - z) ** 2 <= r2) l += slots[i + 3] * decay(P, now - slots[i + 4]);
@@ -57,6 +82,7 @@ export function lossAt(world: World, c: Chimp, x: number, z: number, P: Params):
 /** Hourly: party members share spots at contactShareFrac (max with their own, never the sum), from pre-share copies. */
 export function shareContacts(world: World): void {
   const P = paramsOf(world), idx = index(world), now = world.time;
+  if (P.patrolContactMemory !== 1) return;
   for (const p of world.parties) {
     if (p.members.length < 2) continue;
     const members = p.members.map(id => idx.byId.get(id)).filter((c): c is Chimp => !!c && c.alive);

@@ -99,6 +99,8 @@ export interface SimState {
   ud: Record<number, number[]>; sectorVisit: Record<number, number[]>; udStamp: number;
   /** Use added since the last daily update (sparse, by cell), merged into `ud` daily so isopleths depend only on saved state. */
   udNew: Record<number, Record<number, number>>;
+  /** Ablation (patrolContactMemory 0): the C6 community danger grids; absent otherwise, so default worlds are unchanged. */
+  danger?: Record<number, number[]>;
   /** Stage C7a (field): per community, the day's best-known productive trees as flat [treeId, expected crop, …] pairs; absent when off. */
   knownTrees?: Record<number, number[]>;
   /** Stage C7c (field, fallback.ts): depleted fallback-forage cells as [deficit in feeding-hours, time]; absent when off. */
