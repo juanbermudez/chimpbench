@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Sky } from 'three/addons/objects/Sky.js';
-import { Owner, setAtmosphere, type EnvFrame, type SharedUniforms } from './shared';
+import { HAZE_START_PERSPECTIVE, Owner, setAtmosphere, type EnvFrame, type SharedUniforms } from './shared';
 
 // Sky, sun, moon and ambient light as one rig driven by EnvState. The
 // Preetham sky from three/addons is extended in place with overcast,
@@ -224,7 +224,7 @@ export function createSky(uniforms: SharedUniforms, owner: Owner): SkyRig {
       const mist = THREE.MathUtils.clamp(dawnMist * 0.8 + env.night * 0.2 + rain * 0.3, 0, 0.95);
       const density = (perspective ? 0.0011 + rain * 0.006 : 0.0024 + rain * 0.0026) + dawnMist * (perspective ? 0.0012 : 0.002);
       // Perspective: no haze or ground mist within ~15 m so the followed animal is never erased at dawn.
-      const start = perspective ? 15 : frame.camera.position.distanceTo(frame.target) - 80;
+      const start = perspective ? HAZE_START_PERSPECTIVE : frame.camera.position.distanceTo(frame.target) - 80;
       setAtmosphere(fog, density, start, mist);
       scene.background = null;
 
