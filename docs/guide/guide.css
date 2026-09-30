@@ -211,14 +211,8 @@
 .top-link[hidden] { display: none; }
 .top-link.icon { position: relative; width: 32px; padding: 0; justify-content: center; font: inherit; cursor: pointer; }
 .top-link.icon::after { content: ''; position: absolute; inset: -6px; }
-.top-actions .snd-btn { font: inherit; font-size: 13.5px; font-weight: 500; cursor: pointer; padding: 0 12px 0 10px; }
 .snd-btn .i { width: 16px; height: 16px; color: var(--ink-2); transition: color .15s; }
 .snd-btn[aria-pressed="true"] .i { color: var(--gold); }
-.snd-short { display: none; }
-.tf-btn span { font: 500 14px/1 var(--font-title, inherit); letter-spacing: 0; color: var(--ink-2); }
-.tf-btn[aria-pressed="true"] { border-color: var(--line-3); background: var(--surface-2); }
-.tf-btn[aria-pressed="true"] span { color: var(--ink); }
-@media (max-width: 999px) { .snd-long { display: none; } .snd-short { display: inline; } }
 @media (max-width: 480px) { .brand b { letter-spacing: .08em; } .top-actions .top-link:last-child .i { display: none; } .top-actions .top-link:last-child { padding: 0 10px; } }
 
 /* ---------- Decision models popover ("How it's built"; docs/guide/motion.js) ----------

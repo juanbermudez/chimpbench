@@ -50,8 +50,7 @@ function guideSound() {
     const on = started && !muted;
     toggle.setAttribute('aria-pressed', String(on));
     toggle.setAttribute('aria-label', on ? 'Sound on' : 'Sound off');
-    toggle.querySelector('.snd-long').textContent = on ? 'Sound on' : 'Sound off';
-    toggle.querySelector('.snd-short').textContent = on ? 'On' : 'Off';
+    toggle.title = on ? 'Sound on' : 'Sound off';
     toggle.querySelector('use').setAttribute('href', on ? '#i-speaker' : '#i-speaker-off');
     state.muted = muted;
   };
@@ -192,7 +191,7 @@ function guideSound() {
   }
 
   const onGesture = e => {
-    if (e.target && e.target.closest && e.target.closest('[data-sound-toggle], [data-title-font]')) return;   // the toggle handles itself; the font toggle is not a sound gesture
+    if (e.target && e.target.closest && e.target.closest('[data-sound-toggle]')) return;   // the toggle handles itself; the font toggle is not a sound gesture
     if (e instanceof KeyboardEvent && (e.metaKey || e.ctrlKey || e.altKey)) return;
     removeEventListener('pointerdown', onGesture, true); removeEventListener('keydown', onGesture, true);
     if (!muted && !started) start(FADE_IN);
