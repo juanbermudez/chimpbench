@@ -24,7 +24,7 @@ import { hash01 } from '../../src/sim/rng';
 import { candidateMeta } from '../../src/sim/candidates';
 import type { ProfileName } from '../../src/field/config';
 import { buildJevQuestion, buildLocalQuestion, decisionContextError, estimateInputTokens, TOKEN_BUDGET } from '../../server/decide';
-import { inc, MIN_AGE, newStats, Scoring, TICKS_PER_DAY, worldHash, type ArmResult, type Stats } from './jev-arm';
+import { inc, MIN_AGE, newStats, Scoring, snapshotGuardParams, TICKS_PER_DAY, worldHash, type ArmResult, type Stats } from './jev-arm';
 
 export type PaidArm = 'J1' | 'J2' | 'J2s';
 export type Bridge = 'fake' | 'fake-worker' | 'worker';
@@ -91,6 +91,8 @@ export interface JevStats { calls: number; batches: number; estTokens: number; s
 export interface PaidResult {
   arm: PaidArm; seed: number; runId: string; capDollars: number; burnInHash: string;
   complete: boolean; stopReason: string; stoppedAt: { phase: 'burn-in' | 'warmup' | 'scored' | 'done'; day: number };
+  /** Parameters forced by the snapshot guard (jev-arm.ts SNAPSHOT_GUARD); empty on a pre-C13 registry. */
+  guardParams: Record<string, number>;
   /** Scored-window results (the free arms' shape), null when the world stopped before scoring. */
   result: ArmResult | null;
   jev: JevStats; worker: Record<string, unknown>; doNotTrain: string; wallMs: number;
@@ -174,8 +176,9 @@ export async function answerPaid(world: World, arm: PaidArm, gate: GateState, st
 export async function runPaidWorld(job: PaidJob, makeScorer: () => Promise<Scorer & { ready?: Record<string, unknown> }>): Promise<PaidResult> {
   const t0 = performance.now();
   const js: JevStats = { calls: 0, batches: 0, estTokens: 0, spent: 0, revalidated: 0, tv: [], kinds: {} };
-  const base = { arm: job.arm, seed: job.seed, runId: job.runId, capDollars: job.capDollars, doNotTrain: DO_NOT_TRAIN };
-  const world = createWorld(job.seed, { profile: job.profile });
+  const guardParams = snapshotGuardParams();
+  const base = { arm: job.arm, seed: job.seed, runId: job.runId, capDollars: job.capDollars, doNotTrain: DO_NOT_TRAIN, guardParams };
+  const world = createWorld(job.seed, { profile: job.profile, params: guardParams as Record<string, number> });
   for (let i = 0, n = Math.round(job.burnInDays * TICKS_PER_DAY); i < n; i++) tickWorld(world);
   const burnInHash = worldHash(world);
   if (job.expectBurnInHash && burnInHash !== job.expectBurnInHash)

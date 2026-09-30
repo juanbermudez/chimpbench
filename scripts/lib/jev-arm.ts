@@ -11,6 +11,7 @@ import { gateCheck, intentOf, newGateState, type GateState } from '../../src/dec
 import { drawIndex, drawUniform, rulesProbs, uniform, utilityProbs } from '../../src/decide/policies';
 import { candidateMeta } from '../../src/sim/candidates';
 import { paramsOf } from '../../src/sim/params';
+import { DEFAULTS } from '../../src/sim/params.gen';
 import { index, type SimChimp } from '../../src/sim/state';
 import { activityCategory, CAT_FEED, CAT_GROOM, CAT_NONE, CAT_REST, CAT_TRAVEL, CATEGORIES } from '../../src/field/categories';
 import { PROFILES, TARGET_FOLLOW, type ProfileName } from '../../src/field/config';
@@ -63,19 +64,31 @@ export interface ArmResult {
   observer: Record<string, { value: number | null; male?: number | null; female?: number | null; n: number }>;
   wallMs: number;
 }
-export interface SeedResult { seed: number; burnInHash: string; alive: number; policyDriven: number; arms: ArmResult[]; burnInMs: number }
+export interface SeedResult { seed: number; burnInHash: string; alive: number; policyDriven: number; arms: ArmResult[]; burnInMs: number; guardParams: Record<string, number> }
+
+/**
+ * Snapshot guard. Every arm of the test runs on one frozen snapshot that predates stage C13, whose rgOn and intakeValue
+ * switches change rules-driven behaviour (R would silently become RG). If a build's registry has them, every world of
+ * every arm is created with them forced to 0, the pre-C13 behaviour, and the values are recorded; with today's registry
+ * the list is empty and nothing changes.
+ */
+export const SNAPSHOT_GUARD: Readonly<Record<string, number>> = { rgOn: 0, intakeValue: 0 };
+export function snapshotGuardParams(defaults: Record<string, unknown> = DEFAULTS): Record<string, number> {
+  return Object.fromEntries(Object.entries(SNAPSHOT_GUARD).filter(([id]) => id in defaults));
+}
 
 /** sha256 of the world's JSON (the world after burn-in; identical for every arm of a seed). */
 export const worldHash = (w: World) => createHash('sha256').update(JSON.stringify(w)).digest('hex').slice(0, 16);
 
 export function runSeed(job: SeedJob): SeedResult {
   const t0 = performance.now();
-  const base = createWorld(job.seed, { profile: job.profile, params: job.params ?? {} });
+  const guardParams = snapshotGuardParams();
+  const base = createWorld(job.seed, { profile: job.profile, params: { ...guardParams, ...(job.params ?? {}) } as Record<string, number> });
   for (let i = 0, n = Math.round(job.burnInDays * TICKS_PER_DAY); i < n; i++) tickWorld(base);
   const burnInHash = worldHash(base), burnInMs = performance.now() - t0;
   const alive = base.chimps.filter(c => c.alive);
   const arms = job.arms.map(arm => runArm(structuredClone(base), arm, job));
-  return { seed: job.seed, burnInHash, alive: alive.length, policyDriven: alive.filter(c => c.age >= MIN_AGE).length, arms, burnInMs };
+  return { seed: job.seed, burnInHash, alive: alive.length, policyDriven: alive.filter(c => c.age >= MIN_AGE).length, arms, burnInMs, guardParams };
 }
 
 export const inc = (r: Record<string, number>, k: string, n = 1) => { r[k] = (r[k] ?? 0) + n; };

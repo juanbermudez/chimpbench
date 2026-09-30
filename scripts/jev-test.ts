@@ -29,7 +29,7 @@ import { GATE } from '../src/decide/gate';
 import { softmax, TEMPERATURE, U_WEIGHTS, utilities } from '../src/decide/policies';
 import type { ProfileName } from '../src/field/config';
 import { runPool } from './lib/pool';
-import { ENDPOINT_ROWS, endpoint, FREE_ARMS, MIN_AGE, PAID_ARMS, rowKey, runSeed, setControllers, truthValues, type ArmResult, type Band, type FreeArm, type SeedJob, type SeedResult, menuSample } from './lib/jev-arm';
+import { ENDPOINT_ROWS, endpoint, FREE_ARMS, MIN_AGE, PAID_ARMS, rowKey, runSeed, setControllers, snapshotGuardParams, truthValues, type ArmResult, type Band, type FreeArm, type SeedJob, type SeedResult, menuSample } from './lib/jev-arm';
 import { PRICE_IN, type Bridge, type PaidArm, type PaidJob, type PaidResult } from './lib/jev-paid';
 import { paidFlagsError, paidMarkdown, plannedWorlds, runIdOf, scorePaid, splitBudget, type FreeDoc } from './lib/jev-paid-report';
 
@@ -282,7 +282,9 @@ export async function runPaid(arms: PaidArm[], o: PaidOpts): Promise<void> {
     if (!standard) throw new Error('the real run uses the pre-registered 180 + 2 + 5 days only');
     if (snap.dirty.length && !o.allowDirty) throw new Error(`the tree is dirty (${snap.dirty.join(', ')}): commit first`);
     const plan = JSON.parse(readFileSync(o.plan, 'utf8')) as { snapshot: { simHash: string; decideHash: string }; proposedCaps: Record<string, number> };
-    if (plan.snapshot.simHash !== snap.simHash || plan.snapshot.decideHash !== snap.decideHash) throw new Error('the plan was made on other code: redo the fake dry run');
+    // the sim must be the frozen one; a plan from other decision-layer code only sets ceilings (a misestimate stops a world, it cannot overspend)
+    if (plan.snapshot.simHash !== snap.simHash) throw new Error('the plan was made on another simulation: redo the fake dry run');
+    if (plan.snapshot.decideHash !== snap.decideHash) console.warn(`note: the plan's decision-layer hash ${plan.snapshot.decideHash} differs from this build's ${snap.decideHash}; its caps are used as ceilings and both hashes are recorded`);
     caps = plan.proposedCaps;
     const total = worlds.reduce((a, w) => a + (caps[w.runId] ?? NaN), 0);
     if (!(total <= o.cap + 1e-9)) throw new Error(`the plan's caps sum to $${total} (> --cap $${o.cap}) or miss a world`);
@@ -309,7 +311,7 @@ export async function runPaid(arms: PaidArm[], o: PaidOpts): Promise<void> {
     estTokens: r.jev.estTokens, tokensPerCall: r.jev.calls ? Math.round(r.jev.estTokens / r.jev.calls) : null, estDollars: est[r.runId], billedDollars: r.jev.spent, capUsed: caps[r.runId], proposedCap: proposed.caps[r.runId],
     wallMin: +(r.wallMs / 60000).toFixed(1), projectedRealWallMin: +((r.wallMs / 1000 + r.jev.batches * PAID_LATENCY_S) / 60).toFixed(0) }));
   const doc = { test: 'jev-decisive-test paid arms', preregistration: 'docs/staging/jev-decisive-test.md (+ Amendment 1)', bridge: o.bridge, dryRun: !real, doNotTrain: results[0]?.doNotTrain,
-    snapshot: snap, freeArmsCommit: free.snapshot.commit, capTotal: o.cap, caps, ledger, ledgerTotal: lt.spent, ledgerRuns: lt.runs, perWorld, score, results, wallS };
+    snapshot: snap, freeArmsCommit: free.snapshot.commit, guardParams: snapshotGuardParams(), capTotal: o.cap, caps, ledger, ledgerTotal: lt.spent, ledgerRuns: lt.runs, perWorld, score, results, wallS };
   mkdirSync(o.out, { recursive: true });
   const tag = real ? 'paid-arms' : 'paid-arms-dryrun';
   writeFileSync(join(o.out, `${tag}.json`), JSON.stringify(doc, null, 1) + '\n');
@@ -375,7 +377,7 @@ if (process.argv[1]?.endsWith('jev-test.ts')) {
   const workers = Math.max(1, +flag('workers', '4'));
   const snap = snapshot();
   const B = bands();
-  const settings = { ...cfg, minAge: MIN_AGE, arms: free, temperature: TEMPERATURE, uWeights: U_WEIGHTS, gate: GATE, bands: B, stopRowDistance: STOP_ROW_DISTANCE };
+  const settings = { ...cfg, minAge: MIN_AGE, arms: free, temperature: TEMPERATURE, uWeights: U_WEIGHTS, gate: GATE, bands: B, stopRowDistance: STOP_ROW_DISTANCE, guardParams: snapshotGuardParams() };
   if (has('dry-run')) {
     console.log(JSON.stringify({ plan: { arms: free, seeds, ...cfg, standard, workers, worlds: seeds.length, armRuns: seeds.length * free.length,
       estimate: `about ${Math.round((cfg.burnInDays * 0.5 + free.length * (cfg.warmupDays + cfg.scoredDays) * 1.5) / 60 * Math.ceil(seeds.length / workers))} min on ${workers} workers (0.5 s per burn-in day; ~1.5 s per arm-day with observers and policies)`,

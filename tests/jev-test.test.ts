@@ -7,7 +7,7 @@ import { createWorld, tickWorld } from '../src/simulation';
 import { drawIndex, drawUniform, rulesProbs, softmax, uniform, utilityProbs } from '../src/decide/policies';
 import { buildFacts } from '../src/decide/facts';
 import { buildRequest } from '../src/decision';
-import { bandDistance, endpoint, ENDPOINT_ROWS, rowKey, runArm, runSeed, truthValues, worldHash, type ArmResult, type SeedJob } from '../scripts/lib/jev-arm';
+import { bandDistance, endpoint, ENDPOINT_ROWS, rowKey, runArm, runSeed, snapshotGuardParams, truthValues, worldHash, type ArmResult, type SeedJob } from '../scripts/lib/jev-arm';
 import { calibrate, medianTop } from '../scripts/jev-test';
 import { paidFlagsError, plannedWorlds, scorePaid, splitBudget, type FreeDoc } from '../scripts/lib/jev-paid-report';
 import { runPaidWorld, WorldStopped, type PaidJob, type Scorer } from '../scripts/lib/jev-paid';
@@ -115,7 +115,7 @@ test('paid scoring applies the pre-registered rules and Amendment 1', () => {
   const shifted = { R: freeD.R.map(() => D + 1), RG: freeD.RG.map(() => D), U: freeD.U.map(() => D + 0.8) };
   const free2 = { ...free, summary: { perArm: Object.fromEntries(Object.entries(shifted).map(([a, d]) => [a, { perSeed: d.map((x, i) => ({ seed: seeds[i], D: x })), hungerAllAdults: { median: 0.9 }, hunger: { lactating: { median: 0.89 } } }])) } } as unknown as FreeDoc;
   const paid = seeds.map(seed => ({ arm: 'J2' as const, seed, runId: `jev-test/J2-${seed}`, capDollars: 1, burnInHash: '', complete: true, stopReason: '', stoppedAt: { phase: 'done' as const, day: 5 },
-    result: { ...tiny, hunger: { ...tiny.hunger } }, jev: { calls: 1, batches: 1, estTokens: 1, spent: 0, revalidated: 0, tv: [], kinds: {} }, worker: {}, doNotTrain: '', wallMs: 0 }));
+    result: { ...tiny, hunger: { ...tiny.hunger } }, jev: { calls: 1, batches: 1, estTokens: 1, spent: 0, revalidated: 0, tv: [], kinds: {} }, worker: {}, doNotTrain: '', wallMs: 0, guardParams: {} }));
   const sc = scorePaid(paid, free2, B).arms.J2 as { verdict: string; notes: string[]; beatsRGby005: number; lowerThanR: number };
   assert.equal(sc.lowerThanR, 5);
   assert.equal(sc.beatsRGby005, 0);
@@ -163,4 +163,10 @@ test('the harness is deterministic, and an arm on a copy of the burned-in world 
   const onCopy = runArm(copy, 'X', tiny), onBase = runArm(base, 'X', tiny);
   assert.deepEqual(strip(onCopy), strip(onBase));
   assert.equal(worldHash(copy), worldHash(base), 'both worlds end identical');
+});
+
+test('snapshot guard: C13 switches are forced to their pre-C13 value in every arm, and absent today', () => {
+  assert.deepEqual(snapshotGuardParams(), {}, 'this build predates C13: nothing to force');
+  assert.deepEqual(snapshotGuardParams({ rgOn: 1, intakeValue: 1, walkMps: 0.35 }), { rgOn: 0, intakeValue: 0 });
+  assert.deepEqual(snapshotGuardParams({ rgOn: 1 }), { rgOn: 0 });
 });
