@@ -119,3 +119,17 @@ The pre-C7a female core-area cost amplifies the effect. With it removed (not a C
 - living 49 → 41, 67 and 49; births 25 / 41 / 35; deaths 33 / 23 / 35.
 - Before the amendment the field population collapsed (seed 48: 37 living by year 2).
 - Lactating females still reach median hunger 0.95–1.00 and condition 0.26–0.30 in lean periods, and seed 48 still loses 11 females to starvation over 10 years.
+
+## The food-valuation clue (Jev free-arms test; integrator's note)
+
+- On `main` without the amendment (seeds 6501–6905, field, 5 days after a 180-day burn-in), median hunger was:
+  - rules: lactating 0.89, all adults 0.64;
+  - U, a utility valuing remembered fruit trips at intake rate minus walking cost: lactating 0.70, all adults 0.39.
+- So part of the starvation comes from how the rules value food: animals eat fallback foods in place instead of walking to remembered fruit.
+- The core-cost amendment is a valuation fix of that kind, and it is state-dependent: after it, lactating females spend 3–8% of daylight on fallback (was 16%).
+- Converting all of that time to fruit would recover at most ~0.07 hunger/day (5% × 12.5 h × (0.237 − 0.129)). The lactation term adds 0.29/day.
+- Even under U, lactating females stayed 0.31 above all adults. That also points to the energy budget for the residual.
+- Two more candidates were considered and not adopted in C8:
+  - a rate-consistent fallback value, which would re-tune C5a's fitted activity budget (`fallbackForageW` is labelled tuned);
+  - C7b's `tripRateValue`, which failed its own direction check: it shortened days and moved animals onto ground foods.
+- Open for the integrator.
