@@ -36,6 +36,8 @@ export interface ChimpX {
   ownMales: number; strangers: number; strangerMales: number; strangerTroop: number; isolated: number; nearestStranger: number;
   heardN: number; heardAt: number; heardX: number; heardZ: number; heardTroop: number; heardStim: number;
   joinCall: number; joinCaller: number; joinAt: number; joinX: number; joinZ: number;
+  /** Stage C10 (travelHoo): the companion whose travel hoo this animal last heard, and when (absent until one is heard, so worlds with the switch off are unchanged). */
+  hooFrom?: number; hooAt?: number;
   trees: number[]; fruitNear: number; preyId: number; stims: number[];
   newcomers: number;
   // social bookkeeping

@@ -269,6 +269,7 @@ function onStart(world: World, c: Chimp): void {
       break;
     case 'patrol': if (x.v !== V.APPROACH) startPatrol(world, c); else c.vocal = null; break;
     case 'travel': case 'follow':
+      if (P.travelHoo === 1 && c.action === 'travel' && x.v === V.TREE && x.aux <= 0) travelHoo(world, c);
       // party cohesion (field profile): companions notice a departure and may follow (candidates.ts, partyFollow*);
       // since stage C7a only goal-directed departures (travel) alert them, not an animal that is itself following
       if (P.partyFollowW > 0 && (P.partyLeaderFollow !== 1 || c.action === 'travel')) for (const sid of x.seen) {
@@ -368,6 +369,23 @@ function startPatrol(world: World, c: Chimp): void {
     const b = idx.byId.get(sid);
     if (b && b.alive && b.troopId === c.troopId && b.age >= 12 && hd(b, c) < P.patrolAlertM) interrupt(world, b, `${c.name} is heading out on patrol`);
   }
+}
+
+/**
+ * Stage C10 addendum 1 (travelHoo): the initiator of a trip to a tree gives a quiet travel hoo when an own-community
+ * companion is within the party chain distance: 55.4% of the time, 75.6% with an ally in sight [gruberZuberbuhler2013]
+ * [M]. Hearers' party-follow of the caller is raised for a few minutes (candidates.ts, travelHooFollowW; design).
+ */
+function travelHoo(world: World, c: Chimp): void {
+  const P = paramsOf(world), x = ix(c), idx = index(world);
+  let companion = false, ally = false;
+  for (const id of x.seen) {
+    const o = idx.byId.get(id);
+    if (!o || !o.alive || o.troopId !== c.troopId || o.age < 5 || hd(o, c) > P.partyLinkM) continue;
+    companion = true;
+    if (c.allies.includes(o.id)) ally = true;
+  }
+  if (companion && random(world) < (ally ? P.travelHooAllyP : P.travelHooP)) emitCall(world, c, 'travel-hoo');
 }
 
 /**

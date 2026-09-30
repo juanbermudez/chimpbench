@@ -33,7 +33,8 @@ export type LifeStage = 'infant' | 'juvenile' | 'adolescent' | 'adult' | 'elder'
 export type Skill = 'climbing' | 'foraging' | 'hunting' | 'social';
 export type Sex = 'female' | 'male';
 export type Mood = 'calm' | 'excited' | 'fearful' | 'aggressive' | 'playful' | 'distressed';
-export type CallKind = 'pant-hoot' | 'pant-grunt' | 'scream' | 'food-grunt' | 'bark' | 'alarm-hoo' | 'drum' | 'whimper' | 'laugh';
+export type CallKind = 'pant-hoot' | 'pant-grunt' | 'scream' | 'food-grunt' | 'bark' | 'alarm-hoo' | 'drum' | 'whimper' | 'laugh'
+  | 'travel-hoo'; // C10: quiet hoo that recruits companions to a trip (gruberZuberbuhler2013)
 export type DecisionSource = 'rules' | 'decide';
 
 export interface Candidate { action: Action; targetId: number; score: number; reason: string; }

@@ -1195,6 +1195,8 @@ Adopted at the integrator's suggestion. C7c models travel recruitment without a 
 - **Contract request.** `CallKind` 'travel-hoo'.
 - **Shared file.** The follow offer in `candidates.ts` gets one local term.
 
+**Addendum 1 result (direction check, seeds 31–33, not a proof).** Initiators with a companion hooed on 45–51% of trips; the rate is below the source's 60% because the companion check uses the attention-limited view. Trips followed within 5 min: 0.59 vs 0.51 and 0.63 vs 0.55, hooed vs silent (ratio 1.13–1.15, source 2.1). The one-time refit scan (`travelHooFollowW` 0.6, 1.0, 1.5 on seed 33) gave ratios of 1.22, 1.21 and 1.12. No value reaches 1.6, because silent trips already recruit about half the time through C7c's joint travel. So the weight stays at the pre-registered 0.3, and the travel hoo's effect on recruitment is weaker than in Budongo.
+
 #### C10 addendum 2: gestures (C10b) blocked on the source table
 
 The type-to-meaning lexicon of hobaiterByrne2014 cannot be transcribed from here: the publisher and ScienceDirect refuse automated access, and the paper is not in PubMed Central. Accessible secondary accounts name only a few pairs (a rear foot extended to offer a ride; grabbing for "stop" or "move away"; leaf nibbling as a sexual advance). Two options, for the integrator or user:

@@ -2432,6 +2432,28 @@
    "notes": "Calls are less likely where neighbours range or the community lost before (edges are quiet; design, §5.2; T-COM-3 held out)."
   },
   {
+   "id": "callTravelHooMin",
+   "group": "communication",
+   "value": 0.25,
+   "units": "eco-min",
+   "range": [
+    0.1,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1000000
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.callTravelHooMin",
+   "file": "src/sim/events.ts",
+   "notes": "Stage C10: how long a travel hoo is shown and audible (the call itself lasts ~0.125 s; one tick is the shortest display, design)."
+  },
+  {
    "id": "callWhimperMin",
    "group": "communication",
    "value": 1,
@@ -8395,6 +8417,32 @@
    "profiles": {
     "compressed": 20,
     "field": 300
+   }
+  },
+  {
+   "id": "hearTravelHooM",
+   "group": "communication",
+   "value": 9,
+   "units": "m",
+   "range": [
+    5,
+    100
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1000000
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.hearTravelHooM",
+   "file": "src/sim/events.ts",
+   "notes": "Stage C10: travel hoos are low-intensity (gruberZuberbuhler2013); heard within the party chain distance (partyLinkM: compressed 9, field 50; design).",
+   "profiles": {
+    "compressed": 9,
+    "field": 50
    }
   },
   {
@@ -15958,6 +16006,121 @@
    "refs": [
     "docs/research.md (C7c): taylor1982 net cost of transport, sockol2007 measured chimpanzee range, pontzerWrangham2004 daily walking"
    ]
+  },
+  {
+   "id": "travelHoo",
+   "group": "communication",
+   "value": 1,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.travelHoo",
+   "file": "src/sim/execution.ts",
+   "notes": "Stage C10 addendum 1 switch: trip initiators give a quiet travel hoo heard by nearby own-community animals, whose party-follow of the caller is then more likely (gruberZuberbuhler2013). 0 = silent initiations (the C7c model). Ablation switch.",
+   "integer": true
+  },
+  {
+   "id": "travelHooAllyP",
+   "group": "communication",
+   "value": 0.756,
+   "units": "probability",
+   "range": [
+    0.5,
+    0.95
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "gruberZuberbuhler2013"
+   ],
+   "clock": "none",
+   "symbol": "P.travelHooAllyP",
+   "file": "src/sim/execution.ts",
+   "notes": "Stage C10: probability of a travel hoo with an ally in sight (75.6%, gruberZuberbuhler2013, full text)."
+  },
+  {
+   "id": "travelHooFollowW",
+   "group": "communication",
+   "value": 0.3,
+   "units": "score",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    5
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.travelHooFollowW",
+   "file": "src/sim/candidates.ts",
+   "notes": "Stage C10: added to a hearer's party-follow (or shared-goal travel) score toward the caller of a travel hoo. May be refitted once on seeds 31-33 to a hooted-to-silent ratio of trips followed by >= 1 companion of 1.6-2.6 (gruberZuberbuhler2013: 71.4% vs 33.7%); logged; not a target."
+  },
+  {
+   "id": "travelHooP",
+   "group": "communication",
+   "value": 0.554,
+   "units": "probability",
+   "range": [
+    0.3,
+    0.8
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "gruberZuberbuhler2013"
+   ],
+   "clock": "none",
+   "symbol": "P.travelHooP",
+   "file": "src/sim/execution.ts",
+   "notes": "Stage C10: probability that an initiator gives a travel hoo when no ally is in sight (55.4%, gruberZuberbuhler2013, full text)."
+  },
+  {
+   "id": "travelHooWindowMin",
+   "group": "communication",
+   "value": 5,
+   "units": "eco-min",
+   "range": [
+    1,
+    15
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1000
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.travelHooWindowMin",
+   "file": "src/sim/candidates.ts",
+   "notes": "Stage C10: minutes during which a heard travel hoo raises the hearer's party-follow of the caller (design)."
   },
   {
    "id": "treeGridCellM",

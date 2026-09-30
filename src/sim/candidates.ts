@@ -314,7 +314,9 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     // and adult males; parties travel together between food patches (fission-fusion) (design; tuned to T-PTY-1)
     if (P.partyFollowW > 0 && !carried && c.age >= 5 && d > P.partyFollowMinM && d < P.partyLinkM && (o.action === 'travel' || o.action === 'follow') && o.targetId !== c.id && !night) {
       const lead = P.partyLeaderFollow === 1 ? leaderOf(o, c, byId, x.seen) : o.id, L = byId.get(lead);
-      const sc = P.partyFollowBase + b * P.partyFollowW + pers.sociability * P.partyFollowSocialW + (isAdultMale(o) ? P.partyFollowMaleW : 0) - h * P.partyFollowHungerW - rain * 0.3;
+      // stage C10 addendum 1: a travel hoo heard from this companion (or its leader) in the last few minutes raises following it
+      const hoo = P.travelHoo === 1 && x.hooFrom !== undefined && (x.hooFrom === lead || x.hooFrom === o.id) && time - (x.hooAt ?? NEVER) <= P.travelHooWindowMin / 60 ? P.travelHooFollowW : 0;
+      const sc = P.partyFollowBase + b * P.partyFollowW + pers.sociability * P.partyFollowSocialW + (isAdultMale(o) ? P.partyFollowMaleW : 0) - h * P.partyFollowHungerW - rain * 0.3 + hoo;
       // stage C7c (field; c7b-prereg §6.2): a companion on a committed trip to a tree lends its goal: go there with it (shared goal) [H: joint travel, gruberZuberbuhler2013]
       if (P.partyJoinTrip === 1 && L && L.action === 'travel' && ix(L).v === V.TREE && isTreeId(L.targetId)) offer('travel', L.targetId, sc, V.TREE, L.id);
       else offer('follow', lead, sc, V.PARTY);
