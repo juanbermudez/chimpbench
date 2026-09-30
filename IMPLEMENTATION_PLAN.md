@@ -14,6 +14,8 @@ Working plan for the current program. Objectives: `docs/realism-roadmap.md`. Del
 | Visual data guide | visual guide agent (Opus) | done (b90ef06) | pipeline, dataset timeline, 100-target validation grid (held-out passes/fails 8/18 on dev seeds, 7/15 fresh), behaviour strips, fruit calendar and species panels, size-matched ranges, Gombe vs sim day paths and straightness, turning rose, activity bars, method-sensitive steps, patrol timeline and participation. About 47 KB gzipped. The sim paths are from C7a; re-run after the combined proof. |
 | Patrol data and guide | data agent | done (2980c8e) | real patrol statistics (Ngogo 0.76/wk observed, 33% per-male participation; Gombe 180 patrols, median 88.5 min, 8 males, 3 females; post-split West 17.4/yr vs Central 5.0/yr); T-BRD-1 reproduced; T-PAT-8 not comparable; Gombe 15-min paths (1,330 follows; straightness 0.47, turning 0.55 rad at 30 min, daily path 2.3 km). The 30-min step is method-sensitive (Taï 95 m vs Gombe 2.8 m), so it's no longer a headline gap. |
 
+**Jev decisive test** (docs/staging/jev-decisive-test.md, from a four-judge panel on both Jev designs; reports in artifacts/decide-ft/judges/). Design A was judged better. B's distillation is barred by the TypeSafe MCA §2.3(b). Free arms done (branch `jev-free-arms`): summed band distance R 2.04, RG 0.93 (5/5), U 1.83, X 1.37 (starving). Amendment 1 (stricter): Jev must beat RG and pass a viability guard. The lost-variant bug is fixed (options now carry variants; line 224 was fine). **The user approved the paid test with a hard $10 cap:** TRAINING wires in the spend guard, then the harness agent runs J1, J2 and J2s after a fake-server dry run. **The user approved C13:** rules + intention gate + seeded sampling as the default policy, pre-registered, switchable, judged by the lean proof.
+
 Validation structure (from 2026-09-29): the Taï and Ngogo C12 comparisons are development diagnostics (seen). The Gombe 15-min paths (jg05d) are the held-out movement validation, withheld from every designer.
 
 Ablation rule (from 2026-09-29): every stage's mechanisms are switchable by registry parameters, so the combined proof can attribute changes (all on vs one stage off).
@@ -249,3 +251,19 @@ Compares model-driven populations (untuned, baseline, aggressive, collaborative)
 **Success Criteria**: six checked hypotheses, all historical matrix seeds, exact proposed change points without implementation, disjoint fitting/development/reporting seeds, and separate approval/spend gates. Future baseline must reach at least the concurrent rules count or 5/11, whichever is higher, with sufficient observation; persona contrasts must remain separable.
 **Checks**: aggregate-only offline probability/label/scorecard analysis; document schema, links, arithmetic and scoped diff. No model calls or population runs in this design task.
 **Status**: Design ready for approval — no decision/simulation/server/training changes; $0 spent. First proposed paid stage cap: $2 Jev, after explicit approval and a repaired run-wide budget ledger. Later caps $25 / $8 / $12 are separate proposals. RunPod remains $3.35/$5 used; no new rental authorized. Source variants are lost in logged features, and real activity shares cannot be resampled from those logs; both limits are documented. Five-year results remain stand-in evidence.
+
+## Jev decision redesign, Claude version (owner: Claude design session; design only)
+Two independent designs answer the same brief. This one is [docs/decide-jev-design.md](docs/decide-jev-design.md); the Codex one is [docs/decide-jev-design-agent-2.md](docs/decide-jev-design-agent-2.md). The section above was written for the Codex one before its file moved, so its link now opens this version. The user will give both to the main agent.
+**Goal**: stages J0–J4 in docs/decide-jev-design.md §9. Code computes the ecology as named facts. Jev judges the kind of activity, then the partner, place or act, in one fan-out call. Code composes the answers, samples reproducibly and keeps the intent until a salient change.
+**Success Criteria**:
+- J2 (7 days, development seeds 6301–6303):
+  - Jev baseline feeding ≤ 0.55 and travel ≥ 0.10 on every seed, for both sexes;
+  - Jev baseline passes at least as many of T-ACT-1–4 and T-PTY-1 as rules, by scorer verdicts;
+  - temperaments separable.
+- J4 (report seeds 6501–6905): baseline scores at least rules' re-baselined verdict count. Scored with verdicts, rules make 3/11 on snapshot-v3, not 5/11.
+**Tests**: docs/decide-jev-design.md §9–10: the D1 variant test, the gate replay and the pre-registered P1 probes.
+**Status**: Design ready for approval. $0 spent; nothing in src/, server/, scripts/ or training/ changed. Decisions needed:
+1. TypeSafe MCA §2.3(b) bars training students on Jev outputs without written permission (Path A or Path B).
+2. Spend caps: J1 $1, J2 $15, then J3 $12 (Path A) or $75 (Path B).
+3. Reserve report seeds 6501–6905.
+4. Integrator ruling on decide-ft runs that used later-reserved seeds 1010, 5101, 5202, 7001–7003 and 9101.
