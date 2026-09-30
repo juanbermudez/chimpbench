@@ -1,6 +1,6 @@
 # Realism roadmap
 
-Objectives for bringing MGOGO's chimpanzee behavior close to field reality, and how each one will be proven. The design details and quantitative targets live in `docs/realism-design.md` (written by the research phase). Evidence tags follow `docs/research.md`: [H] high, [M] moderate, [L] low or assumed.
+Objectives for bringing ChimpBench's chimpanzee behavior close to field reality, and how each one will be proven. The design details and quantitative targets live in `docs/realism-design.md` (written by the research phase). Evidence tags follow `docs/research.md`: [H] high, [M] moderate, [L] low or assumed.
 
 ## Principle
 

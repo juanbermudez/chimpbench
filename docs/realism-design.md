@@ -20,7 +20,7 @@ The design for objectives O1–O12 in [realism-roadmap.md](realism-roadmap.md): 
 | 4 | "Too few killings" is not established. The median community rate is ≈ 0.08 per year, so zero killings in 9 community-years happens about half the time. | T-LET-1 | Keep killing rate as a fitted target with a wide band; do not inflate. |
 | 5 | Encounters: Kanyawara 8.0 and Taï 7.1 per community-year, 85% and 73% heard only. The sim's 35 and 63% are off because **sight (21×) and party links (9×) are inflated relative to range size**, far more than hearing (1.8×). | T-IGE-1, -2 | O3 is confirmed as the top priority; the fix is ratios, not metres (§5.1). |
 | 6 | Patrols: Gombe and Taï communities patrol ~0.3 per week; Ngogo (~25 males) 0.72 per week. The sim imposes the Ngogo rate on 3–7-male communities. Per-male participation is similar across sites (10–14 per year). | T-PAT-1, -2 | Patrol hazard driven by males and boundary staleness (§5.3). |
-| 7 | A 2026 *Science* paper documents the Ngogo fission with 30 years of network data, and its data are public (CC0): yearly networks, patrol counts, population snapshots. Fission is known from only two cases, both in large communities. | T-FIS-1..3 | Best held-out dataset in the program. MGOGO's small communities and 120-chimp cap make emergent fission nearly impossible without a large-community scenario and faster ticks at 150+ chimps. |
+| 7 | A 2026 *Science* paper documents the Ngogo fission with 30 years of network data, and its data are public (CC0): yearly networks, patrol counts, population snapshots. Fission is known from only two cases, both in large communities. | T-FIS-1..3 | Best held-out dataset in the program. ChimpBench's small communities and 120-chimp cap make emergent fission nearly impossible without a large-community scenario and faster ticks at 150+ chimps. |
 | 8 | Chimpanzees **slow down** as they approach a remembered tree, choose the nearest productive tree only 30% of the time, and revisit trees every 2.5–5.4 days. Travel linearity (0.96) is trivially ~1 in a sim that moves in straight lines. | T-FOOD-5..9 | Validate O7 with goal-directedness metrics, not linearity. |
 | 9 | Pant-hoot caller identity is only moderately distinctive (19.5% vs 6.9% chance). Kanyawara drumming shows no individual signature. | T-COM-5, -6 | O10 signatures must be noisy; "stable across calls" means stable means, not perfect identifiability. |
 | 10 | The existing reconciliation band "14–22%" could not be verified; the verified wild value is 14.4% (Mahale). | T-SOC-9 | Replace the band. |
@@ -45,7 +45,7 @@ The design for objectives O1–O12 in [realism-roadmap.md](realism-roadmap.md): 
 | **Fitted** | May be used for calibration (in priors, objectives or tuning decisions). Chosen because it constrains one or a few parameters fairly directly. Mostly ranging, activity budgets, encounter and hunt rates, life-table anchors, call rates. |
 | **Held out** | Never used for any tuning decision. Chosen because it emerges from several interacting mechanisms or sits at a different level of organization: network structure, range-size scaling, expansion and prey scenarios, hunting seasonality and bursts, rank and maternal effects, fission. A held-out match is the strongest evidence the program can produce. |
 | **Encoded** | The current or planned mechanism was designed from this very pattern (for example the ≥ 3-male playback rule). Reported, but not counted as independent validation. |
-| **Accept band** | The range the simulation must hit, scaled to MGOGO communities (12–22 members, 3–7 adult males) where stated. Field values are quoted as reported next to it. |
+| **Accept band** | The range the simulation must hit, scaled to ChimpBench communities (12–22 members, 3–7 adult males) where stated. Field values are quoted as reported next to it. |
 | **Evidence** | H: multi-site or large-sample, full text read. M: one site, abstract only, or derived by arithmetic. L: secondary citation, captive animals, or qualitative only. |
 | **Access** | FT full text read; Abs abstract only; Data dataset inspected; Meta metadata only. Every source's authors, year, title, journal and DOI were checked against Crossref. |
 | **Derived** | Arithmetic on reported numbers, done in this pass (for example 120 encounters ÷ 15 years). Marked wherever used. |
@@ -1458,7 +1458,7 @@ None were downloaded into the project. Every Dryad and Zenodo DOI and license be
 
 ### Open questions for the integrator
 
-1. Should MGOGO keep three small communities (Budongo/Gombe scale) or grow one toward Kanyawara size (~50, 10+ males)? Many targets are from larger communities; growing costs performance.
+1. Should ChimpBench keep three small communities (Budongo/Gombe scale) or grow one toward Kanyawara size (~50, 10+ males)? Many targets are from larger communities; growing costs performance.
 2. Which site profile is the default for phenology and fallback foods: Ngogo (leaves as fallback, figs a staple) or Kanyawara (pith as fallback)? The design supports both; calibration should target one.
 3. Is the field profile's scale factor of 50 (8 km map) acceptable for the renderer's overview, or should the overview use a different aggregation?
 4. Should the observer run in the browser (a live "field notebook" panel), or stay script-only until C11?

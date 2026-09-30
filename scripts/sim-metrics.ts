@@ -275,7 +275,7 @@ if (weather.length) {
   row('  mean daily min / max (°C)', `${f(mean(weather.map(q => q.tmin)))} / ${f(mean(weather.map(q => q.tmax)))}`, '~15 / ~24', '[M]');
 }
 
-console.log(`\nMGOGO simulation metrics — natural aging ${DAYS} days × seeds ${SEEDS.join(', ')}${life.length ? `; life course ${LIFE_YEARS} y × seeds ${LIFE_SEEDS.join(', ')}` : ''}${weather.length ? `; weather ${WEATHER_YEARS} y × seeds ${SEEDS.join(', ')}` : ''} (${((performance.now() - t0) / 1000).toFixed(0)} s)\n`);
+console.log(`\nChimpBench simulation metrics — natural aging ${DAYS} days × seeds ${SEEDS.join(', ')}${life.length ? `; life course ${LIFE_YEARS} y × seeds ${LIFE_SEEDS.join(', ')}` : ''}${weather.length ? `; weather ${WEATHER_YEARS} y × seeds ${SEEDS.join(', ')}` : ''} (${((performance.now() - t0) / 1000).toFixed(0)} s)\n`);
 console.log('| Metric | Simulated | Field value / target | Evidence |');
 console.log('| --- | --- | --- | --- |');
 for (const r of rows) console.log(`| ${r.join(' | ')} |`);

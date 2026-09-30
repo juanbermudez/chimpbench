@@ -1,6 +1,8 @@
-# MGOGO
+# ChimpBench
 
-A 3D eastern-chimpanzee society in a synthetic Kibale-like rainforest, and a live demonstration of a local decision model (GLiNER2.5-Decide) choosing what a chimp does next from the state it perceives. Three communities with dominance hierarchies, alliances, kinship, fission-fusion parties, territorial patrols, hunting, mating, births and deaths, under a real day/night cycle and seasonal weather.
+ChimpBench (formerly MGOGO) is a 3D eastern-chimpanzee society in a synthetic Kibale-like rainforest, and a live demonstration of a local decision model (GLiNER2.5-Decide) choosing what a chimp does next from the state it perceives. Three communities with dominance hierarchies, alliances, kinship, fission-fusion parties, territorial patrols, hunting, mating, births and deaths, under a real day/night cycle and seasonal weather.
+
+Environment variables, debug hooks and browser storage keys keep the `MGOGO` prefix on purpose, so settings, saves and scripts keep working.
 
 ## Run
 
@@ -93,7 +95,7 @@ Spatial, simulation-driven audio (`src/audio/*`, Web Audio). The listener stands
 Reloading the page brings back the last simulation where you left it, **paused** (Space continues). The world, the decision loop's counters and its 50 newest traces, and the view (selection, tab, layers, speed) are saved as one gzip JSON snapshot in an SQLite file in the browser's private storage (OPFS), through the official SQLite WASM build in a worker (`src/persist/*`; design and measurements in `docs/persistence.md`).
 
 - **Autosave:** every minute while the tab is visible, when you leave the tab or close it, and before switching simulations. Each simulation keeps its 3 newest autosaves plus every manual save. Saving does not hitch the frame loop: the snapshot is serialized in time-budgeted slices (about 3 ms of main-thread work per frame) while the clock holds, then encoded, compressed and written in the worker.
-- **Simulations menu:** the name in the menu bar. New (with seed and name), open, rename, duplicate, delete, export one simulation (`.mgogo.json.gz`) or all of them (`.sqlite3`), import either (and the old Settings › Export JSON). The dot next to it says "Saved 12 s ago", "Saving…", or why it is not saving.
+- **Simulations menu:** the name in the menu bar. New (with seed and name), open, rename, duplicate, delete, export one simulation (`.chimpbench.json.gz`) or all of them (`.sqlite3`), import either (also older `.mgogo.json.gz` exports and the old Settings › Export JSON). The dot next to it says "Saved 12 s ago", "Saving…", or why it is not saving.
 - **Where saves live:** this browser profile, per site address (`127.0.0.1:5173` and `localhost:5173` are different). Export to back up or move them. "Keep saves" asks the browser not to clear them under storage pressure.
 - **One tab at a time:** a second tab shows "open in another tab" and runs unsaved; "Use this tab" asks the first tab to save and hand over.
 - **Old saves:** while the simulation's state layout keeps changing, saves from an older layout are marked incompatible: listed, exportable, but not openable by this build.

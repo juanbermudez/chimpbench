@@ -1,6 +1,6 @@
-# MGOGO simulation reference
+# ChimpBench simulation reference
 
-How the MGOGO world model works, derived from the code in [src/sim/](../src/sim/) behind [src/simulation.ts](../src/simulation.ts). It is for developers and scientists who are new to the code. Every mechanism names its function and links to its file. Numbers were checked against the code, `pnpm test` (53 passing) and a default [scripts/sim-metrics.ts](../scripts/sim-metrics.ts) run (seeds 48, 7, 21) on 28 September 2026.
+How the ChimpBench world model works, derived from the code in [src/sim/](../src/sim/) behind [src/simulation.ts](../src/simulation.ts). It is for developers and scientists who are new to the code. Every mechanism names its function and links to its file. Numbers were checked against the code, `pnpm test` (53 passing) and a default [scripts/sim-metrics.ts](../scripts/sim-metrics.ts) run (seeds 48, 7, 21) on 28 September 2026.
 
 [docs/research.md](research.md) holds the evidence: sources, what they show, and open questions. This document holds the mechanisms. Where they meet, research.md is the authority on what the literature says and this file is the authority on what the code does.
 

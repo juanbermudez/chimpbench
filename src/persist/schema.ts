@@ -27,7 +27,7 @@ export interface SnapshotRow { id: number; simId: string; kind: string; savedAt:
 export type NewSim = Pick<SimRow, 'id' | 'name' | 'seed'> & SnapshotMeta & { parentId?: string | null };
 
 export class ReadOnlyError extends Error {
-  constructor(v: number) { super(`This browser's saves were written by a newer MGOGO (database schema ${v}; this build knows ${SCHEMA_VERSION}). They open read-only here so nothing is lost.`); this.name = 'ReadOnlyError'; }
+  constructor(v: number) { super(`This browser's saves were written by a newer ChimpBench (database schema ${v}; this build knows ${SCHEMA_VERSION}). They open read-only here so nothing is lost.`); this.name = 'ReadOnlyError'; }
 }
 
 /** Creates or upgrades the schema. Returns the version found; throws ReadOnlyError for a newer database. */

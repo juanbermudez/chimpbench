@@ -14,7 +14,7 @@ mkdir -p artifacts/remote
 tmp=$(mktemp -d)
 git archive --format=tar HEAD -- . ':(exclude)public/audio' ':(exclude)training' ':(exclude)data/raw' | tar -x -C "$tmp"
 echo "$commit" > "$tmp/BUNDLE_COMMIT"
-out="artifacts/remote/mgogo-$short.tar.gz"
+out="artifacts/remote/chimpbench-$short.tar.gz"
 tar -czf "$out" -C "$tmp" .
 rm -rf "$tmp"
 if tar -tzf "$out" | grep -E -q '^\./(data/raw|public/audio|artifacts)/'; then echo "bundle contains excluded paths" >&2; rm -f "$out"; exit 4; fi

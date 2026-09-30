@@ -71,6 +71,11 @@ export function snapshotMeta(world: World): SnapshotMeta {
 }
 
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48) || 'simulation';
+// Export file names. Import detects the format by content; the name only seeds the imported simulation's name, so
+// exports from before the rename (.mgogo.json.gz, mgogo-simulations-*.sqlite3) still import.
+export const exportFileName = (name: string, day: number) => `${slug(name)}-day-${day}.chimpbench.json.gz`;
+export const libraryFileName = (date: Date) => `chimpbench-simulations-${date.toISOString().slice(0, 10)}.sqlite3`;
+export const importedName = (fileName: string) => `${fileName.replace(/\.((chimpbench|mgogo)\.)?json(\.gz)?$/i, '')} (imported)`;
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 export function createPersistence(host: PersistHost, options: { enabled: boolean; autosaveMs?: number }) {
@@ -309,14 +314,14 @@ export function createPersistence(host: PersistHost, options: { enabled: boolean
     async exportSimulation(simId: string, name: string, day: number): Promise<{ blob: Blob; filename: string }> {
       if (simId === status.simId) flushBeforeSwitch();
       const bytes = await client!.exportSim(simId);
-      return { blob: new Blob([bytes], { type: 'application/gzip' }), filename: `${slug(name)}-day-${day}.mgogo.json.gz` };
+      return { blob: new Blob([bytes], { type: 'application/gzip' }), filename: exportFileName(name, day) };
     },
     async exportLibrary(): Promise<{ blob: Blob; filename: string }> {
       flushBeforeSwitch();
       const bytes = await client!.exportLibrary();
-      return { blob: new Blob([bytes], { type: 'application/vnd.sqlite3' }), filename: `mgogo-simulations-${new Date().toISOString().slice(0, 10)}.sqlite3` };
+      return { blob: new Blob([bytes], { type: 'application/vnd.sqlite3' }), filename: libraryFileName(new Date()) };
     },
-    /** .sqlite3 libraries merge; .mgogo.json(.gz) and the legacy Settings export become a new simulation. */
+    /** .sqlite3 libraries merge; .chimpbench.json(.gz), older .mgogo.json(.gz) and the legacy Settings export become a new simulation. */
     async importFile(file: File): Promise<{ ids: string[]; text: string }> {
       if (!client || !writable()) throw new Error(status.message || 'Saving is unavailable in this tab.');
       const head = new Uint8Array(await file.slice(0, 16).arrayBuffer());
@@ -326,7 +331,7 @@ export function createPersistence(host: PersistHost, options: { enabled: boolean
       }
       const text = head[0] === 0x1f && head[1] === 0x8b ? await new Response(file.stream().pipeThrough(new DecompressionStream('gzip'))).text() : await file.text();
       const env = parseEnvelope(text); // throws a SaveError that says why
-      const id = crypto.randomUUID(), name = `${file.name.replace(/\.(mgogo\.)?json(\.gz)?$/i, '')} (imported)`, meta = snapshotMeta(env.world);
+      const id = crypto.randomUUID(), name = importedName(file.name), meta = snapshotMeta(env.world);
       await client.create({ id, name, seed: env.world.seed, ...meta });
       await client.saveWhole(id, 'import', meta, JSON.stringify(env));
       return { ids: [id], text: `Imported “${name}” (day ${env.world.day})` };
