@@ -206,6 +206,54 @@ class GuardTest(unittest.TestCase):
             g.ask(STATE)
         self.assertEqual(len(self.fake.requests), 1)
 
+    def test_running_totals_match_the_attempt_rows(self):
+        self.fake.script = [(429, {}, b"{}", 0), (500, {}, b"x", 0)]
+        g = self.guard()
+        with self.assertRaises(sg.BillingUnknown):
+            g.ask(STATE)
+        for _ in range(3):
+            g.ask(STATE)
+        db = self.ledger._db()
+        spent, reserved, n = db.execute("SELECT SUM(spent_dollars), COALESCE(SUM(CASE WHEN state = 'reserved' THEN reserve_dollars END), 0), COUNT(*) FROM attempts WHERE run_id = 'r1'").fetchone()
+        t = self.ledger.totals("r1")
+        self.assertAlmostEqual(t["spent"], spent, places=12)
+        self.assertAlmostEqual(t["reserved"], reserved, places=12)
+        self.assertEqual(t["attempts"], n)
+        d = db.execute("SELECT SUM(spent), SUM(reserved) FROM days").fetchone()
+        self.assertAlmostEqual(d[0], spent, places=12)
+        self.assertAlmostEqual(d[1], 0.0, places=12)
+
+    def test_a_reservation_costs_the_same_in_a_large_ledger(self):
+        self.ledger.open_run("big", 1e6)
+        def batch(k):
+            t0 = time.perf_counter()
+            for _ in range(k):
+                self.ledger.release(self.ledger.reserve("big", "s" * 64, 900), "timing")
+            return (time.perf_counter() - t0) / k
+        first = batch(300)
+        for _ in range(4):
+            batch(1000)
+        last = batch(300)
+        self.assertLess(last, first * 3 + 0.002, f"reserve+release {first * 1000:.2f} ms at start, {last * 1000:.2f} ms after 4,600 attempts")
+
+    def test_a_schema_1_ledger_is_migrated_with_its_totals(self):
+        import sqlite3
+        path = self.dir / "old.db"
+        db = sqlite3.connect(path)
+        db.executescript("""CREATE TABLE runs (run_id TEXT PRIMARY KEY, cap_dollars REAL NOT NULL, created REAL NOT NULL, status TEXT NOT NULL, note TEXT);
+          CREATE TABLE attempts (id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT NOT NULL, t REAL NOT NULL, request_sha256 TEXT NOT NULL, est_tokens INTEGER NOT NULL,
+            reserve_dollars REAL NOT NULL, state TEXT NOT NULL, http_status INTEGER, input_tokens INTEGER, spent_dollars REAL NOT NULL DEFAULT 0, model TEXT, error TEXT, do_not_train TEXT NOT NULL);
+          CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+          INSERT INTO runs VALUES ('old', 1.0, 0, 'open', '');
+          INSERT INTO attempts(run_id, t, request_sha256, est_tokens, reserve_dollars, state, spent_dollars, do_not_train) VALUES ('old', 100, 'a', 10, 0.001, 'settled', 0.0004, 'x'), ('old', 200, 'b', 10, 0.002, 'reserved', 0, 'x');""")
+        db.commit(); db.close()
+        led = sg.Ledger(path)
+        t = led.totals("old")
+        self.assertAlmostEqual(t["spent"], 0.0004); self.assertAlmostEqual(t["reserved"], 0.002); self.assertEqual(t["attempts"], 2)
+        led.release(2, "migrated")
+        self.assertAlmostEqual(led.totals("old")["reserved"], 0.0)
+        led.close()
+
     def test_daily_cap_spans_runs(self):
         self.ledger.set_daily_cap(self.one_reserve() * 1.5)
         self.guard(run="a", cap=1.0).ask(STATE)

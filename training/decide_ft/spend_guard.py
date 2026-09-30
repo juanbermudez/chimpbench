@@ -112,11 +112,16 @@ CREATE TABLE IF NOT EXISTS attempts (
   do_not_train TEXT NOT NULL);
 CREATE INDEX IF NOT EXISTS attempts_run ON attempts(run_id, state);
 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS days (day INTEGER PRIMARY KEY, spent REAL NOT NULL DEFAULT 0, reserved REAL NOT NULL DEFAULT 0);
 """
+# Running totals (schema 2): runs.spent/reserved/attempts and days.spent/reserved are updated in the same transaction as
+# the attempt row they summarize, so a reservation reads O(1) totals instead of summing every attempt (schema 1 summed
+# them, which grew with the ledger: ~150 ms per reservation at 95,000 rows). attempts.day is the UTC day of reservation.
+_RUN_COLS = (("spent", "REAL NOT NULL DEFAULT 0"), ("reserved", "REAL NOT NULL DEFAULT 0"), ("attempts", "INTEGER NOT NULL DEFAULT 0"))
 
 
 class Ledger:
-    """The persistent spend ledger. Totals are sums over attempt rows, so a restart or a second process sees them."""
+    """The persistent spend ledger, shared by every process through SQLite. Totals live in the runs and days rows."""
 
     def __init__(self, path: str | Path):
         self.path = str(path)
@@ -125,8 +130,29 @@ class Ledger:
         self._all_lock = threading.Lock()
         db = self._db()
         db.executescript(SCHEMA)
-        db.execute("INSERT OR IGNORE INTO meta(key, value) VALUES ('schema', 'mgogo-jev-spend-guard-1')")
-        db.execute("INSERT OR IGNORE INTO meta(key, value) VALUES ('do_not_train', ?)", (DO_NOT_TRAIN,))
+        with self._tx() as db:
+            self._migrate(db)
+            db.execute("INSERT OR IGNORE INTO meta(key, value) VALUES ('do_not_train', ?)", (DO_NOT_TRAIN,))
+
+    @staticmethod
+    def _migrate(db: sqlite3.Connection) -> None:
+        """Brings a schema-1 ledger to schema 2: adds the running totals and fills them from the attempt rows, once."""
+        have = {r[1] for r in db.execute("PRAGMA table_info(runs)")}
+        if not all(c in have for c, _ in _RUN_COLS):
+            for c, decl in _RUN_COLS:
+                if c not in have:
+                    db.execute(f"ALTER TABLE runs ADD COLUMN {c} {decl}")
+            db.execute("""UPDATE runs SET
+              spent = (SELECT COALESCE(SUM(spent_dollars), 0) FROM attempts a WHERE a.run_id = runs.run_id),
+              reserved = (SELECT COALESCE(SUM(CASE WHEN state = 'reserved' THEN reserve_dollars END), 0) FROM attempts a WHERE a.run_id = runs.run_id),
+              attempts = (SELECT COUNT(*) FROM attempts a WHERE a.run_id = runs.run_id)""")
+        if "day" not in {r[1] for r in db.execute("PRAGMA table_info(attempts)")}:
+            db.execute("ALTER TABLE attempts ADD COLUMN day INTEGER")
+            db.execute("UPDATE attempts SET day = CAST(t / 86400 AS INTEGER)")
+            db.execute("DELETE FROM days")
+            db.execute("""INSERT INTO days(day, spent, reserved) SELECT day, SUM(spent_dollars), COALESCE(SUM(CASE WHEN state = 'reserved' THEN reserve_dollars END), 0)
+              FROM attempts GROUP BY day""")
+        db.execute("INSERT INTO meta(key, value) VALUES ('schema', 'mgogo-jev-spend-guard-2') ON CONFLICT(key) DO UPDATE SET value = excluded.value")
 
     def _db(self) -> sqlite3.Connection:
         db = getattr(self._local, "db", None)
@@ -181,81 +207,77 @@ class Ledger:
             db.execute("INSERT INTO meta(key, value) VALUES ('daily_cap', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", (str(dollars),))
 
     def totals(self, run_id: str) -> dict:
-        db = self._db()
-        run = db.execute("SELECT cap_dollars, status FROM runs WHERE run_id = ?", (run_id,)).fetchone()
+        run = self._db().execute("SELECT cap_dollars, status, spent, reserved, attempts FROM runs WHERE run_id = ?", (run_id,)).fetchone()
         if run is None:
             raise GuardError(f"unknown run {run_id}")
-        spent, reserved, n = db.execute(
-            "SELECT COALESCE(SUM(spent_dollars), 0), COALESCE(SUM(CASE WHEN state = 'reserved' THEN reserve_dollars END), 0), COUNT(*) FROM attempts WHERE run_id = ?",
-            (run_id,)).fetchone()
-        return {"run_id": run_id, "cap": run[0], "status": run[1], "spent": spent, "reserved": reserved, "attempts": n}
+        return {"run_id": run_id, "cap": run[0], "status": run[1], "spent": run[2], "reserved": max(0.0, run[3]), "attempts": run[4]}
 
     # --- attempts -----------------------------------------------------------
     def reserve(self, run_id: str, request_sha256: str, est_tokens: int) -> int:
         """Books a reservation for one attempt, or raises CapReached (and stops the run) when it would cross the cap."""
         reserve = est_tokens * TOKEN_MARGIN * PRICE_IN
+        now = time.time()
+        day = int(now // 86400)
         refusal, aid = "", -1
         with self._tx() as db:
-            run = db.execute("SELECT cap_dollars, status FROM runs WHERE run_id = ?", (run_id,)).fetchone()
+            run = db.execute("SELECT cap_dollars, status, spent, reserved FROM runs WHERE run_id = ?", (run_id,)).fetchone()
             if run is None:
                 raise GuardError(f"unknown run {run_id}: open it with an explicit cap first")
-            cap, status = run
+            cap, status, spent, reserved = run
             if status != "open":
                 raise CapReached(f"run {run_id} is {status}: no further calls")
-            spent, reserved = db.execute(
-                "SELECT COALESCE(SUM(spent_dollars), 0), COALESCE(SUM(CASE WHEN state = 'reserved' THEN reserve_dollars END), 0) FROM attempts WHERE run_id = ?",
-                (run_id,)).fetchone()
             daily = db.execute("SELECT value FROM meta WHERE key = 'daily_cap'").fetchone()
             if daily is not None:
-                day0 = time.time() // 86400 * 86400
-                d_spent, d_res = db.execute(
-                    "SELECT COALESCE(SUM(spent_dollars), 0), COALESCE(SUM(CASE WHEN state = 'reserved' THEN reserve_dollars END), 0) FROM attempts WHERE t >= ?",
-                    (day0,)).fetchone()
-                if d_spent + d_res + reserve > float(daily[0]) + 1e-12:
+                d = db.execute("SELECT spent, reserved FROM days WHERE day = ?", (day,)).fetchone() or (0.0, 0.0)
+                if d[0] + d[1] + reserve > float(daily[0]) + 1e-12:
                     refusal = f"daily cap ${float(daily[0]):.4f} reached"
             if not refusal and spent + reserved + reserve > cap + 1e-12:
-                refusal = f"run {run_id}: cap ${cap:.4f} reached (spent ${spent:.6f}, reserved ${reserved:.6f})"
+                refusal = f"run {run_id}: cap ${cap:.4f} reached (spent ${spent:.6f}, reserved ${max(0.0, reserved):.6f})"
             if refusal:
                 # the stop is committed, not rolled back with the refusal: every later reservation for this run refuses
                 db.execute("UPDATE runs SET status = 'stopped', note = ? WHERE run_id = ?", (refusal, run_id))
             else:
-                cur = db.execute("INSERT INTO attempts(run_id, t, request_sha256, est_tokens, reserve_dollars, state, do_not_train) VALUES (?, ?, ?, ?, ?, 'reserved', ?)",
-                                 (run_id, time.time(), request_sha256, est_tokens, reserve, DO_NOT_TRAIN))
+                cur = db.execute("INSERT INTO attempts(run_id, t, day, request_sha256, est_tokens, reserve_dollars, state, do_not_train) VALUES (?, ?, ?, ?, ?, ?, 'reserved', ?)",
+                                 (run_id, now, day, request_sha256, est_tokens, reserve, DO_NOT_TRAIN))
                 aid = int(cur.lastrowid)
+                db.execute("UPDATE runs SET reserved = reserved + ?, attempts = attempts + 1 WHERE run_id = ?", (reserve, run_id))
+                db.execute("INSERT INTO days(day, spent, reserved) VALUES (?, 0, ?) ON CONFLICT(day) DO UPDATE SET reserved = reserved + excluded.reserved", (day, reserve))
         if refusal:
             raise CapReached(refusal)
         return aid
 
-    def _close(self, attempt_id: int, state: str, spent_sql: str, **cols) -> None:
-        sets = ", ".join(f"{k} = ?" for k in cols)
+    def _finish(self, attempt_id: int, state: str, cost_of: Callable[[float], float], **cols) -> tuple[str, float, float]:
+        """Closes an open reservation as `state` with cost `cost_of(reserve)`; moves it from reserved to spent in the run's and
+        the day's totals, in one transaction. Returns (run_id, reserve, cost)."""
         with self._tx() as db:
-            n = db.execute(f"UPDATE attempts SET state = ?, spent_dollars = {spent_sql}{', ' + sets if sets else ''} WHERE id = ? AND state = 'reserved'",
-                           (state, *cols.values(), attempt_id)).rowcount
-            if n != 1:
+            row = db.execute("SELECT run_id, reserve_dollars, day FROM attempts WHERE id = ? AND state = 'reserved'", (attempt_id,)).fetchone()
+            if row is None:
                 raise GuardError(f"attempt {attempt_id} is not an open reservation")
+            run_id, reserve, day = row
+            cost = cost_of(reserve)
+            sets = "".join(f", {k} = ?" for k in cols)
+            db.execute(f"UPDATE attempts SET state = ?, spent_dollars = ?{sets} WHERE id = ?", (state, cost, *cols.values(), attempt_id))
+            db.execute("UPDATE runs SET reserved = reserved - ?, spent = spent + ? WHERE run_id = ?", (reserve, cost, run_id))
+            db.execute("UPDATE days SET reserved = reserved - ?, spent = spent + ? WHERE day = ?", (reserve, cost, day))
+            if cost > reserve + 1e-15:
+                db.execute("UPDATE runs SET status = 'stopped', note = ? WHERE run_id = ?", (f"overrun: attempt {attempt_id} billed ${cost:.8f} above its reservation", run_id))
+        return run_id, reserve, cost
 
     def settle(self, attempt_id: int, input_tokens: int, model: str | None, http_status: int) -> float:
-        """The reservation becomes the billed cost, in one UPDATE (no window where neither is counted). A bill above the
+        """The reservation becomes the billed cost, in one transaction (no window where neither is counted). A bill above the
         reservation means the size estimate failed: the run stops at once, so the cap can be exceeded at most by the
         overruns of calls already in flight (the cap holds exactly while bills stay within their reservations)."""
         cost = input_tokens * PRICE_IN
-        with self._tx() as db:
-            row = db.execute("SELECT run_id, reserve_dollars FROM attempts WHERE id = ? AND state = 'reserved'", (attempt_id,)).fetchone()
-            if row is None:
-                raise GuardError(f"attempt {attempt_id} is not an open reservation")
-            db.execute("UPDATE attempts SET state = 'settled', spent_dollars = ?, input_tokens = ?, model = ?, http_status = ? WHERE id = ?",
-                       (cost, input_tokens, model, http_status, attempt_id))
-            if cost > row[1] + 1e-15:
-                db.execute("UPDATE runs SET status = 'stopped', note = ? WHERE run_id = ?", (f"overrun: attempt {attempt_id} billed {input_tokens} tokens above its reservation", row[0]))
+        self._finish(attempt_id, "settled", lambda _r: cost, input_tokens=input_tokens, model=model, http_status=http_status)
         return cost
 
     def book_unknown(self, attempt_id: int, error: str, http_status: int | None = None) -> None:
         """Billing unknown: the whole reservation is booked as spent."""
-        self._close(attempt_id, "unknown", "reserve_dollars", error=error[:500], http_status=http_status)
+        self._finish(attempt_id, "unknown", lambda r: r, error=error[:500], http_status=http_status)
 
     def release(self, attempt_id: int, error: str, http_status: int | None = None) -> None:
         """Nothing was billed (the request never left, or the provider refused it before work): the reservation is freed."""
-        self._close(attempt_id, "released", "0", error=error[:500], http_status=http_status)
+        self._finish(attempt_id, "released", lambda _r: 0.0, error=error[:500], http_status=http_status)
 
 
 def http_sender(endpoint: str, key: Callable[[], str], timeout: float = 30.0, tls=None) -> Callable[[bytes], tuple[int, dict, bytes]]:
