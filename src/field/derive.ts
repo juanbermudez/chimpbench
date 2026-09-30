@@ -39,6 +39,8 @@ export interface Derived {
   aliveAt(id: number, t: number): boolean;
   adultMales(troop: number, t: number): number[];
   month(tick: number): number;
+  /** Stage C8: uncapped days (living below 90% of the population cap) between two times, in days (all days when no cap is recorded). */
+  uncappedDays(a: number, b: number): number;
 }
 
 export function derive(rec: Records): Derived {
@@ -120,9 +122,21 @@ export function derive(rec: Records): Derived {
     for (let i = lo; i < l.length && l[i].t <= t + after; i++) if (kinds.includes(l[i].kind)) return true;
     return false;
   };
+  // stage C8: census days at or above 90% of the population cap, as a prefix count over world days (the cap blocks conception)
+  const capDay = new Set(rec.popCap > 0 ? rec.living.filter(l => l.n >= 0.9 * rec.popCap).map(l => l.day) : []);
+  const day0 = Math.floor((rec.time0 + 6.5) / 24) + 1, nDays = Math.ceil(days) + 2, pre = new Float64Array(nDays + 1);
+  for (let i = 0; i < nDays; i++) pre[i + 1] = pre[i] + (capDay.has(day0 + i) ? 0 : 1);
+  const dayPos = (t: number) => Math.min(nDays, Math.max(0, (t + 6.5) / 24 + 1 - day0));
+  const uncappedDays = (a: number, b: number) => {
+    if (!capDay.size) return Math.max(0, b - a) / 24;
+    const pa = dayPos(a), pb = dayPos(b);
+    if (!(pb > pa)) return 0;
+    const at = (p: number) => { const i = Math.floor(p); return pre[Math.min(nDays, i)] + (i < nDays ? (pre[i + 1] - pre[i]) * (p - i) : 0); };
+    return at(pb) - at(pa);
+  };
   const d: Derived = {
     rec, profile, tH, days, years, t0: rec.time0, t1: rec.time0 + days * 24, mid: rec.time0 + days * 12, troops, communityYears: troops.length * years, roster, followPts, followScans, followDays, followHours, ranges, phen,
-    patrols: [], callsBy, calledNear, level, ageAt, isAdultMale, aliveAt, adultMales, month: (tick: number) => Math.floor(tick * tH / MONTH_H),
+    patrols: [], callsBy, calledNear, level, ageAt, isAdultMale, aliveAt, adultMales, month: (tick: number) => Math.floor(tick * tH / MONTH_H), uncappedDays,
   };
   d.patrols = classifyPatrols(rec, followPts, level);
   return d;

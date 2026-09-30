@@ -1092,17 +1092,17 @@ export const METRICS: MetricDef[] = [
     },
   },
   {
-    id: 'T-DEM-10', protocol: 'census: detected births ÷ female-years at estimated ages 20–30 (emeryThompson2007)', pool: 'custom',
+    id: 'T-DEM-10', protocol: 'census: detected births ÷ female-years at estimated ages 20–30 (emeryThompson2007), counted only on census days with the living below 90% of the population cap (docs/realism-design.md §8 C8)', pool: 'custom',
     compute: d => {
       let births = 0, fy = 0;
-      const t1 = d.t1;
+      const t1 = d.t1, YH = 365.25 * 24;
       for (const r of d.rec.roster) {
         if (r.sex !== 'female') continue;
         const from = r.firstSeen, dt = d.rec.deaths.find(x => x.id === r.id)?.tEst ?? t1, to = Math.min(t1, dt);
-        const a0 = d.ageAt(r.id, from), a1 = d.ageAt(r.id, to), lo = Math.max(a0, 20), hi = Math.min(a1, 30);
-        if (hi > lo) fy += hi - lo;
+        const a = Math.max(from, r.birthEst + 20 * YH), b = Math.min(to, r.birthEst + 30 * YH);
+        if (b > a) fy += d.uncappedDays(a, b) / 365.25;
       }
-      for (const b of d.rec.births) { const a = d.ageAt(b.mother, b.tSeen); if (a >= 20 && a < 30) births++; }
+      for (const b of d.rec.births) { const a = d.ageAt(b.mother, b.tSeen); if (a >= 20 && a < 30 && d.uncappedDays(b.tSeen - 12, b.tSeen + 12) > 0.5) births++; }
       return { value: fy ? births / fy : null, n: births, num: births, den: fy };
     },
     pooled: s => {
@@ -1126,8 +1126,8 @@ export const METRICS: MetricDef[] = [
     pooled: s => { const v = s.flatMap(x => x.raw?.age ?? []); return v.length >= 3 ? { value: mean(v), n: v.length } : none('fewer than 3 first births', v.length); },
   },
   {
-    id: 'T-DEM-12', protocol: 'census: interval between successive detected births to one mother when the first infant survived (emeryThompson2007)', pool: 'custom',
-    compute: d => ({ value: null, n: 0, raw: { ibi: interbirth(d, true) } }),
+    id: 'T-DEM-12', protocol: 'census: interval between successive detected births to one mother when the first infant survived (emeryThompson2007); intervals with a census day at or above 90% of the population cap are dropped (docs/realism-design.md §8 C8)', pool: 'custom',
+    compute: d => ({ value: null, n: 0, raw: { ibi: interbirth(d, true, true) } }),
     pooled: s => { const v = s.flatMap(x => x.raw?.ibi ?? []); return v.length >= 3 ? { value: mean(v), n: v.length } : none('fewer than 3 intervals (needs multi-year runs)', v.length); },
   },
   {
@@ -1417,14 +1417,18 @@ function bondRuns(d: Derived): SeedValue {
   return runs.length ? { value: mean(runs), n: runs.length, note: `over ${years} observed years (runs are censored at the run length)` } : none('no strong bonds');
 }
 
-function interbirth(d: Derived, survived: boolean): number[] {
+function interbirth(d: Derived, survived: boolean, capFree = false): number[] {
   const byMother = new Map<number, { t: number; id: number }[]>();
   for (const b of d.rec.births) { let l = byMother.get(b.mother); if (!l) byMother.set(b.mother, l = []); l.push({ t: b.truthBirth, id: b.id }); }
   const deathT = new Map(d.rec.deaths.map(x => [x.id, x.tEst]));
   const out: number[] = [];
   for (const l of byMother.values()) {
     l.sort((a, b) => a.t - b.t);
-    for (let i = 1; i < l.length; i++) { const dt = deathT.get(l[i - 1].id); const lived = dt === undefined || dt >= l[i].t; if (lived === survived) out.push((l[i].t - l[i - 1].t) / (24 * 365.25)); }
+    for (let i = 1; i < l.length; i++) {
+      const dt = deathT.get(l[i - 1].id), lived = dt === undefined || dt >= l[i].t;
+      if (capFree && d.uncappedDays(l[i - 1].t, l[i].t) < (l[i].t - l[i - 1].t) / 24 - 1e-6) continue;
+      if (lived === survived) out.push((l[i].t - l[i - 1].t) / (24 * 365.25));
+    }
   }
   return out;
 }

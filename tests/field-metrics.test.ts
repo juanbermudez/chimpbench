@@ -561,3 +561,18 @@ test('C8 T-LET-5 (sealed; constructed census): expansion month, 3-year windows a
   assert.equal(letFivePooled([r]).pass, null, 'insufficient with one seed');
   assert.equal(letFivePooled([r, r]).pass, true);
 });
+
+test('C8 fertility is measured only below 90% of the population cap (T-DEM-10 female-years and births; T-DEM-12 intervals)', () => {
+  const Y = 365.25 * 24, r = emptyRecords();
+  r.days = 365.25 * 2; r.popCap = 10;
+  // days of year 1 at the cap (9 living >= 0.9 × 10), year 2 below it
+  for (let day = 1; day <= 732; day++) r.living.push({ day, n: day <= 366 ? 9 : 5 });
+  r.roster.push({ id: 1, sex: 'female', troop: 1, natal: 1, mother: -1, birthEst: -20 * Y, knownAge: false, founder: true, firstSeen: 0 },
+    { id: 2, sex: 'male', troop: 1, natal: 1, mother: 1, birthEst: 0.5 * Y, knownAge: true, founder: false, firstSeen: 0.5 * Y },
+    { id: 3, sex: 'male', troop: 1, natal: 1, mother: 1, birthEst: 1.5 * Y, knownAge: true, founder: false, firstSeen: 1.5 * Y });
+  r.births.push({ id: 2, mother: 1, troop: 1, tSeen: 0.5 * Y, truthBirth: 0.5 * Y, father: -1 }, { id: 3, mother: 1, troop: 1, tSeen: 1.5 * Y, truthBirth: 1.5 * Y, father: -1 });
+  const d = derive(r), f = metric('T-DEM-10').compute!(d);
+  assert.ok(Math.abs(f.den! - 1) < 0.01, `uncapped female-years ${f.den}`);
+  assert.equal(f.num, 1, 'only the birth below the cap');
+  assert.deepEqual(metric('T-DEM-12').compute!(d).raw!.ibi, [], 'the interval overlapping capped days is dropped');
+});

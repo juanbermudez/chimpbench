@@ -913,6 +913,7 @@ export function dayStep(o: Observer, world: World, init: boolean): void {
         cause: 'unknown', respiratory: false, last, ill: o.id.ill[id] >= last - ILL_WINDOW_H });
     }
   }
+  o.rec.living.push({ day: world.day, n: index(world).alive.length });
   for (const t of world.troops) {
     o.rec.alpha.push({ day: world.day, troop: t.id, id: t.alphaId });
     o.rec.femaleOrder.push({ day: world.day, troop: t.id, ids: t.femaleHierarchy.slice() });

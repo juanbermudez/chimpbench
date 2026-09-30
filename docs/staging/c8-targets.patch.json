@@ -699,6 +699,19 @@
    "targets": [],
    "verdicts": "no target value",
    "class": "diagnostic"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C8 implementer (worktree branch; entered by the integrator at registration)",
+   "seen": "T-DEM-10 and T-DEM-12 values in the C3-C7a scorecards (e.g. c6-field10y T-DEM-10 0.25, T-DEM-12 5.0); no C8 value",
+   "param": "Population-cap rule (docs/realism-design.md §5.7 'Population cap' and §8 C8 'fertility measured only below 90% of the population cap'): the observer records the simulation's popCap and the number living at each 21:00 census; T-DEM-10 counts female-years and births only on census days with the living below 90% of the cap; T-DEM-12 drops intervals that include such a day. T-DEM-11 and T-DEM-13 unchanged",
+   "reason": "design text (the cap blocks conception and live birth, a simulation artifact), not a verdict",
+   "targets": [
+    "T-DEM-10",
+    "T-DEM-12"
+   ],
+   "verdicts": "unchanged below the cap; runs that reach the cap no longer bias fertility low",
+   "class": "protocol"
   }
  ],
  "registryRefsToSources": {

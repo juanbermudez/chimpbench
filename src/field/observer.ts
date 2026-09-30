@@ -1,5 +1,6 @@
 import type { Chimp, Interaction, World } from '../types';
 import { mixSeed } from '../sim/rng';
+import { paramsOf } from '../sim/params';
 import { TICK_HOURS, index, type SimChimp } from '../sim/state';
 import { defaultConfig, type ObserverConfig } from './config';
 import { conflictTick, dayStep, finishProtocols, focalTruthTick, minuteStep, type OpenEncounter, type PendingHeard } from './protocols';
@@ -117,7 +118,7 @@ export function orand(o: Observer): number {
 
 export function createObserver(world: World, over: Partial<ObserverConfig> = {}): Observer {
   const cfg = defaultConfig(over.profile?.name ?? 'compressed', over);
-  const rec: Records = { ...emptyRecords(cfg.profile.name), seed: cfg.seed, worldSeed: world.seed, tickHours: TICK_HOURS, time0: world.time, troops: world.troops.map(t => t.id), mapSize: world.size };
+  const rec: Records = { ...emptyRecords(cfg.profile.name), seed: cfg.seed, worldSeed: world.seed, tickHours: TICK_HOURS, time0: world.time, troops: world.troops.map(t => t.id), mapSize: world.size, popCap: paramsOf(world).popCap };
   const o: Observer = {
     cfg, rng: mixSeed((world.seed ^ 0x0b5e ^ cfg.seed) >>> 0), rec, teams: [], interCursor: world.nextId - 1, callCursor: world.nextId - 1,
     open: [], hunts: new Map(), captures: [], roster: new Map(), status: new Map(), pendingBirths: new Map(), recentDead: [],

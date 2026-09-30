@@ -129,7 +129,12 @@ export interface Records {
   census: CensusRec[]; deaths: DeathRec[]; births: BirthRec[]; transfers: TransferRec[];
   phenology: PhenologyRec[]; transects: TransectRec[]; visits: TreeVisitRec[]; experiments: ExperimentRec[];
   alpha: { day: number; troop: number; id: number }[];
-  /** Stage C8: daily respiratory-sign censuses, first sightings of a snare injury, early-morning stress readings and urine lean-mass samples. */
+  /**
+   * Stage C8: the simulation's population cap and the number living at each 21:00 census (fertility is measured only below
+   * 90% of the cap: docs/realism-design.md §8 C8), daily respiratory-sign censuses, first sightings of a snare injury,
+   * early-morning stress readings and urine lean-mass samples.
+   */
+  popCap: number; living: { day: number; n: number }[];
   health: HealthRec[]; snared: { id: number; t: number }[]; stress: SampleRec[]; lean: SampleRec[];
   femaleOrder: { day: number; troop: number; ids: number[] }[];
   /** environment.fruitIndex at each monthly phenology round, and that round's observation month (T-PAT-8). */
@@ -185,7 +190,7 @@ export function recordsHash(r: Records): string {
 export function emptyRecords(profile = 'compressed'): Records {
   return {
     profile, seed: 1, worldSeed: 1, tickHours: 15 / 3600, ticks: 0, days: 0, time0: 0, troops: [1, 2, 3], mapSize: 160, points: pointTable(), scans: scanTable(), follows: [], roster: [], events: [], conflicts: [],
-    encounters: [], hunts: [], calls: [], census: [], deaths: [], births: [], transfers: [], phenology: [], transects: [], visits: [], experiments: [], alpha: [], health: [], snared: [], stress: [], lean: [], femaleOrder: [], fruitIndex: [], fruitMonth: [],
+    encounters: [], hunts: [], calls: [], census: [], deaths: [], births: [], transfers: [], phenology: [], transects: [], visits: [], experiments: [], alpha: [], popCap: 0, living: [], health: [], snared: [], stress: [], lean: [], femaleOrder: [], fruitIndex: [], fruitMonth: [],
     weather: { rainMm: 0, afternoonMm: 0, tmin: [], tmax: [] },
     truth: { activity: { male: [0, 0, 0, 0, 0, 0], female: [0, 0, 0, 0, 0, 0] }, pathM: {}, largestFrac: [], wholeFrac: [], nestFrac: [], wakeMin: [], settleMin: [], ground: 0, channel: 0, swollenDayHours: 0, mates: 0,
       encounters: 0, encountersHeard: 0, encountersSeen: 0, encounterLog: [], followedEncounters: [], patrols: [], groomMin: [], interactions: {}, conflicts: 0, fights: 0, reconciliations: 0, consolations: 0, killings: 0, hunts: 0, huntSuccesses: 0,
