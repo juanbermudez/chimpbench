@@ -1108,7 +1108,7 @@
    "date": "2026-09-30",
    "by": "science/simulation owner",
    "seen": "none",
-   "param": "cosmetic string rename MGOGO -> ChimpBench (user decision) in data/targets.json notes and one accept basis (T-LET-1: 'ChimpBench communities are small'), scripts/compare-*.ts credits and titles, the band scripts, guide-data.ts and docs/data credits; no metric, band or rule change; observer record hashes and the goldens unchanged (scripts/remote/verify.ts)",
+   "param": "cosmetic string rename MGOGO -> ChimpBench (user decision) in data/targets.json notes and T-IGE-1's accept basis ('ChimpBench communities are small') and the field notes of T-PAT-8, T-BRD-1 and T-FIS-5, scripts/compare-*.ts credits and titles, the band scripts, guide-data.ts and docs/data credits; no metric, band or rule change; observer record hashes and the goldens unchanged (scripts/remote/verify.ts)",
    "reason": "product renamed to ChimpBench in user-facing text",
    "targets": [
     "all"
