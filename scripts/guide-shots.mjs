@@ -84,6 +84,8 @@ async function save(name, { clip, width = 1600 } = {}) {
   console.log(`  ${written.at(-1)}`);
 }
 const want = name => !only || only.includes(name);
+// The right panel opens on the communities (with the unit grid); the selected animal's tile opens its chimp view.
+const chimpTab = async tab => { if (await page.locator('.rp-chimp').isHidden()) await page.locator('.unit[aria-current="true"]').click(); await page.locator(`[data-tab="${tab}"]`).click(); await wait(300); };
 const box = async sel => { const b = await page.locator(sel).first().boundingBox(); return b && { x: Math.max(0, b.x - 1), y: Math.max(0, b.y - 1), width: b.width + 2, height: b.height + 2 }; };
 
 try {
@@ -106,7 +108,7 @@ try {
     // The default roster is the selected chimp (West's alpha): wait for real model decisions, preferring one where
     // GLiNER and the rules disagree, so the strip shows both.
     await until(() => { const m = window.__MGOGO__.snapshot().model; return m.ready && m.applied > 0; }, null, 120000);
-    await page.locator('[data-tab="mind"]').click();
+    await chimpTab('mind');
     // A shared model server can be busy: take a disagreement if one comes within 2 minutes, else any applied answer.
     const start = Date.now();
     while (Date.now() - start < 300000) {
@@ -119,6 +121,7 @@ try {
   }
 
   if (want('close-party')) {
+    await chimpTab('overview');   // the chimp view with needs, personality and skills beside the forest
     await key('c'); await wait(3500);
     await save('close-party');
     await key('r'); await wait(1500);
@@ -130,6 +133,8 @@ try {
     // fades forced off (a debug switch), then live. Side panels hidden.
     await key('c'); await wait(2500);
     await key('b'); await key('i'); await wait(900);
+    // The camera follows the selected chimp: its "Following …" pill is chrome, not part of the keep-clear comparison.
+    const noPill = await page.addStyleTag({ content: '.follow-ind{display:none!important}' });
     const fadeOff = on => page.evaluate(v => { document.querySelector('canvas').__env.debug.fadeOverride = v; }, on ? 0 : null);
     const centre = { x: VIEW.width * .2, y: VIEW.height * .15, width: VIEW.width * .6, height: VIEW.height * .7 };
     let best = { az: 0, d: -1 };
@@ -157,6 +162,7 @@ try {
     await fadeOff(false); await wait(1800);
     await save('keep-clear');
     await key(' ');
+    await noPill.evaluate(el => el.remove());
     await key('b'); await key('i'); await key('r'); await wait(1500);
   }
 
@@ -181,7 +187,7 @@ try {
 
   if (want('experiment-shift') && withModel) {
     // Playback near the selected chimp's party; the Mind tab then pairs the decision before and after it.
-    await page.locator('[data-tab="mind"]').click();
+    await chimpTab('mind');
     await key('e'); await wait(500);
     await page.locator('[data-kind="playback-stranger"]').click();
     await until(() => !document.querySelector('.shift')?.classList.contains('waiting'), null, 60000).catch(() => {});

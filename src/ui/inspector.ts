@@ -2,18 +2,18 @@ import type { Ctx } from './app';
 import type { Action, Chimp, MemoryDigest, Relationship, World } from '../types';
 import type { InspectorTab } from './contracts';
 import { icon } from './icons';
-import { actionVerb, ageText, ago, cap, duration, esc, feedCat, interactionCat, nameOf, pct, RELATION_LABEL, relationClass, sinceText, stamp, troopOf, troopShort } from './format';
+import { actionVerb, ageText, ago, cap, duration, esc, feedCat, interactionCat, nameOf, pct, RELATION_LABEL, relationClass, stamp, troopOf, troopShort } from './format';
 import { bar, chip, empty, meter, radar, rankBadge, troopChip } from './parts';
 import { mindHtml, mindKey } from './mind';
 import { egoTreeSvg } from './family-tree';
 import { egoNetworkSvg, relationLegend } from './graph';
-import { alphaTimelineSvg, ladderHtml, tenureListHtml } from './hierarchy';
+import { alphaCardHtml, alphaTimelineSvg, ladderHtml, tenureListHtml } from './hierarchy';
 import { emblem } from './communities';
 import { CAT_ICON } from './feed';
 import { morph } from './morph';
 
-// Right-hand inspector: identity header + five tabs. Each tab renders only
-// when its content key changes; focus, <details> state and scroll survive.
+// Right panel, chimp view: identity header + five tabs (the community view, community-panel.ts, shares the panel).
+// Each tab renders only when its content key changes; focus, <details> state and scroll survive.
 
 const TABS: { id: InspectorTab; label: string; ic: string }[] = [
   { id: 'overview', label: 'Overview', ic: 'person' }, { id: 'mind', label: 'Mind', ic: 'brain' }, { id: 'family', label: 'Family', ic: 'tree' },
@@ -46,10 +46,15 @@ export function renderInto(el: HTMLElement, html: string) {
   }
 }
 
+/** The overview's one-line state: "Traveling · 17 min", or when and how the animal died. */
+export function nowLine(w: World, c: Chimp): string {
+  if (!c.alive) return `Died ${c.deathTime !== null ? stamp(w, c.deathTime) : ''}${c.causeOfDeath ? ` · ${c.causeOfDeath}` : ''}`.trim();
+  const t = c.actionTime ?? 0;
+  return `${actionVerb(c.action)} · ${t < 60 ? 'just started' : duration(t / 3600)}`;
+}
+
 function overviewHtml(ctx: Ctx, c: Chimp): string {
   const w = ctx.world();
-  const tn = c.targetId >= 0 ? nameOf(w, c.targetId) : '';
-  const targetLabel = c.targetId >= 0 && w.chimps.some(x => x.id === c.targetId) ? tn : c.targetId >= 0 ? (w.trees.find(t => t.id === c.targetId)?.common ?? (w.water.some(x => x.id === c.targetId) ? 'water' : '')) : '';
   const status: string[] = [];
   status.push(chip(cap(c.mood), `mood-${c.mood}`, 'Current mood'));
   if (c.sex === 'female' && c.cycleDay >= 0) status.push(chip(`Swelling ${pct(c.swelling)}%${c.swelling > 0.9 ? ' · maximal' : ''}`, c.swelling > 0.9 ? 'swell max' : 'swell', `Anogenital swelling; cycle day ${c.cycleDay}`));
@@ -64,21 +69,15 @@ function overviewHtml(ctx: Ctx, c: Chimp): string {
     meter('Stress', c.stress, 'neg'), meter('Health', c.health, 'good'), ...(c.injury > 0.01 ? [meter('Injury', c.injury, 'neg')] : []),
   ];
   const episodes = [...(c.episodes ?? [])].sort((a, b) => b.time - a.time).slice(0, 5);
+  // One line: what the animal is doing and for how long, then its tags (mood, cycle, meat, …).
   return `<div class="ov">
-    <section class="now ${c.decisionSource === 'decide' ? 'by-model' : ''}">
-      <div class="now-top"><span class="now-ic">${icon(ACTION_ICON[c.action] ?? 'leaf')}</span>
-        <div class="now-txt"><b>${esc(actionVerb(c.action))}${targetLabel ? ` <i>→ ${esc(targetLabel)}</i>` : ''}</b><span class="now-meta">${c.alive ? ((c.actionTime ?? 0) < 60 ? 'Now · just started' : `Now · for ${duration((c.actionTime ?? 0) / 3600)}`) : c.deathTime !== null ? `Died ${stamp(w, c.deathTime)}` : ''}</span></div>
-        <span class="src ${c.decisionSource === 'decide' ? 'model' : ''}" title="Who picked the current action">${c.decisionSource === 'decide' ? `${icon('spark')}GLiNER` : 'Rules'}</span></div>
-      <p class="now-reason">${esc(c.alive ? c.reason : `Cause of death: ${c.causeOfDeath ?? 'unknown'}`)}</p>
-      <div class="chips">${status.join('')}</div>
-    </section>
+    <section class="now-line" aria-label="Current state"><b>${icon(ACTION_ICON[c.action] ?? 'leaf')}${esc(nowLine(w, c))}</b>${status.join('')}</section>
     <section class="blk"><h3 class="eyebrow">Internal state <span class="muted">0–100</span></h3><div class="needs">${needs.join('')}</div></section>
     <section class="blk two">
       <div><h3 class="eyebrow">Personality</h3>${radar(c.personality)}</div>
       <div><h3 class="eyebrow">Skills</h3><div class="skills">${Object.entries(c.skills).map(([k, v]) => meter(cap(k), v, 'skill')).join('')}</div></div>
     </section>
     ${episodes.length ? `<section class="blk"><h3 class="eyebrow">Recent episodes</h3><ol class="diary">${episodes.map(e => `<li class="k-${e.kind}"><span class="mono">${ago(w, e.time)}</span>${esc(e.text)}</li>`).join('')}</ol></section>` : ''}
-    <p class="honest">Needs, personality and skills are simulation state (illustrative, uncalibrated).</p>
   </div>`;
 }
 
@@ -188,9 +187,8 @@ function socialHtml(ctx: Ctx, c: Chimp): string {
 function hierarchyHtml(ctx: Ctx, c: Chimp): string {
   const w = ctx.world(), t = troopOf(w, c.troopId);
   if (!t) return empty('No community', 'This individual has no community record.');
-  const alpha = w.chimps.find(x => x.id === t.alphaId);
   return `<div class="hier">
-    <section class="alpha-card" style="--c:${esc(t.color)}">${icon('crown')}<div><b>${alpha ? `<button class="lnk" data-select="${alpha.id}">${esc(alpha.name)}</button>` : 'Vacant'}</b><span class="ac-meta">${esc(troopShort(t))} alpha${alpha ? ` · ${t.alphaSince < 0 ? '≥ ' : ''}${duration(w.time - t.alphaSince)}, ${sinceText(w, t.alphaSince)}` : ' · contested, no male holds the position'}</span></div></section>
+    ${alphaCardHtml(w, t)}
     <section class="blk"><h3 class="eyebrow">Males <span class="muted">Elo score</span></h3>${ladderHtml(w, t, 'male', c.id, ctx.ranks, true)}</section>
     <section class="blk"><h3 class="eyebrow">Females <span class="muted">Elo score</span></h3>${ladderHtml(w, t, 'female', c.id, ctx.ranks, true)}</section>
     <section class="blk"><h3 class="eyebrow">Alpha tenures</h3>${alphaTimelineSvg(w, [t], c.id, 340)}${tenureListHtml(w, t)}</section>
@@ -236,15 +234,14 @@ export function createInspector(root: HTMLElement, ctx: Ctx) {
       const w = ctx.world(), c = ctx.selected();
       if (!c) { renderInto(body, empty('Nobody selected', 'Click a chimp in the forest, the map or the field log.', 'person')); return; }
       const t = troopOf(w, c.troopId);
-      const hk = [c.id, c.name, c.alive, c.stage, Math.floor(c.age * 10), c.troopId, t?.alphaId, (c.sex === 'male' ? t?.maleHierarchy : t?.femaleHierarchy)?.indexOf(c.id), c.controller, w.modelPolicy.mode].join('|');
+      const hk = [c.id, c.name, c.alive, c.stage, Math.floor(c.age * 10), c.troopId, t?.alphaId, (c.sex === 'male' ? t?.maleHierarchy : t?.femaleHierarchy)?.indexOf(c.id)].join('|');
       if (force || hk !== headKey) {
         headKey = hk;
-        const controlled = c.controller === 'model' && w.modelPolicy.mode !== 'off';
         renderInto(head, `<div class="ih-row">${t ? emblem(t, 'lg') : ''}<div class="ih-id">
           <h2 class="ih-name">${esc(c.name)}${c.alive ? '' : ' <span class="dagger">†</span>'}</h2>
           <p class="ih-meta">${cap(c.stage)} ${c.sex} · ${ageText(c)}${t ? ` · ${esc(troopShort(t))}` : ''}${c.natalTroopId !== c.troopId ? ' · immigrant' : ''}</p></div>
           <div class="ih-actions"><button class="icon-btn" data-act="prev" aria-label="Previous in community ([)" title="Previous in community ([)">${icon('chevronL')}</button><button class="icon-btn" data-act="next" aria-label="Next in community (])" title="Next in community (])">${icon('chevronR')}</button><button class="icon-btn" data-act="focus" aria-label="Focus camera (F)" title="Focus camera (F)">${icon('focus')}</button><button class="icon-btn insp-collapse" data-act="collapse" aria-label="Collapse inspector (I)" title="Collapse inspector (I)">${icon('chevronR')}</button><button class="icon-btn sheet-close" data-act="close-sheet" aria-label="Close inspector">${icon('down')}</button></div></div>
-          <div class="ih-badges">${rankBadge(w, c)}${controlled ? `<span class="ctl-badge">${icon('spark')}GLiNER-controlled</span>` : '<span class="ctl-badge rules">Rules</span>'}<span class="ih-no mono" title="Individual number">#${String(c.id).padStart(3, '0')}</span></div>`);
+          <div class="ih-badges">${rankBadge(w, c)}<span class="ih-no mono" title="Individual number">#${String(c.id).padStart(3, '0')}</span></div>`);
       }
       const tk = ctx.state.tab;
       if (tk !== tabKey || force) { tabKey = tk; tabs.querySelectorAll<HTMLElement>('[data-tab]').forEach(b => { const on = b.dataset.tab === tk; b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1; }); body.setAttribute('aria-labelledby', `tab-${tk}`); }
@@ -254,7 +251,7 @@ export function createInspector(root: HTMLElement, ctx: Ctx) {
         case 'family': bk = [c.id, w.chimps.length, w.chimps.filter(x => !x.alive).length, Math.floor(w.time / 24)].join('|'); html = () => familyHtml(ctx, c); break;
         case 'social': bk = [c.id, Math.floor(w.time * 4), w.interactions.length, w.events.length, c.digests?.length ?? 0].join('|'); html = () => socialHtml(ctx, c); break;
         case 'hierarchy': bk = [c.id, w.troops.map(tt => [tt.alphaId, tt.maleHierarchy.join(','), tt.femaleHierarchy.join(',')].join(';')).join('/'), Math.floor(w.time)].join('|'); html = () => hierarchyHtml(ctx, c); break;
-        default: bk = [c.id, c.action, c.targetId, c.reason, c.mood, c.alive, Math.round(c.hunger * 50), Math.round(c.thirst * 50), Math.round(c.energy * 50), Math.round(c.social * 50), Math.round(c.stress * 50), Math.round(c.health * 50), Math.round(c.injury * 50), Math.round(c.swelling * 20), c.lactating, c.pregnancy > 0, c.carryingMeat > 0, c.vocal, c.episodes?.length, c.decisionSource, Math.floor((c.actionTime ?? 0) / 60)].join('|'); html = () => overviewHtml(ctx, c);
+        default: bk = [c.id, nowLine(w, c), c.mood, c.alive, Math.round(c.hunger * 50), Math.round(c.thirst * 50), Math.round(c.energy * 50), Math.round(c.social * 50), Math.round(c.stress * 50), Math.round(c.health * 50), Math.round(c.injury * 50), Math.round(c.swelling * 20), c.lactating, c.pregnancy > 0, c.carryingMeat > 0, c.vocal, c.nest !== null, c.episodes?.length].join('|'); html = () => overviewHtml(ctx, c);
       }
       bk = `${tk}:${bk}`;
       if (force || bk !== bodyKey) {

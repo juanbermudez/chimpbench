@@ -76,10 +76,49 @@ try {
   pass(`GLiNER applied ${s2.model.applied} (latency ${Math.round(s2.model.latencyMs)} ms, ${s2.model.inputTokens} tokens)`);
   }
 
+  // Right panel: it opens on the communities, with the selected animal's community and its unit grid. A tile selects
+  // that animal (chimp view, Back button) and the camera follows it; a drag lets go; F takes it back.
+  const rp = () => page.evaluate(() => ({ panel: document.querySelector('.app').dataset.panel, tiles: document.querySelectorAll('.unit').length, current: document.querySelector('.unit[aria-current="true"]')?.dataset.unit ?? null }));
+  const rp0 = await rp();
+  assert.equal(rp0.panel, 'community', 'the right panel opens on the communities');
+  assert.ok(rp0.tiles >= 5 && rp0.current !== null, `unit grid with the selected animal (${JSON.stringify(rp0)})`);
+  await key('r'); await page.waitForTimeout(1200);
+  const pick = await page.evaluate(() => Number([...document.querySelectorAll('.unit')][1].dataset.unit));
+  await page.locator(`.unit[data-unit="${pick}"]`).click();
+  await page.waitForTimeout(2000);
+  const fol = () => page.evaluate(id => {
+    const e = document.querySelector('canvas').__env, v = { x: 0, y: 0, z: 0, set(x, y, z) { this.x = x; this.y = y; this.z = z; return this; } };
+    e.creatures.getPosition(id, v);
+    // How far the animal (torso) is from the camera's line of sight through the focus: its offset from the view centre.
+    const t = e.rig.target, c = e.rig.camera.position, dx = t.x - c.x, dy = t.y - c.y, dz = t.z - c.z, n = Math.hypot(dx, dy, dz);
+    const wx = v.x - t.x, wy = v.y + 0.6 - t.y, wz = v.z - t.z, a = (wx * dx + wy * dy + wz * dz) / n;
+    return { followId: e.rig.followId, d: Math.sqrt(Math.max(0, wx * wx + wy * wy + wz * wz - a * a)), tx: t.x, tz: t.z };
+  }, pick);
+  let far = 0;
+  for (let i = 0; i < 12; i++) { await page.waitForTimeout(250); far = Math.max(far, (await fol()).d); }
+  assert.equal((await rp()).panel, 'chimp', 'a tile opens the chimp view');
+  assert.equal((await fol()).followId, pick, "the camera follows the tile's animal");
+  assert.ok(far < 2, `the animal stays within 2 m of the view centre (${far.toFixed(2)} m)`);
+  assert.ok(await page.locator('.follow-ind').isVisible(), 'following indicator shown');
+  assert.ok(await page.locator('.rp-back').isVisible(), 'back button shown');
+  const vb = await page.locator('#viewport').boundingBox(), x0 = vb.x + vb.width * 0.45, y0 = vb.y + vb.height * 0.5;
+  await page.mouse.move(x0, y0); await page.mouse.down(); await page.mouse.move(x0 + 120, y0 + 50, { steps: 8 }); await page.mouse.up();
+  await page.waitForTimeout(800);
+  const f2 = await fol(); await page.waitForTimeout(1500); const f3 = await fol();
+  assert.equal(f3.followId, null, 'a drag lets the animal go');
+  assert.ok(Math.hypot(f3.tx - f2.tx, f3.tz - f2.tz) < 0.05, 'and the focus stays where the user put it');
+  assert.ok(await page.locator('.follow-ind').isHidden(), 'following indicator hidden');
+  await key('f'); await page.waitForTimeout(2000);
+  assert.equal((await fol()).followId, pick, 'F follows again');
+  await shot('e2e-follow');
+  pass(`right panel: ${rp0.tiles} unit tiles; a tile follows its animal (within ${far.toFixed(2)} m), a drag lets go, F takes it back`);
+
   // Mind tab shows the loop.
   await page.locator('[data-tab="mind"]').click();
   await page.waitForTimeout(800);
   assert.equal((await snap()).tab, 'mind');
+  assert.equal(await page.locator('.mind .ctl').count(), 0, 'no model card at the top of the Mind tab');
+  assert.equal(await page.locator('.mctl input[data-act="control"]').count(), 1, 'the per-chimp model switch is still there');
   await shot('e2e-mind');
   pass('Mind tab shows the decision trace');
 
