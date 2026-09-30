@@ -121,6 +121,12 @@ The pre-C7a female core-area cost amplifies the effect. With it removed (not a C
 - Before the amendment the field population collapsed (seed 48: 37 living by year 2).
 - Lactating females still reach median hunger 0.95–1.00 and condition 0.26–0.30 in lean periods, and seed 48 still loses 11 females to starvation over 10 years.
 
+**40-year run with the amendment (development; pre-C13 code, branch 24dc7b2; field, natural aging, `--demography`, seeds 48, 7, 21, 5, 11; `artifacts/validation/c8/dev-40y-amended.json`):**
+- Living after 40 years, from 49: 13, 19, 29, 5, 10. Births 66 / 79 / 79 / 58 / 52, deaths 102 / 109 / 99 / 100 / 91. The populations decline in every seed.
+- Fitted rows: T-DEM-1 0.25 (inconclusive, would fail); T-DEM-2 fail on females (e15 12.2 y; males 20.2 y, in band); T-DEM-5 0.107 pass; T-DEM-6 attack 0.76 pass; T-DEM-9 0.148 inconclusive (would pass); T-DEM-10 0.215 inconclusive (would pass); T-DEM-11 14.8 pass; T-DEM-12 5.5 pass.
+- Compared with the run before the amendment (seeds 48 and 7: q1 0.61, female e15 2.3 y), the amendment helps. Adult-female mortality still drives the decline, consistent with the residual lactation deficit above.
+- The C13 rules policy and intake valuation (merged after this run) change the food choices this deficit depends on. The post-C13 check follows.
+
 ## The food-valuation clue (Jev free-arms test; integrator's note)
 
 - On `main` without the amendment (seeds 6501–6905, field, 5 days after a 180-day burn-in), median hunger was:
