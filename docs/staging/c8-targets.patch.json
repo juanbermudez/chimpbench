@@ -729,6 +729,29 @@
    ],
    "verdicts": "T-RNG-5 (held out) will move because hungry mothers range farther: the rule was designed from the energy diagnosis, not from T-RNG-5, and T-RNG-5 is reported with that caveat; demography rows development only",
    "class": "C7a amendment"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "C8 implementer (worktree branch; entered by the integrator at registration) (integrator ruling)",
+   "seen": "none: the only output was the failing test's diff on a 1.5-day compressed window, in which every sealed row had n = 0 and empty arrays (log deleted)",
+   "param": "Sealing gap closed at the merge of main a6005d4: scripts/ft-field.ts (decide-ft track) computed every metric with a compute function, sealed ones included, without the --unseal gate. It now skips sealed metrics like src/field/run.ts, with a spy test (tests/ft-field.test.ts), and its protocolHash copy re-exports scripts/lib/protocol-hash.ts. Sealing audit after the ft-field gap: no values exist in artifacts/decide-ft (checked by the TRAINING session file by file, 2026-09-30: T-DEM-14, T-DEM-15 and T-LET-5 appear only as n/a rows with null values because snapshot-v3's METRICS had no compute for them; T-DEM-16-24 appear nowhere); T-DEM-14/15/16-24 and T-LET-5 remain sealed",
+   "reason": "sealed rows must be unreachable unless --unseal passes the hash-bound freeze check (early-life-prereg §1.2)",
+   "targets": [
+    "T-DEM-14",
+    "T-DEM-15",
+    "T-DEM-16",
+    "T-DEM-17",
+    "T-DEM-18",
+    "T-DEM-19",
+    "T-DEM-20",
+    "T-DEM-21",
+    "T-DEM-22",
+    "T-DEM-23",
+    "T-DEM-24",
+    "T-LET-5"
+   ],
+   "verdicts": "sealed (unchanged)",
+   "class": "sealing audit"
   }
  ],
  "registryRefsToSources": {

@@ -1131,7 +1131,8 @@ The "Files" row of §5.7 should list `candidates.ts` (guardian), `conflict.ts` (
 > 1. Mechanism commit; the pre-run condition check (pooled juveniles, levers off, logged); exposure counts published.
 > 2. Baseline hazard refit to the fitted rows with every lever on; fitted-only development on seeds 48, 7, 21, 5, 11.
 > 3. Fitted replication on fresh set A (1111, 1212, 1313, 1414, 1515); parameter freeze (registry hash logged).
-> 4. One hash-bound `--unseal` run: held-out rows scored on fresh set B (1616, 1717, 1818, 1919, 2020, 2121, 2222, 2323, 2424, 2525), with the development seeds and set A reported as replication and spread; T-LET-5 from `field-scenario.ts expansion` on set B.
+> 4. One hash-bound `--unseal` run: held-out rows scored on fresh set B (1717, 1818, 1919, 2020, 2121, 2222, 2323, 2424, 2525, 2626), with the development seeds and set A reported as replication and spread; T-LET-5 from `field-scenario.ts expansion` on set B.
+>    *Seed replacement (30 September 2026, before any unsealing): set B's 1616 became 2626 because a proof dry run had run 1616 (protocolLog entry "reserved seed replacement before any proof run", 2026-09-30).*
 > 5. Full-table regression (every target, field profile, 1 year, 5 seeds) against the C7a proof; compressed bench and `scripts/sim-metrics.ts`.
 > 6. Ablations A1 and A2 after scoring; independent review.
 > **Success Criteria** (natural aging, field profile, 40 years; fertility measured only below 90% of the population cap; spread reported for every row):
@@ -1182,7 +1183,8 @@ The "Files" row of §5.7 should list `candidates.ts` (guardian), `conflict.ts` (
 4. **Fitted replication** on fresh set A (1111, 1212, 1313, 1414, 1515), spread reported. **Parameter freeze** (registry hash logged).
 5. **Proof run.**
    - One hash-bound `--unseal` run at natural aging, field profile, 40 years.
-   - **Held-out rows scored on fresh set B** (1616, 1717, 1818, 1919, 2020, 2121, 2222, 2323, 2424, 2525). None of sets A or B was used in any logged run as of 29 September 2026; the integrator confirms.
+   - **Held-out rows scored on fresh set B** (1717, 1818, 1919, 2020, 2121, 2222, 2323, 2424, 2525, 2626). None of sets A or B was used in any logged run as of 29 September 2026; the integrator confirms.
+   - *Seed replacement (30 September 2026, before any unsealing): 1616 became 2626, because a 29 September proof dry run had run 1616 (the expansion scenario, 1 compressed year). See the protocolLog entry "reserved seed replacement before any proof run" (2026-09-30).*
    - The development seeds and set A are reported alongside as replication and spread.
    - T-LET-5 from `scripts/field-scenario.ts expansion --years 10` on set B, with the paired baseline.
    - Counted and encoded rows listed apart.
