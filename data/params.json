@@ -413,6 +413,101 @@
    "notes": "A silent approach toward heard strangers gives up after this long. Compressed literal before C5a (900 s × 0.044 m/s ≈ 40 m ≈ the 36 m hearing radius). Field: time to walk the 1 km hearing radius at ~0.3 m/s effective (C5a review: the unscaled cap stopped approaches ~350 m out; design)."
   },
   {
+   "id": "assocBondW",
+   "group": "social",
+   "value": 0,
+   "units": "score per bond",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    5
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "gruberZuberbuhler2013"
+   ],
+   "clock": "none",
+   "symbol": "P.assocBondW",
+   "file": "src/sim/candidates.ts",
+   "notes": "Stage C9: party-follow and join-call scores gain this x bond with the leader or caller (allies were recruited to travel more often, gruberZuberbuhler2013; weight design). Default 0 (off); the pre-registered C9 scenario value is 0.3. Ablation switch."
+  },
+  {
+   "id": "assocEveryMin",
+   "group": "social",
+   "value": 15,
+   "units": "eco-min",
+   "range": [
+    5,
+    60
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    1440
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.assocEveryMin",
+   "file": "src/sim/fission.ts",
+   "notes": "Stage C9: party co-membership is scanned this often in daylight (15-min scans, docs/realism-design.md 5.4)."
+  },
+  {
+   "id": "assocHistCellM",
+   "group": "social",
+   "value": 8,
+   "units": "m",
+   "range": [
+    4,
+    1000
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    10000
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.assocHistCellM",
+   "file": "src/sim/fission.ts",
+   "notes": "Stage C9: cell size of the per-individual location histograms that give the clusters' range overlap (field 400 m, docs/realism-design.md 5.4; compressed 8 m, the layout x 1/50).",
+   "profiles": {
+    "compressed": 8,
+    "field": 400
+   }
+  },
+  {
+   "id": "assocMinScans",
+   "group": "social",
+   "value": 50,
+   "units": "scans",
+   "range": [
+    20,
+    200
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    100000
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.assocMinScans",
+   "file": "src/sim/fission.ts",
+   "notes": "Stage C9: individuals with fewer (decayed) association scans are left out of the monthly network (docs/realism-design.md 5.4).",
+   "integer": true
+  },
+  {
    "id": "asyncGraceMin",
    "group": "decision",
    "value": 6,
@@ -2580,6 +2675,29 @@
    "notes": "How long a Scream call is shown and audible."
   },
   {
+   "id": "callSignatures",
+   "group": "communication",
+   "value": 1,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.callSignatures",
+   "file": "src/sim/events.ts",
+   "integer": true,
+   "notes": "Stage C10 switch (docs/realism-design.md 'C10 pre-registration'): pant-hoots carry six signature features and drums their inter-hit intervals (Call.features; src/sim/signals.ts). 0 = no features (the key is omitted), T-COM-5 and T-COM-6 n/a. Ablation switch."
+  },
+  {
    "id": "callSuppressW",
    "group": "communication",
    "value": 0.3,
@@ -2602,6 +2720,28 @@
    "notes": "Calls are less likely where neighbours range or the community lost before (edges are quiet; design, §5.2; T-COM-3 held out)."
   },
   {
+   "id": "callTravelHooMin",
+   "group": "communication",
+   "value": 0.25,
+   "units": "eco-min",
+   "range": [
+    0.1,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1000000
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.callTravelHooMin",
+   "file": "src/sim/events.ts",
+   "notes": "Stage C10: how long a travel hoo is shown and audible (the call itself lasts ~0.125 s; one tick is the shortest display, design)."
+  },
+  {
    "id": "callWhimperMin",
    "group": "communication",
    "value": 1,
@@ -2622,6 +2762,29 @@
    "symbol": "CALL_MINUTES (Whimper)",
    "file": "src/sim/events.ts",
    "notes": "How long a Whimper call is shown and audible."
+  },
+  {
+   "id": "callerDiscrim",
+   "group": "communication",
+   "value": 1,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.callerDiscrim",
+   "file": "src/sim/perception.ts",
+   "integer": true,
+   "notes": "Stage C10 switch: a listener counts stranger callers (heardN) by their perceived pant-hoot features (a new caller when the perceived vector differs from every caller already counted by more than discrimThreshold); drums carry no identity. 0 = the C6 rule (distinct true caller ids). Needs callSignatures. Ablation switch."
   },
   {
    "id": "candidateJitterSpan",
@@ -4528,6 +4691,72 @@
    "notes": "Mothers charge an aggressor of their offspring within this distance. Compressed stand-in scaled with sight (field ≈ compressed × 35/15, design). Also the radius at which a guardian's presence deters charges on its ward (C8)."
   },
   {
+   "id": "discrimDistW",
+   "group": "communication",
+   "value": 1,
+   "units": "feature SD per hearing radius",
+   "range": [
+    0,
+    3
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    10
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.discrimDistW",
+   "file": "src/sim/signals.ts",
+   "notes": "Stage C10: growth of perception noise with distance, per hearing radius of the call kind (design [L])."
+  },
+  {
+   "id": "discrimNoise0",
+   "group": "communication",
+   "value": 0.3,
+   "units": "feature SD",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    10
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.discrimNoise0",
+   "file": "src/sim/signals.ts",
+   "notes": "Stage C10: perception noise SD added to a heard call's features at zero distance (design [L]; callers are only partly distinguishable, desai2022)."
+  },
+  {
+   "id": "discrimThreshold",
+   "group": "communication",
+   "value": 1.5,
+   "units": "RMS feature difference",
+   "range": [
+    0.5,
+    3
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    10
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.discrimThreshold",
+   "file": "src/sim/perception.ts",
+   "notes": "Stage C10: a heard stranger pant-hoot counts as a new caller when its perceived features differ from every caller already counted in the window by more than this root-mean-square difference (design [L])."
+  },
+  {
    "id": "dispersalHazardPerY",
    "group": "reproduction",
    "value": 3,
@@ -4897,6 +5126,122 @@
    "symbol": "applyIntervention drought / fruitIndexNow",
    "file": "src/sim/interventions.ts",
    "notes": "Fruit index multiplier during a drought."
+  },
+  {
+   "id": "drumHitsMedian",
+   "group": "communication",
+   "value": 4,
+   "units": "hits",
+   "range": [
+    3,
+    6
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    2,
+    20
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "eleuteri2025"
+   ],
+   "clock": "none",
+   "symbol": "P.drumHitsMedian",
+   "file": "src/sim/signals.ts",
+   "notes": "Stage C10: median hits per drumming bout (eastern chimpanzees: median 4, mode 3; eleuteri2025)."
+  },
+  {
+   "id": "drumHitsSigma",
+   "group": "communication",
+   "value": 0.45,
+   "units": "log SD",
+   "range": [
+    0.2,
+    0.8
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    3
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "eleuteri2025"
+   ],
+   "clock": "none",
+   "symbol": "P.drumHitsSigma",
+   "file": "src/sim/signals.ts",
+   "notes": "Stage C10: log-normal spread of hits per bout; 0.45 with median 4 puts the mode at 3 after rounding (eleuteri2025; derived)."
+  },
+  {
+   "id": "drumIntervalMs",
+   "group": "communication",
+   "value": 229,
+   "units": "ms",
+   "range": [
+    150,
+    350
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    20,
+    2000
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "eleuteri2025"
+   ],
+   "clock": "none",
+   "symbol": "P.drumIntervalMs",
+   "file": "src/sim/signals.ts",
+   "notes": "Stage C10: mean inter-hit interval of a drumming bout (eleuteri2025: ~229 ms)."
+  },
+  {
+   "id": "drumJitter",
+   "group": "communication",
+   "value": 0.1,
+   "units": "fraction",
+   "range": [
+    0,
+    0.3
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.drumJitter",
+   "file": "src/sim/signals.ts",
+   "notes": "Stage C10: relative SD of each inter-hit interval (design)."
+  },
+  {
+   "id": "drumSwing",
+   "group": "communication",
+   "value": 0.3,
+   "units": "fraction",
+   "range": [
+    0,
+    0.5
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    0.9
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.drumSwing",
+   "file": "src/sim/signals.ts",
+   "notes": "Stage C10: eastern drummers alternate short and long intervals (eleuteri2025); intervals are mean x (1 -/+ this). The size is design."
   },
   {
    "id": "eloK",
@@ -5808,6 +6153,32 @@
    "notes": "Digest priority of transfer events (higher is kept first)."
   },
   {
+   "id": "fallbackCapH",
+   "group": "feeding",
+   "value": 0,
+   "units": "feeding-hours per cell",
+   "range": [
+    0,
+    2
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    100
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.fallbackCapH",
+   "file": "src/sim/fallback.ts",
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage C7c (field; c7b-prereg 6.1): fallback foods (pith, herbs, sapling leaves) are depletable: a forageCellM cell holds this many animal-hours of feeding at the full rate when full, on average (skewed by fallbackPatchExp); feeding removes stock in proportion to what is left and a deficit regrows over fallbackRegrowDays. Design: a mean hectare holds about one animal-hour; herb feeding restricts party size (malenky1994). Consistency, not the setting: a 20-member community eating ~1.2 h of fallback per animal-day needs ~7 km2 at steady state. 0 = off, the unlimited field. Pre-registered field value 1.0; off by default after the C7c direction check (c7b-prereg section 7): the range kernel fell (2.13 -> 1.83 km2) and fallback nearly vanished (fruit share 0.84 -> 0.95), with party size cancelling the joint-trip gain when both are on."
+  },
+  {
    "id": "fallbackForageW",
    "group": "feeding",
    "value": 0.65,
@@ -5854,6 +6225,116 @@
    "symbol": "forageTick fallback",
    "file": "src/sim/execution.ts",
    "notes": "Leaves, pith and herbs: lower-quality fallback foods [H for fallback use; rate design]."
+  },
+  {
+   "id": "fallbackMoveOnFrac",
+   "group": "feeding",
+   "value": 0,
+   "units": "share of stock",
+   "range": [
+    0.25,
+    0.75
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.fallbackMoveOnFrac",
+   "file": "src/sim/execution.ts",
+   "profiles": {
+    "compressed": 0,
+    "field": 0.5
+   },
+   "notes": "Stage C7c (field; c7b-prereg 6.1): an animal feeding on fallback walks on along its heading at the forage pace once its own cell holds less than this share of its stock and no better cell is in view. Design. Read only when fallbackCapH > 0."
+  },
+  {
+   "id": "fallbackPatchExp",
+   "group": "feeding",
+   "value": 0,
+   "units": "exponent",
+   "range": [
+    1,
+    3
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    10
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.fallbackPatchExp",
+   "file": "src/sim/fallback.ts",
+   "profiles": {
+    "compressed": 0,
+    "field": 2
+   },
+   "notes": "Stage C7c (field; c7b-prereg 6.1): cell capacity is fallbackCapH x (p + 1) u^p (mean fallbackCapH): with 2, half the cells hold 12.5% of the stock and the richest 10% hold 27%. Design; terrestrial herbs are scarcer and patchier at Kibale than at Lomako (malenky1994) [M, qualitative]. Read only when fallbackCapH > 0."
+  },
+  {
+   "id": "fallbackRateRatio",
+   "group": "feeding",
+   "value": 0,
+   "units": "x ripe-fruit rate",
+   "range": [
+    0.32,
+    0.58
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "H",
+   "sources": [
+    "uwimbabazi2019",
+    "potts2011"
+   ],
+   "refs": [
+    "docs/research.md (C7c): uwimbabazi2019 energy intake rates; potts2011 fallback shares"
+   ],
+   "clock": "none",
+   "symbol": "P.fallbackRateRatio",
+   "file": "src/sim/fallback.ts",
+   "profiles": {
+    "compressed": 0,
+    "field": 0.39
+   },
+   "notes": "Stage C7c (field; c7b-prereg 6.1): fallback intake at full stock is this share of the ripe-fruit rate (fruitIntakePerH x fruitHungerFactor). Energy intake 10.7 kcal/min on ripe fruit, 3.4 on pith, 6.2 on young leaves (Kanyawara females, uwimbabazi2019), weighted by Kanyawara feeding shares of pith 17.4% and young leaves 6.9% (potts2011): 4.2 / 10.7 = 0.39. Range: pith alone 0.32 to leaves alone 0.58. Read only when fallbackCapH > 0."
+  },
+  {
+   "id": "fallbackRegrowDays",
+   "group": "feeding",
+   "value": 30,
+   "units": "days",
+   "range": [
+    10,
+    90
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    10000
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.fallbackRegrowDays",
+   "file": "src/sim/fallback.ts",
+   "profiles": {
+    "compressed": 30,
+    "field": 30
+   },
+   "notes": "Stage C7c (field; c7b-prereg 6.1): a fallback cell's deficit decays with this time constant (herb and sapling regrowth; design, no source). Read only when fallbackCapH > 0."
   },
   {
    "id": "familiarFullLevel",
@@ -6574,6 +7055,122 @@
    "notes": "Spread of first swelling ages."
   },
   {
+   "id": "fissionMinAdults",
+   "group": "social",
+   "value": 3,
+   "units": "adults",
+   "range": [
+    2,
+    5
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    50
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.fissionMinAdults",
+   "file": "src/sim/fission.ts",
+   "notes": "Stage C9 split rule: adult males and adult females each cluster must hold at least (docs/realism-design.md 5.4).",
+   "integer": true
+  },
+  {
+   "id": "fissionMonths",
+   "group": "social",
+   "value": 12,
+   "units": "months",
+   "range": [
+    6,
+    24
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    240
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.fissionMonths",
+   "file": "src/sim/fission.ts",
+   "notes": "Stage C9 split rule: consecutive months the conditions must hold (middle of the 6-24 prior; Gombe and Ngogo took 1-3 years).",
+   "integer": true
+  },
+  {
+   "id": "fissionOn",
+   "group": "social",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.fissionOn",
+   "file": "src/sim/fission.ts",
+   "notes": "Stage C9 switch (docs/realism-design.md 'C9 pre-registration'): association bookkeeping, monthly community detection, the a priori split rule and new-community creation. Off by default (no state written; worlds identical to pre-C9); the C9 scenario turns it on. Ablation switch.",
+   "integer": true
+  },
+  {
+   "id": "fissionOverlap",
+   "group": "social",
+   "value": 0.5,
+   "units": "Bhattacharyya coefficient",
+   "range": [
+    0.3,
+    0.6
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.fissionOverlap",
+   "file": "src/sim/fission.ts",
+   "notes": "Stage C9 split rule: overlap of the clusters' location histograms at most this (middle of the 0.3-0.6 prior; not tuned). Ngogo's West-Central range overlap was 0.65-0.77 before 2016 and 0.31-0.44 after (reference only)."
+  },
+  {
+   "id": "fissionQ",
+   "group": "social",
+   "value": 0.4,
+   "units": "modularity",
+   "range": [
+    0.3,
+    0.5
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [
+    "traag2019",
+    "newman2006"
+   ],
+   "clock": "none",
+   "symbol": "P.fissionQ",
+   "file": "src/sim/fission.ts",
+   "notes": "Stage C9 split rule: modularity of the best two-cluster split must be at least this (middle of the 0.3-0.5 prior, docs/realism-design.md 5.4; not tuned)."
+  },
+  {
    "id": "fleeStepM",
    "group": "movement",
    "value": 8,
@@ -6654,6 +7251,126 @@
     "field": 10
    },
    "notes": "Dependents follow the caretaker with urgency 1.3 + d / this. Body-scale distance: the same in both profiles (design)."
+  },
+  {
+   "id": "foodCallBase",
+   "group": "communication",
+   "value": 0.35,
+   "units": "probability",
+   "range": [
+    0.1,
+    0.7
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": true,
+   "evidence": "M",
+   "sources": [
+    "kalanBoesch2015"
+   ],
+   "clock": "none",
+   "symbol": "P.foodCallBase",
+   "file": "src/sim/execution.ts",
+   "notes": "Stage C10: base probability of a food grunt on arriving in a crown with crop > 0.3 (Taï: food calls at about half of feeding events, kalanBoesch2015, abstract, P. t. verus). May be refitted once to T-COM-8's band centre on development seeds (logged).",
+   "prior": {
+    "dist": "uniform"
+   }
+  },
+  {
+   "id": "foodCallCropW",
+   "group": "communication",
+   "value": 0.3,
+   "units": "probability per crop unit",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    5
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.foodCallCropW",
+   "file": "src/sim/execution.ts",
+   "notes": "Stage C10: food-call probability added per unit of crop above 0.3 (direction from docs/realism-design.md 5.8; design)."
+  },
+  {
+   "id": "foodCallMaleW",
+   "group": "communication",
+   "value": 0.05,
+   "units": "probability per male",
+   "range": [
+    0,
+    0.2
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "kalanBoesch2015"
+   ],
+   "clock": "none",
+   "symbol": "P.foodCallMaleW",
+   "file": "src/sim/execution.ts",
+   "notes": "Stage C10: food-call probability added per other adult male in sight, up to 3 (more calling with more males present, kalanBoesch2015; magnitude design)."
+  },
+  {
+   "id": "foodCallPartnerW",
+   "group": "communication",
+   "value": 0.15,
+   "units": "probability",
+   "range": [
+    0,
+    0.4
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "slocombe2010"
+   ],
+   "clock": "none",
+   "symbol": "P.foodCallPartnerW",
+   "file": "src/sim/execution.ts",
+   "notes": "Stage C10: food-call probability added when a bonded partner (bond >= 0.5) or the alpha is in sight (calls depend on an important social partner nearby, slocombe2010; magnitude design)."
+  },
+  {
+   "id": "foodCallRule",
+   "group": "communication",
+   "value": 1,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.foodCallRule",
+   "file": "src/sim/execution.ts",
+   "integer": true,
+   "notes": "Stage C10 switch: food grunts at arrival in a fruiting crown are probabilistic and audience-dependent (foodCall*; kalanBoesch2015, slocombe2010). 0 = the C7a rule (a grunt whenever the crop exceeds 0.3). Ablation switch."
   },
   {
    "id": "foodTreeDensityPerHa",
@@ -7428,6 +8145,35 @@
    "symbol": "makeChimp gestation",
    "file": "src/sim/generation.ts",
    "notes": "Spread of gestation lengths (222-232 days). The 222–232 d span is narrower than the cited 208–235 d, so the level is not claimed (C5a review)."
+  },
+  {
+   "id": "goalDistScaleM",
+   "group": "movement",
+   "value": 0,
+   "units": "m",
+   "range": [
+    0,
+    3200
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1000000
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/research.md (C7c-C7d): janson2014 (the D -> 0 limit, nearest unused known resource weighted by value)"
+   ],
+   "clock": "none",
+   "symbol": "P.goalDistScaleM",
+   "file": "src/sim/candidates.ts",
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage C7e (field; c7b-prereg 9): goal order among out-of-sight trees by (worth - revisit) x D / (D + max(d, memoryTreeMinM)); only the top-ranked tree is offered, at its usual score. D -> 0 is route chaining, D -> infinity no distance preference. 0 = off (the C7c-C7d four-best shortlist; compressed). Declared calibration against Taï straightness, turning and path rate (loss and seeds in c7b-prereg 9.2); Fitted (C7e) against Taï (seeds 3909, 4010; compare-movement 0.25 y): loss off 0.163; D = 50, 100, 200, 400, 800, 1,600, 3,200 m gave 0.85, 0.94, 1.28, 0.85, 0.74, 0.45, 0.25 (straightness rises to 0.26-0.33 but turning rises to 1.1-2.1 rad and path falls to 85-114 m/h); no value beats off, so the field value stays 0 (c7b-prereg 9.5). Prior for the fit: 50-3,200 m (0 = off)."
   },
   {
    "id": "groomCreditRetainPerH",
@@ -8485,6 +9231,32 @@
    "profiles": {
     "compressed": 20,
     "field": 300
+   }
+  },
+  {
+   "id": "hearTravelHooM",
+   "group": "communication",
+   "value": 9,
+   "units": "m",
+   "range": [
+    5,
+    100
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1000000
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.hearTravelHooM",
+   "file": "src/sim/events.ts",
+   "notes": "Stage C10: travel hoos are low-intensity (gruberZuberbuhler2013); heard within the party chain distance (partyLinkM: compressed 9, field 50; design).",
+   "profiles": {
+    "compressed": 9,
+    "field": 50
    }
   },
   {
@@ -11382,6 +12154,36 @@
    "notes": "Party cohesion: weight of the bond when following a party member who travels off; 0 disables the candidate (compressed). Field value tuned to T-PTY-1 (design). Field value tuned in C5a against T-PTY-1, T-ACT-2 and T-RNG-4; those targets are labelled tuned (C5a review)."
   },
   {
+   "id": "partyJoinTrip",
+   "group": "social",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/research.md (C7c; patrols): gruberZuberbuhler2013, travel initiation, recruitment, waiting and checking"
+   ],
+   "clock": "none",
+   "symbol": "P.partyJoinTrip",
+   "file": "src/sim/candidates.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 1
+   },
+   "notes": "Stage C7c (field; c7b-prereg 6.2): a companion who would party-follow an animal on a committed trip to a tree instead travels to that tree with it (shared goal, no drop-out); the initiator waits for lagging joiners (partyWaitMaxMin). Joint travel after recruitment; initiators wait in 54-58% of initiations (gruberZuberbuhler2013) [H]; the shared-goal form is design. 0 = off (compressed)."
+  },
+  {
    "id": "partyLeaderFollow",
    "group": "social",
    "value": 0,
@@ -11495,6 +12297,32 @@
     "field": 0.05
    },
    "notes": "Travel to a remembered tree costs this per community member in sight (up to 3): individuals leave their party less readily than they follow it (design; tuned to T-PTY-1 and T-ACT-2). 0 = off (compressed; the literal 0 subtracted is exact). Field value tuned in C5a against T-PTY-1, T-ACT-2 and T-RNG-4; those targets are labelled tuned (C5a review)."
+  },
+  {
+   "id": "partyWaitMaxMin",
+   "group": "social",
+   "value": 0,
+   "units": "min per trip",
+   "range": [
+    2,
+    10
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    120
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.partyWaitMaxMin",
+   "file": "src/sim/execution.ts",
+   "profiles": {
+    "compressed": 0,
+    "field": 5
+   },
+   "notes": "Stage C7c (field; c7b-prereg 6.2): the initiator of a committed trip stands while a joiner or follower is more than sightDayM behind, for at most this long per trip (design; waiting of at least 5 s is common, gruberZuberbuhler2013, durations not reported). Read only when partyJoinTrip is 1."
   },
   {
    "id": "patchEcology",
@@ -11681,6 +12509,29 @@
    "notes": "§5.3.1 Amendment A4: the alpha's extra score to lead a patrol, 0.1 → 0: rank does not predict patrolling (wattsMitani2001, massaro2022; langergraber2017 found a rank effect on participation, so mixed). The other lead terms (party males, boldness) are weakly evidenced (design)."
   },
   {
+   "id": "patrolContactMemory",
+   "group": "patrol",
+   "value": 1,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.patrolContactMemory",
+   "file": "src/sim/contact.ts",
+   "integer": true,
+   "notes": "Ablation switch (C6 patrol corrections, P2): 1 = per-chimp contact memory shared by travelling together (default); 0 = the C6 community-wide danger grid (flight shared among those retreating, a patrol turning back, wounds and deaths; 8-neighbour spread; daily decay), no contact writes, routes by staleness only."
+  },
+  {
    "calibrate": false,
    "clock": "none",
    "id": "patrolContactW",
@@ -11745,6 +12596,51 @@
    "symbol": "patrolAndCalls",
    "file": "src/sim/candidates.ts",
    "notes": "Patrols start before this hour. The 08:00–15:30 start window stays design (unverified; docs/realism-design.md §5.3.1 Amendment A7)."
+  },
+  {
+   "id": "patrolEnergyGate",
+   "group": "patrol",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.patrolEnergyGate",
+   "file": "src/sim/perception.ts",
+   "integer": true,
+   "notes": "Ablation switch (A2): 0 = no energy gate on the patrol hazard (default, mitaniWatts2005); 1 = the C6 gate E, rising from patrolEnergyLow to 1 with the party's mean energy."
+  },
+  {
+   "id": "patrolEnergyLow",
+   "group": "patrol",
+   "value": 0.4,
+   "units": "energy",
+   "range": [
+    0.2,
+    0.8
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.patrolEnergyLow",
+   "file": "src/sim/perception.ts",
+   "notes": "Read only when patrolEnergyGate is 1 (ablation): party mean energy below which no patrol starts; E rises linearly to 1 at full energy (the C6 value, design)."
   },
   {
    "calibrate": false,
@@ -12260,6 +13156,52 @@
    "symbol": "P.patrolRollMaxH",
    "file": "src/sim/perception.ts",
    "notes": "Longest interval credited to one patrol-hazard roll (design)."
+  },
+  {
+   "id": "patrolSilence",
+   "group": "patrol",
+   "value": 1,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.patrolSilence",
+   "file": "src/sim/candidates.ts",
+   "integer": true,
+   "notes": "Ablation switch (P4a): 1 = patrol members make no calls or displays (default; silence [H], patrol-evidence.md); 0 = the C6 candidates."
+  },
+  {
+   "id": "patrolSingleFile",
+   "group": "patrol",
+   "value": 1,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.patrolSingleFile",
+   "file": "src/sim/execution.ts",
+   "integer": true,
+   "notes": "Ablation switch (P4a): 1 = patrol members follow the member ahead in join order (default); 0 = the C6 cluster around the leader."
   },
   {
    "id": "patrolStaleTauDays",
@@ -13865,6 +14807,36 @@
    "notes": "Rough play escalates (partner more than 2 y younger) [H occurs; rate design]."
   },
   {
+   "id": "routeChain",
+   "group": "movement",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [],
+   "refs": [
+    "docs/research.md (C7c-C7d): janson2014, efficient primate paths match visiting the nearest unused known resource"
+   ],
+   "clock": "none",
+   "symbol": "P.routeChain",
+   "file": "src/sim/candidates.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage C7d (field; c7b-prereg 8.3): among out-of-sight goals only the tree with the most believed value per metre (worth / max(d, memoryTreeMinM)) is offered, at its usual score, instead of the four best by score: the nearest unused known resource weighted by value (janson2014) [M]; crop beliefs and the revisit penalty keep emptied and just-used trees out, so a day chains nearby trees. No free parameter. 0 = off. Pre-registered field value 1; off by default after the C7d direction check (c7b-prereg 8.4): straightness rose (0.21 -> 0.26) but turning rose too (0.87 -> 1.59 rad), trips shrank to ~60 m, the 30-min path fell 2,014 -> 795 m/day and fruit share 0.79 -> 0.53."
+  },
+  {
    "id": "runMps",
    "group": "movement",
    "value": 0.3,
@@ -14377,6 +15349,54 @@
    "symbol": "computeCandidates",
    "file": "src/sim/candidates.ts",
    "notes": "Meat-share score lost per unit tension."
+  },
+  {
+   "id": "sigCommunitySD",
+   "group": "communication",
+   "value": 0.241,
+   "units": "feature SD (call noise = 1)",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    10
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "desai2022"
+   ],
+   "clock": "none",
+   "symbol": "P.sigCommunitySD",
+   "file": "src/sim/signals.ts",
+   "notes": "Stage C10: SD of the natal-community offset of the pant-hoot signature. Set by the same offline Monte Carlo so that community discriminant accuracy for two communities is about 1.3x chance (group differences weaker than individual ones, desai2022; the 1.3x reading is design, docs/realism-design.md 5.8). Result (--reps 16): 0.241 with sigIdentitySD 0.308."
+  },
+  {
+   "id": "sigIdentitySD",
+   "group": "communication",
+   "value": 0.308,
+   "units": "feature SD (call noise = 1)",
+   "range": [
+    0.1,
+    2
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    10
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "desai2022"
+   ],
+   "clock": "none",
+   "symbol": "P.sigIdentitySD",
+   "file": "src/sim/signals.ts",
+   "notes": "Stage C10: SD of a chimpanzee's individual signature offset per standardized pant-hoot feature, in units of the call-to-call SD. Set by the offline Monte Carlo of the recorder protocol (scripts/signals-metrics.ts --calibrate; no simulation run) so that leave-one-out discriminant accuracy for 18 callers x 20 calls is 2.8x chance (desai2022: 19.5% vs 6.9%). T-COM-5 is tuned by construction. Result (--reps 16): 0.308 gives identity 2.80x and community 1.30x chance with sigCommunitySD 0.241."
   },
   {
    "id": "sightDayM",
@@ -16155,16 +17175,136 @@
     1000000.0
    ],
    "calibrate": false,
-   "evidence": "design",
-   "sources": [],
+   "evidence": "M",
+   "sources": [
+    "uwimbabazi2019"
+   ],
    "clock": "none",
    "symbol": "P.travelDistScaleM",
    "file": "src/sim/candidates.ts",
    "profiles": {
     "compressed": 60,
-    "field": 60000
+    "field": 62900
    },
-   "notes": "Travel to a remembered tree: score falls by 1 per this many metres. Travel-cost scale (score falls by 1 per this many metres). Compressed literal before C5a; field value set for real distances between food patches (design, tuned to T-ACT-2 and T-RNG-4 in stage C5a). Field value tuned in C5a against T-ACT-2 and T-RNG-4 (with the cohesion weights); both targets are labelled tuned (C5a review). Stage C7a: field value 60,000 m, fitted against the two C12 statistics declared fitted (path per hour, Taï; same-day displacement, Ngogo) on proof seeds 48 and 7 (probes 2,000 / 6,000 / 20,000 / 60,000 m: 101 / 148 / 186 / 214 m/h, 0.20 / 0.29 / 0.31 / 0.34 km); the knob saturates below the field values. Distance then barely matters within a range, as field chimpanzees skip the nearest productive tree 70% of the time (normand2009). Stage C7b (C7a review finding 4; c7b-prereg addendum): declared, not fitted: the field value 60,000 m switches the distance cost off within a range (at most ~0.05 score across it), a design choice. The pre-registered alternative, intake-rate trip values (tripRateValue), is implemented but off by default after its direction check. Range widened to hold the declared value."
+   "notes": "Travel to a remembered tree: score falls by 1 per this many metres. Travel-cost scale (score falls by 1 per this many metres). Compressed literal before C5a; field value set for real distances between food patches (design, tuned to T-ACT-2 and T-RNG-4 in stage C5a). Field value tuned in C5a against T-ACT-2 and T-RNG-4 (with the cohesion weights); both targets are labelled tuned (C5a review). Stage C7a: field value 60,000 m, fitted against the two C12 statistics declared fitted (path per hour, Taï; same-day displacement, Ngogo) on proof seeds 48 and 7 (probes 2,000 / 6,000 / 20,000 / 60,000 m: 101 / 148 / 186 / 214 m/h, 0.20 / 0.29 / 0.31 / 0.34 km); the knob saturates below the field values. Distance then barely matters within a range, as field chimpanzees skip the nearest productive tree 70% of the time (normand2009). Stage C7c (c7b-prereg 6.3): field value derived from travel energetics, L = daily energy / (memTravelHungerW x cost of walking a metre) = 2,500 kcal (uwimbabazi2019; one hunger unit is about a day's intake) / (1.25 x 0.0318 kcal/m) = 62,900 m, with the net cost of transport 10.7 M^-0.316 J/kg/m (taylor1982) at M = 40 kg (design; 33-45 kg gives 58-72 km), inside the measured chimpanzee range (sockol2007). Walking 1 km costs ~1% of a day's energy: energetics justify an almost flat distance cost; the C7a fit (60,000 m) sits on it by coincidence. Compressed keeps its literal (60 m).",
+   "refs": [
+    "docs/research.md (C7c): taylor1982 net cost of transport, sockol2007 measured chimpanzee range, pontzerWrangham2004 daily walking"
+   ]
+  },
+  {
+   "id": "travelHoo",
+   "group": "communication",
+   "value": 1,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.travelHoo",
+   "file": "src/sim/execution.ts",
+   "notes": "Stage C10 addendum 1 switch: trip initiators give a quiet travel hoo heard by nearby own-community animals, whose party-follow of the caller is then more likely (gruberZuberbuhler2013). 0 = silent initiations (the C7c model). Ablation switch.",
+   "integer": true
+  },
+  {
+   "id": "travelHooAllyP",
+   "group": "communication",
+   "value": 0.756,
+   "units": "probability",
+   "range": [
+    0.5,
+    0.95
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "gruberZuberbuhler2013"
+   ],
+   "clock": "none",
+   "symbol": "P.travelHooAllyP",
+   "file": "src/sim/execution.ts",
+   "notes": "Stage C10: probability of a travel hoo with an ally in sight (75.6%, gruberZuberbuhler2013, full text)."
+  },
+  {
+   "id": "travelHooFollowW",
+   "group": "communication",
+   "value": 0.3,
+   "units": "score",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    5
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.travelHooFollowW",
+   "file": "src/sim/candidates.ts",
+   "notes": "Stage C10: added to a hearer's party-follow (or shared-goal travel) score toward the caller of a travel hoo. May be refitted once on seeds 31-33 to a hooted-to-silent ratio of trips followed by >= 1 companion of 1.6-2.6 (gruberZuberbuhler2013: 71.4% vs 33.7%); logged; not a target."
+  },
+  {
+   "id": "travelHooP",
+   "group": "communication",
+   "value": 0.554,
+   "units": "probability",
+   "range": [
+    0.3,
+    0.8
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "gruberZuberbuhler2013"
+   ],
+   "clock": "none",
+   "symbol": "P.travelHooP",
+   "file": "src/sim/execution.ts",
+   "notes": "Stage C10: probability that an initiator gives a travel hoo when no ally is in sight (55.4%, gruberZuberbuhler2013, full text)."
+  },
+  {
+   "id": "travelHooWindowMin",
+   "group": "communication",
+   "value": 5,
+   "units": "eco-min",
+   "range": [
+    1,
+    15
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1000
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.travelHooWindowMin",
+   "file": "src/sim/candidates.ts",
+   "notes": "Stage C10: minutes during which a heard travel hoo raises the hearer's party-follow of the caller (design)."
   },
   {
    "id": "treeGridCellM",

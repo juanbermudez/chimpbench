@@ -3,27 +3,27 @@
  "generated": "2026-09-28",
  "about": "Quantitative field targets for MGOGO (docs/realism-design.md §2). Values are as reported by the sources; \"accept\" is the band the simulation must hit, scaled to MGOGO communities (12–22 members, 3–7 adult males) where stated. Evidence: H multi-site or large-sample full text; M one site, abstract-only or derived; L secondary, captive or qualitative. role fitted = may be used for calibration; held-out = never used for tuning. encoded = the mechanism was designed from this pattern, so a match is weak evidence.",
  "counts": {
-  "targets": 100,
+  "targets": 101,
   "fitted": 37,
-  "held-out": 63,
+  "held-out": 64,
   "parameterConstraints": 19,
-  "sources": 123
+  "sources": 124
  },
  "protocolPolicy": [
   "Every protocol parameter (observer settings, classifier rules, metric windows and thresholds, scoring rules) is set from the source's methods text or by validating the instrument against simulation truth, never by looking at a field-target verdict.",
-  "The protocol is frozen with a hash (protocolFreeze): sha256 over src/field/*.ts, scripts/lib/field-worker.ts, each target's id, role, encoded flag, band and observer protocol and its verdict-changing flags (compromised, protocolRevisedPostHoc, revisedPostFreeze, tuned, heldAsFail, instrumentWarning, partiallyEncoded, notScorable), the c12Fitted declarations, and the comparison code (src/compare/*.ts, scripts/compare-*.ts; since the C7a review). scripts/field-metrics.ts prints whether the current hash matches.",
+  "The protocol is frozen with a hash (protocolFreeze): sha256 over src/field/*.ts, scripts/lib/field-worker.ts, each target's id, role, encoded flag, band and observer protocol and its verdict-changing flags (compromised, protocolRevisedPostHoc, revisedPostFreeze, tuned, heldAsFail, instrumentWarning, partiallyEncoded, notScorable), the c12Fitted declarations, the comparison code (src/compare/*.ts, scripts/compare-*.ts; since the C7a review) and the scenario scoring scripts (scripts/field-scenario.ts, scripts/c9-scenario.ts; since C9). scripts/field-metrics.ts prints whether the current hash matches.",
   "Any change needs a protocolLog entry: date, parameter, old -> new, reason (source text with page, bug, or truth accuracy), which results had been seen, and verdicts before -> after. A change after the freeze also needs a new freeze hash.",
   "A held-out target touched by a change made after its value was seen is compromised (reported, never counted as validation) unless the change is a bug fix or follows the source's methods text and was made before the freeze; those are flagged protocolRevisedPostHoc and reported with before/after values. After the freeze, any change that touches a held-out target compromises it.",
   "A fitted target whose protocol was changed after its value was seen without such a reason reverts to the source value.",
   "Instrument validation against truth (sampling accuracy, classifier precision and recall) is allowed at any time, because truth is not a field target; each validation run is logged."
  ],
  "protocolFreeze": {
-  "stage": "C7a review findings 9-12",
+  "stage": "C9 proof seeds",
   "date": "2026-09-29",
-  "hash": "f29c8b0773effa06",
+  "hash": "c6dc9be135771d16",
   "previous": {
-   "stage": "C12 relabel",
-   "hash": "e88dcd8f700a2997"
+   "stage": "C9 proof preparation",
+   "hash": "7d80a5a2c7c40da1"
   }
  },
  "protocolLog": [
@@ -907,6 +907,140 @@
     "all"
    ],
    "verdicts": "combined proof",
+   "class": "freeze"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C10 implementer",
+   "seen": "C10 direction checks on seeds 31 and 32 (field, 60-day burn-in + 60 days), printing only T-COM-5 (2.81, 3.22 x chance), T-COM-6 (median 4 hits, 218-220 ms, no female bouts) and T-COM-8 (0.52, 0.42); no held-out value printed",
+   "param": "new observer protocol: bioacoustic recorder (pant-hoot features within 10% of the hearing radius and drum intervals stored with call records, CallRec.f); T-COM-5 (LDA leave-one-out identity accuracy / chance, part community) and T-COM-6 (median hits, mean interval, male bouts without a call, female bouts; pass = median 3-5 and no female bouts) implemented; T-COM-5 flagged tuned (by construction)",
+   "reason": "stage C10 (docs/realism-design.md 'C10 pre-registration')",
+   "targets": [
+    "T-COM-5",
+    "T-COM-6",
+    "T-COM-8"
+   ],
+   "verdicts": "n/a -> measured (T-COM-5, T-COM-6)",
+   "class": "new protocol",
+   "flags": {
+    "T-COM-5": "tuned"
+   }
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C10 implementer",
+   "seen": "as above",
+   "param": "model change (C10, on by default in both profiles, each switch off reproduces the pre-C10 world): callSignatures, callerDiscrim, foodCallRule (docs/realism-design.md 'C10 pre-registration'); compressed goldens re-recorded",
+   "reason": "stage C10",
+   "targets": [
+    "T-COM-1..11",
+    "T-IGE-* (heardN)"
+   ],
+   "verdicts": "combined proof",
+   "class": "model change"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C10 implementer",
+   "seen": "the C10 direction checks (C10 rows only)",
+   "param": "freeze C10: f29c8b0773effa06 -> fe5c3af51005d776 (bioacoustic recorder, T-COM-5 and T-COM-6 metrics, T-COM-5 tuned flag; merged with main at C7c)",
+   "reason": "stage C10",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "combined proof",
+   "class": "freeze"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C10 implementer (addendum 1)",
+   "seen": "travel-hoo direction checks on seeds 31-33 (field, 30-day burn-in + 20 days): hoo share of initiations with a companion 0.45-0.51; recruitment within 5 min, hooed vs silent: 0.59 vs 0.51 and 0.63 vs 0.55 (ratio 1.13-1.15) at travelHooFollowW 0.3; the one-time refit scan on seed 33 gave ratio 1.22, 1.21 and 1.12 at 0.6, 1.0 and 1.5",
+   "param": "model change: travel hoos (travelHoo on in both profiles; CallKind 'travel-hoo'); travelHooFollowW stays at the pre-registered 0.3 because no value in the scan reaches the pre-registered ratio of 1.6-2.6 (silent trips already recruit ~0.5 through C7c's joint travel); compressed goldens re-recorded; travel hoo off reproduces the C10 world",
+   "reason": "C10 addendum 1 (docs/realism-design.md); refit rule applied and the ratio not reached, reported",
+   "targets": [
+    "none (no target row; T-PTY-* and T-ACT-* consequences at the combined proof)"
+   ],
+   "verdicts": "combined proof",
+   "class": "model change"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C9 implementer",
+   "seen": "no C9 run (unit tests on crafted worlds only)",
+   "param": "observer: a community created by a fission gets a following team from the next day step and joins the records' community list (src/field ensureTeams); no effect without a split, so every current row is unchanged",
+   "reason": "C9 pre-registration (the Ngogo researchers followed both groups)",
+   "targets": [
+    "none today (T-FIS-* when measured)"
+   ],
+   "verdicts": "unchanged",
+   "class": "protocol (new communities)"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C9 implementer",
+   "seen": "none",
+   "param": "freeze: fe5c3af51005d776 -> ad788552f11082eb (observer team for new communities)",
+   "reason": "C9 build",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "combined proof",
+   "class": "freeze"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C9 implementer",
+   "seen": "real data only (fission-bands: Ngogo 2017-2022 patrol ratio median 7.35, 90% CI 6.19-11.41); no C9 scenario result (a 60-day compressed dry run of the script, which cannot split)",
+   "param": "T-FIS-5 added (band 6.1905-11.4069, scripts/fission-bands-metrics.ts, the pre-registered rule with adult males of population_snapshots.csv); T-FIS-1..5 scored by scripts/c9-scenario.ts from simulation truth (metric stubs point there); the T-FIS-1 baseline runs as the scenario's baseline kind because fissionOn is off by default (integrator), not in the combined proof's 40-year runs as pre-registered",
+   "reason": "C9 pre-registration; integrator ruling that fissionOn stays off by default",
+   "targets": [
+    "T-FIS-1",
+    "T-FIS-2",
+    "T-FIS-3",
+    "T-FIS-4",
+    "T-FIS-5"
+   ],
+   "verdicts": "new / pending (C9 proof)",
+   "class": "new targets"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C9 implementer",
+   "seen": "no C9 scenario result",
+   "param": "freeze: ad788552f11082eb -> 7d80a5a2c7c40da1 (T-FIS-5 row, T-FIS metric stubs, the fingerprint now also covers scripts/field-scenario.ts and scripts/c9-scenario.ts)",
+   "reason": "C9 proof preparation",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "C9 proof, combined proof",
+   "class": "freeze"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C9 implementer (integrator ruling)",
+   "seen": "no C9 value (seeds 3505-3909 were run by C7c, C7d and C7e movement direction checks with fission off)",
+   "param": "C9 proof seeds 3505, 3606, 3707, 3808, 3909 -> 5101, 5202, 5303, 5404, 5505 (reserved, never run); scripts/c9-scenario.ts default seeds changed; AGENTS.md lists the reserved sets",
+   "reason": "proof seeds must never have been run",
+   "targets": [
+    "T-FIS-1",
+    "T-FIS-2",
+    "T-FIS-3",
+    "T-FIS-4",
+    "T-FIS-5"
+   ],
+   "verdicts": "none",
+   "class": "protocol (seeds)"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C9 implementer",
+   "seen": "none",
+   "param": "freeze: 7d80a5a2c7c40da1 -> c6dc9be135771d16 (scripts/c9-scenario.ts default seeds)",
+   "reason": "C9 proof seeds",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "C9 proof",
    "class": "freeze"
   }
  ],
@@ -2563,7 +2697,7 @@
    "evidence": "M",
    "role": "held-out",
    "encoded": false,
-   "notes": "",
+   "notes": "C9: scored from simulation truth by scripts/c9-scenario.ts under the C9 pre-registration rules (docs/realism-design.md). Because fissionOn is off by default, the T-FIS-1 baseline runs as the scenario's own baseline kind (default communities with fission on), not inside the combined proof.",
    "sources": [
     "sandel2026",
     "sandelWatts2021"
@@ -2610,7 +2744,7 @@
    "evidence": "M",
    "role": "held-out",
    "encoded": false,
-   "notes": "",
+   "notes": "C9: scored from simulation truth by scripts/c9-scenario.ts under the C9 pre-registration rules (docs/realism-design.md). Because fissionOn is off by default, the T-FIS-1 baseline runs as the scenario's own baseline kind (default communities with fission on), not inside the combined proof.",
    "sources": [
     "feldblum2018",
     "mitaniAmsler2003"
@@ -2657,7 +2791,7 @@
    "evidence": "M",
    "role": "held-out",
    "encoded": false,
-   "notes": "",
+   "notes": "C9: scored from simulation truth by scripts/c9-scenario.ts under the C9 pre-registration rules (docs/realism-design.md). Because fissionOn is off by default, the T-FIS-1 baseline runs as the scenario's own baseline kind (default communities with fission on), not inside the combined proof.",
    "sources": [
     "sandel2026",
     "sandelWatts2021"
@@ -2696,9 +2830,47 @@
    "evidence": "M",
    "role": "held-out",
    "encoded": false,
-   "notes": "",
+   "notes": "C9: scored from simulation truth by scripts/c9-scenario.ts under the C9 pre-registration rules (docs/realism-design.md). Because fissionOn is off by default, the T-FIS-1 baseline runs as the scenario's own baseline kind (default communities with fission on), not inside the combined proof.",
    "sources": [
     "sandelWatts2021"
+   ]
+  },
+  {
+   "id": "T-FIS-5",
+   "objectives": [
+    "O5",
+    "O6"
+   ],
+   "metric": "Patrols after a fission",
+   "definition": "After a split, adult-male patrols per 10 adult males per year, smaller daughter community / larger daughter; median of yearly ratios. Sim: scripts/c9-scenario.ts large-community scenario, simulation truth (patrol interactions), years after the split.",
+   "observer": {
+    "protocol": "scenario (simulation truth)",
+    "interval_min": null,
+    "unit": "daughter-community year"
+   },
+   "field": [
+    {
+     "population": "Ngogo West and Central",
+     "years": "2017-2022",
+     "value": "median ratio 7.35 (yearly 5.3-15.3); West (7-11 adult males) 5.6-40 patrols per 10 males per year, Central (23-26) 0.8-4",
+     "n": "6 years",
+     "method": "patrol-data-quarterly.csv x population_snapshots.csv (adult males); scripts/fission-bands-metrics.ts",
+     "source": "sandel2026",
+     "note": "computed by MGOGO from open data (CC0) before any C9 run"
+    }
+   ],
+   "accept": {
+    "lo": 6.1905,
+    "hi": 11.4069,
+    "units": "ratio",
+    "basis": "bootstrap 90% CI over years (C9 pre-registration rule), computed before any C9 run"
+   },
+   "evidence": "M",
+   "role": "held-out",
+   "encoded": false,
+   "notes": "C9 pre-registration (new held-out). The smaller, male-dense West group patrolled far more per male than Central after the Ngogo fission.",
+   "sources": [
+    "sandel2026"
    ]
   },
   {
@@ -5150,10 +5322,11 @@
    "evidence": "M",
    "role": "fitted",
    "encoded": false,
-   "notes": "",
+   "notes": " C10: measured by the bioacoustic recorder (pant-hoots of adult males within 10% of the hearing radius of a following team; LDA leave-one-out over callers with >= 10 calls).",
    "sources": [
     "desai2022"
-   ]
+   ],
+   "tuned": "C10: tuned by construction. sigIdentitySD 0.308 and sigCommunitySD 0.241 were set by an offline Monte Carlo of this target's recorder protocol against desai2022's 2.8x chance (scripts/signals-metrics.ts --calibrate; no simulation run), so a pass is a calibration result, not evidence."
   },
   {
    "id": "T-COM-6",
@@ -5196,7 +5369,7 @@
    "evidence": "M",
    "role": "fitted",
    "encoded": false,
-   "notes": "",
+   "notes": " C10: hits per bout and intervals are drawn from eleuteri2025's eastern values (median 4, mode 3, 229 ms), so the hits and interval parts are close to construction; the male-only part and the share of male bouts without a call (Kanyawara 61%, Taï 6%) are consequences of who drums and when.",
    "sources": [
     "clarkArcadi2004",
     "eleuteri2025"
@@ -5280,7 +5453,7 @@
    "evidence": "L",
    "role": "fitted",
    "encoded": false,
-   "notes": "",
+   "notes": " C10: foodCallBase 0.35 (kalanBoesch2015) with crop and audience terms (slocombe2010); the audience part of this target would be encoded; the current protocol does not measure it.",
    "sources": [
     "kalanBoesch2015",
     "slocombe2010"
@@ -7229,6 +7402,19 @@
    "url": "https://doi.org/10.1371/journal.pbio.3002350",
    "access": "FT",
    "bibliographyVerified": "docs/research.md (Lemoine et al. 2023, Taï border movement); S3 Data CC BY 4.0"
+  },
+  "gruberZuberbuhler2013": {
+   "authors": "Gruber T, Zuberbühler K",
+   "year": 2013,
+   "title": "Vocal recruitment for joint travel in wild chimpanzees",
+   "journal": "PLoS ONE",
+   "volume": "8",
+   "issue": "9",
+   "pages": "e76073",
+   "doi": "10.1371/journal.pone.0076073",
+   "url": "https://doi.org/10.1371/journal.pone.0076073",
+   "access": "FT",
+   "bibliographyVerified": "docs/research.md (PMC3783376); figures checked in the PLoS ONE full text, 2026-09-29"
   }
  },
  "c12Fitted": {

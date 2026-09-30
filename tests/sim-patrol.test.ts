@@ -117,3 +117,22 @@ test('P4a: a patrol travels in single file with its phase on the party; determin
   for (let i = 0; i < 300; i++) { tickWorld(w); tickWorld(copy); }
   assert.equal(fnv(canonical(copy)), fnv(canonical(w)));
 });
+
+test('patrol ablation switches: the C6 danger grid, cluster, energy gate and calls come back when switched; defaults unchanged', async () => {
+  const { markDanger } = await import('../src/sim/contact');
+  const OFF = { patrolContactMemory: 0, patrolSingleFile: 0, patrolEnergyGate: 1, patrolSilence: 0 };
+  const w = createWorld(21, { params: OFF });
+  for (let i = 0; i < 400; i++) tickWorld(w);
+  const [a] = w.chimps.filter(ch => ch.alive && ch.troopId === 1 && ch.age >= 10);
+  const P = paramsOf(w);
+  markDanger(w, 1, a.position[0], a.position[2], 3);
+  assert.ok(simOf(w).danger?.[1], 'grid created');
+  assert.ok(Math.abs(lossAt(w, a, a.position[0], a.position[2], P) - 3) < 1e-9, 'loss read from the community grid');
+  noteContact(w, a, a.position[0], a.position[2], 0, 1);
+  shareContacts(w);
+  const days = 3;
+  for (let i = 0; i < days * 5760; i++) tickWorld(w); // runs with every switch at its C6 value
+  assert.ok(lossAt(w, a, a.position[0], a.position[2], P) < 3, 'the grid decays daily');
+  const d = createWorld(21);
+  assert.equal(simOf(d).danger, undefined, 'default worlds carry no danger grid');
+});

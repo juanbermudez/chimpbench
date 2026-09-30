@@ -239,6 +239,31 @@ Proposed additions from the realism research pass. They are **not yet merged** i
 - **Botanical skills and inspection mistakes** [janmaat2013b] (full text) [M]: Janmaat KRL, Ban SD, Boesch C 2013. Taï chimpanzees use botanical skills to discover fruit: what we can learn from their mistakes. *Animal Cognition* 16(6):851–860. [doi:10.1007/s10071-013-0617-z](https://doi.org/10.1007/s10071-013-0617-z). Chimpanzees inspect empty trees of species that are fruiting synchronously, so a species' fruiting state is learned and an empty tree is learned on arrival (cited by `knownTreesK` and C7a rule 8).
 - **Stylization (C7a rule 8):** the daily list of the 40 best-known trees uses the true share of each species' trees in fruit and every tree's capacity, including trees no animal has seen: community omniscience about those 40 trees, labelled as such in `src/sim/foraging.ts`.
 
+## Community fission (stage C9 pre-registration, 29 September 2026)
+
+Sources for docs/realism-design.md "C9 pre-registration". Bibliographies are Crossref-checked in `data/targets.json`.
+
+- **Ngogo fission and its aftermath** [sandel2026] (abstract; data CC0, Dryad doi:10.5061/dryad.sf7m0cgkg, in `data/raw/`). The network polarized in 2015 and two groups were distinct by 2018. Then came 24 attacks, killing at least 7 mature males and 17 infants of the Central group. The data are adult-male proximity and grooming scans (1998–2022), yearly networks, group labels for 219 individuals, quarterly patrols per group from 2016, and yearly group sizes.
+- **Earlier Ngogo killings** [sandelWatts2021] (full text): lethal coalitionary aggression associated with the fission. The victim Basie had 12.5–24.8% yearly party association with the western males.
+- **Gombe fission** [feldblum2018] (Feldblum JT, Manfredi S, Gilby IC et al. 2018. *American Journal of Physical Anthropology*, doi:10.1002/ajpa.23462). Subgrouping rose sharply in 1971–72 before the 1973 split, coinciding with a struggle among three top males. It is the source of a held-out pattern (T-FIS-2), so it is not used in the C9 design.
+- **Stable male subgroups without a split** [mitaniAmsler2003] (Mitani J, Amsler S 2003. *Behaviour*, doi:10.1163/156853903770238355). Ngogo in 2003 had two stable male subgroups with overlapping ranges.
+- **Community detection** [traag2019] (Traag VA, Waltman L, van Eck NJ 2019. From Louvain to Leiden: guaranteeing well-connected communities. *Scientific Reports*, doi:10.1038/s41598-019-41695-z) and **modularity** [newman2006] (Newman MEJ 2006. *PNAS*, doi:10.1073/pnas.0601602103): method sources.
+- **Bond-weighted recruitment** [gruberZuberbuhler2013] (full text): allies were recruited to joint travel more often.
+
+## Communication (stage C10, 29 September 2026)
+
+Sources for the C10 pre-registration (docs/realism-design.md, "C10 pre-registration"). Bibliographies are Crossref-checked in `data/targets.json`. FT = full text, Abs = abstract.
+
+- **Pant-hoot signatures** [desai2022] (FT) [M]. Desai NP, Fedurek P, Slocombe KE et al. 2022. Chimpanzee pant-hoots encode individual information more reliably than group differences. *American Journal of Primatology* 84(11):e23430. [doi:10.1002/ajp.23430](https://doi.org/10.1002/ajp.23430). Gombe and Kanyawara: caller identity from structural features 19.5% vs 6.9% chance (18 individuals); 35.8% vs 24.7% with context controlled; group differences are weaker than individual ones.
+- **Drumming structure, eastern chimpanzees** [eleuteri2025] (FT) [M]. Eleuteri V et al. 2025. Chimpanzee drumming shows rhythmicity and subspecies variation. *Current Biology* 35(10):2448–2456.e4. [doi:10.1016/j.cub.2025.04.019](https://doi.org/10.1016/j.cub.2025.04.019). Median 4 hits per bout (mode 3); mean inter-hit interval ~229 ms; eastern drummers alternate short and long intervals. Data: Zenodo doi:10.5281/zenodo.15175482 (CC BY 4.0; not downloaded).
+- **Drumming at Kanyawara and Taï** [clarkArcadi2004] (FT) [M]. Clark Arcadi A, Robert D, Mugurusi F 2004. A comparison of buttress drumming by male chimpanzees from two populations. *Primates* 45(2):135–139. [doi:10.1007/s10329-003-0070-8](https://doi.org/10.1007/s10329-003-0070-8). 61% of Kanyawara male bouts had no call (Taï 6%); no females drummed; no individual signature at Kanyawara.
+- **Drumming context** [eleuteri2022] (FT) [M], held out (T-COM-7), not used in design: Eleuteri V et al. 2022. The form and function of chimpanzee buttress drumming. *Animal Behaviour* 192:189–205. [doi:10.1016/j.anbehav.2022.07.013](https://doi.org/10.1016/j.anbehav.2022.07.013).
+- **Food calls and audience** [kalanBoesch2015] (Abs) [M]. Kalan AK, Boesch C 2015. Audience effects in chimpanzee food calls and their potential for recruiting others. *Behavioral Ecology and Sociobiology* 69(10):1701–1712. [doi:10.1007/s00265-015-1982-1](https://doi.org/10.1007/s00265-015-1982-1). Taï (*P. t. verus*): food calls at about half of feeding events; more calling with more males present.
+- **Food calls and partners** [slocombe2010] (Abs) [M]. Slocombe KE et al. 2010. Production of food-associated calls in wild male chimpanzees is dependent on the composition of the audience. *Behavioral Ecology and Sociobiology* 64(12):1959–1966. [doi:10.1007/s00265-010-1006-0](https://doi.org/10.1007/s00265-010-1006-0). Males call more when an important social partner is nearby.
+- **Gesture repertoire** [hobaiterByrne2011] (FT) [M]. Hobaiter C, Byrne RW 2011. The gestural repertoire of the wild chimpanzee. *Animal Cognition* 14(5):745–767. [doi:10.1007/s10071-011-0409-2](https://doi.org/10.1007/s10071-011-0409-2). Budongo Sonso: 66 gesture types; individual repertoires 10.0 ± 8.9 (1–41); juveniles 15.1, adults 5.1.
+- **Gesture meanings** [hobaiterByrne2014] (FT) [M]. Hobaiter C, Byrne RW 2014. The meanings of chimpanzee gestures. *Current Biology* 24(14):1596–1600. [doi:10.1016/j.cub.2014.05.066](https://doi.org/10.1016/j.cub.2014.05.066). 19 meanings; 4.6 ± 3.0 meanings per gesture type. The type-to-meaning table is to be transcribed before C10b.
+- Held out, not used in C10 design: [mitaniNishida1993] (pant-hoot rates and rank, Mahale; T-COM-1, -2, -4), [wilson2007] (rank and range zone, Kanyawara; T-COM-2, -3), [clarkWrangham1994] (arrival pant-hoots and status; T-COM-9).
+
 ## Real-data comparison sources (stage C12, 29 September 2026)
 
 Downloaded with the user's approval into `data/raw/`, which is never published. Bibliographic details were checked on Crossref and Zenodo by the comparison agent. Only normalized, derived results appear in `docs/data/` and the guide.
@@ -378,6 +403,49 @@ Evidence for the C7b mechanisms ([staging/c7b-prereg.md](staging/c7b-prereg.md))
 - *new* emeryThompson2014: Emery Thompson M, Muller MN, Wrangham RW 2014. Male chimpanzees compromise the foraging success of their mates in Kibale National Park, Uganda. *Behavioral Ecology and Sociobiology* 68(12):1973–1983. [doi:10.1007/s00265-014-1803-y](https://doi.org/10.1007/s00265-014-1803-y) (Abs).
 - *new* charnov1976: Charnov EL 1976. Optimal foraging, the marginal value theorem. *Theoretical Population Biology* 9(2):129–136. [doi:10.1016/0040-5809(76)90040-X](https://doi.org/10.1016/0040-5809(76)90040-X) (theory; standard reference).
 - potts2011 and janmaat2016 are already in the realism-design.md source table; the lines above add findings, not sources.
+
+## Fallback foods, joint travel and travel energetics (stage C7c, 29 September 2026)
+
+Evidence for the C7c mechanisms ([staging/c7b-prereg.md](staging/c7b-prereg.md) §6). Bibliographic data checked against Crossref on 29 September 2026.
+
+- **Energy intake rates by food, Kanyawara females** [uwimbabazi2019] (full text, PMC7450825) [H].
+  - Energy intake: ripe fruit 10.7 ± 1.3 kcal/min (figs 12.5, drupes 9.9), young leaves 6.2 ± 0.6, pith 3.4 ± 2.2.
+  - Dry-matter feeding rate: 3.4, 2.1 and 1.8 g/min respectively.
+  - Daily metabolisable energy intake ≈ 2,500 kcal, the same in drupe and fig months.
+  - Feeding time 308.7 ± 85 min per day.
+- **Fallback shares, Kibale** [potts2011] (full text, author copy) [H]: pith and stems 17.4% of feeding time at Kanyawara vs 1.0% at Ngogo; young leaves ~6.9% at Kanyawara. At Ngogo, leaves (mainly *Pterygota* saplings, 8.5% of feeding) are the fallback and pith is not [watts2012b].
+- **Pith as the fallback energy source, Kanyawara** [wrangham1991] (Abs) [M].
+  - Pith intake fell as fruit abundance rose and rose with rainfall; leaf intake did not track fruit.
+  - Piths are low in sugar and protein and high in hemicellulose and cellulose, partly digestible.
+  - They offer an alternative energy supply when fruit is scarce.
+- **Herbs at Kibale are scarcer than at Lomako; party size is restricted while feeding on them** [malenky1994] (Abs) [M].
+  - Kibale chimpanzees eat herbs as a fallback source of carbohydrate.
+  - Party size while feeding on terrestrial herbs is restricted at both sites, but the relative strength of that constraint could not be determined.
+- **Joint travel, Budongo Sonso** [gruberZuberbuhler2013] (full text, PLoS ONE) [H].
+  - 166 travel initiations. Vocal initiations (with "travel hoos") recruited at least one follower in 55 of 77 (71.4%); silent ones in 30 of 89 (33.7%).
+  - Initiators waited (stood motionless ≥ 5 s) in 58.4% of vocal and 53.9% of silent initiations.
+  - They checked back (gazed 90–180° behind toward others) in 39.0% and 25.8%.
+- **Cost of walking.**
+  - Net cost of transport across 62 bird and mammal species: 10.7 · M^−0.316 J kg⁻¹ m⁻¹ (M in kg) [taylor1982] (Abs) [H as an equation].
+  - Adult chimpanzees measured 0.14–0.29 ml O₂ kg⁻¹ m⁻¹ walking quadrupedally (individual values from the paper's table, seen only through an index snippet) [sockol2007] [M].
+  - Taylor's equation gives 0.17 ml O₂ kg⁻¹ m⁻¹ (3.3 J kg⁻¹ m⁻¹) at 40 kg, inside that range.
+- **Daily locomotor cost, Kanyawara** [pontzerWrangham2004] (Abs; the day ranges come from an indexed excerpt) [M]: wild chimpanzees spend about 10× more energy per day walking than climbing. Male day range was 2.4 km, and adult females and mothers about 2.0 and 1.9 km.
+
+**New sources:**
+
+- *new* wrangham1991: Wrangham RW, Conklin NL, Chapman CA, Hunt KD 1991. The significance of fibrous foods for Kibale Forest chimpanzees. *Philosophical Transactions of the Royal Society B* 334(1270):171–178. [doi:10.1098/rstb.1991.0106](https://doi.org/10.1098/rstb.1991.0106) (Abs).
+- *new* malenky1994: Malenky RK, Wrangham RW 1994. A quantitative comparison of terrestrial herbaceous food consumption by *Pan paniscus* in the Lomako Forest, Zaire, and *Pan troglodytes* in the Kibale Forest, Uganda. *American Journal of Primatology* 32(1):1–12. [doi:10.1002/ajp.1350320102](https://doi.org/10.1002/ajp.1350320102) (Abs).
+- *new* taylor1982: Taylor CR, Heglund NC, Maloiy GMO 1982. Energetics and mechanics of terrestrial locomotion. I. Metabolic energy consumption as a function of speed and body size in birds and mammals. *Journal of Experimental Biology* 97(1):1–21. [doi:10.1242/jeb.97.1.1](https://doi.org/10.1242/jeb.97.1.1) (Abs).
+- *new* sockol2007: Sockol MD, Raichlen DA, Pontzer H 2007. Chimpanzee locomotor energetics and the origin of human bipedalism. *PNAS* 104(30):12265–12269. [doi:10.1073/pnas.0703267104](https://doi.org/10.1073/pnas.0703267104) (Abs; table values via index snippet, PMC1941460).
+- *new* pontzerWrangham2004: Pontzer H, Wrangham RW 2004. Climbing and the daily energy cost of locomotion in wild chimpanzees: implications for hominoid locomotor evolution. *Journal of Human Evolution* 46(3):315–333. [doi:10.1016/j.jhevol.2003.12.006](https://doi.org/10.1016/j.jhevol.2003.12.006) (Abs).
+- uwimbabazi2019, potts2011, watts2012b and gruberZuberbuhler2013 are already cited; the lines above add findings.
+- **Route choice among many remembered goals** [janson2014] (Abs) [M] (stage C7d).
+  - A review of three captive studies in which primates visited arrays of equally valuable goals.
+  - The efficient paths observed are largely consistent with the simplest rule, visiting the nearest unused known resource.
+  - Movement sequences fit best a rule that sums spatial information from all unused resources into one "gravity" measure, which guides travel to one destination at a time.
+  - The review finds no clear evidence of multi-step route planning.
+- *new* janson2014: Janson C 2014. Death of the (traveling) salesman: primates do not show clear evidence of multi-step route planning. *American Journal of Primatology* 76(5):410–420. [doi:10.1002/ajp.22186](https://doi.org/10.1002/ajp.22186) (Abs).
+- **Unverified and not used as a value:** adult body mass. C7c uses 40 kg as a design value and reports 33–45 kg as a sensitivity range.
 
 ## Early life and maternal effects (chimpanzees)
 

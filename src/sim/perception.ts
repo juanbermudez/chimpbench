@@ -8,6 +8,7 @@ import { stalestSector } from './territory';
 import { paramsOf, type Params } from './params';
 import { fruitAt } from './phenology';
 import { noteContact } from './contact';
+import { featureDistance, perceivedFeatures } from './signals';
 import { NEVER, aliveNear, byIdIn, index, ix, simOf, treesNear } from './state';
 
 export const IMPULSE_TRANSFER = 1, IMPULSE_ESCALATE = 2, IMPULSE_INFANTICIDE = 3, IMPULSE_RAIN = 4, IMPULSE_GANG = 5, IMPULSE_PATROL = 6;
@@ -129,7 +130,7 @@ export function perceive(world: World, c: Chimp): void {
   if (x.strangers > 0) {
     // contact memory (§5.3.1 P2): strangers seen add contact where the nearest one stands, at most once per contactSeenGapH
     const ns = x.nearestStranger >= 0 ? index(world).byId.get(x.nearestStranger) : undefined;
-    if (ns && time - x.contactSeenAt >= P.contactSeenGapH) { x.contactSeenAt = time; noteContact(world, c, ns.position[0], ns.position[2], 1, 0); }
+    if (ns && P.patrolContactMemory === 1 && time - x.contactSeenAt >= P.contactSeenGapH) { x.contactSeenAt = time; noteContact(world, c, ns.position[0], ns.position[2], 1, 0); }
     // An isolated stranger: no other perceived stranger within 15 m of it.
     const byId = index(world).byId;
     let bestD = Infinity;
@@ -241,7 +242,12 @@ function rollImpulses(world: World, c: Chimp): void {
       // no energy gate (§5.3.1 A2: fruit acts through male party size; lean periods did not deter patrols, mitaniWatts2005) [M]
       const S = 1 - Math.exp(-stalestSector(world, troop).days / P.patrolStaleTauDays);
       const heard = world.time - x.heardAt < 24 ? 1 : 0;
-      const h = P.patrolH0 * Math.pow(P.patrolMaleOddsRatio, x.ownMales - 3) * S * (1 + P.patrolHeardBeta * heard);
+      let h = P.patrolH0 * Math.pow(P.patrolMaleOddsRatio, x.ownMales - 3) * S * (1 + P.patrolHeardBeta * heard);
+      if (P.patrolEnergyGate === 1) { // ablation: the C6 energy gate E, rising from patrolEnergyLow to full party mean energy
+        let e = c.energy, k = 1;
+        for (const id of x.seen) { const o = byId.get(id)!; if (o.troopId === c.troopId && isAdultMale(o)) { e += o.energy; k++; } }
+        h *= Math.max(0, Math.min(1, (e / k - P.patrolEnergyLow) / (1 - P.patrolEnergyLow)));
+      }
       if (random(world) < 1 - Math.exp(-h * dt)) { x.impulse = IMPULSE_PATROL; x.impulseTarget = -1; x.impulseUntil = world.time + P.impulseDurationH; return; }
     }
   }
@@ -276,6 +282,10 @@ function hear(world: World, o: Chimp, callId: number, kind: CallKind, caller: Ch
     }
     return;
   }
+  if (kind === 'travel-hoo') { // stage C10 addendum 1: a companion is setting off (candidates.ts raises following it)
+    if (o.troopId === caller.troopId) { x.hooFrom = caller.id; x.hooAt = world.time; }
+    return;
+  }
   if (kind === 'scream') {
     if (o.troopId === caller.troopId && (caller.motherId === o.id || o.allies.includes(caller.id))) interrupt(world, o, `heard ${caller.name} scream`);
     return;
@@ -287,15 +297,19 @@ function hear(world: World, o: Chimp, callId: number, kind: CallKind, caller: Ch
   }
   // Stranger pant-hoots or drumming: count distinct callers of that community heard in the last 3 minutes.
   let n = 0;
-  const seenCallers: number[] = [];
-  for (let i = world.calls.length - 1; i >= 0; i--) {
-    const call = world.calls[i];
-    if (world.time - call.time > paramsOf(world).strangerCallerWindowH) break;
-    if (call.troopId !== caller.troopId || (call.kind !== 'pant-hoot' && call.kind !== 'drum')) continue;
-    if (seenCallers.indexOf(call.callerId) < 0) { seenCallers.push(call.callerId); n++; }
+  const P = paramsOf(world);
+  if (P.callerDiscrim === 1 && P.callSignatures === 1) n = discriminatedCallers(world, o, caller.troopId, P);
+  else {
+    const seenCallers: number[] = [];
+    for (let i = world.calls.length - 1; i >= 0; i--) {
+      const call = world.calls[i];
+      if (world.time - call.time > P.strangerCallerWindowH) break;
+      if (call.troopId !== caller.troopId || (call.kind !== 'pant-hoot' && call.kind !== 'drum')) continue;
+      if (seenCallers.indexOf(call.callerId) < 0) { seenCallers.push(call.callerId); n++; }
+    }
   }
   // contact memory (§5.3.1 P2): a new stranger chorus heard adds contact at the caller's place
-  if (world.time - x.heardAt > paramsOf(world).strangerCallerWindowH) noteContact(world, o, caller.position[0], caller.position[2], 1, 0);
+  if (P.patrolContactMemory === 1 && world.time - x.heardAt > P.strangerCallerWindowH) noteContact(world, o, caller.position[0], caller.position[2], 1, 0);
   x.heardN = Math.max(1, n); x.heardAt = world.time; x.heardX = caller.position[0]; x.heardZ = caller.position[2]; x.heardTroop = caller.troopId; x.heardStim = -1;
   // most intergroup encounters are acoustic only (Kanyawara: 85% of 120 encounters in 15 y; Wilson et al. 2012) [M]
   const s = simOf(world);
@@ -309,6 +323,30 @@ function hear(world: World, o: Chimp, callId: number, kind: CallKind, caller: Ch
   }
   if (world.environment.daylight > 0.1 && world.time - x.lastHeard > 0.08) { x.lastHeard = world.time; interrupt(world, o, `heard ${x.heardN} stranger${x.heardN > 1 ? 's' : ''} pant-hoot`, true); }
   if (world.environment.daylight > 0.1) noteEncounter(world, o, (index(world).troopById.get(caller.troopId)?.name ?? 'stranger').replace(' community', ''), false);
+}
+
+/**
+ * Stage C10 (callerDiscrim): the stranger callers of community `troop` a listener can tell apart in the window. Each
+ * heard pant-hoot is perceived with distance-dependent noise (signals.ts); it counts as a new caller when its perceived
+ * features differ from every caller already counted by more than discrimThreshold (design [L]). Drums, playbacks and
+ * other calls without features carry no identity: they count as one caller only when no pant-hoot is counted. Pure.
+ */
+const _perc: number[][] = [];
+function discriminatedCallers(world: World, o: Chimp, troop: number, P: Params): number {
+  let counted = 0, anon = false;
+  for (let i = world.calls.length - 1; i >= 0; i--) {
+    const call = world.calls[i];
+    if (world.time - call.time > P.strangerCallerWindowH) break;
+    if (call.troopId !== troop || (call.kind !== 'pant-hoot' && call.kind !== 'drum')) continue;
+    const d2 = (call.position[0] - o.position[0]) ** 2 + (call.position[2] - o.position[2]) ** 2;
+    if (d2 > call.radius * call.radius) continue; // out of this listener's earshot
+    if (call.kind !== 'pant-hoot' || !call.features) { anon = true; continue; }
+    const v = perceivedFeatures(P, call.features, o.id, call.id, Math.sqrt(d2), call.radius, _perc[counted] ?? (_perc[counted] = []));
+    let fresh = true;
+    for (let k = 0; k < counted; k++) if (featureDistance(v, _perc[k]) <= P.discrimThreshold) { fresh = false; break; }
+    if (fresh) counted++;
+  }
+  return counted > 0 ? counted : anon ? 1 : 0;
 }
 
 setHearHook(hear);

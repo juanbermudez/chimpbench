@@ -14,8 +14,8 @@ export const WORKER_FILE = new URL('./lib/field-worker.ts', SCRIPTS);
 /**
  * sha256 over every observer source file, the worker, each target's id, role, band and observer protocol and its
  * verdict-changing flags (compromised, revised post hoc or post-freeze, tuned, held as fail, instrument warning, partially
- * encoded, not scorable), the C12 fitted and seen declarations, and the comparison code (src/compare/*.ts,
- * scripts/compare-*.ts). data/targets.json protocolFreeze.hash records the frozen value; a mismatch means the protocol
+ * encoded, not scorable), the C12 fitted and seen declarations, the comparison code (src/compare/*.ts,
+ * scripts/compare-*.ts) and the scenario scoring scripts (scripts/field-scenario.ts, scripts/c9-scenario.ts; since C9). data/targets.json protocolFreeze.hash records the frozen value; a mismatch means the protocol
  * changed after the freeze and must have a protocolLog entry (held-out targets it touches become compromised).
  */
 const FLAG_FIELDS = ['compromised', 'protocolRevisedPostHoc', 'revisedPostFreeze', 'tuned', 'heldAsFail', 'instrumentWarning', 'partiallyEncoded', 'notScorable'] as const;
@@ -35,7 +35,7 @@ export function protocolHash(): string {
   hashDir('../src/field/', x => x.endsWith('.ts'));
   h.update(readFileSync(WORKER_FILE));
   hashDir('../src/compare/', x => x.endsWith('.ts'));
-  hashDir('./', x => /^compare-.*\.ts$/.test(x));
+  hashDir('./', x => /^compare-.*\.ts$/.test(x) || x === 'c9-scenario.ts' || x === 'field-scenario.ts'); // scenario scoring (T-FIS, T-LET-4) since C9
   const t = JSON.parse(readFileSync(TARGETS, 'utf8')) as { targets: ({ id: string; role: string; encoded: boolean; accept: unknown; observer: unknown } & Record<string, unknown>)[]; c12Fitted?: unknown };
   h.update(JSON.stringify(t.targets.map(x => [x.id, x.role, x.encoded, x.accept, x.observer, FLAG_FIELDS.map(k => x[k] ?? null)])));
   h.update(JSON.stringify(t.c12Fitted ?? null));

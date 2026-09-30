@@ -5,6 +5,7 @@ import { cellAt, gridOf, levels, pressureAt, territoryCost } from './territory';
 import { clamp, hash01, smoothstep } from './rng';
 import { paramsOf, type Params } from './params';
 import { fruitAt } from './phenology';
+import { bestFallbackNear, fallbackOn } from './fallback';
 import { byIdIn, index, isTreeId, ix, NEVER, TREE_ID0, treesNear, simOf } from './state';
 
 // Variants refine an action's meaning (why a charge happens) for execution and reason text.
@@ -96,6 +97,8 @@ export function isCarried(c: Chimp, mother: Chimp | undefined): boolean {
 
 const _near: number[] = [];
 const _mem: (Tree | number)[] = [];
+const _rk: number[] = [], _dk: number[] = []; // stages C7d-C7e: believed value (worth − revisit) and distance of each shortlist entry
+const _fb: [number, number] = [0, 0];
 
 function chooseNestTree(world: World, c: Chimp): Tree | undefined {
   const x = ix(c), P = paramsOf(world);
@@ -156,7 +159,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   curP = P;
   const x = ix(c);
   curEnd = x.actEnd; curDone = x.finished;
-  curSilent = c.action === 'patrol' && x.v !== V.APPROACH && !!simOf(world).patrols[c.troopId];
+  curSilent = P.patrolSilence === 1 && c.action === 'patrol' && x.v !== V.APPROACH && !!simOf(world).patrols[c.troopId];
   if (!c.alive) { out.push({ action: 'dead', targetId: -1, score: 1, reason: 'Life ended' }); return out; }
   const st = stampTrees(world, c, x);
   const idx = index(world);
@@ -229,11 +232,13 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     }
   }
   if (!caretaker) {
-    offer('forage', -1, h * P.fallbackForageW + 0.03 - rain * 0.3);
+    // stage C7c (field): fallback is worth the best rate in view, so a depleted patch sends the animal elsewhere (fallback.ts)
+    offer('forage', -1, h * P.fallbackForageW * (fallbackOn(P) ? bestFallbackNear(world, px, pz, x.sight, _fb) : 1) + 0.03 - rain * 0.3);
     // field profile: leaving companions for a food tree of one's own has a cost (parties travel together; design, T-PTY-1)
     const stay = P.partyStayW > 0 ? P.partyStayW * Math.min(x.visibleOwn, P.partyStayMaxN) : 0;
     const shortlist = P.patchEcology === 1; // field: many remembered trees; score the few best by distance and hunger
-    _mem.length = 0;
+    _mem.length = 0; _rk.length = 0; _dk.length = 0;
+    const minD = P.memoryTreeMinM;
     for (let _i3 = 0; _i3 < c.memory.length; _i3++) { const m = c.memory[_i3];
       if (m.kind === 'tree' && time - m.seenAt < P.memTravelHorizonH && !stamped(_sight, m.entityId, st)) {
         const t = idx.treeById.get(m.entityId); if (!t) continue;
@@ -242,7 +247,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
         // stage C7a (field): a remembered tree is worth what the animal last saw in it
         const crop = x.treeCrop?.[t.id] ?? 0.2;
         const worth = P.memCropBelief === 1 ? h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) : h * P.memTravelHungerW;
-        if (shortlist) { _mem.push(t, worth - tripCost(worth, crop, d, h, P) - revisit(x, t.id, time, P)); continue; }
+        if (shortlist) { const rv = revisit(x, t.id, time, P); _mem.push(t, worth - tripCost(worth, crop, d, h, P) - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD)); continue; }
         offer('travel', t.id, worth - tripCost(worth, crop, d, h, P) - revisit(x, t.id, time, P) - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + pers.sociability * env.fruitIndex * 0.1 - stay, V.TREE);
       } else if (m.kind === 'water' && c.thirst > 0.25 && c.age >= 3) {
         const d = Math.hypot(m.position[0] - px, m.position[2] - pz);
@@ -260,7 +265,19 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       const d = dxz(t, px, pz);
       if (d < P.memoryTreeMinM) continue;
       const crop = x.treeCrop?.[id] ?? known[i + 1], worth = h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef));
-      _mem.push(t, worth - tripCost(worth, crop, d, h, P) - revisit(x, id, time, P));
+      const rv = revisit(x, id, time, P);
+      _mem.push(t, worth - tripCost(worth, crop, d, h, P) - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD));
+    }
+    // stage C7d (field; c7b-prereg §8.3): route chaining, the nearest unused known resource weighted by value (janson2014) [M]:
+    // offer only the tree with the most believed value per metre, at its usual score. Stage C7e (§9): with goalDistScaleM D > 0
+    // the rank is value × D / (D + d) instead, between route chaining (D → 0) and no distance preference (D → ∞); fitted (C7e) against Taï
+    const D = P.goalDistScaleM;
+    if (shortlist && (D > 0 || P.routeChain === 1) && _rk.length) {
+      let bi = -1, br = -Infinity;
+      for (let i = 0; i < _rk.length; i++) { const r = D > 0 ? _rk[i] * D / (D + _dk[i]) : _rk[i] / _dk[i]; if (r > br) { br = r; bi = i; } }
+      const t = _mem[2 * bi] as Tree, base = _mem[2 * bi + 1] as number;
+      _mem.length = 0;
+      offer('travel', t.id, base - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + pers.sociability * env.fruitIndex * 0.1 - stay, V.TREE);
     }
     if (shortlist) for (let k = 0; k < 4 && _mem.length; k++) {
       let bi = 1;
@@ -275,6 +292,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       let pull = x.joinRich ? 0.15 + env.fruitIndex * 0.35 + h * 0.3 + pers.sociability * 0.15 : pers.sociability * 0.3 * env.fruitIndex - 0.05;
       // field profile: an individual with few companions and an unmet social need goes to the callers; males to males (design; T-PTY-1)
       if (P.joinSocialW > 0) { const caller = byId.get(x.joinCaller); pull += (1 - c.social) * P.joinSocialW * (x.visibleOwn < 2 ? 1 : P.joinSocialInPartyF) + (male && c.age >= 15 && caller && isAdultMale(caller) ? P.joinMaleW : 0); }
+      if (P.assocBondW > 0) { const caller = byId.get(x.joinCaller); if (caller) pull += P.assocBondW * bond(c, caller); } // stage C9: bond with the caller (off by default)
       if (d > P.joinCallMinM) offer('travel', x.joinCall, pull * (1 - rain * 0.5) - d / P.joinCallDistScaleM, V.CALLER, x.joinCaller);
     }
     // beyond the own range (UD isopleth, stage C6) the pull home grows; the equal-area circle is not the range's shape
@@ -332,8 +350,16 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       offer('flee', o.id, (tn - P.avoidTensionFloor) * P.avoidTensionW + P.avoidBase, V.AVOID);
     // party cohesion (field profile): keep up with a party member who is travelling off, likelier for bonded partners
     // and adult males; parties travel together between food patches (fission-fusion) (design; tuned to T-PTY-1)
-    if (P.partyFollowW > 0 && !carried && c.age >= 5 && d > P.partyFollowMinM && d < P.partyLinkM && (o.action === 'travel' || o.action === 'follow') && o.targetId !== c.id && !night)
-      offer('follow', P.partyLeaderFollow === 1 ? leaderOf(o, c, byId, x.seen) : o.id, P.partyFollowBase + b * P.partyFollowW + pers.sociability * P.partyFollowSocialW + (isAdultMale(o) ? P.partyFollowMaleW : 0) - h * P.partyFollowHungerW - rain * 0.3, V.PARTY);
+    if (P.partyFollowW > 0 && !carried && c.age >= 5 && d > P.partyFollowMinM && d < P.partyLinkM && (o.action === 'travel' || o.action === 'follow') && o.targetId !== c.id && !night) {
+      const lead = P.partyLeaderFollow === 1 ? leaderOf(o, c, byId, x.seen) : o.id, L = byId.get(lead);
+      // stage C10 addendum 1: a travel hoo heard from this companion (or its leader) in the last few minutes raises following it
+      const hoo = P.travelHoo === 1 && x.hooFrom !== undefined && (x.hooFrom === lead || x.hooFrom === o.id) && time - (x.hooAt ?? NEVER) <= P.travelHooWindowMin / 60 ? P.travelHooFollowW : 0;
+      const sc = P.partyFollowBase + b * P.partyFollowW + pers.sociability * P.partyFollowSocialW + (isAdultMale(o) ? P.partyFollowMaleW : 0) - h * P.partyFollowHungerW - rain * 0.3 + hoo
+        + (P.assocBondW > 0 && L ? P.assocBondW * bond(c, L) : 0); // stage C9: bond with the leader (off by default)
+      // stage C7c (field; c7b-prereg §6.2): a companion on a committed trip to a tree lends its goal: go there with it (shared goal) [H: joint travel, gruberZuberbuhler2013]
+      if (P.partyJoinTrip === 1 && L && L.action === 'travel' && ix(L).v === V.TREE && isTreeId(L.targetId)) offer('travel', L.targetId, sc, V.TREE, L.id);
+      else offer('follow', lead, sc, V.PARTY);
+    }
     // recent immigrant females stay near adult males, who buffer resident-female aggression [M]
     if (c.sex === 'female' && c.age >= 12 && x.immigrantAge >= 0 && c.age - x.immigrantAge < 2 && o.sex === 'male' && o.age >= 15 && d > P.immigrantFollowMinM && d < P.immigrantFollowMaxM)
       offer('follow', o.id, 0.2 + (time - x.victimAt < 1 ? 0.3 : 0) - h * 0.3, V.PARTY, 1);

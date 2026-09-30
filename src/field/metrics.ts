@@ -4,7 +4,7 @@ import { MONTH_H, shares, type Derived } from './derive';
 import { P_LACT, type Records } from './records';
 import { EARLY_LIFE_METRICS, SEALED } from './early-life';
 import { cellOf, cellRange, isoplethArea, kde } from './space';
-import { conciliatoryTendency, dispersion, finite, hwi, kendall, logistic, mean, median, ols, pearson, poissonInterval, spearman, steepness } from './stats';
+import { conciliatoryTendency, dispersion, finite, hwi, kendall, ldaLeaveOneOut, logistic, mean, median, ols, pearson, poissonInterval, spearman, steepness } from './stats';
 
 // One metric function per target id (data/targets.json), each implementing its source's computation on the
 // observer's records (docs/realism-design.md §3.6). A function returns one seed's value; `pool` says how seeds
@@ -657,10 +657,12 @@ export const METRICS: MetricDef[] = [
   },
 
   // Fission
-  { id: 'T-FIS-1', protocol: 'census + association network', na: 'communities cannot split (fission is stage C9)' },
-  { id: 'T-FIS-2', protocol: 'association-network modularity before fission', na: 'communities cannot split (C9)' },
-  { id: 'T-FIS-3', protocol: 'post-split killing rate', na: 'communities cannot split (C9)' },
-  { id: 'T-FIS-4', protocol: 'former associates among victims', na: 'communities cannot split (C9)' },
+  // Fission (stage C9): scored from simulation truth by scripts/c9-scenario.ts (40-year scenarios, fissionOn 1); fission is off in these runs
+  { id: 'T-FIS-1', protocol: 'fissions per community-year by adult-male class (scenario)', na: 'scored by scripts/c9-scenario.ts (baseline and large-community scenarios; fissionOn is off by default)' },
+  { id: 'T-FIS-2', protocol: 'years of rising yearly mean modularity before the split condition first held (scenario)', na: 'scored by scripts/c9-scenario.ts (large-community scenario)' },
+  { id: 'T-FIS-3', protocol: 'killings between daughters in 7 years after the split / paired baseline intercommunity rate (scenario)', na: 'scored by scripts/c9-scenario.ts (large and large-off scenarios)' },
+  { id: 'T-FIS-4', protocol: 'victims killed by the other daughter with a former associate among the killers (scenario)', na: 'scored by scripts/c9-scenario.ts (large-community scenario)' },
+  { id: 'T-FIS-5', protocol: 'post-split patrols per 10 adult males, smaller / larger daughter (scenario)', na: 'scored by scripts/c9-scenario.ts (large-community scenario)' },
 
   // Food
   {
@@ -1192,8 +1194,48 @@ export const METRICS: MetricDef[] = [
       return { value: ctx[CAT_TRAVEL] / tot, parts: { travel: ctx[CAT_TRAVEL] / tot, feed: ctx[CAT_FEED] / tot, rest: ctx[CAT_REST] / tot, fruitRate: fr, groundRate: gr }, n: tot, pass: travelTop && fr > gr };
     },
   },
-  { id: 'T-COM-5', protocol: 'discriminant identity of pant-hoots', na: 'calls carry no individual acoustic features (C10 signatures)' },
-  { id: 'T-COM-6', protocol: 'drumming bout structure', na: 'drums are single events without hit structure (C10)' },
+  {
+    id: 'T-COM-5', protocol: 'bioacoustic recorder (stage C10): pant-hoots of adult males recorded within 10% of the hearing radius of a following team, one record per call; leave-one-out linear discriminant accuracy for caller identity over callers with >= 10 recorded calls, divided by chance (1 / callers); part community: the same calls classified by the caller\'s community (desai2022)',
+    compute: d => {
+      const byCaller = new Map<number, { f: number[]; troop: number }[]>(), seen = new Set<string>();
+      for (const c of d.rec.calls) {
+        if (c.kind !== 'pant-hoot' || !c.f || !d.isAdultMale(c.caller, c.t)) continue;
+        const key = `${c.caller}|${c.t}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        (byCaller.get(c.caller) ?? byCaller.set(c.caller, []).get(c.caller)!).push({ f: c.f, troop: c.troop });
+      }
+      const X: number[][] = [], who: number[] = [], troop: number[] = [];
+      for (const [id, l] of byCaller) if (l.length >= 10) for (const r of l) { X.push(r.f); who.push(id); troop.push(r.troop); }
+      const callers = new Set(who).size;
+      if (callers < 3) return none(`needs >= 3 callers with >= 10 recorded pant-hoots (${callers})`, X.length);
+      const a = ldaLeaveOneOut(X, who), b = new Set(troop).size >= 2 ? ldaLeaveOneOut(X, troop) : null;
+      return { value: a.accuracy / a.chance, n: X.length, parts: { callers, accuracy: a.accuracy, community: b ? b.accuracy / b.chance : null } };
+    },
+  },
+  {
+    id: 'T-COM-6', protocol: 'drums heard by a following team, one record per bout (stage C10): median hits per bout (intervals + 1) and mean inter-hit interval; pass when the median is 3-5 hits and no bout is by a female; parts: share of male bouts without the drummer\'s pant-hoot within 1 min (reported) (eleuteri2025; clarkArcadi2004)', pool: 'custom',
+    compute: d => {
+      const hits: number[] = [], iv: number[] = [], silent: number[] = [], female: number[] = [], seen = new Set<string>();
+      for (const c of d.rec.calls) {
+        if (c.kind !== 'drum' || !c.f) continue;
+        const key = `${c.caller}|${c.t}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const sex = d.roster.get(c.caller)?.sex;
+        hits.push(c.f.length + 1); for (const v of c.f) iv.push(v);
+        female.push(sex === 'female' ? 1 : 0);
+        if (sex === 'male') silent.push(d.calledNear(c.caller, c.t, ['pant-hoot'], 1 / 60, 1 / 60) ? 0 : 1);
+      }
+      return { value: null, n: hits.length, raw: { hits, iv, silent, female } };
+    },
+    pooled: s => {
+      const hits = s.flatMap(v => v.raw?.hits ?? []), iv = s.flatMap(v => v.raw?.iv ?? []), silent = s.flatMap(v => v.raw?.silent ?? []), female = s.flatMap(v => v.raw?.female ?? []);
+      if (hits.length < 20) return none(`needs >= 20 recorded drumming bouts (${hits.length})`, hits.length);
+      const med = median(hits), fem = female.reduce((a, b) => a + b, 0);
+      return { value: med, n: hits.length, parts: { meanIntervalMs: mean(iv), maleBoutsWithoutCall: silent.length ? mean(silent) : null, femaleBouts: fem }, pass: med >= 3 && med <= 5 && fem === 0 };
+    },
+  },
   {
     id: 'T-COM-7', protocol: 'logistic regression of a focal male drumming in a minute on party size; negative slope required (eleuteri2022)', pool: 'custom',
     compute: d => {

@@ -1,7 +1,8 @@
-import type { CallKind, Chimp, Interaction, InteractionKind, SimEventKind, World } from '../types';
+import type { Call, CallKind, Chimp, Interaction, InteractionKind, SimEventKind, World } from '../types';
 import { paramsOf } from './params';
 import type { ParamId } from './params.gen';
 import { index, ix, simOf } from './state';
+import { drumIntervals, pantHootFeatures } from './signals';
 
 export function nextId(world: World): number { return world.nextId++; }
 
@@ -64,11 +65,11 @@ export function flashInteraction(world: World, kind: InteractionKind, actor: Chi
 // (pant-hoots carry ~1-2 km in forest), and how long each call lasts (call*Min).
 const CALL_RADIUS: Record<CallKind, ParamId> = {
   'pant-hoot': 'hearPantHootM', drum: 'hearDrumM', scream: 'hearScreamM', bark: 'hearBarkM', 'alarm-hoo': 'hearAlarmHooM', 'food-grunt': 'hearFoodGruntM',
-  'pant-grunt': 'hearPantGruntM', whimper: 'hearWhimperM', laugh: 'hearLaughM',
+  'pant-grunt': 'hearPantGruntM', whimper: 'hearWhimperM', laugh: 'hearLaughM', 'travel-hoo': 'hearTravelHooM',
 };
 const CALL_MINUTES: Record<CallKind, ParamId> = {
   'pant-hoot': 'callPantHootMin', drum: 'callDrumMin', scream: 'callScreamMin', bark: 'callBarkMin', 'alarm-hoo': 'callAlarmHooMin', 'food-grunt': 'callFoodGruntMin',
-  'pant-grunt': 'callPantGruntMin', whimper: 'callWhimperMin', laugh: 'callLaughMin',
+  'pant-grunt': 'callPantGruntMin', whimper: 'callWhimperMin', laugh: 'callLaughMin', 'travel-hoo': 'callTravelHooMin',
 };
 
 export type HearFn = (world: World, listener: Chimp, callId: number, kind: CallKind, caller: Chimp) => void;
@@ -81,8 +82,11 @@ export function emitCall(world: World, caller: Chimp, kind: CallKind): number {
   caller.vocal = kind; caller.vocalUntil = world.time + P[CALL_MINUTES[kind]] / 60;
   const radius = P[CALL_RADIUS[kind]];
   const id = nextId(world);
-  world.calls.push({ id, kind, callerId: caller.id, troopId: caller.troopId, position: [caller.position[0], caller.position[1], caller.position[2]], time: world.time, radius });
-  if (hearHook && (kind === 'pant-hoot' || kind === 'drum' || kind === 'alarm-hoo' || kind === 'scream')) {
+  const call: Call = { id, kind, callerId: caller.id, troopId: caller.troopId, position: [caller.position[0], caller.position[1], caller.position[2]], time: world.time, radius };
+  // stage C10: pant-hoots carry the caller's signature, drums their inter-hit intervals (the key is absent when off)
+  if (P.callSignatures === 1) { if (kind === 'pant-hoot') call.features = pantHootFeatures(P, caller.id, caller.natalTroopId, id); else if (kind === 'drum') call.features = drumIntervals(P, id); }
+  world.calls.push(call);
+  if (hearHook && (kind === 'pant-hoot' || kind === 'drum' || kind === 'alarm-hoo' || kind === 'scream' || kind === 'travel-hoo')) {
     const r2 = radius * radius;
     for (const o of index(world).alive) {
       if (o === caller || !o.alive) continue;

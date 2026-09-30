@@ -1132,6 +1132,74 @@ Shape statistics that were similar stay similar (core fraction, edge and centre 
 **Effort / risk**: L (5–10 days). Risk: high (may not emerge; a negative result is reported, not tuned away).
 **Status**: Not Started
 
+#### C9 pre-registration (29 September 2026, docs only; nothing built, no run)
+
+This fixes C9's rules, values, sources and held-out rules before any C9 code exists. It builds on §5.4 and the open Ngogo data: the fission networks and quarterly patrols in `data/raw/dryad-sf7m0cgkg` [sandel2026], and the fission range divergence in `docs/data/ranging-compare.json`. Sources are listed in docs/research.md ("Community fission, stage C9").
+
+**Ablation switches.** With both off, the model is the pre-C9 model. Association bookkeeping is written only when `fissionOn` is 1, so worlds with it off are identical to pre-C9 worlds.
+
+| Switch | Mechanism | Off (0) means |
+| --- | --- | --- |
+| `fissionOn` | association bookkeeping, monthly detection, the split rule and new-community creation | no association data, no split |
+| `assocBondW` | party-following and join-call pull weighted by bond with the leader or caller | the C7c scores |
+
+**Rules and values (fixed now; not tuned).**
+1. **Association.** Every 15 min, each pair of independent individuals ≥ 10 y in the same party gets a co-membership count, and each individual gets a scan count. Counts are integer-keyed (`a·100000 + b`) in `world.sim.assoc`. Each individual also gets a 400 m location histogram. Everything is plain data and serializable (§5.4).
+2. **Monthly detection.** For each community, the simple ratio index over pairs with ≥ 50 scans each, then deterministic Louvain with Leiden refinement [traag2019]: nodes in id order, ties to the smaller id, no RNG. The output is the best two-cluster split, its modularity Q [newman2006], adult males and females per cluster, and the Bhattacharyya overlap of the clusters' location histograms. A monthly row goes to `world.sim.fissionLog` (at most 240).
+3. **Split rule (a field-recognition proxy).** Q ≥ `fissionQ` and overlap ≤ `fissionOverlap` for ≥ `fissionMonths` consecutive months, with ≥ 3 adult males and ≥ 3 adult females in each cluster. Values, taken at the middle of the §5.4 priors (design): `fissionQ` 0.4 (prior 0.3–0.5), `fissionOverlap` 0.5 (prior 0.3–0.6), `fissionMonths` 12 (prior 6–24). For reference only, not used to choose the values: at Ngogo the West–Central pooled-range overlap was 0.65–0.77 in 2011–2015 and 0.31–0.44 from 2016 (`ranging-compare.json`, derived from sandel2026's data), so 0.5 lies between the two regimes.
+4. **On a split.** The cluster farther from the original range centroid becomes a new `Troop` (id 4 and up). Dependents follow their mothers. The range is divided by the clusters' location histograms. Hierarchies and alphas are recomputed. Bonds, memories and digests are kept, and the two groups become strangers: the existing intergroup mechanics apply, and nothing scripts violence. The observer adds a following team for the new community from the split month on, as the Ngogo researchers followed both groups.
+5. **Bond-weighted association** (`assocBondW`). The party-follow and join-call scores gain `assocBondW` × bond with the leader or caller. Allies were recruited to travel more often [gruberZuberbuhler2013] [M]; the weight is design, 0.3.
+
+**Deliberately not built.** §5.4 also proposes that rivals' allies avoid each other during hierarchy instability. It would be designed from the Gombe antecedent [feldblum2018], which is part of T-FIS-2's own pattern ("coincident hierarchy upheaval"), so it would encode that target. It stays out; if an upheaval coincides with a split, it has emerged.
+
+**Held-out targets and rules** (all counted only if nothing was set by looking at them).
+
+| Target | Rule, fixed now | Where it runs |
+| --- | --- | --- |
+| T-FIS-1 | Fissions per community-year by adult-male class. Pass: zero fissions in communities with < 10 adult males, and ≤ 1 per 100 community-years at 20–40 males. | Baseline: every 40-year natural-aging run of the combined proof (C8 sets A and B), so no extra cost. Scenario below. |
+| T-FIS-2 | Years of rising Q (yearly mean of the monthly Q, strictly increasing run) before the month the split condition first held. It is measured to the onset, not the recognized split, so the 12-month persistence rule cannot make the lead. Band 1–3 years. Hierarchy changes (an alpha change or a contested vacancy) within ±1 year of onset are reported. | `large-community` scenario |
+| T-FIS-3 | Killings between the daughter communities in the 7 years after the split ÷ the baseline intercommunity killing rate of the same seeds. Band ≥ 5. | scenario, paired baseline |
+| T-FIS-4 | Share of victims killed by the other daughter community whose killers include a former associate (simple ratio index ≥ the median of adult male pairs in the year before onset). Pass: ≥ 0.5 (bonds do not protect). | scenario |
+| T-FIS-5 (new) | After a split, adult-male patrols per 10 males per year, smaller daughter ÷ larger daughter. Real value by the rule: 2017–2022 of `patrol-data-quarterly.csv` with the males of `population_snapshots.csv`, median of yearly ratios, with a bootstrap 90% CI over years. The band is that CI, computed by a script before any C9 run; the data only have been looked at, never a simulated value. | scenario |
+| Range divergence (C12 `fission` row) | Daughter-community range overlap before vs after the split. **Encoded:** the split rule requires overlap ≤ 0.5, so a low overlap after the split holds by construction. Reported, never counted. | scenario |
+
+**Scenario `large-community`.** At the start, the West community gets extra members, including adult males, up to ≥ 60 members and ≥ 15 adult males. This mirrors the expansion scenario's extra males. It runs 40 years at natural aging, with the population cap raised to 180. Seeds 5101, 5202, 5303, 5404 and 5505, reserved and never run (the first choice, 3505–3909, had already served C7c–C7e movement direction checks with fission off; corrected before any C9 run, logged). If no fission occurs, that negative result is reported and nothing is tuned to produce one.
+
+**Contract and other owners.** New troops are appended to `world.troops`, and the current types allow that. The UI, renderer and audio must handle more than 3 communities (colours, emblems, labels), and the integrator should confirm before the build.
+
+**Shared files at build time.** A new `src/sim/fission.ts`. Also `parties.ts` (15-min association), `tick.ts` (monthly), `candidates.ts` (one local term per score for `assocBondW`), `hierarchy.ts` (recompute after a split), `generation.ts` (new troop records), and `src/field` (a team per new community, plus the T-FIS metrics).
+
+**Cost.** Association counts are about 1 ms per eco-day and monthly detection < 5 ms for n ≤ 80. The bench target is ≤ 0.8 s per eco-day at 150 living.
+
+#### C9 build addendum (29 September 2026, before any C9 run)
+
+Built in `src/sim/fission.ts`, off by default (`fissionOn` 0, `assocBondW` 0; the C9 scenario turns on both, with `assocBondW` at 0.3), so the combined proof is unaffected. With it off, no state is written and worlds are identical to `main`: the compressed goldens are unchanged, and field seeds 48 and 7 at days 3 and 40 are identical. Implementation details fixed now, before any run:
+- **Time window.** Association counts, scans and location histograms decay by e^(−1/12) each month, a 12-month window (design). The clusters' range overlap uses the same decayed histograms.
+- **Community detection.** Deterministic Louvain levels are followed by a connectivity refinement: a community that is not connected is split into its components, which is the guarantee Leiden adds [traag2019]. Leiden's full refinement phase is simplified to this. Communities are then merged greedily to the best two, and single nodes move while modularity rises.
+- **Who counts.**
+  - Network nodes are independent animals aged ≥ 10 with ≥ 50 decayed scans.
+  - A community needs at least 12 nodes (four times `fissionMinAdults`) to be tested.
+  - Adults for the composition rule: males per `isAdultMale`, and females ≥ 15 y.
+- **Which cluster leaves.** The daughter is the cluster whose histogram centroid lies farther from the parent's range centre. Animals outside the network go with their mother, processed oldest first, or else to the nearer cluster centroid.
+- **The daughter community.**
+  - It gets the next colour and emblem from the UI's order (#c9a4f0 ■, #e8c36a ★, #9fb0c8 ⬟, #f08a8a ✚) and the name "<parent> (new)".
+  - Its parent is recorded in `world.sim.fission.parents`, so no contract field is needed.
+  - An ongoing patrol of the parent ends.
+  - The parent's use is divided cell by cell by the clusters' histogram shares, with equal shares where neither cluster was seen.
+- **Observer.** A community that appears gets a following team (`ensureTeams`), and its id is added to the records.
+- **Still to build for the C9 proof.** The T-FIS observer metrics, the `large-community` scenario and the T-FIS-5 band script.
+
+#### C9 proof preparation (29 September 2026, before any C9 scenario run)
+
+- **T-FIS-5 band.** Computed from the real data by the pre-registered rule (`scripts/fission-bands-metrics.ts`, adult males of `population_snapshots.csv`, 2017–2022). Median ratio 7.35, 90% CI 6.19–11.41. Every year West, the smaller group (7–11 adult males), patrolled 5–15 times more per male than Central (23–26). The row is in data/targets.json, held out.
+- **Scenario script.** `scripts/c9-scenario.ts` scores T-FIS-1…5 and the range divergence from simulation truth, by the pre-registered rules. It runs three kinds at natural aging:
+  - `baseline`: default communities with fission on.
+  - `large`: West cloned up to ≥ 60 members and ≥ 15 adult males, cloning adult males and mothers with their young; `popCap` 180.
+  - `large-off`: the same start with fission off. It gives the paired intercommunity killing rate for T-FIS-3, per community pair per year over the three communities.
+- **Change from the pre-registration** (integrator ruling: `fissionOn` stays off by default). The T-FIS-1 baseline can no longer come from the combined proof's 40-year runs, so it runs as the scenario's `baseline` kind. Logged.
+- **Fix after the first plumbing run** (compressed, seed 42, 3 years; not a proof, and no C9 value is tuned on it). When Louvain finds a single community, the monthly Q was reported as 0, which hid a network that is starting to divide. The best two-way split now comes from the leading eigenvector of the modularity matrix [newman2006], polished by node moves. Q stays 0 only when no split has positive modularity. On the compressed map a 60-member community forms one party chain (every pair's association index is near 1), so Q stays 0 there; the proof uses the field profile.
+- **Proof command.** `pnpm exec tsx scripts/c9-scenario.ts --years 40 --workers 6` on the reserved seeds 5101–5505. Rough wall time: about 12 h at 6 workers and 30 h at 2. The large communities approach the cap of 180, which costs about 0.6–1 s per eco-day.
+
 ### Stage C10: Communication (O10)
 **Goal**: individual and community call signatures, recognition by listeners, context- and audience-dependent calling, drumming structure, core gestures, features exposed to the audio layer.
 **Success Criteria** (5 seeds × 1 year):
@@ -1142,6 +1210,68 @@ Shape statistics that were similar stay similar (core fraction, edge and centre 
 **Proof**: `scripts/field-metrics.ts --years 1` with the bioacoustic recorder's discriminant analysis; an audio loudness and variation check with the audio owner.
 **Effort / risk**: M (3–5 days). Risk: low.
 **Status**: Not Started
+
+#### C10 pre-registration (29 September 2026, before any C10 run)
+
+Rules, values and sources are fixed here before any simulation run with C10 code. Sources are added to docs/research.md ("Communication, stage C10"). Evidence tags follow AGENTS.md.
+
+**Ablation switches (new rule for every stage).** Each C10 mechanism has a registry switch; with all of them 0 the model is the pre-C10 model (goldens reproduce). Defaults are on in both profiles, so the combined proof can run "all on" against "C10 off".
+
+| Switch | Mechanism | Off (0) means |
+| --- | --- | --- |
+| `callSignatures` | pant-hoot feature vectors and drum structure on calls | calls carry no features; T-COM-5 and T-COM-6 are n/a |
+| `callerDiscrim` | listeners count stranger callers by their perceived features | `heardN` counts distinct true caller ids (C6 rule) |
+| `foodCallRule` | probabilistic, audience-dependent food grunts at arrival | the C7a rule (a grunt whenever the crop exceeds 0.3) |
+| `gestureRequests` | gestures before social actions (C10b, below) | no gestures |
+
+**Rules and values.**
+1. **Pant-hoot signatures** (`callSignatures`). Each chimpanzee has a constant mean signature over six standardized features (build-up duration, climax peak frequency, element count, inter-element interval, let-down strength, overall duration): `s_i = c_k + δ_i`, with `c_k ~ N(0, sigCommunitySD²)` for its natal community and `δ_i ~ N(0, sigIdentitySD²)`, both drawn from hashes of the ids (no RNG, constant over a life). Each call adds call-to-call variation `ε ~ N(0, 1)` per feature, hashed from the call id. No context shift: desai2022 shows context adds variation, but its size is not transcribed (design 0, labelled). The features go on the call (`Call.features`, contract request below) for listeners, the observer and the audio layer. Individual signatures exist but are noisy: identity 19.5% vs 6.9% chance, group differences weaker [desai2022] [M]. Feature choice follows §5.8 (design).
+   - **Values, fixed by an offline Monte Carlo of the observer's recorder protocol, with no simulation run:** `sigIdentitySD` so that leave-one-out discriminant accuracy for 18 callers × 20 calls is 2.8× chance (desai2022: 19.5 ÷ 6.9); `sigCommunitySD` so that community accuracy for two communities is ~1.3× chance (the §5.8 reading of desai2022, "less reliably than group differences"). T-COM-5 is then tuned by construction and labelled so.
+2. **Caller discrimination** (`callerDiscrim`). A listener perceives a call's features with extra noise `σ_p = discrimNoise0 + discrimDistW · d / hearing radius`, hashed per listener and call. Within the stranger-caller window it counts a new caller only when the perceived vector's root-mean-square distance to every caller already counted exceeds `discrimThreshold`; `heardN` ≥ 1. Values: `discrimNoise0` 0.3, `discrimDistW` 1, `discrimThreshold` 1.5 (design [L]; the premise, that callers are only partly distinguishable, is desai2022 [M]).
+3. **Food calls** (`foodCallRule`). On arrival in a crown with crop > 0.3 (the existing condition, when no arrival pant-hoot is given, 0.3 h since the last food call), a food grunt with probability `clamp01(foodCallBase + foodCallCropW · (crop − 0.3) + foodCallMaleW · min(3, other adult males within sight) + foodCallPartnerW · [a partner with bond ≥ 0.5, or the alpha, in sight])`, drawn from `world.rng`. Values: `foodCallBase` 0.35, `foodCallCropW` 0.3, `foodCallMaleW` 0.05, `foodCallPartnerW` 0.15, which gives about one call per two feeding arrivals: food calls at about half of feeding events, more with more males present [kalanBoesch2015] (Taï, *P. t. verus*; abstract) [M]; more with an important partner nearby [slocombe2010] (abstract) [M]; the crop term and all magnitudes are design. `foodCallBase` may be refitted once to T-COM-8's band centre (0.45) on development seeds, logged. T-COM-8's audience part would be encoded; the current protocol does not measure it.
+4. **Drum structure** (`callSignatures`). Each drum call carries its inter-hit intervals. Hits per bout = max(2, round(exp(ln `drumHitsMedian` + `drumHitsSigma` · z))), z hashed from the call id: median 4, and σ 0.45 puts the mode at 3 (eastern chimpanzees: median 4 hits per bout, mode 3, mean inter-hit interval 229 ms [eleuteri2025] [M]). Intervals alternate short and long around `drumIntervalMs` 229 with swing `drumSwing` 0.3 (the alternation is eleuteri2025; the swing size is design) and 10% jitter. No individual offset: Kanyawara drumming shows no individual signature [clarkArcadi2004] [M]. Who drums and when is unchanged (adult males in displays, counter-calls and patrol releases).
+5. **Gestures (C10b, after the contract fields and a transcription of hobaiterByrne2014).** A core subset of Sonso gesture types with their meanings, used as requests before grooming, play, travelling together and "stop", recorded as interactions; they raise the partner's acceptance, and a chimpanzee's repertoire grows with use (T-COM-10: 66 types, individual mean 10.0, juveniles 15.1 vs adults 5.1 [hobaiterByrne2011]; 19 meanings, 4.6 per gesture [hobaiterByrne2014]). Rules and values will be fixed in an addendum before any C10b run.
+
+**Deliberately not implemented.** §5.8 also lists a rank term and a males-in-party term on pant-hoot rates, status-dependent arrival calls and a party-size term on drumming. Each would be built from the pattern of a held-out target (T-COM-2 [mitaniNishida1993] [wilson2007], T-COM-9 [clarkWrangham1994], T-COM-7 [eleuteri2022]). C10 leaves these patterns to emerge or fail, so the targets stay held out.
+
+**Observer (protocol additions, frozen with the rows).**
+- *Recorder (T-COM-5):* every pant-hoot of an adult male heard by a following team within 100 m is recorded with its features. Per seed: leave-one-out linear discriminant accuracy over callers with ≥ 10 recorded calls, ÷ chance (1/callers); part: community accuracy ÷ chance.
+- *Drums (T-COM-6):* drums heard by a team. Median hits per bout, mean inter-hit interval, share of male bouts without the drummer's pant-hoot within 1 min (reported), share of bouts by females (must be 0). Pass: median 3–5 hits and no female bouts.
+
+**Targets.** Fitted: T-COM-5 (tuned by construction, above), T-COM-6, T-COM-8, T-COM-10 (C10b). Held out: T-COM-2, T-COM-7, T-COM-9; T-COM-3 and T-COM-4 have been encoded since C6. T-COM-1 and T-COM-11 are unchanged.
+
+**Direction checks** (not proof). Seeds 31, 32 and 33 (outside 606–1010, 1111–2525 and the proof seeds), 120 field days. Checks: signatures are constant per chimpanzee, recognition errors rise with distance, the food-call share moves toward 0.3–0.6, and the drum median is 3–5. The proof runs combined after the merges.
+
+**Contract request (src/types.ts, integrator):** `Call.features?: number[]` (pant-hoot: six standardized features; drum: inter-hit intervals in ms), and for C10b `InteractionKind` 'gesture' with `Interaction.gesture?: string`.
+
+**Shared files.** `events.ts` (`emitCall` features), `perception.ts` (`hear`), `execution.ts` (the food-call lines of the arrival block only), a new `src/sim/signals.ts`, and `src/field` (recorder, drums). No `candidates.ts` edits before C10b.
+
+#### C10 addendum 1: travel hoos (29 September 2026, before any travel-hoo code or run)
+
+Adopted at the integrator's suggestion. C7c models travel recruitment without a call. Values verified in the full text of gruberZuberbuhler2013 (PLoS ONE, Budongo Sonso):
+- 60.3% of 456 travel events included a "travel hoo".
+- 71.4% (55/77) of vocally initiated travel events led to a travel party, against 33.7% (30/89) of silent ones.
+- Callers called more with an ally in the audience: 75.6% vs 55.4%.
+- Travel hoos are low-intensity, short (0.125 s) and low-pitched.
+
+| Switch | Rule | Values | Evidence |
+| --- | --- | --- | --- |
+| `travelHoo` | When an independent animal starts a goal-directed trip (to a tree, or initiating a C7c joint trip) with at least one own-community companion within `partyLinkM`, it gives a quiet travel hoo. The hoo is heard only by own-community animals within `hearTravelHooM`. For `travelHooWindowMin`, a hearer's party-follow candidate toward the caller is offered with `travelHooFollowW` added. | P(hoo) `travelHooP` 0.554, or `travelHooAllyP` 0.756 with an ally in sight; `hearTravelHooM` = `partyLinkM` (field 50 m, compressed 9 m); window 5 min; `travelHooFollowW` 0.3 | [M] for the call rates (gruberZuberbuhler2013); hearing range, window and follow weight are design |
+
+- **Refit rule, fixed now.** `travelHooFollowW` may be refitted once on seeds 31–33 (a direction check, not a proof). The goal is a ratio of hooted to silent trips followed by at least one companion of 1.6–2.6 (source 2.1). The refit is logged. There is no target row: the pattern is fitted, so it is not validation.
+- **Other rules.** Travel hoos carry no signature features. They are not counted by `heardN`, and the observer does not record them.
+- **Contract request.** `CallKind` 'travel-hoo'.
+- **Shared file.** The follow offer in `candidates.ts` gets one local term.
+
+**Addendum 1 result (direction check, seeds 31–33, not a proof).** Initiators with a companion hooed on 45–51% of trips; the rate is below the source's 60% because the companion check uses the attention-limited view. Trips followed within 5 min: 0.59 vs 0.51 and 0.63 vs 0.55, hooed vs silent (ratio 1.13–1.15, source 2.1). The one-time refit scan (`travelHooFollowW` 0.6, 1.0, 1.5 on seed 33) gave ratios of 1.22, 1.21 and 1.12. No value reaches 1.6, because silent trips already recruit about half the time through C7c's joint travel. So the weight stays at the pre-registered 0.3, and the travel hoo's effect on recruitment is weaker than in Budongo.
+
+#### C10 addendum 2: gestures (C10b) blocked on the source table
+
+The type-to-meaning lexicon of hobaiterByrne2014 cannot be transcribed from here: the publisher and ScienceDirect refuse automated access, and the paper is not in PubMed Central. Accessible secondary accounts name only a few pairs (a rear foot extended to offer a ride; grabbing for "stop" or "move away"; leaf nibbling as a sexual advance). Two options, for the integrator or user:
+- supply the PDF, and the lexicon will be transcribed; or
+- accept abstract gesture types with the three request meanings the simulation uses (groom me, play with me, follow me), labelled a stylization.
+
+T-COM-10 stays n/a until then.
 
 ### Stage C11: Calibration and validation report (O12)
 **Goal**: sensitivity analysis, history matching, ABC posterior, held-out posterior predictive checks, ODD document, validation report.

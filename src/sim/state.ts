@@ -36,6 +36,8 @@ export interface ChimpX {
   ownMales: number; strangers: number; strangerMales: number; strangerTroop: number; isolated: number; nearestStranger: number;
   heardN: number; heardAt: number; heardX: number; heardZ: number; heardTroop: number; heardStim: number;
   joinCall: number; joinCaller: number; joinAt: number; joinX: number; joinZ: number;
+  /** Stage C10 (travelHoo): the companion whose travel hoo this animal last heard, and when (absent until one is heard, so worlds with the switch off are unchanged). */
+  hooFrom?: number; hooAt?: number;
   trees: number[]; fruitNear: number; preyId: number; stims: number[];
   newcomers: number;
   // social bookkeeping
@@ -89,6 +91,14 @@ export interface PatrolState {
 }
 export interface HuntState { preyId: number; troopId: number; start: number; resolveAt: number; hunters: number[]; interId: number }
 
+/** Stage C9 state (plain data): decayed pair counts (key a·100000 + b, a < b), scan counts and location histograms per individual, the month last processed, consecutive months meeting the split rule per community, the monthly log (≤ 240 rows) and each daughter community's parent. */
+export interface FissionState {
+  pairs: Record<number, number>; scans: Record<number, number>; hist: Record<number, Record<number, number>>; lastMonth: number;
+  run: Record<number, number>;
+  log: { month: number; troopId: number; Q: number; n: [number, number]; males: [number, number]; females: [number, number]; overlap: number; met: boolean }[];
+  parents: Record<number, number>;
+}
+
 /** Hidden world-level state (weather chain, patrols, hunts, counters). Plain data, serializable. */
 export interface SimState {
   carry: number; nextChimpId: number; aliveVersion: number; hierDirty: boolean;
@@ -109,8 +119,14 @@ export interface SimState {
   ud: Record<number, number[]>; sectorVisit: Record<number, number[]>; udStamp: number;
   /** Use added since the last daily update (sparse, by cell), merged into `ud` daily so isopleths depend only on saved state. */
   udNew: Record<number, Record<number, number>>;
+  /** Ablation (patrolContactMemory 0): the C6 community danger grids; absent otherwise, so default worlds are unchanged. */
+  danger?: Record<number, number[]>;
+  /** Stage C9 (fission.ts): association counts, location histograms, monthly detection log; absent unless fissionOn is 1. */
+  fission?: FissionState;
   /** Stage C7a (field): per community, the day's best-known productive trees as flat [treeId, expected crop, …] pairs; absent when off. */
   knownTrees?: Record<number, number[]>;
+  /** Stage C7c (field, fallback.ts): depleted fallback-forage cells as [deficit in feeding-hours, time]; absent when off. */
+  fallback?: Record<number, [number, number]>;
   kills: Record<string, number>;
   vacantUntil: Record<number, number>;
   /** Community hunting day (daily draw) until this time. */

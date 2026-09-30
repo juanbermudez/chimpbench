@@ -7,8 +7,8 @@ const _near: number[] = [];
 import { CHANNEL, streamCell } from '../sim/stream';
 import { facingSectors } from '../sim/territory';
 import { ACTION_CODE, CAT_FEED, CAT_NONE, activityCategory, feedType, FEED_FRUIT } from './categories';
-import { ensureIds, orand, sim, type Observer, type Team } from './observer';
-import { P_CALLED, P_CHANNEL, P_GROUND, P_LACT, P_MEAT, P_SWOLLEN, type ConflictRec, type EncounterRec, type EventRec, type Follow } from './records';
+import { ensureIds, ensureTeams, orand, sim, type Observer, type Team } from './observer';
+import { P_CALLED, P_CHANNEL, P_GROUND, P_LACT, P_MEAT, P_SWOLLEN, type CallRec, type ConflictRec, type EncounterRec, type EventRec, type Follow } from './records';
 
 // Field protocols (docs/realism-design.md §3.4–3.5): focal follows with a lost-follow model, 1-min focal point
 // samples, 15-min party scans, all-occurrence capture of interactions and calls within visibility or hearing,
@@ -274,7 +274,10 @@ function processCalls(o: Observer, world: World): void {
       if (dd > call.radius * call.radius) continue; // observers hear what the chimps hear
       if (recorded) {
         const context = caller ? (caller.id === tm.focal ? lastFocalCategory(o, tm) : categoryOf(o, world, caller)) : CAT_NONE;
-        if (!o.cfg.demography) o.rec.calls.push({ t: call.time, team: tm.index, caller: call.callerId, kind: call.kind, troop: call.troopId, dist: Math.sqrt(dd), context });
+        const rec: CallRec = { t: call.time, team: tm.index, caller: call.callerId, kind: call.kind, troop: call.troopId, dist: Math.sqrt(dd), context };
+        // bioacoustic recorder (stage C10): pant-hoots close to the team (within 10% of the hearing radius), every drum heard
+        if (call.features && (call.kind === 'drum' || dd <= (0.1 * call.radius) ** 2)) rec.f = call.features.slice();
+        if (!o.cfg.demography) o.rec.calls.push(rec);
       }
       // Acoustic encounter (wilson2012): foreign long calls heard by the team, with or without a response. The caller's
       // community is taken from the call (the field attributes calls by distance and direction: an optimistic proxy).
@@ -884,6 +887,7 @@ function monthStep(o: Observer, world: World): void {
 
 /** At 04:00: choose the day's focals. At 21:00: close the day's follows, write the census and daily records. */
 export function dayStep(o: Observer, world: World, init: boolean): void {
+  ensureTeams(o, world);
   const hour = world.hour;
   if (init || hour < 21) {
     for (const tm of o.teams) { if (tm.state === 2) endFollow(o, world, tm, false, false); chooseFocal(o, world, tm); }

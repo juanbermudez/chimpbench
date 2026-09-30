@@ -13,9 +13,10 @@ import type { ParamId } from './params.gen';
 import { TICK_HOURS, TICK_SECONDS, byIdIn, huntOf, index, isTreeId, ix, simOf } from './state';
 import { resolveHunt } from './ecology';
 import { eatFruit, forageYield, fruitAt } from './phenology';
+import { bestFallbackNear, eatFallback, fallbackOn, fallbackStock, fallbackValue } from './fallback';
 import { recordAggression, recordConsolation, recordGrooming, recordMating, recordMeat, recordReconciliation, recordSupport } from './relations';
 import { BANK_A, BANK_B, CHANNEL, FORD, bankOf, bestFord, dryPoint, fordExits, streamCell, tangentNear } from './stream';
-import { noteContact, sectorContact } from './contact';
+import { markDanger, noteContact, sectorContact } from './contact';
 import { cellAt, gridOf, neighbourSectors, pressureAt, rangeEdge, sectorDir, useLevels } from './territory';
 
 // Bout durations in eco-minutes [min, max] (registry bout*Min / bout*Max).
@@ -253,7 +254,10 @@ function onStart(world: World, c: Chimp): void {
     case 'flee':
       if (x.v === V.AGGRESSOR) emitCall(world, c, 'scream');
       // retreating from strangers seen or heard: a loss in the animal's own contact memory (§5.3.1 P2)
-      if (x.v === V.STRANGERS || x.v === V.HEARD) noteContact(world, c, c.position[0], c.position[2], 0, P.dangerFleeW);
+      if (x.v === V.STRANGERS || x.v === V.HEARD) {
+        if (P.patrolContactMemory === 1) noteContact(world, c, c.position[0], c.position[2], 0, P.dangerFleeW);
+        else markDanger(world, c.troopId, c.position[0], c.position[2], P.dangerFleeW / Math.max(1, x.visibleOwn + 1)); // C6: shared among those retreating
+      }
       c.mood = 'fearful';
       break;
     case 'call':
@@ -269,6 +273,7 @@ function onStart(world: World, c: Chimp): void {
       break;
     case 'patrol': if (x.v !== V.APPROACH) startPatrol(world, c); else c.vocal = null; break;
     case 'travel': case 'follow':
+      if (P.travelHoo === 1 && c.action === 'travel' && x.v === V.TREE && x.aux <= 0) travelHoo(world, c);
       // party cohesion (field profile): companions notice a departure and may follow (candidates.ts, partyFollow*);
       // since stage C7a only goal-directed departures (travel) alert them, not an animal that is itself following
       if (P.partyFollowW > 0 && (P.partyLeaderFollow !== 1 || c.action === 'travel')) for (const sid of x.seen) {
@@ -370,6 +375,66 @@ function startPatrol(world: World, c: Chimp): void {
   }
 }
 
+/**
+ * Stage C10 addendum 1 (travelHoo): the initiator of a trip to a tree gives a quiet travel hoo when an own-community
+ * companion is within the party chain distance: 55.4% of the time, 75.6% with an ally in sight [gruberZuberbuhler2013]
+ * [M]. Hearers' party-follow of the caller is raised for a few minutes (candidates.ts, travelHooFollowW; design).
+ */
+function travelHoo(world: World, c: Chimp): void {
+  const P = paramsOf(world), x = ix(c), idx = index(world);
+  let companion = false, ally = false;
+  for (const id of x.seen) {
+    const o = idx.byId.get(id);
+    if (!o || !o.alive || o.troopId !== c.troopId || o.age < 5 || hd(o, c) > P.partyLinkM) continue;
+    companion = true;
+    if (c.allies.includes(o.id)) ally = true;
+  }
+  if (companion && random(world) < (ally ? P.travelHooAllyP : P.travelHooP)) emitCall(world, c, 'travel-hoo');
+}
+
+/**
+ * Stage C10 (foodCallRule; docs/realism-design.md "C10 pre-registration", rule 3): chance of a food grunt on arriving in
+ * a crown with crop > 0.3. Food calls at about half of feeding events, more with more males present [kalanBoesch2015]
+ * [M]; more with an important partner nearby [slocombe2010] [M]; the crop term and all magnitudes are design.
+ */
+export function foodCallChance(world: World, c: Chimp, crop: number): number {
+  const P = paramsOf(world), x = ix(c), idx = index(world), troop = idx.troopById.get(c.troopId);
+  let males = 0, partner = 0;
+  for (const id of x.seen) {
+    const o = idx.byId.get(id);
+    if (!o || !o.alive || o.troopId !== c.troopId) continue;
+    if (o.sex === 'male' && o.age >= 15) males++;
+    if ((c.bonds[o.id] ?? 0) >= 0.5 || troop?.alphaId === o.id) partner = 1;
+  }
+  return clamp(P.foodCallBase + P.foodCallCropW * (crop - 0.3) + P.foodCallMaleW * Math.min(3, males) + P.foodCallPartnerW * partner);
+}
+
+/**
+ * Stage C7c (field; docs/staging/c7b-prereg.md §6.2): the initiator of a committed trip stands and waits while a companion
+ * joining it (same tree) or following it is more than sightDayM behind and farther from the goal, up to partyWaitMaxMin per
+ * trip; the bout end moves with the wait. Initiators waited in 54-58% of travel initiations (gruberZuberbuhler2013) [H].
+ */
+function waitForParty(world: World, c: Chimp, gx: number, gz: number): boolean {
+  const P = paramsOf(world), x = ix(c);
+  if (x.prog >= P.partyWaitMaxMin * 60 || c.position[1] > 0.3) return false;
+  const lim2 = P.sightDayM * P.sightDayM, mine = (c.position[0] - gx) ** 2 + (c.position[2] - gz) ** 2;
+  const alive = index(world).alive;
+  for (let i = 0; i < alive.length; i++) {
+    const o = alive[i];
+    if (o === c || !o.alive || o.troopId !== c.troopId) continue;
+    const ox = ix(o);
+    const joiner = (o.action === 'travel' && o.targetId === c.targetId && ox.aux === c.id) || (o.action === 'follow' && o.targetId === c.id && ox.v === V.PARTY);
+    if (!joiner) continue;
+    const dx = o.position[0] - c.position[0], dz = o.position[2] - c.position[2];
+    if (dx * dx + dz * dz > lim2 && (o.position[0] - gx) ** 2 + (o.position[2] - gz) ** 2 > mine) {
+      x.prog += TICK_SECONDS; x.actEnd += TICK_HOURS; c.nextDecision = x.actEnd;
+      face(c, o);
+      return true;
+    }
+  }
+  return false;
+}
+
 /** Per-tick execution of the current action. */
 export function executeAction(world: World, c: Chimp): void {
   const P = paramsOf(world), WALK = P.walkMps, RUN = P.runMps, MATE_INTERVAL_H = P.mateIntervalH;
@@ -405,6 +470,7 @@ export function executeAction(world: World, c: Chimp): void {
       if (x.v === V.CALLER) { gx = x.joinX; gz = x.joinZ; stop = P.joinCallStopM; }
       else if (x.v === V.HOME || c.targetId < 0) { const t = idx.troopById.get(c.troopId)!; gx = t.center[0]; gz = t.center[2]; stop = t.radius * 0.6; }
       else { const t = idx.treeById.get(c.targetId); if (!t) return finish(world, c); gx = t.position[0]; gz = t.position[2]; stop = 3; }
+      if (x.v === V.TREE && x.aux < 0 && P.partyJoinTrip === 1 && waitForParty(world, c, gx, gz)) return;
       if (moveTo(world, c, gx, 0, gz, WALK, stop)) finish(world, c);
       return;
     }
@@ -623,7 +689,11 @@ export function executeAction(world: World, c: Chimp): void {
       // edge caution and hurried return (§5.3.1 P4a): slower outside the own 95% isopleth, faster home until the core
       const lv = useLevels(world)[c.troopId], here = lv ? lv[cellAt(gridOf(world, P), c.position[0], c.position[2])] : 0;
       const pace = pt.phase === 2 && here > P.udCoreLevel ? P.patrolReturnSpeed : here > P.udRangeLevel ? P.patrolEdgeSpeed : 1;
-      if (leader && leader.alive && leader !== c && hd(leader, c) < P.patrolFollowM) {
+      if (leader && leader.alive && leader !== c && hd(leader, c) < P.patrolFollowM && P.patrolSingleFile !== 1) {
+        // ablation (patrolSingleFile 0): the C6 cluster around the leader
+        const a = hash01(c.id, 8, 8) * Math.PI * 2;
+        moveTo(world, c, leader.position[0] + Math.cos(a) * 2.5, 0, leader.position[2] + Math.sin(a) * 2.5, WALK * 1.05 * pace, 0.8);
+      } else if (leader && leader.alive && leader !== c && hd(leader, c) < P.patrolFollowM) {
         // single file in join order: follow the member ahead, patrolFileGapM behind
         let ahead = leader;
         for (let i = pt.file.indexOf(c.id) - 1; i >= 0; i--) { const a = idx.byId.get(pt.file[i]); if (a && a.alive && a.action === 'patrol') { ahead = a; break; } }
@@ -683,6 +753,7 @@ function forageTick(world: World, c: Chimp): void {
   const idx = index(world);
   if (c.targetId < 0) {
     if (c.position[1] > 0.05) { moveTo(world, c, c.position[0], 0, c.position[2], WALK, 0.1); return; }
+    if (fallbackOn(P)) return fallbackTick(world, c);
     if (world.tick % 16 === (c.id % 16)) {
       const a = hash01(c.id, world.tick, 3) * Math.PI * 2;
       x.gx = c.position[0] + Math.sin(a) * 0.8; x.gz = c.position[2] + Math.cos(a) * 0.8;
@@ -712,7 +783,7 @@ function forageTick(world: World, c: Chimp): void {
     if (crop > 0.55 && c.age >= 12 && time - x.lastCall > 0.75 && (t.common === 'fig' || t.id === simOf(world).figTree) && random(world) < 0.5) {
       // arrival pant-hoots at rich fruit sources attract others [H]
       x.lastCall = time; emitCall(world, c, 'pant-hoot'); c.mood = 'excited';
-    } else if (time - x.lastFoodCall > 0.3 && crop > 0.3) { x.lastFoodCall = time; emitCall(world, c, 'food-grunt'); }
+    } else if (time - x.lastFoodCall > 0.3 && crop > 0.3 && (P.foodCallRule !== 1 || random(world) < foodCallChance(world, c, crop))) { x.lastFoodCall = time; emitCall(world, c, 'food-grunt'); }
   }
   // feeding: up to fruitIntakePerH (0.055 fruit units/h, scaled by foraging skill), x4.4 = up to ~0.24 hunger/h, so chimps feed about half the day (design; field feeding shares are 33-50% of daytime, docs/realism-design.md T-ACT-1)
   const want = P.fruitIntakePerH * TICK_HOURS * (P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging) * (c.age < 5 ? P.fruitIntakeYoungFactor : 1) * selfFeed(c, P) * snareIntake(c, P);
@@ -726,6 +797,27 @@ function forageTick(world: World, c: Chimp): void {
   else if (t.fruit < 0.02) { forget(c, t.id, 'tree'); finish(world, c); } // eatFruit leaves the current crop in t.fruit
   // stage C7a (field): feed until the crown is emptied or the animal is sated (up to feedMaxMin in one crown)
   else if (P.feedMaxMin > 0 && c.nextDecision <= world.time + TICK_HOURS && c.actionTime < P.feedMaxMin * 60) { x.actEnd = c.nextDecision = world.time + 2 * TICK_HOURS; }
+}
+
+const _fbPt: [number, number] = [0, 0];
+/**
+ * Stage C7c (field; c7b-prereg §6.1): feeding on patchy, depletable fallback foods while walking at the forage pace, toward
+ * a visible better cell, or on along the current heading once the own cell is below fallbackMoveOnFrac of its stock
+ * (dependants stay by their caretaker). Intake and depletion: fallback.ts.
+ */
+function fallbackTick(world: World, c: Chimp): void {
+  const P = paramsOf(world), x = ix(c), px = c.position[0], pz = c.position[2];
+  if (world.tick % 16 === (c.id % 16)) {
+    const here = fallbackValue(world, px, pz), best = dependentOn(world, c) ? here : bestFallbackNear(world, px, pz, x.sight, _fbPt);
+    if (best > here) { x.gx = _fbPt[0]; x.gz = _fbPt[1]; }
+    else if (!dependentOn(world, c) && fallbackStock(world, px, pz) < P.fallbackMoveOnFrac) {
+      // walk on through the forest on a wandering heading (a point ahead; design)
+      const a = c.heading + (hash01(c.id, world.tick, 4) - 0.5);
+      x.gx = px + Math.sin(a) * 30; x.gz = pz + Math.cos(a) * 30;
+    } else { const a = hash01(c.id, world.tick, 3) * Math.PI * 2; x.gx = px + Math.sin(a) * 0.8; x.gz = pz + Math.cos(a) * 0.8; }
+  }
+  if (x.gx !== 0 || x.gz !== 0) moveTo(world, c, x.gx, 0, x.gz, P.walkMps * 0.3, 0.2);
+  c.hunger = clamp(c.hunger - eatFallback(world, c, TICK_HOURS));
 }
 
 function pairTick(world: World, c: Chimp, o: Chimp | undefined): void {
