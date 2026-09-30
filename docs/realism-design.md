@@ -1396,7 +1396,7 @@ About 67 h in all, or 3–4 nights at 6 workers, and about 3× that at 2. If the
 - **C13b.** The rules value food by its intake rate, walk included, so leaves count at their lower rate against remembered fruit.
 **Why**: the Jev decisive test's free arms (artifacts/decide-ft/jev-test/free-arms.md; docs/staging/jev-decisive-test.md) ran the same gate and sampling as a control. On simulation truth over T-ACT-1 to 4, party size and male day range, RG cut the summed band distance from 2.04 to 0.93 and did better than rules on 5 of 5 seeds (6501–6905, field, 5 scored days), with no hunger cost (median adult hunger 0.64 vs 0.66; lactating females 0.89 vs 0.91). The rules are over-deterministic.
 **Why C13b**: the rules value fallback food (leaves, pith, herbs) without its lower intake rate, so hungry animals eat leaves in place rather than walk to remembered fruit. Design A diagnosed it (docs/decide-jev-design.md §4). The C8 agent confirmed it: lactating females spend 16% of daylight on fallback at half the fruit rate. In the free arms, U, a utility over intake rate minus walking cost, lowered median hunger from 0.89 to 0.70 in lactating females and from 0.64 to 0.39 in all adults.
-**Status**: pre-registered and built; direction check pending.
+**Status**: built; direction check done (30 September 2026); both parts on by default.
 
 #### C13 pre-registration (29 September 2026, before any C13 run; C13b added the same day, before any C13 or C13b run)
 
@@ -1464,6 +1464,35 @@ The registry holds 0.164 and 0.152. 0.77 was Jev's median top-option probability
   - the RG share of decisions kept by the gate.
 - **Viability guard** (from the Jev Amendment 1), per part and for both together, each against both off: a part stays off by default if, with it on, median adult hunger rises by more than 0.10, or the lactating-female median reaches 0.95. Otherwise it stays on whatever the fitted rows do. Nothing (temperature, gate, age or the valuation) is changed after the check.
 - A compressed pass on seed 48 × 60 days checks the same guard.
+
+**5b. Direction check result** (30 September 2026; seeds 48, 7 and 21; field; 1 year after the 180-day burn-in; observer values for the rows, simulation truth for hunger; `artifacts/validation/c13/`). Not a proof.
+
+| | Both off | C13a only | C13b only | Both on |
+| --- | --- | --- | --- | --- |
+| Median adult hunger | 0.60–0.68 | 0.50–0.56 | 0.48–0.52 | 0.46–0.51 |
+| Lactating-female hunger | 0.88–0.90 | 0.77–0.85 | 0.70–0.76 | 0.74–0.81 |
+| Fallback share of adult feeding | 0.28–0.36 | 0.22–0.28 | 0.05–0.08 | 0.14–0.16 |
+| T-ACT-1 feeding (male / female) | 0.38 / 0.54 | 0.42 / 0.51 | 0.38 / 0.46 | 0.42 / 0.47 |
+| T-ACT-2 travel | 0.33 / 0.17 | 0.21 / 0.15 | 0.24 / 0.17 | 0.15 / 0.12 |
+| T-ACT-3 grooming | 0.06 / 0.08 | 0.06 / 0.11 | 0.12 / 0.13 | 0.09 / 0.14 |
+| T-ACT-4 rest incl. grooming | 0.25 | 0.33 | 0.35 | 0.39 |
+| T-PTY-1 party size | 3.48 | 2.81 | 3.43 | 2.63 |
+| T-RNG-4 male day range (km) | 4.21 | 2.32 | 2.52 | 1.58 |
+| T-PAT-6 incursion share | 0.60 | 0.50 | 0.46 | 0.18 |
+| T-FOOD-2 | 0.74 | 0.78 | 0.94 | 0.87 |
+| Fitted rows passing | 5 | 9 | 10 | 8 |
+
+- **Viability guard: passes** for each part and for both. Hunger falls with every part rather than rising.
+- **Predictions:**
+  - C13a moved as predicted. Travel, day range and party size went down, and rest went up. Party size fell more than "slightly": 3.48 to 2.81.
+  - C13b lowered hunger and the fallback share as predicted.
+  - C13b did not raise travel or day range against C13a alone, as predicted; with both on, both went further down. Travel now sits at or below the band's floor (females 0.12), and day range sits at its floor (1.58 km).
+- **Also moved:**
+  - T-PAT-6 fell to 0.18 with both parts on.
+  - T-FOOD-2 rose above its band.
+  - Decisions per chimp-day dropped from about 100 to 75, with 53% of RG decisions kept by the gate.
+- **Consequences.** Nothing is re-tuned. Both parts stay on, and the lean proof judges the rows; the tuned rows (T-ACT-2, T-PTY-1, T-RNG-4, T-PAT-1) are expected to move there too.
+- **Compressed guard** (seed 48, 60 days): passes. Adult hunger 0.44 with both off, 0.48 with both on; lactating females 0.58 and 0.64.
 
 **6. Proof.** The lean proof (`scripts/proof.ts --plan lean`) with both parts on. `data/proof-ablations.json` has an ablation set per part, `C13a` (`rgOn` 0) and `C13b` (`intakeValue` 0), so each is attributed.
 
