@@ -152,6 +152,22 @@ The pre-C7a female core-area cost amplifies the effect. With it removed (not a C
   - Two reasons: epidemic deaths are lumpy, and the non-epidemic adult-female baseline is small because the floor binds at 30–45 y.
   - Populations grow 3–4% per year and would reach the cap of 120 in about 25 years.
   - A 40-year check is needed before T-DEM-2 or T-DEM-10 can be read on the merged model.
+- *Correction:* the "life-table level about 0.03 per year" above is 1/e15, which holds only for a stationary age structure. The age-standardized check below replaces it.
+
+**Adult-female deaths by age band against expectation (C13 on, same runs re-counted; `artifacts/validation/c8/sanity/c8-sanity2.ts`, `x*-on.json`).**
+- 522 adult-female-years; 5 deaths, 4 of them in epidemics.
+- Expected deaths:
+  - 7.2 from wood2017's all-cause hazards at the observed ages (0.014 per year), P(≤ 5) = 0.28;
+  - 8.0 from the model's own expectation (baseline 2.6 + epidemics 5.4), P(≤ 5) = 0.19.
+- The observed rate matches expectation within Poisson noise.
+- By band (female-years, deaths, all-cause expectation):
+  - 15–30: 261, 3, 2.9;
+  - 30–45: 213, 1, 3.1;
+  - 45+: 48, 1, 1.2.
+- **Why the floor binds at 30–47 y.** The expected epidemic hazard there is 0.0154 per year (0.1 arrivals × 0.62 attack × about 0.25 fatality at odds ratio 3.86). That exceeds wood2017's all-cause 0.011–0.017, so the baseline sits at the 20% floor.
+  - As a result, the model's expected mortality at those ages is about 11% above the life table.
+  - The analytic e15 is 34.3 y, inside the band.
+  - The likely source mismatch: wood2017 (Ngogo 1995–2016) largely predates Ngogo's 2016–17 outbreak, while the arrival rate and fatality come from Kanyawara, Gombe and Ngogo 2017.
 
 ## The food-valuation clue (Jev free-arms test; integrator's note)
 
