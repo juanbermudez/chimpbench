@@ -48,7 +48,7 @@ Copy `<out>` back, then from a checkout at the manifest's commit (`git worktree 
 `data/raw` and `node_modules` symlinks):
 
 ```sh
-pnpm exec tsx scripts/proof.ts --run --workers 6 --out <copy>/proof \
+pnpm exec tsx scripts/proof.ts --run --plan full --workers 6 --out <copy>/proof \
   --only compare-ranging,compare-movement,compare-gombe-paths,compare-patrols,guide-data
 ```
 

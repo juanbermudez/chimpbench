@@ -1199,6 +1199,10 @@ Built in `src/sim/fission.ts`, off by default (`fissionOn` 0, `assocBondW` 0; th
 - **Change from the pre-registration** (integrator ruling: `fissionOn` stays off by default). The T-FIS-1 baseline can no longer come from the combined proof's 40-year runs, so it runs as the scenario's `baseline` kind. Logged.
 - **Fix after the first plumbing run** (compressed, seed 42, 3 years; not a proof, and no C9 value is tuned on it). When Louvain finds a single community, the monthly Q was reported as 0, which hid a network that is starting to divide. The best two-way split now comes from the leading eigenvector of the modularity matrix [newman2006], polished by node moves. Q stays 0 only when no split has positive modularity. On the compressed map a 60-member community forms one party chain (every pair's association index is near 1), so Q stays 0 there; the proof uses the field profile.
 - **Proof command.** `pnpm exec tsx scripts/c9-scenario.ts --years 40 --workers 6` on the reserved seeds 5101–5505. Rough wall time: about 12 h at 6 workers and 30 h at 2. The large communities approach the cap of 180, which costs about 0.6–1 s per eco-day.
+- **Lean local proof** (29 September 2026, user decision, logged before any C9 value). The combined proof's lean plan (`scripts/proof.ts --plan lean`) runs one `large` world on 5101 × 75 years instead of the three kinds on 5101–5505 × 40 years.
+  - T-FIS-1, -2, -4 and -5 come from that world. T-FIS-3 has no paired `large-off` run and is reported insufficient.
+  - Fission is not switched on in a generation world, because C9's setting (`assocBondW` 0.3) changes party joining from the first day and a split would contaminate the demography rows.
+  - The pre-registered 5 × 3 × 40-year proof stays available for a later full run.
 
 ### Stage C10: Communication (O10)
 **Goal**: individual and community call signatures, recognition by listeners, context- and audience-dependent calling, drumming structure, core gestures, features exposed to the audio layer.

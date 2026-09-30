@@ -15,7 +15,7 @@ mkdir -p "$OUT"; OUT=$(cd "$OUT" && pwd)
 if [ $SMOKE -eq 1 ]; then
   S="$OUT/smoke"; rm -rf "$S"; mkdir -p "$S"
   pnpm exec tsx scripts/remote/verify.ts
-  pnpm exec tsx scripts/proof.ts --dry-run --remote --parallel --workers "$WORKERS" --out "$S/proof"
+  pnpm exec tsx scripts/proof.ts --dry-run --plan full --remote --parallel --workers "$WORKERS" --out "$S/proof"
   pnpm exec tsx scripts/c9-scenario.ts --kinds baseline,large --seeds 31 --days 3 --workers 2 --out "$S/c9" >/dev/null
   echo "smoke ok: $S"; exit 0
 fi
@@ -36,7 +36,7 @@ run_stage() {
   echo "== $s ($(date -u +%FT%TZ))"
   case $s in
     verify) pnpm exec tsx scripts/remote/verify.ts | tee "$OUT/verify.log" ;;
-    proof)  pnpm exec tsx scripts/proof.ts --run --remote --parallel --resume --workers "$WORKERS" --out "$OUT/proof" ;;
+    proof)  pnpm exec tsx scripts/proof.ts --run --plan full --remote --parallel --resume --workers "$WORKERS" --out "$OUT/proof" ;;
     c9)     pnpm exec tsx scripts/c9-scenario.ts --years 40 --workers "$WORKERS" --out "$OUT/c9" ;;
     c11)    # Contract for the C11 build: scripts/c11-run.ts runs screening, calibration and validation, honouring --workers, --out and --resume.
             if [ -f scripts/c11-run.ts ]; then pnpm exec tsx scripts/c11-run.ts --workers "$WORKERS" --out "$OUT/c11" --resume
@@ -45,4 +45,4 @@ run_stage() {
   echo "$s" >> "$OUT/stages.done"
 }
 for s in "${stages[@]}"; do run_stage "$s"; done
-echo "finished: $OUT (copy it back; run the local steps there: pnpm exec tsx scripts/proof.ts --run --out <copy>/proof --only compare-ranging,compare-movement,compare-gombe-paths,compare-patrols,guide-data)"
+echo "finished: $OUT (copy it back; run the local steps there: pnpm exec tsx scripts/proof.ts --run --plan full --out <copy>/proof --only compare-ranging,compare-movement,compare-gombe-paths,compare-patrols,guide-data)"

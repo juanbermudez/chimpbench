@@ -7,6 +7,14 @@
 //   pnpm exec tsx scripts/proof.ts --run --workers 6 [--only dev-field,fresh-field] [--from compare-ranging]
 //   pnpm exec tsx scripts/proof.ts --run --remote --parallel --workers 64 --out /data/proof --resume   # many-core machine
 //
+// --plan lean (default) | full. The lean plan (29 September 2026, user decision: the proof runs locally on 4–6 cores;
+// declared and logged in data/targets.json protocolLog before any proof value existed): 3 generation worlds (set B's
+// 1616, 1717, 1818) × 75 years of natural aging with C8 demography, the sealed rows unsealed on these seeds only; the
+// paired expansion scenario on the same seeds × 10 years (T-LET-4 against its baseline, T-LET-5 unsealed); the C9
+// large scenario on 5101 × 75 years; behaviour on the development seeds and fresh replication on 606–1010, 1 year after
+// a 180-day burn-in each; ablations 1 seed × 1 year per stage; the comparisons locally afterwards. The full plan is the
+// original one (docs/simulation.md "Combined proof").
+//
 // --out <dir> writes every artifact there (default artifacts/validation/proof). --remote skips the steps that read
 // data/raw (the comparisons and guide-data: run them locally afterwards with --only and the same --out). --parallel runs
 // independent steps at the same time within the --workers budget (and a memory budget, --mem-gb, default 80% of RAM).
@@ -29,56 +37,61 @@ const ROOT = new URL('../', import.meta.url).pathname;
 const OUT = flag('out', DRY ? 'artifacts/validation/proof-dry' : 'artifacts/validation/proof').replace(/\/$/, '');
 const ABS = (p: string) => (p.startsWith('/') ? p : `${ROOT}${p}`);
 
+const PLAN = flag('plan', 'lean');
+if (PLAN !== 'lean' && PLAN !== 'full') { console.error(`--plan must be lean or full (got ${PLAN})`); process.exit(2); }
+const LEAN = PLAN === 'lean';
 const SEEDS = {
   dev: [48, 7, 21, 5, 11],
   fresh: [606, 707, 808, 909, 1010],              // patrol re-tests and fitted-row replication (never used before the patrol corrections)
   setA: [1111, 1212, 1313, 1414, 1515],           // C8 fitted replication
   setB: [1616, 1717, 1818, 1919, 2020, 2121, 2222, 2323, 2424, 2525], // C8 held out, hash-bound --unseal
+  generations: [1616, 1717, 1818],                // lean plan: set B's first three (generation worlds and the paired scenario)
+  c9: [5101],                                     // lean plan: the first C9 proof seed (the large scenario)
 };
 interface Ablations { seeds: number[]; years: number; burnInDays: number; stages: Record<string, { params: Record<string, number> | null; note: string }> }
 const ABL = JSON.parse(readFileSync(new URL('../data/proof-ablations.json', import.meta.url), 'utf8')) as Ablations;
 const C8 = readFileSync(new URL('./field-metrics.ts', import.meta.url), 'utf8').includes("has('demography')");
 
-/** Planning costs, seconds of one worker per simulated seed-day (f9d66b0-era field bench at load ~7, observer included). */
-const COST = { field: 0.30, scenario: 0.25, demography: 0.50, compare: 0.28 } as const;
+/**
+ * Planning costs, seconds of one worker per simulated seed-day, idle machine. field, scenario and compare: f9d66b0-era
+ * field bench at load ~7, observer included. demography: the C8 branch's 40-year natural-aging runs in demography mode
+ * (2,073–2,468 s per 14,600 days with two jobs at once, 29 September 2026), rounded up. fission: the C9 large scenario
+ * (~110–130 living, popCap 180): 4.3 s per day measured at load ~35 on 12 cores, about 1.3 s idle; the population can
+ * grow toward the cap over 75 years, so treat it as a lower bound.
+ */
+const COST = { field: 0.30, scenario: 0.25, demography: 0.20, compare: 0.28, fission: 1.3 } as const;
 type Kind = keyof typeof COST | 'post';
 
 /** `after`: steps whose outputs this one reads; `local`: reads data/raw (never on a remote machine); `memGb`: peak memory per job. */
 interface Step { id: string; what: string; kind: Kind; jobs: number; seedDays: number; argv: (w: number) => string[]; needs?: 'C8'; outputs: string[]; after?: string[]; local?: boolean; memGb?: number }
 
 function tsx(script: string, ...rest: (string | number)[]): string[] { return ['exec', 'tsx', `scripts/${script}`, ...rest.map(String)]; }
-const seedsOf = (s: number[]) => (DRY ? [s[0]] : s).join(',');
+/** Dry runs use development seed 48 for every step, so plumbing never touches a reserved proof seed. */
+const seedsOf = (s: number[]) => (DRY ? [48] : s).join(',');
 const n = (s: number[]) => (DRY ? 1 : s.length);
 
-function steps(): Step[] {
-  const fieldSpan = DRY ? ['--days', 3, '--burn-in', 1] : ['--years', 10, '--burn-in', 180];
-  const out: Step[] = [
-    { id: 'dev-field', what: 'field targets, development seeds × 10 years (fitted rows; patrol rows with male-party follows where specified)', kind: 'field', jobs: n(SEEDS.dev), seedDays: DRY ? 4 : 3830,
-      argv: w => tsx('field-metrics.ts', '--profile', 'field', ...fieldSpan, '--seeds', seedsOf(SEEDS.dev), '--workers', w, '--json', `${OUT}/dev-field.json`, '--md', `${OUT}/dev-field.md`), outputs: [`${OUT}/dev-field.json`], memGb: 2 },
-    { id: 'fresh-field', what: 'fresh-seed replication (606–1010): fitted rows and the patrol rows re-tested after the patrol corrections', kind: 'field', jobs: n(SEEDS.fresh), seedDays: DRY ? 4 : 3830,
-      argv: w => tsx('field-metrics.ts', '--profile', 'field', ...fieldSpan, '--seeds', seedsOf(SEEDS.fresh), '--workers', w, '--json', `${OUT}/fresh-field.json`, '--md', `${OUT}/fresh-field.md`), outputs: [`${OUT}/fresh-field.json`], memGb: 2 },
-    { id: 'scenario', what: 'expansion scenario with its paired baseline on set B × 10 years: T-LET-4 (relative to the baseline) and, with --unseal, T-LET-5', kind: 'scenario', jobs: 2 * n(SEEDS.setB), seedDays: 3650,
-      argv: w => tsx('field-scenario.ts', 'expansion', ...(DRY ? ['--profile', 'compressed', '--years', 1] : ['--profile', 'field', '--years', 10]), '--seeds', seedsOf(SEEDS.setB), '--workers', w, '--out', `${OUT}/scenario`, ...(DRY || !C8 ? [] : ['--unseal'])),
-      outputs: [`${OUT}/scenario/expansion-summary.json`], memGb: 0.6 },
-    { id: 'c8-setB', what: 'C8 demography proof, set B × 40 years natural aging, hash-bound --unseal (T-DEM-14, T-DEM-15, the sealed rows)', kind: 'demography', jobs: n(SEEDS.setB), seedDays: DRY ? 3 : 14600, needs: 'C8',
-      argv: w => tsx('field-metrics.ts', '--profile', 'field', ...(DRY ? ['--days', 3] : ['--years', 40, '--unseal']), '--demography', '--seeds', seedsOf(SEEDS.setB), '--workers', w, '--json', `${OUT}/c8-setB.json`, '--md', `${OUT}/c8-setB.md`), outputs: [`${OUT}/c8-setB.json`], memGb: 3 },
-    { id: 'c8-setA', what: 'C8 fitted replication, set A × 40 years natural aging', kind: 'demography', jobs: n(SEEDS.setA), seedDays: DRY ? 3 : 14600, needs: 'C8',
-      argv: w => tsx('field-metrics.ts', '--profile', 'field', ...(DRY ? ['--days', 3] : ['--years', 40]), '--demography', '--seeds', seedsOf(SEEDS.setA), '--workers', w, '--json', `${OUT}/c8-setA.json`, '--md', `${OUT}/c8-setA.md`), outputs: [`${OUT}/c8-setA.json`], memGb: 3 },
-  ];
-  const ablSpan = DRY ? ['--days', 2, '--burn-in', 1] : ['--years', ABL.years, '--burn-in', ABL.burnInDays];
-  const ablDays = DRY ? 3 : ABL.years * 365 + ABL.burnInDays;
-  out.push({ id: 'ablation-all-on', what: `ablation baseline: all mechanisms on, seeds ${ABL.seeds.join(', ')} × ${ABL.years} years`, kind: 'field', jobs: n(ABL.seeds), seedDays: ablDays,
-    argv: w => tsx('field-metrics.ts', '--profile', 'field', ...ablSpan, '--seeds', seedsOf(ABL.seeds), '--workers', w, '--experiments-every', 0, '--json', `${OUT}/ablation-all-on.json`), outputs: [`${OUT}/ablation-all-on.json`], memGb: 0.8 });
+function steps(): Step[] { return LEAN ? leanSteps() : fullSteps(); }
+
+/** Ablation steps (all-on baseline, each stage off, the diffs) on `seeds` over `span`. */
+function ablationSteps(seeds: number[], span: (string | number)[], days: number, years: number): Step[] {
+  const out: Step[] = [];
+  out.push({ id: 'ablation-all-on', what: `ablation baseline: all mechanisms on, seeds ${seeds.join(', ')} × ${years} year${years === 1 ? '' : 's'}`, kind: 'field', jobs: n(seeds), seedDays: days,
+    argv: w => tsx('field-metrics.ts', '--profile', 'field', ...span, '--seeds', seedsOf(seeds), '--workers', w, '--experiments-every', 0, '--json', `${OUT}/ablation-all-on.json`), outputs: [`${OUT}/ablation-all-on.json`], memGb: 0.8 });
   for (const [stage, a] of Object.entries(ABL.stages)) {
-    out.push({ id: `ablation-${stage}`, what: `ablation: ${stage} off, all else on (${a.note.split('.')[0]})`, kind: 'field', jobs: n(ABL.seeds), seedDays: ablDays,
-      argv: w => [...tsx('field-metrics.ts', '--profile', 'field', ...ablSpan, '--seeds', seedsOf(ABL.seeds), '--workers', w, '--experiments-every', 0, '--params', JSON.stringify(a.params ?? {}), '--json', `${OUT}/ablation-${stage}.json`)],
+    out.push({ id: `ablation-${stage}`, what: `ablation: ${stage} off, all else on (${a.note.split('.')[0]})`, kind: 'field', jobs: n(seeds), seedDays: days,
+      argv: w => [...tsx('field-metrics.ts', '--profile', 'field', ...span, '--seeds', seedsOf(seeds), '--workers', w, '--experiments-every', 0, '--params', JSON.stringify(a.params ?? {}), '--json', `${OUT}/ablation-${stage}.json`)],
       needs: stage === 'C8' ? 'C8' : undefined, outputs: [`${OUT}/ablation-${stage}.json`], memGb: 0.8 });
     out.push({ id: `ablation-${stage}-diff`, what: `ablation diff: all on vs ${stage} off`, kind: 'post', jobs: 1, seedDays: 0,
       argv: () => tsx('field-compare.ts', `${OUT}/ablation-all-on.json`, `${OUT}/ablation-${stage}.json`, `${OUT}/ablation-${stage}.md`, '--title', `All on vs ${stage} off`),
       needs: stage === 'C8' ? 'C8' : undefined, outputs: [`${OUT}/ablation-${stage}.md`], after: ['ablation-all-on', `ablation-${stage}`] });
   }
+  return out;
+}
+
+/** The comparisons and guide data (read data/raw: local only), as in the full plan. */
+function localSteps(): Step[] {
   const cmp = DRY ? { seeds: '48', burn: 1 } : { seeds: SEEDS.dev.join(','), burn: 180 };
-  out.push(
+  return [
     { id: 'compare-ranging', what: 'C12 ranging comparison (Ngogo GPS; development diagnostic, seen)', kind: 'compare', jobs: DRY ? 1 : 5, seedDays: DRY ? 366 : 1275,
       argv: w => tsx('compare-ranging.ts', '--seeds', cmp.seeds, '--years', DRY ? 1 : 3, '--burn-in', cmp.burn, '--workers', w, ...(DRY ? ['--out', `${OUT}/compare`, '--guide', `${OUT}/ranging-compare.json`] : [])),
       outputs: [DRY ? `${OUT}/ranging-compare.json` : 'docs/data/ranging-compare.json'], local: true, memGb: 1 },
@@ -93,8 +106,58 @@ function steps(): Step[] {
       outputs: [DRY ? `${OUT}/patrol-compare.json` : 'docs/data/patrol-compare.json'], local: true, after: ['dev-field', 'fresh-field', 'scenario'] },
     { id: 'guide-data', what: 'refresh the guide JSON from the new scorecards (dry run: written to the dry directory)', kind: 'post', jobs: 1, seedDays: 0,
       argv: () => tsx('guide-data.ts', '--scorecard', `${OUT}/dev-field.json`, '--fresh', `${OUT}/fresh-field.json`, ...(DRY ? ['--out-dir', OUT] : [])), outputs: [DRY ? `${OUT}/guide-validation.json` : 'docs/data/guide-validation.json'], local: true, after: ['dev-field', 'fresh-field'] },
-  );
+  ];
+}
+
+/** The lean plan (header): 3 generation worlds carry demography; behaviour and replication are 1 year each. */
+function leanSteps(): Step[] {
+  const yearSpan = DRY ? ['--days', 3, '--burn-in', 1] : ['--years', 1, '--burn-in', 180], yearDays = DRY ? 4 : 545;
+  const gen = SEEDS.generations;
+  const out: Step[] = [
+    { id: 'generations', what: `generation worlds: ${gen.join(', ')} × 75 years natural aging, C8 demography; hash-bound --unseal (T-DEM-14, T-DEM-15 and the other sealed rows, on these seeds only)`, kind: 'demography', jobs: n(gen), seedDays: DRY ? 3 : 27375, needs: 'C8',
+      argv: w => tsx('field-metrics.ts', '--profile', 'field', ...(DRY ? ['--days', 3] : ['--years', 75, '--unseal']), '--demography', '--seeds', seedsOf(gen), '--workers', w, '--json', `${OUT}/generations.json`, '--md', `${OUT}/generations.md`), outputs: [`${OUT}/generations.json`], memGb: 1.5 },
+    { id: 'scenario', what: `expansion scenario with its paired baseline on ${gen.join(', ')} × 10 years: T-LET-4 (relative to the baseline) and, with --unseal, T-LET-5`, kind: 'scenario', jobs: 2 * n(gen), seedDays: DRY ? 365 : 3650,
+      argv: w => tsx('field-scenario.ts', 'expansion', ...(DRY ? ['--profile', 'compressed', '--years', 1] : ['--profile', 'field', '--years', 10]), '--seeds', seedsOf(gen), '--workers', w, '--out', `${OUT}/scenario`, ...(DRY || !C8 ? [] : ['--unseal'])),
+      outputs: [`${OUT}/scenario/expansion-summary.json`], memGb: 0.6 },
+    { id: 'c9-large', what: `C9 large scenario on ${SEEDS.c9.join(', ')} × 75 years (fissionOn 1, assocBondW 0.3; T-FIS-1, -2, -4, -5; T-FIS-3 has no paired baseline in this plan)`, kind: 'fission', jobs: n(SEEDS.c9), seedDays: DRY ? 3 : 27375,
+      argv: () => tsx('c9-scenario.ts', '--kinds', 'large', '--seeds', seedsOf(SEEDS.c9), ...(DRY ? ['--days', 3] : ['--years', 75]), '--workers', 1, '--out', `${OUT}/c9`), outputs: [`${OUT}/c9/c9-summary.json`], memGb: 1.5 },
+    { id: 'dev-field', what: 'behaviour: development seeds × 1 year after the burn-in (all non-demography rows; patrol rows with male-party follows where specified; T-BRD-1)', kind: 'field', jobs: n(SEEDS.dev), seedDays: yearDays,
+      argv: w => tsx('field-metrics.ts', '--profile', 'field', ...yearSpan, '--seeds', seedsOf(SEEDS.dev), '--workers', w, '--json', `${OUT}/dev-field.json`, '--md', `${OUT}/dev-field.md`), outputs: [`${OUT}/dev-field.json`], memGb: 0.8 },
+    { id: 'fresh-field', what: 'fresh-seed replication (606–1010) × 1 year after the burn-in: fitted rows and the re-tested patrol rows', kind: 'field', jobs: n(SEEDS.fresh), seedDays: yearDays,
+      argv: w => tsx('field-metrics.ts', '--profile', 'field', ...yearSpan, '--seeds', seedsOf(SEEDS.fresh), '--workers', w, '--json', `${OUT}/fresh-field.json`, '--md', `${OUT}/fresh-field.md`), outputs: [`${OUT}/fresh-field.json`], memGb: 0.8 },
+  ];
+  out.push(...ablationSteps([ABL.seeds[0]], DRY ? ['--days', 2, '--burn-in', 1] : ['--years', 1, '--burn-in', ABL.burnInDays], DRY ? 3 : 365 + ABL.burnInDays, 1));
+  out.push(...localSteps());
   return out;
+}
+
+/** The original plan (docs/simulation.md "Combined proof"). */
+function fullSteps(): Step[] {
+  const fieldSpan = DRY ? ['--days', 3, '--burn-in', 1] : ['--years', 10, '--burn-in', 180];
+  const out: Step[] = [
+    { id: 'dev-field', what: 'field targets, development seeds × 10 years (fitted rows; patrol rows with male-party follows where specified)', kind: 'field', jobs: n(SEEDS.dev), seedDays: DRY ? 4 : 3830,
+      argv: w => tsx('field-metrics.ts', '--profile', 'field', ...fieldSpan, '--seeds', seedsOf(SEEDS.dev), '--workers', w, '--json', `${OUT}/dev-field.json`, '--md', `${OUT}/dev-field.md`), outputs: [`${OUT}/dev-field.json`], memGb: 2 },
+    { id: 'fresh-field', what: 'fresh-seed replication (606–1010): fitted rows and the patrol rows re-tested after the patrol corrections', kind: 'field', jobs: n(SEEDS.fresh), seedDays: DRY ? 4 : 3830,
+      argv: w => tsx('field-metrics.ts', '--profile', 'field', ...fieldSpan, '--seeds', seedsOf(SEEDS.fresh), '--workers', w, '--json', `${OUT}/fresh-field.json`, '--md', `${OUT}/fresh-field.md`), outputs: [`${OUT}/fresh-field.json`], memGb: 2 },
+    { id: 'scenario', what: 'expansion scenario with its paired baseline on set B × 10 years: T-LET-4 (relative to the baseline) and, with --unseal, T-LET-5', kind: 'scenario', jobs: 2 * n(SEEDS.setB), seedDays: 3650,
+      argv: w => tsx('field-scenario.ts', 'expansion', ...(DRY ? ['--profile', 'compressed', '--years', 1] : ['--profile', 'field', '--years', 10]), '--seeds', seedsOf(SEEDS.setB), '--workers', w, '--out', `${OUT}/scenario`, ...(DRY || !C8 ? [] : ['--unseal'])),
+      outputs: [`${OUT}/scenario/expansion-summary.json`], memGb: 0.6 },
+    { id: 'c8-setB', what: 'C8 demography proof, set B × 40 years natural aging, hash-bound --unseal (T-DEM-14, T-DEM-15, the sealed rows)', kind: 'demography', jobs: n(SEEDS.setB), seedDays: DRY ? 3 : 14600, needs: 'C8',
+      argv: w => tsx('field-metrics.ts', '--profile', 'field', ...(DRY ? ['--days', 3] : ['--years', 40, '--unseal']), '--demography', '--seeds', seedsOf(SEEDS.setB), '--workers', w, '--json', `${OUT}/c8-setB.json`, '--md', `${OUT}/c8-setB.md`), outputs: [`${OUT}/c8-setB.json`], memGb: 3 },
+    { id: 'c8-setA', what: 'C8 fitted replication, set A × 40 years natural aging', kind: 'demography', jobs: n(SEEDS.setA), seedDays: DRY ? 3 : 14600, needs: 'C8',
+      argv: w => tsx('field-metrics.ts', '--profile', 'field', ...(DRY ? ['--days', 3] : ['--years', 40]), '--demography', '--seeds', seedsOf(SEEDS.setA), '--workers', w, '--json', `${OUT}/c8-setA.json`, '--md', `${OUT}/c8-setA.md`), outputs: [`${OUT}/c8-setA.json`], memGb: 3 },
+  ];
+  out.push(...ablationSteps(ABL.seeds, DRY ? ['--days', 2, '--burn-in', 1] : ['--years', ABL.years, '--burn-in', ABL.burnInDays], DRY ? 3 : ABL.years * 365 + ABL.burnInDays, ABL.years));
+  out.push(...localSteps());
+  return out;
+}
+
+/** Wall time of `--parallel` over these steps: longest-first list scheduling of their jobs on `workers` (post steps 30 s each). */
+function makespan(steps: Step[], workers: number): number {
+  const jobs = steps.flatMap(s => (s.kind === 'post' ? [30] : Array.from({ length: s.jobs }, () => s.seedDays * COST[s.kind]))).sort((a, b) => b - a);
+  const lanes = new Array<number>(Math.max(1, workers)).fill(0);
+  for (const j of jobs) { let k = 0; for (let i = 1; i < lanes.length; i++) if (lanes[i] < lanes[k]) k = i; lanes[k] += j; }
+  return Math.max(...lanes);
 }
 
 function wallSeconds(s: Step, workers: number): number {
@@ -129,10 +192,13 @@ async function main() {
   }
   if (has('estimate')) {
     const ws = flag('workers', '2,6').split(',').map(Number);
-    console.log(`| Step | Jobs | Seed-days per job | ${ws.map(w => `${w} workers`).join(' | ')} |\n| --- | --- | --- | ${ws.map(() => '---').join(' | ')} |`);
+    console.log(`Plan: ${PLAN}.\n\n| Step | Jobs | Seed-days per job | ${ws.map(w => `${w} workers`).join(' | ')} |\n| --- | --- | --- | ${ws.map(() => '---').join(' | ')} |`);
     const tot = ws.map(() => 0);
     for (const s of all) { const t = ws.map(w => wallSeconds(s, w)); t.forEach((v, i) => (tot[i] += v)); console.log(`| ${s.id} | ${s.jobs} | ${s.seedDays} | ${t.map(v => `${(v / 3600).toFixed(1)} h`).join(' | ')} |`); }
-    console.log(`| **total** | | | ${tot.map(v => `**${(v / 3600).toFixed(1)} h**`).join(' | ')} |`);
+    console.log(`| **total, one step at a time** | | | ${tot.map(v => `**${(v / 3600).toFixed(1)} h**`).join(' | ')} |`);
+    const par = (local: boolean) => ws.map(w => makespan(all.filter(s => !!s.local === local), w));
+    console.log(`| **--parallel, simulation steps** | | | ${par(false).map(v => `**${(v / 3600).toFixed(1)} h**`).join(' | ')} |`);
+    console.log(`| **then the local steps** | | | ${par(true).map(v => `${(v / 3600).toFixed(1)} h`).join(' | ')} |`);
     console.log(`\nCosts per seed-day (one worker): ${Object.entries(COST).map(([k, v]) => `${k} ${v} s`).join(', ')}. Idle-machine figures; on a loaded machine or with more workers than performance cores, expect 1.3–1.6× longer.`);
     return;
   }

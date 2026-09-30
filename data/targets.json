@@ -18,12 +18,12 @@
   "Instrument validation against truth (sampling accuracy, classifier precision and recall) is allowed at any time, because truth is not a field target; each validation run is logged."
  ],
  "protocolFreeze": {
-  "stage": "C9 proof seeds",
+  "stage": "Lean proof plan",
   "date": "2026-09-29",
   "hash": "c6dc9be135771d16",
   "previous": {
-   "stage": "C9 proof preparation",
-   "hash": "7d80a5a2c7c40da1"
+   "stage": "C9 proof seeds",
+   "hash": "c6dc9be135771d16"
   }
  },
  "protocolLog": [
@@ -1041,6 +1041,30 @@
     "all"
    ],
    "verdicts": "C9 proof",
+   "class": "freeze"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "science/simulation owner (user decision relayed by the coordinator)",
+   "seen": "none (the combined proof has never run; no proof value exists)",
+   "param": "combined proof: lean plan (scripts/proof.ts --plan lean, now the default; --plan full keeps the original). Generation worlds 1616, 1717, 1818 x 75 years natural aging with C8 demography, hash-bound --unseal on these seeds only (replaces c8-setA 1111-1515 x 40 y and c8-setB 1616-2525 x 40 y). Expansion scenario with its paired baseline on 1616, 1717, 1818 x 10 years (T-LET-4; T-LET-5 unsealed; was set B x 10 y). C9: one large world on 5101 x 75 years (was baseline, large and large-off on 5101-5505 x 40 y); T-FIS-3 has no paired baseline and is reported insufficient; no generation world runs with fission (C9's assocBondW 0.3 changes party joining from day one, and a split would contaminate the demography rows). Behaviour on 48, 7, 21, 5, 11 and fresh replication on 606-1010: 1 year after a 180-day burn-in each (were 10 years). Ablations: seed 48 x 1 year per stage (were 48, 7, 21 x 2 years). Comparisons, Gombe paths and guide data unchanged, run locally. Dry runs now use seed 48 for every step.",
+   "reason": "local compute limit (the proof must run on 4-6 cores in a few hours); user decision",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "none",
+   "class": "proof design"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "science/simulation owner",
+   "seen": "none",
+   "param": "freeze: c6dc9be135771d16 -> c6dc9be135771d16 (unchanged: scripts/proof.ts is outside the protocol hash; the freeze records the lean plan's declaration)",
+   "reason": "lean proof plan declared",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "combined proof (lean plan)",
    "class": "freeze"
   }
  ],
