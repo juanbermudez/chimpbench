@@ -70,3 +70,15 @@ All arms run on one frozen snapshot of `main`, with its commit and sim hash reco
    - tested against a fake server.
 3. **Paid, only with the user's explicit approval: hard cap $10.** J1 and J2 × 5 seeds, plus J2s × 1 seed. A world that hits its share of the cap stops, and is marked incomplete.
 4. **No distillation or training on Jev outputs.** Outputs carry a do-not-train marker.
+
+## Amendment 1 (2026-09-29, after the free arms, before any paid run; stricter only)
+
+Free-arm results (seeds 6501–6905; mean summed band distance; lower is better):
+- R 2.04; RG 0.93 (better than R on 5/5 seeds); U 1.83; X 1.37 (better than R on 5/5).
+- Median adult hunger: R 0.64, RG 0.66, U 0.39, X 0.86. Lactating females: R 0.89, RG 0.91, U 0.70, X 0.97.
+- R misses on male travel (0.67), female travel (0.10), grooming for both sexes (0.25 male, 0.53 female) and male day range (0.38).
+
+The endpoint can be improved by dilution: random choice beats rules. And gate plus sampling alone (RG) cuts the distance by 55%. The original rule could therefore credit Jev with a gain that comes from sampling. Changes, all stricter:
+1. **"Jev helps"** now also requires J2 to beat **RG** by ≥ 0.05 on ≥ 4 of 5 seeds. RG is the strongest free control.
+2. **Viability guard:** an arm whose median adult hunger exceeds R's by more than 0.10, or whose lactating-female median is ≥ 0.95, is "non-viable" and can't count as "helps". X fails this guard.
+3. **"No difference"** now covers J2 matching RG, and the conclusion is then that "sampling and intention holding explain the gain, not Jev".
