@@ -170,7 +170,7 @@ try {
     await key('t'); await wait(800);
     for (const view of ['kinship', 'dominance']) {
       if (!want(`society-${view}`)) continue;
-      await page.locator(`[data-sview="${view}"]`).click(); await wait(900);
+      await page.locator(`[role="tab"][data-sview="${view}"]`).click(); // the community panel has shortcut buttons with the same data-sview await wait(900);
       await save(`society-${view}`);
     }
     await key('Escape'); await wait(500);
