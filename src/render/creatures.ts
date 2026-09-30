@@ -17,6 +17,7 @@ import { createProps } from './creatures/props';
 import { createSelection } from './creatures/selection';
 import { createSocial } from './creatures/social';
 import { createLabels } from './creatures/labels';
+import { nearestOnScreen } from './creatures/pick';
 import { createFX } from './creatures/fx';
 import { createNests } from './creatures/nests';
 import { createPrey } from './creatures/prey';
@@ -63,6 +64,9 @@ export interface CreatureFrame {
   /** Optional canopy lens (strategy view): centre x, y (NDC), radius z (NDC y units), strength w; aspect = width / height.
    * Animals inside it render without the x-ray fill (outline only where still occluded). */
   lens?: THREE.Vector4; aspect?: number;
+  /** Optional: the animal under the cursor (what a click would select), −1 none; its label is highlighted. Absent: the
+   * labels guess the hover from the pointer themselves (harness). */
+  hoverId?: number;
 }
 export interface CreatureLayer {
   picks: THREE.Object3D[];                                  // raycast targets, userData.chimpId
@@ -77,6 +81,11 @@ export interface CreatureLayer {
    * climbs, drums on or perches in (hostTree, −1 none). Fills out[] (reused objects) and returns the count. Read-only.
    */
   keepClearCandidates?(out: KeepCandidate[], camera: THREE.Camera): number;
+  /** Optional: chimp id whose name label (padded hit box) contains (x, y) in viewport CSS px, else −1. */
+  labelAt?(x: number, y: number): number;
+  /** Optional: chimp id of the visible animal nearest (x, y) in viewport CSS px within max(radius, its on-screen
+   * half-size), else −1; preferId (the hovered animal) wins close calls (creatures/pick.ts). */
+  nearestAt?(x: number, y: number, camera: THREE.Camera, radius: number, preferId: number): number;
   dispose(): void;
 }
 
@@ -1527,6 +1536,23 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     }
     return n;
   }
+  // Screen-space pick buffers (reused): body centre in CSS px, on-screen reach, and the chimp id per candidate.
+  const pickX = new Float32Array(CAPACITY), pickY = new Float32Array(CAPACITY), pickR = new Float32Array(CAPACITY), pickId = new Int32Array(CAPACITY);
+  function nearestAt(x: number, y: number, camera: THREE.Camera, radius: number, preferId: number): number {
+    const w = view.w || 1440, h = view.h || 800;
+    let n = 0, prefer = -1;
+    for (const a of animList) {
+      if (n >= CAPACITY) break;
+      if (!a.visible || a.fade > 0.6 || a.lastSkinFrame < 0) continue;
+      V.set(a.bx, a.by + 0.5 * a.morph.size, a.bz).project(camera);
+      if (V.z > 1 || V.z < -1) continue;
+      pickX[n] = (V.x * 0.5 + 0.5) * w; pickY[n] = (-V.y * 0.5 + 0.5) * h; pickR[n] = 0.6 * a.px; pickId[n] = a.id;
+      if (a.id === preferId) prefer = n;
+      n++;
+    }
+    const i = nearestOnScreen(n, pickX, pickY, pickR, x, y, radius, prefer);
+    return i >= 0 ? pickId[i] : -1;
+  }
   function bendSources(x: number, z: number, out: THREE.Vector4[]): number {
     let n = 0;
     for (const a of animList) {
@@ -1554,5 +1580,5 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     picks.length = 0; anims.clear(); animList.length = 0;
     void lastElapsed;
   }
-  return { picks, update, getPosition, getScale, bendSources, keepClearCandidates, dispose, debug } as CreatureLayer & { debug: typeof debug };
+  return { picks, update, getPosition, getScale, bendSources, keepClearCandidates, labelAt: labels.hitTest, nearestAt, dispose, debug } as CreatureLayer & { debug: typeof debug };
 }

@@ -4,7 +4,10 @@ import { esc, troopShort } from './format';
 
 // Canvas minimap: static habitat layer cached per world, dynamic layer
 // (territories, parties, individuals, stimuli, selection, night tint) redrawn
-// on the UI tick. Click selects the nearest individual within 7 m, else pans.
+// on the UI tick, and the camera's ground footprint on its own overlay canvas,
+// redrawn only when the scene reports that it moved. Click selects the nearest
+// individual within 7 m, else pans the camera there (which also stops the close
+// view following an animal; F or a double-click on a chimp brings it back).
 
 const hexA = (hex: string, a: number) => {
   const h = hex.replace('#', ''); const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h.slice(0, 6), 16);
@@ -13,10 +16,12 @@ const hexA = (hex: string, a: number) => {
 
 export function createMinimap(root: HTMLElement, ctx: Ctx) {
   // The card's title, camera row and layer column are built by app.ts around this host (see .p-map).
-  root.innerHTML = `<div class="map-frame"><canvas class="map" tabindex="0" role="img" aria-label="Community range map. Click to select the nearest chimp or pan the camera."></canvas><span class="map-n mono" aria-hidden="true">N</span></div>
+  root.innerHTML = `<div class="map-frame"><canvas class="map" tabindex="0" role="img" aria-label="Community range map. The outlined area is where the camera looks. Click to select the nearest chimp or move the camera there."></canvas><canvas class="map-view" aria-hidden="true"></canvas><span class="map-n mono" aria-hidden="true">N</span></div>
   <div class="map-legend"></div>`;
-  const canvas = root.querySelector<HTMLCanvasElement>('canvas')!;
+  const canvas = root.querySelector<HTMLCanvasElement>('canvas.map')!;
   const g = canvas.getContext('2d')!;
+  const viewCanvas = root.querySelector<HTMLCanvasElement>('canvas.map-view')!;
+  const v = viewCanvas.getContext('2d')!;
   const legend = root.querySelector<HTMLElement>('.map-legend')!;
   let staticLayer: HTMLCanvasElement | null = null, staticFor: World | null = null, W = 0, H = 0, legendKey = '';
   // CSS size and visibility come from a ResizeObserver, so the 4 Hz redraw never reads layout.
@@ -29,7 +34,26 @@ export function createMinimap(root: HTMLElement, ctx: Ctx) {
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     const w = Math.max(1, Math.round(cssW * dpr)), h = Math.max(1, Math.round(cssH * dpr));
     if (w !== canvas.width || h !== canvas.height) { canvas.width = w; canvas.height = h; staticFor = null; }
+    if (w !== viewCanvas.width || h !== viewCanvas.height) { viewCanvas.width = w; viewCanvas.height = h; fpVersion = -1; }
     W = w; H = h;
+  }
+  // Camera footprint (scene.getFootprint): the ground the unobstructed view covers, and the focus as a dot that stays
+  // visible when the footprint is a few pixels (close views on the 8 km field map). Neutral white: gold is the selection.
+  let fpVersion = -1, fpWorld: World | null = null;
+  function drawFootprint() {
+    const fp = ctx.deps.getScene()?.getFootprint?.(), w = ctx.world();
+    if (!fp) { if (fpVersion !== -1) { v.clearRect(0, 0, viewCanvas.width, viewCanvas.height); fpVersion = -1; } return; }
+    if (fp.version === fpVersion && fpWorld === w) return;
+    fpVersion = fp.version; fpWorld = w;
+    const k = W / 300, p = fp.pts;
+    v.clearRect(0, 0, W, H);
+    v.beginPath(); v.moveTo(mx(w, p[0]), mz(w, p[1]));
+    for (let i = 1; i < 4; i++) v.lineTo(mx(w, p[i * 2]), mz(w, p[i * 2 + 1]));
+    v.closePath();
+    v.fillStyle = 'rgba(236,236,238,.07)'; v.fill();
+    v.lineJoin = 'round'; v.lineWidth = 1.3 * k; v.strokeStyle = 'rgba(236,236,238,.82)'; v.stroke();
+    v.beginPath(); v.arc(mx(w, fp.fx), mz(w, fp.fz), 2.4 * k, 0, Math.PI * 2);
+    v.fillStyle = '#ececee'; v.fill(); v.lineWidth = k; v.strokeStyle = 'rgba(16,16,18,.85)'; v.stroke();
   }
   const mx = (w: World, x: number) => (x / w.size + 0.5) * W;
   const mz = (w: World, z: number) => (z / w.size + 0.5) * H;
@@ -72,6 +96,13 @@ export function createMinimap(root: HTMLElement, ctx: Ctx) {
   legend.addEventListener('click', e => { const b = (e.target as HTMLElement).closest<HTMLElement>('[data-troop]'); if (b) { const id = Number(b.dataset.troop); ctx.highlight(ctx.state.highlightTroopId === id ? null : id); } });
 
   return {
+    /** Every animation frame while the map is on screen: redraws the camera footprint only when it moved. */
+    frame() {
+      if (!sized) readBox();
+      if (cssW < 1 || cssH < 1) return;
+      size();
+      drawFootprint();
+    },
     update() {
       const w = ctx.world();
       if (!sized) readBox(); // first frame only, before the observer has reported

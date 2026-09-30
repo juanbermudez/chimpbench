@@ -83,16 +83,24 @@ export function needsParamsChoice(world: World, acceptedFor: string | null): Par
 /** Label shown while such a world runs. */
 export const paramsNote = (c: ParamsChange) => `Created with an older parameter set (${c.saved || 'unknown'}); running with the current defaults (${c.current}).`;
 
+/**
+ * Field-profile keys that appear only once their mechanism runs (patch crops and feeding bouts on chimp.sim within the
+ * first hour, remembered trees on world.sim at the first day's end). Like OPTIONAL_SIM / OPTIONAL_X they are not part of
+ * the layout; without them every field save made after the first feeding bout was refused on load.
+ */
+const LAZY_SIM: readonly string[] = [...OPTIONAL_SIM, 'knownTrees'];
+const LAZY_X: readonly string[] = [...OPTIONAL_X, 'treeCrop', 'fedTree', 'fedAt'];
+
 /** Structural check on the loaded world itself (also covers legacy exports that carry no stamp). */
 export function worldShapeProblem(world: World): string {
   const w = world as World & { sim?: object };
-  if (!w || !Array.isArray(w.chimps) || !Array.isArray(w.troops) || !Array.isArray(w.trees) || typeof w.tick !== 'number' || typeof w.rng !== 'number') return 'not a MGOGO world';
+  if (!w || !Array.isArray(w.chimps) || !Array.isArray(w.troops) || !Array.isArray(w.trees) || typeof w.tick !== 'number' || typeof w.rng !== 'number') return 'not a ChimpBench world';
   if (!w.sim) return 'world has no simulation state (world.sim)';
   // keys that appear only once their mechanism fires (travel hoo, fission) are not part of the layout
   const keys = (o: object, optional: readonly string[]) => Object.keys(o).filter(k => !optional.includes(k)).sort().join(',');
-  if (keys(w.sim, OPTIONAL_SIM) !== keys(newSimState(), OPTIONAL_SIM)) return 'world.sim layout differs from this build';
+  if (keys(w.sim, LAZY_SIM) !== keys(newSimState(), LAZY_SIM)) return 'world.sim layout differs from this build';
   const living = w.chimps.find(c => c.alive && (c as { sim?: object }).sim) as { sim: object } | undefined;
-  if (living && keys(living.sim, OPTIONAL_X) !== keys(newX(), OPTIONAL_X)) return 'chimp.sim layout differs from this build';
+  if (living && keys(living.sim, LAZY_X) !== keys(newX(), LAZY_X)) return 'chimp.sim layout differs from this build';
   return '';
 }
 
@@ -172,7 +180,7 @@ export function parseEnvelope(text: string): SaveEnvelope {
   let raw: unknown;
   try { raw = JSON.parse(text); } catch (e) { throw new SaveError(`Save is not valid JSON (${e instanceof Error ? e.message : e})`, 'corrupt'); }
   const env = (isLegacy(raw) ? fromLegacy(raw) : raw) as SaveEnvelope;
-  if (!env || typeof env !== 'object' || typeof env.format !== 'number' || !env.world) throw new SaveError('Not a MGOGO save', 'unknown-format');
+  if (!env || typeof env !== 'object' || typeof env.format !== 'number' || !env.world) throw new SaveError('Not a ChimpBench save', 'unknown-format');
   const compat = compatibility(env);
   if (!compat.ok) throw new SaveError(`Cannot open this save: ${compat.reason}`, 'incompatible');
   const problem = worldShapeProblem(env.world);

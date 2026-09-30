@@ -19,7 +19,7 @@ The script refuses a dirty tree, checks that `expected-hashes.json` still matche
 
 ```sh
 # Node 22+ (e.g. NodeSource), then:
-tar -xzf mgogo-<commit>.tar.gz -C mgogo && cd mgogo
+mkdir -p chimpbench && tar -xzf chimpbench-<commit>.tar.gz -C chimpbench && cd chimpbench
 scripts/remote/setup.sh          # pnpm install --frozen-lockfile, then the determinism check
 scripts/remote/run-all.sh --smoke --out ~/run     # ~5 min of plumbing at 6+ vCPUs; marks nothing done
 scripts/remote/run-all.sh --out ~/run             # workers default to $(nproc)

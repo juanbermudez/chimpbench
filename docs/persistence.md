@@ -364,9 +364,9 @@ export interface SimStore {
   /** Copies the newest (or given) snapshot into a new simulation: a branch point, not the history. */
   duplicate(simId: string, name: string, snapshotId?: number): Promise<SimSummary>;
   delete(simId: string): Promise<void>;
-  exportSimulation(simId: string): Promise<Blob>;   // .mgogo.json.gz: envelope + session, readable across DB schema versions
+  exportSimulation(simId: string): Promise<Blob>;   // .chimpbench.json.gz: envelope + session, readable across DB schema versions
   exportLibrary(): Promise<Blob>;                   // .sqlite3: every simulation (pool.exportFile)
-  /** Detects .sqlite3, .mgogo.json(.gz) and the legacy Settings "Export" JSON (version '0.2.0'). New ids; never overwrites. */
+  /** Detects .sqlite3, .chimpbench.json(.gz) (and older .mgogo.json(.gz)) and the legacy Settings "Export" JSON (version '0.2.0'). New ids; never overwrites. */
   import(file: Blob): Promise<SimSummary[]>;
   getSettings(): Promise<Settings>;
   setSettings(patch: Partial<Settings>): Promise<void>;
@@ -488,7 +488,7 @@ There are three independent version numbers:
 
 **Policy during the realism program (C3–C11), recommended:** don't write sim migrations yet. Each stage that breaks state bumps `SIM_STATE_VERSION`. Old saves then show as **Incompatible**: "saved with simulation v3; this build runs v5". They are never loaded silently, and the list offers:
 
-- **Export**, a portable `.mgogo.json.gz` that can be loaded by a matching older build.
+- **Export**, a portable `.chimpbench.json.gz` that can be loaded by a matching older build. Import detects the format by content, so exports named `.mgogo.json.gz` (before the rename) still import.
 - **Start new with the same seed and settings.**
 - **Delete.**
 
@@ -526,7 +526,7 @@ Write migrations only once the state shape settles, or for a run someone cares a
   - Save checkpoint ⌘S (`preventDefault` on the browser's "Save page")
   - Rename…
   - Duplicate (branch here)
-  - Export ▸ (This simulation `.mgogo.json.gz` · All simulations `.sqlite3`)
+  - Export ▸ (This simulation `.chimpbench.json.gz` · All simulations `.sqlite3`)
   - Import…
   - Delete… (type-to-confirm the name)
 - **Open dialog:**
@@ -537,9 +537,9 @@ Write migrations only once the state shape settles, or for a run someone cares a
 - **Indicator** (right of the clock in the menu bar):
   - "Saved · 12 s ago"
   - "Saving…"
-  - "⚠ Not saving — MGOGO is open in another tab [Use here]"
+  - "⚠ Not saving — ChimpBench is open in another tab [Use here]"
   - "⚠ Not saving — storage unavailable (private window?) [Export]"
-  - "Read-only — saved by a newer MGOGO"
+  - "Read-only — saved by a newer ChimpBench"
 - **Second tab:**
   - It runs without saving and shows a banner.
   - **Use here** asks the owner over `BroadcastChannel('mgogo-store')` to `release()`: save, close, `pauseVfs`, drop the lock. The owner then shows "Moved to another tab [Take back]". The new tab acquires the lock and loads the latest.

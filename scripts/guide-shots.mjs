@@ -1,9 +1,9 @@
 // Captures the app screenshots used by the guide (docs/architecture.html) into docs/img/*.webp.
 // Usage: node scripts/guide-shots.mjs [url] [--only overview-dawn,mind-decision] [--seed 7]
 //   Shots: overview-dawn, mind-decision (mind), close-party, keep-clear (writes keep-clear-off too), society-kinship,
-//   society-dominance, time-menu (time), experiment-shift (experiment), storm, night. The model-dependent ones (mind,
-//   experiment, time) are skipped while /api/decide/status is not ready, so a busy model never overwrites them;
-//   recapture them alone later with --only mind,experiment,time.
+//   society-dominance, experiment-shift (experiment), storm, night. The model-dependent ones (mind,
+//   experiment) are skipped while /api/decide/status is not ready, so a busy model never overwrites them;
+//   recapture them alone later with --only mind,experiment.
 //   url defaults to the running `pnpm dev` at http://127.0.0.1:5173 (real GLiNER model, so the Mind tab shows real
 //   probabilities). This script never starts or stops a server on 5173. If 5173 is unreachable it uses a model-free
 //   server on 5196, starting one (MGOGO_NO_MODEL=1) itself if needed and stopping it again at the end.
@@ -15,7 +15,7 @@ const { chromium } = await import('/Users/juanbermudez/.cache/codex-runtimes/cod
 
 const args = process.argv.slice(2);
 const flag = name => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : undefined; };
-const ALIAS = { mind: 'mind-decision', experiment: 'experiment-shift', time: 'time-menu', society: 'society-kinship,society-dominance' };
+const ALIAS = { mind: 'mind-decision', experiment: 'experiment-shift', society: 'society-kinship,society-dominance' };
 const only = flag('--only')?.split(',').flatMap(n => (ALIAS[n] ?? n).split(','));
 const seed = Number(flag('--seed') ?? 7);
 const root = new URL('../', import.meta.url).pathname;
@@ -84,10 +84,12 @@ async function save(name, { clip, width = 1600 } = {}) {
   console.log(`  ${written.at(-1)}`);
 }
 const want = name => !only || only.includes(name);
+// The right panel opens on the communities (with the unit grid); the selected animal's tile opens its chimp view.
+const chimpTab = async tab => { if (await page.locator('.rp-chimp').isHidden()) await page.locator('.unit[aria-current="true"]').click(); await page.locator(`[data-tab="${tab}"]`).click(); await wait(300); };
 const box = async sel => { const b = await page.locator(sel).first().boundingBox(); return b && { x: Math.max(0, b.x - 1), y: Math.max(0, b.y - 1), width: b.width + 2, height: b.height + 2 }; };
 
 try {
-  await page.goto(`${base}/?perf=1&seed=${seed}`, { waitUntil: 'load' });
+  await page.goto(`${base}/?perf=1&seed=${seed}&profile=compressed`, { waitUntil: 'load' }); // the guide shows the compressed map
   await until(() => document.querySelector('.loading')?.classList.contains('done'), null, 90000);
   await until(() => window.__MGOGO__?.snapshot().tick > 0);
   // Transient toasts are not part of the views being documented.
@@ -106,7 +108,7 @@ try {
     // The default roster is the selected chimp (West's alpha): wait for real model decisions, preferring one where
     // GLiNER and the rules disagree, so the strip shows both.
     await until(() => { const m = window.__MGOGO__.snapshot().model; return m.ready && m.applied > 0; }, null, 120000);
-    await page.locator('[data-tab="mind"]').click();
+    await chimpTab('mind');
     // A shared model server can be busy: take a disagreement if one comes within 2 minutes, else any applied answer.
     const start = Date.now();
     while (Date.now() - start < 300000) {
@@ -119,6 +121,7 @@ try {
   }
 
   if (want('close-party')) {
+    await chimpTab('overview');   // the chimp view with needs, personality and skills beside the forest
     await key('c'); await wait(3500);
     await save('close-party');
     await key('r'); await wait(1500);
@@ -130,6 +133,8 @@ try {
     // fades forced off (a debug switch), then live. Side panels hidden.
     await key('c'); await wait(2500);
     await key('b'); await key('i'); await wait(900);
+    // The camera follows the selected chimp: its "Following …" pill is chrome, not part of the keep-clear comparison.
+    const noPill = await page.addStyleTag({ content: '.follow-ind{display:none!important}' });
     const fadeOff = on => page.evaluate(v => { document.querySelector('canvas').__env.debug.fadeOverride = v; }, on ? 0 : null);
     const centre = { x: VIEW.width * .2, y: VIEW.height * .15, width: VIEW.width * .6, height: VIEW.height * .7 };
     let best = { az: 0, d: -1 };
@@ -157,6 +162,7 @@ try {
     await fadeOff(false); await wait(1800);
     await save('keep-clear');
     await key(' ');
+    await noPill.evaluate(el => el.remove());
     await key('b'); await key('i'); await key('r'); await wait(1500);
   }
 
@@ -164,24 +170,15 @@ try {
     await key('t'); await wait(800);
     for (const view of ['kinship', 'dominance']) {
       if (!want(`society-${view}`)) continue;
-      await page.locator(`[data-sview="${view}"]`).click(); await wait(900);
+      await page.locator(`[role="tab"][data-sview="${view}"]`).click(); // the community panel has shortcut buttons with the same data-sview await wait(900);
       await save(`society-${view}`);
     }
     await key('Escape'); await wait(500);
   }
 
-  if (want('time-menu') && withModel) {
-    await page.locator('.hud [data-act="time"]').first().click(); await wait(700);
-    const bar = await box('.hud'), drop = await box('#time-drop');
-    const x = Math.max(0, Math.min(bar.x, drop.x) - 12), y = Math.max(0, bar.y - 12);
-    const clip = { x, y, width: Math.min(VIEW.width - x, Math.max(drop.x + drop.width, 900) - x + 12), height: drop.y + drop.height - y + 12 };
-    await save('time-menu', { clip, width: 1400 });
-    await key('Escape'); await wait(400);
-  }
-
   if (want('experiment-shift') && withModel) {
     // Playback near the selected chimp's party; the Mind tab then pairs the decision before and after it.
-    await page.locator('[data-tab="mind"]').click();
+    await chimpTab('mind');
     await key('e'); await wait(500);
     await page.locator('[data-kind="playback-stranger"]').click();
     await until(() => !document.querySelector('.shift')?.classList.contains('waiting'), null, 60000).catch(() => {});

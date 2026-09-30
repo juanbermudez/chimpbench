@@ -1,6 +1,10 @@
 import * as THREE from 'three';
-import { WATER_LEVEL, Owner, rng, type EnvFrame, type SharedUniforms } from './shared';
+import { HAZE_START_PERSPECTIVE, WATER_LEVEL, Owner, rng, type EnvFrame, type SharedUniforms } from './shared';
 import { createGlowTexture } from './textures';
+
+/** Perspective sun shafts reach ~63% of full glow this far (m) beyond the haze start, ~98% at twice it. Design assumption
+ * (stylization): the canopy-gap shafts stay a mid- and background effect in close views. */
+const SHAFT_REACH = 25;
 
 // GPU-animated atmosphere: rain streaks in a camera-following box, splash
 // rings on ground and water, understory fireflies at night, and sun shafts
@@ -210,7 +214,7 @@ export function createWeather(uniforms: SharedUniforms, shaftSites: THREE.Vector
     vertexShader: /* glsl */`
       attribute vec4 aSite;
       uniform float uTime; uniform vec3 uKeyDir; uniform float uOrtho; uniform vec3 uViewDir;
-      varying vec2 vQ; varying float vFlicker;
+      varying vec2 vQ; varying float vFlicker; varying float vDepth;
       ${HEIGHT_GLSL}
       void main() {
         vec3 base = vec3( aSite.x, groundAt( aSite.xy ) - 0.3, aSite.y );
@@ -223,14 +227,22 @@ export function createWeather(uniforms: SharedUniforms, shaftSites: THREE.Vector
         vec3 world = base + axis * position.y * len + side * position.x * width;
         vQ = position.xy;
         vFlicker = 0.65 + 0.35 * sin( uTime * 0.37 + aSite.w * 40.0 ) * sin( uTime * 0.23 + aSite.w * 17.0 );
-        gl_Position = projectionMatrix * viewMatrix * vec4( world, 1.0 );
+        vec4 mv = viewMatrix * vec4( world, 1.0 );
+        vDepth = - mv.z; // affine in the quad, so the interpolated view depth is exact per fragment
+        gl_Position = projectionMatrix * mv;
       }`,
     fragmentShader: /* glsl */`
-      uniform vec3 uKeyColor; uniform float uIntensity;
-      varying vec2 vQ; varying float vFlicker;
+      uniform vec3 uKeyColor; uniform float uIntensity; uniform float uOrtho;
+      varying vec2 vQ; varying float vFlicker; varying float vDepth;
       void main() {
         float across = 1.0 - vQ.x * vQ.x;
         float a = across * across * smoothstep( 0.0, 0.18, vQ.y ) * ( 1.0 - smoothstep( 0.45, 1.0, vQ.y ) );
+        // Perspective: a shaft is the sunlit share of the haze's airlight, so it follows the fog's exp² build-up with
+        // view depth from the same start. A flat add let shafts between the camera and the followed party veil it:
+        // dark fur in canopy shade reflects less than one shaft added (pale "clay" chimps in a beige haze).
+        float d = max( vDepth - ${HAZE_START_PERSPECTIVE.toFixed(1)}, 0.0 ) / ${SHAFT_REACH.toFixed(1)};
+        a *= uOrtho > 0.5 ? 1.0 : 1.0 - exp( - d * d );
+        if ( a < 0.002 ) discard; // near-camera quads can fill the screen: skip their blends
         gl_FragColor = vec4( uKeyColor * a * vFlicker * uIntensity, 1.0 );
       }`,
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false, forceSinglePass: true,

@@ -1,5 +1,5 @@
 import type { Chimp, Troop, World } from '../types';
-import { ageText, duration, esc, nameOf, stamp, troopShort } from './format';
+import { ageText, duration, esc, nameOf, sinceText, stamp, troopShort } from './format';
 import { icon } from './icons';
 
 // Dominance ladders (Elo bars, alpha crown, recent rank moves) and the alpha
@@ -44,6 +44,12 @@ export function ladderHtml(world: World, troop: Troop, sex: 'male' | 'female', s
       <span class="r-delta mono ${d > 0 ? 'up' : d < 0 ? 'dn' : ''}">${d > 0 ? `▲${d}` : d < 0 ? `▼${-d}` : ''}</span>
     </button></li>`;
   }).join('')}</ol>`;
+}
+
+/** The community's alpha male and his tenure (inspector Rank tab, community panel). */
+export function alphaCardHtml(world: World, t: Troop): string {
+  const alpha = world.chimps.find(x => x.id === t.alphaId);
+  return `<section class="alpha-card" style="--c:${esc(t.color)}">${icon('crown')}<div><b>${alpha ? `<button class="lnk" data-select="${alpha.id}">${esc(alpha.name)}</button>` : 'Vacant'}</b><span class="ac-meta">${esc(troopShort(t))} alpha${alpha ? ` · ${t.alphaSince < 0 ? '≥ ' : ''}${duration(world.time - t.alphaSince)}, ${sinceText(world, t.alphaSince)}` : ' · contested, no male holds the position'}</span></div></section>`;
 }
 
 /** Swimlane timeline of alpha tenures, one lane per community, ending at "now". */

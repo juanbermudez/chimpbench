@@ -144,6 +144,14 @@ test('stage C8 hidden state: the new fields are finite numbers, and saves from b
   assert.equal(compatibility({ format: SAVE_FORMAT, stateVersion: STATE_VERSION, stateShape: old }).ok, false);
 });
 
+test('shape check: a field world run past its first day (feeding bouts, remembered trees) still opens', () => {
+  const w = createWorld(48, { profile: 'field' });
+  for (let i = 0; i < 5770; i++) tickWorld(w);
+  const sim = (w as unknown as { sim: Record<string, unknown> }).sim;
+  assert.ok('knownTrees' in sim && w.chimps.some(c => 'fedTree' in (c as unknown as { sim: object }).sim), 'the lazy field keys have appeared');
+  assert.equal(worldShapeProblem(JSON.parse(JSON.stringify(w)) as World), '');
+});
+
 test('shape check: keys that appear once a mechanism fires (travel hoo, fission) do not refuse a save; unknown keys do', () => {
   const w = JSON.parse(JSON.stringify(run(world(48), 20))) as World;
   const first = w.chimps.find(c => c.alive) as unknown as { sim: Record<string, unknown> };

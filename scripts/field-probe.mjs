@@ -80,7 +80,7 @@ async function crownSweep(label) {
   return total;
 }
 
-// 1. Whole-map overview (the default field camera).
+// 1. Whole-map overview (Reset camera; a new field world opens in the close view on the selected animal).
 await key('r');
 await page.evaluate(() => document.querySelector('canvas').__env.rig.reset());
 await page.waitForTimeout(1500);

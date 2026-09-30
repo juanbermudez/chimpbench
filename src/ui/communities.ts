@@ -4,9 +4,9 @@ import { icon } from './icons';
 import { duration, emblemText, esc, nameOf, troopShort } from './format';
 import { morph } from './morph';
 
-// Three community cards: identity, alpha + tenure, demography, strength
+// Three community cards at the top of the right panel: identity, alpha + tenure, demography, strength
 // (adult males, the best single predictor of intergroup dominance at Ngogo
-// and Kanyawara) and current party count.
+// and Kanyawara) and current party count. A card shows its community in the panel.
 
 export function demography(world: World, t: Troop) {
   const m = world.chimps.filter(c => c.alive && c.troopId === t.id);
@@ -26,30 +26,32 @@ export function emblem(t: Troop, cls = '') {
 }
 
 export function createCommunities(root: HTMLElement, ctx: Ctx) {
-  root.innerHTML = `<div class="sec-head"><h2 class="eyebrow">Communities</h2><span class="sec-actions"><button class="link-btn" data-act="society">${icon('tree')}Society<kbd>T</kbd></button><button class="icon-btn sm side-collapse" data-act="collapse-sidebar" aria-controls="left-sidebar" aria-keyshortcuts="B" aria-label="Hide sidebar (B)" title="Hide sidebar (B)">${icon('chevronL')}</button></span></div><div class="cards" role="list"></div>`;
+  root.innerHTML = `<div class="sec-head"><h2 class="eyebrow">Communities</h2><span class="sec-actions"><button class="link-btn" data-act="society">${icon('tree')}Society<kbd>T</kbd></button><button class="icon-btn sm insp-collapse" data-act="collapse" aria-keyshortcuts="I" aria-label="Collapse panel (I)" title="Collapse panel (I)">${icon('chevronR')}</button></span></div><div class="cards" role="list"></div>`;
   const list = root.querySelector<HTMLElement>('.cards')!;
-  root.querySelector<HTMLButtonElement>('[data-act="society"]')!.onclick = () => ctx.openSociety();
+  root.querySelector<HTMLButtonElement>('[data-act="society"]')!.onclick = () => ctx.openSociety(ctx.state.panelTroopId ?? 'all');
+  root.querySelector<HTMLButtonElement>('[data-act="collapse"]')!.onclick = () => ctx.setInspector(false);
+  // A card shows that community in the panel (details and unit grid); world highlighting stays on the range map legend.
   list.addEventListener('click', e => {
     const b = (e.target as HTMLElement).closest<HTMLElement>('[data-troop]'); if (!b) return;
-    const id = Number(b.dataset.troop);
-    ctx.highlight(ctx.state.highlightTroopId === id ? null : id);
+    ctx.showCommunity(Number(b.dataset.troop));
   });
   list.addEventListener('pointerover', e => { const b = (e.target as HTMLElement).closest<HTMLElement>('[data-troop]'); ctx.hoverTroop(b ? Number(b.dataset.troop) : null); });
   list.addEventListener('pointerleave', () => ctx.hoverTroop(null));
   let key = '';
   return {
-    update(force = false) {
+    /** shownId: the community the panel shows (its card is marked current). */
+    update(shownId: number | null, force = false) {
       const w = ctx.world();
       const rows = w.troops.map(t => ({ t, d: demography(w, t) }));
       const maxAm = Math.max(1, ...rows.map(r => r.d.am));
       const tenures = rows.map(({ t }) => t.alphaId >= 0 ? `${t.alphaSince < 0 ? '≥' : ''}${duration(Math.max(0, w.time - t.alphaSince))}` : '');
       // Keyed on what the cards display (the tenure as its rounded text), so the clock alone never re-renders them.
-      const k = JSON.stringify([ctx.state.highlightTroopId, tenures, rows.map(r => [r.t.alphaId, r.d])]);
+      const k = JSON.stringify([shownId, ctx.state.highlightTroopId, tenures, rows.map(r => [r.t.alphaId, r.d])]);
       if (!force && k === key) return; key = k;
       morph(list, rows.map(({ t, d }, ri) => {
-        const on = ctx.state.highlightTroopId === t.id;
+        const on = shownId === t.id, hl = ctx.state.highlightTroopId === t.id;
         const tenure = tenures[ri];
-        return `<button class="card ${on ? 'on' : ''}" role="listitem" data-troop="${t.id}" data-focus-key="troop-${t.id}" style="--c:${esc(t.color)}" aria-pressed="${on}" aria-label="${esc(t.name)}: ${d.total} members, ${d.am} adult males. ${on ? 'Highlighted' : 'Highlight in world'}">
+        return `<button class="card ${on ? 'on' : ''} ${hl ? 'hl' : ''}" role="listitem" data-troop="${t.id}" data-focus-key="troop-${t.id}" style="--c:${esc(t.color)}"${on ? ' aria-current="true"' : ''} aria-label="${esc(t.name)}: ${d.total} members, ${d.am} adult males. ${on ? 'Shown below' : 'Show members'}">
           ${emblem(t)}
           <span class="card-body">
             <span class="card-top"><b class="card-name">${esc(troopShort(t))}</b><span class="card-total" title="Living members">${d.total}</span></span>

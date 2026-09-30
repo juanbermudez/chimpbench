@@ -2,6 +2,7 @@ import type { Candidate, Chimp, DecisionSource, World } from '../types';
 import { findCandidate, getEligibleActions, rulesChoice } from './candidates';
 import { setRest, startAction } from './execution';
 import { perceive } from './perception';
+import { rgChoice } from './rg';
 import { ix, living } from './state';
 
 export function isModelControlled(world: World, c: Chimp): boolean {
@@ -27,13 +28,17 @@ export function decisionPoint(world: World, c: Chimp): void {
     c.nextDecision = world.time + 1 / 60;
     return;
   }
-  decideByRules(world, c);
+  decideByRules(world, c, true);
 }
 
-export function decideByRules(world: World, c: Chimp): boolean {
+/**
+ * Rules decide from the current candidates (best first). `policy`: a rules-driven chimp's own decision, which follows
+ * the RG policy when rgOn (stage C13, src/sim/rg.ts); a model chimp's late-answer fallback keeps the argmax.
+ */
+export function decideByRules(world: World, c: Chimp, policy = false): boolean {
   const best = c.candidates[0];
   if (!best || best.action === 'dead') { ix(c).finished = false; return false; }
-  startAction(world, c, best, 'rules');
+  startAction(world, c, (policy && rgChoice(world, c, c.candidates)) || best, 'rules');
   return true;
 }
 

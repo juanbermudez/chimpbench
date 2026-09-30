@@ -6,6 +6,7 @@ import { clamp, hash01, smoothstep } from './rng';
 import { paramsOf, type Params } from './params';
 import { fruitAt } from './phenology';
 import { bestFallbackNear, fallbackOn } from './fallback';
+import { fruitRate, leafRate, treeIntake } from './intake';
 import { byIdIn, index, isTreeId, ix, NEVER, TREE_ID0, treesNear, simOf } from './state';
 
 // Variants refine an action's meaning (why a charge happens) for execution and reason text.
@@ -219,6 +220,10 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   }
 
   // --- feeding, drinking, travel ------------------------------------------------
+  // stage C13b (intakeValue): a feeding option's food worth scales with its expected intake per hour, walk included,
+  // relative to this animal's own ripe-fruit rate (design A's currency, the sim's own rates; src/sim/intake.ts) [charnov1976]
+  const iv = P.intakeValue === 1, fruitH = iv ? fruitRate(c, P).hungerPerH : 1;
+  const tripFrac = (crop: number, feeders: number, d: number) => { const ti = treeIntake(c, P, crop, feeders, d, P.intakeCropOnly !== 1); return ti.feedH > 0 ? ti.feedH / (ti.walkH + ti.feedH) : 0; };
   if (!caretaker || (c.age >= 1.5 && !carried && caretaker.action === 'forage')) {
     for (let _i1 = 0; _i1 < x.trees.length; _i1++) { const id = x.trees[_i1];
       const t = idx.treeById.get(id)!;
@@ -226,15 +231,17 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       const d = dxz(t, px, pz);
       let crowd = 0;
       for (let _i2 = 0; _i2 < x.seen.length; _i2++) { const sid = x.seen[_i2]; const o = byId.get(sid)!; if (o.action === 'forage' && o.targetId === t.id) crowd++; }
-      const q = Math.min(1, (P.patchEcology === 1 ? fruitAt(world, t) : t.fruit) / P.fruitValueRef);
+      const crop = P.patchEcology === 1 ? fruitAt(world, t) : t.fruit, q = Math.min(1, crop / P.fruitValueRef);
       // contest competition grows with crowding when fruit is scarce (drives parties apart) [H]
       const compete = crowd * P.crowdCompeteW * (P.crowdScarcityRef - env.fruitIndex) * (c.rank > P.crowdHighRank ? P.crowdHighRankFactor : 1);
-      offer('forage', t.id, (h * 1.6 + 0.1) * (0.55 + 0.45 * q) - d / P.forageDistScaleM - compete - rain * 0.45 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.6 - coreCostOf(t, coreW, troop, x) + (t.id === s.figTree && h > 0.2 ? 0.2 : 0) - revisit(x, t.id, time, P), V.NONE, crowd);
+      offer('forage', t.id, (h * 1.6 + 0.1) * (0.55 + 0.45 * q) * (iv ? tripFrac(crop, crowd, d) : 1) - d / P.forageDistScaleM - compete - rain * 0.45 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.6 - coreCostOf(t, coreW, troop, x) + (t.id === s.figTree && h > 0.2 ? 0.2 : 0) - revisit(x, t.id, time, P), V.NONE, crowd);
     }
   }
   if (!caretaker) {
     // stage C7c (field): fallback is worth the best rate in view, so a depleted patch sends the animal elsewhere (fallback.ts)
-    offer('forage', -1, h * P.fallbackForageW * (fallbackOn(P) ? bestFallbackNear(world, px, pz, x.sight, _fb) : 1) + 0.03 - rain * 0.3);
+    // C13b: leaves are worth their intake rate here relative to ripe fruit (full-stock rate when fallback depletes: the best cell in view scales it)
+    const leafV = iv ? (fallbackOn(P) ? P.fruitIntakePerH * P.fruitHungerFactor * P.fallbackRateRatio : leafRate(world, px, pz, P)) / fruitH : 1;
+    offer('forage', -1, h * P.fallbackForageW * (fallbackOn(P) ? bestFallbackNear(world, px, pz, x.sight, _fb) : 1) * leafV + 0.03 - rain * 0.3);
     // field profile: leaving companions for a food tree of one's own has a cost (parties travel together; design, T-PTY-1)
     const stay = P.partyStayW > 0 ? P.partyStayW * Math.min(x.visibleOwn, P.partyStayMaxN) : 0;
     const shortlist = P.patchEcology === 1; // field: many remembered trees; score the few best by distance and hunger
@@ -247,7 +254,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
         if (d < P.memoryTreeMinM) continue;
         // stage C7a (field): a remembered tree is worth what the animal last saw in it
         const crop = x.treeCrop?.[t.id] ?? 0.2;
-        const worth = P.memCropBelief === 1 ? h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) : h * P.memTravelHungerW;
+        const worth = (P.memCropBelief === 1 ? h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) : h * P.memTravelHungerW) * (iv ? tripFrac(crop, 0, d) : 1);
         if (shortlist) { const rv = revisit(x, t.id, time, P); _mem.push(t, worth - tripCost(worth, crop, d, h, P) - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD)); continue; }
         offer('travel', t.id, worth - tripCost(worth, crop, d, h, P) - revisit(x, t.id, time, P) - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + pers.sociability * env.fruitIndex * 0.1 - stay, V.TREE);
       } else if (m.kind === 'water' && c.thirst > 0.25 && c.age >= 3) {
@@ -265,7 +272,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       const t = kt[i >> 1]; if (!t) continue;
       const d = dxz(t, px, pz);
       if (d < P.memoryTreeMinM) continue;
-      const crop = x.treeCrop?.[id] ?? known[i + 1], worth = h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef));
+      const crop = x.treeCrop?.[id] ?? known[i + 1], worth = h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) * (iv ? tripFrac(crop, 0, d) : 1);
       const rv = revisit(x, id, time, P);
       _mem.push(t, worth - tripCost(worth, crop, d, h, P) - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD));
     }
@@ -451,7 +458,8 @@ function revisit(x: ReturnType<typeof ix>, id: number, time: number, P: Params):
  * animal's need (design cap). Only registry values, so no free parameter.
  */
 export function tripCost(worth: number, crop: number, d: number, h: number, P: Params): number {
-  if (P.tripRateValue !== 1) return d / P.travelDistScaleM;
+  // with the C13b intake valuation the walk time is already in `worth`; only the energetic distance cost remains
+  if (P.tripRateValue !== 1 || P.intakeValue === 1) return d / P.travelDistScaleM;
   const tf = Math.min(crop, h / P.fruitHungerFactor) / P.fruitIntakePerH, tw = d / P.walkMps / 3600;
   return tf > 0 ? worth * tw / (tw + tf) : worth;
 }

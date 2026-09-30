@@ -19,8 +19,9 @@ test('async: a model-controlled chimp waits, continues or rests, then rules deci
     tickWorld(w);
     assert.equal(c.awaitingDecisionSince, since, 'still waiting within the grace period');
   }
-  for (let i = 0; i < 20 && c.awaitingDecisionSince !== null; i++) tickWorld(w);
-  assert.equal(c.awaitingDecisionSince, null);
+  // the wait ends with a rules decision; a short rules act (a pant-grunt, say) can end in the same tick and open a new wait
+  for (let i = 0; i < 20 && c.awaitingDecisionSince === since; i++) tickWorld(w);
+  assert.notEqual(c.awaitingDecisionSince, since, 'the wait ended');
   assert.equal(c.decisionSource, 'rules');
   const waited = (w.time - since) * 60;
   assert.ok(waited > 6 && waited <= 7.5, `fell back after ${waited.toFixed(2)} min`);

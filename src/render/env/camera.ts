@@ -8,6 +8,7 @@ import {
   blendDuration, blendFrame, createThrough, distanceForFrame, easeInOut, frameHeightPersp, lensRadius, pitchForDistance,
   springStep, stepThrough, terrainLift, zoomBand, type ZoomBand,
 } from './camera-zoom';
+import { chaseArrived, chaseReset, chaseStep, createChase, jumpFor, nextFollow, userPanned, type FollowEvent } from './follow';
 import { hyp2 } from '../fastmath';
 
 // Three cameras behind one rig on one zoom axis (docs/graphics-camera-plan.md §2): the tilted orthographic strategy
@@ -66,7 +67,16 @@ export interface CameraRig {
   /** Director and follow diagnostics (cuts with the rules they passed, occlusion re-framings, zoom-throughs). */
   readonly log: { cuts: { t: number; kind: string; interactionId: number; sameSubject: boolean; side: number; angle: number }[]; reframes: number; throughs: number };
   setView(mode: ViewMode, selectedId: number | null): void;
+  /** Places the camera on the animal at once and follows it (setup, probes, entering the close view). */
   focusChimp(id: number): void;
+  /**
+   * Follows the animal in the strategy and close views: the focus glides to its rendered position on a critically
+   * damped spring (follow.ts), then tracks it until the user pans, the camera is sent elsewhere or the view goes
+   * cinematic. Zoom and orbit keep following. zoomIn: the strategy view also zooms in to at least the party framing.
+   */
+  follow(id: number, zoomIn?: boolean): void;
+  /** True while the focus is still gliding to a newly followed animal. */
+  readonly followGliding: boolean;
   panTo(x: number, z: number): void;
   reset(): void;
   resize(width: number, height: number): void;
@@ -159,6 +169,20 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
   controls.mouseButtons.MIDDLE = THREE.MOUSE.DOLLY;
   controls.mouseButtons.RIGHT = THREE.MOUSE.ROTATE;
   let followId: number | null = null;
+  // Follow glide (follow.ts): the focus glides onto a newly followed animal, then rides its path (strategy view) or the
+  // close view's tracking spring takes over. The chase starts at rest on each attach (glideReady false).
+  let gliding = false, glideReady = false;
+  const chase = createChase();
+  // A drag that moves the focus detaches the follow; a click (under 6 px of travel) or a rotation does not.
+  let dragging = false, dragPx = 0, panGrace = 0, downX = 0, downY = 0;
+  function followEvent(e: FollowEvent) {
+    const s = nextFollow({ id: followId, gliding }, e);
+    if (s.id === followId && s.gliding === gliding) return;
+    if (s.id !== followId) followReady = false;
+    if (s.gliding && !gliding) glideReady = false;
+    followId = s.id; gliding = s.gliding;
+    configureControls();
+  }
   // Orbit limits are per mode: the orthographic camera stays far back (zoom frames the view, or its near plane cuts
   // into the hills); the close camera's distance and pitch are set by the rig, so OrbitControls must not clamp them.
   function configureControls() {
@@ -242,7 +266,7 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
   }
 
   function reset() {
-    followId = null;
+    followEvent({ type: 'reset' });
     if (mode === 'rts') {
       controls.target.set(0, 4, 0);
       rtsAzimuth = Math.atan2(113, 161); rtsElevation = RTS_ELEVATION;
@@ -271,7 +295,7 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
       orbitTarget = clampN(orbitTarget, ORBIT_MIN, ORBIT_MAX);
       orbit[0] = Math.log(orbitTarget); orbit[1] = 0;
       placeClose(az, clampN(pitchForDistance(orbitTarget) + userOffset, 0.03, 1.5), orbitTarget);
-      followId = id;
+      followId = id; gliding = false;
       followPoint.copy(controls.target);
       followVel.set(0, 0, 0);
       followReady = true;
@@ -279,12 +303,23 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
     } else if (mode === 'rts') {
       panTo(pos.x, pos.z);
       rtsZoomTarget = Math.max(2.2, rtsZoomTarget);
+      // Placed on the animal already: track it from here (no glide).
+      followId = id; gliding = false; glideReady = false;
+      configureControls();
     }
     controls.update();
   }
 
+  function follow(id: number, zoomIn = false) {
+    if (mode === 'cinematic' || !world.chimps.some(c => c.id === id)) return;
+    followEvent({ type: 'attach', id });
+    // A new attach ignores the tail of an earlier drag (the controls' damping can still carry it for a moment).
+    panGrace = 0; dragPx = 0;
+    if (zoomIn && mode === 'rts') rtsZoomTarget = Math.max(2.2, rtsZoomTarget);
+  }
+
   function panTo(x: number, z: number) {
-    if (mode === 'close') { followId = null; configureControls(); }
+    followEvent({ type: 'pan-to' });
     pos.set(x, height(x, z) + 2, z);
     shift.copy(pos).sub(controls.target);
     modeCam.position.add(shift);
@@ -345,6 +380,21 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
     shift.copy(followPoint).sub(controls.target);
     controls.target.add(shift);
     close.position.add(shift);
+  }
+
+  // Follow chase (both user views): the focus glides onto the animal on a critically damped spring with its velocity
+  // fed forward (follow.ts), then (lock) rides its interpolated path; the view camera moves with the focus, so framing,
+  // pitch and orbit are kept: no snap, no whip. Returns true when a glide has arrived.
+  function chaseFocus(dt: number, px: number, py: number, pz: number, cam: THREE.Camera, frameH: number): boolean {
+    const tg = controls.target;
+    if (!glideReady) { chaseReset(chase, tg.x, tg.y, tg.z); glideReady = true; }
+    // Each step starts from where the focus is (a map clamp may have moved it) and keeps the chase's velocity.
+    chase.f[0] = tg.x; chase.f[1] = tg.y; chase.f[2] = tg.z;
+    // Animal positions come from the creature layer's previous frame (the scene updates the camera first): lead by one.
+    if (chaseStep(chase, px, py, pz, dt, !gliding, jumpFor(frameH), 1)) followEvent({ type: 'relocated' });
+    shift.set(chase.f[0] - tg.x, chase.f[1] - tg.y, chase.f[2] - tg.z);
+    tg.add(shift); cam.position.add(shift);
+    return gliding && chaseArrived(chase, frameH);
   }
 
   // ---------------------------------------------------------------------
@@ -674,7 +724,8 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
     pointer.x = (e.clientX - r.left) / Math.max(1, r.width) * 2 - 1;
     pointer.y = -((e.clientY - r.top) / Math.max(1, r.height)) * 2 + 1;
   }
-  const onPointerMove = (e: PointerEvent) => updatePointer(e);
+  const onPointerMove = (e: PointerEvent) => { updatePointer(e); if (e.buttons) dragPx = Math.max(dragPx, hyp2(e.clientX - downX, e.clientY - downY)); };
+  const onPointerDown = (e: PointerEvent) => { downX = e.clientX; downY = e.clientY; dragPx = 0; };
   const onWheel = (e: WheelEvent) => {
     if (mode === 'cinematic') return;
     e.preventDefault();
@@ -695,6 +746,7 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
   };
   dom.addEventListener('wheel', onWheel, { passive: false, capture: true });
   dom.addEventListener('pointermove', onPointerMove);
+  dom.addEventListener('pointerdown', onPointerDown);
 
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
@@ -729,7 +781,8 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
   function zoomThroughIn() {
     const hf = rtsFrame(rtsZoomTarget);
     if (!groundUnder(pointer.x, pointer.y, rts, gp)) gp.set(controls.target.x, height(controls.target.x, controls.target.z), controls.target.z);
-    const id = nearestAnimal(gp, 6);
+    // Zooming keeps following: a followed animal is the one the view glides in on (the strategy zoom is about the focus).
+    const id = followId !== null && getPosition(followId, pos) ? followId : nearestAnimal(gp, 6);
     const az = azimuthOf(rts, controls.target);
     rtsAzimuth = az; rtsElevation = elevationOf(rts, controls.target);
     beginBlend();
@@ -737,8 +790,8 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
     orbitTarget = clampN(distanceForFrame(hf, CLOSE_FOV), ORBIT_MIN, ORBIT_MAX);
     orbit[0] = Math.log(orbitTarget); orbit[1] = 0;
     userOffset = 0; lift = 0; exact = false; orbitMin = ORBIT_MIN;
-    if (id !== null && getPosition(id, pos)) { followId = id; controls.target.set(pos.x, pos.y + 1.1, pos.z); followPoint.copy(controls.target); followVel.set(0, 0, 0); followReady = true; }
-    else { followId = null; controls.target.set(gp.x, gp.y + 1, gp.z); }
+    if (id !== null && getPosition(id, pos)) { followId = id; gliding = false; controls.target.set(pos.x, pos.y + 1.1, pos.z); followPoint.copy(controls.target); followVel.set(0, 0, 0); followReady = true; }
+    else { followId = null; gliding = false; controls.target.set(gp.x, gp.y + 1, gp.z); }
     lift = terrainLift(controls.target.x, controls.target.y, controls.target.z, orbitTarget, az, pitchForDistance(orbitTarget), height);
     placeClose(az, pitchForDistance(orbitTarget) + lift, orbitTarget);
     configureControls();
@@ -748,7 +801,8 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
     const hf = frameHeightPersp(close.position.distanceTo(controls.target), CLOSE_FOV);
     const az = azimuthOf(close, controls.target);
     beginBlend();
-    mode = 'rts'; modeCam = rts; controls.object = rts; followId = null;
+    // A followed animal stays followed in the strategy view (its spring starts from here).
+    mode = 'rts'; modeCam = rts; controls.object = rts; glideReady = false;
     controls.target.y = Math.max(2, height(controls.target.x, controls.target.z) + 2);
     rtsAzimuth = az;
     placeRts(az, rtsElevation);
@@ -764,7 +818,9 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
     if (followId !== null && getPosition(followId, pos)) {
       subject.copy(pos);
       pos.y += 1.1;
-      updateFollow(dt, elapsed, pos, simRate);
+      // A new follow glides in first; the speed-capped tracking spring takes over from where the glide ends.
+      if (!gliding) updateFollow(dt, elapsed, pos, simRate);
+      else if (chaseFocus(dt, pos.x, pos.y, pos.z, close, frameHeightPersp(close.position.distanceTo(controls.target), close.fov))) { followEvent({ type: 'arrived' }); followReady = false; }
       hasSubject = true;
       subjectIds[0] = followId; subjectCount = 1;
     } else if (selectedId !== null && getPosition(selectedId, subject)) { hasSubject = true; subjectIds[0] = selectedId; subjectCount = 1; }
@@ -794,7 +850,18 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
   }
 
   function updateRts(dt: number) {
+    const bx = controls.target.x, bz = controls.target.z;
     controls.update(dt);
+    // Only a pan moves the focus inside the controls (rotation turns about it; the wheel is the rig's own): a real drag
+    // that moved it is the user taking the camera, so the follow lets go. Otherwise the focus glides to / tracks the animal.
+    panGrace = Math.max(0, panGrace - dt);
+    if (followId !== null && userPanned(hyp2(controls.target.x - bx, controls.target.z - bz), dragPx, dragging, panGrace)) followEvent({ type: 'user-pan' });
+    if (followId !== null) {
+      if (!getPosition(followId, pos)) followEvent({ type: 'lost' });
+      // The focus sits on the animal's torso, so one up in a crown is centred too (a climb moves the focus straight up:
+      // no sideways jump). The lens, keep-clear, map footprint and listener read the ground under the focus, not its height.
+      else if (chaseFocus(dt, pos.x, Math.max(pos.y, height(pos.x, pos.z)) + 0.6, pos.z, rts, rtsFrame(rts.zoom))) followEvent({ type: 'arrived' });
+    }
     // A script set the zoom directly: adopt it.
     if (Math.abs(rts.zoom - rtsZoomSet) > 1e-4) { rtsZoomTarget = clampN(rts.zoom, zoomMin(), RTS_ZOOM_MAX); rtsZoom[0] = Math.log(rtsZoomTarget); rtsZoom[1] = 0; }
     springStep(rtsZoom, Math.log(rtsZoomTarget), ZOOM_TAU, dt);
@@ -853,21 +920,25 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
       focusChimp(id);
     } else if (mode === 'rts') {
       modeCam = rts; controls.object = rts;
-      followId = null;
+      // The close view's followed animal stays followed (the strategy spring starts from the close focus).
+      glideReady = false;
       controls.target.set(prevFocus.x, Math.max(2, prevFocus.y), prevFocus.z);
       placeRts(rtsAzimuth, rtsElevation);
       rts.updateProjectionMatrix();
     } else {
       modeCam = cine;
       shot = null;
-      followId = null;
+      followEvent({ type: 'view', mode: 'cinematic' });
     }
     configureControls();
     controls.update();
   }
 
-  const onStart = () => { if (mode === 'rts') followId = null; };
+  // Drag bookkeeping for the follow (updateRts decides whether a drag was a pan).
+  const onStart = () => { dragging = true; };
+  const onEnd = () => { dragging = false; panGrace = 0.4; };
   controls.addEventListener('start', onStart);
+  controls.addEventListener('end', onEnd);
 
   configureControls();
   reset();
@@ -895,8 +966,9 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
     log,
     controls,
     get followId() { return followId; },
-    set followId(v) { if (v !== followId) followReady = false; followId = v; configureControls(); },
-    setView, focusChimp, panTo, reset,
+    set followId(v) { if (v !== followId) followReady = false; followId = v; gliding = false; glideReady = false; configureControls(); },
+    get followGliding() { return gliding; },
+    setView, focusChimp, follow, panTo, reset,
     resize(width, h) {
       widthPx = width; heightPx = h;
       const aspect = width / h;
@@ -944,7 +1016,7 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
     setZoomNow(z) { if (mode === 'rts') { setZoomNow(z); blending = false; } },
     place(cx, cy, cz, lx, ly, lz) {
       if (mode !== 'close') return;
-      followId = null; configureControls();
+      followId = null; gliding = false; configureControls();
       controls.target.set(lx, ly, lz);
       close.position.set(cx, cy, cz);
       const d = Math.max(0.05, close.position.distanceTo(controls.target));
@@ -962,8 +1034,10 @@ export function createCameraRig(dom: HTMLElement, world: World, height: (x: numb
     },
     dispose() {
       controls.removeEventListener('start', onStart);
+      controls.removeEventListener('end', onEnd);
       dom.removeEventListener('wheel', onWheel, { capture: true });
       dom.removeEventListener('pointermove', onPointerMove);
+      dom.removeEventListener('pointerdown', onPointerDown);
       controls.dispose();
     },
   };

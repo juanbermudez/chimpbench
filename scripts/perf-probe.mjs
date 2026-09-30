@@ -24,8 +24,10 @@ const doProfile = opt('profile', false), doTrace = opt('trace', false), doStartu
 const width = Number(opt('width', 1440)), height = Number(opt('height', 900));
 const quality = String(opt('quality', 'high')); // 'auto' keeps the app's auto-downgrade
 // --query "profile=field": extra URL parameters (the field profile's scenarios: rts = the whole-map overview,
-// strat = the strategy view zoomed on the selected animal's party, close and cinematic as usual).
+// strat = the strategy view zoomed on the selected animal's party, close and cinematic as usual). Without a profile in
+// --query the probe opens the compressed map (the app's default is the field profile), so runs stay comparable.
 const extraQuery = String(opt('query', '') || '');
+const appQuery = ['perf=1', pop ? `pop=${pop}` : '', /(^|&)profile=/.test(extraQuery) ? '' : 'profile=compressed', extraQuery].filter(Boolean).join('&');
 const SPEEDS = ['1x', '10x', '1h', '6h', '1d', 'max'];
 const MATRIX = [];
 for (const view of ['rts', 'close', 'cinematic']) for (const speed of ['1x', '1h', '1d', 'max']) for (const time of ['day', 'night', 'storm']) MATRIX.push(`${view}-${speed}-${time}`);
@@ -59,7 +61,7 @@ async function openApp(browser, extra = '') {
   await page.addInitScript(INIT);
   const cdp = await page.context().newCDPSession(page);
   await cdp.send('Performance.enable');
-  const url = `${base}/?perf=1${pop ? `&pop=${pop}` : ''}${extraQuery ? `&${extraQuery}` : ''}${extra}`;
+  const url = `${base}/?${appQuery}${extra}`;
   const t0 = Date.now();
   await page.goto(url, { waitUntil: 'load' });
   // Ready = frames are being rendered (warm-up compile finished).
@@ -86,6 +88,8 @@ async function setup(page, id) {
   if (view === 'close' && snap0.view !== 'close') await press(page, 'c');
   if (view === 'cinematic' && snap0.view !== 'cinematic') await press(page, 'v');
   if ((view === 'rts' || view === 'strat') && snap0.view !== 'rts') await press(page, 'r');
+  // Field profile: a new world opens on the selected animal's party; rts means the whole-map overview (Reset camera).
+  if (view === 'rts') await page.evaluate(() => { const e = document.querySelector('canvas').__env; if (e?.field) e.rig.reset(); });
   // Strategy view zoomed in on the selected animal (frame height ~46 m): in the field profile, the detailed window.
   if (view === 'strat') { await page.evaluate(() => { const e = document.querySelector('canvas').__env; const id = window.__MGOGO__.snapshot().selectedId; if (id !== null) e.rig.focusChimp(id); }); await page.waitForTimeout(2500); }
   const snap = await page.evaluate(() => window.__MGOGO__.snapshot());
@@ -193,7 +197,7 @@ try {
     const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: dpr });
     await page.addInitScript(INIT);
     const t0 = Date.now();
-    await page.goto(`${base}/?perf=1${pop ? `&pop=${pop}` : ''}`, { waitUntil: 'load' });
+    await page.goto(`${base}/?${appQuery}`, { waitUntil: 'load' });
     const loadMs = Date.now() - t0;
     await page.evaluate(() => { window.__probe.on = true; });
     await page.waitForTimeout(6000);

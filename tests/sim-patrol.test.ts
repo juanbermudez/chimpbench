@@ -33,7 +33,7 @@ test('P1: with patrolHeardBeta 0, hearing strangers does not change the patrol h
 
 test('P3: the female join, lactating join and female stay scores are registry settings', () => {
   const score = (params: Record<string, number>) => {
-    const w = createWorld(7, { params });
+    const w = createWorld(7, { params: { rgOn: 0, intakeValue: 0, ...params } }); // the recorded scenario (pre-C13)
     for (let i = 0; i < 5760 / 3; i++) tickWorld(w);
     const leader = adultMales(w, 1)[0], f = w.chimps.find(c => c.alive && c.troopId === 1 && c.sex === 'female' && c.age >= 15 && !c.lactating)!;
     f.position = [leader.position[0] + 3, 0, leader.position[2]];
@@ -91,7 +91,7 @@ test('A1: the patrol route follows the leader\'s contact memory', () => {
 });
 
 test('P4a: a patrol travels in single file with its phase on the party; determinism holds', () => {
-  const make = () => createWorld(48, { params: { patrolH0: 50 } });
+  const make = () => createWorld(48, { params: { patrolH0: 50, rgOn: 0, intakeValue: 0 } }); // the single-file mechanism on its recorded scenario (argmax rules, pre-C13)
   const w = make();
   let seen = false;
   for (let i = 0; i < 5760 * 2 && !seen; i++) {

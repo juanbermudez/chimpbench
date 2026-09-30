@@ -71,7 +71,7 @@ export function createSimulations(dialog: HTMLDialogElement, ctx: Ctx) {
         <button type="button" class="icon-btn" data-act="dice" aria-label="Random seed" title="Random seed">${icon('dice')}</button>
         <button type="button" class="btn" data-act="new">New simulation</button>
       </div>
-      <div class="sn-profile" style="display:flex;align-items:center;gap:10px;margin-top:8px"><span class="subtle">Profile</span><span class="seg" role="radiogroup" aria-label="Scale profile"><button type="button" role="radio" data-profile="compressed">Compressed</button><button type="button" role="radio" data-profile="field">Field (real scale, experimental)</button></span></div>
+      <div class="sn-profile" style="display:flex;align-items:center;gap:10px;margin-top:8px"><span class="subtle">Profile</span><span class="seg" role="radiogroup" aria-label="Scale profile"><button type="button" role="radio" data-profile="field">Field (8 km, real scale)</button><button type="button" role="radio" data-profile="compressed">Compressed (160 m)</button></span></div>
       <p class="subtle">The current simulation is saved first. Same seed and settings replay the same rule-driven world.</p>
     </section>
     <section class="sims-list-sec" aria-labelledby="sims-list-h">
@@ -87,13 +87,13 @@ export function createSimulations(dialog: HTMLDialogElement, ctx: Ctx) {
         <input type="file" data-k="file" accept=".sqlite3,.sqlite,.db,.gz,.json,application/json,application/gzip" hidden>
       </span>
     </footer>
-    <p class="honest">Saves stay in this browser profile, per site address, in an SQLite file. Export a simulation (.mgogo.json.gz) or everything (.sqlite3) to back up or move them. While the simulation's state layout keeps changing, saves from an older layout are marked incompatible: they cannot be opened by this build, but they can still be exported.</p>
+    <p class="honest">Saves stay in this browser profile, per site address, in an SQLite file. Export a simulation (.chimpbench.json.gz) or everything (.sqlite3) to back up or move them; older .mgogo.json.gz exports still import. While the simulation's state layout keeps changing, saves from an older layout are marked incompatible: they cannot be opened by this build, but they can still be exported.</p>
   </form>`;
   const k = <T extends HTMLElement = HTMLElement>(name: string) => dialog.querySelector<T>(`[data-k="${name}"]`)!;
   const list = k('list'), seedInput = k<HTMLInputElement>('new-seed'), nameInput = k<HTMLInputElement>('new-name'), file = k<HTMLInputElement>('file'), autosave = k<HTMLInputElement>('autosave');
   let rows: SimListItemView[] = [], renaming = '', busy = false, timer = 0;
-  // Scale profile for the next new simulation (C5b): compressed 160 m map (default) or the real-metre field map.
-  let profile: 'compressed' | 'field' = 'compressed';
+  // Scale profile for the next new simulation (C5b): the real-metre field map (default) or the compressed 160 m map.
+  let profile: 'compressed' | 'field' = 'field';
   const syncProfile = () => dialog.querySelectorAll<HTMLElement>('[data-profile]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.profile === profile)));
 
   const say = (text: string, severity = 1) => ctx.notify({ text, cat: 'system', title: 'Simulations', severity });
@@ -142,7 +142,7 @@ export function createSimulations(dialog: HTMLDialogElement, ctx: Ctx) {
         <button type="button" class="btn sm" data-row="open" ${r.current || !r.compatible ? 'disabled' : ''} title="${r.compatible ? 'Open this simulation (the current one is saved first)' : esc(r.reason)}">${icon('folder')}Open</button>
         <button type="button" class="icon-btn sm" data-row="rename" aria-label="Rename ${esc(r.name)}" title="Rename">${icon('pencil')}</button>
         <button type="button" class="icon-btn sm" data-row="duplicate" aria-label="Duplicate ${esc(r.name)}" title="Duplicate (copies the newest snapshot)">${icon('copy')}</button>
-        <button type="button" class="icon-btn sm" data-row="export" aria-label="Export ${esc(r.name)}" title="Export (.mgogo.json.gz)">${icon('download')}</button>
+        <button type="button" class="icon-btn sm" data-row="export" aria-label="Export ${esc(r.name)}" title="Export (.chimpbench.json.gz)">${icon('download')}</button>
         <button type="button" class="icon-btn sm danger" data-row="delete" aria-label="Delete ${esc(r.name)}" title="Delete">${icon('trash')}</button>
       </div></li>`;
   }
@@ -262,7 +262,7 @@ export function createSimulations(dialog: HTMLDialogElement, ctx: Ctx) {
     open() {
       if (!p) return;
       seedInput.value = String(ctx.world().seed + 1);
-      profile = ctx.world().size > 1000 ? 'field' : 'compressed';
+      profile = 'field';
       syncProfile();
       dialog.showModal();
       void refresh();

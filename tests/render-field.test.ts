@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { CENTRE_SNAP, OVERVIEW_FULL, OVERVIEW_IN, RECENTRE_M, approach, needsRecentre, overviewWeight, partyMarkerPx, rtsDistanceFor, runSteps, stepFor, tileRange, tileSeed, windowCentre } from '../src/render/env/field';
+import { CENTRE_SNAP, OVERVIEW_FULL, OVERVIEW_IN, RECENTRE_M, approach, needsRecentre, overviewWeight, partyFocus, partyMarkerPx, rtsDistanceFor, runSteps, stepFor, tileRange, tileSeed, windowCentre } from '../src/render/env/field';
 import { cellOf, createGrid } from '../src/render/env/cells';
 import { createTreeIndex } from '../src/render/creatures/tree-index';
 import { createWorld } from '../src/simulation';
@@ -48,6 +48,17 @@ test('the overview weight is 0 in perspective views and rises monotonically over
   assert.equal(overviewWeight(OVERVIEW_FULL, false), 1);
   let prev = 0;
   for (let hf = OVERVIEW_IN; hf <= OVERVIEW_FULL; hf += 20) { const w = overviewWeight(hf, false); assert.ok(w >= prev); prev = w; }
+});
+
+test('a field scene opens on the focus animal\'s party centre, else on the animal', () => {
+  const w = createWorld(48, { profile: 'field' });
+  const c = w.chimps.find(x => x.alive)!;
+  const p = w.parties.find(q => q.id === c.partyId && q.troopId === c.troopId)!;
+  assert.deepEqual(partyFocus(w, c.id), [p.center[0], p.center[2]]);
+  const lone = { ...w, parties: [] } as World;
+  assert.deepEqual(partyFocus(lone, c.id), [c.position[0], c.position[2]]);
+  assert.equal(partyFocus(w, undefined), null);
+  assert.equal(partyFocus(w, -5), null);
 });
 
 test('the strategy camera distance keeps 260 m for strategy frames and grows at km scale (field profile only)', () => {

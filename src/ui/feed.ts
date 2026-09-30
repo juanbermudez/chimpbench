@@ -12,7 +12,7 @@ export const CAT_ICON: Record<FeedCat, string> = {
 // filters, click-to-select, and toasts for major events (severity >= 2).
 
 export function createFeed(root: HTMLElement, ctx: Ctx) {
-  root.innerHTML = `<div class="sec-head"><h2 class="eyebrow">Field log</h2><button class="link-btn" data-act="filters" aria-expanded="false" aria-controls="feed-filters">${icon('filter')}Filter</button></div>
+  root.innerHTML = `<div class="sec-head"><h2 class="eyebrow">Field log</h2><span class="sec-actions"><button class="link-btn" data-act="filters" aria-expanded="false" aria-controls="feed-filters">${icon('filter')}Filter</button><button class="icon-btn sm side-collapse" data-act="collapse-sidebar" aria-controls="left-sidebar" aria-keyshortcuts="B" aria-label="Hide sidebar (B)" title="Hide sidebar (B)">${icon('chevronL')}</button></span></div>
   <div class="feed-filters" id="feed-filters" hidden role="group" aria-label="Event categories">${FEED_CATS.map(c => `<button class="fchip k-${c.id}" data-cat="${c.id}" aria-pressed="true"><i></i>${c.label}</button>`).join('')}</div>
   <ol class="feed-list" aria-label="Recent events, newest first"></ol>`;
   const list = root.querySelector<HTMLOListElement>('.feed-list')!;

@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import type { Action, CallKind, World } from '../../types';
 import type { Anim, CreatureFrame } from '../creatures';
 import type { PartyView } from './social';
+import { inLabelBox } from './pick';
 
 const MAX_LABELS = 40;
 const MAX_BANNERS = 12;
@@ -45,6 +46,8 @@ const STYLE = `
   background:rgba(20,20,22,.9);color:#ececee;border:1px solid rgba(255,255,255,.09);box-shadow:0 1px 3px rgba(0,0,0,.45);
   font:500 11px/1.25 var(--font-ui,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif);white-space:nowrap;will-change:transform,opacity;transition:opacity .25s}
 .crl.sel{border-color:rgba(226,191,121,.36)}
+.crl.hov{background:rgba(36,36,40,.96);border-color:rgba(255,255,255,.3)}
+.crl.sel.hov{border-color:rgba(226,191,121,.62)}
 .crl.pulse{animation:crl-pulse 1.1s ease-out}
 @keyframes crl-pulse{from{border-color:#e2bf79;background:rgba(64,53,31,.95)}}
 .crl-chip{width:7px;height:7px;border-radius:50%;flex:none}
@@ -69,7 +72,7 @@ const STYLE = `
 
 interface Slot {
   el: HTMLDivElement; chip: HTMLSpanElement; name: HTMLSpanElement; rank: HTMLSpanElement; act: HTMLSpanElement; voc: HTMLSpanElement;
-  used: boolean; visible: boolean; pulseAt: number; width: number;
+  used: boolean; visible: boolean; pulseAt: number; width: number; h: number; hov: boolean;
   // Last written content and style, so unchanged labels cost no DOM writes (and no style invalidation).
   id: number; name$: string; color: string; rank$: string; act$: string; vocal: string; sel: boolean; model: boolean; tx: number; ty: number; op: number;
 }
@@ -103,7 +106,7 @@ export function createLabels(container: HTMLElement) {
     el.insertAdjacentHTML('beforeend', AI_ICON);
     el.append(chip, name, rank, act, voc);
     root.appendChild(el);
-    slots.push({ el, chip, name, rank, act, voc, used: false, visible: false, pulseAt: -99, width: 0,
+    slots.push({ el, chip, name, rank, act, voc, used: false, visible: false, pulseAt: -99, width: 0, h: 20, hov: false,
       id: -1, name$: '', color: '', rank$: '', act$: '', vocal: '', sel: false, model: false, tx: NaN, ty: NaN, op: -1 });
   }
   const banners: Banner[] = [];
@@ -121,6 +124,8 @@ export function createLabels(container: HTMLElement) {
       const width = entry.borderBoxSize?.[0]?.inlineSize ?? (entry.target as HTMLElement).offsetWidth;
       if (!t || !(width > 0)) continue;
       t.width = width;
+      const height = entry.borderBoxSize?.[0]?.blockSize ?? (entry.target as HTMLElement).offsetHeight;
+      if (!('key' in t) && height > 0) t.h = height;
       if ('key' in t && t.key) { if (bannerWidth.size > 256) bannerWidth.clear(); bannerWidth.set(t.key, width); }
     }
   });
@@ -246,6 +251,9 @@ export function createLabels(container: HTMLElement) {
       c.a = a; c.x = x; c.y = y; c.pri = pri; c.d = md; c.detail = sel || party;
       cand.push(c);
     }
+    // The scene's hover (what a click would select: label, body or nearest within the pick radius) overrides the
+    // label-anchor guess above, so the highlighted label is always the animal a click picks.
+    if (frame.hoverId !== undefined) hovered = frame.hoverId >= 0 ? anims.get(frame.hoverId) ?? null : null;
     for (const c of cand) if (c.a === hovered) { c.pri = Math.max(c.pri, 60); c.detail = true; }
     cand.sort(byPri);
     // Stable slots: an animal keeps the same DOM element while labelled, so content (and its measured
@@ -298,14 +306,29 @@ export function createLabels(container: HTMLElement) {
       // Pulse when a model decision has just landed.
       const pk = pulse(a.id, frame.elapsed);
       if (pk > 0.9 && frame.elapsed - s.pulseAt > 1) { const el = s.el; s.pulseAt = frame.elapsed; el.classList.remove('pulse'); el.classList.add('pulse'); window.setTimeout(() => el.classList.remove('pulse'), 1150); }
+      const hov = frame.hoverId !== undefined && a === hovered;
+      if (hov !== s.hov) { s.hov = hov; s.el.classList.toggle('hov', hov); }
       const dimmed = frame.highlightTroopId != null && chimp.troopId !== frame.highlightTroopId;
       place(s, c.x, c.y - 8, dimmed ? 0.35 : c.pri >= 40 ? 1 : 0.86);
       if (!s.visible) { s.el.style.display = ''; s.visible = true; }
     }
     for (const s of slots) if (!s.used && s.visible) { s.el.style.display = 'none'; s.visible = false; s.id = -1; }
   }
+  /** Chimp id whose label hit box (at least 32 px tall, padded) contains (x, y) in container CSS px, else −1. Labels
+   * never take pointer events themselves (drag and wheel must reach the canvas), so the scene asks here on a click. */
+  function hitTest(x: number, y: number): number {
+    let best = -1, bestD = Infinity;
+    for (const s of slots) {
+      if (!s.visible || s.id < 0 || !Number.isFinite(s.tx)) continue;
+      const w = s.width || 96, h = s.h || 20;
+      if (!inLabelBox(x, y, s.tx, s.ty, w, h)) continue;
+      const d = Math.abs(x - s.tx) + Math.abs(y - (s.ty - h / 2));
+      if (d < bestD) { bestD = d; best = s.id; }
+    }
+    return best;
+  }
   return {
-    update,
+    update, hitTest,
     dispose() {
       container.removeEventListener('pointermove', onMove); container.removeEventListener('pointerleave', onLeave);
       window.removeEventListener('scroll', readOrigin, { capture: true });

@@ -29,13 +29,18 @@ test('tension rises after an attack, more for the victim, and falls after reconc
   assert.ok(given > 0 && received > given, `victim ${received.toFixed(3)} > aggressor ${given.toFixed(3)} > 0`);
   assert.equal(relationshipOf(w, B, A).lastIncident?.direction, 'received');
   assert.equal(relationshipOf(w, A, B).lastIncident?.kind, 'attack');
-  for (let i = 0; i < 12; i++) tickWorld(w);
-  place(A, -52, 8); place(B, -51, 8);
-  startAction(w, A, { action: 'reconcile', targetId: B.id, score: 1, reason: 'probe' }, 'rules');
-  const start = w.time;
-  let beforeA = 0, beforeB = 0;
-  for (let i = 0; i < 20 && !(ix(A).recon > start); i++) { beforeA = tensionOf(A, B); beforeB = tensionOf(B, A); tickWorld(w); }
-  assert.ok(ix(A).recon > start, 'the reconciliation happened');
+  // the pair may reconcile on its own once the attack is over (the rules policy samples its menu since C13); otherwise it
+  // is made to. Either way the reconciliation is measured against the tension just before it.
+  const after = w.time;
+  let beforeA = 0, beforeB = 0, recon = false;
+  for (let i = 0; i < 12 && !recon; i++) { beforeA = tensionOf(A, B); beforeB = tensionOf(B, A); tickWorld(w); recon = ix(A).recon > after; }
+  if (!recon) {
+    place(A, -52, 8); place(B, -51, 8);
+    startAction(w, A, { action: 'reconcile', targetId: B.id, score: 1, reason: 'probe' }, 'rules');
+    const start = w.time;
+    for (let i = 0; i < 20 && !recon; i++) { beforeA = tensionOf(A, B); beforeB = tensionOf(B, A); tickWorld(w); recon = ix(A).recon > start; }
+  }
+  assert.ok(recon, 'the reconciliation happened');
   assert.ok(beforeA > 0 && tensionOf(A, B) <= beforeA * 0.66 && tensionOf(B, A) <= beforeB * 0.66, 'reconciliation removes at least a third of the tension');
   assert.ok((relationshipOf(w, A, B).counts.month.reconciliations ?? 0) >= 1);
   // Valuable relationships are repaired more by the same reconciliation.

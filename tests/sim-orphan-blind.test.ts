@@ -106,6 +106,7 @@ const ALLOW: Record<string, Record<string, string>> = {
   'execution.ts': { '*dependentOn': 'the dependent-follow, nurse and nest code that already calls dependentOn' },
   'tick.ts': { carryInfants: 'the existing dependentOn call (carrying)' },
   'observe.ts': { observe: 'the existing caretaker perceivability and dependency flag' },
+  'rg.ts': { perceivedCandidates: 'C13: the same caretaker perceivability as observe() (who can be on the menu; no rank, mating or fertility term)' },
 };
 
 /** Forbidden-pattern hits outside the allowlist: file, enclosing top-level function, line and pattern. */

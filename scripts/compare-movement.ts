@@ -1,5 +1,5 @@
 // Real vs simulated movement (realism Stage C12, part b). Computes the same focal-follow movement statistics on Taï
-// chimpanzee follows (P. t. verus, western subspecies, Côte d'Ivoire; NOT Kibale) and on MGOGO field-profile worlds
+// chimpanzee follows (P. t. verus, western subspecies, Côte d'Ivoire; NOT Kibale) and on ChimpBench field-profile worlds
 // followed the same way, and compares simulated community ranges with Taï territory sizes at matched group size.
 //   Real: Lemoine S, Samuni L, Crockford C, Wittig RM (2023) Chimpanzees make tactical use of high elevation in
 //   territorial contexts. PLOS Biol 21(11): e3002350, doi:10.1371/journal.pbio.3002350, S1–S3 Data, CC BY 4.0; and
@@ -268,7 +268,7 @@ async function main() {
   const zoneCurve = (pts: TrackPoint[], lv: number[]) => Array.from({ length: 10 }, (_, i) => r4(travelShareIn(pts, lv, i / 10 - (i === 0 ? 1 : 0), (i + 1) / 10)));
   const simLvAll = simAn.flatMap(s => s.stats.levels), simPtsAll = sims.flatMap(s => s.points);
   const profileOut = { hours: Array.from({ length: 11 }, (_, i) => 7 + i), real: realAll.profile.map(r4), realUnits: unitStats.map(u => ({ unit: u.unit, profile: u.s.profile.map(r4) })), sim: simAn.length ? hourProfile(simPtsAll).map(r4) : null, simSeeds: simAn.map(s => s.stats.profile.map(r4)) };
-  const attribution = 'Real data: Lemoine S, Samuni L, Crockford C, Wittig RM (2023) Chimpanzees make tactical use of high elevation in territorial contexts. PLOS Biology 21(11): e3002350, doi:10.1371/journal.pbio.3002350, S1–S3 Data, CC BY 4.0; Lemoine S, Boesch C, Preis A, Samuni L, Crockford C, Wittig RM (2020) Group dominance increases territory size and reduces neighbour pressure in wild chimpanzees. Royal Society Open Science 7: 200577, doi:10.1098/rsos.200577, ESM, CC BY 4.0. Taï National Park, Côte d’Ivoire: western chimpanzees (P. t. verus), not Kibale. Derived statistics and normalized maps by MGOGO; not endorsed by the authors.';
+  const attribution = 'Real data: Lemoine S, Samuni L, Crockford C, Wittig RM (2023) Chimpanzees make tactical use of high elevation in territorial contexts. PLOS Biology 21(11): e3002350, doi:10.1371/journal.pbio.3002350, S1–S3 Data, CC BY 4.0; Lemoine S, Boesch C, Preis A, Samuni L, Crockford C, Wittig RM (2020) Group dominance increases territory size and reduces neighbour pressure in wild chimpanzees. Royal Society Open Science 7: 200577, doi:10.1098/rsos.200577, ESM, CC BY 4.0. Taï National Park, Côte d’Ivoire: western chimpanzees (P. t. verus), not Kibale. Derived statistics and normalized maps by ChimpBench; not endorsed by the authors.';
   const verdictRules = 'Scalar: similar if the sim median lies inside the range of real group-year values; different if no seed does; otherwise inconclusive. Distribution / profile / map: distance ≤ the largest real leave-one-group-year-out distance is similar, > 2× it is different, otherwise inconclusive. Fewer than 5 seeds: inconclusive.';
   const caveats = [
     'Different subspecies and forest: Taï (P. t. verus, lowland rainforest, Côte d’Ivoire), not Kibale (P. t. schweinfurthii). The simulation is parameterized for Kibale, so Taï is a reference for movement structure, not a target.',
@@ -305,7 +305,7 @@ async function main() {
   writeFileSync(rel(`${OUT}/result.json`), JSON.stringify({ ...guide, units: unitStats.map(u => ({ unit: u.unit, follows: u.s.follows, records: u.s.records, shares: u.s.shares, stepMedian: median(u.s.stepM), rate: median(u.s.rate), zoneRatio: u.s.zoneRatio })) }, null, 1));
 
   // ---------------------------------------------------------------- figures
-  const dir = rel(`${OUT}/figures/`), src = 'Real: Taï East and South, 2013–2016 (Lemoine et al. 2023, PLOS Biol, CC BY 4.0), western chimpanzees, not Kibale. Sim: MGOGO field profile.';
+  const dir = rel(`${OUT}/figures/`), src = 'Real: Taï East and South, 2013–2016 (Lemoine et al. 2023, PLOS Biol, CC BY 4.0), western chimpanzees, not Kibale. Sim: ChimpBench field profile.';
   const dser = (d: ReturnType<typeof dens>): Series[] => {
     const w = (d.hi - d.lo) / d.bins, xs = d.real.map((_, i) => d.lo + (i + 0.5) * w);
     const s: Series[] = [{ name: 'Taï (band: group-years)', color: REAL, x: xs, y: d.real.map(v => v ?? NaN), lo: d.realBand?.lo.map(v => v ?? NaN), hi: d.realBand?.hi.map(v => v ?? NaN) }];

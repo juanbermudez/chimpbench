@@ -10,7 +10,7 @@ import { canonical, fnv, runCase } from './fixtures/golden';
 
 // Stage C10 (docs/realism-design.md "C10 pre-registration").
 
-const OFF = { callSignatures: 0, callerDiscrim: 0, foodCallRule: 0, travelHoo: 0 };
+const OFF = { callSignatures: 0, callerDiscrim: 0, foodCallRule: 0, travelHoo: 0, rgOn: 0, intakeValue: 0 }; // the pre-C10 model had no C13 either
 
 test('C10 off reproduces the pre-C10 model exactly (compressed golden seed 48, 2 days)', () => {
   const w = runCase({ seed: 48, ageRate: 1, days: 2 }, seed => createWorld(seed, { params: OFF }));
@@ -19,8 +19,8 @@ test('C10 off reproduces the pre-C10 model exactly (compressed golden seed 48, 2
 });
 
 test('travel hoo off reproduces the C10 model before addendum 1 (compressed golden seed 48, 2 days)', () => {
-  const w = runCase({ seed: 48, ageRate: 1, days: 2 }, seed => createWorld(seed, { params: { travelHoo: 0 } }));
-  assert.equal(fnv(canonical(w)), '588ada70e9edfb09'); // re-recorded with C8 merged (intended)
+  const w = runCase({ seed: 48, ageRate: 1, days: 2 }, seed => createWorld(seed, { params: { travelHoo: 0, rgOn: 0, intakeValue: 0 } }));
+  assert.equal(fnv(canonical(w)), '588ada70e9edfb09'); // re-recorded with C8 merged (intended); C13 off
 });
 
 test('a signature is constant for a chimpanzee; calls vary around it; features ride on pant-hoots and drums', () => {
@@ -80,6 +80,7 @@ test('heardN counts the stranger callers a listener can tell apart (more calls h
     const caller = w.chimps.find(c => c.alive && c.troopId === 2 && c.sex === 'male' && c.age >= 15)!;
     const listener = w.chimps.find(c => c.alive && c.troopId === 1 && c.age >= 15)!;
     listener.position = [caller.position[0] + 5, 0, caller.position[2]];
+    w.calls.length = 0; // only the test's calls are in the listener's window
     for (let k = 0; k < calls; k++) emitCall(w, caller, 'pant-hoot');
     return ix(listener).heardN;
   };
@@ -113,7 +114,7 @@ test('travel hoo (C10 addendum 1): a trip initiator with a companion near may ho
   const { candidateMeta, computeCandidates, V } = await import('../src/sim/candidates');
   const { startAction } = await import('../src/sim/execution');
   const { perceive } = await import('../src/sim/perception');
-  const w = createWorld(33, { profile: 'field', params: { travelHooP: 1, travelHooAllyP: 1 } });
+  const w = createWorld(33, { profile: 'field', params: { travelHooP: 1, travelHooAllyP: 1, rgOn: 0, intakeValue: 0 } }); // the recorded scenario (pre-C13)
   for (let i = 0; i < 5760 / 4; i++) tickWorld(w);
   const [a, b] = w.chimps.filter(ch => ch.alive && ch.age >= 15 && ch.troopId === 1);
   b.position = [a.position[0] + 10, 0, a.position[2]]; b.action = 'rest'; b.targetId = -1; a.position[1] = 0;

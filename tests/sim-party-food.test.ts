@@ -58,7 +58,7 @@ test('the community expectation of known trees uses the mean fullness', () => {
 });
 
 test('trip cost: intake-rate value in the field (nearer is better, no free scale); linear in compressed', () => {
-  const F = paramsOf(createWorld(3, { profile: 'field', params: C7B })), C = paramsOf(createWorld(3));
+  const F = paramsOf(createWorld(3, { profile: 'field', params: { ...C7B, intakeValue: 0 } })), C = paramsOf(createWorld(3)); // C13b supersedes the rate form (tripCost)
   // hunger 0.5 and a 0.2 crop: Tf = 0.2 / 0.11 h; Tw = d / walkMps
   const worth = 0.4, tf = Math.min(0.2, 0.5 / F.fruitHungerFactor) / F.fruitIntakePerH;
   for (const d of [100, 500, 1500]) {

@@ -1,7 +1,7 @@
 {
  "version": 1,
  "generated": "2026-09-28",
- "about": "Quantitative field targets for MGOGO (docs/realism-design.md §2). Values are as reported by the sources; \"accept\" is the band the simulation must hit, scaled to MGOGO communities (12–22 members, 3–7 adult males) where stated. Evidence: H multi-site or large-sample full text; M one site, abstract-only or derived; L secondary, captive or qualitative. role fitted = may be used for calibration; held-out = never used for tuning. encoded = the mechanism was designed from this pattern, so a match is weak evidence.",
+ "about": "Quantitative field targets for ChimpBench (docs/realism-design.md §2). Values are as reported by the sources; \"accept\" is the band the simulation must hit, scaled to ChimpBench communities (12–22 members, 3–7 adult males) where stated. Evidence: H multi-site or large-sample full text; M one site, abstract-only or derived; L secondary, captive or qualitative. role fitted = may be used for calibration; held-out = never used for tuning. encoded = the mechanism was designed from this pattern, so a match is weak evidence.",
  "counts": {
   "targets": 101,
   "fitted": 37,
@@ -18,12 +18,12 @@
   "Instrument validation against truth (sampling accuracy, classifier precision and recall) is allowed at any time, because truth is not a field target; each validation run is logged."
  ],
  "protocolFreeze": {
-  "stage": "Seed replacement",
+  "stage": "Neutral-voice strings",
   "date": "2026-09-30",
-  "hash": "839e47235ca4b43f",
+  "hash": "3c7b860f2833d182",
   "previous": {
-   "stage": "Lean proof plan",
-   "hash": "c6dc9be135771d16"
+   "stage": "ChimpBench rename",
+   "hash": "400aa83eac468b54"
   }
  },
  "protocolLog": [
@@ -1103,6 +1103,137 @@
    ],
    "verdicts": "combined proof (lean plan), C9 proof",
    "class": "freeze"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "science/simulation owner",
+   "seen": "none",
+   "param": "cosmetic string rename MGOGO -> ChimpBench (user decision) in data/targets.json notes and T-IGE-1's accept basis ('ChimpBench communities are small') and the field notes of T-PAT-8, T-BRD-1 and T-FIS-5, scripts/compare-*.ts credits and titles, the band scripts, guide-data.ts and docs/data credits; no metric, band or rule change; observer record hashes and the goldens unchanged (scripts/remote/verify.ts)",
+   "reason": "product renamed to ChimpBench in user-facing text",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "none",
+   "class": "cosmetic"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "science/simulation owner",
+   "seen": "none",
+   "param": "freeze: 839e47235ca4b43f -> 400aa83eac468b54 (cosmetic string rename only)",
+   "reason": "ChimpBench rename",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "combined proof (lean plan), C9 proof",
+   "class": "freeze"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "science/simulation owner",
+   "seen": "none",
+   "param": "cosmetic string rename (neutral voice): T-IGE-1's accept basis 'ChimpBench communities are small' -> 'the simulated communities are small'; scripts/compare-patrols.ts T-PAT-3 Ngogo source 'far larger than mine' -> 'far larger than the simulated communities'; the fruit-guide note in guide-data.ts; the same strings in docs/data; no metric, band or rule change; observer record hashes and the goldens unchanged (scripts/remote/verify.ts)",
+   "reason": "the guide is neutral-voice ChimpBench (user decision)",
+   "targets": [
+    "T-IGE-1",
+    "T-PAT-3"
+   ],
+   "verdicts": "none",
+   "class": "cosmetic"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "science/simulation owner",
+   "seen": "none",
+   "param": "freeze: 400aa83eac468b54 -> 3c7b860f2833d182 (cosmetic string rename only)",
+   "reason": "neutral-voice strings",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "combined proof (lean plan), C9 proof",
+   "class": "freeze"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "science/simulation owner (stage C13, user-approved)",
+   "seen": "C13a: fitted rows T-ACT-1 to 4, T-PTY-1 and T-RNG-4 on simulation truth in the Jev free arms (seeds 6501-6905, field, 5 scored days; artifacts/decide-ft/jev-test/free-arms.md); C13b: the U arm's hunger medians there and the C8 agent's fallback share of lactating females; no held-out value",
+   "param": "model change before the proof, two switchable parts, pre-registered in docs/realism-design.md \"C13 pre-registration\" before any C13 run. C13a (rgOn 1): rules-driven chimps aged 8+ hold an intention (the Jev free arms' gate) and otherwise sample the bounded menu by a softmax of the rules scores at rgTemperature (0.152 compressed, 0.164 field; design rule: median top-option probability 0.77 on dev seed 6301), drawing from world.rng. C13b (intakeValue 1): feeding and trip worth scale with expected intake per hour, walk included, relative to the animal's ripe-fruit rate (leaves at their lower rate). Both profiles; ablation sets C13a (rgOn 0) and C13b (intakeValue 0); both off is hash-identical to before. Fitted rows tuned under the argmax rules (T-ACT-2, T-PTY-1, T-RNG-4, T-PAT-1) will shift and are not re-tuned; the lean proof judges them.",
+   "reason": "the argmax rules are over-deterministic (the gate plus sampling cut the summed band distance on those rows from 2.04 to 0.93, 5/5 seeds, no hunger cost), and they value fallback food without its lower intake rate (lactating females spend 16% of daylight on fallback at half the fruit rate)",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "none (no proof value exists)",
+   "class": "model change"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "science/simulation owner (stage C13c, coordinator-approved)",
+   "seen": "fitted rows T-ACT-2, T-PTY-1, T-RNG-4 and T-PAT-6 in the C13 direction check (seeds 48, 7, 21, field, 1 year) and diagnostic movement probes on the same development seeds (trips per adult-day, trip length, male path, party size; sim truth); no held-out value",
+   "param": "C13c pre-registration, before any C13c run. Two changes, each switchable: (1) rgMaxAgeH 0.5: the in-sim gate's maximum intention age is 30 min (was the Jev gate's 90 min; GATE.maxAgeH in src/decide/gate.ts stays 1.5 for the Jev test); design assumption. (2) intakeCropOnly 1: the C13b feeding time of a fruit tree is its crop share at the animal's intake, no longer also capped by its hunger (hunger already scales the food worth, so it was counted twice); design. Ablation set C13c = {rgMaxAgeH 1.5, intakeCropOnly 0}, hash-identical to C13. Predictions (direction check on development seeds 48, 7, 21, field, 1 year after the 180-day burn-in, against C13 on the same seeds): trips to trees back to about 5 per adult-day (C13: about 3.8; before C13: 5-6); male day range (T-RNG-4, observer) up into 1.5-3.5 km (C13: 1.58); trip length up; party size (T-PTY-1) about unchanged. Viability guard as in C13 section 5: C13c stays off by default if, against both C13 parts off, median adult hunger rises by more than 0.10 or the lactating-female median reaches 0.95. T-RNG-4 is touched (fitted, tuned, held as fail); nothing is tuned after the check.",
+   "reason": "C13 moved the movement rows the wrong way: the gate cut trips from 5-6 to about 3.8 per adult-day by holding daytime rest (median 36 min), and counting hunger twice shortened C13b trips (median 300 -> 170 m); diagnostic probes with both changes restored about 5 trips per day and a 2.2-2.7 km male day range",
+   "targets": [
+    "T-RNG-4",
+    "T-ACT-2",
+    "T-PTY-1",
+    "T-PAT-6"
+   ],
+   "verdicts": "none (no proof value exists)",
+   "class": "model change"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "science/simulation owner (stage C13c)",
+   "seen": "fitted rows on development seeds 48, 7, 21 (field, 1 year): T-RNG-4 2.59 km (C13 1.58), T-ACT-2 0.22 / 0.15, T-PTY-1 2.90, T-PAT-6 0.44; sim truth: trips 4.9-5.1 per adult-day, adult hunger 0.45-0.51, lactating 0.75-0.79; no held-out value",
+   "param": "C13c direction check: viability guard passes; every pre-registered prediction held; rgMaxAgeH 0.5 and intakeCropOnly 1 stay on by default. T-RNG-4 touched (fitted, tuned, still held as fail); nothing tuned after the check",
+   "reason": "C13c pre-registration (f43722e)",
+   "targets": [
+    "T-RNG-4",
+    "T-ACT-2",
+    "T-PTY-1",
+    "T-PAT-6"
+   ],
+   "verdicts": "none (direction check, not a proof)",
+   "class": "model change"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "science/simulation owner (stage C13d, user-approved)",
+   "seen": "development seeds 48, 7, 21 (field, sim truth, 30 days after the 180-day burn-in) with a recruitment probe: under C13c, 54-59% of own-community companions within partyLinkM get a decision point within 5 min of a trip initiation (before C13: 47-54%), 43-45% join; initiations recruiting at least one companion within 5 min: hooed 54-59%, silent 40-42% (ratio 1.31-1.44; before C13 1.46-1.60); fitted rows of the C13c direction check (T-PTY-1 2.90); no held-out value",
+   "param": "C13d pre-registration, before any C13d run. Premise corrected: a departure cue already exists in the field profile (C7a party cohesion: an animal setting off interrupts companions in its last view within partyLinkM, non-urgent, so a companion interrupted in the last 2 min or with a pending interrupt is skipped). C13d (departCue 1, field profile only: the joint-trip and travel-hoo follow options it serves exist only there; compressed 0 keeps the compressed goldens): when an adult (15+) sets off on a trip to a tree, every living own-community companion aged 5+ within partyLinkM, awake and not already following it, gets an urgent decision point at once, whether or not it was in the initiator's view; the existing joint-trip, party-follow and travel-hoo options then compete as usual (C13a sampling applies). Evidence: joint travel recruitment [H] gruberZuberbuhler2013 (vocal initiations recruited at least one follower in 71.4%, silent in 33.7%); the decision-point mechanism is a design assumption. Ablation set C13d = {departCue 0}, hash-identical to C13c. Predictions (seeds 48, 7, 21, field, 1 year after the burn-in, against C13c): T-PTY-1 party size up toward about 3.5; hooed initiations recruit clearly more than silent ones (ratio >= 1.6); decisions per chimp-day and male day range rise slightly. Viability guard as in C13 section 5 (against both C13 parts off). Nothing is tuned after the check.",
+   "reason": "party size fell below its band under C13 (3.48 -> 2.90 with C13c); only about half of the companions of an initiator got a decision point within 5 min",
+   "targets": [
+    "T-PTY-1",
+    "T-RNG-4",
+    "T-ACT-2"
+   ],
+   "verdicts": "none (no proof value exists)",
+   "class": "model change"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "science/simulation owner (stage C13d)",
+   "seen": "fitted rows on development seeds 48, 7, 21 (field, 1 year): T-PTY-1 2.90 (C13c 2.90), T-RNG-4 2.53 (2.59), T-ACT-2 0.21 / 0.15; sim truth: recruitment ratio 1.27-1.29 (C13c 1.35-1.41), companions joining 0.43-0.45 (0.39-0.44), decisions 74-76 per chimp-day (74-76); no held-out value",
+   "param": "C13d direction check: viability guard passes; all four pre-registered predictions failed (party size unchanged, recruitment ratio down, decisions and day range unchanged). departCue stays on by default (merge rule: the guard); the ablation row C13d attributes its effect in the lean proof. Nothing tuned after the check",
+   "reason": "C13d pre-registration (6e9ec52)",
+   "targets": [
+    "T-PTY-1",
+    "T-RNG-4",
+    "T-ACT-2"
+   ],
+   "verdicts": "none (direction check, not a proof)",
+   "class": "model change"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "science/simulation owner (integrator ruling)",
+   "seen": "the C13d direction check (development seeds 48, 7, 21)",
+   "param": "departCue field default 1 -> 0: C13d is a pre-registered null result (all four predictions failed: party size 2.90 unchanged, recruitment ratio 1.27-1.29 vs >= 1.6 predicted, decisions and day range unchanged); the mechanism stays behind its switch; the lean proof's ablation row C13d now switches it on to measure it. Field hashes re-recorded; compressed goldens unchanged",
+   "reason": "a mechanism with no measured effect is not on by default",
+   "targets": [
+    "T-PTY-1"
+   ],
+   "verdicts": "none",
+   "class": "model change"
   }
  ],
  "targets": [
@@ -1880,7 +2011,7 @@
     "lo": 5,
     "hi": 12,
     "units": "per community-year",
-    "basis": "Kanyawara and Taï; MGOGO communities are small"
+    "basis": "Kanyawara and Taï; the simulated communities are small"
    },
    "evidence": "H",
    "role": "fitted",
@@ -2392,7 +2523,7 @@
      "n": "211 months",
      "method": "patrol dates of Langergraber et al. 2017 (Dryad kk33f) joined to the monthly ripe fruit score of Potts et al. 2020 (Dryad gf1vhhmk8); scripts/patrol-bands-metrics.ts",
      "source": "langergraber2017",
-     "note": "computed by MGOGO from open data (CC0); 12-month block bootstrap -0.048 to 0.232 (note, not the band); rho with the share of trees with fruit 0.110 (note)"
+     "note": "computed by ChimpBench from open data (CC0); 12-month block bootstrap -0.048 to 0.232 (note, not the band); rho with the share of trees with fruit 0.110 (note)"
     }
    ],
    "accept": {
@@ -2432,7 +2563,7 @@
      "n": "625 stops, 283 group-days",
      "method": ">= 5-min stops at peripheral hills or low-lying places in the overlap zone (S3 Data, CC BY 4.0); cluster bootstrap over group-days; scripts/patrol-bands-metrics.ts",
      "source": "lemoine2023",
-     "note": "computed by MGOGO from open data; Taï, not Kibale (western subspecies)"
+     "note": "computed by ChimpBench from open data; Taï, not Kibale (western subspecies)"
     }
    ],
    "accept": {
@@ -2917,7 +3048,7 @@
      "n": "6 years",
      "method": "patrol-data-quarterly.csv x population_snapshots.csv (adult males); scripts/fission-bands-metrics.ts",
      "source": "sandel2026",
-     "note": "computed by MGOGO from open data (CC0) before any C9 run"
+     "note": "computed by ChimpBench from open data (CC0) before any C9 run"
     }
    ],
    "accept": {
@@ -7476,6 +7607,19 @@
    "url": "https://doi.org/10.1371/journal.pone.0076073",
    "access": "FT",
    "bibliographyVerified": "docs/research.md (PMC3783376); figures checked in the PLoS ONE full text, 2026-09-29"
+  },
+  "charnov1976": {
+   "authors": "Charnov EL",
+   "year": 1976,
+   "title": "Optimal foraging, the marginal value theorem",
+   "journal": "Theoretical Population Biology",
+   "volume": "9",
+   "issue": "2",
+   "pages": "129-136",
+   "doi": "10.1016/0040-5809(76)90040-X",
+   "url": "https://doi.org/10.1016/0040-5809(76)90040-X",
+   "access": "Abs",
+   "bibliographyVerified": "docs/research.md entry (theory; standard reference)"
   }
  },
  "c12Fitted": {

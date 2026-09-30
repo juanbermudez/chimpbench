@@ -1,6 +1,6 @@
-# Wild chimpanzee datasets for MGOGO
+# Wild chimpanzee datasets for ChimpBench
 
-What real data exists to compare MGOGO's simulated **ranging, movement trajectories, patrols and territory change** with real chimpanzee communities, and how to show the comparison in the science guide. The machine-readable version is `data/datasets.json` (same entries, metric support per dataset, download and request lists).
+What real data exists to compare ChimpBench's simulated **ranging, movement trajectories, patrols and territory change** with real chimpanzee communities, and how to show the comparison in the science guide. The machine-readable version is `data/datasets.json` (same entries, metric support per dataset, download and request lists).
 
 Checked on 29 September 2026. Each entry was verified from its landing page or repository API: DataCite, Dryad, Zenodo, figshare, Dataverse, HTTP headers or journal full-text XML. Entries marked *(helper)* were verified by a scouting agent in the same session and not re-fetched here. Nothing was downloaded except Zenodo 18603419, which the user approved.
 
@@ -99,7 +99,7 @@ Write only normalized summaries into `data/validation/`. Keep raw files in `data
 
    Output: `data/validation/ngogo-space.json`.
 2. **Ngogo 15-min raw GPS (request).** Same loader, plus per-follow tracks: DPL, step and turn distributions, straightness, hourly speed. Label patrol days with #5 and test the GPS patrol classifier (§6).
-3. **Movebank Kanyawara 2017 (request).** Export to CSV. Treat each deployment as a follow once the owner confirms it. Resample to 1 and 5 min and run the same metric suite. This is the closest match to MGOGO's forest.
+3. **Movebank Kanyawara 2017 (request).** Export to CSV. Treat each deployment as a follow once the owner confirms it. Resample to 1 and 5 min and run the same metric suite. This is the closest match to ChimpBench's forest.
 4. **Movebank Loango (request).** Build daily party tracks. Compute DPL, step, turn and straightness, and 2017 vs 2018 overlap. Use it as a cross-site check, not a Kibale target.
 5. **Ngogo patrol dates (open).** Build a date list and per-male participation into `data/validation/ngogo-patrols.json`. Join the dates with #2.
 6. **Ngogo quarterly patrols (open).** Build patrol rate per group before and after fission, plus group sizes, into `data/validation/ngogo-fission.json`.
@@ -242,7 +242,7 @@ Notes:
 >
 > Dear Dr [name],
 >
-> I am building MGOGO, an open, deterministic agent-based simulation of eastern chimpanzee communities, inspired by Kibale. I want to test whether its ranging and boundary patrols resemble real communities, not just match averages. Your [paper/dataset] is the best source for this.
+> I am building ChimpBench, an open, deterministic agent-based simulation of eastern chimpanzee communities, inspired by Kibale. I want to test whether its ranging and boundary patrols resemble real communities, not just match averages. Your [paper/dataset] is the best source for this.
 >
 > Could you share [specific files: e.g. the 15-min focal GPS behind gps_qualified.csv, with follow IDs and the patrol log for 2011–2015]?
 >
@@ -265,7 +265,7 @@ Notes:
 
 ### 9.1 Scale: compare shapes, not kilometres
 
-MGOGO communities are small: 12–22 members, 3–7 adult males. Real study communities are larger. Every map is therefore drawn in units of the **equal-area radius R = √(A95/π)**, computed the same way for real and simulated communities from their own fixes.
+ChimpBench communities are small: 12–22 members, 3–7 adult males. Real study communities are larger. Every map is therefore drawn in units of the **equal-area radius R = √(A95/π)**, computed the same way for real and simulated communities from their own fixes.
 
 | Community | 95% range (km²) | R (km) | Linear size vs sim West |
 | --- | --- | --- | --- |
@@ -344,7 +344,7 @@ Show every seed as a dot. Carry over the `fitted`, `held-out`, `tuned` and `enco
 
 ### 9.6 Attribution text
 
-- **Ngogo GPS:** "Ngogo locations: Sandel A, Lee KC, Angedakin S, et al. (2026). Space Use Analysis for 'Lethal conflict after group fission in wild chimpanzees'. Zenodo, doi:10.5281/zenodo.18603419, CC BY 4.0. Normalized, rotated and aggregated by MGOGO; not the authors' figure."
+- **Ngogo GPS:** "Ngogo locations: Sandel A, Lee KC, Angedakin S, et al. (2026). Space Use Analysis for 'Lethal conflict after group fission in wild chimpanzees'. Zenodo, doi:10.5281/zenodo.18603419, CC BY 4.0. Normalized, rotated and aggregated by ChimpBench; not the authors' figure."
 - **Taï territory sizes:** "Lemoine S, Boesch C, Preis A, Samuni L, Crockford C, Wittig RM (2020). R Soc Open Sci 7:200577; data figshare doi:10.6084/m9.figshare.c.4988834, CC BY 4.0."
 - **Taï high ground:** "Lemoine SRT, Samuni L, Crockford C, Wittig RM (2023). PLOS Biol 21:e3002350, S1–S3 Data, CC BY 4.0."
 - **CC0 data** (Ngogo patrols, Ngogo fission, Gombe patrols, Gombe female ranges): no attribution is legally required. Cite anyway: Langergraber et al. 2017 (doi:10.5061/dryad.kk33f), Sandel et al. 2026 (doi:10.5061/dryad.sf7m0cgkg), Massaro et al. 2022 (doi:10.5061/dryad.z8w9ghxdb), Pusey & Schroepfer-Walker 2013 (doi:10.5061/dryad.jg05d).
@@ -426,7 +426,7 @@ Candidates to replace the proxy and low-confidence clips in `public/audio/SOURCE
   - Issa (Dryad 5dv41ns34);
   - Sebitoli camera sites (Zenodo 17700299).
 
-  None has trajectories. They give densities or occurrence only; low value for MGOGO.
+  None has trajectories. They give densities or occurrence only; low value for ChimpBench.
 
 ### 11.4 Dispersal
 

@@ -274,9 +274,18 @@ function onStart(world: World, c: Chimp): void {
     case 'patrol': if (x.v !== V.APPROACH) startPatrol(world, c); else c.vocal = null; break;
     case 'travel': case 'follow':
       if (P.travelHoo === 1 && c.action === 'travel' && x.v === V.TREE && x.aux <= 0) travelHoo(world, c);
+      // stage C13d (departCue, field): an adult setting off on a trip to a tree is at once a decision point for every
+      // awake own-community companion aged 5+ within the party chain distance, seen or not, so the joint-trip,
+      // party-follow and travel-hoo options can recruit it. Recruitment to joint travel [H] gruberZuberbuhler2013
+      // (71.4% of vocal and 33.7% of silent initiations recruited a follower); the urgent decision point is a design assumption
+      const cue = P.departCue === 1 && c.action === 'travel' && x.v === V.TREE && x.aux <= 0 && c.age >= 15;
+      if (cue) for (const b of idx.alive) {
+        if (b === c || b.troopId !== c.troopId || b.age < 5 || b.action === 'nest' || (b.action === 'follow' && b.targetId === c.id) || (b.action === 'travel' && b.targetId === c.targetId)) continue;
+        if (hd(b, c) <= P.partyLinkM) interrupt(world, b, `${c.name} set off`, true);
+      }
       // party cohesion (field profile): companions notice a departure and may follow (candidates.ts, partyFollow*);
       // since stage C7a only goal-directed departures (travel) alert them, not an animal that is itself following
-      if (P.partyFollowW > 0 && (P.partyLeaderFollow !== 1 || c.action === 'travel')) for (const sid of x.seen) {
+      if (!cue && P.partyFollowW > 0 && (P.partyLeaderFollow !== 1 || c.action === 'travel')) for (const sid of x.seen) {
         const b = idx.byId.get(sid);
         if (b && b.alive && b.troopId === c.troopId && b.age >= 5 && b.action !== 'follow' && hd(b, c) < P.partyLinkM) interrupt(world, b, `${c.name} is moving off`);
       }

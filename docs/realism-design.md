@@ -20,7 +20,7 @@ The design for objectives O1–O12 in [realism-roadmap.md](realism-roadmap.md): 
 | 4 | "Too few killings" is not established. The median community rate is ≈ 0.08 per year, so zero killings in 9 community-years happens about half the time. | T-LET-1 | Keep killing rate as a fitted target with a wide band; do not inflate. |
 | 5 | Encounters: Kanyawara 8.0 and Taï 7.1 per community-year, 85% and 73% heard only. The sim's 35 and 63% are off because **sight (21×) and party links (9×) are inflated relative to range size**, far more than hearing (1.8×). | T-IGE-1, -2 | O3 is confirmed as the top priority; the fix is ratios, not metres (§5.1). |
 | 6 | Patrols: Gombe and Taï communities patrol ~0.3 per week; Ngogo (~25 males) 0.72 per week. The sim imposes the Ngogo rate on 3–7-male communities. Per-male participation is similar across sites (10–14 per year). | T-PAT-1, -2 | Patrol hazard driven by males and boundary staleness (§5.3). |
-| 7 | A 2026 *Science* paper documents the Ngogo fission with 30 years of network data, and its data are public (CC0): yearly networks, patrol counts, population snapshots. Fission is known from only two cases, both in large communities. | T-FIS-1..3 | Best held-out dataset in the program. MGOGO's small communities and 120-chimp cap make emergent fission nearly impossible without a large-community scenario and faster ticks at 150+ chimps. |
+| 7 | A 2026 *Science* paper documents the Ngogo fission with 30 years of network data, and its data are public (CC0): yearly networks, patrol counts, population snapshots. Fission is known from only two cases, both in large communities. | T-FIS-1..3 | Best held-out dataset in the program. ChimpBench's small communities and 120-chimp cap make emergent fission nearly impossible without a large-community scenario and faster ticks at 150+ chimps. |
 | 8 | Chimpanzees **slow down** as they approach a remembered tree, choose the nearest productive tree only 30% of the time, and revisit trees every 2.5–5.4 days. Travel linearity (0.96) is trivially ~1 in a sim that moves in straight lines. | T-FOOD-5..9 | Validate O7 with goal-directedness metrics, not linearity. |
 | 9 | Pant-hoot caller identity is only moderately distinctive (19.5% vs 6.9% chance). Kanyawara drumming shows no individual signature. | T-COM-5, -6 | O10 signatures must be noisy; "stable across calls" means stable means, not perfect identifiability. |
 | 10 | The existing reconciliation band "14–22%" could not be verified; the verified wild value is 14.4% (Mahale). | T-SOC-9 | Replace the band. |
@@ -45,7 +45,7 @@ The design for objectives O1–O12 in [realism-roadmap.md](realism-roadmap.md): 
 | **Fitted** | May be used for calibration (in priors, objectives or tuning decisions). Chosen because it constrains one or a few parameters fairly directly. Mostly ranging, activity budgets, encounter and hunt rates, life-table anchors, call rates. |
 | **Held out** | Never used for any tuning decision. Chosen because it emerges from several interacting mechanisms or sits at a different level of organization: network structure, range-size scaling, expansion and prey scenarios, hunting seasonality and bursts, rank and maternal effects, fission. A held-out match is the strongest evidence the program can produce. |
 | **Encoded** | The current or planned mechanism was designed from this very pattern (for example the ≥ 3-male playback rule). Reported, but not counted as independent validation. |
-| **Accept band** | The range the simulation must hit, scaled to MGOGO communities (12–22 members, 3–7 adult males) where stated. Field values are quoted as reported next to it. |
+| **Accept band** | The range the simulation must hit, scaled to ChimpBench communities (12–22 members, 3–7 adult males) where stated. Field values are quoted as reported next to it. |
 | **Evidence** | H: multi-site or large-sample, full text read. M: one site, abstract only, or derived by arithmetic. L: secondary citation, captive animals, or qualitative only. |
 | **Access** | FT full text read; Abs abstract only; Data dataset inspected; Meta metadata only. Every source's authors, year, title, journal and DOI were checked against Crossref. |
 | **Derived** | Arithmetic on reported numbers, done in this pass (for example 120 encounters ÷ 15 years). Marked wherever used. |
@@ -1389,6 +1389,187 @@ About 67 h in all, or 3–4 nights at 6 workers, and about 3× that at 2. If the
 - No parameter is changed outside the design.
 - Held-out outputs are computed only in step 5 and after, and are never looked at before the posterior is frozen.
 - If the posterior-median model fails a fitted row that passed before calibration, it is reported, and nothing is re-tuned after validation.
+
+### Stage C13: Rules decision policy with intention holding and sampling (RG), and food valued by intake rate
+**Goal**: two separately switchable parts.
+- **C13a.** Rules-driven chimpanzees stop re-deciding at every bout end and stop always taking the top-scored option. They hold an intention until something salient changes, and otherwise choose stochastically among the options a model would be offered.
+- **C13b.** The rules value food by its intake rate, walk included, so leaves count at their lower rate against remembered fruit.
+**Why**: the Jev decisive test's free arms (artifacts/decide-ft/jev-test/free-arms.md; docs/staging/jev-decisive-test.md) ran the same gate and sampling as a control. On simulation truth over T-ACT-1 to 4, party size and male day range, RG cut the summed band distance from 2.04 to 0.93 and did better than rules on 5 of 5 seeds (6501–6905, field, 5 scored days), with no hunger cost (median adult hunger 0.64 vs 0.66; lactating females 0.89 vs 0.91). The rules are over-deterministic.
+**Why C13b**: the rules value fallback food (leaves, pith, herbs) without its lower intake rate, so hungry animals eat leaves in place rather than walk to remembered fruit. Design A diagnosed it (docs/decide-jev-design.md §4). The C8 agent confirmed it: lactating females spend 16% of daylight on fallback at half the fruit rate. In the free arms, U, a utility over intake rate minus walking cost, lowered median hunger from 0.89 to 0.70 in lactating females and from 0.64 to 0.39 in all adults.
+**Status**: built; direction checks done (30 September 2026); C13a, C13b and the C13c follow-up on by default.
+
+#### C13 pre-registration (29 September 2026, before any C13 run; C13b added the same day, before any C13 or C13b run)
+
+**1. Mechanism C13a** (`src/sim/rg.ts`, switch `rgOn`; the ablation `rgOn` 0 is the argmax rules before C13, hash-identical).
+- **Who.** Rules-driven chimps aged `rgMinAge` (8) and over at their own decision points: the population the free arms tested. Younger ones, and a model-controlled chimp's late-answer fallback, keep the argmax.
+- **Gate.** The free arms' gate (`src/decide/gate.ts`, design A §3; its constants are design assumptions). The current act and target are kept unless:
+  - an interrupt fired since the choice;
+  - hunger, thirst, fatigue or loneliness changed bucket (mild ≥ 0.4, moderate ≥ 0.55, strong ≥ 0.7, severe ≥ 0.88);
+  - the period changed (night, dawn, morning, midday 11:30–14:30, afternoon, dusk);
+  - the intention is older than 90 min;
+  - the act finished or became illegal;
+  - or the chimp is feeding, hunger is at least mild, and a tree in view or in memory offers ≥ 2× the food per hour here, walk included.
+  - A trip that ends within 6 m of its tree becomes feeding there if that is legal.
+  - One difference from the harness is forced by the rules path: in the free arms a chimp whose act had finished was set to rest while it waited, so its intention counted as ended. Here the rules path keeps the act, so "finished" is tested directly. The outcome is the same.
+- **Menu.** The bounded menu a model is offered (`src/sim/menu.ts`, moved unchanged from `src/decision.ts`): at most 8 options, night and dusk menus applied, the rules' pick and one stimulus response kept.
+  - The chimp-target filter is observe()'s: candidates about the first 8 perceivable chimps.
+  - The disturbance that keeps a response is read from the chimp's own perception. It counts every chimp in view displaying, charging or attacking, not only the model's eight-person list (design).
+- **Sampling.** A softmax of the rules' own scores (jitter included) at `rgTemperature`, one draw from `world.rng`. A menu with fewer than 2 options goes to the argmax.
+- **Purity.** `rulesChoice()` and `observe()` are unchanged and stay pure. The intention is stored in `chimp.sim.rgIntent` (plain data, saved, part of determinism). The key is absent until the first RG decision, so worlds with the switch off keep their shape and hashes.
+
+**1b. Mechanism C13b** (`src/sim/intake.ts` and `src/sim/candidates.ts`, switch `intakeValue`; with `intakeValue` 0 the valuation is as before, hash-identical).
+- **Food worth.** Every feeding option's food worth is multiplied by its expected intake: hunger removed per hour, walk included, divided by the animal's own ripe-fruit rate. This is design A's currency [charnov1976]. The rates are the sim's own, shared with the Jev facts (`src/decide/facts.ts` now reads them from `src/sim/intake.ts`, unchanged):
+  - **A fruit tree in view:** feed ÷ (walk + feed). The feeding time is the lesser of the crown's share (crop ÷ (1 + feeders)) at the animal's intake and its hunger at its hunger rate. The walk is at `walkMps`.
+  - **A trip to a remembered or community-known tree:** the same, with the believed crop and no sharers.
+  - **Leaves, pith and herbs here:** the fallback rate here divided by the fruit rate. The fallback rate is `fallbackHungerPerH` × the local yield (0.6–1.3), about 0.07–0.14 per h, against 0.18–0.24 per h for fruit (field). With depletion on, it is the full-stock rate, scaled as before by the best cell in view.
+- **Other terms unchanged.** Distance terms stay as the energetic cost of walking. A trip's distance cost stays in its energetic form; `tripRateValue`'s rate form would count the walk twice, so C13b supersedes it when both are on.
+- **Scope.** It is general, for every animal and not only lactating females. A sated animal (hunger 0) gains no food worth from a crown.
+
+**2. Temperature** (design rule, not a biological estimate). The rules' own top option gets a median probability of 0.77 on rules-world menus of development seed 6301 (180-day burn-in, 2 days). `scripts/rg-calibrate.ts` gives:
+- field 0.1641 on 5,635 menus, the free arms' RG value (it reproduces `scripts/jev-test.ts --calibrate`);
+- compressed 0.1519 on 5,528 menus.
+
+The registry holds 0.164 and 0.152. 0.77 was Jev's median top-option probability on its own menus (docs/decide-jev-design.md, H1 table), so animals take the rules' best option about three times in four. No source gives the stochasticity of a wild chimpanzee's choice; the value is labelled a design assumption and never tuned to a target.
+
+**3. Profiles.** Both. The compressed goldens are re-recorded as an intended change. Every downstream random draw shifts, so field hashes change too.
+
+**4. Expected movements** (from the free arms, simulation truth, field; used only as predictions):
+
+| Row | Role | Free arms: rules → RG | Expected with C13 |
+| --- | --- | --- | --- |
+| T-ACT-2 travel | fitted, tuned under argmax | males 0.34 → 0.22, females 0.25 → 0.19 | down, toward and into the band |
+| T-RNG-4 male day range | fitted, tuned, held as fail | 4.27 → 2.91 km | down; stays held as fail whatever its value |
+| T-ACT-4 rest incl. grooming | fitted | 0.29 → 0.39 | up |
+| T-ACT-1 feeding | fitted | ±0.02 | about unchanged |
+| T-PTY-1 party size | fitted, tuned under argmax | 2.64 → 2.44 | slightly down (a risk: it is already low) |
+| T-ACT-3 grooming | fitted | unchanged (0.05 / 0.03) | unchanged |
+
+- **C13b, direction only.** The free arms have no C13b-alone arm; U combined this currency with other terms, so its magnitudes do not transfer. Expected:
+  - median adult hunger down, and lactating-female hunger down more;
+  - the fallback share of feeding down;
+  - fruit feeding (T-ACT-1) about unchanged or up;
+  - travel and male day range up relative to C13a alone, because walking to fruit replaces feeding on leaves;
+  - the combined effect on T-ACT-2 and T-RNG-4 is not predicted.
+- **Knock-on effects, direction only.** Shorter daily paths should mean fewer boundary visits, so T-IGE-1 is expected down. No prediction for patrols, hunting, calls or the movement comparisons.
+- **Held-out rows.** No prediction. They are never used for any C13 decision, and the lean proof reports them.
+- **Rows that will shift.** The fitted rows tuned under argmax rules (T-ACT-2, T-PTY-1, T-RNG-4 and T-PAT-1) will shift. They are not re-tuned in C13; the lean proof judges them.
+
+**5. Direction check** (development seeds only; not a proof).
+- Seeds 48, 7 and 21, field profile, 1 year after the 180-day burn-in, observer on (`scripts/field-metrics.ts`). Four arms on the same seeds: both parts on, C13a off (`rgOn` 0), C13b off (`intakeValue` 0), and both off (the model before C13).
+- Reported for each arm:
+  - every fitted row's shift;
+  - median adult hunger and lactating-female hunger;
+  - the fallback share of feeding;
+  - the decision count per chimp-day;
+  - the RG share of decisions kept by the gate.
+- **Viability guard** (from the Jev Amendment 1), per part and for both together, each against both off: a part stays off by default if, with it on, median adult hunger rises by more than 0.10, or the lactating-female median reaches 0.95. Otherwise it stays on whatever the fitted rows do. Nothing (temperature, gate, age or the valuation) is changed after the check.
+- A compressed pass on seed 48 × 60 days checks the same guard.
+
+**5b. Direction check result** (30 September 2026; seeds 48, 7 and 21; field; 1 year after the 180-day burn-in; observer values for the rows, simulation truth for hunger; `artifacts/validation/c13/`). Not a proof.
+
+| | Both off | C13a only | C13b only | Both on |
+| --- | --- | --- | --- | --- |
+| Median adult hunger | 0.60–0.68 | 0.50–0.56 | 0.48–0.52 | 0.46–0.51 |
+| Lactating-female hunger | 0.88–0.90 | 0.77–0.85 | 0.70–0.76 | 0.74–0.81 |
+| Fallback share of adult feeding | 0.28–0.36 | 0.22–0.28 | 0.05–0.08 | 0.14–0.16 |
+| T-ACT-1 feeding (male / female) | 0.38 / 0.54 | 0.42 / 0.51 | 0.38 / 0.46 | 0.42 / 0.47 |
+| T-ACT-2 travel | 0.33 / 0.17 | 0.21 / 0.15 | 0.24 / 0.17 | 0.15 / 0.12 |
+| T-ACT-3 grooming | 0.06 / 0.08 | 0.06 / 0.11 | 0.12 / 0.13 | 0.09 / 0.14 |
+| T-ACT-4 rest incl. grooming | 0.25 | 0.33 | 0.35 | 0.39 |
+| T-PTY-1 party size | 3.48 | 2.81 | 3.43 | 2.63 |
+| T-RNG-4 male day range (km) | 4.21 | 2.32 | 2.52 | 1.58 |
+| T-PAT-6 incursion share | 0.60 | 0.50 | 0.46 | 0.18 |
+| T-FOOD-2 | 0.74 | 0.78 | 0.94 | 0.87 |
+| Fitted rows passing | 5 | 9 | 10 | 8 |
+
+- **Viability guard: passes** for each part and for both. Hunger falls with every part rather than rising.
+- **Predictions:**
+  - C13a moved as predicted. Travel, day range and party size went down, and rest went up. Party size fell more than "slightly": 3.48 to 2.81.
+  - C13b lowered hunger and the fallback share as predicted.
+  - C13b did not raise travel or day range against C13a alone, as predicted; with both on, both went further down. Travel now sits at or below the band's floor (females 0.12), and day range sits at its floor (1.58 km).
+- **Also moved:**
+  - T-PAT-6 fell to 0.18 with both parts on.
+  - T-FOOD-2 rose above its band.
+  - Decisions per chimp-day dropped from about 100 to 75, with 53% of RG decisions kept by the gate.
+- **Consequences.** Nothing is re-tuned. Both parts stay on, and the lean proof judges the rows; the tuned rows (T-ACT-2, T-PTY-1, T-RNG-4, T-PAT-1) are expected to move there too.
+- **Compressed guard** (seed 48, 60 days): passes. Adult hunger 0.44 with both off, 0.48 with both on; lactating females 0.58 and 0.64.
+
+**5c. C13c pre-registration** (30 September 2026, before any C13c run; logged in protocolLog). The direction check and the probes in `artifacts/validation/c13/` (development seeds) showed why C13 shrank movement:
+- The gate cut trips to trees from 5–6 to about 3.8 per adult-day. It held daytime rest for a median of 36 min, where the argmax rules re-decided at every bout end. Sampling alone would have raised the male day range to about 4.9 km.
+- C13b halved trip length (median 300 to 170 m). It counts hunger twice: once in the food worth, and again in the feeding time, which is capped by hunger.
+
+Two changes, each switchable, with their own ablation set `C13c` (`rgMaxAgeH` 1.5 and `intakeCropOnly` 0, hash-identical to C13):
+1. **`rgMaxAgeH` 0.5.** The in-sim gate re-decides an intention after 30 min, not 90 (design assumption). The Jev gate constant stays 90 min.
+2. **`intakeCropOnly` 1.** A fruit tree's feeding time in the C13b valuation is its crop share at the animal's intake, without the hunger cap (design). The Jev facts keep the capped time.
+
+Predictions, against C13 on seeds 48, 7 and 21 (field, 1 year after the burn-in):
+- trips to trees back to about 5 per adult-day;
+- male day range (T-RNG-4) up into 1.5–3.5 km;
+- trips longer;
+- party size (T-PTY-1) about unchanged.
+
+The diagnostic probe with both changes gave about 5 trips per day and 2.2–2.7 km. The viability guard of §5 applies against both C13 parts off. T-RNG-4 is logged as touched. Nothing is tuned after the check.
+
+**5d. C13c direction check result** (30 September 2026; seeds 48, 7 and 21; field; 1 year after the burn-in; `artifacts/validation/c13/`). Not a proof.
+
+| | Both C13 parts off | C13 | C13c |
+| --- | --- | --- | --- |
+| Trips to trees per adult-day | 5.3–5.5 | 3.9–4.1 | 4.9–5.1 |
+| Trip median (m) | 298–381 | 173–195 | 215–233 |
+| Male day range, T-RNG-4 (km, observer) | 4.21 | 1.58 | 2.59 |
+| T-ACT-2 travel (male / female) | 0.33 / 0.17 | 0.15 / 0.12 | 0.22 / 0.15 |
+| T-PTY-1 party size | 3.48 | 2.63 | 2.90 |
+| T-PAT-6 incursion share | 0.60 | 0.18 | 0.44 |
+| Median adult hunger | 0.60–0.68 | 0.46–0.51 | 0.45–0.51 |
+| Lactating-female hunger | 0.88–0.90 | 0.74–0.81 | 0.75–0.79 |
+| Fitted rows passing | 5 | 8 | 9 |
+
+- **Viability guard: passes.**
+- **Predictions:** all four held. Trips returned to about 5 per adult-day, the male day range rose into its band, and trips got longer. Party size rose slightly, 2.63 to 2.90, which is still below its band. The gate now keeps 35% of RG decisions instead of 53%.
+- **T-RNG-4** is touched (fitted, tuned, held as fail); it is still held as fail.
+- **T-IGE-1:** seed 48 partly saturated again, at 63 per community-year (§18 note).
+
+**5e. C13d pre-registration** (30 September 2026, before any C13d run; logged in protocolLog). Party cohesion: a departure is a decision point for every companion in range.
+- **Premise corrected.** The field profile already has a departure cue (C7a party cohesion). An animal setting off interrupts companions in its last view within `partyLinkM`, but not urgently: a companion interrupted in the last 2 min, or with an interrupt pending, is skipped.
+- **Coverage under C13c** (development seeds, sim truth):
+  - 54–59% of companions within `partyLinkM` get a decision point within 5 min of a trip initiation; 43–45% join.
+  - Hooed initiations recruit at least one companion in 54–59% of cases, silent ones in 40–42% (ratio 1.31–1.44). Before C13 the ratio was 1.46–1.60; the field source's ratio is 2.1 [gruberZuberbuhler2013].
+- **C13d** (`departCue`, field profile only, because the joint-trip and travel-hoo follow options exist only there):
+  - When an adult (15+) sets off on a trip to a tree, every living own-community companion aged 5+ within `partyLinkM`, awake and not already following it, gets an urgent decision point at once, whether or not it was in the initiator's view.
+  - The existing joint-trip, party-follow and travel-hoo options then compete as usual, with C13a sampling.
+  - Recruitment to joint travel is [H] [gruberZuberbuhler2013]. The decision point is a design assumption.
+  - Ablation set `C13d` (`departCue` 0) is hash-identical to C13c.
+- **Predictions** (seeds 48, 7 and 21, field, 1 year, against C13c):
+  - T-PTY-1 up toward about 3.5;
+  - hooed initiations recruit clearly more than silent ones (ratio ≥ 1.6);
+  - decisions per chimp-day and the male day range rise slightly;
+  - the viability guard of §5 holds.
+
+**5f. C13d direction check result** (30 September 2026; seeds 48, 7 and 21; field; 1 year; `artifacts/validation/c13/`). Not a proof.
+
+| | C13c | C13d |
+| --- | --- | --- |
+| T-PTY-1 party size | 2.90 | 2.90 |
+| Initiations recruiting ≥ 1 companion within 5 min, hooed / silent | 0.50–0.56 / 0.37–0.40 | 0.53–0.56 / 0.42–0.44 |
+| Recruitment ratio, hooed ÷ silent | 1.35–1.41 | 1.27–1.29 |
+| Companions joining within 5 min | 0.39–0.44 | 0.43–0.45 |
+| Male day range, T-RNG-4 (km, observer) | 2.59 | 2.53 |
+| T-ACT-2 travel (male / female) | 0.22 / 0.15 | 0.21 / 0.15 |
+| Decisions per chimp-day | 74–76 | 74–76 |
+| Fitted rows passing | 9 | 9 |
+
+- **Viability guard: passes.**
+- **All four predictions failed.** Party size did not move. The recruitment ratio fell. Decisions and day range did not rise.
+- **Why.** Companions now get the decision point, but when C13a samples their choice they rarely pick joining. Silent initiations gained the most, so the ratio fell. The missing cohesion is in the choice among options, not in the timing of decision points.
+- **Measurement note.** The "deciding within 5 min" share measured 0.55–0.61. It undercounts, because decisions made in the initiation's own tick are missed.
+- **T-PAT-6** (0.06, n = 17 patrols) is too noisy to read.
+- **Default.** Merged under the rule of merging if the guard passes, then switched **off by default** by integrator ruling. It is a pre-registered null result: a mechanism with no measured effect is not on by default. The code stays behind `departCue`. The ablation row now switches it on, so the lean proof still tests it.
+
+**6. Proof.** The lean proof (`scripts/proof.ts --plan lean`) with both parts on. `data/proof-ablations.json` has an ablation set per part, `C13a` (`rgOn` 0) and `C13b` (`intakeValue` 0), so each is attributed.
+
+**7. Handoffs.**
+- The TRAINING session is warned when C13 lands: rules-driven states change, and its stand-ins train on rules-world contexts.
+- The Jev decisive test's R arm means the argmax rules. After C13 its harness must create worlds with `rgOn` 0, or run from its pinned snapshot, or R becomes RG. The other arms are unaffected: their policy chimps are aged 8+ and model-controlled, and the younger ones stay on the argmax. Flagged to the coordinator.
 ---
 
 ## 9. Datasets
@@ -1458,7 +1639,7 @@ None were downloaded into the project. Every Dryad and Zenodo DOI and license be
 
 ### Open questions for the integrator
 
-1. Should MGOGO keep three small communities (Budongo/Gombe scale) or grow one toward Kanyawara size (~50, 10+ males)? Many targets are from larger communities; growing costs performance.
+1. Should ChimpBench keep three small communities (Budongo/Gombe scale) or grow one toward Kanyawara size (~50, 10+ males)? Many targets are from larger communities; growing costs performance.
 2. Which site profile is the default for phenology and fallback foods: Ngogo (leaves as fallback, figs a staple) or Kanyawara (pith as fallback)? The design supports both; calibration should target one.
 3. Is the field profile's scale factor of 50 (8 km map) acceptable for the renderer's overview, or should the overview use a different aggregation?
 4. Should the observer run in the browser (a live "field notebook" panel), or stay script-only until C11?

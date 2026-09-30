@@ -60,7 +60,7 @@ async function init(): Promise<InitInfo> {
         return new Promise<void>(release => { releaseLock = release; });
       }).catch(() => resolve(false));
     });
-    if (!got) { state = 'locked'; message = 'MGOGO is open in another tab, which keeps the save library. This tab runs without saving.'; }
+    if (!got) { state = 'locked'; message = 'ChimpBench is open in another tab, which keeps the save library. This tab runs without saving.'; }
     else {
       try {
         pool = await sqlite3.installOpfsSAHPoolVfs({ name: 'mgogo-pool', directory: '.mgogo-pool', initialCapacity: 8 });
