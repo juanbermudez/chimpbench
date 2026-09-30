@@ -21,7 +21,7 @@ import { createWorld, tickWorld } from '../src/simulation';
 import { V } from '../src/sim/candidates';
 import { paramsOf } from '../src/sim/params';
 import { cropTarget, fruitAt } from '../src/sim/phenology';
-import { TICK_HOURS, index, isTreeId, ix } from '../src/sim/state';
+import { TICK_HOURS, index, isTreeId, ix, simOf } from '../src/sim/state';
 import { cellAt, gridOf, levels } from '../src/sim/territory';
 import { independent } from '../src/field/protocols';
 import type { Chimp, World } from '../src/types';
@@ -44,6 +44,11 @@ interface Result {
   visitMin: number[]; visitWhy: Record<string, number>;
   /** C12 definitions on 30-min fixes 07:00–18:00: path (sum of steps), straightness (net ÷ path), turns between steps both ≥ 15 m. */
   path30: number[]; straight30: number[]; turn30: number[];
+  /** Day structure (C7d): tick path by activity; 18:00 → nest (21:00) distance; nest → last crown fed; distances of the
+   * 07:00, 12:00 and 18:00 positions from the community centre; share of the furthest excursion given back by 18:00;
+   * at each initiator's trip start, chosen distance ÷ distance of the nearest remembered or known tree believed at least 0.8 as good. */
+  pathBy: Record<string, number>; endToNest: number[]; nestToCrown: number[]; startC: number[]; noonC: number[]; endC: number[]; giveBack: number[];
+  chainRatio: number[]; chosenD: number[]; nearestD: number[];
 }
 
 const vName = (v: number) => Object.entries(V).find(([, n]) => n === v)?.[0] ?? String(v);
@@ -72,7 +77,7 @@ export function run(job: Job): Result {
   const P = paramsOf(w), link = P.partyLinkM;
   const r: Result = { seed: job.seed, variant: job.variant, adultDays: 0, party: [], partyBy: {}, sep: {}, sepLeftBehind: 0, scansWithCompany: 0,
     recruit: { trips: 0, withCompany: 0, companions: 0, kept: 0, sameGoal: 0, followed: 0 }, crowd: [], crowdHours: [], eaten: [], standing: [], potential: [], rangeTrees: [], fedTrees: [], deficit: [],
-    legTurn: [], legReturn: 0, legs: 0, legLen: [], still: {}, halfHours: 0, steps30: [], dayPath: [], dayNet: [], dayMaxR: [], visitMin: [], visitWhy: {}, path30: [], straight30: [], turn30: [] };
+    legTurn: [], legReturn: 0, legs: 0, legLen: [], still: {}, halfHours: 0, steps30: [], dayPath: [], dayNet: [], dayMaxR: [], visitMin: [], visitWhy: {}, path30: [], straight30: [], turn30: [], pathBy: {}, endToNest: [], nestToCrown: [], startC: [], noonC: [], endC: [], giveBack: [], chainRatio: [], chosenD: [], nearestD: [] };
   const want = (c: Chimp) => P.fruitIntakePerH * TICK_HOURS * (P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging) * (c.age < 5 ? P.fruitIntakeYoungFactor : 1);
   const prevParty = new Map<number, Set<number>>(), prevPos = new Map<number, [number, number]>();
   const trips = new Map<number, { dv: number; tree: number; comp: number[]; t0: number }>();
@@ -84,6 +89,8 @@ export function run(job: Job): Result {
   const fixes = new Map<number, [number, number][]>();
   const lastTick = new Map<number, [number, number]>();
   const fedToday = new Map<number, Set<number>>();
+  const lastCrown = new Map<number, number>(), endPos = new Map<number, [number, number]>();
+  const centreOf = (c: Chimp) => index(w).troopById.get(c.troopId)!.center;
   for (let day = 0; day < job.days; day++) {
     const eatenBy = new Map<number, number>();
     for (let i = 0; i < 5760; i++) {
@@ -96,13 +103,24 @@ export function run(job: Job): Result {
         eatenBy.set(c.troopId, (eatenBy.get(c.troopId) ?? 0) + Math.min(want(c), fruitAt(w, t) + want(c)));
         let s = fedToday.get(c.troopId); if (!s) fedToday.set(c.troopId, s = new Set()); s.add(t.id);
       }
-      if (h < 7 || h >= 18) { if (h >= 18 && h < 18 + TICK_HOURS) { for (const [id, d] of day0) { const c = idx.byId.get(id); if (c) { r.dayPath.push(d.path); r.dayNet.push(Math.hypot(c.position[0] - d.x, c.position[2] - d.z)); r.dayMaxR.push(d.maxR); } } day0.clear(); dayFixes(r, fixes); fixes.clear(); prevParty.clear(); prevPos.clear(); trips.clear(); lastLeg.clear(); legStart.clear(); half.clear(); visit.clear(); lastTick.clear(); } continue; }
+      if (h >= 21 && h < 21 + TICK_HOURS) {
+        for (const [id, e] of endPos) {
+          const c = idx.byId.get(id); if (!c || !c.alive) continue;
+          r.endToNest.push(Math.hypot(c.position[0] - e[0], c.position[2] - e[1]));
+          const t = idx.treeById.get(lastCrown.get(id) ?? -1);
+          if (t) r.nestToCrown.push(Math.hypot(c.position[0] - t.position[0], c.position[2] - t.position[2]));
+        }
+        endPos.clear(); lastCrown.clear();
+      }
+      if (h < 7 || h >= 18) { if (h >= 18 && h < 18 + TICK_HOURS) { for (const [id, d] of day0) { const c = idx.byId.get(id); if (c) { const net = Math.hypot(c.position[0] - d.x, c.position[2] - d.z); r.dayPath.push(d.path); r.dayNet.push(net); r.dayMaxR.push(d.maxR); if (d.maxR > 50) r.giveBack.push((d.maxR - net) / d.maxR); const ce = centreOf(c); r.endC.push(Math.hypot(c.position[0] - ce[0], c.position[2] - ce[2])); endPos.set(id, [c.position[0], c.position[2]]); } } day0.clear(); dayFixes(r, fixes); fixes.clear(); prevParty.clear(); prevPos.clear(); trips.clear(); lastLeg.clear(); legStart.clear(); half.clear(); visit.clear(); lastTick.clear(); } continue; }
       const adults = idx.alive.filter(c => c.alive && c.age >= 15 && independent(c));
       for (const c of adults) {
         const x = ix(c);
         // day path and furthest distance from the 07:00 position
         const d0 = day0.get(c.id);
-        if (!d0) day0.set(c.id, { x: c.position[0], z: c.position[2], path: 0, maxR: 0 });
+        if (!d0) { day0.set(c.id, { x: c.position[0], z: c.position[2], path: 0, maxR: 0 }); const ce = centreOf(c); r.startC.push(Math.hypot(c.position[0] - ce[0], c.position[2] - ce[2])); }
+        if (h >= 12 && h < 12 + TICK_HOURS) { const ce = centreOf(c); r.noonC.push(Math.hypot(c.position[0] - ce[0], c.position[2] - ce[2])); }
+        if (c.action === 'forage' && x.phase === 2 && isTreeId(c.targetId)) lastCrown.set(c.id, c.targetId);
         // tree visits: consecutive feeding in one crown, across re-decisions
         // (a pause of up to 10 min, e.g. a call, then feeding again in the same crown is the same visit; T-FOOD-4's rule)
         const v = visit.get(c.id), feeding = c.action === 'forage' && x.phase === 2 && isTreeId(c.targetId);
@@ -134,6 +152,7 @@ export function run(job: Job): Result {
         }
         if (onTrip && !legStart.has(c.id)) {
           legStart.set(c.id, { dv: c.decisionVersion, sx: c.position[0], sz: c.position[2], tree: c.targetId });
+          if (x.aux < 0) chain(w, c, r);
           const mates = idx.alive.filter(m => m.alive && m.troopId === c.troopId), par = chainParties(mates, link), me = mates.indexOf(c);
           const comp = mates.filter((m, k) => m !== c && par[k] === par[me] && m.age >= 15 && independent(m)).map(m => m.id);
           r.recruit.trips++;
@@ -152,7 +171,7 @@ export function run(job: Job): Result {
       for (const c of adults) {
         const d = day0.get(c.id)!;
         const lp = lastTick.get(c.id);
-        if (lp) d.path += Math.hypot(c.position[0] - lp[0], c.position[2] - lp[1]);
+        if (lp) { const st = Math.hypot(c.position[0] - lp[0], c.position[2] - lp[1]); d.path += st; inc(r.pathBy, key(c), st); }
         lastTick.set(c.id, [c.position[0], c.position[2]]);
         d.maxR = Math.max(d.maxR, Math.hypot(c.position[0] - d.x, c.position[2] - d.z));
         const hh = half.get(c.id);
@@ -230,6 +249,28 @@ export function run(job: Job): Result {
   return r;
 }
 
+/** At an initiator's trip start: chosen tree distance vs the nearest remembered or known tree believed at least 0.8 as good (out of sight). */
+function chain(w: World, c: Chimp, r: Result): void {
+  const x = ix(c), P = paramsOf(w), idx = index(w), px = c.position[0], pz = c.position[2];
+  const known = simOf(w).knownTrees?.[c.troopId] ?? [];
+  const exp = new Map<number, number>();
+  for (let i = 0; i < known.length; i += 2) exp.set(known[i], known[i + 1]);
+  const belief = (id: number) => x.treeCrop?.[id] ?? exp.get(id) ?? 0.2;
+  const cand = new Set<number>(exp.keys());
+  for (const m of c.memory) if (m.kind === 'tree' && w.time - m.seenAt < P.memTravelHorizonH) cand.add(m.entityId);
+  const target = idx.treeById.get(c.targetId); if (!target) return;
+  const dc = Math.hypot(target.position[0] - px, target.position[2] - pz), bc = belief(target.id);
+  let dn = Infinity;
+  for (const id of cand) {
+    const t = idx.treeById.get(id); if (!t) continue;
+    const d = Math.hypot(t.position[0] - px, t.position[2] - pz);
+    if (d < P.memoryTreeMinM || belief(id) < 0.8 * bc) continue;
+    if (d < dn) dn = d;
+  }
+  if (!Number.isFinite(dn) || dn <= 0) return;
+  r.chainRatio.push(dc / dn); r.chosenD.push(dc); r.nearestD.push(dn);
+}
+
 /** Full-day follows (≥ 21 of 23 fixes, 07:00–18:00): C12's path, straightness and turning (src/compare/tracks.ts). */
 function dayFixes(r: Result, fixes: Map<number, [number, number][]>): void {
   for (const f of fixes.values()) {
@@ -255,9 +296,9 @@ function merge(rs: Result[]): Result {
   for (const r of rs.slice(1)) {
     o.adultDays += r.adultDays; o.sepLeftBehind += r.sepLeftBehind; o.scansWithCompany += r.scansWithCompany; o.legReturn += r.legReturn; o.legs += r.legs; o.halfHours += r.halfHours;
     for (const k of Object.keys(o.recruit) as (keyof Result['recruit'])[]) o.recruit[k] += r.recruit[k];
-    for (const f of ['party', 'crowd', 'crowdHours', 'eaten', 'standing', 'potential', 'rangeTrees', 'fedTrees', 'deficit', 'legTurn', 'legLen', 'steps30', 'dayPath', 'dayNet', 'dayMaxR', 'visitMin', 'path30', 'straight30', 'turn30'] as const) o[f] = o[f].concat(r[f]);
+    for (const f of ['party', 'crowd', 'crowdHours', 'eaten', 'standing', 'potential', 'rangeTrees', 'fedTrees', 'deficit', 'legTurn', 'legLen', 'steps30', 'dayPath', 'dayNet', 'dayMaxR', 'visitMin', 'path30', 'straight30', 'turn30', 'endToNest', 'nestToCrown', 'startC', 'noonC', 'endC', 'giveBack', 'chainRatio', 'chosenD', 'nearestD'] as const) o[f] = o[f].concat(r[f]);
     for (const [k, v] of Object.entries(r.partyBy)) o.partyBy[k] = (o.partyBy[k] ?? []).concat(v);
-    for (const f of ['sep', 'still', 'visitWhy'] as const) for (const [k, n] of Object.entries(r[f])) o[f][k] = (o[f][k] ?? 0) + n;
+    for (const f of ['sep', 'still', 'visitWhy', 'pathBy'] as const) for (const [k, n] of Object.entries(r[f])) o[f][k] = (o[f][k] ?? 0) + n;
   }
   return o;
 }
@@ -279,6 +320,8 @@ function report(o: Result, name: string): string {
   const lt = o.legTurn;
   L.push(`Trips to trees ≥ 50 m: ${o.legs}, length median ${f0(q(o.legLen, 0.5))} m; turn between consecutive trips median ${f2(q(lt, 0.5))} rad, reversals (> 2.5 rad) ${f2(lt.filter(a => a > 2.5).length / (lt.length || 1))}, returns to within 150 m of the previous trip's start ${f2(o.legReturn / (lt.length || 1))}.`);
   L.push(`30-min fixes, full days (C12 definitions): path ${f0(q(o.path30, 0.5))} m/day (${f0(q(o.path30, 0.5) / 11)} m/h), straightness median ${f2(q(o.straight30, 0.5))}, turning angle median ${f2(q(o.turn30, 0.5))} rad (steps ≥ 15 m; ${o.turn30.length} turns).`);
+  const pb = Object.values(o.pathBy).reduce((a, b) => a + b, 0) || 1, between = Object.entries(o.pathBy).filter(([k]) => /^(travel|follow|forage:toCrown|drink|patrol|consort|transfer|flee|hunt)/.test(k)).reduce((a, [, v]) => a + v, 0);
+  L.push(`Day structure: path between patches (travel, follow, walking to a crown, drink, …) ${f2(between / pb)} of the tick path; top: ${top(o.pathBy, 6).map(([k, v]) => `${k} ${f2(v / pb)}`).join(', ')}. 18:00 → nest ${f0(q(o.endToNest, 0.5))} m (p90 ${f0(q(o.endToNest, 0.9))}); nest → last crown fed ${f0(q(o.nestToCrown, 0.5))} m; from the community centre at 07:00 / 12:00 / 18:00 ${f0(q(o.startC, 0.5))} / ${f0(q(o.noonC, 0.5))} / ${f0(q(o.endC, 0.5))} m; share of the furthest excursion given back by 18:00 ${f2(q(o.giveBack, 0.5))}. Trip goals (initiators): chosen ${f0(q(o.chosenD, 0.5))} m vs nearest comparable ${f0(q(o.nearestD, 0.5))} m, ratio median ${f2(q(o.chainRatio, 0.5))} (≤ 1.2: ${f2(o.chainRatio.filter(v => v <= 1.2).length / (o.chainRatio.length || 1))}).`);
   L.push(`Day (07:00–18:00): path median ${f0(q(o.dayPath, 0.5))} m, net ${f0(q(o.dayNet, 0.5))} m, furthest from the start ${f0(q(o.dayMaxR, 0.5))} m; 30-min step median ${f0(q(o.steps30, 0.5))} m, < 15 m ${f2(o.steps30.filter(s => s < 15).length / (o.steps30.length || 1))}; still half-hours are mostly: ${top(o.still, 6).map(([k, n]) => `${k} ${f2(n / (o.halfHours || 1))}`).join(', ')} (share of all half-hours).`);
   return L.join('\n');
 }

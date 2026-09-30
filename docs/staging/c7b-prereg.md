@@ -368,3 +368,202 @@ A direction "holds" when the paired change has the expected sign. No significanc
   - Unchanged: straightness 0.19, range kernel 2.13 → 2.23 km², stationary 0.50.
   - Fruit share 0.84 → 0.82.
   - Straightness and range area remain the main open gaps.
+
+---
+
+## 8. C7d: the food package with joint trips; straightness (pre-registration, 29 September 2026)
+
+The branch is `main` at 762a259 (C7c merged: joint trips and the energetic distance cost on; fallback limits and the food package off). Metric roles are as in §6: development diagnostics only, no Gombe files, nothing fitted. New development seeds: **3707 and 3808**, never run before.
+
+### 8.1 The missing combination: food package + joint trips (stated before any run)
+
+**Variants** (paired, seeds 3707 and 3808):
+- K: `main` as merged.
+- K + food: `cropFullExp` 11.9, `cropFullMin` 0.3, `patchesPerHa` 5.9, as pre-registered in §3.2–3.3.
+
+**Tools:**
+- `party-food-metrics.ts`, 60-day burn-in + 6 days.
+- `field-metrics.ts --days 120 --burn-in 60`.
+
+**Expected direction:** T-RNG-1 West kernel ↑ vs K, while party size holds. **Keep the food package only if all three hold:**
+- T-PTY-1 (observer) ≥ 2.8;
+- diagnostic party size (independents, 50 m chain) ≥ K − 0.10;
+- T-FOOD-2 ≥ 0.60.
+
+**If party size collapses anyway,** these measures, already in the script, diagnose why:
+- adults per fed-in crown, and the hours a crown's crop lasts its feeders;
+- visit endings (crop gone vs social);
+- trips starting in company and companions kept.
+
+Any crown-sharing mechanism that follows is pre-registered separately (§8.3) before it is run.
+
+### 8.2 Straightness diagnosis (measurement only; seeds 3707 and 3808, K, 372 adult-days)
+
+These measures were added to `party-food-metrics.ts` before any C7d mechanism existed: tick path by activity, day-end → nest distance, nest → last crown distance, distance from the community centre over the day, and goal order. Output: `artifacts/validation/c7d/diag-food.txt` (worktree).
+
+| Measure (K) | Value |
+| --- | --- |
+| Straightness / turning (30-min fixes, full days) | 0.21 / 0.87 rad |
+| Tick path between patches | 0.99. Trips to trees 0.62, **trips toward callers 0.20**, drinking 0.10, party follows 0.04. Within-patch wandering is negligible. |
+| 18:00 position → night nest | 5 m median (p90 349 m) |
+| Night nest → last crown fed | 39 m median |
+| Distance from the community centre at 07:00 / 12:00 / 18:00 | 384 / 395 / 385 m |
+| Furthest point of the day / net 07:00 → 18:00 | 683 m / 365 m (37% of the excursion given back) |
+| Goal order (initiators) | chosen tree 318 m away vs the nearest remembered or known tree believed at least 0.8 as good 122 m; ratio median **1.88**; within 1.2× only 35% |
+| Consecutive trips | median turn 1.93 rad (uniform 1.57), 34% reversals (uniform 20%) |
+
+**Diagnosis:**
+1. **Not a nightly return.** Nests are where the day ends and next to the last crown, and there is no central place: distance from the centre is flat through the day. Nest-site choice is not the lever.
+2. **Not within-patch wandering.** Almost all path is travel between patches.
+3. **Goal order is effectively random among comparable trees.** The candidate jitter (±0.12) is much larger than the energetic distance cost (~0.005 score per 300 m), so an initiator picks among comparable known trees almost blind to distance. Successive trips then point anywhere, with a backward bias.
+4. **A fifth of the path is travel toward callers,** in directions unrelated to the day's route; a tenth is trips to water.
+
+### 8.3 Route chaining (`routeChain`, field; stated before any run of it)
+
+**Rule.** Among out-of-sight goals (remembered and community-known trees), the animal ranks trees by believed value per metre, worth ÷ max(d, `memoryTreeMinM`). Only the best-ranked tree is offered, at its usual score (worth − the energetic distance cost − revisit), instead of the four best by score.
+- This is the nearest-unused-known-resource rule, weighted by value. It is the simplest rule consistent with the efficient paths of primates choosing among many remembered goals [janson2014] [M].
+- Trees believed empty stay out through the C7a crop beliefs; trees just fed in stay out through the C6b revisit penalty. So a day chains nearby trees without going back.
+- No free parameter.
+- Crowns in sight keep their scoring.
+
+**Expected direction** vs K, same seeds:
+- primary: straightness ↑ and turning ↓;
+- mechanism check: goal-order ratio falls and the share within 1.2× rises;
+- guards: T-RNG-1 not down by more than 10%, diagnostic party size not down by more than 0.10.
+
+**Keep only if the primary directions and both guards hold.**
+
+**Not built:**
+- **Crown-sharing capacity from crown area.** No source gives a feeding area per animal, and a party-size rule tied to crown size would encode the held-out T-PTY-2 (party size vs patch size).
+- **Changes to caller or water trips.** No source-grounded rule is in hand. They are reported as open.
+
+### 8.4 C7d results and decisions (after the check)
+
+Seeds 3707 and 3808, paired. `party-food-metrics.ts` ran 60-day burn-in + 6 days; `field-metrics.ts` ran 60-day burn-in + 120 days. Every variant passes `routeChain` explicitly. A first field run was stopped and discarded because it would have loaded the route-chaining code mid-run. Output: `artifacts/validation/c7d/` (worktree). Development diagnostics only.
+
+| Variant | T-RNG-1 (km²) | T-PTY-1 | Party size (diagnostic) | T-FOOD-2 | Straightness | Turning (rad) | Path (m/day) | Goal-order ratio |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| K (`main`) | 2.71 | 2.90 | 2.14 | 0.79 | 0.21 | 0.87 | 2,014 | 1.88 |
+| K + food package | 7.53 | **2.26** | **1.59** | 0.66 | 0.18 | 1.30 | 3,629 | 1.30 |
+| K + route chaining | 2.58 | 4.27 | 4.43 | **0.53** | 0.26 | **1.59** | **795** | 1.00 |
+
+Other effects:
+- The food package's travel share is 0.52.
+- Route chaining shrinks trips to a median 59 m and cuts fruit eaten from 5.8 to 4.3 units per community-day.
+
+**Decisions:**
+- **§8.1 food package with joint trips: dropped.** Range rose into the band, but T-PTY-1 is 2.26 (< 2.8) and the diagnostic party size fell 0.55.
+  - **Why party size still collapses.** Joint trips still bring companions to the same tree: 97% are still together at arrival. Then they cannot feed together.
+    - Crowd: adults per fed-in crown 1.06 (1.13 in K).
+    - Crop life: a crown's crop lasts its feeders 1.1 h (3.8 h in K).
+    - Endings: 58% of visits end with the crop gone.
+  - **Against the field.** In K a median crown holds ~4 feeding-hours, which would feed a party of 7 for ~35 min, in line with Kibale patch residency of 27–46 min per visit for feeding parties of 7–8 [potts2011]. With the package, it would feed them for ~10 min.
+  - So the package makes crowns too small for a party's visit. Crowns in K are already about the right size for real parties; what K lacks is parties feeding together, not food.
+  - A crown-sharing capacity was not built: no source gives a feeding area per animal, and it would encode T-PTY-2.
+- **§8.3 route chaining: dropped.** Straightness rose (0.21 → 0.26) and both guards held (T-RNG-1 −5%; party size +2.3), but turning rose (0.87 → 1.59 rad). The mechanism worked as intended (goal-order ratio 1.88 → 1.00); strict value-per-metre ranking just makes trips so short (59 m) that the day collapses (795 m/day) and animals fall back on ground food (fruit share 0.53).
+
+**Straightness, where it stands:**
+- The diagnosis stands: goals are chosen almost blind to distance, and a fifth of the path is travel toward callers (§8.2).
+- Neither extreme works. A near-flat distance cost (energetic) leaves goal order random; ranking by value per metre over-chains.
+- An intermediate rule would need a distance-value trade-off with a free scale, which this stage does not fit. The time-rate rule (§3.4) is the only scale-free candidate so far, and it shortened days in C7b. Open for the integrator.
+
+---
+
+## 9. C7e: a declared calibration of the goal-distance scale (declared before fitting, 29 September 2026)
+
+The branch is `main` at cf7a493 (C10 and travel hoos merged; field hashes changed), merged forward. Validation roles: Taï and Ngogo are the development (fitting) set; the Gombe paths are held out and never opened here. The fitted value is labelled **"fitted (C7e) against Taï"** in the registry notes and here.
+
+### 9.1 The parameter
+**`goalDistScaleM` = D (metres; field; 0 = off, the C7c/C7d behaviour, where the four best out-of-sight trees by score are offered).**
+
+**Functional form.** With D > 0, every out-of-sight goal (remembered or community-known tree) is ranked by
+
+> (worth − revisit) × D ÷ (D + max(d, `memoryTreeMinM`)),
+
+a hyperbolic distance discount. Only the top-ranked tree is offered, at its usual score (worth − the energetic distance cost − revisit − the usual terms). So D sets goal order only, not how attractive travel is.
+
+- As D → 0 the rank tends to value per metre: route chaining (§8.3).
+- As D → ∞ the rank is believed value alone: no distance preference.
+- Crowns in sight keep their scoring.
+
+**Prior range: 50–3,200 m.**
+- The lower end sits near the spacing of goal trees (the nearest comparable tree is a median 122 m away, §8.2; `memoryTreeMinM` is 35 m). Below it D reproduces route chaining, already tested.
+- The upper end is about a range diameter (~3 km for a 7 km² range). Beyond it the discount barely reorders goals within a range.
+- Grid: **50, 100, 200, 400, 800, 1,600, 3,200 m** (log-spaced), plus off.
+
+### 9.2 Fitting targets, loss and instrument
+**Targets** (development diagnostics, Taï; C12 definitions):
+
+| Statistic | Target |
+| --- | --- |
+| Straightness of full-day follows | S* = 0.50 |
+| Turning angle between 30-min steps (both ≥ 15 m) | T* = 0.76 rad |
+| Path per hour | R* = 314 m/h |
+
+**Loss:** L = ⅓ ((S − S*)/S*)² + ⅓ ((T − T*)/T*)² + ⅓ ((R − R*)/R*)².
+- Relative squared errors with equal weights: all three are robust path-shape gaps.
+- Path rate guards against the over-chaining collapse seen in §8.4.
+
+**Instrument:** `scripts/compare-movement.ts --seeds 3909,4010 --years 0.25 --burn-in 60 --workers 2 --params {…}`, run with `--out` and `--guide` redirected to `artifacts/validation/c7e/`. The sim statistic is the scorecard's sim value for each row.
+- **Seeds 3909 and 4010:** development seeds, never run before, outside 606–1010, 1111–2525 and 48, 7, 21, 5, 11.
+
+**Decision rule:**
+- D* = the grid value with the least L.
+- It stays **on by default only if L(D*) < L(off)**; otherwise off, and said so.
+
+### 9.3 Second declared candidate: the food package (discrete)
+- At D*, the food package (`cropFullExp` 11.9, `cropFullMin` 0.3, `patchesPerHa` 5.9) is scored by the same L, on vs off.
+- **Constraint (not a target):** T-PTY-1 ≥ 2.8, from `field-metrics.ts --days 120 --burn-in 60 --seeds 3909,4010 --workers 2`.
+- The package is chosen only if it is feasible and lowers L.
+
+### 9.4 Report at the chosen setting
+The loss surface; every C12 development row from `compare-movement.ts`; the field observer's T-* rows; `party-food-metrics.ts` (party size, stationary share, goal order); and the bench (`scripts/bench-ab.ts`, off vs chosen).
+
+### 9.5 C7e results: fitted (C7e) against Taï (development set; seeds 3909 and 4010)
+
+**Loss surface** (`scripts/fit-goal-dist.ts`; `compare-movement.ts`, 60-day burn-in + 0.25 year; output in `artifacts/validation/c7e/fit-grid.*`, worktree):
+
+| `goalDistScaleM` | Straightness | Turning (rad) | Path (m/h) | **Loss** |
+| --- | --- | --- | --- | --- |
+| off | 0.228 | 0.861 | 182 | **0.163** |
+| 50 m | 0.257 | 1.777 | 85 | 0.852 |
+| 100 m | 0.280 | 1.866 | 91 | 0.939 |
+| 200 m | 0.222 | 2.081 | 90 | 1.280 |
+| 400 m | 0.269 | 1.804 | 104 | 0.849 |
+| 800 m | 0.316 | 1.722 | 100 | 0.735 |
+| 1,600 m | 0.300 | 1.427 | 114 | 0.445 |
+| 3,200 m | 0.327 | 1.102 | 110 | 0.248 |
+
+**Decision** (rule §9.2): the best grid value (3,200 m, L 0.248) does not beat off (0.163), so **`goalDistScaleM` stays 0**.
+- Offering one ranked goal raises straightness at every scale.
+- But it halves the path rate and raises turning: animals take fewer and shorter trips and move less per half-hour.
+- The hyperbolic-rank family therefore cannot trade straightness against path shape better than the current shortlist.
+
+**Food package at the chosen setting (§9.3): not chosen.**
+- L = 0.493 (straightness 0.158, turning 1.52 rad, path 344 m/h).
+- It is also infeasible: T-PTY-1 2.03 < 2.8. Range 7.41 km², travel share 0.49, T-FOOD-2 0.71.
+
+**Every development diagnostic at the chosen setting** (the current model, `goalDistScaleM` 0, seeds 3909 and 4010):
+
+*C12 Taï rows* (sim vs real):
+
+| Row | Sim | Real |
+| --- | --- | --- |
+| Travel share | 0.25 | 0.20 |
+| Rest | 0.32 | 0.40 |
+| Feed | 0.43 | 0.40 |
+| 30-min step | 5.8 m | 95 m |
+| Step in territory radii | 0.010 | 0.031 |
+| Turning | 0.86 rad | 0.76 rad |
+| Path | 182 m/h | 314 m/h |
+| Straightness | 0.23 | 0.50 |
+| Territory level | 0.31 | 0.46 |
+| Periphery ÷ core travel | 4.5 | 1.4 |
+| Party size | 1.5 | 6 |
+| Territory at matched size | 0.91 km² | 13.6 km² |
+
+*Field observer:* T-RNG-1 1.99 km², T-PTY-1 3.25, T-FOOD-2 0.77, T-ACT-1 0.46, T-ACT-2 0.26.
+
+*Diagnostic:* party size 2.61, straightness 0.20, turning 0.96 rad, stationary half-hours 0.51. Path between patches 0.98 (trees 0.61, callers 0.18, water 0.11).
+
+**Bench:** not needed. The chosen setting is off, and the new code path runs only when `goalDistScaleM` > 0.
