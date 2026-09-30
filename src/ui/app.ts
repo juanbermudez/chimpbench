@@ -28,7 +28,9 @@ export interface Ctx {
   world(): World; selected(): Chimp | undefined;
   select(id: number, o?: { focus?: boolean; tab?: InspectorTab }): void;
   highlight(troopId: number | null): void; hoverTroop(troopId: number | null): void;
-  setTab(tab: InspectorTab): void; setView(v: ViewMode): void; toggleLayer(l: Layer, on?: boolean): void;
+  setTab(tab: InspectorTab): void;
+  /** fromScene: the scene already changed view itself (wheel zoom-through); only the UI follows. */
+  setView(v: ViewMode, o?: { fromScene?: boolean }): void; toggleLayer(l: Layer, on?: boolean): void;
   openSociety(troop?: number | 'all'): void; closeSociety(): void;
   setDock(d: Dock): void; openSettings(): void;
   fireExperiment(kind: InterventionKind): void;
@@ -134,10 +136,11 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     },
     hoverTroop(id) { if (state.hoverTroopId !== id) { state.hoverTroopId = id; app.dataset.hoverTroop = id === null ? '' : String(id); minimap.update(); } },
     setTab(tab) { state.tab = tab; ctx.refresh(); },
-    setView(v) {
+    setView(v, o = {}) {
       state.view = v; app.dataset.view = v;
-      const s = deps.getScene(); s?.setView(v);
-      if (v !== 'rts') s?.focusChimp(state.selectedId);
+      // A zoom-through has already placed the camera (on the animal or ground under the cursor): pushing the view back
+      // into the scene would refocus the selected chimp and jump away from where the user zoomed.
+      if (!o.fromScene) { const s = deps.getScene(); s?.setView(v); if (v !== 'rts') s?.focusChimp(state.selectedId); }
       syncDock(); syncPanels();
       if (v === 'cinematic') updateCaption();
     },
@@ -545,6 +548,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     /** Call every animation frame; DOM work runs at ~4 Hz, one panel step per frame. */
     tick(now: number) {
       if (state.view !== 'cinematic') hud.frame(now);
+      if (shown.left) minimap.frame();
       if (step >= STEPS.length) { if (now - lastUi < 250) return; lastUi = now; prepare(); step = 0; }
       STEPS[step++](false);
     },
