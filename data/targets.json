@@ -18,12 +18,12 @@
   "Instrument validation against truth (sampling accuracy, classifier precision and recall) is allowed at any time, because truth is not a field target; each validation run is logged."
  ],
  "protocolFreeze": {
-  "stage": "ChimpBench rename",
+  "stage": "Neutral-voice strings",
   "date": "2026-09-30",
-  "hash": "400aa83eac468b54",
+  "hash": "3c7b860f2833d182",
   "previous": {
-   "stage": "Seed replacement",
-   "hash": "839e47235ca4b43f"
+   "stage": "ChimpBench rename",
+   "hash": "400aa83eac468b54"
   }
  },
  "protocolLog": [
@@ -1122,6 +1122,31 @@
    "seen": "none",
    "param": "freeze: 839e47235ca4b43f -> 400aa83eac468b54 (cosmetic string rename only)",
    "reason": "ChimpBench rename",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "combined proof (lean plan), C9 proof",
+   "class": "freeze"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "science/simulation owner",
+   "seen": "none",
+   "param": "cosmetic string rename (neutral voice): T-IGE-1's accept basis 'ChimpBench communities are small' -> 'the simulated communities are small'; scripts/compare-patrols.ts T-PAT-3 Ngogo source 'far larger than mine' -> 'far larger than the simulated communities'; the fruit-guide note in guide-data.ts; the same strings in docs/data; no metric, band or rule change; observer record hashes and the goldens unchanged (scripts/remote/verify.ts)",
+   "reason": "the guide is neutral-voice ChimpBench (user decision)",
+   "targets": [
+    "T-IGE-1",
+    "T-PAT-3"
+   ],
+   "verdicts": "none",
+   "class": "cosmetic"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "science/simulation owner",
+   "seen": "none",
+   "param": "freeze: 400aa83eac468b54 -> 3c7b860f2833d182 (cosmetic string rename only)",
+   "reason": "neutral-voice strings",
    "targets": [
     "all"
    ],
