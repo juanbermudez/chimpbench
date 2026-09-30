@@ -1,6 +1,7 @@
 import type { Chimp, DigestEvent, PartnerTally, Troop, Tree, Water, Weather, World } from '../types';
 import { DEFAULTS } from './params.gen';
 import { defaultSettings, paramsOf, type ParamSettings } from './params';
+import type { Intent } from '../decide/gate';
 
 // Clock and scale. Every behavioral constant lives in the parameter registry (data/params.json, generated into
 // params.gen.ts); hot code reads the resolved values through paramsOf(world) (params.ts). These exports are the
@@ -38,6 +39,8 @@ export interface ChimpX {
   joinCall: number; joinCaller: number; joinAt: number; joinX: number; joinZ: number;
   /** Stage C10 (travelHoo): the companion whose travel hoo this animal last heard, and when (absent until one is heard, so worlds with the switch off are unchanged). */
   hooFrom?: number; hooAt?: number;
+  /** Stage C13 (rgOn): the rules policy's current intention (absent until the first RG decision, so worlds with the switch off are unchanged). */
+  rgIntent?: Intent;
   trees: number[]; fruitNear: number; preyId: number; stims: number[];
   newcomers: number;
   // social bookkeeping
@@ -130,7 +133,7 @@ export type SimWorld = World & { sim: SimState };
  * ChimpX and SimState keys that exist only once their mechanism has fired (so worlds with the switch off keep their
  * shape and hashes). The save check (src/persist/envelope.ts worldShapeProblem) ignores them.
  */
-export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt'];
+export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent'];
 export const OPTIONAL_SIM: readonly string[] = ['fission'];
 
 export function newX(): ChimpX {

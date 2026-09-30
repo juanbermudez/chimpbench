@@ -1066,6 +1066,18 @@
    ],
    "verdicts": "combined proof (lean plan)",
    "class": "freeze"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "science/simulation owner (stage C13, user-approved)",
+   "seen": "C13a: fitted rows T-ACT-1 to 4, T-PTY-1 and T-RNG-4 on simulation truth in the Jev free arms (seeds 6501-6905, field, 5 scored days; artifacts/decide-ft/jev-test/free-arms.md); C13b: the U arm's hunger medians there and the C8 agent's fallback share of lactating females; no held-out value",
+   "param": "model change before the proof, two switchable parts, pre-registered in docs/realism-design.md \"C13 pre-registration\" before any C13 run. C13a (rgOn 1): rules-driven chimps aged 8+ hold an intention (the Jev free arms' gate) and otherwise sample the bounded menu by a softmax of the rules scores at rgTemperature (0.152 compressed, 0.164 field; design rule: median top-option probability 0.77 on dev seed 6301), drawing from world.rng. C13b (intakeValue 1): feeding and trip worth scale with expected intake per hour, walk included, relative to the animal's ripe-fruit rate (leaves at their lower rate). Both profiles; ablation sets C13a (rgOn 0) and C13b (intakeValue 0); both off is hash-identical to before. Fitted rows tuned under the argmax rules (T-ACT-2, T-PTY-1, T-RNG-4, T-PAT-1) will shift and are not re-tuned; the lean proof judges them.",
+   "reason": "the argmax rules are over-deterministic (the gate plus sampling cut the summed band distance on those rows from 2.04 to 0.93, 5/5 seeds, no hunger cost), and they value fallback food without its lower intake rate (lactating females spend 16% of daylight on fallback at half the fruit rate)",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "none (no proof value exists)",
+   "class": "model change"
   }
  ],
  "targets": [
@@ -7439,6 +7451,19 @@
    "url": "https://doi.org/10.1371/journal.pone.0076073",
    "access": "FT",
    "bibliographyVerified": "docs/research.md (PMC3783376); figures checked in the PLoS ONE full text, 2026-09-29"
+  },
+  "charnov1976": {
+   "authors": "Charnov EL",
+   "year": 1976,
+   "title": "Optimal foraging, the marginal value theorem",
+   "journal": "Theoretical Population Biology",
+   "volume": "9",
+   "issue": "2",
+   "pages": "129-136",
+   "doi": "10.1016/0040-5809(76)90040-X",
+   "url": "https://doi.org/10.1016/0040-5809(76)90040-X",
+   "access": "Abs",
+   "bibliographyVerified": "docs/research.md entry (theory; standard reference)"
   }
  },
  "c12Fitted": {

@@ -60,6 +60,14 @@
     "patrolReleaseContactP": 0
    },
    "note": "All C6 patrol corrections off: the C6 community danger grid instead of per-chimp contact memory (P2), the C6 cluster instead of single file and calls allowed (P4a), the energy gate back (A2), the heard-strangers boost (P1), staleness-only routes (A1), the 2.5 h cap (A3), the alpha lead bonus (A4), uniform pace and no release (P4a). Female participation settings (P3) keep their values, which are today's literals."
+  },
+  "C13a": {
+   "params": { "rgOn": 0 },
+   "note": "The rules decision policy (intention gate and sampling) off: the argmax rules (tests/sim-rg.test.ts)."
+  },
+  "C13b": {
+   "params": { "intakeValue": 0 },
+   "note": "Food valued by intake rate off: feeding and trip worth as before C13 (with rgOn 0 as well, hash-identical to the model before C13)."
   }
  }
 }

@@ -103,7 +103,7 @@ test('stimuli are perceived locally: only chimps near a snake know about it', ()
 
 test('UD: daytime party use adds independent members × Δt to the party cell; isopleths and the range follow the use', async () => {
   const { cellAt, dailyTerritory, gridOf, levels, recordUse } = await import('../src/sim/territory');
-  const w = createWorld(48);
+  const w = createWorld(48, { params: { rgOn: 0, intakeValue: 0 } }); // the recorded scenario (pre-C13)
   runTo(w, 12); // midday: daylight, parties awake
   const s = simOf(w), g = gridOf(w, paramsOf(w)), west = w.troops[0];
   s.ud[west.id] = new Array(g.n * g.n).fill(0); s.udNew[west.id] = {};
