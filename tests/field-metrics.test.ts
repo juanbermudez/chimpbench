@@ -12,6 +12,8 @@ import { clusterBootstrap, cox, poissonGlm, seededRng, type CoxRow } from '../sr
 import { SEALED, letFivePooled, letFiveSeed, type ScenarioCensus } from '../src/field/early-life';
 import { runFieldJob } from '../src/field/run';
 import { spawnSync } from 'node:child_process';
+import { frozen, protocolHash } from '../scripts/lib/protocol-hash';
+import { REGISTRY_HASH } from '../src/sim/params';
 
 const metric = (id: string) => METRICS.find(m => m.id === id)!;
 /** Deterministic standard normal from a hash (Box–Muller). */
@@ -416,9 +418,14 @@ test('C8 sealing: sealed rows publish only the id, the metric, the role and "sea
   assert.match(unsealRefusal({ stage: 'C8', hash: 'a', registryHash: 'r' }, 'b', 'r')!, /protocol hash/);
   assert.match(unsealRefusal({ stage: 'C8', hash: 'a', registryHash: 'r' }, 'a', 's')!, /registry hash/);
   assert.equal(unsealRefusal({ stage: 'C8 proof freeze', hash: 'a', registryHash: 'r' }, 'a', 'r'), null);
-  const r = spawnSync(process.execPath, ['--import', 'tsx', 'scripts/field-metrics.ts', '--unseal', '--days', '0.01', '--seeds', '3', '--no-pool'], { encoding: 'utf8', timeout: 60000 });
-  assert.notEqual(r.status, 0, 'the script refuses');
-  assert.match(r.stderr, /--unseal refused/);
+  // the script's own gate on this checkout: once the C8 freeze is taken and current, --unseal is allowed, and a test must
+  // never run an unseal (it would compute sealed rows); before that, the script must refuse
+  const fz = frozen(), allowed = unsealRefusal({ stage: fz.stage ?? undefined, hash: fz.hash ?? undefined, registryHash: fz.registryHash ?? undefined }, protocolHash(), REGISTRY_HASH) === null;
+  if (!allowed) {
+    const r = spawnSync(process.execPath, ['--import', 'tsx', 'scripts/field-metrics.ts', '--unseal', '--days', '0.01', '--seeds', '3', '--no-pool'], { encoding: 'utf8', timeout: 60000 });
+    assert.notEqual(r.status, 0, 'the script refuses');
+    assert.match(r.stderr, /--unseal refused/);
+  } else assert.ok(fz.stage?.startsWith('C8'), 'an allowed unseal rests on a C8 freeze');
 });
 
 test('C8 summary counts: encoded rows land in "encoded" whatever their verdict; counted rows in their verdict (WP3 finding 2)', () => {

@@ -1577,6 +1577,29 @@
    ],
    "verdicts": "combined proof (lean plan), C9 proof",
    "class": "freeze"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "science/simulation owner (integrator)",
+   "seen": "none (the child process output was captured by the test runner and discarded, not viewed)",
+   "param": "right after the C8 freeze, one run of the test suite spawned scripts/field-metrics.ts --unseal --days 0.01 --seeds 3 --no-pool (tests/field-metrics.test.ts 'C8 sealing'), which the script now accepted: 0.01 days on development seed 3, not a proof seed. The test now asks the script's own gate first and spawns only while unsealing is refused, so no test can run an unseal",
+   "reason": "the test assumed no C8 freeze existed",
+   "targets": [
+    "T-DEM-14",
+    "T-DEM-15",
+    "T-DEM-16",
+    "T-DEM-17",
+    "T-DEM-18",
+    "T-DEM-19",
+    "T-DEM-20",
+    "T-DEM-21",
+    "T-DEM-22",
+    "T-DEM-23",
+    "T-DEM-24",
+    "T-LET-5"
+   ],
+   "verdicts": "none",
+   "class": "sealing audit"
   }
  ],
  "targets": [
