@@ -1,6 +1,6 @@
 # AGENTS.md
 
-MGOGO is a 3D eastern-chimpanzee society simulation (Kibale-inspired) and a live demo of a local decision model, GLiNER2.5-Decide, choosing actions from the state a chimp perceives. Vite 8, TypeScript 7 strict, three.js 0.186 (WebGL), vanilla DOM UI, `node:test` via tsx. Local git repo (no remote, `main`); parallel agents work in git worktrees and the integrator merges.
+ChimpBench (formerly MGOGO) is a 3D eastern-chimpanzee society simulation (Kibale-inspired) and a live demo of a local decision model, GLiNER2.5-Decide, choosing actions from the state a chimp perceives. Vite 8, TypeScript 7 strict, three.js 0.186 (WebGL), vanilla DOM UI, `node:test` via tsx. Local git repo (no remote, `main`); parallel agents work in git worktrees and the integrator merges.
 
 ## Commands
 
@@ -72,6 +72,7 @@ Frame loop order (in `src/main.ts`): `pumpDecisions` → `advance` (clock runs `
 - **Saves:** World must stay JSON-lossless (no Map/Set/class instances, `undefined` values, non-finite numbers or shared references; `tests/persist-envelope.test.ts` guards it). Changing `ChimpX`/`SimState` keys changes `STATE_SHAPE` and marks older saves incompatible (by design during the realism program; no migrations). Bump `STATE_VERSION` in `src/persist/envelope.ts` when a field keeps its name but changes meaning.
 - **Troop fields:** `troop.alphaId` is `-1` during a contested vacancy (up to 48 h). Since stage C6 `troop.center`/`radius` are the use-weighted centre and equal-area radius of the 95% utilization isopleth (`troop.range`, updated daily by `src/sim/territory.ts`); nothing scripts range shifts.
 - **Interventions:** `applyIntervention(world, kind, { troopId, position })` treats `position` as the observer's focus. Each protocol places its stimulus relative to it.
+- **Naming:** the product is ChimpBench. Env vars (`MGOGO_*`), debug hooks (`__MGOGO_*__`), storage keys and names (`mgogo.sqlite3`, `mgogo-pool`, `mgogo-store`, `mgogo:uncapped`, `mgogo.sidebar`, `mgogo.sound.v1`) and shader/material flags and cache keys stay `MGOGO`-prefixed on purpose, for compatibility with saves, settings, scripts and running sessions; don't rename them. Exports are `.chimpbench.json.gz`; `.mgogo.json.gz` still imports.
 - **Terminology:** use "community" in UI and docs ("troop" is baboon usage) and "party" for temporary subgroups. The code type is still `Troop`.
 - **Style:** compact TypeScript, comments explain why. Match surrounding code. No new npm dependencies without strong reason (three/addons are available).
 

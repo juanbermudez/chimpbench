@@ -1,4 +1,4 @@
-# MGOGO — research and simulation contract
+# ChimpBench — research and simulation contract
 
 Research pass: **2026-09-28**. Proposed baseline: **eastern chimpanzees (*Pan troglodytes schweinfurthii*) in a synthetic Kibale-inspired moist forest in Uganda**. The map, communities, individuals, initial populations, and event histories are invented. This is not a reconstruction of Ngogo or Kanyawara and not a validated model of chimpanzee behavior.
 
@@ -146,7 +146,7 @@ V0 carries actor ID, decision revision, ecological elapsed time, bounded candida
 
 At admission, `applyDecision` rejects a changed actor revision, missing/dead actor, or pair no longer in the current eligible menu. Cancelled or reset requests cannot alter the next world. Fast-forward can age a response out even when wall-clock latency is short. The inspector displays applied/discarded counts and the last inference's timing, input tokens, and score.
 
-MGOGO launches its own worker with offline Hugging Face settings, reusing GHN's interpreter and weights without changing GHN. No API key, hosted inference, or automatic CPU fallback is used. Model/checkpoint/runtime identity and full request/response receipts are saved under `artifacts/`; these do **not** include every admission and committed world event, so full replay is not yet implemented. A future scientific run should add perception revisions, dependency hashes, ecological deadlines, and immutable admission/outcome events.
+ChimpBench launches its own worker with offline Hugging Face settings, reusing GHN's interpreter and weights without changing GHN. No API key, hosted inference, or automatic CPU fallback is used. Model/checkpoint/runtime identity and full request/response receipts are saved under `artifacts/`; these do **not** include every admission and committed world event, so full replay is not yet implemented. A future scientific run should add perception revisions, dependency hashes, ecological deadlines, and immutable admission/outcome events.
 
 ## 11. Time has explicit units
 
@@ -623,7 +623,7 @@ Taï chimpanzees are *P. t. verus*. Gombe, Mahale, Budongo and Kibale chimpanzee
 
 ## Analogies from other primates (not used for targets)
 
-**These are analogies only: never a target and never a parameter source.** Baboons and macaques differ from chimpanzees in life history, dispersal and ecology. These studies show what kinds of early-life effects exist in long-lived primates; they size nothing in MGOGO. Each was checked on 29 September 2026 (FT = full text, Abs = abstract).
+**These are analogies only: never a target and never a parameter source.** Baboons and macaques differ from chimpanzees in life history, dispersal and ecology. These studies show what kinds of early-life effects exist in long-lived primates; they size nothing in ChimpBench. Each was checked on 29 September 2026 (FT = full text, Abs = abstract).
 
 - **Cumulative early adversity, Amboseli baboons** [tung2016] (FT, PMC4838827).
   - Population: *Papio cynocephalus*, Amboseli, Kenya; data 1983–2013.

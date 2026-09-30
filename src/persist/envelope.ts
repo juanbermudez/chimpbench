@@ -84,7 +84,7 @@ export const paramsNote = (c: ParamsChange) => `Created with an older parameter 
 /** Structural check on the loaded world itself (also covers legacy exports that carry no stamp). */
 export function worldShapeProblem(world: World): string {
   const w = world as World & { sim?: object };
-  if (!w || !Array.isArray(w.chimps) || !Array.isArray(w.troops) || !Array.isArray(w.trees) || typeof w.tick !== 'number' || typeof w.rng !== 'number') return 'not a MGOGO world';
+  if (!w || !Array.isArray(w.chimps) || !Array.isArray(w.troops) || !Array.isArray(w.trees) || typeof w.tick !== 'number' || typeof w.rng !== 'number') return 'not a ChimpBench world';
   if (!w.sim) return 'world has no simulation state (world.sim)';
   // keys that appear only once their mechanism fires (travel hoo, fission) are not part of the layout
   const keys = (o: object, optional: readonly string[]) => Object.keys(o).filter(k => !optional.includes(k)).sort().join(',');
@@ -170,7 +170,7 @@ export function parseEnvelope(text: string): SaveEnvelope {
   let raw: unknown;
   try { raw = JSON.parse(text); } catch (e) { throw new SaveError(`Save is not valid JSON (${e instanceof Error ? e.message : e})`, 'corrupt'); }
   const env = (isLegacy(raw) ? fromLegacy(raw) : raw) as SaveEnvelope;
-  if (!env || typeof env !== 'object' || typeof env.format !== 'number' || !env.world) throw new SaveError('Not a MGOGO save', 'unknown-format');
+  if (!env || typeof env !== 'object' || typeof env.format !== 'number' || !env.world) throw new SaveError('Not a ChimpBench save', 'unknown-format');
   const compat = compatibility(env);
   if (!compat.ok) throw new SaveError(`Cannot open this save: ${compat.reason}`, 'incompatible');
   const problem = worldShapeProblem(env.world);

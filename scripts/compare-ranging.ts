@@ -1,6 +1,6 @@
 // Real vs simulated home ranges (realism Stage C12, part a). Computes the same kernel home-range statistics on the
 // Ngogo GPS subsample (Sandel et al., Zenodo 10.5281/zenodo.18603419, CC BY 4.0; supplement to Science
-// doi:10.1126/science.adz4944) and on MGOGO field-profile worlds sampled the same way, then writes a similarity
+// doi:10.1126/science.adz4944) and on ChimpBench field-profile worlds sampled the same way, then writes a similarity
 // scorecard, normalized overlay figures and a non-sensitive summary for the guide.
 //
 //   pnpm exec tsx scripts/compare-ranging.ts                          # 5 seeds × 2 years after a 180-day burn-in, 2 workers
@@ -290,7 +290,7 @@ async function main() {
     gapHoursMedian: { real: r4(median(realYears.flatMap(y => y.dispHours))), sim: simAn.length ? r4(median(simAn.flatMap(s => s.years.flatMap(y => y.dispHours)))) : null },
     real: { fixes: realAll.length, individuals: realSampling.individuals, individualYears: realSampling.indYears, years: [ryKeys[0], ryKeys[ryKeys.length - 1]], bandwidthM: Math.round(hReal), daysWith1Fix: realSampling.daysWith1, daysWith2Fixes: realSampling.daysWith2 },
   };
-  const attribution = 'Real data: Sandel A, Lee KC, Angedakin S, Birungi C, Kanweri D, Kalunga D et al. (2026) Space Use Analysis for "Lethal conflict after group fission in wild chimpanzees". Zenodo, doi:10.5281/zenodo.18603419, CC BY 4.0; supplement to Sandel AA, He Y, Ren J et al. (2026) Lethal conflict after group fission in wild chimpanzees. Science 392(6794):216–220, doi:10.1126/science.adz4944. Derived statistics and normalized maps by MGOGO; not endorsed by the authors.';
+  const attribution = 'Real data: Sandel A, Lee KC, Angedakin S, Birungi C, Kanweri D, Kalunga D et al. (2026) Space Use Analysis for "Lethal conflict after group fission in wild chimpanzees". Zenodo, doi:10.5281/zenodo.18603419, CC BY 4.0; supplement to Sandel AA, He Y, Ren J et al. (2026) Lethal conflict after group fission in wild chimpanzees. Science 392(6794):216–220, doi:10.1126/science.adz4944. Derived statistics and normalized maps by ChimpBench; not endorsed by the authors.';
   const method = {
     projection: 'WGS84 → UTM 36N (EPSG:32636) for real fixes; the simulation is already in metres.',
     kernel: 'Bivariate normal kernel, fixed h = median over individual-years of mean(sd x, sd y)·n^(−1/6) (per dataset: real; each sim seed); 100-node grid over each study-year extended by its span (adehabitatHR kernelUD grid = 100, extent = 1, same4all = TRUE).',
@@ -372,7 +372,7 @@ function realFission(years: YearAnalysis[], network: ReturnType<typeof parseClus
 }
 
 function writeFigures(dir: URL, x: { realIndMap: NormGrid; simIndMap: NormGrid | null; realCommMap: NormGrid; simCommMap: NormGrid | null; guide: { distributions: Record<string, { lo: number; hi: number; bins: number; real: (number | null)[]; sim: (number | null)[] | null; simBand: { lo: (number | null)[]; hi: (number | null)[] } | null }> }; fission: ReturnType<typeof realFission>; rows: { id: string; label: string; distance: string; real: { value: number; lo: number; hi: number }; sim: { value: number; lo: number; hi: number }; verdict: string }[]; simAn: { between: { ba: number; sepR: number }[]; splits: { groupBA: number; silhouette: number }[] }[] }) {
-  const src = 'Real: Ngogo GPS subsample 2011–2023 (Sandel et al. 2026, Zenodo 10.5281/zenodo.18603419, CC BY 4.0). Sim: MGOGO field profile.';
+  const src = 'Real: Ngogo GPS subsample 2011–2023 (Sandel et al. 2026, Zenodo 10.5281/zenodo.18603419, CC BY 4.0). Sim: ChimpBench field profile.';
   const ind = [{ name: 'Real (Ngogo)', grid: x.realIndMap, color: REAL }, ...(x.simIndMap ? [{ name: 'Simulated', grid: x.simIndMap, color: SIM }] : [])];
   writeFileSync(new URL('ud-individual.svg', dir), heatmapFigure('Individual annual ranges, normalized', `Mean of individual-year UDs, each centred, scaled by its range radius and rotated. ${src}`, ind));
   const com = [{ name: 'Real (Ngogo 2011–14)', grid: x.realCommMap, color: REAL }, ...(x.simCommMap ? [{ name: 'Simulated', grid: x.simCommMap, color: SIM }] : [])];

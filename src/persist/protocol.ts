@@ -4,7 +4,7 @@ import type { NewSim, SimRow, SnapshotMeta, SnapshotRow } from './schema';
 
 /**
  * ready: OPFS-backed and writable. memory: no OPFS here (private window, old browser); works until the tab closes.
- * locked: another tab owns the library. readonly: written by a newer MGOGO. released: handed to another tab.
+ * locked: another tab owns the library. readonly: written by a newer ChimpBench. released: handed to another tab.
  * error: storage could not start (message says why).
  */
 export type StoreState = 'ready' | 'memory' | 'locked' | 'readonly' | 'released' | 'error';

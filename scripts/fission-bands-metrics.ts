@@ -29,7 +29,7 @@ const med = (v: number[]) => quantile(v, 0.5), rng = mulberry32(20260929), boot:
 for (let k = 0; k < 4000; k++) { const s: number[] = []; for (let i = 0; i < years.length; i++) s.push(years[Math.floor(rng() * years.length)].ratio); boot.push(med(s)); }
 const out = { rule: 'median over 2017-2022 of yearly (patrols per 10 adult males, smaller daughter) / (larger daughter); band = bootstrap 90% CI over years', years,
   median: Math.round(med(years.map(y => y.ratio)) * 1e4) / 1e4, band: [quantile(boot, 0.05), quantile(boot, 0.95)].map(v => Math.round(v * 1e4) / 1e4),
-  credit: 'Sandel AA et al. 2026, Science, doi:10.1126/science.adz4944; data Dryad doi:10.5061/dryad.sf7m0cgkg (CC0). Derived statistics by MGOGO.' };
+  credit: 'Sandel AA et al. 2026, Science, doi:10.1126/science.adz4944; data Dryad doi:10.5061/dryad.sf7m0cgkg (CC0). Derived statistics by ChimpBench.' };
 const dir = process.argv.includes('--out') ? process.argv[process.argv.indexOf('--out') + 1] : 'artifacts/validation/c9';
 mkdirSync(dir, { recursive: true });
 writeFileSync(`${dir}/fission-bands.json`, JSON.stringify(out, null, 1) + '\n');

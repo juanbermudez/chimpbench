@@ -1,7 +1,7 @@
 {
  "version": 1,
  "generated": "2026-09-28",
- "about": "Quantitative field targets for MGOGO (docs/realism-design.md §2). Values are as reported by the sources; \"accept\" is the band the simulation must hit, scaled to MGOGO communities (12–22 members, 3–7 adult males) where stated. Evidence: H multi-site or large-sample full text; M one site, abstract-only or derived; L secondary, captive or qualitative. role fitted = may be used for calibration; held-out = never used for tuning. encoded = the mechanism was designed from this pattern, so a match is weak evidence.",
+ "about": "Quantitative field targets for ChimpBench (docs/realism-design.md §2). Values are as reported by the sources; \"accept\" is the band the simulation must hit, scaled to ChimpBench communities (12–22 members, 3–7 adult males) where stated. Evidence: H multi-site or large-sample full text; M one site, abstract-only or derived; L secondary, captive or qualitative. role fitted = may be used for calibration; held-out = never used for tuning. encoded = the mechanism was designed from this pattern, so a match is weak evidence.",
  "counts": {
   "targets": 101,
   "fitted": 37,
@@ -18,12 +18,12 @@
   "Instrument validation against truth (sampling accuracy, classifier precision and recall) is allowed at any time, because truth is not a field target; each validation run is logged."
  ],
  "protocolFreeze": {
-  "stage": "Seed replacement",
+  "stage": "ChimpBench rename",
   "date": "2026-09-30",
-  "hash": "839e47235ca4b43f",
+  "hash": "400aa83eac468b54",
   "previous": {
-   "stage": "Lean proof plan",
-   "hash": "c6dc9be135771d16"
+   "stage": "Seed replacement",
+   "hash": "839e47235ca4b43f"
   }
  },
  "protocolLog": [
@@ -1106,6 +1106,30 @@
   },
   {
    "date": "2026-09-30",
+   "by": "science/simulation owner",
+   "seen": "none",
+   "param": "cosmetic string rename MGOGO -> ChimpBench (user decision) in data/targets.json notes and T-IGE-1's accept basis ('ChimpBench communities are small') and the field notes of T-PAT-8, T-BRD-1 and T-FIS-5, scripts/compare-*.ts credits and titles, the band scripts, guide-data.ts and docs/data credits; no metric, band or rule change; observer record hashes and the goldens unchanged (scripts/remote/verify.ts)",
+   "reason": "product renamed to ChimpBench in user-facing text",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "none",
+   "class": "cosmetic"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "science/simulation owner",
+   "seen": "none",
+   "param": "freeze: 839e47235ca4b43f -> 400aa83eac468b54 (cosmetic string rename only)",
+   "reason": "ChimpBench rename",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "combined proof (lean plan), C9 proof",
+   "class": "freeze"
+  },
+  {
+   "date": "2026-09-30",
    "by": "science/simulation owner (stage C13, user-approved)",
    "seen": "C13a: fitted rows T-ACT-1 to 4, T-PTY-1 and T-RNG-4 on simulation truth in the Jev free arms (seeds 6501-6905, field, 5 scored days; artifacts/decide-ft/jev-test/free-arms.md); C13b: the U arm's hunger medians there and the C8 agent's fallback share of lactating females; no held-out value",
    "param": "model change before the proof, two switchable parts, pre-registered in docs/realism-design.md \"C13 pre-registration\" before any C13 run. C13a (rgOn 1): rules-driven chimps aged 8+ hold an intention (the Jev free arms' gate) and otherwise sample the bounded menu by a softmax of the rules scores at rgTemperature (0.152 compressed, 0.164 field; design rule: median top-option probability 0.77 on dev seed 6301), drawing from world.rng. C13b (intakeValue 1): feeding and trip worth scale with expected intake per hour, walk included, relative to the animal's ripe-fruit rate (leaves at their lower rate). Both profiles; ablation sets C13a (rgOn 0) and C13b (intakeValue 0); both off is hash-identical to before. Fitted rows tuned under the argmax rules (T-ACT-2, T-PTY-1, T-RNG-4, T-PAT-1) will shift and are not re-tuned; the lean proof judges them.",
@@ -1892,7 +1916,7 @@
     "lo": 5,
     "hi": 12,
     "units": "per community-year",
-    "basis": "Kanyawara and Taï; MGOGO communities are small"
+    "basis": "Kanyawara and Taï; ChimpBench communities are small"
    },
    "evidence": "H",
    "role": "fitted",
@@ -2404,7 +2428,7 @@
      "n": "211 months",
      "method": "patrol dates of Langergraber et al. 2017 (Dryad kk33f) joined to the monthly ripe fruit score of Potts et al. 2020 (Dryad gf1vhhmk8); scripts/patrol-bands-metrics.ts",
      "source": "langergraber2017",
-     "note": "computed by MGOGO from open data (CC0); 12-month block bootstrap -0.048 to 0.232 (note, not the band); rho with the share of trees with fruit 0.110 (note)"
+     "note": "computed by ChimpBench from open data (CC0); 12-month block bootstrap -0.048 to 0.232 (note, not the band); rho with the share of trees with fruit 0.110 (note)"
     }
    ],
    "accept": {
@@ -2444,7 +2468,7 @@
      "n": "625 stops, 283 group-days",
      "method": ">= 5-min stops at peripheral hills or low-lying places in the overlap zone (S3 Data, CC BY 4.0); cluster bootstrap over group-days; scripts/patrol-bands-metrics.ts",
      "source": "lemoine2023",
-     "note": "computed by MGOGO from open data; Taï, not Kibale (western subspecies)"
+     "note": "computed by ChimpBench from open data; Taï, not Kibale (western subspecies)"
     }
    ],
    "accept": {
@@ -2929,7 +2953,7 @@
      "n": "6 years",
      "method": "patrol-data-quarterly.csv x population_snapshots.csv (adult males); scripts/fission-bands-metrics.ts",
      "source": "sandel2026",
-     "note": "computed by MGOGO from open data (CC0) before any C9 run"
+     "note": "computed by ChimpBench from open data (CC0) before any C9 run"
     }
    ],
    "accept": {

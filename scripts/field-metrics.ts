@@ -146,7 +146,7 @@ async function main() {
 
   // console report
   const line = (r: ScoreRow) => `| ${r.id}${r.encoded ? ' (enc.)' : ''}${r.flags.map(x => ` *${x}*`).join('')} | ${r.metric} | ${r.band} | ${r.perSeed.map(v => f(v)).join(' / ') || '—'} | ${f(r.pooled)}${r.sd !== null ? ` ± ${f(r.sd)}` : ''} | ${f(r.truth)} | **${r.verdict}**${r.scaleSensitive ? ' ᶜ' : ''} | ${r.note} |`;
-  console.log(`\nMGOGO field-observer scorecard — profile ${PROFILE}, natural aging ${DAYS} days × seeds ${SEEDS.join(', ')} (${((performance.now() - t0) / 1000).toFixed(0)} s)\n`);
+  console.log(`\nChimpBench field-observer scorecard — profile ${PROFILE}, natural aging ${DAYS} days × seeds ${SEEDS.join(', ')} (${((performance.now() - t0) / 1000).toFixed(0)} s)\n`);
   for (const role of ['fitted', 'held-out'] as const) {
     const s = summary[role];
     console.log(`### ${role === 'fitted' ? 'Fitted' : 'Held-out'} targets: ${s.pass} pass, ${s.tuned} tuned pass, ${s.fail} fail, ${s.inconclusive} inconclusive, ${s.insufficient} insufficient data, ${s['n/a']} n/a (mechanism missing)${s.scale ? `, ${s.scale} not scored (scale)` : ''}${s.structural ? `, ${s.structural} structural` : ''}${s.compromised ? `, ${s.compromised} compromised` : ''}${s.instrument ? `, ${s.instrument} instrument below bar` : ''}${s.unscorable ? `, ${s.unscorable} not scorable` : ''}${s.encoded ? `, ${s.encoded} encoded (counted apart)` : ''}\n`);

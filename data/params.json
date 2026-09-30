@@ -1,6 +1,6 @@
 {
  "version": 1,
- "about": "MGOGO parameter registry (docs/realism-design.md §4): every behavioral, ecological and demographic constant the simulation reads, with its plausible range, hard limits, evidence and sources. Human-edited, sorted by id. scripts/gen-params.ts validates it and writes src/sim/params.gen.ts. Planned entries document parameter constraints (P-*) whose mechanisms arrive in later stages.",
+ "about": "ChimpBench parameter registry (docs/realism-design.md §4): every behavioral, ecological and demographic constant the simulation reads, with its plausible range, hard limits, evidence and sources. Human-edited, sorted by id. scripts/gen-params.ts validates it and writes src/sim/params.gen.ts. Planned entries document parameter constraints (P-*) whose mechanisms arrive in later stages.",
  "params": [
   {
    "id": "activeDayH",

@@ -133,7 +133,7 @@ function main() {
   const args = process.argv.slice(2), oi = args.indexOf('--out'), out = oi >= 0 ? args[oi + 1] : 'artifacts/validation/patrol';
   const pat8 = patrolFruit(), brd1 = borderStops();
   const res = { generated: new Date().toISOString(), seed: SEED, replicates: B, 'T-PAT-8': pat8, 'T-BRD-1': brd1,
-    credit: 'Langergraber KE, Watts DP, Vigilant L, Mitani JC (2017) PNAS, Dryad doi:10.5061/dryad.kk33f (CC0); Potts KB, Watts DP, Langergraber KE, Mitani JC (2020) Biotropica, Dryad doi:10.5061/dryad.gf1vhhmk8 (CC0); Lemoine S, Samuni L, Crockford C, Wittig RM (2023) PLOS Biol 21: e3002350, S3 Data (CC BY 4.0). Derived statistics by MGOGO.' };
+    credit: 'Langergraber KE, Watts DP, Vigilant L, Mitani JC (2017) PNAS, Dryad doi:10.5061/dryad.kk33f (CC0); Potts KB, Watts DP, Langergraber KE, Mitani JC (2020) Biotropica, Dryad doi:10.5061/dryad.gf1vhhmk8 (CC0); Lemoine S, Samuni L, Crockford C, Wittig RM (2023) PLOS Biol 21: e3002350, S3 Data (CC BY 4.0). Derived statistics by ChimpBench.' };
   mkdirSync(out, { recursive: true });
   writeFileSync(`${out}/bands.json`, JSON.stringify(res, null, 2) + '\n');
   const md = [
