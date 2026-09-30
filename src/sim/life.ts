@@ -148,10 +148,10 @@ function moodFor(c: Chimp, a: string): Mood {
  * first-year mortality ~0.15, and remaining life expectancy at 15 of ~35 y for females and ~20 y for males (e15 35.1 /
  * 21.0 reported). Stage C8 re-fits the baseline by removing the expected epidemic hazard (modelled explicitly in
  * disease.ts), floored at hazardBaseFloor of the all-cause value, so the total matches the life table without counting
- * those deaths twice. Aggression, poor condition (health) and wounds add to it; losing the mother acts through feeding
+ * those deaths twice. `epidemicShare` is the share of that hazard the ecological clock delivers per biological year (1/ageRate). Aggression, poor condition (health) and wounds add to it; losing the mother acts through feeding
  * and protection (C8).
  */
-export function hazard(c: Chimp, P: Params): number {
+export function hazard(c: Chimp, P: Params, epidemicShare = 1): number {
   const a = c.age;
   let h: number;
   if (a < 1) h = P.hazardInfant;
@@ -159,7 +159,7 @@ export function hazard(c: Chimp, P: Params): number {
   else if (a < 15) h = P.hazardJuvenile;
   else if (c.sex === 'female') h = a < 35 ? P.hazardFemaleAdult : a < 45 ? P.hazardFemaleMid : P.hazardFemaleMid * Math.exp(P.hazardFemaleSenescence * (a - 45));
   else h = a < 25 ? P.hazardMaleYoungAdult : a < 35 ? P.hazardMalePrime : P.hazardMalePrime * Math.exp(P.hazardMaleSenescence * (a - 35));
-  h = Math.max(h * P.hazardBaseFloor, h - expectedEpidemicHazard(a, P));
+  h = Math.max(h * P.hazardBaseFloor, h - epidemicShare * expectedEpidemicHazard(a, P));
   h *= 1 + Math.max(0, P.hazardHealthThreshold - c.health) * P.hazardHealthWeight + c.injury * P.hazardInjuryWeight;
   return h;
 }
@@ -207,7 +207,9 @@ export function slowLife(world: World): void {
       if (m && m.alive) m.lactating = world.chimps.some(k => k.alive && k.motherId === m.id && !ix(k).weaned);
     }
     if (x.carryDead !== NEVER && x.carryDead <= world.time) { x.carryDead = NEVER; c.carryingDeadId = -1; episode(world, c, 'life', 'Left the body of my infant behind'); }
-    const p = 1 - Math.exp(-hazard(c, P) * bioDays / 365.25);
+    // epidemics run on the ecological clock, so at ageRate r they deliver 1/r of their deaths per biological year and the
+    // baseline removes only that share (life-course mode stays near the all-cause life table)
+    const p = 1 - Math.exp(-hazard(c, P, 1 / Math.max(1, world.ageRate)) * bioDays / 365.25);
     if (c.health <= 0.02 || random(world) < p) {
       // the orphan cause is kept for unweaned motherless deaths (T-DEM-4's classification does not shift)
       const m = index(world).byId.get(c.motherId);

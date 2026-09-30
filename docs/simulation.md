@@ -871,7 +871,7 @@ Cycling starts at the first-swelling age (10.2–11.4 y) once lactational amenor
 | 35–45 | 0.017 | 0.042·e^(0.08(age−35)) |
 | ≥ 45 | 0.017·e^(0.12(age−45)) | (same curve) |
 
-- **Re-fitted baseline (C8).** The baseline is the all-cause value minus the expected epidemic hazard at the registry's epidemic parameters (arrival × the SIR final size at `epidemicR0` × the mean case fatality, by age class: infants, 5–29 y, 30 y and over), floored at 20% of the all-cause value, so epidemic deaths, now modelled explicitly, are not counted twice. Baseline deaths are recorded as illness (old age after 45).
+- **Re-fitted baseline (C8).** The baseline is the all-cause value minus the expected epidemic hazard at the registry's epidemic parameters (arrival × the SIR final size at `epidemicR0` × the mean case fatality, by age class: infants, 5–29 y, 30 y and over), floored at 20% of the all-cause value, so epidemic deaths, now modelled explicitly, are not counted twice. Epidemics run on the ecological clock, so at ageRate r only 1/r of that hazard is removed (life-course mode stays near the all-cause table). Baseline deaths are recorded as illness (old age after 45).
 - The hazard is multiplied by `1 + 8·max(0, 0.6 − health) + 3·injury`. The old orphan hazard is gone (C8): losing the mother acts through feeding, condition and protection.
 - The death probability per slow step is `1 − exp(−h × bioDays/365.25)`.
 - With health 1 and no injury the baseline plus the expected epidemic hazard gives q1 = 0.15 and e15 ≈ 35 y (female) / 21 y (male), as in the test (analytic life table).
