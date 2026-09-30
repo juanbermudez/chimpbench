@@ -323,6 +323,28 @@ test('C8 snare hazard only on the ground in risky cells', async () => {
   assert.ok(ix(edge).snare > 0, 'walking at the edge');
   assert.equal(ix(inner).snare, 0, 'no risk in the interior (interior risk 0)');
   assert.equal(ix(tree).snare, 0, 'no snares in the trees');
+  assert.equal(edge.snared, true, 'the contract mirror is set');
+  assert.ok(!('snared' in inner) && !('snared' in tree), 'and absent (never undefined) otherwise');
+});
+
+test('C8 contract mirrors: Chimp.sick while a case runs (awake animals cough), deleted on recovery and at death', async () => {
+  const { slowDisease } = await import('../src/sim/disease');
+  const w = createWorld(7, { params: { epidemicBetaPerH: 0, epidemicArrivalPerY: 0, epidemicFatality: 0.000001, epidemicVirulenceSd: 0, coughPerH: 720 } });
+  const t = w.troops[0], [I, J, K] = w.chimps.filter(c => c.alive && c.troopId === t.id && c.age > 10);
+  simOf(w).outbreaks[t.id] = { id: 9, start: w.time, v: 1 };
+  for (const c of [I, J, K]) { ix(c).outbreak = 9; ix(c).ill = w.time + 24; c.vocal = null; }
+  I.action = 'rest'; J.action = 'nest'; ix(J).phase = 2;
+  w.calls.length = 0;
+  slowDisease(w, 1);
+  assert.ok(I.sick === true && J.sick === true && K.sick === true, 'sick while ill');
+  const coughs = w.calls.filter(k => k.kind === 'cough');
+  assert.ok(coughs.some(k => k.callerId === I.id), 'the awake animal coughs');
+  assert.ok(!coughs.some(k => k.callerId === J.id), 'a sleeping one does not');
+  killChimp(w, K, 'test');
+  assert.ok(!('sick' in K), 'the key goes at death');
+  w.time += 48;
+  slowDisease(w, 5 / 60);
+  assert.ok(I.alive && !('sick' in I) && !('sick' in J), 'and on recovery (the key is deleted, never undefined)');
 });
 
 test('C8 an introduction exposes the index case\'s whole party; outbreaks arrive per community at the registry rate', async () => {

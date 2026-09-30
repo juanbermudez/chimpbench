@@ -17,6 +17,7 @@ export function killChimp(world: World, c: Chimp, cause: string, severity = 2, t
   c.alive = false; c.action = 'dead'; c.targetId = -1; c.deathTime = world.time; c.causeOfDeath = cause;
   c.awaitingDecisionSince = null; c.decisionVersion++; c.vocal = null; c.carryingMeat = 0; c.nest = null; c.position[1] = 0;
   c.candidates.length = 0; c.partyId = -1; c.mood = 'calm'; c.reason = 'Life ended';
+  delete c.sick; // an illness ends with death (a snare injury stays visible on the body)
   // No one reads a dead animal's spatial memory or perception snapshot; drop them now (the rest goes in slimDead).
   c.memory.length = 0; x.seen.length = 0; x.trees.length = 0; x.stims.length = 0; x.metAt = {}; x.greet = {};
   if ((c.carryingDeadId ?? -1) >= 0) c.carryingDeadId = -1; // a mother who dies leaves the body she carried

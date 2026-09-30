@@ -34,6 +34,7 @@ export function slowSnares(world: World): void {
     const p = 1 - Math.exp(-P.snareHazardPerKm * snareRisk(world, px, pz, P) * d / 1000);
     if (random(world) >= p) continue;
     x.snare = P.snareSeverityMin + (1 - P.snareSeverityMin) * random(world); // severity of the disability
+    c.snared = true; // contract mirror (permanent)
     c.injury = clamp(c.injury + P.snareWound);
     episode(world, c, 'life', 'Caught a hand in a wire snare');
     addEvent(world, `${c.name} was caught in a wire snare and injured a limb`, 'life', [c.id], c.troopId, 1);

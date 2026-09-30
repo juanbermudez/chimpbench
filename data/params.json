@@ -2543,6 +2543,28 @@
    "notes": "How long a Bark call is shown and audible."
   },
   {
+   "id": "callCoughMin",
+   "group": "communication",
+   "value": 0.25,
+   "units": "eco-min",
+   "range": [
+    0.1,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1000000
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.callCoughMin",
+   "file": "src/sim/events.ts",
+   "notes": "Stage C8: how long a cough is shown (a cough lasts under a second; one tick is the shortest display, design)."
+  },
+  {
    "id": "callDrumMin",
    "group": "communication",
    "value": 0.5,
@@ -4068,6 +4090,28 @@
    "symbol": "P.coreHungerRelief (computeCandidates core cost)",
    "file": "src/sim/candidates.ts",
    "notes": "C7a amendment (C8; docs/staging/c8-lactation-diagnosis.md): an adult female's core-area cost is multiplied by (1 − coreHungerRelief × hunger), so a hungry female leaves her core for fruit instead of staying on fallback foods at half the intake rate. General (every adult female with a core cost; reads only hunger), never lactation-specific. 1 = full relief at hunger 1 (design, not tuned); 0 restores C7a."
+  },
+  {
+   "id": "coughPerH",
+   "group": "disease",
+   "value": 4,
+   "units": "per waking hour",
+   "range": [
+    1,
+    12
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    720
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "P.coughPerH (slowDisease)",
+   "file": "src/sim/disease.ts",
+   "notes": "Stage C8: coughs per waking hour of a sick animal. Coughing is the clinical sign by which field teams recognise respiratory outbreaks (negrey2019, scully2018); the rate is design. Display and sound only: no animal reacts to a cough, and the observer does not record it."
   },
   {
    "id": "cropFallRate",
@@ -9077,6 +9121,32 @@
    "profiles": {
     "compressed": 18,
     "field": 300
+   }
+  },
+  {
+   "id": "hearCoughM",
+   "group": "communication",
+   "value": 9,
+   "units": "m",
+   "range": [
+    5,
+    50
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1000000
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.hearCoughM",
+   "file": "src/sim/events.ts",
+   "notes": "Stage C8: a cough is a quiet, close-range sound (design); the radius only sizes the call record for display and audio.",
+   "profiles": {
+    "compressed": 9,
+    "field": 20
    }
   },
   {

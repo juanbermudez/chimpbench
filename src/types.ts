@@ -34,7 +34,8 @@ export type Skill = 'climbing' | 'foraging' | 'hunting' | 'social';
 export type Sex = 'female' | 'male';
 export type Mood = 'calm' | 'excited' | 'fearful' | 'aggressive' | 'playful' | 'distressed';
 export type CallKind = 'pant-hoot' | 'pant-grunt' | 'scream' | 'food-grunt' | 'bark' | 'alarm-hoo' | 'drum' | 'whimper' | 'laugh'
-  | 'travel-hoo'; // C10: quiet hoo that recruits companions to a trip (gruberZuberbuhler2013)
+  | 'travel-hoo' // C10: quiet hoo that recruits companions to a trip (gruberZuberbuhler2013)
+  | 'cough'; // C8: coughing while ill in a respiratory outbreak (clinical signs that identify outbreaks: negrey2019, emeryThompson2018)
 export type DecisionSource = 'rules' | 'decide';
 
 export interface Candidate { action: Action; targetId: number; score: number; reason: string; }
@@ -153,6 +154,10 @@ export interface Chimp {
    * the last 12 months; the month in progress is not included (read it through relationshipOf).
    */
   digests?: MemoryDigest[];
+  /** Optional, stage C8: true while a respiratory illness is under way (negrey2019, emeryThompson2018); the key is absent otherwise. */
+  sick?: boolean;
+  /** Optional, stage C8: true after a permanent snare injury (wood2017, emeryThompson2020), e.g. for a limp; the key is absent otherwise. */
+  snared?: boolean;
 }
 
 // ---------------------------------------------------------------------------

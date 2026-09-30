@@ -1,8 +1,8 @@
 import type { Chimp, World } from '../types';
-import { addEvent, episode } from './events';
+import { addEvent, emitCall, episode } from './events';
 import { killChimp } from './life';
 import { paramsOf, type Params } from './params';
-import { random } from './rng';
+import { hash01, random } from './rng';
 import { NEVER, index, ix, simOf } from './state';
 
 // Stage C8 respiratory epidemics (docs/realism-design.md §5.7, O9). A human-origin respiratory virus reaches a community
@@ -57,10 +57,19 @@ export function slowDisease(world: World, hours: number): void {
     }
   }
   // cases that have run their course
+  const pCough = 1 - Math.exp(-P.coughPerH * hours);
   for (const c of index(world).alive.slice()) {
     const x = ix(c);
-    if (x.ill === NEVER || x.ill > time || !c.alive) continue;
-    x.ill = NEVER;
+    if (x.ill === NEVER || !c.alive) continue;
+    if (x.ill > time) {
+      c.sick = true;
+      // sick animals cough now and then while awake and not already calling (display and sound only; the timing comes
+      // from a hash, so no world.rng draw)
+      const asleep = c.action === 'nest' && (x.phase === 2 || x.v !== 0);
+      if (!asleep && c.vocal === null && hash01(c.id, world.tick, 0xc0f) < pCough) emitCall(world, c, 'cough');
+      continue;
+    }
+    x.ill = NEVER; delete c.sick;
     const ob = byTroop[c.troopId];
     const lo = Math.log(P.epidemicFatality / (1 - P.epidemicFatality)) + (c.age < 5 ? Math.log(P.epidemicInfantOR) : 0) + (c.age >= 30 ? Math.log(P.epidemicOldOR) : 0) + Math.log(ob && ob.id === x.outbreak ? ob.v : 1);
     if (random(world) < 1 / (1 + Math.exp(-lo))) killChimp(world, c, 'respiratory illness (outbreak)', 2);
@@ -76,6 +85,7 @@ export function slowDisease(world: World, hours: number): void {
 function infect(world: World, c: Chimp, id: number): void {
   const x = ix(c), P = paramsOf(world);
   x.outbreak = id; x.ill = world.time + 24 * P.epidemicIllDays;
+  c.sick = true; // contract mirror for the renderer and audio (the key is deleted when the case ends)
 }
 
 /** Standard normal from world.rng (Box–Muller; two draws). */

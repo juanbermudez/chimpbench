@@ -30,12 +30,14 @@ export const KIND: Record<CallKind, KindSpec> = {
   laugh: { range: 12, level: 0.28, severity: 0.8, kindCooldown: 1.5 },
   // C10 travel hoo: low-intensity, short-range (gruberZuberbuhler2013); no clip yet, so its pool is empty and it stays silent
   'travel-hoo': { range: 12, level: 0.25, severity: 0.7, kindCooldown: 1.5 },
+  // C8 cough of a sick animal in a respiratory outbreak (negrey2019): close-range; no clip, so it stays silent
+  cough: { range: 12, level: 0.25, severity: 0.8, kindCooldown: 2.0 },
 };
 export const CALL_KINDS = Object.keys(KIND) as CallKind[];
 /** Kinds with no recording: synthesized at load time (src/audio/synth.ts). Stylization. */
 export const SYNTH_KINDS: readonly CallKind[] = ['drum', 'laugh'];
 /** Kinds with neither a recording nor a synth yet (C10 travel hoo): their pool stays empty and they are silent. */
-export const SILENT_KINDS: readonly CallKind[] = ['travel-hoo'];
+export const SILENT_KINDS: readonly CallKind[] = ['travel-hoo', 'cough'];
 export const REF_DISTANCE = 5;   // m: full level inside this radius
 /** Distance law exponent: 1 would be spherical spreading (−6 dB per doubling); 0.75 (−4.5 dB) keeps calls in the
  *  close-view frame readable over the ambience while the low-pass carries the distance cue. Design assumption. */
@@ -199,7 +201,7 @@ export function rateTier(simRate: number): RateTier {
   return 'none';
 }
 const SUB_KEEP: Record<CallKind, number> = {
-  'pant-hoot': 1, drum: 1, scream: 0.8, bark: 0.6, 'alarm-hoo': 0.6, 'food-grunt': 0.3, 'pant-grunt': 0.3, whimper: 0.3, laugh: 0.3, 'travel-hoo': 0.3,
+  'pant-hoot': 1, drum: 1, scream: 0.8, bark: 0.6, 'alarm-hoo': 0.6, 'food-grunt': 0.3, 'pant-grunt': 0.3, whimper: 0.3, laugh: 0.3, 'travel-hoo': 0.3, cough: 0.3,
 };
 /** Whether a call may start at this playback speed. roll is a uniform 0..1 draw (injected for tests). */
 export function admitAtRate(kind: CallKind, simRate: number, d: number, roll: number): boolean {

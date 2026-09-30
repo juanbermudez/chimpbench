@@ -65,11 +65,11 @@ export function flashInteraction(world: World, kind: InteractionKind, actor: Chi
 // (pant-hoots carry ~1-2 km in forest), and how long each call lasts (call*Min).
 const CALL_RADIUS: Record<CallKind, ParamId> = {
   'pant-hoot': 'hearPantHootM', drum: 'hearDrumM', scream: 'hearScreamM', bark: 'hearBarkM', 'alarm-hoo': 'hearAlarmHooM', 'food-grunt': 'hearFoodGruntM',
-  'pant-grunt': 'hearPantGruntM', whimper: 'hearWhimperM', laugh: 'hearLaughM', 'travel-hoo': 'hearTravelHooM',
+  'pant-grunt': 'hearPantGruntM', whimper: 'hearWhimperM', laugh: 'hearLaughM', 'travel-hoo': 'hearTravelHooM', cough: 'hearCoughM',
 };
 const CALL_MINUTES: Record<CallKind, ParamId> = {
   'pant-hoot': 'callPantHootMin', drum: 'callDrumMin', scream: 'callScreamMin', bark: 'callBarkMin', 'alarm-hoo': 'callAlarmHooMin', 'food-grunt': 'callFoodGruntMin',
-  'pant-grunt': 'callPantGruntMin', whimper: 'callWhimperMin', laugh: 'callLaughMin', 'travel-hoo': 'callTravelHooMin',
+  'pant-grunt': 'callPantGruntMin', whimper: 'callWhimperMin', laugh: 'callLaughMin', 'travel-hoo': 'callTravelHooMin', cough: 'callCoughMin',
 };
 
 export type HearFn = (world: World, listener: Chimp, callId: number, kind: CallKind, caller: Chimp) => void;
