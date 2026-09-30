@@ -106,7 +106,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     <div class="society" hidden data-occluder></div>
     <dialog class="settings glass" data-occluder></dialog>
     <dialog class="sims" aria-label="Simulations" data-occluder></dialog>
-    <div class="loading" role="status"><div class="load-mark">${icon('leaf')}</div><span>Growing a living forest…</span></div>
+    <div class="loading" role="status"><span class="load-name">ChimpBench</span><span>Growing a living forest…</span></div>
   </div>`;
   const app = root.querySelector<HTMLElement>('.app')!;
   const q = <T extends HTMLElement = HTMLElement>(s: string) => root.querySelector<T>(s)!;
