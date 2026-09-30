@@ -66,7 +66,7 @@ const persist = createPersistence({
 
 // Until the store answers (~50–100 ms on reload, ~0.3 s on a first visit), show the loading screen.
 const root = document.querySelector<HTMLElement>('#app')!;
-root.innerHTML = `<div class="app"><div class="loading" role="status"><div class="load-mark">${icon('leaf')}</div><span>Opening your simulation…</span></div></div>`;
+root.innerHTML = `<div class="app"><div class="loading" role="status"><img class="load-mark" src="/brand/logo-512.png" alt="" width="64" height="64" /><span>Opening your simulation…</span></div></div>`;
 await persist.start();
 const opened: OpenResult | null = !scratch && persist.canRead() ? await persist.open().catch(e => ({ ok: false as const, sim: null, reason: String(e instanceof Error ? e.message : e) })) : null;
 // A save created with an older parameter registry never resumes silently: the user chooses (after the UI exists).
