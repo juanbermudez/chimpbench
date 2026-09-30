@@ -1,6 +1,6 @@
 import type { World } from '../types';
 import type { DecisionController, DecisionTrace, Roster } from '../decision';
-import { newSimState, newX } from '../sim/state';
+import { newSimState, newX, OPTIONAL_SIM, OPTIONAL_X } from '../sim/state';
 import { REGISTRY_HASH } from '../sim/params';
 
 // The save envelope: everything a resumed run needs to continue exactly where it stopped (the whole World,
@@ -86,10 +86,11 @@ export function worldShapeProblem(world: World): string {
   const w = world as World & { sim?: object };
   if (!w || !Array.isArray(w.chimps) || !Array.isArray(w.troops) || !Array.isArray(w.trees) || typeof w.tick !== 'number' || typeof w.rng !== 'number') return 'not a MGOGO world';
   if (!w.sim) return 'world has no simulation state (world.sim)';
-  const keys = (o: object) => Object.keys(o).sort().join(',');
-  if (keys(w.sim) !== keys(newSimState())) return 'world.sim layout differs from this build';
+  // keys that appear only once their mechanism fires (travel hoo, fission) are not part of the layout
+  const keys = (o: object, optional: readonly string[]) => Object.keys(o).filter(k => !optional.includes(k)).sort().join(',');
+  if (keys(w.sim, OPTIONAL_SIM) !== keys(newSimState(), OPTIONAL_SIM)) return 'world.sim layout differs from this build';
   const living = w.chimps.find(c => c.alive && (c as { sim?: object }).sim) as { sim: object } | undefined;
-  if (living && keys(living.sim) !== keys(newX())) return 'chimp.sim layout differs from this build';
+  if (living && keys(living.sim, OPTIONAL_X) !== keys(newX(), OPTIONAL_X)) return 'chimp.sim layout differs from this build';
   return '';
 }
 

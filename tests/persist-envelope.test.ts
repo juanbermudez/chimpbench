@@ -8,7 +8,7 @@ import type { World } from '../src/types';
 import { REGISTRY_HASH } from '../src/sim/params';
 import {
   APP_VERSION, SAVE_FORMAT, STATE_SHAPE, STATE_VERSION, SaveError, captureDecider, compatibility, envelopeChunks, needsParamsChoice, paramsChange,
-  jsonPieces, paramsNote, parseEnvelope, plainDataProblems, restoreDecider, takeSlice, type SaveEnvelope,
+  jsonPieces, paramsNote, parseEnvelope, plainDataProblems, restoreDecider, takeSlice, worldShapeProblem, type SaveEnvelope,
 } from '../src/persist/envelope';
 
 function world(seed: number, pop = 0, ageRate = 1): World {
@@ -130,4 +130,14 @@ test('a save from an older parameter registry opens only by choice, and is label
   // A world without a recorded registry counts as older too.
   delete (env.world as World & { sim: { params: { registry?: string } } }).sim.params.registry;
   assert.deepEqual(paramsChange(env.world), { saved: '', current: REGISTRY_HASH });
+});
+
+test('shape check: keys that appear once a mechanism fires (travel hoo, fission) do not refuse a save; unknown keys do', () => {
+  const w = JSON.parse(JSON.stringify(run(world(48), 20))) as World;
+  const first = w.chimps.find(c => c.alive) as unknown as { sim: Record<string, unknown> };
+  first.sim.hooFrom = 3; first.sim.hooAt = 1.5;
+  (w as unknown as { sim: Record<string, unknown> }).sim.fission = { scans: 0 };
+  assert.equal(worldShapeProblem(w), '');
+  first.sim.somethingNew = 1;
+  assert.equal(worldShapeProblem(w), 'chimp.sim layout differs from this build');
 });
