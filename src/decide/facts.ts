@@ -1,10 +1,11 @@
 import type { Action, Candidate, Chimp, World } from '../types';
 import { candidateMeta, V } from '../sim/candidates';
 import { dayPhase } from '../sim/environment';
-import { fallbackOn, fallbackValue } from '../sim/fallback';
 import { bond, dominates, maternalKin } from '../sim/hierarchy';
 import { paramsOf, type Params } from '../sim/params';
-import { forageYield, fruitAt } from '../sim/phenology';
+import { fruitAt } from '../sim/phenology';
+import { leafRate, treeIntake } from '../sim/intake';
+export { leafRate } from '../sim/intake';
 import { index, isChimpId, isTreeId, isWaterId, type ChimpX, type SimChimp } from '../sim/state';
 import { cellAt, gridOf, useLevels } from '../sim/territory';
 
@@ -141,26 +142,9 @@ const RESTING: Partial<Record<Action, true>> = { rest: true, shelter: true, groo
 const hidden = (c: Chimp): ChimpX => (c as SimChimp).sim;
 const dist = (ax: number, az: number, bx: number, bz: number) => Math.hypot(ax - bx, az - bz);
 
-/** Hunger removed per hour by ripe fruit for this animal (execution.ts forageTick): intake × skill × young factor × hunger per fruit unit. */
-function fruitRate(c: Chimp, P: Params): { fruitPerH: number; hungerPerH: number } {
-  const fruitPerH = P.fruitIntakePerH * (P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging) * (c.age < 5 ? P.fruitIntakeYoungFactor : 1);
-  return { fruitPerH, hungerPerH: fruitPerH * P.fruitHungerFactor };
-}
-
-/** Hunger removed per hour by fallback foods (leaves, pith, herbs) where the animal stands (execution.ts forageTick / fallback.ts). */
-export function leafRate(world: World, x: number, z: number, P: Params): number {
-  if (fallbackOn(P)) return P.fruitIntakePerH * P.fruitHungerFactor * P.fallbackRateRatio * fallbackValue(world, x, z);
-  return P.fallbackHungerPerH * (P.patchEcology === 1 ? forageYield(world, x, z) : 1);
-}
-
-function place(c: Chimp, P: Params, R: Rates, treeId: number, species: string, source: FoodPlace['source'], crop: number, cropKnown: boolean, distM: number, memoryAgeH: number | null, feeders: number): FoodPlace {
-  const { fruitPerH, hungerPerH } = fruitRate(c, P);
-  const walkH = distM / R.walk / 3600;
-  // feeding lasts until the crown's share is eaten or the hunger is gone, whichever comes first
-  const share = crop / (1 + feeders);
-  const feedH = Math.max(0, Math.min(share / Math.max(1e-9, fruitPerH), c.hunger / Math.max(1e-9, hungerPerH)));
-  const frac = feedH > 0 ? feedH / (walkH + feedH) : 0;
-  return { treeId, species, source, crop, cropKnown, distM, walkMin: walkH * 60, memoryAgeH, feeders, rateH: hungerPerH, feedH, perHourInclWalk: hungerPerH * frac, thirstPerHInclWalk: fruitPerH * P.fruitThirstFactor * frac };
+function place(c: Chimp, P: Params, _R: Rates, treeId: number, species: string, source: FoodPlace['source'], crop: number, cropKnown: boolean, distM: number, memoryAgeH: number | null, feeders: number): FoodPlace {
+  const t = treeIntake(c, P, crop, feeders, distM);
+  return { treeId, species, source, crop, cropKnown, distM, walkMin: t.walkH * 60, memoryAgeH, feeders, rateH: t.rateH, feedH: t.feedH, perHourInclWalk: t.perHourInclWalk, thirstPerHInclWalk: t.thirstPerHInclWalk };
 }
 
 function periodOf(phase: Situation['phase'], hour: number): Situation['period'] {

@@ -9747,6 +9747,31 @@
    "notes": "Community marked unstable after an alpha change."
   },
   {
+   "id": "intakeValue",
+   "group": "decision",
+   "value": 1,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [
+    "charnov1976"
+   ],
+   "clock": "none",
+   "symbol": "P.intakeValue",
+   "file": "src/sim/candidates.ts",
+   "notes": "Stage C13b switch (docs/realism-design.md \"C13 pre-registration\"): the rules' feeding and trip scores scale their food worth by the option's expected intake per hour, walk included, relative to the animal's own ripe-fruit rate (src/sim/intake.ts; design A's currency from the sim's own rates: fruit 0.11 x skill x 2.2 per h, fallback 0.11 x local yield per h). 0 = the valuation before C13. Ablation switch.",
+   "integer": true
+  },
+  {
    "id": "interruptSpacingMin",
    "group": "decision",
    "value": 2,
@@ -14071,6 +14096,78 @@
     "field": 0.5
    },
    "notes": "Stage C6b: a crown the individual has just fed in is worth less (the fruit within reach has been taken): forage and travel scores fall by this x exp(-hours since / revisitTauH). 0 = off (compressed, unchanged). Design, set before any run."
+  },
+  {
+   "id": "rgMinAge",
+   "group": "decision",
+   "value": 8,
+   "units": "years",
+   "range": [
+    5,
+    15
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    60
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "bio",
+   "symbol": "P.rgMinAge",
+   "file": "src/sim/rg.ts",
+   "notes": "Stage C13: rules-driven chimps at least this old decide by the RG policy (intention gate plus sampling); younger ones keep the argmax rules. 8 is the population the Jev free arms tested (the model-eligible age of the decide-ft harnesses).",
+   "integer": true
+  },
+  {
+   "id": "rgOn",
+   "group": "decision",
+   "value": 1,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rgOn",
+   "file": "src/sim/rg.ts",
+   "notes": "Stage C13 switch (docs/realism-design.md \"C13 pre-registration\"): rules decisions hold an intention until a salient change (the design A gate of src/decide/gate.ts) and otherwise sample the bounded menu (src/sim/menu.ts) by a softmax of the rules scores at rgTemperature, drawing from world.rng. 0 = the argmax rules before C13. Ablation switch.",
+   "integer": true
+  },
+  {
+   "id": "rgTemperature",
+   "group": "decision",
+   "value": 0.164,
+   "units": "score",
+   "range": [
+    0.082,
+    0.328
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0.001,
+    10
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rgTemperature",
+   "file": "src/sim/rg.ts",
+   "profiles": {
+    "compressed": 0.152,
+    "field": 0.164
+   },
+   "notes": "Stage C13: softmax temperature over the rules scores of the menu. Design rule: the rules' own top option gets a median probability of 0.77 on rules-world menus of development seed 6301 (180-day burn-in, 2 days; scripts/rg-calibrate.ts per profile: field 0.1641 on 5,635 menus, compressed 0.1519 on 5,528). Field is the Jev free arms' RG value (scripts/jev-test.ts --calibrate gave the same 0.1641); 0.77 was Jev's median top probability (docs/decide-jev-design.md)."
   },
   {
    "id": "ripeRampDays",

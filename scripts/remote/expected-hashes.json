@@ -2,11 +2,11 @@
  "about": "Hashes recorded on the local machine by scripts/remote/verify.ts --record; a remote run must reproduce them exactly.",
  "node": "v22.22.3",
  "platform": "darwin arm64",
- "recorded": "2026-09-30T01:39:30.975Z",
+ "recorded": "2026-09-30T04:17:14.323Z",
  "hashes": {
-  "golden-seed48-rate1-2d": "c523ef0a699327cb",
-  "field-s7-d3": "30ebbf7fda440092",
-  "fission-s21-d2": "a08413c15184ae3a",
-  "observed-s48-d3": "adfa401f2819d5a0/4576d822b5cb6f1e/11791ae02c8ac67b"
+  "golden-seed48-rate1-2d": "6a240465cf888472",
+  "field-s7-d3": "3b741b8108a88f0c",
+  "fission-s21-d2": "1260e603ed29112a",
+  "observed-s48-d3": "af17abbe820cf4a0/f4bf8bb37ff366fb/c3de552971b8d50c"
  }
 }

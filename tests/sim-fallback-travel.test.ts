@@ -68,7 +68,7 @@ test('fallback cells are patchy (mean capacity fallbackCapH) and off in compress
 });
 
 test('the ground-forage candidate falls when the patches in view are depleted, and the animal can see a better cell', () => {
-  const w = createWorld(3505, { profile: 'field', params: FB });
+  const w = createWorld(3505, { profile: 'field', params: { ...FB, rgOn: 0, intakeValue: 0 } }); // the C7c mechanism on its recorded scenario (pre-C13)
   for (let i = 0; i < 5760 / 4; i++) tickWorld(w);
   const [c] = adults(w);
   c.position = [c.position[0], 0, c.position[2]];
@@ -156,7 +156,7 @@ test('the field distance cost is the energetic derivation (daily energy ÷ hunge
 
 test('route chaining: only the out-of-sight tree with the most believed value per metre is offered (field); off lists several', () => {
   const pick = (params: Record<string, number>) => {
-    const w = createWorld(3707, { profile: 'field', params: { routeChain: 1, ...params } });
+    const w = createWorld(3707, { profile: 'field', params: { routeChain: 1, rgOn: 0, intakeValue: 0, ...params } }); // C7d as specified (pre-C13 worth)
     for (let i = 0; i < 5760 / 4; i++) tickWorld(w);
     const [c] = adults(w);
     c.position = [c.position[0], 0, c.position[2]]; c.hunger = 0.7; c.action = 'rest'; c.targetId = -1;
@@ -181,7 +181,7 @@ test('route chaining: only the out-of-sight tree with the most believed value pe
 
 test('goal-distance scale (C7e): a short scale picks the near tree, a long one the far richer tree; one goal offered', () => {
   const pick = (D: number) => {
-    const w = createWorld(3707, { profile: 'field', params: { goalDistScaleM: D, routeChain: 0 } });
+    const w = createWorld(3707, { profile: 'field', params: { goalDistScaleM: D, routeChain: 0, rgOn: 0, intakeValue: 0 } }); // C7e as specified (pre-C13 worth)
     for (let i = 0; i < 5760 / 4; i++) tickWorld(w);
     const [c] = adults(w);
     c.position = [c.position[0], 0, c.position[2]]; c.hunger = 0.7; c.action = 'rest'; c.targetId = -1;

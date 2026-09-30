@@ -91,7 +91,7 @@ test('A1: the patrol route follows the leader\'s contact memory', () => {
 });
 
 test('P4a: a patrol travels in single file with its phase on the party; determinism holds', () => {
-  const make = () => createWorld(48, { params: { patrolH0: 50 } });
+  const make = () => createWorld(48, { params: { patrolH0: 50, rgOn: 0, intakeValue: 0 } }); // the single-file mechanism on its recorded scenario (argmax rules, pre-C13)
   const w = make();
   let seen = false;
   for (let i = 0; i < 5760 * 2 && !seen; i++) {
