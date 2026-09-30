@@ -143,5 +143,6 @@ test('C13d: a trip initiation gives every companion in range an urgent decision 
   assert.match(on.intr, /set off/);
   assert.equal(off.intr, '');
   assert.equal(paramsOf(createWorld(33)).departCue, 0, 'compressed: off');
+  assert.equal(paramsOf(createWorld(33, { profile: 'field' })).departCue, 0, 'field: off by default (a pre-registered null result)');
   assert.equal(on.P.departCue, 1);
 });

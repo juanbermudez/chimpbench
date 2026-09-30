@@ -1563,7 +1563,7 @@ The diagnostic probe with both changes gave about 5 trips per day and 2.2–2.7 
 - **Why.** Companions now get the decision point, but when C13a samples their choice they rarely pick joining. Silent initiations gained the most, so the ratio fell. The missing cohesion is in the choice among options, not in the timing of decision points.
 - **Measurement note.** The "deciding within 5 min" share measured 0.55–0.61. It undercounts, because decisions made in the initiation's own tick are missed.
 - **T-PAT-6** (0.06, n = 17 patrols) is too noisy to read.
-- **Default.** Merged and on by default, as the rule was to merge if the guard passes. Its ablation row lets the lean proof attribute its null effect.
+- **Default.** Merged under the rule of merging if the guard passes, then switched **off by default** by integrator ruling. It is a pre-registered null result: a mechanism with no measured effect is not on by default. The code stays behind `departCue`. The ablation row now switches it on, so the lean proof still tests it.
 
 **6. Proof.** The lean proof (`scripts/proof.ts --plan lean`) with both parts on. `data/proof-ablations.json` has an ablation set per part, `C13a` (`rgOn` 0) and `C13b` (`intakeValue` 0), so each is attributed.
 

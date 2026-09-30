@@ -1222,6 +1222,18 @@
    ],
    "verdicts": "none (direction check, not a proof)",
    "class": "model change"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "science/simulation owner (integrator ruling)",
+   "seen": "the C13d direction check (development seeds 48, 7, 21)",
+   "param": "departCue field default 1 -> 0: C13d is a pre-registered null result (all four predictions failed: party size 2.90 unchanged, recruitment ratio 1.27-1.29 vs >= 1.6 predicted, decisions and day range unchanged); the mechanism stays behind its switch; the lean proof's ablation row C13d now switches it on to measure it. Field hashes re-recorded; compressed goldens unchanged",
+   "reason": "a mechanism with no measured effect is not on by default",
+   "targets": [
+    "T-PTY-1"
+   ],
+   "verdicts": "none",
+   "class": "model change"
   }
  ],
  "targets": [

@@ -74,8 +74,8 @@
    "note": "The C13c follow-up off: the 90-min intention age and the hunger-capped feeding time of C13 (hash-identical to C13)."
   },
   "C13d": {
-   "params": { "departCue": 0 },
-   "note": "The C13d departure cue off: only the C7a cue (companions in the initiator's view, not urgent); hash-identical to C13c."
+   "params": { "departCue": 1 },
+   "note": "C13d is off by default (a pre-registered null result, 30 September 2026); this row switches it ON, so the comparison with the all-on baseline measures it. The row's sign is reversed relative to the other stages."
   }
  }
 }

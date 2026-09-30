@@ -4455,9 +4455,9 @@
    "file": "src/sim/execution.ts",
    "profiles": {
     "compressed": 0,
-    "field": 1
+    "field": 0
    },
-   "notes": "Stage C13d switch (docs/realism-design.md \"C13d pre-registration\"): an adult setting off on a trip to a tree gives every awake own-community companion aged 5+ within partyLinkM an urgent decision point, seen or not (the C7a cue reached only companions in the initiator's view and skipped any interrupted in the last 2 min). Recruitment to joint travel [H] gruberZuberbuhler2013; the decision point is a design assumption. Field only: the joint-trip and follow options it serves exist only there. 0 = C13c. Ablation switch (set C13d).",
+   "notes": "Stage C13d switch (docs/realism-design.md \"C13d pre-registration\"), off by default after its direction check: a pre-registered null result (party size, recruitment ratio, decisions and day range did not move as predicted). When on (field): an adult setting off on a trip to a tree gives every awake own-community companion aged 5+ within partyLinkM an urgent decision point, seen or not (the C7a cue reaches only companions in the initiator's view and skips any interrupted in the last 2 min). Recruitment to joint travel [H] gruberZuberbuhler2013; the decision point is a design assumption. Kept for the lean proof's ablation row (which switches it on).",
    "integer": true
   },
   {
