@@ -18,11 +18,11 @@
   "Instrument validation against truth (sampling accuracy, classifier precision and recall) is allowed at any time, because truth is not a field target; each validation run is logged."
  ],
  "protocolFreeze": {
-  "stage": "Lean proof plan",
-  "date": "2026-09-29",
-  "hash": "c6dc9be135771d16",
+  "stage": "Seed replacement",
+  "date": "2026-09-30",
+  "hash": "839e47235ca4b43f",
   "previous": {
-   "stage": "C9 proof seeds",
+   "stage": "Lean proof plan",
    "hash": "c6dc9be135771d16"
   }
  },
@@ -1065,6 +1065,43 @@
     "all"
    ],
    "verdicts": "combined proof (lean plan)",
+   "class": "freeze"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "science/simulation owner (integrator ruling)",
+   "seen": "none (no proof has run on any of these seeds)",
+   "param": "reserved seed replacement before any proof run. Patrol re-test set 606, 707, 808, 909, 1010 -> 707, 808, 909, 1013, 1014 (606 -> 1014, 1010 -> 1013). C8 set B 1616 -> 2626, so set B is 1717-2626 (step 101) and the lean plan's generation worlds and paired scenario are 1717, 1818, 1919. C9 proof set 5101 -> 5606 and 5202 -> 5707, so 5303, 5404, 5505, 5606, 5707; the lean plan's large world is 5606. C11 pool C 7001-7003 -> 7021-7023 (same roles: screening 7021, 7022; history matching 7021-7023, 7004, 7005), so C is 7004-7023; V3 9101 -> 9606, so 9202-9606. Each replacement was grepped in artifacts/ and scripts/ for any seed use before adoption; none was found. scripts/proof.ts, scripts/c9-scenario.ts, AGENTS.md (reserved and retired lists), docs/realism-design.md (patrol labels, C9 proof, C11 seeds) and docs/simulation.md updated; the T-PAT-2, -3, -5, -7 and T-LET-6 labels name the new fresh set.",
+   "reason": "prior use: the decide-ft track ran model-driven worlds on 1010, 5101, 5202, 7001, 7002, 7003 and 9101; the 29 September proof dry runs ran 606 (fresh-field, 3 field days) and 1616 (the expansion scenario, 1 compressed year), found by the same grep. 'Never run before' must stay literally true.",
+   "targets": [
+    "T-PAT-2",
+    "T-PAT-3",
+    "T-PAT-5",
+    "T-PAT-7",
+    "T-LET-6",
+    "T-FIS-1",
+    "T-FIS-2",
+    "T-FIS-3",
+    "T-FIS-4",
+    "T-FIS-5",
+    "T-LET-4",
+    "T-LET-5",
+    "T-DEM-14",
+    "T-DEM-15"
+   ],
+   "verdicts": "none",
+   "class": "protocol (seeds)"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "science/simulation owner",
+   "seen": "none",
+   "param": "freeze: c6dc9be135771d16 -> 839e47235ca4b43f (scripts/c9-scenario.ts default seeds; the fresh-set labels of T-PAT-2, -3, -5, -7 and T-LET-6)",
+   "reason": "reserved seed replacement",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "combined proof (lean plan), C9 proof",
    "class": "freeze"
   }
  ],
@@ -2117,7 +2154,7 @@
    "sources": [
     "langergraber2017"
    ],
-   "revisedPostFreeze": "C6 patrol corrections (§5.3.1 P1–P4a, Amendment A): model revised post-freeze; re-tested on fresh seeds 606, 707, 808, 909, 1010; counts as validation only if no parameter was set by looking at it",
+   "revisedPostFreeze": "C6 patrol corrections (§5.3.1 P1–P4a, Amendment A): model revised post-freeze; re-tested on fresh seeds 707, 808, 909, 1013, 1014; counts as validation only if no parameter was set by looking at it",
    "protocolRevisedPostHoc": true
   },
   {
@@ -2176,7 +2213,7 @@
     "massaro2022",
     "wattsMitani2001"
    ],
-   "revisedPostFreeze": "C6 patrol corrections (§5.3.1 P1–P4a, Amendment A): model revised post-freeze; re-tested on fresh seeds 606, 707, 808, 909, 1010; counts as validation only if no parameter was set by looking at it",
+   "revisedPostFreeze": "C6 patrol corrections (§5.3.1 P1–P4a, Amendment A): model revised post-freeze; re-tested on fresh seeds 707, 808, 909, 1013, 1014; counts as validation only if no parameter was set by looking at it",
    "protocolRevisedPostHoc": true
   },
   {
@@ -2254,7 +2291,7 @@
    "sources": [
     "amsler2010"
    ],
-   "revisedPostFreeze": "C6 patrol corrections (§5.3.1 P1–P4a, Amendment A): model revised post-freeze; re-tested on fresh seeds 606, 707, 808, 909, 1010; counts as validation only if no parameter was set by looking at it",
+   "revisedPostFreeze": "C6 patrol corrections (§5.3.1 P1–P4a, Amendment A): model revised post-freeze; re-tested on fresh seeds 707, 808, 909, 1013, 1014; counts as validation only if no parameter was set by looking at it",
    "protocolRevisedPostHoc": true
   },
   {
@@ -2331,7 +2368,7 @@
    "sources": [
     "watts2006"
    ],
-   "revisedPostFreeze": "C6 patrol corrections (§5.3.1 P1–P4a, Amendment A): model revised post-freeze; re-tested on fresh seeds 606, 707, 808, 909, 1010; counts as validation only if no parameter was set by looking at it",
+   "revisedPostFreeze": "C6 patrol corrections (§5.3.1 P1–P4a, Amendment A): model revised post-freeze; re-tested on fresh seeds 707, 808, 909, 1013, 1014; counts as validation only if no parameter was set by looking at it",
    "protocolRevisedPostHoc": true
   },
   {
@@ -2677,7 +2714,7 @@
    "sources": [
     "mitani2010"
    ],
-   "revisedPostFreeze": "C6 patrol corrections (§5.3.1 P1–P4a, Amendment A): model revised post-freeze; re-tested on fresh seeds 606, 707, 808, 909, 1010; counts as validation only if no parameter was set by looking at it",
+   "revisedPostFreeze": "C6 patrol corrections (§5.3.1 P1–P4a, Amendment A): model revised post-freeze; re-tested on fresh seeds 707, 808, 909, 1013, 1014; counts as validation only if no parameter was set by looking at it",
    "protocolRevisedPostHoc": true
   },
   {

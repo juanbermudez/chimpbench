@@ -27,7 +27,7 @@ scripts/remote/run-all.sh --out ~/run             # workers default to $(nproc)
 
 Run it under `tmux` or `nohup`. `run-all.sh` runs, in order: `verify` (determinism) → `proof` (combined proof, simulation
 steps only, independent steps in parallel within the worker and memory budget) → `c9` (C9 proof, 40 years, seeds
-5101–5505) → `c11` (runs `scripts/c11-run.ts` once C11 is built; until then the stage stays open). Finished stages are
+5303–5707) → `c11` (runs `scripts/c11-run.ts` once C11 is built; until then the stage stays open). Finished stages are
 listed in `<out>/stages.done` and skipped on re-run; inside the proof, finished steps are skipped too (`--resume`).
 `--from <stage>` restarts at a stage. `<out>/manifest.json` holds the commit and protocol hash; a folder never mixes two
 builds (the scripts refuse).
