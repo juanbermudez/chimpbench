@@ -5,8 +5,9 @@
 
 The first line out is {"ready": true, "adapters": {name: sha256}, "device": ...}. Protocol lines go to the
 real stdout only; library chatter is redirected to stderr, as in the GHN worker. The GLiNER model loads only when a
-batch first needs it, so Jev-only runs never load it. "jev" items go to TypeSafe concurrently, capped by
-MGOGO_JEV_MAX_DOLLARS (default 1.0).
+batch first needs it, so Jev-only runs never load it. "jev" items go to TypeSafe concurrently through the spend guard:
+MGOGO_JEV_LEDGER, MGOGO_JEV_RUN and MGOGO_JEV_CAP are required (no default cap). A guard stop (cap reached, kill
+switch, unknown billing) is fatal: the worker reports it and exits, and the harness aborts the world as incomplete.
 """
 from __future__ import annotations
 
@@ -45,7 +46,8 @@ def main(device: str) -> None:
                 if "jev" in groups:
                     if jev is None:
                         from jev import JevClient
-                        jev = JevClient(max_dollars=float(os.environ.get("MGOGO_JEV_MAX_DOLLARS", "1.0")))
+                        jev = JevClient(ledger=os.environ["MGOGO_JEV_LEDGER"], run_id=os.environ["MGOGO_JEV_RUN"],
+                                        cap_dollars=float(os.environ["MGOGO_JEV_CAP"]))
                     idx = groups.pop("jev")
                     for i, probs in zip(idx, pool.map(lambda k: jev.choose(batch[k]["packet"], tag="society"), idx)):
                         results[i] = probs
@@ -60,8 +62,11 @@ def main(device: str) -> None:
                 torch.mps.empty_cache()
             emit({"results": results, "seconds": round(time.monotonic() - began, 4),
                   **({"jev_spent": round(jev.spent, 6), "jev_calls": jev.calls} if jev else {})})
-        except Exception as exc:  # report and keep serving; the harness decides by rules for this batch
-            emit({"error": f"{type(exc).__name__}: {exc}"})
+        except Exception as exc:
+            from spend_guard import GuardError
+            emit({"error": f"{type(exc).__name__}: {exc}", "fatal": isinstance(exc, (GuardError, KeyError))})
+            if isinstance(exc, (GuardError, KeyError)):  # a spend stop or missing guard settings ends the run; never rules instead
+                return
 
 
 if __name__ == "__main__":
