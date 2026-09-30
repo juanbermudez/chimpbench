@@ -269,6 +269,7 @@ function onStart(world: World, c: Chimp): void {
       break;
     case 'patrol': if (x.v !== V.APPROACH) startPatrol(world, c); else c.vocal = null; break;
     case 'travel': case 'follow':
+      if (P.travelHoo === 1 && c.action === 'travel' && x.v === V.TREE && x.aux <= 0) travelHoo(world, c);
       // party cohesion (field profile): companions notice a departure and may follow (candidates.ts, partyFollow*);
       // since stage C7a only goal-directed departures (travel) alert them, not an animal that is itself following
       if (P.partyFollowW > 0 && (P.partyLeaderFollow !== 1 || c.action === 'travel')) for (const sid of x.seen) {
@@ -368,6 +369,40 @@ function startPatrol(world: World, c: Chimp): void {
     const b = idx.byId.get(sid);
     if (b && b.alive && b.troopId === c.troopId && b.age >= 12 && hd(b, c) < P.patrolAlertM) interrupt(world, b, `${c.name} is heading out on patrol`);
   }
+}
+
+/**
+ * Stage C10 addendum 1 (travelHoo): the initiator of a trip to a tree gives a quiet travel hoo when an own-community
+ * companion is within the party chain distance: 55.4% of the time, 75.6% with an ally in sight [gruberZuberbuhler2013]
+ * [M]. Hearers' party-follow of the caller is raised for a few minutes (candidates.ts, travelHooFollowW; design).
+ */
+function travelHoo(world: World, c: Chimp): void {
+  const P = paramsOf(world), x = ix(c), idx = index(world);
+  let companion = false, ally = false;
+  for (const id of x.seen) {
+    const o = idx.byId.get(id);
+    if (!o || !o.alive || o.troopId !== c.troopId || o.age < 5 || hd(o, c) > P.partyLinkM) continue;
+    companion = true;
+    if (c.allies.includes(o.id)) ally = true;
+  }
+  if (companion && random(world) < (ally ? P.travelHooAllyP : P.travelHooP)) emitCall(world, c, 'travel-hoo');
+}
+
+/**
+ * Stage C10 (foodCallRule; docs/realism-design.md "C10 pre-registration", rule 3): chance of a food grunt on arriving in
+ * a crown with crop > 0.3. Food calls at about half of feeding events, more with more males present [kalanBoesch2015]
+ * [M]; more with an important partner nearby [slocombe2010] [M]; the crop term and all magnitudes are design.
+ */
+export function foodCallChance(world: World, c: Chimp, crop: number): number {
+  const P = paramsOf(world), x = ix(c), idx = index(world), troop = idx.troopById.get(c.troopId);
+  let males = 0, partner = 0;
+  for (const id of x.seen) {
+    const o = idx.byId.get(id);
+    if (!o || !o.alive || o.troopId !== c.troopId) continue;
+    if (o.sex === 'male' && o.age >= 15) males++;
+    if ((c.bonds[o.id] ?? 0) >= 0.5 || troop?.alphaId === o.id) partner = 1;
+  }
+  return clamp(P.foodCallBase + P.foodCallCropW * (crop - 0.3) + P.foodCallMaleW * Math.min(3, males) + P.foodCallPartnerW * partner);
 }
 
 /**
@@ -730,7 +765,7 @@ function forageTick(world: World, c: Chimp): void {
     if (crop > 0.55 && c.age >= 12 && time - x.lastCall > 0.75 && (t.common === 'fig' || t.id === simOf(world).figTree) && random(world) < 0.5) {
       // arrival pant-hoots at rich fruit sources attract others [H]
       x.lastCall = time; emitCall(world, c, 'pant-hoot'); c.mood = 'excited';
-    } else if (time - x.lastFoodCall > 0.3 && crop > 0.3) { x.lastFoodCall = time; emitCall(world, c, 'food-grunt'); }
+    } else if (time - x.lastFoodCall > 0.3 && crop > 0.3 && (P.foodCallRule !== 1 || random(world) < foodCallChance(world, c, crop))) { x.lastFoodCall = time; emitCall(world, c, 'food-grunt'); }
   }
   // feeding: up to fruitIntakePerH (0.055 fruit units/h, scaled by foraging skill), x4.4 = up to ~0.24 hunger/h, so chimps feed about half the day (design; field feeding shares are 33-50% of daytime, docs/realism-design.md T-ACT-1)
   const want = P.fruitIntakePerH * TICK_HOURS * (P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging) * (c.age < 5 ? P.fruitIntakeYoungFactor : 1);

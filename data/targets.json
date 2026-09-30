@@ -7,7 +7,7 @@
   "fitted": 37,
   "held-out": 63,
   "parameterConstraints": 19,
-  "sources": 123
+  "sources": 124
  },
  "protocolPolicy": [
   "Every protocol parameter (observer settings, classifier rules, metric windows and thresholds, scoring rules) is set from the source's methods text or by validating the instrument against simulation truth, never by looking at a field-target verdict.",
@@ -18,12 +18,12 @@
   "Instrument validation against truth (sampling accuracy, classifier precision and recall) is allowed at any time, because truth is not a field target; each validation run is logged."
  ],
  "protocolFreeze": {
-  "stage": "C7a review findings 9-12",
+  "stage": "C10",
   "date": "2026-09-29",
-  "hash": "f29c8b0773effa06",
+  "hash": "fe5c3af51005d776",
   "previous": {
-   "stage": "C12 relabel",
-   "hash": "e88dcd8f700a2997"
+   "stage": "C7a review findings 9-12",
+   "hash": "f29c8b0773effa06"
   }
  },
  "protocolLog": [
@@ -908,6 +908,60 @@
    ],
    "verdicts": "combined proof",
    "class": "freeze"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C10 implementer",
+   "seen": "C10 direction checks on seeds 31 and 32 (field, 60-day burn-in + 60 days), printing only T-COM-5 (2.81, 3.22 x chance), T-COM-6 (median 4 hits, 218-220 ms, no female bouts) and T-COM-8 (0.52, 0.42); no held-out value printed",
+   "param": "new observer protocol: bioacoustic recorder (pant-hoot features within 10% of the hearing radius and drum intervals stored with call records, CallRec.f); T-COM-5 (LDA leave-one-out identity accuracy / chance, part community) and T-COM-6 (median hits, mean interval, male bouts without a call, female bouts; pass = median 3-5 and no female bouts) implemented; T-COM-5 flagged tuned (by construction)",
+   "reason": "stage C10 (docs/realism-design.md 'C10 pre-registration')",
+   "targets": [
+    "T-COM-5",
+    "T-COM-6",
+    "T-COM-8"
+   ],
+   "verdicts": "n/a -> measured (T-COM-5, T-COM-6)",
+   "class": "new protocol",
+   "flags": {
+    "T-COM-5": "tuned"
+   }
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C10 implementer",
+   "seen": "as above",
+   "param": "model change (C10, on by default in both profiles, each switch off reproduces the pre-C10 world): callSignatures, callerDiscrim, foodCallRule (docs/realism-design.md 'C10 pre-registration'); compressed goldens re-recorded",
+   "reason": "stage C10",
+   "targets": [
+    "T-COM-1..11",
+    "T-IGE-* (heardN)"
+   ],
+   "verdicts": "combined proof",
+   "class": "model change"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C10 implementer",
+   "seen": "the C10 direction checks (C10 rows only)",
+   "param": "freeze C10: f29c8b0773effa06 -> fe5c3af51005d776 (bioacoustic recorder, T-COM-5 and T-COM-6 metrics, T-COM-5 tuned flag; merged with main at C7c)",
+   "reason": "stage C10",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "combined proof",
+   "class": "freeze"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C10 implementer (addendum 1)",
+   "seen": "travel-hoo direction checks on seeds 31-33 (field, 30-day burn-in + 20 days): hoo share of initiations with a companion 0.45-0.51; recruitment within 5 min, hooed vs silent: 0.59 vs 0.51 and 0.63 vs 0.55 (ratio 1.13-1.15) at travelHooFollowW 0.3; the one-time refit scan on seed 33 gave ratio 1.22, 1.21 and 1.12 at 0.6, 1.0 and 1.5",
+   "param": "model change: travel hoos (travelHoo on in both profiles; CallKind 'travel-hoo'); travelHooFollowW stays at the pre-registered 0.3 because no value in the scan reaches the pre-registered ratio of 1.6-2.6 (silent trips already recruit ~0.5 through C7c's joint travel); compressed goldens re-recorded; travel hoo off reproduces the C10 world",
+   "reason": "C10 addendum 1 (docs/realism-design.md); refit rule applied and the ratio not reached, reported",
+   "targets": [
+    "none (no target row; T-PTY-* and T-ACT-* consequences at the combined proof)"
+   ],
+   "verdicts": "combined proof",
+   "class": "model change"
   }
  ],
  "targets": [
@@ -5150,10 +5204,11 @@
    "evidence": "M",
    "role": "fitted",
    "encoded": false,
-   "notes": "",
+   "notes": " C10: measured by the bioacoustic recorder (pant-hoots of adult males within 10% of the hearing radius of a following team; LDA leave-one-out over callers with >= 10 calls).",
    "sources": [
     "desai2022"
-   ]
+   ],
+   "tuned": "C10: tuned by construction. sigIdentitySD 0.308 and sigCommunitySD 0.241 were set by an offline Monte Carlo of this target's recorder protocol against desai2022's 2.8x chance (scripts/signals-metrics.ts --calibrate; no simulation run), so a pass is a calibration result, not evidence."
   },
   {
    "id": "T-COM-6",
@@ -5196,7 +5251,7 @@
    "evidence": "M",
    "role": "fitted",
    "encoded": false,
-   "notes": "",
+   "notes": " C10: hits per bout and intervals are drawn from eleuteri2025's eastern values (median 4, mode 3, 229 ms), so the hits and interval parts are close to construction; the male-only part and the share of male bouts without a call (Kanyawara 61%, Taï 6%) are consequences of who drums and when.",
    "sources": [
     "clarkArcadi2004",
     "eleuteri2025"
@@ -5280,7 +5335,7 @@
    "evidence": "L",
    "role": "fitted",
    "encoded": false,
-   "notes": "",
+   "notes": " C10: foodCallBase 0.35 (kalanBoesch2015) with crop and audience terms (slocombe2010); the audience part of this target would be encoded; the current protocol does not measure it.",
    "sources": [
     "kalanBoesch2015",
     "slocombe2010"
@@ -7229,6 +7284,19 @@
    "url": "https://doi.org/10.1371/journal.pbio.3002350",
    "access": "FT",
    "bibliographyVerified": "docs/research.md (Lemoine et al. 2023, Taï border movement); S3 Data CC BY 4.0"
+  },
+  "gruberZuberbuhler2013": {
+   "authors": "Gruber T, Zuberbühler K",
+   "year": 2013,
+   "title": "Vocal recruitment for joint travel in wild chimpanzees",
+   "journal": "PLoS ONE",
+   "volume": "8",
+   "issue": "9",
+   "pages": "e76073",
+   "doi": "10.1371/journal.pone.0076073",
+   "url": "https://doi.org/10.1371/journal.pone.0076073",
+   "access": "FT",
+   "bibliographyVerified": "docs/research.md (PMC3783376); figures checked in the PLoS ONE full text, 2026-09-29"
   }
  },
  "c12Fitted": {

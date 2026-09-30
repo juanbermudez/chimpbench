@@ -1178,6 +1178,33 @@ Rules, values and sources are fixed here before any simulation run with C10 code
 
 **Shared files.** `events.ts` (`emitCall` features), `perception.ts` (`hear`), `execution.ts` (the food-call lines of the arrival block only), a new `src/sim/signals.ts`, and `src/field` (recorder, drums). No `candidates.ts` edits before C10b.
 
+#### C10 addendum 1: travel hoos (29 September 2026, before any travel-hoo code or run)
+
+Adopted at the integrator's suggestion. C7c models travel recruitment without a call. Values verified in the full text of gruberZuberbuhler2013 (PLoS ONE, Budongo Sonso):
+- 60.3% of 456 travel events included a "travel hoo".
+- 71.4% (55/77) of vocally initiated travel events led to a travel party, against 33.7% (30/89) of silent ones.
+- Callers called more with an ally in the audience: 75.6% vs 55.4%.
+- Travel hoos are low-intensity, short (0.125 s) and low-pitched.
+
+| Switch | Rule | Values | Evidence |
+| --- | --- | --- | --- |
+| `travelHoo` | When an independent animal starts a goal-directed trip (to a tree, or initiating a C7c joint trip) with at least one own-community companion within `partyLinkM`, it gives a quiet travel hoo. The hoo is heard only by own-community animals within `hearTravelHooM`. For `travelHooWindowMin`, a hearer's party-follow candidate toward the caller is offered with `travelHooFollowW` added. | P(hoo) `travelHooP` 0.554, or `travelHooAllyP` 0.756 with an ally in sight; `hearTravelHooM` = `partyLinkM` (field 50 m, compressed 9 m); window 5 min; `travelHooFollowW` 0.3 | [M] for the call rates (gruberZuberbuhler2013); hearing range, window and follow weight are design |
+
+- **Refit rule, fixed now.** `travelHooFollowW` may be refitted once on seeds 31–33 (a direction check, not a proof). The goal is a ratio of hooted to silent trips followed by at least one companion of 1.6–2.6 (source 2.1). The refit is logged. There is no target row: the pattern is fitted, so it is not validation.
+- **Other rules.** Travel hoos carry no signature features. They are not counted by `heardN`, and the observer does not record them.
+- **Contract request.** `CallKind` 'travel-hoo'.
+- **Shared file.** The follow offer in `candidates.ts` gets one local term.
+
+**Addendum 1 result (direction check, seeds 31–33, not a proof).** Initiators with a companion hooed on 45–51% of trips; the rate is below the source's 60% because the companion check uses the attention-limited view. Trips followed within 5 min: 0.59 vs 0.51 and 0.63 vs 0.55, hooed vs silent (ratio 1.13–1.15, source 2.1). The one-time refit scan (`travelHooFollowW` 0.6, 1.0, 1.5 on seed 33) gave ratios of 1.22, 1.21 and 1.12. No value reaches 1.6, because silent trips already recruit about half the time through C7c's joint travel. So the weight stays at the pre-registered 0.3, and the travel hoo's effect on recruitment is weaker than in Budongo.
+
+#### C10 addendum 2: gestures (C10b) blocked on the source table
+
+The type-to-meaning lexicon of hobaiterByrne2014 cannot be transcribed from here: the publisher and ScienceDirect refuse automated access, and the paper is not in PubMed Central. Accessible secondary accounts name only a few pairs (a rear foot extended to offer a ride; grabbing for "stop" or "move away"; leaf nibbling as a sexual advance). Two options, for the integrator or user:
+- supply the PDF, and the lexicon will be transcribed; or
+- accept abstract gesture types with the three request meanings the simulation uses (groom me, play with me, follow me), labelled a stylization.
+
+T-COM-10 stays n/a until then.
+
 ### Stage C11: Calibration and validation report (O12)
 **Goal**: sensitivity analysis, history matching, ABC posterior, held-out posterior predictive checks, ODD document, validation report.
 **Success Criteria**:
