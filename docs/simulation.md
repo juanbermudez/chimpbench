@@ -886,6 +886,7 @@ Cycling starts at the first-swelling age (10.2–11.4 y) once lactational amenor
 - The hazard is multiplied by `1 + 8·max(0, 0.6 − health) + 3·injury`. The old orphan hazard is gone (C8): losing the mother acts through feeding, condition and protection.
 - The death probability per slow step is `1 − exp(−h × bioDays/365.25)`.
 - With health 1 and no injury the baseline plus the expected epidemic hazard gives q1 = 0.15 and e15 ≈ 35 y (female) / 21 y (male), as in the test (analytic life table).
+- **Known source mismatch (C8b ruling, not fixed).** For females aged 30–47 the expected epidemic hazard (0.0154 per year: 0.1 arrivals × 0.62 attack × about 0.25 case fatality at the 30+ odds ratio) exceeds wood2017's all-cause hazard (0.011–0.017), so the baseline sits at the 20% floor. The model's expected mortality at those ages is then about 11% above the life table (analytic female e15 34.3 y, inside the band). The likely cause is that wood2017's life table (Ngogo 1995–2016) largely predates Ngogo's 2016–17 outbreak, while the arrival rate and fatality come from Kanyawara, Gombe and Ngogo 2017. Measured adult-female deaths match expectation (5 against 7.2 all-cause and 8.0 model-expected in 522 female-years; docs/staging/c8-lactation-diagnosis.md).
 - Violence, poor condition, snares and the realized epidemics come on top of the baseline. Before C8 the simulated life course gave e15 = 32.6 / 19.5 y, below Ngogo's 35.1 / 21.0 ([§18](#18-validation)).
 
 **Body condition and growth** (C8, [life.ts](../src/sim/life.ts); docs/staging/early-life-prereg.md §2.6):

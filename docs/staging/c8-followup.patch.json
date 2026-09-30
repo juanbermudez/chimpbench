@@ -1,0 +1,15 @@
+{
+ "about": "C8 follow-up staging for data/targets.json (applied by the integrator; this branch never edits targets.json). Append `protocolLog` in order.",
+ "protocolLog": [
+  {
+   "date": "2026-09-30",
+   "by": "C8 implementer (integrator ruling C8b)",
+   "seen": "development truth reads only (seeds 48, 7, 21; 10 field years, C13 on): adult-female deaths by age band against age-standardized expectations; no target row computed",
+   "param": "No baseline-hazard change. Logged as a source mismatch: for females aged 30-47 the expected epidemic hazard (0.0154/y = epidemicArrivalPerY 0.1 x SIR final size 0.62 at epidemicR0 1.55 x mean case fatality ~0.25 at epidemicOldOR 3.86) exceeds wood2017's all-cause hazard (hazardFemaleAdult 0.011, hazardFemaleMid 0.017), so the re-fitted baseline sits at hazardBaseFloor (20%) and the model's expected mortality there is ~11% above the life table (analytic female e15 34.3 y, in band). Likely cause: wood2017's life table (Ngogo 1995-2016) largely predates Ngogo's 2016-17 outbreak (negrey2019), while the arrival and fatality parameters come from Kanyawara, Gombe and Ngogo 2017 (emeryThompson2018, williams2008, negrey2019, scully2018). Measured: 5 adult-female deaths in 522 female-years against 7.2 expected from the all-cause hazards at the observed ages and 8.0 from the model (P(<=5) 0.28 and 0.19). docs/simulation.md §13 notes it",
+   "reason": "integrator ruling on the C8b design (docs/staging/c8-lactation-diagnosis.md)",
+   "targets": ["T-DEM-2", "T-DEM-3"],
+   "verdicts": "no change (no model or protocol change)",
+   "class": "source mismatch (not fixed)"
+  }
+ ]
+}
