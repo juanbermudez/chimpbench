@@ -45,3 +45,17 @@ test('model conditions answer waiting chimps before the observers step, determin
   assert.equal(first.decisions, a.decisions);
   assert.equal(first.applied, a.applied);
 });
+
+test('ft-field never computes a sealed metric (stage C8 sealing, spy)', async () => {
+  const { METRICS } = await import('../src/field/metrics');
+  const sealed = METRICS.filter(m => m.sealed && m.compute);
+  assert.ok(sealed.length >= 3, 'T-DEM-14, T-DEM-15 and T-LET-5 at least');
+  const orig = sealed.map(m => m.compute!);
+  let calls = 0;
+  for (const m of sealed) { const f = m.compute!; m.compute = d => { calls++; return f(d); }; }
+  try {
+    const got = await runFtField({ ...job, days: 0.05, experimentEveryDays: 0, cond: 'rules' }, null);
+    assert.equal(calls, 0);
+    for (const m of sealed) assert.ok(!(m.id in got.values), `${m.id} has no value`);
+  } finally { sealed.forEach((m, i) => { m.compute = orig[i]; }); }
+});

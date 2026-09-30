@@ -27,7 +27,7 @@
 // `field-compare.ts rules-48.json all-baseline-48.json` diffs two runs; plus cond, assignment, codeSha256, worker
 // (adapter hashes), decisions, applied, modelSeconds (worker wait; the first batch, firstBatchSeconds, includes loading
 // GLiNER, which worker.py does lazily), batches. And <out>/<cond>-<seed>.md, a short summary.
-import { appendFileSync, readFileSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs';
+import { appendFileSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { availableParallelism } from 'node:os';
 import { resolve } from 'node:path';
 import { createHash } from 'node:crypto';
@@ -46,6 +46,7 @@ import { mean } from '../src/field/stats';
 import { applyInstrumentBar, scoreTargets, summarize, type TargetFile } from '../src/field/targets';
 import { PHENOLOGY_DATA } from '../src/sim/phenology.gen';
 import { codeHash } from './ft-contexts';
+import { frozen, protocolHash } from './lib/protocol-hash';
 import { answerWaiting, assignment, setControllers, Worker as DecideWorker, type LoggedDecision, type Scorer } from './ft-society';
 import { StandInScorer } from './ft-standin';
 
@@ -135,7 +136,9 @@ export async function runFtField(job: FtFieldJob, scorer: Scorer | null, log: (m
   const m0 = performance.now();
   const d = derive(rec), pd = derive(prec), md = derive(mrec);
   const values: Record<string, SeedValue> = {};
-  for (const m of METRICS) if (m.compute) { const mode = TARGET_FOLLOW[m.id]; values[m.id] = m.compute(mode === 'party-larger' ? pd : mode === 'party-males' ? md : d); }
+  // sealed metrics (stage C8: T-DEM-14, -15, T-LET-5 and the staged early-life rows) are never computed here; only
+  // scripts/field-metrics.ts --unseal may call them, after the freeze check (early-life-prereg §1.2)
+  for (const m of METRICS) if (m.compute && !m.sealed) { const mode = TARGET_FOLLOW[m.id]; values[m.id] = m.compute(mode === 'party-larger' ? pd : mode === 'party-males' ? md : d); }
   const pat1 = METRICS.find(m => m.id === 'T-PAT-1');
   if (pat1?.compute && values['T-PAT-1']) values['T-PAT-1'].parts = { ...values['T-PAT-1'].parts, maleParties: pat1.compute(md).value };
   const s18 = section18(d);
@@ -150,23 +153,10 @@ export async function runFtField(job: FtFieldJob, scorer: Scorer | null, log: (m
     values, s18, accuracy, counts, cond: job.cond, assignment: assign, observeFirst: !!job.observeFirst, decisions, applied, modelSeconds, firstBatchSeconds, firstBatchDecisions, batches, byCommunity, census: [...census, censusPoint(world, job.days)] };
 }
 
-/**
- * Protocol fingerprint, identical to scripts/field-metrics.ts protocolHash() (that script runs on import, so it cannot
- * be imported): sha256 over src/field/*.ts, the pool worker and each target's id, role, band and observer protocol.
- */
-export function protocolHash(): string {
-  const h = createHash('sha256');
-  const dir = new URL('../src/field/', import.meta.url);
-  for (const f of readdirSync(dir).filter(x => x.endsWith('.ts')).sort()) { h.update(f); h.update(readFileSync(new URL(f, dir))); }
-  h.update(readFileSync(new URL('./lib/field-worker.ts', import.meta.url)));
-  const t = JSON.parse(readFileSync(new URL('../data/targets.json', import.meta.url), 'utf8')) as { targets: { id: string; role: string; encoded: boolean; accept: unknown; observer: unknown }[] };
-  h.update(JSON.stringify(t.targets.map(x => [x.id, x.role, x.encoded, x.accept, x.observer])));
-  return h.digest('hex').slice(0, 16);
-}
-function frozenHash(): { hash: string | null; stage: string | null } {
-  const t = JSON.parse(readFileSync(new URL('../data/targets.json', import.meta.url), 'utf8')) as { protocolFreeze?: { hash: string; stage: string } };
-  return { hash: t.protocolFreeze?.hash ?? null, stage: t.protocolFreeze?.stage ?? null };
-}
+// Protocol fingerprint: the one computation shared with scripts/field-metrics.ts (scripts/lib/protocol-hash.ts; the
+// copy that lived here had fallen behind it).
+export { protocolHash };
+const frozenHash = frozen;
 
 export interface ScorecardMeta { profile: ProfileName; days: number; burnInDays: number; experimentsEveryDays: number; params?: Record<string, number>; observerSeed?: number; truth?: boolean }
 
