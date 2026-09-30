@@ -1046,6 +1046,7 @@ Every evidence-tagged constant and every distance lives in the parameter registr
 | Elo k (contest / greeting) | 100 / 20 | Elo | `eloK` `eloKGreeting` | [M] / design | Neumann et al. 2011 |
 | Elo logistic scale | 0.01 | 1/Elo | `eloLogisticScale` | design |  |
 | Male strength drift τ | 500 | bio-days | `maleDriftTauDays` | design | tenures ~1.7–8 y (Gombe) |
+| Core cost relief with hunger (C7a amendment, C8) | an adult female's core-area cost × (1 − hunger) | fraction | `coreHungerRelief` | design | c8-lactation-diagnosis |
 | Growth record → strength (C8) | strength × (0.5 + 0.5 · grow); the observer's lean-mass proxy uses the same factor | fraction | `growStrengthW` | design | early-life-prereg §2.6 |
 | Female queue τ | 150 | bio-days | `femaleQueueTauDays` | [M] pattern | Foerster et al. 2016 |
 | Rank edge / ally weight in power | 0.2·tanh(ΔElo/400) / 0.6 |  | `power*` | design |  |

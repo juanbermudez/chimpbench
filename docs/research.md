@@ -617,6 +617,27 @@ Taï chimpanzees are *P. t. verus*. Gombe, Mahale, Budongo and Kibale chimpanzee
 - *new* culverhouse2018 (gap only): Culverhouse RC, Saccone NL, Horton AC et al. 2018. Collaborative meta-analysis finds no evidence of a strong interaction between stress and 5-HTTLPR genotype contributing to the development of depression. *Molecular Psychiatry* 23(1):133–142. [doi:10.1038/mp.2017.44](https://doi.org/10.1038/mp.2017.44) (Abs).
 - *new* border2019 (gap only): Border R, Johnson EC, Evans LM et al. 2019. No support for historical candidate gene or candidate gene-by-interaction hypotheses for major depression across multiple large samples. *American Journal of Psychiatry* 176(5):376–387. [doi:10.1176/appi.ajp.2018.18070881](https://doi.org/10.1176/appi.ajp.2018.18070881) (Abs).
 
+## Lactation energetics (chimpanzees; C8 lactation diagnosis, 29 September 2026)
+
+Read for the C8 diagnosis of starving lactating females in the field profile (docs/staging/c8-lactation-diagnosis.md). Tags as in the early-life section.
+
+- **Energy balance through lactation, Kanyawara** [emeryThompson2012] (Abs) [M].
+  - n: 17 wild, unprovisioned mothers, Kibale; energy balance from urinary C-peptide of insulin, followed longitudinally.
+  - C-peptide of nursing mothers was depressed for about 6 months postpartum, then showed a net increase through the second year.
+  - Mothers in lower-quality foraging areas had lower C-peptide profiles than mothers in food-rich areas.
+  - Cycling resumed only after a sustained period of energy gain.
+  - No magnitude of the daily cost of lactation is given in the abstract.
+- **Nursing and infant feeding by age, Ngogo** [badescu2022] (Abs) [M].
+  - n: 72 immatures, Ngogo, Kibale.
+  - Nursing time, rates and durations were highest for infants of 6 months or younger and did not change significantly from 6 months to 5 years; some 5–7-year-olds still nursed, at decreasing rates.
+  - Infants under 6 months foraged little; foraging durations and time share rose with age.
+- **Use in MGOGO.** Neither source gives a chimpanzee magnitude for the energy cost of lactation, so the coded constant lactation hunger term (+0.012/h, about +20% of the awake rate, also at night) is left as a design value; its constancy over the whole lactation is a stylization (the sources show the cost concentrated in the first months and recovery of energy balance during the second year).
+
+**Sources:**
+
+- emeryThompson2012: Emery Thompson M, Muller MN, Wrangham RW 2012. The energetics of lactation and the return to fecundity in wild chimpanzees. *Behavioral Ecology* 23(6):1234–1241. [doi:10.1093/beheco/ars107](https://doi.org/10.1093/beheco/ars107) (Abs).
+- badescu2022: Bădescu I, Watts DP, Curteanu C, Desruelle KJ, Sellen DW 2022. Effects of infant age and sex, and maternal parity on the interaction of lactation with infant feeding development in chimpanzees. *PLoS ONE* 17(8):e0272139. [doi:10.1371/journal.pone.0272139](https://doi.org/10.1371/journal.pone.0272139) (Abs).
+
 ## Analogies from other primates (not used for targets)
 
 **These are analogies only: never a target and never a parameter source.** Baboons and macaques differ from chimpanzees in life history, dispersal and ecology. These studies show what kinds of early-life effects exist in long-lived primates; they size nothing in MGOGO. Each was checked on 29 September 2026 (FT = full text, Abs = abstract).

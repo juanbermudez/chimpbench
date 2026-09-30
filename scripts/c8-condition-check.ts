@@ -8,6 +8,9 @@
 // percentile and condLow to the pooled 5th percentile, once; the rule and the result are logged before any lever run.
 // Exposure only (§5.3): births, immature-years, and orphaning events by the offspring's sex and age class. No survival,
 // paternity, lean-mass, stress or aggression statistic is computed.
+// Extension (docs/staging/c8-lactation-diagnosis.md): adult females' condition is also reported by reproductive state
+// (lactating, pregnant, other). The original check pooled juveniles only, so it could not see starving mothers; the
+// decision rule still reads the juveniles only, as pre-registered.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { createWorld, tickWorld } from '../src/simulation';
 import type { Profile } from '../src/sim/params';
@@ -25,12 +28,17 @@ const q = (v: number[], p: number) => { const s = [...v].sort((a, b) => a - b); 
 const t0 = performance.now();
 const w = createWorld(SEED, { profile: PROFILE, params: { maternalLevers: 0, bereaveStress: 0, birthCondFromMother: 0 } });
 const P = paramsOf(w);
-const conds: number[] = [];
+const conds: number[] = [], females: Record<string, number[]> = { lactating: [], pregnant: [], other: [] };
 let immatureYears = 0, prevHour = w.hour;
 const days = Math.round(YEARS * 365);
 for (let i = 0; i < days * 5760; i++) {
   tickWorld(w);
-  if (prevHour < 12 && w.hour >= 12) for (const c of w.chimps) { if (!c.alive) continue; if (c.age < 12) immatureYears += 1 / 365; if (c.stage === 'juvenile') conds.push(ix(c).cond); }
+  if (prevHour < 12 && w.hour >= 12) for (const c of w.chimps) {
+    if (!c.alive) continue;
+    if (c.age < 12) immatureYears += 1 / 365;
+    if (c.stage === 'juvenile') conds.push(ix(c).cond);
+    if (c.sex === 'female' && c.age >= 15) females[c.lactating ? 'lactating' : c.pregnancy > 0 ? 'pregnant' : 'other'].push(ix(c).cond);
+  }
   prevHour = w.hour;
 }
 const births = w.chimps.filter(c => c.birthTime > 0).length;
@@ -52,7 +60,8 @@ const result = {
   date: new Date().toISOString(), seed: SEED, years: YEARS, profile: PROFILE, overrides: { maternalLevers: 0, bereaveStress: 0, birthCondFromMother: 0 },
   rule: `pooled juvenile (5–9.99 y) condition at 12:00 daily; band ${BAND[0]}–${BAND[1]} (design); outside it: condGood := p25, condLow := p5, once`,
   samples: conds.length, median, p25, p5, mean: conds.reduce((a, b) => a + b, 0) / conds.length, min: Math.min(...conds), max: Math.max(...conds),
-  inBand, registry: { condGood: P.condGood, condLow: P.condLow }, decision: inBand ? 'keep condGood and condLow' : `set condGood = ${p25.toFixed(3)}, condLow = ${p5.toFixed(3)}`,
+  inBand, registry: { condGood: P.condGood, condLow: P.condLow },
+  adultFemales: Object.fromEntries(Object.entries(females).map(([k, v]) => [k, v.length ? { samples: v.length, median: q(v, 0.5), p10: q(v, 0.1), belowCondLow: v.filter(x => x < P.condLow).length / v.length } : null])), decision: inBand ? 'keep condGood and condLow' : `set condGood = ${p25.toFixed(3)}, condLow = ${p5.toFixed(3)}`,
   exposure: { births, immatureYears, orphaningEvents: orphaning, living: w.chimps.filter(c => c.alive).length },
   wallS: (performance.now() - t0) / 1000,
 };

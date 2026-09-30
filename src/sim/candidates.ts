@@ -184,7 +184,8 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   const lv = levels(world), tg = gridOf(world, P);
   const inNest = c.action === 'nest' && x.phase >= 2 && c.nest !== null;
   // adult females, especially mothers, forage mostly within individual core areas [H]
-  const coreW = c.sex === 'female' && c.age >= 12 ? (c.lactating ? P.coreCostLactating : P.coreCostFemale) : 0;
+  // C7a amendment (C8): the core cost relaxes with hunger, so a hungry female leaves her core for fruit (design)
+  const coreW = c.sex === 'female' && c.age >= 12 ? (c.lactating ? P.coreCostLactating : P.coreCostFemale) * (1 - P.coreHungerRelief * h) : 0;
 
   // --- sleep, rest, shelter -------------------------------------------------
   // chimpanzees leave nests around sunrise and settle around sunset [H]

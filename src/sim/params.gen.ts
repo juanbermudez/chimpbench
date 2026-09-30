@@ -2,7 +2,7 @@
 /* eslint-disable */
 export const REGISTRY_VERSION = 1;
 /** Content hash of every live default, hard range, profile value and integer flag. Stored with each world. */
-export const REGISTRY_HASH = '685cae42040e58a2';
+export const REGISTRY_HASH = '756b118f398d2752';
 
 /** Registry defaults (the compressed profile). */
 export const DEFAULTS = {
@@ -179,6 +179,7 @@ export const DEFAULTS = {
   continueBonus: 0.25,
   coreCostFemale: 0.35,
   coreCostLactating: 0.6,
+  coreHungerRelief: 1,
   cropFallRate: 0.5,
   cropFullExp: 0,
   cropFullMin: 0,
@@ -938,6 +939,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   continueBonus: [0, 10],
   coreCostFemale: [-10, 10],
   coreCostLactating: [-10, 10],
+  coreHungerRelief: [0, 1],
   cropFallRate: [0, 1000000],
   cropFullExp: [0, 100],
   cropFullMin: [0, 1],

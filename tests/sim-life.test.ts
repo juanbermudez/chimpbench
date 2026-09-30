@@ -339,3 +339,20 @@ test('C8 an introduction exposes the index case\'s whole party; outbreaks arrive
   assert.deepEqual(ill.map(c => c.id).sort((a, b) => a - b), party.members.filter(id => w.chimps.find(c => c.id === id)!.alive).sort((a, b) => a - b), 'the whole party');
   assert.ok(days < 400, `${days} days at 10 per community-year`);
 });
+
+test('C7a amendment (C8): an adult female\'s core-area cost relaxes with hunger; the switch at 0 restores the old cost', () => {
+  const score = (relief: number, hunger: number) => {
+    const w = createWorld(48, { params: { coreHungerRelief: relief } });
+    while (w.hour < 10) tickWorld(w);
+    const f = w.chimps.find(c => c.alive && c.sex === 'female' && c.age > 20 && !w.chimps.some(k => k.alive && k.motherId === c.id && !ix(k).weaned))!;
+    const t = w.trees.reduce((a, b) => (Math.hypot(b.position[0] - f.position[0], b.position[2] - f.position[2]) < 3 && b.fruit > a.fruit ? b : a), w.trees[0]);
+    const x = ix(f);
+    x.coreX = t.position[0] + 20; x.coreZ = t.position[2]; x.trees = [t.id]; x.seen = []; f.hunger = hunger; f.lactating = false; t.fruit = 0.5;
+    const out: Candidate[] = [];
+    computeCandidates(w, f, out);
+    return out.find(q => q.action === 'forage' && q.targetId === t.id)?.score ?? null;
+  };
+  const off = score(0, 0.8), on = score(1, 0.8), sated = [score(0, 0), score(1, 0)];
+  assert.ok(off !== null && on !== null && on > off, `relief raises the score of a tree off the core (${off} → ${on})`);
+  assert.equal(sated[0], sated[1], 'no relief when sated');
+});

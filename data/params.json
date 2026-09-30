@@ -4048,6 +4048,28 @@
    "notes": "Core-area cost for lactating females per range radius."
   },
   {
+   "id": "coreHungerRelief",
+   "group": "feeding",
+   "value": 1,
+   "units": "fraction per unit hunger",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.coreHungerRelief (computeCandidates core cost)",
+   "file": "src/sim/candidates.ts",
+   "notes": "C7a amendment (C8; docs/staging/c8-lactation-diagnosis.md): an adult female's core-area cost is multiplied by (1 − coreHungerRelief × hunger), so a hungry female leaves her core for fruit instead of staying on fallback foods at half the intake rate. General (every adult female with a core cost; reads only hunger), never lactation-specific. 1 = full relief at hunger 1 (design, not tuned); 0 restores C7a."
+  },
+  {
    "id": "cropFallRate",
    "group": "phenology",
    "value": 0.5,
