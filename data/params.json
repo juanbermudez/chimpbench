@@ -4432,6 +4432,35 @@
    "notes": "Mothers charge an aggressor of their offspring within this distance. Compressed stand-in scaled with sight (field ≈ compressed × 35/15, design)."
   },
   {
+   "id": "departCue",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [
+    "gruberZuberbuhler2013"
+   ],
+   "clock": "none",
+   "symbol": "P.departCue",
+   "file": "src/sim/execution.ts",
+   "profiles": {
+    "compressed": 0,
+    "field": 1
+   },
+   "notes": "Stage C13d switch (docs/realism-design.md \"C13d pre-registration\"): an adult setting off on a trip to a tree gives every awake own-community companion aged 5+ within partyLinkM an urgent decision point, seen or not (the C7a cue reached only companions in the initiator's view and skipped any interrupted in the last 2 min). Recruitment to joint travel [H] gruberZuberbuhler2013; the decision point is a design assumption. Field only: the joint-trip and follow options it serves exist only there. 0 = C13c. Ablation switch (set C13d).",
+   "integer": true
+  },
+  {
    "id": "discrimDistW",
    "group": "communication",
    "value": 1,
