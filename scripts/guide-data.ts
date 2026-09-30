@@ -165,7 +165,7 @@ function fruit() {
     site: { ...site, annualRain, monthlyRfs: monthlyMedian(site.rfs).map(v => round(v, 0)), monthlyRain: monthlyMedian(site.rain).map(v => round(v, 1)),
       note: 'RFS is the site ripe fruit score of the source file (a crop-weighted index); rain in mm per month.' },
     species: { years: [phen.years[a], phen.years[b]], unit: 'share of monitored stems with ripe fruit', list: species, unmatched: phen.unmatched,
-      note: 'The eight species of my forest that the Ngogo transect records; the ninth (Ficus sansibarica) uses the fig mean. My field-profile forest steps through these record years in order.' },
+      note: 'The eight species of the simulated forest that the Ngogo transect records; the ninth (Ficus sansibarica) uses the fig mean. The field-profile forest steps through these record years in order.' },
   };
 }
 

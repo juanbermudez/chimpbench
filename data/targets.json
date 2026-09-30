@@ -1904,7 +1904,7 @@
     "lo": 5,
     "hi": 12,
     "units": "per community-year",
-    "basis": "Kanyawara and Taï; ChimpBench communities are small"
+    "basis": "Kanyawara and Taï; the simulated communities are small"
    },
    "evidence": "H",
    "role": "fitted",
