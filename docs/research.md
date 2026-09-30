@@ -239,6 +239,17 @@ Proposed additions from the realism research pass. They are **not yet merged** i
 - **Botanical skills and inspection mistakes** [janmaat2013b] (full text) [M]: Janmaat KRL, Ban SD, Boesch C 2013. Taï chimpanzees use botanical skills to discover fruit: what we can learn from their mistakes. *Animal Cognition* 16(6):851–860. [doi:10.1007/s10071-013-0617-z](https://doi.org/10.1007/s10071-013-0617-z). Chimpanzees inspect empty trees of species that are fruiting synchronously, so a species' fruiting state is learned and an empty tree is learned on arrival (cited by `knownTreesK` and C7a rule 8).
 - **Stylization (C7a rule 8):** the daily list of the 40 best-known trees uses the true share of each species' trees in fruit and every tree's capacity, including trees no animal has seen: community omniscience about those 40 trees, labelled as such in `src/sim/foraging.ts`.
 
+## Community fission (stage C9 pre-registration, 29 September 2026)
+
+Sources for docs/realism-design.md "C9 pre-registration". Bibliographies are Crossref-checked in `data/targets.json`.
+
+- **Ngogo fission and its aftermath** [sandel2026] (abstract; data CC0, Dryad doi:10.5061/dryad.sf7m0cgkg, in `data/raw/`). The network polarized in 2015 and two groups were distinct by 2018. Then came 24 attacks, killing at least 7 mature males and 17 infants of the Central group. The data are adult-male proximity and grooming scans (1998–2022), yearly networks, group labels for 219 individuals, quarterly patrols per group from 2016, and yearly group sizes.
+- **Earlier Ngogo killings** [sandelWatts2021] (full text): lethal coalitionary aggression associated with the fission. The victim Basie had 12.5–24.8% yearly party association with the western males.
+- **Gombe fission** [feldblum2018] (Feldblum JT, Manfredi S, Gilby IC et al. 2018. *American Journal of Physical Anthropology*, doi:10.1002/ajpa.23462). Subgrouping rose sharply in 1971–72 before the 1973 split, coinciding with a struggle among three top males. It is the source of a held-out pattern (T-FIS-2), so it is not used in the C9 design.
+- **Stable male subgroups without a split** [mitaniAmsler2003] (Mitani J, Amsler S 2003. *Behaviour*, doi:10.1163/156853903770238355). Ngogo in 2003 had two stable male subgroups with overlapping ranges.
+- **Community detection** [traag2019] (Traag VA, Waltman L, van Eck NJ 2019. From Louvain to Leiden: guaranteeing well-connected communities. *Scientific Reports*, doi:10.1038/s41598-019-41695-z) and **modularity** [newman2006] (Newman MEJ 2006. *PNAS*, doi:10.1073/pnas.0601602103): method sources.
+- **Bond-weighted recruitment** [gruberZuberbuhler2013] (full text): allies were recruited to joint travel more often.
+
 ## Communication (stage C10, 29 September 2026)
 
 Sources for the C10 pre-registration (docs/realism-design.md, "C10 pre-registration"). Bibliographies are Crossref-checked in `data/targets.json`. FT = full text, Abs = abstract.
