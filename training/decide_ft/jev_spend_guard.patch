@@ -1,4 +1,4 @@
-PROPOSAL ONLY: not applied. Owner: the TRAINING session (training/decide_ft/jev.py; worker.py is on the same paid path).
+APPLIED UPSTREAM in 552bac3 (TRAINING session, verbatim; kept for the record). Originally a proposal. Owner: the TRAINING session (training/decide_ft/jev.py; worker.py is on the same paid path).
 Wires the run-wide spend guard (training/decide_ft/spend_guard.py, tested by test_spend_guard.py against a fake server) into JevClient and worker.py:
 explicit ledger + run id + cap (no default), jev-1.13.0 pinned, per-attempt receipts with the do-not-train marker, retries only on 429/529,
 unknown billing booked as spent, hard stop at the cap, dry-run and kill switch; a guard stop is fatal in worker.py (never filled with rules).
