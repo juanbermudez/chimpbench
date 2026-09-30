@@ -202,7 +202,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
       const w = deps.getWorld();
       const data = { version: '0.2.0', savedAt: new Date().toISOString(), note: 'Synthetic, uncalibrated simulation. Traces record model inputs and outputs; a snapshot alone is not a full replay.', clock: { ...deps.clock }, policy: w.modelPolicy, decider: { ...deps.decider, traces: undefined }, traces: deps.decider.traces.slice(-200), world: w };
       const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' }));
-      const a = document.createElement('a'); a.href = url; a.download = `mgogo-seed-${w.seed}-day-${w.day}.json`; a.click();
+      const a = document.createElement('a'); a.href = url; a.download = `chimpbench-seed-${w.seed}-day-${w.day}.json`; a.click();
       setTimeout(() => URL.revokeObjectURL(url), 2000);
     },
     notify({ text, cat = 'system', severity = 1, actor = -1, title, action }) {
