@@ -7500,6 +7500,35 @@
    "notes": "Spread of gestation lengths (222-232 days). The 222–232 d span is narrower than the cited 208–235 d, so the level is not claimed (C5a review)."
   },
   {
+   "id": "goalDistScaleM",
+   "group": "movement",
+   "value": 0,
+   "units": "m",
+   "range": [
+    0,
+    3200
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1000000
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/research.md (C7c-C7d): janson2014 (the D -> 0 limit, nearest unused known resource weighted by value)"
+   ],
+   "clock": "none",
+   "symbol": "P.goalDistScaleM",
+   "file": "src/sim/candidates.ts",
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage C7e (field; c7b-prereg 9): goal order among out-of-sight trees by (worth - revisit) x D / (D + max(d, memoryTreeMinM)); only the top-ranked tree is offered, at its usual score. D -> 0 is route chaining, D -> infinity no distance preference. 0 = off (the C7c-C7d four-best shortlist; compressed). Declared calibration against Taï straightness, turning and path rate (loss and seeds in c7b-prereg 9.2); Fitted (C7e) against Taï (seeds 3909, 4010; compare-movement 0.25 y): loss off 0.163; D = 50, 100, 200, 400, 800, 1,600, 3,200 m gave 0.85, 0.94, 1.28, 0.85, 0.74, 0.45, 0.25 (straightness rises to 0.26-0.33 but turning rises to 1.1-2.1 rad and path falls to 85-114 m/h); no value beats off, so the field value stays 0 (c7b-prereg 9.5). Prior for the fit: 50-3,200 m (0 = off)."
+  },
+  {
    "id": "groomCreditRetainPerH",
    "group": "social",
    "value": 0.97,
@@ -13945,6 +13974,36 @@
    "symbol": "pairTick play",
    "file": "src/sim/execution.ts",
    "notes": "Rough play escalates (partner more than 2 y younger) [H occurs; rate design]."
+  },
+  {
+   "id": "routeChain",
+   "group": "movement",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [],
+   "refs": [
+    "docs/research.md (C7c-C7d): janson2014, efficient primate paths match visiting the nearest unused known resource"
+   ],
+   "clock": "none",
+   "symbol": "P.routeChain",
+   "file": "src/sim/candidates.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage C7d (field; c7b-prereg 8.3): among out-of-sight goals only the tree with the most believed value per metre (worth / max(d, memoryTreeMinM)) is offered, at its usual score, instead of the four best by score: the nearest unused known resource weighted by value (janson2014) [M]; crop beliefs and the revisit penalty keep emptied and just-used trees out, so a day chains nearby trees. No free parameter. 0 = off. Pre-registered field value 1; off by default after the C7d direction check (c7b-prereg 8.4): straightness rose (0.21 -> 0.26) but turning rose too (0.87 -> 1.59 rad), trips shrank to ~60 m, the 30-min path fell 2,014 -> 795 m/day and fruit share 0.79 -> 0.53."
   },
   {
    "id": "runMps",
