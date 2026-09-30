@@ -6,7 +6,7 @@ import { killChimp } from './life';
 import { clamp, random } from './rng';
 import { noteEvent, recordAggression, recordWound, tensionOf } from './relations';
 import { paramsOf } from './params';
-import { noteContact, witnesses } from './contact';
+import { markDanger, noteContact, witnesses } from './contact';
 import { index, ix, simOf } from './state';
 
 const hd = (a: Chimp, b: Chimp) => Math.hypot(a.position[0] - b.position[0], a.position[2] - b.position[2]);
@@ -182,15 +182,18 @@ function gangAttack(world: World, c: Chimp, o: Chimp): void {
       s.kills[key] = (s.kills[key] ?? 0) + 1;
       // contact memory (§5.3.1 P2, A1): the losers' witnesses remember where they lost a member, the winners' witnesses
       // where a neighbour died; ranges then move through use (territory.ts), not by script
-      for (const w of witnesses(world, o.troopId, o.position[0], o.position[2])) if (w !== o) noteContact(world, w, o.position[0], o.position[2], 0, P.dangerDeathW);
-      for (const w of witnesses(world, c.troopId, o.position[0], o.position[2])) noteContact(world, w, o.position[0], o.position[2], P.dangerDeathW, 0);
+      if (P.patrolContactMemory === 1) {
+        for (const w of witnesses(world, o.troopId, o.position[0], o.position[2])) if (w !== o) noteContact(world, w, o.position[0], o.position[2], 0, P.dangerDeathW);
+        for (const w of witnesses(world, c.troopId, o.position[0], o.position[2])) noteContact(world, w, o.position[0], o.position[2], P.dangerDeathW, 0);
+      } else markDanger(world, o.troopId, o.position[0], o.position[2], P.dangerDeathW); // ablation: the C6 community grid
       killChimp(world, o, `killed in an intergroup attack by ${troop.name} males`, 3,
         `${n} ${troop.name} males (${names}) attacked ${o.name}, an isolated ${other.name} ${o.sex === 'male' ? (o.age >= 15 ? 'adult male' : 'adolescent male') : o.age < 5 ? 'infant' : 'female'}; ${o.name} died of the injuries`);
       for (const a of attackers) { episode(world, a, 'territory', `Joined the attack that killed ${o.name}, a stranger`, o.id); noteEvent(world, a, 'intergroup', `Joined the attack that killed ${o.name} of the ${other.name}`, o.id); }
       return;
     }
     noteEvent(world, o, 'injury', `Wounded in an attack by ${troop.name} males`, c.id);
-    noteContact(world, o, o.position[0], o.position[2], 0, P.dangerInjuryW); // wounded by strangers (§5.3.1 P2)
+    if (P.patrolContactMemory === 1) noteContact(world, o, o.position[0], o.position[2], 0, P.dangerInjuryW); // wounded by strangers (§5.3.1 P2)
+    else markDanger(world, o.troopId, o.position[0], o.position[2], P.dangerInjuryW); // ablation: the C6 community grid
     addEvent(world, `${troop.name} males (${names}) attacked ${o.name} of ${other.name}; ${o.sex === 'male' ? 'he' : 'she'} escaped wounded`, 'territory', [c.id, o.id], c.troopId, 2);
   }
   episode(world, o, 'territory', `Was attacked by ${troop.name} males`, c.id);

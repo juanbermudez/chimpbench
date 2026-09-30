@@ -2,7 +2,7 @@
 /* eslint-disable */
 export const REGISTRY_VERSION = 1;
 /** Content hash of every live default, hard range, profile value and integer flag. Stored with each world. */
-export const REGISTRY_HASH = 'ff7b5a3d5d28fdb9';
+export const REGISTRY_HASH = '4295e5525e3931ed';
 
 /** Registry defaults (the compressed profile). */
 export const DEFAULTS = {
@@ -489,9 +489,12 @@ export const DEFAULTS = {
   patchesPerHa: 0,
   patrolAlertM: 25,
   patrolAlphaLeadBonus: 0,
+  patrolContactMemory: 1,
   patrolContactW: 1,
   patrolEdgeSpeed: 0.6,
   patrolEndH: 15.5,
+  patrolEnergyGate: 0,
+  patrolEnergyLow: 0.4,
   patrolFemaleJoin: 0.2,
   patrolFemaleStay: -0.3,
   patrolFileGapM: 3,
@@ -514,6 +517,8 @@ export const DEFAULTS = {
   patrolReleaseP: 0.5,
   patrolReturnSpeed: 1.3,
   patrolRollMaxH: 1,
+  patrolSilence: 1,
+  patrolSingleFile: 1,
   patrolStaleTauDays: 7,
   patrolStaleW: 0.25,
   patrolStartH: 8,
@@ -1197,9 +1202,12 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   patchesPerHa: [0, 1000000],
   patrolAlertM: [0, 1000000],
   patrolAlphaLeadBonus: [0, 1],
+  patrolContactMemory: [0, 1],
   patrolContactW: [0, 10],
   patrolEdgeSpeed: [0.1, 2],
   patrolEndH: [0, 24],
+  patrolEnergyGate: [0, 1],
+  patrolEnergyLow: [0, 1],
   patrolFemaleJoin: [-5, 5],
   patrolFemaleStay: [-5, 5],
   patrolFileGapM: [0.5, 50],
@@ -1222,6 +1230,8 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   patrolReleaseP: [0, 1],
   patrolReturnSpeed: [0.1, 3],
   patrolRollMaxH: [0, 1000000],
+  patrolSilence: [0, 1],
+  patrolSingleFile: [0, 1],
   patrolStaleTauDays: [0, 1000000],
   patrolStaleW: [0, 10],
   patrolStartH: [0, 24],
@@ -1419,7 +1429,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
 };
 
 /** Parameters that must stay whole numbers. */
-export const INTEGER_IDS: readonly ParamId[] = ['allyCount', 'attentionN', 'callSignatures', 'callerDiscrim', 'chimpGridCellM', 'coerceMaxRepeats', 'contactSlots', 'cycleLenMinDays', 'cycleLenSpanDays', 'deadSlimDays', 'episodeCap', 'eventCap', 'eventPriorityAlpha', 'eventPriorityBirth', 'eventPriorityDeath', 'eventPriorityInfanticide', 'eventPriorityInjury', 'eventPriorityIntergroup', 'eventPriorityRank', 'eventPriorityTransfer', 'followCommit', 'foodCallRule', 'fordSpacingM', 'gangMinOwnMales', 'historyFacts', 'historyMaxChars', 'historyMaxLines', 'huntMinMales', 'infanticideMaleMargin', 'knownTreesK', 'layoutScale', 'mapSizeM', 'memCropBelief', 'memKeepMonths', 'memLedgerEvents', 'memMonthEvents', 'memMonthPartners', 'memTreeCap', 'memYearEvents', 'memYearPartners', 'memoryCap', 'memoryMonthDays', 'partyEveryTicks', 'partyJoinTrip', 'partyLeaderFollow', 'partyStayMaxN', 'patchEcology', 'patrolMinMales', 'phenologyForcing', 'popCap', 'preyMinGroups', 'preyMoveEveryTicks', 'siteTzH', 'slotsForage', 'slotsMulti', 'slowEveryTicks', 'startDoy', 'streamAnalytic', 'synthYears', 'tickSeconds', 'travelCommit', 'travelHoo', 'treeGridCellM', 'tripRateValue', 'udCellM', 'udKernelRef'];
+export const INTEGER_IDS: readonly ParamId[] = ['allyCount', 'attentionN', 'callSignatures', 'callerDiscrim', 'chimpGridCellM', 'coerceMaxRepeats', 'contactSlots', 'cycleLenMinDays', 'cycleLenSpanDays', 'deadSlimDays', 'episodeCap', 'eventCap', 'eventPriorityAlpha', 'eventPriorityBirth', 'eventPriorityDeath', 'eventPriorityInfanticide', 'eventPriorityInjury', 'eventPriorityIntergroup', 'eventPriorityRank', 'eventPriorityTransfer', 'followCommit', 'foodCallRule', 'fordSpacingM', 'gangMinOwnMales', 'historyFacts', 'historyMaxChars', 'historyMaxLines', 'huntMinMales', 'infanticideMaleMargin', 'knownTreesK', 'layoutScale', 'mapSizeM', 'memCropBelief', 'memKeepMonths', 'memLedgerEvents', 'memMonthEvents', 'memMonthPartners', 'memTreeCap', 'memYearEvents', 'memYearPartners', 'memoryCap', 'memoryMonthDays', 'partyEveryTicks', 'partyJoinTrip', 'partyLeaderFollow', 'partyStayMaxN', 'patchEcology', 'patrolContactMemory', 'patrolEnergyGate', 'patrolMinMales', 'patrolSilence', 'patrolSingleFile', 'phenologyForcing', 'popCap', 'preyMinGroups', 'preyMoveEveryTicks', 'siteTzH', 'slotsForage', 'slotsMulti', 'slowEveryTicks', 'startDoy', 'streamAnalytic', 'synthYears', 'tickSeconds', 'travelCommit', 'travelHoo', 'treeGridCellM', 'tripRateValue', 'udCellM', 'udKernelRef'];
 
 /** Scale-profile values that differ from DEFAULTS (docs/realism-design.md §5.1). */
 export const PROFILE_VALUES: { readonly compressed: Partial<Record<ParamId, number>>; readonly field: Partial<Record<ParamId, number>> } = {

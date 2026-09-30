@@ -5,7 +5,7 @@ import { hash01, random } from './rng';
 import { noteEncounter } from './relations';
 import { paramsOf } from './params';
 import { PARTY_EVERY, TICK_HOURS, chimpCells, index, ix, simOf } from './state';
-import { noteContact } from './contact';
+import { markDanger, noteContact } from './contact';
 import { SECTORS, cellAt, gridOf, incursionPoint, rangeEdge, recordUse, sectorDir, useLevels } from './territory';
 
 const parent: number[] = [];
@@ -170,7 +170,8 @@ export function updatePatrols(world: World): void {
     const outnumbered = lx.strangerMales > 0 && lx.strangerMales >= lx.ownMales || (time - lx.heardAt < P.patrolHeardWindowH && lx.heardTroop > 0 && lx.heardN >= lx.ownMales);
     if (outnumbered && p.phase < 2) {
       // a patrol turning back: a loss for every member still on it (contact memory, §5.3.1 P2)
-      for (const id of p.file) { const m = idx.byId.get(id); if (m && m.alive && m.action === 'patrol') noteContact(world, m, leader.position[0], leader.position[2], 0, P.dangerFleeW); }
+      if (P.patrolContactMemory === 1) { for (const id of p.file) { const m = idx.byId.get(id); if (m && m.alive && m.action === 'patrol') noteContact(world, m, leader.position[0], leader.position[2], 0, P.dangerFleeW); } }
+      else markDanger(world, troop.id, leader.position[0], leader.position[2], P.dangerFleeW); // ablation: the C6 community grid
       p.contact = true;
       p.phase = 2; p.wx = troop.center[0]; p.wz = troop.center[2]; p.stopUntil = time;
       addEvent(world, `The ${troop.name} patrol turned back from outnumbering strangers`, 'territory', [leader.id], troop.id, 1);
