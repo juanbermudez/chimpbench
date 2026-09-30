@@ -51,3 +51,46 @@ Runs: 30-day burn-in, then 30 days measured. Adult females (15 y or more) are sp
 - the fitted demography rows from 40-year runs on the development seeds.
 
 **The pre-run condition check** (`scripts/c8-condition-check.ts`) is extended to adult females by reproductive state (lactating, pregnant, other). The original check pooled juveniles only.
+
+## Diagnosis results (development; seeds 48, 7, 21; days 30–60; daylight means)
+
+| Configuration | Lactating hunger | Lactating condition | Other adult females' hunger |
+| --- | --- | --- | --- |
+| All on | 0.67 | 0.39 | 0.48 |
+| C7a off | 0.52 | 0.49 | 0.40 |
+| C7c off | 0.64 | 0.41 | 0.45 |
+| Patrols off | 0.66 | 0.39 | 0.46 |
+| C10 off | 0.66 | 0.39 | 0.47 |
+| C8's mechanisms off | 0.63 | 0.40 | 0.45 |
+
+**Energy decomposition (all on).** Lactating vs other adult females vs males:
+- Feeding share of daylight: 47.7% vs 37.4% vs 32.8%. Lactating females feed the most, but 16.4% of their daylight goes to fallback foods, against 10.2% for other females and 0.2% for males.
+- Intake per feeding hour is identical across classes: fruit 0.236 hunger/h, fallback 0.129.
+- Travel: 9.5% vs 20% of daylight. Ground distance: 1.7 vs 3.1 km per 12 daylight hours.
+- Joint trips: 3.1% vs 6.2% of daylight. Patrols: 0.
+- Coded hunger gain: 0.072 vs 0.060 per awake hour. The lactation term (+0.012/h) also runs through the night, where it adds 55% to the sleep rate.
+- Mothers do not travel more and are not dragged on trips: C7c is not the cause.
+
+**Attribution.** By the rule, C7a is implicated (−0.15 hunger); the other stages move hunger by 0.03 or less. C7a's knobs one at a time:
+- fruitValueRef back to 0.45: −0.10;
+- patchesPerHa back to 18: −0.06;
+- memCropBelief 0: +0.12;
+- the rest: within ±0.05.
+
+The pre-C7a female core-area cost amplifies the effect. With it removed (not a C7a knob; a diagnostic only), lactating hunger falls to 0.46: fallback use drops from 16.4% to 0.2% and travel rises to 18.6%. So under C7a's sparser, lower-valued crowns, the state-independent core cost (`coreCostLactating` 0.6, `coreCostFemale`) holds hungry females on fallback foods inside their cores, at half the fruit intake rate.
+
+**Lactation cost vs literature.**
+- emeryThompson2012 (Kanyawara, 17 mothers, urinary C-peptide; abstract): energy balance is depressed for 6 months postpartum, then shows a net increase through the second year, and is lower in poorer foraging habitats.
+- badescu2022 (Ngogo, 72 immatures; abstract): nursing is highest at 6 months or younger, with no significant change from 6 months to 5 years.
+- Neither gives a magnitude. So the coded +20% (of the awake rate) cannot be shown to exceed what the literature supports, and it stays unchanged. The time course (highest early, recovery after 6 months) is noted as a stylization of the constant term.
+
+## Amendment (fixed before its effect is checked)
+
+**C7a amendment (C8): the female core-area cost relaxes with hunger.**
+- In `candidates.ts`, the core-cost weight of an adult female is multiplied by (1 − `coreHungerRelief` × hunger).
+- `coreHungerRelief` = 1 (design: full relief at hunger 1, none when sated). 0 restores C7a exactly.
+- The rule is general: every adult female with a core cost, whatever her reproductive state. It reads only hunger. The larger lactating weight is the pre-existing [H] design ("adult females, especially mothers, forage mostly within individual core areas").
+- It is labelled a C7a amendment because C7a's food landscape is what makes the core cost bind. The cost itself predates C7a.
+- It will move T-RNG-5 (held out, lactating vs male day range), because hungry mothers range farther. The rule was designed from the energy diagnosis, not from T-RNG-5, and T-RNG-5 is reported with that caveat.
+- The value is not tuned.
+- Checks: the decomposition again; population over 10 years (field, seeds 48, 7, 21); fitted demography rows over 40 years (development seeds).
