@@ -1189,6 +1189,16 @@ Built in `src/sim/fission.ts`, off by default (`fissionOn` 0, `assocBondW` 0; th
 - **Observer.** A community that appears gets a following team (`ensureTeams`), and its id is added to the records.
 - **Still to build for the C9 proof.** The T-FIS observer metrics, the `large-community` scenario and the T-FIS-5 band script.
 
+#### C9 proof preparation (29 September 2026, before any C9 scenario run)
+
+- **T-FIS-5 band.** Computed from the real data by the pre-registered rule (`scripts/fission-bands-metrics.ts`, adult males of `population_snapshots.csv`, 2017–2022). Median ratio 7.35, 90% CI 6.19–11.41. Every year West, the smaller group (7–11 adult males), patrolled 5–15 times more per male than Central (23–26). The row is in data/targets.json, held out.
+- **Scenario script.** `scripts/c9-scenario.ts` scores T-FIS-1…5 and the range divergence from simulation truth, by the pre-registered rules. It runs three kinds at natural aging:
+  - `baseline`: default communities with fission on.
+  - `large`: West cloned up to ≥ 60 members and ≥ 15 adult males, cloning adult males and mothers with their young; `popCap` 180.
+  - `large-off`: the same start with fission off. It gives the paired intercommunity killing rate for T-FIS-3, per community pair per year over the three communities.
+- **Change from the pre-registration** (integrator ruling: `fissionOn` stays off by default). The T-FIS-1 baseline can no longer come from the combined proof's 40-year runs, so it runs as the scenario's `baseline` kind. Logged.
+- **Proof command.** `pnpm exec tsx scripts/c9-scenario.ts --years 40 --workers 6` on seeds 3505–3909. Rough wall time: about 12 h at 6 workers and 30 h at 2. The large communities approach the cap of 180, which costs about 0.6–1 s per eco-day.
+
 ### Stage C10: Communication (O10)
 **Goal**: individual and community call signatures, recognition by listeners, context- and audience-dependent calling, drumming structure, core gestures, features exposed to the audio layer.
 **Success Criteria** (5 seeds × 1 year):

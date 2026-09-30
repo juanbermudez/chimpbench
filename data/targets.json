@@ -3,27 +3,27 @@
  "generated": "2026-09-28",
  "about": "Quantitative field targets for MGOGO (docs/realism-design.md §2). Values are as reported by the sources; \"accept\" is the band the simulation must hit, scaled to MGOGO communities (12–22 members, 3–7 adult males) where stated. Evidence: H multi-site or large-sample full text; M one site, abstract-only or derived; L secondary, captive or qualitative. role fitted = may be used for calibration; held-out = never used for tuning. encoded = the mechanism was designed from this pattern, so a match is weak evidence.",
  "counts": {
-  "targets": 100,
+  "targets": 101,
   "fitted": 37,
-  "held-out": 63,
+  "held-out": 64,
   "parameterConstraints": 19,
   "sources": 124
  },
  "protocolPolicy": [
   "Every protocol parameter (observer settings, classifier rules, metric windows and thresholds, scoring rules) is set from the source's methods text or by validating the instrument against simulation truth, never by looking at a field-target verdict.",
-  "The protocol is frozen with a hash (protocolFreeze): sha256 over src/field/*.ts, scripts/lib/field-worker.ts, each target's id, role, encoded flag, band and observer protocol and its verdict-changing flags (compromised, protocolRevisedPostHoc, revisedPostFreeze, tuned, heldAsFail, instrumentWarning, partiallyEncoded, notScorable), the c12Fitted declarations, and the comparison code (src/compare/*.ts, scripts/compare-*.ts; since the C7a review). scripts/field-metrics.ts prints whether the current hash matches.",
+  "The protocol is frozen with a hash (protocolFreeze): sha256 over src/field/*.ts, scripts/lib/field-worker.ts, each target's id, role, encoded flag, band and observer protocol and its verdict-changing flags (compromised, protocolRevisedPostHoc, revisedPostFreeze, tuned, heldAsFail, instrumentWarning, partiallyEncoded, notScorable), the c12Fitted declarations, the comparison code (src/compare/*.ts, scripts/compare-*.ts; since the C7a review) and the scenario scoring scripts (scripts/field-scenario.ts, scripts/c9-scenario.ts; since C9). scripts/field-metrics.ts prints whether the current hash matches.",
   "Any change needs a protocolLog entry: date, parameter, old -> new, reason (source text with page, bug, or truth accuracy), which results had been seen, and verdicts before -> after. A change after the freeze also needs a new freeze hash.",
   "A held-out target touched by a change made after its value was seen is compromised (reported, never counted as validation) unless the change is a bug fix or follows the source's methods text and was made before the freeze; those are flagged protocolRevisedPostHoc and reported with before/after values. After the freeze, any change that touches a held-out target compromises it.",
   "A fitted target whose protocol was changed after its value was seen without such a reason reverts to the source value.",
   "Instrument validation against truth (sampling accuracy, classifier precision and recall) is allowed at any time, because truth is not a field target; each validation run is logged."
  ],
  "protocolFreeze": {
-  "stage": "C9 build (fission off)",
+  "stage": "C9 proof preparation",
   "date": "2026-09-29",
-  "hash": "ad788552f11082eb",
+  "hash": "7d80a5a2c7c40da1",
   "previous": {
-   "stage": "C10",
-   "hash": "fe5c3af51005d776"
+   "stage": "C9 build (fission off)",
+   "hash": "ad788552f11082eb"
   }
  },
  "protocolLog": [
@@ -985,6 +985,34 @@
     "all"
    ],
    "verdicts": "combined proof",
+   "class": "freeze"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C9 implementer",
+   "seen": "real data only (fission-bands: Ngogo 2017-2022 patrol ratio median 7.35, 90% CI 6.19-11.41); no C9 scenario result (a 60-day compressed dry run of the script, which cannot split)",
+   "param": "T-FIS-5 added (band 6.1905-11.4069, scripts/fission-bands-metrics.ts, the pre-registered rule with adult males of population_snapshots.csv); T-FIS-1..5 scored by scripts/c9-scenario.ts from simulation truth (metric stubs point there); the T-FIS-1 baseline runs as the scenario's baseline kind because fissionOn is off by default (integrator), not in the combined proof's 40-year runs as pre-registered",
+   "reason": "C9 pre-registration; integrator ruling that fissionOn stays off by default",
+   "targets": [
+    "T-FIS-1",
+    "T-FIS-2",
+    "T-FIS-3",
+    "T-FIS-4",
+    "T-FIS-5"
+   ],
+   "verdicts": "new / pending (C9 proof)",
+   "class": "new targets"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C9 implementer",
+   "seen": "no C9 scenario result",
+   "param": "freeze: ad788552f11082eb -> 7d80a5a2c7c40da1 (T-FIS-5 row, T-FIS metric stubs, the fingerprint now also covers scripts/field-scenario.ts and scripts/c9-scenario.ts)",
+   "reason": "C9 proof preparation",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "C9 proof, combined proof",
    "class": "freeze"
   }
  ],
@@ -2641,7 +2669,7 @@
    "evidence": "M",
    "role": "held-out",
    "encoded": false,
-   "notes": "",
+   "notes": "C9: scored from simulation truth by scripts/c9-scenario.ts under the C9 pre-registration rules (docs/realism-design.md). Because fissionOn is off by default, the T-FIS-1 baseline runs as the scenario's own baseline kind (default communities with fission on), not inside the combined proof.",
    "sources": [
     "sandel2026",
     "sandelWatts2021"
@@ -2688,7 +2716,7 @@
    "evidence": "M",
    "role": "held-out",
    "encoded": false,
-   "notes": "",
+   "notes": "C9: scored from simulation truth by scripts/c9-scenario.ts under the C9 pre-registration rules (docs/realism-design.md). Because fissionOn is off by default, the T-FIS-1 baseline runs as the scenario's own baseline kind (default communities with fission on), not inside the combined proof.",
    "sources": [
     "feldblum2018",
     "mitaniAmsler2003"
@@ -2735,7 +2763,7 @@
    "evidence": "M",
    "role": "held-out",
    "encoded": false,
-   "notes": "",
+   "notes": "C9: scored from simulation truth by scripts/c9-scenario.ts under the C9 pre-registration rules (docs/realism-design.md). Because fissionOn is off by default, the T-FIS-1 baseline runs as the scenario's own baseline kind (default communities with fission on), not inside the combined proof.",
    "sources": [
     "sandel2026",
     "sandelWatts2021"
@@ -2774,9 +2802,47 @@
    "evidence": "M",
    "role": "held-out",
    "encoded": false,
-   "notes": "",
+   "notes": "C9: scored from simulation truth by scripts/c9-scenario.ts under the C9 pre-registration rules (docs/realism-design.md). Because fissionOn is off by default, the T-FIS-1 baseline runs as the scenario's own baseline kind (default communities with fission on), not inside the combined proof.",
    "sources": [
     "sandelWatts2021"
+   ]
+  },
+  {
+   "id": "T-FIS-5",
+   "objectives": [
+    "O5",
+    "O6"
+   ],
+   "metric": "Patrols after a fission",
+   "definition": "After a split, adult-male patrols per 10 adult males per year, smaller daughter community / larger daughter; median of yearly ratios. Sim: scripts/c9-scenario.ts large-community scenario, simulation truth (patrol interactions), years after the split.",
+   "observer": {
+    "protocol": "scenario (simulation truth)",
+    "interval_min": null,
+    "unit": "daughter-community year"
+   },
+   "field": [
+    {
+     "population": "Ngogo West and Central",
+     "years": "2017-2022",
+     "value": "median ratio 7.35 (yearly 5.3-15.3); West (7-11 adult males) 5.6-40 patrols per 10 males per year, Central (23-26) 0.8-4",
+     "n": "6 years",
+     "method": "patrol-data-quarterly.csv x population_snapshots.csv (adult males); scripts/fission-bands-metrics.ts",
+     "source": "sandel2026",
+     "note": "computed by MGOGO from open data (CC0) before any C9 run"
+    }
+   ],
+   "accept": {
+    "lo": 6.1905,
+    "hi": 11.4069,
+    "units": "ratio",
+    "basis": "bootstrap 90% CI over years (C9 pre-registration rule), computed before any C9 run"
+   },
+   "evidence": "M",
+   "role": "held-out",
+   "encoded": false,
+   "notes": "C9 pre-registration (new held-out). The smaller, male-dense West group patrolled far more per male than Central after the Ngogo fission.",
+   "sources": [
+    "sandel2026"
    ]
   },
   {

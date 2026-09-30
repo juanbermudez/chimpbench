@@ -617,10 +617,12 @@ export const METRICS: MetricDef[] = [
   },
 
   // Fission
-  { id: 'T-FIS-1', protocol: 'census + association network', na: 'communities cannot split (fission is stage C9)' },
-  { id: 'T-FIS-2', protocol: 'association-network modularity before fission', na: 'communities cannot split (C9)' },
-  { id: 'T-FIS-3', protocol: 'post-split killing rate', na: 'communities cannot split (C9)' },
-  { id: 'T-FIS-4', protocol: 'former associates among victims', na: 'communities cannot split (C9)' },
+  // Fission (stage C9): scored from simulation truth by scripts/c9-scenario.ts (40-year scenarios, fissionOn 1); fission is off in these runs
+  { id: 'T-FIS-1', protocol: 'fissions per community-year by adult-male class (scenario)', na: 'scored by scripts/c9-scenario.ts (baseline and large-community scenarios; fissionOn is off by default)' },
+  { id: 'T-FIS-2', protocol: 'years of rising yearly mean modularity before the split condition first held (scenario)', na: 'scored by scripts/c9-scenario.ts (large-community scenario)' },
+  { id: 'T-FIS-3', protocol: 'killings between daughters in 7 years after the split / paired baseline intercommunity rate (scenario)', na: 'scored by scripts/c9-scenario.ts (large and large-off scenarios)' },
+  { id: 'T-FIS-4', protocol: 'victims killed by the other daughter with a former associate among the killers (scenario)', na: 'scored by scripts/c9-scenario.ts (large-community scenario)' },
+  { id: 'T-FIS-5', protocol: 'post-split patrols per 10 adult males, smaller / larger daughter (scenario)', na: 'scored by scripts/c9-scenario.ts (large-community scenario)' },
 
   // Food
   {
