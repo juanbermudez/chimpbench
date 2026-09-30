@@ -25,6 +25,10 @@ test('detection recovers a planted two-group partition; a single cohesive group 
   assert.ok(r.Q > 0.35 && Math.abs(r.Q - modularity(w, r.labels)) < 1e-12, `Q ${r.Q}`);
   const one = block([16], 0.5, 0).w;
   assert.ok(bestTwoSplit(one).Q < 0.1, `cohesive Q ${bestTwoSplit(one).Q}`);
+  // weak structure (a network starting to divide): still a positive best two-way split, mostly along the planted line
+  const weak = block([8, 8], 0.5, 0.33), rw = bestTwoSplit(weak.w);
+  const hits = rw.labels.filter((l, i) => (l === rw.labels[0]) === (weak.lab[i] === weak.lab[0])).length;
+  assert.ok(rw.Q > 0 && hits >= 13, `weak Q ${rw.Q}, ${hits}/16`);
   // three planted groups are merged to the best two
   const three = block([6, 6, 6], 0.5, 0.02).w;
   assert.equal(new Set(bestTwoSplit(three).labels).size, 2);
