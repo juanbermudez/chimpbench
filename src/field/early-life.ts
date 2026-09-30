@@ -95,7 +95,6 @@ const coxRows = (c: CoxRaw, idx: number[]): CoxRow[] => idx.map(i => ({ start: c
 const logHr = (c: CoxRaw, idx: number[]) => { const rows = coxRows(c, idx); if (!rows.some(r => r.event && r.x[0] === 1) && !rows.some(r => r.event)) return null; const f = cox(rows, 1); return f.converged ? f.beta[0] : null; };
 const orphanYears = (c: CoxRaw) => c.x.reduce((a, x, i) => a + (x === 1 ? c.stop[i] - c.start[i] : 0), 0);
 const orphanDeaths = (c: CoxRaw) => c.x.reduce((a, x, i) => a + (x === 1 && c.event[i] ? 1 : 0), 0);
-const allIdx = (n: number) => Array.from({ length: n }, (_, i) => i);
 const estParts = (name: string, e: Estimate) => ({ [name]: e.est, [`${name}Lo`]: e.lo, [`${name}Hi`]: e.hi, [`${name}Mde`]: e.mde });
 
 // ---------------------------------------------------------------------------
