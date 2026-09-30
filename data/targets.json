@@ -18,12 +18,12 @@
   "Instrument validation against truth (sampling accuracy, classifier precision and recall) is allowed at any time, because truth is not a field target; each validation run is logged."
  ],
  "protocolFreeze": {
-  "stage": "Seed replacement",
+  "stage": "ChimpBench rename",
   "date": "2026-09-30",
-  "hash": "839e47235ca4b43f",
+  "hash": "400aa83eac468b54",
   "previous": {
-   "stage": "Lean proof plan",
-   "hash": "c6dc9be135771d16"
+   "stage": "Seed replacement",
+   "hash": "839e47235ca4b43f"
   }
  },
  "protocolLog": [
@@ -1098,6 +1098,30 @@
    "seen": "none",
    "param": "freeze: c6dc9be135771d16 -> 839e47235ca4b43f (scripts/c9-scenario.ts default seeds; the fresh-set labels of T-PAT-2, -3, -5, -7 and T-LET-6)",
    "reason": "reserved seed replacement",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "combined proof (lean plan), C9 proof",
+   "class": "freeze"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "science/simulation owner",
+   "seen": "none",
+   "param": "cosmetic string rename MGOGO -> ChimpBench (user decision) in data/targets.json notes and one accept basis (T-LET-1: 'ChimpBench communities are small'), scripts/compare-*.ts credits and titles, the band scripts, guide-data.ts and docs/data credits; no metric, band or rule change; observer record hashes and the goldens unchanged (scripts/remote/verify.ts)",
+   "reason": "product renamed to ChimpBench in user-facing text",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "none",
+   "class": "cosmetic"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "science/simulation owner",
+   "seen": "none",
+   "param": "freeze: 839e47235ca4b43f -> 400aa83eac468b54 (cosmetic string rename only)",
+   "reason": "ChimpBench rename",
    "targets": [
     "all"
    ],
