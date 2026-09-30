@@ -2,7 +2,7 @@
 // footer and the year.
 
 /** The author's X profile: the one place to set it. Every [data-x-link] gets it; [data-x-text] also shows it. */
-export const X_URL = 'https://x.com/HANDLE';
+export const X_URL = 'https://x.com/jbermudez5';
 
 
 function footer() {
