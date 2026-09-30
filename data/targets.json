@@ -1014,6 +1014,22 @@
    ],
    "verdicts": "C9 proof, combined proof",
    "class": "freeze"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C9 implementer (integrator ruling)",
+   "seen": "no C9 value (seeds 3505-3909 were run by C7c, C7d and C7e movement direction checks with fission off)",
+   "param": "C9 proof seeds 3505, 3606, 3707, 3808, 3909 -> 5101, 5202, 5303, 5404, 5505 (reserved, never run); scripts/c9-scenario.ts default seeds changed; AGENTS.md lists the reserved sets",
+   "reason": "proof seeds must never have been run",
+   "targets": [
+    "T-FIS-1",
+    "T-FIS-2",
+    "T-FIS-3",
+    "T-FIS-4",
+    "T-FIS-5"
+   ],
+   "verdicts": "none",
+   "class": "protocol (seeds)"
   }
  ],
  "targets": [
