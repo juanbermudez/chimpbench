@@ -427,7 +427,7 @@ function activity(fig, [M]) {
 
 // ---------- Patrols by month of the year, averaged over each site's study years (never matched year to year).
 // Gombe comes from year-round daily follows, so it is the fair seasonal reference; Ngogo's months carry its observers'
-// field seasons. The simulated line stays "pending" until the patrol proof writes `seasonality.sim`.
+// field seasons. No simulated line is drawn until the patrol proof writes `seasonality.sim`.
 function seasonal(fig, [PC]) {
   const el = plotOf(fig), S = PC && PC.seasonality;
   if (!S || !S.gombePatrols || !S.ngogoPatrols) return pending(el, 'The patrol records are not available.');
@@ -464,9 +464,7 @@ function seasonal(fig, [PC]) {
   const hi = a => MONTHS[a.indexOf(Math.max(...a))], lo = a => MONTHS[a.indexOf(Math.min(...a))];
   set(fig, 'sub', `Averaged over ${yg} years at Gombe (${nf.format(tg)} patrols) and ${yn} at Ngogo (${nf.format(tn)}). Gombe patrols most in ${hi(S.gombePatrols)} and least in ${lo(S.gombePatrols)}, and no month is empty. At Ngogo, ${pct((S.ngogoPatrols[5] + S.ngogoPatrols[6]) / tn)} of patrols fall in June and July, which mostly reflects when observers were in the field.`);
   const leg = fig.querySelector('.gv-legend');
-  if (leg) leg.innerHTML = `<span><i class="gv-sw" style="--k:var(--gombe)"></i>Gombe, daily follows all year</span><span><i class="gv-sw dash" style="--k:var(--ngogo)"></i>Ngogo, observed patrols only</span>` +
-    // No simulated line is drawn until the proof defines one; the legend says so rather than guessing a shape.
-    '<span class="gv-pending">Simulated: pending until the patrol proof runs</span>';
+  if (leg) leg.innerHTML = `<span><i class="gv-sw" style="--k:var(--gombe)"></i>Gombe, daily follows all year</span><span><i class="gv-sw dash" style="--k:var(--ngogo)"></i>Ngogo, observed patrols only</span>`;   // no simulated line until the patrol proof writes one
   table(fig, ['Month', 'Gombe patrols', 'Gombe per month', 'Ngogo patrols', 'Ngogo per month'], () => MONTHS.map((m, i) => [m, S.gombePatrols[i], (S.gombePatrols[i] / yg).toFixed(2), S.ngogoPatrols[i], (S.ngogoPatrols[i] / yn).toFixed(2)]));
 }
 

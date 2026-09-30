@@ -145,6 +145,7 @@
 .vg-detail .d-strip { max-width: 520px; }
 .vg-detail a { color: var(--ink-2); text-decoration-color: var(--line-3); }
 .vtag { display: inline-flex; align-items: center; height: 19px; padding: 0 7px; border-radius: 5px; font-size: 11px; font-weight: 500; white-space: nowrap; border: 1px solid var(--line-3); color: var(--ink-2); }
+.vtag { display: none !important; }   /* verdict labels (Pass, Fail, Tuned…) are not shown in the guide; colour carries the result */
 .vtag.pass { color: #0a0a0b; background: var(--v-pass); border-color: transparent; }
 .vtag.fail { color: #1a1206; background: var(--v-fail); border-color: transparent; }
 .vtag.inconclusive { background: var(--v-unc); color: var(--ink); border-color: transparent; }

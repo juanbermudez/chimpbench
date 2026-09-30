@@ -423,6 +423,7 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
 .rv-lead { margin-top: 40px; max-width: 680px; } .rv-lead p { font-size: 16.5px; line-height: 1.65; }
 .vchip { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 5px; font-size: 11.5px; font-weight: 500; white-space: nowrap; border: 1px solid var(--line-3); color: var(--ink-2); }
 .vchip:empty { display: none; }
+.vchip { display: none !important; }   /* verdict labels (Similar, Different, Method-sensitive…) are not shown in the guide */
 .vchip.ok { color: var(--ink); background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.26); }
 .vchip.diff { color: var(--warn); border-color: rgba(233,165,87,.45); background: rgba(233,165,87,.08); }
 .vchip.unc { color: var(--ink-3); }
@@ -521,7 +522,6 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
 .stat.g3 { grid-template-columns: minmax(0, 1fr) 84px 84px 84px; }
 .stat .v b.v-gombe { color: var(--gombe); }
 .stat .v b.pend { font-size: 14px; font-weight: 400; color: var(--ink-3); letter-spacing: 0; }
-.pv-status { margin-top: -4px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 13px; color: var(--ink-3); max-width: 760px; }
 .pv-table { margin-top: 40px; padding: 18px 20px 14px; display: grid; gap: 10px; min-width: 0; }
 .pv-table > figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 12px; font-size: 14px; }
 .pv-table > figcaption b { font-family: var(--font-title); font-weight: 500; } .pv-table .muted { font-size: 12.5px; color: var(--ink-3); }
@@ -1190,7 +1190,7 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
         <header class="sh"><h3 id="h-fruit">Fruit calendar</h3><p>Ripe fruit is chimps' main food, and its timing affects party size and travel. At Ngogo, researchers recorded ripe fruit on the same marked trees every month from 1998 to 2017 (<a class="cite" href="https://doi.org/10.1111/btp.12764">Potts et al. 2020</a>). The simulated forest (field profile) uses this record directly: its fruit follows the Ngogo months in order, year by year.</p></header>
 
         <figure class="panel gv" data-gv="fruit" aria-labelledby="gv-fruit-t">
-          <figcaption class="gv-head"><b id="gv-fruit-t">Twenty years of ripe fruit at Ngogo</b><span class="vtag soft">builds the forest</span></figcaption>
+          <figcaption class="gv-head"><b id="gv-fruit-t">Twenty years of ripe fruit at Ngogo</b></figcaption>
           <p class="gv-take">Ripe fruit comes in pulses, and no two years repeat. The simulated forest steps through these years in order, month by month.</p>
           <p class="gv-sub" data-v="sub"></p>
           <div class="gv-plot" role="img" aria-label="Heat map of Ngogo's monthly ripe-fruit score, 1998 to 2017, with yearly rainfall on the right and median months below."><p class="ph">Loading the phenology record…</p></div>
@@ -1306,9 +1306,7 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
       <!-- Patrols and territory vs real data. Drawn at load from docs/data/patrol-compare.json (scripts/compare-patrols.ts);
            a snapshot is embedded for file:// viewing. Derived statistics only: no coordinates, dates finer than a month or names. -->
       <section class="sec subsec rv pv" id="patrols" aria-labelledby="h-pv">
-        <header class="sh"><h3 id="h-pv">Patrols and territory</h3><p>A boundary patrol is a group of males walking the edge of their range, mostly in silence, stopping to listen and sometimes entering a neighbour's range. Open datasets record observed patrols at Ngogo (1996–2015) and after its split (2016–2024), patrols on Gombe's daily follows (1978–2007) and border stops at Taï (2013–2016). From them come patrol rates, who joins, duration, timing through the year and what parties do at the border; the virtual field observer will measure simulated patrols the same way. Status: the real numbers below are final, and the simulated ones are pending until the corrected patrol model's test run.</p></header>
-
-        <p class="pv-status" id="pv-status"><span class="vchip nc">Loading…</span></p>
+        <header class="sh"><h3 id="h-pv">Patrols and territory</h3><p>A boundary patrol is a group of males walking the edge of their range, stopping to listen and sometimes crossing into a neighbour&rsquo;s range. Patrol records from Ngogo, Gombe and Taï give how often patrols happen, who joins and how long they last, and the simulated patrols are measured the same way.</p></header>
 
         <div class="rv-lead prose">
           <p id="pv-lead">Loading the comparison…</p>
@@ -1326,7 +1324,7 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
         <figure class="panel pv-table">
           <figcaption><b>Patrols by the numbers</b><span class="muted" id="pv-table-meta"></span></figcaption>
           <div class="sc-table"><table>
-            <thead><tr><th scope="col">Measure</th><th scope="col">Ngogo</th><th scope="col">Gombe</th><th scope="col">Band</th><th scope="col">Simulated</th><th scope="col">Status</th></tr></thead>
+            <thead><tr><th scope="col">Measure</th><th scope="col">Ngogo</th><th scope="col">Gombe</th><th scope="col">Band</th><th scope="col">Simulated</th></tr></thead>
             <tbody id="pv-rows"><tr><td colspan="6">Loading…</td></tr></tbody>
           </table></div>
           <p class="rv-sub">Numbers computed from open records say <i>open data</i>; the rest are published figures. Each band was fixed before any run of the corrected patrol model. Ngogo's community is far bigger than the simulated ones (24–44 males), so shares and rates are the fair comparison, not head counts.</p>
@@ -1352,7 +1350,7 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
             <figcaption><b>Where border stops happen</b><span class="vchip" id="pv-where-chip"></span></figcaption>
             <p class="rv-sub" id="pv-where-sub">…</p>
             <div class="chart" id="pv-where" role="img" aria-label="Histogram of Taï border stops by distance from the range centre, in range radii: most sit between 0.6 and 1.1 radii."></div>
-            <div class="rv-legend"><span class="lg lg-tai"><i></i>Taï border stops</span><span class="muted">simulated listening stops: pending</span></div>
+            <div class="rv-legend"><span class="lg lg-tai"><i></i>Taï border stops</span></div>
           </figure>
         </div>
 
@@ -1760,10 +1758,10 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
       var bar = shown.map(function (v) { return '<span class="sb ' + VCLS[v] + '" style="flex:' + counts[v] + '" title="' + counts[v] + ' ' + VNAME[v].toLowerCase() + '"></span>'; }).join('') + '</div><ul class="sb-key">' +
         shown.map(function (v) { return '<li><i class="sb ' + VCLS[v] + '"></i><b>' + counts[v] + '</b> ' + VNAME[v].toLowerCase() + '</li>'; }).join('') + '</ul><div hidden>';
       var rows = sc.map(function (s) {
-        return '<tr><th scope="row">' + esc(s.label) + (s.note ? '<small>' + esc(s.note) + '</small>' : '') + '</th><td>' + fmt(s, val(s, 'real')) + '</td><td>' + fmt(s, val(s, 'sim')) + '</td><td><span class="vchip ' + (VCLS[s.verdict] || 'unc') + '">' + esc(VNAME[s.verdict] || s.verdict) + '</span></td></tr>';
+        return '<tr><th scope="row">' + esc(s.label) + (s.note ? '<small>' + esc(s.note) + '</small>' : '') + '</th><td>' + fmt(s, val(s, 'real')) + '</td><td>' + fmt(s, val(s, 'sim')) + '</td></tr>';
       }).join('');
       return '<div class="sc-set"><div class="sc-head"><h4>' + x[0] + '</h4><span>' + sc.length + ' measures</span></div><div class="sb-bar">' + bar + '</div>' +
-        '<details><summary>All ' + sc.length + ' measures</summary><div class="sc-table"><table><thead><tr><th scope="col">Measure</th><th scope="col">' + x[1] + '</th><th scope="col">Simulated</th><th scope="col">Verdict</th></tr></thead><tbody>' + rows + '</tbody></table></div></details></div>';
+        '<details><summary>All ' + sc.length + ' measures</summary><div class="sc-table"><table><thead><tr><th scope="col">Measure</th><th scope="col">' + x[1] + '</th><th scope="col">Simulated</th></tr></thead><tbody>' + rows + '</tbody></table></div></details></div>';
     }).join('');
     q('#rv-score-meta').textContent = total + ' measures. For a single number, similar means the simulated median sits inside the real range across years, and different means no simulated seed does.';
   }
@@ -1828,13 +1826,13 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
         var pre = c.site !== site ? c.site + ': ' : '';
         return '<td><b class="' + (c.value == null ? 'pend' : i ? 'v-gombe' : 'v-real') + '">' + esc(pre + c.text) + '</b><small>' + (c.open ? 'Open data. ' : 'Published. ') + esc(c.source.charAt(0).toUpperCase() + c.source.slice(1)) + '.</small></td>';
       }).join('');
-      var s = r.sim, mine = pending(s) ? '<span class="pend">' + (/not measured/.test(s.status) ? 'not measured' : 'pending') + '</span>' : '<b>' + esc(num(s.value, r.unit)) + '</b>' + (s.seeds ? '<small>' + s.seeds.length + ' seeds</small>' : '');
+      var s = r.sim, mine = pending(s) ? '<span class="pend">—</span>' : '<b>' + esc(num(s.value, r.unit)) + '</b>' + (s.seeds ? '<small>' + s.seeds.length + ' seeds</small>' : '');
       var lab = r.labels.map(function (l) { return LABEL[l] || l; }).join(', ');
       return '<tr><th scope="row">' + esc(r.label) + '<small>' + esc(lab) + (r.paper ? '. ' + esc(r.paper) : '') + '</small></th>' + cells +
-        '<td class="nw">' + esc(bandText(r.band, r.unit)) + '</td><td>' + mine + '</td><td class="nw">' + chip(s) + '</td></tr>';
+        '<td class="nw">' + esc(bandText(r.band, r.unit)) + '</td><td>' + mine + '</td></tr>';
     }).join('');
     var n = d.table.filter(function (r) { return !pending(r.sim); }).length;
-    q('#pv-table-meta').textContent = n ? n + ' of ' + d.table.length + ' measured in the simulation' : 'Simulation: pending';
+    q('#pv-table-meta').textContent = n ? n + ' of ' + d.table.length + ' measured in the simulation' : '';
   }
 
   // --- Small SVG helpers sized to the container.
@@ -1863,9 +1861,9 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
     t.push('<line x1="' + sx(ind.band[0]).toFixed(1) + '" x2="' + sx(ind.band[1]).toFixed(1) + '" y1="' + yy + '" y2="' + yy + '" stroke="' + TAI + '" stroke-width="1.5"/><circle cx="' + sx(fz.slope != null ? fz.slope : ind.slope).toFixed(1) + '" cy="' + yy + '" r="4.5" fill="' + TAI + '" stroke="#101012" stroke-width="2"><title>Taï slope ' + (fz.slope != null ? fz.slope : ind.slope).toFixed(3) + ' log-odds per adult</title></circle>');
     if (!pending(B.sim)) t.push('<circle cx="' + sx(B.sim.value).toFixed(1) + '" cy="' + yy + '" r="4.5" fill="' + MINE + '" stroke="#101012" stroke-width="2"><title>Simulated ' + B.sim.value.toFixed(3) + '</title></circle>');
     [-0.05, 0, 0.05, 0.1, 0.15, 0.2].forEach(function (v) { t.push('<text x="' + sx(v).toFixed(1) + '" y="' + (g.H - 16) + '" text-anchor="middle" class="tk">' + (v > 0 ? '+' : '') + v + '</text>'); });
-    t.push('<text x="' + L + '" y="' + (g.H - 2) + '" class="tk">change in log-odds of advancing per extra adult' + (pending(B.sim) ? ' · simulated: pending' : '') + '</text>');
+    t.push('<text x="' + L + '" y="' + (g.H - 2) + '" class="tk">change in log-odds of advancing per extra adult'  + '</text>');
     sl.innerHTML = t.join('') + '</svg>';
-    var c = q('#pv-brd-chip'); c.className = 'vchip ' + (pending(B.sim) ? 'nc' : B.sim.verdict === 'pass' ? 'ok' : B.sim.verdict === 'fail' ? 'diff' : 'unc'); c.textContent = pending(B.sim) ? 'Simulated: pending' : B.sim.verdict === 'pass' ? 'In band' : B.sim.verdict === 'fail' ? 'Out of band' : 'Not scored';
+    var c = q('#pv-brd-chip'); c.className = 'vchip ' + (pending(B.sim) ? 'nc' : B.sim.verdict === 'pass' ? 'ok' : B.sim.verdict === 'fail' ? 'diff' : 'unc'); c.hidden = pending(B.sim); c.textContent = pending(B.sim) ? '' : B.sim.verdict === 'pass' ? 'In band' : B.sim.verdict === 'fail' ? 'Out of band' : 'Not scored';
     q('#pv-brd-sub').textContent = 'At Taï, parties that stopped at the border moved on toward the neighbours after ' + pct(fz.share || ind.share) + ' of ' + (fz.stops || ind.stops) +
       ' stops, and more often when more adults were there: about +' + (fz.slope || ind.slope).toFixed(2) + ' in log-odds per extra adult, band ' + band[0].toFixed(3) + ' to ' + band[1].toFixed(3) +
       '. That slope is the fair test. The Taï records count adults of both sexes, not males, so the simulation counts adults too. The overall share is partly built into the model, so it is reported, not scored.';
@@ -1897,13 +1895,13 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
     [0, 0.5, 1, 1.5, 2].forEach(function (v) { s.push('<text x="' + X(v).toFixed(1) + '" y="' + (H - 7) + '" text-anchor="middle" class="tk">' + v + (v === 2 ? ' r' : '') + '</text>'); });
     s.push('<line x1="' + X(1) + '" x2="' + X(1) + '" y1="' + T + '" y2="' + Y(0) + '" stroke="' + MUTE + '" stroke-dasharray="2 3"/><text x="' + (X(1) + 5) + '" y="' + (T + 10) + '" class="tk">range radius</text>');
     el.innerHTML = s.join('') + '</svg>';
-    var c = q('#pv-where-chip'); c.className = 'vchip nc'; c.textContent = 'Simulated: pending';
+    q('#pv-where-chip').hidden = true;
     q('#pv-where-sub').textContent = 'Distance of each Taï border stop from its group\'s range centre, in range radii (r, the radius of a circle as large as the range). Half sit within ' + D.median.toFixed(2) + ' r, most between ' +
       D.p10.toFixed(2) + ' and ' + D.p90.toFixed(2) + ' r. Scaling by the range radius makes a small forest and a large one comparable. Simulated listening stops will be scored in the outer 20% of the range radius once the proof runs.';
   }
 
   function stat(label, a, b, ca, cb) {
-    var v = function (x, cap, cls) { return '<span class="v"><i>' + cap + '</i>' + (x == null ? '<b class="pend">pending</b>' : '<b class="' + cls + '">' + esc(x) + '</b>') + '</span>'; };
+    var v = function (x, cap, cls) { return '<span class="v"><i>' + cap + '</i>' + (x == null ? '<b class="pend">—</b>' : '<b class="' + cls + '">' + esc(x) + '</b>') + '</span>'; };
     return '<div class="stat"><span class="k">' + esc(label) + '</span>' + v(a, ca, 'v-real') + v(b, cb, 'v-mine') + '</div>';
   }
   function expansion(d) {
@@ -1925,12 +1923,7 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
 
   function render(P) {
     var d = P.d, ng = d.ngogo, g = d.gombe, B = d.bands['T-BRD-1'], sp = d.fission.split, fresh = d.proof && d.proof.fresh;
-    q('#pv-status').innerHTML = (fresh ? '<span class="vchip ok">Simulation: measured</span><span>Fresh seeds ' + fresh.seeds.join(', ') + (fresh.date ? ', run ' + esc(fresh.date.slice(0, 10)) : '') + '.</span>'
-      : '<span class="vchip nc">Simulation: pending</span><span>The corrected patrol model is waiting for its test run in the combined proof, so the simulated numbers stay blank until then. The real numbers below are final.</span>');
-    q('#pv-lead').innerHTML = 'What the field records say: Ngogo sent out a patrol about once every <b>' + Math.round(ng.daysPerPatrol) + ' days</b> of observation, with a median of <b>' + ng.malesPerPatrol.median + ' males</b>, about ' + pct(ng.shareOfListedMales.mean) + ' of the community\'s males. ' +
-      'At Gombe, a patrol took <b>' + Math.round(g.patrol.minutes.median) + ' minutes</b>, with ' + g.patrol.males.median + ' males and usually a few females. At Taï, parties that paused at the border pushed on toward the neighbours ' + pct(B.frozen ? B.frozen.share : B.independent.share) + ' of the time, more often in bigger parties. ' +
-      'And after Ngogo split, the small group patrolled far harder per male than the big one (' + (sp.westPer10MaleYears / sp.centralPer10MaleYears).toFixed(0) + '×).';
-    table(d); brd(d); split(d); where(d); expansion(d); periph(d);
+    q('#pv-lead').innerHTML = 'Ngogo patrolled about once every <b>' + Math.round(ng.daysPerPatrol) + ' days</b> of observation, with a median of <b>' + ng.malesPerPatrol.median + ' males</b>. At Gombe, a patrol lasted about <b>' + Math.round(g.patrol.minutes.median) + ' minutes</b>.';
     q('#pv-nc').innerHTML = d.notComparable.map(function (t) { var i = t.indexOf(':'); var rest = t.slice(i + 1).trim(); return '<li>' + (i > 0 ? '<b>' + esc(t.slice(0, i)) + '.</b> ' + esc(rest.charAt(0).toUpperCase() + rest.slice(1)) : esc(t)) + '</li>'; }).join('');
     var a8 = d.bands['T-PAT-8'], aB = B.agreement;
     q('#pv-prov').textContent = 'Generated ' + (d.generated || '?').slice(0, 10) + ' by scripts/compare-patrols.ts (bootstrap ' + d.provenance.B + ' replicates). Bands frozen by scripts/patrol-bands-metrics.ts before any run of the corrected model and recomputed independently here: T-BRD-1 ' +
