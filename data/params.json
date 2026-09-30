@@ -9747,6 +9747,29 @@
    "notes": "Community marked unstable after an alpha change."
   },
   {
+   "id": "intakeCropOnly",
+   "group": "decision",
+   "value": 1,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.intakeCropOnly",
+   "file": "src/sim/candidates.ts",
+   "notes": "Stage C13c switch (docs/realism-design.md \"C13c pre-registration\"): in the C13b intake valuation a fruit tree's feeding time is its crop share at the animal's intake, without the hunger cap (the food worth already scales with hunger, so the cap counted it twice). 0 = the C13b valuation. Ablation switch (set C13c).",
+   "integer": true
+  },
+  {
    "id": "intakeValue",
    "group": "decision",
    "value": 1,
@@ -14096,6 +14119,28 @@
     "field": 0.5
    },
    "notes": "Stage C6b: a crown the individual has just fed in is worth less (the fruit within reach has been taken): forage and travel scores fall by this x exp(-hours since / revisitTauH). 0 = off (compressed, unchanged). Design, set before any run."
+  },
+  {
+   "id": "rgMaxAgeH",
+   "group": "decision",
+   "value": 0.5,
+   "units": "h",
+   "range": [
+    0.25,
+    1.5
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.05,
+    24
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rgMaxAgeH",
+   "file": "src/sim/rg.ts",
+   "notes": "Stage C13c: the in-sim intention gate re-decides an intention older than this (design assumption; the Jev gate's 90 min held daytime rest for a median of 36 min and cut trips to trees from 5-6 to about 3.8 per adult-day on development seeds). 1.5 = C13 (ablation set C13c). The Jev gate constant (src/decide/gate.ts GATE.maxAgeH) is unchanged."
   },
   {
    "id": "rgMinAge",

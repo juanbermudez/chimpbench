@@ -199,7 +199,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   // stage C13b (intakeValue): a feeding option's food worth scales with its expected intake per hour, walk included,
   // relative to this animal's own ripe-fruit rate (design A's currency, the sim's own rates; src/sim/intake.ts) [charnov1976]
   const iv = P.intakeValue === 1, fruitH = iv ? fruitRate(c, P).hungerPerH : 1;
-  const tripFrac = (crop: number, feeders: number, d: number) => { const ti = treeIntake(c, P, crop, feeders, d); return ti.feedH > 0 ? ti.feedH / (ti.walkH + ti.feedH) : 0; };
+  const tripFrac = (crop: number, feeders: number, d: number) => { const ti = treeIntake(c, P, crop, feeders, d, P.intakeCropOnly !== 1); return ti.feedH > 0 ? ti.feedH / (ti.walkH + ti.feedH) : 0; };
   if (!caretaker || (c.age >= 1.5 && !carried && caretaker.action === 'forage')) {
     for (let _i1 = 0; _i1 < x.trees.length; _i1++) { const id = x.trees[_i1];
       const t = idx.treeById.get(id)!;

@@ -68,6 +68,10 @@
   "C13b": {
    "params": { "intakeValue": 0 },
    "note": "Food valued by intake rate off: feeding and trip worth as before C13 (with rgOn 0 as well, hash-identical to the model before C13)."
+  },
+  "C13c": {
+   "params": { "rgMaxAgeH": 1.5, "intakeCropOnly": 0 },
+   "note": "The C13c follow-up off: the 90-min intention age and the hunger-capped feeding time of C13 (hash-identical to C13)."
   }
  }
 }

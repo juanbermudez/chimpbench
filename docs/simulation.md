@@ -517,11 +517,11 @@ Each behavior calls `offer(action, target, score, variant, aux)`. The rules are:
 `rulesChoice` computes the same list into a scratch array and returns a copy of the top candidate (the **argmax**). It is pure. `resolveByRules` and the decision loop use it to report "the rules' pick".
 
 **The rules policy (stage C13, `rgOn`, on in both profiles).** A rules-driven chimp aged `rgMinAge` (8) or over does not simply take the argmax at its own decision points ([rg.ts](../src/sim/rg.ts); [realism-design.md "C13 pre-registration"](realism-design.md)):
-- **It holds its intention.** It keeps its current act and target unless something salient has changed: an interrupt, a need changing bucket, a new period of the day, 90 min passing, the act ending or becoming illegal, or a much better food place in view or memory while feeding. This is the Jev free arms' gate, `src/decide/gate.ts`. A trip that ends at its tree becomes feeding there.
+- **It holds its intention.** It keeps its current act and target unless something salient has changed: an interrupt, a need changing bucket, a new period of the day, 30 min passing (`rgMaxAgeH`, C13c; 90 min in the Jev gate), the act ending or becoming illegal, or a much better food place in view or memory while feeding. This is the Jev free arms' gate, `src/decide/gate.ts`. A trip that ends at its tree becomes feeding there.
 - **Otherwise it samples.** It picks from the bounded menu a model would be offered ([menu.ts](../src/sim/menu.ts): at most 8 options, night and dusk menus) by a softmax of the rules' scores at `rgTemperature` (0.152 compressed, 0.164 field), one draw from `world.rng`. The temperature gives the rules' top option a median probability of 0.77 (design rule).
 - **Exceptions.** Younger chimps, a menu of fewer than two options, and a model chimp's late-answer fallback keep the argmax. `rgOn` 0 restores the argmax everywhere, hash-identical to before C13.
 
-**Food valued by intake rate (stage C13b, `intakeValue`, on in both profiles).** Each feeding option's food worth is scaled by its expected intake per hour, walk included, relative to the animal's own ripe-fruit rate ([intake.ts](../src/sim/intake.ts)). A fruit tree counts feed ÷ (walk + feed), where feeding lasts until the crown's share or the hunger runs out. Leaves count their rate here ÷ the fruit rate. So a hungry animal walks to remembered fruit rather than eating leaves at half the rate. `intakeValue` 0 restores the earlier worth.
+**Food valued by intake rate (stage C13b, `intakeValue`, on in both profiles).** Each feeding option's food worth is scaled by its expected intake per hour, walk included, relative to the animal's own ripe-fruit rate ([intake.ts](../src/sim/intake.ts)). A fruit tree counts feed ÷ (walk + feed), where feeding lasts until the crown's share runs out (C13c, `intakeCropOnly`; before C13c also until the hunger ran out, which counted hunger twice). Leaves count their rate here ÷ the fruit rate. So a hungry animal walks to remembered fruit rather than eating leaves at half the rate. `intakeValue` 0 restores the earlier worth.
 
 `startAction` ([execution.ts](../src/sim/execution.ts)) is the single commit path for both rules and model. It does the following:
 - **Same action and target:** it only extends the bout.
@@ -1074,6 +1074,7 @@ Every evidence-tagged constant and every distance lives in the parameter registr
 | Food calls (C10) | on arrival in a crown with crop > 0.3 (≥ 0.3 h since the last): P = 0.35 + 0.3 (crop − 0.3) + 0.05 per other adult male in sight (≤ 3) + 0.15 with a bonded partner (bond ≥ 0.5) or the alpha in sight; off = a grunt every time | switch, probability | `foodCallRule` `foodCallBase` `foodCallCropW` `foodCallMaleW` `foodCallPartnerW` | M (base, audience), design (crop, magnitudes) | kalanBoesch2015, slocombe2010 |
 | Rules decision policy (C13) | chimps aged 8+ hold an intention until a salient change (the Jev free arms' gate), otherwise sample the bounded menu by a softmax of the rules scores at T = 0.152 → 0.164 (median top-option probability 0.77, dev seed 6301); off = argmax | switch, years, score | `rgOn` `rgMinAge` `rgTemperature` | design | realism-design.md "C13 pre-registration"; artifacts/decide-ft/jev-test/free-arms.md |
 | Food valued by intake rate (C13b) | feeding and trip worth × expected hunger removed per hour, walk included, ÷ the animal's ripe-fruit rate: feed ÷ (walk + feed) for fruit trees (crop share or hunger limits feeding); fallback rate ÷ fruit rate for leaves (0.07–0.14 vs 0.18–0.24 per h, field); off = worth as before | switch | `intakeValue` | design [M as applied] | charnov1976; realism-design.md "C13 pre-registration" |
+| C13c follow-up | the in-sim gate re-decides an intention after 30 min (the Jev gate keeps 90); C13b feeding time is the crop share alone (hunger counted once); off = C13 | h, switch | `rgMaxAgeH` `intakeCropOnly` | design | realism-design.md "C13c pre-registration" |
 | Patrol window, males | 08:00–15:30, ≥ 3 |  | `patrolStartH` `patrolEndH` `patrolMinMales` | design |  |
 | Patrol max length | 2.5 | h | `patrolMaxH` | design |  |
 | Patrol incursion share | 40% |  | `patrolIncursionP` | design [H: incursions occur] | Watts & Mitani 2001; T-PAT-6 |
@@ -1247,6 +1248,13 @@ The current output of the default run (natural aging 365 days × seeds 48, 7, 21
 | Rainfall (4 y × 3 seeds), mm/yr | 1649 | ~1,500–1,700 (Kanyawara ~1,570) | [M] |
 |   share falling 13:00–19:00 | 68% | afternoon storms | [M] |
 |   mean daily min / max (°C) | 15.0 / 23.9 | ~15 / ~24 | [M] |
+
+**Field-profile intergroup encounters (T-IGE-1) are real but seed-sensitive** (diagnosis of 30 September 2026; development seeds, sim truth; the pre-registered definition is unchanged).
+- **How an encounter is counted.** Hearing one stranger pant-hoot or drum within `hearPantHootM` (1 km) counts as one. The simulation allows at most one per community pair per `encounterGapH` (12 h) in daylight, so about one a day.
+- **Why the rate saturates.** The ranges are about 3× too small in area (radius ~1 km), so the gap between two ranges is often inside earshot. A pair then records an auditory contact almost every day. When the use centres drift 0.5–1 km closer, a pair flips from a few to about 365 contacts a year.
+- **Example.** Seed 48 before C13: centres 1.7–2.2 km apart, every pair heard daily, 522 per community-year through the observer. With C13 on, the centres stayed 2.2–2.9 km apart: 5 per community-year.
+- **Which seeds saturate is chance.** The observer counts about 2 per true contact only because each contact is logged once per pair and heard by both communities. Which seeds saturate depends on the random-number path: across the travel-hoo merge seeds 5, 7, 11 and 21 flipped in both directions. The 228 per community-year of the pre-C13 direction check (seeds 48, 7, 21) is this saturation, not a counting bug.
+- **What would fix it.** Larger ranges (T-RNG-1), not a new definition.
 
 Where the field values come from:
 - research.md: Gombe interbirth interval (Wallis 1997) and age at first birth (Walker et al.), Ngogo first-year mortality and e15 (Wood et al. 2017).

@@ -80,6 +80,7 @@ test('heardN counts the stranger callers a listener can tell apart (more calls h
     const caller = w.chimps.find(c => c.alive && c.troopId === 2 && c.sex === 'male' && c.age >= 15)!;
     const listener = w.chimps.find(c => c.alive && c.troopId === 1 && c.age >= 15)!;
     listener.position = [caller.position[0] + 5, 0, caller.position[2]];
+    w.calls.length = 0; // only the test's calls are in the listener's window
     for (let k = 0; k < calls; k++) emitCall(w, caller, 'pant-hoot');
     return ix(listener).heardN;
   };

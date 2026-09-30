@@ -106,3 +106,18 @@ test('C13b: leaves count at their intake rate against fruit; a trip counts its w
   assert.ok(near.perHourInclWalk > far.perHourInclWalk && far.perHourInclWalk > 0, 'a longer walk lowers the intake per hour');
   assert.ok(Math.abs(far.perHourInclWalk - far.rateH * far.feedH / (far.walkH + far.feedH)) < 1e-12);
 });
+
+test('C13c: its ablation set reproduces C13 (hash-identical); crop-only feeding time; the Jev gate constant is unchanged', async () => {
+  // the compressed golden of seed 48, natural aging, 2 days, recorded at the C13 merge (68e0dfb)
+  assert.equal(worldHash(run(createWorld(48, { params: { rgMaxAgeH: 1.5, intakeCropOnly: 0 } }), 2)), '6a240465cf888472');
+  const { treeIntake } = await import('../src/sim/intake');
+  const { paramsOf } = await import('../src/sim/params');
+  const { GATE } = await import('../src/decide/gate');
+  const w = createWorld(7, { profile: 'field' }), P = paramsOf(w), c = w.chimps.find(k => k.alive && k.age >= 15)!;
+  c.hunger = 0.2;
+  const capped = treeIntake(c, P, 1, 0, 500), crop = treeIntake(c, P, 1, 0, 500, false);
+  assert.ok(crop.feedH > capped.feedH, 'a mildly hungry animal: the crop allows longer feeding than its hunger');
+  assert.ok(crop.perHourInclWalk > capped.perHourInclWalk, 'so the walk weighs less');
+  assert.equal(P.rgMaxAgeH, 0.5);
+  assert.equal(GATE.maxAgeH, 1.5);
+});
