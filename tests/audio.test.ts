@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
-  CALL_KINDS, INTERACTION_VOICES, KIND, MAX_VOICES, REF_DISTANCE, absorptionCutoff, admitAtRate, ambienceWidth, animalZoomGain, bedLevels, birdChorus,
+  CALL_KINDS, INTERACTION_VOICES, SILENT_KINDS, KIND, MAX_VOICES, REF_DISTANCE, absorptionCutoff, admitAtRate, ambienceWidth, animalZoomGain, bedLevels, birdChorus,
   burbleGain, cooldownOk, distanceGain, emptyLevels, headingOf, nearestOnStream, pickSlot, poolFor, rateTier, streamGain, streamPan, thunderShape,
   voicePriority, voiceRate, zoomFromFrameHeight, type BedInput, type ClipMeta,
 } from '../src/audio/mix';
@@ -203,6 +203,7 @@ test('the shipped manifest keeps bonobo clips optional and every recorded call k
   for (const c of clips) if (c.species === 'bonobo') assert.equal(c.optional, true, `${c.id} must be opt-in`);
   for (const k of CALL_KINDS) {
     if (k === 'drum' || k === 'laugh') { assert.equal(poolFor(clips, k, false).length, 0, `${k} is synthesized`); continue; }
+    if (SILENT_KINDS.includes(k)) continue; // no clip yet (C10 travel hoo): silent
     assert.ok(poolFor(clips, k, false).length > 0, `${k} has chimpanzee clips`);
     for (const id of poolFor(clips, k, false)) assert.ok(!id.startsWith('bn-'), `${id} is not a bonobo clip`);
   }

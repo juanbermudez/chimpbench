@@ -10,12 +10,17 @@ import { canonical, fnv, runCase } from './fixtures/golden';
 
 // Stage C10 (docs/realism-design.md "C10 pre-registration").
 
-const OFF = { callSignatures: 0, callerDiscrim: 0, foodCallRule: 0 };
+const OFF = { callSignatures: 0, callerDiscrim: 0, foodCallRule: 0, travelHoo: 0 };
 
 test('C10 off reproduces the pre-C10 model exactly (compressed golden seed 48, 2 days)', () => {
   const w = runCase({ seed: 48, ageRate: 1, days: 2 }, seed => createWorld(seed, { params: OFF }));
   assert.equal(fnv(canonical(w)), '292affa6f213e9cd');
   assert.ok(w.calls.every(c => !('features' in c)), 'no features key when callSignatures is off');
+});
+
+test('travel hoo off reproduces the C10 model before addendum 1 (compressed golden seed 48, 2 days)', () => {
+  const w = runCase({ seed: 48, ageRate: 1, days: 2 }, seed => createWorld(seed, { params: { travelHoo: 0 } }));
+  assert.equal(fnv(canonical(w)), 'e6e4209f3c793aa4');
 });
 
 test('a signature is constant for a chimpanzee; calls vary around it; features ride on pant-hoots and drums', () => {
@@ -102,4 +107,29 @@ test('food-call chance rises with the crop and with the audience (males, a bonde
   c.bonds[mates[0].id] = 0.8;
   assert.ok(Math.abs(foodCallChance(w, c, 0.4) - audience - paramsOf(w).foodCallPartnerW) < 1e-9);
   troop.alphaId = alpha;
+});
+
+test('travel hoo (C10 addendum 1): a trip initiator with a companion near may hoo; the companion hears it and following the caller scores higher', async () => {
+  const { candidateMeta, computeCandidates, V } = await import('../src/sim/candidates');
+  const { startAction } = await import('../src/sim/execution');
+  const { perceive } = await import('../src/sim/perception');
+  const w = createWorld(33, { profile: 'field', params: { travelHooP: 1, travelHooAllyP: 1 } });
+  for (let i = 0; i < 5760 / 4; i++) tickWorld(w);
+  const [a, b] = w.chimps.filter(ch => ch.alive && ch.age >= 15 && ch.troopId === 1);
+  b.position = [a.position[0] + 10, 0, a.position[2]]; b.action = 'rest'; b.targetId = -1;
+  perceive(w, a); perceive(w, b);
+  const far = w.trees.reduce((p, t) => (Math.abs(Math.hypot(t.position[0] - a.position[0], t.position[2] - a.position[2]) - 400) < Math.abs(Math.hypot(p.position[0] - a.position[0], p.position[2] - a.position[2]) - 400) ? t : p));
+  const cand = { action: 'travel' as const, targetId: far.id, score: 1, reason: 'test' };
+  candidateMeta.set(cand, { v: V.TREE, aux: -1 });
+  const before = w.calls.length;
+  startAction(w, a, cand, 'rules');
+  assert.ok(w.calls.slice(before).some(k => k.kind === 'travel-hoo' && k.callerId === a.id && !('features' in k)), 'the initiator hooed');
+  assert.equal(ix(b).hooFrom, a.id);
+  a.position = [b.position[0] + 20, 0, b.position[2]];
+  perceive(w, b);
+  const score = () => computeCandidates(w, b, []).filter(k => (k.action === 'follow' && k.targetId === a.id) || (k.action === 'travel' && k.targetId === far.id)).reduce((m, k) => Math.max(m, k.score), -1);
+  const withHoo = score();
+  ix(b).hooAt = w.time - 1;
+  const without = score();
+  assert.ok(withHoo > without, `${withHoo} vs ${without}`);
 });

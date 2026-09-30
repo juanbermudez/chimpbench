@@ -7,7 +7,7 @@
   "fitted": 37,
   "held-out": 63,
   "parameterConstraints": 19,
-  "sources": 123
+  "sources": 124
  },
  "protocolPolicy": [
   "Every protocol parameter (observer settings, classifier rules, metric windows and thresholds, scoring rules) is set from the source's methods text or by validating the instrument against simulation truth, never by looking at a field-target verdict.",
@@ -950,6 +950,18 @@
    ],
    "verdicts": "combined proof",
    "class": "freeze"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C10 implementer (addendum 1)",
+   "seen": "travel-hoo direction checks on seeds 31-33 (field, 30-day burn-in + 20 days): hoo share of initiations with a companion 0.45-0.51; recruitment within 5 min, hooed vs silent: 0.59 vs 0.51 and 0.63 vs 0.55 (ratio 1.13-1.15) at travelHooFollowW 0.3; the one-time refit scan on seed 33 gave ratio 1.22, 1.21 and 1.12 at 0.6, 1.0 and 1.5",
+   "param": "model change: travel hoos (travelHoo on in both profiles; CallKind 'travel-hoo'); travelHooFollowW stays at the pre-registered 0.3 because no value in the scan reaches the pre-registered ratio of 1.6-2.6 (silent trips already recruit ~0.5 through C7c's joint travel); compressed goldens re-recorded; travel hoo off reproduces the C10 world",
+   "reason": "C10 addendum 1 (docs/realism-design.md); refit rule applied and the ratio not reached, reported",
+   "targets": [
+    "none (no target row; T-PTY-* and T-ACT-* consequences at the combined proof)"
+   ],
+   "verdicts": "combined proof",
+   "class": "model change"
   }
  ],
  "targets": [
@@ -7272,6 +7284,19 @@
    "url": "https://doi.org/10.1371/journal.pbio.3002350",
    "access": "FT",
    "bibliographyVerified": "docs/research.md (Lemoine et al. 2023, Taï border movement); S3 Data CC BY 4.0"
+  },
+  "gruberZuberbuhler2013": {
+   "authors": "Gruber T, Zuberbühler K",
+   "year": 2013,
+   "title": "Vocal recruitment for joint travel in wild chimpanzees",
+   "journal": "PLoS ONE",
+   "volume": "8",
+   "issue": "9",
+   "pages": "e76073",
+   "doi": "10.1371/journal.pone.0076073",
+   "url": "https://doi.org/10.1371/journal.pone.0076073",
+   "access": "FT",
+   "bibliographyVerified": "docs/research.md (PMC3783376); figures checked in the PLoS ONE full text, 2026-09-29"
   }
  },
  "c12Fitted": {

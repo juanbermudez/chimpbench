@@ -34,7 +34,7 @@ const CAT_ICON: Record<Cat, string> = {
   repro: '<circle cx="6" cy="6" r="3"/>',
   dead: '<path d="M3 6h6" stroke-width="1.6"/>',
 };
-const CALL_TEXT: Record<CallKind, string> = { 'pant-hoot': 'pant-hoot', 'pant-grunt': 'pant-grunt', scream: 'scream', 'food-grunt': 'food grunt', bark: 'bark', 'alarm-hoo': 'alarm hoo', drum: 'drumming', whimper: 'whimper', laugh: 'laughing' };
+const CALL_TEXT: Record<CallKind, string> = { 'pant-hoot': 'pant-hoot', 'pant-grunt': 'pant-grunt', scream: 'scream', 'food-grunt': 'food grunt', bark: 'bark', 'alarm-hoo': 'alarm hoo', drum: 'drumming', whimper: 'whimper', laugh: 'laughing', 'travel-hoo': 'travel hoo' };
 
 // Neutral near-black chrome matching the app's UI tokens (src/style.css :root): surfaces #141416/#18181b, hairline
 // borders in white at 7–18%, text #ececee / #b8b8bd / #85858b, and the gold accent #e2bf79 only for the focal

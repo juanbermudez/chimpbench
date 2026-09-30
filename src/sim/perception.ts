@@ -277,6 +277,10 @@ function hear(world: World, o: Chimp, callId: number, kind: CallKind, caller: Ch
     }
     return;
   }
+  if (kind === 'travel-hoo') { // stage C10 addendum 1: a companion is setting off (candidates.ts raises following it)
+    if (o.troopId === caller.troopId) { x.hooFrom = caller.id; x.hooAt = world.time; }
+    return;
+  }
   if (kind === 'scream') {
     if (o.troopId === caller.troopId && (caller.motherId === o.id || o.allies.includes(caller.id))) interrupt(world, o, `heard ${caller.name} scream`);
     return;
