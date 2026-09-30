@@ -205,6 +205,38 @@
 .lane svg { display: block; width: 100%; height: auto; overflow: visible; }
 .swarm { display: grid; gap: 10px; }
 
+/* ---------- Forest sound toggle (docs/guide/sound.js) ---------- */
+.top-actions { display: flex; align-items: center; gap: 8px; }
+.top-link[hidden] { display: none; }
+.top-link.icon { position: relative; width: 32px; padding: 0; justify-content: center; font: inherit; cursor: pointer; }
+.top-link.icon::after { content: ''; position: absolute; inset: -6px; }
+.top-link.icon .i { width: 16px; height: 16px; color: var(--ink-2); transition: color .15s; }
+.top-link.icon[aria-pressed="true"] .i { color: var(--gold); }
+
+/* ---------- Screenshot viewer (docs/guide/motion.js) ----------
+   A frameless, near-fullscreen view over a dim scrim. The image flies from its thumbnail with a FLIP transform
+   (420 ms open, 300 ms close, both on the page's --ease); scrim, caption and close button only fade. */
+.frame .zoom { display: block; width: 100%; padding: 0; margin: 0; border: 0; background: none; border-radius: inherit; cursor: zoom-in; }
+.frame .zoom:focus-visible { outline: 2px solid var(--ink); outline-offset: -4px; }
+dialog.lb { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: transparent; color: var(--ink); overflow: hidden; cursor: zoom-out; }
+dialog.lb::backdrop { background: transparent; }
+.lb-scrim { position: absolute; inset: 0; background: rgba(5,5,6,.95); opacity: 0; transition: opacity .22s var(--ease); }
+.lb.open .lb-scrim { opacity: 1; transition-duration: .3s; }
+.lb-fig { position: absolute; inset: 0; margin: 0; padding: 56px 24px 24px; display: grid; justify-items: center; align-content: center; gap: 14px; }
+.lb-img { display: block; width: auto; height: auto; max-width: min(96vw, 1760px); max-height: calc(100dvh - 128px); border-radius: 10px; transform-origin: 0 0; box-shadow: 0 40px 100px -40px rgba(0,0,0,.95); }
+.lb-cap { max-width: 720px; font-size: 13.5px; line-height: 1.55; color: var(--ink-3); text-align: center; opacity: 0; transition: opacity .12s var(--ease); }
+.lb-cap b { color: var(--ink-2); font-weight: 500; }
+.lb.open .lb-cap { opacity: 1; transition-duration: .2s; transition-delay: .2s; }
+.lb-close { position: absolute; top: 12px; right: 12px; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border-radius: 50%; border: 1px solid var(--line-2); background: rgba(16,16,18,.72); color: var(--ink-2); cursor: pointer; opacity: 0; transition: opacity .12s var(--ease), color .15s, border-color .15s; }
+.lb-close svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 1.6; fill: none; stroke-linecap: round; }
+.lb-close:hover { color: var(--ink); border-color: var(--line-3); }
+.lb.open .lb-close { opacity: 1; transition-duration: .2s, .15s, .15s; }
+.lb.fade .lb-img { opacity: 0; transition: opacity .15s linear; }
+.lb.fade.open .lb-img { opacity: 1; }
+.lb.fade .lb-scrim, .lb.fade .lb-cap, .lb.fade .lb-close { transition-duration: .15s; transition-delay: 0s; }
+html.lb-lock { overflow: hidden; }
+@media (max-width: 759px) { .lb-fig { padding: 60px 8px 16px; } .lb-img { max-width: calc(100vw - 16px); border-radius: 8px; } }
+
 /* ---------- Responsive ---------- */
 @media (max-width: 999px) {
   .pipe2 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
