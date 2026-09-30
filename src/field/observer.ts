@@ -1,4 +1,4 @@
-import type { Chimp, Interaction, World } from '../types';
+import type { Chimp, Interaction, Troop, World } from '../types';
 import { mixSeed } from '../sim/rng';
 import { TICK_HOURS, index, type SimChimp } from '../sim/state';
 import { defaultConfig, type ObserverConfig } from './config';
@@ -152,12 +152,20 @@ export function createObserver(world: World, over: Partial<ObserverConfig> = {})
     }
     o.lines[t.id] = l;
   }
-  for (const t of world.troops) {
-    o.teams.push({ index: o.teams.length, mark: [], partyStamp: -1, members: [], pInd: 0, pAM: 0, pN5: 0, pN10: 0, troop: t.id, state: 0, focal: -1, follow: null, rotation: [], rotIdx: 0, blockStart: -1e9, x: t.center[0], z: t.center[2], party: [], called: false,
-      encounters: new Map(), heard: [], visitTree: -1, departX: 0, departZ: 0, departT: 0, seenToday: [], seenMark: [] });
-  }
+  for (const t of world.troops) addTeam(o, t);
   dayStep(o, world, true);
   return o;
+}
+
+function addTeam(o: Observer, t: Troop): void {
+  o.teams.push({ index: o.teams.length, mark: [], partyStamp: -1, members: [], pInd: 0, pAM: 0, pN5: 0, pN10: 0, troop: t.id, state: 0, focal: -1, follow: null, rotation: [], rotIdx: 0, blockStart: -1e9, x: t.center[0], z: t.center[2], party: [], called: false,
+    encounters: new Map(), heard: [], visitTree: -1, departX: 0, departZ: 0, departT: 0, seenToday: [], seenMark: [] });
+}
+
+/** Stage C9: a community that split off gets its own following team from then on (the Ngogo researchers followed both groups). */
+export function ensureTeams(o: Observer, world: World): void {
+  if (o.teams.length >= world.troops.length) return;
+  for (const t of world.troops) if (!o.teams.some(tm => tm.troop === t.id)) { addTeam(o, t); if (!o.rec.troops.includes(t.id)) o.rec.troops.push(t.id); }
 }
 
 /** Call once after every tickWorld. Reads the world; never writes it. */

@@ -18,12 +18,12 @@
   "Instrument validation against truth (sampling accuracy, classifier precision and recall) is allowed at any time, because truth is not a field target; each validation run is logged."
  ],
  "protocolFreeze": {
-  "stage": "C10",
+  "stage": "C9 build (fission off)",
   "date": "2026-09-29",
-  "hash": "fe5c3af51005d776",
+  "hash": "ad788552f11082eb",
   "previous": {
-   "stage": "C7a review findings 9-12",
-   "hash": "f29c8b0773effa06"
+   "stage": "C10",
+   "hash": "fe5c3af51005d776"
   }
  },
  "protocolLog": [
@@ -962,6 +962,30 @@
    ],
    "verdicts": "combined proof",
    "class": "model change"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C9 implementer",
+   "seen": "no C9 run (unit tests on crafted worlds only)",
+   "param": "observer: a community created by a fission gets a following team from the next day step and joins the records' community list (src/field ensureTeams); no effect without a split, so every current row is unchanged",
+   "reason": "C9 pre-registration (the Ngogo researchers followed both groups)",
+   "targets": [
+    "none today (T-FIS-* when measured)"
+   ],
+   "verdicts": "unchanged",
+   "class": "protocol (new communities)"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C9 implementer",
+   "seen": "none",
+   "param": "freeze: fe5c3af51005d776 -> ad788552f11082eb (observer team for new communities)",
+   "reason": "C9 build",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "combined proof",
+   "class": "freeze"
   }
  ],
  "targets": [

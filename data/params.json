@@ -316,6 +316,101 @@
    "notes": "A silent approach toward heard strangers gives up after this long. Compressed literal before C5a (900 s × 0.044 m/s ≈ 40 m ≈ the 36 m hearing radius). Field: time to walk the 1 km hearing radius at ~0.3 m/s effective (C5a review: the unscaled cap stopped approaches ~350 m out; design)."
   },
   {
+   "id": "assocBondW",
+   "group": "social",
+   "value": 0,
+   "units": "score per bond",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    5
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "gruberZuberbuhler2013"
+   ],
+   "clock": "none",
+   "symbol": "P.assocBondW",
+   "file": "src/sim/candidates.ts",
+   "notes": "Stage C9: party-follow and join-call scores gain this x bond with the leader or caller (allies were recruited to travel more often, gruberZuberbuhler2013; weight design). Default 0 (off); the pre-registered C9 scenario value is 0.3. Ablation switch."
+  },
+  {
+   "id": "assocEveryMin",
+   "group": "social",
+   "value": 15,
+   "units": "eco-min",
+   "range": [
+    5,
+    60
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    1440
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.assocEveryMin",
+   "file": "src/sim/fission.ts",
+   "notes": "Stage C9: party co-membership is scanned this often in daylight (15-min scans, docs/realism-design.md 5.4)."
+  },
+  {
+   "id": "assocHistCellM",
+   "group": "social",
+   "value": 8,
+   "units": "m",
+   "range": [
+    4,
+    1000
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    10000
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.assocHistCellM",
+   "file": "src/sim/fission.ts",
+   "notes": "Stage C9: cell size of the per-individual location histograms that give the clusters' range overlap (field 400 m, docs/realism-design.md 5.4; compressed 8 m, the layout x 1/50).",
+   "profiles": {
+    "compressed": 8,
+    "field": 400
+   }
+  },
+  {
+   "id": "assocMinScans",
+   "group": "social",
+   "value": 50,
+   "units": "scans",
+   "range": [
+    20,
+    200
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    100000
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.assocMinScans",
+   "file": "src/sim/fission.ts",
+   "notes": "Stage C9: individuals with fewer (decayed) association scans are left out of the monthly network (docs/realism-design.md 5.4).",
+   "integer": true
+  },
+  {
    "id": "asyncGraceMin",
    "group": "decision",
    "value": 6,
@@ -6522,6 +6617,122 @@
    "symbol": "makeChimp firstSwell",
    "file": "src/sim/generation.ts",
    "notes": "Spread of first swelling ages."
+  },
+  {
+   "id": "fissionMinAdults",
+   "group": "social",
+   "value": 3,
+   "units": "adults",
+   "range": [
+    2,
+    5
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    50
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.fissionMinAdults",
+   "file": "src/sim/fission.ts",
+   "notes": "Stage C9 split rule: adult males and adult females each cluster must hold at least (docs/realism-design.md 5.4).",
+   "integer": true
+  },
+  {
+   "id": "fissionMonths",
+   "group": "social",
+   "value": 12,
+   "units": "months",
+   "range": [
+    6,
+    24
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    240
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.fissionMonths",
+   "file": "src/sim/fission.ts",
+   "notes": "Stage C9 split rule: consecutive months the conditions must hold (middle of the 6-24 prior; Gombe and Ngogo took 1-3 years).",
+   "integer": true
+  },
+  {
+   "id": "fissionOn",
+   "group": "social",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.fissionOn",
+   "file": "src/sim/fission.ts",
+   "notes": "Stage C9 switch (docs/realism-design.md 'C9 pre-registration'): association bookkeeping, monthly community detection, the a priori split rule and new-community creation. Off by default (no state written; worlds identical to pre-C9); the C9 scenario turns it on. Ablation switch.",
+   "integer": true
+  },
+  {
+   "id": "fissionOverlap",
+   "group": "social",
+   "value": 0.5,
+   "units": "Bhattacharyya coefficient",
+   "range": [
+    0.3,
+    0.6
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.fissionOverlap",
+   "file": "src/sim/fission.ts",
+   "notes": "Stage C9 split rule: overlap of the clusters' location histograms at most this (middle of the 0.3-0.6 prior; not tuned). Ngogo's West-Central range overlap was 0.65-0.77 before 2016 and 0.31-0.44 after (reference only)."
+  },
+  {
+   "id": "fissionQ",
+   "group": "social",
+   "value": 0.4,
+   "units": "modularity",
+   "range": [
+    0.3,
+    0.5
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [
+    "traag2019",
+    "newman2006"
+   ],
+   "clock": "none",
+   "symbol": "P.fissionQ",
+   "file": "src/sim/fission.ts",
+   "notes": "Stage C9 split rule: modularity of the best two-cluster split must be at least this (middle of the 0.3-0.5 prior, docs/realism-design.md 5.4; not tuned)."
   },
   {
    "id": "fleeStepM",

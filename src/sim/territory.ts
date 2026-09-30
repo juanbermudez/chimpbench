@@ -152,6 +152,9 @@ export function dailyTerritory(world: World): void {
   updateRanges(world);
 }
 
+/** Recompute isopleths, centres and radii now (after a community split, fission.ts). */
+export function refreshRanges(world: World): void { updateRanges(world); }
+
 function updateRanges(world: World): void {
   const s = simOf(world), P = paramsOf(world), g = gridOf(world, P);
   s.udStamp++;

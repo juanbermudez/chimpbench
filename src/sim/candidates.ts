@@ -255,6 +255,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       let pull = x.joinRich ? 0.15 + env.fruitIndex * 0.35 + h * 0.3 + pers.sociability * 0.15 : pers.sociability * 0.3 * env.fruitIndex - 0.05;
       // field profile: an individual with few companions and an unmet social need goes to the callers; males to males (design; T-PTY-1)
       if (P.joinSocialW > 0) { const caller = byId.get(x.joinCaller); pull += (1 - c.social) * P.joinSocialW * (x.visibleOwn < 2 ? 1 : P.joinSocialInPartyF) + (male && c.age >= 15 && caller && isAdultMale(caller) ? P.joinMaleW : 0); }
+      if (P.assocBondW > 0) { const caller = byId.get(x.joinCaller); if (caller) pull += P.assocBondW * bond(c, caller); } // stage C9: bond with the caller (off by default)
       if (d > P.joinCallMinM) offer('travel', x.joinCall, pull * (1 - rain * 0.5) - d / P.joinCallDistScaleM, V.CALLER, x.joinCaller);
     }
     // beyond the own range (UD isopleth, stage C6) the pull home grows; the equal-area circle is not the range's shape
@@ -316,7 +317,8 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       const lead = P.partyLeaderFollow === 1 ? leaderOf(o, c, byId, x.seen) : o.id, L = byId.get(lead);
       // stage C10 addendum 1: a travel hoo heard from this companion (or its leader) in the last few minutes raises following it
       const hoo = P.travelHoo === 1 && x.hooFrom !== undefined && (x.hooFrom === lead || x.hooFrom === o.id) && time - (x.hooAt ?? NEVER) <= P.travelHooWindowMin / 60 ? P.travelHooFollowW : 0;
-      const sc = P.partyFollowBase + b * P.partyFollowW + pers.sociability * P.partyFollowSocialW + (isAdultMale(o) ? P.partyFollowMaleW : 0) - h * P.partyFollowHungerW - rain * 0.3 + hoo;
+      const sc = P.partyFollowBase + b * P.partyFollowW + pers.sociability * P.partyFollowSocialW + (isAdultMale(o) ? P.partyFollowMaleW : 0) - h * P.partyFollowHungerW - rain * 0.3 + hoo
+        + (P.assocBondW > 0 && L ? P.assocBondW * bond(c, L) : 0); // stage C9: bond with the leader (off by default)
       // stage C7c (field; c7b-prereg §6.2): a companion on a committed trip to a tree lends its goal: go there with it (shared goal) [H: joint travel, gruberZuberbuhler2013]
       if (P.partyJoinTrip === 1 && L && L.action === 'travel' && ix(L).v === V.TREE && isTreeId(L.targetId)) offer('travel', L.targetId, sc, V.TREE, L.id);
       else offer('follow', lead, sc, V.PARTY);

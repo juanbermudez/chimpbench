@@ -1171,6 +1171,24 @@ This fixes C9's rules, values, sources and held-out rules before any C9 code exi
 
 **Cost.** Association counts are about 1 ms per eco-day and monthly detection < 5 ms for n ≤ 80. The bench target is ≤ 0.8 s per eco-day at 150 living.
 
+#### C9 build addendum (29 September 2026, before any C9 run)
+
+Built in `src/sim/fission.ts`, off by default (`fissionOn` 0, `assocBondW` 0; the C9 scenario turns on both, with `assocBondW` at 0.3), so the combined proof is unaffected. With it off, no state is written and worlds are identical to `main`: the compressed goldens are unchanged, and field seeds 48 and 7 at days 3 and 40 are identical. Implementation details fixed now, before any run:
+- **Time window.** Association counts, scans and location histograms decay by e^(−1/12) each month, a 12-month window (design). The clusters' range overlap uses the same decayed histograms.
+- **Community detection.** Deterministic Louvain levels are followed by a connectivity refinement: a community that is not connected is split into its components, which is the guarantee Leiden adds [traag2019]. Leiden's full refinement phase is simplified to this. Communities are then merged greedily to the best two, and single nodes move while modularity rises.
+- **Who counts.**
+  - Network nodes are independent animals aged ≥ 10 with ≥ 50 decayed scans.
+  - A community needs at least 12 nodes (four times `fissionMinAdults`) to be tested.
+  - Adults for the composition rule: males per `isAdultMale`, and females ≥ 15 y.
+- **Which cluster leaves.** The daughter is the cluster whose histogram centroid lies farther from the parent's range centre. Animals outside the network go with their mother, processed oldest first, or else to the nearer cluster centroid.
+- **The daughter community.**
+  - It gets the next colour and emblem from the UI's order (#c9a4f0 ■, #e8c36a ★, #9fb0c8 ⬟, #f08a8a ✚) and the name "<parent> (new)".
+  - Its parent is recorded in `world.sim.fission.parents`, so no contract field is needed.
+  - An ongoing patrol of the parent ends.
+  - The parent's use is divided cell by cell by the clusters' histogram shares, with equal shares where neither cluster was seen.
+- **Observer.** A community that appears gets a following team (`ensureTeams`), and its id is added to the records.
+- **Still to build for the C9 proof.** The T-FIS observer metrics, the `large-community` scenario and the T-FIS-5 band script.
+
 ### Stage C10: Communication (O10)
 **Goal**: individual and community call signatures, recognition by listeners, context- and audience-dependent calling, drumming structure, core gestures, features exposed to the audio layer.
 **Success Criteria** (5 seeds × 1 year):

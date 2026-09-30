@@ -13,6 +13,7 @@ import { IMPULSE_RAIN, dailyBeliefs } from './perception';
 import { dailyKnownTrees } from './foraging';
 import { fallbackOn, pruneFallback } from './fallback';
 import { shareContacts } from './contact';
+import { fissionStep } from './fission';
 import { materializeFruit } from './phenology';
 import { dailyTerritory } from './territory';
 import { random } from './rng';
@@ -47,6 +48,7 @@ export function tickWorld(world: World): void {
   }
   carryInfants(world);
   if (world.tick % PARTY_EVERY === 0) { computeParties(world); updatePatrols(world); }
+  if (paramsOf(world).fissionOn === 1) fissionStep(world); // stage C9 (off by default)
 }
 
 /** Ventral carrying in the first months, then dorsal riding while the mother travels or sleeps. [H] */
