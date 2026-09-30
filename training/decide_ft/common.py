@@ -41,7 +41,8 @@ def snapshot() -> Path:
 def load_base(device: str, half: bool = False):
     import torch
     from gliner2 import AutoExtractor
-    model = AutoExtractor.from_pretrained(str(snapshot()), local_files_only=True, use_flashdeberta=False)
+    # MGOGO_FLASHDEBERTA=1 swaps in the FlashDeBERTa attention kernel (CUDA, if installed); parity is checked by bench_batch.py --save.
+    model = AutoExtractor.from_pretrained(str(snapshot()), local_files_only=True, use_flashdeberta=os.environ.get("MGOGO_FLASHDEBERTA") == "1")
     model.eval()
     if half:
         model.half()
