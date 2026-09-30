@@ -1357,6 +1357,40 @@ Flags: `--days` / `--years`, `--seeds`, `--json`, `--md`, `--workers` (default `
 
 ---
 
+### Combined proof
+
+One command runs the whole proof once C8 and C7e are merged: `scripts/proof.ts`. It runs each step through its own script, stops at the first failure, and logs commands, exit codes, times and outputs to `artifacts/validation/proof/` (`steps.json`, `README.md`, one log per step).
+
+```sh
+pnpm exec tsx scripts/proof.ts --list                  # steps, commands and whether a full run may start
+pnpm exec tsx scripts/proof.ts --estimate              # wall time per step at 2 and 6 workers
+pnpm exec tsx scripts/proof.ts --dry-run --workers 2   # every step for 1 seed x a few days, into artifacts/validation/proof-dry/
+pnpm exec tsx scripts/proof.ts --run --workers 6       # the proof; resume a failed run with --from <step>, or run a subset with --only a,b
+```
+
+| Step | What it runs |
+| --- | --- |
+| `dev-field` | Field targets on the development seeds 48, 7, 21, 5, 11 × 10 years after a 180-day burn-in. Patrol rows use male-party follows where their protocol says so. |
+| `fresh-field` | The same on fresh seeds 606–1010: replication of the fitted rows, and the patrol rows re-tested after the patrol corrections. |
+| `scenario` | The expansion scenario and its paired baseline on set B (1616–2525) × 10 years: T-LET-4 relative to the baseline, and T-LET-5 with `--unseal`. |
+| `c8-setB` | The C8 demography proof on set B × 40 years at natural aging, hash-bound `--unseal` (T-DEM-14, T-DEM-15 and the other sealed rows). |
+| `c8-setA` | C8 fitted replication on set A (1111–1515) × 40 years. |
+| `ablation-*` | An all-on baseline and each stage switched off (C7a, C7c, C7e, C8, C10, patrol corrections) on seeds 48, 7, 21 × 2 years. Each is followed by a `field-compare.ts` diff. The sets live in `data/proof-ablations.json`, declared by each stage owner; the patrol set is partial (contact memory, single file and the removed energy gate have no switch). |
+| `compare-ranging`, `compare-movement` | The C12 comparisons (development diagnostics, seen). `compare-movement` also writes fresh simulated follows. |
+| `compare-gombe-paths` | The held-out movement validation, run on those fresh follows. |
+| `compare-patrols` | Real patrol statistics against `dev-field`, `fresh-field` and the scenario. |
+| `guide-data` | Refreshes the guide JSON from the new scorecards. |
+
+**Preconditions for `--run`.** The script checks all four and refuses to start otherwise; `--list` shows what is missing.
+- The protocol hash equals the frozen one. After the C8 and C7e merges, re-freeze to C8's logged freeze, because `--unseal` is hash-bound.
+- Every ablation set is declared.
+- C8 is merged.
+- There are no uncommitted changes under `src/`, `scripts/`, `data/` or `tests/`.
+
+**Dry run.** It uses one seed per set and a few days. The scenario uses the compressed profile for 1 year. The C8 steps run without `--unseal` and are skipped until C8 is merged. Every output goes to the dry directory, and `guide-data` writes there with `--out-dir`. The first dry run on 29 September passed every step except the C8 ones, which were skipped.
+
+**Wall time** (`--estimate`, idle machine). About 22 h at 2 workers and 8.5 h at 6. The two C8 40-year steps are three quarters of it (16 h and 6 h). On a loaded machine, or with more workers than performance cores, expect 1.3–1.6× longer: about 29–36 h and 11–14 h. The costs per seed-day are planning figures: field 0.30 s, scenario 0.25 s, demography 0.50 s (population near the cap), comparisons 0.28 s.
+
 ## 19. Stylizations, limitations and calibration needs
 
 **Stylized on purpose** (labelled in the code):

@@ -1132,6 +1132,45 @@ Shape statistics that were similar stay similar (core fraction, edge and centre 
 **Effort / risk**: L (5–10 days). Risk: high (may not emerge; a negative result is reported, not tuned away).
 **Status**: Not Started
 
+#### C9 pre-registration (29 September 2026, docs only; nothing built, no run)
+
+This fixes C9's rules, values, sources and held-out rules before any C9 code exists. It builds on §5.4 and the open Ngogo data: the fission networks and quarterly patrols in `data/raw/dryad-sf7m0cgkg` [sandel2026], and the fission range divergence in `docs/data/ranging-compare.json`. Sources are listed in docs/research.md ("Community fission, stage C9").
+
+**Ablation switches.** With both off, the model is the pre-C9 model. Association bookkeeping is written only when `fissionOn` is 1, so worlds with it off are identical to pre-C9 worlds.
+
+| Switch | Mechanism | Off (0) means |
+| --- | --- | --- |
+| `fissionOn` | association bookkeeping, monthly detection, the split rule and new-community creation | no association data, no split |
+| `assocBondW` | party-following and join-call pull weighted by bond with the leader or caller | the C7c scores |
+
+**Rules and values (fixed now; not tuned).**
+1. **Association.** Every 15 min, each pair of independent individuals ≥ 10 y in the same party gets a co-membership count, and each individual gets a scan count. Counts are integer-keyed (`a·100000 + b`) in `world.sim.assoc`. Each individual also gets a 400 m location histogram. Everything is plain data and serializable (§5.4).
+2. **Monthly detection.** For each community, the simple ratio index over pairs with ≥ 50 scans each, then deterministic Louvain with Leiden refinement [traag2019]: nodes in id order, ties to the smaller id, no RNG. The output is the best two-cluster split, its modularity Q [newman2006], adult males and females per cluster, and the Bhattacharyya overlap of the clusters' location histograms. A monthly row goes to `world.sim.fissionLog` (at most 240).
+3. **Split rule (a field-recognition proxy).** Q ≥ `fissionQ` and overlap ≤ `fissionOverlap` for ≥ `fissionMonths` consecutive months, with ≥ 3 adult males and ≥ 3 adult females in each cluster. Values, taken at the middle of the §5.4 priors (design): `fissionQ` 0.4 (prior 0.3–0.5), `fissionOverlap` 0.5 (prior 0.3–0.6), `fissionMonths` 12 (prior 6–24). For reference only, not used to choose the values: at Ngogo the West–Central pooled-range overlap was 0.65–0.77 in 2011–2015 and 0.31–0.44 from 2016 (`ranging-compare.json`, derived from sandel2026's data), so 0.5 lies between the two regimes.
+4. **On a split.** The cluster farther from the original range centroid becomes a new `Troop` (id 4 and up). Dependents follow their mothers. The range is divided by the clusters' location histograms. Hierarchies and alphas are recomputed. Bonds, memories and digests are kept, and the two groups become strangers: the existing intergroup mechanics apply, and nothing scripts violence. The observer adds a following team for the new community from the split month on, as the Ngogo researchers followed both groups.
+5. **Bond-weighted association** (`assocBondW`). The party-follow and join-call scores gain `assocBondW` × bond with the leader or caller. Allies were recruited to travel more often [gruberZuberbuhler2013] [M]; the weight is design, 0.3.
+
+**Deliberately not built.** §5.4 also proposes that rivals' allies avoid each other during hierarchy instability. It would be designed from the Gombe antecedent [feldblum2018], which is part of T-FIS-2's own pattern ("coincident hierarchy upheaval"), so it would encode that target. It stays out; if an upheaval coincides with a split, it has emerged.
+
+**Held-out targets and rules** (all counted only if nothing was set by looking at them).
+
+| Target | Rule, fixed now | Where it runs |
+| --- | --- | --- |
+| T-FIS-1 | Fissions per community-year by adult-male class. Pass: zero fissions in communities with < 10 adult males, and ≤ 1 per 100 community-years at 20–40 males. | Baseline: every 40-year natural-aging run of the combined proof (C8 sets A and B), so no extra cost. Scenario below. |
+| T-FIS-2 | Years of rising Q (yearly mean of the monthly Q, strictly increasing run) before the month the split condition first held. It is measured to the onset, not the recognized split, so the 12-month persistence rule cannot make the lead. Band 1–3 years. Hierarchy changes (an alpha change or a contested vacancy) within ±1 year of onset are reported. | `large-community` scenario |
+| T-FIS-3 | Killings between the daughter communities in the 7 years after the split ÷ the baseline intercommunity killing rate of the same seeds. Band ≥ 5. | scenario, paired baseline |
+| T-FIS-4 | Share of victims killed by the other daughter community whose killers include a former associate (simple ratio index ≥ the median of adult male pairs in the year before onset). Pass: ≥ 0.5 (bonds do not protect). | scenario |
+| T-FIS-5 (new) | After a split, adult-male patrols per 10 males per year, smaller daughter ÷ larger daughter. Real value by the rule: 2017–2022 of `patrol-data-quarterly.csv` with the males of `population_snapshots.csv`, median of yearly ratios, with a bootstrap 90% CI over years. The band is that CI, computed by a script before any C9 run; the data only have been looked at, never a simulated value. | scenario |
+| Range divergence (C12 `fission` row) | Daughter-community range overlap before vs after the split. **Encoded:** the split rule requires overlap ≤ 0.5, so a low overlap after the split holds by construction. Reported, never counted. | scenario |
+
+**Scenario `large-community`.** At the start, the West community gets extra members, including adult males, up to ≥ 60 members and ≥ 15 adult males. This mirrors the expansion scenario's extra males. It runs 40 years at natural aging, with the population cap raised to 180. Seeds 3505, 3606, 3707, 3808 and 3909 are fresh (outside 606–1010, 1111–2525, the proof seeds and the C7b and C10 check seeds). If no fission occurs, that negative result is reported and nothing is tuned to produce one.
+
+**Contract and other owners.** New troops are appended to `world.troops`, and the current types allow that. The UI, renderer and audio must handle more than 3 communities (colours, emblems, labels), and the integrator should confirm before the build.
+
+**Shared files at build time.** A new `src/sim/fission.ts`. Also `parties.ts` (15-min association), `tick.ts` (monthly), `candidates.ts` (one local term per score for `assocBondW`), `hierarchy.ts` (recompute after a split), `generation.ts` (new troop records), and `src/field` (a team per new community, plus the T-FIS metrics).
+
+**Cost.** Association counts are about 1 ms per eco-day and monthly detection < 5 ms for n ≤ 80. The bench target is ≤ 0.8 s per eco-day at 150 living.
+
 ### Stage C10: Communication (O10)
 **Goal**: individual and community call signatures, recognition by listeners, context- and audience-dependent calling, drumming structure, core gestures, features exposed to the audio layer.
 **Success Criteria** (5 seeds × 1 year):
