@@ -1529,6 +1529,42 @@ The diagnostic probe with both changes gave about 5 trips per day and 2.2–2.7 
 - **T-RNG-4** is touched (fitted, tuned, held as fail); it is still held as fail.
 - **T-IGE-1:** seed 48 partly saturated again, at 63 per community-year (§18 note).
 
+**5e. C13d pre-registration** (30 September 2026, before any C13d run; logged in protocolLog). Party cohesion: a departure is a decision point for every companion in range.
+- **Premise corrected.** The field profile already has a departure cue (C7a party cohesion). An animal setting off interrupts companions in its last view within `partyLinkM`, but not urgently: a companion interrupted in the last 2 min, or with an interrupt pending, is skipped.
+- **Coverage under C13c** (development seeds, sim truth):
+  - 54–59% of companions within `partyLinkM` get a decision point within 5 min of a trip initiation; 43–45% join.
+  - Hooed initiations recruit at least one companion in 54–59% of cases, silent ones in 40–42% (ratio 1.31–1.44). Before C13 the ratio was 1.46–1.60; the field source's ratio is 2.1 [gruberZuberbuhler2013].
+- **C13d** (`departCue`, field profile only, because the joint-trip and travel-hoo follow options exist only there):
+  - When an adult (15+) sets off on a trip to a tree, every living own-community companion aged 5+ within `partyLinkM`, awake and not already following it, gets an urgent decision point at once, whether or not it was in the initiator's view.
+  - The existing joint-trip, party-follow and travel-hoo options then compete as usual, with C13a sampling.
+  - Recruitment to joint travel is [H] [gruberZuberbuhler2013]. The decision point is a design assumption.
+  - Ablation set `C13d` (`departCue` 0) is hash-identical to C13c.
+- **Predictions** (seeds 48, 7 and 21, field, 1 year, against C13c):
+  - T-PTY-1 up toward about 3.5;
+  - hooed initiations recruit clearly more than silent ones (ratio ≥ 1.6);
+  - decisions per chimp-day and the male day range rise slightly;
+  - the viability guard of §5 holds.
+
+**5f. C13d direction check result** (30 September 2026; seeds 48, 7 and 21; field; 1 year; `artifacts/validation/c13/`). Not a proof.
+
+| | C13c | C13d |
+| --- | --- | --- |
+| T-PTY-1 party size | 2.90 | 2.90 |
+| Initiations recruiting ≥ 1 companion within 5 min, hooed / silent | 0.50–0.56 / 0.37–0.40 | 0.53–0.56 / 0.42–0.44 |
+| Recruitment ratio, hooed ÷ silent | 1.35–1.41 | 1.27–1.29 |
+| Companions joining within 5 min | 0.39–0.44 | 0.43–0.45 |
+| Male day range, T-RNG-4 (km, observer) | 2.59 | 2.53 |
+| T-ACT-2 travel (male / female) | 0.22 / 0.15 | 0.21 / 0.15 |
+| Decisions per chimp-day | 74–76 | 74–76 |
+| Fitted rows passing | 9 | 9 |
+
+- **Viability guard: passes.**
+- **All four predictions failed.** Party size did not move. The recruitment ratio fell. Decisions and day range did not rise.
+- **Why.** Companions now get the decision point, but when C13a samples their choice they rarely pick joining. Silent initiations gained the most, so the ratio fell. The missing cohesion is in the choice among options, not in the timing of decision points.
+- **Measurement note.** The "deciding within 5 min" share measured 0.55–0.61. It undercounts, because decisions made in the initiation's own tick are missed.
+- **T-PAT-6** (0.06, n = 17 patrols) is too noisy to read.
+- **Default.** Merged and on by default, as the rule was to merge if the guard passes. Its ablation row lets the lean proof attribute its null effect.
+
 **6. Proof.** The lean proof (`scripts/proof.ts --plan lean`) with both parts on. `data/proof-ablations.json` has an ablation set per part, `C13a` (`rgOn` 0) and `C13b` (`intakeValue` 0), so each is attributed.
 
 **7. Handoffs.**

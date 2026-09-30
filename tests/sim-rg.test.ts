@@ -121,3 +121,27 @@ test('C13c: its ablation set reproduces C13 (hash-identical); crop-only feeding 
   assert.equal(P.rgMaxAgeH, 0.5);
   assert.equal(GATE.maxAgeH, 1.5);
 });
+
+test('C13d: a trip initiation gives every companion in range an urgent decision point, seen or not (field); off = the C7a cue', async () => {
+  const { candidateMeta, V } = await import('../src/sim/candidates');
+  const { startAction } = await import('../src/sim/execution');
+  const { paramsOf } = await import('../src/sim/params');
+  const setOff = (departCue: number) => {
+    const w = createWorld(33, { profile: 'field', params: { departCue } });
+    for (let i = 0; i < 5760 / 4; i++) tickWorld(w);
+    const [a, b] = w.chimps.filter(k => k.alive && k.age >= 15 && k.troopId === 1);
+    b.position = [a.position[0] + 20, 0, a.position[2]]; b.action = 'rest'; b.targetId = -1;
+    ix(a).seen = []; // b is not in a's last view
+    ix(b).intr = ''; ix(b).lastIntrAt = w.time; // and was interrupted just now (the C7a cue would skip it)
+    const tree = w.trees.find(t => Math.hypot(t.position[0] - a.position[0], t.position[2] - a.position[2]) > 200)!;
+    const cand = { action: 'travel' as const, targetId: tree.id, score: 1, reason: 'test' };
+    candidateMeta.set(cand, { v: V.TREE, aux: -1 });
+    startAction(w, a, cand, 'rules');
+    return { intr: ix(b).intr, P: paramsOf(w) };
+  };
+  const on = setOff(1), off = setOff(0);
+  assert.match(on.intr, /set off/);
+  assert.equal(off.intr, '');
+  assert.equal(paramsOf(createWorld(33)).departCue, 0, 'compressed: off');
+  assert.equal(on.P.departCue, 1);
+});
