@@ -42,6 +42,9 @@ function makeWorld(seed: number, profile: Profile = urlProfile ?? APP_PROFILE): 
 let world!: World;
 const clock = createClock();
 const decider = createDecisionController();
+// Static hosting (VITE_STATIC=1, e.g. a published artifact): no local model server, no save library and no sound
+// files, so rules decide and nothing is fetched that isn't there. VITE_GUIDE_URL points the guide link elsewhere.
+const STATIC = import.meta.env.VITE_STATIC === '1';
 let scene: Scene | null = null;
 let audio: AudioEngine | null = null;
 let elapsed = 0;
@@ -62,7 +65,7 @@ const persist = createPersistence({
   dirtyKey: () => `${world.tick}|${mutationKey()}|${JSON.stringify(session())}`,
   notify: (text, severity) => notifyUi(text, severity),
   changed: () => {},
-}, { enabled: !perf.on && params.get('persist') !== '0' });
+}, { enabled: !perf.on && !STATIC && params.get('persist') !== '0' });
 
 // Until the store answers (~50–100 ms on reload, ~0.3 s on a first visit), show the loading screen.
 const root = document.querySelector<HTMLElement>('#app')!;
@@ -159,12 +162,12 @@ const app = createApp(root, {
   setPlaying: playing => { clock.playing = playing; },
   setPolicy: mode => { epoch++; setPolicy(decider, world, mode); },
   setRoster: (roster, selectedId) => { epoch++; setRoster(decider, world, roster, selectedId); },
-  retryModel: async () => { await startLocalModel(decider); void pollReadiness(); },
+  retryModel: async () => { if (STATIC) return; await startLocalModel(decider); void pollReadiness(); },
   applyIntervention: (kind, options) => { epoch++; return applyIntervention(world, kind, options); },
   relationOf, relationshipOf,
   newWorld: newSimulation,
   setQuality: quality => scene?.setQuality(quality),
-  guideUrl: '/docs/architecture.html',
+  guideUrl: import.meta.env.VITE_GUIDE_URL || '/docs/architecture.html',
   persistence: persist.status.mode === 'off' ? undefined : persistenceView,
 });
 captureUi = app.captureUi;
@@ -204,6 +207,7 @@ function startScene(focusId: number, fresh: boolean): Scene | null {
 }
 
 async function pollReadiness() {
+  if (STATIC) { decider.ready = false; decider.phase = 'unavailable'; decider.status = 'Rules decide (the local model runs only in the desktop version)'; return; }
   await refreshDecideStatus(decider);
   if (decider.phase === 'loading') setTimeout(() => { void pollReadiness(); }, 2000);
 }
@@ -267,7 +271,7 @@ function frame(now: number) {
 scene = startScene(app.state.selectedId, !resumed);
 // Sound starts silent and locked; the first click or key unlocks it, and assets load once the forest is on screen.
 // ?audiodebug=1 exposes window.__MGOGO_AUDIO__ (lossless output capture) for scripts/audio-probe.mjs.
-audio = createAudioEngine({ debug: params.get('audiodebug') === '1' });
+audio = STATIC ? null : createAudioEngine({ debug: params.get('audiodebug') === '1' });
 // The loading screen stays up until the first frame has rendered, so shader warm-up and first-use GPU uploads
 // happen behind it instead of freezing the revealed forest (the old ~470 ms stall right after load).
 let revealed = !scene;
