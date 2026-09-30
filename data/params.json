@@ -7526,7 +7526,7 @@
     "compressed": 0,
     "field": 0
    },
-   "notes": "Stage C7e (field; c7b-prereg 9): goal order among out-of-sight trees by (worth - revisit) x D / (D + max(d, memoryTreeMinM)); only the top-ranked tree is offered, at its usual score. D -> 0 is route chaining, D -> infinity no distance preference. 0 = off (the C7c-C7d four-best shortlist; compressed). Declared calibration against Taï straightness, turning and path rate (loss and seeds in c7b-prereg 9.2); field value set by the fit. Prior for the fit: 50-3,200 m (0 = off)."
+   "notes": "Stage C7e (field; c7b-prereg 9): goal order among out-of-sight trees by (worth - revisit) x D / (D + max(d, memoryTreeMinM)); only the top-ranked tree is offered, at its usual score. D -> 0 is route chaining, D -> infinity no distance preference. 0 = off (the C7c-C7d four-best shortlist; compressed). Declared calibration against Taï straightness, turning and path rate (loss and seeds in c7b-prereg 9.2); Fitted (C7e) against Taï (seeds 3909, 4010; compare-movement 0.25 y): loss off 0.163; D = 50, 100, 200, 400, 800, 1,600, 3,200 m gave 0.85, 0.94, 1.28, 0.85, 0.74, 0.45, 0.25 (straightness rises to 0.26-0.33 but turning rises to 1.1-2.1 rad and path falls to 85-114 m/h); no value beats off, so the field value stays 0 (c7b-prereg 9.5). Prior for the fit: 50-3,200 m (0 = off)."
   },
   {
    "id": "groomCreditRetainPerH",

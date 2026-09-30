@@ -518,3 +518,52 @@ a hyperbolic distance discount. Only the top-ranked tree is offered, at its usua
 
 ### 9.4 Report at the chosen setting
 The loss surface; every C12 development row from `compare-movement.ts`; the field observer's T-* rows; `party-food-metrics.ts` (party size, stationary share, goal order); and the bench (`scripts/bench-ab.ts`, off vs chosen).
+
+### 9.5 C7e results: fitted (C7e) against Taï (development set; seeds 3909 and 4010)
+
+**Loss surface** (`scripts/fit-goal-dist.ts`; `compare-movement.ts`, 60-day burn-in + 0.25 year; output in `artifacts/validation/c7e/fit-grid.*`, worktree):
+
+| `goalDistScaleM` | Straightness | Turning (rad) | Path (m/h) | **Loss** |
+| --- | --- | --- | --- | --- |
+| off | 0.228 | 0.861 | 182 | **0.163** |
+| 50 m | 0.257 | 1.777 | 85 | 0.852 |
+| 100 m | 0.280 | 1.866 | 91 | 0.939 |
+| 200 m | 0.222 | 2.081 | 90 | 1.280 |
+| 400 m | 0.269 | 1.804 | 104 | 0.849 |
+| 800 m | 0.316 | 1.722 | 100 | 0.735 |
+| 1,600 m | 0.300 | 1.427 | 114 | 0.445 |
+| 3,200 m | 0.327 | 1.102 | 110 | 0.248 |
+
+**Decision** (rule §9.2): the best grid value (3,200 m, L 0.248) does not beat off (0.163), so **`goalDistScaleM` stays 0**.
+- Offering one ranked goal raises straightness at every scale.
+- But it halves the path rate and raises turning: animals take fewer and shorter trips and move less per half-hour.
+- The hyperbolic-rank family therefore cannot trade straightness against path shape better than the current shortlist.
+
+**Food package at the chosen setting (§9.3): not chosen.**
+- L = 0.493 (straightness 0.158, turning 1.52 rad, path 344 m/h).
+- It is also infeasible: T-PTY-1 2.03 < 2.8. Range 7.41 km², travel share 0.49, T-FOOD-2 0.71.
+
+**Every development diagnostic at the chosen setting** (the current model, `goalDistScaleM` 0, seeds 3909 and 4010):
+
+*C12 Taï rows* (sim vs real):
+
+| Row | Sim | Real |
+| --- | --- | --- |
+| Travel share | 0.25 | 0.20 |
+| Rest | 0.32 | 0.40 |
+| Feed | 0.43 | 0.40 |
+| 30-min step | 5.8 m | 95 m |
+| Step in territory radii | 0.010 | 0.031 |
+| Turning | 0.86 rad | 0.76 rad |
+| Path | 182 m/h | 314 m/h |
+| Straightness | 0.23 | 0.50 |
+| Territory level | 0.31 | 0.46 |
+| Periphery ÷ core travel | 4.5 | 1.4 |
+| Party size | 1.5 | 6 |
+| Territory at matched size | 0.91 km² | 13.6 km² |
+
+*Field observer:* T-RNG-1 1.99 km², T-PTY-1 3.25, T-FOOD-2 0.77, T-ACT-1 0.46, T-ACT-2 0.26.
+
+*Diagnostic:* party size 2.61, straightness 0.20, turning 0.96 rad, stationary half-hours 0.51. Path between patches 0.98 (trees 0.61, callers 0.18, water 0.11).
+
+**Bench:** not needed. The chosen setting is off, and the new code path runs only when `goalDistScaleM` > 0.
