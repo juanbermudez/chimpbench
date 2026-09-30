@@ -43,6 +43,9 @@
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); }
+/* Text colour and font on body too, not only :root: a host page (the published artifact) styles body itself,
+   and anything that inherits (community names, buttons) would pick up its dark text. */
+body { color: var(--ink); font-family: var(--font-ui); font-size: 13px; line-height: 1.4; color-scheme: dark; }
 h1, h2, h3, h4, p, ol, ul, dl, dd, figure { margin: 0; }
 ol, ul { padding: 0; list-style: none; }
 button, a, input, select { font: inherit; color: inherit; }
