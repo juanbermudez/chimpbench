@@ -1494,6 +1494,22 @@ The registry holds 0.164 and 0.152. 0.77 was Jev's median top-option probability
 - **Consequences.** Nothing is re-tuned. Both parts stay on, and the lean proof judges the rows; the tuned rows (T-ACT-2, T-PTY-1, T-RNG-4, T-PAT-1) are expected to move there too.
 - **Compressed guard** (seed 48, 60 days): passes. Adult hunger 0.44 with both off, 0.48 with both on; lactating females 0.58 and 0.64.
 
+**5c. C13c pre-registration** (30 September 2026, before any C13c run; logged in protocolLog). The direction check and the probes in `artifacts/validation/c13/` (development seeds) showed why C13 shrank movement:
+- The gate cut trips to trees from 5–6 to about 3.8 per adult-day. It held daytime rest for a median of 36 min, where the argmax rules re-decided at every bout end. Sampling alone would have raised the male day range to about 4.9 km.
+- C13b halved trip length (median 300 to 170 m). It counts hunger twice: once in the food worth, and again in the feeding time, which is capped by hunger.
+
+Two changes, each switchable, with their own ablation set `C13c` (`rgMaxAgeH` 1.5 and `intakeCropOnly` 0, hash-identical to C13):
+1. **`rgMaxAgeH` 0.5.** The in-sim gate re-decides an intention after 30 min, not 90 (design assumption). The Jev gate constant stays 90 min.
+2. **`intakeCropOnly` 1.** A fruit tree's feeding time in the C13b valuation is its crop share at the animal's intake, without the hunger cap (design). The Jev facts keep the capped time.
+
+Predictions, against C13 on seeds 48, 7 and 21 (field, 1 year after the burn-in):
+- trips to trees back to about 5 per adult-day;
+- male day range (T-RNG-4) up into 1.5–3.5 km;
+- trips longer;
+- party size (T-PTY-1) about unchanged.
+
+The diagnostic probe with both changes gave about 5 trips per day and 2.2–2.7 km. The viability guard of §5 applies against both C13 parts off. T-RNG-4 is logged as touched. Nothing is tuned after the check.
+
 **6. Proof.** The lean proof (`scripts/proof.ts --plan lean`) with both parts on. `data/proof-ablations.json` has an ablation set per part, `C13a` (`rgOn` 0) and `C13b` (`intakeValue` 0), so each is attributed.
 
 **7. Handoffs.**
