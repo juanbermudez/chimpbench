@@ -1376,11 +1376,11 @@ Two plans: `--plan lean` (the default) and `--plan full`.
 
 | Step | What it runs |
 | --- | --- |
-| `generations` | Three generation worlds, set B's 1616, 1717 and 1818, × 75 years (≈ 3 chimpanzee generations) at natural aging, C8 demography, hash-bound `--unseal` (T-DEM-14, T-DEM-15 and the other sealed rows, on these seeds only). They carry every demography row. |
+| `generations` | Three generation worlds, set B's 1717, 1818 and 1919, × 75 years (≈ 3 chimpanzee generations) at natural aging, C8 demography, hash-bound `--unseal` (T-DEM-14, T-DEM-15 and the other sealed rows, on these seeds only). They carry every demography row. |
 | `scenario` | The expansion scenario and its paired baseline on the same three seeds × 10 years: T-LET-4 relative to the baseline, T-LET-5 with `--unseal`. A 1-year behaviour run cannot test T-LET-4, which needs lethal wins and years of range change. |
-| `c9-large` | The C9 `large` scenario on 5101 × 75 years (fission on). No generation world runs with fission: C9's setting includes `assocBondW` 0.3, which changes party joining from the first day, and a split would re-form communities, hierarchies and demographic denominators. T-FIS-3 has no paired `large-off` run in this plan and is reported insufficient. |
+| `c9-large` | The C9 `large` scenario on 5606 × 75 years (fission on). No generation world runs with fission: C9's setting includes `assocBondW` 0.3, which changes party joining from the first day, and a split would re-form communities, hierarchies and demographic denominators. T-FIS-3 has no paired `large-off` run in this plan and is reported insufficient. |
 | `dev-field` | Behaviour: the development seeds × 1 year after a 180-day burn-in. All non-demography rows, patrol rows with male-party follows where their protocol says so, T-BRD-1. |
-| `fresh-field` | Fresh seeds 606–1010 × 1 year after the burn-in: the fitted rows and the re-tested patrol rows. |
+| `fresh-field` | Fresh seeds 707, 808, 909, 1013 and 1014 × 1 year after the burn-in: the fitted rows and the re-tested patrol rows. |
 | `ablation-*` | All on and each stage off on seed 48 × 1 year after the burn-in, each followed by a diff. |
 | `compare-*`, `guide-data` | As in the full plan, locally afterwards. |
 
@@ -1399,8 +1399,8 @@ Two plans: `--plan lean` (the default) and `--plan full`.
 | Step | What it runs |
 | --- | --- |
 | `dev-field` | Field targets on the development seeds 48, 7, 21, 5, 11 × 10 years after a 180-day burn-in. Patrol rows use male-party follows where their protocol says so. |
-| `fresh-field` | The same on fresh seeds 606–1010: replication of the fitted rows, and the patrol rows re-tested after the patrol corrections. |
-| `scenario` | The expansion scenario and its paired baseline on set B (1616–2525) × 10 years: T-LET-4 relative to the baseline, and T-LET-5 with `--unseal`. |
+| `fresh-field` | The same on fresh seeds 707, 808, 909, 1013 and 1014: replication of the fitted rows, and the patrol rows re-tested after the patrol corrections. |
+| `scenario` | The expansion scenario and its paired baseline on set B (1717–2626) × 10 years: T-LET-4 relative to the baseline, and T-LET-5 with `--unseal`. |
 | `c8-setB` | The C8 demography proof on set B × 40 years at natural aging, hash-bound `--unseal` (T-DEM-14, T-DEM-15 and the other sealed rows). |
 | `c8-setA` | C8 fitted replication on set A (1111–1515) × 40 years. |
 | `ablation-*` | An all-on baseline and each stage switched off (C7a, C7c, C7e, C8, C10, patrol corrections) on seeds 48, 7, 21 × 2 years. Each is followed by a `field-compare.ts` diff. The sets live in `data/proof-ablations.json`, declared by each stage owner; the patrol set is partial (contact memory, single file and the removed energy gate have no switch). |

@@ -500,7 +500,7 @@ Adopted by the user: recommendations 1–5 of the patrol review. The evidence ch
 **Validation rules (fixed now).**
 - **T-PAT-4 is compromised this cycle.** P1 changes its predictor after its value was seen. It is reported, never counted, and nothing is tuned against it.
 - **T-LET-4 becomes partially encoded.** P2 makes expansion toward contested edges more likely. It is scored against the paired baseline, per the C6 review.
-- **The other patrol targets (T-PAT-2, 3, 5, 7, T-LET-6) are touched by a model change after the freeze.** They are re-tested on fresh seeds 606, 707, 808, 909 and 1010, never used before, and labelled "model revised post-freeze". They count as validation only if no parameter was set by looking at them.
+- **The other patrol targets (T-PAT-2, 3, 5, 7, T-LET-6) are touched by a model change after the freeze.** They are re-tested on fresh seeds never used before (606, 707, 808, 909 and 1010 at first; 707, 808, 909, 1013 and 1014 since 30 September, because 606 and 1010 had been run; protocolLog), and labelled "model revised post-freeze". They count as validation only if no parameter was set by looking at them.
 - **The fitted T-PAT-1 and T-PAT-6 keep their fitted parameters.** `patrolH0` and `patrolIncursionP` may be refitted once, to those targets only, and the refit is logged. Fresh-seed replication is required.
 
 **P5: new held-out targets.** The definitions are fixed now; the bands are computed from the real data by the rule stated here, before any post-change simulation value is seen.
@@ -533,7 +533,7 @@ Adopted by the user: recommendations 1–5 of the patrol review. The evidence ch
 - **Bands (P5).** Computed by `scripts/patrol-bands-metrics.ts` from the raw files before any simulated value of the corrected model was seen; only derived statistics were written. T-PAT-8: 279 Ngogo patrols in 211 months (1998–2015; 113 months without a patrol), ρ 0.059, band −0.057 to 0.170. Ngogo patrols do not track fruit month by month, which fits mitaniWatts2005 (the fruit effect vanished once male party size was in the model). T-BRD-1: 625 Taï stops, advance 0.448 (0.411–0.486), slope +0.072 (0.037–0.107) log-odds per adult present. The Gombe files (Dryad z8w9ghxdb) have no fruit series, so the optional second site is not used.
 - **T-PAT-8 not scorable (integrator ruling, same day, before any simulated value).** The Ngogo patrol file is not continuous observation: 43% of patrols fall in June–July, 113 of 211 months are empty, gaps reach 286–367 d, and Langergraber et al. 2017 report 2,621 observation days against ~6,900 calendar days. Without an effort column a monthly patrol rate cannot be computed, so the band measures observation effort as much as patrolling. Over the 98 months with a patrol, ρ = −0.054. The row is kept for the record and never counted; it returns if monthly observation days are obtained.
 - **Deviations forced by the data (logged).** S3 Data record adults present, not males (Lemoine et al. count all adults because Taï females join encounters), so the "male-count slope" is a slope on adults present, measured the same way in the simulation (adult males + adult females of the nearest party scan). Taï stops are ≥ 5-min rests; simulated listening stops last 2–4 min, so simulated halts of ≥ 1 min count.
-- **Labels applied** (from the pre-registration): T-PAT-4 compromised; T-PAT-2, 3, 5, 7 and T-LET-6 "model revised post-freeze" (fresh seeds 606–1010); T-LET-4 "partially encoded" (paired baseline); T-PAT-9 encoded. The protocol is re-frozen with the new rows.
+- **Labels applied** (from the pre-registration): T-PAT-4 compromised; T-PAT-2, 3, 5, 7 and T-LET-6 "model revised post-freeze" (fresh seeds 707, 808, 909, 1013, 1014); T-LET-4 "partially encoded" (paired baseline); T-PAT-9 encoded. The protocol is re-frozen with the new rows.
 
 ### 5.4 O6: Community fission
 
@@ -1198,8 +1198,8 @@ Built in `src/sim/fission.ts`, off by default (`fissionOn` 0, `assocBondW` 0; th
   - `large-off`: the same start with fission off. It gives the paired intercommunity killing rate for T-FIS-3, per community pair per year over the three communities.
 - **Change from the pre-registration** (integrator ruling: `fissionOn` stays off by default). The T-FIS-1 baseline can no longer come from the combined proof's 40-year runs, so it runs as the scenario's `baseline` kind. Logged.
 - **Fix after the first plumbing run** (compressed, seed 42, 3 years; not a proof, and no C9 value is tuned on it). When Louvain finds a single community, the monthly Q was reported as 0, which hid a network that is starting to divide. The best two-way split now comes from the leading eigenvector of the modularity matrix [newman2006], polished by node moves. Q stays 0 only when no split has positive modularity. On the compressed map a 60-member community forms one party chain (every pair's association index is near 1), so Q stays 0 there; the proof uses the field profile.
-- **Proof command.** `pnpm exec tsx scripts/c9-scenario.ts --years 40 --workers 6` on the reserved seeds 5101–5505. Rough wall time: about 12 h at 6 workers and 30 h at 2. The large communities approach the cap of 180, which costs about 0.6–1 s per eco-day.
-- **Lean local proof** (29 September 2026, user decision, logged before any C9 value). The combined proof's lean plan (`scripts/proof.ts --plan lean`) runs one `large` world on 5101 × 75 years instead of the three kinds on 5101–5505 × 40 years.
+- **Proof command.** `pnpm exec tsx scripts/c9-scenario.ts --years 40 --workers 6` on the reserved seeds 5303, 5404, 5505, 5606 and 5707 (5101 and 5202 were replaced on 30 September: the decide-ft track had run them; protocolLog). Rough wall time: about 12 h at 6 workers and 30 h at 2. The large communities approach the cap of 180, which costs about 0.6–1 s per eco-day.
+- **Lean local proof** (29 September 2026, user decision, logged before any C9 value). The combined proof's lean plan (`scripts/proof.ts --plan lean`) runs one `large` world on 5606 × 75 years instead of the three kinds on the five C9 seeds × 40 years.
   - T-FIS-1, -2, -4 and -5 come from that world. T-FIS-3 has no paired `large-off` run and is reported insufficient.
   - Fission is not switched on in a generation world, because C9's setting (`assocBondW` 0.3) changes party joining from the first day and a split would contaminate the demography rows.
   - The pre-registered 5 × 3 × 40-year proof stays available for a later full run.
@@ -1316,13 +1316,14 @@ This fixes C11's rules before any calibration code or run. It refines §7, and w
   - Stochastic variance comes from the noise floor (step 0).
 
 **2. Seeds, all reserved and never run before C11.**
-- Calibration pool C: 7001–7020.
+- Calibration pool C: 7004–7023.
   - Step 0 uses all 20.
-  - Design points use common random numbers: screening on 7001 and 7002; history matching and the direct confirmation on 7001–7005.
+  - Design points use common random numbers: screening on 7021 and 7022; history matching and the direct confirmation on 7021, 7022, 7023, 7004 and 7005.
 - Validation set V1: 8101, 8202, 8303, 8404, 8505, for the posterior predictive field rows and the Gombe paths.
 - Scenario set V2: 8606, 8707, 8808, 8909, 9010, for the expansion scenario (T-LET-4, T-LET-5) and the C9 scenario at the posterior median.
-- Demography set V3: 9101, 9202, 9303, 9404, 9505 (step 5b).
-- None overlaps 48/7/21/5/11, 101–505, 606–1010, 1111–2525, 5101–5505 or any direction-check seed. The sets go into AGENTS.md's reserved list at the C11 freeze.
+- Demography set V3: 9202, 9303, 9404, 9505, 9606 (step 5b).
+- None overlaps 48/7/21/5/11, 101–505, the patrol re-test set, the C8 sets, the C9 set or any direction-check seed. The sets are in AGENTS.md's reserved list.
+- *Seed replacement (30 September 2026, before any C11 run):* 7001, 7002 and 7003 became 7021, 7022 and 7023, each in the same role, and 9101 became 9606. The decide-ft track had run model-driven worlds on them (protocolLog).
 
 **3. Method** (§7.2, with the budget fixed now). Field profile, observer on, 180-day burn-in.
 - **Step 0, noise floor.** Default parameters on the 20 C seeds × 1 year. Gives the per-statistic SD, which feeds the emulator nugget and the distance.
