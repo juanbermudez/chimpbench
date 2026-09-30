@@ -664,7 +664,6 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
         <li><a href="#decide">Decisions</a></li>
         <li><a href="#society">Society</a></li>
         <li><a href="#experiments">Field experiments</a></li>
-        <li><a href="#time">Time</a></li>
         <li><a href="#system">Architecture</a></li>
         <li><a href="#realism">Realism checks</a></li>
         <li><a href="#fruit">Fruit calendar</a></li>
@@ -684,7 +683,6 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
           <li><a href="#decide">Decisions</a></li>
           <li><a href="#society">Society</a></li>
           <li><a href="#experiments">Field experiments</a></li>
-          <li><a href="#time">Time</a></li>
           <li><a href="#system">Architecture</a></li>
           <li><a href="#realism">Realism checks</a></li>
           <li><a href="#fruit">Fruit calendar</a></li>
@@ -1069,30 +1067,6 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
       </section>
 
       <!-- Time -->
-      <section class="sec" id="time" aria-labelledby="h-time">
-        <header class="sh"><h2 id="h-time">Time</h2><p>The simulation advances in steps of 15 seconds, and every chimp is updated at every step. A faster speed runs more steps per second; the steps stay the same size, so speed changes how quickly time passes on screen, not what happens in each step.</p></header>
-        <div class="time">
-          <figure class="panel speeds" aria-label="Steps per real second at four speeds: 4 at 1 minute per second, 40 at 10 minutes per second, 240 at 1 hour per second and 5,760 at 1 day per second.">
-            <div class="second" aria-hidden="true"><span>speed</span><div><span>one real second</span><span>&#8203;</span></div></div>
-            <div class="speed"><b>1 min/s<span>4 steps</span></b><svg viewBox="0 0 480 18" preserveAspectRatio="none" aria-hidden="true"><defs><pattern id="p4" width="120" height="18" patternUnits="userSpaceOnUse"><rect class="tk" x="1" y="0" width="115" height="18" rx="3"/></pattern></defs><rect width="480" height="18" fill="url(#p4)"/></svg></div>
-            <div class="speed"><b>10 min/s<span>40 steps</span></b><svg viewBox="0 0 480 18" preserveAspectRatio="none" aria-hidden="true"><defs><pattern id="p40" width="12" height="18" patternUnits="userSpaceOnUse"><rect class="tk" x="1" y="0" width="9" height="18" rx="1.5"/></pattern></defs><rect width="480" height="18" fill="url(#p40)"/></svg></div>
-            <div class="speed"><b>1 h/s<span>240 steps</span></b><svg viewBox="0 0 480 18" preserveAspectRatio="none" aria-hidden="true"><defs><pattern id="p240" width="2" height="18" patternUnits="userSpaceOnUse"><rect class="tk" x="0" y="0" width="1.1" height="18"/></pattern></defs><rect width="480" height="18" fill="url(#p240)"/></svg></div>
-            <div class="speed"><b>1 day/s<span>5,760 steps</span></b><svg viewBox="0 0 480 18" preserveAspectRatio="none" aria-hidden="true"><rect class="tk" width="480" height="18" rx="3"/></svg></div>
-            <p class="foot">Same step size in every row, just more of them. With the rules alone, a world plays out exactly the same at any speed.</p>
-          </figure>
-          <div class="prose">
-            <h3>Life-course mode</h3>
-            <p>Turn on <b>life-course mode</b> in Settings and every forest day becomes a whole year of life. Babies grow up, alphas get old and toppled, family trees branch out.</p>
-            <p>Daily routines stay on normal time, so it's a time-lapse of lives rather than of days.</p>
-          </div>
-        </div>
-        <figure class="shot time-shot">
-          <div class="frame"><img src="img/time-menu.webp" width="1400" height="583" loading="lazy" decoding="async" alt="The time menu opened from the menu bar: speed buttons from 1 min/s to Max, a status line 'Running, every chimp resolves every tick', today's timeline from 00 to 24 with event ticks, and the decision model section showing the live model's status and mode."></div>
-          <figcaption><b>The time menu.</b> Speeds 1 to 6 on the keyboard, today's events, and the model's status and mode. Space pauses.</figcaption>
-        </figure>
-      </section>
-
-      <!-- System -->
       <section class="sec" id="system" aria-labelledby="h-system">
         <header class="sh"><h2 id="h-system">Architecture</h2><p>One rule organizes the code: <b>only the simulation changes the world.</b> The 3D view, the sound and the interface read it; the decision loop asks it for a chimp's view and returns a checked choice.</p></header>
         <div class="panel arch">

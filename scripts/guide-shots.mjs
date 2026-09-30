@@ -1,9 +1,9 @@
 // Captures the app screenshots used by the guide (docs/architecture.html) into docs/img/*.webp.
 // Usage: node scripts/guide-shots.mjs [url] [--only overview-dawn,mind-decision] [--seed 7]
 //   Shots: overview-dawn, mind-decision (mind), close-party, keep-clear (writes keep-clear-off too), society-kinship,
-//   society-dominance, time-menu (time), experiment-shift (experiment), storm, night. The model-dependent ones (mind,
-//   experiment, time) are skipped while /api/decide/status is not ready, so a busy model never overwrites them;
-//   recapture them alone later with --only mind,experiment,time.
+//   society-dominance, experiment-shift (experiment), storm, night. The model-dependent ones (mind,
+//   experiment) are skipped while /api/decide/status is not ready, so a busy model never overwrites them;
+//   recapture them alone later with --only mind,experiment.
 //   url defaults to the running `pnpm dev` at http://127.0.0.1:5173 (real GLiNER model, so the Mind tab shows real
 //   probabilities). This script never starts or stops a server on 5173. If 5173 is unreachable it uses a model-free
 //   server on 5196, starting one (MGOGO_NO_MODEL=1) itself if needed and stopping it again at the end.
@@ -15,7 +15,7 @@ const { chromium } = await import('/Users/juanbermudez/.cache/codex-runtimes/cod
 
 const args = process.argv.slice(2);
 const flag = name => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : undefined; };
-const ALIAS = { mind: 'mind-decision', experiment: 'experiment-shift', time: 'time-menu', society: 'society-kinship,society-dominance' };
+const ALIAS = { mind: 'mind-decision', experiment: 'experiment-shift', society: 'society-kinship,society-dominance' };
 const only = flag('--only')?.split(',').flatMap(n => (ALIAS[n] ?? n).split(','));
 const seed = Number(flag('--seed') ?? 7);
 const root = new URL('../', import.meta.url).pathname;
@@ -174,15 +174,6 @@ try {
       await save(`society-${view}`);
     }
     await key('Escape'); await wait(500);
-  }
-
-  if (want('time-menu') && withModel) {
-    await page.locator('.hud [data-act="time"]').first().click(); await wait(700);
-    const bar = await box('.hud'), drop = await box('#time-drop');
-    const x = Math.max(0, Math.min(bar.x, drop.x) - 12), y = Math.max(0, bar.y - 12);
-    const clip = { x, y, width: Math.min(VIEW.width - x, Math.max(drop.x + drop.width, 900) - x + 12), height: drop.y + drop.height - y + 12 };
-    await save('time-menu', { clip, width: 1400 });
-    await key('Escape'); await wait(400);
   }
 
   if (want('experiment-shift') && withModel) {
