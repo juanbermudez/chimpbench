@@ -18,13 +18,15 @@
   "Instrument validation against truth (sampling accuracy, classifier precision and recall) is allowed at any time, because truth is not a field target; each validation run is logged."
  ],
  "protocolFreeze": {
-  "stage": "Neutral-voice strings",
+  "stage": "C8 freeze (sealed rows registered)",
   "date": "2026-09-30",
-  "hash": "3c7b860f2833d182",
+  "hash": "81c73f60d3a3b2e5",
+  "registryHash": "7e72eb52692342a5",
   "previous": {
-   "stage": "ChimpBench rename",
-   "hash": "400aa83eac468b54"
-  }
+   "stage": "Neutral-voice strings",
+   "hash": "3c7b860f2833d182"
+  },
+  "note": "scripts/field-metrics.ts --unseal and field-scenario.ts expansion --unseal refuse unless protocolFreeze.stage starts with 'C8' and hash and registryHash equal the current protocol and registry hashes (src/field/targets.ts unsealRefusal)"
  },
  "protocolLog": [
   {
@@ -1563,6 +1565,18 @@
    ],
    "verdicts": "no verdict: development checks only; the fitted rows are to be re-run on the merged model",
    "class": "merge ruling"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "science/simulation owner (integrator)",
+   "seen": "none",
+   "param": "freeze: 3c7b860f2833d182 -> 81c73f60d3a3b2e5 (C8 freeze per docs/staging/c8-targets.patch.json protocolFreezeTemplate: C8's src/field and scripts, the T-DEM-16..24 rows; registryHash 7e72eb52692342a5; previous is the actual latest freeze, not the template's C7a entry)",
+   "reason": "C8 merged (f5d9cba) and its staging registered; the hash-bound --unseal needs a freeze whose stage starts with 'C8' and whose hash and registryHash equal the current ones",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "combined proof (lean plan), C9 proof",
+   "class": "freeze"
   }
  ],
  "targets": [
