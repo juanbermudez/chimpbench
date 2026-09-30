@@ -116,8 +116,11 @@ test('travel hoo (C10 addendum 1): a trip initiator with a companion near may ho
   const w = createWorld(33, { profile: 'field', params: { travelHooP: 1, travelHooAllyP: 1 } });
   for (let i = 0; i < 5760 / 4; i++) tickWorld(w);
   const [a, b] = w.chimps.filter(ch => ch.alive && ch.age >= 15 && ch.troopId === 1);
-  b.position = [a.position[0] + 10, 0, a.position[2]]; b.action = 'rest'; b.targetId = -1;
+  b.position = [a.position[0] + 10, 0, a.position[2]]; b.action = 'rest'; b.targetId = -1; a.position[1] = 0;
   perceive(w, a); perceive(w, b);
+  // the field chimp grid is rebuilt per tick, so a teleported companion is added to the perception snapshots by hand
+  if (!ix(a).seen.includes(b.id)) ix(a).seen.push(b.id);
+  if (!ix(b).seen.includes(a.id)) ix(b).seen.push(a.id);
   const far = w.trees.reduce((p, t) => (Math.abs(Math.hypot(t.position[0] - a.position[0], t.position[2] - a.position[2]) - 400) < Math.abs(Math.hypot(p.position[0] - a.position[0], p.position[2] - a.position[2]) - 400) ? t : p));
   const cand = { action: 'travel' as const, targetId: far.id, score: 1, reason: 'test' };
   candidateMeta.set(cand, { v: V.TREE, aux: -1 });
