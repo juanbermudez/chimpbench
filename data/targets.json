@@ -1179,6 +1179,21 @@
    ],
    "verdicts": "none (no proof value exists)",
    "class": "model change"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "science/simulation owner (stage C13c)",
+   "seen": "fitted rows on development seeds 48, 7, 21 (field, 1 year): T-RNG-4 2.59 km (C13 1.58), T-ACT-2 0.22 / 0.15, T-PTY-1 2.90, T-PAT-6 0.44; sim truth: trips 4.9-5.1 per adult-day, adult hunger 0.45-0.51, lactating 0.75-0.79; no held-out value",
+   "param": "C13c direction check: viability guard passes; every pre-registered prediction held; rgMaxAgeH 0.5 and intakeCropOnly 1 stay on by default. T-RNG-4 touched (fitted, tuned, still held as fail); nothing tuned after the check",
+   "reason": "C13c pre-registration (f43722e)",
+   "targets": [
+    "T-RNG-4",
+    "T-ACT-2",
+    "T-PTY-1",
+    "T-PAT-6"
+   ],
+   "verdicts": "none (direction check, not a proof)",
+   "class": "model change"
   }
  ],
  "targets": [
