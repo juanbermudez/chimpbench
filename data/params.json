@@ -113,9 +113,8 @@
    ],
    "calibrate": false,
    "evidence": "M",
-   "sources": [],
-   "refs": [
-    "hobaiter2014 (docs/research.md, Early life; Table 1): unrelated adopters 13-35+ y (Taï), 20-26 (Gombe), 30 (Sonso)"
+   "sources": [
+    "hobaiter2014"
    ],
    "clock": "none",
    "symbol": "P.adoptOtherMinAgeY (adopt)",
@@ -138,14 +137,13 @@
    ],
    "calibrate": false,
    "evidence": "stylized",
-   "sources": [],
+   "sources": [
+    "hobaiter2014"
+   ],
    "clock": "none",
    "symbol": "adopt",
    "file": "src/sim/life.ts",
-   "notes": "Adoption by a bonded non-sibling (12 y or older) for orphans of 3 y and over. Unrelated adoption is common at Taï (13 of 20 pooled unrelated cases) and a minority in East Africa; it starts after 5.2 ± 6.6 months (siblings 0.3 ± 0.2) (hobaiter2014). The sim adopts at once (stylization).",
-   "refs": [
-    "hobaiter2014 (docs/research.md, Early life): unrelated adoption in 20 of 36 pooled cases, 13 of them at Taï"
-   ]
+   "notes": "Adoption by a bonded non-sibling (12 y or older) for orphans of 3 y and over. Unrelated adoption is common at Taï (13 of 20 pooled unrelated cases) and a minority in East Africa; it starts after 5.2 ± 6.6 months (siblings 0.3 ± 0.2) (hobaiter2014). The sim adopts at once (stylization)."
   },
   {
    "id": "adoptSiblingInfantP",
@@ -185,9 +183,8 @@
    ],
    "calibrate": false,
    "evidence": "M",
-   "sources": [],
-   "refs": [
-    "hobaiter2014 (docs/research.md, Early life): sibling carers 8-10 y at Gombe, 9-11 at Sonso, 6-11 at Taï"
+   "sources": [
+    "hobaiter2014"
    ],
    "clock": "none",
    "symbol": "P.adoptSiblingMinAgeY (adopt)",
@@ -878,10 +875,9 @@
    ],
    "calibrate": false,
    "evidence": "M",
-   "sources": [],
-   "refs": [
-    "girardButtoz2021 (docs/research.md, Early life): immatures under 12",
-    "samuni2020 (docs/research.md, Early life): orphans lost the mother before 10"
+   "sources": [
+    "girardButtoz2021",
+    "samuni2020"
    ],
    "clock": "none",
    "symbol": "P.bereaveMaxAgeY (killChimp)",
@@ -904,9 +900,8 @@
    ],
    "calibrate": false,
    "evidence": "stylized",
-   "sources": [],
-   "refs": [
-    "girardButtoz2021 (docs/research.md, Early life): steeper diurnal cortisol slope within 2 y of the loss"
+   "sources": [
+    "girardButtoz2021"
    ],
    "clock": "none",
    "symbol": "P.bereaveStress (killChimp)",
@@ -8699,11 +8694,9 @@
    "calibrate": false,
    "evidence": "M",
    "sources": [
-    "crockford2020"
-   ],
-   "refs": [
-    "hobaiter2014 (docs/research.md, Early life): adoption counts immatures under 12",
-    "stanton2020 (docs/research.md, Early life): upper age class 10-14.99 y"
+    "crockford2020",
+    "hobaiter2014",
+    "stanton2020"
    ],
    "clock": "none",
    "symbol": "P.guardMaxAgeY (guardianOf, notifyAllies)",

@@ -3,11 +3,11 @@
  "generated": "2026-09-28",
  "about": "Quantitative field targets for ChimpBench (docs/realism-design.md §2). Values are as reported by the sources; \"accept\" is the band the simulation must hit, scaled to ChimpBench communities (12–22 members, 3–7 adult males) where stated. Evidence: H multi-site or large-sample full text; M one site, abstract-only or derived; L secondary, captive or qualitative. role fitted = may be used for calibration; held-out = never used for tuning. encoded = the mechanism was designed from this pattern, so a match is weak evidence.",
  "counts": {
-  "targets": 101,
+  "targets": 110,
   "fitted": 37,
-  "held-out": 64,
+  "held-out": 73,
   "parameterConstraints": 19,
-  "sources": 124
+  "sources": 132
  },
  "protocolPolicy": [
   "Every protocol parameter (observer settings, classifier rules, metric windows and thresholds, scoring rules) is set from the source's methods text or by validating the instrument against simulation truth, never by looking at a field-target verdict.",
@@ -1234,6 +1234,335 @@
    ],
    "verdicts": "none",
    "class": "model change"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "B7 WP2 design agent (pre-registration after WP3; entered by the integrator at WP4)",
+   "seen": "no value exists (no C8 mechanism)",
+   "param": "New held-out target T-DEM-16 (survival of daughters orphaned at 5–9.99 y): census + genealogy protocol, time-varying Cox, pattern rule and power rule (insufficient below 300 orphan-years or 10 orphan deaths) as in docs/staging/early-life-prereg.md §1.3",
+   "reason": "B7 pre-registration before any C8 code; rule from stanton2020 Abstract (female classes; direction only, n UNVERIFIED)",
+   "targets": [
+    "T-DEM-16"
+   ],
+   "verdicts": "new",
+   "class": "new targets"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "B7 WP2 design agent (pre-registration after WP3; entered by the integrator at WP4)",
+   "seen": "no value exists (no C8 mechanism)",
+   "param": "New held-out target T-DEM-17 (sex difference in the survival cost of maternal loss at 10–14.99 y): statistic log HR(sons) − log HR(daughters), pattern rule and power rule as in docs/staging/early-life-prereg.md §1.4; class-level HRs reported as unscored parts",
+   "reason": "B7 pre-registration; WP3 finding 9 (power); rule from stanton2020 Abstract",
+   "targets": [
+    "T-DEM-17"
+   ],
+   "verdicts": "new",
+   "class": "new targets"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "B7 WP2 design agent (pre-registration after WP3; entered by the integrator at WP4)",
+   "seen": "no value exists (no C8 mechanism)",
+   "param": "New check T-DEM-18 (stress activation after maternal loss fades), held-out and encoded: endocrine proxy protocol and pattern rule as in docs/staging/early-life-prereg.md §1.5",
+   "reason": "B7 pre-registration; the bereavement mechanism is designed from girardButtoz2021, so the row is encoded-descriptive and never counted",
+   "targets": [
+    "T-DEM-18"
+   ],
+   "verdicts": "new (encoded-descriptive)",
+   "class": "new targets"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "B7 WP2 design agent (pre-registration after WP3; entered by the integrator at WP4)",
+   "seen": "no value exists (no C8 mechanism)",
+   "param": "New check T-DEM-19 (lean-mass proxy, orphans vs non-orphans), held-out and encoded: urine-proxy protocol (one sample per 10 follow-days present; truth read of leanIndex) and pattern rule as in docs/staging/early-life-prereg.md §1.6",
+   "reason": "B7 pre-registration; split from the former T-DEM-18 (WP3 finding 2); rule from samuni2020 Table 1",
+   "targets": [
+    "T-DEM-19"
+   ],
+   "verdicts": "new (encoded-descriptive)",
+   "class": "new targets"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "B7 WP2 design agent (pre-registration after WP3; entered by the integrator at WP4)",
+   "seen": "no value exists (no C8 mechanism)",
+   "param": "New check T-DEM-20 (lean-mass proxy, alpha mother vs other mothers), held-out and encoded: protocol and pattern rule as in docs/staging/early-life-prereg.md §1.7",
+   "reason": "B7 pre-registration; split from the former T-DEM-18 and labelled encoded per WP3 finding 1 (the lever reads dominance relative to the mother); rule from samuni2020 Table 2",
+   "targets": [
+    "T-DEM-20"
+   ],
+   "verdicts": "new (encoded-descriptive)",
+   "class": "new targets"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "B7 WP2 design agent (pre-registration after WP3; entered by the integrator at WP4)",
+   "seen": "no value exists (no C8 mechanism)",
+   "param": "New held-out target T-DEM-21 (neighbour pressure during pregnancy and offspring survival): NPI = mean(I × K) × F per lemoine2020a STAR Methods (I transform UNVERIFIED: quoted before the freeze, else max(0, 1 − d/d75), logged), 8.5-month window, Cox with the source's predictors, controls and random effects (confirmed from the Methods before the freeze), pattern rule as in docs/staging/early-life-prereg.md §1.8",
+   "reason": "B7 pre-registration; split from the former T-DEM-19 (WP3 finding 2); covariates per WP3 finding 22; rule from lemoine2020a Table 1",
+   "targets": [
+    "T-DEM-21"
+   ],
+   "verdicts": "new",
+   "class": "new targets"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "B7 WP2 design agent (pre-registration after WP3; entered by the integrator at WP4)",
+   "seen": "no value exists (no C8 mechanism)",
+   "param": "New check T-DEM-22 (pregnancy vs lactation windows of neighbour pressure), held-out and encoded: protocol as T-DEM-21, pattern rule as in docs/staging/early-life-prereg.md §1.9",
+   "reason": "B7 pre-registration; split from the former T-DEM-19 part (b) (WP3 finding 2)",
+   "targets": [
+    "T-DEM-22"
+   ],
+   "verdicts": "new (encoded-descriptive)",
+   "class": "new targets"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "B7 WP2 design agent (pre-registration after WP3; entered by the integrator at WP4)",
+   "seen": "no value exists (no C8 mechanism)",
+   "param": "New held-out target T-DEM-23 (aggression received by immatures under 9, by sex): all-occurrence agonism with party-scan exposure, negative binomial age × sex model, pattern rule as in docs/staging/early-life-prereg.md §1.10; expectation: fail",
+   "reason": "B7 pre-registration; rule from sabbi2021 Results; evidence M per the targets.json scale (WP3 finding 15)",
+   "targets": [
+    "T-DEM-23"
+   ],
+   "verdicts": "new",
+   "class": "new targets"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "B7 WP2 design agent (pre-registration after WP3; entered by the integrator at WP4)",
+   "seen": "no value exists (no C8 mechanism)",
+   "param": "New check T-DEM-24 (one-year survival after maternal loss, under 4 vs 4 or more), held-out and encoded: census + genealogy protocol and pattern rule as in docs/staging/early-life-prereg.md §1.11",
+   "reason": "B7 pre-registration; checks the replacement of hazardOrphan by energy effects; rule from hobaiter2014 Results (N = 33 pooled); encoded-descriptive, never counted",
+   "targets": [
+    "T-DEM-24"
+   ],
+   "verdicts": "new (encoded-descriptive)",
+   "class": "new targets"
+  },
+  {
+   "date": "2026-09-29 (ruling; logged at WP4)",
+   "by": "integrator (ruling; text drafted by B7 WP2)",
+   "seen": "T-DEM-14, T-DEM-15 and T-LET-5: no value exists (n/a with n = 0 in every C3–C7a scorecard and JSON in artifacts/validation/; no birth or infant statistic in the C6 expansion summaries); T-DEM-16..24: new, no value",
+   "param": "Ruling. (1) The first implementation of a never-computed held-out target does not touch it, provided that it is written from the registered definition and the source's methods, that no mechanism code that could move it exists yet, and that a new freeze hash is taken before any run. (2) Sealed means never computed: the metric function is not called unless scripts/field-metrics.ts --unseal is given; JSON, MD, worker messages and scorecards carry no value, n, parts, interval, verdict or 'would be' note (tested on the JSON output). (3) --unseal refuses unless the parameter-registry hash and the protocol freeze hash equal those logged at the C8 freeze. (4) During C8 development no script, notebook or session tallies orphan vs non-orphan outcomes, fertility or infant survival by maternal rank, or births around an expansion from event logs, field logs, genetic-record events or saved worlds; the residual risk of a person reading the app's event feed is accepted. Sealed until the C8 proof: T-DEM-14, T-DEM-15, T-LET-5, T-DEM-16..24",
+   "reason": "WP3 review (sealing answer and finding 3); protocolPolicy intent: block value-informed changes",
+   "targets": [
+    "T-DEM-14",
+    "T-DEM-15",
+    "T-LET-5",
+    "T-DEM-16",
+    "T-DEM-17",
+    "T-DEM-18",
+    "T-DEM-19",
+    "T-DEM-20",
+    "T-DEM-21",
+    "T-DEM-22",
+    "T-DEM-23",
+    "T-DEM-24"
+   ],
+   "verdicts": "sealed until the C8 proof",
+   "class": "ruling"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "B7 WP2 design agent (pre-registration after WP3; entered by the integrator at WP4)",
+   "seen": "no value exists (n/a in every C3–C7a scorecard)",
+   "param": "T-DEM-15 computation pre-registered from its unchanged row and crockford2020 Methods (via WP3 finding 8): cohort (known-age sons; orphans lost the mother at 4.0–11.99 y; non-orphans' mother alive to 12; paternity parts need age >= 14), statistics (first paternity at conception of the first offspring surviving >= 2 y; Poisson paternities with offset log conceptions from age 10; time-varying Cox survival from 4), decision rule and insufficient thresholds as in docs/staging/early-life-prereg.md §1.12; report note 'direction partly encoded; guardMaxAgeY = 12 from crockford2020'",
+   "reason": "WP3 finding 8; row untouched",
+   "targets": [
+    "T-DEM-15"
+   ],
+   "verdicts": "no value",
+   "class": "pre-registration"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "B7 WP2 design agent (pre-registration after WP3; entered by the integrator at WP4)",
+   "seen": "C3–C7a scorecards and JSON (for example c6-field10y 'would be fail', seed interval 0.21–0.28, n 208; c7a-fresh 'would be fail', 0.06–0.43; c7a-field1y 'would be pass', 0.18–0.58)",
+   "param": "T-SOC-11 is not sealed (values exist). Under the normal policy: C8 changes strength (growth record), feeding and health for every animal, so C8 is a model change after its value was seen; T-SOC-11 is re-tested on the fresh seeds of the C8 proof, labelled 'model revised post-freeze', and counts only if no parameter was set by looking at it",
+   "reason": "WP3 finding 3 (correction of the earlier draft's 'no value exists'); C6 precedent for model changes after a value was seen",
+   "targets": [
+    "T-SOC-11"
+   ],
+   "verdicts": "model revised post-freeze (pending)",
+   "class": "labels"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "B7 WP2 design agent (pre-registration after WP3; entered by the integrator at WP4)",
+   "seen": "no value exists",
+   "param": "walker2018 (maturation of daughters orphaned before 8) considered and deferred, not registered: model-predicted medians in the text (maturity 10.7 vs 13.3 y; first birth 13.6 vs 16.8 y, per WP3), hazard ratios 0.07 and 0.45, number of orphans unreported; no C8 mechanism makes maturation depend on condition",
+   "reason": "no mechanism; a later registration designed from walker2018 would be encoded",
+   "targets": [],
+   "verdicts": "deferred",
+   "class": "labels"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C8 implementer (worktree branch; entered by the integrator at registration)",
+   "seen": "no C8 demography value (the fix was written from the code, before any C8 run); the science agent's report of the burn-in bug",
+   "param": "src/field/derive.ts and metrics.ts: demography exposure measured from time0 (observation start after burn-in) instead of world time 0: the life table (T-DEM-1, -2, -3) t0/t1, T-DEM-10 t1, the adult-male and community-size mid-points (d.days·12 -> time0 + days·12; maleDominance, T-RNG-2, T-PAT-2, T-SOC-3, T-SOC-4, section18 rangeShift and party shares) and T-HUN-6's months (counted from time0). Unit test with a 180-day burn-in added",
+   "reason": "bug: with --burn-in the exposure window was truncated (records carry time0)",
+   "targets": [
+    "T-DEM-1",
+    "T-DEM-2",
+    "T-DEM-3",
+    "T-DEM-10",
+    "T-HUN-6",
+    "T-RNG-2",
+    "T-PAT-2",
+    "T-SOC-3",
+    "T-SOC-4"
+   ],
+   "verdicts": "runs with burn-in: demography exposure no longer truncated (before -> after not recomputed for old runs)",
+   "class": "bug fix"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C8 implementer (worktree branch; entered by the integrator at registration)",
+   "seen": "no value exists (T-DEM-4 and T-DEM-6..9 were n/a; T-DEM-5 n/a)",
+   "param": "C8 observer protocols and first computations (freeze commit, before any mechanism): health monitoring (community members seen with respiratory signs, per census day); necropsy truth for found carcasses (disease / aggression, wound complications counted as aggression / other; disappearances unknown) and the last sighting on death records; snare injuries recorded when seen. T-DEM-4: known-cause shares (parts disease, aggression; respiratory share of all deaths reported); T-DEM-5: outbreaks = clusters of sighting days with gaps <= 30 d in which >= 20% of the community is seen ill within 91 d of the first sighting (the registered definition; the 30-d gap is design), per community-year, Poisson interval; T-DEM-6: per outbreak attack = distinct ill / community size, mortality = deaths of members seen ill or with respiratory necropsy from start to 30 d after the last sighting / size, means over outbreaks, part bands attack 0.4-0.9 and mortality 0-0.17 (from the row's basis); T-DEM-7: logistic regression of outbreak death on infant (< 5 y) and >= 30 y, pass if both odds ratios > 1, insufficient below 10 outbreak deaths; T-DEM-8: respiratory deaths (respiratory necropsy, or a disappearance after signs in the previous 30 d) per 1,000 chimp-years; T-DEM-9: share of roster individuals > 3 y alive at each observation-year end whose snare injury was recorded. --demography storage mode (5-min fixes only, no call, event or visit records) for 40-year runs",
+   "reason": "C8 adds the epidemic and snare mechanisms; protocols written from the rows' definitions before any mechanism code existed",
+   "targets": [
+    "T-DEM-4",
+    "T-DEM-5",
+    "T-DEM-6",
+    "T-DEM-7",
+    "T-DEM-8",
+    "T-DEM-9"
+   ],
+   "verdicts": "n/a -> computed",
+   "class": "new protocol"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C8 implementer (worktree branch; entered by the integrator at registration)",
+   "seen": "no value exists (sealed, never computed)",
+   "param": "Implementation choices fixed in the freeze commit before any value, for the sealed rows (src/field/early-life.ts, survival.ts): (1) mixed models approximated: random group intercepts as strata (Cox) or fixed stratum effects (Poisson; strata without events dropped), random individual effects by resampling individuals or mothers in the 1,000-resample cluster bootstrap (seeded, observer-owned); (2) T-DEM-15 first paternity dated at conception (birth - 228 d): crockford2020's reference point is UNVERIFIED in docs/research.md, so the pre-registered default stands; (3) T-DEM-21 I transform: the source text leaves it UNVERIFIED (docs/research.md), so the pre-registered fallback I = max(0, 1 - d/d75) (design) is used; d75 along the ray from the centre (mean of the previous 12 months' fixes) through the encounter; K = (10 - b)/10 for the 10% kernel band b, 0 outside; F = 1 / mean observation days between consecutive encounters in the window (1 / observation days with one encounter; NPI 0 with none); births need 20.5 months of prior observation; (4) T-DEM-14 (outline in §1.12, completed here): 'high-ranking' = top third of the female order at the interval mid-point (jones2010's cut-offs UNVERIFIED; design), intervals after a birth whose infant was alive at the next birth or at censoring, pass if the birth HR (high vs not) 90% lower bound > 1 and the survival-to-1 difference 90% lower bound > 0, survival to 5 a part, insufficient below 30 intervals per group; (5) T-LET-5 (outline completed): expansion month = first month after year 1 in which the winner's 95% range exceeds its year-1 mean by >= 10% (design); pre window 3 y before it, post window 3 y starting one gestation (228 d) later (wood2025 started the post period 8 months after first use of the new area); births and deaths before 3 among them (births without 3 y of follow-up and no death dropped from the share), paired baseline over the same windows; pooled over seeds with an expansion: pass if births rise, the death share falls, and both changes exceed the baseline's; insufficient with fewer than 2 seeds with an expansion; census from the simulation's genealogy (the scenario runs without the observer), kept only in the --unseal run; (6) T-DEM-17's daughters' HR interval width uses the 90% bootstrap interval; (7) T-DEM-23's aggression received = detected decided conflicts lost by the immature",
+   "reason": "early-life-prereg §1.2 (protocol before mechanism); WP3 findings 8, 22",
+   "targets": [
+    "T-DEM-14",
+    "T-DEM-15",
+    "T-LET-5",
+    "T-DEM-16",
+    "T-DEM-17",
+    "T-DEM-18",
+    "T-DEM-19",
+    "T-DEM-20",
+    "T-DEM-21",
+    "T-DEM-22",
+    "T-DEM-23",
+    "T-DEM-24"
+   ],
+   "verdicts": "sealed until the C8 proof",
+   "class": "pre-registration"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C8 implementer (worktree branch; entered by the integrator at registration)",
+   "seen": "pooled juvenile condition only (never split by orphan status, maternal rank or sex); no early-life outcome",
+   "param": "Pre-run condition check (early-life-prereg §2.6), on the mechanism commit: field profile, seed 48, 2 years, maternalLevers 0, bereaveStress 0, birthCondFromMother 0; juvenile (5-9.99 y) condition daily at 12:00, 3,468 samples: median 0.604, p25 0.571, p5 0.516, inside the design band 0.55-0.85, so condGood 0.5 and condLow 0.3 stay (rule: outside the band, condGood := p25 and condLow := p5, once). Exposure counts (§5.3, exposure only): 9 births, 29.7 immature-years, 9 orphaning events (F 0-4.99: 3, F 5-9.99: 2, M 0-4.99: 3, M 10-14.99: 1) in 2 years (scripts/c8-condition-check.ts)",
+   "reason": "early-life-prereg §2.6 and §5.3; logged before any lever run",
+   "targets": [],
+   "verdicts": "no target value",
+   "class": "labels"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C8 implementer (worktree branch; entered by the integrator at registration)",
+   "seen": "truth reads on development seeds only: outbreak attack and mortality after seeded introductions; ground km walked; no observer value of any T-DEM row",
+   "param": "Fitted-row development calibration (registry notes carry the numbers): epidemicBetaPerH 0.03 field / 0.001 compressed (mean attack ~0.64 per introduction, seeds 48, 7, 21, 5, 11; matches the SIR final size 0.62 at epidemicR0 1.55 used by the baseline refit); epidemicFatality 0.07 (mean outbreak mortality ~0.08 with the virulence spread); snareHazardPerKm 6e-5 field / 0.0023 compressed (an injury rate ~0.015 per individual-year from measured risk-weighted ground km). An introduction exposes the index case's party (single index cases mostly fizzled). Baseline refit: all-cause hazard minus the analytic expected epidemic hazard, floored at 20% (binds for females at 30-45 y); analytic q1 0.150, e15 34.3 / 20.2 y",
+   "reason": "docs/realism-design.md §5.7 and §8 C8 step 2 (fitted rows only: T-DEM-5, -6, -9; held-out rows not used)",
+   "targets": [
+    "T-DEM-1",
+    "T-DEM-2",
+    "T-DEM-5",
+    "T-DEM-6",
+    "T-DEM-9"
+   ],
+   "verdicts": "development (fitted)",
+   "class": "calibration"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C8 implementer (worktree branch; entered by the integrator at registration)",
+   "seen": "pooled juvenile (5-11.99 y) truth diagnostics only; never split by orphan status, maternal rank or sex",
+   "param": "Feeding-tolerance lever strength with today's unlimited fallback food (coordinator request): field, seeds 48 and 7, 60 days after a 30-day burn-in, maternalLevers 1 vs 0: feeding supplants of juveniles 0 and 0.33 per juvenile-day, identical with the levers on and off (the deterrence never changed a choice in these runs; who the supplanters were was not recorded); juveniles fed on fruit in 99.7-99.9% of feeding ticks; pooled juvenile condition 0.61-0.62 either way, above condGood 0.5, so the growth record is not limited. What the lever needs from the C7b fallback change: a real intake cost of losing a contested crown (depleting, patchier, lower-rate fallback), condition that can fall below condGood, and the food model's intake at contested crowns (the lever only lowers the supplant score)",
+   "reason": "pre-registered risk (early-life-prereg §5.5: the energy lever may be weak; not to be fixed by raising guardFeedDeterW)",
+   "targets": [],
+   "verdicts": "no target value",
+   "class": "diagnostic"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C8 implementer (worktree branch; entered by the integrator at registration)",
+   "seen": "T-DEM-10 and T-DEM-12 values in the C3-C7a scorecards (e.g. c6-field10y T-DEM-10 0.25, T-DEM-12 5.0); no C8 value",
+   "param": "Population-cap rule (docs/realism-design.md §5.7 'Population cap' and §8 C8 'fertility measured only below 90% of the population cap'): the observer records the simulation's popCap and the number living at each 21:00 census; T-DEM-10 counts female-years and births only on census days with the living below 90% of the cap; T-DEM-12 drops intervals that include such a day. T-DEM-11 and T-DEM-13 unchanged",
+   "reason": "design text (the cap blocks conception and live birth, a simulation artifact), not a verdict",
+   "targets": [
+    "T-DEM-10",
+    "T-DEM-12"
+   ],
+   "verdicts": "unchanged below the cap; runs that reach the cap no longer bias fertility low",
+   "class": "protocol"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C8 implementer (worktree branch; entered by the integrator at registration) (integrator ruling (c))",
+   "seen": "truth energy diagnostics of adult females by reproductive state on development seeds 48, 7, 21 (hunger, condition, fallback share, travel; stage ablations one at a time); 10-year population sizes on the same seeds; no held-out value, T-RNG-5 not computed",
+   "param": "C7a amendment (made in C8): an adult female's core-area cost is multiplied by (1 - coreHungerRelief x hunger), so a hungry female leaves her core for fruit instead of staying on fallback foods. General and state-dependent (every adult female with a core cost; reads only her hunger; never lactation-specific, which would encode T-RNG-5). coreHungerRelief 1 (design, not tuned); 0 restores C7a exactly and is in the C7a set of data/proof-ablations.json. Fix rules and form were fixed in docs/staging/c8-lactation-diagnosis.md before the effect was checked. The coded lactation cost is unchanged (no source gives a magnitude; docs/research.md 'Lactation energetics'); condLow and the pre-registered health term are unchanged",
+   "reason": "lactating females starved in the field profile (development: median hunger 0.67 vs 0.48 for other adult females; population collapse); ablations implicated C7a (C7a off -0.15, core cost off -0.21; C7c, patrols, C10 and C8 mechanisms <= 0.04)",
+   "targets": [
+    "T-RNG-5",
+    "T-DEM-1",
+    "T-DEM-2",
+    "T-DEM-10",
+    "T-DEM-11",
+    "T-DEM-12"
+   ],
+   "verdicts": "T-RNG-5 (held out) will move because hungry mothers range farther: the rule was designed from the energy diagnosis, not from T-RNG-5, and T-RNG-5 is reported with that caveat; demography rows development only",
+   "class": "C7a amendment"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "C8 implementer (worktree branch; entered by the integrator at registration) (integrator ruling)",
+   "seen": "none: the only output was the failing test's diff on a 1.5-day compressed window, in which every sealed row had n = 0 and empty arrays (log deleted)",
+   "param": "Sealing gap closed at the merge of main a6005d4: scripts/ft-field.ts (decide-ft track) computed every metric with a compute function, sealed ones included, without the --unseal gate. It now skips sealed metrics like src/field/run.ts, with a spy test (tests/ft-field.test.ts), and its protocolHash copy re-exports scripts/lib/protocol-hash.ts. Sealing audit after the ft-field gap: no values exist in artifacts/decide-ft (checked by the TRAINING session file by file, 2026-09-30: T-DEM-14, T-DEM-15 and T-LET-5 appear only as n/a rows with null values because snapshot-v3's METRICS had no compute for them; T-DEM-16-24 appear nowhere); T-DEM-14/15/16-24 and T-LET-5 remain sealed",
+   "reason": "sealed rows must be unreachable unless --unseal passes the hash-bound freeze check (early-life-prereg §1.2)",
+   "targets": [
+    "T-DEM-14",
+    "T-DEM-15",
+    "T-DEM-16",
+    "T-DEM-17",
+    "T-DEM-18",
+    "T-DEM-19",
+    "T-DEM-20",
+    "T-DEM-21",
+    "T-DEM-22",
+    "T-DEM-23",
+    "T-DEM-24",
+    "T-LET-5"
+   ],
+   "verdicts": "sealed (unchanged)",
+   "class": "sealing audit"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "C8 implementer (integrator ruling)",
+   "seen": "development truth reads only (seeds 48, 7, 21; 10 field years; C13 on and off on the merged code); fitted rows of the pre-C13 40-year development run (seeds 48, 7, 21, 5, 11); no held-out or sealed value",
+   "param": "C8 merged after C13 on viability. The merge condition 'lactating hunger clearly improved' is withdrawn: its baseline (lean-period median 0.95-1.00) came from a script lost with /tmp at a reboot and could not be reproduced. The like-for-like paired arms (C13 on vs rgOn 0 and intakeValue 0, hash-identical to pre-C13 C8) show the lactating median unchanged (lean days 0.67-0.74) while adult-female starvation deaths fall from 13 to 0. Viability: births / deaths 120 / 60 pooled with C13 (102 / 118 without), no collapse. The pre-C13 40-year development result (artifacts/validation/c8/dev-40y-amended.json: populations 49 -> 5-29; female e15 12.2 y) is superseded. Follow-up C8b (baseline hazard, lactation energy term) is designed separately",
+   "reason": "integrator ruling on the post-C13 check (docs/staging/c8-lactation-diagnosis.md)",
+   "targets": [
+    "T-DEM-1",
+    "T-DEM-2",
+    "T-DEM-10",
+    "T-DEM-12"
+   ],
+   "verdicts": "no verdict: development checks only; the fitted rows are to be re-run on the merged model",
+   "class": "merge ruling"
   }
  ],
  "targets": [
@@ -5772,6 +6101,342 @@
     "crockford2012"
    ],
    "protocolRevisedPostHoc": true
+  },
+  {
+   "id": "T-DEM-16",
+   "objectives": [
+    "O9"
+   ],
+   "metric": "Survival of daughters orphaned at 5–9.99 y",
+   "definition": "Hazard of death after the mother's death for daughters orphaned at 5–9.99 y vs daughters whose mother was alive and in the community at the same age, followed from that age.",
+   "observer": {
+    "protocol": "census + genealogy",
+    "interval_min": null,
+    "unit": "individual"
+   },
+   "field": [
+    {
+     "population": "Gombe (two communities)",
+     "years": "over 50 y of demographic records",
+     "value": "females orphaned at 0–4.99 and 5–9.99 y survived less than non-orphans",
+     "n": "UNVERIFIED (abstract only)",
+     "method": "survival by age class at maternal loss",
+     "source": "stanton2020",
+     "note": "abstract only; hazard ratios UNVERIFIED"
+    }
+   ],
+   "accept": {
+    "lo": null,
+    "hi": null,
+    "units": "pattern",
+    "basis": "direction only: HR > 1 (90% lower bound > 1); insufficient below 300 orphan-years or 10 orphan deaths"
+   },
+   "evidence": "M",
+   "role": "held-out",
+   "encoded": false,
+   "notes": "Weak: the direction is partly built in by the C8 levers. The 0–4.99 class is reported, not scored (dominated by the self-feeding ramp; see T-DEM-24). Known-age daughters only; transfers followed.",
+   "sources": [
+    "stanton2020"
+   ]
+  },
+  {
+   "id": "T-DEM-17",
+   "objectives": [
+    "O9"
+   ],
+   "metric": "Sex difference in the survival cost of maternal loss at 10–14.99 y",
+   "definition": "For individuals orphaned at 10–14.99 y: log hazard ratio (orphan vs non-orphan) of sons minus that of daughters.",
+   "observer": {
+    "protocol": "census + genealogy",
+    "interval_min": null,
+    "unit": "individual"
+   },
+   "field": [
+    {
+     "population": "Gombe (two communities)",
+     "years": "over 50 y of demographic records",
+     "value": "males orphaned at 10–14.99 y survived less than non-orphans; females orphaned at 10–14.99 y were no more likely to die than non-orphans and lived longer after the loss than males orphaned at that age; males orphaned at 0–4.99 and 5–9.99 y also survived less",
+     "n": "UNVERIFIED (abstract only)",
+     "method": "survival by age class at maternal loss",
+     "source": "stanton2020",
+     "note": "abstract only"
+    }
+   ],
+   "accept": {
+    "lo": null,
+    "hi": null,
+    "units": "pattern",
+    "basis": "log HR(sons) − log HR(daughters) at 10–14.99 y > 0 (90% lower bound > 0); insufficient below 200 orphan-years or 10 orphan deaths per sex, or a daughters' HR interval wider than 4-fold"
+   },
+   "evidence": "M",
+   "role": "held-out",
+   "encoded": false,
+   "notes": "Class-level HRs (sons 0–4.99, 5–9.99, 10–14.99; daughters 10–14.99) reported as unscored parts; sons' post-weaning survival is scored only in T-DEM-15. The asymmetry may also arise from existing sex-specific systems (dominance, male rivalry, female queue).",
+   "sources": [
+    "stanton2020"
+   ]
+  },
+  {
+   "id": "T-DEM-18",
+   "objectives": [
+    "O9"
+   ],
+   "metric": "Stress activation after maternal loss fades",
+   "definition": "Early-morning stress reading of immatures under 12 orphaned < 2 y before, orphaned >= 2 y before, and non-orphans; mature males orphaned before 12 vs not.",
+   "observer": {
+    "protocol": "endocrine proxy (truth)",
+    "interval_min": null,
+    "unit": "sample"
+   },
+   "field": [
+    {
+     "population": "Taï (P. t. verus)",
+     "years": "2000–2018",
+     "value": "recently orphaned immatures (< 2 y since loss): diurnal cortisol slope 58% steeper (−0.60 vs −0.38), from higher early-morning cortisol; immatures orphaned earlier did not differ; mature males orphaned before 12 showed no consistent difference",
+     "n": "immatures: 7 recent, 16 earlier, 36 non-orphans (846 samples, 50 individuals; some in more than one class); mature males 11 vs 17 (2,184 samples)",
+     "method": "Bayesian mixed models of diurnal cortisol slope",
+     "source": "girardButtoz2021",
+     "note": ""
+    }
+   ],
+   "accept": {
+    "lo": null,
+    "hi": null,
+    "units": "pattern",
+    "basis": "recent orphans above non-orphans; earlier orphans and adult orphan males not different"
+   },
+   "evidence": "M",
+   "role": "held-out",
+   "encoded": true,
+   "notes": "Encoded-descriptive: bereaveHalfLifeD and bereaveMaxAgeY were designed from this source; reported, never counted. Truth read of stress at 06:00–08:00 (no diurnal rhythm in the sim).",
+   "sources": [
+    "girardButtoz2021"
+   ]
+  },
+  {
+   "id": "T-DEM-19",
+   "objectives": [
+    "O9"
+   ],
+   "metric": "Lean-mass proxy: orphans vs non-orphans",
+   "definition": "Lean-mass proxy of individuals aged 4–15 by age and sex: orphans (mother lost after weaning and before 10) vs age-matched non-orphans.",
+   "observer": {
+    "protocol": "urine proxy (truth) + census",
+    "interval_min": null,
+    "unit": "sample"
+   },
+   "field": [
+    {
+     "population": "Taï (P. t. verus)",
+     "years": "two decades",
+     "value": "orphans had less lean mass than age-matched non-orphans (−0.122 ± 0.046 on log SG-corrected creatinine, χ² = 6.376, P = 0.012)",
+     "n": "1,318 samples from 70 individuals aged 4–15, 18 orphans",
+     "method": "LMM of SG-corrected urinary creatinine",
+     "source": "samuni2020",
+     "note": "no sex × orphan term reported"
+    }
+   ],
+   "accept": {
+    "lo": null,
+    "hi": null,
+    "units": "pattern",
+    "basis": "orphans lower"
+   },
+   "evidence": "M",
+   "role": "held-out",
+   "encoded": true,
+   "notes": "Encoded-descriptive: the feeding lever and condition-to-growth route were designed with this result in view; reported, never counted. The proxy reads the growth record without noise.",
+   "sources": [
+    "samuni2020"
+   ]
+  },
+  {
+   "id": "T-DEM-20",
+   "objectives": [
+    "O9"
+   ],
+   "metric": "Lean-mass proxy: alpha mother vs other mothers",
+   "definition": "Among 4–10-year-olds with living mothers in the community, lean-mass proxy of the alpha female's offspring vs of other mothers' offspring.",
+   "observer": {
+    "protocol": "urine proxy (truth) + census + Elo",
+    "interval_min": null,
+    "unit": "sample"
+   },
+   "field": [
+    {
+     "population": "Taï (P. t. verus)",
+     "years": "two decades",
+     "value": "offspring of subordinate mothers had less lean mass than offspring of the alpha female (−0.292 ± 0.103, P = 0.006); continuous maternal rank not significant (P = 0.093)",
+     "n": "414 samples, 48 offspring aged 4–10, 29 mothers",
+     "method": "LMM of SG-corrected urinary creatinine",
+     "source": "samuni2020",
+     "note": ""
+    }
+   ],
+   "accept": {
+    "lo": null,
+    "hi": null,
+    "units": "pattern",
+    "basis": "offspring of the alpha female higher than of all other mothers; no gradient required"
+   },
+   "evidence": "M",
+   "role": "held-out",
+   "encoded": true,
+   "notes": "Encoded-descriptive (WP3 finding 1): the feeding deterrence reads dominance relative to the mother, which builds the gradient in; reported, never counted.",
+   "sources": [
+    "samuni2020"
+   ]
+  },
+  {
+   "id": "T-DEM-21",
+   "objectives": [
+    "O4",
+    "O9"
+   ],
+   "metric": "Neighbour pressure during pregnancy and offspring survival",
+   "definition": "Offspring survival (Cox) vs the community's neighbour-pressure index averaged over the 8.5 months before birth, with the source's predictors and controls.",
+   "observer": {
+    "protocol": "all-occurrence encounters + fixes + census",
+    "interval_min": 30,
+    "unit": "offspring"
+   },
+   "field": [
+    {
+     "population": "Taï (P. t. verus)",
+     "years": "1997–2016 (54 group-years)",
+     "value": "higher neighbour pressure during pregnancy raised offspring mortality (b = 1.025 ± 0.391, P = 0.008; hazard-ratio 95% CI 1.51–4.85; full model LRT χ² = 9.50, df = 4, P = 0.04); maternal rank no effect (P = 0.55)",
+     "n": "81 offspring of 44 mothers (37 died)",
+     "method": "mixed-effects Cox model",
+     "source": "lemoine2020a",
+     "note": "index = mean(I × K) × F, STAR Methods"
+    }
+   ],
+   "accept": {
+    "lo": null,
+    "hi": null,
+    "units": "pattern",
+    "basis": "HR per SD of pregnancy-window pressure > 1 (90% lower bound > 1); insufficient below 30 offspring deaths"
+   },
+   "evidence": "M",
+   "role": "held-out",
+   "encoded": false,
+   "notes": "The prenatal condition channel (birthCondFromMother) is motivated by this source's hypothesis: a pass is moderate evidence. Touched by any C6/C7a change to encounters, ranging or contact memory made after its value is seen.",
+   "sources": [
+    "lemoine2020a"
+   ]
+  },
+  {
+   "id": "T-DEM-22",
+   "objectives": [
+    "O4",
+    "O9"
+   ],
+   "metric": "Neighbour pressure: pregnancy window stronger than lactation windows",
+   "definition": "Offspring survival vs neighbour pressure averaged over the first 1, 2 and 3 years of lactation, compared with the pregnancy-window estimate (T-DEM-21 model).",
+   "observer": {
+    "protocol": "all-occurrence encounters + fixes + census",
+    "interval_min": 30,
+    "unit": "offspring"
+   },
+   "field": [
+    {
+     "population": "Taï (P. t. verus)",
+     "years": "1997–2016 (54 group-years)",
+     "value": "averaged over the first 1, 2 or 3 years of lactation, neighbour pressure had no effect on survival (P = 0.64–0.80), unlike the pregnancy window (P = 0.008)",
+     "n": "81 offspring of 44 mothers",
+     "method": "mixed-effects Cox models",
+     "source": "lemoine2020a",
+     "note": ""
+    }
+   ],
+   "accept": {
+    "lo": null,
+    "hi": null,
+    "units": "pattern",
+    "basis": "pregnancy-window log HR above each lactation-window log HR"
+   },
+   "evidence": "M",
+   "role": "held-out",
+   "encoded": true,
+   "notes": "Encoded-descriptive: the prenatal channel exists because of this source; reported, never counted.",
+   "sources": [
+    "lemoine2020a"
+   ]
+  },
+  {
+   "id": "T-DEM-23",
+   "objectives": [
+    "O9",
+    "O11"
+   ],
+   "metric": "Aggression received by immatures, by sex",
+   "definition": "Rate of aggression received (charging displays, chases, attacks) per hour present in the followed party by immatures under 9, by half-year of age and sex.",
+   "observer": {
+    "protocol": "all-occurrence agonism + party scans",
+    "interval_min": 15,
+    "unit": "individual-half-year"
+   },
+   "field": [
+    {
+     "population": "Kanyawara",
+     "years": "2005–2017",
+     "value": "aggression received rose faster with age in males (age × sex β = 0.115 ± 0.06, P = 0.04); males received more than females by about 4–5 y (about 3× by 5 y); aggression displayed predicted aggression received (β = 2.694, P < 0.001), not mediated by sex; time in parties with or near adult males did not differ by sex",
+     "n": "49 immatures under 9 (25 F, 24 M); focal subsample 25 (14 F, 11 M), 2015–2017",
+     "method": "all-occurrence aggression during party follows, per hour observed",
+     "source": "sabbi2021",
+     "note": ""
+    }
+   ],
+   "accept": {
+    "lo": null,
+    "hi": null,
+    "units": "pattern",
+    "basis": "age × sex > 0 and male:female rate ratio > 1 at 4.5–6 y (90% lower bounds); insufficient below 10 immatures per sex with >= 20 h at 4.5–6 y"
+   },
+   "evidence": "M",
+   "role": "held-out",
+   "encoded": false,
+   "notes": "Pre-registered expectation: fail (no juvenile aggression mechanism; supplants skip animals under 5). Reported as a gap, never tuned.",
+   "sources": [
+    "sabbi2021"
+   ]
+  },
+  {
+   "id": "T-DEM-24",
+   "objectives": [
+    "O9"
+   ],
+   "metric": "One-year survival after maternal loss, by age at loss",
+   "definition": "Share of orphans (immatures under 12) alive one year after the mother's death, orphaned under 4 vs at 4 or more.",
+   "observer": {
+    "protocol": "census + genealogy",
+    "interval_min": null,
+    "unit": "orphan"
+   },
+   "field": [
+    {
+     "population": "Budongo Sonso; Gombe; Mahale; Taï (pooled)",
+     "years": "various",
+     "value": "one-year survival depended only on age at loss (P = 0.017): 42% of orphans under 4 vs 95% of those 4 or older; at Sonso adopted orphans 100% vs non-adopted 25% (Fisher P = 0.024)",
+     "n": "N = 33 (pooled); Sonso 11 orphans",
+     "method": "logistic regression",
+     "source": "hobaiter2014",
+     "note": ""
+    }
+   ],
+   "accept": {
+    "lo": null,
+    "hi": null,
+    "units": "pattern",
+    "basis": "survival lower for loss under 4"
+   },
+   "evidence": "M",
+   "role": "held-out",
+   "encoded": true,
+   "notes": "Encoded-descriptive: the self-feeding ramp to each individual's weaning age builds the direction in (adopt() no longer weans at 3); checks the replacement of hazardOrphan; reported, never counted.",
+   "sources": [
+    "hobaiter2014"
+   ]
   }
  ],
  "parameterConstraints": [
@@ -7318,9 +7983,10 @@
    "issue": null,
    "pages": "131-140",
    "doi": "10.1016/j.jhevol.2017.10.010",
-   "url": "https://pubmed.ncbi.nlm.nih.gov/29447755/",
-   "access": "Abs",
-   "bibliographyVerified": "Crossref API, 2026-09-28"
+   "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5819610/",
+   "access": "FT",
+   "bibliographyVerified": "Crossref API, 2026-09-28",
+   "note": "WP3 finding 14: WP1 read the full text"
   },
   "watts2006": {
    "authors": "Watts DP, Muller M, Amsler SJ et al.",
@@ -7620,6 +8286,97 @@
    "url": "https://doi.org/10.1016/0040-5809(76)90040-X",
    "access": "Abs",
    "bibliographyVerified": "docs/research.md entry (theory; standard reference)"
+  },
+  "stanton2020": {
+   "authors": "Stanton MA, Lonsdorf EV, Murray CM et al.",
+   "year": 2020,
+   "title": "Consequences of maternal loss before and after weaning in male and female wild chimpanzees",
+   "journal": "Behavioral Ecology and Sociobiology",
+   "volume": "74",
+   "issue": "2",
+   "pages": "22",
+   "doi": "10.1007/s00265-020-2804-7",
+   "url": "https://scholars.duke.edu/publication/1431229",
+   "access": "Abs",
+   "bibliographyVerified": "Crossref (docs/research.md, B7 WP1)"
+  },
+  "girardButtoz2021": {
+   "authors": "Girard-Buttoz C, Tkaczynski PJ, Samuni L et al.",
+   "year": 2021,
+   "title": "Early maternal loss leads to short- but not long-term effects on diurnal cortisol slopes in wild chimpanzees",
+   "journal": "eLife",
+   "volume": "10",
+   "issue": null,
+   "pages": "e64134",
+   "doi": "10.7554/eLife.64134",
+   "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8208813/",
+   "access": "FT",
+   "bibliographyVerified": "Crossref (docs/research.md, B7 WP1)"
+  },
+  "samuni2020": {
+   "authors": "Samuni L, Tkaczynski P, Deschner T et al.",
+   "year": 2020,
+   "title": "Maternal effects on offspring growth indicate post-weaning juvenile dependence in chimpanzees (Pan troglodytes verus)",
+   "journal": "Frontiers in Zoology",
+   "volume": "17",
+   "issue": null,
+   "pages": "1",
+   "doi": "10.1186/s12983-019-0343-8",
+   "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6945487/",
+   "access": "FT",
+   "bibliographyVerified": "Crossref (docs/research.md, B7 WP1)"
+  },
+  "murray2014": {
+   "authors": "Murray CM, Lonsdorf EV, Stanton MA et al.",
+   "year": 2014,
+   "title": "Early social exposure in wild chimpanzees: mothers with sons are more gregarious than mothers with daughters",
+   "journal": "PNAS",
+   "volume": "111",
+   "issue": "51",
+   "pages": "18189-18194",
+   "doi": "10.1073/pnas.1409507111",
+   "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4280574/",
+   "access": "FT",
+   "bibliographyVerified": "Crossref (docs/research.md, B7 WP1)"
+  },
+  "hobaiter2014": {
+   "authors": "Hobaiter C, Schel AM, Langergraber K et al.",
+   "year": 2014,
+   "title": "'Adoption' by maternal siblings in wild chimpanzees",
+   "journal": "PLoS ONE",
+   "volume": "9",
+   "issue": "8",
+   "pages": "e103777",
+   "doi": "10.1371/journal.pone.0103777",
+   "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4118915/",
+   "access": "FT",
+   "bibliographyVerified": "Crossref (docs/research.md, B7 WP1)"
+  },
+  "reddyMitani2019": {
+   "authors": "Reddy RB, Mitani JC",
+   "year": 2019,
+   "title": "Social relationships and caregiving behavior between recently orphaned chimpanzee siblings",
+   "journal": "Primates",
+   "volume": "60",
+   "issue": "5",
+   "pages": "389-400",
+   "doi": "10.1007/s10329-019-00732-1",
+   "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7136970/",
+   "access": "FT",
+   "bibliographyVerified": "Crossref (docs/research.md, B7 WP1)"
+  },
+  "sabbi2021": {
+   "authors": "Sabbi KH, Emery Thompson M, Machanda ZP et al.",
+   "year": 2021,
+   "title": "Sex differences in early experience and the development of aggression in wild chimpanzees",
+   "journal": "PNAS",
+   "volume": "118",
+   "issue": "12",
+   "pages": "e2017144118",
+   "doi": "10.1073/pnas.2017144118",
+   "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8000022/",
+   "access": "FT",
+   "bibliographyVerified": "Crossref (docs/research.md, B7 WP1)"
   }
  },
  "c12Fitted": {
