@@ -159,6 +159,41 @@ test('bounded menu keeps the rules pick, rest and distinct actions, in a fixed o
   assert.deepEqual(trees.map(c => `${c.action}:${c.targetId}`), ['rest:-1', 'forage:100001'], 'a second tree would only split the forage vote');
 });
 
+test('bounded menu copies keep each option variant (lost-variant bug, judge 2 N2)', { skip: needsSim }, async () => {
+  const { boundedCandidates, phaseMenu } = decision!;
+  const { candidateMeta, V } = await import('../src/sim/candidates');
+  const mk = (action: Candidate['action'], targetId: number, score: number, v: number) => { const c: Candidate = { action, targetId, score, reason: '' }; candidateMeta.set(c, { v, aux: 7 }); return c; };
+  const menu = [mk('rest', -1, 0.2, V.NONE), mk('travel', 100_005, 0.9, V.TREE), mk('follow', 12, 0.5, V.MOTHER), mk('charge', 13, 0.4, V.DEFEND), mk('charge', 14, 0.3, V.STATUS), mk('nest', 100_009, 0.1, V.NONE)];
+  const bounded = boundedCandidates(menu);
+  for (const o of bounded) {
+    const src = menu.find(c => c.action === o.action && c.targetId === o.targetId)!;
+    assert.notEqual(o, src, 'menu options are copies');
+    assert.deepEqual(candidateMeta.get(o), candidateMeta.get(src), `${o.action} ${o.targetId} keeps its variant`);
+  }
+  // The night filter admits some options only by variant (defending young, an infant's follow): it must work on copies too.
+  const night = phaseMenu(bounded, 'night').map(c => `${c.action}:${candidateMeta.get(c)?.v}`);
+  assert.ok(night.includes(`follow:${V.MOTHER}`) && night.includes(`charge:${V.DEFEND}`), night.join(' '));
+  assert.ok(!night.includes('travel:30'));
+  // A real menu: every option carries the variant of the candidate it came from, and remembered-tree trips read TREE.
+  const world = sim!.createWorld(48);
+  let trips = 0, variants = 0, options = 0;
+  for (let t = 0; t < 1500 && trips < 3; t++) {
+    sim!.tickWorld(world);
+    if (t % 50) continue;
+    for (const c of world.chimps.filter(k => k.alive && k.age >= 8)) {
+      const fresh = sim!.observe(world, c).candidates;
+      for (const o of decision!.buildRequest(world, c).options) {
+        const src = fresh.find(k => k.action === o.action && k.targetId === o.targetId)!;
+        assert.equal(candidateMeta.get(o)?.v, candidateMeta.get(src)?.v, `${o.action} ${o.targetId}`);
+        options++; if ((candidateMeta.get(o)?.v ?? 0) !== V.NONE) variants++;
+        if (o.action === 'travel' && o.targetId > 100_000 && o.targetId < 200_000 && candidateMeta.get(o)?.v === V.TREE) trips++;
+      }
+    }
+  }
+  assert.ok(trips > 0, 'a remembered-tree trip on some menu keeps V.TREE');
+  assert.ok(variants > 0 && variants < options, `${variants} of ${options} options carry a variant`);
+});
+
 // --- Loop helpers -----------------------------------------------------------
 
 function waitingWorld(seed = 21): { world: World; chimp: Chimp; controller: ReturnType<Decision['createDecisionController']> } {

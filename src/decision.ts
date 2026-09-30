@@ -181,6 +181,17 @@ const same = (a: Pick<Candidate, 'action' | 'targetId'>, b: Pick<Candidate, 'act
 const RESPONSE_ACTIONS = new Set<Action>(['flee', 'alarm', 'call', 'display', 'patrol', 'charge', 'shelter', 'climb', 'hunt', 'forage']);
 
 /**
+ * A menu copy that keeps the candidate's variant. candidateMeta is keyed by object identity, so a bare `{ ...c }` lost
+ * it: every reader of a bounded option (stand-in features, option classes, the night/dusk variant filter if it ever saw
+ * a copy) read NONE. Execution was never affected (applyDecision re-fetches the candidate).
+ */
+export function copyCandidate(c: Candidate): Candidate {
+  const copy = { ...c }, meta = candidateMeta.get(c);
+  if (meta) candidateMeta.set(copy, meta);
+  return copy;
+}
+
+/**
  * At most eight options: the kept picks (rules' choice, a stimulus response),
  * rest, then the best target of each action type, then other social partners.
  * Options are returned in a fixed action order, not by rules score, so the
@@ -192,7 +203,7 @@ export function boundedCandidates(candidates: Candidate[], keep: (Candidate | nu
   const chosen: Candidate[] = [];
   const add = (c: Candidate | null | undefined) => {
     const match = c && legal.find(l => same(l, c));
-    if (match && chosen.length < MAX_OPTIONS && !chosen.some(o => same(o, match))) chosen.push({ ...match });
+    if (match && chosen.length < MAX_OPTIONS && !chosen.some(o => same(o, match))) chosen.push(copyCandidate(match));
   };
   keep.forEach(add);
   add(ranked.find(c => c.action === 'rest'));
