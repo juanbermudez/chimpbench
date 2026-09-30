@@ -1194,6 +1194,20 @@
    ],
    "verdicts": "none (direction check, not a proof)",
    "class": "model change"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "science/simulation owner (stage C13d, user-approved)",
+   "seen": "development seeds 48, 7, 21 (field, sim truth, 30 days after the 180-day burn-in) with a recruitment probe: under C13c, 54-59% of own-community companions within partyLinkM get a decision point within 5 min of a trip initiation (before C13: 47-54%), 43-45% join; initiations recruiting at least one companion within 5 min: hooed 54-59%, silent 40-42% (ratio 1.31-1.44; before C13 1.46-1.60); fitted rows of the C13c direction check (T-PTY-1 2.90); no held-out value",
+   "param": "C13d pre-registration, before any C13d run. Premise corrected: a departure cue already exists in the field profile (C7a party cohesion: an animal setting off interrupts companions in its last view within partyLinkM, non-urgent, so a companion interrupted in the last 2 min or with a pending interrupt is skipped). C13d (departCue 1, field profile only: the joint-trip and travel-hoo follow options it serves exist only there; compressed 0 keeps the compressed goldens): when an adult (15+) sets off on a trip to a tree, every living own-community companion aged 5+ within partyLinkM, awake and not already following it, gets an urgent decision point at once, whether or not it was in the initiator's view; the existing joint-trip, party-follow and travel-hoo options then compete as usual (C13a sampling applies). Evidence: joint travel recruitment [H] gruberZuberbuhler2013 (vocal initiations recruited at least one follower in 71.4%, silent in 33.7%); the decision-point mechanism is a design assumption. Ablation set C13d = {departCue 0}, hash-identical to C13c. Predictions (seeds 48, 7, 21, field, 1 year after the burn-in, against C13c): T-PTY-1 party size up toward about 3.5; hooed initiations recruit clearly more than silent ones (ratio >= 1.6); decisions per chimp-day and male day range rise slightly. Viability guard as in C13 section 5 (against both C13 parts off). Nothing is tuned after the check.",
+   "reason": "party size fell below its band under C13 (3.48 -> 2.90 with C13c); only about half of the companions of an initiator got a decision point within 5 min",
+   "targets": [
+    "T-PTY-1",
+    "T-RNG-4",
+    "T-ACT-2"
+   ],
+   "verdicts": "none (no proof value exists)",
+   "class": "model change"
   }
  ],
  "targets": [
