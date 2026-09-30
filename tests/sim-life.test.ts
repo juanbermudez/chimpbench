@@ -186,7 +186,8 @@ test('dead records are slimmed, so a 40-year life course grows ~1 KB per death i
 
 test('slimming the dead is deterministic across tick batching', async () => {
   const { stepWorld } = await import('../src/simulation');
-  const make = () => { const w = createWorld(21); w.ageRate = 365; return w; };
+  // one death at the start in every copy, so there is a record to slim whatever the run's own mortality
+  const make = () => { const w = createWorld(21); w.ageRate = 365; killChimp(w, w.chimps.find(c => c.alive && c.age > 30)!, 'illness'); return w; };
   const a = make(), b = make(), c = make();
   for (let i = 0; i < 48; i++) stepWorld(a, 60);
   for (let i = 0; i < 11520; i++) stepWorld(b, 0.25);

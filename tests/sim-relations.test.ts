@@ -68,6 +68,8 @@ test('tension lowers grooming, drives avoidance of a dominant and grudge charges
   dom.action = 'rest'; dom.targetId = -1; sub.action = 'rest'; sub.targetId = -1;
   ix(dom).lastAgg = -1e9; dom.hunger = sub.hunger = 0.2; sub.social = 0.2;
   perceive(w, sub); perceive(w, dom);
+  // only the pair in view, so other grooming partners cannot take the limited candidate slots (scene independent of who else is near)
+  ix(sub).seen = [dom.id]; ix(dom).seen = [sub.id];
   const score = (c: Chimp, action: string, target: number) => getEligibleActions(w, c).find(k => k.action === action && k.targetId === target);
   const groomCalm = score(sub, 'groom', dom.id);
   assert.ok(groomCalm, 'a lonely subordinate would groom a resting dominant');
