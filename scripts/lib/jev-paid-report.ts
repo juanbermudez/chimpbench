@@ -119,6 +119,7 @@ export function paidMarkdown(doc: { bridge: Bridge; snapshot: Record<string, unk
   const A = doc.score.arms as Record<string, any>;
   o.push(`# Jev decisive test: paid arms${doc.bridge === 'worker' ? '' : ` (DRY RUN against the fake server, bridge ${doc.bridge}; no paid call)`}`, '');
   o.push(`${DO_NOT_TRAIN}.`, '');
+  if (doc.bridge !== 'worker') o.push('**Fake answers.** A local fake server answered every call with a hashed distribution, not Jev. The distances and verdicts below only exercise the pipeline and the scorer; they say nothing about Jev. The call counts, token estimates and costs are the planning numbers.', '');
   o.push(`Snapshot ${JSON.stringify(doc.snapshot)}. Wall ${doc.wallS} s. Cap $${doc.capTotal.toFixed(2)} split per world; spend ledger total ${doc.ledgerTotal === null ? '—' : `$${doc.ledgerTotal.toFixed(4)}`}.`, '');
   o.push('| Arm | seed | complete | D | Δ vs R | Δ vs RG | Δ vs U | calls | spent $ | est. $ | cap $ | stop |', '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
   for (const [arm, a] of Object.entries(A)) for (const s of a.perSeed)
