@@ -1197,6 +1197,7 @@ Built in `src/sim/fission.ts`, off by default (`fissionOn` 0, `assocBondW` 0; th
   - `large`: West cloned up to ≥ 60 members and ≥ 15 adult males, cloning adult males and mothers with their young; `popCap` 180.
   - `large-off`: the same start with fission off. It gives the paired intercommunity killing rate for T-FIS-3, per community pair per year over the three communities.
 - **Change from the pre-registration** (integrator ruling: `fissionOn` stays off by default). The T-FIS-1 baseline can no longer come from the combined proof's 40-year runs, so it runs as the scenario's `baseline` kind. Logged.
+- **Fix after the first plumbing run** (compressed, seed 42, 3 years; not a proof, and no C9 value is tuned on it). When Louvain finds a single community, the monthly Q was reported as 0, which hid a network that is starting to divide. The best two-way split now comes from the leading eigenvector of the modularity matrix [newman2006], polished by node moves. Q stays 0 only when no split has positive modularity. On the compressed map a 60-member community forms one party chain (every pair's association index is near 1), so Q stays 0 there; the proof uses the field profile.
 - **Proof command.** `pnpm exec tsx scripts/c9-scenario.ts --years 40 --workers 6` on seeds 3505–3909. Rough wall time: about 12 h at 6 workers and 30 h at 2. The large communities approach the cap of 180, which costs about 0.6–1 s per eco-day.
 
 ### Stage C10: Communication (O10)

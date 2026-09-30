@@ -153,7 +153,10 @@ export function bestTwoSplit(w: number[][]): { labels: number[]; Q: number } {
     labels = labels.map(l => (l === bj ? bi : l > bj ? l - 1 : l));
     k--;
   }
-  if (k < 2) return { labels: labels.map(() => 0), Q: 0 };
+  // one Louvain community: the best two-way split is still wanted (its Q tracks a network that is starting to divide);
+  // take the sign of the leading eigenvector of the modularity matrix [newman2006], then polish
+  if (k < 2) labels = spectralBisect(w);
+  if (labels.every(l => l === labels[0])) return { labels: labels.map(() => 0), Q: 0 };
   let q = modularity(w, labels), improved = true, guard = 0;
   while (improved && guard++ < 50) {
     improved = false;
@@ -164,7 +167,22 @@ export function bestTwoSplit(w: number[][]): { labels: number[]; Q: number } {
       if (tq > q + 1e-12) { labels = trial; q = tq; improved = true; }
     }
   }
-  return { labels, Q: q };
+  return q > 0 ? { labels, Q: q } : { labels: labels.map(() => 0), Q: 0 };
+}
+
+/** Newman's spectral bisection: signs of the leading eigenvector of B = A − k kᵀ / 2m (shifted power iteration, deterministic). */
+function spectralBisect(w: number[][]): number[] {
+  const n = w.length, deg = w.map(r => r.reduce((a, b) => a + b, 0)), m2 = deg.reduce((a, b) => a + b, 0);
+  if (m2 <= 0) return new Array<number>(n).fill(0);
+  const B = w.map((r, i) => r.map((v, j) => v - deg[i] * deg[j] / m2));
+  const shift = Math.max(...B.map(r => r.reduce((a, v) => a + Math.abs(v), 0)));
+  let x = Array.from({ length: n }, (_, i) => 1 + (i % 7) / 7 - (i % 3) / 3);
+  for (let it = 0; it < 300; it++) {
+    const y = B.map((r, i) => r.reduce((a, v, j) => a + v * x[j], 0) + shift * x[i]);
+    const norm = Math.sqrt(y.reduce((a, v) => a + v * v, 0)) || 1;
+    x = y.map(v => v / norm);
+  }
+  return x.map(v => (v > 0 ? 1 : 0));
 }
 
 function overlap(f: FissionState, a: number[], b: number[]): number {
