@@ -94,6 +94,7 @@ The pre-C7a female core-area cost amplifies the effect. With it removed (not a C
 - It will move T-RNG-5 (held out, lactating vs male day range), because hungry mothers range farther. The rule was designed from the energy diagnosis, not from T-RNG-5, and T-RNG-5 is reported with that caveat.
 - The value is not tuned.
 - Checks: the decomposition again; population over 10 years (field, seeds 48, 7, 21); fitted demography rows over 40 years (development seeds).
+- Logged as a C7a amendment (protocolLog class "C7a amendment") in `docs/staging/c8-targets.patch.json`. Its switch is in the C7a set of `data/proof-ablations.json`, so the combined proof attributes it to the stage it amends.
 
 ## Checks after the amendment (development)
 

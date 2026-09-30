@@ -712,6 +712,23 @@
    ],
    "verdicts": "unchanged below the cap; runs that reach the cap no longer bias fertility low",
    "class": "protocol"
+  },
+  {
+   "date": "2026-09-29",
+   "by": "C8 implementer (worktree branch; entered by the integrator at registration) (integrator ruling (c))",
+   "seen": "truth energy diagnostics of adult females by reproductive state on development seeds 48, 7, 21 (hunger, condition, fallback share, travel; stage ablations one at a time); 10-year population sizes on the same seeds; no held-out value, T-RNG-5 not computed",
+   "param": "C7a amendment (made in C8): an adult female's core-area cost is multiplied by (1 - coreHungerRelief x hunger), so a hungry female leaves her core for fruit instead of staying on fallback foods. General and state-dependent (every adult female with a core cost; reads only her hunger; never lactation-specific, which would encode T-RNG-5). coreHungerRelief 1 (design, not tuned); 0 restores C7a exactly and is in the C7a set of data/proof-ablations.json. Fix rules and form were fixed in docs/staging/c8-lactation-diagnosis.md before the effect was checked. The coded lactation cost is unchanged (no source gives a magnitude; docs/research.md 'Lactation energetics'); condLow and the pre-registered health term are unchanged",
+   "reason": "lactating females starved in the field profile (development: median hunger 0.67 vs 0.48 for other adult females; population collapse); ablations implicated C7a (C7a off -0.15, core cost off -0.21; C7c, patrols, C10 and C8 mechanisms <= 0.04)",
+   "targets": [
+    "T-RNG-5",
+    "T-DEM-1",
+    "T-DEM-2",
+    "T-DEM-10",
+    "T-DEM-11",
+    "T-DEM-12"
+   ],
+   "verdicts": "T-RNG-5 (held out) will move because hungry mothers range farther: the rule was designed from the energy diagnosis, not from T-RNG-5, and T-RNG-5 is reported with that caveat; demography rows development only",
+   "class": "C7a amendment"
   }
  ],
  "registryRefsToSources": {
