@@ -10,6 +10,7 @@
 // by rules. Menus with fewer than two options, invalid contexts and answers the engine refuses go to rules as in every
 // arm, counted by reason.
 import { spawn, type ChildProcess } from 'node:child_process';
+import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { homedir } from 'node:os';
 import { resolve } from 'node:path';
@@ -48,6 +49,8 @@ export interface PaidJob {
   /** The free arms' burn-in world hash for this seed: a mismatch stops the world before any call (pairing needs the same world). */
   expectBurnInHash?: string;
   python?: string;
+  /** Burn-in cache file: the burned-in world as JSON, reused by the other arms of the seed when its hash is the expected one. */
+  burnInCache?: string;
 }
 
 export interface Scorer { score(packets: unknown[]): Promise<{ results: number[][]; spent?: number; calls?: number }>; stop(): void }
@@ -172,14 +175,32 @@ export async function answerPaid(world: World, arm: PaidArm, gate: GateState, st
   }
 }
 
+/**
+ * The burned-in world of a job. A cached world (JSON, which is lossless for World) is used only when its hash is the one
+ * the free arms recorded for the seed, so a cache can save time but never change the world; a fresh burn-in with the
+ * expected hash is cached for the seed's other arms.
+ */
+function burnIn(job: PaidJob, guardParams: Record<string, number>): World {
+  if (job.burnInCache && job.expectBurnInHash && existsSync(job.burnInCache)) {
+    const cached = JSON.parse(readFileSync(job.burnInCache, 'utf8')) as World;
+    if (worldHash(cached) === job.expectBurnInHash) return cached;
+  }
+  const world = createWorld(job.seed, { profile: job.profile, params: guardParams as Record<string, number> });
+  for (let i = 0, n = Math.round(job.burnInDays * TICKS_PER_DAY); i < n; i++) tickWorld(world);
+  if (job.burnInCache && job.expectBurnInHash && worldHash(world) === job.expectBurnInHash) {
+    writeFileSync(job.burnInCache + '.tmp', JSON.stringify(world));
+    renameSync(job.burnInCache + '.tmp', job.burnInCache);
+  }
+  return world;
+}
+
 /** One paid world: burn-in, the arm's warm-up and scored days through the scorer. Never falls back to rules after a stop. */
 export async function runPaidWorld(job: PaidJob, makeScorer: () => Promise<Scorer & { ready?: Record<string, unknown> }>): Promise<PaidResult> {
   const t0 = performance.now();
   const js: JevStats = { calls: 0, batches: 0, estTokens: 0, spent: 0, revalidated: 0, tv: [], kinds: {} };
   const guardParams = snapshotGuardParams();
   const base = { arm: job.arm, seed: job.seed, runId: job.runId, capDollars: job.capDollars, doNotTrain: DO_NOT_TRAIN, guardParams };
-  const world = createWorld(job.seed, { profile: job.profile, params: guardParams as Record<string, number> });
-  for (let i = 0, n = Math.round(job.burnInDays * TICKS_PER_DAY); i < n; i++) tickWorld(world);
+  const world = burnIn(job, guardParams);
   const burnInHash = worldHash(world);
   if (job.expectBurnInHash && burnInHash !== job.expectBurnInHash)
     return { ...base, burnInHash, complete: false, stopReason: `burn-in world ${burnInHash} differs from the free arms' ${job.expectBurnInHash}: not run`, stoppedAt: { phase: 'burn-in', day: 0 }, result: null, jev: js, worker: {}, wallMs: performance.now() - t0 };

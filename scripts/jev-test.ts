@@ -13,6 +13,7 @@
 //   pnpm exec tsx scripts/jev-test.ts --arms J1,J2,J2s --paid --cap 10 --bridge worker --ledger <db> --plan <paid-plan.json>
 //        # the real run through TRAINING's spend-guarded worker.py (per-world caps from the plan); writes paid-arms.{json,md}
 //   pnpm exec tsx scripts/jev-test.ts --kill                          # touches every paid world's kill file
+//   ... --resume      # continue an interrupted paid or dry run: same ledger and caps, finished worlds kept
 //
 // Development runs (--seeds other than the decisive set, --burn-in/--warmup/--scored/--profile) are labelled
 // non-standard and written to free-arms-dev-*.{json,md}, never over free-arms.{json,md}. A standard run needs a clean
@@ -258,7 +259,7 @@ function calibrationRun(days: number, burnIn: number) {
 // Paid arms (J1, J2, J2s): per-world caps, fake dry run, real run, scoring
 // ---------------------------------------------------------------------------
 
-interface PaidOpts { cap: number; bridge: Bridge; ledger: string; plan: string; workers: number; out: string; repo: string; dryRun: boolean; allowDirty: boolean; scored: number; warmup: number; burnIn: number }
+interface PaidOpts { cap: number; bridge: Bridge; ledger: string; plan: string; workers: number; out: string; repo: string; dryRun: boolean; allowDirty: boolean; scored: number; warmup: number; burnIn: number; resume: boolean }
 const PAID_LATENCY_S = 0.25; // median Jev latency per request in the round-2 receipts (judge 3: 0.218–0.228 s median, p95 0.35 s)
 
 function ledgerTotals(ledger: string, repo: string): { runs: Record<string, unknown>[]; spent: number } {
@@ -277,7 +278,12 @@ export async function runPaid(arms: PaidArm[], o: PaidOpts): Promise<void> {
   const expect = Object.fromEntries(free.seedInfo.map(s => [s.seed, s.burnInHash]));
   const worlds = plannedWorlds(arms);
   const standard = o.scored === STANDARD.scoredDays && o.warmup === STANDARD.warmupDays && o.burnIn === STANDARD.burnInDays;
-  let caps: Record<string, number>, ledger = o.ledger;
+  const kind = real ? 'paid' : 'dryrun';
+  // a resumed run keeps its ledger and caps (dryrun|paid/manifest.json) and skips worlds whose result file exists
+  const manifestFile = join(o.out, kind, 'manifest.json');
+  const prior = o.resume && existsSync(manifestFile) ? JSON.parse(readFileSync(manifestFile, 'utf8')) as { ledger: string; caps: Record<string, number>; simHash: string; decideHash: string } : null;
+  if (prior && (prior.simHash !== snap.simHash || prior.decideHash !== snap.decideHash)) throw new Error('--resume: the interrupted run was made on other code; start a new run');
+  let caps: Record<string, number>, ledger = prior?.ledger ?? o.ledger;
   if (real) {
     if (!standard) throw new Error('the real run uses the pre-registered 180 + 2 + 5 days only');
     if (snap.dirty.length && !o.allowDirty) throw new Error(`the tree is dirty (${snap.dirty.join(', ')}): commit first`);
@@ -291,17 +297,29 @@ export async function runPaid(arms: PaidArm[], o: PaidOpts): Promise<void> {
     execFileSync('python3', ['-B', join(o.repo, 'training/decide_ft/spend_guard.py'), 'daily-cap', '--ledger', ledger, '--dollars', String(o.cap)]);
   } else {
     ledger = ledger || join(o.out, `dryrun-ledger-${new Date().toISOString().replace(/[:.]/g, '-')}.db`);
-    caps = splitBudget(o.cap, worlds).caps; // provisional: weighted equal split (J2s double); the dry run proposes cost-based caps
+    caps = splitBudget(o.cap, worlds).caps; // provisional: weighted split (J2s 1.25×); the dry run proposes cost-based caps
   }
-  const kind = real ? 'paid' : 'dryrun';
-  const jobs: (PaidJob & { repo: string })[] = worlds.map(w => ({ seed: w.seed, arm: w.arm, profile: STANDARD.profile, burnInDays: o.burnIn, warmupDays: o.warmup, scoredDays: o.scored,
+  if (prior) caps = prior.caps;
+  mkdirSync(join(o.out, kind), { recursive: true });
+  writeFileSync(manifestFile, JSON.stringify({ ledger, caps, simHash: snap.simHash, decideHash: snap.decideHash, commit: snap.commit, started: prior ? undefined : new Date().toISOString() }, null, 1) + '\n');
+  mkdirSync(join(o.out, 'burnin-cache'), { recursive: true });
+  const jobs: (PaidJob & { repo: string; resultFile: string })[] = worlds.map(w => ({ seed: w.seed, arm: w.arm, profile: STANDARD.profile, burnInDays: o.burnIn, warmupDays: o.warmup, scoredDays: o.scored,
     bridge: o.bridge, ledger, runId: w.runId, capDollars: caps[w.runId], ftRoot: relative(o.repo, join(o.out, kind, `${w.arm}-${w.seed}`)),
-    expectBurnInHash: o.burnIn === STANDARD.burnInDays ? expect[w.seed] : undefined, repo: o.repo }));
+    expectBurnInHash: o.burnIn === STANDARD.burnInDays ? expect[w.seed] : undefined, repo: o.repo,
+    burnInCache: join(o.out, 'burnin-cache', `${w.seed}-${snap.simHash}.json`), resultFile: join(o.out, kind, `${w.arm}-${w.seed}`, 'result.json') }));
   if (o.dryRun) { console.log(JSON.stringify({ plan: jobs.map(j => ({ arm: j.arm, seed: j.seed, runId: j.runId, cap: j.capDollars })), capTotal: o.cap, bridge: o.bridge, ledger, snapshot: snap }, null, 1)); return; }
   const t0 = performance.now();
   console.log(`jev-test ${kind}: ${worlds.length} worlds (${arms.join(', ')}), bridge ${o.bridge}, ${o.workers} at a time, cap $${o.cap} split per world; ledger ${ledger}`);
-  const results = await runPool<PaidJob & { repo: string }, PaidResult>(new URL('./lib/jev-paid-worker.ts', import.meta.url), jobs, { size: o.workers,
-    onDone: (i, ms) => console.log(`  ${jobs[i].runId} done in ${Math.round(ms / 1000)} s`) });
+  const done = new Map<string, PaidResult>();
+  if (prior) for (const j of jobs) if (existsSync(j.resultFile)) done.set(j.runId, JSON.parse(readFileSync(j.resultFile, 'utf8')) as PaidResult);
+  // an interrupted world restarts under a fresh ledger run (its earlier partial spend stays booked under the old run id)
+  const todo = jobs.filter(j => !done.has(j.runId)).map(j => prior && existsSync(join(o.out, kind, `${j.arm}-${j.seed}`, 'jev')) ? { ...j, runId: `${j.runId}/retry-${Date.now()}` } : j);
+  if (done.size) console.log(`  resuming: ${done.size} worlds already done (${[...done.keys()].join(', ')})`);
+  const fresh = await runPool<PaidJob & { repo: string; resultFile: string }, PaidResult>(new URL('./lib/jev-paid-worker.ts', import.meta.url), todo, { size: o.workers,
+    onDone: (i, ms) => console.log(`  ${todo[i].runId} done in ${Math.round(ms / 1000)} s`) });
+  const byWorld = new Map([...done, ...fresh.map(r => [r.runId.replace(/\/retry-\d+$/, ''), r] as const)]);
+  // results are keyed by the planned world; a retry keeps its own ledger run id beside it
+  const results = jobs.map(j => { const r = byWorld.get(j.runId)!; return r.runId === j.runId ? r : { ...r, runId: j.runId, ledgerRunId: r.runId }; });
   const wallS = Math.round((performance.now() - t0) / 1000);
   const lt = ledgerTotals(ledger, o.repo);
   const score = scorePaid(results, free, bands());
@@ -366,7 +384,7 @@ if (process.argv[1]?.endsWith('jev-test.ts')) {
   if (refusal) { console.error(refusal); process.exit(2); }
   if (arms.some(a => (PAID_ARMS as readonly string[]).includes(a))) {
     runPaid(arms as PaidArm[], { cap: +flag('cap', '0'), bridge: flag('bridge', '') as Bridge, ledger: flag('ledger', ''), plan: flag('plan', ''), workers: +flag('workers', '11'),
-      out, repo, dryRun: has('dry-run'), allowDirty: has('allow-dirty'), scored: +flag('scored', String(STANDARD.scoredDays)), warmup: +flag('warmup', String(STANDARD.warmupDays)), burnIn: +flag('burn-in', String(STANDARD.burnInDays)) })
+      out, repo, dryRun: has('dry-run'), allowDirty: has('allow-dirty'), resume: has('resume'), scored: +flag('scored', String(STANDARD.scoredDays)), warmup: +flag('warmup', String(STANDARD.warmupDays)), burnIn: +flag('burn-in', String(STANDARD.burnInDays)) })
       .catch(err => { console.error(err); process.exit(1); });
   } else {
   const seeds = flag('seeds', DECISIVE_SEEDS.join(',')).split(',').map(Number);

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createWorld, tickWorld } from '../src/simulation';
@@ -169,4 +169,21 @@ test('snapshot guard: C13 switches are forced to their pre-C13 value in every ar
   assert.deepEqual(snapshotGuardParams(), {}, 'this build predates C13: nothing to force');
   assert.deepEqual(snapshotGuardParams({ rgOn: 1, intakeValue: 1, walkMps: 0.35 }), { rgOn: 0, intakeValue: 0 });
   assert.deepEqual(snapshotGuardParams({ rgOn: 1 }), { rgOn: 0 });
+});
+
+test('a cached burn-in is reused only when its hash is the expected one, and gives the same world', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'jev-cache-'));
+  const cache = join(dir, 'burnin.json');
+  const job: PaidJob = { seed: 6301, arm: 'J2', profile: 'compressed', burnInDays: 0.1, warmupDays: 0.01, scoredDays: 0.05, bridge: 'fake', ledger: '', runId: 't', capDollars: 1, ftRoot: '' };
+  const uniformScorer = async (): Promise<Scorer> => ({ async score(packets) { return { results: packets.map(pk => { const n = Object.keys((pk as { questions: { action: { criteria: object } } }).questions.action.criteria).length; return Array.from({ length: n }, () => 1 / n); }) }; }, stop() {} });
+  const plain = await runPaidWorld(job, uniformScorer);
+  const first = await runPaidWorld({ ...job, burnInCache: cache, expectBurnInHash: plain.burnInHash }, uniformScorer);
+  assert.ok(existsSync(cache), 'the matching burn-in was cached');
+  const second = await runPaidWorld({ ...job, burnInCache: cache, expectBurnInHash: plain.burnInHash }, uniformScorer);
+  const strip = (r: typeof plain) => ({ ...r, wallMs: 0, result: r.result ? { ...r.result, wallMs: 0 } : null });
+  assert.deepEqual(strip(second), strip(first), 'the cached world continues exactly as the fresh one');
+  assert.deepEqual(strip(first), strip(plain));
+  writeFileSync(cache, JSON.stringify({ not: 'a world' }));
+  const third = await runPaidWorld({ ...job, burnInCache: cache, expectBurnInHash: plain.burnInHash }, uniformScorer);
+  assert.equal(third.burnInHash, plain.burnInHash, 'a wrong cache is ignored and the world burned in again');
 });
