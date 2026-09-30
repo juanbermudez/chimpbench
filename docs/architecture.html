@@ -103,6 +103,8 @@ main { min-width: 0; }
 .jump ol { padding: 2px 6px 8px; display: grid; grid-template-columns: 1fr 1fr; }
 .jump a { display: block; padding: 9px 8px; border-radius: 6px; font-size: 14px; color: var(--ink-2); text-decoration: none; }
 .jump a:hover { background: var(--surface-2); color: var(--ink); }
+.jump li.has-sub { grid-column: 1 / -1; }
+.jump ol ol { display: grid; grid-template-columns: 1fr 1fr; padding: 0 0 0 14px; }
 @media (min-width: 1200px) {
   .layout { grid-template-columns: 168px minmax(0, 1fr); gap: 64px; }
   .jump { display: none; }
@@ -111,10 +113,15 @@ main { min-width: 0; }
   .toc a { display: block; padding: 5px 0 5px 14px; margin-left: -1px; border-left: 1px solid transparent; font-size: 13.5px; line-height: 1.4; color: var(--ink-3); text-decoration: none; transition: color .15s, border-color .15s; }
   .toc a:hover { color: var(--ink); }
   .toc a[aria-current="true"] { color: var(--ink); border-left-color: var(--ink); }
+  .toc ol ol { border-left: 0; gap: 2px; margin-top: 2px; }
+  .toc ol ol a { padding-left: 28px; font-size: 13px; }
   .toc a.ai[aria-current="true"] { border-left-color: var(--gold); }
 }
 .sec { padding-top: 72px; margin-top: 104px; border-top: 1px solid var(--line); scroll-margin-top: 52px; }
 .sec.first { margin-top: 0; border-top: 0; padding-top: 112px; }
+/* Subsections of Chimp data: no divider, a smaller heading. */
+.sec.sub { margin-top: 88px; padding-top: 0; border-top: 0; }
+.sec.sub .sh h3 { font: 500 clamp(22px, 2.3vw, 26px)/1.2 var(--font-title); letter-spacing: -.02em; }
 .sh { display: grid; gap: 14px; max-width: 640px; margin-bottom: 48px; }
 h2 { font: 500 clamp(27px, 3vw, 34px)/1.15 var(--font-title); letter-spacing: -.026em; text-wrap: balance; }
 .sh p { font-size: 17px; line-height: 1.65; color: var(--ink-2); text-wrap: pretty; }
@@ -567,6 +574,7 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
   .hero { padding-top: 64px; } .hero-copy p { font-size: 16.5px; } .hero-shot { margin-top: 40px; }
   .sec { margin-top: 72px; padding-top: 56px; } .sec.first { padding-top: 72px; }
   .sh { margin-bottom: 32px; } .sh p { font-size: 16px; }
+  .sec.sub { margin-top: 64px; }
   .rows, .learn, .mechs, .pipe-notes, .pair, .facts-inline { grid-template-columns: 1fr; }
   .facts-inline div:nth-child(odd) { padding-right: 0; }
   .traits { grid-template-columns: 1fr; } .trait, .trait:nth-child(3n) { border-right: 0; }
@@ -637,7 +645,7 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
   <a class="brand" href="#top" aria-label="ChimpBench Primate Decision Simulator, back to top"><b>ChimpBench</b><i></i><span>Primate Decision Simulator</span></a>
   <div class="top-actions">
     <button class="top-link icon snd-btn" type="button" data-sound-toggle aria-pressed="false" aria-label="Sound off" title="Sound off" hidden><svg class="i" aria-hidden="true"><use href="#i-speaker-off"/></svg></button>
-    <a class="top-link" href="../">Open the forest <svg class="i" aria-hidden="true"><use href="#i-right"/></svg></a>
+    <a class="top-link" href="../">Open ChimpBench <svg class="i" aria-hidden="true"><use href="#i-right"/></svg></a>
   </div>
 </header>
 
@@ -647,7 +655,7 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
       <h1 id="h-top">A chimpanzee society simulation, based on wild chimps.</h1>
       <p>ChimpBench simulates communities of wild chimpanzees in a 3D rainforest modeled on Kibale, Uganda. Each chimp feeds, rests, travels, grooms, fights and reconciles, patrols, hunts, raises young and ages, through day and night and the seasons.</p>
       <p>A personal experiment in using decision models to drive behavior. Each chimp&rsquo;s choices come from what it senses and how it feels, and are decided by rules or by <span class="ai">a small AI model running on your computer</span>. The results are compared with field data from wild chimps.</p>
-      <div class="cta"><a class="btn primary" href="../">Open the forest <svg class="i" aria-hidden="true"><use href="#i-right"/></svg></a><a class="btn" href="#decide">How a chimp decides</a></div>
+      <div class="cta"><a class="btn primary" href="../">Open ChimpBench <svg class="i" aria-hidden="true"><use href="#i-right"/></svg></a><a class="btn" href="#decide">How a chimp decides</a></div>
     </div>
     <figure class="shot hero-shot">
       <div class="frame"><img src="img/overview-dawn.webp" width="1600" height="1000" alt="The ChimpBench app at dawn on day one: the field log and range map on the left; the misty forest in the middle, with labelled chimps and dashed community ranges; on the right, the communities with West selected, its alpha Tavuni, its foraging parties and a grid of its members." fetchpriority="high" decoding="async"></div>
@@ -665,10 +673,13 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
         <li><a href="#society">Society</a></li>
         <li><a href="#experiments">Field experiments</a></li>
         <li><a href="#system">Architecture</a></li>
-        <li><a href="#realism">Chimp data</a></li>
-        <li><a href="#fruit">Fruit calendar</a></li>
-        <li><a href="#ranging">Ranging and movement</a></li>
-        <li><a href="#patrols">Patrols and territory</a></li>
+        <li class="has-sub"><a href="#realism">Chimp data</a>
+          <ol>
+            <li><a href="#fruit">Fruit calendar</a></li>
+            <li><a href="#ranging">Ranging and movement</a></li>
+            <li><a href="#patrols">Patrols and territory</a></li>
+          </ol>
+        </li>
         <li><a href="#sources">Credits</a></li>
       </ol>
     </nav>
@@ -684,10 +695,13 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
           <li><a href="#society">Society</a></li>
           <li><a href="#experiments">Field experiments</a></li>
           <li><a href="#system">Architecture</a></li>
-          <li><a href="#realism">Chimp data</a></li>
-          <li><a href="#fruit">Fruit calendar</a></li>
-          <li><a href="#ranging">Ranging and movement</a></li>
-          <li><a href="#patrols">Patrols and territory</a></li>
+          <li class="has-sub"><a href="#realism">Chimp data</a>
+            <ol>
+              <li><a href="#fruit">Fruit calendar</a></li>
+              <li><a href="#ranging">Ranging and movement</a></li>
+              <li><a href="#patrols">Patrols and territory</a></li>
+            </ol>
+          </li>
           <li><a href="#sources">Credits</a></li>
         </ol>
       </details>
@@ -1172,8 +1186,8 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
 
       <!-- Fruit. Drawn by docs/guide/guide.js from docs/data/guide-fruit.json (scripts/guide-data.ts): site-level monthly
            aggregates of the Ngogo phenology record, no tree positions. -->
-      <section class="sec" id="fruit" aria-labelledby="h-fruit">
-        <header class="sh"><h2 id="h-fruit">Fruit calendar</h2><p>Ripe fruit is chimps' main food, and its timing affects party size and travel. At Ngogo, researchers recorded ripe fruit on the same marked trees every month from 1998 to 2017 (<a class="cite" href="https://doi.org/10.1111/btp.12764">Potts et al. 2020</a>). The simulated forest (field profile) uses this record directly: its fruit follows the Ngogo months in order, year by year.</p></header>
+      <section class="sec sub" id="fruit" aria-labelledby="h-fruit">
+        <header class="sh"><h3 id="h-fruit">Fruit calendar</h3><p>Ripe fruit is chimps' main food, and its timing affects party size and travel. At Ngogo, researchers recorded ripe fruit on the same marked trees every month from 1998 to 2017 (<a class="cite" href="https://doi.org/10.1111/btp.12764">Potts et al. 2020</a>). The simulated forest (field profile) uses this record directly: its fruit follows the Ngogo months in order, year by year.</p></header>
 
         <figure class="panel gv" data-gv="fruit" aria-labelledby="gv-fruit-t">
           <figcaption class="gv-head"><b id="gv-fruit-t">Twenty years of ripe fruit at Ngogo</b><span class="vtag soft">builds the forest</span></figcaption>
@@ -1196,8 +1210,8 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
 
       <!-- Ranging and movement vs real data. Everything below is drawn at load from docs/data/*.json (scripts/compare-ranging.ts,
            scripts/compare-movement.ts); a snapshot is embedded for file:// viewing. No coordinates exist in either file. -->
-      <section class="sec rv" id="ranging" aria-labelledby="h-rv">
-        <header class="sh"><h2 id="h-rv">Ranging and movement</h2><p>Three open datasets record where wild chimps went: GPS fixes from Ngogo (2011–2023), 30-minute focal records from Taï (2013–2016) and 15-minute focal follows from Gombe (2000–2003). The same measures are computed for real and simulated chimps: home-range area and core area (95% and 50% kernels), how use spreads across the range, 30-minute step length, turning angle and how straight a day's path is. The virtual field observer samples the simulated chimps on the same schedules. Status: the way use spreads within a range matches Ngogo. Being improved: ranges are about three times too small for the group size, and day paths double back too often.</p></header>
+      <section class="sec sub rv" id="ranging" aria-labelledby="h-rv">
+        <header class="sh"><h3 id="h-rv">Ranging and movement</h3><p>Three open datasets record where wild chimps went: GPS fixes from Ngogo (2011–2023), 30-minute focal records from Taï (2013–2016) and 15-minute focal follows from Gombe (2000–2003). The same measures are computed for real and simulated chimps: home-range area and core area (95% and 50% kernels), how use spreads across the range, 30-minute step length, turning angle and how straight a day's path is. The virtual field observer samples the simulated chimps on the same schedules. Status: the way use spreads within a range matches Ngogo. Being improved: ranges are about three times too small for the group size, and day paths double back too often.</p></header>
 
         <div class="verdicts" id="rv-verdicts" aria-live="polite">
           <div class="vcol"><h3><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>Similar</h3><ul data-v="similar"><li class="ph">Loading the comparison…</li></ul></div>
@@ -1291,8 +1305,8 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
       </section>
       <!-- Patrols and territory vs real data. Drawn at load from docs/data/patrol-compare.json (scripts/compare-patrols.ts);
            a snapshot is embedded for file:// viewing. Derived statistics only: no coordinates, dates finer than a month or names. -->
-      <section class="sec rv pv" id="patrols" aria-labelledby="h-pv">
-        <header class="sh"><h2 id="h-pv">Patrols and territory</h2><p>A boundary patrol is a group of males walking the edge of their range, mostly in silence, stopping to listen and sometimes entering a neighbour's range. Open datasets record observed patrols at Ngogo (1996–2015) and after its split (2016–2024), patrols on Gombe's daily follows (1978–2007) and border stops at Taï (2013–2016). From them come patrol rates, who joins, duration, timing through the year and what parties do at the border; the virtual field observer will measure simulated patrols the same way. Status: the real numbers below are final, and the simulated ones are pending until the corrected patrol model's test run.</p></header>
+      <section class="sec sub rv pv" id="patrols" aria-labelledby="h-pv">
+        <header class="sh"><h3 id="h-pv">Patrols and territory</h3><p>A boundary patrol is a group of males walking the edge of their range, mostly in silence, stopping to listen and sometimes entering a neighbour's range. Open datasets record observed patrols at Ngogo (1996–2015) and after its split (2016–2024), patrols on Gombe's daily follows (1978–2007) and border stops at Taï (2013–2016). From them come patrol rates, who joins, duration, timing through the year and what parties do at the border; the virtual field observer will measure simulated patrols the same way. Status: the real numbers below are final, and the simulated ones are pending until the corrected patrol model's test run.</p></header>
 
         <p class="pv-status" id="pv-status"><span class="vchip nc">Loading…</span></p>
 
