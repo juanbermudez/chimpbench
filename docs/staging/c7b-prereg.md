@@ -466,3 +466,55 @@ Other effects:
 - The diagnosis stands: goals are chosen almost blind to distance, and a fifth of the path is travel toward callers (§8.2).
 - Neither extreme works. A near-flat distance cost (energetic) leaves goal order random; ranking by value per metre over-chains.
 - An intermediate rule would need a distance-value trade-off with a free scale, which this stage does not fit. The time-rate rule (§3.4) is the only scale-free candidate so far, and it shortened days in C7b. Open for the integrator.
+
+---
+
+## 9. C7e: a declared calibration of the goal-distance scale (declared before fitting, 29 September 2026)
+
+The branch is `main` at cf7a493 (C10 and travel hoos merged; field hashes changed), merged forward. Validation roles: Taï and Ngogo are the development (fitting) set; the Gombe paths are held out and never opened here. The fitted value is labelled **"fitted (C7e) against Taï"** in the registry notes and here.
+
+### 9.1 The parameter
+**`goalDistScaleM` = D (metres; field; 0 = off, the C7c/C7d behaviour, where the four best out-of-sight trees by score are offered).**
+
+**Functional form.** With D > 0, every out-of-sight goal (remembered or community-known tree) is ranked by
+
+> (worth − revisit) × D ÷ (D + max(d, `memoryTreeMinM`)),
+
+a hyperbolic distance discount. Only the top-ranked tree is offered, at its usual score (worth − the energetic distance cost − revisit − the usual terms). So D sets goal order only, not how attractive travel is.
+
+- As D → 0 the rank tends to value per metre: route chaining (§8.3).
+- As D → ∞ the rank is believed value alone: no distance preference.
+- Crowns in sight keep their scoring.
+
+**Prior range: 50–3,200 m.**
+- The lower end sits near the spacing of goal trees (the nearest comparable tree is a median 122 m away, §8.2; `memoryTreeMinM` is 35 m). Below it D reproduces route chaining, already tested.
+- The upper end is about a range diameter (~3 km for a 7 km² range). Beyond it the discount barely reorders goals within a range.
+- Grid: **50, 100, 200, 400, 800, 1,600, 3,200 m** (log-spaced), plus off.
+
+### 9.2 Fitting targets, loss and instrument
+**Targets** (development diagnostics, Taï; C12 definitions):
+
+| Statistic | Target |
+| --- | --- |
+| Straightness of full-day follows | S* = 0.50 |
+| Turning angle between 30-min steps (both ≥ 15 m) | T* = 0.76 rad |
+| Path per hour | R* = 314 m/h |
+
+**Loss:** L = ⅓ ((S − S*)/S*)² + ⅓ ((T − T*)/T*)² + ⅓ ((R − R*)/R*)².
+- Relative squared errors with equal weights: all three are robust path-shape gaps.
+- Path rate guards against the over-chaining collapse seen in §8.4.
+
+**Instrument:** `scripts/compare-movement.ts --seeds 3909,4010 --years 0.25 --burn-in 60 --workers 2 --params {…}`, run with `--out` and `--guide` redirected to `artifacts/validation/c7e/`. The sim statistic is the scorecard's sim value for each row.
+- **Seeds 3909 and 4010:** development seeds, never run before, outside 606–1010, 1111–2525 and 48, 7, 21, 5, 11.
+
+**Decision rule:**
+- D* = the grid value with the least L.
+- It stays **on by default only if L(D*) < L(off)**; otherwise off, and said so.
+
+### 9.3 Second declared candidate: the food package (discrete)
+- At D*, the food package (`cropFullExp` 11.9, `cropFullMin` 0.3, `patchesPerHa` 5.9) is scored by the same L, on vs off.
+- **Constraint (not a target):** T-PTY-1 ≥ 2.8, from `field-metrics.ts --days 120 --burn-in 60 --seeds 3909,4010 --workers 2`.
+- The package is chosen only if it is feasible and lowers L.
+
+### 9.4 Report at the chosen setting
+The loss surface; every C12 development row from `compare-movement.ts`; the field observer's T-* rows; `party-food-metrics.ts` (party size, stationary share, goal order); and the bench (`scripts/bench-ab.ts`, off vs chosen).
