@@ -120,8 +120,8 @@ main { min-width: 0; }
 .sec { padding-top: 72px; margin-top: 104px; border-top: 1px solid var(--line); scroll-margin-top: 52px; }
 .sec.first { margin-top: 0; border-top: 0; padding-top: 112px; }
 /* Subsections of Chimp data: no divider, a smaller heading. */
-.sec.sub { margin-top: 88px; padding-top: 0; border-top: 0; }
-.sec.sub .sh h3 { font: 500 clamp(22px, 2.3vw, 26px)/1.2 var(--font-title); letter-spacing: -.02em; }
+.sec.subsec { margin-top: 88px; padding-top: 0; border-top: 0; }
+.sec.subsec .sh h3 { font: 500 clamp(22px, 2.3vw, 26px)/1.2 var(--font-title); letter-spacing: -.02em; }
 .sh { display: grid; gap: 14px; max-width: 640px; margin-bottom: 48px; }
 h2 { font: 500 clamp(27px, 3vw, 34px)/1.15 var(--font-title); letter-spacing: -.026em; text-wrap: balance; }
 .sh p { font-size: 17px; line-height: 1.65; color: var(--ink-2); text-wrap: pretty; }
@@ -574,7 +574,7 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
   .hero { padding-top: 64px; } .hero-copy p { font-size: 16.5px; } .hero-shot { margin-top: 40px; }
   .sec { margin-top: 72px; padding-top: 56px; } .sec.first { padding-top: 72px; }
   .sh { margin-bottom: 32px; } .sh p { font-size: 16px; }
-  .sec.sub { margin-top: 64px; }
+  .sec.subsec { margin-top: 64px; }
   .rows, .learn, .mechs, .pipe-notes, .pair, .facts-inline { grid-template-columns: 1fr; }
   .facts-inline div:nth-child(odd) { padding-right: 0; }
   .traits { grid-template-columns: 1fr; } .trait, .trait:nth-child(3n) { border-right: 0; }
@@ -1186,7 +1186,7 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
 
       <!-- Fruit. Drawn by docs/guide/guide.js from docs/data/guide-fruit.json (scripts/guide-data.ts): site-level monthly
            aggregates of the Ngogo phenology record, no tree positions. -->
-      <section class="sec sub" id="fruit" aria-labelledby="h-fruit">
+      <section class="sec subsec" id="fruit" aria-labelledby="h-fruit">
         <header class="sh"><h3 id="h-fruit">Fruit calendar</h3><p>Ripe fruit is chimps' main food, and its timing affects party size and travel. At Ngogo, researchers recorded ripe fruit on the same marked trees every month from 1998 to 2017 (<a class="cite" href="https://doi.org/10.1111/btp.12764">Potts et al. 2020</a>). The simulated forest (field profile) uses this record directly: its fruit follows the Ngogo months in order, year by year.</p></header>
 
         <figure class="panel gv" data-gv="fruit" aria-labelledby="gv-fruit-t">
@@ -1210,7 +1210,7 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
 
       <!-- Ranging and movement vs real data. Everything below is drawn at load from docs/data/*.json (scripts/compare-ranging.ts,
            scripts/compare-movement.ts); a snapshot is embedded for file:// viewing. No coordinates exist in either file. -->
-      <section class="sec sub rv" id="ranging" aria-labelledby="h-rv">
+      <section class="sec subsec rv" id="ranging" aria-labelledby="h-rv">
         <header class="sh"><h3 id="h-rv">Ranging and movement</h3><p>Three open datasets record where wild chimps went: GPS fixes from Ngogo (2011–2023), 30-minute focal records from Taï (2013–2016) and 15-minute focal follows from Gombe (2000–2003). The same measures are computed for real and simulated chimps: home-range area and core area (95% and 50% kernels), how use spreads across the range, 30-minute step length, turning angle and how straight a day's path is. The virtual field observer samples the simulated chimps on the same schedules. Status: the way use spreads within a range matches Ngogo. Being improved: ranges are about three times too small for the group size, and day paths double back too often.</p></header>
 
         <div class="verdicts" id="rv-verdicts" aria-live="polite">
@@ -1305,7 +1305,7 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
       </section>
       <!-- Patrols and territory vs real data. Drawn at load from docs/data/patrol-compare.json (scripts/compare-patrols.ts);
            a snapshot is embedded for file:// viewing. Derived statistics only: no coordinates, dates finer than a month or names. -->
-      <section class="sec sub rv pv" id="patrols" aria-labelledby="h-pv">
+      <section class="sec subsec rv pv" id="patrols" aria-labelledby="h-pv">
         <header class="sh"><h3 id="h-pv">Patrols and territory</h3><p>A boundary patrol is a group of males walking the edge of their range, mostly in silence, stopping to listen and sometimes entering a neighbour's range. Open datasets record observed patrols at Ngogo (1996–2015) and after its split (2016–2024), patrols on Gombe's daily follows (1978–2007) and border stops at Taï (2013–2016). From them come patrol rates, who joins, duration, timing through the year and what parties do at the border; the virtual field observer will measure simulated patrols the same way. Status: the real numbers below are final, and the simulated ones are pending until the corrected patrol model's test run.</p></header>
 
         <p class="pv-status" id="pv-status"><span class="vchip nc">Loading…</span></p>
