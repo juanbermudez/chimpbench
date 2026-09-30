@@ -752,6 +752,21 @@
    ],
    "verdicts": "sealed (unchanged)",
    "class": "sealing audit"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "C8 implementer (integrator ruling)",
+   "seen": "development truth reads only (seeds 48, 7, 21; 10 field years; C13 on and off on the merged code); fitted rows of the pre-C13 40-year development run (seeds 48, 7, 21, 5, 11); no held-out or sealed value",
+   "param": "C8 merged after C13 on viability. The merge condition 'lactating hunger clearly improved' is withdrawn: its baseline (lean-period median 0.95-1.00) came from a script lost with /tmp at a reboot and could not be reproduced. The like-for-like paired arms (C13 on vs rgOn 0 and intakeValue 0, hash-identical to pre-C13 C8) show the lactating median unchanged (lean days 0.67-0.74) while adult-female starvation deaths fall from 13 to 0. Viability: births / deaths 120 / 60 pooled with C13 (102 / 118 without), no collapse. The pre-C13 40-year development result (artifacts/validation/c8/dev-40y-amended.json: populations 49 -> 5-29; female e15 12.2 y) is superseded. Follow-up C8b (baseline hazard, lactation energy term) is designed separately",
+   "reason": "integrator ruling on the post-C13 check (docs/staging/c8-lactation-diagnosis.md)",
+   "targets": [
+    "T-DEM-1",
+    "T-DEM-2",
+    "T-DEM-10",
+    "T-DEM-12"
+   ],
+   "verdicts": "no verdict: development checks only; the fitted rows are to be re-run on the merged model",
+   "class": "merge ruling"
   }
  ],
  "registryRefsToSources": {
