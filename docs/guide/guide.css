@@ -18,7 +18,7 @@
 .gv { padding: 20px 22px 16px; display: grid; gap: 12px; min-width: 0; margin: 0; }
 .gv + .gv, .gv-row + .gv, .gv + .gv-row { margin-top: 16px; }
 .gv-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 12px; font-size: 14.5px; }
-.gv-head b { font-weight: 500; letter-spacing: -.01em; }
+.gv-head b { font-family: var(--font-title, inherit); font-weight: 500; letter-spacing: -.01em; }
 .gv-take { font-size: 15px; line-height: 1.5; color: var(--ink); max-width: 720px; text-wrap: pretty; }
 .gv-sub { font-size: 13px; line-height: 1.55; color: var(--ink-3); max-width: 760px; text-wrap: pretty; }
 .gv-sub b { color: var(--ink-2); font-weight: 500; }
@@ -205,13 +205,49 @@
 .lane svg { display: block; width: 100%; height: auto; overflow: visible; }
 .swarm { display: grid; gap: 10px; }
 
-/* ---------- Forest sound toggle (docs/guide/sound.js) ---------- */
+/* ---------- Header controls: title font (docs/guide/site.js) and forest sound (docs/guide/sound.js) ----------
+   An Aa toggle and a labelled Sound on/off button, in the top-link style. */
 .top-actions { display: flex; align-items: center; gap: 8px; }
 .top-link[hidden] { display: none; }
 .top-link.icon { position: relative; width: 32px; padding: 0; justify-content: center; font: inherit; cursor: pointer; }
 .top-link.icon::after { content: ''; position: absolute; inset: -6px; }
-.top-link.icon .i { width: 16px; height: 16px; color: var(--ink-2); transition: color .15s; }
-.top-link.icon[aria-pressed="true"] .i { color: var(--gold); }
+.top-actions .snd-btn { font: inherit; font-size: 13.5px; font-weight: 500; cursor: pointer; padding: 0 12px 0 10px; }
+.snd-btn .i { width: 16px; height: 16px; color: var(--ink-2); transition: color .15s; }
+.snd-btn[aria-pressed="true"] .i { color: var(--gold); }
+.snd-short { display: none; }
+.tf-btn span { font: 500 14px/1 var(--font-title, inherit); letter-spacing: 0; color: var(--ink-2); }
+.tf-btn[aria-pressed="true"] { border-color: var(--line-3); background: var(--surface-2); }
+.tf-btn[aria-pressed="true"] span { color: var(--ink); }
+@media (max-width: 999px) { .snd-long { display: none; } .snd-short { display: inline; } }
+@media (max-width: 480px) { .brand b { letter-spacing: .08em; } .top-actions .top-link:last-child .i { display: none; } .top-actions .top-link:last-child { padding: 0 10px; } }
+
+/* ---------- Decision models popover ("How it's built"; docs/guide/motion.js) ----------
+   Opens from the diagram's gold box (click, Enter/Space, or hover with a fine pointer) or, below 1000 px, from the list
+   item. Enters in 240 ms on the page's --ease, scaling from the box; leaves quieter (160 ms). Reduced motion: fade only. */
+.arch-fig { position: relative; }
+.dm-hit { position: absolute; left: 2%; top: 72.83%; width: 22%; height: 21.51%; padding: 0; margin: 0; border: 0; border-radius: 12px; background: transparent; color: transparent; font-size: 0; cursor: pointer; transition: box-shadow .15s; }
+.dm-hit:hover, .dm-hit[aria-expanded="true"] { box-shadow: inset 0 0 0 1px var(--gold); }
+.dm-hit:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+.dm-pop { z-index: 2; width: 340px; max-width: 100%; padding: 14px 16px 12px; border-radius: 12px; border: 1px solid var(--gold-3); background: var(--surface-2); box-shadow: 0 24px 60px -24px rgba(0,0,0,.95); opacity: 0; transform: scale(.96); transform-origin: 0 100%; transition: opacity .16s var(--ease), transform .16s var(--ease); cursor: auto; }
+.dm-pop.in { opacity: 1; transform: none; transition-duration: .24s; }
+.dm-pop:focus { outline: none; } .dm-pop:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+.arch-fig .dm-pop { position: absolute; left: 25.2%; bottom: 5.66%; }
+.dm-pop-h { font-size: 12.5px; color: var(--ink-3); margin-bottom: 6px; }
+.dm-pop dl { display: grid; margin: 0; }
+.dm-pop dl div { padding: 8px 0; border-top: 1px solid var(--line); display: grid; gap: 1px; }
+.dm-pop dt { font-size: 13.5px; font-weight: 500; color: var(--gold-2); }
+.dm-pop dd { margin: 0; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
+.arch-list li.ai { padding: 0; }
+.dm-row { display: grid; gap: 2px; width: 100%; padding: 14px 0; margin: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.dm-row b { font-size: 15px; font-weight: 500; color: var(--gold-2); }
+.dm-row > span { font-size: 14px; color: var(--ink-2); }
+.dm-row .dm-more { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 13px; color: var(--gold-2); }
+.dm-row .dm-more .i { width: 15px; height: 15px; transition: transform .2s var(--ease); }
+.dm-row[aria-expanded="true"] .dm-more .i { transform: rotate(180deg); }
+.dm-row:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.arch-list .dm-pop { position: relative; width: 100%; margin: 0 0 14px; transform-origin: 0 0; }
+@media (max-width: 999px) { .dm-hit { display: none; } }
+@media (prefers-reduced-motion: reduce) { .dm-pop, .dm-pop.in { transform: none; transition: opacity .15s linear; } }
 
 /* ---------- Screenshot viewer (docs/guide/motion.js) ----------
    A frameless, near-fullscreen view over a dim scrim. The image flies from its thumbnail with a FLIP transform

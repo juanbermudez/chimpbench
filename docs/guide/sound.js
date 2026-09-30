@@ -2,8 +2,10 @@
 // somewhere in the forest. Reuses the app's derived audio (public/audio, Epidemic Sound, licensed to the user; see
 // public/audio/SOURCES.md), so it only plays when the guide is served from this project.
 //
-// - Autoplay policy: nothing plays at load. Sound starts on the first click or key anywhere (fading in over 2 s) or
-//   from the header toggle, which mutes and unmutes with a short fade. A mute is remembered and holds on the next visit.
+// - Autoplay policy: nothing plays at load. Sound starts on the first click or key anywhere, or from the header's
+//   Sound button. Every start (first gesture, unmute, return to the tab) fades in over 3 s on a raised-cosine curve
+//   (slow start, gentle landing); turning it off fades out in 0.4 s. The on/off choice is remembered for the next
+//   visit. There is no volume control: the level is set once, under the page.
 // - Memory: the ambience bed streams through two <audio> elements crossfaded at the loop point (never decoded into an
 //   AudioBuffer). The manifest and each call clip are fetched lazily, on first start and on first use.
 // - Calls: chimpanzee pools only (pant-hoots, alarm hoos, screams, synthesized buttress drums); never the optional
@@ -19,7 +21,7 @@ const DEBUG = /[?&]sounddebug=1\b/.test(location.search);
 const BASE = new URL('../audio/', location.href).href;
 const AMBIENCE = 'bed-dawn';                           // the app's daytime rainforest bed
 const BED_GAIN = 0.42, BED_XF = 4;                     // under the page, never in front of it; s of loop crossfade
-const FADE_IN = 2, FADE_TOGGLE = 0.35, FADE_HIDE = 0.25;
+const FADE_IN = 3, FADE_OUT = 0.4, FADE_HIDE = 0.25;
 const GAP = DEBUG ? [3, 6] : [45, 90];                 // s between calls
 const KINDS = [['pant-hoot', 0.5], ['drum', 0.2], ['scream', 0.15], ['alarm-hoo', 0.15]];   // weights; design assumption
 // Distance classes: share of calls, gain, low-pass cutoff (Hz), reverb send, pan spread. Far calls are dull and wet.
@@ -31,12 +33,13 @@ const DIST = [
 
 const read = () => { try { return localStorage.getItem(KEY); } catch { return null; } };
 const write = v => { try { localStorage.setItem(KEY, v); } catch { /* storage blocked: the choice lasts this visit */ } };
+try { localStorage.removeItem('chimpbench.guide.volume'); } catch { /* a volume stored by an earlier version of the page */ }
 const AC = window.AudioContext || window.webkitAudioContext;
 const pick = list => list[Math.floor(Math.random() * list.length)];
 
 function guideSound() {
   const toggle = document.querySelector('[data-sound-toggle]');
-  if (!AC || !toggle) { if (toggle) toggle.hidden = true; return; }
+  if (!toggle || !AC) return;   // no Web Audio: the button stays hidden
   let muted = read() === 'off', started = false, ctx = null, out = null, mix = null, reverb = null, clips = null, timer = 0;
   const bed = { els: [], xf: [], active: 0, xfading: false, xfadeEnd: 0 };
   const buffers = new Map();
@@ -46,7 +49,9 @@ function guideSound() {
   const paint = () => {
     const on = started && !muted;
     toggle.setAttribute('aria-pressed', String(on));
-    toggle.setAttribute('aria-label', on ? 'Turn forest sound off' : 'Turn forest sound on');
+    toggle.setAttribute('aria-label', on ? 'Sound on' : 'Sound off');
+    toggle.querySelector('.snd-long').textContent = on ? 'Sound on' : 'Sound off';
+    toggle.querySelector('.snd-short').textContent = on ? 'On' : 'Off';
     toggle.querySelector('use').setAttribute('href', on ? '#i-speaker' : '#i-speaker-off');
     state.muted = muted;
   };
@@ -55,7 +60,7 @@ function guideSound() {
     ctx = new AC();
     const limiter = ctx.createDynamicsCompressor();
     limiter.threshold.value = -6; limiter.knee.value = 3; limiter.ratio.value = 12; limiter.attack.value = 0.003; limiter.release.value = 0.25;
-    out = ctx.createGain(); out.gain.value = 0;
+    out = ctx.createGain(); out.gain.value = 0;              // fades (start, mute, hidden tab)
     const trim = ctx.createGain(); trim.gain.value = 0.67;   // takes back the compressor's automatic make-up gain (as in the app)
     mix = ctx.createGain();
     mix.connect(limiter).connect(trim).connect(out).connect(ctx.destination);
@@ -95,7 +100,14 @@ function guideSound() {
   const playBeds = () => { bed.els[bed.active].play().catch(() => {}); if (bed.xfading) bed.els[1 - bed.active].play().catch(() => {}); };
   const pauseBeds = () => bed.els.forEach(el => el.pause());
 
-  const fade = (to, secs) => { const t = ctx.currentTime; out.gain.cancelScheduledValues(t); out.gain.setValueAtTime(out.gain.value, t); out.gain.linearRampToValueAtTime(to, t + secs); };
+  // Raised-cosine fade from wherever the level is now: no jump if a fade is interrupted, a slow start, a soft landing.
+  const fade = (to, secs) => {
+    const g = out.gain, t = ctx.currentTime;
+    if (g.cancelAndHoldAtTime) g.cancelAndHoldAtTime(t); else { g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); }
+    const from = g.value, curve = new Float32Array(64);
+    for (let i = 0; i < 64; i++) curve[i] = from + (to - from) * (1 - Math.cos(Math.PI * i / 63)) / 2;
+    g.setValueCurveAtTime(curve, t + 0.01, secs);
+  };
 
   async function manifest() {
     if (clips) return clips;
@@ -180,7 +192,7 @@ function guideSound() {
   }
 
   const onGesture = e => {
-    if (e.target && e.target.closest && e.target.closest('[data-sound-toggle]')) return;   // the toggle handles itself
+    if (e.target && e.target.closest && e.target.closest('[data-sound-toggle], [data-title-font]')) return;   // the toggle handles itself; the font toggle is not a sound gesture
     if (e instanceof KeyboardEvent && (e.metaKey || e.ctrlKey || e.altKey)) return;
     removeEventListener('pointerdown', onGesture, true); removeEventListener('keydown', onGesture, true);
     if (!muted && !started) start(FADE_IN);
@@ -189,14 +201,14 @@ function guideSound() {
   addEventListener('keydown', onGesture, true);
 
   toggle.addEventListener('click', () => {
-    if (started && !muted) { muted = true; write('off'); silence(FADE_TOGGLE, true); }
-    else { muted = false; write('on'); start(started ? FADE_TOGGLE : FADE_IN); }
+    if (started && !muted) { muted = true; write('off'); silence(FADE_OUT, true); }
+    else { muted = false; write('on'); start(FADE_IN); }
     paint();
   });
   document.addEventListener('visibilitychange', () => {
     if (!started || muted) return;
     if (document.hidden) silence(FADE_HIDE, true);
-    else start(FADE_TOGGLE);
+    else start(FADE_IN);
   });
   toggle.hidden = false;
   paint();

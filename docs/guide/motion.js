@@ -144,5 +144,46 @@ function viewer() {
   });
 }
 
+// ------------------------------------------------------------------------------------------------ decision models popover
+// The "How it's built" diagram's gold box (or, below 1000 px, its list item) opens a short list of the decision models
+// being tested. Click or Enter/Space pins it and moves focus into it; a fine pointer's hover previews it. Esc or a click
+// outside closes it, and Esc returns focus to the trigger. Timing lives in the CSS (240 ms in, 160 ms out, --ease).
+function modelsPopover() {
+  const pop = document.getElementById('dm-pop'), triggers = [...document.querySelectorAll('[data-dm]')];
+  if (!pop || !triggers.length) return;
+  const hover = matchMedia('(hover: hover) and (pointer: fine)');
+  let owner = null, pinned = false, showT = 0, hideT = 0, doneT = 0;
+  const place = tr => { const host = tr.closest('.arch-fig') || tr.closest('li'); if (host && pop.parentElement !== host) host.appendChild(pop); };
+  function open(tr, pin, focus) {
+    clearTimeout(hideT); clearTimeout(doneT);
+    if (owner && owner !== tr) close(false, true);
+    owner = tr; pinned = pinned || pin; place(tr);
+    tr.setAttribute('aria-expanded', 'true');
+    if (pop.hidden) { pop.hidden = false; pop.getBoundingClientRect(); }   // commit the start state before transitioning
+    pop.classList.add('in');
+    if (focus) pop.focus({ preventScroll: true });
+  }
+  function close(focusBack, now) {
+    if (!owner) return;
+    const tr = owner; owner = null; pinned = false;
+    tr.setAttribute('aria-expanded', 'false');
+    pop.classList.remove('in');
+    clearTimeout(doneT);
+    if (now) pop.hidden = true; else doneT = setTimeout(() => { if (!owner) pop.hidden = true; }, 170);
+    if (focusBack) tr.focus({ preventScroll: true });
+  }
+  triggers.forEach(tr => {
+    tr.addEventListener('click', () => (owner === tr && pinned ? close(false) : open(tr, true, true)));   // Enter and Space click too
+    tr.addEventListener('pointerenter', () => { if (!hover.matches || pinned) return; clearTimeout(hideT); showT = setTimeout(() => open(tr, false, false), 120); });
+    tr.addEventListener('pointerleave', () => { clearTimeout(showT); if (!pinned) hideT = setTimeout(() => close(false), 200); });
+  });
+  pop.addEventListener('pointerenter', () => clearTimeout(hideT));
+  pop.addEventListener('pointerleave', () => { if (!pinned) hideT = setTimeout(() => close(false), 200); });
+  pop.addEventListener('focusout', e => { if (owner && pinned && !pop.contains(e.relatedTarget) && e.relatedTarget !== owner) close(false); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && owner) close(pop.contains(document.activeElement) || document.activeElement === owner); });
+  document.addEventListener('pointerdown', e => { if (owner && !pop.contains(e.target) && !owner.contains(e.target)) close(false); });
+}
+
 decisionLoop();
 viewer();
+modelsPopover();
