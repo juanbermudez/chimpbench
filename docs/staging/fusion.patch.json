@@ -1,0 +1,26 @@
+{
+ "about": "Finding-company staging for data/targets.json (requested by the integrator; this branch never edits targets.json). Append `protocolLog` in order. No target label changes: T-PTY-1 is already fitted and labelled tuned; T-PTY-4 is already compromised.",
+ "protocolLog": [
+  {
+   "date": "2026-10-01",
+   "by": "finding-company design (C8 agent; integrator request)",
+   "seen": "truth probes of main f24c9ae (field, seeds 48 and 7, 30-day burn-in + 20 days): time alone by sex, solitary spells, pant-hoots heard and approached, how company is gained and lost; the moving-together result (T-PTY-1 2.86, T-PTY-4 0.509 over 6 months). No value under the change (nothing coded or run)",
+   "param": "Finding-company pre-registration, fixed before any code or run (docs/staging/fusion-prereg.md). (1) departPersistAll (field 1, compressed 0): the departure-attempt rule of departPersist also applies to an own trip to water beyond the party link and to travel to a pant-hoot caller; companions notice a departure to water and may follow with the existing party-follow option. No new magnitude; [M] gruberZuberbuhler2013 (a travel event is any locomotion of 10 m or more; recruitment, waiting and re-launching concern such events); following to water with the same weights is design. (2) joinLoneW: for an animal with no companion of 12 y or more within the party link, the pull toward an own-community pant-hoot caller gains joinLoneW + joinBondW x bond with the caller ([M] direction: mitaniNishida1993, gruberZuberbuhler2013). joinLoneW is FITTED, the stage's one fitted parameter: bisection between 0 and 0.8, at most 5 steps, departPersistAll on, each step one observer run (field, seeds 48 and 7, 30-day burn-in + 60 days) read through a script that prints only T-PTY-1; target pooled T-PTY-1 3.5 +/- 0.15; if 0.8 does not reach 3.35 the fit stops, reported as not reached, and joinLoneW is the largest value that passes the guard, or 0. Checks: both on at the fitted value vs both off, seeds 48 and 7, 30 + 60 days, then 30 + 180 days if the guard passes. Guard: G1 both off hash-identical to main f24c9ae; G2 T-ACT-1..4 and T-RNG-4 in band; G3 median hunger of adults and lactating females at most 0.03 above off by party-truth.ts, no extra starvation; G4 company gained per solitary hour higher and the water share of own-move partings lower, each seed; G5 hooed attempts recruiting per attempt within 0.71 +/- 0.05. Predictions (not a gate): T-PTY-1 3.35-3.65; time alone 0.33-0.43; company gained per solitary hour 0.75-1.0; pair together after 60 min 0.66-0.74; T-PTY-4 0.38-0.47; T-RNG-4 2.6-3.1 km; T-ACT-1 0.40-0.43, T-ACT-2 0.20-0.24; adult hunger +0.00 to +0.03; lone animals approaching a pant-hoot heard 15-35%; own-move partings on a trip to water 15-30%; T-PTY-2 patch R² unchanged 0.00-0.03; T-FOOD-6 unchanged 6.5-8.5 d. Also reported untuned: C13e rows, T-PTY-3, truth patrol reads. Conflict noted: T-PTY-4 (held out, compromised, 0.51 vs 0.15-0.45) moves toward its band with more cohesion; it is not read by the fit and is reported before and after",
+   "reason": "after departPersist, fusion is the limiting rate (a solitary animal answers one community pant-hoot in fifteen) and two thirds of own-move partings are trips to water or to callers, which departPersist does not cover",
+   "targets": [
+    "T-PTY-1",
+    "T-PTY-2",
+    "T-PTY-3",
+    "T-PTY-4",
+    "T-FOOD-6",
+    "T-RNG-4",
+    "T-ACT-1",
+    "T-ACT-2",
+    "T-ACT-3",
+    "T-ACT-4"
+   ],
+   "verdicts": "T-PTY-1 fitted here (already labelled tuned); held-out rows untuned; no value yet",
+   "class": "pre-registration"
+  }
+ ]
+}
