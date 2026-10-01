@@ -13663,7 +13663,7 @@
    "symbol": "P.nestLightDecide",
    "file": "src/sim/rg.ts",
    "integer": true,
-   "notes": "Stage E2b switch (docs/staging/e2b-prereg.md §7, iteration 2): in changing light (0 < daylight < 1) a rules-driven animal in its own finished nest re-decides at the end of every nest bout; the intention gate does not keep a nest intention across bouts while the light changes (the 30-min rgMaxAgeH and the period boundaries otherwise set the dawn departure). No parameter. 0 = E2a, bit-identical. Ablation switch."
+   "notes": "Stage E2b switch (docs/staging/e2b-prereg.md §7, iterations 2–3): while the light rises (0 < daylight < 1 and brightening, the change of daylight over the last tick, > 0) a rules-driven animal in its own finished nest re-decides at the end of every nest bout; the intention gate does not keep a nest intention across those bouts (the 30-min rgMaxAgeH and the period boundaries otherwise set the dawn departure). Falling light is not a reason to reconsider (iteration 2 re-decided at dusk too: animals left finished nests and built others). No parameter. 0 = E2a, bit-identical. Ablation switch."
   },
   {
    "id": "nestMorningDaylightHigh",

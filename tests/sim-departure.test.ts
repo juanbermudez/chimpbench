@@ -142,14 +142,19 @@ test('nurseWake on the full stack: feeds wake mothers at night, the trickle of a
   assert.ok(woken < 0.3 * motherNightTicks, `woken ${woken} of ${motherNightTicks} mother-night ticks`);
 });
 
-test('nestLightDecide: in changing light the gate re-draws a nest intention at every bout end; off, never', () => {
+test('nestLightDecide: while the light rises the gate re-draws a nest intention at every bout end; never at dusk; off, never', () => {
   for (const on of [0, 1]) {
     const w = createWorld(48, { profile: 'field', params: { ...R, nestLightDecide: on } });
-    resetRgTally(true);
-    run(w, 5760);
-    const n = rgTally.why.light ?? 0;
+    let n = 0, dusk = 0;
+    for (let i = 0; i < 5760; i++) {
+      resetRgTally(true);
+      tickWorld(w);
+      const k = rgTally.why.light ?? 0;
+      n += k; if (w.hour > 12) dusk += k;
+    }
     resetRgTally(false);
     if (on) assert.ok(n > 50, `light re-draws ${n}`); else assert.equal(n, 0);
+    assert.equal(dusk, 0, 'no light re-draws while the light falls');
   }
   const p = { ...R, nestLightDecide: 1 };
   assert.equal(worldHash(run(createWorld(7, { profile: 'field', params: p }), 2000)), worldHash(run(createWorld(7, { profile: 'field', params: p }), 2000)));
