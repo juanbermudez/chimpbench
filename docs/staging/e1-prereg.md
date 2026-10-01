@@ -164,3 +164,63 @@ Quick check, all rows (30 days, 2 seeds; noisy): fitted pass 8 → 6, fail 8 →
 - **Expected.** Infants of 0.5–2 y: milk up to 307 against a demand of 309, so about in balance. Infants of 2–5 y: 307 of milk + about 180 of their own against 492, so close to balance with a high appetite. Both are **at the margin**: whether weanlings hold their reserves then depends on the assumed yield (human, scaled by mass^0.75) and on C8's self-feeding ramp. Mothers: milk cost up to 384 kcal/day, reserves a little below other females at every infant age.
 - **Run.** 30-day burn-in + 60 days (the largest allowed), seeds 48 and 7, both arms, to see the infants' reserve trend.
 - **If infants still lose reserves steadily:** the limit stays in the code, the result is reported as not viable under the kill criterion, and the open question is handed to E2 and to the self-feeding ramp. No input is moved to rescue them.
+
+**Iteration 3 result** (seeds 48 and 7, days 30–90, both arms; `base-60.*`, `it3-60.*`).
+
+Energy budget, kcal per day (sim truth):
+
+| Class | In | Out | Resting | Activity | Walk | Climb | Carry | Gestation | Growth | Milk | Eating min | Ground km | Daylight hunger | Reserves ÷ store | Condition |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Adult male | 1,328 | 1,334 | 1,092 | 146 | 71 | 25 | 0 | 0 | 0 | 0 | 145 | 1.98 | 0.15 | +0.060 | 0.74 |
+| Female, not pregnant or lactating | 1,108 | 1,112 | 926 | 124 | 45 | 17 | 0 | 0 | 0 | 0 | 138 | 1.56 | 0.18 | +0.052 | 0.74 |
+| Female, pregnant | 1,205 | 1,207 | 926 | 124 | 53 | 19 | 0 | 85 | 0 | 0 | 148 | 1.84 | 0.17 | +0.054 | 0.74 |
+| Female, lactating | 1,472 | 1,497 | 926 | 126 | 44 | 22 | 9 | 0 | 0 | 370 | 165 | 1.46 | 0.36 | −0.012 | 0.69 |
+| … youngest infant 0.5–2 y | 1,461 | 1,488 | 926 | 126 | 48 | 24 | 9 | 0 | 0 | 354 | 174 | 1.60 | 0.30 | +0.007 | 0.70 |
+| … youngest infant ≥ 2 y | 1,482 | 1,504 | 926 | 125 | 40 | 20 | 10 | 0 | 0 | 383 | 158 | 1.34 | 0.41 | −0.029 | 0.68 |
+| Juvenile 5–12 y | 958 | 965 | 764 | 100 | 52 | 18 | 0 | 0 | 30 | 0 | 109 | 2.12 | 0.23 | +0.034 | 0.72 |
+| Infant 2–5 y | 460 (306 milk) | 490 | 395 | 51 | 4 | 4 | 0 | 0 | 36 | 0 | 71 | 0.38 | 0.56 | −0.10 → −0.26 | 0.58 |
+| Infant 0.5–2 y | 292 (283 milk) | 308 | 240 | 30 | 1 | 1 | 0 | 0 | 36 | 0 | 7 | 0.18 | 0.38 | −0.04 → −0.12 (40 days) | 0.64 |
+
+Births 0, deaths 1 (an adult male, illness), 98 → 97 living; no starvation death in 60 days. Baseline: births 0, deaths 0.
+
+Scorecard rows registered in §4 (mean of 2 seeds, 60 days; before → after):
+
+| Row | Band | Before | After | Verdict |
+| --- | --- | --- | --- | --- |
+| T-ACT-1 feeding share | 0.33–0.50 | 0.425 | 0.248 | pass → fail |
+| T-ACT-2 travel share | 0.12–0.25 | 0.188 | 0.141 | pass → pass |
+| T-ACT-3 grooming share | 0.08–0.18 | 0.126 | 0.211 | pass → fail |
+| T-ACT-4 rest share | 0.30–0.47 | 0.330 | 0.568 | pass → fail |
+| T-ACT-5 sex and reproductive-state differences (held out) | male − female feeding ≤ 0.05; lactating travel less | −0.051 | −0.014 | fail → pass |
+| T-RNG-4 male day range | 1.5–3.5 km | 2.68 | 1.80 | fail → fail (interval) |
+| T-RNG-5 lactating ÷ male day range (held out) | 0.3–0.6 | 0.63 | 0.81 | fail → fail, worse |
+| T-FOOD-2 fruit share of feeding | 0.60–0.78 | 0.90 | 0.75 | fail → pass |
+| T-FOOD-4 trees per day (held out) | 4–15 | 5.4 | 3.0 | pass → fail |
+| T-PTY-1 party size | 3–9 | 2.6 | 3.3 | fail → pass |
+| T-FOOD-3, T-DEM-10, 12, 13, 14, 19, 20 | — | — | — | not scorable in 60 days |
+| Daily intake, adult females (T-ENE-1, e-sources band 1,900–3,100) | 2,479 ± 858 kcal | — | 1,108–1,472 | miss, low |
+| Feeding minutes, adult females (T-ENE-2, band 250–370) | 309 ± 85 min | 267–313 (in band; the timers were tuned to it) | 138–174 | miss, low |
+
+All rows: fitted pass 7 → 6, fail 9 → 8; held-out pass 7 → 5, fail 15 → 13. The held-out gain of the 30-day check did not hold at 60 days; neither run can establish a held-out change.
+
+Baseline, same window (`base-60-diag.txt`): lactating females' condition 0.47 and daylight hunger 0.53 (0.43 and 0.58 with an infant of 2 y or more) against 0.63 and 0.35 for other adult females; they eat 291 min a day and walk 1.7 km against 267 min and 2.5 km.
+
+**The lactating-female problem, named.** It was the food conversion, not the lactation term.
+- Under the timers a day costs an adult female about 0.97 hunger units (0.06/h awake, 0.022/h asleep). The ledger puts the same day at 1,112 kcal. Ripe fruit removes 0.242 hunger per feeding hour (`fruitIntakePerH` × `fruitHungerFactor`), which is therefore worth about 280 kcal/h, or **4.6 kcal per feeding minute, against 9.9–12.5 measured**. Fallback foods come out at 2.5 against 4.2.
+- That conversion was set so that chimpanzees feed for about half the day. It leaves no slack: a female without an infant must eat 4 h at the full rate, and in practice eats 4.5 h.
+- The lactation term adds 9% (infant of 2 y or more, with the C8c taper) to 30% (infant under 0.5 y). Mothers of the *older* infants are the hungriest in the baseline, where the term is smallest. What they lack is time at food: the core-area cost keeps them within 1.4 km a day, on poorer crowns, and they already feed 4.6–5.2 h.
+- With food at its measured energy, a nursing mother's 1,500 kcal take 165 min. The time squeeze is gone, so the same core-area cost no longer starves her.
+- The caveat is the finding of this stage: if wild females really eat 2,479 kcal in 309 min, they are as short of time as the timer model's mothers were.
+
+**Reading.**
+- *Adults.* The balance closes within 0.5% for every adult class. Reserves sit 5–6% above the set point for animals without dependants and 1–3% below it for nursing mothers, whose milk cost is now 354–383 kcal/day at every infant age (the yield limit ÷ 0.8) instead of rising to 524.
+- *Lactation time course.* A deficit relative to other females through the whole of lactation, slightly larger with an older infant. Direction right (mothers below other females), time course not (no recovery in year 2). The recovery needs infants to take solid food earlier and faster than C8's ramp lets them.
+- *Infants.* With milk limited to the daily yield, infants of 0.5–5 y run a deficit of 16–30 kcal/day and lose 0.2–0.3% of their reserve a day. No death in 60 days, but the trend is steady, so under the registered rule this variant is **not shown viable**; a run of a year or more (the integrator's) would show whether weanlings starve. Three facts produce it: (1) an infant under 1.2 y cannot feed itself at all while its demand reaches the yield (308 against 307 kcal/day) near 1 y; (2) under 5 y the self-feeding ramp × 0.4 gives 2–3 kcal per feeding minute; (3) an infant feeds only while its mother does, and she now feeds 165 min a day instead of about 270.
+- *Not done, on purpose:* the yield, the ramp, the under-5 factor and the nest rule were left alone. Without the yield limit (`ledgerMilkYieldCoef` ≥ 1,000, iteration 1) infants hold their reserves and mothers supply up to 419 kcal/day of milk, more than the human-scaled yield.
+
+**Stop.** Three iterations on the milk question; by the working rule the next step is a different angle, not a fourth variant. Candidates, in order:
+1. Body mass as state: growth is paid only out of a surplus, so an underfed infant grows more slowly instead of burning its reserve (growth faltering). The 36 kcal/day of growth is the size of the infants' deficit. It would also give T-DEM-19 and T-DEM-20 a physical lean-mass variable.
+2. E2: infants nurse at night (then the gland store, about 11 h in humans, can return).
+3. The self-feeding ramp and the under-5 intake factor (C8 design values on the timer scale) re-derived in kcal.
+
+**Kill criterion.** Viability is not established (infant reserves), fitted rows are worse where predicted (T-ACT-1, 3, 4), held-out rows are not better. The switch stays off.

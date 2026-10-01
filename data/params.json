@@ -11682,7 +11682,7 @@
    "clock": "eco",
    "symbol": "energyTick",
    "file": "src/sim/energy.ts",
-   "notes": "Hours of milk synthesis a mother can hold for her infant. 24 = only the daily yield limits milk, whenever it is drunk (E1 iteration 3). A real gland holds less and stops synthesis when full, but no source gives its capacity, and the sim's infants cannot nurse at night (a clock rule, stage E2), so a smaller value would take away a quarter of the yield for a reason that is not physiology."
+   "notes": "Hours of milk synthesis a mother can hold for her infant. 24 = only the daily yield limits milk, whenever it is drunk (E1 iteration 3). A real gland holds less and stops synthesis when full (humans: about 0.46 of the daily yield, 11 h; Kent et al. 1999, abstract, received after iteration 3 was registered), but the sim's infants cannot nurse at night (a clock rule, stage E2), so a smaller value takes yield away for a reason that is not physiology (6 h: a quarter of it, iteration 2)."
   },
   {
    "id": "ledgerMilkYieldCoef",
@@ -11704,7 +11704,7 @@
    "clock": "eco",
    "symbol": "energyTick",
    "file": "src/sim/energy.ts",
-   "notes": "Milk energy a mother can make per day per kg^0.75 of her mass: the human 501 kcal/day (749 g/day x 2.8 kJ/g, Butte & King 2005) at 60 kg; about 307 kcal/day at 31.3 kg. Scaling by mass^0.75 is a design assumption; no chimpanzee milk yield exists. (E1 iteration 2: without it a larger infant simply drank more.) Pending e-sources (not yet in docs/research.md)."
+   "notes": "Milk energy a mother can make per day per kg^0.75 of her mass: the human 501 kcal/day (749 g/day x 2.8 kJ/g, Butte & King 2005) at 60 kg; about 307 kcal/day at 31.3 kg. Milk energy output scales with maternal mass^0.74 +- 0.05 across 47 mammal species (Riek 2021, abstract); the coefficient is the human one and no chimpanzee milk yield exists. A value above about 1,000 removes the limit (iteration 1). (E1 iteration 2: without it a larger infant simply drank more.) Pending e-sources (not yet in docs/research.md)."
   },
   {
    "id": "ledgerPlantShareKcal",
