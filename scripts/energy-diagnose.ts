@@ -5,8 +5,14 @@
 // energy passed out unabsorbed, foregut and hindgut fill, and the share of daylight with a full hindgut.
 // Stage E1c adds a table of unweaned infants by year of age (milk by day and night, own food, growth, mass, daytime
 // nursing and eating shares, reserve change over the window) and their mothers' reserves by the same ages.
+// Stage E1f adds: a 0–0.5 y bin; daytime ticks in the nurse act (nipple contact, the milk-ejection wait included), nursing
+// bouts per daylight hour and their mean length; the milk share of intake and a straight line through it (the indicative
+// nutritional weaning age); the implied own-food rate per eating minute; mothers' daily energy balance (change of reserves
+// per day) by the age of their youngest infant (T-ENE-5's reading); juveniles' growth velocity by sex. --term-births
+// (a scenario for diagnosis, used identically in every arm compared): every female pregnant at the end of the burn-in
+// gives birth at its first slow step, so newborns and their mothers' first months are in the window.
 //
-//   pnpm exec tsx scripts/energy-diagnose.ts [--seeds 48,7] [--burn-in 30] [--days 30] [--profile field] [--params '{"energyLedger":1}'] [--json f.json]
+//   pnpm exec tsx scripts/energy-diagnose.ts [--seeds 48,7] [--burn-in 30] [--days 30] [--profile field] [--params '{"energyLedger":1}'] [--term-births] [--json f.json]
 import { writeFileSync } from 'node:fs';
 import { createWorld, tickWorld } from '../src/simulation';
 import { digestaCaps, energyTap, massOf, reserveCap, gutCap, type EnergyTerm } from '../src/sim/energy';
@@ -16,13 +22,18 @@ import type { Chimp, World } from '../src/types';
 
 const arg = (k: string, d: string) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
 const seeds = arg('seeds', '48,7').split(',').map(Number), burnIn = +arg('burn-in', '30'), days = +arg('days', '30');
-const profile = arg('profile', 'field') as Profile, params = JSON.parse(arg('params', '{}')), jsonOut = arg('json', '');
+const profile = arg('profile', 'field') as Profile, params = JSON.parse(arg('params', '{}')), jsonOut = arg('json', ''), termBirths = process.argv.includes('--term-births');
 const DAY = 5760, TERMS: EnergyTerm[] = ['rest', 'activity', 'walk', 'climb', 'carry', 'pregnancy', 'growth', 'milk', 'digestion'];
 // stage E1c: unweaned infants by year of age, and their mothers by the same ages
-const BINS = ['0–1 y', '1–2 y', '2–3 y', '3–4 y', '4–5 y', '≥ 5 y'] as const;
-const binOf = (age: number) => BINS[Math.min(5, Math.floor(age))];
-interface Inf { ticks: number; dayTicks: number; milkDay: number; milkNight: number; kin: number; growth: number; out: number; nurseDay: number; eatDay: number; res: number; kg: number; mothers: number; motherRes: number; motherMilkCost: number }
-const blankInf = (): Inf => ({ ticks: 0, dayTicks: 0, milkDay: 0, milkNight: 0, kin: 0, growth: 0, out: 0, nurseDay: 0, eatDay: 0, res: 0, kg: 0, mothers: 0, motherRes: 0, motherMilkCost: 0 });
+const BINS = ['0–0.5 y', '0.5–1 y', '1–2 y', '2–3 y', '3–4 y', '4–5 y', '≥ 5 y'] as const;
+const MID: Record<string, number> = { '0–0.5 y': 0.25, '0.5–1 y': 0.75, '1–2 y': 1.5, '2–3 y': 2.5, '3–4 y': 3.5, '4–5 y': 4.5, '≥ 5 y': 5.5 };
+const binOf = (age: number) => age < 0.5 ? BINS[0] : age < 1 ? BINS[1] : BINS[Math.min(6, Math.floor(age) + 1)];
+interface Inf { ticks: number; dayTicks: number; milkDay: number; milkNight: number; kin: number; growth: number; out: number; nurseDay: number; eatDay: number; res: number; kg: number; mothers: number; motherRes: number; motherMilkCost: number;
+  /** Stage E1f: daylight ticks in the nurse act; nurse bouts started by day; mothers' daily balance (Δ reserves, kcal and ÷ store) and mother-days. */
+  actDay: number; bouts: number; mBal: number; mBalRel: number; mDays: number }
+const blankInf = (): Inf => ({ ticks: 0, dayTicks: 0, milkDay: 0, milkNight: 0, kin: 0, growth: 0, out: 0, nurseDay: 0, eatDay: 0, res: 0, kg: 0, mothers: 0, motherRes: 0, motherMilkCost: 0, actDay: 0, bouts: 0, mBal: 0, mBalRel: 0, mDays: 0 });
+/** Stage E1f: juveniles' (weaned, under 12 y) mass at the window ends, by sex. */
+const juvs: { seed: number; id: number; sex: string; age0: number; kg0: number; kg1: number; days: number }[] = [];
 const inf = Object.fromEntries(BINS.map(b => [b, blankInf()])) as Record<string, Inf>;
 /** Per infant over the window: age, mass and reserves (÷ store) at the start and end, and its mother's mean reserves. */
 const dyads: { seed: number; id: number; age0: number; kg0: number; kg1: number; res0: number; res1: number; days: number; mRes: number; mN: number; milk: number }[] = [];
@@ -65,6 +76,8 @@ for (const seed of seeds) {
   // ledger undercounts them by that factor, so its budgets would be wrong (docs/simulation.md, energy ledger)
   if (on && w.ageRate > 1) throw new Error(`energy-diagnose: the energy ledger is not valid at ageRate ${w.ageRate} (> 1); run at natural aging`);
   for (let i = 0; i < burnIn * DAY; i++) tickWorld(w);
+  // stage E1f scenario: pregnancies at the end of the burn-in reach term now (birth at the next slow step)
+  if (termBirths) for (const c of w.chimps) if (c.alive && c.pregnancy > 0) c.pregnancy = Math.max(c.pregnancy, ix(c).gestation - 1e-3);
   livingStart += w.chimps.filter(c => c.alive).length;
   const births0 = w.stats.births, dead0 = new Set(w.chimps.filter(c => !c.alive).map(c => c.id));
   let young = youngest(w);
@@ -89,6 +102,9 @@ for (const seed of seeds) {
   refreshBins();
   const start = new Map<number, { age0: number; kg0: number; res0: number; mRes: number; mN: number }>();
   for (const id of binNow.keys()) { const c = w.chimps.find(k => k.id === id)!, L = ix(c).en; start.set(id, { age0: c.age, kg0: massOf(c, P), res0: L ? L.res / reserveCap(c, P) : 0, mRes: 0, mN: 0 }); }
+  const juv0 = new Map<number, { age0: number; kg0: number }>();
+  for (const c of w.chimps) if (c.alive && ix(c).weaned && c.age < 12) juv0.set(c.id, { age0: c.age, kg0: massOf(c, P) });
+  const prevAct = new Map<number, string>(), resAtDay = new Map<number, number>();
   for (let i = 0; i < days * DAY; i++) {
     light = w.environment.daylight > 0.1;
     tickWorld(w);
@@ -130,7 +146,11 @@ for (const seed of seeds) {
     for (const [id, b] of binNow) {
       const c = w.chimps.find(k => k.id === id)!;
       if (!c.alive) continue;
+      if (!start.has(id) && ix(c).en) { const L0 = ix(c).en!; start.set(id, { age0: c.age, kg0: massOf(c, P), res0: L0.res / reserveCap(c, P), mRes: 0, mN: 0 }); }
       const B = inf[b], L = ix(c).en, m = motherOf.get(id), milk = milkTick.get(id) ?? 0;
+      // stage E1f: nipple contact by day (the nurse act, the milk-ejection wait included) and bouts started by day
+      const was = prevAct.get(id); prevAct.set(id, c.action);
+      if (light && c.action === 'nurse') { B.actDay++; if (was !== 'nurse') B.bouts++; }
       B.ticks++; B.kg += massOf(c, P);
       const din = L ? L.in - (prevInfIn.get(id) ?? L.in) : 0;
       if (L) { B.res += L.res / reserveCap(c, P); B.kin += din; prevInfIn.set(id, L.in); }
@@ -144,6 +164,16 @@ for (const seed of seeds) {
       if (m && m.alive && ix(m).en) { const r = ix(m).en!.res / reserveCap(m, P); B.mothers++; B.motherRes += r; const st = start.get(id); if (st) { st.mRes += r; st.mN++; } }
     }
     milkTick.clear();
+    // stage E1f: each mother's change of reserves over the day, binned by her youngest unweaned infant's age (T-ENE-5)
+    if (on && i % DAY === DAY - 1) {
+      const yg = youngest(w);
+      for (const m of w.chimps) {
+        if (!m.alive || m.sex !== 'female' || !ix(m).en) { resAtDay.delete(m.id); continue; }
+        const r = ix(m).en!.res, a = yg.get(m.id), prev = resAtDay.get(m.id);
+        if (a !== undefined && prev !== undefined) { const B = inf[binOf(a)]; B.mBal += r - prev; B.mBalRel += (r - prev) / reserveCap(m, P); B.mDays++; }
+        resAtDay.set(m.id, r);
+      }
+    }
     if (on && i % DAY === DAY / 2) for (const n of ['adult male', 'female, other', 'female, lactating', 'juvenile 5–12 y', 'infant 2–5 y', 'infant 0.5–2 y', 'infant < 0.5 y'] as Cls[]) {
       let s = 0, m = 0;
       for (const c of w.chimps) if (c.alive && cls.get(c.id)?.includes(n) && ix(c).en) { s += ix(c).en!.res / reserveCap(c, P); m++; }
@@ -151,11 +181,13 @@ for (const seed of seeds) {
     }
   }
   energyTap.fn = null;
+  for (const [id, j] of juv0) { const c = w.chimps.find(k => k.id === id)!; if (c.alive) juvs.push({ seed, id, sex: c.sex, age0: j.age0, kg0: j.kg0, kg1: massOf(c, P), days }); }
   for (const [id, st] of start) {
     const c = w.chimps.find(k => k.id === id)!;
     if (!c.alive) continue;
     const L = ix(c).en;
-    dyads.push({ seed, id, age0: st.age0, kg0: st.kg0, kg1: massOf(c, P), res0: st.res0, res1: L ? L.res / reserveCap(c, P) : 0, days, mRes: st.mN ? st.mRes / st.mN : NaN, mN: st.mN, milk: (milkOf.get(id) ?? 0) / days });
+    const dd = Math.max(1, (c.age - st.age0) * 365.25 / Math.max(1e-9, w.ageRate)); // days observed (newborns enter late)
+    dyads.push({ seed, id, age0: st.age0, kg0: st.kg0, kg1: massOf(c, P), res0: st.res0, res1: L ? L.res / reserveCap(c, P) : 0, days: dd, mRes: st.mN ? st.mRes / st.mN : NaN, mN: st.mN, milk: (milkOf.get(id) ?? 0) / dd });
   }
   births += w.stats.births - births0;
   livingEnd += w.chimps.filter(c => c.alive).length;
@@ -189,13 +221,30 @@ console.log(`deaths by class: ${JSON.stringify(deathsByClass)}`);
 console.log('\nunweaned infants by year of age (kcal per infant-day; shares of daylight ticks; growth kg per year from mass at the window ends)');
 console.log('| age | infant-days | milk day | milk night | own food | kcal out | growth kcal | daytime nursing % | daytime eating % | mass kg | reserves ÷ store | Δ reserves over window | growth kg/y | mother reserves ÷ store | mother milk cost |');
 console.log('| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+const weanPts: [number, number][] = [];
 for (const b of BINS) {
   const B = inf[b], d = B.ticks / DAY; if (!d) continue;
   const ds = dyads.filter(x => binOf(x.age0) === b), dres = ds.length ? ds.reduce((s, x) => s + x.res1 - x.res0, 0) / ds.length : NaN, gv = ds.length ? ds.reduce((s, x) => s + (x.kg1 - x.kg0) / (x.days / 365.25), 0) / ds.length : NaN;
   const milk = B.milkDay + B.milkNight;
   console.log(`| ${b} | ${f(d)} | ${f(B.milkDay / d)} | ${f(B.milkNight / d)} | ${f((B.kin - milk) / d)} | ${f(B.out / d)} | ${f(B.growth / d)} | ${f(100 * B.nurseDay / Math.max(1, B.dayTicks), 1)} | ${f(100 * B.eatDay / Math.max(1, B.dayTicks), 1)} | ${f(B.kg / B.ticks, 1)} | ${f(B.res / B.ticks, 3)} | ${f(dres, 3)} (n ${ds.length}) | ${f(gv, 2)} | ${f(B.motherRes / Math.max(1, B.mothers), 3)} | ${f(B.motherMilkCost / d)} |`);
 }
+console.log('\nstage E1f: nursing, intake and mothers\' balance by infant age (daylight shares; bouts per daylight hour; own-food kcal per eating minute)');
+console.log('| age | nurse act % of daylight | bouts per daylight h | mean bout min | milk share of intake | own food kcal per eating min | mothers\' balance kcal/d | mothers\' balance ÷ store per d | mother-days |');
+console.log('| --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+for (const b of BINS) {
+  const B = inf[b], d = B.ticks / DAY; if (!d && !B.mDays) continue;
+  const milk = B.milkDay + B.milkNight, own = B.kin - milk, share = B.kin > 0 ? milk / B.kin : NaN, dayH = B.dayTicks / 240;
+  if (b !== '0–0.5 y' && b !== '0.5–1 y' && Number.isFinite(share)) weanPts.push([MID[b], share]);
+  console.log(`| ${b} | ${f(100 * B.actDay / Math.max(1, B.dayTicks), 1)} | ${f(dayH ? B.bouts / dayH : NaN, 2)} | ${f(B.bouts ? B.actDay / 4 / B.bouts : NaN, 1)} | ${f(share, 2)} | ${f(B.eatDay ? own / (B.eatDay / 4) : NaN, 2)} | ${f(B.mDays ? B.mBal / B.mDays : NaN)} | ${f(B.mDays ? B.mBalRel / B.mDays : NaN, 4)} | ${B.mDays} |`);
+}
+if (weanPts.length >= 2) {
+  const n = weanPts.length, mx = weanPts.reduce((s, p) => s + p[0], 0) / n, my = weanPts.reduce((s, p) => s + p[1], 0) / n;
+  const k = weanPts.reduce((s, p) => s + (p[0] - mx) * (p[1] - my), 0) / weanPts.reduce((s, p) => s + (p[0] - mx) ** 2, 0);
+  console.log(`milk share of intake against age (bins ≥ 1 y): slope ${f(k, 3)} per y; reaches zero at ${f(mx - my / k, 1)} y (indicative nutritional weaning)`);
+}
+const jv = (sex: string, lo: number, hi: number) => { const j = juvs.filter(x => x.sex === sex && x.age0 >= lo && x.age0 < hi); return j.length ? `${f(j.reduce((s, x) => s + (x.kg1 - x.kg0) / (x.days / 365.25), 0) / j.length, 2)} kg/y (n ${j.length}, mean ${f(j.reduce((s, x) => s + x.kg0, 0) / j.length, 1)} kg at ${f(j.reduce((s, x) => s + x.age0, 0) / j.length, 1)} y)` : '—'; };
+console.log(`juvenile growth velocity, weaned to 12 y: female 4–8 y ${jv('female', 4, 8)}, 8–12 y ${jv('female', 8, 12)}; male 4–8 y ${jv('male', 4, 8)}, 8–12 y ${jv('male', 8, 12)}`);
 console.log('dyads (seed, id, age at start, kg start → end, reserves start → end, milk kcal/d, mother mean reserves):');
 for (const x of dyads) console.log(`  ${x.seed} ${x.id} ${x.age0.toFixed(2)} y  ${x.kg0.toFixed(2)} → ${x.kg1.toFixed(2)} kg  ${x.res0.toFixed(3)} → ${x.res1.toFixed(3)}  milk ${x.milk.toFixed(0)}  mother ${x.mRes.toFixed(3)}`);
 for (const [n, t] of Object.entries(traj)) console.log(`reserves ÷ store, ${n}, every 5 d: ${t.filter((_, i) => i % 5 === 0).map(v => f(v, 3)).join(' ')}`);
-if (jsonOut) writeFileSync(jsonOut, JSON.stringify({ profile, seeds, burnIn, days, params, rows, births, deaths, deathsByClass, living: [livingStart, livingEnd], traj, infants: inf, dyads }, null, 1));
+if (jsonOut) writeFileSync(jsonOut, JSON.stringify({ profile, seeds, burnIn, days, params, termBirths, rows, births, deaths, deathsByClass, living: [livingStart, livingEnd], traj, infants: inf, dyads, juvs }, null, 1));

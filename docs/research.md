@@ -1645,3 +1645,22 @@ Evidence pass for stage E2b (nest departure and the active day; `docs/staging/e2
 - janmaat2014 and batesByrne2009 are already listed (docs/realism-design.md source table); the entries above add findings from their full texts.
 
 **Not verified:** the janmaat2014 supplement (predictor scaling, ripe-fruit presence durations, Fig. S5 leopard attack rates); Jenny & Zuberbühler 2005 (leopard hunting times); any measurement of chimpanzee mothers waking at night to nurse; a chimpanzee visual threshold for travel in low light (Matsuzawa 1990 measured acuity, about 1.5, in daylight only; not read).
+
+### E.18 Addendum: milk-ejection latency and the growth requirement (stage E1f, 1 October 2026)
+
+Evidence pass of the stage E1f implementer (`docs/staging/e1f-prereg.md`), 1 October 2026, for the one nursing rule (a fixed time cost per bout) and the growth requirement. Bibliographic data checked against Crossref and Europe PMC on that day. Tags as in this Track E section.
+
+- **Milk-ejection latency, women** [gardner2015] (FT, PMC4520208) [M for humans; cross-species].
+  - 12 mothers with normal milk production (502–1,356 mL/day); one major milk duct imaged by ultrasound through a whole breastfeed and a 15-min pumping session.
+  - Time to the first increase in duct diameter (the first milk ejection): 53.6 ± 30.2 s when breastfeeding, 73.3 ± 22.0 s when pumping (P = 0.057). Duration of the first milk ejection 105 ± 29 s (breastfeeding).
+  - The discussion cites other methods giving 73–92 s to milk ejection with a pump under relaxed conditions.
+  - Use in E1f: the fixed time a nursing bout costs before milk flows (`ledgerLetDownS` 54 s), *assumed* for chimpanzees. No chimpanzee or ape value was found.
+- **Several milk ejections per feed, women** [ramsay2004] (Abs) [M for humans]. Ultrasound of a milk duct in the unsuckled breast: 2.5 ± 1.5 (SD) increases and decreases in duct diameter per breastfeed (n = 62); duct diameter stable between feeds; milk intake rose with the number of milk ejections (r² = 0.365, n = 57). Use: context only. The model lets milk flow after one latency per bout and stop when the store is empty, which is coarser than repeated ejections.
+- **The growth requirement, humans** [fao2004], section 4 (FT extract of 4.3–4.4) [H] human. "Energy needs for growth have two components: 1) the energy used to synthesize growing tissues; and 2) the energy deposited in those tissues"; "The sum of energy deposition and TEE is the mean daily energy requirement". Use in E1f: mechanism citation for an appetite that anticipates the cost of growth (`ledgerGrowPotential` with `ledgerDrive`). No number is taken from it.
+
+**Sources:**
+- *new* gardner2015: Gardner H, Kent JC, Lai CT, Mitoulas LR, Cregan MD, Hartmann PE, Geddes DT 2015. Milk ejection patterns: an intra-individual comparison of breastfeeding and pumping. *BMC Pregnancy and Childbirth* 15:156. [doi:10.1186/s12884-015-0583-3](https://doi.org/10.1186/s12884-015-0583-3) (FT, PMC4520208).
+- *new* ramsay2004: Ramsay DT, Kent JC, Owens RA, Hartmann PE 2004. Ultrasound imaging of milk ejection in the breast of lactating women. *Pediatrics* 113(2):361–367. [doi:10.1542/peds.113.2.361](https://doi.org/10.1542/peds.113.2.361) (Abs).
+- fao2004 is already listed (section 7); [section 4, Energy requirements of children and adolescents](https://www.fao.org/4/y5686e/y5686e06.htm) is added.
+
+**Not verified:** any chimpanzee value for the milk-ejection latency, the milk transfer rate per suckling minute, or the number of milk ejections per bout.
