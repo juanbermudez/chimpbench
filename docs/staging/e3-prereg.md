@@ -321,3 +321,119 @@ fails; held-out band distance clearly worse (beyond the seed noise E0 reported, 
 on by default only under Track E's keep rule: viability passes, held-out distance does not rise, and the prescription
 count falls; the decision is provisional under the 3-month cap and needs `e-bench --confirm` (5 seeds) before any
 default changes. No constant is tuned to any row; if R + C or R + A misses, the miss is reported, not fixed.
+
+### Iteration 2, band distance (re-scored after the merge, no new simulation)
+
+`scripts/e-bench.ts --rescore` of the iteration 1–2 scorecards (`artifacts/validation/e3/rescore/`), change against the
+baseline on rows scored in both runs. T-HUN-4 ("more males, more hunting", an odds ratio from a handful of hunts in
+2 × 30 days) swings from 1.0 to 14 between arms, so the held-out change is also given without it.
+
+| Arm | fitted (common rows) | held-out (common rows) | held-out without T-HUN-4 | prescriptions |
+| --- | --- | --- | --- | --- |
+| baseline | 2.98 | 4.76 | — | 138 |
+| choice (it 1) | −0.67 | −2.05 | −1.51 | 137 |
+| choice (it 2) | −0.09 | +8.00 | −1.43 | 137 |
+| persist | +0.55 | −2.51 | −0.89 | 137 |
+| switchCost | −0.79 | −2.11 | −1.51 | 136 |
+| all (it 1) | −0.26 | +0.95 | −0.34 | 134 |
+| all (it 2) | −0.16 | +1.31 | +2.87 | 134 |
+
+Inside E0's seed noise (up to 0.8 on a single row) except T-HUN-4 itself. The iteration 2 verdicts stand.
+
+### Iteration 3 results (the physiological stack), 1 October 2026
+
+Run as registered (`artifacts/validation/e3/run3.sh`): field, seeds 48 and 7, 30-day burn-in + 30 days, `--workers 2`.
+Decision log `check-3.*`; e-bench `eb-{ref,refChoice,refAll}.*` and comparisons `eb-cmp-*`; movement `mv-ref*.txt`; energy
+budget `en-*.txt` (`scripts/energy-diagnose.ts`, sim truth, added to read the feeding result). Seed means.
+
+| Row | timer baseline (it 2) | **R** | **R + C** | **R + A** |
+| --- | --- | --- | --- | --- |
+| e-bench fitted distance | 2.98 | 4.06 | 4.87 (+0.82) | 7.44 (+3.38) |
+| e-bench held-out distance (common rows) | 4.76 | 6.23 | 3.07 (−3.87) | 4.71 (−1.51) |
+| held-out change without T-HUN-4 | — | — | −1.09 | +0.14 |
+| prescription count (E3 entries only counted out) | 138 | 138 | 137 | 134 |
+| viability (e-bench): births, deaths, starvation | — | pass: 0, 0, 0 | pass: 0, 0, 0 | pass: 0, 0, 0 |
+| adult / lactating hunger, median | 0.38 / 0.57 | 0.165 / 0.369 | 0.132 / 0.336 | 0.072 / 0.128 |
+| infant 2–5 y reserves ÷ store, day 35 → 60 | — | −0.098 → −0.163 | −0.113 → −0.172 | −0.139 → −0.243 |
+| mean U / mean T at draws | 0.69 / 0.164 | 0.30 / 0.164 | 0.30 / 0.283 | 0.28 / 0.340 |
+| draws at U < 0.1 (share of night draws) | 0% | 10.5% (48%) | 11.8% (47%) | 10.1% (0%) |
+| top option taken | 0.710 | 0.694 | 0.654 | 0.601 |
+| decisions per chimp-day | 74.2 | 87.0 | 88.1 | 100.6 |
+| kept by the gate | 0.342 | 0.408 | 0.410 | 0.158 |
+| crown bout median / mean (min) | 37.8 / 43.7 | 32.5 / 31.9 | 30.5 / 29.5 | 13.6 / 18.7 |
+| feeding bout median, movement (min) | 38 | 33 | 30 | 14 |
+| crowns per adult-day | 5.24 | 3.03 | 2.94 | 2.99 |
+| eating minutes, adult male / female (no dependants) | — | 151 / 143 | 169 / 162 | 198 / 209 |
+| fruit share of eating, adult male / female | — | 70% / 50% | 54% / 36% | 36% / 10% |
+| male km per day (decision log) | 2.43 | 2.08 | 1.95 | 2.99 |
+| path per hour, movement (m/h; fitted C12) | 165 | 128 | 127 | 170 |
+| party follows per adult-day | 0.83 | 1.16 | 1.40 | 3.63 |
+| daylight shares, sim truth: feed / travel / groom / rest (m; f) | .37/.19/.11/.31; .42/.15/.16/.25 | .22/.17/.22/.34; .23/.13/.27/.33 | .24/.16/.18/.37; .25/.14/.25/.32 | .28/.24/.15/.28; .31/.18/.20/.27 |
+| T-ACT-1 feeding (0.33–0.5) | 0.429 | 0.270 fail | 0.253 fail | 0.317 fail (d 0.08) |
+| T-ACT-2 travel (0.12–0.25) | 0.179 | 0.154 | 0.140 | 0.208 |
+| T-ACT-3 grooming (0.08–0.18) | 0.134 | 0.252 fail | 0.220 fail | 0.203 fail |
+| T-ACT-4 rest incl. grooming (0.30–0.47) | 0.389 | 0.413 | **0.602 fail** | 0.461 |
+| T-PTY-1 party size (3–9) | 2.88 fail | 3.38 | 3.60 | 3.68 |
+| T-RNG-4 male day range (held as fail) | 2.18 | 1.86 | 2.16 | 2.98 |
+| T-FOOD-2 fruit share of feeding (0.60–0.78) | 0.877 fail | 0.655 | 0.606 | **0.325 fail** |
+| T-FOOD-4 trees per day (held-out, 4–15) | 5.43 | 3.13 fail | 3.25 fail | 2.87 fail |
+| T-FOOD-5 nearest-tree share (held-out) | 0.107 fail | 0.087 fail | 0.074 fail | 0.036 fail |
+| T-FOOD-6 revisit interval (held-out) | 5.12 | 4.90 | 5.00 | 5.20 |
+| T-HUN-1 hunts per community-year (5–25) | 18.2 | 44.6 fail | 35.7 | 66.9 fail |
+
+Observer T-ACT-4 is a mean over focal individual-months of at least 1 h; in 2 × 30 days it rests on few of them (R + C:
+0.65 and 0.55 by seed while the sim-truth rest + groom share fell from 0.56–0.59 to 0.55–0.57). The sim-truth shares,
+from every adult every minute of daylight, are the steadier reading of the activity rows here.
+
+**Against the predictions.**
+- *R:* mean U below iteration 2 (yes, 0.30); share of draws at U < 0.1 above 25% (no, 10.5%); "most of them by day"
+  (no: 48% of night draws are at U < 0.1 against 3% of day draws, which bears out iteration 2's guess about where
+  its low-U draws came from). Feeding low and grooming high, as E1 found (yes); rest in band (the midday literal's
+  loss offsets E1's sated rest).
+- *R + C:* U as R (yes); T above 0.41 (no, 0.28: fewer near-zero draws by day than in iteration 2, because hunger is
+  low but rarely nil and loneliness counts with a partner); top share down (yes, 0.694 → 0.654); kept, decisions and
+  bout length ≈ (yes); crowns per day up (no, ≈); feeding up (sim truth yes, +0.02 and eating +18–19 min; observer no);
+  travel and male range up (no: sim truth ≈ or down, the observer's T-RNG-4 up); grooming ≈ (no: down, −0.04 males and −0.02
+  females in sim truth, −0.03 observed, toward its band); rest down (sim truth slightly, observer up and out of band); party size down (no, 3.38 → 3.60);
+  hunger ≈ (yes, −0.03).
+- *R + A:* U lower (yes, slightly); T above 0.41 (no, 0.34); top down (yes, 0.601); kept about 0.1 (yes, 0.158;
+  "not-paying" while resting is 11–13% of draws); decisions up (yes, +16%); crown bout median down (yes, 32.5 → 13.6
+  min, as the gut fills); feeding up (yes, 0.22 → 0.30 sim truth, 0.317 observer); travel and male range up (yes,
+  2.08 → 2.99 km); grooming down (yes, toward band); rest down (yes, sim truth 0.56–0.59 → 0.43–0.47); hunger lower
+  (yes, 0.165 → 0.072); nests kept at night (yes: night draws fell from 16% to 1% of all draws).
+- *Not predicted (R + A):* the feeding gained is fallback, not fruit. Fruit share of eating falls from 70% / 50% to 36% /
+  10% (T-FOOD-2 0.655 → 0.325, both seeds, out of band) at the same daily kcal (males 1,346 → 1,401, the rise being
+  walking and climbing). Weaned infants of 2–5 y, who eat only fruit and only where their mother feeds, lose reserves 60% faster
+  (−0.0026 → −0.0042 of the store per day; daylight hunger 0.55 → 0.64). Hunts per community-year rise to 67 and party
+  follows triple.
+
+**Why the fruit share falls (first principles).** Under the ledger, hunger is gut space × appetite, and fruit fills
+0.59–0.74 of the gut per hour, so at a typical daylight hunger of 0.1–0.2 a crown serves 8–20 min. The pay test at
+ratio 1 averages that over the walk (field `walkMps` 0.35 m/s): a crown 200 m away pays 0.31–0.47 × H per hour (by sex and H)
+against 0.30 × H for leaves where the animal stands (fallback yield varies ×0.6–1.3 between cells); at H 0.1 a crown
+beyond 200–250 m, about the median trip in R (245 m), or a shared crop pays less than the leaves. Each decision values only the deficit of the moment; nothing in the
+currency values fruit's energy beyond the current gut space (reserves enter only through appetite). Two things follow.
+`urgencyChoice` draws near-uniformly when sated, so the in-place ground option, always on the menu, is taken more
+often (R + C already: fruit share 70% / 50% → 54% / 36%). `urgencyPersist` then keeps food in place (no walk to
+charge) and ends crown bouts as soon as the gut is full (crown bout 30 → 14 min), after which a crown elsewhere rarely
+out-pays the leaves underfoot.
+
+**Verdicts (iteration 3, provisional under the 3-month cap; nothing goes on by default).**
+- `urgencyChoice` on the stack: **stays off; a candidate for `e-bench --confirm`, conditional on the stack.** Viable;
+  prescription count −1; held-out distance −3.9 on common rows, but −1.1 without T-HUN-4, inside the seed noise E0
+  measured; fitted +0.8 (observer T-ACT-4, T-SOC-9, both on few samples). By Track E's keep rule it passes on the quick
+  check. Its only clear effects are a flatter choice (top share −0.04) and less grooming. The stack itself is off
+  (E1 is a null result), so no default can change on this evidence. Development seeds other than 48 and 7 were not
+  run here (instruction); the 5-seed confirmation is the integrator's.
+- `urgencyPersist` + `urgencySwitchCost` (arm R + A): **stay off.** E-bench's viability passes and held-out distance
+  is flat without T-HUN-4 (+0.14), but a fitted row is lost beyond noise (T-FOOD-2, both seeds), fitted distance rises
+  by 3.4, and the weanlings' energy deficit, already E1's open viability problem, grows by 60%. The persistence rule
+  does exactly what §4 says; on a gut-space currency that is the wrong thing for a frugivore.
+- Iteration 3 changed one thing in code, the stack's relief rates in the pay test and the urgency (no constant); that
+  stays, since with `rhythmSleep` 0 it is inert and with it on it is the only reading consistent with §4.
+
+**Stop.** Three iterations on E3 (rule: at most three per issue). What it shows: urgency-scaled choice is harmless and
+removes one prescription; persistence by drive reduction per hour is only as good as the currency's horizon. Next angle,
+not run here: value food by energy that the animal can still use over the day (gut space plus the reserve deficit,
+i.e. E1b's bulk-limited gut and digestive pause), then retest `urgencyPersist`; and give the nest's darkness value a
+deficit form (safety), which the pay test cannot see today.
