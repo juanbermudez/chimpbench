@@ -226,3 +226,22 @@ test('C13e deciding: bond, alliance, a dominant leader and a hoo raise the join 
   assert.ok(Math.abs(base - s.join(b)!.score - P.joinStayW * 0.5 * q) < 0.0021, `staying at a tree of quality ${q}`);
   assert.ok(base < 1, `joining is not near-automatic (base value ${base})`);
 });
+
+test('C14: a hazard-raised patrol that is the rules\' top pick is taken without a hold or a second draw', async () => {
+  const { candidateMeta, V } = await import('../src/sim/candidates');
+  const { IMPULSE_PATROL } = await import('../src/sim/perception');
+  const w = run(createWorld(48), 1.25); // 12:30, inside the patrol window
+  let checked = 0;
+  for (const m of w.chimps.filter(k => k.alive && k.sex === 'male' && k.age >= 15)) {
+    const copy = structuredClone(w), c = copy.chimps.find(k => k.id === m.id)!, x = ix(c);
+    x.impulse = IMPULSE_PATROL; x.impulseUntil = copy.time + 0.1; c.hunger = 0.3;
+    const list = computeCandidates(copy, c, []);
+    if (!(list[0].action === 'patrol' && candidateMeta.get(list[0])?.v === V.LEAD)) continue;
+    const rng = copy.rng, pick = rgChoice(copy, c, list)!;
+    assert.ok(same(pick, list[0]), 'the lead option is taken');
+    assert.equal(copy.rng, rng, 'no draw');
+    assert.equal(ix(c).rgIntent?.action, 'patrol');
+    checked++;
+  }
+  assert.ok(checked > 0, 'some male has the patrol lead as its top pick');
+});

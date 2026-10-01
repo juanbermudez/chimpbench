@@ -274,8 +274,8 @@ test('moving together: a joined attempt goes at once; after departPersistMaxMin 
 
 test('moving together: departPersist off reproduces the field model before it (hash-identical); on changes the world', async () => {
   const { worldHash } = await import('./fixtures/golden');
-  const run = (params: Record<string, number>) => { const w = createWorld(48, { profile: 'field', params }); for (let i = 0; i < 2880; i++) tickWorld(w); return worldHash(w); };
-  // field seed 48 after 2880 ticks (12 h) on main 9570a3f, before the moving-together stage
-  assert.equal(run({ departPersist: 0 }), '7b610a2b60ecf82e');
-  assert.notEqual(run({}), '7b610a2b60ecf82e');
+  const run = (params: Record<string, number>) => { const w = createWorld(48, { profile: 'field', params }); for (let i = 0; i < 2 * 5760; i++) tickWorld(w); return worldHash(w); };
+  // field seed 48 after 2 days on main aa950b1 (hunting fix and C14 in), before the moving-together stage
+  assert.equal(run({ departPersist: 0 }), '1d85d0d99f46b78c');
+  assert.notEqual(run({}), '1d85d0d99f46b78c');
 });
