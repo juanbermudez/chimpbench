@@ -101,4 +101,6 @@ At most three, each changing the mechanism from first principles, written here b
 
 ## 8. Results
 
-(to be filled after the runs)
+### Run log (each entry written before its run)
+
+- **R0–R2** (1 October 2026, code at ad17eea): R0 was first run (diagnosis and bench) at 2fb334b, after the §1 fixes and before any E4b code existed; its diagnosis is re-run at ad17eea because the diagnosis gained the E4b readouts (pant-hoots by act, T-END-8 in fedurek2016's form, bond-partner grooming around intergroup contact). R1 and R2 as in §5. Outputs in `artifacts/validation/e4b/` (gitignored), one heavy run at a time, `--workers 1`.
