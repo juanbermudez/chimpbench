@@ -99,4 +99,7 @@ The switches stay off, and the result is recorded as a null, if any of these hol
 
 ## 7. Results
 
-(filled in after the runs)
+### Run log (each entry written before its run)
+
+- **R1** (1 October 2026, after merging `track-e` at 5ef6265): baseline and all four switches, `e-bench --quick` and `endocrine-diagnose.ts` (seeds 48, 7; 30 + 30 days). Outputs in `artifacts/validation/e4a/` (gitignored).
+- **R2** (written after R1, before running; no mechanism change): (a) a noise-floor arm: the baseline with `rgTemperature` 0.1641 instead of 0.164, a behaviourally negligible change that only re-draws the trajectory, to show how far rows move by chance in a 30-day window on two seeds; (b) the physiological stack (`energyLedger`, `rhythmSleep`, `rhythmHeat` = 1) without and with the four E4a switches, because the energy deficit is meant to drive stress and the timer hunger of the baseline is not an energy balance. `endocrine-diagnose.ts` gained three genuine readouts (T-END-6 rank half, T-END-8, T-END-12 intergroup half); R1's diagnosis is re-run with them.

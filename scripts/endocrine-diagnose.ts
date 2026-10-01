@@ -45,7 +45,8 @@ for (const seed of seeds) {
     S(`${label} stress before`).add(pre); S(`${label} stress +0`).add(c.stress);
     for (const [name, dt] of [['+5 min', 20], ['+1 h', HOUR], ['+3 h', 3 * HOUR], ['+6 h', 6 * HOUR]] as const) due.push([w.tick + dt, c.id, `${label} stress ${name}`]);
   };
-  let heavy = s.weather.heavy, stormAt = NEVER, seenInter = w.nextId;
+  let heavy = s.weather.heavy, stormAt = NEVER, seenInter = w.nextId, seenCall = w.nextId;
+  const hoots = new Map<number, number>(); // pant-hoots per caller since the last full hour (T-END-8)
   const parous = (f: Chimp) => f.age >= P.endoParousAgeY || ix(f).amenUntil > 0;
   for (let i = 0; i < days * DAY; i++) {
     tickWorld(w);
@@ -54,6 +55,8 @@ for (const seed of seeds) {
     heavy = s.weather.heavy;
     for (let k = w.interactions.length - 1; k >= 0 && w.interactions[k].id >= seenInter; k--) if (w.interactions[k].kind === 'fight') bump('contact fights and hits (interactions)');
     seenInter = w.nextId;
+    for (let k = w.calls.length - 1; k >= 0 && w.calls[k].id >= seenCall; k--) if (w.calls[k].kind === 'pant-hoot') hoots.set(w.calls[k].callerId, (hoots.get(w.calls[k].callerId) ?? 0) + 1);
+    seenCall = w.nextId;
     if (due.length && due[0][0] <= w.tick) { const rest: typeof due = []; for (const d of due) { if (d[0] > w.tick) { rest.push(d); continue; } const c = w.chimps.find(k => k.id === d[1]); if (c && c.alive) S(d[2]).add(c.stress); } due = rest; }
     const hourly = i % HOUR === 0 && day > 0.3;
     for (const c of w.chimps) {
@@ -94,6 +97,14 @@ for (const seed of seeds) {
       const cls = isAdultMale(c) ? (() => { const m = w.chimps.filter(k => k.alive && isAdultMale(k) && k.troopId === c.troopId).sort((a, b) => b.elo - a.elo), r = m.indexOf(c) / Math.max(1, m.length);
         return r < 1 / 3 ? 'adult males, top third' : r < 2 / 3 ? 'adult males, middle' : 'adult males, bottom third'; })() : c.sex === 'female' && c.age >= 15 ? (c.lactating ? 'adult females, lactating' : 'adult females, other') : c.age >= 5 ? 'immatures 5–15 y' : 'infants';
       S(`stress | ${cls}`).add(c.stress);
+      // T-END-6 (rank half, genuine): lactating females by rank among the adult females of their community
+      if (c.sex === 'female' && c.age >= 15 && c.lactating) {
+        const f = w.chimps.filter(k => k.alive && k.sex === 'female' && k.age >= 15 && k.troopId === c.troopId).sort((a, b) => b.elo - a.elo);
+        S(`lactating female stress | ${f.indexOf(c) < f.length / 2 ? 'upper half of female ranks' : 'lower half of female ranks'}`).add(c.stress);
+        S(`lactating female stress | fruit index ${w.environment.fruitIndex < 0.4 ? '< 0.4' : '≥ 0.4'}`).add(c.stress);
+      }
+      // T-END-12 (intergroup half, genuine: intergroup contact is not wired to affiliation): adults with strangers in view or heard in the last hour
+      if (c.age >= 15 && x.affil !== undefined) S(`adult affiliation | ${x.strangers > 0 || time - x.heardAt < 1 ? 'strangers seen or heard in the last hour' : 'no strangers'}`).add(x.affil);
       if (x.affil !== undefined) { S(`affiliation | ${cls}`).add(x.affil); if (c.action !== 'groom') S('affiliation, not grooming (all)').add(x.affil); }
       if (isAdultMale(c)) {
         let swollenParous = false, swollenNulli = false, rival = false;
@@ -105,9 +116,12 @@ for (const seed of seeds) {
         S(`male stress | hierarchy ${(s.unstableUntil[c.troopId] ?? NEVER) > time ? 'unstable' : 'stable'}`).add(c.stress);
         S(`male stress | ${w.hour < 12 ? 'morning' : 'afternoon'}`).add(c.stress);
         if (x.arousal !== undefined) { S(`arousal | ${cls}`).add(x.arousal); S(`male arousal | ${ctx}`).add(x.arousal); S(`male arousal | close-rank male in view: ${rival ? 'yes' : 'no'}`).add(x.arousal); }
+        // T-END-8 (genuine: pant-hooting is not wired to arousal): arousal by own pant-hoots in the past hour
+        if (x.arousal !== undefined) S(`male arousal | own pant-hoots in the past hour: ${(hoots.get(c.id) ?? 0) > 0 ? '≥ 1' : '0'}`).add(x.arousal);
         bump(rival ? 'adult-male hourly samples with a close-rank male in view' : 'adult-male hourly samples without one');
       }
     }
+    if (i % HOUR === 0) hoots.clear();
   }
   for (const k of ['conflicts', 'injuries', 'reconciliations', 'deaths', 'killings', 'takeovers', 'groomingBouts'] as const) bump(`stats.${k}`, w.stats[k] - st0[k]);
   for (const c of w.chimps) if (!c.alive && !dead0.has(c.id)) { const cause = (c.causeOfDeath ?? 'unknown').replace(/ (with|by|of|from a fight with) .*/, ' $1 …'); deaths[cause] = (deaths[cause] ?? 0) + 1; }
