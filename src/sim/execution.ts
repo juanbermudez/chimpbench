@@ -14,7 +14,7 @@ import { clamp, hash01, random } from './rng';
 import type { ParamId } from './params.gen';
 import { NEVER, TICK_HOURS, TICK_SECONDS, byIdIn, huntOf, index, isTreeId, ix, simOf } from './state';
 import { resolveHunt } from './ecology';
-import { endoShared } from './endocrine';
+import { endoOn, endoShared, endoThreat } from './endocrine';
 import { eatFruit, forageYield, fruitAt } from './phenology';
 import { bestFallbackNear, eatFallback, fallbackOn, fallbackStock, fallbackValue } from './fallback';
 import { recordAggression, recordConsolation, recordGrooming, recordMating, recordMeat, recordReconciliation, recordSupport } from './relations';
@@ -191,7 +191,8 @@ export function startAction(world: World, c: Chimp, cand: Candidate, source: Dec
   x.intr = ''; x.finished = false; x.v = meta.v; x.aux = meta.aux;
   // stage E4a iteration 1 (endoRedirect): a defeat is considered once, at the loser's first choice after it, whatever he
   // chooses (redirection is the reaction to the defeat; docs/staging/e4a-prereg.md §7). The stress load scales the score.
-  if (x.lostAt > NEVER && paramsOf(world).endoRedirect === 1) x.lostAt = NEVER;
+  // stage E4b (endoFastRedirect): dropped; the decay of the fast state closes the option instead
+  if (x.lostAt > NEVER && endoOn(paramsOf(world), 'endoRedirect') && !endoOn(paramsOf(world), 'endoFastRedirect')) x.lostAt = NEVER;
   x.actEnd = world.time + boutHours(world, c, cand.action);
   // stage C7a (field): a trip to a remembered tree is not re-decided on the way; the bout lasts the walk plus 5 min
   if (cand.action === 'travel' && meta.v === V.TREE && paramsOf(world).travelCommit === 1) {
@@ -227,6 +228,7 @@ function onStart(world: World, c: Chimp): void {
       x.lastAgg = time;
       const ox = ix(o);
       ox.victimOf = c.id; ox.victimAt = time;
+      endoThreat(world, o); // stage E4b (endoFast): aggression received kicks the fast arousal
       interrupt(world, o, `${c.name} is ${c.action === 'attack' ? 'attacking' : 'charging at'} me`, true);
       let kind: InteractionKind = c.action === 'attack' ? 'fight' : 'charge';
       if (o.troopId !== c.troopId) kind = 'intergroup';

@@ -6,6 +6,7 @@ import { killChimp } from './life';
 import { clamp, random } from './rng';
 import { noteEvent, recordAggression, recordWound, tensionOf } from './relations';
 import { paramsOf, type Params } from './params';
+import { endoOn, endoThreat } from './endocrine';
 import { markDanger, noteContact, witnesses } from './contact';
 import { index, ix, simOf } from './state';
 
@@ -66,9 +67,10 @@ function decided(world: World, w: Chimp, l: Chimp, how: 'charge' | 'fight', inju
   const lx = ix(l);
   const P = paramsOf(world);
   // stage E4a (endoRedirect): every loss is noted and nothing is drawn; whether he redirects follows from his stress load (candidates.ts)
-  if (P.endoRedirect === 1) lx.lostAt = time;
+  if (endoOn(P, 'endoRedirect')) lx.lostAt = time;
   else if (random(world) < P.redirectBaseP + P.redirectAggrP * l.personality.aggression) lx.lostAt = time; // redirected aggression follows some losses [M]
   lx.victimOf = w.id; lx.victimAt = time;
+  endoThreat(world, l); // stage E4b (endoFast): a decided loss kicks the fast arousal
   world.stats.conflicts++;
   l.stress = clamp(l.stress + (how === 'fight' ? 0.35 : 0.2));
   w.stress = clamp(w.stress + 0.05);
@@ -180,6 +182,7 @@ function gangAttack(world: World, c: Chimp, o: Chimp): void {
   emitCall(world, o, 'scream');
   o.mood = 'fearful'; o.stress = clamp(o.stress + 0.4);
   ox.victimOf = c.id; ox.victimAt = world.time;
+  endoThreat(world, o); // stage E4b (endoFast)
   const key = `${c.troopId}>${o.troopId}`;
   const troop = index(world).troopById.get(c.troopId)!, other = index(world).troopById.get(o.troopId)!;
   const names = attackers.map(a => a.name).join(', ');

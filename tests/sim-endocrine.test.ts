@@ -3,13 +3,13 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { worldShapeProblem, plainDataProblems } from '../src/persist/envelope';
 import { V, candidateMeta, computeCandidates } from '../src/sim/candidates';
-import { endoShared, endoStep, escalateScore, rainScore, redirectScore } from '../src/sim/endocrine';
+import { endoHeard, endoKick, endoShared, endoStep, escalateScore, fastNow, fastSpanH, rainFastScore, rainScore, redirectFastScore, redirectScore } from '../src/sim/endocrine';
 import { setWeather } from '../src/sim/environment';
 import { isAdultMale, maternalKin } from '../src/sim/hierarchy';
 import { startAction } from '../src/sim/execution';
 import { paramsOf, type Overrides } from '../src/sim/params';
 import { IMPULSE_ESCALATE, perceive } from '../src/sim/perception';
-import { NEVER, SLOW_EVERY, SLOW_HOURS, ix, simOf } from '../src/sim/state';
+import { NEVER, SLOW_EVERY, SLOW_HOURS, TICK_HOURS, ix, simOf } from '../src/sim/state';
 import { createWorld, stepWorld, tickWorld } from '../src/simulation';
 import type { Chimp, World } from '../src/types';
 import { caseKey, runCase, worldHash } from './fixtures/golden';
@@ -19,6 +19,8 @@ import { caseKey, runCase, worldHash } from './fixtures/golden';
 const ON: Overrides = { endoStates: 1, endoEscalate: 1, endoRedirect: 1, endoRainDisplay: 1 };
 const run = (w: World, ticks: number) => { for (let i = 0; i < ticks; i++) tickWorld(w); return w; };
 const HOUR = 240, STEPS_PER_H = HOUR / SLOW_EVERY;
+/** The eco-hour of the current tick: steps() moves the tick on but not world.time, and an event stamped now falls in the next step's window. */
+const now = (w: World) => w.tick * TICK_HOURS;
 /** `n` slow steps of one animal with nothing in view (the tick is moved on so each step has its own event window). */
 function steps(w: World, c: Chimp, n: number, sleeping = false): void {
   for (let i = 0; i < n; i++) { w.tick += SLOW_EVERY; endoStep(w, c, ix(c), sleeping, paramsOf(w), paramsOf(w).stressFloor); }
@@ -29,6 +31,7 @@ function quiet(params: Overrides = ON): { w: World; c: Chimp } {
   const c = w.chimps.find(k => k.alive && isAdultMale(k) && k.troopId === 1)!;
   const x = ix(c);
   x.seen.length = 0; x.strangers = 0; x.victimAt = NEVER; x.lastAgg = NEVER; x.heardAt = NEVER; x.recon = NEVER; x.consoleAt = NEVER; x.consoledAt = NEVER;
+  delete x.aggKick; delete x.heardFrom;
   c.lastConflict = null; c.action = 'rest'; c.hunger = 0; x.cond = 1; x.bereft = 0; c.stress = paramsOf(w).stressFloor; x.arousal = 0; x.affil = 0;
   return { w, c };
 }
@@ -82,7 +85,7 @@ test('stress load rises with its drivers: aggression given or received, energy d
   assert.ok(Math.abs(rest - P.stressFloor) < 1e-9, 'at the floor with no driver');
   assert.ok(after((w, c) => { ix(c).victimAt = w.time; }) > rest + 0.05, 'being charged');
   assert.ok(after((w, c) => { ix(c).lastAgg = w.time; }) > rest + 0.05, 'charging');
-  assert.ok(after((w, c) => { ix(c).heardAt = w.time; }) > rest + 0.1, 'a stranger chorus');
+  assert.ok(after((w, c) => { endoHeard(w, ix(c), paramsOf(w)); ix(c).heardAt = w.time; }) > rest + 0.1, 'a stranger chorus');
   // an event counts once: a second step does not kick again
   const twice = after((w, c) => { ix(c).victimAt = w.time; }, 2), once = after((w, c) => { ix(c).victimAt = w.time; });
   assert.ok(twice < once);
@@ -151,9 +154,11 @@ test('affiliation rises with grooming in proportion to the bond, with sharing, r
   assert.ok(groomed(0.9) > 0.3);
   const { w, c } = quiet(), P = paramsOf(w);
   const o = w.chimps.find(k => k.alive && k.troopId === c.troopId && k !== c)!;
+  ix(o).affil = 0.4; // review fix: a receiver that already carries affiliation gets the bounded kick on top of it
   endoShared(c, o, P);
   assert.equal(ix(c).affil, P.endoAffilShareKick);
-  assert.equal(ix(o).affil, (ix(o).affil ?? 0) > 0 ? ix(o).affil : P.endoAffilShareKick);
+  assert.ok(Math.abs(ix(o).affil! - (0.4 + P.endoAffilShareKick * 0.6)) < 1e-12);
+  assert.ok(ix(o).affil! > 0.4);
   for (const key of ['recon', 'consoleAt', 'consoledAt'] as const) {
     const q = quiet();
     ix(q.c)[key] = q.w.time;
@@ -268,4 +273,145 @@ test('endoRedirect (iteration 1): a defeat is considered once, at the loser\'s f
   assert.ok(off.redirect());
   startAction(off.w, off.c, computeCandidates(off.w, off.c, []).find(k => k.action === 'rest')!, 'rules');
   assert.ok(off.x.lostAt > NEVER && off.redirect());
+});
+
+test('E4b fix: one stress kick per aggressive interaction, given or received', () => {
+  const P = paramsOf(quiet().w);
+  const once = (() => { const { w, c } = quiet(); ix(c).victimAt = w.time; steps(w, c, 1); return c.stress; })();
+  // charged in one slow step, re-stamped as the loser a minute later in the next one: the same interaction
+  const twoSteps = (() => { const { w, c } = quiet(), x = ix(c); x.victimAt = now(w) + 4 / 60; steps(w, c, 1); x.victimAt = now(w); steps(w, c, 1); return c.stress; })();
+  const decay = (s: number) => P.stressFloor + (s - P.stressFloor) * Math.exp(-SLOW_HOURS / P.endoStressTauH);
+  assert.ok(Math.abs(twoSteps - decay(once)) < 1e-9, 'no second kick for the decision');
+  // charged and counter-charging in the same step: one kick
+  const both = (() => { const { w, c } = quiet(); ix(c).victimAt = w.time; ix(c).lastAgg = w.time; steps(w, c, 1); return c.stress; })();
+  assert.ok(Math.abs(both - once) < 1e-12);
+  // a new interaction later on kicks again
+  const later = (() => { const { w, c } = quiet(), x = ix(c); x.victimAt = w.time; steps(w, c, 1); steps(w, c, 3); x.lastAgg = now(w); steps(w, c, 1); return c.stress; })();
+  assert.ok(later > once, 'a second interaction');
+});
+
+test('E4b fix: a stranger chorus kicks the stress load once per hearing episode, not every step while it goes on', () => {
+  const chorus = (gapSteps: number, calls: number) => {
+    const { w, c } = quiet(), x = ix(c), P = paramsOf(w);
+    let peak = 0;
+    for (let i = 0; i < calls; i++) {
+      w.time = now(w);
+      endoHeard(w, x, P); x.heardAt = w.time; x.heardN = 2;
+      steps(w, c, gapSteps);
+      if (i === 0) peak = c.stress;
+    }
+    return { first: peak, end: c.stress, P };
+  };
+  const steady = chorus(1, 12); // a call every 5 min for an hour
+  assert.ok(steady.end < steady.first, 'the load decays while the calls continue');
+  const apart = chorus(Math.ceil(steady.P.endoHeardEpisodeH / SLOW_HOURS) + 1, 2); // two choruses more than the gap apart
+  assert.ok(apart.end > steady.end, 'a new episode kicks again');
+  // with the switch off nothing is marked
+  const { w, c } = quiet({}), x = ix(c);
+  endoHeard(w, x, paramsOf(w));
+  assert.equal(x.heardFrom, undefined);
+});
+
+test('review fix: a dependent switch without endoStates counts as off (the dice stay), not as a removed act', () => {
+  const day = (p: Overrides) => worldHash(run(createWorld(21, { params: p }), 5760));
+  const off = day({});
+  assert.equal(day({ endoEscalate: 1 }), off);
+  assert.equal(day({ endoRedirect: 1 }), off);
+  assert.equal(day({ endoRainDisplay: 1 }), off);
+  const storm = (p: Overrides) => { const w = run(createWorld(21, { params: p }), 6 * HOUR); setWeather(w, 'storm', 0.9); run(w, 60); return w; };
+  const a = storm({ endoRainDisplay: 1 }), b = storm({});
+  assert.equal(worldHash(a), worldHash(b));
+  assert.equal(simOf(a).stormAt, undefined, 'no onset is noted for a switch that is off');
+});
+
+// --- Stage E4b (docs/staging/e4b-prereg.md): a fast arousal state for acute reactions ----------------------------------
+
+const FAST: Overrides = { ...ON, endoFast: 1, endoFastRedirect: 1 };
+
+test('E4b: the fast switches count as off without their dependencies, and change the world with them', () => {
+  const day = (p: Overrides) => worldHash(run(createWorld(21, { params: p }), 5760));
+  assert.equal(day({ endoFast: 1, endoFastRedirect: 1 }), day({}), 'without endoStates');
+  const on = day(ON);
+  assert.equal(day({ ...ON, endoFastRedirect: 1 }), on, 'endoFastRedirect without endoFast');
+  assert.equal(day({ ...ON, endoRedirect: 0, endoFast: 1, endoFastRedirect: 1 }), day({ ...ON, endoRedirect: 0, endoFast: 1 }), 'endoFastRedirect without endoRedirect');
+  assert.notEqual(day({ ...ON, endoFast: 1 }), on);
+  assert.notEqual(day(FAST), day({ ...ON, endoFast: 1 }));
+  // switches off: the state does not exist
+  const w = run(createWorld(21, { params: ON }), 5760);
+  assert.ok(w.chimps.every(c => ix(c).fast === undefined && ix(c).fastAt === undefined));
+});
+
+test('E4b: the fast state decays with its own time constant, and kicks are bounded', () => {
+  const { w, c } = quiet(FAST), x = ix(c), P = paramsOf(w);
+  assert.equal(fastNow(x, w.time, P), 0);
+  endoKick(w, c, 0.8, P);
+  assert.ok(Math.abs(fastNow(x, w.time, P) - 0.8) < 1e-12);
+  assert.ok(Math.abs(fastNow(x, w.time + P.endoFastTauMin / 60, P) - 0.8 * Math.exp(-1)) < 1e-12, 'one time constant');
+  const before = JSON.stringify(x); fastNow(x, w.time + 1, P); assert.equal(JSON.stringify(x), before, 'reading is pure');
+  endoKick(w, c, 0.8, P);
+  assert.ok(Math.abs(fastNow(x, w.time, P) - (0.8 + 0.8 * 0.2)) < 1e-12, 'a second kick is bounded');
+  for (let i = 0; i < 20; i++) endoKick(w, c, 1, P);
+  assert.ok(fastNow(x, w.time, P) <= 1);
+  assert.ok(fastNow(x, w.time + 25 / 60, P) < 0.01 * fastNow(x, w.time, P), 'gone within half an hour');
+});
+
+test('E4b: a daytime storm onset and aggression received kick the fast state', () => {
+  const w = run(createWorld(21, { params: FAST }), 6 * HOUR), P = paramsOf(w);
+  setWeather(w, 'storm', 0.9);
+  run(w, 60);
+  const s = simOf(w).stormAt!;
+  assert.ok(s !== undefined && w.time - s < 0.3);
+  const awake = w.chimps.filter(c => c.alive && ix(c).fastAt !== undefined && Math.abs(ix(c).fastAt! - s) < 1e-9);
+  assert.ok(awake.length > 5, 'awake individuals kicked at the onset');
+  assert.ok(awake.every(c => ix(c).fast! >= P.endoFastStormKick - 1e-9));
+  // a charge kicks its target
+  const { w: w2, c } = quiet(FAST);
+  const o = w2.chimps.find(k => k.alive && k.troopId === c.troopId && k !== c && k.age >= 15)!;
+  o.position[0] = c.position[0] + 2; o.position[2] = c.position[2]; ix(c).seen.push(o.id);
+  startAction(w2, c, { action: 'charge', targetId: o.id, score: 1, reason: '' }, 'rules');
+  assert.ok(Math.abs(fastNow(ix(o), w2.time, paramsOf(w2)) - paramsOf(w2).endoFastThreatKick) < 1e-9);
+});
+
+test('E4b: the rain display is scored from the fast state with arousal as gain, offered once per onset and for a few time constants', () => {
+  const { w, c } = quiet(FAST), x = ix(c), P = paramsOf(w);
+  c.personality.boldness = 0.8; x.arousal = 0; x.lastDisplay = NEVER;
+  simOf(w).stormAt = w.time;
+  const rain = () => computeCandidates(w, c, []).find(k => k.action === 'display' && candidateMeta.get(k)?.v === V.RAIN);
+  assert.equal(rain(), undefined, 'no fast arousal, no display');
+  endoKick(w, c, 0.8, P);
+  assert.ok(Math.abs(rainFastScore(c, x, w.time, P) - P.rainDisplayScore * 0.8 * 0.8) < 1e-12);
+  assert.ok(rain(), 'offered after the onset');
+  x.arousal = 0.5; assert.ok(Math.abs(rainFastScore(c, x, w.time, P) - P.rainDisplayScore * 1 * 0.8) < 1e-12, 'arousal amplifies, capped at 1');
+  x.arousal = 0;
+  const t0 = w.time;
+  w.time = t0 + fastSpanH(P) + 0.01; assert.equal(rain(), undefined, 'closed after the span');
+  w.time = t0 + 0.02; x.lastDisplay = t0 + 0.01; assert.equal(rain(), undefined, 'once per onset');
+});
+
+test('E4b: the redirected charge is scored by the fast state and stays open after the first choice, until the span ends', () => {
+  const { w, c } = quiet(FAST), x = ix(c), P = paramsOf(w);
+  const o = w.chimps.find(k => k.alive && k.troopId === c.troopId && k.sex === 'female' && k.age >= 15 && !maternalKin(c, k))!;
+  o.position[0] = c.position[0] + 3; o.position[1] = c.position[1]; o.position[2] = c.position[2];
+  x.seen.push(o.id); c.stress = 0.4; x.lostAt = w.time; x.lastAgg = NEVER;
+  const redirect = () => computeCandidates(w, c, []).find(k => k.action === 'charge' && k.targetId === o.id && candidateMeta.get(k)?.v === V.REDIRECT);
+  endoKick(w, c, 0.8, P);
+  const tn = x.tension[o.id] ?? 0;
+  assert.ok(Math.abs(redirectFastScore(c, x, tn, w.time, P) - 0.8 * (P.redirectBase + c.personality.aggression * P.redirectAggrW + 0.4 * P.redirectStressW + tn * P.redirectTensionW)) < 1e-12);
+  assert.ok(redirect(), 'offered after the loss');
+  startAction(w, c, computeCandidates(w, c, []).find(k => k.action === 'rest')!, 'rules');
+  assert.ok(x.lostAt > NEVER && redirect(), 'still open after a first choice (no once rule)');
+  w.time += fastSpanH(P) + 0.01;
+  assert.equal(redirect(), undefined, 'closed after the span');
+});
+
+test('E4b: with every switch on the world is deterministic however ticks are batched, and saves keep their shape', () => {
+  const a = createWorld(48, { params: FAST }), b = createWorld(48, { params: FAST });
+  for (let i = 0; i < 8; i++) stepWorld(a, 60);
+  for (let i = 0; i < 8 * 240; i++) stepWorld(b, 0.25);
+  assert.deepEqual(a, b);
+  const w = run(createWorld(7, { params: FAST }), 5760);
+  setWeather(w, 'storm', 0.9); run(w, 120);
+  assert.equal(worldShapeProblem(w), '');
+  assert.deepEqual(plainDataProblems(w), []);
+  assert.deepEqual(JSON.parse(JSON.stringify(w)), w);
 });

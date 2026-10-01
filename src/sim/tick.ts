@@ -21,6 +21,7 @@ import { rideTick } from './energy';
 import { slowSnares } from './snares';
 import { random } from './rng';
 import { paramsOf } from './params';
+import { endoKick, endoOn } from './endocrine';
 import { PARTY_EVERY, SLOW_EVERY, SLOW_HOURS, TICK_HOURS, TICK_SECONDS, index, ix, simOf } from './state';
 
 const snapshot: Chimp[] = [];
@@ -78,10 +79,13 @@ function rainOnset(world: World): void {
   const storm = world.environment.weather === 'storm';
   const P = paramsOf(world);
   // stage E4a (endoRainDisplay): no roll; the onset is noted and every adult male is offered the display, scored from his state (candidates.ts)
-  const endo = P.endoRainDisplay === 1;
+  const endo = endoOn(P, 'endoRainDisplay');
   if (endo && storm) simOf(world).stormAt = world.time;
+  // stage E4b (endoFast): a storm onset kicks the fast arousal of every awake individual (docs/staging/e4b-prereg.md)
+  const fast = storm && endoOn(P, 'endoFast');
   for (const c of index(world).alive) {
     if (!c.alive || (c.action === 'nest' && ix(c).phase >= 2)) continue;
+    if (fast) endoKick(world, c, P.endoFastStormKick, P);
     // Goodall's "rain dance": a rare charging display by adult males at the onset of heavy rain [M/L]
     if (!endo && storm && c.sex === 'male' && c.age >= 15 && random(world) < P.rainDisplayP) { const x = ix(c); x.impulse = IMPULSE_RAIN; x.impulseUntil = world.time + P.impulseDurationH; }
     interrupt(world, c, storm ? 'a heavy storm broke' : 'heavy rain started');

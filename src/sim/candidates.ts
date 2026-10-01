@@ -9,7 +9,7 @@ import { bestFallbackNear, fallbackOn } from './fallback';
 import { fruitRate, leafWorth, treeIntake } from './intake';
 import { heatRestValue, nestValue, shelterValue, thermalLoad } from './rhythm';
 import { milkWorth } from './energy';
-import { escalateScore, rainScore, redirectScore } from './endocrine';
+import { endoOn, escalateScore, fastSpanH, rainFastScore, rainScore, redirectFastScore, redirectScore } from './endocrine';
 import { byIdIn, index, isTreeId, ix, NEVER, TREE_ID0, treesNear, simOf } from './state';
 
 // Variants refine an action's meaning (why a charge happens) for execution and reason text.
@@ -462,7 +462,11 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   if (adolescentOrAdult && !night) {
     // displays [H]; rain display at storm onset (Goodall) [M/L]
     // stage E4a (endoRainDisplay): offered to every adult male just after a storm onset, once, scored from arousal and boldness
-    if (P.endoRainDisplay === 1) { const at = s.stormAt ?? NEVER; if (male && c.age >= 15 && time - at < P.impulseDurationH && x.lastDisplay < at) { const sc = rainScore(c, x, P); if (sc > 0) offer('display', -1, sc, V.RAIN); } }
+    // stage E4b (endoFast): scored from the fast state instead, for endoFastSpanTau of its time constants (docs/staging/e4b-prereg.md)
+    if (endoOn(P, 'endoRainDisplay')) {
+      const at = s.stormAt ?? NEVER, fast = endoOn(P, 'endoFast');
+      if (male && c.age >= 15 && time - at < (fast ? fastSpanH(P) : P.impulseDurationH) && x.lastDisplay < at) { const sc = fast ? rainFastScore(c, x, time, P) : rainScore(c, x, P); if (sc > 0) offer('display', -1, sc, V.RAIN); }
+    }
     else if (x.impulse === IMPULSE_RAIN && x.impulseUntil > time && male) offer('display', -1, P.rainDisplayScore, V.RAIN);
     if (male && e > 0.3 && time - x.lastDisplay > 0.75) {
       const rv = rivalCloseness > 0.3 ? rival : -1;
@@ -573,8 +577,10 @@ function aggression(world: World, c: Chimp, rival: number, rivalCloseness: numbe
   // stage E4a (docs/staging/e4a-prereg.md): with the switches on no dice open these options. The escalated attack is on
   // offer whenever the old preconditions of the impulse hold (plus the refractory gate of status aggression), and the
   // redirected charge after every loss for one stress time constant; their scores come from the slow states (endocrine.ts).
-  const endoEsc = P.endoEscalate === 1 && cooled && isAdultMale(c), escR = Math.min(P.escalateDistM, P.escalateAttackRangeM);
-  const redirectOpen = time - x.lostAt < (P.endoRedirect === 1 ? P.endoStressTauH : P.redirectWindowH) && x.lastAgg < x.lostAt;
+  const endoEsc = endoOn(P, 'endoEscalate') && cooled && isAdultMale(c), escR = Math.min(P.escalateDistM, P.escalateAttackRangeM);
+  // stage E4b (endoFastRedirect): open for endoFastSpanTau time constants of the fast state, scored by it (docs/staging/e4b-prereg.md)
+  const endoRed = endoOn(P, 'endoRedirect'), fastRed = endoOn(P, 'endoFastRedirect');
+  const redirectOpen = time - x.lostAt < (fastRed ? fastSpanH(P) : endoRed ? P.endoStressTauH : P.redirectWindowH) && x.lastAgg < x.lostAt;
   if (x.impulse === IMPULSE_INFANTICIDE && x.impulseUntil > time) {
     const o = byId.get(x.impulseTarget);
     if (o && o.alive && dcc(c, o) < P.infanticideAttackRangeM) offer('attack', o.id, 1.1, V.INFANTICIDE);
@@ -590,7 +596,7 @@ function aggression(world: World, c: Chimp, rival: number, rivalCloseness: numbe
     const deter = guarded(world, c, o, x.seen, P) ? P.guardDeterW : 0;
     // redirected aggression toward a lower-ranked bystander after losing [M], preferably one it already has tension with (design)
     if (redirectOpen && dist < P.redirectRangeM && o.age >= 5 && !kin && dominates(c, o))
-      offer('charge', o.id, (P.endoRedirect === 1 ? redirectScore(c, tn, P) : P.redirectBase + pers.aggression * P.redirectAggrW + c.stress * P.redirectStressW + tn * P.redirectTensionW) - deter, V.REDIRECT);
+      offer('charge', o.id, (fastRed ? redirectFastScore(c, x, tn, time, P) : endoRed ? redirectScore(c, tn, P) : P.redirectBase + pers.aggression * P.redirectAggrW + c.stress * P.redirectStressW + tn * P.redirectTensionW) - deter, V.REDIRECT);
     if (endoEsc && o.sex === 'male' && o.age >= 15 && Math.abs(o.elo - c.elo) < P.escalateEloGap && dist < escR) { const sc = escalateScore(c, o, x, P); if (sc > 0) offer('attack', o.id, sc, V.ESCALATE); }
     // a grudge: a dominant may charge a subordinate whose own aggression toward it is unrepaired (last incident received) (design) [M: compatibility]
     if (tn >= P.rivalTension && cooled && dist < P.grudgeRangeM && o.age >= 5 && !kin && dominates(c, o) && (x.incident[o.id]?.[1] ?? 0) % 2 === 1)

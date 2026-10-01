@@ -62,6 +62,10 @@ export interface ChimpX {
   rivalId: number;
   /** Stage E4a (endoStates; src/sim/endocrine.ts): competitive arousal (adult males only) and affiliation, 0..1. Absent until the states run, so worlds with the switch off are unchanged. The stress load is chimp.stress. */
   arousal?: number; affil?: number;
+  /** Stage E4b fixes (endoStates): the last aggression stamp that kicked the stress load, and the start of the current hearing episode of stranger calls. Absent until first set. */
+  aggKick?: number; heardFrom?: number;
+  /** Stage E4b (endoFast): the fast arousal (catecholamine-like) as last set, and the eco-hour it was set; read through endocrine.ts fastNow. Absent until the first kick. */
+  fast?: number; fastAt?: number;
   // reproduction and life history
   cycleLen: number; cops: Record<number, number>; sireId: number; amenUntil: number; firstSwell: number; gestation: number;
   weanAge: number; weaned: boolean; caretaker: number; immigrantAge: number; disperser: boolean; transferTo: number;
@@ -176,7 +180,7 @@ export type SimWorld = World & { sim: SimState };
  * ChimpX and SimState keys that exist only once their mechanism has fired (so worlds with the switch off keep their
  * shape and hashes). The save check (src/persist/envelope.ts worldShapeProblem) ignores them.
  */
-export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'en', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil'];
+export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'en', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt'];
 export const OPTIONAL_SIM: readonly string[] = ['fission', 'stormAt'];
 
 export function newX(): ChimpX {

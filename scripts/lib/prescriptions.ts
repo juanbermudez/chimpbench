@@ -173,12 +173,12 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   continueBonus: { when: P => P.urgencySwitchCost !== 1, why: 'not read while urgencySwitchCost is 1 (stage E3)' },
   finishedPenalty: { when: P => P.urgencySwitchCost !== 1, why: 'not read while urgencySwitchCost is 1 (stage E3)' },
   // stage E4a (docs/staging/e4a-prereg.md): the slow internal states replace these dice and the fixed stress relaxation
-  escalateImpulseBase: { when: P => P.endoEscalate !== 1, why: 'no escalation impulse is drawn while endoEscalate is 1 (src/sim/perception.ts)' },
-  escalateImpulseAggr: { when: P => P.endoEscalate !== 1, why: 'no escalation impulse is drawn while endoEscalate is 1 (src/sim/perception.ts)' },
-  redirectBaseP: { when: P => P.endoRedirect !== 1, why: 'no redirect priming is drawn while endoRedirect is 1 (src/sim/conflict.ts)' },
-  redirectAggrP: { when: P => P.endoRedirect !== 1, why: 'no redirect priming is drawn while endoRedirect is 1 (src/sim/conflict.ts)' },
-  redirectWindowH: { when: P => P.endoRedirect !== 1, why: "the defeat is considered once, at the loser's first choice after it, while endoRedirect is 1" },
-  rainDisplayP: { when: P => P.endoRainDisplay !== 1, why: 'no rain-display roll while endoRainDisplay is 1 (src/sim/tick.ts)' },
+  escalateImpulseBase: { when: P => P.endoEscalate !== 1 || P.endoStates !== 1, why: 'no escalation impulse is drawn while endoEscalate and endoStates are 1 (src/sim/perception.ts)' },
+  escalateImpulseAggr: { when: P => P.endoEscalate !== 1 || P.endoStates !== 1, why: 'no escalation impulse is drawn while endoEscalate and endoStates are 1 (src/sim/perception.ts)' },
+  redirectBaseP: { when: P => P.endoRedirect !== 1 || P.endoStates !== 1, why: 'no redirect priming is drawn while endoRedirect and endoStates are 1 (src/sim/conflict.ts)' },
+  redirectAggrP: { when: P => P.endoRedirect !== 1 || P.endoStates !== 1, why: 'no redirect priming is drawn while endoRedirect and endoStates are 1 (src/sim/conflict.ts)' },
+  redirectWindowH: { when: P => P.endoRedirect !== 1 || P.endoStates !== 1, why: "the defeat is considered once, at the loser's first choice after it, while endoRedirect and endoStates are 1" },
+  rainDisplayP: { when: P => P.endoRainDisplay !== 1 || P.endoStates !== 1, why: 'no rain-display roll while endoRainDisplay and endoStates are 1 (src/sim/tick.ts)' },
   stressRelaxPerH: { when: P => P.endoStates !== 1, why: 'the stress load is a leaky integrator with its own drivers while endoStates is 1 (src/sim/endocrine.ts)' },
 };
 

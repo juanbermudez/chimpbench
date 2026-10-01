@@ -8,6 +8,7 @@ import { recomputeHierarchies } from './hierarchy';
 import { killChimp } from './life';
 import { clamp } from './rng';
 import { paramsOf } from './params';
+import { endoHeard } from './endocrine';
 import { NEVER, index, ix, simOf } from './state';
 
 function mainParty(world: World, troop: Troop): Party | undefined {
@@ -56,6 +57,7 @@ export function applyIntervention(world: World, kind: InterventionKind, options:
         const c = idx.byId.get(id)!;
         if (c.troopId === neighbor) return;
         const x = ix(c);
+        endoHeard(world, x, P); // stage E4b fix: the start of a hearing episode
         x.heardN = 1; x.heardAt = time; x.heardX = stim.position[0]; x.heardZ = stim.position[2]; x.heardTroop = neighbor; x.heardStim = stim.id; x.lastHeard = time;
         interrupt(world, c, 'heard a stranger male pant-hoot', true);
       });
