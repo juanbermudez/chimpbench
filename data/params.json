@@ -11557,6 +11557,29 @@
    "notes": "Metabolisable energy intake of an adult feeding on non-fig ripe fruit (drupes 9.9 kcal/min; all ripe fruit 10.7 +- 1.3; Kanyawara females, uwimbabazi2019). The crop still depletes at fruitIntakePerH fruit units per hour, so one fruit unit is worth 60 x this / fruitIntakePerH kcal."
   },
   {
+   "id": "ledgerGrowSurplus",
+   "group": "needs",
+   "value": 0,
+   "units": "flag",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "energyTick",
+   "file": "src/sim/energy.ts",
+   "integer": true,
+   "notes": "Stage E1c (docs/staging/e1c-prereg.md), with energyLedger 1: 1 = body mass is state (chimp.sim.en.kg, opened at the stylized curve's value for the animal's age and sex) and an animal below its adult mass grows at the curve's slope (the well-fed potential) only while its reserves are above the set point, paying ledgerGrowthKcalPerG per g; an underfed animal stops growing instead of burning its reserve (growth faltering), and the mass-for-age curve becomes an output. 0 = mass follows the curve by age and growth is charged whatever the balance (E1)."
+  },
+  {
    "id": "ledgerGrowthKcalPerG",
    "group": "needs",
    "value": 4.5,
@@ -11623,6 +11646,51 @@
    "notes": "Time constant of energy absorption from the gut (first order): gastric emptying plus small-intestine absorption (human solid-meal half-emptying about 1.5-2 h; captive chimpanzee stomachs were empty after more than 3 h and less than 16 h, Ardente et al. 2011, abstract: first-order emptying with this constant is 95% complete at 9 h). Not the 38-48 h mean transit time of Milton & Demment 1988: that is the passage of indigestible residue through the whole tract; bulk limitation by residue is not modelled. Pending e-sources (not yet in docs/research.md)."
   },
   {
+   "id": "ledgerInfantIntake",
+   "group": "feeding",
+   "value": 0,
+   "units": "flag",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "forageTick",
+   "file": "src/sim/execution.ts",
+   "integer": true,
+   "notes": "Stage E1c (docs/staging/e1c-prereg.md), with energyLedger 1: 1 = an animal's intake rate of fruit and of ground fallback foods is the adult rate x (its mass / the adult mass of its sex)^ledgerIntakeSizeExp (x the foraging-skill multiplier on fruit, unchanged), for every animal below adult mass; this replaces C8's self-feeding ramp (selfFeedStartY) and the under-5 factor (fruitIntakeYoungFactor), and the option valuation (intake.ts) uses the same rates. 0 = the ramp and factor on fruit and ground foods outside the field fallback, adult rate on field fallback foods (E1)."
+  },
+  {
+   "id": "ledgerIntakeSizeExp",
+   "group": "feeding",
+   "value": 0.75,
+   "units": "exponent",
+   "range": [
+    0.5,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    2
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "intakeSize",
+   "file": "src/sim/energy.ts",
+   "notes": "Stage E1c (ledgerInfantIntake): intake capacity scales as (mass / adult mass)^this. 0.75 = like the resting rate, so a skilled animal of any size covers its resting needs in the same feeding time as an adult (design). No chimpanzee measurement of ingestion rate against body size was found; bray2018 gives only the direction (infants' ingestion rates below adults', juveniles' not significantly)."
+  },
+  {
    "id": "ledgerMassBirthKg",
    "group": "needs",
    "value": 1.8,
@@ -11642,7 +11710,7 @@
    "clock": "none",
    "symbol": "massOf",
    "file": "src/sim/energy.ts",
-   "notes": "Body mass at birth (captive neonates about 1.7-1.9 kg; no primary source traced). Mass then rises linearly to the adult value at ledgerMassMatureFemaleY / ledgerMassMatureMaleY (stylized growth curve). Pending e-sources (not yet in docs/research.md)."
+   "notes": "Body mass at birth: 1.8 kg; captive neonates at Yerkes averaged 1,733 g (desilva2011, 47 births with maternal mass). Mass then rises linearly to the adult value at ledgerMassMatureFemaleY / ledgerMassMatureMaleY (stylized growth curve; with ledgerGrowSurplus 1 the curve's slope is the well-fed growth potential and mass is state)."
   },
   {
    "id": "ledgerMassFemaleKg",
@@ -11818,7 +11886,7 @@
    "clock": "eco",
    "symbol": "energyTick",
    "file": "src/sim/energy.ts",
-   "notes": "Hours of milk synthesis a mother can hold for her infant. 24 = only the daily yield limits milk, whenever it is drunk (E1 iteration 3). A real gland holds less and stops synthesis when full (humans: about 0.46 of the daily yield, 11 h; Kent et al. 1999, abstract, received after iteration 3 was registered), but the sim's infants cannot nurse at night (a clock rule, stage E2), so a smaller value takes yield away for a reason that is not physiology (6 h: a quarter of it, iteration 2)."
+   "notes": "Hours of milk synthesis a mother can hold for her infant. 24 = only the daily yield limits milk, whenever it is drunk (E1 iteration 3). A real gland holds less and stops synthesis when full (humans: about 0.46 of the daily yield, 11 h; Kent et al. 1999, abstract, received after iteration 3 was registered), but the sim's infants cannot nurse at night (a clock rule, stage E2), so a smaller value takes yield away for a reason that is not physiology (6 h: a quarter of it, iteration 2). E1c: with ledgerNightNurse 1 the precondition is gone and the sourced 11 h applies (passed as an override in the E1c runs; the default stays 24 so E1 is unchanged)."
   },
   {
    "id": "ledgerMilkYieldCoef",
@@ -11841,6 +11909,29 @@
    "symbol": "energyTick",
    "file": "src/sim/energy.ts",
    "notes": "Milk energy a mother can make per day per kg^0.75 of her mass: the human 501 kcal/day (749 g/day x 2.8 kJ/g, Butte & King 2005) at 60 kg; about 307 kcal/day at 31.3 kg. Milk energy output scales with maternal mass^0.74 +- 0.05 across 47 mammal species (Riek 2021, abstract); the coefficient is the human one and no chimpanzee milk yield exists. A value above about 1,000 removes the limit (iteration 1). (E1 iteration 2: without it a larger infant simply drank more.) Pending e-sources (not yet in docs/research.md)."
+  },
+  {
+   "id": "ledgerNightNurse",
+   "group": "needs",
+   "value": 0,
+   "units": "flag",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "nestTick",
+   "file": "src/sim/execution.ts",
+   "integer": true,
+   "notes": "Stage E1c (docs/staging/e1c-prereg.md), with energyLedger 1: 1 = a dependent infant sleeping in its mother's nest suckles from her (nurseTick: the suckling rate, limited by her gland store and its gut room) while its hunger readout is at or above the end of a nursing bout (0.08); same eligibility as the day nursing option, no weaning refusal at night (stylization). Infants share the mother's nest until weaning (khayer2025 [M]); night suckling: captive newborns (mizuno2006 [L]) and the human analogy. With it, ledgerMilkStoreH can take its sourced value (11 h, kent1999). 0 = milk only through the day nurse act (E1)."
   },
   {
    "id": "ledgerPlantShareKcal",
