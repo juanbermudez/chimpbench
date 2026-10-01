@@ -4,6 +4,7 @@ import { IMPULSE_ESCALATE, IMPULSE_GANG, IMPULSE_HUNT, IMPULSE_INFANTICIDE, IMPU
 import { cellAt, gridOf, levels, pressureAt, territoryCost } from './territory';
 import { clamp, hash01, smoothstep } from './rng';
 import { paramsOf, type Params } from './params';
+import { dayPhase } from './environment';
 import { fruitAt } from './phenology';
 import { bestFallbackNear, fallbackOn } from './fallback';
 import { fruitRate, leafRate, treeIntake } from './intake';
@@ -114,7 +115,10 @@ function chooseNestTree(world: World, c: Chimp): Tree | undefined {
     if (t.height < P.nestTreeMinHeightM) continue;
     const dx = t.position[0] - c.position[0], dz = t.position[2] - c.position[2];
     // A new nest most nights: avoid last night's tree. [H]
-    const s = -Math.sqrt(dx * dx + dz * dz) * P.nestTreeDistW + hash01(t.id, c.id, world.day) * P.nestTreeHashW + (t.id === x.nestTree ? -1 : 0) + t.height * P.nestTreeHeightW;
+    // stage C15b: a tree bearing fruit is avoided as a nest (chimpanzees nested in their breakfast tree on 2% of mornings,
+    // janmaat2014 [M]; the penalty equals that of last night's tree, design)
+    const s = -Math.sqrt(dx * dx + dz * dz) * P.nestTreeDistW + hash01(t.id, c.id, world.day) * P.nestTreeHashW + (t.id === x.nestTree ? -1 : 0) + t.height * P.nestTreeHeightW
+      - (P.breakfastPlan === 1 && (P.patchEcology === 1 ? fruitAt(world, t) : t.fruit) > 0.05 ? 1 : 0);
     if (s > bestS) { bestS = s; best = t; }
   }
   return best;
@@ -197,6 +201,18 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   let nestDrive = hour >= P.nestEveningFromH ? smoothstep(P.nestEveningStartH, P.nestEveningEndH, hour) * P.nestEveningDrive + (night ? P.nestNightBonus : 0)
     : (1 - smoothstep(P.nestMorningDaylightLow, P.nestMorningDaylightHigh, env.daylight)) * P.nestMorningDrive;
   nestDrive += (1 - e) * 0.3 + (night && rain > 0.3 ? 0.3 : 0);
+  // stage C15b (breakfastPlan, field): at dawn a far breakfast brings an earlier departure [M] janmaat2014. The morning
+  // nest drive falls by breakfastW (fitted to 18% of departures before sunrise) x the walk to the animal's best
+  // remembered fruit tree, saturating at 80 min (ban2014's mean approach time; design)
+  if (P.breakfastPlan === 1 && c.action === 'nest' && hour < P.nestEveningFromH && nestDrive > 0 && dayPhase(world) === 'dawn') {
+    let bestCrop = 0, far = 0;
+    for (let i = 0; i < c.memory.length; i++) { const m = c.memory[i];
+      if (m.kind !== 'tree' || time - m.seenAt >= P.memTravelHorizonH) continue;
+      const crop = x.treeCrop?.[m.entityId] ?? 0.2;
+      if (crop > bestCrop) { bestCrop = crop; far = Math.hypot(m.position[0] - px, m.position[2] - pz); }
+    }
+    if (bestCrop > 0) nestDrive -= P.breakfastW * Math.min(1, far / P.walkMps / 60 / 80);
+  }
   if (caretaker) {
     if (caretaker.action === 'nest' && isTreeId(caretaker.targetId)) offer('nest', caretaker.targetId, nestDrive + 0.4, V.MOTHER, caretaker.id);
   } else if (c.age >= 3) {
@@ -245,7 +261,9 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     // stage C7c (field): fallback is worth the best rate in view, so a depleted patch sends the animal elsewhere (fallback.ts)
     // C13b: leaves are worth their intake rate here relative to ripe fruit (full-stock rate when fallback depletes: the best cell in view scales it)
     const leafV = iv ? (fallbackOn(P) ? P.fruitIntakePerH * P.fruitHungerFactor * P.fallbackRateRatio : leafRate(world, px, pz, P)) / fruitH : 1;
-    offer('forage', -1, h * P.fallbackForageW * (fallbackOn(P) ? bestFallbackNear(world, px, pz, x.sight, _fb) : 1) * leafV + 0.03 - rain * 0.3);
+    // stage C15a: the hunger-independent part of the fallback worth is a registry value (fallbackBase; leaves are a daily
+    // food beside fruit, watts2012a, emeryThompson2020 [H]; fitted in the field profile to T-FOOD-2)
+    offer('forage', -1, h * P.fallbackForageW * (fallbackOn(P) ? bestFallbackNear(world, px, pz, x.sight, _fb) : 1) * leafV + P.fallbackBase - rain * 0.3);
     // field profile: leaving companions for a food tree of one's own has a cost (parties travel together; design, T-PTY-1)
     const stay = P.partyStayW > 0 ? P.partyStayW * Math.min(x.visibleOwn, P.partyStayMaxN) : 0;
     const shortlist = P.patchEcology === 1; // field: many remembered trees; score the few best by distance and hunger

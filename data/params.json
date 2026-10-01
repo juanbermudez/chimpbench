@@ -2494,6 +2494,59 @@
    "notes": "Shortest travel bout (drawn by hash between min and max)."
   },
   {
+   "rangeBasis": "assumed",
+   "calibrate": false,
+   "clock": "none",
+   "id": "breakfastPlan",
+   "group": "feeding",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "hardRange": [
+    0,
+    1
+   ],
+   "evidence": "design",
+   "sources": [
+    "janmaat2014"
+   ],
+   "symbol": "P.breakfastPlan",
+   "file": "src/sim/candidates.ts",
+   "profiles": {
+    "compressed": 0,
+    "field": 1
+   },
+   "integer": true,
+   "notes": "Stage C15b switch (field): at dawn the RG gate does not hold a nest intention; the morning nest drive falls with the walk to the best remembered fruit tree (breakfastW); a tree bearing fruit is avoided as a night nest. Earlier departures for a far breakfast and nests away from the breakfast tree [M] janmaat2014; the forms are design assumptions. 0 = before C15. Ablation switch (set C15b)."
+  },
+  {
+   "rangeBasis": "assumed",
+   "calibrate": false,
+   "clock": "none",
+   "id": "breakfastW",
+   "group": "feeding",
+   "value": 1.5,
+   "units": "score",
+   "range": [
+    0,
+    3
+   ],
+   "hardRange": [
+    0,
+    10
+   ],
+   "evidence": "M",
+   "sources": [
+    "janmaat2014"
+   ],
+   "symbol": "P.breakfastW",
+   "file": "src/sim/candidates.ts",
+   "notes": "Stage C15b: how much a far breakfast lowers the morning nest drive at dawn (x min(1, walk minutes to the best remembered fruit tree / 80)). To be fitted to 18% of departures before sunrise (janmaat2014; pre-registered bisection); 1.5 is the bracket midpoint before the fit."
+  },
+  {
    "id": "callAlarmHooMin",
    "group": "communication",
    "value": 0.75,
@@ -6241,6 +6294,35 @@
    "file": "src/sim/relations.ts",
    "integer": true,
    "notes": "Digest priority of transfer events (higher is kept first)."
+  },
+  {
+   "rangeBasis": "assumed",
+   "calibrate": false,
+   "clock": "none",
+   "id": "fallbackBase",
+   "group": "feeding",
+   "value": 0.03,
+   "units": "score",
+   "range": [
+    0.03,
+    0.6
+   ],
+   "hardRange": [
+    0,
+    5
+   ],
+   "evidence": "H",
+   "sources": [
+    "watts2012a",
+    "emeryThompson2020"
+   ],
+   "symbol": "P.fallbackBase",
+   "file": "src/sim/candidates.ts",
+   "profiles": {
+    "compressed": 0.03,
+    "field": 0.03
+   },
+   "notes": "Stage C15a: the hunger-independent part of the fallback (leaves, pith, herbs) worth; the literal 0.03 before C15. Leaves are a daily food beside fruit (11-19% of feeding; watts2012a, emeryThompson2020) [H]. Field value to be fitted to T-FOOD-2 (pre-registered bisection); compressed keeps 0.03. Ablation (set C15a): 0.03."
   },
   {
    "id": "fallbackCapH",

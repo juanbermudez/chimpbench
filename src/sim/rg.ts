@@ -90,6 +90,8 @@ export function patchPoorHere(world: World, c: Chimp, tree: number, P: Params): 
 function gate(world: World, c: Chimp, it: Intent | undefined, list: Candidate[]): { keep: Candidate; arrived: boolean } | null {
   if (!it) return null;
   const x = ix(c);
+  // stage C15b (breakfastPlan): at dawn waking is re-decided at every morning bout; a nest is not an intention to hold
+  if (paramsOf(world).breakfastPlan === 1 && it.action === 'nest' && dayPhase(world) === 'dawn') return null;
   if (x.lastIntrAt > it.chosenAt) return null;
   // hunting fix (huntEncounter): meeting a colobus group in company is a salient change, so the hunt is weighed
   if (x.impulse === IMPULSE_HUNT && x.impulseUntil > world.time && findCandidate(list, 'hunt', x.impulseTarget)) return null;
