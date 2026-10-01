@@ -249,3 +249,75 @@ grooming and rest down, and T-ACT-4 leaves its band.
 is almost never above 0.1 and loneliness is the largest deficit in 72% of samples, so "urgency" is mostly a social
 reading and resting can never pay. Stage E1 (energy-balance hunger) and E2a (sleep pressure, heat load) now exist on
 `track-e`; iteration 3 tests the same switches on that stack.
+
+### Amendment before iteration 3: the physiological stack (written and committed before any run of it)
+
+**Why.** Iterations 1–2 showed that the urgency forms are only as good as the readouts they read. Two Track E stages
+now replace the timers behind two of them, both off by default and merged into this branch from `track-e`:
+- E1 `energyLedger`: hunger = gut emptiness × appetite, from an energy balance in kcal (`src/sim/energy.ts`). Ripe
+  fruit fills 0.74 (adult female) and 0.59 (adult male) of the gut per feeding hour, against 0.24 hunger units under
+  the timers; E1 measured adult daylight hunger 0.15–0.18 and lactating 0.36.
+- E2a `rhythmSleep`: fatigue is felt sleepiness, 1 − energy = S × (1 − daylight), where S is sleep pressure (rises
+  awake with τ 18.2 h, falls asleep with τ 4.2 h). In full daylight fatigue is exactly 0. `rhythmHeat`: a thermal
+  load from a heat balance values rest and shelter; E2a measured it near 0 at Kibale temperatures (mean 0.01 at
+  midday, 4.9% of samples above 0.1).
+
+**Arms.** Field, development seeds 48 and 7, 30-day burn-in + 30 days, switches on from world creation, `--workers 2`.
+- **R** (reference): `energyLedger` 1, `rhythmSleep` 1, `rhythmHeat` 1.
+- **R + C**: R + `urgencyChoice` 1.
+- **R + A**: R + `urgencyChoice`, `urgencyPersist`, `urgencySwitchCost` 1.
+No persist-only or switch-cost-only arm (run cap, shared machine). Tools: `scripts/e3-urgency-check.ts` (decision log,
+bouts, hunger), `scripts/e-bench.ts --quick` (band distance fitted and held-out, prescription count, viability),
+`scripts/movement-metrics.ts --fitted-only` (30-day burn-in + 8 days).
+
+**Code change, consistency only (no constant added or changed).** §4 defines pay with "the sim's own relief rate" of
+each deficit. Under `rhythmSleep` those rates are no longer the energy timers, so the pay test and the urgency read
+the mechanics that run:
+- Under `rhythmSleep` 1 only sleep (a finished nest) lowers sleep pressure; resting, sheltering and grooming do not,
+  and walking does not raise it. So ρ_F(rest) = ρ_F(shelter) = ρ_F(groom) = 0, the walking and play costs on F are 0,
+  and ρ_F(nest) = (1 − daylight) × (S / `rhythmSleepDecayH` + (1 − S) / `rhythmSleepRiseH`) per hour: the fall of felt
+  sleepiness asleep relative to its rise awake, serve time F / ρ_F. Urgency counts fatigue only when a nest is on the
+  menu (the iteration 2 rule: a deficit counts when the menu can act on it).
+- Under `energyLedger` 1 the feeding rates of `src/sim/intake.ts` are already shares of the animal's own gut capacity
+  per hour, so feeding pay and serve time need no change; the fallback rate is now read for the animal (it used the
+  adult-female default gut).
+- `rhythmSleep` 0: the iteration 1–2 code path, unchanged (tested).
+- Diagnostic only: draws are also tallied by day phase (day, dusk, night) with their urgency, to check where the low-U
+  draws of iteration 2 came from.
+- `scripts/lib/prescriptions.ts`: the four E3 prescriptions (`rgTemperature`, `rgMaxAgeH`, `continueBonus`,
+  `finishedPenalty`) are counted out while the switch that replaces them is on, so e-bench's prescription count sees
+  the removal. (E1 and E2a have not registered their own removals there; the reference's absolute count therefore
+  overstates, and only differences between arms are read.)
+
+**Not added: thermal load as a deficit.** At its measured size it cannot move U or the pay test. Consequence accepted:
+under `urgencyPersist`, heat-driven rest and rain shelter are re-drawn at every bout end and decided by the scores.
+
+**Predicted from first principles (before any run, including R's).**
+
+*In R itself* (context, no test): by day fatigue is 0 and hunger about 0.15–0.2, so urgency at draws is mostly
+loneliness where a partner is on the menu, otherwise hunger or stress. Mean U at draws below iteration 2's 0.39 and the
+share of draws at U < 0.1 above iteration 2's 25%, most of them by day. From E1 and E2a: feeding share low (E1 alone
+0.25, out of band), rest and grooming high (E1 alone 0.57) but lowered by the loss of the midday literal (E2a).
+
+| Row (direction against R) | R + C | R + A |
+| --- | --- | --- |
+| mean U / mean T at draws | U as R; T above iteration 2's 0.41 | U as R or lower; T above 0.41 |
+| top option taken | down (flatter food choices dominate; social draws stay sharp) | down |
+| kept by the gate | ≈ | down to about 0.1 (rest by day pays exactly 0: "not-paying" at every rest-bout end) |
+| decisions per chimp-day | ≈ | up |
+| crown bout median | ≈ | down (a crown stops paying when the gut is full: H ÷ 0.6–0.74 per h is 15–20 min at H 0.2) |
+| crowns per adult-day, T-FOOD-4 | up | no prediction |
+| T-ACT-1 feeding | up (sated animals draw near-uniformly, so the high-scoring rest of a sated animal loses share) | up |
+| T-ACT-2 travel, T-RNG-4 male range | up | up |
+| T-ACT-3 grooming | ≈ | down (switch cost off, as in iteration 1) |
+| T-ACT-4 rest incl. grooming | down | down |
+| T-PTY-1 party size | down (as iteration 2) | no prediction |
+| adult hunger | ≈ (within 0.05) | ≈ or lower (iteration 1: −0.10; less room under appetite) |
+| night | — | nests kept at night (the night menu's alternatives pay 0 for fatigue under rhythmSleep) |
+
+**Keep rule and kill criterion, against R.** §8 with R as the baseline: not viable if median adult hunger rises by
+more than 0.10, the lactating-female median reaches 0.95, a starvation death appears, or e-bench's viability verdict
+fails; held-out band distance clearly worse (beyond the seed noise E0 reported, up to 0.8 on one row). A switch can go
+on by default only under Track E's keep rule: viability passes, held-out distance does not rise, and the prescription
+count falls; the decision is provisional under the 3-month cap and needs `e-bench --confirm` (5 seeds) before any
+default changes. No constant is tuned to any row; if R + C or R + A misses, the miss is reported, not fixed.
