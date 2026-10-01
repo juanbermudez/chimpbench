@@ -21,7 +21,7 @@ Evidence pass for Track E (IMPLEMENTATION_PLAN.md, "Track E: Emergence"), 1 Octo
 | Age at which mass growth slows | Females 10 y, males 13 y (Gombe) | pusey2005 (Abs) | [M] | input (growth knee) |
 | Birth mass | 1.8 kg, not verified to a primary source | none | assumed | input |
 | Kibale body mass | No value exists (animals are not weighed) | — | gap | — |
-| Total energy expenditure (doubly labelled water), genus *Pan*, captive adults | Females 1,722 ± 363 kcal/d at 46.4 kg; males 2,145 ± 546 kcal/d at 57.9 kg. Derived: 97–102 × M^0.75 kcal/d | pontzer2016 (FT) | [H] captive; [M] as a wild value | check on the ledger, not a set value |
+| Total energy expenditure (doubly labelled water), genus *Pan*, captive adults | Females 1,722 ± 363 kcal/d at 46.4 kg; males 2,145 ± 546 kcal/d at 57.9 kg. Derived: 97–102 × M^0.75 kcal/d | pontzer2016 (FT) | [H] captive; [M] as a wild value | target (T-ENE-8): a check on the ledger, never a set value |
 | Basal metabolic rate, *Pan* | 1,214 kcal/d (46.4 kg), 1,401 kcal/d (57.9 kg): estimated from juvenile respirometry, not measured in adults. Derived: 67–68 × M^0.75, i.e. Kleiber × 0.96 | pontzer2016 (FT) | [M] | input |
 | Kleiber equation | 70 × M^0.75 kcal/d | kleiber1947 (standard reference) | [H] as an equation; cross-species | input (fallback) |
 | Physical activity level (TEE ÷ BMR), captive *Pan* | 1.4 females, 1.5 males | pontzer2016 (FT) | [M] | check |
@@ -56,7 +56,7 @@ Evidence pass for Track E (IMPLEMENTATION_PLAN.md, "Track E: Emergence"), 1 Octo
 | Energy balance through lactation | Depressed for about 6 months after birth, net increase through the second year (17 mothers) | emeryThompson2012 (Abs) | [M] | target, direction (T-ENE-5) |
 | Energy balance and males in the party | Females have lower C-peptide when they associate with more males | emeryThompson2014 (Abs) | [M] | target, direction (T-ENE-6) |
 | Male feeding and mating effort | Males feed less on days with oestrous parous females (12 males, 11 months) | georgiev2014 (Abs) | [M] | target, direction (T-ENE-7) |
-| Energy balance and rank | Low-ranking Kanyawara males had higher C-peptide than dominant males | emeryThompson2009 (Abs) | [M] | target, direction (T-ENE-8) |
+| Energy balance and rank | Low-ranking Kanyawara males had higher C-peptide than dominant males | emeryThompson2009 (Abs) | [M] | direction only (no row proposed) |
 | Feeding and travel when food is scarce | Taï: shorter daily journey and more feeding time in periods of scarcity | nguessan2009 (FT abstract), vale2020 (Abs) | [M] | target, direction (T-ENE-9) |
 
 ### E2 daily rhythm: inputs
@@ -87,8 +87,8 @@ Evidence pass for Track E (IMPLEMENTATION_PLAN.md, "Track E: Emergence"), 1 Octo
 | Where they drink | Kanyawara, 14 years, 81 animals, 4,087 drinking events: streams 3,102 (76%), tree holes and buttress holes 382, puddles and footprints 511; 625 with a tool | mackenzie2025 (FT) | [H] | target (T-RHY-7) |
 | Rest and ground use in heat | Resting and time on the ground both rise with temperature in the sun (30 adults, 247 h, Budongo); time in the sun starts to fall at about 30 °C and falls sharply at about 40 °C | kosheleff2009 (Abs) | [M] | target, direction (T-RHY-8) |
 | Ground use by season | Bossou: 23.4% of time on the ground (2.9% in August to 42.1% in November); more on warm or dry days; only the day's maximum temperature was significant | takemoto2004 (Abs) | [M] | target, direction (T-RHY-8) |
-| Leaf feeding by time of day | Ngogo: sapling leaves eaten more in the evening than in the morning | carlson2013 (Abs) | [M] | target, direction (T-RHY-9) |
-| Hourly activity profile (feeding peaks, midday rest) | No verified quantitative source | — | gap | — |
+| Leaf feeding by time of day | Ngogo: sapling leaves eaten more in the evening than in the morning | carlson2013 (Abs) | [M] | target, direction (T-RHY-10) |
+| Hourly activity profile (feeding peaks, midday rest) | No verified quantitative source | — | gap | direction-only row at low confidence (T-RHY-9) |
 | Behaviour in heavy rain | No quantitative source. Chimpanzees "hunch up in rain" (Goodall 1962, as cited by anderson2019) | anderson2019 (FT), secondary | [L] | gap |
 | Nests and overnight weather | Thicker, deeper nests in cooler or wetter conditions; taller trees with denser canopy before rainy nights | alrazi2026 (Abs) | [M] | direction only |
 
@@ -172,7 +172,7 @@ The gaps for E2 and E4 are in section 5.
   - A human-tailored equation gives ape values 11 ± 3% higher.
   - The paper states that wild apes will generally have lower body fat than these cohorts.
   - Derived: basal rate = 68.3 and 66.7 × M^0.75 kcal/d; expenditure = 96.9 and 102.2 × M^0.75 kcal/d. Scaled to Gombe masses: about 1,280 kcal/d (31.3 kg) and 1,600 kcal/d (39 kg).
-  - Use in Track E: input for the resting rate and body fat; check on total daily expenditure.
+  - Use in Track E: input for the resting rate and body fat; check on total daily expenditure (T-ENE-8).
 - **Primate expenditure is low** [pontzer2014] (FT, PMC3910615) [H].
   - 17 primate species spend about 50% of the energy expected for a placental mammal of their mass.
   - Chimpanzees (sanctuary and zoo, n = 10): 57.1 kg, 2,386 kcal/d (an older equation than pontzer2016).
@@ -257,7 +257,7 @@ The gaps for E2 and E4 are in section 5.
   - C-peptide was very low during a respiratory epidemic despite good feeding conditions.
   - Kanyawara males had lower C-peptide than Ngogo males.
   - Low-ranking males had higher C-peptide than dominant males.
-  - Use in Track E: target for energy balance against fruit (T-ENE-4) and rank (T-ENE-8).
+  - Use in Track E: target for energy balance against fruit (T-ENE-4); the rank result is direction only.
 - **Energy balance, Taï** [vale2020] (Abs) [M]. One community, 12 months: C-peptide rose with food availability in both sexes; when food was abundant chimpanzees fed for less time and spent more energy. The rank effects came from a model "only close to significance". Target, direction (T-ENE-4, T-ENE-9).
 - **Mating effort costs feeding, Kanyawara** [georgiev2014] (Abs) [M]. 12 males followed for 11 months: males fed less on days with oestrous parous females; the drop tracked aggression and copulation rates and did not depend on rank. Target, direction (T-ENE-7).
 - **Lactation** [emeryThompson2012] and **males in the party** [emeryThompson2014]: already in research.md ("Lactation energetics" and "Food competition and party size"). Targets T-ENE-5 and T-ENE-6.
@@ -392,7 +392,7 @@ The gaps for E2 and E4 are in section 5.
   - Use in Track E: input for sleep pressure, *assumed*.
 - **Nests and weather** [alrazi2026] (Abs) [M]. Eastern chimpanzees (site not named in the abstract): nests in warmer, less windy spots; thicker and deeper nests when cooler or wetter; taller trees with denser canopy before rainy nights; overnight weather predicted nesting better than weather at building time. Direction only.
 - **Review of ape nesting and sleep** [anderson2019] (FT, author copy). Used only for the statement that chimpanzees hunch up in rain (Goodall 1962, as cited). [fruth2018] (FT, author copy): no timing values.
-- **Leaf feeding by time of day, Ngogo** [carlson2013] (Abs) [M]. Leaves of two sapling species were eaten more in the evening than in the morning, when their sugars are higher and fibre lower. Target, direction (T-RHY-9).
+- **Leaf feeding by time of day, Ngogo** [carlson2013] (Abs) [M]. Leaves of two sapling species were eaten more in the evening than in the morning, when their sugars are higher and fibre lower. Target, direction (T-RHY-10).
 
 ## 7. Sources: E3 choice (theory)
 
