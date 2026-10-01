@@ -5,7 +5,8 @@ import { worldShapeProblem, plainDataProblems } from '../src/persist/envelope';
 import { V, candidateMeta, computeCandidates } from '../src/sim/candidates';
 import { endoShared, endoStep, escalateScore, rainScore, redirectScore } from '../src/sim/endocrine';
 import { setWeather } from '../src/sim/environment';
-import { isAdultMale } from '../src/sim/hierarchy';
+import { isAdultMale, maternalKin } from '../src/sim/hierarchy';
+import { startAction } from '../src/sim/execution';
 import { paramsOf, type Overrides } from '../src/sim/params';
 import { IMPULSE_ESCALATE, perceive } from '../src/sim/perception';
 import { NEVER, SLOW_EVERY, SLOW_HOURS, ix, simOf } from '../src/sim/state';
@@ -244,4 +245,27 @@ test('with the switches on the world is deterministic however ticks are batched,
   assert.equal(worldShapeProblem(w), '');
   assert.deepEqual(plainDataProblems(w), []);
   assert.deepEqual(JSON.parse(JSON.stringify(w)), w);
+});
+
+test('endoRedirect (iteration 1): a defeat is considered once, at the loser\'s first choice after it', () => {
+  const setup = (params: Overrides) => {
+    const { w, c } = quiet(params), x = ix(c);
+    // an unrelated adult female he dominates, close by and in view
+    const o = w.chimps.find(k => k.alive && k.troopId === c.troopId && k.sex === 'female' && k.age >= 15 && !maternalKin(c, k))!;
+    o.position[0] = c.position[0] + 3; o.position[1] = c.position[1]; o.position[2] = c.position[2];
+    x.seen.push(o.id); c.stress = 0.6; x.lostAt = w.time; x.lastAgg = NEVER;
+    const redirect = () => computeCandidates(w, c, []).some(k => k.action === 'charge' && k.targetId === o.id && candidateMeta.get(k)?.v === V.REDIRECT);
+    return { w, c, x, redirect };
+  };
+  const on = setup(ON);
+  assert.ok(on.redirect(), 'offered at the first choice after the loss');
+  const rest = computeCandidates(on.w, on.c, []).find(k => k.action === 'rest')!;
+  startAction(on.w, on.c, rest, 'rules');
+  assert.equal(on.x.lostAt, NEVER, 'the choice closes it, whatever was chosen');
+  assert.ok(!on.redirect(), 'not offered again');
+  // with the dice (switch off) the choice leaves the 6-minute window open
+  const off = setup({});
+  assert.ok(off.redirect());
+  startAction(off.w, off.c, computeCandidates(off.w, off.c, []).find(k => k.action === 'rest')!, 'rules');
+  assert.ok(off.x.lostAt > NEVER && off.redirect());
 });

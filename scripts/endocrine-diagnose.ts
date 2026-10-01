@@ -66,7 +66,7 @@ for (const seed of seeds) {
       const v0 = version.get(c.id) ?? c.decisionVersion, key = `${c.action}:${c.targetId}:${x.v}`;
       if (c.decisionVersion !== v0 && key !== prevKey.get(c.id)) {
         if (c.action === 'attack' && x.v === V.ESCALATE) bump('escalated attacks chosen');
-        if (c.action === 'charge' && x.v === V.REDIRECT) { bump('redirected charges'); if ((time - x.lostAt) * 60 <= 10) bump('redirected charges within 10 min of the loss'); S('redirect: minutes after the loss').add((time - x.lostAt) * 60); }
+        if (c.action === 'charge' && x.v === V.REDIRECT) { const lost = c.lastConflict && !c.lastConflict.won ? (time - c.lastConflict.time) * 60 : NaN; bump('redirected charges'); if (lost <= 10) bump('redirected charges within 10 min of the loss'); if (lost >= 0) S('redirect: minutes after the loss').add(lost); }
         if (c.action === 'display' && x.v === V.RAIN) bump('rain displays');
         if (c.action === 'display' && isAdultMale(c) && time - stormAt < P.impulseDurationH) bump('adult-male displays within 6 min of a storm onset (any kind)');
         if (c.action === 'charge' && x.v === V.STATUS) bump('status charges');
