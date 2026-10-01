@@ -55,20 +55,25 @@ export function runViability(j: ViabilityJob): Viability {
   };
 }
 
-export interface ViabilityVerdict { pass: boolean; births: number; deaths: number; ratio: number | null; starvationDeaths: number; minLivingShare: number; reasons: string[] }
+export interface ViabilityVerdict { pass: boolean; births: number; deaths: number; ratio: number | null; starvationDeaths: number; minLivingShare: number; reasons: string[]; /** Too few births and deaths to compare them: that criterion was not applied. */ fewEvents: boolean }
+/** Births are compared with deaths only when the run has at least this many of both together (short windows hold a handful). */
+export const MIN_EVENTS = 10;
 /** A seed may not end below this share of its starting population (C8c gate G2). */
 export const MIN_LIVING_SHARE = 0.8;
 
 /**
  * The guard (IMPLEMENTATION_PLAN.md Track E, protocol step 4; docs/staging/c8c-lactation-taper.md G2): pooled births
  * are at least pooled deaths, nobody starved in the scored window, and no seed ends below 80% of its starting population.
+ * With fewer than MIN_EVENTS births and deaths together (runs of a month or two) their comparison is chance, so that
+ * criterion is not applied and `fewEvents` says so; the other two still decide.
  */
 export function viabilityVerdict(v: Viability[]): ViabilityVerdict {
   const births = v.reduce((a, x) => a + x.births, 0), deaths = v.reduce((a, x) => a + x.deaths, 0), starvationDeaths = v.reduce((a, x) => a + x.starvationDeaths, 0);
   const minLivingShare = v.length ? Math.min(...v.map(x => x.livingStart ? x.livingEnd / x.livingStart : 0)) : NaN;
   const reasons: string[] = [];
-  if (births < deaths) reasons.push(`births ${births} < deaths ${deaths}`);
+  const fewEvents = births + deaths < MIN_EVENTS;
+  if (births < deaths && !fewEvents) reasons.push(`births ${births} < deaths ${deaths}`);
   if (starvationDeaths > 0) reasons.push(`${starvationDeaths} starvation death${starvationDeaths === 1 ? '' : 's'}`);
   if (minLivingShare < MIN_LIVING_SHARE) reasons.push(`a seed ends at ${(minLivingShare * 100).toFixed(0)}% of its starting population (< ${MIN_LIVING_SHARE * 100}%)`);
-  return { pass: v.length > 0 && !reasons.length, births, deaths, ratio: deaths ? births / deaths : null, starvationDeaths, minLivingShare, reasons };
+  return { pass: v.length > 0 && !reasons.length, births, deaths, ratio: deaths ? births / deaths : null, starvationDeaths, minLivingShare, reasons, fewEvents };
 }

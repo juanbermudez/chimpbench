@@ -12,7 +12,8 @@
 // their own; it calls bandDistance per part and is unchanged.)
 // Rows without a numeric band (pattern rows: the scorer returns pass or fail by majority of seeds) have no distance.
 // They are never dropped silently: rowDistance() returns kind 'pattern' and sumDistances() counts them apart, as it
-// does rows without a value (insufficient data, mechanism missing, structural, sealed, scale).
+// does rows without a value (insufficient data, mechanism missing, structural, sealed, scale) and rows the caller
+// rules out because the run is shorter than the window they need (`window`), so every sum states its own row set.
 
 export interface Band { lo: number; hi: number }
 /** A band with an open side (null), as written in data/targets.json `accept`. */
@@ -86,13 +87,16 @@ export interface DistanceSum {
   unscored: number;
   /** Rows the caller excluded (compromised, not scorable, instrument below its bar): reported, never summed. */
   excluded: number;
+  /** Rows that need a longer window than the run has: reported as insufficient, never summed. */
+  window: number;
 }
 
 /** Sums row distances and counts what is left out. `excluded` rows are counted apart whatever their kind. */
-export function sumDistances(rows: { d: RowDistance; verdict: string; excluded?: boolean }[]): DistanceSum {
-  const s: DistanceSum = { sum: 0, capped: 0, rows: 0, outside: 0, pattern: { pass: 0, fail: 0, other: 0 }, unscored: 0, excluded: 0 };
+export function sumDistances(rows: { d: RowDistance; verdict: string; excluded?: boolean; window?: boolean }[]): DistanceSum {
+  const s: DistanceSum = { sum: 0, capped: 0, rows: 0, outside: 0, pattern: { pass: 0, fail: 0, other: 0 }, unscored: 0, excluded: 0, window: 0 };
   for (const r of rows) {
-    if (r.excluded) s.excluded++;
+    if (r.window) s.window++;
+    else if (r.excluded) s.excluded++;
     else if (r.d.kind === 'pattern') s.pattern[r.verdict === 'pass' ? 'pass' : r.verdict === 'fail' ? 'fail' : 'other']++;
     else if (r.d.kind === 'unscored' || r.d.distance === null) s.unscored++;
     else { s.sum += r.d.distance; s.capped += Math.min(1, r.d.distance); s.rows++; if (r.d.distance > 0) s.outside++; }

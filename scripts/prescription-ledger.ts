@@ -76,7 +76,7 @@ export function ledgerMarkdown(L: ReturnType<typeof buildLedger>): string {
   const kinds: Record<string, number> = {};
   for (const r of oe.filter(r => r.active)) kinds[r.kind] = (kinds[r.kind] ?? 0) + 1;
   o.push(`Outcome-encoding entries in use, by kind: ${Object.entries(kinds).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k} ${n}`).join(', ')}.`, '');
-  o.push('Limits. The classes follow written rules, so they are reproducible, not certain: entries marked † are judgement calls. Bout lengths (`bout*Min`/`Max`) are classed design (re-decision cadence) except the two tied to clock windows. Score literals in `src/sim` (weights such as the rest score\'s 0.12) and gap literals (`time - x.lastCall > 1.5`) are outside this lint, which covers hour-of-day comparisons, dice against fixed numbers and the time-of-day menus only.', '');
+  o.push('Limits. The classes follow written rules, so they are reproducible, not certain: entries marked † are judgement calls. Bout lengths (`bout*Min`/`Max`) are classed design (re-decision cadence) except the four tied to clock windows (midday rest, morning nest). Score literals in `src/sim` (weights such as the rest score\'s 0.12) and gap literals (`time - x.lastCall > 1.5`) are outside this lint, which covers hour-of-day comparisons, dice against fixed numbers and the time-of-day menus only.', '');
 
   o.push('## Outcome-encoding registry entries', '');
   o.push('| Id | Group | Field value | Units | Kind | In use | Encodes | Rule | Why |', '| --- | --- | --- | --- | --- | --- | --- | --- | --- |');

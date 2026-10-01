@@ -3,7 +3,7 @@ import test from 'node:test';
 import { bandDistance, openBandDistance, rowDistance, sumDistances } from '../scripts/lib/band-distance';
 import { bandDistance as jevBandDistance, endpoint, ENDPOINT_ROWS, rowKey } from '../scripts/lib/jev-arm';
 import { runViability, viabilityVerdict, type Viability } from '../scripts/lib/viability';
-import { benchRows, compare, distances, furthest, parsePartBands, type BenchDoc } from '../scripts/e-bench';
+import { MAX_TOTAL_DAYS, MODES, NEEDS_YEAR, benchRows, compare, distances, furthest, parsePartBands, type BenchDoc } from '../scripts/e-bench';
 
 const near = (a: number | null, b: number) => assert.ok(a !== null && Math.abs(a - b) < 1e-12, `${a} ≠ ${b}`);
 
@@ -55,8 +55,9 @@ test('sums count what they leave out', () => {
     { d: num(9), verdict: 'fail', excluded: true },
     { d: none('pattern'), verdict: 'pass' }, { d: none('pattern'), verdict: 'fail' }, { d: none('pattern'), verdict: 'insufficient' },
     { d: none('unscored'), verdict: 'insufficient' },
+    { d: none('unscored'), verdict: 'insufficient', window: true }, { d: none('pattern'), verdict: 'insufficient', window: true },
   ]);
-  assert.deepEqual(s, { sum: 4.5, capped: 1.5, rows: 3, outside: 2, pattern: { pass: 1, fail: 1, other: 1 }, unscored: 1, excluded: 1 });
+  assert.deepEqual(s, { sum: 4.5, capped: 1.5, rows: 3, outside: 2, pattern: { pass: 1, fail: 1, other: 1 }, unscored: 1, excluded: 1, window: 2 });
 });
 
 const targets = [
@@ -90,12 +91,29 @@ test('scorecard rows become benchmark rows: part bands, exclusions, sealed rows'
   assert.equal(by['T-COM-3'].kind, 'pattern');
   // a sealed row shows nothing but its id, metric and role
   assert.deepEqual(by['T-DEM-14'], { id: 'T-DEM-14', metric: 'rank and fertility', role: 'held-out', encoded: false, sealed: true, band: '', units: '', pooled: null, perSeed: [], parts: {}, verdict: 'sealed', flags: [],
-    kind: 'sealed', distance: null, partDistances: null, perSeedDistance: [], oneSided: false, degenerate: false, excluded: true });
+    kind: 'sealed', distance: null, partDistances: null, perSeedDistance: [], oneSided: false, degenerate: false, excluded: true, window: false });
   const d = distances(rows);
   near(d.fitted.sum, 0.75);
   near(d.heldOut.sum, 0.5);
   assert.deepEqual([d.heldOut.excluded, d.heldOut.pattern.pass, d.sealed, d.heldOutEncoded.rows], [1, 1, 1, 0]);
   assert.deepEqual(furthest(rows).map(r => r.id), ['T-ACT-1', 'T-FOOD-3', 'T-DEM-2']);
+});
+
+test('modes respect the 90-day limit, and rows that need a year are insufficient in shorter runs', () => {
+  assert.deepEqual(MODES.quick, { days: 30, burnInDays: 30, seeds: [48, 7] });
+  assert.deepEqual(MODES.confirm, { days: 60, burnInDays: 30, seeds: [48, 7, 21, 5, 11] });
+  for (const m of [MODES.quick, MODES.confirm]) assert.ok(m.days + m.burnInDays <= MAX_TOTAL_DAYS);
+  assert.ok(MODES.full.days + MODES.full.burnInDays > MAX_TOTAL_DAYS);       // kept, refused without --allow-long
+  assert.ok('T-DEM-2' in NEEDS_YEAR && 'T-RNG-1' in NEEDS_YEAR && !('T-ACT-1' in NEEDS_YEAR));
+  const short = benchRows(card, targets, 60), by = Object.fromEntries(short.map(r => [r.id, r]));
+  assert.deepEqual([by['T-DEM-2'].window, by['T-DEM-2'].verdict, by['T-DEM-2'].distance, by['T-DEM-2'].kind], [true, 'insufficient', null, 'unscored']);
+  assert.match(by['T-DEM-2'].flags[0], /window too short/);
+  assert.deepEqual([by['T-FOOD-3'].window, by['T-FOOD-3'].distance], [true, null]);
+  assert.equal(by['T-ACT-1'].window, false);
+  const d = distances(short);
+  near(d.fitted.sum, 0.5);
+  assert.deepEqual([d.fitted.rows, d.fitted.window, d.heldOut.rows, d.heldOut.window, d.heldOut.sum], [1, 1, 0, 1, 0]);
+  assert.equal(benchRows(card, targets, 365).some(r => r.window), false);
 });
 
 test('compare: change per row, raw and on rows scored in both runs', () => {
@@ -122,7 +140,9 @@ test('compare: change per row, raw and on rows scored in both runs', () => {
 test('viability: the guard and a replayed world', () => {
   const v = (o: Partial<Viability>): Viability => ({ seed: 1, livingStart: 50, livingEnd: 50, births: 3, deaths: 2, ratio: 1.5, starvationDeaths: 0, orphanInfantDeaths: 0, deathsByCause: {}, burnInStarvationDeaths: 0, medianAdultHunger: 0.4, medianLactatingHunger: 0.5, wallMs: 0, ...o });
   assert.equal(viabilityVerdict([v({}), v({ births: 0, deaths: 1 })]).pass, true);
-  assert.match(viabilityVerdict([v({ births: 1, deaths: 2 })]).reasons[0], /births 1 < deaths 2/);
+  assert.match(viabilityVerdict([v({ births: 4, deaths: 8 })]).reasons[0], /births 4 < deaths 8/);
+  // a handful of events cannot rank births against deaths: that criterion is not applied, and the verdict says so
+  assert.deepEqual([viabilityVerdict([v({ births: 1, deaths: 2 })]).pass, viabilityVerdict([v({ births: 1, deaths: 2 })]).fewEvents], [true, true]);
   assert.match(viabilityVerdict([v({ starvationDeaths: 1 })]).reasons[0], /1 starvation death/);
   assert.match(viabilityVerdict([v({}), v({ livingEnd: 39 })]).reasons[0], /78% of its starting population/);
   assert.equal(viabilityVerdict([]).pass, false);
