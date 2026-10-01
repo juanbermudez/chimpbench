@@ -1,7 +1,7 @@
 import type { Chimp, World } from '../types';
 import { bond, isAdultMale, maternalKin } from './hierarchy';
 import { paramsOf, type Params } from './params';
-import { SLOW_EVERY, SLOW_HOURS, TICK_HOURS, index, ix, type ChimpX } from './state';
+import { NEVER, SLOW_EVERY, SLOW_HOURS, TICK_HOURS, index, ix, type ChimpX } from './state';
 
 // Stage E4a (docs/staging/e4a-prereg.md): three slow internal states, each matched to a hormone field teams measure in
 // urine. Rare acts then follow from an animal's standing state instead of a probability roll that opens an option.
@@ -59,9 +59,13 @@ export function endoStep(world: World, c: Chimp, x: ChimpX, sleeping: boolean, P
   // affiliation speeds the way down. Losses, wins, grooming, reconciliation and consolation act on chimp.stress where
   // they happen, as before.
   let s = c.stress;
-  if (since(x.victimAt, tick)) s += P.endoStressAggrKick * (1 - s);
-  if (since(x.lastAgg, tick)) s += P.endoStressAggrKick * (1 - s);
-  if (since(x.heardAt, tick)) s += P.endoStressStrangerW * (1 - s);
+  // E4b fix: one kick per aggressive interaction, given or received. Aggression stamps less than one slow step after the
+  // last kicked one belong to the same interaction (the charge, the counter-charge, the decision that re-stamps the
+  // loser as victim), which before the fix could kick twice.
+  const agg = x.victimAt > x.lastAgg ? x.victimAt : x.lastAgg;
+  if (since(agg, tick) && agg - (x.aggKick ?? NEVER) >= SLOW_HOURS) { s += P.endoStressAggrKick * (1 - s); x.aggKick = agg; }
+  // E4b fix: only the start of a hearing episode kicks (endoHeard), not every slow step while the calls go on
+  if (since(x.heardFrom ?? NEVER, tick)) s += P.endoStressStrangerW * (1 - s);
   const deficit = (c.hunger + (1 - x.cond)) / 2;
   let target = floor + P.endoStressDeficitW * deficit + (!sleeping && x.strangers > 0 ? P.endoStressStrangerW : 0);
   if (target > 1) target = 1;
@@ -78,6 +82,14 @@ export function endoStep(world: World, c: Chimp, x: ChimpX, sleeping: boolean, P
     a += (level - a) * (1 - Math.exp(-SLOW_HOURS / P.endoArousalTauH));
     x.arousal = a < 1e-6 ? 0 : a > 1 ? 1 : a;
   }
+}
+
+/**
+ * A stranger call is about to be heard (perception.ts hear, interventions.ts playback): called before x.heardAt is
+ * overwritten, it marks the start of a new hearing episode when nothing was heard for endoHeardGapH (E4b fix).
+ */
+export function endoHeard(world: World, x: ChimpX, P: Params): void {
+  if (P.endoStates === 1 && world.time - x.heardAt > P.endoHeardGapH) x.heardFrom = world.time;
 }
 
 /** Food sharing raises affiliation in giver and receiver (execution.ts; the only event that leaves no timestamp). */

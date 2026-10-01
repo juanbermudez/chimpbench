@@ -9,6 +9,7 @@ import { paramsOf, type Params } from './params';
 import { fruitAt } from './phenology';
 import { noteContact } from './contact';
 import { featureDistance, perceivedFeatures } from './signals';
+import { endoHeard } from './endocrine';
 import { NEVER, aliveNear, byIdIn, index, ix, simOf, treesNear } from './state';
 
 export const IMPULSE_TRANSFER = 1, IMPULSE_ESCALATE = 2, IMPULSE_INFANTICIDE = 3, IMPULSE_RAIN = 4, IMPULSE_GANG = 5, IMPULSE_PATROL = 6, IMPULSE_HUNT = 7;
@@ -324,6 +325,7 @@ function hear(world: World, o: Chimp, callId: number, kind: CallKind, caller: Ch
   }
   // contact memory (§5.3.1 P2): a new stranger chorus heard adds contact at the caller's place
   if (P.patrolContactMemory === 1 && world.time - x.heardAt > P.strangerCallerWindowH) noteContact(world, o, caller.position[0], caller.position[2], 1, 0);
+  endoHeard(world, x, P); // stage E4b fix: the start of a hearing episode (before heardAt moves on)
   x.heardN = Math.max(1, n); x.heardAt = world.time; x.heardX = caller.position[0]; x.heardZ = caller.position[2]; x.heardTroop = caller.troopId; x.heardStim = -1;
   // most intergroup encounters are acoustic only (Kanyawara: 85% of 120 encounters in 15 y; Wilson et al. 2012) [M]
   const s = simOf(world);

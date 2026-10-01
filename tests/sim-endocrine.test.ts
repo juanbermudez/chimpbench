@@ -3,13 +3,13 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { worldShapeProblem, plainDataProblems } from '../src/persist/envelope';
 import { V, candidateMeta, computeCandidates } from '../src/sim/candidates';
-import { endoShared, endoStep, escalateScore, rainScore, redirectScore } from '../src/sim/endocrine';
+import { endoHeard, endoShared, endoStep, escalateScore, rainScore, redirectScore } from '../src/sim/endocrine';
 import { setWeather } from '../src/sim/environment';
 import { isAdultMale, maternalKin } from '../src/sim/hierarchy';
 import { startAction } from '../src/sim/execution';
 import { paramsOf, type Overrides } from '../src/sim/params';
 import { IMPULSE_ESCALATE, perceive } from '../src/sim/perception';
-import { NEVER, SLOW_EVERY, SLOW_HOURS, ix, simOf } from '../src/sim/state';
+import { NEVER, SLOW_EVERY, SLOW_HOURS, TICK_HOURS, ix, simOf } from '../src/sim/state';
 import { createWorld, stepWorld, tickWorld } from '../src/simulation';
 import type { Chimp, World } from '../src/types';
 import { caseKey, runCase, worldHash } from './fixtures/golden';
@@ -19,6 +19,8 @@ import { caseKey, runCase, worldHash } from './fixtures/golden';
 const ON: Overrides = { endoStates: 1, endoEscalate: 1, endoRedirect: 1, endoRainDisplay: 1 };
 const run = (w: World, ticks: number) => { for (let i = 0; i < ticks; i++) tickWorld(w); return w; };
 const HOUR = 240, STEPS_PER_H = HOUR / SLOW_EVERY;
+/** The eco-hour of the current tick: steps() moves the tick on but not world.time, and an event stamped now falls in the next step's window. */
+const now = (w: World) => w.tick * TICK_HOURS;
 /** `n` slow steps of one animal with nothing in view (the tick is moved on so each step has its own event window). */
 function steps(w: World, c: Chimp, n: number, sleeping = false): void {
   for (let i = 0; i < n; i++) { w.tick += SLOW_EVERY; endoStep(w, c, ix(c), sleeping, paramsOf(w), paramsOf(w).stressFloor); }
@@ -29,6 +31,7 @@ function quiet(params: Overrides = ON): { w: World; c: Chimp } {
   const c = w.chimps.find(k => k.alive && isAdultMale(k) && k.troopId === 1)!;
   const x = ix(c);
   x.seen.length = 0; x.strangers = 0; x.victimAt = NEVER; x.lastAgg = NEVER; x.heardAt = NEVER; x.recon = NEVER; x.consoleAt = NEVER; x.consoledAt = NEVER;
+  delete x.aggKick; delete x.heardFrom;
   c.lastConflict = null; c.action = 'rest'; c.hunger = 0; x.cond = 1; x.bereft = 0; c.stress = paramsOf(w).stressFloor; x.arousal = 0; x.affil = 0;
   return { w, c };
 }
@@ -82,7 +85,7 @@ test('stress load rises with its drivers: aggression given or received, energy d
   assert.ok(Math.abs(rest - P.stressFloor) < 1e-9, 'at the floor with no driver');
   assert.ok(after((w, c) => { ix(c).victimAt = w.time; }) > rest + 0.05, 'being charged');
   assert.ok(after((w, c) => { ix(c).lastAgg = w.time; }) > rest + 0.05, 'charging');
-  assert.ok(after((w, c) => { ix(c).heardAt = w.time; }) > rest + 0.1, 'a stranger chorus');
+  assert.ok(after((w, c) => { endoHeard(w, ix(c), paramsOf(w)); ix(c).heardAt = w.time; }) > rest + 0.1, 'a stranger chorus');
   // an event counts once: a second step does not kick again
   const twice = after((w, c) => { ix(c).victimAt = w.time; }, 2), once = after((w, c) => { ix(c).victimAt = w.time; });
   assert.ok(twice < once);
@@ -268,4 +271,41 @@ test('endoRedirect (iteration 1): a defeat is considered once, at the loser\'s f
   assert.ok(off.redirect());
   startAction(off.w, off.c, computeCandidates(off.w, off.c, []).find(k => k.action === 'rest')!, 'rules');
   assert.ok(off.x.lostAt > NEVER && off.redirect());
+});
+
+test('E4b fix: one stress kick per aggressive interaction, given or received', () => {
+  const P = paramsOf(quiet().w);
+  const once = (() => { const { w, c } = quiet(); ix(c).victimAt = w.time; steps(w, c, 1); return c.stress; })();
+  // charged in one slow step, re-stamped as the loser a minute later in the next one: the same interaction
+  const twoSteps = (() => { const { w, c } = quiet(), x = ix(c); x.victimAt = now(w) + 4 / 60; steps(w, c, 1); x.victimAt = now(w); steps(w, c, 1); return c.stress; })();
+  const decay = (s: number) => P.stressFloor + (s - P.stressFloor) * Math.exp(-SLOW_HOURS / P.endoStressTauH);
+  assert.ok(Math.abs(twoSteps - decay(once)) < 1e-9, 'no second kick for the decision');
+  // charged and counter-charging in the same step: one kick
+  const both = (() => { const { w, c } = quiet(); ix(c).victimAt = w.time; ix(c).lastAgg = w.time; steps(w, c, 1); return c.stress; })();
+  assert.ok(Math.abs(both - once) < 1e-12);
+  // a new interaction later on kicks again
+  const later = (() => { const { w, c } = quiet(), x = ix(c); x.victimAt = w.time; steps(w, c, 1); steps(w, c, 3); x.lastAgg = now(w); steps(w, c, 1); return c.stress; })();
+  assert.ok(later > once, 'a second interaction');
+});
+
+test('E4b fix: a stranger chorus kicks the stress load once per hearing episode, not every step while it goes on', () => {
+  const chorus = (gapSteps: number, calls: number) => {
+    const { w, c } = quiet(), x = ix(c), P = paramsOf(w);
+    let peak = 0;
+    for (let i = 0; i < calls; i++) {
+      w.time = now(w);
+      endoHeard(w, x, P); x.heardAt = w.time; x.heardN = 2;
+      steps(w, c, gapSteps);
+      if (i === 0) peak = c.stress;
+    }
+    return { first: peak, end: c.stress, P };
+  };
+  const steady = chorus(1, 12); // a call every 5 min for an hour
+  assert.ok(steady.end < steady.first, 'the load decays while the calls continue');
+  const apart = chorus(Math.ceil(steady.P.endoHeardGapH / SLOW_HOURS) + 1, 2); // two choruses more than the gap apart
+  assert.ok(apart.end > steady.end, 'a new episode kicks again');
+  // with the switch off nothing is marked
+  const { w, c } = quiet({}), x = ix(c);
+  endoHeard(w, x, paramsOf(w));
+  assert.equal(x.heardFrom, undefined);
 });

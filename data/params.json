@@ -5807,6 +5807,28 @@
    "notes": "Stage E4a moved literal: the score of the escalated attack opened by an escalation impulse (unchanged at endoEscalate 0). With endoEscalate 1 it is the ceiling the states scale down."
   },
   {
+   "id": "endoHeardGapH",
+   "group": "needs",
+   "value": 0.25,
+   "units": "h",
+   "range": [
+    0.125,
+    0.5
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1000
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "endoHeard",
+   "file": "src/sim/endocrine.ts",
+   "notes": "Stage E4b fix of E4a (docs/staging/e4b-prereg.md §1): a stranger call heard after this long without one starts a new hearing episode, and only the start of an episode kicks the stress load (endoStressStrangerW). Before the fix every slow step with a call heard kicked it again while a chorus or counter-calling went on. Design: the window in which observe() still reports a heard chorus (15 min). Read only while endoStates is 1."
+  },
+  {
    "id": "endoParousAgeY",
    "group": "needs",
    "value": 15,
