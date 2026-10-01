@@ -118,4 +118,55 @@ At most three, each a change of mechanism logged here with its reason before its
 
 ## 7. Results
 
-(To be filled after the runs.)
+Runs: field profile, seeds 48 and 7, 30-day burn-in + 60 days, `--workers 1`; outputs in `artifacts/validation/e1e/` (not tracked). Unit tests of the switch (`tests/sim-drive.test.ts`): conservation exact with the drive on (sharing included), determinism, saves, switch-off identity. `pnpm test` passes (after adding the §17 row the registry test asks for).
+
+### Arm R (reference: the stack with E1c and the bug fixes)
+
+Adult females (not pregnant or lactating) eat 1,304 formula kcal in 174 min and spend 1,263. Lactating females: 1,633 kcal, 189 min, reserves **−0.114 → −0.258** of the store (−0.26%/day; E1b's flaw, unchanged by E1c or the fixes). Infants 0.5–2 y +0.012 → +0.011, 2–5 y −0.017 → −0.051. Hourly (first 3 h / middle / last 3 h): feeding 40 / 24 / 23%, rest 15 / 28 / 31%. Fitted 3.599, held-out 3.776, viability pass.
+
+### Iteration 1 (the registered mechanism; arm D)
+
+**Not viable: 8 lactating females starved** (2 on seed 48, 6 on seed 7). Lactating reserves −0.342 → −0.553 (min −0.631); other adult females −0.027 → −0.055; juveniles −0.068 → −0.120; infants 2–5 y −0.036 → −0.144.
+
+| | Arm R | Arm D |
+| --- | --- | --- |
+| Lactating: formula kcal eaten; eating min; ground km; fruit share of eating; daylight hunger | 1,633; 189; 1.88; 72%; 0.39 | **1,369**; 196; **3.19**; **47%**; 0.62 |
+| Other adult females: same | 1,304; 174; 2.19; 52%; 0.20 | 1,316; 189; 2.81; 43%; 0.34 |
+| Lactating females leave the nest, min after sunrise | 21 | 47 |
+| Feeding first 3 h / middle / last 3 h (truth) | 40 / 24 / 23% | 34 / 27 / 30% |
+| Rest, same | 15 / 28 / 31% | 20 / 28 / 29% |
+| Infants 1–4 y: daytime nursing; milk (kcal/day) | 40–67% (E1c); about 307 | 15–20%; 153–175 by day + 133–155 at night |
+| T-ACT-1 / 2 / 3 / 4 | 0.30 / 0.18 / 0.24 / 0.50 | 0.31 / 0.23 / 0.18 / 0.42 |
+| T-FOOD-2; T-RNG-5 | 0.72; 0.73 | 0.57; 1.38 |
+| Fitted / held-out distance | 3.599 / 3.776 | 3.959 / 5.578 |
+
+What worked as registered:
+- A late-afternoon rise in feeding appeared (30% against 27% in the middle third).
+- The early peak shrank (40 → 34%).
+- Daytime nursing fell to 11–20% of daylight.
+
+Hunger was no longer capped by emptiness: mothers' daylight hunger was 0.62.
+
+**Named flaw: the bout was valued to the end of the need, at the gut's pace.**
+- With a large need (a mother in deficit needs thousands of kcal), the energy E a tree "can deliver" was the whole crop share. The bout to eat it ran mostly at the foregut's emptying rate (gut capacity ÷ 3 h, about 190 kcal/h against 535 eaten), so every fruit tree was worth about a third of its intake rate. That held even for the crown the animal sat in.
+- Fallback food, eaten where the animal stands, was still valued at its full rate. So the hungrier the animal, the less fruit was worth relative to leaves, to resting and to the nest at dawn.
+- Mothers left the nest later and switched to fallback food (fruit 72% → 47% of eating), walked 70% further, and ate less energy in the same minutes.
+- The nursing value had the same flaw: a need larger than the gland's store was valued as the trickle of synthesis, so infants of 2–5 y drank 87 kcal/day less than the yield.
+
+The physiology the coordinator's brief describes is satiation ending a meal at distension, not a meal paced to the end of the deficit. **Kill criterion 1 is met; iteration 1 is null.**
+
+### Iteration 2 (change of mechanism, logged before its run)
+
+A bout ends when the foregut is full, the crop share is eaten or the need is met, and the animal then re-decides:
+- **Trees:** E = min(crop share, need, what fits: room × R ÷ (R − Q), the foregut's room plus its emptying while it fills); the bout lasts E ÷ R. A trip's share of the full intake rate is then the time spent feeding over the trip, as before E1e, and the crown the animal sits in is worth its full rate. Fruit and fallback food are again compared at their own rates.
+- **Nursing:** the share of a full flow the glands give now: min(1, (store + synthesis over one tick) ÷ one tick of full flow). A dry gland gives the trickle; a gland holding milk, the full flow.
+
+Nothing else changes: the drive, the horizon and the satiation curve stay as registered.
+
+Expected against arm R:
+- mothers' fruit share and intake at least arm R's, with higher hunger;
+- no starvation;
+- lactating slope better than arm R's (target of the kill criterion: ≥ −0.05%/day, not certain);
+- the late-afternoon rise in feeding kept;
+- infants back to the full yield (about 307 kcal/day);
+- daytime nursing back toward arm R's level (E1c's open problem returns: it is a persistence problem, the nurse act continuing at a trickle, not a valuation one).
