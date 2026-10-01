@@ -805,7 +805,7 @@ Evidence pass for Track E (IMPLEMENTATION_PLAN.md, "Track E: Emergence"). Nothin
 | --- | --- | --- | --- | --- |
 | Active day, nest to nest | 11 h 34 min males, 10 h 57 min lactating females (Budongo Sonso) | batesByrne2009 (in the registry) | [M] | target (T-RHY-1) |
 | Active period by sex, state and season | Non-receptive females shorter than males; receptive females longer than males; females longer in the dry season; low-ranking males longer than higher-ranking males (Gombe 1975–1992) | lodwick2004 (Abs) | [M] | target, direction (T-RHY-2) |
-| Leaving the nest before sunrise | 18% of departures (5 females, 179 days, Taï, fruit-scarce periods); earlier when breakfast is an ephemeral fruit and far away | janmaat2014 (FT extract) | [M] | target (T-RHY-3) |
+| Leaving the nest before sunrise | 18% of departures (5 females, 179 days, Taï, fruit-scarce periods); earlier when breakfast is an ephemeral fruit and far away | janmaat2014 (FT; read in full for E2b) | [M] | target (T-RHY-3) |
 | Time of night-nest building | "Around 18:00" at Kibale, "often observed around sunset" (general statement) | khayer2025 (FT extract) | [L] | target (T-RHY-4) |
 | Activity at night | 1.80% of camera-trap activity is nocturnal across 22 sites, mostly in twilight hours; 3.3% of forest clips at Sebitoli, Kibale | tagg2018 (Abs), lacroux2022 (Abs) | [M] | target (T-RHY-5) |
 | Drinking frequency | Gombe mothers: 788 drinks in 10,517 h (derived: 0.075 per hour, about 0.9 per 12-hour day); 0.001 of observation minutes; more in the dry season | nelson2022 (FT) | [H] | target (T-RHY-6) |
@@ -1093,8 +1093,8 @@ The gaps for E2 and E4 are in E.5.
   - Non-receptive females were active longer in the dry season; males showed no seasonal effect.
   - No durations are in the abstract.
   - Use in Track E: target, direction (T-RHY-2).
-- **Active day, Budongo** [batesByrne2009] (in the registry): 11 h 34 min for males, 10 h 57 min for lactating females. Today this is the parameter `activeDayH`; Track E turns it into a target (T-RHY-1).
-- **Leaving the nest, Taï** [janmaat2014] (FT extract) [M].
+- **Active day, Budongo** [batesByrne2009] (in the registry; read in full for stage E2b, see the E2b addendum): 11 h 34 min for males, 10 h 57 min for lactating females. Today this is the parameter `activeDayH`; Track E turns it into a target (T-RHY-1).
+- **Leaving the nest, Taï** [janmaat2014] (FT extract; read in full for stage E2b, see the E2b addendum) [M].
   - 5 adult females, 275 full days in three fruit-scarce periods (departure model: 179 days).
   - 18% of departures were before sunrise.
   - Departure was earlier when the breakfast fruit was very ephemeral (figs), and more so when it was farther away.
@@ -1565,3 +1565,35 @@ Evidence pass for stage E4b (a fast arousal state for acute reactions; `docs/sta
 - fedurek2016, samuni2017, preis2018, mullerLipson2003 and sobolewski2013 are already listed; the entries above add findings.
 
 **Not verified:** the healthy-volunteer catecholamine half-lives (secondary only); wild rain-display descriptions and any rate (seen only as summarised by hattoriTomonaga2020); Herbinger et al. 2009 (stranger playbacks at Taï, *Animal Behaviour* 78:1389–1396; not read).
+
+### E.16 Addendum: nest departure and the active day (stage E2b, 1 October 2026)
+
+Evidence pass for stage E2b (nest departure and the active day; `docs/staging/e2b-prereg.md`), 1 October 2026. Bibliographic data checked against Crossref on that day. Tags as in this Track E section (FT, Abs, secondary; [H], [M], [L] rate the observation in its own population; "cross-species" and "derived" as marked).
+
+- **Breakfast time, type and place, Taï** [janmaat2014] (FT: the PMC author manuscript PMC4246305, read from the Internet Archive copy of 28 February 2024; the live PMC page asked for a CAPTCHA, which was not bypassed; the publisher page refused the request) [M]. Replaces the earlier "FT extract" reading.
+  - 5 habituated adult females, all with offspring under 7 y; followed 16 April 2009 – 30 August 2011 in periods of 4–8 weeks during three fruit-scarce periods; 275 full days. The departure model uses 179 mornings: days after a complete observation day, fruit breakfasts only (74% of mornings).
+  - Departure time in seconds from astronomical sunrise (NOAA calculator), linear mixed model (Table 1, estimate ± SE): intercept 779.1 ± 293.7; non-fig breakfast +844.6 ± 328.8; breakfast fruit size +316.3 ± 136.9 (P = 0.026); distance nest–breakfast site −147.4 ± 206.7; non-fig × distance +582.8 ± 246.0 (P = 0.025); adult males at the nest −242.3 ± 116.2; feeding duration at the breakfast site −390.5 ± 105.3; feeding duration × males +234.8 ± 110.3 (P = 0.043); relative energy balance −118.4 ± 108 (P = 0.28); night temperature −134.1 ± 107.7 (P = 0.25); rain at the nest +437.6 ± 215.5 (P = 0.044). Full against control model χ²₄ = 22.67, P = 0.0002. The scaling of the predictors is in the supplement, which was not read, so the coefficients give directions and relative sizes, not seconds per metre.
+  - "18% of all departures were before sunrise", in twilight "when navigation is difficult and predation risk is greatest".
+  - Females left earlier for figs than for other fruit, but only when the figs were far; breakfast figs far from the nest were not eaten later than near ones (r = 0.016, n = 46): they left earlier to make up for travel time. For non-fig breakfasts they left later when the site was far.
+  - Why figs: hetero-specific foragers (monkeys, birds, squirrels) were found feeding in fig feeding trees more often (median proportion 0.45 against 0.35; 12 fig and 29 other species; P = 0.0016); ripe figs and small fruits stay on the tree for shorter periods (P = 0.032; fruit size r = 0.33). The authors control intragroup competition with the males at the nest × feeding duration term and attribute the fig effect to competition with other species.
+  - Approach speed to breakfast trees: figs median 0.33 m/s, other fruit 0.16 m/s (32 and 119 sites).
+  - Nests in the breakfast tree: 4 of 179 (2%); breakfast was outside the nest every day.
+  - Nest grunt to nest building: alone with offspring 19 ± 23 min and 980 ± 685 m (n = 26); in a party 30 ± 27 min and 1,194 ± 1,075 m (n = 82).
+  - The authors' reading of late departures to far non-fig sites: mothers avoid travelling when predation risk is greatest (forest leopards hunt with crepuscular peaks; Jenny & Zuberbühler 2005, not read).
+  - Use in E2b: target T-RHY-3 (share before sunrise) and direction rows (figs earlier than other fruit; far figs earlier than near figs; far non-fig sites later). Nothing here is an input.
+- **Nest departure and the active day by sex class, Budongo** [batesByrne2009] (FT: the authors' accepted manuscript, Sussex repository, figshare 23461388) [M].
+  - Sonso community, September 2002 – September 2003; 15 focal adults: 8 males and 7 females, of whom 6 lactating or gestating ("lactating females") and 1 receptive.
+  - Leaving the night nest, mean ± SD: males 06:56 ± 32 min (21 departures), lactating females 06:46 ± 13 min (12), receptive females 06:37 ± 12 min (4); no difference (F₂,₃₆ = 1.31, P = 0.28).
+  - Nest to nest: males 11 h 34 min ± 35 min (10 days), lactating females 10 h 57 min ± 34 min (7 days); t = 2.139, df = 15, P = 0.049.
+  - Stops of 20 min or more: males 6.5 ± 1.8 per day lasting 60 ± 50 min; lactating females 4.5 ± 1.0 lasting 95 ± 83 min. Day range 2.7 ± 1.5 km against 1.2 ± 0.8 km.
+  - Derived [L]: departures do not differ, so the shorter day is an earlier evening nest (from the means, about 18:30 for males and 17:43 for lactating females; the two means come from different subsets of days). Sunrise at Sonso (1.7°N, 31.5°E, East Africa Time) is about 06:35–07:05 through the year (computed here, not reported), so animals of every class left at about sunrise, and lactating females nested about an hour before sunset.
+  - Use in E2b: T-RHY-1 and its class contrast (target), now with its timing: evening, not morning.
+- **Nocturnal activity follows moonlight, Fongoli** [pruetz2018] (Abs) [M]. Savanna mosaic; 403 h of observation on 40 nights, 2007–2013. Chimpanzees were more active after moonrise or before moonset in fuller moon phases (dry season only); most night activity was travel or foraging. The author's premise: diurnal primates have no visual specialization for low light. Use in E2b: direction only; activity in the dark is limited by the light to see by.
+- **Postpartum sleep fragmentation, women** [montgomeryDowns2010] (Abs) [M for humans; cross-species]. Wrist actigraphy, 50 mothers, postpartum weeks 2–16: nocturnal sleep 7.2 ± 0.95 h, unchanged over the weeks; sleep efficiency 79.7% (week 2) to 90.2% (week 16) as fragmentation fell (21.7 to 12.8). Use in E2b: night feeding wakes the mother (direction; a tenth to a fifth of the night early in lactation in women), *assumed* for chimpanzees; no chimpanzee value was found.
+
+**Sources:**
+- *new* pruetz2018: Pruetz JD 2018. Nocturnal behavior by a diurnal ape, the West African chimpanzee (*Pan troglodytes verus*), in a savanna environment at Fongoli, Senegal. *American Journal of Physical Anthropology* 166(3):541–548. [doi:10.1002/ajpa.23434](https://doi.org/10.1002/ajpa.23434) (Abs).
+- *new* montgomeryDowns2010: Montgomery-Downs HE, Insana SP, Clegg-Kraynok MM, Mancini LM 2010. Normative longitudinal maternal sleep: the first 4 postpartum months. *American Journal of Obstetrics and Gynecology* 203(5):465.e1–465.e7. [doi:10.1016/j.ajog.2010.06.057](https://doi.org/10.1016/j.ajog.2010.06.057) (Abs).
+- janmaat2014 and batesByrne2009 are already listed (docs/realism-design.md source table); the entries above add findings from their full texts.
+
+**Not verified:** the janmaat2014 supplement (predictor scaling, ripe-fruit presence durations, Fig. S5 leopard attack rates); Jenny & Zuberbühler 2005 (leopard hunting times); any measurement of chimpanzee mothers waking at night to nurse; a chimpanzee visual threshold for travel in low light (Matsuzawa 1990 measured acuity, about 1.5, in daylight only; not read).
