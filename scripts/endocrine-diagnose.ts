@@ -48,6 +48,8 @@ for (const seed of seeds) {
   const st0 = { ...w.stats }, dead0 = new Set(w.chimps.filter(c => !c.alive).map(c => c.id));
   const version = new Map<number, number>(), prevStress = new Map<number, number>(), prevKey = new Map<number, string>(), lastLoss = new Map<number, number>();
   const prevAgg = new Map<number, number>(), prevVictim = new Map<number, number>(), grooming = new Map<number, number>();
+  const lostToRedirect = new Map<number, boolean>(); // stage E4b: was this animal's last loss to a redirected charge (redirect chains)
+  const startKey = new Map<number, string>(); // each chimp's act at the start of the tick (filled after the per-chimp loop)
   for (const c of w.chimps) { version.set(c.id, c.decisionVersion); prevStress.set(c.id, c.stress); lastLoss.set(c.id, c.lastConflict?.time ?? NEVER); prevAgg.set(c.id, ix(c).lastAgg); prevVictim.set(c.id, ix(c).victimAt); }
   // samples scheduled after events: [tick due, chimp id, label]
   let due: [number, number, string][] = [];
@@ -86,7 +88,7 @@ for (const seed of seeds) {
       const v0 = version.get(c.id) ?? c.decisionVersion, key = `${c.action}:${c.targetId}:${x.v}`;
       if (c.decisionVersion !== v0 && key !== prevKey.get(c.id)) {
         if (c.action === 'attack' && x.v === V.ESCALATE) bump('escalated attacks chosen');
-        if (c.action === 'charge' && x.v === V.REDIRECT) { const lost = c.lastConflict && !c.lastConflict.won ? (time - c.lastConflict.time) * 60 : NaN; bump('redirected charges'); if (lost <= 10) bump('redirected charges within 10 min of the loss'); if (lost >= 0) S('redirect: minutes after the loss').add(lost); }
+        if (c.action === 'charge' && x.v === V.REDIRECT) { const lost = c.lastConflict && !c.lastConflict.won ? (time - c.lastConflict.time) * 60 : NaN; bump('redirected charges'); if (lostToRedirect.get(c.id)) bump('redirected charges by an animal whose loss was itself to a redirect (chains)'); if (lost <= 10) bump('redirected charges within 10 min of the loss'); if (lost >= 0) S('redirect: minutes after the loss').add(lost); }
         if (c.action === 'display' && x.v === V.RAIN) { bump('rain displays'); S('rain display: minutes after the onset').add((time - stormAt) * 60); }
         if (c.action === 'display' && isAdultMale(c) && time - stormAt < P.impulseDurationH) bump('adult-male displays within 6 min of a storm onset (any kind)');
         if (c.action === 'charge' && x.v === V.STATUS) bump('status charges');
@@ -96,7 +98,8 @@ for (const seed of seeds) {
       version.set(c.id, c.decisionVersion); prevKey.set(c.id, key);
       // event responses of the stress load
       const lc = c.lastConflict;
-      if (lc && lc.time !== lastLoss.get(c.id)) { lastLoss.set(c.id, lc.time); if (lc.time === time) follow(c, lc.won ? 'after a win:' : 'after a loss:', pre); }
+      if (lc && lc.time !== lastLoss.get(c.id)) { lastLoss.set(c.id, lc.time); if (lc.time === time) { follow(c, lc.won ? 'after a win:' : 'after a loss:', pre);
+        if (!lc.won) { const byRedirect = /:2$/.test(startKey.get(lc.opponentId) ?? ''); lostToRedirect.set(c.id, byRedirect); if (byRedirect) bump('decided conflicts won by a redirected charge'); } } }
       if (x.lastAgg !== prevAgg.get(c.id)) { prevAgg.set(c.id, x.lastAgg); if (x.lastAgg === time) follow(c, 'aggressor:', pre); }
       if (x.victimAt !== prevVictim.get(c.id)) {
         prevVictim.set(c.id, x.victimAt);
@@ -152,6 +155,7 @@ for (const seed of seeds) {
         bump(rival ? 'adult-male hourly samples with a close-rank male in view' : 'adult-male hourly samples without one');
       }
     }
+    for (const c of w.chimps) if (c.alive) startKey.set(c.id, `${c.action}:${c.targetId}:${ix(c).v}`);
     if (i % HOUR === 0) hoots.clear();
   }
   for (const [, p0] of prof) {
