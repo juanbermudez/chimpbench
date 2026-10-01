@@ -1626,6 +1626,38 @@ The viability guard of §5 applies (against both C13 parts off). T-PTY-1, T-RNG-
 **7. Handoffs.**
 - The TRAINING session is warned when C13 lands: rules-driven states change, and its stand-ins train on rules-world contexts.
 - The Jev decisive test's R arm means the argmax rules. After C13 its harness must create worlds with `rgOn` 0, or run from its pinned snapshot, or R becomes RG. The other arms are unaffected: their policy chimps are aged 8+ and model-controlled, and the younger ones stay on the argmax. Flagged to the coordinator.
+
+### Stage C14: Patrol initiation under small parties
+**Goal**: patrols start at a wild rate again. **Status**: built and merged (1 October 2026); short runs only, so the observer rows wait for the long runs.
+
+**Diagnosis** (development seeds 48 and 7, sim truth, 60–90 days).
+- The patrol hazard is rolled only for a male with ≥ 3 own adult males in view. Parties shrank from 6.9 at C6 to 2.7, so that holds 6.5–8% of adult-male daytime. The base rate `patrolH0` was fitted at C6 for the large parties.
+- C13 lost over a third of the impulses that did arise: 3 of 24 were held by the intention gate and 6 were drawn away by sampling.
+- The observer then sees few of the patrols. A focal follow catches a patrol only when the focal is in it: about 1 in 10 now, 1 in 2 at C6.
+- The patrol switches are on and the ranges have a periphery; neither is the cause.
+
+**Pre-registration** (protocolLog, before any C14 run). Ablation set `C14` (`patrolImpulseDecides` 0, `patrolH0` 0.004), hash-identical to before.
+1. **`patrolImpulseDecides`** (both profiles). When the hazard-raised patrol-lead option is the rules' top pick, it is taken: no intention hold and no second draw. The hazard roll is the stochastic decision (design assumption).
+2. **`patrolH0` refitted in the field profile**, by log-space bisection inside its registry prior, to a sim-truth rate of 0.3 patrols per community-week, the midpoint of T-PAT-1's band. Only the count of patrols started was read (seeds 48 and 7, 90 days). Result: 0.0183 (0.298 per community-week). The compressed profile keeps 0.004.
+
+**Check** (seeds 48, 7 and 21; 180 days after the burn-in; 6 months were needed, because 3 months give about 10 patrols per seed):
+
+| Row | Prediction | Before | C14 | Verdict |
+| --- | --- | --- | --- | --- |
+| Truth patrols per community-week (fitted) | 0.2–0.4 | 0.06 | 0.35 (0.33 after the hunting merge) | pass |
+| Patrols reaching 3 adult males | ≥ 70% | 79% of 14 | 51% (57% after the merge) | **fail** |
+| Truth duration, median | 60–240 min | 156–361 | 163–216 | pass |
+| Truth incursion share | 0.25–0.55 | 0.43 | 0.31 (0.52 after the merge) | pass |
+| T-PAT-1 observed, per week | rises about 4×, stays below 0.1–0.5 | 0.006 | 0.069 | rose 11×; still below |
+| T-PAT-2 per male-year | rises about 4×, stays below 7–18 | 0.21 | 2.2 | rose 10×; still below |
+| T-PAT-6 observed incursion share | not resolvable | 0.15 | 0.12 on 26 | fail so far |
+| T-PAT-7 contact fraction | not resolvable | 0 | 0 on 16 | fail so far |
+| Viability guard | hunger within +0.10 | 0.40–0.41 | 0.40–0.45 | pass |
+
+- **Patrols are too small.** About half never reach three adult males: the companions' sampled choice often declines to join. That is the next gap, with the small parties behind it.
+- **What 6 months cannot resolve:** the observer rows (16 classified patrols) and killings on patrols (T-LET-6).
+- Nothing was adjusted after the check.
+
 ---
 
 ## 9. Datasets
