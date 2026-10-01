@@ -85,6 +85,10 @@
   "C13e": {
    "params": { "joinChoice": 0 },
    "note": "C13e off: the joint trip only beyond the 5 m minimum and without its own slot, the C7a departure cue, and the near-automatic party-follow value (hash-identical to before C13e)."
+  },
+  "hunting": {
+   "params": { "huntEncounter": 0, "huntExtraKillP": 0 },
+   "note": "Hunting fix off: the hunt needs a community hunting day (the daily lottery) and 3 adult males again, and a successful hunt makes one capture (hash-identical to the model before the fix: tests/sim-hunting.test.ts, field seeds 48 and 7; docs/staging/hunting-fix.patch.json)."
   }
  }
 }
