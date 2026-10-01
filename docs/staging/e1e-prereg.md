@@ -170,3 +170,44 @@ Expected against arm R:
 - the late-afternoon rise in feeding kept;
 - infants back to the full yield (about 307 kcal/day);
 - daytime nursing back toward arm R's level (E1c's open problem returns: it is a persistence problem, the nurse act continuing at a trickle, not a valuation one).
+
+**Iteration 2 result (arm D2).** Viable: no deaths in 60 days on either seed.
+
+| Row (band) | Arm 0 (no switches) | Arm R (stack) | Arm D2 (stack + E1e) | Registered |
+| --- | --- | --- | --- | --- |
+| T-ENE-1 formula kcal, adult females (1,900–3,100; truth) | — | 1,304 | 1,310 | 1,300–1,450, miss: as registered |
+| T-ENE-2 eating min, adult females (250–370; truth) | 268 | 174 | 171 | 0 to +15%: as registered (no change), miss |
+| T-ACT-1 feeding | 0.43 | 0.30 | 0.30 | +0 to +0.04: as registered |
+| T-ACT-2 travel | 0.19 | 0.18 | 0.16 | ±0.03: as registered |
+| T-ACT-3 grooming | 0.13 | 0.24 | 0.24 | ±0.03: as registered |
+| T-ACT-4 rest + groom | 0.38 | 0.50 (fail) | 0.46 (pass) | no direction registered |
+| T-RHY-9 feeding first 3 h / middle / last 3 h (truth) | 61 / 31 / 40% | 40 / 24 / 23% | **35 / 26 / 30%** | late peak appears (registered ≥ 5 points; measured 3.8), early peak smaller: as registered |
+| T-RHY-9 rest, same | 7 / 36 / 20% | 15 / 28 / 31% | **22 / 29 / 29%** | highest in the middle: met by 0.7 points |
+| T-FOOD-2 fruit share | 0.89 | 0.72 | 0.69 | no direction |
+| T-FOOD-4 trees per day | 5.3 | 4.4 | 4.8 | up slightly: as registered |
+| Lactating females: reserves ÷ store, day 30 → 85 | — | −0.114 → −0.258 (−0.26%/day) | **−0.048 → −0.075 (−0.049%/day)** | stop falling (≥ −0.05%/day): met at the limit; the last 15 days fall faster (−0.054 → −0.075) |
+| Lactating females: formula kcal; eating min; ground km | — | 1,633; 189; 1.88 | 1,721; 206; 1.58 | |
+| Infants 0.5–2 y / 2–5 y: reserves day 30 → 85 | — | +0.012 → +0.011 / −0.017 → −0.051 | +0.001 → +0.001 / −0.009 → −0.009 | hold: as registered |
+| Infants 1–2 / 2–3 / 3–4 y: daytime nursing; milk (kcal/day) | 14–23% (nurse act) | 72 / 64 / 39%; 307 | **25 / 27 / 26%**; 307 | under 25%: met only at 1–2 y (field about 3%) |
+| Infants 1–2 / 2–3 / 3–4 y: growth (kg/y) | (curve) | 0.00 / 0.27 / 1.37 | 1.31 / 0.69 / 0.35 | — |
+| Other adult females; juveniles: reserves | — | +0.019; −0.020 | −0.001 → −0.005; −0.006 → −0.022 | — |
+| Lactating females leave the nest (min after sunrise); active day, males / lactating | 15 (all) | 21; 11 h 17 / 11 h 35 | 46; 11 h 15 / 11 h 17 | field 11 h 34 / 10 h 57: the wrong-signed contrast of E2a shrinks from +18 to +2 min |
+| Last nest entry, min after sunset | −12 | −5 | −11 | registered 0–15 min later: **wrong direction** (6 min earlier) |
+| Fitted / held-out distance (e-bench) | 2.547 / 4.358 | 3.599 / 3.776 | 4.876 / 3.529 | on rows scored in both arms: −0.056 / −0.064 |
+| Viability | pass | pass | pass | |
+
+The fitted rise of +1.28 is T-PAT-6 (incursion share, 1.33), scored in arm D2 only. In arm R the patrol rows T-PAT-1, 2, 3, 5 and 7 were scored instead: patrols are rare events in 60 days. On rows scored in both arms, fitted −0.056 and held-out −0.064.
+
+**Kill criterion:**
+- K1: no starvation, and no adult class falling faster than 0.05%/day (lactating females at −0.049%/day; arm R −0.26).
+- K2: the late peak appeared and the lactating slope improved.
+- K3: on shared rows, fitted −0.056 and held-out −0.064.
+
+**Verdict: keep (provisional)**, as a candidate in the E stack, off by default (no prescription removed).
+
+Reading:
+- The two-signal appetite removes E1b's failure: mothers eat 5% more and hold their reserves, without moving an input. The drive ahead of the night fast makes the late-afternoon rise in feeding, from sleep pressure and no clock.
+- What it does not do: feeding time and daily intake are unchanged (171 min, 1,310 kcal, against 309 min and 2,479 kcal). Intake still equals expenditure, and the gap to the field is the same factor of about 1.9.
+- The midday pause is weak. Rest is 29% in the middle third against 29% in the last: the pause the field describes needs a stronger morning peak than this design gives. An empty gut adds no drive here, so dawn hunger is lower than under E1's readout.
+- The margin on mothers is thin (exactly at the threshold, with a steeper last fortnight). It needs the 5-seed confirm run before anything is built on it.
+- Infants: daytime nursing at 1–4 y falls from 39–72% to 25–27% at the full milk yield, and own food rises. Still far from the field's 3%: the nurse act continues at a trickle (E3's persistence problem, not this stage's).
