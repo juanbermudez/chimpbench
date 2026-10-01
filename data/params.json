@@ -6320,9 +6320,9 @@
    "file": "src/sim/candidates.ts",
    "profiles": {
     "compressed": 0.03,
-    "field": 0.03
+    "field": 0.191
    },
-   "notes": "Stage C15a: the hunger-independent part of the fallback (leaves, pith, herbs) worth; the literal 0.03 before C15. Leaves are a daily food beside fruit (11-19% of feeding; watts2012a, emeryThompson2020) [H]. Field value to be fitted to T-FOOD-2 (pre-registered bisection); compressed keeps 0.03. Ablation (set C15a): 0.03."
+   "notes": "Stage C15a: the hunger-independent part of the fallback (leaves, pith, herbs) worth; the literal 0.03 before C15. Leaves are a daily food beside fruit (11-19% of feeding; watts2012a, emeryThompson2020) [H]. Field 0.191: fitted to T-FOOD-2 by the pre-registered bisection (sim-truth fruit share of adult feeding 0.695 against 0.69; seeds 48 and 7, 30 days after a 180-day burn-in; trail 0.315 -> 0.472, 0.173 -> 0.729, 0.244 -> 0.621, 0.209 -> 0.662, 0.191 -> 0.695; only that share was read). Compressed keeps 0.03. Ablation (set C15a): 0.03."
   },
   {
    "id": "fallbackCapH",
