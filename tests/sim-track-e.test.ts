@@ -6,7 +6,7 @@ import { createWorld, tickWorld } from '../src/simulation';
 import { paramsOf } from '../src/sim/params';
 
 const TRACK_E_SWITCHES = [
-  'energyLedger', 'ledgerGrowSurplus', 'ledgerNightNurse', 'ledgerInfantIntake', // E1, E1c
+  'energyLedger', 'ledgerGrowSurplus', 'ledgerNightNurse', 'ledgerInfantIntake', 'ledgerDigesta', // E1, E1c, E1b
   'rhythmSleep', 'rhythmHeat', 'rhythmFreeNight', // E2a
   'urgencyChoice', 'urgencyPersist', 'urgencySwitchCost', // E3
   'endoStates', 'endoEscalate', 'endoRedirect', 'endoRainDisplay', // E4a
