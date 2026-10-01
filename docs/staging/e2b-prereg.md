@@ -189,3 +189,58 @@ Reading:
    as AL, smaller, for departures (lower hunger).
 
 Arms: RL, AL, SN2, SALN2 with `scripts/rhythm-metrics.ts`; AL and SALN2 also with `scripts/e-bench.ts --quick`.
+
+### Iteration 2 results
+
+| Readout | RL2 (R + nestLightDecide) | AL2 (R + departRace + nestLightDecide) | SN2 (S + nurseWake, feeds) | SALN2 (S + all three) | Field |
+| --- | --- | --- | --- | --- | --- |
+| Departures before sunrise, adult females (seed 48 / 7) | 0.011 (0.014 / 0.008) | **0.055 (0.051 / 0.059)** | 0.000 | 0.002 | 0.18 (band 0.05–0.35) |
+| … males / lactating / other females | 0.00 / 0.02 / 0.00 | 0.01 / 0.07 / 0.04 | 0 / 0 / 0 | 0 / 0 / 0 | — |
+| Earliest departure, min after sunrise | −9 | −15 | — | — | Taï: twilight |
+| Median departure (p10–p90) | 25 (14 to 34) | 19 (6 to 30) | 47 (21 to 51) | 28 (19 to 38) | about 0 (Budongo); +13 to +27 (Taï) |
+| Fig crowns < 150 / 150–500 / ≥ 500 m | 23 / 26 / 26 | 16 / 18 / 19 | 47 / 47 / 46 | 27 / 29 / 29 | far figs earliest |
+| Other crowns < 150 / 150–500 / ≥ 500 m | 24 / 27 / 25 | 19 / 20 / 21 | 47 / 47 / 47 | 27 / 29 / 29 | far non-figs latest |
+| Before sunrise: figs by distance; others by distance | 0.02 / 0 / 0; 0.01 / 0 / 0 | 0.06 / 0.04 / 0.04; 0.04 / 0.02 / 0.02 | 0 | 0.00; 0.01 / 0 / 0 | — |
+| Last nest entry, min after sunset; nests entered per evening | −4; 1.27 | −3; 1.24 | −3; 1.13 | −1; 1.35 | — |
+| Active day, all; males / lactating (difference) | 11 h 37; 11 h 37 / 11 h 40 (+3) | 11 h 45; 11 h 43 / 11 h 51 (+8) | 11 h 18; 11 h 19 / 11 h 20 (+2) | 11 h 35; 11 h 35 / 11 h 37 (+1) | 11 h 34 / 10 h 57 (−37) |
+| Sleep pressure leaving the nest, lactating | 0.03 | 0.03 | **0.03** | 0.04 | — |
+| Night out of a nest; night deaths; deaths | 0.0%; 0; 0 | 0.0%; 0; 0 | 0.0%; 0; 0 | 0.0%; 0; 0 | — |
+| e-bench fitted / held-out (rows scored in both, against R or S) | — | 4.812 / 3.931 (−0.730 / −0.315) | — | 5.459 / 2.172 (+0.560 / −0.216) | noise floor 0.8 |
+| Prescriptions; viability | — | 139; pass | — | 139; pass | — |
+
+Reading:
+- **Re-deciding in changing light moves departures to the value crossing**, as predicted (RL2: median +45 → +25 min,
+  p10 +19 → +14). With the race on as well (AL2), departures come earlier still (median +19, p10 +6) and **5.5% of
+  adult females' departures are before sunrise** (both seeds 5–6%): inside T-RHY-3's band at its lower edge, a third of
+  Taï's 18%, and none earlier than 15 min before sunrise. They are mostly lactating females (7%), the hungriest
+  animals: their meal worth, and so their stake, is largest.
+- **The janmaat2014 pattern does not emerge.** Early departures are as common or commoner for near crowns than for far
+  ones, and figs differ from other fruit by at most 3 min. In the model the stake falls with distance (the meal is
+  worth less per hour the longer the walk) faster than the light at arrival raises it, and nothing makes figs more
+  contested: their crops are larger and no other species eats them.
+- **On the full stack the race stays ineffective** (SALN2: 0.2% before sunrise, median +28): adults are sated (mean
+  hunger about 0.2) and the stake scales with the meal's worth.
+- **Side effect**: re-deciding at dusk too makes animals leave a finished nest and build another (nests per evening
+  1.08 → 1.24–1.35). The last entry does not move.
+- **nurseWake with feeds only**: mothers' sleep pressure on leaving the nest is 0.03 (predicted 0.03–0.08); the
+  lactating − male contrast is +2 min against +3 on the stack without it. Night feeding, at the rate the model's
+  infants feed, costs a mother too little sleep to shorten her day: a null, as predicted. Second attempt on the
+  lactating contrast; see the reading in §8.
+- No kill criterion is met: no night activity or night deaths, active day 11 h 18 – 11 h 45 (T-RHY-1), nest building
+  6–11 min before sunset (T-RHY-4), viability passes, no held-out rise beyond the noise floor on rows scored in both.
+
+### Iteration 3 (change of mechanism, logged before its run)
+
+**`nestLightDecide` reacts to brightening only (T-RHY-3, third and last attempt).** The re-decision at a nest bout's
+end applies while the light is rising (the brightening the animal perceives, departure.ts `brightening` > 0), not
+while it falls. Reason: the side effect above, and the physiology E2a already uses: returning light is an arousal cue
+for a sleeping animal (light arousal); falling light only makes staying in the nest more attractive and is no reason
+to get up and weigh leaving. No parameter.
+
+Predictions: dawn as in iteration 2 (AL3 before sunrise 0.04–0.07 for adult females, median +15 to +22 min; SALN3
+about 0.00–0.01 and +25 to +30); nests per evening back to the values without the switch (1.06–1.14); active day
+5–10 min shorter than in AL2 / SALN2 (the evening as in A1 / S); the fig and distance pattern unchanged (absent). The
+lactating contrast is not attempted again (§8).
+
+Arms: AL3 (R + departRace + nestLightDecide) and SALN3 (S + departRace + nestLightDecide + nurseWake), rhythm-metrics
+and e-bench --quick.
