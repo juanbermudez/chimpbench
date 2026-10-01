@@ -177,3 +177,74 @@ between the baseline and iteration 1; every row closer to the baseline than in i
 **Not changed, though seen:** under `urgencyPersist` the gate keeps only 10–11% of decisions (34% today), because
 fatigue is almost never above 0.1, so resting and nesting almost never "pay" and are re-drawn at every bout end. That
 is the rule working on today's readouts (no sleep pressure or heat load exists yet; stage E2), not something to patch.
+
+### Iteration 2 results (menu-addressable urgency), 1 October 2026
+
+Same quick check: field, seeds 48 and 7, 30-day burn-in + 30 days; `scripts/e3-urgency-check.ts` (decision log) and
+`field-metrics.ts` (observer, scored rows), `movement-metrics.ts --fitted-only` (30-day burn-in + 8 days). Seed means.
+`urgencyPersist` and `urgencySwitchCost` alone are unchanged since iteration 1 and were not re-run. Artifacts:
+`artifacts/validation/e3/check-{1,2}.*`, `fm-*.{md,json}`, `mv-*.txt` (suffix 2 = iteration 2).
+
+| Row | baseline | choice (it 1) | **choice (it 2)** | persist | switchCost | all (it 1) | **all (it 2)** |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| adult hunger, median | 0.381 | 0.378 | 0.399 | 0.284 | 0.380 | 0.297 | 0.280 |
+| lactating hunger, median | 0.568 | 0.557 | 0.575 | 0.366 | 0.538 | 0.367 | 0.362 |
+| deaths (all illness), births | 0, 0 | 1, 0 | 0, 0 | 0, 0 | 2, 0 | 0, 0 | 1, 0 |
+| mean U / mean T at draws | 0.69 / 0.164 | 0.67 / 0.097 | 0.39 / 0.413 | 0.53 / 0.164 | 0.73 / 0.164 | 0.57 / 0.127 | 0.32 / 0.443 |
+| draws at U < 0.1 | 0% | 0% | 23% | 0% | 0% | 0% | 25% |
+| top option taken | 0.710 | 0.809 | 0.728 | 0.738 | 0.708 | 0.805 | 0.714 |
+| decisions per chimp-day | 74.2 | 73.3 | 74.4 | 75.5 | 75.0 | 80.2 | 76.5 |
+| kept by the gate | 0.342 | 0.346 | 0.350 | 0.109 | 0.336 | 0.100 | 0.111 |
+| crown bout median / mean (min) | 37.8 / 43.7 | 38.9 / 45.8 | 38.8 / 47.0 | 36.3 / 47.5 | 37.4 / 42.9 | 34.5 / 45.0 | 35.1 / 45.5 |
+| feeding bout median, movement (min) | 38 | 40 | 38 | 33 | 37 | 32 | 34 |
+| crowns per adult-day | 5.24 | 5.22 | 5.15 | 4.82 | 5.37 | 5.19 | 5.09 |
+| male km per day (decision log) | 2.43 | 2.55 | 2.53 | 2.57 | 2.85 | 2.65 | 2.87 |
+| T-ACT-1 feeding (0.33–0.5) | 0.429 | 0.421 | 0.427 | 0.429 | 0.424 | 0.419 | 0.428 |
+| T-ACT-2 travel (0.12–0.25) | 0.179 | 0.170 | 0.176 | 0.187 | 0.202 | 0.195 | 0.176 |
+| T-ACT-3 grooming (0.08–0.18) | 0.134 | 0.140 | 0.115 | 0.148 | 0.109 | 0.124 | 0.107 |
+| T-ACT-4 rest incl. grooming (0.30–0.47) | 0.389 | 0.344 | 0.337 | 0.349 | **0.299 fail** | 0.319 | 0.347 |
+| T-PTY-1 party size (3–9) | 2.88 fail | 2.82 fail | 2.64 fail | 2.95 fail | 2.72 fail | **3.08 pass** | 2.76 fail |
+| T-RNG-4 male day range (1.5–3.5, held as fail) | 2.18 | 2.43 | 2.56 | 2.46 | 2.81 | 2.76 | 2.68 |
+| T-FOOD-4 trees per day (held-out, 4–15) | 5.43 | 5.35 | 5.37 | 4.85 | 5.47 | 5.14 | 5.13 |
+| T-FOOD-5 nearest-tree share (held-out, 0.15–0.45) | 0.107 fail | 0.107 | 0.103 | 0.084 | 0.094 | 0.067 | 0.094 |
+| T-FOOD-6 revisit interval (held-out, 2–7 d) | 5.12 | 5.39 | 5.69 | 4.95 | 4.85 | 5.55 | 5.65 |
+| scored rows pass / fail, fitted | 7 / 8 | 8 / 7 | 8 / 7 | 8 / 5 | 6 / 10 | 9 / 6 | 7 / 8 |
+| scored rows pass / fail, held-out | 3 / 15 | 5 / 13 | 7 / 15 | 8 / 14 | 6 / 16 | 5 / 13 | 6 / 16 |
+
+The pass/fail counts move on rows with a handful of events in 2 × 30 days (patrol, hunting and social rows flip in
+both directions in every arm); E0 found rows moving by up to 0.8 band distance between seed sets. Only the decision-log
+rows (thousands of draws and bouts) and the activity shares carry signal at this length.
+
+**Against the amendment's predictions** (`urgencyChoice`): mean U at draws fell (0.67 → 0.39) and the temperature
+rose (0.097 → 0.413), as predicted. The mean temperature is now *above* the fixed 0.164 because a quarter of draws
+happen at U < 0.1, where T > 0.54 and the choice is close to uniform over the legal menu (sated animals with nobody to
+groom, and the night menu, where fatigue, the only deficit nesting can act on, is almost always below 0.1). The share
+taking the top option fell between baseline and iteration 1 (0.728), as predicted. "Every row closer to the baseline
+than iteration 1" failed: T-ACT-1 and T-ACT-2 came closer; T-ACT-3, T-ACT-4, T-PTY-1, T-RNG-4 and the crown-bout mean
+moved further away.
+
+**Against §7** (`urgencyChoice`, iteration 2): top share up (yes, +0.02); bout length ≈ (yes); trees per day up (no, ≈);
+male day range up (yes, T-RNG-4 2.18 → 2.56); party size up (no: 2.88 → 2.64, away from its band); feeding ≈ (yes);
+travel up (no, ≈); grooming ≈ (no, 0.134 → 0.115); rest down (yes, 0.389 → 0.337).
+(`urgencyPersist`): bout length up (median no, 37.8 → 36.3; mean yes, 43.7 → 47.5); trees per day up (no, 5.43 → 4.85);
+male range up (yes); feeding up (no, ≈); travel up (yes, small); grooming down (no, 0.134 → 0.148); rest down (yes); kept
+share down for resting (yes, overall 0.34 → 0.11). Not predicted: hunger falls by 0.10 (lactating by 0.20) at the same
+feeding share, because poor crowns are left at ratio 1 instead of 2 and without the 0.4 hunger floor.
+(`urgencySwitchCost`): bout length down (yes, slightly); more draws ending in a switch (yes); travel and male range up,
+grooming and rest down, and T-ACT-4 leaves its band.
+
+**Verdicts (iteration 2, provisional under the 3-month cap).**
+- `urgencyChoice`: **stays off.** Viable (adult hunger +0.02, lactating +0.01, no starvation). No row enters a band;
+  T-PTY-1, the row §7 expected it to raise, falls. The form does what it says (nothing at stake → near-uniform choice),
+  but on today's readouts "nothing at stake" covers a quarter of all draws, because fatigue is a timer near zero.
+- `urgencyPersist`: **stays off, retest.** Viable and better fed; bout lengths and activity shares inside their bands,
+  T-FOOD-4 down but in band. The rule is inert for resting (rest never out-pays food while fatigue ≈ 0), so 2 of 3
+  decisions are re-draws. Not judged until fatigue is a real state.
+- `urgencySwitchCost`: **stays off.** Viable, but a fitted row (T-ACT-4) leaves its band and grooming falls; nothing
+  improves. Removing the two constants unmasks retry loops of short acts (more draws end in a switch, more travel).
+- All three: **stays off.** Viable; the one pass it had in iteration 1 (T-PTY-1 3.08) is gone with the amended U.
+
+**What iteration 2 says.** The urgency forms are only as good as the deficits they read. With timer readouts, fatigue
+is almost never above 0.1 and loneliness is the largest deficit in 72% of samples, so "urgency" is mostly a social
+reading and resting can never pay. Stage E1 (energy-balance hunger) and E2a (sleep pressure, heat load) now exist on
+`track-e`; iteration 3 tests the same switches on that stack.
