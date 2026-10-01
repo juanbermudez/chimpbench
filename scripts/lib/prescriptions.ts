@@ -168,8 +168,10 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   travelHooP: { when: P => P.travelHoo === 1, why: 'read only while travelHoo is 1' },
   travelHooAllyP: { when: P => P.travelHoo === 1, why: 'read only while travelHoo is 1' },
   joinHooW: { when: P => P.travelHoo === 1 && P.joinChoice === 1, why: 'read only while travelHoo and joinChoice are 1' },
-  rgTemperature: { when: P => P.rgOn === 1, why: 'read only while rgOn is 1' },
-  rgMaxAgeH: { when: P => P.rgOn === 1, why: 'read only while rgOn is 1' },
+  rgTemperature: { when: P => P.rgOn === 1 && P.urgencyChoice !== 1, why: 'read only while rgOn is 1 and urgencyChoice is not (stage E3)' },
+  rgMaxAgeH: { when: P => P.rgOn === 1 && P.urgencyPersist !== 1, why: 'read only while rgOn is 1 and urgencyPersist is not (stage E3)' },
+  continueBonus: { when: P => P.urgencySwitchCost !== 1, why: 'not read while urgencySwitchCost is 1 (stage E3)' },
+  finishedPenalty: { when: P => P.urgencySwitchCost !== 1, why: 'not read while urgencySwitchCost is 1 (stage E3)' },
 };
 
 /** Whether an entry is in use: generated (not planned), non-zero under these resolved parameters, and not switched out. */

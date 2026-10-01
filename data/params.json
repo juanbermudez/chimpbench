@@ -19943,6 +19943,75 @@
    "notes": "Time constant of daily UD decay: ranges remember about half a year of use (design, §5.2)."
   },
   {
+   "id": "urgencyChoice",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.urgencyChoice",
+   "file": "src/sim/urgency.ts",
+   "notes": "Stage E3 switch (docs/staging/e3-prereg.md §3): the softmax temperature of the rules decision policy comes from urgency U (the largest of hunger, thirst, 1 - energy, 1 - social, stress): T = candidateJitterSpan / (pi sqrt2 U), i.e. decision noise SD = score jitter SD / U (no new constant). rgTemperature then has no effect. 0 = the fixed rgTemperature (hash-identical). Off by default in both profiles; ablation switch.",
+   "integer": true
+  },
+  {
+   "id": "urgencyPersist",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.urgencyPersist",
+   "file": "src/sim/urgency.ts",
+   "notes": "Stage E3 switch (docs/staging/e3-prereg.md §4): the intention gate keeps an act while it still pays, i.e. while it reduces drive (sum of squared deficits; Keramati & Gutkin 2014, pending e-sources) at least as fast as the best alternative on the menu, switch time included (marginal value theorem at ratio 1 [charnov1976]); an act that serves no deficit is kept while it is the rules' top option. rgMaxAgeH, the need buckets and the gate's patch ratio and hunger floor then have no effect. 0 = the C13 gate (hash-identical). Off by default in both profiles; ablation switch.",
+   "integer": true
+  },
+  {
+   "id": "urgencySwitchCost",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.urgencySwitchCost",
+   "file": "src/sim/candidates.ts",
+   "notes": "Stage E3 switch (docs/staging/e3-prereg.md §5): continueBonus and finishedPenalty are not applied. The real cost of switching (time and travel to the alternative) is already in every alternative's score, and staying is the pay test's job. 0 = both applied (hash-identical). Off by default in both profiles; ablation switch.",
+   "integer": true
+  },
+  {
    "id": "vacancyEloGap",
    "group": "dominance",
    "value": 100,
