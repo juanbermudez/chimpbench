@@ -153,4 +153,27 @@ baseline, each switch alone, all three. Reserved and retired seeds are never run
 
 ## 9. Results
 
-(empty at pre-registration)
+### Iteration 1 (the form above), 1 October 2026
+
+Quick check as §8, development seeds 48 and 7, field, 30-day burn-in + 30 days. Numbers in the table of iteration 2 below.
+Finding that led to iteration 2 (baseline world, seed 48, daytime samples of animals aged 8+): loneliness (1 − social)
+has a median of 0.68 and a 90th percentile of 1.0, and is the largest deficit in 72% of samples; fatigue has a median of
+0.04 (90th percentile 0.10); stress 0.05. So U = the largest of all five readouts is mostly the loneliness of animals
+with nobody to groom, and 28–31% of draws happen at U ≥ 0.9. A lone, lonely animal then chooses among food options at
+the sharpest temperature although no option on its menu can act on its loneliness.
+
+### Amendment before iteration 2 (written and committed before any run of the amended form)
+
+**Change, `urgencyChoice` only.** U = the largest deficit the menu can act on. Principle, unchanged: the cost of a wrong
+choice is the drive reduction forgone; a deficit that no option serves is not at stake in this choice. Hunger counts
+when the menu holds a feeding option or an own trip to a tree; thirst with water or a fruit crown; fatigue with rest,
+shelter or a nest; loneliness with a grooming or play partner. Stress always counts (it has no consummatory act of its
+own; escape, appeasement and reassurance all bear on it). No constant added, none changed; T₁ is unchanged.
+`urgencyPersist` and `urgencySwitchCost` are unchanged.
+
+**Expected against iteration 1:** mean U at draws lower, temperature higher, share of draws taking the top option
+between the baseline and iteration 1; every row closer to the baseline than in iteration 1.
+
+**Not changed, though seen:** under `urgencyPersist` the gate keeps only 10–11% of decisions (34% today), because
+fatigue is almost never above 0.1, so resting and nesting almost never "pay" and are re-drawn at every bout end. That
+is the rule working on today's readouts (no sleep pressure or heat load exists yet; stage E2), not something to patch.

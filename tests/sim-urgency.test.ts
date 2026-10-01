@@ -53,10 +53,18 @@ test('temperature falls with urgency and is bounded below by the score jitter\'s
   assert.deepEqual(choiceProbs([0.3, 0.9, 0.1], 0), [0, 1, 0], 'no jitter: the argmax');
   const soft = choiceProbs([0.3, 0.9, 0.1], urgencyTemperature(0.2, P)), sharp = choiceProbs([0.3, 0.9, 0.1], urgencyTemperature(0.9, P));
   assert.ok(sharp[1] > soft[1] && soft[1] > 1 / 3);
-  const c = createWorld(48).chimps[0];
-  setNeeds(c, 0.2, 0.1, 0.9, 0.9, 0); assert.ok(Math.abs(urgency(c) - 0.2) < 1e-12);
-  setNeeds(c, 0.2, 0.1, 0.35, 0.9, 0); assert.ok(Math.abs(urgency(c) - 0.65) < 1e-12, 'fatigue');
-  setNeeds(c, 0.2, 0.1, 0.9, 0.9, 0.8); assert.ok(Math.abs(urgency(c) - 0.8) < 1e-12, 'stress');
+  // urgency: the largest deficit the menu can act on; stress always counts
+  const c = createWorld(48).chimps[0], opt = (action: Chimp['action'], targetId = -1) => ({ action, targetId });
+  const full = [opt('forage'), opt('drink', 200001), opt('rest'), opt('groom', 2)];
+  setNeeds(c, 0.2, 0.1, 0.9, 0.9, 0); assert.ok(Math.abs(urgency(c, full) - 0.2) < 1e-12);
+  setNeeds(c, 0.2, 0.1, 0.35, 0.9, 0); assert.ok(Math.abs(urgency(c, full) - 0.65) < 1e-12, 'fatigue');
+  setNeeds(c, 0.2, 0.1, 0.9, 0.9, 0.8); assert.ok(Math.abs(urgency(c, [opt('forage')]) - 0.8) < 1e-12, 'stress');
+  setNeeds(c, 0.2, 0.1, 0.9, 0.05, 0);
+  assert.ok(Math.abs(urgency(c, full) - 0.95) < 1e-12, 'lonely, with a partner on the menu');
+  assert.ok(Math.abs(urgency(c, [opt('forage'), opt('rest')]) - 0.2) < 1e-12, 'lonely, with nobody to groom: nothing at stake in this choice');
+  setNeeds(c, 0.2, 0.7, 0.9, 0.9, 0);
+  assert.ok(Math.abs(urgency(c, [opt('forage'), opt('rest')]) - 0.2) < 1e-12, 'thirsty, no water on the menu');
+  assert.ok(Math.abs(urgency(c, [opt('forage', 100001), opt('rest')]) - 0.7) < 1e-12, 'a fruit crown carries water');
 });
 
 test('a starving chimp takes its top food option with higher probability than a sated one in the same scene', () => {
@@ -69,7 +77,7 @@ test('a starving chimp takes its top food option with higher probability than a 
       const menu = rgMenu(copy, c, computeCandidates(copy, c, [])), P = paramsOf(copy), scores = menu.map(k => k.score);
       const fi = menu.map((k, i) => ({ k, i })).filter(o => o.k.action === 'forage' || (o.k.action === 'travel' && candidateMeta.get(o.k)?.v === V.TREE)).sort((a, b) => b.k.score - a.k.score)[0];
       if (!fi || menu.length < 2) return null;
-      return { p: choiceProbs(scores, urgencyTemperature(urgency(c), P))[fi.i], soft: choiceProbs(scores, urgencyTemperature(0.15, P))[fi.i], top: fi.k.score >= Math.max(...scores) };
+      return { p: choiceProbs(scores, urgencyTemperature(urgency(c, menu), P))[fi.i], soft: choiceProbs(scores, urgencyTemperature(0.15, P))[fi.i], top: fi.k.score >= Math.max(...scores) };
     };
     const starving = food(0.95), sated = food(0.15);
     if (!starving || !sated) continue;

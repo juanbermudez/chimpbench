@@ -17,9 +17,28 @@ import { index, isTreeId, isWaterId, ix } from './state';
 // smallest integer exponent under which deprivation raises the value of relief; design A's U policy used the same).
 // Pure: no RNG, no writes, no allocation outside the night and dusk menu filter.
 
-/** Urgency U in [0, 1]: the largest deficit, i.e. the largest marginal drive an error could leave unserved (design assumption). */
-export function urgency(c: Chimp): number {
-  return Math.max(0, Math.min(1, Math.max(c.hunger, c.thirst, 1 - c.energy, 1 - c.social, c.stress)));
+/**
+ * Urgency U in [0, 1] at a choice among `menu`: the largest deficit the menu can act on (design assumption). The cost
+ * of a wrong choice is the drive reduction forgone, so a deficit no option serves puts nothing at stake: hunger counts
+ * when a feeding option or a trip to a tree is offered, thirst with water or a fruit crown, fatigue with rest, shelter
+ * or a nest, loneliness with a grooming or play partner. Stress always counts: it has no consummatory act of its own,
+ * and escape, appeasement and reassurance all bear on it. (Iteration 2 of the pre-registration: with every readout
+ * counted, loneliness, saturated in animals with nobody to groom, was the largest deficit at 72% of daytime samples.)
+ */
+export function urgency(c: Chimp, menu: readonly Pick<Candidate, 'action' | 'targetId'>[]): number {
+  let U = c.stress;
+  const H = c.hunger, T = c.thirst, F = 1 - c.energy, L = 1 - c.social;
+  for (let i = 0; i < menu.length; i++) {
+    const k = menu[i];
+    switch (k.action) {
+      case 'forage': if (H > U) U = H; if (isTreeId(k.targetId) && T > U) U = T; break;
+      case 'travel': { const m = candidateMeta.get(k as Candidate); if (m && m.v === V.TREE && m.aux <= 0) { if (H > U) U = H; if (T > U) U = T; } break; }
+      case 'drink': if (T > U) U = T; break;
+      case 'rest': case 'shelter': case 'nest': if (F > U) U = F; break;
+      case 'groom': case 'play': if (L > U) U = L; break;
+    }
+  }
+  return Math.max(0, Math.min(1, U));
 }
 
 /**

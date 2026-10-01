@@ -25,11 +25,11 @@ import { index, isChimpId, isTreeId, ix } from './state';
 
 /**
  * Diagnostic counters for scripts (not world state; the sim never reads them): RG decisions by outcome, re-decisions by
- * trigger, draws that took the menu's top-scored option, and the urgency at draws in tenths. Counted only while `on`.
+ * trigger (and by trigger and the act that was held), draws that took the menu's top-scored option, and the urgency at draws in tenths. Counted only while `on`.
  */
-export const rgTally = { on: false, kept: 0, arrived: 0, drawn: 0, top: 0, argmax: 0, lead: 0, uSum: 0, tSum: 0, uBins: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], why: {} as Record<string, number> };
+export const rgTally = { on: false, kept: 0, arrived: 0, drawn: 0, top: 0, argmax: 0, lead: 0, uSum: 0, tSum: 0, uBins: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], why: {} as Record<string, number>, whyAct: {} as Record<string, number> };
 export function resetRgTally(on: boolean): void {
-  Object.assign(rgTally, { on, kept: 0, arrived: 0, drawn: 0, top: 0, argmax: 0, lead: 0, uSum: 0, tSum: 0, uBins: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], why: {} });
+  Object.assign(rgTally, { on, kept: 0, arrived: 0, drawn: 0, top: 0, argmax: 0, lead: 0, uSum: 0, tSum: 0, uBins: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], why: {}, whyAct: {} });
 }
 
 /** The chimp-target filter of observe(): only candidates about the first 8 perceivable chimps by candidate score. */
@@ -141,7 +141,7 @@ export function rgChoice(world: World, c: Chimp, list: Candidate[]): Candidate |
     x.rgIntent = intentOf(world, c, top.action, top.targetId, V.LEAD, candidateMeta.get(top)?.aux ?? -1);
     return top;
   }
-  const g = gate(world, c, x.rgIntent, list);
+  const held = x.rgIntent?.action ?? 'none', g = gate(world, c, x.rgIntent, list);
   if (typeof g !== 'string') {
     if (rgTally.on) { if (g.arrived) rgTally.arrived++; else rgTally.kept++; }
     if (g.arrived) x.rgIntent = { ...intentOf(world, c, 'forage', g.keep.targetId, candidateMeta.get(g.keep)?.v ?? V.NONE), buckets: x.rgIntent!.buckets };
@@ -150,11 +150,11 @@ export function rgChoice(world: World, c: Chimp, list: Candidate[]): Candidate |
   const menu = rgMenu(world, c, list);
   if (menu.length < 2) { if (rgTally.on) rgTally.argmax++; delete x.rgIntent; return null; }
   // stage E3 (urgencyChoice): the temperature falls with urgency (src/sim/urgency.ts); one draw either way
-  const byUrgency = P.urgencyChoice === 1, T = byUrgency ? urgencyTemperature(urgency(c), P) : P.rgTemperature;
+  const byUrgency = P.urgencyChoice === 1, T = byUrgency ? urgencyTemperature(urgency(c, menu), P) : P.rgTemperature;
   const scores = menu.map(k => k.score), i = drawIndex(byUrgency ? choiceProbs(scores, T) : softmax(scores, T), random(world));
   if (rgTally.on) {
-    const U = urgency(c);
-    rgTally.drawn++; rgTally.why[g] = (rgTally.why[g] ?? 0) + 1; rgTally.uSum += U; rgTally.tSum += Math.min(T, 10); rgTally.uBins[Math.min(9, Math.floor(U * 10))]++;
+    const U = urgency(c, menu);
+    rgTally.drawn++; rgTally.why[g] = (rgTally.why[g] ?? 0) + 1; const wa = `${g}:${held}`; rgTally.whyAct[wa] = (rgTally.whyAct[wa] ?? 0) + 1; rgTally.uSum += U; rgTally.tSum += Math.min(T, 10); rgTally.uBins[Math.min(9, Math.floor(U * 10))]++;
     if (scores[i] >= Math.max(...scores)) rgTally.top++;
   }
   const o = menu[i];
