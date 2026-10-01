@@ -55,3 +55,36 @@ Status: design for the integrator, 30 September 2026. Nothing here is run or cod
 ## Related stylization (not changed here)
 
 - Cycling resumes after a fixed amenorrhea (`amenorrheaMinY` 3.5 + up to 1 y), not after energy gain as emeryThompson2012 reports. That is a separate item.
+
+## Result of the paired check (development; 30 September 2026)
+
+Branch `c8c-lactation-taper`, code 29fbf39. Field profile, 10 years, seeds 48, 7, 21, `lactTaper` 1 against 0 on the same code, 3 workers.
+- Truth energetics and viability: `artifacts/validation/c8/sanity/c8c-check.ts`, outputs in `artifacts/validation/c8/c8c/t*-{on,off}.json`.
+- Fitted rows: `scripts/field-metrics.ts --demography --no-truth --params '{"lactTaper":…}'`, `fm-{on,off}.json`. Only the fitted rows were read (`fitted.py`); the held-out rows in those files were not.
+- The `lactTaper` 0 arm reproduces the earlier post-C13 check exactly (49 → 65, 68, 74).
+
+**Guard (merge gate): passes.**
+
+| Guard | Result | Verdict |
+| --- | --- | --- |
+| G1: `lactTaper` 0 hash-identical to the model before C8c | golden seed 48, 2 days: `330e4f797ca75f22` reproduced (tests/sim-life.test.ts) | pass |
+| G2: pooled births ≥ deaths; no seed below 80% of its start | births / deaths 116 / 62; living 49 → 71, 69, 61 | pass |
+| G3: lactating median hunger with the youngest offspring ≥ 2 y lower with the taper, each seed | 0.61 / 0.60 / 0.60 against 0.66 / 0.67 / 0.66 | pass |
+
+**Predictions: 3 pass, 5 fail.**
+
+| Quantity | Predicted | `lactTaper` 0 | `lactTaper` 1 | Verdict |
+| --- | --- | --- | --- | --- |
+| Lactating lean-day median hunger (seeds 48 / 7 / 21) | 0.58–0.64 | 0.71 / 0.67 / 0.70 | 0.68 / 0.63 / 0.65 | **fail**: fell 0.04, about half the predicted drop; one seed in range |
+| Lactating median condition | 0.35–0.42 | 0.31 / 0.30 / 0.31 | 0.37 / 0.38 / 0.38 | pass |
+| T-DEM-1 (q1), pooled | unchanged beyond noise | 0.159 | 0.168 | pass (both in band; seeds 0.13–0.25) |
+| Female e15 (T-DEM-2 part) | +0 to +1 y, inside 31–39 | 50.7 y | 45.7 y | **fail**: 5 y lower, and above the band in both arms |
+| Male e15 (T-DEM-2 part) | unchanged | 25.6 y | 19.0 y | **fail**: 6.5 y lower |
+| T-DEM-12, pooled | 0.1–0.3 y shorter | 5.29 y | 5.07 y | pass (0.22 y shorter; in band) |
+| T-DEM-10, pooled | slightly higher | 0.243 | 0.217 | **fail**: lower |
+| Growth per year, pooled | +0.2 to +0.5% | +3.4% (births / deaths 120 / 60) | +3.1% (116 / 62) | **fail**: no gain |
+
+- **No fitted row leaves its band only under the taper.** T-DEM-1, -10 and -12 are inside their bands in both arms. T-DEM-2 fails in both arms, because female e15 is above the band.
+- **Life expectancy cannot be read from this check.** Three seeds over 10 years hold 5–7 adult-female deaths per arm (about 7 expected from the life table), and they come in epidemic lumps. The e15 differences between arms are therefore not attributable to the taper; the 40-year density check is the instrument for T-DEM-2.
+- **Why the hunger drop is half the prediction.** The prediction assumed the lactation term explains the whole gap to other females. Mothers of offspring aged 2 y or more are still the hungriest class under the taper (0.60, against 0.57 below 2 y), so part of that gap has another cause. It is not diagnosed here.
+- **Adult-female deaths:** 7 in 513 female-years with the taper and 5 in 522 without, against about 7 expected in each arm. One starvation death occurred with the taper (seed 21) and none without.
