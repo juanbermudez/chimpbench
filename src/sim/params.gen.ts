@@ -2,7 +2,7 @@
 /* eslint-disable */
 export const REGISTRY_VERSION = 1;
 /** Content hash of every live default, hard range, profile value and integer flag. Stored with each world. */
-export const REGISTRY_HASH = 'd88614dff8ceaa1e';
+export const REGISTRY_HASH = 'ff23e8ffc6a8c475';
 
 /** Registry defaults (the compressed profile). */
 export const DEFAULTS = {
@@ -116,7 +116,7 @@ export const DEFAULTS = {
   boutTravelMax: 22,
   boutTravelMin: 12,
   breakfastPlan: 0,
-  breakfastW: 1.5,
+  breakfastW: 1.969,
   callAlarmHooMin: 0.75,
   callBarkMin: 0.5,
   callCoughMin: 0.25,

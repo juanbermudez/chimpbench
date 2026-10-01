@@ -2528,7 +2528,7 @@
    "clock": "none",
    "id": "breakfastW",
    "group": "feeding",
-   "value": 1.5,
+   "value": 1.969,
    "units": "score",
    "range": [
     0,
@@ -2544,7 +2544,7 @@
    ],
    "symbol": "P.breakfastW",
    "file": "src/sim/candidates.ts",
-   "notes": "Stage C15b: how much a far breakfast lowers the morning nest drive at dawn (x min(1, walk minutes to the best remembered fruit tree / 80)). To be fitted to 18% of departures before sunrise (janmaat2014; pre-registered bisection); 1.5 is the bracket midpoint before the fit."
+   "notes": "Stage C15b: how much a far breakfast lowers the morning nest drive at dawn (x min(1, walk minutes to the best remembered fruit tree / 80)). Fitted to 18% of departures before sunrise [janmaat2014] by the pre-registered bisection on [0, 3] (seeds 48 and 7, 30 days after a 180-day burn-in): 0.178 at 1.969 (trail 1.5 -> 0.086, 2.25 -> 0.233, 1.875 -> 0.175, 2.063 -> 0.185, 1.969 -> 0.178; only that share was read). T-FOOD-10 is held out and carries 'model revised post-freeze'."
   },
   {
    "id": "callAlarmHooMin",
