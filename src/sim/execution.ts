@@ -7,7 +7,7 @@ import { addBond, dominates, eloUpdate, rankedMale } from './hierarchy';
 import { paramsOf, type Params } from './params';
 import { snareIntake } from './snares';
 import { doTransfer, recordCopulation } from './reproduction';
-import { forget } from './perception';
+import { IMPULSE_HUNT, forget } from './perception';
 import { clamp, hash01, random } from './rng';
 import type { ParamId } from './params.gen';
 import { TICK_HOURS, TICK_SECONDS, byIdIn, huntOf, index, isTreeId, ix, simOf } from './state';
@@ -197,6 +197,7 @@ export function startAction(world: World, c: Chimp, cand: Candidate, source: Dec
   c.nextDecision = x.actEnd;
   if (c.nest && cand.action !== 'nest') c.nest = null;
   if (x.impulse !== 0 && (cand.action === 'attack' || cand.action === 'transfer' || (cand.action === 'patrol' && x.v === V.LEAD) || (cand.action === 'display' && x.v === V.RAIN))) { x.impulse = 0; x.impulseUntil = -1e9; }
+  if (x.impulse === IMPULSE_HUNT) { x.impulse = 0; x.impulseUntil = -1e9; } // hunting fix: the hunt is considered once per encounter, whatever he chose
   if (!same) onStart(world, c);
 }
 

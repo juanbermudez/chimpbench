@@ -642,6 +642,17 @@ Read for the C8 diagnosis of starving lactating females in the field profile (do
 - emeryThompson2012: Emery Thompson M, Muller MN, Wrangham RW 2012. The energetics of lactation and the return to fecundity in wild chimpanzees. *Behavioral Ecology* 23(6):1234–1241. [doi:10.1093/beheco/ars107](https://doi.org/10.1093/beheco/ars107) (Abs).
 - badescu2022: Bădescu I, Watts DP, Curteanu C, Desruelle KJ, Sellen DW 2022. Effects of infant age and sex, and maternal parity on the interaction of lactation with infant feeding development in chimpanzees. *PLoS ONE* 17(8):e0272139. [doi:10.1371/journal.pone.0272139](https://doi.org/10.1371/journal.pone.0272139) (Abs).
 
+## Hunting decision at colobus encounters (hunting fix, 1 October 2026)
+
+Keys refer to the source list in [realism-design.md](realism-design.md) and `data/targets.json`; every figure below is already in the target registry (T-HUN-1 to T-HUN-9, P-HUN-4). No new source.
+
+- **Hunts are decided at encounters** [gilby2015] (full text) [H]. The field statistic is the share of red colobus encounters (within 100 m in 15-min scans at Kanyawara, 50 m at Gombe) that become hunts: Kanyawara 7.9% of 2,461 encounters, Kasekela 64.7%, Mitumba 48.0%; Ngogo 37% (61 of 164) [mitaniWatts2001].
+- **More males, more hunting** [gilby2015] [H]: odds per extra adult male +48% (Kanyawara), +8% (Kasekela), +72% (Mitumba). With an "impact hunter" present, 18.9% of Kanyawara encounters were hunted against 2.3% without. Not encoded: the model has no term for the number of males beyond the lead score it already had.
+- **Kills per successful hunt** [M]: Ngogo 3.41 ± 1.79 (n = 32) [mitaniWatts1999] with 15.2 adult males present at hunts [wattsMitani2002]; Kanyawara 1.28, Kasekela 1.90, Mitumba 1.30 [gilby2015].
+  - Used: each hunter other than the first captor makes a capture with probability (3.41 − 1) ÷ (15.2 − 1) = 0.17 (`huntExtraKillP`). The two Ngogo figures come from overlapping but different periods (1995–1998 and 1995–1999), and males present stand in for hunters. The binomial form is a design assumption.
+- **Design assumptions (labelled in code):** at least 2 adult males in view to start a hunt (`huntEncMinMales`; the earlier 3 was a design value too); an "encounter" for an individual is a colobus group in sight that it did not perceive at its previous decision point; one consideration per encounter.
+- **Known gap:** the observer records colobus encounters about 3 times as often as Kanyawara (about 11 against 3.7 per 100 follow-hours), so hunts per encounter (T-HUN-3) and hunts per community-year (T-HUN-1) cannot both sit in their bands (docs/simulation.md §12).
+
 ## Analogies from other primates (not used for targets)
 
 **These are analogies only: never a target and never a parameter source.** Baboons and macaques differ from chimpanzees in life history, dispersal and ecology. These studies show what kinds of early-life effects exist in long-lived primates; they size nothing in ChimpBench. Each was checked on 29 September 2026 (FT = full text, Abs = abstract).

@@ -11,7 +11,7 @@ import { noteContact } from './contact';
 import { featureDistance, perceivedFeatures } from './signals';
 import { NEVER, aliveNear, byIdIn, index, ix, simOf, treesNear } from './state';
 
-export const IMPULSE_TRANSFER = 1, IMPULSE_ESCALATE = 2, IMPULSE_INFANTICIDE = 3, IMPULSE_RAIN = 4, IMPULSE_GANG = 5, IMPULSE_PATROL = 6;
+export const IMPULSE_TRANSFER = 1, IMPULSE_ESCALATE = 2, IMPULSE_INFANTICIDE = 3, IMPULSE_RAIN = 4, IMPULSE_GANG = 5, IMPULSE_PATROL = 6, IMPULSE_HUNT = 7;
 
 /** Memory lifetimes in hours (registry memTtl*); water is remembered for good. */
 const ttl = (P: Params, kind: Memory['kind']) => kind === 'chimp' ? P.memTtlChimpH : kind === 'tree' ? P.memTtlTreeH : kind === 'prey' ? P.memTtlPreyH : 1e9;
@@ -181,12 +181,15 @@ export function perceive(world: World, c: Chimp): void {
   }
   x.fruitNear = clamp(x.fruitNear);
   for (const w of world.water) { const dx = w.position[0] - px, dz = w.position[2] - pz; if (dx * dx + dz * dz < r2 * 1.5) remember(world, c, w.id, 'water', w.position); }
+  const prevPrey = x.preyId;
   x.preyId = -1;
   let preyD = (r * P.preySightFactor) ** 2;
   if (world.environment.daylight > 0.3) for (const p of world.prey) {
     const dx = p.position[0] - px, dz = p.position[2] - pz, d2 = dx * dx + dz * dz;
     if (d2 < preyD) { preyD = d2; x.preyId = p.id; }
   }
+  // a colobus encounter: a group in sight that was not the group perceived at the previous decision point (hunting fix)
+  const metPrey = x.preyId !== prevPrey ? x.preyId : -1;
   if (x.preyId < 0) {
     // an ongoing hunt by our community is loud: its prey is known to anyone within earshot
     for (const h of simOf(world).hunts) {
@@ -207,11 +210,11 @@ export function perceive(world: World, c: Chimp): void {
     x.stims.push(st.id);
     if (st.kind === 'snake-model' && d2 < P.snakeVisualM * P.snakeVisualM) { const a = s.aware[st.id] ?? (s.aware[st.id] = []); if (!a.includes(c.id)) a.push(c.id); }
   }
-  rollImpulses(world, c);
+  rollImpulses(world, c, metPrey);
 }
 
 /** Rare behaviors start as impulses drawn at perception, so pure candidate scoring stays rng-free. */
-function rollImpulses(world: World, c: Chimp): void {
+function rollImpulses(world: World, c: Chimp, metPrey: number): void {
   const x = ix(c);
   if (x.impulseUntil > world.time && x.impulse !== 0) return;
   x.impulse = 0; x.impulseTarget = -1; x.impulseUntil = NEVER;
@@ -251,6 +254,12 @@ function rollImpulses(world: World, c: Chimp): void {
       if (random(world) < 1 - Math.exp(-h * dt)) { x.impulse = IMPULSE_PATROL; x.impulseTarget = -1; x.impulseUntil = world.time + P.impulseDurationH; return; }
     }
   }
+  // Hunting fix (huntEncounter, field; docs/staging/hunting-fix.patch.json): the hunt is decided at the colobus encounter,
+  // as the field statistic is defined (hunts per encounter within 100 m, gilby2015) [H], not on a community hunting day.
+  // An adult male who has just met a colobus group in company considers leading a hunt, once: the impulse opens the
+  // option (candidates.ts) and ends with his next choice (execution.ts). Nothing is drawn; whether he hunts is his choice
+  // among his options. huntEncMinMales (no solo hunts; a capture needs two hunters) is a design assumption.
+  if (P.huntEncounter === 1 && metPrey > 0 && x.ownMales >= P.huntEncMinMales) { x.impulse = IMPULSE_HUNT; x.impulseTarget = metPrey; x.impulseUntil = world.time + P.impulseDurationH; return; }
   for (const id of x.seen) {
     const o = byId.get(id)!;
     if (o.troopId === c.troopId && o.sex === 'male' && o.age >= 15 && Math.abs(o.elo - c.elo) < P.escalateEloGap) {

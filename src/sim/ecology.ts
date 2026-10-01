@@ -1,4 +1,4 @@
-import type { World } from '../types';
+import type { Chimp, World } from '../types';
 import { addEvent, emitCall, endInteraction, episode, flashInteraction, interrupt } from './events';
 import { spawnPrey } from './generation';
 import { hash01, random } from './rng';
@@ -78,11 +78,22 @@ export function resolveHunt(world: World, h: HuntState): void {
     world.stats.huntSuccesses++;
     flashInteraction(world, 'hunt', captor, -1, hunters.map(c => c.id), 1);
     emitCall(world, captor, 'scream');
-    addEvent(world, `${troop?.name ?? ''} hunters (${n}) captured a red colobus; ${captor.name} holds the meat`, 'hunt', hunters.map(c => c.id), h.troopId, 1);
-    for (const c of hunters) { c.skills.hunting = Math.min(1, c.skills.hunting + 0.01); episode(world, c, 'hunt', c === captor ? 'Caught a red colobus' : `Hunted colobus with ${captor.name}; he caught one`, captor.id); }
-    for (const o of index(world).alive) {
-      if (o === captor || o.troopId !== captor.troopId) continue;
-      if (Math.hypot(o.position[0] - captor.position[0], o.position[2] - captor.position[2]) < P.meatAlertM) interrupt(world, o, `${captor.name} has colobus meat`);
+    // Hunting fix (huntExtraKillP, field; 0 = one capture per hunt): each other hunter makes a capture of his own with this
+    // probability, while the group stays above the size at which it is removed. Ngogo: 3.41 kills per successful hunt
+    // (mitaniWatts1999) with 15.2 adult males present (wattsMitani2002) give (3.41 - 1) / (15.2 - 1) = 0.17 [M], derived
+    // and not fitted; the binomial form and the use of males present for hunters are design assumptions.
+    const others: Chimp[] = [];
+    if (P.huntExtraKillP > 0) for (const c of hunters) {
+      if (c === captor || p.size <= 4 || random(world) >= P.huntExtraKillP) continue;
+      c.carryingMeat = 1; p.size -= 1; others.push(c);
+      flashInteraction(world, 'hunt', c, -1, hunters.map(q => q.id), 1);
+    }
+    addEvent(world, others.length ? `${troop?.name ?? ''} hunters (${n}) captured ${others.length + 1} red colobus; ${[captor, ...others].map(c => c.name).join(', ')} hold the meat`
+      : `${troop?.name ?? ''} hunters (${n}) captured a red colobus; ${captor.name} holds the meat`, 'hunt', hunters.map(c => c.id), h.troopId, 1);
+    for (const c of hunters) { c.skills.hunting = Math.min(1, c.skills.hunting + 0.01); episode(world, c, 'hunt', c === captor || others.includes(c) ? 'Caught a red colobus' : `Hunted colobus with ${captor.name}; he caught one`, captor.id); }
+    for (const holder of [captor, ...others]) for (const o of index(world).alive) {
+      if (o === holder || o.troopId !== holder.troopId) continue;
+      if (Math.hypot(o.position[0] - holder.position[0], o.position[2] - holder.position[2]) < P.meatAlertM) interrupt(world, o, `${holder.name} has colobus meat`);
     }
   } else if (n > 0) {
     addEvent(world, `${troop?.name ?? ''} hunters (${n}) chased a red colobus group, which escaped`, 'hunt', hunters.map(c => c.id), h.troopId, 0);
