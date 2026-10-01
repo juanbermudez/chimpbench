@@ -640,7 +640,11 @@ function scan(o: Observer, world: World, tm: Team, c: Chimp, members: Chimp[]): 
     sx += m.position[0]; sz += m.position[2];
   }
   const n = members.length;
-  let prey = -1, preyDist = -1, best = prof.preyEncounterM * prof.preyEncounterM;
+  // colobus "detected within 100 m" (gilby2015): the scan limit of the profile, or the distance at which colobus are
+  // detected in this world (the chimpanzees' own, sight x preySightFactor) when that is shorter; equal by default up to
+  // the encounter-rate fix (docs/staging/hunting-fix.patch.json, entry 3)
+  const P = paramsOf(world), detectM = P.sightDayM * P.preySightFactor, limitM = detectM < prof.preyEncounterM - 1e-6 ? detectM : prof.preyEncounterM;
+  let prey = -1, preyDist = -1, best = limitM * limitM;
   if (world.environment.daylight > 0.3) for (const p of world.prey) for (let i = 0; i < members.length; i++) {
     const m = members[i];
     const dd = d2(m.position[0], m.position[2], p.position[0], p.position[2]);
