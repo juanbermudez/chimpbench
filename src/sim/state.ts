@@ -74,6 +74,8 @@ export interface ChimpX {
    * condition over her current pregnancy.
    */
   cond: number; grow: number; bereft: number; gestCond: number;
+  /** Stage E1 (energyLedger; energy.ts): the energy ledger, absent until the switch is on and the individual first ticks. */
+  en?: EnergyLedger;
   /**
    * Stage C8 health (docs/realism-design.md §5.7): eco-hour when the current respiratory illness ends (NEVER when well),
    * the outbreak that last infected this individual (-1 none; immune to it afterwards), a permanent snare injury
@@ -81,6 +83,13 @@ export interface ChimpX {
    */
   ill: number; outbreak: number; snare: number; trX: number; trZ: number;
 }
+
+/**
+ * Stage E1 energy ledger (kcal; energy.ts): energy in the gut not yet absorbed, body reserves relative to the set point
+ * (negative = deficit), lifetime energy eaten and spent (in − out = gut + reserves − their opening values), and the
+ * position at the last tick (locomotion is costed per metre actually moved).
+ */
+export interface EnergyLedger { gut: number; res: number; in: number; out: number; x: number; y: number; z: number }
 
 /** The memory month in progress: tallies accumulate on events and are finalized into a MemoryDigest every 30 eco-days. */
 export interface MonthLedger { start: number; startRank: number; partners: Record<number, PartnerTally>; events: DigestEvent[]; encounters: number; lastEncounter: number }
@@ -147,7 +156,7 @@ export type SimWorld = World & { sim: SimState };
  * ChimpX and SimState keys that exist only once their mechanism has fired (so worlds with the switch off keep their
  * shape and hashes). The save check (src/persist/envelope.ts worldShapeProblem) ignores them.
  */
-export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent'];
+export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'en'];
 export const OPTIONAL_SIM: readonly string[] = ['fission'];
 
 export function newX(): ChimpX {

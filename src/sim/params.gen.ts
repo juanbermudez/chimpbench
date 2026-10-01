@@ -2,7 +2,7 @@
 /* eslint-disable */
 export const REGISTRY_VERSION = 1;
 /** Content hash of every live default, hard range, profile value and integer flag. Stored with each world. */
-export const REGISTRY_HASH = '57903c4cdc400019';
+export const REGISTRY_HASH = '03be0f1595be3b12';
 
 /** Registry defaults (the compressed profile). */
 export const DEFAULTS = {
@@ -240,6 +240,7 @@ export const DEFAULTS = {
   eloLogisticScale: 0.01,
   encounterGapH: 12,
   encounterPartyMarginM: 60,
+  energyLedger: 0,
   energyOtherPerH: 0.02,
   energyRestPerH: 0.06,
   energyRunPerH: 0.25,
@@ -472,6 +473,33 @@ export const DEFAULTS = {
   lactTaperFloor: 0.3,
   lactTaperStartY: 0.5,
   layoutScale: 1,
+  ledgerActFeed: 1.38,
+  ledgerActRest: 1.25,
+  ledgerActSleep: 1,
+  ledgerAppetiteGain: 5,
+  ledgerAppetiteSet: 0.5,
+  ledgerClimbEff: 0.2,
+  ledgerCondSet: 0.7,
+  ledgerFallbackKcalPerMin: 4.2,
+  ledgerFigKcalPerMin: 12.5,
+  ledgerFruitKcalPerMin: 9.9,
+  ledgerGrowthKcalPerG: 4.5,
+  ledgerGutCapKcalPerKg: 25,
+  ledgerGutEmptyH: 3,
+  ledgerMassBirthKg: 1.8,
+  ledgerMassFemaleKg: 31.3,
+  ledgerMassMaleKg: 39,
+  ledgerMassMatureFemaleY: 10,
+  ledgerMassMatureMaleY: 13,
+  ledgerMeatKcalPerMin: 6.7,
+  ledgerMilkEff: 0.8,
+  ledgerMilkKcalPerMin: 2.5,
+  ledgerPlantShareKcal: 50,
+  ledgerPregnancyCoef: 7,
+  ledgerReserveKcalPerKg: 1300,
+  ledgerRmrCoef: 70,
+  ledgerRmrExp: 0.75,
+  ledgerWalkJPerKgM: 3.8,
   maleDriftTauDays: 500,
   mapSizeM: 160,
   mateApproachS: 150,
@@ -1025,6 +1053,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   eloLogisticScale: [0, 1000000],
   encounterGapH: [0, 1000000],
   encounterPartyMarginM: [0, 1000000],
+  energyLedger: [0, 1],
   energyOtherPerH: [0, 1000000],
   energyRestPerH: [0, 1000000],
   energyRunPerH: [0, 1000000],
@@ -1257,6 +1286,33 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   lactTaperFloor: [0, 1],
   lactTaperStartY: [0, 10],
   layoutScale: [0, 1000000],
+  ledgerActFeed: [1, 10],
+  ledgerActRest: [1, 10],
+  ledgerActSleep: [0.5, 10],
+  ledgerAppetiteGain: [0, 1000000],
+  ledgerAppetiteSet: [0, 1],
+  ledgerClimbEff: [0.01, 1],
+  ledgerCondSet: [0.01, 1],
+  ledgerFallbackKcalPerMin: [0, 1000000],
+  ledgerFigKcalPerMin: [0, 1000000],
+  ledgerFruitKcalPerMin: [0, 1000000],
+  ledgerGrowthKcalPerG: [0, 1000000],
+  ledgerGutCapKcalPerKg: [0.001, 1000000],
+  ledgerGutEmptyH: [0.01, 1000000],
+  ledgerMassBirthKg: [0.1, 100],
+  ledgerMassFemaleKg: [1, 200],
+  ledgerMassMaleKg: [1, 200],
+  ledgerMassMatureFemaleY: [1, 60],
+  ledgerMassMatureMaleY: [1, 60],
+  ledgerMeatKcalPerMin: [0, 1000000],
+  ledgerMilkEff: [0.01, 1],
+  ledgerMilkKcalPerMin: [0, 1000000],
+  ledgerPlantShareKcal: [0, 1000000],
+  ledgerPregnancyCoef: [0, 1000000],
+  ledgerReserveKcalPerKg: [1, 1000000],
+  ledgerRmrCoef: [1, 1000000],
+  ledgerRmrExp: [0.1, 1.5],
+  ledgerWalkJPerKgM: [0, 1000000],
   maleDriftTauDays: [0, 1000000],
   mapSizeM: [160, 8000],
   mateApproachS: [1, 100000],
@@ -1573,7 +1629,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
 };
 
 /** Parameters that must stay whole numbers. */
-export const INTEGER_IDS: readonly ParamId[] = ['allyCount', 'assocMinScans', 'attentionN', 'birthCondFromMother', 'callSignatures', 'callerDiscrim', 'chimpGridCellM', 'coerceMaxRepeats', 'contactSlots', 'cycleLenMinDays', 'cycleLenSpanDays', 'deadSlimDays', 'departCue', 'episodeCap', 'eventCap', 'eventPriorityAlpha', 'eventPriorityBirth', 'eventPriorityDeath', 'eventPriorityInfanticide', 'eventPriorityInjury', 'eventPriorityIntergroup', 'eventPriorityRank', 'eventPriorityTransfer', 'fissionMinAdults', 'fissionMonths', 'fissionOn', 'followCommit', 'foodCallRule', 'fordSpacingM', 'gangMinOwnMales', 'historyFacts', 'historyMaxChars', 'historyMaxLines', 'huntEncMinMales', 'huntEncounter', 'huntMinMales', 'infanticideMaleMargin', 'intakeCropOnly', 'intakeValue', 'joinChoice', 'knownTreesK', 'lactTaper', 'layoutScale', 'mapSizeM', 'maternalLevers', 'memCropBelief', 'memKeepMonths', 'memLedgerEvents', 'memMonthEvents', 'memMonthPartners', 'memTreeCap', 'memYearEvents', 'memYearPartners', 'memoryCap', 'memoryMonthDays', 'partyEveryTicks', 'partyJoinTrip', 'partyLeaderFollow', 'partyStayMaxN', 'patchEcology', 'patrolContactMemory', 'patrolEnergyGate', 'patrolImpulseDecides', 'patrolMinMales', 'patrolSilence', 'patrolSingleFile', 'phenologyForcing', 'popCap', 'preyMinGroups', 'preyMoveEveryTicks', 'rgMinAge', 'rgOn', 'routeChain', 'siteTzH', 'slotsForage', 'slotsMulti', 'slowEveryTicks', 'startDoy', 'streamAnalytic', 'synthYears', 'tickSeconds', 'travelCommit', 'travelHoo', 'treeGridCellM', 'tripRateValue', 'udCellM', 'udKernelRef'];
+export const INTEGER_IDS: readonly ParamId[] = ['allyCount', 'assocMinScans', 'attentionN', 'birthCondFromMother', 'callSignatures', 'callerDiscrim', 'chimpGridCellM', 'coerceMaxRepeats', 'contactSlots', 'cycleLenMinDays', 'cycleLenSpanDays', 'deadSlimDays', 'departCue', 'energyLedger', 'episodeCap', 'eventCap', 'eventPriorityAlpha', 'eventPriorityBirth', 'eventPriorityDeath', 'eventPriorityInfanticide', 'eventPriorityInjury', 'eventPriorityIntergroup', 'eventPriorityRank', 'eventPriorityTransfer', 'fissionMinAdults', 'fissionMonths', 'fissionOn', 'followCommit', 'foodCallRule', 'fordSpacingM', 'gangMinOwnMales', 'historyFacts', 'historyMaxChars', 'historyMaxLines', 'huntEncMinMales', 'huntEncounter', 'huntMinMales', 'infanticideMaleMargin', 'intakeCropOnly', 'intakeValue', 'joinChoice', 'knownTreesK', 'lactTaper', 'layoutScale', 'mapSizeM', 'maternalLevers', 'memCropBelief', 'memKeepMonths', 'memLedgerEvents', 'memMonthEvents', 'memMonthPartners', 'memTreeCap', 'memYearEvents', 'memYearPartners', 'memoryCap', 'memoryMonthDays', 'partyEveryTicks', 'partyJoinTrip', 'partyLeaderFollow', 'partyStayMaxN', 'patchEcology', 'patrolContactMemory', 'patrolEnergyGate', 'patrolImpulseDecides', 'patrolMinMales', 'patrolSilence', 'patrolSingleFile', 'phenologyForcing', 'popCap', 'preyMinGroups', 'preyMoveEveryTicks', 'rgMinAge', 'rgOn', 'routeChain', 'siteTzH', 'slotsForage', 'slotsMulti', 'slowEveryTicks', 'startDoy', 'streamAnalytic', 'synthYears', 'tickSeconds', 'travelCommit', 'travelHoo', 'treeGridCellM', 'tripRateValue', 'udCellM', 'udKernelRef'];
 
 /** Scale-profile values that differ from DEFAULTS (docs/realism-design.md §5.1). */
 export const PROFILE_VALUES: { readonly compressed: Partial<Record<ParamId, number>>; readonly field: Partial<Record<ParamId, number>> } = {

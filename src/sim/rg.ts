@@ -77,7 +77,7 @@ export function patchPoorHere(world: World, c: Chimp, tree: number, P: Params): 
     const d = Math.hypot(m.position[0] - px, m.position[2] - pz);
     if (d >= P.memoryTreeMinM) best = Math.max(best, treeIntake(c, P, x.treeCrop?.[m.entityId] ?? UNKNOWN_CROP, 0, d).perHourInclWalk);
   }
-  const here = isTreeId(tree) && x.trees.includes(tree) ? fruitRate(c, P).hungerPerH : leafRate(world, px, pz, P);
+  const here = isTreeId(tree) && x.trees.includes(tree) ? fruitRate(c, P).hungerPerH : leafRate(world, px, pz, P, c);
   return best >= GATE.patchRatio * here && best > 0;
 }
 

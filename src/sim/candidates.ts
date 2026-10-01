@@ -6,7 +6,7 @@ import { clamp, hash01, smoothstep } from './rng';
 import { paramsOf, type Params } from './params';
 import { fruitAt } from './phenology';
 import { bestFallbackNear, fallbackOn } from './fallback';
-import { fruitRate, leafRate, treeIntake } from './intake';
+import { fruitRate, leafWorth, treeIntake } from './intake';
 import { byIdIn, index, isTreeId, ix, NEVER, TREE_ID0, treesNear, simOf } from './state';
 
 // Variants refine an action's meaning (why a charge happens) for execution and reason text.
@@ -244,7 +244,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   if (!caretaker) {
     // stage C7c (field): fallback is worth the best rate in view, so a depleted patch sends the animal elsewhere (fallback.ts)
     // C13b: leaves are worth their intake rate here relative to ripe fruit (full-stock rate when fallback depletes: the best cell in view scales it)
-    const leafV = iv ? (fallbackOn(P) ? P.fruitIntakePerH * P.fruitHungerFactor * P.fallbackRateRatio : leafRate(world, px, pz, P)) / fruitH : 1;
+    const leafV = iv ? leafWorth(world, c, px, pz, P, fruitH) : 1;
     offer('forage', -1, h * P.fallbackForageW * (fallbackOn(P) ? bestFallbackNear(world, px, pz, x.sight, _fb) : 1) * leafV + 0.03 - rain * 0.3);
     // field profile: leaving companions for a food tree of one's own has a cost (parties travel together; design, T-PTY-1)
     const stay = P.partyStayW > 0 ? P.partyStayW * Math.min(x.visibleOwn, P.partyStayMaxN) : 0;

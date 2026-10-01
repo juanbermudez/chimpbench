@@ -98,7 +98,7 @@ The switch stays off, and the result is recorded as null, if with the ledger on:
 
 ## 6. Benchmark
 
-- Quick check (integrator's rule of 1 October, the machine is shared): same command and seeds for both arms, `scripts/field-metrics.ts --profile field --days 30 --burn-in 30 --seeds 48,7 --workers 2`, without and with `--params '{"energyLedger":1}'`. It finds direction and catches breakage; it cannot score demography rows (T-DEM), which need years. One 120-day, 3-seed run (48, 7, 21) at the end if the load permits. The 365-day, 5-seed benchmark is run once by the integrator on the integrated branch. Development seeds only.
+- Quick check (integrator's rule of 1 October, the machine is shared): same command and seeds for both arms, `scripts/field-metrics.ts --profile field --days 30 --burn-in 30 --seeds 48,7 --workers 2`, without and with `--params '{"energyLedger":1}'`. It finds direction and catches breakage; it cannot score demography rows (T-DEM), which need years. No run longer than 90 days in total (user's limit, 1 October; the largest allowed is a 30-day burn-in + 60 days). The 365-day, 5-seed benchmark is run once by the integrator on the integrated branch. Development seeds only.
 - `scripts/energy-diagnose.ts`: by sex and reproductive class, daily kcal in, kcal out by term, feeding minutes, gut fill, reserves, deaths by cause.
 
 ## 7. Results

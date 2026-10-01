@@ -5450,6 +5450,29 @@
    "notes": "Party centres farther apart than sight + this are skipped in encounter detection (an optimisation bound; field parties spread over hundreds of metres)."
   },
   {
+   "id": "energyLedger",
+   "group": "needs",
+   "value": 0,
+   "units": "flag",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.energyLedger",
+   "file": "src/sim/life.ts",
+   "integer": true,
+   "notes": "Stage E1 (docs/staging/e1-prereg.md): 1 = hunger, condition and starvation come from an energy ledger in kcal (gut contents, body reserves; src/sim/energy.ts); the hunger timers (hungerAwakePerH, hungerRunPerH, hungerSleepPerH, hungerLactationPerH, hungerPregnancyPerH, bodyChild*, lactTaper*) and the hunger-unit conversions (fruitHungerFactor, fallbackHungerPerH, fallbackRateRatio, meatHungerFactor) are then not read. 0 = the timers (hash-identical to before E1)."
+  },
+  {
    "id": "energyOtherPerH",
    "group": "needs",
    "value": 0.02,
@@ -11169,6 +11192,610 @@
    },
    "notes": "The map and the stream are the compressed layout × this (field profile × 50, an 8 km map; docs/realism-design.md §5.1). Community centres use centerScale.",
    "integer": true
+  },
+  {
+   "id": "ledgerActFeed",
+   "group": "needs",
+   "value": 1.38,
+   "units": "x resting rate",
+   "range": [
+    1.2,
+    1.6
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    10
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "energyTick",
+   "file": "src/sim/energy.ts",
+   "notes": "Metabolic rate while feeding as a multiple of the resting rate (cross-species primate time-energy budgets: Leonard & Robertson 1997 after Coelho 1974, as used for Tai chimpanzees by N’guessan et al. 2009); locomotion is costed per metre on top. Pending e-sources (not yet in docs/research.md)."
+  },
+  {
+   "id": "ledgerActRest",
+   "group": "needs",
+   "value": 1.25,
+   "units": "x resting rate",
+   "range": [
+    1.1,
+    1.5
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    10
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "energyTick",
+   "file": "src/sim/energy.ts",
+   "notes": "Metabolic rate while awake and not feeding (resting, grooming, social acts, the postural part of travel) as a multiple of the resting rate (Leonard & Robertson 1997, as used by N’guessan et al. 2009; cross-species). Locomotion is costed per metre on top. Pending e-sources (not yet in docs/research.md)."
+  },
+  {
+   "id": "ledgerActSleep",
+   "group": "needs",
+   "value": 1,
+   "units": "x resting rate",
+   "range": [
+    0.85,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.5,
+    10
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "energyTick",
+   "file": "src/sim/energy.ts",
+   "notes": "Metabolic rate asleep as a multiple of the resting rate (sleeping metabolic rate is 0.9-1.0 of basal in humans). Pending e-sources (not yet in docs/research.md)."
+  },
+  {
+   "id": "ledgerAppetiteGain",
+   "group": "needs",
+   "value": 5,
+   "units": "appetite per reserve fraction",
+   "range": [
+    2.5,
+    10
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1000000.0
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "hungerOf",
+   "file": "src/sim/energy.ts",
+   "notes": "Readout, not physiology: appetite = clamp(ledgerAppetiteSet - gain x reserves / reserve capacity), so appetite is full at a deficit of 10% of the usable reserve and nil at a 10% surplus (a tight lipostat: condition then departs from the set point only when food or time limits intake). hunger = gut emptiness x appetite."
+  },
+  {
+   "id": "ledgerAppetiteSet",
+   "group": "needs",
+   "value": 0.5,
+   "units": "appetite 0..1",
+   "range": [
+    0.25,
+    1
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "hungerOf",
+   "file": "src/sim/energy.ts",
+   "notes": "Readout, not physiology: appetite at the reserve set point (the midpoint of the 0..1 scale, so deficits and surpluses act symmetrically)."
+  },
+  {
+   "id": "ledgerClimbEff",
+   "group": "movement",
+   "value": 0.2,
+   "units": "fraction",
+   "range": [
+    0.14,
+    0.25
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.01,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "energyTick",
+   "file": "src/sim/energy.ts",
+   "notes": "Efficiency of converting metabolic energy into the potential energy of climbing: cost per metre climbed = mass x g / efficiency = 49 J/kg/m. Muscle efficiency for positive work is at most about 0.25; the small-primate regression of Hanna et al. 2008 extrapolates to about 70 J/kg/m at 35 kg (efficiency 0.14); both are cross-species assumptions. Descent is free (stylized). Pending e-sources (not yet in docs/research.md)."
+  },
+  {
+   "id": "ledgerCondSet",
+   "group": "needs",
+   "value": 0.7,
+   "units": "condition 0..1",
+   "range": [
+    0.5,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.01,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "ledgerSlow",
+   "file": "src/sim/energy.ts",
+   "notes": "Readout, not physiology: body condition (C8 cond) at the reserve set point; cond = ledgerCondSet x (1 + reserves / reserve capacity), 0 when the usable reserve is gone. 0.7 is the C8 default condition of a founder."
+  },
+  {
+   "id": "ledgerFallbackKcalPerMin",
+   "group": "feeding",
+   "value": 4.2,
+   "units": "kcal/min",
+   "range": [
+    3.4,
+    6.2
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    1000000.0
+   ],
+   "calibrate": false,
+   "evidence": "H",
+   "sources": [
+    "uwimbabazi2019",
+    "potts2011"
+   ],
+   "clock": "eco",
+   "symbol": "fallbackKcalPerH",
+   "file": "src/sim/energy.ts",
+   "notes": "Metabolisable energy intake on fallback foods at a mean cell (x the forage field, forageYield): pith 3.4 and young leaves 6.2 kcal/min weighted by their Kanyawara feeding shares 17.4 : 6.9 (uwimbabazi2019 rates, potts2011 shares; the same weighting as fallbackRateRatio 0.39 x 10.7)."
+  },
+  {
+   "id": "ledgerFigKcalPerMin",
+   "group": "feeding",
+   "value": 12.5,
+   "units": "kcal/min",
+   "range": [
+    11,
+    14
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1000000.0
+   ],
+   "calibrate": false,
+   "evidence": "H",
+   "sources": [
+    "uwimbabazi2019"
+   ],
+   "clock": "eco",
+   "symbol": "fruitKcalPerUnit",
+   "file": "src/sim/energy.ts",
+   "notes": "Metabolisable energy intake of an adult feeding in a fig crown at full crop (Kanyawara females; uwimbabazi2019). Scaled by foraging skill, the under-5 factor, the self-feeding ramp and snare injury as the fruit intake is."
+  },
+  {
+   "id": "ledgerFruitKcalPerMin",
+   "group": "feeding",
+   "value": 9.9,
+   "units": "kcal/min",
+   "range": [
+    8.6,
+    12
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    1000000.0
+   ],
+   "calibrate": false,
+   "evidence": "H",
+   "sources": [
+    "uwimbabazi2019"
+   ],
+   "clock": "eco",
+   "symbol": "fruitKcalPerUnit",
+   "file": "src/sim/energy.ts",
+   "notes": "Metabolisable energy intake of an adult feeding on non-fig ripe fruit (drupes 9.9 kcal/min; all ripe fruit 10.7 +- 1.3; Kanyawara females, uwimbabazi2019). The crop still depletes at fruitIntakePerH fruit units per hour, so one fruit unit is worth 60 x this / fruitIntakePerH kcal."
+  },
+  {
+   "id": "ledgerGrowthKcalPerG",
+   "group": "needs",
+   "value": 4.5,
+   "units": "kcal/g",
+   "range": [
+    2.9,
+    6
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1000000.0
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "energyTick",
+   "file": "src/sim/energy.ts",
+   "notes": "Energy cost of a gram of growth (tissue deposited plus synthesis; human infants: mean 18.7 kJ/g = 4.5 kcal/g, range 2.9-6.0; Roberts & Young 1988, abstract). Charged at the natural daily rate of the mass curve whatever world.ageRate is (physiology runs on the ecological clock). Pending e-sources (not yet in docs/research.md)."
+  },
+  {
+   "id": "ledgerGutCapKcalPerKg",
+   "group": "needs",
+   "value": 25,
+   "units": "kcal/kg body mass",
+   "range": [
+    12.5,
+    50
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0.001,
+    1000000.0
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "gutCap",
+   "file": "src/sim/energy.ts",
+   "notes": "Meal capacity of the gut in metabolisable energy: about 4% of body mass in fresh food x 0.63 kcal/g fresh ripe fruit (10.7 kcal/min at 3.4 g dry matter/min, uwimbabazi2019, at an assumed 20% dry matter). A full gut takes no more food. No ape stomach capacity was found. Pending e-sources (not yet in docs/research.md)."
+  },
+  {
+   "id": "ledgerGutEmptyH",
+   "group": "needs",
+   "value": 3,
+   "units": "h",
+   "range": [
+    1.5,
+    6
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0.01,
+    1000000.0
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "energyTick",
+   "file": "src/sim/energy.ts",
+   "notes": "Time constant of energy absorption from the gut (first order): gastric emptying plus small-intestine absorption (human solid-meal half-emptying about 1.5-2 h; captive chimpanzee stomachs were empty after more than 3 h and less than 16 h, Ardente et al. 2011, abstract: first-order emptying with this constant is 95% complete at 9 h). Not the 38-48 h mean transit time of Milton & Demment 1988: that is the passage of indigestible residue through the whole tract; bulk limitation by residue is not modelled. Pending e-sources (not yet in docs/research.md)."
+  },
+  {
+   "id": "ledgerMassBirthKg",
+   "group": "needs",
+   "value": 1.8,
+   "units": "kg",
+   "range": [
+    1.5,
+    2
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.1,
+    100
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "massOf",
+   "file": "src/sim/energy.ts",
+   "notes": "Body mass at birth (captive neonates about 1.7-1.9 kg; no primary source traced). Mass then rises linearly to the adult value at ledgerMassMatureFemaleY / ledgerMassMatureMaleY (stylized growth curve). Pending e-sources (not yet in docs/research.md)."
+  },
+  {
+   "id": "ledgerMassFemaleKg",
+   "group": "needs",
+   "value": 31.3,
+   "units": "kg",
+   "range": [
+    26,
+    40
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    200
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "massOf",
+   "file": "src/sim/energy.ts",
+   "notes": "Adult female body mass: Gombe median (Pusey et al. 2005, P. t. schweinfurthii; Mahale 35.2 kg, Uehara & Nishida 1987); nobody weighs Kibale chimpanzees (C7c used 40 kg as a design value). Pending e-sources (not yet in docs/research.md)."
+  },
+  {
+   "id": "ledgerMassMaleKg",
+   "group": "needs",
+   "value": 39,
+   "units": "kg",
+   "range": [
+    35,
+    45
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    200
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "massOf",
+   "file": "src/sim/energy.ts",
+   "notes": "Adult male body mass: Gombe median (Pusey et al. 2005; Mahale 42.0 kg, Uehara & Nishida 1987). Pending e-sources (not yet in docs/research.md)."
+  },
+  {
+   "id": "ledgerMassMatureFemaleY",
+   "group": "needs",
+   "value": 10,
+   "units": "y",
+   "range": [
+    9,
+    13
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    60
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "massOf",
+   "file": "src/sim/energy.ts",
+   "notes": "Age at which female mass reaches the adult value (Gombe: female growth slows at 10 y; Pusey et al. 2005, abstract). Growth is linear from birth (stylized). Pending e-sources (not yet in docs/research.md)."
+  },
+  {
+   "id": "ledgerMassMatureMaleY",
+   "group": "needs",
+   "value": 13,
+   "units": "y",
+   "range": [
+    11,
+    15
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    60
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "massOf",
+   "file": "src/sim/energy.ts",
+   "notes": "Age at which male mass reaches the adult value (Gombe: male growth slows at 13 y; Pusey et al. 2005, abstract). Pending e-sources (not yet in docs/research.md)."
+  },
+  {
+   "id": "ledgerMeatKcalPerMin",
+   "group": "feeding",
+   "value": 6.7,
+   "units": "kcal/min",
+   "range": [
+    3.35,
+    36
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1000000.0
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "meatKcalPerUnit",
+   "file": "src/sim/energy.ts",
+   "notes": "Energy intake while eating meat: 348 g/h (Wrangham & Conklin-Brittain 2003; up to 1.9 kg/h, Gilby 2006) x 1.15 kcal/g red colobus, both as cited by Hardus et al. 2012 (secondary). One unit of carryingMeat is worth 60 x this / meatEatPerH kcal. Pending e-sources (not yet in docs/research.md)."
+  },
+  {
+   "id": "ledgerMilkEff",
+   "group": "reproduction",
+   "value": 0.8,
+   "units": "fraction",
+   "range": [
+    0.7,
+    0.9
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.01,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "nurseTick",
+   "file": "src/sim/energy.ts",
+   "notes": "Efficiency of milk synthesis: the mother spends milk energy / this (human value, Butte & King 2005). No chimpanzee magnitude exists for the cost of lactation (docs/research.md, lactation energetics), so the cost follows from what the infant drinks. Pending e-sources (not yet in docs/research.md)."
+  },
+  {
+   "id": "ledgerMilkKcalPerMin",
+   "group": "reproduction",
+   "value": 2.5,
+   "units": "kcal/min",
+   "range": [
+    1.25,
+    5
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1000000.0
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "nurseTick",
+   "file": "src/sim/energy.ts",
+   "notes": "Milk energy transferred per minute of nursing: a human value (501 kcal/day, Butte & King 2005, over an assumed 2 h of suckling) scaled by mass^0.75 to a 31 kg mother. Limited by the room in the infant’s gut. Pending e-sources (not yet in docs/research.md)."
+  },
+  {
+   "id": "ledgerPlantShareKcal",
+   "group": "feeding",
+   "value": 50,
+   "units": "kcal",
+   "range": [
+    25,
+    100
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1000000.0
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "sharePlant",
+   "file": "src/sim/energy.ts",
+   "notes": "Energy of one piece of plant food a foraging mother hands to her begging offspring (about 5 min of ripe-fruit feeding); it replaces the -0.08 hunger of the timer model."
+  },
+  {
+   "id": "ledgerPregnancyCoef",
+   "group": "reproduction",
+   "value": 7,
+   "units": "kcal/day per kg^0.75",
+   "range": [
+    3.5,
+    14
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1000000.0
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "energyTick",
+   "file": "src/sim/energy.ts",
+   "notes": "Mean daily energy cost of gestation per kg^0.75 of maternal mass, excluding maternal fat gain (which is reserves here): a human value (about 40,000 kcal over 280 days at 60 kg, from the 321 MJ total of Butte & King 2005 less maternal fat; the split is not verified). Rises linearly from 0 at conception to twice the mean at term (stylized). Pending e-sources (not yet in docs/research.md)."
+  },
+  {
+   "id": "ledgerReserveKcalPerKg",
+   "group": "needs",
+   "value": 1300,
+   "units": "kcal/kg body mass",
+   "range": [
+    650,
+    2600
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    1,
+    1000000.0
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "reserveCap",
+   "file": "src/sim/energy.ts",
+   "notes": "Usable energy reserve at the set point per kg of body mass: about 30% of body mass can be lost before death, at about 4,300 kcal/kg of mixed fat and lean tissue. Captive Pan carry 8-9% fat (Pontzer et al. 2016), about 21,000-26,000 kcal in a 31 kg female, so the rest is lean tissue. Reserves at minus this amount mean death by starvation. Pending e-sources (not yet in docs/research.md)."
+  },
+  {
+   "id": "ledgerRmrCoef",
+   "group": "needs",
+   "value": 70,
+   "units": "kcal/day per kg^exp",
+   "range": [
+    60,
+    90
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    1000000.0
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "energyTick",
+   "file": "src/sim/energy.ts",
+   "notes": "Resting metabolic rate = this x mass^ledgerRmrExp (Kleiber 1947). Pontzer et al. 2016 estimate the basal rate of captive Pan at 0.96 of this (from 1930s respirometry of immatures); their total expenditure by doubly labelled water is a benchmark, not an input. Pending e-sources (not yet in docs/research.md)."
+  },
+  {
+   "id": "ledgerRmrExp",
+   "group": "needs",
+   "value": 0.75,
+   "units": "exponent",
+   "range": [
+    0.67,
+    0.76
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.1,
+    1.5
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "energyTick",
+   "file": "src/sim/energy.ts",
+   "notes": "Mass exponent of the resting metabolic rate (Kleiber 1947). Pending e-sources (not yet in docs/research.md)."
+  },
+  {
+   "id": "ledgerWalkJPerKgM",
+   "group": "movement",
+   "value": 3.8,
+   "units": "J/kg/m",
+   "range": [
+    2.8,
+    5.8
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    1000000.0
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [],
+   "refs": [
+    "sockol2007 (docs/research.md, C7c travel energetics)"
+   ],
+   "clock": "none",
+   "symbol": "energyTick",
+   "file": "src/sim/energy.ts",
+   "notes": "Net cost of transport: 0.19 (SE 0.013) ml O2/kg/m in 5 captive chimpanzees (33.9-82.3 kg) walking quadrupedally at 1.0 m/s, individuals 0.14-0.29 (sockol2007, Table 1), at 20.1 J/ml; about 30% above the all-mammal equation of taylor1982. Charged per metre actually moved, at any speed; a carried infant’s mass is charged to its carrier."
   },
   {
    "id": "maleDriftTauDays",
