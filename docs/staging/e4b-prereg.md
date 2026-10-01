@@ -105,3 +105,71 @@ At most three, each changing the mechanism from first principles, written here b
 
 - **R0–R2** (1 October 2026, code at ad17eea): R0 was first run (diagnosis and bench) at 2fb334b, after the §1 fixes and before any E4b code existed; its diagnosis is re-run at ad17eea because the diagnosis gained the E4b readouts (pant-hoots by act, T-END-8 in fedurek2016's form, bond-partner grooming around intergroup contact). R1 and R2 as in §5. Outputs in `artifacts/validation/e4b/` (gitignored), one heavy run at a time, `--workers 1`.
 - **R0n, R2 again, R3a, R3b** (written after R0–R2, before running; no mechanism change). R2 raised decided conflicts by a third, beyond the +10% predicted. Two readouts and one control decide whether that is the redirect: the diagnosis gains redirect chains (redirects by an animal whose own loss was to a redirect, and decided conflicts won by a redirect) and R2 is re-diagnosed; **R0n** is R0 with `rgTemperature` 0.1641 instead of 0.164 (E4a's noise arm: one draw in thousands changes, the trajectory re-draws) to show how far decided conflicts move by chance. **R3a/R3b**: the physiological stack (`energyLedger`, `rhythmSleep`, `rhythmHeat` = 1) with R0's switches and with R2's, diagnosis and bench.
+
+### Results (seeds 48, 7; 30-day burn-in + 30 days; field profile; rules policy)
+
+Timer world: R0 = E4a's keep candidate with the §1 fixes; R0n = R0 with `rgTemperature` 0.1641 (noise); R1 = R0 + `endoFast` + `endoRainDisplay`; R2 = R1 + `endoFastRedirect` (re-diagnosed as R2b with the chain readout: identical world, identical counts). Stack: R3a = `energyLedger` + `rhythmSleep` + `rhythmHeat` + R0's switches; R3b = the stack + R2's. Simulation truth from `endocrine-diagnose.ts` (all communities, 0.49 community-years per arm); raw counts.
+
+| Raw counts in 30 days, both seeds | R0 | R0n (noise) | R1 | R2 | R3a | R3b |
+| --- | --- | --- | --- | --- | --- | --- |
+| Daytime storm onsets | 10 | 6 | 8 | 7 | 7 | 5 |
+| Rain displays (per onset) | 8 (0.8), dice | 3 (0.5), dice | 13 (1.6) | 21 (3.0) | 3 (0.4), dice | 16 (3.2) |
+| Rain displays at the onset itself | 8 | 3 | 13 | 21 | 3 | 16 |
+| Decided conflicts | 279 | 373 | 290 | 373 | 671 | 640 |
+| Redirected charges | 13 | 12 | 8 | 34 | 16 | 60 |
+| per decided conflict | 0.047 | 0.032 | 0.028 | 0.091 | 0.024 | 0.094 |
+| within 10 min of the loss | 13 | 11 | 7 | 34 | 15 | 59 |
+| latency, median (p90) | 0.25 (0.5) min | 0.25 (0.75) | 0.25 (14) | 0.25 (0.75) | 0.25 (0.75) | 0.25 (1.5) |
+| by an animal whose loss was to a redirect | — | — | — | 1 | — | 5 |
+| Escalated attacks | 3 | 1 | 0 | 1 | 3 | 1 |
+| Contact fights and hits | 18 | 26 | 11 | 16 | 39 | 26 |
+| Injuries | 1 | 0 | 0 | 0 | 2 | 0 |
+| Deaths | 0 | 0 | 0 | 0 | 0 | 0 |
+| Reconciled per decided conflict (truth) | 0.082 | 0.091 | 0.090 | 0.080 | 0.149 | 0.142 |
+
+`e-bench --quick` (observer scorecard; distances summed over the rows scored in each run):
+
+| Arm | Fitted | Held-out | Held-out without hunting, patrol and intergroup rows | Prescriptions | Viability | T-SOC-5 | T-SOC-9 | T-SOC-10 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| R0 | 4.79 | 6.74 | 1.70 | 133 (the bench printed 134: it counted `endoHeardGapH` before its rename) | pass | 0.19 fail | insufficient | pass |
+| R1 | 3.29 | 5.77 | 1.88 | 132 | pass | 0.19 fail | insufficient | pass |
+| R2 | 4.57 | 2.95 | 1.34 | 132 | pass | 0.08 fail | insufficient | pass |
+| R3a | 4.68 | 3.59 | 1.65 | 133 | pass | pass | pass (0.14) | pass |
+| R3b | 4.26 | 4.65 | 2.41 | 132 | pass | pass | **1.09 fail** (−0.07) | pass |
+
+Viability: every arm 0 births, 0 deaths, no starvation, 49 living at the end on each seed. The large held-out moves (R0 → R2 −3.8) sit in the patrol and hunting rows (T-PAT-2, T-PAT-3, T-HUN-4), which E4b does not touch and which E4a's noise arm moved by up to 2.7; on the other rows every move is inside E4a's noise floor (±1.1), except R3b's T-SOC-9 (below).
+
+**Noise.** R0n changes one draw in thousands and moves decided conflicts from 279 to 373 (+34%). R2's 373 is therefore not an effect of the redirect: decided conflicts are not measurable to better than about a third in this window. The redirect's own rate is: 0.091–0.094 per decided conflict with the fast state against 0.024–0.047 in the four arms with E4a's rule.
+
+**§5 predictions:**
+
+| Quantity | Predicted | Observed | Verdict |
+| --- | --- | --- | --- |
+| Rain displays | above E4a's 0–2, below the dice's 12–16 per community-year (moderate) | 26–43 per community-year (1.6–3.2 per onset) against the dice's 0.4–0.8 per onset | **miss**: above the dice. My estimate of the shelter score at an onset (≈ 1.5, from a rain level of 0.9) was too high for natural storms; the bold males' display score (≤ 1.5 × 0.83 × boldness) competes with it |
+| Rain displays right after the onset | ≥ 80% within 10 min (high) | all at the onset itself | confirmed |
+| Redirected charges | R2 1.5–3 × R0's per-conflict share (low) | × 2.0 (× 2–4 against all E4a-rule arms) | confirmed |
+| Redirect latency | median < 2 min, ≥ 80% within 10 min (moderate) | median 0.25 min; 100% (timer) and 98% (stack) within 10 min | confirmed |
+| Conflicts, contact fights, injuries | R1 ≈ R0; R2 ≤ +10% conflicts; injuries per conflict < 2 × R0 (moderate) | R2 +34% conflicts, but the noise arm moves +34% too; contact fights and injuries not up | conflicts not measurable; injuries confirmed |
+| Deaths from fights | none (moderate) | none | confirmed |
+| T-END-8, E4a readout | still reversed (moderate) | reversed in every arm (0.021–0.031 with own pant-hoots against 0.031–0.051 without) | confirmed |
+| T-END-8, fedurek2016 form | mean within-male r near 0, no arm off R0 beyond noise (low) | negative in every arm: r −0.14 to −0.33, positive in 3–9 of 27–28 males; R0n alone spans −0.18 to −0.30 | **miss** in sign (negative, not 0); no arm differs beyond noise |
+| T-END-12 | still fails (high) | fails in every arm: affiliation 0.016–0.144 with strangers seen or heard in the hour against 0.099–0.215 without; bond-partner grooming lower too (0–0.08 against 0.10–0.21) | confirmed |
+| Band distances | inside the noise floor of R0 (high) | timer: yes. Stack: held-out +1.07 (at the floor), T-SOC-9 (fitted) 0.14 pass → −0.07 fail | timer confirmed; stack borderline |
+| Prescriptions | R1 = R2 = R0 − 1 (high) | 133 → 132 | confirmed |
+| Viability | passes (high) | passes | confirmed |
+
+**Kill criterion (§6): not met by any switch in any arm.** Viability passes; no fight deaths; injuries per conflict 0 with the fast switches; held-out does not rise beyond +1.1 (timer −1.0 R1, −3.8 R2 in the noisy rows; stack +1.07); rain displays occur (R1: 13); redirect latency median 0.25 min with ≥ 98% within 10 min.
+
+**Other T-END rows** (hourly samples; R0 / R2 / R3b): T-END-3 passes in every arm (male stress 0.146–0.182 with a swollen parous female against 0.064–0.121 without); T-END-6 rank half passes weakly in every arm; T-END-2 weak form flickers with noise (top-third against bottom-third males 0.124 vs 0.131 in R0, 0.121 vs 0.117 in R2, 0.073 vs 0.071 in R3b); T-END-5 (partly encoded) passes; T-END-1 not testable (no unstable period); T-END-9 not scored.
+
+**Context for the redirect rate, not a registered row.** At Taï the first post-conflict interaction of a conflict partner was redirected aggression after 88 of 876 conflicts, 10% (wittig2003; either partner, no time limit, the first interaction that day). The fast redirect gives 9% of decided conflicts (losers only, within minutes); E4a's rule gives 2–5%.
+
+**Iterations.** None run. No kill criterion was met, and the misses are not mechanism failures that a first-principles change could address without tuning: the rain-display rate follows from the kick, boldness and the shelter score, none of which may be set to a behavioural rate (and no field rate exists); T-END-8 and T-END-12 have no route that E4b's mechanism can supply without encoding them (§2 and below).
+
+### Verdict
+
+- **`endoFast` + `endoRainDisplay`: provisional keep candidate.** Viability passes, held-out does not rise beyond the noise floor (timer or stack), the prescription count falls (133 → 132: `rainDisplayP` is no longer read), and E4a's null is resolved: the fast state carries the display at the storm onset without a roll. Caveat: the display is now 2–5 times as common as the old 12% roll gave (1.6–3.2 adult males per daytime storm onset across two communities), and no wild rate exists to judge it. A field row (share of daytime storms with a rain display, or of adult males displaying) should be registered before the switch goes on. Defaults stay off (track rule).
+- **`endoFastRedirect`: null for keeping, informative.** It shows that the fast state can replace E4a's event gate (latency stays at 15 s median without the once-per-defeat rule; redirect chains are rare, 1 in 34 and 5 in 60), but it removes no counted prescription (the gate it replaces was a design rule), it doubles the redirect rate with no registered row to judge it against (wittig2003 is context), and on the stack the fitted reconciliation row T-SOC-9 fails (0.14 → −0.07, distance 1.09, at the noise floor), plausibly because a loser now redirects more often at the moment it would otherwise reconcile. Stays off.
+- **T-END-8.** E4a's reverse failure was partly a readout problem: fedurek2016's "hourly" association is across the hours of the day (07–18) within males, carried by testosterone's morning peak and decline (mullerLipson2003). In that form the model still fails (r negative in every arm): its adult-male pant-hoots are mostly contact calls given with fewer than two community members in sight (35%) and calls while travelling or following at a fitted hazard (44%), displays 11–18%, while its arousal rises in company (rivals, swollen females). A circadian input to arousal (physiology measured independently of calling, mullerLipson2003) would make the row a test of the model's daily pant-hoot profile; its amplitude has no anchor in state units, so it was not added.
+- **T-END-12.** Stays a genuine failing test by design (§2): the route the brief proposed (contact-seeking under threat) exists in captivity (brooks2021) but the field source's own controls rule it out as the cause (samuni2017), and a generic arousal → oxytocin route contradicts preis2018. The model also shows no contact-seeking: bond-partner grooming is lower, not higher, around intergroup contact.
+- **Biggest open problem.** The model's call system, not its hormones, decides T-END-8: pant-hoots come from isolation and a fitted travel hazard, so no endocrine mechanism can produce the field's testosterone–calling association without either encoding it or first replacing the call-rate prescriptions (`travelCallPerH`, the arrival coin) with calls that follow from state and context.
