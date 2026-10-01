@@ -1849,6 +1849,18 @@
    ],
    "verdicts": "none (no proof value exists)",
    "class": "model change"
+  },
+  {
+   "date": "2026-10-01",
+   "by": "science/simulation owner (stage C15)",
+   "seen": "only the fitted statistic of the breakfastW bisection (share of departures before sunrise, seeds 48 and 7, 30 days): 0.80 at 1.5, 0.74 at 0.75, 0.70 at 0.375; the run was stopped there",
+   "param": "C15b amendment, before any other C15b value was read: rule (i) of the pre-registration (at dawn the gate does not hold a nest intention) is withdrawn. With it, about 70% of departures fall before sunrise whatever breakfastW is, because the morning nest drive is already gone at sunrise (nestMorningDaylightHigh 0.4), as in the model before C13 (58%). Without it the gate's own night-to-dawn re-decision, about 20 min before sunrise, is where a far breakfast can pull an animal out early (rule ii), and breakfastW decides how many leave. Rules (ii) and (iii) and the fit target (18%) are unchanged; the bisection restarts on [0, 3]",
+   "reason": "the pre-registered rule made the fitted parameter powerless",
+   "targets": [
+    "T-FOOD-10"
+   ],
+   "verdicts": "none",
+   "class": "pre-registration amendment"
   }
  ],
  "targets": [
