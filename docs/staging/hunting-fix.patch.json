@@ -20,6 +20,26 @@
    ],
    "verdicts": "none (no proof value exists)",
    "class": "model change"
+  },
+  {
+   "date": "2026-10-01",
+   "by": "hunting-fix implementer (branch worktree-agent-a954b443db4b6f22a)",
+   "seen": "the direction check of the pre-registration (407e80c), development seeds 48 and 7, field, 30-day burn-in + 30 days, 1 worker, the changed model (c77d8fe) against the ablation set on the same seeds and window: T-HUN-1, -2, -3, -7 and the held-out T-HUN-4, -8 and -9 as listed under param; T-HUN-5 and -6 returned 'insufficient' and were not read; T-ACT-1 to 4 and T-PTY-1; truth tallies (scripts/hunt-diagnose.ts) and hunger medians (scripts/c13-direction.ts)",
+   "param": "Hunting fix result (direction check, not a proof). Nothing was adjusted after the rows were seen. Fix on against the ablation set (which had no hunt in the window): T-HUN-3 0.024 (4 of 165 encounters; ablation 0 of 185); predicted 0.04-0.10: the prediction fails, and the row stays below its band [0.05-0.4], about 9 times its 1-year value before (0.0003-0.003). T-HUN-1 20.3 per community-year (10 observed hunts in 6 community-months, Poisson interval 9.7-37.3; truth 66.9, 33 hunts); predicted 20-60: inside the range; it passes its band [5-25], which the pre-registration expected it to exceed. T-HUN-2 0.17 (2 of 12 observed hunts; truth 0.27, 9 of 33); predicted 0.15-0.40: as predicted, and it fails its band [0.5-0.8]: 10 of 32 hunts were left with one hunter at the resolution, 12 had two, 9 three and 1 four, on the unchanged design curve. T-HUN-7 1.00 on 2 observed successful hunts (truth 1.11: 10 captures in 9 successes); predicted 1.1-1.4: not resolved by the observer (n = 2); truth sits at the lower edge of the prediction and below the band [1.2-2]. Held-out, direction only: T-HUN-4 pooled odds ratio 1.55 per male (per seed 0.67 and 4.12; standard error of the log odds 0.53; 4 hunted encounters); predicted 2-6: the prediction fails (lower); the value is inside its band but not resolved. T-HUN-8 1.00 (2 observed captures; truth 10 of 10 captors adult males); predicted 0.80-1.00: at the upper edge, not resolved. T-HUN-9: 5 individuals present, none ate: not resolved. T-HUN-5 and T-HUN-6: not resolvable in 30 days, not read. Other rows, fix on against the ablation set: T-ACT-1 0.44 against 0.42, T-ACT-2 0.19 against 0.19, T-ACT-3 0.13 against 0.13 (within 0.02, as predicted); T-ACT-4 0.31 against 0.36 (outside the predicted 0.02; truth 0.40 in both arms; the row averages 4 individual-months and one seed of the ablation arm reads 0.40); T-PTY-1 2.54 against 2.42 (within 0.15). The two rate rows are tied: observed hunts per community-year divided by hunts per encounter is about 840 here (Kanyawara: 132 encounters per year), so 0.05 per encounter would mean about 42 observed hunts per community-year; both bands cannot hold while the observer records 10.8 colobus encounters per 100 follow-hours against Kanyawara's 3.7. Viability guard: no death of any cause in either arm (so none by starvation). Hunger medians, single paired runs: adults 0.364 against 0.346 (seed 48) and 0.375 against 0.367 (seed 7); lactating females 0.530 against 0.488 and 0.561 against 0.552. The pre-registered tolerance of 0.02 is exceeded once (lactating, seed 48: +0.042), so the guard as written fails on that run. Logged after seeing it, as an instrument check and not a model change: 4 to 5 re-draws per arm and seed (the same model with candidateJitterSpan 0.24001 to 0.2403 instead of 0.24, which only changes the random sequence) put single-run medians 0.02 (adults) and 0.02-0.04 (lactating) apart within an arm; the arm means differ by +0.003 and +0.011 (adults) and +0.012 and +0.018 (lactating), inside the tolerance but positive on both seeds, so a rise of 0.01-0.02 cannot be excluded at this window. The standing guard of the program (adults +0.10, lactating median 0.95; C13 section 5) passes. Unit checks: the ablation set is hash-identical to the model before the change (field seeds 48 and 7 after 3 days, seed 21 after 30 days; compressed golden hashes unchanged). T-HUN-1, -2, -3 and -7 touched (fitted); T-HUN-4, -5, -6, -8 and -9 labelled 'model revised post-freeze'",
+   "reason": "hunting fix pre-registration (407e80c)",
+   "targets": [
+    "T-HUN-1",
+    "T-HUN-2",
+    "T-HUN-3",
+    "T-HUN-4",
+    "T-HUN-5",
+    "T-HUN-6",
+    "T-HUN-7",
+    "T-HUN-8",
+    "T-HUN-9"
+   ],
+   "verdicts": "none (direction check, not a proof)",
+   "class": "model change"
   }
  ],
  "targetEdits": {
