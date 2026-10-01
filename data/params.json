@@ -12334,6 +12334,29 @@
    "notes": "Stage E1c (docs/staging/e1c-prereg.md), with energyLedger 1: 1 = a dependent infant sleeping in its mother's nest suckles from her (nurseTick: the suckling rate, limited by her gland store and its gut room) while its hunger readout is at or above the end of a nursing bout (0.08); same eligibility as the day nursing option, no weaning refusal at night (stylization). Infants share the mother's nest until weaning (khayer2025 [M]); night suckling: captive newborns (mizuno2006 [L]) and the human analogy. With it, ledgerMilkStoreH can take its sourced value (11 h, kent1999). 0 = milk only through the day nurse act (E1)."
   },
   {
+   "id": "ledgerNurseByMilk",
+   "group": "reproduction",
+   "value": 0,
+   "units": "flag",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "milkWorth",
+   "file": "src/sim/candidates.ts",
+   "integer": true,
+   "notes": "Stage E1d (docs/staging/e1d-prereg.md), with energyLedger 1: 1 = the nurse option's score is multiplied by the share of the infant's gut room its mother's gland store can fill now (0 with a full gut; the infant's learned feedback of milk flow, design), and a nursing bout ends when the gland can no longer sustain the suckling rate for a tick. No new number. Non-nutritive (comfort) suckling, documented in the field (badescu2017, badescu2022, matsumoto2017), is not modelled. 0 = the score ignores the gland and the bout lasts while the infant is hungry (E1, E1c)."
+  },
+  {
    "id": "ledgerPlantShareKcal",
    "group": "feeding",
    "value": 50,
