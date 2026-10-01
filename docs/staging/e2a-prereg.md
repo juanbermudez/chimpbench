@@ -52,7 +52,8 @@ light changes. The animal leaves when the nest's value falls below its best alte
 A lumped heat balance per kg of body mass, each tick:
 
 - production `M = RMR(m) · MET + walk cost · metres walked / dt + climb heat · metres climbed / dt`
-  - `RMR = 3.39 · m^−0.25` W/kg (Kleiber); MET 1 at rest, in shelter, grooming, nursing or in a nest, else 1.5
+  - basal rate `3.39 · m^−0.25` W/kg (Kleiber) × 1 asleep, 1.38 feeding, 1.25 otherwise; climbing costs
+    `107.4 · m^−0.119` J/kg per metre, of which 9.8 lifts the body and is not heat
   - metres are the animal's real displacement this tick (carried infants do no work)
 - solar gain `Q = 1000 · sin(sun altitude) · (1 − 0.75 · cloud^3.4) · coat fraction · projected area per kg · exposure`
   - exposure: 0.02 on the ground under the canopy, rising linearly with height to 0.5 at canopy height; a resting,
@@ -85,12 +86,13 @@ then every entry is tagged `assumed` in the registry and carries its source key 
 | `rhythmSleepDecayH` | 4.2 | h | borbely1982 (Daan et al. 1984, human) | assumed |
 | `rhythmSleepW` | 0.9 | score | equals rest's fatigue weight | design |
 | `rhythmDarkW` | 2.2 | score | max food value + 3 temperatures | design |
-| `rhythmMassMaleKg` / `rhythmMassFemaleKg` | 39 / 31.3 | kg | pusey2005 (Gombe) | assumed ([H]) |
-| `rhythmBirthMassFrac` | 0.05 | fraction | 1.8 kg ÷ adult mass | assumed |
-| `rhythmRmrW` | 3.39 | W/kg^0.75 | kleiber1961 (70 kcal/day/kg^0.75) | assumed ([H], mammals) |
-| `rhythmActiveMet` | 1.5 | × RMR | ainsworth2011 (human light activity) | assumed |
-| `rhythmWalkJ` | 4.0 | J/kg/m | sockol2007 (≈ 0.20 ml O₂/kg/m) | assumed ([H]) |
-| `rhythmClimbEff` | 0.25 | fraction | muscle efficiency of vertical work | assumed |
+| `rhythmMassMaleKg` / `rhythmMassFemaleKg` | 39 / 31.3 | kg | pusey2005 (Gombe medians), verified in e-sources.md | assumed ([H]) |
+| `rhythmMassKneeMaleY` / `rhythmMassKneeFemaleY` | 13 / 10 | y | pusey2005 (growth slows), verified in e-sources.md | assumed ([M]) |
+| `rhythmBirthMassFrac` | 0.05 | fraction | 1.8 kg ÷ adult mass, no primary source | assumed |
+| `rhythmRmrW` | 3.39 | W/kg^0.75 | kleiber1947 (70 kcal/day/kg^0.75), verified in e-sources.md | assumed ([H], cross-species) |
+| `rhythmRestMet` / `rhythmFeedMet` | 1.25 / 1.38 | × basal | nguessan2009 (after Leonard & Robertson 1997), verified in e-sources.md | assumed, cross-species |
+| `rhythmWalkJ` | 3.8 | J/kg/m | sockol2007 (0.19 ml O₂/kg/m, n = 5 captive), verified in e-sources.md | assumed ([H]) |
+| `rhythmClimbJ` / `rhythmClimbExp` | 107.4 / 0.119 | J/kg/m at 1 kg / exponent | hannaSchmitt2011, verified in e-sources.md | assumed ([M]) |
 | `rhythmBodyC` | 37 | °C | primate core temperature | assumed |
 | `rhythmHeatCapJ` | 3470 | J/kg/°C | specific heat of body tissue | assumed ([H], physics) |
 | `rhythmHeatTolC` | 1.5 | °C | tolerable core change | assumed |
@@ -114,7 +116,7 @@ None of these is a nesting hour, a resting hour or a rate of sheltering.
 ## 4. Benchmarks and expected direction
 
 Measured by `scripts/rhythm-metrics.ts` (field profile, simulation truth) and `scripts/field-metrics.ts`, baseline
-against switches on, same development seeds (48, 7, 21; then 48, 7, 21, 5, 11).
+against switches on, same development seeds (48 and 7; see the amendment in §5).
 
 | Benchmark | Field value (target, never set) | Expectation with the switches on |
 | --- | --- | --- |
@@ -141,6 +143,12 @@ The switches stay off (and the null is recorded) if any of these holds on the de
 
 A miss on midday rest or on the sex contrast is not a kill: it is reported, with the physiology that is missing.
 `rhythmFreeNight` is judged on its own: it stays off if night time outside nests exceeds 10% or night deaths appear.
+
+Amended before the first run (1 October): mass, growth knees, basal rate, activity multipliers, walking and
+climbing costs now take the values verified in the sources track's `docs/staging/e-sources.md` (first draft had
+4.0 J/kg/m walking, a 1.5 activity multiplier and a 25% climbing efficiency from memory). The benchmark protocol is
+the integrator's quick check: seeds 48 and 7, 30 days after a 30-day burn-in; no run longer than 90 days in total
+(30 + 60). The 365-day, 5-seed run is the integrator's.
 
 ## 6. Rule on iteration
 
