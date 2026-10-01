@@ -277,3 +277,67 @@ Two independent designs answer the same brief. This one is [docs/decide-jev-desi
 2. Spend caps: J1 $1, J2 $15, then J3 $12 (Path A) or $75 (Path B).
 3. Reserve report seeds 6501–6905.
 4. Integrator ruling on decide-ft runs that used later-reserved seeds 1010, 5101, 5202, 7001–7003 and 9101.
+
+## Track E: Emergence (physiology-driven decisions; owner: unassigned; plan only, nothing in `src/` changed)
+
+**Rule (user, 1 October 2026).** Field values of behaviour are targets to benchmark against, never inputs. A parameter may carry a field value only when it is physiology or physics measured independently of the behaviour it helps produce (kcal per minute of a food, the cost of walking a metre). Clock hours, hazards, probabilities and bonuses that exist to make a behaviour happen at its field rate are prescriptions, and this track removes them one at a time.
+
+**Starting point (audit, 1 October 2026).** 787 registry parameters: 588 design, 83 stylized, 48 assumed, 62 [M], 3 [H], 3 calibrated; 16 marked `calibrate`. 110 targets: 37 fitted, 73 held-out, 18 flagged `encoded`. No calorie, body-mass or hormone state exists in `src/sim`: hunger, thirst and energy are timers (`hungerAwakePerH` 0.06 and the rest of group `needs`, `src/sim/life.ts needs()`).
+
+**Iteration protocol (every piece of every stage).**
+1. Name the prescriptive rule being removed and its registry switch. Switch 0 = today's behaviour, so compressed golden hashes stay put.
+2. Pre-register in `docs/staging/e<N>-prereg.md` before any run of the changed model: mechanism, sources (added to `docs/research.md` first), which targets should move and in which direction, and the kill criterion.
+3. Benchmark before and after with the same command and seeds: `scripts/field-metrics.ts --profile field --days 365 --burn-in 180 --seeds 48,7,21,5,11`. Development seeds only; reserved seeds never.
+4. Report three numbers: summed band distance on fitted rows, summed band distance on held-out rows, and the prescription count (from the E0 ledger). Plus the C13 viability guard (births ÷ deaths, no starvation deaths).
+5. Keep rule: the switch goes on by default only if viability passes, held-out distance does not rise, and the prescription count falls. Otherwise it stays off and the null result is recorded (as C13d was).
+6. Independent review before the next piece. `src/sim` work runs one piece at a time.
+
+**Sequencing.** E switches stay off by default until the C11 calibration and the combined proof are frozen, unless the integrator rules otherwise. Proof runs count only on merged `main`.
+
+## Stage E0: Baseline and prescription ledger
+**Goal**: Two numbers for today's model: how close it is to the field, and how much of that closeness is prescribed.
+**Deliverables**:
+- `scripts/prescription-ledger.ts` → `artifacts/validation/e0-ledger.md`. Every registry parameter and every literal in `src/sim` classed as *input* (physiology or physics), *design weight*, or *outcome-encoding*, with the target row it encodes. Seed list from the audit: the `needs` timers; the midday rest literal (`candidates.ts:206`, hours 11.5–14.5, outside the registry); the nest clock (`nestEveningStartH`/`EndH`, `nestWakeHour`); `patrolStartH`/`EndH`, `patrolH0` (fitted to T-PAT-1), `patrolMaleOddsRatio`, `patrolIncursionP` (0.4, inside T-PAT-6's own band); `gangImpulseP`, `rainDisplayP`, `huntGapH`; the night and dusk menus (`menu.ts PHASE_ACTIONS`); `rgTemperature`, `rgMaxAgeH`, `continueBonus`; the call chorus windows.
+- Band distance as an output of the shared scorer (today it lives only in `scripts/jev-test.ts`).
+- Baseline scorecard `artifacts/validation/e0-`.
+**Success Criteria**: the ledger covers all 787 parameters and lints `src/sim` for hour-of-day and probability literals; the baseline reproduces on 5 seeds; the 18 encoded targets are cross-referenced to the parameters that encode them.
+**Tests**: ledger classification test; band-distance unit test against the jev-test numbers.
+**Status**: Not Started
+
+## Stage E1: Energy ledger (calories in, calories out)
+**Goal**: Hunger, condition and the cost of lactation come from an energy balance, not from timers.
+**Removes**: `hungerAwakePerH`, `hungerRunPerH`, `hungerSleepPerH`, `hungerLactationPerH`, `hungerPregnancyPerH`; hunger-unit conversions (`fruitHungerFactor`, `meatHungerFactor`, `fallbackRateRatio` as a hunger rate).
+**Mechanism**: per chimp, gut contents and body reserves in kcal, and body mass by age and sex. Intake by food in kcal per minute: ripe fruit 10.7, young leaves 6.2, pith 3.4 [uwimbabazi2019] [H]. Expenditure = resting cost scaled by mass + cost per metre walked and climbed + lactation, pregnancy and growth. Hunger is a function of gut emptiness and reserve deficit. C8's `cond` reads reserves instead of an average of 1 − hunger.
+**Sources to add first**: chimpanzee total energy expenditure, locomotion cost, gut passage time. No chimpanzee magnitude exists for lactation cost (research.md, lactation energetics), so a human or primate value enters as *assumed* and is flagged.
+**Benchmarks**: T-ACT-1–4, T-RNG-4, T-FOOD-2, T-FOOD-4, T-DEM-10, T-DEM-12 (fitted); T-ACT-5, T-RNG-5, T-FOOD-3, T-DEM-13, T-DEM-14, T-DEM-19, T-DEM-20 (held-out). New rows, registered as targets and never set: daily intake ≈ 2,500 kcal and feeding 309 ± 85 min per day [uwimbabazi2019]; reserves of nursing mothers depressed for about 6 months, then recovering [emeryThompson2012].
+**Success Criteria**: viability passes; daily kcal intake lands in its band without being set; the T-ACT rows are no worse; the lactation pattern has the right direction; the C8 finding (lactating females starving in the field) is explained by a named term of the balance.
+**Tests**: energy conservation per chimp per day (in − out = change in gut + change in reserves, exact); determinism; compressed goldens unchanged at switch 0.
+**Status**: Not Started
+
+## Stage E2: Daily rhythm from body state (heat, water, sleep)
+**Goal**: Midday rest, nesting time and drinking happen because of the body and the light, with no hour written into a score.
+**Removes**: the midday rest literal and the temperature bonus; the nest clock ramp and `nestWakeHour`; the thirst timers; the rain shelter rule. Last, the night and dusk menus for rules-driven chimps (they stay as a guard for models).
+**Mechanism**: heat load from air temperature, exertion and wet fur, shed by resting; water balance from food water content and drinking, lost through heat and exertion; sleep pressure that builds awake and discharges asleep, with light gating nest building (the human two-process sleep model, entered as *assumed*).
+**Benchmarks**: `activeDayH` (males 11 h 34 min, lactating females 10 h 57 min, batesByrne2009) moves from parameter to target. New rows, sources to add first: hourly activity profile, drinking bouts per day, nest-building time relative to sunset. T-ACT-1–4 again.
+**Success Criteria**: with the clock rules off, nesting and midday rest still fall inside their bands; lint finds no hour-of-day literal in rest, nest or shelter scoring.
+**Tests**: water conservation; lint test; night safety (no travel deaths or all-night foraging on 5 seeds).
+**Status**: Not Started
+
+## Stage E3: Urgency replaces fixed choice constants
+**Goal**: How decisively and how persistently a chimp acts depends on how pressing its deficits are.
+**Removes**: the fixed `rgTemperature` (set so the top option wins a median 0.77), `rgMaxAgeH` (30 min), the need buckets (0.4, 0.55, 0.7, 0.88), `continueBonus` and `finishedPenalty`.
+**Mechanism**: an option's value is the deficit it is expected to remove per hour, plus the social terms; choice sharpness scales with the largest deficit (starving is decisive, sated explores); an act continues while it pays at least what the best known alternative would (the feeding gate's marginal-value test, extended to all acts).
+**Benchmarks**: feeding bout lengths and patch residence (`scripts/movement-metrics.ts`), T-PTY-1, T-RNG-4 (fitted); T-FOOD-4, T-FOOD-5, T-FOOD-6 (held-out); the Gombe held-out movement validation, run by the integrator only.
+**Success Criteria**: bout-length distributions no further from the field than with the fixed constants; held-out distance not higher.
+**Tests**: gate replay; identical choices to the current softmax at switch 0.
+**Status**: Not Started
+
+## Stage E4: Slow internal states replace dice and gates
+**Goal**: Rare acts arise from a chimp's standing state, not from a probability roll that opens an option.
+**Removes**, one behaviour per piece, in this order: escalation and redirect probabilities; `rainDisplayP`; `huntGapH`; `gangImpulseP` and the infanticide probabilities; then patrols last (`patrolH0`, `patrolMaleOddsRatio`, the 08:00–15:30 window, `patrolIncursionP`), because the most fitted targets hang on them.
+**Mechanism**: three leaky integrators, each matched to a hormone field teams measure in urine: stress load (cortisol-like), male competitive arousal (testosterone-like), affiliation (oxytocin-like). Events and body state drive them; they scale existing score weights. A reward-expectation state (dopamine-like) is added only if E3 shows the need, and is tagged [L].
+**Sources to verify and add first**: the wild-chimpanzee hormone studies (cortisol and rank, testosterone and competition, oxytocin and grooming, sharing and intergroup conflict).
+**Benchmarks**: T-PAT-1 (fitted through `patrolH0` today; relabelled so a pass counts as emergent), T-HUN-1, T-HUN-3, T-LET-1, T-SOC-7, T-SOC-9 (fitted); T-PAT-2, T-PAT-3, T-PAT-8, T-HUN-4, T-HUN-5, T-HUN-6, T-LET-3, T-LET-6, T-SOC-5, T-SOC-10, T-COM-2 (held-out). New direction-only rows from the hormone literature.
+**Success Criteria**: no option is opened by a dice roll; fitted patrol and hunt rows are no worse; held-out distance falls.
+**Tests**: integrator bounds and determinism; each removed probability has an ablation row in `data/proof-ablations.json`.
+**Status**: Not Started
