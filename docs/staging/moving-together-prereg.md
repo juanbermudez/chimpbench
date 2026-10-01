@@ -49,7 +49,8 @@ Status: design for the integrator, 1 October 2026. Nothing is implemented. Measu
 - **It leaves alone in the end.** Once `departPersistMaxMin` = 13 min ([M] the upper end of the range in the same 9 cases) have passed since the first failed attempt, the next attempt is not abandoned.
 - **Unchanged:** an animal with no audience; joining and following; trips to water; every join value. So the C13e fitted row (71% of hooed initiations recruit within 5 min) should not move.
 - **Design assumptions, labelled:** that a failed attempt is abandoned at all (the source reports re-launching but not how often an initiator left alone); the audience definition; the 1-min check.
-- **State:** two lazy keys on `chimp.sim` (first failed attempt, next allowed attempt), declared optional.
+- **State:** three lazy keys on `chimp.sim` (the audience of the attempt under way, the first failed attempt, the next allowed attempt), declared optional.
+- **Implementation notes (added before any run).** During the check the initiator stands where it is (waiting and checking back), so an abandoned attempt leaves it with its companions; a companion who joins ends the wait at once. An effort that is not re-launched within 13 min of its last failure is over, and the next departure starts a new one. Ablation row `moving-together`.
 - Expected arithmetic for a pair: about three attempts fit in 13 min; at 0.46 per attempt a joint departure follows in about 85% of cases, against 46% now.
 
 Not proposed: a cost of staying alone in the join value. It would raise recruitment per initiation above the sourced 71%.
@@ -67,7 +68,8 @@ Not proposed: a cost of staying alone in the join value. It would raise recruitm
 - G2: T-ACT-1 (0.33–0.5), T-ACT-2 (0.12–0.25), T-ACT-3, T-ACT-4 and T-RNG-4 (1.5–3.5 km) stay in band with the change on.
 - G3: adult and lactating median hunger at most 0.03 above the off arm; no starvation death the off arm lacks.
 - G4: the share of crown departures with a co-feeder present in which a companion leaves within 5 min is higher on than off, each seed.
-- G5: hooed initiations that recruit at least one companion within 5 min stay within 0.71 ± 0.05 (the C13e fitted row).
+- G5: hooed initiations that recruit at least one companion stay within 0.71 ± 0.05 (the C13e fitted row), **read per attempt**: an attempt recruits if a companion joins it before it ends, at most 5 min (`visit-probe.ts`, both arms).
+  - *Amended before any run (1 October 2026), after reading the C13e instrument.* `scripts/c13-direction.ts` counts a companion who takes up a trip to the same tree within 5 min of an initiation. With the change on, that also counts companions who join a re-launch a few minutes after a failed first attempt, so its figure is expected to rise without any change in the join values. It is reported beside the per-attempt reading (called, silent and their ratio), not used as the gate.
 
 **Predictions (pass or fail reported; not a gate).**
 

@@ -43,6 +43,10 @@
    "params": { "oestrusPullW": 0.3 },
    "note": "Party-size stage, the pull of females in oestrus on males: off by default (a pre-registered null result, 1 October 2026); this row switches it ON at the pre-registered 0.3. The row's sign is reversed relative to the other stages."
   },
+  "moving-together": {
+   "params": { "departPersist": 0 },
+   "note": "Moving-together stage off: an initiator leaves whether or not anyone follows, as before (hash-identical to the model before; docs/staging/moving-together-prereg.md)."
+  },
   "C8c": {
    "params": { "lactTaper": 0 },
    "note": "The C8c lactation-cost taper off: the constant lactation hunger cost of C8 (hash-identical to the model before C8c; docs/staging/c8c-lactation-taper.md)."

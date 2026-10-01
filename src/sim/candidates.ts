@@ -270,6 +270,9 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     offer('forage', -1, h * P.fallbackForageW * (fallbackOn(P) ? bestFallbackNear(world, px, pz, x.sight, _fb) : 1) * leafV + 0.03 - rain * 0.3);
     // field profile: leaving companions for a food tree of one's own has a cost (parties travel together; design, T-PTY-1)
     const stay = (P.partyStayW > 0 ? P.partyStayW * Math.min(x.visibleOwn, P.partyStayMaxN) : 0) + oestrusNear;
+    // stage departPersist: after a failed departure attempt its own trips to trees wait for the re-launch time, while it
+    // still has companions to leave (execution.ts departAttempt) [M: gruberZuberbuhler2013; design]
+    const held = P.departPersist === 1 && x.tryAt !== undefined && time < x.tryAt && departAudience(world, c) > 0;
     const shortlist = P.patchEcology === 1; // field: many remembered trees; score the few best by distance and hunger
     _mem.length = 0; _rk.length = 0; _dk.length = 0;
     const minD = P.memoryTreeMinM;
@@ -282,7 +285,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
         const crop = x.treeCrop?.[t.id] ?? 0.2;
         const worth = (P.memCropBelief === 1 ? h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) : h * P.memTravelHungerW) * (iv ? tripFrac(crop, 0, d) : 1);
         if (shortlist) { const rv = revisit(x, t.id, time, P); _mem.push(t, worth - tripCost(worth, crop, d, h, P) - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD)); continue; }
-        offer('travel', t.id, worth - tripCost(worth, crop, d, h, P) - revisit(x, t.id, time, P) - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay, V.TREE);
+        if (!held) offer('travel', t.id, worth - tripCost(worth, crop, d, h, P) - revisit(x, t.id, time, P) - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay, V.TREE);
       } else if (m.kind === 'water' && c.thirst > 0.25 && c.age >= 3) {
         const d = Math.hypot(m.position[0] - px, m.position[2] - pz);
         offer('drink', m.entityId, c.thirst * 1.5 - d / P.drinkDistScaleM - 0.05);
@@ -311,14 +314,14 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       for (let i = 0; i < _rk.length; i++) { const r = D > 0 ? _rk[i] * D / (D + _dk[i]) : _rk[i] / _dk[i]; if (r > br) { br = r; bi = i; } }
       const t = _mem[2 * bi] as Tree, base = _mem[2 * bi + 1] as number;
       _mem.length = 0;
-      offer('travel', t.id, base - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay, V.TREE);
+      if (!held) offer('travel', t.id, base - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay, V.TREE);
     }
     if (shortlist) for (let k = 0; k < 4 && _mem.length; k++) {
       let bi = 1;
       for (let i = 3; i < _mem.length; i += 2) if ((_mem[i] as number) > (_mem[bi] as number)) bi = i;
       const t = _mem[bi - 1] as Tree, base = _mem[bi] as number;
       _mem.splice(bi - 1, 2);
-      offer('travel', t.id, base - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay, V.TREE);
+      if (!held) offer('travel', t.id, base - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay, V.TREE);
     }
     if (x.joinCall > 0 && time - x.joinAt < 0.3 && c.action !== 'patrol') {
       // parties gather at rich food and split up when fruit is scarce (fission-fusion tracks fruit) [H]
@@ -991,3 +994,16 @@ export function findCandidate(list: Candidate[], action: string, targetId: numbe
   return undefined;
 }
 
+
+/** Stage departPersist: own-community animals of 12 y or more within the party link of `c`, awake: those a departure would leave behind. */
+export function departAudience(world: World, c: Chimp): number {
+  const P = paramsOf(world), alive = index(world).alive, l2 = P.partyLinkM * P.partyLinkM;
+  let n = 0;
+  for (let i = 0; i < alive.length; i++) {
+    const o = alive[i];
+    if (o === c || o.troopId !== c.troopId || o.age < 12 || (o.action === 'nest' && ix(o).phase >= 2)) continue;
+    const dx = o.position[0] - c.position[0], dz = o.position[2] - c.position[2];
+    if (dx * dx + dz * dz <= l2) n++;
+  }
+  return n;
+}

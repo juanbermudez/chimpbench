@@ -174,7 +174,7 @@ test('C13e bug fix: the joint trip is offered inside the 5 m minimum; off = the 
     assert.equal(!!s.join(b), want, `joinChoice ${joinChoice}`);
   }
   // field seed 7, 1 day, on main before C13e (7bc8c31); the hunting fix and the party-size switches came later and are off too
-  assert.equal(worldHash(run(createWorld(7, { profile: 'field', params: { joinChoice: 0, huntEncounter: 0, huntExtraKillP: 0, crowdByShare: 0, oestrusPullW: 0 } }), 1)), '08cdb7889f141e01');
+  assert.equal(worldHash(run(createWorld(7, { profile: 'field', params: { joinChoice: 0, huntEncounter: 0, huntExtraKillP: 0, crowdByShare: 0, oestrusPullW: 0, departPersist: 0 } }), 1)), '08cdb7889f141e01');
 });
 
 test('C13e noticing: a silent departure reaches only companions who see the leader go and are not absorbed; a hoo reaches every hearer', async () => {

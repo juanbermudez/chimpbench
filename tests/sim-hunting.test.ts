@@ -16,6 +16,7 @@ import { worldHash } from './fixtures/golden';
 
 const run = (w: World, days: number) => { for (let i = 0, n = Math.round(days * 5760); i < n; i++) tickWorld(w); return w; };
 const OFF = { huntEncounter: 0, huntExtraKillP: 0 };
+const BEFORE = { ...OFF, departPersist: 0 }; // the recorded hashes also predate the moving-together stage
 
 /** Midday in a field world: adult male `a` of community 1 with a colobus group 40 m east; `company` adult males stand beside him, the others are far away. */
 function scene(params: Record<string, number> = {}, company = 1) {
@@ -35,8 +36,8 @@ const lead = (w: World, a: Chimp) => computeCandidates(w, a, []).find(k => k.act
 
 test('the ablation set reproduces the model before the hunting fix (hash-identical); the fix is on in the field profile only', () => {
   // field seeds 48 and 7 after 3 days, recorded on main before the change (21592c1)
-  assert.equal(worldHash(run(createWorld(48, { profile: 'field', params: OFF }), 3)), '1f52745b86507338');
-  assert.equal(worldHash(run(createWorld(7, { profile: 'field', params: OFF }), 3)), '0c43f4c12dd3d172');
+  assert.equal(worldHash(run(createWorld(48, { profile: 'field', params: BEFORE }), 3)), '1f52745b86507338');
+  assert.equal(worldHash(run(createWorld(7, { profile: 'field', params: BEFORE }), 3)), '0c43f4c12dd3d172');
   const field = paramsOf(createWorld(33, { profile: 'field' })), compressed = paramsOf(createWorld(33));
   assert.deepEqual([field.huntEncounter, field.huntEncMinMales, field.huntExtraKillP], [1, 2, 0.17]);
   assert.deepEqual([compressed.huntEncounter, compressed.huntExtraKillP], [0, 0]);
@@ -88,8 +89,9 @@ test('rain, low energy and the gap since the community\'s last hunt still close 
   }
   const { w, a, p, males } = scene();
   perceive(w, a);
+  const huntsBefore = w.stats.hunts; // the warm-up may hold a hunt already
   startAction(w, a, lead(w, a)!, 'rules');
-  assert.equal(w.stats.hunts, 1);
+  assert.equal(w.stats.hunts, huntsBefore + 1);
   assert.equal(ix(a).impulse, 0);
   const b = males[1];
   perceive(w, b);
@@ -117,9 +119,9 @@ test('captures: each other hunter makes one of his own with huntExtraKillP; 0 ke
     for (const c of hunters) { c.position = [p.position[0] + 2, 0, p.position[2]]; c.action = 'hunt'; c.targetId = p.id; c.carryingMeat = 0; }
     const h = { preyId: p.id, troopId: a.troopId, start: w.time, resolveAt: w.time, hunters: hunters.map(c => c.id), interId: -1 };
     simOf(w).hunts.push(h);
-    const before = w.interactions.length;
+    const before = w.interactions.length, successesBefore = w.stats.huntSuccesses; // the warm-up may hold a hunt already
     resolveHunt(w, h);
-    assert.equal(w.stats.huntSuccesses, 1);
+    assert.equal(w.stats.huntSuccesses, successesBefore + 1);
     assert.equal(size - p.size, want, `${want} taken from the group`);
     assert.equal(hunters.filter(c => c.carryingMeat === 1).length, want);
     const flashes = w.interactions.slice(before).filter(i => i.kind === 'hunt' && i.end !== null);

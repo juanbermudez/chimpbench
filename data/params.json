@@ -4783,6 +4783,28 @@
    "notes": "Mothers charge an aggressor of their offspring within this distance. Compressed stand-in scaled with sight (field ≈ compressed × 35/15, design). Also the radius at which a guardian's presence deters charges on its ward (C8)."
   },
   {
+   "id": "departCheckMin",
+   "group": "movement",
+   "value": 1,
+   "units": "eco-min",
+   "range": [
+    0.25,
+    2
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    60
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "P.departCheckMin (departWait)",
+   "file": "src/sim/execution.ts",
+   "notes": "Moving-together stage: how long an initiator with an audience stands and checks before giving an unjoined attempt up (design: one round of its companions' decisions; the source counts a wait from 5 s)."
+  },
+  {
    "id": "departCue",
    "group": "decision",
    "value": 0,
@@ -4810,6 +4832,89 @@
    },
    "notes": "Stage C13d switch (docs/realism-design.md \"C13d pre-registration\"), off by default after its direction check: a pre-registered null result (party size, recruitment ratio, decisions and day range did not move as predicted). When on (field): an adult setting off on a trip to a tree gives every awake own-community companion aged 5+ within partyLinkM an urgent decision point, seen or not (the C7a cue reaches only companions in the initiator's view and skips any interrupted in the last 2 min). Recruitment to joint travel [H] gruberZuberbuhler2013; the decision point is a design assumption. Kept for the lean proof's ablation row (which switches it on).",
    "integer": true
+  },
+  {
+   "id": "departPersist",
+   "group": "movement",
+   "value": 0,
+   "units": "flag",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Food landscape: tree size, crop size and patch use): gruberZuberbuhler2013, initiators wait and check back; after a failed recruitment the initiator re-launched its effort (9 cases, mean 3.80 min, range 0-13 min); a travel party is two or more"
+   ],
+   "population": "Budongo Sonso",
+   "clock": "none",
+   "symbol": "P.departPersist (execution.ts departAttempt, departWait; candidates.ts)",
+   "file": "src/sim/execution.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 1
+   },
+   "notes": "Moving-together stage (docs/staging/moving-together-prereg.md 3; field): 1 = an own trip to a tree started with an audience (own-community animals of 12 y or more within partyLinkM, awake) is an attempt: the initiator stands and checks for departCheckMin, and if nobody has joined or followed it gives the attempt up and stays; its own trips to trees are off its menu for departRetryMin; once departPersistMaxMin have passed since the first failed attempt the next attempt goes ahead alone. Waiting, checking and re-launching are sourced; that a failed attempt is abandoned and the audience definition are design assumptions. 0 = the model before (hash-identical; compressed)."
+  },
+  {
+   "id": "departPersistMaxMin",
+   "group": "movement",
+   "value": 13,
+   "units": "eco-min",
+   "range": [
+    6,
+    26
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    600
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Food landscape: tree size, crop size and patch use): gruberZuberbuhler2013, initiators wait and check back; after a failed recruitment the initiator re-launched its effort (9 cases, mean 3.80 min, range 0-13 min); a travel party is two or more"
+   ],
+   "population": "Budongo Sonso",
+   "clock": "eco",
+   "symbol": "P.departPersistMaxMin (departAttempt)",
+   "file": "src/sim/execution.ts",
+   "notes": "Moving-together stage: once this long has passed since the first failed attempt of a departure effort, the next attempt is not abandoned (the upper end of the re-launch delays, 0-13 min, 9 cases). An effort not re-launched within this window is over."
+  },
+  {
+   "id": "departRetryMin",
+   "group": "movement",
+   "value": 3.8,
+   "units": "eco-min",
+   "range": [
+    1.9,
+    7.6
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    600
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Food landscape: tree size, crop size and patch use): gruberZuberbuhler2013, initiators wait and check back; after a failed recruitment the initiator re-launched its effort (9 cases, mean 3.80 min, range 0-13 min); a travel party is two or more"
+   ],
+   "population": "Budongo Sonso",
+   "clock": "eco",
+   "symbol": "P.departRetryMin (departWait; candidates.ts)",
+   "file": "src/sim/execution.ts",
+   "notes": "Moving-together stage: after a failed attempt the initiator's own trips to trees are off its menu for this long, while it still has an audience (mean re-launch delay 3.80 min, 9 cases)."
   },
   {
    "id": "discrimDistW",

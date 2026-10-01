@@ -199,9 +199,83 @@ test('party-size stage: both switches off reproduce the field model before it (h
   const { worldHash } = await import('./fixtures/golden');
   const run = (params: Record<string, number>) => { const w = createWorld(48, { profile: 'field', params }); for (let i = 0; i < 2880; i++) tickWorld(w); return worldHash(w); };
   // field seed 48 after 2880 ticks (12 h) on main 21592c1, before the party-size stage (and before the hunting fix, off here too)
-  const HUNT_OFF = { huntEncounter: 0, huntExtraKillP: 0 };
+  const HUNT_OFF = { huntEncounter: 0, huntExtraKillP: 0, departPersist: 0 }; // and before the moving-together stage
   const off = run({ ...HUNT_OFF, crowdByShare: 0, oestrusPullW: 0 });
   assert.equal(off, 'bb1957953df81ebc');
   assert.equal(run(HUNT_OFF), off, 'both are off by default');
   assert.notEqual(run({ ...HUNT_OFF, crowdByShare: 1 }), off, 'crowdByShare changes the world');
+});
+
+// Moving-together stage (docs/staging/moving-together-prereg.md): departPersist.
+async function departScene(params: Record<string, number> = {}) {
+  const { departAudience } = await import('../src/sim/candidates');
+  const { executeAction } = await import('../src/sim/execution');
+  const { perceive } = await import('../src/sim/perception');
+  const w = createWorld(33, { profile: 'field', params: { travelHooP: 0, travelHooAllyP: 0, ...params } });
+  for (let i = 0; i < 5760 / 4; i++) tickWorld(w);
+  const [a, b] = w.chimps.filter(k => k.alive && k.age >= 15 && k.troopId === 1);
+  const far = w.trees.find(t => Math.hypot(t.position[0] - a.position[0], t.position[2] - a.position[2]) > 300)!;
+  a.position[1] = 0; a.hunger = 0.8;
+  b.position = [a.position[0] + 10, 0, a.position[2]]; b.action = 'rest'; b.targetId = -1; ix(b).phase = 0;
+  const trip = (c: typeof a, aux: number): Candidate => { const k: Candidate = { action: 'travel', targetId: far.id, score: 1, reason: 'test' }; candidateMeta.set(k, { v: V.TREE, aux }); return k; };
+  const setOff = () => startAction(w, a, trip(a, -1), 'rules');
+  // one tick of the initiator alone (the rest of the world stands still)
+  const step = () => { w.tick++; w.time += paramsOf(w).tickHours; executeAction(w, a); };
+  const ownTrips = () => { perceive(w, a); return computeCandidates(w, a, []).filter(k => k.action === 'travel' && candidateMeta.get(k)?.v === V.TREE && (candidateMeta.get(k)?.aux ?? -1) <= 0); };
+  return { w, a, b, far, trip, setOff, step, ownTrips, audience: () => departAudience(w, a), P: paramsOf(w) };
+}
+
+test('moving together: an unjoined departure attempt is given up after the check; own trips wait for the re-launch time', async () => {
+  const s = await departScene(), x = ix(s.a), at = [s.a.position[0], s.a.position[2]];
+  assert.ok(s.audience() >= 1, 'a companion of 12 y or more is within the party link');
+  const t0 = s.w.time;
+  s.setOff();
+  assert.equal(x.tryN, s.audience(), 'an attempt, with its audience');
+  for (let i = 0; i < 3; i++) { s.step(); assert.ok(!x.finished && x.tryN !== undefined, 'standing and checking'); }
+  assert.deepEqual([s.a.position[0], s.a.position[2]], at, 'it has not moved');
+  s.step();
+  assert.ok(x.finished && x.tryN === undefined, 'given up after departCheckMin');
+  assert.ok(Math.abs(x.trySince! - t0) < 1e-9, 'the effort began with this attempt');
+  assert.ok(Math.abs(x.tryAt! - (s.w.time + s.P.departRetryMin / 60)) < 1e-9);
+  assert.equal(s.ownTrips().length, 0, 'own trips to trees are off the menu');
+  s.w.time = x.tryAt! + 1e-6;
+  assert.ok(s.ownTrips().length > 0, 'and back after departRetryMin');
+});
+
+test('moving together: a joined attempt goes at once; after departPersistMaxMin the next attempt goes alone; no audience, no attempt; off = the model before', async () => {
+  const s = await departScene(), x = ix(s.a);
+  s.setOff();
+  startAction(s.w, s.b, s.trip(s.b, s.a.id), 'rules'); // the companion joins the trip
+  const d0 = Math.hypot(s.far.position[0] - s.a.position[0], s.far.position[2] - s.a.position[2]);
+  s.step();
+  assert.ok(x.tryN === undefined && x.trySince === undefined && !x.finished, 'recruited');
+  assert.ok(Math.hypot(s.far.position[0] - s.a.position[0], s.far.position[2] - s.a.position[2]) < d0, 'and under way');
+  // an effort that has lasted departPersistMaxMin: the next attempt is not abandoned
+  const late = await departScene(), lx = ix(late.a);
+  lx.trySince = late.w.time - (late.P.departPersistMaxMin + 1) / 60; lx.tryAt = late.w.time - 1 / 60;
+  late.setOff();
+  assert.ok(lx.tryN === undefined && lx.trySince === undefined && lx.tryAt === undefined, 'it leaves alone and the effort is over');
+  // an effort that was not re-launched within the window is forgotten: a new one starts
+  const stale = await departScene(), sx = ix(stale.a);
+  sx.trySince = stale.w.time - 2; sx.tryAt = stale.w.time - 1.9;
+  stale.setOff();
+  assert.ok(sx.tryN !== undefined && sx.trySince === undefined, 'a new effort');
+  // nobody within the party link: an ordinary departure
+  const alone = await departScene();
+  alone.a.position = [alone.far.position[0], 0, alone.far.position[2]];
+  if (alone.audience() === 0) { alone.setOff(); assert.equal(ix(alone.a).tryN, undefined); }
+  // switch off
+  const off = await departScene({ departPersist: 0 });
+  off.setOff();
+  assert.equal(ix(off.a).tryN, undefined);
+  assert.equal(paramsOf(createWorld(3)).departPersist, 0);
+  assert.equal(paramsOf(createWorld(3, { profile: 'field' })).departPersist, 1);
+});
+
+test('moving together: departPersist off reproduces the field model before it (hash-identical); on changes the world', async () => {
+  const { worldHash } = await import('./fixtures/golden');
+  const run = (params: Record<string, number>) => { const w = createWorld(48, { profile: 'field', params }); for (let i = 0; i < 2880; i++) tickWorld(w); return worldHash(w); };
+  // field seed 48 after 2880 ticks (12 h) on main 9570a3f, before the moving-together stage
+  assert.equal(run({ departPersist: 0 }), '7b610a2b60ecf82e');
+  assert.notEqual(run({}), '7b610a2b60ecf82e');
 });

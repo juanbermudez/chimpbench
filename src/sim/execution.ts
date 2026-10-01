@@ -1,5 +1,5 @@
 import type { Action, Candidate, Chimp, DecisionSource, InteractionKind, World } from '../types';
-import { candidateMeta, dependentOn, isCarried, nearestNeighbor, V } from './candidates';
+import { candidateMeta, departAudience, dependentOn, isCarried, nearestNeighbor, V } from './candidates';
 import { notifyAllies, resolveCharge, resolveFight } from './conflict';
 import { addEvent, emitCall, endInteraction, episode, findInteraction, flashInteraction, gate, interrupt, startInteraction } from './events';
 import { nestPoint } from './generation';
@@ -274,6 +274,7 @@ function onStart(world: World, c: Chimp): void {
       break;
     case 'patrol': if (x.v !== V.APPROACH) startPatrol(world, c); else c.vocal = null; break;
     case 'travel': case 'follow':
+      if (P.departPersist === 1) departAttempt(world, c);
       if (P.travelHoo === 1 && c.action === 'travel' && x.v === V.TREE && x.aux <= 0) travelHoo(world, c);
       // stage C13d (departCue, field): an adult setting off on a trip to a tree is at once a decision point for every
       // awake own-community companion aged 5+ within the party chain distance, seen or not, so the joint-trip,
@@ -436,6 +437,47 @@ export function foodCallChance(world: World, c: Chimp, crop: number): number {
 }
 
 /**
+ * Stage departPersist (docs/staging/moving-together-prereg.md §3): an animal that sets off on its own trip to a tree while
+ * it has an audience (own-community animals of 12 y or more within the party link, awake) makes an attempt, not a
+ * departure. It stands and checks for departCheckMin; if nobody has joined its trip or followed it by then it gives the
+ * attempt up and stays, and its own trips to trees are off its menu for departRetryMin. Once departPersistMaxMin have
+ * passed since the first failed attempt, the next attempt goes ahead alone. Field initiators wait and check back, and
+ * after a failed recruitment re-launch the effort (mean 3.80 min later, range 0-13; 9 cases) [M] gruberZuberbuhler2013;
+ * that a failed attempt is abandoned, the audience definition and the check window are design assumptions.
+ */
+function departAttempt(world: World, c: Chimp): void {
+  const P = paramsOf(world), x = ix(c), time = world.time;
+  delete x.tryN;
+  if (c.action !== 'travel' || x.v !== V.TREE || x.aux > 0) return; // only an own trip to a tree is an initiation
+  const cap = P.departPersistMaxMin / 60;
+  // an effort that was not re-launched within the window is over: the next departure starts a new one
+  if (x.trySince !== undefined && time - (x.tryAt ?? -1e9) > cap) { delete x.trySince; delete x.tryAt; }
+  const audience = departAudience(world, c);
+  if (audience === 0 || (x.trySince !== undefined && time - x.trySince >= cap)) { delete x.trySince; delete x.tryAt; return; } // nobody to leave, or it has waited long enough: it goes
+  x.tryN = audience;
+}
+
+/** The initiator stands and checks; true while the attempt is still open (or was just given up). */
+function departWait(world: World, c: Chimp): boolean {
+  const P = paramsOf(world), x = ix(c), alive = index(world).alive;
+  for (let i = 0; i < alive.length; i++) {
+    const o = alive[i];
+    if (o === c || !o.alive || o.troopId !== c.troopId) continue;
+    const ox = ix(o);
+    if ((o.action === 'travel' && o.targetId === c.targetId && ox.aux === c.id) || (o.action === 'follow' && o.targetId === c.id && ox.v === V.PARTY)) {
+      delete x.tryN; delete x.trySince; delete x.tryAt; // recruited: the party moves
+      return false;
+    }
+  }
+  if (c.actionTime < P.departCheckMin * 60) { x.actEnd += TICK_HOURS; c.nextDecision = x.actEnd; return true; } // waiting, checking back
+  delete x.tryN;
+  if (x.trySince === undefined) x.trySince = world.time - c.actionTime / 3600;
+  x.tryAt = world.time + P.departRetryMin / 60;
+  finish(world, c);
+  return true;
+}
+
+/**
  * Stage C7c (field; docs/staging/c7b-prereg.md §6.2): the initiator of a committed trip stands and waits while a companion
  * joining it (same tree) or following it is more than sightDayM behind and farther from the goal, up to partyWaitMaxMin per
  * trip; the bout end moves with the wait. Initiators waited in 54-58% of travel initiations (gruberZuberbuhler2013) [H].
@@ -496,6 +538,7 @@ export function executeAction(world: World, c: Chimp): void {
       if (x.v === V.CALLER) { gx = x.joinX; gz = x.joinZ; stop = P.joinCallStopM; }
       else if (x.v === V.HOME || c.targetId < 0) { const t = idx.troopById.get(c.troopId)!; gx = t.center[0]; gz = t.center[2]; stop = t.radius * 0.6; }
       else { const t = idx.treeById.get(c.targetId); if (!t) return finish(world, c); gx = t.position[0]; gz = t.position[2]; stop = 3; }
+      if (x.tryN !== undefined && departWait(world, c)) return;
       if (x.v === V.TREE && x.aux < 0 && P.partyJoinTrip === 1 && waitForParty(world, c, gx, gz)) return;
       if (moveTo(world, c, gx, 0, gz, WALK, stop)) finish(world, c);
       return;
