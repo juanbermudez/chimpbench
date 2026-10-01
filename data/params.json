@@ -13127,6 +13127,29 @@
    "notes": "Net cost of transport: 0.19 (SE 0.013) ml O2/kg/m in 5 captive chimpanzees (33.9-82.3 kg) walking quadrupedally at 1.0 m/s, individuals 0.14-0.29 (sockol2007, Table 1), at 20.1 J/ml; about 30% above the all-mammal equation of taylor1982. Charged per metre actually moved, at any speed; a carried infant’s mass is charged to its carrier."
   },
   {
+   "id": "ledgerWildCostMult",
+   "group": "needs",
+   "value": 1,
+   "units": "x (resting x activity)",
+   "range": [
+    1,
+    1.4
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.5,
+    4
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "energyTick",
+   "file": "src/sim/energy.ts",
+   "calibrationExcluded": "Stage E1g sensitivity parameter: wild total expenditure has never been measured in chimpanzees, so this unknown is swept and reported (docs/staging/e1g-prereg.md), never fitted to a behavioural target.",
+   "notes": "Stage E1g (docs/staging/e1g-prereg.md), read only with energyLedger 1: multiplies the non-locomotor maintenance term (resting rate x activity multiple) for wild costs no term models (thermoregulation, immune function, tissue repair, vigilance). 1 = the captive-based sum (hash-identical). Unknown: no wild great ape has a measured total expenditure. Range: wild non-human haplorhines measured by doubly labelled water have PAL 1.38 (yellow baboons) to 1.89 (mantled howlers) (simmen2021, nagyMilton1979), which is k 1.0-1.4 on the ledger's own PAL of about 1.36; captive and wild primates spend alike (pontzer2014); Hadza foragers' PAL 1.78 (women) and 2.26 (men) would be k 1.3-1.7 (pontzer2012). A sensitivity parameter, swept and never fitted."
+  },
+  {
    "id": "maleDriftTauDays",
    "group": "dominance",
    "value": 500,

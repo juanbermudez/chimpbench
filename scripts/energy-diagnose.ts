@@ -17,7 +17,7 @@ import type { Chimp, World } from '../src/types';
 const arg = (k: string, d: string) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
 const seeds = arg('seeds', '48,7').split(',').map(Number), burnIn = +arg('burn-in', '30'), days = +arg('days', '30');
 const profile = arg('profile', 'field') as Profile, params = JSON.parse(arg('params', '{}')), jsonOut = arg('json', '');
-const DAY = 5760, TERMS: EnergyTerm[] = ['rest', 'activity', 'walk', 'climb', 'carry', 'pregnancy', 'growth', 'milk', 'digestion'];
+const DAY = 5760, TERMS: EnergyTerm[] = ['rest', 'activity', 'wild', 'walk', 'climb', 'carry', 'pregnancy', 'growth', 'milk', 'digestion'];
 // stage E1c: unweaned infants by year of age, and their mothers by the same ages
 const BINS = ['0–1 y', '1–2 y', '2–3 y', '3–4 y', '4–5 y', '≥ 5 y'] as const;
 const binOf = (age: number) => BINS[Math.min(5, Math.floor(age))];
@@ -175,8 +175,8 @@ const rows = CLASSES.map(n => {
     formulaIn: a.fin / d, dmIn: a.dmIn / d, fecal: a.fec / d, foreFill: a.fore / a.ticks, hindFill: a.hind / a.ticks, hindFullDay: a.hindFull / Math.max(1, a.dayTicks), foreFullDay: a.foreFull / Math.max(1, a.dayTicks) };
 });
 console.log(`energy diagnosis: ${profile}, seeds ${seeds.join(', ')}, burn-in ${burnIn} d, ${days} d, params ${JSON.stringify(params)}`);
-console.log('| class | n | kcal in | (milk in) | kcal out | rest | activity | walk | climb | carry | preg | growth | milk | digestion | forage min | eating min | fruit % | ground km | gut fill | day hunger | reserves ÷ store | cond |');
-console.log('| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+console.log('| class | n | kcal in | (milk in) | kcal out | rest | activity | wild | walk | climb | carry | preg | growth | milk | digestion | forage min | eating min | fruit % | ground km | gut fill | day hunger | reserves ÷ store | cond |');
+console.log('| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
 for (const r of rows) if (r.days > 0) console.log(`| ${r.cls} | ${r.individuals} | ${f(r.kcalIn)} | ${f(r.milkIn)} | ${f(r.kcalOut)} | ${TERMS.map(t => f(r.out[t])).join(' | ')} | ${f(r.forageMin)} | ${f(r.eatingMin)} | ${f(100 * r.fruitShare)} | ${f(r.groundKm, 2)} | ${f(r.gutFill, 2)} | ${f(r.hungerDay, 2)} | ${f(r.reserves, 3)} | ${f(r.cond, 2)} |`);
 if (rows.some(r => r.formulaIn > 0)) {
   console.log('\nstage E1b digesta (formula kcal and dry matter eaten are the field\'s intake measures; kcal in above counts fibre at its fermentation yield)');
