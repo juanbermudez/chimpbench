@@ -808,10 +808,11 @@ function nestTick(world: World, c: Chimp): void {
     // nest sharing until weaning [M]; mizuno2006, night suckling of captive newborns [L]; no refusal is a stylization (lint-ok: existing values)
     if (P.ledgerNightNurse === 1 && m.action === 'nest' && m.id === c.motherId && c.age < x.weanAge + 0.3 && c.hunger >= NURSE_DONE
       && (held || hd(c, m) <= 1.2) && ledgerOn(P)) {
-      // stage E2b (nurseWake): a tick in which the infant drinks is a waking tick for the mother (rhythm.ts rhythmNeeds)
-      const before = ix(m).en?.milk ?? 0;
+      // stage E2b (nurseWake): a feed wakes the mother (rhythm.ts rhythmNeeds): a tick in which the infant drinks from a
+      // gland that can sustain the suckling rate (E1d's end-of-bout test); draining the synthesis of an empty gland does not
+      const feed = P.nurseWake === 1 && !glandEmpty(m, P), before = feed ? ix(m).en?.milk ?? 0 : 0;
       nurseTick(c, m, P);
-      if (P.nurseWake === 1 && (ix(m).en?.milk ?? 0) < before) ix(m).nwk = world.tick;
+      if (feed && (ix(m).en?.milk ?? 0) < before) ix(m).nwk = world.tick;
     }
     return;
   }

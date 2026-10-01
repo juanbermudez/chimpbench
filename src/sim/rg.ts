@@ -107,6 +107,12 @@ export function patchPoorHere(world: World, c: Chimp, tree: number, P: Params): 
 function gate(world: World, c: Chimp, it: Intent | undefined, list: Candidate[]): { keep: Candidate; arrived: boolean } | string {
   if (!it) return 'no-intent';
   const x = ix(c), P = paramsOf(world), persist = P.urgencyPersist === 1;
+  // stage E2b (nestLightDecide; docs/staging/e2b-prereg.md §7, iteration 2): in changing light an animal in its own
+  // finished nest weighs staying again at the end of every nest bout; the light itself is the salient change
+  if (P.nestLightDecide === 1 && it.action === 'nest' && c.action === 'nest' && x.phase === 2 && x.v !== V.MOTHER && world.time >= x.actEnd) {
+    const L = world.environment.daylight;
+    if (L > 0 && L < 1) return 'light';
+  }
   if (x.lastIntrAt > it.chosenAt) return 'interrupt';
   // hunting fix (huntEncounter): meeting a colobus group in company is a salient change, so the hunt is weighed
   if (x.impulse === IMPULSE_HUNT && x.impulseUntil > world.time && findCandidate(list, 'hunt', x.impulseTarget)) return 'hunt';

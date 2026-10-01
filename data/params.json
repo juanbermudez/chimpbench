@@ -13643,6 +13643,29 @@
    "notes": "Evening nest drive starts rising (settle around sunset [H])."
   },
   {
+   "id": "nestLightDecide",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.nestLightDecide",
+   "file": "src/sim/rg.ts",
+   "integer": true,
+   "notes": "Stage E2b switch (docs/staging/e2b-prereg.md §7, iteration 2): in changing light (0 < daylight < 1) a rules-driven animal in its own finished nest re-decides at the end of every nest bout; the intention gate does not keep a nest intention across bouts while the light changes (the 30-min rgMaxAgeH and the period boundaries otherwise set the dawn departure). No parameter. 0 = E2a, bit-identical. Ablation switch."
+  },
+  {
    "id": "nestMorningDaylightHigh",
    "group": "social",
    "value": 0.4,
@@ -13913,7 +13936,7 @@
    "symbol": "P.nurseWake",
    "file": "src/sim/rhythm.ts",
    "integer": true,
-   "notes": "Stage E2b switch (docs/staging/e2b-prereg.md §3.2): a tick in which a mother's infant drinks milk in her nest at night (E1c ledgerNightNurse) is a waking tick for her sleep pressure (it rises instead of falling), as night feeding fragments postpartum sleep in women (montgomeryDowns2010, cross-species, assumed). Needs energyLedger, ledgerNightNurse and rhythmSleep; no effect otherwise. 0 = unchanged. Ablation switch."
+   "notes": "Stage E2b switch (docs/staging/e2b-prereg.md §3.2, §7 iteration 2): a feed at night wakes the mother: a tick in which her infant drinks in her nest (E1c ledgerNightNurse) from a gland that can sustain the suckling rate (E1d's glandEmpty test) is a waking tick for her sleep pressure (it rises instead of falling), as night feeding fragments postpartum sleep in women (montgomeryDowns2010, cross-species, assumed). Draining the synthesis of an empty gland does not count (iteration 1 counted it and mothers were awake 76% of the night). Needs energyLedger, ledgerNightNurse and rhythmSleep; no effect otherwise. 0 = unchanged. Ablation switch."
   },
   {
    "id": "oestrusPullW",

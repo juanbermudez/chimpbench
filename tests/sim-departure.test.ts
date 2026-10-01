@@ -6,6 +6,7 @@ import { arrivalLight, brightening, needUnits, raceStake, rivalsAt, sharedLoss }
 import { daylightAt } from '../src/sim/environment';
 import { paramsOf, resolveParams } from '../src/sim/params';
 import { rhythmNeeds } from '../src/sim/rhythm';
+import { resetRgTally, rgTally } from '../src/sim/rg';
 import { index, ix } from '../src/sim/state';
 import type { Candidate, World } from '../src/types';
 import { worldHash } from './fixtures/golden';
@@ -18,7 +19,7 @@ const run = (w: World, ticks: number) => { for (let i = 0; i < ticks; i++) tickW
 
 test('switches off: written as 0 they give the default world, and add no state', () => {
   for (const profile of ['compressed', 'field'] as const) {
-    const a = run(createWorld(48, { profile, params: R }), 600), b = run(createWorld(48, { profile, params: { ...R, departRace: 0, nurseWake: 0 } }), 600);
+    const a = run(createWorld(48, { profile, params: R }), 600), b = run(createWorld(48, { profile, params: { ...R, departRace: 0, nurseWake: 0, nestLightDecide: 0 } }), 600);
     assert.equal(worldHash(b), worldHash(a), profile);
     for (const c of a.chimps) assert.ok(!('treeFeed' in ix(c)) && !('nwk' in ix(c)));
   }
@@ -128,11 +129,28 @@ test('nurseWake: a tick in which her infant drank makes the mother wake, so her 
   assert.ok(x.slp! < S0, 'only the tick after a suckle counts');
 });
 
-test('nurseWake on the full stack: mothers are woken at night, and the world stays deterministic', () => {
+test('nurseWake on the full stack: feeds wake mothers at night, the trickle of an empty gland does not; deterministic', () => {
   const params = { ...R, energyLedger: 1, ledgerGrowSurplus: 1, ledgerNightNurse: 1, ledgerInfantIntake: 1, ledgerNurseByMilk: 1, nurseWake: 1 };
   const a = createWorld(7, { profile: 'field', params }), b = createWorld(7, { profile: 'field', params });
-  let woken = 0;
-  for (let i = 0; i < 5760; i++) { tickWorld(a); tickWorld(b); if (a.environment.daylight === 0) for (const c of index(a).alive) if (ix(c).nwk === a.tick) woken++; }
+  let woken = 0, motherNightTicks = 0;
+  for (let i = 0; i < 2 * 5760; i++) {
+    tickWorld(a); tickWorld(b);
+    if (a.environment.daylight === 0) for (const c of index(a).alive) { if (c.lactating && c.action === 'nest') motherNightTicks++; if (ix(c).nwk === a.tick) woken++; }
+  }
   assert.equal(worldHash(a), worldHash(b));
-  assert.ok(woken > 0, 'some night suckling woke a mother');
+  assert.ok(woken > 0, 'some night feed woke a mother');
+  assert.ok(woken < 0.3 * motherNightTicks, `woken ${woken} of ${motherNightTicks} mother-night ticks`);
+});
+
+test('nestLightDecide: in changing light the gate re-draws a nest intention at every bout end; off, never', () => {
+  for (const on of [0, 1]) {
+    const w = createWorld(48, { profile: 'field', params: { ...R, nestLightDecide: on } });
+    resetRgTally(true);
+    run(w, 5760);
+    const n = rgTally.why.light ?? 0;
+    resetRgTally(false);
+    if (on) assert.ok(n > 50, `light re-draws ${n}`); else assert.equal(n, 0);
+  }
+  const p = { ...R, nestLightDecide: 1 };
+  assert.equal(worldHash(run(createWorld(7, { profile: 'field', params: p }), 2000)), worldHash(run(createWorld(7, { profile: 'field', params: p }), 2000)));
 });
