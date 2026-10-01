@@ -2,6 +2,7 @@ import type { Candidate, Chimp, World } from '../types';
 import { bucketOf, periodNow, UNKNOWN_CROP } from '../decide/facts';
 import { GATE, intentOf, type Intent } from '../decide/gate';
 import { drawIndex, softmax } from '../decide/policies';
+import { choiceProbs, stillPaying, urgency, urgencyTemperature } from './urgency';
 import { candidateMeta, findCandidate, V } from './candidates';
 import { fruitRate, leafRate, treeIntake } from './intake';
 import { dayPhase } from './environment';
@@ -18,6 +19,18 @@ import { index, isChimpId, isTreeId, ix } from './state';
 // menu a model would be offered (src/sim/menu.ts; at most 8 options, night and dusk menus) by a softmax of the rules'
 // own scores at rgTemperature, drawing from world.rng. Fewer than two options: the argmax rules decide, as before.
 // rulesChoice() and observe() are untouched and stay pure.
+// Stage E3 (docs/staging/e3-prereg.md; src/sim/urgency.ts): with urgencyChoice the temperature comes from the animal's
+// urgency instead of rgTemperature; with urgencyPersist the gate's need buckets, maximum age and patch ratio give way to
+// one rule, keep the act while it still pays. Both off (the default): the C13 policy, bit for bit.
+
+/**
+ * Diagnostic counters for scripts (not world state; the sim never reads them): RG decisions by outcome, re-decisions by
+ * trigger, draws that took the menu's top-scored option, and the urgency at draws in tenths. Counted only while `on`.
+ */
+export const rgTally = { on: false, kept: 0, arrived: 0, drawn: 0, top: 0, argmax: 0, lead: 0, uSum: 0, tSum: 0, uBins: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], why: {} as Record<string, number> };
+export function resetRgTally(on: boolean): void {
+  Object.assign(rgTally, { on, kept: 0, arrived: 0, drawn: 0, top: 0, argmax: 0, lead: 0, uSum: 0, tSum: 0, uBins: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], why: {} });
+}
 
 /** The chimp-target filter of observe(): only candidates about the first 8 perceivable chimps by candidate score. */
 function perceivedCandidates(world: World, c: Chimp, all: Candidate[]): Candidate[] {
@@ -87,15 +100,17 @@ export function patchPoorHere(world: World, c: Chimp, tree: number, P: Params): 
  * rules path keeps the act, so `ended` says so explicitly. A finished trip to a tree in view within GATE.arriveM
  * becomes feeding there when that is legal.
  */
-function gate(world: World, c: Chimp, it: Intent | undefined, list: Candidate[]): { keep: Candidate; arrived: boolean } | null {
-  if (!it) return null;
-  const x = ix(c);
-  if (x.lastIntrAt > it.chosenAt) return null;
+function gate(world: World, c: Chimp, it: Intent | undefined, list: Candidate[]): { keep: Candidate; arrived: boolean } | string {
+  if (!it) return 'no-intent';
+  const x = ix(c), P = paramsOf(world), persist = P.urgencyPersist === 1;
+  if (x.lastIntrAt > it.chosenAt) return 'interrupt';
   // hunting fix (huntEncounter): meeting a colobus group in company is a salient change, so the hunt is weighed
-  if (x.impulse === IMPULSE_HUNT && x.impulseUntil > world.time && findCandidate(list, 'hunt', x.impulseTarget)) return null;
-  if (bucketOf(c.hunger) !== it.buckets.hunger || bucketOf(c.thirst) !== it.buckets.thirst || bucketOf(1 - c.energy) !== it.buckets.fatigue || bucketOf(1 - c.social) !== it.buckets.loneliness) return null;
+  if (x.impulse === IMPULSE_HUNT && x.impulseUntil > world.time && findCandidate(list, 'hunt', x.impulseTarget)) return 'hunt';
+  // stage E3 (urgencyPersist): the buckets and the maximum age are replaced by the pay test below
+  if (!persist && (bucketOf(c.hunger) !== it.buckets.hunger || bucketOf(c.thirst) !== it.buckets.thirst || bucketOf(1 - c.energy) !== it.buckets.fatigue || bucketOf(1 - c.social) !== it.buckets.loneliness)) return 'need-bucket';
+  if (periodNow(world) !== it.period) return 'period';
   // stage C13c: the in-sim maximum intention age (rgMaxAgeH, 30 min); the Jev gate keeps GATE.maxAgeH (90 min)
-  if (periodNow(world) !== it.period || world.time - it.chosenAt > paramsOf(world).rgMaxAgeH) return null;
+  if (!persist && world.time - it.chosenAt > P.rgMaxAgeH) return 'max-age';
   const current = findCandidate(list, it.action, it.targetId);
   const ongoing = !x.finished && c.action === it.action && c.targetId === it.targetId && !!current;
   if (!ongoing) {
@@ -103,9 +118,10 @@ function gate(world: World, c: Chimp, it: Intent | undefined, list: Candidate[])
       const t = x.trees.includes(it.targetId) ? index(world).treeById.get(it.targetId) : undefined, feed = findCandidate(list, 'forage', it.targetId);
       if (t && Math.hypot(t.position[0] - c.position[0], t.position[2] - c.position[2]) <= GATE.arriveM && feed) return { keep: feed, arrived: true };
     }
-    return null;
+    return 'ended';
   }
-  if (it.action === 'forage' && bucketOf(c.hunger) !== 'none' && patchPoorHere(world, c, it.targetId, paramsOf(world))) return null;
+  if (persist) { const why = stillPaying(world, c, current!, list, P); if (why) return why; }
+  else if (it.action === 'forage' && bucketOf(c.hunger) !== 'none' && patchPoorHere(world, c, it.targetId, P)) return 'patch-poor';
   return { keep: current!, arrived: false };
 }
 
@@ -121,17 +137,27 @@ export function rgChoice(world: World, c: Chimp, list: Candidate[]): Candidate |
   // it is not drawn a second time (design assumption; the C6 hazard was fitted as the rate of patrols started)
   const top = list[0];
   if (P.patrolImpulseDecides === 1 && top && top.action === 'patrol' && candidateMeta.get(top)?.v === V.LEAD) {
+    if (rgTally.on) rgTally.lead++;
     x.rgIntent = intentOf(world, c, top.action, top.targetId, V.LEAD, candidateMeta.get(top)?.aux ?? -1);
     return top;
   }
   const g = gate(world, c, x.rgIntent, list);
-  if (g) {
+  if (typeof g !== 'string') {
+    if (rgTally.on) { if (g.arrived) rgTally.arrived++; else rgTally.kept++; }
     if (g.arrived) x.rgIntent = { ...intentOf(world, c, 'forage', g.keep.targetId, candidateMeta.get(g.keep)?.v ?? V.NONE), buckets: x.rgIntent!.buckets };
     return g.keep;
   }
   const menu = rgMenu(world, c, list);
-  if (menu.length < 2) { delete x.rgIntent; return null; }
-  const o = menu[drawIndex(softmax(menu.map(k => k.score), P.rgTemperature), random(world))];
+  if (menu.length < 2) { if (rgTally.on) rgTally.argmax++; delete x.rgIntent; return null; }
+  // stage E3 (urgencyChoice): the temperature falls with urgency (src/sim/urgency.ts); one draw either way
+  const byUrgency = P.urgencyChoice === 1, T = byUrgency ? urgencyTemperature(urgency(c), P) : P.rgTemperature;
+  const scores = menu.map(k => k.score), i = drawIndex(byUrgency ? choiceProbs(scores, T) : softmax(scores, T), random(world));
+  if (rgTally.on) {
+    const U = urgency(c);
+    rgTally.drawn++; rgTally.why[g] = (rgTally.why[g] ?? 0) + 1; rgTally.uSum += U; rgTally.tSum += Math.min(T, 10); rgTally.uBins[Math.min(9, Math.floor(U * 10))]++;
+    if (scores[i] >= Math.max(...scores)) rgTally.top++;
+  }
+  const o = menu[i];
   const pick = findCandidate(list, o.action, o.targetId)!, meta = candidateMeta.get(pick) ?? { v: V.NONE, aux: -1 };
   x.rgIntent = intentOf(world, c, pick.action, pick.targetId, meta.v, meta.aux);
   return pick;
