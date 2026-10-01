@@ -20,8 +20,11 @@ import { NEVER, SLOW_EVERY, SLOW_HOURS, TICK_HOURS, index, ix, type ChimpX } fro
  * one-switch ablation keeps its dice instead of removing them and leaving a state that never runs (arousal undefined,
  * score 0, the act absent). Every reader of a dependent switch goes through this.
  */
-export type EndoDependent = 'endoEscalate' | 'endoRedirect' | 'endoRainDisplay';
-export function endoOn(P: Params, s: EndoDependent): boolean { return P.endoStates === 1 && P[s] === 1; }
+export type EndoDependent = 'endoEscalate' | 'endoRedirect' | 'endoRainDisplay' | 'endoFast' | 'endoFastRedirect';
+export function endoOn(P: Params, s: EndoDependent): boolean {
+  if (P.endoStates !== 1 || P[s] !== 1) return false;
+  return s !== 'endoFastRedirect' || (P.endoRedirect === 1 && P.endoFast === 1); // the fast redirect replaces E4a's, on the fast state
+}
 
 /** An event stamped at eco-hour `t` happened in the slow step that ended before tick `tick` (each event counts once). */
 function since(t: number, tick: number): boolean {
@@ -107,6 +110,43 @@ export function endoShared(giver: Chimp, receiver: Chimp, P: Params): void {
   rx.affil = r + P.endoAffilShareKick * (1 - r);
 }
 
+// --- stage E4b: fast arousal (docs/staging/e4b-prereg.md) ---------------------------------------------------------
+// The slow states set the gain of acute reactions but cannot carry them (E4a: male arousal was near zero at storm
+// onsets, and the redirect needed an event gate). A fast state, catecholamine-like (sympathetic-adrenomedullary), rises
+// at salient events and falls back within minutes (endoFastTauMin). It is stored with the eco-hour it was last set and
+// read with exact decay, so it costs nothing between events and reading it is pure. Kicks are bounded, S += k × (1 − S),
+// and applied where the event happens: a daytime storm onset (tick.ts) and aggression received (execution.ts onStart,
+// conflict.ts). Not wired on purpose (no act in E4b reads the fast state there): stranger calls or sight, attacks seen,
+// food finds, reunions.
+
+/** Fast arousal of `x` at eco-hour `time` (pure): the last kick, decayed with endoFastTauMin. */
+export function fastNow(x: ChimpX, time: number, P: Params): number {
+  const f = x.fast;
+  if (!f) return 0;
+  return f * Math.exp(-(time - (x.fastAt ?? time)) * 60 / P.endoFastTauMin);
+}
+
+/** How long an option opened by the fast state stays on offer, in eco-hours: endoFastSpanTau time constants. */
+export function fastSpanH(P: Params): number { return P.endoFastSpanTau * P.endoFastTauMin / 60; }
+
+/** A salient event kicks the fast state of `c` by `k` (bounded). Callers check endoOn(P, 'endoFast'). */
+export function endoKick(world: World, c: Chimp, k: number, P: Params): void {
+  const x = ix(c), f = fastNow(x, world.time, P);
+  x.fast = f + k * (1 - f); x.fastAt = world.time;
+}
+
+/** Aggression received (charged or attacked, a decided loss, a gang attack): the threat kick, while endoFast is on. */
+export function endoThreat(world: World, o: Chimp): void {
+  const P = paramsOf(world);
+  if (endoOn(P, 'endoFast')) endoKick(world, o, P.endoFastThreatKick, P);
+}
+
+/** The acute drive of a male competitive act: the fast state, amplified by competitive arousal up to twice (design). */
+function acuteDrive(x: ChimpX, time: number, P: Params): number {
+  const d = fastNow(x, time, P) * (1 + (x.arousal ?? 0));
+  return d > 1 ? 1 : d;
+}
+
 // --- scores (pure; candidates.ts) ---------------------------------------------------------------------------------
 // One rule for the three acts: the constant score the dice-opened option had is the ceiling, and levels in 0..1 scale it.
 
@@ -126,4 +166,17 @@ export function redirectScore(c: Chimp, tension: number, P: Params): number {
 /** Rain display at a storm onset: arousal and boldness scale the old score. */
 export function rainScore(c: Chimp, x: ChimpX, P: Params): number {
   return P.rainDisplayScore * (x.arousal ?? 0) * c.personality.boldness;
+}
+
+/** Stage E4b (endoFast): rain display from the fast state, competitive arousal as gain, boldness as the trait. */
+export function rainFastScore(c: Chimp, x: ChimpX, time: number, P: Params): number {
+  return P.rainDisplayScore * acuteDrive(x, time, P) * c.personality.boldness;
+}
+
+/**
+ * Stage E4b (endoFastRedirect): redirected charge after a loss. The dice model's own score (stress in its own term, the
+ * slow state as gain), opened by no roll and scaled by the fast state.
+ */
+export function redirectFastScore(c: Chimp, x: ChimpX, tension: number, time: number, P: Params): number {
+  return fastNow(x, time, P) * (P.redirectBase + c.personality.aggression * P.redirectAggrW + c.stress * P.redirectStressW + tension * P.redirectTensionW);
 }

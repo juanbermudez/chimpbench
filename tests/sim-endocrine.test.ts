@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { worldShapeProblem, plainDataProblems } from '../src/persist/envelope';
 import { V, candidateMeta, computeCandidates } from '../src/sim/candidates';
-import { endoHeard, endoShared, endoStep, escalateScore, rainScore, redirectScore } from '../src/sim/endocrine';
+import { endoHeard, endoKick, endoShared, endoStep, escalateScore, fastNow, fastSpanH, rainFastScore, rainScore, redirectFastScore, redirectScore } from '../src/sim/endocrine';
 import { setWeather } from '../src/sim/environment';
 import { isAdultMale, maternalKin } from '../src/sim/hierarchy';
 import { startAction } from '../src/sim/execution';
@@ -322,4 +322,96 @@ test('review fix: a dependent switch without endoStates counts as off (the dice 
   const a = storm({ endoRainDisplay: 1 }), b = storm({});
   assert.equal(worldHash(a), worldHash(b));
   assert.equal(simOf(a).stormAt, undefined, 'no onset is noted for a switch that is off');
+});
+
+// --- Stage E4b (docs/staging/e4b-prereg.md): a fast arousal state for acute reactions ----------------------------------
+
+const FAST: Overrides = { ...ON, endoFast: 1, endoFastRedirect: 1 };
+
+test('E4b: the fast switches count as off without their dependencies, and change the world with them', () => {
+  const day = (p: Overrides) => worldHash(run(createWorld(21, { params: p }), 5760));
+  assert.equal(day({ endoFast: 1, endoFastRedirect: 1 }), day({}), 'without endoStates');
+  const on = day(ON);
+  assert.equal(day({ ...ON, endoFastRedirect: 1 }), on, 'endoFastRedirect without endoFast');
+  assert.equal(day({ ...ON, endoRedirect: 0, endoFast: 1, endoFastRedirect: 1 }), day({ ...ON, endoRedirect: 0, endoFast: 1 }), 'endoFastRedirect without endoRedirect');
+  assert.notEqual(day({ ...ON, endoFast: 1 }), on);
+  assert.notEqual(day(FAST), day({ ...ON, endoFast: 1 }));
+  // switches off: the state does not exist
+  const w = run(createWorld(21, { params: ON }), 5760);
+  assert.ok(w.chimps.every(c => ix(c).fast === undefined && ix(c).fastAt === undefined));
+});
+
+test('E4b: the fast state decays with its own time constant, and kicks are bounded', () => {
+  const { w, c } = quiet(FAST), x = ix(c), P = paramsOf(w);
+  assert.equal(fastNow(x, w.time, P), 0);
+  endoKick(w, c, 0.8, P);
+  assert.ok(Math.abs(fastNow(x, w.time, P) - 0.8) < 1e-12);
+  assert.ok(Math.abs(fastNow(x, w.time + P.endoFastTauMin / 60, P) - 0.8 * Math.exp(-1)) < 1e-12, 'one time constant');
+  const before = JSON.stringify(x); fastNow(x, w.time + 1, P); assert.equal(JSON.stringify(x), before, 'reading is pure');
+  endoKick(w, c, 0.8, P);
+  assert.ok(Math.abs(fastNow(x, w.time, P) - (0.8 + 0.8 * 0.2)) < 1e-12, 'a second kick is bounded');
+  for (let i = 0; i < 20; i++) endoKick(w, c, 1, P);
+  assert.ok(fastNow(x, w.time, P) <= 1);
+  assert.ok(fastNow(x, w.time + 25 / 60, P) < 0.01 * fastNow(x, w.time, P), 'gone within half an hour');
+});
+
+test('E4b: a daytime storm onset and aggression received kick the fast state', () => {
+  const w = run(createWorld(21, { params: FAST }), 6 * HOUR), P = paramsOf(w);
+  setWeather(w, 'storm', 0.9);
+  run(w, 60);
+  const s = simOf(w).stormAt!;
+  assert.ok(s !== undefined && w.time - s < 0.3);
+  const awake = w.chimps.filter(c => c.alive && ix(c).fastAt !== undefined && Math.abs(ix(c).fastAt! - s) < 1e-9);
+  assert.ok(awake.length > 5, 'awake individuals kicked at the onset');
+  assert.ok(awake.every(c => ix(c).fast! >= P.endoFastStormKick - 1e-9));
+  // a charge kicks its target
+  const { w: w2, c } = quiet(FAST);
+  const o = w2.chimps.find(k => k.alive && k.troopId === c.troopId && k !== c && k.age >= 15)!;
+  o.position[0] = c.position[0] + 2; o.position[2] = c.position[2]; ix(c).seen.push(o.id);
+  startAction(w2, c, { action: 'charge', targetId: o.id, score: 1, reason: '' }, 'rules');
+  assert.ok(Math.abs(fastNow(ix(o), w2.time, paramsOf(w2)) - paramsOf(w2).endoFastThreatKick) < 1e-9);
+});
+
+test('E4b: the rain display is scored from the fast state with arousal as gain, offered once per onset and for a few time constants', () => {
+  const { w, c } = quiet(FAST), x = ix(c), P = paramsOf(w);
+  c.personality.boldness = 0.8; x.arousal = 0; x.lastDisplay = NEVER;
+  simOf(w).stormAt = w.time;
+  const rain = () => computeCandidates(w, c, []).find(k => k.action === 'display' && candidateMeta.get(k)?.v === V.RAIN);
+  assert.equal(rain(), undefined, 'no fast arousal, no display');
+  endoKick(w, c, 0.8, P);
+  assert.ok(Math.abs(rainFastScore(c, x, w.time, P) - P.rainDisplayScore * 0.8 * 0.8) < 1e-12);
+  assert.ok(rain(), 'offered after the onset');
+  x.arousal = 0.5; assert.ok(Math.abs(rainFastScore(c, x, w.time, P) - P.rainDisplayScore * 1 * 0.8) < 1e-12, 'arousal amplifies, capped at 1');
+  x.arousal = 0;
+  const t0 = w.time;
+  w.time = t0 + fastSpanH(P) + 0.01; assert.equal(rain(), undefined, 'closed after the span');
+  w.time = t0 + 0.02; x.lastDisplay = t0 + 0.01; assert.equal(rain(), undefined, 'once per onset');
+});
+
+test('E4b: the redirected charge is scored by the fast state and stays open after the first choice, until the span ends', () => {
+  const { w, c } = quiet(FAST), x = ix(c), P = paramsOf(w);
+  const o = w.chimps.find(k => k.alive && k.troopId === c.troopId && k.sex === 'female' && k.age >= 15 && !maternalKin(c, k))!;
+  o.position[0] = c.position[0] + 3; o.position[1] = c.position[1]; o.position[2] = c.position[2];
+  x.seen.push(o.id); c.stress = 0.4; x.lostAt = w.time; x.lastAgg = NEVER;
+  const redirect = () => computeCandidates(w, c, []).find(k => k.action === 'charge' && k.targetId === o.id && candidateMeta.get(k)?.v === V.REDIRECT);
+  endoKick(w, c, 0.8, P);
+  const tn = x.tension[o.id] ?? 0;
+  assert.ok(Math.abs(redirectFastScore(c, x, tn, w.time, P) - 0.8 * (P.redirectBase + c.personality.aggression * P.redirectAggrW + 0.4 * P.redirectStressW + tn * P.redirectTensionW)) < 1e-12);
+  assert.ok(redirect(), 'offered after the loss');
+  startAction(w, c, computeCandidates(w, c, []).find(k => k.action === 'rest')!, 'rules');
+  assert.ok(x.lostAt > NEVER && redirect(), 'still open after a first choice (no once rule)');
+  w.time += fastSpanH(P) + 0.01;
+  assert.equal(redirect(), undefined, 'closed after the span');
+});
+
+test('E4b: with every switch on the world is deterministic however ticks are batched, and saves keep their shape', () => {
+  const a = createWorld(48, { params: FAST }), b = createWorld(48, { params: FAST });
+  for (let i = 0; i < 8; i++) stepWorld(a, 60);
+  for (let i = 0; i < 8 * 240; i++) stepWorld(b, 0.25);
+  assert.deepEqual(a, b);
+  const w = run(createWorld(7, { params: FAST }), 5760);
+  setWeather(w, 'storm', 0.9); run(w, 120);
+  assert.equal(worldShapeProblem(w), '');
+  assert.deepEqual(plainDataProblems(w), []);
+  assert.deepEqual(JSON.parse(JSON.stringify(w)), w);
 });

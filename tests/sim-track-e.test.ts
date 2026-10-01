@@ -10,6 +10,7 @@ const TRACK_E_SWITCHES = [
   'rhythmSleep', 'rhythmHeat', 'rhythmFreeNight', // E2a
   'urgencyChoice', 'urgencyPersist', 'urgencySwitchCost', // E3
   'endoStates', 'endoEscalate', 'endoRedirect', 'endoRainDisplay', // E4a
+  'endoFast', 'endoFastRedirect', // E4b
 ] as const;
 
 test('Track E switches are all 0 by default in both profiles', () => {

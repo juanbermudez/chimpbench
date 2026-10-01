@@ -3,6 +3,8 @@
 //   - escalated attacks, redirected charges and rain displays per community-year, with conflicts, injuries and deaths;
 //   - the three states by sex and rank, by hour, with and without a swollen female in view, in unstable periods;
 //   - their course around events: after a lost conflict, after starting or receiving a charge, after grooming.
+//   - stage E4b: pant-hoots by the act they came from, T-END-8 in fedurek2016's form (within-male correlation across
+//     hour-of-day bins, 07-18), bond-partner grooming around intergroup contact (T-END-12 behaviour), the fast state.
 //
 //   pnpm exec tsx scripts/endocrine-diagnose.ts [--seeds 48,7] [--burn-in 30] [--days 30] [--params '{…}'] [--json f.json]
 // Development seeds only (AGENTS.md lists the reserved ones). burn-in + days ≤ 90.
@@ -10,6 +12,7 @@ import { writeFileSync } from 'node:fs';
 import { V } from '../src/sim/candidates';
 import { isAdultMale, maternalKin } from '../src/sim/hierarchy';
 import { paramsOf } from '../src/sim/params';
+import { fastNow } from '../src/sim/endocrine';
 import { NEVER, ix, simOf } from '../src/sim/state';
 import { createWorld, tickWorld } from '../src/simulation';
 import type { Chimp } from '../src/types';
@@ -19,6 +22,13 @@ const seeds = arg('seeds', '48,7').split(',').map(Number), burnIn = +arg('burn-i
 const params = JSON.parse(arg('params', '{}')), jsonOut = arg('json', '');
 if (burnIn + days > 90) throw new RangeError('burn-in + days must not exceed 90');
 const DAY = 5760, HOUR = 240;
+function pearson(a: number[], b: number[]): number | null {
+  const n = a.length; if (n < 4) return null;
+  const ma = a.reduce((s, v) => s + v, 0) / n, mb = b.reduce((s, v) => s + v, 0) / n;
+  let sab = 0, saa = 0, sbb = 0; for (let i = 0; i < n; i++) { sab += (a[i] - ma) * (b[i] - mb); saa += (a[i] - ma) ** 2; sbb += (b[i] - mb) ** 2; }
+  return saa > 0 && sbb > 0 ? sab / Math.sqrt(saa * sbb) : null;
+}
+const VNAME: Record<number, string> = Object.fromEntries(Object.entries(V).map(([k, v]) => [v, k]));
 
 class Stat { n = 0; sum = 0; v: number[] = []; add(x: number) { this.n++; this.sum += x; this.v.push(x); }
   out() { const s = [...this.v].sort((a, b) => a - b), q = (p: number) => s.length ? +s[Math.min(s.length - 1, Math.floor(p * s.length))].toFixed(3) : null;
@@ -47,6 +57,9 @@ for (const seed of seeds) {
   };
   let heavy = s.weather.heavy, stormAt = NEVER, seenInter = w.nextId, seenCall = w.nextId;
   const hoots = new Map<number, number>(); // pant-hoots per caller since the last full hour (T-END-8)
+  // T-END-8 as fedurek2016 computed it: per focal male, the mean of each one-hour interval of the day (07:00-18:00) over
+  // the study, testosterone against pant-hoot rate (author copy, Methods). Bins by the hour each sampled hour started.
+  const prof = new Map<number, { a: number[]; h: number[]; n: number[] }>();
   const parous = (f: Chimp) => f.age >= P.endoParousAgeY || ix(f).amenUntil > 0;
   for (let i = 0; i < days * DAY; i++) {
     tickWorld(w);
@@ -55,7 +68,14 @@ for (const seed of seeds) {
     heavy = s.weather.heavy;
     for (let k = w.interactions.length - 1; k >= 0 && w.interactions[k].id >= seenInter; k--) if (w.interactions[k].kind === 'fight') bump('contact fights and hits (interactions)');
     seenInter = w.nextId;
-    for (let k = w.calls.length - 1; k >= 0 && w.calls[k].id >= seenCall; k--) if (w.calls[k].kind === 'pant-hoot') hoots.set(w.calls[k].callerId, (hoots.get(w.calls[k].callerId) ?? 0) + 1);
+    for (let k = w.calls.length - 1; k >= 0 && w.calls[k].id >= seenCall; k--) if (w.calls[k].kind === 'pant-hoot') {
+      hoots.set(w.calls[k].callerId, (hoots.get(w.calls[k].callerId) ?? 0) + 1);
+      // stage E4b: what the caller was doing when it pant-hooted (call variant, display, charge, patrol)
+      // (the act at the start of the tick, unless a call act started this tick: displays end with their pant-hoot and a new act)
+      const k2 = w.chimps.find(q => q.id === w.calls[k].callerId);
+      if (k2) { const startedCall = k2.action === 'call' && k2.decisionVersion !== version.get(k2.id); const lab = startedCall ? `call/${VNAME[ix(k2).v] ?? ix(k2).v}` : (prevKey.get(k2.id) ?? '?').replace(/:[-0-9]+:(\d+)$/, (_m, v) => `/${VNAME[+v] ?? v}`);
+        bump(`pant-hoots by ${isAdultMale(k2) ? 'adult males' : 'others'}: ${lab}`); }
+    }
     seenCall = w.nextId;
     if (due.length && due[0][0] <= w.tick) { const rest: typeof due = []; for (const d of due) { if (d[0] > w.tick) { rest.push(d); continue; } const c = w.chimps.find(k => k.id === d[1]); if (c && c.alive) S(d[2]).add(c.stress); } due = rest; }
     const hourly = i % HOUR === 0 && day > 0.3;
@@ -67,9 +87,11 @@ for (const seed of seeds) {
       if (c.decisionVersion !== v0 && key !== prevKey.get(c.id)) {
         if (c.action === 'attack' && x.v === V.ESCALATE) bump('escalated attacks chosen');
         if (c.action === 'charge' && x.v === V.REDIRECT) { const lost = c.lastConflict && !c.lastConflict.won ? (time - c.lastConflict.time) * 60 : NaN; bump('redirected charges'); if (lost <= 10) bump('redirected charges within 10 min of the loss'); if (lost >= 0) S('redirect: minutes after the loss').add(lost); }
-        if (c.action === 'display' && x.v === V.RAIN) bump('rain displays');
+        if (c.action === 'display' && x.v === V.RAIN) { bump('rain displays'); S('rain display: minutes after the onset').add((time - stormAt) * 60); }
         if (c.action === 'display' && isAdultMale(c) && time - stormAt < P.impulseDurationH) bump('adult-male displays within 6 min of a storm onset (any kind)');
         if (c.action === 'charge' && x.v === V.STATUS) bump('status charges');
+        if (c.action === 'display') bump(`displays started: ${isAdultMale(c) ? 'adult male' : 'other'}/${VNAME[x.v] ?? x.v}`);
+        if (c.action === 'call') bump(`calls started: ${isAdultMale(c) ? 'adult male' : 'other'}/${VNAME[x.v] ?? x.v}`);
       } else if (c.decisionVersion === v0 && key !== prevKey.get(c.id) && c.action === 'attack' && x.v === V.ESCALATE) bump('charges that became contact fights (counter-charge)');
       version.set(c.id, c.decisionVersion); prevKey.set(c.id, key);
       // event responses of the stress load
@@ -105,6 +127,10 @@ for (const seed of seeds) {
       }
       // T-END-12 (intergroup half, genuine: intergroup contact is not wired to affiliation): adults with strangers in view or heard in the last hour
       if (c.age >= 15 && x.affil !== undefined) S(`adult affiliation | ${x.strangers > 0 || time - x.heardAt < 1 ? 'strangers seen or heard in the last hour' : 'no strangers'}`).add(x.affil);
+      // T-END-12, behaviour (stage E4b): in grooming contact with a bond partner (≥ 0.5) at the sample, by the same split
+      if (c.age >= 15) { const g = c.action === 'groom' && x.phase === 1 && (c.bonds[c.targetId] ?? 0.15) >= 0.5 ? 1 : 0; S(`adult grooming a bond partner | ${x.strangers > 0 || time - x.heardAt < 1 ? 'strangers seen or heard in the last hour' : 'no strangers'}`).add(g); }
+      // stage E4b: the fast arousal (catecholamine-like) at the hourly sample, by context
+      if (x.fast !== undefined) S(`fast arousal | ${x.strangers > 0 || time - x.heardAt < 0.25 ? 'strangers seen or heard in the last 15 min' : w.environment.weather === 'storm' ? 'storm' : 'other'}`).add(fastNow(x, time, P));
       if (x.affil !== undefined) { S(`affiliation | ${cls}`).add(x.affil); if (c.action !== 'groom') S('affiliation, not grooming (all)').add(x.affil); }
       if (isAdultMale(c)) {
         let swollenParous = false, swollenNulli = false, rival = false;
@@ -118,10 +144,20 @@ for (const seed of seeds) {
         if (x.arousal !== undefined) { S(`arousal | ${cls}`).add(x.arousal); S(`male arousal | ${ctx}`).add(x.arousal); S(`male arousal | close-rank male in view: ${rival ? 'yes' : 'no'}`).add(x.arousal); }
         // T-END-8 (genuine: pant-hooting is not wired to arousal): arousal by own pant-hoots in the past hour
         if (x.arousal !== undefined) S(`male arousal | own pant-hoots in the past hour: ${(hoots.get(c.id) ?? 0) > 0 ? '≥ 1' : '0'}`).add(x.arousal);
+        const bin = (Math.floor(w.hour) + 23) % 24;
+        if (x.arousal !== undefined && bin >= 7 && bin < 18) {
+          const p0 = prof.get(c.id) ?? (prof.set(c.id, { a: Array(24).fill(0), h: Array(24).fill(0), n: Array(24).fill(0) }), prof.get(c.id)!);
+          p0.a[bin] += x.arousal; p0.h[bin] += hoots.get(c.id) ?? 0; p0.n[bin]++;
+        }
         bump(rival ? 'adult-male hourly samples with a close-rank male in view' : 'adult-male hourly samples without one');
       }
     }
     if (i % HOUR === 0) hoots.clear();
+  }
+  for (const [, p0] of prof) {
+    const bins = [...Array(24).keys()].filter(b => p0.n[b] >= 3), A = bins.map(b => p0.a[b] / p0.n[b]), H = bins.map(b => p0.h[b] / p0.n[b]);
+    const r = pearson(A, H);
+    if (r !== null) { S('T-END-8 (fedurek2016 form): within-male r, hour-of-day arousal vs pant-hoot rate, 07-18').add(r); bump(r > 0 ? 'T-END-8 males with r > 0' : 'T-END-8 males with r ≤ 0'); }
   }
   for (const k of ['conflicts', 'injuries', 'reconciliations', 'deaths', 'killings', 'takeovers', 'groomingBouts'] as const) bump(`stats.${k}`, w.stats[k] - st0[k]);
   for (const c of w.chimps) if (!c.alive && !dead0.has(c.id)) { const cause = (c.causeOfDeath ?? 'unknown').replace(/ (with|by|of|from a fight with) .*/, ' $1 …'); deaths[cause] = (deaths[cause] ?? 0) + 1; }

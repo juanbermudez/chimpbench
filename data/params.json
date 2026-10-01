@@ -5807,6 +5807,140 @@
    "notes": "Stage E4a moved literal: the score of the escalated attack opened by an escalation impulse (unchanged at endoEscalate 0). With endoEscalate 1 it is the ceiling the states scale down."
   },
   {
+   "id": "endoFast",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.endoFast",
+   "file": "src/sim/endocrine.ts",
+   "integer": true,
+   "notes": "Stage E4b switch (docs/staging/e4b-prereg.md): a fast arousal state (catecholamine-like) runs, chimp.sim.fast with chimp.sim.fastAt, kicked at a daytime storm onset (endoFastStormKick) and by aggression received (endoFastThreatKick), decaying with endoFastTauMin. With endoRainDisplay the rain display is scored from it (rainDisplayScore × min(1, fast × (1 + arousal)) × boldness, for endoFastSpanTau time constants after the onset) instead of from the slow arousal. Needs endoStates 1: it counts as off unless endoStates is 1 (endocrine.ts endoOn). 0 = E4a, bit-identical. Ablation switch."
+  },
+  {
+   "id": "endoFastRedirect",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.endoFastRedirect",
+   "file": "src/sim/candidates.ts",
+   "integer": true,
+   "notes": "Stage E4b switch (docs/staging/e4b-prereg.md): after a lost conflict the redirected charge is scored fast × (redirectBase + redirectAggrW × aggression + redirectStressW × stress + redirectTensionW × tension) minus the guardian deterrent, offered until the loser next aggresses, for endoFastSpanTau time constants of the fast state; E4a iteration 1's rule (the defeat considered once, at the first choice) is dropped. Needs endoStates, endoRedirect and endoFast 1: it counts as off otherwise (endocrine.ts endoOn). 0 = E4a's redirect. Ablation switch."
+  },
+  {
+   "id": "endoFastSpanTau",
+   "group": "decision",
+   "value": 3,
+   "units": "time constants",
+   "range": [
+    2,
+    4
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.5,
+    20
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "fastSpanH",
+   "file": "src/sim/endocrine.ts",
+   "notes": "Stage E4b: an option the fast state scores (rain display, redirected charge) stays on offer for this many of its time constants after the event, when the state is below 5% of a kick (design), so it is not left on the menu at a score of nearly 0."
+  },
+  {
+   "id": "endoFastStormKick",
+   "group": "needs",
+   "value": 0.8,
+   "units": "state",
+   "range": [
+    0.4,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "endoKick",
+   "file": "src/sim/tick.ts",
+   "notes": "Stage E4b: the fast arousal of every awake individual rises by this × (1 − fast) at a daytime storm onset. Direction: sudden loud sound drives rhythmic display-like movement, more in males (hattoriTomonaga2020 [M], captive; docs/research.md E.13); the size is a design assumption (one of the strongest acute stimuli, short of saturating the state), set before any run and not tuned."
+  },
+  {
+   "id": "endoFastTauMin",
+   "group": "needs",
+   "value": 5,
+   "units": "eco-min",
+   "range": [
+    2.5,
+    10
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0.1,
+    1000
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "fastNow",
+   "file": "src/sim/endocrine.ts",
+   "notes": "Stage E4b: time constant of the fast arousal state. Bounded below by plasma catecholamine clearance (half-lives about 1–2.5 min; secondary sources only, not verified) and above by post-conflict anxiety in captive chimpanzees, raised for the entire 10-min post-conflict window (fraser2008 [M], docs/research.md E.13): at 5 min a kick is still 14% at 10 min. The value inside the bounds is a design assumption."
+  },
+  {
+   "id": "endoFastThreatKick",
+   "group": "needs",
+   "value": 0.8,
+   "units": "state",
+   "range": [
+    0.4,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "endoThreat",
+   "file": "src/sim/endocrine.ts",
+   "notes": "Stage E4b: the fast arousal rises by this × (1 − fast) when the animal is charged or attacked, loses a decided conflict, or is gang-attacked. Direction: heart rate rises at a dominant's approach (aureli1999 [L], rhesus, 2 females); victims' anxiety stays raised after a conflict (fraser2008 [M], captive chimpanzees; docs/research.md E.13). The size is a design assumption, equal to the storm kick, set before any run."
+  },
+  {
    "id": "endoHeardEpisodeH",
    "group": "needs",
    "value": 0.25,
