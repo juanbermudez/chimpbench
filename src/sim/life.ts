@@ -5,6 +5,7 @@ import { dailyRelations, noteEvent } from './relations';
 import { reproSlow } from './reproduction';
 import { rhythmNeeds } from './rhythm';
 import { expectedEpidemicHazard } from './disease';
+import { endoNeeds } from './endocrine';
 import { eat, energyTick, ledgerSlow, meatKcalPerUnit } from './energy';
 import { clamp, random } from './rng';
 import { paramsOf, type Params } from './params';
@@ -148,7 +149,8 @@ export function needs(world: World, c: Chimp): void {
   c.thirst += (sleeping ? r.tSleep : r.tAwake + (env.temperature > r.tHotC ? r.tHot : 0) - env.rain * r.tRain) * h;
   c.energy += (sleeping ? r.eSleep : a === 'rest' || a === 'shelter' || a === 'groom' || a === 'nurse' ? r.eRest : RUNNING[a] ? -r.eRun : WALKING[a] ? -r.eWalk : -r.eOther) * h;
   c.social -= (sleeping ? r.sSleep : r.sAwake) * h;
-  c.stress -= (c.stress - (r.stressFloor + x.bereft)) * r.stressRelax * h;
+  // stage E4a (endoStates): the stress load is a slow state with its own drivers (endocrine.ts) instead of a fixed relaxation
+  if (paramsOf(world).endoStates === 1) endoNeeds(world, c, x, sleeping, r.stressFloor + x.bereft); else c.stress -= (c.stress - (r.stressFloor + x.bereft)) * r.stressRelax * h;
   if (c.carryingMeat > 0 && !sleeping) {
     let eaten = Math.min(c.carryingMeat, r.meatEat * h);
     if (r.ledger) { const P = paramsOf(world), k = meatKcalPerUnit(P); eaten = eat(c, P, eaten * k) / k; } // only what the gut takes

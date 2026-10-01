@@ -1,0 +1,178 @@
+# E4a pre-registration: three slow internal states replace the first dice
+
+Status: written and committed before the first run of the changed model (1 October 2026, branch `worktree-agent-a167d633d1a24ba31`, from `main` f24c9ae). Track E, stage E4, first piece. Patrols, hunting, gang attacks and infanticide are not touched.
+
+Rule served: field values of behaviour are targets, never inputs. A probability that exists to make a behaviour happen at some rate is removed. Only physiology measured independently of the behaviour may be a parameter.
+
+## 1. What is removed
+
+| Dice today | Where | Switch that removes it |
+| --- | --- | --- |
+| Escalation impulse, `escalateImpulseBase + escalateImpulseAggr × aggression` per attended close-rank adult male per perception (0.2–0.8%); the attack it opens scores a constant 1.25 | `perception.ts rollImpulses`, `candidates.ts aggression` | `endoEscalate` |
+| Redirect priming, `redirectBaseP + redirectAggrP × aggression` per loss (8–23%), then a 6-minute window | `conflict.ts decided`, `candidates.ts aggression` | `endoRedirect` |
+| Rain display, `rainDisplayP` (12% of adult males at storm onset); the display it opens scores a constant 1.5 | `tick.ts rainOnset`, `candidates.ts` | `endoRainDisplay` |
+
+`endoStates` runs the three states. All four switches default to 0 in both profiles; at 0 the world is bit-identical to today. With a switch on, its probability parameters are not read and draw nothing from `world.rng`.
+
+## 2. Mechanism
+
+Three states per chimp, each in 0..1, each a leaky integrator `S += (target − S) × (1 − exp(−dt/τ))`, stepped every slow step (5 eco-min) from the animal's last perception, plus bounded kicks `S += k × (1 − S)` at events. No randomness.
+
+**Stress load (cortisol-like).** The existing `chimp.stress` is the state itself; no second stress notion is added. Reason: every existing event kick (loss +0.2 or +0.35, win +0.05, grooming, reconciliation, consolation, gang attack, infanticide) and every score term that reads stress (pant-grunt, submit, reconcile, redirect) already uses it, and its existing relaxation (0.25 per hour, τ = 4 h) is already of the hormone's time scale. With `endoStates` on, the fixed relaxation toward a constant floor is replaced by:
+- target = `stressFloor` + bereavement (existing) + `endoStressDeficitW` × energy deficit + `endoStressStrangerW` × strangers in view. Energy deficit = ½ hunger + ½ (1 − cond).
+- kicks: `endoStressAggrKick` when the animal starts a charge or attack, or is the target of one; `endoStressStrangerW` when a stranger chorus is heard.
+- recovery rate = (1/τ) × (1 + `endoAffilBufferK` × affiliation): the affiliation state speeds recovery.
+
+**Competitive arousal (testosterone-like), adult males (15 y and over) only.**
+- target = `endoArousalOestrusW` × (largest swelling among parous, unrelated females of the community in view) + `endoArousalRivalW` × (rank closeness of the closest-rank adult male in view, 1 − |ΔElo| ÷ `escalateEloGap`).
+- kick: `endoArousalWinKick` on a decided conflict won.
+
+**Affiliation (oxytocin-like), everyone.**
+- target = bond with the partner while in grooming contact (giving or receiving), else 0.
+- kicks: `endoAffilShareKick` on food sharing (giver and receiver); `endoAffilRepairKick` on reconciliation (both) and consolation (both).
+
+**Not wired, on purpose** (they stay tests of the mechanism): rank (sites disagree), hierarchy instability, parous oestrous females → stress, time of day, patrols, intergroup conflict → affiliation, pant-hooting. The brief listed instability as a driver of stress and arousal; it is left out so that T-END-1 stays a genuine test (instability can still reach the states through the aggression it causes).
+
+**The one scoring rule.** The constant score a dice-opened option had becomes the ceiling; state and trait levels in 0..1 multiply it. No new score constant is introduced.
+- Escalated attack on a close-rank adult male: `endoEscalateScore` (1.25, the old literal) × arousal × ½(own aggression + tension toward him) × (1 − stress) × (1 − affiliation × bond with him). Offered whenever the old preconditions hold (adult male, rival adult male of the community within `escalateEloGap` Elo and within `escalateDistM` and `escalateAttackRangeM`), plus the existing refractory gate of status aggression (no own aggression in the last 1.5 h) and a score above 0.
+- Redirected charge at a dominated, unrelated bystander: stress × (`redirectBase` + `redirectAggrW` × aggression + `redirectTensionW` × tension toward the bystander + `redirectStressW`), minus the guardian deterrent as today. Offered after every lost conflict until the animal next aggresses, for one stress time constant (`endoStressTauH`) instead of the 6-minute window.
+- Rain display: `rainDisplayScore` (1.5) × arousal × boldness, offered to every adult male for `impulseDurationH` after a daytime storm onset, once.
+
+Whether the animal then does it is its choice among its options (the menu draw of the RG policy), not a roll that opens the option. The scores are not fitted to the old probabilities or to any behavioural rate.
+
+## 3. Drivers and time constants
+
+Source keys are those of `docs/staging/e-sources.md` (track-e worktree, E4 section, read 1 October 2026). They are not yet in `docs/research.md`, so the registry tags every entry `assumed` and names the key in its note. "Direction" = the sign is verified; the magnitude in state units is a design assumption in every row.
+
+| Parameter | Value | Basis |
+| --- | --- | --- |
+| `endoStressTauH` | 3.4 h | Urinary glucocorticoid peak 135–270 min after an event (wittig2015, full text) [M]; midpoint. That is the lag of the field readout; using it as the state's time constant is assumed |
+| `endoArousalTauH` | 6 h | assumed, pending e-sources (no verified constant; labelled steroid peaks in urine within 5.5 h, bahr2000 [M], one captive male) |
+| `endoAffilTauH` | 1 h | assumed, pending e-sources (listed there as a gap) |
+| `endoStressAggrKick` | 0.1 | Direction [H] wittig2015: stress rises after a single aggressive interaction, in aggressor and victim (112% against 85% after rest; 9 males) |
+| `endoStressDeficitW` | 0.3 | Direction [M] emeryThompson2010 (abstract only, n not given): lactating females higher in months of low fruit consumption. For males the evidence conflicts (mullerWrangham2004a against muller2021), so for them it is assumed |
+| `endoStressStrangerW` | 0.2 | Direction [H] wittig2016: 22% higher after intergroup encounters than after grooming |
+| `endoAffilBufferK` | 1 | Direction [H] wittig2016: 23% lower with a bond partner in every context. The route (affiliation speeds recovery) and the size are assumed |
+| `endoArousalOestrusW` | 0.6 | Direction [M] sobolewski2013 (abstract): testosterone above baseline with parous oestrous females, not with nulliparous ones |
+| `endoArousalRivalW` | 0.4 | assumed, pending e-sources (challenge hypothesis; mullerWrangham2004b seen only as cited) |
+| `endoArousalWinKick` | 0.15 | assumed, pending e-sources (winner effect; no wild chimpanzee source) |
+| grooming → affiliation target = bond | — | Direction [M] crockford2013 (abstract only, n not given): higher after grooming with a bond partner than with a non-bond partner or none |
+| `endoAffilShareKick` | 0.5 | Direction [M] wittig2014 (abstract only, n not given): higher after food sharing than after grooming, whatever the bond |
+| `endoAffilRepairKick` | 0.3 | Direction [M] preis2018 (abstract): higher after reconciliation and bystander affiliation than after aggression alone |
+| `endoEscalateScore` | 1.25 | design: the constant score of the old impulse-opened attack, now the ceiling |
+| parity proxy | — | A female counts as parous at 15 y or over, or once she has had an amenorrhoea set by a birth (first births at about 14–15.5 y in Kibale; design) |
+
+**T-END rows (staged, `docs/staging/e-targets.patch.json`).** Encoded by construction: T-END-4 (stress after aggression), T-END-10 (affiliation after grooming a bond partner), T-END-11 (after food sharing), T-END-7 (arousal with parous against nulliparous oestrous females), the reconciliation half of T-END-12, and the intergroup-above-grooming half of T-END-5. Partly encoded: T-END-5 bond-partner half (through affiliation, not through the partner's presence), T-END-6 food half (through hunger and condition). Genuine tests: T-END-1 (instability), T-END-2 (rank), T-END-3 (male stress with parous oestrous females), the rank half of T-END-6, T-END-8 (pant-hoots), T-END-9 (patrols; not to be used for design), the intergroup half of T-END-12.
+
+## 4. Expected direction (stated before any run)
+
+Baseline (dice, quick check below): 5.7 decided conflicts per day in the observed community (truth), contact share 0.07, reconciled 0.07 (uncorrected), consoled 0.04.
+
+| Quantity | Expectation with all four switches on | Confidence |
+| --- | --- | --- |
+| Escalated attacks per community-year | Unknown in size. The option is on offer far more often than the dice opened it, at a low score (about 0.05–0.2 without an oestrous female in view, up to about 0.5 with one and with tension). Guess: more than with dice | low |
+| Decided conflicts per community-year | Up a little (more redirects on offer, more escalations) | low |
+| Share escalating to contact fights (0.07) | Up | moderate |
+| Redirected aggression share of losses | Offered after every loss for hours, at a score of about 0.15–0.35 instead of 0.5–0.9 for 6 minutes after 8–23% of losses. Guess: similar or higher | low |
+| Rain displays | Down sharply, near zero (score mostly under 0.5 against shelter at about 1.5) | high |
+| Reconciliation, T-SOC-9 | Down: resting stress is higher (energy deficit) and reconciliation is scored `− stress × reconcileStressW` | moderate |
+| Third-party affiliation, T-SOC-10 | No clear change | low |
+| Hierarchy steepness, T-SOC-5 | Up slightly if close-rank males settle more contests by contact | low |
+| Alpha tenure, T-SOC-7 | Not measurable in 60 days | — |
+| Injuries from fights | Up with escalations | moderate |
+| Deaths from fights | None expected in 60 days (baseline none) | moderate |
+| Stress by context (diagnosis) | Higher after losses and aggression (encoded); higher in unstable periods and with oestrous females only if aggression carries it (genuine) | — |
+
+## 5. Kill criterion
+
+The switches stay off, and the result is recorded as a null, if any of these holds on the development seeds:
+- the population is not viable (C13 guard: births ÷ deaths, any starvation death that the baseline does not have);
+- deaths from fights are clearly above the baseline, or injuries per conflict at least double;
+- held-out rows are clearly worse (summed band distance up, integrator's 365-day run).
+
+## 6. Protocol
+
+- Quick check only (machine under load; coordinator limit: burn-in + days ≤ 90): `pnpm exec tsx scripts/field-metrics.ts --profile field --days 30 --burn-in 30 --seeds 48,7 --workers 2`, with and without `--params '{"endoStates":1,"endoEscalate":1,"endoRedirect":1,"endoRainDisplay":1}'`.
+- `scripts/endocrine-diagnose.ts` (simulation truth, same seeds and window): escalations, redirects and rain displays per community-year with and without the switches; the three states by sex and rank; their course around events.
+- Development seeds 48 and 7 only. The 365-day, 5-seed benchmark is the integrator's.
+- Iterations change the mechanism from first principles and are logged below. No weight is tuned to a behavioural rate.
+
+## 7. Results
+
+### Run log (each entry written before its run)
+
+- **R1** (1 October 2026, after merging `track-e` at 5ef6265): baseline and all four switches, `e-bench --quick` and `endocrine-diagnose.ts` (seeds 48, 7; 30 + 30 days). Outputs in `artifacts/validation/e4a/` (gitignored).
+- **R2** (written after R1, before running; no mechanism change): (a) a noise-floor arm: the baseline with `rgTemperature` 0.1641 instead of 0.164, a behaviourally negligible change that only re-draws the trajectory, to show how far rows move by chance in a 30-day window on two seeds; (b) the physiological stack (`energyLedger`, `rhythmSleep`, `rhythmHeat` = 1) without and with the four E4a switches, because the energy deficit is meant to drive stress and the timer hunger of the baseline is not an energy balance. `endocrine-diagnose.ts` gained three genuine readouts (T-END-6 rank half, T-END-8, T-END-12 intergroup half); R1's diagnosis is re-run with them.
+- **Iteration 1** (written after R1 and R2, before its run; one mechanism change). *Finding that motivates it:* with `endoRedirect` the redirected charge came a mean 41 min (timer world) and 32 min (stack) after the loss, against 1 min with the dice (corrected after the run: these are means; the medians were 29 and 15 min against 0.5); 65% (timer) and 53% (stack) came more than 10 min after it. The 3.4-h window let the slow stress load stand in for an acute reaction: an observer would not call most of those charges redirected aggression, which is by definition the loser's reaction to the defeat. *Change:* with `endoRedirect` the defeat is considered once, at the loser's first choice after it (whatever he chooses, as the hunting fix considers a hunt once per colobus encounter); `startAction` clears `lostAt`. The stress-scaled score, the τ bound and every weight are unchanged; no clock, no probability, no new parameter. *Expected:* redirects fall below R1's share of decided conflicts (10% timer, 13% stack) and above the dice's 2%, nearly all within 10 min of the loss (moderate); decided conflicts down a little against R1/R2 (low); reconciliation unchanged (low). Arms: all four switches, timer world and stack, same seeds and window.
+
+
+### Results (seeds 48, 7; 30-day burn-in + 30 days; field profile; rules policy)
+
+"Timer" = today's needs; "stack" = `energyLedger` + `rhythmSleep` + `rhythmHeat`. "Endo" = all four switches; "it1" = iteration 1. Simulation truth from `endocrine-diagnose.ts` (all communities, 0.49 community-years per arm); raw counts in brackets.
+
+| Per community-year | timer, dice | timer, endo R1 | timer, endo it1 | stack, dice | stack, endo R2 | stack, endo it1 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Escalated attacks | 4.1 [2] | 4.1 [2] | 4.1 [2] | 6.1 [3] | 10.1 [5] | 8.1 [4] |
+| Redirected charges | 14 [7] | 69 [34] | 28 [14] | 30 [15] | 241 [119] | 41 [20] |
+| of which within 10 min of the loss | 14 | 24 | 28 | 30 | 114 | 41 |
+| Redirect latency, median | 0.5 min | 29 min | 0.25 min | 0.5 min | 15 min | 0.25 min |
+| Rain displays | 12.2 [6] | 0 | 0 | 12.2 [6] | 2.0 [1] | 2.0 [1] |
+| Decided conflicts | 696 | 671 | 732 | 1,570 | 1,793 | 1,833 |
+| Redirects per decided conflict | 0.020 | 0.103 | 0.039 | 0.019 | 0.135 | 0.022 |
+| Contact fights and hits | 51 [25] | 55 [27] | 39 [19] | 97 [48] | 105 [52] | 99 [49] |
+| Injuries (per conflict) | 4.1 (0.006) | 0 | 0 | 6.1 (0.004) | 10.1 (0.006) | 4.1 (0.002) |
+| Deaths | 0 | 0 | 0 | 0 | 0 | 0 |
+| Reconciled per decided conflict (truth) | 0.088 | 0.088 | 0.058 | 0.195 | 0.154 | 0.178 |
+
+`e-bench --quick` (observer scorecard; distances summed over the rows scored in the run):
+
+| Arm | Fitted | Held-out | Prescriptions | Viability | T-SOC-5 | T-SOC-9 | T-SOC-10 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| timer, dice | 2.98 | 4.76 | 138 | pass | 0.08 fail | 0.33 fail (one seed) | 0.08 fail |
+| timer, dice, `rgTemperature` 0.1641 (noise) | 4.13 | 5.81 | 138 | pass | 0.08 fail | insufficient | 0.17 pass |
+| timer, endo R1 | 3.26 | 3.50 | 132 | pass | 0.06 fail | insufficient | 0.30 pass |
+| timer, endo it1 | 3.90 | 4.72 | 132 | pass | 0.15 fail | insufficient | 0.20 pass |
+| stack, dice | 4.05 | 6.23 | 138 | pass | 0.44 pass | 0.14 pass | 0.27 pass |
+| stack, endo R2 | 6.75 | 2.59 | 132 | pass | 0.31 pass | 0.43 fail | 0.31 fail |
+| stack, endo it1 | 5.55 | 3.59 | 132 | pass | 0.48 pass | 0.24 fail | 0.31 fail |
+
+T-SOC-7 needs a year (not scored). Viability: every arm 0 births, 0 deaths, no starvation, 49 living at the end on each seed.
+
+**Noise floor.** The noise arm changes nothing but one draw in thousands, yet moves the sums by +1.1 (fitted) and +1.1 (held-out); on the rows scored in both runs and without the hunting rows, by +0.08 and −0.85. In the noise arm T-HUN-4 alone moves by 1.0 (and by up to 2.7 between other arms), T-HUN-1 by 0.9, T-RNG-5 and T-SOC-6 by 0.5–0.6. Every band-distance difference between the arms above is inside this floor: the quick check cannot see an effect of E4a on any target row. The prereg's §4 is therefore judged on simulation truth.
+
+**§4 predictions** (timer world; stack in brackets):
+
+| Quantity | Predicted | Observed | Verdict |
+| --- | --- | --- | --- |
+| Escalated attacks | more than the dice (low) | 2 → 2 (3 → 5, it1 4) | inconclusive: a handful of events. Close-rank males (within 90 Elo) are in view in 0.5% of adult-male hours, so the option is almost never on offer; arousal sits at 0.02–0.03 without a swollen female |
+| Decided conflicts | up a little (low) | −4% R1, +5% it1 (+14%, +17%) | up in the stack, flat in the timer world |
+| Share escalating to contact | up (moderate) | 0.073 → 0.082 R1, 0.053 it1 (0.062 → 0.059, 0.054) | not up |
+| Redirects | similar or higher (low) | 5× R1, 2× it1 (8×, 1.3×) | higher; R1's surplus was mostly late charges (iteration 1) |
+| Rain displays | near zero (high) | 12 → 0 (12 → 2) | confirmed |
+| Reconciliation, T-SOC-9 | down (moderate) | truth 0.088 → 0.088 R1, 0.058 it1 (0.195 → 0.154, 0.178) | down in 3 of 4 endo arms; observer row unscorable or noise |
+| T-SOC-10 | no clear change (low) | inside the noise floor | as predicted |
+| T-SOC-5 | up slightly (low) | inside the noise floor | not seen |
+| Injuries | up with escalations (moderate) | 2 → 0 (3 → 5, it1 2) | not seen; a handful of events |
+| Deaths from fights | none (moderate) | none | confirmed |
+
+**Kill criterion (§5): not met in any arm.** Viability passes; no fight deaths; injuries per conflict at most 1.5× the baseline (stack R2), otherwise lower; held-out sums lower or inside the noise floor (timer 4.76 → 4.72, stack 6.23 → 3.59 with iteration 1).
+
+**T-END rows** (endo it1, timer / stack; hourly samples):
+
+| Row | Kind | Result |
+| --- | --- | --- |
+| T-END-1 instability | genuine | not testable: no unstable period in 30 days |
+| T-END-2 rank, not negative | genuine | pass in the weak form: top-third males 0.121 vs bottom-third 0.116 (stack 0.079 vs 0.061, a Kanyawara-like positive slope, through aggression given). The dice model is flat (0.035 vs 0.037) |
+| T-END-3 parous oestrous females, male stress | genuine | pass: 0.167 vs 0.116 without a swollen female (0.146 vs 0.064); also true in the dice model (0.051 vs 0.035), through coercion. Nulliparous females raise it as much, which the row does not test |
+| T-END-6 rank half, lactating females | genuine | weak pass: lower half 0.130 vs upper 0.128 (0.071 vs 0.065). Food half not testable (fruit index never below 0.4) |
+| T-END-8 arousal and pant-hoots | genuine | **fail**, reversed: 0.023 in hours with own pant-hoots vs 0.038 without (0.046 vs 0.070) |
+| T-END-12 intergroup half, affiliation | genuine | **fail**, reversed (13 and 7 samples): 0.036 vs 0.107 (0.184 vs 0.226). Affiliation comes only from grooming, and nobody grooms with strangers about |
+| T-END-9 patrols | genuine, not for design | not scored (too few patrols) |
+| T-END-4, -7, -10, -11, -12 reconciliation half, -5 intergroup half | encoded | pass as wired (T-END-7 partly: arousal with only nulliparous swollen females in view 0.095 vs 0.018 none, the 6-h decay after a parous female leaves) |
+| T-END-5 bond-partner half | partly encoded | pass: 3 h after being targeted 0.152 with a bond partner in view vs 0.275 without; also true in the dice model |
+
+### Verdict
+
+- **`endoStates` + `endoEscalate` + `endoRedirect` (iteration 1): provisional keep candidate.** Viability passes, held-out distance does not rise beyond the noise floor, the prescription count falls (138 → 133 without the rain switch; 132 with it), and the acts keep their field shape: redirects come within a minute of the defeat and stay rare (2–4% of decided conflicts), escalations stay rare, no fight deaths. It does not improve any target row measurably in this window. Defaults stay off (track rule; C11 and the proof first); `e-bench --confirm` and the 365-day run are the integrator's.
+- **`endoRainDisplay`: null.** None of the three slow states carries the rain display: male arousal is near zero at most storm onsets, so the act all but disappears (12 → 0–2 per community-year). A storm is an acute stimulus; wiring it to arousal would re-encode the old roll. The switch stays off and `rainDisplayP` stays a counted prescription.
+- **Biggest open problem.** Slow states cannot carry acute reactions. The redirect needed an event gate (the defeat considered once), the rain display has no driver, and male arousal is close to zero outside oestrous parties, so arousal-scaled acts happen almost only there. Two genuine rows fail in reverse (T-END-8, T-END-12). A fast arousal state (minutes) would be the next piece, and needs sources first.

@@ -8,6 +8,7 @@ import { fruitAt } from './phenology';
 import { bestFallbackNear, fallbackOn } from './fallback';
 import { fruitRate, leafWorth, treeIntake } from './intake';
 import { heatRestValue, nestValue, shelterValue, thermalLoad } from './rhythm';
+import { escalateScore, rainScore, redirectScore } from './endocrine';
 import { byIdIn, index, isTreeId, ix, NEVER, TREE_ID0, treesNear, simOf } from './state';
 
 // Variants refine an action's meaning (why a charge happens) for execution and reason text.
@@ -456,7 +457,9 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   const adolescentOrAdult = c.age >= 12 && !caretaker;
   if (adolescentOrAdult && !night) {
     // displays [H]; rain display at storm onset (Goodall) [M/L]
-    if (x.impulse === IMPULSE_RAIN && x.impulseUntil > time && male) offer('display', -1, P.rainDisplayScore, V.RAIN);
+    // stage E4a (endoRainDisplay): offered to every adult male just after a storm onset, once, scored from arousal and boldness
+    if (P.endoRainDisplay === 1) { const at = s.stormAt ?? NEVER; if (male && c.age >= 15 && time - at < P.impulseDurationH && x.lastDisplay < at) { const sc = rainScore(c, x, P); if (sc > 0) offer('display', -1, sc, V.RAIN); } }
+    else if (x.impulse === IMPULSE_RAIN && x.impulseUntil > time && male) offer('display', -1, P.rainDisplayScore, V.RAIN);
     if (male && e > 0.3 && time - x.lastDisplay > 0.75) {
       const rv = rivalCloseness > 0.3 ? rival : -1;
       offer('display', rv, 0.02 + pers.aggression * 0.3 + pers.boldness * 0.12 + rivalCloseness * 0.3 + (x.newcomers > 0 ? 0.25 : 0) + unstable * 0.35
@@ -561,8 +564,13 @@ function aggression(world: World, c: Chimp, rival: number, rivalCloseness: numbe
   }
   if (x.impulse === IMPULSE_ESCALATE && x.impulseUntil > time) {
     const o = byId.get(x.impulseTarget);
-    if (o && o.alive && dcc(c, o) < P.escalateAttackRangeM) offer('attack', o.id, 1.25, V.ESCALATE);
+    if (o && o.alive && dcc(c, o) < P.escalateAttackRangeM) offer('attack', o.id, P.endoEscalateScore, V.ESCALATE);
   }
+  // stage E4a (docs/staging/e4a-prereg.md): with the switches on no dice open these options. The escalated attack is on
+  // offer whenever the old preconditions of the impulse hold (plus the refractory gate of status aggression), and the
+  // redirected charge after every loss for one stress time constant; their scores come from the slow states (endocrine.ts).
+  const endoEsc = P.endoEscalate === 1 && cooled && isAdultMale(c), escR = Math.min(P.escalateDistM, P.escalateAttackRangeM);
+  const redirectOpen = time - x.lostAt < (P.endoRedirect === 1 ? P.endoStressTauH : P.redirectWindowH) && x.lastAgg < x.lostAt;
   if (x.impulse === IMPULSE_INFANTICIDE && x.impulseUntil > time) {
     const o = byId.get(x.impulseTarget);
     if (o && o.alive && dcc(c, o) < P.infanticideAttackRangeM) offer('attack', o.id, 1.1, V.INFANTICIDE);
@@ -577,8 +585,9 @@ function aggression(world: World, c: Chimp, rival: number, rivalCloseness: numbe
     // stage C8 guardian levers: a ward's guardian in sight and close by deters charges from animals it is not dominated by
     const deter = guarded(world, c, o, x.seen, P) ? P.guardDeterW : 0;
     // redirected aggression toward a lower-ranked bystander after losing [M], preferably one it already has tension with (design)
-    if (time - x.lostAt < P.redirectWindowH && x.lastAgg < x.lostAt && dist < P.redirectRangeM && o.age >= 5 && !kin && dominates(c, o))
-      offer('charge', o.id, P.redirectBase + pers.aggression * P.redirectAggrW + c.stress * P.redirectStressW + tn * P.redirectTensionW - deter, V.REDIRECT);
+    if (redirectOpen && dist < P.redirectRangeM && o.age >= 5 && !kin && dominates(c, o))
+      offer('charge', o.id, (P.endoRedirect === 1 ? redirectScore(c, tn, P) : P.redirectBase + pers.aggression * P.redirectAggrW + c.stress * P.redirectStressW + tn * P.redirectTensionW) - deter, V.REDIRECT);
+    if (endoEsc && o.sex === 'male' && o.age >= 15 && Math.abs(o.elo - c.elo) < P.escalateEloGap && dist < escR) { const sc = escalateScore(c, o, x, P); if (sc > 0) offer('attack', o.id, sc, V.ESCALATE); }
     // a grudge: a dominant may charge a subordinate whose own aggression toward it is unrepaired (last incident received) (design) [M: compatibility]
     if (tn >= P.rivalTension && cooled && dist < P.grudgeRangeM && o.age >= 5 && !kin && dominates(c, o) && (x.incident[o.id]?.[1] ?? 0) % 2 === 1)
       offer('charge', o.id, P.grudgeTensionW * (tn - P.grudgeTensionFloor) + pers.aggression * P.grudgeAggrW - P.grudgeBase - h * P.grudgeHungerW - deter, V.TENSION);

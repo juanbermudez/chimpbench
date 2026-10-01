@@ -77,10 +77,13 @@ function rainOnset(world: World): void {
   if (world.environment.daylight < 0.1) return;
   const storm = world.environment.weather === 'storm';
   const P = paramsOf(world);
+  // stage E4a (endoRainDisplay): no roll; the onset is noted and every adult male is offered the display, scored from his state (candidates.ts)
+  const endo = P.endoRainDisplay === 1;
+  if (endo && storm) simOf(world).stormAt = world.time;
   for (const c of index(world).alive) {
     if (!c.alive || (c.action === 'nest' && ix(c).phase >= 2)) continue;
     // Goodall's "rain dance": a rare charging display by adult males at the onset of heavy rain [M/L]
-    if (storm && c.sex === 'male' && c.age >= 15 && random(world) < P.rainDisplayP) { const x = ix(c); x.impulse = IMPULSE_RAIN; x.impulseUntil = world.time + P.impulseDurationH; }
+    if (!endo && storm && c.sex === 'male' && c.age >= 15 && random(world) < P.rainDisplayP) { const x = ix(c); x.impulse = IMPULSE_RAIN; x.impulseUntil = world.time + P.impulseDurationH; }
     interrupt(world, c, storm ? 'a heavy storm broke' : 'heavy rain started');
   }
   if (gate(world, 'rain-onset', 3)) addEvent(world, storm ? 'A thunderstorm broke over the forest' : 'Heavy rain began', 'weather', [], -1, storm ? 1 : 0);

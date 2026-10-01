@@ -12,8 +12,9 @@ import { doTransfer, recordCopulation } from './reproduction';
 import { IMPULSE_HUNT, forget } from './perception';
 import { clamp, hash01, random } from './rng';
 import type { ParamId } from './params.gen';
-import { TICK_HOURS, TICK_SECONDS, byIdIn, huntOf, index, isTreeId, ix, simOf } from './state';
+import { NEVER, TICK_HOURS, TICK_SECONDS, byIdIn, huntOf, index, isTreeId, ix, simOf } from './state';
 import { resolveHunt } from './ecology';
+import { endoShared } from './endocrine';
 import { eatFruit, forageYield, fruitAt } from './phenology';
 import { bestFallbackNear, eatFallback, fallbackOn, fallbackStock, fallbackValue } from './fallback';
 import { recordAggression, recordConsolation, recordGrooming, recordMating, recordMeat, recordReconciliation, recordSupport } from './relations';
@@ -188,6 +189,9 @@ export function startAction(world: World, c: Chimp, cand: Candidate, source: Dec
   c.action = cand.action; c.targetId = cand.targetId; c.reason = cand.reason;
   c.decisionSource = source; c.decisionVersion++; c.awaitingDecisionSince = null;
   x.intr = ''; x.finished = false; x.v = meta.v; x.aux = meta.aux;
+  // stage E4a iteration 1 (endoRedirect): a defeat is considered once, at the loser's first choice after it, whatever he
+  // chooses (redirection is the reaction to the defeat; docs/staging/e4a-prereg.md §7). The stress load scales the score.
+  if (x.lostAt > NEVER && paramsOf(world).endoRedirect === 1) x.lostAt = NEVER;
   x.actEnd = world.time + boutHours(world, c, cand.action);
   // stage C7a (field): a trip to a remembered tree is not re-decided on the way; the bout lasts the walk plus 5 min
   if (cand.action === 'travel' && meta.v === V.TREE && paramsOf(world).travelCommit === 1) {
@@ -658,6 +662,7 @@ export function executeAction(world: World, c: Chimp): void {
           episode(world, o, 'food', `Got meat from ${c.name}`, c.id);
         }
         addBond(c, o.id, 0.03); addBond(o, c.id, 0.05);
+        if (P.endoStates === 1) endoShared(c, o, P); // stage E4a: sharing raises the affiliation state of both
         flashInteraction(world, 'share', c, o.id, [c.id, o.id], 0.3);
         episode(world, c, 'food', `Shared ${x.v === V.PLANT ? 'food' : 'meat'} with ${o.name}`, o.id);
         finish(world, c);
