@@ -16161,6 +16161,823 @@
    "notes": "Stage C13: softmax temperature over the rules scores of the menu. Design rule: the rules' own top option gets a median probability of 0.77 on rules-world menus of development seed 6301 (180-day burn-in, 2 days; scripts/rg-calibrate.ts per profile: field 0.1641 on 5,635 menus, compressed 0.1519 on 5,528). Field is the Jev free arms' RG value (scripts/jev-test.ts --calibrate gave the same 0.1641); 0.77 was Jev's median top probability (docs/decide-jev-design.md)."
   },
   {
+   "id": "rhythmAreaM2",
+   "group": "needs",
+   "value": 0.025,
+   "units": "m2/kg^(2/3)",
+   "range": [
+    0.0125,
+    0.05
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1000000.0
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmAreaM2",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: body area presented to the sun per kg^(2/3) (Meeh surface 0.1 m^(2/3), a quarter of it projected). Assumed geometry."
+  },
+  {
+   "id": "rhythmBirthMassFrac",
+   "group": "needs",
+   "value": 0.05,
+   "units": "fraction",
+   "range": [
+    0.025,
+    0.1
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0.001,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmBirthMassFrac",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: body mass at birth as a share of adult mass (about 1.8 kg, not verified to a primary source). Assumed; to be replaced by the E1 body mass."
+  },
+  {
+   "id": "rhythmBodyC",
+   "group": "needs",
+   "value": 37,
+   "units": "C",
+   "range": [
+    36.5,
+    37.5
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    30,
+    42
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmBodyC",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: core body temperature. Assumed (primate value)."
+  },
+  {
+   "id": "rhythmCanopyM",
+   "group": "needs",
+   "value": 25,
+   "units": "m",
+   "range": [
+    12.5,
+    50
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    1,
+    100
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmCanopyM",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: height at which an animal in a crown receives the crown share of sunlight (rhythmShadeCrown). Assumed canopy height."
+  },
+  {
+   "id": "rhythmClimbExp",
+   "group": "needs",
+   "value": 0.119,
+   "units": "exponent",
+   "range": [
+    0,
+    0.25
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmClimbExp",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: the metabolic cost of climbing a metre is rhythmClimbJ x mass^-exponent J/kg (primates; slope not significant; source key hannaSchmitt2011). Verified in docs/staging/e-sources.md (1 October 2026); tagged assumed until the key is registered in docs/research.md and data/targets.json."
+  },
+  {
+   "id": "rhythmClimbJ",
+   "group": "needs",
+   "value": 107.4,
+   "units": "J/kg/m at 1 kg",
+   "range": [
+    53.7,
+    214.8
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1000000.0
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmClimbJ",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: metabolic cost of climbing a metre for a 1 kg primate (source key hannaSchmitt2011: 107.4 x M^-0.119 J/kg/m); the 9.8 J/kg of lifting the body is not heat. Verified in docs/staging/e-sources.md (1 October 2026); tagged assumed until the key is registered in docs/research.md and data/targets.json."
+  },
+  {
+   "id": "rhythmCloudAtt",
+   "group": "needs",
+   "value": 0.75,
+   "units": "fraction",
+   "range": [
+    0.5,
+    0.9
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmCloudAtt",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: share of solar irradiance removed under full cloud, 1 - att x cloud^rhythmCloudExp (source key kastenCzeplak1980). Pending e-sources: tagged assumed until the source is registered in docs/research.md."
+  },
+  {
+   "id": "rhythmCloudExp",
+   "group": "needs",
+   "value": 3.4,
+   "units": "exponent",
+   "range": [
+    1.7,
+    6.8
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0.1,
+    10
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmCloudExp",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: exponent of cloud cover in the irradiance law (source key kastenCzeplak1980). Pending e-sources: tagged assumed until the source is registered in docs/research.md."
+  },
+  {
+   "id": "rhythmCoatHeat",
+   "group": "needs",
+   "value": 0.5,
+   "units": "fraction",
+   "range": [
+    0.25,
+    0.9
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmCoatHeat",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: share of the solar radiation striking a dark coat that becomes a heat load on the body (source key walsberg1983). Pending e-sources: tagged assumed until the source is registered in docs/research.md."
+  },
+  {
+   "id": "rhythmCondExp",
+   "group": "needs",
+   "value": 0.426,
+   "units": "exponent",
+   "range": [
+    0.3,
+    0.55
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmCondExp",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: minimal thermal conductance per kg falls with mass^-exponent (mammal allometry, source key bradleyDeavers1980). Pending e-sources: tagged assumed until the source is registered in docs/research.md."
+  },
+  {
+   "id": "rhythmCondW",
+   "group": "needs",
+   "value": 0.224,
+   "units": "W/kg/C at 1 kg",
+   "range": [
+    0.112,
+    0.448
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1000000.0
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmCondW",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: minimal (vasoconstricted, dry coat) thermal conductance of a 1 kg mammal; 0.0465 W/kg/C at 40 kg (mammal allometry 0.76 m^-0.426 ml O2/g/h/C, source key bradleyDeavers1980). No chimpanzee measurement. Pending e-sources: tagged assumed until the source is registered in docs/research.md."
+  },
+  {
+   "id": "rhythmDarkW",
+   "group": "decision",
+   "value": 2.2,
+   "units": "score",
+   "range": [
+    1.1,
+    4.4
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    100
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmDarkW",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a: value of being in a nest in full darkness (times 1 - daylight). Set a priori, not fitted: the largest value of a food option (hunger 1: 1.7) plus three softmax temperatures, so a nest in the dark beats a starving animal's best meal. Design weight."
+  },
+  {
+   "id": "rhythmEvapW",
+   "group": "needs",
+   "value": 1.2,
+   "units": "W/kg",
+   "range": [
+    0.6,
+    2.4
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    50
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmEvapW",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: maximum evaporative heat loss (human maximum of about 12 W/kg divided by the tenfold difference in sweat gland density, source key kamberov2018). Pending e-sources: tagged assumed until the source is registered in docs/research.md."
+  },
+  {
+   "id": "rhythmFeedMet",
+   "group": "needs",
+   "value": 1.38,
+   "units": "x basal",
+   "range": [
+    1.2,
+    2
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    10
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmFeedMet",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: metabolic rate while feeding as a multiple of the basal rate (source key nguessan2009, after Leonard and Robertson 1997; cross-species). Verified in docs/staging/e-sources.md (1 October 2026); tagged assumed until the key is registered in docs/research.md and data/targets.json."
+  },
+  {
+   "id": "rhythmFreeNight",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "rgMenu",
+   "file": "src/sim/rg.ts",
+   "notes": "Stage E2a switch (docs/staging/e2a-prereg.md): 1 = rules-driven chimps are not filtered by the night and dusk menus (src/sim/menu.ts); models keep them. 0 = the menus apply to everyone.",
+   "integer": true
+  },
+  {
+   "id": "rhythmHeat",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "rhythmNeeds",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a switch (docs/staging/e2a-prereg.md): 1 = a thermal load from air temperature, sun, exertion and wet fur replaces the midday rest literal, the temperature bonus, the midday rest bout and the shelter rule. 0 = the clock and threshold rules.",
+   "integer": true
+  },
+  {
+   "id": "rhythmHeatCapJ",
+   "group": "needs",
+   "value": 3470,
+   "units": "J/kg/C",
+   "range": [
+    3300,
+    3600
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1000,
+    4200
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmHeatCapJ",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: specific heat of body tissue. Physics; assumed until registered. Pending e-sources: tagged assumed until the source is registered in docs/research.md."
+  },
+  {
+   "id": "rhythmHeatTolC",
+   "group": "needs",
+   "value": 1.5,
+   "units": "C",
+   "range": [
+    0.75,
+    3.0
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0.1,
+    10
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmHeatTolC",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: change of body temperature that counts as a full thermal load (1 or -1). Assumed."
+  },
+  {
+   "id": "rhythmMassFemaleKg",
+   "group": "needs",
+   "value": 31.3,
+   "units": "kg",
+   "range": [
+    31,
+    42
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    5,
+    100
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmMassFemaleKg",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: adult female body mass (Gombe median, source key pusey2005). Verified in docs/staging/e-sources.md (1 October 2026); tagged assumed until the key is registered in docs/research.md and data/targets.json. To be replaced by the E1 body mass."
+  },
+  {
+   "id": "rhythmMassKneeFemaleY",
+   "group": "needs",
+   "value": 10,
+   "units": "y",
+   "range": [
+    8,
+    13
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    30
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "bio",
+   "symbol": "P.rhythmMassKneeFemaleY",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: age at which female mass growth slows; mass rises linearly from birth mass to the adult value at this age (Gombe, source key pusey2005; the growth curves were not read). Verified in docs/staging/e-sources.md (1 October 2026); tagged assumed until the key is registered in docs/research.md and data/targets.json. To be replaced by the E1 body mass."
+  },
+  {
+   "id": "rhythmMassKneeMaleY",
+   "group": "needs",
+   "value": 13,
+   "units": "y",
+   "range": [
+    10,
+    16
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    30
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "bio",
+   "symbol": "P.rhythmMassKneeMaleY",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: age at which male mass growth slows (Gombe, source key pusey2005). Verified in docs/staging/e-sources.md (1 October 2026); tagged assumed until the key is registered in docs/research.md and data/targets.json. To be replaced by the E1 body mass."
+  },
+  {
+   "id": "rhythmMassMaleKg",
+   "group": "needs",
+   "value": 39,
+   "units": "kg",
+   "range": [
+    31,
+    42
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    5,
+    100
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmMassMaleKg",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: adult male body mass (Gombe median, source key pusey2005). Verified in docs/staging/e-sources.md (1 October 2026); tagged assumed until the key is registered in docs/research.md and data/targets.json. To be replaced by the E1 body mass."
+  },
+  {
+   "id": "rhythmRestMet",
+   "group": "needs",
+   "value": 1.25,
+   "units": "x basal",
+   "range": [
+    1,
+    1.6
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    10
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmRestMet",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: metabolic rate awake and not feeding as a multiple of the basal rate (source key nguessan2009, after Leonard and Robertson 1997; cross-species). An animal asleep in a nest runs at the basal rate. Verified in docs/staging/e-sources.md (1 October 2026); tagged assumed until the key is registered in docs/research.md and data/targets.json."
+  },
+  {
+   "id": "rhythmRmrW",
+   "group": "needs",
+   "value": 3.39,
+   "units": "W/kg^0.75",
+   "range": [
+    1.695,
+    6.78
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0.5,
+    20
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmRmrW",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: basal metabolic rate, 70 kcal/day per kg^0.75 (source key kleiber1947; Pan estimates are 0.96 of it, pontzer2016). Verified in docs/staging/e-sources.md (1 October 2026); tagged assumed until the key is registered in docs/research.md and data/targets.json."
+  },
+  {
+   "id": "rhythmShadeCrown",
+   "group": "needs",
+   "value": 0.5,
+   "units": "fraction",
+   "range": [
+    0.2,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmShadeCrown",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: share of open-sky sunlight reaching an active animal at canopy height. Assumed."
+  },
+  {
+   "id": "rhythmShadeGround",
+   "group": "needs",
+   "value": 0.02,
+   "units": "fraction",
+   "range": [
+    0.01,
+    0.05
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmShadeGround",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: share of open-sky sunlight reaching the forest floor, and a resting animal in shade (source key chazdon1984: 1-2% in closed tropical forest). Pending e-sources: tagged assumed until the source is registered in docs/research.md."
+  },
+  {
+   "id": "rhythmShelterRain",
+   "group": "needs",
+   "value": 0.3,
+   "units": "fraction",
+   "range": [
+    0.1,
+    0.6
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmShelterRain",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: share of the rain that reaches a sheltering animal. Assumed."
+  },
+  {
+   "id": "rhythmSleep",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "rhythmNeeds",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a switch (docs/staging/e2a-prereg.md): 1 = sleep pressure and light replace the nest clock ramp, the nest wake hour, the night rest bonus and the energy timers (energy = 1 - sleep pressure). 0 = the clock rules.",
+   "integer": true
+  },
+  {
+   "id": "rhythmSleepDecayH",
+   "group": "needs",
+   "value": 4.2,
+   "units": "h",
+   "range": [
+    2.1,
+    8.4
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0.1,
+    1000
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "P.rhythmSleepDecayH",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a: time constant of the fall of sleep pressure while asleep (two-process model, human value; source key borbely1982, Daan et al. 1984). Pending e-sources: tagged assumed until the source is registered in docs/research.md."
+  },
+  {
+   "id": "rhythmSleepRiseH",
+   "group": "needs",
+   "value": 18.2,
+   "units": "h",
+   "range": [
+    9.1,
+    36.4
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0.1,
+    1000
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "P.rhythmSleepRiseH",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a: time constant of the rise of sleep pressure while awake (two-process model, human value; source key borbely1982, Daan et al. 1984). Pending e-sources: tagged assumed until the source is registered in docs/research.md."
+  },
+  {
+   "id": "rhythmSleepW",
+   "group": "decision",
+   "value": 0.9,
+   "units": "score",
+   "range": [
+    0.45,
+    1.8
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    100
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmSleepW",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a: weight of sleep pressure in the value of a nest. Equal to the weight rest gives fatigue, so sleepiness alone never favours a nest over resting. Design weight."
+  },
+  {
+   "id": "rhythmSoakRain",
+   "group": "needs",
+   "value": 0.1,
+   "units": "rain intensity",
+   "range": [
+    0.05,
+    0.2
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0.001,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmSoakRain",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: rain intensity (1 = rainMmPerH) at which the coat is half soaked; wetness = rain / (rain + this). Assumed."
+  },
+  {
+   "id": "rhythmSolarW",
+   "group": "needs",
+   "value": 1000,
+   "units": "W/m2",
+   "range": [
+    900,
+    1100
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1400
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmSolarW",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: clear-sky irradiance with the sun overhead. Physics; assumed until registered. Pending e-sources: tagged assumed until the source is registered in docs/research.md."
+  },
+  {
+   "id": "rhythmThermW",
+   "group": "decision",
+   "value": 1.6,
+   "units": "score",
+   "range": [
+    0.8,
+    3.2
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    100
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmThermW",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a: weight of a full thermal load in the rest score (stored heat) and the shelter score (heat debt). Equal to the hunger weight of feeding. Design weight."
+  },
+  {
+   "id": "rhythmVaso",
+   "group": "needs",
+   "value": 3,
+   "units": "ratio",
+   "range": [
+    1.5,
+    6
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    1,
+    20
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmVaso",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: largest dry heat loss over the smallest (peripheral vasodilation). Assumed."
+  },
+  {
+   "id": "rhythmWalkJ",
+   "group": "needs",
+   "value": 3.8,
+   "units": "J/kg/m",
+   "range": [
+    2.8,
+    5.8
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    100
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmWalkJ",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: net metabolic cost of walking a metre (0.19 ml O2/kg/m, individuals 0.14-0.29; captive, n = 5; source key sockol2007). Verified in docs/staging/e-sources.md (1 October 2026); tagged assumed until the key is registered in docs/research.md and data/targets.json."
+  },
+  {
+   "id": "rhythmWetCond",
+   "group": "needs",
+   "value": 3,
+   "units": "ratio",
+   "range": [
+    1.5,
+    6
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    1,
+    20
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmWetCond",
+   "file": "src/sim/rhythm.ts",
+   "notes": "Stage E2a heat balance: thermal conductance of a soaked coat over a dry one. Assumed."
+  },
+  {
    "id": "ripeRampDays",
    "group": "phenology",
    "value": 7,

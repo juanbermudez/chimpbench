@@ -32,6 +32,11 @@ export const isChimpId = (id: number) => id > 0 && id < TREE_ID0;
 export interface ChimpX {
   actEnd: number; phase: number; prog: number; gx: number; gy: number; gz: number;
   intr: string; finished: boolean; interId: number;
+  /**
+   * Stage E2a (rhythm.ts): sleep pressure 0..1 (rhythmSleep), thermal load −1..1 (rhythmHeat) and the position at the
+   * last tick (for the work of moving). Absent until their switch is on, so worlds with the switches off are unchanged.
+   */
+  slp?: number; heat?: number; hpx?: number; hpy?: number; hpz?: number;
   // perception snapshot, refreshed at decision points
   seen: number[]; seenAt: number; sight: number;
   ownMales: number; strangers: number; strangerMales: number; strangerTroop: number; isolated: number; nearestStranger: number;
@@ -163,7 +168,7 @@ export type SimWorld = World & { sim: SimState };
  * ChimpX and SimState keys that exist only once their mechanism has fired (so worlds with the switch off keep their
  * shape and hashes). The save check (src/persist/envelope.ts worldShapeProblem) ignores them.
  */
-export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'en'];
+export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'en', 'slp', 'heat', 'hpx', 'hpy', 'hpz'];
 export const OPTIONAL_SIM: readonly string[] = ['fission'];
 
 export function newX(): ChimpX {
