@@ -151,7 +151,7 @@ Code 587054f (c16-moving-together on `main` aa950b1: hunting fix and C14 in both
 | Share reaching 3 adult males | 0.68 | 0.67 |
 | Adult males per patrol | 2.68 | 2.57 |
 
-- Patrol size does not rise. **The number of patrols rises by a third** (0.44 → 0.60 per community-week in this window). That is the quantity C14 fitted `patrolH0` to, so it would need its own look if this change merges.
+- Patrol size does not rise. **The number of patrols rises by a third** (0.22 → 0.30 per community-week in this window: 6 community-runs of 25.7 weeks). That is the quantity C14 fitted `patrolH0` to (0.30, on its own window of 90 days after a 180-day burn-in), so it needs its own look if this change merges.
 
 **Why the effect is smaller than predicted, as I read it.**
 - Parting within an hour fell by about a third (accompanied animals alone 60 min later: 0.29 → 0.19–0.22), not by the two thirds the pair arithmetic gave. Persistence only governs own trips to trees. The other ways of parting are untouched: trips to water, drifting to crowns beyond the 50 m link, followers dropping out, leaving after the 13-min cap, and nesting apart. I have not measured their shares.
