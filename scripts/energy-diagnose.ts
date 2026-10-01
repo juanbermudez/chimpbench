@@ -118,7 +118,12 @@ for (const seed of seeds) {
       const din = L ? L.in - (prevInfIn.get(id) ?? L.in) : 0;
       if (L) { B.res += L.res / reserveCap(c, P); B.kin += din; prevInfIn.set(id, L.in); }
       // daytime nursing: milk drunk this tick (any act); daytime eating: own food swallowed this tick
-      if (light) { B.dayTicks++; if (milk > 0) B.nurseDay++; if (din - milk > 1e-9) B.eatDay++; }
+      // (ledger off: the nurse act, and the forage act on the ground or in a crown)
+      if (light) {
+        B.dayTicks++;
+        if (L ? milk > 0 : c.action === 'nurse') B.nurseDay++;
+        if (L ? din - milk > 1e-9 : c.action === 'forage' && (c.targetId < 0 ? c.position[1] <= 0.05 : ix(c).phase === 2)) B.eatDay++;
+      }
       if (m && m.alive && ix(m).en) { const r = ix(m).en!.res / reserveCap(m, P); B.mothers++; B.motherRes += r; const st = start.get(id); if (st) { st.mRes += r; st.mN++; } }
     }
     milkTick.clear();
