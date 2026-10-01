@@ -839,12 +839,13 @@ This is tested with playback ([§16](#16-field-experiments)).
   - Viability: no deaths in the window in either arm. Over 4 to 5 re-draws per arm and seed, median adult hunger is 0.003 and 0.011 higher with the fix and the lactating-female median 0.012 and 0.018 higher; single runs vary by 0.02–0.04, so a rise of 0.01–0.02 cannot be excluded.
   - Not resolved by 30 days: kills per successful hunt (2 observed), the odds per adult male (4 hunted encounters), who captures, seasonality and bursts (T-HUN-4 to T-HUN-9).
   - The ablation set `hunting` (`huntEncounter` 0, `huntExtraKillP` 0) reproduces the model before the fix exactly.
-- **Measured (field, encounter fix; development seeds 48 and 7 after a 30-day burn-in, direction checks, not a proof):**
-  - 3 months against the ablation set (`preySightFactor` 2.86): colobus encounters 3.85 per 100 follow-hours (10.84); hunts follow 6.8% of them (T-HUN-3: 12 of 177; ablation 3.8%, 19 of 501; band 5–40%); 14.2 observed hunts per community-year (T-HUN-1; ablation 27.7; band 5–25), 34.5 in truth (61.5).
-  - 6 months with the fix on: encounters 3.83 per 100 h; T-HUN-3 5.8% (20 of 346), inside its band with an interval that still reaches below 5%; T-HUN-1 15.9 (47 observed hunts; truth 34.5).
-  - Still off: success 17% observed and 20% in truth (T-HUN-2, band 50–80%; 13 of 102 hunts were left with one hunter and 61 with two, on the unchanged design curve); kills per successful hunt 1.00 on 7 observed successes, 1.35 in truth (27 captures in 20 successes; T-HUN-7 needs more observed successes than 6 months give).
-  - Held-out checks, untuned (6 months): the odds of hunting rise 4.4 times per adult male (T-HUN-4, band 1.05–1.8; parties with fewer than two adult males cannot start a hunt); hunts do not track fruit (T-HUN-5 r² 0.007) and are not clustered (T-HUN-6 0.78, band ≥ 1.5); every observed captor is an adult male (T-HUN-8 1.00, band 0.8–0.95).
-  - Viability: no deaths in any run; median hunger of adults and of lactating females does not rise (4 draws per arm and seed: −0.001 and −0.006; 0.000 and −0.016).
+- **Measured (field, encounter fix; development seeds 48 and 7 after a 30-day burn-in, on main f24c9ae; direction checks, not a proof):**
+  - 3 months against the ablation set (`preySightFactor` 2.86): colobus encounters 4.53 per 100 follow-hours (11.58); hunts follow 7.1% of them (T-HUN-3: 15 of 210; ablation 5.3%, 28 of 533; band 5–40%); 14.9 observed hunts per community-year (T-HUN-1; ablation 23.7; band 5–25), 40.6 in truth (61.5).
+  - 6 months with the fix on: encounters 4.24 per 100 h (Kanyawara 3.73); T-HUN-3 6.2% (24 of 385), inside its band with an interval that still reaches below 5%; T-HUN-1 13.9 (41 observed hunts; truth 34.8).
+  - Still off: success 21% observed and in truth (T-HUN-2, band 50–80%; 17 of 103 hunts were left with one hunter and 58 with two, on the unchanged design curve); kills per successful hunt 1.10 on 10 observed successes, 1.14 in truth (T-HUN-7, band 1.2–2).
+  - Held-out checks, untuned (6 months): the odds of hunting rise 9.4 times per adult male (T-HUN-4, band 1.05–1.8; parties with fewer than two adult males cannot start a hunt); hunting tracks fruit on one seed of two (T-HUN-5 r² 0.38 and 0.00); monthly counts are not clustered enough (T-HUN-6 1.36, band ≥ 1.5); 9 of 11 observed captors are adult males (T-HUN-8 0.82, band 0.8–0.95).
+  - Viability: no death by starvation in any run; median hunger of adults and of lactating females does not rise (4 draws per arm and seed: +0.007 and 0.000; +0.002 and +0.002).
+  - The fit was made before the moving-together stage was merged; on the merged model the fit statistic reads 3.92 per 100 h (3.81 before), within its run-to-run variation of about 10%. Re-fit at the freeze.
   - The ablation set `encounters` (`preySightFactor` 2.86) reproduces the model before the fix exactly.
 
 ---
