@@ -1,21 +1,22 @@
-// Captures the app screenshots used by the guide (docs/architecture.html) into docs/img/*.webp.
-// Usage: node scripts/guide-shots.mjs [url] [--only overview-dawn,mind-decision] [--seed 7]
-//   Shots: overview-dawn, mind-decision (mind), close-party, keep-clear (writes keep-clear-off too), society-kinship,
-//   society-dominance, experiment-shift (experiment), storm, night. The model-dependent ones (mind,
-//   experiment) are skipped while /api/decide/status is not ready, so a busy model never overwrites them;
-//   recapture them alone later with --only mind,experiment.
-//   url defaults to the running `pnpm dev` at http://127.0.0.1:5173 (real GLiNER model, so the Mind tab shows real
+// Captures the app screenshots used by the About page (about.html) into docs/img/*.webp, on the 8 km field map (the
+// app default).
+// Usage: node scripts/guide-shots.mjs [url] [--only overview-dawn,follow] [--seed 7]
+//   Shots: overview-dawn, follow, community-panel, map-scale, experiment-shift (experiment), society-kinship,
+//   society-dominance, close-party, storm, night. The model-dependent one (experiment) is skipped while
+//   /api/decide/status is not ready, so a busy model never overwrites it; recapture it alone later with --only experiment.
+//   url defaults to the running `pnpm dev` at http://127.0.0.1:5173 (the server's GLiNER model, so the Mind tab shows real
 //   probabilities). This script never starts or stops a server on 5173. If 5173 is unreachable it uses a model-free
 //   server on 5196, starting one (MGOGO_NO_MODEL=1) itself if needed and stopping it again at the end.
 // The page runs with ?perf=1 (no saving, so the browser profile's simulations are untouched, plus skipHours/quality
-// hooks) in a throwaway headless profile. Frames render at devicePixelRatio 2 and are downscaled, so UI text stays crisp.
+// hooks) and ?provider=server (no browser-model download) in a throwaway headless profile. Frames render at
+// devicePixelRatio 2 and are downscaled, so UI text stays crisp.
 import { mkdir, writeFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 const { chromium } = await import('/Users/juanbermudez/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs');
 
 const args = process.argv.slice(2);
 const flag = name => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : undefined; };
-const ALIAS = { mind: 'mind-decision', experiment: 'experiment-shift', society: 'society-kinship,society-dominance' };
+const ALIAS = { experiment: 'experiment-shift', society: 'society-kinship,society-dominance' };
 const only = flag('--only')?.split(',').flatMap(n => (ALIAS[n] ?? n).split(','));
 const seed = Number(flag('--seed') ?? 7);
 const root = new URL('../', import.meta.url).pathname;
@@ -89,118 +90,90 @@ const chimpTab = async tab => { if (await page.locator('.rp-chimp').isHidden()) 
 const box = async sel => { const b = await page.locator(sel).first().boundingBox(); return b && { x: Math.max(0, b.x - 1), y: Math.max(0, b.y - 1), width: b.width + 2, height: b.height + 2 }; };
 
 try {
-  await page.goto(`${base}/?perf=1&seed=${seed}&profile=compressed`, { waitUntil: 'load' }); // the guide shows the compressed map
-  await until(() => document.querySelector('.loading')?.classList.contains('done'), null, 90000);
+  await page.goto(`${base}/?perf=1&seed=${seed}&provider=server`, { waitUntil: 'load' }); // field map (the app default)
+  await until(() => document.querySelector('.loading')?.classList.contains('done'), null, 120000);
   await until(() => window.__MGOGO__?.snapshot().tick > 0);
   // Transient toasts are not part of the views being documented.
   await page.addStyleTag({ content: '.toasts{display:none!important}' });
   await perfHook('quality', 'high');
   await wait(4000);
 
+  // A new field world opens in the close view on the selected animal (West's alpha), still in its night nest.
   if (want('overview-dawn')) await save('overview-dawn');
 
-  // The dawn prologue settles to 1 min/s by 07:15; wait for it so later scenes run at a watchable speed.
-  await until(() => window.__MGOGO__.snapshot().hour > 7.3, null, 240000);
+  // Mid-morning: the chimps have left their nests and are feeding and travelling.
+  if ((await snap()).hour < 8.4) { await perfHook('skipHours', 8.4 - (await snap()).hour); await wait(4000); }
 
-  if (withModel) await policy('lockstep');
+  // Strategy view following the selected chimp, zoomed out two wheel steps so its surroundings show.
+  const HALF = { y: 0, width: VIEW.width / 2, height: VIEW.height };
+  if (want('follow') || want('community-panel')) {
+    await key('r'); await wait(2500);
+    await page.mouse.move(VIEW.width * 0.47, VIEW.height * 0.5);
+    for (let i = 0; i < 2; i++) { await page.mouse.wheel(0, 240); await wait(1500); }
+    if (want('follow')) await save('follow', { clip: { x: VIEW.width / 4, ...HALF }, width: 800 });           // the chimp centred, the "Following …" pill below
+    if (want('community-panel')) await save('community-panel', { clip: { x: VIEW.width / 2, ...HALF }, width: 800 });   // communities, parties and the member tiles
+  }
 
-  if (want('mind-decision') && withModel) {
-    // The default roster is the selected chimp (West's alpha): wait for real model decisions, preferring one where
-    // GLiNER and the rules disagree, so the strip shows both.
+  if (want('map-scale')) {
+    // Reset camera frames the whole 8 km map: community ranges, party markers and the scale bar.
+    await page.locator('[data-act="reset-camera"]').first().click(); await wait(4000);
+    await save('map-scale');
+  }
+
+  if (want('experiment-shift') && withModel) {
+    // Playback near the selected chimp's party; the Mind tab then pairs the decision before and after it.
+    await policy('lockstep');
+    await chimpTab('mind');       // the selected animal's tile: the camera follows it again
+    await key('r'); await wait(2500);
     await until(() => { const m = window.__MGOGO__.snapshot().model; return m.ready && m.applied > 0; }, null, 120000);
-    await chimpTab('mind');
-    // A shared model server can be busy: take a disagreement if one comes within 2 minutes, else any applied answer.
-    const start = Date.now();
-    while (Date.now() - start < 300000) {
-      const t = (await snap()).model.lastTrace, late = Date.now() - start > 120000;
-      if (t && t.source === 'model' && t.applied && t.probabilities.length >= 3 && (late || t.choice !== t.rules)) break;
-      await wait(1000);
-    }
-    await wait(800);
-    await save('mind-decision', { clip: await box('.inspector'), width: 900 });
-  }
-
-  if (want('close-party')) {
-    await chimpTab('overview');   // the chimp view with needs, personality and skills beside the forest
-    await key('c'); await wait(3500);
-    await save('close-party');
-    await key('r'); await wait(1500);
-  }
-
-  if (want('keep-clear')) {
-    // Keep-clear camera: a close orbit around the selected chimp at the azimuth where turning the fade off changes the
-    // middle of the frame most (a trunk or crown in front of the party). Captured twice from the same paused moment:
-    // fades forced off (a debug switch), then live. Side panels hidden.
-    await key('c'); await wait(2500);
-    await key('b'); await key('i'); await wait(900);
-    // The camera follows the selected chimp: its "Following …" pill is chrome, not part of the keep-clear comparison.
-    const noPill = await page.addStyleTag({ content: '.follow-ind{display:none!important}' });
-    const fadeOff = on => page.evaluate(v => { document.querySelector('canvas').__env.debug.fadeOverride = v; }, on ? 0 : null);
-    const centre = { x: VIEW.width * .2, y: VIEW.height * .15, width: VIEW.width * .6, height: VIEW.height * .7 };
-    let best = { az: 0, d: -1 };
-    for (let k = 0; k < 12; k++) {
-      const az = k * Math.PI / 6;
-      await page.evaluate(a => document.querySelector('canvas').__env.rig.setOrbit(14, 0.62, a, true), az); await wait(1100);
-      const live = await page.screenshot({ type: 'png', clip: centre, scale: 'css' });
-      await fadeOff(true); await wait(350);
-      const off = await page.screenshot({ type: 'png', clip: centre, scale: 'css' });
-      await fadeOff(false);
-      const d = await encoder.evaluate(async ([a, b]) => {
-        const load = async s => createImageBitmap(await (await fetch(`data:image/png;base64,${s}`)).blob());
-        const [ia, ib] = [await load(a), await load(b)], w = 240, h = Math.round(w * ia.height / ia.width);
-        const px = img => { const c = new OffscreenCanvas(w, h), g = c.getContext('2d'); g.drawImage(img, 0, 0, w, h); return g.getImageData(0, 0, w, h).data; };
-        const pa = px(ia), pb = px(ib); let sum = 0; for (let i = 0; i < pa.length; i += 4) sum += Math.abs(pa[i] - pb[i]) + Math.abs(pa[i + 1] - pb[i + 1]) + Math.abs(pa[i + 2] - pb[i + 2]);
-        return sum / (w * h);
-      }, [live.toString('base64'), off.toString('base64')]);
-      if (d > best.d) best = { az, d };
-    }
-    console.log(`  keep-clear azimuth ${(best.az * 180 / Math.PI).toFixed(0)}°, mean change ${best.d.toFixed(1)}`);
-    await page.evaluate(a => document.querySelector('canvas').__env.rig.setOrbit(14, 0.62, a, true), best.az); await wait(1800);
-    await key(' ');   // pause, so both frames show the same moment from the same spot
-    await fadeOff(true); await wait(900);
-    await save('keep-clear-off');
-    await fadeOff(false); await wait(1800);
-    await save('keep-clear');
-    await key(' ');
-    await noPill.evaluate(el => el.remove());
-    await key('b'); await key('i'); await key('r'); await wait(1500);
+    await key('e'); await wait(500);
+    await page.locator('[data-kind="playback-stranger"]').click();
+    await until(() => !document.querySelector('.shift')?.classList.contains('waiting'), null, 90000).catch(() => {});
+    await wait(2500);
+    await save('experiment-shift');
+    await key('Escape'); await wait(400);
+    await policy('async');
   }
 
   if (want('society-kinship') || want('society-dominance')) {
     await key('t'); await wait(800);
     for (const view of ['kinship', 'dominance']) {
       if (!want(`society-${view}`)) continue;
-      await page.locator(`[role="tab"][data-sview="${view}"]`).click(); // the community panel has shortcut buttons with the same data-sview await wait(900);
+      await page.locator(`[role="tab"][data-sview="${view}"]`).click();   // the community panel has shortcut buttons with the same data-sview
+      await wait(900);
       await save(`society-${view}`);
     }
     await key('Escape'); await wait(500);
   }
 
-  if (want('experiment-shift') && withModel) {
-    // Playback near the selected chimp's party; the Mind tab then pairs the decision before and after it.
-    await chimpTab('mind');
-    await key('e'); await wait(500);
-    await page.locator('[data-kind="playback-stranger"]').click();
-    await until(() => !document.querySelector('.shift')?.classList.contains('waiting'), null, 60000).catch(() => {});
-    await wait(2500);
-    await save('experiment-shift');
-    await key('Escape'); await wait(400);
+  if (want('close-party')) {
+    // The close view on a party: pick the largest social or foraging party of the selected community and follow it.
+    if (await page.locator('.rp-comm').isHidden()) { await page.locator('[data-act="panel-back"]').click(); await wait(500); }
+    const idx = await page.evaluate(() => {
+      const rows = [...document.querySelectorAll('.cp-party')].map((b, i) => ({ i, kind: b.querySelector('.cp-pk')?.textContent.trim() ?? '', n: Number(b.querySelector('.cp-ps')?.textContent) || 0 }));
+      const best = rows.filter(r => /^(Social|Foraging)/.test(r.kind)).sort((a, b) => b.n - a.n)[0] ?? rows.sort((a, b) => b.n - a.n)[0];
+      return best ? best.i : -1;
+    });
+    if (idx >= 0) { await page.locator('.cp-party').nth(idx).click(); await wait(2500); }
+    await chimpTab('overview');   // the chimp view with needs, personality and skills beside the forest
+    await key('c'); await wait(4500);
+    await save('close-party');
+    await key('r'); await wait(1500);
   }
-
-  if (withModel) await policy('async');
 
   if (want('storm')) {
     await perfHook('intervene', 'storm');
     await until(() => window.__MGOGO__.snapshot().environment.rain > 0.5, null, 30000).catch(() => console.log('  (rain did not reach 0.5)'));
     await wait(2500);
-    await key('c'); await wait(3000);
+    await key('c'); await wait(3500);
     await save('storm');
     await key('r'); await wait(1000);
   }
 
   if (want('night')) {
     const h = (await snap()).hour;
-    await perfHook('skipHours', ((21.5 - h) + 24) % 24); await wait(5000);
+    await perfHook('skipHours', ((21.5 - h) + 24) % 24); await wait(6000);
+    await key('r'); await wait(2500);
     await save('night');
   }
 } catch (error) {
