@@ -5632,6 +5632,50 @@
    "notes": "Thirst relief per hour at a drinking site."
   },
   {
+   "id": "driveAvgH",
+   "group": "needs",
+   "value": 24,
+   "units": "h",
+   "range": [
+    12,
+    48
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.25,
+    1000
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "energyTick",
+   "file": "src/sim/energy.ts",
+   "notes": "Stage E1e: time constant of the running average of energy spent per hour, the animal's expectation of what the coming hours will cost: one day, the cycle over which expenditure repeats (design)."
+  },
+  {
+   "id": "driveFirstDayH",
+   "group": "needs",
+   "value": 12,
+   "units": "h",
+   "range": [
+    11,
+    13
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    23
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "openDrive",
+   "file": "src/sim/energy.ts",
+   "notes": "Stage E1e: the waking day an animal expects before it has slept once in the simulation (sets the sleep pressure taken as its bedtime): 12 h, the equatorial photoperiod (physics). Replaced by its own measure after its first night."
+  },
+  {
    "id": "droughtCropFactor",
    "group": "observer",
    "value": 0.3,
@@ -12271,6 +12315,29 @@
    "file": "src/sim/energy.ts",
    "integer": true,
    "notes": "Stage E1b (docs/staging/e1b-prereg.md), read only with energyLedger 1: 1 = the gut holds digesta (dry matter in a foregut and fibre in a hindgut, src/sim/energy.ts) instead of energy: each food fills the foregut by its measured dry matter per kcal, fibre is fermented or passed out in the hindgut at its measured digestibility, hunger reads foregut fill, and absorbing costs digestaTefFrac. 0 = the E1 ledger (hash-identical)."
+  },
+  {
+   "id": "ledgerDrive",
+   "group": "needs",
+   "value": 0,
+   "units": "flag",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "driveOn",
+   "file": "src/sim/energy.ts",
+   "integer": true,
+   "notes": "Stage E1e (docs/staging/e1e-prereg.md), read only with energyLedger 1: 1 = a two-signal appetite. Hunger = the energy still needed before the next chance to feed (reserve deficit, less what the gut will yield, plus the expected spending over the waking time left and the fast after it, the waking time read from sleep pressure) as a share of what the animal could eat in that time, times 1 - fill^2 (satiation near distension); trees and nursing are valued by the energy a bout can deliver. 0 = the E1/E1b readout (hash-identical)."
   },
   {
    "id": "ledgerFallbackKcalPerMin",

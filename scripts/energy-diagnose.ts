@@ -61,6 +61,9 @@ function classesOf(c: Chimp, young: Map<number, number>): Cls[] {
 for (const seed of seeds) {
   const w = createWorld(seed, { profile, params });
   const P = paramsOf(w), on = P.energyLedger === 1;
+  // growth, gestation and milk are charged per ecological tick at their natural rate: at ageRate > 1 (life course) the
+  // ledger undercounts them by that factor, so its budgets would be wrong (docs/simulation.md, energy ledger)
+  if (on && w.ageRate > 1) throw new Error(`energy-diagnose: the energy ledger is not valid at ageRate ${w.ageRate} (> 1); run at natural aging`);
   for (let i = 0; i < burnIn * DAY; i++) tickWorld(w);
   livingStart += w.chimps.filter(c => c.alive).length;
   const births0 = w.stats.births, dead0 = new Set(w.chimps.filter(c => !c.alive).map(c => c.id));

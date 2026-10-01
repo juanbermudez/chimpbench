@@ -653,7 +653,7 @@ export function executeAction(world: World, c: Chimp): void {
       if (!o || !o.alive) return finish(world, c);
       if (moveTo(world, c, o.position[0], o.position[1], o.position[2], WALK, 1.2)) {
         face(c, o);
-        if (x.v === V.PLANT) { if (ledgerOn(P)) sharePlant(o, P); else o.hunger = clamp(o.hunger - 0.08); }
+        if (x.v === V.PLANT) { if (ledgerOn(P)) sharePlant(c, o, P); else o.hunger = clamp(o.hunger - 0.08); } // the ledger: out of the giver's gut
         else {
           const amt = Math.min(0.2, c.carryingMeat);
           recordMeat(world, c, o);
@@ -917,9 +917,9 @@ function fallbackTick(world: World, c: Chimp): void {
     } else { const a = hash01(c.id, world.tick, 3) * Math.PI * 2; x.gx = px + Math.sin(a) * 0.8; x.gz = pz + Math.cos(a) * 0.8; }
   }
   if (x.gx !== 0 || x.gz !== 0) moveTo(world, c, x.gx, 0, x.gz, P.walkMps * 0.3, 0.2);
-  const got = eatFallback(world, c, TICK_HOURS);
-  if (ledgerOn(P)) eat(c, P, P.ledgerInfantIntake === 1 ? got * intakeSize(c, P) : got, 'fallback'); // E1c: by body size
-  else c.hunger = clamp(c.hunger - got);
+  // the ledger: the cell loses only what the gut takes (E1c: by body size); the timers: the hunger removed
+  if (ledgerOn(P)) { const k = P.ledgerInfantIntake === 1 ? intakeSize(c, P) : 1; eatFallback(world, c, TICK_HOURS, g => eat(c, P, g * k, 'fallback')); }
+  else c.hunger = clamp(c.hunger - eatFallback(world, c, TICK_HOURS));
 }
 
 function pairTick(world: World, c: Chimp, o: Chimp | undefined): void {

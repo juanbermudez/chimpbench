@@ -65,17 +65,22 @@ export function bestFallbackNear(world: World, x: number, z: number, sight: numb
   return best;
 }
 
-/** One tick of fallback feeding by `c` for `dtH` hours: returns the hunger removed (stage E1, energyLedger: the kcal offered) and depletes the cell. */
-export function eatFallback(world: World, c: Chimp, dtH: number): number {
+/**
+ * One tick of fallback feeding by `c` for `dtH` hours: returns the hunger removed (stage E1, energyLedger: the kcal
+ * eaten) and depletes the cell. `take` (the ledger) eats what is offered and returns what the animal actually took; the
+ * cell then loses only that share of a full tick's feeding (a full gut, or a small infant, removes less).
+ */
+export function eatFallback(world: World, c: Chimp, dtH: number, take?: (kcal: number) => number): number {
   const P = paramsOf(world), cell = P.forageCellM, s = simOf(world), time = world.time;
   const cx = Math.floor(c.position[0] / cell), cz = Math.floor(c.position[2] / cell);
   const cap = capacity(P, cx, cz);
   if (cap <= 0) return 0;
   const frac = stockFrac(world, P, cx, cz, time);
   const gain = (P.energyLedger === 1 ? P.ledgerFallbackKcalPerMin * 60 : P.fruitIntakePerH * P.fruitHungerFactor * P.fallbackRateRatio) * forageYield(world, c.position[0], c.position[2]) / ((P.forageYieldMin + P.forageYieldMax) / 2) * frac * dtH;
+  const used = take ? (gain > 0 ? take(gain) : 0) : gain, share = take ? (gain > 0 ? used / gain : 0) : 1;
   const k = keyOf(cx, cz);
-  (s.fallback ??= {})[k] = [Math.min(cap, (1 - frac) * cap + frac * dtH), time];
-  return gain;
+  (s.fallback ??= {})[k] = [Math.min(cap, (1 - frac) * cap + frac * dtH * share), time];
+  return used;
 }
 
 /** Daily: drop regrown cells so the saved state stays small. */
