@@ -316,7 +316,7 @@ Two independent designs answer the same brief. This one is [docs/decide-jev-desi
 **Benchmarks**: T-ACT-1–4, T-RNG-4, T-FOOD-2, T-FOOD-4, T-DEM-10, T-DEM-12 (fitted); T-ACT-5, T-RNG-5, T-FOOD-3, T-DEM-13, T-DEM-14, T-DEM-19, T-DEM-20 (held-out). New rows, registered as targets and never set: daily intake ≈ 2,500 kcal and feeding 309 ± 85 min per day [uwimbabazi2019]; reserves of nursing mothers depressed for about 6 months, then recovering [emeryThompson2012].
 **Success Criteria**: viability passes; daily kcal intake lands in its band without being set; the T-ACT rows are no worse; the lactation pattern has the right direction; the C8 finding (lactating females starving in the field) is explained by a named term of the balance.
 **Tests**: energy conservation per chimp per day (in − out = change in gut + change in reserves, exact); determinism; compressed goldens unchanged at switch 0.
-**Status**: Not Started
+**Status**: In Progress. E1 merged into `track-e` (c0d54ed), switch off: null under the kill criterion after 3 iterations (`docs/staging/e1-prereg.md`). Adults balance at about 1.2 × resting and feed 140–175 min a day (T-ENE-2 309 ± 85, miss low), so rest and grooming rise out of band. The C8 lactating-female starvation is explained: the timer food conversion was worth 4.6 kcal per feeding minute against 9.9–12.5 measured. With milk limited to the mother's daily yield, infants of 0.5–5 y run a 16–30 kcal/day deficit. Next, in parallel (1 October): **E1b** digestion (apparent digestibility and a bulk-limited gut; branch `e1b-digestion`) and **E1c** infant energetics (growth from surplus, night nursing in the nest, infant intake in kcal; branch `e1c-infants`).
 
 ## Stage E2: Daily rhythm from body state (heat, water, sleep)
 **Goal**: Midday rest, nesting time and drinking happen because of the body and the light, with no hour written into a score.
@@ -325,7 +325,7 @@ Two independent designs answer the same brief. This one is [docs/decide-jev-desi
 **Benchmarks**: `activeDayH` (males 11 h 34 min, lactating females 10 h 57 min, batesByrne2009) moves from parameter to target. New rows, sources to add first: hourly activity profile, drinking bouts per day, nest-building time relative to sunset. T-ACT-1–4 again.
 **Success Criteria**: with the clock rules off, nesting and midday rest still fall inside their bands; lint finds no hour-of-day literal in rest, nest or shelter scoring.
 **Tests**: water conservation; lint test; night safety (no travel deaths or all-night foraging on 5 seeds).
-**Status**: Not Started
+**Status**: In Progress. E2a merged into `track-e` (6eb244a), switches `rhythmSleep`, `rhythmHeat`, `rhythmFreeNight` off (`docs/staging/e2a-prereg.md`). Emerges without any hour in the scores: nesting at dusk (T-RHY-4 inside), active day 11 h 22 min (T-RHY-1 inside), staying in nests all night with the night menu off. Misses: no departures before sunrise (T-RHY-3); lactating females' active day is not the shorter one; midday rest does not emerge (54% → 22%) and heat is not the cause at Kibale temperatures (dissipation exceeds production below about 33 °C in shade). The baseline's late feeding peak was made by the clock. Midday rest is handed to E1b (digestive pause).
 
 ## Stage E3: Urgency replaces fixed choice constants
 **Goal**: How decisively and how persistently a chimp acts depends on how pressing its deficits are.
@@ -334,7 +334,7 @@ Two independent designs answer the same brief. This one is [docs/decide-jev-desi
 **Benchmarks**: feeding bout lengths and patch residence (`scripts/movement-metrics.ts`), T-PTY-1, T-RNG-4 (fitted); T-FOOD-4, T-FOOD-5, T-FOOD-6 (held-out); the Gombe held-out movement validation, run by the integrator only.
 **Success Criteria**: bout-length distributions no further from the field than with the fixed constants; held-out distance not higher.
 **Tests**: gate replay; identical choices to the current softmax at switch 0.
-**Status**: Not Started
+**Status**: In Progress (branch `worktree-agent-aed8770ac2d51431d`). Iterations 1–2 run; iteration 3 tests the urgency switches on the physiological stack (`energyLedger` + `rhythmSleep` + `rhythmHeat`), since with timer readouts fatigue was near zero and urgency was mostly loneliness.
 
 ## Stage E4: Slow internal states replace dice and gates
 **Goal**: Rare acts arise from a chimp's standing state, not from a probability roll that opens an option.
@@ -344,4 +344,4 @@ Two independent designs answer the same brief. This one is [docs/decide-jev-desi
 **Benchmarks**: T-PAT-1 (fitted through `patrolH0` today; relabelled so a pass counts as emergent), T-HUN-1, T-HUN-3, T-LET-1, T-SOC-7, T-SOC-9 (fitted); T-PAT-2, T-PAT-3, T-PAT-8, T-HUN-4, T-HUN-5, T-HUN-6, T-LET-3, T-LET-6, T-SOC-5, T-SOC-10, T-COM-2 (held-out). New direction-only rows from the hormone literature.
 **Success Criteria**: no option is opened by a dice roll; fitted patrol and hunt rows are no worse; held-out distance falls.
 **Tests**: integrator bounds and determinism; each removed probability has an ablation row in `data/proof-ablations.json`.
-**Status**: Not Started
+**Status**: In Progress (branch `worktree-agent-a167d633d1a24ba31`). E4a pre-registered: three leaky integrators (stress, male arousal, affiliation) replace the escalation and redirect dice and `rainDisplayP` (switches `endoStates`, `endoEscalate`, `endoRedirect`, `endoRainDisplay`). Code written; first runs pending.
