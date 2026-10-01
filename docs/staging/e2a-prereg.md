@@ -205,3 +205,46 @@ light are pending (assumed).
 Expected: the afternoon climb of rest disappears and the late feeding share recovers; rest at midday falls further
 below the baseline (nothing but satiation and the small thermal load raises it), so T-ACT-4 (rest + groom) is
 expected to fall, possibly out of its band; nest building a few minutes later and the active day a few minutes longer.
+
+Result (seeds 48 and 7, 30 + 30 days; baseline in brackets):
+
+| | Switches on | Baseline | Field or staged target |
+| --- | --- | --- | --- |
+| Leaves nest, min after sunrise (median, p10–p90) | 45 (19 to 51) | 15 (11 to 20) | around sunrise; T-RHY-3 share before sunrise 0.05–0.35: **0.00, miss** (baseline 0.00) |
+| Starts the last nest, min before sunset (median) | 10 | 17 | T-RHY-4 −30 to +90: inside |
+| Last nest entry, min after sunset (median, p10–p90) | −5 (−27 to 13) | −12 (−30 to 9) | — |
+| Active day, all adults | 11 h 22 min | 11 h 39 min | T-RHY-1 10.5–12.0 h: inside |
+| Active day, males / lactating females | 11 h 20 / 11 h 27 | 11 h 39 / 11 h 40 | 11 h 34 / 10 h 57: **sex contrast has the wrong sign** |
+| Nests entered per evening | 1.08 | 1.00 | — |
+| Feeding, first 3 h / middle / last 3 h of the day | 63% / 39% / 32% | 62% / 31% / 39% | T-RHY-9 early and late peaks: **early yes, late no** |
+| Rest, first 3 h / middle / last 3 h | 6% / 21% / 26% | 7% / 38% / 22% | T-RHY-9 highest in the middle: **no** |
+| Rest at midday on hot / mild / rainy days | 22.5% / 21.5% / 24.1% | 54.4% / 54.1% / 63.8% | T-RHY-8 rest rises with heat: **no contrast** |
+| Thermal load at midday (mean; share above 0.1) | 0.01; 4.9% | — | — |
+| 07:00–19:00: rest / groom / feed / travel | 18.0% / 15.5% / 39.7% / 18.6% | 25.7% / 11.9% / 38.9% / 17.7% | T-ACT rows (observer scorecard below) |
+| Shelter in rain 0.3–0.5, adults / juveniles | 19% / 23% | 61% / 74% | no quantitative field value |
+| Night time out of a nest, menu on | 0.0% | 0.0% | T-RHY-5 0–0.05: inside (field 1.8–3.3% of activity records; the model has none) |
+| Night time out of a nest, **night menu off** | 0.0%; 0.3 min of feeding or travel per animal-night; 0 deaths | — | — |
+| Mean hunger, adults / lactating females | 0.35 / 0.51 | 0.40 / 0.55 | — |
+
+Reading:
+- The afternoon climb of rest is gone, as expected. Rest is now flat from noon to dusk (22–25%).
+- **Midday rest does not emerge.** With the clock literal and the temperature bonus off, rest at midday falls from 54%
+  to 22%, and hot, mild and rainy days do not differ. The heat balance says why: at 22–24 °C under canopy the assumed
+  dissipation capacity (3.0 W/kg at 24 °C) exceeds production even for an animal feeding in a sunlit crown (about
+  2.9 W/kg), so almost no heat is stored. The same physiology puts the upper critical temperature of a resting
+  chimpanzee in shade near 33 °C and makes full sun untenable within tens of minutes, which agrees in direction with
+  Budongo (time in the sun falls from about 30 °C, kosheleff2009). First-principles conclusion: at Kibale's
+  temperatures the midday rest is not a heat response. The physiology that is missing is digestion: gut fill after
+  the morning feeding peak limits further intake and forces a pause. That is stage E1's gut state; the rest score
+  has only the stand-in `hunger < 0.2 → +0.2` today.
+- The simulated weather cannot test the hot-against-cool contrast: no day in 60 had a midday mean below 21 °C.
+- **The late feeding peak of the baseline was made by the clock**: it is the rebound after the scripted midday rest.
+  Without it, feeding declines monotonically from the morning.
+- Nest timing is set mainly by the light curve (`daylight`, a smoothstep of sun altitude from −8° to +12°, an
+  existing design scale and not an illuminance), and only weakly by sleep pressure (it moves the evening about
+  10 minutes earlier than the mirror image of the morning). Animals leave late (45 min after sunrise, when
+  `daylight` reaches about 0.9) and none before sunrise.
+- Night: with the night and dusk menus off, rules-driven chimps stay in their nests on darkness and sleep pressure
+  alone: 0.0% of night time out of a nest, no night deaths.
+- Rain: sheltering falls to a third of the baseline's and rises with rain; small animals shelter more (they cool
+  faster), as predicted. No field value exists to judge the level.

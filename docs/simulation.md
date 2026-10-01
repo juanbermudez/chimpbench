@@ -376,6 +376,12 @@ A few `ChimpX` fields are written but never read (`mateAsk/mateAskAt`, `stranger
 
 At +0.06/h, hunger climbs from a typical 0.3 to 1 in about 12 waking hours without food. Mood is derived each tick from action and state (`moodFor`).
 
+**Daily rhythm from body state (stage E2a, [rhythm.ts](../src/sim/rhythm.ts); three switches, off by default; [staging/e2a-prereg.md](staging/e2a-prereg.md)).** No hour of the day is read by this mechanism.
+- **`rhythmSleep`.** Sleep pressure `S` (`chimp.sim.slp`, 0..1) rises awake as `1 − (1 − S)·exp(−dt/18.2 h)` and falls asleep in a nest as `S·exp(−dt/4.2 h)` (the two-process model's process S; human time constants, *assumed*). Light suppresses felt sleepiness: `energy = 1 − S·(1 − daylight)`, which replaces the energy timers. A nest (build or stay) is worth `(1 − daylight)·(0.9·S + 2.2)`, and a new nest is offered only while `daylight < 1`. This replaces the nest clock ramp, the `hour ≥ 12` gate, the 05:45 cap of the night bout and the night rest bonus. Nest bouts follow light: 60–100 min in the dark, 4–9 min in changing light, 12–20 min in full light, and returning light cuts a bout drawn in the dark.
+- **`rhythmHeat`.** A thermal load `H` (`chimp.sim.heat`, −1..1) from a heat balance per kg: basal rate (Kleiber) × 1 asleep, 1.38 feeding, 1.25 otherwise; the work of the metres actually walked (3.8 J/kg/m) and climbed; sun under cloud and canopy (2% of open sky on the ground and for a resting animal, up to 50% at canopy height); losses between a vasoconstricted minimum and a vasodilated maximum plus evaporation, scaled by body − air temperature and tripled by a soaked coat. A surplus is stored (H > 0), a shortfall is a debt (H < 0). Rest gains `1.6·max(0, H)`; shelter is offered in rain (≥ 0.12) to an animal in debt at `1.6·max(0, −H)`. This replaces the midday rest literal, the temperature bonus, the midday rest bout and the shelter rule. The dissipation values are *assumed*: no thermoneutral zone has been measured for chimpanzees.
+- **`rhythmFreeNight`.** The rules policy's menu is not filtered by day phase ([§8](#8-decision-making)); models keep the night and dusk menus.
+- **Measured** (quick check, 2 seeds, 30 days; `scripts/rhythm-metrics.ts`): results and misses are in the pre-registration's Results section.
+
 **Condition** (`slowLife`):
 - Wounds heal 0.075 per eco-day.
 - Health relaxes (time constant 0.5 eco-day) toward `1 − 0.45·injury − 0.015·max(0, age − 45) − (0.3 if hunger > 0.9)`.
@@ -969,7 +975,7 @@ Cycling starts at the first-swelling age (10.2–11.4 y) once lactational amenor
 
 **Behavioral effects of weather:**
 - Rain shrinks sight, slows movement, and lowers foraging, travel, grooming and play scores.
-- Rain of 0.3 or more offers `shelter`.
+- Rain of 0.3 or more offers `shelter` (with `rhythmHeat` 1: rain of 0.12 or more, to an animal in heat debt; [§6](#6-individuals)).
 - **Heavy-rain onset** (rain crossing 0.35, `rainOnset`) interrupts everyone awake in daylight. In storms, 12% of adult males get a rain-display impulse (Goodall's "rain dance" [M/L]).
 
 **Stream** ([stream.ts](../src/sim/stream.ts)):
