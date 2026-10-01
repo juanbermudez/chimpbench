@@ -12,6 +12,7 @@ import { clamp, hash01, random } from './rng';
 import type { ParamId } from './params.gen';
 import { TICK_HOURS, TICK_SECONDS, byIdIn, huntOf, index, isTreeId, ix, simOf } from './state';
 import { resolveHunt } from './ecology';
+import { endoShared } from './endocrine';
 import { eatFruit, forageYield, fruitAt } from './phenology';
 import { bestFallbackNear, eatFallback, fallbackOn, fallbackStock, fallbackValue } from './fallback';
 import { recordAggression, recordConsolation, recordGrooming, recordMating, recordMeat, recordReconciliation, recordSupport } from './relations';
@@ -652,6 +653,7 @@ export function executeAction(world: World, c: Chimp): void {
           episode(world, o, 'food', `Got meat from ${c.name}`, c.id);
         }
         addBond(c, o.id, 0.03); addBond(o, c.id, 0.05);
+        if (P.endoStates === 1) endoShared(c, o, P); // stage E4a: sharing raises the affiliation state of both
         flashInteraction(world, 'share', c, o.id, [c.id, o.id], 0.3);
         episode(world, c, 'food', `Shared ${x.v === V.PLANT ? 'food' : 'meat'} with ${o.name}`, o.id);
         finish(world, c);

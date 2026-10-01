@@ -317,6 +317,7 @@ The slow step runs *before* the chimps in its tick. A chimp that dies in `slowLi
 | Hearing | `heardN/At/X/Z/Troop/Stim`, `lastHeard`; same-community call to join: `joinCall/Caller/At/X/Z/Rich` |
 | Social bookkeeping | `greet`, `support`, `groomRecv`, `coerce`, `lastDisplay/Call/Mate/Agg/FoodCall`, `victimOf/At`, `lostAt`, `coalA/B/At`, `rivalId`, `recon`, `consoleAt`, `consoledAt`, `gangAt`, `gangRoll` |
 | Impulses | `impulse`, `impulseTarget`, `impulseUntil`, `patrolRoll` (last patrol-hazard roll) |
+| Slow internal states (stage E4a, [endocrine.ts](../src/sim/endocrine.ts); absent until `endoStates` is on) | `arousal` (competitive arousal, adult males), `affil` (affiliation); the stress load is `chimp.stress` |
 | Life history | `cycleLen`, `cops`, `near`, `sireId`, `amenUntil`, `firstSwell`, `gestation`, `weanAge`, `weaned`, `caretaker`, `immigrantAge`, `disperser`, `transferTo`, `guardBy`, `carryDead`, `nestTree` |
 | Space | female core area `coreX/coreZ` |
 | Relationships and memory ([relations.ts](../src/sim/relations.ts)) | `tension` (directed 0..1 by partner id), `incident` (last incident per partner: `[time, code]`, code 0 threat given, 1 threat received, 2 attack given, 3 attack received), `month` (the memory month in progress: `start`, `startRank`, per-partner `partners` tallies, `events`, `encounters`, `lastEncounter`), `monthsSinceYear` |
@@ -463,6 +464,7 @@ Chimps in a tree climb down before walking more than 3 m, and climb once within 
 - **Infanticide:** for each attended infant under 1.5 y. Probability 0.004 if it is a stranger's infant and own adult males outnumber stranger males by 3 or more; 0.0005 if the chimp is a community alpha of under 30 days who did not sire the infant (or the mother's current pregnancy).
 - **Patrol** ([§11](#11-territory)): an hourly hazard for adult males with ≥ 3 own adult males in view, 08:00–15:30, no patrol running, rain < 0.3.
 - **Rain display:** drawn in `rainOnset` at storm onset for 12% of males of 15 y and over.
+- **Stage E4a switches** (off by default; [§10](#10-social-systems) "Slow internal states"): with `endoEscalate` the escalation impulse is not drawn, with `endoRainDisplay` the rain display is not drawn (the storm onset is noted in `world.sim.stormAt`). The options are then offered from the animal's standing state.
 - **Transfer:** drawn in `reproSlow` ([§13](#13-reproduction-and-life-history)).
 
 ---
@@ -685,8 +687,19 @@ All 30 actions. "Offered when" gives the main eligibility and score terms; `h` =
 - **Decided outcome** (`decided`):
   - Elo update with k = 100 and `lastConflict` set for both.
   - Loser stress +0.2 (+0.35 after a fight).
-  - With probability `0.08 + 0.15·aggression` the loser is primed to redirect aggression at a lower-ranked bystander [M].
+  - With probability `0.08 + 0.15·aggression` the loser is primed to redirect aggression at a lower-ranked bystander [M]. With `endoRedirect` (stage E4a) nothing is drawn: every loss is noted.
   - `stats.conflicts++` and the takeover check.
+**Slow internal states** (stage E4a, [endocrine.ts](../src/sim/endocrine.ts), [docs/staging/e4a-prereg.md](staging/e4a-prereg.md); switches `endoStates`, `endoEscalate`, `endoRedirect`, `endoRainDisplay`, all 0 by default, so default worlds are unchanged). Rare acts follow from an animal's standing state instead of a probability that opens an option.
+- **Three states in 0..1**, each matched to a hormone field teams measure in urine, each a leaky integrator `S += (target − S)·(1 − exp(−dt/τ))` stepped every slow step from the last perception, plus bounded kicks `S += k·(1 − S)` at events. No randomness. Every magnitude is a design assumption; the directions and the stress time scale come from the wild-chimpanzee endocrine studies listed in the registry notes (keys of `docs/staging/e-sources.md`, not yet in research.md, so the registry tags them assumed).
+  - **Stress load** (cortisol-like) is `chimp.stress` itself. Target: `stressFloor` + bereavement + `endoStressDeficitW`·(½ hunger + ½ (1 − cond)) + `endoStressStrangerW` with strangers in view. Kicks: `endoStressAggrKick` on starting a charge or attack and on being its target; `endoStressStrangerW` on hearing a stranger chorus. τ = `endoStressTauH` (3.4 h), and recovery is faster by `1 + endoAffilBufferK·affiliation`. Loss, win, grooming, reconciliation and consolation act on `stress` where they happen, as before.
+  - **Competitive arousal** (testosterone-like), adult males only. Target: `endoArousalOestrusW` × the largest swelling among parous, unrelated females of the community in view + `endoArousalRivalW` × rank closeness of the closest-rank adult male in view. Kick: `endoArousalWinKick` on a conflict won. τ = `endoArousalTauH` (6 h, assumed).
+  - **Affiliation** (oxytocin-like). Target: the bond with the partner while in grooming contact. Kicks: `endoAffilShareKick` on food sharing, `endoAffilRepairKick` on reconciliation and consolation. τ = `endoAffilTauH` (1 h, assumed).
+  - Not wired, so they remain tests: rank, hierarchy instability, time of day, patrols, intergroup conflict → affiliation.
+- **One scoring rule**: the constant score the dice-opened option had is the ceiling, and levels in 0..1 scale it.
+  - `endoEscalate`: an attack on an adult male within `escalateEloGap` Elo and `escalateDistM` is offered whenever the animal is an adult male with no aggression in the last 1.5 h, at `endoEscalateScore` × arousal × ½(aggression + tension toward him) × (1 − stress) × (1 − affiliation × bond).
+  - `endoRedirect`: after every lost conflict, for `endoStressTauH` and until the loser next aggresses, a charge at a dominated unrelated bystander is offered at stress × (`redirectBase` + `redirectAggrW`·aggression + `redirectTensionW`·t + `redirectStressW`).
+  - `endoRainDisplay`: for `impulseDurationH` after a daytime storm onset every adult male is offered the display once, at `rainDisplayScore` × arousal × boldness.
+  - With a switch on, its probability parameters are not read and nothing is drawn from `world.rng` (tests/sim-endocrine.test.ts).
 - **Coalitions** (`notifyAllies`) [M-H]. When a charge or attack starts, bystanders who are awake, within 25 m of the victim, and either males of 12 y and over or kin of either party may be alerted:
   - **Aggressor's side:** members of the aggressor's community with bond > 0.45 to the aggressor (or kin), within 15 m of the victim (25 m if the victim is a stranger). Probability `0.5 × bond`, or 0.8 against a stranger.
   - **Victim's side:** members of the victim's community with bond > 0.45 to the victim (or kin), within 15 m. Probability `0.5 × bond`.
@@ -1091,6 +1104,12 @@ Every evidence-tagged constant and every distance lives in the parameter registr
 | Escalation impulse | 0.002 + 0.006·aggression | per perception | `escalateImpulse*` `escalateEloGap` `escalateDistM` | design |  |
 | Infanticide impulse | 0.004 stranger / 0.0005 new alpha | per perception | `infanticideStrangerP` `infanticideNewAlpha*` `infanticideMaxAgeY` `infanticideMaleMargin` | [L] |  |
 | Rain display | 12% of adult males | per storm onset | `rainDisplay*` `impulseDurationH` | [M/L] | Goodall |
+| Slow-state switches (E4a) | 0 (off) | switch | `endoStates` `endoEscalate` `endoRedirect` `endoRainDisplay` | design | docs/staging/e4a-prereg.md; 0 = today's dice |
+| Slow-state time constants (E4a) | stress 3.4, arousal 6, affiliation 1 | eco-h | `endoStressTauH` `endoArousalTauH` `endoAffilTauH` | assumed | stress: urinary peak 135–270 min after an event (wittig2015 in e-sources) |
+| Stress load drivers (E4a) | deficit 0.3, strangers 0.2, aggression kick 0.1, affiliation buffer 1 | state | `endoStressDeficitW` `endoStressStrangerW` `endoStressAggrKick` `endoAffilBufferK` | assumed | directions from e-sources; sizes assumed |
+| Arousal drivers (E4a) | parous swollen female 0.6, close-rank rival 0.4, win kick 0.15; parous from 15 y | state | `endoArousalOestrusW` `endoArousalRivalW` `endoArousalWinKick` `endoParousAgeY` | assumed | oestrus direction from e-sources; the rest assumed |
+| Affiliation kicks (E4a) | sharing 0.5, reconciliation and consolation 0.3 | state | `endoAffilShareKick` `endoAffilRepairKick` | assumed | directions from e-sources |
+| Escalated attack score | 1.25 (ceiling with `endoEscalate`) | score | `endoEscalateScore` | design | moved literal |
 | Reconciliation window | 0.3 | h | `reconcileWindowH` | design | wild 14–22% reconciled |
 | Consolation window, bond | 0.15 h, ≥ 0.55 |  | `consoleWindowH` `consoleBondMin` | design [M] |  |
 | Pant-grunt repeat | 8 | h per dyad | `pantGruntRepeatH` | design |  |

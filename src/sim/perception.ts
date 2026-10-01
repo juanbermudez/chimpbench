@@ -264,7 +264,8 @@ function rollImpulses(world: World, c: Chimp, metPrey: number): void {
     const o = byId.get(id)!;
     if (o.troopId === c.troopId && o.sex === 'male' && o.age >= 15 && Math.abs(o.elo - c.elo) < P.escalateEloGap) {
       const dx = o.position[0] - c.position[0], dz = o.position[2] - c.position[2];
-      if (dx * dx + dz * dz < P.escalateDistM * P.escalateDistM && random(world) < P.escalateImpulseBase + P.escalateImpulseAggr * c.personality.aggression) { x.impulse = IMPULSE_ESCALATE; x.impulseTarget = id; x.impulseUntil = world.time + P.impulseDurationH; return; }
+      // stage E4a (endoEscalate): nothing is drawn; the attack is offered from the animal's standing state (candidates.ts aggression)
+      if (P.endoEscalate !== 1 && dx * dx + dz * dz < P.escalateDistM * P.escalateDistM && random(world) < P.escalateImpulseBase + P.escalateImpulseAggr * c.personality.aggression) { x.impulse = IMPULSE_ESCALATE; x.impulseTarget = id; x.impulseUntil = world.time + P.impulseDurationH; return; }
     }
     // Infanticide by males is documented within and between communities; rates are low and uncertain. [H occurs, L rates]
     if (o.age < P.infanticideMaxAgeY && o.motherId > 0) {

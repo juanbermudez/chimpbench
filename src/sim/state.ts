@@ -55,6 +55,8 @@ export interface ChimpX {
   victimOf: number; victimAt: number; lostAt: number;
   coalA: number; coalB: number; coalAt: number;
   rivalId: number;
+  /** Stage E4a (endoStates; src/sim/endocrine.ts): competitive arousal (adult males only) and affiliation, 0..1. Absent until the states run, so worlds with the switch off are unchanged. The stress load is chimp.stress. */
+  arousal?: number; affil?: number;
   // reproduction and life history
   cycleLen: number; cops: Record<number, number>; sireId: number; amenUntil: number; firstSwell: number; gestation: number;
   weanAge: number; weaned: boolean; caretaker: number; immigrantAge: number; disperser: boolean; transferTo: number;
@@ -140,6 +142,8 @@ export interface SimState {
   vacantUntil: Record<number, number>;
   /** Community hunting day (daily draw) until this time. */
   huntDay: Record<number, number>;
+  /** Stage E4a (endoRainDisplay): eco-hour of the last daytime storm onset; absent unless the switch is on. */
+  stormAt?: number;
   /** Stage C8 (disease.ts): the respiratory outbreak running in each community (id, start, virulence on the odds scale), and the next id. */
   outbreaks: Record<number, { id: number; start: number; v: number }>; nextOutbreak: number;
   /** Registry hash, scale profile and parameter overrides this world was created with (params.ts). Small plain data. */
@@ -153,8 +157,8 @@ export type SimWorld = World & { sim: SimState };
  * ChimpX and SimState keys that exist only once their mechanism has fired (so worlds with the switch off keep their
  * shape and hashes). The save check (src/persist/envelope.ts worldShapeProblem) ignores them.
  */
-export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt'];
-export const OPTIONAL_SIM: readonly string[] = ['fission'];
+export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'arousal', 'affil'];
+export const OPTIONAL_SIM: readonly string[] = ['fission', 'stormAt'];
 
 export function newX(): ChimpX {
   return {
