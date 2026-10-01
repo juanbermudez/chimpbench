@@ -283,7 +283,11 @@ function hear(world: World, o: Chimp, callId: number, kind: CallKind, caller: Ch
     return;
   }
   if (kind === 'travel-hoo') { // stage C10 addendum 1: a companion is setting off (candidates.ts raises following it)
-    if (o.troopId === caller.troopId) { x.hooFrom = caller.id; x.hooAt = world.time; }
+    if (o.troopId === caller.troopId) {
+      x.hooFrom = caller.id; x.hooAt = world.time;
+      // stage C13e (joinChoice; noticing): the hoo reaches every companion within earshot, seen or not, and makes it decide
+      if (paramsOf(world).joinChoice === 1 && o.age >= 5 && o.action !== 'nest') interrupt(world, o, `${caller.name} gave a travel hoo`, true);
+    }
     return;
   }
   if (kind === 'scream') {

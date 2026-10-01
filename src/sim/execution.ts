@@ -283,9 +283,25 @@ function onStart(world: World, c: Chimp): void {
         if (b === c || b.troopId !== c.troopId || b.age < 5 || b.action === 'nest' || (b.action === 'follow' && b.targetId === c.id) || (b.action === 'travel' && b.targetId === c.targetId)) continue;
         if (hd(b, c) <= P.partyLinkM) interrupt(world, b, `${c.name} set off`, true);
       }
+      // stage C13e (joinChoice, field; noticing): a silent departure on a trip to a tree is noticed only by companions who
+      // can see the leader go (it is inside their own sight radius and the party chain distance) and are not absorbed
+      // (feeding in a crown, grooming or being groomed, asleep); those get a decision point. A travel hoo reaches every
+      // hearer on its own (perception.ts). Definitions from existing state; design assumptions
+      const notice = !cue && P.joinChoice === 1 && P.partyFollowW > 0 && c.action === 'travel' && x.v === V.TREE && x.aux <= 0;
+      if (notice) {
+        const groomed = new Set<number>();
+        for (const g of idx.alive) if (g.action === 'groom' && g.targetId > 0 && ix(g).phase >= 1) groomed.add(g.targetId);
+        for (const b of idx.alive) {
+          if (b === c || b.troopId !== c.troopId || b.age < 5 || b.action === 'nest' || b.action === 'follow') continue;
+          const d = hd(b, c);
+          if (d >= P.partyLinkM || d > ix(b).sight) continue;
+          if ((b.action === 'forage' && isTreeId(b.targetId) && ix(b).phase === 2) || (b.action === 'groom' && ix(b).phase >= 1) || groomed.has(b.id)) continue;
+          interrupt(world, b, `${c.name} is moving off`);
+        }
+      }
       // party cohesion (field profile): companions notice a departure and may follow (candidates.ts, partyFollow*);
       // since stage C7a only goal-directed departures (travel) alert them, not an animal that is itself following
-      if (!cue && P.partyFollowW > 0 && (P.partyLeaderFollow !== 1 || c.action === 'travel')) for (const sid of x.seen) {
+      if (!cue && !notice && P.partyFollowW > 0 && (P.partyLeaderFollow !== 1 || c.action === 'travel')) for (const sid of x.seen) {
         const b = idx.byId.get(sid);
         if (b && b.alive && b.troopId === c.troopId && b.age >= 5 && b.action !== 'follow' && hd(b, c) < P.partyLinkM) interrupt(world, b, `${c.name} is moving off`);
       }

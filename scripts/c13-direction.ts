@@ -18,11 +18,13 @@ import { paramsOf } from '../src/sim/params';
 import type { Profile } from '../src/sim/params';
 import { runPool } from './lib/pool';
 
-interface Job { seed: number; arm: string; params: Record<string, number>; profile: Profile; days: number; burnIn: number }
-interface Result {
+export interface Job { seed: number; arm: string; params: Record<string, number>; profile: Profile; days: number; burnIn: number }
+export interface Result {
   seed: number; arm: string; fallbackShare: number; fallbackShareLact: number; hungerAdults: number; hungerLact: number; thirstAdults: number;
   decisionsPerChimpDay: number; kept: number; drawn: number; argmax: number; tripsPerAdultDay: number; tripMedianM: number; maleKmPerDay: number;
-  recruitHooed: number; recruitSilent: number; recruitRatio: number; companionDecided5min: number; companionJoined5min: number; ms: number;
+  recruitHooed: number; recruitSilent: number; recruitRatio: number; companionDecided5min: number; companionJoined5min: number;
+  /** Initiations with companions in range, and those that recruited at least one within 5 min, by hooed or silent (for pooling over seeds). */
+  hooedN: number; hooedRecruited: number; silentN: number; silentRecruited: number; ms: number;
 }
 
 const median = (v: number[]) => { const s = [...v].sort((a, b) => a - b); return s.length ? s[Math.floor(s.length / 2)] : NaN; };
@@ -85,7 +87,8 @@ export function runJob(j: Job): Result {
   const r3 = (v: number) => Math.round(v * 1000) / 1000;
   const share = (a: Init[]) => a.length ? a.filter(x => x.comps.some(k => k.joined)).length / a.length : NaN;
   const rh = share(done.filter(x => x.hooed)), rs = share(done.filter(x => !x.hooed)), comps = done.flatMap(x => x.comps);
-  return { recruitHooed: r3(rh), recruitSilent: r3(rs), recruitRatio: r3(rh / rs), companionDecided5min: r3(comps.filter(k => k.decided).length / Math.max(1, comps.length)), companionJoined5min: r3(comps.filter(k => k.joined).length / Math.max(1, comps.length)), seed: j.seed, arm: j.arm, fallbackShare: r3(feed.leaves / Math.max(1, feed.fruit + feed.leaves)), fallbackShareLact: r3(feed.leavesL / Math.max(1, feed.fruitL + feed.leavesL)),
+  const hooedI = done.filter(x => x.hooed), silentI = done.filter(x => !x.hooed), rec = (x: Init) => x.comps.some(k => k.joined);
+  return { hooedN: hooedI.length, hooedRecruited: hooedI.filter(rec).length, silentN: silentI.length, silentRecruited: silentI.filter(rec).length, recruitHooed: r3(rh), recruitSilent: r3(rs), recruitRatio: r3(rh / rs), companionDecided5min: r3(comps.filter(k => k.decided).length / Math.max(1, comps.length)), companionJoined5min: r3(comps.filter(k => k.joined).length / Math.max(1, comps.length)), seed: j.seed, arm: j.arm, fallbackShare: r3(feed.leaves / Math.max(1, feed.fruit + feed.leaves)), fallbackShareLact: r3(feed.leavesL / Math.max(1, feed.fruitL + feed.leavesL)),
     hungerAdults: r3(median(hunger)), hungerLact: r3(median(lact)), thirstAdults: r3(median(thirst)), decisionsPerChimpDay: r3(decisions / (chimpTicks / 5760)),
     kept: r3(kept / Math.max(1, decisions)), drawn: r3(drawn / Math.max(1, decisions)), argmax: r3(argmax / Math.max(1, decisions)),
     tripsPerAdultDay: r3(trips / Math.max(1, adultDays)), tripMedianM: Math.round(median(tripD)), maleKmPerDay: r3(malePath / 1000 / Math.max(1, maleDays)), ms: Date.now() - t0 };

@@ -48,7 +48,9 @@ export function rgMenu(world: World, c: Chimp, all: Candidate[]): Candidate[] {
   const phased = phaseMenu(perceivedCandidates(world, c, all), dayPhase(world));
   const best = all[0] && all[0].action !== 'dead' ? all[0] : null;
   const response = disturbed(world, c) ? [...phased].filter(k => RESPONSE_ACTIONS.has(k.action)).sort((a, b) => b.score - a.score)[0] : undefined;
-  return boundedCandidates(phased, [best, response]);
+  // stage C13e (joinChoice): a noticed departure stays on the menu as its own option (the joint trip), beside the animal's own best trip
+  const join = paramsOf(world).joinChoice === 1 ? phased.find(k => k.action === 'travel' && (candidateMeta.get(k)?.aux ?? -1) > 0 && candidateMeta.get(k)?.v === V.TREE) : undefined;
+  return boundedCandidates(phased, [best, response, join]);
 }
 
 /**
