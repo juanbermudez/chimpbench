@@ -304,7 +304,7 @@ test('E4b fix: a stranger chorus kicks the stress load once per hearing episode,
   };
   const steady = chorus(1, 12); // a call every 5 min for an hour
   assert.ok(steady.end < steady.first, 'the load decays while the calls continue');
-  const apart = chorus(Math.ceil(steady.P.endoHeardGapH / SLOW_HOURS) + 1, 2); // two choruses more than the gap apart
+  const apart = chorus(Math.ceil(steady.P.endoHeardEpisodeH / SLOW_HOURS) + 1, 2); // two choruses more than the gap apart
   assert.ok(apart.end > steady.end, 'a new episode kicks again');
   // with the switch off nothing is marked
   const { w, c } = quiet({}), x = ix(c);

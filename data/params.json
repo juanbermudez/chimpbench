@@ -5807,7 +5807,7 @@
    "notes": "Stage E4a moved literal: the score of the escalated attack opened by an escalation impulse (unchanged at endoEscalate 0). With endoEscalate 1 it is the ceiling the states scale down."
   },
   {
-   "id": "endoHeardGapH",
+   "id": "endoHeardEpisodeH",
    "group": "needs",
    "value": 0.25,
    "units": "h",

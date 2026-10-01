@@ -94,10 +94,10 @@ export function endoStep(world: World, c: Chimp, x: ChimpX, sleeping: boolean, P
 
 /**
  * A stranger call is about to be heard (perception.ts hear, interventions.ts playback): called before x.heardAt is
- * overwritten, it marks the start of a new hearing episode when nothing was heard for endoHeardGapH (E4b fix).
+ * overwritten, it marks the start of a new hearing episode when nothing was heard for endoHeardEpisodeH (E4b fix).
  */
 export function endoHeard(world: World, x: ChimpX, P: Params): void {
-  if (P.endoStates === 1 && world.time - x.heardAt > P.endoHeardGapH) x.heardFrom = world.time;
+  if (P.endoStates === 1 && world.time - x.heardAt > P.endoHeardEpisodeH) x.heardFrom = world.time;
 }
 
 /** Food sharing raises affiliation in giver and receiver (execution.ts; the only event that leaves no timestamp). */
