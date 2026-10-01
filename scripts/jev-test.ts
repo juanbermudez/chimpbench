@@ -311,7 +311,9 @@ export async function runPaid(arms: PaidArm[], o: PaidOpts): Promise<void> {
   const t0 = performance.now();
   console.log(`jev-test ${kind}: ${worlds.length} worlds (${arms.join(', ')}), bridge ${o.bridge}, ${o.workers} at a time, cap $${o.cap} split per world; ledger ${ledger}`);
   const done = new Map<string, PaidResult>();
-  if (prior) for (const j of jobs) if (existsSync(j.resultFile)) done.set(j.runId, JSON.parse(readFileSync(j.resultFile, 'utf8')) as PaidResult);
+  // kept on resume: complete worlds, and worlds that stopped after making calls (a world that hit its cap or the kill
+  // switch is final and is never re-run); a world that stopped before its first call spent nothing and runs again
+  if (prior) for (const j of jobs) if (existsSync(j.resultFile)) { const r = JSON.parse(readFileSync(j.resultFile, 'utf8')) as PaidResult; if (r.complete || r.jev.calls > 0) done.set(j.runId, r); }
   // an interrupted world restarts under a fresh ledger run (its earlier partial spend stays booked under the old run id)
   const todo = jobs.filter(j => !done.has(j.runId)).map(j => prior && existsSync(join(o.out, kind, `${j.arm}-${j.seed}`, 'jev')) ? { ...j, runId: `${j.runId}/retry-${Date.now()}` } : j);
   if (done.size) console.log(`  resuming: ${done.size} worlds already done (${[...done.keys()].join(', ')})`);
@@ -383,7 +385,8 @@ if (process.argv[1]?.endsWith('jev-test.ts')) {
   const refusal = paidFlagsError(arms, { paid: has('paid'), cap: flag('cap', ''), ledger: flag('ledger', ''), bridge: flag('bridge', ''), plan: flag('plan', ''), repo });
   if (refusal) { console.error(refusal); process.exit(2); }
   if (arms.some(a => (PAID_ARMS as readonly string[]).includes(a))) {
-    runPaid(arms as PaidArm[], { cap: +flag('cap', '0'), bridge: flag('bridge', '') as Bridge, ledger: flag('ledger', ''), plan: flag('plan', ''), workers: +flag('workers', '11'),
+    // absolute paths: the Python worker runs in training/decide_ft, where a relative ledger path would not open
+    runPaid(arms as PaidArm[], { cap: +flag('cap', '0'), bridge: flag('bridge', '') as Bridge, ledger: flag('ledger', '') && resolve(flag('ledger', '')), plan: flag('plan', '') && resolve(flag('plan', '')), workers: +flag('workers', '4'),
       out, repo, dryRun: has('dry-run'), allowDirty: has('allow-dirty'), resume: has('resume'), scored: +flag('scored', String(STANDARD.scoredDays)), warmup: +flag('warmup', String(STANDARD.warmupDays)), burnIn: +flag('burn-in', String(STANDARD.burnInDays)) })
       .catch(err => { console.error(err); process.exit(1); });
   } else {
