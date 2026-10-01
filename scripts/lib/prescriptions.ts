@@ -192,6 +192,11 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
     'digestaMeatDmGPerKcal', 'digestaMilkDmGPerKcal', 'digestaTefFrac'].map(id => [id, { when: (P: Record<string, number>) => P.energyLedger === 1 && P.ledgerDigesta === 1, why: 'read only while energyLedger and ledgerDigesta are 1 (stage E1b)' }])),
   // stage E2b (docs/staging/e2b-prereg.md): departRace and nurseWake add terms to the nest's value and to sleep pressure;
   // neither switches a prescription out, so neither has an entry here (both are class design, rule 1)
+  // stage E1f (docs/staging/e1f-prereg.md): ledgerGrowPotential replaces the stylized growth knees by captive growth rates
+  // (both design, so the count does not change); ledgerNurseBout supersedes ledgerNurseByMilk (a switch) and switches
+  // no prescription out (the weaning refusal roll, weanRefuseMaxP, stays)
+  ledgerMassMatureFemaleY: { when: P => !(P.energyLedger === 1 && P.ledgerGrowSurplus === 1 && P.ledgerGrowPotential === 1), why: 'not read while ledgerGrowPotential (with ledgerGrowSurplus) is 1 (stage E1f)' },
+  ledgerMassMatureMaleY: { when: P => !(P.energyLedger === 1 && P.ledgerGrowSurplus === 1 && P.ledgerGrowPotential === 1), why: 'not read while ledgerGrowPotential (with ledgerGrowSurplus) is 1 (stage E1f)' },
 };
 
 /** Whether an entry is in use: generated (not planned), non-zero under these resolved parameters, and not switched out. */

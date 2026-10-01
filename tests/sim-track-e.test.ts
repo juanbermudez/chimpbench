@@ -12,6 +12,7 @@ const TRACK_E_SWITCHES = [
   'endoStates', 'endoEscalate', 'endoRedirect', 'endoRainDisplay', // E4a
   'endoFast', 'endoFastRedirect', // E4b
   'departRace', 'nurseWake', 'nestLightDecide', // E2b
+  'ledgerNurseBout', 'ledgerGrowPotential', // E1f
 ] as const;
 
 test('Track E switches are all 0 by default in both profiles', () => {
