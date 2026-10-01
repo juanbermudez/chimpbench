@@ -6,7 +6,8 @@ import { clamp, hash01, smoothstep } from './rng';
 import { paramsOf, type Params } from './params';
 import { fruitAt } from './phenology';
 import { bestFallbackNear, fallbackOn } from './fallback';
-import { fruitRate, leafRate, treeIntake } from './intake';
+import { fruitRate, leafWorth, treeIntake } from './intake';
+import { heatRestValue, nestValue, shelterValue, thermalLoad } from './rhythm';
 import { escalateScore, rainScore, redirectScore } from './endocrine';
 import { byIdIn, index, isTreeId, ix, NEVER, TREE_ID0, treesNear, simOf } from './state';
 
@@ -195,18 +196,23 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
 
   // --- sleep, rest, shelter -------------------------------------------------
   // chimpanzees leave nests around sunrise and settle around sunset [H]
-  let nestDrive = hour >= P.nestEveningFromH ? smoothstep(P.nestEveningStartH, P.nestEveningEndH, hour) * P.nestEveningDrive + (night ? P.nestNightBonus : 0)
-    : (1 - smoothstep(P.nestMorningDaylightLow, P.nestMorningDaylightHigh, env.daylight)) * P.nestMorningDrive;
-  nestDrive += (1 - e) * 0.3 + (night && rain > 0.3 ? 0.3 : 0);
+  // stage E2a (rhythm.ts): with rhythmSleep 1 the nest's value is sleep pressure plus darkness, and with rhythmHeat 1
+  // rest and shelter follow the thermal load; the clock terms below then have no effect (tests/sim-rhythm.test.ts)
+  const rS = P.rhythmSleep === 1, rH = P.rhythmHeat === 1;
+  let nestDrive = rS ? nestValue(P, c, env.daylight)
+    : hour >= P.nestEveningFromH ? smoothstep(P.nestEveningStartH, P.nestEveningEndH, hour) * P.nestEveningDrive + (night ? P.nestNightBonus : 0)
+      : (1 - smoothstep(P.nestMorningDaylightLow, P.nestMorningDaylightHigh, env.daylight)) * P.nestMorningDrive;
+  nestDrive += (rS ? 0 : (1 - e) * 0.3) + (night && rain > 0.3 ? 0.3 : 0);
   if (caretaker) {
     if (caretaker.action === 'nest' && isTreeId(caretaker.targetId)) offer('nest', caretaker.targetId, nestDrive + 0.4, V.MOTHER, caretaker.id);
   } else if (c.age >= 3) {
     if (inNest && c.nest) offer('nest', c.nest.treeId, nestDrive);
-    else if (nestDrive > 0.25 && (hour >= 12 || night)) { const t = c.action === 'nest' && isTreeId(c.targetId) ? idx.treeById.get(c.targetId) : chooseNestTree(world, c); if (t) offer('nest', t.id, nestDrive); }
+    else if (nestDrive > 0.25 && (rS ? env.daylight < 1 : hour >= 12 || night)) { const t = c.action === 'nest' && isTreeId(c.targetId) ? idx.treeById.get(c.targetId) : chooseNestTree(world, c); if (t) offer('nest', t.id, nestDrive); }
   }
-  const midday = hour >= 11.5 && hour < 14.5 ? 0.3 : 0;
-  offer('rest', -1, 0.12 + (1 - e) * 0.9 + midday + (h < 0.2 ? 0.2 : 0) + (env.temperature > 23 ? 0.1 : 0) + c.injury * 0.5 + (night ? 0.4 : 0) + (caretaker ? 0.1 : 0) + (x.ill > time ? P.epidemicRestW : 0));
-  if (rain >= 0.3 && !inNest && !night && !carried) offer('shelter', -1, 0.2 + rain * 1.6 - h * 0.2);
+  const midday = rH ? heatRestValue(P, c) : hour >= 11.5 && hour < 14.5 ? 0.3 : 0;
+  offer('rest', -1, 0.12 + (1 - e) * 0.9 + midday + (h < 0.2 ? 0.2 : 0) + (!rH && env.temperature > 23 ? 0.1 : 0) + c.injury * 0.5 + (night && !rS ? 0.4 : 0) + (caretaker ? 0.1 : 0) + (x.ill > time ? P.epidemicRestW : 0));
+  if (rH) { if (rain >= 0.12 && !inNest && !carried) { const cold = shelterValue(P, c); if (cold > 0) offer('shelter', -1, cold); } }
+  else if (rain >= 0.3 && !inNest && !night && !carried) offer('shelter', -1, 0.2 + rain * 1.6 - h * 0.2);
 
   // --- dependents -------------------------------------------------------------
   if (caretaker) {
@@ -267,7 +273,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   if (!caretaker) {
     // stage C7c (field): fallback is worth the best rate in view, so a depleted patch sends the animal elsewhere (fallback.ts)
     // C13b: leaves are worth their intake rate here relative to ripe fruit (full-stock rate when fallback depletes: the best cell in view scales it)
-    const leafV = iv ? (fallbackOn(P) ? P.fruitIntakePerH * P.fruitHungerFactor * P.fallbackRateRatio : leafRate(world, px, pz, P)) / fruitH : 1;
+    const leafV = iv ? leafWorth(world, c, px, pz, P, fruitH) : 1;
     offer('forage', -1, h * P.fallbackForageW * (fallbackOn(P) ? bestFallbackNear(world, px, pz, x.sight, _fb) : 1) * leafV + 0.03 - rain * 0.3);
     // field profile: leaving companions for a food tree of one's own has a cost (parties travel together; design, T-PTY-1)
     const stay = (P.partyStayW > 0 ? P.partyStayW * Math.min(x.visibleOwn, P.partyStayMaxN) : 0) + oestrusNear;
@@ -857,7 +863,7 @@ export function reasonFor(world: World, c: Chimp, sl: Slot): string {
     case 'rest':
       if (env.daylight < 0.1) return 'Sit quietly in the dark';
       if (c.energy < 0.45) return `Rest here; energy is low (${pct(c.energy)})`;
-      if (world.hour >= 11.5 && world.hour < 14.5) return `Rest through the midday heat (${Math.round(env.temperature)} °C)`;
+      if (paramsOf(world).rhythmHeat === 1 ? thermalLoad(c) > 0.1 : world.hour >= 11.5 && world.hour < 14.5) return `Rest through the midday heat (${Math.round(env.temperature)} °C)`;
       if (c.hunger < 0.2) return 'Sit and digest after feeding';
       return c.injury > 0.2 ? 'Rest to favor my wounds' : 'Sit and rest nearby';
     case 'nest':

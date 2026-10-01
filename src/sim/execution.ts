@@ -5,7 +5,9 @@ import { addEvent, emitCall, endInteraction, episode, findInteraction, flashInte
 import { nestPoint } from './generation';
 import { addBond, dominates, eloUpdate, rankedMale } from './hierarchy';
 import { paramsOf, type Params } from './params';
+import { eat, fallbackKcalPerH, fruitKcalPerUnit, gutRoom, ledgerOn, nurseTick, sharePlant } from './energy';
 import { snareIntake } from './snares';
+import { lightArousal } from './rhythm';
 import { doTransfer, recordCopulation } from './reproduction';
 import { IMPULSE_HUNT, forget } from './perception';
 import { clamp, hash01, random } from './rng';
@@ -37,9 +39,13 @@ const CODE: Record<string, number> = { rest: 1, forage: 2, nest: 3 };
 function boutHours(world: World, c: Chimp, action: Action): number {
   const P = paramsOf(world);
   let a = P[DUR[action][0]], b = P[DUR[action][1]];
-  if (action === 'rest' && world.hour >= 11.5 && world.hour < 14.5) { a = P.boutRestMiddayMin; b = P.boutRestMiddayMax; }
+  if (action === 'rest' && P.rhythmHeat !== 1 && world.hour >= 11.5 && world.hour < 14.5) { a = P.boutRestMiddayMin; b = P.boutRestMiddayMax; }
   let cap = Infinity;
-  if (action === 'nest') {
+  if (action === 'nest' && P.rhythmSleep === 1) {
+    // stage E2a: bouts by light alone. In the dark the full bout, uncapped (light arousal ends it, nestTick); in changing light the short bout; in full light the day bout
+    const L = world.environment.daylight;
+    if (L >= 1) { a = P.boutNestDayMin; b = P.boutNestDayMax; } else if (L > 0.1) { a = P.boutNestMorningMin; b = P.boutNestMorningMax; }
+  } else if (action === 'nest') {
     if (world.hour >= 5.5 && world.hour < 12) { a = P.boutNestMorningMin; b = P.boutNestMorningMax; }
     else if (world.environment.daylight > 0.1) { a = P.boutNestDayMin; b = P.boutNestDayMax; }
     else cap = Math.max(5, ((P.nestWakeHour - world.hour + 24) % 24) * 60);
@@ -644,7 +650,7 @@ export function executeAction(world: World, c: Chimp): void {
       if (!o || !o.alive) return finish(world, c);
       if (moveTo(world, c, o.position[0], o.position[1], o.position[2], WALK, 1.2)) {
         face(c, o);
-        if (x.v === V.PLANT) { o.hunger = clamp(o.hunger - 0.08); }
+        if (x.v === V.PLANT) { if (ledgerOn(P)) sharePlant(o, P); else o.hunger = clamp(o.hunger - 0.08); }
         else {
           const amt = Math.min(0.2, c.carryingMeat);
           recordMeat(world, c, o);
@@ -740,7 +746,8 @@ export function executeAction(world: World, c: Chimp): void {
         x.interId = startInteraction(world, 'nurse', c, m.id, [c.id, m.id], 0.2).id;
       }
       if (!isCarried(c, m) && hd(c, m) > 1.2) { moveTo(world, c, m.position[0], m.position[1], m.position[2], WALK, 0.8); return; }
-      c.hunger = clamp(c.hunger - 0.5 * TICK_HOURS * (1 - c.age / 6));
+      if (ledgerOn(P)) nurseTick(c, m, P); // stage E1: milk into the infant's gut, its cost out of the mother's reserves
+      else c.hunger = clamp(c.hunger - 0.5 * TICK_HOURS * (1 - c.age / 6));
       c.thirst = clamp(c.thirst - 0.4 * TICK_HOURS);
       c.social = clamp(c.social + 0.2 * TICK_HOURS);
       m.energy = clamp(m.energy - 0.02 * TICK_HOURS);
@@ -779,6 +786,7 @@ function nestTick(world: World, c: Chimp): void {
   const P = paramsOf(world), WALK = P.walkMps;
   const x = ix(c);
   const idx = index(world);
+  if (P.rhythmSleep === 1) lightArousal(world, c);
   if (x.v === V.MOTHER) {
     const m = dependentOn(world, c);
     if (!m) return finish(world, c);
@@ -832,7 +840,8 @@ function forageTick(world: World, c: Chimp): void {
     if (x.gx !== 0 || x.gz !== 0) moveTo(world, c, x.gx, 0, x.gz, WALK * 0.3, 0.2);
     // leaves, pith and herbs: lower-quality fallback foods [H]; the field profile's forage field varies by habitat and season
     const self = selfFeed(c, P) * snareIntake(c, P);
-    if (P.patchEcology === 1) c.hunger = clamp(c.hunger - P.fallbackHungerPerH * TICK_HOURS * forageYield(world, c.position[0], c.position[2]) * self);
+    if (ledgerOn(P)) eat(c, P, fallbackKcalPerH(P) * TICK_HOURS * (P.patchEcology === 1 ? forageYield(world, c.position[0], c.position[2]) : 1) * self);
+    else if (P.patchEcology === 1) c.hunger = clamp(c.hunger - P.fallbackHungerPerH * TICK_HOURS * forageYield(world, c.position[0], c.position[2]) * self);
     else c.hunger = clamp(c.hunger - P.fallbackHungerPerH * TICK_HOURS * self);
     return;
   }
@@ -857,11 +866,15 @@ function forageTick(world: World, c: Chimp): void {
     } else if (time - x.lastFoodCall > 0.3 && crop > 0.3 && (P.foodCallRule !== 1 || random(world) < foodCallChance(world, c, crop))) { x.lastFoodCall = time; emitCall(world, c, 'food-grunt'); }
   }
   // feeding: up to fruitIntakePerH (0.055 fruit units/h, scaled by foraging skill), x4.4 = up to ~0.24 hunger/h, so chimps feed about half the day (design; field feeding shares are 33-50% of daytime, docs/realism-design.md T-ACT-1)
-  const want = P.fruitIntakePerH * TICK_HOURS * (P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging) * (c.age < 5 ? P.fruitIntakeYoungFactor : 1) * selfFeed(c, P) * snareIntake(c, P);
+  // stage E1 (energyLedger): the same fruit intake, worth kcal by food type, and no more than the gut can take
+  const led = ledgerOn(P), kcalPerFruit = led ? fruitKcalPerUnit(P, t.common === 'fig') : 0;
+  let want = P.fruitIntakePerH * TICK_HOURS * (P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging) * (c.age < 5 ? P.fruitIntakeYoungFactor : 1) * selfFeed(c, P) * snareIntake(c, P);
+  if (led) want = Math.min(want, gutRoom(c, P) / kcalPerFruit);
   let intake: number;
   if (lazy) intake = eatFruit(world, t, want);
   else { intake = Math.min(t.fruit, want); t.fruit -= intake; }
-  c.hunger = clamp(c.hunger - intake * P.fruitHungerFactor);
+  if (led) eat(c, P, intake * kcalPerFruit);
+  else c.hunger = clamp(c.hunger - intake * P.fruitHungerFactor);
   c.thirst = clamp(c.thirst - intake * P.fruitThirstFactor);
   c.skills.foraging = clamp(c.skills.foraging + (1 - c.skills.foraging) * TICK_HOURS * 0.002);
   if (c.hunger < 0.06) finish(world, c);
@@ -888,7 +901,8 @@ function fallbackTick(world: World, c: Chimp): void {
     } else { const a = hash01(c.id, world.tick, 3) * Math.PI * 2; x.gx = px + Math.sin(a) * 0.8; x.gz = pz + Math.cos(a) * 0.8; }
   }
   if (x.gx !== 0 || x.gz !== 0) moveTo(world, c, x.gx, 0, x.gz, P.walkMps * 0.3, 0.2);
-  c.hunger = clamp(c.hunger - eatFallback(world, c, TICK_HOURS));
+  const got = eatFallback(world, c, TICK_HOURS);
+  if (ledgerOn(P)) eat(c, P, got); else c.hunger = clamp(c.hunger - got);
 }
 
 function pairTick(world: World, c: Chimp, o: Chimp | undefined): void {

@@ -1,4 +1,5 @@
 import type { Chimp, World } from '../types';
+import { fallbackKcalPerH, fruitKcalPerUnit, gutCap } from './energy';
 import { fallbackOn, fallbackValue } from './fallback';
 import type { Params } from './params';
 import { forageYield } from './phenology';
@@ -7,17 +8,32 @@ import { forageYield } from './phenology';
 // included: the marginal-value currency [charnov1976] of design A (docs/decide-jev-design.md §4). Shared by the rules'
 // intake valuation (stage C13b, `intakeValue`, src/sim/candidates.ts) and the Jev situation facts (src/decide/facts.ts),
 // so both compute the same numbers. Pure.
+// Stage E1 (energyLedger): the same rates in kcal, expressed as the share of the animal's gut capacity filled per hour
+// (the unit of the derived hunger at full appetite), so every ratio and feeding time below keeps its meaning.
 
 /** Ripe fruit intake for this animal (fruit units per hour) and the hunger it removes per hour: intake × skill × young factor. */
 export function fruitRate(c: Chimp, P: Params): { fruitPerH: number; hungerPerH: number } {
   const fruitPerH = P.fruitIntakePerH * (P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging) * (c.age < 5 ? P.fruitIntakeYoungFactor : 1);
+  if (P.energyLedger === 1) return { fruitPerH, hungerPerH: fruitPerH * fruitKcalPerUnit(P, false) / gutCap(c, P) };
   return { fruitPerH, hungerPerH: fruitPerH * P.fruitHungerFactor };
 }
 
 /** Hunger removed per hour by fallback foods (leaves, pith, herbs) where the animal stands. */
-export function leafRate(world: World, x: number, z: number, P: Params): number {
+export function leafRate(world: World, x: number, z: number, P: Params, c?: Chimp): number {
+  // ledger: per gut capacity of `c` (of an adult female when no animal is given)
+  if (P.energyLedger === 1) return fallbackKcalPerH(P) * (fallbackOn(P) ? fallbackValue(world, x, z) : P.patchEcology === 1 ? forageYield(world, x, z) : 1)
+    / (c ? gutCap(c, P) : P.ledgerGutCapKcalPerKg * P.ledgerMassFemaleKg);
   if (fallbackOn(P)) return P.fruitIntakePerH * P.fruitHungerFactor * P.fallbackRateRatio * fallbackValue(world, x, z);
   return P.fallbackHungerPerH * (P.patchEcology === 1 ? forageYield(world, x, z) : 1);
+}
+
+/**
+ * What fallback foods are worth relative to this animal's ripe fruit (candidates.ts, C13b): the full-stock rate when
+ * fallback depletes (the best cell in view scales it), else the rate where it stands. `fruitH` is fruitRate(c).hungerPerH.
+ */
+export function leafWorth(world: World, c: Chimp, x: number, z: number, P: Params, fruitH: number): number {
+  if (P.energyLedger === 1) return (fallbackOn(P) ? fallbackKcalPerH(P) / gutCap(c, P) : leafRate(world, x, z, P, c)) / fruitH;
+  return (fallbackOn(P) ? P.fruitIntakePerH * P.fruitHungerFactor * P.fallbackRateRatio : leafRate(world, x, z, P)) / fruitH;
 }
 
 export interface TreeIntake {

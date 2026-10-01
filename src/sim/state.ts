@@ -32,6 +32,11 @@ export const isChimpId = (id: number) => id > 0 && id < TREE_ID0;
 export interface ChimpX {
   actEnd: number; phase: number; prog: number; gx: number; gy: number; gz: number;
   intr: string; finished: boolean; interId: number;
+  /**
+   * Stage E2a (rhythm.ts): sleep pressure 0..1 (rhythmSleep), thermal load −1..1 (rhythmHeat) and the position at the
+   * last tick (for the work of moving). Absent until their switch is on, so worlds with the switches off are unchanged.
+   */
+  slp?: number; heat?: number; hpx?: number; hpy?: number; hpz?: number;
   // perception snapshot, refreshed at decision points
   seen: number[]; seenAt: number; sight: number;
   ownMales: number; strangers: number; strangerMales: number; strangerTroop: number; isolated: number; nearestStranger: number;
@@ -82,6 +87,8 @@ export interface ChimpX {
    * condition over her current pregnancy.
    */
   cond: number; grow: number; bereft: number; gestCond: number;
+  /** Stage E1 (energyLedger; energy.ts): the energy ledger, absent until the switch is on and the individual first ticks. */
+  en?: EnergyLedger;
   /**
    * Stage C8 health (docs/realism-design.md §5.7): eco-hour when the current respiratory illness ends (NEVER when well),
    * the outbreak that last infected this individual (-1 none; immune to it afterwards), a permanent snare injury
@@ -89,6 +96,14 @@ export interface ChimpX {
    */
   ill: number; outbreak: number; snare: number; trX: number; trZ: number;
 }
+
+/**
+ * Stage E1 energy ledger (kcal; energy.ts): energy in the gut not yet absorbed, body reserves relative to the set point
+ * (negative = deficit), lifetime energy eaten and spent (in − out = gut + reserves − their opening values), the
+ * position at the last tick (locomotion is costed per metre actually moved), and the milk a lactating mother's glands
+ * hold (kcal an infant can drink now; its energy is charged to her when it is drunk).
+ */
+export interface EnergyLedger { gut: number; res: number; in: number; out: number; x: number; y: number; z: number; milk: number }
 
 /** The memory month in progress: tallies accumulate on events and are finalized into a MemoryDigest every 30 eco-days. */
 export interface MonthLedger { start: number; startRank: number; partners: Record<number, PartnerTally>; events: DigestEvent[]; encounters: number; lastEncounter: number }
@@ -157,7 +172,7 @@ export type SimWorld = World & { sim: SimState };
  * ChimpX and SimState keys that exist only once their mechanism has fired (so worlds with the switch off keep their
  * shape and hashes). The save check (src/persist/envelope.ts worldShapeProblem) ignores them.
  */
-export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'arousal', 'affil'];
+export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'en', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil'];
 export const OPTIONAL_SIM: readonly string[] = ['fission', 'stormAt'];
 
 export function newX(): ChimpX {
