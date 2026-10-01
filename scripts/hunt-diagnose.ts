@@ -1,7 +1,7 @@
 // Hunting diagnosis (development tool, sim truth): at the decision points of males aged 12+ who perceive colobus,
 // which gate of the hunt option holds, whether the option is offered, and how it scores against the alternatives.
 //
-//   pnpm exec tsx scripts/hunt-diagnose.ts [--seed 48] [--burn-in 30] [--days 30] [--params '{…}']
+//   pnpm exec tsx scripts/hunt-diagnose.ts [--seed 48] [--burn-in 30] [--days 30] [--params '{…}'] [--what-if-m 50,60,100]
 import { createWorld, tickWorld } from '../src/simulation';
 import { softmax } from '../src/decide/policies';
 import { isAdultMale } from '../src/sim/hierarchy';
@@ -19,6 +19,8 @@ for (const c of w.chimps) version.set(c.id, c.decisionVersion);
 const n = { dp: 0, prey: 0, huntDay: 0, males3: 0, gap: 0, rain: 0, energy: 0, gates: 0, lead: 0, join: 0, onMenu: 0, top: 0, chosen: 0, huntDayTroopDays: 0, troopDays: 0 };
 const maleHist: number[] = [], prob: number[] = [], margin: number[] = [], vs: Record<string, number> = {};
 const lastPrey = new Map<number, number>(), w2 = { newEnc: 0, newEnc2: 0 }, whatIf: number[] = [], whatIfScore: number[] = [], whatIfHunger: number[] = [], whatIfBest: number[] = [];
+const WHAT_IF_M = arg('what-if-m', '').split(',').filter(Boolean).map(Number), lastAt = new Map<number, number>();
+const byD: Record<number, { newEnc: number; newEnc2: number; probSum: number; distSum: number }> = Object.fromEntries(WHAT_IF_M.map(D => [D, { newEnc: 0, newEnc2: 0, probSum: 0, distSum: 0 }]));
 const h0 = w.stats.hunts, s0 = w.stats.huntSuccesses, deaths0 = w.stats.deaths;
 // truth tallies of the hunts themselves: hunters at the resolution (from the event text), captures and captors by class
 const huntersAt: number[] = [], captorClass = { adultMale: 0, adolescentMale: 0, female: 0 }, perCommunity: Record<number, number> = {};
@@ -44,6 +46,22 @@ for (let i = 0; i < days * 5760; i++) {
     if (c.decisionVersion === v0 || c.sex !== 'male' || c.age < 12 || w.environment.daylight <= 0.3) continue;
     n.dp++;
     const x = ix(c);
+    // what-if by detection distance (nothing changed): were colobus detected within D instead of today's distance, the adult
+    // males newly within D of a group with >= 2 adult males in view, and today's lead score there against the menu
+    if (isAdultMale(c) && x.seenAt === w.time) for (const D of WHAT_IF_M) {
+      const lim = D * x.sight / P.sightDayM;
+      let near = -1, nd = lim;
+      for (const p of w.prey) { const d = Math.hypot(p.position[0] - c.position[0], p.position[2] - c.position[2]); if (d < nd) { nd = d; near = p.id; } }
+      const key = c.id * 1000 + D, was = lastAt.get(key) ?? -1;
+      lastAt.set(key, near);
+      if (near < 0 || near === was) continue;
+      const r = byD[D];
+      r.newEnc++;
+      if (x.ownMales < 2 || w.environment.rain >= 0.3 || c.energy <= 0.35) continue;
+      const sc = 0.5 + 0.15 * (x.ownMales - 3) + c.skills.hunting * 0.35 + c.personality.boldness * 0.15 - nd / P.huntDistScaleM;
+      const menu = rgMenu(w, c, c.candidates).filter(q => q.action !== 'hunt').map(q => q.score);
+      r.newEnc2++; r.probSum += softmax([...menu, sc], P.rgTemperature)[menu.length]; r.distSum += nd;
+    }
     if (x.preyId <= 0 || x.seenAt !== w.time) { if (x.seenAt === w.time) lastPrey.set(c.id, -1); continue; }
     n.prey++;
     maleHist[x.ownMales] = (maleHist[x.ownMales] ?? 0) + 1;
@@ -87,6 +105,8 @@ console.log(JSON.stringify({ seed, burnIn, days, params, communities: w.troops.m
   prey: w.prey.length, counts: n, ownMalesAtPrey: maleHist, huntProbOnMenu: { mean: mean(prob), n: prob.length }, lostTo: vs, meanMarginWhenBeaten: mean(margin),
   whatIf: { ...w2, scored: whatIf.length, meanProb: mean(whatIf), meanScore: mean(whatIfScore), meanBestOther: mean(whatIfBest),
     probHungerLow: mean(whatIf.filter((_, i) => whatIfHunger[i] < 0.4)), probHungerHigh: mean(whatIf.filter((_, i) => whatIfHunger[i] >= 0.4)) },
+  whatIfByDetectionM: Object.fromEntries(WHAT_IF_M.map(D => [D, { newEncounters: byD[D].newEnc, withCompany: byD[D].newEnc2, expectedLeads: +byD[D].probSum.toFixed(1),
+    meanProb: +(byD[D].probSum / Math.max(1, byD[D].newEnc2)).toFixed(3), meanDistM: Math.round(byD[D].distSum / Math.max(1, byD[D].newEnc2)) }])),
   hunts: w.stats.hunts - h0, successes: w.stats.huntSuccesses - s0, huntsPerCommunityYear: (w.stats.hunts - h0) / w.troops.length / days * 365, huntsByCommunity: perCommunity,
   huntersAtResolution: huntersAt.reduce((a, k) => { a[k] = (a[k] ?? 0) + 1; return a; }, {} as Record<number, number>), captures, captorClass,
   deaths: w.stats.deaths - deaths0, deathsByCause: w.chimps.filter(c => !c.alive && c.deathTime !== null && c.deathTime >= burnIn * 24).reduce((a, c) => { const k = c.causeOfDeath ?? '?'; a[k] = (a[k] ?? 0) + 1; return a; }, {} as Record<string, number>),
