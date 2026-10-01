@@ -1695,6 +1695,20 @@
    ],
    "verdicts": "none (no proof value exists)",
    "class": "model change"
+  },
+  {
+   "date": "2026-10-01",
+   "by": "science/simulation owner (stage C13e)",
+   "seen": "development seeds 48, 7, 21 (field): the hooed recruitment rate during the fit (only that rate); then the 1-year direction check: hooed 0.71-0.72, silent 0.33-0.36, ratio 1.98-2.20, T-PTY-1 2.72 (joinChoice 0: 2.79), T-RNG-4 2.50 (2.52), T-ACT-2 0.21 / 0.16, adult hunger 0.40-0.44; no held-out value",
+   "param": "C13e result. joinHooW fitted to 0.094 by the pre-registered bisection (hooed recruitment 0.702 against 0.714). Untuned checks: silent recruitment passes (0.33-0.36; wild 0.337), hooed / silent ratio passes (1.98-2.20; wild 2.1), T-PTY-1 fails its prediction (2.79 -> 2.72, not up). Other predictions pass (join option among noticed 0.95-0.96; day range, decisions and T-ACT-2 unchanged). Viability guard passes; joinChoice stays on (field). Nothing was adjusted after the untuned rows were seen. T-PTY-1, T-RNG-4 and T-ACT-2 touched (fitted)",
+   "reason": "C13e pre-registration (acad474)",
+   "targets": [
+    "T-PTY-1",
+    "T-RNG-4",
+    "T-ACT-2"
+   ],
+   "verdicts": "none (direction check, not a proof)",
+   "class": "model change"
   }
  ],
  "targets": [

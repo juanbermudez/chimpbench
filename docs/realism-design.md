@@ -1396,7 +1396,7 @@ About 67 h in all, or 3–4 nights at 6 workers, and about 3× that at 2. If the
 - **C13b.** The rules value food by its intake rate, walk included, so leaves count at their lower rate against remembered fruit.
 **Why**: the Jev decisive test's free arms (artifacts/decide-ft/jev-test/free-arms.md; docs/staging/jev-decisive-test.md) ran the same gate and sampling as a control. On simulation truth over T-ACT-1 to 4, party size and male day range, RG cut the summed band distance from 2.04 to 0.93 and did better than rules on 5 of 5 seeds (6501–6905, field, 5 scored days), with no hunger cost (median adult hunger 0.64 vs 0.66; lactating females 0.89 vs 0.91). The rules are over-deterministic.
 **Why C13b**: the rules value fallback food (leaves, pith, herbs) without its lower intake rate, so hungry animals eat leaves in place rather than walk to remembered fruit. Design A diagnosed it (docs/decide-jev-design.md §4). The C8 agent confirmed it: lactating females spend 16% of daylight on fallback at half the fruit rate. In the free arms, U, a utility over intake rate minus walking cost, lowered median hunger from 0.89 to 0.70 in lactating females and from 0.64 to 0.39 in all adults.
-**Status**: built; direction checks done (30 September 2026); C13a, C13b and the C13c follow-up on by default.
+**Status**: built; direction checks done (30 September and 1 October 2026); C13a, C13b, C13c and C13e on by default; C13d off (null result).
 
 #### C13 pre-registration (29 September 2026, before any C13 run; C13b added the same day, before any C13 or C13b run)
 
@@ -1597,6 +1597,29 @@ The diagnostic probe with both changes gave about 5 trips per day and 2.2–2.7 
 - T-ACT-2 within 0.03 of before.
 
 The viability guard of §5 applies (against both C13 parts off). T-PTY-1, T-RNG-4 and T-ACT-2 are touched.
+
+**5h. C13e result** (1 October 2026; seeds 48, 7 and 21; field; `artifacts/validation/c13/`). Not a proof.
+
+*The fit.* `joinHooW` = 0.094. The pre-registered bisection read only the hooed rate: 0.946 at 0.75, 0.854 at 0.375, 0.766 at 0.188, 0.702 at 0.094, 0.745 at 0.141 and 0.736 at 0.118. The closest step to 0.714 was kept.
+
+*Direction check* (1 year after the burn-in, against `joinChoice` 0 on the same seeds):
+
+| Row | Prediction | Before | C13e | Verdict |
+| --- | --- | --- | --- | --- |
+| Hooed initiations recruiting ≥ 1 companion (fitted) | 0.66–0.76 | 0.50–0.51 | 0.71–0.72 | pass |
+| Silent initiations recruiting ≥ 1 companion (untuned; wild 0.337) | 0.24–0.44 | 0.36–0.38 | 0.33–0.36 | pass |
+| Hooed ÷ silent ratio (untuned; wild 2.1) | 1.6–2.6 | 1.36–1.40 | 1.98–2.20 | pass |
+| T-PTY-1 party size (untuned) | up, toward 3–9 | 2.79 | 2.72 | **fail** |
+| Join option among companions who noticed | ≥ 0.80 | 0.35 of all in range | 0.95–0.96 | pass |
+| Male day range, T-RNG-4 (km, observer) | about unchanged or up | 2.52 | 2.50 | pass |
+| Decisions per chimp-day | about unchanged or up | 73.9–74.5 | 73.3–74.0 | pass |
+| T-ACT-2 travel (male / female) | within 0.03 | 0.22 / 0.17 | 0.21 / 0.16 | pass |
+| Fitted rows passing | — | 10 | 10 | — |
+
+- **Viability guard: passes.** Adult hunger is 0.40–0.44 (both C13 parts off: 0.50–0.59), and lactating females are at 0.59–0.64.
+- **Party size did not rise.** Recruitment now matches the wild rates, hooed and silent, yet parties are no larger. About 66–70% of companions in range notice a departure. Per companion, the share joining within 5 min rose only from 0.39–0.40 to 0.46–0.47. So recruitment at departures is not what keeps the simulated parties small.
+- **Not adjusted.** Nothing was changed after seeing the untuned rows.
+- **T-PAT-6** fell from 0.36 to 0.15 on few patrols, which is too noisy to read.
 
 **6. Proof.** The lean proof (`scripts/proof.ts --plan lean`) with both parts on. `data/proof-ablations.json` has an ablation set per part, `C13a` (`rgOn` 0) and `C13b` (`intakeValue` 0), so each is attributed.
 
