@@ -1721,6 +1721,24 @@
    ],
    "verdicts": "combined proof (lean plan), C9 proof",
    "class": "freeze"
+  },
+  {
+   "date": "2026-10-01",
+   "by": "science/simulation owner (stage C14, patrol initiation; coordinator-approved, short runs only)",
+   "seen": "patrol rows of the C13e direction check on development seeds 48, 7, 21 (field, 1 year): T-PAT-1 0.006 per week (sim truth 0.075), T-PAT-2 0.21, T-PAT-6 0.15, T-PAT-7 0; diagnostic probes on seeds 48 and 7 (sim truth, 60-90 days): the party condition for the patrol hazard (>= 3 own adult males in view) holds 6.5-8% of adult-male daytime (party size fell from 6.9 at C6 to 2.7), and with the hazard raised for the probe 9 of 24 impulses were lost at the C13 decision (3 held by the intention gate, 6 drawn away by sampling). T-PAT-2, -3, -5, -7 and T-LET-6 are held out and already labelled 'model revised post-freeze'",
+   "param": "C14 pre-registration, before any C14 run. (1) patrolImpulseDecides 1 (both profiles): when the hazard-raised patrol-lead option is the rules' top pick, it is taken; the C13 gate does not hold the old intention over it and it is not drawn a second time (the hazard roll in perception.ts is the stochastic decision; design assumption). Other impulses are not changed. (2) patrolH0 refitted in the field profile only (compressed keeps 0.004), by bisection in log space inside its registry prior (0.0005-0.05), 5 steps, development seeds 48 and 7, 180-day burn-in + 90 days, 1 worker, to a sim-truth patrol rate of 0.3 per community-week (the midpoint of T-PAT-1's 0.1-0.5 band); only the count of patrols started is read. Ablation set C14 = {patrolImpulseDecides 0, patrolH0 0.004}, hash-identical to before. Fitted row: T-PAT-1 (fitted, tuned), through its truth counterpart. Untuned checks (seeds 48, 7, 21; 180-day burn-in + 180 days; nothing adjusted after seeing them): truth patrol rate 0.2-0.4 per community-week; at least 70% of patrols reach 3 adult males; truth patrol duration median 60-240 min; truth incursion share 0.25-0.55 (patrolIncursionP 0.4). Not resolvable in this window and left to the long runs: the observer rows T-PAT-1 (observed), T-PAT-2, T-PAT-3, T-PAT-6, T-PAT-7 and T-LET-6; expectation stated now: observed T-PAT-1 and T-PAT-2 rise about fourfold and stay below their bands, because a focal follow catches a patrol only when the focal is in it (about 1 in 10 now, 1 in 2 at C6) and patrols have about 3 males. Viability guard: median adult hunger not more than 0.10 above the C14-off arm and lactating median below 0.95.",
+   "reason": "patrols almost never start: the hazard needs >= 3 adult males in view, which small parties rarely give, its base rate was fitted at C6 for parties of 7, and C13 loses over a third of the impulses",
+   "targets": [
+    "T-PAT-1",
+    "T-PAT-2",
+    "T-PAT-3",
+    "T-PAT-5",
+    "T-PAT-6",
+    "T-PAT-7",
+    "T-LET-6"
+   ],
+   "verdicts": "none (no proof value exists)",
+   "class": "model change"
   }
  ],
  "targets": [
