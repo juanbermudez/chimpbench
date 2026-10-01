@@ -217,8 +217,9 @@ rows (thousands of draws and bouts) and the activity shares carry signal at this
 
 **Against the amendment's predictions** (`urgencyChoice`): mean U at draws fell (0.67 → 0.39) and the temperature
 rose (0.097 → 0.413), as predicted. The mean temperature is now *above* the fixed 0.164 because a quarter of draws
-happen at U < 0.1, where T > 0.54 and the choice is close to uniform over the legal menu (sated animals with nobody to
-groom, and the night menu, where fatigue, the only deficit nesting can act on, is almost always below 0.1). The share
+happen at U < 0.1, where T > 0.54 and the choice is close to uniform over the legal menu (draws were not broken down by context;
+the likely sources are sated animals with nobody to groom and night draws, where fatigue, the only deficit nesting can
+act on, is almost always below 0.1). The share
 taking the top option fell between baseline and iteration 1 (0.728), as predicted. "Every row closer to the baseline
 than iteration 1" failed: T-ACT-1 and T-ACT-2 came closer; T-ACT-3, T-ACT-4, T-PTY-1, T-RNG-4 and the crown-bout mean
 moved further away.
