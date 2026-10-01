@@ -198,9 +198,10 @@ test('party-size stage: a male of 10 y or more follows a female in oestrus and i
 test('party-size stage: both switches off reproduce the field model before it (hash-identical), and the share rule changes the field world', async () => {
   const { worldHash } = await import('./fixtures/golden');
   const run = (params: Record<string, number>) => { const w = createWorld(48, { profile: 'field', params }); for (let i = 0; i < 2880; i++) tickWorld(w); return worldHash(w); };
-  // field seed 48 after 2880 ticks (12 h) on main 21592c1, before the party-size stage
-  const off = run({ crowdByShare: 0, oestrusPullW: 0 });
+  // field seed 48 after 2880 ticks (12 h) on main 21592c1, before the party-size stage (and before the hunting fix, off here too)
+  const HUNT_OFF = { huntEncounter: 0, huntExtraKillP: 0 };
+  const off = run({ ...HUNT_OFF, crowdByShare: 0, oestrusPullW: 0 });
   assert.equal(off, 'bb1957953df81ebc');
-  assert.equal(run({}), off, 'both are off by default');
-  assert.notEqual(run({ crowdByShare: 1 }), off, 'crowdByShare changes the world');
+  assert.equal(run(HUNT_OFF), off, 'both are off by default');
+  assert.notEqual(run({ ...HUNT_OFF, crowdByShare: 1 }), off, 'crowdByShare changes the world');
 });

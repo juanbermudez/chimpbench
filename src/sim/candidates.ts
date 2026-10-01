@@ -1,6 +1,6 @@
 import type { Action, Candidate, Chimp, Tree, Troop, World } from '../types';
 import { bond, dominates, isAdultMale, maternalKin, rankLabel, rankedMale, strength } from './hierarchy';
-import { IMPULSE_ESCALATE, IMPULSE_GANG, IMPULSE_INFANTICIDE, IMPULSE_PATROL, IMPULSE_RAIN, IMPULSE_TRANSFER } from './perception';
+import { IMPULSE_ESCALATE, IMPULSE_GANG, IMPULSE_HUNT, IMPULSE_INFANTICIDE, IMPULSE_PATROL, IMPULSE_RAIN, IMPULSE_TRANSFER } from './perception';
 import { cellAt, gridOf, levels, pressureAt, territoryCost } from './territory';
 import { clamp, hash01, smoothstep } from './rng';
 import { paramsOf, type Params } from './params';
@@ -739,8 +739,10 @@ function meatAndHunting(world: World, c: Chimp): void {
     const female = c.sex === 'female' ? 0.8 : 0;
     // hunting is opportunistic and male-biased; success rises with hunters at Ngogo [M-H]
     if (hunt) offer('hunt', p.id, 1 + c.skills.hunting * P.huntJoinSkillW - female - dist / P.huntDistScaleM, V.JOIN, hunt.hunters.length);
-    // hunts start only on a community's hunting day and with several males together (no solo colobus hunts at Ngogo) [M-H]
-    else if (c.sex === 'male' && (s.huntDay[c.troopId] ?? NEVER) > time && x.ownMales >= P.huntMinMales && time - (s.lastHunt[c.troopId] ?? NEVER) > P.huntGapH)
+    // hunts start only with several males together (no solo colobus hunts at Ngogo) [M-H]: on a community's hunting day,
+    // or (hunting fix, huntEncounter) when he has just met this group in company, the impulse set at perception
+    else if (c.sex === 'male' && time - (s.lastHunt[c.troopId] ?? NEVER) > P.huntGapH && (((s.huntDay[c.troopId] ?? NEVER) > time && x.ownMales >= P.huntMinMales)
+      || (x.impulse === IMPULSE_HUNT && x.impulseTarget === p.id && x.impulseUntil > time && x.ownMales >= P.huntEncMinMales)))
       offer('hunt', p.id, 0.5 + 0.15 * (x.ownMales - 3) + c.skills.hunting * 0.35 + c.personality.boldness * 0.15 - dist / P.huntDistScaleM, V.LEAD, x.ownMales);
   }
 }

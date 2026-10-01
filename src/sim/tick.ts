@@ -133,11 +133,13 @@ function summary(world: World): void {
  * adult males; a hunt still needs prey in view and >=3 males together. The 0.0045 per male per day came from
  * reading Mitani & Watts 1999 (Ngogo) as "62 hunts in 471 days with ~24 males". The paper's 62 are hunting
  * episodes and attempts, 13 of them finds of chimpanzees already eating meat, with 26 adult males
- * (docs/research.md). The rate is a design value pending an encounter-based hunt decision (realism stage C7).
+ * (docs/research.md). The rate is a design value; with huntEncounter 1 (field) nothing is drawn and the hunt is decided
+ * at the colobus encounter. A hunting day set by the colobus-troop field experiment works in both cases.
  */
 function huntingDays(world: World): void {
   const s = simOf(world);
   const P = paramsOf(world);
+  if (P.huntEncounter === 1) return; // hunting fix: the decision is made at the colobus encounter (perception.ts), no lottery
   for (const t of world.troops) if (random(world) < P.huntDayPerMale * t.adultMales) s.huntDay[t.id] = world.time + P.huntDayDurationH;
 }
 

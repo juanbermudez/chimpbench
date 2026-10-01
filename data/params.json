@@ -9924,6 +9924,58 @@
    "notes": "An ongoing hunt by the community is heard within this distance. Field: loud events heard within 500 m (design, as the observer)."
   },
   {
+   "id": "huntEncMinMales",
+   "group": "hunting",
+   "value": 2,
+   "units": "males",
+   "range": [
+    1,
+    6
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    1000000
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.huntEncMinMales",
+   "file": "src/sim/perception.ts",
+   "integer": true,
+   "notes": "Hunting fix (docs/staging/hunting-fix.patch.json): adult males in view, himself included, for an adult male to consider hunting a colobus group he has just met (huntEncounter 1). Design assumption: no solo hunts, and a capture already needs two hunters; the 3 of huntMinMales came with the hunting-day lottery and still applies to a hunting day set by the colobus-troop experiment."
+  },
+  {
+   "id": "huntEncounter",
+   "group": "hunting",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [
+    "gilby2015"
+   ],
+   "clock": "none",
+   "symbol": "P.huntEncounter",
+   "file": "src/sim/perception.ts",
+   "profiles": {
+    "compressed": 0,
+    "field": 1
+   },
+   "integer": true,
+   "notes": "Hunting fix switch (docs/staging/hunting-fix.patch.json): the hunt decision is made at the colobus encounter (hunts per encounter is the field statistic, gilby2015) instead of on a community hunting day. An adult male who newly perceives a colobus group with huntEncMinMales adult males in view considers leading a hunt once, at today's score; the daily hunting-day lottery is not drawn. Nothing is fitted. Field only (the compressed map meets colobus about 12 times too often, docs/simulation.md §18). 0 = the hunting-day lottery. Ablation switch (set hunting)."
+  },
+  {
    "id": "huntEncounterProbBroken",
    "group": "hunting",
    "value": 0.64,
@@ -9951,6 +10003,36 @@
    ],
    "planned": "C7",
    "notes": "Share of colobus encounters hunted in broken canopy (15% in tall primary forest; success 92% vs 55%); +/-10%."
+  },
+  {
+   "id": "huntExtraKillP",
+   "group": "hunting",
+   "value": 0,
+   "units": "probability",
+   "range": [
+    0.085,
+    0.34
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "mitaniWatts1999",
+    "wattsMitani2002"
+   ],
+   "population": "Ngogo",
+   "clock": "none",
+   "symbol": "resolveHunt",
+   "file": "src/sim/ecology.ts",
+   "profiles": {
+    "compressed": 0,
+    "field": 0.17
+   },
+   "notes": "Hunting fix (docs/staging/hunting-fix.patch.json): in a successful hunt each other hunter makes a capture of his own with this probability. Derived, not fitted: Ngogo's 3.41 kills per successful hunt (mitaniWatts1999) with 15.2 adult males present (wattsMitani2002) give (3.41 - 1) / (15.2 - 1) = 0.17. The binomial form and the use of males present for hunters are design assumptions. 0 = one capture per successful hunt (the compressed profile, and the ablation set hunting)."
   },
   {
    "id": "huntGapH",

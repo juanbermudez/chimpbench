@@ -9,6 +9,7 @@ import { boundedCandidates, phaseMenu, RESPONSE_ACTIONS } from './menu';
 import { paramsOf, type Params } from './params';
 import { fruitAt } from './phenology';
 import { random } from './rng';
+import { IMPULSE_HUNT } from './perception';
 import { index, isChimpId, isTreeId, ix } from './state';
 
 // Stage C13 (docs/realism-design.md "C13 pre-registration"): the rules decision policy RG. At a decision point a
@@ -50,7 +51,9 @@ export function rgMenu(world: World, c: Chimp, all: Candidate[]): Candidate[] {
   const response = disturbed(world, c) ? [...phased].filter(k => RESPONSE_ACTIONS.has(k.action)).sort((a, b) => b.score - a.score)[0] : undefined;
   // stage C13e (joinChoice): a noticed departure stays on the menu as its own option (the joint trip), beside the animal's own best trip
   const join = paramsOf(world).joinChoice === 1 ? phased.find(k => k.action === 'travel' && (candidateMeta.get(k)?.aux ?? -1) > 0 && candidateMeta.get(k)?.v === V.TREE) : undefined;
-  return boundedCandidates(phased, [best, response, join]);
+  // hunting fix (huntEncounter): a hunt he may lead at a colobus encounter stays on the menu, as a response does
+  const x = ix(c), hunt = x.impulse === IMPULSE_HUNT && x.impulseUntil > world.time ? phased.find(k => k.action === 'hunt') : undefined;
+  return boundedCandidates(phased, [best, response, join, hunt]);
 }
 
 /**
@@ -88,6 +91,8 @@ function gate(world: World, c: Chimp, it: Intent | undefined, list: Candidate[])
   if (!it) return null;
   const x = ix(c);
   if (x.lastIntrAt > it.chosenAt) return null;
+  // hunting fix (huntEncounter): meeting a colobus group in company is a salient change, so the hunt is weighed
+  if (x.impulse === IMPULSE_HUNT && x.impulseUntil > world.time && findCandidate(list, 'hunt', x.impulseTarget)) return null;
   if (bucketOf(c.hunger) !== it.buckets.hunger || bucketOf(c.thirst) !== it.buckets.thirst || bucketOf(1 - c.energy) !== it.buckets.fatigue || bucketOf(1 - c.social) !== it.buckets.loneliness) return null;
   // stage C13c: the in-sim maximum intention age (rgMaxAgeH, 30 min); the Jev gate keeps GATE.maxAgeH (90 min)
   if (periodNow(world) !== it.period || world.time - it.chosenAt > paramsOf(world).rgMaxAgeH) return null;
