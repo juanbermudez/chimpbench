@@ -292,6 +292,8 @@ Two independent designs answer the same brief. This one is [docs/decide-jev-desi
 5. Keep rule: the switch goes on by default only if viability passes, held-out distance does not rise, and the prescription count falls. Otherwise it stays off and the null result is recorded (as C13d was).
 6. Independent review before the next piece. `src/sim` work runs one piece at a time.
 
+**Run-length cap (user, 1 October 2026).** No simulation longer than 3 months in total for now. Quick check: seeds 48 and 7, burn-in 30, 30 days. Deciding benchmark until the cap is lifted: seeds 48,7,21,5,11, burn-in 30, 60 days (`e-bench --confirm`). Rows that need a longer window are reported as insufficient and left out of both sums; keep/null decisions made under the cap are provisional and are re-run at 365 days when it is lifted. Track E runs use the rules policy only: no paid model API (Jev) is called.
+
 **Sequencing.** E switches stay off by default until the C11 calibration and the combined proof are frozen, unless the integrator rules otherwise. Proof runs count only on merged `main`.
 
 ## Stage E0: Baseline and prescription ledger
