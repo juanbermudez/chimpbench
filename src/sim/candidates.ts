@@ -46,7 +46,9 @@ function offer(action: Action, target: number, score: number, v: number = V.NONE
   if (!(score > -0.4)) return;
   if (curSilent && (action === 'call' || action === 'display')) return;
   score += (hash01(cur.id, cur.decisionVersion, CODE[action], target) - 0.5) * curP.candidateJitterSpan;
-  if (action === cur.action && target === cur.targetId) score += curDone ? -curP.finishedPenalty : curTime < curEnd ? curP.continueBonus : 0;
+  // stage E3 (urgencySwitchCost; docs/staging/e3-prereg.md §5): no continuation bonus or finished penalty. The cost of
+  // switching (time and travel to the alternative) is already in each alternative's score, and staying is the pay test's job
+  if (action === cur.action && target === cur.targetId && curP.urgencySwitchCost !== 1) score += curDone ? -curP.finishedPenalty : curTime < curEnd ? curP.continueBonus : 0;
   // stage C13e (joinChoice): the joint trip (travel to a companion's goal tree, aux = its leader) keeps one slot of its
   // own, so the animal's own trips cannot crowd it out of the choice; a trip to the same tree still merges
   const grouped = curP.joinChoice === 1 && action === 'travel', join = grouped && v === V.TREE && aux > 0;
