@@ -18,13 +18,13 @@
   "Instrument validation against truth (sampling accuracy, classifier precision and recall) is allowed at any time, because truth is not a field target; each validation run is logged."
  ],
  "protocolFreeze": {
-  "stage": "C8 freeze + C8c (lactation taper; sealed rows registered)",
-  "date": "2026-09-30",
+  "stage": "C8 freeze + C8c + C13e (join choice; sealed rows registered)",
+  "date": "2026-10-01",
   "hash": "7950e457bd02358f",
-  "registryHash": "396a4de9dae76896",
+  "registryHash": "165f717235c71d8d",
   "previous": {
-   "stage": "C8 freeze (sealed rows registered)",
-   "hash": "81c73f60d3a3b2e5"
+   "stage": "C8 freeze + C8c (lactation taper; sealed rows registered)",
+   "hash": "7950e457bd02358f"
   },
   "note": "scripts/field-metrics.ts --unseal and field-scenario.ts expansion --unseal refuse unless protocolFreeze.stage starts with 'C8' and hash and registryHash equal the current protocol and registry hashes (src/field/targets.ts unsealRefusal)"
  },
@@ -1709,6 +1709,18 @@
    ],
    "verdicts": "none (direction check, not a proof)",
    "class": "model change"
+  },
+  {
+   "date": "2026-10-01",
+   "by": "science/simulation owner (integrator)",
+   "seen": "none",
+   "param": "freeze: protocol hash 7950e457bd02358f -> 7950e457bd02358f (unchanged: C13e touches no hashed file); registryHash 396a4de9dae76896 -> 165f717235c71d8d (the C13e join* parameters, joinHooW fitted 0.094)",
+   "reason": "C13e merged; --unseal is bound to the protocol and registry hashes",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "combined proof (lean plan), C9 proof",
+   "class": "freeze"
   }
  ],
  "targets": [
