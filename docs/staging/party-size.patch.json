@@ -1,0 +1,27 @@
+{
+ "about": "Party-size staging for data/targets.json (proposed; applied by the integrator only if the design in docs/staging/party-size-prereg.md is approved; this branch never edits targets.json). Append `protocolLog`; apply `targetEdits` (set each field on the named target).",
+ "targetEdits": {
+  "T-PTY-2": {
+   "encoded": true,
+   "revisedPostFreeze": "Party-size change (docs/staging/party-size-prereg.md §4.1: crowding priced by the crown's per-animal share, the habitat-index terms removed): the rule encodes the direction of both parts (a patch-size effect, no habitat term); model revised post-freeze after the row's values were seen on seeds 48, 7, 21; scored only on fresh seeds; the magnitude (R² 0.2-0.8) is not tuned"
+  },
+  "T-PTY-3": {
+   "revisedPostFreeze": "Party-size change (docs/staging/party-size-prereg.md §4): model revised post-freeze after the row's values were seen on seeds 48, 7, 21; scored only on fresh seeds; counts as validation only if no parameter was set by looking at it"
+  },
+  "T-PTY-4": {
+   "revisedPostFreeze": "Party-size change (docs/staging/party-size-prereg.md §4): model revised post-freeze after the row's values were seen on seeds 48, 7, 21 (the row is already compromised); scored only on fresh seeds"
+  }
+ },
+ "protocolLog": [
+  {
+   "date": "2026-10-01",
+   "by": "party-size design (C8 agent; integrator request)",
+   "seen": "existing 1-year development outputs on seeds 48, 7, 21 (artifacts/validation/c13/dc-*.json, light-c13e.json): T-PTY-1 2.72, T-PTY-2 patch R² 0.016 and habitat-fruit R² 0.17, T-PTY-3 1.26, T-PTY-4 0.59, and the same rows with the C13 switches off (party size 3.48, patch R² 0.026). No run was made for the design",
+   "param": "Party-size pre-registration, fixed before any code or run (docs/staging/party-size-prereg.md). (1) crowdByShare 1: the forage worth of a crown is multiplied by 1 - (1 - cover) x r, cover = min(1, share / need) / min(1, crop / need), share = crop / (1 + co-feeders seen in the crown), need = hunger / fruitHungerFactor, r = crowdHighRankFactor for a high-ranking feeder, else 1; the habitat-index crowding cost and the sociability x fruitIndex trip bonus are 0 under the switch. No new free parameter; 0 = hash-identical to the model before. Evidence: chapman1995, newtonFisher2000, malenky1994 [M]; the functional form is a design assumption. (2) oestrusPullW 0.3 (design, not tuned; 0 = off, hash-identical): for males aged 10 y or more, a female in sight with swelling >= consortSwellingMin adds oestrusPullW x swelling to following her or joining her trip, and to the cost of leaving on an own trip. Evidence: emeryThompson2014 [M] (direction only). Fitted: nothing. Check: field, seeds 48 and 7, 30-day burn-in + 60 days, both switches on vs off, 2 workers. Guard: G1 switches off reproduce the goldens; G2 T-ACT-1, -2, -3, -4 and T-RNG-4 stay in band with the change on; G3 adult and lactating median hunger at most 0.03 above the off arm and no starvation death that the off arm lacks; G4 mean co-feeders per feeding scan higher in the top third of crowns by crop than in the bottom third, each seed. Predictions (not a gate): T-PTY-1 2.9-3.6; patch R² 0.08-0.30; T-PTY-4 0.50-0.58; T-PTY-3 unchanged within its spread (1.0-1.6); adult males in parties with a swollen female at least 1.2x those without; travel share +0.00 to +0.02. Not resolved in 60 days: the habitat-fruit part of T-PTY-2 (needs >= 4 monthly means; a 150-day window follows only if the guard passes; predicted R² at or below 0.10-0.15), demography, and T-PTY-3 with fewer than 5 periphery follows. Pre-declared next step, not part of this check: if T-PTY-1 stays below 3, re-fit partyStayW (tuned under argmax in C5a) against T-PTY-1 alone, with the integrator's go",
+   "reason": "T-PTY-1 below band since C13a; the patch-size effect absent in every version (crowding priced by habitat fruit, not by the crown)",
+   "targets": ["T-PTY-1", "T-PTY-2", "T-PTY-3", "T-PTY-4", "T-SOC-4", "T-ACT-5", "T-ACT-1", "T-ACT-2", "T-ACT-3", "T-ACT-4", "T-RNG-4"],
+   "verdicts": "T-PTY-2 encoded and model revised post-freeze; T-PTY-3 and T-PTY-4 model revised post-freeze (fresh seeds only); T-PTY-1 stays fitted and labelled tuned; no value yet",
+   "class": "pre-registration (proposed)"
+  }
+ ]
+}
