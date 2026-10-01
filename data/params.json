@@ -13179,7 +13179,7 @@
    "units": "per h",
    "range": [
     0.002,
-    0.008
+    0.0366
    ],
    "rangeBasis": "assumed-x2",
    "hardRange": [
@@ -13192,11 +13192,15 @@
    "clock": "eco",
    "symbol": "P.patrolH0",
    "file": "src/sim/perception.ts",
-   "notes": "Base hourly patrol hazard per eligible adult male (docs/realism-design.md §5.3). Fitted to T-PAT-1 (stage C6).",
+   "notes": "Base hourly patrol hazard per eligible adult male (docs/realism-design.md §5.3). Compressed 0.004: fitted to T-PAT-1 at stage C6. Field 0.0183: refitted at stage C14 (pre-registered log-space bisection, development seeds 48 and 7, 90 days after a 180-day burn-in) to a sim-truth patrol rate of 0.3 per community-week, the midpoint of T-PAT-1's band (0.298 at 0.0183; trail 0.005 -> 0.078, 0.0158 -> 0.207, 0.0281 -> 0.402, 0.0211 -> 0.350, 0.0183 -> 0.298; only the count of patrols started was read); the C6 value assumed parties of about 7, and the hazard needs >= 3 adult males in view. The range covers both profile values (x2).",
    "prior": {
     "dist": "loguniform",
     "lo": 0.0005,
     "hi": 0.05
+   },
+   "profiles": {
+    "compressed": 0.004,
+    "field": 0.0183
    }
   },
   {
