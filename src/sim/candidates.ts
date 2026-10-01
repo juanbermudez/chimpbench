@@ -243,6 +243,28 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   // stage C13b (intakeValue): a feeding option's food worth scales with its expected intake per hour, walk included,
   // relative to this animal's own ripe-fruit rate (design A's currency, the sim's own rates; src/sim/intake.ts) [charnov1976]
   const iv = P.intakeValue === 1, fruitH = iv ? fruitRate(c, P).hungerPerH : 1;
+  // party-size stage (crowdByShare; docs/staging/party-size-prereg.md §4.1): co-feeders cost what they take from this
+  // animal's need. need = the fruit that would sate it; share = the crown's crop split with the feeders seen in it; the
+  // worth keeps the part of the need the crown still covers (1 when alone or when the crown feeds everyone), with the
+  // existing contest asymmetry for high-ranking feeders. Party size tracks patch size, not habitat-wide food
+  // [M: chapman1995, newtonFisher2000, malenky1994]; the functional form is a design assumption. The habitat-index
+  // crowding cost and the sociability × fruit-index trip bonus are off under the switch.
+  const byShare = P.crowdByShare === 1;
+  const shareWorth = (crop: number, crowd: number): number => {
+    if (crowd <= 0 || h <= 0) return 1;
+    const need = h / P.fruitHungerFactor, all = Math.min(1, crop / need);
+    if (all <= 0) return 1;
+    const cover = Math.min(1, crop / (1 + crowd) / need) / all;
+    return 1 - (1 - cover) * (c.rank > P.crowdHighRank ? P.crowdHighRankFactor : 1);
+  };
+  const socFruit = byShare ? 0 : pers.sociability * env.fruitIndex * 0.1;
+  // party-size stage (oestrusPullW; §4.2): males of 10 y or more stay with a female in oestrus (swelling from
+  // consortSwellingMin; maternal kin excluded, as for mating offers). Receptive females raise the number of males in
+  // parties [M: emeryThompson2014]; the weight is a design assumption.
+  const pullOn = P.oestrusPullW > 0 && male && c.age >= 10;
+  const oestrusOf = (f: Chimp | undefined): number => pullOn && f !== undefined && f.sex === 'female' && f.troopId === c.troopId && f.swelling >= P.consortSwellingMin && !maternalKin(c, f) ? P.oestrusPullW * f.swelling : 0;
+  let oestrusNear = 0;
+  if (pullOn) for (let _i0 = 0; _i0 < x.seen.length; _i0++) { const v = oestrusOf(byId.get(x.seen[_i0])); if (v > oestrusNear) oestrusNear = v; }
   const tripFrac = (crop: number, feeders: number, d: number) => { const ti = treeIntake(c, P, crop, feeders, d, P.intakeCropOnly !== 1); return ti.feedH > 0 ? ti.feedH / (ti.walkH + ti.feedH) : 0; };
   if (!caretaker || (c.age >= 1.5 && !carried && caretaker.action === 'forage')) {
     for (let _i1 = 0; _i1 < x.trees.length; _i1++) { const id = x.trees[_i1];
@@ -253,8 +275,8 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       for (let _i2 = 0; _i2 < x.seen.length; _i2++) { const sid = x.seen[_i2]; const o = byId.get(sid)!; if (o.action === 'forage' && o.targetId === t.id) crowd++; }
       const crop = P.patchEcology === 1 ? fruitAt(world, t) : t.fruit, q = Math.min(1, crop / P.fruitValueRef);
       // contest competition grows with crowding when fruit is scarce (drives parties apart) [H]
-      const compete = crowd * P.crowdCompeteW * (P.crowdScarcityRef - env.fruitIndex) * (c.rank > P.crowdHighRank ? P.crowdHighRankFactor : 1);
-      offer('forage', t.id, (h * 1.6 + 0.1) * (0.55 + 0.45 * q) * (iv ? tripFrac(crop, crowd, d) : 1) - d / P.forageDistScaleM - compete - rain * 0.45 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.6 - coreCostOf(t, coreW, troop, x) + (t.id === s.figTree && h > 0.2 ? 0.2 : 0) - revisit(x, t.id, time, P), V.NONE, crowd);
+      const compete = byShare ? 0 : crowd * P.crowdCompeteW * (P.crowdScarcityRef - env.fruitIndex) * (c.rank > P.crowdHighRank ? P.crowdHighRankFactor : 1);
+      offer('forage', t.id, (h * 1.6 + 0.1) * (0.55 + 0.45 * q) * (iv ? tripFrac(crop, crowd, d) : 1) * (byShare ? shareWorth(crop, crowd) : 1) - d / P.forageDistScaleM - compete - rain * 0.45 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.6 - coreCostOf(t, coreW, troop, x) + (t.id === s.figTree && h > 0.2 ? 0.2 : 0) - revisit(x, t.id, time, P), V.NONE, crowd);
     }
   }
   if (!caretaker) {
@@ -265,7 +287,10 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     // food beside fruit, watts2012a, emeryThompson2020 [H]; fitted in the field profile to T-FOOD-2)
     offer('forage', -1, h * P.fallbackForageW * (fallbackOn(P) ? bestFallbackNear(world, px, pz, x.sight, _fb) : 1) * leafV + P.fallbackBase - rain * 0.3);
     // field profile: leaving companions for a food tree of one's own has a cost (parties travel together; design, T-PTY-1)
-    const stay = P.partyStayW > 0 ? P.partyStayW * Math.min(x.visibleOwn, P.partyStayMaxN) : 0;
+    const stay = (P.partyStayW > 0 ? P.partyStayW * Math.min(x.visibleOwn, P.partyStayMaxN) : 0) + oestrusNear;
+    // stage departPersist: after a failed departure attempt its own trips to trees wait for the re-launch time, while it
+    // still has companions to leave (execution.ts departAttempt) [M: gruberZuberbuhler2013; design]
+    const held = P.departPersist === 1 && x.tryAt !== undefined && time < x.tryAt && departAudience(world, c) > 0;
     const shortlist = P.patchEcology === 1; // field: many remembered trees; score the few best by distance and hunger
     _mem.length = 0; _rk.length = 0; _dk.length = 0;
     const minD = P.memoryTreeMinM;
@@ -278,7 +303,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
         const crop = x.treeCrop?.[t.id] ?? 0.2;
         const worth = (P.memCropBelief === 1 ? h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) : h * P.memTravelHungerW) * (iv ? tripFrac(crop, 0, d) : 1);
         if (shortlist) { const rv = revisit(x, t.id, time, P); _mem.push(t, worth - tripCost(worth, crop, d, h, P) - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD)); continue; }
-        offer('travel', t.id, worth - tripCost(worth, crop, d, h, P) - revisit(x, t.id, time, P) - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + pers.sociability * env.fruitIndex * 0.1 - stay, V.TREE);
+        if (!held) offer('travel', t.id, worth - tripCost(worth, crop, d, h, P) - revisit(x, t.id, time, P) - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay, V.TREE);
       } else if (m.kind === 'water' && c.thirst > 0.25 && c.age >= 3) {
         const d = Math.hypot(m.position[0] - px, m.position[2] - pz);
         offer('drink', m.entityId, c.thirst * 1.5 - d / P.drinkDistScaleM - 0.05);
@@ -307,14 +332,14 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       for (let i = 0; i < _rk.length; i++) { const r = D > 0 ? _rk[i] * D / (D + _dk[i]) : _rk[i] / _dk[i]; if (r > br) { br = r; bi = i; } }
       const t = _mem[2 * bi] as Tree, base = _mem[2 * bi + 1] as number;
       _mem.length = 0;
-      offer('travel', t.id, base - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + pers.sociability * env.fruitIndex * 0.1 - stay, V.TREE);
+      if (!held) offer('travel', t.id, base - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay, V.TREE);
     }
     if (shortlist) for (let k = 0; k < 4 && _mem.length; k++) {
       let bi = 1;
       for (let i = 3; i < _mem.length; i += 2) if ((_mem[i] as number) > (_mem[bi] as number)) bi = i;
       const t = _mem[bi - 1] as Tree, base = _mem[bi] as number;
       _mem.splice(bi - 1, 2);
-      offer('travel', t.id, base - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + pers.sociability * env.fruitIndex * 0.1 - stay, V.TREE);
+      if (!held) offer('travel', t.id, base - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay, V.TREE);
     }
     if (x.joinCall > 0 && time - x.joinAt < 0.3 && c.action !== 'patrol') {
       // parties gather at rich food and split up when fruit is scarce (fission-fusion tracks fruit) [H]
@@ -397,11 +422,12 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       const trip = P.partyJoinTrip === 1 && !!L && L.action === 'travel' && ix(L).v === V.TREE && isTreeId(L.targetId);
       // stage C13e: the joint trip has a tree as its goal, so it needs no minimum distance to the leader (at the departure
       // cue the leader is still next to its companions); its value is the join value, no longer near-automatic
-      if (P.joinChoice === 1 && trip) offer('travel', L!.targetId, joinValue(L!), V.TREE, L!.id);
+      const her = Math.max(oestrusOf(o), oestrusOf(L)); // a female in oestrus who travels off, or whose leader does
+      if (P.joinChoice === 1 && trip) offer('travel', L!.targetId, joinValue(L!) + her, V.TREE, L!.id);
       else if (d > P.partyFollowMinM) {
       // stage C10 addendum 1: a travel hoo heard from this companion (or its leader) in the last few minutes raises following it
       const hoo = P.travelHoo === 1 && x.hooFrom !== undefined && (x.hooFrom === lead || x.hooFrom === o.id) && time - (x.hooAt ?? NEVER) <= P.travelHooWindowMin / 60 ? P.travelHooFollowW : 0;
-      const sc = P.partyFollowBase + b * P.partyFollowW + pers.sociability * P.partyFollowSocialW + (isAdultMale(o) ? P.partyFollowMaleW : 0) - h * P.partyFollowHungerW - rain * 0.3 + hoo
+      const sc = P.partyFollowBase + b * P.partyFollowW + pers.sociability * P.partyFollowSocialW + (isAdultMale(o) ? P.partyFollowMaleW : 0) - h * P.partyFollowHungerW - rain * 0.3 + hoo + her
         + (P.assocBondW > 0 && L ? P.assocBondW * bond(c, L) : 0); // stage C9: bond with the leader (off by default)
       // stage C7c (field; c7b-prereg §6.2): a companion on a committed trip to a tree lends its goal: go there with it (shared goal) [H: joint travel, gruberZuberbuhler2013]
       if (trip) offer('travel', L!.targetId, sc, V.TREE, L!.id);
@@ -434,7 +460,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     && x.hooFrom !== undefined && time - (x.hooAt ?? NEVER) <= P.travelHooWindowMin / 60 && !x.seen.includes(x.hooFrom)) {
     const L = byId.get(x.hooFrom);
     if (L && L.alive && L.troopId === c.troopId && L.action === 'travel' && ix(L).v === V.TREE && isTreeId(L.targetId) && dxz(L, px, pz) < P.hearTravelHooM)
-      offer('travel', L.targetId, joinValue(L), V.TREE, L.id);
+      offer('travel', L.targetId, joinValue(L) + oestrusOf(L), V.TREE, L.id);
   }
 
   const adolescentOrAdult = c.age >= 12 && !caretaker;
@@ -986,3 +1012,16 @@ export function findCandidate(list: Candidate[], action: string, targetId: numbe
   return undefined;
 }
 
+
+/** Stage departPersist: own-community animals of 12 y or more within the party link of `c`, awake: those a departure would leave behind. */
+export function departAudience(world: World, c: Chimp): number {
+  const P = paramsOf(world), alive = index(world).alive, l2 = P.partyLinkM * P.partyLinkM;
+  let n = 0;
+  for (let i = 0; i < alive.length; i++) {
+    const o = alive[i];
+    if (o === c || o.troopId !== c.troopId || o.age < 12 || (o.action === 'nest' && ix(o).phase >= 2)) continue;
+    const dx = o.position[0] - c.position[0], dz = o.position[2] - c.position[2];
+    if (dx * dx + dz * dz <= l2) n++;
+  }
+  return n;
+}

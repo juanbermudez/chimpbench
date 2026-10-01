@@ -39,6 +39,12 @@ export interface ChimpX {
   joinCall: number; joinCaller: number; joinAt: number; joinX: number; joinZ: number;
   /** Stage C10 (travelHoo): the companion whose travel hoo this animal last heard, and when (absent until one is heard, so worlds with the switch off are unchanged). */
   hooFrom?: number; hooAt?: number;
+  /**
+   * Stage departPersist: a departure effort in progress (absent otherwise, so worlds with the switch off are unchanged).
+   * tryN: the audience of the attempt under way; trySince: when the first failed attempt of this effort began; tryAt: when
+   * its own trips to trees come back on the menu after a failed attempt.
+   */
+  tryN?: number; trySince?: number; tryAt?: number;
   /** Stage C13 (rgOn): the rules policy's current intention (absent until the first RG decision, so worlds with the switch off are unchanged). */
   rgIntent?: Intent;
   trees: number[]; fruitNear: number; preyId: number; stims: number[];
@@ -147,7 +153,7 @@ export type SimWorld = World & { sim: SimState };
  * ChimpX and SimState keys that exist only once their mechanism has fired (so worlds with the switch off keep their
  * shape and hashes). The save check (src/persist/envelope.ts worldShapeProblem) ignores them.
  */
-export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent'];
+export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt'];
 export const OPTIONAL_SIM: readonly string[] = ['fission'];
 
 export function newX(): ChimpX {
