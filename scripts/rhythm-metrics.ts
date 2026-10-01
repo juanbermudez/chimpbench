@@ -11,6 +11,9 @@ import { writeFileSync } from 'node:fs';
 import { isMainThread, parentPort } from 'node:worker_threads';
 import { createWorld, tickWorld } from '../src/simulation';
 import { V } from '../src/sim/candidates';
+import { skyLux } from '../src/sim/light';
+import { paramsOf } from '../src/sim/params';
+import { fruitAt } from '../src/sim/phenology';
 import { ix } from '../src/sim/state';
 import type { Chimp } from '../src/types';
 import { runPool } from './lib/pool';
@@ -65,7 +68,12 @@ export interface RhythmResult {
    * the last exit from a nest, and the breakfast, the first feeding after it (0 none before noon, 1 fig crown, 2 other
    * crown, 3 fallback on the ground), metres from the nest, and other chimpanzees feeding in that crown when it started.
    */
-  deps: { cls: Cls; wake: number; bf: 0 | 1 | 2 | 3; d: number; feeders: number }[];
+  deps: { cls: Cls; wake: number; bf: 0 | 1 | 2 | 3; d: number; feeders: number; lux: number }[];
+  /**
+   * Stage E2c: per fruiting crown (crop ≥ 0.06 at sunrise) and day, the crop at sunset as a share of the crop at sunrise
+   * (figs, other fruit): how much of a crown the forest takes within a day (frugivores, chimpanzees, phenology).
+   */
+  cropDay: { fig: number[]; other: number[] };
   births: number; deaths: number; causes: Record<string, number>; nightDeaths: number; living: number; adults: number;
   hungerAdult: number; hungerLact: number;
 }
@@ -82,11 +90,11 @@ export function runRhythm(job: RhythmJob): RhythmResult {
     byTemp: TEMPBINS.map(() => [[0, 0], [0, 0]]),
     night: { ticks: Object.fromEntries(KINDS.map(k => [k, 0])) as Record<Kind, number>, metres: 0, nights: 0, adultTicks: Object.fromEntries(KINDS.map(k => [k, 0])) as Record<Kind, number> },
     rain: { adult: RAINBINS.map(() => [0, 0, 0, 0, 0]), juvenile: RAINBINS.map(() => [0, 0, 0, 0, 0]) },
-    heatMidday: [], sleepAtNoon: [], deps: [], births: 0, deaths: 0, causes: {}, nightDeaths: 0, living: 0, adults: 0, hungerAdult: 0, hungerLact: 0,
+    heatMidday: [], sleepAtNoon: [], deps: [], cropDay: { fig: [], other: [] }, births: 0, deaths: 0, causes: {}, nightDeaths: 0, living: 0, adults: 0, hungerAdult: 0, hungerLact: 0,
   };
   interface Track { inNest: boolean; nesting: boolean; start: number; lastStart: number; lastEntry: number; wake: number; sWake: number; sBed: number; atMid: boolean; entries: number; cls: Cls | null; px: number; pz: number;
-    /** E2b: where the last morning exit was, and the breakfast after it (bf −1 = not yet). */
-    wx: number; wz: number; bf: number; bd: number; bn: number }
+    /** E2b: where the last morning exit was, and the breakfast after it (bf −1 = not yet). E2c: open-sky illuminance at the exit (lux). */
+    wx: number; wz: number; bf: number; bd: number; bn: number; lux: number }
   const tr = new Map<number, Track>();
   const inNest = (c: Chimp) => c.action === 'nest' && (ix(c).phase === 2 || ix(c).v === V.MOTHER);
   const clsOf = (c: Chimp): Cls => (c.sex === 'male' ? 'male' : c.lactating ? 'lactating' : 'female');
@@ -96,13 +104,14 @@ export function runRhythm(job: RhythmJob): RhythmResult {
   const births0 = w.stats.births, deaths0 = w.stats.deaths, dead = new Set(w.chimps.filter(c => !c.alive).map(c => c.id));
   const treeOf = (id: number) => w.trees[id - 100001];
   let hungerA = 0, hungerAN = 0, hungerL = 0, hungerLN = 0;
+  const P = paramsOf(w), dawnCrop = new Map<number, number>();
   for (let i = 0; i < job.days * 5760; i++) {
     tickWorld(w);
     const env = w.environment, alt = env.sunAltitude, rising = alt > prevAlt, time = w.time, hour = w.hour;
     const isSunrise = prevAlt < H0 && alt >= H0, isSunset = prevAlt >= H0 && alt < H0;
     const isNoon = prevRise && !rising && alt > 0, isMidnight = !prevRise && rising && alt < 0;
-    if (isSunrise) sunrise = time;
-    if (isSunset) sunset = time;
+    if (isSunrise) { sunrise = time; dawnCrop.clear(); for (const tr0 of w.trees) { const f = fruitAt(w, tr0); if (f >= 0.06) dawnCrop.set(tr0.id, f); } }
+    if (isSunset) { sunset = time; for (const [id, f0] of dawnCrop) { const tr0 = treeOf(id); (tr0.species.startsWith('Ficus') ? res.cropDay.fig : res.cropDay.other).push(fruitAt(w, tr0) / f0); } dawnCrop.clear(); }
     if (isNoon) noon = time;
     const night = env.daylight <= 0.03, light = env.daylight >= 0.1;
     const midWin = hour >= 11.5 && hour < 14.5, mornWin = hour >= 8 && hour < 11;
@@ -115,12 +124,12 @@ export function runRhythm(job: RhythmJob): RhythmResult {
       if (c.age < 5) continue;
       const adult = c.age >= 15, x = ix(c), k = kindOf(c), nest = inNest(c);
       let t = tr.get(c.id);
-      if (!t) { t = { inNest: nest, nesting: c.action === 'nest', start: NaN, lastStart: NaN, lastEntry: NaN, wake: NaN, sWake: NaN, sBed: NaN, atMid: false, entries: 0, cls: null, px: c.position[0], pz: c.position[2], wx: 0, wz: 0, bf: -1, bd: NaN, bn: 0 }; tr.set(c.id, t); }
+      if (!t) { t = { inNest: nest, nesting: c.action === 'nest', start: NaN, lastStart: NaN, lastEntry: NaN, wake: NaN, sWake: NaN, sBed: NaN, atMid: false, entries: 0, cls: null, px: c.position[0], pz: c.position[2], wx: 0, wz: 0, bf: -1, bd: NaN, bn: 0, lux: NaN }; tr.set(c.id, t); }
       if ((c.action === 'nest') !== t.nesting) { t.nesting = c.action === 'nest'; if (t.nesting) t.start = time; } // setting off to build
       if (nest !== t.inNest) {
         t.inNest = nest;
         if (nest) { t.lastEntry = time; t.lastStart = t.start; t.sBed = x.slp ?? 1 - c.energy; if (time > noon) t.entries++; }
-        else if (rising) { t.wake = time; t.sWake = x.slp ?? 1 - c.energy; t.wx = c.position[0]; t.wz = c.position[2]; t.bf = -1; } // between solar midnight and noon; the last exit counts
+        else if (rising) { t.wake = time; t.sWake = x.slp ?? 1 - c.energy; t.wx = c.position[0]; t.wz = c.position[2]; t.bf = -1; t.lux = skyLux(P, alt, env.cloud); } // between solar midnight and noon; the last exit counts
       }
       // E2b: the breakfast, the first feeding after the morning exit
       if (rising && !nest && t.bf < 0 && !Number.isNaN(t.wake) && c.action === 'forage' && x.phase === 2) {
@@ -131,7 +140,7 @@ export function runRhythm(job: RhythmJob): RhythmResult {
       }
       if (isNoon) {
         t.cls = adult ? clsOf(c) : null; if (adult) res.sleepAtNoon.push(1 - c.energy);
-        if (adult && !Number.isNaN(t.wake) && !Number.isNaN(sunrise) && t.wake > sunrise - 6) res.deps.push({ cls: clsOf(c), wake: (t.wake - sunrise) * 60, bf: (t.bf < 0 ? 0 : t.bf) as 0 | 1 | 2 | 3, d: t.bd, feeders: t.bn });
+        if (adult && !Number.isNaN(t.wake) && !Number.isNaN(sunrise) && t.wake > sunrise - 6) res.deps.push({ cls: clsOf(c), wake: (t.wake - sunrise) * 60, bf: (t.bf < 0 ? 0 : t.bf) as 0 | 1 | 2 | 3, d: t.bd, feeders: t.bn, lux: t.lux });
       }
       if (isMidnight) {
         if (adult) { res.adultNights++; if (!nest) res.outAtMidnight++; }
@@ -217,6 +226,11 @@ export function report(rs: RhythmResult[], job: Omit<RhythmJob, 'seed'>): string
   }
   for (const [bf, name] of [[3, 'fallback on the ground'], [0, 'none before noon']] as const) { const v = deps.filter(r => r.bf === bf); L.push(`| ${name} | — | ${v.length} | ${f0(q(v.map(r => r.wake), 0.5))} (${f0(q(v.map(r => r.wake), 0.1))} to ${f0(q(v.map(r => r.wake), 0.9))}) | ${pre(v)} | — |`); }
   L.push('', 'Field directions (janmaat2014, Taï, fruit breakfasts): figs earlier than other fruit; far figs earlier than near figs; far non-fig sites later than near ones.');
+  // stage E2c: the light of departure, and how much of a crown is gone by evening
+  const lux = deps.map(r => r.lux).filter(v => Number.isFinite(v)), lb = (lo: number, hi: number) => pc(lux.filter(v => v >= lo && v < hi).length, lux.length);
+  L.push('', `Open-sky illuminance at departure (stage E2c; lux, horizontal, sky model): median ${f0(q(lux, 0.5))} (p10 ${f2(q(lux, 0.1))}, p90 ${f0(q(lux, 0.9))}); below 1 lux ${lb(0, 1)}, 1–85 lux ${lb(1, 85)}, 85 lux and above ${lb(85, Infinity)} (field, secondary: feeding activity of great apes at 1–85 lux, Erkert as cited by tagg2018).`);
+  const cd = (k: 'fig' | 'other') => rs.flatMap(r => r.cropDay?.[k] ?? []);
+  L.push(`Crop at sunset as a share of the crop at sunrise, fruiting crowns (stage E2c): figs median ${f2(q(cd('fig'), 0.5))} (p10 ${f2(q(cd('fig'), 0.1))}; n ${cd('fig').length}), other fruit ${f2(q(cd('other'), 0.5))} (p10 ${f2(q(cd('other'), 0.1))}; n ${cd('other').length}).`);
   L.push('', `Adults out of a nest at solar midnight: ${pc(rs.reduce((a, r) => a + r.outAtMidnight, 0), nights)} of ${nights} adult-nights. Sleep pressure at solar noon: mean ${f2(mean(rs.flatMap(r => r.sleepAtNoon)))}.`, '');
   L.push('## Hourly activity of adults (share of the hour)', '', `| Hour | ${KINDS.join(' | ')} |`, `| --- | ${KINDS.map(() => '---').join(' | ')} |`);
   for (let h = 0; h < 24; h++) {
@@ -264,7 +278,7 @@ async function main() {
   const text = report(res, { burnIn, days, params });
   console.log(text);
   if (flag('md', '')) writeFileSync(flag('md', ''), text + '\n');
-  if (flag('json', '')) writeFileSync(flag('json', ''), JSON.stringify({ seeds, burnIn, days, params, results: res.map(r => ({ ...r, heatMidday: undefined, sleepAtNoon: undefined })) }, null, 1));
+  if (flag('json', '')) writeFileSync(flag('json', ''), JSON.stringify({ seeds, burnIn, days, params, results: res.map(r => ({ ...r, heatMidday: undefined, sleepAtNoon: undefined, cropDay: undefined })) }, null, 1));
 }
 
 if (!isMainThread) {

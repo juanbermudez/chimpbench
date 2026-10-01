@@ -4664,6 +4664,29 @@
    "notes": "Time constant of danger-map decay (design, §5.2)."
   },
   {
+   "id": "darkCost",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.darkCost",
+   "file": "src/sim/light.ts",
+   "integer": true,
+   "notes": "Stage E2c switch (docs/staging/e2c-prereg.md): darkness acts through its physical consequences instead of the nest's darkness weight. The light at the animal's height (sky illuminance from the sun's altitude, skyLuxSun, under the E2a cloud attenuation and canopy profile) sets its visual acuity relative to full daylight (shlaer1937 fit, sightAcuity*); feeding intake, the sight radius and the walking pace (walkDarkPace) follow it, and trips are valued with the light expected on arrival. The nest's value becomes resting plus sleep pressure (rhythmSleepW x S x (1 - daylight)); rhythmDarkW is no longer read, resting outside a nest no longer carries the sleep term (only a nest lets an animal sleep), and an animal in its own finished nest is not offered rest separately (resting there is staying in the nest). Leopards are absent from Kibale (wood2017), so no predation term. Needs rhythmSleep; no effect otherwise. 0 = E2a/E2b, bit-identical. Ablation switch."
+  },
+  {
    "id": "daylightHighDeg",
    "group": "weather",
    "value": 12,
@@ -18879,6 +18902,50 @@
    "notes": "Stage C10: SD of a chimpanzee's individual signature offset per standardized pant-hoot feature, in units of the call-to-call SD. Set by the offline Monte Carlo of the recorder protocol (scripts/signals-metrics.ts --calibrate; no simulation run) so that leave-one-out discriminant accuracy for 18 callers x 20 calls is 2.8x chance (desai2022: 19.5% vs 6.9%). T-COM-5 is tuned by construction. Result (--reps 16): 0.308 gives identity 2.80x and community 1.30x chance with sigCommunitySD 0.241."
   },
   {
+   "id": "sightAcuityExp",
+   "group": "perception",
+   "value": 0.48,
+   "units": "exponent",
+   "range": [
+    0.38,
+    0.6
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.05,
+    5
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.sightAcuityExp",
+   "file": "src/sim/light.ts",
+   "notes": "Stage E2c (darkCost): exponent n of relative visual acuity 1 / (1 + (K / T)^n), T the retinal illuminance in trolands; least-squares fit (log acuity) to shlaer1937 Table I column II (24 points, 0.004 to 10^5 trolands, free fixation, one trained human observer; rms error 0.055 log units). Human physiology, cross-species (chimpanzee acuity in daylight is close to human: spence1934, matsuzawa1990 as cited by adams2017); assumed."
+  },
+  {
+   "id": "sightAcuityHalfTd",
+   "group": "perception",
+   "value": 23.4,
+   "units": "troland",
+   "range": [
+    10,
+    50
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.01,
+    100000
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.sightAcuityHalfTd",
+   "file": "src/sim/light.ts",
+   "notes": "Stage E2c (darkCost): retinal illuminance K (trolands) at which visual acuity is half its photopic maximum; same fit to shlaer1937 as sightAcuityExp (log10 K = 1.37). Human physiology, cross-species; assumed."
+  },
+  {
    "id": "sightDayM",
    "group": "perception",
    "value": 15,
@@ -18939,6 +19006,28 @@
     "compressed": 5,
     "field": 10
    }
+  },
+  {
+   "id": "sightRetinaTdPerLux",
+   "group": "perception",
+   "value": 1.2,
+   "units": "troland per lux",
+   "range": [
+    0.3,
+    3
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.001,
+    100
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.sightRetinaTdPerLux",
+   "file": "src/sim/light.ts",
+   "notes": "Stage E2c (darkCost): retinal illuminance per lux on the scene, reflectance x pupil area / pi: a forest surface of reflectance 0.1 seen through a dark-adapted pupil of 7 mm (38 mm^2). Physics and human pupil size; the reflectance is not sourced. Assumed."
   },
   {
    "id": "siteLatDeg",
@@ -19006,6 +19095,50 @@
    "file": "src/sim/environment.ts",
    "integer": true,
    "notes": "East Africa Time offset from UTC. Site choice (Ngogo, Kibale), not an evidence claim."
+  },
+  {
+   "id": "skyLuxNight",
+   "group": "weather",
+   "value": 0.0005,
+   "units": "lux",
+   "range": [
+    0.0001,
+    0.002
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.skyLuxNight",
+   "file": "src/sim/light.ts",
+   "notes": "Stage E2c (darkCost): illuminance of the moonless night sky (starlight and airglow), the constant term of the U.S. Naval Observatory sky model (janiczekDeYoung1987, as transcribed in the skylight package). Physics; the moon is not modelled. Assumed."
+  },
+  {
+   "id": "skyLuxSun",
+   "group": "weather",
+   "value": 133775,
+   "units": "lux",
+   "range": [
+    120000,
+    140000
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    50000,
+    200000
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.skyLuxSun",
+   "file": "src/sim/light.ts",
+   "notes": "Stage E2c (darkCost): solar illuminance term of the U.S. Naval Observatory sky model (janiczekDeYoung1987: E = this x atmospheric transmission of the refracted altitude, giving about 760 lux at the horizon, 3 lux at -6 deg and 0.005 lux at -12 deg in a clear sky). Physics; assumed until registered."
   },
   {
    "id": "slotsForage",
@@ -21227,6 +21360,28 @@
    "symbol": "recomputeHierarchies",
    "file": "src/sim/hierarchy.ts",
    "notes": "During a contested vacancy the alpha stays open while the top two adult males are within this gap."
+  },
+  {
+   "id": "walkDarkPace",
+   "group": "movement",
+   "value": 0.92,
+   "units": "fraction",
+   "range": [
+    0.85,
+    0.97
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.05,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.walkDarkPace",
+   "file": "src/sim/light.ts",
+   "notes": "Stage E2c (darkCost): walking pace in near-darkness as a share of the daylight pace: 101 against 110 cm/s at 0.015 against 650 lux at the eye after 20 min of dark adaptation (figueiro2011; 24 older adults on an indoor path). The pace rises linearly with vision to 1 in full daylight (design). Human biomechanics, cross-species; a clear path, so a lower bound on the cost on a forest floor. Assumed."
   },
   {
    "id": "walkMps",
