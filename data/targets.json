@@ -18,13 +18,13 @@
   "Instrument validation against truth (sampling accuracy, classifier precision and recall) is allowed at any time, because truth is not a field target; each validation run is logged."
  ],
  "protocolFreeze": {
-  "stage": "C8 freeze (sealed rows registered)",
+  "stage": "C8 freeze + C8c (lactation taper; sealed rows registered)",
   "date": "2026-09-30",
-  "hash": "81c73f60d3a3b2e5",
-  "registryHash": "7e72eb52692342a5",
+  "hash": "7950e457bd02358f",
+  "registryHash": "396a4de9dae76896",
   "previous": {
-   "stage": "Neutral-voice strings",
-   "hash": "3c7b860f2833d182"
+   "stage": "C8 freeze (sealed rows registered)",
+   "hash": "81c73f60d3a3b2e5"
   },
   "note": "scripts/field-metrics.ts --unseal and field-scenario.ts expansion --unseal refuse unless protocolFreeze.stage starts with 'C8' and hash and registryHash equal the current protocol and registry hashes (src/field/targets.ts unsealRefusal)"
  },
@@ -1669,6 +1669,18 @@
     "T-DEM-3": "revisedPostFreeze",
     "T-DEM-13": "revisedPostFreeze"
    }
+  },
+  {
+   "date": "2026-09-30",
+   "by": "science/simulation owner (integrator)",
+   "seen": "none",
+   "param": "freeze: 81c73f60d3a3b2e5 -> 7950e457bd02358f; registryHash 7e72eb52692342a5 -> 396a4de9dae76896 (C8c lactTaper on by default; the revised-post-freeze labels on T-RNG-5, T-ACT-5, T-DEM-3 and T-DEM-13)",
+   "reason": "C8c merged (2082e3e) and its follow-up staging registered; --unseal is bound to the protocol and registry hashes",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "combined proof (lean plan), C9 proof",
+   "class": "freeze"
   }
  ],
  "targets": [
