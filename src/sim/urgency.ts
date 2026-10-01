@@ -7,6 +7,7 @@ import { leafRate, treeIntake } from './intake';
 import { phaseMenu } from './menu';
 import type { Params } from './params';
 import { fruitAt } from './phenology';
+import { sleepPressure } from './rhythm';
 import { index, isTreeId, isWaterId, ix } from './state';
 
 // Stage E3 (docs/staging/e3-prereg.md): how decisively and how persistently a chimpanzee acts comes from how pressing
@@ -24,8 +25,11 @@ import { index, isTreeId, isWaterId, ix } from './state';
  * or a nest, loneliness with a grooming or play partner. Stress always counts: it has no consummatory act of its own,
  * and escape, appeasement and reassurance all bear on it. (Iteration 2 of the pre-registration: with every readout
  * counted, loneliness, saturated in animals with nobody to groom, was the largest deficit at 72% of daytime samples.)
+ * Under rhythmSleep (stage E2a) fatigue is felt sleepiness, which only sleep lowers: it counts with a nest alone
+ * (iteration 3 of the pre-registration; the same rule, read on the mechanics that run).
  */
-export function urgency(c: Chimp, menu: readonly Pick<Candidate, 'action' | 'targetId'>[]): number {
+export function urgency(c: Chimp, menu: readonly Pick<Candidate, 'action' | 'targetId'>[], P: Params): number {
+  const sleepOnly = P.rhythmSleep === 1;
   let U = c.stress;
   const H = c.hunger, T = c.thirst, F = 1 - c.energy, L = 1 - c.social;
   for (let i = 0; i < menu.length; i++) {
@@ -34,7 +38,8 @@ export function urgency(c: Chimp, menu: readonly Pick<Candidate, 'action' | 'tar
       case 'forage': if (H > U) U = H; if (isTreeId(k.targetId) && T > U) U = T; break;
       case 'travel': { const m = candidateMeta.get(k as Candidate); if (m && m.v === V.TREE && m.aux <= 0) { if (H > U) U = H; if (T > U) U = T; } break; }
       case 'drink': if (T > U) U = T; break;
-      case 'rest': case 'shelter': case 'nest': if (F > U) U = F; break;
+      case 'rest': case 'shelter': if (!sleepOnly && F > U) U = F; break;
+      case 'nest': if (F > U) U = F; break;
       case 'groom': case 'play': if (L > U) U = L; break;
     }
   }
@@ -79,14 +84,19 @@ const frac = (serveH: number, walkH: number) => serveH > 0 ? serveH / (walkH + s
  * Pay of an option (prereg §4): drive it reduces per hour, Σ deficit × the sim's own relief rate (relative to idling
  * awake), averaged over the walk to it plus the time it would serve (until the deficit is cleared, or the animal's
  * share of the believed crop is eaten). The factor 2 of the marginal drive is dropped. 0 for acts that serve no deficit.
+ * Rates follow the mechanics that run (iteration 3): under energyLedger the feeding rates of intake.ts are shares of the
+ * animal's own gut per hour; under rhythmSleep only sleep lowers fatigue (felt sleepiness S × (1 − daylight)), at
+ * (1 − daylight) × (S ÷ rhythmSleepDecayH + (1 − S) ÷ rhythmSleepRiseH) per hour relative to staying awake, and
+ * resting, grooming, walking and play neither lower nor raise it.
  */
 export function payOf(world: World, c: Chimp, k: Pick<Candidate, 'action' | 'targetId'>, v: number, aux: number, P: Params): number {
   const H = c.hunger, T = c.thirst, F = 1 - c.energy, L = 1 - c.social, S = c.stress;
   const px = c.position[0], pz = c.position[2], x = ix(c), idx = index(world);
-  const restE = P.energyRestPerH + P.energyOtherPerH, walkE = P.energyWalkPerH - P.energyOtherPerH;
+  const sleepOnly = P.rhythmSleep === 1;
+  const restE = sleepOnly ? 0 : P.energyRestPerH + P.energyOtherPerH, walkE = sleepOnly ? 0 : P.energyWalkPerH - P.energyOtherPerH;
   switch (k.action) {
     case 'forage': case 'travel': {
-      if (k.action === 'forage' && !isTreeId(k.targetId)) return H * leafRate(world, px, pz, P);
+      if (k.action === 'forage' && !isTreeId(k.targetId)) return H * leafRate(world, px, pz, P, c);
       if (k.action === 'travel' && !(v === V.TREE && aux <= 0)) return 0;
       const t = idx.treeById.get(k.targetId);
       if (!t) return 0;
@@ -107,7 +117,9 @@ export function payOf(world: World, c: Chimp, k: Pick<Candidate, 'action' | 'tar
     }
     case 'rest': case 'shelter': return F * restE;
     case 'nest': {
-      const t = idx.treeById.get(k.targetId), sleepE = P.energySleepPerH + P.energyOtherPerH;
+      const t = idx.treeById.get(k.targetId), s = sleepOnly ? sleepPressure(c) : 0;
+      const sleepE = sleepOnly ? (1 - world.environment.daylight) * (s / P.rhythmSleepDecayH + (1 - s) / P.rhythmSleepRiseH) : P.energySleepPerH + P.energyOtherPerH;
+      if (!(sleepE > 0)) return 0;
       const walkH = t ? Math.hypot(t.position[0] - px, t.position[2] - pz) / P.walkMps / 3600 : 0;
       return F * sleepE * frac(F / sleepE, walkH);
     }
@@ -117,7 +129,7 @@ export function payOf(world: World, c: Chimp, k: Pick<Candidate, 'action' | 'tar
       const walkH = Math.hypot(o.position[0] - px, o.position[2] - pz) / P.walkMps / 3600;
       if (k.action === 'groom') { const f = frac(L / GROOM_SOCIAL_PER_H, walkH); return (L * GROOM_SOCIAL_PER_H + S * GROOM_STRESS_PER_H + F * restE) * f - F * walkE * (1 - f); }
       const f = frac(L / PLAY_SOCIAL_PER_H, walkH);
-      return L * PLAY_SOCIAL_PER_H * f - F * (walkE + PLAY_EXTRA_ENERGY_PER_H * f);
+      return L * PLAY_SOCIAL_PER_H * f - F * (walkE + (sleepOnly ? 0 : PLAY_EXTRA_ENERGY_PER_H) * f);
     }
     default: return 0;
   }

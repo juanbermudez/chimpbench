@@ -27,9 +27,12 @@ import { index, isChimpId, isTreeId, ix } from './state';
  * Diagnostic counters for scripts (not world state; the sim never reads them): RG decisions by outcome, re-decisions by
  * trigger (and by trigger and the act that was held), draws that took the menu's top-scored option, and the urgency at draws in tenths. Counted only while `on`.
  */
-export const rgTally = { on: false, kept: 0, arrived: 0, drawn: 0, top: 0, argmax: 0, lead: 0, uSum: 0, tSum: 0, uBins: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], why: {} as Record<string, number>, whyAct: {} as Record<string, number> };
+export const rgTally = { on: false, kept: 0, arrived: 0, drawn: 0, top: 0, argmax: 0, lead: 0, uSum: 0, tSum: 0, uBins: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], why: {} as Record<string, number>, whyAct: {} as Record<string, number>,
+  /** Draws by day phase: [draws, summed urgency, draws at urgency below 0.1]. */
+  phase: { dawn: [0, 0, 0], day: [0, 0, 0], dusk: [0, 0, 0], night: [0, 0, 0] } as Record<'dawn' | 'day' | 'dusk' | 'night', number[]> };
 export function resetRgTally(on: boolean): void {
-  Object.assign(rgTally, { on, kept: 0, arrived: 0, drawn: 0, top: 0, argmax: 0, lead: 0, uSum: 0, tSum: 0, uBins: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], why: {}, whyAct: {} });
+  Object.assign(rgTally, { on, kept: 0, arrived: 0, drawn: 0, top: 0, argmax: 0, lead: 0, uSum: 0, tSum: 0, uBins: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], why: {}, whyAct: {},
+    phase: { dawn: [0, 0, 0], day: [0, 0, 0], dusk: [0, 0, 0], night: [0, 0, 0] } });
 }
 
 /** The chimp-target filter of observe(): only candidates about the first 8 perceivable chimps by candidate score. */
@@ -151,10 +154,11 @@ export function rgChoice(world: World, c: Chimp, list: Candidate[]): Candidate |
   const menu = rgMenu(world, c, list);
   if (menu.length < 2) { if (rgTally.on) rgTally.argmax++; delete x.rgIntent; return null; }
   // stage E3 (urgencyChoice): the temperature falls with urgency (src/sim/urgency.ts); one draw either way
-  const byUrgency = P.urgencyChoice === 1, T = byUrgency ? urgencyTemperature(urgency(c, menu), P) : P.rgTemperature;
+  const byUrgency = P.urgencyChoice === 1, T = byUrgency ? urgencyTemperature(urgency(c, menu, P), P) : P.rgTemperature;
   const scores = menu.map(k => k.score), i = drawIndex(byUrgency ? choiceProbs(scores, T) : softmax(scores, T), random(world));
   if (rgTally.on) {
-    const U = urgency(c, menu);
+    const U = urgency(c, menu, P), ph = rgTally.phase[dayPhase(world)];
+    ph[0]++; ph[1] += U; if (U < 0.1) ph[2]++;
     rgTally.drawn++; rgTally.why[g] = (rgTally.why[g] ?? 0) + 1; const wa = `${g}:${held}`; rgTally.whyAct[wa] = (rgTally.whyAct[wa] ?? 0) + 1; rgTally.uSum += U; rgTally.tSum += Math.min(T, 10); rgTally.uBins[Math.min(9, Math.floor(U * 10))]++;
     if (scores[i] >= Math.max(...scores)) rgTally.top++;
   }

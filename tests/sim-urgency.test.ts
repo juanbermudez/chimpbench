@@ -56,15 +56,15 @@ test('temperature falls with urgency and is bounded below by the score jitter\'s
   // urgency: the largest deficit the menu can act on; stress always counts
   const c = createWorld(48).chimps[0], opt = (action: Chimp['action'], targetId = -1) => ({ action, targetId });
   const full = [opt('forage'), opt('drink', 200001), opt('rest'), opt('groom', 2)];
-  setNeeds(c, 0.2, 0.1, 0.9, 0.9, 0); assert.ok(Math.abs(urgency(c, full) - 0.2) < 1e-12);
-  setNeeds(c, 0.2, 0.1, 0.35, 0.9, 0); assert.ok(Math.abs(urgency(c, full) - 0.65) < 1e-12, 'fatigue');
-  setNeeds(c, 0.2, 0.1, 0.9, 0.9, 0.8); assert.ok(Math.abs(urgency(c, [opt('forage')]) - 0.8) < 1e-12, 'stress');
+  setNeeds(c, 0.2, 0.1, 0.9, 0.9, 0); assert.ok(Math.abs(urgency(c, full, P) - 0.2) < 1e-12);
+  setNeeds(c, 0.2, 0.1, 0.35, 0.9, 0); assert.ok(Math.abs(urgency(c, full, P) - 0.65) < 1e-12, 'fatigue');
+  setNeeds(c, 0.2, 0.1, 0.9, 0.9, 0.8); assert.ok(Math.abs(urgency(c, [opt('forage')], P) - 0.8) < 1e-12, 'stress');
   setNeeds(c, 0.2, 0.1, 0.9, 0.05, 0);
-  assert.ok(Math.abs(urgency(c, full) - 0.95) < 1e-12, 'lonely, with a partner on the menu');
-  assert.ok(Math.abs(urgency(c, [opt('forage'), opt('rest')]) - 0.2) < 1e-12, 'lonely, with nobody to groom: nothing at stake in this choice');
+  assert.ok(Math.abs(urgency(c, full, P) - 0.95) < 1e-12, 'lonely, with a partner on the menu');
+  assert.ok(Math.abs(urgency(c, [opt('forage'), opt('rest')], P) - 0.2) < 1e-12, 'lonely, with nobody to groom: nothing at stake in this choice');
   setNeeds(c, 0.2, 0.7, 0.9, 0.9, 0);
-  assert.ok(Math.abs(urgency(c, [opt('forage'), opt('rest')]) - 0.2) < 1e-12, 'thirsty, no water on the menu');
-  assert.ok(Math.abs(urgency(c, [opt('forage', 100001), opt('rest')]) - 0.7) < 1e-12, 'a fruit crown carries water');
+  assert.ok(Math.abs(urgency(c, [opt('forage'), opt('rest')], P) - 0.2) < 1e-12, 'thirsty, no water on the menu');
+  assert.ok(Math.abs(urgency(c, [opt('forage', 100001), opt('rest')], P) - 0.7) < 1e-12, 'a fruit crown carries water');
 });
 
 test('a starving chimp takes its top food option with higher probability than a sated one in the same scene', () => {
@@ -77,7 +77,7 @@ test('a starving chimp takes its top food option with higher probability than a 
       const menu = rgMenu(copy, c, computeCandidates(copy, c, [])), P = paramsOf(copy), scores = menu.map(k => k.score);
       const fi = menu.map((k, i) => ({ k, i })).filter(o => o.k.action === 'forage' || (o.k.action === 'travel' && candidateMeta.get(o.k)?.v === V.TREE)).sort((a, b) => b.k.score - a.k.score)[0];
       if (!fi || menu.length < 2) return null;
-      return { p: choiceProbs(scores, urgencyTemperature(urgency(c, menu), P))[fi.i], soft: choiceProbs(scores, urgencyTemperature(0.15, P))[fi.i], top: fi.k.score >= Math.max(...scores) };
+      return { p: choiceProbs(scores, urgencyTemperature(urgency(c, menu, P), P))[fi.i], soft: choiceProbs(scores, urgencyTemperature(0.15, P))[fi.i], top: fi.k.score >= Math.max(...scores) };
     };
     const starving = food(0.95), sated = food(0.15);
     if (!starving || !sated) continue;
@@ -150,4 +150,36 @@ test('with all three switches on: deterministic across tick batching, in both pr
   for (let i = 0; i < 8 * 240; i++) tickWorld(g);
   assert.equal(worldHash(f), worldHash(g));
   assert.ok(f.chimps.some(c => c.alive && ix(c).rgIntent), 'intentions are held');
+});
+
+test('iteration 3, on the physiological stack: only sleep pays for fatigue, urgency counts fatigue with a nest alone, and runs stay deterministic', () => {
+  const STACK = { energyLedger: 1, rhythmSleep: 1, rhythmHeat: 1 };
+  const w = createWorld(7, { profile: 'field', params: { ...STACK, ...ALL } }), P = paramsOf(w);
+  for (let i = 0; i < 4; i++) stepWorld(w, 60);
+  const c = w.chimps.find(k => k.alive && k.age >= 15)!, tree = w.trees[0], opt = (action: Chimp['action'], targetId = -1) => ({ action, targetId });
+  setNeeds(c, 0.2, 0.1, 0.35, 0.9, 0);
+  const rest = opt('rest'), nest = opt('nest', tree.id), shelter = opt('shelter');
+  // resting, sheltering: sleep pressure does not fall awake
+  assert.equal(payOf(w, c, rest, V.NONE, -1, P), 0);
+  assert.equal(payOf(w, c, shelter, V.NONE, -1, P), 0);
+  // the nest pays only in the dark: felt sleepiness falls asleep at (1 − daylight)(S/τ_decay + (1 − S)/τ_rise) per hour
+  const S = 0.6; ix(c).slp = S;
+  w.environment.daylight = 1;
+  assert.equal(payOf(w, c, nest, V.NONE, -1, P), 0);
+  w.environment.daylight = 0;
+  const rho = S / P.rhythmSleepDecayH + (1 - S) / P.rhythmSleepRiseH, F = 1 - c.energy;
+  const walkH = Math.hypot(tree.position[0] - c.position[0], tree.position[2] - c.position[2]) / P.walkMps / 3600, serve = F / rho;
+  assert.ok(Math.abs(payOf(w, c, nest, V.NONE, -1, P) - F * rho * serve / (walkH + serve)) < 1e-12);
+  // urgency: fatigue is at stake only where a nest is offered
+  assert.ok(Math.abs(urgency(c, [opt('forage'), rest], P) - 0.2) < 1e-12);
+  assert.ok(Math.abs(urgency(c, [opt('forage'), nest], P) - 0.65) < 1e-12);
+  // with rhythmSleep 0 the timer rates are read, as in iterations 1–2
+  const T = paramsOf(createWorld(7, { profile: 'field' }));
+  assert.ok(Math.abs(payOf(w, c, rest, V.NONE, -1, T) - F * (T.energyRestPerH + T.energyOtherPerH)) < 1e-12);
+  assert.ok(Math.abs(urgency(c, [opt('forage'), rest], T) - 0.65) < 1e-12);
+  // determinism across tick batching with the stack and all three switches
+  const a = createWorld(7, { profile: 'field', params: { ...STACK, ...ALL } }), b = createWorld(7, { profile: 'field', params: { ...STACK, ...ALL } });
+  for (let i = 0; i < 6; i++) stepWorld(a, 60);
+  for (let i = 0; i < 6 * 240; i++) tickWorld(b);
+  assert.equal(worldHash(a), worldHash(b));
 });

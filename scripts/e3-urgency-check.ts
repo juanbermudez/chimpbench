@@ -20,6 +20,10 @@ interface Result {
   seed: number; arm: string; alive: number; births: number; deaths: Record<string, number>; hungerAdults: number; hungerLact: number;
   decisionsPerChimpDay: number; kept: number; arrived: number; drawn: number; argmax: number; lead: number; top: number; meanU: number; meanT: number;
   uBins: number[]; why: Record<string, number>;
+  /** Re-decision trigger and the act that was held, top 8, as shares of draws. */
+  whyAct: Record<string, number>;
+  /** Draws by day phase: share of draws, mean urgency, share of the phase's draws at urgency below 0.1. */
+  byPhase: Record<string, { share: number; meanU: number; low: number }>;
   share: Record<'m' | 'f', Record<string, number>>;
   feedBoutMedianMin: number; feedBoutMeanMin: number; feedBouts: number; crownsPerAdultDay: number; maleKmPerDay: number; ms: number;
 }
@@ -60,7 +64,7 @@ function runJob(j: Job): Result {
       crowns.clear();
     }
   }
-  const t = { ...rgTally, uBins: [...rgTally.uBins], why: { ...rgTally.why } };
+  const t = { ...rgTally, uBins: [...rgTally.uBins], why: { ...rgTally.why }, whyAct: { ...rgTally.whyAct }, phase: structuredClone(rgTally.phase) };
   resetRgTally(false);
   const decisions = t.kept + t.arrived + t.drawn + t.argmax + t.lead, deaths: Record<string, number> = {};
   for (const c of w.chimps) if (!c.alive && !dead0.has(c.id)) { const k = c.causeOfDeath ?? 'unknown'; deaths[k] = (deaths[k] ?? 0) + 1; }
@@ -69,6 +73,8 @@ function runJob(j: Job): Result {
     decisionsPerChimpDay: r3(decisions / (chimpTicks / 5760)), kept: r3(t.kept / decisions), arrived: r3(t.arrived / decisions), drawn: r3(t.drawn / decisions), argmax: r3(t.argmax / decisions), lead: r3(t.lead / decisions),
     top: r3(t.top / Math.max(1, t.drawn)), meanU: r3(t.uSum / Math.max(1, t.drawn)), meanT: r3(t.tSum / Math.max(1, t.drawn)), uBins: t.uBins.map(n => r3(n / Math.max(1, t.drawn))),
     why: Object.fromEntries(Object.entries(t.why).sort((a, b) => b[1] - a[1]).map(([k, v]) => [k, r3(v / Math.max(1, t.drawn))])),
+    whyAct: Object.fromEntries(Object.entries(t.whyAct).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([k, v]) => [k, r3(v / Math.max(1, t.drawn))])),
+    byPhase: Object.fromEntries(Object.entries(t.phase).map(([k, [n, u, low]]) => [k, { share: r3(n / Math.max(1, t.drawn)), meanU: r3(u / Math.max(1, n)), low: r3(low / Math.max(1, n)) }])),
     share: { m: norm(share.m), f: norm(share.f) }, feedBoutMedianMin: r3(median(bouts)), feedBoutMeanMin: r3(bouts.reduce((a, b) => a + b, 0) / Math.max(1, bouts.length)), feedBouts: bouts.length,
     crownsPerAdultDay: r3(crownVisits / Math.max(1, adultDays)), maleKmPerDay: r3(malePath / 1000 / Math.max(1, maleDays)), ms: Date.now() - t0 };
 }
@@ -85,6 +91,8 @@ async function main() {
   for (const r of res) console.log(`| ${r.seed} | ${r.arm} | ${sh(r, 'feed')} | ${sh(r, 'travel')} | ${sh(r, 'groom')} | ${sh(r, 'rest')} | ${r.feedBoutMedianMin} / ${r.feedBoutMeanMin} | ${r.crownsPerAdultDay} | ${r.maleKmPerDay} | ${r.decisionsPerChimpDay} | ${r.kept} / ${r.arrived} / ${r.drawn} | ${r.top} | ${r.meanU} / ${r.meanT} | ${r.hungerAdults} / ${r.hungerLact} | ${r.births} | ${JSON.stringify(r.deaths)} |`);
   console.log('\nRe-decision triggers (share of draws):');
   for (const r of res) console.log(`- ${r.seed} ${r.arm}: ${JSON.stringify(r.why)}; urgency at draws by tenth: ${JSON.stringify(r.uBins)}`);
+  console.log('\nTrigger:held act (share of draws, top 8) and draws by day phase (share, mean U, share at U < 0.1):');
+  for (const r of res) console.log(`- ${r.seed} ${r.arm}: ${JSON.stringify(r.whyAct)}; ${JSON.stringify(r.byPhase)}`);
   const out = flag('out', '');
   if (out) writeFileSync(out, JSON.stringify({ seeds, days, burnIn, arms, results: res }, null, 1) + '\n');
 }
