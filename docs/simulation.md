@@ -1140,6 +1140,9 @@ Every evidence-tagged constant and every distance lives in the parameter registr
 | Arousal drivers (E4a) | parous swollen female 0.6, close-rank rival 0.4, win kick 0.15; parous from 15 y | state | `endoArousalOestrusW` `endoArousalRivalW` `endoArousalWinKick` `endoParousAgeY` | assumed | oestrus direction from research.md (sobolewski2013); the rest assumed |
 | Affiliation kicks (E4a) | sharing 0.5, reconciliation and consolation 0.3 | state | `endoAffilShareKick` `endoAffilRepairKick` | assumed | directions from research.md (Track E sources) |
 | Escalated attack score | 1.25 (ceiling with `endoEscalate`) | score | `endoEscalateScore` | design | moved literal |
+| Fast-state switches (E4b) | 0 (off) | switch | `endoFast` `endoFastRedirect` | design | docs/staging/e4b-prereg.md; 0 = E4a |
+| Fast arousal (E4b) | τ 5 min; storm and threat kicks 0.8; options open 3 τ | eco-min, state | `endoFastTauMin` `endoFastStormKick` `endoFastThreatKick` `endoFastSpanTau` | assumed (τ), design | τ between catecholamine clearance (secondary) and post-conflict anxiety (fraser2008, research.md E.13) |
+| Hearing episode (E4b fix) | 0.25 | h | `endoHeardEpisodeH` | design | only the start of an episode of stranger calls kicks the stress load |
 | Reconciliation window | 0.3 | h | `reconcileWindowH` | design | wild 14–22% reconciled |
 | Consolation window, bond | 0.15 h, ≥ 0.55 |  | `consoleWindowH` `consoleBondMin` | design [M] |  |
 | Pant-grunt repeat | 8 | h per dyad | `pantGruntRepeatH` | design |  |
