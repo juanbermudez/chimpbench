@@ -35,9 +35,10 @@ function scene(params: Record<string, number> = {}, company = 1) {
 const lead = (w: World, a: Chimp) => computeCandidates(w, a, []).find(k => k.action === 'hunt' && candidateMeta.get(k)?.v === V.LEAD);
 
 test('the ablation set reproduces the model before the hunting fix (hash-identical); the fix is on in the field profile only', () => {
-  // field seeds 48 and 7 after 3 days, recorded on main before the change (21592c1)
-  assert.equal(worldHash(run(createWorld(48, { profile: 'field', params: BEFORE }), 3)), '1f52745b86507338');
-  assert.equal(worldHash(run(createWorld(7, { profile: 'field', params: BEFORE }), 3)), '0c43f4c12dd3d172');
+  // field seeds 48 and 7 after 3 days, recorded on main before the change (21592c1); the encounter fix off too (colobus
+  // detected within 100 m, as when the hashes were recorded)
+  assert.equal(worldHash(run(createWorld(48, { profile: 'field', params: { ...BEFORE, preySightFactor: 2.86 } }), 3)), '1f52745b86507338');
+  assert.equal(worldHash(run(createWorld(7, { profile: 'field', params: { ...BEFORE, preySightFactor: 2.86 } }), 3)), '0c43f4c12dd3d172');
   const field = paramsOf(createWorld(33, { profile: 'field' })), compressed = paramsOf(createWorld(33));
   assert.deepEqual([field.huntEncounter, field.huntEncMinMales, field.huntExtraKillP], [1, 2, 0.17]);
   assert.deepEqual([compressed.huntEncounter, compressed.huntExtraKillP], [0, 0]);
@@ -110,6 +111,44 @@ test('with the switch on no hunting day is drawn; one set by the colobus-troop e
     simOf(w).huntDay[a.troopId] = w.time + 6;
     assert.equal(!!lead(w, a), want, `${company + 1} adult males`);
   }
+});
+
+test('encounter fix: colobus are detected within sight x preySightFactor (field 1.39, 48.6 m), by the chimpanzees and by the observer\'s scan', async () => {
+  const { createObserver, finishObserver, observerStep } = await import('../src/field/observer');
+  const { PROFILES } = await import('../src/field/config');
+  assert.equal(paramsOf(createWorld(33, { profile: 'field' })).preySightFactor, 1.39);
+  // the chimpanzee: a group 60 m away is detected at 100 m (2.86) and not at 48.6 m; 40 m away it is detected by both
+  for (const [factor, d, want] of [[1.39, 60, false], [2.86, 60, true], [1.39, 40, true]] as const) {
+    const { w, a, p } = scene({ preySightFactor: factor });
+    p.position[0] = a.position[0] + d;
+    perceive(w, a);
+    assert.equal(ix(a).preyId === p.id, want, `chimpanzee, factor ${factor}, ${d} m`);
+  }
+  // the observer: the 15-min scan of a followed party records the group only within the world's detection distance,
+  // and never beyond the 100 m limit of the source's scans
+  const scans = (factor: number, d: number) => {
+    const w = run(createWorld(33, { profile: 'field', params: { preySightFactor: factor, huntEncounter: 0 } }), 0.2); // no hunts: nobody runs to the group
+    const obs = createObserver(w, { seed: 3, profile: PROFILES.field });
+    const until = w.tick + 5760 * 0.2;
+    let positive = 0, n = 0;
+    while (w.tick < until) {
+      tickWorld(w);
+      // keep every colobus group d metres east of some member of each followed party just before the scan
+      const focals = obs.teams.filter(t => t.state === 2).map(t => w.chimps.find(c => c.id === t.focal)!);
+      w.prey.forEach((q, i) => { const f = focals[i % Math.max(1, focals.length)]; q.position[0] = f ? f.position[0] + d : -3000; q.position[2] = f ? f.position[2] : -3000; });
+      const before = obs.rec.scans.t.n;
+      observerStep(obs, w);
+      for (let k = before; k < obs.rec.scans.t.n; k++) { n++; if (obs.rec.scans.prey.data[k] >= 0) positive++; }
+    }
+    finishObserver(obs, w);
+    return { positive, n };
+  };
+  // (the group is placed from the focal; 75 m and 160 m leave room for the other members of its party)
+  const near = scans(1.39, 30), far = scans(1.39, 75), old = scans(2.86, 75), beyond = scans(5, 160);
+  assert.ok(near.n > 10 && near.positive === near.n, `30 m: every scan positive (${near.positive}/${near.n})`);
+  assert.equal(far.positive, 0, '75 m: beyond the detection distance');
+  assert.ok(old.positive === old.n && old.n > 10, '2.86: 75 m is within the 100 m of the scans');
+  assert.equal(beyond.positive, 0, 'never beyond the scan limit (175 m of detection is capped at 100 m)');
 });
 
 test('captures: each other hunter makes one of his own with huntExtraKillP; 0 keeps one capture per successful hunt', () => {

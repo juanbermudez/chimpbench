@@ -14444,8 +14444,8 @@
    "value": 1.2,
    "units": "x sight",
    "range": [
-    1.43,
-    5.72
+    0.695,
+    2.78
    ],
    "rangeBasis": "assumed-x2",
    "hardRange": [
@@ -14453,18 +14453,19 @@
     1000000.0
    ],
    "calibrate": false,
-   "evidence": "design",
+   "evidence": "M",
    "sources": [
     "gilby2015"
    ],
+   "population": "Kanyawara",
    "clock": "none",
    "symbol": "P.preySightFactor",
    "file": "src/sim/perception.ts",
    "profiles": {
     "compressed": 1.2,
-    "field": 2.86
+    "field": 1.39
    },
-   "notes": "Prey are detected within sight × this. Field: 100 m colobus encounters (gilby2015) at 35 m sight."
+   "notes": "Prey are detected within sight × this, by the chimpanzees and, when shorter than the scan limit, by the observer's colobus scan (src/field/protocols.ts). Field: 1.39 (48.6 m at 35 m sight), fitted (the encounter fix's one fitted parameter; docs/staging/hunting-fix.patch.json, entries 3 and 4) so that colobus encounters equal Kanyawara's 3.73 per 100 h of observation (gilby2015): every adult as focal, development seeds 48 and 7, 30-day burn-in + 30 days, pooled 3.81 at 1.39 (scripts/colobus-encounter-diagnose.ts; trail 1.35 -> 3.44, 1.43 -> 4.51, 1.37 -> 3.50, 1.39 -> 3.81). Before: 2.86, which read the 100 m limit of the source's scans as certain detection (10.8 per 100 h). Ablation set encounters: 2.86."
   },
   {
    "id": "rainAprMm",
