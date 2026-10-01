@@ -1,17 +1,5 @@
 {
- "about": "Party-size staging for data/targets.json (design approved by the integrator on 1 October 2026; this branch never edits targets.json). Append `protocolLog` in order; apply `targetEdits` (set each field on the named target).",
- "targetEdits": {
-  "T-PTY-2": {
-   "encoded": true,
-   "revisedPostFreeze": "Party-size change (docs/staging/party-size-prereg.md §4.1: crowding priced by the crown's per-animal share, the habitat-index terms removed): the rule encodes the direction of both parts (a patch-size effect, no habitat term); model revised post-freeze after the row's values were seen on seeds 48, 7, 21; scored only on fresh seeds; the magnitude (R² 0.2-0.8) is not tuned"
-  },
-  "T-PTY-3": {
-   "revisedPostFreeze": "Party-size change (docs/staging/party-size-prereg.md §4): model revised post-freeze after the row's values were seen on seeds 48, 7, 21; scored only on fresh seeds; counts as validation only if no parameter was set by looking at it"
-  },
-  "T-PTY-4": {
-   "revisedPostFreeze": "Party-size change (docs/staging/party-size-prereg.md §4): model revised post-freeze after the row's values were seen on seeds 48, 7, 21 (the row is already compromised); scored only on fresh seeds"
-  }
- },
+ "about": "Party-size staging for data/targets.json (this branch never edits targets.json). Append `protocolLog` in order. No target label changes: the mechanisms are off by default after a null result, so T-PTY-2, -3 and -4 keep their status (the `targetEdits` proposed with the pre-registration are withdrawn).",
  "protocolLog": [
   {
    "date": "2026-10-01",
@@ -54,6 +42,26 @@
    ],
    "verdicts": "T-PTY-1 stays fitted and labelled tuned (re-fit); T-PTY-2, -3, -4 untuned, reported before and after; no value yet",
    "class": "pre-registration (conditional re-fit)"
+  },
+  {
+   "date": "2026-10-01",
+   "by": "party-size check (C8 agent)",
+   "seen": "development only, seeds 48 and 7, field, 30-day burn-in + 60 days, switches on vs off: T-PTY-1, T-PTY-3, T-PTY-4, T-ACT-1..4, T-RNG-4 through the observer (T-PTY-2 not computable below 4 months) and truth reads (feeders per crown by crop, males in parties with a swollen female, hunger, deaths); and one re-fit step (partyStayW 0.40) read through T-PTY-1 first, then the same rows",
+   "param": "Party-size result (docs/staging/party-size-prereg.md §6): a pre-registered null result. crowdByShare and oestrusPullW are off by default in both profiles; the code stays behind the switches and the ablation rows party-share and party-oestrus switch them on (sign reversed, as C13d). Guard: G1 pass; G2 pass (T-ACT-1 0.424, T-ACT-2 0.186, T-ACT-3 0.129, T-ACT-4 0.350, T-RNG-4 2.37 km); G3 fail in seed 48 (median hunger +0.033 adults and lactating, limit 0.03; seed 7 -0.004 and +0.015; no deaths); G4 fail (co-feeders in the top vs bottom third of crowns by crop: 1.20 vs 1.22 and 1.18 vs 1.17). Predictions, 0 of 6 pass: T-PTY-1 2.62 on vs 2.52 off (predicted 2.9-3.6); patch R² (truth) 0.000 on crop and 0.006-0.008 on crown radius (predicted 0.08-0.30); T-PTY-4 0.587 vs 0.591 (0.50-0.58); T-PTY-3 0.73 vs 0.79 (unchanged inside 1.0-1.6); adult males with a swollen female 1.05x and 0.68x those without (>= 1.2); travel share -0.005 (+0.00 to +0.02). Cause found by the check: occupied crowns hold 1.2 feeders in both arms and their crops are 0.33-0.52 fruit units against a need of 0.23-0.27 per hungry adult, so co-feeding hardly occurs and pricing the share has nothing to act on; the constraint is patch size relative to appetite, which the design had not examined. Conditional re-fit of partyStayW: step 1 at the bound 0.40 gave pooled T-PTY-1 3.348 (3.96 / 2.74), below the pre-registered 3.35: stopped, not reached. At the bound median hunger rose to 0.48 / 0.44 (adults) and 0.69 / 0.67 (lactating), so G3 fails and the value is not adopted; partyStayW stays 0.05. Untuned rows before -> at the bound: T-PTY-3 0.73 -> 1.35, T-PTY-4 0.587 -> 0.481, T-PTY-2 not computable in 60 days. Nothing was changed after these rows were seen",
+   "reason": "pre-registered check and conditional re-fit (entries above)",
+   "targets": [
+    "T-PTY-1",
+    "T-PTY-2",
+    "T-PTY-3",
+    "T-PTY-4",
+    "T-ACT-1",
+    "T-ACT-2",
+    "T-ACT-3",
+    "T-ACT-4",
+    "T-RNG-4"
+   ],
+   "verdicts": "no change to any row or label: mechanisms off by default, partyStayW unchanged; development reads only",
+   "class": "development check (pre-registered; null result)"
   }
  ]
 }

@@ -115,3 +115,55 @@ Recruitment at departures is not the cause (science agent: join share 0.46). Eac
 - The habitat-fruit part of T-PTY-2 needs at least 4 monthly means. A 150-day window gives 5; it is run only if the 60-day check passes its guard. Prediction for it: R² at or below 0.10–0.15.
 - Demography, and any effect on births through male–female association.
 - T-PTY-3 if fewer than 5 periphery follows occur in the window.
+
+## 6. Result (development; 1 October 2026)
+
+Code 5536703. Field profile, seeds 48 and 7, 30-day burn-in then 60 days, both switches on against both off, at most 2 processes. Outputs in `artifacts/validation/party/` (`fm60-*.json`, `truth60-*.json`).
+
+**The change does nothing measurable, and its guard fails. Both switches are now off by default (null result); the code stays behind them.**
+
+**Guard.**
+
+| Guard | Result | Verdict |
+| --- | --- | --- |
+| G1: both off = the model before | field seed 48, 12 h: hash reproduced (tests/sim-party-food.test.ts) | pass |
+| G2: fitted activity and ranging rows in band, change on | T-ACT-1 0.424, T-ACT-2 0.186, T-ACT-3 0.129, T-ACT-4 0.350, T-RNG-4 2.37 km | pass |
+| G3: median hunger at most 0.03 above the off arm; no extra starvation | seed 48: adults +0.033, lactating +0.033; seed 7: adults −0.004, lactating +0.015; no deaths | **fail** (seed 48, by 0.003) |
+| G4: more co-feeders in the top third of crowns by crop than in the bottom third, each seed | seed 48: 1.20 against 1.22; seed 7: 1.18 against 1.17 | **fail** |
+
+**Predictions: 0 of 6 pass.**
+
+| Quantity | Predicted on | Off | On | Verdict |
+| --- | --- | --- | --- | --- |
+| T-PTY-1, mean party size (seeds 48 / 7) | 2.9–3.6 | 2.52 (2.49 / 2.55) | 2.62 (2.84 / 2.40) | **fail** |
+| Patch effect, R² | 0.08–0.30 | truth: 0.001 on crop, 0.006–0.009 on crown radius | truth: 0.000 on crop, 0.006–0.008 on crown radius | **fail** |
+| T-PTY-4, female time alone | 0.50–0.58 | 0.591 | 0.587 | **fail** (unchanged) |
+| T-PTY-3, periphery ÷ core males | unchanged, inside 1.0–1.6 | 0.79 (0.41 / 1.17) | 0.73 (1.00 / 0.46) | **fail** (below the range in both arms; a noisy 60-day value) |
+| Adult males in parties with a swollen female ÷ without | ≥ 1.2 and above off | 0.83 / 0.73 | 1.05 / 0.68 | **fail** |
+| T-ACT-2, travel share | +0.00 to +0.02 | 0.191 | 0.186 | **fail** (−0.005) |
+
+- **Correction to §5.** T-PTY-2 returns nothing below 4 monthly means, for both of its parts, so the observer's patch R² cannot be read in 60 days. The patch effect above is the truth read (feeders per occupied crown on the crown's crop and radius).
+
+**Why it does nothing: crowns almost never hold two feeders.**
+- An occupied crown holds 1.2 feeders on average, in both arms. A party holds 1.4–1.5 independent animals when every party counts once.
+- The crops of the crowns in use are 0.33–0.52 fruit units (tercile cuts). A hungry adult needs about 0.23–0.27 units to sate (hunger 0.5–0.6 ÷ `fruitHungerFactor` 2.2). A crown is one to two meals.
+- At 9.8 feeding trees per hectare, about 8 food trees lie within 50 m of an animal (those in fruit are fewer). Companions spread over crowns, each in its own.
+- So no valuation of the share can produce a patch-size effect: co-feeding, the thing it prices, hardly occurs. The constraint is the food landscape (patch size relative to appetite), which §3 did not examine. The §3 reading of the valuation code is right as far as it goes, but it is not the binding cause.
+- The oestrus pull has nothing to hold together for the same reason: parties average under two independents.
+
+**The conditional re-fit of `partyStayW`: not reached, and not adoptable.**
+- Step 1, the upper bound 0.40: pooled T-PTY-1 3.348 (3.96 / 2.74). That is below the pre-registered 3.35, so the fit stopped there as "not reached". Seed 7 stays below the band.
+- At that bound, hunger rises: adult median 0.48 / 0.44 (0.36 / 0.36 at 0.05), lactating 0.69 / 0.67 (0.51 / 0.55). Guard G3 fails by a wide margin, so the value would not be adopted even if the target had been met. Animals that stay with companions make fewer feeding trips.
+- 0.40 is also outside the registry's range for `partyStayW` (0.05–0.2).
+
+| Untuned row | Before (`partyStayW` 0.05, switches on) | At the bound (0.40, not adopted) |
+| --- | --- | --- |
+| T-PTY-2 | not computable in 60 days | not computable in 60 days |
+| T-PTY-3 | 0.73 (1.00 / 0.46) | 1.35 (0.94 / 1.77) |
+| T-PTY-4 | 0.587 | 0.481 (0.41 / 0.55) |
+
+- Other rows at the bound: T-ACT-1 0.442, T-ACT-2 0.152, T-RNG-4 1.98 km (all in band).
+
+**Where the lever is (not designed here).**
+- Party size needs patches that feed several animals for the length of a visit. Field values: feeding parties of 7.3–8.4 with a patch residency of 27–46 min (potts2011); crowns more than half filled are at least 9 times scarcer than others (janmaat2016).
+- In the model a crown is one to two meals, and there are many of them close together. Fewer, larger crops at the same total food would be the supply-side change. It moves the C5a and C7a fitted rows (activity budget, day range), so it is a re-fit of the food landscape, not a small switch. C7b's crown-fullness knobs (`cropFullExp`, `patchesPerHa`) exist and are off after their own direction check.

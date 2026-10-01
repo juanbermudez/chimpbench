@@ -4261,9 +4261,9 @@
    "integer": true,
    "profiles": {
     "compressed": 0,
-    "field": 1
+    "field": 0
    },
-   "notes": "Party-size stage (docs/staging/party-size-prereg.md 4.1; field): 1 = a crown's forage worth is multiplied by 1 - (1 - cover) x r, cover = min(1, share / need) / min(1, crop / need), share = crop / (1 + co-feeders seen in the crown), need = hunger / fruitHungerFactor, r = crowdHighRankFactor for a high-ranking feeder; the habitat-index crowding cost (crowdCompeteW x (crowdScarcityRef - fruit index)) and the sociability x fruit-index trip bonus are then 0. No new magnitude. The direction is sourced; the functional form is a design assumption. 0 = the model before (hash-identical; compressed)."
+   "notes": "Party-size stage (docs/staging/party-size-prereg.md 4.1; field): 1 = a crown's forage worth is multiplied by 1 - (1 - cover) x r, cover = min(1, share / need) / min(1, crop / need), share = crop / (1 + co-feeders seen in the crown), need = hunger / fruitHungerFactor, r = crowdHighRankFactor for a high-ranking feeder; the habitat-index crowding cost (crowdCompeteW x (crowdScarcityRef - fruit index)) and the sociability x fruit-index trip bonus are then 0. No new magnitude. The direction is sourced; the functional form is a design assumption. 0 = the model before (hash-identical). Off by default in both profiles: a pre-registered null result (1 October 2026; 60-day paired check, seeds 48 and 7): crowns hold 1.2 feeders with or without it, so pricing the share changes nothing and the mechanism guard failed. Kept behind the switch."
   },
   {
    "id": "crowdCompeteW",
@@ -12347,10 +12347,10 @@
    "value": 0,
    "units": "score per unit swelling",
    "range": [
-    0.15,
+    0,
     0.6
    ],
-   "rangeBasis": "assumed-x2",
+   "rangeBasis": "assumed",
    "hardRange": [
     0,
     5
@@ -12363,9 +12363,9 @@
    "file": "src/sim/candidates.ts",
    "profiles": {
     "compressed": 0,
-    "field": 0.3
+    "field": 0
    },
-   "notes": "Party-size stage (docs/staging/party-size-prereg.md 4.2; field): for males aged 10 y or more, a community female in sight with swelling >= consortSwellingMin (maternal kin excluded, as for mating offers) adds this x her swelling to following her or joining her trip, and to the cost of leaving on a trip of his own. Receptive females raised the number of males in parties at Kanyawara (emeryThompson2014, direction only); the weight is design, not tuned (about two softmax temperatures). 0 = off (hash-identical; compressed)."
+   "notes": "Party-size stage (docs/staging/party-size-prereg.md 4.2; field): for males aged 10 y or more, a community female in sight with swelling >= consortSwellingMin (maternal kin excluded, as for mating offers) adds this x her swelling to following her or joining her trip, and to the cost of leaving on a trip of his own. Receptive females raised the number of males in parties at Kanyawara (emeryThompson2014, direction only); the weight is design, not tuned (about two softmax temperatures). 0 = off (hash-identical). Off by default in both profiles: a pre-registered null result (1 October 2026): at 0.3, adult males in parties with a swollen female were 1.05 and 0.68 times those without (seeds 48 and 7). Kept behind the switch."
   },
   {
    "id": "pantGruntDistScaleM",

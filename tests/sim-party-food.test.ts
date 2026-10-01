@@ -151,9 +151,9 @@ test('party-size stage: co-feeders cost what they take from the need (crowdBySha
     const a = score(0, crop, 0, LOW), b = score(0, crop, 3, LOW);
     assert.ok(Math.abs((a.score - b.score) - 3 * P.crowdCompeteW * (P.crowdScarcityRef - a.fruitIndex)) < TOL, `off, crop ${crop}`);
   }
-  // field on, compressed off
+  // off by default in both profiles (a pre-registered null result)
   assert.equal(paramsOf(createWorld(3)).crowdByShare, 0);
-  assert.equal(paramsOf(createWorld(3, { profile: 'field' })).crowdByShare, 1);
+  assert.equal(paramsOf(createWorld(3, { profile: 'field' })).crowdByShare, 0);
 });
 
 test('party-size stage: a male of 10 y or more follows a female in oestrus and is slower to leave her (oestrusPullW); maternal kin and other males are not pulled', () => {
@@ -192,7 +192,7 @@ test('party-size stage: a male of 10 y or more follows a female in oestrus and i
     assert.deepEqual(b.trips, a.trips, JSON.stringify(o));
   }
   assert.equal(paramsOf(createWorld(3)).oestrusPullW, 0);
-  assert.equal(paramsOf(createWorld(3, { profile: 'field' })).oestrusPullW, 0.3);
+  assert.equal(paramsOf(createWorld(3, { profile: 'field' })).oestrusPullW, 0);
 });
 
 test('party-size stage: both switches off reproduce the field model before it (hash-identical), and the share rule changes the field world', async () => {
@@ -201,5 +201,6 @@ test('party-size stage: both switches off reproduce the field model before it (h
   // field seed 48 after 2880 ticks (12 h) on main 21592c1, before the party-size stage
   const off = run({ crowdByShare: 0, oestrusPullW: 0 });
   assert.equal(off, 'bb1957953df81ebc');
-  assert.notEqual(run({ oestrusPullW: 0 }), off, 'crowdByShare changes the world');
+  assert.equal(run({}), off, 'both are off by default');
+  assert.notEqual(run({ crowdByShare: 1 }), off, 'crowdByShare changes the world');
 });
