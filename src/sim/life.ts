@@ -3,6 +3,7 @@ import { addEvent, endInteraction, episode } from './events';
 import { bond, femaleQueue, lifeStage } from './hierarchy';
 import { dailyRelations, noteEvent } from './relations';
 import { reproSlow } from './reproduction';
+import { rhythmNeeds } from './rhythm';
 import { expectedEpidemicHazard } from './disease';
 import { clamp, random } from './rng';
 import { paramsOf, type Params } from './params';
@@ -153,6 +154,7 @@ export function needs(world: World, c: Chimp): void {
   if (c.energy > 1) c.energy = 1; else if (c.energy < 0) c.energy = 0;
   if (c.social > 1) c.social = 1; else if (c.social < 0) c.social = 0;
   if (c.stress > 1) c.stress = 1; else if (c.stress < 0) c.stress = 0;
+  { const P = paramsOf(world); if (P.rhythmSleep === 1 || P.rhythmHeat === 1) rhythmNeeds(world, c, sleeping); } // stage E2a: sleep pressure and thermal load
   if (c.vocal !== null && world.time > c.vocalUntil) c.vocal = null;
   c.mood = moodFor(c, a);
 }

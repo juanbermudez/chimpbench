@@ -100,7 +100,7 @@ then every entry is tagged `assumed` in the registry and carries its source key 
 | `rhythmVaso` | 3 | ratio | peripheral vasodilation, max ÷ min conductance | assumed |
 | `rhythmEvapW` | 1.2 | W/kg | kamberov2018 (human maximum ÷ 10, sweat gland density) | assumed |
 | `rhythmWetCond` | 3 | ratio | wet pelage conductance | assumed |
-| `rhythmSoakRain` | 0.1 | rain intensity | coat soaked at ~3 mm/h | assumed |
+| `rhythmSoakRain` | 0.1 | rain intensity | coat half soaked at ~3 mm/h; wetness = rain ÷ (rain + this) | assumed |
 | `rhythmShelterRain` | 0.3 | fraction | rain reaching a sheltering animal | assumed |
 | `rhythmSolarW` | 1000 | W/m² | clear-sky irradiance, sun overhead | assumed ([H], physics) |
 | `rhythmCloudAtt` / `rhythmCloudExp` | 0.75 / 3.4 | — | kastenCzeplak1980 | assumed ([H]) |
@@ -157,4 +157,51 @@ its reason before its run.
 
 ## 7. Results
 
-(filled in after the runs)
+Quick check throughout: field profile, seeds 48 and 7, 30 days after a 30-day burn-in, simulation truth
+(`scripts/rhythm-metrics.ts`); outputs in `artifacts/e2a/` (not tracked).
+
+Targets staged by the sources track after this file was first written (`docs/staging/e-targets.patch.json`, rows
+T-RHY-1…10; compared against, never set): T-RHY-1 active day 10.5–12.0 h; T-RHY-3 share of nest departures before
+sunrise 0.05–0.35; T-RHY-4 nest building −30 to +90 min before sunset [L]; T-RHY-5 share of activity at night 0–0.05;
+T-RHY-8 rest rises with heat (pattern); T-RHY-9 feeding peaks early and late, rest highest in the middle (pattern).
+
+### Iteration 1 (the mechanism of §2 as written)
+
+| | Baseline (clock rules) | Switches on | Field |
+| --- | --- | --- | --- |
+| Leaves nest, min after sunrise (median, p10–p90) | 15 (11 to 20) | 30 (19 to 50) | around sunrise; 18% before it (janmaat2014) |
+| Last nest entry, min after sunset | −12 (−30 to 9) | −18 (−35 to 10) | around sunset |
+| Active day, males / lactating females | 11 h 39 / 11 h 40 | 11 h 16 / 11 h 20 | 11 h 34 / 10 h 57 |
+| Rest 12:00–14:00 / 15:00–17:00 | 58% / 20% | 34% / 46% | highest around midday |
+| Feeding 15:00–17:00 | 41% | 25% | a late peak |
+| Mean thermal load at midday | — | 0.01 (3.9% of samples above 0.1) | — |
+| Night time out of a nest (menu on / menu off) | 0.0% | 0.0% / 0.0% | 1.8–3.3% of activity records |
+| Deaths in 30 days, 2 seeds | 0 | 0 | — |
+
+Reading:
+- Nesting and waking emerge from light and sleep pressure with no hour in the scores, inside T-RHY-1.
+- **Miss, as pre-registered**: lactating females have the longer day, not the shorter one (they are hungrier and
+  leave earlier).
+- **Miss**: nobody leaves before sunrise (T-RHY-3).
+- **Miss, and a flaw of the mechanism**: rest climbs through the afternoon to 46–48% and the late feeding peak is
+  gone. Cause: `energy = 1 − S` puts the whole of sleep pressure (0.3 at noon, 0.47 at dusk) into the rest score's
+  fatigue term, whose weight (0.9) was written for the old gauge, which stayed near 1 all day. Physiologically this
+  is the two-process model with process S and without its opponent: in diurnal primates the circadian pacemaker and
+  light itself promote wakefulness through the day and hold sleep propensity low until light fades, although S rises
+  (the opponent process, Edgar et al. 1993 in squirrel monkeys; the alerting effect of light). §2.1 used light only
+  in the nest's darkness term.
+- Heat: the thermal load is close to zero all day. With the assumed dissipation capacity (vasodilation × 3,
+  evaporation 1.2 W/kg) a chimpanzee at 15–24 °C under canopy is inside its neutral zone even while feeding in a
+  sunlit crown or walking. Midday rest does not come from heat at these temperatures, and hot, mild and rainy days do
+  not differ in the predicted direction.
+
+### Iteration 2 (change of mechanism, logged before its run)
+
+Felt sleepiness = S × (1 − daylight): light suppresses the expression of sleep pressure, which keeps building
+underneath. No new parameter. `energy = 1 − S·(1 − daylight)` and the nest's value becomes
+`(1 − daylight)·(rhythmSleepW·S + rhythmDarkW)`. Source keys for the opponent process and the alerting effect of
+light are pending (assumed).
+
+Expected: the afternoon climb of rest disappears and the late feeding share recovers; rest at midday falls further
+below the baseline (nothing but satiation and the small thermal load raises it), so T-ACT-4 (rest + groom) is
+expected to fall, possibly out of its band; nest building a few minutes later and the active day a few minutes longer.

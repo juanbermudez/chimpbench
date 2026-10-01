@@ -6,6 +6,7 @@ import { nestPoint } from './generation';
 import { addBond, dominates, eloUpdate, rankedMale } from './hierarchy';
 import { paramsOf, type Params } from './params';
 import { snareIntake } from './snares';
+import { lightArousal } from './rhythm';
 import { doTransfer, recordCopulation } from './reproduction';
 import { IMPULSE_HUNT, forget } from './perception';
 import { clamp, hash01, random } from './rng';
@@ -36,9 +37,13 @@ const CODE: Record<string, number> = { rest: 1, forage: 2, nest: 3 };
 function boutHours(world: World, c: Chimp, action: Action): number {
   const P = paramsOf(world);
   let a = P[DUR[action][0]], b = P[DUR[action][1]];
-  if (action === 'rest' && world.hour >= 11.5 && world.hour < 14.5) { a = P.boutRestMiddayMin; b = P.boutRestMiddayMax; }
+  if (action === 'rest' && P.rhythmHeat !== 1 && world.hour >= 11.5 && world.hour < 14.5) { a = P.boutRestMiddayMin; b = P.boutRestMiddayMax; }
   let cap = Infinity;
-  if (action === 'nest') {
+  if (action === 'nest' && P.rhythmSleep === 1) {
+    // stage E2a: bouts by light alone. In the dark the full bout, uncapped (light arousal ends it, nestTick); in changing light the short bout; in full light the day bout
+    const L = world.environment.daylight;
+    if (L >= 1) { a = P.boutNestDayMin; b = P.boutNestDayMax; } else if (L > 0.1) { a = P.boutNestMorningMin; b = P.boutNestMorningMax; }
+  } else if (action === 'nest') {
     if (world.hour >= 5.5 && world.hour < 12) { a = P.boutNestMorningMin; b = P.boutNestMorningMax; }
     else if (world.environment.daylight > 0.1) { a = P.boutNestDayMin; b = P.boutNestDayMax; }
     else cap = Math.max(5, ((P.nestWakeHour - world.hour + 24) % 24) * 60);
@@ -734,6 +739,7 @@ function nestTick(world: World, c: Chimp): void {
   const P = paramsOf(world), WALK = P.walkMps;
   const x = ix(c);
   const idx = index(world);
+  if (P.rhythmSleep === 1) lightArousal(world, c);
   if (x.v === V.MOTHER) {
     const m = dependentOn(world, c);
     if (!m) return finish(world, c);
