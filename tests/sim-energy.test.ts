@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createWorld, stepWorld, tickWorld } from '../src/simulation';
-import { eat, energyTap, energyTick, gutCap, intakeSize, ledgerOf, ledgerSlow, massOf, nurseTick, reserveCap } from '../src/sim/energy';
+import { eat, energyTap, energyTick, glandEmpty, gutCap, intakeSize, ledgerOf, ledgerSlow, massOf, milkWorth, nurseTick, reserveCap } from '../src/sim/energy';
 import { fruitRate } from '../src/sim/intake';
 import { paramsOf, type Overrides } from '../src/sim/params';
 import { ix } from '../src/sim/state';
@@ -248,6 +248,60 @@ test('E1c saves and determinism: ledgers with mass are plain data, load, resume 
   assert.equal(worldHash(copy), worldHash(w));
   assert.deepEqual(Object.keys(ix(w.chimps.find(c => c.alive)!).en!).sort(), ['gut', 'in', 'kg', 'milk', 'out', 'res', 'x', 'y', 'z']);
   const a = createWorld(48, { params: E1C }), b = createWorld(48, { params: E1C });
+  run(a, 1200);
+  for (let i = 0; i < 1200 / 60; i++) stepWorld(b, 15);
+  assert.equal(worldHash(a), worldHash(b));
+});
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Stage E1d (docs/staging/e1d-prereg.md): nursing is worth the milk the gland can deliver. Off by default.
+const E1D: Overrides = { ...E1C, ledgerNurseByMilk: 1 };
+
+test('E1d: the switch does nothing without the ledger', () => {
+  const a = createWorld(7), b = createWorld(7, { params: { ledgerNurseByMilk: 1 } });
+  run(a, DAY / 2); run(b, DAY / 2);
+  assert.equal(worldHash(a), worldHash(b));
+});
+
+test('E1d milkWorth: the share of the infant\'s gut room the gland can fill; nothing with a full gut; empty gland', () => {
+  const w = createWorld(48, { params: E1D }), P = paramsOf(w);
+  const infant = w.chimps.find(c => c.alive && c.age > 1 && c.age < 4 && w.chimps.some(m => m.id === c.motherId && m.alive))!, mother = w.chimps.find(m => m.id === infant.motherId)!;
+  const I = ledgerOf(infant, P), M = ledgerOf(mother, P), cap = gutCap(infant, P);
+  I.gut = 0; M.milk = 0;
+  assert.equal(milkWorth(infant, mother, P), 0);
+  assert.equal(glandEmpty(mother, P), true);
+  M.milk = cap / 4; assert.ok(Math.abs(milkWorth(infant, mother, P) - 0.25) < 1e-12);
+  M.milk = 2 * cap; assert.equal(milkWorth(infant, mother, P), 1);
+  assert.equal(glandEmpty(mother, P), false);
+  I.gut = cap; assert.equal(milkWorth(infant, mother, P), 0, 'a full gut takes nothing');
+});
+
+test('E1d: infants stop drinking the trickle of an emptied gland; energy is conserved; batching does not matter', () => {
+  const day = (params: Overrides) => {
+    const w = createWorld(48, { params });
+    run(w, 600);
+    const before = new Map(w.chimps.filter(c => c.alive).map(c => [c.id, { ...ix(c).en! }]));
+    let drinkTicks = 0, ticks = 0;
+    const drank = new Set<number>();
+    energyTap.fn = (c, term) => { if (term === 'suckled') drank.add(c.id); };
+    try {
+      for (let i = 0; i < DAY; i++) {
+        drank.clear(); tickWorld(w);
+        if (w.environment.daylight <= 0.1) continue;
+        for (const c of w.chimps) if (c.alive && c.age >= 1.2 && c.age < 4 && !ix(c).weaned) { ticks++; if (drank.has(c.id)) drinkTicks++; }
+      }
+    } finally { energyTap.fn = null; }
+    for (const c of w.chimps) {
+      const b = before.get(c.id), L = c.alive ? ix(c).en : undefined;
+      if (!b || !L) continue;
+      const flow = (L.in - b.in) - (L.out - b.out), stock = (L.gut - b.gut) + (L.res - b.res);
+      assert.ok(Math.abs(flow - stock) < 1e-6 * Math.max(1, L.in, L.out), `${c.name}: flow ${flow} vs stock ${stock}`);
+    }
+    return drinkTicks / Math.max(1, ticks);
+  };
+  const on = day(E1D), off = day(E1C);
+  assert.ok(off > 0.2 && on < off / 2, `daylight ticks drinking, infants 1.2-4 y: ${on.toFixed(3)} with vs ${off.toFixed(3)} without`);
+  const a = createWorld(48, { params: E1D }), b = createWorld(48, { params: E1D });
   run(a, 1200);
   for (let i = 0; i < 1200 / 60; i++) stepWorld(b, 15);
   assert.equal(worldHash(a), worldHash(b));

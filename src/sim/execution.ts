@@ -5,7 +5,7 @@ import { addEvent, emitCall, endInteraction, episode, findInteraction, flashInte
 import { nestPoint } from './generation';
 import { addBond, dominates, eloUpdate, rankedMale } from './hierarchy';
 import { paramsOf, type Params } from './params';
-import { eat, fallbackKcalPerH, fruitKcalPerUnit, gutRoom, intakeSize, ledgerOn, nurseTick, sharePlant } from './energy';
+import { eat, fallbackKcalPerH, fruitKcalPerUnit, glandEmpty, gutRoom, intakeSize, ledgerOn, nurseTick, sharePlant } from './energy';
 import { snareIntake } from './snares';
 import { lightArousal } from './rhythm';
 import { doTransfer, recordCopulation } from './reproduction';
@@ -756,7 +756,8 @@ export function executeAction(world: World, c: Chimp): void {
       c.thirst = clamp(c.thirst - 0.4 * TICK_HOURS);
       c.social = clamp(c.social + 0.2 * TICK_HOURS);
       m.energy = clamp(m.energy - 0.02 * TICK_HOURS);
-      if (c.hunger < NURSE_DONE) finish(world, c);
+      // stage E1d (ledgerNurseByMilk): the bout also ends when the gland can no longer sustain the suckling rate
+      if (c.hunger < NURSE_DONE || (P.ledgerNurseByMilk === 1 && ledgerOn(P) && glandEmpty(m, P))) finish(world, c);
       return;
     }
     case 'patrol': {

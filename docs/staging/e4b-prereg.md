@@ -16,7 +16,7 @@ Rule served: field values of behaviour are targets, never inputs. No dice may op
 
 These change the E4a world whenever `endoStates` is 1 (fewer stress kicks), so the E4a reference is re-run (R0 below). Compressed goldens and the field switches-off pin are unchanged.
 
-## 2. What the sources say (read 1 October 2026; details and tags in `docs/staging/e-sources.md` §13 and `docs/research.md` E.13)
+## 2. What the sources say (read 1 October 2026; details and tags in `docs/staging/e-sources.md` §14 and `docs/research.md` E.14)
 
 **Two time scales.** Glucocorticoids permit, stimulate or suppress an ongoing stress response (sapolsky2000, abstract): the slow states act on a faster response, they are not it. Plasma catecholamines clear in minutes (half-lives of about 1 to 2.5 min in human pharmacology references; seen only in secondary sources, not verified). In captive chimpanzees, victims' self-scratching and self-grooming stayed above matched controls for the entire 10-min post-conflict window (fraser2008, Chester Zoo, 22 recipients, 234 PC–MC pairs) [M, captive]. In free-moving rhesus macaques, heart rate rose after the approach of a dominant, not of kin or a subordinate (aureli1999, 2 females) [L, cross-species]. In birds, agonistic heart-rate rises last seconds (wascher2021, review).
 

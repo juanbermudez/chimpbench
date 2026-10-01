@@ -5894,7 +5894,7 @@
    "clock": "none",
    "symbol": "endoKick",
    "file": "src/sim/tick.ts",
-   "notes": "Stage E4b: the fast arousal of every awake individual rises by this × (1 − fast) at a daytime storm onset. Direction: sudden loud sound drives rhythmic display-like movement, more in males (hattoriTomonaga2020 [M], captive; docs/research.md E.13); the size is a design assumption (one of the strongest acute stimuli, short of saturating the state), set before any run and not tuned."
+   "notes": "Stage E4b: the fast arousal of every awake individual rises by this × (1 − fast) at a daytime storm onset. Direction: sudden loud sound drives rhythmic display-like movement, more in males (hattoriTomonaga2020 [M], captive; docs/research.md E.14); the size is a design assumption (one of the strongest acute stimuli, short of saturating the state), set before any run and not tuned."
   },
   {
    "id": "endoFastTauMin",
@@ -5916,7 +5916,7 @@
    "clock": "eco",
    "symbol": "fastNow",
    "file": "src/sim/endocrine.ts",
-   "notes": "Stage E4b: time constant of the fast arousal state. Bounded below by plasma catecholamine clearance (half-lives about 1–2.5 min; secondary sources only, not verified) and above by post-conflict anxiety in captive chimpanzees, raised for the entire 10-min post-conflict window (fraser2008 [M], docs/research.md E.13): at 5 min a kick is still 14% at 10 min. The value inside the bounds is a design assumption."
+   "notes": "Stage E4b: time constant of the fast arousal state. Bounded below by plasma catecholamine clearance (half-lives about 1–2.5 min; secondary sources only, not verified) and above by post-conflict anxiety in captive chimpanzees, raised for the entire 10-min post-conflict window (fraser2008 [M], docs/research.md E.14): at 5 min a kick is still 14% at 10 min. The value inside the bounds is a design assumption."
   },
   {
    "id": "endoFastThreatKick",
@@ -5938,7 +5938,7 @@
    "clock": "none",
    "symbol": "endoThreat",
    "file": "src/sim/endocrine.ts",
-   "notes": "Stage E4b: the fast arousal rises by this × (1 − fast) when the animal is charged or attacked, loses a decided conflict, or is gang-attacked. Direction: heart rate rises at a dominant's approach (aureli1999 [L], rhesus, 2 females); victims' anxiety stays raised after a conflict (fraser2008 [M], captive chimpanzees; docs/research.md E.13). The size is a design assumption, equal to the storm kick, set before any run."
+   "notes": "Stage E4b: the fast arousal rises by this × (1 − fast) when the animal is charged or attacked, loses a decided conflict, or is gang-attacked. Direction: heart rate rises at a dominant's approach (aureli1999 [L], rhesus, 2 females); victims' anxiety stays raised after a conflict (fraser2008 [M], captive chimpanzees; docs/research.md E.14). The size is a design assumption, equal to the storm kick, set before any run."
   },
   {
    "id": "endoHeardEpisodeH",
@@ -12488,6 +12488,29 @@
    "file": "src/sim/execution.ts",
    "integer": true,
    "notes": "Stage E1c (docs/staging/e1c-prereg.md), with energyLedger 1: 1 = a dependent infant sleeping in its mother's nest suckles from her (nurseTick: the suckling rate, limited by her gland store and its gut room) while its hunger readout is at or above the end of a nursing bout (0.08); same eligibility as the day nursing option, no weaning refusal at night (stylization). Infants share the mother's nest until weaning (khayer2025 [M]); night suckling: captive newborns (mizuno2006 [L]) and the human analogy. With it, ledgerMilkStoreH can take its sourced value (11 h, kent1999). 0 = milk only through the day nurse act (E1)."
+  },
+  {
+   "id": "ledgerNurseByMilk",
+   "group": "reproduction",
+   "value": 0,
+   "units": "flag",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "milkWorth",
+   "file": "src/sim/candidates.ts",
+   "integer": true,
+   "notes": "Stage E1d (docs/staging/e1d-prereg.md), with energyLedger 1: 1 = the nurse option's score is multiplied by the share of the infant's gut room its mother's gland store can fill now (0 with a full gut; the infant's learned feedback of milk flow, design), and a nursing bout ends when the gland can no longer sustain the suckling rate for a tick. No new number. Non-nutritive (comfort) suckling, documented in the field (badescu2017, badescu2022, matsumoto2017), is not modelled. 0 = the score ignores the gland and the bout lasts while the infant is hungry (E1, E1c)."
   },
   {
    "id": "ledgerPlantShareKcal",

@@ -8,6 +8,7 @@ import { fruitAt } from './phenology';
 import { bestFallbackNear, fallbackOn } from './fallback';
 import { fruitRate, leafWorth, treeIntake } from './intake';
 import { heatRestValue, nestValue, shelterValue, thermalLoad } from './rhythm';
+import { milkWorth } from './energy';
 import { endoOn, escalateScore, fastSpanH, rainFastScore, rainScore, redirectFastScore, redirectScore } from './endocrine';
 import { byIdIn, index, isTreeId, ix, NEVER, TREE_ID0, treesNear, simOf } from './state';
 
@@ -222,7 +223,10 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     const isMother = caretaker.id === c.motherId;
     if (carried) offer('follow', caretaker.id, 0.6, V.MOTHER);
     else offer('follow', caretaker.id, d > 3 ? 1.3 + d / P.followMotherDistScaleM : 0.15, V.MOTHER);
-    if (isMother && c.age < x.weanAge + 0.3) offer('nurse', caretaker.id, 0.25 + h * 1.5 * (c.age < 0.5 ? 1.3 : 1) * (1 - c.age / 7) - (d > P.nurseRangeM ? 0.5 : 0));
+    // stage E1d (ledgerNurseByMilk): nursing is worth the share of the infant's need the gland can fill now (energy.ts milkWorth)
+    if (isMother && c.age < x.weanAge + 0.3) offer('nurse', caretaker.id, P.energyLedger === 1 && P.ledgerNurseByMilk === 1
+      ? (0.25 + h * 1.5 * (c.age < 0.5 ? 1.3 : 1) * (1 - c.age / 7)) * milkWorth(c, caretaker, P) - (d > P.nurseRangeM ? 0.5 : 0)
+      : 0.25 + h * 1.5 * (c.age < 0.5 ? 1.3 : 1) * (1 - c.age / 7) - (d > P.nurseRangeM ? 0.5 : 0));
     if (c.age >= 1 && !carried && caretaker.action === 'forage' && d < P.begPlantRangeM && h > 0.35) offer('beg', caretaker.id, 0.25 + h * 0.45, V.PLANT);
     if (c.age >= 1.2 && !carried) offer('forage', -1, h * 0.5 - 0.05);
   } else if (c.age < P.juvenileFollowMaxAgeY) {
