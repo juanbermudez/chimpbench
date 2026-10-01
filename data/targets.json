@@ -1681,6 +1681,20 @@
    ],
    "verdicts": "combined proof (lean plan), C9 proof",
    "class": "freeze"
+  },
+  {
+   "date": "2026-10-01",
+   "by": "science/simulation owner (stage C13e, user-approved)",
+   "seen": "development seeds 48, 7, 21 (field, sim truth): at trip departures only 35% of companions within partyLinkM had a join option (53% were inside the 5 m minimum, 12% did not see the initiator); where offered it was the best option (median probability 0.997); recruitment of at least one companion within 5 min: hooed 0.50-0.56, silent 0.37-0.44; T-PTY-1 2.90 in the C13c direction check; no held-out value",
+   "param": "C13e pre-registration, before any C13e run (switch joinChoice, field only; ablation set C13e = {joinChoice 0}, hash-identical to before). (1) Bug fix: the joint trip (a companion's goal tree) is offered within partyLinkM without the partyFollowMinM minimum; following a chimp keeps the minimum; the joint trip keeps a slot of its own among the candidates and on the RG menu. (2) Noticing: a travel hoo gives every own-community hearer within hearTravelHooM a decision point and the join option for travelHooWindowMin, seen or not; a silent departure is a decision point only for companions within partyLinkM who can see the leader go (the leader is within their own sight radius) and are not absorbed (feeding in a crown, grooming or being groomed, or asleep); at its own decision points a companion sees a travelling leader as before. (3) Deciding: join value = joinBase 0.3 + joinBondW 0.5 x bond + joinAllyW 0.2 (ally) + joinRankW 0.15 (leader dominates the companion) + partyFollowSocialW x sociability + joinHooW (a travel hoo heard from that leader) - joinStayW 0.8 x own hunger x crop quality of the tree it is feeding in - rain; the old near-automatic value (base 0.7 + bond + 0.4 for an adult male) no longer applies to joint trips. Evidence: recruitment to joint travel and more recruitment of allies [H] gruberZuberbuhler2013; every magnitude is a design assumption. (4) One fitted parameter: joinHooW, by bisection on [0, 1.5] (6 steps, seeds 48, 7, 21, 180-day burn-in + 30 days, 2 workers), to make hooed initiations recruit at least one companion within 5 min in 71.4% of cases pooled over the seeds; only that rate is read during the fit. Untuned checks, nothing adjusted after seeing them: silent recruitment (wild 33.7%; pass 0.24-0.44), hooed / silent ratio (wild 2.1; pass 1.6-2.6), T-PTY-1 (prediction: up from the joinChoice-0 arm, toward the 3-9 band). Other predictions (1-year direction check, seeds 48, 7, 21, against joinChoice 0): hooed recruitment 0.66-0.76; join option available to at least 80% of companions who noticed; male day range and decisions per chimp-day about unchanged or slightly up; T-ACT-2 within 0.03 of before. Viability guard as in C13 section 5 (against both C13 parts off). T-PTY-1, T-RNG-4 and T-ACT-2 are touched (fitted).",
+   "reason": "party size fell below its band under C13 and the join option was missing at the departure cue (the 5 m minimum) or near-automatic when present",
+   "targets": [
+    "T-PTY-1",
+    "T-RNG-4",
+    "T-ACT-2"
+   ],
+   "verdicts": "none (no proof value exists)",
+   "class": "model change"
   }
  ],
  "targets": [

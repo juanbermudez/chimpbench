@@ -1565,6 +1565,39 @@ The diagnostic probe with both changes gave about 5 trips per day and 2.2–2.7 
 - **T-PAT-6** (0.06, n = 17 patrols) is too noisy to read.
 - **Default.** Merged under the rule of merging if the guard passes, then switched **off by default** by integrator ruling. It is a pre-registered null result: a mechanism with no measured effect is not on by default. The code stays behind `departCue`. The ablation row now switches it on, so the lean proof still tests it.
 
+**5g. C13e pre-registration** (1 October 2026, before any C13e run; logged in protocolLog). Party cohesion as one stage: a bug fix, noticing and deciding. Switch `joinChoice`, field only; ablation set `C13e` (`joinChoice` 0), hash-identical to before.
+
+*What the probes showed* (development seeds, sim truth). At a trip departure only 35% of companions within `partyLinkM` had a join option: 53% were inside the 5 m minimum (`partyFollowMinM`) at the moment of the cue, and 12% did not see the initiator. Where the option existed it was the best one (median probability 0.997), so joining was near-automatic.
+
+1. **Bug fix.** The joint trip, whose goal is the leader's tree, is offered within `partyLinkM` without the 5 m minimum. Following a chimp keeps the minimum. The joint trip keeps a slot of its own among the candidates and on the RG menu, so it competes instead of being hidden behind the animal's own best trip.
+2. **Noticing.**
+   - A travel hoo gives every own-community hearer within `hearTravelHooM` a decision point, and the join option for `travelHooWindowMin`, seen or not.
+   - A silent departure is a decision point only for companions within `partyLinkM` who can see the leader go and are not absorbed. "Can see" means the leader is within the companion's own sight radius. "Absorbed" means feeding in a crown, grooming or being groomed, or asleep. Both read existing state (design assumptions).
+   - At its own decision points a companion sees a travelling leader as before.
+3. **Deciding.** The join value is: `joinBase` 0.3 + `joinBondW` 0.5 × bond + `joinAllyW` 0.2 for an ally + `joinRankW` 0.15 when the leader dominates the companion + `partyFollowSocialW` × sociability + `joinHooW` for a hoo heard from that leader − `joinStayW` 0.8 × own hunger × the crop quality of the tree it is feeding in − rain.
+   - Recruitment to joint travel, and more of it for allies, is [H] [gruberZuberbuhler2013]. Every magnitude is a design assumption.
+   - The old near-automatic value (0.7 + bond + 0.4 for an adult male) no longer applies to joint trips.
+4. **One fitted parameter: `joinHooW`.**
+   - Bisection on [0, 1.5], 6 steps, on seeds 48, 7 and 21 (180-day burn-in + 30 days).
+   - Target: hooed initiations recruit at least one companion within 5 min in 71.4% of cases, pooled over the seeds [gruberZuberbuhler2013].
+   - Only that rate is read during the fit.
+
+**Untuned checks** (nothing is adjusted after seeing them):
+
+| Row | Wild value | Pass |
+| --- | --- | --- |
+| Silent initiations recruiting ≥ 1 companion | 33.7% | 0.24–0.44 |
+| Hooed ÷ silent ratio | 2.1 | 1.6–2.6 |
+| T-PTY-1 party size | band 3–9 | up from the `joinChoice` 0 arm, toward the band |
+
+**Other predictions** (seeds 48, 7 and 21, field, 1 year, against `joinChoice` 0):
+- hooed recruitment 0.66–0.76;
+- the join option available to ≥ 80% of companions who noticed;
+- male day range and decisions per chimp-day about unchanged or slightly up;
+- T-ACT-2 within 0.03 of before.
+
+The viability guard of §5 applies (against both C13 parts off). T-PTY-1, T-RNG-4 and T-ACT-2 are touched.
+
 **6. Proof.** The lean proof (`scripts/proof.ts --plan lean`) with both parts on. `data/proof-ablations.json` has an ablation set per part, `C13a` (`rgOn` 0) and `C13b` (`intakeValue` 0), so each is attributed.
 
 **7. Handoffs.**
