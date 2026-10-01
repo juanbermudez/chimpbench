@@ -126,7 +126,11 @@ test('a full hindgut holds the foregut full: the gut empties only as fast as fib
   fc.action = 'rest'; FL.gut = 0; FL.dm = 0; FL.fib = 0; FL.res = 0; FL.hind = 0; eat(fc, P, 1e6, 'fallback');
   L.hind = capH;
   for (let i = 0; i < 240; i++) { energyTick(w, c, x, false); energyTick(free, fc, ix(fc), false); }
-  assert.ok(L.dm! > FL.dm! + 0.2 * capF, `blocked foregut ${L.dm!.toFixed(1)} g vs free ${FL.dm!.toFixed(1)} g after an hour`);
-  assert.ok(L.hind! <= capH + 1e-9);
+  assert.ok(L.dm! > FL.dm! + 10, `blocked foregut ${L.dm!.toFixed(1)} g vs free ${FL.dm!.toFixed(1)} g after an hour`);
+  assert.ok(L.hind! <= capH + 1e-9 && L.hind! > 0.99 * capH, 'the hindgut stays full');
+  // the blocked foregut empties only by the room fermentation and passage free in the hindgut, ÷ its fibre share
+  const k = 1 / ((P.digestaMrtH - P.ledgerGutEmptyH) * (1 - P.digestaNdfDigestibility));
+  const expected = capH * (1 - Math.exp(-k)) / P.digestaFallbackNdf;
+  assert.ok(Math.abs((capF - L.dm!) - expected) < 0.05 * expected, `emptied ${(capF - L.dm!).toFixed(1)} g vs ${expected.toFixed(1)} g`);
   assert.ok(c.hunger < fc.hunger, 'and the blocked animal is less hungry');
 });
