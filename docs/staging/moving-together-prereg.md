@@ -92,3 +92,68 @@ Not proposed: a cost of staying alone in the join value. It would raise recruitm
 **What these runs cannot resolve.** T-RNG-1 (annual range), T-PTY-3 if fewer than 5 periphery follows occur, demography, and whether nest groups matter.
 
 **If T-PTY-1 stays below 3.** No re-fit is pre-registered. The next lever by the measurements is fusion (a solitary animal finds company in only 20% of hours; nothing gathers animals at the nest), which needs its own design.
+
+## 5. Result (development; 1 October 2026)
+
+Code 587054f (c16-moving-together on `main` aa950b1: hunting fix and C14 in both arms). Field profile, seeds 48 and 7, `departPersist` on against off, at most 2 processes. Two windows after a 30-day burn-in: 60 days, then 180 days (6 months) for T-PTY-2 and T-FOOD-6; the 180-day values are given for the other rows too, where they are the better read. Outputs in `artifacts/validation/party/` (`*-mt60-*`, `*-mt180-*`; a first 60-day run on the earlier base 9570a3f is kept in `pre-aa950b1/` and gave the same picture).
+
+**The guard passes. The change works in the predicted direction at about a third to a half of the predicted size. T-PTY-1 stays just below its band.**
+
+**Guard.**
+
+| Guard | Result (seed 48 / 7) | Verdict |
+| --- | --- | --- |
+| G1: off = the field model on `main` aa950b1 | hash reproduced over 2 days (tests/sim-party-food.test.ts); compressed goldens unchanged | pass |
+| G2: activity and ranging rows in band, on | 180 d: T-ACT-1 0.425, T-ACT-2 0.195, T-ACT-3 0.131, T-ACT-4 0.360, T-RNG-4 2.59 km | pass |
+| G3: median hunger at most 0.03 above off; no extra starvation | 180 d: adults +0.003 / +0.019, lactating +0.018 / +0.020; no deaths. 60 d: adults +0.016 / +0.016, lactating +0.025 / +0.029 | pass (see the note) |
+| G4: joint departure given a co-feeder, higher on than off in each seed | 180 d: 0.63 against 0.58; 0.57 against 0.53 | pass |
+| G5: hooed attempts that recruit, per attempt, inside 0.71 ± 0.05 | 180 d: 0.715 / 0.671 on (0.683 / 0.679 off) | pass |
+
+- *Note on G3.* The pre-registration did not name the hunger instrument. The truth read of the party check (`party-truth.ts`) is the one above. The C13 direction script samples differently and gave lactating +0.032 in seed 7 over 60 days, 0.002 over the limit; over 180 days it gives +0.017 and +0.021.
+
+**The C13e rows (must not move).**
+
+| Reading | Called | Silent | Ratio |
+| --- | --- | --- | --- |
+| Field (gruberZuberbuhler2013) | 71% | 34% | 2.1 |
+| Per attempt, on (180 d, seed 48 / 7) | 0.72 / 0.67 | 0.31 / 0.29 | 2.3 / 2.3 |
+| Per attempt, off | 0.68 / 0.68 | 0.34 / 0.34 | 2.0 / 2.0 |
+| `c13-direction.ts`, on | 0.73 / 0.69 | 0.33 / 0.31 | 2.2 / 2.2 |
+| `c13-direction.ts`, off | 0.70 / 0.70 | 0.35 / 0.35 | 2.0 / 2.0 |
+
+- Called recruitment holds. Silent recruitment falls by about 0.03, so the ratio rises from 2.0 to 2.2–2.3.
+
+**Predictions: 6 pass, 6 fail, 1 right in direction only.**
+
+| Quantity | Predicted on | Off (seed 48 / 7) | On (seed 48 / 7) | Verdict |
+| --- | --- | --- | --- | --- |
+| Bout per crown visit, median | 36–44 min | 38.0 / 39.3 | 37.3 / 38.8 | pass |
+| Crown visits per adult per day | 4.8–5.5 | 5.3 / 5.1 | 5.4 / 5.1 | pass (60 d: 5.7 / 5.2) |
+| Joint departure, given a co-feeder | 0.70–0.90 | 0.58 / 0.53 | 0.63 / 0.57 | **fail** |
+| A pair still together after 60 min | 0.70–0.85 | 0.52 / 0.57 | 0.62 / 0.63 | **fail** |
+| Time with no companion | 0.35–0.50 | 0.59 / 0.61 | 0.47 / 0.53 | **fail** (one seed above) |
+| Feeders per occupied crown | 1.3–1.6 | 1.18 / 1.16 | 1.26 / 1.21 | **fail** |
+| T-PTY-1 (fitted row, not tuned) | 3.0–3.8 | 2.51 (2.55 / 2.46) | 2.86 (3.03 / 2.69); 60 d: 2.98 | **fail** (below 3) |
+| T-PTY-4, female time alone | 0.40–0.52 | 0.594 | 0.509 | pass |
+| T-RNG-4, day range | 2.2–2.7 km | 2.80 | 2.59 | pass |
+| T-ACT-1 / T-ACT-2 | 0.40–0.43 / 0.17–0.20 | 0.427 / 0.200 | 0.425 / 0.195 | pass |
+| Adult median hunger | +0.00 to +0.03 | 0.427 / 0.393 | 0.430 / 0.412 | pass |
+| T-FOOD-6, revisit interval (6 months) | unchanged, 13–18 d | 7.8 d (6.2 / 9.4) | 7.5 d (5.5 / 9.6) | unchanged, as predicted; my range was wrong for a 6-month window |
+| T-PTY-2, patch R² (6 months) | 0.02–0.08 | 0.013 | 0.010 | **fail** (unchanged; habitat-fruit R² 0.15 in both) |
+
+- Other held-out reads, untuned: T-PTY-3 1.14 on against 1.47 off (noisy). T-FOOD-6 sits just outside its band (2–7 d) in both arms.
+
+**Patrol reads from truth (integrator's request; nothing tuned).** 180 days, both seeds pooled.
+
+| | Off | On |
+| --- | --- | --- |
+| Patrols | 34 | 46 |
+| Share reaching 3 adult males | 0.68 | 0.67 |
+| Adult males per patrol | 2.68 | 2.57 |
+
+- Patrol size does not rise. **The number of patrols rises by a third** (0.44 → 0.60 per community-week in this window). That is the quantity C14 fitted `patrolH0` to, so it would need its own look if this change merges.
+
+**Why the effect is smaller than predicted, as I read it.**
+- Parting within an hour fell by about a third (accompanied animals alone 60 min later: 0.29 → 0.19–0.22), not by the two thirds the pair arithmetic gave. Persistence only governs own trips to trees. The other ways of parting are untouched: trips to water, drifting to crowns beyond the 50 m link, followers dropping out, leaving after the 13-min cap, and nesting apart. I have not measured their shares.
+- Fusion did not change: a solitary animal is in company an hour later in 20–23% of cases, in both arms. It is now the limiting rate.
+- Party size still does not grow with community size (2.4–2.8 in the community of 23, 2.5–2.6 in the one of 12).
