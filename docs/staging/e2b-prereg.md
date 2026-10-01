@@ -123,4 +123,69 @@ is logged below with its reason before its run. A miss is a finding.
 
 ## 7. Results
 
-(to be filled)
+Quick check throughout: field profile, seeds 48 and 7, 30 days after a 30-day burn-in, `--workers 1`, simulation truth
+(`scripts/rhythm-metrics.ts`) and `scripts/e-bench.ts --quick`; outputs in `artifacts/validation/e2b/` (not tracked).
+
+### Iteration 1 (the mechanisms of §3 as registered)
+
+| Readout | R | A1 (R + departRace) | S (full stack) | SN1 (S + nurseWake) | SAN1 (S + both) | Field |
+| --- | --- | --- | --- | --- | --- | --- |
+| Departures before sunrise, adults / adult females | 0.00 / 0.00 | 0.00 / 0.00 | 0.00 / 0.00 | 0.00 / 0.00 | 0.00 / 0.00 | 0.18 (Taï females) |
+| Median departure, min after sunrise (p10–p90) | 45 (19 to 51) | 24 (18 to 49) | 47 (21 to 52) | 47 (22 to 52) | 47 (22 to 52) | about 0 (Budongo); +13 to +27 (Taï) |
+| Fig crowns < 150 / 150–500 / ≥ 500 m | 40 / 46 / 46 | 23 / 24 / 21 | 45 / 47 / 47 | 47 / 47 / 47 | 47 / 47 / 48 | figs earlier when far |
+| Other crowns < 150 / 150–500 / ≥ 500 m | 41 / 46 / 46 | 23 / 24 / 24 | 47 / 47 / 47 | 47 / 47 / 48 | 47 / 47 / 48 | far non-fig later |
+| Last nest entry, min after sunset (median) | −4 | −3 | 0 | −4 | −4 | males about −25 |
+| Active day, all adults | 11 h 23 min | 11 h 31 min | 11 h 20 min | 11 h 17 min | 11 h 16 min | T-RHY-1 10.5–12 h |
+| Active day, males / lactating (lactating − male) | 11 h 23 / 11 h 29 (+6) | 11 h 30 / 11 h 35 (+5) | 11 h 20 / 11 h 23 (+3) | 11 h 19 / 11 h 13 (−6) | 11 h 19 / 11 h 10 (−9) | 11 h 34 / 10 h 57 (−37) |
+| Sleep pressure leaving the nest, lactating / others | 0.02 / 0.02 | 0.03 / 0.03 | 0.02 / 0.02 | **0.72** / 0.02 | **0.72** / 0.02 | — |
+| Night out of a nest; m moved per animal-night; night deaths | 0.0%; 0; 0 | 0.0%; 0; 0 | 0.0%; 1; 0 | 0.0%; 0; 0 | 0.0%; 0; 0 | — |
+| Deaths (all respiratory outbreak) | 2 | 1 | 0 | 0 | 0 | — |
+| e-bench fitted / held-out distance | 5.486 / 3.347 | 3.443 / 4.377 | 3.492 / 2.889 | — | 4.693 / 3.425 | — |
+| … on rows scored in both, against R (A1) or S (SAN1) | — | −0.883 / −0.369 | — | — | +0.229 / −0.363 | noise floor 0.8 |
+| Prescription count; viability | 139; pass | 139; pass | 139; pass | — | 139; pass | — |
+
+Reading:
+- **T-RHY-3 stays at 0.00, as predicted.** The race stake exists (diagnostic, seed 48, adults in nests at dawn: mean
+  G 0.07 at L 0.03–0.1, 0.24–0.25 at L 0.35–0.7, above 0.5 in 0–17% of samples) but before sunrise the nest is worth
+  1.7–2.3 against a best alternative of 0.6: no stake comes close. The darkness weight, not the food side, holds the
+  animals.
+- **The median moved from +45 to +24 min with departRace, more than predicted (0–10 min), and the reason is the
+  intention gate, not value.** In R and A1 the earliest departures (p10 +18–20 min) and the clusters sit on the gate's
+  re-draws: light arousal cuts the dark bout at L ≈ 0.1 (about 18 min before sunrise) and the period changes from night
+  to dawn, so the animal draws once; it then keeps its nest intention for `rgMaxAgeH` (30 min) through the short dawn
+  bouts, and draws again about 12 min after sunrise and at the dawn-to-morning period change (L = 0.97, about +45 min).
+  R's median of +45 min (E2a's "leave when daylight reaches about 0.9") is that period change. The stake turns the
+  +12 min re-draw into departures; it cannot act at the −18 min one.
+- **No fig or distance effect** (predicted): sim figs carry larger crops and nothing but chimpanzees eats them.
+- **On the full stack departRace does nothing** (S 47 against SAN1 47 min): adults are less hungry there (mean hunger
+  0.20 against 0.35), so the meal worth W and the stake are small, and 8–10% of mornings have no breakfast before noon.
+- **nurseWake: right sign, wrong mechanism.** The lactating − male contrast goes from +3 (S) to −6 and −9 min, but
+  mothers leave the nest with a sleep pressure of 0.72 (predicted 0.05–0.12): they are awake most of the night. A
+  diagnostic (seed 48, 2 nights after the burn-in) shows why: an infant drinks something in 76% of its mother's night
+  ticks, but at half the suckling rate or more in only 3.6%. E1c's night suckling has no bouts: the infant drains the
+  milk the gland makes, tick by tick, all night. Counting every such tick as waking makes the mother 4–8 times as
+  wakeful as postpartum women (efficiency 80–90%, montgomeryDowns2010).
+- Night: no animal leaves its nest at night in any arm; no night deaths; viability passes everywhere. No kill
+  criterion is met. e-bench changes are inside the noise floor on rows scored in both runs.
+
+### Iteration 2 (changes of mechanism, logged before their runs)
+
+1. **`nestLightDecide` (new switch; T-RHY-3, second attempt).** In changing light (0 < daylight < 1) an animal in its
+   own finished nest re-decides at the end of every nest bout: the intention gate does not keep a nest intention
+   across bouts while the light changes (rg.ts). Reason: iteration 1 shows the dawn departure is set by the gate's
+   re-draws (the 30-min maximum intention age and the period boundaries at daylight 0.03 and 0.97), which defeats
+   E2a's own design (short bouts in changing light "so the animal re-decides as light changes"). Changing light is the
+   salient change for a diurnal animal waking in a nest. No parameter; dusk is covered by the same rule.
+   Predictions: R + `nestLightDecide` (RL): median departure +15 to +25 min (the value crossing at L ≈ 0.65–0.7),
+   p10 earlier than +18; before sunrise 0.00–0.01; last nest entry 0 to +10 min later and more nests per evening (the
+   value of staying at dusk is close to the alternatives at L ≈ 0.9). R + departRace + `nestLightDecide` (AL): median
+   +5 to +20 min; before sunrise 0.01–0.05, still below the band (the darkness weight holds); no fig effect; far
+   contested crowns no earlier than near ones by more than 5 min.
+2. **`nurseWake`, second definition (lactating contrast, second attempt).** A waking tick is one in which the infant
+   drinks from a gland that can sustain the suckling rate (not empty by E1d's own end-of-bout test, `glandEmpty`, before
+   the drink): a feed. Draining the synthesis of an empty gland, which E1d ends by day, does not count. Predictions
+   (S + `nurseWake`, SN2): mothers' sleep pressure leaving the nest 0.03–0.08; the lactating − male contrast within
+   ±5 min of S (+3); the field's −37 min not reached. Full stack with all three (SALN2): as SN2 for the contrast and
+   as AL, smaller, for departures (lower hunger).
+
+Arms: RL, AL, SN2, SALN2 with `scripts/rhythm-metrics.ts`; AL and SALN2 also with `scripts/e-bench.ts --quick`.
