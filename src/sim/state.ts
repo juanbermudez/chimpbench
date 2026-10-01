@@ -101,7 +101,16 @@ export interface ChimpX {
  * position at the last tick (locomotion is costed per metre actually moved), and the milk a lactating mother's glands
  * hold (kcal an infant can drink now; its energy is charged to her when it is drunk).
  */
-export interface EnergyLedger { gut: number; res: number; in: number; out: number; x: number; y: number; z: number; milk: number }
+export interface EnergyLedger {
+  gut: number; res: number; in: number; out: number; x: number; y: number; z: number; milk: number;
+  /**
+   * Stage E1b (ledgerDigesta; energy.ts), present only with that switch on: dry matter in the foregut (g), the fibre (NDF)
+   * part of it (g), fibre in the hindgut (g), formula energy eaten (kcal, the field's intake measure), energy passed out
+   * unabsorbed (kcal) and dry matter eaten (g). With these, `gut` holds the non-fibre energy of the foregut and `in`
+   * counts fibre at its fermentation yield.
+   */
+  dm?: number; fib?: number; hind?: number; fin?: number; fec?: number; dmIn?: number;
+}
 
 /** The memory month in progress: tallies accumulate on events and are finalized into a MemoryDigest every 30 eco-days. */
 export interface MonthLedger { start: number; startRank: number; partners: Record<number, PartnerTally>; events: DigestEvent[]; encounters: number; lastEncounter: number }

@@ -838,7 +838,7 @@ function forageTick(world: World, c: Chimp): void {
     if (x.gx !== 0 || x.gz !== 0) moveTo(world, c, x.gx, 0, x.gz, WALK * 0.3, 0.2);
     // leaves, pith and herbs: lower-quality fallback foods [H]; the field profile's forage field varies by habitat and season
     const self = selfFeed(c, P) * snareIntake(c, P);
-    if (ledgerOn(P)) eat(c, P, fallbackKcalPerH(P) * TICK_HOURS * (P.patchEcology === 1 ? forageYield(world, c.position[0], c.position[2]) : 1) * self);
+    if (ledgerOn(P)) eat(c, P, fallbackKcalPerH(P) * TICK_HOURS * (P.patchEcology === 1 ? forageYield(world, c.position[0], c.position[2]) : 1) * self, 'fallback');
     else if (P.patchEcology === 1) c.hunger = clamp(c.hunger - P.fallbackHungerPerH * TICK_HOURS * forageYield(world, c.position[0], c.position[2]) * self);
     else c.hunger = clamp(c.hunger - P.fallbackHungerPerH * TICK_HOURS * self);
     return;
@@ -865,13 +865,13 @@ function forageTick(world: World, c: Chimp): void {
   }
   // feeding: up to fruitIntakePerH (0.055 fruit units/h, scaled by foraging skill), x4.4 = up to ~0.24 hunger/h, so chimps feed about half the day (design; field feeding shares are 33-50% of daytime, docs/realism-design.md T-ACT-1)
   // stage E1 (energyLedger): the same fruit intake, worth kcal by food type, and no more than the gut can take
-  const led = ledgerOn(P), kcalPerFruit = led ? fruitKcalPerUnit(P, t.common === 'fig') : 0;
+  const led = ledgerOn(P), fig = t.common === 'fig', kcalPerFruit = led ? fruitKcalPerUnit(P, fig) : 0;
   let want = P.fruitIntakePerH * TICK_HOURS * (P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging) * (c.age < 5 ? P.fruitIntakeYoungFactor : 1) * selfFeed(c, P) * snareIntake(c, P);
-  if (led) want = Math.min(want, gutRoom(c, P) / kcalPerFruit);
+  if (led) want = Math.min(want, gutRoom(c, P, fig ? 'fig' : 'drupe') / kcalPerFruit);
   let intake: number;
   if (lazy) intake = eatFruit(world, t, want);
   else { intake = Math.min(t.fruit, want); t.fruit -= intake; }
-  if (led) eat(c, P, intake * kcalPerFruit);
+  if (led) eat(c, P, intake * kcalPerFruit, fig ? 'fig' : 'drupe');
   else c.hunger = clamp(c.hunger - intake * P.fruitHungerFactor);
   c.thirst = clamp(c.thirst - intake * P.fruitThirstFactor);
   c.skills.foraging = clamp(c.skills.foraging + (1 - c.skills.foraging) * TICK_HOURS * 0.002);
@@ -900,7 +900,7 @@ function fallbackTick(world: World, c: Chimp): void {
   }
   if (x.gx !== 0 || x.gz !== 0) moveTo(world, c, x.gx, 0, x.gz, P.walkMps * 0.3, 0.2);
   const got = eatFallback(world, c, TICK_HOURS);
-  if (ledgerOn(P)) eat(c, P, got); else c.hunger = clamp(c.hunger - got);
+  if (ledgerOn(P)) eat(c, P, got, 'fallback'); else c.hunger = clamp(c.hunger - got);
 }
 
 function pairTick(world: World, c: Chimp, o: Chimp | undefined): void {

@@ -10,6 +10,18 @@
 // Every input is physiology or physics from the registry (ids ledger*); the two appetite numbers and the condition set
 // point are readouts. Field values of behaviour (feeding time, daily intake) are targets and appear nowhere here.
 // Conservation: for every individual, in − out = Δgut + Δreserves, exactly (tests/sim-energy.test.ts).
+//
+// Stage E1b (docs/staging/e1b-prereg.md; P.ledgerDigesta 1, on top of the ledger): the gut holds digesta, not energy.
+//   foregut  stomach and small intestine, in grams of dry matter; filled by eating (each food brings its measured dry
+//            matter per kcal and its fibre share), emptied first-order (ledgerGutEmptyH). What leaves it is split: the
+//            non-fibre energy is absorbed, the fibre (NDF) passes on to the hindgut, and only as fast as the hindgut has
+//            room (a full hindgut holds the foregut full);
+//   hindgut  fibre in grams; fermented (yield digestaFermentKcalPerG per gram) or passed out, competing first-order so
+//            that the fermented share is the measured fibre digestibility and the residue leaves after the mean
+//            retention time.
+// Hunger reads foregut fill (bulk) instead of energy in the gut; absorbing costs digestaTefFrac of what is absorbed
+// (diet-induced thermogenesis). Conservation: in − out − fec = Δ(gut + yield × fibre in both pools) + Δreserves, where
+// `in` counts fibre at its fermentation yield and `fin` keeps the formula energy eaten (the field's intake measure).
 import type { Chimp, World } from '../types';
 import { paramsOf, type Params } from './params';
 import { TICK_HOURS, TICK_SECONDS, ix, type ChimpX, type EnergyLedger } from './state';
@@ -27,6 +39,36 @@ interface Rates {
   /** kcal per kg per metre on the ground, and per metre climbed. */ walk: number; climb: number;
   /** Milk made per tick per kg^exp of maternal mass (kcal), and how many ticks of synthesis the glands hold. */ milk: number; milkTicks: number;
   /** Longest plausible move in one tick (m); a longer jump is a placement, not locomotion. */ maxStep: number;
+  /** Stage E1b (ledgerDigesta), else null. */ dig: Digesta | null;
+}
+/** A food as digesta: dry matter (g), fibre (g) and non-fibre energy (kcal) per kcal of formula energy eaten. */
+interface Food { g: number; fib: number; nf: number }
+export type FoodKind = 'drupe' | 'fig' | 'fallback' | 'meat' | 'milk';
+interface Digesta {
+  food: Record<FoodKind, Food>;
+  /** Foregut and hindgut dry-matter capacity per kg of body mass (g). */ capF: number; capH: number;
+  /** Share of the hindgut fibre that leaves in one tick (fermented or passed), and the fermented share of what leaves. */ leave: number; ferm: number;
+}
+/** Formula energy (fibre at the formula's credit) split into dry matter, fibre and non-fibre energy, from a feeding rate in kcal/min and g/min. */
+function food(P: Params, kcalPerMin: number, gPerMin: number, ndf: number): Food {
+  const g = gPerMin / kcalPerMin, fib = g * ndf;
+  return { g, fib, nf: 1 - fib * P.digestaNdfCreditKcalPerG };
+}
+function digesta(P: Params): Digesta {
+  const kp = 1 / Math.max(1e-6, P.digestaMrtH - P.ledgerGutEmptyH), d = P.digestaNdfDigestibility;
+  const k = kp / Math.max(1e-6, 1 - d); // fermentation k·d and passage k·(1 − d): the fermented share is d
+  const nonFibre = (gPerKcal: number): Food => ({ g: gPerKcal, fib: 0, nf: 1 });
+  return {
+    food: {
+      drupe: food(P, P.ledgerFruitKcalPerMin, P.digestaDrupeDmGPerMin, P.digestaFruitNdf),
+      fig: food(P, P.ledgerFigKcalPerMin, P.digestaFigDmGPerMin, P.digestaFruitNdf),
+      fallback: food(P, P.ledgerFallbackKcalPerMin, P.digestaFallbackDmGPerMin, P.digestaFallbackNdf),
+      meat: nonFibre(P.digestaMeatDmGPerKcal), milk: nonFibre(P.digestaMilkDmGPerKcal),
+    },
+    capF: P.digestaGutMlPerKg * P.digestaForegutShare * P.digestaForegutDmGPerMl,
+    capH: P.digestaGutMlPerKg * (1 - P.digestaForegutShare) * P.digestaHindgutDmGPerMl,
+    leave: 1 - Math.exp(-k * TICK_HOURS), ferm: d,
+  };
 }
 let ratesOf: Params | null = null;
 let R: Rates;
@@ -42,6 +84,7 @@ function rates(P: Params): Rates {
     climb: G_MPS2 / P.ledgerClimbEff / J_PER_KCAL,
     milk: P.ledgerMilkYieldCoef / 24 * TICK_HOURS, milkTicks: P.ledgerMilkStoreH / TICK_HOURS,
     maxStep: 2 * P.runMps * TICK_SECONDS + 2,
+    dig: P.ledgerDigesta === 1 ? digesta(P) : null,
   };
   return R;
 }
@@ -57,9 +100,26 @@ function growthKgPerY(c: Chimp, P: Params): number {
   return c.age >= at ? 0 : ((f ? P.ledgerMassFemaleKg : P.ledgerMassMaleKg) - P.ledgerMassBirthKg) / at;
 }
 
-/** Gut capacity and usable reserve at the set point (kcal). */
-export const gutCap = (c: Chimp, P: Params) => P.ledgerGutCapKcalPerKg * massOf(c, P);
+/**
+ * Gut capacity (kcal) and usable reserve at the set point (kcal). With ledgerDigesta 1 the gut is sized in dry matter;
+ * its capacity in kcal is then what fills the foregut when eating drupes (the unit the intake valuation reads, intake.ts).
+ */
+export function gutCap(c: Chimp, P: Params): number {
+  const D = rates(P).dig;
+  return D ? D.capF * massOf(c, P) / D.food.drupe.g : P.ledgerGutCapKcalPerKg * massOf(c, P);
+}
 export const reserveCap = (c: Chimp, P: Params) => P.ledgerReserveKcalPerKg * massOf(c, P);
+/** Stage E1b: foregut and hindgut dry-matter capacity (g), or 0 with ledgerDigesta 0. */
+export function digestaCaps(c: Chimp, P: Params): [number, number] {
+  const D = rates(P).dig, M = massOf(c, P);
+  return D ? [D.capF * M, D.capH * M] : [0, 0];
+}
+
+/** Stage E1b: open the digesta pools (a gut that held only energy is read as drupes; the hindgut starts empty). */
+function openDigesta(c: Chimp, L: EnergyLedger, D: Digesta, P: Params): void {
+  const f = D.food.drupe, dm = Math.min(D.capF * massOf(c, P), L.gut * f.g); // L.gut was formula kcal of drupes
+  L.gut = dm * f.nf / f.g; L.dm = dm; L.fib = dm * f.fib / f.g; L.hind = 0; L.fin = 0; L.fec = 0; L.dmIn = 0;
+}
 
 /**
  * The individual's ledger, opened on first use from the state it already has: reserves from its condition (a founder
@@ -69,29 +129,49 @@ export function ledgerOf(c: Chimp, P: Params): EnergyLedger {
   const x = ix(c);
   if (x.en) return x.en;
   const dev = x.cond / P.ledgerCondSet - 1; // the inverse of the condition readout
-  const p = c.position;
-  return x.en = { gut: gutCap(c, P) * (1 - (c.hunger > 1 ? 1 : c.hunger < 0 ? 0 : c.hunger)), res: reserveCap(c, P) * (dev < -0.9 ? -0.9 : dev > 0.5 ? 0.5 : dev), in: 0, out: 0, x: p[0], y: p[1], z: p[2], milk: 0 };
+  const p = c.position, D = rates(P).dig;
+  const L: EnergyLedger = { gut: gutCap(c, P) * (1 - (c.hunger > 1 ? 1 : c.hunger < 0 ? 0 : c.hunger)), res: reserveCap(c, P) * (dev < -0.9 ? -0.9 : dev > 0.5 ? 0.5 : dev), in: 0, out: 0, x: p[0], y: p[1], z: p[2], milk: 0 };
+  if (D) openDigesta(c, L, D, P);
+  return x.en = L;
 }
 
 /** hunger 0..1 = gut emptiness × appetite; appetite = set − gain × reserves ÷ usable reserve, clamped (readout; design). */
 function setHunger(c: Chimp, L: EnergyLedger, P: Params): void {
-  const M = massOf(c, P);
-  const e = 1 - L.gut / (P.ledgerGutCapKcalPerKg * M), a = P.ledgerAppetiteSet - P.ledgerAppetiteGain * L.res / (P.ledgerReserveKcalPerKg * M);
+  const M = massOf(c, P), D = rates(P).dig;
+  // stage E1b: emptiness is bulk, the foregut's dry matter against its capacity
+  const e = D ? 1 - L.dm! / (D.capF * M) : 1 - L.gut / (P.ledgerGutCapKcalPerKg * M), a = P.ledgerAppetiteSet - P.ledgerAppetiteGain * L.res / (P.ledgerReserveKcalPerKg * M);
   c.hunger = (e > 1 ? 1 : e < 0 ? 0 : e) * (a > 1 ? 1 : a < 0 ? 0 : a);
 }
 
 /** Optional tap for diagnostics (scripts/energy-diagnose.ts): called with each expenditure term. Never set by the app; reads only. */
-export type EnergyTerm = 'rest' | 'activity' | 'walk' | 'climb' | 'carry' | 'pregnancy' | 'growth' | 'milk';
+export type EnergyTerm = 'rest' | 'activity' | 'walk' | 'climb' | 'carry' | 'pregnancy' | 'growth' | 'milk' | 'digestion';
 export const energyTap: { fn: ((c: Chimp, term: EnergyTerm, kcal: number) => void) | null } = { fn: null };
 
 /** One tick of the balance for `c` (called from needs()): absorption, expenditure, and the hunger readout. */
 export function energyTick(world: World, c: Chimp, x: ChimpX, sleeping: boolean): void {
   const P = paramsOf(world), r = rates(P), L = x.en ?? ledgerOf(c, P);
-  const M = massOf(c, P), m75 = Math.pow(M, P.ledgerRmrExp), tap = energyTap.fn;
-  const absorbed = L.gut * r.absorb;
-  L.gut -= absorbed;
+  const M = massOf(c, P), m75 = Math.pow(M, P.ledgerRmrExp), tap = energyTap.fn, D = r.dig;
+  let absorbed: number, out = 0;
+  if (D) {
+    if (L.dm === undefined) openDigesta(c, L, D, P);
+    // foregut: a first-order share leaves; its fibre must fit in the hindgut, or the foregut empties only as fast as it does
+    let a = r.absorb;
+    const move = L.fib! * a, room = D.capH * M - L.hind!;
+    if (move > room) a = room > 0 ? a * room / move : 0;
+    absorbed = L.gut * a; L.gut -= absorbed;
+    const fib = L.fib! * a;
+    L.dm! -= L.dm! * a; L.fib! -= fib; L.hind! += fib;
+    // hindgut: fibre is fermented or passed out, in the measured proportion
+    const leave = L.hind! * D.leave, fermented = leave * D.ferm;
+    L.hind! -= leave;
+    absorbed += fermented * P.digestaFermentKcalPerG;
+    L.fec! += (leave - fermented) * P.digestaFermentKcalPerG;
+    // diet-induced thermogenesis: the cost of processing what is absorbed
+    const tef = absorbed * P.digestaTefFrac;
+    out += tef; if (tap) tap(c, 'digestion', tef);
+  } else { absorbed = L.gut * r.absorb; L.gut -= absorbed; }
   const base = r.rest * m75, act = sleeping ? P.ledgerActSleep : c.action === 'forage' ? P.ledgerActFeed : P.ledgerActRest;
-  let out = base * act;
+  out += base * act;
   if (tap) { tap(c, 'rest', base); tap(c, 'activity', base * (act - 1)); }
   if (c.pregnancy > 0) {
     // gestation: twice the mean cost × progress, so the mean over the pregnancy is the registry value
@@ -135,17 +215,36 @@ export function rideTick(rider: Chimp, carrier: Chimp, P: Params): void {
   if (energyTap.fn) energyTap.fn(carrier, 'carry', cost);
 }
 
-/** Energy the gut can still take (kcal). */
-export function gutRoom(c: Chimp, P: Params): number {
-  const room = gutCap(c, P) - ledgerOf(c, P).gut;
+/** Energy the gut can still take (kcal of `kind`; stage E1b: by the food's dry matter per kcal). */
+export function gutRoom(c: Chimp, P: Params, kind: FoodKind = 'drupe'): number {
+  const D = rates(P).dig, L = ledgerOf(c, P);
+  if (D && L.dm === undefined) openDigesta(c, L, D, P);
+  const room = D ? (D.capF * massOf(c, P) - L.dm!) / D.food[kind].g : gutCap(c, P) - L.gut;
   return room > 0 ? room : 0;
 }
 
-/** Eat up to `kcal`: what fits goes into the gut. Returns the energy taken and refreshes the hunger readout. */
-export function eat(c: Chimp, P: Params, kcal: number): number {
-  const L = ledgerOf(c, P), room = gutCap(c, P) - L.gut;
+/**
+ * Eat up to `kcal` of formula energy of food `kind`: what fits goes into the gut. Returns the energy taken and refreshes
+ * the hunger readout. Stage E1b: the food fills the foregut by its dry matter, and its fibre enters the books at its
+ * fermentation yield (`in`); the formula energy and dry matter eaten are kept for comparison with field intake.
+ */
+export function eat(c: Chimp, P: Params, kcal: number, kind: FoodKind = 'drupe'): number {
+  const L = ledgerOf(c, P), D = rates(P).dig;
+  if (!D) {
+    const room = gutCap(c, P) - L.gut;
+    const take = kcal < room ? kcal : room > 0 ? room : 0;
+    if (take > 0) { L.gut += take; L.in += take; }
+    setHunger(c, L, P);
+    return take;
+  }
+  if (L.dm === undefined) openDigesta(c, L, D, P);
+  const f = D.food[kind], room = (D.capF * massOf(c, P) - L.dm!) / f.g;
   const take = kcal < room ? kcal : room > 0 ? room : 0;
-  if (take > 0) { L.gut += take; L.in += take; }
+  if (take > 0) {
+    const dm = take * f.g, fib = take * f.fib, nf = take * f.nf;
+    L.gut += nf; L.dm! += dm; L.fib! += fib;
+    L.in += nf + fib * P.digestaFermentKcalPerG; L.fin! += take; L.dmIn! += dm;
+  }
   setHunger(c, L, P);
   return take;
 }
@@ -163,7 +262,7 @@ export const fallbackKcalPerH = (P: Params) => P.ledgerFallbackKcalPerMin * 60;
  */
 export function nurseTick(infant: Chimp, mother: Chimp, P: Params): void {
   const ML = ledgerOf(mother, P), flow = P.ledgerMilkKcalPerMin * 60 * TICK_HOURS;
-  const milk = eat(infant, P, flow < ML.milk ? flow : ML.milk);
+  const milk = eat(infant, P, flow < ML.milk ? flow : ML.milk, 'milk');
   if (milk <= 0) return;
   const cost = milk / P.ledgerMilkEff;
   ML.milk -= milk; ML.res -= cost; ML.out += cost;
@@ -171,7 +270,7 @@ export function nurseTick(infant: Chimp, mother: Chimp, P: Params): void {
 }
 
 /** A piece of plant food handed to a begging offspring. */
-export const sharePlant = (o: Chimp, P: Params) => eat(o, P, P.ledgerPlantShareKcal);
+export const sharePlant = (o: Chimp, P: Params) => eat(o, P, P.ledgerPlantShareKcal, 'fallback');
 
 /**
  * Slow step (slowLife): condition reads reserves (ledgerCondSet at the set point, 0 when the usable reserve is gone).

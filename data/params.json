@@ -4917,6 +4917,372 @@
    "notes": "Moving-together stage: after a failed attempt the initiator's own trips to trees are off its menu for this long, while it still has an audience (mean re-launch delay 3.80 min, 9 cases)."
   },
   {
+   "id": "digestaDrupeDmGPerMin",
+   "group": "feeding",
+   "value": 3.0,
+   "units": "g dry matter/min",
+   "range": [
+    2.4,
+    3.6
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0.001,
+    1000000.0
+   ],
+   "calibrate": false,
+   "evidence": "H",
+   "sources": [
+    "uwimbabazi2019"
+   ],
+   "clock": "eco",
+   "symbol": "digesta",
+   "file": "src/sim/energy.ts",
+   "notes": "Dry-matter feeding rate on drupes (non-fig ripe fruit), 3.0 +- 0.6 g/min, the same records as ledgerFruitKcalPerMin (9.9 kcal/min; uwimbabazi2019 Table 1, Kanyawara females). Gives 0.303 g of dry matter per kcal eaten. Whether swallowed seeds are in the analysed samples was not reached (docs/staging/e1b-prereg.md)."
+  },
+  {
+   "id": "digestaFallbackDmGPerMin",
+   "group": "feeding",
+   "value": 1.89,
+   "units": "g dry matter/min",
+   "range": [
+    1.8,
+    2.1
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0.001,
+    1000000.0
+   ],
+   "calibrate": false,
+   "evidence": "H",
+   "sources": [
+    "uwimbabazi2019",
+    "potts2011"
+   ],
+   "clock": "eco",
+   "symbol": "digesta",
+   "file": "src/sim/energy.ts",
+   "notes": "Dry-matter feeding rate on fallback foods: pith 1.8 and young leaves 2.1 g/min (uwimbabazi2019 Table 1) weighted by their Kanyawara feeding shares 17.4 : 6.9 (potts2011), the weighting of ledgerFallbackKcalPerMin (4.2 kcal/min). 0.449 g per kcal: fallback food fills the gut 1.5 times faster per kcal than drupes."
+  },
+  {
+   "id": "digestaFallbackNdf",
+   "group": "feeding",
+   "value": 0.534,
+   "units": "fraction of dry matter",
+   "range": [
+    0.431,
+    0.581
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "H",
+   "sources": [
+    "uwimbabazi2019",
+    "potts2011"
+   ],
+   "clock": "none",
+   "symbol": "digesta",
+   "file": "src/sim/energy.ts",
+   "notes": "Fibre (NDF) share of fallback food: pith 58.1% and young leaves 43.1% of organic matter (uwimbabazi2019 Table 2), weighted by the dry matter eaten (pith 17.4 x 1.8 g/min, leaves 6.9 x 2.1 g/min; potts2011 shares). Range: leaves to pith."
+  },
+  {
+   "id": "digestaFermentKcalPerG",
+   "group": "needs",
+   "value": 3.0,
+   "units": "kcal per g NDF fermented",
+   "range": [
+    2.5,
+    3.5
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    9
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "digesta",
+   "file": "src/sim/energy.ts",
+   "notes": "Energy the body absorbs per gram of fibre fermented (short-chain fatty acids), the factor of the field formula's fibre credit: 3 kcal/g x digestion coefficient (masi2015, full text, after Conklin-Brittain et al. 2006). Not a chimpanzee measurement. Pending docs/research.md key."
+  },
+  {
+   "id": "digestaFigDmGPerMin",
+   "group": "feeding",
+   "value": 4.2,
+   "units": "g dry matter/min",
+   "range": [
+    3.7,
+    4.7
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0.001,
+    1000000.0
+   ],
+   "calibrate": false,
+   "evidence": "H",
+   "sources": [
+    "uwimbabazi2019"
+   ],
+   "clock": "eco",
+   "symbol": "digesta",
+   "file": "src/sim/energy.ts",
+   "notes": "Dry-matter feeding rate on figs, 4.2 +- 0.5 g/min, the same records as ledgerFigKcalPerMin (12.5 kcal/min; uwimbabazi2019 Table 1). 0.336 g per kcal."
+  },
+  {
+   "id": "digestaForegutDmGPerMl",
+   "group": "needs",
+   "value": 0.15,
+   "units": "g dry matter/mL",
+   "range": [
+    0.1,
+    0.2
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "digesta",
+   "file": "src/sim/energy.ts",
+   "notes": "Dry-matter concentration of foregut digesta at capacity. No ape value found; assumed (fresh ripe fruit about 0.2, diluted by gastric secretion)."
+  },
+  {
+   "id": "digestaForegutShare",
+   "group": "needs",
+   "value": 0.45,
+   "units": "fraction of gut volume",
+   "range": [
+    0.4,
+    0.48
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "digesta",
+   "file": "src/sim/energy.ts",
+   "notes": "Stomach plus small intestine as a share of gut volume in chimpanzees: stomach 17-20% and small intestine 23-28% (Milton 1987 table, seen only as cited by a secondary web page); apes hold more than 45% of gut volume in the colon (milton1999, full text). The rest is the hindgut (caecum and colon)."
+  },
+  {
+   "id": "digestaFruitNdf",
+   "group": "feeding",
+   "value": 0.415,
+   "units": "fraction of dry matter",
+   "range": [
+    0.35,
+    0.5
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "H",
+   "sources": [
+    "uwimbabazi2019"
+   ],
+   "clock": "none",
+   "symbol": "digesta",
+   "file": "src/sim/energy.ts",
+   "notes": "Fibre (NDF) share of ripe fruit, 41.5% of organic matter (uwimbabazi2019 Table 2), taken as the share of dry matter (ash not reported; derived organic matter / dry matter for ripe fruit about 0.97). One value for drupes and figs (no separate fig value). Range assumed."
+  },
+  {
+   "id": "digestaGutMlPerKg",
+   "group": "needs",
+   "value": 83,
+   "units": "mL per kg body mass",
+   "range": [
+    60,
+    111
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    1000
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "digesta",
+   "file": "src/sim/energy.ts",
+   "notes": "Volume of the digestive tract: 3,329 mL in a captive chimpanzee (derived from nakamura2017, abstract: 489.4 cm3 of seeds = 14.7% of the previously reported capacity; the original measurement, probably Chivers & Hladik 1980, was not read), divided by an assumed reference mass of 40 kg (range 30-55 kg: 111-60 mL/kg); isometric scaling with body mass assumed."
+  },
+  {
+   "id": "digestaHindgutDmGPerMl",
+   "group": "needs",
+   "value": 0.2,
+   "units": "g dry matter/mL",
+   "range": [
+    0.15,
+    0.25
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "digesta",
+   "file": "src/sim/energy.ts",
+   "notes": "Dry-matter concentration of hindgut digesta at capacity. No ape value found; assumed (human colonic contents and stools are about a fifth to a quarter dry matter, not verified here). A wild Mahale female held 258.8 g dry seeds in 489 cm3 (nakamura2017): seeds alone can be denser."
+  },
+  {
+   "id": "digestaMeatDmGPerKcal",
+   "group": "needs",
+   "value": 0.23,
+   "units": "g dry matter/kcal",
+   "range": [
+    0.2,
+    0.3
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.001,
+    10
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "digesta",
+   "file": "src/sim/energy.ts",
+   "notes": "Dry matter per kcal of meat: 1.15 kcal/g fresh (the food-table value behind ledgerMeatKcalPerMin, hardus2012, secondary) at an assumed 27% dry matter. No fibre."
+  },
+  {
+   "id": "digestaMilkDmGPerKcal",
+   "group": "needs",
+   "value": 0.185,
+   "units": "g dry matter/kcal",
+   "range": [
+    0.15,
+    0.22
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.001,
+    10
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "digesta",
+   "file": "src/sim/energy.ts",
+   "notes": "Dry matter per kcal of milk: human milk 0.67 kcal/g (2.8 kJ/g, butteKing2005) at an assumed 12.4% solids. No fibre. Cross-species."
+  },
+  {
+   "id": "digestaMrtH",
+   "group": "needs",
+   "value": 38,
+   "units": "h",
+   "range": [
+    31,
+    48
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    1000
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "digesta",
+   "file": "src/sim/energy.ts",
+   "notes": "Mean retention time of indigestible markers through the whole tract: 38 h on a 34% NDF diet and 48 h on 14% NDF in captive chimpanzees (miltonDemment1988; the 38 h seen only in a search snippet, the 48 h confirmed by milton1999, full text: 2.0 d). The hindgut passes residue with a time constant of this minus ledgerGutEmptyH. Range: about 31 h (lambert2002, secondary) to 48 h."
+  },
+  {
+   "id": "digestaNdfCreditKcalPerG",
+   "group": "feeding",
+   "value": 1.6,
+   "units": "kcal/g NDF",
+   "range": [
+    1.3,
+    1.9
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    9
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "uwimbabazi2019"
+   ],
+   "clock": "none",
+   "symbol": "digesta",
+   "file": "src/sim/energy.ts",
+   "notes": "The fibre credit inside the field's metabolisable-energy formula (4 x sugars and protein + 9 x lipid + 1.6 x NDF; uwimbabazi2019, after Conklin-Brittain et al. 2006). Used only to split a food's formula energy (the kcal/min inputs) into its non-fibre part and its fibre; the energy fibre actually yields is digestaFermentKcalPerG x digestaNdfDigestibility. The credit equals 3 kcal/g x 0.53 (derived; masi2015 states the structure 3 kcal/g x digestion coefficient)."
+  },
+  {
+   "id": "digestaNdfDigestibility",
+   "group": "needs",
+   "value": 0.449,
+   "units": "fraction",
+   "range": [
+    0.4,
+    0.75
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    0.99
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "digesta",
+   "file": "src/sim/energy.ts",
+   "notes": "Share of fibre (NDF) fermented: 0.449 in captive western gorillas on a highly fibrous diet (remisDierenfeld2004, as used by masi2015, full text). Cross-species: no chimpanzee value was read; the chimpanzee formula credit implies 0.53 (1.6 / 3, derived); captive orangutans 0.45-0.745 by fibre source (schmidt2005, abstract); chimpanzee fibre digestibility falls as dietary fibre rises (miltonDemment1988, abstract) and wild fruit (41.5% NDF) is more fibrous than either chimpanzee trial diet (14%, 34%)."
+  },
+  {
+   "id": "digestaTefFrac",
+   "group": "needs",
+   "value": 0.1,
+   "units": "fraction of energy absorbed",
+   "range": [
+    0.05,
+    0.15
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    0.5
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "energyTick",
+   "file": "src/sim/energy.ts",
+   "notes": "Diet-induced thermogenesis: the energy cost of digesting and storing what is absorbed. Humans on a mixed diet at energy balance: 5-15% of daily expenditure (westerterp2004, abstract); 10.5% (high fat) to 14.6% (high protein and carbohydrate) of intake over 24 h in a respiration chamber (westerterp1999, abstract). Cross-species. Pre-registered check (docs/staging/e1b-prereg.md): with it, a captive-like day of the ledger gives 1,691 and 1,996 kcal/d for pontzer2016's females and males (-1.8%, -6.9%); without it -11.6% and -16.2%."
+  },
+  {
    "id": "discrimDistW",
    "group": "communication",
    "value": 1,
@@ -11482,6 +11848,29 @@
    "symbol": "ledgerSlow",
    "file": "src/sim/energy.ts",
    "notes": "Readout, not physiology: body condition (C8 cond) at the reserve set point; cond = ledgerCondSet x (1 + reserves / reserve capacity), 0 when the usable reserve is gone. 0.7 is the C8 default condition of a founder."
+  },
+  {
+   "id": "ledgerDigesta",
+   "group": "needs",
+   "value": 0,
+   "units": "flag",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.ledgerDigesta",
+   "file": "src/sim/energy.ts",
+   "integer": true,
+   "notes": "Stage E1b (docs/staging/e1b-prereg.md), read only with energyLedger 1: 1 = the gut holds digesta (dry matter in a foregut and fibre in a hindgut, src/sim/energy.ts) instead of energy: each food fills the foregut by its measured dry matter per kcal, fibre is fermented or passed out in the hindgut at its measured digestibility, hunger reads foregut fill, and absorbing costs digestaTefFrac. 0 = the E1 ledger (hash-identical)."
   },
   {
    "id": "ledgerFallbackKcalPerMin",
