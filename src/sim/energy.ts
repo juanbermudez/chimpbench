@@ -207,6 +207,22 @@ export function nurseTick(infant: Chimp, mother: Chimp, P: Params): void {
   if (energyTap.fn) { energyTap.fn(mother, 'milk', cost); energyTap.fn(infant, 'suckled', milk); }
 }
 
+/**
+ * Stage E1d (ledgerNurseByMilk): what a nursing bout is worth now, as the share of the infant's gut room the mother's
+ * gland store can fill (0 with a full gut; 1 when either ledger is not open yet). Pure: reads existing ledgers only.
+ */
+export function milkWorth(infant: Chimp, mother: Chimp, P: Params): number {
+  const I = ix(infant).en, M = ix(mother).en;
+  if (!I || !M) return 1;
+  const room = gutCap(infant, P) - I.gut;
+  return room > 0 ? (M.milk < room ? M.milk / room : 1) : 0;
+}
+/** Stage E1d: the gland holds less than one tick of suckling, so it can no longer sustain the suckling rate. */
+export function glandEmpty(mother: Chimp, P: Params): boolean {
+  const M = ix(mother).en;
+  return !M || M.milk < P.ledgerMilkKcalPerMin * 60 * TICK_HOURS;
+}
+
 /** A piece of plant food handed to a begging offspring. */
 export const sharePlant = (o: Chimp, P: Params) => eat(o, P, P.ledgerPlantShareKcal);
 
