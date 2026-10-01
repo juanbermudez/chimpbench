@@ -123,4 +123,55 @@ Field profile, seeds 48 and 7 only, 30-day burn-in + 60 days, `--workers 2`, one
 
 ## 8. Results
 
-(To be filled after the runs.)
+Runs: field profile, seeds 48 and 7, 30-day burn-in + 60 days, rules policy, `artifacts/validation/e1b/` (not tracked). Before any changed run, the switch-off check: worlds with `energyLedger` 1 (alone and with `rhythmSleep` + `rhythmHeat`) and the compressed default give the same hash after one day on this branch as on `track-e` (6f5a4c3). Unit tests (`tests/sim-digesta.test.ts`): conservation exact for every individual in both profiles, determinism under batching, saves resume exactly, the E1 ledger untouched at switch 0. One test threshold was wrong on first run (it asked a blocked foregut to stay 35 g fuller after an hour; the registered arithmetic gives 22 g, which is what the model did); the test now checks the arithmetic.
+
+### Iteration 1 (the registered model; arm 2)
+
+Energy (simulation truth, `energy-diagnose`), kcal per day; arm 1 in brackets:
+
+| Class | Formula kcal eaten | Dry matter g | Spent | of which DIT | Eating min | Foregut / hindgut fill | Daylight hunger | Reserves ÷ store, day 30 → 90 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Adult male | 1,566 (1,333) | 523 | 1,516 (1,343) | 151 | 175 (151) | 0.30 / 0.51 | 0.17 (0.14) | +0.039 → +0.030 (+0.071 → +0.062) |
+| Female, not pregnant or lactating | 1,308 (1,106) | 458 | 1,263 (1,114) | 126 | 171 (145) | 0.33 / 0.58 | 0.20 (0.15) | +0.022 → +0.013 (+0.067 → +0.059) |
+| Female, pregnant | 1,403 (1,220) | 487 | 1,366 (1,222) | 135 | 181 (156) | 0.35 / 0.62 | 0.20 (0.15) | — |
+| **Female, lactating** | 1,642 (1,477) | 546 | 1,686 (1,498) | 158 | 193 (173) | 0.39 / 0.67 | 0.39 (0.35) | **−0.110 → −0.238** (−0.001 → −0.021) |
+| Juvenile 5–12 y | 1,131 (967) | 366 | 1,102 (978) | 109 | 133 (117) | 0.34 / 0.57 | 0.27 (0.24) | −0.010 → −0.025 (+0.036 → +0.027) |
+| Infant 2–5 y | 498 (457) | 118 | 544 (489) | 49 | 87 (68) | 0.25 / 0.21 | 0.57 (0.55) | −0.143 → −0.412 (−0.098 → −0.285) |
+| Infant 0.5–2 y | 305 (289) | 61 | 344 (307) | 30 | 74 (5) | 0.27 / 0.08 | 0.44 (0.38) | −0.141 → −0.364 by day 75 (−0.050 → −0.136) |
+
+Absorbed ÷ formula energy (kcal in − passed out, over formula kcal eaten): 0.96 for adults, as registered. A full hindgut: at most 2% of daylight in any class; a full foregut: 1–5%.
+
+Rows (arms 0 / 1 / 2; observer scorecard unless marked truth):
+
+| Row | Band | Arm 0 (baseline) | Arm 1 (E1 + E2a) | Arm 2 (+ E1b) | Registered expectation for arm 2 |
+| --- | --- | --- | --- | --- | --- |
+| T-ENE-1 formula intake, adult females (truth) | 1,900–3,100 | — | 1,106 | 1,308 | 1,250–1,350, miss: **as registered** |
+| T-ENE-2 eating minutes, adult females (truth) | 250–370 | 268 (forage 275) | 145 | 171 (+18%) | 160–190, miss: **as registered** |
+| T-ENE-3 dry matter, adult females (truth) | 650–1,100 g | — | — | 458 | 420–500, miss: **as registered** |
+| T-ENE-8 expenditure ÷ M^0.75, non-reproducing adults (truth) | 85–130 | — | 84 F, 86 M | 95 F, 97 M | 92–95, into the band: **as registered** |
+| T-ACT-1 feeding share | 0.33–0.50 | 0.43 | 0.27 | 0.29 | 0.29–0.33: as registered (fail) |
+| T-ACT-2 travel share | 0.12–0.25 | 0.19 | 0.15 | 0.18 | 0.15–0.17: higher than registered (pass) |
+| T-ACT-3 grooming share | 0.08–0.18 | 0.13 | 0.26 | 0.22 | 0.23–0.26: fell more than registered (fail) |
+| T-ACT-4 rest + groom | 0.30–0.47 | 0.38 | 0.45 | 0.48 | 0.41–0.45: **wrong direction** (pass → fail by 0.01); in simulation truth rest + groom fell (51.8% → 46.9% of 07:00–19:00) |
+| T-FOOD-2 fruit share of feeding | 0.60–0.78 | 0.89 | 0.65 | 0.70 | no direction registered (pass) |
+| T-FOOD-4 trees per day | 4–15 | 5.3 | 3.0 | 4.3 | 3.3–4.0: rose more than registered (fail → pass) |
+| T-RHY-9 feeding first 3 h / middle / last 3 h (truth) | early and late peaks | 61 / 31 / 40% | 32 / 22 / 20% | 40 / 24 / 23% | early peak only: **as registered** |
+| T-RHY-9 rest first 3 h / middle / last 3 h (truth) | highest in the middle | 7 / 36 / 20% | 22 / 30 / 33% | 17 / 30 / 32% | not highest at midday: **as registered** |
+| Midday − morning rest, hot days (truth) | — | 40.7 pt | 4.5 pt | 6.4 pt | — |
+| Fitted / held-out band distance (e-bench) | — | 2.547 / 4.358 | 3.486 / 5.439 | 4.367 / 4.136 | — |
+| Prescription count | — | 138 | 138 | 138 | unchanged |
+| Births / deaths / starvation | — | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 1 / 0 (an orphaned infant; its mother died with 3 others in a respiratory outbreak during the burn-in of seed 48, none by starvation) | 0 starvation |
+
+The fitted rise (+0.83 on rows scored in both arms) is T-PAT-6, incursion share, 0 → 1.33 (patrols are rare events in 60 days; arm 2 records patrols where arm 1 recorded none scorable), plus T-HUN-2 (+0.23) and T-HUN-1 (+0.10); the activity rows moved toward their bands (T-ACT-3 −0.47, T-ACT-1 −0.14). The held-out fall (−2.21 on shared rows) is mostly T-HUN-4 (2.62 → 0.93).
+
+**Kill criterion: null.** Criterion 1 is met: lactating females lose 0.23% of their usable store a day (−0.110 → −0.238 over 55 days), against 0.04% in arm 1 and the registered threshold of 0.05%; no class starved within the window. Criterion 2 is met as registered (fitted +0.88 > 0.3), though by a patrol row. Criterion 3 is not (T-ENE-8 entered its band; eating minutes +18%).
+
+**Which term makes the mothers' deficit.** Their spending rose by 188 kcal/d (diet-induced thermogenesis 158, more walking and climbing 16, milk 8), their absorbed energy by about 105 (1,477 formula kcal at 0.99 effective in E1 to 1,642 at 0.963). Their appetite is saturated (reserves below −10% of the store give appetite 1), so hunger equals foregut emptiness: 0.39 on average in daylight against 0.35 in arm 1 at reserves near zero. The bulk-sized foregut holds 579 kcal of drupes and 390 kcal of fallback food (E1's energy gut held 783 of either), so for the same energy eaten it is fuller, and the readout `hunger = emptiness × appetite` cannot rise above emptiness however large the deficit. The gut was full only 3% of daylight: what binds is not capacity but the readout, in which momentary fill caps the drive to eat. This is the coordinator's E3 finding from the other side (food valued by gut space now, not by the deficit over the coming hours). Infants lose reserve faster for the registered reason (DIT on an intake capped by the milk yield).
+
+**Midday rest.** As registered, a digesta gut does not make it. The foregut's 3-hour constant makes a pause 1–2 hours after the dawn bout (rest rises from 4% at 07:00 to 28% at 09:00 and stays flat to 18:00); the hindgut's roughly 19-hour constant has no daily phase and was never full. Feeding falls from the dawn peak and does not rise again before the nest.
+
+### Runs after iteration 1 (logged before they ran)
+
+- **A1, attribution (not a candidate):** arm 2 with `digestaTefFrac` 0, `energy-diagnose` only. Question: is the mothers' deficit the DIT they cannot eat to cover? Expected: lactating reserves roughly flat (within 0.05%/day), adults back near arm 1's level, eating minutes +5–10% over arm 1 only.
+- **S1, bounded sensitivity (registered in §7):** low end of the capacity range (`digestaGutMlPerKg` 60, `digestaForegutDmGPerMl` 0.10, `digestaHindgutDmGPerMl` 0.15), full benchmark. Expected now, from iteration 1: the hindgut fills (over 20% of daylight), the readout ceiling falls further, so every class's reserves fall faster than in arm 2 and mothers most; whether rest becomes highest in the middle third is the question it answers.
+- No mechanism iteration: the flaw found is in the hunger readout (a design readout of E1, and the subject of E3), not in the digesta physiology; changing it here would take over E3's scope.
