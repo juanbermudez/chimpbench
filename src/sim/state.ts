@@ -105,7 +105,11 @@ export interface ChimpX {
  * position at the last tick (locomotion is costed per metre actually moved), and the milk a lactating mother's glands
  * hold (kcal an infant can drink now; its energy is charged to her when it is drunk).
  */
-export interface EnergyLedger { gut: number; res: number; in: number; out: number; x: number; y: number; z: number; milk: number }
+export interface EnergyLedger {
+  gut: number; res: number; in: number; out: number; x: number; y: number; z: number; milk: number;
+  /** Stage E1c (ledgerGrowSurplus): body mass in kg, state instead of a curve by age; present only with that switch. */
+  kg?: number;
+}
 
 /** The memory month in progress: tallies accumulate on events and are finalized into a MemoryDigest every 30 eco-days. */
 export interface MonthLedger { start: number; startRank: number; partners: Record<number, PartnerTally>; events: DigestEvent[]; encounters: number; lastEncounter: number }

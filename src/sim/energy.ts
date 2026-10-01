@@ -10,6 +10,9 @@
 // Every input is physiology or physics from the registry (ids ledger*); the two appetite numbers and the condition set
 // point are readouts. Field values of behaviour (feeding time, daily intake) are targets and appear nowhere here.
 // Conservation: for every individual, in − out = Δgut + Δreserves, exactly (tests/sim-energy.test.ts).
+// Stage E1c (docs/staging/e1c-prereg.md; switches 0 by default): ledgerGrowSurplus makes mass state and pays growth only
+// from a surplus; ledgerInfantIntake scales intake capacity with body size (intakeSize); night suckling in the mother's
+// nest (ledgerNightNurse) goes through nurseTick from execution.ts.
 import type { Chimp, World } from '../types';
 import { paramsOf, type Params } from './params';
 import { TICK_HOURS, TICK_SECONDS, ix, type ChimpX, type EnergyLedger } from './state';
@@ -47,14 +50,30 @@ function rates(P: Params): Rates {
 }
 
 /** Body mass (kg) by age and sex: linear from birth mass to the adult mass at the age growth ends (registry; stylized curve). */
-export function massOf(c: Chimp, P: Params): number {
+function curveMass(c: Chimp, P: Params): number {
   const f = c.sex === 'female', adult = f ? P.ledgerMassFemaleKg : P.ledgerMassMaleKg, at = f ? P.ledgerMassMatureFemaleY : P.ledgerMassMatureMaleY;
   return c.age >= at ? adult : P.ledgerMassBirthKg + (adult - P.ledgerMassBirthKg) * c.age / at;
 }
+/** Body mass (kg): the curve by age, or with ledgerGrowSurplus 1 (stage E1c) the animal's own mass, once its ledger holds one. */
+export function massOf(c: Chimp, P: Params): number {
+  const kg = P.ledgerGrowSurplus === 1 ? ix(c).en?.kg : undefined;
+  return kg !== undefined ? kg : curveMass(c, P);
+}
+const adultMass = (c: Chimp, P: Params) => c.sex === 'female' ? P.ledgerMassFemaleKg : P.ledgerMassMaleKg;
+/** The curve's slope (kg per bio-year): with ledgerGrowSurplus 1 the growth potential of a well-fed animal below adult mass. */
+const potentialKgPerY = (c: Chimp, P: Params) => (adultMass(c, P) - P.ledgerMassBirthKg) / (c.sex === 'female' ? P.ledgerMassMatureFemaleY : P.ledgerMassMatureMaleY);
 /** Mass gained per bio-year (kg) at this age. */
 function growthKgPerY(c: Chimp, P: Params): number {
   const f = c.sex === 'female', at = f ? P.ledgerMassMatureFemaleY : P.ledgerMassMatureMaleY;
   return c.age >= at ? 0 : ((f ? P.ledgerMassFemaleKg : P.ledgerMassMaleKg) - P.ledgerMassBirthKg) / at;
+}
+/**
+ * Stage E1c (ledgerInfantIntake): intake capacity relative to an adult of the same sex, (mass ÷ adult mass)^ledgerIntakeSizeExp
+ * (design: like the resting rate, so a skilled animal of any size covers its resting needs in an adult's feeding time).
+ */
+export function intakeSize(c: Chimp, P: Params): number {
+  const r = massOf(c, P) / adultMass(c, P);
+  return r >= 1 ? 1 : Math.pow(r, P.ledgerIntakeSizeExp);
 }
 
 /** Gut capacity and usable reserve at the set point (kcal). */
@@ -70,7 +89,9 @@ export function ledgerOf(c: Chimp, P: Params): EnergyLedger {
   if (x.en) return x.en;
   const dev = x.cond / P.ledgerCondSet - 1; // the inverse of the condition readout
   const p = c.position;
-  return x.en = { gut: gutCap(c, P) * (1 - (c.hunger > 1 ? 1 : c.hunger < 0 ? 0 : c.hunger)), res: reserveCap(c, P) * (dev < -0.9 ? -0.9 : dev > 0.5 ? 0.5 : dev), in: 0, out: 0, x: p[0], y: p[1], z: p[2], milk: 0 };
+  x.en = { gut: gutCap(c, P) * (1 - (c.hunger > 1 ? 1 : c.hunger < 0 ? 0 : c.hunger)), res: reserveCap(c, P) * (dev < -0.9 ? -0.9 : dev > 0.5 ? 0.5 : dev), in: 0, out: 0, x: p[0], y: p[1], z: p[2], milk: 0 };
+  if (P.ledgerGrowSurplus === 1) x.en.kg = curveMass(c, P); // stage E1c: a founder starts on the curve, a newborn at birth mass
+  return x.en;
 }
 
 /** hunger 0..1 = gut emptiness × appetite; appetite = set − gain × reserves ÷ usable reserve, clamped (readout; design). */
@@ -80,8 +101,11 @@ function setHunger(c: Chimp, L: EnergyLedger, P: Params): void {
   c.hunger = (e > 1 ? 1 : e < 0 ? 0 : e) * (a > 1 ? 1 : a < 0 ? 0 : a);
 }
 
-/** Optional tap for diagnostics (scripts/energy-diagnose.ts): called with each expenditure term. Never set by the app; reads only. */
-export type EnergyTerm = 'rest' | 'activity' | 'walk' | 'climb' | 'carry' | 'pregnancy' | 'growth' | 'milk';
+/**
+ * Optional tap for diagnostics (scripts/energy-diagnose.ts): called with each expenditure term, and with 'suckled' (an
+ * intake, not an expenditure: milk the infant drank). Never set by the app; reads only.
+ */
+export type EnergyTerm = 'rest' | 'activity' | 'walk' | 'climb' | 'carry' | 'pregnancy' | 'growth' | 'milk' | 'suckled';
 export const energyTap: { fn: ((c: Chimp, term: EnergyTerm, kcal: number) => void) | null } = { fn: null };
 
 /** One tick of the balance for `c` (called from needs()): absorption, expenditure, and the hunger readout. */
@@ -100,8 +124,21 @@ export function energyTick(world: World, c: Chimp, x: ChimpX, sleeping: boolean)
   }
   // milk synthesis is limited: the store fills at the yield rate and holds ledgerMilkStoreH hours of it
   if (c.lactating) { const y = r.milk * m75, full = y * r.milkTicks; L.milk = L.milk + y < full ? L.milk + y : full; } else if (L.milk !== 0) L.milk = 0;
-  const g = growthKgPerY(c, P);
-  if (g > 0) { const k = r.grow * g; out += k; if (tap) tap(c, 'growth', k); }
+  if (P.ledgerGrowSurplus === 1) {
+    // stage E1c: lean growth only from a surplus (reserves above the set point), at the well-fed potential, up to adult
+    // mass; mass advances on the life-history clock, the cost is charged at the natural daily rate (as in E1)
+    if (L.kg === undefined) L.kg = curveMass(c, P);
+    const adult = adultMass(c, P);
+    if (L.kg < adult && L.res > 0) {
+      const v = potentialKgPerY(c, P), step = v * TICK_HOURS / 24 / DAYS_PER_YEAR * (world.ageRate > 0 ? world.ageRate : 0);
+      const frac = step > adult - L.kg ? (adult - L.kg) / step : 1;
+      L.kg = frac < 1 ? adult : L.kg + step;
+      const k = r.grow * v * frac; out += k; if (tap) tap(c, 'growth', k);
+    }
+  } else {
+    const g = growthKgPerY(c, P);
+    if (g > 0) { const k = r.grow * g; out += k; if (tap) tap(c, 'growth', k); }
+  }
   // locomotion: metres actually moved since the last tick
   const p = c.position, dx = p[0] - L.x, dy = p[1] - L.y, dz = p[2] - L.z;
   L.x = p[0]; L.y = p[1]; L.z = p[2];
@@ -167,7 +204,7 @@ export function nurseTick(infant: Chimp, mother: Chimp, P: Params): void {
   if (milk <= 0) return;
   const cost = milk / P.ledgerMilkEff;
   ML.milk -= milk; ML.res -= cost; ML.out += cost;
-  if (energyTap.fn) energyTap.fn(mother, 'milk', cost);
+  if (energyTap.fn) { energyTap.fn(mother, 'milk', cost); energyTap.fn(infant, 'suckled', milk); }
 }
 
 /** A piece of plant food handed to a begging offspring. */
