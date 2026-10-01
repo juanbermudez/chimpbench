@@ -148,7 +148,8 @@ export function stillPaying(world: World, c: Chimp, current: Candidate, list: Ca
   if (!servesDeficit(current.action, v, aux)) return list[0] === current ? '' : 'not-top';
   const here = payOf(world, c, current, v, aux, P);
   if (!(here > 0)) return 'not-paying';
-  const menu = phaseMenu(list, dayPhase(world));
+  // the same phase filter as the menu actually chosen from (rg.ts rgMenu): with rhythmFreeNight no night/dusk filter
+  const menu = phaseMenu(list, P.rhythmFreeNight === 1 ? 'day' : dayPhase(world));
   for (let i = 0; i < menu.length; i++) {
     const k = menu[i];
     if (k === current) continue;
