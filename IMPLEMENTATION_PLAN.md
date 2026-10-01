@@ -304,7 +304,9 @@ Two independent designs answer the same brief. This one is [docs/decide-jev-desi
 - Baseline scorecard `artifacts/validation/e0-`.
 **Success Criteria**: the ledger covers all 787 parameters and lints `src/sim` for hour-of-day and probability literals; the baseline reproduces on 5 seeds; the 18 encoded targets are cross-referenced to the parameters that encode them.
 **Tests**: ledger classification test; band-distance unit test against the jev-test numbers.
-**Status**: Not Started
+**Status**: Complete (1 October 2026; merged into `track-e`, 97fe2cb). Tools: `scripts/e-bench.ts` (`--quick`, `--confirm`, `--compare`), `scripts/prescription-ledger.ts`, `scripts/lib/band-distance.ts`; ledger and baseline in `docs/staging/e0-ledger.md`, `docs/staging/e0-baseline.md`.
+**Baseline on `track-e`** (`--confirm`: seeds 48,7,21,5,11, 60 days after a 30-day burn-in): fitted distance 2.974 over 17 rows (capped 2.817); held-out distance 6.213 over 14 rows (capped 4.097; T-HUN-4 2.59 and T-BRD-1 1.53 are two thirds of it); prescription count 134 (125 registry entries in use + 9 literals); viability pass (0 births, 1 death, 0 starvation deaths). Ledger classes: input 89, design 565, outcome-encoding 133.
+**Limits under the 3-month cap**: 33 rows need a year and are not scored; with 0–2 births and deaths the births ÷ deaths test is not applied; rows moved by up to 0.8 between quick and confirm, so a difference counts only beyond the seed-set noise floor (second seed set 3,13,17,19,23, in `artifacts/validation/e/te-baseline-confirm-seedsB`) and on rows scored in both runs.
 
 ## Stage E1: Energy ledger (calories in, calories out)
 **Goal**: Hunger, condition and the cost of lactation come from an energy balance, not from timers.
