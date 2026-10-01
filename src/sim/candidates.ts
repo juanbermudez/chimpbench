@@ -288,7 +288,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
         if (!held) offer('travel', t.id, worth - tripCost(worth, crop, d, h, P) - revisit(x, t.id, time, P) - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay, V.TREE);
       } else if (m.kind === 'water' && c.thirst > 0.25 && c.age >= 3) {
         const d = Math.hypot(m.position[0] - px, m.position[2] - pz);
-        offer('drink', m.entityId, c.thirst * 1.5 - d / P.drinkDistScaleM - 0.05);
+        if (!(held && departAll(P) && d > P.partyLinkM)) offer('drink', m.entityId, c.thirst * 1.5 - d / P.drinkDistScaleM - 0.05);
       }
     }
     // stage C7a (field): the community's best-known productive trees, valued by expectation unless seen (foraging.ts)
@@ -330,7 +330,12 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       // field profile: an individual with few companions and an unmet social need goes to the callers; males to males (design; T-PTY-1)
       if (P.joinSocialW > 0) { const caller = byId.get(x.joinCaller); pull += (1 - c.social) * P.joinSocialW * (x.visibleOwn < 2 ? 1 : P.joinSocialInPartyF) + (male && c.age >= 15 && caller && isAdultMale(caller) ? P.joinMaleW : 0); }
       if (P.assocBondW > 0) { const caller = byId.get(x.joinCaller); if (caller) pull += P.assocBondW * bond(c, caller); } // stage C9: bond with the caller (off by default)
-      if (d > P.joinCallMinM) offer('travel', x.joinCall, pull * (1 - rain * 0.5) - d / P.joinCallDistScaleM, V.CALLER, x.joinCaller);
+      // finding-company stage (joinLoneW; docs/staging/fusion-prereg.md §3.2): an animal with no companion of 12 y or more
+      // in its party answers community pant-hoots, more so a bonded caller's. Pant-hoots keep contact with and recruit
+      // allies and associates [M: mitaniNishida1993; gruberZuberbuhler2013]; joinLoneW is fitted to T-PTY-1, the bond
+      // weight is the existing joinBondW
+      if (P.joinLoneW > 0 && departAudience(world, c) === 0) { const caller = byId.get(x.joinCaller); pull += P.joinLoneW + (caller ? P.joinBondW * bond(c, caller) : 0); }
+      if (d > P.joinCallMinM && !(held && departAll(P))) offer('travel', x.joinCall, pull * (1 - rain * 0.5) - d / P.joinCallDistScaleM, V.CALLER, x.joinCaller);
     }
     // beyond the own range (UD isopleth, stage C6) the pull home grows; the equal-area circle is not the range's shape
     const here = lv[c.troopId]?.[cellAt(tg, px, pz)] ?? 0;
@@ -399,14 +404,17 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       offer('flee', o.id, (tn - P.avoidTensionFloor) * P.avoidTensionW + P.avoidBase, V.AVOID);
     // party cohesion (field profile): keep up with a party member who is travelling off, likelier for bonded partners
     // and adult males; parties travel together between food patches (fission-fusion) (design; tuned to T-PTY-1)
-    if (P.partyFollowW > 0 && !carried && c.age >= 5 && d < P.partyLinkM && (o.action === 'travel' || o.action === 'follow') && o.targetId !== c.id && !night) {
+    // (stage departPersistAll: a companion walking to water can be followed like any other who moves off)
+    if (P.partyFollowW > 0 && !carried && c.age >= 5 && d < P.partyLinkM && (o.action === 'travel' || o.action === 'follow' || (departAll(P) && o.action === 'drink')) && o.targetId !== c.id && !night) {
       const lead = P.partyLeaderFollow === 1 ? leaderOf(o, c, byId, x.seen) : o.id, L = byId.get(lead);
       const trip = P.partyJoinTrip === 1 && !!L && L.action === 'travel' && ix(L).v === V.TREE && isTreeId(L.targetId);
       // stage C13e: the joint trip has a tree as its goal, so it needs no minimum distance to the leader (at the departure
       // cue the leader is still next to its companions); its value is the join value, no longer near-automatic
       const her = Math.max(oestrusOf(o), oestrusOf(L)); // a female in oestrus who travels off, or whose leader does
       if (P.joinChoice === 1 && trip) offer('travel', L!.targetId, joinValue(L!) + her, V.TREE, L!.id);
-      else if (d > P.partyFollowMinM) {
+      // (departPersistAll: an open attempt to leave for water or a caller can be followed from next to the initiator, as a
+      // joint trip to a tree can since C13e: at the departure cue the initiator still stands among its companions)
+      else if (d > P.partyFollowMinM || (departAll(P) && ix(o).tryN !== undefined && !trip)) {
       // stage C10 addendum 1: a travel hoo heard from this companion (or its leader) in the last few minutes raises following it
       const hoo = P.travelHoo === 1 && x.hooFrom !== undefined && (x.hooFrom === lead || x.hooFrom === o.id) && time - (x.hooAt ?? NEVER) <= P.travelHooWindowMin / 60 ? P.travelHooFollowW : 0;
       const sc = P.partyFollowBase + b * P.partyFollowW + pers.sociability * P.partyFollowSocialW + (isAdultMale(o) ? P.partyFollowMaleW : 0) - h * P.partyFollowHungerW - rain * 0.3 + hoo + her
@@ -994,6 +1002,9 @@ export function findCandidate(list: Candidate[], action: string, targetId: numbe
   return undefined;
 }
 
+
+/** Finding-company stage: departPersistAll extends departPersist, so it needs it on (the moving-together ablation row switches both off). */
+export const departAll = (P: Params): boolean => P.departPersist === 1 && P.departPersistAll === 1;
 
 /** Stage departPersist: own-community animals of 12 y or more within the party link of `c`, awake: those a departure would leave behind. */
 export function departAudience(world: World, c: Chimp): number {

@@ -1,5 +1,5 @@
 import type { Action, Candidate, Chimp, DecisionSource, InteractionKind, World } from '../types';
-import { candidateMeta, departAudience, dependentOn, isCarried, nearestNeighbor, V } from './candidates';
+import { candidateMeta, departAll, departAudience, dependentOn, isCarried, nearestNeighbor, V } from './candidates';
 import { notifyAllies, resolveCharge, resolveFight } from './conflict';
 import { addEvent, emitCall, endInteraction, episode, findInteraction, flashInteraction, gate, interrupt, startInteraction } from './events';
 import { nestPoint } from './generation';
@@ -273,6 +273,18 @@ function onStart(world: World, c: Chimp): void {
       c.mood = 'fearful';
       break;
     case 'patrol': if (x.v !== V.APPROACH) startPatrol(world, c); else c.vocal = null; break;
+    case 'drink':
+      // stage departPersistAll: a trip to water out of the party is a departure like any other: an attempt if there is an
+      // audience, and companions in sight notice it and may follow (candidates.ts party-follow) (design: the same rule)
+      if (departAll(P)) delete x.tryN; // an attempt left open by an interrupted trip does not carry over
+      if (departAll(P) && farWater(world, c)) {
+        departAttempt(world, c);
+        for (const sid of x.seen) {
+          const b = idx.byId.get(sid);
+          if (b && b.alive && b.troopId === c.troopId && b.age >= 5 && b.action !== 'follow' && hd(b, c) < P.partyLinkM) interrupt(world, b, `${c.name} is moving off`);
+        }
+      }
+      break;
     case 'travel': case 'follow':
       if (P.departPersist === 1) departAttempt(world, c);
       if (P.travelHoo === 1 && c.action === 'travel' && x.v === V.TREE && x.aux <= 0) travelHoo(world, c);
@@ -448,13 +460,23 @@ export function foodCallChance(world: World, c: Chimp, crop: number): number {
 function departAttempt(world: World, c: Chimp): void {
   const P = paramsOf(world), x = ix(c), time = world.time;
   delete x.tryN;
-  if (c.action !== 'travel' || x.v !== V.TREE || x.aux > 0) return; // only an own trip to a tree is an initiation
+  // an initiation: an own trip to a tree; with departPersistAll (docs/staging/fusion-prereg.md §3.1) also travel to a
+  // pant-hoot caller and a trip to water beyond the party link (the source's travel event is any locomotion of 10 m or
+  // more between two non-locomotion activities) [M: gruberZuberbuhler2013]
+  const own = c.action === 'travel' ? (x.v === V.TREE ? x.aux <= 0 : departAll(P) && x.v === V.CALLER) : departAll(P) && c.action === 'drink' && farWater(world, c);
+  if (!own) return;
   const cap = P.departPersistMaxMin / 60;
   // an effort that was not re-launched within the window is over: the next departure starts a new one
   if (x.trySince !== undefined && time - (x.tryAt ?? -1e9) > cap) { delete x.trySince; delete x.tryAt; }
   const audience = departAudience(world, c);
   if (audience === 0 || (x.trySince !== undefined && time - x.trySince >= cap)) { delete x.trySince; delete x.tryAt; return; } // nobody to leave, or it has waited long enough: it goes
   x.tryN = audience;
+}
+
+/** A trip to water that takes the animal out of its party: the water lies beyond the party link. */
+function farWater(world: World, c: Chimp): boolean {
+  const wt = index(world).waterById.get(c.targetId);
+  return !!wt && Math.hypot(wt.position[0] - c.position[0], wt.position[2] - c.position[2]) > paramsOf(world).partyLinkM;
 }
 
 /** The initiator stands and checks; true while the attempt is still open (or was just given up). */
@@ -526,6 +548,7 @@ export function executeAction(world: World, c: Chimp): void {
     case 'drink': {
       const w = idx.waterById.get(c.targetId);
       if (!w) return finish(world, c);
+      if (x.tryN !== undefined && departAll(P) && departWait(world, c)) return;
       // drinking spots sit on the stream bank; drink at the spot itself
       if (moveTo(world, c, w.position[0], 0, w.position[2], WALK, 0.9)) {
         c.thirst = clamp(c.thirst - P.drinkThirstPerH * TICK_HOURS);
@@ -860,7 +883,9 @@ function forageTick(world: World, c: Chimp): void {
   if (lazy) intake = eatFruit(world, t, want);
   else { intake = Math.min(t.fruit, want); t.fruit -= intake; }
   c.hunger = clamp(c.hunger - intake * P.fruitHungerFactor);
-  c.thirst = clamp(c.thirst - intake * P.fruitThirstFactor);
+  // water from fruit (fruitWaterRelief; docs/staging/fusion-prereg.md §3.1a): above 0 it replaces fruitThirstFactor, and is
+  // fitted to the Kanyawara drinking rate; chimpanzees need not drink daily, food supplies water [M: mackenzie2025]
+  c.thirst = clamp(c.thirst - intake * (P.fruitWaterRelief > 0 ? P.fruitWaterRelief : P.fruitThirstFactor));
   c.skills.foraging = clamp(c.skills.foraging + (1 - c.skills.foraging) * TICK_HOURS * 0.002);
   if (c.hunger < 0.06) finish(world, c);
   else if (t.fruit < 0.02) { forget(c, t.id, 'tree'); finish(world, c); } // eatFruit leaves the current crop in t.fruit

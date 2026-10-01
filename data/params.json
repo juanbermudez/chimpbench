@@ -4865,6 +4865,37 @@
    "notes": "Moving-together stage (docs/staging/moving-together-prereg.md 3; field): 1 = an own trip to a tree started with an audience (own-community animals of 12 y or more within partyLinkM, awake) is an attempt: the initiator stands and checks for departCheckMin, and if nobody has joined or followed it gives the attempt up and stays; its own trips to trees are off its menu for departRetryMin; once departPersistMaxMin have passed since the first failed attempt the next attempt goes ahead alone. Waiting, checking and re-launching are sourced; that a failed attempt is abandoned and the audience definition are design assumptions. 0 = the model before (hash-identical; compressed)."
   },
   {
+   "id": "departPersistAll",
+   "group": "movement",
+   "value": 0,
+   "units": "flag",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Food landscape: tree size, crop size and patch use): gruberZuberbuhler2013, a travel event is any locomotion of 10 m or more between two non-locomotion activities; recruitment, waiting and re-launching concern such events"
+   ],
+   "population": "Budongo Sonso",
+   "clock": "none",
+   "symbol": "P.departPersistAll (execution.ts departAttempt, onStart drink; candidates.ts)",
+   "file": "src/sim/execution.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 1
+   },
+   "notes": "Finding-company stage (docs/staging/fusion-prereg.md 3.1; field): 1 = the departure-attempt rule of departPersist also applies to an own trip to water beyond the party link and to travel to a pant-hoot caller; companions in sight notice a departure to water and may follow the animal with the existing party-follow option. No new magnitude. That companions follow to water with the same weights is a design assumption. 0 = the model before (hash-identical; compressed)."
+  },
+  {
    "id": "departPersistMaxMin",
    "group": "movement",
    "value": 13,
@@ -8093,6 +8124,36 @@
    "notes": "A crown's value rises with its crop up to this much fruit (q = crop / this). Compressed 0.45 (the literal before C7a, where most crowns count as full). Field 1 (stage C7a): a full crown, so bigger crops are worth more; chimpanzees skip the nearest productive tree 70% of the time (normand2009) and head for high-valued trees from ~0.5 km (ban2014). Design."
   },
   {
+   "id": "fruitWaterRelief",
+   "group": "feeding",
+   "value": 0,
+   "units": "thirst per fruit unit",
+   "range": [
+    0,
+    2
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1000000
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Food landscape: tree size, crop size and patch use): mackenzie2025, Kanyawara 2005-2018, observed drinking about 0.005-0.010 events per individual per hour of observation (read from its Figure 5; a lower bound); chimpanzees are not obliged to drink daily because food supplies water"
+   ],
+   "population": "Kanyawara",
+   "clock": "none",
+   "symbol": "P.fruitWaterRelief (forageTick; intake.ts treeIntake)",
+   "file": "src/sim/execution.ts",
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Water from fruit (docs/staging/fusion-prereg.md 3.1a; field): above 0, a fruit unit eaten relieves this much thirst, in place of fruitThirstFactor. FITTED to the sourced drinking rate (0.0075 drinks per animal per daylight hour, accepted inside 0.005-0.010), not to a target row, by the pre-registered bisection. 0 = fruitThirstFactor as before (hash-identical; compressed)."
+  },
+  {
    "id": "gangEdgeFrac",
    "group": "conflict",
    "value": 0.7,
@@ -10950,6 +11011,36 @@
    "evidence": "M",
    "symbol": "P.joinHooW",
    "notes": "Stage C13e: added to the join value when a travel hoo was heard from the leader. Fitted (the stage's one fitted parameter) so that hooed initiations recruit at least one companion within 5 min in 71.4% of cases [gruberZuberbuhler2013]: bisection on [0, 1.5], 6 steps, development seeds 48, 7, 21 (180-day burn-in + 30 days), pooled rate 0.702 at 0.094 (scripts/c13e-fit.ts; trail 0.75 -> 0.946, 0.375 -> 0.854, 0.188 -> 0.766, 0.094 -> 0.702, 0.141 -> 0.745, 0.118 -> 0.736). Only the hooed rate was read."
+  },
+  {
+   "id": "joinLoneW",
+   "group": "social",
+   "value": 0,
+   "units": "score",
+   "range": [
+    0,
+    0.8
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    5
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Food landscape: tree size, crop size and patch use): mitaniNishida1993, pant-hoots maintain contact with and recruit allies and associates; gruberZuberbuhler2013, allies are recruited more often"
+   ],
+   "population": "Mahale M; Budongo Sonso",
+   "clock": "none",
+   "symbol": "P.joinLoneW (computeCandidates: travel to a caller)",
+   "file": "src/sim/candidates.ts",
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Finding-company stage (docs/staging/fusion-prereg.md 3.2; field): for an animal with no companion of 12 y or more within the party link, the pull toward an own-community pant-hoot caller gains this plus joinBondW x its bond with the caller. The direction is sourced; the value is FITTED to T-PTY-1 alone by the pre-registered bisection (no source gives how readily a lone animal answers). 0 = off (hash-identical; compressed)."
   },
   {
    "id": "joinMaleW",

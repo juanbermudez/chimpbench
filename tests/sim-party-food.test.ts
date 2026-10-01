@@ -199,7 +199,7 @@ test('party-size stage: both switches off reproduce the field model before it (h
   const { worldHash } = await import('./fixtures/golden');
   const run = (params: Record<string, number>) => { const w = createWorld(48, { profile: 'field', params }); for (let i = 0; i < 2880; i++) tickWorld(w); return worldHash(w); };
   // field seed 48 after 2880 ticks (12 h) on main 21592c1, before the party-size stage (and before the hunting fix, off here too)
-  const HUNT_OFF = { huntEncounter: 0, huntExtraKillP: 0, departPersist: 0 }; // and before the moving-together stage
+  const HUNT_OFF = { huntEncounter: 0, huntExtraKillP: 0, departPersist: 0, joinLoneW: 0, fruitWaterRelief: 0 }; // and before the moving-together and finding-company stages
   const off = run({ ...HUNT_OFF, crowdByShare: 0, oestrusPullW: 0 });
   assert.equal(off, 'bb1957953df81ebc');
   assert.equal(run(HUNT_OFF), off, 'both are off by default');
@@ -276,6 +276,123 @@ test('moving together: departPersist off reproduces the field model before it (h
   const { worldHash } = await import('./fixtures/golden');
   const run = (params: Record<string, number>) => { const w = createWorld(48, { profile: 'field', params }); for (let i = 0; i < 2 * 5760; i++) tickWorld(w); return worldHash(w); };
   // field seed 48 after 2 days on main aa950b1 (hunting fix and C14 in), before the moving-together stage
-  assert.equal(run({ departPersist: 0 }), '1d85d0d99f46b78c');
-  assert.notEqual(run({}), '1d85d0d99f46b78c');
+  const LATER = { joinLoneW: 0, fruitWaterRelief: 0 }; // the finding-company stage's fitted switches (departPersistAll needs departPersist)
+  assert.equal(run({ ...LATER, departPersist: 0 }), '1d85d0d99f46b78c');
+  assert.notEqual(run({ ...LATER, departPersistAll: 0 }), '1d85d0d99f46b78c');
+});
+
+// Finding-company stage (docs/staging/fusion-prereg.md): departPersistAll, joinLoneW, fruitWaterRelief.
+async function waterScene(params: Record<string, number> = {}) {
+  const s = await departScene(params), { w, a } = s;
+  const { perceive } = await import('../src/sim/perception');
+  const dist = (k: { position: number[] }, c = a) => Math.hypot(k.position[0] - c.position[0], k.position[2] - c.position[2]);
+  const water = w.water.filter(k => dist(k) > 80).sort((p, q) => dist(p) - dist(q))[0];
+  a.thirst = 0.9;
+  const drink = (): Candidate => ({ action: 'drink', targetId: water.id, score: 1, reason: 'test' });
+  const menuOf = (c: typeof a) => { perceive(w, c); if (!c.memory.some(m => m.entityId === water.id)) c.memory.push({ entityId: water.id, kind: 'water', seenAt: w.time, position: [water.position[0], 0, water.position[2]] }); return computeCandidates(w, c, []); };
+  // the menu keeps one water: a trip to water beyond the party link, whichever it is
+  const farDrink = () => menuOf(a).some(k => k.action === 'drink' && dist(w.water.find(q => q.id === k.targetId)!) > paramsOf(w).partyLinkM);
+  return { ...s, water, dist, drink, menuOf, farDrink, toWater: () => startAction(w, a, drink(), 'rules') };
+}
+
+test('finding company: a trip to water out of the party is a departure attempt; given up unjoined, held until the re-launch time (departPersistAll)', async () => {
+  const s = await waterScene(), x = ix(s.a), at = [s.a.position[0], s.a.position[2]];
+  assert.ok(s.farDrink(), 'far water is on the menu');
+  s.toWater();
+  assert.equal(x.tryN, s.audience(), 'an attempt, with its audience');
+  for (let i = 0; i < 3; i++) { s.step(); assert.ok(!x.finished && x.tryN !== undefined, 'standing and checking'); }
+  assert.deepEqual([s.a.position[0], s.a.position[2]], at, 'it has not moved');
+  s.step();
+  assert.ok(x.finished && x.tryN === undefined && x.tryAt !== undefined, 'given up after departCheckMin');
+  assert.ok(!s.farDrink(), 'the trip to far water waits');
+  s.w.time = x.tryAt! + 1e-6;
+  assert.ok(s.farDrink(), 'and is back after departRetryMin');
+  // water within the party link is no departure
+  const near = await waterScene();
+  near.a.position = [near.water.position[0] + 30, 0, near.water.position[2]]; near.b.position = [near.a.position[0] + 5, 0, near.a.position[2]];
+  if (near.audience() > 0) { near.toWater(); assert.equal(ix(near.a).tryN, undefined, 'water inside the party link'); }
+});
+
+test('finding company: a companion can follow the animal leaving for water, from next to it, and the attempt then goes; travel to a caller is an attempt too; off = neither', async () => {
+  const s = await waterScene(), x = ix(s.a);
+  s.b.position = [s.a.position[0] + 3, 0, s.a.position[2]]; // closer than partyFollowMinM
+  s.toWater();
+  const follow = s.menuOf(s.b).find(k => k.action === 'follow' && k.targetId === s.a.id && candidateMeta.get(k)?.v === V.PARTY);
+  assert.ok(follow, 'the companion may follow the open attempt');
+  startAction(s.w, s.b, follow!, 'rules');
+  const d0 = s.dist(s.water);
+  s.step();
+  assert.ok(x.tryN === undefined && x.trySince === undefined && !x.finished, 'recruited');
+  assert.ok(s.dist(s.water) < d0, 'and on its way to the water');
+  // travel to a pant-hoot caller
+  const toCaller = (t: Awaited<ReturnType<typeof waterScene>>) => {
+    const k: Candidate = { action: 'travel', targetId: 1000001, score: 1, reason: 'test' }; candidateMeta.set(k, { v: V.CALLER, aux: t.b.id });
+    const tx = ix(t.a); tx.joinCall = 1000001; tx.joinCaller = t.b.id; tx.joinAt = t.w.time; tx.joinX = t.a.position[0] + 400; tx.joinZ = t.a.position[2];
+    startAction(t.w, t.a, k, 'rules');
+  };
+  const c = await waterScene();
+  toCaller(c);
+  assert.equal(ix(c.a).tryN, c.audience(), 'travel to a caller is an attempt');
+  // off: no attempt, and a companion walking to water is not followed
+  const off = await waterScene({ departPersistAll: 0 });
+  off.toWater();
+  assert.equal(ix(off.a).tryN, undefined);
+  assert.ok(!off.menuOf(off.b).some(k => k.action === 'follow' && k.targetId === off.a.id && candidateMeta.get(k)?.v === V.PARTY));
+  const off2 = await waterScene({ departPersistAll: 0 });
+  toCaller(off2);
+  assert.equal(ix(off2.a).tryN, undefined);
+  // departPersistAll extends departPersist: with that off it does nothing (the moving-together ablation row)
+  const none = await waterScene({ departPersist: 0 });
+  none.toWater();
+  assert.equal(ix(none.a).tryN, undefined);
+  assert.equal(paramsOf(createWorld(3)).departPersistAll, 0);
+  assert.equal(paramsOf(createWorld(3, { profile: 'field' })).departPersistAll, 1);
+});
+
+test('finding company: a lone animal answers a community pant-hoot more readily, a bonded caller more (joinLoneW); in company nothing changes', async () => {
+  // one world state scored under each setting (the runs would diverge otherwise)
+  const scene = async (lone: boolean) => {
+    const s = await waterScene(), { w, a, b } = s, x = ix(a);
+    if (lone) for (let k = 1; k < 40 && s.audience() > 0; k++) a.position = [b.position[0] + 150 * k, 0, b.position[2]];
+    assert.equal(s.audience() === 0, lone);
+    a.social = 0.2; a.thirst = 0; a.hunger = 0; a.bonds[b.id] = 0.6; // sated: its own trips to trees do not crowd the caller out of the travel slots
+    s.menuOf(a);
+    x.joinCall = 1000001; x.joinCaller = b.id; x.joinAt = w.time; x.joinX = a.position[0] + 400; x.joinZ = a.position[2]; x.joinRich = false;
+    const json = JSON.stringify(w);
+    return (joinLoneW: number) => {
+      const v = JSON.parse(json) as World;
+      (v as unknown as { sim: { params: { overrides: Record<string, number> } } }).sim.params.overrides.joinLoneW = joinLoneW;
+      const k = computeCandidates(v, v.chimps.find(q => q.id === a.id)!, []).find(q => q.action === 'travel' && candidateMeta.get(q)?.v === V.CALLER);
+      assert.ok(k, 'travel to the caller is offered');
+      return { score: k!.score, rain: v.environment.rain, P: paramsOf(v) };
+    };
+  };
+  const alone = await scene(true), base = alone(0), on = alone(0.3);
+  assert.ok(Math.abs(on.score - base.score - (0.3 + on.P.joinBondW * 0.6) * (1 - on.rain * 0.5)) < 2.5e-3, `${on.score} vs ${base.score}`);
+  const inParty = await scene(false);
+  assert.ok(Math.abs(inParty(0.3).score - inParty(0).score) < 2.5e-3, 'an animal with a companion of 12 y or more is not pulled');
+  assert.equal(paramsOf(createWorld(3)).joinLoneW, 0);
+});
+
+test('finding company: fruit eaten relieves thirst by fruitWaterRelief when it is on (fruitThirstFactor when off); animals then drink less often', async () => {
+  const { treeIntake } = await import('../src/sim/intake');
+  const w0 = createWorld(3, { profile: 'field', params: { fruitWaterRelief: 0 } }), w1 = createWorld(3, { profile: 'field', params: { fruitWaterRelief: 1.5 } });
+  const adult = (w: World) => w.chimps.find(k => k.alive && k.age >= 15)!;
+  const t0 = treeIntake(adult(w0), paramsOf(w0), 0.5, 0, 100), t1 = treeIntake(adult(w1), paramsOf(w1), 0.5, 0, 100);
+  assert.ok(t0.thirstPerHInclWalk > 0);
+  assert.ok(Math.abs(t1.thirstPerHInclWalk / t0.thirstPerHInclWalk - 1.5 / paramsOf(w0).fruitThirstFactor) < 1e-9);
+  assert.equal(t1.perHourInclWalk, t0.perHourInclWalk, 'hunger is untouched');
+  // one field day: fewer animal-ticks spent on trips to water
+  const drinkTicks = (w: World) => { let n = 0; for (let i = 0; i < 5760; i++) { tickWorld(w); for (const c of w.chimps) if (c.alive && c.action === 'drink') n++; } return n; };
+  const before = drinkTicks(w0), after = drinkTicks(w1);
+  assert.ok(after < before * 0.6, `${after} vs ${before}`);
+  assert.equal(paramsOf(createWorld(3)).fruitWaterRelief, 0);
+});
+
+test('finding company: all three switches off reproduce the field model before it (hash-identical); departPersistAll on changes the world', async () => {
+  const { worldHash } = await import('./fixtures/golden');
+  const run = (params: Record<string, number>) => { const w = createWorld(48, { profile: 'field', params }); for (let i = 0; i < 2 * 5760; i++) tickWorld(w); return worldHash(w); };
+  // field seed 48 after 2 days on main f24c9ae (departPersist on), before the finding-company stage
+  assert.equal(run({ departPersistAll: 0, joinLoneW: 0, fruitWaterRelief: 0 }), 'b6e154069d1ec297');
+  assert.notEqual(run({ joinLoneW: 0, fruitWaterRelief: 0 }), 'b6e154069d1ec297');
 });

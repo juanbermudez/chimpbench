@@ -44,5 +44,5 @@ export function treeIntake(c: Chimp, P: Params, crop: number, feeders: number, d
   const byCrop = share / Math.max(1e-9, fruitPerH);
   const feedH = Math.max(0, hungerCap ? Math.min(byCrop, c.hunger / Math.max(1e-9, hungerPerH)) : byCrop);
   const frac = feedH > 0 ? feedH / (walkH + feedH) : 0;
-  return { rateH: hungerPerH, feedH, walkH, perHourInclWalk: hungerPerH * frac, thirstPerHInclWalk: fruitPerH * P.fruitThirstFactor * frac };
+  return { rateH: hungerPerH, feedH, walkH, perHourInclWalk: hungerPerH * frac, thirstPerHInclWalk: fruitPerH * (P.fruitWaterRelief > 0 ? P.fruitWaterRelief : P.fruitThirstFactor) * frac };
 }

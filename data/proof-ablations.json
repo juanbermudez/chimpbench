@@ -45,7 +45,15 @@
   },
   "moving-together": {
    "params": { "departPersist": 0 },
-   "note": "Moving-together stage off: an initiator leaves whether or not anyone follows, as before (hash-identical to the model before; docs/staging/moving-together-prereg.md)."
+   "note": "Moving-together stage off: an initiator leaves whether or not anyone follows, as before (hash-identical to the model before; docs/staging/moving-together-prereg.md). departPersistAll extends departPersist, so this row switches it off too."
+  },
+  "finding-company": {
+   "params": { "departPersistAll": 0, "joinLoneW": 0 },
+   "note": "Finding-company stage off: trips to water and to pant-hoot callers are not departure attempts and a companion walking to water is not followed; a lone animal gets no extra pull to a community pant-hoot (hash-identical to the model before with water-from-fruit off too; docs/staging/fusion-prereg.md)."
+  },
+  "water-from-fruit": {
+   "params": { "fruitWaterRelief": 0 },
+   "note": "Water from fruit off: a fruit unit relieves thirst by fruitThirstFactor, as before (the C5a value, under which animals drink 12-24 times more often than the Kanyawara record; docs/staging/fusion-prereg.md 3.1a)."
   },
   "C8c": {
    "params": { "lactTaper": 0 },

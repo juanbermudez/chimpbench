@@ -44,12 +44,13 @@ Field profile only; each part behind its own switch; both off is `main` f24c9ae,
 - Companions notice a departure to water as they notice any other, and may follow the animal walking to water with the existing party-follow option.
 - Sourced [M]: the source's travel event is any locomotion of 10 m or more between two non-locomotion activities, and its recruitment, waiting and re-launching are about such events (gruberZuberbuhler2013). Design: that companions can follow to water with the same weights as any other departure.
 - No new magnitude.
+- Implementation notes, fixed before any run of the changed model: `departPersistAll` extends `departPersist` and does nothing with it off (so the moving-together ablation row stays the model before that stage). While such an attempt is open, a companion may start following from next to the initiator: the party-follow option's 5 m minimum does not apply to it, as it does not apply to a joint trip to a tree since C13e (at the departure the initiator still stands among its companions). An attempt left open by an interrupted trip does not carry over to a trip to water.
 
 ### 3.1a `fruitWaterRelief`: water from fruit (added before any run of the changed model, at the integrator's request)
 
-- **Measured** (`drink-probe.ts`, `main` f24c9ae, seeds 48 and 7, 20 days, animals of 5 y or more): 2.2 trips to water and 1.3–1.4 drinks per animal per day; 0.11–0.12 drinks per daylight hour; 28 min a day on water trips, 230 m each.
+- **Measured** (`drink-probe.ts`, `main` f24c9ae, seeds 48 and 7, 20 days, animals of 5 y or more): 2.2 trips to water and 1.4 drinks per animal per day; 0.117–0.121 drinks per daylight hour; 27–28 min a day on water trips, 200–220 m each. (Re-measured once the off arm was hash-identical to `main`; a first probe on the unfinished build read 1.3–1.4, 0.11–0.12, 28 min and 230 m.)
 - **Field:** about 0.005–0.010 observed drinks per individual per hour of observation at Kanyawara, or one every 8–17 days; chimpanzees are not obliged to drink daily, because food supplies water (mackenzie2025).
-- **So the model drinks 11–24 times too often.** The water share of partings in §2 is an artifact of that.
+- **So the model drinks 12–24 times too often.** The water share of partings in §2 is an artifact of that.
 - **Change:** with `fruitWaterRelief` above 0, a fruit unit eaten relieves that much thirst, in place of `fruitThirstFactor` (0.55 in the field, tuned in C5a against the travel share and the day range, not against drinking). Its own switch and ablation row; 0 is today's model.
 - **Fitted to the sourced rate**, not to any target row: bisection between 0.55 and 2.0, at most 6 steps, each step the drinking probe on seeds 48 and 7 (30-day burn-in + 20 days, `departPersistAll` on, `joinLoneW` 0), reading only drinks per daylight hour. Target 0.0075 per hour, accepted inside 0.005–0.010. The field figure is a lower bound, so the fit aims at its middle rather than below it.
 - **The `joinLoneW` fit of §4 runs with this correction on.** Party size is reported for both arms (correction on and off).

@@ -16,7 +16,7 @@ import { worldHash } from './fixtures/golden';
 
 const run = (w: World, days: number) => { for (let i = 0, n = Math.round(days * 5760); i < n; i++) tickWorld(w); return w; };
 const OFF = { huntEncounter: 0, huntExtraKillP: 0 };
-const BEFORE = { ...OFF, departPersist: 0 }; // the recorded hashes also predate the moving-together stage
+const BEFORE = { ...OFF, departPersist: 0, joinLoneW: 0, fruitWaterRelief: 0 }; // the recorded hashes also predate the moving-together and finding-company stages
 
 /** Midday in a field world: adult male `a` of community 1 with a colobus group 40 m east; `company` adult males stand beside him, the others are far away. */
 function scene(params: Record<string, number> = {}, company = 1) {

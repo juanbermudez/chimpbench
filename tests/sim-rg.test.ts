@@ -96,8 +96,10 @@ test('C13b: leaves count at their intake rate against fruit; a trip counts its w
   const { paramsOf } = await import('../src/sim/params');
   const on = run(createWorld(7, { profile: 'field' }), 1.3), off = structuredClone(on);
   (off as unknown as { sim: { params: { overrides: Record<string, number> } } }).sim.params.overrides = { intakeValue: 0 };
-  const c = on.chimps.find(k => k.alive && k.age >= 15 && k.hunger > 0.2)!, c0 = off.chimps.find(k => k.id === c.id)!, P = paramsOf(on);
-  const leaves = (w: World, k: typeof c) => computeCandidates(w, k, []).find(o => o.action === 'forage' && o.targetId === -1)!.score;
+  // an adult with leaves on its menu (crowns in sight can take all the forage slots; which animal is first depends on the run)
+  const leafOf = (w: World, k: World['chimps'][number]) => computeCandidates(w, k, []).find(o => o.action === 'forage' && o.targetId === -1);
+  const c = on.chimps.find(k => k.alive && k.age >= 15 && k.hunger > 0.2 && leafOf(on, k))!, c0 = off.chimps.find(k => k.id === c.id)!, P = paramsOf(on);
+  const leaves = (w: World, k: typeof c) => leafOf(w, k)!.score;
   const factor = leafRate(on, c.position[0], c.position[2], P) / fruitRate(c, P).hungerPerH;
   assert.ok(factor > 0.2 && factor < 0.9, `leaf/fruit rate ${factor}`);
   // jitter and the continuation bonus are the same in both worlds; scores are clamped to [0, 3] and rounded to 0.001
@@ -174,7 +176,7 @@ test('C13e bug fix: the joint trip is offered inside the 5 m minimum; off = the 
     assert.equal(!!s.join(b), want, `joinChoice ${joinChoice}`);
   }
   // field seed 7, 1 day, on main before C13e (7bc8c31); the hunting fix and the party-size switches came later and are off too
-  assert.equal(worldHash(run(createWorld(7, { profile: 'field', params: { joinChoice: 0, huntEncounter: 0, huntExtraKillP: 0, crowdByShare: 0, oestrusPullW: 0, departPersist: 0 } }), 1)), '08cdb7889f141e01');
+  assert.equal(worldHash(run(createWorld(7, { profile: 'field', params: { joinChoice: 0, huntEncounter: 0, huntExtraKillP: 0, crowdByShare: 0, oestrusPullW: 0, departPersist: 0, joinLoneW: 0, fruitWaterRelief: 0 } }), 1)), '08cdb7889f141e01');
 });
 
 test('C13e noticing: a silent departure reaches only companions who see the leader go and are not absorbed; a hoo reaches every hearer', async () => {
