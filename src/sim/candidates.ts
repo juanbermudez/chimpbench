@@ -284,7 +284,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     // C13b: leaves are worth their intake rate here relative to ripe fruit (full-stock rate when fallback depletes: the best cell in view scales it)
     const leafV = iv ? (fallbackOn(P) ? P.fruitIntakePerH * P.fruitHungerFactor * P.fallbackRateRatio : leafRate(world, px, pz, P)) / fruitH : 1;
     // stage C15a: the hunger-independent part of the fallback worth is a registry value (fallbackBase; leaves are a daily
-    // food beside fruit, watts2012a, emeryThompson2020 [H]; fitted in the field profile to T-FOOD-2)
+    // food beside fruit, watts2012a, emeryThompson2020; evidence level in the registry; fitted in the field profile to T-FOOD-2)
     offer('forage', -1, h * P.fallbackForageW * (fallbackOn(P) ? bestFallbackNear(world, px, pz, x.sight, _fb) : 1) * leafV + P.fallbackBase - rain * 0.3);
     // field profile: leaving companions for a food tree of one's own has a cost (parties travel together; design, T-PTY-1)
     const stay = (P.partyStayW > 0 ? P.partyStayW * Math.min(x.visibleOwn, P.partyStayMaxN) : 0) + oestrusNear;
