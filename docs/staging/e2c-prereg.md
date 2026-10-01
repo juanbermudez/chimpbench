@@ -1,0 +1,179 @@
+# Stage E2c pre-registration: darkness by its consequences
+
+Written 1 October 2026, before the first run of the changed model. Track E rule: field values of behaviour are targets,
+never inputs. Only physiology or physics measured independently of the behaviour may be a parameter.
+
+Scope: the two causes E2b left for the missing janmaat2014 pattern (`docs/staging/e2b-prereg.md` §8): the darkness
+weight of the nest, and fruit that only chimpanzees eat. Branch `e2c-darkness` (from `track-e`; every Track E switch off
+by default). Sources: research.md E.18 (this stage) and E.17 (E2b).
+
+## 1. The prescription removed
+
+`rhythmDarkW` (2.2, E2a): the nest's value is `(1 − daylight)·(rhythmSleepW·S + rhythmDarkW)`. It was set a priori so a
+nest in the dark beats a starving animal's best meal by three softmax temperatures. Nothing else in the world is
+different in the dark: animals see trees and companions over the E2a sight interpolation, eat and walk at daylight
+rates. The weight states the outcome "stay in the nest while it is dark", like `nestNightBonus` (which the E0 ledger
+counts as an outcome-encoding bonus). The E0 rules classed it *design* (rule 8, a score weight); this stage reclasses it
+as outcome-encoding (`scripts/lib/prescriptions.ts`), counted while `rhythmSleep` is 1 and `darkCost` is not. So every
+earlier arm with `rhythmSleep` 1 counts one more prescription than reported (E2b's 139 becomes 140).
+
+New switch `darkCost` (0 = E2a/E2b, bit-identical; needs `rhythmSleep`).
+
+## 2. Mechanism (`darkCost` 1)
+
+### 2.1 Light at the animal
+
+Open-sky illuminance on a horizontal surface from the sun's geometric altitude h, the U.S. Naval Observatory sky model
+(janiczekDeYoung1987; read as transcribed in the `skylight` R package): `E_sky = skyLuxSun · T(h') + skyLuxNight`, with
+h' the refracted altitude and T the direct-plus-scattered transmission of the model's air mass. Cloud removes the share
+the E2a heat balance already uses (`1 − 0.75·cloud^3.4`, kastenCzeplak1980). The moon is not modelled.
+
+The light at height y under the canopy is `E_sky × share(y)`, share rising linearly from `rhythmShadeGround` (0.02) on
+the floor to `rhythmShadeCrown` (0.5) at `rhythmCanopyM` (25 m): the E2a profile, unchanged.
+
+### 2.2 Vision
+
+Relative visual acuity at retinal illuminance T (trolands): `a = 1 / (1 + (K / T)^n)`, K = 23.4 td, n = 0.48, a
+least-squares fit to shlaer1937 Table I column II (24 points from 0.004 to 10⁵ td, free fixation, so the most sensitive
+retina is used at each level; rms error 0.055 log units). T = lux × 1.2 (reflectance 0.1 × a dark-adapted pupil of
+38 mm² ÷ π; the reflectance is not sourced). Chimpanzee acuity in daylight is close to human (spence1934 and
+matsuzawa1990 as cited by adams2017, about 35–60 cycles per degree); how it falls with brightness in chimpanzees was not
+verified, so the human curve enters as *assumed*.
+
+Vision v(y) = a(E(y)) ÷ a(E at the same height under the same sky with the sun at `daylightHighDeg`, +12°), capped at 1:
+exactly 1 whenever the simulation's daylight is 1, so nothing changes by day.
+
+Computed values (clear sky; minutes from apparent sunrise at 4 min per degree):
+
+| Sun altitude | Min to sunrise | Sky lux | E2a daylight | v floor | v nest (14 m) | Sight on the floor | Pace |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| −10° | −37 | 0.04 | 0 | 0.01 | 0.03 | 10.2 m | 0.92 |
+| −8° | −29 | 0.35 | 0 | 0.03 | 0.08 | 10.7 m | 0.92 |
+| −6° | −21 | 3.0 | 0.03 | 0.07 | 0.20 | 11.9 m | 0.93 |
+| −4° | −13 | 24 | 0.10 | 0.19 | 0.41 | 14.6 m | 0.94 |
+| −2° | −5 | 170 | 0.22 | 0.38 | 0.65 | 19.6 m | 0.95 |
+| 0° | +3 | 980 | 0.35 | 0.64 | 0.84 | 25.9 m | 0.97 |
+| +4° | +19 | 3,300 | 0.65 | 0.82 | 0.93 | 30.4 m | 0.99 |
+| +12° | +51 | 14,800 | 1 | 1 | 1 | 35 m | 1 |
+
+Vision in the crowns runs well ahead of the E2a daylight scale (0.84 against 0.35 at sunrise), and the floor lags the
+crowns by 4–5 minutes of sun.
+
+### 2.3 What vision changes (couplings: design assumptions [L])
+
+- **Feeding.** Fruit intake in a crown and leaf intake on the ground scale with v at the animal's height (fruit is found
+  and chosen by sight, ripeness by colour, which needs cones: CIE mesopic range 0.005–5 cd/m², cie2017).
+- **Perception.** Sight radius `sightNightM + (sightDayM − sightNightM)·v` at the animal's height: the E2a interpolation
+  driven by vision instead of the daylight scale (with its rain, height and age factors unchanged). observe() stays pure
+  and local: it reads the perception record as before.
+- **Locomotion.** Walking and climbing pace `walkDarkPace + (1 − walkDarkPace)·v`: 0.92 in near darkness (figueiro2011:
+  101 against 110 cm/s at 0.015 against 650 lux at the eye, 24 older adults, dark-adapted, indoor path; a lower bound on
+  the cost on a forest floor). Climbing safety (falls): no source; not modelled.
+- **Valuation.** A trip to a crown d metres away is valued at the pace averaged between now and arrival (floor light) and
+  with the vision expected at the crown on arrival (the sun's altitude at arrival at the daylight pace, today's cloud):
+  the share of the trip spent feeding becomes `feedH / (walkH + feedH / v_arrival)` with walkH at the light-limited pace
+  (the intake-per-hour currency of C13b, with a slower intake rate). Ground foraging is valued × v now. The stake of
+  departRace scales with these worths, unchanged otherwise.
+- **Risk.** Leopards are absent from Kibale and no leopard predation on chimpanzees is known there (wood2017); lions and
+  hyenas enter rarely with no recorded predation. So no predation term. At Taï, where leopards hunt diurnally and
+  crepuscularly (jennyZuberbuhler2005; boesch1991: attack risk about 0.3 per chimpanzee-year), such a term would belong.
+
+### 2.4 The nest
+
+`restBase` = the rest score without its fatigue term (0.12 + heat load + sated + injury + caretaker + illness, as now).
+
+- Nest (stay in the own finished nest, or build one): `restBase + rhythmSleepW·S·(1 − daylight)` − the departRace stake.
+  A nest is a place to rest that also lets the animal sleep; the darkness weight is gone and safety adds nothing at
+  Kibale. No hour and no light threshold appear.
+- Rest outside a nest: `restBase`. Under rhythmSleep resting awake does not lower sleep pressure (only sleep in a nest
+  does), so the fatigue term (`(1 − energy)·0.9`, the same felt sleepiness) belongs to the nest, not to rest. By day it is
+  zero, so daytime rest is unchanged.
+- An animal in its own finished nest is not offered rest separately: resting there is staying in the nest.
+
+At night the night menu (unchanged; `rhythmFreeNight` stays 0 in every arm) leaves an animal in its nest only the nest
+(and nursing, fleeing, alarm, submission). At dawn every option is open and the nest competes with feeding and travel
+whose worth now falls with light.
+
+## 3. Background frugivores: not implemented (no measured rate)
+
+The second piece, removal of ripe fruit by other frugivores as a measured ecological rate, needs a rate measured in the
+field independently of chimpanzees: the share of a ripe crop removed per hour, or the residence time of a ripe fruit,
+by monkeys, hornbills, barbets, turacos, squirrels and fruit bats, ideally separately for figs. None was found in a
+source that could be read (research.md E.18): Kibale papers give ripe fruit as under 0.5% of the fruit standing in a
+crown (houle2014) and ripe fruit as the most ephemeral food at monthly resolution (janmaat2016), not a rate; Kakamega
+gives visitor counts without fruits per visit or crop sizes (kirika2008, abstract); the papers likely to hold a rate
+(Gautier-Hion & Michaloud 1989; Poulsen et al. 2002; Olupot et al. 1998; Korine et al. 2000; the janmaat2014
+supplement) were behind paywalls. No rate is invented: `frugivoreLoad` is not added. Consequence, registered here:
+nothing in this stage makes figs more contested than other fruit, so **the fig contrast of janmaat2014 is not expected
+to emerge**.
+
+## 4. Inputs
+
+| Parameter | Value | Source | Tag |
+| --- | --- | --- | --- |
+| `skyLuxSun` | 133,775 lux | janiczekDeYoung1987 sky model | assumed (physics) |
+| `skyLuxNight` | 0.0005 lux | janiczekDeYoung1987 (starlight and airglow) | assumed (physics) |
+| `sightAcuityHalfTd`, `sightAcuityExp` | 23.4 td, 0.48 | fit to shlaer1937 Table I | assumed (human, cross-species) |
+| `sightRetinaTdPerLux` | 1.2 td/lux | reflectance 0.1 (not sourced) × 7 mm pupil ÷ π | assumed |
+| `walkDarkPace` | 0.92 | figueiro2011 | assumed (human, cross-species) |
+| reused | `rhythmShadeGround` 0.02, `rhythmShadeCrown` 0.5, `rhythmCanopyM` 25, `rhythmCloudAtt` 0.75, `rhythmCloudExp` 3.4, `sightDayM` 35, `sightNightM` 10, `daylightHighDeg` 12 | E2a and the field profile | as registered |
+
+None is a departure time, a nesting time or a rate of night activity. The three couplings of §2.3 (intake ∝ v, sight
+radius by v, pace linear in v) are design.
+
+## 5. Predictions (registered before any run)
+
+Quick check: field profile, seeds 48 and 7, 30 days after a 30-day burn-in, `--workers 1`. R = `rhythmSleep`,
+`rhythmHeat`, `departRace`, `nestLightDecide` 1 (E2b's AL3). T = R + `darkCost`. If time allows, S = R + `energyLedger`,
+`ledgerGrowSurplus`, `ledgerNightNurse`, `ledgerInfantIntake`, `ledgerNurseByMilk`, `ledgerDigesta`, `ledgerDrive`, and
+ST = S + `darkCost`. Tools: `scripts/rhythm-metrics.ts` (sky lux at departure and the crop left at sunset added for this
+stage), `scripts/e-bench.ts --quick`.
+
+Reasoning: at dawn an animal's nest is worth about 0.15 (hungry) to 0.35 (sated) once S has discharged; a breakfast trip
+is worth about 0.6 in daylight for a hungry adult (E2b §2). With intake scaled by vision at the crown, a trip passes the
+nest when v ≈ 0.25–0.5 for hungry animals, i.e. with the sun at −5° to −3°, 17 to 9 minutes before sunrise. Walking
+barely slows (pace ≥ 0.92), and far crowns gain from the better light on arrival.
+
+| Readout | R (expected, ≈ E2b AL3) | T (expected) | Field (never set) |
+| --- | --- | --- | --- |
+| Departures before sunrise, adult females | 0.03–0.07 | **0.35–0.80: overshoot of T-RHY-3** (0.05–0.35) | 0.18 (Taï) |
+| Median departure, min after sunrise | +15 to +20 | −12 to +3 | about 0 (Budongo); +13 to +27 (Taï) |
+| Sky lux at departure (median) | 1,000–4,000 | 20–400 | 1–85 lux for great-ape feeding activity (secondary, Erkert as cited by tagg2018) |
+| Fig against other crowns | within 3 min | within 3 min (no fig term) | figs earlier |
+| Far (≥ 500 m) against near (< 150 m) crowns | within 3 min | far earlier by 0–10 min | far figs earlier; far non-figs later |
+| Hungrier classes (lactating) earlier than males | yes | yes | no difference (Budongo) |
+| Last nest entry, min after sunset | −5 to 0 | +5 to +25 (no darkness weight at dusk) | males about −25 (Budongo, derived) |
+| Active day, all adults | 11 h 35 – 11 h 50 | **12 h 00 – 12 h 30: above T-RHY-1** (10.5–12.0 h) | 11 h 34 males |
+| Night out of a nest; m moved per animal-night; night deaths | 0%; ~0; 0 | 0%; ~0; 0 | 1.8% of activity records (tagg2018) |
+| Adults out of a nest at solar midnight | 0% | 0% | — |
+| Rest share 07:00–19:00 | E2b-like | down 0–3 points (rest lost its dusk sleep term) | — |
+| Crop at sunset ÷ sunrise, figs / other | 0.9–1.0 / 0.9–1.0 | unchanged (no frugivores) | — |
+| Prescription count | 140 (rhythmDarkW now counted) | 139 | — |
+| Fitted / held-out distance | E2b-like | within the noise floor (0.8) on rows scored in both | — |
+| Viability | pass | pass | — |
+
+The registered expectation is that darkness by its consequences releases the animals too early in the morning and keeps
+them out too late in the evening: at Kibale's light levels vision recovers well before sunrise and fails only after
+sunset, and with no predators and nearly undiminished walking nothing else in the dark holds an animal in its nest. If
+that is what happens, the darkness weight was standing in for something other than darkness.
+
+## 6. Kill criteria (darkCost stays off, the null is recorded)
+
+1. Viability: a starvation death R does not have; births ÷ deaths below R beyond the seed spread; any death at night.
+2. Night safety: night time out of a nest above 5%; adults out of a nest at solar midnight on more than 2% of
+   adult-nights; night travel above 10 m per animal-night or above R by more than 5 m.
+3. Active day outside 10.5–12 h (T-RHY-1); median start of the last nest more than 90 min from sunset.
+4. Held-out distance rises beyond the noise floor (0.8) on rows scored in both runs.
+5. With the switch off, any compressed golden hash or the field pin in `tests/sim-track-e.test.ts` moves.
+
+Keep rule (Track E): viability passes, held-out distance does not rise, and the prescription count falls (it does by
+construction: 140 → 139). Even then the switch stays off by default until the integrator rules.
+
+## 7. Rule on iteration
+
+At most three iterations. No input is moved to hit a benchmark; no weight is tuned to a rate. Each change of mechanism is
+logged below, with its reason, before its run. A miss is a finding.
+
+## 8. Results
+
+(to be written after the runs)

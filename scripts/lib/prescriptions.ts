@@ -42,6 +42,7 @@ export const OVERRIDES: Record<string, Override> = {
   nestEveningDrive: oe('clock', 'strength of the evening clock ramp (nestEveningStartH to nestEveningEndH): part of the nest clock'),
   nestMorningDrive: oe('clock', 'strength of the morning stay-in-nest drive: part of the nest clock', [], true),
   nestNightBonus: oe('bonus', 'extra nest drive because it is night: states sleeping at night'),
+  rhythmDarkW: oe('bonus', 'stage E2a nest value in the dark, set a priori to beat a starving animal\'s best meal (docs/staging/e2c-prereg.md §1): states staying in the nest while it is dark, with no consequence of darkness behind it (as nestNightBonus)'),
   boutRestMiddayMin: oe('clock', 'rest bouts are longer between 11:30 and 14:30 by rule (literal clock window in execution.ts)', ['T-ACT-4']),
   boutRestMiddayMax: oe('clock', 'rest bouts are longer between 11:30 and 14:30 by rule (literal clock window in execution.ts)', ['T-ACT-4']),
   boutNestMorningMin: oe('clock', 'nest bouts are short between 05:30 and 12:00 by rule (literal clock window in execution.ts)'),
@@ -59,6 +60,8 @@ export const OVERRIDES: Record<string, Override> = {
   fallbackRateRatio: { cls: 'input', kind: 'physiology', reason: 'ratio of measured energy intake rates (kcal per minute on pith and young leaves ÷ ripe fruit, uwimbabazi2019)' },
   travelDistScaleM: { cls: 'input', kind: 'physics', borderline: true, reason: 'field value derived from the cost of walking a metre (taylor1982, sockol2007) and a day\'s energy; the earlier tuned value was replaced at C7c. It still contains memTravelHungerW, which is tuned' },
   patchesPerHa: { cls: 'input', kind: 'ecology', reason: 'field value is the measured density of feeding-size trees (janmaat2016); the earlier value tuned to T-FOOD-11 was replaced at C7a' },
+  // stage E2c: physics of light and human physiology measured apart from any chimpanzee behaviour
+  walkDarkPace: { cls: 'input', kind: 'physiology', reason: 'measured walking speed in near-darkness over daylight speed (figueiro2011, humans), cross-species' },
   // stage E1b: food properties measured on the food or on the feeding rate, like ledgerFruitKcalPerMin's kcal per minute
   digestaDrupeDmGPerMin: { cls: 'input', kind: 'physiology', reason: 'measured dry matter ingested per feeding minute on drupes (uwimbabazi2019 Table 1), the bulk companion of the kcal per minute' },
   digestaFigDmGPerMin: { cls: 'input', kind: 'physiology', reason: 'measured dry matter ingested per feeding minute on figs (uwimbabazi2019 Table 1)' },
@@ -192,6 +195,8 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
     'digestaMeatDmGPerKcal', 'digestaMilkDmGPerKcal', 'digestaTefFrac'].map(id => [id, { when: (P: Record<string, number>) => P.energyLedger === 1 && P.ledgerDigesta === 1, why: 'read only while energyLedger and ledgerDigesta are 1 (stage E1b)' }])),
   // stage E2b (docs/staging/e2b-prereg.md): departRace and nurseWake add terms to the nest's value and to sleep pressure;
   // neither switches a prescription out, so neither has an entry here (both are class design, rule 1)
+  // stage E2c (docs/staging/e2c-prereg.md): darkCost replaces the darkness weight by the consequences of darkness
+  rhythmDarkW: { when: P => P.rhythmSleep === 1 && P.darkCost !== 1, why: 'read only by the E2a nest value (rhythmSleep 1), and not while darkCost is 1 (src/sim/rhythm.ts nestValue, src/sim/candidates.ts)' },
 };
 
 /** Whether an entry is in use: generated (not planned), non-zero under these resolved parameters, and not switched out. */
