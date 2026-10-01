@@ -17,6 +17,7 @@ import { fissionStep } from './fission';
 import { materializeFruit } from './phenology';
 import { dailyTerritory } from './territory';
 import { dailyDisease, slowDisease } from './disease';
+import { rideTick } from './energy';
 import { slowSnares } from './snares';
 import { random } from './rng';
 import { paramsOf } from './params';
@@ -55,6 +56,7 @@ export function tickWorld(world: World): void {
 
 /** Ventral carrying in the first months, then dorsal riding while the mother travels or sleeps. [H] */
 function carryInfants(world: World): void {
+  const P = paramsOf(world), led = P.energyLedger === 1;
   for (let i = 0; i < snapshot.length; i++) {
     const c = snapshot[i];
     if (!c.alive || c.age >= 4) continue;
@@ -66,6 +68,7 @@ function carryInfants(world: World): void {
     c.position[2] = m.position[2] + Math.cos(m.heading) * back;
     c.position[1] = m.position[1] + (ventral ? 0.25 : 0.55);
     c.heading = m.heading;
+    if (led) rideTick(c, m, P); // stage E1: the carrier pays for the load
     if (m.nest && m.action === 'nest' && (!c.nest || c.nest.treeId !== m.nest.treeId)) c.nest = { treeId: m.nest.treeId, position: [m.nest.position[0], m.nest.position[1], m.nest.position[2]] };
   }
 }

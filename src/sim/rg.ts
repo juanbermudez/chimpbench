@@ -59,7 +59,8 @@ function disturbed(world: World, c: Chimp): boolean {
 
 /** The bounded menu at this decision point (the same construction as src/decision.ts buildRequest). */
 export function rgMenu(world: World, c: Chimp, all: Candidate[]): Candidate[] {
-  const phased = phaseMenu(perceivedCandidates(world, c, all), dayPhase(world));
+  // stage E2a (rhythmFreeNight): rules-driven chimps are not held by the night and dusk menus; sleep pressure and darkness keep them in their nests
+  const phased = phaseMenu(perceivedCandidates(world, c, all), paramsOf(world).rhythmFreeNight === 1 ? 'day' : dayPhase(world));
   const best = all[0] && all[0].action !== 'dead' ? all[0] : null;
   const response = disturbed(world, c) ? [...phased].filter(k => RESPONSE_ACTIONS.has(k.action)).sort((a, b) => b.score - a.score)[0] : undefined;
   // stage C13e (joinChoice): a noticed departure stays on the menu as its own option (the joint trip), beside the animal's own best trip
@@ -90,7 +91,7 @@ export function patchPoorHere(world: World, c: Chimp, tree: number, P: Params): 
     const d = Math.hypot(m.position[0] - px, m.position[2] - pz);
     if (d >= P.memoryTreeMinM) best = Math.max(best, treeIntake(c, P, x.treeCrop?.[m.entityId] ?? UNKNOWN_CROP, 0, d).perHourInclWalk);
   }
-  const here = isTreeId(tree) && x.trees.includes(tree) ? fruitRate(c, P).hungerPerH : leafRate(world, px, pz, P);
+  const here = isTreeId(tree) && x.trees.includes(tree) ? fruitRate(c, P).hungerPerH : leafRate(world, px, pz, P, c);
   return best >= GATE.patchRatio * here && best > 0;
 }
 

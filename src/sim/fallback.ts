@@ -65,14 +65,14 @@ export function bestFallbackNear(world: World, x: number, z: number, sight: numb
   return best;
 }
 
-/** One tick of fallback feeding by `c` for `dtH` hours: returns the hunger removed and depletes the cell. */
+/** One tick of fallback feeding by `c` for `dtH` hours: returns the hunger removed (stage E1, energyLedger: the kcal offered) and depletes the cell. */
 export function eatFallback(world: World, c: Chimp, dtH: number): number {
   const P = paramsOf(world), cell = P.forageCellM, s = simOf(world), time = world.time;
   const cx = Math.floor(c.position[0] / cell), cz = Math.floor(c.position[2] / cell);
   const cap = capacity(P, cx, cz);
   if (cap <= 0) return 0;
   const frac = stockFrac(world, P, cx, cz, time);
-  const gain = P.fruitIntakePerH * P.fruitHungerFactor * P.fallbackRateRatio * forageYield(world, c.position[0], c.position[2]) / ((P.forageYieldMin + P.forageYieldMax) / 2) * frac * dtH;
+  const gain = (P.energyLedger === 1 ? P.ledgerFallbackKcalPerMin * 60 : P.fruitIntakePerH * P.fruitHungerFactor * P.fallbackRateRatio) * forageYield(world, c.position[0], c.position[2]) / ((P.forageYieldMin + P.forageYieldMax) / 2) * frac * dtH;
   const k = keyOf(cx, cz);
   (s.fallback ??= {})[k] = [Math.min(cap, (1 - frac) * cap + frac * dtH), time];
   return gain;
