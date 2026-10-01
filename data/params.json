@@ -4235,6 +4235,37 @@
    "notes": "Stage C7a (field): a patch's crop capacity scales with (crown radius / species mean)^this, renormalized so each species' mean is unchanged; 2 = crown area (allometric design assumption). Large crops become rare, as in the field (a fruiting tree every 97 m of transect but a large crop every 21 km, janmaat2016). 0 = off (compressed). janmaat2016 supports only the rarity of large full crops (crown size combined with >= 50% fullness; fullness alone is at least 9x rarer); the area scaling is a design assumption."
   },
   {
+   "id": "crowdByShare",
+   "group": "feeding",
+   "value": 0,
+   "units": "flag",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Food competition and party size): chapman1995, larger parties deplete patches faster so patch size limits party size (Kanyawara); newtonFisher2000, party size tracks patch size and not habitat-wide food (Budongo); malenky1994, party size restricted on small herb patches"
+   ],
+   "population": "Kanyawara; Budongo",
+   "clock": "none",
+   "symbol": "P.crowdByShare (computeCandidates forage)",
+   "file": "src/sim/candidates.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 1
+   },
+   "notes": "Party-size stage (docs/staging/party-size-prereg.md 4.1; field): 1 = a crown's forage worth is multiplied by 1 - (1 - cover) x r, cover = min(1, share / need) / min(1, crop / need), share = crop / (1 + co-feeders seen in the crown), need = hunger / fruitHungerFactor, r = crowdHighRankFactor for a high-ranking feeder; the habitat-index crowding cost (crowdCompeteW x (crowdScarcityRef - fruit index)) and the sociability x fruit-index trip bonus are then 0. No new magnitude. The direction is sourced; the functional form is a design assumption. 0 = the model before (hash-identical; compressed)."
+  },
+  {
    "id": "crowdCompeteW",
    "group": "decision",
    "value": 0.1,
@@ -12309,6 +12340,32 @@
     "field": 5
    },
    "notes": "Nursing is less likely beyond this distance from the mother. Body-scale distance: the same in both profiles (design)."
+  },
+  {
+   "id": "oestrusPullW",
+   "group": "social",
+   "value": 0,
+   "units": "score per unit swelling",
+   "range": [
+    0.15,
+    0.6
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    5
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.oestrusPullW (computeCandidates: party follow, joint trip, own-trip stay cost)",
+   "file": "src/sim/candidates.ts",
+   "profiles": {
+    "compressed": 0,
+    "field": 0.3
+   },
+   "notes": "Party-size stage (docs/staging/party-size-prereg.md 4.2; field): for males aged 10 y or more, a community female in sight with swelling >= consortSwellingMin (maternal kin excluded, as for mating offers) adds this x her swelling to following her or joining her trip, and to the cost of leaving on a trip of his own. Receptive females raised the number of males in parties at Kanyawara (emeryThompson2014, direction only); the weight is design, not tuned (about two softmax temperatures). 0 = off (hash-identical; compressed)."
   },
   {
    "id": "pantGruntDistScaleM",

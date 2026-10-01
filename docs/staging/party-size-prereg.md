@@ -68,6 +68,13 @@ Recruitment at departures is not the cause (science agent: join share 0.46). Eac
 - `oestrusPullW` = 0.3 (design, not tuned; about two temperature units). 0 switches it off, hash-identical.
 - Evidence: receptive females raised the number of males in parties at Kanyawara (emeryThompson2014 [M]). No source gives a magnitude, so the weight is design.
 
+### 4.2a Implementation notes (added before any run)
+
+- Both switches are field-only: `crowdByShare` is 1 and `oestrusPullW` 0.3 in the field profile, and both are 0 in the compressed profile, so the compressed goldens do not move.
+- The pull excludes maternal kin (mother, sons, maternal siblings), as the existing mating offers do.
+- "Following her or joining her trip" covers a swollen female who travels off and a companion's trip that she leads.
+- Ablation rows: `party-share` and `party-oestrus` in `data/proof-ablations.json`.
+
 ### 4.3 Not proposed now
 
 - **Re-fitting cohesion under sampling.** `partyStayW` was tuned to T-PTY-1 under argmax. If T-PTY-1 stays below 3 after 4.1 and 4.2, the pre-declared next step is to re-fit `partyStayW` against T-PTY-1 alone (a fitted row, already labelled tuned), by bisection on development seeds. It needs the integrator's go and is not part of this check.

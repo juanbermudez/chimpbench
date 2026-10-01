@@ -173,8 +173,8 @@ test('C13e bug fix: the joint trip is offered inside the 5 m minimum; off = the 
     s.place(b, 3); s.setOff();
     assert.equal(!!s.join(b), want, `joinChoice ${joinChoice}`);
   }
-  // field seed 7, 1 day, on main before C13e (7bc8c31)
-  assert.equal(worldHash(run(createWorld(7, { profile: 'field', params: { joinChoice: 0 } }), 1)), '08cdb7889f141e01');
+  // field seed 7, 1 day, on main before C13e (7bc8c31); the party-size switches came later and are off too
+  assert.equal(worldHash(run(createWorld(7, { profile: 'field', params: { joinChoice: 0, crowdByShare: 0, oestrusPullW: 0 } }), 1)), '08cdb7889f141e01');
 });
 
 test('C13e noticing: a silent departure reaches only companions who see the leader go and are not absorbed; a hoo reaches every hearer', async () => {
