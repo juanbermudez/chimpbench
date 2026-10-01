@@ -780,7 +780,7 @@ export function executeAction(world: World, c: Chimp): void {
   }
 }
 
-/** Hunger readout below which a nursing bout ends (design). */
+/** Hunger readout below which a nursing bout ends (lint-ok: the nurse act's existing literal, moved here unchanged). */
 const NURSE_DONE = 0.08;
 
 function nestTick(world: World, c: Chimp): void {
@@ -795,7 +795,8 @@ function nestTick(world: World, c: Chimp): void {
     const held = isCarried(c, m);
     if (!held) moveTo(world, c, m.position[0], m.position[1], m.position[2], WALK, 0.4);
     // stage E1c (ledgerNightNurse): an infant in its mother's nest suckles while hungry, on the day option's eligibility
-    // (khayer2025: nest sharing until weaning [M]; mizuno2006: night suckling, captive newborns [L]); no refusal at night (stylization)
+    // (weaning + 0.3 y) and within the nurse act's reach (1.2 m), with no weaning refusal at night. Evidence: khayer2025,
+    // nest sharing until weaning [M]; mizuno2006, night suckling of captive newborns [L]; no refusal is a stylization (lint-ok: existing values)
     if (P.ledgerNightNurse === 1 && m.action === 'nest' && m.id === c.motherId && c.age < x.weanAge + 0.3 && c.hunger >= NURSE_DONE
       && (held || hd(c, m) <= 1.2) && ledgerOn(P)) nurseTick(c, m, P);
     return;
