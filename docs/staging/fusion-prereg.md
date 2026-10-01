@@ -45,6 +45,16 @@ Field profile only; each part behind its own switch; both off is `main` f24c9ae,
 - Sourced [M]: the source's travel event is any locomotion of 10 m or more between two non-locomotion activities, and its recruitment, waiting and re-launching are about such events (gruberZuberbuhler2013). Design: that companions can follow to water with the same weights as any other departure.
 - No new magnitude.
 
+### 3.1a `fruitWaterRelief`: water from fruit (added before any run of the changed model, at the integrator's request)
+
+- **Measured** (`drink-probe.ts`, `main` f24c9ae, seeds 48 and 7, 20 days, animals of 5 y or more): 2.2 trips to water and 1.3–1.4 drinks per animal per day; 0.11–0.12 drinks per daylight hour; 28 min a day on water trips, 230 m each.
+- **Field:** about 0.005–0.010 observed drinks per individual per hour of observation at Kanyawara, or one every 8–17 days; chimpanzees are not obliged to drink daily, because food supplies water (mackenzie2025).
+- **So the model drinks 11–24 times too often.** The water share of partings in §2 is an artifact of that.
+- **Change:** with `fruitWaterRelief` above 0, a fruit unit eaten relieves that much thirst, in place of `fruitThirstFactor` (0.55 in the field, tuned in C5a against the travel share and the day range, not against drinking). Its own switch and ablation row; 0 is today's model.
+- **Fitted to the sourced rate**, not to any target row: bisection between 0.55 and 2.0, at most 6 steps, each step the drinking probe on seeds 48 and 7 (30-day burn-in + 20 days, `departPersistAll` on, `joinLoneW` 0), reading only drinks per daylight hour. Target 0.0075 per hour, accepted inside 0.005–0.010. The field figure is a lower bound, so the fit aims at its middle rather than below it.
+- **The `joinLoneW` fit of §4 runs with this correction on.** Party size is reported for both arms (correction on and off).
+- Predictions for the correction alone (untuned rows): time on water trips from 28 min to under 3 min a day; T-ACT-2 from 0.195 to 0.16–0.19 and T-RNG-4 from 2.59 to 2.1–2.5 km (water trips are about 0.5 km a day now; both rows were tuned in C5a with thirst as it was, and both must stay in band: guard G2); T-PTY-1 from 2.86 to 3.0–3.3 with `departPersistAll` on and `joinLoneW` 0; own-move partings on a trip to water under 5%.
+
 ### 3.2 `joinLoneW`: a lone animal answers community pant-hoots
 
 - For an animal with no companion of 12 y or more within the party link, the pull toward an own-community pant-hoot caller gains `joinLoneW` + `joinBondW` × its bond with the caller.
@@ -53,16 +63,16 @@ Field profile only; each part behind its own switch; both off is `main` f24c9ae,
 
 ## 4. Pre-registration
 
-**Fitted:** `joinLoneW`, by bisection between 0 and 0.8, at most 5 steps, with `departPersistAll` on. Each step is one observer run (field, seeds 48 and 7, 30-day burn-in + 60 days) read through a script that prints only T-PTY-1. Target: pooled T-PTY-1 = 3.5 ± 0.15 (the target pre-registered for the earlier cohesion re-fit). If 0.8 does not reach 3.35 the fit stops there, reported as not reached, and `joinLoneW` is set to the largest value that passes the guard, or to 0. T-PTY-1 stays fitted and labelled tuned.
+**Fitted:** `fruitWaterRelief` to the sourced drinking rate (§3.1a), first. Then `joinLoneW`, by bisection between 0 and 0.8, at most 5 steps, with `departPersistAll` and the water correction on; if T-PTY-1 is already 3.35 or more at `joinLoneW` 0, it stays 0. Each step is one observer run (field, seeds 48 and 7, 30-day burn-in + 60 days) read through a script that prints only T-PTY-1. Target: pooled T-PTY-1 = 3.5 ± 0.15 (the target pre-registered for the earlier cohesion re-fit). If 0.8 does not reach 3.35 the fit stops there, reported as not reached, and `joinLoneW` is set to the largest value that passes the guard, or to 0. T-PTY-1 stays fitted and labelled tuned.
 
 **Untuned:** everything else. Nothing is changed after T-PTY-2, -3 or -4 are seen.
 
 **Conflict noted.** T-PTY-4 (female time alone, held out, compromised) is 0.51 against 0.15–0.45. More cohesion moves it toward its band. It is not read by the fit and is reported before and after.
 
-**Checks** (field, seeds 48 and 7, both switches on at the fitted value against both off, at most 2 processes): 30-day burn-in + 60 days; then 30 + 180 days if the guard passes.
+**Checks** (field, seeds 48 and 7, all three switches on at the fitted values against all off, at most 2 processes; plus one observer run with only the water correction off, for the party size of that arm): 30-day burn-in + 60 days; then 30 + 180 days if the guard passes.
 
 **Guard (merge gate).**
-- G1: both off reproduce `main` f24c9ae (hash); the compressed goldens do not move.
+- G1: all three off reproduce `main` f24c9ae (hash); the compressed goldens do not move.
 - G2: T-ACT-1 (0.33–0.5), T-ACT-2 (0.12–0.25), T-ACT-3, T-ACT-4 and T-RNG-4 (1.5–3.5 km) stay in band with the change on.
 - G3: median hunger of adults and of lactating females at most 0.03 above the off arm, read by `party-truth.ts` (15-min daylight samples of animals of 15 y or more); no starvation death the off arm lacks.
 - G4: company gained per solitary hour is higher on than off in each seed, and own-move partings by trips to water are a smaller share on than off in each seed (`fusion-probe.ts`).

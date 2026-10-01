@@ -719,7 +719,14 @@ Read for the food-landscape design ([staging/food-landscape-prereg.md](staging/f
   - Persistence: in 9 cases the initiator failed to recruit and re-launched its effort shortly afterwards (mean 3.80 min, range 0–13 min).
   - The text read does not say how often an initiator left alone after a failed attempt.
 
+- **How often chimpanzees drink, Kanyawara** [mackenzie2025] (full text, author-hosted copy, read 1 October 2026) [M: the rates are read from a figure].
+  - All drinking by members of the followed party was recorded, 2005–2018: 4,087 drinking events by 81 chimpanzees (47 females, 34 males). 77.6% were at streams, 12.8% at puddles, 9.6% at tree holes; 14.9% used a tool.
+  - "Unlike humans, chimpanzees are not always obligated to consume water on a daily basis, as they can often obtain water from their food resources" (citing Pontzer et al. 2021 and Wrangham 1977, not read here).
+  - Drinking rate per individual per hour of observation (Figure 5; model estimates for ages 5–60, with 95% ribbons): about 0.002–0.010 at streams, rising with age and higher for females, and about 0.001 each at tree holes and puddles. In total about 0.005–0.010 per hour, or 0.06–0.12 per 12-hour day: one observed drink every 8–17 days.
+  - These are observed events in a followed party, so they are a lower bound on true drinking. Annual counts per individual have medians of about 3–10 (Figure 2c).
+
 **Sources:**
 
+- *new* mackenzie2025: MacKenzie C, Brodnan S, Felsche E, Sabbi K, Otali E, Wrangham R, Rosati AG, Machanda ZP 2025. Wild chimpanzees (*Pan troglodytes schweinfurthii*) use tools to access out of reach water. *American Journal of Primatology* 87:e70036. [doi:10.1002/ajp.70036](https://doi.org/10.1002/ajp.70036) (FT, PMC12011317; record checked against Europe PMC on 1 October 2026; already linked in §7 above without a key).
 - *new* chapman1992: Chapman CA, Chapman LJ, Wrangham R, Hunt K, Gebo D, Gardner L 1992. Estimators of fruit abundance of tropical trees. *Biotropica* 24(4):527–531. [doi:10.2307/2389015](https://doi.org/10.2307/2389015) (indexed summary; bibliographic record checked against Crossref on 1 October 2026, which lists the first page only; the page range is from memory).
 - potts2011, potts2020 and janmaat2016 are already cited; the lines above add derived statistics, not sources.
