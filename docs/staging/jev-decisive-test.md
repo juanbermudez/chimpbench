@@ -179,3 +179,26 @@ Code: `src/decide/jev-packet.ts` (packet v3), `scripts/lib/jev-paid.ts` (runner)
 - **Validity.** A world is invalid if these fallbacks exceed 0.5% of its policy decisions (warm-up and scored days together). An invalid world is treated like an incomplete one. The count and share are reported for every world, and any world near the line is shown both ways.
 - **Unchanged.** The cap stop and the kill switch stay hard stops: a world they stop is incomplete and is never continued by rules. A malformed answer also still stops its world. The endpoint, every threshold and the decision rules are unchanged.
 - **Second attempt.** Fresh ledger run ids (`jev-test/a2/...`). The first attempt's $0.2735 stays booked; the new per-world caps are the cost-proportional split of what is left, so prior spend plus the caps stay within the $10 hard cap. The run refuses to start if any world would have less than 1.2× its estimated cost. Same order (J2, J2s, J1), seeds, snapshot checks and tripwire.
+
+## Paid-arm results (2026-10-01, attempt 2; scored with the rules above and Amendment 1)
+
+Files: `artifacts/decide-ft/jev-test/paid-arms.{json,md}` (gitignored). All 11 worlds completed. Ledger total $7.4446 of the $10 cap ($7.1712 for this attempt, $0.2735 for the aborted first attempt). Every Jev output carries the do-not-train marker.
+
+| Arm | Mean distance | Per seed (6501 / 6602 / 6703 / 6804 / 6905) | Median adult hunger | Verdict |
+| --- | --- | --- | --- | --- |
+| R (free) | 2.044 | 2.42 / 1.89 / 1.97 / 1.86 / 2.08 | 0.64 | |
+| RG (free) | 0.927 | 0.92 / 0.89 / 1.29 / 0.76 / 0.78 | 0.66 | |
+| U (free) | 1.829 | 1.53 / 1.37 / 2.18 / 1.61 / 2.45 | 0.39 | |
+| J1 | 2.898 | 2.46 / 2.32 / 3.52 / 2.41 / 3.79 | 0.73 | hurts |
+| J2 | 1.888 | 2.65 / 1.79 / 1.66 / 1.89 / 1.46 | 0.36 | **no difference** |
+
+- **J2 (the decisive arm): no difference.**
+  - vs R: mean −0.156, but lower on only 3 of 5 seeds (the rule needs 4).
+  - vs U: mean +0.059; lower by ≥ 0.05 on 2 of 5 seeds. U matches J2, so any gain over R is credited to the facts, not to Jev.
+  - vs RG: mean +0.961; RG is closer to the bands on all 5 seeds.
+  - Viable: median adult hunger 0.36 (R 0.64), lactating females 0.64.
+- **J1 (Jev as shipped): hurts** by the same rule: worse than R on 5 of 5 seeds (mean +0.855) and worse than U by ≥ 0.05 on 5 of 5.
+- **J2s check:** mean total variation 0.168 over 1,464 matched states (median 0.150), above 0.05. Jev reads the facts.
+- **Where J2 misses:** it feeds too much (0.57 males, 0.56 females; band 0.33–0.50) and travels too little (0.09 and 0.11; band 0.12–0.25). Grooming is 0.05, party size 2.0 and male day range 1.40 km, all below their bands. Rest is in band.
+- **Unknown-billing fallbacks (Deviation 2):** one decision each in J2-6602 (0.012% of its decisions) and J2-6905 (0.011%); none elsewhere. No world is near the 0.5% line.
+- **GLiNER budget:** 0 would-be fallbacks in every paid world.

@@ -14,6 +14,8 @@
 //        # the real run through TRAINING's spend-guarded worker.py (per-world caps from the plan); writes paid-arms.{json,md}
 //   pnpm exec tsx scripts/jev-test.ts --kill                          # touches every paid world's kill file
 //   ... --resume      # continue an interrupted paid or dry run: same ledger and caps, finished worlds kept
+//   pnpm exec tsx scripts/jev-test.ts --rescore [--notes file]        # rewrite paid-arms.{json,md} from the stored world results (no call)
+//   ... --attempt 2   # a new attempt after an aborted one: own ledger run ids, caps from what is left of the hard cap
 //
 // Development runs (--seeds other than the decisive set, --burn-in/--warmup/--scored/--profile) are labelled
 // non-standard and written to free-arms-dev-*.{json,md}, never over free-arms.{json,md}. A standard run needs a clean
@@ -349,9 +351,27 @@ export async function runPaid(arms: PaidArm[], o: PaidOpts): Promise<void> {
   const tag = real ? 'paid-arms' : 'paid-arms-dryrun';
   writeFileSync(join(o.out, `${tag}.json`), JSON.stringify(doc, null, 1) + '\n');
   writeFileSync(join(o.out, `${tag}.md`), paidMarkdown({ bridge: o.bridge, snapshot: { commit: snap.commit.slice(0, 12), simHash: snap.simHash, decideHash: snap.decideHash, dirty: snap.dirty.length },
-    ledgerTotal: lt.spent, capTotal: o.cap, caps, score, paid: results, wallS }) + planMarkdown(perWorld, proposed, o));
+    ledgerTotal: lt.spent, capTotal: o.cap, caps, score, paid: results, wallS, free, ledgerRuns: lt.runs as { run_id: string; spent: number }[], attempt: o.attempt }) + (real ? '' : planMarkdown(perWorld, proposed, o)));
   if (!real) writeFileSync(join(o.out, 'paid-plan.json'), JSON.stringify({ madeBy: `fake dry run, bridge ${o.bridge}`, snapshot: snap, capTotal: o.cap, factor: proposed.factor, proposedCaps: proposed.caps, perWorld }, null, 1) + '\n');
   console.log(`wrote ${join(o.out, tag)}.{json,md}${real ? '' : ' and paid-plan.json'} (${wallS} s); ledger total $${lt.spent.toFixed(4)}`);
+}
+
+/**
+ * Rewrites paid-arms.{json,md} from the world results already stored in paid-arms.json (no call, no world run): the
+ * scorer and the report can be corrected without touching the results. The run's own snapshot stays; this build is noted.
+ */
+export function rescorePaid(o: { out: string; repo: string; notes: string[] }): void {
+  const file = join(o.out, 'paid-arms.json');
+  const doc = JSON.parse(readFileSync(file, 'utf8')) as { bridge: Bridge; snapshot: ReturnType<typeof snapshot>; capTotal: number; caps: Record<string, number>; ledger: string; results: PaidResult[]; wallS: number;
+    settings?: { attempt?: number }; [k: string]: unknown };
+  if (doc.bridge !== 'worker') throw new Error('paid-arms.json is not a real run');
+  const free = JSON.parse(readFileSync(join(o.out, 'free-arms.json'), 'utf8')) as FreeDoc;
+  const lt = ledgerTotals(doc.ledger, o.repo), score = scorePaid(doc.results, free, bands()), now = snapshot();
+  const out = { ...doc, score, ledgerTotal: lt.spent, ledgerRuns: lt.runs, notes: o.notes, rescoredBy: { commit: now.commit, decideHash: now.decideHash, at: new Date().toISOString() } };
+  writeFileSync(file, JSON.stringify(out, null, 1) + '\n');
+  writeFileSync(join(o.out, 'paid-arms.md'), paidMarkdown({ bridge: doc.bridge, snapshot: { commit: doc.snapshot.commit.slice(0, 12), simHash: doc.snapshot.simHash, decideHash: doc.snapshot.decideHash, dirty: doc.snapshot.dirty.length, reportBuiltBy: now.commit.slice(0, 12) },
+    ledgerTotal: lt.spent, capTotal: doc.capTotal, caps: doc.caps, score, paid: doc.results, wallS: doc.wallS, free, ledgerRuns: lt.runs as { run_id: string; spent: number }[], attempt: doc.settings?.attempt ?? 1, notes: o.notes }));
+  console.log(`rewrote ${file} and .md from the stored world results; ledger total $${lt.spent.toFixed(4)}`);
 }
 
 function planMarkdown(perWorld: { runId: string; complete: boolean; calls: number; batches: number; tokensPerCall: number | null; estDollars: number; capUsed: number; proposedCap: number; projectedRealWallMin: number }[], proposed: { caps: Record<string, number>; factor: number | null }, o: PaidOpts): string {
@@ -382,6 +402,12 @@ if (process.argv[1]?.endsWith('jev-test.ts')) {
     mkdirSync(out, { recursive: true });
     writeFileSync(join(out, 'calibration.json'), JSON.stringify(res, null, 1) + '\n');
     console.log(JSON.stringify(res, null, 1));
+    process.exit(0);
+  }
+  if (has('rescore')) {
+    // notes are read from a file, one per line (attempt history, deviations)
+    const nf = flag('notes', '');
+    rescorePaid({ out, repo: resolve('.'), notes: nf ? readFileSync(nf, 'utf8').split('\n').map(l => l.trim()).filter(Boolean) : [] });
     process.exit(0);
   }
   if (has('kill')) {

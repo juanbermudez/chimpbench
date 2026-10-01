@@ -58,7 +58,7 @@ export function splitBudget(total: number, worlds: World1[], est?: Record<string
   return { caps, factor: hasEst ? total / W : null };
 }
 
-export interface FreeDoc { summary: { perArm: Record<string, { perSeed: { seed: number; D: number }[]; hungerAllAdults: { median: number }; hunger: Record<string, { median: number }> }> }; seedInfo: { seed: number; burnInHash: string }[] }
+export interface FreeDoc { summary: { perArm: Record<string, { perSeed: { seed: number; D: number; truth?: Record<string, number> }[]; meanD?: number; hungerAllAdults: { median: number }; hunger: Record<string, { median: number }>; callsPerChimpDay?: number; policyDecisionsPerChimpDay?: number }> }; seedInfo: { seed: number; burnInHash: string }[] }
 
 const median = (a: number[]) => { const s = [...a].sort((x, y) => x - y); if (!s.length) return NaN; const m = (s.length - 1) / 2; return (s[Math.floor(m)] + s[Math.ceil(m)]) / 2; };
 const mean = (a: number[]) => a.length ? a.reduce((p, q) => p + q, 0) / a.length : NaN;
@@ -116,7 +116,8 @@ export function scorePaid(paid: PaidResult[], free: FreeDoc, B: Record<string, B
 
 const f = (v: unknown, d = 3) => typeof v === 'number' && Number.isFinite(v) ? v.toFixed(d) : '—';
 
-export function paidMarkdown(doc: { bridge: Bridge; snapshot: Record<string, unknown>; ledgerTotal: number | null; capTotal: number; caps: Record<string, number>; score: ReturnType<typeof scorePaid>; paid: PaidResult[]; wallS: number }): string {
+export function paidMarkdown(doc: { bridge: Bridge; snapshot: Record<string, unknown>; ledgerTotal: number | null; capTotal: number; caps: Record<string, number>; score: ReturnType<typeof scorePaid>; paid: PaidResult[]; wallS: number;
+  free?: FreeDoc; ledgerRuns?: { run_id: string; spent: number }[]; attempt?: number; notes?: string[] }): string {
   const o: string[] = [];
   const A = doc.score.arms as Record<string, any>;
   o.push(`# Jev decisive test: paid arms${doc.bridge === 'worker' ? '' : ` (DRY RUN against the fake server, bridge ${doc.bridge}; no paid call)`}`, '');
@@ -134,6 +135,25 @@ export function paidMarkdown(doc: { bridge: Bridge; snapshot: Record<string, unk
   if (A.J2s?.tv) o.push(`- **J2s check:** ${A.J2s.tv.conclusion} (${A.J2s.tv.matchedStates} matched states, mean TV ${f(A.J2s.tv.meanTV)}, median ${f(A.J2s.tv.medianTV)}).`);
   o.push('', '## Rows (seed-mean truth distance, complete worlds)', '', `| Row | ${Object.keys(A).join(' | ')} |`, `| --- | ${Object.keys(A).map(() => '---').join(' | ')} |`);
   for (const r of ENDPOINT_ROWS) { const k = rowKey(r); o.push(`| ${k} | ${Object.values(A).map((a: any) => f(mean(a.perSeed.filter((s: any) => s.complete).map((s: any) => s.distances[k])))).join(' | ')} |`); }
+  if (doc.free) {
+    // truth values (seed means) beside the free arms, with hunger and decision counts
+    const F = doc.free.summary.perArm, freeArms = ['R', 'RG', 'U', 'X'].filter(a => F[a]);
+    const paidVal = (a: any, k: string) => mean(a.perSeed.filter((s: any) => s.complete && s.truth).map((s: any) => s.truth[k]));
+    o.push('', '## Truth values (seed means; lactating females excluded) beside the free arms', '', `| Row | ${[...freeArms, ...Object.keys(A)].join(' | ')} |`, `| --- | ${[...freeArms, ...Object.keys(A)].map(() => '---').join(' | ')} |`);
+    for (const r of ENDPOINT_ROWS) { const k = rowKey(r); o.push(`| ${k} (${r.label}) | ${[...freeArms.map(a => f(mean(F[a].perSeed.map(s => s.truth?.[k] ?? NaN)))), ...Object.values(A).map((a: any) => f(paidVal(a, k)))].join(' | ')} |`); }
+    o.push(`| **mean D** | ${[...freeArms.map(a => f(F[a].meanD ?? mean(F[a].perSeed.map(s => s.D)))), ...Object.values(A).map((a: any) => f(a.meanD))].join(' | ')} |`);
+    o.push(`| median adult hunger | ${[...freeArms.map(a => f(F[a].hungerAllAdults.median, 2)), ...Object.values(A).map((a: any) => f(a.hunger.medianAllAdults, 2))].join(' | ')} |`);
+    o.push(`| median hunger, lactating females | ${[...freeArms.map(a => f(F[a].hunger.lactating?.median, 2)), ...Object.values(A).map((a: any) => f(a.hunger.medianLactating, 2))].join(' | ')} |`);
+    const perCD = (arm: string, g: (r: NonNullable<PaidResult['result']>) => number) => { const w = doc.paid.filter(p => p.arm === arm && p.complete && p.result); return w.length ? w.reduce((x, p) => x + g(p.result!), 0) / w.reduce((x, p) => x + p.result!.chimpDays, 0) : NaN; };
+    o.push(`| calls (vocal) per chimp-day | ${[...freeArms.map(a => f(F[a].callsPerChimpDay, 1)), ...Object.keys(A).map(a => f(perCD(a, r => Object.values(r.calls).reduce((x, y) => x + y, 0)), 1))].join(' | ')} |`);
+    o.push(`| policy decisions per chimp-day | ${[...freeArms.map(a => f(F[a].policyDecisionsPerChimpDay, 1)), ...Object.keys(A).map(a => f(perCD(a, r => r.decisions), 1))].join(' | ')} |`);
+  }
+  if (doc.ledgerRuns?.length) {
+    const cur = (id: string) => (doc.attempt ?? 1) > 1 ? id.includes(`/a${doc.attempt}/`) : !/\/a\d+\//.test(id);
+    const here = doc.ledgerRuns.filter(r => cur(r.run_id)).reduce((a, r) => a + r.spent, 0), before = doc.ledgerRuns.filter(r => !cur(r.run_id)).reduce((a, r) => a + r.spent, 0);
+    o.push('', '## Spend', '', `Ledger total **$${(here + before).toFixed(4)}** of the $${doc.capTotal.toFixed(2)} hard cap: this attempt $${here.toFixed(4)}${before > 0 ? `, earlier aborted attempt(s) $${before.toFixed(4)} (no result of theirs is used)` : ''}.`);
+  }
+  if (doc.notes?.length) o.push('', '## Notes', '', ...doc.notes.map(n => `- ${n}`));
   o.push('', `Rules: ${JSON.stringify(doc.score.rules)}`, '');
   return o.join('\n');
 }
