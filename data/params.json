@@ -10719,7 +10719,7 @@
    "clock": "none",
    "file": "src/sim/candidates.ts",
    "id": "joinHooW",
-   "value": 0.75,
+   "value": 0.094,
    "units": "score",
    "range": [
     0,
@@ -10731,7 +10731,7 @@
    ],
    "evidence": "M",
    "symbol": "P.joinHooW",
-   "notes": "Stage C13e: added to the join value when a travel hoo was heard from the leader. Fitted (the stage's one fitted parameter) so that hooed initiations recruit at least one companion within 5 min in 71.4% of cases [gruberZuberbuhler2013]; bisection on development seeds 48, 7, 21 (pre-registered). 0.75 is the bracket midpoint before the fit."
+   "notes": "Stage C13e: added to the join value when a travel hoo was heard from the leader. Fitted (the stage's one fitted parameter) so that hooed initiations recruit at least one companion within 5 min in 71.4% of cases [gruberZuberbuhler2013]: bisection on [0, 1.5], 6 steps, development seeds 48, 7, 21 (180-day burn-in + 30 days), pooled rate 0.702 at 0.094 (scripts/c13e-fit.ts; trail 0.75 -> 0.946, 0.375 -> 0.854, 0.188 -> 0.766, 0.094 -> 0.702, 0.141 -> 0.745, 0.118 -> 0.736). Only the hooed rate was read."
   },
   {
    "id": "joinMaleW",

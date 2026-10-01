@@ -2,7 +2,7 @@
 /* eslint-disable */
 export const REGISTRY_VERSION = 1;
 /** Content hash of every live default, hard range, profile value and integer flag. Stored with each world. */
-export const REGISTRY_HASH = '7131d6cf55b10f16';
+export const REGISTRY_HASH = '165f717235c71d8d';
 
 /** Registry defaults (the compressed profile). */
 export const DEFAULTS = {
@@ -454,7 +454,7 @@ export const DEFAULTS = {
   joinCallMinM: 8,
   joinCallStopM: 6,
   joinChoice: 0,
-  joinHooW: 0.75,
+  joinHooW: 0.094,
   joinMaleW: 0,
   joinRankW: 0.15,
   joinSocialInPartyF: 0.4,
