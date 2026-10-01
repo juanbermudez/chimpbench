@@ -34,7 +34,7 @@ Sources are in docs/research.md ("Food landscape: tree size, crop size and patch
 - Standing ripe crop: 1,010 units, or 9,200 chimp-hours of feeding. The 49 chimps eat about 2–3% of it per day.
 - Crop per fruiting crown: median 0.47 units, 90th percentile 0.79, 99th 1.14. The largest 10% hold 19%.
 - A median crown is 4.3 chimp-hours of feeding. **That is one wild party visit (3.3–6.5 chimp-hours).** It reads as "one to two meals" only because a model meal is 2.3 h of feeding in one crown (hunger 0.55 ÷ 0.24 per hour), against a wild visit of 27–46 min.
-- Feeding trees per day 5.3 (T-FOOD-4); feeding is 43% of daylight. So a crown visit lasts about 55 min (derived), against 27–46.
+- Feeding trees per day 5.3 (T-FOOD-4); feeding is 43% of daylight. *Corrected by measurement (docs/staging/moving-together-prereg.md §1): a crown visit lasts 39 min (median) and removes 13% of a day's need, both inside the field values. The "2.3 h meal" above is the time to sate from hunger 0.55, which animals rarely do in one crown (6–8% of visits end sated).*
 - Feeders per occupied crown 1.2; T-FOOD-11 202 m per fruiting tree (band 60–160).
 
 ## 3. What that means for the brief

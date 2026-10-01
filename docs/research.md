@@ -700,6 +700,13 @@ Read for the food-landscape design ([staging/food-landscape-prereg.md](staging/f
 - **A party visit, in feeding time** (derived from [potts2011]): 7.29–8.39 feeders × 27.0–46.2 min of patch residency = 3.3–6.5 chimp-hours of feeding per visit, in patches of 63–67 cm DBH. That patch size is the median of the trees in fruit in the Ngogo record (68 cm), so feeding parties of 7–8 use ordinary fruiting trees, not only giants.
 - **Density of fruiting crowns** (derived from [janmaat2016] and [potts2020]): about 6–9.8 feeding-size food trees per ha × 8.7–8.9% in fruit = 0.5–0.9 fruiting crowns per ha. A fruiting food tree every 97 m of transect against a large ripe crop every 10–21 km makes large ripe crops about 0.5–1% of the fruiting trees met.
 
+- **Travel initiations: what counts, who is alone, and persistence** [gruberZuberbuhler2013] (full text, PLoS ONE page, read 1 October 2026) [H; persistence M, 9 cases].
+  - A travel event: the end of a non-locomotion activity, then locomotion of at least 10 m, ending when a non-locomotion activity starts. 456 events (275 with a travel hoo, 181 silent), 33 focal animals, Sonso community of 74.
+  - Recruitment succeeded "if at least one individual followed the initiator": a travel party is two or more, the initiator included.
+  - 51 of the 181 silent events were excluded because the focal was alone (32) or alone with dependent offspring (19). So at least 51 of 456 travel events (11%) were made by a solitary animal; the text gives no count for vocal events.
+  - Persistence: in 9 cases the initiator failed to recruit and re-launched its effort shortly afterwards (mean 3.80 min, range 0–13 min).
+  - The text read does not say how often an initiator left alone after a failed attempt.
+
 **Sources:**
 
 - *new* chapman1992: Chapman CA, Chapman LJ, Wrangham R, Hunt K, Gebo D, Gardner L 1992. Estimators of fruit abundance of tropical trees. *Biotropica* 24(4):527–531. [doi:10.2307/2389015](https://doi.org/10.2307/2389015) (indexed summary; bibliographic record checked against Crossref on 1 October 2026, which lists the first page only; the page range is from memory).

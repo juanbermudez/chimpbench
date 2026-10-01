@@ -1,0 +1,92 @@
+# Moving together: measurement, design and pre-registration
+
+Status: design for the integrator, 1 October 2026. Nothing is implemented. Measurements are truth probes on `main` 21592c1 behaviour: field profile, seeds 48 and 7, 30-day burn-in then 20 days, 2 processes (`artifacts/validation/party/visit-probe.ts`, `visits-48.json`, `visits-7.json`). Animals of 12 y or more are the subjects and the companions, so a mother with her juvenile is not counted as a party.
+
+## 1. The model against the field pattern
+
+| Quantity | Model (seed 48 / 7) | Field | Source |
+| --- | --- | --- | --- |
+| Feeding bout per crown visit, median | 38.8 / 38.5 min (middle half 30–55) | 27–46 min | potts2011 |
+| Crown visits per adult per day | 5.5 / 5.3 | 4–15 feeding trees per day (Taï); 7–11 if Kanyawara's 309 min of feeding were all crown visits (derived) | T-FOOD-4 band; uwimbabazi2019 |
+| Share of a day's intake per visit | 13% (hunger 0.13 of about 1.0 gained per day) | 12–20% (27–46 min × 10.7 kcal/min of 2,500 kcal; derived) | uwimbabazi2019 |
+| Visit ends because the animal is sated | 8% / 6% | — | — |
+| Visit ends because the crown is empty | 1% / 2% | — | — |
+| Crop left when leaving, median | 0.43 / 0.39 units (a median crown holds 0.47) | — | — |
+| Arrivals with a companion (another arrival at the crown within 5 min) | 25% / 25% | not reported; feeding parties of 7.3–8.4 | potts2011 |
+| Visits alone throughout | 66% / 64% | — | — |
+| Departures with a co-feeder present | 21% / 23% | — | — |
+| of those, a companion leaves within 5 min | 51% / 53% | not reported | — |
+| Pairs leaving together that feed in the same next crown | 35% / 42% | not reported | — |
+| Time with no companion (animals of 12 y or more) | 60% / 59% | females alone 15–45%, males less | T-PTY-4 band (doran1997, lehmannBoesch2008, wakefield2008) |
+| Travel events made by a solitary animal | not measured as such; 77–79% of crown departures have no co-feeder | at least 11% (51 of 456) | gruberZuberbuhler2013 |
+| A pair still in one party after 60 min | 55% / 60% | not reported | — |
+| A solitary animal in company 60 min later | 20% / 20% | not reported | — |
+| Companions in the party at 05:00 (in nests) | 0.73 / 0.76, the same as by day | — | — |
+
+- **Correction to docs/staging/food-landscape-prereg.md §2.** I derived a crown visit of "about 55 min" and called a model meal "2.3 h in one crown". Measured, a visit is 39 min and removes 13% of a day's need. Bout length and intake per visit already match the field.
+- Party size does not rise with community size: an adult's party holds 2.0–2.1 animals in the community of 21–22, 2.1–2.2 in the one of 15 and 2.2–2.4 in the one of 12. Parties are mostly a mother and her dependants, or a chance pair.
+
+## 2. Why the model differs
+
+- **Not the satiation rule.** 6–8% of visits end sated.
+- **Not the intake rate.** A visit supplies 13% of the day, inside the field's 12–20%.
+- **Not intention holding.** It gives the 39-min bout, which is the field's.
+- **Not crop size.** Crowns are left 85–90% full. No party is there to empty them.
+- **Leaving is one animal's decision, and it is final.**
+  - An initiator leaves whether or not anyone follows. Each companion in range joins with probability about 0.46 (science agent).
+  - C13e fitted the share of hooed initiations that recruit at least one follower to the field's 71%. With one companion present, that is a per-companion probability near 0.5–0.7, and every failure splits the pair.
+  - In the field a failed initiation is not the end. Initiators wait (54–58% of initiations), check back (26–39%), and when unsuccessful re-launch the effort after a mean of 3.8 min (range 0–13; 9 cases) (gruberZuberbuhler2013). A travel party is defined there as two or more.
+- **The balance of rates explains the level.** Accompanied animals are alone an hour later in 26–28% of cases; solitary ones find company in 20%. That balance gives 57% alone, as measured.
+- Nothing gathers animals in the evening either: nest groups are no larger than day parties.
+
+## 3. The change (not implemented)
+
+`departPersist` (field profile 1, compressed 0; 0 is today's model, hash-identical).
+
+- **Audience:** own-community animals of 12 y or more within the party link (50 m), awake, other than the initiator's dependants. Design definition.
+- **A failed attempt is abandoned.** An initiator with an audience starts its own trip to a tree as today (travel hoo, departure cue, the wait for a joiner). If after `departCheckMin` (1 min; design, one round of companions' decisions) no audience member is travelling to that tree or following it, the initiator gives the attempt up and stays.
+- **It re-launches.** Its own trips to trees are off its menu for `departRetryMin` = 3.8 min ([M] gruberZuberbuhler2013, mean of 9 cases), then it may try again, to any tree.
+- **It leaves alone in the end.** Once `departPersistMaxMin` = 13 min ([M] the upper end of the range in the same 9 cases) have passed since the first failed attempt, the next attempt is not abandoned.
+- **Unchanged:** an animal with no audience; joining and following; trips to water; every join value. So the C13e fitted row (71% of hooed initiations recruit within 5 min) should not move.
+- **Design assumptions, labelled:** that a failed attempt is abandoned at all (the source reports re-launching but not how often an initiator left alone); the audience definition; the 1-min check.
+- **State:** two lazy keys on `chimp.sim` (first failed attempt, next allowed attempt), declared optional.
+- Expected arithmetic for a pair: about three attempts fit in 13 min; at 0.46 per attempt a joint departure follows in about 85% of cases, against 46% now.
+
+Not proposed: a cost of staying alone in the join value. It would raise recruitment per initiation above the sourced 71%.
+
+## 4. Pre-registration
+
+**Fitted:** nothing. **Untuned:** everything; the two times are sourced and the check window is design.
+
+**Checks.** Field profile, seeds 48 and 7, on against off, at most 2 processes.
+- 30-day burn-in + 60 days: observer rows and the visit probe. About 5 minutes.
+- 30-day burn-in + 180 days (6 months), only if the guard passes: T-PTY-2 and T-FOOD-6, which 60 days cannot resolve. About 10 minutes.
+
+**Guard (merge gate).**
+- G1: switch off reproduces the field model (hash) and the compressed goldens do not move.
+- G2: T-ACT-1 (0.33–0.5), T-ACT-2 (0.12–0.25), T-ACT-3, T-ACT-4 and T-RNG-4 (1.5–3.5 km) stay in band with the change on.
+- G3: adult and lactating median hunger at most 0.03 above the off arm; no starvation death the off arm lacks.
+- G4: the share of crown departures with a co-feeder present in which a companion leaves within 5 min is higher on than off, each seed.
+- G5: hooed initiations that recruit at least one companion within 5 min stay within 0.71 ± 0.05 (the C13e fitted row).
+
+**Predictions (pass or fail reported; not a gate).**
+
+| Quantity | Off (as measured) | Predicted on | Role |
+| --- | --- | --- | --- |
+| Bout per crown visit, median | 39 min | 36–44 min | untuned |
+| Crown visits per adult per day | 5.3–5.5 | 4.8–5.5 | untuned |
+| Joint departure, given a co-feeder | 0.51–0.53 | 0.70–0.90 | untuned |
+| A pair still together after 60 min | 0.55–0.60 | 0.70–0.85 | untuned |
+| Time with no companion | 0.59–0.60 | 0.35–0.50 | untuned |
+| Feeders per occupied crown | 1.2 | 1.3–1.6 | untuned |
+| T-PTY-1 | 2.5–2.7 | 3.0–3.8 | fitted row, not tuned here |
+| T-PTY-4, female time alone | 0.59 | 0.40–0.52 | held out, untuned |
+| T-RNG-4, day range | 2.4–2.6 km | 2.2–2.7 km | fitted row, guard |
+| T-ACT-1 / T-ACT-2 | 0.42 / 0.19 | 0.40–0.43 / 0.17–0.20 | fitted rows, guard |
+| Adult median hunger | 0.32–0.36 | +0.00 to +0.03 | guard |
+| T-FOOD-6, revisit interval (6-month run) | 15.6 d | unchanged, 13–18 d: nothing here acts on revisits | held out, untuned |
+| T-PTY-2, patch R² (6-month run) | 0.016 | 0.02–0.08: co-feeding becomes common enough for crowding to matter a little | held out, untuned |
+
+**What these runs cannot resolve.** T-RNG-1 (annual range), T-PTY-3 if fewer than 5 periphery follows occur, demography, and whether nest groups matter.
+
+**If T-PTY-1 stays below 3.** No re-fit is pre-registered. The next lever by the measurements is fusion (a solitary animal finds company in only 20% of hours; nothing gathers animals at the nest), which needs its own design.
