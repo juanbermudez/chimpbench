@@ -17,9 +17,10 @@ const adult = (w: World, sex: 'female' | 'male') => w.chimps.find(c => c.alive &
 /** Energy held in the gut, in the ledger's units: non-fibre energy plus fibre at its fermentation yield, in both pools. */
 const gutEnergy = (L: { gut: number; fib?: number; hind?: number }, yieldKcal: number) => L.gut + yieldKcal * ((L.fib ?? 0) + (L.hind ?? 0));
 
-test('energy is conserved for every individual over a day: in − out − passed out = Δgut + Δreserves (both profiles)', () => {
-  for (const profile of ['compressed', 'field'] as const) {
-    const w = createWorld(48, { profile, params: ON }), P = paramsOf(w), Y = P.digestaFermentKcalPerG;
+test('energy is conserved for every individual over a day: in − out − passed out = Δgut + Δreserves (both profiles, with and without E1c)', () => {
+  const E1C: Overrides = { ...ON, ledgerGrowSurplus: 1, ledgerNightNurse: 1, ledgerInfantIntake: 1 };
+  for (const [profile, params] of [['compressed', ON], ['field', ON], ['field', E1C]] as const) {
+    const w = createWorld(48, { profile, params }), P = paramsOf(w), Y = P.digestaFermentKcalPerG;
     run(w, 600);
     const before = new Map(w.chimps.filter(c => c.alive).map(c => [c.id, { ...ix(c).en! }]));
     run(w, DAY);

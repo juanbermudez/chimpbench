@@ -5,15 +5,16 @@ import { addEvent, emitCall, endInteraction, episode, findInteraction, flashInte
 import { nestPoint } from './generation';
 import { addBond, dominates, eloUpdate, rankedMale } from './hierarchy';
 import { paramsOf, type Params } from './params';
-import { eat, fallbackKcalPerH, fruitKcalPerUnit, gutRoom, ledgerOn, nurseTick, sharePlant } from './energy';
+import { eat, fallbackKcalPerH, fruitKcalPerUnit, gutRoom, intakeSize, ledgerOn, nurseTick, sharePlant } from './energy';
 import { snareIntake } from './snares';
 import { lightArousal } from './rhythm';
 import { doTransfer, recordCopulation } from './reproduction';
 import { IMPULSE_HUNT, forget } from './perception';
 import { clamp, hash01, random } from './rng';
 import type { ParamId } from './params.gen';
-import { TICK_HOURS, TICK_SECONDS, byIdIn, huntOf, index, isTreeId, ix, simOf } from './state';
+import { NEVER, TICK_HOURS, TICK_SECONDS, byIdIn, huntOf, index, isTreeId, ix, simOf } from './state';
 import { resolveHunt } from './ecology';
+import { endoShared } from './endocrine';
 import { eatFruit, forageYield, fruitAt } from './phenology';
 import { bestFallbackNear, eatFallback, fallbackOn, fallbackStock, fallbackValue } from './fallback';
 import { recordAggression, recordConsolation, recordGrooming, recordMating, recordMeat, recordReconciliation, recordSupport } from './relations';
@@ -188,6 +189,9 @@ export function startAction(world: World, c: Chimp, cand: Candidate, source: Dec
   c.action = cand.action; c.targetId = cand.targetId; c.reason = cand.reason;
   c.decisionSource = source; c.decisionVersion++; c.awaitingDecisionSince = null;
   x.intr = ''; x.finished = false; x.v = meta.v; x.aux = meta.aux;
+  // stage E4a iteration 1 (endoRedirect): a defeat is considered once, at the loser's first choice after it, whatever he
+  // chooses (redirection is the reaction to the defeat; docs/staging/e4a-prereg.md §7). The stress load scales the score.
+  if (x.lostAt > NEVER && paramsOf(world).endoRedirect === 1) x.lostAt = NEVER;
   x.actEnd = world.time + boutHours(world, c, cand.action);
   // stage C7a (field): a trip to a remembered tree is not re-decided on the way; the bout lasts the walk plus 5 min
   if (cand.action === 'travel' && meta.v === V.TREE && paramsOf(world).travelCommit === 1) {
@@ -658,6 +662,7 @@ export function executeAction(world: World, c: Chimp): void {
           episode(world, o, 'food', `Got meat from ${c.name}`, c.id);
         }
         addBond(c, o.id, 0.03); addBond(o, c.id, 0.05);
+        if (P.endoStates === 1) endoShared(c, o, P); // stage E4a: sharing raises the affiliation state of both
         flashInteraction(world, 'share', c, o.id, [c.id, o.id], 0.3);
         episode(world, c, 'food', `Shared ${x.v === V.PLANT ? 'food' : 'meat'} with ${o.name}`, o.id);
         finish(world, c);
@@ -749,7 +754,7 @@ export function executeAction(world: World, c: Chimp): void {
       c.thirst = clamp(c.thirst - 0.4 * TICK_HOURS);
       c.social = clamp(c.social + 0.2 * TICK_HOURS);
       m.energy = clamp(m.energy - 0.02 * TICK_HOURS);
-      if (c.hunger < 0.08) finish(world, c);
+      if (c.hunger < NURSE_DONE) finish(world, c);
       return;
     }
     case 'patrol': {
@@ -780,6 +785,9 @@ export function executeAction(world: World, c: Chimp): void {
   }
 }
 
+/** Hunger readout below which a nursing bout ends (lint-ok: the nurse act's existing literal, moved here unchanged). */
+const NURSE_DONE = 0.08;
+
 function nestTick(world: World, c: Chimp): void {
   const P = paramsOf(world), WALK = P.walkMps;
   const x = ix(c);
@@ -789,7 +797,13 @@ function nestTick(world: World, c: Chimp): void {
     const m = dependentOn(world, c);
     if (!m) return finish(world, c);
     if (m.nest && (!c.nest || c.nest.treeId !== m.nest.treeId)) c.nest = { treeId: m.nest.treeId, position: [m.nest.position[0], m.nest.position[1], m.nest.position[2]] };
-    if (!isCarried(c, m)) moveTo(world, c, m.position[0], m.position[1], m.position[2], WALK, 0.4);
+    const held = isCarried(c, m);
+    if (!held) moveTo(world, c, m.position[0], m.position[1], m.position[2], WALK, 0.4);
+    // stage E1c (ledgerNightNurse): an infant in its mother's nest suckles while hungry, on the day option's eligibility
+    // (weaning + 0.3 y) and within the nurse act's reach (1.2 m), with no weaning refusal at night. Evidence: khayer2025,
+    // nest sharing until weaning [M]; mizuno2006, night suckling of captive newborns [L]; no refusal is a stylization (lint-ok: existing values)
+    if (P.ledgerNightNurse === 1 && m.action === 'nest' && m.id === c.motherId && c.age < x.weanAge + 0.3 && c.hunger >= NURSE_DONE
+      && (held || hd(c, m) <= 1.2) && ledgerOn(P)) nurseTick(c, m, P);
     return;
   }
   const t = idx.treeById.get(c.targetId);
@@ -837,7 +851,8 @@ function forageTick(world: World, c: Chimp): void {
     }
     if (x.gx !== 0 || x.gz !== 0) moveTo(world, c, x.gx, 0, x.gz, WALK * 0.3, 0.2);
     // leaves, pith and herbs: lower-quality fallback foods [H]; the field profile's forage field varies by habitat and season
-    const self = selfFeed(c, P) * snareIntake(c, P);
+    // stage E1c (ledgerInfantIntake): intake capacity by body size replaces C8's ramp under the ledger
+    const self = (P.ledgerInfantIntake === 1 && ledgerOn(P) ? intakeSize(c, P) : selfFeed(c, P)) * snareIntake(c, P);
     if (ledgerOn(P)) eat(c, P, fallbackKcalPerH(P) * TICK_HOURS * (P.patchEcology === 1 ? forageYield(world, c.position[0], c.position[2]) : 1) * self, 'fallback');
     else if (P.patchEcology === 1) c.hunger = clamp(c.hunger - P.fallbackHungerPerH * TICK_HOURS * forageYield(world, c.position[0], c.position[2]) * self);
     else c.hunger = clamp(c.hunger - P.fallbackHungerPerH * TICK_HOURS * self);
@@ -865,8 +880,11 @@ function forageTick(world: World, c: Chimp): void {
   }
   // feeding: up to fruitIntakePerH (0.055 fruit units/h, scaled by foraging skill), x4.4 = up to ~0.24 hunger/h, so chimps feed about half the day (design; field feeding shares are 33-50% of daytime, docs/realism-design.md T-ACT-1)
   // stage E1 (energyLedger): the same fruit intake, worth kcal by food type, and no more than the gut can take
+  // stage E1c (ledgerInfantIntake): the young factor and C8's ramp give way to intake capacity by body size
   const led = ledgerOn(P), fig = t.common === 'fig', kcalPerFruit = led ? fruitKcalPerUnit(P, fig) : 0;
-  let want = P.fruitIntakePerH * TICK_HOURS * (P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging) * (c.age < 5 ? P.fruitIntakeYoungFactor : 1) * selfFeed(c, P) * snareIntake(c, P);
+  let want = led && P.ledgerInfantIntake === 1
+    ? P.fruitIntakePerH * TICK_HOURS * (P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging) * intakeSize(c, P) * snareIntake(c, P)
+    : P.fruitIntakePerH * TICK_HOURS * (P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging) * (c.age < 5 ? P.fruitIntakeYoungFactor : 1) * selfFeed(c, P) * snareIntake(c, P);
   if (led) want = Math.min(want, gutRoom(c, P, fig ? 'fig' : 'drupe') / kcalPerFruit);
   let intake: number;
   if (lazy) intake = eatFruit(world, t, want);
@@ -900,7 +918,8 @@ function fallbackTick(world: World, c: Chimp): void {
   }
   if (x.gx !== 0 || x.gz !== 0) moveTo(world, c, x.gx, 0, x.gz, P.walkMps * 0.3, 0.2);
   const got = eatFallback(world, c, TICK_HOURS);
-  if (ledgerOn(P)) eat(c, P, got, 'fallback'); else c.hunger = clamp(c.hunger - got);
+  if (ledgerOn(P)) eat(c, P, P.ledgerInfantIntake === 1 ? got * intakeSize(c, P) : got, 'fallback'); // E1c: by body size
+  else c.hunger = clamp(c.hunger - got);
 }
 
 function pairTick(world: World, c: Chimp, o: Chimp | undefined): void {

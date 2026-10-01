@@ -1,0 +1,109 @@
+import type { Chimp, World } from '../types';
+import { bond, isAdultMale, maternalKin } from './hierarchy';
+import { paramsOf, type Params } from './params';
+import { SLOW_EVERY, SLOW_HOURS, TICK_HOURS, index, ix, type ChimpX } from './state';
+
+// Stage E4a (docs/staging/e4a-prereg.md): three slow internal states, each matched to a hormone field teams measure in
+// urine. Rare acts then follow from an animal's standing state instead of a probability roll that opens an option.
+//   stress load (cortisol-like)        chimp.stress itself: one stress notion, read by every score term that read it before
+//   competitive arousal (testosterone) chimp.sim.arousal, adult males only
+//   affiliation (oxytocin-like)        chimp.sim.affil
+// Each is a leaky integrator in 0..1, S += (target − S) × (1 − exp(−dt/τ)), stepped every slow step (5 eco-min) from the
+// animal's last perception, plus bounded kicks S += k × (1 − S) at events. Events are read from the timestamps the
+// simulation already keeps (who was charged, who lost, who reconciled), so nothing else has to call in here except food
+// sharing, which leaves no timestamp. No randomness, no allocation. Sources and tags: the registry notes (endo*).
+//
+// Not wired on purpose, so they stay tests of the mechanism: rank, hierarchy instability, time of day, patrols.
+
+/** An event stamped at eco-hour `t` happened in the slow step that ended before tick `tick` (each event counts once). */
+function since(t: number, tick: number): boolean {
+  const e = Math.round(t / TICK_HOURS);
+  return e >= tick - SLOW_EVERY && e < tick;
+}
+
+/** No parity record is kept: a female counts as parous from endoParousAgeY, or once a birth has set her amenorrhoea. */
+function parous(f: Chimp, P: Params): boolean { return f.age >= P.endoParousAgeY || ix(f).amenUntil > 0; }
+
+/** The one call from needs() (life.ts): runs the states on slow-step ticks only. `floor` is the resting stress level needs() used before. */
+export function endoNeeds(world: World, c: Chimp, x: ChimpX, sleeping: boolean, floor: number): void {
+  if (world.tick % SLOW_EVERY === 0) endoStep(world, c, x, sleeping, paramsOf(world), floor);
+}
+
+/** One slow step of the three states of `c`. Deterministic; reads the last perception snapshot (x.seen). */
+export function endoStep(world: World, c: Chimp, x: ChimpX, sleeping: boolean, P: Params, floor: number): void {
+  const tick = world.tick, byId = index(world).byId;
+  const male = isAdultMale(c);
+  // context in view: the closest-rank adult male, the most swollen parous female, a partner in grooming contact
+  let rival = 0, oestrus = 0, groom = -1;
+  if (!sleeping) {
+    const seen = x.seen;
+    for (let i = 0; i < seen.length; i++) {
+      const o = byId.get(seen[i]);
+      if (!o || !o.alive || o.troopId !== c.troopId) continue;
+      if (o.action === 'groom' && o.targetId === c.id && ix(o).phase === 1) { const b = bond(c, o); if (b > groom) groom = b; }
+      if (!male) continue;
+      if (isAdultMale(o)) { const cl = 1 - Math.abs(o.elo - c.elo) / P.escalateEloGap; if (cl > rival) rival = cl; }
+      else if (o.sex === 'female' && o.swelling > oestrus && parous(o, P) &&!maternalKin(c, o)) oestrus = o.swelling;
+    }
+    if (c.action === 'groom' && x.phase === 1) { const o = byId.get(c.targetId); if (o && o.alive) { const b = bond(c, o); if (b > groom) groom = b; } }
+  }
+
+  // affiliation: grooming contact pulls it toward the bond with the partner; repair after conflict kicks it
+  let f = x.affil ?? 0;
+  if (since(x.recon, tick)) f += P.endoAffilRepairKick * (1 - f);
+  if (since(x.consoleAt, tick) || since(x.consoledAt, tick)) f += P.endoAffilRepairKick * (1 - f);
+  f += ((groom > 0 ? groom : 0) - f) * (1 - Math.exp(-SLOW_HOURS / P.endoAffilTauH));
+  x.affil = f < 1e-6 ? 0 : f > 1 ? 1 : f;
+
+  // stress load: energy deficit and strangers set the level it settles at; aggression given or received kicks it;
+  // affiliation speeds the way down. Losses, wins, grooming, reconciliation and consolation act on chimp.stress where
+  // they happen, as before.
+  let s = c.stress;
+  if (since(x.victimAt, tick)) s += P.endoStressAggrKick * (1 - s);
+  if (since(x.lastAgg, tick)) s += P.endoStressAggrKick * (1 - s);
+  if (since(x.heardAt, tick)) s += P.endoStressStrangerW * (1 - s);
+  const deficit = (c.hunger + (1 - x.cond)) / 2;
+  let target = floor + P.endoStressDeficitW * deficit + (!sleeping && x.strangers > 0 ? P.endoStressStrangerW : 0);
+  if (target > 1) target = 1;
+  s += (target - s) * (1 - Math.exp(-SLOW_HOURS * (s > target ? 1 + P.endoAffilBufferK * x.affil : 1) / P.endoStressTauH));
+  c.stress = s < 0 ? 0 : s > 1 ? 1 : s;
+
+  // competitive arousal: a parous swollen female and a close-rank rival in view set the level; a win kicks it
+  if (male) {
+    let a = x.arousal ?? 0;
+    const lc = c.lastConflict;
+    if (lc && lc.won && since(lc.time, tick)) a += P.endoArousalWinKick * (1 - a);
+    let level = P.endoArousalOestrusW * oestrus + P.endoArousalRivalW * rival;
+    if (level > 1) level = 1;
+    a += (level - a) * (1 - Math.exp(-SLOW_HOURS / P.endoArousalTauH));
+    x.arousal = a < 1e-6 ? 0 : a > 1 ? 1 : a;
+  }
+}
+
+/** Food sharing raises affiliation in giver and receiver (execution.ts; the only event that leaves no timestamp). */
+export function endoShared(giver: Chimp, receiver: Chimp, P: Params): void {
+  const gx = ix(giver), rx = ix(receiver), g = gx.affil ?? 0, r = rx.affil ?? 0;
+  gx.affil = g + P.endoAffilShareKick * (1 - g);
+  rx.affil = r + P.endoAffilShareKick * (1 - r);
+}
+
+// --- scores (pure; candidates.ts) ---------------------------------------------------------------------------------
+// One rule for the three acts: the constant score the dice-opened option had is the ceiling, and levels in 0..1 scale it.
+
+/** Escalated attack on close-rank rival `o`: rises with arousal, own aggression and tension toward him; falls with stress and with affiliation toward him. */
+export function escalateScore(c: Chimp, o: Chimp, x: ChimpX, P: Params): number {
+  const a = x.arousal ?? 0;
+  if (a <= 0) return 0;
+  const drive = (c.personality.aggression + (x.tension[o.id] ?? 0)) / 2;
+  return P.endoEscalateScore * a * drive * (1 - c.stress) * (1 - (x.affil ?? 0) * bond(c, o));
+}
+
+/** Redirected charge at a bystander after a loss: today's redirect terms at full stress, scaled by the stress load. */
+export function redirectScore(c: Chimp, tension: number, P: Params): number {
+  return c.stress * (P.redirectBase + c.personality.aggression * P.redirectAggrW + tension * P.redirectTensionW + P.redirectStressW);
+}
+
+/** Rain display at a storm onset: arousal and boldness scale the old score. */
+export function rainScore(c: Chimp, x: ChimpX, P: Params): number {
+  return P.rainDisplayScore * (x.arousal ?? 0) * c.personality.boldness;
+}

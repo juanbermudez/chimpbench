@@ -5952,6 +5952,406 @@
    "notes": "Party centres farther apart than sight + this are skipped in encounter detection (an optimisation bound; field parties spread over hundreds of metres)."
   },
   {
+   "id": "endoAffilBufferK",
+   "group": "needs",
+   "value": 1,
+   "units": "per unit affiliation",
+   "range": [
+    0.5,
+    2
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    100
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "endoStep",
+   "file": "src/sim/endocrine.ts",
+   "notes": "Stage E4a: the stress recovery rate is (1/endoStressTauH) × (1 + this × affiliation). Direction verified (docs/research.md, Track E sources) (wittig2016 [H], full text: glucocorticoids 23% lower with a bond partner in every context); the route through the affiliation state and the size are assumed (design assumption)."
+  },
+  {
+   "id": "endoAffilRepairKick",
+   "group": "needs",
+   "value": 0.3,
+   "units": "state",
+   "range": [
+    0.15,
+    0.6
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "endoStep",
+   "file": "src/sim/endocrine.ts",
+   "notes": "Stage E4a: affiliation rises by this × (1 − affiliation) at a reconciliation (both) and a consolation (both). Direction verified (docs/research.md, Track E sources) (preis2018 [M], abstract: oxytocin higher after reconciliation and bystander affiliation than after aggression alone); the size is a design assumption."
+  },
+  {
+   "id": "endoAffilShareKick",
+   "group": "needs",
+   "value": 0.5,
+   "units": "state",
+   "range": [
+    0.25,
+    1.0
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "endoShared",
+   "file": "src/sim/endocrine.ts",
+   "notes": "Stage E4a: affiliation rises by this × (1 − affiliation) in giver and receiver when food is shared. Direction verified (docs/research.md, Track E sources) (wittig2014 [M], abstract only, n not given: oxytocin higher after food sharing than after grooming, whatever the bond); the size is a design assumption."
+  },
+  {
+   "id": "endoAffilTauH",
+   "group": "needs",
+   "value": 1,
+   "units": "h",
+   "range": [
+    0.5,
+    2
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0.01,
+    1000
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "endoStep",
+   "file": "src/sim/endocrine.ts",
+   "notes": "Stage E4a: time constant of the affiliation state (oxytocin-like). assumed (no verified time scale for urinary oxytocin: docs/research.md, Track E sources, gap 8)."
+  },
+  {
+   "id": "endoArousalOestrusW",
+   "group": "needs",
+   "value": 0.6,
+   "units": "state",
+   "range": [
+    0.3,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "endoStep",
+   "file": "src/sim/endocrine.ts",
+   "notes": "Stage E4a: target of an adult male's competitive arousal per unit swelling of the most swollen parous, unrelated female of his community in view. Direction verified (docs/research.md, Track E sources) (sobolewski2013 [M], abstract: testosterone above baseline with parous oestrous females, not nulliparous ones); the size is a design assumption. Parous = 15 y or over, or an amenorrhoea set by a birth (design proxy)."
+  },
+  {
+   "id": "endoArousalRivalW",
+   "group": "needs",
+   "value": 0.4,
+   "units": "state",
+   "range": [
+    0.2,
+    0.8
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "endoStep",
+   "file": "src/sim/endocrine.ts",
+   "notes": "Stage E4a: target of an adult male's competitive arousal per unit rank closeness (1 − |ΔElo| ÷ escalateEloGap) of the closest-rank adult male in view. assumed (challenge hypothesis; mullerWrangham2004b seen only as cited)."
+  },
+  {
+   "id": "endoArousalTauH",
+   "group": "needs",
+   "value": 6,
+   "units": "h",
+   "range": [
+    3.0,
+    12
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0.01,
+    1000
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "endoStep",
+   "file": "src/sim/endocrine.ts",
+   "notes": "Stage E4a: time constant of competitive arousal (testosterone-like). assumed (no verified constant; labelled steroid peaks in urine within 5.5 h, bahr2000 [M], one captive male)."
+  },
+  {
+   "id": "endoArousalWinKick",
+   "group": "needs",
+   "value": 0.15,
+   "units": "state",
+   "range": [
+    0.075,
+    0.3
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "endoStep",
+   "file": "src/sim/endocrine.ts",
+   "notes": "Stage E4a: an adult male's arousal rises by this × (1 − arousal) when he wins a decided conflict. assumed (winner effect; no wild chimpanzee source)."
+  },
+  {
+   "id": "endoEscalate",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.endoEscalate",
+   "file": "src/sim/perception.ts",
+   "integer": true,
+   "notes": "Stage E4a switch (docs/staging/e4a-prereg.md): no escalation impulse is drawn (escalateImpulseBase and escalateImpulseAggr are not read, world.rng is not touched). An escalated attack on a close-rank adult male is offered whenever its preconditions hold, scored endoEscalateScore × arousal × ½(aggression + tension toward him) × (1 − stress) × (1 − affiliation × bond). Needs endoStates 1. 0 = the impulse dice. Ablation switch."
+  },
+  {
+   "id": "endoEscalateScore",
+   "group": "decision",
+   "value": 1.25,
+   "units": "score",
+   "range": [
+    0.625,
+    2.5
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    -10,
+    10
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "aggression",
+   "file": "src/sim/candidates.ts",
+   "notes": "Stage E4a moved literal: the score of the escalated attack opened by an escalation impulse (unchanged at endoEscalate 0). With endoEscalate 1 it is the ceiling the states scale down."
+  },
+  {
+   "id": "endoParousAgeY",
+   "group": "needs",
+   "value": 15,
+   "units": "y",
+   "range": [
+    13,
+    16
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    60
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "parous",
+   "file": "src/sim/endocrine.ts",
+   "notes": "Stage E4a: the simulation keeps no parity record. A female counts as parous from this age, or once a birth has set her amenorrhoea (first births come at about 14–15.5 y in Kibale, as in reproduction.ts). Used only for the arousal driver endoArousalOestrusW (testosterone responds to parous oestrous females, not nulliparous ones; sobolewski2013 in docs/research.md (Track E sources))."
+  },
+  {
+   "id": "endoRainDisplay",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.endoRainDisplay",
+   "file": "src/sim/tick.ts",
+   "integer": true,
+   "notes": "Stage E4a switch (docs/staging/e4a-prereg.md): no rain-display roll (rainDisplayP is not read, world.rng is not touched). At a daytime storm onset every adult male is offered the display for impulseDurationH, once, scored rainDisplayScore × arousal × boldness. Needs endoStates 1. 0 = the 12% roll. Ablation switch."
+  },
+  {
+   "id": "endoRedirect",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.endoRedirect",
+   "file": "src/sim/conflict.ts",
+   "integer": true,
+   "notes": "Stage E4a switch (docs/staging/e4a-prereg.md): no redirect roll (redirectBaseP and redirectAggrP are not read, world.rng is not touched). After every lost conflict, until the loser next aggresses and for endoStressTauH, a charge at a dominated unrelated bystander is offered, scored stress × (redirectBase + redirectAggrW × aggression + redirectTensionW × tension + redirectStressW). Needs endoStates 1. 0 = the priming dice and the 6-minute window. Ablation switch."
+  },
+  {
+   "id": "endoStates",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.endoStates",
+   "file": "src/sim/endocrine.ts",
+   "integer": true,
+   "notes": "Stage E4a switch (docs/staging/e4a-prereg.md): three slow internal states run. chimp.stress becomes the stress load (target from energy deficit and strangers, kicks at aggression, recovery sped by affiliation, time constant endoStressTauH) in place of the fixed relaxation stressRelaxPerH; chimp.sim.arousal (adult males) and chimp.sim.affil are created. 0 = today's model, bit-identical. Ablation switch."
+  },
+  {
+   "id": "endoStressAggrKick",
+   "group": "needs",
+   "value": 0.1,
+   "units": "state",
+   "range": [
+    0.05,
+    0.2
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "endoStep",
+   "file": "src/sim/endocrine.ts",
+   "notes": "Stage E4a: stress rises by this × (1 − stress) when the animal starts a charge or an attack, or is the target of one. Direction verified (docs/research.md, Track E sources) (wittig2015 [H], full text: glucocorticoids rise after a single aggressive interaction in aggressor and victim, 112% against 85% after rest, 9 males); the size is a design assumption."
+  },
+  {
+   "id": "endoStressDeficitW",
+   "group": "needs",
+   "value": 0.3,
+   "units": "state",
+   "range": [
+    0.15,
+    0.6
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "endoStep",
+   "file": "src/sim/endocrine.ts",
+   "notes": "Stage E4a: stress target per unit energy deficit, ½ hunger + ½ (1 − cond). Direction verified (docs/research.md, Track E sources) for lactating females (emeryThompson2010 [M], abstract only, n not given: higher in months of low fruit consumption); for males the evidence conflicts (mullerWrangham2004a against muller2021). The size is a design assumption."
+  },
+  {
+   "id": "endoStressStrangerW",
+   "group": "needs",
+   "value": 0.2,
+   "units": "state",
+   "range": [
+    0.1,
+    0.4
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "endoStep",
+   "file": "src/sim/endocrine.ts",
+   "notes": "Stage E4a: stress target with strangers in view, and the kick when a stranger chorus is heard. Direction verified (docs/research.md, Track E sources) (wittig2016 [H], full text: 22% higher after intergroup encounters than after grooming); the size is a design assumption."
+  },
+  {
+   "id": "endoStressTauH",
+   "group": "needs",
+   "value": 3.4,
+   "units": "h",
+   "range": [
+    1.7,
+    6.8
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0.01,
+    1000
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "endoStep",
+   "file": "src/sim/endocrine.ts",
+   "notes": "Stage E4a: time constant of the stress load (cortisol-like). The urinary glucocorticoid peak lags an event by 135–270 min (wittig2015 [M], full text; midpoint 3.4 h). That is the lag of the field readout; using it as the state's time constant is a design assumption. The fixed relaxation it replaces (stressRelaxPerH 0.25) had a time constant of 4 h."
+  },
+  {
    "id": "energyLedger",
    "group": "needs",
    "value": 0,
@@ -11946,6 +12346,29 @@
    "notes": "Metabolisable energy intake of an adult feeding on non-fig ripe fruit (drupes 9.9 kcal/min; all ripe fruit 10.7 +- 1.3; Kanyawara females, uwimbabazi2019). The crop still depletes at fruitIntakePerH fruit units per hour, so one fruit unit is worth 60 x this / fruitIntakePerH kcal."
   },
   {
+   "id": "ledgerGrowSurplus",
+   "group": "needs",
+   "value": 0,
+   "units": "flag",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "energyTick",
+   "file": "src/sim/energy.ts",
+   "integer": true,
+   "notes": "Stage E1c (docs/staging/e1c-prereg.md), with energyLedger 1: 1 = body mass is state (chimp.sim.en.kg, opened at the stylized curve's value for the animal's age and sex) and an animal below its adult mass grows at the curve's slope (the well-fed potential) only while its reserves are above the set point, paying ledgerGrowthKcalPerG per g; an underfed animal stops growing instead of burning its reserve (growth faltering), and the mass-for-age curve becomes an output. 0 = mass follows the curve by age and growth is charged whatever the balance (E1)."
+  },
+  {
    "id": "ledgerGrowthKcalPerG",
    "group": "needs",
    "value": 4.5,
@@ -12012,6 +12435,51 @@
    "notes": "Time constant of energy absorption from the gut (first order): gastric emptying plus small-intestine absorption (human solid-meal half-emptying about 1.5-2 h; captive chimpanzee stomachs were empty after more than 3 h and less than 16 h, Ardente et al. 2011, abstract: first-order emptying with this constant is 95% complete at 9 h). Not the 38-48 h mean transit time of Milton & Demment 1988: that is the passage of indigestible residue through the whole tract; bulk limitation by residue is not modelled. Pending e-sources (not yet in docs/research.md)."
   },
   {
+   "id": "ledgerInfantIntake",
+   "group": "feeding",
+   "value": 0,
+   "units": "flag",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "forageTick",
+   "file": "src/sim/execution.ts",
+   "integer": true,
+   "notes": "Stage E1c (docs/staging/e1c-prereg.md), with energyLedger 1: 1 = an animal's intake rate of fruit and of ground fallback foods is the adult rate x (its mass / the adult mass of its sex)^ledgerIntakeSizeExp (x the foraging-skill multiplier on fruit, unchanged), for every animal below adult mass; this replaces C8's self-feeding ramp (selfFeedStartY) and the under-5 factor (fruitIntakeYoungFactor), and the option valuation (intake.ts) uses the same rates. 0 = the ramp and factor on fruit and ground foods outside the field fallback, adult rate on field fallback foods (E1)."
+  },
+  {
+   "id": "ledgerIntakeSizeExp",
+   "group": "feeding",
+   "value": 0.75,
+   "units": "exponent",
+   "range": [
+    0.5,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    2
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "intakeSize",
+   "file": "src/sim/energy.ts",
+   "notes": "Stage E1c (ledgerInfantIntake): intake capacity scales as (mass / adult mass)^this. 0.75 = like the resting rate, so a skilled animal of any size covers its resting needs in the same feeding time as an adult (design). No chimpanzee measurement of ingestion rate against body size was found; bray2018 gives only the direction (infants' ingestion rates below adults', juveniles' not significantly)."
+  },
+  {
    "id": "ledgerMassBirthKg",
    "group": "needs",
    "value": 1.8,
@@ -12031,7 +12499,7 @@
    "clock": "none",
    "symbol": "massOf",
    "file": "src/sim/energy.ts",
-   "notes": "Body mass at birth (captive neonates about 1.7-1.9 kg; no primary source traced). Mass then rises linearly to the adult value at ledgerMassMatureFemaleY / ledgerMassMatureMaleY (stylized growth curve). Pending e-sources (not yet in docs/research.md)."
+   "notes": "Body mass at birth: 1.8 kg; captive neonates at Yerkes averaged 1,733 g (desilva2011, 47 births with maternal mass). Mass then rises linearly to the adult value at ledgerMassMatureFemaleY / ledgerMassMatureMaleY (stylized growth curve; with ledgerGrowSurplus 1 the curve's slope is the well-fed growth potential and mass is state)."
   },
   {
    "id": "ledgerMassFemaleKg",
@@ -12207,7 +12675,7 @@
    "clock": "eco",
    "symbol": "energyTick",
    "file": "src/sim/energy.ts",
-   "notes": "Hours of milk synthesis a mother can hold for her infant. 24 = only the daily yield limits milk, whenever it is drunk (E1 iteration 3). A real gland holds less and stops synthesis when full (humans: about 0.46 of the daily yield, 11 h; Kent et al. 1999, abstract, received after iteration 3 was registered), but the sim's infants cannot nurse at night (a clock rule, stage E2), so a smaller value takes yield away for a reason that is not physiology (6 h: a quarter of it, iteration 2)."
+   "notes": "Hours of milk synthesis a mother can hold for her infant. 24 = only the daily yield limits milk, whenever it is drunk (E1 iteration 3). A real gland holds less and stops synthesis when full (humans: about 0.46 of the daily yield, 11 h; Kent et al. 1999, abstract, received after iteration 3 was registered), but the sim's infants cannot nurse at night (a clock rule, stage E2), so a smaller value takes yield away for a reason that is not physiology (6 h: a quarter of it, iteration 2). E1c: with ledgerNightNurse 1 the precondition is gone and the sourced 11 h applies (passed as an override in the E1c runs; the default stays 24 so E1 is unchanged)."
   },
   {
    "id": "ledgerMilkYieldCoef",
@@ -12230,6 +12698,29 @@
    "symbol": "energyTick",
    "file": "src/sim/energy.ts",
    "notes": "Milk energy a mother can make per day per kg^0.75 of her mass: the human 501 kcal/day (749 g/day x 2.8 kJ/g, Butte & King 2005) at 60 kg; about 307 kcal/day at 31.3 kg. Milk energy output scales with maternal mass^0.74 +- 0.05 across 47 mammal species (Riek 2021, abstract); the coefficient is the human one and no chimpanzee milk yield exists. A value above about 1,000 removes the limit (iteration 1). (E1 iteration 2: without it a larger infant simply drank more.) Pending e-sources (not yet in docs/research.md)."
+  },
+  {
+   "id": "ledgerNightNurse",
+   "group": "needs",
+   "value": 0,
+   "units": "flag",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "nestTick",
+   "file": "src/sim/execution.ts",
+   "integer": true,
+   "notes": "Stage E1c (docs/staging/e1c-prereg.md), with energyLedger 1: 1 = a dependent infant sleeping in its mother's nest suckles from her (nurseTick: the suckling rate, limited by her gland store and its gut room) while its hunger readout is at or above the end of a nursing bout (0.08); same eligibility as the day nursing option, no weaning refusal at night (stylization). Infants share the mother's nest until weaning (khayer2025 [M]); night suckling: captive newborns (mizuno2006 [L]) and the human analogy. With it, ledgerMilkStoreH can take its sourced value (11 h, kent1999). 0 = milk only through the day nurse act (E1)."
   },
   {
    "id": "ledgerPlantShareKcal",
@@ -20330,6 +20821,75 @@
    "symbol": "P.udTauDays",
    "file": "src/sim/territory.ts",
    "notes": "Time constant of daily UD decay: ranges remember about half a year of use (design, §5.2)."
+  },
+  {
+   "id": "urgencyChoice",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.urgencyChoice",
+   "file": "src/sim/urgency.ts",
+   "notes": "Stage E3 switch (docs/staging/e3-prereg.md §3): the softmax temperature of the rules decision policy comes from urgency U (the largest of hunger, thirst, 1 - energy, 1 - social, stress): T = candidateJitterSpan / (pi sqrt2 U), i.e. decision noise SD = score jitter SD / U (no new constant). rgTemperature then has no effect. 0 = the fixed rgTemperature (hash-identical). Off by default in both profiles; ablation switch.",
+   "integer": true
+  },
+  {
+   "id": "urgencyPersist",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.urgencyPersist",
+   "file": "src/sim/urgency.ts",
+   "notes": "Stage E3 switch (docs/staging/e3-prereg.md §4): the intention gate keeps an act while it still pays, i.e. while it reduces drive (sum of squared deficits; Keramati & Gutkin 2014, pending e-sources) at least as fast as the best alternative on the menu, switch time included (marginal value theorem at ratio 1 [charnov1976]); an act that serves no deficit is kept while it is the rules' top option. rgMaxAgeH, the need buckets and the gate's patch ratio and hunger floor then have no effect. 0 = the C13 gate (hash-identical). Off by default in both profiles; ablation switch.",
+   "integer": true
+  },
+  {
+   "id": "urgencySwitchCost",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.urgencySwitchCost",
+   "file": "src/sim/candidates.ts",
+   "notes": "Stage E3 switch (docs/staging/e3-prereg.md §5): continueBonus and finishedPenalty are not applied. The real cost of switching (time and travel to the alternative) is already in every alternative's score, and staying is the pay test's job. 0 = both applied (hash-identical). Off by default in both profiles; ablation switch.",
+   "integer": true
   },
   {
    "id": "vacancyEloGap",

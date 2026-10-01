@@ -65,7 +65,9 @@ function decided(world: World, w: Chimp, l: Chimp, how: 'charge' | 'fight', inju
   l.lastConflict = { opponentId: w.id, time, won: false };
   const lx = ix(l);
   const P = paramsOf(world);
-  if (random(world) < P.redirectBaseP + P.redirectAggrP * l.personality.aggression) lx.lostAt = time; // redirected aggression follows some losses [M]
+  // stage E4a (endoRedirect): every loss is noted and nothing is drawn; whether he redirects follows from his stress load (candidates.ts)
+  if (P.endoRedirect === 1) lx.lostAt = time;
+  else if (random(world) < P.redirectBaseP + P.redirectAggrP * l.personality.aggression) lx.lostAt = time; // redirected aggression follows some losses [M]
   lx.victimOf = w.id; lx.victimAt = time;
   world.stats.conflicts++;
   l.stress = clamp(l.stress + (how === 'fight' ? 0.35 : 0.2));

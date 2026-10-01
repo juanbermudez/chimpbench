@@ -1236,7 +1236,7 @@ The gaps for E2 and E4 are in E.5.
 
 Each item below is used at most as a labelled assumption.
 
-- **Birth mass 1.8 kg.** No primary source reached.
+- **Birth mass 1.8 kg.** No primary source reached. (E1c: desilva2011 gives 1,733 g for captive births, E.12.)
 - **Milton & Demment's transit times (38 h and 48 h)** and **Lambert's retention time (about 31 h).** Seen only in search snippets; the abstracts carry no hours.
 - **Chimpanzee meat intake (348 g/h; 1.9 ± 1.2 kg/h) and 115 kcal per 100 g.** Seen only as cited by hardus2012. The originals (Wrangham & Conklin-Brittain 2003; Gilby 2006) were not read.
 - **Activity multipliers 1.25 and 1.38, pregnancy +25%, lactation +50%, walking speeds from Mahale.** Seen only as used by nguessan2009. Leonard & Robertson 1997, Key & Ross 1999, Hunt 1989 and Coelho 1974 were not read.
@@ -1269,7 +1269,54 @@ Each item below is used at most as a labelled assumption.
   - *new* kent1999: Kent JC, Mitoulas L, Cox DB, Owens RA, Hartmann PE 1999. Breast volume and milk production during extended lactation in women. *Experimental Physiology* 84(2):435–447. [doi:10.1111/j.1469-445X.1999.01808.x](https://doi.org/10.1111/j.1469-445X.1999.01808.x) (Abs; bibliography from Europe PMC).
 - **Order of events for T-ENE-1 to T-ENE-3.** Their bands were committed (3ba7a86) before any simulated value was seen. The E1 implementer then reported a ledger that closes at about 1,115 kcal/d for females, with 135–175 feeding minutes per day: below both bands. The bands are left as committed.
 
-### E.12 Addendum: digestion (stage E1b, 1 October 2026)
+### E.12 Addendum: infant energetics (stage E1c, 1 October 2026)
+
+Evidence pass for stage E1c (infant energetics: growth, night nursing, infant intake), 1 October 2026. Bibliographic data checked against Crossref or Europe PMC on that day. Tags as in this Track E section (FT, Abs, secondary; [H], [M], [L] rate the observation in its own population).
+
+- **Feeding development, Kanyawara** [bray2018] (FT, PMC5739981) [M]. Extends the unkeyed entry in research.md §2 ("A life is a changing capacity").
+  - n: 26 immatures and 31 adults, 2010–2013.
+  - First solid food: earliest 5.1 months; most not before their eighth month (mean ± SE 7.9 ± 0.7 months, range 5.1–11.1, n = 9).
+  - Suckling into the fifth year: 4.8 ± 0.7 y (range 4.1–6.0, n = 8).
+  - Percent of observation time feeding on solid food rose with age; 3–4-year-olds were still below adult levels (β = −9.43, SE 2.02), and adult levels were reached between 4 and 6 years.
+  - Ingestion rate (items per minute of foraging, five ripe fruit species): infants significantly below adults (β = −4.72, SE 1.15); juveniles lower but not significantly (β = −1.72, SE 0.79); adolescents close to adults. Absolute rates are only in a figure (not read).
+  - Use in E1c: targets for the onset of solid food and the age at adult feeding time; direction only for ingestion rate by age (no magnitude, so not an input).
+- **Nursing and foraging by age, Ngogo** [badescu2022] (FT, PMC9352031; research.md had the abstract) [M].
+  - n: 72 immatures aged 0–9 y; 1,245.2 focal hours (mean 12.4 h per subject); follows between 07:00 and 17:30.
+  - Suckling: 5.85 ± 3.4% of observation time at 0–6 months (1.63 ± 0.51 bouts per hour); about 3% from 6 months to 4 years (1.00 ± 0.44 bouts per hour); bouts about 2 min (2.03 ± 0.73).
+  - Foraging time: 0.84 ± 1.81% at 0–6 months; 17.18 ± 15.97% at 6–12 months; 24.85 ± 8.13% at 1–2 y; 46.7 ± 6.0% at 4–5 y; adults about 47% of the day.
+  - The authors: independent foraging "probably became a dietary requirement for infants at 1 year old, when their energy needs may have surpassed the available milk energy"; by 1 year infants foraged whenever their mothers did.
+  - Night: "our lack of data on night-time nursing, which may be common, as it is in humans" (no night data).
+  - Use in E1c: targets (daytime suckling share, foraging share by age); no input.
+- **Isotopic weaning, Ngogo** [badescu2017] (Abs) [M]. Bădescu, Katzenberg, Watts, Sellen. 560 faecal samples, 48 infants with their mothers and siblings. Infants ≤ 1 y were 2.0‰ (δ15N) and 0.8‰ (δ13C) above their mothers; solid foods were eaten within 2–5 months of birth; isotopic weaning by about 4.5 y, before nipple contact ended (comfort nursing). Secondary (search summary, not in the abstract read): the decline in milk reliance starts at about 1 y and is complete at 4–4.5 y. Target, direction (milk share falls with age).
+- **Feeding around 3 years, Mahale** [matsumoto2017] (Abs) [M]. 19 infants aged 1–60 months, 518 h. At about 3 years infants spent more total feeding time and more time on leaves and hard-to-process foods; milk dependence fell at about 3 years, before nipple contact ceased (around 48 months, as summarised by lonsdorf2021). Target, direction.
+- **Feeding development, Gombe** [lonsdorf2021] (FT, accepted manuscript at par.nsf.gov) [M]. 81 offspring, 1975–2016. Feeding time rose fastest up to 5 years and levelled off after 6 years near the mothers' level; mothers fed 0.47 ± 0.12 (dry) and 0.44 ± 0.12 (wet season) of observation time; mean weaning age 4.7 y (citing Lonsdorf et al. 2020). Secondary: Pusey et al. 2005 showed that females "grow exponentially until 10 years of age". Target.
+- **Wild growth, Gombe, read secondarily** [gurvenWalker2006] (FT appendix) [L]. "Growth data for wild chimpanzees are scant"; from pusey2005, "a very rough estimation": 10 kg at 5 y for both sexes, 21 kg (females) and 24 kg (males) at 10 y, adults 31 and 39 kg. Derived: about 1.6 kg/y from birth to 5 y, 2.2 (F) and 2.8 (M) kg/y from 5 to 10 y. Target (mass for age), low confidence: pusey2005's own curves were not read.
+- **Wild against captive growth** [hamada1996] (bibliography only; the statement is from a search snippet attributed to this paper, unverified). Hamada, Udono, Teramoto, Sugawara: laboratory chimpanzees mature more than 2 years earlier than wild ones, and "the major reason for the retarded maturation in wild chimpanzees is the delay of growth from infant to the early juvenile phases (0–4 yrs of age), probably owing to a limited nutritional supply from the mother". Direction only, unverified.
+- **Neonatal mass and growth in the first year, captive** [desilva2011] (FT, PMC3024680) [M] captive. Yerkes: 415 births, 47 with infant (within 2 weeks of birth) and maternal mass. Mean neonatal mass 1,733 g; neonate 3.3% of maternal mass (95% CI 3.0–3.5); at 1 year infants weigh 8.6% of their mother's mass (n = 9 dyads). Derived: about 4.5 kg at 1 year (2.6 × birth mass). Use: verifies the birth mass of 1.8 kg to within 4% (captive); the first-year gain (about 2.8 kg) is a captive, well-fed reference.
+- **Growth of captive chimpanzees by setting** [curry2023] (FT, PMC10084351) [M] captive. 298 sanctuary chimpanzees (Tchimpounga, Chimfunshi, Tacugama), 1,030 zoo, 442 research. Pre-maturation growth: sanctuary 3.4 (F) and 3.8 (M) kg/y; zoo 4.7 and 5.4; research 4.8 and 5.3. Maturation breakpoint: sanctuary 12.4 (F) and 13.8 (M) y; zoo 11.4 and 11.9. Adult mass: sanctuary 43.5 ± 7.5 (F), 52.6 ± 8.1 kg (M). Use: captive references that bracket the potential growth rate of a well-fed animal.
+- **Offspring growth and weaning, Kanyawara** [emeryThompson2016] (Abs, via Europe PMC; already listed) [M]. Juvenile lean mass (urinary creatinine) rose with the interval to the next sibling's birth; low maternal energy balance during lactation predicted larger, not smaller, juveniles; "offspring growth suffers when mothers wean early". Target, direction: more milk, more growth.
+- **Night: nest sharing and night suckling.**
+  - [khayer2025] (FT extract, via Europe PMC) [M] for nest sharing: "infants continue to regularly share night nests with their mothers at least until they are weaned (at 4–5 years old in *P. troglodytes*)", sometimes to 10 years (citing van Lawick-Goodall 1968 and others); nest sharing enables "night-time nutritive or comfort nursing" (cited to human studies, Gettler & McKenna 2011 and McKenna et al. 2007). No wild chimpanzee measurement of night nursing.
+  - [mizuno2006] (Abs via search snippet; bibliography from Crossref) [L]. Mizuno, Takeshita, Matsuzawa: night behaviour of 3 mother-reared captive newborns in their first 4 months; infants suckled at night (with eyes open until the end of month 2, mostly with eyes closed thereafter). Direction only: chimpanzee infants suckle at night.
+  - badescu2022: no night data (above).
+  - Use in E1c: night suckling in the mother's nest is a mechanism with [L] support (captive newborns, human analogy); its amount is not an input.
+- **Intake rate and body size.** No chimpanzee measurement of ingestion rate (kcal per minute) against body mass was found; bray2018 gives only the direction (infants below adults, juveniles not significantly). The size scaling of intake capacity used in E1c is a design assumption.
+
+**Not verified (E1c):** hamada1996's statement (snippet only); the Gombe mass-for-age values (secondary, via gurvenWalker2006); the course of milk reliance between 1 and 4.5 y in badescu2017 (search summary, not the abstract); mizuno2006 details (search snippet); any chimpanzee or ape value for night suckling frequency, milk yield or gland capacity.
+
+**Sources:**
+- *new* bray2018: Bray J, Emery Thompson M, Muller MN, Wrangham RW, Machanda ZP 2018. The development of feeding behavior in wild chimpanzees (*Pan troglodytes schweinfurthii*). *American Journal of Physical Anthropology* 165(1):34–46 (online 26 September 2017). [doi:10.1002/ajpa.23325](https://doi.org/10.1002/ajpa.23325) (FT, PMC5739981).
+- *new* badescu2017: Bădescu I, Katzenberg MA, Watts DP, Sellen DW 2017. A novel fecal stable isotope approach to determine the timing of age-related feeding transitions in wild infant chimpanzees. *American Journal of Physical Anthropology* 162(2):285–299. [doi:10.1002/ajpa.23116](https://doi.org/10.1002/ajpa.23116) (Abs).
+- *new* matsumoto2017: Matsumoto T 2017. Developmental changes in feeding behaviors of infant chimpanzees at Mahale, Tanzania: implications for nutritional independence long before cessation of nipple contact. *American Journal of Physical Anthropology* 163(2):356–366. [doi:10.1002/ajpa.23212](https://doi.org/10.1002/ajpa.23212) (Abs).
+- *new* lonsdorf2021: Lonsdorf EV, Stanton MA, Wellens KR, Murray CM 2021. Wild chimpanzee offspring exhibit adult-like foraging patterns around the age of weaning. *American Journal of Physical Anthropology* 175(1):268–281. [doi:10.1002/ajpa.24267](https://doi.org/10.1002/ajpa.24267) (FT, accepted manuscript).
+- *new* gurvenWalker2006: Gurven M, Walker R 2006. Energetic demand of multiple dependents and the evolution of slow human growth. *Proceedings of the Royal Society B* 273(1588):835–841. [doi:10.1098/rspb.2005.3380](https://doi.org/10.1098/rspb.2005.3380) (FT, electronic appendix).
+- *new* hamada1996: Hamada Y, Udono T, Teramoto M, Sugawara T 1996. The growth pattern of chimpanzees: somatic growth and reproductive maturation in *Pan troglodytes*. *Primates* 37(3):279–295. [doi:10.1007/BF02381860](https://doi.org/10.1007/BF02381860) (bibliography only).
+- *new* desilva2011: DeSilva JM 2011. A shift toward birthing relatively large infants early in human evolution. *PNAS* 108(3):1022–1027. [doi:10.1073/pnas.1003865108](https://doi.org/10.1073/pnas.1003865108) (FT, PMC3024680).
+- *new* curry2023: Curry BA, Drane AL, Atencia R et al. 2023. Body mass and growth rates in captive chimpanzees (*Pan troglodytes*) cared for in African wildlife sanctuaries, zoological institutions, and research facilities. *Zoo Biology* 42(1):98–106. [doi:10.1002/zoo.21718](https://doi.org/10.1002/zoo.21718) (FT, PMC10084351).
+- *new* mizuno2006: Mizuno Y, Takeshita H, Matsuzawa T 2006. Behavior of infant chimpanzees during the night in the first 4 months of life: smiling and suckling in relation to behavioral state. *Infancy* 9(2):221–240. [doi:10.1207/s15327078in0902_7](https://doi.org/10.1207/s15327078in0902_7) (Abs, search snippet).
+- badescu2022, emeryThompson2012, emeryThompson2016, pusey2005, khayer2025 and kent1999 are already listed; the entries above add findings.
+
+### E.13 Addendum: digestion (stage E1b, 1 October 2026)
 
 Requested by the E1b implementer (docs/staging/e1b-prereg.md), 1 October 2026. Questions: apparent digestibility of dry matter, fibre and energy in chimpanzees or great apes; any wild great-ape total energy expenditure; gut capacity; evidence of a digestive pause. Same tags as above. Bibliographic data checked against Crossref on 1 October 2026 except knott2005 (book chapter).
 
