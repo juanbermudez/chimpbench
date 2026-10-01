@@ -10531,6 +10531,78 @@
    "notes": "A stranger with no community member within this distance is isolated. Compressed stand-in scaled with sight (field ≈ compressed × 35/15, design)."
   },
   {
+   "group": "decision",
+   "rangeBasis": "assumed",
+   "calibrate": false,
+   "sources": [
+    "gruberZuberbuhler2013"
+   ],
+   "clock": "none",
+   "file": "src/sim/candidates.ts",
+   "id": "joinAllyW",
+   "value": 0.2,
+   "units": "score",
+   "range": [
+    0.1,
+    0.4
+   ],
+   "hardRange": [
+    0,
+    5
+   ],
+   "evidence": "design",
+   "symbol": "P.joinAllyW",
+   "notes": "Stage C13e: added when the leader is an ally. Allies were recruited more often [H] gruberZuberbuhler2013; the magnitude is a design assumption."
+  },
+  {
+   "group": "decision",
+   "rangeBasis": "assumed",
+   "calibrate": false,
+   "sources": [
+    "gruberZuberbuhler2013"
+   ],
+   "clock": "none",
+   "file": "src/sim/candidates.ts",
+   "id": "joinBase",
+   "value": 0.3,
+   "units": "score",
+   "range": [
+    0.15,
+    0.6
+   ],
+   "hardRange": [
+    -5,
+    5
+   ],
+   "evidence": "design",
+   "symbol": "P.joinBase",
+   "notes": "Stage C13e: base value of joining a departing leader's trip (design assumption; the scale of a low-key social act in the rules)."
+  },
+  {
+   "group": "decision",
+   "rangeBasis": "assumed",
+   "calibrate": false,
+   "sources": [
+    "gruberZuberbuhler2013"
+   ],
+   "clock": "none",
+   "file": "src/sim/candidates.ts",
+   "id": "joinBondW",
+   "value": 0.5,
+   "units": "score per bond",
+   "range": [
+    0.25,
+    1
+   ],
+   "hardRange": [
+    0,
+    5
+   ],
+   "evidence": "design",
+   "symbol": "P.joinBondW",
+   "notes": "Stage C13e: bond with the leader in the join value (design assumption; grooming weighs bond 0.4)."
+  },
+  {
    "id": "joinCallDistScaleM",
    "group": "social",
    "value": 60,
@@ -10609,6 +10681,59 @@
    "notes": "Travel toward a caller stops this far from the call position. Compressed stand-in scaled with sight (field ≈ compressed × 35/15, design)."
   },
   {
+   "group": "decision",
+   "rangeBasis": "assumed",
+   "calibrate": false,
+   "sources": [
+    "gruberZuberbuhler2013"
+   ],
+   "clock": "none",
+   "file": "src/sim/candidates.ts",
+   "id": "joinChoice",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "hardRange": [
+    0,
+    1
+   ],
+   "evidence": "design",
+   "symbol": "P.joinChoice",
+   "profiles": {
+    "compressed": 0,
+    "field": 1
+   },
+   "integer": true,
+   "notes": "Stage C13e switch (docs/realism-design.md \"C13e pre-registration\"): the joint trip is offered without the 5 m minimum and keeps its own candidate and menu slot; a travel hoo gives every hearer a decision point; a silent departure only those who can see the leader go and are not absorbed; joining is valued by join* instead of the near-automatic party-follow score. Field only (joint trips exist only there). 0 = before C13e. Ablation switch (set C13e)."
+  },
+  {
+   "group": "decision",
+   "rangeBasis": "assumed",
+   "calibrate": false,
+   "sources": [
+    "gruberZuberbuhler2013"
+   ],
+   "clock": "none",
+   "file": "src/sim/candidates.ts",
+   "id": "joinHooW",
+   "value": 0.094,
+   "units": "score",
+   "range": [
+    0,
+    1.5
+   ],
+   "hardRange": [
+    0,
+    5
+   ],
+   "evidence": "M",
+   "symbol": "P.joinHooW",
+   "notes": "Stage C13e: added to the join value when a travel hoo was heard from the leader. Fitted (the stage's one fitted parameter) so that hooed initiations recruit at least one companion within 5 min in 71.4% of cases [gruberZuberbuhler2013]: bisection on [0, 1.5], 6 steps, development seeds 48, 7, 21 (180-day burn-in + 30 days), pooled rate 0.702 at 0.094 (scripts/c13e-fit.ts; trail 0.75 -> 0.946, 0.375 -> 0.854, 0.188 -> 0.766, 0.094 -> 0.702, 0.141 -> 0.745, 0.118 -> 0.736). Only the hooed rate was read."
+  },
+  {
    "id": "joinMaleW",
    "group": "social",
    "value": 0,
@@ -10633,6 +10758,30 @@
     "field": 0.2
    },
    "notes": "Joining calls: an adult male's extra pull toward a calling adult male (males are the most gregarious; design)."
+  },
+  {
+   "group": "decision",
+   "rangeBasis": "assumed",
+   "calibrate": false,
+   "sources": [
+    "gruberZuberbuhler2013"
+   ],
+   "clock": "none",
+   "file": "src/sim/candidates.ts",
+   "id": "joinRankW",
+   "value": 0.15,
+   "units": "score",
+   "range": [
+    0.075,
+    0.3
+   ],
+   "hardRange": [
+    0,
+    5
+   ],
+   "evidence": "design",
+   "symbol": "P.joinRankW",
+   "notes": "Stage C13e: added when the leader dominates the companion (design assumption; no source gives a rank effect on recruitment)."
   },
   {
    "id": "joinSocialInPartyF",
@@ -10685,6 +10834,30 @@
     "field": 0.55
    },
    "notes": "Joining calls: pull of an unmet social need toward pant-hooting community members, full when fewer than 2 companions are in sight; 0 disables (compressed). Field: tuned to T-PTY-1 (design). Field value tuned in C5a against T-PTY-1, T-ACT-2 and T-RNG-4; those targets are labelled tuned (C5a review)."
+  },
+  {
+   "group": "decision",
+   "rangeBasis": "assumed",
+   "calibrate": false,
+   "sources": [
+    "gruberZuberbuhler2013"
+   ],
+   "clock": "none",
+   "file": "src/sim/candidates.ts",
+   "id": "joinStayW",
+   "value": 0.8,
+   "units": "score",
+   "range": [
+    0.4,
+    1.6
+   ],
+   "hardRange": [
+    0,
+    5
+   ],
+   "evidence": "design",
+   "symbol": "P.joinStayW",
+   "notes": "Stage C13e: cost of leaving, own hunger x the crop quality (0-1) of the tree the animal is feeding in (design assumption)."
   },
   {
    "id": "juvenileFollowM",

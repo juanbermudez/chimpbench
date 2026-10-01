@@ -148,3 +148,81 @@ test('C13d: a trip initiation gives every companion in range an urgent decision 
   assert.equal(paramsOf(createWorld(33, { profile: 'field' })).departCue, 0, 'field: off by default (a pre-registered null result)');
   assert.equal(on.P.departCue, 1);
 });
+
+// Stage C13e (docs/realism-design.md "C13e pre-registration"): joint-trip bug fix, noticing and deciding.
+async function c13e(params: Record<string, number> = {}) {
+  const { computeCandidates, candidateMeta, V } = await import('../src/sim/candidates');
+  const { startAction } = await import('../src/sim/execution');
+  const { perceive } = await import('../src/sim/perception');
+  const { emitCall } = await import('../src/sim/events');
+  const { paramsOf } = await import('../src/sim/params');
+  const w = createWorld(33, { profile: 'field', params: { travelHooP: 0, travelHooAllyP: 0, ...params } });
+  for (let i = 0; i < 5760 / 4; i++) tickWorld(w);
+  const adults = w.chimps.filter(k => k.alive && k.age >= 15 && k.troopId === 1);
+  const [a] = adults, others = adults.slice(1, 5);
+  const far = w.trees.find(t => Math.hypot(t.position[0] - a.position[0], t.position[2] - a.position[2]) > 300)!;
+  const place = (b: typeof a, d: number) => { b.position = [a.position[0] + d, 0, a.position[2]]; b.action = 'rest'; b.targetId = -1; ix(b).intr = ''; ix(b).lastIntrAt = -1e9; ix(b).phase = 0; };
+  const setOff = () => { const cand = { action: 'travel' as const, targetId: far.id, score: 1, reason: 'test' }; candidateMeta.set(cand, { v: V.TREE, aux: -1 }); startAction(w, a, cand, 'rules'); };
+  const join = (b: typeof a) => { perceive(w, b); return computeCandidates(w, b, []).find(k => k.action === 'travel' && k.targetId === far.id && candidateMeta.get(k)?.aux === a.id); };
+  return { w, a, others, far, place, setOff, join, emitCall, P: paramsOf(w) };
+}
+
+test('C13e bug fix: the joint trip is offered inside the 5 m minimum; off = the model before C13e (hash-identical)', async () => {
+  for (const [joinChoice, want] of [[1, true], [0, false]] as const) {
+    const s = await c13e({ joinChoice }), b = s.others[0];
+    s.place(b, 3); s.setOff();
+    assert.equal(!!s.join(b), want, `joinChoice ${joinChoice}`);
+  }
+  // field seed 7, 1 day, on main before C13e (7bc8c31)
+  assert.equal(worldHash(run(createWorld(7, { profile: 'field', params: { joinChoice: 0 } }), 1)), '08cdb7889f141e01');
+});
+
+test('C13e noticing: a silent departure reaches only companions who see the leader go and are not absorbed; a hoo reaches every hearer', async () => {
+  const s = await c13e(), [seeing, feeding, grooming, unseen] = s.others;
+  s.place(seeing, 10); s.place(feeding, 12); s.place(grooming, 14); s.place(unseen, 45);
+  const crown = s.w.trees.find(t => t.id !== s.far.id)!;
+  feeding.action = 'forage'; feeding.targetId = crown.id; ix(feeding).phase = 2;
+  grooming.action = 'groom'; grooming.targetId = seeing.id; ix(grooming).phase = 1;
+  ix(seeing).sight = 35; ix(unseen).sight = 35;
+  s.setOff();
+  assert.equal(ix(feeding).intr, '', 'feeding in a crown: absorbed');
+  assert.equal(ix(grooming).intr, '', 'grooming: absorbed');
+  assert.equal(ix(seeing).intr, '', 'being groomed: absorbed');
+  assert.equal(ix(unseen).intr, '', 'beyond its sight radius');
+  grooming.action = 'rest'; grooming.targetId = -1; ix(grooming).phase = 0; ix(grooming).sight = 35;
+  const s2 = await c13e(), [watcher, eater, hidden] = s2.others;
+  s2.place(watcher, 10); s2.place(eater, 12); s2.place(hidden, 45);
+  eater.action = 'forage'; eater.targetId = s2.w.trees.find(t => t.id !== s2.far.id)!.id; ix(eater).phase = 2;
+  ix(watcher).sight = 35; ix(hidden).sight = 35;
+  s2.setOff();
+  assert.match(ix(watcher).intr, /moving off/);
+  assert.equal(ix(eater).intr, '');
+  s2.emitCall(s2.w, s2.a, 'travel-hoo');
+  assert.match(ix(eater).intr, /travel hoo/, 'a hoo reaches an absorbed companion');
+  assert.match(ix(hidden).intr, /travel hoo/, 'and one that cannot see the leader');
+  ix(hidden).seen = ix(hidden).seen.filter(id => id !== s2.a.id);
+  const { computeCandidates, candidateMeta } = await import('../src/sim/candidates');
+  assert.ok(computeCandidates(s2.w, hidden, []).some(k => k.action === 'travel' && k.targetId === s2.far.id && candidateMeta.get(k)?.aux === s2.a.id), 'the hearer can join without seeing the leader');
+});
+
+test('C13e deciding: bond, alliance, a dominant leader and a hoo raise the join value; a good tree and hunger lower it', async () => {
+  const s = await c13e(), b = s.others[0], P = s.P;
+  s.place(b, 20); s.setOff();
+  b.allies = b.allies.filter(id => id !== s.a.id); b.bonds[s.a.id] = 0.2; b.hunger = 0.5;
+  delete ix(b).hooFrom;
+  const base = s.join(b)!.score;
+  b.bonds[s.a.id] = 0.6;
+  assert.ok(Math.abs(s.join(b)!.score - base - P.joinBondW * 0.4) < 0.0021, 'bond');
+  b.bonds[s.a.id] = 0.2; b.allies.push(s.a.id);
+  assert.ok(Math.abs(s.join(b)!.score - base - P.joinAllyW) < 0.0021, 'ally');
+  b.allies = b.allies.filter(id => id !== s.a.id);
+  ix(b).hooFrom = s.a.id; ix(b).hooAt = s.w.time;
+  assert.ok(Math.abs(s.join(b)!.score - base - P.joinHooW) < 0.0021, 'hoo');
+  delete ix(b).hooFrom;
+  const crown = s.w.trees.find(t => t.id !== s.far.id && Math.hypot(t.position[0] - b.position[0], t.position[2] - b.position[2]) < 400)!;
+  b.action = 'forage'; b.targetId = crown.id; ix(b).phase = 2;
+  const { fruitAt } = await import('../src/sim/phenology');
+  const q = Math.min(1, fruitAt(s.w, crown) / P.fruitValueRef);
+  assert.ok(Math.abs(base - s.join(b)!.score - P.joinStayW * 0.5 * q) < 0.0021, `staying at a tree of quality ${q}`);
+  assert.ok(base < 1, `joining is not near-automatic (base value ${base})`);
+});

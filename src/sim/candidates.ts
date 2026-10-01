@@ -45,16 +45,20 @@ function offer(action: Action, target: number, score: number, v: number = V.NONE
   if (curSilent && (action === 'call' || action === 'display')) return;
   score += (hash01(cur.id, cur.decisionVersion, CODE[action], target) - 0.5) * curP.candidateJitterSpan;
   if (action === cur.action && target === cur.targetId) score += curDone ? -curP.finishedPenalty : curTime < curEnd ? curP.continueBonus : 0;
+  // stage C13e (joinChoice): the joint trip (travel to a companion's goal tree, aux = its leader) keeps one slot of its
+  // own, so the animal's own trips cannot crowd it out of the choice; a trip to the same tree still merges
+  const grouped = curP.joinChoice === 1 && action === 'travel', join = grouped && v === V.TREE && aux > 0;
   let count = 0, worst = -1;
   for (let i = 0; i < n; i++) {
     const s = pool[i];
     if (s.action !== action) continue;
     if (s.target === target) { if (score > s.score) { s.score = score; s.v = v; s.aux = aux; } return; }
+    if (grouped && (s.v === V.TREE && s.aux > 0) !== join) continue;
     count++;
     if (worst < 0 || s.score < pool[worst].score) worst = i;
   }
   let slot: Slot;
-  if (count >= (action === 'forage' ? curP.slotsForage : MULTI[action] ? curP.slotsMulti : 1)) { if (score <= pool[worst].score) return; slot = pool[worst]; }
+  if (count >= (join ? 1 : action === 'forage' ? curP.slotsForage : MULTI[action] ? curP.slotsMulti : 1)) { if (score <= pool[worst].score) return; slot = pool[worst]; }
   else { if (n >= pool.length) return; slot = pool[n++]; }
   slot.action = action; slot.target = target; slot.score = score; slot.v = v; slot.aux = aux;
 }
@@ -312,6 +316,18 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     }
   }
 
+  // stage C13e (joinChoice; docs/realism-design.md "C13e pre-registration"): what going with a departing leader is worth
+  // to this animal. Who is leaving: its bond with the leader, an ally, a leader that dominates it; recruitment and more
+  // of it for allies [H] gruberZuberbuhler2013. A travel hoo heard from the leader adds joinHooW (fitted to the 71.4% of
+  // vocal initiations that recruited a follower). Staying: its own hunger times the crop quality of the tree it is
+  // feeding in. Every magnitude except joinHooW is a design assumption.
+  const joinValue = (L: Chimp): number => {
+    const heard = P.travelHoo === 1 && x.hooFrom === L.id && time - (x.hooAt ?? NEVER) <= P.travelHooWindowMin / 60;
+    let stay = 0;
+    if (c.action === 'forage' && isTreeId(c.targetId)) { const t = idx.treeById.get(c.targetId); if (t) stay = h * Math.min(1, (P.patchEcology === 1 ? fruitAt(world, t) : t.fruit) / P.fruitValueRef); }
+    return P.joinBase + P.joinBondW * bond(c, L) + (c.allies.includes(L.id) ? P.joinAllyW : 0) + (dominates(L, c) ? P.joinRankW : 0) + pers.sociability * P.partyFollowSocialW
+      + (heard ? P.joinHooW : 0) - P.joinStayW * stay - rain * 0.3;
+  };
   // --- social: seen individuals -----------------------------------------------
   let bestGrunt = -1, bestGruntScore = -Infinity;
   let rival = -1, rivalCloseness = 0;
@@ -358,15 +374,21 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       offer('flee', o.id, (tn - P.avoidTensionFloor) * P.avoidTensionW + P.avoidBase, V.AVOID);
     // party cohesion (field profile): keep up with a party member who is travelling off, likelier for bonded partners
     // and adult males; parties travel together between food patches (fission-fusion) (design; tuned to T-PTY-1)
-    if (P.partyFollowW > 0 && !carried && c.age >= 5 && d > P.partyFollowMinM && d < P.partyLinkM && (o.action === 'travel' || o.action === 'follow') && o.targetId !== c.id && !night) {
+    if (P.partyFollowW > 0 && !carried && c.age >= 5 && d < P.partyLinkM && (o.action === 'travel' || o.action === 'follow') && o.targetId !== c.id && !night) {
       const lead = P.partyLeaderFollow === 1 ? leaderOf(o, c, byId, x.seen) : o.id, L = byId.get(lead);
+      const trip = P.partyJoinTrip === 1 && !!L && L.action === 'travel' && ix(L).v === V.TREE && isTreeId(L.targetId);
+      // stage C13e: the joint trip has a tree as its goal, so it needs no minimum distance to the leader (at the departure
+      // cue the leader is still next to its companions); its value is the join value, no longer near-automatic
+      if (P.joinChoice === 1 && trip) offer('travel', L!.targetId, joinValue(L!), V.TREE, L!.id);
+      else if (d > P.partyFollowMinM) {
       // stage C10 addendum 1: a travel hoo heard from this companion (or its leader) in the last few minutes raises following it
       const hoo = P.travelHoo === 1 && x.hooFrom !== undefined && (x.hooFrom === lead || x.hooFrom === o.id) && time - (x.hooAt ?? NEVER) <= P.travelHooWindowMin / 60 ? P.travelHooFollowW : 0;
       const sc = P.partyFollowBase + b * P.partyFollowW + pers.sociability * P.partyFollowSocialW + (isAdultMale(o) ? P.partyFollowMaleW : 0) - h * P.partyFollowHungerW - rain * 0.3 + hoo
         + (P.assocBondW > 0 && L ? P.assocBondW * bond(c, L) : 0); // stage C9: bond with the leader (off by default)
       // stage C7c (field; c7b-prereg §6.2): a companion on a committed trip to a tree lends its goal: go there with it (shared goal) [H: joint travel, gruberZuberbuhler2013]
-      if (P.partyJoinTrip === 1 && L && L.action === 'travel' && ix(L).v === V.TREE && isTreeId(L.targetId)) offer('travel', L.targetId, sc, V.TREE, L.id);
+      if (trip) offer('travel', L!.targetId, sc, V.TREE, L!.id);
       else offer('follow', lead, sc, V.PARTY);
+      }
     }
     // recent immigrant females stay near adult males, who buffer resident-female aggression [M]
     if (c.sex === 'female' && c.age >= 12 && x.immigrantAge >= 0 && c.age - x.immigrantAge < 2 && o.sex === 'male' && o.age >= 15 && d > P.immigrantFollowMinM && d < P.immigrantFollowMaxM)
@@ -388,6 +410,14 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     }
   }
   if (bestGrunt > 0) offer('pant-grunt', bestGrunt, bestGruntScore);
+  // stage C13e (noticing): a travel hoo reaches companions who do not see the leader; while it is still within earshot
+  // they may join its trip (the hoo names the departure; hearTravelHooM as the limit is a design assumption)
+  if (P.joinChoice === 1 && P.partyFollowW > 0 && P.partyJoinTrip === 1 && P.travelHoo === 1 && !carried && c.age >= 5 && !night
+    && x.hooFrom !== undefined && time - (x.hooAt ?? NEVER) <= P.travelHooWindowMin / 60 && !x.seen.includes(x.hooFrom)) {
+    const L = byId.get(x.hooFrom);
+    if (L && L.alive && L.troopId === c.troopId && L.action === 'travel' && ix(L).v === V.TREE && isTreeId(L.targetId) && dxz(L, px, pz) < P.hearTravelHooM)
+      offer('travel', L.targetId, joinValue(L), V.TREE, L.id);
+  }
 
   const adolescentOrAdult = c.age >= 12 && !caretaker;
   if (adolescentOrAdult && !night) {

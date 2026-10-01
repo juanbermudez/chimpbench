@@ -81,6 +81,10 @@
   "C13d": {
    "params": { "departCue": 1 },
    "note": "C13d is off by default (a pre-registered null result, 30 September 2026); this row switches it ON, so the comparison with the all-on baseline measures it. The row's sign is reversed relative to the other stages."
+  },
+  "C13e": {
+   "params": { "joinChoice": 0 },
+   "note": "C13e off: the joint trip only beyond the 5 m minimum and without its own slot, the C7a departure cue, and the near-automatic party-follow value (hash-identical to before C13e)."
   }
  }
 }
