@@ -9,7 +9,7 @@ import { buildFacts } from '../src/decide/facts';
 import { buildRequest } from '../src/decision';
 import { bandDistance, endpoint, ENDPOINT_ROWS, rowKey, runArm, runSeed, snapshotGuardParams, truthValues, worldHash, type ArmResult, type SeedJob } from '../scripts/lib/jev-arm';
 import { calibrate, medianTop } from '../scripts/jev-test';
-import { paidFlagsError, plannedWorlds, scorePaid, splitBudget, type FreeDoc } from '../scripts/lib/jev-paid-report';
+import { paidFlagsError, plannedWorlds, runIdOf, scorePaid, splitBudget, type FreeDoc } from '../scripts/lib/jev-paid-report';
 import { runPaidWorld, WorldStopped, type PaidJob, type Scorer } from '../scripts/lib/jev-paid';
 import { buildJevV3 } from '../src/decide/jev-packet';
 
@@ -115,7 +115,7 @@ test('paid scoring applies the pre-registered rules and Amendment 1', () => {
   const shifted = { R: freeD.R.map(() => D + 1), RG: freeD.RG.map(() => D), U: freeD.U.map(() => D + 0.8) };
   const free2 = { ...free, summary: { perArm: Object.fromEntries(Object.entries(shifted).map(([a, d]) => [a, { perSeed: d.map((x, i) => ({ seed: seeds[i], D: x })), hungerAllAdults: { median: 0.9 }, hunger: { lactating: { median: 0.89 } } }])) } } as unknown as FreeDoc;
   const paid = seeds.map(seed => ({ arm: 'J2' as const, seed, runId: `jev-test/J2-${seed}`, capDollars: 1, burnInHash: '', complete: true, stopReason: '', stoppedAt: { phase: 'done' as const, day: 5 },
-    result: { ...tiny, hunger: { ...tiny.hunger } }, jev: { calls: 1, batches: 1, estTokens: 1, spent: 0, revalidated: 0, tv: [], kinds: {} }, worker: {}, doNotTrain: '', wallMs: 0, guardParams: {} }));
+    result: { ...tiny, hunger: { ...tiny.hunger } }, jev: { calls: 1, batches: 1, estTokens: 1, spent: 0, revalidated: 0, tv: [], kinds: {}, asked: 1, unknownEvents: 0, unknownDecisions: 0 }, worker: {}, doNotTrain: '', wallMs: 0, guardParams: {}, unknownShare: 0 }));
   const sc = scorePaid(paid, free2, B).arms.J2 as { verdict: string; notes: string[]; beatsRGby005: number; lowerThanR: number };
   assert.equal(sc.lowerThanR, 5);
   assert.equal(sc.beatsRGby005, 0);
@@ -186,4 +186,35 @@ test('a cached burn-in is reused only when its hash is the expected one, and giv
   writeFileSync(cache, JSON.stringify({ not: 'a world' }));
   const third = await runPaidWorld({ ...job, burnInCache: cache, expectBurnInHash: plain.burnInHash }, uniformScorer);
   assert.equal(third.burnInHash, plain.burnInHash, 'a wrong cache is ignored and the world burned in again');
+});
+
+test('Deviation 2: an unknown-billing call sends its batch to rules and the world continues; too many make it invalid', async () => {
+  const job: PaidJob = { seed: 6301, arm: 'J2', profile: 'compressed', burnInDays: 0.1, warmupDays: 0, scoredDays: 0.2, bridge: 'fake', ledger: '', runId: 't', capDollars: 1, ftRoot: '' };
+  const uniform = (packets: unknown[]) => packets.map(pk => { const n = Object.keys((pk as { questions: { action: { criteria: object } } }).questions.action.criteria).length; return Array.from({ length: n }, () => 1 / n); });
+  // a scorer whose k-th batch (and every `every`-th after) fails with unknown billing, as worker.py reports it
+  const flaky = (first: number, every: number) => { let batches = 0, restarts = 0; const sc: Scorer & { restarts: () => number } = {
+    async score(packets) { batches++; if (batches === first || (every > 0 && batches > first && (batches - first) % every === 0)) throw new WorldStopped('BillingUnknown: billing unknown after send: transport: The read operation timed out', true); return { results: uniform(packets) }; },
+    stop() {}, async restart() { restarts++; }, restarts: () => restarts }; return sc; };
+  const once = flaky(40, 0);
+  const cont = await runPaidWorld({ ...job, unknownBilling: 'rules', coolOffS: 0 }, async () => once);
+  assert.equal(cont.complete, true, cont.stopReason);
+  assert.equal(cont.jev.unknownEvents, 1); assert.ok(cont.jev.unknownDecisions >= 1);
+  assert.equal(once.restarts(), 1, 'the worker was restarted once');
+  assert.equal(cont.result!.fallbacks['jev-unknown-billing'], cont.jev.unknownDecisions, 'counted as a rules fallback by reason (scored days)');
+  assert.ok(cont.unknownShare > 0 && cont.unknownShare <= 0.005, `share ${cont.unknownShare}`);
+  const stop = await runPaidWorld({ ...job, unknownBilling: 'stop' }, async () => flaky(40, 0));
+  assert.equal(stop.complete, false); assert.match(stop.stopReason, /BillingUnknown/);
+  const many = await runPaidWorld({ ...job, unknownBilling: 'rules', coolOffS: 0 }, async () => flaky(10, 20));
+  assert.equal(many.complete, false, 'above 0.5% of policy decisions the world is invalid');
+  assert.match(many.stopReason, /invalid: \d+ jev-unknown-billing fallbacks/);
+  assert.ok(many.result && many.stoppedAt.phase === 'done', 'its scored window is kept, so it can be shown both ways');
+  // the cap and the kill switch stay hard stops under Deviation 2
+  const cap = await runPaidWorld({ ...job, unknownBilling: 'rules', coolOffS: 0 }, async () => ({ async score() { throw new WorldStopped('CapReached: run t: cap $1.0000 reached', true); }, stop() {}, async restart() {} }));
+  assert.equal(cap.complete, false); assert.match(cap.stopReason, /CapReached/); assert.equal(cap.jev.unknownEvents, 0);
+});
+
+test('a second attempt has its own ledger run ids', () => {
+  assert.equal(runIdOf('J2', 6501), 'jev-test/J2-6501');
+  assert.equal(runIdOf('J2', 6501, 2), 'jev-test/a2/J2-6501');
+  assert.deepEqual(plannedWorlds(['J2s'], 2).map(w => w.runId), ['jev-test/a2/J2s-6501']);
 });

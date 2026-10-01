@@ -167,3 +167,15 @@ Code: `src/decide/jev-packet.ts` (packet v3), `scripts/lib/jev-paid.ts` (runner)
 - **Why:** pairing every state doubles the J2s world's calls. A short fake-server smoke put the full paid set at about the $10 cap. With a 25% subsample, J2s costs about 1.25× a J2 world and still yields thousands of matched states.
 - **When:** decided and coded before any paid call, and before the full dry run's cost estimate.
 - **What it does not change:** the endpoint, every threshold, and the J2s criterion (mean TV < 0.05 means Jev is not reading the facts).
+
+## Deviation 2 (2026-10-01, after an aborted first attempt, before any call of the second): unknown billing no longer stops a world
+
+- **What happened.** The first paid attempt started at 11:35. Between 11:39:26 and 11:39:36 one TypeSafe incident gave three J2 worlds a 30-second read timeout and a fourth an HTTP 520. Under the paid-arm settings above, unknown billing stopped each of those worlds, so 4 of the 5 J2 worlds were incomplete within 10 seconds, all still in their warm-up days. The run was stopped with the kill switch at $0.2735. No world completed, and no result of that attempt is used; its files are named `paid-arms-aborted-attempt1`.
+- **Changed rule.** When a call's billing is unknown (a timeout or reset after sending, a 5xx such as 520, a 2xx without usage):
+  - the guard still books the whole reservation as spent and never retries that request;
+  - the decisions of that one batch go to rules, counted under the fallback reason `jev-unknown-billing`;
+  - the worker is restarted, and the world waits 60 seconds before its next call, so a provider burst costs a few batches. The wait is not a retry;
+  - the world then continues.
+- **Validity.** A world is invalid if these fallbacks exceed 0.5% of its policy decisions (warm-up and scored days together). An invalid world is treated like an incomplete one. The count and share are reported for every world, and any world near the line is shown both ways.
+- **Unchanged.** The cap stop and the kill switch stay hard stops: a world they stop is incomplete and is never continued by rules. A malformed answer also still stops its world. The endpoint, every threshold and the decision rules are unchanged.
+- **Second attempt.** Fresh ledger run ids (`jev-test/a2/...`). The first attempt's $0.2735 stays booked; the new per-world caps are the cost-proportional split of what is left, so prior spend plus the caps stay within the $10 hard cap. The run refuses to start if any world would have less than 1.2× its estimated cost. Same order (J2, J2s, J1), seeds, snapshot checks and tripwire.

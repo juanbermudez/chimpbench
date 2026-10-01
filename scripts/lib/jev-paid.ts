@@ -51,17 +51,29 @@ export interface PaidJob {
   python?: string;
   /** Burn-in cache file: the burned-in world as JSON, reused by the other arms of the seed when its hash is the expected one. */
   burnInCache?: string;
+  /**
+   * Deviation 2 (docs/staging/jev-decisive-test.md): what an unknown-billing call (a timeout or reset after sending, a 5xx)
+   * does to its world. 'rules': the guard books the reservation and never retries the request; that batch's decisions go
+   * to rules under the reason jev-unknown-billing, the worker restarts, the world waits `coolOffS` and continues; the world
+   * is invalid if such fallbacks exceed UNKNOWN_SHARE_LIMIT of its policy decisions. 'stop' (default): the world stops.
+   */
+  unknownBilling?: 'stop' | 'rules';
+  coolOffS?: number;
 }
+/** A world is invalid when jev-unknown-billing fallbacks exceed this share of its policy decisions (Deviation 2). */
+export const UNKNOWN_SHARE_LIMIT = 0.005;
 
-export interface Scorer { score(packets: unknown[]): Promise<{ results: number[][]; spent?: number; calls?: number }>; stop(): void }
+export interface Scorer { score(packets: unknown[]): Promise<{ results: number[][]; spent?: number; calls?: number }>; stop(): void; restart?(): Promise<void> }
 
 /** Stops a world: the guard refused (cap, kill switch, unknown billing), an answer was malformed, or the worker died. */
 export class WorldStopped extends Error { constructor(msg: string, readonly fatal: boolean) { super(msg); } }
 
 /** A Python worker (worker.py protocol): one JSON line in per batch, one out. */
 export class WorkerBridge implements Scorer {
-  private child: ChildProcess; private lines: AsyncIterableIterator<string>; ready: Record<string, unknown> = {};
-  constructor(job: PaidJob, repo: string) {
+  private child!: ChildProcess; private lines!: AsyncIterableIterator<string>; ready: Record<string, unknown> = {};
+  constructor(private job: PaidJob, private repo: string) { this.spawn(); }
+  private spawn(): void {
+    const job = this.job, repo = this.repo;
     const fake = job.bridge !== 'worker';
     const python = job.python ?? (job.bridge === 'fake' ? 'python3' : process.env.MGOGO_DECIDE_PYTHON ?? resolve(homedir(), 'Desktop/GHN/data/raw/decide-env/bin/python'));
     const args = job.bridge === 'worker' ? ['-B', 'worker.py', '--device', 'cpu'] : ['-B', 'jev_fake_worker.py', ...(job.bridge === 'fake-worker' ? ['--through-worker'] : [])];
@@ -88,14 +100,22 @@ export class WorkerBridge implements Scorer {
     return { results: res.results, spent: res.jev_spent, calls: res.jev_calls };
   }
   stop(): void { this.child.kill(); }
+  /** A fresh worker for the same ledger run (worker.py exits after a guard error); the run's spend stays in the ledger. */
+  async restart(): Promise<void> { this.child.kill(); this.spawn(); await this.start(); }
 }
 
-export interface JevStats { calls: number; batches: number; estTokens: number; spent: number; revalidated: number; tv: number[]; kinds: Record<string, number> }
+export interface JevStats {
+  calls: number; batches: number; estTokens: number; spent: number; revalidated: number; tv: number[]; kinds: Record<string, number>;
+  /** Policy decisions put to Jev (warm-up and scored days), and the unknown-billing events and the decisions they sent to rules. */
+  asked: number; unknownEvents: number; unknownDecisions: number;
+}
 export interface PaidResult {
   arm: PaidArm; seed: number; runId: string; capDollars: number; burnInHash: string;
   complete: boolean; stopReason: string; stoppedAt: { phase: 'burn-in' | 'warmup' | 'scored' | 'done'; day: number };
   /** Parameters forced by the snapshot guard (jev-arm.ts SNAPSHOT_GUARD); empty on a pre-C13 registry. */
   guardParams: Record<string, number>;
+  /** jev-unknown-billing fallbacks as a share of the world's policy decisions (Deviation 2; invalid above UNKNOWN_SHARE_LIMIT). */
+  unknownShare: number;
   /** Scored-window results (the free arms' shape), null when the world stopped before scoring. */
   result: ArmResult | null;
   jev: JevStats; worker: Record<string, unknown>; doNotTrain: string; wallMs: number;
@@ -140,7 +160,8 @@ function prepare(world: World, c: Chimp, arm: PaidArm, gate: GateState, stats: S
 }
 
 /** Answers every waiting policy-driven chimp after a tick with one worker batch. Throws WorldStopped. */
-export async function answerPaid(world: World, arm: PaidArm, gate: GateState, stats: Stats, js: JevStats, scorer: Scorer, record: boolean): Promise<void> {
+export async function answerPaid(world: World, arm: PaidArm, gate: GateState, stats: Stats, js: JevStats, scorer: Scorer, record: boolean,
+  unknown: { mode: 'stop' | 'rules'; coolOffS: number } = { mode: 'stop', coolOffS: 0 }): Promise<void> {
   const pending: Pending[] = [];
   for (const c of world.chimps) {
     if (!c.alive || c.controller !== 'model' || c.awaitingDecisionSince === null) continue;
@@ -150,7 +171,25 @@ export async function answerPaid(world: World, arm: PaidArm, gate: GateState, st
   if (!pending.length) return;
   const packets = pending.flatMap(p => p.paired ? [p.packet, p.paired] : [p.packet]);
   for (const pk of packets) js.estTokens += estimateTokens(JSON.stringify({ ...(pk as object), model: 'jev-1.13.0' }).length);
-  const res = await scorer.score(packets);
+  js.asked += pending.length;
+  let res: Awaited<ReturnType<Scorer['score']>>;
+  try { res = await scorer.score(packets); }
+  catch (e) {
+    if (unknown.mode !== 'rules' || !(e instanceof WorldStopped) || !/^BillingUnknown/.test(e.message)) throw e;
+    // Deviation 2: the guard booked the reservation and will not retry; these decisions go to rules, the world goes on
+    js.unknownEvents++;
+    for (const p of pending) {
+      if (!p.c.alive || p.c.awaitingDecisionSince === null) continue;
+      js.unknownDecisions++;
+      if (record) inc(stats.fallbacks, 'jev-unknown-billing');
+      delete gate.intents[p.c.id];
+      resolveByRules(world, p.c.id);
+    }
+    if (!scorer.restart) throw new WorldStopped(`${e.message} (and the worker cannot restart)`, true);
+    await scorer.restart();
+    if (unknown.coolOffS > 0) await new Promise(r => setTimeout(r, unknown.coolOffS * 1000)); // a wait, not a retry: a provider burst costs few batches
+    return;
+  }
   js.batches++; js.calls += packets.length;
   if (typeof res.spent === 'number') js.spent = res.spent;
   if (res.results.length !== packets.length) throw new WorldStopped(`worker returned ${res.results.length} answers for ${packets.length} packets`, true);
@@ -197,13 +236,15 @@ function burnIn(job: PaidJob, guardParams: Record<string, number>): World {
 /** One paid world: burn-in, the arm's warm-up and scored days through the scorer. Never falls back to rules after a stop. */
 export async function runPaidWorld(job: PaidJob, makeScorer: () => Promise<Scorer & { ready?: Record<string, unknown> }>): Promise<PaidResult> {
   const t0 = performance.now();
-  const js: JevStats = { calls: 0, batches: 0, estTokens: 0, spent: 0, revalidated: 0, tv: [], kinds: {} };
+  const js: JevStats = { calls: 0, batches: 0, estTokens: 0, spent: 0, revalidated: 0, tv: [], kinds: {}, asked: 0, unknownEvents: 0, unknownDecisions: 0 };
+  const unknown = { mode: job.unknownBilling ?? 'stop', coolOffS: job.coolOffS ?? 0 };
+  const share = () => js.asked ? js.unknownDecisions / js.asked : 0;
   const guardParams = snapshotGuardParams();
   const base = { arm: job.arm, seed: job.seed, runId: job.runId, capDollars: job.capDollars, doNotTrain: DO_NOT_TRAIN, guardParams };
   const world = burnIn(job, guardParams);
   const burnInHash = worldHash(world);
   if (job.expectBurnInHash && burnInHash !== job.expectBurnInHash)
-    return { ...base, burnInHash, complete: false, stopReason: `burn-in world ${burnInHash} differs from the free arms' ${job.expectBurnInHash}: not run`, stoppedAt: { phase: 'burn-in', day: 0 }, result: null, jev: js, worker: {}, wallMs: performance.now() - t0 };
+    return { ...base, burnInHash, complete: false, stopReason: `burn-in world ${burnInHash} differs from the free arms' ${job.expectBurnInHash}: not run`, stoppedAt: { phase: 'burn-in', day: 0 }, unknownShare: 0, result: null, jev: js, worker: {}, wallMs: performance.now() - t0 };
   let scorer: (Scorer & { ready?: Record<string, unknown> }) | null = null;
   const gate = newGateState(), stats = newStats();
   world.modelPolicy = { ...world.modelPolicy, mode: 'async' };
@@ -211,16 +252,19 @@ export async function runPaidWorld(job: PaidJob, makeScorer: () => Promise<Score
   let phase: PaidResult['stoppedAt']['phase'] = 'warmup', tick = 0, sc: Scoring | null = null;
   try {
     scorer = await makeScorer();
-    for (let n = Math.round(job.warmupDays * TICKS_PER_DAY); tick < n; tick++) { control(); tickWorld(world); await answerPaid(world, job.arm, gate, stats, js, scorer, false); }
+    for (let n = Math.round(job.warmupDays * TICKS_PER_DAY); tick < n; tick++) { control(); tickWorld(world); await answerPaid(world, job.arm, gate, stats, js, scorer, false, unknown); }
     phase = 'scored'; tick = 0;
     sc = new Scoring(world, job);
-    for (let i = 1; i <= sc.ticks; i++, tick++) { control(); tickWorld(world); await answerPaid(world, job.arm, gate, stats, js, scorer, true); sc.step(world, i); }
+    for (let i = 1; i <= sc.ticks; i++, tick++) { control(); tickWorld(world); await answerPaid(world, job.arm, gate, stats, js, scorer, true, unknown); sc.step(world, i); }
     phase = 'done';
-    return { ...base, burnInHash, complete: true, stopReason: '', stoppedAt: { phase, day: job.scoredDays }, result: sc.finish(world, job.arm, job.seed, stats, t0), jev: js, worker: scorer.ready ?? {}, wallMs: performance.now() - t0 };
+    // Deviation 2: a finished world with too many unknown-billing fallbacks is invalid (its scored window is kept, so it can be shown both ways)
+    const invalid = share() > UNKNOWN_SHARE_LIMIT;
+    return { ...base, burnInHash, complete: !invalid, stopReason: invalid ? `invalid: ${js.unknownDecisions} jev-unknown-billing fallbacks in ${js.asked} policy decisions (${(100 * share()).toFixed(2)}% > ${100 * UNKNOWN_SHARE_LIMIT}%)` : '',
+      stoppedAt: { phase, day: job.scoredDays }, unknownShare: share(), result: sc.finish(world, job.arm, job.seed, stats, t0), jev: js, worker: scorer.ready ?? {}, wallMs: performance.now() - t0 };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     // the world stops here and is marked incomplete; its partial scored window is kept for diagnosis only
     const partial = sc && tick > 0 ? sc.finish(world, job.arm, job.seed, stats, t0) : null;
-    return { ...base, burnInHash, complete: false, stopReason: msg, stoppedAt: { phase, day: +(tick / TICKS_PER_DAY).toFixed(3) }, result: partial, jev: js, worker: scorer?.ready ?? {}, wallMs: performance.now() - t0 };
+    return { ...base, burnInHash, complete: false, stopReason: msg, stoppedAt: { phase, day: +(tick / TICKS_PER_DAY).toFixed(3) }, unknownShare: share(), result: partial, jev: js, worker: scorer?.ready ?? {}, wallMs: performance.now() - t0 };
   } finally { scorer?.stop(); }
 }

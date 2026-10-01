@@ -51,6 +51,13 @@ def fake_answer(body: bytes) -> dict:
 
 
 def start_fake_server(latency: float) -> tuple[ThreadingHTTPServer, str]:
+    # MGOGO_FAKE_FAIL_AT=n: the n-th request of this run gets an HTTP 520 once (a marker file in the receipts directory
+    # keeps a restarted worker from failing again), to rehearse the unknown-billing path of Deviation 2.
+    fail_at = int(os.environ.get("MGOGO_FAKE_FAIL_AT", "0"))
+    marker = Path(os.environ.get("MGOGO_JEV_RECEIPTS", ".")) / "FAKE_FAILED"
+    count = {"n": 0}
+    lock = threading.Lock()
+
     class H(BaseHTTPRequestHandler):
         def log_message(self, *a):
             pass
@@ -59,6 +66,14 @@ def start_fake_server(latency: float) -> tuple[ThreadingHTTPServer, str]:
             body = self.rfile.read(int(self.headers["Content-Length"]))
             if self.headers.get("Authorization") != f"Bearer {FAKE_KEY}":
                 self.send_response(401); self.end_headers(); return
+            with lock:
+                count["n"] += 1
+                fail = fail_at > 0 and count["n"] == fail_at and not marker.exists()
+                if fail:
+                    marker.parent.mkdir(parents=True, exist_ok=True)
+                    marker.write_text("failed once\n")
+            if fail:
+                self.send_response(520); self.send_header("Content-Length", "0"); self.end_headers(); return
             if latency:
                 time.sleep(latency)
             raw = json.dumps(fake_answer(body)).encode()

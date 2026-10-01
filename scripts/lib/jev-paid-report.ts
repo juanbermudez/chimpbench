@@ -8,7 +8,8 @@ import { DO_NOT_TRAIN, PRICE_IN, type Bridge, type PaidArm, type PaidResult } fr
 export const PAID_SEEDS: Record<PaidArm, number[]> = { J1: [6501, 6602, 6703, 6804, 6905], J2: [6501, 6602, 6703, 6804, 6905], J2s: [6501] };
 /** J2s also asks a quarter of its states unshuffled (jev-paid.ts PAIR_SHARE), so its provisional share is 1.25×. */
 const WEIGHT: Record<PaidArm, number> = { J1: 1, J2: 1, J2s: 1.25 };
-export const runIdOf = (arm: PaidArm, seed: number) => `jev-test/${arm}-${seed}`;
+/** Ledger run id of a world; a later attempt gets its own ids (an aborted attempt's spend stays booked under its own). */
+export const runIdOf = (arm: PaidArm, seed: number, attempt = 1) => attempt > 1 ? `jev-test/a${attempt}/${arm}-${seed}` : `jev-test/${arm}-${seed}`;
 
 export function isSqlite(file: string): boolean {
   try { return statSync(file).size >= 100 && readFileSync(file).subarray(0, 16).toString('latin1') === 'SQLite format 3\0'; } catch { return false; }
@@ -42,7 +43,7 @@ export function paidFlagsError(arms: string[], f: { paid: boolean; cap: string; 
 }
 
 export interface World1 { arm: PaidArm; seed: number; runId: string }
-export const plannedWorlds = (arms: PaidArm[]): World1[] => arms.flatMap(arm => PAID_SEEDS[arm].map(seed => ({ arm, seed, runId: runIdOf(arm, seed) })));
+export const plannedWorlds = (arms: PaidArm[], attempt = 1): World1[] => arms.flatMap(arm => PAID_SEEDS[arm].map(seed => ({ arm, seed, runId: runIdOf(arm, seed, attempt) })));
 
 /**
  * Per-world caps that sum to at most `total`: proportional to each world's estimated cost when estimates exist (every
@@ -76,6 +77,7 @@ export function scorePaid(paid: PaidResult[], free: FreeDoc, B: Record<string, B
       return { seed: w.seed, complete, stopReason: w.stopReason, stoppedAt: w.stoppedAt, D: complete ? e!.D : null, partialD: !complete && e ? e.D : null, distances: e?.rows ?? null, truth,
         deltaR: complete ? e!.D - freeD('R', w.seed) : null, deltaRG: complete ? e!.D - freeD('RG', w.seed) : null, deltaU: complete ? e!.D - freeD('U', w.seed) : null,
         calls: w.jev.calls, spent: w.jev.spent, estDollars: w.jev.estTokens * PRICE_IN, cap: w.capDollars,
+        asked: w.jev.asked ?? 0, unknownEvents: w.jev.unknownEvents ?? 0, unknownDecisions: w.jev.unknownDecisions ?? 0, unknownShare: w.unknownShare ?? 0,
         observer: w.result?.observer ?? null, decisions: w.result?.decisions ?? 0, kept: w.result?.kept ?? {}, fallbacks: w.result?.fallbacks ?? {},
         glinerOverBudget: w.result ? `${w.result.glinerOverBudget}/${w.result.glinerChecked}` : '', rulesAgree: w.result && w.result.decisions ? w.result.rulesAgree / w.result.decisions : null,
         medianTopProb: w.result ? median(w.result.topProb) : null, revalidated: w.jev.revalidated };
@@ -121,9 +123,9 @@ export function paidMarkdown(doc: { bridge: Bridge; snapshot: Record<string, unk
   o.push(`${DO_NOT_TRAIN}.`, '');
   if (doc.bridge !== 'worker') o.push('**Fake answers.** A local fake server answered every call with a hashed distribution, not Jev. The distances and verdicts below only exercise the pipeline and the scorer; they say nothing about Jev. The call counts, token estimates and costs are the planning numbers.', '');
   o.push(`Snapshot ${JSON.stringify(doc.snapshot)}. Wall ${doc.wallS} s. Cap $${doc.capTotal.toFixed(2)} split per world; spend ledger total ${doc.ledgerTotal === null ? '—' : `$${doc.ledgerTotal.toFixed(4)}`}.`, '');
-  o.push('| Arm | seed | complete | D | Δ vs R | Δ vs RG | Δ vs U | calls | spent $ | est. $ | cap $ | stop |', '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+  o.push('| Arm | seed | complete | D | Δ vs R | Δ vs RG | Δ vs U | calls | unknown-billing fallbacks (share of decisions) | spent $ | cap $ | stop |', '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
   for (const [arm, a] of Object.entries(A)) for (const s of a.perSeed)
-    o.push(`| ${arm} | ${s.seed} | ${s.complete ? 'yes' : '**no**'} | ${f(s.D ?? s.partialD)} | ${f(s.deltaR)} | ${f(s.deltaRG)} | ${f(s.deltaU)} | ${s.calls} | ${f(s.spent, 4)} | ${f(s.estDollars, 4)} | ${f(s.cap, 4)} | ${s.stopReason ? `${s.stopReason.slice(0, 80)} (${s.stoppedAt.phase} day ${s.stoppedAt.day})` : ''} |`);
+    o.push(`| ${arm} | ${s.seed} | ${s.complete ? 'yes' : '**no**'} | ${f(s.D ?? s.partialD)}${s.complete ? '' : s.partialD !== null ? ' (not counted)' : ''} | ${f(s.deltaR)} | ${f(s.deltaRG)} | ${f(s.deltaU)} | ${s.calls} | ${s.unknownDecisions} in ${s.unknownEvents} events (${(100 * s.unknownShare).toFixed(3)}%) | ${f(s.spent, 4)} | ${f(s.cap, 4)} | ${s.stopReason ? `${s.stopReason.slice(0, 110)} (${s.stoppedAt.phase} day ${s.stoppedAt.day})` : ''} |`);
   o.push('', '## Verdicts (pre-registered rules + Amendment 1)', '');
   for (const [arm, a] of Object.entries(A)) {
     if (arm === 'J2s') continue;
