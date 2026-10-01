@@ -124,12 +124,13 @@ Field profile, seeds 48 and 7 only, 30-day burn-in + 60 days, `--workers 2`, one
 ## 8. Results
 
 Runs: field profile, seeds 48 and 7, 30-day burn-in + 60 days, rules policy, `artifacts/validation/e1b/` (not tracked). Before any changed run, the switch-off check: worlds with `energyLedger` 1 (alone and with `rhythmSleep` + `rhythmHeat`) and the compressed default give the same hash after one day on this branch as on `track-e` (6f5a4c3). Unit tests (`tests/sim-digesta.test.ts`): conservation exact for every individual in both profiles, determinism under batching, saves resume exactly, the E1 ledger untouched at switch 0. One test threshold was wrong on first run (it asked a blocked foregut to stay 35 g fuller after an hour; the registered arithmetic gives 22 g, which is what the model did); the test now checks the arithmetic.
+Full suite at the end: `pnpm exec tsc --noEmit` clean; `pnpm test` 532 pass, 1 skipped, 1 failed only because `tests/guide-data.test.ts` reads a gitignored artifact (`artifacts/validation/c7a-field1y.json`) that a fresh worktree lacks; with the file copied from the main checkout it passes. Golden hashes unchanged.
 
 ### Iteration 1 (the registered model; arm 2)
 
 Energy (simulation truth, `energy-diagnose`), kcal per day; arm 1 in brackets:
 
-| Class | Formula kcal eaten | Dry matter g | Spent | of which DIT | Eating min | Foregut / hindgut fill | Daylight hunger | Reserves ÷ store, day 30 → 90 |
+| Class | Formula kcal eaten | Dry matter g | Spent | of which DIT | Eating min | Foregut / hindgut fill | Daylight hunger | Reserves ÷ store, day 30 → 85 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Adult male | 1,566 (1,333) | 523 | 1,516 (1,343) | 151 | 175 (151) | 0.30 / 0.51 | 0.17 (0.14) | +0.039 → +0.030 (+0.071 → +0.062) |
 | Female, not pregnant or lactating | 1,308 (1,106) | 458 | 1,263 (1,114) | 126 | 171 (145) | 0.33 / 0.58 | 0.20 (0.15) | +0.022 → +0.013 (+0.067 → +0.059) |
@@ -175,3 +176,31 @@ The fitted rise (+0.83 on rows scored in both arms) is T-PAT-6, incursion share,
 - **A1, attribution (not a candidate):** arm 2 with `digestaTefFrac` 0, `energy-diagnose` only. Question: is the mothers' deficit the DIT they cannot eat to cover? Expected: lactating reserves roughly flat (within 0.05%/day), adults back near arm 1's level, eating minutes +5–10% over arm 1 only.
 - **S1, bounded sensitivity (registered in §7):** low end of the capacity range (`digestaGutMlPerKg` 60, `digestaForegutDmGPerMl` 0.10, `digestaHindgutDmGPerMl` 0.15), full benchmark. Expected now, from iteration 1: the hindgut fills (over 20% of daylight), the readout ceiling falls further, so every class's reserves fall faster than in arm 2 and mothers most; whether rest becomes highest in the middle third is the question it answers.
 - No mechanism iteration: the flaw found is in the hunger readout (a design readout of E1, and the subject of E3), not in the digesta physiology; changing it here would take over E3's scope.
+
+### A1 result (DIT off; attribution only)
+
+| Class | Formula kcal eaten | Spent | Eating min | Reserves ÷ store, day 30 → 85 |
+| --- | --- | --- | --- | --- |
+| Adult male | 1,404 | 1,359 | 160 | +0.050 → +0.044 |
+| Female, not pregnant or lactating | 1,172 | 1,130 | 151 | +0.035 → +0.026 |
+| Female, lactating | 1,533 | 1,517 | 179 | −0.064 → −0.115 (−0.09% of the store a day) |
+| Infant 2–5 y | 471 | 491 | 76 | −0.094 → −0.223 |
+
+Without DIT, mothers still lose 0.09% of their store a day (arm 1 0.04%, arm 2 0.23%): DIT is about 70% of their extra loss. The rest: they absorb what arm 1's mothers absorbed (formula intake +4%, absorbed share 0.96) while walking 16 kcal/d more. In every arm with digesta, intake rises less than need, because hunger cannot exceed foregut emptiness.
+
+### S1 result (low end of the assumed capacity: foregut 2.7 g/kg, hindgut 5.0 g/kg)
+
+Not viable: 33 deaths by starvation and 16 orphaned infants in 60 days (98 → 49 living, both seeds), with no birth. Every class lost reserve from the burn-in on (adult females −0.32 → −0.87 of the store; males −0.28 → −0.75), eating 900 formula kcal against 1,271 spent, while their daylight hunger stayed at 0.28 (appetite saturated, foregut 72% full on average in daylight; full 10% of daylight; hindgut never full). They walked more (3.3 km on the ground against 2.2) and fed less (149 min). Hourly profile: feeding 30 / 20 / 20%, rest 21 / 30 / 32% (first 3 h / middle / last 3 h): no midday rest here either.
+
+S1 answers the registered question: a smaller gut does not make a midday pause; it makes animals feel full while they starve. The capacity is a sensitive, unsourced input (the central value keeps adults viable; the low end of its range collapses the population), and its effect runs entirely through the readout.
+
+### Verdict and open problem
+
+**Null**, under the registered criteria 1 and 2, confirmed by A1 and S1. `ledgerDigesta` stays at 0 and leaves the E stack. What stays useful on the branch: the digesta bookkeeping (dry matter, fibre, formula intake, faecal loss) and the diet-induced thermogenesis term, which closes the captive-day check against pontzer2016 (−1.8% and −6.9%) and brings T-ENE-8 into its band.
+
+Findings:
+1. **Digestibility does not reconcile field intake with expenditure.** Sourced fibre digestibility makes absorbed energy 0.94–0.97 of the field formula's. With DIT, adult females eat 1,308 formula kcal in 171 minutes, against 2,479 kcal in 309 minutes in the field. The remaining factor of about 1.9 has no measured physiological cause. The candidates, none with a number: swallowed seeds counted in the analysed food samples (Kibale chimpanzees swallow seeds; whether the samples included them was not reached), feeding rates or minutes overestimated by the field method (the same method gives wild gorillas up to 9,683 kcal/d), and wild expenditure far above captive (no wild ape has been measured).
+2. **Midday rest is not a digestive pause in this model.** With a 3-hour foregut, the dawn bout is followed by a pause 1–2 hours later, and rest then stays flat until the nest. Neither the central nor the low capacity gives rest highest in the middle third or a late feeding peak.
+3. **The term that fails is the hunger readout.** `hunger = foregut emptiness × appetite` (E1's design readout) lets momentary gut fill cap the drive to eat, so a deficit beyond 10% of the store cannot raise it. With a bulk-sized gut this starves mothers slowly (central capacity) or everyone fast (low capacity). It is the same structure as the coordinator's E3 finding: food has to be valued against the reserve deficit over the coming hours, not only against gut space now.
+
+**Biggest open problem.** The factor of about 1.9 between field formula intake (2,479 kcal) and any sourced expenditure (1,250–1,500 kcal for an adult female with DIT). Until it is resolved, T-ENE-1 to T-ENE-3 and the feeding-time rows (T-ACT-1, T-ENE-2) cannot all pass in a model that conserves energy. The first thing to check is a primary source: whether uwimbabazi2019's food samples include swallowed seeds, and the dry matter of seeds in Kibale chimpanzee dung.
