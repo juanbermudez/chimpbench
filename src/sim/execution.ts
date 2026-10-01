@@ -8,6 +8,7 @@ import { paramsOf, type Params } from './params';
 import { eat, fallbackKcalPerH, fruitKcalPerUnit, glandEmpty, gutRoom, intakeSize, ledgerOn, nurseTick, sharePlant } from './energy';
 import { snareIntake } from './snares';
 import { lightArousal } from './rhythm';
+import { noteFeeders } from './departure';
 import { doTransfer, recordCopulation } from './reproduction';
 import { IMPULSE_HUNT, forget } from './perception';
 import { clamp, hash01, random } from './rng';
@@ -158,7 +159,7 @@ function cleanupPrevious(world: World, c: Chimp): void {
   // leaving a crown after feeding in it: what is left becomes the belief about it (stage C7a, field)
   if (c.action === 'forage' && x.phase === 2 && isTreeId(c.targetId) && paramsOf(world).memCropBelief === 1) {
     const t = index(world).treeById.get(c.targetId);
-    if (t) (x.treeCrop ??= {})[t.id] = Math.round(fruitAt(world, t) * 1000) / 1000;
+    if (t) { (x.treeCrop ??= {})[t.id] = Math.round(fruitAt(world, t) * 1000) / 1000; if (paramsOf(world).departRace === 1) noteFeeders(c, t.id, index(world).byId); }
   }
   // leaving a crown after feeding in it: remember it as harvested (stage C6b, field; design)
   if (c.action === 'forage' && x.phase === 2 && isTreeId(c.targetId) && paramsOf(world).revisitW > 0) {
@@ -806,7 +807,12 @@ function nestTick(world: World, c: Chimp): void {
     // (weaning + 0.3 y) and within the nurse act's reach (1.2 m), with no weaning refusal at night. Evidence: khayer2025,
     // nest sharing until weaning [M]; mizuno2006, night suckling of captive newborns [L]; no refusal is a stylization (lint-ok: existing values)
     if (P.ledgerNightNurse === 1 && m.action === 'nest' && m.id === c.motherId && c.age < x.weanAge + 0.3 && c.hunger >= NURSE_DONE
-      && (held || hd(c, m) <= 1.2) && ledgerOn(P)) nurseTick(c, m, P);
+      && (held || hd(c, m) <= 1.2) && ledgerOn(P)) {
+      // stage E2b (nurseWake): a tick in which the infant drinks is a waking tick for the mother (rhythm.ts rhythmNeeds)
+      const before = ix(m).en?.milk ?? 0;
+      nurseTick(c, m, P);
+      if (P.nurseWake === 1 && (ix(m).en?.milk ?? 0) < before) ix(m).nwk = world.tick;
+    }
     return;
   }
   const t = idx.treeById.get(c.targetId);

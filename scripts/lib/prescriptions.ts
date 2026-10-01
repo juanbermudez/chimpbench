@@ -180,6 +180,8 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   redirectWindowH: { when: P => P.endoRedirect !== 1 || P.endoStates !== 1, why: "the defeat is considered once, at the loser's first choice after it, while endoRedirect and endoStates are 1" },
   rainDisplayP: { when: P => P.endoRainDisplay !== 1 || P.endoStates !== 1, why: 'no rain-display roll while endoRainDisplay and endoStates are 1 (src/sim/tick.ts)' },
   stressRelaxPerH: { when: P => P.endoStates !== 1, why: 'the stress load is a leaky integrator with its own drivers while endoStates is 1 (src/sim/endocrine.ts)' },
+  // stage E2b (docs/staging/e2b-prereg.md): departRace and nurseWake add terms to the nest's value and to sleep pressure;
+  // neither switches a prescription out, so neither has an entry here (both are class design, rule 1)
 };
 
 /** Whether an entry is in use: generated (not planned), non-zero under these resolved parameters, and not switched out. */

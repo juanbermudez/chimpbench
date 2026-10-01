@@ -71,7 +71,9 @@ const STILL: Record<string, 1> = { rest: 1, shelter: 1, groom: 1, nurse: 1, nest
 export function rhythmNeeds(world: World, c: Chimp, asleep: boolean): void {
   const P = paramsOf(world), x = ix(c);
   if (P.rhythmSleep === 1) {
-    const S = sleepStep(P, x.slp ?? 1 - c.energy, asleep);
+    // stage E2b (nurseWake): her infant drank in her nest last tick (execution.ts nestTick), so she was awake for it
+    const nursed = P.nurseWake === 1 && x.nwk === world.tick - 1;
+    const S = sleepStep(P, x.slp ?? 1 - c.energy, asleep && !nursed);
     x.slp = S; c.energy = 1 - sleepiness(S, world.environment.daylight);
   }
   if (P.rhythmHeat !== 1) return;

@@ -4891,6 +4891,29 @@
    "notes": "Moving-together stage: once this long has passed since the first failed attempt of a departure effort, the next attempt is not abandoned (the upper end of the re-launch delays, 0-13 min, 9 cases). An effort not re-launched within this window is over."
   },
   {
+   "id": "departRace",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.departRace",
+   "file": "src/sim/departure.ts",
+   "integer": true,
+   "notes": "Stage E2b switch (docs/staging/e2b-prereg.md §3.1): the nest's value (staying in it or building one) is lowered by the largest stake of delay among the animal's feeding options, G = W × n × lim × a: W the option's food worth as the rules compute it, n the others eating the same crown (in view now, or remembered feeding there and not in view now; belief chimp.sim.treeFeed, written beside treeCrop), lim the part of the meal they take when they eat with it rather than after it (the party-size share rule), a whether they will be eating when it arrives (1 when seen eating; else the daylight expected at its arrival from the brightening it perceives). No clock hour, no new weight. 0 = E2a, bit-identical. Ablation switch."
+  },
+  {
    "id": "departRetryMin",
    "group": "movement",
    "value": 3.8,
@@ -13868,6 +13891,29 @@
     "field": 5
    },
    "notes": "Nursing is less likely beyond this distance from the mother. Body-scale distance: the same in both profiles (design)."
+  },
+  {
+   "id": "nurseWake",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.nurseWake",
+   "file": "src/sim/rhythm.ts",
+   "integer": true,
+   "notes": "Stage E2b switch (docs/staging/e2b-prereg.md §3.2): a tick in which a mother's infant drinks milk in her nest at night (E1c ledgerNightNurse) is a waking tick for her sleep pressure (it rises instead of falling), as night feeding fragments postpartum sleep in women (montgomeryDowns2010, cross-species, assumed). Needs energyLedger, ledgerNightNurse and rhythmSleep; no effect otherwise. 0 = unchanged. Ablation switch."
   },
   {
    "id": "oestrusPullW",
