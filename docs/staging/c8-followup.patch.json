@@ -33,6 +33,21 @@
    ],
    "verdicts": "held-out rows relabelled 'model revised post-freeze' (set B only); sealed rows unchanged; fitted rows development only",
    "class": "pre-registration"
+  },
+  {
+   "date": "2026-09-30",
+   "by": "C8 implementer",
+   "seen": "development only (seeds 48, 7, 21; 10 field years; lactTaper 1 vs 0 on the same code): fitted rows T-DEM-1, -2, -10, -12 and truth energetics and viability; the held-out rows in the field-metrics output were not read; no sealed value",
+   "param": "C8c result (docs/staging/c8c-lactation-taper.md). Guard passes: G1 lactTaper 0 hash-identical to the model before C8c; G2 births / deaths 116 / 62 pooled, living 49 -> 71, 69, 61; G3 lactating median hunger with the youngest offspring >= 2 y 0.61 / 0.60 / 0.60 against 0.66 / 0.67 / 0.66. Predictions: 3 pass (lactating median condition 0.37-0.38 from 0.30-0.31; T-DEM-1 0.168 vs 0.159; T-DEM-12 5.07 vs 5.29 y), 5 fail (lactating lean-day median hunger 0.68 / 0.63 / 0.65 against the predicted 0.58-0.64; female e15 45.7 vs 50.7 y, above the band in both arms; male e15 19.0 vs 25.6 y; T-DEM-10 0.217 vs 0.243; growth +3.1% vs +3.4% per year). No fitted row leaves its band only under the taper. Life expectancy cannot be read from 3 seeds x 10 years (5-7 adult-female deaths per arm, in epidemic lumps); the 40-year density check is the instrument. No value was tuned after the check; lactTaper stays 1 with the pre-registered values",
+   "reason": "pre-registered check of the C8c taper",
+   "targets": [
+    "T-DEM-1",
+    "T-DEM-2",
+    "T-DEM-10",
+    "T-DEM-12"
+   ],
+   "verdicts": "development only: T-DEM-1, -10, -12 inside their bands in both arms; T-DEM-2 fails in both arms (female e15 above the band over 10 years)",
+   "class": "development check (pre-registered)"
   }
  ],
  "targetEdits": {
