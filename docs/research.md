@@ -683,3 +683,24 @@ Read for the C8 diagnosis of starving lactating females in the field profile (do
 - maestripieri2005: Maestripieri D 2005. Early experience affects the intergenerational transmission of infant abuse in rhesus monkeys. *PNAS* 102(27):9726–9729. [doi:10.1073/pnas.0504122102](https://doi.org/10.1073/pnas.0504122102) (FT, PMC1172276).
 - sapolskyShare2004: Sapolsky RM, Share LJ 2004. A pacific culture among wild baboons: its emergence and transmission. *PLoS Biology* 2(4):e106. [doi:10.1371/journal.pbio.0020106](https://doi.org/10.1371/journal.pbio.0020106) (FT, PMC387274).
 - testard2024: Testard C, Shergold C, Acevedo-Ithier A et al. 2024. Ecological disturbance alters the adaptive benefits of social ties. *Science* 384(6702):1330–1335. [doi:10.1126/science.adk0606](https://doi.org/10.1126/science.adk0606) (FT, PMC11995978).
+
+## Food landscape: tree size, crop size and patch use (party-size follow-up, 1 October 2026)
+
+Read for the food-landscape design ([staging/food-landscape-prereg.md](staging/food-landscape-prereg.md)). Tags as in the sections above. "Derived" means computed here from a cited source; the script is named.
+
+- **Tree diameter as the estimator of a fruit crop** [chapman1992] (indexed summary only; the abstract is not available) [M].
+  - Diameter at breast height (DBH) was the most consistently accurate estimator of fruit abundance and had low between-observer variability; crown volume was neither precise nor accurate.
+  - No exponent is given in the text read. Whether a crop scales with DBH or with basal area (DBH²) is not sourced here.
+- **Tree sizes in the Ngogo phenology record** [potts2020] (data, Dryad gf1vhhmk8, CC0; derived, `artifacts/validation/party/` probe scripts, statistics only).
+  - 1,007 monitored trees with a DBH: median 50 cm, 10th percentile 13, 90th 111, 99th 192, largest 277.
+  - By species (median DBH; spread of log DBH): *Ficus mucuso* 98 cm (0.68), *Pseudospondias microcarpa* 81 (0.61), *Mimusops bagshawei* 79 (0.40), *Pterygota mildbraedii* 71 (0.54), *Ficus natalensis* 60 (0.50), *Chrysophyllum albidum* 60 (0.24), *Celtis durandii* 32 (0.35), *Uvariopsis congensis* 19 (0.19). 25–34 trees each.
+  - Tree-months with ripe fruit: 15,689 of 176,057 (8.9%). The trees in fruit have a median DBH of 68 cm (90th percentile 132, 99th 200).
+  - Concentration among fruiting tree-months: the largest 10% hold 23% of the summed DBH and 39% of the summed basal area (20%: 39% and 59%).
+  - The record's ripe-fruit score is 1 in 97.5% of fruiting tree-months, so it carries almost no crop-size information.
+- **A party visit, in feeding time** (derived from [potts2011]): 7.29–8.39 feeders × 27.0–46.2 min of patch residency = 3.3–6.5 chimp-hours of feeding per visit, in patches of 63–67 cm DBH. That patch size is the median of the trees in fruit in the Ngogo record (68 cm), so feeding parties of 7–8 use ordinary fruiting trees, not only giants.
+- **Density of fruiting crowns** (derived from [janmaat2016] and [potts2020]): about 6–9.8 feeding-size food trees per ha × 8.7–8.9% in fruit = 0.5–0.9 fruiting crowns per ha. A fruiting food tree every 97 m of transect against a large ripe crop every 10–21 km makes large ripe crops about 0.5–1% of the fruiting trees met.
+
+**Sources:**
+
+- *new* chapman1992: Chapman CA, Chapman LJ, Wrangham R, Hunt K, Gebo D, Gardner L 1992. Estimators of fruit abundance of tropical trees. *Biotropica* 24(4):527–531. [doi:10.2307/2389015](https://doi.org/10.2307/2389015) (indexed summary; bibliographic record checked against Crossref on 1 October 2026, which lists the first page only; the page range is from memory).
+- potts2011, potts2020 and janmaat2016 are already cited; the lines above add derived statistics, not sources.
