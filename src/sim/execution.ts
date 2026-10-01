@@ -752,6 +752,19 @@ export function executeAction(world: World, c: Chimp): void {
         x.interId = startInteraction(world, 'nurse', c, m.id, [c.id, m.id], 0.2).id;
       }
       if (!isCarried(c, m) && hd(c, m) > 1.2) { moveTo(world, c, m.position[0], m.position[1], m.position[2], WALK, 0.8); return; }
+      if (P.ledgerNurseBout === 1 && ledgerOn(P)) {
+        // stage E1f (ledgerNurseBout): no milk flows for the first ledgerLetDownS of contact (milk ejection; gardner2015,
+        // women, assumed), then the full flow; the bout ends when a tick delivers less than the full flow (the gland or
+        // the gut can no longer sustain it) or the infant is sated; a new bout waits for ejection again
+        x.prog += TICK_SECONDS;
+        const k = clamp((x.prog - P.ledgerLetDownS) / TICK_SECONDS);
+        const drunk = k > 0 ? nurseTick(c, m, P, k) : 0;
+        if (k > 0) c.thirst = clamp(c.thirst - 0.4 * TICK_HOURS * k);
+        c.social = clamp(c.social + 0.2 * TICK_HOURS);
+        m.energy = clamp(m.energy - 0.02 * TICK_HOURS);
+        if (c.hunger < NURSE_DONE || (k > 0 && drunk < k * P.ledgerMilkKcalPerMin * 60 * TICK_HOURS * (1 - 1e-9))) { x.prog = 0; finish(world, c); }
+        return;
+      }
       if (ledgerOn(P)) nurseTick(c, m, P); // stage E1: milk into the infant's gut, its cost out of the mother's reserves
       else c.hunger = clamp(c.hunger - 0.5 * TICK_HOURS * (1 - c.age / 6));
       c.thirst = clamp(c.thirst - 0.4 * TICK_HOURS);

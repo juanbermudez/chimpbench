@@ -32,6 +32,12 @@
 // left is read from sleep pressure against the pressure at which the animal last fell asleep (E2a's process S), never
 // from the hour. A tree is worth the energy it can deliver over the bout (crop share, need, and the gut's room plus its
 // emptying), and a nursing bout the milk the mother's glands can deliver.
+// Stage E1f (docs/staging/e1f-prereg.md; switches 0 by default, read only with energyLedger 1): ledgerNurseBout values a
+// day nursing bout like a tree visit, by the milk it delivers over the time it takes, the milk-ejection latency included
+// (nurseBoutWorth; the act waits that latency before milk flows, execution.ts), and supersedes E1d's and E1e's nursing
+// terms; ledgerGrowPotential (with ledgerGrowSurplus) takes the growth potential from captive rates (growthPotential),
+// pays growth from the day's surplus of absorbed energy over all other spending (aAvg, mAvg), and lets the drive
+// (ledgerDrive) anticipate the potential growth (spendRate).
 import type { Chimp, World } from '../types';
 import { paramsOf, type Params } from './params';
 import { TICK_HOURS, TICK_SECONDS, ix, type ChimpX, type EnergyLedger } from './state';
@@ -109,9 +115,24 @@ function curveMass(c: Chimp, P: Params): number {
 /** Body mass (kg): the curve by age, or with ledgerGrowSurplus 1 (stage E1c) the animal's own mass, once its ledger holds one. */
 export function massOf(c: Chimp, P: Params): number {
   const kg = P.ledgerGrowSurplus === 1 ? ix(c).en?.kg : undefined;
-  return kg !== undefined ? kg : curveMass(c, P);
+  return kg !== undefined ? kg : growPot(P) ? potentialMass(c, P) : curveMass(c, P);
 }
 const adultMass = (c: Chimp, P: Params) => c.sex === 'female' ? P.ledgerMassFemaleKg : P.ledgerMassMaleKg;
+/** Stage E1f: the captive growth potential is in use (ledgerGrowPotential with mass as state, ledgerGrowSurplus). */
+const growPot = (P: Params) => P.ledgerGrowPotential === 1 && P.ledgerGrowSurplus === 1;
+/**
+ * Stage E1f (ledgerGrowPotential): the growth potential at this age, kg per bio-year: the captive first-year gain
+ * (desilva2011), then the sanctuary rate by sex (curry2023), up to the adult mass (the caller stops at it).
+ */
+export function growthPotential(c: Chimp, P: Params): number {
+  return c.age < 1 ? P.ledgerGrowFirstYearKg : c.sex === 'female' ? P.ledgerGrowFemaleKgPerY : P.ledgerGrowMaleKgPerY;
+}
+/** Stage E1f: mass on the potential curve at this age (a founder's opening mass), capped at the adult mass. */
+function potentialMass(c: Chimp, P: Params): number {
+  const v = c.sex === 'female' ? P.ledgerGrowFemaleKgPerY : P.ledgerGrowMaleKgPerY, a = c.age;
+  const m = P.ledgerMassBirthKg + P.ledgerGrowFirstYearKg * (a < 1 ? a : 1) + v * (a > 1 ? a - 1 : 0), adult = adultMass(c, P);
+  return m < adult ? m : adult;
+}
 /** The curve's slope (kg per bio-year): with ledgerGrowSurplus 1 the growth potential of a well-fed animal below adult mass. */
 const potentialKgPerY = (c: Chimp, P: Params) => (adultMass(c, P) - P.ledgerMassBirthKg) / (c.sex === 'female' ? P.ledgerMassMatureFemaleY : P.ledgerMassMatureMaleY);
 /** Mass gained per bio-year (kg) at this age. */
@@ -165,7 +186,7 @@ export function ledgerOf(c: Chimp, P: Params): EnergyLedger {
   const p = c.position, D = rates(P).dig;
   const L: EnergyLedger = { gut: gutCap(c, P) * (1 - (c.hunger > 1 ? 1 : c.hunger < 0 ? 0 : c.hunger)), res: reserveCap(c, P) * (dev < -0.9 ? -0.9 : dev > 0.5 ? 0.5 : dev), in: 0, out: 0, x: p[0], y: p[1], z: p[2], milk: 0 };
   x.en = L;
-  if (P.ledgerGrowSurplus === 1) L.kg = curveMass(c, P); // stage E1c: a founder starts on the curve, a newborn at birth mass
+  if (P.ledgerGrowSurplus === 1) L.kg = growPot(P) ? potentialMass(c, P) : curveMass(c, P); // stage E1c: a founder starts on the curve (E1f: the potential), a newborn at birth mass
   if (D) openDigesta(c, L, D, P); // stage E1b (after the mass, which sizes the gut)
   if (driveOn(P)) openDrive(c, L, P);
   return L;
@@ -178,6 +199,28 @@ export const driveOn = (P: Params) => P.energyLedger === 1 && P.ledgerDrive === 
 function openDrive(c: Chimp, L: EnergyLedger, P: Params): void {
   L.eAvg = P.ledgerRmrCoef / 24 * Math.pow(massOf(c, P), P.ledgerRmrExp) * P.ledgerActRest;
   L.sBed = 1 - Math.exp(-P.driveFirstDayH / P.rhythmSleepRiseH); L.sWake = 0; L.slept = 0; L.outAt = L.out;
+}
+
+/**
+ * Stage E1f: open the growth books of an animal below adult mass: spending other than growth at the awake resting rate
+ * (as openDrive), and absorption at that plus growth at the potential (a founder or newborn is taken to be in balance at
+ * its potential; design).
+ */
+function openGrowth(c: Chimp, L: EnergyLedger, P: Params): void {
+  L.mAvg = P.ledgerRmrCoef / 24 * Math.pow(massOf(c, P), P.ledgerRmrExp) * P.ledgerActRest;
+  L.aAvg = L.mAvg + rates(P).grow * growthPotential(c, P) / TICK_HOURS; L.gAt = L.out;
+}
+/**
+ * Spending the drive expects (kcal/h): the day-long average of everything spent (E1e), or with ledgerGrowPotential, for
+ * an animal below adult mass, the day-long average of everything but growth plus growth at the potential (a growing
+ * animal's requirement is its expenditure plus the energy it deposits; fao2004 §4.4).
+ */
+function spendRate(c: Chimp, L: EnergyLedger, P: Params): number {
+  if (growPot(P) && L.kg !== undefined && L.kg < adultMass(c, P)) {
+    const m = L.mAvg !== undefined ? L.mAvg : P.ledgerRmrCoef / 24 * Math.pow(massOf(c, P), P.ledgerRmrExp) * P.ledgerActRest; // read-only before the books open
+    return m + rates(P).grow * growthPotential(c, P) / TICK_HOURS;
+  }
+  return L.eAvg!;
 }
 
 /** Energy in the gut still to be absorbed (kcal): the foregut's non-fibre energy, plus the expected yield of the fibre in both pools. */
@@ -219,7 +262,7 @@ export function energyNeed(c: Chimp, P: Params): number {
   const L = ledgerOf(c, P), D = rates(P).dig;
   if (L.eAvg === undefined) openDrive(c, L, P);
   const [left, fast] = feedHorizon(c, L, P);
-  return -L.res - gutEnergy(L, P, D) + L.eAvg! * (left + fast);
+  return -L.res - gutEnergy(L, P, D) + spendRate(c, L, P) * (left + fast);
 }
 
 /**
@@ -251,7 +294,7 @@ function setHunger(c: Chimp, L: EnergyLedger, P: Params): void {
     // stage E1e: drive = need ÷ (intake rate × waking time left), inhibited near distension by 1 − fill²
     const D = rates(P).dig;
     if (L.eAvg === undefined) openDrive(c, L, P);
-    const [left, fast] = feedHorizon(c, L, P), need = -L.res - gutEnergy(L, P, D) + L.eAvg! * (left + fast);
+    const [left, fast] = feedHorizon(c, L, P), need = -L.res - gutEnergy(L, P, D) + spendRate(c, L, P) * (left + fast);
     const phi = need > 0 ? need / (feedRate(c, P) * (left > TICK_HOURS ? left : TICK_HOURS)) : 0, f = gutFill(c, L, P, D);
     c.hunger = (phi > 1 ? 1 : phi) * (1 - f * f);
     return;
@@ -305,7 +348,22 @@ export function energyTick(world: World, c: Chimp, x: ChimpX, sleeping: boolean)
   }
   // milk synthesis is limited: the store fills at the yield rate and holds ledgerMilkStoreH hours of it
   if (c.lactating) { const y = r.milk * m75, full = y * r.milkTicks; L.milk = L.milk + y < full ? L.milk + y : full; } else if (L.milk !== 0) L.milk = 0;
-  if (P.ledgerGrowSurplus === 1) {
+  let grown = 0;
+  if (P.ledgerGrowSurplus === 1 && growPot(P)) {
+    // stage E1f: growth from the day's surplus. f = (day-long mean absorbed − day-long mean of all other spending) ÷ the
+    // cost of growing at the captive potential, clamped 0..1 [west2001's allocation, over a day]; mass advances on the
+    // life-history clock, the cost is charged at the natural daily rate (as in E1)
+    if (L.kg === undefined) L.kg = potentialMass(c, P);
+    const adult = adultMass(c, P);
+    if (L.kg < adult) {
+      if (L.mAvg === undefined) openGrowth(c, L, P);
+      const v = growthPotential(c, P), G = r.grow * v, s = (L.aAvg! - L.mAvg!) * TICK_HOURS;
+      let f = s <= 0 ? 0 : s >= G ? 1 : s / G;
+      const step = v * f * TICK_HOURS / 24 / DAYS_PER_YEAR * (world.ageRate > 0 ? world.ageRate : 0);
+      if (step > adult - L.kg) { f = f * (adult - L.kg) / step; L.kg = adult; } else L.kg += step;
+      grown = G * f; out += grown; if (tap) tap(c, 'growth', grown);
+    }
+  } else if (P.ledgerGrowSurplus === 1) {
     // stage E1c: lean growth only from a surplus (reserves above the set point), at the well-fed potential, up to adult
     // mass; mass advances on the life-history clock, the cost is charged at the natural daily rate (as in E1)
     if (L.kg === undefined) L.kg = curveMass(c, P);
@@ -333,6 +391,14 @@ export function energyTick(world: World, c: Chimp, x: ChimpX, sleeping: boolean)
   }
   L.res += absorbed - out;
   L.out += out;
+  if (L.mAvg !== undefined) {
+    // stage E1f: the day-long means of energy absorbed and of everything spent but growth (milk and carrying are charged
+    // elsewhere, so read the books); kept while the animal is below adult mass
+    if (growPot(P) && L.kg !== undefined && L.kg < adultMass(c, P)) {
+      L.aAvg! += (absorbed / TICK_HOURS - L.aAvg!) * r.avg;
+      L.mAvg += ((L.out - L.gAt! - grown) / TICK_HOURS - L.mAvg) * r.avg; L.gAt = L.out;
+    } else { delete L.mAvg; delete L.aAvg; delete L.gAt; }
+  }
   if (driveOn(P)) {
     // stage E1e: the day-long average of everything spent (milk and carrying are charged elsewhere, so read the books),
     // and the sleep pressure at the last falling asleep and waking (the animal's own measure of its waking day)
@@ -405,15 +471,32 @@ export const fallbackKcalPerH = (P: Params) => P.ledgerFallbackKcalPerMin * 60;
 
 /**
  * One tick of nursing: the infant drinks at the suckling rate what the mother's glands hold and its gut takes; the mother
- * spends that energy ÷ the efficiency of milk synthesis.
+ * spends that energy ÷ the efficiency of milk synthesis. `frac` is the share of the tick in which milk flows (stage E1f:
+ * the tick in which the milk-ejection latency ends). Returns the milk drunk (kcal).
  */
-export function nurseTick(infant: Chimp, mother: Chimp, P: Params): void {
-  const ML = ledgerOf(mother, P), flow = P.ledgerMilkKcalPerMin * 60 * TICK_HOURS;
+export function nurseTick(infant: Chimp, mother: Chimp, P: Params, frac = 1): number {
+  const ML = ledgerOf(mother, P), flow = P.ledgerMilkKcalPerMin * 60 * TICK_HOURS * frac;
   const milk = eat(infant, P, flow < ML.milk ? flow : ML.milk, 'milk');
-  if (milk <= 0) return;
+  if (milk <= 0) return 0;
   const cost = milk / P.ledgerMilkEff;
   ML.milk -= milk; ML.res -= cost; ML.out += cost;
   if (energyTap.fn) { energyTap.fn(mother, 'milk', cost); energyTap.fn(infant, 'suckled', milk); }
+  return milk;
+}
+
+/**
+ * Stage E1f (ledgerNurseBout): what a day nursing bout is worth, as the share of the full suckling rate it delivers over
+ * the time it takes, the milk-ejection latency included: E ÷ (E + rate × latency), E the milk it can deliver (the gland
+ * store plus what is made while it drains, up to what the infant's foregut can take of milk). 0 for a dry gland or a
+ * full gut; 1 while either ledger is not open. Pure: reads existing ledgers only.
+ */
+export function nurseBoutWorth(infant: Chimp, mother: Chimp, P: Params): number {
+  const I = ix(infant).en, M = ix(mother).en;
+  if (!I || !M) return 1;
+  const F = P.ledgerMilkKcalPerMin * 60, y = P.ledgerMilkYieldCoef / 24 * Math.pow(massOf(mother, P), P.ledgerRmrExp), D = rates(P).dig;
+  const room = D && I.dm !== undefined ? (D.capF * massOf(infant, P) - I.dm) / D.food.milk.g : gutCap(infant, P) - I.gut;
+  const gland = F > y ? M.milk * F / (F - y) : Infinity, E = gland < room ? gland : room;
+  return E > 0 ? E / (E + F * P.ledgerLetDownS / 3600) : 0;
 }
 
 /**

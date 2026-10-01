@@ -2,7 +2,7 @@
 /* eslint-disable */
 export const REGISTRY_VERSION = 1;
 /** Content hash of every live default, hard range, profile value and integer flag. Stored with each world. */
-export const REGISTRY_HASH = 'f96e4c84ba6f00e5';
+export const REGISTRY_HASH = '582d2d8e24a565a5';
 
 /** Registry defaults (the compressed profile). */
 export const DEFAULTS = {
@@ -534,12 +534,17 @@ export const DEFAULTS = {
   ledgerFallbackKcalPerMin: 4.2,
   ledgerFigKcalPerMin: 12.5,
   ledgerFruitKcalPerMin: 9.9,
+  ledgerGrowFemaleKgPerY: 3.4,
+  ledgerGrowFirstYearKg: 2.8,
+  ledgerGrowMaleKgPerY: 3.8,
+  ledgerGrowPotential: 0,
   ledgerGrowSurplus: 0,
   ledgerGrowthKcalPerG: 4.5,
   ledgerGutCapKcalPerKg: 25,
   ledgerGutEmptyH: 3,
   ledgerInfantIntake: 0,
   ledgerIntakeSizeExp: 0.75,
+  ledgerLetDownS: 54,
   ledgerMassBirthKg: 1.8,
   ledgerMassFemaleKg: 31.3,
   ledgerMassMaleKg: 39,
@@ -551,6 +556,7 @@ export const DEFAULTS = {
   ledgerMilkStoreH: 24,
   ledgerMilkYieldCoef: 23.2,
   ledgerNightNurse: 0,
+  ledgerNurseBout: 0,
   ledgerNurseByMilk: 0,
   ledgerPlantShareKcal: 50,
   ledgerPregnancyCoef: 7,
@@ -1448,12 +1454,17 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   ledgerFallbackKcalPerMin: [0, 1000000],
   ledgerFigKcalPerMin: [0, 1000000],
   ledgerFruitKcalPerMin: [0, 1000000],
+  ledgerGrowFemaleKgPerY: [0, 20],
+  ledgerGrowFirstYearKg: [0, 20],
+  ledgerGrowMaleKgPerY: [0, 20],
+  ledgerGrowPotential: [0, 1],
   ledgerGrowSurplus: [0, 1],
   ledgerGrowthKcalPerG: [0, 1000000],
   ledgerGutCapKcalPerKg: [0.001, 1000000],
   ledgerGutEmptyH: [0.01, 1000000],
   ledgerInfantIntake: [0, 1],
   ledgerIntakeSizeExp: [0, 2],
+  ledgerLetDownS: [0, 600],
   ledgerMassBirthKg: [0.1, 100],
   ledgerMassFemaleKg: [1, 200],
   ledgerMassMaleKg: [1, 200],
@@ -1465,6 +1476,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   ledgerMilkStoreH: [0.01, 1000000],
   ledgerMilkYieldCoef: [0, 1000000],
   ledgerNightNurse: [0, 1],
+  ledgerNurseBout: [0, 1],
   ledgerNurseByMilk: [0, 1],
   ledgerPlantShareKcal: [0, 1000000],
   ledgerPregnancyCoef: [0, 1000000],
@@ -1831,7 +1843,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
 };
 
 /** Parameters that must stay whole numbers. */
-export const INTEGER_IDS: readonly ParamId[] = ['allyCount', 'assocMinScans', 'attentionN', 'birthCondFromMother', 'callSignatures', 'callerDiscrim', 'chimpGridCellM', 'coerceMaxRepeats', 'contactSlots', 'crowdByShare', 'cycleLenMinDays', 'cycleLenSpanDays', 'deadSlimDays', 'departCue', 'departPersist', 'departRace', 'endoEscalate', 'endoFast', 'endoFastRedirect', 'endoRainDisplay', 'endoRedirect', 'endoStates', 'energyLedger', 'episodeCap', 'eventCap', 'eventPriorityAlpha', 'eventPriorityBirth', 'eventPriorityDeath', 'eventPriorityInfanticide', 'eventPriorityInjury', 'eventPriorityIntergroup', 'eventPriorityRank', 'eventPriorityTransfer', 'fissionMinAdults', 'fissionMonths', 'fissionOn', 'followCommit', 'foodCallRule', 'fordSpacingM', 'gangMinOwnMales', 'historyFacts', 'historyMaxChars', 'historyMaxLines', 'huntEncMinMales', 'huntEncounter', 'huntMinMales', 'infanticideMaleMargin', 'intakeCropOnly', 'intakeValue', 'joinChoice', 'knownTreesK', 'lactTaper', 'layoutScale', 'ledgerDigesta', 'ledgerDrive', 'ledgerGrowSurplus', 'ledgerInfantIntake', 'ledgerNightNurse', 'ledgerNurseByMilk', 'mapSizeM', 'maternalLevers', 'memCropBelief', 'memKeepMonths', 'memLedgerEvents', 'memMonthEvents', 'memMonthPartners', 'memTreeCap', 'memYearEvents', 'memYearPartners', 'memoryCap', 'memoryMonthDays', 'nestLightDecide', 'nurseWake', 'partyEveryTicks', 'partyJoinTrip', 'partyLeaderFollow', 'partyStayMaxN', 'patchEcology', 'patrolContactMemory', 'patrolEnergyGate', 'patrolImpulseDecides', 'patrolMinMales', 'patrolSilence', 'patrolSingleFile', 'phenologyForcing', 'popCap', 'preyMinGroups', 'preyMoveEveryTicks', 'rgMinAge', 'rgOn', 'rhythmFreeNight', 'rhythmHeat', 'rhythmSleep', 'routeChain', 'siteTzH', 'slotsForage', 'slotsMulti', 'slowEveryTicks', 'startDoy', 'streamAnalytic', 'synthYears', 'tickSeconds', 'travelCommit', 'travelHoo', 'treeGridCellM', 'tripRateValue', 'udCellM', 'udKernelRef', 'urgencyChoice', 'urgencyPersist', 'urgencySwitchCost'];
+export const INTEGER_IDS: readonly ParamId[] = ['allyCount', 'assocMinScans', 'attentionN', 'birthCondFromMother', 'callSignatures', 'callerDiscrim', 'chimpGridCellM', 'coerceMaxRepeats', 'contactSlots', 'crowdByShare', 'cycleLenMinDays', 'cycleLenSpanDays', 'deadSlimDays', 'departCue', 'departPersist', 'departRace', 'endoEscalate', 'endoFast', 'endoFastRedirect', 'endoRainDisplay', 'endoRedirect', 'endoStates', 'energyLedger', 'episodeCap', 'eventCap', 'eventPriorityAlpha', 'eventPriorityBirth', 'eventPriorityDeath', 'eventPriorityInfanticide', 'eventPriorityInjury', 'eventPriorityIntergroup', 'eventPriorityRank', 'eventPriorityTransfer', 'fissionMinAdults', 'fissionMonths', 'fissionOn', 'followCommit', 'foodCallRule', 'fordSpacingM', 'gangMinOwnMales', 'historyFacts', 'historyMaxChars', 'historyMaxLines', 'huntEncMinMales', 'huntEncounter', 'huntMinMales', 'infanticideMaleMargin', 'intakeCropOnly', 'intakeValue', 'joinChoice', 'knownTreesK', 'lactTaper', 'layoutScale', 'ledgerDigesta', 'ledgerDrive', 'ledgerGrowPotential', 'ledgerGrowSurplus', 'ledgerInfantIntake', 'ledgerNightNurse', 'ledgerNurseBout', 'ledgerNurseByMilk', 'mapSizeM', 'maternalLevers', 'memCropBelief', 'memKeepMonths', 'memLedgerEvents', 'memMonthEvents', 'memMonthPartners', 'memTreeCap', 'memYearEvents', 'memYearPartners', 'memoryCap', 'memoryMonthDays', 'nestLightDecide', 'nurseWake', 'partyEveryTicks', 'partyJoinTrip', 'partyLeaderFollow', 'partyStayMaxN', 'patchEcology', 'patrolContactMemory', 'patrolEnergyGate', 'patrolImpulseDecides', 'patrolMinMales', 'patrolSilence', 'patrolSingleFile', 'phenologyForcing', 'popCap', 'preyMinGroups', 'preyMoveEveryTicks', 'rgMinAge', 'rgOn', 'rhythmFreeNight', 'rhythmHeat', 'rhythmSleep', 'routeChain', 'siteTzH', 'slotsForage', 'slotsMulti', 'slowEveryTicks', 'startDoy', 'streamAnalytic', 'synthYears', 'tickSeconds', 'travelCommit', 'travelHoo', 'treeGridCellM', 'tripRateValue', 'udCellM', 'udKernelRef', 'urgencyChoice', 'urgencyPersist', 'urgencySwitchCost'];
 
 /** Scale-profile values that differ from DEFAULTS (docs/realism-design.md §5.1). */
 export const PROFILE_VALUES: { readonly compressed: Partial<Record<ParamId, number>>; readonly field: Partial<Record<ParamId, number>> } = {

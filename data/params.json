@@ -12592,6 +12592,104 @@
    "notes": "Metabolisable energy intake of an adult feeding on non-fig ripe fruit (drupes 9.9 kcal/min; all ripe fruit 10.7 +- 1.3; Kanyawara females, uwimbabazi2019). The crop still depletes at fruitIntakePerH fruit units per hour, so one fruit unit is worth 60 x this / fruitIntakePerH kcal."
   },
   {
+   "id": "ledgerGrowFemaleKgPerY",
+   "group": "needs",
+   "value": 3.4,
+   "units": "kg/y",
+   "range": [
+    2.8,
+    4.1
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    20
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [],
+   "refs": [
+    "docs/research.md E.14: curry2023, sanctuary chimpanzees, pre-maturation growth F 3.4 (95% CI 2.8-4.1) kg/y (piecewise regression, 147 F)"
+   ],
+   "clock": "bio",
+   "symbol": "growthPotential",
+   "file": "src/sim/energy.ts",
+   "notes": "Stage E1f (ledgerGrowPotential): growth potential of a well-fed female after her first year, kg per biological year, up to ledgerMassFemaleKg (curry2023: sanctuary chimpanzees in forest enclosures, mostly natural food; captive [M]). Zoo and research animals grow faster (4.7-4.8) and end 58-88% heavier than wild adults, so the sanctuary rate is the closest measured well-fed rate. Wild growth (Gombe) is a target (T-INF-4), never an input."
+  },
+  {
+   "id": "ledgerGrowFirstYearKg",
+   "group": "needs",
+   "value": 2.8,
+   "units": "kg/y",
+   "range": [
+    2.2,
+    3.4
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    20
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [],
+   "refs": [
+    "docs/research.md E.12 and E.14: desilva2011, Yerkes neonates 1,733 g; 8.6% of maternal mass at 1 y (n = 9 dyads), about 4.5 kg: about 2.8 kg in the first year"
+   ],
+   "clock": "bio",
+   "symbol": "growthPotential",
+   "file": "src/sim/energy.ts",
+   "notes": "Stage E1f (ledgerGrowPotential): growth potential in the first year of life, both sexes, kg per biological year (desilva2011, captive well-fed infants: about 1.73 kg at birth to about 4.5 kg at 1 y, derived; captive [M]). Range: +-20% (n = 9 dyads, assumed)."
+  },
+  {
+   "id": "ledgerGrowMaleKgPerY",
+   "group": "needs",
+   "value": 3.8,
+   "units": "kg/y",
+   "range": [
+    3.4,
+    4.3
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    20
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [],
+   "refs": [
+    "docs/research.md E.14: curry2023, sanctuary chimpanzees, pre-maturation growth M 3.8 (95% CI 3.4-4.3) kg/y (151 M)"
+   ],
+   "clock": "bio",
+   "symbol": "growthPotential",
+   "file": "src/sim/energy.ts",
+   "notes": "Stage E1f (ledgerGrowPotential): growth potential of a well-fed male after his first year, kg per biological year, up to ledgerMassMaleKg (curry2023, sanctuary; captive [M]). The sexes differ in rate, not in the age growth ends (leighShea1996, curry2023)."
+  },
+  {
+   "id": "ledgerGrowPotential",
+   "group": "needs",
+   "value": 0,
+   "units": "flag",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "growthPotential",
+   "file": "src/sim/energy.ts",
+   "integer": true,
+   "notes": "Stage E1f (docs/staging/e1f-prereg.md §2.2), with energyLedger 1 and ledgerGrowSurplus 1: 1 = the growth potential is the captive rate (ledgerGrowFirstYearKg in the first year, then ledgerGrowFemaleKgPerY / ledgerGrowMaleKgPerY) up to the adult mass, founders open on that curve, and growth is paid from the day's surplus: f = clamp((day-long mean absorbed - day-long mean spending other than growth) / cost of growing at the potential, 0, 1), both means over driveAvgH (west2001's allocation, over a day), replacing E1c's reserve gate; with ledgerDrive 1 the drive's expected spending includes the potential growth (fao2004 section 4.4: requirement = expenditure + energy deposited). ledgerMassMatureFemaleY and ledgerMassMatureMaleY are not read. 0 = E1c (the stylized linear curve, growth only while reserves are above the set point)."
+  },
+  {
    "id": "ledgerGrowSurplus",
    "group": "needs",
    "value": 0,
@@ -12724,6 +12822,31 @@
    "symbol": "intakeSize",
    "file": "src/sim/energy.ts",
    "notes": "Stage E1c (ledgerInfantIntake): intake capacity scales as (mass / adult mass)^this. 0.75 = like the resting rate, so a skilled animal of any size covers its resting needs in the same feeding time as an adult (design). No chimpanzee measurement of ingestion rate against body size was found; bray2018 gives only the direction (infants' ingestion rates below adults', juveniles' not significantly)."
+  },
+  {
+   "id": "ledgerLetDownS",
+   "group": "reproduction",
+   "value": 54,
+   "units": "s",
+   "range": [
+    20,
+    90
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    600
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "refs": [
+    "docs/research.md E.18: gardner2015, first milk ejection 53.6 +- 30.2 s after the start of breastfeeding (12 women, ultrasound); 73-92 s with a pump"
+   ],
+   "clock": "eco",
+   "symbol": "nurseBoutWorth",
+   "file": "src/sim/energy.ts",
+   "notes": "Stage E1f (ledgerNurseBout): milk-ejection latency, the time of suckling before milk flows (women breastfeeding: 53.6 +- 30.2 s, gardner2015; human, cross-species, assumed for chimpanzees; no ape value found). The fixed time cost of a nursing bout, as the walk is for a tree visit. Range: the reported mean +- 1 SD."
   },
   {
    "id": "ledgerMassBirthKg",
@@ -12967,6 +13090,29 @@
    "file": "src/sim/execution.ts",
    "integer": true,
    "notes": "Stage E1c (docs/staging/e1c-prereg.md), with energyLedger 1: 1 = a dependent infant sleeping in its mother's nest suckles from her (nurseTick: the suckling rate, limited by her gland store and its gut room) while its hunger readout is at or above the end of a nursing bout (0.08); same eligibility as the day nursing option, no weaning refusal at night (stylization). Infants share the mother's nest until weaning (khayer2025 [M]); night suckling: captive newborns (mizuno2006 [L]) and the human analogy. With it, ledgerMilkStoreH can take its sourced value (11 h, kent1999). 0 = milk only through the day nurse act (E1)."
+  },
+  {
+   "id": "ledgerNurseBout",
+   "group": "reproduction",
+   "value": 0,
+   "units": "flag",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "nurseBoutWorth",
+   "file": "src/sim/energy.ts",
+   "integer": true,
+   "notes": "Stage E1f (docs/staging/e1f-prereg.md §2.1), with energyLedger 1: 1 = one nursing rule. A day nursing bout is worth the milk it can deliver per unit of time committed to it, as a share of the full suckling rate, the milk-ejection latency (ledgerLetDownS) included: the whole nurse score x E / (E + suckling rate x latency), with E = min(the gland store plus what is made while it drains, the milk the infant's foregut can take; digesta-consistent units). In the act no milk flows for the first ledgerLetDownS of contact, and the bout ends when a tick delivers less than the full flow (gland or gut) or at the existing hunger end. Supersedes ledgerNurseByMilk (E1d) and the nursing term of ledgerDrive (E1e), which are not read while it is 1 and keep their meaning while it is 0. The night rule (ledgerNightNurse) is unchanged. 0 = today's routes."
   },
   {
    "id": "ledgerNurseByMilk",
