@@ -1832,6 +1832,23 @@
    ],
    "verdicts": "combined proof (lean plan), C9 proof",
    "class": "freeze"
+  },
+  {
+   "date": "2026-10-01",
+   "by": "science/simulation owner (stage C15, foraging choices; coordinator-approved, short runs only)",
+   "seen": "food rows on development seeds 48, 7, 21 (field): T-FOOD-2 0.90, T-FOOD-3 0.17 (1 year) and 0.66 (180 days), T-FOOD-6 15.6 days (1 year) and 5.9 (180 days), T-FOOD-7 264 m, T-FOOD-10 0.013 with breakfast in the nest tree 0.28; diagnostic probe on seed 48 (sim truth, 30 and 180 days): fallback 0.11 of adult feeding (0.15 below hunger 0.4, 0.015 above 0.7; 0.136 with intakeValue 0), nests left 8-18 min after sunrise (2% before), revisit gap by any community member 1.9 days. T-FOOD-3 and T-FOOD-10 are held out and get the 'model revised post-freeze' label with this stage",
+   "param": "C15 pre-registration, before any C15 run. C15a (fallbackBase, field; ablation value 0.03 = before): the hunger-independent part of the fallback (leaves, pith, herbs) worth, a literal 0.03 until now, becomes a registry parameter fitted to T-FOOD-2: leaves are a daily food beside fruit (11-19% of feeding at Kanyawara and Ngogo; watts2012a, emeryThompson2020), not only a hunger fallback. Fit: bisection on [0.03, 0.6], 5 steps, seeds 48 and 7, 180-day burn-in + 30 days, 1 worker, to a sim-truth fruit share of adult feeding time of 0.69 (the midpoint of T-FOOD-2's band); only that share is read. C15b (breakfastPlan 1, field; ablation 0): (i) at dawn the C13 gate no longer holds a nest intention, so waking is re-decided at each morning bout (design); (ii) while the morning nest drive lasts, it is lowered by breakfastW x min(1, walk minutes to the animal's best remembered fruit tree / 80): a farther breakfast brings an earlier departure [M] janmaat2014 (80 min is ban2014's mean approach time; design); (iii) a tree bearing fruit is avoided as a night nest (penalty 1, like last night's tree; chimpanzees nested in their breakfast tree on 2% of mornings, janmaat2014; magnitude design). One fitted number in C15b: breakfastW, by bisection on [0, 3], 5 steps, same seeds and window, to 18% of departures before sunrise (janmaat2014; T-FOOD-10 is held out, so it is labelled 'model revised post-freeze'). Untuned checks (seeds 48, 7, 21; 30 days unless a row needs more; nothing adjusted after seeing them): T-FOOD-2 observed inside 0.60-0.78; T-FOOD-10 observed inside 0.08-0.30 and breakfast in the nest tree below 0.15; T-FOOD-3 r >= 0.3 (needs 6 months of months; held out, labelled); T-FOOD-7 about unchanged (within 30 m of before; encoded); T-ACT-1 feeding still inside 0.33-0.50 for both sexes; T-ACT-2 within 0.03 of before. Viability guard: median adult hunger not more than 0.10 above the C15-off arm, lactating median below 0.95. T-FOOD-6 is not changed here: its observer mean depends on the window (5.9 days at 180, 15.6 at 365) while any community member returns to a crown after 1.9 days in truth; a protocol proposal goes to the coordinator.",
+   "reason": "too little fallback food (fruit 0.90 of feeding against 0.60-0.78), no departures before sunrise and breakfast in the nest tree on 28% of mornings",
+   "targets": [
+    "T-FOOD-2",
+    "T-FOOD-3",
+    "T-FOOD-10",
+    "T-FOOD-7",
+    "T-ACT-1",
+    "T-ACT-2"
+   ],
+   "verdicts": "none (no proof value exists)",
+   "class": "model change"
   }
  ],
  "targets": [
