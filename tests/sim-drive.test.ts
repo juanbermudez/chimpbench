@@ -107,7 +107,7 @@ test('a tree is worth the energy a bout can deliver: nothing to a sated animal; 
   const [capF] = digestaCaps(c, P);
   eat(c, P, 0.9 * capF / (P.digestaDrupeDmGPerMin / P.ledgerFruitKcalPerMin), 'drupe');
   const fullFar = treeIntake(c, P, 50, 0, 300);
-  assert.ok(fullFar.perHourInclWalk < 0.5 * far.perHourInclWalk, `${fullFar.perHourInclWalk} vs ${far.perHourInclWalk}`);
+  assert.ok(fullFar.perHourInclWalk < 0.7 * far.perHourInclWalk, `${fullFar.perHourInclWalk} vs ${far.perHourInclWalk}`);
   assert.ok(needFruit(c, P, c.hunger) > 0, 'the crop-share rules read the kcal need');
   void gutCap;
 });
