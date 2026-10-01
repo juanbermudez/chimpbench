@@ -86,6 +86,13 @@ export interface ChimpX {
   /** Stage C7a (field): crop this individual last saw (or left) in each remembered fruit tree, by tree id; absent until first used. */
   treeCrop?: Record<number, number>;
   /**
+   * Stage E2b (departRace; src/sim/departure.ts): the others this individual saw feeding in each remembered crown when it
+   * last saw it (ids), kept beside the crop belief; absent until the switch is on and the first crown is seen.
+   */
+  treeFeed?: Record<number, number[]>;
+  /** Stage E2b (nurseWake): the last tick in which this mother's infant drank milk in her nest at night. Absent until then. */
+  nwk?: number;
+  /**
    * Stage C8 (docs/staging/early-life-prereg.md §2.6–2.9): body condition 0..1 (a slow average of 1 − hunger), the growth
    * record 0..1 (scales strength), a transient bereavement stress added to the resting stress floor, and a mother's mean
    * condition over her current pregnancy.
@@ -193,7 +200,7 @@ export type SimWorld = World & { sim: SimState };
  * ChimpX and SimState keys that exist only once their mechanism has fired (so worlds with the switch off keep their
  * shape and hashes). The save check (src/persist/envelope.ts worldShapeProblem) ignores them.
  */
-export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'en', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt'];
+export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'en', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk'];
 export const OPTIONAL_SIM: readonly string[] = ['fission', 'stormAt'];
 
 export function newX(): ChimpX {

@@ -10,6 +10,7 @@ import { fruitAt } from './phenology';
 import { noteContact } from './contact';
 import { featureDistance, perceivedFeatures } from './signals';
 import { endoHeard, endoOn } from './endocrine';
+import { noteFeeders } from './departure';
 import { NEVER, aliveNear, byIdIn, index, ix, simOf, treesNear } from './state';
 
 export const IMPULSE_TRANSFER = 1, IMPULSE_ESCALATE = 2, IMPULSE_INFANTICIDE = 3, IMPULSE_RAIN = 4, IMPULSE_GANG = 5, IMPULSE_PATROL = 6, IMPULSE_HUNT = 7;
@@ -158,12 +159,16 @@ export function perceive(world: World, c: Chimp): void {
   // fruiting crowns are conspicuous from further than animals on the ground (design)
   const n = treesNear(world, px, pz, Math.min(r * P.treeSightFactor, P.treeSightMaxM), _trees);
   const lazy = P.patchEcology === 1;
+  // stage E2b (departRace): who was seen feeding in a crown is kept beside the crop belief (departure.ts)
+  const race = P.departRace === 1;
   for (let k = 0; k < n; k++) {
     const t = world.trees[_trees[k]];
     const f = lazy ? fruitAt(world, t) : t.fruit;
     if (f > x.fruitNear) x.fruitNear = f;
     // stage C7a (field): what is seen of a remembered crown replaces the belief about it
-    if (x.treeCrop && x.treeCrop[t.id] !== undefined) { if (f < 0.04) delete x.treeCrop[t.id]; else x.treeCrop[t.id] = Math.round(f * 1000) / 1000; }
+    if (x.treeCrop && x.treeCrop[t.id] !== undefined) {
+      if (f < 0.04) { delete x.treeCrop[t.id]; if (x.treeFeed) delete x.treeFeed[t.id]; } else { x.treeCrop[t.id] = Math.round(f * 1000) / 1000; if (race) noteFeeders(c, t.id, byId); }
+    }
     if (f < 0.06) { if (f < 0.04) forget(c, t.id, 'tree'); continue; }
     // keep the best five by fruit per distance
     const dx = t.position[0] - px, dz = t.position[2] - pz;
@@ -178,7 +183,7 @@ export function perceive(world: World, c: Chimp): void {
   }
   for (let k = 0; k < x.trees.length && k < 4; k++) {
     const t = index(world).treeById.get(x.trees[k])!, f = lazy ? fruitAt(world, t) : t.fruit;
-    if (f > 0.2) { remember(world, c, t.id, 'tree', t.position); if (P.memCropBelief === 1) (x.treeCrop ??= {})[t.id] = Math.round(f * 1000) / 1000; }
+    if (f > 0.2) { remember(world, c, t.id, 'tree', t.position); if (P.memCropBelief === 1) { (x.treeCrop ??= {})[t.id] = Math.round(f * 1000) / 1000; if (race) noteFeeders(c, t.id, byId); } }
   }
   x.fruitNear = clamp(x.fruitNear);
   for (const w of world.water) { const dx = w.position[0] - px, dz = w.position[2] - pz; if (dx * dx + dz * dz < r2 * 1.5) remember(world, c, w.id, 'water', w.position); }
@@ -379,5 +384,7 @@ export function dailyBeliefs(world: World): void {
       for (let i = 0; i < c.memory.length; i++) if (c.memory[i].kind === 'tree' && c.memory[i].entityId === id) { kept = true; break; }
       if (!kept) delete b[key];
     }
+    const fd = ix(c).treeFeed; // stage E2b: the feeders record follows the crop belief
+    if (fd) for (const key in fd) if (b[+key] === undefined) delete fd[key];
   }
 }

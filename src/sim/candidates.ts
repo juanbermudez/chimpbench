@@ -9,6 +9,7 @@ import { bestFallbackNear, fallbackOn } from './fallback';
 import { fruitRate, leafWorth, needFruit, treeIntake } from './intake';
 import { heatRestValue, nestValue, shelterValue, thermalLoad } from './rhythm';
 import { milkShare, milkWorth } from './energy';
+import { arrivalLight, brightening, needUnits, raceStake, rivalsAt } from './departure';
 import { endoOn, escalateScore, fastSpanH, rainFastScore, rainScore, redirectFastScore, redirectScore } from './endocrine';
 import { byIdIn, index, isTreeId, ix, NEVER, TREE_ID0, treesNear, simOf } from './state';
 
@@ -125,6 +126,12 @@ function chooseNestTree(world: World, c: Chimp): Tree | undefined {
   return best;
 }
 
+/** The animal's own nest: stay in the finished one, or build (`open`: a new nest may be started now). */
+function offerOwnNest(world: World, c: Chimp, inNest: boolean, drive: number, open: boolean): void {
+  if (inNest && c.nest) offer('nest', c.nest.treeId, drive);
+  else if (drive > 0.25 && open) { const t = c.action === 'nest' && isTreeId(c.targetId) ? index(world).treeById.get(c.targetId) : chooseNestTree(world, c); if (t) offer('nest', t.id, drive); }
+}
+
 // Allocation-free helpers for the hot path (called for every candidate; closures inside computeCandidates allocated per call).
 const dxz = (o: { position: number[] }, px: number, pz: number) => Math.hypot(o.position[0] - px, o.position[2] - pz);
 const dcc = (c: Chimp, o: Chimp) => Math.hypot(o.position[0] - c.position[0], o.position[2] - c.position[2]);
@@ -203,16 +210,17 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   // rest and shelter follow the thermal load; the clock terms below then have no effect (tests/sim-rhythm.test.ts)
   const rS = P.rhythmSleep === 1, rH = P.rhythmHeat === 1;
   const drive = P.energyLedger === 1 && P.ledgerDrive === 1; // stage E1e: options valued by the energy a bout delivers
+  // stage E2b (departRace; departure.ts): the nest's value is lowered by the largest stake of delay among the feeding
+  // options below (others eating the same limited crop while this animal waits), so its own nest is offered after them
+  const race = P.departRace === 1, dLdt = race ? brightening(world) : 0, need = race ? needUnits(c, P) : 0;
+  let raceG = 0;
   let nestDrive = rS ? nestValue(P, c, env.daylight)
     : hour >= P.nestEveningFromH ? smoothstep(P.nestEveningStartH, P.nestEveningEndH, hour) * P.nestEveningDrive + (night ? P.nestNightBonus : 0)
       : (1 - smoothstep(P.nestMorningDaylightLow, P.nestMorningDaylightHigh, env.daylight)) * P.nestMorningDrive;
   nestDrive += (rS ? 0 : (1 - e) * 0.3) + (night && rain > 0.3 ? 0.3 : 0);
   if (caretaker) {
     if (caretaker.action === 'nest' && isTreeId(caretaker.targetId)) offer('nest', caretaker.targetId, nestDrive + 0.4, V.MOTHER, caretaker.id);
-  } else if (c.age >= 3) {
-    if (inNest && c.nest) offer('nest', c.nest.treeId, nestDrive);
-    else if (nestDrive > 0.25 && (rS ? env.daylight < 1 : hour >= 12 || night)) { const t = c.action === 'nest' && isTreeId(c.targetId) ? idx.treeById.get(c.targetId) : chooseNestTree(world, c); if (t) offer('nest', t.id, nestDrive); }
-  }
+  } else if (c.age >= 3 && !race) offerOwnNest(world, c, inNest, nestDrive, rS ? env.daylight < 1 : hour >= 12 || night);
   const midday = rH ? heatRestValue(P, c) : hour >= 11.5 && hour < 14.5 ? 0.3 : 0;
   offer('rest', -1, 0.12 + (1 - e) * 0.9 + midday + (h < 0.2 ? 0.2 : 0) + (!rH && env.temperature > 23 ? 0.1 : 0) + c.injury * 0.5 + (night && !rS ? 0.4 : 0) + (caretaker ? 0.1 : 0) + (x.ill > time ? P.epidemicRestW : 0));
   if (rH) { if (rain >= 0.12 && !inNest && !carried) { const cold = shelterValue(P, c); if (cold > 0) offer('shelter', -1, cold); } }
@@ -278,7 +286,9 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       const crop = P.patchEcology === 1 ? fruitAt(world, t) : t.fruit, q = Math.min(1, crop / P.fruitValueRef);
       // contest competition grows with crowding when fruit is scarce (drives parties apart) [H]
       const compete = byShare ? 0 : crowd * P.crowdCompeteW * (P.crowdScarcityRef - env.fruitIndex) * (c.rank > P.crowdHighRank ? P.crowdHighRankFactor : 1);
-      offer('forage', t.id, (h * 1.6 + 0.1) * (0.55 + 0.45 * q) * (iv ? tripFrac(crop, crowd, d) : 1) * (byShare ? shareWorth(crop, crowd) : 1) - d / P.forageDistScaleM - compete - rain * 0.45 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.6 - coreCostOf(t, coreW, troop, x) + (t.id === s.figTree && h > 0.2 ? 0.2 : 0) - revisit(x, t.id, time, P), V.NONE, crowd);
+      const fw = (h * 1.6 + 0.1) * (0.55 + 0.45 * q) * (iv ? tripFrac(crop, crowd, d) : 1);
+      if (race && crowd > 0) raceG = Math.max(raceG, raceStake(fw, crop, crowd, need, 1)); // stage E2b: the feeders are eating now
+      offer('forage', t.id, fw * (byShare ? shareWorth(crop, crowd) : 1) - d / P.forageDistScaleM - compete - rain * 0.45 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.6 - coreCostOf(t, coreW, troop, x) + (t.id === s.figTree && h > 0.2 ? 0.2 : 0) - revisit(x, t.id, time, P), V.NONE, crowd);
     }
   }
   if (!caretaker) {
@@ -302,6 +312,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
         // stage C7a (field): a remembered tree is worth what the animal last saw in it
         const crop = x.treeCrop?.[t.id] ?? 0.2;
         const worth = (P.memCropBelief === 1 ? h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) : h * P.memTravelHungerW) * (iv ? tripFrac(crop, 0, d) : 1);
+        if (race) { const nr = rivalsAt(c, t.id); if (nr > 0) raceG = Math.max(raceG, raceStake(worth, crop, nr, need, arrivalLight(env.daylight, dLdt, d, P))); } // stage E2b
         if (shortlist) { const rv = revisit(x, t.id, time, P); _mem.push(t, worth - tripCost(worth, crop, d, h, P, needFruit(c, P, h)) - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD)); continue; }
         if (!held) offer('travel', t.id, worth - tripCost(worth, crop, d, h, P, needFruit(c, P, h)) - revisit(x, t.id, time, P) - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay, V.TREE);
       } else if (m.kind === 'water' && c.thirst > 0.25 && c.age >= 3) {
@@ -320,6 +331,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       const d = dxz(t, px, pz);
       if (d < P.memoryTreeMinM) continue;
       const crop = x.treeCrop?.[id] ?? known[i + 1], worth = h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) * (iv ? tripFrac(crop, 0, d) : 1);
+      if (race) { const nr = rivalsAt(c, id); if (nr > 0) raceG = Math.max(raceG, raceStake(worth, crop, nr, need, arrivalLight(env.daylight, dLdt, d, P))); } // stage E2b
       const rv = revisit(x, id, time, P);
       _mem.push(t, worth - tripCost(worth, crop, d, h, P, needFruit(c, P, h)) - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD));
     }
@@ -358,6 +370,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       offer('climb', t.id, 0.06 + pers.playfulness * 0.15 + (c.age < 10 ? 0.1 : 0) - rain * 0.3 - (night ? 2 : 0));
     }
   }
+  if (race && !caretaker && c.age >= 3) offerOwnNest(world, c, inNest, nestDrive - raceG, rS ? env.daylight < 1 : hour >= 12 || night);
 
   // stage C13e (joinChoice; docs/realism-design.md "C13e pre-registration"): what going with a departing leader is worth
   // to this animal. Who is leaving: its bond with the leader, an ally, a leader that dominates it; recruitment and more

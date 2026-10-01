@@ -60,6 +60,12 @@ export interface RhythmResult {
   rain: { adult: number[][]; juvenile: number[][] };
   /** Thermal load and sleep pressure samples (adults). */
   heatMidday: number[]; sleepAtNoon: number[];
+  /**
+   * Stage E2b: one record per adult per morning with a nest departure (recorded at solar noon): minutes from sunrise to
+   * the last exit from a nest, and the breakfast, the first feeding after it (0 none before noon, 1 fig crown, 2 other
+   * crown, 3 fallback on the ground), metres from the nest, and other chimpanzees feeding in that crown when it started.
+   */
+  deps: { cls: Cls; wake: number; bf: 0 | 1 | 2 | 3; d: number; feeders: number }[];
   births: number; deaths: number; causes: Record<string, number>; nightDeaths: number; living: number; adults: number;
   hungerAdult: number; hungerLact: number;
 }
@@ -76,9 +82,11 @@ export function runRhythm(job: RhythmJob): RhythmResult {
     byTemp: TEMPBINS.map(() => [[0, 0], [0, 0]]),
     night: { ticks: Object.fromEntries(KINDS.map(k => [k, 0])) as Record<Kind, number>, metres: 0, nights: 0, adultTicks: Object.fromEntries(KINDS.map(k => [k, 0])) as Record<Kind, number> },
     rain: { adult: RAINBINS.map(() => [0, 0, 0, 0, 0]), juvenile: RAINBINS.map(() => [0, 0, 0, 0, 0]) },
-    heatMidday: [], sleepAtNoon: [], births: 0, deaths: 0, causes: {}, nightDeaths: 0, living: 0, adults: 0, hungerAdult: 0, hungerLact: 0,
+    heatMidday: [], sleepAtNoon: [], deps: [], births: 0, deaths: 0, causes: {}, nightDeaths: 0, living: 0, adults: 0, hungerAdult: 0, hungerLact: 0,
   };
-  interface Track { inNest: boolean; nesting: boolean; start: number; lastStart: number; lastEntry: number; wake: number; sWake: number; sBed: number; atMid: boolean; entries: number; cls: Cls | null; px: number; pz: number }
+  interface Track { inNest: boolean; nesting: boolean; start: number; lastStart: number; lastEntry: number; wake: number; sWake: number; sBed: number; atMid: boolean; entries: number; cls: Cls | null; px: number; pz: number;
+    /** E2b: where the last morning exit was, and the breakfast after it (bf −1 = not yet). */
+    wx: number; wz: number; bf: number; bd: number; bn: number }
   const tr = new Map<number, Track>();
   const inNest = (c: Chimp) => c.action === 'nest' && (ix(c).phase === 2 || ix(c).v === V.MOTHER);
   const clsOf = (c: Chimp): Cls => (c.sex === 'male' ? 'male' : c.lactating ? 'lactating' : 'female');
@@ -86,6 +94,7 @@ export function runRhythm(job: RhythmJob): RhythmResult {
   // the day's midday and morning tallies are filed under the day type once the midday window has closed
   let mid = [0, 0, 0, 0, 0], morn = [0, 0, 0, 0, 0], midT = 0, midRain = 0, midTicks = 0, midHeat = 0, midHeatN = 0;
   const births0 = w.stats.births, deaths0 = w.stats.deaths, dead = new Set(w.chimps.filter(c => !c.alive).map(c => c.id));
+  const treeOf = (id: number) => w.trees[id - 100001];
   let hungerA = 0, hungerAN = 0, hungerL = 0, hungerLN = 0;
   for (let i = 0; i < job.days * 5760; i++) {
     tickWorld(w);
@@ -106,14 +115,24 @@ export function runRhythm(job: RhythmJob): RhythmResult {
       if (c.age < 5) continue;
       const adult = c.age >= 15, x = ix(c), k = kindOf(c), nest = inNest(c);
       let t = tr.get(c.id);
-      if (!t) { t = { inNest: nest, nesting: c.action === 'nest', start: NaN, lastStart: NaN, lastEntry: NaN, wake: NaN, sWake: NaN, sBed: NaN, atMid: false, entries: 0, cls: null, px: c.position[0], pz: c.position[2] }; tr.set(c.id, t); }
+      if (!t) { t = { inNest: nest, nesting: c.action === 'nest', start: NaN, lastStart: NaN, lastEntry: NaN, wake: NaN, sWake: NaN, sBed: NaN, atMid: false, entries: 0, cls: null, px: c.position[0], pz: c.position[2], wx: 0, wz: 0, bf: -1, bd: NaN, bn: 0 }; tr.set(c.id, t); }
       if ((c.action === 'nest') !== t.nesting) { t.nesting = c.action === 'nest'; if (t.nesting) t.start = time; } // setting off to build
       if (nest !== t.inNest) {
         t.inNest = nest;
         if (nest) { t.lastEntry = time; t.lastStart = t.start; t.sBed = x.slp ?? 1 - c.energy; if (time > noon) t.entries++; }
-        else if (rising) { t.wake = time; t.sWake = x.slp ?? 1 - c.energy; } // between solar midnight and noon; the last exit counts
+        else if (rising) { t.wake = time; t.sWake = x.slp ?? 1 - c.energy; t.wx = c.position[0]; t.wz = c.position[2]; t.bf = -1; } // between solar midnight and noon; the last exit counts
       }
-      if (isNoon) { t.cls = adult ? clsOf(c) : null; if (adult) res.sleepAtNoon.push(1 - c.energy); }
+      // E2b: the breakfast, the first feeding after the morning exit
+      if (rising && !nest && t.bf < 0 && !Number.isNaN(t.wake) && c.action === 'forage' && x.phase === 2) {
+        const tree = c.targetId > 100000 && c.targetId < 200000 ? treeOf(c.targetId) : undefined;
+        t.bf = tree ? (tree.species.startsWith('Ficus') ? 1 : 2) : 3;
+        t.bd = tree ? Math.hypot(tree.position[0] - t.wx, tree.position[2] - t.wz) : NaN;
+        t.bn = tree ? w.chimps.reduce((n, o) => n + (o !== c && o.alive && o.action === 'forage' && o.targetId === tree.id ? 1 : 0), 0) : 0;
+      }
+      if (isNoon) {
+        t.cls = adult ? clsOf(c) : null; if (adult) res.sleepAtNoon.push(1 - c.energy);
+        if (adult && !Number.isNaN(t.wake) && !Number.isNaN(sunrise) && t.wake > sunrise - 6) res.deps.push({ cls: clsOf(c), wake: (t.wake - sunrise) * 60, bf: (t.bf < 0 ? 0 : t.bf) as 0 | 1 | 2 | 3, d: t.bd, feeders: t.bn });
+      }
       if (isMidnight) {
         if (adult) { res.adultNights++; if (!nest) res.outAtMidnight++; }
         if (t.cls && t.atMid && nest && !Number.isNaN(t.wake) && !Number.isNaN(t.lastEntry) && t.lastEntry > noon && t.wake < noon && !Number.isNaN(sunrise) && !Number.isNaN(sunset))
@@ -185,6 +204,19 @@ export function report(rs: RhythmResult[], job: Omit<RhythmJob, 'seed'>): string
   const nights = rs.reduce((a, r) => a + r.adultNights, 0);
   const fem = rec.filter(r => r.cls !== 'male');
   L.push('', `Staged targets (compared, never set): T-RHY-1 active day 10.5–12.0 h: ${hm(mean(rec.map(r => r.active)))}. T-RHY-3 share of adult-female departures before sunrise 0.05–0.35: ${f2(fem.filter(r => r.wake < 0).length / Math.max(1, fem.length))}. T-RHY-4 start of the last nest −30 to +90 min before sunset: ${f0(q(rec.map(r => r.build), 0.5))}.`);
+  // stage E2b: departures and breakfasts (janmaat2014: departure relative to sunrise by breakfast fruit and distance)
+  const deps = rs.flatMap(r => r.deps), DB = [[0, 150], [150, 500], [500, Infinity]] as const;
+  const pre = (v: { wake: number }[]) => f2(v.filter(r => r.wake < 0).length / Math.max(1, v.length));
+  L.push('', '## Nest departure and breakfast (stage E2b; adults, every morning with a departure)', '',
+    `Share of departures before sunrise (field: 18% of adult-female departures at Taï, janmaat2014; T-RHY-3 band 0.05–0.35): all adults ${pre(deps)} (n ${deps.length}); males ${pre(deps.filter(r => r.cls === 'male'))}; lactating ${pre(deps.filter(r => r.cls === 'lactating'))}; other females ${pre(deps.filter(r => r.cls === 'female'))}; all adult females ${pre(deps.filter(r => r.cls !== 'male'))}.`,
+    `Median departure, min after sunrise: all ${f0(q(deps.map(r => r.wake), 0.5))}; males ${f0(q(deps.filter(r => r.cls === 'male').map(r => r.wake), 0.5))}; lactating ${f0(q(deps.filter(r => r.cls === 'lactating').map(r => r.wake), 0.5))}; other females ${f0(q(deps.filter(r => r.cls === 'female').map(r => r.wake), 0.5))} (Budongo, batesByrne2009, derived: about at sunrise for every class).`, '',
+    '| Breakfast | Distance from the nest | Departures | Departure, min after sunrise (median, p10–p90) | Before sunrise | Others feeding there at the start (mean) |', '| --- | --- | --- | --- | --- | --- |');
+  for (const [bf, name] of [[1, 'fig crown'], [2, 'other crown']] as const) for (const [lo, hi] of DB) {
+    const v = deps.filter(r => r.bf === bf && r.d >= lo && r.d < hi);
+    L.push(`| ${name} | ${hi === Infinity ? `≥ ${lo} m` : `${lo}–${hi} m`} | ${v.length} | ${f0(q(v.map(r => r.wake), 0.5))} (${f0(q(v.map(r => r.wake), 0.1))} to ${f0(q(v.map(r => r.wake), 0.9))}) | ${pre(v)} | ${f2(mean(v.map(r => r.feeders)))} |`);
+  }
+  for (const [bf, name] of [[3, 'fallback on the ground'], [0, 'none before noon']] as const) { const v = deps.filter(r => r.bf === bf); L.push(`| ${name} | — | ${v.length} | ${f0(q(v.map(r => r.wake), 0.5))} (${f0(q(v.map(r => r.wake), 0.1))} to ${f0(q(v.map(r => r.wake), 0.9))}) | ${pre(v)} | — |`); }
+  L.push('', 'Field directions (janmaat2014, Taï, fruit breakfasts): figs earlier than other fruit; far figs earlier than near figs; far non-fig sites later than near ones.');
   L.push('', `Adults out of a nest at solar midnight: ${pc(rs.reduce((a, r) => a + r.outAtMidnight, 0), nights)} of ${nights} adult-nights. Sleep pressure at solar noon: mean ${f2(mean(rs.flatMap(r => r.sleepAtNoon)))}.`, '');
   L.push('## Hourly activity of adults (share of the hour)', '', `| Hour | ${KINDS.join(' | ')} |`, `| --- | ${KINDS.map(() => '---').join(' | ')} |`);
   for (let h = 0; h < 24; h++) {

@@ -190,6 +190,8 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   ...Object.fromEntries(['digestaDrupeDmGPerMin', 'digestaFigDmGPerMin', 'digestaFallbackDmGPerMin', 'digestaFruitNdf', 'digestaFallbackNdf', 'digestaNdfCreditKcalPerG',
     'digestaFermentKcalPerG', 'digestaNdfDigestibility', 'digestaMrtH', 'digestaGutMlPerKg', 'digestaForegutShare', 'digestaForegutDmGPerMl', 'digestaHindgutDmGPerMl',
     'digestaMeatDmGPerKcal', 'digestaMilkDmGPerKcal', 'digestaTefFrac'].map(id => [id, { when: (P: Record<string, number>) => P.energyLedger === 1 && P.ledgerDigesta === 1, why: 'read only while energyLedger and ledgerDigesta are 1 (stage E1b)' }])),
+  // stage E2b (docs/staging/e2b-prereg.md): departRace and nurseWake add terms to the nest's value and to sleep pressure;
+  // neither switches a prescription out, so neither has an entry here (both are class design, rule 1)
 };
 
 /** Whether an entry is in use: generated (not planned), non-zero under these resolved parameters, and not switched out. */

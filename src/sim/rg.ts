@@ -5,6 +5,7 @@ import { drawIndex, softmax } from '../decide/policies';
 import { choiceProbs, stillPaying, urgency, urgencyTemperature } from './urgency';
 import { candidateMeta, findCandidate, V } from './candidates';
 import { fruitRate, leafRate, treeIntake } from './intake';
+import { brightening } from './departure';
 import { dayPhase } from './environment';
 import { boundedCandidates, phaseMenu, RESPONSE_ACTIONS } from './menu';
 import { paramsOf, type Params } from './params';
@@ -107,6 +108,13 @@ export function patchPoorHere(world: World, c: Chimp, tree: number, P: Params): 
 function gate(world: World, c: Chimp, it: Intent | undefined, list: Candidate[]): { keep: Candidate; arrived: boolean } | string {
   if (!it) return 'no-intent';
   const x = ix(c), P = paramsOf(world), persist = P.urgencyPersist === 1;
+  // stage E2b (nestLightDecide; docs/staging/e2b-prereg.md §7, iterations 2–3): while the light rises an animal in its
+  // own finished nest weighs staying again at the end of every nest bout: returning light is the arousal cue (falling
+  // light only makes the nest more attractive, so it is no reason to reconsider)
+  if (P.nestLightDecide === 1 && it.action === 'nest' && c.action === 'nest' && x.phase === 2 && x.v !== V.MOTHER && world.time >= x.actEnd) {
+    const L = world.environment.daylight;
+    if (L > 0 && L < 1 && brightening(world) > 0) return 'light';
+  }
   if (x.lastIntrAt > it.chosenAt) return 'interrupt';
   // hunting fix (huntEncounter): meeting a colobus group in company is a salient change, so the hunt is weighed
   if (x.impulse === IMPULSE_HUNT && x.impulseUntil > world.time && findCandidate(list, 'hunt', x.impulseTarget)) return 'hunt';

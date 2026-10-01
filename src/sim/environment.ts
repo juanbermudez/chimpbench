@@ -72,6 +72,22 @@ export function updateSun(world: World): void {
   env.moonPhase = phase - Math.floor(phase);
 }
 
+/**
+ * Daylight at any eco-time (pure; the formula of updateSun, which is left as it is). Stage E2b (departRace) reads the
+ * brightening an animal perceives, the change of daylight over the last tick; nothing else reads it.
+ */
+export function daylightAt(world: World, time: number): number {
+  const t = START_HOUR + time, hour = t % 24, doy = ((START_DOY - 1 + Math.floor(t / 24)) % 365) + 1;
+  const g = 2 * Math.PI / 365 * (doy - 1 + (hour - 12) / 24);
+  const decl = 0.006918 - 0.399912 * Math.cos(g) + 0.070257 * Math.sin(g) - 0.006758 * Math.cos(2 * g) + 0.000907 * Math.sin(2 * g)
+    - 0.002697 * Math.cos(3 * g) + 0.00148 * Math.sin(3 * g);
+  const eqt = 229.18 * (0.000075 + 0.001868 * Math.cos(g) - 0.032077 * Math.sin(g) - 0.014615 * Math.cos(2 * g) - 0.040849 * Math.sin(2 * g));
+  const ha = ((hour * 60 + eqt + 4 * LON - 60 * TZ) / 4 - 180) * Math.PI / 180;
+  const alt = Math.asin(clamp(Math.sin(LAT) * Math.sin(decl) + Math.cos(LAT) * Math.cos(decl) * Math.cos(ha), -1, 1));
+  const P = paramsOf(world);
+  return smoothstep(P.daylightLowDeg, P.daylightHighDeg, alt * 180 / Math.PI);
+}
+
 export function dayPhase(world: World): 'dawn' | 'day' | 'dusk' | 'night' {
   const d = world.environment.daylight;
   if (d <= 0.03) return 'night';
