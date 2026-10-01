@@ -376,6 +376,15 @@ A few `ChimpX` fields are written but never read (`mateAsk/mateAskAt`, `stranger
 
 At +0.06/h, hunger climbs from a typical 0.3 to 1 in about 12 waking hours without food. Mood is derived each tick from action and state (`moodFor`).
 
+**Energy ledger** (stage E1, `energyLedger`, off by default; [energy.ts](../src/sim/energy.ts), [staging/e1-prereg.md](staging/e1-prereg.md)). With the switch on, the hunger row above and every hunger-unit conversion are replaced by an energy balance in kcal:
+- **State** (`chimp.sim.en`, created on the first tick): gut contents, body reserves relative to a set point, lifetime energy in and out, last position.
+- **Intake** goes into the gut, up to its capacity (25 kcal per kg of body mass): ripe fruit 9.9 and figs 12.5 kcal per feeding minute (× skill, the under-5 factor, the self-feeding ramp and snare injury, as before; the crop is depleted in proportion), fallback foods 4.2 × the forage field, meat 6.7, milk 2.5 per nursing minute, a shared plant piece 50 kcal.
+- **Absorption**: the gut empties into the body first-order over 3 h.
+- **Expenditure** per tick: 70 × mass^0.75 kcal/day × 1 asleep, 1.25 awake or 1.38 feeding; 3.8 J/kg per metre moved; mass × g ÷ 0.2 per metre climbed (a carried infant is charged to its carrier); gestation; growth (4.5 kcal/g). A mother pays milk ÷ 0.8 for what her infant drinks; she makes at most 23.2 × mass^0.75 kcal of milk a day (about 307), whenever it is drunk (the store holds a day of synthesis). There is no prescribed lactation cost.
+- **Body mass**: 1.8 kg at birth, linear to 31.3 kg at 10 y (females) or 39 kg at 13 y (males).
+- **Readouts**: `hunger` = gut emptiness × appetite, with appetite = 0.5 − 5 × reserves ÷ usable reserve (0..1); `cond` = 0.7 × (1 + reserves ÷ usable reserve), read by C8's health, growth and fertility terms as before; reserves at minus the usable reserve (1,300 kcal per kg) are death by starvation. The −0.3 health term at hunger > 0.9 is not used.
+- Energy in − energy out = Δgut + Δreserves for every individual (`tests/sim-energy.test.ts`). `scripts/energy-diagnose.ts` prints the budget by class.
+
 **Condition** (`slowLife`):
 - Wounds heal 0.075 per eco-day.
 - Health relaxes (time constant 0.5 eco-day) toward `1 − 0.45·injury − 0.015·max(0, age − 45) − (0.3 if hunger > 0.9)`.
@@ -1055,6 +1064,12 @@ Every evidence-tagged constant and every distance lives in the parameter registr
 | Fruit intake | 0.055 × (0.75 + 0.25·skill) | fruit/h | `fruitIntake*` | design | feed ~½ day |
 | Fruit → hunger | ×4.4 |  | `fruitHungerFactor` `fruitThirstFactor` | design |  |
 | Fallback food | 0.11 | hunger/h | `fallbackHungerPerH` | design [H for fallback use] |  |
+| Energy ledger (E1, off by default) | 1 = hunger, condition and starvation come from an energy balance in kcal (gut contents, body reserves; [energy.ts](../src/sim/energy.ts)); the hunger timers and hunger-unit conversions above are then not used | switch | `energyLedger` | design | staging/e1-prereg.md |
+| Ledger: body mass | adult 31.3 kg (F), 39 kg (M); 1.8 kg at birth, linear to 10 y (F) / 13 y (M) | kg, y | `ledgerMassFemaleKg` `ledgerMassMaleKg` `ledgerMassBirthKg` `ledgerMassMatureFemaleY` `ledgerMassMatureMaleY` | assumed (Gombe medians, Pusey et al. 2005; pending e-sources); curve stylized |  |
+| Ledger: expenditure | resting 70 × mass^0.75 kcal/day × 1 asleep, 1.25 awake, 1.38 feeding; + 3.8 J/kg per metre moved; + mass × g ÷ 0.2 per metre climbed; + gestation 7 kcal/day per kg^0.75 (mean; 0 → 2× at term); + growth 4.5 kcal/g | kcal, J | `ledgerRmrCoef` `ledgerRmrExp` `ledgerActSleep` `ledgerActRest` `ledgerActFeed` `ledgerWalkJPerKgM` `ledgerClimbEff` `ledgerPregnancyCoef` `ledgerGrowthKcalPerG` | [M] walking (sockol2007); the rest assumed (Kleiber 1947, human or cross-species; pending e-sources) | daily expenditure is a target, never set |
+| Ledger: intake | ripe fruit 9.9, figs 12.5, fallback 4.2 (× forage field), meat 6.7 kcal/min; milk 2.5 kcal per nursing minute from glands that make 23.2 kcal/day per kg^0.75 (the store holds a day of it), costing the mother milk ÷ 0.8; a shared plant piece 50 kcal | kcal/min, kcal | `ledgerFruitKcalPerMin` `ledgerFigKcalPerMin` `ledgerFallbackKcalPerMin` `ledgerMeatKcalPerMin` `ledgerMilkKcalPerMin` `ledgerMilkYieldCoef` `ledgerMilkStoreH` `ledgerMilkEff` `ledgerPlantShareKcal` | [H] plant foods (uwimbabazi2019, potts2011); meat and milk assumed; shared piece design | feeding minutes and daily kcal are targets, never set |
+| Ledger: gut and reserves | gut capacity 25 kcal per kg, emptied first-order over 3 h; usable reserve 1,300 kcal per kg at the set point (exhausted = starvation) | kcal/kg, h | `ledgerGutCapKcalPerKg` `ledgerGutEmptyH` `ledgerReserveKcalPerKg` | assumed (pending e-sources) |  |
+| Ledger: readouts | hunger = gut emptiness × appetite; appetite = 0.5 − 5 × reserves ÷ usable reserve (0..1); condition = 0.7 × (1 + reserves ÷ usable reserve) | 0..1 | `ledgerAppetiteSet` `ledgerAppetiteGain` `ledgerCondSet` | design | not physiology: maps the balance onto the 0..1 scales the scoring reads |
 | Drinking | 1.4 | thirst/h | `drinkThirstPerH` | design |  |
 | Wound healing | 0.075 | per eco-day | `woundHealPerDay` | assumed |  |
 | Baseline hazards | table in [§13](#13-reproduction-and-life-history); C8: minus the expected epidemic hazard, floored at 20% | per bio-year | `hazardInfant` `hazardYoung` `hazardJuvenile` `hazardFemale*` `hazardMale*` `hazardHealth*` `hazardInjuryWeight` `hazardBaseFloor` | [M] | Wood et al. 2017 q1, e15 |

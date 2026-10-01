@@ -4,6 +4,7 @@ import { bond, femaleQueue, lifeStage } from './hierarchy';
 import { dailyRelations, noteEvent } from './relations';
 import { reproSlow } from './reproduction';
 import { expectedEpidemicHazard } from './disease';
+import { eat, energyTick, ledgerSlow, meatKcalPerUnit } from './energy';
 import { clamp, random } from './rng';
 import { paramsOf, type Params } from './params';
 import { NEVER, SLOW_HOURS, TICK_HOURS, index, ix, markAliveChanged, simOf, type SimChimp } from './state';
@@ -95,6 +96,8 @@ interface NeedRates {
   tSleep: number; tAwake: number; tHotC: number; tHot: number; tRain: number;
   eSleep: number; eRest: number; eRun: number; eWalk: number; eOther: number; sSleep: number; sAwake: number;
   stressFloor: number; stressRelax: number; meatEat: number; meatHunger: number;
+  /** Stage E1: the energy ledger replaces the hunger timers (energy.ts). */
+  ledger: boolean;
 }
 let ratesOf: Params | null = null;
 let R: NeedRates;
@@ -105,7 +108,7 @@ function needRates(P: Params): NeedRates {
     hLact: P.hungerLactationPerH, hPreg: P.hungerPregnancyPerH, tSleep: P.thirstSleepPerH, tAwake: P.thirstAwakePerH, tHotC: P.thirstHotC,
     tHot: P.thirstHotPerH, tRain: P.thirstRainRelief, eSleep: P.energySleepPerH, eRest: P.energyRestPerH, eRun: P.energyRunPerH,
     eWalk: P.energyWalkPerH, eOther: P.energyOtherPerH, sSleep: P.socialSleepPerH, sAwake: P.socialAwakePerH, stressFloor: P.stressFloor,
-    stressRelax: P.stressRelaxPerH, meatEat: P.meatEatPerH, meatHunger: P.meatHungerFactor };
+    stressRelax: P.stressRelaxPerH, meatEat: P.meatEatPerH, meatHunger: P.meatHungerFactor, ledger: P.energyLedger === 1 };
   return R;
 }
 
@@ -138,14 +141,18 @@ export function needs(world: World, c: Chimp): void {
   const env = world.environment;
   const h = TICK_HOURS, r = needRates(paramsOf(world));
   const body = c.age < 12 ? r.bodyBase + r.bodyGain * c.age / 12 : 1;
-  c.hunger += ((sleeping ? r.hSleep : RUNNING[a] ? r.hRun : r.hAwake) * body + (c.lactating ? r.hLact * lactationTaper(world, c, paramsOf(world)) : 0) + (c.pregnancy > 0 ? r.hPreg : 0)) * h;
+  // stage E1 (energyLedger): hunger is read from the energy balance instead of the timers
+  if (r.ledger) energyTick(world, c, x, sleeping);
+  else c.hunger += ((sleeping ? r.hSleep : RUNNING[a] ? r.hRun : r.hAwake) * body + (c.lactating ? r.hLact * lactationTaper(world, c, paramsOf(world)) : 0) + (c.pregnancy > 0 ? r.hPreg : 0)) * h;
   c.thirst += (sleeping ? r.tSleep : r.tAwake + (env.temperature > r.tHotC ? r.tHot : 0) - env.rain * r.tRain) * h;
   c.energy += (sleeping ? r.eSleep : a === 'rest' || a === 'shelter' || a === 'groom' || a === 'nurse' ? r.eRest : RUNNING[a] ? -r.eRun : WALKING[a] ? -r.eWalk : -r.eOther) * h;
   c.social -= (sleeping ? r.sSleep : r.sAwake) * h;
   c.stress -= (c.stress - (r.stressFloor + x.bereft)) * r.stressRelax * h;
   if (c.carryingMeat > 0 && !sleeping) {
-    const eat = Math.min(c.carryingMeat, r.meatEat * h);
-    c.carryingMeat -= eat; c.hunger -= eat * r.meatHunger;
+    let eaten = Math.min(c.carryingMeat, r.meatEat * h);
+    if (r.ledger) { const P = paramsOf(world), k = meatKcalPerUnit(P); eaten = eat(c, P, eaten * k) / k; } // only what the gut takes
+    else c.hunger -= eaten * r.meatHunger;
+    c.carryingMeat -= eaten;
     if (c.carryingMeat < 0.005) c.carryingMeat = 0;
   }
   if (c.hunger > 1) c.hunger = 1; else if (c.hunger < 0) c.hunger = 0;
@@ -187,10 +194,10 @@ export function hazard(c: Chimp, P: Params, epidemicShare = 1): number {
   return h;
 }
 
-function causeFor(c: Chimp, orphan: boolean): string {
+function causeFor(c: Chimp, orphan: boolean, starving: boolean): string {
   if (orphan) return 'orphaned infant, did not survive without its mother';
   if (c.injury > 0.5) return 'complications of wounds';
-  if (c.hunger > 0.95) return 'starvation';
+  if (starving) return 'starvation';
   if (c.age > 45) return 'old age';
   return 'illness';
 }
@@ -201,6 +208,7 @@ export function slowLife(world: World): void {
   const s = simOf(world);
   const P = paramsOf(world);
   const alive = index(world).alive.slice();
+  const led = P.energyLedger === 1;
   for (const c of alive) {
     if (!c.alive) continue;
     const x = ix(c);
@@ -215,8 +223,11 @@ export function slowLife(world: World): void {
     // wounds heal over days of ecological time [assumed rate]
     c.injury = Math.max(0, c.injury - P.woundHealPerDay * ecoDays);
     // stage C8 body condition: a slow average of (1 − hunger); health falls as condition drops below condLow (early-life-prereg §2.6)
-    x.cond += ((1 - c.hunger) - x.cond) * (1 - Math.exp(-ecoDays / P.condTauD));
-    const target = 1 - 0.45 * c.injury - Math.max(0, c.age - 45) * 0.015 - (c.hunger > 0.9 ? 0.3 : 0) - Math.max(0, P.condLow - x.cond) / P.condLow - (x.ill > world.time ? P.epidemicHealthDrop : 0);
+    // stage E1 (energyLedger): condition reads body reserves, and starvation is an exhausted reserve (no hunger term)
+    let starved = false;
+    if (led) starved = ledgerSlow(c, x, P);
+    else x.cond += ((1 - c.hunger) - x.cond) * (1 - Math.exp(-ecoDays / P.condTauD));
+    const target = 1 - 0.45 * c.injury - Math.max(0, c.age - 45) * 0.015 - (!led && c.hunger > 0.9 ? 0.3 : 0) - Math.max(0, P.condLow - x.cond) / P.condLow - (x.ill > world.time ? P.epidemicHealthDrop : 0);
     c.health = clamp(c.health + (target - c.health) * (1 - Math.exp(-ecoDays * 2)));
     // the growth record (scales strength) follows condition until growEndY; bereavement stress decays (no permanent offset)
     if (c.age < P.growEndY) x.grow += (Math.min(1, x.cond / P.condGood) - x.grow) * (1 - Math.exp(-bioDays / 365.25 / P.growTauY));
@@ -233,10 +244,10 @@ export function slowLife(world: World): void {
     // epidemics run on the ecological clock, so at ageRate r they deliver 1/r of their deaths per biological year and the
     // baseline removes only that share (life-course mode stays near the all-cause life table)
     const p = 1 - Math.exp(-hazard(c, P, 1 / Math.max(1, world.ageRate)) * bioDays / 365.25);
-    if (c.health <= 0.02 || random(world) < p) {
+    if (starved || c.health <= 0.02 || random(world) < p) {
       // the orphan cause is kept for unweaned motherless deaths (T-DEM-4's classification does not shift)
       const m = index(world).byId.get(c.motherId);
-      killChimp(world, c, causeFor(c, !x.weaned && !(m && m.alive)), 2);
+      killChimp(world, c, causeFor(c, !x.weaned && !(m && m.alive), led ? starved || x.cond < P.condLow : c.hunger > 0.95), 2);
     }
   }
 }
