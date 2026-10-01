@@ -223,33 +223,26 @@ export function energyNeed(c: Chimp, P: Params): number {
 }
 
 /**
- * Stage E1e: hours of feeding needed to swallow `kcal` of drupes at `R` kcal/h, when the foregut holds `room` kcal more
- * and drains at most its capacity per ledgerGutEmptyH (full-gut emptying, an upper bound): feeding at R until full, then
- * at the rate the gut empties.
+ * Stage E1e: the energy (kcal of drupes) a feeding bout can take before the foregut is full: its room plus what it
+ * empties while filling, at intake rate R against full-gut emptying Q (capacity ÷ ledgerGutEmptyH, an upper bound).
+ * Satiation at distension ends the bout (iteration 2 of the pre-registration; iteration 1 paced it to the end of the need).
  */
-export function boutHours(c: Chimp, P: Params, kcal: number, R: number): number {
-  if (!(kcal > 0) || !(R > 0)) return 0;
+export function boutRoom(c: Chimp, P: Params, R: number): number {
   const room = gutRoom(c, P, 'drupe'), Q = gutCap(c, P) / P.ledgerGutEmptyH;
-  if (R <= Q) return kcal / R;
-  const tFill = room / (R - Q), eFill = R * tFill;
-  return kcal <= eFill ? kcal / R : tFill + (kcal - eFill) / Q;
+  return R > Q ? room * R / (R - Q) : Infinity;
 }
 
 /**
- * Stage E1e: the share of a full flow of milk a nursing bout would deliver (0..1): the mother's glands hold `milk` kcal and
- * refill at her synthesis rate; the infant drinks at the suckling rate until its need is met. A dry gland gives the
- * trickle of synthesis. The infant senses the let-down on contact; reading the store is a modelling shortcut (rules only).
+ * Stage E1e: the share of a full flow of milk the mother's glands give now (0..1): what they hold plus one tick of
+ * synthesis, against one tick of full flow; a dry gland gives the trickle of synthesis. The infant senses the let-down on
+ * contact; reading the store is a modelling shortcut (rules only, not the model packet).
  */
 export function milkShare(infant: Chimp, mother: Chimp, P: Params): number {
   if (!mother.lactating) return 0;
-  const F = P.ledgerMilkKcalPerMin * 60, y = P.ledgerMilkYieldCoef / 24 * Math.pow(massOf(mother, P), P.ledgerRmrExp);
-  const store = ledgerOf(mother, P).milk, need = energyNeed(infant, P);
-  if (!(need > 0)) return 1;
-  if (y >= F) return 1;
-  const eFull = store * F / (F - y); // drunk at the full flow before the gland runs dry
-  if (need <= eFull) return 1;
-  const t = store / (F - y) + (need - eFull) / y;
-  return need / (F * t);
+  const flow = P.ledgerMilkKcalPerMin * 60 * TICK_HOURS, y = P.ledgerMilkYieldCoef / 24 * TICK_HOURS * Math.pow(massOf(mother, P), P.ledgerRmrExp);
+  const v = (ledgerOf(mother, P).milk + y) / flow;
+  void infant;
+  return v < 1 ? v : 1;
 }
 
 /** hunger 0..1 = gut emptiness × appetite; appetite = set − gain × reserves ÷ usable reserve, clamped (readout; design). */

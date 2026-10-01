@@ -1,5 +1,5 @@
 import type { Chimp, World } from '../types';
-import { boutHours, energyNeed, fallbackKcalPerH, fruitKcalPerUnit, gutCap, gutRoom, intakeSize, refGutCap } from './energy';
+import { boutRoom, energyNeed, fallbackKcalPerH, fruitKcalPerUnit, gutCap, gutRoom, intakeSize, refGutCap } from './energy';
 import { fallbackOn, fallbackValue } from './fallback';
 import type { Params } from './params';
 import { forageYield } from './phenology';
@@ -61,10 +61,10 @@ export function treeIntake(c: Chimp, P: Params, crop: number, feeders: number, d
   // feeding lasts until the crown's share is eaten or the hunger is gone, whichever comes first
   const share = crop / (1 + feeders);
   if (P.energyLedger === 1 && P.ledgerDrive === 1) {
-    // stage E1e: the energy the crown can deliver over the bout, against the need, at the gut's pace (energy.ts boutHours);
-    // the hunger cap does not apply (the need replaces it)
+    // stage E1e: the energy the crown can deliver over a bout that ends at the crop share, the need or a full foregut
+    // (energy.ts boutRoom), at the intake rate; the hunger cap does not apply (the need replaces it)
     const kcalPerFruit = fruitKcalPerUnit(P, false), R = fruitPerH * kcalPerFruit, cap = gutCap(c, P);
-    const need = energyNeed(c, P), E = Math.max(0, Math.min(share * kcalPerFruit, need)), t = boutHours(c, P, E, R);
+    const E = Math.max(0, Math.min(share * kcalPerFruit, energyNeed(c, P), boutRoom(c, P, R))), t = R > 0 ? E / R : 0;
     const span = walkH + t;
     return { rateH: hungerPerH, feedH: t, walkH, perHourInclWalk: span > 0 ? E / span / cap : 0, thirstPerHInclWalk: span > 0 ? E / kcalPerFruit * P.fruitThirstFactor / span : 0 };
   }

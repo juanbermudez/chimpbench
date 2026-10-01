@@ -91,7 +91,7 @@ test('drive: a deficit is not capped by gut emptiness; a full foregut sates; a c
   void energyTick;
 });
 
-test('a tree is worth the energy a bout can deliver: nothing to a sated animal, less per hour when the gut paces the bout', () => {
+test('a tree is worth the energy a bout can deliver: nothing to a sated animal; a bout ends when the foregut is full', () => {
   const w = createWorld(48, { profile: 'field', params: ON }), P = paramsOf(w), c = adult(w, 'male'), x = ix(c);
   const L = ledgerOf(c, P);
   x.slp = 0.2; L.sWake = 0.02; L.sBed = 0.48; L.eAvg = 60; L.gut = 0; L.dm = 0; L.fib = 0; L.hind = 0;
@@ -99,10 +99,15 @@ test('a tree is worth the energy a bout can deliver: nothing to a sated animal, 
   assert.ok(energyNeed(c, P) < 0);
   assert.equal(treeIntake(c, P, 5, 0, 0).perHourInclWalk, 0, 'a sated animal gains nothing from a crown');
   L.res = -0.2 * reserveCap(c, P);
-  const big = treeIntake(c, P, 50, 0, 0); // a huge crop and a large need: the gut paces the bout
-  assert.ok(big.perHourInclWalk < 0.999 * big.rateH, `gut-paced: ${big.perHourInclWalk} < ${big.rateH}`);
-  const small = treeIntake(c, P, 0.01, 0, 0); // a crumb fits in the gut: full rate
-  assert.ok(Math.abs(small.perHourInclWalk - small.rateH) < 1e-9 * small.rateH);
+  const here = treeIntake(c, P, 50, 0, 0);
+  assert.ok(Math.abs(here.perHourInclWalk - here.rateH) < 1e-9 * here.rateH, 'the crown it sits in is worth its full rate, whatever the need');
+  const far = treeIntake(c, P, 50, 0, 300);
+  assert.ok(far.perHourInclWalk < here.rateH && far.perHourInclWalk > 0);
+  // a nearly full foregut leaves a short bout, so the same walk costs a larger share of the trip
+  const [capF] = digestaCaps(c, P);
+  eat(c, P, 0.9 * capF / (P.digestaDrupeDmGPerMin / P.ledgerFruitKcalPerMin), 'drupe');
+  const fullFar = treeIntake(c, P, 50, 0, 300);
+  assert.ok(fullFar.perHourInclWalk < 0.5 * far.perHourInclWalk, `${fullFar.perHourInclWalk} vs ${far.perHourInclWalk}`);
   assert.ok(needFruit(c, P, c.hunger) > 0, 'the crop-share rules read the kcal need');
   void gutCap;
 });
@@ -116,6 +121,7 @@ test('nursing is worth the milk the glands can deliver', () => {
   M.milk = 0;
   const dry = milkShare(infant, mother, P), F = P.ledgerMilkKcalPerMin * 60;
   assert.ok(dry > 0 && dry < 0.2, `a dry gland gives the trickle of synthesis: ${dry.toFixed(3)} of ${F} kcal/h`);
+  M.milk = 0.5 * F / 240; assert.ok(milkShare(infant, mother, P) > 0.5 && milkShare(infant, mother, P) < 1, 'half a tick of flow in store');
   mother.lactating = false; assert.equal(milkShare(infant, mother, P), 0);
 });
 
