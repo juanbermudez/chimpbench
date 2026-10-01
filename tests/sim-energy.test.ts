@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createWorld, stepWorld, tickWorld } from '../src/simulation';
-import { eat, energyTick, gutCap, ledgerOf, ledgerSlow, massOf, nurseTick, reserveCap } from '../src/sim/energy';
+import { eat, energyTap, energyTick, gutCap, intakeSize, ledgerOf, ledgerSlow, massOf, nurseTick, reserveCap } from '../src/sim/energy';
+import { fruitRate } from '../src/sim/intake';
 import { paramsOf, type Overrides } from '../src/sim/params';
 import { ix } from '../src/sim/state';
 import { plainDataProblems, worldShapeProblem } from '../src/persist/envelope';
@@ -142,4 +143,112 @@ test('milk: what the infant drinks leaves the mother, at the cost of synthesis; 
   for (let i = 0; i < 100; i++) { c.position[0] += 1; c.position[1] += 0.1; energyTick(w, c, x, false); energyTick(still, sc, sx, false); }
   const extra = (L.out - SL.out) * 4184; // J
   assert.ok(Math.abs(extra - (100 * P.ledgerWalkJPerKgM * M + 10 * M * 9.81 / P.ledgerClimbEff)) < 1e-3 * extra, `${extra} J`);
+});
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Stage E1c (docs/staging/e1c-prereg.md): growth from surplus, night nursing, intake capacity by body size. Off by default.
+const E1C: Overrides = { energyLedger: 1, ledgerGrowSurplus: 1, ledgerNightNurse: 1, ledgerInfantIntake: 1 };
+const curveKg = (c: Chimp, P: ReturnType<typeof paramsOf>) => {
+  const f = c.sex === 'female', adult = f ? P.ledgerMassFemaleKg : P.ledgerMassMaleKg, at = f ? P.ledgerMassMatureFemaleY : P.ledgerMassMatureMaleY;
+  return c.age >= at ? adult : P.ledgerMassBirthKg + (adult - P.ledgerMassBirthKg) * c.age / at;
+};
+
+test('E1c: the switches do nothing without the ledger (default world unchanged)', () => {
+  const a = createWorld(7), b = createWorld(7, { params: { ledgerGrowSurplus: 1, ledgerNightNurse: 1, ledgerInfantIntake: 1, ledgerIntakeSizeExp: 0.5 } });
+  run(a, DAY / 2); run(b, DAY / 2);
+  assert.equal(worldHash(a), worldHash(b));
+});
+
+test('E1c: energy is conserved with growth from surplus, night nursing and intake by size (both profiles)', () => {
+  for (const profile of ['compressed', 'field'] as const) {
+    const w = createWorld(48, { profile, params: profile === 'field' ? { ...E1C, rhythmSleep: 1, rhythmHeat: 1, ledgerMilkStoreH: 11 } : E1C });
+    run(w, 600);
+    const before = new Map(w.chimps.filter(c => c.alive).map(c => [c.id, { ...ix(c).en! }]));
+    run(w, DAY);
+    let checked = 0;
+    for (const c of w.chimps) {
+      const b = before.get(c.id), L = c.alive ? ix(c).en : undefined;
+      if (!b || !L) continue;
+      const flow = (L.in - b.in) - (L.out - b.out), stock = (L.gut - b.gut) + (L.res - b.res);
+      assert.ok(Math.abs(flow - stock) < 1e-6 * Math.max(1, L.in, L.out), `${profile} ${c.name}: flow ${flow} vs stock ${stock}`);
+      assert.ok(L.kg !== undefined && L.kg >= b.kg! && L.kg <= (c.sex === 'female' ? paramsOf(w).ledgerMassFemaleKg : paramsOf(w).ledgerMassMaleKg) + 1e-9, 'mass is state, never falls, never above adult');
+      checked++;
+    }
+    assert.ok(checked >= 40, `${checked} individuals checked`);
+  }
+});
+
+test('E1c growth: only from reserves above the set point, at the curve slope, up to adult mass', () => {
+  const w = createWorld(48, { params: E1C }), P = paramsOf(w);
+  const inf = w.chimps.find(c => c.alive && c.age > 1 && c.age < 4)!, x = ix(inf);
+  inf.action = 'rest';
+  const L = ledgerOf(inf, P);
+  assert.equal(L.kg, curveKg(inf, P), 'a founder opens on the curve');
+  assert.equal(massOf(inf, P), L.kg);
+  let grown = 0;
+  energyTap.fn = (_c, term, kcal) => { if (term === 'growth') grown += kcal; };
+  try {
+    // below the set point: no growth, no growth cost
+    L.res = -50; const kg0 = L.kg!;
+    for (let i = 0; i < 240; i++) { L.res = -50; energyTick(w, inf, x, false); }
+    assert.equal(L.kg, kg0); assert.equal(grown, 0);
+    // above it: the curve's slope per bio-year, 4.5 kcal per g
+    const f = inf.sex === 'female', v = ((f ? P.ledgerMassFemaleKg : P.ledgerMassMaleKg) - P.ledgerMassBirthKg) / (f ? P.ledgerMassMatureFemaleY : P.ledgerMassMatureMaleY);
+    for (let i = 0; i < 240; i++) { L.res = 1e5; energyTick(w, inf, x, false); }
+    const dkg = v / 24 / 365.25;
+    assert.ok(Math.abs(L.kg! - kg0 - dkg) < 1e-9, `${L.kg! - kg0} kg in an hour vs ${dkg}`);
+    assert.ok(Math.abs(grown - dkg * 1000 * P.ledgerGrowthKcalPerG) < 1e-6, `${grown} kcal`);
+    assert.ok(Math.abs(gutCap(inf, P) - P.ledgerGutCapKcalPerKg * L.kg!) < 1e-9, 'capacities follow the own mass');
+    // it stops exactly at adult mass, and an adult never grows
+    const adultKg = f ? P.ledgerMassFemaleKg : P.ledgerMassMaleKg;
+    L.kg = adultKg - 1e-7; grown = 0;
+    for (let i = 0; i < 10; i++) { L.res = 1e5; energyTick(w, inf, x, false); }
+    assert.equal(L.kg, adultKg);
+    assert.ok(grown > 0 && grown < 1e-7 * 1000 * P.ledgerGrowthKcalPerG + 1e-9, 'only the remaining gram is paid for');
+    const ad = adult(w, 'male'), AL = ledgerOf(ad, P); grown = 0;
+    for (let i = 0; i < 100; i++) { AL.res = 1e5; energyTick(w, ad, ix(ad), false); }
+    assert.equal(grown, 0); assert.equal(AL.kg, P.ledgerMassMaleKg);
+  } finally { energyTap.fn = null; }
+});
+
+test('E1c intake: capacity scales with (mass / adult mass)^exp, 1 for adults, and the fruit valuation uses it', () => {
+  const w = createWorld(48, { params: E1C }), P = paramsOf(w);
+  const inf = w.chimps.find(c => c.alive && c.age > 1 && c.age < 4)!, ad = adult(w, inf.sex);
+  ledgerOf(inf, P); ledgerOf(ad, P);
+  assert.equal(intakeSize(ad, P), 1);
+  const r = massOf(inf, P) / (inf.sex === 'female' ? P.ledgerMassFemaleKg : P.ledgerMassMaleKg);
+  assert.ok(Math.abs(intakeSize(inf, P) - r ** P.ledgerIntakeSizeExp) < 1e-12);
+  const skill = (c: Chimp) => P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging;
+  assert.ok(Math.abs(fruitRate(inf, P).fruitPerH / fruitRate(ad, P).fruitPerH - intakeSize(inf, P) * skill(inf) / skill(ad)) < 1e-12);
+  // switch off: the old young factor
+  const P0 = paramsOf(createWorld(48, { params: ON }));
+  assert.ok(Math.abs(fruitRate(inf, P0).fruitPerH - P0.fruitIntakePerH * skill(inf) * P0.fruitIntakeYoungFactor) < 1e-12);
+});
+
+test('E1c night nursing: infants drink in their mother\'s nest in the dark only with the switch', () => {
+  const nightMilk = (params: Overrides) => {
+    const w = createWorld(48, { params });
+    let milk = 0;
+    energyTap.fn = (_c, term, kcal) => { if (term === 'suckled' && w.environment.daylight < 0.1) milk += kcal; };
+    try { run(w, DAY); } finally { energyTap.fn = null; }
+    return milk;
+  };
+  const on = nightMilk({ ...ON, ledgerNightNurse: 1 }), off = nightMilk(ON);
+  assert.ok(on > 100, `${on} kcal drunk at night with the switch`);
+  assert.ok(on > 5 * off, `night milk ${on} with vs ${off} without`);
+});
+
+test('E1c saves and determinism: ledgers with mass are plain data, load, resume exactly, and batch-invariant', () => {
+  const w = createWorld(5, { profile: 'field', params: E1C });
+  run(w, DAY / 2);
+  assert.deepEqual(plainDataProblems(w), []);
+  const copy = JSON.parse(JSON.stringify(w)) as World;
+  assert.equal(worldShapeProblem(copy), '');
+  run(w, 300); run(copy, 300);
+  assert.equal(worldHash(copy), worldHash(w));
+  assert.deepEqual(Object.keys(ix(w.chimps.find(c => c.alive)!).en!).sort(), ['gut', 'in', 'kg', 'milk', 'out', 'res', 'x', 'y', 'z']);
+  const a = createWorld(48, { params: E1C }), b = createWorld(48, { params: E1C });
+  run(a, 1200);
+  for (let i = 0; i < 1200 / 60; i++) stepWorld(b, 15);
+  assert.equal(worldHash(a), worldHash(b));
 });
