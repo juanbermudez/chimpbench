@@ -18,12 +18,12 @@
   "Instrument validation against truth (sampling accuracy, classifier precision and recall) is allowed at any time, because truth is not a field target; each validation run is logged."
  ],
  "protocolFreeze": {
-  "stage": "C8 freeze + C8c + C13e (join choice; sealed rows registered)",
+  "stage": "C8 freeze + C8c + C13e + hunting fix + C14 (sealed rows registered)",
   "date": "2026-10-01",
-  "hash": "7950e457bd02358f",
-  "registryHash": "165f717235c71d8d",
+  "hash": "a2228c2df476680b",
+  "registryHash": "57903c4cdc400019",
   "previous": {
-   "stage": "C8 freeze + C8c (lactation taper; sealed rows registered)",
+   "stage": "C8 freeze + C8c + C13e (join choice; sealed rows registered)",
    "hash": "7950e457bd02358f"
   },
   "note": "scripts/field-metrics.ts --unseal and field-scenario.ts expansion --unseal refuse unless protocolFreeze.stage starts with 'C8' and hash and registryHash equal the current protocol and registry hashes (src/field/targets.ts unsealRefusal)"
@@ -1820,6 +1820,18 @@
     "T-HUN-8": "revisedPostFreeze",
     "T-HUN-9": "revisedPostFreeze"
    }
+  },
+  {
+   "date": "2026-10-01",
+   "by": "science/simulation owner (integrator)",
+   "seen": "none",
+   "param": "freeze: protocol hash 7950e457bd02358f -> a2228c2df476680b (the revised-post-freeze labels on T-HUN-4, -5, -6, -8, -9); registryHash 165f717235c71d8d -> 57903c4cdc400019 (the hunting-fix parameters; patrolImpulseDecides; patrolH0 field 0.0183)",
+   "reason": "hunting fix (9570a3f) and C14 merged; --unseal is bound to the protocol and registry hashes",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "combined proof (lean plan), C9 proof",
+   "class": "freeze"
   }
  ],
  "targets": [
