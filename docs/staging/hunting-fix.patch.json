@@ -1,0 +1,42 @@
+{
+ "about": "Hunting fix staging for data/targets.json (applied by the integrator; this branch never edits targets.json). Append `protocolLog` in order; apply `targetEdits` (set each field on the named target). The first entry is the pre-registration, committed before any run of the changed model; the result entry is appended after the direction check. No hashed protocol file is touched (the protocol hash stays 7950e457bd02358f); the registry hash changes (three new parameters), so the integrator logs a new freeze at the merge.",
+ "protocolLog": [
+  {
+   "date": "2026-10-01",
+   "by": "hunting-fix implementer (branch worktree-agent-a954b443db4b6f22a)",
+   "seen": "development seeds 48, 7, 21 (field, 180-day burn-in + 365 days; artifacts/validation/c13/dc-c13e.json and dc-off.json): T-HUN-1 0.22 per community-year (truth 1.56; both C13 parts off: 1.11, truth 2.22), T-HUN-2 0.67 on 3 observed hunts (truth 0.53 on 14), T-HUN-3 0.0003 at 10.8 colobus encounters per 100 follow-hours (2,976 encounters: 39% with no adult male in the scan, 41% with one, 14% with two, 6% with three or more), T-HUN-7 1.00, and the held-out T-HUN-4 2.18, T-HUN-5 0.01, T-HUN-6 0.95, T-HUN-8 1.00. Diagnosis on today's model (scripts/hunt-diagnose.ts, sim truth, 30-day burn-in + 30 days): seed 48: 2,563 daylight decision points of males aged 12+ with colobus perceived; a hunting day held at 19 (0.7%), three adult males in view at 259 (10%), both at none, so the hunt was never offered; with both C13 parts off: hunting day 77 of 2,690 (2.9%), three adult males 634 (24%), both 6, 3 hunts. What-if on today's model (nothing changed): adult males newly perceiving a colobus group with at least 2 adult males in view: 192 (seed 48) and 160 (seed 21, no burn-in) in 30 days; today's lead score there averages 0.40 against 0.77 for the best other option, a softmax share of 0.135 and 0.123 (0.14 at hunger below 0.4, 0.09 above). No value of the changed model: nothing was run with it",
+   "param": "Hunting fix pre-registration, before any run of the changed model. Cause: the hunt-lead option needs a community 'hunting day' (a daily lottery at huntDayPerMale 0.0045 per adult male, a design value from a misread figure, docs/simulation.md §12) and at least 3 adult males in view; at colobus encounters the two almost never coincide, so the option is not offered. C13 is not the cause (hunting was near zero before it); its smaller parties lowered the share of encounters with three adult males from 24% to 10%. Change (switch huntEncounter, field only; 0 restores today's model exactly): (1) the hunting-day lottery is not drawn; the decision is made at the encounter, as the field statistic is defined (hunts per colobus encounter, gilby2015 [H]): an adult male (15+) who newly perceives a colobus group (not the group he perceived at his previous decision point), with at least huntEncMinMales 2 adult males in view, himself included (design assumption: no solo hunts; a capture already needs two hunters), gets a hunt impulse for that group for impulseDurationH; (2) while it lasts the hunt-lead option is offered under today's other conditions (rain below 0.3, energy above 0.35, huntGapH since the community's last hunt) at today's score, unchanged; it stays on the bounded RG menu and breaks the intention gate (a colobus encounter is a salient change); the impulse ends with his next choice, so he considers the hunt once per encounter; joining an ongoing hunt is unchanged; a hunting day set by the colobus-troop field experiment still works as before, with huntMinMales 3. (3) Multiple captures (huntExtraKillP, field 0.17, compressed 0 = off): in a successful hunt each other hunter makes a capture of his own with probability 0.17, while the group has more than 4 members; derived, not fitted: Ngogo's 3.41 kills per successful hunt (mitaniWatts1999) with 15.2 adult males present (wattsMitani2002) give (3.41 - 1) / (15.2 - 1) = 0.17 [M]; the binomial form and the use of males present for hunters are design assumptions. Fitted quantity: none. No probability, score or threshold is fitted to any row; the hunt rate follows from today's lead score under the RG softmax. The success curve (huntSuccessMax, huntSuccessRate) is unchanged. Ablation set 'hunting' = {huntEncounter 0, huntExtraKillP 0}, hash-identical to the model before the change (unit test on hashes recorded before the change). Direction check (development seeds 48 and 7, field, 30-day burn-in + 30 days, 1 worker; scripts/field-metrics.ts for the rows, scripts/hunt-diagnose.ts and scripts/c13-direction.ts for truth and viability; each arm against the ablation set on the same seeds and window). Predictions, with the band in brackets: T-HUN-3 up from about 0 to 0.04-0.10, expected to pass [0.05-0.4]; T-HUN-1 up to 20-60 per community-year, expected to exceed its band [5-25], because the observer records colobus encounters about 3 times as often as Kanyawara (10.8 against 3.7 per 100 h) and the two rows are tied by that rate; T-HUN-2 down to 0.15-0.40, expected to fail [0.5-0.8]: hunts by 2 or 3 hunters meet the unchanged design curve (0.21 for 2, 0.36 for 3) and the earlier 0.67 rested on 3 hunts; T-HUN-7 up from 1.00 to 1.1-1.4, at the lower edge of [1.2-2]; held-out, direction only: T-HUN-4 stays above 1 and is expected above its band (2-6 against 1.05-1.8) because parties with fewer than 2 adult males cannot start a hunt; T-HUN-8 down from 1.00 to 0.80-1.00; T-HUN-5 and T-HUN-6 cannot be resolved by a 30-day window (they need at least 6 months of monthly counts) and are not read; T-HUN-9 gains data, no prediction; T-HUN-10 stays n/a. Other rows: activity shares (T-ACT-1 to 4) within 0.02 and T-PTY-1 within 0.15 of the ablation arm. Viability guard (merge gate, against the ablation arm, each seed): median adult hunger and median lactating-female hunger do not rise by more than 0.02 (run-to-run noise), and no death by starvation occurs in the window. Nothing is adjusted after the check, whatever the rows show. T-HUN-1, -2, -3 and -7 are touched (fitted); T-HUN-4, -5, -6, -8 and -9 are held out and get the label 'model revised post-freeze' (targetEdits)",
+   "reason": "simulated chimpanzees almost never hunt: T-HUN-3 0.0003-0.003 against 0.05-0.4 and T-HUN-1 0.22 against 5-25 on the development seeds; T-HUN-7 is exactly 1 by construction",
+   "targets": [
+    "T-HUN-1",
+    "T-HUN-2",
+    "T-HUN-3",
+    "T-HUN-4",
+    "T-HUN-5",
+    "T-HUN-6",
+    "T-HUN-7",
+    "T-HUN-8",
+    "T-HUN-9"
+   ],
+   "verdicts": "none (no proof value exists)",
+   "class": "model change"
+  }
+ ],
+ "targetEdits": {
+  "T-HUN-4": {
+   "revisedPostFreeze": "Hunting fix (docs/staging/hunting-fix.patch.json; the hunt decision moved from a daily lottery to the colobus encounter, and several captures per hunt, made after this row's values were seen on development seeds): model revised post-freeze; counts as validation only if no parameter was set by looking at it (nothing was fitted)"
+  },
+  "T-HUN-5": {
+   "revisedPostFreeze": "Hunting fix (docs/staging/hunting-fix.patch.json; the hunt decision moved from a daily lottery to the colobus encounter, and several captures per hunt, made after this row's values were seen on development seeds): model revised post-freeze; counts as validation only if no parameter was set by looking at it (nothing was fitted)"
+  },
+  "T-HUN-6": {
+   "revisedPostFreeze": "Hunting fix (docs/staging/hunting-fix.patch.json; the hunt decision moved from a daily lottery to the colobus encounter, and several captures per hunt, made after this row's values were seen on development seeds): model revised post-freeze; counts as validation only if no parameter was set by looking at it (nothing was fitted)"
+  },
+  "T-HUN-8": {
+   "revisedPostFreeze": "Hunting fix (docs/staging/hunting-fix.patch.json; the hunt decision moved from a daily lottery to the colobus encounter, and several captures per hunt, made after this row's values were seen on development seeds): model revised post-freeze; counts as validation only if no parameter was set by looking at it (nothing was fitted)"
+  },
+  "T-HUN-9": {
+   "revisedPostFreeze": "Hunting fix (docs/staging/hunting-fix.patch.json; the hunt decision moved from a daily lottery to the colobus encounter, and several captures per hunt, made after this row's values were seen on development seeds): model revised post-freeze; counts as validation only if no parameter was set by looking at it (nothing was fitted)"
+  }
+ }
+}
