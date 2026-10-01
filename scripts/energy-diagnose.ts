@@ -64,7 +64,8 @@ for (const seed of seeds) {
       const pp = prevPos.get(c.id), step = pp && c.position[1] < 0.3 ? Math.hypot(c.position[0] - pp[0], c.position[2] - pp[1]) : 0;
       prevPos.set(c.id, [c.position[0], c.position[2]]);
       if (L) prevIn.set(c.id, L.in);
-      const foraging = c.action === 'forage', eating = L ? din > 0 && c.action !== 'nurse' : foraging && x.phase === 2;
+      // with the ledger off, eating is the forage act in a crown (phase 2) or on the ground
+      const foraging = c.action === 'forage', eating = L ? din > 0 && c.action !== 'nurse' : foraging && (c.targetId < 0 ? c.position[1] <= 0.05 : x.phase === 2);
       for (const n of k) {
         const a = acc[n];
         a.ticks++; a.ids.add(seed * 100000 + c.id); a.walked += step < 100 ? step : 0;
@@ -76,7 +77,7 @@ for (const seed of seeds) {
         if (light) { a.dayTicks++; a.hunger += c.hunger; }
       }
     }
-    if (on && i % DAY === DAY / 2) for (const n of ['adult male', 'female, other', 'female, lactating', 'juvenile 5–12 y', 'infant 0.5–2 y'] as Cls[]) {
+    if (on && i % DAY === DAY / 2) for (const n of ['adult male', 'female, other', 'female, lactating', 'juvenile 5–12 y', 'infant 2–5 y', 'infant 0.5–2 y', 'infant < 0.5 y'] as Cls[]) {
       let s = 0, m = 0;
       for (const c of w.chimps) if (c.alive && cls.get(c.id)?.includes(n) && ix(c).en) { s += ix(c).en!.res / reserveCap(c, P); m++; }
       (traj[n] ??= [])[Math.floor(i / DAY)] = ((traj[n][Math.floor(i / DAY)] ?? 0) * (seeds.indexOf(seed)) + (m ? s / m : 0)) / (seeds.indexOf(seed) + 1);

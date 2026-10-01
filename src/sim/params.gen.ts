@@ -2,7 +2,7 @@
 /* eslint-disable */
 export const REGISTRY_VERSION = 1;
 /** Content hash of every live default, hard range, profile value and integer flag. Stored with each world. */
-export const REGISTRY_HASH = '03be0f1595be3b12';
+export const REGISTRY_HASH = '57578855087d5d95';
 
 /** Registry defaults (the compressed profile). */
 export const DEFAULTS = {
@@ -494,6 +494,8 @@ export const DEFAULTS = {
   ledgerMeatKcalPerMin: 6.7,
   ledgerMilkEff: 0.8,
   ledgerMilkKcalPerMin: 2.5,
+  ledgerMilkStoreH: 24,
+  ledgerMilkYieldCoef: 23.2,
   ledgerPlantShareKcal: 50,
   ledgerPregnancyCoef: 7,
   ledgerReserveKcalPerKg: 1300,
@@ -1307,6 +1309,8 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   ledgerMeatKcalPerMin: [0, 1000000],
   ledgerMilkEff: [0.01, 1],
   ledgerMilkKcalPerMin: [0, 1000000],
+  ledgerMilkStoreH: [0.01, 1000000],
+  ledgerMilkYieldCoef: [0, 1000000],
   ledgerPlantShareKcal: [0, 1000000],
   ledgerPregnancyCoef: [0, 1000000],
   ledgerReserveKcalPerKg: [1, 1000000],

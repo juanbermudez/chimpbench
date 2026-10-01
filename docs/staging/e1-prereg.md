@@ -144,3 +144,23 @@ Quick check, all rows (30 days, 2 seeds; noisy): fitted pass 8 → 6, fail 8 →
 - **Change.** A mother makes milk at `ledgerMilkYieldCoef` × mass^0.75 kcal/day (23.2: the human 501 kcal/day at 60 kg, butteKing2005; assumed, cross-species) into a store that holds `ledgerMilkStoreH` hours of synthesis (6 h, assumed; milk left in the gland stops synthesis). An infant drinks at the suckling rate from what the store holds. The mother still pays milk ÷ 0.8 when it is drunk. No other input changes.
 - **Expected.** Milk to infants under about 1 y unchanged (their demand is below 307 kcal/day). Older infants get at most 307 kcal/day and must feed themselves for the rest; their hunger rises and their own feeding time with it. A mother's milk cost is capped at 384 kcal/day, so her deficit with an older infant shrinks. The time course becomes a rise over the first year and a plateau, still not the recovery in year 2 of emeryThompson2012: that depends on how fast infants take solid food, which is C8's self-feeding ramp (design), not an E1 input.
 - **Watch.** Reserves of infants of 1–5 y. If they fall steadily, the self-feeding ramp (0 at 0.5 y to 1 at weaning, × 0.4 under 5 y) cannot cover what milk no longer does; that is a finding about the ramp, and it is not to be retuned here.
+
+**Iteration 2 result** (quick check, seeds 48 and 7, days 30–60; `it2-30.*`): not viable for infants.
+
+| Class | In (milk) | Out | Eating min | Daylight hunger | Reserves ÷ store, day 30 → 60 |
+| --- | --- | --- | --- | --- | --- |
+| Infant 0.5–2 y | 241 (229) | 309 | 10 | 0.58 | −0.25 → −0.46 |
+| Infant 2–5 y | 404 (228) | 492 | 83 | 0.69 | −0.26 → −0.44 |
+| Female, lactating | 1,402 | 1,405 (milk 285) | 160 | 0.30 | +0.013, flat |
+
+- Mothers' milk cost fell to 285 kcal/day at every infant age, and their reserves no longer fall with infant age (+1.9% with an infant of 0.5–2 y, +0.1% with one of 2 y or more). T-RNG-5 0.75 (baseline 0.64, iteration 1 1.00).
+- Infants got 229 kcal/day of milk, not the 307 the yield allows, and lost 0.7–0.9% of their reserve a day. No deaths yet in 30 days; at that rate they starve within about 4 months.
+- **Cause, by the numbers:** 229 ÷ 307 = 18 ÷ 24. The sim's infants do not nurse at night (the nest rule outscores nursing after dusk), so with a 6 h gland store the synthesis of 6 night hours is lost. The store size has no source, and the night rule is a clock prescription that belongs to E2. An unsourced number met a prescribed clock and became decisive.
+- The 2–5-year-olds did respond as expected (eating 34 → 83 min, 176 kcal/day of their own).
+
+### Iteration 3 (registered before its run): only the daily yield limits milk
+
+- **Change.** `ledgerMilkStoreH` 6 → 24: the store holds a day of synthesis, so the timing of nursing no longer matters and only the daily yield (307 kcal at 31.3 kg) binds. This removes a constraint that has no source; it is not fitted to anything (24 h is the neutral value: "a day's yield, whenever it is drunk"). The gland-capacity term returns when E2 lets infants nurse at night and a source gives the capacity.
+- **Expected.** Infants of 0.5–2 y: milk up to 307 against a demand of 309, so about in balance. Infants of 2–5 y: 307 of milk + about 180 of their own against 492, so close to balance with a high appetite. Both are **at the margin**: whether weanlings hold their reserves then depends on the assumed yield (human, scaled by mass^0.75) and on C8's self-feeding ramp. Mothers: milk cost up to 384 kcal/day, reserves a little below other females at every infant age.
+- **Run.** 30-day burn-in + 60 days (the largest allowed), seeds 48 and 7, both arms, to see the infants' reserve trend.
+- **If infants still lose reserves steadily:** the limit stays in the code, the result is reported as not viable under the kill criterion, and the open question is handed to E2 and to the self-feeding ramp. No input is moved to rescue them.

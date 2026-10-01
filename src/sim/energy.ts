@@ -25,6 +25,7 @@ interface Rates {
   /** kcal per tick per kg^exp of maternal mass at the mean cost of gestation. */ preg: number;
   /** kcal per tick per kg of mass gained per bio-year (growth charged at its natural daily rate). */ grow: number;
   /** kcal per kg per metre on the ground, and per metre climbed. */ walk: number; climb: number;
+  /** Milk made per tick per kg^exp of maternal mass (kcal), and how many ticks of synthesis the glands hold. */ milk: number; milkTicks: number;
   /** Longest plausible move in one tick (m); a longer jump is a placement, not locomotion. */ maxStep: number;
 }
 let ratesOf: Params | null = null;
@@ -39,6 +40,7 @@ function rates(P: Params): Rates {
     grow: 1000 * P.ledgerGrowthKcalPerG / DAYS_PER_YEAR / 24 * TICK_HOURS,
     walk: P.ledgerWalkJPerKgM / J_PER_KCAL,
     climb: G_MPS2 / P.ledgerClimbEff / J_PER_KCAL,
+    milk: P.ledgerMilkYieldCoef / 24 * TICK_HOURS, milkTicks: P.ledgerMilkStoreH / TICK_HOURS,
     maxStep: 2 * P.runMps * TICK_SECONDS + 2,
   };
   return R;
@@ -68,7 +70,7 @@ export function ledgerOf(c: Chimp, P: Params): EnergyLedger {
   if (x.en) return x.en;
   const dev = x.cond / P.ledgerCondSet - 1; // the inverse of the condition readout
   const p = c.position;
-  return x.en = { gut: gutCap(c, P) * (1 - (c.hunger > 1 ? 1 : c.hunger < 0 ? 0 : c.hunger)), res: reserveCap(c, P) * (dev < -0.9 ? -0.9 : dev > 0.5 ? 0.5 : dev), in: 0, out: 0, x: p[0], y: p[1], z: p[2] };
+  return x.en = { gut: gutCap(c, P) * (1 - (c.hunger > 1 ? 1 : c.hunger < 0 ? 0 : c.hunger)), res: reserveCap(c, P) * (dev < -0.9 ? -0.9 : dev > 0.5 ? 0.5 : dev), in: 0, out: 0, x: p[0], y: p[1], z: p[2], milk: 0 };
 }
 
 /** hunger 0..1 = gut emptiness × appetite; appetite = set − gain × reserves ÷ usable reserve, clamped (readout; design). */
@@ -96,6 +98,8 @@ export function energyTick(world: World, c: Chimp, x: ChimpX, sleeping: boolean)
     const k = r.preg * m75 * 2 * Math.min(1, c.pregnancy / x.gestation);
     out += k; if (tap) tap(c, 'pregnancy', k);
   }
+  // milk synthesis is limited: the store fills at the yield rate and holds ledgerMilkStoreH hours of it
+  if (c.lactating) { const y = r.milk * m75, full = y * r.milkTicks; L.milk = L.milk + y < full ? L.milk + y : full; } else if (L.milk !== 0) L.milk = 0;
   const g = growthKgPerY(c, P);
   if (g > 0) { const k = r.grow * g; out += k; if (tap) tap(c, 'growth', k); }
   // locomotion: metres actually moved since the last tick
@@ -153,12 +157,16 @@ export const meatKcalPerUnit = (P: Params) => P.ledgerMeatKcalPerMin * 60 / P.me
 /** Fallback foods at a mean cell at full stock (kcal per hour). */
 export const fallbackKcalPerH = (P: Params) => P.ledgerFallbackKcalPerMin * 60;
 
-/** One tick of nursing: the infant drinks what its gut takes; the mother spends that energy ÷ the efficiency of milk synthesis. */
+/**
+ * One tick of nursing: the infant drinks at the suckling rate what the mother's glands hold and its gut takes; the mother
+ * spends that energy ÷ the efficiency of milk synthesis.
+ */
 export function nurseTick(infant: Chimp, mother: Chimp, P: Params): void {
-  const milk = eat(infant, P, P.ledgerMilkKcalPerMin * 60 * TICK_HOURS);
+  const ML = ledgerOf(mother, P), flow = P.ledgerMilkKcalPerMin * 60 * TICK_HOURS;
+  const milk = eat(infant, P, flow < ML.milk ? flow : ML.milk);
   if (milk <= 0) return;
-  const ML = ledgerOf(mother, P), cost = milk / P.ledgerMilkEff;
-  ML.res -= cost; ML.out += cost;
+  const cost = milk / P.ledgerMilkEff;
+  ML.milk -= milk; ML.res -= cost; ML.out += cost;
   if (energyTap.fn) energyTap.fn(mother, 'milk', cost);
 }
 

@@ -11660,7 +11660,51 @@
    "clock": "eco",
    "symbol": "nurseTick",
    "file": "src/sim/energy.ts",
-   "notes": "Milk energy transferred per minute of nursing: a human value (501 kcal/day, Butte & King 2005, over an assumed 2 h of suckling) scaled by mass^0.75 to a 31 kg mother. Limited by the room in the infant’s gut. Pending e-sources (not yet in docs/research.md)."
+   "notes": "Milk energy transferred per minute of nursing: a human value (501 kcal/day, Butte & King 2005, over an assumed 2 h of suckling) scaled by mass^0.75 to a 31 kg mother. Limited by the room in the infant’s gut and by the milk the mother’s glands hold (ledgerMilkYieldCoef). Pending e-sources (not yet in docs/research.md)."
+  },
+  {
+   "id": "ledgerMilkStoreH",
+   "group": "reproduction",
+   "value": 24,
+   "units": "h",
+   "range": [
+    6,
+    24
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.01,
+    1000000.0
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "energyTick",
+   "file": "src/sim/energy.ts",
+   "notes": "Hours of milk synthesis a mother can hold for her infant. 24 = only the daily yield limits milk, whenever it is drunk (E1 iteration 3). A real gland holds less and stops synthesis when full, but no source gives its capacity, and the sim's infants cannot nurse at night (a clock rule, stage E2), so a smaller value would take away a quarter of the yield for a reason that is not physiology."
+  },
+  {
+   "id": "ledgerMilkYieldCoef",
+   "group": "reproduction",
+   "value": 23.2,
+   "units": "kcal/day per kg^0.75",
+   "range": [
+    11.6,
+    46.4
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1000000.0
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "energyTick",
+   "file": "src/sim/energy.ts",
+   "notes": "Milk energy a mother can make per day per kg^0.75 of her mass: the human 501 kcal/day (749 g/day x 2.8 kJ/g, Butte & King 2005) at 60 kg; about 307 kcal/day at 31.3 kg. Scaling by mass^0.75 is a design assumption; no chimpanzee milk yield exists. (E1 iteration 2: without it a larger infant simply drank more.) Pending e-sources (not yet in docs/research.md)."
   },
   {
    "id": "ledgerPlantShareKcal",

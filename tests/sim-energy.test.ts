@@ -75,7 +75,7 @@ test('saves: a world with ledgers is plain data, passes the load-time shape chec
   run(w, 500); run(copy, 500);
   assert.equal(worldHash(copy), worldHash(w), 'the loaded world continues as the saved one');
   const L = ix(w.chimps.find(c => c.alive)!).en!;
-  assert.deepEqual(Object.keys(L).sort(), ['gut', 'in', 'out', 'res', 'x', 'y', 'z']);
+  assert.deepEqual(Object.keys(L).sort(), ['gut', 'in', 'milk', 'out', 'res', 'x', 'y', 'z']);
   assert.ok(Object.values(L).every(Number.isFinite));
 });
 
@@ -117,12 +117,23 @@ test('milk: what the infant drinks leaves the mother, at the cost of synthesis; 
   const w = createWorld(48, { params: ON }), P = paramsOf(w);
   const infant = w.chimps.find(c => c.alive && c.age < 2 && w.chimps.some(m => m.id === c.motherId && m.alive))!, mother = w.chimps.find(m => m.id === infant.motherId)!;
   const I = ledgerOf(infant, P), Mo = ledgerOf(mother, P);
-  I.gut = 0;
-  const in0 = I.in, out0 = Mo.out, res0 = Mo.res;
+  I.gut = 0; Mo.milk = 0;
+  const in0 = I.in;
+  nurseTick(infant, mother, P);
+  assert.equal(I.in, in0, 'empty glands give nothing');
+  // a lactating mother makes milk at the yield rate, up to what her glands hold
+  mother.lactating = true; mother.action = 'rest';
+  const perDay = P.ledgerMilkYieldCoef * massOf(mother, P) ** P.ledgerRmrExp;
+  for (let i = 0; i < 240; i++) energyTick(w, mother, ix(mother), false);
+  assert.ok(Math.abs(Mo.milk - perDay / 24) < 1e-9, 'an hour of synthesis');
+  for (let i = 0; i < DAY; i++) energyTick(w, mother, ix(mother), false);
+  assert.ok(Math.abs(Mo.milk - perDay * P.ledgerMilkStoreH / 24) < 1e-9, 'full glands stop synthesis');
+  const out1 = Mo.out, res1 = Mo.res, store = Mo.milk;
   nurseTick(infant, mother, P);
   const milk = I.in - in0;
-  assert.ok(milk > 0 && Math.abs(milk - P.ledgerMilkKcalPerMin / 4) < 1e-9, 'a 15 s tick of nursing');
-  assert.ok(Math.abs((Mo.out - out0) - milk / P.ledgerMilkEff) < 1e-9 && Math.abs((res0 - Mo.res) - milk / P.ledgerMilkEff) < 1e-9);
+  assert.ok(Math.abs(milk - P.ledgerMilkKcalPerMin / 4) < 1e-9, 'a 15 s tick of nursing');
+  assert.ok(Math.abs(store - Mo.milk - milk) < 1e-9);
+  assert.ok(Math.abs((Mo.out - out1) - milk / P.ledgerMilkEff) < 1e-9 && Math.abs((res1 - Mo.res) - milk / P.ledgerMilkEff) < 1e-9);
   // 100 m on the ground and 10 m up, in steps a walker can make
   const c = adult(w, 'female'), x = ix(c), L = ledgerOf(c, P), M = massOf(c, P);
   c.action = 'rest'; c.position[1] = 0; L.x = c.position[0]; L.y = 0; L.z = c.position[2];
