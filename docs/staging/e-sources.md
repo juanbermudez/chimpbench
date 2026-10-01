@@ -526,3 +526,20 @@ Each item below is used at most as a labelled assumption.
 - **Oxytocin and testosterone sampling windows.**
 - **smithJungers1997 species values**, **pusey2005 growth curves**, **emeryThompson2013**: full texts not read.
 - **Full texts marked "FT extract"** (wessling2018, preis2019, janmaat2014, khayer2025) were read through a fetch tool that returns quoted passages, not the whole page. The quoted numbers are reported as returned.
+
+## 11. Addendum: milk yield and gland storage (requested by the E1 implementer, 1 October 2026)
+
+- **Milk output scales with maternal mass^0.74** [riek2021] (Abs) [M], cross-species.
+  - 47 mammal species at peak lactation, phylogenetically controlled.
+  - Milk output and milk energy output both scale to the power 0.74 ± 0.05 of maternal body mass.
+  - Use in Track E: supports scaling the milk-yield limit by M^0.75. The exponent is now sourced; the coefficient is not.
+- **Coefficient of the milk-yield limit.** E1 uses 23.2 kcal/d per kg^0.75, from butteKing2005's 501 kcal/d of milk at a 60 kg mother. The 60 kg is not in butteKing2005's abstract, so the coefficient stays *assumed*. No chimpanzee or ape milk yield was found. Oftedal 1984 (Symposia of the Zoological Society of London 51:33–85) is the usual citation for milk energy output by species; it has no DOI in Crossref and was not read.
+- **Gland storage capacity, humans** [kent1999] (Abs) [H] for humans; cross-species.
+  - Exclusive breastfeeding, months 1–6: storage capacity 209.9 ± 11.0 mL per breast (SEM, 46 breasts); 24-hour production 453.6 g per breast (48 breasts).
+  - Storage capacity and 24-hour production were related, and both followed infant demand.
+  - Derived: storage is about 0.46 of daily production, or about 11 hours of production.
+  - Use in Track E: input for gland storage, *assumed* (human).
+- **Sources:**
+  - *new* riek2021: Riek A 2021. Comparative phylogenetic analysis of milk output at peak lactation. *Comparative Biochemistry and Physiology Part A* 257:110976. [doi:10.1016/j.cbpa.2021.110976](https://doi.org/10.1016/j.cbpa.2021.110976) (Abs).
+  - *new* kent1999: Kent JC, Mitoulas L, Cox DB, Owens RA, Hartmann PE 1999. Breast volume and milk production during extended lactation in women. *Experimental Physiology* 84(2):435–447. [doi:10.1111/j.1469-445X.1999.01808.x](https://doi.org/10.1111/j.1469-445X.1999.01808.x) (Abs; bibliography from Europe PMC).
+- **Order of events for T-ENE-1 to T-ENE-3.** Their bands were committed (3ba7a86) before any simulated value was seen. The E1 implementer then reported a ledger that closes at about 1,115 kcal/d for females, with 135–175 feeding minutes per day: below both bands. The bands are left as committed.
