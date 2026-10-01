@@ -215,13 +215,14 @@ Reading:
   Taï's 18%, and none earlier than 15 min before sunrise. They are mostly lactating females (7%), the hungriest
   animals: their meal worth, and so their stake, is largest.
 - **The janmaat2014 pattern does not emerge.** Early departures are as common or commoner for near crowns than for far
-  ones, and figs differ from other fruit by at most 3 min. In the model the stake falls with distance (the meal is
-  worth less per hour the longer the walk) faster than the light at arrival raises it, and nothing makes figs more
-  contested: their crops are larger and no other species eats them.
+  ones, and figs differ from other fruit by at most 3 min. Nothing in the model makes a far crown more urgent than a
+  near one except the light at arrival, while the meal's worth per hour, which the stake scales with, falls with the
+  walk; and nothing makes figs more contested: their crops are larger and no other species eats them.
 - **On the full stack the race stays ineffective** (SALN2: 0.2% before sunrise, median +28): adults are sated (mean
   hunger about 0.2) and the stake scales with the meal's worth.
-- **Side effect**: re-deciding at dusk too makes animals leave a finished nest and build another (nests per evening
-  1.08 → 1.24–1.35). The last entry does not move.
+- **Side effect**: nests entered per evening rose from 1.08 to 1.24–1.35. Read at the time as re-nesting at dusk; the
+  iteration-3 diagnostic below shows that this readout also counts re-entries at dawn (entries after the previous solar
+  noon), so part of the rise was dawn dithering. The last entry does not move.
 - **nurseWake with feeds only**: mothers' sleep pressure on leaving the nest is 0.03 (predicted 0.03–0.08); the
   lactating − male contrast is +2 min against +3 on the stack without it. Night feeding, at the rate the model's
   infants feed, costs a mother too little sleep to shorten her day: a null, as predicted. Second attempt on the
@@ -244,3 +245,73 @@ lactating contrast is not attempted again (§8).
 
 Arms: AL3 (R + departRace + nestLightDecide) and SALN3 (S + departRace + nestLightDecide + nurseWake), rhythm-metrics
 and e-bench --quick.
+
+### Iteration 3 results
+
+| Readout | AL3 (R + departRace + nestLightDecide) | SALN3 (S + all three) | Field |
+| --- | --- | --- | --- |
+| Departures before sunrise, adult females (seed 48 / 7) | **0.049 (0.035 / 0.063)** | 0.003 (0.006 / 0.000) | 0.18 (band 0.05–0.35) |
+| … males / lactating / other females | 0.01 / 0.07 / 0.03 | 0.00 / 0.01 / 0.00 | — |
+| T-FOOD-10 (held-out, field observer: share of departures before sunrise, band 0.08–0.30) | **0.09, pass** (R 0.00, fail) | 0.00, fail (S 0.00) | 0.18 |
+| Earliest departure, min after sunrise | −13.5 | −6.7 | Taï: twilight |
+| Median departure (p10–p90) | 18 (6 to 29) | 28 (19 to 38) | about 0 (Budongo); +13 to +27 (Taï) |
+| Fig crowns < 150 / 150–500 / ≥ 500 m: median; share before sunrise | 17 / 18 / 18; 0.05 / 0.03 / 0.00 | 29 / 29 / 30; 0 | far figs earliest |
+| Other crowns, same | 18 / 19 / 19; 0.04 / 0.03 / 0.02 | 27 / 28 / 29; 0 | far non-figs latest |
+| Last nest entry, min after sunset; nest entries counted per evening | −4; 1.15 | −2; 1.33 | — |
+| Active day, all; males / lactating (difference) | 11 h 43; 11 h 41 / 11 h 48 (+7) | 11 h 33; 11 h 33 / 11 h 37 (+4) | 11 h 34 / 10 h 57 (−37) |
+| Night out of a nest; night deaths; deaths | 0.0%; 0; 0 | 0.0%; 0; 0 | — |
+| e-bench fitted / held-out (rows scored in both, against R or S) | 5.965 / 2.469 (+0.479 / −0.878) | 8.434 / 3.132 (**+3.538** / +0.243) | noise floor 0.8 |
+| Prescriptions; viability | 139; pass | 139; pass | — |
+
+Nest entries by time of day (diagnostic, seed 48, 5 days after the 30-day burn-in): R 0.06 in the morning and 1.01 in
+the afternoon and evening per adult-day; AL3 0.19 and 1.01. With re-decisions on rising light only, the evening is
+unchanged; the extra entries are animals that leave the nest at dawn and come back (dithering while the nest and the
+best alternative are close).
+
+Reading:
+- Restricting the re-decision to rising light leaves the dawn as in iteration 2 (5% of adult females' departures
+  before sunrise, median +18 min) and removes the evening side effect. The field observer's own row, T-FOOD-10
+  (held-out), moves from 0.00 (fail) to 0.09 (inside 0.08–0.30); simulation truth for adult females is 0.049, at the
+  lower edge of the staged T-RHY-3 band. Both are a half to a quarter of Taï's 18%, and no departure is earlier than
+  14 min before sunrise.
+- Who leaves early is set by hunger, not by the crop's ephemerality or distance: lactating females 7%, males 1%; near
+  crowns as often as far ones; figs as other fruit.
+- On the full stack nothing leaves before sunrise (sated adults, small stakes). Its fitted distance rises by 3.5 on
+  rows scored in both: T-SOC-9 (+1.84) and T-HUN-1 (+1.12) swing both ways between iterations (SALN2: −0.57 and +0.41)
+  and are noise; T-ACT-3 (+0.45; +0.56 in SALN2), T-RNG-5 (+0.58; +0.30) and T-ACT-4 (+0.30; +0.13) move the same way
+  in both: the longer active day on the stack (11 h 20 → 11 h 33) goes to grooming and rest, and lactating females
+  range relatively more.
+
+## 8. Verdict
+
+| Switch | What it does | Result | Decision |
+| --- | --- | --- | --- |
+| `departRace` | the nest's value falls by the stake of delay at a contested, limited crop | alone: median +45 → +24 min, no departure before sunrise; with `nestLightDecide`: 5% of adult females' departures before sunrise (T-FOOD-10 passes), driven by hunger; on the full stack: no effect | off; removes no prescription, so it cannot pass the Track E keep rule. Re-test after the appetite rework (E1e): the stake scales with the meal's worth |
+| `nestLightDecide` | while the light rises, an animal in its nest re-decides at every bout's end | removes a gate artefact: E2a's "leave when daylight reaches 0.9" was the intention gate's period change at daylight 0.97; median +45 → +25 min alone; dawn re-entries 0.06 → 0.19 per adult-day | off; candidate for the integrator (no prescription removed; rgMaxAgeH stays in use elsewhere) |
+| `nurseWake` | a feed at night wakes the mother | iteration 1 (every suckling tick): mothers awake about three quarters of the night, contrast −6 to −9 min; iteration 2 (feeds only): sleep pressure 0.03, contrast +2 | off: null |
+
+**T-RHY-3: partial.** Departures before sunrise now emerge from value, light and competitors, with no clock and no
+departure rule, at the lower edge of the band on the timer-needs reference and not at all on the full stack. The
+janmaat2014 conditions (ephemeral fruit, far away) do not produce them. Two things in the model stand between it and
+the field:
+1. **The darkness weight.** The nest's darkness term (`rhythmDarkW` 2.2 × (1 − daylight), set a priori in E2a to beat
+   any meal) is a design value with no physical consequence in the simulated world: nothing is risky or slower in the
+   dark (no predators, no falls, no light-limited travel or vision beyond the sight radius). It holds every animal
+   until about 15 min before sunrise and sets departure timing more than any food or competitor term. A first-principles
+   replacement needs the physical costs of moving in poor light (travel speed and footing by light under the canopy;
+   crepuscular predation, janmaat2014's reading of late departures to far non-fig sites), with sources not yet found
+   for chimpanzees.
+2. **Ephemeral fruit.** In the model only chimpanzees eat fruit, and fig crops are larger than others. Taï's figs are
+   ephemeral because birds, monkeys and squirrels strip them (janmaat2014: hetero-specific foragers in 45% against 35%
+   of feeding trees). Without that guild the fig × distance pattern cannot emerge.
+
+**Lactating active day: null after two attempts, and out of reach of this architecture.** batesByrne2009's contrast is
+in the evening: lactating females leave the nest when males do (06:46 against 06:56, no difference) and nest about an
+hour before sunset, in full daylight (derived). E2a values a nest only in falling light (`(1 − daylight)` terms, a new
+nest only while daylight < 1) and light masks felt sleepiness entirely, so no physiology of sleep can put an animal in a
+nest more than about 50 min before sunset. Energy points the wrong way: milk and carrying raise a mother's hunger, which
+lengthens her day (S: lactating +3 min against males; R: +5). Night feeding at the rate the model's infants feed costs
+a mother about 3% of her night. Not modelled and plausible: risk to an infant at dusk, and the infant's own sleep.
+
+Side finding for E1c/E1d: at night infants drink in 76% of their mothers' night ticks but at half the suckling rate or
+more in only 3.6%: night suckling has no bouts and drains the gland's synthesis tick by tick.
