@@ -111,6 +111,14 @@ function gate(world: World, c: Chimp, it: Intent | undefined, list: Candidate[])
 export function rgChoice(world: World, c: Chimp, list: Candidate[]): Candidate | null {
   const P = paramsOf(world), x = ix(c);
   if (P.rgOn !== 1 || c.age < P.rgMinAge) { if (x.rgIntent) delete x.rgIntent; return null; }
+  // stage C14 (patrolImpulseDecides): a patrol the hazard has just raised (perception.ts) is itself the stochastic
+  // decision. When leading it is the rules' top pick, it is taken: the gate does not hold the old intention over it and
+  // it is not drawn a second time (design assumption; the C6 hazard was fitted as the rate of patrols started)
+  const top = list[0];
+  if (P.patrolImpulseDecides === 1 && top && top.action === 'patrol' && candidateMeta.get(top)?.v === V.LEAD) {
+    x.rgIntent = intentOf(world, c, top.action, top.targetId, V.LEAD, candidateMeta.get(top)?.aux ?? -1);
+    return top;
+  }
   const g = gate(world, c, x.rgIntent, list);
   if (g) {
     if (g.arrived) x.rgIntent = { ...intentOf(world, c, 'forage', g.keep.targetId, candidateMeta.get(g.keep)?.v ?? V.NONE), buckets: x.rgIntent!.buckets };

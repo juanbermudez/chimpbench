@@ -13246,6 +13246,29 @@
    "notes": "A patrol turns home when a neighbour chorus at least as large as its own male count was heard within this window (design; numerical assessment is [M-H], the window is not)."
   },
   {
+   "id": "patrolImpulseDecides",
+   "group": "patrol",
+   "value": 1,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.patrolImpulseDecides",
+   "file": "src/sim/rg.ts",
+   "notes": "Stage C14 switch: when the hazard-raised patrol-lead option is the rules' top pick, the RG policy takes it (no intention hold, no second draw): the hazard roll is the stochastic decision. 0 = C13 (over a third of the impulses were lost on development seeds). Ablation switch (set C14).",
+   "integer": true
+  },
+  {
    "id": "patrolIncursionP",
    "group": "patrol",
    "value": 0.4,
