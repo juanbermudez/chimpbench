@@ -6,9 +6,9 @@ import { clamp, hash01, smoothstep } from './rng';
 import { paramsOf, type Params } from './params';
 import { fruitAt } from './phenology';
 import { bestFallbackNear, fallbackOn } from './fallback';
-import { fruitRate, leafWorth, treeIntake } from './intake';
+import { fruitRate, leafWorth, needFruit, treeIntake } from './intake';
 import { heatRestValue, nestValue, shelterValue, thermalLoad } from './rhythm';
-import { milkWorth } from './energy';
+import { milkShare, milkWorth } from './energy';
 import { endoOn, escalateScore, fastSpanH, rainFastScore, rainScore, redirectFastScore, redirectScore } from './endocrine';
 import { byIdIn, index, isTreeId, ix, NEVER, TREE_ID0, treesNear, simOf } from './state';
 
@@ -202,6 +202,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   // stage E2a (rhythm.ts): with rhythmSleep 1 the nest's value is sleep pressure plus darkness, and with rhythmHeat 1
   // rest and shelter follow the thermal load; the clock terms below then have no effect (tests/sim-rhythm.test.ts)
   const rS = P.rhythmSleep === 1, rH = P.rhythmHeat === 1;
+  const drive = P.energyLedger === 1 && P.ledgerDrive === 1; // stage E1e: options valued by the energy a bout delivers
   let nestDrive = rS ? nestValue(P, c, env.daylight)
     : hour >= P.nestEveningFromH ? smoothstep(P.nestEveningStartH, P.nestEveningEndH, hour) * P.nestEveningDrive + (night ? P.nestNightBonus : 0)
       : (1 - smoothstep(P.nestMorningDaylightLow, P.nestMorningDaylightHigh, env.daylight)) * P.nestMorningDrive;
@@ -223,10 +224,12 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     const isMother = caretaker.id === c.motherId;
     if (carried) offer('follow', caretaker.id, 0.6, V.MOTHER);
     else offer('follow', caretaker.id, d > 3 ? 1.3 + d / P.followMotherDistScaleM : 0.15, V.MOTHER);
-    // stage E1d (ledgerNurseByMilk): nursing is worth the share of the infant's need the gland can fill now (energy.ts milkWorth)
+    // stage E1d (ledgerNurseByMilk): nursing is worth the share of the infant's need the gland can fill now (energy.ts milkWorth);
+    // stage E1e (ledgerDrive), when E1d is off: the share of a full flow the glands can deliver over the bout (milkShare).
+    // Two routes to one idea, kept apart until they are reconciled (E1d takes precedence when both are on).
     if (isMother && c.age < x.weanAge + 0.3) offer('nurse', caretaker.id, P.energyLedger === 1 && P.ledgerNurseByMilk === 1
       ? (0.25 + h * 1.5 * (c.age < 0.5 ? 1.3 : 1) * (1 - c.age / 7)) * milkWorth(c, caretaker, P) - (d > P.nurseRangeM ? 0.5 : 0)
-      : 0.25 + h * 1.5 * (c.age < 0.5 ? 1.3 : 1) * (1 - c.age / 7) - (d > P.nurseRangeM ? 0.5 : 0));
+      : 0.25 + h * 1.5 * (c.age < 0.5 ? 1.3 : 1) * (1 - c.age / 7) * (drive ? milkShare(c, caretaker, P) : 1) - (d > P.nurseRangeM ? 0.5 : 0));
     if (c.age >= 1 && !carried && caretaker.action === 'forage' && d < P.begPlantRangeM && h > 0.35) offer('beg', caretaker.id, 0.25 + h * 0.45, V.PLANT);
     if (c.age >= 1.2 && !carried) offer('forage', -1, h * 0.5 - 0.05);
   } else if (c.age < P.juvenileFollowMaxAgeY) {
@@ -249,7 +252,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   const byShare = P.crowdByShare === 1;
   const shareWorth = (crop: number, crowd: number): number => {
     if (crowd <= 0 || h <= 0) return 1;
-    const need = h / P.fruitHungerFactor, all = Math.min(1, crop / need);
+    const need = needFruit(c, P, h), all = Math.min(1, crop / need); // fruit units that meet the need (the ledger: kcal-based)
     if (all <= 0) return 1;
     const cover = Math.min(1, crop / (1 + crowd) / need) / all;
     return 1 - (1 - cover) * (c.rank > P.crowdHighRank ? P.crowdHighRankFactor : 1);
@@ -262,7 +265,9 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   const oestrusOf = (f: Chimp | undefined): number => pullOn && f !== undefined && f.sex === 'female' && f.troopId === c.troopId && f.swelling >= P.consortSwellingMin && !maternalKin(c, f) ? P.oestrusPullW * f.swelling : 0;
   let oestrusNear = 0;
   if (pullOn) for (let _i0 = 0; _i0 < x.seen.length; _i0++) { const v = oestrusOf(byId.get(x.seen[_i0])); if (v > oestrusNear) oestrusNear = v; }
-  const tripFrac = (crop: number, feeders: number, d: number) => { const ti = treeIntake(c, P, crop, feeders, d, P.intakeCropOnly !== 1); return ti.feedH > 0 ? ti.feedH / (ti.walkH + ti.feedH) : 0; };
+  // stage E1e (ledgerDrive): the share of the full intake rate a trip delivers (energy over the bout ÷ rate × time, walk
+  // included), which a gut-limited bout lowers; otherwise the share of the trip spent feeding
+  const tripFrac = (crop: number, feeders: number, d: number) => { const ti = treeIntake(c, P, crop, feeders, d, P.intakeCropOnly !== 1); return drive ? (ti.rateH > 0 ? ti.perHourInclWalk / ti.rateH : 0) : ti.feedH > 0 ? ti.feedH / (ti.walkH + ti.feedH) : 0; };
   if (!caretaker || (c.age >= 1.5 && !carried && caretaker.action === 'forage')) {
     for (let _i1 = 0; _i1 < x.trees.length; _i1++) { const id = x.trees[_i1];
       const t = idx.treeById.get(id)!;
@@ -297,8 +302,8 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
         // stage C7a (field): a remembered tree is worth what the animal last saw in it
         const crop = x.treeCrop?.[t.id] ?? 0.2;
         const worth = (P.memCropBelief === 1 ? h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) : h * P.memTravelHungerW) * (iv ? tripFrac(crop, 0, d) : 1);
-        if (shortlist) { const rv = revisit(x, t.id, time, P); _mem.push(t, worth - tripCost(worth, crop, d, h, P) - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD)); continue; }
-        if (!held) offer('travel', t.id, worth - tripCost(worth, crop, d, h, P) - revisit(x, t.id, time, P) - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay, V.TREE);
+        if (shortlist) { const rv = revisit(x, t.id, time, P); _mem.push(t, worth - tripCost(worth, crop, d, h, P, needFruit(c, P, h)) - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD)); continue; }
+        if (!held) offer('travel', t.id, worth - tripCost(worth, crop, d, h, P, needFruit(c, P, h)) - revisit(x, t.id, time, P) - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay, V.TREE);
       } else if (m.kind === 'water' && c.thirst > 0.25 && c.age >= 3) {
         const d = Math.hypot(m.position[0] - px, m.position[2] - pz);
         offer('drink', m.entityId, c.thirst * 1.5 - d / P.drinkDistScaleM - 0.05);
@@ -316,7 +321,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       if (d < P.memoryTreeMinM) continue;
       const crop = x.treeCrop?.[id] ?? known[i + 1], worth = h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) * (iv ? tripFrac(crop, 0, d) : 1);
       const rv = revisit(x, id, time, P);
-      _mem.push(t, worth - tripCost(worth, crop, d, h, P) - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD));
+      _mem.push(t, worth - tripCost(worth, crop, d, h, P, needFruit(c, P, h)) - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD));
     }
     // stage C7d (field; c7b-prereg §8.3): route chaining, the nearest unused known resource weighted by value (janson2014) [M]:
     // offer only the tree with the most believed value per metre, at its usual score. Stage C7e (§9): with goalDistScaleM D > 0
@@ -532,10 +537,11 @@ function revisit(x: ReturnType<typeof ix>, id: number, time: number, P: Params):
  * the marginal value theorem (charnov1976), worth × Tw / (Tw + Tf): Tw the walk, Tf the feeding the tree offers up to the
  * animal's need (design cap). Only registry values, so no free parameter.
  */
-export function tripCost(worth: number, crop: number, d: number, h: number, P: Params): number {
+export function tripCost(worth: number, crop: number, d: number, h: number, P: Params, need = h / P.fruitHungerFactor): number {
   // with the C13b intake valuation the walk time is already in `worth`; only the energetic distance cost remains
   if (P.tripRateValue !== 1 || P.intakeValue === 1) return d / P.travelDistScaleM;
-  const tf = Math.min(crop, h / P.fruitHungerFactor) / P.fruitIntakePerH, tw = d / P.walkMps / 3600;
+  // `need`: fruit units that meet the need (intake.ts needFruit; the timers' conversion by default)
+  const tf = Math.min(crop, need) / P.fruitIntakePerH, tw = d / P.walkMps / 3600;
   return tf > 0 ? worth * tw / (tw + tf) : worth;
 }
 

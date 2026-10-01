@@ -59,6 +59,13 @@ export const OVERRIDES: Record<string, Override> = {
   fallbackRateRatio: { cls: 'input', kind: 'physiology', reason: 'ratio of measured energy intake rates (kcal per minute on pith and young leaves ÷ ripe fruit, uwimbabazi2019)' },
   travelDistScaleM: { cls: 'input', kind: 'physics', borderline: true, reason: 'field value derived from the cost of walking a metre (taylor1982, sockol2007) and a day\'s energy; the earlier tuned value was replaced at C7c. It still contains memTravelHungerW, which is tuned' },
   patchesPerHa: { cls: 'input', kind: 'ecology', reason: 'field value is the measured density of feeding-size trees (janmaat2016); the earlier value tuned to T-FOOD-11 was replaced at C7a' },
+  // stage E1b: food properties measured on the food or on the feeding rate, like ledgerFruitKcalPerMin's kcal per minute
+  digestaDrupeDmGPerMin: { cls: 'input', kind: 'physiology', reason: 'measured dry matter ingested per feeding minute on drupes (uwimbabazi2019 Table 1), the bulk companion of the kcal per minute' },
+  digestaFigDmGPerMin: { cls: 'input', kind: 'physiology', reason: 'measured dry matter ingested per feeding minute on figs (uwimbabazi2019 Table 1)' },
+  digestaFallbackDmGPerMin: { cls: 'input', kind: 'physiology', reason: 'measured dry matter ingested per feeding minute on pith and young leaves (uwimbabazi2019), weighted as ledgerFallbackKcalPerMin' },
+  digestaFruitNdf: { cls: 'input', kind: 'food chemistry', reason: 'fibre content of ripe fruit (uwimbabazi2019 Table 2): a property of the food' },
+  digestaFallbackNdf: { cls: 'input', kind: 'food chemistry', reason: 'fibre content of pith and young leaves (uwimbabazi2019 Table 2): a property of the food' },
+  digestaNdfCreditKcalPerG: { cls: 'input', kind: 'food chemistry', reason: 'the fibre credit inside the formula that produced the kcal per minute inputs; used only to split them' },
   // design entries the rules would call outcome-encoding
   snareDeathP: { cls: 'design', kind: 'environment', reason: 'death risk of a snare injury: an environmental hazard with a design value, not a behaviour' },
   hazardBaseFloor: { cls: 'design', kind: 'world', reason: 'floor of the baseline mortality after the epidemic share is removed; "re-fitted" in its notes describes the life table, not a fit to behaviour' },
@@ -180,6 +187,9 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   redirectWindowH: { when: P => P.endoRedirect !== 1 || P.endoStates !== 1, why: "the defeat is considered once, at the loser's first choice after it, while endoRedirect and endoStates are 1" },
   rainDisplayP: { when: P => P.endoRainDisplay !== 1 || P.endoStates !== 1, why: 'no rain-display roll while endoRainDisplay and endoStates are 1 (src/sim/tick.ts)' },
   stressRelaxPerH: { when: P => P.endoStates !== 1, why: 'the stress load is a leaky integrator with its own drivers while endoStates is 1 (src/sim/endocrine.ts)' },
+  ...Object.fromEntries(['digestaDrupeDmGPerMin', 'digestaFigDmGPerMin', 'digestaFallbackDmGPerMin', 'digestaFruitNdf', 'digestaFallbackNdf', 'digestaNdfCreditKcalPerG',
+    'digestaFermentKcalPerG', 'digestaNdfDigestibility', 'digestaMrtH', 'digestaGutMlPerKg', 'digestaForegutShare', 'digestaForegutDmGPerMl', 'digestaHindgutDmGPerMl',
+    'digestaMeatDmGPerKcal', 'digestaMilkDmGPerKcal', 'digestaTefFrac'].map(id => [id, { when: (P: Record<string, number>) => P.energyLedger === 1 && P.ledgerDigesta === 1, why: 'read only while energyLedger and ledgerDigesta are 1 (stage E1b)' }])),
 };
 
 /** Whether an entry is in use: generated (not planned), non-zero under these resolved parameters, and not switched out. */

@@ -1,5 +1,5 @@
 import type { Chimp, World } from '../types';
-import { fallbackKcalPerH, fruitKcalPerUnit, gutCap, intakeSize } from './energy';
+import { boutRoom, energyNeed, fallbackKcalPerH, fruitKcalPerUnit, gutCap, gutRoom, intakeSize, refGutCap } from './energy';
 import { fallbackOn, fallbackValue } from './fallback';
 import type { Params } from './params';
 import { forageYield } from './phenology';
@@ -25,7 +25,7 @@ export function fruitRate(c: Chimp, P: Params): { fruitPerH: number; hungerPerH:
 export function leafRate(world: World, x: number, z: number, P: Params, c?: Chimp): number {
   // ledger: per gut capacity of `c` (of an adult female when no animal is given)
   if (P.energyLedger === 1) return fallbackKcalPerH(P) * (fallbackOn(P) ? fallbackValue(world, x, z) : P.patchEcology === 1 ? forageYield(world, x, z) : 1)
-    / (c ? gutCap(c, P) : P.ledgerGutCapKcalPerKg * P.ledgerMassFemaleKg) * (c && P.ledgerInfantIntake === 1 ? intakeSize(c, P) : 1);
+    / (c ? gutCap(c, P) : refGutCap(P)) * (c && P.ledgerInfantIntake === 1 ? intakeSize(c, P) : 1);
   if (fallbackOn(P)) return P.fruitIntakePerH * P.fruitHungerFactor * P.fallbackRateRatio * fallbackValue(world, x, z);
   return P.fallbackHungerPerH * (P.patchEcology === 1 ? forageYield(world, x, z) : 1);
 }
@@ -60,8 +60,29 @@ export function treeIntake(c: Chimp, P: Params, crop: number, feeders: number, d
   const walkH = distM / P.walkMps / 3600;
   // feeding lasts until the crown's share is eaten or the hunger is gone, whichever comes first
   const share = crop / (1 + feeders);
+  if (P.energyLedger === 1 && P.ledgerDrive === 1) {
+    // stage E1e: the energy the crown can deliver over a bout that ends at the crop share, the need or a full foregut
+    // (energy.ts boutRoom), at the intake rate; the hunger cap does not apply (the need replaces it)
+    const kcalPerFruit = fruitKcalPerUnit(P, false), R = fruitPerH * kcalPerFruit, cap = gutCap(c, P);
+    const E = Math.max(0, Math.min(share * kcalPerFruit, energyNeed(c, P), boutRoom(c, P, R))), t = R > 0 ? E / R : 0;
+    const span = walkH + t;
+    return { rateH: hungerPerH, feedH: t, walkH, perHourInclWalk: span > 0 ? E / span / cap : 0, thirstPerHInclWalk: span > 0 ? E / kcalPerFruit * P.fruitThirstFactor / span : 0 };
+  }
   const byCrop = share / Math.max(1e-9, fruitPerH);
-  const feedH = Math.max(0, hungerCap ? Math.min(byCrop, c.hunger / Math.max(1e-9, hungerPerH)) : byCrop);
+  // the ledger's hunger includes appetite (0.5 at the set point), so a bout lasts until the gut is full: cap by its emptiness
+  const capH = hungerCap ? (P.energyLedger === 1 ? gutRoom(c, P) / gutCap(c, P) : c.hunger) : 0;
+  const feedH = Math.max(0, hungerCap ? Math.min(byCrop, capH / Math.max(1e-9, hungerPerH)) : byCrop);
   const frac = feedH > 0 ? feedH / (walkH + feedH) : 0;
   return { rateH: hungerPerH, feedH, walkH, perHourInclWalk: hungerPerH * frac, thirstPerHInclWalk: fruitPerH * P.fruitThirstFactor * frac };
+}
+
+/**
+ * Fruit units that would meet this animal's need (the crop-share and trip-cost rules of candidates.ts): the timers'
+ * hunger ÷ fruitHungerFactor; under the ledger the gut's kcal at this hunger (or, stage E1e, the energy need) ÷ the energy
+ * of a fruit unit. (Under the ledger these rules used the timers' conversion; both are off by default.)
+ */
+export function needFruit(c: Chimp, P: Params, h: number): number {
+  if (P.energyLedger !== 1) return h / P.fruitHungerFactor;
+  const kcal = P.ledgerDrive === 1 ? Math.max(0, energyNeed(c, P)) : h * gutCap(c, P);
+  return kcal / fruitKcalPerUnit(P, false);
 }

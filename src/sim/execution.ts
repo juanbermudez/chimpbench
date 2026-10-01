@@ -655,7 +655,7 @@ export function executeAction(world: World, c: Chimp): void {
       if (!o || !o.alive) return finish(world, c);
       if (moveTo(world, c, o.position[0], o.position[1], o.position[2], WALK, 1.2)) {
         face(c, o);
-        if (x.v === V.PLANT) { if (ledgerOn(P)) sharePlant(o, P); else o.hunger = clamp(o.hunger - 0.08); }
+        if (x.v === V.PLANT) { if (ledgerOn(P)) sharePlant(c, o, P); else o.hunger = clamp(o.hunger - 0.08); } // the ledger: out of the giver's gut
         else {
           const amt = Math.min(0.2, c.carryingMeat);
           recordMeat(world, c, o);
@@ -856,7 +856,7 @@ function forageTick(world: World, c: Chimp): void {
     // leaves, pith and herbs: lower-quality fallback foods [H]; the field profile's forage field varies by habitat and season
     // stage E1c (ledgerInfantIntake): intake capacity by body size replaces C8's ramp under the ledger
     const self = (P.ledgerInfantIntake === 1 && ledgerOn(P) ? intakeSize(c, P) : selfFeed(c, P)) * snareIntake(c, P);
-    if (ledgerOn(P)) eat(c, P, fallbackKcalPerH(P) * TICK_HOURS * (P.patchEcology === 1 ? forageYield(world, c.position[0], c.position[2]) : 1) * self);
+    if (ledgerOn(P)) eat(c, P, fallbackKcalPerH(P) * TICK_HOURS * (P.patchEcology === 1 ? forageYield(world, c.position[0], c.position[2]) : 1) * self, 'fallback');
     else if (P.patchEcology === 1) c.hunger = clamp(c.hunger - P.fallbackHungerPerH * TICK_HOURS * forageYield(world, c.position[0], c.position[2]) * self);
     else c.hunger = clamp(c.hunger - P.fallbackHungerPerH * TICK_HOURS * self);
     return;
@@ -884,15 +884,15 @@ function forageTick(world: World, c: Chimp): void {
   // feeding: up to fruitIntakePerH (0.055 fruit units/h, scaled by foraging skill), x4.4 = up to ~0.24 hunger/h, so chimps feed about half the day (design; field feeding shares are 33-50% of daytime, docs/realism-design.md T-ACT-1)
   // stage E1 (energyLedger): the same fruit intake, worth kcal by food type, and no more than the gut can take
   // stage E1c (ledgerInfantIntake): the young factor and C8's ramp give way to intake capacity by body size
-  const led = ledgerOn(P), kcalPerFruit = led ? fruitKcalPerUnit(P, t.common === 'fig') : 0;
+  const led = ledgerOn(P), fig = t.common === 'fig', kcalPerFruit = led ? fruitKcalPerUnit(P, fig) : 0;
   let want = led && P.ledgerInfantIntake === 1
     ? P.fruitIntakePerH * TICK_HOURS * (P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging) * intakeSize(c, P) * snareIntake(c, P)
     : P.fruitIntakePerH * TICK_HOURS * (P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging) * (c.age < 5 ? P.fruitIntakeYoungFactor : 1) * selfFeed(c, P) * snareIntake(c, P);
-  if (led) want = Math.min(want, gutRoom(c, P) / kcalPerFruit);
+  if (led) want = Math.min(want, gutRoom(c, P, fig ? 'fig' : 'drupe') / kcalPerFruit);
   let intake: number;
   if (lazy) intake = eatFruit(world, t, want);
   else { intake = Math.min(t.fruit, want); t.fruit -= intake; }
-  if (led) eat(c, P, intake * kcalPerFruit);
+  if (led) eat(c, P, intake * kcalPerFruit, fig ? 'fig' : 'drupe');
   else c.hunger = clamp(c.hunger - intake * P.fruitHungerFactor);
   c.thirst = clamp(c.thirst - intake * P.fruitThirstFactor);
   c.skills.foraging = clamp(c.skills.foraging + (1 - c.skills.foraging) * TICK_HOURS * 0.002);
@@ -920,9 +920,9 @@ function fallbackTick(world: World, c: Chimp): void {
     } else { const a = hash01(c.id, world.tick, 3) * Math.PI * 2; x.gx = px + Math.sin(a) * 0.8; x.gz = pz + Math.cos(a) * 0.8; }
   }
   if (x.gx !== 0 || x.gz !== 0) moveTo(world, c, x.gx, 0, x.gz, P.walkMps * 0.3, 0.2);
-  const got = eatFallback(world, c, TICK_HOURS);
-  if (ledgerOn(P)) eat(c, P, P.ledgerInfantIntake === 1 ? got * intakeSize(c, P) : got); // E1c: by body size
-  else c.hunger = clamp(c.hunger - got);
+  // the ledger: the cell loses only what the gut takes (E1c: by body size); the timers: the hunger removed
+  if (ledgerOn(P)) { const k = P.ledgerInfantIntake === 1 ? intakeSize(c, P) : 1; eatFallback(world, c, TICK_HOURS, g => eat(c, P, g * k, 'fallback')); }
+  else c.hunger = clamp(c.hunger - eatFallback(world, c, TICK_HOURS));
 }
 
 function pairTick(world: World, c: Chimp, o: Chimp | undefined): void {

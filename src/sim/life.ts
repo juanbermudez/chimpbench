@@ -153,7 +153,7 @@ export function needs(world: World, c: Chimp): void {
   if (paramsOf(world).endoStates === 1) endoNeeds(world, c, x, sleeping, r.stressFloor + x.bereft); else c.stress -= (c.stress - (r.stressFloor + x.bereft)) * r.stressRelax * h;
   if (c.carryingMeat > 0 && !sleeping) {
     let eaten = Math.min(c.carryingMeat, r.meatEat * h);
-    if (r.ledger) { const P = paramsOf(world), k = meatKcalPerUnit(P); eaten = eat(c, P, eaten * k) / k; } // only what the gut takes
+    if (r.ledger) { const P = paramsOf(world), k = meatKcalPerUnit(P); eaten = eat(c, P, eaten * k, 'meat') / k; } // only what the gut takes
     else c.hunger -= eaten * r.meatHunger;
     c.carryingMeat -= eaten;
     if (c.carryingMeat < 0.005) c.carryingMeat = 0;

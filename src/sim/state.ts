@@ -109,8 +109,21 @@ export interface ChimpX {
  */
 export interface EnergyLedger {
   gut: number; res: number; in: number; out: number; x: number; y: number; z: number; milk: number;
+  /**
+   * Stage E1b (ledgerDigesta; energy.ts), present only with that switch on: dry matter in the foregut (g), the fibre (NDF)
+   * part of it (g), fibre in the hindgut (g), formula energy eaten (kcal, the field's intake measure), energy passed out
+   * unabsorbed (kcal) and dry matter eaten (g). With these, `gut` holds the non-fibre energy of the foregut and `in`
+   * counts fibre at its fermentation yield.
+   */
+  dm?: number; fib?: number; hind?: number; fin?: number; fec?: number; dmIn?: number;
   /** Stage E1c (ledgerGrowSurplus): body mass in kg, state instead of a curve by age; present only with that switch. */
   kg?: number;
+  /**
+   * Stage E1e (ledgerDrive), present only with that switch on: the day-long average of energy spent (kcal/h), sleep
+   * pressure when the animal last fell asleep and last woke, whether it slept at the last tick (0/1), and `out` at the
+   * last tick (so costs charged outside energyTick, milk and carrying, enter the average).
+   */
+  eAvg?: number; sBed?: number; sWake?: number; slept?: number; outAt?: number;
 }
 
 /** The memory month in progress: tallies accumulate on events and are finalized into a MemoryDigest every 30 eco-days. */
