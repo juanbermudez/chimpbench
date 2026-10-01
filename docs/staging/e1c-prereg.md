@@ -105,6 +105,82 @@ Keep: none of K1–K5. Even then the switches stay off by default until the inte
 
 At most three iterations, each logged below before its run, each a change of mechanism justified from first principles, never an input moved toward a target.
 
+None run. The registered mechanism passed the kill criterion on its first run, and the misses it left (daytime suckling time, infants' own feeding time, the lactation time course) trace to a choice rule (the nurse act and option) that belongs to stage E3, not to infant energetics (§8.5).
+
 ## 8. Results
 
-(to be filled in after the runs)
+Runs: field profile, seeds 48 and 7, 30-day burn-in + 60 days, rules policy. Outputs in `artifacts/validation/e1c/` (not tracked): `arm*-diag.{txt,json}` (energy diagnosis, sim truth), `arm*-*.{md,json}` (e-bench). The two seeds start from the same founders (8 unweaned infants aged 0.58–3.58 y at day 30; none older than 4 y, none born in the window), so each infant age bin holds 2 infants × 2 seeds. No iteration was needed (§7): the registered mechanism is the only one run.
+
+**Check before the runs.** With the three switches off, field and compressed worlds (ledger on and off) are hash-identical to the commit before the change (seed 48; 3 days field, 2 days compressed), and the compressed golden hashes are untouched (`pnpm test`).
+
+### 8.1 Infants (energy diagnosis, kcal per infant-day)
+
+| | Arm 0 (no ledger) | Arm 1 (stack) | Arm 3 (stack + E1c) | Field (target, never set) |
+| --- | --- | --- | --- | --- |
+| Reserves ÷ store, infants 0.5–2 y at day 30 → day 90 | — | −0.062 → −0.195 | **+0.035 → +0.032** | — |
+| Reserves ÷ store, infants 2–5 y at day 30 → day 90 | — | −0.107 → −0.255 | **+0.001 → −0.003** | — |
+| Milk, by age 0–1 / 1–2 / 2–3 / 3–4 y | — | 259 / 305 / 306 / 307 (all by day) | 258 / 304 / 307 / 307; **65 / 50 / 48 / 48% at night** | milk reliance falls from about 1 y (badescu2017, matsumoto2017) |
+| Own food, same ages | — | 0 / 11 / 78 / 233 | 0 / 15 / 97 / 224 | foraging 17% (6–12 mo), 25% (1–2 y), 47% (4–5 y) of daytime (badescu2022) |
+| Growth paid, same ages (kcal/day) | (timers) | 35 / 36 / 36 / 36 | 35 / 15 / 12 / 28 | — |
+| Growth velocity, same ages (kg/y) | 2.9 (curve) | 2.9 (curve) | **2.86 / 0.83 / 1.06 / 2.30** | about 1.6 kg/y from birth to 5 y (Gombe, [L]); slower than captive at 0–4 y (hamada1996, unverified) |
+| Mass at day 90, infants of 1.45 / 2.05 / 2.75 / 3.25 y | — | 6.07 / 7.66 / 9.66 / 11.09 (the curve) | 5.72 / 7.03 / 9.14 / 10.73 | rough Gombe line 4.2 / 5.2 / 6.3 / 7.1 |
+| Daylight ticks with milk drunk (arm 0: nurse act), same ages | 11 / 14 / 18 / 23% | 14 / 65 / 68 / 40% | **4.8** / 67 / 59 / 40% | suckling 5.85% (0–6 mo), about 3% (6 mo–4 y) (badescu2022) |
+| Daylight ticks with own food swallowed, same ages | 0 / 0.3 / 1.6 / 8.4% (forage act) | 0 / 1.2 / 6.3 / 12.3% | 0 / 0.8 / 4.2 / 7.4% | see foraging above |
+
+Indicative only: integrating arm 3's velocities from 1.8 kg at birth gives about 4.7 kg at 1 y, 5.5 at 2 y, 6.6 at 3 y, 8.9 at 4 y and 11–12 kg at 5 y, against about 10 kg at Gombe ([L]) and 16.5 kg on the old curve. The velocities were measured on infants that started on the heavier curve (higher maintenance), so this is not a measured mass-for-age curve; the level needs newborns, i.e. a run longer than the 90-day cap.
+
+### 8.2 Mothers, juveniles, adults
+
+| | Arm 1 | Arm 3 |
+| --- | --- | --- |
+| Lactating females: reserves ÷ store; milk cost (kcal/day) | −0.008; 370 | −0.009; 370 |
+| Mothers' reserves by infant age 0–1 / 1–2 / 2–3 / 3–4 y (other females +0.06) | +0.034 / −0.004 / −0.022 / −0.031 | +0.038 / +0.011 / −0.036 / −0.040 |
+| Mothers' milk cost by infant age | 323 / 381 / 383 / 384 | 323 / 380 / 384 / 384 |
+| Juveniles 5–12 y: eating min; reserves; growth kcal | 117; +0.032; 30 | **143**; +0.026; 24 |
+| Adult males / other females: eating min; reserves | 151 / 145; +0.063 / +0.060 | 152 / 147; +0.066 / +0.059 |
+| Daylight act shares, adult males rest + groom (sim truth, 30 days) | 48.1% | 49.4% |
+| Births; deaths; starvation | 0; 0; 0 | 0; 0; 0 |
+
+### 8.3 Attribution (energy diagnosis only, registered in §4)
+
+| Arm | Change from arm 3 | Infants 0.5–2 y, day 30 → 90 | Infants 2–5 y, day 30 → 90 | Growth 0.5–2 / 2–5 y (kg/y) | Milk ≥ 1 y | Reading |
+| --- | --- | --- | --- | --- | --- | --- |
+| 3 | — | +0.035 → +0.032 | +0.001 → −0.003 | 1.85 / 1.68 | 304–307 | stable |
+| 3a | growth gate off | −0.009 → −0.067 | −0.025 → −0.035 | 2.89 / 2.91 | 305–307 | infants fall again (K2 fails for 0.5–2 y): the gate is the main stabiliser |
+| 3b | night nursing off (store 11 h) | −0.020 → −0.034 | −0.036 → −0.043 | 1.48 / 0.68 | 278–287 | about 20–30 kcal/day less milk; growth falters more; mothers' cost 342–358 |
+| 3c | intake by size off | +0.022 → +0.022 | −0.035 → −0.060 | 1.76 / 0.50 | 304–307 | own food at 2–4 y 20–25 kcal/day lower; 2–5 y below −0.05 at day 90 (K2 fails) |
+| 3d | store 24 h instead of 11 h | identical to arm 3 (same hash-level numbers) | | | | with night nursing the gland never holds more than 11 h of synthesis, so its capacity stops mattering |
+
+Arm 3a also had a respiratory outbreak in one seed (13 deaths of all classes, none by starvation); outbreaks are stochastic and the arm differs from arm 3 in its whole trajectory, so this is not attributed to the switch.
+
+### 8.4 Scorecard (e-bench, `--quick --days 60`)
+
+| | Arm 0 | Arm 1 | Arm 3 | Arm 3b (noise probe) |
+| --- | --- | --- | --- | --- |
+| Fitted distance | 2.547 (17 rows) | 3.486 (18) | 5.934 (18) | 6.293 (19) |
+| Held-out distance | 4.358 (12) | 5.439 (13) | **3.202 (12)**; −1.737 on the 12 rows scored in both | 3.194 (17); −3.144 on rows in both |
+| Prescription count | 138 | 138 | 138 | 138 |
+| T-ACT-5 (held out) | −0.05 fail | −0.00 pass | −0.02 pass | −0.01 pass |
+| T-RNG-5 (held out, band 0.3–0.6) | 0.61 | 0.78 | 0.71 | 0.66 |
+| Viability | pass | pass | pass | pass |
+
+The fitted rise against arm 1 (+2.45) comes from three rows: T-PAT-6 incursion share (+1.33; 0 incursions in the window), T-HUN-1 hunts per community-year (+0.46) and T-ACT-4 adult rest (+0.40; 0.45 → 0.54 in the observer). Sim truth does not support a mechanism: adult males' daylight rest + groom 48.1% → 49.4%, adult females unchanged, adult eating minutes unchanged, hunts per seed 23 / 33 (arm 1) against 39 / 30 (arm 3), intergroup encounters 29 / 13 against 4 / 14. The infant switches touch adults only through carrying and milk timing; these rows are rare events and focal samples on two seeds, i.e. below the noise floor E0 measured (rows moved by up to 0.8). The prescription count does not fall: the removed ramp (`selfFeedStartY`, `fruitIntakeYoungFactor`) is classed design, not outcome-encoding, and the removed clock dependency (night milk lost to the nest rule) had no registry entry.
+
+### 8.5 Against the predictions (§5)
+
+- Infant reserves: stable, as predicted (arm 1 fell as E1 iteration 3).
+- Growth: below potential at 1–3 y (0.8–1.1 kg/y), at potential in year 1 (milk covers maintenance), recovering at 3–4 y (2.3 kg/y): inside the predicted ranges; the pattern (a growth check in the weaning years) agrees in direction with hamada1996 (unverified).
+- Milk: 304–307 kcal/day at ≥ 1 y, 48–65% at night: as predicted.
+- **Daytime suckling: miss.** Predicted 6–10% of daylight; measured 4.8% in year 1 (field 5.85% at 0–6 months) but 40–67% at 1–4 y in both ledger arms. Cause: the nurse act continues while the infant is hungry, and once the gland is empty an infant ≥ 1 y drinks the synthesis trickle (0.05 kcal per tick) tick after tick; the nursing option's score (0.25 + 1.5 × hunger × (1 − age/7)) ignores how much milk the gland holds and outscores ground foraging (0.5 × hunger − 0.05) for any hungry infant. My prediction used minutes of full flow, not this. Named term: an act that continues while it pays nothing, and an option valued without what it delivers (E3's mechanism: "an act continues while it pays at least what the best known alternative would").
+- Own food at 2–5 y: 97–224 kcal/day, inside 100–220 except 1–2 y (15). Daylight eating 0.8–7.4% against field foraging 17–47%: **miss**, from the trickle nursing above, the C8 gates (no own feeding while carried, i.e. under 1.2 y; trees only from 1.5 y while the caretaker forages) and mothers who feed 157–178 min a day (the E1 T-ENE-2 miss passed on to their infants).
+- Juveniles: feed 143 min against adults' 147–152 (field: adult levels from 4–6 y); reserves +0.026. As predicted.
+- Mothers: unchanged within 0.01 (K3), as predicted.
+- **Lactation time course (T-ENE-5): miss, as registered.** Mothers' milk cost rises with infant age (323 → 384 kcal/day) and their reserves fall (+0.038 → −0.040); the field has the deficit in the first 6 months and recovery in year 2. Named term: from about 1 y every infant drinks the whole yield, because its own food (15–224 kcal/day) is far below what field foraging time would give; the yield itself does not change with the stage of lactation. Infants that foraged as much as in the field would need less milk, and supply would follow demand (kent1999: production followed infant demand).
+- More milk, more growth (emeryThompson2016): not testable here (every infant ≥ 1 y drinks the same yield).
+- T-ACT-5, T-RNG-5: within noise of arm 1 (T-RNG-5 0.78 → 0.71 and 0.66, still above the band).
+
+### 8.6 Verdict
+
+Kill criterion (§6): K1 no deaths; K2 infants 0.5–2 y +0.035 → +0.032 and 2–5 y +0.001 → −0.003 (no fall, above −0.05); K3 lactating females −0.009 against −0.008; K4 juveniles +0.026; K5 held-out −1.74 on rows scored in both. **Keep** (provisional, under the 90-day cap): infants are viable on the E1 ledger with milk limited to the human-scaled yield, without moving an input. The switches stay off by default (Track E sequencing). Attribution: the growth gate is necessary (3a fails K2), intake by size is necessary at 2–5 y (3c fails K2), night nursing adds 20–30 kcal/day of milk and makes the unsourced 24 h store irrelevant (3d identical to arm 3); `ledgerMilkStoreH` can take its sourced 11 h whenever `ledgerNightNurse` is on.
+
+**Biggest open problem.** Infants' time budget: in every ledger arm infants ≥ 1 y spend 40–67% of daylight at an empty nipple and 1–7% eating, against about 3% and 17–47% in the field. It holds the lactation time course wrong (they never need less milk) and caps growth in the weaning years. The fix is a choice mechanism (nursing valued by the milk it delivers; an act ending when it stops paying), which is stage E3's, plus the C8 feeding gates; not an energy input.
