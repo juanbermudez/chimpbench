@@ -163,7 +163,11 @@ async function c13e(params: Record<string, number> = {}) {
   const adults = w.chimps.filter(k => k.alive && k.age >= 15 && k.troopId === 1);
   const [a] = adults, others = adults.slice(1, 5);
   const far = w.trees.find(t => Math.hypot(t.position[0] - a.position[0], t.position[2] - a.position[2]) > 300)!;
-  const place = (b: typeof a, d: number) => { b.position = [a.position[0] + d, 0, a.position[2]]; b.action = 'rest'; b.targetId = -1; ix(b).intr = ''; ix(b).lastIntrAt = -1e9; ix(b).phase = 0; };
+  // a placed animal rests on its own: whoever happened to be grooming it in this run stops (being groomed is being absorbed)
+  const place = (b: typeof a, d: number) => {
+    b.position = [a.position[0] + d, 0, a.position[2]]; b.action = 'rest'; b.targetId = -1; ix(b).intr = ''; ix(b).lastIntrAt = -1e9; ix(b).phase = 0;
+    for (const g of w.chimps) if (g.action === 'groom' && g.targetId === b.id) { g.action = 'rest'; g.targetId = -1; ix(g).phase = 0; }
+  };
   const setOff = () => { const cand = { action: 'travel' as const, targetId: far.id, score: 1, reason: 'test' }; candidateMeta.set(cand, { v: V.TREE, aux: -1 }); startAction(w, a, cand, 'rules'); };
   const join = (b: typeof a) => { perceive(w, b); return computeCandidates(w, b, []).find(k => k.action === 'travel' && k.targetId === far.id && candidateMeta.get(k)?.aux === a.id); };
   return { w, a, others, far, place, setOff, join, emitCall, P: paramsOf(w) };

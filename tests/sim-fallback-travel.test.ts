@@ -70,11 +70,15 @@ test('fallback cells are patchy (mean capacity fallbackCapH) and off in compress
 test('the ground-forage candidate falls when the patches in view are depleted, and the animal can see a better cell', () => {
   const w = createWorld(3505, { profile: 'field', params: { ...FB, rgOn: 0, intakeValue: 0 } }); // the C7c mechanism on its recorded scenario (pre-C13)
   for (let i = 0; i < 5760 / 4; i++) tickWorld(w);
-  const [c] = adults(w);
-  c.position = [c.position[0], 0, c.position[2]];
-  c.hunger = 0.7; c.action = 'rest'; c.targetId = -1;
-  perceive(w, c);
-  const score = () => computeCandidates(w, c, []).find(k => k.action === 'forage' && k.targetId === -1)?.score ?? 0;
+  // an adult with ground food on its menu (crowns in sight can take all the forage slots; which animal is first depends on the run)
+  const leaf = (k: World['chimps'][number]) => computeCandidates(w, k, []).find(o => o.action === 'forage' && o.targetId === -1)?.score ?? 0;
+  const c = adults(w).find(k => {
+    k.position = [k.position[0], 0, k.position[2]];
+    k.hunger = 0.7; k.action = 'rest'; k.targetId = -1;
+    perceive(w, k);
+    return leaf(k) > 0;
+  })!;
+  const score = () => leaf(c);
   const before = score();
   // strip the own cell and every neighbour
   const cell = paramsOf(w).forageCellM;

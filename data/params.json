@@ -8149,9 +8149,9 @@
    "file": "src/sim/execution.ts",
    "profiles": {
     "compressed": 0,
-    "field": 0
+    "field": 1.1390625
    },
-   "notes": "Water from fruit (docs/staging/fusion-prereg.md 3.1a; field): above 0, a fruit unit eaten relieves this much thirst, in place of fruitThirstFactor. FITTED to the sourced drinking rate (0.0075 drinks per animal per daylight hour, accepted inside 0.005-0.010), not to a target row, by the pre-registered bisection. 0 = fruitThirstFactor as before (hash-identical; compressed)."
+   "notes": "Water from fruit (docs/staging/fusion-prereg.md 3.1a; field): above 0, a fruit unit eaten relieves this much thirst, in place of fruitThirstFactor. FITTED to the sourced drinking rate (0.0075 drinks per animal per daylight hour, accepted inside 0.005-0.010), not to a target row, by the pre-registered bisection: 1.1390625 at step 5 gives 0.0044 (seed 48) and 0.0093 (seed 7), mean 0.0068 (0.119 before). 0 = fruitThirstFactor as before (hash-identical; compressed)."
   },
   {
    "id": "gangEdgeFrac",
@@ -11038,9 +11038,9 @@
    "file": "src/sim/candidates.ts",
    "profiles": {
     "compressed": 0,
-    "field": 0
+    "field": 0.025
    },
-   "notes": "Finding-company stage (docs/staging/fusion-prereg.md 3.2; field): for an animal with no companion of 12 y or more within the party link, the pull toward an own-community pant-hoot caller gains this plus joinBondW x its bond with the caller. The direction is sourced; the value is FITTED to T-PTY-1 alone by the pre-registered bisection (no source gives how readily a lone animal answers). 0 = off (hash-identical; compressed)."
+   "notes": "Finding-company stage (docs/staging/fusion-prereg.md 3.2 and 5; field): for an animal with no companion of 12 y or more within the party link, the pull toward an own-community pant-hoot caller gains this plus joinBondW x its bond with the caller. The direction is sourced; the value is NOT identified: the pre-registered bisection against T-PTY-1 did not land in 3.5 +/- 0.15 in 5 steps (0 -> 3.18, 0.025 -> 3.67, 0.05 -> 4.08, 0.1 -> 3.82, 0.2 -> 3.87, 0.4 -> 4.34; any value above 0 also switches on the bond term). 0.025 is the tested value nearest the target, pending the integrator's ruling. 0 = off (hash-identical; compressed)."
   },
   {
    "id": "joinMaleW",

@@ -99,3 +99,36 @@ Field profile only; each part behind its own switch; both off is `main` f24c9ae,
 Also reported, untuned: the C13e rows (called, silent, ratio), T-PTY-3, and the truth patrol reads (count per community-week, share reaching 3 adult males, males per patrol), since C14 fitted the patrol rate.
 
 **What these runs cannot resolve.** T-RNG-1 (annual range), demography, and whether the fitted weight holds on other seeds.
+
+## 5. The two fits (run 1 October 2026; written before the paired check)
+
+**`fruitWaterRelief`**, read: drinks per animal per daylight hour only (seeds 48 and 7, 30 + 20 days, `departPersistAll` on, `joinLoneW` 0).
+
+| Step | Value | Seed 48 | Seed 7 | Mean |
+| --- | --- | --- | --- | --- |
+| before | 0 (0.55) | 0.121 | 0.117 | 0.119 |
+| 1 | 1.275 | 0.0011 | 0.0028 | 0.0020 |
+| 2 | 0.9125 | 0.0387 | 0.0452 | 0.0419 |
+| 3 | 1.09375 | 0.0087 | 0.0125 | 0.0106 |
+| 4 | 1.184375 | 0.0043 | 0.0035 | 0.0039 |
+| 5 | **1.1390625** | 0.0044 | 0.0093 | **0.0068** |
+
+- Accepted at step 5 (inside 0.005–0.010). Water trips take 1.0 and 2.3 min a day (27–28 before); 0.05 and 0.11 drinks per animal per day.
+
+**`joinLoneW`**, read: T-PTY-1 only (seeds 48 and 7, 30 + 60 days, `departPersistAll` and the water correction on).
+
+| Step | Value | Seed 48 | Seed 7 | Pooled |
+| --- | --- | --- | --- | --- |
+| start | 0 | 3.395 | 2.959 | 3.177 |
+| 1 | 0.4 | 4.763 | 3.920 | 4.341 |
+| 2 | 0.2 | 4.044 | 3.700 | 3.872 |
+| 3 | 0.1 | 4.049 | 3.583 | 3.816 |
+| 4 | 0.05 | 4.271 | 3.881 | 4.076 |
+| 5 | 0.025 | 3.712 | 3.623 | 3.668 |
+
+- **The fit did not land in its window** (3.35–3.65) in the 5 steps allowed. The nearest tested value is 0.025, at 3.668: 0.018 above the window.
+- Every tested value is inside the row's band (3–9), including 0.
+- The response is a step, not a slope. Any value above 0 also switches on the bond term (`joinBondW` × bond, at least 0.075 for a community member), and between 0.025 and 0.2 the result does not rise with the value (3.67, 4.08, 3.82, 3.87). The two seeds differ by 0.1–0.8 at one value, which is wider than the window.
+- **So `joinLoneW` is not identified by this fit.** No further step is run without a ruling.
+- **What the paired check runs** (fixed here, from T-PTY-1 alone, before any other row is seen): the main arm uses 0.025, the tested value nearest the target, labelled "fit not converged". The arm with `joinLoneW` 0 (no fitted parameter in the stage) is reported beside it on the same rows, so the integrator can rule between them.
+- Prediction check so far: T-PTY-1 with `departPersistAll` and the water correction on and `joinLoneW` 0 was predicted 3.0–3.3 and is 3.18 (pass).
