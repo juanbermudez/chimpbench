@@ -15,6 +15,14 @@ import { NEVER, SLOW_EVERY, SLOW_HOURS, TICK_HOURS, index, ix, type ChimpX } fro
 //
 // Not wired on purpose, so they stay tests of the mechanism: rank, hierarchy instability, time of day, patrols.
 
+/**
+ * Switches that need the states (review fix, E4b): a dependent switch counts as off unless endoStates is 1, so a
+ * one-switch ablation keeps its dice instead of removing them and leaving a state that never runs (arousal undefined,
+ * score 0, the act absent). Every reader of a dependent switch goes through this.
+ */
+export type EndoDependent = 'endoEscalate' | 'endoRedirect' | 'endoRainDisplay';
+export function endoOn(P: Params, s: EndoDependent): boolean { return P.endoStates === 1 && P[s] === 1; }
+
 /** An event stamped at eco-hour `t` happened in the slow step that ended before tick `tick` (each event counts once). */
 function since(t: number, tick: number): boolean {
   const e = Math.round(t / TICK_HOURS);

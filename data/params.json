@@ -5782,7 +5782,7 @@
    "symbol": "P.endoEscalate",
    "file": "src/sim/perception.ts",
    "integer": true,
-   "notes": "Stage E4a switch (docs/staging/e4a-prereg.md): no escalation impulse is drawn (escalateImpulseBase and escalateImpulseAggr are not read, world.rng is not touched). An escalated attack on a close-rank adult male is offered whenever its preconditions hold, scored endoEscalateScore × arousal × ½(aggression + tension toward him) × (1 − stress) × (1 − affiliation × bond). Needs endoStates 1. 0 = the impulse dice. Ablation switch."
+   "notes": "Stage E4a switch (docs/staging/e4a-prereg.md): no escalation impulse is drawn (escalateImpulseBase and escalateImpulseAggr are not read, world.rng is not touched). An escalated attack on a close-rank adult male is offered whenever its preconditions hold, scored endoEscalateScore × arousal × ½(aggression + tension toward him) × (1 − stress) × (1 − affiliation × bond). Needs endoStates 1: it counts as off (the impulse dice) unless endoStates is 1 (endocrine.ts endoOn; E4b review fix). 0 = the impulse dice. Ablation switch."
   },
   {
    "id": "endoEscalateScore",
@@ -5871,7 +5871,7 @@
    "symbol": "P.endoRainDisplay",
    "file": "src/sim/tick.ts",
    "integer": true,
-   "notes": "Stage E4a switch (docs/staging/e4a-prereg.md): no rain-display roll (rainDisplayP is not read, world.rng is not touched). At a daytime storm onset every adult male is offered the display for impulseDurationH, once, scored rainDisplayScore × arousal × boldness. Needs endoStates 1. 0 = the 12% roll. Ablation switch."
+   "notes": "Stage E4a switch (docs/staging/e4a-prereg.md): no rain-display roll (rainDisplayP is not read, world.rng is not touched). At a daytime storm onset every adult male is offered the display for impulseDurationH, once, scored rainDisplayScore × arousal × boldness. Needs endoStates 1: it counts as off (the 12% roll) unless endoStates is 1 (endocrine.ts endoOn; E4b review fix). 0 = the 12% roll. Ablation switch."
   },
   {
    "id": "endoRedirect",
@@ -5894,7 +5894,7 @@
    "symbol": "P.endoRedirect",
    "file": "src/sim/conflict.ts",
    "integer": true,
-   "notes": "Stage E4a switch (docs/staging/e4a-prereg.md): no redirect roll (redirectBaseP and redirectAggrP are not read, world.rng is not touched). After every lost conflict, until the loser next aggresses and for endoStressTauH, a charge at a dominated unrelated bystander is offered, scored stress × (redirectBase + redirectAggrW × aggression + redirectTensionW × tension + redirectStressW). Needs endoStates 1. 0 = the priming dice and the 6-minute window. Ablation switch."
+   "notes": "Stage E4a switch (docs/staging/e4a-prereg.md): no redirect roll (redirectBaseP and redirectAggrP are not read, world.rng is not touched). Every lost conflict is noted, and the defeat is considered once, at the loser's first choice after it, whatever he chooses (iteration 1; execution.ts startAction clears it; the option stays bounded by endoStressTauH and by his next own aggression): a charge at a dominated, unrelated bystander scored stress × (redirectBase + redirectAggrW × aggression + redirectTensionW × tension + redirectStressW), minus the guardian deterrent. Needs endoStates 1: it counts as off (the dice) unless endoStates is 1 (endocrine.ts endoOn; E4b review fix). 0 = the priming dice and the 6-minute window. Ablation switch."
   },
   {
    "id": "endoStates",

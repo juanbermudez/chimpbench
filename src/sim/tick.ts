@@ -21,6 +21,7 @@ import { rideTick } from './energy';
 import { slowSnares } from './snares';
 import { random } from './rng';
 import { paramsOf } from './params';
+import { endoOn } from './endocrine';
 import { PARTY_EVERY, SLOW_EVERY, SLOW_HOURS, TICK_HOURS, TICK_SECONDS, index, ix, simOf } from './state';
 
 const snapshot: Chimp[] = [];
@@ -78,7 +79,7 @@ function rainOnset(world: World): void {
   const storm = world.environment.weather === 'storm';
   const P = paramsOf(world);
   // stage E4a (endoRainDisplay): no roll; the onset is noted and every adult male is offered the display, scored from his state (candidates.ts)
-  const endo = P.endoRainDisplay === 1;
+  const endo = endoOn(P, 'endoRainDisplay');
   if (endo && storm) simOf(world).stormAt = world.time;
   for (const c of index(world).alive) {
     if (!c.alive || (c.action === 'nest' && ix(c).phase >= 2)) continue;

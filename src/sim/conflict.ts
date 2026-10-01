@@ -6,6 +6,7 @@ import { killChimp } from './life';
 import { clamp, random } from './rng';
 import { noteEvent, recordAggression, recordWound, tensionOf } from './relations';
 import { paramsOf, type Params } from './params';
+import { endoOn } from './endocrine';
 import { markDanger, noteContact, witnesses } from './contact';
 import { index, ix, simOf } from './state';
 
@@ -66,7 +67,7 @@ function decided(world: World, w: Chimp, l: Chimp, how: 'charge' | 'fight', inju
   const lx = ix(l);
   const P = paramsOf(world);
   // stage E4a (endoRedirect): every loss is noted and nothing is drawn; whether he redirects follows from his stress load (candidates.ts)
-  if (P.endoRedirect === 1) lx.lostAt = time;
+  if (endoOn(P, 'endoRedirect')) lx.lostAt = time;
   else if (random(world) < P.redirectBaseP + P.redirectAggrP * l.personality.aggression) lx.lostAt = time; // redirected aggression follows some losses [M]
   lx.victimOf = w.id; lx.victimAt = time;
   world.stats.conflicts++;

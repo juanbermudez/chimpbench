@@ -154,9 +154,11 @@ test('affiliation rises with grooming in proportion to the bond, with sharing, r
   assert.ok(groomed(0.9) > 0.3);
   const { w, c } = quiet(), P = paramsOf(w);
   const o = w.chimps.find(k => k.alive && k.troopId === c.troopId && k !== c)!;
+  ix(o).affil = 0.4; // review fix: a receiver that already carries affiliation gets the bounded kick on top of it
   endoShared(c, o, P);
   assert.equal(ix(c).affil, P.endoAffilShareKick);
-  assert.equal(ix(o).affil, (ix(o).affil ?? 0) > 0 ? ix(o).affil : P.endoAffilShareKick);
+  assert.ok(Math.abs(ix(o).affil! - (0.4 + P.endoAffilShareKick * 0.6)) < 1e-12);
+  assert.ok(ix(o).affil! > 0.4);
   for (const key of ['recon', 'consoleAt', 'consoledAt'] as const) {
     const q = quiet();
     ix(q.c)[key] = q.w.time;
@@ -308,4 +310,16 @@ test('E4b fix: a stranger chorus kicks the stress load once per hearing episode,
   const { w, c } = quiet({}), x = ix(c);
   endoHeard(w, x, paramsOf(w));
   assert.equal(x.heardFrom, undefined);
+});
+
+test('review fix: a dependent switch without endoStates counts as off (the dice stay), not as a removed act', () => {
+  const day = (p: Overrides) => worldHash(run(createWorld(21, { params: p }), 5760));
+  const off = day({});
+  assert.equal(day({ endoEscalate: 1 }), off);
+  assert.equal(day({ endoRedirect: 1 }), off);
+  assert.equal(day({ endoRainDisplay: 1 }), off);
+  const storm = (p: Overrides) => { const w = run(createWorld(21, { params: p }), 6 * HOUR); setWeather(w, 'storm', 0.9); run(w, 60); return w; };
+  const a = storm({ endoRainDisplay: 1 }), b = storm({});
+  assert.equal(worldHash(a), worldHash(b));
+  assert.equal(simOf(a).stormAt, undefined, 'no onset is noted for a switch that is off');
 });
