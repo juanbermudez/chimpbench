@@ -17,6 +17,7 @@ import { PROFILES, TARGET_FOLLOW, type ProfileName } from '../../src/field/confi
 import { derive } from '../../src/field/derive';
 import { METRICS } from '../../src/field/metrics';
 import { createObserver, finishObserver, observerStep } from '../../src/field/observer';
+import { bandDistance, type Band } from './band-distance';
 import { buildLocalQuestion, decisionContextError, estimateInputTokens, TOKEN_BUDGET } from '../../server/decide';
 
 export const FREE_ARMS = ['R', 'RG', 'U', 'X'] as const;
@@ -267,9 +268,9 @@ export function runArm(world: World, arm: FreeArm, job: SeedJob): ArmResult {
 // Endpoint (pre-registered): summed band distance on simulation truth
 // ---------------------------------------------------------------------------
 
-export interface Band { lo: number; hi: number }
-/** 0 inside the band, else the gap to the nearest edge divided by the band width (docs/staging/jev-decisive-test.md). */
-export function bandDistance(x: number, b: Band): number { return Math.max(0, b.lo - x, x - b.hi) / (b.hi - b.lo); }
+// 0 inside the band, else the gap to the nearest edge divided by the band width (docs/staging/jev-decisive-test.md).
+// The function is shared with scripts/e-bench.ts (Track E) and lives in ./band-distance.ts.
+export { bandDistance, type Band };
 
 export interface EndpointRow { id: string; part: 'male' | 'female' | 'pooled'; label: string }
 /** T-ACT-1 to 3 with their sex parts (bandParts male and female in src/field/metrics.ts), T-ACT-4 pooled, party size, male day range. */
