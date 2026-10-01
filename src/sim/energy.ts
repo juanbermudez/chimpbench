@@ -80,8 +80,11 @@ function setHunger(c: Chimp, L: EnergyLedger, P: Params): void {
   c.hunger = (e > 1 ? 1 : e < 0 ? 0 : e) * (a > 1 ? 1 : a < 0 ? 0 : a);
 }
 
-/** Optional tap for diagnostics (scripts/energy-diagnose.ts): called with each expenditure term. Never set by the app; reads only. */
-export type EnergyTerm = 'rest' | 'activity' | 'walk' | 'climb' | 'carry' | 'pregnancy' | 'growth' | 'milk';
+/**
+ * Optional tap for diagnostics (scripts/energy-diagnose.ts): called with each expenditure term, and with 'suckled' (an
+ * intake, not an expenditure: milk the infant drank). Never set by the app; reads only.
+ */
+export type EnergyTerm = 'rest' | 'activity' | 'walk' | 'climb' | 'carry' | 'pregnancy' | 'growth' | 'milk' | 'suckled';
 export const energyTap: { fn: ((c: Chimp, term: EnergyTerm, kcal: number) => void) | null } = { fn: null };
 
 /** One tick of the balance for `c` (called from needs()): absorption, expenditure, and the hunger readout. */
@@ -167,7 +170,7 @@ export function nurseTick(infant: Chimp, mother: Chimp, P: Params): void {
   if (milk <= 0) return;
   const cost = milk / P.ledgerMilkEff;
   ML.milk -= milk; ML.res -= cost; ML.out += cost;
-  if (energyTap.fn) energyTap.fn(mother, 'milk', cost);
+  if (energyTap.fn) { energyTap.fn(mother, 'milk', cost); energyTap.fn(infant, 'suckled', milk); }
 }
 
 /** A piece of plant food handed to a begging offspring. */
