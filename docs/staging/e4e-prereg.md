@@ -357,6 +357,69 @@ Quick reading under §7: viability passes, held-out without the rare rows is not
 hunting does not vanish (truth 0.072 hunts per community-day) — a provisional keep candidate on the keep rule's legs,
 with T-HUN-3 turned from pass to fail. The confirm (H1c) decides.
 
+#### H1c result: confirm (e-bench --confirm, 5ca5b3c, `git.dirty` 0; seeds 48, 7, 21, 5, 11, 30 + 60 days; against e1h-R and NR1c–NR3c; printed by `MODE=confirm report_table.py` and `judge_vs_reps.py confirm R`)
+
+rows counted in every run: 31 (fitted 17, held-out 14)
+| readout | R (ref) | H1c |
+| --- | --- | --- |
+| enc/100h (obs) | 9.49 ± 0.37 (n 4) | 10.1 |
+| T-HUN-3 share hunted | 0.0687 ± 0.012 (n 4) | 0.0217 |
+| T-HUN-1 | 38.4 ± 5.3 (n 4) | 9.73 |
+| T-HUN-2 | 0.242 ± 0.04 (n 4) | 0.235 |
+| T-HUN-4 | 2.09 ± 0.19 (n 4) | 2.09 |
+| hunts/community-year (truth, e-bench) | 75.9 ± 7.2 (n 4) | 20.3 |
+| prescriptions | 103 ± 0 (n 4) | 102 |
+| viability | pass | pass |
+| fitted sum (z) | 3.13 ± 0.3 (n 4) | 2.19 (z -2.8) |
+| held-out sum (z) | 4.54 ± 1.8 (n 4) | 6.22 (z +0.9) |
+| held-out w/o rare sum (z) | 2.57 ± 0.19 (n 4) | 3.02 (z +1.9) |
+
+```
+confirm, reference R (4 runs), rows counted in all runs: fitted 17, held-out 14
+  fitted             (17 rows) ref 3.57, 3.09, 2.93, 2.93 (mean 3.13, sd 0.30; used 0.30) | H1c.json: 2.19, Δ -0.94, z -2.8 RESULT
+  held-out           (14 rows) ref 6.92, 4.05, 2.69, 4.53 (mean 4.54, sd 1.76; used 1.76) | H1c.json: 6.22, Δ +1.68, z +0.9 (inside noise)
+  held-out w/o rare  (12 rows) ref 2.77, 2.31, 2.63, 2.58 (mean 2.57, sd 0.19; used 0.21) | H1c.json: 3.02, Δ +0.45, z +1.9 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-ACT-3   fitted   ref 0.53±0.04 | H1c.json 0.42 (fail)
+   T-BRD-1   held-out ref 1.59±1.55 | H1c.json 2.82 (fail)
+   T-HUN-1   fitted   ref 0.67±0.27 | H1c.json 0.00 (inconclusive)
+   T-HUN-4   held-out ref 0.39±0.25 | H1c.json 0.38 (inconclusive)
+```
+
+Per-row changes against the reference mean (distance, |Δ| > 0.02; same rows): T-HUN-1 −0.67 (9.73 per community-year,
+inside both the registered 5–25 and the staged 4–11), T-ACT-3 −0.11, T-IGE-1 −0.09, T-HUN-8 −0.08, T-SOC-3 −0.07,
+T-ACT-4 −0.06, T-ACT-1 −0.06, T-HUN-7 −0.05; against: T-BRD-1 +1.23 (rare), T-IGE-2 +0.28 (share of intergroup encounters
+heard only, 1.0), T-RNG-5 +0.26, T-HUN-3 +0.08 (0.022, now below its band), T-SOC-6 +0.06, T-FOOD-5 +0.03, T-HUN-2 +0.02.
+T-RNG-5 rises because nursing mothers range farther (1.67 km a day against 1.45–1.59; males 1.96 against 1.90–2.01),
+and their median hunger sits at or above the top of R's per-seed range on three of five seeds (0.54, 0.59, 0.53, 0.56,
+0.63 against 0.49–0.52, 0.53–0.55, 0.49–0.54, 0.54–0.61, 0.57–0.62); the route (less meat begged, or males that hunt
+less crowding crowns) is not tested. Viability passes: one death (illness, seed 11), no starvation. Truth hunting falls
+from 75.9 ± 7.2 to 20.3 hunts per community-year (−73%).
+
+Against the H1c registration: T-HUN-3 below its band (as predicted), T-HUN-1 lower than R's (as predicted), held-out
+inside noise (as predicted; without the rare rows z +1.9, just inside the registered +2).
+
+### Verdict
+
+- **Target audit (finding).** T-HUN-1's band was never scaled to the model's 3–7 males: it brackets Kanyawara's
+  unscaled 10.4 hunts a year at 11.4 adult males, and every scaling by males lowers it. Staged correction 4–11
+  (`docs/staging/e4e-targets.patch.json`), not applied. T-HUN-1 and T-HUN-3 are tied by the encounter rate.
+- **Diagnosis (finding).** The stack hunts about twice as often as the all-off model because spare time puts adult
+  males together at colobus encounters and the hand-set lead value rose 0.15 per male above 3; the 6 h gap was the only
+  brake. T-HUN-1's excess over its band was mostly the encounter rate.
+- **H1 `huntValue` (provisional keep candidate under the registered rule, with reservations).** Viable; prescriptions
+  103 → 102; fitted −0.94 at confirm length (z −2.8, a result); held-out inside noise (z +0.9; without the rare rows
+  +0.45, z +1.9). The gain is mostly T-HUN-1, and that pass is two errors cancelling: the observer meets colobus 2.7 ×
+  as often per follow-hour as Kanyawara, and males now hunt 0.022 of encounters, 0.28 × Kanyawara's 0.079, so T-HUN-3
+  turns from pass to fail. A pure energy value at the model's success curve also flattens the per-decision gradient by
+  males, and the registered "hungrier males hunt" prediction failed (the competition, not the hunt's value, decides).
+  Recommendation: keep it off by default until the colobus encounter rate is audited and resolved; then re-test, because
+  only then can T-HUN-1 and T-HUN-3 judge the decision rather than each other.
+- **Open.** The encounter rate (prey density and detection; the unmerged `preySightFactor` branch is fitted to
+  Kanyawara and needs its own audit); the success curve (T-HUN-2 fails low, `ecology.ts:73`), which caps what any
+  value comparison can expect; the stack's over-valued grooming, which out-competes hunting; gilbyWrangham2007's
+  surplus effect, which an energy-only value cannot produce (registered conflict, §4).
+
 #### Merge and final checks
 
 `track-e` (23f189b: E1i, handoff, E4c confirm record) merged once, at 88a1cbf (conflicts: the switch list in
