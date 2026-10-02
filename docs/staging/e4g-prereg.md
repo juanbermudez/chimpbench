@@ -423,3 +423,76 @@ simulation code is unchanged between 3329520 and fbdc285 with the switch at 0); 
 **S2 + `followCarer`** for the walking by purpose. Single runs differ by chance; differences under 0.2 km a day are not
 resolved. Expected (before the runs): S2 + `followCarer` lowers adult males' ground path by 0.2–0.5 km a day (low) and
 adult females' by 0.1–0.4 (low); S3 + `followCarer` lowers S3's by about as much (low); no starvation death (high).
+
+#### 6.2 results (run-fbdc285, clean; printed by `stack_table.py` from the JSON)
+
+| Arm (energy-diagnose, seeds 48 and 7, 30 + 30 d) | ground km/day: males / other females / lactating / juveniles | reserves %/day: lactating / juveniles / other females | deaths | followCarer |
+| --- | --- | --- | --- | --- |
+| S2 | 3.71 / 3.43 / 3.07 / 3.95 | -0.191 / -0.148 / +0.009 | 0 | 0 |
+| S2 + followCarer | 3.28 / 2.98 / 2.93 / 3.42 | -0.136 / -0.075 / -0.023 | 0 | 1 |
+| S3 | 2.82 / 2.58 / 2.45 / 2.79 | -0.159 / -0.071 / -0.022 | 0 | 0 |
+| S3 + followCarer | 2.57 / 2.21 / 2.35 / 2.51 | -0.127 / -0.021 / +0.015 | 0 | 1 |
+
+| approach-diagnose (truth km/day) | S2 | S2 + followCarer | Δ |
+| --- | --- | --- | --- |
+| adult males: path | 3.771 | 3.333 | -0.438 |
+| … party | 1.450 | 1.152 | -0.298 |
+| … callers | 0.752 | 0.658 | -0.094 |
+| … food | 0.875 | 0.895 | +0.020 |
+| … water | 0.467 | 0.432 | -0.035 |
+| … patrol | 0.090 | 0.089 | -0.001 |
+| … other | 0.137 | 0.106 | -0.031 |
+| adult females: path | 3.392 | 3.137 | -0.255 |
+| … party | 1.048 | 0.871 | -0.177 |
+| … callers | 0.641 | 0.565 | -0.076 |
+| … food | 1.091 | 1.123 | +0.032 |
+| … water | 0.523 | 0.485 | -0.038 |
+| … patrol | 0.002 | 0.005 | +0.003 |
+| … other | 0.088 | 0.088 | +0.000 |
+| juveniles 5–12 y: path | 4.167 | 3.706 | -0.461 |
+| … party | 1.165 | 0.927 | -0.238 |
+| … callers | 0.700 | 0.667 | -0.033 |
+| … food | 0.944 | 0.964 | +0.020 |
+| … water | 0.702 | 0.547 | -0.155 |
+| … patrol | 0.000 | 0.000 | +0.000 |
+| … other | 0.656 | 0.601 | -0.055 |
+
+S2 adult male: follow-party 0.540 km/day, behind a care follow 0.187 (35%); approaches/day 3.687
+
+S2 adult female: follow-party 0.375 km/day, behind a care follow 0.106 (28%); approaches/day 3.034
+S2: party-size readouts — fedurek2014 changes/h 1.597, kalan arrivals 0.23; AM pant-hoots/h 0.671; deaths {}
+S2 + followCarer: party-size readouts — fedurek2014 changes/h 1.329, kalan arrivals 0.241; AM pant-hoots/h 0.645; deaths {}
+
+**Against the expectations (§6.2):** S2's adult males lower by 0.2–0.5 km a day: held (−0.43 ground km; −0.44 path);
+adult females lower by 0.1–0.4: held for lactating females (−0.14) and the pooled adult females (−0.26 path), missed
+for other females (−0.45); S3 lower by about as much: held (males −0.25, other females −0.37, lactating −0.10,
+juveniles −0.28); no starvation death: held. Single runs: differences under 0.2 km a day are not resolved.
+
+**Reading.** On the stack the artefact is larger than on R: adult males on S2 walk 0.19 km a day behind dependents in a
+care follow (35% of their party-follow path), and `followCarer` takes 0.43–0.53 km a day of ground path from males,
+other females and juveniles, about 60% of the 0.74 km that leaving `callValue` out removed in the attribution. On S3
+(the water ledger in), adults walk 2.2–2.6 km a day with `followCarer` on, inside the field's day ranges (Kanyawara 2.4 / 2.0 km,
+Sonso 2.7 / 1.2), and the mothers' and juveniles' deficits shrink (−0.159 → −0.127 and −0.071 → −0.021 %/day).
+
+## 7. Verdict (iteration 1 is the only one run)
+
+- **Diagnosis.** On R + `callValue` the walking calls add (adult males +0.34 km a day against R) is mostly party walking
+  (72%), not approaches to callers as such (26%). By channel: approaches and the companions who follow an approacher
+  45% (females 57%), following a dependent who is keeping up with its carer 16% (an artefact: `candidates.ts:487` reads
+  a care follow as a departure), joined-trip chains 27%, patrol 11%, fewer own food trips −17%. The approach readouts
+  sit near their field values (fedurek2014, kalanBoesch2015); party membership churns 1.6–1.8 × Kanyawara's rate.
+- **`followCarer` (a care follow is not a departure): null by the registered kill criterion**, T-PTY-1 4.34 → 3.97
+  (z −2.4; still inside its band 3–9). It does what it states and removes the walking: adult males 2.50 → 2.22 km a day
+  (z −2.5), adult females 2.08 → 1.94 (z −2.0), party walking z −2.8, T-RNG-4 z −4.4, T-ACT-2 0.178 → 0.154 (z −1.9);
+  viable; sums inside noise; prescriptions 92 → 92 (it removes none, so it could not be a keep candidate under the
+  track rule in any case). Off by default.
+- **Not tuned, and not iterated further.** The cohesion it costs is cohesion the artefact supplied: the party-follow
+  weights were fitted to T-PTY-1 in C5a with the artefact in place (`partyFollowW`, `partyFollowBase`,
+  `partyFollowMaleW`, `partyFollowHungerW`, `partyStayW`: outcome-encoding in the ledger). Restoring party size would mean
+  re-weighting them toward a target, which the track forbids. The obvious second iteration (following an approacher
+  adds nothing when the follower heard the same call) removes more cohesion of the same kind, so it would meet the same
+  criterion by construction.
+- **Recommendation to the integrator.** Treat `candidates.ts:487` as a defect: decide on `followCarer` with the stack
+  (S3 + `followCarer`: adults 2.2–2.6 km a day, deficits smaller) and a T-PTY-1 judged on its band rather than on a
+  shift from a fitted reference; the party-follow weights fitted with the artefact should be re-derived from first
+  principles in a stage of their own (party cohesion), not re-tuned.
