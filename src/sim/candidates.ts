@@ -452,7 +452,16 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       const invited = o.action === 'groom' && o.targetId === c.id && c.action !== 'groom' ? 0.3 + 0.4 * (1 - c.social) : 0;
       // East African males are the most avid groomers; adult females groom mostly kin (design weighting) [H]
       const femaleOffset = c.sex === 'female' && c.age >= 12 && !kin ? P.groomFemaleNonKinOffset : 0;
-      offer('groom', o.id, (grooming ? (time >= x.actEnd ? -0.25 : 0.35) : 0) - femaleOffset + (1 - c.social) * 0.55 + b * 0.4 + (kin ? 0.2 : 0) + recip * 0.2 + up + alphaAlly + invited - tn * P.groomTensionW - d / P.groomDistScaleM - h * 0.6 - rain * 0.6 - (night ? 1.5 : 0) - (c.age < 5 ? 0.3 : 0),
+      // stage E1k (groomNeedDyad; docs/staging/e1k-prereg.md §6): between a mother and her own unweaned offspring the
+      // groomer's own social need weights every social term (need, bond, kin, reciprocity, rank, invitation): drive ×
+      // incentive, so the score at full need (social 0) is today's and a groomer whose need is met gets no value from the
+      // partner terms alone. The motivation to be groomed falls as grooming feeds back on it [M: keverne1989]; the value
+      // of a stimulus depends on the internal state [H, cabanac1971]; the product form is a design assumption with no
+      // free parameter. Costs (tension, distance, hunger, rain, night, age) and the bout's persistence are unchanged.
+      const needDyad = P.groomNeedDyad === 1 && ((o.motherId === c.id && !ix(o).weaned) || (c.motherId === o.id && !x.weaned));
+      offer('groom', o.id, needDyad
+        ? (grooming ? (time >= x.actEnd ? -0.25 : 0.35) : 0) + (1 - c.social) * (0.55 + b * 0.4 + (kin ? 0.2 : 0) + recip * 0.2 + up + alphaAlly + (invited ? 0.7 : 0) - femaleOffset) - tn * P.groomTensionW - d / P.groomDistScaleM - h * 0.6 - rain * 0.6 - (night ? 1.5 : 0) - (c.age < 5 ? 0.3 : 0)
+        : (grooming ? (time >= x.actEnd ? -0.25 : 0.35) : 0) - femaleOffset + (1 - c.social) * 0.55 + b * 0.4 + (kin ? 0.2 : 0) + recip * 0.2 + up + alphaAlly + invited - tn * P.groomTensionW - d / P.groomDistScaleM - h * 0.6 - rain * 0.6 - (night ? 1.5 : 0) - (c.age < 5 ? 0.3 : 0),
         invited ? V.ACCEPT : alphaAlly ? V.COALITION : V.NONE);
     }
     // play [H]
