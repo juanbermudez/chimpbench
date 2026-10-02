@@ -1,4 +1,4 @@
-# Track E handoff (integrator; refreshed 2 October 2026, 03:30)
+# Track E handoff (integrator; refreshed 2 October 2026, 13:10)
 
 Read this before anything else. It replaces `docs/staging/track-e-resume.md`. The canonical copy is on branch
 `track-e`; a copy sits in `~/Desktop/mgogo-session/` for the next session to find.
@@ -14,15 +14,19 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (12:45).** The about-page updater (`site-about`). Integrator: the S5 integrated confirm (S4 +
-  `companyMargin`; registered in e-stack2-confirm.md; `bench-run` at 5911b36).
+- **Running now (13:10).** The about-page updater (`site-about`, from `site`). No simulation runs.
+- **S5 done: the best integrated candidate so far** (e-stack2-confirm.md; S4 + `companyMargin`): 77 prescriptions
+  (today's model 135), viable, night safe; fitted better than R beyond noise (z −3.2) and level with or better than
+  today's model (z −1.8); feeding, grooming, rest, party size in band, travel at its edge (0.258 / 0.216); males walk
+  2.73 km; mothers −0.23%/day, juveniles −0.09%/day. Held-out without the rare rows still worse than today's model
+  (+3.4, mostly T-FOOD-10 at 2.30: a single-site row with a staged scorer fix awaiting the user). The decision guide
+  still shows S3; regenerate it for S5 if the user wants the guide to follow the best stack.
 - **Decision guide merged** (docs/decision-guide.html: 16 diagrams of the S3 candidate stack, before/now hovers, counts
   from the ledger, a test keeps it in sync: if a stage changes the ledger, rerun `scripts/decision-guide.ts`).
 - **E5b merged** (`companyMargin`, off: an approach to a caller counts only the company added beyond the best companion
   present; on S4 males walk 2.61 km instead of 3.32, travel back in band, juveniles stop losing reserve; sums inside noise).
 - **S4 done** (e-stack2-confirm.md): S3 + `followCarer` + `cohesionValue`: 77 prescriptions and viable, but males walk
-  3.43 km a day (S3 2.93) and the deficits deepen: E5a interacts with value-based calls; S3 stays the best integrated
-  candidate; E5b investigates.
+  3.43 km a day (S3 2.93) and the deficits deepen: E5a interacts with value-based calls; E5b fixed it (S5).
 - **Hosted site (user request):** branch `site` (worktree `.claude/worktrees/site`, from `main`) = a snapshot of the main
   checkout's uncommitted site work (UI, in-browser GLiNER, about page; an unrelated PDF and caches excluded) + Real time +
   GLiNER-only builds (`VITE_DECISION_PROVIDER` hides the provider picker and ignores ?provider=). Build for hosting:
