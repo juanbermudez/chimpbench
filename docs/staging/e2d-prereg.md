@@ -272,3 +272,76 @@ Extra arms with the same code, to answer the stage's questions (not mechanism ch
 energyLedger, ledgerGrowSurplus, ledgerNightNurse, ledgerInfantIntake, ledgerNurseByMilk, ledgerDigesta, ledgerDrive)
 and ST2 = S + rhythmCircadian; and T2F = T2 + rhythmFreeNight (night menu off), to see what holds awake adults when the
 menu does not: predicted adults out of a nest at night 3–6%, almost all between waking and dawn.
+
+### Iteration 2 results (commit 23d7e64)
+
+| Readout | R | T2 | TD2 (+ darkCost) | T2F (+ night menu off) | S (full stack) | ST2 (S + rhythmCircadian) | Field or captive |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Sleep onset vs sunset; last waking vs sunrise (adults, median) | — | +97; −128 min | +98; −126 | +99; −126 | — | +102; −123 | captive: retire +15–30, rise −45 to −60 |
+| Hours asleep; temperature minimum vs sunrise | — | 8.16 h; −339 min | 8.16; −337 | 8.16; −336 | — | 8.16; −334 | 8.8 h (captive video) |
+| Start of the last nest, min before sunset (median; p90) | 9; 30 | 38; 51 | 39; 51 | 37; 50 | 16; 31 | 40; 51 | T-RHY-4 −30 to +90 |
+| … share started within 14 min of the light gate opening (≥ 41 min before sunset) | 0.00 | 0.40 | 0.45 | 0.38 | 0.00 | 0.47 | — |
+| Last nest entry vs sunset (median); nests entered per evening | −4; 1.15 | −32; 1.12 | −34; 1.12 | −31; 1.37 | −11; 1.32 | −35; 1.69 | males about −25 |
+| Nest, rest, groom (07:00–19:00, adults) | 3.7, 18.1, 16.4% | 6.6, 17.4, 16.0% | 6.9, 15.7, 15.4% | 6.9, 19.9, 19.4% | 5.1, 27.2, 20.1% | 7.4, 24.1, 20.2% | — |
+| Departure vs sunrise, all adults (median); before sunrise, adult females | +18; 0.05 | −13; **0.99** | −13; **1.00** | **−124**; 0.95 | +27; 0.00 | −7; **0.71** | about 0 (Budongo); 0.18 (Taï; T-RHY-3 0.05–0.35) |
+| Active day: all; males / lactating (difference) | 11 h 43; 11 h 41 / 11 h 48 (+7) | 11 h 55; 11 h 52 / 12 h 03 (+11) | 11 h 52; 11 h 50 / 11 h 57 (+7) | **13 h 22**; 13 h 05 / 13 h 53 (+48) | 11 h 29; 11 h 30 / 11 h 30 (0) | 11 h 37; 11 h 32 / 11 h 53 (+21) | T-RHY-1 10.5–12 h; 11 h 34 / 10 h 57 (−37) |
+| Night out of a nest, adults; m per adult-night | 0.0%; 0 | 0.1%; 1 | 0.0%; 0 | **14.7%; 488** | 0.0%; 0 | 0.1%; 0 | 1.8–3.3% of activity records |
+| Night out of a nest, juveniles 5–15 y; m per juvenile-night | 0.0%; 0 | **4.6%; 163** | **4.3%; 306** | **14.8%; 533** | 0.0%; 0 | 1.7%; **106** | — |
+| Juveniles out of a nest at 04, 05, 06 h | 0, 0, 0% | 13, 29, 28% | 11, 27, 29% | 40, 94, 95% | 0, 0, 0% | 7, 8, 9% | — |
+| Out of a nest at solar midnight (adults, juveniles); night deaths; deaths in the window | 0, 0; 0; 0 | 0, 0; 0; 0 | 0, 0; 0; 0 | 0, 0; 0; 0 | 0, 0; 0; 0 | 0, 0; 0; 0 | — |
+| Fitted / held-out distance | 5.965 / 2.469 | 4.267 / 6.429 | 2.905 / 7.638 | — | 3.635 / 3.503 | 4.313 / 5.819 | — |
+| … on rows scored in both, against R (T2, TD2) or S (ST2) | — | −0.971 / **+4.460** | −0.882 / **+4.547** | — | — | +1.178 / **+2.816** | noise floor 0.8 |
+| Prescription count; viability | 116; pass | 115; pass | 115; pass | — | 109; pass | 108; pass | — |
+
+Held-out rises: T-FOOD-10 (+3.18 in T2 and TD2, +2.74 in ST2) in every arm, plus rows that swing between runs (T-HUN-4
++0.99 and T-HUN-7 +0.63 in T2; T-PAT-6 +1.11 in TD2). Seed 48 lost one animal to illness (the respiratory outbreak model)
+on the 28th day of the burn-in under T2 and TD2, at 04:20; R and T1 did not; no death in any measured window.
+
+Reading:
+- **The day nests are gone, as predicted** (1.12 nests per evening; nest 7% of the daytime; rest and grooming back to
+  R's levels) and the active day is back inside T-RHY-1 (11 h 52 – 11 h 55; 11 h 37 on the full stack).
+- **The evening is now partly the gate's**: the median start of the last nest is 38–40 min before sunset, and 38–47%
+  of last nests start within 14 min of the light gate opening (about 51–55 min before sunset), where felt sleepiness is
+  already 0.7. Without the gate (iteration 1) the nest was built through the afternoon. So process C gives the nest a
+  value that is high from late afternoon on; when in the late afternoon the night nest is built is decided by the
+  light, not by C.
+- **The sleep episode is unchanged** (onset 97–102 min after sunset, waking 123–128 min before sunrise, 8.2 h), and
+  during it no animal of any age leaves its nest.
+- **Dawn is the night menu's.** With the menu (T2, TD2) adults wait in the dark for two hours and leave at its
+  boundary (light arousal, 13 min before sunrise): 99–100% of adult females' departures are before sunrise. With the
+  menu off (T2F) adults leave when they wake, 124 min before sunrise, and spend 15% of the night out of their nests,
+  488 m a night. Juveniles, whom no menu filters, are out 27–29% of the time from 05:00 to dawn in every arm without
+  the full stack.
+- **The full stack (ST2)**: adults are less hungry, so the nest (resting score plus sated term) holds males and other
+  females in some mornings (median departure −2 and 0 min; lactating −13); 71% of adult females' departures are before
+  sunrise; juveniles are out of their nests 1.7% of the night (inside the field's 1.8–3.3%), but move 106 m a night.
+- **Lactating females keep the longer day** in every arm (+7 to +21 min; field −37): they are hungrier, so they nest
+  later and, on the stack, leave earlier.
+- Killed again: T2 and TD2 on criteria 1 (juvenile nights) and 4 (held-out +4.5), ST2 on criteria 1 (106 m per
+  juvenile-night) and 4 (+2.8). Criterion 3 passes in every arm with the gate.
+
+Iteration 3 was not run. The failure left is not a defect of the mechanism but what the mechanism says: with the human
+pacemaker and thresholds, a chimpanzee at Kibale wakes about two hours before sunrise, and nothing in process C (or in
+E2c's measured consequences of darkness) gives an awake animal a reason to stay in its nest until light. The candidate
+inputs that would change this are not available: no chimpanzee circadian period or phase response has been published
+(τ 24.5 h instead of 24.2 moves waking from −128 to −66 min in the offline model, §4; 23.4–25.1 h is the macaque range),
+no walking pace has been measured below 0.015 lux, and no dose–response of masking by darkness was found for a primate.
+Moving any of these to reach the field would be a fit.
+
+## 9. Verdict
+
+| Switch | Result | Decision |
+| --- | --- | --- |
+| `rhythmCircadian` | Removes `rhythmDarkW` (116 → 115; 109 → 108 on the full stack). Process C places sleep inside the night as computed (onset +97 to +102 min after sunset, waking −123 to −128 min before sunrise, 8.2 h; captive chimpanzees sleep 8.8 h, retire 15–30 min after sunset and rise 45–60 min before sunrise), and nobody leaves a nest during it. It does not hold the two hours of darkness after waking: adults are held by the night menu (without it 15% of their night is spent out of the nest), juveniles not at all (4.3–4.6% of their night, 163–306 m; 1.7% and 106 m on the full stack); departures before sunrise 71–100% (T-RHY-3, T-FOOD-10 fail). The evening nest needs E2a's light gate (iteration 1 without it: day nests took a third of the daytime). Viability passes | **off: null** under the kill criteria (1, 4; iteration 1 also 3). Kept in the code as an ablation switch |
+
+What the darkness weight stood for, after E2c and E2d. Not sleep: process C accounts for the sleep episode and quiets
+the night while it lasts, with no weight and no menu. Not vision (E2c). It stood for the hours a chimpanzee spends awake
+in its nest in the dark: about one and a half after dusk (where C's felt sleepiness, 0.8–1, does hold the nest) and
+about two before dawn (where nothing does). A captive chimpanzee under natural light rises 45–60 min before sunrise
+(videan2005); a wild one leaves at about sunrise (batesByrne2009) or, 18% of the time, before it (janmaat2014).
+
+Biggest open problem: the pre-dawn hours. An animal that has slept its fill wakes in the dark; what keeps a wild
+chimpanzee in its nest until light is not in the model. Candidates, none measured for a primate: a chimpanzee clock
+that wakes later (period and phase response unknown), the cost of moving on a forest floor under starlight (vision and
+pace below 0.015 lux), and masking by darkness. A side finding for E2c: its "adults out at solar midnight 2.6–3.0%" was
+most likely the rhythm-metrics artefact fixed here (§8).
