@@ -379,3 +379,40 @@ the mean of T's four realizations, z = (B2 − mean) ÷ (SD × √1.25), SD the 
 T's own spread if larger; |z| > 2 is a result. Expected (integrator, before the run): mothers within −0.10 to +0.10% of
 the store a day (moderate confidence); no starvation (moderate); every sum inside noise (moderate); T-RNG-5 worse than
 T (low).
+
+### Integrator note (2 October 2026): the T-RNG-5 "cost" was follow-day sampling
+
+Stage E1j (e1j-prereg.md §4–§5, interim) measured the mothers' ÷ males' daily path on every chimp-day (simulation
+truth, quick seeds 48 and 7): R 0.77, all switches off 0.69, T with this stage's pair 0.69. The observer's T-RNG-5
+rests on 13–24 complete follow-days of mothers per quick run, so it read R as 0.70 and the pair as 0.84: the "mothers
+range further" cost in §6 (reading, point 3) is sampling noise, not behaviour.
+
+### 8.1 Five-seed confirm result (integrator, 2 October 2026; bench-run at 49d8a3b, clean; numbers generated from the JSON)
+
+Identity: T in quick mode at 49d8a3b equals this stage's `T-quick.json` (cc51622) on every row, so `e1h-T` stands as a
+T realization. The first chain stopped at its 2-hour limit during T3c's viability replay; T3c was resumed with
+`e-bench --reuse` (its scorecard kept).
+
+| | T (four realizations: e1h-T, T1c, T2c, T3c) | B2 (T + `ledgerSatiationReserve` + `ledgerLactGut`) |
+| --- | --- | --- |
+| Viability (e-bench) | **fail in all four** (starvation deaths 4, 2, 2, 2; all nursing mothers in e1h-T) | pass (0 deaths) |
+| Fitted, 16 rows counted in all runs | 2.50 (SD 0.45) | 3.02: Δ +0.52, z +1.0, inside noise |
+| Held-out, 14 rows | 4.97 (SD 1.38) | 3.32: Δ −1.65, z −1.0, inside noise |
+| Held-out without T-HUN-4 and T-BRD-1, 12 rows | 2.36 (SD 0.32) | 2.39: Δ +0.03, z +0.1, inside noise |
+| Lactating females: eating min / dry matter g / absorbed ÷ spent / foregut ≥ 95% full (daylight) | 222 / 616 / 0.765 / 0.074 (e1h-T) | 277 / 788 / 0.959 / 0.097 |
+| Field-method intake, lactating (T-ENE-1 band 1,900–3,100) | 1,911 | 2,441 |
+| Reserves ÷ store, change per day: lactating / juveniles 5–12 y / other females / males | −0.922% / −0.144% / −0.053% / −0.025% (e1h-T) | **−0.149%** / **−0.071%** / −0.049% / −0.029% |
+| Prescriptions | 103 | 103 |
+
+**Verdict (§8, as registered): null on 5 seeds.** No starvation death, but lactating females (−0.149% of the store a
+day) and juveniles 5–12 y (−0.071%) fall faster than the registered line of 0.05%/day. The integrator's expectation
+for mothers (−0.10 to +0.10%) missed; no starvation and every sum inside noise held. Both switches stay off and are
+recorded as a large partial result: against T the pair removes every starvation death, cuts the mothers' loss
+six-fold and puts all three intake rows (T-ENE-1..3) inside their field bands, while the mothers still absorb only
+0.96 of what they spend. The quick result (−0.04%/day on 2 seeds × 30 days) did not hold over 5 seeds × 60 days.
+
+**Reading.** The remaining deficit is about 4% of a mother's spending with her foregut full in under 10% of daylight
+and her hunger at 0.49: the appetite still yields before the gut binds. Whether a slow loss of this size is itself
+unrealistic is a target question: nursing mothers' reserves are depressed for months in the field (emeryThompson2012,
+staged energy rows), so the 0.05%/day line, a design guard, may be stricter than wild mothers; that needs a sourced
+rate before the line is changed. `ledgerLactGut` keeps its flag (size rule matched to the load by construction).

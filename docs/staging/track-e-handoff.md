@@ -14,11 +14,13 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (06:00).** Agent E4f (colobus encounters from sourced ecology; `e4f-encounters`; brief
-  `integrator/e4f-prompt.txt`). Integrator: the E1i confirm in `bench-run` (`e1i-confirm.sh`; ~25 min per run at load
-  15–20) and the E2f night-safety check in `bench-run-2` (a second frozen checkout at 6069e15; registered in
-  e2f-prereg.md §11). Held back until the E1i confirm: mothers' ranging (T-RNG-5) and infant–mother grooming.
-- **Decided since the morning refresh:** E2f merged (`sleepChimp`: chimpanzee EEG sleep 9.7 h moves waking from
+- **Running now (07:30).** Agents E1j (mothers' ranging; interim: the T-RNG-5 excess is follow-day sampling and a
+  single-site band; `e1j-ranging`) and E1k (nursing mothers' remaining deficit: audit the 0.05%/day line, then the
+  infant grooming loop; `e1k-deficit`; brief `integrator/e1k-prompt.txt`). Integrator: the integrated confirm of every
+  provisional candidate (S2, docs/staging/e-stack2-confirm.md; `s2-confirm.sh` in `bench-run`: bench, energy, rhythm).
+- **Decided since the morning refresh:** E4f merged (`preyKanyawara`, off: the colobus encounter excess is mostly the
+  observer's scoring; three scorer fixes staged in `docs/staging/e4f-protocol.patch.json`, not applied, user decision);
+  E2f's night safety confirmed on 5 seeds (adults 2.99% of the night); E2f merged (`sleepChimp`: chimpanzee EEG sleep 9.7 h moves waking from
   −128 to −65 min; with `rhythmFreeNight`, `darkCost`, `nestCompany`, `nestAudience` the night holds without the menu,
   narrowly: adults out 3.0% of the night against 3.3%; prescriptions 115 → 113; departures still 83% before sunrise);
   E4c confirmed on 5 seeds (provisional keep candidate; e4c-prereg.md §10.1);
@@ -75,7 +77,9 @@ Hard rules (AGENTS.md plus this track):
 | `.claude/worktrees/e2f-sleep` | **Running agent** E2f, branched from track-e 49d8a3b. |
 | `.claude/worktrees/e4d-rhythm` | Merged 2 October (head da916df). |
 | `.claude/worktrees/e4e-hunting` | Merged 2 October (head dcca0dc). |
-| `.claude/worktrees/e4f-encounters` | **Running agent** E4f, branched from track-e 6781cb7. |
+| `.claude/worktrees/e4f-encounters` | Merged 2 October (head e7dacde). |
+| `.claude/worktrees/e1j-ranging` | **Running agent** E1j, branched from track-e b0cb6e5. |
+| `.claude/worktrees/e1k-deficit` | **Running agent** E1k, branched from track-e 6f2ee87. |
 | `.claude/worktrees/e2f-sleep` | Merged 2 October (head b5157a0). |
 | `.claude/worktrees/bench-run-2` | Second frozen checkout (6069e15) for the E2f night-safety check. Remove when done. |
 | `.claude/worktrees/bench-run` | Frozen detached checkout for the integrator's benchmarks (612bf15 for the noise arms, then d8c1875 for the E4c confirm; the queued script moves it). `artifacts/validation/e/`: `base-head` (all off, 9392b67), `e1h-{R,T,G}` and their energy JSON, `rescored-*`, `noise/`. Move it only when nothing runs from it. |
@@ -118,10 +122,12 @@ mkdir -p ../<name>/artifacts/validation && ln -s /Users/juanbermudez/Desktop/MGO
 | E4a slow states | `endoStates`, `endoEscalate`, `endoRedirect`, `endoRainDisplay` | keep (provisional) for the first three | Leaky cortisol-, testosterone-, oxytocin-like states replace escalation and redirect dice; slow states cannot carry acute reactions. | e4a-prereg.md |
 | E4b fast arousal | `endoFast`, `endoFastRedirect` | `endoFast` + `endoRainDisplay` keep (provisional); `endoFastRedirect` off | Storm displays without a roll (2–5 × the old rate, no field row). T-END-8 fails because pant-hoots come from isolation and a fitted travel hazard. | e4b-prereg.md |
 | E4c calls | `callValue` | provisional keep candidate; **5-seed confirm queued** | Iteration 1: arrival pant-hoots 0.28 (field 0.04–0.35), party size near the reference, prescriptions −11, held-out inside quick noise. Calls have no daily course (the arousal state rises through the day). | e4c-prereg.md §9–10 |
-| E1i intake | `ledgerSatiationReserve`, `ledgerLactGut` | keep (provisional, pair); **5-seed confirm queued** | Mothers' drive was saturated and satiation ignored their deficit, so they fed no more than other classes. Satiation weighted by the relative store (leptin-like, [M]) plus a lactating gut grown to its load (×1.30; design, no primate source) balance mothers (−0.04%/day, 796 g, 278 min) in quick mode; sums inside noise; T-RNG-5 worse (0.84). Mothers of infants ≥ 2 y groom 34% of daylight (infant-initiated). | e1i-prereg.md |
+| E1i intake | `ledgerSatiationReserve`, `ledgerLactGut` | **null on 5 seeds** (strict viability line), large partial result | Mothers' drive was saturated and satiation ignored their deficit, so they fed no more than other classes. Satiation weighted by the relative store (leptin-like, [M]) plus a lactating gut grown to its load (×1.30; design, no primate source) balance mothers (−0.04%/day, 796 g, 278 min) in quick mode; sums inside noise; T-RNG-5 worse (0.84). Mothers of infants ≥ 2 y groom 34% of daylight (infant-initiated). | e1i-prereg.md |
 | E4d rhythm | `endoRhythm` | recorded, off (removes nothing) | Sleep-entrained secretion (gains from fedurek2016 and girardButtoz2021 ratios): both states fall through the day by construction; T-END-8 fails honestly (r −0.29); calls still have no daily course; morning escalation up beyond noise (no field row). | e4d-prereg.md |
 | E4e hunting | `huntValue` | passes the keep rule on 5 seeds; **held off** | A hunt valued as food (expected meat from the model's success curve; no gap, no lead value): T-HUN-1 into band (9.7 confirm), fitted z −2.8, but T-HUN-3 fails low: the model meets colobus 2.7 × Kanyawara's rate and now hunts 0.28 × the field's share. T-HUN-1's band was never scaled (staged 4–11). | e4e-prereg.md |
-| E4f encounters | — | **running** (agent) | Colobus density is Ngogo 1997–99 (pre-decline) while targets are Kanyawara's: audit and site-matched inputs. | e4f-prereg.md |
+| E4f encounters | `preyKanyawara` | recorded, off ([L] site-matched input) | The 2.55 × encounter excess: observer scoring ×1.42 (focal vs party follows) and ×1.07 (a new encounter per change of nearest group), density ×1.12 (Ngogo pre-decline vs Kanyawara 2.22 groups/km²), residual ×1.5 unsourced. Scorer fixes staged, not applied. | e4f-prereg.md |
+| E1k deficit | — | **running** (agent) | Mothers still absorb 0.96 of spending with E1i's pair: audit the line, then the infant grooming loop. | e1k-prereg.md |
+| E1j ranging | — | **running** (agent) | Interim: in simulation truth mothers ÷ males is 0.69–0.77 (B, R, E1i pair); the observer's T-RNG-5 rests on 13–24 follow-days, so E1i's 0.84 was sampling; the band is Budongo only (Gombe 0.67–0.74, Kanyawara 0.83). R's real change vs B: males' food trips halve. | e1j-prereg.md |
 | E3 re-test | — | done (integrator) | The effect stands without the old hunger cap: persistence halves crown bouts (22 → 11 min) and the fruit share falls to 0.54. | e3-prereg.md, last section |
 | Prescription audit | — (tooling) | merged | The count now sees what E1 and E2a switch out: full stack 134 → 102. | scripts/lib/prescriptions.ts |
 | Full-stack confirm | 14 switches (E1–E1e, E2a, E4a, E4b) | not kept as a whole | Fitted 3.28 → 4.01; held-out 5.90 → 3.49, but T-BRD-1 alone is −2.10 (+0.70 worse without it). One cause: spare time (intake ends early, grooming and hunting fill the day). | IMPLEMENTATION_PLAN.md |
@@ -308,6 +314,7 @@ Times measured by agents this session; load swung between ~8 and ~20 on 12 cores
 | Command | Use | Time |
 | --- | --- | --- |
 | `pnpm test` | full suite, 624 tests | 76–140 s |
+| (gotcha) a queued background chain | its time limit (max 2 h) counts from queueing, not from its first run: queue long chains only behind short ones, or start them when the queue clears; `e-bench --reuse` resumes an interrupted run from its saved scorecard |
 | `pnpm exec tsc --noEmit -p .` | types of `src/` and vite.config.ts **only**: it does not check `scripts/` or `tests/` | < 1 min |
 | `pnpm exec tsx scripts/gen-params.ts [--check]` | after any `data/params.json` edit; after a merge, `git checkout --ours src/sim/params.gen.ts` then regenerate | seconds |
 | `pnpm exec tsx scripts/e-bench.ts --quick --params '{…}' --workers 2 --out artifacts/validation/e/<label> [--compare x.json]` | 2 seeds, 30 + 30 days, direction check | 40–150 s on 2 workers; 3.6–8 min on 1 worker under load; 374 s at load ~20 |
@@ -491,5 +498,8 @@ Agents: the pre-flight block in §7.
 3. May the staged target rows be applied to `data/targets.json` (new freeze)?
 4. May the merged worktrees be removed, and what should happen to the unmerged encounter-fix branch
    (`worktree-agent-a954b443db4b6f22a`)?
+6. May the three staged scorer fixes for colobus encounters and hunting (docs/staging/e4f-protocol.patch.json: gilby2015's
+   run rule, T-HUN-3/4 on party follows, T-HUN-1 counting only encounter-matched hunts) be applied? They change the
+   frozen observer, so they need a protocolLog entry and a new freeze, like the staged target rows (question 3).
 5. Can you open Chivers & Hladik 1980 on HAL (hal-00561758) in your browser, or supply it and Milton & Demment 1988
    (J Nutr) through institutional access? The captive female's body mass decides the gut input (§E.25).
