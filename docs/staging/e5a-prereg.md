@@ -82,11 +82,48 @@ no abstract, Europe PMC no record). Nothing below uses it.
 - **What the field cannot give:** no source gives party size per scan (only per follow), how often parties split, or
   who leaves; none separates following from independent arrival at the same tree.
 
-## 2. Diagnosis (step 1)
+## 2. Diagnosis (step 1; registered 2 October 2026, 09:58, before its runs)
 
-To be registered here before its runs: why parties form and split on R + `followCarer` and on R (who follows whom
-and for which value term; joins after calls; splits at trips to food), party size against the crop of the current
-tree, and the share of cohesion each tuned weight carries (each zeroed in turn: attribution only, nothing kept).
+**Tool.** `scripts/cohesion-diagnose.ts` (new; its header defines every readout). Simulation truth on e-bench's world
+(createWorld + 30-day burn-in + 30 days, seeds 48 and 7, rules policy), plus e-bench's own party-follow observer, so
+its T-PTY-1 per seed must equal e-bench's (identity check, RF). Run from a frozen detached checkout of the commit that
+adds this section. Smoke test (seed 48, 1 + 2 days, RF): every readout filled; nothing read from it beyond that,
+except that it ran.
+
+**Arms (one simulation each; attribution only, nothing kept):** **RF** (R + `followCarer`), **R**, and on RF each
+tuned cohesion weight removed in turn: Z-base `partyFollowBase` 0; Z-bond `partyFollowW` 1e-6 (0 would close the whole
+party-follow mechanism, which reads `partyFollowW > 0` as its gate; 1e-6 keeps the gate and removes the bond term);
+Z-male `partyFollowMaleW` 0; Z-stay `partyStayW` 0; Z-hoo `joinHooW` 0; Z-soc `joinSocialW` 0 (the social pull toward
+pant-hooting community members); Z-all all six together.
+
+**Readouts** (header of the script): observer T-PTY-1 and S1; truth party size at 15-min scans by class at 50, 60
+and 90 m and under S2; time alone; pair joins and splits per subject-day and the mover's part (own trip to food,
+joined trip, to callers, follow party, drink, in or to a crown, …); the value terms of each party follow and joined
+trip taken, by follower class, and whom they follow; feeders per occupied crown against its crop (terciles, R²) and
+the crop in chimp-hours of feeding; true path by class and part; deaths by cause.
+
+**Reading rules (registered).**
+- *What holds parties together, by tuned weight:* Δ observer T-PTY-1 (mean of the two seeds) of each Z arm against RF.
+  A weight "carries cohesion" if its removal lowers T-PTY-1 by more than 0.44 (twice the RF reference's run-to-run SD,
+  0.22, from its four quick realizations); a fall of 0.22–0.44 is "probable"; under 0.22 "not resolved" (single runs).
+  The same for adult males' truth party size at 50 m (reported, not ruled on).
+- *Why parties split:* the mover's part with the largest share of pair splits names the main splitting act; a part
+  with ≥ 25% of splits is named as a cause. *Joins after calls:* the share of joins whose mover is approaching a caller.
+- *Party size and crop:* the crop effect is "absent" if R² of feeders on crop < 0.05 and feeders per occupied crown
+  differ by < 0.2 between the top and bottom crop terciles (pooled seeds, RF).
+- *Scorer fixes:* S1 − scan mean and S2 − 50-m chain on RF, reported as the staged fixes' expected effect.
+
+**Expected (before the runs; low confidence unless stated).** Z-base lowers T-PTY-1 by 0.1–0.4; Z-bond by 0.0–0.2;
+Z-male ±0.2; Z-stay by 0.1–0.4; Z-hoo ±0.2 (moderate); Z-soc by 0.2–0.6; Z-all by 0.5–1.2. R − RF ≈ +0.27 (the
+reference means, 3.80 vs 3.53). Splits: the largest mover part is a walk to water (moderate: the smoke test's two days
+gave 43%; R drinks on the thirst timers), then trips to food. Joins after calls 20–35% (moderate). Crowns: 1.1–1.5
+feeders per occupied crown and no crop effect (moderate; the party-size stage found 1.2 and R² ≈ 0). S1 − scan mean
+within ±0.2; S2 − 50 m within +0.1 (moderate).
+
+**Known defects in the code under test.** Fixed in the reference: `candidates.ts:489` (E4g; adults follow a care
+follow), by `followCarer` 1. Deferred (not part of cohesion as defined here; would move today's behaviour): the
+approach goal is read live from `x.joinX/joinZ` (`src/sim/execution.ts:588`), overwritten by every later call heard
+(`src/sim/perception.ts:317`), so an approach goes to whoever called last (E4g §2).
 
 ## 3. Mechanism (step 2)
 
