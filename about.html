@@ -371,9 +371,8 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
 <div class="page">
   <section class="hero" id="top" aria-labelledby="h-top">
     <div class="hero-copy">
-      <h1 id="h-top">A chimpanzee society simulation, based on wild chimps.</h1>
-      <p>ChimpBench simulates communities of wild chimpanzees in a 3D rainforest modeled on Kibale, Uganda. Each chimp feeds, rests, travels, grooms, fights and reconciles, patrols, hunts, raises young and ages, through day and night and the seasons.</p>
-      <p>A personal experiment in using decision models to drive behavior. Each chimp&rsquo;s choices come from what it senses and how it feels, and are decided by rules or by <span class="ai">a small AI model running on your computer</span>. The results are compared with field data from wild chimps.</p>
+      <h1 id="h-top">I built a chimp society you can watch.</h1>
+      <p>It&rsquo;s a 3D forest modeled on Kibale, Uganda, with communities based on decades of field research. I made it to see if <span class="ai">a small AI model</span> can pick a chimp&rsquo;s next move, and it runs right in your browser.</p>
       <div class="cta"><a class="btn primary" href="/">Open ChimpBench <svg class="i" aria-hidden="true"><use href="#i-right"/></svg></a></div>
     </div>
     <figure class="shot hero-shot">
@@ -392,7 +391,8 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
         <li><a href="#society">Society</a></li>
         <li><a href="#experiments">Field experiments</a></li>
         <li><a href="#realism">Field data</a></li>
-        <li><a href="#sources">Credits</a></li>
+        <li><a href="#next">What&rsquo;s next</a></li>
+        <li><a href="#sources">Credits and docs</a></li>
       </ol>
     </nav>
 
@@ -407,7 +407,8 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
           <li><a href="#society">Society</a></li>
           <li><a href="#experiments">Field experiments</a></li>
           <li><a href="#realism">Field data</a></li>
-          <li><a href="#sources">Credits</a></li>
+          <li><a href="#next">What&rsquo;s next</a></li>
+          <li><a href="#sources">Credits and docs</a></li>
         </ol>
       </details>
 
@@ -704,9 +705,16 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
         </figure>
       </section>
 
-      <!-- Credits (the page is docs/sources.html, kept at that path so older links still work) -->
+      <!-- What's next: the one dated status on the page. Update it when the physiology work is switched on in the app. -->
+      <section class="sec" id="next" aria-labelledby="h-next">
+        <header class="sh"><h2 id="h-next">What&rsquo;s next</h2><p>In the app today, much of a chimp&rsquo;s day still runs on clock hours, dice rolls and scores tuned to match field numbers. I&rsquo;m rebuilding that so behavior comes from the body instead: an energy budget with a gut, sleep pressure and a body clock, a water balance, heat, and hormone-like states such as stress. The rule is that field numbers about behavior are targets to measure against, never settings, and each change is benchmarked against field data before it stays.</p></header>
+        <p class="note"><b>Status, October 2026.</b> Work in progress on a development branch. Some pieces have passed their first tests; none of it is switched on in the app you can open today.</p>
+      </section>
+
+      <!-- Credits and docs: links to the living documents instead of restating them (the Credits page is docs/sources.html,
+           kept at that path so older links still work; simulation.md and research.md are copied into the build by vite.config.ts). -->
       <section class="sec" id="sources" aria-labelledby="h-src">
-        <header class="sh"><h2 id="h-src">Credits</h2><p>The tools, decision models, sound and field data behind ChimpBench, and the studies it draws on, each with its licence, are listed on the <a href="/docs/sources.html">Credits page</a>.</p></header>
+        <header class="sh"><h2 id="h-src">Credits and docs</h2><p>The tools, models, sound and field data behind ChimpBench, and the studies it draws on, each with its licence, are on the <a href="/docs/sources.html">Credits page</a>. For how the simulation works, mechanism by mechanism, read <a href="/docs/simulation.md">simulation.md</a>; for the evidence behind each behavior and how strong it is, read <a href="/docs/research.md">research.md</a>.</p></header>
       </section>
     </main>
   </div>
