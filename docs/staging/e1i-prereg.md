@@ -379,3 +379,10 @@ the mean of T's four realizations, z = (B2 − mean) ÷ (SD × √1.25), SD the 
 T's own spread if larger; |z| > 2 is a result. Expected (integrator, before the run): mothers within −0.10 to +0.10% of
 the store a day (moderate confidence); no starvation (moderate); every sum inside noise (moderate); T-RNG-5 worse than
 T (low).
+
+### Integrator note (2 October 2026): the T-RNG-5 "cost" was follow-day sampling
+
+Stage E1j (e1j-prereg.md §4–§5, interim) measured the mothers' ÷ males' daily path on every chimp-day (simulation
+truth, quick seeds 48 and 7): R 0.77, all switches off 0.69, T with this stage's pair 0.69. The observer's T-RNG-5
+rests on 13–24 complete follow-days of mothers per quick run, so it read R as 0.70 and the pair as 0.84: the "mothers
+range further" cost in §6 (reading, point 3) is sampling noise, not behaviour.

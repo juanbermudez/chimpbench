@@ -126,7 +126,7 @@ mkdir -p ../<name>/artifacts/validation && ln -s /Users/juanbermudez/Desktop/MGO
 | E4d rhythm | `endoRhythm` | recorded, off (removes nothing) | Sleep-entrained secretion (gains from fedurek2016 and girardButtoz2021 ratios): both states fall through the day by construction; T-END-8 fails honestly (r −0.29); calls still have no daily course; morning escalation up beyond noise (no field row). | e4d-prereg.md |
 | E4e hunting | `huntValue` | passes the keep rule on 5 seeds; **held off** | A hunt valued as food (expected meat from the model's success curve; no gap, no lead value): T-HUN-1 into band (9.7 confirm), fitted z −2.8, but T-HUN-3 fails low: the model meets colobus 2.7 × Kanyawara's rate and now hunts 0.28 × the field's share. T-HUN-1's band was never scaled (staged 4–11). | e4e-prereg.md |
 | E4f encounters | `preyKanyawara` | recorded, off ([L] site-matched input) | The 2.55 × encounter excess: observer scoring ×1.42 (focal vs party follows) and ×1.07 (a new encounter per change of nearest group), density ×1.12 (Ngogo pre-decline vs Kanyawara 2.22 groups/km²), residual ×1.5 unsourced. Scorer fixes staged, not applied. | e4f-prereg.md |
-| E1j ranging | — | **running** (agent) | Why mothers range as far as males (T-RNG-5 0.76 on R; band 0.3–0.6). | e1j-prereg.md |
+| E1j ranging | — | **running** (agent) | Interim: in simulation truth mothers ÷ males is 0.69–0.77 (B, R, E1i pair); the observer's T-RNG-5 rests on 13–24 follow-days, so E1i's 0.84 was sampling; the band is Budongo only (Gombe 0.67–0.74, Kanyawara 0.83). R's real change vs B: males' food trips halve. | e1j-prereg.md |
 | E3 re-test | — | done (integrator) | The effect stands without the old hunger cap: persistence halves crown bouts (22 → 11 min) and the fruit share falls to 0.54. | e3-prereg.md, last section |
 | Prescription audit | — (tooling) | merged | The count now sees what E1 and E2a switch out: full stack 134 → 102. | scripts/lib/prescriptions.ts |
 | Full-stack confirm | 14 switches (E1–E1e, E2a, E4a, E4b) | not kept as a whole | Fitted 3.28 → 4.01; held-out 5.90 → 3.49, but T-BRD-1 alone is −2.10 (+0.70 worse without it). One cause: spare time (intake ends early, grooming and hunting fill the day). | IMPLEMENTATION_PLAN.md |
@@ -313,6 +313,7 @@ Times measured by agents this session; load swung between ~8 and ~20 on 12 cores
 | Command | Use | Time |
 | --- | --- | --- |
 | `pnpm test` | full suite, 624 tests | 76–140 s |
+| (gotcha) a queued background chain | its time limit (max 2 h) counts from queueing, not from its first run: queue long chains only behind short ones, or start them when the queue clears; `e-bench --reuse` resumes an interrupted run from its saved scorecard |
 | `pnpm exec tsc --noEmit -p .` | types of `src/` and vite.config.ts **only**: it does not check `scripts/` or `tests/` | < 1 min |
 | `pnpm exec tsx scripts/gen-params.ts [--check]` | after any `data/params.json` edit; after a merge, `git checkout --ours src/sim/params.gen.ts` then regenerate | seconds |
 | `pnpm exec tsx scripts/e-bench.ts --quick --params '{…}' --workers 2 --out artifacts/validation/e/<label> [--compare x.json]` | 2 seeds, 30 + 30 days, direction check | 40–150 s on 2 workers; 3.6–8 min on 1 worker under load; 374 s at load ~20 |
