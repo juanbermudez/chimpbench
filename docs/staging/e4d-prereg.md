@@ -189,3 +189,23 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>" && git log --oneline -1
   detached checkout of the commit that adds this entry (the code is 193ff76's; this commit changes only the prereg).
   Order: endocrine-diagnose and calls-diagnose for R and D1 (two processes at a time), then `e-bench --quick
   --workers 2` for R, then for D1 with `--compare` R. Outputs copied to `artifacts/validation/e4d/` (gitignored).
+- **Iteration 2** (written after D1's diagnoses and before D1's bench finished; one mechanism change, logged before
+  its run). *Finding that motivates it* (D1 endocrine-diagnose, seeds 48 and 7, 30 + 30 days): the stress load now
+  falls through the day (pooled adult males 0.306 at 07 h, 0.086 at 17 h, ratio 3.56; R 1.52), but arousal is flat
+  (0.123 → 0.109, ratio 1.12; R 0.027 → 0.076, 0.36). A scratch check (seed 48, 10-day burn-in, 4 days, 25 male-nights;
+  `chk/ard-check.ts` in the session scratch) shows why: the drive an adult male holds at his last waking slow step is 0
+  on 88% of nights (in falling light, daylight 0.34 at onset, no close-rank male or swollen parous female in view) and
+  large on the rest; its mean (0.071) equals the mean of his waking drive over the day (0.077). The drive is
+  intermittent (mostly 0, now and then 0.3–0.6), so a snapshot gives most males no nocturnal rise and a few one capped at
+  1. The derivation of `endoRhythmGainT` (§3) assumed the night amplifies the day's drive; the snapshot amplifies the
+  dusk instant. *Change:* the held drive is the waking drive integrated with the state's own time constant (`ard` +=
+  (drive − `ard`)·(1 − e^(−dt/τ)) at each waking slow step, `endoArousalTauH`; held unchanged through sleep), so the
+  axis's nocturnal secretion amplifies the stimulation of the male's recent waking hours, not the view from his nest. No
+  parameter changes; stress is unchanged. *Arm D2* = R + `endoRhythm` with iteration 2; endocrine-diagnose,
+  calls-diagnose, `e-bench --quick --workers 2 --compare` R, from a frozen checkout of the commit that implements it.
+  *Expected (D2 against R; D1 for the stress rows):* pooled arousal 07 h 0.2–0.35, 17 h 0.09–0.14, ratio 1.8–3.0
+  (moderate); stress as D1 (high); adult-male pant-hoots morning ÷ afternoon within 0.6–1.0 (R 0.72, D1 0.81; high);
+  T-END-8 fedurek2016 form mean r < 0 with at most half of the males positive (moderate); T-END-8 net of time of day
+  within −0.15..0.15 (low); escalated attacks at most 10 per 60 seed-days, a larger morning share than R's (low);
+  decided conflicts, T-COM-1, T-PTY-1 and the shared-row sums within noise (moderate); prescriptions unchanged (high);
+  viability passes (high). Kill criterion and keep rule as §7.
