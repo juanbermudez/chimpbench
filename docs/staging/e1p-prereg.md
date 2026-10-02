@@ -157,3 +157,95 @@ held at the edge for 5–8 y F, missed for M).
 order in which a growing primate gives up tissue reserve and structural growth, which §2 takes from sources, not from
 the targets. The 2 × Gombe growth is not, in the quick window, a partition effect: the infants' intake covers captive
 growth (E1f's named term, intake per eating minute, stands).
+
+## 2. Step 2: mechanism (registered 2 October 2026 before any run of changed code)
+
+### 2.0 Field rows and readouts (sources opened; pre-flight)
+
+| Row (staged, read by energy-diagnose; not scored by e-bench) | Sample (sex, reproductive state, mass, method) | Readout here, defined from the source's method |
+| --- | --- | --- |
+| T-INF-4 mass for age | Gombe, *P. t. schweinfurthii*: "1,286 weighings of 31 males and 26 females aged 2–43 years, over 33 years" (pusey2005, abstract; research.md E.3), weighed on a scale during provisioning years; the infant curve is gurvenWalker2006's "very rough estimation" from pusey2005's figures (about 10 kg at 5 y, so about 1.6 kg/y from birth; 2.2 F and 2.8 M kg/y at 5–10 y) [L] | growth velocity, kg per bio-year over the window, two ways: the ledger's mass (`kg`, structure) and the **weighed mass**, kg + reserves ÷ 4,300 kcal/kg (the registry's tissue energy density for the usable store), since a scale weighs the tissue the reserves stand for |
+| T-ENE-5 energy balance through lactation | Kanyawara, 17 mothers, urinary C-peptide, longitudinal (emeryThompson2012, abstract; staged row) | mothers' balance (Δ reserves, kcal/day) by the youngest infant's age (existing E1f readout); direction: rising with infant age from 0.5–1 y |
+| T-INF-1, T-INF-2, T-INF-5 | Gombe 40 infants, 1-min point samples (lonsdorf2014); Ngogo 72 immatures, focal follows (badescu2022) | existing E1f / E1n readouts (eating share, nurse act, bouts per daylight hour), unchanged |
+| T-ENE-1..3 | Kanyawara, 14 multiparous nursing mothers, full-day focal follows (uwimbabazi2019) | existing E1h readouts, unchanged |
+
+Readouts added for the arms (`scripts/energy-diagnose.ts` E1p section, read-only; smoke-tested with each arm's switch on
+before its run): **f paid** = growth paid ÷ the potential's cost per tick (exact for any rule; the existing "mean f"
+reads C8's formula); **weighed-mass velocity** (above). Everything else in §1.2 is unchanged.
+
+### 2.1 What the sources say about the partition (research.md, Addendum: E1p growth and the body's state)
+
+- **Order: the tissue reserve gives way first, structural growth afterwards.** In 5,160 Gambian children, height's
+  seasonal course lags weight's by about 3 months, and wasting predicts stunting 3 months later after current stunting
+  (OR 3.2) (schoenbuchner2019, FT, [M] human). Wasting or poor weight gain "may precede linear growth retardation", and
+  the 6-month change in weight-for-length is directly associated with later length (richard2012, [M] human).
+- **Graded, not a threshold**: richard2012's association is continuous in the change of weight-for-length.
+- **Mechanism direction**: energy deprivation lowers the growth axis (IGF-I) within days (thissen1994, [M]); it does not
+  say whether the signal follows the store or the recent balance.
+- **Against the brief's premise** ("growth is the first claim to give way"): in the one primate with longitudinal data,
+  structural growth is not the first claim to give way; the tissue reserve is, and growth follows the depleted state.
+  "Growth faltering precedes loss of maintenance" holds (both sources show growth slowing while children live), but
+  that is the order of growth and maintenance, not of growth and reserve.
+
+In the model's units: the usable store is about 30% of body mass, so a relative store w = 1 + reserves ÷ store maps to
+(1 − w) × 30% of body mass lost; the S6 infants' −5 to −6% is about 1.7% of body mass, C8's knee (−29%) about 9%.
+
+### 2.2 Iteration 1: one switch, two arms (one per reading the diagnosis and sources leave open)
+
+**Switch `growYield`** (design, integer 0–2, 0 by default = today, bit-identical; read only with `energyLedger`,
+`ledgerGrowSurplus` and `ledgerGrowPotential` 1). In energyTick's growth block f (the share of the potential paid) is:
+
+- **0 (today):** f = min(1, cond ÷ `condGood`) (C8's rule; E1f iteration 2).
+- **1, arm Y1, growth yields in proportion to the relative store (the order the sources give):** f = min(1, cond ÷
+  `ledgerCondSet`) = min(1, max(0, 1 + reserves ÷ usable store)). C8's rule with its reference condition at the
+  ledger's set point (the state the drive regulates to and condition reads as 0.7) instead of a timer-scale value: the
+  reserve gives way first and growth yields in proportion to how much of it is gone, continuously, from the set point to
+  an empty store (none at starvation). No new number; the proportional form is a design assumption with no free
+  parameter (as E1i's satiation weight), and it is graded as richard2012's association is.
+- **2, arm Y2, growth only from what is left after maintenance (the brief's premise, a bound):** f = min(C8's f,
+  clamp((aAvg − mAvg) ÷ G, 0, 1)), aAvg the day-long mean of energy absorbed (kcal/h, `driveAvgH` 24 h, kept on the
+  ledger while the animal is below adult mass and opened at mAvg + G, E1f iteration 1's books), mAvg the day-long mean of
+  all other spending (existing), G the potential's cost (kcal/h). On the day-long mean the reserves never pay for
+  growth; a shortfall below maintenance still draws on them. This is E1f iteration 1's rule (west2001's allocation) on
+  the S6 stack; E1f found it hides the shortfall from the appetite, so growth velocity reports the dependents' option
+  weights. Its order (growth first, reserve protected) is the reverse of schoenbuchner2019's; it is run to bound how much
+  the partition can move S6's dyads, not as the physiological reading.
+
+Both arms leave the drive as E1f set it (expected spending = mAvg + growth at the potential, fao2004 §4.4), the cost per
+gram, the potential and the adult mass. Neither removes a counted prescription (`condGood` is still read by fertility
+and the growth record): `removesNothing`; prescriptions 76 in both.
+
+**Implementation** (before the arms; disclosed): `src/sim/energy.ts` (growth block, aAvg books, an exported pure
+`growFraction`), `src/sim/state.ts` (`aAvg` on the ledger, optional), registry entry `growYield` and its §17 row,
+switch lists (`tests/sim-track-e.test.ts`, `scripts/lib/prescriptions.ts`), `tests/sim-e1p.test.ts` (default 0 and
+hash-identity with the switch at 0 over a field day; `growFraction` per mode; determinism of each mode over a day; the
+aAvg books open and close with growth). Smoke tests: seed 48, S6 + the switch, 1-day burn-in + 2 days, readouts only.
+
+**Arms:** S6 (`S6q-params.json`) + `{"growYield":1}` (Y1) and + `{"growYield":2}` (Y2). Runs per arm: `e-bench --quick`
+(seeds 48, 7; 30 + 30 days; `--workers 1`) and `energy-diagnose` (same seeds and window), one at a time, from a frozen
+detached checkout of the commit that adds this section and the code; load checked first (runs only below a 1-minute
+load of 30). Reference: S6q, S6q1–S6q3 (integrator, bench-run cac9598; not re-run).
+
+**Predictions (by hand, before any run; against the four S6 runs' mean ± SD; the reference's growth spread is 0, all at
+the potential).**
+
+| Quantity | S6q (diagnosis) | Y1 expected | Y2 expected |
+| --- | --- | --- | --- |
+| f paid, infants 0.5–4 y; juveniles growing | 1.000 | 0.93–0.96; 0.91–0.96 (high) | 0.45–0.85; 0.40–0.85 (low) |
+| Velocity (ledger mass), 0.5–1 / 1–4 y, kg/y | 2.80 / 3.60 | 2.60–2.70 / 3.35–3.45 (high) | 1.3–2.4 / 1.6–3.0 (low) |
+| Velocity, juveniles 5–8 y F / 8–12 y M | 3.40 / 3.80 | 3.10–3.25 / 3.55–3.70 (high) | 1.4–2.9 / 1.5–3.2 (low) |
+| Infants' reserves (class OLS %/day; level) | 0.5–2 y −0.010; 2–5 y +0.030; levels −5 to −6% | within the reference spread, level up ≤ 0.01 (moderate): ≤ 3 kcal/day spared, and the dyad rule hands any gain back to the mother | level −2 to −6%, slopes not worse than the reference (low) |
+| Juveniles' reserves | −0.020 %/day; level −6% | within spread, level up ≤ 0.01 (moderate) | level up 0.01–0.05 toward the set point; eating minutes down 2–10% (moderate: the drive's deficit term shrinks) |
+| Infants' daylight hunger; own food 1–4 y | 0.35–0.39; 270 / 428 / 627 kcal/day | within ±0.02; within ±5% (moderate) | down 0.01–0.05; down 0–20% (moderate: E1f's hidden shortfall) |
+| Milk drunk 1–2 / 2–3 / 3–4 y | 241 / 224 / 213 kcal/day | within ±10 (moderate) | down 0–40 (low) |
+| Mothers' balance by infant age; lactating reserves | −15 / −4 / +10 / +4 kcal/day; +0.010 %/day | within the spread (moderate) | up 0–20 kcal/day at 1–4 y (low) |
+| Bench sums (fitted; held-out; without T-HUN-4, T-BRD-1; without T-IGE-3) | group mean | inside noise (high) | inside noise (moderate) |
+| Prescriptions; viability | 76; pass | 76; pass (high) | 76; pass (moderate) |
+
+**Decision rule (registered, as E1o's).** An arm is a *provisional keep candidate* if viable (no starvation death; no
+class below −0.05%/day that is not already below it in the reference by more than its spread), the held-out sums not
+up (|z| ≤ 2, with and without T-HUN-4 and T-BRD-1; reported also without T-IGE-3) and the fitted sum not up beyond
+noise. Neither arm removes a prescription, so neither can go on by default under the Track E rule. An arm answers the
+stage's question if growth at 1–4 y falls below the reference beyond its spread; the share of a shortfall carried by
+growth (growth not paid ÷ (growth not paid + reserves lost), by class) is reported for each arm. Y2 stays a bound even if
+it passes (its order contradicts schoenbuchner2019), and the prereg says so.
