@@ -16,8 +16,10 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
 - **Running now (18:10).** Stage agent **E1p** (`e1p-growth`, from track-e 1b85093: infants keep growing at the captive
   rate while S6 makes their reserves fall; brief `integrator/e1p-prompt.txt`). Integrator: the S6 quick reference, 4
-  runs (`bench-run/artifacts/validation/e/s6q/`, script `integrator/s6q.sh`; message E1p when all four exist), and the
-  energy re-runs of S5c2 and S5c3 (completing S6's energy group).
+  runs (`bench-run/artifacts/validation/e/s6q/`, script `integrator/s6q.sh`): **done** 19:24, all viable and clean,
+  E1p told; S6's energy group completed (S5c2, S5c3 re-run; readings stand). The machine's load spikes intermittently to
+  700–970 from other apps (iOS Simulator, computer-use node processes): agents stall and runs crawl; resume stalled
+  agents with a message, restart killed runs when `uptime` is low.
 - **E3b merged** (`revisitByCrop`, off; a provisional keep candidate as a correction: a crown fed in is valued by the crop
   believed left, not devalued for 12 h whatever is left): mothers in balance, walking −27–36%, T-HUN-1 into its band;
   costs: fruit share 0.85 (above band), T-SOC-9 out. Removes no counted prescription. Observer fixes for T-FOOD-4/5/6
