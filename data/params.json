@@ -8883,6 +8883,29 @@
    "notes": "Flight heads for a point this far away, re-aimed every tick. Field: about one tick of running (design)."
   },
   {
+   "id": "followCarer",
+   "group": "social",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.followCarer",
+   "file": "src/sim/candidates.ts",
+   "integer": true,
+   "notes": "Stage E4g switch (docs/staging/e4g-prereg.md §3): a care follow is not a departure. With 1, party cohesion (candidates.ts, the 'follow party' and joint-trip offers) does not count a companion in a care follow (a dependent keeping up with its caretaker, V.MOTHER, or a weaned juvenile with its guardian, V.JUVENILE) as travelling off, and a leader chain (leaderOf) does not climb into one; the carer, if she herself travels or follows a party member, is followed as before. Today a mother walking into a crown (a forage act) is not followed, but her offspring copying the move is (E4g diagnosis: 38-43% of adult males' party-follow path, rising with party size). Design (the principle); no field value is used. 0 = today, bit-identical. Ablation switch."
+  },
+  {
    "id": "followCommit",
    "group": "movement",
    "value": 0,
