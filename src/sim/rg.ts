@@ -38,6 +38,14 @@ export function resetRgTally(on: boolean): void {
     phase: { dawn: [0, 0, 0], day: [0, 0, 0], dusk: [0, 0, 0], night: [0, 0, 0] } });
 }
 
+/**
+ * Optional tap for diagnostics (scripts/intake-diagnose.ts, stage E1i): called at every RG decision with the full
+ * candidate list, the menu drawn from and its choice probabilities (empty when nothing was drawn), the option taken and
+ * why: the gate's reason for a draw ('need-bucket', 'max-age', 'ended', …), or 'kept', 'arrived', 'lead', 'phase' and
+ * 'argmax' (fewer than two options: the rules' best). Never set by the app; reads only, so the simulation is unchanged.
+ */
+export const rgTap: { fn: ((c: Chimp, list: Candidate[], menu: Candidate[], probs: number[], chosen: Candidate, why: string) => void) | null } = { fn: null };
+
 /** The chimp-target filter of observe(): only candidates about the first 8 perceivable chimps by candidate score. */
 function perceivedCandidates(world: World, c: Chimp, all: Candidate[]): Candidate[] {
   const x = ix(c), byId = index(world).byId, chosen: number[] = [];
@@ -153,12 +161,14 @@ export function rgChoice(world: World, c: Chimp, list: Candidate[]): Candidate |
   if (P.patrolImpulseDecides === 1 && top && top.action === 'patrol' && candidateMeta.get(top)?.v === V.LEAD) {
     if (rgTally.on) rgTally.lead++;
     x.rgIntent = intentOf(world, c, top.action, top.targetId, V.LEAD, candidateMeta.get(top)?.aux ?? -1);
+    if (rgTap.fn) rgTap.fn(c, list, [], [], top, 'lead');
     return top;
   }
   const held = x.rgIntent?.action ?? 'none', g = gate(world, c, x.rgIntent, list);
   if (typeof g !== 'string') {
     if (rgTally.on) { if (g.arrived) rgTally.arrived++; else rgTally.kept++; }
     if (g.arrived) x.rgIntent = { ...intentOf(world, c, 'forage', g.keep.targetId, candidateMeta.get(g.keep)?.v ?? V.NONE), buckets: x.rgIntent!.buckets };
+    if (rgTap.fn) rgTap.fn(c, list, [], [], g.keep, g.arrived ? 'arrived' : 'kept');
     return g.keep;
   }
   const menu = rgMenu(world, c, list);
@@ -170,13 +180,14 @@ export function rgChoice(world: World, c: Chimp, list: Candidate[]): Candidate |
     if (ph === 'night' || ph === 'dusk') {
       const pick = findCandidate(list, menu[0].action, menu[0].targetId)!, meta = candidateMeta.get(pick) ?? { v: V.NONE, aux: -1 };
       x.rgIntent = intentOf(world, c, pick.action, pick.targetId, meta.v, meta.aux);
+      if (rgTap.fn) rgTap.fn(c, list, menu, [1], pick, 'phase');
       return pick;
     }
   }
-  if (menu.length < 2) { if (rgTally.on) rgTally.argmax++; delete x.rgIntent; return null; }
+  if (menu.length < 2) { if (rgTally.on) rgTally.argmax++; delete x.rgIntent; if (rgTap.fn && list[0]) rgTap.fn(c, list, menu, [], list[0], 'argmax'); return null; }
   // stage E3 (urgencyChoice): the temperature falls with urgency (src/sim/urgency.ts); one draw either way
   const byUrgency = P.urgencyChoice === 1, T = byUrgency ? urgencyTemperature(urgency(c, menu, P), P) : P.rgTemperature;
-  const scores = menu.map(k => k.score), i = drawIndex(byUrgency ? choiceProbs(scores, T) : softmax(scores, T), random(world));
+  const scores = menu.map(k => k.score), probs = byUrgency ? choiceProbs(scores, T) : softmax(scores, T), i = drawIndex(probs, random(world));
   if (rgTally.on) {
     const U = urgency(c, menu, P), ph = rgTally.phase[dayPhase(world)];
     ph[0]++; ph[1] += U; if (U < 0.1) ph[2]++;
@@ -186,5 +197,6 @@ export function rgChoice(world: World, c: Chimp, list: Candidate[]): Candidate |
   const o = menu[i];
   const pick = findCandidate(list, o.action, o.targetId)!, meta = candidateMeta.get(pick) ?? { v: V.NONE, aux: -1 };
   x.rgIntent = intentOf(world, c, pick.action, pick.targetId, meta.v, meta.aux);
+  if (rgTap.fn) rgTap.fn(c, list, menu, probs, pick, g);
   return pick;
 }
