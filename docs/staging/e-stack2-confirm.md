@@ -187,3 +187,31 @@ that adds this section), against the four-run means of B and R and beside S3 and
 run): prescriptions 77 (high); viable (moderate); males' ground path at or below S3's (2.93 km) and the travel share
 inside its band (moderate); the mothers' and juveniles' deficits at or better than S3's (moderate); T-PTY-1 inside its
 band (moderate); held-out without the rare rows still worse than B beyond noise (moderate: T-FOOD-10 is untouched).
+
+### S5 results (bench-run at 5911b36, clean; numbers generated from the JSON)
+
+| | S3 | S4 | **S5 = S4 + `companyMargin`** |
+| --- | --- | --- | --- |
+| Prescriptions | 83 | 77 | **77** |
+| Viability | pass | pass | pass (2 deaths: one outbreak, one illness) |
+| Fitted against B's mean (16 rows) / R's mean (17–18 rows) | +0.17 (z +0.4) / −0.45 (z −0.8) | +0.49 (z +1.2) / +0.07 (z +0.1) | **−0.75 (z −1.8) / −1.09 (z −3.2)** |
+| Held-out against B's mean (14 rows) | +0.69 (z +0.4) | +0.51 (z +0.3) | +1.99 (z +1.2) |
+| Held-out without the rare rows against B's mean (12 rows) | +2.97 (z +11.8) | +3.33 (z +13.2) | +3.39 (z +13.5) |
+| T-ACT-1 / T-ACT-3 / T-ACT-4 | pass / pass / — | pass / pass / — | pass / pass / pass |
+| T-ACT-2 travel, males / females (band 0.12–0.25) | 0.262 / 0.236 | 0.290 / 0.268 | 0.258 / 0.216 |
+| T-PTY-1 (band 3–9) / T-HUN-1 (5–25) | 4.48 / 48.3 | 4.16 / 41.0 | 3.38 / 34.7 |
+| T-FOOD-10 (distance) | 0.686 (1.75) | 0.779 (2.18) | 0.806 (2.30) |
+| Ground km per day, males / lactating | 2.93 / 2.56 | 3.43 / 2.84 | **2.73 / 2.44** |
+| Reserves %/day, lactating / juveniles | −0.249 / −0.118 | −0.272 / −0.174 | **−0.233 / −0.086** |
+| Night: adults out of a nest; T-RHY-5 | 2.19%; 0.0218 | 2.68%; 0.0264 | 2.73%; 0.0284 (one death at night; deaths were illness) |
+
+**Against the S5 expectations:** prescriptions 77 held; viable held; males' path below S3's held (2.73 km); travel
+share inside its band missed narrowly for males (0.258 against 0.25); the deficits better than S3's held; T-PTY-1 in
+band held; held-out without the rare rows still worse than B held.
+
+**Reading.** S5 is the best integrated candidate so far: 58 prescriptions fewer than today's model (77 against 135),
+viable and safe at night, its fitted distance better than R's beyond noise (z −3.2) and level with or better than
+today's model, every activity row but travel inside its band, and the walking and deficits that S4 added gone. Its cost
+is still the held-out rows without the rare ones, mostly T-FOOD-10 (2.30): E2h showed that row rests on 5 Taï mothers
+in fruit-scarce periods and is scored differently by the observer; its staged scoring (e2h-protocol.patch.json) would
+change this reading and needs the user's approval.
