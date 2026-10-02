@@ -336,6 +336,14 @@ T-ACT-1 moved beyond 2 SD of the reference, toward its band (feeding share 0.319
 against 0.270–0.296): males that hunt less feed more. Hunters' reserves at the start of a hunt are unchanged (0.0023 of
 the usable store above the set point in both): leaders are at the set point, neither in surplus nor in deficit.
 
+Hunts per impulse by adult males in view (truth; hunts with m males ÷ impulses with m males, from the diagnosis JSON;
+printed by a one-off script over `diag/*.json`): R's four realizations 0.087 (2 males, n 993), 0.121 (3, n 387), 0.140
+(4, n 157), 0.156 (5, n 32); H1 0.030 (2, n 299), 0.023 (3, n 128), 0 (4, n 31), 0.067 (5, n 15). H1 loses the
+per-decision gradient by males: in the model's own physics a male's expected meat is nearly flat in the hunters present
+(success rises from 0.21 to 0.67 between 2 and 7 hunters while his chance to hold meat falls from 0.59 to 0.29), so any
+"more males, more hunting" now comes only from more males each weighing the hunt. The field gradient (+48% odds per male
+at Kanyawara) is stronger than that.
+
 Quick reading under §7: viability passes, held-out without the rare rows is not up beyond noise, the count falls, and
 hunting does not vanish (truth 0.072 hunts per community-day) — a provisional keep candidate on the keep rule's legs,
 with T-HUN-3 turned from pass to fail. The confirm (H1c) decides.
