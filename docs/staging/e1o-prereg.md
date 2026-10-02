@@ -190,7 +190,7 @@ minutes by the model's per-minute intake; with intake held by the foregut's thro
 food. The per-minute rate (101–175 kcal of fruit an hour, a foregut filled in under an hour) sets the infant's eating
 time (T-INF-1: 8.6–16.8% of daylight against 17–47%), not its intake.
 
-**Correction after iteration 1 (written 14:20, after arm B's run; disclosed).** Item 2's reading, that own food
+**Correction after iteration 1 (committed in c03db91, after arm B's run; disclosed).** Item 2's reading, that own food
 "stops near what its foregut passes while food is in reach", and the paragraph above built on it, are withdrawn. D6's
 registered rule read a crown-time intake at or above what a full foregut passes (1.15–1.35 here) as a foregut limit;
 in arm B the same infants, hungrier (5–6% of their store below the set point), ate 1.58–1.72 × that amount in their
