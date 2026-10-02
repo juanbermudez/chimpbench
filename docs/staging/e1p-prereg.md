@@ -249,3 +249,14 @@ noise. Neither arm removes a prescription, so neither can go on by default under
 stage's question if growth at 1–4 y falls below the reference beyond its spread; the share of a shortfall carried by
 growth (growth not paid ÷ (growth not paid + reserves lost), by class) is reported for each arm. Y2 stays a bound even if
 it passes (its order contradicts schoenbuchner2019), and the prereg says so.
+
+**Implementation checks (before the arms; disclosed).** Code at the commit that adds this paragraph. `growYield` 0 on the
+S6 stack gives the same world hash as f5d0597 (the commit before the change) after one field day on seeds 48 and 7
+(b21042a6c6795a5f, 6414fa749de2ae17; scratch `tools/hash_check.mts`); `tests/sim-e1p.test.ts` 4 pass (defaults,
+`growFraction` per mode, the aAvg books, determinism of modes 1 and 2 over a quarter day); `tsc` clean; `gen-params
+--check` clean (991 entries). Prescription count on S6: 76 with `growYield` 0, 1 and 2 (`removesNothing`). Readouts added
+to the E1p section before any arm (§2.0): growing ticks paid below the potential, and the weighed-mass velocity (kg +
+reserves ÷ 4,300 kcal/kg). Smoke tests (seed 48, S6 + each mode, 1-day burn-in + 2 days; `scratch e1p/smoke/`): every
+readout prints; Y1 pays 0.98–0.995 of the potential, Y2 0.04–0.38 in those two days (the window's first days are the
+dyads' transient, S < 0 in most groups), and Y2's books exist only on growing animals. No prediction was changed after
+the smoke tests.

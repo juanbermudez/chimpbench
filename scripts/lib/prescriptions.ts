@@ -326,6 +326,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   cohesionValue: { stage: 'E5a', needs: {} },
   crownShare: { stage: 'E5c', needs: { energyLedger: 1, ledgerDrive: 1 }, removesNothing: 'switches off two crop-blind design terms (the habitat-index crowding cost, the revisit devaluation of a crown just used); co-feeders then cost their share of the bout through tripWorth and a used crown is worth the crop believed left; no counted prescription is switched out (e5c-prereg §3.2)' },
   revisitByCrop: { stage: 'E3b', needs: {}, removesNothing: 'switches off a crop-blind design term (the devaluation of a crown just used, revisitW × exp(−h / revisitTauH)); a crown fed in is then worth the crop believed left (C7a), as any other crown; no counted prescription is switched out (e3b-prereg §5)' },
+  growYield: { stage: 'E1p', needs: { energyLedger: 1, ledgerGrowSurplus: 1, ledgerGrowPotential: 1 }, removesNothing: 'changes which state the share of the growth potential reads (1: the relative store from the set point; 2: also the day-long surplus after maintenance) in place of C8\'s knee at condGood; condGood stays in use (fertility, the growth record), no registry entry or literal is switched out (e1p-prereg §2.2)' },
   companyMargin: { stage: 'E5b', needs: { cohesionValue: 1 }, removesNothing: 'values an approach to a caller by the company it adds over the company the animal already has (E5a\'s companyValue and settled-companion set); adds no magnitude and switches no prescription out (e5b-prereg §5)' },
 };
 

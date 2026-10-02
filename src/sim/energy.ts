@@ -50,6 +50,11 @@
 // Stage E1o (docs/staging/e1o-prereg.md §2.1; P.milkInDrive, 0 by default, read only with ledgerDrive 1): an unweaned
 // animal's drive counts milk at what its mother's gland can deliver over the horizon (what it holds plus what it will
 // make over the waking time left and the night after it), not at the suckling rate all day (feedRate's milk term).
+// Stage E1p (docs/staging/e1p-prereg.md §2.2; P.growYield, 0 by default, read only with ledgerGrowSurplus and
+// ledgerGrowPotential 1): what share of the growth potential is paid (growFraction). 0 = C8's rule (min(1, cond ÷
+// condGood): growth yields only 29% below the set point); 1 = in proportion to the relative store from the set point
+// (the tissue reserve gives way first and growth follows the depleted state, schoenbuchner2019); 2 = no more than the
+// day-long mean surplus after maintenance pays (aAvg − mAvg; E1f iteration 1's books, a bound).
 import type { Chimp, World } from '../types';
 import { paramsOf, type Params } from './params';
 import { TICK_HOURS, TICK_SECONDS, index, ix, type ChimpX, type EnergyLedger } from './state';
@@ -379,6 +384,21 @@ export function ownDrive(c: Chimp, P: Params): number {
 }
 
 /**
+ * Stage E1p (growYield; docs/staging/e1p-prereg.md §2.2): the share of the growth potential paid this tick (0..1), from
+ * condition (cond), the day-long means of energy absorbed and of all other spending (aAvg, mAvg, kcal/h; aAvg only with
+ * growYield 2) and the potential's cost G (kcal/h). 0 = C8's rule, min(1, cond ÷ condGood); 1 = in proportion to the
+ * relative store, min(1, cond ÷ ledgerCondSet) (cond = ledgerCondSet × (1 + reserves ÷ usable store), so this is the
+ * relative store, none at starvation; a design form with no free parameter); 2 = C8's rule, and no more than the
+ * day-long mean surplus after maintenance pays, (aAvg − mAvg) ÷ G. Pure.
+ */
+export function growFraction(P: Params, cond: number, aAvg: number | undefined, mAvg: number | undefined, G: number): number {
+  if (P.growYield === 1) { const w = cond / P.ledgerCondSet; return w >= 1 ? 1 : w > 0 ? w : 0; }
+  const q = cond / P.condGood, f = q >= 1 ? 1 : q > 0 ? q : 0;
+  if (P.growYield === 2 && aAvg !== undefined && mAvg !== undefined && G > 0) { const k = (aAvg - mAvg) / G, s = k >= 1 ? 1 : k > 0 ? k : 0; return s < f ? s : f; }
+  return f;
+}
+
+/**
  * Optional tap for diagnostics (scripts/energy-diagnose.ts): called with each expenditure term, and with 'suckled' (an
  * intake, not an expenditure: milk the infant drank). Never set by the app; reads only.
  */
@@ -436,8 +456,9 @@ export function energyTick(world: World, c: Chimp, x: ChimpX, sleeping: boolean)
     const adult = adultMass(c, P);
     if (L.kg < adult) {
       if (L.mAvg === undefined) openGrowth(c, L, P);
-      const v = growthPotential(c, P), G = r.grow * v, q = x.cond / P.condGood;
-      let f = q >= 1 ? 1 : q > 0 ? q : 0;
+      // stage E1p (growYield): which state the share paid reads (growFraction; 0 = C8's rule as above)
+      const v = growthPotential(c, P), G = r.grow * v;
+      let f = growFraction(P, x.cond, L.aAvg, L.mAvg, G / TICK_HOURS);
       const step = v * f * TICK_HOURS / 24 / DAYS_PER_YEAR * (world.ageRate > 0 ? world.ageRate : 0);
       if (step > adult - L.kg) { f = f * (adult - L.kg) / step; L.kg = adult; } else L.kg += step;
       grown = G * f; out += grown; if (tap) tap(c, 'growth', grown);
@@ -475,7 +496,10 @@ export function energyTick(world: World, c: Chimp, x: ChimpX, sleeping: boolean)
     // books), for the drive; kept while the animal is below adult mass
     if (growPot(P) && L.kg !== undefined && L.kg < adultMass(c, P)) {
       L.mAvg += ((L.out - L.gAt! - grown) / TICK_HOURS - L.mAvg) * r.avg; L.gAt = L.out;
-    } else { delete L.mAvg; delete L.gAt; }
+      // stage E1p (growYield 2): the day-long mean of energy absorbed (kcal/h), opened in balance at the potential (mAvg + G,
+      // as E1f iteration 1 opened it; design)
+      if (P.growYield === 2) L.aAvg = L.aAvg === undefined ? L.mAvg + r.grow * growthPotential(c, P) / TICK_HOURS : L.aAvg + (absorbed / TICK_HOURS - L.aAvg) * r.avg;
+    } else { delete L.mAvg; delete L.gAt; if (L.aAvg !== undefined) delete L.aAvg; }
   }
   if (driveOn(P)) {
     // stage E1e: the day-long average of everything spent (milk and carrying are charged elsewhere, so read the books),
