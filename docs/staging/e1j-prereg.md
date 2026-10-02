@@ -97,3 +97,53 @@ ratio differs from today's by more than R's own spread over its realizations.
 Pending (source check of pontzerWrangham2004 and pontzerWrangham2006 for Kanyawara, Gombe and Taï sex-class day ranges;
 2 routes or 10 minutes per source). research.md already records, from an indexed excerpt only, Kanyawara males 2.4
 km/day, adult females about 2.0 and mothers about 1.9 (pontzerWrangham2004): a ratio near 0.8 if verified.
+
+## 3. Diagnosis readouts (defined before the diagnosis runs; unchanged simulation code)
+
+Tool: `scripts/ranging-diagnose.ts` (new; reads only). One seed per process; the world and the focal observer are
+e-bench's (focal team set, observer seed 1), without the party-follow team sets and the field experiments, which never
+write the world: its T-RNG-4 and T-RNG-5 must equal e-bench's per-seed values (checked on every run, "identity").
+Classes (adults ≥ 15 y): male; lactating (split by the youngest dependent infant, < 2 y and ≥ 2 y); pregnant (not
+lactating); other adult female.
+
+**D0, the observer (complete follows ≥ 8 h):** per class and follow-day,
+- `todayKm`: today's day range (every 5-min fix of the follow);
+- `fieldKm`: batesByrne2009's method. Methods: the location was recorded "every five minutes when it was travelling";
+  "Movements of the target animal and its party within a 20+ minute halt were not recorded"; the halt area was "within a
+  35m radius of the initial stopping point" (non-feeding) or the food patch. Rule: a halt is a run of 1-min point
+  samples that stays within 35 m of its first point for 20 min or more; each 5-min fix inside it is recorded at the
+  halt's first point (35 m stands in for the food-patch rule too: a design simplification);
+- `actKm`: the same with halts from activity (20 min or more with no point sample in the travel category);
+- halts and phases per follow-day, mean halt (min), mean phase (m) (field: 6.5 and 4.5 halts a day; 60 and 95 min;
+  357 and 277 m per phase); share of follow minutes with another adult male in the focal's party.
+Ratios reported both ways: the mean over seeds of per-seed ratios (today's T-RNG-5) and the ratio of class means over
+pooled follow-days (the field's).
+
+**D1, simulation truth (every tick):** per class and chimp-day,
+- path (km/day; horizontal; teleport steps skipped) and its parts by the act executed: own trip to food (travel to a
+  tree, no leader), joined trip (travel to a leader's tree), to callers, home pull, follow a party member, to the crown,
+  in the crown, ground forage (fallback, walking at the forage pace), drink (to water), patrol, consort, nest, groom
+  approach, play, mate guarding, other; bouts of each part per day (entries into it) and metres per bout; path by action;
+- daylight (> 0.1): share of minutes with another adult male in the own party, alone (no other member ≥ 5 y), mean party
+  size; halts and trips (the 35 m / 20 min rule on 1-min positions), trip length, halt length, path inside trips;
+- mothers: minutes a day carrying an infant (`isCarried`), all day and in daylight; carry, walk and climb kcal a day
+  (`energyTap`); daylight minutes with the dependent infant in the nurse act; the mother's speed then and otherwise.
+
+**Code reading, no run (carrying):** the ledger charges the carrier for a carried infant's mass over every metre moved
+and climbed (`src/sim/energy.ts` rideTick, lines 451–462; `src/sim/tick.ts` carryInfants, 59–75). No decision sees it: a
+trip's value is energy per hour including the walk *time* (`src/sim/intake.ts` treeIntake, 58–70; candidates.ts
+tripWorth, 305–318), the walk's energy cost is in no option score, and the pace is `walkMps` for every adult. Nursing
+moves the infant to the mother and leaves her act alone (E1i D2).
+
+**Smoke test (2 days, seed 48, R; seen before this section was written):** every readout non-empty; identity holds
+(T-RNG-4 2.222 = D0 male `todayKm`). It already showed a part no candidate in the brief names: walks to water, about
+2.8–3.2 per adult a day of 150–210 m (0.5–0.58 km/day, a quarter to a third of the path) in every class. Context, not a
+target here: Gombe mothers drink about 0.9 times per 12-h day (nelson2022, research.md), and rainforest apes can go days
+without drinking (pontzer2021).
+
+**Runs:** R and B (all off), seeds 48 and 7, 30 + 30 days, from a frozen checkout of the commit that adds this section;
+R's T-RNG-4/5 identity against R-quick.json per seed, B's against base-quick.json.
+
+**Identity of R at the branch start (done 06:49):** e-bench --quick of R at b0cb6e5 equals R-quick.json (612bf15) on all
+110 rows (per-seed values and parts), prescriptions 103, viability pass: the integrator's R quick realizations are valid
+references for this stage while every new switch is 0.
