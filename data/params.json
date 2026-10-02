@@ -19929,6 +19929,55 @@
    "notes": "Stage E2c (darkCost): solar illuminance term of the U.S. Naval Observatory sky model (janiczekDeYoung1987: E = this x atmospheric transmission of the refracted altitude, giving about 760 lux at the horizon, 3 lux at -6 deg and 0.005 lux at -12 deg in a clear sky). Physics; assumed until registered."
   },
   {
+   "id": "sleepChimp",
+   "group": "needs",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.sleepChimp",
+   "file": "src/sim/circadian.ts",
+   "notes": "Stage E2f switch (docs/staging/e2f-prereg.md): 1 = the chimpanzee sleep amount in place of the human one: both thresholds of the two-process gate are lowered by sleepDriveShift (needs rhythmSleep and rhythmCircadian). 0 = E2d's human thresholds.",
+   "integer": true
+  },
+  {
+   "id": "sleepDriveShift",
+   "group": "needs",
+   "value": 0.0654,
+   "units": "S units",
+   "range": [
+    0.0654,
+    0.0975
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    0.17
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Addendum: E2f sleep window): bert1970 via campbellTobler1984, 9.7 h of EEG sleep in 14-h nocturnal records (17:00-07:00) of 3 captive adults under natural light; the shift is derived, the value that gives 9.7 h asleep in the model's own steady state under its Kibale light (scripts/sleep-calibrate.ts); the route (both thresholds lowered, their distance unchanged) is skeldonDijk2025 Fig. 5"
+   ],
+   "population": "captive (Bert et al. 1970)",
+   "clock": "none",
+   "symbol": "P.sleepDriveShift",
+   "file": "src/sim/circadian.ts",
+   "notes": "Stage E2f (sleepChimp): the drive to sleep-active neurons, as the lowering of both two-process thresholds (S units; their distance unchanged, skeldonDijk2025 Fig. 5; across species a larger mean drive to sleep-active neurons gives a larger share of time asleep, Phillips et al. as given there). Derived from the chimpanzee EEG sleep amount, 9.7 h (bert1970, captive adults, natural light) [M]: the shift that gives 9.7 h asleep in the model's steady state under its Kibale light (scripts/sleep-calibrate.ts; 0 gives the human 8.15 h). Range: 9.7 h (EEG) to 10.5 h (havercamp2021, infrared video of 12 sanctuary males in a 17:00-06:00 window that ended before waking; a sensitivity bound, not an input)."
+  },
+  {
    "id": "slotsForage",
    "group": "decision",
    "value": 3,
