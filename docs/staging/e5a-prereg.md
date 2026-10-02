@@ -461,3 +461,14 @@ trend within 0.02%/day of RF's), held-out with and without the rare rows inside 
 - **Recommendation.** Confirm A3 on five seeds; if it holds, `cohesionValue` is a keep candidate that removes the C5a
   cohesion weights and C13e's fitted hoo bonus. Open: females' extra walking to callers (the approach goal defect of E4g,
   `execution.ts:588`, is still deferred), mothers alone more often, and no crop effect on feeding-party size.
+
+## Five-seed confirm (integrator, registered 2 October 2026 before its run)
+
+Runs: `e-bench --confirm` (seeds 48, 7, 21, 5, 11; 30 + 60 days) and `energy-diagnose` (same seeds and window) for
+**RC3** = R + `followCarer` + `cohesionValue` (iteration 3 as merged), from `bench-run` at the commit that adds this
+section; judged against R's four confirm realizations (e1h-R, NR1c–NR3c; R's identity at later heads shown at d8c1875
+and 4c86404; the new switches' switch-off identity is tested). Judgement as this stage registered its keep rule
+(viability; held-out not up beyond noise in both row sets, z with SD × √1.25; prescriptions down), with T-PTY-1, T-ACT-2,
+T-RNG-4 and the simulation-truth day ranges reported against R's spread. Expected (integrator, before the run): every
+sum inside noise (moderate); prescriptions 103 → 97 (high); viability passes (moderate); T-PTY-1 within R's spread
+(low: the bug fix alone lowered it).
