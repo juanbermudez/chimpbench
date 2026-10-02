@@ -350,3 +350,18 @@ Reading:
 Biggest open problem: what keeps an awake wild chimpanzee in its nest until about sunrise (captive ones get up 45–60
 min before it), and the adult sleep period under natural light by EEG (onset and final waking clock times), which
 decides how much of the pre-dawn hold is sleep at all (9.7 h leaves 44 min awake before the night ends; 10.5 h, 7).
+
+## 11. Five-seed night-safety check (integrator, registered 2 October 2026 before its run)
+
+Why: WFSD's night-safety pass is within 0.3 points of the line on seeds 48 and 7. Its benchmark sums were inside
+noise, so the deciding readout is night safety, and `rhythm-metrics` is the cheapest decisive check.
+
+Runs: `rhythm-metrics --seeds 48,7,21,5,11 --burn-in 30 --days 60` (confirm length, 90 days in all), field, rules
+policy, from a frozen detached checkout at the commit that adds this section: **R0** (`rhythmSleep`, `rhythmHeat`,
+`departRace`, `nestLightDecide`, `rhythmCircadian` 1) and **WFSD** (R0 + `sleepChimp`, `rhythmFreeNight`,
+`nestCompany`, `nestAudience`, `darkCost` 1), one run each.
+
+Reading rule (as §7.2): the pass stands on 5 seeds if WFSD's adults are out of a nest ≤ 3.3% of the night and T-RHY-5
+≤ 0.033, with no night death and juveniles 5–15 y not worse than R0's; otherwise WFSD is recorded as failing night
+safety on 5 seeds. Expected (integrator, before the run): adults 2.5–4.0% of the night (low confidence: the margin is
+small and three seeds are new).
