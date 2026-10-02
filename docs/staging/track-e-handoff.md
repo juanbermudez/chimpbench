@@ -14,9 +14,15 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (09:40).** Agents E2h (departure timing: audit first; `e2h-departure`) and E5a (party cohesion from
-  first principles: removes the party weights tuned in C5a; `e5a-cohesion`; brief `integrator/e5a-prompt.txt`).
-  Integrator: E2g's 5-seed confirm (registered in e2g-prereg.md; `bench-run` at 10c8ded).
+- **Running now (10:05).** Agents E5a (party cohesion; `e5a-cohesion`) and E1m (milk output: audit the human milk
+  inputs against primate and ape measurements; `e1m-milk`; brief `integrator/e1m-prompt.txt`). Integrator: free.
+- **E2h merged** (no mechanism: T-FOOD-10 rests on 5 Taï mothers in fruit-scarce periods and the observer scores it
+  differently; other sites put median departure at −20 to +15 min, where S3's males and other females already sit; the
+  real miss is nursing mothers leaving ~60 min early, hungry and thirsty; staged band and scorer fixes). **E2g
+  confirmed** on 5 seeds (provisional keep candidate; on R the freed time goes to grooming, fitted z +2.1).
+- **Pattern across today's audits:** T-ENE-1, T-RNG-5, T-FOOD-10, T-HUN-1/3 (and T-PTY-1 under audit) are single-site,
+  small-sample or scored differently from the field. Corrections are staged in docs/staging/e*-targets.patch.json and
+  e*-protocol.patch.json; applying them is the user's decision (questions 3 and 6) and needs a new freeze.
 - **E4g merged** (`followCarer`, off: a defect at candidates.ts:487 — adults follow a dependent keeping up with its
   mother — accounts for part of the walking calls add; fixing it shrinks parties because the party weights were tuned
   to T-PTY-1 with the defect in place).
@@ -96,6 +102,8 @@ Hard rules (AGENTS.md plus this track):
 | `.claude/worktrees/e2g-water` | Merged 2 October (head 1fe91ff). |
 | `.claude/worktrees/e4g-calltravel` | Merged 2 October (head 9a4005b). |
 | `.claude/worktrees/e5a-cohesion` | **Running agent** E5a, branched from track-e 10c8ded. |
+| `.claude/worktrees/e2h-departure` | Merged 2 October (head 2de32ae). |
+| `.claude/worktrees/e1m-milk` | **Running agent** E1m, branched from track-e eeded56. |
 | `.claude/worktrees/e2h-departure` | **Running agent** E2h, branched from track-e 702027e. |
 | `.claude/worktrees/e1k-deficit` | Merged 2 October (head 5d2a01e). |
 | `.claude/worktrees/e2f-sleep` | Merged 2 October (head b5157a0). |
