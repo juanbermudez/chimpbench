@@ -14,9 +14,11 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (10:25).** Agents E5a (party cohesion; `e5a-cohesion`) and E1n (weaning as a decision: the mother's
-  nursing choice from her own energy state in place of the refusal roll; `e1n-weaning`; brief `integrator/e1n-prompt.txt`).
-  Integrator: free.
+- **Running now (10:45).** Agent E1n (weaning as a decision; `e1n-weaning`). Integrator: E5a's 5-seed confirm
+  (R + `followCarer` + `cohesionValue`; registered in e5a-prereg.md; `bench-run` at 2f1fe3b).
+- **E5a merged** (`cohesionValue`, off: the companion's company weighted by the animal's own social need replaces the
+  six party weights tuned to T-PTY-1; quick: party size, travel and male range at the reference, prescriptions −6;
+  T-PTY-1's band has no recorded derivation, a band 4.5–9.2 staged; party size still does not track crop size).
 - **E1m merged** (valid null: no primate or ape milk output exists, the human input is confirmed; finding: infants of
   1–4 y drink the full milk cap, so mothers pay a full lactation into the fourth year and their deficit deepens with
   infant age, the opposite of the field's direction).
@@ -105,7 +107,7 @@ Hard rules (AGENTS.md plus this track):
 | `.claude/worktrees/e1j-ranging` | Merged 2 October (head c898395). |
 | `.claude/worktrees/e2g-water` | Merged 2 October (head 1fe91ff). |
 | `.claude/worktrees/e4g-calltravel` | Merged 2 October (head 9a4005b). |
-| `.claude/worktrees/e5a-cohesion` | **Running agent** E5a, branched from track-e 10c8ded. |
+| `.claude/worktrees/e5a-cohesion` | Merged 2 October (head 338ea91). |
 | `.claude/worktrees/e2h-departure` | Merged 2 October (head 2de32ae). |
 | `.claude/worktrees/e1m-milk` | Merged 2 October (head 679215a). |
 | `.claude/worktrees/e1n-weaning` | **Running agent** E1n, branched from track-e 8b53de0. |
