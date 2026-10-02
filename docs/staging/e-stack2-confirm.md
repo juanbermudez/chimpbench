@@ -145,3 +145,12 @@ departures before sunrise, 1.75) and on rows that need longer windows or better 
 T-FOOD-5, T-FOOD-7). Remaining problems of the candidate stack, in order of cost: departures before sunrise (67% vs
 18%), the nursing and juvenile deficits (−0.25 and −0.12% of the store a day), hunting (T-HUN-1 48 per community-year,
 with the scorer fixes of E4f unapplied), T-RNG-5 (single-site band, staged).
+
+## S4 confirm (registered 2 October 2026 before its run)
+
+S4 = S3 + `followCarer` + `cohesionValue` (E4g's defect fix and E5a's party cohesion, confirmed on 5 seeds on R).
+Same runs and judgement as S2 and S3 (`e-bench --confirm`, `energy-diagnose`, `rhythm-metrics`; seeds 48, 7, 21, 5, 11;
+30 + 60 days; from `bench-run` at the commit that adds this section), against the four-run means of B and R and beside
+S3 (a single run; reported, not judged). Expected (integrator, before the run): prescriptions 77 (high: S3's 83 minus
+the six party weights); viable (moderate); T-PTY-1 inside its band (moderate); held-out without the rare-event rows
+still worse than B beyond noise (moderate: T-FOOD-10 is untouched); night safety holds (moderate).
