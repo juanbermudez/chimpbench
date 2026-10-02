@@ -417,3 +417,10 @@ y below the reference beyond its spread), with opposite partitions:
   at 37–48% of the potential; the reserves gain 0.7–1.3% of the store; the appetite falls with the growth not paid.
 
 Next (§2.3, registered): the confirm's second month on the development seeds, where the S6 infants' fall happens.
+
+**Amendment to §2.3 (logged 19:50, after S6's and Y1's extension runs were read, before Y2's; disclosed).** In the
+second 30 days every class falls, and Y1 differs from S6 in classes the rule cannot touch (adult males −0.069 against
+−0.094%/day), so a single run per arm cannot separate the rule from the trajectory. As e-noise.md amendment 2 does for
+the benchmark, S6's extension run is re-drawn three times (`rgTemperature` 0.1641, 0.1639, 0.16405; same seeds, window
+and checkout) and each arm's second-month slopes are read against the four S6 realizations (mean ± SD), with the adult
+classes as the control. Predictions unchanged.
