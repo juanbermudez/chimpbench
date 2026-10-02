@@ -360,3 +360,47 @@ reserves the open cost. Energy readouts of S5c2 and S5c3 to be re-run when the m
 | T-HUN-3 | 0.05–0.4 | 0.055 / 0.071 / 0.061 / 0.065 | 0.063 ± 0.007 | 0.057 |
 | T-FOOD-2 | 0.6–0.78 | 0.772 / 0.772 / 0.756 / 0.764 | 0.766 ± 0.008 | 0.761 |
 | T-FOOD-10 | 0.08–0.3 | 0.806 / 0.760 / 0.761 / 0.770 | 0.774 ± 0.022 | 0.766 |
+
+**S6: energy group completed (19:20).** The energy-diagnose runs of S5c2 and S5c3 were re-run once the machine was free (bench-run cac9598, same parameters). With all four S5 runs the readings above stand: nursing mothers −0.241 ± 0.010 → −0.125%/day, juveniles inside S5's spread, infants beyond it (the cost). Printed by judge_s6.py:
+
+| Reserves ÷ store, % per day (OLS over the window) | S5 runs | S5 mean ± SD | S6 | z |
+| --- | --- | --- | --- | --- |
+| adult male | -0.032 / -0.033 / -0.030 / -0.034 | -0.032 ± 0.002 | -0.031 | +0.7 |
+| female, other | -0.054 / -0.045 / -0.039 / -0.047 | -0.046 ± 0.006 | -0.028 | +2.6 |
+| female, lactating | -0.233 / -0.255 / -0.239 / -0.238 | -0.241 ± 0.010 | -0.125 | +10.9 |
+| juvenile 5–12 y | -0.086 / -0.085 / -0.068 / -0.092 | -0.083 ± 0.010 | -0.075 | +0.7 |
+| infant 2–5 y | -0.013 / -0.013 / -0.014 / -0.014 | -0.013 ± 0.001 | -0.106 | -108.9 |
+| infant 0.5–2 y | -0.007 / -0.007 / -0.002 / -0.003 | -0.005 ± 0.003 | -0.147 | -48.8 |
+| infant < 0.5 y | +0.000 / +0.000 / +0.000 / +0.000 | +0.000 ± 0.000 | +0.000 | +nan |
+
+| Milk drunk, kcal per infant-day | S5 runs | S5 mean ± SD | S6 | z |
+| --- | --- | --- | --- | --- |
+| 0.5–1 y | 284 / 284 / 285 / 284 | 284 ± 0 | 279 | -9.5 |
+| 1–2 y | 308 / 308 / 308 / 309 | 308 ± 0 | 238 | -267.9 |
+| 2–3 y | 307 / 307 / 307 / 307 | 307 ± 0 | 198 | -6756.0 |
+| 3–4 y | 307 / 307 / 307 / 307 | 307 ± 0 | 190 | -10377.4 |
+
+| Mothers' balance, kcal/day by infant age | S5 runs | S5 mean ± SD | S6 | z |
+| --- | --- | --- | --- | --- |
+| 0.5–1 y | -47 / -48 / -40 / -42 | -44 ± 4 | -36 | +1.8 |
+| 1–2 y | -93 / -98 / -101 / -93 | -96 ± 4 | -79 | +4.3 |
+| 2–3 y | -144 / -151 / -143 / -150 | -147 ± 4 | -65 | +17.3 |
+| 3–4 y | -129 / -142 / -136 / -134 | -135 ± 5 | -43 | +15.0 |
+
+| Ground km per day / eating min / reserves level | S5 runs | S5 mean ± SD | S6 | z |
+| --- | --- | --- | --- | --- |
+| adult male: groundKm | 2.73 / 2.72 / 2.77 / 2.73 | 2.74 ± 0.02 | 2.68 | -2.4 |
+| adult male: eatingMin | 255 / 255 / 256 / 254 | 255 ± 1 | 256 | +0.5 |
+| adult male: reserves | -0.022 / -0.021 / -0.023 / -0.023 | -0.022 ± 0.001 | -0.022 | +0.1 |
+| female, other: groundKm | 2.33 / 2.38 / 2.35 / 2.29 | 2.34 ± 0.04 | 2.22 | -2.7 |
+| female, other: eatingMin | 248 / 250 / 250 / 247 | 249 ± 1 | 249 | +0.1 |
+| female, other: reserves | -0.045 / -0.045 / -0.044 / -0.042 | -0.044 ± 0.001 | -0.042 | +1.3 |
+| female, lactating: groundKm | 2.44 / 2.49 / 2.48 / 2.45 | 2.47 ± 0.03 | 2.50 | +1.0 |
+| female, lactating: eatingMin | 284 / 284 / 284 / 284 | 284 ± 0 | 268 | -34.4 |
+| female, lactating: reserves | -0.146 / -0.148 / -0.145 / -0.144 | -0.146 ± 0.002 | -0.079 | +29.2 |
+| juvenile 5–12 y: groundKm | 2.68 / 2.69 / 2.70 / 2.69 | 2.69 ± 0.01 | 2.66 | -2.3 |
+| juvenile 5–12 y: eatingMin | 268 / 268 / 270 / 269 | 269 ± 1 | 268 | -0.1 |
+| juvenile 5–12 y: reserves | -0.077 / -0.079 / -0.075 / -0.081 | -0.078 ± 0.003 | -0.079 | -0.3 |
+| infant 2–5 y: groundKm | 0.18 / 0.19 / 0.20 / 0.19 | 0.19 ± 0.01 | 0.23 | +6.4 |
+| infant 2–5 y: eatingMin | 109 / 109 / 109 / 110 | 109 ± 1 | 150 | +72.2 |
+| infant 2–5 y: reserves | -0.019 / -0.020 / -0.020 / -0.019 | -0.020 ± 0.001 | -0.082 | -110.5 |
