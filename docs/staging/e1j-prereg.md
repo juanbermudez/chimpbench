@@ -550,3 +550,18 @@ agreement (integrator's message during the stage: "ending E1j WITHOUT a mechanis
 
 **Biggest open problem.** Male ranging on the ledger: R halves everyone's food trips and its males' path rests on two
 prescriptions (walks to water and the rejoining they trigger), so T-RNG-4 and with it T-RNG-5 are not yet emergent.
+
+## 12. Files, merge and final checks
+
+- Code: `scripts/ranging-diagnose.ts` (new, reads only; typechecked with the repo's strict settings plus node types).
+  No change to `src/`, `data/` or `tests/`: R is the integrator's R (identity: e-bench at b0cb6e5 equals R-quick.json
+  on all 110 rows; the tool reproduces R-quick and NR1q–NR3q's per-seed T-RNG-4/5, and base-quick's). No new switch,
+  parameter or prescription.
+- Docs: this file; `docs/staging/e1j-targets.patch.json` (staged multi-site band, never applied); research.md and
+  e-sources.md "Addendum: E1j mothers' ranging"; docs/simulation.md note after E1i's.
+- Outputs (gitignored, local): `artifacts/validation/e1j/` (the diagnosis JSON of R, NR1–NR3, B, TP and A1, A1's e-bench
+  JSON, the first-round runs under `v1/`, and the table scripts under `tools/`).
+- `track-e` (3da77a8: E1i's 5-seed confirm, the integrated-confirm registration, handoff; docs only) merged once, at
+  dc58dee, without conflicts. After the merge: `gen-params --check` clean, `tsc --noEmit -p .` clean, `pnpm test` 662
+  tests, 661 pass, 0 fail, 1 skipped; `git ls-files data/raw node_modules` prints nothing. Prescription count: R 103
+  (no switch added); A1 100 (the three thirst timers at 0 are counted as not in use; an attribution, not a candidate).
