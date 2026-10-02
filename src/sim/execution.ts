@@ -781,17 +781,18 @@ export function executeAction(world: World, c: Chimp): void {
       // stage E1n (weanDecide; docs/staging/e1n-prereg.md §3): the mother lets the bout start and go on while the milk's
       // worth to her infant given its own alternatives (energy.ts ownDrive) is at least her own drive (equal weights:
       // equal relatedness to her current and future offspring, trivers1974; design). It replaces the weaning roll.
-      const decide = P.weanDecide === 1 && driveOn(P);
+      // iteration 2 (e1n-prereg.md §3.6): a sleeping mother makes no decision (motherDecides)
+      const sw = P.weanDecide === 1 && driveOn(P), decide = sw && motherDecides(P, m);
       if (x.phase === 0) {
         // weaning conflict: refusals rise from ~3.2 years [H for conflict, rates L]
-        if (decide ? ownDrive(c, P) < m.hunger : c.age > P.weanRefuseAgeY && random(world) < clamp((c.age - P.weanRefuseAgeY) / P.weanRefuseRampY) * P.weanRefuseMaxP) {
+        if (sw ? decide && ownDrive(c, P) < m.hunger : c.age > P.weanRefuseAgeY && random(world) < clamp((c.age - P.weanRefuseAgeY) / P.weanRefuseRampY) * P.weanRefuseMaxP) {
           emitCall(world, c, 'whimper'); c.mood = 'distressed'; c.stress = clamp(c.stress + 0.1);
           episode(world, c, 'social', `My mother ${m.name} refused to let me nurse`, m.id);
-          if (decide) x.wr = m.decisionVersion; // stage E1n: the infant asks again once she has started a new act (candidates.ts)
-          if (nurseTap.fn) nurseTap.fn(c, m, decide ? 'refuse-mother' : 'refuse-roll');
+          if (sw) x.wr = m.decisionVersion; // stage E1n: the infant asks again once she has started a new act (candidates.ts)
+          if (nurseTap.fn) nurseTap.fn(c, m, sw ? 'refuse-mother' : 'refuse-roll');
           return finish(world, c);
         }
-        if (decide && x.wr !== undefined) delete x.wr;
+        if (sw && x.wr !== undefined) delete x.wr;
         if (nurseTap.fn) nurseTap.fn(c, m, 'start');
         x.phase = 1;
         x.interId = startInteraction(world, 'nurse', c, m.id, [c.id, m.id], 0.2).id;
@@ -857,6 +858,14 @@ const NURSE_DONE = 0.08;
  * own decision refused or ended it (stage E1n switch). Never set by the app; reads only, no state and no RNG.
  */
 export type NurseEvent = 'start' | 'refuse-roll' | 'refuse-mother' | 'end-mother';
+/**
+ * Stage E1n iteration 2 (weanDecide; docs/staging/e1n-prereg.md §3.6): whether a mother is awake to decide. In a finished
+ * nest she is asleep (as life.ts books her), unless the circadian latch says she is awake (rhythmCircadian 1, x.asl not 1);
+ * a sleeping animal makes no decision (circadian.ts: no decision point while asleep).
+ */
+function motherDecides(P: Params, m: Chimp): boolean {
+  return !(m.action === 'nest' && ix(m).phase >= 2 && (P.rhythmCircadian !== 1 || ix(m).asl === 1));
+}
 export const nurseTap: { fn: ((infant: Chimp, mother: Chimp, ev: NurseEvent) => void) | null } = { fn: null };
 
 function nestTick(world: World, c: Chimp): void {
@@ -874,8 +883,9 @@ function nestTick(world: World, c: Chimp): void {
     // (weaning + 0.3 y) and within the nurse act's reach (1.2 m), with no weaning refusal at night. Evidence: khayer2025,
     // nest sharing until weaning [M]; mizuno2006, night suckling of captive newborns [L]; no refusal is a stylization (lint-ok: existing values)
     // stage E1n (weanDecide): with the switch, the mother's decision (as in the day act) replaces "no refusal at night"
+    // while she is awake in her nest; asleep she makes no decision (iteration 2, e1n-prereg.md §3.6)
     if (P.ledgerNightNurse === 1 && m.action === 'nest' && m.id === c.motherId && c.age < x.weanAge + 0.3 && c.hunger >= NURSE_DONE
-      && (held || hd(c, m) <= 1.2) && ledgerOn(P) && !(P.weanDecide === 1 && driveOn(P) && ownDrive(c, P) < m.hunger)) {
+      && (held || hd(c, m) <= 1.2) && ledgerOn(P) && !(P.weanDecide === 1 && driveOn(P) && motherDecides(P, m) && ownDrive(c, P) < m.hunger)) {
       // stage E2b (nurseWake): a feed wakes the mother (rhythm.ts rhythmNeeds): a tick in which the infant drinks from a
       // gland that can sustain the suckling rate (E1d's end-of-bout test); draining the synthesis of an empty gland does not
       const feed = P.nurseWake === 1 && !glandEmpty(m, P), before = feed ? ix(m).en?.milk ?? 0 : 0;
