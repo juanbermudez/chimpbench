@@ -353,6 +353,11 @@ since the last harvest; no source gives a chimpanzee-specific ripening rate or a
   from a source: no ripening rate, ripe-fruit persistence or within-crown reach was found for any chimpanzee food tree
   (§3), and a reach or wastage fraction set by design would be a weight on revisits.
 
+- **Final checks** (after merging track-e 063c3b4 once, 7652e90): `gen-params --check` clean, `tsc --noEmit` clean,
+  `pnpm test` 705 tests: 704 pass, 0 fail, 1 skipped. Outputs (local, session scratch `e3b/`): `diag/` (D0–D3),
+  `diag2/` (D0, D1, R1–R3 with the two added readouts), `arms/` (A1 e-bench and tables), and the table scripts
+  `diag_table.py`, `q1.py`, `arm_table.py`, `rowdiff.py`, `judge_sens.py`.
+
 ### 5.1 Iteration 1 (registered 2 October 2026, 14:55, before its run): a return valued by the crop believed left (`revisitByCrop`)
 
 **Why (§2.1).** The revisit devaluation is the term behind A3's changes (80–110% of each), and a return finds what the
