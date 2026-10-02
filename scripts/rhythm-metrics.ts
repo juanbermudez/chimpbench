@@ -67,7 +67,9 @@ export interface RhythmResult {
    * from the previous sunset to the first sleep onset in a nest, from sunrise to the last waking, and hours asleep; and
    * the time of the minimum of the circadian oscillator (minutes from the following sunrise).
    */
-  sleep?: { cls: Cls; onset: number; off: number; hours: number }[]; xMin?: number[];
+  sleep?: { cls: Cls; onset: number; off: number; hours: number; s?: number }[]; xMin?: number[];
+  /** Stage E2f: the same sleep records for independent juveniles (5–8 y, 8–15 y), and sleep pressure S at the last waking (`s`). */
+  juvSleep?: { band: '5-8' | '8-15'; onset: number; off: number; hours: number; s?: number }[];
   /** Daylight ticks out of a nest by rain intensity: [bin] → [shelter, rest, feed, travel, all], adults and juveniles (5–10 y). */
   rain: { adult: number[][]; juvenile: number[][] };
   /** Thermal load and sleep pressure samples (adults). */
@@ -83,7 +85,9 @@ export interface RhythmResult {
    * before sunrise): ticks, ticks with rain ≥ 0.05, and the ticks of independent animals of 5–8 y (decided by the argmax
    * rules, which no night menu filters) in and out of a nest, with their metres.
    */
-  predawn?: { ticks: number; wet: number; youngOut: number; youngAll: number; youngMetres: number; youngNights: number };
+  predawn?: { ticks: number; wet: number; youngOut: number; youngAll: number; youngMetres: number; youngNights: number;
+    /** Stage E2f: adults (15 y and older) and independent juveniles of 8–15 y in the same window, in and out of a nest. */
+    adultOut?: number; adultAll?: number; midOut?: number; midAll?: number };
   /**
    * Stage E2c: per fruiting crown (crop ≥ 0.06 at sunrise) and day, the crop at sunset as a share of the crop at sunrise
    * (figs, other fruit): how much of a crown the forest takes within a day (frugivores, chimpanzees, phenology).
@@ -105,7 +109,7 @@ export function runRhythm(job: RhythmJob): RhythmResult {
     byTemp: TEMPBINS.map(() => [[0, 0], [0, 0]]),
     night: { ticks: Object.fromEntries(KINDS.map(k => [k, 0])) as Record<Kind, number>, metres: 0, nights: 0, adultTicks: Object.fromEntries(KINDS.map(k => [k, 0])) as Record<Kind, number> },
     rain: { adult: RAINBINS.map(() => [0, 0, 0, 0, 0]), juvenile: RAINBINS.map(() => [0, 0, 0, 0, 0]) },
-    heatMidday: [], sleepAtNoon: [], deps: [], cropDay: { fig: [], other: [] }, sleep: [], xMin: [], predawn: { ticks: 0, wet: 0, youngOut: 0, youngAll: 0, youngMetres: 0, youngNights: 0 },
+    heatMidday: [], sleepAtNoon: [], deps: [], cropDay: { fig: [], other: [] }, sleep: [], xMin: [], predawn: { ticks: 0, wet: 0, youngOut: 0, youngAll: 0, youngMetres: 0, youngNights: 0, adultOut: 0, adultAll: 0, midOut: 0, midAll: 0 }, juvSleep: [],
     juvNight: { ticks: Object.fromEntries(KINDS.map(k => [k, 0])) as Record<Kind, number>, metres: 0, adultMetres: 0, outAtMidnight: 0, nights: 0, hourOut: Array(24).fill(0), hourAll: Array(24).fill(0) }, births: 0, deaths: 0, causes: {}, nightDeaths: 0, living: 0, adults: 0, hungerAdult: 0, hungerLact: 0,
   };
   interface Track { inNest: boolean; nesting: boolean; start: number; lastStart: number; lastEntry: number; wake: number; sWake: number; sBed: number; atMid: boolean; entries: number; cls: Cls | null; px: number; pz: number;
@@ -114,7 +118,9 @@ export function runRhythm(job: RhythmJob): RhythmResult {
     /** E2e: rain and thermal load at the morning exit, and its time. */
     wr: number; wh: number; wt: number;
     /** E2d: asleep last tick, first sleep onset and last waking since the last solar noon, ticks asleep, the oscillator's minimum and its time. */
-    asleep: boolean; slOn: number; slOff: number; slTicks: number; xMin: number; xMinT: number }
+    asleep: boolean; slOn: number; slOff: number; slTicks: number; xMin: number; xMinT: number;
+    /** E2f: sleep pressure at the last waking. */
+    slS: number }
   const tr = new Map<number, Track>();
   const inNest = (c: Chimp) => c.action === 'nest' && (ix(c).phase === 2 || ix(c).v === V.MOTHER);
   const clsOf = (c: Chimp): Cls => (c.sex === 'male' ? 'male' : c.lactating ? 'lactating' : 'female');
@@ -149,12 +155,12 @@ export function runRhythm(job: RhythmJob): RhythmResult {
       if (c.age < 5) continue;
       const adult = c.age >= 15, x = ix(c), k = kindOf(c), nest = inNest(c);
       let t = tr.get(c.id);
-      if (!t) { t = { inNest: nest, nesting: c.action === 'nest', start: NaN, lastStart: NaN, lastEntry: NaN, wake: NaN, sWake: NaN, sBed: NaN, atMid: false, entries: 0, cls: null, px: c.position[0], pz: c.position[2], wx: 0, wz: 0, bf: -1, bd: NaN, bn: 0, lux: NaN, wr: 0, wh: 0, wt: NaN, asleep: false, slOn: NaN, slOff: NaN, slTicks: 0, xMin: Infinity, xMinT: NaN }; tr.set(c.id, t); }
+      if (!t) { t = { inNest: nest, nesting: c.action === 'nest', start: NaN, lastStart: NaN, lastEntry: NaN, wake: NaN, sWake: NaN, sBed: NaN, atMid: false, entries: 0, cls: null, px: c.position[0], pz: c.position[2], wx: 0, wz: 0, bf: -1, bd: NaN, bn: 0, lux: NaN, wr: 0, wh: 0, wt: NaN, asleep: false, slOn: NaN, slOff: NaN, slTicks: 0, xMin: Infinity, xMinT: NaN, slS: NaN }; tr.set(c.id, t); }
       // E2d: sleep episodes (the circadian latch on while in a nest) and the oscillator's daily minimum
       if (x.asl !== undefined) {
         const asleep = x.asl === 1 && nest;
         if (asleep && !t.asleep && Number.isNaN(t.slOn)) t.slOn = time;
-        if (!asleep && t.asleep) t.slOff = time;
+        if (!asleep && t.asleep) { t.slOff = time; t.slS = x.slp ?? NaN; }
         if (asleep) t.slTicks++;
         t.asleep = asleep;
         if (x.cx! < t.xMin) { t.xMin = x.cx!; t.xMinT = time; }
@@ -174,14 +180,20 @@ export function runRhythm(job: RhythmJob): RhythmResult {
       }
       if (isNoon) {
         if (adult && x.asl !== undefined && !Number.isNaN(sunrise) && !Number.isNaN(sunset)) {
-          if (!Number.isNaN(t.slOn) && !Number.isNaN(t.slOff) && sunset < sunrise) res.sleep!.push({ cls: clsOf(c), onset: (t.slOn - sunset) * 60, off: (t.slOff - sunrise) * 60, hours: t.slTicks / 240 });
+          if (!Number.isNaN(t.slOn) && !Number.isNaN(t.slOff) && sunset < sunrise) res.sleep!.push({ cls: clsOf(c), onset: (t.slOn - sunset) * 60, off: (t.slOff - sunrise) * 60, hours: t.slTicks / 240, s: t.slS });
           if (Number.isFinite(t.xMin) && t.xMinT > sunset) res.xMin!.push((t.xMinT - sunrise) * 60);
         }
-        t.slOn = NaN; t.slOff = NaN; t.slTicks = 0; t.xMin = Infinity; t.xMinT = NaN;
+        // stage E2f: independent juveniles' sleep episodes, by age band
+        if (!adult && x.asl !== undefined && !dependentOn(w, c) && !Number.isNaN(sunrise) && !Number.isNaN(sunset) && !Number.isNaN(t.slOn) && !Number.isNaN(t.slOff) && sunset < sunrise)
+          res.juvSleep!.push({ band: c.age < 8 ? '5-8' : '8-15', onset: (t.slOn - sunset) * 60, off: (t.slOff - sunrise) * 60, hours: t.slTicks / 240, s: t.slS });
+        t.slOn = NaN; t.slOff = NaN; t.slTicks = 0; t.xMin = Infinity; t.xMinT = NaN; t.slS = NaN;
         t.cls = adult ? clsOf(c) : null; if (adult) res.sleepAtNoon.push(1 - c.energy);
         if (adult && !Number.isNaN(t.wake) && !Number.isNaN(sunrise) && t.wake > sunrise - 6) res.deps.push({ cls: clsOf(c), wake: (t.wake - sunrise) * 60, bf: (t.bf < 0 ? 0 : t.bf) as 0 | 1 | 2 | 3, d: t.bd, feeders: t.bn, lux: t.lux, rain: t.wr, heat: t.wh, t: t.wt, x: t.wx, z: t.wz, troop: c.troopId });
       }
       if (predawn && c.age < 8 && !dependentOn(w, c)) { const pd = res.predawn!; pd.youngAll++; if (!nest) pd.youngOut++; pd.youngMetres += Math.hypot(c.position[0] - t.px, c.position[2] - t.pz); }
+      // stage E2f: adults and independent 8–15 y in the same pre-dawn window
+      if (predawn && adult) { const pd = res.predawn!; pd.adultAll!++; if (!nest) pd.adultOut!++; }
+      else if (predawn && c.age >= 8 && !dependentOn(w, c)) { const pd = res.predawn!; pd.midAll!++; if (!nest) pd.midOut!++; }
       if (isMidnight) {
         if (c.age < 8 && !dependentOn(w, c)) res.predawn!.youngNights++;
         if (adult) { res.adultNights++; if (!nest) res.outAtMidnight++; }
@@ -321,6 +333,7 @@ export function report(rs: RhythmResult[], job: Omit<RhythmJob, 'seed'>): string
       `Juveniles (5–15 y): out of a nest ${pc(jtot - jt.nest, jtot)} of night time (${KINDS.filter(k => k !== 'nest').map(k => `${k} ${pc(jt[k], jtot)}`).join(', ')}); ${f0(rs.reduce((a, r) => a + r.juvNight!.metres, 0) / Math.max(1, jn))} m moved per juvenile-night; out at solar midnight ${pc(rs.reduce((a, r) => a + r.juvNight!.outAtMidnight, 0), jn)} of ${jn} juvenile-nights.`,
       `Juveniles out of a nest by hour of the night: ${[18, 19, 20, 21, 22, 23, 0, 1, 2, 3, 4, 5, 6].map(h => { const o = rs.reduce((a, r) => a + r.juvNight!.hourOut[h], 0), n = rs.reduce((a, r) => a + r.juvNight!.hourAll[h], 0); return n ? `${String(h).padStart(2, '0')} ${pc(o, n)}` : ''; }).filter(Boolean).join(', ')}.`,
       `Independent animals of 5–8 y (argmax rules, no night menu) in the two hours before sunrise (stage E2e): out of a nest ${pc(rs.reduce((a, r) => a + (r.predawn?.youngOut ?? 0), 0), rs.reduce((a, r) => a + (r.predawn?.youngAll ?? 0), 0))}; ${f0(rs.reduce((a, r) => a + (r.predawn?.youngMetres ?? 0), 0) / Math.max(1, rs.reduce((a, r) => a + (r.predawn?.youngNights ?? 0), 0)))} m per animal-morning.`,
+      `Pre-dawn window by class (stage E2f; out of a nest): adults ${pc(rs.reduce((a, r) => a + (r.predawn?.adultOut ?? 0), 0), rs.reduce((a, r) => a + (r.predawn?.adultAll ?? 0), 0))}; independent 8–15 y ${pc(rs.reduce((a, r) => a + (r.predawn?.midOut ?? 0), 0), rs.reduce((a, r) => a + (r.predawn?.midAll ?? 0), 0))}; independent 5–8 y ${pc(rs.reduce((a, r) => a + (r.predawn?.youngOut ?? 0), 0), rs.reduce((a, r) => a + (r.predawn?.youngAll ?? 0), 0))}.`,
       'Field: 1.8% of camera-trap activity at night across 22 sites (tagg2018); 3.3% of forest clips at Sebitoli (lacroux2022).', '');
   }
   const sl = rs.flatMap(r => r.sleep ?? []), xm = rs.flatMap(r => r.xMin ?? []);
@@ -330,6 +343,12 @@ export function report(rs: RhythmResult[], job: Omit<RhythmJob, 'seed'>): string
       const v = cls === 'all' ? sl : sl.filter(r => r.cls === cls);
       L.push(`| ${cls} | ${v.length} | ${f0(q(v.map(r => r.onset), 0.5))} (${f0(q(v.map(r => r.onset), 0.1))} to ${f0(q(v.map(r => r.onset), 0.9))}) | ${f0(q(v.map(r => r.off), 0.5))} (${f0(q(v.map(r => r.off), 0.1))} to ${f0(q(v.map(r => r.off), 0.9))}) | ${f2(mean(v.map(r => r.hours)))} |`);
     }
+    const js = rs.flatMap(r => r.juvSleep ?? []);
+    for (const band of ['5-8', '8-15'] as const) {
+      const v = js.filter(r => r.band === band);
+      if (v.length) L.push(`| independent ${band} y | ${v.length} | ${f0(q(v.map(r => r.onset), 0.5))} (${f0(q(v.map(r => r.onset), 0.1))} to ${f0(q(v.map(r => r.onset), 0.9))}) | ${f0(q(v.map(r => r.off), 0.5))} (${f0(q(v.map(r => r.off), 0.1))} to ${f0(q(v.map(r => r.off), 0.9))}) | ${f2(mean(v.map(r => r.hours)))} |`);
+    }
+    L.push('', `Sleep pressure S at the last waking (stage E2f; median): adults ${(q(sl.map(r => r.s ?? NaN).filter(Number.isFinite), 0.5)).toFixed(3)}; juveniles ${(q(js.map(r => r.s ?? NaN).filter(Number.isFinite), 0.5)).toFixed(3)}.`);
     L.push('', `Minimum of the circadian oscillator (core-temperature rhythm), min after sunrise: median ${f0(q(xm, 0.5))} (p10 ${f0(q(xm, 0.1))}, p90 ${f0(q(xm, 0.9))}).`,
       'Captive chimpanzees under natural light (videan2005): retire 15–30 min after sunset, rise 45–60 min before sunrise; 8.8 h asleep of 10.3 h retired.', '');
   }
