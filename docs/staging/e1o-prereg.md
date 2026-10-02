@@ -89,6 +89,13 @@ at the end of the tick (after that tick's drink), so at 0.5–1 y drinking can e
 uses reserves ≥ the set point, which the drive holds infants near, so it is reported beside the reserves themselves.
 The predictions of §1.3 were written before the smoke and are not changed.
 
+**Readout added after the diagnosis run (disclosed; 13:50, before any mechanism was written).** The registered
+readouts showed own food as the residual but could not say what the infant does while food is in reach, so D5 was
+added: **D5 while the mother feeds in a crown** (her forage act at a tree, in the crown), the share of the infant's
+daylight ticks in that state, and what the infant does then (eating own food, nursing, carried, its acts), its hunger
+and foregut fill. The diagnosis run is repeated once with it (same command, frozen checkout of the commit adding it);
+every other readout must come out identical (same simulation code; checked).
+
 ### 1.3 Predictions (before the run)
 
 - N1–N2: at 1–4 y, hunger ≥ 0.08 in ≥ 95% of night-nest ticks and the infant drinks in ≥ 90% of them (high); the drive

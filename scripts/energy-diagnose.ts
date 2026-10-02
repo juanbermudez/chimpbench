@@ -59,14 +59,14 @@ const blankWean = (): Wean => ({ dayStarts: 0, nightActStarts: 0, refRoll: 0, re
   mStarts: 0, mRes: 0, mHunger: 0, mFill: 0, mFeeding: 0, storeFull: 0, storeTicks: 0 });
 const wean = Object.fromEntries(BINS.map(b => [b, blankWean()])) as Record<string, Wean>;
 /** Stage E1o: what an older infant drinks (see the header and docs/staging/e1o-prereg.md §1.2), by infant age. */
-interface E1o { nightTicks: number; nest: number; elig: number; drink: number; sat: number; satN: number; glandLim: number; asleep: number; drinkAsleep: number; fruitRate: number; nH: number; nRes: number; nFillMilk: number; nFillSolid: number; nPhi: number; nPhiN: number;
+interface E1o { mCrown: number; mcEat: number; mcNurse: number; mcCarried: number; mcH: number; mcFill: number; mcAct: Record<string, number>; nightTicks: number; nest: number; elig: number; drink: number; sat: number; satN: number; glandLim: number; asleep: number; drinkAsleep: number; fruitRate: number; nH: number; nRes: number; nFillMilk: number; nFillSolid: number; nPhi: number; nPhiN: number;
   nights: number; nSpend: number; nGutDusk: number; nMilk: number; nResDusk: number; nResDawn: number; nGlandDusk: number; nGlandDawn: number; nSynth: number;
   daySynth: number; dayMilk: number; synthTicks: number;
   ons: number; oRes: number; oH: number; oPhi: number; oPhiN: number; oOwn: number; oFillMilk: number; oFillSolid: number; oGland: number; oB: number; oNoDef: number;
   dec: number; ownOn: number; treeOn: number; carriedDec: number; mForDec: number; freeBeats: number; both: number; other: Record<string, number>;
   dayTicks: number; carried: number; mFor: number; eat: number; eatFull: number; size: number;
   mTicks: number; mDay: number; mEat: number; mFill: number; mHunger: number; mRes: number }
-const blankE1o = (): E1o => ({ nightTicks: 0, nest: 0, elig: 0, drink: 0, sat: 0, satN: 0, glandLim: 0, asleep: 0, drinkAsleep: 0, fruitRate: 0, nH: 0, nRes: 0, nFillMilk: 0, nFillSolid: 0, nPhi: 0, nPhiN: 0,
+const blankE1o = (): E1o => ({ mCrown: 0, mcEat: 0, mcNurse: 0, mcCarried: 0, mcH: 0, mcFill: 0, mcAct: {}, nightTicks: 0, nest: 0, elig: 0, drink: 0, sat: 0, satN: 0, glandLim: 0, asleep: 0, drinkAsleep: 0, fruitRate: 0, nH: 0, nRes: 0, nFillMilk: 0, nFillSolid: 0, nPhi: 0, nPhiN: 0,
   nights: 0, nSpend: 0, nGutDusk: 0, nMilk: 0, nResDusk: 0, nResDawn: 0, nGlandDusk: 0, nGlandDawn: 0, nSynth: 0, daySynth: 0, dayMilk: 0, synthTicks: 0,
   ons: 0, oRes: 0, oH: 0, oPhi: 0, oPhiN: 0, oOwn: 0, oFillMilk: 0, oFillSolid: 0, oGland: 0, oB: 0, oNoDef: 0,
   dec: 0, ownOn: 0, treeOn: 0, carriedDec: 0, mForDec: 0, freeBeats: 0, both: 0, other: {}, dayTicks: 0, carried: 0, mFor: 0, eat: 0, eatFull: 0, size: 0,
@@ -309,6 +309,12 @@ for (const seed of seeds) {
             if (m && m.action === 'forage') E.mFor++;
             const ate = din - milk > 1e-9;
             if (ate) { E.eat++; if (fillOf(c) >= 0.95) E.eatFull++; }
+            // D5 (added after the diagnosis run, disclosed): while the mother feeds in a crown, what the infant does
+            if (m && m.action === 'forage' && isTreeId(m.targetId) && ix(m).phase === 2) {
+              E.mCrown++; if (ate) E.mcEat++; if (c.action === 'nurse') E.mcNurse++; if (isCarried(c, m)) E.mcCarried++;
+              E.mcH += c.hunger; E.mcFill += fillOf(c);
+              const a = ate ? 'eating' : c.action === 'forage' ? 'forage (not eating)' : c.action; E.mcAct[a] = (E.mcAct[a] ?? 0) + 1;
+            }
             E.size += intakeSize(c, P);
             // the infant's full intake rate on ripe fruit at its size and skill (kcal/h; energy.ts feedRate's fruit term), against the suckling rate
             E.fruitRate += P.fruitIntakePerH * (P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging) * (P.ledgerInfantIntake === 1 ? intakeSize(c, P) : c.age < 5 ? P.fruitIntakeYoungFactor : 1) * fruitKcalPerUnit(P, false);
@@ -474,10 +480,19 @@ for (const b of BINS) {
   const o: Record<string, number | string> = { onsetsPerDay: E.ons / d, oRes: E.oRes / on, oHunger: E.oH / on, oPhi: E.oPhi / Math.max(1, E.oPhiN), oOwn: E.oOwn / on, oFillMilk: E.oFillMilk / on, oFillSolid: E.oFillSolid / on, oGland: E.oGland / on, oB: E.oB / on, oNoDeficit: E.oNoDef / on,
     ownOnMenu: E.ownOn / dec, treeOnMenu: E.treeOn / dec, carriedDec: E.carriedDec / dec, motherForagingDec: E.mForDec / dec, freeBeats: E.freeBeats / Math.max(1, E.both), freeBeatsN: E.both, others,
     carried: E.carried / dt, motherForaging: E.mFor / dt, eating: E.eat / dt, eatFull: E.eatFull / Math.max(1, E.eat), size: E.size / dt, fruitRate: E.fruitRate / dt,
-    mEatMin: E.mTicks ? E.mEat / 4 / (E.mTicks / DAY) : NaN, mFill: E.mFill / md, mHunger: E.mHunger / md, mRes: E.mTicks ? E.mRes / E.mTicks : NaN };
+    mEatMin: E.mTicks ? E.mEat / 4 / (E.mTicks / DAY) : NaN, mFill: E.mFill / md, mHunger: E.mHunger / md, mRes: E.mTicks ? E.mRes / E.mTicks : NaN,
+    mCrown: E.mCrown / dt, mcEat: E.mcEat / Math.max(1, E.mCrown), mcNurse: E.mcNurse / Math.max(1, E.mCrown), mcCarried: E.mcCarried / Math.max(1, E.mCrown), mcHunger: E.mcH / Math.max(1, E.mCrown), mcFill: E.mcFill / Math.max(1, E.mCrown),
+    mcActs: Object.entries(E.mcAct).sort((u, v) => v[1] - u[1]).slice(0, 5).map(([a, k]) => `${a} ${f(100 * k / Math.max(1, E.mCrown), 1)}`).join(', ') };
   Object.assign(e1oOut[b] ??= {}, o);
   const n = (k: string, dg = 0) => f(o[k] as number, dg), pc = (k: string) => f(100 * (o[k] as number), 1);
   console.log(`| ${b} | ${n('onsetsPerDay', 1)} | ${n('oRes', 3)} | ${n('oHunger', 2)} | ${n('oPhi', 2)} | ${n('oOwn', 2)} | ${n('oFillMilk', 2)} / ${n('oFillSolid', 2)} | ${n('oGland', 1)} | ${n('oB', 2)} | ${pc('oNoDeficit')} | ${pc('ownOnMenu')} | ${pc('treeOnMenu')} | ${pc('carriedDec')} | ${pc('motherForagingDec')} | ${pc('freeBeats')} (${E.both}) | ${others} | ${pc('carried')} | ${pc('motherForaging')} | ${pc('eating')} | ${pc('eatFull')} | ${n('size', 2)} | ${n('fruitRate')} | ${n('mEatMin')}, ${n('mFill', 2)}, ${n('mHunger', 2)}, ${n('mRes', 3)} |`);
+}
+console.log('\nstage E1o (D5): while the mother feeds in a crown (shares of those daylight ticks of the infant)');
+console.log('| age | mother in a crown % of daylight | infant eating own food % | in the nurse act % | carried % | infant hunger | infant foregut fill | infant acts (top 5) |');
+console.log('| --- | --- | --- | --- | --- | --- | --- | --- |');
+for (const b of BINS) {
+  const o = e1oOut[b]; if (!o || o.mCrown === undefined) continue;
+  console.log(`| ${b} | ${f(100 * (o.mCrown as number), 1)} | ${f(100 * (o.mcEat as number), 1)} | ${f(100 * (o.mcNurse as number), 1)} | ${f(100 * (o.mcCarried as number), 1)} | ${f(o.mcHunger as number, 2)} | ${f(o.mcFill as number, 2)} | ${o.mcActs} |`);
 }
 const jv = (sex: string, lo: number, hi: number) => { const j = juvs.filter(x => x.sex === sex && x.age0 >= lo && x.age0 < hi); return j.length ? `${f(j.reduce((s, x) => s + (x.kg1 - x.kg0) / (x.days / 365.25), 0) / j.length, 2)} kg/y (n ${j.length}, mean ${f(j.reduce((s, x) => s + x.kg0, 0) / j.length, 1)} kg at ${f(j.reduce((s, x) => s + x.age0, 0) / j.length, 1)} y)` : '—'; };
 console.log(`juvenile growth velocity, weaned to 12 y: female 4–8 y ${jv('female', 4, 8)}, 8–12 y ${jv('female', 8, 12)}; male 4–8 y ${jv('male', 4, 8)}, 8–12 y ${jv('male', 8, 12)}`);
