@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { candidateMeta, companyValue, computeCandidates, forfeitedCompany, mateWorth, V } from '../src/sim/candidates';
+import { candidateMeta, companyValue, computeCandidates, mateWorth, V } from '../src/sim/candidates';
 import { paramsOf, traceParamReads } from '../src/sim/params';
 import { index, ix } from '../src/sim/state';
 import { createWorld, tickWorld } from '../src/simulation';
@@ -65,18 +65,16 @@ function scene(over: Record<string, number>, swelling: number, companionAct: 're
   return { w, m, f, k, out, join, P: paramsOf(w) };
 }
 
-test('companyValue: a fertile unrelated female is worth her mating value more to an adult male; forfeit counts settled companions only', () => {
+test('companyValue: a fertile unrelated female is worth her mating value more to an adult male', () => {
   const s0 = scene({}, 0, 'rest'), s1 = scene({}, 1, 'rest');
   assert.ok(Math.abs(companyValue(s1.m, s1.f, s1.P) - companyValue(s0.m, s0.f, s0.P) - mateWorth(s1.m, s1.f)) < 1e-12);
   assert.ok(companyValue(s0.m, s0.f, s0.P) >= s0.P.joinBase);
-  // the resting companion is forfeited by leaving; the travelling female is not (she is leaving herself)
-  assert.equal(forfeitedCompany(s0.w, s0.m, s0.P), companyValue(s0.m, s0.k, s0.P));
-  const t = scene({}, 0, 'travel');
-  assert.equal(forfeitedCompany(t.w, t.m, t.P), 0);
+  // a female's company for a female carries no mating value
+  assert.ok(Math.abs(companyValue(s1.f, s1.k, s1.P) - companyValue(s0.f, s0.k, s0.P)) < 1e-12);
 });
 
 test('cohesionValue: joining her trip is offered and is worth more with a fertile female; the tuned weights do not move it', () => {
-  // the other companion travels home, so nothing settled is forfeited and both party offers are on the list
+  // the other companion travels home, so both party offers (the joint trip and the plain follow) are on the list
   const s0 = scene({}, 0, 'travel'), s1 = scene({}, 1, 'travel');
   assert.ok(s0.join && s1.join, 'the joint trip is offered');
   assert.ok(Math.abs(s1.join!.score - s0.join!.score - mateWorth(s1.m, s1.f)) < 1e-9, 'the mating value is added to her company');

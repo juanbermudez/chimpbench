@@ -200,9 +200,10 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   const pers = c.personality;
   const caretaker = dependentOn(world, c);
   const carried = caretaker ? isCarried(c, caretaker) : false;
-  // stage E5a (cohesionValue; docs/staging/e5a-prereg.md §3): leaving companions forfeits their company, valued like any
-  // companion's (companyValue); computed once per decision for every option that leaves them
-  const cohesion = cohesionOn(P), forfeit = cohesion && !caretaker ? forfeitedCompany(world, c, P) : 0;
+  // stage E5a (cohesionValue; docs/staging/e5a-prereg.md §3, iteration 2): a companion's company is valued by the animal
+  // that moves toward it (following, joining, approaching a caller), never as a cost of leaving: a departure alerts the
+  // companions, who weigh the leaver's company in their own choice to come
+  const cohesion = cohesionOn(P);
   const px = c.position[0], pz = c.position[2];
   const unstable = (s.unstableUntil[c.troopId] ?? NEVER) > time ? 1 : 0;
   const isAlpha = troop?.alphaId === c.id;
@@ -342,9 +343,8 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     const leafV = (iv ? leafWorth(world, c, px, pz, P, fruitH) : 1) * (dark ? visionNow(world, 0) : 1); // E2c: leaves are found by sight
     offer('forage', -1, h * P.fallbackForageW * (fallbackOn(P) ? bestFallbackNear(world, px, pz, x.sight, _fb) : 1) * leafV + 0.03 - rain * 0.3);
     // field profile: leaving companions for a food tree of one's own has a cost (parties travel together; design, T-PTY-1)
-    // stage E5a (cohesionValue): the cost is the company forfeited (the best settled companion's companyValue), not a
-    // tuned weight per companion
-    const stay = cohesion ? forfeit : (P.partyStayW > 0 ? P.partyStayW * Math.min(x.visibleOwn, P.partyStayMaxN) : 0) + oestrusNear;
+    // stage E5a (cohesionValue): none; the companions value the leaver's company in their own choice to come
+    const stay = cohesion ? 0 : (P.partyStayW > 0 ? P.partyStayW * Math.min(x.visibleOwn, P.partyStayMaxN) : 0) + oestrusNear;
     // stage departPersist: after a failed departure attempt its own trips to trees wait for the re-launch time, while it
     // still has companions to leave (execution.ts departAttempt) [M: gruberZuberbuhler2013; design]
     const held = P.departPersist === 1 && x.tryAt !== undefined && time < x.tryAt && departAudience(world, c) > 0;
@@ -366,8 +366,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       } else if (m.kind === 'water' && c.age >= 3 && (water ? c.thirst > 0 : c.thirst > 0.25)) {
         const d = Math.hypot(m.position[0] - px, m.position[2] - pz);
         // stage E2g (waterLedger): thirst from the water deficit, the trip valued by the share of it spent drinking (water.ts)
-        // stage E5a (cohesionValue): walking off to water leaves the companions too, so it forfeits their company
-        offer('drink', m.entityId, (water ? drinkWorth(c, P, d) : c.thirst * 1.5 - d / P.drinkDistScaleM - 0.05) - forfeit);
+        offer('drink', m.entityId, water ? drinkWorth(c, P, d) : c.thirst * 1.5 - d / P.drinkDistScaleM - 0.05);
       }
     }
     // stage C7a (field): the community's best-known productive trees, valued by expectation unless seen (foraging.ts)
@@ -408,16 +407,15 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       const d = Math.hypot(x.joinX - px, x.joinZ - pz);
       let pull = x.joinRich ? 0.15 + env.fruitIndex * 0.35 + h * 0.3 + pers.sociability * 0.15 : pers.sociability * 0.3 * env.fruitIndex - 0.05;
       // field profile: an individual with few companions and an unmet social need goes to the callers; males to males (design; T-PTY-1)
-      // stage E5a (cohesionValue): the caller's company gained, less the company left behind, in place of the tuned social pull
-      if (cohesion) { const caller = byId.get(x.joinCaller); pull += (caller && caller.alive ? companyValue(c, caller, P) : 0) - forfeit; }
+      // stage E5a (cohesionValue): the caller's company, in place of the tuned social pull
+      if (cohesion) { const caller = byId.get(x.joinCaller); if (caller && caller.alive) pull += companyValue(c, caller, P); }
       else if (P.joinSocialW > 0) { const caller = byId.get(x.joinCaller); pull += (1 - c.social) * P.joinSocialW * (x.visibleOwn < 2 ? 1 : P.joinSocialInPartyF) + (male && c.age >= 15 && caller && isAdultMale(caller) ? P.joinMaleW : 0); }
       if (P.assocBondW > 0) { const caller = byId.get(x.joinCaller); if (caller) pull += P.assocBondW * bond(c, caller); } // stage C9: bond with the caller (off by default)
       if (d > P.joinCallMinM) offer('travel', x.joinCall, pull * (1 - rain * 0.5) - d / P.joinCallDistScaleM, V.CALLER, x.joinCaller);
     }
     // beyond the own range (UD isopleth, stage C6) the pull home grows; the equal-area circle is not the range's shape
     const here = lv[c.troopId]?.[cellAt(tg, px, pz)] ?? 0;
-    // stage E5a (cohesionValue): so does heading home alone
-    if (troop && here > P.homeLevel && c.action !== 'patrol' && c.action !== 'consort' && c.action !== 'transfer') offer('travel', -1, P.homeW * (here - P.homeLevel) / (1 - P.homeLevel) + (fromCenter > troop.radius * P.homeFarRadii ? P.homeFarW : 0) - forfeit, V.HOME);
+    if (troop && here > P.homeLevel && c.action !== 'patrol' && c.action !== 'consort' && c.action !== 'transfer') offer('travel', -1, P.homeW * (here - P.homeLevel) / (1 - P.homeLevel) + (fromCenter > troop.radius * P.homeFarRadii ? P.homeFarW : 0), V.HOME);
     if (c.age >= 1.5 && c.age < 16 && x.trees.length) {
       const t = idx.treeById.get(x.trees[0])!;
       offer('climb', t.id, 0.06 + pers.playfulness * 0.15 + (c.age < 10 ? 0.1 : 0) - rain * 0.3 - (night ? 2 : 0));
@@ -430,8 +428,8 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   // of it for allies [H] gruberZuberbuhler2013. A travel hoo heard from the leader adds joinHooW (fitted to the 71.4% of
   // vocal initiations that recruited a follower). Staying: its own hunger times the crop quality of the tree it is
   // feeding in. Every magnitude except joinHooW is a design assumption.
-  // stage E5a (cohesionValue; docs/staging/e5a-prereg.md §3): going with a departing leader is worth the leader's company,
-  // less the company left behind, plus the food at the leader's tree shared with the animals feeding there or going there
+  // stage E5a (cohesionValue; docs/staging/e5a-prereg.md §3): going with a departing leader is worth the leader's company
+  // plus the food at the leader's tree shared with the animals feeding there or going there
   // (the leader included), valued and walked as the animal's own trip to a remembered tree (memory belief of the crop,
   // or 0.2 as for any unremembered crop; the trip's share from treeIntake with those feeders). The hoo informs (it gives
   // a decision point), it adds no value; the crown being left is worth its own forage option, so no stay term.
@@ -446,7 +444,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     return worth - tripCost(worth, crop, d, h, P, needFruit(c, P, h));
   };
   const joinValue = (L: Chimp): number => {
-    if (cohesion) return companyValue(c, L, P) - forfeit + destWorth(L) - rain * 0.3;
+    if (cohesion) return companyValue(c, L, P) + destWorth(L) - rain * 0.3;
     const heard = P.travelHoo === 1 && x.hooFrom === L.id && time - (x.hooAt ?? NEVER) <= P.travelHooWindowMin / 60;
     let stay = 0;
     if (c.action === 'forage' && isTreeId(c.targetId)) { const t = idx.treeById.get(c.targetId); if (t) stay = h * Math.min(1, (P.patchEcology === 1 ? fruitAt(world, t) : t.fruit) / P.fruitValueRef); }
@@ -526,10 +524,10 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       const her = Math.max(oestrusOf(o), oestrusOf(L)); // a female in oestrus who travels off, or whose leader does
       if (P.joinChoice === 1 && trip) offer('travel', L!.targetId, joinValue(L!) + (cohesion ? 0 : her), V.TREE, L!.id);
       else if (d > P.partyFollowMinM) {
-      // stage E5a (cohesionValue): following is worth the followed animal's company, less the company left behind and the
-      // walk (tripCost's energetic distance scale), in place of the tuned base, bond and male weights; the hoo adds no value
+      // stage E5a (cohesionValue): following is worth the followed animal's company less the walk (tripCost's energetic
+      // distance scale), in place of the tuned base, bond and male weights; the hoo adds no value
       const F = L ?? o;
-      const sc = cohesion ? companyValue(c, F, P) - forfeit - rain * 0.3 - dxz(F, px, pz) / P.travelDistScaleM : followScore(lead, L, o, b, her);
+      const sc = cohesion ? companyValue(c, F, P) - rain * 0.3 - dxz(F, px, pz) / P.travelDistScaleM : followScore(lead, L, o, b, her);
       // stage C7c (field; c7b-prereg §6.2): a companion on a committed trip to a tree lends its goal: go there with it (shared goal) [H: joint travel, gruberZuberbuhler2013]
       if (trip) offer('travel', L!.targetId, sc, V.TREE, L!.id);
       else offer('follow', lead, sc, V.PARTY);
@@ -671,25 +669,6 @@ export function companyValue(c: Chimp, o: Chimp, P: Params): number {
   let v = P.joinBase + P.joinBondW * bond(c, o) + (c.allies.includes(o.id) ? P.joinAllyW : 0) + (dominates(o, c) ? P.joinRankW : 0) + c.personality.sociability * P.partyFollowSocialW;
   if (c.sex === 'male' && c.age >= 10 && o.sex === 'female' && o.age >= 10 && o.swelling >= 0.75 && !maternalKin(c, o)) v += mateWorth(c, o);
   return v;
-}
-/**
- * Stage E5a: the company an option forfeits when it leaves the animal's companions: the best companyValue among the
- * own-community animals of 5 y or more it sees within the party link that are settled (not travelling or following,
- * so not leaving themselves, and not care followers coming along; not in a nest). 0 when alone: company never makes
- * staying worse.
- */
-export function forfeitedCompany(world: World, c: Chimp, P: Params): number {
-  const x = ix(c), byId = index(world).byId, l2 = P.partyLinkM * P.partyLinkM;
-  let best = 0;
-  for (let i = 0; i < x.seen.length; i++) {
-    const o = byId.get(x.seen[i]);
-    if (!o || !o.alive || o === c || o.troopId !== c.troopId || o.age < 5 || o.action === 'travel' || o.action === 'follow' || o.action === 'nest') continue;
-    const dx = o.position[0] - c.position[0], dz = o.position[2] - c.position[2];
-    if (dx * dx + dz * dz > l2) continue;
-    const v = companyValue(c, o, P);
-    if (v > best) best = v;
-  }
-  return best;
 }
 
 /**
