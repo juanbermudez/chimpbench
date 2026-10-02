@@ -13,6 +13,8 @@
 // gives birth at its first slow step, so newborns and their mothers' first months are in the window.
 // Stage E1h: the staged rows T-ENE-1 to T-ENE-3 are scored on the model's lactating class (the source's subjects were
 // nursing mothers; docs/staging/e-targets.patch.json), T-ENE-8 on non-reproducing adults; printed as a table at the end.
+// Stage E1k: the JSON also holds per-class daily sums over the window (`daily`), so a window can be split afterwards
+// (the 5-seed E1i confirm's mothers lost most in its last 30 days, when the phenology crop falls).
 //
 //   pnpm exec tsx scripts/energy-diagnose.ts [--seeds 48,7] [--burn-in 30] [--days 30] [--profile field] [--params '{"energyLedger":1}'] [--term-births] [--json f.json]
 import { writeFileSync } from 'node:fs';
@@ -55,6 +57,13 @@ const deaths: Record<string, number> = {}, deathsByClass: Record<string, number>
 let births = 0, livingStart = 0, livingEnd = 0;
 // reserve trajectories: daily mean reserves ÷ usable reserve by class
 const traj: Record<string, number[]> = {};
+// stage E1k: per-class daily sums over the window (summed over seeds), so any part of the window can be read later:
+// ticks, daylight ticks, eating ticks, kcal eaten (milk included), kcal passed out, kcal spent, dry matter eaten,
+// daylight hunger, daylight ticks with the foregut ≥ 95% full
+interface Day { ticks: number; dayTicks: number; eating: number; kin: number; fec: number; out: number; dm: number; hunger: number; foreFull: number }
+const daily: Record<string, Day[]> = {};
+let curDay = 0;
+const dayOf = (n: string): Day => ((daily[n] ??= [])[curDay] ??= { ticks: 0, dayTicks: 0, eating: 0, kin: 0, fec: 0, out: 0, dm: 0, hunger: 0, foreFull: 0 });
 
 /** Youngest unweaned offspring's age per mother (for the lactation time course). */
 function youngest(w: World): Map<number, number> {
@@ -101,7 +110,7 @@ for (const seed of seeds) {
       const b = binNow.get(c.id); if (b) { if (light) inf[b].milkDay += kcal; else inf[b].milkNight += kcal; inf[b].motherMilkCost += kcal / P.ledgerMilkEff; }
       return;
     }
-    const k = cls.get(c.id); if (k) for (const n of k) acc[n].out[term] += kcal;
+    const k = cls.get(c.id); if (k) for (const n of k) { acc[n].out[term] += kcal; dayOf(n).out += kcal; }
     const b = binNow.get(c.id);
     if (b) { inf[b].out += kcal; if (term === 'growth') inf[b].growth += kcal; }
   };
@@ -115,6 +124,7 @@ for (const seed of seeds) {
   const prevAct = new Map<number, string>(), resAtDay = new Map<number, number>();
   for (let i = 0; i < days * DAY; i++) {
     light = w.environment.daylight > 0.1;
+    curDay = Math.floor(i / DAY);
     tickWorld(w);
     light = w.environment.daylight > 0.1;
     if (i % 240 === 0) {
@@ -149,6 +159,8 @@ for (const seed of seeds) {
         if (caps) { a.fin += dfin; a.dmIn += ddm; a.fec += dfec; a.fore += L!.dm! / caps[0]; a.hind += L!.hind! / caps[1]; }
         a.cond += x.cond; a.m75 += Math.pow(massOf(c, P), P.ledgerRmrExp);
         if (light) { a.dayTicks++; a.hunger += c.hunger; if (caps) { if (L!.hind! >= 0.95 * caps[1]) a.hindFull++; if (L!.dm! >= 0.95 * caps[0]) a.foreFull++; } }
+        const dd = dayOf(n); dd.ticks++; if (eating) dd.eating++; if (L) dd.kin += din; dd.fec += dfec; dd.dm += ddm;
+        if (light) { dd.dayTicks++; dd.hunger += c.hunger; if (caps && L!.dm! >= 0.95 * caps[0]) dd.foreFull++; }
       }
     }
     for (const [id, b] of binNow) {
@@ -274,4 +286,4 @@ console.log(`juvenile growth velocity, weaned to 12 y: female 4–8 y ${jv('fema
 console.log('dyads (seed, id, age at start, kg start → end, reserves start → end, milk kcal/d, mother mean reserves):');
 for (const x of dyads) console.log(`  ${x.seed} ${x.id} ${x.age0.toFixed(2)} y  ${x.kg0.toFixed(2)} → ${x.kg1.toFixed(2)} kg  ${x.res0.toFixed(3)} → ${x.res1.toFixed(3)}  milk ${x.milk.toFixed(0)}  mother ${x.mRes.toFixed(3)}`);
 for (const [n, t] of Object.entries(traj)) console.log(`reserves ÷ store, ${n}, every 5 d: ${t.filter((_, i) => i % 5 === 0).map(v => f(v, 3)).join(' ')}`);
-if (jsonOut) writeFileSync(jsonOut, JSON.stringify({ profile, seeds, burnIn, days, params, termBirths, rows, births, deaths, deathsByClass, living: [livingStart, livingEnd], traj, infants: inf, dyads, juvs }, null, 1));
+if (jsonOut) writeFileSync(jsonOut, JSON.stringify({ profile, seeds, burnIn, days, params, termBirths, rows, births, deaths, deathsByClass, living: [livingStart, livingEnd], traj, daily, infants: inf, dyads, juvs }, null, 1));

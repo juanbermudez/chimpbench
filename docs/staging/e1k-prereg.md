@@ -85,3 +85,49 @@ their only energetic readout.
 - What a size would need: emeryThompson2012's monthly C-peptide values (full text, not reached) and a calibration of
   C-peptide against energy balance in kcal (none known for chimpanzees), or repeated weights by reproductive state
   (pusey2005, full text not reached).
+
+### 1.5 Where in the window the deficit sits (found during the audit, before any run of this stage)
+
+The integrator's energy JSONs keep each class's daily mean reserves (`traj`), so the 5-seed window splits in halves
+(`season_table.py`, stage scratch; least squares over each half):
+
+| class (%/day, 5 seeds) | R: days 0–29 / 30–59 of the window | G | T | B2 |
+| --- | --- | --- | --- | --- |
+| female, lactating | −0.027 / −0.143 | −0.084 / −0.296 | −0.851 / −1.035 | −0.043 / −0.298 |
+| juvenile 5–12 y | −0.002 / −0.035 | +0.006 / −0.046 | −0.122 / −0.199 | −0.028 / −0.140 |
+| female, other | −0.004 / −0.018 | −0.006 / −0.022 | −0.036 / −0.141 | −0.021 / −0.092 |
+| adult male | −0.002 / −0.013 | −0.001 / −0.014 | +0.005 / −0.059 | −0.007 / −0.058 |
+
+In every arm every class loses faster in the window's second half (run days 60–90, 27 Nov–27 Dec). B2's mothers are
+at −0.043%/day in the first half (inside the line; the quick window is this half) and −0.298%/day in the second.
+The food supply, computed without simulating behaviour (`season_probe.ts`: the phenology crop of every tree is a pure
+function of time), falls in the same half: the summed crop drops by 35% (seed 48), 52% (7), 23% (11), 47% (21) and
+56% (5) from run day 60 to 90 (it changed by 0% to −23% from day 30 to 60), and the young-leaf season factor of the
+forage field falls from 1.11 to 0.89.
+
+**Consequence for the audit.** The field reports lower energy balance when fruit is scarce (emeryThompson2009, vale2020:
+C-peptide rises with fruit; staged T-ENE-4), so a fall of reserves through a 23–56% fruit decline is the field's
+direction, not by itself a viability failure. A line of 0.05%/day for every class over a window that includes this
+decline tests the season as much as the mothers. What remains a model question is the *size* of the mothers' fall
+relative to the other classes (×3–5 in the second half) and whether mothers raise their feeding time when food
+falls, as the field's chimpanzees do (vale2020: they fed for less time when food was abundant).
+
+## 2. Field rows scored, and their samples (sources opened)
+
+| Row | Band | Sample, method | Source, access |
+| --- | --- | --- | --- |
+| T-ACT-1 (fitted) feeding share | 0.33–0.50 | Budongo Waibira: 10 adult males and 9 adult females, "Seven of the females were lactating, while two females were not lactating but travelled with a single juvenile offspring"; continuous focal from the night nest, follows 4.1 ± 2.6 h; feeding "all behaviours related to food handling; the entire process of picking and ingesting food items" | villioth2025, FT via BioC (PMC12701709), opened 2 October |
+| T-ACT-3 (fitted) grooming share | 0.08–0.18 (M 0.15, F 0.12) | same 19 adults; "grooming (giving or receiving)"; every female sampled was a mother with a dependent offspring, so F 0.12 is a mothers' value | villioth2025, as above |
+| T-ENE-2 / T-ENE-3 (staged) | 250–370 min; 650–1,100 g | Kanyawara, 14 nursing mothers, full-day focal follows (≥ 10 h); bouts keep non-feeding gaps ≤ 5 min | uwimbabazi2019 (e1i-prereg.md §1; full text read by the field audit) |
+| T-ENE-5 (staged, direction) | months 0–6 low, net rise in year 2 | 17 Kanyawara mothers, urinary C-peptide | emeryThompson2012 (abstract; §1.2) |
+
+## 3. Reference and readouts (registered before any run)
+
+**Reference B2** (params in the stage scratch `B2-params.json`, identical to the integrator's B2), at this branch's
+head, from a frozen detached checkout; three re-draws add `rgTemperature` 0.1641, 0.1639, 0.16405 (e-noise.md
+amendment 2). For each of the four: `e-bench --quick --workers 1` (seeds 48, 7; 30 + 30 days; the sums and the rows)
+and `energy-diagnose --seeds 48,7 --burn-in 30 --days 60` (90 days in all, within the cap). The energy run is longer
+than quick mode on purpose: its first 30 days are the quick window and its last 30 the seasonal decline of §1.5, where
+the 5-seed deficit sits; with the new `daily` series (scripts/energy-diagnose.ts, this stage; read-only) eating minutes,
+dry matter and absorbed ÷ spent are read per half. Energy readouts are judged against the reference's own spread over
+its four runs.
