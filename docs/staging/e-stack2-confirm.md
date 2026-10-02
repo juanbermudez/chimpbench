@@ -154,3 +154,26 @@ Same runs and judgement as S2 and S3 (`e-bench --confirm`, `energy-diagnose`, `r
 S3 (a single run; reported, not judged). Expected (integrator, before the run): prescriptions 77 (high: S3's 83 minus
 the six party weights); viable (moderate); T-PTY-1 inside its band (moderate); held-out without the rare-event rows
 still worse than B beyond noise (moderate: T-FOOD-10 is untouched); night safety holds (moderate).
+
+### S4 results (bench-run at d256096, clean; numbers generated from the JSON)
+
+| | S3 (single run) | **S4 = S3 + `followCarer` + `cohesionValue`** |
+| --- | --- | --- |
+| Prescriptions | 83 | **77** |
+| Viability | pass | pass (3 deaths in seed 48, all a respiratory outbreak) |
+| Fitted against B's mean / R's mean | +0.17 (z +0.4) / −0.45 (z −0.8) | +0.49 (z +1.2) / +0.07 (z +0.1) |
+| Held-out against B's mean | +0.69 (z +0.4) | +0.51 (z +0.3) |
+| Held-out without the rare rows against B's mean | +2.97 (z +11.8) | **+3.33 (z +13.2)** |
+| T-ACT-2 travel, males / females (band 0.12–0.25) | 0.262 / 0.236 | 0.290 / 0.268 |
+| T-PTY-1 (band 3–9) / T-ACT-3 males, females | 4.48 / 0.161, 0.180 | 4.16 / 0.126, 0.169 |
+| Ground km per day, males / lactating (truth) | 2.93 / 2.56 | **3.43 / 2.84** |
+| Reserves %/day, lactating / juveniles | −0.249 / −0.118 | −0.272 / −0.174 |
+| Night: adults out of a nest; T-RHY-5; departures before sunrise | 2.19%; 0.0218; 0.67 | 2.68%; 0.0264; 0.77 (one death at night, during the outbreak) |
+
+**Against the S4 expectations:** prescriptions 77 held; viable held; T-PTY-1 in band held; held-out without the rare
+rows still worse than B held; night safety held (one death at night, recorded as the outbreak's).
+
+**Reading.** Party cohesion valued by social need (E5a) passed on R alone, but on the integrated stack it adds about
+0.5 km of walking a day for males, the travel share leaves its band again and the mothers' and juveniles' deficits
+deepen: it interacts with value-based calls (the walking E4g traced to calls is joining and following parties). S3
+stays the best integrated candidate; the E5a pair needs a stage on the call–cohesion interaction before it joins.
