@@ -15,8 +15,9 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
 - **Running now (14:30).** The about-page updater (`site-about`, from `site`). Stage agent **E1o** (`e1o-milk-demand`:
-  why infants of 1–4 y drink the whole milk yield; mothers' deficit), from track-e c7a4c75, brief in the session
-  scratchpad (`integrator/e1o-prompt.txt`).
+  why infants of 1–4 y drink the whole milk yield; mothers' deficit), from track-e c7a4c75, and **E3b** (`e3b-revisit`:
+  what stops a chimp going back to a crown it just fed in; separates E5c's two crop-blind terms), from track-e 29202da;
+  briefs in the session scratchpad (`integrator/e1o-prompt.txt`, `e3b-prompt.txt`).
 - **E5c merged** (`crownShare`, off; no switch kept): party members feed one or two at a time (1.3 per crown), so a
   crown's crop never limits them and no crown valuation makes feeders follow the crop. Side finding: with the
   crop-blind revisit devaluation (`revisitW`, design, no source) and the habitat-index crowding off, mothers balance
