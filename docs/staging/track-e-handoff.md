@@ -15,8 +15,9 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
 - **Running now (14:30).** The about-page updater (`site-about`, from `site`). Stage agent **E1o** (`e1o-milk-demand`:
-  why infants of 1–4 y drink the whole milk yield; mothers' deficit), from track-e c7a4c75, brief in the session
-  scratchpad (`integrator/e1o-prompt.txt`).
+  why infants of 1–4 y drink the whole milk yield; mothers' deficit), from track-e c7a4c75, and **E3b** (`e3b-revisit`:
+  what stops a chimp going back to a crown it just fed in; separates E5c's two crop-blind terms), from track-e 29202da;
+  briefs in the session scratchpad (`integrator/e1o-prompt.txt`, `e3b-prompt.txt`).
 - **E5c merged** (`crownShare`, off; no switch kept): party members feed one or two at a time (1.3 per crown), so a
   crown's crop never limits them and no crown valuation makes feeders follow the crop. Side finding: with the
   crop-blind revisit devaluation (`revisitW`, design, no source) and the habitat-index crowding off, mothers balance
@@ -37,6 +38,12 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   present; on S4 males walk 2.61 km instead of 3.32, travel back in band, juveniles stop losing reserve; sums inside noise).
 - **S4 done** (e-stack2-confirm.md): S3 + `followCarer` + `cohesionValue`: 77 prescriptions and viable, but males walk
   3.43 km a day (S3 2.93) and the deficits deepen: E5a interacts with value-based calls; E5b fixed it (S5).
+- **Hosted site, 2 October 14:50:** `site` now also holds the rewritten About page (merged `site-about` 4618daf: first-person
+  hero, stale sections cut, What's next) and the decision guide as a hidden page (`docs/decision-guide.html`, a Vite
+  input: unlinked, noindex, at /docs/decision-guide; made from track-e's guide by `integrator/hosted_guide.py` until the
+  `guide-s5` agent moves that into `scripts/decision-guide.ts --hosted`). `guide-s5` (worktree `.claude/worktrees/guide-s5`)
+  refreshes the guide from S3 to S5 (S6 if its confirm passes: message it the verdict). Build checked: no console errors,
+  data figures draw, dist 32 MB without audio. Still no deploy: the user has not said how to publish.
 - **Hosted site (user request):** branch `site` (worktree `.claude/worktrees/site`, from `main`) = a snapshot of the main
   checkout's uncommitted site work (UI, in-browser GLiNER, about page; an unrelated PDF and caches excluded) + Real time +
   GLiNER-only builds (`VITE_DECISION_PROVIDER` hides the provider picker and ignores ?provider=). Build for hosting:

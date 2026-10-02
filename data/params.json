@@ -14860,6 +14860,32 @@
    "notes": "Remembered trees nearer than this are left to the forage candidates (tree detection distance). Field: P-SCALE-2 crown detection (design)."
   },
   {
+   "id": "milkInDrive",
+   "group": "needs",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Addendum: E1o what an older infant drinks): cohen1994"
+   ],
+   "clock": "none",
+   "symbol": "P.milkInDrive",
+   "file": "src/sim/energy.ts",
+   "integer": true,
+   "notes": "Stage E1o switch, arm A (docs/staging/e1o-prereg.md §2.1): an unweaned infant's drive counts milk at what its mother's gland can deliver. With 1 (and energyLedger 1, ledgerDrive 1) the intake capacity in the drive (energy.ts setHunger) is the infant's own feeding rate over its waking time left plus the milk her gland holds and will make over that time and the night after it, in place of the suckling rate (150 kcal/h) over the waking time left (E1n's deferred defect, energy.ts feedRate). The gland and synthesis rate are read from the mother's ledger once a tick and kept on the infant's ledger (gm, gy). Milk and solids counted in one appetite (cohen1994: infants self-regulate total energy intake; design form, no new number). Removes no rule. 0 = today, bit-identical."
+  },
+  {
    "id": "nestAudience",
    "group": "decision",
    "value": 0,
@@ -23045,6 +23071,32 @@
    "file": "src/sim/execution.ts",
    "integer": true,
    "notes": "Stage E1n switch (docs/staging/e1n-prereg.md §3): the mother decides when milk leaves the gland. With 1 (and energyLedger 1, ledgerDrive 1) she lets a suckling bout start, and go on tick by tick, by day and at night in her nest, while the milk's worth to her infant is at least its cost to her, both read as the ledger's drive: the infant's drive with only its own feeding as capacity (energy.ts ownDrive: no milk term) against her own hunger readout (her drive, which carries her reserve deficit). Equal weights from equal relatedness to the current and future offspring (parent-offspring conflict, trivers1974; design assumption). Replaces the weaning refusal roll (weanRefuseMaxP, weanRefuseAgeY, weanRefuseRampY are not read) and the no-refusal-at-night stylization; milk she withholds stays in the gland, and a full store stops synthesis (existing rule). No new input. 0 = today, bit-identical."
+  },
+  {
+   "id": "weanDeficit",
+   "group": "reproduction",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Addendum: E1o what an older infant drinks; Addendum: E1n weaning as a decision): trivers1974, maestripieri2002, emeryThompson2012"
+   ],
+   "clock": "none",
+   "symbol": "P.weanDeficit",
+   "file": "src/sim/execution.ts",
+   "integer": true,
+   "notes": "Stage E1o switch, arm B (docs/staging/e1o-prereg.md §2.1), read only with weanDecide, energyLedger and ledgerDrive 1: the mother's decision in her own deficit's currency, day and night. She lets a suckling bout start and go on while her infant's relative reserve deficit (max(0, -reserves / usable store)) is at least hers; ties allow (equal weights from equal relatedness, trivers1974; her cost tied to her energy state, emeryThompson2012; design). While she sleeps her last decision stands: a refusal still pending (the infant's wr equals her decision count) stops night suckling until she starts a new act; awake in her nest she decides by the same comparison. Replaces weanDecide's comparison (ownDrive against her hunger) and its free night suckling while she sleeps. No new number; removes no further rule. 0 = today, bit-identical."
   },
   {
    "id": "weanRefuseAgeY",

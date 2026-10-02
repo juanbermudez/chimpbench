@@ -1,0 +1,482 @@
+# E1o pre-registration: what an older infant drinks
+
+Registered 2 October 2026 (first commit 13:13), before any run of this stage. Track E, stage E1o, branch
+`e1o-milk-demand` (from `track-e` c7a4c75). Any new switch is 0 by default in both profiles and is read only with
+`energyLedger` 1, so the compressed goldens and the field pin cannot move.
+
+**Rule served.** Field values of behaviour are targets, never inputs. No suckling rate, milk share, weaning age or
+mother's balance is set from a field value; no weight or input is tuned to hit one. A miss is a finding.
+
+**Seen before this registration (disclosed).** The integrator's S5 confirm energy log
+(`bench-run/artifacts/validation/e/s5/S5-energy.log`, 5 seeds × 60 days, 5911b36): infants of 1–4 y drink 307–309
+kcal/day (day 168–171, night 138–139), eat 49 / 98 / 121 min a day at 1–2 / 2–3 / 3–4 y at 2.97 / 3.20 / 4.08 kcal per
+eating minute; at their daylight decisions with the nurse option offered their hunger is 0.29–0.32, their foregut 0.41–0.52
+full, the gland holds 7–16 kcal and is dry in 19–24% of them; the store is never full (0% of ticks) at 1–4 y; mothers'
+balance −93 / −144 / −129 kcal/day at 1–2 / 2–3 / 3–4 y (−47 at 0.5–1 y). E1m §3.1 and E1n §2.4–§3.7 (read in full).
+No run of this stage had been made.
+
+## 0. The problem (from the brief; integrator's confirms, simulation truth)
+
+- Nursing mothers are the class in deficit on every stack (S5: −0.23% of the store a day; other adult females −0.05,
+  males −0.03). On S3 their balance falls with infant age: −42, −99, −147, −150 kcal/day at 0.5–1, 1–2, 2–3, 3–4 y;
+  the field gives the opposite direction (emeryThompson2012: depressed for six months, then a net gain through year 2).
+- E1m: from about 0.9 y every infant drinks the whole yield (307 kcal/day; the mother pays 384) to 4 y. At the
+  field's eating minutes the model's infants would need 45–196 kcal/day of milk at 1–2 y, 27–130 at 2–3 y and none at
+  3–4 y; they eat 0.31–0.57 of the field's eating minutes at 2.4–5.2 × the per-minute intake the field's time implies.
+- E1n: a mother who refuses by day does not change the volume: the refused milk is drunk at night. The weaning age is
+  still prescribed (`weanAgeMinY`, `weanAgeSpanY`).
+
+**Question: what holds an older infant's drinking at the cap?**
+
+## 1. Step 1: diagnosis (readouts defined here; smoke-tested on 2 days before use)
+
+### 1.1 How the milk books run (code read before any run)
+
+- Synthesis fills the gland store at `ledgerMilkYieldCoef` × M^0.75 ÷ 24 per hour (12.8 kcal/h at 31.3 kg) and stops
+  only when the store holds `ledgerMilkStoreH` (24 h) of it (energy.ts energyTick). The mother pays only for milk drunk
+  (nurseTick: milk ÷ 0.8). So milk drunk = min(what the infant takes, what is made); a gland that is never full makes
+  307 kcal a day whatever the infant needs.
+- **Night** (execution.ts nestTick, `ledgerNightNurse`): an infant in its mother's nest drinks on every tick its hunger
+  readout is ≥ 0.08 (`NURSE_DONE`), at the suckling rate, from what the gland holds.
+- **Day** (candidates.ts nurse offer, `ledgerNurseBout`): the nurse option scores (0.25 + 1.5 × hunger × (1 − age/7)) ×
+  b, b = E ÷ (E + 150 kcal/h × 54 s) the share of a full flow the bout delivers (a gland of 7 kcal gives b ≈ 0.77). Own
+  food for a dependent: the ground forage option (0.5 × hunger − 0.05) from 1.2 y and not carried; begging (hunger >
+  0.35, mother foraging); the mother's own tree only, from 1.5 y, not carried, while she forages ((1.6 × hunger + 0.1)
+  × quality × trip worth). Infants are carried below 1.2 y, and to 4 y while the mother travels or nests (isCarried).
+- **The infant's hunger** (setHunger, E1e/E1i): min(φ, 1) × (1 − w × fill²), φ = need ÷ (intake rate × waking time
+  left); its intake rate (feedRate) counts milk at the full suckling rate (150 kcal/h) all day, whatever the gland holds
+  (E1n §5, deferred defect energy.ts:271–274); with no waking time left the divisor is one tick (φ = 1; energy.ts:318).
+- Offline arithmetic (registry values): an infant's foregut holds 5.6 g of dry matter per kg (83 mL/kg × 0.45 × 0.15
+  g/mL), i.e. 30 kcal of milk per kg (0.185 g/kcal): 197 / 290 / 400 kcal at 6.5 / 9.6 / 13.2 kg (1–2 / 2–3 / 3–4 y),
+  emptied with a 3-h constant. The gut cannot be what stops a 1–4-year-old drinking 12.8 kcal an hour.
+
+### 1.2 Readouts (sim truth, unweaned infants with their mother alive, by age bin 0.5–1, 1–2, 2–3, 3–4 y; new section
+"E1o" in `scripts/energy-diagnose.ts`, read-only; existing E1c/E1f/E1n readouts unchanged)
+
+Night = `environment.daylight ≤ 0.1` (energy-diagnose's definition); "in the nest" = the infant in the nest act with
+its mother (variant MOTHER) while she is in the nest act.
+- **N1 night access.** Share of night ticks in the mother's nest; of those, share with hunger ≥ 0.08 (eligible), share
+  drinking, share with the drive saturated (φ ≥ 0.999, read as hunger ÷ the satiation term).
+- **N2 what limits a night drink.** Of night drinking ticks, the share in which the gland held less than one tick of
+  full flow before the drink (gland-limited: the infant drinks the synthesis trickle).
+- **N3 the infant's night budget** (per infant-night, dusk = first night tick): its spending over the night, the energy
+  in its gut at dusk, milk drunk over the night, its reserves ÷ store at dusk and dawn; the mother's gland at dusk and
+  dawn; synthesis over the night (store change + milk drunk).
+- **D1 day synthesis and day milk** (per infant-day; synthesis = store change + milk drunk).
+- **D2 day bout onsets** (the nurse act's accepted start, existing tap): the infant's reserves ÷ store, hunger, φ,
+  own-food drive (ownDrive), foregut fill split into milk and solids (a shadow pool: the milk's dry matter enters it and
+  it empties in the same proportion as the foregut each tick; read-only), the gland, the bout's worth b; and the share
+  of onsets "without a deficit" (reserves ≥ 0 and foregut ≥ half full).
+- **D3 the day choice** (the infant's daylight decisions with the nurse option offered; existing E1n set): share with any
+  own-food option on the menu, with a tree on the menu, carried, mother foraging; share in which the nurse score's
+  hunger-free part (0.25 × b, minus its distance term) alone beats the best own-food option; the three most chosen acts
+  when neither nursing nor own food is chosen.
+- **D4 what limits own-food eating**: daylight shares carried, mother in the forage act, infant eating own food;
+  eating ticks at a ≥ 95% full foregut; mean intake size (mass ÷ adult mass)^`ledgerIntakeSizeExp`; own kcal per eating
+  minute (existing).
+- **M1 mothers by their youngest infant's age bin**: eating minutes, daylight foregut fill, daylight hunger, reserves ÷
+  store (balance: existing E1f readout).
+
+Run: S5 (S5-params.json), seeds 48 and 7, 30-day burn-in + 30 days, rules policy, from a frozen detached checkout of
+the commit that adds the readouts and this section (one simulation; the existing readouts come out of the same run).
+
+**Smoke test (seed 48, S5, 1-day burn-in + 2 days; `scratchpad/e1o/smoke/`; readouts only, not the diagnosis).** Every
+readout prints and is non-empty at 1–4 y. Added after the first smoke and before the diagnosis run (disclosed): N1 also
+reports the share of night-nest ticks with the infant asleep by the circadian latch (`x.asl`, rhythmCircadian) and the
+share of night drinks taken asleep; D4 reports the infant's full intake rate on ripe fruit at its size and skill
+(feedRate's fruit term, kcal/h) beside the suckling rate (150 kcal/h). Reading notes: "eligible" is the hunger readout
+at the end of the tick (after that tick's drink), so at 0.5–1 y drinking can exceed eligibility; "without a deficit"
+uses reserves ≥ the set point, which the drive holds infants near, so it is reported beside the reserves themselves.
+The predictions of §1.3 were written before the smoke and are not changed.
+
+**Readout added after the diagnosis run (disclosed; committed 13:39, before any mechanism was written).** The registered
+readouts showed own food as the residual but could not say what the infant does while food is in reach, so D5 was
+added: **D5 while the mother feeds in a crown** (her forage act at a tree, in the crown), the share of the infant's
+daylight ticks in that state, and what the infant does then (eating own food, nursing, carried, its acts), its hunger
+and foregut fill. The diagnosis run is repeated once with it (same command, frozen checkout of the commit adding it);
+every other readout must come out identical (same simulation code; checked).
+
+**Second readout added after D5's run (disclosed; committed 13:51, before any mechanism was written).** D5 showed the infant
+resting 31–46% of its mother's crown time with its foregut half full, which could be choice or gut throughput (meals
+fill the foregut, rests are its emptying). **D6 own food against the foregut's throughput**: the own-food dry matter
+the infant eats (all dry matter eaten minus milk's, shared plant pieces included) while its mother is in a crown and
+outside, per infant-day; and, over the crown ticks, its intake ÷ what its foregut would pass if kept full (capacity × the
+share a full foregut empties per tick, 1 − exp(−15 s ÷ 3 h)). A ratio near or above 1 means own food is limited by the
+foregut's throughput in the time food is in reach (meals that fill it from below add to the ratio); well below 1, by the
+choice. The diagnosis run is repeated a third time with it (same command; the other readouts must be identical).
+
+### 1.3 Predictions (before the run)
+
+- N1–N2: at 1–4 y, hunger ≥ 0.08 in ≥ 95% of night-nest ticks and the infant drinks in ≥ 90% of them (high); the drive
+  is saturated in most night-nest ticks (≥ 70%; moderate: sleep lowers the pressure that defines the waking time left,
+  so φ may unsaturate late in the night); ≥ 90% of night drinks are gland-limited (high).
+- N3: the infant's night spending exceeds night synthesis (about 160 kcal) at 1–4 y (high), so a night rule that
+  followed the deficit would still drink the night's synthesis unless the infant entered the night with a surplus.
+- D1: day milk = day synthesis within 5% at 1–4 y (high).
+- D2: onsets at reserves −0.01 to −0.03 of the store, hunger 0.25–0.35, foregut 0.35–0.55 full, of which milk ≤ 30%
+  (moderate); "without a deficit" ≤ 20% of onsets (low).
+- D3: own food on the menu in 30–60% of decisions at 1–2 y and 50–80% at 2–4 y (low); the hunger-free part alone beats
+  the best own food in ≥ 40% of decisions with both (low).
+- D4: ≤ 5% of eating ticks at a full foregut (moderate); carried 30–60% of daylight at 1–4 y (low).
+- M1: mothers' eating minutes and daylight hunger flat or rising with infant age, foregut < 0.75 full (moderate).
+- Expected term (low to moderate; the run decides): **the infant's demand for milk is not bounded by its need on
+  either route**, so synthesis is the only limit: at night a saturated drive drinks at any gut room; by day the nurse
+  score wins at the infant's hunger, which is held low by a capacity term that counts milk at 150 kcal/h all day.
+
+### 1.4 Step 1 result (S5, seeds 48 and 7, 30 + 30 days, sim truth; frozen checkout be072ae; generated by
+`diag_table.py` from `diag3-S5.json`; copies in `artifacts/validation/e1o/` of this worktree, not tracked)
+
+The three diagnosis runs (9b72171, 03982a0, be072ae) gave identical readouts wherever they overlap (the commits add
+readouts only).
+
+Night (per infant-night; shares of night-nest ticks)
+| age | in the nest % | hunger ≥ 0.08 % | drinking % | asleep % | drinks asleep % | φ saturated % | mean φ | gland-limited drinks % | night hunger | reserves ÷ store | foregut milk / solids | night spend | gut energy at dusk | night milk | night synthesis | gland dusk → dawn |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 0.5–1 y | 96.4 | 0.1 | 3.8 | 88.0 | 60.2 | 3.5 | 0.11 | 0.0 | 0.07 | 0.015 | 0.33 / 0.00 | 125 | 106 | 63 | 145 | 157 → 239 |
+| 1–2 y | 94.8 | 100.0 | 100.0 | 89.4 | 89.4 | 13.3 | 0.31 | 100.0 | 0.24 | -0.012 | 0.19 / 0.13 | 184 | 118 | 139 | 146 | 0 → 7 |
+| 2–3 y | 93.9 | 100.0 | 100.0 | 90.3 | 90.3 | 13.4 | 0.34 | 100.0 | 0.27 | -0.013 | 0.14 / 0.14 | 227 | 163 | 138 | 146 | 1 → 9 |
+| 3–4 y | 93.1 | 100.0 | 100.0 | 91.0 | 91.1 | 13.9 | 0.37 | 99.9 | 0.32 | -0.015 | 0.10 / 0.14 | 281 | 222 | 138 | 146 | 1 → 9 |
+
+Day (per infant-day; onsets = accepted day bout starts; decisions = daylight decisions with the nurse option offered)
+| age | day milk | day synthesis | onsets/day | onset reserves ÷ store | onset hunger | onset φ | onset own-food drive | onset foregut milk / solids | onset gland kcal | onset b | own food on menu % | tree on menu % | hunger-free part beats own food % | nurse chosen % | own food chosen % |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 0.5–1 y | 221 | 138 | 11.3 | 0.002 | 0.27 | 0.40 | 0.67 | 0.39 / 0.00 | 248.9 | 0.96 | 0.0 | 0.0 | 0.0 | 12.1 | 0.0 |
+| 1–2 y | 167 | 161 | 19.4 | -0.015 | 0.30 | 0.46 | 0.57 | 0.18 / 0.24 | 8.6 | 0.72 | 78.8 | 14.4 | 52.5 | 23.0 | 6.4 |
+| 2–3 y | 169 | 161 | 19.0 | -0.017 | 0.30 | 0.46 | 0.52 | 0.13 / 0.32 | 10.1 | 0.75 | 76.9 | 24.7 | 53.3 | 23.1 | 6.3 |
+| 3–4 y | 169 | 161 | 16.2 | -0.018 | 0.32 | 0.50 | 0.49 | 0.09 / 0.42 | 12.9 | 0.78 | 75.9 | 25.1 | 55.7 | 21.0 | 7.5 |
+
+Own food and the mother (shares of the infant's daylight ticks)
+| age | eating min | own kcal/day | own kcal per eating min | eating % daylight | eating at a full foregut % | carried % | mother foraging % | own fruit rate kcal/h | mother in a crown % | infant eating while she is in a crown % | nursing then % | infant hunger / fill then | acts then | own dry matter g/d in a crown / outside | crown intake ÷ full-foregut throughput | mother eating min | mother daylight fill | mother daylight hunger | mother reserves ÷ store | mothers' balance kcal/d |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 0.5–1 y | 0 | 0 | — | 0.0 | 0.0 | 100.0 | 40.1 | 60 | 27.9 | 0.0 | 10.1 | 0.15 / 0.21 | follow 84.4, nurse 10.1, rest 5.3, nest 0.2 | 0 / 0 | 0.00 | 296 | 0.72 | 0.36 | -0.047 | 4 |
+| 1–2 y | 65 | 177 | 2.73 | 8.6 | 7.1 | 19.3 | 40.8 | 101 | 31.8 | 16.6 | 12.7 | 0.24 / 0.40 | rest 45.6, eating 16.6, follow 14.6, nurse 12.7, play 6.9 | 29 / 34 | 0.56 | 302 | 0.71 | 0.49 | -0.100 | -17 |
+| 2–3 y | 102 | 311 | 3.06 | 13.5 | 2.2 | 17.6 | 37.2 | 134 | 31.3 | 35.9 | 11.6 | 0.24 / 0.47 | rest 38.6, eating 35.9, nurse 11.6, follow 8.9, groom 1.9 | 81 / 27 | 1.15 | 274 | 0.68 | 0.55 | -0.139 | -72 |
+| 3–4 y | 127 | 492 | 3.88 | 16.8 | 2.0 | 18.5 | 38.1 | 175 | 32.0 | 43.6 | 10.5 | 0.25 / 0.52 | eating 43.6, rest 30.9, nurse 10.5, follow 9.8, play 2.5 | 133 / 39 | 1.35 | 281 | 0.69 | 0.54 | -0.144 | -96 |
+
+Infants (existing readouts): milk day + night, own food, kcal out, growth, reserves
+| age | milk day | milk night | milk total | kcal out | growth kcal | reserves ÷ store | milk share |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 0.5–1 y | 221 | 63 | 284 | 283 | 34 | 0.010 | 1.00 |
+| 1–2 y | 167 | 139 | 307 | 437 | 44 | -0.014 | 0.63 |
+| 2–3 y | 169 | 138 | 307 | 541 | 44 | -0.015 | 0.50 |
+| 3–4 y | 169 | 138 | 307 | 676 | 44 | -0.017 | 0.38 |
+
+Against the predictions (§1.3): N1–N2 held for eligibility, drinking and gland-limited drinks (100%, 100%, 99.9–100%
+at 1–4 y) but **missed for saturation**: the drive is saturated in only 13–14% of night-nest ticks (mean φ 0.31–0.37;
+sleep lowers the pressure that defines the waking time left, so a sleeping infant reads its next waking day, not "no
+time left"). N3 held (night spend 184–281 against night synthesis 146). D1 held (day milk 167–169 against 161 made by
+day plus 7–9 left at dawn). D2 held (onsets at −0.015 to −0.018 of the store, hunger 0.30–0.32, foregut 0.31–0.51
+full of which milk 0.09–0.18; none without a deficit). D3 held (own food on the menu 76–79%; nursing's hunger-free
+part alone beats the best own food in 52–56%). D4 held (2–7% of eating at a full foregut; carried 18–19%). M1 missed:
+mothers' eating minutes fall with infant age (302, 274, 281) and their balance with them (−17, −72, −96 kcal/day).
+
+**The term that holds an older infant's drinking at the cap: its own deficit, which its own food cannot close.**
+1. Drinking follows the infant's deficit, on both routes. At 0.5–1 y the need (283 kcal/day) is below the yield: the
+   infant sits 1.0–1.5% of its store above its set point, its night hunger is 0.07, it drinks in 3.8% of night-nest
+   ticks, the gland holds 239 kcal at dawn and is full 7.9% of the time, and it drinks 284 kcal, below the cap.
+2. From 1 y the infant's spending (437, 541, 676 kcal/day at 1–2, 2–3, 3–4 y, at the captive-potential masses 6.9,
+   9.6, 13.1 kg) exceeds the yield (307), and its own food stops near what its foregut passes while food is in reach:
+   while its mother feeds in a crown (31–32% of its daylight) it eats 1.15 and 1.35 × what a full foregut passes at
+   2–3 and 3–4 y (0.56 at 1–2 y, when trees open only from 1.5 y), in meals that end near a full foregut and rests while
+   it empties (hunger then 0.24, foregut 0.47–0.52 full on average); outside those hours it adds 27–39 g of dry matter a
+   day. So it stays 1.4–1.7% of its store below its set point.
+3. In that deficit it drinks every kcal the gland makes: at night in its sleep (90% of night drinks), hunger 0.24–0.32
+   against the 0.08 stop in every night-nest tick, every drink gland-limited (138 of 146 kcal made at night); by day in
+   16–19 bouts at a gland of 9–13 kcal (167–169 kcal). The store never fills, so the cap (307) is what it drinks.
+
+So the premise that the cap and not the infant's need sets what an older infant drinks does not hold on the model's
+own books: the infant needs more than the yield. E1m's milk need "at the field's eating minutes" multiplied field
+minutes by the model's per-minute intake; with intake held by the foregut's throughput, more minutes bring little more
+food. The per-minute rate (101–175 kcal of fruit an hour, a foregut filled in under an hour) sets the infant's eating
+time (T-INF-1: 8.6–16.8% of daylight against 17–47%), not its intake.
+
+**Correction after iteration 1 (committed in c03db91, after arm B's run; disclosed).** Item 2's reading, that own food
+"stops near what its foregut passes while food is in reach", and the paragraph above built on it, are withdrawn. D6's
+registered rule read a crown-time intake at or above what a full foregut passes (1.15–1.35 here) as a foregut limit;
+in arm B the same infants, hungrier (5–6% of their store below the set point), ate 1.58–1.72 × that amount in their
+mothers' crown time, 27–52% more own food a day in 26–50% more eating minutes (§2.2). The ratio exceeds 1 because
+meals fill the foregut from below between rests, so it is no ceiling, and own food at the reference was limited by the
+infant's hunger, not its gut. The term restated:
+
+**The term that holds an older infant's drinking at the cap: milk comes first.** At its normal hunger (0.24–0.32) an
+infant of 1–4 y takes milk on both routes until the gland is dry: at night in its sleep at any hunger above the 0.08
+stop (every drink gland-limited, 138 of 146 kcal made at night), by day in 16–19 bouts at 9–13 kcal, nursing's
+hunger-free part alone beating its best own food in 52–56% of its decisions. Its own food rises and falls with its
+hunger (arm B), so it fills only what the yield leaves of a need that exceeds it (437–676 kcal/day). Nothing but
+synthesis limits what it drinks: the weaning roll refuses 9.8% of day attempts at 3–4 y, and refused milk waits in a
+store that holds a day of synthesis. Where the need is below the yield (0.5–1 y), the infant drinks below it (284).
+E1m's reading (more eating time would mean less milk needed) is therefore not contradicted: in arm B, with milk
+limited, infants ate 26–50% more minutes and 27–52% more own food. The candidate list below was written with the
+withdrawn reading; its foregut statements (candidates 1 and 3) go with it, and the rest stands.
+
+What the candidates of the brief can and cannot do, read from these numbers:
+- *Milk and solids in one gut and one drive* (candidate 1): suckling already follows the deficit (item 1), and milk
+  (0.185 g of dry matter per kcal against 0.406 for drupes) is the food a gut-limited infant should take. The one
+  defect left in the infant's drive is the milk term of its intake capacity (energy.ts feedRate: 150 kcal/h all day,
+  12 × what the gland makes; E1n §5): it keeps the infant's hunger at 0.24 in its mother's crown time against an
+  own-food drive of 0.49–0.57, so its meals end and its rests begin earlier than its gut requires (the only headroom on
+  the infant's side, roughly the gap between a half-full and a full foregut while food is in reach).
+- *The night access rule* (candidate 2): night drinking follows the deficit (item 1); not the term.
+- *The infant's intake rate per eating minute* (candidate 3): sets eating time, not intake (item 2).
+- *The mother's refusal in her own deficit's currency, day and night* (candidate 4): the only route by which a
+  food-limited infant drinks less than the gland makes. Today nothing but synthesis limits it; the weaning roll acts
+  by day only from 3.2 y (9.8% of attempts at 3–4 y); E1n's decision, taken only while she is awake, moves refused day
+  milk to the night through the 24-h store.
+
+## 2. Step 2: mechanisms (registered 2 October 2026, committed 14:01 in c7a409d, before any run of changed code)
+
+### 2.1 Iteration 1: two arms, one per candidate the diagnosis leaves open
+
+**Arm A, `milkInDrive` (candidate 1; 0 = today):** an unweaned infant's drive counts milk at what its mother's gland
+can deliver, not at the suckling rate all day. In setHunger the intake capacity over the waking time left becomes
+R_own × left + (the milk her gland holds + her synthesis rate × (left + fast)), in place of (R_own + 150 kcal/h) × left:
+own food is available only while awake, milk through the waking time and the night after it (in her nest). The gland
+and synthesis rate are read from the mother's ledger once a tick (energyTick, which has the world) and kept on the
+infant's ledger (`gm`, `gy`); an infant without a lactating mother counts no milk. No new number; the form follows
+the drive's definition (E1e: what it could eat over its horizon). Read only with `energyLedger` and `ledgerDrive` 1.
+It removes no rule (`removesNothing`: a defect of the drive's capacity term, E1n §5).
+
+Predictions for A (the regulator argument: the drive returns hunger to the level at which the infant's choices bring
+intake to its spending, so a capacity term moves the reserve level, not the split between milk and own food):
+- milk at 1–4 y at the cap within 2% (moderate to high); at 0.5–1 y up by 0–20 kcal/day (moderate: a larger φ keeps
+  the night hunger above 0.08 more often);
+- infants' reserves up by 0.005–0.03 of the store at 1–4 y (moderate); own food within ±10% of the reference at 2–4 y,
+  up 0–25% at 1–2 y (low);
+- mothers' balance by infant age within the reference spread (moderate); sums inside noise (moderate).
+
+**Arm B, `weanDeficit` (candidate 4; 0 = today; read only with `weanDecide`, `energyLedger` and `ledgerDrive` 1):**
+the mother's decision in her own deficit's currency, day and night.
+- *Currency.* She lets a bout start and go on while her infant's relative reserve deficit is at least hers:
+  d = max(0, −reserves ÷ usable store), the shortfall of the quantity condition reads. E1n compared the infant's
+  own-food drive with her hunger readout, which by day is mostly her satiation term (her φ is saturated, E1n §3.5) and
+  after a meal falls near zero, so she allowed bouts when her gut was full rather than because of her reserves. Equal
+  weights (equal relatedness to her current and future offspring, trivers1974; design); ties (both at or above their
+  set points) allow. Her future reproduction is tied to her energy state ("Cycling resumed only after a sustained
+  period of energy gain", emeryThompson2012), so her reserves are the currency of her cost.
+- *Night.* A sleeping mother makes no decision (E1n §3.6), and a refusal holds while her situation is unchanged (E1n
+  §3.4: the infant asks again once she starts a new act). With the switch the night follows the same rule: while she
+  sleeps, her last decision stands, so a refusal still pending (the infant's `wr` equals her decision count) stops
+  night suckling until she starts a new act; awake in her nest she decides by the same comparison. Her deficit does
+  not depend on her waking time, so the night comparison has no saturation artefact (E1n §3.5).
+- No new number. It replaces E1n's comparison (`ownDrive` against her hunger) and E1n's "while she sleeps, night
+  suckling runs as today"; it removes no registry entry (`removesNothing`; the roll is already removed by `weanDecide`).
+
+Predictions for B (against the S5 reference; the arm is S5 + `weanDecide` + `weanDeficit`):
+- every mother refuses until her infant's relative deficit reaches hers, so in the window each dyad sits near equal
+  relative deficits (infant and mother within 0.03 of each other at 1–4 y; moderate);
+- milk at 1–4 y below the cap by more than the reference spread, by 30–150 kcal/day, falling with infant age (low to
+  moderate); night milk down more than day milk (moderate);
+- mothers' balance by infant age improves, most where the infant has most own food (3–4 y), so T-ENE-5's direction
+  (better with infant age from 1 y) appears (low); infants' reserves fall to −0.04 to −0.12 of the store (moderate);
+  infants' own food up 0–25% (low, gut-limited); growth unchanged (condition stays above `condGood`, moderate);
+- no starvation death (moderate to high); prescriptions 77 → 76 (`weanDecide` removes the roll; high); sums inside
+  noise (moderate); night safety unchanged (high: no adult act changes).
+
+Attribution arm B0 (not an iteration): S5 + `weanDecide` alone (E1n iteration 2 on S5), same runs, to separate the
+decision from its currency and night rule.
+
+Runs (each arm and B0): `e-bench --quick` (seeds 48 and 7, 30 + 30 days, `--workers 1`) and `energy-diagnose` (same
+seeds and window), from a frozen detached checkout of the commit that adds the switches; a 2-day smoke test of each
+switch first (seed 48, readouts only). Judged by §3.
+
+**Decision rule (registered).** An arm is a *provisional keep candidate* if viable (no starvation death; no class
+below −0.05%/day that is not already below it in the reference by more than its spread), the held-out sums not up
+(|z| ≤ 2, with and without T-HUN-4 and T-BRD-1) and the fitted sum not up beyond noise; otherwise off, with the null
+recorded. Neither arm removes a prescription, so neither can go on by default under the Track E rule. B answers the
+stage's question only if milk at 1–4 y falls below the cap beyond the reference spread. If B makes weaning emerge
+(milk to zero by the infant's own state before the prescribed age), a further iteration removes the prescribed weaning
+age behind the switch; in a 60-day window with infants of 0.6–3.7 y this is not expected.
+
+**Implementation and smoke tests (before the arms; disclosed).** Code at the commit that adds this paragraph:
+`src/sim/energy.ts` (milkCapacity, relDeficit, the gland keys refreshed in energyTick), `src/sim/execution.ts` (the
+nurse act's comparison, `nightAllowed`), `src/sim/state.ts` (`gm`, `gy`), registry and table rows, switch lists,
+`tests/sim-e1o.test.ts` (defaults, no gland keys with the switch off, determinism of both switches over a day, the
+gland read, relDeficit, the awake mother's comparison and ties, the sleeping mother's pending refusal at night).
+Prescription counts: A 77, B 76, B0 76 (`weanDecide` switches the roll out). Smoke tests (seed 48, 1-day burn-in + 2
+days, readouts only; `scratchpad/e1o/smoke/`): every readout prints; A keeps 1–4-year-olds at 303–308 kcal of milk a
+day; B moves 1–4-year-olds to 158–218 kcal a day with the gland holding 77–155 kcal at dusk. Nothing in the
+predictions above was changed after the smoke tests.
+
+### 2.2 Iteration 1 results (A1 and B1 at 003dc38, `git.dirty` 0; reference S5q, S5q1, S5q2, S5q3 at 5911b36)
+
+Quick mode, seeds 48 and 7, 30 + 30 days, rules policy; one e-bench and one energy-diagnose per arm. Every number
+below was generated from the JSON by `judge.py`, `report.py` and `e1o_compare.py` (`artifacts/validation/e1o/tools/`, not
+tracked).
+
+Bench sums against the mean of the reference's four realizations (rows counted in all five runs):
+
+```
+commits: {'S5q': '5911b36(dirty 0)', 'S5q1': '5911b36(dirty 0)', 'S5q2': '5911b36(dirty 0)', 'S5q3': '5911b36(dirty 0)', 'A1': '003dc38(dirty 0)', 'B1': '003dc38(dirty 0)'}
+
+## A1: distance sums on rows scored in all five runs (17 fitted, 13 held-out)
+| sum | reference runs | reference mean ± SD | arm | SD used | z |
+| --- | --- | --- | --- | --- | --- |
+| fitted | 3.00 / 2.71 / 3.75 / 3.71 | 3.29 ± 0.52 | 3.35 | 0.69 | +0.07 |
+| heldOut | 7.30 / 8.55 / 5.46 / 5.29 | 6.65 ± 1.56 | 6.80 | 1.56 | +0.09 |
+| heldOutNoRare | 5.24 / 5.19 / 5.46 / 5.29 | 5.30 ± 0.12 | 5.35 | 0.48 | +0.10 |
+largest row changes vs reference mean: T-HUN-1 +0.41, T-RNG-5 +0.31, T-IGE-1 -0.26, T-HUN-2 -0.19, T-COM-11 +0.19, T-HUN-8 -0.14
+
+## B1: distance sums on rows scored in all five runs (17 fitted, 13 held-out)
+| sum | reference runs | reference mean ± SD | arm | SD used | z |
+| --- | --- | --- | --- | --- | --- |
+| fitted | 3.00 / 2.71 / 3.75 / 3.71 | 3.29 ± 0.52 | 2.64 | 0.69 | -0.85 |
+| heldOut | 7.30 / 8.55 / 5.46 / 5.29 | 6.65 ± 1.56 | 4.95 | 1.56 | -0.98 |
+| heldOutNoRare | 5.24 / 5.19 / 5.46 / 5.29 | 5.30 ± 0.12 | 4.95 | 0.48 | -0.65 |
+largest row changes vs reference mean: T-HUN-4 -1.35, T-HUN-1 -0.82, T-RNG-5 -0.42, T-SOC-9 +0.31, T-IGE-1 -0.27, T-FOOD-10 +0.19
+```
+
+The fixed table (reference mean ± SD of its four runs):
+
+| readout | S5 (4 runs, mean ± SD) | A1 | B1 |
+| --- | --- | --- | --- |
+| milk kcal/d (0.5–1 / 1–2 / 2–3 / 3–4 y) | 284 ± 0 / 307 ± 0 / 307 ± 0 / 307 ± 0 | 284 / 307 / 307 / 307 | 282 / 240 / 224 / 213 |
+| mothers' balance kcal/d (same ages) | 2 ± 2 / -27 ± 15 / -87 ± 11 / -66 ± 25 | 9 / -31 / -52 / -96 | -15 / -4 / 10 / 4 |
+| infants growth kg/y (same ages) | 2.80 ± 0.00 / 3.60 ± 0.00 / 3.60 ± 0.00 / 3.60 ± 0.00 | 2.80 / 3.60 / 3.60 / 3.60 | 2.80 / 3.60 / 3.60 / 3.60 |
+| lactating females reserves %/d | -0.114 ± 0.026 | -0.099 | 0.010 |
+| juveniles 5–12 y reserves %/d | -0.007 ± 0.014 | -0.011 | -0.020 |
+| infants 0.5–2 / 2–5 y reserves %/d | 0.003 ± 0.004 / 0.017 ± 0.006 | 0.008 / 0.010 | -0.010 / 0.030 |
+| fitted z | — | 3.35 vs 3.29 (z +0.1) | 2.64 vs 3.29 (z -0.8) |
+| held-out z (all rows) | — | 6.80 vs 6.65 (z +0.1) | 4.95 vs 6.65 (z -1.0) |
+| held-out z without T-HUN-4, T-BRD-1 | — | 5.35 vs 5.30 (z +0.1) | 4.95 vs 5.30 (z -0.7) |
+| prescriptions | 77 | 77 | 76 |
+| viability (deaths; starvation) | 0; 0 | pass (0; 0) | pass (0; 0) |
+
+Nursing and eating by infant age (T-INF-5: 0.5–2.0 bouts per daylight hour, bouts 1–4 min beside it; T-INF-2: nipple
+contact 1–6% of daylight; T-INF-1: eating rises with age, Gombe 15–33% at 1.5–2 y and 33–74% at 4.5–5 y):
+reference eating 8.7 / 13.6 / 17.0% of daylight at 1–2 / 2–3 / 3–4 y, A1 8.7 / 13.7 / 17.0, B1 13.0 / 18.5 / 21.4;
+nurse act 10.3 / 10.3 / 10.0%, A1 10.4 / 10.2 / 9.9, B1 9.6 / 9.5 / 8.8; bouts per daylight hour 1.52 / 1.50 / 1.26,
+A1 1.65 / 1.45 / 1.28, B1 0.93 / 1.25 / 1.28, of 4.1 / 4.1 / 4.7 min, A1 3.8 / 4.2 / 4.7, B1 6.2 / 4.5 / 4.1.
+
+Mechanism readouts (the reference's diagnosis run, one realization, against each arm's energy run):
+
+| readout (0.5–1 / 1–2 / 2–3 / 3–4 y) | S5 (diag3) | A1 | B1 |
+| --- | --- | --- | --- |
+| milk day | 221 / 167 / 169 / 169 | 92 / 165 / 167 / 169 | 213 / 162 / 149 / 136 |
+| milk night | 63 / 139 / 138 / 138 | 192 / 142 / 140 / 138 | 69 / 79 / 75 / 77 |
+| day synthesis | 138 / 161 / 161 / 161 | 136 / 161 / 161 / 161 | 157 / 158 / 151 / 144 |
+| night synthesis | 145 / 146 / 146 / 146 | 146 / 146 / 146 / 146 | 123 / 84 / 72 / 66 |
+| gland at dusk | 157 / 0 / 1 / 1 | 257 / 1 / 1 / 1 | 189 / 237 / 250 / 258 |
+| store full % of ticks | 7.9 / 0.0 / 0.0 / 0.0 | 7.9 / 0.0 / 0.0 / 0.0 | 8.8 / 21.2 / 27.0 / 31.5 |
+| night-nest ticks drinking % | 3.8 / 100.0 / 100.0 / 100.0 | 11.6 / 98.5 / 99.7 / 99.7 | 3.9 / 4.0 / 5.2 / 7.1 |
+| night hunger | 0.07 / 0.24 / 0.27 / 0.32 | 0.08 / 0.25 / 0.28 / 0.33 | 0.37 / 0.43 / 0.45 / 0.51 |
+| night φ | 0.11 / 0.31 / 0.34 / 0.37 | 0.10 / 0.29 / 0.32 / 0.38 | 0.40 / 0.50 / 0.52 / 0.57 |
+| refused by mother /d | 0.0 / 0.0 / 0.0 / 0.0 | 0.0 / 0.0 / 0.0 / 0.0 | 12.9 / 19.1 / 15.5 / 12.7 |
+| ended by mother /d | 0.0 / 0.0 / 0.0 / 0.0 | 0.0 / 0.0 / 0.0 / 0.0 | 9.6 / 9.6 / 11.5 / 11.6 |
+| day onsets /d | 11.3 / 19.4 / 19.0 / 16.2 | 3.8 / 20.7 / 18.2 / 16.0 | 18.0 / 11.3 / 15.2 / 15.8 |
+| infant hunger at decisions | 0.16 / 0.27 / 0.28 / 0.30 | 0.13 / 0.27 / 0.27 / 0.29 | 0.31 / 0.29 / 0.32 / 0.35 |
+| own food kcal/d | 0 / 177 / 311 / 492 | 0 / 176 / 311 / 488 | 0 / 270 / 428 / 627 |
+| eating min/d | 0 / 65 / 102 / 127 | 0 / 65 / 103 / 128 | 0 / 98 / 140 / 161 |
+| own dm in crown g/d | 0 / 29 / 81 / 133 | 0 / 32 / 84 / 135 | 0 / 40 / 110 / 164 |
+| crown intake ÷ full throughput | 0.00 / 0.56 / 1.15 / 1.35 | 0.00 / 0.62 / 1.18 / 1.45 | 0.00 / 0.85 / 1.58 / 1.72 |
+| eating while mother in crown % | 0.0 / 16.6 / 35.9 / 43.6 | 0.0 / 17.7 / 36.9 / 46.9 | 0.0 / 24.5 / 50.1 / 57.5 |
+| infant hunger in crown | 0.15 / 0.24 / 0.24 / 0.25 | 0.12 / 0.25 / 0.23 / 0.25 | 0.43 / 0.31 / 0.30 / 0.32 |
+| infant reserves ÷ store | 0.010 / -0.014 / -0.015 / -0.017 | 0.017 / 0.002 / 0.000 / -0.004 | -0.050 / -0.062 / -0.054 / -0.056 |
+| mother reserves ÷ store | -0.047 / -0.100 / -0.139 / -0.144 | -0.046 / -0.109 / -0.109 / -0.161 | -0.048 / -0.062 / -0.054 / -0.057 |
+| mothers' balance kcal/d | 4 / -17 / -72 / -96 | 9 / -31 / -52 / -96 | -15 / -4 / 10 / 4 |
+| mother eating min | 296 / 302 / 274 / 281 | 296 / 295 / 277 / 284 | 294 / 283 / 262 / 260 |
+| mother daylight hunger | 0.36 / 0.49 / 0.55 / 0.54 | 0.37 / 0.49 / 0.53 / 0.55 | 0.36 / 0.46 / 0.50 / 0.49 |
+
+Night safety (`rhythm-metrics`, same seeds and window): B1 adults out of a nest 2.6% of the night (line 3.3%),
+T-RHY-5 0.03 (band 0–0.05), out at solar midnight 0.0% of 1,860 adult-nights, no death; A1 the same (2.6%, 0.03,
+0.0%).
+
+**Attribution B0 (S5 + `weanDecide` alone, E1n's iteration 2 on S5; same commit and runs; generated by the same
+scripts).** Sums inside noise (fitted z −0.4, held-out −1.0, without the rare rows −0.7; 76 prescriptions; viable).
+Milk stays at the cap (284 / 307 / 307 / 307): the mother refuses 7.6–15.6 day attempts a day at 1–4 y and the
+refused milk is drunk at night (night 154 / 167 / 181 kcal at 1–2 / 2–3 / 3–4 y against 139–140; day 153 / 140 / 126
+against 167–169); mothers −0.106%/day (reference −0.114 ± 0.026). E1n's result reproduces on S5: the decision alone
+moves milk from day to night; B's currency and its night rule carry B's whole effect (which of the two matters more is
+not separated by these arms).
+
+**Against the predictions (§2.1).**
+- *A.* Held: milk at 1–4 y at the cap (307); infants' reserves up by 0.012–0.016 of the store, to the set point; own
+  food at 2–4 y unchanged; sums inside noise (z +0.1 each). Missed: milk at 0.5–1 y did not rise (284) but moved to the
+  night (192 against 60 kcal; day nursing 2.9% of daylight against 10.9%); own food at 1–2 y did not rise (176);
+  mothers' balance by infant age mixed (2–3 y −52 against −87 ± 11, 3–4 y −96 against −66 ± 25). The regulator
+  argument held: counting milk at what the gland delivers moves the infant's reserve level, not what it drinks.
+- *B.* Held: each dyad at near-equal relative deficits (infants −0.050 to −0.062, mothers −0.048 to −0.062); milk at
+  1–4 y below the cap, falling with infant age (240, 224, 213 kcal/day against 307 ± 0), night milk down more than day
+  milk (−61 to −64 against −5 to −32 kcal/day); mothers' balance improved most at 2–4 y (+10 and +4 against −87 and −66 kcal/day)
+  and now rises with infant age from 0.5 y (−15, −4, +10, +4: T-ENE-5's direction); infants' reserves −0.050 to −0.062;
+  growth unchanged (3.60 kg/y); no death; prescriptions 76; sums inside noise (z −0.85, −0.98, −0.65); night safe.
+  Missed: own food rose 27–52% (registered 0–25%), in 26–50% more eating minutes; the indicative weaning line moved
+  from 6.54 to 5.77 y.
+
+**Verdict (registered rule, §2.1).**
+- **A (`milkInDrive`): provisional keep candidate as a defect fix (viable, sums inside noise, removes nothing), null
+  for the stage's question:** with milk counted at what the gland delivers the infants sit at their set point and
+  drink the same.
+- **B (`weanDeficit` on `weanDecide`): provisional keep candidate (viable, every class above −0.05%/day: lactating
+  +0.010, juveniles −0.020, infants −0.010 and +0.030; fitted and held-out sums inside noise and lower; 76
+  prescriptions, the roll removed by `weanDecide`).** It answers the stage's question: once the mother decides in her
+  own deficit's currency and her refusal holds while she sleeps, what an older infant drinks falls below the cap and
+  with age, the infant eats more of its own food, and nursing mothers stop losing reserve (−0.114 ± 0.026 → +0.010%
+  of the store a day). The cost lands on the infants' reserves (−5 to −6% of the store), not on their growth.
+- Weaning does not emerge: milk is 213 kcal/day at 3–4 y and nothing drives it to zero before the prescribed age, so
+  `weanAgeMinY`/`weanAgeSpanY` stay (and the ledger counts them as inputs, §4).
+- One quick realization per arm: a 5-seed confirm of B against S5's confirm realizations is the next step.
+- No second iteration was run: B answers the stage's question and passes the registered rule, A's null is the one the
+  diagnosis predicted, and B0 already separates the decision from B's currency and night rule. A and B are not to be
+  combined as built: under B the milk an infant can count on is what its mother lets it drink, not what the gland
+  holds (A's capacity term would overstate it).
+
+## 3. Benchmark and judging (from the brief; e-noise.md amendment 2)
+
+Reference: S5 (e-stack2-confirm.md, "S5 results"; 32 switches, `bench-run/artifacts/validation/e/s5/S5-params.json`) in
+quick mode, run by the integrator once plus three re-draws (`rgTemperature` 0.1641, 0.1639, 0.16405) at bench-run
+5911b36 (simulation code identical to this branch's start), each with `energy-diagnose` (seeds 48, 7; burn-in 30;
+30 days): `bench-run/artifacts/validation/e/s5q/{S5q,S5q1,S5q2,S5q3}.json` and `…-energy.json`. Not re-run here.
+Each arm = S5 + this stage's switch, same quick settings, from a frozen detached checkout of a committed head.
+Judged with `judge_vs_reps.py quick custom` against the mean of the four: z = (arm − mean) ÷ (SD × √(1 + 1/n)), quick
+per-run SD fitted 0.69, held-out 1.26, held-out without T-HUN-4 and T-BRD-1 0.48, or the reference's own spread if
+larger; |z| > 2 is a result. Energy, travel and party readouts against the reference's own spread (mean ± SD of its
+4 runs). Viability must pass. Prescriptions: `scripts/prescription-ledger.ts --count --params` (S5: 77); a switch that
+removes a named rule must lower it.
+
+## 4. Known defects and caveats (fixed before measuring, or deferred with file:line)
+
+- `src/sim/energy.ts:274` (feedRate): an unweaned animal's intake capacity counts milk at the full suckling rate all
+  day (E1n §5). Addressed behind arm A (`milkInDrive`); with it off it stays (the reference's behaviour).
+- `src/sim/execution.ts:897` (nestTick, night suckling): the infant drinks tick by tick while asleep, with no
+  milk-ejection latency (the day act waits `ledgerLetDownS`); every night drink is gland-limited, so the volume does not
+  depend on it (§1.4); deferred.
+- `src/sim/candidates.ts:281` and the carry gate: infants under 1.2 y (or carried) have no own-food option (E1n §5);
+  not implicated (0.5–1-year-olds drink below the cap, §1.4); deferred.
+- `scripts/lib/prescriptions.ts:156`: `weanAgeMinY` and `weanAgeSpanY` are classed *input* (rule 4, reproductive
+  physiology) although they encode T-INF-3 (e-targets.patch.json, T-INF-3 note); a switch that removed the prescribed
+  weaning age would not lower the count, so the tool would be wrong in the brief's sense. No arm here removes them
+  (§2.1); reported to the integrator, not changed (the classification is the ledger's, shared by every stage).
+- Readout caveats (`scripts/energy-diagnose.ts`, E1o section): "eligible" reads the hunger at the end of the tick (after
+  its drink); the shadow milk pool starts empty for each infant at the window's start (it converges within hours, the
+  foregut's 3-h constant); D6's own dry matter includes plant pieces shared by the mother; synthesis is read as store
+  change plus this infant's drink (a mother with two unweaned infants would be read low; none in these windows).
+
+## 5. Stage verdict and open problems
+
+- **The term** (§1.4, as corrected): milk comes first. An infant of 1–4 y drains the gland on both routes at its normal
+  hunger (night: asleep, any hunger above the 0.08 stop; day: a bout whose hunger-free part alone beats its own food in
+  half its decisions) and eats its own food only to the rest of a need above the yield; nothing but synthesis limits
+  it. Drinking falls below the yield only where the need is below it (0.5–1 y).
+- **Arm A (`milkInDrive`)**: provisional keep candidate as a defect fix; null for the volume (infants at their set point,
+  milk at the cap), as the diagnosis predicted. Not to be combined with B as built (§2.2).
+- **Arm B (`weanDeficit`, on `weanDecide`)**: provisional keep candidate; milk at 1–4 y 240, 224, 213 kcal/day (cap 307),
+  nursing mothers from −0.114 to +0.010% of the store a day, their balance rising with infant age (T-ENE-5's
+  direction), infants eating 27–52% more of their own food, sums inside noise, viable, night safe, 76 prescriptions
+  (the roll goes with `weanDecide`). Next: a 5-seed confirm against S5's confirm realizations.
+- **Open problems.** (1) Infants now carry the dyad's deficit (5–6% of their store below the set point) but still grow
+  at the captive potential (3.6 kg/y; Gombe about 1.6): growth yields only below condition 0.5 (`condGood`, reserves
+  −29%), so the wild growth deficit still does not emerge. (2) Weaning is still prescribed (milk 213 kcal/day at 3–4 y;
+  nothing drives it to zero), and the ledger classes `weanAgeMinY`/`weanAgeSpanY` as inputs (§4). (3) Which of B's
+  two parts (the deficit currency, the refusal that stands while she sleeps) carries the effect is not separated.
+
+## 6. Final checks (after merging `track-e` once, 0a99d22: E5c `crownShare` and handoff refreshes)
+
+Conflicts only in docs/research.md and docs/staging/e-sources.md (both sides appended an addendum: E5c's numbered one
+kept first, this stage's after it, its withdrawn foregut reading corrected) and src/sim/params.gen.ts (ours,
+regenerated). `gen-params --check` clean (989 entries, lint clean); `tsc --noEmit -p .` clean; the first full
+`pnpm test` after the merge failed two tests of the C8 orphan-blind static scan (tests/sim-orphan-blind.test.ts: a
+lookup of the living mother in energy.ts energyTick, arm A's read of her gland, and the scan's canary that counts hits),
+fixed by allowlisting that site with its reason (milk availability; no rank, mating or fertility term; no behaviour
+changed, so no run is affected); then `pnpm test` 701 tests, 700 pass, 0 fail, 1 skipped (888e0e3); the compressed goldens and the field pin did not move.
+`git ls-files data/raw node_modules` prints nothing. Run outputs and the table scripts are in
+`artifacts/validation/e1o/` of this worktree (local, not tracked); the frozen checkout used for every run was removed.
