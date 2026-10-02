@@ -1,0 +1,37 @@
+{
+ "about": "Stage E2h staging for the virtual field observer (proposal; applied by the integrator, this branch never edits src/field). Four scorer corrections that make T-FOOD-10 (and the §18 'wake' and 'settle' readouts) follow janmaat2014's Methods, read in full (docs/staging/e2h-prereg.md §1–§3). Registered at 09:38 on 2 October 2026 before this stage's diagnosis was read; model values seen earlier are disclosed in e2h-targets.patch.json. Applying it changes the protocol hash and the T-FOOD-10 value of every saved run: protocolLog entry and new freeze by the integrator. The effect on R0 and S3, computed from simulation records with the same definitions, is in the prereg (§8).",
+ "source": {
+  "key": "janmaat2014",
+  "method": "'A target female was followed from the point of waking until construction of an evening sleeping nest'; 'Astronomical sunrise times were retrieved from the website www.esrl.noaa.gov/gmd/grad/solcalc/sunrise.html'; 'We only analyzed data from days that followed complete observation days'; 'Breakfast was defined as the first food item eaten after waking up. Only mornings where breakfast consisted of fruit were considered (74% of all mornings)'; five adult females 'all with young offspring (<7 y)' during 'three fruit-scarce periods'."
+ },
+ "changes": [
+  {
+   "id": "noaa-sunrise",
+   "where": "src/field/protocols.ts:83–84 (weatherMinute) at 702027e",
+   "today": "sunrise = the first point interval with the sun's centre above 0°, sunset the first below 0° (geometric, no refraction)",
+   "proposed": "sunrise and sunset at the sun's centre crossing −0.833° (NOAA's sunrise: upper limb with standard refraction), as janmaat2014 and scripts/rhythm-metrics.ts use",
+   "effect": "sunrise 3.5 min earlier in the quick window (derived); departures in those 3.5 min stop counting as before sunrise; §18 'wake' and 'settle' shift by the same amount"
+  },
+  {
+   "id": "no-0400-departure",
+   "where": "src/field/protocols.ts:392–403 (followStep) and 443–448 (startFollow)",
+   "today": "a follow starts at the first point sample after 04:00 at which the focal is not in `nest` phase 2; a focal already out of its nest at 04:00 gets a 'departure' at 04:00",
+   "proposed": "record on the follow whether the focal was seen in its nest after 04:00 (a departure was observed); T-FOOD-10 and §18 'wake' use only follows with an observed departure",
+   "effect": "none on R0, S3 or B in quick mode (no such follow in 12 runs; prereg §8); a guard for stacks with night activity"
+  },
+  {
+   "id": "mothers-fruit-breakfast",
+   "where": "src/field/metrics.ts:717–722 (T-FOOD-10) and src/field/records.ts Follow",
+   "today": "every follow of an adult focal of either sex, whatever the first food",
+   "proposed": "only follows whose focal is an adult female with a dependent offspring at the follow's start (lactating, or mother of a living offspring under 7 y: a new Follow field `mother`), and whose first food item (the first point sample with feed type fruit, ground food or meat; water and milk are not food items) is fruit",
+   "effect": "the row reads mothers' fruit-breakfast mornings, as the field"
+  },
+  {
+   "id": "fruit-scarce-days",
+   "where": "src/field/metrics.ts:717–722 (T-FOOD-10); the day's habitat fruit index (env.fruitIndex) stored on the follow",
+   "today": "every day of the scored window",
+   "proposed": "only follows on days whose habitat fruit index is below its long-run mean (`fruitIndexAtMean`, 0.6); report n; the row is 'insufficient' when no scored day is fruit-scarce",
+   "effect": "in quick mode only seed 7's window counts (seed 48's index is 0.95 on every scored day; seed 7's mean 0.56, minimum 0.46, all 30 days below 0.6); the confirm seeds 21, 5 and 11 were not checked"
+  }
+ ]
+}
