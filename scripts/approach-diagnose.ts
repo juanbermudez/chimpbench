@@ -40,13 +40,53 @@
 //     while the focal still feeds there; the share of events with an arrival (field 153 of 557, 27%), split by a
 //     pant-hoot or a food grunt by the focal before the first arrival (field: on fruit, both raise arrivals).
 //
+// Stage E5b (docs/staging/e5b-prereg.md §3; the block `e5b` of the JSON; every earlier field is unchanged): what moves an
+//   animal toward companions and what it gets there. Social moves: 'follow party' (follow, V.PARTY), 'joined trip'
+//   (travel to a leader's tree, V.TREE with a leader), 'to callers' (travel to a heard pant-hoot or drum, V.CALLER).
+//   decisions: every rules (RG) decision of an animal ≥ 8 y that starts a new bout of a social move (the option taken
+//     differs from the current act or target; gate continuations 'kept'/'arrived' excluded), via rgTap, with the value
+//     terms recomputed from the decider's state at that decision, in both forms whichever the arm runs:
+//       E5a form (cohesionValue): company = (1 − social) × (joinBase + joinBondW·bond + joinAllyW·[ally] +
+//         joinRankW·[it dominates] + partyFollowSocialW·sociability); mate = the mating value of a fertile female for a
+//         male (companyValue − company);
+//       C5a/C13e form (before E5a): follow = partyFollowBase + partyFollowW·bond + partyFollowSocialW·sociability +
+//         partyFollowMaleW·[adult male] (+ travelHooFollowW if a hoo was heard from it); joined trip = joinBase + joinBondW·
+//         bond + joinAllyW·[ally] + joinRankW·[dominates] + partyFollowSocialW·sociability (+ joinHooW if heard; stay =
+//         joinStayW × hunger × crop quality of the crown it feeds in); approach = (1 − social) × joinSocialW × (1, or
+//         joinSocialInPartyF with ≥ 2 own-community animals in sight) + joinMaleW·[adult male to adult male];
+//       the call's own pull of an approach (joinRich: 0.15 + 0.35·fruit index + 0.3·hunger + 0.15·sociability, else 0.3·
+//         sociability·fruit index − 0.05) and its distance cost (d ÷ joinCallDistScaleM); for a joined trip under E5a the
+//         food at the leader's tree (destWorth) as the residual of the option's score after the candidate jitter, company,
+//         mate and rain (−0.3 × rain); for a follow the residual must be ≈ 0 (identity check of the readout).
+//     Both forms take the followed animal or leader (the act's target) as the companion; the C5a form's bond and
+//     adult-male terms are read with the animal that triggered the offer, which may be a follower in the chain
+//     (approximation, reported). Means per entry by class and move; entries per chimp-day; the decider's hunger, social
+//     need (1 − social), reserves ÷ store, own-community animals in sight; shares with ≥ 2 in sight, toward a fertile
+//     female (the mate gate), and (joined trips) after a travel hoo from the leader.
+//   counterfactual first step (drawn decisions, arms with cohesionValue): for each social-move option on the menu that
+//     would start a new bout, its choice probability p at the decision (softmax of the menu at rgTemperature, recomputed
+//     and checked against the tap's) and p' with one term taken out of its score (clamped at 0), all else equal: the
+//     company, the mate value, the food at the leader's tree (joined trips), and the swap to the C5a/C13e form of the same
+//     option. Σ(p − p') per chimp-day = entries the term adds at the first step; × the arm's own mean path per bout of
+//     that move = km per day (first step only: no feedback on later states, menu membership held fixed).
+//   bouts: for each bout of a social move, and of an own trip to a tree as the comparison (part entered → left, or a new
+//     target), path (m), minutes, locomotion kcal (walk, climb, carry),
+//     and in the 30 min after its end: kcal eaten (energyTap 'eaten'), fed in a crown, groomed or was groomed (groom act
+//     in its grooming phase), mated or in consort, and social(end of window) − social(bout start).
+//   daylight state (every 15 min, daylight > 0.3, awake): hunger, social need, reserves ÷ store, own-community animals
+//     ≥ 5 y within the party link (50 m), by class. Path of joined trips started within the hoo window after the
+//     leader's travel hoo ('joining after a call') by class.
+//
 //   pnpm exec tsx scripts/approach-diagnose.ts [--seeds 48,7] [--burn-in 30] [--days 30] [--params '{…}'] [--json f.json]
 // Development seeds only (AGENTS.md lists the reserved ones); burn-in + days ≤ 90.
 import { writeFileSync } from 'node:fs';
-import { V } from '../src/sim/candidates';
+import { candidateMeta, cohesionOn, companyValue, V } from '../src/sim/candidates';
 import { energyTap, reserveCap } from '../src/sim/energy';
-import { isAdultMale } from '../src/sim/hierarchy';
+import { bond, dominates, isAdultMale } from '../src/sim/hierarchy';
 import { paramsOf } from '../src/sim/params';
+import { fruitAt } from '../src/sim/phenology';
+import { rgTap } from '../src/sim/rg';
+import { hash01 } from '../src/sim/rng';
 import { index, isTreeId, ix, TICK_HOURS } from '../src/sim/state';
 import { createWorld, tickWorld } from '../src/simulation';
 import type { Chimp, World } from '../src/types';
@@ -117,6 +157,36 @@ const traj: Record<string, number[]> = {};
 const deaths: Record<string, number> = {};
 let births = 0, livingStart = 0, livingEnd = 0;
 
+// --- stage E5b readouts (header; e5b-prereg.md §3) ---------------------------------------------------------------------
+const MOVES = ['follow party', 'joined trip', 'to callers'] as const;
+type Move = typeof MOVES[number];
+const moveOf = (action: string, v: number | undefined, aux: number | undefined): Move | null =>
+  action === 'follow' && v === V.PARTY ? 'follow party' : action === 'travel' && v === V.TREE && (aux ?? -1) > 0 ? 'joined trip' : action === 'travel' && v === V.CALLER ? 'to callers' : null;
+const JIT_CODE: Record<string, number> = { travel: 4, follow: 7 }; // candidates.ts CODE, for the candidate jitter
+/** Sums over the decisions that started a new bout of a move (means printed per entry). */
+interface Dec { n: number; score: number; comp4: number; mate4: number; comp3: number; hoo3: number; stay3: number; callFood: number; walk: number; food4: number; foodN: number;
+  resid: number; residAbs: number; residN: number; dist: number; hunger: number; need: number; res: number; resN: number; sight: number; inParty: number; fertile: number; afterHoo: number;
+  bySex: Record<string, number> }
+const blankDec = (): Dec => ({ n: 0, score: 0, comp4: 0, mate4: 0, comp3: 0, hoo3: 0, stay3: 0, callFood: 0, walk: 0, food4: 0, foodN: 0, resid: 0, residAbs: 0, residN: 0, dist: 0, hunger: 0, need: 0,
+  res: 0, resN: 0, sight: 0, inParty: 0, fertile: 0, afterHoo: 0, bySex: {} });
+const DEC = Object.fromEntries(CLASSES.map(k => [k, Object.fromEntries(MOVES.map(m => [m, blankDec()]))])) as Record<Cls, Record<Move, Dec>>;
+/** First-step counterfactual sums (drawn decisions, cohesion arms): Σp and Σ(p − p') by term removed. */
+interface Cf { p: number; company: number; mate: number; food: number; swap: number; options: number }
+const blankCf = (): Cf => ({ p: 0, company: 0, mate: 0, food: 0, swap: 0, options: 0 });
+const CF = Object.fromEntries(CLASSES.map(k => [k, Object.fromEntries(MOVES.map(m => [m, blankCf()]))])) as Record<Cls, Record<Move, Cf>>;
+let probCheck = 0, probChecks = 0; // max |recomputed softmax − tap's probabilities|
+/** Bouts of social moves and what the 30 min after their end gave. */
+interface Gb { n: number; path: number; min: number; kcal: number; eaten: number; fed: number; groomed: number; mated: number; dSocial: number; closed: number }
+const blankGb = (): Gb => ({ n: 0, path: 0, min: 0, kcal: 0, eaten: 0, fed: 0, groomed: 0, mated: 0, dSocial: 0, closed: 0 });
+/** Bouts tracked: the social moves, and own trips to trees as the comparison (what a walk for food gives). */
+const BOUT_MOVES = [...MOVES, 'own trip'] as const;
+type BMove = typeof BOUT_MOVES[number];
+const GB = Object.fromEntries(CLASSES.map(k => [k, Object.fromEntries(BOUT_MOVES.map(m => [m, blankGb()]))])) as Record<Cls, Record<BMove, Gb>>;
+const hooJoinKm = Object.fromEntries(CLASSES.map(k => [k, 0])) as Record<Cls, number>;
+/** Daylight state sums (every 15 min of awake daylight). */
+interface St { n: number; hunger: number; need: number; res: number; resN: number; party50: number; alone: number }
+const ST = Object.fromEntries(CLASSES.map(k => [k, { n: 0, hunger: 0, need: 0, res: 0, resN: 0, party50: 0, alone: 0 } as St])) as Record<Cls, St>;
+
 for (const seed of seeds) {
   const w = createWorld(seed, { profile: 'field', params });
   const P = paramsOf(w), MAX_STEP = 2 * P.runMps * TICK_HOURS * 3600 + 2, LINK = P.partyLinkM;
@@ -147,12 +217,90 @@ for (const seed of seeds) {
     if (!e.ph && !e.fg) { kal.none++; kal.noneArrived += arr; }
   };
 
+  // stage E5b: bouts of social moves, the 30 min after each, and the decisions that start them (header)
+  interface G { move: BMove; cls: Cls[]; t0: number; path: number; kcal: number; social0: number; target: number; hoo: boolean }
+  const gBouts = new Map<number, G>();
+  interface GW { until: number; move: BMove; cls: Cls[]; eaten: number; fed: boolean; groomed: boolean; mated: boolean; social0: number }
+  const gWatches = new Map<number, GW[]>();
+  const hooHeard = (x: ReturnType<typeof ix>, from: number, t: number) => x.hooFrom === from && t - (x.hooAt ?? -Infinity) <= P.travelHooWindowMin / 60;
+  interface Terms { F: Chimp | undefined; comp4: number; mate4: number; comp3: number; hoo3: number; stay3: number; callFood: number; walk: number; dist: number; rainF: number; jit: number; afterHoo: boolean }
+  const termsOf = (c: Chimp, act: string, target: number, move: Move, aux: number): Terms => {
+    const x = ix(c), idx = index(w), t = w.time, soc = c.personality.sociability, need = 1 - c.social;
+    const F = idx.byId.get(move === 'follow party' ? target : aux);
+    let comp4 = 0, mate4 = 0, comp3 = 0, hoo3 = 0, stay3 = 0, callFood = 0, walk = 0, dist = 0, rainF = 1, afterHoo = false;
+    const inc = F ? P.joinBase + P.joinBondW * bond(c, F) + (c.allies.includes(F.id) ? P.joinAllyW : 0) + (dominates(F, c) ? P.joinRankW : 0) + soc * P.partyFollowSocialW : 0;
+    if (F) { comp4 = need * inc; mate4 = companyValue(c, F, P) - comp4; afterHoo = hooHeard(x, F.id, t); }
+    if (move === 'follow party') {
+      if (F) { comp3 = P.partyFollowBase + P.partyFollowW * bond(c, F) + soc * P.partyFollowSocialW + (isAdultMale(F) ? P.partyFollowMaleW : 0); dist = Math.hypot(F.position[0] - c.position[0], F.position[2] - c.position[2]); }
+      hoo3 = afterHoo ? P.travelHooFollowW : 0; walk = dist / P.travelDistScaleM;
+    } else if (move === 'joined trip') {
+      comp3 = inc; hoo3 = afterHoo ? P.joinHooW : 0;
+      if (c.action === 'forage' && isTreeId(c.targetId)) { const tr = idx.treeById.get(c.targetId); if (tr) stay3 = P.joinStayW * c.hunger * Math.min(1, (P.patchEcology === 1 ? fruitAt(w, tr) : tr.fruit) / P.fruitValueRef); }
+      const tr = idx.treeById.get(target); if (tr) dist = Math.hypot(tr.position[0] - c.position[0], tr.position[2] - c.position[2]);
+    } else {
+      const fi = w.environment.fruitIndex;
+      callFood = x.joinRich ? 0.15 + fi * 0.35 + c.hunger * 0.3 + soc * 0.15 : soc * 0.3 * fi - 0.05;
+      dist = Math.hypot(x.joinX - c.position[0], x.joinZ - c.position[2]); walk = dist / P.joinCallDistScaleM; rainF = 1 - w.environment.rain * 0.5;
+      comp3 = P.joinSocialW > 0 ? need * P.joinSocialW * (x.visibleOwn < 2 ? 1 : P.joinSocialInPartyF) + (c.sex === 'male' && c.age >= 15 && F && isAdultMale(F) ? P.joinMaleW : 0) : 0;
+    }
+    const jit = (hash01(c.id, c.decisionVersion, JIT_CODE[act] ?? 0, target) - 0.5) * P.candidateJitterSpan;
+    return { F, comp4, mate4, comp3, hoo3, stay3, callFood, walk, dist, rainF, jit, afterHoo };
+  };
+  const cohesion = cohesionOn(P), T = P.rgTemperature;
+  const isNew = (c: Chimp, act: string, target: number, v: number | undefined) => !(c.action === act && c.targetId === target && ix(c).v === v);
+  rgTap.fn = (c, _list, menu, probs, chosen, why) => {
+    const ks = classesOf(c); if (!ks || c.age < 8) return;
+    const x = ix(c), rain = w.environment.rain;
+    if (why !== 'kept' && why !== 'arrived') {
+      const meta = candidateMeta.get(chosen), move = moveOf(chosen.action, meta?.v, meta?.aux);
+      if (move && isNew(c, chosen.action, chosen.targetId, meta?.v)) {
+        const tm = termsOf(c, chosen.action, chosen.targetId, move, meta?.aux ?? -1), s = chosen.score, unclamped = s > 0 && s < 3;
+        let resid = NaN, food4 = NaN;
+        if (move === 'joined trip') { if (cohesion) food4 = s - tm.jit - tm.comp4 - tm.mate4 + rain * 0.3; else resid = s - tm.jit - (tm.comp3 + tm.hoo3 - tm.stay3 - rain * 0.3); }
+        else if (move === 'follow party') resid = s - tm.jit - (cohesion ? tm.comp4 + tm.mate4 - rain * 0.3 - tm.walk : tm.comp3 + tm.hoo3 - rain * 0.3);
+        else resid = s - tm.jit - ((tm.callFood + (cohesion ? tm.comp4 + tm.mate4 : tm.comp3)) * tm.rainF - tm.walk);
+        const toward = tm.F ? (isAdultMale(tm.F) ? 'adult male' : tm.F.sex === 'female' && tm.F.age >= 15 ? 'adult female' : 'younger') : 'gone';
+        for (const k of ks) {
+          const d = DEC[k][move];
+          d.n++; d.score += s; d.comp4 += tm.comp4; d.mate4 += tm.mate4; d.comp3 += tm.comp3; d.hoo3 += tm.hoo3; d.stay3 += tm.stay3; d.callFood += tm.callFood; d.walk += tm.walk; d.dist += tm.dist;
+          if (unclamped && !Number.isNaN(food4)) { d.food4 += food4; d.foodN++; }
+          if (unclamped && !Number.isNaN(resid)) { d.resid += resid; d.residAbs += Math.abs(resid); d.residN++; }
+          d.hunger += c.hunger; d.need += 1 - c.social; if (x.en) { d.res += x.en.res / reserveCap(c, P); d.resN++; }
+          d.sight += x.visibleOwn; if (x.visibleOwn >= 2) d.inParty++; if (tm.mate4 > 0) d.fertile++; if (tm.afterHoo) d.afterHoo++;
+          d.bySex[toward] = (d.bySex[toward] ?? 0) + 1;
+        }
+      }
+    }
+    // first step: what each term adds to the chance that a social-move option on the menu is taken (cohesion arms, draws)
+    if (!cohesion || probs.length < 2 || probs.length !== menu.length) return;
+    const sc = menu.map(k => k.score), m = Math.max(...sc), e = sc.map(v => Math.exp((v - m) / T)), z = e.reduce((a, b) => a + b, 0);
+    for (let j = 0; j < menu.length; j++) probCheck = Math.max(probCheck, Math.abs(e[j] / z - probs[j]));
+    probChecks++;
+    for (let j = 0; j < menu.length; j++) {
+      const k = menu[j], meta = candidateMeta.get(k), move = moveOf(k.action, meta?.v, meta?.aux);
+      if (!move || !isNew(c, k.action, k.targetId, meta?.v)) continue;
+      const tm = termsOf(c, k.action, k.targetId, move, meta?.aux ?? -1), s = k.score, p = probs[j];
+      const pOff = (X: number) => { const e2 = Math.exp((Math.max(0, s - X) - m) / T); return e2 / (z - e[j] + e2); };
+      const food4 = move === 'joined trip' ? s - tm.jit - tm.comp4 - tm.mate4 + rain * 0.3 : 0;
+      const rf = move === 'to callers' ? tm.rainF : 1;
+      const swap = move === 'follow party' ? tm.comp4 + tm.mate4 - tm.walk - tm.comp3 - tm.hoo3
+        : move === 'joined trip' ? tm.comp4 + tm.mate4 + food4 - tm.comp3 - tm.hoo3 + tm.stay3
+        : (tm.comp4 + tm.mate4 - tm.comp3) * rf;
+      for (const q of ks) {
+        const f = CF[q][move];
+        f.options++; f.p += p; f.company += p - pOff(tm.comp4 * rf); f.mate += p - pOff(tm.mate4 * rf); if (move === 'joined trip') f.food += p - pOff(food4); f.swap += p - pOff(swap);
+      }
+    }
+  };
+
   energyTap.fn = (c, term, kcal) => {
+    if (term === 'eaten') { const ws = gWatches.get(c.id); if (ws) for (const wt of ws) wt.eaten += kcal; return; }
     if (term !== 'walk' && term !== 'climb' && term !== 'carry') return;
     const ks = classesOf(c); if (!ks) return;
-    const pu = PURPOSE_OF[partOf(c)];
+    const part = partOf(c), pu = PURPOSE_OF[part];
     for (const k of ks) A[k].kcal[pu] += kcal;
     const b = bouts.get(c.id); if (b && pu === 'callers') b.kcal += kcal;
+    const g = gBouts.get(c.id); if (g && part === g.move) g.kcal += kcal;
   };
   let seenCall = w.nextId;
   const prevPhase = new Map<number, number>(), prevAct = new Map<number, string>(), prevTarget = new Map<number, number>();
@@ -235,6 +383,38 @@ for (const seed of seeds) {
         if (info) callTab[info.atFood ? 'at food' : 'not at food'].approaches++;
       }
       if (b && part === 'to callers') b.path += d;
+      // stage E5b: bouts of social moves (a new bout when the move or its target changes) and the 30 min after each
+      const mv: BMove | null = part === 'follow party' || part === 'joined trip' || part === 'to callers' || part === 'own trip' ? part : null;
+      let gb = gBouts.get(c.id);
+      if (gb && (mv !== gb.move || c.targetId !== gb.target)) {
+        for (const k of gb.cls) { const g = GB[k][gb.move]; g.n++; g.path += gb.path; g.min += (t - gb.t0) * 60; g.kcal += gb.kcal; }
+        (gWatches.get(c.id) ?? gWatches.set(c.id, []).get(c.id)!).push({ until: t + WIN_H, move: gb.move, cls: gb.cls, eaten: 0, fed: false, groomed: false, mated: false, social0: gb.social0 });
+        gBouts.delete(c.id); gb = undefined;
+      }
+      if (mv && !gb) { gb = { move: mv, cls: ks, t0: t, path: 0, kcal: 0, social0: c.social, target: c.targetId, hoo: mv === 'joined trip' && hooHeard(x, x.aux, t) }; gBouts.set(c.id, gb); }
+      if (gb) { gb.path += d; if (gb.hoo) for (const k of ks) hooJoinKm[k] += d; }
+      // stage E5b: daylight state every 15 min of awake daylight
+      if (awake && w.tick % (SCAN * 3) === 0) {
+        const p50 = partySize(c) - 1;
+        for (const k of ks) { const s = ST[k]; s.n++; s.hunger += c.hunger; s.need += 1 - c.social; if (x.en) { s.res += x.en.res / reserveCap(c, P); s.resN++; } s.party50 += p50; if (p50 === 0) s.alone++; }
+      }
+    }
+    // stage E5b: what the 30 min after each social-move bout gave
+    if (gWatches.size) {
+      const groomedNow = new Set<number>();
+      for (const g of idx.alive) if (g.action === 'groom' && g.targetId > 0 && ix(g).phase >= 1) { groomedNow.add(g.targetId); groomedNow.add(g.id); }
+      for (const [id, ws] of gWatches) {
+        const c = byId.get(id), alive = !!c && c.alive;
+        for (let k = ws.length - 1; k >= 0; k--) {
+          const wt = ws[k];
+          if (alive) { if (inCrown(c!)) wt.fed = true; if (groomedNow.has(id)) wt.groomed = true; if (c!.action === 'mate' || c!.action === 'consort') wt.mated = true; }
+          if (t >= wt.until || !alive) {
+            for (const q of wt.cls) { const g = GB[q][wt.move]; g.closed++; g.eaten += wt.eaten; if (wt.fed) g.fed++; if (wt.groomed) g.groomed++; if (wt.mated) g.mated++; if (alive) g.dSocial += c!.social - wt.social0; }
+            ws.splice(k, 1);
+          }
+        }
+        if (!ws.length) gWatches.delete(id);
+      }
     }
     if (i % DAY === DAY / 2) for (const n of ECLS) {
       let sum = 0, m = 0;
@@ -256,7 +436,7 @@ for (const seed of seeds) {
       }
     }
   }
-  energyTap.fn = null;
+  energyTap.fn = null; rgTap.fn = null;
   for (const e of events.values()) closeEvent(e);
   births += w.stats.births - births0;
   livingEnd += w.chimps.filter(c => c.alive).length;
@@ -334,6 +514,34 @@ const result = {
     reservePctPerDay: Object.fromEntries(ECLS.map(n => [n, Math.round(slopePct(traj[n] ?? []) * 10000) / 10000])), traj },
   kalanBoesch2015: { events: kal.events, withOthersArrivingTogether: r3(kal.together / Math.max(1, kal.events)), shareWithArrival: r3(kal.arrived / Math.max(1, kal.events)),
     pantHoot: { events: kal.ph, share: r3(kal.phArrived / Math.max(1, kal.ph)) }, foodGrunt: { events: kal.fg, share: r3(kal.fgArrived / Math.max(1, kal.fg)) }, neither: { events: kal.none, share: r3(kal.noneArrived / Math.max(1, kal.none)) } },
+  // stage E5b (header; e5b-prereg.md §3)
+  e5b: {
+    cohesionValue: params.cohesionValue === 1, callValue: params.callValue === 1,
+    softmaxCheck: { maxAbsDiff: probCheck, draws: probChecks },
+    decisions: Object.fromEntries(CLASSES.map(k => [k, Object.fromEntries(MOVES.map(mv => {
+      const d = DEC[k][mv], n = Math.max(1, d.n), cd = Math.max(1e-9, cdOf(k));
+      return [mv, { entries: d.n, perChimpDay: r3(d.n / cd),
+        mean: { score: r3(d.score / n), company: r3(d.comp4 / n), mate: r3(d.mate4 / n), c5aSocial: r3(d.comp3 / n), c5aHoo: r3(d.hoo3 / n), c13eStay: r3(d.stay3 / n), callPull: r3(d.callFood / n),
+          walkCost: r3(d.walk / n), distM: r3(d.dist / n), destFood: d.foodN ? r3(d.food4 / d.foodN) : null, residual: d.residN ? r3(d.resid / d.residN) : null, residualAbs: d.residN ? r3(d.residAbs / d.residN) : null,
+          hunger: r3(d.hunger / n), socialNeed: r3(d.need / n), reserves: d.resN ? r3(d.res / d.resN) : null, ownInSight: r3(d.sight / n) },
+        share: { twoOrMoreInSight: r3(d.inParty / n), fertileFemale: r3(d.fertile / n), afterHoo: r3(d.afterHoo / n) },
+        toward: Object.fromEntries(Object.entries(d.bySex).sort((a, b) => b[1] - a[1]).map(([a, v]) => [a, r3(v / n)])) }];
+    }))])),
+    counterfactual: Object.fromEntries(CLASSES.map(k => [k, Object.fromEntries(MOVES.map(mv => {
+      const f = CF[k][mv], g = GB[k][mv], cd = Math.max(1e-9, cdOf(k)), mPerBout = g.n ? g.path / g.n : 0;
+      const km = (v: number) => r3(v / cd * mPerBout / 1000);
+      return [mv, { options: f.options, expectedEntriesPerChimpDay: r3(f.p / cd), meanPathPerBoutM: r3(mPerBout),
+        addedEntriesPerChimpDay: { company: r3(f.company / cd), mate: r3(f.mate / cd), destFood: r3(f.food / cd), swapToC5aForm: r3(f.swap / cd) },
+        addedKmPerDay: { company: km(f.company), mate: km(f.mate), destFood: km(f.food), swapToC5aForm: km(f.swap) } }];
+    }))])),
+    bouts: Object.fromEntries(CLASSES.map(k => [k, Object.fromEntries(BOUT_MOVES.map(mv => {
+      const g = GB[k][mv], n = Math.max(1, g.n), cl = Math.max(1, g.closed), cd = Math.max(1e-9, cdOf(k));
+      return [mv, { n: g.n, perChimpDay: r3(g.n / cd), pathM: r3(g.path / n), minutes: r3(g.min / n), locoKcal: r3(g.kcal / n), locoKcalPerKm: g.path > 0 ? r3(g.kcal / (g.path / 1000)) : null,
+        in30min: { closed: g.closed, eatenKcal: r3(g.eaten / cl), fedInCrown: r3(g.fed / cl), groomedOrGroomer: r3(g.groomed / cl), matedOrConsort: r3(g.mated / cl), socialChange: r3(g.dSocial / cl) } }];
+    }))])),
+    joinedAfterHooKmPerDay: Object.fromEntries(CLASSES.map(k => [k, r3(hooJoinKm[k] / Math.max(1e-9, cdOf(k)) / 1000)])),
+    daylight: Object.fromEntries(CLASSES.map(k => { const s = ST[k], n = Math.max(1, s.n); return [k, { samples: s.n, hunger: r3(s.hunger / n), socialNeed: r3(s.need / n), reserves: s.resN ? r3(s.res / s.resN) : null, companions50m: r3(s.party50 / n), alone: r3(s.alone / n) }]; })),
+  },
 };
 if (jsonOut) writeFileSync(jsonOut, JSON.stringify(result, null, 1));
 console.log(JSON.stringify(result, null, 1));
