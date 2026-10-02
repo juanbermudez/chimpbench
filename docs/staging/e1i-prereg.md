@@ -218,6 +218,36 @@ Bench (`e-bench --quick`): fitted −0.944 on 17 rows scored in both (−0.944 w
 - **Eating minutes rose 39%, dry matter 8%.** The added minutes are spent at a nearly full foregut (≥ 95% full in 30% of daylight against 8%), where intake is limited to what the foregut empties. So the binding term has moved from the readout to the foregut's throughput: at 83 mL/kg and a 3-hour emptying constant the foregut passes at most about 0.98 × 175 g ÷ 3 h × 12.6 h + 172 g ≈ 890 g a day even if it were full through all daylight; the field's nursing mothers pass 873 ± 289 g (T-ENE-3), at that ceiling, and the model's mothers need about 780 g.
 - The arm leaves a behavioural share as well: mothers' daylight fill is 0.78, not 0.95; after a bout ends at a redraw (fill 0.95) they spend 39 min on other acts (grooming 25% of next acts) before feeding again, and the rules give feeding P = 0.41 at draws with appetite and room (feeding options 0.57, the best other option 0.73).
 
+### Iteration 2 (registered 2 October 2026, before its run): lactational enlargement of the gut (`ledgerLactGut`), on top of iteration 1
+
+**Why.** After iteration 1 the mothers feed the field's minutes (322 min/day) but half of their eating ticks (51.4%; D6, re-run of arm B at ce33105, identical behaviour) are at a ≥ 95% full foregut, where they swallow 1.29 g of dry matter per eating minute against 3.09 g below it; other females 23%, males 10%. They pass 685 g a day against the ~780 g they need. Of the four candidates of §3, (c) addresses this term directly; (a) is ruled out (§5), and (d) has no better source than the two secondary ones.
+
+**Physiology.** In small mammals the demands of lactation are met partly by organ remodelling that "involves growth of the alimentary tract and associated organs such as the liver and pancreas" (speakman2008, abstract, [M]); in lactating rats the gastro-intestinal hypertrophy is studied "in relation to food intake" (campbellFell1964; title only, full text not reached). No primate measurement was found ([L] for chimpanzees).
+
+**Mechanism** (`src/sim/energy.ts`, read only with `energyLedger`, `ledgerDigesta` and `ledgerDrive` 1; 0 = iteration 1 exactly). A lactating female's foregut and hindgut dry-matter capacities are multiplied by g = 1 + m ÷ max(E − m, m), where E is her day-long mean spending (the drive's `eAvg`, which includes the milk she pays for) and m the cost of synthesising her full milk yield (`ledgerMilkYieldCoef` × M^0.75 ÷ 24 ÷ `ledgerMilkEff` per hour). The gut grows in proportion to the extra intake lactation demands: the isometric null form of a capacity matched to its load (design; no free parameter). For the model's mothers E ≈ 70 kcal/h and m ≈ 16, so g ≈ 1.30: a foregut of about 228 g of dry matter instead of 175. No time course (the window holds established mothers; the gut changes with lactation's start and end); a mother whose infant drinks less than the yield gets a gut slightly larger than her demand (design simplification). Nothing else changes; the capacity is not a store, so conservation is untouched.
+
+**Arm B2** = arm B + `{"ledgerLactGut":1}`. Same tools, seeds and window; compared with T (the stage's reference) and with B1 (attribution).
+
+**Predictions (by hand, before the run; against B1 unless stated).** Arithmetic: at the same relative fill a 1.30 × foregut passes 1.30 × the dry matter; B1's daylight content (0.78 × 175 g = 137 g) would give 0.62 of the larger foregut, so hunger rises and meals run fuller; mothers return toward balance, then their satiation strengthens as the store recovers (iteration 1's feedback).
+
+| Quantity | T | B1 | Expected B2 |
+| --- | --- | --- | --- |
+| Mothers' eating ticks at the wall | — | 51.4% | 10–35% |
+| Lactating dry matter g/day | 632 | 685 | 760–880 |
+| Lactating eating min/day | 231 | 322 | 280–350 |
+| Lactating absorbed ÷ spent | 0.807 | 0.858 | 0.95–1.08 |
+| Lactating reserves, %/day | −0.79 | −0.59 | −0.15 to +0.30 |
+| Lactating daylight fill (of the larger foregut); daylight hunger | 0.71; 0.44 | 0.78; 0.53 | 0.60–0.78; 0.50–0.70 |
+| Other classes (not lactating): reserves, eating minutes | — | +0.005 to +0.016%/day; 238–281 min | within ±0.03%/day and ±5% of B1 |
+| T-ENE-1 field method; T-ENE-2; T-ENE-3 | 1,973; 231; 632 | 2,132; 322; 685 | 2,250–2,600 (in); 280–350 (in); 760–880 (in) |
+| T-ACT-1; T-ACT-3 | 0.377; 0.186 | 0.417; 0.156 | 0.41–0.44; 0.14–0.17 |
+| Starvation deaths | 0 | 0 | 0 |
+| Prescription count | 103 | 103 | 103 |
+| Viability | fail | fail (lactating) | **pass** (moderate confidence) |
+| Held-out on shared rows against T | — | −2.07 (+0.12 without the rare rows) | within noise |
+
+**Kill criterion (iteration 2).** Null if any of: K1, a starvation death, or a class other than lactating females falls faster than in T by more than 0.05%/day; K2 (mechanism), the mothers' dry matter rises by less than 8% over B1, or their share of eating ticks at the wall does not fall; K3, held-out distance on rows scored in both B2 and T rises by more than the noise threshold (1.5 until the integrator's quick value), with or without T-HUN-4 and T-BRD-1. If K1–K3 pass and viability passes: **keep (provisional)** for the pair, `ledgerLactGut` flagged "magnitude design, no primate source" (never a default without one). If K1–K3 pass but viability fails: partial (finding).
+
 ## 7. Known defects and caveats in the code under test
 
 - Readout caveat (scripts/intake-diagnose.ts closeBout): the gate's reason is not the bout's trigger. A forage act that finishes at satiation usually draws as 'need-bucket' (hunger changed bucket since the intent), so satiation and a full gut are read from the state at the last eating tick, not from the reason.

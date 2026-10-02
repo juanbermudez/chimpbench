@@ -80,3 +80,50 @@ test('switch on: deterministic under batching and plain data (no new state)', ()
   const c = a.chimps.find(k => k.alive && ix(k).en)!;
   assert.ok(Number.isFinite(c.hunger) && c.hunger >= 0 && c.hunger <= 1);
 });
+
+// Stage E1i iteration 2: ledgerLactGut, a lactating female's gut sized to her milk demand.
+const B2: Overrides = { ...B, ledgerLactGut: 1 };
+
+test('ledgerLactGut is 0 by default; off (absent or 0) leaves the world unchanged; it is read only with the digesta gut and the drive', () => {
+  for (const profile of ['field', 'compressed'] as const) assert.equal(paramsOf(createWorld(5, { profile })).ledgerLactGut, 0, profile);
+  const a = createWorld(7, { profile: 'field', params: B }), b = createWorld(7, { profile: 'field', params: { ...B, ledgerLactGut: 0 } });
+  run(a, DAY / 4); run(b, DAY / 4);
+  assert.equal(worldHash(a), worldHash(b));
+  const noDrive = { ...B, ledgerDrive: 0 };
+  const c = createWorld(7, { profile: 'field', params: noDrive }), d = createWorld(7, { profile: 'field', params: { ...noDrive, ledgerLactGut: 1 } });
+  run(c, DAY / 4); run(d, DAY / 4);
+  assert.equal(worldHash(c), worldHash(d), 'not read without ledgerDrive');
+});
+
+test('a lactating female\'s gut is sized to her milk demand; nobody else\'s changes', () => {
+  const w = createWorld(48, { profile: 'field', params: B2 }), P = paramsOf(w), PB = paramsOf(createWorld(48, { profile: 'field', params: B }));
+  run(w, DAY); // the day-long mean of spending (eAvg) opens at the resting rate and needs about a day to carry the milk
+  const mother = w.chimps.find(k => k.alive && k.lactating && ix(k).en?.eAvg !== undefined)!, other = w.chimps.find(k => k.alive && k.sex === 'female' && k.age >= 20 && !k.lactating)!;
+  assert.ok(mother && other);
+  const E = ix(mother).en!.eAvg!, M = 31.3, m = P.ledgerMilkYieldCoef / 24 * Math.pow(M, P.ledgerRmrExp) / P.ledgerMilkEff;
+  const [f2, h2] = digestaCaps(mother, P), [f1, h1] = digestaCaps(mother, PB);
+  const g = 1 + m / Math.max(E - m, m);
+  assert.ok(Math.abs(f2 / f1 - g) < 1e-9 && Math.abs(h2 / h1 - g) < 1e-9, `foregut × ${f2 / f1}, expected ${g}`);
+  assert.ok(g > 1.2 && g < 1.45, `about 1.3 for an adult mother (E ${E.toFixed(1)}, m ${m.toFixed(1)} kcal/h)`);
+  assert.deepEqual(digestaCaps(other, P), digestaCaps(other, PB));
+});
+
+test('ledgerLactGut on: energy conserved exactly and deterministic under batching', () => {
+  const w = createWorld(48, { profile: 'field', params: B2 }), P = paramsOf(w), Y = P.digestaFermentKcalPerG;
+  const gutE = (L: { gut: number; fib?: number; hind?: number }) => L.gut + Y * ((L.fib ?? 0) + (L.hind ?? 0));
+  run(w, 600);
+  const before = new Map(w.chimps.filter(c => c.alive).map(c => [c.id, { ...ix(c).en! }]));
+  run(w, DAY / 2);
+  let checked = 0;
+  for (const c of w.chimps) {
+    const L = ix(c).en, B0 = before.get(c.id);
+    if (!c.alive || !L || !B0) continue;
+    const lhs = (L.in - B0.in) - (L.out - B0.out) - (L.fec! - B0.fec!), rhs = (gutE(L) - gutE(B0)) + (L.res - B0.res);
+    assert.ok(Math.abs(lhs - rhs) < 1e-6 * Math.max(1, Math.abs(lhs)), `chimp ${c.id}: ${lhs} vs ${rhs}`);
+    checked++;
+  }
+  assert.ok(checked > 20);
+  const a = createWorld(7, { profile: 'field', params: B2 }), b = createWorld(7, { profile: 'field', params: B2 });
+  run(a, DAY / 2); run(b, DAY / 4); run(b, DAY / 4);
+  assert.equal(worldHash(a), worldHash(b));
+});

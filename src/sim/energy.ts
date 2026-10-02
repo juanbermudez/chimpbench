@@ -164,9 +164,24 @@ export function intakeSize(c: Chimp, P: Params): number {
  */
 export function gutCap(c: Chimp, P: Params): number {
   const D = rates(P).dig;
-  return D ? D.capF * massOf(c, P) / D.food.drupe.g : P.ledgerGutCapKcalPerKg * massOf(c, P);
+  return D ? D.capF * gutKg(c, P) / D.food.drupe.g : P.ledgerGutCapKcalPerKg * massOf(c, P);
 }
 export const reserveCap = (c: Chimp, P: Params) => P.ledgerReserveKcalPerKg * massOf(c, P);
+/**
+ * Stage E1i (ledgerLactGut, with ledgerDigesta and ledgerDrive): the body mass that sizes the gut. A lactating female's
+ * gut grows in proportion to the extra intake lactation demands (speakman2008 [M]: growth of the alimentary tract in
+ * lactation; no primate measurement, [L]): × (1 + m ÷ max(E − m, m)), E her day-long mean spending (eAvg, milk paid
+ * included), m the cost of synthesising her full milk yield. The isometric matched-capacity form is a design assumption
+ * with no free parameter; no time course. Everyone else (and the switch at 0): the body mass.
+ */
+function gutKg(c: Chimp, P: Params): number {
+  const M = massOf(c, P);
+  if (P.ledgerLactGut !== 1 || !c.lactating || P.ledgerDigesta !== 1 || !driveOn(P)) return M;
+  const E = ix(c).en?.eAvg;
+  if (E === undefined) return M;
+  const m = P.ledgerMilkYieldCoef / 24 * Math.pow(M, P.ledgerRmrExp) / P.ledgerMilkEff, o = E - m;
+  return M * (1 + m / (o > m ? o : m));
+}
 /** Gut capacity (kcal of drupes) of an adult female, for rates quoted without an animal. */
 export function refGutCap(P: Params): number {
   const D = rates(P).dig;
@@ -174,13 +189,13 @@ export function refGutCap(P: Params): number {
 }
 /** Stage E1b: foregut and hindgut dry-matter capacity (g), or 0 with ledgerDigesta 0. */
 export function digestaCaps(c: Chimp, P: Params): [number, number] {
-  const D = rates(P).dig, M = massOf(c, P);
+  const D = rates(P).dig, M = gutKg(c, P);
   return D ? [D.capF * M, D.capH * M] : [0, 0];
 }
 
 /** Stage E1b: open the digesta pools (a gut that held only energy is read as drupes; the hindgut starts empty). */
 function openDigesta(c: Chimp, L: EnergyLedger, D: Digesta, P: Params): void {
-  const f = D.food.drupe, dm = Math.min(D.capF * massOf(c, P), L.gut * f.g); // L.gut was formula kcal of drupes
+  const f = D.food.drupe, dm = Math.min(D.capF * gutKg(c, P), L.gut * f.g); // L.gut was formula kcal of drupes
   L.gut = dm * f.nf / f.g; L.dm = dm; L.fib = dm * f.fib / f.g; L.hind = 0; L.fin = 0; L.fec = 0; L.dmIn = 0;
 }
 
@@ -234,7 +249,7 @@ function gutEnergy(L: EnergyLedger, P: Params, D: Digesta | null): number {
 
 /** Foregut fill 0..1: dry matter against capacity with digesta, energy against capacity without. */
 function gutFill(c: Chimp, L: EnergyLedger, P: Params, D: Digesta | null): number {
-  const f = D ? L.dm! / (D.capF * massOf(c, P)) : L.gut / (P.ledgerGutCapKcalPerKg * massOf(c, P));
+  const f = D ? L.dm! / (D.capF * gutKg(c, P)) : L.gut / (P.ledgerGutCapKcalPerKg * massOf(c, P));
   return f > 1 ? 1 : f < 0 ? 0 : f;
 }
 
@@ -335,7 +350,7 @@ export function energyTick(world: World, c: Chimp, x: ChimpX, sleeping: boolean)
     if (L.dm === undefined) openDigesta(c, L, D, P);
     // foregut: a first-order share leaves; its fibre must fit in the hindgut, or the foregut empties only as fast as it does
     let a = r.absorb;
-    const move = L.fib! * a, room = D.capH * M - L.hind!;
+    const move = L.fib! * a, room = D.capH * gutKg(c, P) - L.hind!;
     if (move > room) a = room > 0 ? a * room / move : 0;
     absorbed = L.gut * a; L.gut -= absorbed;
     const fib = L.fib! * a;
@@ -450,7 +465,7 @@ export function rideTick(rider: Chimp, carrier: Chimp, P: Params): void {
 export function gutRoom(c: Chimp, P: Params, kind: FoodKind = 'drupe'): number {
   const D = rates(P).dig, L = ledgerOf(c, P);
   if (D && L.dm === undefined) openDigesta(c, L, D, P);
-  const room = D ? (D.capF * massOf(c, P) - L.dm!) / D.food[kind].g : gutCap(c, P) - L.gut;
+  const room = D ? (D.capF * gutKg(c, P) - L.dm!) / D.food[kind].g : gutCap(c, P) - L.gut;
   return room > 0 ? room : 0;
 }
 
@@ -469,7 +484,7 @@ export function eat(c: Chimp, P: Params, kcal: number, kind: FoodKind = 'drupe')
     return take;
   }
   if (L.dm === undefined) openDigesta(c, L, D, P);
-  const f = D.food[kind], room = (D.capF * massOf(c, P) - L.dm!) / f.g;
+  const f = D.food[kind], room = (D.capF * gutKg(c, P) - L.dm!) / f.g;
   const take = kcal < room ? kcal : room > 0 ? room : 0;
   if (take > 0) {
     const dm = take * f.g, fib = take * f.fib, nf = take * f.nf;

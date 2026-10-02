@@ -13284,6 +13284,29 @@
    "notes": "Stage E1c (ledgerInfantIntake): intake capacity scales as (mass / adult mass)^this. 0.75 = like the resting rate, so a skilled animal of any size covers its resting needs in the same feeding time as an adult (design). No chimpanzee measurement of ingestion rate against body size was found; bray2018 gives only the direction (infants' ingestion rates below adults', juveniles' not significantly)."
   },
   {
+   "id": "ledgerLactGut",
+   "group": "feeding",
+   "value": 0,
+   "units": "flag",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "gutKg",
+   "file": "src/sim/energy.ts",
+   "integer": true,
+   "notes": "Stage E1i iteration 2 (docs/staging/e1i-prereg.md), read only with energyLedger, ledgerDigesta and ledgerDrive 1: 1 = a lactating female's foregut and hindgut dry-matter capacities are multiplied by 1 + m / max(E - m, m), E her day-long mean spending (eAvg, milk paid included), m the cost of synthesising her full milk yield (ledgerMilkYieldCoef x M^0.75 / ledgerMilkEff): the gut grows in proportion to the extra intake lactation demands. Direction [M] (small mammals: growth of the alimentary tract in lactation, speakman2008); no primate measurement ([L]); the isometric matched-capacity form is a design assumption with no free parameter; no time course. 0 = the body-mass gut (hash-identical)."
+  },
+  {
    "id": "ledgerLetDownS",
    "group": "reproduction",
    "value": 54,
