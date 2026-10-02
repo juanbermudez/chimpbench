@@ -7,7 +7,8 @@ import { paramsOf, type Params } from './params';
 import { fruitAt } from './phenology';
 import { bestFallbackNear, fallbackOn } from './fallback';
 import { fruitRate, leafWorth, needFruit, treeIntake } from './intake';
-import { heatRestValue, nestValue, shelterValue, thermalLoad } from './rhythm';
+import { heatRestValue, nestValue, shelterValue, sleepPressure, thermalLoad } from './rhythm';
+import { darkOn, tripLight, visionNow, type TripLight } from './light';
 import { milkShare, milkWorth } from './energy';
 import { arrivalLight, brightening, needUnits, raceStake, rivalsAt } from './departure';
 import { endoOn, escalateScore, fastSpanH, rainFastScore, rainScore, redirectFastScore, redirectScore } from './endocrine';
@@ -164,6 +165,9 @@ function remembersChimp(c: Chimp, id: number): boolean {
   for (let i = 0; i < mem.length; i++) if (mem[i].kind === 'chimp' && mem[i].entityId === id) return true;
   return false;
 }
+/** Stage E2c: mean feeding height in a crown as a share of tree height (execution.ts forageTick draws 0.45–0.73). */
+const CROWN_Y = 0.45 + 0.28 / 2;
+const _tl: TripLight = { pace: 1, see: 1 };
 /** Slot order: score, then target, then action code (a strict total order, so any correct sort gives the same list). */
 function slotBefore(a: Slot, b: Slot): number { return b.score - a.score || a.target - b.target || CODE[a.action] - CODE[b.action]; }
 const _order: Slot[] = [];
@@ -214,15 +218,25 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   // options below (others eating the same limited crop while this animal waits), so its own nest is offered after them
   const race = P.departRace === 1, dLdt = race ? brightening(world) : 0, need = race ? needUnits(c, P) : 0;
   let raceG = 0;
-  let nestDrive = rS ? nestValue(P, c, env.daylight)
+  const midday = rH ? heatRestValue(P, c) : hour >= 11.5 && hour < 14.5 ? 0.3 : 0;
+  // stage E2c (darkCost; light.ts, docs/staging/e2c-prereg.md §2.4): darkness acts through what it does to feeding, sight
+  // and walking (below and in execution.ts), not through a weight on the nest. A nest is a place to rest that also lets
+  // the animal sleep: it is worth the rest score, felt sleepiness included. Resting awake does not discharge sleep
+  // pressure, so rest outside a nest loses the felt sleepiness (rhythmSleepW × S × (1 − daylight), zero by day), and an
+  // animal in its own finished nest rests by staying in it.
+  const dark = darkOn(P);
+  const restScore = 0.12 + (1 - e) * 0.9 + midday + (h < 0.2 ? 0.2 : 0) + (!rH && env.temperature > 23 ? 0.1 : 0) + c.injury * 0.5 + (night && !rS ? 0.4 : 0) + (caretaker ? 0.1 : 0) + (x.ill > time ? P.epidemicRestW : 0);
+  let nestDrive = dark ? restScore
+    : rS ? nestValue(P, c, env.daylight)
     : hour >= P.nestEveningFromH ? smoothstep(P.nestEveningStartH, P.nestEveningEndH, hour) * P.nestEveningDrive + (night ? P.nestNightBonus : 0)
       : (1 - smoothstep(P.nestMorningDaylightLow, P.nestMorningDaylightHigh, env.daylight)) * P.nestMorningDrive;
   nestDrive += (rS ? 0 : (1 - e) * 0.3) + (night && rain > 0.3 ? 0.3 : 0);
   if (caretaker) {
     if (caretaker.action === 'nest' && isTreeId(caretaker.targetId)) offer('nest', caretaker.targetId, nestDrive + 0.4, V.MOTHER, caretaker.id);
   } else if (c.age >= 3 && !race) offerOwnNest(world, c, inNest, nestDrive, rS ? env.daylight < 1 : hour >= 12 || night);
-  const midday = rH ? heatRestValue(P, c) : hour >= 11.5 && hour < 14.5 ? 0.3 : 0;
-  offer('rest', -1, 0.12 + (1 - e) * 0.9 + midday + (h < 0.2 ? 0.2 : 0) + (!rH && env.temperature > 23 ? 0.1 : 0) + c.injury * 0.5 + (night && !rS ? 0.4 : 0) + (caretaker ? 0.1 : 0) + (x.ill > time ? P.epidemicRestW : 0));
+  // felt sleepiness, (1 − energy) under rhythmSleep, is what only the nest relieves: rest keeps the rest of its score
+  if (!dark) offer('rest', -1, restScore);
+  else if (!inNest) offer('rest', -1, restScore - P.rhythmSleepW * sleepPressure(c) * (1 - env.daylight));
   if (rH) { if (rain >= 0.12 && !inNest && !carried) { const cold = shelterValue(P, c); if (cold > 0) offer('shelter', -1, cold); } }
   else if (rain >= 0.3 && !inNest && !night && !carried) offer('shelter', -1, 0.2 + rain * 1.6 - h * 0.2);
 
@@ -276,6 +290,17 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   // stage E1e (ledgerDrive): the share of the full intake rate a trip delivers (energy over the bout ÷ rate × time, walk
   // included), which a gut-limited bout lowers; otherwise the share of the trip spent feeding
   const tripFrac = (crop: number, feeders: number, d: number) => { const ti = treeIntake(c, P, crop, feeders, d, P.intakeCropOnly !== 1); return drive ? (ti.rateH > 0 ? ti.perHourInclWalk / ti.rateH : 0) : ti.feedH > 0 ? ti.feedH / (ti.walkH + ti.feedH) : 0; };
+  // stage E2c (darkCost): in poor light the walk takes the light-limited pace and feeding runs at the vision expected in
+  // the crown on arrival, so the share of the trip's full-light intake per hour is feedH / (walkH + feedH / see)
+  const tripWorth = (t: Tree, crop: number, feeders: number, d: number): number => {
+    if (dark && (tripLight(world, P, d, t.height * CROWN_Y, _tl).pace < 1 || _tl.see < 1)) {
+      if (!iv) return _tl.see;
+      if (!(_tl.see > 0)) return 0;
+      const ti = treeIntake(c, P, crop, feeders, d / _tl.pace, P.intakeCropOnly !== 1);
+      return ti.feedH > 0 ? ti.feedH / (ti.walkH + ti.feedH / _tl.see) : 0;
+    }
+    return iv ? tripFrac(crop, feeders, d) : 1;
+  };
   if (!caretaker || (c.age >= 1.5 && !carried && caretaker.action === 'forage')) {
     for (let _i1 = 0; _i1 < x.trees.length; _i1++) { const id = x.trees[_i1];
       const t = idx.treeById.get(id)!;
@@ -286,7 +311,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       const crop = P.patchEcology === 1 ? fruitAt(world, t) : t.fruit, q = Math.min(1, crop / P.fruitValueRef);
       // contest competition grows with crowding when fruit is scarce (drives parties apart) [H]
       const compete = byShare ? 0 : crowd * P.crowdCompeteW * (P.crowdScarcityRef - env.fruitIndex) * (c.rank > P.crowdHighRank ? P.crowdHighRankFactor : 1);
-      const fw = (h * 1.6 + 0.1) * (0.55 + 0.45 * q) * (iv ? tripFrac(crop, crowd, d) : 1);
+      const fw = (h * 1.6 + 0.1) * (0.55 + 0.45 * q) * tripWorth(t, crop, crowd, d);
       if (race && crowd > 0) raceG = Math.max(raceG, raceStake(fw, crop, crowd, need, 1)); // stage E2b: the feeders are eating now
       offer('forage', t.id, fw * (byShare ? shareWorth(crop, crowd) : 1) - d / P.forageDistScaleM - compete - rain * 0.45 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.6 - coreCostOf(t, coreW, troop, x) + (t.id === s.figTree && h > 0.2 ? 0.2 : 0) - revisit(x, t.id, time, P), V.NONE, crowd);
     }
@@ -294,7 +319,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   if (!caretaker) {
     // stage C7c (field): fallback is worth the best rate in view, so a depleted patch sends the animal elsewhere (fallback.ts)
     // C13b: leaves are worth their intake rate here relative to ripe fruit (full-stock rate when fallback depletes: the best cell in view scales it)
-    const leafV = iv ? leafWorth(world, c, px, pz, P, fruitH) : 1;
+    const leafV = (iv ? leafWorth(world, c, px, pz, P, fruitH) : 1) * (dark ? visionNow(world, 0) : 1); // E2c: leaves are found by sight
     offer('forage', -1, h * P.fallbackForageW * (fallbackOn(P) ? bestFallbackNear(world, px, pz, x.sight, _fb) : 1) * leafV + 0.03 - rain * 0.3);
     // field profile: leaving companions for a food tree of one's own has a cost (parties travel together; design, T-PTY-1)
     const stay = (P.partyStayW > 0 ? P.partyStayW * Math.min(x.visibleOwn, P.partyStayMaxN) : 0) + oestrusNear;
@@ -311,7 +336,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
         if (d < P.memoryTreeMinM) continue;
         // stage C7a (field): a remembered tree is worth what the animal last saw in it
         const crop = x.treeCrop?.[t.id] ?? 0.2;
-        const worth = (P.memCropBelief === 1 ? h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) : h * P.memTravelHungerW) * (iv ? tripFrac(crop, 0, d) : 1);
+        const worth = (P.memCropBelief === 1 ? h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) : h * P.memTravelHungerW) * tripWorth(t, crop, 0, d);
         if (race) { const nr = rivalsAt(c, t.id); if (nr > 0) raceG = Math.max(raceG, raceStake(worth, crop, nr, need, arrivalLight(env.daylight, dLdt, d, P))); } // stage E2b
         if (shortlist) { const rv = revisit(x, t.id, time, P); _mem.push(t, worth - tripCost(worth, crop, d, h, P, needFruit(c, P, h)) - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD)); continue; }
         if (!held) offer('travel', t.id, worth - tripCost(worth, crop, d, h, P, needFruit(c, P, h)) - revisit(x, t.id, time, P) - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay, V.TREE);
@@ -330,7 +355,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       const t = kt[i >> 1]; if (!t) continue;
       const d = dxz(t, px, pz);
       if (d < P.memoryTreeMinM) continue;
-      const crop = x.treeCrop?.[id] ?? known[i + 1], worth = h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) * (iv ? tripFrac(crop, 0, d) : 1);
+      const crop = x.treeCrop?.[id] ?? known[i + 1], worth = h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) * tripWorth(t, crop, 0, d);
       if (race) { const nr = rivalsAt(c, id); if (nr > 0) raceG = Math.max(raceG, raceStake(worth, crop, nr, need, arrivalLight(env.daylight, dLdt, d, P))); } // stage E2b
       const rv = revisit(x, id, time, P);
       _mem.push(t, worth - tripCost(worth, crop, d, h, P, needFruit(c, P, h)) - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD));

@@ -1,4 +1,5 @@
 import type { World } from '../types';
+import { sunAltitudeAt } from './environment';
 import type { Params } from './params';
 import { paramsOf } from './params';
 
@@ -10,8 +11,9 @@ import { paramsOf } from './params';
 //   vision: relative visual acuity at that light (shlaer1937, human; cross-species), through a retinal illuminance in
 //           trolands per lux (reflectance × dark-adapted pupil ÷ π, assumed);
 //   use:    vision relative to full daylight at the same place and sky (1 whenever daylight is 1). Feeding (finding
-//           and picking ripe fruit, picking leaves), the sight radius and the walking pace follow it (candidates.ts,
-//           execution.ts, perception.ts; the three couplings are design assumptions, docs/staging/e2c-prereg.md §2).
+//           and picking ripe fruit, picking leaves) and the sight radius follow it, and the walking pace rises from its
+//           near-darkness share (walkDarkPace, figueiro2011) to 1 with it (candidates.ts, execution.ts, perception.ts;
+//           the three couplings are design assumptions, docs/staging/e2c-prereg.md §2.3).
 // Everything here is pure: no rng, no world mutation.
 
 const DEG = Math.PI / 180;
@@ -65,11 +67,29 @@ export function visionNow(world: World, y: number): number {
   return env.daylight >= 1 ? 1 : visionAt(paramsOf(world), env.sunAltitude, env.cloud, y);
 }
 
+/** Stage E2c: darkCost replaces a term of the E2a nest value, so it acts only with rhythmSleep. */
+export const darkOn = (P: Params): boolean => P.darkCost === 1 && P.rhythmSleep === 1;
+
 /** Sight radius at vision `v`: the night radius in the dark, the day radius in full light (the E2a interpolation, by vision). */
 export function sightAt(P: Params, v: number): number { return P.sightNightM + (P.sightDayM - P.sightNightM) * v; }
 
+/** Walking and climbing pace at vision `v`, a share of the daylight pace: walkDarkPace in near-darkness, 1 in full light. */
+export function paceAt(P: Params, v: number): number { return P.walkDarkPace + (1 - P.walkDarkPace) * v; }
+
+/** The light on a trip: the mean walking pace over the walk and the vision in the crown on arrival. */
+export interface TripLight { pace: number; see: number }
+
 /**
- * Walking pace at vision `v`, as a share of the daylight pace: the distance the animal can see ahead over the daylight
- * sight radius, so it covers what it sees in the same time whatever the light (design; docs/staging/e2c-prereg.md §2.3).
+ * Light on a trip of `distM` metres to a crown fed in at height `crownY`: the pace averaged between now and arrival (on
+ * the floor) and the vision in the crown on arrival, with the sun where it will be when the animal arrives at the
+ * daylight pace under today's cloud. Both 1 when the sun stays above daylightHighDeg until then. Writes into `out`.
  */
-export function paceAt(P: Params, v: number): number { return sightAt(P, v) / P.sightDayM; }
+export function tripLight(world: World, P: Params, distM: number, crownY: number, out: TripLight): TripLight {
+  const env = world.environment, walkH = distM / P.walkMps / 3600, hi = P.daylightHighDeg * DEG;
+  // the sun's altitude changes by at most 15° an hour (the Earth's rotation): full light until arrival
+  if (env.sunAltitude >= hi + walkH * (360 / 24) * DEG) { out.pace = 1; out.see = 1; return out; }
+  const alt = sunAltitudeAt(world.time + walkH);
+  out.pace = (paceAt(P, visionAt(P, env.sunAltitude, env.cloud, 0)) + paceAt(P, visionAt(P, alt, env.cloud, 0))) / 2;
+  out.see = visionAt(P, alt, env.cloud, crownY);
+  return out;
+}
