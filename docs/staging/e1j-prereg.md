@@ -440,6 +440,6 @@ run) while the simulation-truth ratio is 0.786 ± 0.027: the day sampling, not t
 days carried 0.82–1.00 of their class's mean path, so the observer read R about 0.08 below its truth. A confirm run (5
 seeds × 60 days) has about 5 × the follow-days; R's four confirm realizations spread 0.050 (§0).
 
-*Integrator, during the stage (recorded verbatim in substance):* E1i's pair is not confirmed (null under the strict
+*Integrator, during the stage (recorded in substance):* E1i's pair is not confirmed (null under the strict
 viability line on 5 seeds), so the optional "best arm on R + `ledgerFoodEnergyFix` + E1i's pair" is skipped and R is
 the only reference. The TP diagnosis of §3–§5 (registered and run before that message) stays as context only.
