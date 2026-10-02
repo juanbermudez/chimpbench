@@ -177,3 +177,13 @@ rows still worse than B held; night safety held (one death at night, recorded as
 0.5 km of walking a day for males, the travel share leaves its band again and the mothers' and juveniles' deficits
 deepen: it interacts with value-based calls (the walking E4g traced to calls is joining and following parties). S3
 stays the best integrated candidate; the E5a pair needs a stage on the call–cohesion interaction before it joins.
+
+## S5 confirm (registered 2 October 2026 before its run)
+
+S5 = S4 + `companyMargin` (E5b: an approach to a caller is worth only the company the caller adds beyond the best
+companion already present; a correction to E5a's company valuation). Same runs and judgement as S2–S4 (`e-bench
+--confirm`, `energy-diagnose`, `rhythm-metrics`; seeds 48, 7, 21, 5, 11; 30 + 60 days; from `bench-run` at the commit
+that adds this section), against the four-run means of B and R and beside S3 and S4. Expected (integrator, before the
+run): prescriptions 77 (high); viable (moderate); males' ground path at or below S3's (2.93 km) and the travel share
+inside its band (moderate); the mothers' and juveniles' deficits at or better than S3's (moderate); T-PTY-1 inside its
+band (moderate); held-out without the rare rows still worse than B beyond noise (moderate: T-FOOD-10 is untouched).
