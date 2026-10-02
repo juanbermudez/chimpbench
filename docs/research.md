@@ -2423,3 +2423,167 @@ for the stage.
   non-feeding pant-hoots with males joining or leaving within ±2 scans, the share of feeding events with others arriving
   within 30 min); never fitted.
 - fedurek2014, kalanBoesch2015, southern2025 and clarkWrangham1994 are already listed; the entries above add findings.
+
+### E.36 Addendum: E2h departure timing (2 October 2026)
+
+Read for stage E2h (docs/staging/e2h-prereg.md §1): when wild chimpanzees leave their night nests relative to sunrise,
+site by site, and how each source defines departure and sunrise. Offsets marked "derived" are this stage's: the
+sources give clock times, so the NOAA sunrise (sun's centre at −0.833°) was computed for each day of each study window
+(scripts/departure-bands-metrics.ts) and a mean departure set against a mean sunrise [L].
+
+- **Breakfast planning, Taï** [janmaat2014] (FT; extends E.17) [M]. The departure sample is 179 mornings, not 275 days:
+  "We only analyzed data from days that followed complete observation days" and "Only mornings where breakfast
+  consisted of fruit were considered (74% of all mornings)"; Fig. 2's "datapoints (n = 179) show the observed departure
+  times", and "18% of all departures were before sunrise" is said of that figure. Sunrise: "Astronomical sunrise times
+  were retrieved from the website www.esrl.noaa.gov/gmd/grad/solcalc/sunrise.html" (NOAA's apparent sunrise, not
+  astronomical twilight). Mean departure +13 min at average predictors (Table 1 intercept +779 s); a normal with that
+  mean and an 18% share has an SD of about 14 min (derived). Five mothers with offspring under 7 y, three fruit-scarce
+  periods, a site with leopards (boesch1991).
+- **Leaving the night nest by season, Gombe** [wrangham1975] (FT, PhD thesis, Table 3.1; extends E.32) [M]. Adult
+  males (target-male follows), "Mean times of leaving and entering night-nests are shown from all observations (N = 75)":
+  leaving 06:50 (dry, Jul–Sep 1972), 06:28 (wet, Nov 1972 – Jan 1973), 06:47 (dry, Jul–Sep 1973), 06:42 (May 1972 – Sep
+  1973). Derived: −14, −20, −17 and −18 min from NOAA sunrise (East Africa Time; mean nest entry then falls −33 to +4 min
+  from sunset, where UTC+2 would put it after dark). No SD. Anecdote: Southern males "reached the second fig in the dark
+  after leaving their nests before dawn".
+- **Leaving the night nest by class, Budongo** [batesByrne2009] (FT; extends E.17) [M]. Derived against the mean NOAA
+  sunrise of September 2002 – September 2003 (06:49.9, range 06:35.8–07:06.4): males +6 min (06:56 ± 32, n 21),
+  lactating females −4 (06:46 ± 13, n 12), receptive females −13 (06:37 ± 12, n 4), all 37 pooled +1. Shares before
+  sunrise if departures are normal: males 0.42–0.43, lactating 0.60–0.66, receptive 0.81–0.94 (derived; bounded by
+  departures tracking sunrise or independent of it).
+- **The first to leave a nesting party, Mahale** [zamma2014] (FT, Kyoto University repository manuscript; extends the
+  E2a entry, which read the abstract) [M]. M group, 5 nights, 26 August – 2 September 2011 (dry season, new moon on 29
+  August), parties of 21–47: recording "stopped when the first chimpanzee in the party left its bed in the morning (mean
+  finish time 6:48, range 6:07–7:13)". Derived: −15 min (−56 to +10) from NOAA sunrise (East Africa Time assumed). The
+  earliest of a large party: a lower bound of its departures.
+- **Before dawn at Kibale** [uwimbabazi2021] (FT, PMC8225573; extends its entry) [M]: Kanyawara female follows "started
+  at dawn when the focal individual left her nest", but "sometimes the focal individual had already left the nest before
+  dawn". [lacroux2022] (FT; extends its entry) [M]: Sebitoli camera traps, twilight = "30 min before sunrise to sunrise"
+  (and after sunset): 26 twilight and 10 night events of 36 nocturnal ones in the forest; "Most nocturnal activity
+  occurred in the early morning, within an hour before sunrise". No departure times.
+- **Fongoli** [stewart2011] (FT, PhD thesis) [M]: "the chimpanzees frequently nested and arose in the dark"; nests were
+  built on average 30 min after sunset.
+- **Issa** [drummondclarke2023] (FT, PMC10651548) [L], one morning: at 06:20 on 4 June 2020 eight males had "the entire
+  party still in their nests"; at 07:10 the party "began pant-hooting and ran". Context only (n = 1).
+- Use in E2h: targets only (a three-site band on the median departure, T-RHY-3, and a two-site band for mothers,
+  T-FOOD-10; docs/staging/e2h-targets.patch.json). Nothing here is an input.
+
+**Sources:**
+- *new* stewart2011: Stewart FA 2011. *The evolution of shelter: ecology and ethology of chimpanzee nest building.* PhD
+  thesis, University of Cambridge. [doi:10.17863/CAM.13968](https://doi.org/10.17863/CAM.13968) (FT).
+- *new* drummondclarke2023: Drummond-Clarke RC, Fryns C, Stewart FA, Piel AK 2023. A case of intercommunity lethal
+  aggression by chimpanzees in an open and dry landscape, Issa Valley, western Tanzania. *Primates* 64(6):599–608.
+  [doi:10.1007/s10329-023-01085-6](https://doi.org/10.1007/s10329-023-01085-6) (FT, PMC10651548).
+- janmaat2014, wrangham1975, batesByrne2009, zamma2014, uwimbabazi2021, lacroux2022 and boesch1991 are already listed;
+  the entries above add findings.
+
+**Not verified:** pruetz2018 full text; hozer2026 numbers (HAL served a bot check); nest-departure times at Ngogo,
+Kalinzu, Seringbara, Toro-Semliki, Goualougo, Lopé, Kahuzi and Mt Assirik; the Anderson reviews of primate sleep;
+Ghiglieri 1984 (a book).
+
+### E.37 Addendum: E1m milk output (2 October 2026)
+
+Evidence pass for stage E1m, an audit of the milk inputs (`ledgerMilkYieldCoef` 23.2 kcal/day per kg^0.75,
+`ledgerMilkEff` 0.80, `ledgerMilkKcalPerMin` 2.5: all human, all assumed). Question: is a primate or ape milk energy
+output, measured by isotope dilution, deuterium turnover or test-weighing, better supported for a 31.3 kg wild
+chimpanzee mother than the human value scaled by M^0.75? The decision rule was registered before any value was read
+([staging/e1m-prereg.md](staging/e1m-prereg.md) §2). Bibliographic data checked against Crossref on 2 October 2026.
+Hosts dropped at their first challenge: www.sciencedirect.com (captcha; AJCN and J Nutr back issues now resolve
+there), discovery.ucl.ac.uk (Cloudflare), link.springer.com, openagrar.de and the Göttingen repository (bot checks),
+PMC PDF downloads (proof-of-work page).
+
+- **Human milk energy output with maternal mass** [butteKing2005] (FT, Cambridge PDF; extends E.11) [H] human.
+  - The registry's 749 g/day is a WHO review value (Brown, Dewey & Allen 1998): "Mean milk production rates through 5
+    months postpartum are almost identical (749 g day−1) for exclusively-breastfeeding women in developed and
+    developing countries". No maternal mass is given for it: the registry's 60 kg is an assumption.
+  - Tables 12 and 15 pair doubly labelled water studies with measured milk energy output and maternal weight:
+    Lovelady 1993 (USA, n 9, 12–24 weeks) 64.8 kg, 2.20 MJ/day; Goldberg 1991 (UK, n 10) 58.9, 58.9 and 58.6 kg, 2.24,
+    2.23 and 2.22 MJ/day at 4, 8 and 12 weeks; Forsum 1992 (Sweden, n 23, 8 weeks) 64.4 kg, 1.97 MJ/day; Butte 2001
+    (USA, n 24, 12 weeks) 62.8 kg, 2.02 MJ/day; mean 2.15 MJ/day. The milk method of the originals is not stated here.
+  - Derived: 20.7–25.1 kcal/day per kg^0.75 (mean of the four studies 22.6, SD 1.9; pooled 23.1). The registered 23.2
+    is 2.6% above the mean, 0.3 SD: confirmed, not corrected.
+  - Efficiency of synthesis: "Applying this correction to the estimate of biochemical efficiency derived above
+    (91–94%) would yield a figure of 80–85%"; a 1970 estimate from food-intake differences measured no milk; "Given the
+    imprecision of these estimates, the biochemical derivation of 80% seems reasonable". No primate measurement exists
+    that was found.
+- **Human milk intake by deuterium** [daCosta2010] (Abs; PMC3592484 front matter) [H] human. Dose-to-mother deuterium
+  turnover, 1,115 measurements of infants aged 0–24 months in 12 countries: 0.78 kg/day overall, above 0.80 kg/day
+  until 6–7 months. No maternal mass in the abstract. Cross-species check only.
+- **Rhesus macaque milk** [hinde2009] (FT, PMC2615798; E.13 read the abstract) [M] captive. 58 mothers in outdoor
+  corrals (8.6 kg at 1 month, 8.9 kg at 3.5 months). The "milk yield value" is milk let down with oxytocin and stripped
+  after 3.5–4 h of separation (11.4 g at 0.83 kcal/g; 17.0 g at 0.99 kcal/g); in the authors' words it "should not be
+  considered an estimate of the absolute or daily milk yield", and isotope dilution, timed milking or test-weighing
+  were judged unsuitable for socially housed rhesus. Also: "In comparison with other mammals, primates produce dilute
+  milks over an extended lactation period resulting in low daily costs of investment." Not a daily output.
+- **Baboon and marmoset outputs: not read.** roberts1985 (Abs; E.13): no values in the abstract; hinde2009 (FT) puts
+  its restricted mothers at three captive baboons. bussVoss1971: no abstract; the publisher host is behind a captcha.
+  tardif2001: closed; later papers cite it for milk composition only.
+- **Searches** (PubMed titles and abstracts, Europe PMC full text, 2 October 2026): no measured daily milk output of
+  any great ape, and none of another nonhuman primate beyond the unread baboon studies.
+- **Chimpanzee and ape milk composition** [milligan2007] (FT, University of Arizona repository) [M] captive.
+  - Chimpanzees: 4 captive females, one sample each (three at the Southwest National Primate Research Center on days
+    451, 473 and 550, sedated, no oxytocin; one at the St. Louis Zoo on day 97, with oxytocin). Smithsonian Nutrition
+    Laboratory assays; gross energy from fat, protein and sugar at 9.11, 5.86 and 3.95 kcal/g. Fat 2.01 ± 0.83%, crude
+    protein 0.90 ± 0.10%, lactose 7.43 ± 0.30%, dry matter 11.45 ± 0.75%; **0.53 ± 0.07 kcal/g** (Tables 9.1, 9.2).
+  - Other apes: captive gorilla 0.47 (n 4), bonobo 0.44 (1), orangutan 0.53 (1); wild mountain gorilla 0.49 (4);
+    Hominidae pooled 0.50 ± 0.04 SE (13); captive rhesus 1.03 (22). "fat and total gross energy were not significantly
+    different between captive and wild living hominoids". Oftedal & Iverson 1995 list no ape (samples too small).
+  - Older chimpanzee values (Ben Shaul 1962, read only in milligan2007's Table 3.4, n ≤ 3, method not given): fat 3.7,
+    protein 1.2, lactose 7.0% (derived 0.68 kcal/g). Not used.
+  - Derived: chimpanzee milk is 0.79 as energy-dense as human milk (0.669 kcal/g, 2.8 kJ/g), with 0.216 g of dry matter
+    per kcal against the registry's human 0.185 (`digestaMilkDmGPerKcal`).
+- **Allometry.**
+  - riek2021 (Abs; E.11): the exponent 0.74 ± 0.05 only. Coefficient, units and primate rows not read (closed); its
+    reference list names only baboon (bussVoss1971) and human milk-intake sources.
+  - [riek2011] (not read; closed). Its DOI is 10.1016/j.mambio.2010.03.004.
+  - [riek2008] (Abs) [M], offspring side: 62 species measured by weigh-suckle-weigh or isotopes; young at peak
+    lactation drink about 883 kJ/day per kg^0.82 of their own mass and grow 32 g/day per kg^0.82.
+  - Oftedal 1984 is not online. [douhard2016] (FT, PMC4944469) groups it with older studies that "reported a value of
+    the scaling exponent close to that historically found for the metabolic rate (i.e., between 2/3 and 3/4), but did
+    not account for the shared ancestry between species". Low primate output is stated in words only: [oftedal1991]
+    (Abs: "Both human and non-human primates have relatively low requirements for protein as a consequence of slow
+    growth rates, small milk yields and relatively dilute milk"), hinde2009, and [dufourSauther2002] (Abs: primates have
+    "longer periods of gestation and lactation and slower prenatal and postnatal growth than other mammals of similar
+    size. This reduces daily maternal energy costs."). No coefficient or primate offset could be read.
+  - [hindeMilligan2011] (Abs; closed): its reference list cites milligan2007, the mountain gorilla study, Oftedal 1984
+    and Riek for apes and allometry; its tables were not read.
+- **Use in E1m: no input changes (a valid null).** No primate or ape daily output measured by isotope or
+  test-weighing could be read, and no primate allometric line with a coefficient; the human-scaled coefficient is
+  confirmed by measured human outputs with maternal mass. Brackets for a wild chimpanzee yield (not inputs): 212–281
+  kcal/day for an exclusively milk-fed infant of 3–9 months on the captive growth potential (221 at 9 months at Gombe's
+  growth); 243 kcal/day if hominoids conserved milk volume rather than energy per kg^0.75; 274–333 kcal/day from the four
+  human studies scaled to 31.3 kg (the input: 307).
+
+**Sources:**
+- *new* milligan2007: Milligan LA 2007. *Nonhuman primate milk composition: relationship to phylogeny, ontogeny, and
+  ecology.* PhD dissertation, University of Arizona. [hdl:10150/194078](https://hdl.handle.net/10150/194078) (FT).
+- *new* daCosta2010: da Costa TH, Haisma H, Wells JC, Mander AP, Whitehead RG, Bluck LJ 2010. How much human milk do
+  infants consume? Data from 12 countries using a standardized stable isotope methodology. *Journal of Nutrition*
+  140(12):2227–2232. [doi:10.3945/jn.110.123489](https://doi.org/10.3945/jn.110.123489) (Abs).
+- *new* riek2008: Riek A 2008. Relationship between milk energy intake and growth rate in suckling mammalian young at
+  peak lactation: an updated meta-analysis. *Journal of Zoology* 274(2):160–170.
+  [doi:10.1111/j.1469-7998.2007.00369.x](https://doi.org/10.1111/j.1469-7998.2007.00369.x) (Abs).
+- *new* riek2011: Riek A 2011. Allometry of milk intake at peak lactation. *Mammalian Biology* 76(1):3–11.
+  [doi:10.1016/j.mambio.2010.03.004](https://doi.org/10.1016/j.mambio.2010.03.004) (not read).
+- *new* douhard2016: Douhard F, Lemaître J-F, Rauw WM, Friggens NC 2016. Allometric scaling of the elevation of maternal
+  energy intake during lactation. *Frontiers in Zoology* 13:32.
+  [doi:10.1186/s12983-016-0164-y](https://doi.org/10.1186/s12983-016-0164-y) (FT, PMC4944469).
+- *new* oftedal1991: Oftedal OT 1991. The nutritional consequences of foraging in primates: the relationship of
+  nutrient intakes to nutrient requirements. *Philosophical Transactions of the Royal Society B* 334(1270):161–170.
+  [doi:10.1098/rstb.1991.0105](https://doi.org/10.1098/rstb.1991.0105) (Abs).
+- *new* dufourSauther2002: Dufour D, Sauther M 2002. Comparative and evolutionary dimensions of the energetics of
+  human pregnancy and lactation. *American Journal of Human Biology* 14(5):584–602.
+  [doi:10.1002/ajhb.10071](https://doi.org/10.1002/ajhb.10071) (Abs).
+- *new* hindeMilligan2011: Hinde K, Milligan LA 2011. Primate milk: proximate mechanisms and ultimate perspectives.
+  *Evolutionary Anthropology* 20(1):9–23. [doi:10.1002/evan.20289](https://doi.org/10.1002/evan.20289) (Abs).
+- *new* bussVoss1971: Buss DH, Voss WR 1971. Evaluation of four methods for estimating the milk yield of baboons.
+  *Journal of Nutrition* 101(7):901–909. [doi:10.1093/jn/101.7.901](https://doi.org/10.1093/jn/101.7.901) (not read).
+- *new* tardif2001: Tardif SD, Power ML, Oftedal OT, Power RA, Layne DG 2001. Lactation, maternal behavior and infant
+  growth in common marmoset monkeys (*Callithrix jacchus*): effects of maternal size and litter size. *Behavioral
+  Ecology and Sociobiology* 51(1):17–25. [doi:10.1007/s002650100400](https://doi.org/10.1007/s002650100400) (not read;
+  author order as cited by hinde2009, the Crossref deposit lists another).
+- butteKing2005, hinde2009, roberts1985, riek2021, whittier2011, garcia2017 and emeryThompson2013 are already listed;
+  the entries above add findings.
+
+**Not verified:** milk outputs of roberts1985 and bussVoss1971 (publisher captcha); tardif2001; riek2021's coefficient
+and primate rows; riek2011; Oftedal 1984 (not online); hindeMilligan2011's tables; garcia2017's energy by stage;
+emeryThompson2013 (closed; its abstract has no numbers); Ben Shaul 1962 (read only through milligan2007).
