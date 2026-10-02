@@ -259,4 +259,124 @@ held-out not up beyond noise (z ≤ +2, both row sets), count down → provision
 
 | Iteration | Registered (commit) | Arm | Status |
 | --- | --- | --- | --- |
-| 1 | e378e73 | W1 = R + `waterLedger` 1 | smoke test (seed 48, 1 + 2 days, 2.9 s): every readout filled; no defect; 68% of adult drinking events at 07:00–09:00, deficit at an event 1.7–2.2% of mass; budget (mL/day) e.g. adult males: food 1,113, metabolic 203, drunk 569 in; evaporation 164, insensible 603, faecal 307, urine 800 out. Arm running from a frozen checkout of e378e73 (08:10) |
+| 1 | e378e73 | W1 = R + `waterLedger` 1 | smoke test (seed 48, 1 + 2 days, 2.9 s): every readout filled; no defect; 68% of adult drinking events at 07:00–09:00, deficit at an event 1.7–2.2% of mass; budget (mL/day) e.g. adult males: food 1,113, metabolic 203, drunk 569 in; evaporation 164, insensible 603, faecal 307, urine 800 out. Ran from frozen checkouts of e378e73 (e-bench, diagnosis) and 75c722b (diagnosis re-run with the §3 addition; every earlier readout reproduced exactly). Done: §7 |
+| 2, 3 | — | — | not used (§8) |
+
+## 7. Iteration 1 results (W1 = R + `waterLedger` 1; quick, seeds 48 and 7, 30 + 30 days; rules policy)
+
+Runs (gitignored, frozen checkouts in the session scratch `e2g/`): `W1-quick.json` (e-bench, `git.dirty` 0),
+`D-W1b-{48,7}.json` (water-diagnose), `E-W1.json` and `E-R.json` (energy-diagnose, quick, same seeds). R's
+diagnosis spread: `D-{R,NR1,NR2,NR3}-{48,7}.json` (the four quick realizations; each diagnosis's T-RNG-4 and T-RNG-5
+equal the e-bench run of the same realization, so the worlds are the integrator's). Identity at this head: the R stack's
+field world hashes after 2 days are equal before (61550da) and after (75c722b) the mechanism (seed 48 9deaf1df367a7d34,
+seed 7 51357e4fb3248108). Every number below is printed by the scripts named (session scratch `e2g/tools/`).
+
+**Sums against the mean of R's four realizations** (`tools/zscore.py`; e-noise.md amendment 2):
+
+```
+## W1-quick against the mean of 4 reference realizations (commit e378e73, dirty 0)
+- fitted: 16 rows; arm 4.366; reference mean 3.900 (runs 5.13, 3.76, 3.42, 3.29; own SD 0.84); change +0.466; SD used 0.84; z +0.50 -> inside noise
+  largest row changes vs the mean: T-SOC-9 -0.39, T-ACT-3 +0.36, T-HUN-2 +0.17, T-HUN-1 +0.15, T-ACT-4 +0.12, T-ACT-1 +0.05
+- held-out: 12 rows; arm 2.216; reference mean 2.534 (runs 2.48, 2.40, 2.23, 3.03; own SD 0.35); change -0.318; SD used 1.26; z -0.23 -> inside noise
+  largest row changes vs the mean: T-HUN-4 -0.24, T-SOC-3 -0.16, T-HUN-8 +0.14, T-RNG-5 -0.09, T-SOC-6 +0.09, T-SOC-10 -0.08
+- held-out, no rare: 11 rows; arm 2.216; reference mean 2.292 (runs 2.48, 2.24, 2.23, 2.21; own SD 0.13); change -0.076; SD used 0.48; z -0.14 -> inside noise
+  largest row changes vs the mean: T-SOC-3 -0.16, T-HUN-8 +0.14, T-RNG-5 -0.09, T-SOC-6 +0.09, T-SOC-10 -0.08, T-FOOD-7 +0.04
+```
+
+**Report table** (`tools/final_table.py`; diagnosis rows pool adults over classes and seeds by chimp-days):
+
+| quantity | R (mean ± SD, 4 diag / 4 bench) | W1 |
+| --- | --- | --- |
+| drinking events per adult-day | 2.240 ± 0.013 | 0.839 |
+| walks to water per adult-day | 2.803 ± 0.030 | 0.977 |
+| daylight minutes drinking (%) | 1.783 ± 0.021 | 0.606 |
+| share of adult movement walking to water | 0.221 ± 0.006 | 0.099 |
+| split share of walks with mates | 0.708 ± 0.005 | 0.675 |
+| males' true day range (km/day) | 2.159 ± 0.065 | 1.776 |
+| mothers' true day range (km/day) | 1.696 ± 0.027 | 1.401 |
+| T-RNG-4 | 1.897 ± 0.126 | 1.648 |
+| T-RNG-5 | 0.706 ± 0.080 | 0.680 |
+| T-PTY-1 | 3.799 ± 0.154 | 4.090 |
+| T-ACT-1 | 0.298 ± 0.009 | 0.289 |
+| T-ACT-2 | 0.152 ± 0.005 | 0.139 |
+| T-ACT-3 | 0.243 ± 0.014 | 0.276 |
+| T-ACT-4 | 0.493 ± 0.029 | 0.519 |
+| fitted sum | 3.90 ± 0.84 | 4.37 (z +0.50; 16 rows) |
+| held-out sum | 2.53 ± 0.35 | 2.22 (z -0.23; 12 rows) |
+| held-out, no rare sum | 2.29 ± 0.13 | 2.22 (z -0.14; 11 rows) |
+| prescription count | 103 | 97 |
+| viability (bench; reserve slope %/day M, L, F; deaths) | pass; +0.001 ± 0.003, -0.001 ± 0.006, +0.001 ± 0.004 | pass; +0.001, +0.007, +0.003; deaths 0; max class mean deficit 0.94% |
+
+**Water readouts by class** (`tools/diag_vs_ref.py`; R = mean ± SD of its four realizations):
+
+| readout | R M (4) | R L (4) | R F (4) | W1 M | W1 L | W1 F |
+| --- | --- | --- | --- | --- | --- | --- |
+| walks to water per day | 2.77 ± 0.03 | 2.55 ± 0.04 | 3.08 ± 0.08 | 0.92 | 1.00 | 1.04 |
+| drinking events per 12 h of daylight | 2.08 ± 0.02 | 2.04 ± 0.01 | 2.33 ± 0.03 | 0.72 | 0.86 | 0.87 |
+| minutes per event | 6.1 ± 0.1 | 5.8 ± 0.0 | 6.0 ± 0.1 | 4.8 | 6.6 | 4.8 |
+| daylight minutes drinking (%) | 1.78 ± 0.03 | 1.64 ± 0.03 | 1.93 ± 0.03 | 0.50 | 0.80 | 0.60 |
+| walk to water (km/day) | 0.44 ± 0.01 | 0.40 ± 0.01 | 0.47 ± 0.02 | 0.14 | 0.17 | 0.18 |
+| walk to water ÷ all movement | 0.202 ± 0.007 | 0.235 ± 0.004 | 0.241 ± 0.009 | 0.081 | 0.119 | 0.115 |
+| walks with mates that end split | 0.72 ± 0.01 | 0.69 ± 0.02 | 0.70 ± 0.01 | 0.67 | 0.69 | 0.68 |
+| split walks rejoined within 60 min | 0.39 ± 0.02 | 0.44 ± 0.02 | 0.40 ± 0.03 | 0.45 | 0.48 | 0.41 |
+| thirst at event start | 0.32 ± 0.00 | 0.31 ± 0.00 | 0.31 ± 0.00 | 0.74 | 0.92 | 0.79 |
+| deficit at event start (% of mass) | — | — | — | 1.77 | 2.42 | 1.83 |
+| mean deficit (% of mass) | — | — | — | 0.70 | 0.93 | 0.69 |
+| largest individual deficit (% of mass) | — | — | — | 3.21 | 3.28 | 2.70 |
+| truth day range (km/day) | 2.16 ± 0.06 | 1.70 ± 0.03 | 1.94 ± 0.06 | 1.78 | 1.40 | 1.53 |
+| reserve slope (% of store per day) | 0.001 ± 0.003 | -0.001 ± 0.006 | 0.001 ± 0.004 | 0.001 | 0.007 | 0.003 |
+
+**Reserve slopes from energy-diagnose** (`tools/energy_slopes.py`; % of the usable store per day, least squares over daily midday means; one quick run each):
+
+| arm | adult male | female, other | female, lactating | juvenile 5–12 y | infant 2–5 y | infant 0.5–2 y | deaths |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| R | -0.002 (mean +0.005) | -0.000 (mean +0.001) | -0.010 (mean -0.047) | -0.012 (mean -0.007) | +0.002 (mean -0.009) | +0.006 (mean -0.003) | 0 |
+| W1 | +0.001 (mean +0.004) | +0.004 (mean +0.002) | +0.007 (mean -0.045) | +0.024 (mean -0.008) | -0.007 (mean -0.011) | +0.013 (mean -0.005) | 0 |
+
+Observer (focal follows): adult females 91 drinking events in 882 follow hours (1.24 per 12 h; R's four: 2.48), males
+57 in 676 h (1.01; R 2.35). Event starts by local hour (adults): 74% in 07:00–08:00, 14% in 08:00–09:00, then ≤ 4% an
+hour (R: 16% in the first hour, then 6–12% every hour to 18:00). No drinking at night. Water budget (mL/day; ledger tap):
+adult males in: food 1,541, drunk 439, metabolic 209; out: urine 1,043 (obligatory 417 plus the passed surplus),
+insensible 605, faecal 371, regulated evaporation 170. Lactating females in: food 1,748, drunk 583, metabolic 193; out:
+urine 1,064, insensible 530, faecal 415, milk 394, evaporation 123. Water taken in per kcal eaten (energy-diagnose's
+kcal): 1.17 (males), 1.20 (lactating), 1.25 (other females) mL/kcal, against ~2.8 in zoo and sanctuary apes
+(pontzer2021, abstract; isotope turnover); the model eats 449–575 g of dry matter a day against the field mothers' 873
+(T-ENE-3), so its food water is low too. Largest individual deficit 2.6–3.6% of body mass; at most 0.2% of chimp-ticks
+above 3%.
+
+**Against the predictions (§5):** held: walks to water 0.92–1.04 a day (0.3–1.5); events 0.72–0.87 per 12 h (0.3–1.5);
+4.8–6.6 min per event (2–8); 88% of adult events at 07:00–09:00 (≥ 35%); walk to water 0.14–0.18 km/day (0.05–0.30);
+split share per walk 0.67–0.69 (0.55–0.80); mean deficit 0.69–0.93% (0.3–1.2, no class above 2); truth day ranges 1.78
+and 1.40 km/day (1.55–2.00, 1.30–1.60); T-RNG-4 1.648 (1.45–1.85); T-RNG-5 0.680 (0.65–0.90); T-PTY-1 4.09 (3.9–4.5);
+T-ACT-1 0.289 (0.27–0.30); T-ACT-2 0.139 (0.11–0.145); T-ACT-3 0.276 (0.25–0.32); every sum inside noise; count 97;
+viability pass. Missed: mothers' daylight drinking time 0.80% (registered 0.1–0.7%; males 0.50, other females 0.60).
+Kill criteria: (a) not met (no class mean above 2%, no individual above 5%); (b) not met (no death; every class's
+reserve slope within 0.04%/day of R's).
+## 8. Verdict
+
+**Iteration 1 (W1) passes the keep rule: provisional keep candidate; 5-seed confirm recommended.** Viability passes
+(no death, reserve slopes as R's), held-out inside noise (z −0.23 on all shared rows, −0.14 without T-HUN-4 and T-BRD-1),
+fitted inside noise (z +0.50), prescriptions 103 → 97. Every registered prediction held but one (mothers' daylight
+drinking time 0.80% against ≤ 0.7%). Iterations 2 and 3 were not used: no defect or failed criterion called for one,
+and the open questions below are inputs that need sources, not mechanism changes.
+
+**What emerges.** With water in and out from sourced physiology, drinking becomes a dawn rehydration: a night without
+food leaves a deficit of 1.8–2.4% of body mass (faeces, urine and insensible loss go on; no food water comes in), and
+the first drink of the day replaces it; by day, food water (1.4–1.7 L/day on R's intake) exceeds losses and the surplus
+leaves as urine. Walks to water fall from 2.6–3.1 to 0.9–1.0 a day and their path from ~0.45 to ~0.16 km/day. Each walk
+still splits the walker's party as often as before (≈ 0.7), so the prescribed fission clock shrinks with the walks.
+
+**Open problems.**
+1. Drinking time is still 4–7 × Gombe mothers' 0.12% of observed time (nelson2022, a drier site; no Kibale rate
+   exists). It is set by the dawn deficit, which rests on [L] human inputs: bare-skin diffusion (Fanger; a furred skin
+   is not modelled, about a third of the night loss), urine and faeces passed continuously at night (no nocturnal
+   antidiuresis, no defecation timing), and a human drinking rate. Chimpanzee insensible water loss and night urine
+   flow would decide it.
+2. Without the prescribed walks, males' day range falls (truth 2.20 → 1.78 km/day; T-RNG-4 1.90 → 1.65, band floor 1.5)
+   and the freed time goes to grooming (T-ACT-3 0.24 → 0.28, further out of band): male ranging and fission–fusion now
+   rest on food trips alone. That is the next stage's problem, not this one's.
+3. The model takes in 1.2–1.25 mL of water per kcal eaten against ~2.8 in captive apes (pontzer2021, abstract): it eats
+   about a third less dry matter than the field's nursing mothers (T-ENE-3), so its food water is low too; with the
+   field's intake the daytime surplus would grow, not the dawn deficit.
+4. Model water sites carry no kind or stock: 8–13% of drinking is at stream-bank sites against Kanyawara's 78%
+   (T-RHY-7); the pools (`waterSitesPerKm2`, design) take the rest.
