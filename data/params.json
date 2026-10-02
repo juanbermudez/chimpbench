@@ -6819,6 +6819,73 @@
    "notes": "Stage E4a switch (docs/staging/e4a-prereg.md): no redirect roll (redirectBaseP and redirectAggrP are not read, world.rng is not touched). Every lost conflict is noted, and the defeat is considered once, at the loser's first choice after it, whatever he chooses (iteration 1; execution.ts startAction clears it; the option stays bounded by endoStressTauH and by his next own aggression): a charge at a dominated, unrelated bystander scored stress × (redirectBase + redirectAggrW × aggression + redirectTensionW × tension + redirectStressW), minus the guardian deterrent. Needs endoStates 1: it counts as off (the dice) unless endoStates is 1 (endocrine.ts endoOn; E4b review fix). 0 = the priming dice and the 6-minute window. Ablation switch."
   },
   {
+   "id": "endoRhythm",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.endoRhythm",
+   "file": "src/sim/endocrine.ts",
+   "integer": true,
+   "notes": "Stage E4d switch (docs/staging/e4d-prereg.md): sleep-gated secretion. While an animal sleeps (in its own finished nest, or riding in its mother's), the stress load's target is endoRhythmGainC × its waking tonic target (stressFloor + bereavement + endoStressDeficitW × energy deficit), and an adult male's competitive arousal target is endoRhythmGainT × his waking drive (oestrus and rival terms) integrated over his waking slow steps with endoArousalTauH and held through sleep (chimp.sim.ard; iteration 2, e4d-prereg §9); awake, both are as in E4a. The states peak at waking and fall through the day with their own time constants. Removes no prescription (removesNothing). Needs endoStates 1: it counts as off unless endoStates is 1 (endocrine.ts endoOn). 0 = E4a/E4b/E4c, bit-identical. Ablation switch."
+  },
+  {
+   "id": "endoRhythmGainC",
+   "group": "needs",
+   "value": 3.38,
+   "units": "ratio",
+   "range": [
+    2.7,
+    4.83
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    1,
+    20
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "endoStep",
+   "file": "src/sim/endocrine.ts",
+   "notes": "Stage E4d: the sleep gain of the stress load's tonic production (endoRhythm). Derived, not fitted to behaviour: the gain that gives the state's tonic course a 07 h ÷ 17 h ratio of 2.64 with endoStressTauH 3.4 h, for an animal waking at sunrise (06:50 at Kibale) and asleep from sunset (18:50), one-hour bin means of the periodic solution. Ratio: girardButtoz2021 Fig. 1 (Taï non-orphan immatures, urinary cortisol, log line 4.00 at 07 h and 3.03 at 17 h, read by eye) [M] (docs/research.md, Addendum: E4d hormone rhythm); direction [H] mullerLipson2003 (Kanyawara males). Range: ratios 2.2–3.5 (adult males' linear slope is steeper in its own model). Tying cortisol to sleep instead of a clock front-loads the decline (a known misfit; e4d-prereg §3)."
+  },
+  {
+   "id": "endoRhythmGainT",
+   "group": "needs",
+   "value": 4.35,
+   "units": "ratio",
+   "range": [
+    3.04,
+    6.84
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    1,
+    20
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "endoStep",
+   "file": "src/sim/endocrine.ts",
+   "notes": "Stage E4d: the sleep gain of competitive arousal's production (endoRhythm). Derived, not fitted to behaviour: the gain that gives the state's tonic course a 07 h ÷ 17 h ratio of 2.43 with endoArousalTauH 6 h, for a male waking at sunrise (06:50 at Kibale) and asleep from sunset (18:50), one-hour bin means of the periodic solution; the computed course (1, 0.89, 0.79, 0.71, 0.65, 0.59, 0.54, 0.50, 0.47, 0.44, 0.41, 0.39 of the 07 h value at 07–18 h) follows the figure's. Ratio: fedurek2016 Fig. 4 (Kanyawara, 11 adult males, mean urinary testosterone ≈ 124 × 10³ pg/ml at 07 h and 51 × 10³ at 17 h, read by eye) [M]; a sleep-driven rise, not a clock: axelsson2005, luboshitzky2001 (human) [M] (docs/research.md, Addendum: E4d hormone rhythm). Range: ratios 2.0–3.0."
+  },
+  {
    "id": "endoStates",
    "group": "decision",
    "value": 0,

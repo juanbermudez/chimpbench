@@ -415,3 +415,66 @@ test('E4b: with every switch on the world is deterministic however ticks are bat
   assert.deepEqual(plainDataProblems(w), []);
   assert.deepEqual(JSON.parse(JSON.stringify(w)), w);
 });
+
+// Stage E4d (docs/staging/e4d-prereg.md): sleep-gated secretion in the stress and arousal states.
+const RHY: Overrides = { ...ON, endoRhythm: 1 };
+
+test('E4d: endoRhythm counts as off without endoStates, and changes the world with it', () => {
+  const day = (p: Overrides) => worldHash(run(createWorld(48, { params: p }), 5760));
+  assert.equal(day({ endoRhythm: 1 }), day({}));
+  assert.notEqual(day(RHY), day(ON));
+});
+
+test('E4d: asleep, the stress load rises toward endoRhythmGainC × its tonic target, and falls back awake', () => {
+  const { w, c } = quiet(RHY), P = paramsOf(w), n = 24;
+  steps(w, c, n, true);
+  const k = P.endoRhythmGainC * P.stressFloor;
+  assert.ok(Math.abs(c.stress - (k + (P.stressFloor - k) * Math.exp(-n * SLOW_HOURS / P.endoStressTauH))) < 1e-9);
+  const top = c.stress;
+  steps(w, c, n);
+  assert.ok(Math.abs(c.stress - (P.stressFloor + (top - P.stressFloor) * Math.exp(-n * SLOW_HOURS / P.endoStressTauH))) < 1e-9);
+  // without the switch, sleep is the tonic level itself
+  const q = quiet();
+  steps(q.w, q.c, n, true);
+  assert.ok(Math.abs(q.c.stress - P.stressFloor) < 1e-12);
+});
+
+test('E4d: asleep, arousal rises toward endoRhythmGainT × his waking drive integrated with its time constant; without a drive it does not', () => {
+  const { w, c } = quiet(RHY), P = paramsOf(w), x = ix(c), k = 1 - Math.exp(-SLOW_HOURS / P.endoArousalTauH);
+  x.ard = 0; // quiet() ran two hours with the switch on
+  const o = w.chimps.find(k => k.alive && k.troopId === c.troopId && k !== c && isAdultMale(k))!;
+  o.elo = c.elo + 40;
+  x.seen.push(o.id);
+  const drive = P.endoArousalRivalW * (1 - 40 / P.escalateEloGap), m = STEPS_PER_H * 24;
+  steps(w, c, m); // a waking day with a close-rank rival in view: the held drive follows the drive with the state's time constant
+  const held = drive * (1 - Math.pow(1 - k, m));
+  assert.ok(Math.abs(x.ard! - held) < 1e-12);
+  const a0 = x.arousal!, h0 = x.ard!, n = 36, target = Math.min(1, P.endoRhythmGainT * h0);
+  steps(w, c, n, true);
+  assert.equal(x.ard, h0, 'held through sleep');
+  assert.ok(Math.abs(x.arousal! - (target + (a0 - target) * Math.exp(-n * SLOW_HOURS / P.endoArousalTauH))) < 1e-9);
+  assert.ok(x.arousal! > drive, 'the night amplifies the waking drive');
+  // awake again with nothing in view: the drive held decays toward 0, and arousal falls with its time constant
+  x.seen.length = 0;
+  const a1 = x.arousal!;
+  steps(w, c, n);
+  assert.ok(Math.abs(x.ard! - h0 * Math.pow(1 - k, n)) < 1e-12);
+  assert.ok(Math.abs(x.arousal! - a1 * Math.exp(-n * SLOW_HOURS / P.endoArousalTauH)) < 1e-9);
+  // no drive while awake: no nocturnal rise
+  const q = quiet(RHY);
+  ix(q.c).ard = 0;
+  steps(q.w, q.c, 1); steps(q.w, q.c, n, true);
+  assert.equal(ix(q.c).arousal, 0);
+});
+
+test('E4d: with endoRhythm on the world is deterministic however ticks are batched, and saves keep their shape', () => {
+  const a = createWorld(48, { params: RHY }), b = createWorld(48, { params: RHY });
+  for (let i = 0; i < 8; i++) stepWorld(a, 60);
+  for (let i = 0; i < 8 * 240; i++) stepWorld(b, 0.25);
+  assert.deepEqual(a, b);
+  const w = run(createWorld(7, { params: RHY }), 5760);
+  assert.ok(w.chimps.some(c => c.alive && ix(c).ard !== undefined));
+  assert.equal(worldShapeProblem(w), '');
+  assert.deepEqual(plainDataProblems(w), []);
+  assert.deepEqual(JSON.parse(JSON.stringify(w)), w);
+});
