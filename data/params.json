@@ -3888,6 +3888,32 @@
    }
   },
   {
+   "id": "companyMargin",
+   "group": "social",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/research.md: charnov1976 (a patch is worth its gain over the alternative), keverne1989 (the motivation to be groomed is regulated by grooming), cabanac1971 (an incentive weighted by the internal state it serves)"
+   ],
+   "clock": "none",
+   "symbol": "P.companyMargin",
+   "file": "src/sim/candidates.ts",
+   "integer": true,
+   "notes": "Stage E5b switch (docs/staging/e5b-prereg.md §5): with cohesionValue 1, an approach to a heard caller gains only the company the caller adds to the company the animal already has: max(0, companyValue(caller) - the best companyValue among its settled companions in sight within the party link (own community, 5 y or more, not travelling or following, not in a nest; E5a iteration 1's settled companion)). The E5b diagnosis found the caller's company, valued at full whatever company the listener already has and weighted by a social need the approach does not relieve, the term that adds the walking on the integrated stack (approaches to callers +0.33 to +0.37 km a day for adult males with either call model). The marginal value of company, as a patch is worth its gain over the alternative; the social drive is relieved by grooming, which a companion present offers as well as a distant one. No new magnitude (companyValue is E5a's, the settled set E5a's). Approaches only (the term the diagnosis names); following and joined trips are unchanged. Removes no prescription. 0 = today, bit-identical. Ablation switch."
+  },
+  {
    "id": "condGood",
    "group": "needs",
    "value": 0.5,

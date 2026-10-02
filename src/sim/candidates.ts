@@ -412,7 +412,9 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       let pull = x.joinRich ? 0.15 + env.fruitIndex * 0.35 + h * 0.3 + pers.sociability * 0.15 : pers.sociability * 0.3 * env.fruitIndex - 0.05;
       // field profile: an individual with few companions and an unmet social need goes to the callers; males to males (design; T-PTY-1)
       // stage E5a (cohesionValue): the caller's company, in place of the tuned social pull
-      if (cohesion) { const caller = byId.get(x.joinCaller); if (caller && caller.alive) pull += companyValue(c, caller, P); }
+      // stage E5b (companyMargin; docs/staging/e5b-prereg.md §5): only the company the caller adds to what the animal
+      // already has (its best settled companion in sight within the party link); company is worth what a move adds
+      if (cohesion) { const caller = byId.get(x.joinCaller); if (caller && caller.alive) pull += P.companyMargin === 1 ? Math.max(0, companyValue(c, caller, P) - presentCompany(world, c, P)) : companyValue(c, caller, P); }
       else if (P.joinSocialW > 0) { const caller = byId.get(x.joinCaller); pull += (1 - c.social) * P.joinSocialW * (x.visibleOwn < 2 ? 1 : P.joinSocialInPartyF) + (male && c.age >= 15 && caller && isAdultMale(caller) ? P.joinMaleW : 0); }
       if (P.assocBondW > 0) { const caller = byId.get(x.joinCaller); if (caller) pull += P.assocBondW * bond(c, caller); } // stage C9: bond with the caller (off by default)
       if (d > P.joinCallMinM) offer('travel', x.joinCall, pull * (1 - rain * 0.5) - d / P.joinCallDistScaleM, V.CALLER, x.joinCaller);
@@ -674,6 +676,28 @@ export function companyValue(c: Chimp, o: Chimp, P: Params): number {
   let v = (1 - c.social) * (P.joinBase + P.joinBondW * bond(c, o) + (c.allies.includes(o.id) ? P.joinAllyW : 0) + (dominates(o, c) ? P.joinRankW : 0) + c.personality.sociability * P.partyFollowSocialW);
   if (c.sex === 'male' && c.age >= 10 && o.sex === 'female' && o.age >= 10 && o.swelling >= 0.75 && !maternalKin(c, o)) v += mateWorth(c, o);
   return v;
+}
+
+/**
+ * Stage E5b (companyMargin; docs/staging/e5b-prereg.md §5): the company an animal already has, the best companyValue
+ * among the settled companions it sees within the party link (own community, 5 y or more, not travelling or following,
+ * not in a nest: E5a iteration 1's settled companion), 0 with none. An approach to a caller is worth the caller's company
+ * less this (never below 0): the marginal value of company, as a patch is worth its gain over the alternative
+ * [charnov1976]; the social drive is relieved by grooming, which a companion present offers as well as a distant one
+ * [keverne1989, cabanac1971]. No new magnitude. Pure.
+ */
+export function presentCompany(world: World, c: Chimp, P: Params): number {
+  const x = ix(c), byId = index(world).byId, l2 = P.partyLinkM * P.partyLinkM;
+  let best = 0;
+  for (let i = 0; i < x.seen.length; i++) {
+    const o = byId.get(x.seen[i]);
+    if (!o || !o.alive || o === c || o.troopId !== c.troopId || o.age < 5 || o.action === 'travel' || o.action === 'follow' || o.action === 'nest') continue;
+    const dx = o.position[0] - c.position[0], dz = o.position[2] - c.position[2];
+    if (dx * dx + dz * dz > l2) continue;
+    const v = companyValue(c, o, P);
+    if (v > best) best = v;
+  }
+  return best;
 }
 
 /**
