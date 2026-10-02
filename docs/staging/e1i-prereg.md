@@ -347,6 +347,10 @@ Bench sums against the mean of the four T realizations (§4a; rows counted in al
 3. *Costs:* mothers now range further relative to males (T-RNG-5 0.67 → 0.84, band 0.3–0.6; the largest held-out move, within noise as a sum); hunting rows move both ways (rare events in 30 days); T-ACT-3 female 0.184 (band ≤ 0.18).
 4. *Still open:* mothers of infants ≥ 2 y groom 33.7% of daylight (other females 12.1%), after 1.49 interrupts per daylight hour, 77% from their own infant ("began grooming me"): infants from 2 y groom their mothers and the mothers reciprocate. No source was checked for infant-to-mother grooming rates; a design weight of the infant's options, outside this stage.
 
+### Files and checks
+
+Every run's JSON, scorecard and log, and the table scripts that generated the numbers above (`tools/energy_table.py`, `diag_table.py`, `bench_table.py`, `zscore.py`), are in `artifacts/validation/e1i/` of the `e1i-intake` worktree (gitignored, local). After merging `track-e` (5b452e6 and E4d): `gen-params --check` clean, `tsc --noEmit` clean, `pnpm test` 652 tests, 651 pass, 0 fail, 1 skipped; the goldens and the field pin did not move (both switches 0 by default).
+
 ## 7. Known defects and caveats in the code under test
 
 - Readout caveat (scripts/intake-diagnose.ts closeBout): the gate's reason is not the bout's trigger. A forage act that finishes at satiation usually draws as 'need-bucket' (hunger changed bucket since the intent), so satiation and a full gut are read from the state at the last eating tick, not from the reason.

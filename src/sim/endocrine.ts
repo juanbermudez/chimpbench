@@ -14,13 +14,19 @@ import { NEVER, SLOW_EVERY, SLOW_HOURS, TICK_HOURS, index, ix, type ChimpX } fro
 // sharing, which leaves no timestamp. No randomness, no allocation. Sources and tags: the registry notes (endo*).
 //
 // Not wired on purpose, so they stay tests of the mechanism: rank, hierarchy instability, time of day, patrols.
+//
+// Stage E4d (endoRhythm; docs/staging/e4d-prereg.md): sleep-gated secretion. While an animal sleeps, the stress load's
+// target is endoRhythmGainC × its waking tonic target and an adult male's arousal target is endoRhythmGainT × the drive
+// he had over his recent waking hours (chimp.sim.ard), so both states peak at waking and fall through the day with their own time
+// constants, as urinary cortisol and testosterone do (fedurek2016, girardButtoz2021; testosterone follows sleep, not
+// the clock: axelsson2005). Tied to the animal's own sleep, never to the hour.
 
 /**
  * Switches that need the states (review fix, E4b): a dependent switch counts as off unless endoStates is 1, so a
  * one-switch ablation keeps its dice instead of removing them and leaving a state that never runs (arousal undefined,
  * score 0, the act absent). Every reader of a dependent switch goes through this.
  */
-export type EndoDependent = 'endoEscalate' | 'endoRedirect' | 'endoRainDisplay' | 'endoFast' | 'endoFastRedirect';
+export type EndoDependent = 'endoEscalate' | 'endoRedirect' | 'endoRainDisplay' | 'endoFast' | 'endoFastRedirect' | 'endoRhythm';
 export function endoOn(P: Params, s: EndoDependent): boolean {
   if (P.endoStates !== 1 || P[s] !== 1) return false;
   return s !== 'endoFastRedirect' || (P.endoRedirect === 1 && P.endoFast === 1); // the fast redirect replaces E4a's, on the fast state
@@ -43,7 +49,7 @@ export function endoNeeds(world: World, c: Chimp, x: ChimpX, sleeping: boolean, 
 /** One slow step of the three states of `c`. Deterministic; reads the last perception snapshot (x.seen). */
 export function endoStep(world: World, c: Chimp, x: ChimpX, sleeping: boolean, P: Params, floor: number): void {
   const tick = world.tick, byId = index(world).byId;
-  const male = isAdultMale(c);
+  const male = isAdultMale(c), rhythm = endoOn(P, 'endoRhythm'); // stage E4d: sleep-gated secretion
   // context in view: the closest-rank adult male, the most swollen parous female, a partner in grooming contact
   let rival = 0, oestrus = 0, groom = -1;
   if (!sleeping) {
@@ -78,7 +84,8 @@ export function endoStep(world: World, c: Chimp, x: ChimpX, sleeping: boolean, P
   // E4b fix: only the start of a hearing episode kicks (endoHeard), not every slow step while the calls go on
   if (since(x.heardFrom ?? NEVER, tick)) s += P.endoStressStrangerW * (1 - s);
   const deficit = (c.hunger + (1 - x.cond)) / 2;
-  let target = floor + P.endoStressDeficitW * deficit + (!sleeping && x.strangers > 0 ? P.endoStressStrangerW : 0);
+  const tonic = floor + P.endoStressDeficitW * deficit; // stage E4d: asleep, the tonic production runs at endoRhythmGainC times its waking rate
+  let target = (rhythm && sleeping ? P.endoRhythmGainC * tonic : tonic) + (!sleeping && x.strangers > 0 ? P.endoStressStrangerW : 0);
   if (target > 1) target = 1;
   s += (target - s) * (1 - Math.exp(-SLOW_HOURS * (s > target ? 1 + P.endoAffilBufferK * x.affil : 1) / P.endoStressTauH));
   c.stress = s < 0 ? 0 : s > 1 ? 1 : s;
@@ -90,7 +97,11 @@ export function endoStep(world: World, c: Chimp, x: ChimpX, sleeping: boolean, P
     if (lc && lc.won && since(lc.time, tick)) a += P.endoArousalWinKick * (1 - a);
     let level = P.endoArousalOestrusW * oestrus + P.endoArousalRivalW * rival;
     if (level > 1) level = 1;
-    a += (level - a) * (1 - Math.exp(-SLOW_HOURS / P.endoArousalTauH));
+    // stage E4d: asleep, the night's secretion amplifies his waking drive, integrated over his recent waking hours with
+    // the state's own time constant (iteration 2: the drive is intermittent, so the view from the nest at dusk is no set point)
+    const k = 1 - Math.exp(-SLOW_HOURS / P.endoArousalTauH);
+    if (rhythm) { if (sleeping) { level = P.endoRhythmGainT * (x.ard ?? 0); if (level > 1) level = 1; } else { const d = x.ard ?? 0; x.ard = d + (level - d) * k; } }
+    a += (level - a) * k;
     x.arousal = a < 1e-6 ? 0 : a > 1 ? 1 : a;
   }
 }

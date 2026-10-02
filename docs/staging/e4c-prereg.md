@@ -320,3 +320,16 @@ The last row is the commit each bench ran at and its count of uncommitted files:
 - `scripts/calls-diagnose.ts` (arrival block, `arrived`): the arrival readout counts a pant-hoot in the tick the feeding phase is entered at any crown; bouchard2022a counts the whole approach from about 30 m when joining others. The hourly readout divides by awake time, so the first hour after the night holds few awake minutes.
 
 **Recommended next.** A 5-seed confirm of T1 against R and S1b against S0. A reply stage (calls heard as decision points, with the deferred `unlocatedShare` question). The endocrine daily course (T-END-8). For the integrator: T-COM-8's band scope (the observer counts the arrival minute, where the Taï value is 19%).
+
+## 10. Five-seed confirm (integrator, registered 2 October 2026 before its run)
+
+Why: iteration 1 is a provisional keep candidate whose benchmark differences sit inside quick-mode noise (§9).
+
+Runs: field profile, rules policy, seeds 48, 7, 21, 5, 11, 30-day burn-in + 60 days, `--workers 2`, one at a time, from the frozen checkout `.claude/worktrees/bench-run` at the commit that adds this section.
+- **R**: the reference stack of e1h-prereg.md §4 (handoff §3), all E4c and E2e switches 0. It doubles as an identity check: its rows must equal the E1h confirm's `e1h-R` (run at 9392b67, before E4c and E2e were merged) exactly; if they do not, this run is the reference and the difference is reported.
+- **RC**: R + `callValue` 1 (iteration 1 as merged).
+- `e-bench --confirm` for both (RC `--compare` R); `calls-diagnose --seeds 48,7,21,5,11 --burn-in 30 --days 60` for both (simulation truth).
+
+Judgement: §7 unchanged, on RC against R. Null if any of: viability fails; held-out on rows scored in both rises by more than +1.1 (this stage's registered floor); adult-male pant-hoots below 0.25 or above 3 per awake hour, or travel hoos given at under 10% of initiations with a companion in view; T-PTY-1 falls by more than 0.5, or the share of adult males alone at hourly samples rises by more than 0.10. Otherwise a provisional keep candidate if the prescription count falls. Sums are reported with and without T-HUN-4 and T-BRD-1; the integrator's noise threshold (docs/staging/e-noise.md), once recorded, is applied afterwards as a separate reading.
+
+Expected (integrator, before the run): adult-male pant-hoots 0.4–0.8 per awake hour and 15–35% of adult-male crown arrivals with a pant-hoot (moderate confidence); T-PTY-1 up by 0.3–1.5 (moderate); prescriptions 103 → 92 (high); viability passes (high); held-out within ±1.1 of R (moderate).

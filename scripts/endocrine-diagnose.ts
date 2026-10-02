@@ -5,6 +5,10 @@
 //   - their course around events: after a lost conflict, after starting or receiving a charge, after grooming.
 //   - stage E4b: pant-hoots by the act they came from, T-END-8 in fedurek2016's form (within-male correlation across
 //     hour-of-day bins, 07-18), bond-partner grooming around intergroup contact (T-END-12 behaviour), the fast state.
+//   - stage E4d (docs/staging/e4d-prereg.md §5): the pooled daily profile of the stress load beside arousal's, their
+//     07 h ÷ 17 h ratios; T-END-8 net of time of day (a male's arousal before 09:00 against his pant-hoot rate that day,
+//     within males across days: fedurek2016's monthly analysis used morning samples only); escalated attacks,
+//     redirected charges, decided conflicts and reconciliations in the morning (clock hours 06-11) and the afternoon (12-18).
 //
 //   pnpm exec tsx scripts/endocrine-diagnose.ts [--seeds 48,7] [--burn-in 30] [--days 30] [--params '{…}'] [--json f.json]
 // Development seeds only (AGENTS.md lists the reserved ones). burn-in + days ≤ 90.
@@ -22,6 +26,8 @@ const seeds = arg('seeds', '48,7').split(',').map(Number), burnIn = +arg('burn-i
 const params = JSON.parse(arg('params', '{}')), jsonOut = arg('json', '');
 if (burnIn + days > 90) throw new RangeError('burn-in + days must not exceed 90');
 const DAY = 5760, HOUR = 240;
+/** Stage E4d: the half of the day a clock hour falls in (06-11 morning, 12-18 afternoon; other hours are night). */
+const half = (h: number) => (h >= 6 && h < 12 ? 'morning 06-11' : h >= 12 && h < 19 ? 'afternoon 12-18' : 'night');
 function pearson(a: number[], b: number[]): number | null {
   const n = a.length; if (n < 4) return null;
   const ma = a.reduce((s, v) => s + v, 0) / n, mb = b.reduce((s, v) => s + v, 0) / n;
@@ -61,7 +67,10 @@ for (const seed of seeds) {
   const hoots = new Map<number, number>(); // pant-hoots per caller since the last full hour (T-END-8)
   // T-END-8 as fedurek2016 computed it: per focal male, the mean of each one-hour interval of the day (07:00-18:00) over
   // the study, testosterone against pant-hoot rate (author copy, Methods). Bins by the hour each sampled hour started.
-  const prof = new Map<number, { a: number[]; h: number[]; n: number[] }>();
+  const prof = new Map<number, { a: number[]; s: number[]; h: number[]; n: number[] }>();
+  // stage E4d: T-END-8 net of time of day, per male and day: arousal before 09:00 (sum, n) and own pant-hoots over sampled hours 07-17 (sum, n)
+  const daily = new Map<number, Map<number, { a: number; an: number; h: number; hn: number }>>();
+  let conf0 = w.stats.conflicts, rec0 = w.stats.reconciliations;
   const parous = (f: Chimp) => f.age >= P.endoParousAgeY || ix(f).amenUntil > 0;
   for (let i = 0; i < days * DAY; i++) {
     tickWorld(w);
@@ -87,7 +96,8 @@ for (const seed of seeds) {
       // acts started this tick
       const v0 = version.get(c.id) ?? c.decisionVersion, key = `${c.action}:${c.targetId}:${x.v}`;
       if (c.decisionVersion !== v0 && key !== prevKey.get(c.id)) {
-        if (c.action === 'attack' && x.v === V.ESCALATE) bump('escalated attacks chosen');
+        if (c.action === 'attack' && x.v === V.ESCALATE) { bump('escalated attacks chosen'); bump(`escalated attacks chosen, ${half(w.hour)}`); }
+        if (c.action === 'charge' && x.v === V.REDIRECT) bump(`redirected charges, ${half(w.hour)}`);
         if (c.action === 'charge' && x.v === V.REDIRECT) { const lost = c.lastConflict && !c.lastConflict.won ? (time - c.lastConflict.time) * 60 : NaN; bump('redirected charges'); if (lostToRedirect.get(c.id)) bump('redirected charges by an animal whose loss was itself to a redirect (chains)'); if (lost <= 10) bump('redirected charges within 10 min of the loss'); if (lost >= 0) S('redirect: minutes after the loss').add(lost); }
         if (c.action === 'display' && x.v === V.RAIN) { bump('rain displays'); S('rain display: minutes after the onset').add((time - stormAt) * 60); }
         if (c.action === 'display' && isAdultMale(c) && time - stormAt < P.impulseDurationH) bump('adult-male displays within 6 min of a storm onset (any kind)');
@@ -149,17 +159,32 @@ for (const seed of seeds) {
         if (x.arousal !== undefined) S(`male arousal | own pant-hoots in the past hour: ${(hoots.get(c.id) ?? 0) > 0 ? '≥ 1' : '0'}`).add(x.arousal);
         const bin = (Math.floor(w.hour) + 23) % 24;
         if (x.arousal !== undefined && bin >= 7 && bin < 18) {
-          const p0 = prof.get(c.id) ?? (prof.set(c.id, { a: Array(24).fill(0), h: Array(24).fill(0), n: Array(24).fill(0) }), prof.get(c.id)!);
-          p0.a[bin] += x.arousal; p0.h[bin] += hoots.get(c.id) ?? 0; p0.n[bin]++;
+          const p0 = prof.get(c.id) ?? (prof.set(c.id, { a: Array(24).fill(0), s: Array(24).fill(0), h: Array(24).fill(0), n: Array(24).fill(0) }), prof.get(c.id)!);
+          p0.a[bin] += x.arousal; p0.s[bin] += c.stress; p0.h[bin] += hoots.get(c.id) ?? 0; p0.n[bin]++;
+          // stage E4d: the day's morning arousal (samples before 09:00) and pant-hoots per sampled hour (bins 07-17)
+          const dm = daily.get(c.id) ?? (daily.set(c.id, new Map()), daily.get(c.id)!), d = Math.floor(i / DAY);
+          const e = dm.get(d) ?? (dm.set(d, { a: 0, an: 0, h: 0, hn: 0 }), dm.get(d)!);
+          if (w.hour < 9) { e.a += x.arousal; e.an++; }
+          e.h += hoots.get(c.id) ?? 0; e.hn++;
         }
         bump(rival ? 'adult-male hourly samples with a close-rank male in view' : 'adult-male hourly samples without one');
       }
     }
     for (const c of w.chimps) if (c.alive) startKey.set(c.id, `${c.action}:${c.targetId}:${ix(c).v}`);
+    if (w.stats.conflicts !== conf0) { bump(`decided conflicts, ${half(w.hour)}`, w.stats.conflicts - conf0); conf0 = w.stats.conflicts; }
+    if (w.stats.reconciliations !== rec0) { bump(`reconciliations, ${half(w.hour)}`, w.stats.reconciliations - rec0); rec0 = w.stats.reconciliations; }
     if (i % HOUR === 0) hoots.clear();
   }
   // stage E4c: the pooled daily profiles behind T-END-8 (mean arousal and pant-hoots per sampled male-hour, by hour 07-18)
-  for (const [, p0] of prof) for (let b = 7; b < 18; b++) { S(`T-END-8 profile: arousal at ${String(b).padStart(2, '0')} h`).add(p0.n[b] ? p0.a[b] / p0.n[b] : 0); S(`T-END-8 profile: pant-hoots per male-hour at ${String(b).padStart(2, '0')} h`).add(p0.n[b] ? p0.h[b] / p0.n[b] : 0); }
+  for (const [, p0] of prof) for (let b = 7; b < 18; b++) { S(`T-END-8 profile: arousal at ${String(b).padStart(2, '0')} h`).add(p0.n[b] ? p0.a[b] / p0.n[b] : 0); S(`T-END-8 profile: pant-hoots per male-hour at ${String(b).padStart(2, '0')} h`).add(p0.n[b] ? p0.h[b] / p0.n[b] : 0);
+    if (p0.n[b]) S(`E4d profile: stress at ${String(b).padStart(2, '0')} h`).add(p0.s[b] / p0.n[b]); }
+  // stage E4d: T-END-8 net of time of day (within males across days; days with a morning sample and at least 5 sampled hours)
+  for (const [, dm] of daily) {
+    const days = [...dm.values()].filter(e => e.an > 0 && e.hn >= 5);
+    if (days.length < 5) continue;
+    const r = pearson(days.map(e => e.a / e.an), days.map(e => e.h / e.hn));
+    if (r !== null) { S('E4d T-END-8 net of time of day: within-male r across days, arousal before 09:00 vs pant-hoots per sampled hour').add(r); bump(r > 0 ? 'E4d net-of-time males with r > 0' : 'E4d net-of-time males with r ≤ 0'); }
+  }
   for (const [, p0] of prof) {
     const bins = [...Array(24).keys()].filter(b => p0.n[b] >= 3), A = bins.map(b => p0.a[b] / p0.n[b]), H = bins.map(b => p0.h[b] / p0.n[b]);
     const r = pearson(A, H);
@@ -179,11 +204,16 @@ const out = {
   shares: { redirectedPerDecidedConflict: conflicts ? +((count['redirected charges'] ?? 0) / conflicts).toFixed(4) : null, injuriesPerConflict: conflicts ? +((count['stats.injuries'] ?? 0) / conflicts).toFixed(4) : null,
     reconciledPerConflict: conflicts ? +((count['stats.reconciliations'] ?? 0) / conflicts).toFixed(4) : null },
   counts: count, deathsByCause: deaths,
+  // stage E4d: pooled daily profiles (means over adult males of each male's bin mean) and the 07 h ÷ 17 h ratios
+  profiles: (() => { const st = (k: string) => stats[k]?.n ? stats[k].sum / stats[k].n : null, prf = (name: string) => Object.fromEntries([...Array(11).keys()].map(j => j + 7).map(b => [b, st(`${name} at ${String(b).padStart(2, '0')} h`)]).map(([b, v]) => [b, v === null ? null : +(v as number).toFixed(4)]));
+    const A = prf('T-END-8 profile: arousal'), Sx = prf('E4d profile: stress'), H = prf('T-END-8 profile: pant-hoots per male-hour'), q = (o: Record<string, number | null>) => (o[7] !== null && o[17] ? +((o[7] as number) / (o[17] as number)).toFixed(3) : null);
+    return { arousal: A, stress: Sx, pantHoots: H, ratio07to17: { arousal: q(A), stress: q(Sx), pantHoots: q(H) }, field: 'testosterone 2.43 (fedurek2016 Fig. 4), cortisol 2.64 (girardButtoz2021 Fig. 1, immatures); bins: the state at half past the next hour (e4d-prereg §5.1)' }; })(),
   states: Object.fromEntries(Object.keys(stats).sort().map(k => [k, stats[k].out()])),
 };
 if (jsonOut) writeFileSync(jsonOut, JSON.stringify(out, null, 1) + '\n');
 console.log(`Endocrine diagnosis: field, seeds ${seeds.join(', ')}, ${burnIn}-day burn-in + ${days} days, params ${JSON.stringify(params)}; ${out.setup.communityYears} community-years`);
 console.log('\nPer community-year:'); for (const [k, v] of Object.entries(out.perCommunityYear)) console.log(`  ${k.padEnd(62)} ${v}`);
+console.log('\nE4d profiles (07..17 h):', JSON.stringify(out.profiles));
 console.log('\nShares:', JSON.stringify(out.shares)); console.log('Counts:', JSON.stringify(count)); console.log('Deaths by cause:', JSON.stringify(deaths));
 console.log('\nStates (n, mean, p10, p50, p90):');
 for (const [k, v] of Object.entries(out.states)) console.log(`  ${k.padEnd(60)} ${String(v.n).padStart(7)}  ${v.mean}  ${v.p10}  ${v.p50}  ${v.p90}`);

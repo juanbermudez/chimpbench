@@ -437,3 +437,27 @@ removes one prescription; persistence by drive reduction per hour is only as goo
 not run here: value food by energy that the animal can still use over the day (gut space plus the reserve deficit,
 i.e. E1b's bulk-limited gut and digestive pause), then retest `urgencyPersist`; and give the nest's darkness value a
 deficit form (safety), which the pay test cannot see today.
+
+## Integrator note (2 October 2026): the iteration-3 explanation is confounded
+
+A reviewer doubt (handoff §8 item 14) is confirmed by reading the code. E3's runs were merged at 17:02 on 1 October,
+before E1e's bug fix B2 (merged 19:18). With `energyLedger` 1 and `ledgerDrive` 0, `treeIntake` (src/sim/intake.ts)
+then capped a bout at hunger ÷ rate, and the ledger's hunger includes appetite (about 0.5 at the set point), so a crown
+bout's value came out about half. `payOf` (src/sim/urgency.ts) calls `treeIntake` with that cap on. The finding "a walk
+to a crown rarely pays" (§9) may therefore be the bug, not the mechanism. Re-test `urgencyPersist` on the current code
+(B2 fixed; with `ledgerDrive` 1 the cap does not apply) before acting on E3's recommendation.
+
+## Integrator re-test of iteration 3 on the current stack (registered 2 October 2026 before its run)
+
+Arms (field, seeds 48 and 7, rules policy, from the frozen checkout `bench-run` at the commit that adds this section):
+**R**, the reference stack of the handoff (§3), which includes `ledgerDrive`, so `treeIntake` values a bout by the
+energy it can deliver and E3's hunger cap is not in play; **R + A**, R + `urgencyChoice`, `urgencyPersist` and
+`urgencySwitchCost` 1 (E3's arm A). Readouts: `movement-metrics --fitted-only --burn-in 30 --days 8` (crown bout median
+and mean) for both arms; `e-bench --quick` for R + A, judged against R's four quick realizations (e-noise.md,
+amendment 2).
+
+Registered reading: if the pre-E1e hunger cap explains iteration 3, R + A's crown bout median stays within ±20% of R's
+and T-FOOD-2 (fruit share of feeding) stays inside its band (0.60–0.78); if the crown bout median falls by 30% or more
+and the fruit share falls below the band, iteration 3's explanation stands on the current code. Anything in between is
+reported as unresolved. No switch goes on from this re-test; it decides only whether E3's recommendation (value food
+against reserves) is still needed.

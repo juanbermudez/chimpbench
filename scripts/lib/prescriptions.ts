@@ -286,6 +286,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   endoFast: { stage: 'E4b', needs: { endoStates: 1 }, removesNothing: 'runs the fast state; the roll it lets go (rainDisplayP) is switched out by endoRainDisplay (e4b-prereg)' },
   endoFastRedirect: { stage: 'E4b', needs: { endoStates: 1, endoRedirect: 1, endoFast: 1 }, removesNothing: 'rescores the redirect that endoRedirect already took off the dice (e4b-prereg)' },
   callValue: { stage: 'E4c', needs: {} },
+  endoRhythm: { stage: 'E4d', needs: { endoStates: 1 }, removesNothing: 'adds a sleep-gated secretion term to the stress and arousal states; no clock literal, hazard or roll encoded their daily course (e4d-prereg §3.1)' },
 };
 
 /** Whether an entry is in use: generated (not planned), non-zero under these resolved parameters, and not switched out. */

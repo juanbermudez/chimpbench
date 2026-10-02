@@ -18,6 +18,7 @@ const TRACK_E_SWITCHES = [
   'nestAudience', 'nestCompany', // E2e
   'ledgerFoodEnergyFix', // E1h
   'callValue', // E4c
+  'endoRhythm', // E4d
   'ledgerSatiationReserve', 'ledgerLactGut', // E1i
 ] as const;
 
