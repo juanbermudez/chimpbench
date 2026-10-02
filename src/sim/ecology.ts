@@ -1,6 +1,6 @@
 import type { Chimp, World } from '../types';
 import { addEvent, emitCall, endInteraction, episode, flashInteraction, interrupt } from './events';
-import { spawnPrey } from './generation';
+import { preyGroupsOf, spawnPrey } from './generation';
 import { hash01, random } from './rng';
 import { paramsOf } from './params';
 import { PREY_ID0, SLOW_HOURS, TICK_SECONDS, index, simOf, type HuntState } from './state';
@@ -44,7 +44,7 @@ export function slowPrey(world: World): void {
   }
   for (let i = world.prey.length - 1; i >= 0; i--) if (world.prey[i].size <= 3) world.prey.splice(i, 1);
   const P = paramsOf(world);
-  if (world.prey.length < P.preyMinGroups && world.time > s.preyAt) { spawnPrey(world); s.preyAt = world.time + P.preyRespawnH; }
+  if (world.prey.length < preyGroupsOf(world) && world.time > s.preyAt) { spawnPrey(world); s.preyAt = world.time + P.preyRespawnH; }
   for (let i = s.hunts.length - 1; i >= 0; i--) if (world.time > s.hunts[i].resolveAt + 0.25) { endInteraction(world, s.hunts[i].interId); s.hunts.splice(i, 1); }
 }
 

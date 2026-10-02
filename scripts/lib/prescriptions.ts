@@ -290,6 +290,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   callValue: { stage: 'E4c', needs: {} },
   endoRhythm: { stage: 'E4d', needs: { endoStates: 1 }, removesNothing: 'adds a sleep-gated secretion term to the stress and arousal states; no clock literal, hazard or roll encoded their daily course (e4d-prereg §3.1)' },
   huntValue: { stage: 'E4e', needs: { energyLedger: 1, ledgerDrive: 1 } },
+  preyKanyawara: { stage: 'E4f', needs: {}, removesNothing: 'corrects an input (the field colobus density: Ngogo 1997-99 out, Kanyawara in, both inputs); no prescription is switched out (e4f-prereg §4.1)' },
 };
 
 /** Whether an entry is in use: generated (not planned), non-zero under these resolved parameters, and not switched out. */

@@ -11,7 +11,9 @@
 //   focalRule  = gilbyRule with the distance taken from the focal animal only
 //   per 100 follow-hours and per follow-day; distance of the nearest group at an encounter's first scan by 25 m band;
 //   share of positive scans with two or more groups within 100 m; farthest party member from the focal at scans; the
-//   party centroid's travel per follow-hour (scan to scan).
+//   party centroid's travel per follow-hour (scan to scan); the hunted share of encounters (T-HUN-3's statistic) and
+//   the per-encounter rows of adult males at the first scan and hunted (T-HUN-4's inputs) under the model and gilby
+//   rules (hunt matching defined at the code below).
 // Truth: adult males' colobus encounters by day (scripts/e4e-hunt-diagnose.ts definition: a group in sight, not the
 //   group perceived at his previous decision point) per community-day, and his distance to it by 25 m band; colobus
 //   groups inside each community's range (use-weighted centre, equal-area radius of the 95% isopleth) at noon; colobus
@@ -132,6 +134,33 @@ function teamSet(o: Observer, label: string) {
   });
   const per100 = (n: number) => r4(n / hours * 100), perDay = (n: number) => r4(n / fdays);
   const hun3 = METRICS.find(m => m.id === 'T-HUN-3')!.compute!(d);
+  // hunted share and the T-HUN-4 inputs (adult males at the first scan) under both counting rules. Model rule: as
+  // metrics.ts (a detected hunt by the follow's community on that group, or on an unknown group, starting from 0.25 h
+  // before to 1 h after the encounter's first scan). Gilby rule (gilby2015: "We matched every observed hunt attempt to an
+  // encounter"): such a hunt on any group scanned in the run, from 0.25 h before its first positive scan to the later
+  // of 1 h after it and 0.25 h after its last positive scan.
+  const hs = rec.hunts.filter(h => h.detected);
+  const rows = { model: { am: [] as number[], y: [] as number[] }, gilby: { am: [] as number[], y: [] as number[] } };
+  d.followScans.forEach((idx, f) => {
+    const troop = rec.follows[f].troop;
+    let prev = -1;
+    for (let k = 0; k < idx.length; k++) {
+      const i = idx[k], prey = S.prey.data[i], t = S.t.data[i] * rec.tickHours;
+      if (prey >= 0 && prey !== prev) {
+        rows.model.am.push(S.am.data[i]);
+        rows.model.y.push(hs.some(h => h.troop === troop && (h.prey === prey || h.prey < 0) && h.t0 >= t - 0.25 && h.t0 <= t + 1) ? 1 : 0);
+      }
+      if (prey >= 0 && (k === 0 || S.prey.data[idx[k - 1]] < 0)) {
+        const preys = new Set<number>(); let t1 = t;
+        for (let j = k; j < idx.length && S.prey.data[idx[j]] >= 0; j++) { preys.add(S.prey.data[idx[j]]); t1 = S.t.data[idx[j]] * rec.tickHours; }
+        const hi = Math.max(t + 1, t1 + 0.25);
+        rows.gilby.am.push(S.am.data[i]);
+        rows.gilby.y.push(hs.some(h => h.troop === troop && (preys.has(h.prey) || h.prey < 0) && h.t0 >= t - 0.25 && h.t0 <= hi) ? 1 : 0);
+      }
+      prev = prey;
+    }
+  });
+  const share = (y: number[]) => (y.length ? r4(y.reduce((a, b) => a + b, 0) / y.length) : null);
   return {
     label, followHours: r4(hours), followDays: fdays, followHoursPerDay: r4(hours / fdays), scans, positiveScans: positive,
     per100h: { modelRule: per100(model), gilbyRule: per100(gilby), focalRule: per100(focal) },
@@ -142,6 +171,9 @@ function teamSet(o: Observer, label: string) {
     spreadM: { mean: meanOf(spreads), p50: spreads.length ? r4([...spreads].sort((a, b) => a - b)[Math.floor(spreads.length / 2)]) : null },
     partyTravelMPerH: pathH > 0 ? r4(path / pathH) : null,
     tHun3Check: { value: hun3.value ?? null, encountersPer100h: hun3.parts?.encountersPer100h ?? null },
+    huntedShare: { modelRule: share(rows.model.y), gilbyRule: share(rows.gilby.y) },
+    detectedHunts: hs.length, detectedHuntsPerFollowDay: r4(hs.length / fdays),
+    encounterRows: rows,
   };
 }
 finishObserver(mobs, w);
