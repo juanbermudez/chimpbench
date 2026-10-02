@@ -1,0 +1,59 @@
+{
+ "about": "Stage E1k staging (proposal; never applied by this branch). Adds a comparison band to the staged T-ENE-5 row of docs/staging/e-targets.patch.json (itself not yet in data/targets.json): a direction band for the ledger reading of mothers' reserve change by the age of the youngest infant, from emeryThompson2012's abstract. It changes no accept band. Applying it goes with the staged energy rows (integrator: protocolLog entry and new freeze). How the E1i reference B2 compares: docs/staging/e1k-prereg.md \u00a71.3-1.4.",
+ "targets": [
+  {
+   "id": "T-ENE-5",
+   "objectives": [
+    "O9"
+   ],
+   "metric": "Energy balance through lactation",
+   "definition": "Energy-balance reading of mothers by time since birth: months 0-6, 6-12 and 12-24, within mothers.",
+   "observer": {
+    "protocol": "urine proxy (truth) + census",
+    "interval_min": null,
+    "unit": "sample"
+   },
+   "field": [
+    {
+     "population": "Kanyawara mothers",
+     "years": "\u2014",
+     "value": "C-peptide depressed for about 6 months postpartum, then a net increase through the second year; cycling resumes only after sustained gain; lower profiles in poorer foraging areas",
+     "n": "17 mothers",
+     "method": "urinary C-peptide, longitudinal",
+     "source": "emeryThompson2012",
+     "note": ""
+    }
+   ],
+   "accept": {
+    "lo": null,
+    "hi": null,
+    "units": "pattern",
+    "basis": "months 0-6 below the mother's own later level; net rise through year 2"
+   },
+   "evidence": "M",
+   "role": "held-out",
+   "encoded": true,
+   "notes": "ENCODED while the C8c lactation taper is on: its knots lactTaperStartY 0.5 and lactTaperEndY 2 were set from this study. Counts as validation only if E1 derives the cost of lactation from milk energy and infant demand without those knots; set encoded to false at registration only in that case. How to measure: as T-ENE-4, grouped by the age of the youngest unweaned offspring from the census. Stage E1f: no chimpanzee source shows milk output falling in year 2 (badescu2022: nursing steady from 1 to 4 y; e-sources \u00a714.3), so a year-2 recovery must come from the mother's own intake, not from a falling milk cost. Read the ledger's daily balance (change of reserves per day) by the age of the youngest infant; a 90-day window needs births at its start (energy-diagnose --term-births) to see months 0-6.",
+   "sources": [
+    "emeryThompson2012"
+   ],
+   "comparisonBand": {
+    "lo": -0.05,
+    "hi": null,
+    "units": "% of the usable store per day (ledger truth: mean daily change of a mother's reserves \u00f7 her store, mothers grouped by the age of their youngest unweaned infant), mothers whose youngest infant is 0.5-2 y",
+    "basis": "sign only: emeryThompson2012 (abstract, 17 Kanyawara mothers, urinary C-peptide): depressed for six months postpartum, 'thereafter showing a net increase through the second year'; 'Cycling resumed only after a sustained period of energy gain'. No field size exists (C-peptide is an index; no chimpanzee calibration to kcal), so the lower edge is zero widened by the Track E design guard (0.05%/day, design). Months 0-6: negative expected, size unsourced, no band. Infants >= 2 y: same direction before cycling resumes, timing not in the abstract, no band."
+   },
+   "revisions": [
+    {
+     "date": "2026-10-02",
+     "stage": "E1k",
+     "reason": "Line audit (docs/staging/e1k-prereg.md \u00a71): the field reports the sign of nursing mothers' energy balance by lactation stage, not a size; a direction band on the ledger reading lets the staged row be compared with the model's reserve change. Simulated values seen when this was written: B2 (E1i 5-seed confirm) -0.083 (0.5-1 y) and -0.186 (1-2 y) %/day; the band follows the source's sign and the existing design guard only.",
+     "changed": [
+      "comparisonBand"
+     ],
+     "acceptChanged": false
+    }
+   ]
+  }
+ ]
+}
