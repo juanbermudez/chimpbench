@@ -2701,3 +2701,58 @@ has just fed in. Tags as above.
 
 **Not verified:** ban2014's Methods (how its 2.5-day interval was measured); a ripening rate, a ripe-fruit persistence
 time or a within-crown reach for any chimpanzee food tree.
+
+### Addendum: E1p growth and the body's state (2 October 2026)
+
+Read for stage E1p ([staging/e1p-prereg.md](staging/e1p-prereg.md) §2): in what order a growing primate gives up tissue
+reserve and structural growth when energy is short, and whether growth reads the reserve or the day's balance.
+research.md was searched first (E.12, E.14: hamadaUdono2002, west2001, fao2004 §4.4; E.28: grill2010, polidori2016);
+no growth-under-restriction source was listed. Three sources were read on 2 October 2026 (one full text through NCBI
+BioC, two abstracts through Europe PMC). Tags as above.
+
+- **Wasting precedes and predicts stunting, rural Gambia** [schoenbuchner2019] (FT, CC BY, PMC6669055 through NCBI
+  BioC) [M] human, cross-species.
+  - Sample: clinic growth-monitoring records of children under 2 y in three villages of West Kiang, 1976–2016: 64,342
+    measurements of 5,160 children (median 12 each), "measured regardless of their health status"; wasted = weight-for-
+    length z score (WLZ) < −2, stunted = length-for-age z (LAZ) < −2 (WHO 2006 standards). A lean wet season (July–
+    October) each year.
+  - Method: multilevel models; "A time lag of 3 mo was chosen based on the observation made as part of the previous
+    analysis that seasonal variation in height occurs ∼3 mo later than seasonal variation in weight."
+  - Results: "being wasted was predictive of stunting (OR: 3.2; 95% CI: 2.7, 3.9), even after accounting for current
+    stunting"; infants born at the start of the wet season "showed early growth faltering in weight-for-length z score".
+    Authors' reading: "slowing of linear growth may represent an 'internal' adjustment to resolve wasting by diverting
+    resources to tissue accretion rather than overall size increase".
+  - Use in E1p: the order of the partition (the tissue reserve gives way first; structural growth slows afterwards, in
+    response to the depleted state, and resumes as tissue is restored); mechanism citation for growth that yields to
+    the reserve state rather than to the day's balance. No number is taken.
+- **Change in weight-for-length and later length, 8 cohorts** [richard2012] (Abs, Europe PMC; PMC3374667 is not in the
+  open-access set) [M] human, cross-species. 1,599 children from 8 cohort studies: "Instances of wasting or poor weight
+  gain may precede linear growth retardation"; "Change in WLZ in the previous 6-mo period was directly associated with
+  greater attained length at 18 mo [0.33 cm (95% CI: 0.11, 0.54 cm)] and 24 mo [0.72 cm (95% CI: 0.52, 0.92 cm)]";
+  wasting only at 0–5 mo left no lasting deficit. Use in E1p: the relation is graded (a continuous association with the
+  reserve state, not a threshold) and modest; direction only, no number taken.
+- **Energy state and the growth axis** [thissen1994] (Abs, Europe PMC) [M] human and animal models (review). "In humans,
+  serum IGF-I concentrations are markedly lowered by energy and/or protein deprivation"; after fasting, energy and
+  protein intake restore it rapidly; its "exquisite sensitivity" to nutrients and "relative short half-life" make it a
+  marker of nutritional status. Use in E1p: the direction (growth signalling yields to energy deprivation); it does not
+  say whether the signal follows the store or the recent balance, so it supports neither arm against the other.
+- Recalled, not re-read: hamadaUdono2002 (catch-up growth after a delay, captive chimpanzees: growth resumes after a
+  shortfall); west2001 (growth from what remains after maintenance, theory); the registry's usable store (about 30% of
+  body mass at about 4,300 kcal/kg of mixed tissue, `ledgerReserveKcalPerKg`), which maps the model's relative store to
+  body mass lost.
+- *new* schoenbuchner2019: Schoenbuchner SM, Dolan C, Mwangome M, Hall A, Richard SA, Wells JC, Khara T, Sonko B,
+  Prentice AM, Moore SE 2019. The relationship between wasting and stunting: a retrospective cohort analysis of
+  longitudinal data in Gambian children from 1976 to 2016. *American Journal of Clinical Nutrition* 110(2):498–507.
+  [doi:10.1093/ajcn/nqy326](https://doi.org/10.1093/ajcn/nqy326) (FT, PMC6669055).
+- *new* richard2012: Richard SA, Black RE, Gilman RH, Guerrant RL, Kang G, Lanata CF, Mølbak K, Rasmussen ZA, Sack RB,
+  Valentiner-Branth P, Checkley W, Childhood Infection and Malnutrition Network 2012. Wasting is associated with
+  stunting in early childhood. *Journal of Nutrition* 142(7):1291–1296.
+  [doi:10.3945/jn.111.154922](https://doi.org/10.3945/jn.111.154922) (Abs, PubMed 22623393).
+- *new* thissen1994: Thissen JP, Ketelslegers JM, Underwood LE 1994. Nutritional regulation of the insulin-like growth
+  factors. *Endocrine Reviews* 15(1):80–101. [doi:10.1210/edrv-15-1-80](https://doi.org/10.1210/edrv-15-1-80) (Abs,
+  PubMed 8156941).
+
+**Not verified:** Kooijman 2001 (*Phil Trans R Soc B* 356:331–349, PMC1088431: abstract only through NCBI efetch; not in
+the BioC open-access set), so the dynamic-energy-budget rule (growth from a reserve flux after maintenance) is not
+cited for any form; any primate measurement of growth velocity against fat or reserve state; the steepness of the
+growth response in any species in reserve units.

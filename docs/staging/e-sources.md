@@ -1744,3 +1744,12 @@ Same text as research.md "Addendum: E3b revisits": normand2009 read in full (PMC
 revisit method (same individual, trees < 30 m apart one resource, two females followed 28 consecutive days; "On average,
 chimpanzees revisit a tree within 5.37 days"); ban2014's abstract (Europe PMC; full text behind a bot check, not used);
 houle2014 recalled (ripe fruit < 0.5% of the fruit in a tree). No new source.
+
+## Addendum: E1p growth and the body's state (2 October 2026)
+
+Same text as research.md "Addendum: E1p growth and the body's state": schoenbuchner2019 read in full (PMC6669055
+through NCBI BioC: 5,160 Gambian children under 2 y, 64,342 measurements; wasting predicts stunting 3 months later, OR
+3.2, after current stunting; height's seasonal course lags weight's by about 3 months); richard2012 (abstract, Europe
+PMC: 1,599 children, 8 cohorts; the change in weight-for-length over 6 months is directly associated with later
+length); thissen1994 (abstract, Europe PMC: energy deprivation lowers IGF-I). New: schoenbuchner2019, richard2012,
+thissen1994. Not verified: Kooijman 2001 (abstract only), a primate growth response in reserve units.
