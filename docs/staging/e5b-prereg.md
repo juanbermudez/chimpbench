@@ -1,6 +1,6 @@
 # E5b pre-registration: calls and cohesion together
 
-Status: skeleton committed at the start of the stage (2 October 2026, 11:55, branch `e5b-calls-cohesion`, from
+Status: skeleton committed at the start of the stage (2 October 2026, 11:45, db62dd3, branch `e5b-calls-cohesion`, from
 `track-e` 8720097), before any run and before any code change. Track E, stage E5 (fission–fusion), second piece.
 Rules policy only; development seeds 48 and 7; no run longer than 90 days in all.
 
@@ -32,7 +32,7 @@ S3: {"energyLedger":1,"ledgerGrowSurplus":1,"ledgerNightNurse":1,"ledgerInfantIn
 S4: S3 + {"followCarer":1,"cohesionValue":1}
 ```
 
-## 1. Field rows scored here: samples (written 11:57, before any run of this stage was read)
+## 1. Field rows scored here: samples (committed 11:58 with §3, 7c7574a, before any run of this stage was read)
 
 The rows this stage reports (scored by e-bench; none is an input). Sources opened in the session copies
 (`track-e/artifacts/track-e-session-scratch-2026-10-01/`) where available; otherwise the full-text reading of the stage
@@ -58,7 +58,7 @@ named is cited.
    0.16405), with `energy-diagnose` for each; arms judged against the reference mean (e-noise.md amendment 2).
 4. At most 3 iterations, each logged in §6 and committed before its run.
 
-## 3. Diagnosis (step 1; registered 2 October 2026, 12:00, before its runs)
+## 3. Diagnosis (step 1; registered 2 October 2026, 11:58, 7c7574a, before its runs)
 
 **Question.** Which term of the calls–cohesion interaction adds about 0.5 km of walking a day on the stack: what moves
 the animals (food trips, following a party member, joining a leader's trip, joining after a travel hoo, approaching
@@ -263,7 +263,7 @@ Deaths: S3 none; S4 {'respiratory illness (outbreak)': 3}; S3F none; S4n none; S
    joined trips end in a crown 92% of the time and deliver more food in the next 30 min than an own trip (116 against
    110 kcal), so that walking is foraging in company.
 3. *Term.* In the approaches, on S4, the first step names **the caller's company**: removing it takes away 0.41 km a
-   day for adult males (2.4 entries) and 0.41 for females; the mate value 0.08 (males), the call's own pull is not E5a's.
+   day for adult males (2.4 entries) and 0.41 for females; the mate value adds 0.08 (males); the call's own pull is not part of E5a's change.
    Swapping the E5a form for the C5a form at the same decisions takes away 0.21 / 0.24 km (57% / 56% of the channel's Δ
    against S3F): the form explains about half at the first step; the rest is state (calls at food per community-day
    25.2 against 13.7 on S3F; social need higher). The C5a form multiplied the social pull by 0.4 when two or more
@@ -353,7 +353,7 @@ Band-distance sums, rows counted in all 4 runs (quick; reference = the four S4 r
 Rows beyond 2 SD of the reference runs (SD floor 0.05), and the rare rows:
 - T-HUN-4 (held-out): reference 0.10 ± 0.10; 
 
-## 5. Mechanism (step 2): `companyMargin`, iteration 1 (registered 2 October 2026, 12:30, before any run of it)
+## 5. Mechanism (step 2): `companyMargin`, iteration 1 (registered 2 October 2026, 12:18, e83b4df, before any run of it)
 
 **Principle.** A move is worth what it adds. An approach to a heard caller is a move toward company; its social gain is
 the company the caller offers beyond the company the animal already has where it is. In foraging terms a patch is worth
@@ -415,4 +415,138 @@ valuation (not a keep candidate by the track rule), and the walking it removes i
 (Each iteration is logged here and committed before its run; at most 3.)
 
 - **Iteration 1** (`companyMargin` as in §5; arm A1): registered and committed with the code before any run of it
-  (this commit). Results §7.
+  (e83b4df); run from a frozen checkout of e83b4df (clean). Results §7.1. No iteration 2 or 3.
+
+## 7. Results
+
+### 7.1 Iteration 1: A1 = S4 + `companyMargin` (run at e83b4df, clean; 12:19–12:22, load about 4, bench `--workers 2`)
+
+Smoke test (seed 48, 1 + 2 days, before the arm): every readout filled; approaches per adult-male day 2.8 against 5.6 in
+the S4 smoke of §3. Unit tests (`tests/sim-company-margin.test.ts`, 5) and the registry tests passed after the
+registration commit; the prescription count is 77 with and without the switch (`prescription-ledger --count`).
+
+Every number below is printed by `artifacts/validation/e5b/e5b_table.py A1` from the JSON (A1's e-bench, energy-diagnose
+and approach-diagnose; the reference's four realizations, §4.2); z = (A1 − mean) ÷ (SD × √1.25) with the reference's own
+SD for the readouts and the registered quick SD (or the spread if larger) for the sums.
+
+| readout | S4 reference: S4q0, S4q1, S4q2, S4q3 | mean ± SD | A1 |
+| --- | --- | --- | --- |
+| T-ACT-2 males | 0.271, 0.294, 0.275, 0.284 | 0.281 ± 0.010 | 0.249 (z -2.8) |
+| T-ACT-2 females | 0.254, 0.254, 0.231, 0.249 | 0.247 ± 0.011 | 0.189 (z -4.9) |
+| T-ACT-2 pooled | 0.262, 0.272, 0.250, 0.265 | 0.262 ± 0.009 | 0.215 (z -4.7) |
+| T-PTY-1 | 4.401, 4.412, 4.406, 4.292 | 4.378 ± 0.057 | 3.342 (z -16.2) |
+| T-RNG-4 | 2.892, 3.108, 2.784, 2.881 | 2.916 ± 0.137 | 2.533 (z -2.5) |
+| T-RNG-5 | 0.826, 0.835, 0.845, 0.899 | 0.851 ± 0.033 | 0.901 (z +1.3) |
+| T-ACT-1 pooled | 0.382, 0.374, 0.397, 0.384 | 0.384 ± 0.010 | 0.401 (z +1.6) |
+| T-ACT-3 males | 0.142, 0.118, 0.129, 0.122 | 0.128 ± 0.011 | 0.125 (z -0.2) |
+| T-ACT-3 females | 0.164, 0.176, 0.163, 0.169 | 0.168 ± 0.006 | 0.171 (z +0.5) |
+| prescriptions | 77.000, 77.000, 77.000, 77.000 | 77.000 ± 0.000 | 77.000 |
+| viability pass | 1.000, 1.000, 1.000, 1.000 | 1.000 ± 0.000 | 1.000 |
+| deaths (e-bench) | 3.000, 0.000, 0.000, 0.000 | 0.750 ± 1.500 | 0.000 (z -0.4) |
+| ground km/day, males | 3.108, 3.507, 3.090, 3.343 | 3.262 ± 0.200 | 2.557 (z -3.1) |
+| ground km/day, other females | 2.775, 2.866, 2.847, 2.854 | 2.835 ± 0.041 | 2.052 (z -17.0) |
+| ground km/day, lactating | 2.610, 2.931, 2.580, 2.559 | 2.670 ± 0.175 | 2.392 (z -1.4) |
+| ground km/day, juveniles | 3.293, 3.531, 3.320, 3.401 | 3.386 ± 0.107 | 2.401 (z -8.2) |
+| reserves %/day, lactating | -0.127, -0.197, -0.129, -0.125 | -0.145 ± 0.035 | -0.111 (z +0.9) |
+| reserves %/day, juveniles | -0.076, -0.202, -0.118, -0.121 | -0.129 ± 0.053 | 0.013 (z +2.4) |
+| reserves %/day, males | 0.010, -0.003, -0.010, -0.012 | -0.004 ± 0.010 | -0.001 (z +0.3) |
+| reserves %/day, other females | -0.011, 0.010, -0.016, -0.006 | -0.006 ± 0.012 | 0.011 (z +1.3) |
+| true day range, males | 3.166, 3.568, 3.151, 3.405 | 3.322 ± 0.201 | 2.609 (z -3.2) |
+|   males: food | 0.853, 0.878, 0.820, 0.827 | 0.844 ± 0.026 | 0.921 (z +2.6) |
+|   males: joined trip | 1.112, 1.326, 1.072, 1.160 | 1.167 ± 0.112 | 0.775 (z -3.1) |
+|   males: follow party | 0.099, 0.138, 0.113, 0.121 | 0.118 ± 0.016 | 0.026 (z -5.0) |
+|   males: to callers | 0.744, 0.875, 0.760, 0.811 | 0.797 ± 0.059 | 0.486 (z -4.7) |
+|   males: water | 0.114, 0.103, 0.113, 0.114 | 0.111 ± 0.005 | 0.142 (z +5.2) |
+|   males: patrol | 0.105, 0.103, 0.126, 0.202 | 0.134 ± 0.047 | 0.143 (z +0.2) |
+|   males: other | 0.140, 0.145, 0.146, 0.172 | 0.151 ± 0.014 | 0.117 (z -2.1) |
+| true day range, females | 2.841, 3.079, 2.852, 2.867 | 2.910 ± 0.113 | 2.334 (z -4.5) |
+|   females: food | 0.965, 1.055, 0.991, 1.062 | 1.018 ± 0.048 | 1.067 (z +0.9) |
+|   females: joined trip | 0.859, 0.911, 0.847, 0.780 | 0.849 ± 0.054 | 0.613 (z -3.9) |
+|   females: follow party | 0.067, 0.064, 0.059, 0.060 | 0.062 ± 0.004 | 0.020 (z -10.3) |
+|   females: to callers | 0.721, 0.817, 0.714, 0.701 | 0.738 ± 0.053 | 0.379 (z -6.0) |
+|   females: water | 0.123, 0.123, 0.131, 0.144 | 0.130 ± 0.010 | 0.148 (z +1.6) |
+|   females: patrol | 0.001, 0.002, 0.000, 0.003 | 0.002 ± 0.001 | 0.004 (z +1.7) |
+|   females: other | 0.105, 0.107, 0.111, 0.118 | 0.110 ± 0.006 | 0.102 (z -1.3) |
+| social need, adult males (daylight) | 0.427, 0.482, 0.418, 0.430 | 0.439 ± 0.029 | 0.367 (z -2.2) |
+| social need, adult females | 0.357, 0.386, 0.353, 0.358 | 0.364 ± 0.015 | 0.284 (z -4.7) |
+| AM approaches/day | 4.263, 5.042, 4.313, 4.581 | 4.550 ± 0.357 | 2.357 (z -5.5) |
+| AF approaches/day | 4.121, 4.575, 4.134, 3.886 | 4.179 ± 0.288 | 1.829 (z -7.3) |
+| AM pant-hoots/awake h | 0.697, 0.755, 0.714, 0.680 | 0.712 ± 0.032 | 0.628 (z -2.3) |
+
+Band-distance sums, rows counted in all 5 runs (quick; reference = the four S4 realizations; z = (arm − mean) ÷ (SD × √1.25), SD = registered quick SD or the reference spread if larger)
+
+- fitted (16 rows): reference 2.61, 3.31, 2.38, 3.85 (mean 3.04, sd 0.67; used 0.69); A1 2.71, Δ -0.33, z -0.43 (inside noise)
+- held-out (12 rows): reference 4.41, 4.70, 5.04, 4.84 (mean 4.75, sd 0.26; used 1.26); A1 6.80, Δ +2.05, z +1.45 (inside noise)
+- held-out w/o rare (11 rows): reference 4.22, 4.70, 5.01, 4.66 (mean 4.65, sd 0.33; used 0.48); A1 4.74, Δ +0.09, z +0.18 (inside noise)
+
+Rows beyond 2 SD of the reference runs (SD floor 0.05), and the rare rows:
+- T-ACT-2 (fitted): reference 0.13 ± 0.04; A1 0.00 (value 0.215, pass)
+- T-COM-11 (fitted): reference 0.77 ± 0.12; A1 0.09 (value 0.222, fail)
+- T-COM-8 (fitted): reference 0.17 ± 0.07; A1 0.00 (value 0.567, pass)
+- T-HUN-2 (fitted): reference 0.94 ± 0.23; A1 1.52 (value 0.0435, fail)
+- T-HUN-4 (held-out): reference 0.10 ± 0.10; A1 2.05 (value 3.34, fail)
+
+Party and recruitment readouts (approach-diagnose, simulation truth; single runs; generated from the JSON):
+
+| run | male composition changes per awake h (fedurek2014 ≈ 0.69) | isolated calls with males joining / leaving (0.25 / 0.10) | feeding events with others arriving (kalanBoesch2015 0.27) | adult males: companions ≤ 50 m / alone | joined-trip entries per adult-male day | approaches started with ≥ 2 in sight | calls at food per community-day | approaches per call at food / not at food |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| S4q0 | 1.40 | 0.264 / 0.207 | 0.23 | 2.56 / 0.26 | 6.60 | 0.50 | 25.2 | 1.73 / 0.36 |
+| S4q1 | 1.62 | 0.274 / 0.231 | 0.24 | 2.85 / 0.25 | 8.52 | 0.55 | 28.6 | 1.83 / 0.37 |
+| S4q2 | 1.58 | 0.302 / 0.248 | 0.24 | 2.64 / 0.24 | 6.85 | 0.51 | 24.3 | 1.81 / 0.34 |
+| S4q3 | 1.48 | 0.270 / 0.235 | 0.23 | 2.55 / 0.25 | 6.94 | 0.49 | 25.8 | 1.68 / 0.35 |
+| A1 | 0.93 | 0.207 / 0.168 | 0.18 | 1.80 / 0.27 | 3.82 | 0.28 | 15.2 | 1.34 / 0.16 |
+
+**Predictions (§5), scored.** Approaches per adult-male day 2.0–3.5: confirmed (2.36); per adult-female day 2.0–3.3:
+missed, lower (1.83). Adult males' path to callers 0.40–0.65: confirmed (0.49). True day range, males 2.85–3.20: **missed,
+lower** (2.61; z −3.2); females 2.45–2.85: **missed, lower** (2.33; z −4.5): joined trips fell too (males 1.17 → 0.78 km,
+z −3.1), which no prediction named. Social need of adult males 0.34–0.43: confirmed (0.37). Adult-male pant-hoots
+0.55–0.70: confirmed (0.63). T-ACT-2 males 0.235–0.275: confirmed (0.249); females 0.205–0.245: missed, lower (0.189).
+T-PTY-1 3.6–4.6: **missed, lower** (3.34; z −16 against the reference's narrow spread). T-RNG-4 2.4–2.9: confirmed (2.53).
+Male composition changes below 1.2: confirmed (0.93). Reserves, lactating −0.15 to −0.07: confirmed (−0.111); juveniles
+−0.13 to −0.04: missed, better (+0.013; z +2.4). Sums inside noise: confirmed (fitted z −0.43, held-out +1.45, held-out
+without T-HUN-4 and T-BRD-1 +0.18; the held-out change is T-HUN-4, 0.10 → 2.05, a rare row). Prescriptions 77: confirmed.
+Viability: confirmed (no deaths).
+
+**Kill criterion (§5): not met.** Viability passes (no death, no starvation); no class's reserve slope falls (lactating
+−0.111 and juveniles +0.013 against −0.145 ± 0.035 and −0.129 ± 0.053; males and other females level); held-out without
+the rare rows is inside noise (z +0.18); T-PTY-1 stays in its band (3.34 ≥ 3); the mechanism runs (approaches 2.36 per
+adult-male day, below the reference's lowest realization, 4.26).
+
+**Verdict (iteration 1): a correction of E5a's valuation, recorded; not a keep candidate on its own** (it removes no
+prescription; the track's keep rule needs the count to fall). With the margin, the pair `followCarer` + `cohesionValue`
+no longer adds walking on the stack: adult males walk 2.61 km a day (S4 3.32 ± 0.20; S3F 2.62 and S3 2.88 in the
+diagnosis's single runs), the travel share is back in its band (0.215 pooled; males 0.249), mothers lose less (−0.111%
+a day) and juveniles no longer lose (+0.013), with every sum inside noise and E5a's six prescriptions still switched out
+(77). It removes more than the approaches: fewer approaches by animals already in company mean fewer fusions, smaller
+parties (companions within 50 m 2.6 → 1.8 for adult males) and fewer departures to join (joined-trip entries 6.6–8.5 →
+3.8 per adult-male day), so the joined-trip walking that carried the calls × cohesion interaction falls with them. Costs:
+party size falls by about one animal (T-PTY-1 4.38 → 3.34, inside the band 3–9; E5a staged 4.5–9.2, on which S4 also
+fails), and fewer feeding events draw others within 30 min (0.23 → 0.18, kalanBoesch2015 0.27); male party membership
+churns less (1.40–1.62 → 0.93 changes per awake hour, fedurek2014 ≈ 0.69). Single quick run: the integrator's 5-seed
+confirm (S4 against S4 + `companyMargin`) decides.
+
+No further iteration: the mechanism does what it states and meets its registered rule; the remaining questions (party
+size, the same margin for following and joined trips, the approach's fitted pull and distance scale) are separate terms
+(§8).
+
+## 8. Stage verdict
+
+- **Diagnosis.** The walking `followCarer` + `cohesionValue` add on the stack is mostly approaches to callers (S4 − S3F:
+  +0.37 km a day for adult males, +0.42 for females) and comes with either call model (+0.33 with today's prescribed
+  calls): E5a values a caller's company at full whatever company the listener already has (half the approaches start in
+  company; the C5a form discounted those by 0.4), weighted by a social need the stack raises (adult males 1.6 × R's) and
+  the approach does not relieve (social change −0.002, the least food of any move: 76 kcal in 30 min). The calls ×
+  cohesion interaction proper (+0.31 km a day for males) sits in joined trips, which return food. The walk's energy
+  cannot be the restraint: a 175-m approach costs 6.2 kcal, 0.003 of the rules' food unit.
+- **Mechanism.** `companyMargin` (off by default): an approach gains only the company the caller adds over the best
+  settled companion present. On S4 it removes the extra walking (adult males 3.32 → 2.61 km a day; females 2.91 → 2.33),
+  restores the travel share to its band, ends the juveniles' deficit and halves the mothers' extra loss, with sums inside
+  noise; parties shrink by one animal (in band). A correction of E5a's valuation; prescriptions unchanged (77).
+- **Recommendation to the integrator.** Confirm S4 + `companyMargin` on 5 seeds against the S4 confirm; if it holds,
+  treat `companyMargin` as part of the `cohesionValue` package (E5a's −6 prescriptions without its walking cost on the
+  stack). Open: party size on the stack (3.34 quick), the same margin for following and joined trips (untested), and the
+  approach's own pull and distance scale (`joinCallDistScaleM`, fitted; the call pull's literals), which E4g left for a
+  later stage.
+- **Known defects, deferred:** `src/sim/execution.ts:588` with `src/sim/perception.ts:317` (an approach walks to the last
+  caller heard; 45–60% of approaches redirected in this stage's runs); `src/sim/calls.ts:32` (`unlocatedShare`, an
+  anti-reply term).
