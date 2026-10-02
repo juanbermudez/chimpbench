@@ -242,3 +242,56 @@ Registered predictions:
   (direction, low confidence). (iii) 5–8 y pre-dawn out-of-nest share below FS's 70.9% (direction).
 - **Kill criterion:** §5 unchanged. Prescriptions with F: 113 (menus off) against R0's 115; `rhythmDarkW` not read
   (circadian). If I1 passes §5.2 on `rhythm-metrics`, it goes to `e-bench --quick` against R0.
+
+#### Iteration 1 results (frozen 0fc6ccf; rhythm-metrics 30 + 30, seeds 48 and 7)
+
+| Readout | F | FS | I1d | I1 |
+| --- | --- | --- | --- | --- |
+| departure, min after sunrise: median (p10–p90) | -124 (-131 to 4) | -57 (-129 to 28) | -125 (-131 to -41) | -45 (-131 to 7) |
+| departures before sunrise, adults (adult females) | 89% (95%), n 1806 | 80% (89%), n 1781 | 100% (100%), n 1799 | 86% (91%), n 1805 |
+| last nest entry, min after sunset (median) | -31 | -34 | -33 | -34 |
+| active day, h: male / lactating / other female | 13.08 / 13.89 / 13.37 | 12.22 / 13.47 / 12.63 | 13.54 / 13.64 / 13.43 | 12.48 / 12.95 / 12.65 |
+| adults: out of a nest, share of night; m per night | 14.7%; 488 m | 9.2%; 286 m | 13.2%; 639 m | 7.3%; 399 m |
+| adults: T-RHY-5 (night share of activity records) | 0.135 | 0.092 | 0.096 | 0.059 |
+| juveniles 5–15 y: out of a nest, share of night; m per night | 14.8%; 533 m | 9.5%; 349 m | 13.4%; 704 m | 8.8%; 453 m |
+| 5–8 y: out of a nest before dawn; m per morning | 97.6%; 658 m | 70.9%; 475 m | 92.6%; 1114 m | 65.3%; 847 m |
+| co-departures (5 min, 50 m) | 22.6% | 22.3% | 27.0% | 24.0% |
+| last waking, min after sunrise (median) | -126 | -126 | -126 | -128 |
+| deaths (at night); causes | 0 (0); {} | 1 (0); {'illness': 1} | 0 (0); {} | 0 (0); {} |
+| pre-dawn rain ≥ 0.05 | 0.0% | 0.3% | 0.3% | 0.3% |
+
+- **(i) holds in direction, night safety fails:** adults out of a nest 7.3% of night time (FS 9.2%, I1d 13.2%), T-RHY-5
+  0.059 (field ≤ 0.033); juveniles 8.8% (R0 4.6%). Killed by criterion 2; not benchmarked. Darkness alone (I1d) barely
+  holds anyone (13.2% against F's 14.7%; departures still at waking, −125 min), as in E2c.
+- **(ii) half holds:** median departure −45 min (later than FS's −57), but 86% before sunrise (not below FS's 80%).
+- **(iii) holds:** 5–8 y out before dawn 65.3% (FS 70.9%).
+- Diagnosis (seed 48, 4 mornings after 30 d; `predawn-diag.ts`): adults with an adult nest-mate at solar midnight out of
+  a nest 21.3% of the pre-dawn window, leaving at a median sun altitude of −4.0°; adults with none out 81.3%, leaving at
+  −11.6° when they leave inside the window. Out of a nest before dawn, solitary adults were travelling to crowns (7,838
+  ticks), feeding (5,166), resting outside a nest (5,049) and drinking (3,118). 5–8 y with no adult nest-mate: 100% out.
+- **A defect in `nestAudience` found here** (`attempt-diag.ts`, R0 + S, seed 48, 4 mornings): a departure from a nest
+  with an awake audience becomes an attempt, but (1) nest-sitters are never told of a departure (src/sim/execution.ts:301
+  and :313 skip `b.action === 'nest'`; the hoo too, src/sim/perception.ts:307), so the attempt cannot recruit them, and
+  (2) a given-up attempt leaves the initiator outside its nest: its nest was dropped when it set off (execution.ts:214,
+  `c.nest = null`), so "stays" means standing beside the tree. 12 of 118 adult exits (04:00–09:00) were attempts; 8 were
+  given up; 10 min later 7 of those animals were out of a nest and none back in one.
+
+### Iteration 2 (registered before its run): an audience that can notice, and staying means staying in the nest
+
+- **Change (under `nestAudience`, no new switch; the registered mechanism made coherent):** (a) an awake animal in a
+  finished nest (circadian latch off) gets the decision point every other companion gets when a companion sets off on
+  a trip to a tree (the silent-departure notice and the travel hoo of C13e; the cue when `departCue` is 1); what it can
+  then choose is unchanged (joining is still offered only from daylight 0.1, candidates.ts:474, 509). (b) An attempt
+  launched from the initiator's own finished nest that is given up returns it to that nest (same tree and place,
+  finished), where it stays until its own trips come back on the menu (`departRetryMin`, 3.8 min, [M]
+  gruberZuberbuhler2013), as the moving-together stage's initiator stays where it was. One lazy key, `chimp.sim.tryNest`
+  (the nest left by an attempt under way), in OPTIONAL_X. No parameter.
+- **Arms (frozen at the commit that implements it):** **S2** = R0 + `nestCompany` + `nestAudience` (iteration 2), the
+  main arm on R0; **FS2** = R0 + F + S (iteration 2), the hold without the menu (diagnostic). rhythm-metrics for both;
+  e-bench --quick for S2 against R0, and for FS2 only if it passes §5.2.
+- **Predictions:** S2 against S: co-departures rise (direction; P-S1's +10 points over R0 not predicted, low confidence);
+  departures before sunrise fall a little (the 7 of 118 exits that were given-up attempts return to the nest; direction,
+  low); night safety unchanged (menu). FS2: still fails night safety (solitary nesters, ≈ half of adult pre-dawn time,
+  are untouched; high confidence).
+- **Kill criterion:** §5 unchanged.
+
