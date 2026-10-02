@@ -456,7 +456,7 @@ export const DIAGRAMS: DiagramSpec[] = [
     ],
     notes: [
       'With E4g and E5a on the reference stack: prescriptions 103 → 97, sums inside noise, viable; mean party size 3.57 → 3.29 (<a href="staging/e5a-prereg.md">e5a-prereg.md</a>, five-seed confirm).',
-      'On S3 the pair is viable with 77 prescriptions, but males walk 3.43 km a day instead of 2.93 and the travel share leaves its band: party cohesion interacts with value-based calls, so S3 stays the best integrated candidate (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, S4).',
+      'On S3 the pair is viable with 77 prescriptions, but males walk 3.43 km a day instead of 2.93 and the travel share leaves its band: party cohesion interacts with value-based calls, so S3 stays the best integrated candidate (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, S4). A stage on that interaction (E5b) is running (<a href="staging/track-e-handoff.md">handoff</a>).',
       'Open: party size does not track crop size, and the party-size target\'s band (3–9) has no recorded derivation (<a href="staging/e5a-prereg.md">e5a-prereg.md §7</a>).',
     ],
   },
