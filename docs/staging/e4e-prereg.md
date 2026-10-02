@@ -83,7 +83,10 @@ resolved (an unmerged branch fits `preySightFactor` to Kanyawara encounters; out
 **Consequence for this stage:** the mechanism is a decision per encounter, so T-HUN-3 (hunted share of encounters) and
 T-HUN-4 (more males, more hunting) are its primary readouts; T-HUN-1 is reported against both bands and is not a
 target the mechanism is built toward. T-HUN-3 and T-HUN-4 are not rescaled (Mitumba, the smallest community, hunted
-48% of its encounters).
+48% of its encounters). One caveat on T-HUN-3's band: it mixes encounter definitions (100 m in 15-min scans at
+Kanyawara; Ngogo's definition is not recorded in the registry, and Gombe used 50 m), and a wider radius counts more
+distant, less huntable groups. The observer is matched to Kanyawara's 100 m, so Kanyawara's 0.079 is the
+method-matched value; no rescaling is proposed (no basis), but values near the band's top come from the Ngogo row.
 
 ## 3. Diagnosis (step 1; unchanged code, R and B; run before §4 was written)
 
