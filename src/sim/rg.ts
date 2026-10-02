@@ -11,6 +11,7 @@ import { boundedCandidates, phaseMenu, RESPONSE_ACTIONS } from './menu';
 import { paramsOf, type Params } from './params';
 import { fruitAt } from './phenology';
 import { random } from './rng';
+import { darkOn } from './light';
 import { IMPULSE_HUNT } from './perception';
 import { index, isChimpId, isTreeId, ix } from './state';
 
@@ -160,6 +161,16 @@ export function rgChoice(world: World, c: Chimp, list: Candidate[]): Candidate |
     return g.keep;
   }
   const menu = rgMenu(world, c, list);
+  // stage E2c (darkCost; e2c-prereg §8 iteration 2): a night or dusk menu left with one option (the nest, once rest is
+  // no longer offered inside it) is that option; the unfiltered argmax would skip the phase menus
+  if (menu.length === 1 && darkOn(P) && P.rhythmFreeNight !== 1) {
+    const ph = dayPhase(world);
+    if (ph === 'night' || ph === 'dusk') {
+      const pick = findCandidate(list, menu[0].action, menu[0].targetId)!, meta = candidateMeta.get(pick) ?? { v: V.NONE, aux: -1 };
+      x.rgIntent = intentOf(world, c, pick.action, pick.targetId, meta.v, meta.aux);
+      return pick;
+    }
+  }
   if (menu.length < 2) { if (rgTally.on) rgTally.argmax++; delete x.rgIntent; return null; }
   // stage E3 (urgencyChoice): the temperature falls with urgency (src/sim/urgency.ts); one draw either way
   const byUrgency = P.urgencyChoice === 1, T = byUrgency ? urgencyTemperature(urgency(c, menu, P), P) : P.rgTemperature;

@@ -139,3 +139,19 @@ test('by day nothing changes: in full daylight the candidates of animals out of 
   }
   assert.ok(n > 10);
 });
+
+test('night: an animal in its own nest is held there by the night menu (a menu of one option is that option)', () => {
+  const w = createWorld(7, { profile: 'field', params: T });
+  let nightTicks = 0, out = 0;
+  for (let i = 0; i < 2 * 5760; i++) {
+    tickWorld(w);
+    if (w.environment.daylight > 0) continue;
+    for (const c of index(w).alive) {
+      if (c.age < 15 || !c.nest) continue;
+      nightTicks++;
+      if (c.action !== 'nest') out++;
+    }
+  }
+  assert.ok(nightTicks > 1000);
+  assert.ok(out / nightTicks < 0.02, `${out} of ${nightTicks} adult night ticks out of a nest`);
+});
