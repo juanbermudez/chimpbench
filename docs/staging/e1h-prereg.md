@@ -144,4 +144,82 @@ Not run (budget, shared machine): body mass 35.2 kg (Mahale females) and a fibre
 
 ## 8. Results
 
-(Filled in after the runs.)
+Runs: field profile, seeds 48 and 7, 30-day burn-in + 60 days, `--workers 1`, one at a time, rules policy, outputs in `artifacts/validation/e1h/` (not tracked: `ref*`, `T*`, `G*`, `*-vs-ref*`, `runs.log`). R ran on eb51b39 + the prereg (unchanged simulation code); T and G on da75162. R's energy diagnosis was repeated on da75162 with the switch off (`ref2-energy`): every class row is identical to the first run, so the switch-off identity holds over the whole 90-day window, not only in the unit tests. Unit tests (`tests/sim-food-energy.test.ts`): the registered arithmetic, switch-off identity (key absent, 0, and 1 without the ledger), exact conservation with the fix on, batching determinism, plain-data saves. `pnpm test` 618 pass, 1 skipped; `tsc --noEmit` clean; goldens and the field pin unchanged. No iteration was run (§8.4).
+
+### 8.1 Energy (simulation truth, `energy-diagnose`), per day
+
+| Class | R: eaten / absorbed / spent / eat min / dry g | T (fix) | G (fix + gut 111 mL/kg) |
+| --- | --- | --- | --- |
+| Lactating females | 1,725 F / 1,661 / 1,693 / 205 / 571 | 1,380 S / 1,312 / 1,668 / 225 / 621 | 1,734 S / 1,648 / 1,709 / 266 / 783 |
+| Other adult females | 1,308 F / 1,255 / 1,257 / 176 / 458 | 1,347 S / 1,277 / 1,290 / 236 / 626 | 1,348 S / 1,277 / 1,277 / 225 / 634 |
+| Pregnant females | 1,415 F / 1,358 / 1,364 / 183 / 491 | 1,429 S / 1,356 / 1,430 / 247 / 656 | 1,456 S / 1,378 / 1,390 / 243 / 686 |
+| Adult males | 1,567 F / 1,510 / 1,512 / 180 / 522 | 1,611 S / 1,532 / 1,540 / 248 / 729 | 1,607 S / 1,527 / 1,531 / 240 / 736 |
+| Juveniles 5–12 y | 1,256 F / 1,212 / 1,223 / 171 / 408 | 1,262 S / 1,202 / 1,242 / 230 / 561 | 1,290 S / 1,229 / 1,236 / 231 / 578 |
+| Infants 2–5 y (eat min) | 84 | 112 | 110 |
+
+F = field-formula kcal, S = sugar-based kcal; absorbed = kcal in − kcal passed out.
+
+| | R | T | G |
+| --- | --- | --- | --- |
+| Lactating: absorbed ÷ spent; foregut fill (all day); daylight hunger; condition | 0.981; 0.41; 0.41; 0.66 | **0.786**; 0.45; 0.46; **0.35** | 0.964; 0.42; 0.48; 0.64 |
+| Reserves ÷ store, change per day (least squares over 60 days): lactating / other females / males / juveniles / infants 2–5 y / infants 0.5–2 y | −0.055% / −0.009% / −0.005% / −0.028% / −0.012% / +0.004% | **−0.847%** / −0.033% / −0.013% / **−0.101%** / −0.014% / +0.003% | −0.104% / −0.012% / −0.006% / −0.022% / −0.016% / +0.001% |
+| Lactating reserves ÷ store, day 0 → 60 of the window | −0.046 → −0.090 | −0.267 → **−0.785** | −0.061 → −0.147 |
+| Deaths (starvation) | 0 (0) | 1, an infant 0.5–2 y, illness (0) | 0 (0) |
+
+Gut-binding test (§4): in T, lactating females absorb 0.786 of what they spend at a foregut fill of 0.45, pregnant females 0.948 at 0.47: **the gut binds**, so G was run. (R's lactating fill was already 0.41, at 0.981.)
+
+### 8.2 Rows
+
+| Row | Band | R | T | G | Registered (T / G) |
+| --- | --- | --- | --- | --- | --- |
+| T-ENE-1 lactating, ledger truth, sugar-based kcal (comparison band, contested) | 1,810–2,070 | 1,725 field-formula kcal (not comparable) | 1,380 (below) | 1,734 (below by 4%) | 1,300–1,500 / 1,700–1,900: as registered |
+| T-ENE-1 lactating, field method | 1,900–3,100 (field mean 2,479) | 1,749 (below) | 1,944 (in) | **2,440 (in)** | 1,800–2,050 / 2,300–2,600: as registered |
+| T-ENE-2 lactating eating min | 250–370 | 205 (below) | 225 (below) | **266 (in)** | 230–260 / 280–320: slightly lower than registered |
+| T-ENE-3 lactating dry matter | 650–1,100 g | 571 (below) | 621 (below) | **783 (in)** | 620–680 / 780–860: as registered |
+| T-ENE-8 kcal ÷ M^0.75, non-reproducing adults | 85–130 | 96.4 | 98.3 | 97.6 | +1–3%: as registered |
+| T-ACT-1 feeding (M, F) | 0.33–0.50 | 0.298 (0.285, 0.309) fail | **0.380** (0.387, 0.375) pass | **0.388** (0.384, 0.391) pass | 0.35–0.40 / 0.37–0.42 |
+| T-ACT-2 travel | 0.12–0.25 | 0.154 | 0.185 | 0.180 | 0.16–0.21 |
+| T-ACT-3 grooming (M, F) | 0.08–0.18 | 0.245 (0.224, 0.263) fail | 0.179 (0.152, **0.201**) fail | 0.185 (0.176, **0.193**) fail | 0.17–0.21 / 0.15–0.19: in range; females still above the band |
+| T-ACT-4 rest + groom | 0.30–0.47 | 0.462 | 0.370 | 0.355 | 0.34–0.42 / 0.32–0.40 |
+| T-HUN-1 hunts per community-year | 5–25 | 54.8 | 44.6 | 41.6 | within ±30% of R: yes (−19%, −24%) |
+| T-FOOD-2 fruit share of feeding | 0.60–0.78 | 0.702 | 0.778 (top edge) | 0.757 | +0.02 to +0.08: as registered |
+| T-FOOD-4 trees per day (held out) | 4–15 | 5.6 | 7.3 | 6.0 | +20–50%: T yes, G +7% (no) |
+| T-RNG-4 male day range, km | 1.5–3.5 | 1.93 | 2.35 | 2.21 | 2.0–2.4 |
+| T-RNG-5 lactating ÷ male day range (held out) | 0.3–0.6 | 0.734 | 0.689 | 0.737 | no trend: as registered |
+| T-PTY-1 party size | 3–9 | 3.77 | 3.22 | 3.42 | — |
+| Fitted / held-out distance (all scored rows) | — | 5.293 / 4.759 | 3.276 / 3.663 | 3.884 / 4.333 | — |
+| On rows scored in both arm and R: fitted / held-out | — | — | **−1.864** (18 rows) / **+0.005** (13) | **−1.256** (17) / **+0.676** (13) | kill at > +0.3 / > +0.5 |
+| Prescription count | — | 103 | 103 | 103 | unchanged |
+| Viability (e-bench: births, deaths, starvation) | — | pass | pass (1 illness death) | pass | — |
+
+The fitted fall is T-ACT-3 (−0.53 / −0.57), T-ACT-1 (−0.20 / −0.20) and T-HUN-1 (−0.51 / −0.66), plus rare-event rows that move both ways (T-COM-11, T-PAT-6, T-HUN-2, T-HUN-7; in G T-SOC-9 +0.65). The held-out rise in G is **T-HUN-4** (more males, more hunting; a regression on few hunts): 0.45 → 1.41 (+0.96); without it G's shared held-out change is −0.28. T-HUN-4 rose in T too (+1.25), offset there by T-IGE-2, T-HUN-8 and T-SOC-10. E0 measured row moves of up to 0.8 between seed sets for such rows.
+
+### 8.3 Against the predictions
+
+Held:
+- eating minutes where the gut does not bind: males +38% in T (registered 35–45%); every adult class +28–33% in G (slightly under);
+- gut binding in T, and its size: mothers absorb 1,312 of 1,668 kcal, reserves −0.85%/day (registered −0.8 to −1.0);
+- every T-ENE value in both arms within or at the edge of its registered range, except T-ENE-2 (225 and 266 against 230–260 and 280–320);
+- T-ACT-1, 2, 3, 4, T-HUN-1, T-FOOD-2, T-RNG-4, T-RNG-5 in their registered ranges in both arms; T-ENE-8 +1–2%;
+- other females, juveniles and males in T as registered (−0.03, −0.10, −0.01%/day).
+
+Missed:
+- starvation deaths in T: registered 3–10, measured 0. Mothers started the window at −0.27 of the store and ended at −0.79; at −0.85%/day the first would starve within about a month more;
+- T-FOOD-4 in G (+7%, registered +20–50%);
+- G's lactating slope (−0.10%/day, registered 0 to −0.2: inside, but twice R's).
+
+### 8.4 Kill criterion and verdict
+
+- **T: viability fails.** Juveniles lose 0.10% of their store a day against R's 0.03%; mothers lose 0.85% a day against R's 0.055% (R's mothers are themselves just beyond the 0.05% line, so by the literal wording of §6 only the juveniles trip it; in substance the mothers fail by a factor of 15). The gut binds (§8.1), so the verdict turns on G.
+- **G:** viability passes by the registered wording (no starvation; mothers −0.10%/day, but R's mothers also exceed 0.05%/day; every other class at or better than R). Mechanism check 2 passes (every adult class +28–33% eating minutes). Check 3: fitted −1.26, **held-out +0.68 on shared rows, above the registered +0.5**, entirely T-HUN-4.
+- **Verdict: null under the registered criterion 3** (`ledgerFoodEnergyFix` stays 0 and is not added to the stack yet). It is a narrow null, driven by one rare-event held-out row in a 2-seed, 60-day run; T itself, at the central gut, leaves held-out unchanged (+0.005) and lowers fitted distance by 1.86 but starves mothers through the gut. What would settle it: the integrator's 5-seed confirm (`e-bench --confirm`) of T and G against R. The default of `digestaGutMlPerKg` does not move.
+- **No iteration.** Neither miss is a flaw of the E1h mechanism: T's failure is the throughput of E1b's assumed foregut, which the stage registered as its expected exposure, and G's is a held-out hunting regression with no energetic route to the food correction. Changing the mechanism to rescue either would be fitting.
+
+### 8.5 Reading
+
+- **The correction does what physiology says it should.** With the energy of a feeding minute computed from measured sugars, adults eat 28–38% longer, and the activity rows that the E stack lost through spare time come back without any expenditure multiplier: T-ACT-1 0.30 → 0.38, T-ACT-4 0.46 → 0.36, grooming 0.25 → 0.18, hunts 55 → 42–45 per community-year. E1g needed `ledgerWildCostMult` ≈ 1.6 (PAL ≈ 2.15) for the same rows; here k stays 1 and expenditure is unchanged (T-ENE-8 96 → 98).
+- **The field method and the model now agree on the field's own terms.** At the gut's upper bound, the model's nursing mothers eat 266 min (field 309 ± 85), 783 g of dry matter (field 873 ± 289), and an observer applying the field's kcal/min to what they eat would record 2,440 kcal/day (field 2,479 ± 858). Their ledger truth is 1,734 sugar-based kcal, 4% below the audit's comparison band (1,810–2,070), and they absorb 1,648 kcal against 1,709 spent. The factor of about 1.9 that E1–E1g could not explain is the formula and the comparison class, as the audit argued.
+- **The foregut is the binding input.** At E1b's central volume (83 mL/kg) the foregut passes about 620 g of dry matter a day for a 31 kg female, and mothers fall 0.85% of their store a day. At 111 mL/kg (3,329 mL ÷ 30 kg, the top of the assumed range) they pass 783 g and nearly balance. The field's 873 g/day, which the formula does not touch, says the same. Gut volume is assumed (one captive capacity of unknown body mass, cited through nakamura2017's abstract, probably from chiversHladik1980), and so are the digesta dry-matter densities and the 3-hour emptying; the gut is now the input to source.
+- **What stays unexplained:** female grooming 0.19–0.20 (band ≤ 0.18), hunting at about 2 × the band, lactating mothers still losing reserve at 0.1%/day even with the larger gut (absorbed 0.96 of spent: E1e's satiation curve caps a mother's fill near 0.42), and T-RNG-5 (mothers range 0.7 × as far as males, band 0.3–0.6).
+
+**Biggest open problem.** Gut capacity. Every arm now hinges on it: with corrected food energy the model's mothers need about 790 g of dry matter a day, the central assumed foregut passes about 620 g, and the only chimpanzee gut volume in hand is one captive capacity of unknown body mass, read through an abstract. Sourcing the gut (chiversHladik1980's chimpanzee volumes and the animal's mass, digesta dry matter, gastric emptying of fruit meals) is the step before this switch or any later E1 stage can be judged.
