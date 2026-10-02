@@ -1704,3 +1704,127 @@ Evidence pass for stage E1g (sensitivity of the energy ledger to unmeasured wild
 - pontzer2014, pontzer2016 and uwimbabazi2019 are already cited above.
 
 **Not verified:** pontzer2014's full text (Europe PMC serves no file; the PNAS page refused), so which of its 17 species were wild and its captive-versus-wild test statistics are not read here (e-sources §3 records the finding from an earlier full-text read); Ricklefs, Konarzewski & Daan 1996 (*American Naturalist* 147:1047–1071) and Speakman 2000 (*Advances in Ecological Research* 30:177–297), the standard compilations of field-to-basal ratios (no abstract available); Pontzer et al. 2016 PeerJ preprint 2307 (sanctuary versus zoo *Pan*; page refused); the source of the wild yellow-baboon value in simmen2021.
+
+### E.19 Addendum: field intake audit (1 October 2026)
+
+Evidence pass for the field audit (`docs/staging/e-field-audit.md`), 1 October 2026. Question: how were the field intake and feeding-time values that the model cannot reproduce (T-ENE-1 to T-ENE-3) measured, are they outliers, what biases does the method carry, and how fast do infants eat? Bibliographic data checked against Crossref on 1 October 2026, except the book chapter. Access:
+- Full texts were read through NCBI's BioC text-mining service and efetch (PMC author manuscripts), publisher open-access pages, institutional repositories and archived author sites.
+- PMC pages that asked for a CAPTCHA and publisher pages that returned a challenge were not bypassed.
+- Entries marked "(subagent)" were read in full by a research subagent of the audit; their load-bearing passages were re-checked unless marked otherwise.
+
+Tags as in this Track E section.
+
+- **How the Kanyawara intake and feeding time were measured** [uwimbabazi2019] (FT: author manuscript NIHMS1029101 through BioC and efetch) [H] for the observations, [M] for the daily energy total. Replaces the E1e phrase-search reading.
+  - Subjects and follows:
+    - 14 multiparous, habituated females of 17; January 2014 – June 2015; one observer. The Discussion calls them nursing mothers. Intake was not analysed by reproductive state.
+    - 210 continuous focal follows, nest to nest where possible. The 141 of at least 10 h (1,597 h) were analysed: 93 in fig months, 48 in drupe months; 14 of the 18 months were fig months.
+  - Feeding = reaching, picking, handling or chewing, plus searching gaps under 5 s. A bout is continuous feeding on one item, not ended by non-feeding interruptions of 5 min or less. Bout start and end to the nearest minute; no subtraction of within-bout gaps is described.
+  - Rates and mass:
+    - Food units per minute counted at 5-min intervals when observation allowed: 4,314 one-minute records over 648 h.
+    - Unit mass from at least 30 wet units per food item, collected from the plant eaten or a neighbour and processed to mimic the chimpanzees (spat seeds removed); dried, corrected to 105 °C dry matter and organic matter.
+    - Daily dry matter = Σ minutes on item × the item's mean g/min.
+  - Wadges: the Discussion notes fibre often spat as a wadge; no subtraction is described. Figs, "normally consumed whole", were sampled whole, seeds included.
+  - Energy:
+    - ME (kcal/100 g organic matter) = 4 TNC + 4 available protein + 9 lipid + 1.6 NDF, following conklinBrittain2006.
+    - TNC by difference (100 − NDF − lipid − available protein − ash); crude protein by near-infrared spectroscopy (N × 6.25); water-soluble carbohydrate (WSC) by phenol–sulphuric assay.
+    - Table 2 (% OM): WSC 16.5 of a TNC of 44.6 in ripe fruit; figs 9.2 of 40.7; non-fig fruit 20.1 of 46.6; young leaves 5.1 of 30.5; pith 15.5 of 33.9.
+  - Results: daily means 308.7 ± 85 min, 872.6 ± 289 g, 2,479.4 ± 858.1 kcal (SD of days); range 1,240–4,931 kcal. Table 4 by dominant food (mean ± SE): non-fig fruit days 2,706 ± 221 (22), fig days 2,590 ± 95 (76), leaf-and-pith days 2,169 ± 114 (43).
+  - Derived from Table 4 (day-weighted; reproduces 2,479):
+    - measured sugar 18%, available protein 14%, lipid 7%;
+    - TNC by difference beyond measured sugar 34% (210 g);
+    - NDF credit 26% (408 g);
+    - 839 g organic matter = 0.96 of the dry matter, so ash does not inflate the energy.
+  - No comparison with expenditure. The only comparison is with an earlier Kanyawara estimate of 2,340 kcal/day (conklinBrittain2006).
+- **Same data, more method** [uwimbabazi2021] (FT, PMC8225573 via BioC) [M].
+  - The 2,479 kcal is called the intake of lactating females and compared with lactating women (about 2,500 kcal).
+  - The bout is described as continuing while the animal chews, up to 5 min.
+  - Protein is given as crude protein at 4 kcal/g.
+  - Follows under 10 h were excluded as not comparable. The reported test (F(2,135) = 35.3, P = 0.15) is internally inconsistent.
+- **The formula's origin and its authors' caveats** [conklinBrittain2006] (FT: scan from the archived author site; subagent; re-checked) [M] for its own data.
+  - Fibre credit: 1.6 kcal/g = 3 kcal/g × 0.543. The 0.543 is the NDF digestibility of captive chimpanzees on a biscuit of 34% NDF and about 2.5% lignin (miltonDemment1988); the wild Kanyawara diet averages about 8% lignin. Orangutans were given 0.543 kcal/g (3 × 0.181) for their more lignified diet.
+  - Caveats (pp. 460–462):
+    - the 4/4/9 factors are human values for low-fibre mixed diets, and in the authors' words "undoubtedly overestimates" for a high-fibre wild diet;
+    - 4 kcal/g for TNC may be too high, because TNC by difference includes soluble fibre;
+    - faster passage at high intake lowers digestibility.
+  - They suggest a fibre value of 0.5–1.0 kcal/g, and expect that fixing these points would lower all intake values.
+  - Method (Kanyawara 1992–93): 10-min focal rotation, instantaneous record at 60 s, bites per minute whenever possible. 17% of chimpanzee feeding minutes lacked rate or nutrient data and were given the month's mean. Feeding = reaching, picking, handling or chewing, included in the rate.
+  - Table 17.2 (8 months, both sexes pooled): 1,806–3,333 kcal/day with the fibre credit (mean 2,340); 1,206–2,535 without (mean 1,704); fibre 21–33% of the total.
+  - Figure 17.1: lactating females would often fall short of the expenditure estimated by pontzerWrangham2004 without the fibre credit, and have a surplus every month with it.
+- **The formula against doubly labelled water** [simmen2017] (electronic supplement FT, CC-BY figshare; main text not reached; extends §18's abstract entry) [M].
+  - Published wild primate intakes are split into a "high energy value" set (TNC by difference) and a "low energy value" set (measured soluble sugars, with starch and pectin estimated at about 5% of dry matter each where not measured).
+  - Where only TNC by difference exists, intake is multiplied by 0.74, the mean ratio of the two computations across diets (74 ± 8%, Table S3).
+  - In ripe-fruit diets, soluble sugars are 48 ± 13% of TNC by difference; sugars, starch and pectin 68 ± 10%.
+  - Paired with doubly labelled water in the same species (Table S5):
+    - the high-value intake exceeds expenditure by 1,770 ± 2,208 kJ/day (Wilcoxon, P < 0.02, 7 species; ratios 1.13–1.92, derived);
+    - the low-value intake does not differ: +144 ± 606 kJ/day, 8 species; ratios 0.84–1.38, mean 1.04, derived.
+  - Allometric intercepts: 131 ± 25% (high-value) and 108 ± 27% (low-value) of the expenditure line.
+  - No chimpanzee is in the database (Table S1).
+- **Taï intake with the same method** [vale2020] (FT and supplement; subagent; Table S3 re-checked; extends §3) [M].
+  - 7 adult females and 4 males, July 2017 – June 2018, 158 all-day follows (1,643 h).
+  - Items counted per bout, 2 min in 10 extrapolated where the mouth was hidden; rates countable in 2,139 of 3,635 bouts. Nutrient values from nguessan2009; same formula; masses assumed 41.6 (F) and 46.3 kg (M).
+  - Table S3, monthly mean daily intake: females 1,237–4,435 kcal (mean of 12 months 2,707), males 1,112–5,466 (2,943); activity cost 640–1,400 kcal/day.
+  - Derived: 165–166 kcal per kg^0.75 at the assumed masses.
+- **Taï energy balance** [nguessan2009] (FT; subagent; not re-checked): intake method items per minute every 10 min whenever possible, same formula; mean intake not tabulated; balance positive in most seasons; the authors allow that intake was overestimated or expenditure underestimated. Direction only.
+- **Orangutan intake** [knott1998] (FT, author PDF; subagent; re-checked) [M].
+  - Gunung Palung, full-day follows; rates as items per minute every 3 then every 5 min; TNC by difference with NDF at 0.543 kcal/g.
+  - January (mast): females 7,404 kcal/day (10 follows, 1 female), males 8,422.
+  - May: females 1,793 (14 follows, 2 females), males 3,824.
+  - Feeding 240 and 228 min (females), 347 and 303 (males).
+  - Requirement estimate 40 kcal/kg/day.
+- **Orangutan intake by fibre assumption** [harrison2010] (FT, author copy; subagent; formula re-checked) [M]. Sabangau, 46 months, nest-to-nest follows of at least 6 h. Adult female intake 1,624 ± 751 kcal/day with NDF at 1.6 kcal/g, 1,226 at 18.1% digestibility, 1,028 with none. Intake exceeded estimated expenditure in a minority of months.
+- **Feeding time by protocol, Kanyawara** [gilby2010] (FT, accepted manuscript, Harvard DASH; subagent; re-checked) [H].
+  - June 2004 – June 2005; full-day focal follows (mean 9.2 h) of 5 adult males and 5 pregnant or lactating females; 1-min instantaneous samples (81,294; 1,354.9 h).
+  - Feeding 32.9% of samples.
+  - Party-level 15-min scans (any animal feeding) gave a feeding share higher by a mean of 29.7 percentage points (range 15.9–50, by month), while the diet composition agreed.
+- **Activity budgets by site and class** [potts2011] (FT, Harvard DASH author copy; Figures 2 and 3 read from the rendered PDF) [H]. Extends the C7b and C7c entries.
+  - Continuous focal follows of one feeding bout and one travel bout, rotating among party members. Feeding/foraging = ingestion or chewing uninterrupted by other behaviour for at least 1 min; travel = sustained movement over 1 min between patches; grooming counted as rest.
+  - Pooled: Kanyawara (2006) feed 44%, travel 11%, rest 45%; Ngogo (2005–06) 47%, 14%, 34%, other 5%.
+  - By class (digitised ± 2 points): Kanyawara pregnant or lactating females feed about 44%, cycling females 47%, males 44%; Ngogo about 62%, 52%, 43%.
+- **Feeding definitions, Waibira** [villioth2025] (FT, PMC12701709 via BioC) [M]. Continuous focal recording; feeding = all food handling, picking and ingesting; movement within the canopy scored as travel; rest = sitting or lying more than 1 min. Follows 4.1 ± 2.6 h (491 h). Feeding 36% (M) and 37% (F), travel 21 and 20%.
+- **Feeding share of Gombe mothers** [stanton2017] (FT, PMC5659293 via BioC; subagent; re-checked) [M]. 1-min instantaneous point samples, follows of 6–12 h. Mothers fed 0.47–0.49 of follow time by juvenile presence, 0.51 with a female and 0.47 with a male infant.
+- **Infant ingestion rates and feeding time, absolute values** [bray2018] (FT; Figures 2 and 5 digitised from the figure images, ± about 0.3 items/min and ± 1 point; a subagent's independent digitisation agreed) [M]. Extends §12.
+  - Ingestion rates, items per minute (1992–1993 targeted samples, at least 30 s in view, 321 records, five ripe fruits): infants 3.0–9.6, juveniles 5.3–11.8, adolescents 9.4–14.1, adults 8.5–13.4.
+  - Mean of fruits: infants 6.6, juveniles 9.2, adolescents and adults 11.5. Infant ÷ adult 0.57 (0.35–0.83 by fruit); juvenile ÷ adult 0.80. β-based: 0.59 and 0.85.
+  - Feeding time, percent of in-view time (KCP full-day follows, 2010–2013, 1-min point samples, solid food swallowed): 1–2 y 16, 2–3 y 25, 3–4 y 34, 4–5 y 38, juveniles 41–46, adolescents 41; prime-aged adults about 44.5 (mean ± SE band about 40–49).
+- **Infant eating share, Gombe** [lonsdorf2014] (FT, Table 1 re-checked) [M]. 1-min point samples, eating = ingestion of solid food: 0.23% at 0 y, 6.7% at 1 y, 22.0% at 1.5 y, 21.6% at 2 y, 29.7% at 2.5 y, 32.5% at 3 y, 49.1% at 4.5 y. No rates.
+- **Nut-cracking rate by age, Taï** [boesch2019] (FT; subagent; figure digitised by the subagent, not re-checked) [M] for its technique. Adult asymptote about 1.35 nuts per minute. Near zero to 5 y, adult performance at about 10 y. A lower bound for a hard technique, not a diet-wide rate.
+- **Whole-fig analysis** [urquizaHaas2008] (Abs) [M] cross-species. *Ficus perforata* eaten by howler monkeys: seeds are 45% of the fig and are not digested, so whole-fig analysis overstates every nutrient, lipid most. Use: direction of a bias in any intake estimate that analyses figs whole.
+- **Methods guide** [rothman2012] (FT, archived author PDF; subagent; one page unreadable) [M].
+  - Feeding time is a good index of foraging effort and a poor one of intake.
+  - Samples should be processed as the animal processes food (wadges, seeds).
+  - N × 6.25 overestimates digestible protein.
+  - The 4/4/9 factors may not suit primates.
+  - Soluble fibre is probably fully fermented.
+- **Rate × time error, captive** [zinner1999] (Abs) [M] cross-species. 18 hamadryas baboons: feeding time explained 30% of the variance in food eaten; mean ingestion rate × feeding time deviated from true intake by 8–50%.
+- **Pith wadging** [wrangham1991] (FT, KCP site; subagent; not re-checked): pith intake on 5 occasions 5–54 g wet/min. In the published discussion, the share of pith that is wadged rather than swallowed was unknown.
+
+**Reading (derived; nothing here is an input).**
+- T-ENE-1 was measured on nursing mothers. Against the model's lactating class, the field is ×1.44 in intake and ×1.50 in minutes.
+- The field formula credits 60% of Kanyawara energy to fractions not measured as such: TNC by difference beyond sugar, and the fibre credit.
+  - Where the same formula can be paired with doubly labelled water it overshoots by 13–92% (mean 46%).
+  - The sugar-based version matches.
+  - On uwimbabazi2019's own composition, the sugar-based intake is 1,810–2,070 kcal/day (0.73–0.83). For a 31–35 kg nursing mother that needs a PAL of 1.3–1.7 outside lactation, inside the measured primate range.
+- Feeding share at Kanyawara: 33%, 44%, 44.5% and 45% under four protocols and periods; T-ENE-2 is the highest.
+- Infants ingest about 0.57 of the adult's items per minute and juveniles 0.80. These are measured ingestion rates, not per-feeding-minute yields.
+
+**Sources:**
+- *new* uwimbabazi2021: Uwimbabazi M, Raubenheimer D, Tweheyo M, Basuta GI, Conklin-Brittain NL, Wrangham RW, Rothman JM 2021. Nutritional geometry of female chimpanzees (*Pan troglodytes*). *American Journal of Primatology* 83(7):e23269. [doi:10.1002/ajp.23269](https://doi.org/10.1002/ajp.23269) (FT, PMC8225573).
+- *new* conklinBrittain2006: Conklin-Brittain NL, Knott CD, Wrangham RW 2006. Energy intake by wild chimpanzees and orangutans: methodological considerations and a preliminary comparison. In: Hohmann G, Robbins MM, Boesch C (eds) *Feeding Ecology in Apes and Other Primates*, pp. 445–465 (some citations give 445–471). Cambridge University Press (FT, scan; no DOI found; pages from the scan).
+- *new* knott1998: Knott CD 1998. Changes in orangutan caloric intake, energy balance, and ketones in response to fluctuating fruit availability. *International Journal of Primatology* 19(6):1061–1079. [doi:10.1023/A:1020330404983](https://doi.org/10.1023/A:1020330404983) (FT).
+- *new* harrison2010: Harrison ME, Morrogh-Bernard HC, Chivers DJ 2010. Orangutan energetics and the influence of fruit availability in the nonmasting peat-swamp forest of Sabangau, Indonesian Borneo. *International Journal of Primatology* 31(4):585–607. [doi:10.1007/s10764-010-9415-5](https://doi.org/10.1007/s10764-010-9415-5) (FT).
+- *new* gilby2010: Gilby IC, Pokempner AA, Wrangham RW 2010. A direct comparison of scan and focal sampling methods for measuring wild chimpanzee feeding behaviour. *Folia Primatologica* 81(5):254–264. [doi:10.1159/000322354](https://doi.org/10.1159/000322354) (FT, accepted manuscript).
+- *new* stanton2017: Stanton MA, Lonsdorf EV, Pusey AE, Murray CM 2017. Do juveniles help or hinder? Influence of juvenile offspring on maternal behavior and reproductive outcomes in wild chimpanzees (*Pan troglodytes*). *Journal of Human Evolution* 111:152–162. [doi:10.1016/j.jhevol.2017.07.012](https://doi.org/10.1016/j.jhevol.2017.07.012) (FT, PMC5659293).
+- *new* boesch2019: Boesch C, Bombjaková D, Meier A, Mundry R 2019. Learning curves and teaching when acquiring nut-cracking in humans and chimpanzees. *Scientific Reports* 9:1515. [doi:10.1038/s41598-018-38392-8](https://doi.org/10.1038/s41598-018-38392-8) (FT).
+- *new* urquizaHaas2008: Urquiza-Haas T, Serio-Silva JC, Hernández-Salazar LT 2008. Traditional nutritional analyses of figs overestimates intake of most nutrient fractions: a study of *Ficus perforata* consumed by howler monkeys (*Alouatta palliata mexicana*). *American Journal of Primatology* 70(5):432–438. [doi:10.1002/ajp.20510](https://doi.org/10.1002/ajp.20510) (Abs).
+- *new* rothman2012: Rothman JM, Chapman CA, Van Soest PJ 2012. Methods in primate nutritional ecology: a user's guide. *International Journal of Primatology* 33(3):542–566. [doi:10.1007/s10764-011-9568-x](https://doi.org/10.1007/s10764-011-9568-x) (FT, archived author PDF).
+- *new* zinner1999: Zinner D 1999. Relationship between feeding time and food intake in hamadryas baboons (*Papio hamadryas*) and the value of feeding time as predictor of food intake. *Zoo Biology* 18(6):495–505. [doi:10.1002/(SICI)1098-2361(1999)18:6<495::AID-ZOO4>3.0.CO;2-U](https://doi.org/10.1002/(SICI)1098-2361(1999)18:6%3C495::AID-ZOO4%3E3.0.CO;2-U) (Abs).
+- uwimbabazi2019, simmen2017, vale2020, nguessan2009, masi2015, potts2011, villioth2025, bray2018, lonsdorf2014, badescu2022, matsumoto2017, schuppli2016, corpByrne2002, wrangham1991, wrangham1994, miltonDemment1988, pontzerWrangham2004, pontzer2016 and simmen2021 are already listed; the entries above add findings.
+
+**Not verified:**
+- potts2015 (*International Journal of Primatology* 36(6):1101–1119, [doi:10.1007/s10764-015-9880-y](https://doi.org/10.1007/s10764-015-9880-y); Ngogo and Kanyawara foraging efficiency): closed, no abstract in any index.
+- simmen2017 main text.
+- rothman2012 p. 555 (TNC by subtraction; unreadable page).
+- The seed fraction of Kibale figs; any wadge-mass measurement; starch, pectin and soluble-sugar profiles of Kibale foods.
+- Doran 1997, Wrangham 1977, Newton-Fisher 1999 and Pontzer & Wrangham 2004 (full text).
+- Any published bonobo daily intake (none found).
+- Any chimpanzee intake rate in g or kcal per minute by age.
