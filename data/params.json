@@ -13649,7 +13649,7 @@
    "clock": "none",
    "symbol": "nurseTick",
    "file": "src/sim/energy.ts",
-   "notes": "Efficiency of milk synthesis: the mother spends milk energy / this (human value, Butte & King 2005). No chimpanzee magnitude exists for the cost of lactation (docs/research.md, lactation energetics), so the cost follows from what the infant drinks. Pending e-sources (not yet in docs/research.md)."
+   "notes": "Efficiency of milk synthesis: the mother spends milk energy / this (human value, Butte & King 2005). No chimpanzee magnitude exists for the cost of lactation (docs/research.md, lactation energetics), so the cost follows from what the infant drinks. Stage E1m audit (docs/staging/e1m-prereg.md; research.md Addendum: E1m milk output): 0.80 is the human biochemical derivation (80-85%; Butte & King 2005, full text); no primate measurement was found, so it stays."
   },
   {
    "id": "ledgerMilkKcalPerMin",
@@ -13671,7 +13671,7 @@
    "clock": "eco",
    "symbol": "nurseTick",
    "file": "src/sim/energy.ts",
-   "notes": "Milk energy transferred per minute of nursing: a human value (501 kcal/day, Butte & King 2005, over an assumed 2 h of suckling) scaled by mass^0.75 to a 31 kg mother. Limited by the room in the infant’s gut and by the milk the mother’s glands hold (ledgerMilkYieldCoef). Pending e-sources (not yet in docs/research.md)."
+   "notes": "Milk energy transferred per minute of nursing: a human value (501 kcal/day, Butte & King 2005, over an assumed 2 h of suckling) scaled by mass^0.75 to a 31 kg mother. Limited by the room in the infant’s gut and by the milk the mother’s glands hold (ledgerMilkYieldCoef). Stage E1m audit (docs/staging/e1m-prereg.md): no primate or ape milk transfer per minute of suckling was found; unchanged."
   },
   {
    "id": "ledgerMilkStoreH",
@@ -13715,7 +13715,7 @@
    "clock": "eco",
    "symbol": "energyTick",
    "file": "src/sim/energy.ts",
-   "notes": "Milk energy a mother can make per day per kg^0.75 of her mass: the human 501 kcal/day (749 g/day x 2.8 kJ/g, Butte & King 2005) at 60 kg; about 307 kcal/day at 31.3 kg. Milk energy output scales with maternal mass^0.74 +- 0.05 across 47 mammal species (Riek 2021, abstract); the coefficient is the human one and no chimpanzee milk yield exists. A value above about 1,000 removes the limit (iteration 1). (E1 iteration 2: without it a larger infant simply drank more.) Pending e-sources (not yet in docs/research.md)."
+   "notes": "Milk energy a mother can make per day per kg^0.75 of her mass: the human 501 kcal/day (749 g/day x 2.8 kJ/g, Butte & King 2005) at 60 kg; about 307 kcal/day at 31.3 kg. Milk energy output scales with maternal mass^0.74 +- 0.05 across 47 mammal species (Riek 2021, abstract); the coefficient is the human one and no chimpanzee milk yield exists. A value above about 1,000 removes the limit (iteration 1). (E1 iteration 2: without it a larger infant simply drank more.) Stage E1m audit (docs/staging/e1m-prereg.md; research.md Addendum: E1m milk output): the 60 kg is an assumption (Butte & King give no mass for 749 g/day), but their four studies with measured milk energy output and maternal weight give 20.7-25.1 kcal/day per kg^0.75 (pooled 23.1), so the coefficient stands; no nonhuman primate or ape daily output measured by isotope dilution or test-weighing could be read, and no primate allometric coefficient. Captive chimpanzee milk holds 0.53 kcal/g (Milligan 2007, n = 4; human 0.67): composition only, not an output."
   },
   {
    "id": "ledgerNightNurse",
