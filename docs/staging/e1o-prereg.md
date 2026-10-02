@@ -290,3 +290,21 @@ per-run SD fitted 0.69, held-out 1.26, held-out without T-HUN-4 and T-BRD-1 0.48
 larger; |z| > 2 is a result. Energy, travel and party readouts against the reference's own spread (mean ± SD of its
 4 runs). Viability must pass. Prescriptions: `scripts/prescription-ledger.ts --count --params` (S5: 77); a switch that
 removes a named rule must lower it.
+
+## 4. Known defects and caveats (fixed before measuring, or deferred with file:line)
+
+- `src/sim/energy.ts:274` (feedRate): an unweaned animal's intake capacity counts milk at the full suckling rate all
+  day (E1n §5). Addressed behind arm A (`milkInDrive`); with it off it stays (the reference's behaviour).
+- `src/sim/execution.ts:897` (nestTick, night suckling): the infant drinks tick by tick while asleep, with no
+  milk-ejection latency (the day act waits `ledgerLetDownS`); every night drink is gland-limited, so the volume does not
+  depend on it (§1.4); deferred.
+- `src/sim/candidates.ts:281` and the carry gate: infants under 1.2 y (or carried) have no own-food option (E1n §5);
+  not implicated (0.5–1-year-olds drink below the cap, §1.4); deferred.
+- `scripts/lib/prescriptions.ts:156`: `weanAgeMinY` and `weanAgeSpanY` are classed *input* (rule 4, reproductive
+  physiology) although they encode T-INF-3 (e-targets.patch.json, T-INF-3 note); a switch that removed the prescribed
+  weaning age would not lower the count, so the tool would be wrong in the brief's sense. No arm here removes them
+  (§2.1); reported to the integrator, not changed (the classification is the ledger's, shared by every stage).
+- Readout caveats (`scripts/energy-diagnose.ts`, E1o section): "eligible" reads the hunger at the end of the tick (after
+  its drink); the shadow milk pool starts empty for each infant at the window's start (it converges within hours, the
+  foregut's 3-h constant); D6's own dry matter includes plant pieces shared by the mother; synthesis is read as store
+  change plus this infant's drink (a mother with two unweaned infants would be read low; none in these windows).
