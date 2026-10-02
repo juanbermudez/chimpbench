@@ -26,7 +26,9 @@ T-RNG-5 (held-out): lactating female day range ÷ adult male day range, band 0.3
 **First reading (before any run of this stage):** R's ratio is higher than B's mostly because R's **males** range
 less (confirm: 1.95 against 2.53 km/day, −23%), not because its mothers range more (1.52 against 1.59, −5%). E1i's
 pair then raised the mothers' day range (quick, single runs: T 1.51 → B2 1.90 km/day; e1i-prereg.md §6). So the
-question has two halves: why R's males travel less than B's, and what sets the mothers' day range.
+question has two halves: why R's males travel less than B's, and what sets the mothers' day range. *(Later note, not a
+change of registration: §4–§5.1 show that E1i's rise was follow-day sampling; in simulation truth the pair lowers the
+ratio.)*
 
 ## 1. Field rows scored here: samples (source opened in full)
 
@@ -285,7 +287,7 @@ R − B, lact: {'own trip': -0.276, 'joined trip': -0.053, 'follow party': 0.04,
    males' 8.2 of 72; field 4.5 of 95 against 6.5 of 60) but not its phase contrast (223 against 241 m; field 277 against
    357): males' trips between halts are a third shorter than Budongo's.
 2. **Why R is worse than B (the integrator's question).** In truth R's males walk 0.34 km/day less than B's (own trips
-   to food −0.39: 205 → 112 m each at about the same number; joined trips −0.22; to callers −0.10; partly offset by
+   to food −0.39: 205 → 112 m each, and 13% fewer; joined trips −0.22; to callers −0.10; partly offset by
    walks to water +0.09, patrols +0.11, following +0.08), while mothers lose only 0.05 (own trips −0.28, offset by walks
    to water +0.14 and walks to play with the infant +0.08). Substituting B's own-trip distance per day for both classes leaves
    the ratio almost unchanged (−0.01): the stack shortens everyone's food trips, and in mothers the loss is refilled by
