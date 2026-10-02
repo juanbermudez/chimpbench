@@ -38,6 +38,12 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   present; on S4 males walk 2.61 km instead of 3.32, travel back in band, juveniles stop losing reserve; sums inside noise).
 - **S4 done** (e-stack2-confirm.md): S3 + `followCarer` + `cohesionValue`: 77 prescriptions and viable, but males walk
   3.43 km a day (S3 2.93) and the deficits deepen: E5a interacts with value-based calls; E5b fixed it (S5).
+- **Hosted site, 2 October 14:50:** `site` now also holds the rewritten About page (merged `site-about` 4618daf: first-person
+  hero, stale sections cut, What's next) and the decision guide as a hidden page (`docs/decision-guide.html`, a Vite
+  input: unlinked, noindex, at /docs/decision-guide; made from track-e's guide by `integrator/hosted_guide.py` until the
+  `guide-s5` agent moves that into `scripts/decision-guide.ts --hosted`). `guide-s5` (worktree `.claude/worktrees/guide-s5`)
+  refreshes the guide from S3 to S5 (S6 if its confirm passes: message it the verdict). Build checked: no console errors,
+  data figures draw, dist 32 MB without audio. Still no deploy: the user has not said how to publish.
 - **Hosted site (user request):** branch `site` (worktree `.claude/worktrees/site`, from `main`) = a snapshot of the main
   checkout's uncommitted site work (UI, in-browser GLiNER, about page; an unrelated PDF and caches excluded) + Real time +
   GLiNER-only builds (`VITE_DECISION_PROVIDER` hides the provider picker and ignores ?provider=). Build for hosting:
