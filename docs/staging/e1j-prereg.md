@@ -92,11 +92,34 @@ Other sites (lactating against male day range): §2.3, from a source check runni
 A scorer fix is staged (`docs/staging/e1j-protocol.patch.json`, never applied here) only if D0 shows the field-method
 ratio differs from today's by more than R's own spread over its realizations.
 
-### 2.3 Other sites
+### 2.3 Other sites (source check, 06:43–06:55; files in the session scratch `e1j/sources/`)
 
-Pending (source check of pontzerWrangham2004 and pontzerWrangham2006 for Kanyawara, Gombe and Taï sex-class day ranges;
-2 routes or 10 minutes per source). research.md already records, from an indexed excerpt only, Kanyawara males 2.4
-km/day, adult females about 2.0 and mothers about 1.9 (pontzerWrangham2004): a ratio near 0.8 if verified.
+| Site | Lactating or adult females | Males | Ratio | Sample, method | Access |
+| --- | --- | --- | --- | --- | --- |
+| Budongo Sonso 2002–03 | lactating/gestating 1.2 ± 0.8 km | 2.7 ± 1.5 km | 0.44 | §1 | batesByrne2009, full text |
+| Gombe 1972–73 | females, "most" anoestrous, median 2.8 km (61 days, 10 females; juveniles' days credited to their mothers) | median 4.2 km (northern, 83 days, 8 males), 3.8 (southern, 23 days, 7) | 0.67–0.74 | nest-to-nest days; 100 m grid lines crossed, moves under ~30 m ignored | wrangham1975 (PhD thesis, Table 5.1, full text) |
+| Kanyawara | adult females 2.0 km | 2.4 km | 0.83 | not seen | pontzerWrangham2004 as cited by wilson2021 (primary closed) |
+| Gombe | adult females 3.2 km | 4.6 km | 0.70 | not seen | pontzerWrangham2004 as cited by wilson2021 |
+| Kanyawara | maternal day range rose with the juvenile's body size, not with infant carrying | — | — | not seen | pontzerWrangham2006 as cited by stanton2017 (primary closed, no abstract) |
+
+Not verified: "mothers about 1.9 km" at Kanyawara (research.md, from an indexed excerpt); otaliGilchrist2006 (Kanyawara;
+title: mothers are less gregarious than nonmothers and males, the infant safety hypothesis; no abstract by OpenAlex or
+Crossref, closed); Taï, Ngogo and Mahale sex-class day ranges (jang2019: 5 Taï females, median 4.03 km, continuous GPS).
+Context for Budongo: Sonso had 33 intra-community infanticide attacks on 30 victims in 24 years; most of the 23
+attacks with known perpetrators were by males only, and two thirds of the victims of known age were under one week old
+(lowe2019, Primates, abstract read; open access).
+
+**Reading [L–M].** The band 0.3–0.6 rests on one site and 13 lactating follow-days. Gombe's mostly anoestrous females
+(verified, primary) and both sites in pontzerWrangham2004 (secondary) give 0.67–0.83. R's 0.71 (quick) and 0.78
+(confirm) lie inside that cross-site range, outside Budongo's.
+
+### 2.4 Audit result: the observer (D0, R and B quick; §3 defines it; tables in §4)
+
+The field's rule (fixes only while travelling, nothing inside 20+ min halts) lowers both classes' day range by 0.15–0.21
+km/day (10–15%) and the ratio by 0.03 on R (0.700 → 0.672, ratio of pooled means 0.674) and by nothing on B (0.777 →
+0.782 per seed, 0.769 → 0.766 pooled); the activity rule changes it by ≤ +0.01. R's own spread over its four
+realizations is 0.080, so **the observer does not inflate T-RNG-5 beyond noise**: no scorer fix is staged (rule of
+§2.2). The other differences (day eligibility, class, pooling) move it by less than 0.01 (pooled 0.700 against 0.699).
 
 ## 3. Diagnosis readouts (defined before the diagnosis runs; unchanged simulation code)
 
@@ -149,3 +172,137 @@ before its run): **TP** = R + `ledgerFoodEnergyFix`, `ledgerSatiationReserve`, `
 **Identity of R at the branch start (done 06:49):** e-bench --quick of R at b0cb6e5 equals R-quick.json (612bf15) on all
 110 rows (per-seed values and parts), prescriptions 103, viability pass: the integrator's R quick realizations are valid
 references for this stage while every new switch is 0.
+
+## 4. Diagnosis results (R and B; registered readouts of §3)
+
+Runs: frozen checkout of fd7cd89 (`git.dirty` clean), seeds 48 and 7, 30 + 30 days, rules policy; JSON in
+`artifacts/validation/e1j/D1-{R,B}-{48,7}.json` of the frozen checkout (gitignored). Every number below was generated
+from the JSON by `tools/d1_table.py` and `tools/decomp.py` (session scratch, copied to `artifacts/validation/e1j/tools/`).
+Identity holds: the tool's T-RNG-4/5 equal e-bench's per-seed values for both arms (R-quick.json, base-quick.json).
+
+**R** (seeds 48, 7)
+
+identity (per seed): seed 48: T-RNG-4 1.994, T-RNG-5 0.620; seed 7: T-RNG-4 1.695, T-RNG-5 0.778
+
+| class (observer, complete follows >= 8 h) | follow-days | today km | field km (35 m / 20 min) | activity-rule km | halts/day | halt min | phases/day | phase m | share with an adult male |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| male | 47 | 1.835 | 1.625 | 1.762 | 8.15 | 72 | 6.32 | 241 | 0.40 |
+| lact | 24 | 1.285 | 1.096 | 1.252 | 5.92 | 104 | 4.46 | 223 | 0.39 |
+| lact <2y | 9 | 1.599 | 1.395 | 1.570 | 6.22 | 94 | 5.11 | 256 | 0.47 |
+| lact >=2y | 15 | 1.096 | 0.917 | 1.061 | 5.73 | 110 | 4.07 | 198 | 0.35 |
+| pregnant | 6 | 2.095 | 1.850 | 2.061 | 8.33 | 70 | 6.83 | 252 | 0.52 |
+| female other | 16 | 1.896 | 1.680 | 1.854 | 7.06 | 81 | 5.75 | 278 | 0.55 |
+
+T-RNG-5 lactating ÷ male: today 0.699 (mean of per-seed ratios; e-bench's form), 0.700 (ratio of pooled means); field method 0.672 / 0.674; activity rule 0.709 / 0.710
+
+| class (truth) | chimp-days | path km/day | daylight path | own trip | joined trip | to callers | home | follow party | to crown | in crown | ground forage | drink | patrol | consort | nest | groom approach | play | guard | other |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| male | 840 | 2.204 | 2.204 | 0.359 | 0.524 | 0.336 | 0.000 | 0.174 | 0.057 | 0.000 | 0.016 | 0.449 | 0.146 | 0.002 | 0.009 | 0.017 | 0.015 | 0.054 | 0.049 |
+| lact | 480 | 1.702 | 1.702 | 0.474 | 0.364 | 0.142 | 0.000 | 0.091 | 0.060 | 0.000 | 0.019 | 0.408 | 0.000 | 0.000 | 0.007 | 0.003 | 0.114 | 0.000 | 0.017 |
+| lact <2y | 240 | 1.952 | 1.952 | 0.371 | 0.522 | 0.244 | 0.000 | 0.117 | 0.060 | 0.000 | 0.024 | 0.454 | 0.000 | 0.000 | 0.007 | 0.004 | 0.126 | 0.000 | 0.022 |
+| lact >=2y | 240 | 1.452 | 1.451 | 0.578 | 0.206 | 0.039 | 0.000 | 0.066 | 0.061 | 0.001 | 0.013 | 0.362 | 0.000 | 0.000 | 0.008 | 0.002 | 0.102 | 0.000 | 0.013 |
+| pregnant | 199 | 2.213 | 2.212 | 0.261 | 0.529 | 0.537 | 0.000 | 0.225 | 0.045 | 0.000 | 0.025 | 0.490 | 0.018 | 0.000 | 0.009 | 0.013 | 0.029 | 0.000 | 0.030 |
+| female other | 341 | 1.823 | 1.822 | 0.242 | 0.487 | 0.295 | 0.000 | 0.155 | 0.039 | 0.000 | 0.023 | 0.486 | 0.012 | 0.000 | 0.010 | 0.010 | 0.019 | 0.000 | 0.044 |
+
+| class (truth) | own trips/day (m each) | joined trips/day (m) | to callers/day (m) | follow party/day (m) | drinks/day (m) | halts/day | halt min | trips/day | trip m | path in trips km/day | with adult male | alone | party size |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| male | 3.19 (112) | 3.43 (154) | 1.61 (211) | 2.82 (62) | 2.77 (162) | 8.07 | 69 | 7.07 | 297 | 1.074 | 0.46 | 0.29 | 3.02 |
+| lact | 3.94 (120) | 2.54 (145) | 0.67 (213) | 2.29 (40) | 2.59 (158) | 7.34 | 78 | 6.34 | 244 | 0.820 | 0.30 | 0.49 | 2.37 |
+| lact <2y | 3.81 (97) | 3.62 (145) | 1.13 (218) | 3.18 (37) | 2.87 (159) | 8.03 | 71 | 7.03 | 254 | 0.937 | 0.38 | 0.33 | 2.80 |
+| lact >=2y | 4.08 (142) | 1.45 (142) | 0.21 (183) | 1.40 (46) | 2.32 (156) | 6.66 | 87 | 5.66 | 232 | 0.702 | 0.23 | 0.64 | 1.94 |
+| pregnant | 2.62 (99) | 3.54 (152) | 2.17 (246) | 2.92 (82) | 3.10 (159) | 8.14 | 68 | 7.14 | 295 | 1.091 | 0.45 | 0.31 | 2.89 |
+| female other | 2.23 (108) | 3.05 (161) | 1.32 (227) | 2.21 (75) | 3.14 (156) | 7.39 | 77 | 6.39 | 272 | 0.854 | 0.44 | 0.33 | 2.71 |
+
+| mothers (truth) | carrying min/day (daylight) | carry kcal/day | walk kcal/day | climb kcal/day | nursing min/day (daylight) | speed nursing m/min | speed otherwise m/min |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| lact | 973 (286) | 11.0 | 48.4 | 32.4 | 75 | 0.95 | 2.40 |
+| lact <2y | 1134 (447) | 10.5 | 55.5 | 35.7 | 80 | 1.09 | 2.77 |
+| lact >=2y | 812 (125) | 11.5 | 41.3 | 29.0 | 70 | 0.79 | 2.04 |
+| female other | 0 (0) | 0.0 | 51.8 | 28.1 | 0 | 0.00 | 0.00 |
+| male | 0 (0) | 0.0 | 78.1 | 44.0 | 0 | 0.00 | 0.00 |
+
+**B** (seeds 48, 7)
+
+identity (per seed): seed 48: T-RNG-4 2.483, T-RNG-5 0.645; seed 7: T-RNG-4 1.873, T-RNG-5 0.909
+
+| class (observer, complete follows >= 8 h) | follow-days | today km | field km (35 m / 20 min) | activity-rule km | halts/day | halt min | phases/day | phase m | share with an adult male |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| male | 51 | 2.124 | 1.942 | 2.083 | 6.55 | 91 | 5.33 | 338 | 0.35 |
+| lact | 13 | 1.633 | 1.488 | 1.617 | 6.23 | 100 | 4.23 | 321 | 0.20 |
+| lact <2y | 5 | 1.881 | 1.725 | 1.861 | 7.20 | 85 | 4.80 | 338 | 0.24 |
+| lact >=2y | 8 | 1.478 | 1.340 | 1.464 | 5.63 | 111 | 3.88 | 308 | 0.17 |
+| pregnant | 9 | 2.399 | 2.200 | 2.376 | 6.67 | 87 | 5.78 | 369 | 0.46 |
+| female other | 20 | 2.007 | 1.830 | 1.985 | 6.50 | 91 | 5.40 | 322 | 0.34 |
+
+T-RNG-5 lactating ÷ male: today 0.777 (mean of per-seed ratios; e-bench's form), 0.769 (ratio of pooled means); field method 0.782 / 0.766; activity rule 0.786 / 0.776
+
+| class (truth) | chimp-days | path km/day | daylight path | own trip | joined trip | to callers | home | follow party | to crown | in crown | ground forage | drink | patrol | consort | nest | groom approach | play | guard | other |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| male | 840 | 2.546 | 2.545 | 0.752 | 0.740 | 0.432 | 0.000 | 0.092 | 0.056 | 0.000 | 0.009 | 0.355 | 0.037 | 0.000 | 0.008 | 0.009 | 0.005 | 0.026 | 0.026 |
+| lact | 480 | 1.753 | 1.752 | 0.751 | 0.418 | 0.147 | 0.000 | 0.051 | 0.059 | 0.001 | 0.009 | 0.269 | 0.000 | 0.000 | 0.007 | 0.002 | 0.032 | 0.000 | 0.005 |
+| lact <2y | 240 | 2.075 | 2.075 | 0.683 | 0.602 | 0.279 | 0.000 | 0.075 | 0.065 | 0.000 | 0.013 | 0.304 | 0.000 | 0.000 | 0.008 | 0.002 | 0.036 | 0.000 | 0.007 |
+| lact >=2y | 240 | 1.430 | 1.430 | 0.818 | 0.233 | 0.016 | 0.000 | 0.028 | 0.052 | 0.001 | 0.006 | 0.235 | 0.000 | 0.000 | 0.007 | 0.001 | 0.029 | 0.000 | 0.004 |
+| pregnant | 173 | 2.441 | 2.441 | 0.817 | 0.634 | 0.465 | 0.000 | 0.121 | 0.058 | 0.000 | 0.011 | 0.305 | 0.000 | 0.000 | 0.008 | 0.007 | 0.006 | 0.000 | 0.011 |
+| female other | 367 | 2.207 | 2.207 | 0.682 | 0.587 | 0.352 | 0.000 | 0.091 | 0.059 | 0.000 | 0.014 | 0.368 | 0.000 | 0.000 | 0.009 | 0.006 | 0.008 | 0.000 | 0.032 |
+
+| class (truth) | own trips/day (m each) | joined trips/day (m) | to callers/day (m) | follow party/day (m) | drinks/day (m) | halts/day | halt min | trips/day | trip m | path in trips km/day | with adult male | alone | party size |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| male | 3.67 (205) | 2.60 (285) | 1.60 (268) | 1.06 (86) | 1.86 (191) | 7.30 | 73 | 6.32 | 391 | 1.261 | 0.36 | 0.39 | 2.30 |
+| lact | 3.50 (214) | 1.42 (295) | 0.50 (298) | 0.85 (61) | 1.58 (170) | 5.94 | 92 | 4.96 | 337 | 0.886 | 0.24 | 0.54 | 1.89 |
+| lact <2y | 3.62 (188) | 2.02 (298) | 0.93 (299) | 1.21 (62) | 1.70 (178) | 6.60 | 83 | 5.64 | 352 | 1.041 | 0.32 | 0.42 | 2.19 |
+| lact >=2y | 3.39 (241) | 0.82 (282) | 0.06 (257) | 0.49 (56) | 1.45 (161) | 5.28 | 103 | 4.29 | 318 | 0.731 | 0.16 | 0.66 | 1.58 |
+| pregnant | 4.36 (187) | 2.27 (281) | 1.78 (260) | 1.15 (105) | 1.69 (181) | 7.30 | 73 | 6.31 | 377 | 1.233 | 0.35 | 0.42 | 2.27 |
+| female other | 3.58 (190) | 2.05 (286) | 1.35 (261) | 0.88 (105) | 2.08 (177) | 7.01 | 76 | 6.03 | 355 | 1.032 | 0.30 | 0.45 | 2.10 |
+
+| mothers (truth) | carrying min/day (daylight) | carry kcal/day | walk kcal/day | climb kcal/day | nursing min/day (daylight) | speed nursing m/min | speed otherwise m/min |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| lact | 965 (279) | 0.0 | 0.0 | 0.0 | 124 | 0.69 | 2.65 |
+| lact <2y | 1130 (443) | 0.0 | 0.0 | 0.0 | 95 | 0.92 | 3.02 |
+| lact >=2y | 801 (114) | 0.0 | 0.0 | 0.0 | 152 | 0.54 | 2.24 |
+| female other | 0 (0) | 0.0 | 0.0 | 0.0 | 0 | 0.00 | 0.00 |
+| male | 0 (0) | 0.0 | 0.0 | 0.0 | 0 | 0.00 | 0.00 |
+
+Truth decomposition of the ratio (`tools/decomp.py`; lactating ÷ male path per chimp-day; one part substituted at a time):
+
+```
+truth ratio lact/male: R 0.772 (L 1.702, M 2.206); B 0.688 (L 1.753, M 2.547)
+  lact <2y / male: R 0.885; lact >=2y / male: R 0.658; female other / male: R 0.826
+Counterfactuals on R (one part substituted at a time):
+  males' own trips at B's length: ratio 0.655 (change -0.117; L 1.702, M 2.599)
+  both classes' own trips at B's: ratio 0.761 (change -0.010; L 1.978, M 2.599)
+  no walks to water (both): ratio 0.736 (change -0.035; L 1.294, M 1.757)
+  mothers <2y with the social travel of mothers >=2y: ratio 0.642 (change -0.130; L 1.415, M 2.206)
+  no mothers' play walks: ratio 0.720 (change -0.052; L 1.588, M 2.206)
+Part differences, male − lact (R, km/day): {'own trip': -0.115, 'joined trip': 0.16, 'to callers': 0.194, 'follow party': 0.082, 'drink': 0.04, 'patrol': 0.146, 'groom approach': 0.014, 'play': -0.099, 'guard': 0.054, 'other': 0.032}
+R − B, males: {'own trip': -0.393, 'joined trip': -0.216, 'to callers': -0.096, 'follow party': 0.082, 'drink': 0.093, 'patrol': 0.109, 'play': 0.01, 'guard': 0.028, 'other': 0.023}
+R − B, lact: {'own trip': -0.276, 'joined trip': -0.053, 'follow party': 0.04, 'drink': 0.139, 'play': 0.082, 'other': 0.012}
+```
+
+**What makes mothers range as far as they do (relative to males), with numbers.**
+1. **Not the mothers' absolute range.** The observer's mothers walk 1.29 km/day (1.10 by the field's method), Budongo's
+   1.2 ± 0.8. R's males walk 1.84 (1.63 by the field's method) against Budongo's 2.7 ± 1.5: the ratio is high because
+   the denominator is short. The model reproduces the field's halt contrast (mothers 5.9 halts a day of 104 min against
+   males' 8.2 of 72; field 4.5 of 95 against 6.5 of 60) but not its phase contrast (223 against 241 m; field 277 against
+   357): males' trips between halts are a third shorter than Budongo's.
+2. **Why R is worse than B (the integrator's question).** In truth R's males walk 0.34 km/day less than B's (own trips
+   to food −0.39: 205 → 112 m each at about the same number; joined trips −0.22; to callers −0.10; partly offset by
+   walks to water +0.09, patrols +0.11, following +0.08), while mothers lose only 0.05 (own trips −0.28, offset by walks
+   to water +0.14 and walks to play with the infant +0.08). Substituting B's own-trip length for both classes leaves the
+   ratio almost unchanged (−0.01): the stack shortens everyone's food trips, and in mothers the loss is refilled by
+   water and play walks.
+3. **Mother-side terms (truth, R):** mothers of infants under 2 y travel socially like other adult females (joined
+   trips, callers and following: 0.88 km/day; with an adult male in 38% of daylight; ratio −0.13 if they travelled like
+   mothers of older infants); mothers make more own food trips than males (3.94 against 3.19 a day, +0.12 km/day; −0.05
+   at the males' level); walks to play with the infant 0.11 km/day (−0.05).
+4. **Walks to water are a large class-independent part of every path:** 2.3–3.1 a day of about 160 m, 0.41–0.49
+   km/day (a fifth to a quarter of the path) in every class (B: 1.5–2.1 a day). The thirst timers are design and the
+   field values of `fruitThirstFactor` and `drinkDistScaleM` were tuned in C5a against T-ACT-2 and T-RNG-4. Removing
+   them from both classes changes the ratio by only −0.035; it would take ~0.4 km/day from T-RNG-4.
+5. **Carrying is charged but trivial and unseen.** Mothers carry an infant 286 daylight min a day; the ledger charges
+   11 kcal/day for it (walk 48, climb 32; about 0.6% of their spending), and no decision reads it. Arithmetic for the
+   brief's first candidate: at `ledgerWalkJPerKgM` 3.8 J kg⁻¹ m⁻¹ (0.00091 kcal), a 120 m trip costs a 31 kg mother
+   with a 7 kg load 4.1 kcal (the infant's share 0.8 kcal), against about 150 kcal absorbed per feeding bout (E1i's T:
+   1,344 kcal a day over 9.2 bouts): a net-energy trip value would change trip scores by 2–4% (the infant ≤ 1%). Not
+   built: it cannot move the ratio measurably.
+6. **Nursing slows, never stops the mother:** her infant nurses 75 daylight min a day, during which she moves 0.95
+   m/min against 2.4 otherwise.
