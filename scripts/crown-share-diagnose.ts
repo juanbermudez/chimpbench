@@ -77,7 +77,7 @@ const CROWN_Y = 0.45 + 0.28 / 2;          // candidates.ts CROWN_Y
 
 interface Job { seed: number; burnIn: number; days: number; params: Record<string, number> }
 type Terms = { base: number; crop: number; trip: number; share: number; crowd: number; cont: number; revisit: number; place: number; rain: number; social: number; jitter: number; other: number };
-interface Opt { kind: 'crown' | 'trip' | 'join'; tree: number; score: number; crop: number; n: number; d: number; t: Terms; binds: boolean; cropBinds: boolean }
+interface Opt { kind: 'crown' | 'trip' | 'join'; tree: number; score: number; crop: number; n: number; d: number; t: Terms; binds: boolean; cropBinds: boolean; needK: number; roomK: number; shareK: number }
 interface Choice { kind: string; why: string; chosen: Opt | null; rejected: Opt | null; nOpts: number; nCrownOpts: number; spread: Record<string, number> | null; anyBinds: boolean; comp: CompRec | null; opts: { s: number; crop: number; n: number; t: Terms; kind: string }[] | null }
 interface CompRec { companionCrown: number; asOption: boolean; inView: boolean; dTerms: Terms | null; dCrop: number; dD: number; dN: number; chosenIsCompanions: boolean }
 interface Result {
@@ -140,10 +140,10 @@ export function runSeed(job: Job): Result {
     return drive ? (ti.rateH > 0 ? ti.perHourInclWalk / ti.rateH : 0) : ti.feedH > 0 ? ti.feedH / (ti.walkH + ti.feedH) : 0;
   };
   const tripCost = (worth: number, d: number): number => P.tripRateValue !== 1 || P.intakeValue === 1 ? d / P.travelDistScaleM : NaN;
-  const bindsOf = (c: Chimp, crop: number, n: number): [boolean, boolean] => {
-    if (P.energyLedger !== 1 || P.ledgerDrive !== 1) return [false, false];
-    const k = fruitKcalPerUnit(P, false), Rk = fruitRate(c, P).fruitPerH * k, lim = Math.min(energyNeed(c, P), boutRoom(c, P, Rk));
-    return [crop / (1 + n) * k < lim, crop * k < lim];
+  const bindsOf = (c: Chimp, crop: number, n: number): [boolean, boolean, number, number, number] => {
+    if (P.energyLedger !== 1 || P.ledgerDrive !== 1) return [false, false, NaN, NaN, NaN];
+    const k = fruitKcalPerUnit(P, false), Rk = fruitRate(c, P).fruitPerH * k, need = energyNeed(c, P), room = boutRoom(c, P, Rk), lim = Math.min(need, room);
+    return [crop / (1 + n) * k < lim, crop * k < lim, need, room, crop / (1 + n) * k];
   };
   const seenFeeders = (c: Chimp, tid: number, trips: boolean): number => {
     const x = ix(c), byId = index(w).byId; let n = 0;
@@ -201,8 +201,8 @@ export function runSeed(job: Job): Result {
         social: kind === 'trip' ? (P.crowdByShare === 1 ? 0 : c.personality.sociability * w.environment.fruitIndex * 0.1) : lead ? companyValue(c, lead, P) : 0, jitter, other: 0 };
     }
     terms.other = k.score - TERMS.reduce((a, q) => q === 'other' ? a : a + terms[q], 0);
-    const [binds, cropBinds] = bindsOf(c, crop, n);
-    return { kind, tree: t.id, score: k.score, crop, n, d, t: terms, binds, cropBinds };
+    const [binds, cropBinds, needK, roomK, shareK] = bindsOf(c, crop, n);
+    return { kind, tree: t.id, score: k.score, crop, n, d, t: terms, binds, cropBinds, needK, roomK, shareK };
   };
   const sd = (v: number[]) => { if (v.length < 2) return 0; const m = v.reduce((a, b) => a + b, 0) / v.length; return Math.sqrt(v.reduce((a, b) => a + (b - m) ** 2, 0) / (v.length - 1)); };
 
@@ -426,6 +426,10 @@ export function summarize(res: Result[], T0 = 0.164): Record<string, unknown> {
     shareBindsInCrownOptions: r3(crownOpts.filter(o => o.binds).length / Math.max(1, crownOpts.length)),
     cropAloneBindsInCrownOptions: r3(crownOpts.filter(o => o.cropBinds).length / Math.max(1, crownOpts.length)),
     crownOptionsWithFeeders: r3(crownOpts.filter(o => o.n > 0).length / Math.max(1, crownOpts.length)),
+    kcal: Object.fromEntries((['crown', 'trip', 'join'] as const).map(kd => { const L = opts.filter(o => o.kind === kd && Number.isFinite(o.needK)); return [kd, { n: L.length,
+      needMedian: r3(med(L.map(o => o.needK))), roomMedian: r3(med(L.map(o => o.roomK))), shareMedian: r3(med(L.map(o => o.shareK))), feedersMean: r3(mean(L.map(o => o.n))),
+      shareBelowNeed: r3(L.filter(o => o.shareK < o.needK).length / Math.max(1, L.length)), cropBelowNeed: r3(L.filter(o => o.shareK * (1 + o.n) < o.needK).length / Math.max(1, L.length)),
+      roomBelowNeed: r3(L.filter(o => o.roomK < o.needK).length / Math.max(1, L.length)), needPositive: r3(L.filter(o => o.needK > 0).length / Math.max(1, L.length)) }]; })),
     crownOptionsCropOverRef: r3(crownOpts.filter(o => o.crop > 1).length / Math.max(1, crownOpts.length)),
     companions: {
       decisionsWithCompanionFeeding: comps.length,
