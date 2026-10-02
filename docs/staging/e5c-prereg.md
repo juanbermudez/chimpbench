@@ -400,7 +400,12 @@ before this registration; the six unit tests ran on the iteration-3 code before 
   replaced before any run because the walk is not the term the diagnosis names (R3: `trip` +0.005) and pricing the walk
   against hours of eating would have made walks nearly free.
 - **Iteration 2** (§3.1; arm A2): registered and committed before its run (494425c). Results §6.2.
-- **Iteration 3** (§3.2; arm A3): registered and committed before its run (this commit). Last iteration.
+- **Iteration 3** (§3.2; arm A3): registered and committed before its run (e076dbe). Results §6.3. Last iteration.
+- **Final checks** (after merging track-e f24032d once): `gen-params --check` clean, `tsc --noEmit` clean, `pnpm test`
+  694 tests: 693 pass, 0 fail, 1 skipped. Arms A1–A3 all ran S5 + `crownShare` 1 (the same parameters) at the commit of
+  their iteration. Outputs (gitignored, local): `artifacts/validation/e5c/` (arm e-bench, energy and crown JSON, the four
+  S5 realizations' crown diagnoses in `diag/`, and the table scripts `arm_report.sh`, `bench_ref.py`, `crown_ref.py`,
+  `diag_table.py`).
 
 ## 6. Results
 
