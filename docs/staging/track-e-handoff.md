@@ -14,7 +14,18 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (13:10).** The about-page updater (`site-about`, from `site`). No simulation runs.
+- **Running now (14:30).** The about-page updater (`site-about`, from `site`). Stage agent **E1o** (`e1o-milk-demand`:
+  why infants of 1–4 y drink the whole milk yield; mothers' deficit), from track-e c7a4c75, and **E3b** (`e3b-revisit`:
+  what stops a chimp going back to a crown it just fed in; separates E5c's two crop-blind terms), from track-e 29202da;
+  briefs in the session scratchpad (`integrator/e1o-prompt.txt`, `e3b-prompt.txt`).
+- **E5c merged** (`crownShare`, off; no switch kept): party members feed one or two at a time (1.3 per crown), so a
+  crown's crop never limits them and no crown valuation makes feeders follow the crop. Side finding: with the
+  crop-blind revisit devaluation (`revisitW`, design, no source) and the habitat-index crowding off, mothers balance
+  (+0.02%/day) and males walk 30% less (1.77 km, T-RNG-4 just below its band): a candidate for its own stage. Next for
+  party size: what makes party members feed together (joint arrival; `main`'s moving-together work). Integrator: the shared S5 quick reference, 4 runs
+  (`bench-run/artifacts/validation/e/s5q/`, script `integrator/s5q.sh <label> [rgTemperature]`): **done** 13:29, all
+  four viable and clean; fitted 3.00 / 2.71 / 3.75 / 3.71, held-out without the rare rows 5.24 / 5.19 / 5.46 / 5.29;
+  both agents told. A quick run takes 3–6 min and energy-diagnose ~3 min.
 - **S5 done: the best integrated candidate so far** (e-stack2-confirm.md; S4 + `companyMargin`): 77 prescriptions
   (today's model 135), viable, night safe; fitted better than R beyond noise (z −3.2) and level with or better than
   today's model (z −1.8); feeding, grooming, rest, party size in band, travel at its edge (0.258 / 0.216); males walk
@@ -190,6 +201,7 @@ mkdir -p ../<name>/artifacts/validation && ln -s /Users/juanbermudez/Desktop/MGO
 | E4f encounters | `preyKanyawara` | recorded, off ([L] site-matched input) | The 2.55 × encounter excess: observer scoring ×1.42 (focal vs party follows) and ×1.07 (a new encounter per change of nearest group), density ×1.12 (Ngogo pre-decline vs Kanyawara 2.22 groups/km²), residual ×1.5 unsourced. Scorer fixes staged, not applied. | e4f-prereg.md |
 | E1k deficit | `groomNeedDyad` | null (marginal K1), off | Removes the mother–infant grooming loop (33% → 11% of daylight; female T-ACT-3 0.18 → 0.11); mothers gain little (extra minutes on fallback food). Line audit: no wild rate exists, only the direction. | e1k-prereg.md |
 | E2g water | `waterLedger` | provisional keep candidate, **confirmed on 5 seeds** (fitted cost on R: grooming fills the freed time; none on S3), off | Water ledger in place of the thirst timers: drinking 2.24 → 0.84 per adult-day, walks to water halved, males' path −0.38 km, prescriptions −6, sums inside noise. | e2g-prereg.md |
+| E5c crown share | `crownShare` | no switch kept; recorded, off | A crown is valued for one gut-full (~245 kcal against a ~2,000 kcal need), so crop and feeders never enter its value; a crown holds 8–12 feeder-bouts while 1.3 party members feed at once. Three valuations: share of the day's need (mothers −1.23%/day), need-filling rate (−0.33%/day), crop-blind terms off (viable, mothers balanced, walking −30%, but feeders fall with crop through depletion). The binding problem is feeding together (synchrony, party size), not crown value. | e5c-prereg.md |
 | Integrated S2 | 28 switches | measured | 89 prescriptions; fitted = today's model; held-out without rare rows +2.9 (T-FOOD-10, travel). | e-stack2-confirm.md |
 | E1j ranging | — | done: no mechanism | Interim: in simulation truth mothers ÷ males is 0.69–0.77 (B, R, E1i pair); the observer's T-RNG-5 rests on 13–24 follow-days, so E1i's 0.84 was sampling; the band is Budongo only (Gombe 0.67–0.74, Kanyawara 0.83). R's real change vs B: males' food trips halve. | e1j-prereg.md |
 | E3 re-test | — | done (integrator) | The effect stands without the old hunger cap: persistence halves crown bouts (22 → 11 min) and the fruit share falls to 0.54. | e3-prereg.md, last section |

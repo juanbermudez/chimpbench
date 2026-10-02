@@ -2624,6 +2624,26 @@ badescu2016 were re-read in full (NCBI BioC, 2 October 2026); bibliographic data
 - badescu2016, badescu2022, bray2018, lonsdorf2014, maestripieri2002, vandeRijtPlooij1987, clark1977 and
   badescuThesis2017 are already listed; the entries above add findings.
 
+### E.39 Addendum: E5c crown share (2 October 2026)
+
+Read for stage E5c ([staging/e5c-prereg.md](staging/e5c-prereg.md) §2.2). Tags as above.
+
+- **Feeding party size and patch size: the measure, re-read** [potts2011] (FT, author copy: the Harvard DASH deposit
+  read through its Internet Archive capture; the live host shows a bot check and was not used) [H]. Extends the C7b
+  entry.
+  - Sample: Kanyawara 2006 (961 h) and Ngogo 2005–06 (1,059 h); continuous focal follows of adult males, cycling females
+    and pregnant or lactating females, each ideally one feeding bout and one travel bout, rotating among party members.
+  - Feeding party size (FPS) is "the maximum number of independently-feeding chimpanzees, including the focal
+    individual, co-feeding in a given patch during a particular feeding bout"; a patch is generally a single tree, its
+    size indexed by DBH (summed DBH for groves).
+  - FPS on patch DBH, ln-transformed, simple linear regression: R² 0.801 (Ngogo), 0.227 (Kanyawara), P < 0.001; Figure 4
+    plots "ln average feeding party size" against ln DBH. Mean FPS 7.29 (1–40) and 8.39 (1–32); CV 1.01 and 0.836.
+  - The authors cite Chapman et al. 1995 for the expectation: a strong positive relationship where alternative food
+    sources are abundant nearby, none where high-quality patches are rare or widely scattered (travel costs).
+  - Use: the definition of T-PTY-2's patch part and of E5c's FPS readout (per bout, maximum co-feeders, ln–ln). The
+    observer scores T-PTY-2 on 15-min scans with crown radius and a linear R² (a staged scorer fix, e5c-prereg §2.2).
+- potts2011, chapman1995, newtonFisher2000 and charnov1976 are already listed; the entry above adds findings.
+
 ### Addendum: E1o what an older infant drinks (2 October 2026)
 
 Evidence pass for stage E1o ([staging/e1o-prereg.md](staging/e1o-prereg.md) §1–§2): why infants of 1–4 y drink the whole
@@ -2638,8 +2658,8 @@ lactation sources); one new source was read (PubMed abstract, 2 October 2026).
   total energy intake and weight and length gain did not differ between groups. The authors: "breastfed infants
   self-regulate their total energy intake when other foods are introduced". Use in E1o: an infant's milk intake is the
   remainder of one appetite after its other food (direction; mechanism citation for counting milk and solids in one
-  drive, arm A), so milk can fall below supply only when other food covers more of the need; it is also the reading the
-  E1o diagnosis tests on the model's books (the infant's own food is limited by its foregut while food is in reach).
+  drive, arm A), so milk can fall below supply only when other food covers more of the need; in the model the infant's own food
+  rises with its hunger (e1o-prereg.md §2.2: with milk limited by its mother, 35–53% more), the same direction.
 - *new* cohen1994: Cohen RJ, Brown KH, Canahuati J, Rivera LL, Dewey KG 1994. Effects of age of introduction of
   complementary foods on infant breast milk intake, total energy intake, and growth: a randomised intervention study in
   Honduras. *Lancet* 344(8918):288–293. [doi:10.1016/s0140-6736(94)91337-4](https://doi.org/10.1016/s0140-6736(94)91337-4) (Abs, PubMed 7914260).

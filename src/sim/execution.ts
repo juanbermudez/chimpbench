@@ -1,5 +1,5 @@
 import type { Action, Candidate, Chimp, DecisionSource, InteractionKind, World } from '../types';
-import { candidateMeta, departAudience, dependentOn, isCarried, nearestNeighbor, partyOn, V } from './candidates';
+import { candidateMeta, crownShareOn, departAudience, dependentOn, isCarried, nearestNeighbor, partyOn, V } from './candidates';
 import { notifyAllies, resolveCharge, resolveFight } from './conflict';
 import { addEvent, emitCall, endInteraction, episode, findInteraction, flashInteraction, gate, interrupt, startInteraction } from './events';
 import { nestPoint } from './generation';
@@ -167,8 +167,9 @@ function cleanupPrevious(world: World, c: Chimp): void {
     const t = index(world).treeById.get(c.targetId);
     if (t) { (x.treeCrop ??= {})[t.id] = Math.round(fruitAt(world, t) * 1000) / 1000; if (paramsOf(world).departRace === 1) noteFeeders(c, t.id, index(world).byId); }
   }
-  // leaving a crown after feeding in it: remember it as harvested (stage C6b, field; design)
-  if (c.action === 'forage' && x.phase === 2 && isTreeId(c.targetId) && paramsOf(world).revisitW > 0) {
+  // leaving a crown after feeding in it: remember it as harvested (stage C6b, field; design); stage E5c (crownShare): not
+  // kept, the belief of what is left (above) carries the depletion
+  if (c.action === 'forage' && x.phase === 2 && isTreeId(c.targetId) && !crownShareOn(paramsOf(world)) && paramsOf(world).revisitW > 0) {
     const ft = x.fedTree ?? (x.fedTree = []), fa = x.fedAt ?? (x.fedAt = []);
     const k = ft.indexOf(c.targetId);
     if (k >= 0) { ft.splice(k, 1); fa.splice(k, 1); }

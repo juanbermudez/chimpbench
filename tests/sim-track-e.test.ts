@@ -30,6 +30,7 @@ const TRACK_E_SWITCHES = [
   'milkInDrive', 'weanDeficit', // E1o
   'cohesionValue', // E5a
   'companyMargin', // E5b
+  'crownShare', // E5c
 ] as const;
 
 test('Track E switches are all 0 by default in both profiles', () => {
