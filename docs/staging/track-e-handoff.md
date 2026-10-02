@@ -112,7 +112,7 @@ mkdir -p ../<name>/artifacts/validation && ln -s /Users/juanbermudez/Desktop/MGO
 | E1i intake | `ledgerSatiationReserve`, `ledgerLactGut` | keep (provisional, pair); **5-seed confirm queued** | Mothers' drive was saturated and satiation ignored their deficit, so they fed no more than other classes. Satiation weighted by the relative store (leptin-like, [M]) plus a lactating gut grown to its load (×1.30; design, no primate source) balance mothers (−0.04%/day, 796 g, 278 min) in quick mode; sums inside noise; T-RNG-5 worse (0.84). Mothers of infants ≥ 2 y groom 34% of daylight (infant-initiated). | e1i-prereg.md |
 | E4d rhythm | `endoRhythm` | recorded, off (removes nothing) | Sleep-entrained secretion (gains from fedurek2016 and girardButtoz2021 ratios): both states fall through the day by construction; T-END-8 fails honestly (r −0.29); calls still have no daily course; morning escalation up beyond noise (no field row). | e4d-prereg.md |
 | E4e hunting | — | **running** (agent) | Audit T-HUN-1, diagnose the stack's extra hunts, then a hunt decision from energy state. | e4e-prereg.md |
-| E3 re-test | — | queued (integrator) | Does persistence still halve crown bouts once the pre-E1e hunger cap is gone? | e3-prereg.md, last section |
+| E3 re-test | — | done (integrator) | The effect stands without the old hunger cap: persistence halves crown bouts (22 → 11 min) and the fruit share falls to 0.54. | e3-prereg.md, last section |
 | Prescription audit | — (tooling) | merged | The count now sees what E1 and E2a switch out: full stack 134 → 102. | scripts/lib/prescriptions.ts |
 | Full-stack confirm | 14 switches (E1–E1e, E2a, E4a, E4b) | not kept as a whole | Fitted 3.28 → 4.01; held-out 5.90 → 3.49, but T-BRD-1 alone is −2.10 (+0.70 worse without it). One cause: spare time (intake ends early, grooming and hunting fill the day). | IMPLEMENTATION_PLAN.md |
 
@@ -463,8 +463,9 @@ several were sent twice; long user updates added to it. The resume note written 
 check that every planned comparison has its reference arm at the same mode and commit.**
 
 **14. Open doubts the reviewers raised (not yet checked).** E3's iteration-3 explanation (persistence fails because a
-walk to a crown rarely pays) may be a units artefact: `payOf` calls `treeIntake` with the hunger cap on. Confirmed on 2 October
-(e3-prereg.md, integrator note): E3 ran before E1e's B2 fix; re-test before acting on E3's recommendation. E1f staged T-INF-1..5 after seeing model values
+walk to a crown rarely pays) may be a units artefact: `payOf` calls `treeIntake` with the hunger cap on. Re-tested on 2 October
+(e3-prereg.md, last section): the effect stands on the current code (crown bouts 22 → 11 min, fruit share 0.54), so
+the doubt is resolved; E3's recommendation stands and the next persistence re-test belongs on R + E1i's pair. E1f staged T-INF-1..5 after seeing model values
 (disclosed; bands from field values only): the integrator should stage target rows before agents run references.
 
 ### The rules, short
