@@ -9932,6 +9932,33 @@
    "notes": "Adult females groom non-kin less (design weighting [H])."
   },
   {
+   "id": "groomNeedDyad",
+   "group": "social",
+   "value": 0,
+   "units": "flag",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "keverne1989",
+    "cabanac1971"
+   ],
+   "clock": "none",
+   "symbol": "computeCandidates (groom offer)",
+   "file": "src/sim/candidates.ts",
+   "integer": true,
+   "notes": "Stage E1k (docs/staging/e1k-prereg.md section 6): 1 = between a mother and her own unweaned offspring (either direction) the groom option's social terms (need 0.55, bond 0.4, kin 0.2, reciprocity 0.2, rank, invitation 0.3 + 0.4) are multiplied by the groomer's social need 1 - social (drive x incentive), so the score at full need is today's; costs and the bout's persistence are unchanged. The motivation to be groomed falls as grooming feeds back on it (opioid feedback in monkeys, keverne1989 [M]); the value of a stimulus depends on the internal state (alliesthesia, cabanac1971 [H] humans); the product form is a design assumption with no free parameter. Scope: the dyad the E1k diagnosis implicates (mothers and infants groom each other at a social need of about 0.02-0.04, adults groom others at 0.35-0.72). 0 = today (hash-identical)."
+  },
+  {
    "id": "groomRangeM",
    "group": "social",
    "value": 20,

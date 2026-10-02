@@ -268,6 +268,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   ledgerFoodEnergyFix: { stage: 'E1h', needs: { energyLedger: 1 }, removesNothing: 'corrects an input (food energy per feeding minute: the field formula\'s values out, the sugar-based values in, all classed input); no prescription is switched out (e1h-prereg §6)' },
   ledgerSatiationReserve: { stage: 'E1i', needs: { energyLedger: 1, ledgerDrive: 1 }, removesNothing: 'weights the design satiation curve of ledgerDrive (1 − fill²) by the relative store (a physiological state); adds no rule and removes none (e1i-prereg §6)' },
   ledgerLactGut: { stage: 'E1i', needs: { energyLedger: 1, ledgerDigesta: 1, ledgerDrive: 1 }, removesNothing: 'scales a lactating female\'s gut capacity with her milk demand (an input-side physiological response); adds no rule and removes none (e1i-prereg §6, iteration 2)' },
+  groomNeedDyad: { stage: 'E1k', needs: {}, removesNothing: 'weights the design grooming terms of a mother and her own unweaned offspring (literal score weights, no registry entry) by the groomer\'s social need (a state); adds no rule and removes none (e1k-prereg §6)' },
   rhythmSleep: { stage: 'E2a', needs: {} },
   rhythmHeat: { stage: 'E2a', needs: {} },
   rhythmFreeNight: { stage: 'E2a', needs: { rhythmSleep: 1 } },

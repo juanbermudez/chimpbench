@@ -2198,3 +2198,65 @@ encounter rate. One input value is taken (the Kanyawara density, [L]); nothing i
   the costs of scramble competition. *Behavioral Ecology* 19(6):1289–1296.
   [doi:10.1093/beheco/arn076](https://doi.org/10.1093/beheco/arn076) (Abs; Crossref-checked).
 - gilby2015 is already cited; the entry above adds its encounter method, read in full.
+
+### Addendum: E1k nursing mothers' deficit (2 October 2026)
+
+Read for stage E1k (docs/staging/e1k-prereg.md): whether wild nursing mothers and juveniles run a sustained energy
+deficit, and how much mothers and their infants groom each other. Full texts through NCBI BioC or efetch; abstracts
+through OpenAlex or PubMed; bibliographic data checked against Crossref on 2 October 2026. Tags as in this Track E
+section.
+
+- **Energy balance through lactation, Kanyawara** [emeryThompson2012] (abstract re-read verbatim through OpenAlex; the
+  full text at academic.oup.com served a Cloudflare challenge on 2 October and was not routed around) [M]. 17 wild,
+  unprovisioned mothers; urinary C-peptide "depressed for six months postpartum, thereafter showing a net increase
+  through the second year"; "Cycling resumed only after a sustained period of energy gain". A sign by lactation stage,
+  not a size: no rate of mass or fat change. Use in E1k: a direction band for the staged T-ENE-5 row read on the
+  ledger (docs/staging/e1k-targets.patch.json, not applied).
+- **Maternal grooming by infant age, Gombe** [stanton2014] (FT, PMC4197843 via BioC) [H]. Mother–infant follows
+  1988–2012, 1-min instantaneous point samples; mothers groomed their infants 0.027–0.029 of time at 1–2 y and
+  0.028–0.031 at 2–3 y (firstborn and laterborn). Use: comparison value for E1k's mother–infant grooming readout
+  (target, never an input).
+- **Infants' own grooming by age, Gombe** [lonsdorf2014] (FT, PMC4049619; already listed) [H]. 40 infants: infant
+  grooming rose "from an average of 0% of time in the first six months to 3.07% of observation time at age 4.5 years".
+  Use: comparison value (target).
+- **Mother–offspring grooming, Mahale** [nishida1988] (Abs, OpenAlex) [M]. "Infants under 2 years of age rarely
+  groomed their mothers, and mostly groomed accessible parts of their mother's bodies, if they did so"; older
+  adolescents reciprocated about equally. Direction only.
+- **Grooming of immatures, Gombe** [pusey1990] (Abs, OpenAlex) [M]. "Immatures of all ages spend 3-13% of their time in
+  social grooming"; juveniles "receive over 90% of their grooming from mothers and siblings". Direction only.
+- **Mothers keep playing with offspring when food is poor, Kanyawara** [sabbi2024] (FT, PMC11002997 via efetch) [M].
+  3,891 adult play bouts by 89 players, 2010–2019, monthly counts against diet quality (share of feeding on non-fig
+  fruit): "when diet quality was low, most adult play fell to near zero whereas it persisted between mothers and
+  offspring". Use: a caution against making a mother's social time with her offspring yield to her energy need; no
+  source was found on mothers cutting grooming when food is scarce.
+- **The motivation to be groomed is regulated by grooming** [keverne1989] (Abs, PubMed 2525263) [M] (monkeys, captive).
+  "Opiate receptor blockade increases the motivation to be groomed, while morphine administration decreases it"; brain
+  opioids change contingent on grooming. Use in E1k: direction for `groomNeedDyad` (grooming is valued by a need that
+  grooming itself satisfies).
+- **Alliesthesia** [cabanac1971] (Abs, OpenAlex) [H] (humans). "A given stimulus can induce a pleasant or unpleasant
+  sensation depending on the subject's internal state", proposed as the motivation of behaviours such as food intake.
+  Use: the principle that an act's incentive is weighted by the internal state it serves (drive × incentive); its
+  product form in `groomNeedDyad` is a design assumption.
+- **Not verified:** emeryThompson2012's monthly C-peptide values (full text not reached); pusey2005's mass by
+  reproductive state (closed); emeryThompson2016's maternal C-peptide by lactation stage (PMC4948337: the publisher
+  does not allow the full text to be downloaded); any wild chimpanzee rate of fat or mass change for mothers or
+  juveniles (none found); Pusey 1983 and Goodall 1986 on mother–offspring grooming.
+
+**Sources:**
+- *new* stanton2014: Stanton MA, Lonsdorf EV, Pusey AE, Goodall J, Murray CM 2014. Maternal behavior by birth order in
+  wild chimpanzees (*Pan troglodytes*). *Current Anthropology* 55(4):483–489. [doi:10.1086/677053](https://doi.org/10.1086/677053) (FT, PMC4197843).
+- *new* nishida1988: Nishida T 1988. Development of social grooming between mother and offspring in wild chimpanzees.
+  *Folia Primatologica* 50(1–2):109–123. [doi:10.1159/000156335](https://doi.org/10.1159/000156335) (Abs).
+- *new* pusey1990: Pusey AE 1990. Behavioural changes at adolescence in chimpanzees. *Behaviour* 115(3–4):203–246.
+  [doi:10.1163/156853990X00581](https://doi.org/10.1163/156853990X00581) (Abs).
+- *new* sabbi2024: Sabbi KH, Kurilla SE, Monroe IG, Zhang Y, Menante A, Cole MF, Otali E, Kobusingye M, Emery Thompson M,
+  Muller MN, Wrangham RW, Machanda ZP 2024. Ecological variation in adult social play reveals a hidden cost of
+  motherhood for wild chimpanzees. *Current Biology* 34(6):1364–1369.e2.
+  [doi:10.1016/j.cub.2024.02.025](https://doi.org/10.1016/j.cub.2024.02.025) (FT, PMC11002997).
+- *new* keverne1989: Keverne EB, Martensz ND, Tuite B 1989. Beta-endorphin concentrations in cerebrospinal fluid of
+  monkeys are influenced by grooming relationships. *Psychoneuroendocrinology* 14(1–2):155–161.
+  [doi:10.1016/0306-4530(89)90065-6](https://doi.org/10.1016/0306-4530(89)90065-6) (Abs).
+- *new* cabanac1971: Cabanac M 1971. Physiological role of pleasure. *Science* 173(4002):1103–1107.
+  [doi:10.1126/science.173.4002.1103](https://doi.org/10.1126/science.173.4002.1103) (Abs).
+- emeryThompson2012, lonsdorf2014, emeryThompson2016, pusey2005, samuni2020 and knott2005 are already listed; the
+  entries above add findings.
