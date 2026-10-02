@@ -15,6 +15,7 @@ const TRACK_E_SWITCHES = [
   'ledgerNurseBout', 'ledgerGrowPotential', // E1f
   'darkCost', // E2c
   'rhythmCircadian', // E2d
+  'nestAudience', 'nestCompany', // E2e
   'ledgerFoodEnergyFix', // E1h
   'callValue', // E4c
 ] as const;

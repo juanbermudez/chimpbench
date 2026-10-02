@@ -12,7 +12,7 @@ import { featureDistance, perceivedFeatures } from './signals';
 import { endoHeard, endoOn } from './endocrine';
 import { noteFeeders } from './departure';
 import { darkOn, sightAt, visionNow } from './light';
-import { NEVER, aliveNear, byIdIn, index, ix, simOf, treesNear } from './state';
+import { NEVER, aliveNear, awakeInNest, byIdIn, index, ix, simOf, treesNear } from './state';
 
 export const IMPULSE_TRANSFER = 1, IMPULSE_ESCALATE = 2, IMPULSE_INFANTICIDE = 3, IMPULSE_RAIN = 4, IMPULSE_GANG = 5, IMPULSE_PATROL = 6, IMPULSE_HUNT = 7;
 
@@ -304,7 +304,8 @@ function hear(world: World, o: Chimp, callId: number, kind: CallKind, caller: Ch
     if (o.troopId === caller.troopId) {
       x.hooFrom = caller.id; x.hooAt = world.time;
       // stage C13e (joinChoice; noticing): the hoo reaches every companion within earshot, seen or not, and makes it decide
-      if (paramsOf(world).joinChoice === 1 && o.age >= 5 && o.action !== 'nest') interrupt(world, o, `${caller.name} gave a travel hoo`, true);
+      // stage E2e (nestAudience, iteration 2): an animal awake in its finished nest hears it too and decides
+      if (paramsOf(world).joinChoice === 1 && o.age >= 5 && (o.action !== 'nest' || awakeInNest(paramsOf(world), o))) interrupt(world, o, `${caller.name} gave a travel hoo`, true);
     }
     return;
   }

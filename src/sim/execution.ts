@@ -14,7 +14,7 @@ import { doTransfer, recordCopulation } from './reproduction';
 import { IMPULSE_HUNT, forget } from './perception';
 import { clamp, hash01, random } from './rng';
 import type { ParamId } from './params.gen';
-import { NEVER, TICK_HOURS, TICK_SECONDS, byIdIn, huntOf, index, isTreeId, ix, simOf } from './state';
+import { NEVER, TICK_HOURS, TICK_SECONDS, awakeInNest, byIdIn, huntOf, index, isTreeId, ix, simOf } from './state';
 import { resolveHunt } from './ecology';
 import { endoOn, endoShared, endoThreat } from './endocrine';
 import { callValueOn, crownOf, gruntWorth, hooWorth, pantHootValue } from './calls';
@@ -191,6 +191,10 @@ export function startAction(world: World, c: Chimp, cand: Candidate, source: Dec
   const x = ix(c);
   const meta = candidateMeta.get(cand) ?? { v: V.NONE, aux: -1 };
   const same = c.action === cand.action && c.targetId === cand.targetId;
+  // stage E2e (nestAudience, iteration 2): an own trip to a tree from its own finished nest may become an attempt; if it
+  // is given up the animal stays in that nest (departWait), so the nest it leaves is kept until departAttempt decides
+  const fromNest = paramsOf(world).nestAudience === 1 && !same && c.action === 'nest' && x.phase >= 2 && c.nest !== null
+    && cand.action === 'travel' && meta.v === V.TREE && meta.aux <= 0 ? c.nest : null;
   if (!same) { cleanupPrevious(world, c); c.actionTime = 0; x.phase = 0; x.prog = 0; x.flag = 0; x.slide = 0; }
   c.action = cand.action; c.targetId = cand.targetId; c.reason = cand.reason;
   c.decisionSource = source; c.decisionVersion++; c.awaitingDecisionSince = null;
@@ -212,6 +216,8 @@ export function startAction(world: World, c: Chimp, cand: Candidate, source: Dec
     if (o && o.action === 'travel' && ix(o).v === V.TREE) x.actEnd = Math.max(x.actEnd, ix(o).actEnd);
   }
   c.nextDecision = x.actEnd;
+  if (fromNest) x.tryNest = { treeId: fromNest.treeId, position: [fromNest.position[0], fromNest.position[1], fromNest.position[2]] };
+  else if (!same && x.tryNest) delete x.tryNest;
   if (c.nest && cand.action !== 'nest') c.nest = null;
   if (x.impulse !== 0 && (cand.action === 'attack' || cand.action === 'transfer' || (cand.action === 'patrol' && x.v === V.LEAD) || (cand.action === 'display' && x.v === V.RAIN))) { x.impulse = 0; x.impulseUntil = -1e9; }
   if (x.impulse === IMPULSE_HUNT) { x.impulse = 0; x.impulseUntil = -1e9; } // hunting fix: the hunt is considered once per encounter, whatever he chose
@@ -300,7 +306,7 @@ function onStart(world: World, c: Chimp): void {
       // (71.4% of vocal and 33.7% of silent initiations recruited a follower); the urgent decision point is a design assumption
       const cue = P.departCue === 1 && c.action === 'travel' && x.v === V.TREE && x.aux <= 0 && c.age >= 15;
       if (cue) for (const b of idx.alive) {
-        if (b === c || b.troopId !== c.troopId || b.age < 5 || b.action === 'nest' || (b.action === 'follow' && b.targetId === c.id) || (b.action === 'travel' && b.targetId === c.targetId)) continue;
+        if (b === c || b.troopId !== c.troopId || b.age < 5 || (b.action === 'nest' && !awakeInNest(P, b)) || (b.action === 'follow' && b.targetId === c.id) || (b.action === 'travel' && b.targetId === c.targetId)) continue;
         if (hd(b, c) <= P.partyLinkM) interrupt(world, b, `${c.name} set off`, true);
       }
       // stage C13e (joinChoice, field; noticing): a silent departure on a trip to a tree is noticed only by companions who
@@ -312,7 +318,8 @@ function onStart(world: World, c: Chimp): void {
         const groomed = new Set<number>();
         for (const g of idx.alive) if (g.action === 'groom' && g.targetId > 0 && ix(g).phase >= 1) groomed.add(g.targetId);
         for (const b of idx.alive) {
-          if (b === c || b.troopId !== c.troopId || b.age < 5 || b.action === 'nest' || b.action === 'follow') continue;
+          // stage E2e (nestAudience, iteration 2): an animal awake in its finished nest notices a departure too
+          if (b === c || b.troopId !== c.troopId || b.age < 5 || (b.action === 'nest' && !awakeInNest(P, b)) || b.action === 'follow') continue;
           const d = hd(b, c);
           if (d >= P.partyLinkM || d > ix(b).sight) continue;
           if ((b.action === 'forage' && isTreeId(b.targetId) && ix(b).phase === 2) || (b.action === 'groom' && ix(b).phase >= 1) || groomed.has(b.id)) continue;
@@ -469,12 +476,12 @@ export function foodCallChance(world: World, c: Chimp, crop: number): number {
 function departAttempt(world: World, c: Chimp): void {
   const P = paramsOf(world), x = ix(c), time = world.time;
   delete x.tryN;
-  if (c.action !== 'travel' || x.v !== V.TREE || x.aux > 0) return; // only an own trip to a tree is an initiation
+  if (c.action !== 'travel' || x.v !== V.TREE || x.aux > 0) { delete x.tryNest; return; } // only an own trip to a tree is an initiation
   const cap = P.departPersistMaxMin / 60;
   // an effort that was not re-launched within the window is over: the next departure starts a new one
   if (x.trySince !== undefined && time - (x.tryAt ?? -1e9) > cap) { delete x.trySince; delete x.tryAt; }
   const audience = departAudience(world, c);
-  if (audience === 0 || (x.trySince !== undefined && time - x.trySince >= cap)) { delete x.trySince; delete x.tryAt; return; } // nobody to leave, or it has waited long enough: it goes
+  if (audience === 0 || (x.trySince !== undefined && time - x.trySince >= cap)) { delete x.trySince; delete x.tryAt; delete x.tryNest; return; } // nobody to leave, or it has waited long enough: it goes
   x.tryN = audience;
 }
 
@@ -486,7 +493,7 @@ function departWait(world: World, c: Chimp): boolean {
     if (o === c || !o.alive || o.troopId !== c.troopId) continue;
     const ox = ix(o);
     if ((o.action === 'travel' && o.targetId === c.targetId && ox.aux === c.id) || (o.action === 'follow' && o.targetId === c.id && ox.v === V.PARTY)) {
-      delete x.tryN; delete x.trySince; delete x.tryAt; // recruited: the party moves
+      delete x.tryN; delete x.trySince; delete x.tryAt; delete x.tryNest; // recruited: the party moves
       return false;
     }
   }
@@ -494,8 +501,26 @@ function departWait(world: World, c: Chimp): boolean {
   delete x.tryN;
   if (x.trySince === undefined) x.trySince = world.time - c.actionTime / 3600;
   x.tryAt = world.time + P.departRetryMin / 60;
-  finish(world, c);
+  if (x.tryNest) resumeNest(world, c); // stage E2e (nestAudience, iteration 2): it gave the attempt up and stays in its nest
+  else finish(world, c);
   return true;
+}
+
+/**
+ * Stage E2e (nestAudience, iteration 2; docs/staging/e2e-prereg.md §8b): an attempt that set off from the initiator's own
+ * finished nest and recruited nobody is given up in the nest: the animal is back in that nest (same tree and place,
+ * finished) until its own trips to trees return to its menu (departRetryMin), as the moving-together initiator stays
+ * where it was. The nest is the one it left (kept in tryNest while the attempt was open).
+ */
+function resumeNest(world: World, c: Chimp): void {
+  const x = ix(c), n = x.tryNest!;
+  delete x.tryNest;
+  cleanupPrevious(world, c);
+  c.action = 'nest'; c.targetId = n.treeId; c.reason = 'Stayed in its nest: nobody came along'; c.actionTime = 0;
+  c.nest = { treeId: n.treeId, position: [n.position[0], n.position[1], n.position[2]] };
+  c.position[0] = n.position[0]; c.position[1] = n.position[1]; c.position[2] = n.position[2];
+  x.phase = 2; x.prog = 0; x.v = V.NONE; x.aux = -1; x.finished = false; x.nestTree = n.treeId;
+  x.actEnd = x.tryAt!; c.nextDecision = x.actEnd;
 }
 
 /**

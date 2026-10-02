@@ -14570,6 +14570,29 @@
    "notes": "Remembered trees nearer than this are left to the forage candidates (tree detection distance). Field: P-SCALE-2 crown detection (design)."
   },
   {
+   "id": "nestAudience",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.nestAudience",
+   "file": "src/sim/candidates.ts",
+   "integer": true,
+   "notes": "Stage E2e switch (docs/staging/e2e-prereg.md §2.2): departAudience counts own-community animals of 12 y or more in a finished nest within partyLinkM unless they are asleep (the circadian latch; without rhythmCircadian there is no latch and they count), so with departPersist 1 a departure from a nest site is an attempt (check, abandon, re-launch, go alone after departPersistMaxMin) as by day. Sleeping nest-mates are not audience: they cannot join (design assumption). Iteration 2 (e2e-prereg §8b): an awake animal in a finished nest also gets the decision point other companions get when a companion sets off (the silent-departure notice and the travel hoo), and an attempt that set off from the initiator's own finished nest and is given up returns it to that nest until departRetryMin has passed (chimp.sim.tryNest holds the nest while the attempt is open). Direction: a group that sleeps together leaves together (rissGoodall1976, secondary, captive). No parameter. 0 = the model before, bit-identical. Ablation switch."
+  },
+  {
    "id": "nestBuildMinS",
    "group": "decision",
    "value": 180,
@@ -14638,6 +14661,29 @@
     "field": 60
    },
    "notes": "Spread of founders' first night nests around their sleeping cluster. Compressed stand-in scaled with sight (field ≈ compressed × 35/15, design)."
+  },
+  {
+   "id": "nestCompany",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.nestCompany",
+   "file": "src/sim/candidates.ts",
+   "integer": true,
+   "notes": "Stage E2e switch (docs/staging/e2e-prereg.md §2.2): staying in its own finished nest keeps the company of its nest-mates. An animal of 5 y or more in its own finished nest (not a dependant) is offered the nest with the company value of its best nest-mate added: the maximum, over own-community animals of 12 y or more in a nest (asleep or awake) within partyLinkM, of C13e's join terms without the hoo, the stay cost and rain (joinBase + joinBondW x bond + joinAllyW x ally + joinRankW x the nest-mate dominates + sociability x partyFollowSocialW). The company of a companion is worth the same moving or staying (design assumption); no new magnitude. 0 = the model before, bit-identical. Ablation switch."
   },
   {
    "id": "nestEveningDrive",

@@ -272,6 +272,8 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   nurseWake: { stage: 'E2b', needs: { energyLedger: 1, ledgerNightNurse: 1, rhythmSleep: 1 }, removesNothing: 'adds a waking tick to the mother\'s sleep pressure (e2b-prereg §8)' },
   darkCost: { stage: 'E2c', needs: { rhythmSleep: 1 } },
   rhythmCircadian: { stage: 'E2d', needs: { rhythmSleep: 1 } },
+  nestAudience: { stage: 'E2e', needs: {}, removesNothing: 'widens the audience of departPersist to awake animals in finished nests; adds no term and removes none (e2e-prereg §2.2)' },
+  nestCompany: { stage: 'E2e', needs: {}, removesNothing: 'adds the company of nest-mates to staying in a nest with the C13e join terms (design); removes no rule (e2e-prereg §2.2)' },
   urgencyChoice: { stage: 'E3', needs: {} },
   urgencyPersist: { stage: 'E3', needs: {} },
   urgencySwitchCost: { stage: 'E3', needs: {} },
