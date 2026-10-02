@@ -362,7 +362,7 @@ table is a mean ± SD over R's four realizations; their T-RNG-4/5 must equal NR1
 - So the observer's T-RNG-5 = the simulation's ratio × ±0.1 of day sampling: R 0.77 in truth is read as 0.70, TP's 0.69
   as 0.84 (E1i's "mothers range further" was this sampling). **No scorer change is staged.**
 
-## 6. Mechanism: decision (registered 07:2x, before any run of changed code; none is built)
+## 6. Mechanism: decision (registered 07:15, before any run of changed code; none is built)
 
 The brief's candidates, each against the diagnosis (§4–§5):
 1. **A trip valued by its net energy, the infant's mass included.** Ruled out by arithmetic (§4 item 5): walking is 2–4%
