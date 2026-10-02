@@ -14,11 +14,14 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (05:50).** Agents E2f (the sleep window; `e2f-sleep`) and E4f (colobus encounters from sourced
-  ecology; `e4f-encounters`; brief `integrator/e4f-prompt.txt`). Integrator chain in `bench-run`: the E1i confirm
-  (`e1i-confirm.sh`; T identity passed; T re-draws, then B2 bench and energy). Held back until the E1i confirm: a stage
-  on mothers' ranging (T-RNG-5), and the infant–mother grooming question (mothers of infants ≥ 2 y groom 34% of daylight).
-- **Decided since the morning refresh:** E4c confirmed on 5 seeds (provisional keep candidate; e4c-prereg.md §10.1);
+- **Running now (06:00).** Agent E4f (colobus encounters from sourced ecology; `e4f-encounters`; brief
+  `integrator/e4f-prompt.txt`). Integrator: the E1i confirm in `bench-run` (`e1i-confirm.sh`; ~25 min per run at load
+  15–20) and the E2f night-safety check in `bench-run-2` (a second frozen checkout at 6069e15; registered in
+  e2f-prereg.md §11). Held back until the E1i confirm: mothers' ranging (T-RNG-5) and infant–mother grooming.
+- **Decided since the morning refresh:** E2f merged (`sleepChimp`: chimpanzee EEG sleep 9.7 h moves waking from
+  −128 to −65 min; with `rhythmFreeNight`, `darkCost`, `nestCompany`, `nestAudience` the night holds without the menu,
+  narrowly: adults out 3.0% of the night against 3.3%; prescriptions 115 → 113; departures still 83% before sunrise);
+  E4c confirmed on 5 seeds (provisional keep candidate; e4c-prereg.md §10.1);
   E3 re-test: the persistence effect stands without the old bug; E4e merged (`huntValue`, off: passes the keep rule but
   its T-HUN-1 gain is two errors cancelling; T-HUN-1's band was never scaled, a corrected band 4–11 is staged in
   e4e-targets.patch.json, not applied).
@@ -73,6 +76,8 @@ Hard rules (AGENTS.md plus this track):
 | `.claude/worktrees/e4d-rhythm` | Merged 2 October (head da916df). |
 | `.claude/worktrees/e4e-hunting` | Merged 2 October (head dcca0dc). |
 | `.claude/worktrees/e4f-encounters` | **Running agent** E4f, branched from track-e 6781cb7. |
+| `.claude/worktrees/e2f-sleep` | Merged 2 October (head b5157a0). |
+| `.claude/worktrees/bench-run-2` | Second frozen checkout (6069e15) for the E2f night-safety check. Remove when done. |
 | `.claude/worktrees/bench-run` | Frozen detached checkout for the integrator's benchmarks (612bf15 for the noise arms, then d8c1875 for the E4c confirm; the queued script moves it). `artifacts/validation/e/`: `base-head` (all off, 9392b67), `e1h-{R,T,G}` and their energy JSON, `rescored-*`, `noise/`. Move it only when nothing runs from it. |
 | `worktree-agent-a954b443db4b6f22a` | **Not Track E**: a colobus encounter fix (`preySightFactor` 1.39, fitted to Kanyawara encounters) from the earlier session, 7 commits, merged nowhere. Ask the user before touching it. |
 | Other `e*` and `worktree-agent-*` worktrees | Fully merged into `track-e` (0 commits ahead). Safe to remove **only if the user agrees**. |
