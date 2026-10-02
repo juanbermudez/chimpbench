@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { plainDataProblems, worldShapeProblem } from '../src/persist/envelope';
-import { callStaleness, cropLoss, gruntWorth, hooWorth, pantHootValue, unlocatedShare } from '../src/sim/calls';
+import { callStaleness, cropLoss, gruntWorth, hooWorth, listenersInEarshot, pantHootValue, unlocatedShare } from '../src/sim/calls';
 import { computeCandidates } from '../src/sim/candidates';
 import { isAdultMale } from '../src/sim/hierarchy';
 import { needFruit } from '../src/sim/intake';
@@ -59,6 +59,21 @@ test('unlocatedShare: the ally bond weight neither seen nor heard within callFix
   assert.equal(unlocatedShare(w, c, x, P), 0);
   x.joinCaller = -1; delete x.metAt[a];
   assert.ok(Math.abs(unlocatedShare(w, c, x, P) - 1) < 1e-12);
+});
+
+test('listenersInEarshot (iteration 1): unseen community members aged 5+ times the share of the range within earshot', () => {
+  const w = field(ON, 1), c = male(w), x = ix(c), P = paramsOf(w);
+  const troop = w.troops.find(t => t.id === c.troopId)!;
+  const members = w.chimps.filter(o => o.alive && o !== c && o.troopId === c.troopId && o.age >= 5);
+  const strangers = w.chimps.filter(o => o.alive && o.troopId !== c.troopId).slice(0, 2).map(o => o.id);
+  assert.ok(members.length > 1 && strangers.length === 2);
+  x.seen = [];
+  troop.radius = P.hearPantHootM / 2;                                  // the whole range within earshot
+  assert.equal(listenersInEarshot(w, c, x, P), members.length);
+  troop.radius = 2 * P.hearPantHootM;                                  // a quarter of the range within earshot
+  assert.ok(Math.abs(listenersInEarshot(w, c, x, P) - members.length / 4) < 1e-12);
+  x.seen = [members[0].id, ...strangers];                              // a member in view is already here; strangers never count
+  assert.ok(Math.abs(listenersInEarshot(w, c, x, P) - (members.length - 1) / 4) < 1e-12);
 });
 
 test('pantHootValue: the contact gain scaled by separation and staleness, less the hush; nothing without allies', () => {

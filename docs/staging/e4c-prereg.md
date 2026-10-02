@@ -2,6 +2,8 @@
 
 Status: written and committed before the first run of the changed model (1 October 2026, branch `e4c-calls`, from `track-e` 591daed). Track E, stage E4, third piece. Builds on E4a and E4b (`docs/staging/e4a-prereg.md`, `docs/staging/e4b-prereg.md`). The reference model (§5) was run before any E4c code existed in the run's path; nothing with `callValue` on has been run.
 
+Outcome (2 October 2026, §9): first pass and iteration 1 run; iteration 1 meets the keep rule in both worlds (provisional keep candidate, off by default, 5-seed confirm pending); no iteration 2.
+
 Rule served: field values of behaviour are targets, never inputs. A probability or hazard set to make a behaviour happen at its field rate is a prescription to remove.
 
 ## 1. What is removed
