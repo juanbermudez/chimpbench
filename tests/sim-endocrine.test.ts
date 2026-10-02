@@ -439,26 +439,30 @@ test('E4d: asleep, the stress load rises toward endoRhythmGainC × its tonic tar
   assert.ok(Math.abs(q.c.stress - P.stressFloor) < 1e-12);
 });
 
-test('E4d: asleep, arousal rises toward endoRhythmGainT × the drive he last had awake; without a drive it does not', () => {
-  const { w, c } = quiet(RHY), P = paramsOf(w), x = ix(c);
+test('E4d: asleep, arousal rises toward endoRhythmGainT × his waking drive integrated with its time constant; without a drive it does not', () => {
+  const { w, c } = quiet(RHY), P = paramsOf(w), x = ix(c), k = 1 - Math.exp(-SLOW_HOURS / P.endoArousalTauH);
+  x.ard = 0; // quiet() ran two hours with the switch on
   const o = w.chimps.find(k => k.alive && k.troopId === c.troopId && k !== c && isAdultMale(k))!;
   o.elo = c.elo + 40;
   x.seen.push(o.id);
-  steps(w, c, 1); // awake with a close-rank rival in view: the drive is held
-  const drive = P.endoArousalRivalW * (1 - 40 / P.escalateEloGap);
-  assert.ok(Math.abs(x.ard! - drive) < 1e-12);
-  const a0 = x.arousal!, n = 36, target = Math.min(1, P.endoRhythmGainT * drive);
+  const drive = P.endoArousalRivalW * (1 - 40 / P.escalateEloGap), m = STEPS_PER_H * 24;
+  steps(w, c, m); // a waking day with a close-rank rival in view: the held drive follows the drive with the state's time constant
+  const held = drive * (1 - Math.pow(1 - k, m));
+  assert.ok(Math.abs(x.ard! - held) < 1e-12);
+  const a0 = x.arousal!, h0 = x.ard!, n = 36, target = Math.min(1, P.endoRhythmGainT * h0);
   steps(w, c, n, true);
+  assert.equal(x.ard, h0, 'held through sleep');
   assert.ok(Math.abs(x.arousal! - (target + (a0 - target) * Math.exp(-n * SLOW_HOURS / P.endoArousalTauH))) < 1e-9);
   assert.ok(x.arousal! > drive, 'the night amplifies the waking drive');
-  // awake again with nothing in view: the drive held is now 0 and arousal falls with its time constant
+  // awake again with nothing in view: the drive held decays toward 0, and arousal falls with its time constant
   x.seen.length = 0;
   const a1 = x.arousal!;
   steps(w, c, n);
-  assert.equal(x.ard, 0);
+  assert.ok(Math.abs(x.ard! - h0 * Math.pow(1 - k, n)) < 1e-12);
   assert.ok(Math.abs(x.arousal! - a1 * Math.exp(-n * SLOW_HOURS / P.endoArousalTauH)) < 1e-9);
-  // no drive at the last waking step: no nocturnal rise
+  // no drive while awake: no nocturnal rise
   const q = quiet(RHY);
+  ix(q.c).ard = 0;
   steps(q.w, q.c, 1); steps(q.w, q.c, n, true);
   assert.equal(ix(q.c).arousal, 0);
 });

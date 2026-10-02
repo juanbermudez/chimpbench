@@ -17,7 +17,7 @@ import { NEVER, SLOW_EVERY, SLOW_HOURS, TICK_HOURS, index, ix, type ChimpX } fro
 //
 // Stage E4d (endoRhythm; docs/staging/e4d-prereg.md): sleep-gated secretion. While an animal sleeps, the stress load's
 // target is endoRhythmGainC × its waking tonic target and an adult male's arousal target is endoRhythmGainT × the drive
-// he last had awake (chimp.sim.ard), so both states peak at waking and fall through the day with their own time
+// he had over his recent waking hours (chimp.sim.ard), so both states peak at waking and fall through the day with their own time
 // constants, as urinary cortisol and testosterone do (fedurek2016, girardButtoz2021; testosterone follows sleep, not
 // the clock: axelsson2005). Tied to the animal's own sleep, never to the hour.
 
@@ -97,9 +97,11 @@ export function endoStep(world: World, c: Chimp, x: ChimpX, sleeping: boolean, P
     if (lc && lc.won && since(lc.time, tick)) a += P.endoArousalWinKick * (1 - a);
     let level = P.endoArousalOestrusW * oestrus + P.endoArousalRivalW * rival;
     if (level > 1) level = 1;
-    // stage E4d: the context scan does not run asleep, so the night's secretion amplifies the drive he last had awake
-    if (rhythm) { if (sleeping) { level = P.endoRhythmGainT * (x.ard ?? 0); if (level > 1) level = 1; } else x.ard = level; }
-    a += (level - a) * (1 - Math.exp(-SLOW_HOURS / P.endoArousalTauH));
+    // stage E4d: asleep, the night's secretion amplifies his waking drive, integrated over his recent waking hours with
+    // the state's own time constant (iteration 2: the drive is intermittent, so the view from the nest at dusk is no set point)
+    const k = 1 - Math.exp(-SLOW_HOURS / P.endoArousalTauH);
+    if (rhythm) { if (sleeping) { level = P.endoRhythmGainT * (x.ard ?? 0); if (level > 1) level = 1; } else { const d = x.ard ?? 0; x.ard = d + (level - d) * k; } }
+    a += (level - a) * k;
     x.arousal = a < 1e-6 ? 0 : a > 1 ? 1 : a;
   }
 }

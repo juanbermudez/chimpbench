@@ -6839,7 +6839,7 @@
    "symbol": "P.endoRhythm",
    "file": "src/sim/endocrine.ts",
    "integer": true,
-   "notes": "Stage E4d switch (docs/staging/e4d-prereg.md): sleep-gated secretion. While an animal sleeps (in its own finished nest, or riding in its mother's), the stress load's target is endoRhythmGainC × its waking tonic target (stressFloor + bereavement + endoStressDeficitW × energy deficit), and an adult male's competitive arousal target is endoRhythmGainT × the drive he last had awake (oestrus and rival terms, held in chimp.sim.ard); awake, both are as in E4a. The states peak at waking and fall through the day with their own time constants. Removes no prescription (removesNothing). Needs endoStates 1: it counts as off unless endoStates is 1 (endocrine.ts endoOn). 0 = E4a/E4b/E4c, bit-identical. Ablation switch."
+   "notes": "Stage E4d switch (docs/staging/e4d-prereg.md): sleep-gated secretion. While an animal sleeps (in its own finished nest, or riding in its mother's), the stress load's target is endoRhythmGainC × its waking tonic target (stressFloor + bereavement + endoStressDeficitW × energy deficit), and an adult male's competitive arousal target is endoRhythmGainT × his waking drive (oestrus and rival terms) integrated over his waking slow steps with endoArousalTauH and held through sleep (chimp.sim.ard; iteration 2, e4d-prereg §9); awake, both are as in E4a. The states peak at waking and fall through the day with their own time constants. Removes no prescription (removesNothing). Needs endoStates 1: it counts as off unless endoStates is 1 (endocrine.ts endoOn). 0 = E4a/E4b/E4c, bit-identical. Ablation switch."
   },
   {
    "id": "endoRhythmGainC",
