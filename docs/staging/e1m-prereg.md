@@ -168,4 +168,76 @@ estimate): closed access; the abstract (OpenAlex) has no numbers. **Not verified
 
 ### 6.2 Composition and allometry
 
-Pending (second helper).
+| Item | Source | Sample, method | Value | Read | Use |
+| --- | --- | --- | --- | --- | --- |
+| Chimpanzee milk | milligan2007 (PhD thesis, University of Arizona, hdl:10150/194078; Tables 9.1, 9.2) | 4 captive females, one sample each (3 at SNPRC on days 451, 473, 550, sedated, no oxytocin; 1 at the St. Louis Zoo on day 97, with oxytocin); Smithsonian Nutrition Laboratory assays; gross energy from fat, protein and sugar at 9.11, 5.86 and 3.95 kcal/g | fat 2.01 ± 0.83%, protein 0.90 ± 0.10%, lactose 7.43 ± 0.30%, dry matter 11.45 ± 0.75%; **0.53 ± 0.07 kcal/g** | FT | composition only (rule 1) |
+| Other apes | milligan2007 Tables 9.2, 9.4, 9.6 | captive gorilla 0.47 (n 4), bonobo 0.44 (1), orangutan 0.53 (1); wild mountain gorilla 0.49 (4); Hominidae pooled 0.50 ± 0.04 SE (13); captive rhesus 1.03 (22). "fat and total gross energy were not significantly different between captive and wild living hominoids" | — | FT | context |
+| Wild mountain gorilla | whittier2011 (Zoo Biol 30:308–317, not *Primates*) | 7 healthy free-ranging mothers, 1–50 months | 0.53 kcal/g (1.9% fat) | Abs | context (E.14 had it) |
+| Chimpanzee, older | Ben Shaul 1962 via milligan2007 Table 3.4 | n ≤ 3, method and stage not given; excluded by Oftedal & Iverson 1995 for sample size | fat 3.7, protein 1.2, lactose 7.0% (derived 0.68 kcal/g) | secondary | not used |
+| Great apes, stage | garcia2017 (Am J Primatol 79:e22614) | 53 samples, 4 captive gorillas to 48 months, 3 orangutans to 22 months | no energy values in the abstract | Abs | not verified |
+| MEO allometry | riek2021 | 47 species at peak lactation, PGLS: milk output and MEO "scaled identically to the power of 0.74 ± 0.05" | coefficient, units and primate rows not verified (closed; the OpenAgrar copy showed a proof-of-work page); its reference list names only baboon (bussVoss1971) and human (Coward 1979) milk-intake sources | Abs | exponent only (as E.11) |
+| Milk intake allometry | riek2011 (Mamm Biol 76:3–11; DOI 10.1016/j.mambio.2010.03.004, the one in the brief belongs to another paper) | — | nothing verified (closed; the Göttingen copy showed a bot check) | none | not verified |
+| Offspring intake | riek2008 (J Zool 274:160–170) | 62 species, weigh-suckle-weigh or isotopes | young at peak lactation drink about 883 kJ/day per kg^0.82 of their own mass | Abs | context |
+| Oftedal 1984 | Symp Zool Soc Lond 51:33–85 | not online; secondary sources give only the exponent's range ("between 2/3 and 3/4", douhard2016) and, in words, low primate output (oftedal1991, hinde2009, dufourSauther2002) | no coefficient, no primate offset | secondary | not verified |
+| Primate milk review | hindeMilligan2011 (Evol Anthropol 20:9–23) | closed; its reference list (Crossref) cites milligan2007, whittier, Oftedal 1984 and Riek for apes and allometry | — | Abs | not verified |
+
+Derived (`derived.py`, local copy): human milk 0.669 kcal/g (2.8 kJ/g) against captive chimpanzee milk 0.53 kcal/g, a
+ratio of 0.79. Chimpanzee milk's dry matter per kcal is 0.216 g (11.45% at 0.53 kcal/g) against the registry's human
+0.185 (`digestaMilkDmGPerKcal`).
+
+## 7. Step 0 decision (by the rule of §2, registered before any value was read): valid null
+
+- **Rule 1–2 (method, sample).** No nonhuman primate daily milk output measured by isotope dilution, deuterium turnover
+  or test-weighing was verified: the baboon studies (roberts1985, bussVoss1971) sit behind a publisher captcha, the
+  rhesus values are 3.5–4 h expressions the authors call no daily yield, the marmoset paper was not reached, and the
+  searches found none for any great ape.
+- **Rule 3(a).** No great-ape output exists. **Rule 3(b).** No comparative primate relation with a coefficient or a
+  primate offset could be read (riek2021, riek2011, Oftedal 1984, hindeMilligan2011); riek2021's references suggest its
+  primates are baboon and human only.
+- **Rule 3(c), checked.** The registered 60 kg is an assumption (butteKing2005 states no mass for its 749 g/day), but
+  the same paper's four studies with measured milk energy output and maternal weight (66 women) give 20.7–25.1
+  kcal/day per kg^0.75 (mean 22.6, SD 1.9; pooled 23.1). The registered 23.2 sits +2.6% above the studies' mean, 0.3 of
+  their SD: the measured human outputs **confirm** the coefficient; there is nothing to correct.
+- **Rule 5.** No primate measurement of the efficiency of synthesis; 0.80 is the human biochemical derivation (80–85%).
+- **`ledgerMilkKcalPerMin`.** No primate or ape milk transfer rate per minute of suckling was found; unchanged.
+- **Composition** (rule 1: not an output). Recorded as a bracket: if hominoids conserved milk *volume* per kg^0.75
+  rather than energy, chimpanzee milk at 0.53 kcal/g would make the yield 0.79 of today's, 18.4 kcal/day per kg^0.75 or
+  243 kcal/day at 31.3 kg. Nothing measured says which is conserved (riek2021: both scale with the same exponent across
+  mammals).
+
+**Verdict: null for the input.** The human-scaled coefficient stays, now as a human value confirmed by measured outputs
+with maternal mass (still `assumed` as a cross-species input). No switch was built and no arm was run (§2.6), so STEP 2
+and the benchmark (§5) do not apply.
+
+**Brackets for a chimpanzee yield (recorded, not inputs).** Infant side (§3.1): an exclusively milk-fed infant needs
+212 kcal/day at 3 months and 281 at 9 months on the captive potential, 221 at 9 months at Gombe's growth. Composition:
+243 kcal/day if volume rather than energy were conserved. Human scaling: 307 (range of the four human studies scaled to
+31.3 kg: 274–333). A wild chimpanzee yield between about 220 and 310 kcal/day agrees with every piece read; the input
+sits at the top of that bracket.
+
+## 8. What the audit leaves open (for the integrator)
+
+- **The mothers' milk cost after the first year is set by the cap, not by a measured output.** From about 0.9 y every
+  infant drinks the whole yield (307 kcal/day, so the mother pays 384) at every age to 4 y, while it eats a third to a
+  sixth of the field's eating time at 2–5 × the per-minute intake the field's eating time implies (§3.1; E1f's open
+  problem). In the field the milk share falls from about 1–1.5 y (isotopes), and no chimpanzee milk transfer has ever
+  been measured. A lower cap would lower the mothers' cost, but no measured value supports one; the lever the evidence
+  points to is the infants' intake rate per eating minute (`ledgerIntakeSizeExp`, design), a demand-side input, not the
+  yield.
+- **Candidate input correction (not made here; outside this stage's three inputs):** `digestaMilkDmGPerKcal` 0.185 g/kcal
+  is human; captive chimpanzee milk gives 0.216 (milligan2007, n = 4). It changes how much milk an infant's foregut takes
+  at a feed, not the mothers' cost.
+- The bases' readouts quoted in the report come from the integrator's existing single 5-seed confirm runs of S3
+  (`S3c`, `S3-energy`, d066cdc) and T (`e1h-T`, `e1h-T-energy`, 9392b67), generated by `basetable.py` (local copy); no
+  new base realizations were run (no arm).
+- Third full-text routes the helper found but did not try (cap of two): an academic.oup.com PDF of roberts1985 listed in
+  Crossref, and a Groningen repository copy of daCosta2010. Neither could change the verdict (a baboon value is a bracket
+  under rule 4; daCosta2010 has no maternal mass in the abstract).
+
+## 9. Known defects and caveats
+
+- None in code: no code was changed. The step-1 need uses the registry's Kleiber rate for infants (human infants run
+  above Kleiber per kg^0.75) and E1f's captive growth potential; both are registered inputs, and the need matches the
+  model's own books within 4% (§3.1).
+- The 2-day smoke (seed 48, S3, eeded56; `artifacts/validation/e1m/smoke-S3.log`) printed the milk-by-age and mothers'
+  milk-cost readouts used here.
