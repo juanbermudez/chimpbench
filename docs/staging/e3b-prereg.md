@@ -591,3 +591,7 @@ community-day, truth) and T-HUN-1 into its band (43.9 → 18.0); T-RNG-5 closer 
 - Observer corrections for T-FOOD-4 (distinct trees), T-FOOD-5 (a return is not a nearest-tree choice) and T-FOOD-6 (per
   individual, 30-m resources) are staged in `e3b-protocol.patch.json`, not applied.
 
+
+**Integrator note (2 October 2026).** §5.1's heading time "14:55" is a slip: the registration is commit d6d19bb at
+14:48:30, and A1's bench ran 14:49–14:57 from that commit, so it was registered before its run. Merged into `track-e` with
+`revisitByCrop` off; the integrated stacks are still judged with it off until a stack confirm includes it.

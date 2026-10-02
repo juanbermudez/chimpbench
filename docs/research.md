@@ -2667,7 +2667,7 @@ lactation sources); one new source was read (PubMed abstract, 2 October 2026).
   decision, arm B), emeryThompson2012 (her cost tied to her energy state: cycling resumes after sustained energy gain),
   kent1999, daly1993 and deweyLonnerdal1986 (synthesis follows the infant's removal, the existing store rule).
 
-### Addendum: E3b revisits (2 October 2026)
+### E.41 Addendum: E3b revisits (2 October 2026)
 
 Read for stage E3b ([staging/e3b-prereg.md](staging/e3b-prereg.md) §3): what stops a chimpanzee going back to a tree it
 has just fed in. Tags as above.

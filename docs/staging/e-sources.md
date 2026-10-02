@@ -1738,7 +1738,7 @@ foods are introduced" [H] human, cross-species; direction and mechanism citation
 drive (staging/e1o-prereg.md arm A). Already listed: trivers1974, maestripieri2002, emeryThompson2012 (arm B), kent1999,
 daly1993, deweyLonnerdal1986.
 
-## Addendum: E3b revisits (2 October 2026)
+## 41. Addendum: E3b revisits (2 October 2026)
 
 Same text as research.md "Addendum: E3b revisits": normand2009 read in full (PMC2762532 through NCBI BioC) for the
 revisit method (same individual, trees < 30 m apart one resource, two females followed 28 consecutive days; "On average,
