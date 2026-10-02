@@ -14,7 +14,12 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (13:10).** The about-page updater (`site-about`, from `site`). No simulation runs.
+- **Running now (13:20).** The about-page updater (`site-about`, from `site`). Stage agents **E1o** (`e1o-milk-demand`:
+  why infants of 1–4 y drink the whole milk yield; mothers' deficit) and **E5c** (`e5c-crown-share`: a crown's crop
+  shared by its feeders; party members feed in different crowns), both from track-e c7a4c75, briefs in the session
+  scratchpad (`integrator/e1o-prompt.txt`, `e5c-prompt.txt`). Integrator: the shared S5 quick reference, 4 runs
+  (`bench-run/artifacts/validation/e/s5q/`, script `integrator/s5q.sh <label> [rgTemperature]`: S5q and S5q1 running,
+  then S5q2 0.1639 and S5q3 0.16405); message both agents when all four exist.
 - **S5 done: the best integrated candidate so far** (e-stack2-confirm.md; S4 + `companyMargin`): 77 prescriptions
   (today's model 135), viable, night safe; fitted better than R beyond noise (z −3.2) and level with or better than
   today's model (z −1.8); feeding, grooming, rest, party size in band, travel at its edge (0.258 / 0.216); males walk
