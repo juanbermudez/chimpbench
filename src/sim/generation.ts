@@ -280,7 +280,7 @@ export function createWorld(seed = 48, opts: { profile?: Profile; params?: Overr
   updateFruit(world);
   if (patches) materializeFruit(world);
   else for (const t of world.trees) t.fruit = t.maxFruit * clamp(t.fruit / t.maxFruit + (random(world) - 0.5) * 0.2);
-  for (let i = 0; i < P.preyMinGroups; i++) spawnPrey(world);
+  for (let i = 0, n = preyGroupsOf(world); i < n; i++) spawnPrey(world);
 
   for (const troop of troops) buildCommunity(world, troop);
   index(world);
@@ -307,6 +307,16 @@ export function createWorld(seed = 48, opts: { profile?: Profile; params?: Overr
   const scale = patches ? ` · field scale ${(world.size / 1000).toFixed(0)} km, ${world.trees.length} food patches, ${phenologySource(world) === 'synthetic' ? 'synthetic phenology' : `phenology ${phenologySource(world)}`}` : '';
   addEvent(world, `Synthetic Kibale-like forest · ${world.chimps.length} chimpanzees in 3 communities${scale} · 28 September, 06:30 (civil twilight), chimpanzees still in night nests`, 'system', [], -1, 1);
   return world;
+}
+
+/**
+ * Colobus groups kept on the map: `preyMinGroups` (field: 159, Ngogo's density in 1997–99), or, with `preyKanyawara` on a
+ * field-scale map, Kanyawara's density times the map's area (stage E4f: the site of the encounter and hunting targets;
+ * docs/staging/e4f-prereg.md §4.1).
+ */
+export function preyGroupsOf(world: World): number {
+  const P = paramsOf(world);
+  return P.preyKanyawara === 1 && world.size > 1000 ? Math.round(P.colobusDensityKanyawaraPerKm2 * (world.size / 1000) ** 2) : P.preyMinGroups;
 }
 
 export function spawnPrey(world: World, near?: Vec3): PreyGroup {

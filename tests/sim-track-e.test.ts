@@ -22,6 +22,7 @@ const TRACK_E_SWITCHES = [
   'ledgerSatiationReserve', 'ledgerLactGut', // E1i
   'huntValue', // E4e
   'sleepChimp', // E2f
+  'preyKanyawara', // E4f
 ] as const;
 
 test('Track E switches are all 0 by default in both profiles', () => {

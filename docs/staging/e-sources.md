@@ -1408,3 +1408,21 @@ Read for stage E2f (docs/staging/e2f-prereg.md): is the model's sleep window (pr
 - *new* samsonShumaker2013: Samson DR, Shumaker RW 2013. Documenting orang-utan sleep architecture: sleeping platform complexity increases sleep quality in captive *Pongo*. *Behaviour* 150(8):845–861. [doi:10.1163/1568539X-00003082](https://doi.org/10.1163/1568539X-00003082) (Abs).
 - *new* samsonShumaker2015: Samson DR, Shumaker RW 2015. Orangutans (*Pongo* spp.) have deeper, more efficient sleep than baboons (*Papio papio*) in captivity. *American Journal of Physical Anthropology* 157(3):421–427. [doi:10.1002/ajpa.22733](https://doi.org/10.1002/ajpa.22733) (Abs).
 - bert1970, freemon1971, campbellTobler1984, videan2005, skeldonDijk2025 and hozer2026 are already listed; the entries above add findings.
+
+## 31. Addendum: E4f colobus encounters (2 October 2026)
+
+Read for stage E4f (docs/staging/e4f-prereg.md §2): the colobus encounter target and the inputs that set the encounter
+rate. Input taken: Kanyawara's red colobus density, 2.22 groups/km² [L] (registry `colobusDensityKanyawaraPerKm2`,
+switch `preyKanyawara`). Entries in full in docs/research.md, "Addendum: E4f colobus encounters".
+
+- **gilby2015** (FT through the PMC article page; BioC and efetch give none) [H]: Kanyawara party scans every 15 min
+  record "whether colobus can be detected within 100 m of the chimpanzees"; an encounter is a positive scan "not
+  immediately preceded by another 'positive' colobus scan"; 2,461 encounters, 3.73 per 100 h (1996–August 2014).
+- **bonnell2010** (FT, McGill repository) [L, secondary]: five groups (70, 25, 84, 45, 40; snaithChapman2008) on 225 ha
+  "representing average density of red colobus" at Kanyawara K-30: 2.22 groups/km².
+- **chapman2010ecol** (FT via a Wayback copy; Table 1 and the density figure not as text) [M]: Kanyawara red colobus group
+  density stable over 26–36 years in unlogged, lightly and heavily logged compartments; red colobus group spread
+  50–1000 m (unpublished data, as cited).
+- **snaithChapman2008** (Abs) [M]: larger groups have larger home ranges, longer daily travel and wider spread; no values.
+- Dead ends this stage (do not retry): Wiley and Oxford Academic hosts (bot check); chapman2002ajpa PMC7159679 (efetch
+  abstract only); chapman2000cons, chapman2005ijp, gillespieChapman2001 (closed).

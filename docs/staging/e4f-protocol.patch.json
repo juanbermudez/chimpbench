@@ -1,0 +1,32 @@
+{
+ "about": "Stage E4f staging for the virtual field observer (proposal; applied by the integrator, this branch never edits src/field). Two scorer corrections that make the colobus encounter count follow gilby2015's Methods, read in full on 2 October 2026 (docs/staging/e4f-prereg.md §2.1, §4.2). Written after the D0 diagnosis of R was seen (focal follows 10.04 per 100 h by today's rule and 8.82 by the run rule; party follows 7.54 and 6.97; prereg §9) and before any arm ran. Applying it changes the protocol hash and the T-HUN-3/T-HUN-4 values of every saved run: protocolLog entry and new freeze by the integrator. Changes 1 and 2 leave T-HUN-1 as it is (it counts hunts and is already scored on party follows); change 3, found after iteration 1 and not registered beforehand, changes T-HUN-1's count.",
+ "source": {
+  "key": "gilby2015",
+  "method": "Kanyawara: 'every 15 min, the field assistants record party composition, and since 1996, whether colobus can be detected within 100 m of the chimpanzees.' Encounters: 'any 15 min scan when the chimpanzees were within 100 m of colobus that was not immediately preceded by another positive colobus scan.' 'We matched every observed hunt attempt to an encounter.'"
+ },
+ "changes": [
+  {
+   "id": "run-rule",
+   "where": "src/field/metrics.ts colobusEncounters (line 118-134 at 6781cb7)",
+   "today": "a new encounter whenever the nearest colobus group within 100 m differs from the previous scan's group (a change of group within a run of positive scans counts again); hunted = a detected hunt by the follow's community on that group, or an unknown group, from 0.25 h before to 1 h after the encounter's first scan",
+   "proposed": "a new encounter at a positive scan not immediately preceded by a positive scan of the same follow; adult males taken at that first scan (T-HUN-4); hunted = a detected hunt by the follow's community on any group scanned in the run, or an unknown group, from 0.25 h before the run's first positive scan to the later of 1 h after it and 0.25 h after its last positive scan",
+   "reference_implementation": "scripts/e4f-encounter-diagnose.ts (gilbyRule, encounterRows.gilby)"
+  },
+  {
+   "id": "follow-type",
+   "where": "src/field/config.ts TARGET_FOLLOW (line 25 at 6781cb7)",
+   "today": "T-HUN-3 and T-HUN-4 are scored on focal follows (one focal individual per community per day, half of them females)",
+   "proposed": "T-HUN-3 and T-HUN-4 scored on the party follows that stay with the larger subgroup ('party-larger'), as T-HUN-1 already is: gilby2015's Kanyawara encounters are party scans",
+   "reference_implementation": "scripts/e4f-encounter-diagnose.ts (observer.partyLarger)"
+  },
+  {
+   "id": "matched-hunts",
+   "found": "after the iteration-1 results, from the saved tool JSON (artifacts/validation/e4f/matched_hunts.py); not registered beforehand",
+   "where": "src/field/metrics.ts T-HUN-1 (hunts seen or heard by a following team) and src/field/protocols.ts (a hunt is detected when the focal or a party member takes part, when it is within sight, or when it is loud and within loudM 500 m)",
+   "today": "T-HUN-1 counts every hunt the party-follow team detects, including hunts by other parties heard up to 500 m away",
+   "proposed": "T-HUN-1 counts the hunt attempts matched to a colobus encounter of the followed party (gilby2015: 'We matched every observed hunt attempt to an encounter'; its 194 hunt attempts are 7.9% of its 2,461 encounters), so that T-HUN-1 = encounters x T-HUN-3 holds in the model as in the source",
+   "reference_implementation": "scripts/e4f-encounter-diagnose.ts (partyLarger encounterRows.gilby: hunted encounters per follow-day x 365)"
+  }
+ ],
+ "effects": "Iteration 1 (docs/staging/e4f-prereg.md §9; copied from artifacts/validation/e4f/report_table.out and matched_hunts.out; quick, seeds 48 and 7, 30 + 30 days; R = its four realizations RD0-RD3, single runs H, K, KH): encounters per 100 follow-hours, today's scorer (focal follows, group-change rule) R 9.50 +/- 0.42, H 12.0, K 8.99, KH 10.3; party follows with the run rule R 6.25 +/- 0.71, H 6.78, K 6.58, KH 6.46 (Kanyawara 3.73). Hunted share of encounters, today's T-HUN-3: R 0.102 +/- 0.015, H 0.027, K 0.068, KH 0.013; party follows with the run rule: R 0.087 +/- 0.019, H 0.010, K 0.109, KH 0.010 (Kanyawara 0.079). T-HUN-1 today: R 45.6 +/- 12.9, H 14.2, K 46.6, KH 6.1; hunts matched to an encounter of the followed party: R 17.2 +/- 4.2 (0.39 +/- 0.10 of the detected hunts), H 2.0, K 22.3, KH 2.0 per community-year (Kanyawara 10.4)."
+}

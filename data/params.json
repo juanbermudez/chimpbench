@@ -3680,6 +3680,32 @@
    "notes": "Males charge females at or above this swelling (linked to mating success [M-H])."
   },
   {
+   "id": "colobusDensityKanyawaraPerKm2",
+   "group": "prey",
+   "value": 2.22,
+   "units": "groups/km2",
+   "range": [
+    1.11,
+    4.44
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    29.2
+   ],
+   "calibrate": false,
+   "evidence": "L",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Addendum: E4f colobus encounters): bonnell2010, five red colobus groups (70, 25, 84, 45, 40; as measured by snaithChapman2008) on a 225 ha grid representing the average density in the Kanyawara K-30 study area (5 / 2.25 km2); chapman2010ecol, Kanyawara red colobus group density stable over 26-36 years in unlogged, lightly and heavily logged compartments"
+   ],
+   "population": "Kanyawara",
+   "clock": "none",
+   "symbol": "preyGroupsOf",
+   "file": "src/sim/generation.ts",
+   "notes": "Stage E4f (docs/staging/e4f-prereg.md §4.1): red colobus groups per km2 at Kanyawara, the site of the encounter and hunting targets (gilby2015), used only with preyKanyawara 1 on a field-scale map (142 groups on 64 km2). A secondary value (an agent-based model's parameterization of the K-30 study area), not a census estimate; Kanyawara's transect densities (chapman2010ecol Fig. 2) were not reached as numbers."
+  },
+  {
    "id": "colobusDensityPerKm2",
    "group": "prey",
    "value": 2.48,
@@ -17037,6 +17063,29 @@
    "symbol": "power",
    "file": "src/sim/hierarchy.ts",
    "notes": "Incumbency edge from Elo in same-sex contests (x tanh(dElo / scale))."
+  },
+  {
+   "id": "preyKanyawara",
+   "group": "prey",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "preyGroupsOf",
+   "file": "src/sim/generation.ts",
+   "integer": true,
+   "notes": "Stage E4f switch (docs/staging/e4f-prereg.md §4.1): on a field-scale map the colobus groups (at world creation and as the respawn floor) are round(colobusDensityKanyawaraPerKm2 x map area) instead of preyMinGroups (field 159, Ngogo 1997-99, before the decline): the prey density of the site whose encounter and hunting rates are the targets. 0 = today (bit-identical). Compressed map: no effect. An input correction; no prescription is switched out."
   },
   {
    "id": "preyMinGroups",
