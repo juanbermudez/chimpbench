@@ -77,6 +77,12 @@ export interface ChimpX {
   phAt?: number; phX?: number; phZ?: number;
   /** Stage E4d (endoRhythm; endocrine.ts): an adult male's competitive-arousal drive (oestrus and rival terms) integrated over his waking slow steps with endoArousalTauH and held through sleep, which his sleep-gated nocturnal secretion amplifies. Absent until the first waking slow step with the switch on. */
   ard?: number;
+  /**
+   * Stage E1n (weanDecide; docs/staging/e1n-prereg.md §3.4): an infant's memory of its mother's last refusal or ended
+   * bout, as her decision count (Chimp.decisionVersion) at that moment; it asks to suckle again once she has started a
+   * new act. Absent until then, and cleared when a bout is let start.
+   */
+  wr?: number;
   // reproduction and life history
   cycleLen: number; cops: Record<number, number>; sireId: number; amenUntil: number; firstSwell: number; gestation: number;
   weanAge: number; weaned: boolean; caretaker: number; immigrantAge: number; disperser: boolean; transferTo: number;
@@ -226,7 +232,7 @@ export type SimWorld = World & { sim: SimState };
  * ChimpX and SimState keys that exist only once their mechanism has fired (so worlds with the switch off keep their
  * shape and hashes). The save check (src/persist/envelope.ts worldShapeProblem) ignores them.
  */
-export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'tryNest', 'en', 'wat', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk', 'cx', 'cxc', 'cn', 'asl', 'phAt', 'phX', 'phZ', 'ard'];
+export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'tryNest', 'en', 'wat', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk', 'cx', 'cxc', 'cn', 'asl', 'phAt', 'phX', 'phZ', 'ard', 'wr'];
 export const OPTIONAL_SIM: readonly string[] = ['fission', 'stormAt'];
 
 export function newX(): ChimpX {

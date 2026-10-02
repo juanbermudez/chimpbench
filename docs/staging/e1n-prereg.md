@@ -200,6 +200,27 @@ without T-HUN-4 and T-BRD-1) and the count down by one; otherwise off and the nu
 readouts are reported against the targets of §1.3, never tuned. A miss with a clear cause may be followed by at most
 two more iterations, each written here and committed before its run.
 
+### 3.4 Amendment before the first arm (switch-on smoke test, 2 October 2026; disclosed)
+
+The registered smoke test (seed 48, 1-day burn-in, 2 days, S3 + `weanDecide` 1; readouts only, not an arm) showed a
+defect of the decision architecture, fixed before any arm ran:
+- **Refusal loop.** A refused infant re-decides at once with the same information and asks again: 555 refusals in an
+  infant-day at 1–2 y (each with the roll's reaction: a whimper and +0.1 stress). The roll never showed it because it
+  refused rarely.
+- **First fix tried in the smoke (rejected before any arm):** remember the mother's drive at the refusal and ask again
+  once the own-food drive reaches it. The memory went stale (her drive falls when she eats, the infant does not know):
+  infants of 1–3 y stopped asking by day (4 kcal of day milk) and the 1–2 y infant lost 1.6% of its store a day.
+- **Fix kept (design, no constant):** a refusal, or a bout the mother ends, holds while her situation is unchanged: the
+  infant remembers her decision count (`Chimp.decisionVersion`, `x.wr`, lazily added, `OPTIONAL_X`) and the nurse option
+  is offered again once she has started a new act (candidates.ts reads the caretaker's decision count, an observable
+  act change, and the infant's own memory; it reads no internal state of the mother). Cleared when a bout is let start.
+  Smoke with the fix: 5.5–13.5 refusals and 5–9 ended bouts per infant-day at 1–4 y; no loop.
+- Readouts smoke-tested with the switch on: refusals and endings by the mother, the infant's own-food drive and the
+  mother's hunger at its decisions (share of decisions in which the rule would let a bout start), the gland state.
+- Night bouts with the switch on count tick-level toggling of the mother's decision (flicker), as at 0.5–1 y in the
+  base; milk at night is read in kcal, not bouts.
+- Prescriptions with the switch: 83 → 82 on S3 (`prescription-ledger --count`).
+
 ## 4. Benchmark and judging (from the brief; e-noise.md amendment 2)
 
 Base S3 at this branch's committed head (and T if useful), quick mode, run once plus three re-draws (add

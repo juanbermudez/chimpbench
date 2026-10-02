@@ -1711,3 +1711,11 @@ PMC PDF downloads (proof-of-work page).
 **Not verified:** milk outputs of roberts1985 and bussVoss1971 (publisher captcha); tardif2001; riek2021's coefficient
 and primate rows; riek2011; Oftedal 1984 (not online); hindeMilligan2011's tables; garcia2017's energy by stage;
 emeryThompson2013 (closed; its abstract has no numbers); Ben Shaul 1962 (read only through milligan2007).
+
+## Addendum: E1n weaning as a decision (2 October 2026)
+
+Same text as research.md "Addendum: E1n weaning as a decision": badescu2022, bray2018, lonsdorf2014 and badescu2016
+re-read in full for the audit (staging/e1n-prereg.md §1; no rate of maternal refusal by infant age exists in any of
+them; bray2018 gives no absolute ingestion rate in its text); new source trivers1974 (Parent-offspring conflict,
+American Zoologist 14(1):249–264, doi:10.1093/icb/14.1.249; theory, via maestripieri2002) for the form of the mother's
+decision (design assumption).

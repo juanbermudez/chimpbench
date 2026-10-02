@@ -2587,3 +2587,39 @@ PMC PDF downloads (proof-of-work page).
 **Not verified:** milk outputs of roberts1985 and bussVoss1971 (publisher captcha); tardif2001; riek2021's coefficient
 and primate rows; riek2011; Oftedal 1984 (not online); hindeMilligan2011's tables; garcia2017's energy by stage;
 emeryThompson2013 (closed; its abstract has no numbers); Ben Shaul 1962 (read only through milligan2007).
+
+### Addendum: E1n weaning as a decision (2 October 2026)
+
+Evidence pass for stage E1n ([staging/e1n-prereg.md](staging/e1n-prereg.md) §1): the field's infant feeding and nursing
+by age, read for targets only, and the theory behind the mother's decision. badescu2022, bray2018, lonsdorf2014 and
+badescu2016 were re-read in full (NCBI BioC, 2 October 2026); bibliographic data checked against Crossref.
+
+- **Nursing and foraging by age, Ngogo, re-read** [badescu2022] (FT, PMC9352031) [M]. Extends E.12 and E.14.3.
+  - Method: 1-h continuous focal samples (07:00–17:30, mornings and afternoons balanced) of 72 immatures 0–9 y (56
+    mothers; none had a younger sibling), 1,245.2 h; nursing = nipple contact, foraging = ingesting food the subject
+    acquired itself; bouts distinct when separated by at least 1 min.
+  - Nursing time, rate and bout length did not change from 6 months to 5 years (GEE P = 0.64, 0.25, 0.95); foraging
+    bout rate level at 1.99 ± 0.61 per hour from 1 y on, while foraging bouts lengthened with age.
+  - No data on maternal rejection. The authors read the pattern as infants "effectively leading their own gradual
+    physiological weaning process", not mothers withdrawing milk over the years. Use: target (T-INF-1, T-INF-2,
+    T-INF-5); the reading is the authors', inferred from nipple time and isotopes (milk transfer was not measured).
+- **Feeding development, Kanyawara, re-read** [bray2018] (FT, PMC5739981) [M]. Extends E.12.
+  - Ingestion rates (items per minute, five ripe fruits, 1992–1993 samples of at least 30 s, 321 records, all infants in
+    one bin): infants below adults (β = −4.72 items/min, SE 1.15); juveniles not significantly (−1.72, SE 0.79). The
+    absolute rates are only in Figure 5, so no infant ÷ adult ratio can be taken from the text (not verified).
+  - Suckling share "increased with age before falling once individuals began to wean" (Figure 1 only). No rejection data.
+  - Use: direction only for ingestion rate; no input correction is possible from the text.
+- **Exclusive suckling and faecal isotopes** [badescu2016] (FT, PMC5180145) [H]: "the faeces of exclusively suckling
+  primate infants exhibit δ15N values that are 2–3‰ ... higher than the faeces of their mothers" (the scale of the
+  isotopic milk share by age; target, direction).
+- **Maternal rejection by infant age: no rate exists** (confirmed in the four full texts above; E.14.4 had found none).
+  Direction only: vandeRijtPlooij1987, clark1977 via maestripieri2002, badescuThesis2017 (E.14.4).
+- **Parent–offspring conflict** [trivers1974] (theory; bibliography from Crossref; the argument as summarised for
+  primates in maestripieri2002, FT author copy). A parent is related equally to its current and its future offspring,
+  so selection favours investing in the current one while the benefit to it exceeds the cost to future offspring;
+  the offspring, related less to its future siblings, is selected to demand more, so weaning is a conflict over when
+  investment ends. Use in E1n: the form of the mother's decision (the infant's benefit against her cost, with equal
+  weights), a design assumption; no rate is taken from it.
+- *new* trivers1974: Trivers RL 1974. Parent-offspring conflict. *American Zoologist* 14(1):249–264. [doi:10.1093/icb/14.1.249](https://doi.org/10.1093/icb/14.1.249) (theory; via maestripieri2002).
+- badescu2016, badescu2022, bray2018, lonsdorf2014, maestripieri2002, vandeRijtPlooij1987, clark1977 and
+  badescuThesis2017 are already listed; the entries above add findings.

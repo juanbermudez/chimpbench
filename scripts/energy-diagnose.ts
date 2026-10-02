@@ -23,7 +23,7 @@
 //   pnpm exec tsx scripts/energy-diagnose.ts [--seeds 48,7] [--burn-in 30] [--days 30] [--profile field] [--params '{"energyLedger":1}'] [--term-births] [--json f.json]
 import { writeFileSync } from 'node:fs';
 import { createWorld, tickWorld } from '../src/simulation';
-import { digestaCaps, energyTap, massOf, plantKcalPerMin, reserveCap, gutCap, type EnergyTerm, type FoodKind } from '../src/sim/energy';
+import { digestaCaps, energyTap, massOf, ownDrive, plantKcalPerMin, reserveCap, gutCap, type EnergyTerm, type FoodKind } from '../src/sim/energy';
 import { paramsOf, type Profile } from '../src/sim/params';
 import { isTreeId, ix } from '../src/sim/state';
 import { nurseTap } from '../src/sim/execution';
@@ -46,8 +46,8 @@ const juvs: { seed: number; id: number; sex: string; age0: number; kg0: number; 
 const inf = Object.fromEntries(BINS.map(b => [b, blankInf()])) as Record<string, Inf>;
 /** Stage E1n: the weaning-decision readouts by infant age (see the header). */
 interface Wean { dayStarts: number; nightActStarts: number; refRoll: number; refMother: number; endMother: number; nightBouts: number; dec: number; nurseTop: number; nurseChosen: number; ownChosen: number;
-  margins: number[]; hunger: number; fill: number; gland: number; dryDec: number; mStarts: number; mRes: number; mHunger: number; mFill: number; mFeeding: number; storeFull: number; storeTicks: number }
-const blankWean = (): Wean => ({ dayStarts: 0, nightActStarts: 0, refRoll: 0, refMother: 0, endMother: 0, nightBouts: 0, dec: 0, nurseTop: 0, nurseChosen: 0, ownChosen: 0, margins: [], hunger: 0, fill: 0, gland: 0, dryDec: 0,
+  margins: number[]; hunger: number; fill: number; gland: number; dryDec: number; own: number; mHungerDec: number; ownAbove: number; mStarts: number; mRes: number; mHunger: number; mFill: number; mFeeding: number; storeFull: number; storeTicks: number }
+const blankWean = (): Wean => ({ dayStarts: 0, nightActStarts: 0, refRoll: 0, refMother: 0, endMother: 0, nightBouts: 0, dec: 0, nurseTop: 0, nurseChosen: 0, ownChosen: 0, margins: [], hunger: 0, fill: 0, gland: 0, dryDec: 0, own: 0, mHungerDec: 0, ownAbove: 0,
   mStarts: 0, mRes: 0, mHunger: 0, mFill: 0, mFeeding: 0, storeFull: 0, storeTicks: 0 });
 const wean = Object.fromEntries(BINS.map(b => [b, blankWean()])) as Record<string, Wean>;
 /** An own-food option of an infant: feeding or foraging, a travel to a tree, begging. */
@@ -213,6 +213,8 @@ for (const seed of seeds) {
           const caps = L && L.dm !== undefined ? digestaCaps(c, P) : null;
           W.hunger += c.hunger; W.fill += caps ? L!.dm! / caps[0] : L ? L.gut / gutCap(c, P) : 0;
           const g = ML ? ML.milk : 0; W.gland += g; if (g < flowTick) W.dryDec++;
+          // the E1n rule's two terms at the decision (read with any switch setting): the infant's own-food drive, the mother's hunger
+          if (m) { const od = ownDrive(c, P); W.own += od; W.mHungerDec += m.hunger; if (od >= m.hunger) W.ownAbove++; }
         }
       }
       if (light && c.action === 'nurse') { B.actDay++; if (was !== 'nurse') B.bouts++; }
@@ -330,17 +332,17 @@ if (weanPts.length >= 2) {
 const q = (a: number[], p: number) => { if (!a.length) return NaN; const s = [...a].sort((u, v) => u - v); return s[Math.min(s.length - 1, Math.floor(p * s.length))]; };
 const weanOut: Record<string, Record<string, number>> = {};
 console.log('\nstage E1n: weaning decision by infant age (per infant-day; decisions = the infant\'s daylight decisions with the nurse option offered; margin = nurse score − best own-food score)');
-console.log('| age | infant-days | day starts (night act starts) | refused (roll, any hour) | refused / ended (mother) | night bouts | milk day | milk night | eating min | own kcal per eating min | decisions | nurse top % | nurse chosen % | own food chosen % | margin p25 / median / p75 | hunger | foregut fill | gland kcal | dry gland % | mother at starts: reserves ÷ store, hunger, foregut, feeding % | store full % |');
-console.log('| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+console.log('| age | infant-days | day starts (night act starts) | refused (roll, any hour) | refused / ended (mother) | night bouts | milk day | milk night | eating min | own kcal per eating min | decisions | nurse top % | nurse chosen % | own food chosen % | margin p25 / median / p75 | hunger | own-food drive / mother hunger (own ≥ mother %) | foregut fill | gland kcal | dry gland % | mother at starts: reserves ÷ store, hunger, foregut, feeding % | store full % |');
+console.log('| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
 for (const b of BINS) {
   const B = inf[b], W = wean[b], d = B.ticks / DAY; if (!d) continue;
   const milk = B.milkDay + B.milkNight, own = B.kin - milk, n = Math.max(1, W.dec), ms = Math.max(1, W.mStarts);
   const o = { infantDays: d, dayStarts: W.dayStarts / d, refusedRoll: W.refRoll / d, refusedRollShare: W.refRoll / Math.max(1, W.refRoll + W.refMother + W.dayStarts + W.nightActStarts), nightActStarts: W.nightActStarts / d, refusedMother: W.refMother / d, endedMother: W.endMother / d,
     nightBouts: W.nightBouts / d, milkDay: B.milkDay / d, milkNight: B.milkNight / d, eatingMin: B.eatDay / 4 / d, ownPerEatMin: B.eatDay ? own / (B.eatDay / 4) : NaN, decisions: W.dec / d,
     nurseTop: W.nurseTop / n, nurseChosen: W.nurseChosen / n, ownChosen: W.ownChosen / n, marginP25: q(W.margins, 0.25), marginMedian: q(W.margins, 0.5), marginP75: q(W.margins, 0.75), marginN: W.margins.length,
-    hunger: W.hunger / n, fill: W.fill / n, gland: W.gland / n, dryGland: W.dryDec / n, mRes: W.mRes / ms, mHunger: W.mHunger / ms, mFill: W.mFill / ms, mFeeding: W.mFeeding / ms, mStarts: W.mStarts, storeFull: W.storeFull / Math.max(1, W.storeTicks) };
+    hunger: W.hunger / n, fill: W.fill / n, gland: W.gland / n, dryGland: W.dryDec / n, ownDrive: W.own / n, motherHungerAtDec: W.mHungerDec / n, ownAboveMother: W.ownAbove / n, mRes: W.mRes / ms, mHunger: W.mHunger / ms, mFill: W.mFill / ms, mFeeding: W.mFeeding / ms, mStarts: W.mStarts, storeFull: W.storeFull / Math.max(1, W.storeTicks) };
   weanOut[b] = o;
-  console.log(`| ${b} | ${f(d)} | ${f(o.dayStarts, 1)} (${f(o.nightActStarts, 2)}) | ${f(o.refusedRoll, 2)} (${f(100 * o.refusedRollShare, 1)}%) | ${f(o.refusedMother, 2)} / ${f(o.endedMother, 2)} | ${f(o.nightBouts, 1)} | ${f(o.milkDay)} | ${f(o.milkNight)} | ${f(o.eatingMin)} | ${f(o.ownPerEatMin, 2)} | ${f(o.decisions, 1)} | ${f(100 * o.nurseTop, 1)} | ${f(100 * o.nurseChosen, 1)} | ${f(100 * o.ownChosen, 1)} | ${f(o.marginP25, 2)} / ${f(o.marginMedian, 2)} / ${f(o.marginP75, 2)} | ${f(o.hunger, 2)} | ${f(o.fill, 2)} | ${f(o.gland)} | ${f(100 * o.dryGland, 1)} | ${f(o.mRes, 3)}, ${f(o.mHunger, 2)}, ${f(o.mFill, 2)}, ${f(100 * o.mFeeding, 1)} | ${f(100 * o.storeFull, 1)} |`);
+  console.log(`| ${b} | ${f(d)} | ${f(o.dayStarts, 1)} (${f(o.nightActStarts, 2)}) | ${f(o.refusedRoll, 2)} (${f(100 * o.refusedRollShare, 1)}%) | ${f(o.refusedMother, 2)} / ${f(o.endedMother, 2)} | ${f(o.nightBouts, 1)} | ${f(o.milkDay)} | ${f(o.milkNight)} | ${f(o.eatingMin)} | ${f(o.ownPerEatMin, 2)} | ${f(o.decisions, 1)} | ${f(100 * o.nurseTop, 1)} | ${f(100 * o.nurseChosen, 1)} | ${f(100 * o.ownChosen, 1)} | ${f(o.marginP25, 2)} / ${f(o.marginMedian, 2)} / ${f(o.marginP75, 2)} | ${f(o.hunger, 2)} | ${f(o.ownDrive, 2)} / ${f(o.motherHungerAtDec, 2)} (${f(100 * o.ownAboveMother, 1)}) | ${f(o.fill, 2)} | ${f(o.gland)} | ${f(100 * o.dryGland, 1)} | ${f(o.mRes, 3)}, ${f(o.mHunger, 2)}, ${f(o.mFill, 2)}, ${f(100 * o.mFeeding, 1)} | ${f(100 * o.storeFull, 1)} |`);
 }
 const jv = (sex: string, lo: number, hi: number) => { const j = juvs.filter(x => x.sex === sex && x.age0 >= lo && x.age0 < hi); return j.length ? `${f(j.reduce((s, x) => s + (x.kg1 - x.kg0) / (x.days / 365.25), 0) / j.length, 2)} kg/y (n ${j.length}, mean ${f(j.reduce((s, x) => s + x.kg0, 0) / j.length, 1)} kg at ${f(j.reduce((s, x) => s + x.age0, 0) / j.length, 1)} y)` : '—'; };
 console.log(`juvenile growth velocity, weaned to 12 y: female 4–8 y ${jv('female', 4, 8)}, 8–12 y ${jv('female', 8, 12)}; male 4–8 y ${jv('male', 4, 8)}, 8–12 y ${jv('male', 8, 12)}`);

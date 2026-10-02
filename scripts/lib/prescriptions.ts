@@ -250,6 +250,10 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
     'read in the timer branches of execution.ts (forageTick, drink) and by urgency.ts payOf (through intake.ts thirstPerHInclWalk); with the water ledger fruit water and drinking are booked in mL (water.ts), so they stay in use only while urgencyChoice or urgencyPersist is 1'),
   drinkDistScaleM: { when: P => !(P.waterLedger === 1 && P.energyLedger === 1 && P.ledgerDigesta === 1), why: 'the drink offer in src/sim/candidates.ts is valued by water.ts drinkWorth (the share of the trip spent drinking, walk included) while the water ledger runs' },
   contactCallGapH: { when: P => P.callValue !== 1, why: 'the contact-call quota (and the fewer-than-2-in-sight gate) in src/sim/candidates.ts patrolAndCalls is not evaluated while callValue is 1: the staleness of the own last pant-hoot (calls.ts callStaleness) replaces it' },
+  // stage E1n (weanDecide; docs/staging/e1n-prereg.md §3): the mother decides by her drive against the infant's own-food
+  // drive (energy.ts ownDrive), so the weaning roll and its ramp are not evaluated
+  ...same(['weanRefuseMaxP', 'weanRefuseAgeY', 'weanRefuseRampY'], P => !(P.weanDecide === 1 && P.energyLedger === 1 && P.ledgerDrive === 1),
+    'the weaning refusal roll in src/sim/execution.ts (nurse act) is not evaluated while weanDecide, energyLedger and ledgerDrive are 1: the mother\'s decision replaces it'),
 };
 
 /** One ACTIVE_WHEN rule for several entries. */
@@ -303,6 +307,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   waterLedger: { stage: 'E2g', needs: { energyLedger: 1, ledgerDigesta: 1, rhythmHeat: 1 } },
   preyKanyawara: { stage: 'E4f', needs: {}, removesNothing: 'corrects an input (the field colobus density: Ngogo 1997-99 out, Kanyawara in, both inputs); no prescription is switched out (e4f-prereg §4.1)' },
   followCarer: { stage: 'E4g', needs: {}, removesNothing: 'corrects which companions\' acts the party-follow rule reads (a care follow is not a departure); adds no term and switches no prescription out (e4g-prereg §3)' },
+  weanDecide: { stage: 'E1n', needs: { energyLedger: 1, ledgerDrive: 1 } },
 };
 
 /** Whether an entry is in use: generated (not planned), non-zero under these resolved parameters, and not switched out. */
