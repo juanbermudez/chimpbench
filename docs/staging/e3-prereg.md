@@ -446,3 +446,18 @@ then capped a bout at hunger ÷ rate, and the ledger's hunger includes appetite 
 bout's value came out about half. `payOf` (src/sim/urgency.ts) calls `treeIntake` with that cap on. The finding "a walk
 to a crown rarely pays" (§9) may therefore be the bug, not the mechanism. Re-test `urgencyPersist` on the current code
 (B2 fixed; with `ledgerDrive` 1 the cap does not apply) before acting on E3's recommendation.
+
+## Integrator re-test of iteration 3 on the current stack (registered 2 October 2026 before its run)
+
+Arms (field, seeds 48 and 7, rules policy, from the frozen checkout `bench-run` at the commit that adds this section):
+**R**, the reference stack of the handoff (§3), which includes `ledgerDrive`, so `treeIntake` values a bout by the
+energy it can deliver and E3's hunger cap is not in play; **R + A**, R + `urgencyChoice`, `urgencyPersist` and
+`urgencySwitchCost` 1 (E3's arm A). Readouts: `movement-metrics --fitted-only --burn-in 30 --days 8` (crown bout median
+and mean) for both arms; `e-bench --quick` for R + A, judged against R's four quick realizations (e-noise.md,
+amendment 2).
+
+Registered reading: if the pre-E1e hunger cap explains iteration 3, R + A's crown bout median stays within ±20% of R's
+and T-FOOD-2 (fruit share of feeding) stays inside its band (0.60–0.78); if the crown bout median falls by 30% or more
+and the fruit share falls below the band, iteration 3's explanation stands on the current code. Anything in between is
+reported as unresolved. No switch goes on from this re-test; it decides only whether E3's recommendation (value food
+against reserves) is still needed.
