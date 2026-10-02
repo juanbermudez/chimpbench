@@ -105,6 +105,7 @@ const ALLOW: Record<string, Record<string, string>> = {
   'perception.ts': { rollImpulses: 'infanticide impulses target infants with a living mother (pre-existing; infant survival, not rank, mating or fertility)' },
   'execution.ts': { '*dependentOn': 'the dependent-follow, nurse and nest code that already calls dependentOn' },
   'tick.ts': { carryInfants: 'the existing dependentOn call (carrying)' },
+  'energy.ts': { energyTick: 'E1o milkInDrive: an unweaned animal\'s drive reads its living mother\'s gland, the milk available to it (no rank, mating or fertility term)' },
   'observe.ts': { observe: 'the existing caretaker perceivability and dependency flag' },
   'rg.ts': { perceivedCandidates: 'C13: the same caretaker perceivability as observe() (who can be on the menu; no rank, mating or fertility term)' },
 };
