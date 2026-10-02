@@ -231,7 +231,7 @@ Kanyawara's per follow-hour (§2.4; prey density and detection, outside this sta
   artifacts/validation/e4e/H1`, then `scripts/e4e-hunt-diagnose.ts` on seeds 48 and 7 (30 + 30 days) with the same
   parameters. Judged by §6–§7 against R-quick and NR1q–NR3q.
 
-- **NRd (reference truth, unchanged code).** Frozen checkout of 5923a07: `scripts/e4e-hunt-diagnose.ts` on seeds 48 and 7
+- **NRd (reference truth, unchanged code; logged about a minute after its launch, disclosed).** Frozen checkout of 5923a07: `scripts/e4e-hunt-diagnose.ts` on seeds 48 and 7
   with R's three re-draws (R + `rgTemperature` 0.1641, 0.1639, 0.16405, the integrator's NR1q–NR3q), so the truth
   readouts of the reference have a spread too (`artifacts/validation/e4e/diag/NR{1,2,3}q-*.json`).
 
@@ -241,4 +241,4 @@ Kanyawara's per follow-hour (§2.4; prey density and detection, outside this sta
   612bf15 and 5923a07: the reference realizations stand.
 - Smoke (`artifacts/validation/e4e/diag/S0-48.json`, copied from the scratch run): every §5 readout is produced; 13
   impulses, 13 offers (`notOffered.gap` 0), 1 chosen; mean offer score 0.109 against 1.033 for the best other option;
-  2 hunts in 2 community-days × 3. No error. H1 launched next.
+  2 hunts in 6 community-days. No error. H1 launched next.
