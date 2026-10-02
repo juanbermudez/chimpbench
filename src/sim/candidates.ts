@@ -229,7 +229,8 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   const restScore = 0.12 + (1 - e) * 0.9 + midday + (h < 0.2 ? 0.2 : 0) + (!rH && env.temperature > 23 ? 0.1 : 0) + c.injury * 0.5 + (night && !rS ? 0.4 : 0) + (caretaker ? 0.1 : 0) + (x.ill > time ? P.epidemicRestW : 0);
   // stage E2d (rhythmCircadian; circadian.ts, docs/staging/e2d-prereg.md §2.4): process C replaces the darkness weight and
   // the light masking. The nest is the rest score without its fatigue term plus the felt sleepiness of the two-process
-  // gate (S between the C-modulated thresholds); rest outside a nest has no sleep term; the nest is offered at any light
+  // gate (S between the C-modulated thresholds); rest outside a nest has no sleep term. A new nest is offered under
+  // E2a's light gate (iteration 2: offered at any light, day nests took a third of the daytime; e2d-prereg §8)
   const circ = circadianOn(P), restBase = restScore - (1 - e) * 0.9;
   let nestDrive = circ ? restBase + P.rhythmSleepW * circadianSleepiness(P, c)
     : dark ? restScore
@@ -239,7 +240,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   nestDrive += (rS ? 0 : (1 - e) * 0.3) + (night && rain > 0.3 ? 0.3 : 0);
   if (caretaker) {
     if (caretaker.action === 'nest' && isTreeId(caretaker.targetId)) offer('nest', caretaker.targetId, nestDrive + 0.4, V.MOTHER, caretaker.id);
-  } else if (c.age >= 3 && !race) offerOwnNest(world, c, inNest, nestDrive, circ || (rS ? env.daylight < 1 : hour >= 12 || night));
+  } else if (c.age >= 3 && !race) offerOwnNest(world, c, inNest, nestDrive, rS ? env.daylight < 1 : hour >= 12 || night);
   // felt sleepiness, (1 − energy) under rhythmSleep, is what only the nest relieves: rest keeps the rest of its score
   if (circ) { if (!inNest) offer('rest', -1, restBase); }
   else if (!dark) offer('rest', -1, restScore);
@@ -406,7 +407,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       offer('climb', t.id, 0.06 + pers.playfulness * 0.15 + (c.age < 10 ? 0.1 : 0) - rain * 0.3 - (night ? 2 : 0));
     }
   }
-  if (race && !caretaker && c.age >= 3) offerOwnNest(world, c, inNest, nestDrive - raceG, circ || (rS ? env.daylight < 1 : hour >= 12 || night));
+  if (race && !caretaker && c.age >= 3) offerOwnNest(world, c, inNest, nestDrive - raceG, rS ? env.daylight < 1 : hour >= 12 || night);
 
   // stage C13e (joinChoice; docs/realism-design.md "C13e pre-registration"): what going with a departing leader is worth
   // to this animal. Who is leaving: its bond with the leader, an ally, a leader that dominates it; recruitment and more
