@@ -85,17 +85,136 @@ T-HUN-4 (more males, more hunting) are its primary readouts; T-HUN-1 is reported
 target the mechanism is built toward. T-HUN-3 and T-HUN-4 are not rescaled (Mitumba, the smallest community, hunted
 48% of its encounters).
 
-## 3. Diagnosis plan (step 1; runs on unchanged code, R and B)
+## 3. Diagnosis (step 1; unchanged code, R and B; run before §4 was written)
 
-Cheapest decisive check first: `scripts/hunt-diagnose.ts` (sim truth) on R and on B, seeds 48 and 7, 30-day burn-in +
-30 days, extended with the readouts listed in §5 (encounters per community-day, share hunted, which gate opened each
-hunt, males present, the leader's energy state and arousal at the start, hour of day). The question it answers: what
-makes the stack hunt more than B: more encounters, a higher share of encounters hunted, or more decision points per
-encounter (spare time).
+Plan as registered: `scripts/e4e-hunt-diagnose.ts` (new, read-only; sim truth) on R and on B, seeds 48 and 7, 30-day
+burn-in + 30 days, from a frozen checkout of 5923a07 (`git worktree add --detach`). Readouts, at every daylight decision
+point of an adult male: an *encounter* is a colobus group in sight that was not the group he perceived at his previous
+decision point (the hunting fix's definition, `perception.ts` metPrey); with at least `huntEncMinMales` (2) adult males
+in view it is an *impulse*; whether the lead was *offered* (on his candidate list) or which gate held it (rain, timer
+energy, `huntGapH`); whether he *chose* it; his state at the impulse; per hunt started, the leader's gate, males in
+view and state; adult males' daylight time by action. Files: `artifacts/validation/e4e/diag/{R,B}-{48,7}.json`; table
+printed by `artifacts/validation/e4e/diag_table.py` (pooled over both seeds; per-seed values joined by /).
 
-## 4. Mechanism
+| readout (truth) | B (all off) | R (stack) |
+| --- | --- | --- |
+| colobus encounters per community-day (adult males) | 5.23 | 5.59 |
+| impulses (encounters with ≥ 2 adult males in view) per community-day | 1.63 | 2.4 |
+| impulses ÷ encounters | 0.311 | 0.429 |
+| impulses with ≥ 3 adult males in view | 0.218 | 0.396 |
+| lead offered ÷ impulses | 0.904 | 0.706 |
+| impulses held by `huntGapH` | 0.0751 | 0.255 |
+| lead chosen ÷ offers | 0.102 | 0.193 |
+| hunts per community-day | 0.128 | 0.256 |
+| hunt score at offers (seed 48 / 7) | 0.395/0.357 | 0.434/0.431 |
+| best other option's score at offers | 0.782/0.779 | 0.808/0.814 |
+| hunger of males who chose the hunt / who did not | 0.333/0.285 vs 0.284/0.28 | 0.178/0.22 vs 0.218/0.24 |
+| leaders' reserves ÷ usable store; foregut fill; need (kcal) | — (timers) | 0.0036/0.0013; 0.442/0.337; 472/779 |
+| leaders' testosterone-like arousal | — | 0.0675/0.089 |
+| adult males' daylight: forage, groom, rest, travel | 0.363, 0.103, 0.272, 0.135 | 0.252, 0.188, 0.272, 0.0854 |
 
-(registered after the diagnosis, before any run of changed code)
+Every hunt on both runs was opened by the encounter impulse (the lottery is not drawn in the field profile).
+
+**What makes the stack hunt twice as often (truth 0.256 against 0.128 hunts per community-day):** spare time spent in
+male company. R's adult males feed 11 points less of the daylight and groom 8.5 points more, so at a colobus encounter they
+are more often with other adult males (impulses per encounter 0.43 against 0.31; three or more males 40% against 22%).
+The hand-set lead value rises 0.15 per adult male above 3 (scores at offers 0.43 against 0.36–0.40), and each offer is
+taken about twice as often (0.19 against 0.10). The gap (`huntGapH`) holds back a quarter of R's impulses and is the only brake. Encounters themselves differ
+little (5.6 against 5.2 per community-day). R's leaders are *less* hungry than the males who let the hunt go: the lead
+value ignores appetite, and a sated male's other options are worth less.
+
+**Why T-HUN-1 fails on both (observer, the integrator's quick realizations at 612bf15):** the hunted share of
+encounters is inside its band on R (T-HUN-3 0.108, 0.116, 0.104, 0.080) and on B (0.068, 0.056, 0.067, 0.023), while the
+observer records 9.0–10.9 colobus encounters per 100 follow-hours against Kanyawara's 3.73 (§2.4). The excess of T-HUN-1
+is mostly the encounter rate, which no decision rule inside T-HUN-3's band can absorb.
+
+**Reference identity.** R's world at 5923a07 and at 612bf15 is hash-identical after 2 days on seeds 48 and 7
+(`scratchpad/e4e/ident.mts`: 9deaf1df367a7d34, 51357e4fb3248108 at both), so the integrator's R quick realizations
+(R-quick, NR1q–NR3q, `bench-run/artifacts/validation/e/noise/`) are this branch's reference. The same check is repeated
+on the switch commit with the switch at 0.
+
+## 4. Mechanism (switch `huntValue`, 0 = today; acts only with `energyLedger` 1 and `ledgerDrive` 1)
+
+A hunt is food. At a colobus encounter (the hunting fix's impulse, unchanged) or on a field experiment's hunting day,
+the lead is offered only when a capture can be expected, and it is scored exactly as a feeding trip to a crown is scored
+in the model's own food currency (stage C13b `intakeValue`, the sim's own rates; [charnov1976]):
+
+  worth = (1.6·h + 0.1) × r − d ÷ `forageDistScaleM`, with r = (E ÷ T) ÷ R_fruit
+
+- h: the male's appetite now (`c.hunger`, the E1e drive × (1 − fill²)); 1.6 and 0.1 are the crown weights (design,
+  `candidates.ts` `fw`), the crop-quality factor taken at 1.
+- R_fruit: his own ripe-fruit intake rate in kcal/h (`intake.ts` `fruitRate` × `fruitKcalPerUnit`), as for a crown.
+- E: the meat energy he can expect, capped at his energy need as a crown's bout is (`energy.ts` `energyNeed`):
+  E = min(need, P_s(n) × q(n) × K), where
+  - P_s(n) = `huntSuccessMax` × (1 − exp(−`huntSuccessRate` × (n − 1))) for n ≥ 2, else 0: the model's own resolution
+    curve (`ecology.ts` `resolveHunt`; design), read as the hunter's expectation;
+  - q(n) = 1/n + (1 − 1/n) × `huntExtraKillP`: his chance to hold meat after a success (the captor is drawn by skill and
+    a hash, uniform in expectation; extra captures [M, derived]);
+  - K = `meatKcalPerUnit` = 60 × `ledgerMeatKcalPerMin` ÷ `meatEatPerH` = 1,149 kcal (assumed; design): what a capture
+    gives in the model;
+  - n = adult males in view, himself included (design: the males he sees will join; joining is unchanged).
+- T (h) = d ÷ `walkMps` + (`huntResolveMinMin` + `huntResolveSpanMin` ÷ 2) min + E ÷ (60 × `ledgerMeatKcalPerMin`):
+  the approach, the expected chase until resolution (design), and the time to eat what he expects.
+- Offered only if E > 0: fewer than two expected hunters cannot capture (the resolution's own rule).
+
+At the model's values r is 0.43–0.54 for 2–7 males at 30–100 m (`scratchpad/e4e/vals.ts`; E 139–221 kcal): a hunt is
+worth about half a ripe crown per hour. **Removed under the switch:** `huntGapH` (the community-wide 6 h gap) and the
+hand-set lead value (0.5 + 0.15·(males − 3) + 0.35·skill + 0.15·boldness − d ÷ `huntDistScaleM`). **Not changed:** the
+encounter impulse and `huntEncMinMales` (perception), joining an ongoing hunt (its hand-set value; out of scope), the
+rain gate (< 0.3) and the timer-energy literal (`c.energy > 0.35`; inert on the stack by day: c.energy ≥ 0.997 at every
+R impulse in §3), the success curve, the hunting-day lottery (not drawn in the field). **Not used, for lack of a
+source:** the testosterone-like arousal (no source read links it to hunting decisions), injury risk (no field rate).
+No new parameter beyond the switch.
+
+Biological reading: meat is valued as food at the hunter's present appetite; a sated male weighs a hunt as he weighs a
+crown. This is one first-principles reading of "value comparison", and it predicts the opposite of gilbyWrangham2007's
+direct effect (more hunting when diet quality is high): here hunting can track fruit only through party size, as
+mitaniWatts2001 explained Ngogo's pattern. That conflict is registered, not resolved; T-HUN-5 needs ≥ 6 months.
+
+## 5. Readouts (defined before any arm; smoke-tested with the switch on, §9 run log)
+
+Observer rows (e-bench; definitions from `src/field/metrics.ts`, written from gilby2015's Methods as recorded in §2):
+- T-HUN-1: "hunts seen or heard by a following team ÷ community-days with a follow × 365"; part per 100 follow-hours.
+- T-HUN-3: "colobus encounters = prey within the profile encounter distance of the focal party at a 15-min scan; share
+  followed by an observed hunt on that group within 1 h"; part encounters per 100 follow-hours.
+- T-HUN-4: "logistic regression of hunting per colobus encounter on adult males in the scan; odds ratio per male".
+- T-HUN-2 (share of observed hunts with ≥ 1 capture), T-HUN-7 (captures per successful observed hunt).
+Truth (`scripts/e4e-hunt-diagnose.ts`, §3 definitions): encounters, impulses and hunts per community-day; offered ÷
+impulse; chosen ÷ offer; hunt score and the best other option's score at offers; hunger, reserves ÷ usable store,
+foregut fill, need and arousal of males who chose the hunt and of those who did not; adult males' daylight by action.
+"Hunters' reserves at hunt start" = the leader's reserves ÷ usable store when the hunt starts.
+
+## 6. Arm and predictions (stated before any run of the changed model)
+
+Arm **H1** = R + `huntValue` 1, `e-bench --quick` (seeds 48, 7; 30 + 30 days; `--workers 1` at load > 8) from a frozen
+checkout, plus the diagnosis script on the same seeds. Judged against the mean of R's four quick realizations
+(`judge_vs_reps.py quick R`; per-run SD fitted 0.69, held-out 1.26, held-out without T-HUN-4 and T-BRD-1 0.48, or the
+reference's own spread if larger; |z| > 2 is a result).
+
+Truth: offered ÷ impulse up from 0.71 to ≥ 0.9 (no gap); chosen ÷ offer down from 0.19 to ≤ 0.08; hunts per
+community-day down from 0.256 to ≤ 0.13 (at least halved); males who choose the hunt hungrier than those who do not
+(today the reverse).
+Rows: T-HUN-3 down from the reference mean to 0.01–0.05 (expected to fail low); T-HUN-1 down to 8–25 (inside the old
+band, likely above the staged 4–11); T-HUN-4 above 1 (each male in company has his own chance; r rises only from 0.48 to
+0.53 between 2 and 4 males), not resolved at this length; T-HUN-2 and T-HUN-7: no prediction (success curve and joins
+unchanged); every other row inside noise (hunting is about 0.1% of males' daylight).
+Sums: fitted down (T-HUN-1's distance falls more than T-HUN-3's rises), |z| possibly below 2; held-out with and without
+the rare rows inside noise. Prescriptions 103 → 102 (`huntGapH`). Viability passes.
+
+## 7. Kill criterion
+
+`huntValue` stays off (null, recorded) if viability fails, if held-out without T-HUN-4 and T-BRD-1 rises beyond noise
+(z > +2 against R's mean), or if the prescription count does not fall. If hunting all but vanishes (truth hunts per
+community-day < 0.03, pooled), the result is recorded as a finding (energy alone does not pay for a hunt at the model's
+success curve), not a keep candidate. Otherwise: provisional keep candidate, to be confirmed (`e-bench --confirm`)
+before any default changes.
+
+## 8. Iterations and known defects
+
+At most 3 iterations, each logged in §9 and committed before its run. Known defects deferred (not fixed here, outside
+the decision): the success curve is a design curve that fails T-HUN-2 low (`src/sim/ecology.ts:73`; the hunter's
+expectation inherits it); the join value is hand-set (`src/sim/candidates.ts:830`); the encounter rate is about 2.6 ×
+Kanyawara's per follow-hour (§2.4; prey density and detection, outside this stage).
 
 ## 9. Results
 
