@@ -11,8 +11,8 @@ import { index, isTreeId, ix, NEVER, type ChimpX } from './state';
 //   pant-hoot   gain: out-of-sight allies learn where the caller is. It grows with the caller's social need, the share of
 //               its ally bond weight it has not seen or heard within callFixH, and how stale its own last pant-hoot is for
 //               listeners (callFixH since it, or moved out of sight of where it called). Cost: neighbours hear it (the C6
-//               hush) and, at a crown, the share of its own need it loses if the community members it remembers within
-//               earshot come. Offered as the 'call' act at decision points when the net value is positive; weighed on
+//               hush) and, at a crown, the share of its own need it loses if the community members likely within
+//               earshot come (iteration 1: all members it does not see × the share of the range within earshot). Offered as the 'call' act at decision points when the net value is positive; weighed on
 //               arrival in a crown, where it is given when the net value is positive.
 //   travel hoo  gain: the bond with each companion within earshot who would not notice a silent departure (feeding in a
 //               crown, grooming or groomed). Cost: the share of its own need at the destination it loses to them.
@@ -50,18 +50,18 @@ export function cropLoss(c: Chimp, P: Params, crop: number, feeders: number, k: 
   return (Math.min(N, crop / (1 + feeders)) - Math.min(N, crop / (1 + feeders + k))) / N;
 }
 
-/** Community members the caller remembers (seen within the chimp memory lifetime) that were out of view at its last perception and within pant-hoot earshot of it. */
-export function rememberedInEarshot(world: World, c: Chimp, x: ChimpX, P: Params): number {
-  const byId = index(world).byId, r2 = P.hearPantHootM * P.hearPantHootM;
-  let k = 0;
-  for (let i = 0; i < c.memory.length; i++) {
-    const m = c.memory[i];
-    if (m.kind !== 'chimp' || m.seenAt >= x.seenAt || world.time - m.seenAt > P.memTtlChimpH) continue;
-    const dx = m.position[0] - c.position[0], dz = m.position[2] - c.position[2];
-    if (dx * dx + dz * dz > r2) continue;
-    if (byId.get(m.entityId)?.troopId === c.troopId) k++;
-  }
-  return k;
+/**
+ * Community members likely to hear a pant-hoot and come (iteration 1, e4c-prereg §8): those aged 5 and over the caller
+ * does not see, times the share of its community's range (the 95% isopleth's equal-area circle) within earshot. A
+ * pant-hoot is a broadcast; the caller cannot address it to its allies alone, and any listener may come to the food.
+ */
+export function listenersInEarshot(world: World, c: Chimp, x: ChimpX, P: Params): number {
+  const idx = index(world), troop = idx.troopById.get(c.troopId);
+  let out = 0;
+  for (let i = 0; i < idx.alive.length; i++) { const o = idx.alive[i]; if (o !== c && o.troopId === c.troopId && o.age >= 5) out++; }
+  for (let i = 0; i < x.seen.length; i++) { const o = idx.byId.get(x.seen[i]); if (o && o.alive && o.troopId === c.troopId && o.age >= 5) out--; }
+  const share = troop && troop.radius > 0 ? Math.min(1, (P.hearPantHootM / troop.radius) ** 2) : 1;
+  return Math.max(0, out) * share;
 }
 
 /** Own-community animals in view feeding in this crown (the competitors already there). */
@@ -86,13 +86,13 @@ export function crownOf(world: World, c: Chimp, P: Params): { crop: number; feed
 /**
  * Net value of a pant-hoot now, in score units: (contactCallBase + contactCallW × social need) × unlocated ally share ×
  * staleness of the own last pant-hoot, minus the C6 hush and, at a crown, (contactCallBase + contactCallW) × the share
- * of its need the caller would lose to the community members it remembers in earshot.
+ * of its need the caller would lose to the community members likely within earshot (listenersInEarshot).
  */
 export function pantHootValue(world: World, c: Chimp, P: Params, crown: { crop: number; feeders: number } | null): number {
   const x = ix(c), K = P.contactCallBase + P.contactCallW;
   const gain = (P.contactCallBase + P.contactCallW * (1 - c.social)) * unlocatedShare(world, c, x, P) * callStaleness(world, c, x, P);
   let cost = P.callSuppressW > 0 ? P.callSuppressW * pressureAt(world, c, c.position[0], c.position[2]) : 0;
-  if (crown) cost += K * cropLoss(c, P, crown.crop, crown.feeders, rememberedInEarshot(world, c, x, P));
+  if (crown) cost += K * cropLoss(c, P, crown.crop, crown.feeders, listenersInEarshot(world, c, x, P));
   return gain - cost;
 }
 
