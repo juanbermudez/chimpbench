@@ -1,0 +1,24 @@
+{
+ "about": "Stage E4f staging for the virtual field observer (proposal; applied by the integrator, this branch never edits src/field). Two scorer corrections that make the colobus encounter count follow gilby2015's Methods, read in full on 2 October 2026 (docs/staging/e4f-prereg.md §2.1, §4.2). Written after the D0 diagnosis of R was seen (focal follows 10.04 per 100 h by today's rule and 8.82 by the run rule; party follows 7.54 and 6.97; prereg §9) and before any arm ran. Applying it changes the protocol hash and the T-HUN-3/T-HUN-4 values of every saved run: protocolLog entry and new freeze by the integrator. T-HUN-1 is not affected (it counts hunts, not encounters, and is already scored on party follows).",
+ "source": {
+  "key": "gilby2015",
+  "method": "Kanyawara: 'every 15 min, the field assistants record party composition, and since 1996, whether colobus can be detected within 100 m of the chimpanzees.' Encounters: 'any 15 min scan when the chimpanzees were within 100 m of colobus that was not immediately preceded by another positive colobus scan.' 'We matched every observed hunt attempt to an encounter.'"
+ },
+ "changes": [
+  {
+   "id": "run-rule",
+   "where": "src/field/metrics.ts colobusEncounters (line 118-134 at 6781cb7)",
+   "today": "a new encounter whenever the nearest colobus group within 100 m differs from the previous scan's group (a change of group within a run of positive scans counts again); hunted = a detected hunt by the follow's community on that group, or an unknown group, from 0.25 h before to 1 h after the encounter's first scan",
+   "proposed": "a new encounter at a positive scan not immediately preceded by a positive scan of the same follow; adult males taken at that first scan (T-HUN-4); hunted = a detected hunt by the follow's community on any group scanned in the run, or an unknown group, from 0.25 h before the run's first positive scan to the later of 1 h after it and 0.25 h after its last positive scan",
+   "reference_implementation": "scripts/e4f-encounter-diagnose.ts (gilbyRule, encounterRows.gilby)"
+  },
+  {
+   "id": "follow-type",
+   "where": "src/field/config.ts TARGET_FOLLOW (line 25 at 6781cb7)",
+   "today": "T-HUN-3 and T-HUN-4 are scored on focal follows (one focal individual per community per day, half of them females)",
+   "proposed": "T-HUN-3 and T-HUN-4 scored on the party follows that stay with the larger subgroup ('party-larger'), as T-HUN-1 already is: gilby2015's Kanyawara encounters are party scans",
+   "reference_implementation": "scripts/e4f-encounter-diagnose.ts (observer.partyLarger)"
+  }
+ ],
+ "effects": "filled from the iteration-1 readouts (prereg §9): R's realizations and every arm are reported under both scorings; only today's scorer is judged in this stage."
+}

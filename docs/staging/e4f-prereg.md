@@ -229,6 +229,8 @@ A further iteration only if a source for colobus day range or for detection dist
 - **I1 identity and S1 smoke (before any arm).** Frozen checkout of 518295c (the switch commit). I1: R with
   `preyKanyawara` 0, 2 days, seeds 48 and 7: E4e's hashes again. S1: R + `preyKanyawara` 1, seed 48, 1 + 2 days through
   the tool: 142 groups, every readout produced, the model-rule hunted share on focal follows equals T-HUN-3's value.
+- **I1 and S1 results** (518295c): R with the switch at 0 gives 9deaf1df367a7d34 and 51357e4fb3248108 (unchanged);
+  S1 makes 142 groups and produces every readout (no hunt in 2 days, so the hunted-share check waits for the arms).
 - **Iteration 1 (K, with H and KH; and the tool's reference spread).** Same frozen checkout, rules policy, seeds 48 and
   7, 30 + 30 days. Two background chains, one process each (load ~11): (a) `e-bench --quick --workers 1` for H = R +
   `huntValue` 1, K = R + `preyKanyawara` 1, KH = K + `huntValue` 1 (`artifacts/validation/e4f/{H,K,KH}.json`); (b) the
