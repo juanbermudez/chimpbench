@@ -210,7 +210,7 @@ Registered predictions:
 - **P-S5 holds in direction, fails night safety.** Adults out of a nest 14.7% → 9.2% of night time (R0 0.1%); T-RHY-5
   0.092 against the field's ≤ 0.033.
 - Diagnosis (`predawn-diag.ts`, seed 48, 30-day burn-in, 4 mornings, FS): adults with an adult nest-mate within 50 m at
-  solar midnight were out of a nest 29.1% of the pre-dawn window and left at a median sun altitude of −4.0° (about 16 min
+  solar midnight were out of a nest 29.1% of the pre-dawn window and left at a median sun altitude of −4.0° (about 13 min
   before sunrise); adults with none were out 98.2% (they leave at waking). About 47% of adult pre-dawn time is spent by
   animals that nested with no adult within 50 m (42% counting nest-mates of 5 y and more): the model's parties are small
   (T-PTY-1 2.80 against 3–9), so company cannot hold them. The mean company value of an awake adult in a nest before dawn
@@ -366,7 +366,7 @@ read in any arm (`rhythmCircadian` is on throughout).)
   that removes the menu once something holds solitary nesters.
 - **The hold without the night menu (FS, FS2, I1): killed** by night safety in every form (adults out 7–9% of night time
   against R0's 0.1% and the field's ≤ 3.3% of activity records). Company holds animals that nest with an adult nest-mate
-  until a sun altitude of about −4° (some 16 min before sunrise, close to the field's departures); it cannot hold the
+  until a sun altitude of about −4° (some 13 min before sunrise, close to the field's departures); it cannot hold the
   animals that nest with no adult within 50 m, about half the adults' pre-dawn time in this model, and E2c's darkness
   cost adds little (I1d).
 - **Thermal arm: inert, not run** (§3.3): no dry heat debt for any class at the model's 15 °C pre-dawn air; pre-dawn
