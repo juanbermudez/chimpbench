@@ -14,10 +14,12 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now.** Agents E1i (why mothers stop eating; worktree `e1i-intake`) and E4d (a daily hormone rhythm;
-  `e4d-rhythm`). Integrator chains in `bench-run`: the noise-threshold arms (six per mode, docs/staging/e-noise.md),
-  then the E4c confirm (e4c-prereg.md §10). Scripts in the session scratchpad `integrator/` (noise.sh, noise2.sh,
-  e4c-confirm.sh, judge_e1h.py, noise_threshold.py).
+- **Running now (04:40).** Agents E1i (why mothers stop eating; worktree `e1i-intake`) and E4e (hunting from state,
+  audit of T-HUN-1 first; `e4e-hunting`, brief in the scratchpad `integrator/e4e-prompt.txt`). Integrator chains in
+  `bench-run`: the E4c confirm (`e4c-confirm.sh`; R identity passed: R at d8c1875 equals e1h-R row for row), then the
+  E3 re-test (`e3-retest.sh`, registered at the end of e3-prereg.md; includes a quick identity run of R at 4c86404).
+- **Merged since the morning refresh:** E4d (`endoRhythm`, off; recorded: the hormones' daily fall is by construction,
+  T-END-8 now fails honestly, sums inside noise; side effect beyond noise: morning escalated attacks 8 vs 1 ± 1).
 - **Noise threshold recorded (04:10)**: judge every arm against the mean of replicated references (the reference plus
   three `rgTemperature` re-draws); per-run SD quick 0.69 / 1.26 / 0.48, confirm 0.30 / 1.45 / 0.21 (fitted / held-out /
   held-out without T-HUN-4 and T-BRD-1). The single-reference rule was biased (e-noise.md). E1i and E4d were told.
@@ -60,7 +62,9 @@ Hard rules (AGENTS.md plus this track):
 | --- | --- |
 | `.claude/worktrees/track-e` (branch `track-e`) | Integration branch. All finished stages merged, switches off (E4c, gut sources and E2e merged 2 October). `main` has not moved since f24c9ae, so there is no drift yet. |
 | `.claude/worktrees/e4c-calls`, `e2e-predawn`, `e-gut-sources` | Merged into track-e on 2 October (heads 329e25c, 3132bc1, 5265666). |
-| `.claude/worktrees/e1i-intake`, `e4d-rhythm` | **Running agents** (E1i, E4d), branched from track-e 2f9129f. |
+| `.claude/worktrees/e1i-intake` | **Running agent** E1i, branched from track-e 2f9129f. |
+| `.claude/worktrees/e4d-rhythm` | Merged 2 October (head da916df). |
+| `.claude/worktrees/e4e-hunting` | **Running agent** E4e, branched from track-e 4c86404. |
 | `.claude/worktrees/bench-run` | Frozen detached checkout for the integrator's benchmarks (612bf15 for the noise arms, then d8c1875 for the E4c confirm; the queued script moves it). `artifacts/validation/e/`: `base-head` (all off, 9392b67), `e1h-{R,T,G}` and their energy JSON, `rescored-*`, `noise/`. Move it only when nothing runs from it. |
 | `worktree-agent-a954b443db4b6f22a` | **Not Track E**: a colobus encounter fix (`preySightFactor` 1.39, fitted to Kanyawara encounters) from the earlier session, 7 commits, merged nowhere. Ask the user before touching it. |
 | Other `e*` and `worktree-agent-*` worktrees | Fully merged into `track-e` (0 commits ahead). Safe to remove **only if the user agrees**. |
@@ -102,7 +106,9 @@ mkdir -p ../<name>/artifacts/validation && ln -s /Users/juanbermudez/Desktop/MGO
 | E4b fast arousal | `endoFast`, `endoFastRedirect` | `endoFast` + `endoRainDisplay` keep (provisional); `endoFastRedirect` off | Storm displays without a roll (2–5 × the old rate, no field row). T-END-8 fails because pant-hoots come from isolation and a fitted travel hazard. | e4b-prereg.md |
 | E4c calls | `callValue` | provisional keep candidate; **5-seed confirm queued** | Iteration 1: arrival pant-hoots 0.28 (field 0.04–0.35), party size near the reference, prescriptions −11, held-out inside quick noise. Calls have no daily course (the arousal state rises through the day). | e4c-prereg.md §9–10 |
 | E1i intake | — | **running** (agent) | Why nursing mothers stop eating with room in the gut: diagnosis first, then arms. | e1i-prereg.md |
-| E4d rhythm | — | **running** (agent) | A circadian secretion term for the testosterone- and cortisol-like states. | e4d-prereg.md |
+| E4d rhythm | `endoRhythm` | recorded, off (removes nothing) | Sleep-entrained secretion (gains from fedurek2016 and girardButtoz2021 ratios): both states fall through the day by construction; T-END-8 fails honestly (r −0.29); calls still have no daily course; morning escalation up beyond noise (no field row). | e4d-prereg.md |
+| E4e hunting | — | **running** (agent) | Audit T-HUN-1, diagnose the stack's extra hunts, then a hunt decision from energy state. | e4e-prereg.md |
+| E3 re-test | — | queued (integrator) | Does persistence still halve crown bouts once the pre-E1e hunger cap is gone? | e3-prereg.md, last section |
 | Prescription audit | — (tooling) | merged | The count now sees what E1 and E2a switch out: full stack 134 → 102. | scripts/lib/prescriptions.ts |
 | Full-stack confirm | 14 switches (E1–E1e, E2a, E4a, E4b) | not kept as a whole | Fitted 3.28 → 4.01; held-out 5.90 → 3.49, but T-BRD-1 alone is −2.10 (+0.70 worse without it). One cause: spare time (intake ends early, grooming and hunting fill the day). | IMPLEMENTATION_PLAN.md |
 
