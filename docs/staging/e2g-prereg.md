@@ -119,6 +119,11 @@ empty as expected on code without a water ledger.
 | water budget (ledger arms only) | mL/day by term from the ledger's tap: food, metabolic, drunk, milk in; evaporation (regulated), insensible, faecal, urine, milk out; mean deficit | the ledger's own balance |
 | reserve slope | least-squares slope of the daily midday mean of energy reserves ÷ usable store, % per day, by class; deaths by cause | viability (as energy-diagnose's trajectories) |
 
+**§3 addition (registered after iteration 1's first diagnosis, before its re-run; disclosed).** Kill criterion (a)
+names "an individual held above 5%", which no §3 readout measured: `water-diagnose` now also reports, per class, the
+largest deficit of any individual at any tick (% of mass) and the share of chimp-ticks above 3% of mass. W1's diagnosis
+is re-run with it from a frozen checkout (simulation code unchanged); every earlier readout must reproduce exactly.
+
 ## 4. Diagnosis results (R at this head; unchanged simulation code)
 
 **Identity.** R quick at 61550da (`e-bench --quick`, frozen checkout, `git.dirty` 0) equals the integrator's `R-quick`

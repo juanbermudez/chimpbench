@@ -16,7 +16,8 @@
 //   split      for walks started in daylight while the walker had party mates (members ≥ 5 y): the share that end with
 //              at least one of those mates no longer in the walker's party, the mean share of mates lost, and the share
 //              of split walks after which a lost mate is back in the walker's party within 60 min of the walk's end;
-//   ledger     with a water ledger (src/sim/water.ts; stage E2g), mL/day by term (waterTap) and the mean deficit;
+//   ledger     with a water ledger (src/sim/water.ts; stage E2g), mL/day by term (waterTap), the mean deficit, the largest
+//              deficit of any individual of the class at any tick and the share of chimp-ticks above 3% of mass;
 //   reserves   daily mean energy reserves ÷ usable store at midday by class (energy ledger), their least-squares slope in
 //              % of the store per day (viability, as scripts/energy-diagnose.ts traj), and deaths by cause.
 // Observer (focal follows, 1-min point samples; T-RHY-6's method: all occurrences on follows of adult females): a run of
@@ -63,10 +64,12 @@ interface Acc {
   thirstWalk: number; thirstEvent: number; defEvent: number; defEventPct: number; defN: number;
   splitN: number; split: number; lostShare: number; rejoined: number;
   water: Record<string, number>; def: number; defPct: number; defTicks: number;
+  /** Largest deficit of any individual of the class at any tick (% of mass), and chimp-ticks above 3% of mass (prereg §3, added for kill criterion (a)). */
+  defMaxPct: number; defOver3: number;
 }
 const blank = (): Acc => ({ ticks: 0, dayTicks: 0, path: 0, drinkPath: 0, walks: 0, dayWalks: 0, events: 0, dayEvents: 0, drinkTicks: 0, dayDrinkTicks: 0, hour: new Array(24).fill(0), bank: 0,
   thirstWalk: 0, thirstEvent: 0, defEvent: 0, defEventPct: 0, defN: 0, splitN: 0, split: 0, lostShare: 0, rejoined: 0,
-  water: Object.fromEntries(TERMS.map(t => [t, 0])), def: 0, defPct: 0, defTicks: 0 });
+  water: Object.fromEntries(TERMS.map(t => [t, 0])), def: 0, defPct: 0, defTicks: 0, defMaxPct: 0, defOver3: 0 });
 const A = Object.fromEntries(CLASSES.map(k => [k, blank()])) as Record<Cls, Acc>;
 
 if (water) water.waterTap.fn = (c, term, mL) => { const k = classOf(c); if (k) A[k].water[term] = (A[k].water[term] ?? 0) + mL; };
@@ -129,7 +132,7 @@ for (let i = 0; i < ticks; i++) {
     }
     wasDrink[id] = drink; wasAt[id] = at;
     const L = (ix(c) as { wat?: { def: number } }).wat;
-    if (L) { a.def += L.def; a.defPct += L.def / (massOf(c, P) * 10); a.defTicks++; }
+    if (L) { const pct = L.def / (massOf(c, P) * 10); a.def += L.def; a.defPct += pct; a.defTicks++; if (pct > a.defMaxPct) a.defMaxPct = pct; if (pct > 3) a.defOver3++; }
   }
   // split walks: a lost mate back in the walker's party within the window
   if (w.tick % MIN === 0) for (const [id, s] of lost) {
@@ -185,6 +188,7 @@ const result = {
       dayWalksWithMates: a.splitN, splitShare: r3(a.split / Math.max(1, a.splitN)), matesLostShare: r3(a.lostShare / Math.max(1, a.splitN)), rejoin60Share: r3(a.rejoined / Math.max(1, a.split)),
       waterMlPerDay: Object.fromEntries(Object.entries(a.water).map(([t, v]) => [t, r3(v / Math.max(1e-9, cd))])),
       deficitMeanMl: a.defTicks ? r3(a.def / a.defTicks) : null, deficitMeanPctMass: a.defTicks ? r3(a.defPct / a.defTicks) : null,
+      deficitMaxPctMass: a.defTicks ? r3(a.defMaxPct) : null, deficitOver3PctShare: a.defTicks ? r3(a.defOver3 / a.defTicks) : null,
       reservesDaily: traj[k].map(r3), reserveSlopePctPerDay: r3(slopePct(traj[k])),
     }];
   })),
