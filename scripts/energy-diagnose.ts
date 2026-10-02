@@ -17,7 +17,7 @@
 //   pnpm exec tsx scripts/energy-diagnose.ts [--seeds 48,7] [--burn-in 30] [--days 30] [--profile field] [--params '{"energyLedger":1}'] [--term-births] [--json f.json]
 import { writeFileSync } from 'node:fs';
 import { createWorld, tickWorld } from '../src/simulation';
-import { digestaCaps, energyTap, massOf, reserveCap, gutCap, type EnergyTerm } from '../src/sim/energy';
+import { digestaCaps, energyTap, massOf, plantKcalPerMin, reserveCap, gutCap, type EnergyTerm, type FoodKind } from '../src/sim/energy';
 import { paramsOf, type Profile } from '../src/sim/params';
 import { ix } from '../src/sim/state';
 import type { Chimp, World } from '../src/types';
@@ -46,10 +46,10 @@ type Cls = typeof CLASSES[number];
 interface Acc { ticks: number; dayTicks: number; forage: number; eating: number; fruit: number; kin: number; milkIn: number; out: Record<EnergyTerm, number>; gut: number; hunger: number; res: number; cond: number; ids: Set<number>; walked: number;
   /** Stage E1b: formula kcal and dry matter eaten, kcal passed out, foregut and hindgut fill, daylight ticks with a full hindgut or foregut. */
   fin: number; dmIn: number; fec: number; fore: number; hind: number; hindFull: number; foreFull: number;
-  /** Stage E1h: Σ body mass^0.75 over ticks (T-ENE-8 divides expenditure by it). */
-  m75: number }
+  /** Stage E1h: Σ body mass^0.75 over ticks (T-ENE-8 divides expenditure by it); food eaten at the field formula's kcal/min (the field method of T-ENE-1). */
+  m75: number; fm: number }
 const blank = (): Acc => ({ ticks: 0, dayTicks: 0, forage: 0, eating: 0, fruit: 0, kin: 0, milkIn: 0, out: Object.fromEntries(TERMS.map(t => [t, 0])) as Record<EnergyTerm, number>, gut: 0, hunger: 0, res: 0, cond: 0, ids: new Set(), walked: 0,
-  fin: 0, dmIn: 0, fec: 0, fore: 0, hind: 0, hindFull: 0, foreFull: 0, m75: 0 });
+  fin: 0, dmIn: 0, fec: 0, fore: 0, hind: 0, hindFull: 0, foreFull: 0, m75: 0, fm: 0 });
 const acc = Object.fromEntries(CLASSES.map(c => [c, blank()])) as Record<Cls, Acc>;
 const deaths: Record<string, number> = {}, deathsByClass: Record<string, number> = {};
 let births = 0, livingStart = 0, livingEnd = 0;
@@ -90,7 +90,11 @@ for (const seed of seeds) {
   const prevDig = new Map<number, [number, number, number]>(); // stage E1b: fin, dmIn, fec at the last tick
   let light = true;
   const binNow = new Map<number, string>(), motherOf = new Map<number, Chimp>(), milkOf = new Map<number, number>(), milkTick = new Map<number, number>();
-  energyTap.fn = (c, term, kcal) => {
+  // stage E1h: each plant food at the field formula's kcal/min (what the field method credits for the same food eaten)
+  const fieldPerKcal: Record<FoodKind, number> = { drupe: P.ledgerFruitKcalPerMin / plantKcalPerMin(P, 'drupe'), fig: P.ledgerFigKcalPerMin / plantKcalPerMin(P, 'fig'),
+    fallback: P.ledgerFallbackKcalPerMin / plantKcalPerMin(P, 'fallback'), meat: 1, milk: 0 };
+  energyTap.fn = (c, term, kcal, kind) => {
+    if (term === 'eaten') { const k = cls.get(c.id); if (k && kind) for (const n of k) acc[n].fm += kcal * fieldPerKcal[kind]; return; }
     if (term === 'suckled') {
       milkOf.set(c.id, (milkOf.get(c.id) ?? 0) + kcal); milkTick.set(c.id, (milkTick.get(c.id) ?? 0) + kcal);
       const k = cls.get(c.id); if (k) for (const n of k) acc[n].milkIn += kcal;
@@ -208,7 +212,7 @@ const rows = CLASSES.map(n => {
   const out = Object.fromEntries(TERMS.map(t => [t, a.out[t] / d])) as Record<EnergyTerm, number>;
   return { cls: n, individuals: a.ids.size, days: d, kcalIn: a.kin / d, milkIn: a.milkIn / d, kcalOut: TERMS.reduce((s, t) => s + out[t], 0), out, forageMin: a.forage / d / 4, eatingMin: a.eating / d / 4,
     fruitShare: a.fruit / Math.max(1, a.eating), groundKm: a.walked / d / 1000, gutFill: a.gut / a.ticks, hungerDay: a.hunger / Math.max(1, a.dayTicks), reserves: a.res / a.ticks, cond: a.cond / a.ticks,
-    m75: a.m75 / Math.max(1, a.ticks), formulaIn: a.fin / d, dmIn: a.dmIn / d, fecal: a.fec / d, foreFill: a.fore / a.ticks, hindFill: a.hind / a.ticks, hindFullDay: a.hindFull / Math.max(1, a.dayTicks), foreFullDay: a.foreFull / Math.max(1, a.dayTicks) };
+    m75: a.m75 / Math.max(1, a.ticks), fieldMethodIn: a.fm / d, formulaIn: a.fin / d, dmIn: a.dmIn / d, fecal: a.fec / d, foreFill: a.fore / a.ticks, hindFill: a.hind / a.ticks, hindFullDay: a.hindFull / Math.max(1, a.dayTicks), foreFullDay: a.foreFull / Math.max(1, a.dayTicks) };
 });
 console.log(`energy diagnosis: ${profile}, seeds ${seeds.join(', ')}, burn-in ${burnIn} d, ${days} d, params ${JSON.stringify(params)}`);
 console.log('| class | n | kcal in | (milk in) | kcal out | rest | activity | wild | walk | climb | carry | preg | growth | milk | digestion | forage min | eating min | fruit % | ground km | gut fill | day hunger | reserves ÷ store | cond |');
@@ -236,6 +240,7 @@ console.log(`deaths by class: ${JSON.stringify(deathsByClass)}`);
   console.log('| --- | --- | --- | --- | --- |');
   if (dig) console.log(`| T-ENE-1 ledger truth (energy eaten, ${sugar ? 'sugar-based' : 'field-formula'} kcal/d) | lactating females | ${f(lac.formulaIn)} | 1,810–2,070 (comparison band, contested row) | ${sugar ? band(lac.formulaIn, 1810, 2070) : 'not comparable (field-formula units)'} |`);
   console.log(`| T-ENE-1 absorbed (kcal in − passed out, /d) | lactating females | ${f(lac.kcalIn - lac.fecal)} | — | — |`);
+  console.log(`| T-ENE-1 field method (food eaten at the field formula's kcal/min) | lactating females | ${f(lac.fieldMethodIn)} | 1,900–3,100 (field band) | ${band(lac.fieldMethodIn, 1900, 3100)} |`);
   console.log(`| T-ENE-2 eating min/d | lactating females | ${f(lac.eatingMin)} | 250–370 | ${band(lac.eatingMin, 250, 370)} |`);
   if (dig) console.log(`| T-ENE-3 dry matter g/d | lactating females | ${f(lac.dmIn)} | 650–1,100 | ${band(lac.dmIn, 650, 1100)} |`);
   console.log(`| T-ENE-8 kcal spent ÷ M^0.75 | adult males and other females | ${f(e8, 1)} | 85–130 | ${band(e8, 85, 130)} |`);
