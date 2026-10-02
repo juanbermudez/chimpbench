@@ -344,6 +344,10 @@ per-decision gradient by males: in the model's own physics a male's expected mea
 "more males, more hunting" now comes only from more males each weighing the hunt. The field gradient (+48% odds per male
 at Kanyawara) is stronger than that.
 
+Viability replay (e-bench stdout): no deaths; median adult hunger 0.18 in every run; median lactating hunger 0.52 and
+0.53 against 0.47–0.51 in R's four realizations, slightly above their range (fewer captures, less meat begged; not
+tested).
+
 Quick reading under §7: viability passes, held-out without the rare rows is not up beyond noise, the count falls, and
 hunting does not vanish (truth 0.072 hunts per community-day) — a provisional keep candidate on the keep rule's legs,
 with T-HUN-3 turned from pass to fail. The confirm (H1c) decides.
