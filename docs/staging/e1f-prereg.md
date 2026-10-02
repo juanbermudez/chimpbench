@@ -139,6 +139,65 @@ The expected target misses (growth too fast against Gombe, eating share, sucklin
 
 At most three, each a change of mechanism from first principles, logged here before its run. No input is moved toward a target.
 
+### Iteration 1 (the registered mechanism): result
+
+Runs: seeds 48 and 7, 30-day burn-in + 60 days, `--term-births` for the energy diagnosis (6 births at day 30 in R and T), e-bench without. Outputs in `artifacts/validation/e1f/` (`ref-tb-diag.txt`, `it1-tb-diag.txt`, `tn-tb-diag.txt`, `tg-tb-diag.txt`, `ref.md`, `it1.md`; not tracked).
+
+| Infants, by age | R: 0–0.5 / 0.5–1 / 1–2 / 2–3 / 3–4 y | T: same ages | Field |
+| --- | --- | --- | --- |
+| Growth velocity (kg/y) | 0.15 / 2.14 / 1.53 / 0.97 / 0.84 | 1.15 / 1.45 / 1.69 / 1.70 / 1.71 | captive 2.8 (year 1), 3.4–3.8; Gombe about 1.6 |
+| Growth paid (kcal/day; potential 34.5 / 34.5 / 42–47) | 2 / 26 / 22 / 11 / 10 | 14 / 17 / 21 / 21 / 21 | — |
+| Milk, day + night (kcal/day) | 132 + 5 / 204 + 65 / 178 + 129 / 157 + 151 / 113 + 160 | 136 + 20 / 199 + 54 / 177 + 128 / 160 + 147 / 158 + 149 | — |
+| Own food (kcal/day) | 0 / 0 / 84 / 183 / 369 | 0 / 0 / 95 / 245 / 412 | — |
+| Daylight eating | 0 / 0 / 3.4 / 7.0 / 11.6% | 0 / 0 / 3.8 / 8.6 / 11.6% | 0.2 / 5.3 / 6.7–22 / 22–30 / 32–36% (T-INF-1) |
+| Nurse act, % of daylight | 6.2 / 9.3 / 8.1 / 6.8 / 4.2 | 8.0 / 10.9 / 10.0 / 9.5 / 9.0 | 2–3.7% (T-INF-2) |
+| Daylight ticks with milk drunk (nest twilight included) | 7.1 / 10.8 / 14.7 / 15.0 / 12.5 | 7.5 / 10.8 / 15.1 / 17.1 / 16.7 | — |
+| Bouts per daylight hour; mean bout (min) | 0.76 / 0.86 / 0.64 / 0.60 / 0.34; 4.9–7.7 | 0.96 / 0.98 / 1.06 / 1.38 / 1.18; 4.1–6.7 | 1.1 ± 0.48; about 2 min (T-INF-5) |
+| Own food per eating minute (kcal) | 3.3–4.2 | 3.3–4.7 | about 0.8–1.2 implied (§6) |
+| Reserves ÷ store (newborns: Δ over the window) | −0.021 (Δ −0.009) / +0.005 / +0.002 / −0.002 / −0.005 | −0.004 (Δ +0.002) / +0.008 / +0.001 / −0.008 / −0.007 | — |
+| Milk share of intake; zero crossing | 0.78 / 0.63 / 0.43 (1–4 y); 5.9 y | 0.76 / 0.56 / 0.43; 6.0 y | weaned 4.71 ± 1.04 y (T-INF-3, encoded) |
+
+| Mothers, by youngest infant's age | R | T | Field (T-ENE-5) |
+| --- | --- | --- | --- |
+| Milk cost (kcal/day) | 172 / 336 / 383 / 384 / 341 | 195 / 317 / 381 / 384 / 384 | — |
+| Reserves ÷ store | −0.021 / −0.044 / −0.044 / −0.074 / −0.059 | −0.013 / −0.036 / −0.044 / −0.071 / −0.066 | — |
+| Daily balance (kcal/day) | −13 / −17 / −30 / −51 / −2 | −20 / −12 / −16 / −54 / −20 | depressed 0–6 months, then a net rise through year 2 |
+
+Others (T against R): lactating females −0.044 against −0.046 of the store, 208 against 210 eating minutes; juveniles 5–12 y eat 167 min (168), reserves −0.010 (−0.012), growth 17 kcal/day (3), velocity 1.62 kg/y for females of 4–8 y (0.08) and 1.78 for males of 8–12 y (0.55), against Gombe-derived 2.2 and 2.8. Adults unchanged. Births 6 in both; deaths 0 (R: 1 adult male, illness); no starvation.
+
+e-bench (`--quick --days 60`, no term births; `it1.md` against `ref.md`): fitted 4.914 → 4.654 (on the 18 rows scored in both +0.407, carried by the hunting rows T-HUN-2 +0.55 and T-HUN-7 +0.13 and T-SOC-9 +0.37: rare events, inside E0's noise floor); held-out 4.152 → 4.329 (+0.177 on the 17 rows in both); prescription count 139 → 139; viability pass (0 births, 0 deaths).
+
+Attribution (energy diagnosis): T-G (growth switch alone) reproduces T's growth columns (1.18 / 1.43 / 1.70 / 1.84 / 1.77 kg/y) and R's nursing columns (nurse act 4.7–8.7%, 0.4–0.8 bouts/h); T-N (nursing switch alone) reproduces T's nursing columns (7.1–11.6%, 0.9–1.2 bouts/h) and R's growth (0.2–2.1 kg/y). T-N had a respiratory outbreak in one seed (5 deaths, two of them lactating females; two newborns orphaned fell to −0.17 and −0.26): outbreaks are stochastic and T-N differs from R in its whole trajectory, so this is not attributed to the switch.
+
+**Kill criterion.** K1 no deaths; K2 infants and newborns within ±0.02 of the store, no fall; K3 lactating −0.044 against −0.046; K4 juveniles −0.010; K5 nurse act 9.0–10.0% at 1–4 y (< 20%); K6 every velocity positive, no steady fall; K7 held-out +0.18 on shared rows (< 0.8). Both switches pass.
+
+**Against the predictions (§6).**
+- Nursing: more and shorter bouts (0.9–1.4 per daylight hour, inside T-INF-5's band, against 0.3–0.9 in R; 4–7 min against the field's 2), as predicted. The nurse act takes 8–11% of daylight (predicted 6–14%; R 4–9%; field 2–3.7%): the bout rule ends a bout when the gland runs short and the next one starts as soon as a few minutes of synthesis are worth the latency, so the infant sits at the nipple more often. Milk ticks within ±4 points of R except 3–4 y (+4.2). Named term for the suckling-time miss, unchanged: the suckling rate (2.5 kcal/min, assumed): at 2–3% of daylight the model's 160–180 kcal of daytime milk would need about 6–8 kcal/min.
+- **Growth: miss of the prediction.** Registered ≥ 0.75 of the potential (2.6–3.8 kg/y at 1–4 y); measured 0.41–0.50 of it (1.15–1.71 kg/y). The number happens to sit at the Gombe-derived 1.6 kg/y, which is not evidence for the mechanism: the cause is a flaw of the rule. Growth takes the whole day's surplus, so any shortfall of intake below maintenance + growth is absorbed by growth and never reaches the reserves; the drive's need reads the reserves, so the infant is never hungrier for having grown less. Infants stay at the hunger at which their options (the ground forage option, 0.5 × hunger − 0.05; trees only beside a foraging mother; the follow option at 0.6 while carried) produce about maintenance + 0.45 × growth, and growth velocity reports those design weights, not food. Infants of 1–4 y spend 4–12% of daylight eating; they are not short of time or food.
+- Own food rose by 11–62 kcal/day (predicted +15 to +35), eating share by 0–1.6 points (predicted +0.5 to +2), own food per eating minute 3.3–4.7 kcal (predicted 3–4.5).
+- Juveniles: 0.45–0.5 of the potential (predicted ≥ 0.75), the same cause; eating minutes unchanged (predicted +5–15%).
+- Milk at the yield from 1 y; weaning readout 6.0 y (predicted 5.5–7): as predicted.
+- **T-ENE-5: miss, as registered, in R and T alike.** Mothers of newborns pay about half the later milk cost (172–195 against 381–384 kcal/day: a newborn drinks 137–156 kcal/day, half the yield). Their daily balance (−13 to −20 kcal/day) is no lower than at 1–2 y (−16 to −30) and there is no rise through year 2 (−12 to −17 at 0.5–1 y, −16 to −30 at 1–2 y). Every lactating class runs a small negative balance, reserves fall with infant age (−0.013 → −0.07), and the lactating trajectory steepens in the last fortnight in both arms (−0.038 → −0.064). The drive raises intake with expenditure, but nothing in the mother's access to food changes with her infant's age, so no recovery appears.
+
+### Iteration 2 (logged before its run): growth is an obligatory expense, limited by condition
+
+**Flaw (iteration 1).** Growth absorbed the whole intake shortfall, so it never reached the reserves or the appetite, and growth velocity reported the dependents' option weights.
+
+**Change** (`ledgerGrowPotential`, nothing else):
+- An animal below its adult mass grows at f × the captive potential, f = min(1, condition ÷ `condGood`): C8's existing rule for when growth becomes limited (the growth record already follows it). Under the ledger condition is 0.7 × (1 + reserves ÷ store), so growth runs at the potential until the reserves fall to −29% of the store, then slows in proportion to condition.
+- Growth is charged as spending whatever the day's intake: a shortfall now draws on the reserves, and the drive's need (which reads the reserves and, with this switch, expects other spending plus growth at the potential) answers it with hunger.
+- The day-long mean of absorbed energy is dropped (aAvg); the mean of other spending (mAvg) stays for the drive.
+- Physiology: growth proceeds at the cost of fat stores under a mild deficit and slows only when condition falls (stunting under sustained deficit; catch-up when food returns, hamadaUdono2002). No new number: `condGood` (0.5, C8 design) is reused.
+
+**Expected (against iteration 1):**
+- growth velocity ≥ 0.85 of the potential at every immature age (newborns 2.4–2.8, infants F 2.9–3.4 and M 3.2–3.8, juveniles likewise): **too fast against Gombe** (about 1.6 kg/y), unless infants cannot hold condition;
+- infants' and juveniles' reserves lower than in iteration 1, by 0.01–0.05 of the store (the drive needs a deficit to raise intake by 20–30 kcal/day);
+- own food +15 to +35 kcal/day at 1–4 y, eating share +0.5 to +2 points; juveniles' eating minutes +3–10%;
+- newborns drink 165–185 kcal/day; their mothers' milk cost rises to 210–235; later ages unchanged; T-ENE-5 still a miss;
+- nursing columns unchanged (the nursing switch is not touched).
+
+**Kill criterion:** §7 unchanged. A K2 or K4 failure (infants or juveniles below −0.05) would mean the model's dependents cannot pay for growth at the potential through their options: a finding about the dependents' choice weights, and iteration 2 would be null.
+
 ## 9. Results
 
 (to be filled)
