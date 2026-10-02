@@ -75,3 +75,18 @@ held-out within noise of B's mean held on all rows (z +1.5) but **missed without
   the travel share leaves its band, and the mothers' and juveniles' deficits double against the E1i pair alone.
 - *Next (registered below before its runs):* attribute the extra travel and deficit by leaving each package out, and
   test the water ledger (E2g, which removes the timed walks to water) on top.
+
+## Attribution (registered 2 October 2026 before its runs)
+
+Question: which package makes S2's animals walk 3.2–3.9 km a day and doubles the mothers' and juveniles' deficits,
+and does the water ledger (E2g, merged since) take the timed walks to water out?
+
+Runs: `energy-diagnose --seeds 48,7 --burn-in 30 --days 30` (quick length, simulation truth: ground path, reserve slopes
+and eating minutes by class), from `bench-run` at the commit that adds this section, three at a time, one process each:
+**R**; **S2**; **S2 − rhythm** (without `rhythmCircadian`, `departRace`, `nestLightDecide`, `sleepChimp`,
+`rhythmFreeNight`, `nestCompany`, `nestAudience`, `darkCost`); **S2 − calls** (without `callValue`); **S2 − E1i**
+(without `ledgerSatiationReserve`, `ledgerLactGut`); **S3** = S2 + `waterLedger`.
+
+Reading rule: a package is named as the source of the extra travel if leaving it out brings males' ground path at
+least halfway back from S2 to R; the water ledger "takes the walks out" if S3's males walk at least 0.4 km a day less
+than S2's (E2g measured 0.38 km on R). Single runs: differences under 0.2 km or 0.05%/day are reported as not resolved.
