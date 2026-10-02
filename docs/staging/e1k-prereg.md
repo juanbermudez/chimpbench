@@ -131,3 +131,29 @@ than quick mode on purpose: its first 30 days are the quick window and its last 
 the 5-seed deficit sits; with the new `daily` series (scripts/energy-diagnose.ts, this stage; read-only) eating minutes,
 dry matter and absorbed ÷ spent are read per half. Energy readouts are judged against the reference's own spread over
 its four runs.
+
+## 4. Step 1: diagnosis (readouts defined before the run; smoke-tested on 2 days, seed 48, B2)
+
+Tool: `scripts/intake-diagnose.ts` (E1i's, extended here; simulation truth, read-only). Run: B2, seeds 48 and 7,
+30-day burn-in + 60 days, `--split 30` (every class again for window days 0–29 [early] and 30–59 [late]: the quick
+window and the seasonal decline). Daylight = `environment.daylight > 0.1`. E1i's D1–D6 are unchanged; new:
+- **Classes:** lactating females also by the youngest infant's age in years (0.5–1, 1–2, 2–3, 3–4, ≥ 4 y); juveniles
+  5–12 y (energy-diagnose's class). Decisions of animals under `rgMinAge` (8 y; argmax rules, which the tap does not
+  see) are read after each tick from `decisionVersion` and the candidate list.
+- **G1 mother–infant grooming:** an episode is a run of daylight ticks in which the mother grooms her own unweaned
+  infant or it grooms her, in contact (`phase` 1 of the groom act). Reported per mother class: episodes per daylight
+  hour, length, share of daylight, mother-only / infant-only / both, who started (who groomed in the first tick), who
+  ended (who groomed in the last tick) and why (the ender's decision in the ending tick: gate reason → new act), the
+  mother's hunger and foregut fill at the start and end, and her own act while she only receives.
+- **G2 the infant's initiative:** unweaned infants' daylight decisions by age: share choosing to groom the mother,
+  that option's score against the infant's best other option, the infant's hunger and social need (1 − social).
+- **G3 the mother's acceptance:** her decisions when the interrupt is her own unweaned infant's "began grooming me":
+  what she chose, P(groom back) and P(feeding) from the menu's softmax, the groom-back score against the best feeding
+  score, her hunger and fill.
+- **D7 decisions with appetite and a foregut that is not full:** every daylight decision (RG draws and argmax) with
+  hunger > 0.4 and foregut fill < 0.95: what won, P(feeding) at draws, the mean margin of each winner over the best
+  feeding option.
+- Energy per half from the reference's `energy-diagnose` `daily` series: eating minutes, dry matter, absorbed ÷ spent.
+
+"Name the term that holds the last 4%": the readout that accounts for the mothers' missing intake (≈ 70 kcal/day,
+about 12 eating minutes at their absorbed rate) in the half where it occurs.
