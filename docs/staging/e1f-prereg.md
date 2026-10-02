@@ -198,6 +198,52 @@ Attribution (energy diagnosis): T-G (growth switch alone) reproduces T's growth 
 
 **Kill criterion:** §7 unchanged. A K2 or K4 failure (infants or juveniles below −0.05) would mean the model's dependents cannot pay for growth at the potential through their options: a finding about the dependents' choice weights, and iteration 2 would be null.
 
-## 9. Results
+### Iteration 2: result
 
-(to be filled)
+Same runs as iteration 1 (`it2-tb-diag.txt`, `it2.md`). No third iteration was run (§9.4).
+
+**Kill criterion.** K1 no deaths, no starvation; K2 infants −0.003 to −0.012 of the store, class falls 0.003–0.012 (the steepest dyads, 0.88 and 1.28 y at day 30, fell 0.026–0.028), newborns −0.006; K3 lactating −0.046 against R's −0.046; K4 juveniles −0.011; K5 nurse act 9.0–9.7% at 1–4 y; K6 every velocity positive; K7 held-out +0.036 on the 13 rows scored in both. Both switches pass.
+
+**Against the expectations logged above.** Growth runs at the potential at every immature age (2.80 kg/y newborns, 2.94 at 0.5–1 y, 3.60 at 1–4 y (sexes pooled), 3.40 F and 3.80 M juveniles): as expected, and too fast against Gombe. Infants pay for it with 0.01 of their store and 41–47 kcal/day more own food (expected +15 to +35), 0.8–1.9 more points of daylight eating (expected +0.5 to +2); juveniles eat 2% longer (expected 3–10%). Newborns drink 186 kcal/day (expected 165–185) and their mothers pay 232 (expected 210–235). Nursing columns unchanged within a point.
+
+## 9. Results (final: iteration 2 for growth, iteration 1's nursing rule)
+
+### 9.1 The reconciled nursing rule
+
+`ledgerNurseBout`: a day nursing bout is worth E ÷ (E + suckling rate × milk-ejection latency), E the milk it can deliver (gland store plus synthesis while it drains, up to what the infant's foregut takes); the act waits the latency (54 s, women) before milk flows and ends when a tick delivers less than the full flow. It replaces E1d (`ledgerNurseByMilk`: share of the gut room) and E1e's nursing term (`ledgerDrive`'s `milkShare`: share of a full flow, no fixed cost); with the new switch 0 both keep their documented meaning. The night rule (E1c) is unchanged.
+
+### 9.2 Final table (seeds 48 and 7, 30-day burn-in + 60 days, term births for the diagnosis)
+
+| Infants by age | R: 0–0.5 / 0.5–1 / 1–2 / 2–3 / 3–4 y | T (final): same ages | Field |
+| --- | --- | --- | --- |
+| Daylight eating | 0 / 0 / 3.4 / 7.0 / 11.6% | 0 / 0 / 5.7 / 9.9 / 12.4% | 0.2 / 5.3 / 6.7–22 / 22–30 / 32–36% (T-INF-1) |
+| Nurse act (nipple contact) | 6.2 / 9.3 / 8.1 / 6.8 / 4.2% | 8.8 / 11.4 / 9.7 / 9.6 / 9.0% | 2–3.7%, no trend (T-INF-2) |
+| Bouts per daylight hour | 0.3–0.9 | 1.0–1.4 | 1.1 ± 0.48 (T-INF-5) |
+| Milk, day + night (kcal/day) | 137 / 269 / 307 / 308 / 273 | 186 / 283 / 308 / 307 / 307 | — |
+| Growth velocity (kg/y) | 0.15 / 2.14 / 1.53 / 0.97 / 0.84 | 2.80 / 2.94 / 3.60 / 3.60 / 3.60 | about 1.6 (Gombe, 0–5 y) |
+| Indicative mass at 5 y (velocities integrated from 1.8 kg) | about 7 kg | about 18 (F) and 20 kg (M) | about 10 kg (T-INF-4) |
+| Juveniles' velocity (kg/y) | F 0.08, M 0.55 | F 3.40, M 3.80 (adult mass at 8.9 and 10.1 y) | F 2.2, M 2.8; knees at 10 and 13 y |
+| Infant reserves ÷ store | −0.021 / +0.005 / +0.002 / −0.002 / −0.005 | −0.006 / +0.006 / −0.011 / −0.012 / −0.010 | — |
+| Milk share of intake, zero crossing | 5.9 y | 6.2 y | weaned 4.71 ± 1.04 y (encoded by `weanAge*`) |
+| Mothers' reserves ÷ store | −0.021 / −0.044 / −0.044 / −0.074 / −0.059 | −0.016 / −0.042 / −0.051 / −0.065 / −0.065 | — |
+| Mothers' daily balance (kcal/day) | −13 / −17 / −30 / −51 / −2 | −19 / −22 / −30 / −38 / −2 | depressed for 6 months, then rising through year 2 (T-ENE-5) |
+| Mothers' milk cost (kcal/day) | 172 / 336 / 383 / 384 / 341 | 232 / 354 / 386 / 384 / 384 | — |
+
+Adults (e-bench, observer): T-ACT-1 0.30 → 0.29, T-ACT-3 0.24 → 0.23, T-ACT-4 0.49 → 0.50, T-ACT-5 pass in both, T-RNG-5 0.77 → 0.71 (band 0.3–0.6), T-FOOD-2 0.68 → 0.69. Lactating females' reserves −0.046 in both; adult classes unchanged.
+
+Scorecard (e-bench `--quick --days 60`): fitted 4.914 (19 rows) → 3.517 (17 rows), −0.675 on the 17 rows scored in both; held-out 4.152 (17) → 3.249 (13), +0.036 on the 13 in both. The headline drops are mostly rows scored in R only (six patrol rows: rare events in 60 days); on shared rows the change is inside E0's noise floor and carried by the hunting rows. Prescription count 139 → 139 (`ledgerMassMatureFemaleY` and `MaleY` leave use, both class design). Viability passes (no births or deaths in the bench window; 6 term births, no deaths in the diagnosis).
+
+### 9.3 Reading
+
+- **Nursing.** One rule now covers value and act. It moves the bout rate into the field's band (1.0–1.4 per hour against 0.3–0.9) and shortens bouts (4–7 min against 5–8; field about 2). Nipple contact rises from 4–9% to 9–11% of daylight (field 2–3.7%): bouts start as soon as a few minutes of synthesis outweigh the latency. Named term for the time miss, unchanged since E1c: the suckling rate (2.5 kcal/min, human-derived, assumed); the model's 160–210 kcal of daytime milk would need about 6–8 kcal/min to fit in 2–3% of daylight. Not changed: no source.
+- **Growth.** With the captive potential and an appetite that sees every shortfall, the model's infants and juveniles grow at the potential, i.e. at the rate of well-fed sanctuary chimpanzees, about twice the Gombe estimate. They pay for it with 5.7–12.4% of daylight spent eating, against 22–49% in the field. The wild growth deficit therefore does not emerge from food or time in this model. Named terms: the infant's intake per eating minute (3.2–4.9 kcal; size-scaled adult rates, design exponent 0.75, `ledgerInfantIntake`), 3–5 times what the field's eating time implies with the model's need and milk (about 0.8–1.2 kcal/min); and the human-scaled milk yield (assumed; ape milk is 0.79 as energy-dense, whittier2011). Either one too generous lets infants cover maintenance plus captive growth with little foraging. Iteration 1's 1.7 kg/y, close to Gombe, was an artefact: growth absorbed every shortfall and so reported the dependents' option weights.
+- **Mass for age and the knees (T-INF-4).** Not measurable in 90 days. At the measured velocities the model puts about 18–20 kg at 5 y and adult mass at 8.9 (F) and 10.1 y (M), against about 10 kg and knees at 10 and 13 y.
+- **Weaning (T-INF-3).** The weaning age is still an input (4.1–5.2 y, from bray2018), so the row stays encoded. The milk share of intake falls about 0.15 a year from 1 y and would reach zero at about 6.2 y; isotopic weaning ends at 4–4.5 y.
+- **T-ENE-5: does the year-2 recovery emerge? No.** From about 1 y every infant drinks the whole yield (milk is the high-rate food), so the mother's milk cost is flat at 384 kcal/day from 1 to 4 y, as badescu2022 infers for Ngogo. Her intake rises with her spending (the drive), but her access to food is the same at every infant age: the core-area cost for lactating females applies whatever the infant's age, and carrying costs only 10–12 kcal/day. Her balance stays slightly negative at every age (−19 to −38 kcal/day), and her reserves fall with infant age (−0.016 → −0.065). Early lactation is the mother's best phase in the model (a newborn drinks 186 kcal/day, half the yield), the reverse of emeryThompson2012. Named terms: a newborn's demand (Kleiber resting rate plus 2.8 kg/y of growth) far below the yield; nothing that frees the mother's foraging as her infant becomes independent.
+
+### 9.4 Verdict
+
+- `ledgerNurseBout`: **keep (provisional)**, off by default. It passes K1–K7, removes the two-route inconsistency (and E1d's mixed units under `ledgerDigesta`), and brings the bout rate into band. It does not remove a prescription; the weaning refusal roll (`weanRefuseMaxP`) and the scripted weaning age stay.
+- `ledgerGrowPotential` (iteration 2): **keep (provisional)**, off by default. It passes K1–K7 and makes growth a sourced potential limited by condition, with mass for age as an output. Its result is a clear miss in the other direction (growth twice Gombe's), which the model's own infant intake rate and milk yield explain. Prescription count unchanged.
+- A third iteration was not run. The misses that remain trace to inputs with no source (infant intake per minute, suckling rate, ape milk yield) and to mechanisms owned by other stages (weaning and maternal rejection, the lactating core-area cost); none can be changed here from first principles with a verified number.
+- **Biggest open problem.** Infant intake per eating minute. With it at size-scaled adult rates, infants need a third to a quarter of the field's eating time, so growth, eating share and nutritional weaning all miss together. A measured chimpanzee intake rate by age (kcal or grams per minute) would test it; none was found (e-sources §14.5).
