@@ -80,7 +80,8 @@ for (const seed of seeds) {
       }
       const mine = callsBy.get(c.id);
       // arrivals in a crown: the forage act moved from walking to feeding this tick
-      const arrived = c.action === 'forage' && isTreeId(c.targetId) && x.phase === 2 && (ph0 === 1 && a0 === 'forage' && prevTarget.get(c.id) === c.targetId);
+      // (feeding phase entered this tick, also when the forage act itself started this tick at the crown)
+      const arrived = c.action === 'forage' && isTreeId(c.targetId) && x.phase === 2 && !(ph0 === 2 && a0 === 'forage' && prevTarget.get(c.id) === c.targetId);
       if (arrived && c.age >= 12) {
         const t = index(w).treeById.get(c.targetId)!, crop = P.patchEcology === 1 ? fruitAt(w, t) : t.fruit;
         let males = 0, partner = false, top2 = false, comp = 0;
