@@ -96,6 +96,15 @@ daylight ticks in that state, and what the infant does then (eating own food, nu
 and foregut fill. The diagnosis run is repeated once with it (same command, frozen checkout of the commit adding it);
 every other readout must come out identical (same simulation code; checked).
 
+**Second readout added after D5's run (disclosed; 14:05, before any mechanism was written).** D5 showed the infant
+resting 31–46% of its mother's crown time with its foregut half full, which could be choice or gut throughput (meals
+fill the foregut, rests are its emptying). **D6 own food against the foregut's throughput**: the own-food dry matter
+the infant eats (all dry matter eaten minus milk's, shared plant pieces included) while its mother is in a crown and
+outside, per infant-day; and, over the crown ticks, its intake ÷ what its foregut would pass if kept full (capacity × the
+share a full foregut empties per tick, 1 − exp(−15 s ÷ 3 h)). A ratio near or above 1 means own food is limited by the
+foregut's throughput in the time food is in reach (meals that fill it from below add to the ratio); well below 1, by the
+choice. The diagnosis run is repeated a third time with it (same command; the other readouts must be identical).
+
 ### 1.3 Predictions (before the run)
 
 - N1–N2: at 1–4 y, hunger ≥ 0.08 in ≥ 95% of night-nest ticks and the infant drinks in ≥ 90% of them (high); the drive
