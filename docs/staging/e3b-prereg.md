@@ -419,5 +419,12 @@ sums are also reported without T-FOOD-5 (a disclosed sensitivity, not the regist
   nearest productive tree" (the tree itself is excluded from the nearer-tree test and the departure point lies in its
   crown). It inflates T-FOOD-5 whenever animals return to the crown they left (E5c's A3: 0.06 → 0.44). Not changed
   (frozen observer); reported.
+- The observer's T-FOOD-4 (src/field/metrics.ts:686–692) counts feeding-tree visits per complete follow, a return to the
+  same tree after ≥ 10 min counting again, while the row's definition (data/targets.json) is "Distinct feeding trees per
+  full-day follow". Returns to a crown raise the observer's count while the distinct trees fall. Not changed (frozen
+  observer); noticed after the diagnosis and before A1's observer rows were read; the truth readout `treesPerDay`
+  (distinct crowns and visits per animal-day) is reported beside it.
+- Scorer corrections for T-FOOD-4, T-FOOD-5 and T-FOOD-6 are staged in `docs/staging/e3b-protocol.patch.json` (not
+  applied: a protocolLog entry and a new freeze are the integrator's and the user's decision).
 - Feeding intake per tick does not fall as a crown is used (execution.ts:979–992): no diminishing returns inside a crown.
   A design property of the C7a crown model, part of what is diagnosed; not changed before the diagnosis.
