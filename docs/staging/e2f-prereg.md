@@ -365,3 +365,19 @@ Reading rule (as §7.2): the pass stands on 5 seeds if WFSD's adults are out of 
 ≤ 0.033, with no night death and juveniles 5–15 y not worse than R0's; otherwise WFSD is recorded as failing night
 safety on 5 seeds. Expected (integrator, before the run): adults 2.5–4.0% of the night (low confidence: the margin is
 small and three seeds are new).
+
+### 11.1 Result (integrator, 2 October 2026; frozen 6069e15; values computed from the JSON with the report's own formulas)
+
+| | R0 | WFSD |
+| --- | --- | --- |
+| Adults out of a nest, share of night time (pooled; per seed 48, 7, 21, 5, 11) | 0.075% (0.08, 0.07, 0.04, 0.08, 0.10) | **2.988%** (2.89, 2.95, 2.97, 3.13, 3.01) |
+| T-RHY-5 (adults; band 0–0.05; line 0.033) | 0.0006 | **0.0295** |
+| Juveniles 5–15 y out of a nest, share of night time | 4.608% | 3.514% |
+| Independent 5–8 y out of a nest in the two hours before sunrise | 95.7% | 34.2% |
+| Departures before sunrise (all adults; T-RHY-3 band 0.05–0.35); median, min after sunrise | 0.99; −14 | 0.84; −14 (lactating −59) |
+| Night deaths; deaths | 0; 0 | 0; 0 |
+
+**Reading (§11 rule): the night-safety pass stands on 5 seeds**, every seed below the line, juveniles better than R0,
+no night death; the registered expectation (2.5–4.0%) held. WFSD stays a provisional keep candidate as a package
+(prescriptions 115 → 113, benchmark sums inside noise on 2 seeds). Departures remain far too early (84% before sunrise
+against the field's 18%): the sleep window and the company hold the night but not the last hour before sunrise.
