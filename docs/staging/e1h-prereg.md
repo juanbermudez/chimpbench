@@ -223,3 +223,16 @@ Missed:
 - **What stays unexplained:** female grooming 0.19–0.20 (band ≤ 0.18), hunting at about 2 × the band, lactating mothers still losing reserve at 0.1%/day even with the larger gut (absorbed 0.96 of spent: E1e's satiation curve caps a mother's fill near 0.42), and T-RNG-5 (mothers range 0.7 × as far as males, band 0.3–0.6).
 
 **Biggest open problem.** Gut capacity. Every arm now hinges on it: with corrected food energy the model's mothers need about 790 g of dry matter a day, the central assumed foregut passes about 620 g, and the only chimpanzee gut volume in hand is one captive capacity of unknown body mass, read through an abstract. Sourcing the gut (chiversHladik1980's chimpanzee volumes and the animal's mass, digesta dry matter, gastric emptying of fruit meals) is the step before this switch or any later E1 stage can be judged.
+
+## 9. Five-seed confirm (integrator, registered 1 October 2026 before its run)
+
+Why: §8.4 left a narrow null on 2 seeds, driven by one rare-event held-out row (T-HUN-4). No 5-seed R existed, and neither saved all-off baseline matches the current head (handoff §5.1), so all four arms run fresh from one commit.
+
+Runs: field profile, `e-bench --confirm` (seeds 48, 7, 21, 5, 11; 30-day burn-in + 60 days), `--workers 2`, rules policy, one bench at a time, from the frozen detached checkout `.claude/worktrees/bench-run` at the commit that adds this section (code identical to 56342c2). Outputs in `artifacts/validation/e/` (gitignored).
+- **B** all switches off, a fresh baseline at this commit (`base-head`).
+- **R**, **T**, **G** exactly as §4 (`e1h-R`, `e1h-T`, `e1h-G`). R is compared with B (context: the stack against today's model); T and G with R (the verdict).
+- Simulation truth: `energy-diagnose --seeds 48,7,21,5,11 --burn-in 30 --days 60 --params <arm> --json` for R, T and G, run one at a time beside the bench chain (one process). It gives the reserve slopes by class, the gut-binding test of §4 and the eating minutes of check 2.
+
+Judgement: §6 unchanged (viability; check 2, eating minutes +20% in classes that are not gut-bound; check 3, fitted > +0.3 or held-out > +0.5 on rows scored in both arm and R). Every shared-row sum is reported twice: all shared rows, and without T-HUN-4 and T-BRD-1. **The verdict uses all shared rows, as registered.** If it differs without the two rare-event rows, it is written as "null as registered; passes without the rare-event rows" and is not flipped by this run. The single noise threshold that the integrator sets next (handoff §5.5, from noise arms on other perturbations, independent of these results) may then be applied to the saved JSONs with `--rescore`, no new simulation, and recorded as a separate, later reading. Deaths are checked by cause (respiratory outbreaks kill animals at random); only starvation deaths count against viability. G stays a sensitivity arm: the default of `digestaGutMlPerKg` does not move from this run.
+
+Expected (integrator, before the run): T fails viability as on 2 seeds (lactating reserves −0.7 to −1.0% of the store a day; moderate confidence); the gut binds in T (moderate); G passes viability (moderate); fitted distance falls by at least 0.5 against R in both T and G (moderate); G's held-out change on shared rows within ±0.5 once T-HUN-4 is pooled over 5 seeds (low).
