@@ -1727,3 +1727,10 @@ Archive capture of its Harvard DASH deposit; the live host shows a bot check) fo
 ("the maximum number of independently-feeding chimpanzees, including the focal individual, co-feeding in a given patch
 during a particular feeding bout"), patch size (DBH) and the ln–ln regression (R² 0.801 Ngogo, 0.227 Kanyawara). No new
 source.
+
+## Addendum: E3b revisits (2 October 2026)
+
+Same text as research.md "Addendum: E3b revisits": normand2009 read in full (PMC2762532 through NCBI BioC) for the
+revisit method (same individual, trees < 30 m apart one resource, two females followed 28 consecutive days; "On average,
+chimpanzees revisit a tree within 5.37 days"); ban2014's abstract (Europe PMC; full text behind a bot check, not used);
+houle2014 recalled (ripe fruit < 0.5% of the fruit in a tree). No new source.
