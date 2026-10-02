@@ -392,3 +392,13 @@ still splits the walker's party as often as before (≈ 0.7), so the prescribed 
 - Docs: this file; research.md and e-sources.md "Addendum: E2g water balance"; docs/simulation.md note and §17 rows.
 - Merged `track-e` (85f1346, handoff only) once, before the final run: no conflict. Then `gen-params --check` clean,
   `tsc --noEmit` clean, `pnpm test` 669 tests: 668 pass, 0 fail, 1 skipped.
+
+## Five-seed confirm (integrator, registered 2 October 2026 before its run)
+
+Runs: `e-bench --confirm` (seeds 48, 7, 21, 5, 11; 30 + 60 days) and `energy-diagnose` (same seeds and window) for
+**RW** = R + `waterLedger`, from `bench-run` at the commit that adds this section; judged against R's four confirm
+realizations (e1h-R, NR1c–NR3c; R's identity at later heads was shown at d8c1875 and 4c86404, and E2g's switch-off
+identity is tested). Judgement as this stage registered (viability; sums against the reference mean, z with SD ×
+√1.25; prescriptions), plus R's energy readouts (e1h-R-energy) for the reserve slopes. Expected (integrator, before the
+run): every sum inside noise (moderate); prescriptions 103 → 97 (high); no dehydration or starvation death (high);
+males' ground path 0.3–0.5 km a day shorter than R's (moderate).

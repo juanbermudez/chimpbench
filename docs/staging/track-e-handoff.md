@@ -14,10 +14,15 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (09:00).** Agent E4g (why value-based calls add ~0.7 km of walking a day; `e4g-calltravel`; brief
-  `integrator/e4g-prompt.txt`). Integrator: the S3 confirm (S2 + `waterLedger`; registered in e-stack2-confirm.md;
-  `s3-confirm.sh` in `bench-run` at d066cdc). Attribution of S2 done: calls are the largest source of the extra
-  walking (−0.74 km without them), the rhythm package −0.29 km, the water ledger takes 0.89 km out.
+- **Running now (09:40).** Agents E2h (departure timing: audit first; `e2h-departure`) and E5a (party cohesion from
+  first principles: removes the party weights tuned in C5a; `e5a-cohesion`; brief `integrator/e5a-prompt.txt`).
+  Integrator: E2g's 5-seed confirm (registered in e2g-prereg.md; `bench-run` at 10c8ded).
+- **E4g merged** (`followCarer`, off: a defect at candidates.ts:487 — adults follow a dependent keeping up with its
+  mother — accounts for part of the walking calls add; fixing it shrinks parties because the party weights were tuned
+  to T-PTY-1 with the defect in place).
+- **S3 confirm done** (e-stack2-confirm.md): S2 + `waterLedger`: 83 prescriptions, viable, fitted level with today's
+  model, travel share at its band's edge (0.26 / 0.24), males walk 2.93 km (S2 3.79), mothers −0.25%/day, juveniles
+  −0.12%/day, night safe; held-out without the rare rows still +3.0 against today's model (T-FOOD-10 1.75).
 - **Integrated confirm S2 done** (e-stack2-confirm.md): 89 prescriptions (B 135), viable, fitted equal to today's
   model, held-out without the rare rows worse (+2.9, z 11.6: T-FOOD-10's early departures and the travel share);
   night safe; mothers −0.29%/day, juveniles −0.17%/day; every class walks 3.2–3.9 km a day.
@@ -89,10 +94,12 @@ Hard rules (AGENTS.md plus this track):
 | `.claude/worktrees/e4f-encounters` | Merged 2 October (head e7dacde). |
 | `.claude/worktrees/e1j-ranging` | Merged 2 October (head c898395). |
 | `.claude/worktrees/e2g-water` | Merged 2 October (head 1fe91ff). |
-| `.claude/worktrees/e4g-calltravel` | **Running agent** E4g, branched from track-e d066cdc. |
+| `.claude/worktrees/e4g-calltravel` | Merged 2 October (head 9a4005b). |
+| `.claude/worktrees/e5a-cohesion` | **Running agent** E5a, branched from track-e 10c8ded. |
+| `.claude/worktrees/e2h-departure` | **Running agent** E2h, branched from track-e 702027e. |
 | `.claude/worktrees/e1k-deficit` | Merged 2 October (head 5d2a01e). |
 | `.claude/worktrees/e2f-sleep` | Merged 2 October (head b5157a0). |
-| `.claude/worktrees/bench-run-2` | Second frozen checkout (6069e15) for the E2f night-safety check. Remove when done. |
+| `.claude/worktrees/bench-run-2` | Removed; its E2f night-check results are in `bench-run/artifacts/validation/e/e2f/`. |
 | `.claude/worktrees/bench-run` | Frozen detached checkout for the integrator's benchmarks (612bf15 for the noise arms, then d8c1875 for the E4c confirm; the queued script moves it). `artifacts/validation/e/`: `base-head` (all off, 9392b67), `e1h-{R,T,G}` and their energy JSON, `rescored-*`, `noise/`. Move it only when nothing runs from it. |
 | `worktree-agent-a954b443db4b6f22a` | **Not Track E**: a colobus encounter fix (`preySightFactor` 1.39, fitted to Kanyawara encounters) from the earlier session, 7 commits, merged nowhere. Ask the user before touching it. |
 | Other `e*` and `worktree-agent-*` worktrees | Fully merged into `track-e` (0 commits ahead). Safe to remove **only if the user agrees**. |
