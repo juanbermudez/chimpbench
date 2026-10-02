@@ -1,0 +1,55 @@
+{
+ "about": "Stage E5a staging for data/targets.json and the observer (proposal; applied by the integrator, this branch never edits targets.json or src/field). One band revision (T-PTY-1) and three scorer fixes (S1, S2 for T-PTY-1; S3 for T-PTY-3). Disclosure: written after the model's T-PTY-1 values of earlier stages were seen (R about 2.8-3.6, R + callValue 4.34, R + callValue + followCarer 3.97; docs/staging/e4g-prereg.md). The bounds follow a rule stated below that uses field values and the model community's composition at creation only. Applying any of it changes the targets or protocol hash: protocolLog entry and new freeze by the integrator. Audit text: docs/staging/e5a-prereg.md §1.",
+ "rule": "T-PTY-1 lower bound: wilson2012's Kanyawara composition scaled class by class to the model's West community at creation (adult males 3.0 of 11 -> x 8; adult females 2.3 of 15 -> x 8; the other 3.9 individuals of 21 -> x 6): 2.18 + 1.23 + 1.11 = 4.5 (proportional scaling of the total gives 4.3). Upper bound: Kanyawara unscaled, 9.2 (the community lives at Kanyawara's density, 2.75 vs 2.87 per km2, so the ecological-constraints account predicts no scaling). The registered lower bound 3 has no stated derivation and lies below both scalings.",
+ "targets": [
+  {
+   "id": "T-PTY-1",
+   "accept": {
+    "lo": 4.5,
+    "hi": 9.2,
+    "units": "individuals (22-member community)",
+    "basis": "between class-proportional scaling of Kanyawara's per-follow composition to the model community (4.5) and Kanyawara unscaled (9.2); proportional scaling has no direct field support (feeding parties at Ngogo, a far larger community, were no larger than Kanyawara's: potts2011), so the unscaled value bounds it above"
+   },
+   "field": [
+    {
+     "population": "Kanyawara",
+     "years": "1992-2006",
+     "value": "9.2 ± 7.0 individuals per follow; 3.0 ± 3.0 adult males, 2.3 ± 1.8 adult females, 0.3 ± 0.7 fully tumescent females",
+     "n": "5,527 party follows, median 5.3 h (0.25-14 h), 35,083 h; community median 47 (43-51): 11 adult males (10-13), 15 adult females (12-19); adult = 12 y or more",
+     "method": "party follows staying with the larger subgroup on a split; 15-min scans recording the identity of all individuals present; per-follow mean composition, then the mean over follows",
+     "source": "wilson2012",
+     "note": "primary, full text (author copy)"
+    }
+   ],
+   "revisions": [
+    {
+     "accept": { "lo": 3, "hi": 9 },
+     "basis": "registered: Kanyawara (~45-50 members) scaled down; wide because party size is site-specific (derivation not recorded)"
+    }
+   ]
+  }
+ ],
+ "scorerFixes": [
+  {
+   "id": "S1",
+   "row": "T-PTY-1",
+   "change": "value = mean over party follows (each with at least one scan) of the follow's mean scan party size, instead of the mean over all scans",
+   "why": "wilson2012: 'For party follows, mean values of party composition ... were used'; 'Parties contained a mean 9.2 ± 7.0 individuals per follow'. Each follow weighs the same whatever its length (0.25-14 h).",
+   "effect": "measured on the reference in docs/staging/e5a-prereg.md §2"
+  },
+  {
+   "id": "S2",
+   "row": "T-PTY-1 (and every row using the observer's party chain)",
+   "change": "party chain at partyLinkM (50 m), plus a link between two animals 50-60 m apart that were in one party at the previous 15-min scan",
+   "why": "wilson2001: party = 'all individuals travelling, feeding, resting, or socializing within about 50 m of one another'; 'In two borderline cases, in which individuals were separated from the rest of the party by 50-60 m but had been together with other party members in the previous 15 min, we considered them all to be members of the same party. In practice, a minimum of 90 m separated the parties we considered to be distinct.'",
+   "effect": "expected small; scan size at 50, 60 and 90 m measured on the reference in docs/staging/e5a-prereg.md §2"
+  },
+  {
+   "id": "S3",
+   "row": "T-PTY-3 (held out)",
+   "change": "score from 'party-larger' follows (add T-PTY-3 to TARGET_FOLLOW) and define the periphery as outside the MCP of the community's night-nest locations, instead of focal follows and the 85% kernel isopleth",
+   "why": "wilson2007: party follows ('At 15-min intervals, the observer recorded the map location and the identity of all individuals known to be travelling with the party'); 'Periphery consisted of all points outside the nesting range but within the park', nesting range = 'the minimum convex polygon enclosing all points used for night nests'",
+   "effect": "not measured (held-out row; applying it needs a protocolLog entry and a new freeze)"
+  }
+ ]
+}
