@@ -224,6 +224,11 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   rhythmDarkW: { when: P => P.rhythmSleep === 1, why: 'read only by nestValue (src/sim/rhythm.ts) while rhythmSleep is 1' },
   // stage E2a: the thermal load replaces the midday rest clock
   ...same(['boutRestMiddayMin', 'boutRestMiddayMax'], P => P.rhythmHeat !== 1, 'the 11:30–14:30 rest bout is not evaluated while rhythmHeat is 1 (src/sim/execution.ts boutHours)'),
+  // stage E1f (docs/staging/e1f-prereg.md): ledgerGrowPotential replaces the stylized growth knees by captive growth rates
+  // (both design, so the count does not change); ledgerNurseBout supersedes ledgerNurseByMilk (a switch) and switches
+  // no prescription out (the weaning refusal roll, weanRefuseMaxP, stays)
+  ledgerMassMatureFemaleY: { when: P => !(P.energyLedger === 1 && P.ledgerGrowSurplus === 1 && P.ledgerGrowPotential === 1), why: 'not read while ledgerGrowPotential (with ledgerGrowSurplus) is 1 (stage E1f)' },
+  ledgerMassMatureMaleY: { when: P => !(P.energyLedger === 1 && P.ledgerGrowSurplus === 1 && P.ledgerGrowPotential === 1), why: 'not read while ledgerGrowPotential (with ledgerGrowSurplus) is 1 (stage E1f)' },
 };
 
 /** One ACTIVE_WHEN rule for several entries. */
@@ -244,6 +249,8 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   ledgerNightNurse: { stage: 'E1c', needs: { energyLedger: 1 }, removesNothing: 'removes a clock dependency (no milk in the nest at night) that had no registry entry or linted literal (e1c-prereg §8.4)' },
   ledgerInfantIntake: { stage: 'E1c', needs: { energyLedger: 1 }, removesNothing: 'switches out the self-feeding ramp (selfFeedStartY) and the under-5 factor (fruitIntakeYoungFactor), both classed design (e1c-prereg §8.4)' },
   ledgerNurseByMilk: { stage: 'E1d', needs: { energyLedger: 1 }, removesNothing: 'removes a behavioural artefact (nursing at an empty gland) that had no registry entry (e1d-prereg)' },
+  ledgerGrowPotential: { stage: 'E1f', needs: { energyLedger: 1, ledgerGrowSurplus: 1 }, removesNothing: 'replaces the stylized growth knees (ledgerMassMatureFemaleY, ledgerMassMatureMaleY, design) with captive growth rates (e1f-prereg)' },
+  ledgerNurseBout: { stage: 'E1f', needs: { energyLedger: 1 }, removesNothing: 'one nursing rule in place of the E1d and E1e terms; the weaning refusal roll (weanRefuseMaxP) stays (e1f-prereg)' },
   ledgerDrive: { stage: 'E1e', needs: { energyLedger: 1 }, removesNothing: 'replaces the appetite readout (ledgerAppetiteSet, ledgerAppetiteGain, design) with a two-signal drive (e1e-prereg)' },
   rhythmSleep: { stage: 'E2a', needs: {} },
   rhythmHeat: { stage: 'E2a', needs: {} },

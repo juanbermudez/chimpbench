@@ -8,7 +8,7 @@ import { fruitAt } from './phenology';
 import { bestFallbackNear, fallbackOn } from './fallback';
 import { fruitRate, leafWorth, needFruit, treeIntake } from './intake';
 import { heatRestValue, nestValue, shelterValue, thermalLoad } from './rhythm';
-import { milkShare, milkWorth } from './energy';
+import { milkShare, milkWorth, nurseBoutWorth } from './energy';
 import { arrivalLight, brightening, needUnits, raceStake, rivalsAt } from './departure';
 import { endoOn, escalateScore, fastSpanH, rainFastScore, rainScore, redirectFastScore, redirectScore } from './endocrine';
 import { byIdIn, index, isTreeId, ix, NEVER, TREE_ID0, treesNear, simOf } from './state';
@@ -232,10 +232,14 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     const isMother = caretaker.id === c.motherId;
     if (carried) offer('follow', caretaker.id, 0.6, V.MOTHER);
     else offer('follow', caretaker.id, d > 3 ? 1.3 + d / P.followMotherDistScaleM : 0.15, V.MOTHER);
+    // stage E1f (ledgerNurseBout): one rule: a bout is worth the share of the full suckling rate it delivers over the time
+    // it takes, the milk-ejection latency included (energy.ts nurseBoutWorth); it supersedes the two routes below.
     // stage E1d (ledgerNurseByMilk): nursing is worth the share of the infant's need the gland can fill now (energy.ts milkWorth);
     // stage E1e (ledgerDrive), when E1d is off: the share of a full flow the glands can deliver over the bout (milkShare).
-    // Two routes to one idea, kept apart until they are reconciled (E1d takes precedence when both are on).
-    if (isMother && c.age < x.weanAge + 0.3) offer('nurse', caretaker.id, P.energyLedger === 1 && P.ledgerNurseByMilk === 1
+    // E1d takes precedence over E1e when both are on and E1f is off.
+    if (isMother && c.age < x.weanAge + 0.3) offer('nurse', caretaker.id, P.energyLedger === 1 && P.ledgerNurseBout === 1
+      ? (0.25 + h * 1.5 * (c.age < 0.5 ? 1.3 : 1) * (1 - c.age / 7)) * nurseBoutWorth(c, caretaker, P) - (d > P.nurseRangeM ? 0.5 : 0)
+      : P.energyLedger === 1 && P.ledgerNurseByMilk === 1
       ? (0.25 + h * 1.5 * (c.age < 0.5 ? 1.3 : 1) * (1 - c.age / 7)) * milkWorth(c, caretaker, P) - (d > P.nurseRangeM ? 0.5 : 0)
       : 0.25 + h * 1.5 * (c.age < 0.5 ? 1.3 : 1) * (1 - c.age / 7) * (drive ? milkShare(c, caretaker, P) : 1) - (d > P.nurseRangeM ? 0.5 : 0));
     if (c.age >= 1 && !carried && caretaker.action === 'forage' && d < P.begPlantRangeM && h > 0.35) offer('beg', caretaker.id, 0.25 + h * 0.45, V.PLANT);

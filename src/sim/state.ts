@@ -131,6 +131,11 @@ export interface EnergyLedger {
    * last tick (so costs charged outside energyTick, milk and carrying, enter the average).
    */
   eAvg?: number; sBed?: number; sWake?: number; slept?: number; outAt?: number;
+  /**
+   * Stage E1f (ledgerGrowPotential), present only while the animal is below adult mass with that switch on: the day-long
+   * average (kcal/h) of everything spent except growth, and `out` at the last tick.
+   */
+  mAvg?: number; gAt?: number;
 }
 
 /** The memory month in progress: tallies accumulate on events and are finalized into a MemoryDigest every 30 eco-days. */

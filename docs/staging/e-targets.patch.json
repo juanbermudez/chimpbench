@@ -1,5 +1,5 @@
 {
- "about": "Track E staging for data/targets.json (proposal by the Track E evidence researcher; applied by the integrator, this branch never edits targets.json). Order: (1) add `sources`; (2) append `targets` (T-ENE-1..9, T-RHY-1..10, T-END-1..12); (3) log a protocolLog entry and take a new freeze, because new rows and new observer protocols change the protocol hash. Nothing here was run: no simulated value of any row has been seen. Roles are held-out unless stated. Three flags need a decision at registration: T-ENE-5 is encoded while the C8c lactation taper is on; T-RHY-1 and T-RHY-8 are encoded while the nest clock and the midday-rest and temperature rules are on; T-END-4, -10 and -11 become encoded if E4 wires those events straight into the states. New observer protocols named here and not yet in src/field: 'energy ledger (truth)', 'camera-trap proxy (truth)', and urine or endocrine proxies combined with party scans, phenology, agonism records and the patrol classifier. Evidence, access and what was not verified: docs/staging/e-sources.md.",
+ "about": "Track E staging for data/targets.json (proposal by the Track E evidence researcher; applied by the integrator, this branch never edits targets.json). Order: (1) add `sources`; (2) append `targets` (T-ENE-1..9, T-RHY-1..10, T-END-1..12, T-INF-1..5 from stage E1f); (3) log a protocolLog entry and take a new freeze, because new rows and new observer protocols change the protocol hash. Nothing here was run: no simulated value of any row has been seen. Roles are held-out unless stated. Three flags need a decision at registration: T-ENE-5 is encoded while the C8c lactation taper is on; T-RHY-1 and T-RHY-8 are encoded while the nest clock and the midday-rest and temperature rules are on; T-END-4, -10 and -11 become encoded if E4 wires those events straight into the states. New observer protocols named here and not yet in src/field: 'energy ledger (truth)', 'camera-trap proxy (truth)', and urine or endocrine proxies combined with party scans, phenology, agonism records and the patrol classifier. Evidence, access and what was not verified: docs/staging/e-sources.md.",
  "sources": {
   "carlson2013": {
    "authors": "CARLSON BA, ROTHMAN JM, MITANI JC",
@@ -423,6 +423,84 @@
    "url": "https://doi.org/10.1038/ncomms13361",
    "access": "FT",
    "bibliographyVerified": "Crossref API, 2026-10-01"
+  },
+  "lonsdorf2014": {
+   "authors": "Lonsdorf EV, Markham AC, Heintz MR, Anderson KE, Ciuk DJ, Goodall J, Murray CM",
+   "year": 2014,
+   "title": "Sex differences in wild chimpanzee behavior emerge during infancy",
+   "journal": "PLoS ONE",
+   "volume": "9",
+   "issue": "6",
+   "pages": "e99099",
+   "doi": "10.1371/journal.pone.0099099",
+   "url": "https://doi.org/10.1371/journal.pone.0099099",
+   "access": "FT (PMC4049619)",
+   "bibliographyVerified": "Crossref API, 2026-10-01"
+  },
+  "lonsdorf2020": {
+   "authors": "Lonsdorf EV, Stanton MA, Pusey AE, Murray CM",
+   "year": 2020,
+   "title": "Sources of variation in weaned age among wild chimpanzees in Gombe National Park, Tanzania",
+   "journal": "American Journal of Physical Anthropology",
+   "volume": "171",
+   "issue": "3",
+   "pages": "419-429",
+   "doi": "10.1002/ajpa.23986",
+   "url": "https://doi.org/10.1002/ajpa.23986",
+   "access": "FT (accepted manuscript)",
+   "bibliographyVerified": "Crossref API, 2026-10-01"
+  },
+  "badescu2016": {
+   "authors": "Bădescu I, Watts DP, Katzenberg MA, Sellen DW",
+   "year": 2016,
+   "title": "Alloparenting is associated with reduced maternal lactation effort and faster weaning in wild chimpanzees",
+   "journal": "Royal Society Open Science",
+   "volume": "3",
+   "issue": "11",
+   "pages": "160577",
+   "doi": "10.1098/rsos.160577",
+   "url": "https://doi.org/10.1098/rsos.160577",
+   "access": "FT (PMC5180145)",
+   "bibliographyVerified": "Crossref API, 2026-10-01"
+  },
+  "badescu2022": {
+   "authors": "Bădescu I, Watts DP, Curteanu C, Desruelle KJ, Sellen DW",
+   "year": 2022,
+   "title": "Effects of infant age and sex, and maternal parity on the interaction of lactation with infant feeding development in chimpanzees",
+   "journal": "PLoS ONE",
+   "volume": "17",
+   "issue": "8",
+   "pages": "e0272139",
+   "doi": "10.1371/journal.pone.0272139",
+   "url": "https://doi.org/10.1371/journal.pone.0272139",
+   "access": "FT (PMC9352031)",
+   "bibliographyVerified": "Crossref API, 2026-10-01"
+  },
+  "gurvenWalker2006": {
+   "authors": "Gurven M, Walker R",
+   "year": 2006,
+   "title": "Energetic demand of multiple dependents and the evolution of slow human growth",
+   "journal": "Proceedings of the Royal Society B: Biological Sciences",
+   "volume": "273",
+   "issue": "1588",
+   "pages": "835-841",
+   "doi": "10.1098/rspb.2005.3380",
+   "url": "https://doi.org/10.1098/rspb.2005.3380",
+   "access": "FT (electronic appendix)",
+   "bibliographyVerified": "Crossref API, 2026-10-01"
+  },
+  "pusey2005": {
+   "authors": "Pusey AE, Oehlert GW, Williams JM, Goodall J",
+   "year": 2005,
+   "title": "Influence of ecological and social factors on body mass of wild chimpanzees",
+   "journal": "International Journal of Primatology",
+   "volume": "26",
+   "issue": "1",
+   "pages": "3-31",
+   "doi": "10.1007/s10764-005-0721-2",
+   "url": "https://doi.org/10.1007/s10764-005-0721-2",
+   "access": "Abs",
+   "bibliographyVerified": "Crossref API, 2026-10-01"
   }
  },
  "targets": [
@@ -630,7 +708,7 @@
    "evidence": "M",
    "role": "held-out",
    "encoded": true,
-   "notes": "ENCODED while the C8c lactation taper is on: its knots lactTaperStartY 0.5 and lactTaperEndY 2 were set from this study. Counts as validation only if E1 derives the cost of lactation from milk energy and infant demand without those knots; set encoded to false at registration only in that case. How to measure: as T-ENE-4, grouped by the age of the youngest unweaned offspring from the census.",
+   "notes": "ENCODED while the C8c lactation taper is on: its knots lactTaperStartY 0.5 and lactTaperEndY 2 were set from this study. Counts as validation only if E1 derives the cost of lactation from milk energy and infant demand without those knots; set encoded to false at registration only in that case. How to measure: as T-ENE-4, grouped by the age of the youngest unweaned offspring from the census. Stage E1f: no chimpanzee source shows milk output falling in year 2 (badescu2022: nursing steady from 1 to 4 y; e-sources §14.3), so a year-2 recovery must come from the mother's own intake, not from a falling milk cost. Read the ledger's daily balance (change of reserves per day) by the age of the youngest infant; a 90-day window needs births at its start (energy-diagnose --term-births) to see months 0-6.",
    "sources": [
     "emeryThompson2012"
    ]
@@ -1728,6 +1806,235 @@
    "sources": [
     "preis2018",
     "samuni2017"
+   ]
+  },
+  {
+   "id": "T-INF-1",
+   "objectives": [
+    "O1",
+    "O9"
+   ],
+   "metric": "Eating share of observation time by infant age",
+   "definition": "Share of 1-min point samples of an unweaned infant scored eating solid food, by infant age block (0-0.5, 0.5-1, 1-1.5, 1.5-2, ..., 4.5-5 y), daytime follows outside the night nest.",
+   "observer": {
+    "protocol": "focal point samples (infant focal, daytime follows outside the night nest)",
+    "interval_min": 1,
+    "unit": "infant-age block"
+   },
+   "field": [
+    {
+     "population": "Gombe Kasekela",
+     "years": "1988-2011",
+     "value": "0.23% (0-0.5 y), 5.33% (0.5-1), 6.67% (1-1.5), 21.95% (1.5-2), 21.64% (2-2.5), 29.74% (2.5-3), 32.45% (3-3.5), 36.14% (3.5-4), 34.43% (4-4.5), 49.09% (4.5-5 y); rises with age, no sex effect",
+     "n": "40 infants (25 M, 15 F)",
+     "method": "1-min point samples; at least 10 h per 60-day block in year 1 and 15 h per 90-day block after",
+     "source": "lonsdorf2014",
+     "note": ""
+    },
+    {
+     "population": "Ngogo",
+     "years": "—",
+     "value": "foraging 0.84% (0-6 months), 17.18% (6-12 months), 24.85% (1-2 y), 46.7% (4-5 y); adults about 47%",
+     "n": "72 immatures 0-9 y, 1,245 focal hours",
+     "method": "focal follows 07:00-17:30",
+     "source": "badescu2022",
+     "note": "foraging, not eating only"
+    }
+   ],
+   "accept": {
+    "lo": null,
+    "hi": null,
+    "units": "pattern",
+    "basis": "rises with age; within a factor 1.5 of the Gombe value in each block from 1 y (e.g. 15-33% at 1.5-2 y, 33-74% at 4.5-5 y)"
+   },
+   "evidence": "H",
+   "role": "held-out",
+   "encoded": false,
+   "notes": "Stage E1f. The model's infants eat only what milk does not cover, so the row tests the infant's intake rate per minute and the milk supply together. How to measure: daylight ticks in which an unweaned infant swallows its own food (energy ledger truth), or the focal eating score, by age block; exclude ticks in the night nest. Order of events: registered by the E1f implementer after the reference model's values were seen (docs/staging/e1f-prereg.md §0); the band is set from the field values only.",
+   "sources": [
+    "lonsdorf2014",
+    "badescu2022"
+   ]
+  },
+  {
+   "id": "T-INF-2",
+   "objectives": [
+    "O1",
+    "O9"
+   ],
+   "metric": "Suckling share of observation time",
+   "definition": "Share of 1-min point samples of an unweaned infant with its mouth on the nipple, by infant age block, daytime follows outside the night nest.",
+   "observer": {
+    "protocol": "focal point samples (infant focal, daytime follows outside the night nest)",
+    "interval_min": 1,
+    "unit": "infant-age block"
+   },
+   "field": [
+    {
+     "population": "Gombe Kasekela",
+     "years": "1988-2011",
+     "value": "2-3.71% of observation time, no significant change with age (0-5 y) or sex",
+     "n": "40 infants",
+     "method": "1-min point samples",
+     "source": "lonsdorf2014",
+     "note": ""
+    },
+    {
+     "population": "Ngogo",
+     "years": "—",
+     "value": "5.85 ± 3.4% at 0-6 months; about 3% from 6 months to 4 y",
+     "n": "72 immatures",
+     "method": "focal follows",
+     "source": "badescu2022",
+     "note": ""
+    }
+   ],
+   "accept": {
+    "lo": 1.0,
+    "hi": 6.0,
+    "units": "% of daytime observation",
+    "basis": "the two sites' values (2-5.85%) widened to 1-6%; no trend with age from 6 months"
+   },
+   "evidence": "H",
+   "role": "held-out",
+   "encoded": false,
+   "notes": "Nipple contact includes comfort (non-nutritive) suckling (badescu2017: isotopic weaning precedes the end of nipple contact), so a model of nutritive suckling only should meet or undershoot the band. Suckling time is a weak proxy of milk intake (cameron1998). How to measure: daylight ticks in the nurse act (the milk-ejection wait included), outside the night nest. Order of events: registered by the E1f implementer after the reference model's values were seen (docs/staging/e1f-prereg.md §0); the band is set from the field values only.",
+   "sources": [
+    "lonsdorf2014",
+    "badescu2022"
+   ]
+  },
+  {
+   "id": "T-INF-3",
+   "objectives": [
+    "O9"
+   ],
+   "metric": "Weaned age",
+   "definition": "Age at the end of suckling: midpoint between the last observed nipple contact and the next session without it (gaps under 90 days).",
+   "observer": {
+    "protocol": "census + focal point samples",
+    "interval_min": 1,
+    "unit": "offspring"
+   },
+   "field": [
+    {
+     "population": "Gombe Kasekela",
+     "years": "41 years of follows",
+     "value": "4.71 ± 1.04 y (range 2.82-8.01); females weaned 88.5 days earlier; lower-ranking mothers weaned later",
+     "n": "37 offspring with a known weaned age (65 in all, 29 mothers)",
+     "method": "1-min point samples, Cox models",
+     "source": "lonsdorf2020",
+     "note": ""
+    }
+   ],
+   "accept": {
+    "lo": 3.7,
+    "hi": 5.8,
+    "units": "y",
+    "basis": "mean ± 1 SD"
+   },
+   "evidence": "H",
+   "role": "held-out",
+   "encoded": true,
+   "notes": "ENCODED while weanAgeMinY and weanAgeSpanY set each offspring's weaning age (uniform 4.1-5.2 y, from bray2018's 4.8 y). It counts as validation only once weaning follows from milk supply and maternal state. Report beside it the age at which a straight line through the milk share of intake (1-4 y) reaches zero (stage E1f energy diagnosis), an output. Order of events: registered by the E1f implementer after the reference model's values were seen (docs/staging/e1f-prereg.md §0); the band is set from the field values only.",
+   "sources": [
+    "lonsdorf2020"
+   ]
+  },
+  {
+   "id": "T-INF-4",
+   "objectives": [
+    "O9",
+    "O12"
+   ],
+   "metric": "Mass for age",
+   "definition": "Mean body mass by age and sex of wild immatures; and the ages at which mass growth slows (females, males).",
+   "observer": {
+    "protocol": "energy ledger (truth) + census",
+    "interval_min": null,
+    "unit": "individual"
+   },
+   "field": [
+    {
+     "population": "Gombe",
+     "years": "—",
+     "value": "about 10 kg at 5 y (both sexes); about 21 kg (F) and 24 kg (M) at 10 y; adults 31 and 39 kg (\"a very rough estimation\")",
+     "n": "—",
+     "method": "read from pusey2005's curves by gurvenWalker2006",
+     "source": "gurvenWalker2006",
+     "note": "secondary"
+    },
+    {
+     "population": "Gombe",
+     "years": "—",
+     "value": "growth slows at about 10 y (F) and 13 y (M); mass varied more in young and old animals and was highest under banana provisioning",
+     "n": "—",
+     "method": "weighing (abstract)",
+     "source": "pusey2005",
+     "note": ""
+    }
+   ],
+   "accept": {
+    "lo": null,
+    "hi": null,
+    "units": "pattern",
+    "basis": "5-y mass 7-13 kg; 10-y mass 16-26 kg (F) and 18-30 kg (M); growth slowing at 9-11 y (F) and 12-14 y (M)"
+   },
+   "evidence": "L",
+   "role": "held-out",
+   "encoded": false,
+   "notes": "Stage E1f. Low confidence (a rough secondary reading). Needs years: in a 90-day window only growth velocities can be read (Gombe-derived: about 1.6 kg/y from 0 to 5 y; 2.2 (F) and 2.8 (M) kg/y from 5 to 10 y). Captive (sanctuary) animals grow 3.4 (F) and 3.8 (M) kg/y and mature 2-3 y earlier (curry2023; gurvenWalker2006), so the wild curve is an outcome of food and costs, never an input. How to measure: chimp.sim.en.kg (ledgerGrowSurplus) by age and sex over the run. Order of events: registered by the E1f implementer after the reference model's values were seen (docs/staging/e1f-prereg.md §0); the band is set from the field values only.",
+   "sources": [
+    "gurvenWalker2006",
+    "pusey2005"
+   ]
+  },
+  {
+   "id": "T-INF-5",
+   "objectives": [
+    "O1",
+    "O9"
+   ],
+   "metric": "Nursing bout rate and length",
+   "definition": "Nursing bouts per hour of daytime observation of an unweaned infant, and mean bout length (min).",
+   "observer": {
+    "protocol": "focal point samples (infant focal, daytime follows outside the night nest)",
+    "interval_min": 1,
+    "unit": "infant-age block"
+   },
+   "field": [
+    {
+     "population": "Ngogo",
+     "years": "—",
+     "value": "1.1 ± 0.48 bouts per hour (range 0.15-2.52)",
+     "n": "42 mother-infant pairs, 831 focal hours",
+     "method": "focal follows",
+     "source": "badescu2016",
+     "note": ""
+    },
+    {
+     "population": "Ngogo",
+     "years": "—",
+     "value": "1.63 ± 0.51 bouts/h at 0-6 months, 1.00 ± 0.44 bouts/h from 6 months to 4 y; bouts 2.03 ± 0.73 min, no change with age (P = 0.84)",
+     "n": "72 immatures",
+     "method": "focal follows",
+     "source": "badescu2022",
+     "note": ""
+    }
+   ],
+   "accept": {
+    "lo": 0.5,
+    "hi": 2.0,
+    "units": "bouts per hour",
+    "basis": "Ngogo range of means widened; bout length 1-4 min reported beside it"
+   },
+   "evidence": "H",
+   "role": "held-out",
+   "encoded": false,
+   "notes": "Stage E1f. Nipple contact, comfort suckling included. How to measure: starts of the nurse act per daylight hour outside the night nest, and nurse-act minutes per bout. Order of events: registered by the E1f implementer after the reference model's values were seen (docs/staging/e1f-prereg.md §0); the band is set from the field values only.",
+   "sources": [
+    "badescu2016",
+    "badescu2022"
    ]
   }
  ]
