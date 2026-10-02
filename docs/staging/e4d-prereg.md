@@ -5,7 +5,8 @@ Status: written and committed before any run of the changed model (2 October 202
 Patrols, hunting, gang attacks, infanticide and the call system are not touched.
 
 Outcome (2 October 2026, §9): two iterations run; iteration 2 (`endoRhythm`) gives both slow states the field's daily
-direction and turns T-END-8 into an honest failure; it removes no prescription, so it stays off (`removesNothing`).
+direction and turns T-END-8 into an honest failure; every band-distance sum is inside noise against the mean of four
+reference runs (amendment); it removes no prescription, so it stays off (`removesNothing`).
 
 Rule served: field values of behaviour are targets, never inputs. A hormone's daily secretion profile is physiology
 measured independently of the behaviour it helps produce, so it may be an input; a calling rate may not.
@@ -329,9 +330,9 @@ registered ratio, which iteration 2 addressed.)
   call rate that day) the association is zero in every arm (field: positive at the monthly scale).
 - *Acts that read the states.* Redirected charges move to the morning (stress-scaled: 25 of 36 in the morning in D2
   against 13 of 34 in R), reconciliation per decided conflict is lower in the morning (0.141 against 0.162 in the
-  afternoon; R 0.183 and 0.167), escalated attacks rise from 3 to 8 (a handful). No field row registers these timings.
+  afternoon; R 0.183 and 0.167), escalated attacks rise from 3 to 8 (a handful). No field row registers these timings. (Against four reference runs, amendment below: the escalation rise and the redirects' morning share are beyond noise; the reconciliation difference is not.)
 - *The bench.* Nothing moves beyond noise: the fitted change (−1.52 on 18 shared rows) sits at the provisional edge and
-  comes from T-PAT-6 and T-HUN-1; held-out +0.24 (+0.32 without T-HUN-4 and T-BRD-1). T-COM-1, T-PTY-1, T-COM-4 stay in
+  comes from T-PAT-6 and T-HUN-1 (inside noise against four reference runs: amendment below); held-out +0.24 (+0.32 without T-HUN-4 and T-BRD-1). T-COM-1, T-PTY-1, T-COM-4 stay in
   band; T-END-2 (weak form) and T-END-3 still pass (stress 0.156 vs 0.148 by rank thirds; 0.233 with a swollen parous
   female in view against 0.141).
 
@@ -344,7 +345,7 @@ model's own totals or wire calls to the states, which is another stage.
 
 | Switch | Result | Decision |
 | --- | --- | --- |
-| `endoRhythm` (iteration 2) | Both slow states peak at waking and fall through the day from each animal's own sleep, with no hour: arousal 07 h ÷ 17 h 0.36 → 1.82 (field 2.43), stress 1.52 → 3.58 (field 2.64, immatures). Calls keep no daily course (0.85 → 0.92; field ≈ 4.3), so T-END-8 in fedurek2016's form turns from a pass for the wrong reason (+0.36, 25 of 28 males) into an honest failure (−0.29, 4 of 28). Viability passes; held-out inside noise; fitted −1.52 at the noise edge (patrol and hunting rows). Removes no prescription (92 → 92) | **off** (`removesNothing`): not a keep under the track's rule. A physiology correction for the integrator to stack under any later call–hormone or patrol stage: it makes the hormone rows and T-END-8 honest tests. A 5-seed confirm is needed before any behavioural claim |
+| `endoRhythm` (iteration 2) | Both slow states peak at waking and fall through the day from each animal's own sleep, with no hour: arousal 07 h ÷ 17 h 0.36 → 1.82 (field 2.43), stress 1.52 → 3.58 (field 2.64, immatures). Calls keep no daily course (0.85 → 0.92; field ≈ 4.3), so T-END-8 in fedurek2016's form turns from a pass for the wrong reason (+0.36, 25 of 28 males) into an honest failure (−0.29, 4 of 28). Viability passes. Against the mean of four reference runs (amendment) every band-distance sum is inside noise (D2: fitted −0.81 (z −1.0, 16 rows), held-out +0.31 (z +0.2, 12 rows), held-out without T-HUN-4 and T-BRD-1 +0.47 (z +0.9, 11 rows)); beyond noise only the encoded hormone profiles, T-END-8, escalated attacks (8 against 1 ± 1) and the morning share of redirects (0.69 against 0.38 ± 0.05). Removes no prescription (92 → 92) | **off** (`removesNothing`): not a keep under the track's rule. A physiology correction for the integrator to stack under any later call–hormone or patrol stage: it makes the hormone rows and T-END-8 honest tests. The escalation and redirect timing changes have no field row; a 5-seed confirm would be needed before any behavioural claim |
 
 **Biggest open problem.** The call system has no daily course of its own: a burst in the first hour after the nest,
 flat through midday, rising toward 17 h, against the field's steady fall from 1.46 per male-hour at 07 h to 0.13 at
@@ -372,6 +373,60 @@ run, with no other change to the registration:
 - Prediction (before the re-draws ran): D1 and D2 are inside noise on every sum; the hormone profiles of D2 lie many
   SDs from the R runs' (the rhythm is a construction, §4.1); the call ratio and T-END-8 net of time of day of D1 and D2
   lie within 2 SD of the R runs'; T-END-8 in fedurek2016's form of D2 lies beyond 2 SD below the R runs' (moderate).
+
+#### Amendment results (Rn1–Rn3 at cfc7842; every number printed by `artifacts/validation/e4d/e4d-z.ts` from the runs' JSON)
+
+| Sum (rows counted in all 4 R runs and the arm) | R runs: mean ± SD (each) | SD used | D1: value, Δ, z | D2: value, Δ, z |
+| --- | --- | --- | --- | --- |
+| Fitted | 4.73 ± 0.67 (4.69, 3.81, 5.05, 5.37; 16 rows) | 0.69 | 5.01, +0.28, z +0.4 (16 rows) | 3.92, -0.81, z -1.0 (16 rows) |
+| Held-out | 2.38 ± 0.23 (2.45, 2.67, 2.26, 2.15; 12 rows) | 1.26 | 2.63, +0.24, z +0.2 (12 rows) | 2.69, +0.31, z +0.2 (12 rows) |
+| Held-out without T-HUN-4 and T-BRD-1 | 2.22 ± 0.14 (2.37, 2.22, 2.26, 2.04; 11 rows) | 0.48 | 2.63, +0.40, z +0.7 (11 rows) | 2.69, +0.47, z +0.9 (11 rows) |
+
+Prescriptions: r 92, rn1 92, rn2 92, rn3 92, d1 92, d2 92
+
+| Readout | R runs: mean ± SD (R, Rn1, Rn2, Rn3) | D1 (z) | D2 (z) |
+| --- | --- | --- | --- |
+| Arousal, pooled AM, 07 h | 0.027 ± 0.003 (0.027, 0.029, 0.029, 0.023) | 0.123 (+27.2) | 0.214 (+53.4) |
+| Arousal, 17 h | 0.086 ± 0.013 (0.076, 0.101, 0.094, 0.074) | 0.109 (+1.6) | 0.118 (+2.2) |
+| Arousal 07 ÷ 17 (field 2.43) | 0.32 ± 0.03 (0.36, 0.29, 0.31, 0.31) | 1.12 (+26.4) | 1.82 (+49.2) |
+| Stress, pooled AM, 07 h | 0.117 ± 0.003 (0.117, 0.119, 0.120, 0.114) | 0.306 (+61.1) | 0.304 (+60.3) |
+| Stress, 17 h | 0.080 ± 0.003 (0.077, 0.081, 0.083, 0.080) | 0.086 (+1.9) | 0.085 (+1.5) |
+| Stress 07 ÷ 17 (field 2.64) | 1.46 ± 0.05 (1.52, 1.46, 1.44, 1.41) | 3.56 (+40.2) | 3.58 (+40.5) |
+| AM pant-hoots 07–08 h ÷ 15–18 h (field ≈ 4.3) | 0.94 ± 0.06 (0.85, 0.97, 0.99, 0.97) | 0.94 (-0.1) | 0.92 (-0.3) |
+| AM pant-hoots per awake hour | 0.59 ± 0.03 (0.59, 0.59, 0.56, 0.63) | 0.58 (-0.3) | 0.60 (+0.5) |
+| T-END-8, fedurek2016 form, mean r | 0.25 ± 0.08 (0.36, 0.21, 0.16, 0.26) | -0.09 (-3.6) | -0.29 (-5.7) |
+| T-END-8, males with r > 0 (of 28) | 21 ± 3 (25, 18, 20, 21) | 13 (-2.4) | 4 (-5.2) |
+| T-END-8 net of time of day, mean r | -0.026 ± 0.033 (-0.007, 0.009, -0.062, -0.045) | -0.011 (+0.4) | -0.006 (+0.6) |
+| Escalated attacks | 1 ± 1 (3, 1, 0, 0) | 2 (+0.6) | 8 (+4.4) |
+| Redirected charges, morning share | 0.38 ± 0.05 (0.38, 0.34, 0.45, 0.33) | 0.48 (+1.7) | 0.69 (+5.3) |
+| Decided conflicts | 1084 ± 67 (1090, 1165, 1081, 1000) | 1174 (+1.2) | 1055 (-0.4) |
+| Reconciled per conflict, morning − afternoon | 0.010 ± 0.029 (0.016, 0.007, -0.027, 0.044) | 0.002 (-0.2) | -0.022 (-1.0) |
+| T-COM-1 (observer) | 0.55 ± 0.04 (0.55, 0.51, 0.53, 0.59) | 0.52 (-0.6) | 0.59 (+1.0) |
+| T-PTY-1 (observer) | 4.34 ± 0.14 (4.24, 4.39, 4.51, 4.21) | 4.38 (+0.3) | 4.13 (-1.3) |
+
+**Reading of the amendment.**
+- *Band distances.* On the rows counted in all four reference runs and the arm (16 fitted, 12 held-out, 11 held-out
+  without T-HUN-4 and T-BRD-1), every sum is inside noise: D1 +0.28 (z +0.4), +0.24 (z +0.2), +0.40 (z +0.7); D2 −0.81
+  (z −1.0), +0.31 (z +0.2), +0.47 (z +0.9). D2's fitted −1.52 against the single R run (18 rows) shrinks to −0.81 against
+  the reference mean. T-COM-1 (z −0.6, +1.0) and T-PTY-1 (z +0.3, −1.3) stay inside the reference spread. Viability
+  passes in all six runs (49 → 49 on each seed, no birth, death or starvation).
+- *The states* lie 27–61 SDs from the four reference runs at 07 h and 1.5–2.2 at 17 h: the rhythm is the construction
+  (§4.1), so these z values say only that the mechanism works, not that anything emerged.
+- *Calls.* The adult-male 07–08 h ÷ 15–18 h ratio of the reference runs is 0.94 ± 0.06 (0.85 in the run R happened to
+  be); D1 and D2 sit inside it (z −0.1, −0.3). The calls' missing daily course is the model's, not a draw.
+- *T-END-8.* The reference's positive within-male association is reproducible (mean r +0.25 ± 0.08; positive in all
+  four runs, 18–25 of 28 males), i.e. a stable property of a model whose arousal and calls both rise into the
+  afternoon. With the rhythm it reverses: D1 −0.09 (z −3.6), D2 −0.29 (z −5.7; 4 of 28 males, z −5.2). Net of time of
+  day the association is zero in every run (−0.026 ± 0.033; D1 and D2 inside).
+- *Acts that read the states* (no field row; direction partly encoded, size genuine). Escalated attacks rise beyond
+  noise in D2 (8 against 1 ± 1, z +4.4), but 6 of the 8 fall in the afternoon, so the encoded direction (more in the
+  morning) does not appear; plausibly because escalation also needs a close-rank rival in view and is damped by
+  stress, which peaks in the morning with arousal (not measured). The morning share of redirected charges rises beyond noise (0.69 against 0.38 ± 0.05, z +5.3; D1
+  0.48, z +1.7), as the stress-scaled redirect follows the stress peak. Decided conflicts (z −0.4) and the morning
+  against afternoon reconciliation difference (z −1.0) stay inside noise.
+- *Predictions of the amendment*: band sums inside noise: confirmed (|z| ≤ 1.0); hormone profiles many SDs from the reference:
+  confirmed; call ratio and net-of-time association within 2 SD: confirmed; T-END-8 (fedurek2016 form) of D2 beyond 2 SD
+  below: confirmed (z −5.7).
 
 ### Appendix: the gain computation behind §3 (added after the runs; it documents the computation that gave §3's values, unchanged)
 
