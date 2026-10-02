@@ -238,9 +238,11 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     : hour >= P.nestEveningFromH ? smoothstep(P.nestEveningStartH, P.nestEveningEndH, hour) * P.nestEveningDrive + (night ? P.nestNightBonus : 0)
       : (1 - smoothstep(P.nestMorningDaylightLow, P.nestMorningDaylightHigh, env.daylight)) * P.nestMorningDrive;
   nestDrive += (rS ? 0 : (1 - e) * 0.3) + (night && rain > 0.3 ? 0.3 : 0);
+  // stage E2e (nestCompany): staying in its own finished nest keeps the company of its nest-mates (nestCompanyValue)
+  const company = P.nestCompany === 1 && inNest && !caretaker && c.age >= 5 ? nestCompanyValue(world, c, P) : 0;
   if (caretaker) {
     if (caretaker.action === 'nest' && isTreeId(caretaker.targetId)) offer('nest', caretaker.targetId, nestDrive + 0.4, V.MOTHER, caretaker.id);
-  } else if (c.age >= 3 && !race) offerOwnNest(world, c, inNest, nestDrive, rS ? env.daylight < 1 : hour >= 12 || night);
+  } else if (c.age >= 3 && !race) offerOwnNest(world, c, inNest, company ? nestDrive + company : nestDrive, rS ? env.daylight < 1 : hour >= 12 || night);
   // felt sleepiness, (1 − energy) under rhythmSleep, is what only the nest relieves: rest keeps the rest of its score
   if (circ) { if (!inNest) offer('rest', -1, restBase); }
   else if (!dark) offer('rest', -1, restScore);
@@ -407,7 +409,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       offer('climb', t.id, 0.06 + pers.playfulness * 0.15 + (c.age < 10 ? 0.1 : 0) - rain * 0.3 - (night ? 2 : 0));
     }
   }
-  if (race && !caretaker && c.age >= 3) offerOwnNest(world, c, inNest, nestDrive - raceG, rS ? env.daylight < 1 : hour >= 12 || night);
+  if (race && !caretaker && c.age >= 3) offerOwnNest(world, c, inNest, (company ? nestDrive + company : nestDrive) - raceG, rS ? env.daylight < 1 : hour >= 12 || night);
 
   // stage C13e (joinChoice; docs/realism-design.md "C13e pre-registration"): what going with a departing leader is worth
   // to this animal. Who is leaving: its bond with the leader, an ally, a leader that dominates it; recruitment and more
@@ -1078,13 +1080,42 @@ export function findCandidate(list: Candidate[], action: string, targetId: numbe
 }
 
 
-/** Stage departPersist: own-community animals of 12 y or more within the party link of `c`, awake: those a departure would leave behind. */
+/**
+ * Stage E2e (nestCompany; docs/staging/e2e-prereg.md §2.2): what the company of its best nest-mate is worth to an animal
+ * staying in its own nest. The company of a companion is worth the same whether the pair moves or stays, so the terms are
+ * C13e's join value (joinValue in computeCandidates) without what belongs to a departure (the hoo heard, the cost of
+ * leaving a crown, rain): joinBase + joinBondW·bond + joinAllyW·[ally] + joinRankW·[the nest-mate dominates] +
+ * sociability·partyFollowSocialW, the maximum over own-community animals of 12 y or more in a nest (asleep or awake: a
+ * sleeping companion is also left behind) within the party link. Nest-mates within the party link are known without being
+ * seen (they nested together at dusk; design assumption). No new magnitude: every term is C13e's (design assumptions there).
+ */
+export function nestCompanyValue(world: World, c: Chimp, P: Params): number {
+  const alive = index(world).alive, l2 = P.partyLinkM * P.partyLinkM;
+  let best = 0; // company never makes staying worse: an unwelcome nest-mate is worth nothing, not less
+  for (let i = 0; i < alive.length; i++) {
+    const o = alive[i];
+    if (o === c || o.troopId !== c.troopId || o.age < 12 || o.action !== 'nest') continue;
+    const dx = o.position[0] - c.position[0], dz = o.position[2] - c.position[2];
+    if (dx * dx + dz * dz > l2) continue;
+    const v = P.joinBase + P.joinBondW * bond(c, o) + (c.allies.includes(o.id) ? P.joinAllyW : 0) + (dominates(o, c) ? P.joinRankW : 0) + c.personality.sociability * P.partyFollowSocialW;
+    if (v > best) best = v;
+  }
+  return best;
+}
+
+/**
+ * Stage departPersist: own-community animals of 12 y or more within the party link of `c`, awake: those a departure would
+ * leave behind. Stage E2e (nestAudience; docs/staging/e2e-prereg.md §2.2): an animal in a finished nest counts unless it
+ * is asleep (the circadian latch; without rhythmCircadian there is no latch and it counts), so a departure from a nest
+ * site is an attempt as by day. Sleeping nest-mates cannot join an attempt (design assumption).
+ */
 export function departAudience(world: World, c: Chimp): number {
-  const P = paramsOf(world), alive = index(world).alive, l2 = P.partyLinkM * P.partyLinkM;
+  const P = paramsOf(world), alive = index(world).alive, l2 = P.partyLinkM * P.partyLinkM, nestAud = P.nestAudience === 1;
   let n = 0;
   for (let i = 0; i < alive.length; i++) {
     const o = alive[i];
-    if (o === c || o.troopId !== c.troopId || o.age < 12 || (o.action === 'nest' && ix(o).phase >= 2)) continue;
+    if (o === c || o.troopId !== c.troopId || o.age < 12) continue;
+    if (o.action === 'nest' && ix(o).phase >= 2 && (!nestAud || ix(o).asl === 1)) continue;
     const dx = o.position[0] - c.position[0], dz = o.position[2] - c.position[2];
     if (dx * dx + dz * dz <= l2) n++;
   }

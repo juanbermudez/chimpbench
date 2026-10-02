@@ -15,6 +15,7 @@ const TRACK_E_SWITCHES = [
   'ledgerNurseBout', 'ledgerGrowPotential', // E1f
   'darkCost', // E2c
   'rhythmCircadian', // E2d
+  'nestAudience', 'nestCompany', // E2e
 ] as const;
 
 test('Track E switches are all 0 by default in both profiles', () => {

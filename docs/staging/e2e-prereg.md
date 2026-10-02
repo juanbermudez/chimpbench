@@ -95,6 +95,17 @@ In the free-night context (R0 + `rhythmFreeNight` 1, a diagnostic arm, §6):
   samsonHunt2012) [M]; the Kibale daily minimum of 16.2 °C quoted by the previous agent was not traced to a source and is
   not used.
 
+### 3.3 Result of the offline check (run after §3.2 was committed, 77c4163; unchanged model code)
+- Output: `thermal-offline.ts` from this branch's head (scratch copy; printed values). Pre-dawn air in the model
+  (`tempBaseC − tempNightCoolC`) 15 °C. Lower critical temperature, dry, asleep / resting / feeding: adult male (39.0 kg)
+  8.2 / 1.0 / −2.8 °C; adult female (31.3 kg) 9.3 / 2.3 / −1.3 °C; juvenile 5 y (16.4 kg) 12.2 / 6.0 / 2.8 °C; juvenile
+  8 y (24.8 kg) 10.4 / 3.7 / 0.3 °C. Thermal load after 1 h out of a nest, dry, resting or feeding: **0.000 for every
+  class**. A debt below −0.05 appears only with rain ≥ 0.05 (5-y juvenile −0.117 feeding, −0.268 resting; 8 y −0.134
+  resting; adult female −0.071 resting) or 0.1 and more.
+- R0 30 + 30 (seeds 48, 7; `rhythm-R0.md`, frozen 77c4163): pre-dawn rain ≥ 0.05 in **0.8%** of the pre-dawn window;
+  **0 of 1,770** adult departures wet.
+- **Decision (by the registered rule): arm T is inert; not built, not run.** No switch `nestInsulation` exists.
+
 ## 4. Field rows and readouts (pre-flight)
 
 | Row | Sample (opened) | Readout (rhythm-metrics / e-bench) |
@@ -131,6 +142,15 @@ Before any arm, the S switches are smoke-tested for 2 days with the switch ON (�
    if T is live; R0 + F + S if it passes criterion 2 in step 2. If time allows, the best arm on the full stack R
    (handoff §3).
 4. At most 3 iterations, each logged in §8 and committed before its run.
+
+### 6.1 Reference measured (R0, 30 + 30, seeds 48 and 7, frozen 77c4163; `rhythm-R0.md`)
+Adult departure median −13 min (p10–p90 −14 to −13), 99% before sunrise (n 1,770); co-departures 43.3%; 5–8 y out of a
+nest 96.0% of the pre-dawn window, 576 m per animal-morning; adults out of a nest 0.1% of night time, T-RHY-5 0.00;
+juveniles 5–15 y 4.6% of night time; last waking −128 min (p10–p90 −135 to −123); no deaths.
+
+### 6.2 Smoke tests with the switches ON (seed 48, 2 days, no burn-in; sanity only, not a result)
+Both arms ran without error; readouts sane. R0 + S: 56% of departures before sunrise (n 54), co-departures 40.7%,
+5–8 y out 45.5% before dawn. R0 + F + S: adults out of a nest 9.0% of night time (T-RHY-5 0.10).
 
 ## 7. Known defects (fix before measuring, or listed here)
 - `rhythm-metrics` co-departure readout is quadratic in departures per run (fine at 30 days).
