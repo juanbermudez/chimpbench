@@ -242,3 +242,11 @@ A further iteration only if a source for colobus day range or for detection dist
   colobus avoidance of chimpanzees is not modelled (no rate found). **Decision:** the inputs (density, ranging) are
   minor drivers; most of the excess is how the encounter is counted (scorer) plus an unexplained residual. The one
   sourced, site-matched input correction is the density, and it is small.
+
+#### Iteration 1 results
+
+- **H reproduces E4e's H1 exactly** (518295c, `git.dirty` 0): T-HUN-1 14.19, T-HUN-3 0.0267 with 11.96 encounters per
+  100 h, T-HUN-4 2.27, fitted 2.25 (z −1.8), held-out 3.18 (z +0.5), without the rare rows 2.56 (z +0.5), count 102
+  (`judge_vs_reps.py quick R H.json`). With RD0 = D0 and I1, the code under test is E4e's on every path R and H use.
+- **Tool checks on the reference**: RD0 reproduces D0 scan for scan; the focal model-rule rows give T-HUN-3 (0.1236,
+  0.0847 per seed) and T-HUN-4 (1.7594, pooled logistic) exactly as R-quick; RD1's truth (5.71) equals E4e's NR1q.
