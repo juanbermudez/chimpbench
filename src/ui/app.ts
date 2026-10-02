@@ -195,7 +195,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
       if (on) {
         if (w.modelPolicy.mode === 'off') deps.setPolicy('async');
         if (c && c.controller !== 'model') deps.setRoster('selected', c.id);
-        ctx.notify({ text: `GLiNER now decides for ${c?.name ?? 'the selected chimp'} (${w.modelPolicy.mode}).`, cat: 'model' });
+        ctx.notify({ text: `The selected provider now decides for ${c?.name ?? 'the selected chimp'} (${w.modelPolicy.mode}).`, cat: 'model' });
       } else {
         deps.setPolicy('off');
         ctx.notify({ text: 'Model off — rules decide for every chimp.', cat: 'model' });

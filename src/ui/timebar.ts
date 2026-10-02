@@ -56,7 +56,7 @@ export function createTimebar(root: HTMLElement, ctx: Ctx) {
       let st = 'ok', text = 'Running · every chimp resolves every tick';
       const target = clock.ecoSecondsPerSecond;
       if (!clock.playing) { st = 'paused'; text = 'Paused · Space to resume'; }
-      else if (clock.blockedByModel) { st = 'blocked'; text = 'Waiting on model · lockstep holds the clock until GLiNER answers'; }
+      else if (clock.blockedByModel) { st = 'blocked'; text = 'Waiting on model · lockstep holds the clock until the model answers'; }
       else if (clock.limited) { st = 'limited'; text = `Sim-limited · every tick still runs; capped at ${formatRate(clock.effectiveRate)}${Number.isFinite(target) ? ` of ${formatRate(target)}` : ''}`; }
       if (state.dataset.state !== st) state.dataset.state = st;
       set(state, text);

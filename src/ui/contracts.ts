@@ -21,13 +21,15 @@ export interface DecisionTraceView {
   options: Candidate[]; probabilities: number[]; choiceIndex: number; rulesIndex: number;
   applied: boolean; discardedReason: string; latencyMs: number; inputTokens: number; source: 'model' | 'rules-fallback';
   /** '' or how an applied answer was applied, e.g. 'applied to newer state (still legal)'. */
-  note?: string;
+  note?: string; provider?: string; model?: string;
 }
 
 export type Roster = 'selected' | 'focal-set' | 'all';
 
 export interface DeciderView {
   enabled: boolean; ready: boolean; busy: boolean; phase: string; status: string; lastError: string;
+  /** Provider selection is host configuration, independent of the saved World. */
+  provider?: string; providerLabel?: string; progress?: number | null;
   model: string; device: string; latencyMs: number | null; inputTokens: number | null;
   calls: number; applied: number; discarded: number;
   roster: Roster; focalIds: number[]; traces: DecisionTraceView[]; agreement: { same: number; total: number };
@@ -53,6 +55,7 @@ export interface UiDeps {
   setPolicy(mode: ModelPolicy['mode']): void;
   setRoster(roster: Roster, selectedId: number): void;
   retryModel(): Promise<void>;
+  setProvider?(id: 'browser' | 'server' | 'jev'): void;
   applyIntervention(kind: InterventionKind, options: { troopId?: number; position?: Vec3 }): Stimulus | null;
   relationOf(world: World, a: Chimp, b: Chimp): Relation;
   /** Optional: a's relationship with b (bond, tension, last incident, tallies). Absent in older hosts. */

@@ -6,7 +6,18 @@
 <meta name="color-scheme" content="dark">
 <meta name="description" content="Credits for the ChimpBench Primate Decision Simulator: the tools, decision models, sound and field data it uses, and the studies it draws on.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230c0c0e'/%3E%3Cpath d='M22.5 11.2A8 8 0 1 0 22.5 20.8' fill='none' stroke='%23e2bf79' stroke-width='2.8' stroke-linecap='round'/%3E%3C/svg%3E">
-<title>Credits · ChimpBench Primate Decision Simulator</title>
+<title>Sources &amp; credits · ChimpBench</title>
+<link rel="canonical" href="https://chimpbench.pages.dev/docs/sources">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Sources &amp; credits · ChimpBench">
+<meta property="og:description" content="The research, tools and data behind ChimpBench.">
+<meta property="og:url" content="https://chimpbench.pages.dev/docs/sources">
+<meta property="og:image" content="https://chimpbench.pages.dev/social/about.jpg">
+<meta property="og:image:alt" content="ChimpBench rainforest scene">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Sources &amp; credits · ChimpBench">
+<meta name="twitter:description" content="The research, tools and data behind ChimpBench.">
+<meta name="twitter:image" content="https://chimpbench.pages.dev/social/about.jpg">
 <link rel="stylesheet" href="guide/fonts.css">
 <style>
 /* The guide's frame (docs/architecture.html), trimmed to what this page uses: tokens, top bar, page column, section header,
@@ -63,6 +74,8 @@ footer.end a { color: var(--ink-2); text-decoration-color: var(--line-3); } foot
   .sources { columns: 1; } .brand b { letter-spacing: .08em; }
   footer.end { width: calc(100% - 32px); }
 }
+.x-profile { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 6px; }
+.x-profile:hover { color: var(--ink); background: var(--surface); }
 </style>
 </head>
 <body>
@@ -73,8 +86,8 @@ footer.end a { color: var(--ink-2); text-decoration-color: var(--line-3); } foot
 <a class="skip" href="#main">Skip to the credits</a>
 
 <header class="top">
-  <a class="brand" href="architecture.html" aria-label="ChimpBench Primate Decision Simulator"><b>ChimpBench</b><i></i><span>Primate Decision Simulator</span></a>
-  <a class="top-link" href="architecture.html"><svg class="i" aria-hidden="true"><use href="#i-left"/></svg> Back to the guide</a>
+  <a class="brand" href="/about" aria-label="ChimpBench Primate Decision Simulator"><b>ChimpBench</b><i></i><span>Primate Decision Simulator</span></a>
+  <a class="top-link" href="/about"><svg class="i" aria-hidden="true"><use href="#i-left"/></svg> Back to About</a>
 </header>
 
 <div class="page">
@@ -108,7 +121,7 @@ footer.end a { color: var(--ink-2); text-decoration-color: var(--line-3); } foot
           <li><a href="https://pytorch.org/">PyTorch</a> <span>· runs the model</span></li>
           <li><a href="https://github.com/huggingface/transformers">Hugging Face Transformers</a> <span>· model code underneath</span></li>
           <li><a href="https://arxiv.org/abs/2106.09685">Trained adapters (LoRA)</a> <span>· three temperaments of GLiNER trained for this project, with <a href="https://github.com/huggingface/peft">Hugging Face PEFT</a></span></li>
-          <li><a href="https://docs.typesafe.ai/">Jev by TypeSafe</a> <span>· a System One model, tested offline only; its answers are never used for training</span></li>
+          <li><a href="https://docs.typesafe.ai/">Jev by TypeSafe</a> <span>· an optional hosted decision model the app can use</span></li>
         </ul>
       </section>
 
@@ -174,7 +187,7 @@ footer.end a { color: var(--ink-2); text-decoration-color: var(--line-3); } foot
   </main>
 </div>
 
-<footer class="end"><span>© <span data-year>2026</span> <a data-x-link href="https://x.com/jbermudez5" target="_blank" rel="noopener">Juan Bermudez</a></span><span><a data-x-link data-x-text href="https://x.com/jbermudez5" target="_blank" rel="noopener">x.com/jbermudez5</a></span></footer>
+<footer class="end"><span>© <span data-year>2026</span> <a data-x-link href="https://x.com/jbermudez5" target="_blank" rel="noopener">Juan Bermudez</a></span><span><a data-x-link class="x-profile" href="https://x.com/jbermudez5" target="_blank" rel="noopener noreferrer" aria-label="Juan Bermudez on X" title="Juan Bermudez on X"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.64 7.584H.47l8.6-9.835L0 1.154h7.594l5.243 6.932zM17.61 20.644h2.039L6.486 3.24H4.298z"/></svg></a></span></footer>
 <script type="module" src="guide/site.js"></script>
 </body>
 </html>

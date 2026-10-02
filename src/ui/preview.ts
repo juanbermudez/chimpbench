@@ -30,7 +30,7 @@ const deps: UiDeps = {
     const s: Stimulus = { id: nextStim++, kind, position: o.position ?? [0, 0, 0], radius: kind === 'remove-alpha' ? 0 : 30, start: world.time, end: world.time + 2, troopId: o.troopId ?? 1, label: kind };
     world.stimuli.push(s); world.events.push({ time: world.time, kind: 'system', text: `Experiment: ${kind}`, actors: [], troopId: s.troopId, severity: 2 }); return s;
   },
-  relationOf: syntheticRelation, newWorld() {}, setQuality() {}, guideUrl: '/docs/architecture.html',
+  relationOf: syntheticRelation, newWorld() {}, setQuality() {}, guideUrl: '/about',
 };
 const app = createApp(document.getElementById('app')!, deps);
 app.ready();
