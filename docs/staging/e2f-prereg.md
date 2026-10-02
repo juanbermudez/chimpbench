@@ -239,4 +239,114 @@ passes both lines (adults ≤ 3.3% of the night, T-RHY-5 ≤ 0.033); if any sing
 "marginal".
 
 ## 10. Results
-(to be filled from the JSON by script)
+
+Runs: field profile, seeds 48 and 7, 30-day burn-in + 30 days, `--workers 1` (load 10–24), from frozen detached
+checkouts: R0 and its re-draws at 31dea54 (e-bench) and c8eb087 (rhythm-metrics; same simulation code), iteration 1 at
+646af95, iteration 2 at 9d4fac9; every e-bench JSON `git.dirty` 0. R0 reproduces E2e's R0 exactly (fitted 4.267,
+held-out 6.429, prescriptions 115; departures −13 min, 99% before sunrise, 1,770 departures in R0a, 5–8 y out 96.0% of
+the pre-dawn window). Every number below is printed by the scratch scripts `rhy_table.py` and `bench_judge.py` from the
+JSON (copies of the scripts and runs in `artifacts/validation/e2f/`, gitignored). Prescription counts from
+`scripts/prescription-ledger.ts --count`: R0 115, W 115, every arm with `rhythmFreeNight` 113. `rhythmDarkW` is read in
+no arm (nor in R0): traced over 2 days, seed 48.
+
+### 10.1 Rhythm readouts (rhythm-metrics; R0 as the mean ± SD of its four realizations)
+
+| Readout | R0 mean ± SD (min to max) of its 4 runs | W | WF | WH | WHF | WFS | WFSD | WFSD1 | WFSD2 | WFSD3 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Last waking, adults (min after sunrise, median) | -128 ± 1 (-128 to -127) | -65 | -64 | -28 | -28 | -65 | -65 | -64 | -65 | -65 |
+| Last waking, independent 5–8 y | -126 ± 1 (-127 to -126) | -63 | -62 | -27 | -28 | -63 | -64 | -62 | -62 | -62 |
+| Hours asleep, adults (mean) | 8.16 ± 0.00 (8.16 to 8.16) | 9.71 | 9.71 | 10.51 | 10.50 | 9.71 | 9.71 | 9.71 | 9.70 | 9.71 |
+| Sleep onset, adults (min after sunset, median) | 97 ± 1 (97 to 98) | 67 | 68 | 56 | 55 | 67 | 67 | 68 | 67 | 67 |
+| S at the last waking (median) | 0.089 ± 0.000 (0.089 to 0.089) | 0.056 | 0.056 | 0.045 | 0.045 | 0.056 | 0.056 | 0.056 | 0.056 | 0.056 |
+| Departure, adults (min after sunrise, median) | -13 ± 0 (-13 to -13) | -13 | -63 | -13 | -28 | -60 | -14 | -13 | -13 | -14 |
+| Departures before sunrise, adults | 0.99 ± 0.00 (0.99 to 1.00) | 0.99 | 0.96 | 1.00 | 0.99 | 0.83 | 0.83 | 0.82 | 0.83 | 0.85 |
+| T-RHY-3: adult-female departures before sunrise | 1.00 ± 0.00 (0.99 to 1.00) | 1.00 | 0.98 | 1.00 | 0.99 | 0.90 | 0.90 | 0.90 | 0.89 | 0.89 |
+| Departures (n) | 1793 ± 16 (1770 to 1803) | 1801 | 1801 | 1799 | 1769 | 1762 | 1811 | 1776 | 1800 | 1775 |
+| Pre-dawn window out of a nest: adults | 0.106 ± 0.000 (0.106 to 0.107) | 0.105 | 0.497 | 0.109 | 0.226 | 0.334 | 0.269 | 0.261 | 0.267 | 0.285 |
+| … independent 8–15 y | 0.106 ± 0.001 (0.105 to 0.106) | 0.106 | 0.499 | 0.109 | 0.226 | 0.343 | 0.290 | 0.301 | 0.291 | 0.291 |
+| … independent 5–8 y | 0.961 ± 0.002 (0.959 to 0.963) | 0.512 | 0.507 | 0.220 | 0.228 | 0.397 | 0.362 | 0.347 | 0.334 | 0.349 |
+| 5–8 y metres per pre-dawn window | 611 ± 36 (576 to 662) | 345 | 419 | 187 | 196 | 303 | 604 | 590 | 562 | 621 |
+| Last nest entry (min after sunset, median) | -33 ± 1 (-34 to -32) | -32 | -30 | -32 | -32 | -32 | -33 | -31 | -32 | -32 |
+| Start of the last nest (min before sunset, median) | 39 ± 1 (38 to 39) | 37 | 36 | 37 | 38 | 38 | 38 | 37 | 37 | 38 |
+| Active day, adults (h, mean) | 11.88 ± 0.03 (11.86 to 11.91) | 11.90 | 12.69 | 11.89 | 12.15 | 12.26 | 12.11 | 12.13 | 12.17 | 12.21 |
+| Adults out of a nest, share of night | 0.0006 ± 0.0002 (0.0003 to 0.0009) | 0.0004 | 0.0618 | 0.0003 | 0.0119 | 0.0393 | 0.0296 | 0.0288 | 0.0304 | 0.0317 |
+| T-RHY-5 (adults) | 0.001 ± 0.000 (0.000 to 0.001) | 0.000 | 0.064 | 0.000 | 0.013 | 0.044 | 0.030 | 0.028 | 0.029 | 0.031 |
+| Juveniles 5–15 y out of a nest, share of night | 0.0461 ± 0.0001 (0.0459 to 0.0462) | 0.0192 | 0.0615 | 0.0028 | 0.0115 | 0.0417 | 0.0350 | 0.0358 | 0.0355 | 0.0348 |
+| Night deaths | 0 ± 0 (0 to 0) | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Deaths (all) | 0 ± 0 (0 to 0) | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+(WH, WHF: the sensitivity arms at 10.5 h of sleep, not an input. WFSD1–3: WFSD's three re-draws.)
+
+### 10.2 Benchmark (e-bench --quick; against the mean of R0's four realizations, e-noise.md amendment 2)
+
+```
+ref R0: commit 31dea54861 dirty 0 fitted 4.267 held-out 6.429 presc 115 viab pass
+ref R1: commit 31dea54861 dirty 0 fitted 5.884 held-out 6.784 presc 115 viab pass
+ref R2: commit 31dea54861 dirty 0 fitted 4.362 held-out 6.510 presc 115 viab pass
+ref R3: commit 31dea54861 dirty 0 fitted 3.847 held-out 7.342 presc 115 viab pass
+
+arm W: commit 646af95f8c dirty 0 fitted 3.812 held-out 7.156 presc 115 viab pass
+  fitted           rows 15  ref mean 2.664 (runs 3.001, 2.602, 3.028, 2.024; own SD 0.469, used 0.69)  arm 2.478  diff -0.186  z -0.24  inside noise
+  held-out         rows 12  ref mean 5.908 (runs 6.429, 5.297, 6.010, 5.897; own SD 0.468, used 1.26)  arm 6.656  diff +0.748  z +0.53  inside noise
+  held-out-norare  rows 11  ref mean 4.866 (runs 4.564, 4.650, 4.902, 5.349; own SD 0.353, used 0.48)  arm 4.931  diff +0.064  z +0.12  inside noise
+  largest row moves vs ref mean: T-HUN-4 (h) +0.684, T-HUN-1 (f) +0.490, T-COM-11 (f) -0.402, T-HUN-7 (f) -0.219, T-SOC-6 (h) +0.105, T-ACT-3 (f) +0.101
+  T-FOOD-10: arm 1 vs refs [1, 1, 1, 1]
+
+arm WFSD: commit 9d4fac918e dirty 0 fitted 2.006 held-out 5.432 presc 113 viab pass
+  fitted           rows 15  ref mean 2.664 (runs 3.001, 2.602, 3.028, 2.024; own SD 0.469, used 0.69)  arm 1.858  diff -0.806  z -1.05  inside noise
+  held-out         rows 12  ref mean 5.908 (runs 6.429, 5.297, 6.010, 5.897; own SD 0.468, used 1.26)  arm 4.932  diff -0.976  z -0.69  inside noise
+  held-out-norare  rows 11  ref mean 4.866 (runs 4.564, 4.650, 4.902, 5.349; own SD 0.353, used 0.48)  arm 4.247  diff -0.619  z -1.15  inside noise
+  largest row moves vs ref mean: T-FOOD-10 (h) -0.833, T-HUN-2 (f) -0.392, T-HUN-4 (h) -0.357, T-RNG-5 (h) +0.322, T-HUN-1 (f) -0.285, T-COM-11 (f) -0.249
+  T-FOOD-10: arm 0.8166666666666667 vs refs [1, 1, 1, 1]
+```
+
+Single-reference `--compare` against R0a, for the record: W fitted −1.789 (16 rows), held-out +0.227 (12) / +0.367 (11
+without T-HUN-4 and T-BRD-1); WFSD fitted −1.144 (15), held-out −1.497 (12) / −0.316 (11). R0a was a high-fitted draw
+(3.001 on the common rows against a mean of 2.664), which is why the single-reference figures look better than the
+judged ones.
+
+### 10.3 Predictions against results
+- **W:** every registered range held: waking −65 (−75 to −55), 9.71 h (9.5–9.8), onset +67 (+60 to +75), departures
+  −13 and 0.99 before sunrise, adults' pre-dawn share 0.105 (0.08–0.13), 5–8 y 0.512 (0.40–0.65), last nest entry −32
+  (−45 to −30), active day 11.90 h, adults' night 0.04%, juveniles 1.9% (1–3%), no deaths, benchmark inside noise
+  (z −0.24 / +0.53 / +0.12), prescriptions 115.
+- **WF:** killed by night safety as predicted: adults 6.2% of the night (4–8%), T-RHY-5 0.064 (0.04–0.08), juveniles
+  6.2% (4–8%); departures −63, 0.96 before sunrise.
+- **WH / WHF (sensitivity):** waking −28 (−40 to −20); 5–8 y 0.22 (0.15–0.40); WHF passes the night lines (adults 1.2%,
+  T-RHY-5 0.013) with departures −28 and 0.99 before sunrise.
+- **WFS:** fails night safety as predicted (adults 3.9%, T-RHY-5 0.044; predicted 3–4.5% and 0.03–0.045).
+- **WFSD:** passes night safety (predicted possible, low confidence): over its four realizations adults 3.01 ± 0.12%
+  of the night (2.88–3.17%, line 3.3%), T-RHY-5 0.029 ± 0.001 (line 0.033), juveniles 3.53 ± 0.05% (R0 4.61%), no
+  death; every single run passes, so the pass stands by the registered reading rule, with a margin of 0.1–0.4 points.
+  Departures −14 min, 0.83 ± 0.01 before sunrise (predicted −35 to −10, 0.80–0.95); 5–8 y 0.35 of the window
+  (predicted 0.30–0.45) but ~590 m in it (R0 611 m); active day 12.15 h (predicted 12.2–12.6; staged T-RHY-1 10.5–12
+  slightly above). Benchmark inside noise in the improving direction (z −1.05 / −0.69 / −1.15), T-FOOD-10 1.00 → 0.82.
+
+## 11. Verdict
+
+| Arm | Result | Decision |
+| --- | --- | --- |
+| `sleepChimp` alone (W) | The sleep window was wrong: with captive EEG sleep (9.7 h) in place of the human 8.2 h, waking moves from 128 to 65 min before sunrise and sleep onset from 97 to 67 min after sunset; independent 5–8-year-olds' pre-dawn wandering halves (96% → 51% of the window, 611 → 345 m) and juveniles' night activity falls (4.6% → 1.9%). Adults are still released by the night menu (−13 min, 99% before sunrise). Inside noise; removes no prescription | **recorded mechanism, off** (no prescription removed) |
+| Without the menu (WF) | Adults leave on waking (−63 min), out 6.2% of the night | **killed** (night safety) |
+| Without the menu, with E2e's company and E2c's darkness (WFSD) | The first hold of the pre-dawn hours without the night menu: adults 3.0% of the night (≤ 3.3%), T-RHY-5 0.029, juveniles 3.5%, no night death, in all four realizations; prescriptions 115 → 113; viability passes; fitted and held-out inside noise (z −1.05, −0.69; −1.15 without the rare rows). Departures still 83% before sunrise (T-FOOD-10 0.82, band 0.08–0.30) | **keep candidate (provisional, a package of five switches), off by default; recommend a 5-seed confirm and the full stack before any default** |
+
+Reading:
+- **Is the sleep window wrong?** Yes, in amount: the human two-process values sleep 8.2 h under Kibale light, captive
+  chimpanzee EEG gives 9.7 h (adults) and 10.8–11.9 h (immatures). The amount is the term that sets waking once the
+  route is fixed. Process C's phase (τ, light response) stays human: the only chimpanzee period (24.8 h, n = 1, constant
+  light, urine) is not admissible.
+- **Does the sourced window fix the pre-dawn problem without a holder?** Not alone: adults still wake 65 min before
+  sunrise and leave on waking without the menu. It shrinks the awake-in-the-dark time from about 107 to about 44 min
+  before the night ends (daylight 0.03, about 21 min before sunrise), and that is what lets the recorded non-prescriptive mechanisms (company, darkness) hold the
+  night without the menu, which they could not do on the human window (E2e: 7.3% of the night). With a slightly
+  larger adult amount (10.5 h, the video lower bound) the free night is safe even without them (WHF 1.2%).
+- **What still fails:** departure timing. Captive chimpanzees under natural light leave their platform 45–60 min
+  before sunrise (videan2005), about when the chimpanzee window wakes them; wild ones mostly stay until about sunrise
+  (janmaat2014: 18% before). The model's held animals leave when joining a departure opens (sun about −4°, ~13 min
+  before sunrise); nothing measured holds an awake wild chimpanzee in its nest for the last quarter hour.
+- **Margins:** the WFSD night pass is narrow (0.1–0.4 points under the line) and rests on two switches that earlier
+  stages did not keep alone (`nestCompany`, `nestAudience`: design values; `darkCost`: a null on the human window).
+
+Biggest open problem: what keeps an awake wild chimpanzee in its nest until about sunrise (captive ones get up 45–60
+min before it), and the adult sleep period under natural light by EEG (onset and final waking clock times), which
+decides how much of the pre-dawn hold is sleep at all (9.7 h leaves 44 min awake before the night ends; 10.5 h, 7).
