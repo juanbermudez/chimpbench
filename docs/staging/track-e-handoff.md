@@ -18,8 +18,9 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   why infants of 1–4 y drink the whole milk yield; mothers' deficit) and **E5c** (`e5c-crown-share`: a crown's crop
   shared by its feeders; party members feed in different crowns), both from track-e c7a4c75, briefs in the session
   scratchpad (`integrator/e1o-prompt.txt`, `e5c-prompt.txt`). Integrator: the shared S5 quick reference, 4 runs
-  (`bench-run/artifacts/validation/e/s5q/`, script `integrator/s5q.sh <label> [rgTemperature]`: S5q and S5q1 running,
-  then S5q2 0.1639 and S5q3 0.16405); message both agents when all four exist.
+  (`bench-run/artifacts/validation/e/s5q/`, script `integrator/s5q.sh <label> [rgTemperature]`): **done** 13:29, all
+  four viable and clean; fitted 3.00 / 2.71 / 3.75 / 3.71, held-out without the rare rows 5.24 / 5.19 / 5.46 / 5.29;
+  both agents told. A quick run takes 3–6 min and energy-diagnose ~3 min.
 - **S5 done: the best integrated candidate so far** (e-stack2-confirm.md; S4 + `companyMargin`): 77 prescriptions
   (today's model 135), viable, night safe; fitted better than R beyond noise (z −3.2) and level with or better than
   today's model (z −1.8); feeding, grooming, rest, party size in band, travel at its edge (0.258 / 0.216); males walk
