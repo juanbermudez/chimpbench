@@ -1,5 +1,5 @@
 import type { Action, Candidate, Chimp, DecisionSource, InteractionKind, World } from '../types';
-import { candidateMeta, departAudience, dependentOn, isCarried, nearestNeighbor, V } from './candidates';
+import { candidateMeta, departAudience, dependentOn, isCarried, nearestNeighbor, partyOn, V } from './candidates';
 import { notifyAllies, resolveCharge, resolveFight } from './conflict';
 import { addEvent, emitCall, endInteraction, episode, findInteraction, flashInteraction, gate, interrupt, startInteraction } from './events';
 import { nestPoint } from './generation';
@@ -314,7 +314,7 @@ function onStart(world: World, c: Chimp): void {
       // can see the leader go (it is inside their own sight radius and the party chain distance) and are not absorbed
       // (feeding in a crown, grooming or being groomed, asleep); those get a decision point. A travel hoo reaches every
       // hearer on its own (perception.ts). Definitions from existing state; design assumptions
-      const notice = !cue && P.joinChoice === 1 && P.partyFollowW > 0 && c.action === 'travel' && x.v === V.TREE && x.aux <= 0;
+      const notice = !cue && P.joinChoice === 1 && partyOn(P) && c.action === 'travel' && x.v === V.TREE && x.aux <= 0;
       if (notice) {
         const groomed = new Set<number>();
         for (const g of idx.alive) if (g.action === 'groom' && g.targetId > 0 && ix(g).phase >= 1) groomed.add(g.targetId);
@@ -329,7 +329,7 @@ function onStart(world: World, c: Chimp): void {
       }
       // party cohesion (field profile): companions notice a departure and may follow (candidates.ts, partyFollow*);
       // since stage C7a only goal-directed departures (travel) alert them, not an animal that is itself following
-      if (!cue && !notice && P.partyFollowW > 0 && (P.partyLeaderFollow !== 1 || c.action === 'travel')) for (const sid of x.seen) {
+      if (!cue && !notice && partyOn(P) && (P.partyLeaderFollow !== 1 || c.action === 'travel')) for (const sid of x.seen) {
         const b = idx.byId.get(sid);
         if (b && b.alive && b.troopId === c.troopId && b.age >= 5 && b.action !== 'follow' && hd(b, c) < P.partyLinkM) interrupt(world, b, `${c.name} is moving off`);
       }
@@ -598,7 +598,7 @@ export function executeAction(world: World, c: Chimp): void {
       const d = hd(c, o);
       if (x.v === V.PARTY && d > x.sight * 1.6) return finish(world, c);
       // party cohesion (field profile): once caught up with a companion who has stopped, decide afresh (feed with it, rest, groom)
-      if (x.v === V.PARTY && x.aux !== 1 && P.partyFollowW > 0) {
+      if (x.v === V.PARTY && x.aux !== 1 && partyOn(P)) {
         const moved = Math.hypot(o.position[0] - x.gx, o.position[2] - x.gz);
         x.gx = o.position[0]; x.gz = o.position[2];
         if (c.actionTime > TICK_SECONDS && moved < 0.5 && d < 5) return finish(world, c);

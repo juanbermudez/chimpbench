@@ -3680,6 +3680,32 @@
    "notes": "Males charge females at or above this swelling (linked to mating success [M-H])."
   },
   {
+   "id": "cohesionValue",
+   "group": "social",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Food competition and party size): chapman1995, newtonFisher2000 (ecological constraints on party size); emeryThompson2014 (receptive females raise the number of males in parties)"
+   ],
+   "clock": "none",
+   "symbol": "P.cohesionValue",
+   "file": "src/sim/candidates.ts",
+   "integer": true,
+   "notes": "Stage E5a switch (docs/staging/e5a-prereg.md §3): party cohesion valued from what association yields, in place of the weights tuned to party size (partyFollowBase, partyFollowW, partyFollowMaleW, partyStayW in C5a; joinHooW in C13e; joinSocialW). With 1 (field profile, partyJoinTrip 1): a companion's company is worth C13e's join terms (joinBase + joinBondW x bond + joinAllyW x ally + joinRankW x it dominates + partyFollowSocialW x sociability) plus, for a male with a fertile female, the mate offer's mating value (candidates.ts companyValue); following a party member is worth its company less the company left behind and the walk; joining a leader's trip adds the food at its tree shared with the feeders there (treeIntake), valued and walked like the animal's own trip; own trips to food or water, the pull home and approaches to callers forfeit the best settled companion's company (approaches gain the caller's); a travel hoo informs and adds no value. The directions are sourced (ecological constraints: party size set by food-patch competition against the benefits of association); every magnitude is an existing design term; no new constant. 0 = today, bit-identical. Ablation switch."
+  },
+  {
    "id": "colobusDensityKanyawaraPerKm2",
    "group": "prey",
    "value": 2.22,

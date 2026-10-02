@@ -125,12 +125,66 @@ follow), by `followCarer` 1. Deferred (not part of cohesion as defined here; wou
 approach goal is read live from `x.joinX/joinZ` (`src/sim/execution.ts:588`), overwritten by every later call heard
 (`src/sim/perception.ts:317`), so an approach goes to whoever called last (E4g §2).
 
-## 3. Mechanism (step 2)
+## 3. Mechanism (step 2): `cohesionValue`, iteration 1 (registered 2 October 2026, 10:05, before any run of it)
 
-To be registered before any run of changed code. One first-principles switch (0 = today) built from terms the model
-already computes (crown share under competition from the ledger's intake; bond and kin; oestrous females for males;
-the walk's energy cost from the ledger's cost of transport), switching out the tuned weights (ACTIVE_WHEN; the count
-must fall). No new tuned constant.
+**Principle (ecological constraints).** Fission–fusion is the balance of what association yields against what it
+costs: companions share food (a crown's crop is divided among its feeders, so larger parties get less each: party size
+tracks patch size, chapman1995, newtonFisher2000 [M]) and companions are worth having (bonds, allies, rank, and for males
+receptive females, who raise the number of males in parties: emeryThompson2014 [M]); walking costs energy. Today none of
+that is weighed: following a companion is worth a tuned base 0.7 + 1.0 × bond + 0.4 for an adult male (C5a), leaving
+companions costs a tuned 0.05 each (C5a), a hoo adds a fitted 0.094 (C13e), and a lone animal is pulled to callers by
+a tuned 0.55 × social need (C5a).
+
+**Change (switch `cohesionValue`, 0 = today in both profiles; read only in the field profile, with `partyJoinTrip` 1):**
+- *Company* (`companyValue`, candidates.ts): what the company of companion o is worth to c, the same moving or staying
+  (E2e's design assumption): C13e's join terms without what belongs to a departure, `joinBase` + `joinBondW`·bond +
+  `joinAllyW`·[ally] + `joinRankW`·[o dominates c] + `partyFollowSocialW`·sociability; plus, for a male of 10 y or more
+  with a fertile unrelated female (swelling ≥ 0.75, the mate offer's gate), the mate offer's own mating value
+  (`mateWorth`: 0.3 + 0.5·swelling + 0.15 if adult + 0.1·rank, the literals of the existing offer, now shared).
+- *Company forfeited* (`forfeitedCompany`): leaving the party loses the best settled companion (own community, ≥ 5 y,
+  in sight within the party link, not itself travelling or following, not in a nest). Subtracted from every option that
+  walks the animal away alone: own trips to trees (in place of `partyStayW` × companions), drinking trips, the pull
+  home, approaches to callers. A design assumption: one companion's worth (the best), not a sum.
+- *Following* a party member who travels off (V.PARTY): its company − the company forfeited − rain × 0.3 (as today) −
+  the walk (distance ÷ `travelDistScaleM`, the energetic distance scale of own trips, derived from the cost of walking a
+  metre) — in place of `partyFollowBase`, `partyFollowW`, `partyFollowMaleW` (and `partyFollowHungerW`, 0 in the field).
+- *Joining a leader's trip to a tree* (C13e's joint trip): the leader's company − the company forfeited − rain × 0.3 + the
+  food at its tree for this animal, shared with the animals seen feeding there or going there, the leader included
+  (`treeIntake` with those feeders: the ledger's crown share), valued and walked exactly as the animal's own trip to a
+  remembered tree (`memTravelHungerW`, the crop it believes: in sight, its memory, else 0.2 as for any unremembered
+  crop; `tripCost`). No stay term: the crown being left is worth its own forage option. The hoo informs (it still gives a
+  decision point) and adds no value: `joinHooW` and `travelHooFollowW` are not read.
+- *Approaching a caller*: the caller's company − the company forfeited, in place of `joinSocialW` (with `joinMaleW`,
+  `joinSocialInPartyF`); the call's food and distance terms are unchanged.
+- No new magnitude: every term is an existing design term or input. Prescriptions under the switch (field, RF): 103 →
+  97 (computed with scripts/prescription-ledger's `prescriptionCount`): `partyFollowBase`, `partyFollowW`,
+  `partyFollowMaleW`, `partyStayW`, `joinHooW`, `joinSocialW` switched out in ACTIVE_WHEN; `partyOn` short-circuits the
+  `partyFollowW > 0` gate, so none of them is read (tests/sim-cohesion-value.test.ts traces a field day).
+
+**Arms (iteration 1).** **A1** = RF + `cohesionValue` 1: e-bench quick (seeds 48 and 7, 30 + 30 days, one run),
+`cohesion-diagnose` and `ranging-diagnose` (seeds 48, 7) on the same params. True day ranges of the reference:
+`ranging-diagnose` on RF and its three re-draws. Smoke test first (seed 48, 1 + 2 days, A1): every readout filled.
+
+**Predictions (A1 against the RF mean ± SD of four runs; low confidence unless stated).**
+
+| Quantity | Reference RF | Predicted A1 | Confidence |
+| --- | --- | --- | --- |
+| Prescription count | 103 | 97 | high (computed) |
+| T-PTY-1 | 3.53 ± 0.22 | up, 4.0–6.5 (fewer fissions: leaving alone costs a companion's company) | low |
+| Pair time together (truth) | 0.141 (RF diag) | up, 0.17–0.30 | low |
+| Splits by walks to water | 33% of pair splits | below 25% | moderate |
+| T-ACT-2 | 0.148 ± 0.009 | 0.12–0.16 | low |
+| T-RNG-4 | 1.93 ± 0.17 | 1.5–2.0 | low |
+| Adult males' true day range | (ranging-diagnose, RF ×4) | lower by 0.1–0.5 km | low |
+| Held-out without T-HUN-4, T-BRD-1 | reference mean | inside noise (|z| ≤ 2) | low |
+| Viability | pass | pass; median adult hunger up ≤ 0.05 | moderate |
+
+**Keep rule and kill criterion (registered).** Keep candidate if viable, held-out without the rare rows not worse beyond
+noise (z ≤ +2 against the RF mean) and the count falls (97). Recorded as a null if viability fails (any starvation
+death; a seed below 80% of its start), if held-out without the rare rows is worse beyond noise (z > +2), or if the
+mechanism does not run (no party follows or joined trips in the diagnosis). Party size, travel and day range are
+reported against the reference, not used to choose between versions: no iteration may be chosen for moving a fitted
+row toward its band.
 
 ## 4. Reference and judging (docs/staging/e-noise.md amendment 2)
 
@@ -149,3 +203,5 @@ must fall). No new tuned constant.
 ## 5. Iteration log
 
 (Each iteration is logged here and committed before its run; at most 3.)
+
+- **Iteration 1** (`cohesionValue` as in §3; arm A1): registered and committed before its run (this commit).
