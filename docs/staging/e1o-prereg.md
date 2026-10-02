@@ -1,6 +1,6 @@
 # E1o pre-registration: what an older infant drinks
 
-Registered 2 October 2026 (first commit 13:15), before any run of this stage. Track E, stage E1o, branch
+Registered 2 October 2026 (first commit 13:13), before any run of this stage. Track E, stage E1o, branch
 `e1o-milk-demand` (from `track-e` c7a4c75). Any new switch is 0 by default in both profiles and is read only with
 `energyLedger` 1, so the compressed goldens and the field pin cannot move.
 
@@ -89,14 +89,14 @@ at the end of the tick (after that tick's drink), so at 0.5–1 y drinking can e
 uses reserves ≥ the set point, which the drive holds infants near, so it is reported beside the reserves themselves.
 The predictions of §1.3 were written before the smoke and are not changed.
 
-**Readout added after the diagnosis run (disclosed; 13:50, before any mechanism was written).** The registered
+**Readout added after the diagnosis run (disclosed; committed 13:39, before any mechanism was written).** The registered
 readouts showed own food as the residual but could not say what the infant does while food is in reach, so D5 was
 added: **D5 while the mother feeds in a crown** (her forage act at a tree, in the crown), the share of the infant's
 daylight ticks in that state, and what the infant does then (eating own food, nursing, carried, its acts), its hunger
 and foregut fill. The diagnosis run is repeated once with it (same command, frozen checkout of the commit adding it);
 every other readout must come out identical (same simulation code; checked).
 
-**Second readout added after D5's run (disclosed; 14:05, before any mechanism was written).** D5 showed the infant
+**Second readout added after D5's run (disclosed; committed 13:51, before any mechanism was written).** D5 showed the infant
 resting 31–46% of its mother's crown time with its foregut half full, which could be choice or gut throughput (meals
 fill the foregut, rests are its emptying). **D6 own food against the foregut's throughput**: the own-food dry matter
 the infant eats (all dry matter eaten minus milk's, shared plant pieces included) while its mother is in a crown and
@@ -204,7 +204,7 @@ What the candidates of the brief can and cannot do, read from these numbers:
   by day only from 3.2 y (9.8% of attempts at 3–4 y); E1n's decision, taken only while she is awake, moves refused day
   milk to the night through the 24-h store.
 
-## 2. Step 2: mechanisms (registered 2 October 2026, 14:15, before any run of changed code)
+## 2. Step 2: mechanisms (registered 2 October 2026, committed 14:01 in c7a409d, before any run of changed code)
 
 ### 2.1 Iteration 1: two arms, one per candidate the diagnosis leaves open
 
