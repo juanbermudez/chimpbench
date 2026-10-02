@@ -254,4 +254,4 @@ held-out not up beyond noise (z ≤ +2, both row sets), count down → provision
 
 | Iteration | Registered (commit) | Arm | Status |
 | --- | --- | --- | --- |
-| 1 | this commit | W1 = R + `waterLedger` 1 | registered; smoke test next |
+| 1 | e378e73 | W1 = R + `waterLedger` 1 | smoke test (seed 48, 1 + 2 days, 2.9 s): every readout filled; no defect; 68% of adult drinking events at 07:00–09:00, deficit at an event 1.7–2.2% of mass; budget (mL/day) e.g. adult males: food 1,113, metabolic 203, drunk 569 in; evaporation 164, insensible 603, faecal 307, urine 800 out. Arm running from a frozen checkout of e378e73 (08:10) |
