@@ -2624,7 +2624,7 @@ badescu2016 were re-read in full (NCBI BioC, 2 October 2026); bibliographic data
 - badescu2016, badescu2022, bray2018, lonsdorf2014, maestripieri2002, vandeRijtPlooij1987, clark1977 and
   badescuThesis2017 are already listed; the entries above add findings.
 
-### Addendum: E5c crown share (2 October 2026)
+### E.39 Addendum: E5c crown share (2 October 2026)
 
 Read for stage E5c ([staging/e5c-prereg.md](staging/e5c-prereg.md) §2.2). Tags as above.
 

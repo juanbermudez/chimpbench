@@ -1720,7 +1720,7 @@ them; bray2018 gives no absolute ingestion rate in its text); new source trivers
 American Zoologist 14(1):249–264, doi:10.1093/icb/14.1.249; theory, via maestripieri2002) for the form of the mother's
 decision (design assumption).
 
-## Addendum: E5c crown share (2 October 2026)
+## 39. Addendum: E5c crown share (2 October 2026)
 
 Same text as research.md "Addendum: E5c crown share": potts2011 re-read in full (author copy through the Internet
 Archive capture of its Harvard DASH deposit; the live host shows a bot check) for the definition of feeding party size
