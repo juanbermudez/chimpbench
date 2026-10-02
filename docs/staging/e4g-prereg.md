@@ -78,9 +78,61 @@ No Ngogo fusion rate was found in the sources already cited.
 - **What the field cannot tell this stage:** how far listeners travel to a caller, or who moves. A mechanism must not
   assume either.
 
-## 2. Diagnosis (step 1)
+## 2. Diagnosis (step 1; registered 2 October 2026 before its runs)
 
-Not started. Registered before its run.
+**Question.** Which part of the walking does `callValue` add: food trips, joining or following a party, approaching a
+caller, water, patrol or other? How many approaches does a heard call start and from how far, how often is the caller
+reached, what does the joiner gain on arrival, and what do approaches cost in energy?
+
+**Code path (read before the run).** A community member's pant-hoot or drum heard within its radius (1 km) sets the
+listener's join cue: the call, the caller and the caller's position at the call, and `joinRich` = the caller was
+foraging with a target (`src/sim/perception.ts:316-318`). For 0.3 h the listener is offered 'travel' to the call's
+position (`V.CALLER`) at pull × (1 − rain/2) − distance ÷ `joinCallDistScaleM` (1,500 m), pull = 0.15 + 0.35 × the
+habitat fruit index + 0.3 × hunger + 0.15 × sociability when the call was at food, else 0.3 × sociability × fruit
+index − 0.05, plus (1 − social) × `joinSocialW` (0.55; × 0.4 with ≥ 2 companions in view) and `joinMaleW` 0.2 for adult
+male to adult male (`src/sim/candidates.ts:400-408`). Nothing in it reads the crop or the crowding at the caller's
+crown, the energy the walk costs, or how old and far the information is. The walk ends 25 m from the goal
+(`joinCallStopM`). Under `callValue` 1 most adult-male pant-hoots are given on arrival in a crown or by the contact
+value (E4c §9), so more calls are "at food" and carry the larger pull.
+
+**Known issue found while writing the readouts (deferred; not fixed before measuring, because any fix moves today's
+behaviour and must sit behind a switch):** the walk's goal is read live from `x.joinX/joinZ` (`src/sim/execution.ts:588`),
+which every later community pant-hoot or drum heard overwrites (`src/sim/perception.ts:317`), so an animal that chose
+to approach caller A walks to whichever community member called last, without a new decision. The diagnosis measures
+how often (`goalRedirected`). A mechanism may include a fix only behind its switch.
+
+**Runs.** `scripts/approach-diagnose.ts` (new; header defines every readout), seeds 48 and 7, field profile, 30-day
+burn-in + 30 days, rules policy, from a frozen detached checkout of the commit that adds this section: **RC** = R +
+`callValue` 1 and **R** (handoff §3). Simulation truth only.
+
+**Readouts** (definitions in the script header; field ones quote the source's Methods, §1):
+- path km per chimp-day by purpose and part, per class (adult males, adult females pooled, lactating, other adult
+  females, adolescents, juveniles 5–12 y), and locomotion kcal (walk, climb, carry) by purpose;
+- approaches (travel to a heard call): per chimp-day, start distance (bins at 250, 500, 750 m), share to calls at food,
+  the caller's act when it called, path, minutes and kcal per approach, ended at the goal or abandoned, goal
+  redirected by a later call, caller within 50 m at the end, party size at start and end, and in the 30 min after:
+  fed in the caller's crown, fed in another crown, came within 50 m of the caller, nothing;
+- per call at food and not at food: listeners ≥ 5 y in range, approaches started;
+- adult-male and adult-female pant-hoots per awake daylight hour;
+- fedurek2014: adult-male composition changes per awake hour at 5-min scans (field ≈ 0.69, derived); share of isolated
+  non-feeding adult-male pant-hoots with males joining within ±2 scans (0.25) or leaving (0.10); mean males joining in
+  the two scans after vs before (field medians 0.27 vs 0.15);
+- kalanBoesch2015: share of adult crown-feeding events with another community member arriving after the first minute
+  and within 30 min (0.27, Taï), by the focal's pant-hoot or food grunt before the first arrival;
+- viability: reserves ÷ store slope (%/day) for adult males, other adult females, lactating females, juveniles
+  (energy-diagnose's `traj`), deaths by cause.
+Smoke test (seed 48, 1 + 2 days, RC): every readout filled; nothing read from it beyond that.
+
+**Reading rule (registered).** Δ = RC − R per purpose, adult males and adult females separately. The term that adds
+the walking is the purpose with the largest Δ, if it carries at least 40% of the total Δ path; otherwise the walking is
+shared and the two largest are named. If it is 'callers', the approaches are split by calls at food and not at food
+and by outcome, and the mechanism (§3) addresses what makes approaches not worth their walk. Differences under 0.1 km
+a day are not resolved (single runs, 2 seeds).
+
+**Expected (before the run).** The largest Δ is 'callers' for adult males (moderate confidence) and adult females
+(low); 'party' (joined trips and follows) is second (low). Under RC most approaches go to calls at food (≥ 50%,
+moderate), a call at food starts more approaches than one not at food (high), and fewer than 25% of approaches end
+with the joiner feeding in the caller's crown within 30 min (moderate). Viability passes in both (high).
 
 ## 3. Mechanism (step 2)
 
