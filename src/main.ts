@@ -52,7 +52,8 @@ try {
 } catch (error) { providerConfigError = error instanceof Error ? error.message : String(error); }
 let savedProvider: string | null = null;
 try { savedProvider = localStorage.getItem('mgogo.decision-provider'); } catch { /* storage may be blocked */ }
-const providerId = providerSelection(providerConfig, import.meta.env.DEV && import.meta.env.VITE_STATIC !== '1', params.get('provider'), savedProvider, import.meta.env.VITE_DECISION_PROVIDER);
+// A build-fixed provider (VITE_DECISION_PROVIDER) is not overridden by ?provider= either.
+const providerId = providerSelection(providerConfig, import.meta.env.DEV && import.meta.env.VITE_STATIC !== '1', import.meta.env.VITE_DECISION_PROVIDER ? null : params.get('provider'), savedProvider, import.meta.env.VITE_DECISION_PROVIDER);
 const decider = createDecisionController(createProvider(providerId, providerConfig));
 if (providerConfigError) decider.lastError = providerConfigError;
 // Static hosting (VITE_STATIC=1, e.g. a published artifact): no local model server, no save library and no sound
@@ -176,7 +177,8 @@ const app = createApp(root, {
   setPlaying: playing => { clock.playing = playing; },
   setPolicy: mode => { epoch++; setPolicy(decider, world, mode); },
   setRoster: (roster, selectedId) => { epoch++; setRoster(decider, world, roster, selectedId); },
-  setProvider: id => {
+  // A build that fixes the provider (VITE_DECISION_PROVIDER, e.g. the hosted GLiNER-only site) offers no picker.
+  setProvider: import.meta.env.VITE_DECISION_PROVIDER ? undefined : id => {
     if (!isProviderId(id)) return;
     epoch++; setDecisionProvider(decider, createProvider(id, providerConfig));
     try { localStorage.setItem('mgogo.decision-provider', id); } catch { /* storage may be blocked */ }
