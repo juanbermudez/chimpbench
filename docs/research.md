@@ -2659,7 +2659,7 @@ lactation sources); one new source was read (PubMed abstract, 2 October 2026).
   self-regulate their total energy intake when other foods are introduced". Use in E1o: an infant's milk intake is the
   remainder of one appetite after its other food (direction; mechanism citation for counting milk and solids in one
   drive, arm A), so milk can fall below supply only when other food covers more of the need; in the model the infant's own food
-  rises with its hunger (e1o-prereg.md §2.2: with milk limited by its mother, 35–53% more), the same direction.
+  rises with its hunger (e1o-prereg.md §2.2: with milk limited by its mother, 27–52% more), the same direction.
 - *new* cohen1994: Cohen RJ, Brown KH, Canahuati J, Rivera LL, Dewey KG 1994. Effects of age of introduction of
   complementary foods on infant breast milk intake, total energy intake, and growth: a randomised intervention study in
   Honduras. *Lancet* 344(8918):288–293. [doi:10.1016/s0140-6736(94)91337-4](https://doi.org/10.1016/s0140-6736(94)91337-4) (Abs, PubMed 7914260).

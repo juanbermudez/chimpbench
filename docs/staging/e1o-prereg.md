@@ -194,7 +194,7 @@ time (T-INF-1: 8.6–16.8% of daylight against 17–47%), not its intake.
 "stops near what its foregut passes while food is in reach", and the paragraph above built on it, are withdrawn. D6's
 registered rule read a crown-time intake at or above what a full foregut passes (1.15–1.35 here) as a foregut limit;
 in arm B the same infants, hungrier (5–6% of their store below the set point), ate 1.58–1.72 × that amount in their
-mothers' crown time, 35–53% more own food a day in 41–51% more eating minutes (§2.2). The ratio exceeds 1 because
+mothers' crown time, 27–52% more own food a day in 26–50% more eating minutes (§2.2). The ratio exceeds 1 because
 meals fill the foregut from below between rests, so it is no ceiling, and own food at the reference was limited by the
 infant's hunger, not its gut. The term restated:
 
@@ -206,7 +206,7 @@ hunger (arm B), so it fills only what the yield leaves of a need that exceeds it
 synthesis limits what it drinks: the weaning roll refuses 9.8% of day attempts at 3–4 y, and refused milk waits in a
 store that holds a day of synthesis. Where the need is below the yield (0.5–1 y), the infant drinks below it (284).
 E1m's reading (more eating time would mean less milk needed) is therefore not contradicted: in arm B, with milk
-limited, infants ate 41–51% more minutes and 35–53% more own food. The candidate list below was written with the
+limited, infants ate 26–50% more minutes and 27–52% more own food. The candidate list below was written with the
 withdrawn reading; its foregut statements (candidates 1 and 3) go with it, and the rest stands.
 
 What the candidates of the brief can and cannot do, read from these numbers:
@@ -399,7 +399,7 @@ not separated by these arms).
   milk (−61 to −64 against −5 to −32 kcal/day); mothers' balance improved most at 2–4 y (+10 and +4 against −87 and −66 kcal/day)
   and now rises with infant age from 0.5 y (−15, −4, +10, +4: T-ENE-5's direction); infants' reserves −0.050 to −0.062;
   growth unchanged (3.60 kg/y); no death; prescriptions 76; sums inside noise (z −0.85, −0.98, −0.65); night safe.
-  Missed: own food rose 35–53% (registered 0–25%), in 41–51% more eating minutes; the indicative weaning line moved
+  Missed: own food rose 27–52% (registered 0–25%), in 26–50% more eating minutes; the indicative weaning line moved
   from 6.54 to 5.77 y.
 
 **Verdict (registered rule, §2.1).**
@@ -461,10 +461,22 @@ removes a named rule must lower it.
   milk at the cap), as the diagnosis predicted. Not to be combined with B as built (§2.2).
 - **Arm B (`weanDeficit`, on `weanDecide`)**: provisional keep candidate; milk at 1–4 y 240, 224, 213 kcal/day (cap 307),
   nursing mothers from −0.114 to +0.010% of the store a day, their balance rising with infant age (T-ENE-5's
-  direction), infants eating 35–53% more of their own food, sums inside noise, viable, night safe, 76 prescriptions
+  direction), infants eating 27–52% more of their own food, sums inside noise, viable, night safe, 76 prescriptions
   (the roll goes with `weanDecide`). Next: a 5-seed confirm against S5's confirm realizations.
 - **Open problems.** (1) Infants now carry the dyad's deficit (5–6% of their store below the set point) but still grow
   at the captive potential (3.6 kg/y; Gombe about 1.6): growth yields only below condition 0.5 (`condGood`, reserves
   −29%), so the wild growth deficit still does not emerge. (2) Weaning is still prescribed (milk 213 kcal/day at 3–4 y;
   nothing drives it to zero), and the ledger classes `weanAgeMinY`/`weanAgeSpanY` as inputs (§4). (3) Which of B's
   two parts (the deficit currency, the refusal that stands while she sleeps) carries the effect is not separated.
+
+## 6. Final checks (after merging `track-e` once, 0a99d22: E5c `crownShare` and handoff refreshes)
+
+Conflicts only in docs/research.md and docs/staging/e-sources.md (both sides appended an addendum: E5c's numbered one
+kept first, this stage's after it, its withdrawn foregut reading corrected) and src/sim/params.gen.ts (ours,
+regenerated). `gen-params --check` clean (989 entries, lint clean); `tsc --noEmit -p .` clean; the first full
+`pnpm test` after the merge failed two tests of the C8 orphan-blind static scan (tests/sim-orphan-blind.test.ts: a
+lookup of the living mother in energy.ts energyTick, arm A's read of her gland, and the scan's canary that counts hits),
+fixed by allowlisting that site with its reason (milk availability; no rank, mating or fertility term; no behaviour
+changed, so no run is affected); then `pnpm test` 701 tests, 700 pass, 0 fail, 1 skipped (888e0e3); the compressed goldens and the field pin did not move.
+`git ls-files data/raw node_modules` prints nothing. Run outputs and the table scripts are in
+`artifacts/validation/e1o/` of this worktree (local, not tracked); the frozen checkout used for every run was removed.
