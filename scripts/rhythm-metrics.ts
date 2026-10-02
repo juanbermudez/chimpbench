@@ -11,10 +11,11 @@ import { writeFileSync } from 'node:fs';
 import { isMainThread, parentPort } from 'node:worker_threads';
 import { createWorld, tickWorld } from '../src/simulation';
 import { V } from '../src/sim/candidates';
+import { sunAltitudeAt } from '../src/sim/environment';
 import { skyLux } from '../src/sim/light';
 import { paramsOf } from '../src/sim/params';
 import { fruitAt } from '../src/sim/phenology';
-import { ix } from '../src/sim/state';
+import { ix, TICK_HOURS } from '../src/sim/state';
 import type { Chimp } from '../src/types';
 import { runPool } from './lib/pool';
 
@@ -60,7 +61,7 @@ export interface RhythmResult {
   /** Night (daylight ≤ 0.03), independent animals aged 5+: ticks by kind, metres moved, animal-nights. */
   night: { ticks: Record<Kind, number>; metres: number; nights: number; adultTicks: Record<Kind, number> };
   /** Stage E2d: the night of juveniles (5–15 y) apart from adults: ticks by kind, metres moved; metres of adults; out of a nest at solar midnight. */
-  juvNight?: { ticks: Record<Kind, number>; metres: number; adultMetres: number; outAtMidnight: number; nights: number };
+  juvNight?: { ticks: Record<Kind, number>; metres: number; adultMetres: number; outAtMidnight: number; nights: number; hourOut: number[]; hourAll: number[] };
   /**
    * Stage E2d (rhythmCircadian): one record per adult per night with a sleep episode (recorded at solar noon): minutes
    * from the previous sunset to the first sleep onset in a nest, from sunrise to the last waking, and hours asleep; and
@@ -99,7 +100,7 @@ export function runRhythm(job: RhythmJob): RhythmResult {
     night: { ticks: Object.fromEntries(KINDS.map(k => [k, 0])) as Record<Kind, number>, metres: 0, nights: 0, adultTicks: Object.fromEntries(KINDS.map(k => [k, 0])) as Record<Kind, number> },
     rain: { adult: RAINBINS.map(() => [0, 0, 0, 0, 0]), juvenile: RAINBINS.map(() => [0, 0, 0, 0, 0]) },
     heatMidday: [], sleepAtNoon: [], deps: [], cropDay: { fig: [], other: [] }, sleep: [], xMin: [],
-    juvNight: { ticks: Object.fromEntries(KINDS.map(k => [k, 0])) as Record<Kind, number>, metres: 0, adultMetres: 0, outAtMidnight: 0, nights: 0 }, births: 0, deaths: 0, causes: {}, nightDeaths: 0, living: 0, adults: 0, hungerAdult: 0, hungerLact: 0,
+    juvNight: { ticks: Object.fromEntries(KINDS.map(k => [k, 0])) as Record<Kind, number>, metres: 0, adultMetres: 0, outAtMidnight: 0, nights: 0, hourOut: Array(24).fill(0), hourAll: Array(24).fill(0) }, births: 0, deaths: 0, causes: {}, nightDeaths: 0, living: 0, adults: 0, hungerAdult: 0, hungerLact: 0,
   };
   interface Track { inNest: boolean; nesting: boolean; start: number; lastStart: number; lastEntry: number; wake: number; sWake: number; sBed: number; atMid: boolean; entries: number; cls: Cls | null; px: number; pz: number;
     /** E2b: where the last morning exit was, and the breakfast after it (bf −1 = not yet). E2c: open-sky illuminance at the exit (lux). */
@@ -109,7 +110,10 @@ export function runRhythm(job: RhythmJob): RhythmResult {
   const tr = new Map<number, Track>();
   const inNest = (c: Chimp) => c.action === 'nest' && (ix(c).phase === 2 || ix(c).v === V.MOTHER);
   const clsOf = (c: Chimp): Cls => (c.sex === 'male' ? 'male' : c.lactating ? 'lactating' : 'female');
-  let prevAlt = w.environment.sunAltitude, prevRise = false, sunrise = NaN, sunset = NaN, noon = NaN;
+  // stage E2d fix: whether the sun was rising before the first measured tick (it is, at the end of a whole-day burn-in at
+  // 06:30); starting from false counted that first tick as a solar midnight, so animals already up at 06:30 were counted
+  // as out of a nest at midnight (and the night was counted twice)
+  let prevAlt = w.environment.sunAltitude, prevRise = w.environment.sunAltitude > sunAltitudeAt(w.time - TICK_HOURS), sunrise = NaN, sunset = NaN, noon = NaN;
   // the day's midday and morning tallies are filed under the day type once the midday window has closed
   let mid = [0, 0, 0, 0, 0], morn = [0, 0, 0, 0, 0], midT = 0, midRain = 0, midTicks = 0, midHeat = 0, midHeatN = 0;
   const births0 = w.stats.births, deaths0 = w.stats.deaths, dead = new Set(w.chimps.filter(c => !c.alive).map(c => c.id));
@@ -177,7 +181,7 @@ export function runRhythm(job: RhythmJob): RhythmResult {
       if (night) {
         res.night.ticks[k]++;
         const moved = Math.hypot(c.position[0] - t.px, c.position[2] - t.pz);
-        if (adult) { res.night.adultTicks[k]++; res.juvNight!.adultMetres += moved; } else { res.juvNight!.ticks[k]++; res.juvNight!.metres += moved; }
+        if (adult) { res.night.adultTicks[k]++; res.juvNight!.adultMetres += moved; } else { res.juvNight!.ticks[k]++; res.juvNight!.metres += moved; res.juvNight!.hourAll[Math.floor(hour)]++; if (!nest) res.juvNight!.hourOut[Math.floor(hour)]++; }
         res.night.metres += moved;
       }
       t.px = c.position[0]; t.pz = c.position[2];
@@ -293,6 +297,7 @@ export function report(rs: RhythmResult[], job: Omit<RhythmJob, 'seed'>): string
     L.push('## Night by age (stage E2d; daylight ≤ 0.03)', '',
       `Adults (15 y and older): out of a nest ${pc(atot - at.nest, atot)} of night time; ${f0(rs.reduce((a, r) => a + r.juvNight!.adultMetres, 0) / Math.max(1, an))} m moved per adult-night; out at solar midnight ${pc(rs.reduce((a, r) => a + r.outAtMidnight, 0), an)} of ${an} adult-nights.`,
       `Juveniles (5–15 y): out of a nest ${pc(jtot - jt.nest, jtot)} of night time (${KINDS.filter(k => k !== 'nest').map(k => `${k} ${pc(jt[k], jtot)}`).join(', ')}); ${f0(rs.reduce((a, r) => a + r.juvNight!.metres, 0) / Math.max(1, jn))} m moved per juvenile-night; out at solar midnight ${pc(rs.reduce((a, r) => a + r.juvNight!.outAtMidnight, 0), jn)} of ${jn} juvenile-nights.`,
+      `Juveniles out of a nest by hour of the night: ${[18, 19, 20, 21, 22, 23, 0, 1, 2, 3, 4, 5, 6].map(h => { const o = rs.reduce((a, r) => a + r.juvNight!.hourOut[h], 0), n = rs.reduce((a, r) => a + r.juvNight!.hourAll[h], 0); return n ? `${String(h).padStart(2, '0')} ${pc(o, n)}` : ''; }).filter(Boolean).join(', ')}.`,
       'Field: 1.8% of camera-trap activity at night across 22 sites (tagg2018); 3.3% of forest clips at Sebitoli (lacroux2022).', '');
   }
   const sl = rs.flatMap(r => r.sleep ?? []), xm = rs.flatMap(r => r.xMin ?? []);
