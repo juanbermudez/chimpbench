@@ -550,3 +550,16 @@ size, the same margin for following and joined trips, the approach's fitted pull
 - **Known defects, deferred:** `src/sim/execution.ts:588` with `src/sim/perception.ts:317` (an approach walks to the last
   caller heard; 45–60% of approaches redirected in this stage's runs); `src/sim/calls.ts:32` (`unlocatedShare`, an
   anti-reply term).
+
+## 9. Files, merge and final checks
+
+- Code: `src/sim/candidates.ts` (`presentCompany`; the approach offer under `companyMargin`), `data/params.json` and
+  `src/sim/params.gen.ts` (`companyMargin`, design, 0), `scripts/lib/prescriptions.ts` and `tests/sim-track-e.test.ts`
+  (the switch list; `removesNothing` note), `tests/sim-company-margin.test.ts` (5 tests), `scripts/approach-diagnose.ts`
+  (the E5b readouts; earlier fields unchanged), docs/simulation.md (note and §17 row). No new source: charnov1976,
+  keverne1989 and cabanac1971 are already in docs/research.md, so no addendum.
+- Outputs (gitignored, local): `artifacts/validation/e5b/` (the reference's e-bench, energy and diagnosis JSON, the six
+  diagnosis arms, A1, the run scripts and the table scripts `diag_table.py`, `diag_md.py`, `e5b_table.py`).
+- `track-e` (4257f78: decision guide, handoff) merged once, without conflicts (bb77207). After the merge:
+  `gen-params --check` clean, `tsc --noEmit -p .` clean, `pnpm test` 690 tests, 689 pass, 0 fail, 1 skipped;
+  `git ls-files data/raw node_modules` prints nothing.
