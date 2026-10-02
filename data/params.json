@@ -13708,6 +13708,29 @@
    "notes": "Mass exponent of the resting metabolic rate (Kleiber 1947). Pending e-sources (not yet in docs/research.md)."
   },
   {
+   "id": "ledgerSatiationReserve",
+   "group": "feeding",
+   "value": 0,
+   "units": "flag",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "setHunger",
+   "file": "src/sim/energy.ts",
+   "integer": true,
+   "notes": "Stage E1i (docs/staging/e1i-prereg.md), read only with energyLedger 1 and ledgerDrive 1: 1 = the satiation term of the two-signal appetite is weighted by the relative store, hunger = min(phi, 1) x (1 - w x fill^2) with w = max(0, 1 + reserves / usable store) (the quantity the condition readout uses): adiposity signals modulate the processing of satiation signals, so a depleted animal eats larger meals (grill2010, rodents [M]; intake rises in proportion to weight lost in humans, polidori2016 [M]); the proportional form is a design assumption with no free parameter. 0 = E1e's 1 - fill^2 (hash-identical)."
+  },
+  {
    "id": "ledgerWalkJPerKgM",
    "group": "movement",
    "value": 3.8,

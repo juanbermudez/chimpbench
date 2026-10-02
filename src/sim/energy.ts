@@ -43,6 +43,10 @@
 // carry metabolisable energy computed from measured water-soluble sugar plus pectin instead of TNC by difference (the
 // field formula), simmen2017's rule on uwimbabazi2019's composition (plantKcalPerMin). Dry matter per minute and fibre are
 // measured on the food and unchanged, so each kcal now brings more bulk.
+// Stage E1i (docs/staging/e1i-prereg.md; P.ledgerSatiationReserve, 0 by default, read only with ledgerDrive 1): the
+// drive saturates (φ ≤ 1) when the reserve deficit exceeds what the waking day can supply, so a depleted mother's hunger
+// was 1 − fill² alone, the same curve as a balanced animal's. With the switch the satiation term is weighted by the
+// relative store (setHunger), as adiposity signals weight satiation signals.
 import type { Chimp, World } from '../types';
 import { paramsOf, type Params } from './params';
 import { TICK_HOURS, TICK_SECONDS, ix, type ChimpX, type EnergyLedger } from './state';
@@ -296,6 +300,15 @@ function setHunger(c: Chimp, L: EnergyLedger, P: Params): void {
     if (L.eAvg === undefined) openDrive(c, L, P);
     const [left, fast] = feedHorizon(c, L, P), need = -L.res - gutEnergy(L, P, D) + spendRate(c, L, P) * (left + fast);
     const phi = need > 0 ? need / (feedRate(c, P) * (left > TICK_HOURS ? left : TICK_HOURS)) : 0, f = gutFill(c, L, P, D);
+    if (P.ledgerSatiationReserve === 1) {
+      // stage E1i (docs/staging/e1i-prereg.md): adiposity signals modulate the processing of satiation signals
+      // (grill2010 [M]), so the satiation term is weighted by the relative store w = 1 + reserves ÷ usable store (1 at the
+      // set point, 0 when the store is gone, above 1 in surplus; the proportional form is a design assumption). A
+      // depleted animal's meal then runs toward the gut wall instead of stopping at a balanced animal's fill.
+      const r = 1 + L.res / reserveCap(c, P), s = 1 - (r > 0 ? r : 0) * f * f;
+      c.hunger = (phi > 1 ? 1 : phi) * (s > 0 ? s : 0);
+      return;
+    }
     c.hunger = (phi > 1 ? 1 : phi) * (1 - f * f);
     return;
   }

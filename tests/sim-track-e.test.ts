@@ -18,6 +18,7 @@ const TRACK_E_SWITCHES = [
   'nestAudience', 'nestCompany', // E2e
   'ledgerFoodEnergyFix', // E1h
   'callValue', // E4c
+  'ledgerSatiationReserve', // E1i
 ] as const;
 
 test('Track E switches are all 0 by default in both profiles', () => {
