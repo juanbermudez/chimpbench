@@ -58,3 +58,25 @@ Being audited now (subagents, disjoint lists; results go to §1.1–§1.3):
    (in − out = change in stores, exact), determinism, switch-off identity; the prescription count must fall.
 4. Arms (at most 3 iterations, each logged here and committed before its run), judged against the mean of R's
    replicated quick realizations (e-noise.md amendment 2), after an identity check of R at this head.
+
+## 3. Diagnosis readouts (registered before the diagnosis runs; `scripts/water-diagnose.ts`, reads only)
+
+World and focal observer as `scripts/ranging-diagnose.ts` builds them (e-bench's world; the T-RNG-4 and T-RNG-5 values
+printed under "identity" must equal e-bench's per-seed values). Classes: adult male, lactating female, other adult
+female (≥ 15 y), juvenile 5–15 y. Smoke test on R (seed 48, 1 + 2 days, 7.6 s): every readout filled, ledger columns
+empty as expected on code without a water ledger.
+
+| Readout | Definition (truth = simulation state every tick; observer = focal follows, 1-min point samples) | Why |
+| --- | --- | --- |
+| walks to water per chimp-day | entries into the drink act | E1j's "walks to water"; the timers' prescribed walks |
+| drinking events per 12 h of daylight (truth) | runs of ticks in the drink act within 1.2 m of the site (the observer's `atWater`), starting in daylight (> 0.1), ÷ (daylight hours ÷ 12) | T-RHY-6's unit: "Drinking events (free water) per individual per 12 h of follow time" |
+| drinking events per 12 h of follow (observer) | a run of consecutive 1-min samples with feeding type "drinking" (`FEED_WATER`) is one event; ÷ (follow hours ÷ 12), by the follow's class | T-RHY-6's "How to measure: count drink actions on focal follows of adult females; divide by follow hours" |
+| minutes per event; share of daylight minutes drinking | ticks at the water ÷ events; daylight ticks at the water ÷ daylight ticks | nelson2022: "0.001 of observation minutes" |
+| event starts by local hour | histogram of (06:30 + world.time) mod 24 | timing of drinking |
+| share at stream-bank sites | event sites within the stream's half width + 3 m | T-RHY-7 (76% at streams, mackenzie2025), indicative: model sites carry no kind |
+| drink path and its share of the daily path | path walked in the drink act ÷ all movement (teleports skipped, as ranging-diagnose) | "the share of travel that heads to water" |
+| thirst at walk start and at event start | `c.thirst` at the first tick of each; with a water ledger also the deficit (mL, % of body mass) | thirst at drinking |
+| party split per walk to water | for walks started in daylight with party mates (members ≥ 5 y): share ending with ≥ 1 of those mates out of the walker's party; mean share of mates lost; share of split walks with a lost mate back within 60 min of the walk's end | "how often a party splits when one member heads to water" |
+| truth day range | km/day of all movement by class (ranging-diagnose's `pathKmPerDay`) | males' and mothers' true day range |
+| water budget (ledger arms only) | mL/day by term from the ledger's tap: food, metabolic, drunk, milk in; evaporation (regulated), insensible, faecal, urine, milk out; mean deficit | the ledger's own balance |
+| reserve slope | least-squares slope of the daily midday mean of energy reserves ÷ usable store, % per day, by class; deaths by cause | viability (as energy-diagnose's trajectories) |
