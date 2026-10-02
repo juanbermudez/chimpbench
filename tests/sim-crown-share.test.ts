@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { computeCandidates, crownShareOn } from '../src/sim/candidates';
+import { computeCandidates, crownShareOn, needFillRate } from '../src/sim/candidates';
 import { energyNeed, fruitKcalPerUnit } from '../src/sim/energy';
 import { paramsOf, traceParamReads } from '../src/sim/params';
 import { fruitAt } from '../src/sim/phenology';
@@ -76,4 +76,14 @@ test('crownShare: a smaller believed crop is worth less only below the need (no 
   const full = crownScore(1, 0), small = crownScore(1, 0, 0.02);
   assert.ok(small.cropK < small.need, 'the depleted crown no longer meets the need');
   assert.ok(small.score < full.score - 1e-6, 'a crown that cannot meet the need is worth less');
+});
+
+test('needFillRate: 1 when the crown meets the need, the fallback ratio when it supplies nothing, rising with the share', () => {
+  assert.equal(needFillRate(2000, 2000, 600, 240), 1);
+  assert.equal(needFillRate(2000, 5000, 600, 240), 1);
+  assert.ok(Math.abs(needFillRate(2000, 0, 600, 240) - 240 / 600) < 1e-12);
+  let prev = 0;
+  for (let E = 0; E <= 2000; E += 100) { const r = needFillRate(2000, E, 600, 240); assert.ok(r >= prev - 1e-12); prev = r; }
+  assert.equal(needFillRate(0, 100, 600, 240), 0, 'no need, no value');
+  assert.ok(Math.abs(needFillRate(2000, 500, 600, 0) - 0.25) < 1e-12, 'without a fallback: the share of the need');
 });

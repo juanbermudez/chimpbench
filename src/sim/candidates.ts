@@ -6,11 +6,11 @@ import { clamp, hash01, smoothstep } from './rng';
 import { paramsOf, type Params } from './params';
 import { fruitAt } from './phenology';
 import { bestFallbackNear, fallbackOn } from './fallback';
-import { fruitRate, leafWorth, needFruit, treeIntake } from './intake';
+import { fruitRate, leafRate, leafWorth, needFruit, treeIntake } from './intake';
 import { heatRestValue, nestValue, shelterValue, sleepPressure, thermalLoad } from './rhythm';
 import { darkOn, tripLight, visionNow, type TripLight } from './light';
 import { circadianOn, circadianSleepiness } from './circadian';
-import { driveOn, energyNeed, fruitKcalPerUnit, milkShare, milkWorth, nurseBoutWorth } from './energy';
+import { driveOn, energyNeed, fruitKcalPerUnit, gutCap, milkShare, milkWorth, nurseBoutWorth } from './energy';
 import { drinkWorth, waterOn } from './water';
 import { arrivalLight, brightening, needUnits, raceStake, rivalsAt } from './departure';
 import { endoOn, escalateScore, fastSpanH, rainFastScore, rainScore, redirectFastScore, redirectScore } from './endocrine';
@@ -326,16 +326,22 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     }
     return iv ? tripFrac(crop, feeders, d) : 1;
   };
-  // stage E5c (crownShare; docs/staging/e5c-prereg.md §3): a crown is worth the food this animal expects to eat there, the
-  // crop it believes divided among the feeders it sees there and itself, up to its energy need (E1e), in the ledger's kcal,
-  // with no fruitValueRef cap and no cap at one gut-full (the gut empties while it stays): the share of its need the crown
-  // meets replaces the 0.55 + 0.45·min(1, crop ÷ fruitValueRef) shape; the walk is valued as before (the C13b rate of the
-  // next bout, tripWorth [charnov1976]). A crown's crop is shared by its feeders, so larger parties get less each [M:
-  // chapman1995, newtonFisher2000]; equal shares and the product form are design assumptions. Co-feeders cost what they take
-  // from the share, so the habitat-index crowding cost is off.
+  // stage E5c (crownShare; docs/staging/e5c-prereg.md §3.1, iteration 2): a crown is worth the rate at which it lets this
+  // animal meet its energy need (E1e). It expects to eat E = the crop it believes, divided among the feeders it sees there
+  // and itself, up to the need, in the ledger's kcal (no fruitValueRef cap, no cap at one gut-full); whatever the crown cannot
+  // supply comes at the fallback's rate where it stands (leaves, pith: its guaranteed alternative). The share of the full
+  // fruit rate at which the need is met, need ÷ (E + (need − E) × fruit rate ÷ fallback rate), lies between the fallback's
+  // ratio and 1 and replaces the 0.55 + 0.45·min(1, crop ÷ fruitValueRef) shape; the walk is valued as before (tripWorth,
+  // the C13b rate of the next bout [charnov1976]). A crown's crop is shared by its feeders, so larger parties get less each
+  // [M: chapman1995, newtonFisher2000]; equal shares and the fallback as the alternative are design assumptions.
+  // Co-feeders cost what they take from the share, so the habitat-index crowding cost is off.
   const cs = crownShareOn(P);
-  const csNeed = cs ? energyNeed(c, P) : 0;
-  const cover = (t: Tree, crop: number, feeders: number): number => csNeed > 0 && crop > 0 ? Math.min(crop * fruitKcalPerUnit(P, t.common === 'fig') / (1 + feeders), csNeed) / csNeed : 0;
+  const csNeed = cs ? energyNeed(c, P) : 0, csFruitH = cs ? fruitRate(c, P).fruitPerH : 0, csLeafK = cs ? leafRate(world, px, pz, P, c) * gutCap(c, P) : 0;
+  const cover = (t: Tree, crop: number, feeders: number): number => {
+    if (!(csNeed > 0) || !(crop > 0)) return 0;
+    const k = fruitKcalPerUnit(P, t.common === 'fig'), E = Math.min(crop * k / (1 + feeders), csNeed), Rf = csFruitH * k;
+    return needFillRate(csNeed, E, Rf, csLeafK);
+  };
   if (!caretaker || (c.age >= 1.5 && !carried && caretaker.action === 'forage')) {
     for (let _i1 = 0; _i1 < x.trees.length; _i1++) { const id = x.trees[_i1];
       const t = idx.treeById.get(id)!;
@@ -669,6 +675,17 @@ export const careFollow = (k: Chimp): boolean => k.action === 'follow' && (ix(k)
  * Field profile only (partyJoinTrip 1). 0 = the model before, bit-identical.
  */
 export const cohesionOn = (P: Params): boolean => P.cohesionValue === 1 && P.partyJoinTrip === 1;
+/**
+ * Stage E5c (crownShare; docs/staging/e5c-prereg.md §3.1): the share of the full fruit rate `Rf` at which an animal meets
+ * its energy `need` when a crown supplies `E` of it and the rest comes at the fallback rate `Rb` (kcal and kcal per hour):
+ * (need ÷ Rf) ÷ (E ÷ Rf + (need − E) ÷ Rb). 1 when the crown meets the need, Rb ÷ Rf when it supplies nothing; E ÷ need
+ * without a fallback. Pure.
+ */
+export function needFillRate(need: number, E: number, Rf: number, Rb: number): number {
+  if (!(need > 0)) return 0;
+  const e = Math.max(0, Math.min(E, need));
+  return Rb > 0 && Rf > 0 ? need / (e + (need - e) * Rf / Rb) : e / need;
+}
 /** Stage E5c (crownShare; docs/staging/e5c-prereg.md §3): crowns valued by the food expected there; needs the E1e drive and the C13b intake valuation. */
 export const crownShareOn = (P: Params): boolean => P.crownShare === 1 && P.energyLedger === 1 && P.ledgerDrive === 1 && P.intakeValue === 1;
 /** Party following runs: under cohesionValue, or (before E5a) while partyFollowW > 0, its gate (then partyFollowW is not read). */

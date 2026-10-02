@@ -317,7 +317,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   followCarer: { stage: 'E4g', needs: {}, removesNothing: 'corrects which companions\' acts the party-follow rule reads (a care follow is not a departure); adds no term and switches no prescription out (e4g-prereg §3)' },
   weanDecide: { stage: 'E1n', needs: { energyLedger: 1, ledgerDrive: 1 } },
   cohesionValue: { stage: 'E5a', needs: {} },
-  crownShare: { stage: 'E5c', needs: { energyLedger: 1, ledgerDrive: 1 }, removesNothing: 'values a crown by the share of the energy need its crop meets among the feeders seen (the ledger\'s kcal) in place of the crop shape 0.55 + 0.45·min(1, crop ÷ fruitValueRef) and the habitat-index crowding cost, all design entries; switches no counted prescription out (e5c-prereg §3)' },
+  crownShare: { stage: 'E5c', needs: { energyLedger: 1, ledgerDrive: 1 }, removesNothing: 'values a crown by the rate at which its share of the crop among the feeders seen meets the energy need (the rest at the fallback rate; the ledger\'s kcal) in place of the crop shape 0.55 + 0.45·min(1, crop ÷ fruitValueRef) and the habitat-index crowding cost, all design entries; switches no counted prescription out (e5c-prereg §3)' },
   companyMargin: { stage: 'E5b', needs: { cohesionValue: 1 }, removesNothing: 'values an approach to a caller by the company it adds over the company the animal already has (E5a\'s companyValue and settled-companion set); adds no magnitude and switches no prescription out (e5b-prereg §5)' },
 };
 
