@@ -11,6 +11,8 @@
 // per day) by the age of their youngest infant (T-ENE-5's reading); juveniles' growth velocity by sex. --term-births
 // (a scenario for diagnosis, used identically in every arm compared): every female pregnant at the end of the burn-in
 // gives birth at its first slow step, so newborns and their mothers' first months are in the window.
+// Stage E1h: the staged rows T-ENE-1 to T-ENE-3 are scored on the model's lactating class (the source's subjects were
+// nursing mothers; docs/staging/e-targets.patch.json), T-ENE-8 on non-reproducing adults; printed as a table at the end.
 //
 //   pnpm exec tsx scripts/energy-diagnose.ts [--seeds 48,7] [--burn-in 30] [--days 30] [--profile field] [--params '{"energyLedger":1}'] [--term-births] [--json f.json]
 import { writeFileSync } from 'node:fs';
@@ -43,9 +45,11 @@ type Cls = typeof CLASSES[number];
 
 interface Acc { ticks: number; dayTicks: number; forage: number; eating: number; fruit: number; kin: number; milkIn: number; out: Record<EnergyTerm, number>; gut: number; hunger: number; res: number; cond: number; ids: Set<number>; walked: number;
   /** Stage E1b: formula kcal and dry matter eaten, kcal passed out, foregut and hindgut fill, daylight ticks with a full hindgut or foregut. */
-  fin: number; dmIn: number; fec: number; fore: number; hind: number; hindFull: number; foreFull: number }
+  fin: number; dmIn: number; fec: number; fore: number; hind: number; hindFull: number; foreFull: number;
+  /** Stage E1h: Σ body mass^0.75 over ticks (T-ENE-8 divides expenditure by it). */
+  m75: number }
 const blank = (): Acc => ({ ticks: 0, dayTicks: 0, forage: 0, eating: 0, fruit: 0, kin: 0, milkIn: 0, out: Object.fromEntries(TERMS.map(t => [t, 0])) as Record<EnergyTerm, number>, gut: 0, hunger: 0, res: 0, cond: 0, ids: new Set(), walked: 0,
-  fin: 0, dmIn: 0, fec: 0, fore: 0, hind: 0, hindFull: 0, foreFull: 0 });
+  fin: 0, dmIn: 0, fec: 0, fore: 0, hind: 0, hindFull: 0, foreFull: 0, m75: 0 });
 const acc = Object.fromEntries(CLASSES.map(c => [c, blank()])) as Record<Cls, Acc>;
 const deaths: Record<string, number> = {}, deathsByClass: Record<string, number> = {};
 let births = 0, livingStart = 0, livingEnd = 0;
@@ -139,7 +143,7 @@ for (const seed of seeds) {
         if (foraging && c.targetId > 0 && (L ? din > 0 : x.phase === 2)) a.fruit++;
         if (L) { a.kin += din; a.gut += caps ? L.dm! / caps[0] : L.gut / gutCap(c, P); a.res += L.res / reserveCap(c, P); }
         if (caps) { a.fin += dfin; a.dmIn += ddm; a.fec += dfec; a.fore += L!.dm! / caps[0]; a.hind += L!.hind! / caps[1]; }
-        a.cond += x.cond;
+        a.cond += x.cond; a.m75 += Math.pow(massOf(c, P), P.ledgerRmrExp);
         if (light) { a.dayTicks++; a.hunger += c.hunger; if (caps) { if (L!.hind! >= 0.95 * caps[1]) a.hindFull++; if (L!.dm! >= 0.95 * caps[0]) a.foreFull++; } }
       }
     }
@@ -204,7 +208,7 @@ const rows = CLASSES.map(n => {
   const out = Object.fromEntries(TERMS.map(t => [t, a.out[t] / d])) as Record<EnergyTerm, number>;
   return { cls: n, individuals: a.ids.size, days: d, kcalIn: a.kin / d, milkIn: a.milkIn / d, kcalOut: TERMS.reduce((s, t) => s + out[t], 0), out, forageMin: a.forage / d / 4, eatingMin: a.eating / d / 4,
     fruitShare: a.fruit / Math.max(1, a.eating), groundKm: a.walked / d / 1000, gutFill: a.gut / a.ticks, hungerDay: a.hunger / Math.max(1, a.dayTicks), reserves: a.res / a.ticks, cond: a.cond / a.ticks,
-    formulaIn: a.fin / d, dmIn: a.dmIn / d, fecal: a.fec / d, foreFill: a.fore / a.ticks, hindFill: a.hind / a.ticks, hindFullDay: a.hindFull / Math.max(1, a.dayTicks), foreFullDay: a.foreFull / Math.max(1, a.dayTicks) };
+    m75: a.m75 / Math.max(1, a.ticks), formulaIn: a.fin / d, dmIn: a.dmIn / d, fecal: a.fec / d, foreFill: a.fore / a.ticks, hindFill: a.hind / a.ticks, hindFullDay: a.hindFull / Math.max(1, a.dayTicks), foreFullDay: a.foreFull / Math.max(1, a.dayTicks) };
 });
 console.log(`energy diagnosis: ${profile}, seeds ${seeds.join(', ')}, burn-in ${burnIn} d, ${days} d, params ${JSON.stringify(params)}`);
 console.log('| class | n | kcal in | (milk in) | kcal out | rest | activity | wild | walk | climb | carry | preg | growth | milk | digestion | forage min | eating min | fruit % | ground km | gut fill | day hunger | reserves ÷ store | cond |');
@@ -218,6 +222,24 @@ if (rows.some(r => r.formulaIn > 0)) {
 }
 console.log(`births ${births}, deaths ${Object.values(deaths).reduce((a, b) => a + b, 0)} ${JSON.stringify(deaths)}; living ${livingStart} → ${livingEnd} (summed over seeds)`);
 console.log(`deaths by class: ${JSON.stringify(deathsByClass)}`);
+// stage E1h: the staged energy rows, each on the class it was measured in (docs/staging/e-targets.patch.json, re-scoped
+// 1 October 2026 after the field audit). T-ENE-1's ledger truth is the energy eaten in the model's own food units: with
+// ledgerFoodEnergyFix 1 the sugar-based values, comparable with the audit's band; with it 0 the field formula's.
+{
+  const by = (n: Cls) => rows.find(r => r.cls === n)!, lac = by('female, lactating'), dig = rows.some(r => r.formulaIn > 0);
+  const band = (v: number, lo: number, hi: number) => !Number.isFinite(v) || !(v > 0) ? '—' : v < lo ? 'below' : v > hi ? 'above' : 'in';
+  const sugar = (params as Record<string, number>).ledgerFoodEnergyFix === 1;
+  const nonRep = (['adult male', 'female, other'] as Cls[]).map(by).filter(r => r.days > 0);
+  const e8 = nonRep.length ? nonRep.reduce((s, r) => s + r.kcalOut / r.m75 * r.days, 0) / nonRep.reduce((s, r) => s + r.days, 0) : NaN;
+  console.log('\nstage E1h: staged energy rows on the class the field measured (simulation truth)');
+  console.log('| row | class | model | band | verdict |');
+  console.log('| --- | --- | --- | --- | --- |');
+  if (dig) console.log(`| T-ENE-1 ledger truth (energy eaten, ${sugar ? 'sugar-based' : 'field-formula'} kcal/d) | lactating females | ${f(lac.formulaIn)} | 1,810–2,070 (comparison band, contested row) | ${sugar ? band(lac.formulaIn, 1810, 2070) : 'not comparable (field-formula units)'} |`);
+  console.log(`| T-ENE-1 absorbed (kcal in − passed out, /d) | lactating females | ${f(lac.kcalIn - lac.fecal)} | — | — |`);
+  console.log(`| T-ENE-2 eating min/d | lactating females | ${f(lac.eatingMin)} | 250–370 | ${band(lac.eatingMin, 250, 370)} |`);
+  if (dig) console.log(`| T-ENE-3 dry matter g/d | lactating females | ${f(lac.dmIn)} | 650–1,100 | ${band(lac.dmIn, 650, 1100)} |`);
+  console.log(`| T-ENE-8 kcal spent ÷ M^0.75 | adult males and other females | ${f(e8, 1)} | 85–130 | ${band(e8, 85, 130)} |`);
+}
 console.log('\nunweaned infants by year of age (kcal per infant-day; shares of daylight ticks; growth kg per year from mass at the window ends)');
 console.log('| age | infant-days | milk day | milk night | own food | kcal out | growth kcal | daytime nursing % | daytime eating % | mass kg | reserves ÷ store | Δ reserves over window | growth kg/y | mother reserves ÷ store | mother milk cost |');
 console.log('| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
