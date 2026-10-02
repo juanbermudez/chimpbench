@@ -69,6 +69,26 @@ Run: S6 (`bench-run/artifacts/validation/e/s6q/S6q-params.json`), seeds 48 and 7
 policy, from a frozen detached checkout of the commit that adds the readouts and this section (one simulation; the
 existing readouts come out of the same run and must equal the integrator's S6q-energy.json where they overlap).
 
-### 1.3 Predictions (before the run)
+**Smoke test (seed 48, S6, 1-day burn-in + 2 days; `scratchpad/e1p/smoke/`; readouts only).** Every E1p readout prints
+and is non-empty for the four infant bins and three juvenile groups; f = 1 and paid ÷ potential = 1.000 in every
+growing group; mAvg equals the realised spending other than growth within 2%. The window's first days are a transient
+(dyads moving to equal relative deficits), so no number of the smoke is read as a result.
 
-(filled in before the diagnosis run; see the next commit)
+### 1.3 Predictions (before the run; arithmetic from the S6 confirm's readouts, 1,300 kcal of usable store per kg)
+
+- G2: growth paid ÷ potential = 1.000 and f = 1 in every tick at 0.5–4 y and in growing juveniles (high): the lowest
+  reserves stay above −29% of the store (condition above 0.5).
+- G1/G3: at 1–4 y the reserves fall 10–20 kcal a day (0.11–0.15% of a 9,000–17,000 kcal store), so S (absorbed minus
+  spending other than growth) is positive but below the growth paid (44 kcal/day): S about 25–35 kcal/day, growth paid
+  out of S 55–80%, the rest from the reserves (moderate). Days with S below growth ≥ 60%; days with S < 0 10–35% (low).
+  At 0.5–1 y the books are near balance (S within ±10 kcal/day of growth; moderate).
+- Day and night: S by night negative at 1–4 y (spending without food; night milk cut by the refusal that stands while
+  the mother sleeps), by day above the day's growth (moderate).
+- G4: mAvg within 5% of the realised spending other than growth (high: it is its 24-h mean).
+- G5: the reserves' slope steeper in the window's second half than in its first at 0.5–5 y (moderate; the S6 confirm).
+- Juveniles 5–12 y below adult mass: growth at the potential (3.4 F, 3.8 M kg/y), f = 1, reserves −0.05 to −0.10% of
+  the store a day, S below growth (moderate).
+- **Expected term (moderate):** the growth rule itself. With f = min(1, cond ÷ condGood), growth is an obligatory
+  expense at the captive potential until the reserves are 29% below the set point; under `weanDeficit` the infant's
+  milk is capped at the mother's relative deficit, so whatever its own food does not cover of maintenance + growth is
+  drawn from its reserves: growth never yields in a 90-day window.
