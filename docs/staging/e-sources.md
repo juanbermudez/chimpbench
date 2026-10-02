@@ -1719,3 +1719,13 @@ re-read in full for the audit (staging/e1n-prereg.md §1; no rate of maternal re
 them; bray2018 gives no absolute ingestion rate in its text); new source trivers1974 (Parent-offspring conflict,
 American Zoologist 14(1):249–264, doi:10.1093/icb/14.1.249; theory, via maestripieri2002) for the form of the mother's
 decision (design assumption).
+
+## Addendum: E1o what an older infant drinks (2 October 2026)
+
+Same text as research.md "Addendum: E1o what an older infant drinks": new source cohen1994 (Cohen, Brown, Canahuati,
+Rivera, Dewey 1994, Lancet 344(8918):288–293, doi:10.1016/s0140-6736(94)91337-4; abstract via PubMed 7914260):
+complementary foods from 4 months lowered breast-milk intake by 103 g/day (62 g with nursing frequency held) while
+total energy intake and growth did not change; "breastfed infants self-regulate their total energy intake when other
+foods are introduced" [H] human, cross-species; direction and mechanism citation for counting milk and solids in one
+drive (staging/e1o-prereg.md arm A). Already listed: trivers1974, maestripieri2002, emeryThompson2012 (arm B), kent1999,
+daly1993, deweyLonnerdal1986.
