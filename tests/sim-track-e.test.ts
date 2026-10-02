@@ -16,6 +16,7 @@ const TRACK_E_SWITCHES = [
   'darkCost', // E2c
   'rhythmCircadian', // E2d
   'nestAudience', 'nestCompany', // E2e
+  'ledgerFoodEnergyFix', // E1h
 ] as const;
 
 test('Track E switches are all 0 by default in both profiles', () => {

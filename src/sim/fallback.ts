@@ -5,6 +5,7 @@
 // (patchy; design, malenky1994 [M]); feeding removes stock in proportion to what is left (a linear functional response),
 // and a deficit regrows over fallbackRegrowDays (design). Off (the unlimited field) when fallbackCapH is 0.
 import type { Chimp, World } from '../types';
+import { fallbackKcalPerH } from './energy';
 import { paramsOf, type Params } from './params';
 import { forageYield } from './phenology';
 import { hash01 } from './rng';
@@ -76,7 +77,7 @@ export function eatFallback(world: World, c: Chimp, dtH: number, take?: (kcal: n
   const cap = capacity(P, cx, cz);
   if (cap <= 0) return 0;
   const frac = stockFrac(world, P, cx, cz, time);
-  const gain = (P.energyLedger === 1 ? P.ledgerFallbackKcalPerMin * 60 : P.fruitIntakePerH * P.fruitHungerFactor * P.fallbackRateRatio) * forageYield(world, c.position[0], c.position[2]) / ((P.forageYieldMin + P.forageYieldMax) / 2) * frac * dtH;
+  const gain = (P.energyLedger === 1 ? fallbackKcalPerH(P) : P.fruitIntakePerH * P.fruitHungerFactor * P.fallbackRateRatio) * forageYield(world, c.position[0], c.position[2]) / ((P.forageYieldMin + P.forageYieldMax) / 2) * frac * dtH;
   const used = take ? (gain > 0 ? take(gain) : 0) : gain, share = take ? (gain > 0 ? used / gain : 0) : 1;
   const k = keyOf(cx, cz);
   (s.fallback ??= {})[k] = [Math.min(cap, (1 - frac) * cap + frac * dtH * share), time];

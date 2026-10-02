@@ -12851,7 +12851,35 @@
    "clock": "eco",
    "symbol": "fallbackKcalPerH",
    "file": "src/sim/energy.ts",
-   "notes": "Metabolisable energy intake on fallback foods at a mean cell (x the forage field, forageYield): pith 3.4 and young leaves 6.2 kcal/min weighted by their Kanyawara feeding shares 17.4 : 6.9 (uwimbabazi2019 rates, potts2011 shares; the same weighting as fallbackRateRatio 0.39 x 10.7)."
+   "notes": "Metabolisable energy intake on fallback foods at a mean cell (x the forage field, forageYield): pith 3.4 and young leaves 6.2 kcal/min weighted by their Kanyawara feeding shares 17.4 : 6.9 (uwimbabazi2019 rates, potts2011 shares; the same weighting as fallbackRateRatio 0.39 x 10.7). Stage E1h: the field formula's value (TNC by difference at 4 kcal/g); not read while ledgerFoodEnergyFix is 1 (the ...Sugar entry replaces it)."
+  },
+  {
+   "id": "ledgerFallbackKcalPerMinSugar",
+   "group": "feeding",
+   "value": 3.23,
+   "units": "kcal/min",
+   "range": [
+    3.17,
+    3.54
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    1000000.0
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "uwimbabazi2019",
+    "potts2011"
+   ],
+   "refs": [
+    "docs/research.md (§E.23, §E.21): simmen2017 electronic supplement, the sugar-based (LEVD) rule (WSC + 5% pectin of dry matter) and its match with doubly labelled water across primates; starch 3-6% (fruit), 1-4% (vegetative parts) and pectin 4-6% of dry matter for the range"
+   ],
+   "clock": "eco",
+   "symbol": "plantKcalPerMin",
+   "file": "src/sim/energy.ts",
+   "notes": "Stage E1h (with ledgerFoodEnergyFix 1): energy per feeding minute on fallback foods at a mean cell, sugar-based: pith 3.4 x 0.799 = 2.72 and young leaves 6.2 x 0.730 = 4.52 kcal/min weighted by their Kanyawara feeding shares 17.4 : 6.9 (potts2011), as ledgerFallbackKcalPerMin. Factor = (4 (WSC + pectin) + 4 AP + 9 lipid + 1.6 NDF) / (4 TNC + 4 AP + 9 lipid + 1.6 NDF) on uwimbabazi2019 Table 2 (% organic matter; pectin 5% of dry matter = 5.2% of organic matter, simmen2017's rule where WSC was measured). Derived [M]: [H] composition, a formula checked across primates (not chimpanzees). Range: pectin 4% (low) to pectin 6% + starch 4% of dry matter (high), simmen2017's ranges for vegetative parts."
   },
   {
    "id": "ledgerFigKcalPerMin",
@@ -12875,7 +12903,57 @@
    "clock": "eco",
    "symbol": "fruitKcalPerUnit",
    "file": "src/sim/energy.ts",
-   "notes": "Metabolisable energy intake of an adult feeding in a fig crown at full crop (Kanyawara females; uwimbabazi2019). Scaled by foraging skill, the under-5 factor, the self-feeding ramp and snare injury as the fruit intake is."
+   "notes": "Metabolisable energy intake of an adult feeding in a fig crown at full crop (Kanyawara females; uwimbabazi2019). Scaled by foraging skill, the under-5 factor, the self-feeding ramp and snare injury as the fruit intake is. Stage E1h: the field formula's value (TNC by difference at 4 kcal/g); not read while ledgerFoodEnergyFix is 1 (the ...Sugar entry replaces it)."
+  },
+  {
+   "id": "ledgerFigKcalPerMinSugar",
+   "group": "feeding",
+   "value": 8.12,
+   "units": "kcal/min",
+   "range": [
+    7.94,
+    9.33
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    1000000.0
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "uwimbabazi2019"
+   ],
+   "refs": [
+    "docs/research.md (§E.23, §E.21): simmen2017 electronic supplement, the sugar-based (LEVD) rule (WSC + 5% pectin of dry matter) and its match with doubly labelled water across primates; starch 3-6% (fruit), 1-4% (vegetative parts) and pectin 4-6% of dry matter for the range"
+   ],
+   "clock": "eco",
+   "symbol": "plantKcalPerMin",
+   "file": "src/sim/energy.ts",
+   "notes": "Stage E1h (with ledgerFoodEnergyFix 1): energy per feeding minute in a fig crown, sugar-based: 12.5 x 194.7 / 299.9 = 8.12 kcal/min (figs, uwimbabazi2019 Table 2: lipid 3.5, AP 6.8, NDF 49.0, TNC 40.7, WSC 9.2 % organic matter; pectin 5% of dry matter, simmen2017). Derived [M]. Range: pectin 4% (low) to pectin 6% + starch 6% of dry matter (high), simmen2017's ranges for fruit. Fig samples include their seeds (eaten whole), which no factor here corrects."
+  },
+  {
+   "id": "ledgerFoodEnergyFix",
+   "group": "feeding",
+   "value": 0,
+   "units": "flag",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "plantKcalPerMin",
+   "file": "src/sim/energy.ts",
+   "integer": true,
+   "notes": "Stage E1h (docs/staging/e1h-prereg.md), read only with energyLedger 1: 1 = plant foods carry metabolisable energy computed from measured water-soluble sugar plus pectin (5% of dry matter) in place of total non-structural carbohydrate by difference, which the field formula credits at 4 kcal/g (simmen2017's rule; that version matches doubly labelled water across primates, the field formula gives 1.13-1.92 x). ledgerFruitKcalPerMinSugar, ledgerFigKcalPerMinSugar and ledgerFallbackKcalPerMinSugar then replace ledgerFruitKcalPerMin, ledgerFigKcalPerMin and ledgerFallbackKcalPerMin wherever a plant food's energy is read (fruit unit energy, fallback per hour, the digesta composition, the intake valuation and the drive); dry matter per minute and fibre are unchanged. 0 = the field formula's values (hash-identical)."
   },
   {
    "id": "ledgerFruitKcalPerMin",
@@ -12899,7 +12977,34 @@
    "clock": "eco",
    "symbol": "fruitKcalPerUnit",
    "file": "src/sim/energy.ts",
-   "notes": "Metabolisable energy intake of an adult feeding on non-fig ripe fruit (drupes 9.9 kcal/min; all ripe fruit 10.7 +- 1.3; Kanyawara females, uwimbabazi2019). The crop still depletes at fruitIntakePerH fruit units per hour, so one fruit unit is worth 60 x this / fruitIntakePerH kcal."
+   "notes": "Metabolisable energy intake of an adult feeding on non-fig ripe fruit (drupes 9.9 kcal/min; all ripe fruit 10.7 +- 1.3; Kanyawara females, uwimbabazi2019). The crop still depletes at fruitIntakePerH fruit units per hour, so one fruit unit is worth 60 x this / fruitIntakePerH kcal. Stage E1h: the field formula's value (TNC by difference at 4 kcal/g); not read while ledgerFoodEnergyFix is 1 (the ...Sugar entry replaces it)."
+  },
+  {
+   "id": "ledgerFruitKcalPerMinSugar",
+   "group": "feeding",
+   "value": 7.39,
+   "units": "kcal/min",
+   "range": [
+    7.27,
+    8.25
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    1000000.0
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "uwimbabazi2019"
+   ],
+   "refs": [
+    "docs/research.md (§E.23, §E.21): simmen2017 electronic supplement, the sugar-based (LEVD) rule (WSC + 5% pectin of dry matter) and its match with doubly labelled water across primates; starch 3-6% (fruit), 1-4% (vegetative parts) and pectin 4-6% of dry matter for the range"
+   ],
+   "clock": "eco",
+   "symbol": "plantKcalPerMin",
+   "file": "src/sim/energy.ts",
+   "notes": "Stage E1h (with ledgerFoodEnergyFix 1): energy per feeding minute on drupes (non-fig ripe fruit), sugar-based: 9.9 x 250.7 / 335.9 = 7.39 kcal/min (uwimbabazi2019 Table 2, non-fig: lipid 5.2, AP 10.6, NDF 37.7, TNC 46.6, WSC 20.1 % organic matter; pectin 5% of dry matter, simmen2017). Derived [M]. Range: pectin 4% (low) to pectin 6% + starch 6% of dry matter (high), simmen2017's ranges for fruit."
   },
   {
    "id": "ledgerGrowFemaleKgPerY",

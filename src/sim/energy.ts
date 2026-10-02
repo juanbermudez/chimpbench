@@ -39,6 +39,10 @@
 // charges growth as spending at that potential, limited only by condition through C8's rule (min(1, cond ÷ condGood);
 // iteration 2: a shortfall draws on the reserves, which the drive reads), and lets the drive (ledgerDrive) anticipate
 // the potential growth (spendRate, from the day-long mean of all other spending, mAvg).
+// Stage E1h (docs/staging/e1h-prereg.md; P.ledgerFoodEnergyFix, 0 by default, read only with energyLedger 1): plant foods
+// carry metabolisable energy computed from measured water-soluble sugar plus pectin instead of TNC by difference (the
+// field formula), simmen2017's rule on uwimbabazi2019's composition (plantKcalPerMin). Dry matter per minute and fibre are
+// measured on the food and unchanged, so each kcal now brings more bulk.
 import type { Chimp, World } from '../types';
 import { paramsOf, type Params } from './params';
 import { TICK_HOURS, TICK_SECONDS, ix, type ChimpX, type EnergyLedger } from './state';
@@ -78,9 +82,9 @@ function digesta(P: Params): Digesta {
   const nonFibre = (gPerKcal: number): Food => ({ g: gPerKcal, fib: 0, nf: 1 });
   return {
     food: {
-      drupe: food(P, P.ledgerFruitKcalPerMin, P.digestaDrupeDmGPerMin, P.digestaFruitNdf),
-      fig: food(P, P.ledgerFigKcalPerMin, P.digestaFigDmGPerMin, P.digestaFruitNdf),
-      fallback: food(P, P.ledgerFallbackKcalPerMin, P.digestaFallbackDmGPerMin, P.digestaFallbackNdf),
+      drupe: food(P, plantKcalPerMin(P, 'drupe'), P.digestaDrupeDmGPerMin, P.digestaFruitNdf),
+      fig: food(P, plantKcalPerMin(P, 'fig'), P.digestaFigDmGPerMin, P.digestaFruitNdf),
+      fallback: food(P, plantKcalPerMin(P, 'fallback'), P.digestaFallbackDmGPerMin, P.digestaFallbackNdf),
       meat: nonFibre(P.digestaMeatDmGPerKcal), milk: nonFibre(P.digestaMilkDmGPerKcal),
     },
     capF: P.digestaGutMlPerKg * P.digestaForegutShare * P.digestaForegutDmGPerMl,
@@ -305,8 +309,9 @@ function setHunger(c: Chimp, L: EnergyLedger, P: Params): void {
  * Optional tap for diagnostics (scripts/energy-diagnose.ts): called with each expenditure term, and with 'suckled' (an
  * intake, not an expenditure: milk the infant drank). Never set by the app; reads only.
  */
-export type EnergyTerm = 'rest' | 'activity' | 'wild' | 'walk' | 'climb' | 'carry' | 'pregnancy' | 'growth' | 'milk' | 'digestion' | 'suckled';
-export const energyTap: { fn: ((c: Chimp, term: EnergyTerm, kcal: number) => void) | null } = { fn: null };
+export type EnergyTerm = 'rest' | 'activity' | 'wild' | 'walk' | 'climb' | 'carry' | 'pregnancy' | 'growth' | 'milk' | 'digestion' | 'suckled' | 'eaten';
+/** 'eaten' (stage E1h) is food taken into the gut, with its kind: an intake, not an expenditure. */
+export const energyTap: { fn: ((c: Chimp, term: EnergyTerm, kcal: number, kind?: FoodKind) => void) | null } = { fn: null };
 
 /** One tick of the balance for `c` (called from needs()): absorption, expenditure, and the hunger readout. */
 export function energyTick(world: World, c: Chimp, x: ChimpX, sleeping: boolean): void {
@@ -446,7 +451,7 @@ export function eat(c: Chimp, P: Params, kcal: number, kind: FoodKind = 'drupe')
   if (!D) {
     const room = gutCap(c, P) - L.gut;
     const take = kcal < room ? kcal : room > 0 ? room : 0;
-    if (take > 0) { L.gut += take; L.in += take; }
+    if (take > 0) { L.gut += take; L.in += take; if (energyTap.fn) energyTap.fn(c, 'eaten', take, kind); }
     setHunger(c, L, P);
     return take;
   }
@@ -457,17 +462,30 @@ export function eat(c: Chimp, P: Params, kcal: number, kind: FoodKind = 'drupe')
     const dm = take * f.g, fib = take * f.fib, nf = take * f.nf;
     L.gut += nf; L.dm! += dm; L.fib! += fib;
     L.in += nf + fib * P.digestaFermentKcalPerG; L.fin! += take; L.dmIn! += dm;
+    if (energyTap.fn) energyTap.fn(c, 'eaten', take, kind);
   }
   setHunger(c, L, P);
   return take;
 }
 
+/**
+ * Stage E1h: energy per feeding minute of a plant food at full rate (kcal/min). With ledgerFoodEnergyFix 1 the sugar-based
+ * values (measured water-soluble sugar plus pectin at 5% of dry matter in place of TNC by difference, simmen2017's rule on
+ * uwimbabazi2019 Table 2), with it 0 the field formula's (uwimbabazi2019 Table 1). Meat and milk carry no carbohydrate
+ * term and are unchanged.
+ */
+export function plantKcalPerMin(P: Params, kind: 'drupe' | 'fig' | 'fallback'): number {
+  const fix = P.ledgerFoodEnergyFix === 1;
+  if (kind === 'drupe') return fix ? P.ledgerFruitKcalPerMinSugar : P.ledgerFruitKcalPerMin;
+  if (kind === 'fig') return fix ? P.ledgerFigKcalPerMinSugar : P.ledgerFigKcalPerMin;
+  return fix ? P.ledgerFallbackKcalPerMinSugar : P.ledgerFallbackKcalPerMin;
+}
 /** Energy of one fruit unit (the crop still depletes at fruitIntakePerH fruit units per hour). */
-export const fruitKcalPerUnit = (P: Params, fig: boolean) => (fig ? P.ledgerFigKcalPerMin : P.ledgerFruitKcalPerMin) * 60 / P.fruitIntakePerH;
+export const fruitKcalPerUnit = (P: Params, fig: boolean) => plantKcalPerMin(P, fig ? 'fig' : 'drupe') * 60 / P.fruitIntakePerH;
 /** Energy of one unit of carried meat (eaten at meatEatPerH units per hour). */
 export const meatKcalPerUnit = (P: Params) => P.ledgerMeatKcalPerMin * 60 / P.meatEatPerH;
 /** Fallback foods at a mean cell at full stock (kcal per hour). */
-export const fallbackKcalPerH = (P: Params) => P.ledgerFallbackKcalPerMin * 60;
+export const fallbackKcalPerH = (P: Params) => plantKcalPerMin(P, 'fallback') * 60;
 
 /**
  * One tick of nursing: the infant drinks at the suckling rate what the mother's glands hold and its gut takes; the mother
