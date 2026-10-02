@@ -783,8 +783,10 @@ export function executeAction(world: World, c: Chimp): void {
         if (c.age > P.weanRefuseAgeY && random(world) < clamp((c.age - P.weanRefuseAgeY) / P.weanRefuseRampY) * P.weanRefuseMaxP) {
           emitCall(world, c, 'whimper'); c.mood = 'distressed'; c.stress = clamp(c.stress + 0.1);
           episode(world, c, 'social', `My mother ${m.name} refused to let me nurse`, m.id);
+          if (nurseTap.fn) nurseTap.fn(c, m, 'refuse-roll');
           return finish(world, c);
         }
+        if (nurseTap.fn) nurseTap.fn(c, m, 'start');
         x.phase = 1;
         x.interId = startInteraction(world, 'nurse', c, m.id, [c.id, m.id], 0.2).id;
       }
@@ -841,6 +843,14 @@ export function executeAction(world: World, c: Chimp): void {
 
 /** Hunger readout below which a nursing bout ends (lint-ok: the nurse act's existing literal, moved here unchanged). */
 const NURSE_DONE = 0.08;
+
+/**
+ * Stage E1n diagnostics (scripts/energy-diagnose.ts): day nurse-act events, the infant and its mother. 'start': contact
+ * begins (the bout is accepted); 'refuse-roll': the weaning roll refused it; 'refuse-mother' / 'end-mother': the mother's
+ * own decision refused or ended it (stage E1n switch). Never set by the app; reads only, no state and no RNG.
+ */
+export type NurseEvent = 'start' | 'refuse-roll' | 'refuse-mother' | 'end-mother';
+export const nurseTap: { fn: ((infant: Chimp, mother: Chimp, ev: NurseEvent) => void) | null } = { fn: null };
 
 function nestTick(world: World, c: Chimp): void {
   const P = paramsOf(world), WALK = P.walkMps;

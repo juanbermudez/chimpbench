@@ -1,6 +1,6 @@
 # E1n pre-registration: weaning as a decision
 
-Registered 2 October 2026 (first commit 10:33), before any run of changed code. Track E, stage E1n, branch
+Registered 2 October 2026 (first commit 10:31), before any run of changed code. Track E, stage E1n, branch
 `e1n-weaning` (from `track-e` 8b53de0). Any new switch is 0 by default in both profiles and is read only with
 `energyLedger` 1, so the compressed goldens and the field pin cannot move.
 
