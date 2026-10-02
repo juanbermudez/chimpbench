@@ -2124,3 +2124,52 @@ Read for stage E4e (docs/staging/e4e-prereg.md): the target audit of the hunting
 **Sources:**
 - *new* mitaniWattsMuller2002: Mitani JC, Watts DP, Muller MN 2002. Recent developments in the study of wild chimpanzee behavior. *Evolutionary Anthropology* 11(1):9–25. [doi:10.1002/evan.10008](https://doi.org/10.1002/evan.10008) (FT; bibliography checked against Crossref, 2 October 2026).
 - gilby2015, gilbyWrangham2007, wattsMitani2002, mitaniWatts2001 and tennie2014 are already cited; the entries above add findings or access notes.
+
+### Addendum: E4f colobus encounters (2 October 2026)
+
+Read for stage E4f (docs/staging/e4f-prereg.md): the colobus encounter target and every input that sets the model's
+encounter rate. One input value is taken (the Kanyawara density, [L]); nothing is fitted to an encounter or hunting rate.
+
+- **What gilby2015 counted** [gilby2015] (FT, read in full this stage through the PMC article page; the BioC and efetch
+  routes give no full text) [H]. Kanyawara field assistants record party composition every 15 min "and since 1996,
+  whether colobus can be detected within 100 m of the chimpanzees"; an encounter is "any 15 min scan when the
+  chimpanzees were within 100 m of colobus that was not immediately preceded by another 'positive' colobus scan". Gombe
+  recorded colobus "within approximately 50 m of the focal chimpanzee". Kanyawara 1996–August 2014: 2,461 encounters,
+  3.73 per 100 h of observation (Kasekela 2.34, Mitumba 2.31; the authors suggest the 100 m against 50 m definitions as
+  one reason). Use in E4f: the method of T-HUN-1/3/4; the model's observer starts a new encounter whenever the nearest
+  group's identity changes (not a run of positive scans) and counts T-HUN-3 on focal follows (gilby2015's are party
+  scans): staged protocol correction, `docs/staging/e4f-protocol.patch.json`.
+- **Kanyawara red colobus density** [bonnell2010] (FT, McGill repository) [L, secondary]. An agent-based model of the
+  Kanyawara K-30 study area (~250 ha) placed "five distinct social groups, of different sizes (70, 25, 84, 45, 40), as
+  measured by Snaith and Chapman (2008), representing average density of red colobus in our study area" on a 225 ha grid:
+  2.22 groups/km², about 117 individuals/km² (derived), mean group 53. Use in E4f: `colobusDensityKanyawaraPerKm2`
+  (`preyKanyawara`); against Ngogo 1997–99's 2.48 (P-HUN-1) the site difference is about 11%.
+- **Kanyawara red colobus density over time and by logging history** [chapman2010ecol] (FT through a Wayback copy of the
+  publisher page; the publisher host answered with a bot check and was dropped; Table 1 and the density figure did not
+  come through as text) [M]. Line transects in K-30 (unlogged), K-14 (lightly logged) and K-15 (heavily logged), all in
+  the Kanyawara study site, over 26–36 years: red colobus group density "remained fairly stable over time in all areas";
+  initially greater in unlogged and lightly logged forest than heavily logged, "but the difference became less marked
+  over time"; later "no difference … between the unlogged and the heavily logged areas". Group spread in Kibale "for red
+  colobus, 50–1000 m" (Chapman and Snaith, unpublished data, as cited). Use in E4f: the K-30 value stands for the
+  community's range; the model's colobus groups are points, while real groups spread widely (which would raise
+  encounters within 100 m, not lower them).
+- **Group size, home range, travel and spread grow together** [snaithChapman2008] (Abs) [M]. Nine Kanyawara groups:
+  larger groups occupied larger home ranges, travelled farther per day and spread wider. No values in the abstract; the
+  model's colobus speed (90 m/h, by day and by night) and its uniform, home-range-free wandering have no source (null).
+- **Access this stage.** Wiley (chapman2010ecol, the 2003 colobine-abundance paper) and Oxford Academic (struhsaker1974)
+  answered with a bot check: hosts dropped. chapman2002ajpa (PMC7159679): efetch abstract only. Not reached:
+  chapman2000cons, chapman2005ijp, gillespieChapman2001, snaithChapman2008 full text, Struhsaker 1975 and 2010 (books).
+  The transect densities by compartment (chapman2010ecol Fig. 2) are the missing site-matched census value.
+
+**Sources:**
+- *new* bonnell2010: Bonnell TR, Sengupta RR, Chapman CA, Goldberg TL 2010. An agent-based model of red colobus
+  resources and disease dynamics implicates key resource sites as hot spots of disease transmission. *Ecological
+  Modelling* 221(20):2491–2500. [doi:10.1016/j.ecolmodel.2010.07.020](https://doi.org/10.1016/j.ecolmodel.2010.07.020)
+  (FT; bibliography checked against Crossref, 2 October 2026).
+- *new* chapman2010ecol: Chapman CA, Struhsaker TT, Skorupa JP, Snaith TV, Rothman JM 2010. Understanding long-term
+  primate community dynamics: implications of forest change. *Ecological Applications* 20(1):179–191.
+  [doi:10.1890/09-0128.1](https://doi.org/10.1890/09-0128.1) (FT, figures and Table 1 excepted; Crossref-checked).
+- *new* snaithChapman2008: Snaith TV, Chapman CA 2008. Red colobus monkeys display alternative behavioral responses to
+  the costs of scramble competition. *Behavioral Ecology* 19(6):1289–1296.
+  [doi:10.1093/beheco/arn076](https://doi.org/10.1093/beheco/arn076) (Abs; Crossref-checked).
+- gilby2015 is already cited; the entry above adds its encounter method, read in full.

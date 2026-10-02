@@ -1385,3 +1385,21 @@ Read for stage E1i (docs/staging/e1i-prereg.md): why nursing mothers stop eating
 - *new* speakman2008: Speakman JR 2008. The physiological costs of reproduction in small mammals. *Philosophical Transactions of the Royal Society B* 363(1490):375–398. [doi:10.1098/rstb.2007.2145](https://doi.org/10.1098/rstb.2007.2145) (Abs, PMC2606756).
 - *new* campbellFell1964: Campbell RM, Fell BF 1964. Gastro-intestinal hypertrophy in the lactating rat and its relation to food intake. *Journal of Physiology* 171(1):90–97. [doi:10.1113/jphysiol.1964.sp007363](https://doi.org/10.1113/jphysiol.1964.sp007363) (title only; scan, PMC1368778).
 - badescu2016, potts2011, stanton2017, lonsdorf2014 and badescu2022 are already listed; the entries above add findings.
+
+## Addendum: E4f colobus encounters (2 October 2026)
+
+Read for stage E4f (docs/staging/e4f-prereg.md §2): the colobus encounter target and the inputs that set the encounter
+rate. Input taken: Kanyawara's red colobus density, 2.22 groups/km² [L] (registry `colobusDensityKanyawaraPerKm2`,
+switch `preyKanyawara`). Entries in full in docs/research.md, "Addendum: E4f colobus encounters".
+
+- **gilby2015** (FT through the PMC article page; BioC and efetch give none) [H]: Kanyawara party scans every 15 min
+  record "whether colobus can be detected within 100 m of the chimpanzees"; an encounter is a positive scan "not
+  immediately preceded by another 'positive' colobus scan"; 2,461 encounters, 3.73 per 100 h (1996–August 2014).
+- **bonnell2010** (FT, McGill repository) [L, secondary]: five groups (70, 25, 84, 45, 40; snaithChapman2008) on 225 ha
+  "representing average density of red colobus" at Kanyawara K-30: 2.22 groups/km².
+- **chapman2010ecol** (FT via a Wayback copy; Table 1 and the density figure not as text) [M]: Kanyawara red colobus group
+  density stable over 26–36 years in unlogged, lightly and heavily logged compartments; red colobus group spread
+  50–1000 m (unpublished data, as cited).
+- **snaithChapman2008** (Abs) [M]: larger groups have larger home ranges, longer daily travel and wider spread; no values.
+- Dead ends this stage (do not retry): Wiley and Oxford Academic hosts (bot check); chapman2002ajpa PMC7159679 (efetch
+  abstract only); chapman2000cons, chapman2005ijp, gillespieChapman2001 (closed).
