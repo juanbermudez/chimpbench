@@ -252,6 +252,10 @@ Bench (`e-bench --quick`): fitted −0.944 on 17 rows scored in both (−0.944 w
 
 **Kill criterion (iteration 2).** Null if any of: K1, a starvation death, or a class other than lactating females falls faster than in T by more than 0.05%/day; K2 (mechanism), the mothers' dry matter rises by less than 8% over B1, or their share of eating ticks at the wall does not fall; K3, held-out distance on rows scored in both B2 and T rises by more than the noise threshold (1.5 until the integrator's quick value), with or without T-HUN-4 and T-BRD-1. If K1–K3 pass and viability passes: **keep (provisional)** for the pair, `ledgerLactGut` flagged "magnitude design, no primate source" (never a default without one). If K1–K3 pass but viability fails: partial (finding).
 
+### Attribution run A2 (registered 2 October 2026, before its run; not an iteration: no mechanism changes)
+
+T + `{"ledgerLactGut":1}` without `ledgerSatiationReserve`, `energy-diagnose` only (same seeds and window, frozen checkout of 374c751). Question: does the lactational gut alone carry the mothers, and does iteration 1 carry the other classes? Expected (by hand, before the run): mothers about as in the E1h confirm's G arm (gut 111 mL/kg for everyone: −0.16%/day), so between −0.30 and −0.05%/day; juveniles and other females as in T (−0.08 and −0.055%/day), so this arm alone would fail viability on them.
+
 ## 7. Known defects and caveats in the code under test
 
 - Readout caveat (scripts/intake-diagnose.ts closeBout): the gate's reason is not the bout's trigger. A forage act that finishes at satiation usually draws as 'need-bucket' (hunger changed bucket since the intent), so satiation and a full gut are read from the state at the last eating tick, not from the reason.
