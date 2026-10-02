@@ -184,4 +184,8 @@ hour (§5.1), kept for comparability with E4a–E4c.
 <invoke name="Bash">
 <parameter name="command">cd /Users/juanbermudez/Desktop/MGOGO/.claude/worktrees/e4d-rhythm && git add docs/staging/e4d-prereg.md && git commit -q -m "E4d prereg: sleep-gated daily rhythm in the slow hormone-like states (sources, mechanism, encoded rows, readouts, predictions, kill criterion), before any code or run
 
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>" && git log --oneline -1
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>" && git log --oneline -1- **R and D1** (2 October 2026; mechanism and readouts at 193ff76, smoke-tested for 2 days with the switch on: the
+  profiles, ratios and act-timing counts print; the net-of-time readout needs ≥ 5 days). Both arms from one frozen
+  detached checkout of the commit that adds this entry (the code is 193ff76's; this commit changes only the prereg).
+  Order: endocrine-diagnose and calls-diagnose for R and D1 (two processes at a time), then `e-bench --quick
+  --workers 2` for R, then for D1 with `--compare` R. Outputs copied to `artifacts/validation/e4d/` (gitignored).
