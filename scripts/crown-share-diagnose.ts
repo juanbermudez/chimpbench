@@ -39,6 +39,13 @@
 //     and maximum feeders, crop fall per hour, ended with the crop below 0.06 (no longer seen as fruiting) or 0.02.
 //   intake (energyTap 'eaten', every tick): for each feeder in a crown, kcal eaten ÷ its full ripe-fruit rate per tick, by
 //     the crown's feeders (1, 2, 3+); ticks crop-limited (the crop left after the tick below 0.02 + feeders × the rate).
+//   bouts (truth, potts2011's feeding party size): for every feeding bout of a subject ≥ 12 y in a crown (consecutive
+//     1-min samples feeding in the same crown), FPS = the maximum number of feeders ≥ 5 y in that crown during the bout,
+//     itself included (potts2011: "the maximum number of independently-feeding chimpanzees, including the focal
+//     individual, co-feeding in a given patch during a particular feeding bout"); patch size = crown radius (the model
+//     has no DBH) and crop at the bout's start. R² of ln FPS on ln radius and on ln crop ("simple linear regression with
+//     ln-transformed data"), per bout and with ln FPS averaged per crown (Figure 4's "ln average feeding party size");
+//     bout minutes ("feeding bout length": "the total amount of time that the focal individual fed in a given patch").
 //   identity: T-PTY-1 of the party-follow team set (must equal e-bench's per seed).
 //
 //   pnpm exec tsx scripts/crown-share-diagnose.ts [--seeds 48,7] [--burn-in 30] [--days 30] [--params '{…}'] [--workers 2] [--json f.json]
@@ -82,6 +89,7 @@ interface Result {
   parties: { n: number; crowns: number[]; modalShare: number[]; crownDist: number[]; outsideInView: number; outside: number; outsideCropOwn: number[]; outsideCropModal: number[] };
   episodes: { min: number[]; crop0: number[]; crop1: number[]; meanN: number[]; maxN: number[]; fallPerH: number[]; below06: number; below02: number };
   intake: { byN: Record<string, { ticks: number; ratio: number; short: number; cropLimited: number }> };
+  bouts: { fps: number[]; radius: number[]; crop: number[]; tree: number[]; min: number[] };
   deaths: Record<string, number>; living: [number, number];
 }
 
@@ -110,7 +118,7 @@ export function runSeed(job: Job): Result {
     crowns: { feeders: [], crop: [], chimpH: [], radius: [] }, feedScans: { n: [], crop: [], radius: [] }, observerScans: { n: [], radius: [] },
     choices: [], parties: { n: 0, crowns: [], modalShare: [], crownDist: [], outsideInView: 0, outside: 0, outsideCropOwn: [], outsideCropModal: [] },
     episodes: { min: [], crop0: [], crop1: [], meanN: [], maxN: [], fallPerH: [], below06: 0, below02: 0 },
-    intake: { byN: {} }, deaths: {}, living: [w.chimps.filter(c => c.alive).length, 0],
+    intake: { byN: {} }, bouts: { fps: [], radius: [], crop: [], tree: [], min: [] }, deaths: {}, living: [w.chimps.filter(c => c.alive).length, 0],
   };
   const refF = w.chimps.find(c => c.alive && c.sex === 'female' && c.age >= 15 && !c.lactating) ?? w.chimps.find(c => c.alive && c.age >= 15)!;
   const fph = fruitRate(refF, P).fruitPerH;
@@ -234,6 +242,8 @@ export function runSeed(job: Job): Result {
   energyTap.fn = (c, term, kcal, kind) => { if (observing && term === 'eaten' && (kind === 'drupe' || kind === 'fig')) eaten.set(c.id, (eaten.get(c.id) ?? 0) + kcal); };
 
   const epi = new Map<number, { t0: number; crop0: number; nSum: number; samples: number; maxN: number }>();
+  const bout = new Map<number, { tree: number; t0: number; crop0: number; max: number; last: number }>();
+  const closeBout = (id: number) => { const b = bout.get(id); if (!b) return; const t = index(w).treeById.get(b.tree); if (t) { R.bouts.fps.push(b.max); R.bouts.radius.push(t.canopy); R.bouts.crop.push(b.crop0); R.bouts.tree.push(b.tree); R.bouts.min.push((b.last - b.t0) * 60 + 1); } bout.delete(id); };
   observing = true;
   for (let i = 0; i < days * DAY; i++) {
     eaten.clear();
@@ -264,6 +274,15 @@ export function runSeed(job: Job): Result {
       root50 = next;
       const occ = new Map<number, number>();
       for (const c of alive) if (c.age >= 5 && feeding(c)) occ.set(c.targetId, (occ.get(c.targetId) ?? 0) + 1);
+      for (const c of alive) {
+        if (c.age < 12) continue;
+        const b = bout.get(c.id);
+        if (feeding(c) && w.environment.daylight > 0.1) {
+          const n = occ.get(c.targetId) ?? 1;
+          if (b && b.tree === c.targetId) { if (n > b.max) b.max = n; b.last = w.time; }
+          else { if (b) closeBout(c.id); bout.set(c.id, { tree: c.targetId, t0: w.time, crop0: fruitAt(w, idx.treeById.get(c.targetId)!), max: n, last: w.time }); }
+        } else if (b) closeBout(c.id);
+      }
       for (const [tid, n] of occ) {
         const e = epi.get(tid);
         if (!e) epi.set(tid, { t0: w.time, crop0: fruitAt(w, idx.treeById.get(tid)!), nSum: n, samples: 1, maxN: n });
@@ -345,6 +364,14 @@ export function summarize(res: Result[], T0 = 0.164): Record<string, unknown> {
     cropMedian: r3(med(crop)), chimpHMedian: r3(med(ch)), chimpHPerFeederMedian: r3(med(ch.map((v, i) => v / fe[i]))), cropOverValueRef: r3(crop.filter(v => v > 1).length / Math.max(1, crop.length)),
   };
   out.feedScans = { n: fsN.length, meanN: r3(mean(fsN)), byCrop: terciles(fsC, fsN), byRadius: terciles(fsR, fsN), r2Crop: r3(r2(fsC, fsN)), r2Radius: r3(r2(fsR, fsN)) };
+  const bF = res.flatMap(r => r.bouts.fps), bR = res.flatMap(r => r.bouts.radius), bC = res.flatMap(r => r.bouts.crop), bT = res.flatMap(r => r.bouts.tree.map(t => r.seed * 1e7 + t)), bM = res.flatMap(r => r.bouts.min);
+  const ln = (v: number[]) => v.map(x => Math.log(Math.max(1e-4, x)));
+  const perTree = new Map<number, { f: number[]; r: number; c: number[] }>();
+  for (let i = 0; i < bF.length; i++) { const e = perTree.get(bT[i]) ?? { f: [], r: bR[i], c: [] }; e.f.push(Math.log(bF[i])); e.c.push(bC[i]); perTree.set(bT[i], e); }
+  const ptc = [...perTree.values()];
+  out.boutsFPS = { bouts: bF.length, meanFPS: r3(mean(bF)), byRadius: terciles(bR, bF), byCrop: terciles(bC, bF), r2LnRadius: r3(r2(ln(bR), ln(bF))), r2LnCrop: r3(r2(ln(bC), ln(bF))),
+    perCrown: { crowns: ptc.length, r2LnRadius: r3(r2(ln(ptc.map(e => e.r)), ptc.map(e => mean(e.f)))), r2LnCrop: r3(r2(ln(ptc.map(e => mean(e.c))), ptc.map(e => mean(e.f)))) },
+    minutesMedian: r3(med(bM)), minutesMean: r3(mean(bM)) };
   out.observerScans = { n: oN.length, meanN: r3(mean(oN)), byRadius: terciles(oR, oN), r2Radius: r3(r2(oR, oN)) };
   // choices
   const ch2 = res.flatMap(r => r.choices);
