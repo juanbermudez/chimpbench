@@ -333,3 +333,36 @@ Runs: field profile, rules policy, seeds 48, 7, 21, 5, 11, 30-day burn-in + 60 d
 Judgement: §7 unchanged, on RC against R. Null if any of: viability fails; held-out on rows scored in both rises by more than +1.1 (this stage's registered floor); adult-male pant-hoots below 0.25 or above 3 per awake hour, or travel hoos given at under 10% of initiations with a companion in view; T-PTY-1 falls by more than 0.5, or the share of adult males alone at hourly samples rises by more than 0.10. Otherwise a provisional keep candidate if the prescription count falls. Sums are reported with and without T-HUN-4 and T-BRD-1; the integrator's noise threshold (docs/staging/e-noise.md), once recorded, is applied afterwards as a separate reading.
 
 Expected (integrator, before the run): adult-male pant-hoots 0.4–0.8 per awake hour and 15–35% of adult-male crown arrivals with a pant-hoot (moderate confidence); T-PTY-1 up by 0.3–1.5 (moderate); prescriptions 103 → 92 (high); viability passes (high); held-out within ±1.1 of R (moderate).
+
+### 10.1 Results (integrator, 2 October 2026; numbers generated from the JSON by `judge_vs_reps.py` and a JSON read of the calls diagnosis)
+
+Runs at d8c1875, clean. **Identity:** R at d8c1875 equals the E1h confirm's `e1h-R` (9392b67) on every row and every
+seed's viability, so E4c and E2e leave R unchanged and R's four confirm realizations (e1h-R, NR1c–NR3c, e-noise.md)
+are the reference.
+
+| | R (four realizations, mean; single e4c-R where marked) | RC (R + `callValue`) |
+| --- | --- | --- |
+| Fitted, 18 rows counted in all runs | 3.87 (SD 0.50) | 4.14: Δ +0.27, z +0.5, inside noise |
+| Held-out, 14 rows | 4.54 (SD 1.76) | 2.73: Δ −1.81, z −0.9, inside noise |
+| Held-out without T-HUN-4 and T-BRD-1, 12 rows | 2.57 (SD 0.19) | 2.54: Δ −0.02, z −0.1, inside noise |
+| Against the single run e4c-R (the old method), held-out on 18 shared rows | — | −4.54 (T-BRD-1 alone 1.59 → 0: the reference's luck) |
+| Prescriptions | 103 | **92** |
+| Viability (5 seeds) | pass | pass (0 deaths, no starvation) |
+| Adult-male pant-hoots per awake hour (truth) | 0.83 (e4c-R) | 0.59 |
+| Adult-male crown arrivals with a pant-hoot, by crop > 0.55 / 0.3–0.55 / ≤ 0.3 (field 0.04–0.35) | 0.12 / 0 / 0 | 0.24 / 0.16 / 0.12 |
+| Travel hoos with a companion in view (field 0.60–0.67) | 0.62 | 0.42 |
+| Adult males alone at hourly samples | 0.31 | 0.29 |
+| Female ÷ male pant-hoot rate (field 0.35–0.45) | 0.33 | 0.47 |
+| Morning ÷ afternoon pant-hoots (field ≈ 4.3) | 1.52 | 1.02 |
+| T-COM-1 / T-COM-8 / T-PTY-1 / T-IGE-1 / T-HUN-1 (single runs) | 0.79 pass / 0.48 pass / 3.57 / 3.40 / 39.7 | 0.57 pass / 0.63 (above band) / 3.84 / 7.49 / 48.7 |
+
+**Verdict (§7, on 5 seeds): provisional keep candidate, confirmed.** Viability passes; held-out does not rise (it falls,
+inside noise); calling neither collapses nor explodes (0.59 per hour; travel hoos at 42% of initiations with a
+companion); party cohesion holds (T-PTY-1 +0.26; adult males alone −0.02); prescriptions fall by 11. The switch stays
+off by default under the Track E sequencing rule. Expectations registered in §10: rate 0.4–0.8 held; arrival shares in
+the field's range held; T-PTY-1 up 0.3–1.5 missed narrowly (+0.26); prescriptions and viability held; held-out within
+±1.1 of R missed (−1.81 against R's mean, inside noise).
+
+**Costs to carry forward.** The call's daily course is flatter than R's (morning ÷ afternoon 1.02; E4d showed the
+hormone fix does not supply it); travel hoos fall below the field band; T-COM-8 drifts above its band; hunting rises
+(48.7 against 39.7 per community-year; single runs, a rare-event row); T-IGE-1 moves into its band (7.5).

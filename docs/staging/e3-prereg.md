@@ -461,3 +461,20 @@ and T-FOOD-2 (fruit share of feeding) stays inside its band (0.60–0.78); if th
 and the fruit share falls below the band, iteration 3's explanation stands on the current code. Anything in between is
 reported as unresolved. No switch goes on from this re-test; it decides only whether E3's recommendation (value food
 against reserves) is still needed.
+
+### Re-test result (integrator, 2 October 2026; bench-run at 4c86404, clean; numbers from the JSON and the metrics log)
+
+- Identity first: R in quick mode at 4c86404 equals `R-quick` (612bf15) on every row, so R's four quick realizations
+  (e-noise.md) are the reference.
+- Crown feeding bout median (`movement-metrics --fitted-only`, seeds 48 and 7, 30 + 8 days): **R 22 min, R + A 11 min**
+  (−50%).
+- Fruit share of feeding (T-FOOD-2, band 0.60–0.78): R inside the band in all four realizations; **R + A 0.54**.
+- Against R's four-run mean: fitted −1.41 (z −1.5), held-out +0.27 (z +0.2), held-out without T-HUN-4 and T-BRD-1
+  +0.51 (z +1.0): inside noise. Rows beyond R's spread: T-ACT-1 and T-ACT-3 better; T-FOOD-2, T-COM-11 and T-SOC-10
+  worse. Prescriptions 103 → 99. Viability passes.
+
+**Reading (as registered): iteration 3's effect stands on the current code.** With `ledgerDrive` on, the pre-E1e hunger
+cap is not in play, and persistence still halves crown bouts and moves feeding to leaves underfoot. The reviewers'
+doubt is resolved: the finding is not that bug. E3's recommendation stands (value food against reserves as well as gut
+space); E1i's `ledgerSatiationReserve` now supplies part of it, so the next re-test of `urgencyPersist` belongs on R +
+E1i's pair once that pair is confirmed.
