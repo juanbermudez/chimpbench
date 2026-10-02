@@ -225,7 +225,7 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   ...same(['energySleepPerH', 'energyRestPerH', 'energyRunPerH', 'energyWalkPerH', 'energyOtherPerH'], P => P.rhythmSleep !== 1,
     'with rhythmSleep 1 energy = 1 − sleep pressure × darkness, set every tick right after the timer step (src/sim/life.ts needs → rhythm.ts rhythmNeeds), and urgency.ts reads sleep pressure; the timer step survives only in the seed of sleep pressure at an animal\'s first tick (one 15 s step). src/decide/facts.ts still copies it into the Jev facts (model arms only)'),
   // stage E2c (docs/staging/e2c-prereg.md): darkCost replaces the darkness weight by the consequences of darkness
-  rhythmDarkW: { when: P => P.rhythmSleep === 1 && P.darkCost !== 1, why: 'read only by the E2a nest value (rhythmSleep 1), and not while darkCost is 1 (src/sim/rhythm.ts nestValue, src/sim/candidates.ts)' },
+  rhythmDarkW: { when: P => P.rhythmSleep === 1 && P.darkCost !== 1 && P.rhythmCircadian !== 1, why: 'read only by the E2a nest value (rhythmSleep 1), and not while darkCost is 1 or rhythmCircadian is 1 (src/sim/rhythm.ts nestValue, src/sim/candidates.ts; stage E2d: process C, src/sim/circadian.ts)' },
   // stage E2a: the thermal load replaces the midday rest clock
   ...same(['boutRestMiddayMin', 'boutRestMiddayMax'], P => P.rhythmHeat !== 1, 'the 11:30–14:30 rest bout is not evaluated while rhythmHeat is 1 (src/sim/execution.ts boutHours)'),
   // stage E1f (docs/staging/e1f-prereg.md): ledgerGrowPotential replaces the stylized growth knees by captive growth rates
@@ -263,6 +263,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   nestLightDecide: { stage: 'E2b', needs: { rhythmSleep: 1 }, removesNothing: 're-decides at nest-bout ends in rising light; rgMaxAgeH stays in use elsewhere (e2b-prereg §8)' },
   nurseWake: { stage: 'E2b', needs: { energyLedger: 1, ledgerNightNurse: 1, rhythmSleep: 1 }, removesNothing: 'adds a waking tick to the mother\'s sleep pressure (e2b-prereg §8)' },
   darkCost: { stage: 'E2c', needs: { rhythmSleep: 1 } },
+  rhythmCircadian: { stage: 'E2d', needs: { rhythmSleep: 1 } },
   urgencyChoice: { stage: 'E3', needs: {} },
   urgencyPersist: { stage: 'E3', needs: {} },
   urgencySwitchCost: { stage: 'E3', needs: {} },
