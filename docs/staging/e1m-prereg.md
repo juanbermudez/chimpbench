@@ -1,6 +1,7 @@
 # E1m pre-registration: milk output, an audit of the input
 
-Registered 2 October 2026 (10:10), before any source value of this stage was read and before any run of changed code.
+Registered 2 October 2026 (committed 10:01), before any new source value of this stage was read (the existing entries
+of research.md §E.11, §E.13 and §E.14 had been read) and before any run of changed code.
 Track E, stage E1m, branch `e1m-milk` (from `track-e` eeded56). Any new switch is 0 by default in both profiles and is
 read only with `energyLedger` 1, so the compressed goldens and the field pin cannot move.
 
@@ -97,6 +98,20 @@ lactating females, batesByrne2009).
 
 Need equals the yield (307 kcal/day at 31.3 kg) at 0.96 y with captive growth, at 1.21 y without growth.
 
+The registered computation (milk needed = need − own food absorbed, own food = field eating minutes × the model's own-food
+kcal per eating minute, absorbed at the model's own-food absorption for the class):
+
+| age | need | field eating min (lonsdorf / badescu) | S3 kcal per eating min | own-food absorption | own food absorbed at field minutes | milk needed | S3 milk drunk |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1–2 y | 401 | 94 / 163 | 2.98 | 0.73 | 205 / 356 | 196 / 45 | 308 |
+| 2–3 y | 541 | 169 / 211 | 3.27 | 0.75 | 411 / 514 | 130 / 27 | 307 |
+| 3–4 y | 669 | 225 / 259 | 4.17 | 0.75 | 702 / 806 | −33 / −138 | 307 |
+
+On T (`e1h-T-energy.json`) the same computation gives 212 / 72, 139 / 39 and −13 / −115 kcal/day against 307–308
+drunk. Deviation, disclosed: the registered own-food term uses the model's per-minute intake, which no field
+measurement backs (E1f: no infant intake rate by age exists), so the table also reports the rate the field's minutes
+imply (above).
+
 Reading:
 - **The input is not far above the infants' needs.** An exclusively milk-fed infant (field: solids under 1% of
   observation time before 6 months, first solids at 7.9 ± 0.7 months, bray2018) needs about 210 kcal/day at 3 months and
@@ -113,7 +128,9 @@ Reading:
   yield. Whether wild mothers make 307 kcal/day after the first year is not testable from the infant side: milk
   transfer has not been measured in chimpanzees (badescu2022 infers a plateau from nipple time and isotopes; isotopes
   put the milk share falling from about 1–1.5 y to zero at 4–4.5 y).
-- Bound from the infant side (registered reading, not an input): a chimpanzee yield below about 210–280 kcal/day at
+- **At the field's eating minutes, the model's infants would need 45–196 kcal/day of milk at 1–2 y, 27–130 at 2–3 y
+  and none at 3–4 y; they drink 307 at every age.** The cap, not the infants' need, sets the milk drunk after 1 y.
+- Bound from the infant side (a reading, not an input): a chimpanzee yield below about 210–280 kcal/day at
   3–9 months could not feed an infant growing at the captive potential on milk alone (212 kcal/day = 16.0 per kg^0.75
   of a 31.3 kg mother at 3 months; 281 = 21.2 at 9 months); at Gombe's growth (about 1.6 kg/y, [L]) the 9-month need is
   221 kcal/day (16.7 per kg^0.75).
