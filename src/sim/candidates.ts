@@ -483,8 +483,11 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       offer('flee', o.id, (tn - P.avoidTensionFloor) * P.avoidTensionW + P.avoidBase, V.AVOID);
     // party cohesion (field profile): keep up with a party member who is travelling off, likelier for bonded partners
     // and adult males; parties travel together between food patches (fission-fusion) (design; tuned to T-PTY-1)
-    if (P.partyFollowW > 0 && !carried && c.age >= 5 && d < P.partyLinkM && (o.action === 'travel' || o.action === 'follow') && o.targetId !== c.id && !night) {
-      const lead = P.partyLeaderFollow === 1 ? leaderOf(o, c, byId, x.seen) : o.id, L = byId.get(lead);
+    // stage E4g (followCarer; docs/staging/e4g-prereg.md §3): a care follow (a dependent keeping up with its carer) is not a
+    // departure: the carer's own act says whether the unit moves, so neither the follower nor a leader chain reads it
+    const careSkip = P.followCarer === 1;
+    if (P.partyFollowW > 0 && !carried && c.age >= 5 && d < P.partyLinkM && (o.action === 'travel' || o.action === 'follow') && o.targetId !== c.id && !night && !(careSkip && careFollow(o))) {
+      const lead = P.partyLeaderFollow === 1 ? leaderOf(o, c, byId, x.seen, careSkip) : o.id, L = byId.get(lead);
       const trip = P.partyJoinTrip === 1 && !!L && L.action === 'travel' && ix(L).v === V.TREE && isTreeId(L.targetId);
       // stage C13e: the joint trip has a tree as its goal, so it needs no minimum distance to the leader (at the departure
       // cue the leader is still next to its companions); its value is the join value, no longer near-automatic
@@ -611,13 +614,20 @@ export function tripCost(worth: number, crop: number, d: number, h: number, P: P
   return tf > 0 ? worth * tw / (tw + tf) : worth;
 }
 
-/** Stage C7a (field): the animal a party follower is ultimately following, if in sight (up to three links), else `o`. */
-function leaderOf(o: Chimp, c: Chimp, byId: Map<number, Chimp>, seen: number[]): number {
+/** A care follow: a dependent keeping up with its caretaker (V.MOTHER) or a weaned juvenile with its guardian (V.JUVENILE). */
+export const careFollow = (k: Chimp): boolean => k.action === 'follow' && (ix(k).v === V.MOTHER || ix(k).v === V.JUVENILE);
+
+/**
+ * Stage C7a (field): the animal a party follower is ultimately following, if in sight (up to three links), else `o`.
+ * Stage E4g (followCarer): with `care`, the chain stops before a companion in a care follow (not a departure).
+ */
+function leaderOf(o: Chimp, c: Chimp, byId: Map<number, Chimp>, seen: number[], care = false): number {
   let lead = o;
   for (let k = 0; k < 3; k++) {
     if (lead.action !== 'follow' || ix(lead).v !== V.PARTY) break;
     const next = byId.get(lead.targetId);
     if (!next || !next.alive || next === c || next.troopId !== c.troopId || !seen.includes(next.id)) break;
+    if (care && careFollow(next)) break;
     lead = next;
   }
   return lead.id;

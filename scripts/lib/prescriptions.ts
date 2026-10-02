@@ -302,6 +302,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   huntValue: { stage: 'E4e', needs: { energyLedger: 1, ledgerDrive: 1 } },
   waterLedger: { stage: 'E2g', needs: { energyLedger: 1, ledgerDigesta: 1, rhythmHeat: 1 } },
   preyKanyawara: { stage: 'E4f', needs: {}, removesNothing: 'corrects an input (the field colobus density: Ngogo 1997-99 out, Kanyawara in, both inputs); no prescription is switched out (e4f-prereg §4.1)' },
+  followCarer: { stage: 'E4g', needs: {}, removesNothing: 'corrects which companions\' acts the party-follow rule reads (a care follow is not a departure); adds no term and switches no prescription out (e4g-prereg §3)' },
 };
 
 /** Whether an entry is in use: generated (not planned), non-zero under these resolved parameters, and not switched out. */

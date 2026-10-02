@@ -25,6 +25,7 @@ const TRACK_E_SWITCHES = [
   'preyKanyawara', // E4f
   'groomNeedDyad', // E1k
   'waterLedger', // E2g
+  'followCarer', // E4g
 ] as const;
 
 test('Track E switches are all 0 by default in both profiles', () => {
