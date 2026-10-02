@@ -443,3 +443,19 @@ seeds × 60 days) has about 5 × the follow-days; R's four confirm realizations 
 *Integrator, during the stage (recorded in substance):* E1i's pair is not confirmed (null under the strict
 viability line on 5 seeds), so the optional "best arm on R + `ledgerFoodEnergyFix` + E1i's pair" is skipped and R is
 the only reference. The TP diagnosis of §3–§5 (registered and run before that message) stays as context only.
+
+## 9. Known defects and caveats
+
+- No defect was found in the simulation code under test that bears on these measurements; nothing was changed in
+  `src/`.
+- Observer design, not a defect (src/field/protocols.ts:408, config.ts `loseFactor` 4): a focal is lost 4 × as often while
+  it runs or is above 15 m. Field teams lose animals mostly when they travel fast; the model's rule removes days with
+  much time in crowns. Its effect on T-RNG-5 is within the day-sampling noise here (§5.1), not separately measured.
+- Readout caveats (scripts/ranging-diagnose.ts): the field-method halt uses the 35 m radius for feeding halts too (the
+  field used the food patch); a tick's displacement is attributed to the act being executed at the end of that tick;
+  "trips" in truth are the movements between halts of the same 35 m / 20 min rule on 1-min daylight positions; the
+  observer's class is the focal's state at the follow's start.
+- Prescriptions met on the way (no change made): the thirst timers (`thirstAwakePerH`, `thirstSleepPerH`,
+  `thirstHotPerH`; design) and the field values of `fruitThirstFactor` and `drinkDistScaleM` (tuned in C5a against
+  T-ACT-2 and T-RNG-4), `partyStayW` and `joinSocialW` (tuned in C5a against T-PTY-1, T-ACT-2 and T-RNG-4), and `walkMps`
+  (field-copy of the day range and the travel share): the male day range of T-RNG-4 is in large part prescribed.
