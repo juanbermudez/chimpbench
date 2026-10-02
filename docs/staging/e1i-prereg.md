@@ -256,6 +256,97 @@ Bench (`e-bench --quick`): fitted −0.944 on 17 rows scored in both (−0.944 w
 
 T + `{"ledgerLactGut":1}` without `ledgerSatiationReserve`, `energy-diagnose` only (same seeds and window, frozen checkout of 374c751). Question: does the lactational gut alone carry the mothers, and does iteration 1 carry the other classes? Expected (by hand, before the run): mothers about as in the E1h confirm's G arm (gut 111 mL/kg for everyone: −0.16%/day), so between −0.30 and −0.05%/day; juveniles and other females as in T (−0.08 and −0.055%/day), so this arm alone would fail viability on them.
 
+### Iteration 2 and attribution: results
+
+Runs: B2 and A2 from a frozen checkout of 374c751 (git.dirty 0), the three re-draws of T from cc51622 (git.dirty 0); seeds 48 and 7, 30 + 30 days, rules policy. Every number generated from the JSON (`energy_table.py`, `diag_table.py`, `bench_table.py`, `zscore.py`, session scratch).
+
+Energy (simulation truth; A2 = T + `ledgerLactGut` without iteration 1, attribution only):
+
+| quantity | T | B1 | B2 | A2 |
+| --- | --- | --- | --- | --- |
+| lactating: eating min/day | 231 | 322 | 278 | 270 |
+| lactating: dry matter g/day | 632 | 685 | 796 | 786 |
+| lactating: absorbed ÷ spent (kcal/day) | 0.807 (1344 / 1665) | 0.858 (1446 / 1684) | 0.993 (1694 / 1707) | 0.977 (1667 / 1707) |
+| lactating: field-method intake kcal/day | 1973 | 2132 | 2484 | 2451 |
+| lactating: foregut ≥ 95% full, share of daylight | 0.082 | 0.300 | 0.090 | 0.052 |
+| lactating: daylight hunger; condition | 0.44; 0.43 | 0.53; 0.49 | 0.46; 0.65 | 0.46; 0.63 |
+| reserves ÷ store, %/day: female, lactating | -0.786 | -0.585 | -0.036 | -0.088 |
+| reserves ÷ store, %/day: female, other | -0.055 | +0.016 | -0.002 | +0.013 |
+| reserves ÷ store, %/day: adult male | +0.017 | +0.014 | -0.008 | -0.001 |
+| reserves ÷ store, %/day: juvenile 5–12 y | -0.079 | +0.005 | -0.000 | -0.074 |
+| reserves ÷ store, %/day: infant 2–5 y | +0.004 | +0.020 | +0.003 | -0.004 |
+| reserves ÷ store, %/day: infant 0.5–2 y | -0.024 | +0.007 | -0.002 | -0.023 |
+| eating min/day: other females / pregnant / males / juveniles | 237 / 249 / 250 / 236 | 238 / 281 / 247 / 265 | 239 / 273 / 247 / 261 | 237 / 248 / 247 / 235 |
+| deaths (starvation) | 1 (0) | 1 (0) | 0 (0) | 0 (0) |
+
+Mothers' eating ticks at a ≥ 95% full foregut (D6): B1 51.4% (1.29 g of dry matter per eating minute there, 3.09 below), B2 14.6% (2.08 and 3.05).
+
+Behaviour (`intake-diagnose`, arm B2):
+
+| class | eat % | forage act, not eating % | groom % | rest % | travel with party % | play % | nest % | daylight hunger | daylight fill | φ | 1 − fill² | need kcal |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| lactating (all) | 36.9 | 1.3 | 23.9 | 10.9 | 4.5 | 4.8 | 9.6 | 0.46 | 0.69 | 0.95 | 0.46 | 3532 |
+| lactating, infant < 2 y | 38.5 | 1.3 | 14.1 | 17.0 | 6.8 | 4.3 | 10.2 | 0.41 | 0.70 | 0.93 | 0.44 | 2812 |
+| lactating, infant ≥ 2 y | 35.2 | 1.2 | 33.7 | 4.7 | 2.2 | 5.3 | 9.0 | 0.50 | 0.67 | 0.96 | 0.49 | 4251 |
+| other adult females | 31.6 | 1.3 | 12.1 | 25.9 | 8.5 | 0.7 | 10.6 | 0.30 | 0.69 | 0.75 | 0.45 | 1592 |
+| pregnant females | 36.3 | 1.3 | 8.8 | 22.2 | 10.1 | 0.7 | 10.3 | 0.34 | 0.74 | 0.90 | 0.38 | 2663 |
+| adult males | 32.8 | 1.2 | 12.8 | 21.2 | 8.9 | 0.4 | 10.8 | 0.27 | 0.63 | 0.58 | 0.52 | 1089 |
+
+| class | bouts per day | eating min per bout | spacing min | fill at bout start → end | hunger start → end | ends at a need-bucket redraw % | ends at satiation or a full gut % | ends by interrupt % | next act: groom / rest / play / other % |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| lactating (all) | 9.0 | 30.7 | 46 | 0.60 → 0.87 | 0.56 → 0.25 | 60.0 | 0.0 | 24.3 | 24 / 15 / 8 / 27 |
+| lactating, infant < 2 y | 9.9 | 29.0 | 40 | 0.63 → 0.87 | 0.51 → 0.22 | 52.5 | 0.0 | 27.5 | 16 / 19 / 7 / 29 |
+| lactating, infant ≥ 2 y | 8.1 | 32.6 | 54 | 0.56 → 0.86 | 0.63 → 0.29 | 69.3 | 0.0 | 20.5 | 35 / 10 / 10 / 26 |
+| other adult females | 9.2 | 25.8 | 47 | 0.63 → 0.90 | 0.39 → 0.12 | 36.7 | 0.0 | 19.7 | 8 / 29 / 1 / 32 |
+| pregnant females | 9.7 | 28.1 | 42 | 0.66 → 0.92 | 0.45 → 0.15 | 46.3 | 0.0 | 23.1 | 8 / 21 / 1 / 39 |
+| adult males | 8.7 | 28.2 | 49 | 0.58 → 0.85 | 0.34 → 0.12 | 25.1 | 0.1 | 17.3 | 10 / 20 / 1 / 36 |
+
+Bench rows (`e-bench --quick`):
+
+| row (band) | T | B1 | B2 |
+| --- | --- | --- | --- |
+| T-ACT-1 (0.33–0.5) | 0.377 (M 0.378, F 0.376) pass | 0.417 (M 0.384, F 0.443) pass | 0.408 (M 0.393, F 0.421) pass |
+| T-ACT-2 (0.12–0.25) | 0.178 (M 0.193, F 0.164) pass | 0.199 (M 0.210, F 0.191) pass | 0.194 (M 0.210, F 0.181) pass |
+| T-ACT-3 (0.08–0.18) | 0.186 (M 0.161, F 0.207) fail | 0.156 (M 0.154, F 0.157) pass | 0.174 (M 0.163, F 0.184) fail |
+| T-ACT-4 (0.3–0.47) | 0.374 pass | 0.293 fail | 0.364 pass |
+| T-FOOD-2 (0.6–0.78) | 0.800 fail | 0.785 fail | 0.789 fail |
+| T-FOOD-4 (4–15) | 7.582 pass | 7.514 pass | 6.892 pass |
+| T-HUN-1 (5–25) | 38.5 (P 1.275) inconclusive | 42.6 (P 1.361) fail | 60.8 (P 1.999) fail |
+| T-RNG-4 (1.5–3.5) | 2.256 (P 1.820, N 0.452, S 0.271) fail | 2.402 (P 1.882, N 0.391, S 0.217) fail | 2.269 (P 1.805, N 0.373, S 0.230) fail |
+| T-RNG-5 (0.3–0.6) | 0.670 (L 1.505, M 2.256) fail | 0.834 (L 2.017, M 2.402) fail | 0.837 (L 1.898, M 2.269) fail |
+| T-PTY-1 (3–9) | 3.153 pass | 3.623 pass | 3.311 pass |
+
+Bench sums against the mean of the four T realizations (§4a; rows counted in all five runs):
+
+**B1 against the mean of the 4 T realizations**
+- fitted: 16 rows; arm 2.274; reference mean 3.366 (runs 2.48, 4.52, 3.33, 3.14; own SD 0.85); change -1.092; SD used 0.85; z -1.15 -> inside noise
+  largest row changes vs the mean: T-SOC-9 -0.62, T-HUN-2 -0.35, T-COM-11 +0.19, T-HUN-1 -0.18, T-ACT-3 -0.11, T-HUN-7 -0.06
+- held-out: 12 rows; arm 3.085; reference mean 3.234 (runs 5.16, 2.91, 2.87, 2.00; own SD 1.35); change -0.149; SD used 1.35; z -0.10 -> inside noise
+  largest row changes vs the mean: T-RNG-5 +0.56, T-HUN-4 -0.40, T-SOC-6 -0.39, T-HUN-8 +0.08, T-SOC-2 -0.03, T-SOC-3 +0.02
+- held-out, no rare: 11 rows; arm 2.382; reference mean 2.135 (runs 2.27, 2.21, 2.34, 1.72; own SD 0.28); change +0.247; SD used 0.48; z +0.46 -> inside noise
+  largest row changes vs the mean: T-RNG-5 +0.56, T-SOC-6 -0.39, T-HUN-8 +0.08, T-SOC-2 -0.03, T-SOC-3 +0.02, T-FOOD-7 -0.02
+**B2 against the mean of the 4 T realizations**
+- fitted: 16 rows; arm 3.888; reference mean 3.366 (runs 2.48, 4.52, 3.33, 3.14; own SD 0.85); change +0.522; SD used 0.85; z +0.55 -> inside noise
+  largest row changes vs the mean: T-HUN-1 +0.74, T-HUN-2 +0.37, T-SOC-9 -0.31, T-COM-11 -0.14, T-ACT-3 -0.10, T-HUN-7 -0.06
+- held-out: 12 rows; arm 3.401; reference mean 3.234 (runs 5.16, 2.91, 2.87, 2.00; own SD 1.35); change +0.167; SD used 1.35; z +0.11 -> inside noise
+  largest row changes vs the mean: T-HUN-4 -0.60, T-RNG-5 +0.58, T-SOC-10 +0.15, T-HUN-8 +0.08, T-FOOD-7 -0.04, T-SOC-2 -0.03
+- held-out, no rare: 11 rows; arm 2.903; reference mean 2.135 (runs 2.27, 2.21, 2.34, 1.72; own SD 0.28); change +0.768; SD used 0.48; z +1.43 -> inside noise
+  largest row changes vs the mean: T-RNG-5 +0.58, T-SOC-10 +0.15, T-HUN-8 +0.08, T-FOOD-7 -0.04, T-SOC-2 -0.03, T-SOC-3 +0.03
+
+**Kill criterion (iteration 2).** K1 passes (no death; every class at −0.01%/day or better except the mothers, who are at −0.036). K2 passes (mothers' dry matter +16% over B1; eating ticks at the wall 51.4% → 14.6%). K3 passes (fitted z +0.55, held-out z +0.11, held-out without the rare-event rows z +1.43: inside noise). Viability passes: every class at or above −0.05%/day (lactating −0.036), no starvation death, e-bench viability pass (no death in either seed). Iteration 1 read with the same rule: fitted z −1.15, held-out z −0.10 and +0.46: inside noise. Prescription count 103 in every arm.
+
+**Verdict: keep (provisional) for the pair** `ledgerSatiationReserve` + `ledgerLactGut`, both off by default (neither removes a prescription, so neither can go on by default under the Track E rule). `ledgerLactGut` is flagged *magnitude design, no primate source*: never a default without one. A 5-seed confirm is the next step.
+
+**Against the predictions (iteration 2).** Held: wall share 14.6% (10–35%); dry matter 796 g (760–880); absorbed ÷ spent 0.993 (0.95–1.08); mothers' slope −0.036%/day (−0.15 to +0.30); daylight fill 0.69 of the larger foregut (0.60–0.78); other classes within ±0.03%/day and ±5% of B1's eating minutes; T-ENE-1 field method 2,484 kcal (2,250–2,600), T-ENE-3 796 g; T-ACT-1 0.408 (0.41–0.44, at the edge); no starvation; prescriptions unchanged; viability pass; held-out inside noise. Missed: eating minutes 278 (registered 280–350; T-ENE-2 is still in its band); daylight hunger 0.46 (0.50–0.70); T-ACT-3 0.174, female 0.184 (registered 0.14–0.17).
+
+**Attribution (A2, registered).** The lactational gut alone brings the mothers to −0.088%/day (registered −0.30 to −0.05) with 786 g and 270 min; juveniles stay at −0.074%/day and infants of 0.5–2 y at −0.023, as in T. So the gut term carries the mothers and iteration 1 carries the juveniles (and the mothers' last 0.05%/day): the pair, not either switch, passes viability in this window. Run-to-run noise in small classes' slopes is visible: other adult females (no switch acts on them) read −0.055 in T and +0.013 in A2.
+
+**Reading.**
+1. *Why nursing mothers stopped eating with room in the gut:* their drive was saturated (φ = 1 all day) and E1e's satiation term did not see the reserve deficit, so their hunger was 1 − fill², the curve of a balanced animal; bouts ended at need-bucket redraws as the gut passed 0.775 full, and the rules then chose feeding no more often than for any other class. Weighting satiation by the relative store (adiposity signals modulate satiation signals) gives a depleted mother larger meals: she feeds the field's minutes (322 min/day).
+2. *What it then exposed:* the foregut's throughput. At 83 mL/kg and a 3-hour emptying constant the foregut passes at most about 890 g a day even if it is full through all daylight; the field's nursing mothers pass 873 ± 289 g, at that ceiling. With the gut of a lactating female grown in proportion to her milk demand (×1.30), mothers absorb 0.99 of what they spend, eat 278 min and 796 g a day, and an observer using the field's kcal/min would record 2,484 kcal (field 2,479 ± 858). T-ENE-1 to T-ENE-3 are all in their field bands; the ledger truth (1,781 sugar-based kcal) sits just under the audit's comparison band (1,810–2,070).
+3. *Costs:* mothers now range further relative to males (T-RNG-5 0.67 → 0.84, band 0.3–0.6; the largest held-out move, within noise as a sum); hunting rows move both ways (rare events in 30 days); T-ACT-3 female 0.184 (band ≤ 0.18).
+4. *Still open:* mothers of infants ≥ 2 y groom 33.7% of daylight (other females 12.1%), after 1.49 interrupts per daylight hour, 77% from their own infant ("began grooming me"): infants from 2 y groom their mothers and the mothers reciprocate. No source was checked for infant-to-mother grooming rates; a design weight of the infant's options, outside this stage.
+
 ## 7. Known defects and caveats in the code under test
 
 - Readout caveat (scripts/intake-diagnose.ts closeBout): the gate's reason is not the bout's trigger. A forage act that finishes at satiation usually draws as 'need-bucket' (hunger changed bucket since the intent), so satiation and a full gut are read from the state at the last eating tick, not from the reason.
