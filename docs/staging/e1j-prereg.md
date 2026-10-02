@@ -97,7 +97,7 @@ ratio differs from today's by more than R's own spread over its realizations.
 | Site | Lactating or adult females | Males | Ratio | Sample, method | Access |
 | --- | --- | --- | --- | --- | --- |
 | Budongo Sonso 2002–03 | lactating/gestating 1.2 ± 0.8 km | 2.7 ± 1.5 km | 0.44 | §1 | batesByrne2009, full text |
-| Gombe 1972–73 | females, "most" anoestrous, median 2.8 km (61 days, 10 females; juveniles' days credited to their mothers) | median 4.2 km (northern, 83 days, 8 males), 3.8 (southern, 23 days, 7) | 0.67–0.74 | nest-to-nest days; 100 m grid lines crossed, moves under ~30 m ignored | wrangham1975 (PhD thesis, Table 5.1, full text) |
+| Gombe 1972–73 | females, "most" anoestrous, median 2.8 km (61 days, 10 females; juveniles' days credited to their mothers) | median 4.2 km (northern, 83 days, 8 males), 3.8 (southern, 23 days, 7) | 0.67–0.74 | nest-to-nest days; movements around a point ignored unless over ~30 m; 100 m grid lines crossed | wrangham1975 (PhD thesis, Table 5.1, full text) |
 | Kanyawara | adult females 2.0 km | 2.4 km | 0.83 | not seen | pontzerWrangham2004 as cited by wilson2021 (primary closed) |
 | Gombe | adult females 3.2 km | 4.6 km | 0.70 | not seen | pontzerWrangham2004 as cited by wilson2021 |
 | Kanyawara | maternal day range rose with the juvenile's body size, not with infant carrying | — | — | not seen | pontzerWrangham2006 as cited by stanton2017 (primary closed, no abstract) |

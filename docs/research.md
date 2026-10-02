@@ -2217,7 +2217,9 @@ lactating or anoestrous females against males, and the method behind each (docs/
   with follow-days as independent units. Use in E1j: T-RNG-4 and T-RNG-5 method (the model's observer is compared in
   e1j-prereg.md §2.4).
 - **One-day ranges by sex, Gombe** [wrangham1975] (FT, PhD thesis, Table 5.1) [M]. January 1972 – September 1973,
-  nest-to-nest days; paths by counting 100 m grid lines crossed, moves under about 30 m ignored. Medians: northern males
+  nest-to-nest days; follows aborted when the target was lost; movements around a point (a food source, a grooming
+  party) ignored unless more than about 30 m; path from 100 m grid lines crossed, checked against a hodometer
+  (r = 0.995, 24 records). Medians: northern males
   4.2 km (83 days, 8 males), southern males 3.8 km (23 days, 7), females 2.8 km (61 days, 10 females; "most of the
   females observed were anoestrous"; juveniles' days credited to their mothers). Derived [L]: females ÷ males 0.67–0.74.
 - **Day ranges by sex, Kanyawara and Gombe** [pontzerWrangham2004] as cited by [wilson2021] (FT of the citing review;
