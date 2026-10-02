@@ -472,3 +472,25 @@ and 4c86404; the new switches' switch-off identity is tested). Judgement as this
 T-RNG-4 and the simulation-truth day ranges reported against R's spread. Expected (integrator, before the run): every
 sum inside noise (moderate); prescriptions 103 → 97 (high); viability passes (moderate); T-PTY-1 within R's spread
 (low: the bug fix alone lowered it).
+
+### Five-seed confirm result (integrator, 2 October 2026; bench-run at 2f1fe3b, clean; numbers generated from the JSON)
+
+| | R (four confirm realizations; energy from e1h-R) | RC3 = R + `followCarer` + `cohesionValue` |
+| --- | --- | --- |
+| Fitted, 17 rows counted in all runs | 3.13 (SD 0.30) | 2.82: Δ −0.31, z −0.9, inside noise |
+| Held-out, 14 rows | 4.54 (SD 1.76) | 5.95: Δ +1.40, z +0.7, inside noise |
+| Held-out without T-HUN-4 and T-BRD-1, 12 rows | 2.57 | 2.91: Δ +0.35, z +1.5, inside noise |
+| Prescriptions | 103 | **97** |
+| Viability | pass | pass (0 deaths) |
+| T-PTY-1 / T-PTY-3 / T-PTY-4 (single e1h-R; RC3) | 3.57 / 0.82 / 0.39 | 3.29 / 0.69 / 0.43 |
+| T-ACT-2 travel, males / females | 0.163 / 0.146 | 0.170 / 0.162 |
+| T-RNG-4 / T-IGE-1 | 1.98 / 3.4 | 2.02 / 5.3 |
+| Ground km, males / other females / lactating (truth) | 2.17 / 1.86 / 1.63 | 2.10 / 1.98 / 1.70 |
+| Reserves %/day, lactating / juveniles | −0.068 / −0.014 | −0.074 / −0.011 |
+
+**Verdict (this stage's keep rule): provisional keep candidate, confirmed on 5 seeds.** The six party weights tuned to
+T-PTY-1 (C5a, C13e) are switched out with the care-follow defect fixed, and every sum stays inside noise of R's
+realizations; party size stays within R's per-row spread (no row beyond 2 SD of R except the hunting and rare rows
+listed in the judge output: T-HUN-2, T-SOC-9, T-BRD-1, T-HUN-4). Expectations held: sums inside noise, prescriptions
+103 → 97, viability; T-PTY-1 within R's spread held. Off by default (sequencing rule). Open: party size does not track
+crop size (R² 0 in the quick diagnosis).
