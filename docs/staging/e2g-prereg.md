@@ -264,7 +264,8 @@ held-out not up beyond noise (z ≤ +2, both row sets), count down → provision
 
 ## 7. Iteration 1 results (W1 = R + `waterLedger` 1; quick, seeds 48 and 7, 30 + 30 days; rules policy)
 
-Runs (gitignored, frozen checkouts in the session scratch `e2g/`): `W1-quick.json` (e-bench, `git.dirty` 0),
+Runs (frozen checkouts in the session scratch `e2g/`; copied with the scripts (`tools/`) and the two source audits
+(`sources/`) to `artifacts/validation/e2g/` of the e2g-water worktree, gitignored): `W1-quick.json` (e-bench, `git.dirty` 0),
 `D-W1b-{48,7}.json` (water-diagnose), `E-W1.json` and `E-R.json` (energy-diagnose, quick, same seeds). R's
 diagnosis spread: `D-{R,NR1,NR2,NR3}-{48,7}.json` (the four quick realizations; each diagnosis's T-RNG-4 and T-RNG-5
 equal the e-bench run of the same realization, so the worlds are the integrator's). Identity at this head: the R stack's
@@ -380,3 +381,14 @@ still splits the walker's party as often as before (≈ 0.7), so the prescribed 
    field's intake the daytime surplus would grow, not the dawn deficit.
 4. Model water sites carry no kind or stock: 8–13% of drinking is at stream-bank sites against Kanyawara's 78%
    (T-RHY-7); the pools (`waterSitesPerKm2`, design) take the rest.
+
+## 9. Files, merge and final checks
+
+- Code: `src/sim/water.ts` (new), hooks in `src/sim/life.ts`, `energy.ts`, `rhythm.ts` (`heatOut`, a side output of
+  `heatStep`; its result is unchanged), `execution.ts`, `candidates.ts`; `src/sim/state.ts` (`WaterLedger`, `wat` in
+  `OPTIONAL_X`); 19 registry entries `water*` in `data/params.json` (every one in docs/simulation.md §17);
+  `scripts/lib/prescriptions.ts` (switch and ACTIVE_WHEN); `scripts/water-diagnose.ts` (diagnosis, reads only);
+  `tests/sim-water.test.ts` (7 tests); `tests/sim-track-e.test.ts` (switch list).
+- Docs: this file; research.md and e-sources.md "Addendum: E2g water balance"; docs/simulation.md note and §17 rows.
+- Merged `track-e` (85f1346, handoff only) once, before the final run: no conflict. Then `gen-params --check` clean,
+  `tsc --noEmit` clean, `pnpm test` 669 tests: 668 pass, 0 fail, 1 skipped.
