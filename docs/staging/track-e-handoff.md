@@ -14,10 +14,10 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (14:30).** The about-page updater (`site-about`, from `site`). Stage agent **E1o** (`e1o-milk-demand`:
-  why infants of 1–4 y drink the whole milk yield; mothers' deficit), from track-e c7a4c75, and **E3b** (`e3b-revisit`:
-  what stops a chimp going back to a crown it just fed in; separates E5c's two crop-blind terms), from track-e 29202da;
-  briefs in the session scratchpad (`integrator/e1o-prompt.txt`, `e3b-prompt.txt`).
+- **Running now (18:10).** Stage agent **E1p** (`e1p-growth`, from track-e 1b85093: infants keep growing at the captive
+  rate while S6 makes their reserves fall; brief `integrator/e1p-prompt.txt`). Integrator: the S6 quick reference, 4
+  runs (`bench-run/artifacts/validation/e/s6q/`, script `integrator/s6q.sh`; message E1p when all four exist), and the
+  energy re-runs of S5c2 and S5c3 (completing S6's energy group).
 - **E3b merged** (`revisitByCrop`, off; a provisional keep candidate as a correction: a crown fed in is valued by the crop
   believed left, not devalued for 12 h whatever is left): mothers in balance, walking −27–36%, T-HUN-1 into its band;
   costs: fruit share 0.85 (above band), T-SOC-9 out. Removes no counted prescription. Observer fixes for T-FOOD-4/5/6
