@@ -402,3 +402,25 @@ identity is tested). Judgement as this stage registered (viability; sums against
 √1.25; prescriptions), plus R's energy readouts (e1h-R-energy) for the reserve slopes. Expected (integrator, before the
 run): every sum inside noise (moderate); prescriptions 103 → 97 (high); no dehydration or starvation death (high);
 males' ground path 0.3–0.5 km a day shorter than R's (moderate).
+
+### Five-seed confirm result (integrator, 2 October 2026; bench-run at 10c8ded, clean; numbers generated from the JSON)
+
+| | R (four confirm realizations; energy from e1h-R) | RW = R + `waterLedger` |
+| --- | --- | --- |
+| Fitted, 18 rows counted in all runs | 3.87 (SD 0.50) | 5.03: Δ +1.16, **z +2.1** (worse beyond noise) |
+| Held-out, 14 rows | 4.54 (SD 1.76) | 3.47: Δ −1.07, z −0.5 |
+| Held-out without T-HUN-4 and T-BRD-1, 12 rows | 2.57 | 2.58: Δ +0.01, z +0.1 |
+| Prescriptions | 103 | **97** |
+| Viability | pass | pass (3 deaths in one seed, all a respiratory outbreak; no starvation or dehydration) |
+| Reserves %/day, lactating / juveniles / males | −0.068 / −0.014 / −0.005 | −0.080 / −0.012 / −0.003 |
+| Ground km per day, males / lactating (truth) | 2.17 / 1.63 | 1.79 / 1.39 |
+| T-ACT-1 feeding, males / females (band 0.33–0.50) | 0.283 / 0.312 | 0.260 / 0.289 |
+| T-ACT-3 grooming, males / females (band 0.08–0.18) | 0.209 / 0.253 | **0.294 / 0.305** |
+| T-ACT-2 travel / T-RNG-4 / T-PTY-1 | 0.163, 0.146 / 1.98 / 3.57 | 0.153, 0.125 / 1.69 / 4.14 |
+
+**Verdict (this stage's keep rule: viability, held-out not up beyond noise in both row sets, count down): provisional
+keep candidate, confirmed on 5 seeds.** The expectation "every sum inside noise" missed on the fitted sum: on R, the
+time the timed walks to water took goes to grooming (T-ACT-3 distance 0.53 → 1.19) and feeding falls further. That is
+R's spare-time problem (feeding ends early at the timer's food energy), not a water effect: on the integrated stack S3,
+where the corrected food energy fills the day with feeding, the same switch left T-ACT-3 inside its band and brought
+the travel share to its edge (e-stack2-confirm.md, S3). The switch stays off by default (sequencing rule).
