@@ -1,0 +1,66 @@
+{
+ "about": "Stage E4e staging for data/targets.json (proposal; applied by the integrator, this branch never edits targets.json). One row: T-HUN-1's band rescaled to the model's adult males after the target audit (docs/staging/e4e-prereg.md §2). The original band is kept under `revisions`. Seen when this was written: B 26.8 and R 39.7 observed hunts per community-year (5-seed confirm, handoff §3); no run of this stage's changed model. Applying it changes the targets hash: protocolLog entry and new freeze by the integrator.",
+ "targets": [
+  {
+   "id": "T-HUN-1",
+   "objectives": [
+    "O8"
+   ],
+   "metric": "Hunts per community-year",
+   "definition": "Observed hunts of red colobus ÷ community-days with a follow × 365.",
+   "observer": {
+    "protocol": "all-occurrence (hunt classifier)",
+    "interval_min": null,
+    "unit": "community-year"
+   },
+   "field": [
+    {
+     "population": "Kanyawara (11.4 males)",
+     "years": "1996-2014",
+     "value": "194 hunts in 224 months ≈ 10.4 per year (derived)",
+     "n": "2,461 encounters",
+     "method": "encounter within 100 m in 15-min scans",
+     "source": "gilby2015",
+     "note": ""
+    },
+    {
+     "population": "Ngogo (~24 males)",
+     "years": "1995-1999",
+     "value": "45.1 successful hunts per year (55.2 in 1998–99)",
+     "n": "111 hunts",
+     "method": "",
+     "source": "wattsMitani2002",
+     "note": ""
+    }
+   ],
+   "accept": {
+    "lo": 4,
+    "hi": 11,
+    "units": "per community-year at the field profile's mean of 4.7 adult males (equivalently 0.9-2.3 per adult male-year)",
+    "basis": "Kanyawara and Ngogo per adult male-year, scaled linearly to the model's adult males (derived)"
+   },
+   "evidence": "M",
+   "role": "fitted",
+   "encoded": false,
+   "notes": "The code comment \"62 hunts in 471 days with ~24 males\" counts 62 hunting episodes and attempts, of which 13 were finds of chimpanzees already eating meat or carrying carcasses; the paper reports 26 adult males. C7a review (finding 7): flagged revised post hoc; log: C5a party-follow team set (source methods, post-freeze, fitted) and the C6 lite party follows at 2-min points. Stage E4e audit (2 October 2026; docs/staging/e4e-prereg.md §2.3): the band 5-25 labelled 'Kanyawara scaled' brackets the unscaled Kanyawara figure (10.4 per year at 11.4 adult males) and was never scaled to the model's 3-7 males; hunting rises with males within and across sites, so the scaling goes down. Derived: Kanyawara 10.4 / 11.4 = 0.91 and Ngogo about 55 / 24 = 2.3 hunts per adult male-year (45.1 successful hunts at 0.82 success); at the field profile's 7, 4 and 3 adult males (mean 4.7) that is 4-11 per community-year. Linear scaling is generous to the smallest communities (per-encounter odds rise with males). Alternative for the integrator: score the row per adult male-year (hunts / sum over follow-days of the community's adult males x 365). T-HUN-1 and T-HUN-3 are tied by the colobus encounter rate (about 3 x Kanyawara's per follow-hour in the model), so both cannot pass with either band until that rate is resolved.",
+   "sources": [
+    "gilby2015",
+    "wattsMitani2002"
+   ],
+   "protocolRevisedPostHoc": true,
+   "revisions": [
+    {
+     "date": "2026-10-02",
+     "by": "stage E4e (branch e4e-hunting)",
+     "accept": {
+      "lo": 5,
+      "hi": 25,
+      "units": "per community-year (3–7 males)",
+      "basis": "Kanyawara scaled"
+     },
+     "reason": "scaling audit: the band was not scaled to the model's adult males"
+    }
+   ]
+  }
+ ]
+}

@@ -11766,6 +11766,29 @@
    "notes": "A swollen female present lowers hunt odds by 22% (impact hunter present: 18.9% vs 2.3% of encounters hunted); +/-10%."
   },
   {
+   "id": "huntValue",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.huntValue",
+   "file": "src/sim/candidates.ts",
+   "integer": true,
+   "notes": "Stage E4e switch (docs/staging/e4e-prereg.md §4): a hunt is food. The lead at a colobus encounter (the hunting fix's impulse) or on an experiment's hunting day is offered only when a capture can be expected, and is scored as a feeding trip to a crown in the model's food currency (C13b intakeValue): (1.6 x hunger + 0.1) x r - distance / forageDistScaleM, r = expected meat energy per hour of the hunt (approach, chase to resolution, eating) / the male's own ripe-fruit rate. Expected meat = min(energy need, P_s(n) x q(n) x meatKcalPerUnit): the model's success curve (huntSuccessMax, huntSuccessRate) with n adult males in view, his chance to hold meat after a success (1/n + (1 - 1/n) x huntExtraKillP). Removes huntGapH (the community-wide gap) and the hand-set lead value. Acts only with energyLedger 1 and ledgerDrive 1; otherwise, and at 0, today's rule, bit-identical. Ablation switch."
+  },
+  {
    "id": "immigrantChargeGapH",
    "group": "social",
    "value": 0.75,
