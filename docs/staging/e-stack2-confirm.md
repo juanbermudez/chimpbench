@@ -246,3 +246,102 @@ night and T-RHY-5 ≤ 0.033.
 | Juveniles' reserves (%/day) | −0.077 | within 0.05 | low |
 | Fitted; held-out; held-out without the rare rows | group mean | inside noise | moderate |
 | Night: adults out of a nest; T-RHY-5 | 2.73%; 0.0284 | ≤ 3.3%; ≤ 0.033 | moderate |
+
+### S6 results (bench-run at cac9598, clean; every number below printed by the integrator's judge_s6.py and night.py from the JSON)
+
+S5 group: S5c (5911b36, code identical for S5) and three re-draws S5c1–S5c3 (cac9598). All five runs viable with no
+deaths in the S6 run. **Disclosures.** (1) The energy-diagnose runs of S5c2 and S5c3 were killed by the background time
+limit while the machine ran at a load near 970 from other applications (hundreds of iOS Simulator and computer-use
+processes); their benchmarks had finished. The energy readouts below therefore compare S6 with two S5 runs (S5c, S5c1),
+whose spread is tiny, so their z values overstate significance: read them by size. (2) The registration's table quoted
+S5's lactating "reserves" as −0.146 %/day: that number is the mean level of reserves ÷ store, not the daily slope. The
+prediction (better by ≥ 0.10) is judged on the slope, as E1o measured it, and the level is reported beside it.
+(3) One S5 re-draw (S5c2) scored T-IGE-3 (held out; the approach depending on own males, an intergroup statistic on few
+events) at a distance of 21.6 against 1.1–2.6 in the others. That makes the group's held-out SD 9.3–9.8, so the
+registered held-out test cannot detect much; a sensitivity reading without T-IGE-3 is printed below it, labelled as such.
+
+```
+bench reference runs: ['S5c', 'S5c1', 'S5c2', 'S5c3']; energy reference runs: ['S5c', 'S5c1']
+  S5c: 5911b36 dirty 0 prescriptions 77
+  S5c1: cac9598 dirty 0 prescriptions 77
+  S5c2: cac9598 dirty 0 prescriptions 77
+  S5c3: cac9598 dirty 0 prescriptions 77
+  S6c: cac9598 dirty 0 prescriptions 76
+
+confirm, reference custom (4 runs), rows counted in all runs: fitted 16, held-out 15
+  fitted             (16 rows) ref 1.90, 2.13, 2.15, 1.81 (mean 1.99, sd 0.17; used 0.30) | S6c.json: 1.99, Δ +0.00, z +0.0 (inside noise)
+  held-out           (15 rows) ref 8.73, 10.01, 27.43, 7.99 (mean 13.54, sd 9.30; used 9.30) | S6c.json: 8.40, Δ -5.14, z -0.5 (inside noise)
+  held-out w/o rare  (13 rows) ref 7.16, 7.24, 26.58, 6.43 (mean 11.85, sd 9.82; used 9.82) | S6c.json: 6.73, Δ -5.13, z -0.5 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-BRD-1   held-out ref 0.84±0.20 | S6c.json 0.91 (fail)
+   T-HUN-1   fitted   ref 0.46±0.03 | S6c.json 0.30 (inconclusive)
+   T-HUN-4   held-out ref 0.84±0.65 | S6c.json 0.76 (inconclusive)
+   T-SOC-9   fitted   ref 0.00±0.00 | S6c.json 0.10 (inconclusive)
+
+| Reserves ÷ store, % per day (OLS over the window) | S5 runs | S5 mean ± SD | S6 | z |
+| --- | --- | --- | --- | --- |
+| adult male | -0.032 / -0.033 | -0.033 ± 0.000 | -0.031 | +13.5 |
+| female, other | -0.054 / -0.045 | -0.050 ± 0.006 | -0.028 | +3.0 |
+| female, lactating | -0.233 / -0.255 | -0.244 ± 0.016 | -0.125 | +6.3 |
+| juvenile 5–12 y | -0.086 / -0.085 | -0.085 ± 0.001 | -0.075 | +10.8 |
+| infant 2–5 y | -0.013 / -0.013 | -0.013 ± 0.000 | -0.106 | -213.0 |
+| infant 0.5–2 y | -0.007 / -0.007 | -0.007 ± 0.000 | -0.147 | -441.2 |
+| infant < 0.5 y | +0.000 / +0.000 | +0.000 ± 0.000 | +0.000 | +nan |
+
+| Milk drunk, kcal per infant-day | S5 runs | S5 mean ± SD | S6 | z |
+| --- | --- | --- | --- | --- |
+| 0.5–1 y | 284 / 284 | 284 ± 0 | 279 | -14.9 |
+| 1–2 y | 308 / 308 | 308 ± 0 | 238 | -513.6 |
+| 2–3 y | 307 / 307 | 307 ± 0 | 198 | -4112.0 |
+| 3–4 y | 307 / 307 | 307 ± 0 | 190 | -10606.6 |
+
+| Mothers' balance, kcal/day by infant age | S5 runs | S5 mean ± SD | S6 | z |
+| --- | --- | --- | --- | --- |
+| 0.5–1 y | -47 / -48 | -48 ± 1 | -36 | +16.8 |
+| 1–2 y | -93 / -98 | -96 ± 3 | -79 | +4.2 |
+| 2–3 y | -144 / -151 | -147 ± 5 | -65 | +13.8 |
+| 3–4 y | -129 / -142 | -136 ± 9 | -43 | +8.1 |
+
+| Ground km per day / eating min / reserves level | S5 runs | S5 mean ± SD | S6 | z |
+| --- | --- | --- | --- | --- |
+| adult male: groundKm | 2.73 / 2.72 | 2.73 ± 0.01 | 2.68 | -4.6 |
+| adult male: eatingMin | 255 / 255 | 255 ± 0 | 256 | +38.4 |
+| adult male: reserves | -0.022 / -0.021 | -0.022 ± 0.001 | -0.022 | -0.4 |
+| female, other: groundKm | 2.33 / 2.38 | 2.35 ± 0.03 | 2.22 | -3.4 |
+| female, other: eatingMin | 248 / 250 | 249 ± 1 | 249 | +0.1 |
+| female, other: reserves | -0.045 / -0.045 | -0.045 ± 0.000 | -0.042 | +12.2 |
+| female, lactating: groundKm | 2.44 / 2.49 | 2.47 ± 0.04 | 2.50 | +0.7 |
+| female, lactating: eatingMin | 284 / 284 | 284 ± 0 | 268 | -47.3 |
+| female, lactating: reserves | -0.146 / -0.148 | -0.147 ± 0.002 | -0.079 | +32.3 |
+| juvenile 5–12 y: groundKm | 2.68 / 2.69 | 2.69 ± 0.01 | 2.66 | -1.8 |
+| juvenile 5–12 y: eatingMin | 268 / 268 | 268 ± 0 | 268 | +2.2 |
+| juvenile 5–12 y: reserves | -0.077 / -0.079 | -0.078 ± 0.001 | -0.079 | -0.5 |
+| infant 2–5 y: groundKm | 0.18 / 0.19 | 0.19 ± 0.01 | 0.23 | +5.5 |
+| infant 2–5 y: eatingMin | 109 / 109 | 109 ± 0 | 150 | +136.7 |
+| infant 2–5 y: reserves | -0.019 / -0.020 | -0.020 ± 0.001 | -0.082 | -84.6 |
+S5c: births 0, deaths {'respiratory illness (outbreak)': 1, 'illness': 1}, living [245, 243]
+S5c1: births 0, deaths {}, living [245, 245]
+S6c: births 0, deaths {}, living [244, 244]
+/Users/juanbermudez/Desktop/MGOGO/.claude/worktrees/bench-run/artifacts/validation/e/s6/S6c-rhythm5.json: adults out of a nest 2.77% of night; T-RHY-5 0.0277; night deaths 0; deaths 0
+/Users/juanbermudez/Desktop/MGOGO/.claude/worktrees/bench-run/artifacts/validation/e/s5/S5-rhythm5.json: adults out of a nest 2.73% of night; T-RHY-5 0.0284; night deaths 1; deaths 2
+
+Sensitivity (not the registered test): held-out without T-HUN-4, T-BRD-1 and T-IGE-3 (12 rows): S5 5.17 / 4.70 / 4.94 / 5.33 (mean 5.03, sd 0.27; used 0.27); S6 5.39, delta +0.36, z +1.2
+T-IGE-3 distance by run (S5c, S5c1, S5c2, S5c3, S6c): [1.99, 2.55, 21.64, 1.1, 1.34]
+```
+
+**Against the predictions.** Prescriptions 76: held. Viability: held. Milk at 1–2 / 2–3 / 3–4 y below the cap and
+falling with age: held (238 / 198 / 190 kcal/day against 307–308). Lactating females' reserves better by ≥ 0.10 %/day:
+held on the slope (−0.244 → −0.125); on the level, +0.07 (−0.147 → −0.079). Mothers' balance rising with infant age:
+partly held (−79 → −65 → −43 kcal/day from 1–2 to 3–4 y, where S5 fell from −96 to −147 and −136; the 0.5–1 y class,
+−36, is the highest). Juveniles within 0.05: held (−0.085 → −0.075). Sums inside noise: held (fitted z 0.0, held-out
+z −0.5 with and without the rare rows; sensitivity without T-IGE-3 as well, z +1.2). Night: held (adults out of a nest
+2.77% of the night, T-RHY-5 0.0277, no night deaths).
+
+**Not predicted, a cost.** Infants now carry part of the dyad's deficit: reserves fall 0.11–0.15% of the store a day at
+0.5–5 y (S5 about 0.01), most of it in the window's second half, when every class loses (the season's fruit), while
+they still grow at the captive rate (E1o's open problem: growth yields only below condition 0.5). Over 90 days no infant
+died; whether they settle or keep falling needs a run longer than the cap.
+
+**Verdict: S6 passes the keep rule and replaces S5 as the best integrated candidate** (76 prescriptions, viable, night
+safe, sums level with S5, nursing mothers' deficit halved and mothers recovering as infants grow), with the infants'
+reserves the open cost. Energy readouts of S5c2 and S5c3 to be re-run when the machine is free.
