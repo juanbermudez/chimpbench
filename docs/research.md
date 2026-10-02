@@ -2666,3 +2666,38 @@ lactation sources); one new source was read (PubMed abstract, 2 October 2026).
 - Already listed and used in E1o without new reading: trivers1974 and maestripieri2002 (the form of the mother's
   decision, arm B), emeryThompson2012 (her cost tied to her energy state: cycling resumes after sustained energy gain),
   kent1999, daly1993 and deweyLonnerdal1986 (synthesis follows the infant's removal, the existing store rule).
+
+### Addendum: E3b revisits (2 October 2026)
+
+Read for stage E3b ([staging/e3b-prereg.md](staging/e3b-prereg.md) §3): what stops a chimpanzee going back to a tree it
+has just fed in. Tags as above.
+
+- **Revisiting the same trees, Taï** [normand2009] (FT, PMC2762532 through NCBI BioC, read 2 October 2026) [M]. Extends
+  the C7a entries (nearest productive tree 30%).
+  - Sample: South group, 16 adults (11 females, 5 males); nest-to-nest follows of one target a day, 375 follow-days of
+    15 individuals, 2005–2007; for the revisits "two females were followed for 28 consecutive days (from 5 January to 1
+    February 2007, and from 19 February to 18 March 2007)". Mass and reproductive state not reported.
+  - Method: "We determined the revisit rate for each resource during these two periods (i.e., how frequently the
+    resource was visited after the first known visit). The trees located less than 30 m from each other were considered
+    to be the same resource. We only considered trees that were revisited by the same individual during the study
+    period as being revisited." How returns on the same day were counted is not stated.
+  - Results: "On average, chimpanzees revisit a tree within 5.37 days"; the longest interval 24 days (bounded by the
+    28-day follows); the two females ate in 391 and 506 trees, 13.96 and 18.07 a day. The probability of revisiting a
+    tree rises with the time spent eating in it at the previous visit (B = 0.506, Wald 22.3) and with the share of
+    females in the party (B = 1.438), falls with the density of its species (B = −0.337), and does not depend on party
+    size. "they revisit the resource where they are able to eat for longer and where they expect to find more fruit".
+  - Use in E3b: the definition of T-FOOD-6's truth readout (per individual, 30-m resources); the direction that a
+    return is valued by the fruit expected, not avoided by a timer.
+- **Anticipating the fruit of a revisited tree, Taï** [ban2014] (Abs, Europe PMC; the full text is not in PMC and the
+  MPG PuRe copy sits behind a bot check, not used) [M]. Five adult females followed "for many consecutive days"; the
+  approach distance to previously visited feeding trees was longer where they "had previously made food grunts and had
+  rejected fewer fruits", and the results suggest they "were able to anticipate the amount of fruit that they would
+  find in the trees". The 2.5-day revisit interval (max 26; 180 approaches) in targets.json was not re-verified here.
+  Use in E3b: direction (a return is worth the fruit remembered and expected), never an input.
+- **Ripe fruit is a small standing stock** [houle2014] (Abs; research.md §E.20): ripe fruits "usually rare in the tree
+  (<0.5% of all fruit available)", mid-ripe 3–8%. Direction: what a feeder eats is ripe fruit that ripening replaces,
+  not the crown's whole crop; no ripening or replacement rate is given.
+- normand2009, ban2014 and houle2014 are already cited; the entries above add findings.
+
+**Not verified:** ban2014's Methods (how its 2.5-day interval was measured); a ripening rate, a ripe-fruit persistence
+time or a within-crown reach for any chimpanzee food tree.

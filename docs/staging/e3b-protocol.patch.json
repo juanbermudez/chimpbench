@@ -1,0 +1,28 @@
+{
+ "about": "Stage E3b staging for the virtual field observer (proposal; applied by the integrator, this branch never edits src/field). Three scorer corrections that make the tree-visit rows follow their sources' definitions (docs/staging/e3b-prereg.md §3, §7). Written after the E3b diagnosis (D0–D3) was read and before the iteration-1 bench (A1) had produced any observer row. Applying it changes the protocol hash and the T-FOOD-4, T-FOOD-5 and T-FOOD-6 values of every saved run: protocolLog entry and new freeze by the integrator; T-FOOD-4 and T-FOOD-5 are already flagged compromised or encoded in data/targets.json.",
+ "sources": {
+  "normand2009": "FT (PMC2762532 through NCBI BioC). 'We determined the revisit rate for each resource during these two periods (i.e., how frequently the resource was visited after the first known visit). The trees located less than 30 m from each other were considered to be the same resource. We only considered trees that were revisited by the same individual during the study period as being revisited.' 'On average, chimpanzees revisit a tree within 5.37 days.' Nearest tree: 'We determined the mean distance to the next nearest resource for each of the resources considered. Then, we determined whether they walked to the next nearest resource or walked longer distances by dividing the distance effectively travelled by the distance to the next nearest resource.'",
+  "janmaat2013b": "not re-read this stage (not open access); the definition in data/targets.json is 'Distinct feeding trees per full-day follow' (7.14 trees/day, 5 females, 275 full-day follows)"
+ },
+ "changes": [
+  {
+   "id": "T-FOOD-6-per-individual",
+   "where": "src/field/metrics.ts T-FOOD-6 (lines 698-708 at 29202da)",
+   "today": "days between visits to the same tree by any followed focal of one community (key: community and tree), counting visits on different days",
+   "proposed": "days between visits by the same individual to the same resource (trees less than 30 m apart are one resource), visits on different days, as normand2009 defines a revisit; reported with the number of individuals and of revisits",
+   "reference_implementation": "scripts/revisit-diagnose.ts (revisitResource30, a_calDiffOtherDays; simulation truth)"
+  },
+  {
+   "id": "T-FOOD-5-no-returns",
+   "where": "src/field/protocols.ts tree visits (lines 494-501 at 29202da) and src/field/metrics.ts T-FOOD-5",
+   "today": "every feeding-tree visit is scored; a return to the tree the focal has just left (after >= 10 min) is scored as a choice of the nearest productive tree, because the tree itself is excluded from the nearer-tree test and the departure point lies in its crown",
+   "proposed": "score only moves to another tree (the next resource, as normand2009 measures it): a visit to the tree of the previous visit is not a move and is left out of T-FOOD-5's numerator and denominator"
+  },
+  {
+   "id": "T-FOOD-4-distinct",
+   "where": "src/field/metrics.ts T-FOOD-4 (lines 685-692 at 29202da)",
+   "today": "feeding-tree visits per complete follow, a return to the same tree after >= 10 min counting again",
+   "proposed": "distinct feeding trees per complete follow, as the row's definition says ('Distinct feeding trees per full-day follow'); the visit count reported beside it as a part"
+  }
+ ]
+}
