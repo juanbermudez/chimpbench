@@ -50,6 +50,12 @@ mass restriction (community-level counts). **Two features of the method matter h
 consecutive positive scans (identity of the colobus group not used), and the colobus must be *detected* by the field
 assistants (sight or sound in forest; no detection probability is given).
 
+Other rows scored here: T-HUN-2 and T-HUN-4's Gombe rows come from the same paper (Kasekela 1976–2013, Mitumba
+2000–2014; focal follows, colobus within ~50 m of the focal); the Ngogo rows (T-HUN-1 wattsMitani2002, T-HUN-2
+mitaniWatts1999/wattsMitani2002, T-HUN-3 mitaniWatts2001: 61 of 164 encounters, definition not recorded) were not
+re-opened (E4e: closed, the University of Michigan repository behind a bot check); values as recorded. T-HUN-1's
+staged band 4–11 (E4e audit, not applied) is reported beside the registered 5–25.
+
 ### 2.2 What the model's observer counts (code at 6781cb7)
 
 - Scans every 15 min by day (daylight > 0.3); the scan stores the nearest colobus group whose point lies within
