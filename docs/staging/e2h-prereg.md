@@ -235,3 +235,7 @@ So the stage ends with the audit, the staged target rows and scorer fix (§3), a
 parameter, no code change in `src/`. The staged T-FOOD-10 band (0.08–0.78) takes S3 in only at its edge and on 9 follows;
 S3's mothers on every day (0.91) and in truth (0.85) stay above it, so the mothers' miss is real under the staged scoring
 too.
+
+## 10. Final checks
+After merging `track-e` (f46d92d) once: `gen-params --check` clean, `tsc --noEmit -p .` clean, `pnpm test` 675 tests,
+674 pass, 0 fail, 1 skipped; `git ls-files data/raw node_modules` empty.
