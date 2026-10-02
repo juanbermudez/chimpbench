@@ -268,6 +268,16 @@ stage's question only if milk at 1–4 y falls below the cap beyond the referenc
 (milk to zero by the infant's own state before the prescribed age), a further iteration removes the prescribed weaning
 age behind the switch; in a 60-day window with infants of 0.6–3.7 y this is not expected.
 
+**Implementation and smoke tests (before the arms; disclosed).** Code at the commit that adds this paragraph:
+`src/sim/energy.ts` (milkCapacity, relDeficit, the gland keys refreshed in energyTick), `src/sim/execution.ts` (the
+nurse act's comparison, `nightAllowed`), `src/sim/state.ts` (`gm`, `gy`), registry and table rows, switch lists,
+`tests/sim-e1o.test.ts` (defaults, no gland keys with the switch off, determinism of both switches over a day, the
+gland read, relDeficit, the awake mother's comparison and ties, the sleeping mother's pending refusal at night).
+Prescription counts: A 77, B 76, B0 76 (`weanDecide` switches the roll out). Smoke tests (seed 48, 1-day burn-in + 2
+days, readouts only; `scratchpad/e1o/smoke/`): every readout prints; A keeps 1–4-year-olds at 303–308 kcal of milk a
+day; B moves 1–4-year-olds to 158–218 kcal a day with the gland holding 77–155 kcal at dusk. Nothing in the
+predictions above was changed after the smoke tests.
+
 ## 3. Benchmark and judging (from the brief; e-noise.md amendment 2)
 
 Reference: S5 (e-stack2-confirm.md, "S5 results"; 32 switches, `bench-run/artifacts/validation/e/s5/S5-params.json`) in

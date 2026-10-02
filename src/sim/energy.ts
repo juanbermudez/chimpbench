@@ -47,9 +47,12 @@
 // drive saturates (φ ≤ 1) when the reserve deficit exceeds what the waking day can supply, so a depleted mother's hunger
 // was 1 − fill² alone, the same curve as a balanced animal's. With the switch the satiation term is weighted by the
 // relative store (setHunger), as adiposity signals weight satiation signals.
+// Stage E1o (docs/staging/e1o-prereg.md §2.1; P.milkInDrive, 0 by default, read only with ledgerDrive 1): an unweaned
+// animal's drive counts milk at what its mother's gland can deliver over the horizon (what it holds plus what it will
+// make over the waking time left and the night after it), not at the suckling rate all day (feedRate's milk term).
 import type { Chimp, World } from '../types';
 import { paramsOf, type Params } from './params';
-import { TICK_HOURS, TICK_SECONDS, ix, type ChimpX, type EnergyLedger } from './state';
+import { TICK_HOURS, TICK_SECONDS, index, ix, type ChimpX, type EnergyLedger } from './state';
 import { eatWater, milkWaterOut, waterOn } from './water';
 
 const J_PER_KCAL = 4184, G_MPS2 = 9.81, DAYS_PER_YEAR = 365.25;
@@ -315,7 +318,7 @@ function setHunger(c: Chimp, L: EnergyLedger, P: Params): void {
     const D = rates(P).dig;
     if (L.eAvg === undefined) openDrive(c, L, P);
     const [left, fast] = feedHorizon(c, L, P), need = -L.res - gutEnergy(L, P, D) + spendRate(c, L, P) * (left + fast);
-    const phi = need > 0 ? need / (feedRate(c, P) * (left > TICK_HOURS ? left : TICK_HOURS)) : 0, f = gutFill(c, L, P, D);
+    const phi = need > 0 ? need / (P.milkInDrive === 1 && !ix(c).weaned ? milkCapacity(c, L, P, left, fast) : feedRate(c, P) * (left > TICK_HOURS ? left : TICK_HOURS)) : 0, f = gutFill(c, L, P, D);
     if (P.ledgerSatiationReserve === 1) {
       // stage E1i (docs/staging/e1i-prereg.md): adiposity signals modulate the processing of satiation signals
       // (grill2010 [M]), so the satiation term is weighted by the relative store w = 1 + reserves ÷ usable store (1 at the
@@ -332,6 +335,28 @@ function setHunger(c: Chimp, L: EnergyLedger, P: Params): void {
   // stage E1b: emptiness is bulk, the foregut's dry matter against its capacity
   const e = D ? 1 - L.dm! / (D.capF * M) : 1 - L.gut / (P.ledgerGutCapKcalPerKg * M), a = P.ledgerAppetiteSet - P.ledgerAppetiteGain * L.res / (P.ledgerReserveKcalPerKg * M);
   c.hunger = (e > 1 ? 1 : e < 0 ? 0 : e) * (a > 1 ? 1 : a < 0 ? 0 : a);
+}
+
+/**
+ * Stage E1o (milkInDrive; docs/staging/e1o-prereg.md §2.1): what an unweaned animal could take over its horizon (kcal):
+ * its own feeding at its own rate over the waking time left, plus the milk its mother's gland holds and will make over
+ * that time and the night after it (kept on its ledger by energyTick: gm, gy). Own food only while awake, milk through
+ * the night in her nest. Never below one tick of its own feeding (as the drive's divisor).
+ */
+function milkCapacity(c: Chimp, L: EnergyLedger, P: Params, left: number, fast: number): number {
+  const own = feedRate(c, P) - P.ledgerMilkKcalPerMin * 60, cap = own * (left > TICK_HOURS ? left : TICK_HOURS) + (L.gm ?? 0) + (L.gy ?? 0) * (left + fast);
+  return cap > own * TICK_HOURS ? cap : own * TICK_HOURS;
+}
+
+/**
+ * Stage E1o (weanDeficit; docs/staging/e1o-prereg.md §2.1): the relative reserve deficit, max(0, −reserves ÷ usable
+ * store): the shortfall of the quantity condition reads (0 at or above the set point). 0 before the ledger opens. Pure.
+ */
+export function relDeficit(c: Chimp, P: Params): number {
+  const L = ix(c).en;
+  if (!L) return 0;
+  const d = -L.res / reserveCap(c, P);
+  return d > 0 ? d : 0;
 }
 
 /**
@@ -460,6 +485,11 @@ export function energyTick(world: World, c: Chimp, x: ChimpX, sleeping: boolean)
     const S = x.slp ?? 1 - c.energy;
     if (sleeping && L.slept === 0) L.sBed = S; else if (!sleeping && L.slept === 1) L.sWake = S;
     L.slept = sleeping ? 1 : 0;
+    // stage E1o (milkInDrive): the milk the mother's gland holds and makes, for the drive's capacity (setHunger)
+    if (P.milkInDrive === 1 && !x.weaned) {
+      const m = index(world).byId.get(c.motherId), ML = m && m.alive && m.lactating ? ix(m).en : undefined;
+      if (m && ML) { L.gm = ML.milk; L.gy = P.ledgerMilkYieldCoef / 24 * Math.pow(massOf(m, P), P.ledgerRmrExp); } else { L.gm = 0; L.gy = 0; }
+    }
   }
   setHunger(c, L, P);
 }

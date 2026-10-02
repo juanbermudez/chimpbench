@@ -5,7 +5,7 @@ import { addEvent, emitCall, endInteraction, episode, findInteraction, flashInte
 import { nestPoint } from './generation';
 import { addBond, dominates, eloUpdate, rankedMale } from './hierarchy';
 import { paramsOf, type Params } from './params';
-import { driveOn, eat, fallbackKcalPerH, fruitKcalPerUnit, glandEmpty, gutRoom, intakeSize, ledgerOn, nurseTick, ownDrive, sharePlant } from './energy';
+import { driveOn, eat, fallbackKcalPerH, fruitKcalPerUnit, glandEmpty, gutRoom, intakeSize, ledgerOn, nurseTick, ownDrive, relDeficit, sharePlant } from './energy';
 import { snareIntake } from './snares';
 import { lightArousal } from './rhythm';
 import { drinkTick, waterOn } from './water';
@@ -15,7 +15,7 @@ import { doTransfer, recordCopulation } from './reproduction';
 import { IMPULSE_HUNT, forget } from './perception';
 import { clamp, hash01, random } from './rng';
 import type { ParamId } from './params.gen';
-import { NEVER, TICK_HOURS, TICK_SECONDS, awakeInNest, byIdIn, huntOf, index, isTreeId, ix, simOf } from './state';
+import { NEVER, TICK_HOURS, TICK_SECONDS, awakeInNest, byIdIn, huntOf, index, isTreeId, ix, simOf, type ChimpX } from './state';
 import { resolveHunt } from './ecology';
 import { endoOn, endoShared, endoThreat } from './endocrine';
 import { callValueOn, crownOf, gruntWorth, hooWorth, pantHootValue } from './calls';
@@ -782,10 +782,12 @@ export function executeAction(world: World, c: Chimp): void {
       // worth to her infant given its own alternatives (energy.ts ownDrive) is at least her own drive (equal weights:
       // equal relatedness to her current and future offspring, trivers1974; design). It replaces the weaning roll.
       // iteration 2 (e1n-prereg.md §3.6): a sleeping mother makes no decision (motherDecides)
-      const sw = P.weanDecide === 1 && driveOn(P), decide = sw && motherDecides(P, m);
+      // stage E1o (weanDeficit; docs/staging/e1o-prereg.md §2.1): the comparison in her own deficit's currency, the
+      // infant's relative reserve deficit against hers (energy.ts relDeficit), in place of ownDrive against her hunger
+      const sw = P.weanDecide === 1 && driveOn(P), decide = sw && motherDecides(P, m), def = sw && P.weanDeficit === 1;
       if (x.phase === 0) {
         // weaning conflict: refusals rise from ~3.2 years [H for conflict, rates L]
-        if (sw ? decide && ownDrive(c, P) < m.hunger : c.age > P.weanRefuseAgeY && random(world) < clamp((c.age - P.weanRefuseAgeY) / P.weanRefuseRampY) * P.weanRefuseMaxP) {
+        if (sw ? decide && (def ? relDeficit(c, P) < relDeficit(m, P) : ownDrive(c, P) < m.hunger) : c.age > P.weanRefuseAgeY && random(world) < clamp((c.age - P.weanRefuseAgeY) / P.weanRefuseRampY) * P.weanRefuseMaxP) {
           emitCall(world, c, 'whimper'); c.mood = 'distressed'; c.stress = clamp(c.stress + 0.1);
           episode(world, c, 'social', `My mother ${m.name} refused to let me nurse`, m.id);
           if (sw) x.wr = m.decisionVersion; // stage E1n: the infant asks again once she has started a new act (candidates.ts)
@@ -798,7 +800,7 @@ export function executeAction(world: World, c: Chimp): void {
         x.interId = startInteraction(world, 'nurse', c, m.id, [c.id, m.id], 0.2).id;
       }
       if (!isCarried(c, m) && hd(c, m) > 1.2) { moveTo(world, c, m.position[0], m.position[1], m.position[2], WALK, 0.8); return; }
-      if (decide && ownDrive(c, P) < m.hunger) { x.wr = m.decisionVersion; if (nurseTap.fn) nurseTap.fn(c, m, 'end-mother'); x.prog = 0; return finish(world, c); }
+      if (decide && (def ? relDeficit(c, P) < relDeficit(m, P) : ownDrive(c, P) < m.hunger)) { x.wr = m.decisionVersion; if (nurseTap.fn) nurseTap.fn(c, m, 'end-mother'); x.prog = 0; return finish(world, c); }
       if (P.ledgerNurseBout === 1 && ledgerOn(P)) {
         // stage E1f (ledgerNurseBout): no milk flows for the first ledgerLetDownS of contact (milk ejection; gardner2015,
         // women, assumed), then the full flow; the bout ends when a tick delivers less than the full flow (the gland or
@@ -868,6 +870,19 @@ function motherDecides(P: Params, m: Chimp): boolean {
 }
 export const nurseTap: { fn: ((infant: Chimp, mother: Chimp, ev: NurseEvent) => void) | null } = { fn: null };
 
+/**
+ * Stage E1o (weanDeficit, with weanDecide; docs/staging/e1o-prereg.md §2.1): whether the mother lets her infant suckle in
+ * her nest this tick. Awake, she decides in her own deficit's currency (the infant's relative reserve deficit at least
+ * hers), and a refusal is remembered as by day (x.wr = her decision count; the infant asks again once she starts a new
+ * act). Asleep, she makes no decision and her last one stands: a refusal still pending stops suckling.
+ */
+function nightAllowed(P: Params, c: Chimp, x: ChimpX, m: Chimp): boolean {
+  if (!motherDecides(P, m)) return !(x.wr !== undefined && x.wr === m.decisionVersion);
+  if (relDeficit(c, P) < relDeficit(m, P)) { x.wr = m.decisionVersion; return false; }
+  if (x.wr !== undefined) delete x.wr;
+  return true;
+}
+
 function nestTick(world: World, c: Chimp): void {
   const P = paramsOf(world), WALK = P.walkMps;
   const x = ix(c);
@@ -884,8 +899,10 @@ function nestTick(world: World, c: Chimp): void {
     // nest sharing until weaning [M]; mizuno2006, night suckling of captive newborns [L]; no refusal is a stylization (lint-ok: existing values)
     // stage E1n (weanDecide): with the switch, the mother's decision (as in the day act) replaces "no refusal at night"
     // while she is awake in her nest; asleep she makes no decision (iteration 2, e1n-prereg.md §3.6)
+    // stage E1o (weanDeficit): her decision in her deficit's currency at night too; asleep, her last decision stands
     if (P.ledgerNightNurse === 1 && m.action === 'nest' && m.id === c.motherId && c.age < x.weanAge + 0.3 && c.hunger >= NURSE_DONE
-      && (held || hd(c, m) <= 1.2) && ledgerOn(P) && !(P.weanDecide === 1 && driveOn(P) && motherDecides(P, m) && ownDrive(c, P) < m.hunger)) {
+      && (held || hd(c, m) <= 1.2) && ledgerOn(P) && (P.weanDeficit === 1 && P.weanDecide === 1 && driveOn(P) ? nightAllowed(P, c, x, m)
+      : !(P.weanDecide === 1 && driveOn(P) && motherDecides(P, m) && ownDrive(c, P) < m.hunger))) {
       // stage E2b (nurseWake): a feed wakes the mother (rhythm.ts rhythmNeeds): a tick in which the infant drinks from a
       // gland that can sustain the suckling rate (E1d's end-of-bout test); draining the synthesis of an empty gland does not
       const feed = P.nurseWake === 1 && !glandEmpty(m, P), before = feed ? ix(m).en?.milk ?? 0 : 0;

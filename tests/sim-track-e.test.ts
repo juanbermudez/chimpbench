@@ -27,6 +27,7 @@ const TRACK_E_SWITCHES = [
   'waterLedger', // E2g
   'followCarer', // E4g
   'weanDecide', // E1n
+  'milkInDrive', 'weanDeficit', // E1o
   'cohesionValue', // E5a
   'companyMargin', // E5b
 ] as const;
