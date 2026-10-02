@@ -200,7 +200,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   const pers = c.personality;
   const caretaker = dependentOn(world, c);
   const carried = caretaker ? isCarried(c, caretaker) : false;
-  // stage E5a (cohesionValue; docs/staging/e5a-prereg.md §3, iteration 2): a companion's company is valued by the animal
+  // stage E5a (cohesionValue; docs/staging/e5a-prereg.md §3–§3.2, iteration 3): a companion's company is valued by the animal
   // that moves toward it (following, joining, approaching a caller), never as a cost of leaving: a departure alerts the
   // companions, who weigh the leaver's company in their own choice to come
   const cohesion = cohesionOn(P);
