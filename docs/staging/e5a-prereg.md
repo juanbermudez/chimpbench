@@ -267,7 +267,7 @@ class's reserve slope more than 0.05%/day below RF's (energy-diagnose, same seed
 standard, handoff §4.5, which iteration 1's criterion lacked); held-out without the rare rows worse beyond noise
 (z > +2); or the mechanism does not run.
 
-### 3.2 Iteration 3 (registered 2 October 2026, 10:19, before its run): company valued by the social drive
+### 3.2 Iteration 3 (registered 2 October 2026, 10:17, cb45c86, before its run): company valued by the social drive
 
 **Why (A1 and A2, §6.1–6.2).** The two bounds of who bears a departure's loss of company both over-cohere once the C13e
 join terms (0.6–1.0 per companion) carry all of cohesion. A1 (the leaver pays) froze parties; A2 (company attracts,
@@ -332,7 +332,8 @@ mechanism does not run. This is the last iteration (at most 3).
 - **Iteration 2** (§3.1; arm A2): registered and committed before its run (this commit). Disclosure: the four unit tests of
   tests/sim-cohesion-value.test.ts ran once on the iteration-2 code minutes before this commit (reads, determinism and
   candidate scores only; no behavioural readout was looked at). Run from run-8afd86e, clean. Results §6.2.
-- **Iteration 3** (§3.2; arm A3): registered and committed before its run (this commit).
+- **Iteration 3** (§3.2; arm A3): registered and committed before its run (cb45c86; the four unit tests and the smoke
+  test ran after that commit). Run from run-cb45c86, clean, `--workers 1` (load 8.9–10.6). Results §6.3. Last iteration.
 
 ## 6. Results
 
@@ -400,3 +401,60 @@ T-RNG-4 missed (0.355, 3.91); males' day range 1.9–2.5 missed (4.82); lactatin
 departures and company at full value, recruitment runs away: each departure recruits, each recruit's departure alerts
 others, and every animal answers every caller.
 
+### 6.3 Iteration 3: A3 = RF + `cohesionValue` (company valued by the social drive; run-cb45c86, clean)
+
+Same scripts; identity: ranging-diagnose's T-RNG-4 per seed (1.882 / 2.087) and cohesion-diagnose's T-PTY-1 per seed
+(3.780 / 3.150) equal e-bench's. Smoke test (seed 48, 1 + 2 days): every readout filled.
+
+| Readout | RF mean ± SD (4 runs) | A3 | z |
+| --- | --- | --- | --- |
+| T-PTY-1 / T-PTY-3 / T-PTY-4 | 3.526 ± 0.220 / 0.876 ± 0.151 / 0.392 ± 0.038 | 3.465 / 0.919 / 0.346 | — |
+| T-ACT-2 / T-RNG-4 / T-IGE-1 | 0.148 ± 0.009 / 1.933 ± 0.167 / 7.354 ± 4.927 | 0.149 / 1.985 / 3.058 | — |
+| True day range, adult males / females (km) | 2.064 ± 0.056 / 1.807 ± 0.016 | 2.088 / 1.952 | +0.4 / +8.1 |
+| Fitted (17) / held-out (13) / without T-HUN-4, T-BRD-1 (12) | 4.385 ± 0.657 / 4.208 ± 1.029 / 3.070 ± 0.569 | −0.117 / −0.989 / −0.306 | −0.15 / −0.70 / −0.48 |
+| Against R's four realizations (16 / 12 / 11 rows) | 3.900 ± 0.842 / 2.534 ± 0.345 / 2.292 ± 0.129 | +0.090 / +0.184 / −0.028 | +0.10 / +0.13 / −0.05 |
+| Prescriptions; viability (e-bench) | 103; pass | 97; pass (no deaths) | — |
+| Reserves %/day: lactating / other females / juveniles / males | −0.009 / +0.003 / +0.001 / +0.002 | +0.004 / −0.001 / −0.010 / +0.001 | — |
+| Median hunger, adults / lactating (per seed) | 0.18 / 0.47–0.52 | 0.19 / 0.47–0.48 | — |
+
+T-PTY-2 needs a year of months and is "insufficient" in quick mode for every run.
+
+Mechanics (diagnosis, single runs against RF): joined trips per adult-male day 3.63 → 2.48 and plain follows 0.88 →
+0.52 (lactating females 2.84 → 1.44 and 0.68 → 0.16); approaches to callers carry more of the walking (adult males 0.32
+→ 0.52 km a day, other adult females 0.34 → 0.84) and of fusion (41% of joins); joins and splits 7.8 → 9.9 per
+subject-day (more fluid parties); truth party size of adult males 3.38 → 3.05, mothers alone 45% → 55% of scans;
+adult males' plain follows go to other adult females 57% of the time (23% on RF): the mating value of fertile females
+(emeryThompson2014's direction). Feeders per occupied crown 1.22, still no crop effect (R² 0.001).
+
+**Predictions scored:** count 97 confirmed; T-PTY-1 2.5–4.0 confirmed (3.47); joined trips < 3.6 confirmed (2.48);
+plain follows < 0.88 confirmed (0.52); adult males' path to callers within ±0.15 km missed (+0.19); T-ACT-2 0.12–0.17
+and T-RNG-4 1.6–2.2 confirmed (0.149, 1.99); males' day range 1.8–2.3 confirmed (2.09); lactating reserves within
+0.05%/day confirmed (+0.004); held-out without rare rows inside noise confirmed (z −0.48).
+
+**Verdict: passes the keep rule (provisional keep candidate, quick, one run).** Viable (no death; every class's reserve
+trend within 0.02%/day of RF's), held-out with and without the rare rows inside noise, fitted inside noise, prescriptions
+103 → 97. One side effect beyond the reference's spread: adult females walk 0.15 km a day more (1.95 against 1.81 ±
+0.02; approaches to callers). A 5-seed confirm (R + `followCarer` confirm realizations as the reference) decides.
+
+## 7. Stage verdict
+
+- **Audit.** T-PTY-1's band (3–9) has no recorded derivation; its lower bound matches no scaling. Proportional scaling of
+  wilson2012's Kanyawara value (9.2 individuals per follow, 47 members) to the model's 22 gives 4.3–4.5, but the sources
+  in hand do not support scaling by membership (Ngogo's far larger community had no larger feeding parties, potts2011)
+  and the model's community lives at Kanyawara's density. Staged: band 4.5–9.2 and scorer fixes S1 (mean of follow
+  means; effect 0.000), S2 (wilson2001's 50–60 m rule; +0.055) and S3 (T-PTY-3 on party follows with a night-nest
+  periphery). Nothing applied.
+- **Diagnosis.** On RF the tuned weights carry cohesion: removing all six takes T-PTY-1 from 3.82 to 2.53; the social
+  pull toward callers (`joinSocialW`) carries most (−1.14), then the follow base and bond weights (−0.57 each) and the
+  fitted hoo bonus (−0.46); the cost of leaving and the male bonus carry nothing resolvable. Parties split mostly at
+  walks to water (33%, R's thirst timers) and at partial recruitment to joined trips (26%). The crop does not limit
+  party size (no crop effect; crowns hold 4.4 chimp-hours).
+- **Mechanism.** `cohesionValue` (off by default), iteration 3: a companion's company is valued by the animal that moves
+  toward it, its social part scaled by the social drive, plus a fertile female's mating value for males; joining a
+  leader adds the food at its tree shared with the feeders there; leaving costs nothing; a hoo informs and adds no
+  value. It reproduces the reference's party size, travel and male day range with six fewer prescriptions. The two
+  bounds tested before it fail: charging company to the leaver freezes parties (A1); company valued regardless of need
+  makes recruitment run away (A2).
+- **Recommendation.** Confirm A3 on five seeds; if it holds, `cohesionValue` is a keep candidate that removes the C5a
+  cohesion weights and C13e's fitted hoo bonus. Open: females' extra walking to callers (the approach goal defect of E4g,
+  `execution.ts:588`, is still deferred), mothers alone more often, and no crop effect on feeding-party size.
