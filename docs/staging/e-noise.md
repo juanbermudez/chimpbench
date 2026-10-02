@@ -49,6 +49,24 @@ the new one may be applied to its saved runs with `e-bench --rescore` as a separ
 Re-measure when the scorer, the targets or the benchmark modes change, or when a new reference stack becomes the
 common base.
 
+## Amendment (2 October 2026, after the three quick arms, before any stage used a threshold)
+
+The three quick arms gave held-out changes of +0.16, −0.09 and −0.26 on all shared rows (rule: threshold 0.4), while
+two quick noise arms already on record moved held-out by more: E4a's by +1.1 (raw sum) and E4c's by −3.13 (rows scored
+in both). Three arms are too few to estimate the held-out spread. Both modes are therefore extended to six arms,
+balanced over the two references, at the same commit and against the same references, and the threshold is recomputed
+on all six by the same rule:
+
+| Arm | Reference | Override added |
+| --- | --- | --- |
+| NB2 | B | `rgTemperature` 0.1639 |
+| NB3 | B | `rgTemperature` 0.16405 |
+| NR3 | R | `rgTemperature` 0.16405 |
+
+This amendment was written knowing the first three quick values (and before any confirm-mode noise arm had finished);
+it adds samples and leaves the rule unchanged. The E4a and E4c arms (other commits, other references) are reported
+beside the result, not pooled.
+
 ## Results
 
 (Filled in after the runs.)
