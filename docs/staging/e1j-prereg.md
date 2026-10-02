@@ -142,7 +142,9 @@ target here: Gombe mothers drink about 0.9 times per 12-h day (nelson2022, resea
 without drinking (pontzer2021).
 
 **Runs:** R and B (all off), seeds 48 and 7, 30 + 30 days, from a frozen checkout of the commit that adds this section;
-R's T-RNG-4/5 identity against R-quick.json per seed, B's against base-quick.json.
+R's T-RNG-4/5 identity against R-quick.json per seed, B's against base-quick.json. Added (07:03, after R and B were read,
+before its run): **TP** = R + `ledgerFoodEnergyFix`, `ledgerSatiationReserve`, `ledgerLactGut` (E1i's fed mothers, T-RNG-5
+0.84 in E1i's quick run), same tool, seeds and checkout, to see what raises the mothers' day range when they eat more.
 
 **Identity of R at the branch start (done 06:49):** e-bench --quick of R at b0cb6e5 equals R-quick.json (612bf15) on all
 110 rows (per-seed values and parts), prescriptions 103, viability pass: the integrator's R quick realizations are valid
