@@ -335,6 +335,25 @@ function setHunger(c: Chimp, L: EnergyLedger, P: Params): void {
 }
 
 /**
+ * Stage E1n (weanDecide; docs/staging/e1n-prereg.md §3): what milk is worth to an unweaned infant given its own
+ * alternatives: its drive (setHunger's E1e terms, E1i's reserve weighting when on) with only its own feeding as intake
+ * capacity, i.e. without the milk term feedRate adds while unweaned. 1 = it cannot cover its need by itself in the
+ * waking time left; low = it can, or its gut is full. 1 while its ledger or drive books are not open. Pure: reads only.
+ */
+export function ownDrive(c: Chimp, P: Params): number {
+  const L = ix(c).en;
+  if (!L || L.eAvg === undefined) return 1;
+  const D = rates(P).dig, [left, fast] = feedHorizon(c, L, P), need = -L.res - gutEnergy(L, P, D) + spendRate(c, L, P) * (left + fast);
+  const own = feedRate(c, P) - (ix(c).weaned ? 0 : P.ledgerMilkKcalPerMin * 60);
+  const phi = need > 0 ? (own > 0 ? need / (own * (left > TICK_HOURS ? left : TICK_HOURS)) : 1) : 0, f = gutFill(c, L, P, D);
+  if (P.ledgerSatiationReserve === 1) {
+    const r = 1 + L.res / reserveCap(c, P), s = 1 - (r > 0 ? r : 0) * f * f;
+    return (phi > 1 ? 1 : phi) * (s > 0 ? s : 0);
+  }
+  return (phi > 1 ? 1 : phi) * (1 - f * f);
+}
+
+/**
  * Optional tap for diagnostics (scripts/energy-diagnose.ts): called with each expenditure term, and with 'suckled' (an
  * intake, not an expenditure: milk the infant drank). Never set by the app; reads only.
  */

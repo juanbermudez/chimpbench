@@ -10,7 +10,7 @@ import { fruitRate, leafWorth, needFruit, treeIntake } from './intake';
 import { heatRestValue, nestValue, shelterValue, sleepPressure, thermalLoad } from './rhythm';
 import { darkOn, tripLight, visionNow, type TripLight } from './light';
 import { circadianOn, circadianSleepiness } from './circadian';
-import { milkShare, milkWorth, nurseBoutWorth } from './energy';
+import { driveOn, milkShare, milkWorth, nurseBoutWorth } from './energy';
 import { drinkWorth, waterOn } from './water';
 import { arrivalLight, brightening, needUnits, raceStake, rivalsAt } from './departure';
 import { endoOn, escalateScore, fastSpanH, rainFastScore, rainScore, redirectFastScore, redirectScore } from './endocrine';
@@ -268,7 +268,11 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     // stage E1d (ledgerNurseByMilk): nursing is worth the share of the infant's need the gland can fill now (energy.ts milkWorth);
     // stage E1e (ledgerDrive), when E1d is off: the share of a full flow the glands can deliver over the bout (milkShare).
     // E1d takes precedence over E1e when both are on and E1f is off.
-    if (isMother && c.age < x.weanAge + 0.3) offer('nurse', caretaker.id, P.energyLedger === 1 && P.ledgerNurseBout === 1
+    // stage E1n (weanDecide; docs/staging/e1n-prereg.md §3.4): after a refusal or an ended bout the infant asks again only
+    // once its mother has started a new act (her decision count moved on since, x.wr): her refusal holds while her
+    // situation is unchanged (design; no constant)
+    const asked = P.weanDecide === 1 && driveOn(P) && x.wr !== undefined && caretaker.decisionVersion === x.wr;
+    if (isMother && c.age < x.weanAge + 0.3 && !asked) offer('nurse', caretaker.id, P.energyLedger === 1 && P.ledgerNurseBout === 1
       ? (0.25 + h * 1.5 * (c.age < 0.5 ? 1.3 : 1) * (1 - c.age / 7)) * nurseBoutWorth(c, caretaker, P) - (d > P.nurseRangeM ? 0.5 : 0)
       : P.energyLedger === 1 && P.ledgerNurseByMilk === 1
       ? (0.25 + h * 1.5 * (c.age < 0.5 ? 1.3 : 1) * (1 - c.age / 7)) * milkWorth(c, caretaker, P) - (d > P.nurseRangeM ? 0.5 : 0)
