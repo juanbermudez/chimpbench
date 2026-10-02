@@ -1939,3 +1939,34 @@ Evidence pass for stage E2d (a circadian sleep gate, process C; `docs/staging/e2
 - *new* hozer2026: Hozer C, Ahabwe F, Freymond N, Cirulnikow M, Chandia B, Mbotella M, Samson D, Zuberbühler K 2026. Rank and social context influence sleep in wild chimpanzees. *Current Biology* 36(1):199–208.e4. [doi:10.1016/j.cub.2025.11.057](https://doi.org/10.1016/j.cub.2025.11.057) (Abs, search agent).
 
 **Not verified:** a circadian period, phase-response curve or melatonin profile for chimpanzees or any great ape (none found); Erkert 2008 (*Biological Rhythm Research* 39:229–267, the source of the "1–85 lux" feeding range cited by tagg2018; publisher refused); the minutes between lights-off and the rise of macaque melatonin; Daan et al.'s skewed circadian waveform (the cosine form of skeldonDijk2025 is used); McNew et al. 1972 (a chimpanzee in constant light; no period found); wild chimpanzee sleep durations (hozer2026 numbers not reached).
+
+### E.23 Addendum: food energy from measured sugars, fibre digestibility and gut capacity (stage E1h, 1 October 2026)
+
+Evidence pass for stage E1h (`docs/staging/e1h-prereg.md`), 1 October 2026. Questions: the composition of the Kanyawara foods by type, the exact rule of the sugar-based energy formula, the best-supported fibre digestibility for chimpanzees, and chimpanzee gut capacity and throughput. Bibliographic data checked against Crossref on 1 October 2026. Access: NCBI BioC for PMC author manuscripts; the figshare API for a CC-BY supplement; Crossref and Europe PMC for abstracts and reference lists. Publisher pages that returned a challenge were not bypassed. Tags as in this Track E section.
+
+- **Composition by food type, Kanyawara** [uwimbabazi2019] (FT, PMC7450825 through BioC; Table 2 re-read in full) [H] for the observations. Extends the entries above with the fig and non-fig rows. % of organic matter, mean ± SE (n species):
+  - figs: lipid 3.5 ± 0.7, available protein 6.8 ± 1.9, NDF 49.0 ± 3.8, TNC 40.7 ± 3.6, WSC 9.2 ± 1.2, lignin 17.3 ± 2.7 (12);
+  - non-fig ripe fruit: 5.2 ± 1.9, 10.6 ± 1.3, 37.7 ± 2.9, 46.6 ± 3.7, 20.1 ± 1.2, lignin 10.9 ± 1.7 (24);
+  - all ripe fruit, young leaves and pith as listed above (WSC 16.5, 5.1, 15.5).
+  - Lipid + AP + NDF + TNC sums to 100 ± 0.1 in every row: TNC is by difference on an organic-matter basis.
+  - Use in Track E (E1h): the sugar-based energy of each food (derived): per 100 g organic matter, 4 (WSC + pectin) + 4 AP + 9 lipid + 1.6 NDF against the field formula's 4 TNC + …; ratio 0.746 drupes, 0.649 figs, 0.730 young leaves, 0.799 pith at pectin 5% of dry matter.
+- **The sugar-based formula, exact rule** [simmen2017] (electronic supplement FT, figshare doi:10.6084/m9.figshare.5032301, CC-BY; Note S2 and Tables S3, S5 re-read; main text still not reached) [M]. Corrects the rule as summarised in §E.21:
+  - where a study reported simple soluble sugars, the LEVD model adds 5% starch plus 5% pectin of the dry matter; **where it reported water-soluble carbohydrates (WSC), it adds only 5% pectin**; where only TNC by difference exists, it multiplies the published intake by 0.74;
+  - their review: starch 3–6% of dry matter in ripe and unripe fruit, 1–4% in vegetative parts; pectin 4–6% of dry matter in fruit and leaves eaten by wild howlers, the only primate data;
+  - sugars + starch + pectin = 68 ± 10% of TNC by difference in ripe-fruit diets (n 7), 44 ± 9% in leaf or unripe-fruit diets (n 11); LEVD ÷ HEVD 74 ± 8% overall (Table S3);
+  - Table S5: HEVD − DLW expenditure +1,770 ± 2,208 kJ/day (Wilcoxon W = 28, P < 0.02, 7 species); LEVD − DLW +144 ± 606 kJ/day (t = 0.492, P < 0.7, 8 species). No chimpanzee in the data set;
+  - the fibre term is species-specific digestibility × 3 kcal/g in both models.
+  - Use in Track E: the rule behind `ledgerFruitKcalPerMinSugar`, `ledgerFigKcalPerMinSugar` and `ledgerFallbackKcalPerMinSugar`; the starch and pectin ranges set their bounds.
+- **Chimpanzee fibre digestibility.** 0.543 for NDF in captive chimpanzees on a 34% NDF, about 2.5% lignin biscuit [miltonDemment1988], as reported by [conklinBrittain2006] (FT, re-checked by the field audit) [M] captive. The wild Kanyawara diet averages about 8% lignin (conklinBrittain2006). miltonDemment1988's own full text was not reached (the publisher returned a challenge page; the Elsevier text API refused). Reading: 0.543 is an upper value for wild food; E1b's 0.449 (gorillas on a fibrous diet) is kept.
+- **Gut morphology across primates** [chiversHladik1980] (Abs, via Crossref and Europe PMC) [M]. 180 individuals of 78 mammal species (117 primates); stomach, small intestine, caecum and colon measured by area, weight and volume; in frugivores the stomach and large intestine are "more voluminous" in larger species, while in faunivores their volume follows body size. No chimpanzee value in the abstract; the full text is closed. Use in Track E: the likely source of the captive chimpanzee gut capacity in nakamura2017 (its reference list, read through Crossref, cites no other gut-morphology study); direction only: isometric scaling of gut volume with body mass within a species is an assumption.
+- **Gut capacity, reference** [nakamura2017] (Abs; reference list through Crossref) [M]. No new number: 3,329 cm³ (derived from the abstract) stays the only chimpanzee gut capacity found; the captive animal's mass is not stated in the abstract. E1h's bounds, 60–111 mL/kg, divide it by 30–55 kg.
+- **Gastric emptying** [ardente2011] (Abs), already listed: more than 3 h, less than 16 h. E1b's 3-hour first-order emptying is at the fast end, so the dry-matter throughput it allows is, if anything, high.
+
+**Sources:**
+- *new* chiversHladik1980: Chivers DJ, Hladik CM 1980. Morphology of the gastrointestinal tract in primates: comparisons with other mammals in relation to diet. *Journal of Morphology* 166(3):337–386. [doi:10.1002/jmor.1051660306](https://doi.org/10.1002/jmor.1051660306) (Abs).
+- uwimbabazi2019, simmen2017, miltonDemment1988, conklinBrittain2006, nakamura2017 and ardente2011 are already listed; the entries above add findings.
+
+**Not verified:**
+- simmen2017 main text; miltonDemment1988 full text (digestibility of each fraction, dry-matter intake of the trial animals).
+- chiversHladik1980 full text: the chimpanzee's gut volume by segment and its body mass.
+- Starch, pectin and soluble-sugar profiles of Kibale foods; dry-matter concentration of ape digesta; maximum voluntary dry-matter intake of chimpanzees. None found.

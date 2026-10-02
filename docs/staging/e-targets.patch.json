@@ -1,5 +1,5 @@
 {
- "about": "Track E staging for data/targets.json (proposal by the Track E evidence researcher; applied by the integrator, this branch never edits targets.json). Order: (1) add `sources`; (2) append `targets` (T-ENE-1..9, T-RHY-1..10, T-END-1..12, T-INF-1..5 from stage E1f); (3) log a protocolLog entry and take a new freeze, because new rows and new observer protocols change the protocol hash. Nothing here was run: no simulated value of any row has been seen. Roles are held-out unless stated. Three flags need a decision at registration: T-ENE-5 is encoded while the C8c lactation taper is on; T-RHY-1 and T-RHY-8 are encoded while the nest clock and the midday-rest and temperature rules are on; T-END-4, -10 and -11 become encoded if E4 wires those events straight into the states. New observer protocols named here and not yet in src/field: 'energy ledger (truth)', 'camera-trap proxy (truth)', and urine or endocrine proxies combined with party scans, phenology, agonism records and the patrol classifier. Evidence, access and what was not verified: docs/staging/e-sources.md.",
+ "about": "Track E staging for data/targets.json (proposal by the Track E evidence researcher; applied by the integrator, this branch never edits targets.json). Order: (1) add `sources`; (2) append `targets` (T-ENE-1..9, T-RHY-1..10, T-END-1..12, T-INF-1..5 from stage E1f); (3) log a protocolLog entry and take a new freeze, because new rows and new observer protocols change the protocol hash. Nothing here was run: no simulated value of any row has been seen. Roles are held-out unless stated. Three flags need a decision at registration: T-ENE-5 is encoded while the C8c lactation taper is on; T-RHY-1 and T-RHY-8 are encoded while the nest clock and the midday-rest and temperature rules are on; T-END-4, -10 and -11 become encoded if E4 wires those events straight into the states. New observer protocols named here and not yet in src/field: 'energy ledger (truth)', 'camera-trap proxy (truth)', and urine or endocrine proxies combined with party scans, phenology, agonism records and the patrol classifier. Evidence, access and what was not verified: docs/staging/e-sources.md. Stage E1h (1 October 2026): T-ENE-1, T-ENE-2 and T-ENE-3 re-scoped to multiparous lactating females after the independent field-method audit (docs/staging/e-field-audit.md); T-ENE-1 flagged contested with a sugar-based comparison band of 1,810-2,070 kcal/d; each revised row keeps its original values under `revisions`.",
  "sources": {
   "carlson2013": {
    "authors": "CARLSON BA, ROTHMAN JM, MITANI JC",
@@ -501,6 +501,71 @@
    "url": "https://doi.org/10.1007/s10764-005-0721-2",
    "access": "Abs",
    "bibliographyVerified": "Crossref API, 2026-10-01"
+  },
+  "bray2018": {
+   "authors": "Bray J, Emery Thompson M, Muller MN, Wrangham RW, Machanda ZP",
+   "year": 2018,
+   "title": "The development of feeding behavior in wild chimpanzees (Pan troglodytes schweinfurthii)",
+   "journal": "American Journal of Physical Anthropology",
+   "volume": "165",
+   "issue": "1",
+   "pages": "34-46",
+   "doi": "10.1002/ajpa.23325",
+   "url": "https://doi.org/10.1002/ajpa.23325",
+   "access": "FT",
+   "bibliographyVerified": "Crossref API, 2026-10-01"
+  },
+  "conklinBrittain2006": {
+   "authors": "Conklin-Brittain NL, Knott CD, Wrangham RW",
+   "year": 2006,
+   "title": "Energy intake by wild chimpanzees and orangutans: methodological considerations and a preliminary comparison",
+   "journal": "In: Hohmann G, Robbins MM, Boesch C (eds) Feeding Ecology in Apes and Other Primates. Cambridge University Press",
+   "volume": "",
+   "issue": "",
+   "pages": "445-465",
+   "doi": "",
+   "url": "",
+   "access": "FT (scan)",
+   "bibliographyVerified": "book chapter, no DOI found; pages from the scan"
+  },
+  "gilby2010": {
+   "authors": "Gilby IC, Pokempner AA, Wrangham RW",
+   "year": 2010,
+   "title": "A direct comparison of scan and focal sampling methods for measuring wild chimpanzee feeding behaviour",
+   "journal": "Folia Primatologica",
+   "volume": "81",
+   "issue": "5",
+   "pages": "254-264",
+   "doi": "10.1159/000322354",
+   "url": "https://doi.org/10.1159/000322354",
+   "access": "FT",
+   "bibliographyVerified": "Crossref API, 2026-10-01"
+  },
+  "simmen2017": {
+   "authors": "Simmen B, Pasquet P, Masi S, Koppert GJA, Wells JCK, Hladik CM",
+   "year": 2017,
+   "title": "Primate energy input and the evolutionary transition to energy-dense diets in humans",
+   "journal": "Proceedings of the Royal Society B: Biological Sciences",
+   "volume": "284",
+   "issue": "1856",
+   "pages": "20170577",
+   "doi": "10.1098/rspb.2017.0577",
+   "url": "https://doi.org/10.1098/rspb.2017.0577",
+   "access": "Abs; electronic supplement FT (figshare doi:10.6084/m9.figshare.5032301, CC-BY)",
+   "bibliographyVerified": "Crossref API, 2026-10-01"
+  },
+  "uwimbabazi2021": {
+   "authors": "Uwimbabazi M, Raubenheimer D, Tweheyo M, Basuta GI, Conklin-Brittain NL, Wrangham RW, Rothman JM",
+   "year": 2021,
+   "title": "Nutritional geometry of female chimpanzees (Pan troglodytes)",
+   "journal": "American Journal of Primatology",
+   "volume": "83",
+   "issue": "7",
+   "pages": "e23269",
+   "doi": "10.1002/ajp.23269",
+   "url": "https://doi.org/10.1002/ajp.23269",
+   "access": "FT",
+   "bibliographyVerified": "Crossref API, 2026-10-01"
   }
  },
  "targets": [
@@ -510,8 +575,8 @@
     "O1",
     "O8"
    ],
-   "metric": "Daily metabolisable energy intake of adult females",
-   "definition": "Mean over full-day focal follows of the energy ingested per day by an adult female (kcal/d), summed over feeding minutes by food type.",
+   "metric": "Daily metabolisable energy intake of multiparous lactating females",
+   "definition": "Mean over full-day focal follows of the energy ingested per day by a multiparous lactating female (the source's subjects were nursing mothers; kcal/d), summed over feeding minutes by food type.",
    "observer": {
     "protocol": "focal continuous",
     "interval_min": 1,
@@ -546,10 +611,55 @@
    "evidence": "M",
    "role": "held-out",
    "encoded": false,
-   "notes": "The field intake estimate is 1.5-1.9 times the expenditure that doubly labelled water implies for a female of Gombe or Mahale mass. A ledger that conserves energy may land below this band; that would be a finding about the field estimate or the model, not a reason to add a correction factor. Never set: intake rates per minute are inputs, daily intake is the outcome. How to measure: the observer follows a focal adult female from nest to nest, logs each feeding minute with its food type, and multiplies by the registered kcal/min of that food (the field method); also report the ledger truth (kcal absorbed) beside it.",
+   "notes": "The field intake estimate is 1.5-1.9 times the expenditure that doubly labelled water implies for a female of Gombe or Mahale mass. A ledger that conserves energy may land below this band; that would be a finding about the field estimate or the model, not a reason to add a correction factor. Never set: intake rates per minute are inputs, daily intake is the outcome. How to measure: the observer follows a focal adult female from nest to nest, logs each feeding minute with its food type, and multiplies by the registered kcal/min of that food (the field method); also report the ledger truth (kcal absorbed) beside it. Stage E1h re-scoping (1 October 2026): score the model's lactating class. Field-method observer: multiply the observed eating minutes by the source's kcal/min (the field formula: drupes 9.9, figs 12.5, fallback 4.2), whatever energy the model's foods carry, so the row stays method-matched (it then adds nothing beyond T-ENE-2); compare the ledger truth with comparisonBand. scripts/energy-diagnose.ts prints both for the lactating class.",
    "sources": [
     "pontzer2016",
-    "uwimbabazi2019"
+    "simmen2017",
+    "uwimbabazi2019",
+    "uwimbabazi2021"
+   ],
+   "contested": true,
+   "protocolRevisedPostHoc": true,
+   "comparisonBand": {
+    "lo": 1810,
+    "hi": 2070,
+    "units": "kcal/d",
+    "basis": "the source's own intake with TNC by difference replaced by measured water-soluble sugar plus 5% pectin (simmen2017's rule; 1,814) up to sugars + starch + pectin at 68% of TNC (simmen2017's ripe-fruit share; 2,068); fibre credit 1.6 kcal/g kept. Derived from uwimbabazi2019 Tables 2 and 4 (e-field-audit §4.2)",
+    "compare": "ledger truth of the model's lactating females: energy eaten in the model's own food units (with ledgerFoodEnergyFix 1, sugar-based kcal; with it 0 the field formula's), reported beside the field-method value"
+   },
+   "reviewNote": "contested (e-field-audit): field ME uses TNC by difference at 4 kcal/g (34% of the energy beyond measured sugar) and NDF at 1.6 kcal/g (26%). This formula gives 1.13-1.92 x doubly labelled water where paired (simmen2017); the sugar-based equivalent is 1,810-2,070 kcal/day. Report beside the ledger truth of lactating females; not counted for or against the model. Never fitted; never a reason to move an input.",
+   "revisions": [
+    {
+     "date": "2026-10-01",
+     "stage": "E1h",
+     "reason": "Independent field-method audit (docs/staging/e-field-audit.md §1.1, §4, §7.1), not model output: uwimbabazi2019's 14 subjects were nursing mothers (the Discussion; uwimbabazi2021 calls the 2,479 kcal the intake of lactating females), and intake was not analysed by reproductive state. The class follows the source's text; simulated values had already been seen (E1-E1g), so the revision is flagged post hoc. Contested flag and comparison band: the field formula overstates metabolisable energy (simmen2017, conklinBrittain2006 caveats).",
+     "changed": [
+      "metric",
+      "definition",
+      "notes",
+      "sources",
+      "contested",
+      "protocolRevisedPostHoc",
+      "comparisonBand",
+      "reviewNote"
+     ],
+     "original": {
+      "metric": "Daily metabolisable energy intake of adult females",
+      "definition": "Mean over full-day focal follows of the energy ingested per day by an adult female (kcal/d), summed over feeding minutes by food type.",
+      "notes": "The field intake estimate is 1.5-1.9 times the expenditure that doubly labelled water implies for a female of Gombe or Mahale mass. A ledger that conserves energy may land below this band; that would be a finding about the field estimate or the model, not a reason to add a correction factor. Never set: intake rates per minute are inputs, daily intake is the outcome. How to measure: the observer follows a focal adult female from nest to nest, logs each feeding minute with its food type, and multiplies by the registered kcal/min of that food (the field method); also report the ledger truth (kcal absorbed) beside it.",
+      "sources": [
+       "pontzer2016",
+       "uwimbabazi2019"
+      ]
+     },
+     "originalAccept": {
+      "lo": 1900,
+      "hi": 3100,
+      "units": "kcal/d",
+      "basis": "field mean ± 25% (one site, widened); the band is the field intake estimate, not the expenditure estimate"
+     },
+     "acceptChanged": false
+    }
    ]
   },
   {
@@ -558,8 +668,8 @@
     "O1",
     "O8"
    ],
-   "metric": "Daily feeding time of adult females",
-   "definition": "Mean feeding minutes per full-day focal follow of an adult female.",
+   "metric": "Daily feeding time of multiparous lactating females",
+   "definition": "Mean feeding minutes per full-day focal follow of a multiparous lactating female (the source's subjects were nursing mothers).",
    "observer": {
     "protocol": "focal continuous",
     "interval_min": 1,
@@ -574,6 +684,33 @@
      "method": "full-day focal follows",
      "source": "uwimbabazi2019",
      "note": ""
+    },
+    {
+     "population": "Kanyawara, 5 adult males and 5 pregnant or lactating females",
+     "years": "2004-06 to 2005-06",
+     "value": "feeding 32.9% of 1-min instantaneous samples (full-day focal follows, mean 9.2 h)",
+     "n": "81,294 samples",
+     "method": "focal, 1-min instantaneous",
+     "source": "gilby2010",
+     "note": "party-level 15-min scans gave about 30 points more"
+    },
+    {
+     "population": "Kanyawara (2006) and Ngogo (2005-06)",
+     "years": "2005-2006",
+     "value": "feeding 44% (Kanyawara) and 47% (Ngogo); Kanyawara pregnant or lactating females about 44% (Fig 3, digitised +/- 2 points)",
+     "n": "961 h and 1,059 h",
+     "method": "continuous focal, bouts of at least 1 min",
+     "source": "potts2011",
+     "note": ""
+    },
+    {
+     "population": "Kanyawara prime-aged adults",
+     "years": "2010-2013",
+     "value": "about 44.5% of in-view time (Fig 2 band about 40-49%)",
+     "n": "KCP full-day follows",
+     "method": "1-min point samples, solid food swallowed",
+     "source": "bray2018",
+     "note": ""
     }
    ],
    "accept": {
@@ -585,9 +722,54 @@
    "evidence": "H",
    "role": "fitted",
    "encoded": false,
-   "notes": "Shares its field value with T-ACT-1 (fitted), so it cannot count as independent validation; registered so that E1 reports minutes beside the share. How to measure: count the focal minutes scored feeding on full-day follows of adult females (existing focal protocol).",
+   "notes": "Shares its field value with T-ACT-1 (fitted), so it cannot count as independent validation; registered so that E1 reports minutes beside the share. How to measure: count the focal minutes scored feeding on full-day follows of adult females (existing focal protocol). Stage E1h re-scoping (1 October 2026): score the model's lactating class. 309 min (45% of observed time) is the top of the Kanyawara range (33%, 44%, 44.5%, 45% under four protocols and periods); uwimbabazi2019's bout rule keeps non-feeding gaps of up to 5 min inside a bout. Prefer T-ACT-1 as the scored time row. Band kept (re-banding now would be post hoc).",
    "sources": [
+    "bray2018",
+    "gilby2010",
+    "potts2011",
     "uwimbabazi2019"
+   ],
+   "protocolRevisedPostHoc": true,
+   "revisions": [
+    {
+     "date": "2026-10-01",
+     "stage": "E1h",
+     "reason": "Independent field-method audit (docs/staging/e-field-audit.md §1.1, §4, §7.1), not model output: uwimbabazi2019's 14 subjects were nursing mothers (the Discussion; uwimbabazi2021 calls the 2,479 kcal the intake of lactating females), and intake was not analysed by reproductive state. The class follows the source's text; simulated values had already been seen (E1-E1g), so the revision is flagged post hoc.",
+     "changed": [
+      "metric",
+      "definition",
+      "field",
+      "notes",
+      "sources",
+      "protocolRevisedPostHoc"
+     ],
+     "original": {
+      "metric": "Daily feeding time of adult females",
+      "definition": "Mean feeding minutes per full-day focal follow of an adult female.",
+      "field": [
+       {
+        "population": "Kanyawara females",
+        "years": "2014-01 to 2015-06",
+        "value": "308.7 ± 85 min/d; 20% lower in drupe months than in fig months",
+        "n": "days not stated; F(1,139) in the seasonal test",
+        "method": "full-day focal follows",
+        "source": "uwimbabazi2019",
+        "note": ""
+       }
+      ],
+      "notes": "Shares its field value with T-ACT-1 (fitted), so it cannot count as independent validation; registered so that E1 reports minutes beside the share. How to measure: count the focal minutes scored feeding on full-day follows of adult females (existing focal protocol).",
+      "sources": [
+       "uwimbabazi2019"
+      ]
+     },
+     "originalAccept": {
+      "lo": 250,
+      "hi": 370,
+      "units": "min/d",
+      "basis": "field mean ± 20% (one site, widened)"
+     },
+     "acceptChanged": false
+    }
    ]
   },
   {
@@ -596,8 +778,8 @@
     "O1",
     "O8"
    ],
-   "metric": "Daily dry-matter intake of adult females",
-   "definition": "Mean dry mass ingested per day by an adult female (g/d): feeding minutes by food type × dry g/min.",
+   "metric": "Daily dry-matter intake of multiparous lactating females",
+   "definition": "Mean dry mass ingested per day by a multiparous lactating female (the source's subjects were nursing mothers; g/d): feeding minutes by food type x dry g/min.",
    "observer": {
     "protocol": "focal continuous",
     "interval_min": 1,
@@ -623,9 +805,35 @@
    "evidence": "M",
    "role": "held-out",
    "encoded": false,
-   "notes": "Tied to T-ENE-1 by the energy density of the diet (about 2.8 kcal per g dry matter overall, derived). How to measure: as T-ENE-1 with the registered dry g/min per food (ripe fruit 3.4, young leaves 2.1, pith 1.8).",
+   "notes": "Tied to T-ENE-1 by the energy density of the diet (about 2.8 kcal per g dry matter overall, derived). How to measure: as T-ENE-1 with the registered dry g/min per food (ripe fruit 3.4, young leaves 2.1, pith 1.8). Stage E1h re-scoping (1 October 2026): score the model's lactating class. Does not depend on the energy formula: the cleanest test of gut throughput; caveat: bout minutes and sampled rates (e-field-audit §3).",
    "sources": [
     "uwimbabazi2019"
+   ],
+   "protocolRevisedPostHoc": true,
+   "revisions": [
+    {
+     "date": "2026-10-01",
+     "stage": "E1h",
+     "reason": "Independent field-method audit (docs/staging/e-field-audit.md §1.1, §4, §7.1), not model output: uwimbabazi2019's 14 subjects were nursing mothers (the Discussion; uwimbabazi2021 calls the 2,479 kcal the intake of lactating females), and intake was not analysed by reproductive state. The class follows the source's text; simulated values had already been seen (E1-E1g), so the revision is flagged post hoc.",
+     "changed": [
+      "metric",
+      "definition",
+      "notes",
+      "protocolRevisedPostHoc"
+     ],
+     "original": {
+      "metric": "Daily dry-matter intake of adult females",
+      "definition": "Mean dry mass ingested per day by an adult female (g/d): feeding minutes by food type × dry g/min.",
+      "notes": "Tied to T-ENE-1 by the energy density of the diet (about 2.8 kcal per g dry matter overall, derived). How to measure: as T-ENE-1 with the registered dry g/min per food (ripe fruit 3.4, young leaves 2.1, pith 1.8)."
+     },
+     "originalAccept": {
+      "lo": 650,
+      "hi": 1100,
+      "units": "g dry matter/d",
+      "basis": "field mean ± 25% (one site, widened)"
+     },
+     "acceptChanged": false
+    }
    ]
   },
   {
