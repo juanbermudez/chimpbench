@@ -411,3 +411,15 @@ only), the share of feeding events joined by others falls further from the field
 and the composition change rate moves toward the field (1.13 → 0.96 against ≈ 0.69). Field context, not a test:
 mothers are less gregarious than other adults at Kanyawara (otaliGilchrist2006, title only, research.md E.32), so
 adults no longer trailing mothers is the expected direction; the model has no row that scores it.
+
+### 6.2 Stack check (registered 2 October 2026 before its runs; reported, not judged)
+
+The stage's problem was found on the integrated stack S2 (e-stack2-confirm.md): every class walks 3.1–4.0 km a day. Not
+an iteration (same mechanism, other reference): single runs on the attribution's settings, to tell the integrator how
+much of the stack's walking the care-follow artefact carries. From run-fbdc285, seeds 48 and 7, 30 + 30 days:
+`energy-diagnose` on **S2 + `followCarer`** and **S3 + `followCarer`** (S2 and S3 exactly as in `bench-run/…/e/s2/S2-params.json`
+and `…/s3/S3-params.json`), compared with the integrator's single runs `S2-energy.json` and `S3-energy.json` (3329520; the
+simulation code is unchanged between 3329520 and fbdc285 with the switch at 0); and `approach-diagnose` on **S2** and
+**S2 + `followCarer`** for the walking by purpose. Single runs differ by chance; differences under 0.2 km a day are not
+resolved. Expected (before the runs): S2 + `followCarer` lowers adult males' ground path by 0.2–0.5 km a day (low) and
+adult females' by 0.1–0.4 (low); S3 + `followCarer` lowers S3's by about as much (low); no starvation death (high).
