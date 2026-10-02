@@ -1,4 +1,4 @@
-# Track E handoff (integrator; refreshed 2 October 2026, 03:40)
+# Track E handoff (integrator; refreshed 2 October 2026, 03:30)
 
 Read this before anything else. It replaces `docs/staging/track-e-resume.md`. The canonical copy is on branch
 `track-e`; a copy sits in `~/Desktop/mgogo-session/` for the next session to find.
@@ -8,7 +8,7 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **What Track E is.** ChimpBench's behaviour is being rebuilt so it emerges from physiology (an energy ledger, a gut,
   sleep pressure, heat, hormone-like states) instead of clock hours, dice and bonuses. Field numbers are targets to
   benchmark against, never inputs. Every stage ships behind switches that are **0 by default**.
-- **State (2 October, 03:40).** `track-e` holds every finished stage, switches off: E4c (calls), E2e (pre-dawn) and
+- **State (2 October, 03:30).** `track-e` holds every finished stage, switches off: E4c (calls), E2e (pre-dawn) and
   the gut-sources pass were merged this session (`pnpm test` 639 pass, 0 fail, 1 skipped; tsc and gen-params clean).
   `main` has not been touched.
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
@@ -446,8 +446,8 @@ several were sent twice; long user updates added to it. The resume note written 
 check that every planned comparison has its reference arm at the same mode and commit.**
 
 **14. Open doubts the reviewers raised (not yet checked).** E3's iteration-3 explanation (persistence fails because a
-walk to a crown rarely pays) may be a units artefact: `payOf` calls `treeIntake` with the hunger cap on. Confirm before
-acting on E3's "value food against reserves" recommendation. E1f staged T-INF-1..5 after seeing model values
+walk to a crown rarely pays) may be a units artefact: `payOf` calls `treeIntake` with the hunger cap on. Confirmed on 2 October
+(e3-prereg.md, integrator note): E3 ran before E1e's B2 fix; re-test before acting on E3's recommendation. E1f staged T-INF-1..5 after seeing model values
 (disclosed; bands from field values only): the integrator should stage target rows before agents run references.
 
 ### The rules, short
