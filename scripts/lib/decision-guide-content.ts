@@ -42,6 +42,8 @@ export interface EdgeSpec {
 export interface ZoneSpec { x: number; y: number; w: number; h: number; label: string }
 export interface DiagramSpec {
   key: string; nav: string; title: string; take: string; desc: string;
+  /** The figure's own caption (the section heading already names the domain). */
+  cap: string;
   w: number; h: number; nodes: NodeSpec[]; edges: EdgeSpec[]; zones?: ZoneSpec[];
   /** Horizontal shift applied to every coordinate (a diagram without a left column moves left). */
   dx?: number;
@@ -162,7 +164,7 @@ const y = (row: number) => 16 + row * 96;
 export const DIAGRAMS: DiagramSpec[] = [
   // ---------------------------------------------------------------------------------------------------------------
   {
-    key: 'choice', nav: 'The choice itself', title: 'The choice itself',
+    key: 'choice', cap: 'One decision point, step by step', nav: 'The choice itself', title: 'The choice itself',
     take: 'The same machinery picks every act. Three of its parts still set how sharp and how sticky choices are by fixed numbers.',
     desc: 'Flowchart of one rules decision: decision point, intention gate, scored options, a bounded menu, a softmax draw and a re-checked act, with the prescribed constants attached.',
     w: 832, h: 616, dx: -192,
@@ -205,7 +207,7 @@ export const DIAGRAMS: DiagramSpec[] = [
   },
   // ---------------------------------------------------------------------------------------------------------------
   {
-    key: 'feeding', nav: 'Feeding', title: 'Feeding and foraging',
+    key: 'feeding', cap: 'From a meal to the next feeding choice', nav: 'Feeding', title: 'Feeding and foraging',
     take: 'Hunger now comes from an energy ledger and a gut. What is still fitted is how far a meal is worth walking, how fast a crown empties and how fast an animal walks.',
     desc: 'Flowchart of feeding on the candidate stack: food energy and bulk, the gut, reserves and hunger feed the value of feeding options, with fitted trip weights still attached.',
     w: 832, h: 616,
@@ -254,7 +256,7 @@ export const DIAGRAMS: DiagramSpec[] = [
   },
   // ---------------------------------------------------------------------------------------------------------------
   {
-    key: 'drinking', nav: 'Drinking', title: 'Drinking',
+    key: 'drinking', cap: 'From water in and out to a drink', nav: 'Drinking', title: 'Drinking',
     take: 'Thirst timers are gone. Thirst is read from a water balance in millilitres, so animals drink when they run short, not on a schedule.',
     desc: 'Flowchart of drinking on the candidate stack: water in food, metabolic water and losses feed a water ledger; the deficit sets thirst, the value of a walk to water and the drinking bout.',
     w: 600, h: 424,
@@ -289,7 +291,7 @@ export const DIAGRAMS: DiagramSpec[] = [
   },
   // ---------------------------------------------------------------------------------------------------------------
   {
-    key: 'sleep', nav: 'Sleep and the nest', title: 'Sleep and the nest',
+    key: 'sleep', cap: 'From sleep pressure to leaving the nest', nav: 'Sleep and the nest', title: 'Sleep and the nest',
     take: 'The nest clock, the morning bout and the night menu are gone. Sleep pressure, a circadian sleep gate, light and company now decide when a chimp nests and when it leaves.',
     desc: 'Flowchart of nesting and leaving the nest on the candidate stack: sleep pressure, a circadian gate, light and company set the nest value, building, bout length and the night choice.',
     w: 536, h: 616,
@@ -334,7 +336,7 @@ export const DIAGRAMS: DiagramSpec[] = [
   },
   // ---------------------------------------------------------------------------------------------------------------
   {
-    key: 'rest', nav: 'Rest and heat', title: 'Rest and heat',
+    key: 'rest', cap: 'From heat to rest and shelter', nav: 'Rest and heat', title: 'Rest and heat',
     take: 'The midday rest clock is gone. Rest and shelter follow a heat balance, which at Kibale\'s temperatures stores almost no heat.',
     desc: 'Flowchart of resting and sheltering on the candidate stack: weather and exertion feed a heat balance that sets the value of rest and of shelter.',
     w: 832, h: 328,
@@ -362,7 +364,7 @@ export const DIAGRAMS: DiagramSpec[] = [
   },
   // ---------------------------------------------------------------------------------------------------------------
   {
-    key: 'nursing', nav: 'Nursing and weaning', title: 'Nursing and weaning',
+    key: 'nursing', cap: 'From milk to weaning', nav: 'Nursing and weaning', title: 'Nursing and weaning',
     take: 'Mothers now pay for the milk their infants drink. Weaning is still a dice roll; the mother\'s own decision can replace it, but does not yet wean.',
     desc: 'Flowchart of nursing and weaning on the candidate stack: the mother pays for milk, nursing bouts are valued by the milk they deliver, the mother refuses by a roll, and weaning age is drawn.',
     w: 832, h: 424,
@@ -397,7 +399,7 @@ export const DIAGRAMS: DiagramSpec[] = [
   },
   // ---------------------------------------------------------------------------------------------------------------
   {
-    key: 'grooming', nav: 'Grooming and play', title: 'Grooming and play',
+    key: 'grooming', cap: 'From social need to grooming and play', nav: 'Grooming and play', title: 'Grooming and play',
     take: 'Grooming and play are valued by state, but the social need they serve still runs on fixed timers.',
     desc: 'Flowchart of grooming and play: a timer-driven social need feeds the value of grooming and of play; rough play is a dice roll.',
     w: 832, h: 328,
@@ -424,7 +426,7 @@ export const DIAGRAMS: DiagramSpec[] = [
   },
   // ---------------------------------------------------------------------------------------------------------------
   {
-    key: 'party', nav: 'Following and joining', title: 'Party following and joining',
+    key: 'party', cap: 'From a departure to travelling together', nav: 'Following and joining', title: 'Party following and joining',
     take: 'On S3, staying together still rests on six weights fitted to party size. A candidate values company by the animal\'s own social need instead; it passed on its own but not on the integrated stack.',
     desc: 'Flowchart of party cohesion: a companion leaves, the join terms and six fitted weights value following, joining or approaching a caller; the E5a and E4g candidates would replace the weights.',
     w: 832, h: 424,
@@ -460,7 +462,7 @@ export const DIAGRAMS: DiagramSpec[] = [
   },
   // ---------------------------------------------------------------------------------------------------------------
   {
-    key: 'calls', nav: 'Calls', title: 'Calls',
+    key: 'calls', cap: 'One value behind six kinds of call', nav: 'Calls', title: 'Calls',
     take: 'Six call rules that were hazards, coins, quotas or clock windows are now one value comparison. Greetings and the sound of calls are still prescribed.',
     desc: 'Diagram of calls on the candidate stack: one call value (gain to listeners against cost to the caller) drives six call types that were prescribed before; a greeting quota and call acoustics remain prescribed.',
     w: 832, h: 520,
@@ -504,7 +506,7 @@ export const DIAGRAMS: DiagramSpec[] = [
   },
   // ---------------------------------------------------------------------------------------------------------------
   {
-    key: 'aggression', nav: 'Aggression and displays', title: 'Aggression and displays',
+    key: 'aggression', cap: 'From internal states to how a contest ends', nav: 'Aggression and displays', title: 'Aggression and displays',
     take: 'Hormone-like states now open escalated attacks, redirected aggression and rain displays. How a fight turns out is still dice.',
     desc: 'Flowchart of aggression on the candidate stack: slow and fast hormone-like states open escalation, redirection and rain displays; contests resolve with prescribed dice, allies join by dice.',
     w: 832, h: 424,
@@ -551,7 +553,7 @@ export const DIAGRAMS: DiagramSpec[] = [
   },
   // ---------------------------------------------------------------------------------------------------------------
   {
-    key: 'hunting', nav: 'Hunting', title: 'Hunting',
+    key: 'hunting', cap: 'From a colobus encounter to meat', nav: 'Hunting', title: 'Hunting',
     take: 'Hunting is still prescribed from the gap between hunts to how a hunt ends. A candidate that values a hunt as food is held off.',
     desc: 'Flowchart of hunting: a colobus encounter in company, the community gap, a hand-set lead value, a success curve and meat eaten per hour; the held-off E4e would value the hunt as food.',
     w: 832, h: 520,
@@ -584,7 +586,7 @@ export const DIAGRAMS: DiagramSpec[] = [
   },
   // ---------------------------------------------------------------------------------------------------------------
   {
-    key: 'patrols', nav: 'Patrols and neighbours', title: 'Patrols and neighbours',
+    key: 'patrols', cap: 'From the patrol window to the release display', nav: 'Patrols and neighbours', title: 'Patrols and neighbours',
     take: 'Patrolling is fully prescribed: a clock window, a fitted hazard, joining scores, route odds and a release display.',
     desc: 'Flowchart of border patrols: a start window and an hourly hazard raise a patrol; joining scores, route odds, length and listening stops, then a release display.',
     w: 832, h: 520, dx: -192,
@@ -612,7 +614,7 @@ export const DIAGRAMS: DiagramSpec[] = [
   },
   // ---------------------------------------------------------------------------------------------------------------
   {
-    key: 'lethal', nav: 'Lethal aggression', title: 'Gang attacks and infanticide',
+    key: 'lethal', cap: 'Two chains of lethal aggression', nav: 'Lethal aggression', title: 'Gang attacks and infanticide',
     take: 'Killing is entirely dice: impulses rolled at perception and kill probabilities at the attack.',
     desc: 'Two chains of lethal aggression: a gang attack on an isolated stranger and infanticide, each an impulse rolled at perception followed by kill dice.',
     w: 832, h: 328,
@@ -640,7 +642,7 @@ export const DIAGRAMS: DiagramSpec[] = [
   },
   // ---------------------------------------------------------------------------------------------------------------
   {
-    key: 'mating', nav: 'Mating and dispersal', title: 'Mating and dispersal',
+    key: 'mating', cap: 'From a fertile female to leaving home', nav: 'Mating and dispersal', title: 'Mating and dispersal',
     take: 'Mating and leaving the natal community run on a quota, a clock hour, a hazard and a probability.',
     desc: 'Flowchart of mating and dispersal: reproductive physiology makes fertile females; a mating quota, a consortship hour, a transfer hazard and a disperser share remain prescribed.',
     w: 832, h: 328,
@@ -663,7 +665,7 @@ export const DIAGRAMS: DiagramSpec[] = [
   },
   // ---------------------------------------------------------------------------------------------------------------
   {
-    key: 'life', nav: 'Life, death and care', title: 'Life, death and care',
+    key: 'life', cap: 'From a death to what follows it', nav: 'Life, death and care', title: 'Life, death and care',
     take: 'Outside any choice, death and what follows it still run on fitted rates and set probabilities.',
     desc: 'Diagram of deaths and their consequences: baseline mortality, epidemics and snares lead to deaths; adoption, carrying a dead infant, bereavement and guardianship follow.',
     w: 832, h: 424,

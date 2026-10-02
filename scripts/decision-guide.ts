@@ -11,11 +11,11 @@
 // the regions; numbers in the prose sit in <span data-n="…"> elements that this script fills.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { execSync } from 'node:child_process';
 import { buildLedger } from './prescription-ledger';
 import { TRACK_E_SWITCHES } from './lib/prescriptions';
-import { DIAGRAMS, DOMAINS, IN_S3_BECAUSE, LITERALS, OVERVIEW, STAGES, STEP_OF, STEPS, SWITCH_VERDICT, type DiagramSpec, type EdgeSpec, type NodeSpec, type Side, type Status, type Step } from './lib/decision-guide-content';
+import { DIAGRAMS, DOMAINS, IN_S3_BECAUSE, LITERALS, OVERVIEW, STAGES, STEP_OF, SWITCH_VERDICT, type DiagramSpec, type EdgeSpec, type NodeSpec, type Side, type Status, type Step } from './lib/decision-guide-content';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PAGE = join(ROOT, 'docs/decision-guide.html');
@@ -296,9 +296,10 @@ function paramLine(D: Data, key: string): string {
 }
 function stageLine(sw: string): string {
   const stg = TRACK_E_SWITCHES[sw].stage, st = STAGES[stg], own = SWITCH_VERDICT[sw];
+  const needs = [...closure(sw)].filter(x => x !== sw);
   const why = IN_S3_BECAUSE[sw] ? `; in S3: ${IN_S3_BECAUSE[sw]}` : '';
   const doc = own?.doc ?? st.doc;
-  return `<code>${esc(sw)}</code> · stage ${esc(stg)}, ${esc(st.name)} · verdict: ${esc(own?.verdict ?? st.verdict)}${esc(why)} (<a href="${doc}">${esc(doc.replace('staging/', ''))}</a>)`;
+  return `<code>${esc(sw)}</code>${needs.length ? ` (with ${needs.map(x => `<code>${esc(x)}</code>`).join(', ')})` : ''} · stage ${esc(stg)}, ${esc(st.name)} · verdict: ${esc(own?.verdict ?? st.verdict)}${esc(why)} (<a href="${doc}">${esc(doc.replace('staging/', ''))}</a>)`;
 }
 function tipHtml(D: Data, d: DiagramSpec, n: NodeSpec): string {
   const st = nodeStatus(D, n)!;
@@ -310,6 +311,8 @@ function tipHtml(D: Data, d: DiagramSpec, n: NodeSpec): string {
     parts.push(`<div class="tt-s"><span class="tt-k k-before">Before</span><p>${esc(n.before!)}</p><ul class="tt-ps">${ids}</ul></div>`);
     parts.push(`<div class="tt-s"><span class="tt-k k-now">Now</span><p>${esc(n.now!)}</p>${ps ? `<ul class="tt-ps">${ps}</ul>` : ''}</div>`);
     parts.push(`<p class="tt-m">Switched out by ${bys.map(stageLine).join('; ')}${n.see ? `. Counted under ${esc(DOMAINS.find(x => x.key === n.see)!.title)}` : ''}.</p>`);
+    const whys = [...new Set(n.ids!.map(k => D.entries.get(k)!.why ?? '').filter(Boolean))];
+    if (whys.length) parts.push(`<p class="tt-why">Ledger: ${whys.map(w => esc(w)).join(' · ')}</p>`);
   } else if (st === 'rem') {
     const would = LAYERS.filter(l => n.ids!.every(k => D.layerEffect[l.key].removed.includes(k)));
     parts.push(`<div class="tt-s"><span class="tt-k k-rem">Still prescribed</span><p>${esc(n.text ?? '')}</p><ul class="tt-ps">${ids}</ul>${ps ? `<ul class="tt-ps tt-rel">${ps}</ul>` : ''}</div>`);
@@ -426,9 +429,9 @@ function overviewSvg(D: Data): { svg: string; items: string } {
 
 // --- sections ------------------------------------------------------------------------------------------------------
 
-function figure(key: string, title: string, svg: string, items: string, sts: Status[], layer: boolean): string {
-  return `<figure class="panel dg" id="fig-${key}" aria-labelledby="fig-${key}-t">`
-    + `<figcaption class="dg-head"><b id="fig-${key}-t">${esc(title)}</b><button class="dg-x" type="button" data-expand="${key}" aria-haspopup="dialog"><svg class="ic" aria-hidden="true"><use href="#ic-expand"/></svg>Expand</button></figcaption>`
+function figure(key: string, title: string, cap: string, svg: string, items: string, sts: Status[], layer: boolean): string {
+  return `<figure class="panel dg" id="fig-${key}" aria-labelledby="fig-${key}-t" data-title="${esc(title)}">`
+    + `<figcaption class="dg-head"><b id="fig-${key}-t">${esc(cap)}</b><button class="dg-x" type="button" data-expand="${key}" aria-haspopup="dialog"><svg class="ic" aria-hidden="true"><use href="#ic-expand"/></svg>Expand</button></figcaption>`
     + `<p class="dg-swipe">Swipe sideways to see all of it, or Expand.</p><div class="dg-frame" data-frame="${key}">${svg}</div>${legendHtml(sts, layer)}`
     + `<details class="dg-text"><summary>Text version and details</summary><ol class="tv-list">${items}</ol></details></figure>`;
 }
@@ -439,7 +442,7 @@ function sectionHtml(D: Data, d: DiagramSpec, i: number): string {
   const notes = d.notes?.length ? `<ul class="dg-notes">${d.notes.map(x => `<li>${x}</li>`).join('')}</ul>` : '';
   return `<section class="sec sub dom" id="d-${d.key}" aria-labelledby="h-${d.key}" data-title="${esc(d.nav)}" data-rem="${t.rem}" data-rep="${t.rep}">`
     + `<header class="sh"><p class="dom-i">${String(i + 1).padStart(2, '0')}</p><h3 id="h-${d.key}">${esc(d.title)}</h3><p>${esc(d.take)}</p><p class="tally">${tallyHtml(t)}</p></header>`
-    + figure(d.key, d.title, svgDiagram(D, d), items, sts, d.edges.some(e => e.kind === 'lay')) + notes + `</section>`;
+    + figure(d.key, d.title, d.cap, svgDiagram(D, d), items, sts, d.edges.some(e => e.kind === 'lay')) + notes + `</section>`;
 }
 function tocHtml(): string {
   return `<li><a href="#read">How to read this page</a></li><li><a href="#count">The count</a></li><li><a href="#overview">One decision</a></li>`
@@ -484,7 +487,7 @@ export function render(D: Data, html: string, commit: string): string {
   const ov = overviewSvg(D);
   const overview = `<section class="sec" id="overview" aria-labelledby="h-overview" data-title="One decision" data-rem="${D.L3.count.total}" data-rep="${D.B.count.total - D.L3.count.total}">`
     + `<header class="sh"><h2 id="h-overview">One decision</h2><p>Every act starts the same way. The map shows where in a decision the remaining prescriptions act, and where S3 replaced them. Hover, focus or tap a box for its list.</p></header>`
-    + figure('overview', 'One decision, from what a chimp senses to what it does', ov.svg, ov.items, ['rem', 'rep'], false) + `</section>`;
+    + figure('overview', 'One decision', 'One decision, from what a chimp senses to what it does', ov.svg, ov.items, ['rem', 'rep'], false) + `</section>`;
   const domains = `<section class="sec" id="domains" aria-labelledby="h-domains"><header class="sh"><h2 id="h-domains">Domain by domain</h2><p>One diagram per kind of decision. Each box is one rule or mechanism, marked by its status. The count under each title comes from the ledger.</p></header>`
     + DGS.map((d, i) => sectionHtml(D, d, i)).join('') + `</section>`;
   const remKinds: Record<string, number> = {};
@@ -495,7 +498,7 @@ export function render(D: Data, html: string, commit: string): string {
   const regions: Record<string, string> = {
     toc: tocHtml(), counts: countsHtml(D), layers: layersHtml(D), diagrams: overview + domains,
     data: `<script type="application/json" id="dg-data">${dataJson(D)}</script>`, kinds: kindsText, sources,
-    stack: esc(JSON.stringify(S3)), stamp: `Generated from <code>${esc(commit)}</code> by <code>scripts/decision-guide.ts</code> with the field profile.`,
+    stack: esc(JSON.stringify(S3)), stamp: `Ledger run by <code>scripts/decision-guide.ts</code> on the field profile, at <code>${esc(commit)}</code> (the last commit to change the registry, the ledger rules or <code>src/sim</code>).`,
   };
   let out = html;
   for (const [name, body] of Object.entries(regions)) {
@@ -535,8 +538,8 @@ function main() {
   const errs = checkContent(D);
   if (errs.length) { console.error(errs.map(e => `  - ${e}`).join('\n')); fail(`${errs.length} content error(s)`); }
   const html = readFileSync(PAGE, 'utf8');
-  const stampCommit = (html.match(/<!--gen:stamp-->Generated from <code>([^<]+)<\/code>/) ?? [])[1];
-  const commit = check && stampCommit ? stampCommit : execSync('git rev-parse --short HEAD', { cwd: ROOT }).toString().trim();
+  // the last commit that changed what the ledger reads, so committing the page itself does not stale its stamp
+  const commit = execSync('git log -1 --format=%h -- data/params.json scripts/prescription-ledger.ts scripts/lib/prescriptions.ts src/sim', { cwd: ROOT }).toString().trim();
   const out = render(D, html, commit);
   const pageErrs = checkPage(D, out);
   if (pageErrs.length) { console.error(pageErrs.map(e => `  - ${e}`).join('\n')); fail(`${pageErrs.length} page error(s)`); }
@@ -550,4 +553,4 @@ function main() {
   if (out !== html) { writeFileSync(PAGE, out); console.log('wrote docs/decision-guide.html'); } else console.log('docs/decision-guide.html unchanged');
 }
 
-main();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main();
