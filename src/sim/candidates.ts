@@ -326,6 +326,13 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     }
     return iv ? tripFrac(crop, feeders, d) : 1;
   };
+  // stage E5c (crownShare; docs/staging/e5c-prereg.md §3.2, iteration 3): a crown's crop is shared by its feeders, so larger
+  // parties get less each [M: chapman1995, newtonFisher2000]. Co-feeders cost what they take from this animal's share of
+  // the bout (tripWorth: the crop it believes ÷ (1 + the feeders it sees), against its need and its gut), and a crown it has
+  // fed in is worth what it believes is left there (C7a's belief, set when it leaves). The two crop-blind terms that kept
+  // feeders apart whatever the crop are off: the habitat-index crowding cost and the devaluation of a crown just used
+  // (revisit, C6b design). Iterations 1 and 2 (the share at the scale of the day's need) are superseded.
+  const cs = crownShareOn(P);
   if (!caretaker || (c.age >= 1.5 && !carried && caretaker.action === 'forage')) {
     for (let _i1 = 0; _i1 < x.trees.length; _i1++) { const id = x.trees[_i1];
       const t = idx.treeById.get(id)!;
@@ -333,10 +340,10 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       const d = dxz(t, px, pz);
       let crowd = 0;
       for (let _i2 = 0; _i2 < x.seen.length; _i2++) { const sid = x.seen[_i2]; const o = byId.get(sid)!; if (o.action === 'forage' && o.targetId === t.id) crowd++; }
-      const crop = P.patchEcology === 1 ? fruitAt(world, t) : t.fruit, q = Math.min(1, crop / P.fruitValueRef);
-      // contest competition grows with crowding when fruit is scarce (drives parties apart) [H]
-      const compete = byShare ? 0 : crowd * P.crowdCompeteW * (P.crowdScarcityRef - env.fruitIndex) * (c.rank > P.crowdHighRank ? P.crowdHighRankFactor : 1);
-      const fw = (h * 1.6 + 0.1) * (0.55 + 0.45 * q) * tripWorth(t, crop, crowd, d);
+      const crop = P.patchEcology === 1 ? fruitAt(world, t) : t.fruit;
+      // contest competition grows with crowding when fruit is scarce (drives parties apart) [H]; stage E5c: the share instead
+      const compete = byShare || cs ? 0 : crowd * P.crowdCompeteW * (P.crowdScarcityRef - env.fruitIndex) * (c.rank > P.crowdHighRank ? P.crowdHighRankFactor : 1);
+      const fw = (h * 1.6 + 0.1) * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) * tripWorth(t, crop, crowd, d);
       if (race && crowd > 0) raceG = Math.max(raceG, raceStake(fw, crop, crowd, need, 1)); // stage E2b: the feeders are eating now
       offer('forage', t.id, fw * (byShare ? shareWorth(crop, crowd) : 1) - d / P.forageDistScaleM - compete - rain * 0.45 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.6 - coreCostOf(t, coreW, troop, x) + (t.id === s.figTree && h > 0.2 ? 0.2 : 0) - revisit(x, t.id, time, P), V.NONE, crowd);
     }
@@ -630,7 +637,8 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
 /** Stage C6b (field): a crown this individual has just fed in is worth less for a while (the fruit within reach is gone). */
 function revisit(x: ReturnType<typeof ix>, id: number, time: number, P: Params): number {
   const ft = x.fedTree;
-  if (!ft || P.revisitW <= 0) return 0;
+  // stage E5c (crownShare): what it believes is left in the crown carries the depletion it saw, whatever the crop
+  if (!ft || crownShareOn(P) || P.revisitW <= 0) return 0;
   // fed-tree ids are unique (execution.ts), so the stamped index is the list's lastIndexOf; valid for the decision in progress
   if (!stamped(_fed, id, _stamp)) return 0;
   return P.revisitW * Math.exp(-(time - x.fedAt![_fedK[id - TREE_ID0]]) / P.revisitTauH);
@@ -659,6 +667,8 @@ export const careFollow = (k: Chimp): boolean => k.action === 'follow' && (ix(k)
  * Field profile only (partyJoinTrip 1). 0 = the model before, bit-identical.
  */
 export const cohesionOn = (P: Params): boolean => P.cohesionValue === 1 && P.partyJoinTrip === 1;
+/** Stage E5c (crownShare; docs/staging/e5c-prereg.md §3.2): co-feeders cost their share of the bout (tripWorth with the feeders seen, the E1e drive and the C13b intake valuation), not a crop-blind crowding or revisit term. */
+export const crownShareOn = (P: Params): boolean => P.crownShare === 1 && P.energyLedger === 1 && P.ledgerDrive === 1 && P.intakeValue === 1;
 /** Party following runs: under cohesionValue, or (before E5a) while partyFollowW > 0, its gate (then partyFollowW is not read). */
 export const partyOn = (P: Params): boolean => cohesionOn(P) || P.partyFollowW > 0;
 /** The value of a mating with fertile female `o` to male `c`: the mate offer's own terms, before distance, hunger, guarding, night. */

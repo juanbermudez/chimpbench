@@ -254,6 +254,11 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
     'read in the timer branches of execution.ts (forageTick, drink) and by urgency.ts payOf (through intake.ts thirstPerHInclWalk); with the water ledger fruit water and drinking are booked in mL (water.ts), so they stay in use only while urgencyChoice or urgencyPersist is 1'),
   drinkDistScaleM: { when: P => !(P.waterLedger === 1 && P.energyLedger === 1 && P.ledgerDigesta === 1), why: 'the drink offer in src/sim/candidates.ts is valued by water.ts drinkWorth (the share of the trip spent drinking, walk included) while the water ledger runs' },
   contactCallGapH: { when: P => P.callValue !== 1, why: 'the contact-call quota (and the fewer-than-2-in-sight gate) in src/sim/candidates.ts patrolAndCalls is not evaluated while callValue is 1: the staleness of the own last pant-hoot (calls.ts callStaleness) replaces it' },
+  // stage E5c (crownShare; docs/staging/e5c-prereg.md §3.2): co-feeders cost their share of the bout and a crown just used is
+  // worth what is believed left, so the habitat-index crowding cost and the revisit devaluation are not evaluated (all design:
+  // the count does not change)
+  ...same(['crowdCompeteW', 'crowdScarcityRef', 'revisitW', 'revisitTauH'], P => !(P.crownShare === 1 && P.energyLedger === 1 && P.ledgerDrive === 1 && P.intakeValue === 1),
+    'the habitat-index crowding cost and the revisit devaluation in src/sim/candidates.ts are not evaluated while crownShare, energyLedger, ledgerDrive and intakeValue are 1: co-feeders cost their share of the bout, a crown just used is worth what is believed left (stage E5c)'),
   // stage E1n (weanDecide; docs/staging/e1n-prereg.md §3): the mother decides by her drive against the infant's own-food
   // drive (energy.ts ownDrive), so the weaning roll and its ramp are not evaluated
   ...same(['weanRefuseMaxP', 'weanRefuseAgeY', 'weanRefuseRampY'], P => !(P.weanDecide === 1 && P.energyLedger === 1 && P.ledgerDrive === 1),
@@ -313,6 +318,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   followCarer: { stage: 'E4g', needs: {}, removesNothing: 'corrects which companions\' acts the party-follow rule reads (a care follow is not a departure); adds no term and switches no prescription out (e4g-prereg §3)' },
   weanDecide: { stage: 'E1n', needs: { energyLedger: 1, ledgerDrive: 1 } },
   cohesionValue: { stage: 'E5a', needs: {} },
+  crownShare: { stage: 'E5c', needs: { energyLedger: 1, ledgerDrive: 1 }, removesNothing: 'switches off two crop-blind design terms (the habitat-index crowding cost, the revisit devaluation of a crown just used); co-feeders then cost their share of the bout through tripWorth and a used crown is worth the crop believed left; no counted prescription is switched out (e5c-prereg §3.2)' },
   companyMargin: { stage: 'E5b', needs: { cohesionValue: 1 }, removesNothing: 'values an approach to a caller by the company it adds over the company the animal already has (E5a\'s companyValue and settled-companion set); adds no magnitude and switches no prescription out (e5b-prereg §5)' },
 };
 

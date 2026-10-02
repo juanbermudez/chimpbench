@@ -4764,6 +4764,32 @@
    "notes": "Crowding cost scales with (ref - fruit index)."
   },
   {
+   "id": "crownShare",
+   "group": "social",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/research.md: chapman1995 and newtonFisher2000 (ecological constraints: a crown's crop is shared by its feeders, so larger parties get less each) [M], charnov1976 (a patch is worth its gain over travel plus handling time) [M as applied], potts2011 (feeding party size and patch size, the held-out pattern this must not encode)"
+   ],
+   "clock": "none",
+   "symbol": "P.crownShare",
+   "file": "src/sim/candidates.ts",
+   "integer": true,
+   "notes": "Stage E5c switch (docs/staging/e5c-prereg.md §3; iteration 3 in §3.2): with the energy ledger, the E1e drive and the C13b intake valuation on, a crown's crop is shared by its feeders and nothing else keeps feeders apart: co-feeders cost what they take from the animal's share of the bout (tripWorth: believed crop / (1 + feeders seen), against its need and its gut), and a crown it has fed in is worth the crop it believes left there (C7a's belief, set when it leaves). The two crop-blind terms are off: the habitat-index crowding cost (crowdCompeteW, crowdScarcityRef) and the devaluation of a crown just used (revisitW, revisitTauH; C6b design). The E5c diagnosis found the share never binding (2.9% of crown options), the crop term's spread within a decision below the choice noise, and companions' crowns rejected mostly for the revisit devaluation (0.195). Iterations 1 and 2 (the share at the scale of the day's need) were nulls: they cost nursing mothers 0.2-1.1% of the store a day. No new magnitude. Removes no counted prescription (the switched-out entries are design). 0 = today, bit-identical. Ablation switch."
+  },
+  {
    "id": "cycleFallEndDay",
    "group": "reproduction",
    "value": 25.5,
