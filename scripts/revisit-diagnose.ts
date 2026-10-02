@@ -18,6 +18,8 @@
 //     same-day returns as 0, (c) mean start-to-start interval in days; by class (adult females ≥ 15 y, normand2009's
 //     subjects; adult males ≥ 15 y; all ≥ 12 y). At each return: crop when it left and when it returns, the phenology
 //     crop at both, and the deficit (phenology − crop) at both.
+//   trees per day: distinct crowns fed in and feeding visits per animal-day (≥ 12 y, calendar days with feeding in a crown).
+//   returns within 3 h: shares by what ended the visit before (gut full, interrupt, need-bucket, …).
 //   bout ends: for each visit of an animal ≥ 12 y, from its state at the last feeding tick and the transition after it:
 //     crop gone (crop < 0.02), sated (hunger < 0.06), gut full (foregut dry matter ≥ 0.95 of capacity), else the rules
 //     decision that ended it (rgTap reason: need-bucket, max-age, ended, patch-poor, interrupt, period, hunt, …; 'none'
@@ -267,7 +269,7 @@ function resources(trees: Record<number, [number, number]>, link: number): Map<n
   }
   const out = new Map<number, number>(); for (const i of idsT) out.set(i, find(i)); return out;
 }
-interface Ret { gapH: number; startDays: number; calDiff: number; cropLeft: number; cropBack: number; tgtLeft: number; tgtBack: number; adultF: boolean; adultM: boolean; adult12: boolean }
+interface Ret { gapH: number; startDays: number; calDiff: number; cropLeft: number; cropBack: number; tgtLeft: number; tgtBack: number; adultF: boolean; adultM: boolean; adult12: boolean; prevEnd: string }
 function returnsOf(visits: Visit[], res: Map<number, number> | null): Ret[] {
   const by = new Map<string, Visit[]>();
   for (const v of visits) { const k = `${v.id}|${res ? res.get(v.tree) ?? v.tree : v.tree}`; (by.get(k) ?? by.set(k, []).get(k)!).push(v); }
@@ -280,7 +282,7 @@ function returnsOf(visits: Visit[], res: Map<number, number> | null): Ret[] {
     for (let i = 1; i < l.length; i++) {
       const a = l[i - 1], b = l[i];
       out.push({ gapH: b.t0 - a.t1, startDays: (b.t0 - a.t0) / 24, calDiff: calDay(b.t0) - calDay(a.t0), cropLeft: a.crop1, cropBack: b.crop0, tgtLeft: a.tgt1, tgtBack: b.tgt0,
-        adultF: b.sex === 'female' && b.age >= 15, adultM: b.sex === 'male' && b.age >= 15, adult12: b.age >= 12 });
+        adultF: b.sex === 'female' && b.age >= 15, adultM: b.sex === 'male' && b.age >= 15, adult12: b.age >= 12, prevEnd: a.end === 'decision' ? a.why : a.end });
     }
   }
   return out;
@@ -290,6 +292,7 @@ function revisitSummary(r: Ret[]) {
   const share = (f: (x: Ret) => boolean) => r.length ? r.filter(f).length / r.length : NaN;
   return { n: r.length, a_calDiffOtherDays: mean(diff.map(x => x.calDiff)), nOtherDays: diff.length, b_calDiffAll: mean(r.map(x => x.calDiff)), c_startDays: mean(r.map(x => x.startDays)),
     lt1h: share(x => x.gapH < 1), h1to3: share(x => x.gapH >= 1 && x.gapH < 3), sameDayLater: share(x => x.gapH >= 3 && x.calDiff === 0), nextDay: share(x => x.calDiff === 1), d2to7: share(x => x.calDiff >= 2 && x.calDiff <= 7), gt7: share(x => x.calDiff > 7),
+    within3hByPrevEnd: (() => { const q = r.filter(x => x.gapH < 3), m: Record<string, number> = {}; for (const x of q) m[x.prevEnd] = (m[x.prevEnd] ?? 0) + 1; for (const k in m) m[k] /= Math.max(1, q.length); return m; })(),
     sameDay: share(x => x.calDiff === 0), medianGapH: med(r.map(x => x.gapH)), cropLeft: mean(r.map(x => x.cropLeft)), cropBack: mean(r.map(x => x.cropBack)), tgtLeft: mean(r.map(x => x.tgtLeft)), tgtBack: mean(r.map(x => x.tgtBack)),
     deficitLeft: mean(r.map(x => x.tgtLeft - x.cropLeft)), deficitBack: mean(r.map(x => x.tgtBack - x.cropBack)),
     sameDayCropLeft: mean(r.filter(x => x.calDiff === 0).map(x => x.cropLeft)), sameDayCropBack: mean(r.filter(x => x.calDiff === 0).map(x => x.cropBack)) };
@@ -311,6 +314,11 @@ function summarize(res: Result[]) {
   const V12 = res.flatMap(r => r.visits).filter(v => v.age >= 12 && v.end !== 'window');
   const tally = (f: (v: Visit) => string) => { const m: Record<string, number> = {}; for (const v of V12) m[f(v)] = (m[f(v)] ?? 0) + 1; for (const k in m) m[k] /= V12.length; return m; };
   const seedDays = res.reduce((s, r) => s + r.days, 0);
+  // distinct crowns fed in and feeding visits per animal-day (≥ 12 y; days on which the animal fed in a crown; T-FOOD-4's
+  // "Distinct feeding trees per full-day follow" in truth, and the observer's count of visits with returns after ≥ 10 min)
+  const perDay = new Map<string, Set<number>>(), visDay = new Map<string, number>();
+  for (const r of res) for (const v of r.visits) if (v.age >= 12) { const k = `${r.seed}|${v.id}|${calDay(v.t0)}`; (perDay.get(k) ?? perDay.set(k, new Set()).get(k)!).add(v.tree); visDay.set(k, (visDay.get(k) ?? 0) + 1); }
+  S.treesPerDay = { distinctCrowns: mean([...perDay.values()].map(x => x.size)), visits: mean([...visDay.values()]), animalDays: perDay.size };
   S.visits = { n: V12.length, perAnimalDay12: NaN, minutesMedian: med(V12.map(v => (v.t1 - v.t0) * 60 + 0.25)), minutesMean: mean(V12.map(v => (v.t1 - v.t0) * 60 + 0.25)), crop0: mean(V12.map(v => v.crop0)), crop1: mean(V12.map(v => v.crop1)),
     ateUnits: mean(V12.map(v => v.ate)), ateShareOfCrop: mean(V12.filter(v => v.crop0 > 0.02).map(v => v.ate / v.crop0)), lastRatio: mean(V12.map(v => v.lastRatio)), fillAtEnd: mean(V12.filter(v => Number.isFinite(v.fill)).map(v => v.fill)), hungerAtEnd: mean(V12.map(v => v.hunger)) };
   S.boutEnd = { state: tally(v => v.end), why: tally(v => v.end === 'decision' ? v.why : v.end), next: tally(v => v.next), companionLeaving: V12.filter(v => v.next === 'party follow' || v.next === 'joined trip').length / Math.max(1, V12.length),
