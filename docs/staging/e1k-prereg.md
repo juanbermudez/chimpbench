@@ -484,3 +484,14 @@ prescriptions 103; viable; mothers' reserves −0.016 / −0.213 / −0.088%/day
    viability.
 5. *Cost:* infants of 0.5–2 y lose −0.005%/day (K1 by its letter); not diagnosed (a guess: they follow mothers who now
    walk 0.27 km/day more to food).
+
+## 9. Files and checks
+
+- Code: `src/sim/candidates.ts` (groom offer, `groomNeedDyad`), `data/params.json` and `src/sim/params.gen.ts`
+  (`groomNeedDyad` 0), `tests/sim-groom-need.test.ts`, `TRACK_E_SWITCHES` in `tests/sim-track-e.test.ts` and
+  `scripts/lib/prescriptions.ts`, `docs/simulation.md` §17 row and note. Tools: `scripts/intake-diagnose.ts` (E1k
+  readouts), `scripts/energy-diagnose.ts` (`daily`). Staged, never applied: `docs/staging/e1k-targets.patch.json`
+  (T-ENE-5 direction band; T-INF-6). Sources: research.md "Addendum: E1k nursing mothers' deficit".
+- Run outputs, stage tools and tables: `artifacts/validation/e1k/` of this worktree (gitignored, local).
+- After merging `track-e` (85f1346: E1j): `gen-params --check` clean, `tsc --noEmit` clean, `pnpm test` 666 tests, 665
+  pass, 0 fail, 1 skipped; the goldens and the field pin did not move (the switch is 0 by default).

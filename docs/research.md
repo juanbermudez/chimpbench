@@ -2199,6 +2199,66 @@ encounter rate. One input value is taken (the Kanyawara density, [L]); nothing i
   [doi:10.1093/beheco/arn076](https://doi.org/10.1093/beheco/arn076) (Abs; Crossref-checked).
 - gilby2015 is already cited; the entry above adds its encounter method, read in full.
 
+### E.32 Addendum: E1j mothers' ranging (2 October 2026)
+
+Stage E1j asked why the model's nursing mothers range far relative to males (T-RNG-5, band 0.3–0.6). Day ranges of
+lactating or anoestrous females against males, and the method behind each (docs/staging/e1j-prereg.md §1–§2).
+
+- **Day-range method and sample, Budongo** [batesByrne2009] (FT, the authors' accepted manuscript; extends E.17) [M].
+  Sonso, September 2002 – September 2003; 15 focal adults: 8 males, 6 "lactating females" (4 lactating throughout, 1
+  gestating then lactating, 1 cycling then pregnant: the paper pools lactating and gestating) and 1 receptive female.
+  Focal follows up to 3 days; a day range counts only follows of at least 8 h without losing the focal: 27 male days,
+  13 lactating, 3 receptive. Location "every five minutes when it was travelling" (GPS, error up to 14 m); movements
+  within a halt of 20 min or more were not recorded; a halt's area is 35 m around its first point, or the food patch.
+  Results: males 2.7 ± 1.5 km, lactating 1.2 ± 0.8, receptive 2.2 ± 0.8 (F2,42 = 5.89); 20+ min halts a day 6.5 ± 1.8
+  against 4.5 ± 1.0, lasting 60 ± 50 against 95 ± 83 min; distance between halts 357 against 277 m at the same speed
+  (1.9 km/h) and straightness; 84% of mothers' phases ended at food (males 68%); mothers revisited a used patch 0.46
+  times per 8-h day (males 0.14) and used the outer 55% of the range less. Derived [L]: ratio 0.44, about 0.26–0.63
+  with follow-days as independent units. Use in E1j: T-RNG-4 and T-RNG-5 method (the model's observer is compared in
+  e1j-prereg.md §2.4).
+- **One-day ranges by sex, Gombe** [wrangham1975] (FT, PhD thesis, Table 5.1) [M]. January 1972 – September 1973,
+  nest-to-nest days; follows aborted when the target was lost; movements around a point (a food source, a grooming
+  party) ignored unless more than about 30 m; path from 100 m grid lines crossed, checked against a hodometer
+  (r = 0.995, 24 records). Medians: northern males 4.2 km (83 days, 8 males), southern males 3.8 km (23 days, 7),
+  females 2.8 km (61 days, 10 females; "most of the females observed were anoestrous"; a juvenile's record was assigned
+  to its mother when they travelled together). Derived [L]: females ÷ males 0.67–0.74.
+- **Day ranges by sex, Kanyawara and Gombe** [pontzerWrangham2004] as cited by [wilson2021] (FT of the citing review;
+  the primary is closed) [L]: Kanyawara females 2.0 km/day, males 2.4 (0.83); Gombe females 3.2, males 4.6 (0.70). The
+  class is adult females, not lactating females; n and method not seen. The earlier entry's "mothers about 1.9 km" was
+  not verified.
+- **Maternal day range and offspring** [pontzerWrangham2006] as cited by [stanton2017] (FT of the citing paper; the
+  primary has no reachable abstract) [L]: at Kanyawara maternal day range was positively correlated with the juvenile's
+  body size, not with infant carrying. Use in E1j: carrying a young infant is not by itself a reason for a shorter day
+  range; a walking juvenile may be.
+- **Intra-community infanticide, Budongo Sonso** [lowe2019] (Abs; open access) [M]. 24 years: 33 attacks on 30 victims
+  (11 definite infanticides, 4 almost certain, 9 suspected, 9 attempts); most of the 23 attacks with known perpetrators
+  were by males only; two thirds of victims of known age were under one week old. Context for the Budongo mothers'
+  short day ranges (not tested by batesByrne2009).
+- Not verified (2 routes each): otaliGilchrist2006 (Kanyawara; the title states that mothers are less gregarious than
+  nonmothers and males, "the infant safety hypothesis"; no abstract on OpenAlex or Crossref; Springer closed);
+  pontzerWrangham2004 and pontzerWrangham2006 primaries (closed; link.springer.com answered with a bot check and was
+  dropped); Taï, Ngogo (Deep Blue repository behind a Cloudflare check, dropped) and Mahale sex-class day ranges.
+
+**Sources:**
+- *new* wrangham1975: Wrangham RW 1975. *The behavioural ecology of chimpanzees in Gombe National Park, Tanzania.* PhD
+  thesis, University of Cambridge. [doi:10.17863/CAM.16415](https://doi.org/10.17863/CAM.16415) (FT, Apollo repository).
+- *new* wilson2021: Wilson ML 2021. Insights into human evolution from 60 years of research on chimpanzees at Gombe.
+  *Evolutionary Human Sciences* 3:e8. [doi:10.1017/ehs.2021.2](https://doi.org/10.1017/ehs.2021.2) (FT, PMC7886264).
+- *new* stanton2017: Stanton MA, Lonsdorf EV, Pusey AE, Murray CM 2017. Do juveniles help or hinder? Influence of
+  juvenile offspring on maternal behavior and reproductive outcomes in wild chimpanzees (*Pan troglodytes*). *Journal of
+  Human Evolution* 111:152–162. [doi:10.1016/j.jhevol.2017.07.012](https://doi.org/10.1016/j.jhevol.2017.07.012) (FT,
+  PMC5659293).
+- *new* pontzerWrangham2006: Pontzer H, Wrangham RW 2006. Ontogeny of ranging in wild chimpanzees. *International
+  Journal of Primatology* 27:295–309. [doi:10.1007/s10764-005-9011-2](https://doi.org/10.1007/s10764-005-9011-2) (not
+  read; cited through stanton2017).
+- *new* lowe2019: Lowe AE, Hobaiter C, Asiimwe C, Zuberbühler K, Newton-Fisher NE 2019. Intra-community infanticide in
+  wild, eastern chimpanzees: a 24-year review. *Primates* 61(1):69–82.
+  [doi:10.1007/s10329-019-00730-3](https://doi.org/10.1007/s10329-019-00730-3) (Abs, open access).
+- *new* otaliGilchrist2006: Otali E, Gilchrist JS 2006. Why chimpanzee (*Pan troglodytes schweinfurthii*) mothers are
+  less gregarious than nonmothers and males: the infant safety hypothesis. *Behavioral Ecology and Sociobiology*
+  59(4):561–570. [doi:10.1007/s00265-005-0081-0](https://doi.org/10.1007/s00265-005-0081-0) (title only; not verified).
+- batesByrne2009 and pontzerWrangham2004 are already cited; the entries above add findings.
+
 ### Addendum: E1k nursing mothers' deficit (2 October 2026)
 
 Read for stage E1k (docs/staging/e1k-prereg.md): whether wild nursing mothers and juveniles run a sustained energy
