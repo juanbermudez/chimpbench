@@ -265,3 +265,10 @@ sits at the top of that bracket.
   model's own books within 4% (§3.1).
 - The 2-day smoke (seed 48, S3, eeded56; `artifacts/validation/e1m/smoke-S3.log`) printed the milk-by-age and mothers'
   milk-cost readouts used here.
+
+## 10. Final checks
+
+After merging `track-e` once (c4a459b, a handoff refresh): `gen-params --check` clean (983 entries, lint clean),
+`tsc --noEmit -p .` clean, `pnpm test` 675 tests, 674 pass, 0 fail, 1 skipped; `git ls-files data/raw node_modules`
+empty. No simulation code, parameter value or test changed in this stage (the three milk parameters' notes record the
+audit).
