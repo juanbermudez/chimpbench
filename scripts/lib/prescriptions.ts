@@ -42,7 +42,6 @@ export const OVERRIDES: Record<string, Override> = {
   nestEveningDrive: oe('clock', 'strength of the evening clock ramp (nestEveningStartH to nestEveningEndH): part of the nest clock'),
   nestMorningDrive: oe('clock', 'strength of the morning stay-in-nest drive: part of the nest clock', [], true),
   nestNightBonus: oe('bonus', 'extra nest drive because it is night: states sleeping at night'),
-  rhythmDarkW: oe('bonus', 'stage E2a nest value in the dark, set a priori to beat a starving animal\'s best meal (docs/staging/e2c-prereg.md §1): states staying in the nest while it is dark, with no consequence of darkness behind it (as nestNightBonus)'),
   boutRestMiddayMin: oe('clock', 'rest bouts are longer between 11:30 and 14:30 by rule (literal clock window in execution.ts)', ['T-ACT-4']),
   boutRestMiddayMax: oe('clock', 'rest bouts are longer between 11:30 and 14:30 by rule (literal clock window in execution.ts)', ['T-ACT-4']),
   boutNestMorningMin: oe('clock', 'nest bouts are short between 05:30 and 12:00 by rule (literal clock window in execution.ts)'),
