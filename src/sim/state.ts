@@ -37,6 +37,11 @@ export interface ChimpX {
    * last tick (for the work of moving). Absent until their switch is on, so worlds with the switches off are unchanged.
    */
   slp?: number; heat?: number; hpx?: number; hpy?: number; hpz?: number;
+  /**
+   * Stage E2d (circadian.ts, rhythmCircadian): the circadian oscillator (x, x_c, used photoreceptors n) and the sleep
+   * latch (1 asleep or due to sleep, 0 awake). Absent until the switch is on, so worlds with the switch off are unchanged.
+   */
+  cx?: number; cxc?: number; cn?: number; asl?: number;
   // perception snapshot, refreshed at decision points
   seen: number[]; seenAt: number; sight: number;
   ownMales: number; strangers: number; strangerMales: number; strangerTroop: number; isolated: number; nearestStranger: number;
@@ -207,7 +212,7 @@ export type SimWorld = World & { sim: SimState };
  * ChimpX and SimState keys that exist only once their mechanism has fired (so worlds with the switch off keep their
  * shape and hashes). The save check (src/persist/envelope.ts worldShapeProblem) ignores them.
  */
-export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'en', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk', 'phAt', 'phX', 'phZ'];
+export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'en', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk', 'cx', 'cxc', 'cn', 'asl', 'phAt', 'phX', 'phZ'];
 export const OPTIONAL_SIM: readonly string[] = ['fission', 'stormAt'];
 
 export function newX(): ChimpX {

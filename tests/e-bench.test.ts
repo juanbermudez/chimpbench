@@ -3,7 +3,7 @@ import test from 'node:test';
 import { bandDistance, openBandDistance, rowDistance, sumDistances } from '../scripts/lib/band-distance';
 import { bandDistance as jevBandDistance, endpoint, ENDPOINT_ROWS, rowKey } from '../scripts/lib/jev-arm';
 import { runViability, viabilityVerdict, type Viability } from '../scripts/lib/viability';
-import { MAX_TOTAL_DAYS, MODES, NEEDS_YEAR, benchRows, compare, distances, furthest, parsePartBands, type BenchDoc } from '../scripts/e-bench';
+import { MAX_TOTAL_DAYS, MODES, NEEDS_YEAR, RARE_EVENT_ROWS, benchRows, compare, distances, furthest, parsePartBands, type BenchDoc } from '../scripts/e-bench';
 
 const near = (a: number | null, b: number) => assert.ok(a !== null && Math.abs(a - b) < 1e-12, `${a} ≠ ${b}`);
 
@@ -68,7 +68,7 @@ const targets = [
   { id: 'T-COM-3', role: 'held-out' as const, encoded: true, accept: { lo: null, hi: null, units: '' } },
   { id: 'T-DEM-14', role: 'held-out' as const, encoded: false, accept: { lo: null, hi: null, units: '' } },
 ];
-const card = [
+const card: Parameters<typeof benchRows>[0] = [
   { id: 'T-ACT-1', metric: 'feeding', role: 'fitted' as const, encoded: false, band: '0.33–0.5', verdict: 'fail', perSeed: [0.4], pooled: 0.4, parts: { male: 0.4, female: 0.67 }, flags: [] },
   { id: 'T-DEM-2', metric: 'e15', role: 'fitted' as const, encoded: false, band: 'female 31–39, male 18–24', verdict: 'fail', perSeed: [], pooled: 30, parts: { female: 35, male: 27 }, flags: [] },
   { id: 'T-PTY-4', metric: 'gregariousness', role: 'held-out' as const, encoded: false, band: '0.15–0.45', verdict: 'fail', perSeed: [0.6], pooled: 0.6, parts: {}, flags: ['compromised'] },
@@ -135,6 +135,31 @@ test('compare: change per row, raw and on rows scored in both runs', () => {
   assert.equal(c.sameSettings, true);
   near(c.rows.find(r => r.id === 'T-ACT-1')!.delta, -0.5);
   assert.ok(!c.rows.some(r => r.id === 'T-DEM-14'), 'sealed rows never enter a comparison');
+  near(c.fitted.commonNoRare, -0.5);         // no rare-event row here: the same figure
+  assert.equal(c.fitted.commonRowsNoRare, 2);
+});
+
+test('rare-event rows stay in every sum and are also reported without', () => {
+  assert.deepEqual([...RARE_EVENT_ROWS], ['T-HUN-4', 'T-BRD-1']);
+  const t = [...targets, ...['T-HUN-4', 'T-BRD-1'].map(id => ({ id, role: 'held-out' as const, encoded: false, accept: { lo: 0, hi: 1, units: '' } }))];
+  const rareCard = (hun: number, brd: number, fallback: number) => [...card.map(r => r.id === 'T-FOOD-3' ? { ...r, pooled: fallback, perSeed: [fallback] } : r),
+    { id: 'T-HUN-4', metric: 'hunting and males', role: 'held-out' as const, encoded: false, band: '0–1', verdict: 'fail', perSeed: [hun], pooled: hun, parts: {}, flags: [] },
+    { id: 'T-BRD-1', metric: 'border stops', role: 'held-out' as const, encoded: false, band: '0–1', verdict: 'fail', perSeed: [brd], pooled: brd, parts: {}, flags: [] }];
+  const doc = (rows: ReturnType<typeof benchRows>): BenchDoc => {
+    const d = distances(rows);
+    return { tool: 'e-bench', version: 1, date: '', label: 'x', mode: 'quick', config: { profile: 'field', days: 365, burnInDays: 60, seeds: [48], params: {}, workers: 1 }, git: { commit: '', branch: '', dirty: 0 }, protocolHash: null, registryHash: '',
+      headline: { fittedDistance: d.fitted.sum, heldOutDistance: d.heldOut.sum, prescriptionCount: 0, viability: 'pass' }, distance: d, prescriptions: { total: 0, registryActive: 0, literals: 0, registryAll: 0, inactive: [], activeIds: [] },
+      viability: null, summary: {}, rows, timing: { scorecardS: null, viabilityS: null, totalS: null }, scorecard: '' };
+  };
+  const before = benchRows(rareCard(3, 1.5, 0.15), t), after = benchRows(rareCard(1.5, 1.5, 0.3), t), d = distances(before);
+  near(d.heldOut.sum, 0.5 + 2 + 0.5);        // T-FOOD-3 0.5, T-HUN-4 2, T-BRD-1 0.5
+  near(d.heldOutNoRare.sum, 0.5);
+  assert.deepEqual([d.heldOut.rows, d.heldOutNoRare.rows, d.fittedNoRare.rows], [3, 1, d.fitted.rows]);
+  const c = compare(doc(before), doc(after));
+  near(c.heldOut.common, -0.5 - 1.5);         // T-FOOD-3 into its band, T-HUN-4 halfway back
+  assert.equal(c.heldOut.commonRows, 3);
+  near(c.heldOut.commonNoRare, -0.5);
+  assert.equal(c.heldOut.commonRowsNoRare, 1);
 });
 
 test('viability: the guard and a replayed world', () => {

@@ -1771,7 +1771,207 @@ Evidence pass for stage E2c (darkness by its consequences; `docs/staging/e2c-pre
 
 **Not verified:** a removal rate of ripe fruit by non-chimpanzee frugivores at any African site; how chimpanzee acuity falls with brightness (Spence 1934's data); a chimpanzee or primate fall rate by light; the reflectance of forest surfaces used for the retinal illuminance (0.1, assumed); the source of the "1–85 lux" feeding range (Erkert, as cited by tagg2018).
 
-### E.21 Addendum: calls as decisions (stage E4c, 1 October 2026)
+### E.21 Addendum: field intake audit (1 October 2026)
+
+Evidence pass for the field audit (`docs/staging/e-field-audit.md`), 1 October 2026. Question: how were the field intake and feeding-time values that the model cannot reproduce (T-ENE-1 to T-ENE-3) measured, are they outliers, what biases does the method carry, and how fast do infants eat? Bibliographic data checked against Crossref on 1 October 2026, except the book chapter. Access:
+- Full texts were read through NCBI's BioC text-mining service and efetch (PMC author manuscripts), publisher open-access pages, institutional repositories and archived author sites.
+- PMC pages that asked for a CAPTCHA and publisher pages that returned a challenge were not bypassed.
+- Entries marked "(subagent)" were read in full by a research subagent of the audit; their load-bearing passages were re-checked unless marked otherwise.
+
+Tags as in this Track E section.
+
+- **How the Kanyawara intake and feeding time were measured** [uwimbabazi2019] (FT: author manuscript NIHMS1029101 through BioC and efetch) [H] for the observations, [M] for the daily energy total. Replaces the E1e phrase-search reading.
+  - Subjects and follows:
+    - 14 multiparous, habituated females of 17; January 2014 – June 2015; one observer. The Discussion calls them nursing mothers. Intake was not analysed by reproductive state.
+    - 210 continuous focal follows, nest to nest where possible. The 141 of at least 10 h (1,597 h) were analysed: 93 in fig months, 48 in drupe months; 14 of the 18 months were fig months.
+  - Feeding = reaching, picking, handling or chewing, plus searching gaps under 5 s. A bout is continuous feeding on one item, not ended by non-feeding interruptions of 5 min or less. Bout start and end to the nearest minute; no subtraction of within-bout gaps is described.
+  - Rates and mass:
+    - Food units per minute counted at 5-min intervals when observation allowed: 4,314 one-minute records over 648 h.
+    - Unit mass from at least 30 wet units per food item, collected from the plant eaten or a neighbour and processed to mimic the chimpanzees (spat seeds removed); dried, corrected to 105 °C dry matter and organic matter.
+    - Daily dry matter = Σ minutes on item × the item's mean g/min.
+  - Wadges: the Discussion notes fibre often spat as a wadge; no subtraction is described. Figs, "normally consumed whole", were sampled whole, seeds included.
+  - Energy:
+    - ME (kcal/100 g organic matter) = 4 TNC + 4 available protein + 9 lipid + 1.6 NDF, following conklinBrittain2006.
+    - TNC by difference (100 − NDF − lipid − available protein − ash); crude protein by near-infrared spectroscopy (N × 6.25); water-soluble carbohydrate (WSC) by phenol–sulphuric assay.
+    - Table 2 (% OM): WSC 16.5 of a TNC of 44.6 in ripe fruit; figs 9.2 of 40.7; non-fig fruit 20.1 of 46.6; young leaves 5.1 of 30.5; pith 15.5 of 33.9.
+  - Results: daily means 308.7 ± 85 min, 872.6 ± 289 g, 2,479.4 ± 858.1 kcal (SD of days); range 1,240–4,931 kcal. Table 4 by dominant food (mean ± SE): non-fig fruit days 2,706 ± 221 (22), fig days 2,590 ± 95 (76), leaf-and-pith days 2,169 ± 114 (43).
+  - Derived from Table 4 (day-weighted; reproduces 2,479):
+    - measured sugar 18%, available protein 14%, lipid 7%;
+    - TNC by difference beyond measured sugar 34% (210 g);
+    - NDF credit 26% (408 g);
+    - 839 g organic matter = 0.96 of the dry matter, so ash does not inflate the energy.
+  - No comparison with expenditure. The only comparison is with an earlier Kanyawara estimate of 2,340 kcal/day (conklinBrittain2006).
+- **Same data, more method** [uwimbabazi2021] (FT, PMC8225573 via BioC) [M].
+  - The 2,479 kcal is called the intake of lactating females and compared with lactating women (about 2,500 kcal).
+  - The bout is described as continuing while the animal chews, up to 5 min.
+  - Protein is given as crude protein at 4 kcal/g.
+  - Follows under 10 h were excluded as not comparable. The reported test (F(2,135) = 35.3, P = 0.15) is internally inconsistent.
+- **The formula's origin and its authors' caveats** [conklinBrittain2006] (FT: scan from the archived author site; subagent; re-checked) [M] for its own data.
+  - Fibre credit: 1.6 kcal/g = 3 kcal/g × 0.543. The 0.543 is the NDF digestibility of captive chimpanzees on a biscuit of 34% NDF and about 2.5% lignin (miltonDemment1988); the wild Kanyawara diet averages about 8% lignin. Orangutans were given 0.543 kcal/g (3 × 0.181) for their more lignified diet.
+  - Caveats (pp. 460–462):
+    - the 4/4/9 factors are human values for low-fibre mixed diets, and in the authors' words "undoubtedly overestimates" for a high-fibre wild diet;
+    - 4 kcal/g for TNC may be too high, because TNC by difference includes soluble fibre;
+    - faster passage at high intake lowers digestibility.
+  - They suggest a fibre value of 0.5–1.0 kcal/g, and expect that fixing these points would lower all intake values.
+  - Method (Kanyawara 1992–93): 10-min focal rotation, instantaneous record at 60 s, bites per minute whenever possible. 17% of chimpanzee feeding minutes lacked rate or nutrient data and were given the month's mean. Feeding = reaching, picking, handling or chewing, included in the rate.
+  - Table 17.2 (8 months, both sexes pooled): 1,806–3,333 kcal/day with the fibre credit (mean 2,340); 1,206–2,535 without (mean 1,704); fibre 21–33% of the total.
+  - Figure 17.1: lactating females would often fall short of the expenditure estimated by pontzerWrangham2004 without the fibre credit, and have a surplus every month with it.
+- **The formula against doubly labelled water** [simmen2017] (electronic supplement FT, CC-BY figshare; main text not reached; extends §18's abstract entry) [M].
+  - Published wild primate intakes are split into a "high energy value" set (TNC by difference) and a "low energy value" set (measured soluble sugars, with starch and pectin estimated at about 5% of dry matter each where not measured).
+  - Where only TNC by difference exists, intake is multiplied by 0.74, the mean ratio of the two computations across diets (74 ± 8%, Table S3).
+  - In ripe-fruit diets, soluble sugars are 48 ± 13% of TNC by difference; sugars, starch and pectin 68 ± 10%.
+  - Paired with doubly labelled water in the same species (Table S5):
+    - the high-value intake exceeds expenditure by 1,770 ± 2,208 kJ/day (Wilcoxon, P < 0.02, 7 species; ratios 1.13–1.92, derived);
+    - the low-value intake does not differ: +144 ± 606 kJ/day, 8 species; ratios 0.84–1.38, mean 1.04, derived.
+  - Allometric intercepts: 131 ± 25% (high-value) and 108 ± 27% (low-value) of the expenditure line.
+  - No chimpanzee is in the database (Table S1).
+- **Taï intake with the same method** [vale2020] (FT and supplement; subagent; Table S3 re-checked; extends §3) [M].
+  - 7 adult females and 4 males, July 2017 – June 2018, 158 all-day follows (1,643 h).
+  - Items counted per bout, 2 min in 10 extrapolated where the mouth was hidden; rates countable in 2,139 of 3,635 bouts. Nutrient values from nguessan2009; same formula; masses assumed 41.6 (F) and 46.3 kg (M).
+  - Table S3, monthly mean daily intake: females 1,237–4,435 kcal (mean of 12 months 2,707), males 1,112–5,466 (2,943); activity cost 640–1,400 kcal/day.
+  - Derived: 165–166 kcal per kg^0.75 at the assumed masses.
+- **Taï energy balance** [nguessan2009] (FT; subagent; not re-checked): intake method items per minute every 10 min whenever possible, same formula; mean intake not tabulated; balance positive in most seasons; the authors allow that intake was overestimated or expenditure underestimated. Direction only.
+- **Orangutan intake** [knott1998] (FT, author PDF; subagent; re-checked) [M].
+  - Gunung Palung, full-day follows; rates as items per minute every 3 then every 5 min; TNC by difference with NDF at 0.543 kcal/g.
+  - January (mast): females 7,404 kcal/day (10 follows, 1 female), males 8,422.
+  - May: females 1,793 (14 follows, 2 females), males 3,824.
+  - Feeding 240 and 228 min (females), 347 and 303 (males).
+  - Requirement estimate 40 kcal/kg/day.
+- **Orangutan intake by fibre assumption** [harrison2010] (FT, author copy; subagent; formula re-checked) [M]. Sabangau, 46 months, nest-to-nest follows of at least 6 h. Adult female intake 1,624 ± 751 kcal/day with NDF at 1.6 kcal/g, 1,226 at 18.1% digestibility, 1,028 with none. Intake exceeded estimated expenditure in a minority of months.
+- **Feeding time by protocol, Kanyawara** [gilby2010] (FT, accepted manuscript, Harvard DASH; subagent; re-checked) [H].
+  - June 2004 – June 2005; full-day focal follows (mean 9.2 h) of 5 adult males and 5 pregnant or lactating females; 1-min instantaneous samples (81,294; 1,354.9 h).
+  - Feeding 32.9% of samples.
+  - Party-level 15-min scans (any animal feeding) gave a feeding share higher by a mean of 29.7 percentage points (range 15.9–50, by month), while the diet composition agreed.
+- **Activity budgets by site and class** [potts2011] (FT, Harvard DASH author copy; Figures 2 and 3 read from the rendered PDF) [H]. Extends the C7b and C7c entries.
+  - Continuous focal follows of one feeding bout and one travel bout, rotating among party members. Feeding/foraging = ingestion or chewing uninterrupted by other behaviour for at least 1 min; travel = sustained movement over 1 min between patches; grooming counted as rest.
+  - Pooled: Kanyawara (2006) feed 44%, travel 11%, rest 45%; Ngogo (2005–06) 47%, 14%, 34%, other 5%.
+  - By class (digitised ± 2 points): Kanyawara pregnant or lactating females feed about 44%, cycling females 47%, males 44%; Ngogo about 62%, 52%, 43%.
+- **Feeding definitions, Waibira** [villioth2025] (FT, PMC12701709 via BioC) [M]. Continuous focal recording; feeding = all food handling, picking and ingesting; movement within the canopy scored as travel; rest = sitting or lying more than 1 min. Follows 4.1 ± 2.6 h (491 h). Feeding 36% (M) and 37% (F), travel 21 and 20%.
+- **Feeding share of Gombe mothers** [stanton2017] (FT, PMC5659293 via BioC; subagent; re-checked) [M]. 1-min instantaneous point samples, follows of 6–12 h. Mothers fed 0.47–0.49 of follow time by juvenile presence, 0.51 with a female and 0.47 with a male infant.
+- **Infant ingestion rates and feeding time, absolute values** [bray2018] (FT; Figures 2 and 5 digitised from the figure images, ± about 0.3 items/min and ± 1 point; a subagent's independent digitisation agreed) [M]. Extends §12.
+  - Ingestion rates, items per minute (1992–1993 targeted samples, at least 30 s in view, 321 records, five ripe fruits): infants 3.0–9.6, juveniles 5.3–11.8, adolescents 9.4–14.1, adults 8.5–13.4.
+  - Mean of fruits: infants 6.6, juveniles 9.2, adolescents and adults 11.5. Infant ÷ adult 0.57 (0.35–0.83 by fruit); juvenile ÷ adult 0.80. β-based: 0.59 and 0.85.
+  - Feeding time, percent of in-view time (KCP full-day follows, 2010–2013, 1-min point samples, solid food swallowed): 1–2 y 16, 2–3 y 25, 3–4 y 34, 4–5 y 38, juveniles 41–46, adolescents 41; prime-aged adults about 44.5 (mean ± SE band about 40–49).
+- **Infant eating share, Gombe** [lonsdorf2014] (FT, Table 1 re-checked) [M]. 1-min point samples, eating = ingestion of solid food: 0.23% at 0 y, 6.7% at 1 y, 22.0% at 1.5 y, 21.6% at 2 y, 29.7% at 2.5 y, 32.5% at 3 y, 49.1% at 4.5 y. No rates.
+- **Nut-cracking rate by age, Taï** [boesch2019] (FT; subagent; figure digitised by the subagent, not re-checked) [M] for its technique. Adult asymptote about 1.35 nuts per minute. Near zero to 5 y, adult performance at about 10 y. A lower bound for a hard technique, not a diet-wide rate.
+- **Whole-fig analysis** [urquizaHaas2008] (Abs) [M] cross-species. *Ficus perforata* eaten by howler monkeys: seeds are 45% of the fig and are not digested, so whole-fig analysis overstates every nutrient, lipid most. Use: direction of a bias in any intake estimate that analyses figs whole.
+- **Methods guide** [rothman2012] (FT, archived author PDF; subagent; one page unreadable) [M].
+  - Feeding time is a good index of foraging effort and a poor one of intake.
+  - Samples should be processed as the animal processes food (wadges, seeds).
+  - N × 6.25 overestimates digestible protein.
+  - The 4/4/9 factors may not suit primates.
+  - Soluble fibre is probably fully fermented.
+- **Rate × time error, captive** [zinner1999] (Abs) [M] cross-species. 18 hamadryas baboons: feeding time explained 30% of the variance in food eaten; mean ingestion rate × feeding time deviated from true intake by 8–50%.
+- **Pith wadging** [wrangham1991] (FT, KCP site; subagent; not re-checked): pith intake on 5 occasions 5–54 g wet/min. In the published discussion, the share of pith that is wadged rather than swallowed was unknown.
+
+**Reading (derived; nothing here is an input).**
+- T-ENE-1 was measured on nursing mothers. Against the model's lactating class, the field is ×1.44 in intake and ×1.50 in minutes.
+- The field formula credits 60% of Kanyawara energy to fractions not measured as such: TNC by difference beyond sugar, and the fibre credit.
+  - Where the same formula can be paired with doubly labelled water it overshoots by 13–92% (mean 46%).
+  - The sugar-based version matches.
+  - On uwimbabazi2019's own composition, the sugar-based intake is 1,810–2,070 kcal/day (0.73–0.83). For a 31–35 kg nursing mother that needs a PAL of 1.3–1.7 outside lactation, inside the measured primate range.
+- Feeding share at Kanyawara: 33%, 44%, 44.5% and 45% under four protocols and periods; T-ENE-2 is the highest.
+- Infants ingest about 0.57 of the adult's items per minute and juveniles 0.80. These are measured ingestion rates, not per-feeding-minute yields.
+
+**Sources:**
+- *new* uwimbabazi2021: Uwimbabazi M, Raubenheimer D, Tweheyo M, Basuta GI, Conklin-Brittain NL, Wrangham RW, Rothman JM 2021. Nutritional geometry of female chimpanzees (*Pan troglodytes*). *American Journal of Primatology* 83(7):e23269. [doi:10.1002/ajp.23269](https://doi.org/10.1002/ajp.23269) (FT, PMC8225573).
+- *new* conklinBrittain2006: Conklin-Brittain NL, Knott CD, Wrangham RW 2006. Energy intake by wild chimpanzees and orangutans: methodological considerations and a preliminary comparison. In: Hohmann G, Robbins MM, Boesch C (eds) *Feeding Ecology in Apes and Other Primates*, pp. 445–465 (some citations give 445–471). Cambridge University Press (FT, scan; no DOI found; pages from the scan).
+- *new* knott1998: Knott CD 1998. Changes in orangutan caloric intake, energy balance, and ketones in response to fluctuating fruit availability. *International Journal of Primatology* 19(6):1061–1079. [doi:10.1023/A:1020330404983](https://doi.org/10.1023/A:1020330404983) (FT).
+- *new* harrison2010: Harrison ME, Morrogh-Bernard HC, Chivers DJ 2010. Orangutan energetics and the influence of fruit availability in the nonmasting peat-swamp forest of Sabangau, Indonesian Borneo. *International Journal of Primatology* 31(4):585–607. [doi:10.1007/s10764-010-9415-5](https://doi.org/10.1007/s10764-010-9415-5) (FT).
+- *new* gilby2010: Gilby IC, Pokempner AA, Wrangham RW 2010. A direct comparison of scan and focal sampling methods for measuring wild chimpanzee feeding behaviour. *Folia Primatologica* 81(5):254–264. [doi:10.1159/000322354](https://doi.org/10.1159/000322354) (FT, accepted manuscript).
+- *new* stanton2017: Stanton MA, Lonsdorf EV, Pusey AE, Murray CM 2017. Do juveniles help or hinder? Influence of juvenile offspring on maternal behavior and reproductive outcomes in wild chimpanzees (*Pan troglodytes*). *Journal of Human Evolution* 111:152–162. [doi:10.1016/j.jhevol.2017.07.012](https://doi.org/10.1016/j.jhevol.2017.07.012) (FT, PMC5659293).
+- *new* boesch2019: Boesch C, Bombjaková D, Meier A, Mundry R 2019. Learning curves and teaching when acquiring nut-cracking in humans and chimpanzees. *Scientific Reports* 9:1515. [doi:10.1038/s41598-018-38392-8](https://doi.org/10.1038/s41598-018-38392-8) (FT).
+- *new* urquizaHaas2008: Urquiza-Haas T, Serio-Silva JC, Hernández-Salazar LT 2008. Traditional nutritional analyses of figs overestimates intake of most nutrient fractions: a study of *Ficus perforata* consumed by howler monkeys (*Alouatta palliata mexicana*). *American Journal of Primatology* 70(5):432–438. [doi:10.1002/ajp.20510](https://doi.org/10.1002/ajp.20510) (Abs).
+- *new* rothman2012: Rothman JM, Chapman CA, Van Soest PJ 2012. Methods in primate nutritional ecology: a user's guide. *International Journal of Primatology* 33(3):542–566. [doi:10.1007/s10764-011-9568-x](https://doi.org/10.1007/s10764-011-9568-x) (FT, archived author PDF).
+- *new* zinner1999: Zinner D 1999. Relationship between feeding time and food intake in hamadryas baboons (*Papio hamadryas*) and the value of feeding time as predictor of food intake. *Zoo Biology* 18(6):495–505. [doi:10.1002/(SICI)1098-2361(1999)18:6<495::AID-ZOO4>3.0.CO;2-U](https://doi.org/10.1002/(SICI)1098-2361(1999)18:6%3C495::AID-ZOO4%3E3.0.CO;2-U) (Abs).
+- uwimbabazi2019, simmen2017, vale2020, nguessan2009, masi2015, potts2011, villioth2025, bray2018, lonsdorf2014, badescu2022, matsumoto2017, schuppli2016, corpByrne2002, wrangham1991, wrangham1994, miltonDemment1988, pontzerWrangham2004, pontzer2016 and simmen2021 are already listed; the entries above add findings.
+
+**Not verified:**
+- potts2015 (*International Journal of Primatology* 36(6):1101–1119, [doi:10.1007/s10764-015-9880-y](https://doi.org/10.1007/s10764-015-9880-y); Ngogo and Kanyawara foraging efficiency): closed, no abstract in any index.
+- simmen2017 main text.
+- rothman2012 p. 555 (TNC by subtraction; unreadable page).
+- The seed fraction of Kibale figs; any wadge-mass measurement; starch, pectin and soluble-sugar profiles of Kibale foods.
+- Doran 1997, Wrangham 1977, Newton-Fisher 1999 and Pontzer & Wrangham 2004 (full text).
+- Any published bonobo daily intake (none found).
+- Any chimpanzee intake rate in g or kcal per minute by age.
+
+### E.22 Addendum: a circadian sleep gate (stage E2d, 1 October 2026)
+
+Evidence pass for stage E2d (a circadian sleep gate, process C; `docs/staging/e2d-prereg.md`), 1 October 2026. Bibliographic data checked against Crossref on that day. Tags as in this Track E section (FT, Abs, secondary; [H], [M], [L] rate the observation in its own population; "cross-species" and "derived" as marked). "Search agent" = read in full by a literature agent of this stage, numbers relayed with their location; the inputs below were read directly.
+
+**Process C: the oscillator and its light input (inputs, cross-species).**
+- **The two-process model's standard parameters** [skeldonDijk2025] (FT, Europe PMC XML) [H] for humans; [daan1984] (bibliography; the 1984 paper itself not read). Sleep pressure H rises during wake as μ + (H₀ − μ)·exp(−t/χw) and falls during sleep as exp(−t/χs); sleep starts when H reaches the upper threshold H⁺(t) = H₀⁺ + a·C(t) and ends at the lower H⁻(t) = H₀⁻ + a·C(t); C(t) is "the circadian rhythm of wake propensity", in its simplest form a cosine of unit amplitude, with the circadian minimum assigned phase 0 (about 06:00 in young adults). Standard values: χs = 4.2 h, χw = 18.2 h, H₀⁺ = 0.67, H₀⁻ = 0.17, a = 0.12, μ = 1. Without the circadian modulation the cycle has a natural period of 22.6 h with 5.8 h of sleep. The thresholds are read physiologically as the mutual inhibition of sleep-promoting (VLPO) and arousal (monoaminergic) neurons; shifting the drive to the VLPO moves both thresholds together. Use in E2d: input (`circHUpper`, `circHLower`, `circAmp`; χw and χs are E2a's `rhythmSleepRiseH`, `rhythmSleepDecayH`), *assumed* (human).
+- **The circadian pacemaker model** [forger1999] (Abs) with its equations and parameter values as used in [crodelle2023] (FT, Europe PMC XML) [H] for humans. A van der Pol oscillator (x, x_c; x is the core-temperature rhythm, its minimum the temperature minimum) driven by light through a photoreceptor pool n ("process L"): dx/dt = (π/12)(x_c + B); dx_c/dt = (π/12)[μ(x_c − 4x_c³/3) − x((24/(0.99669 τx))² + kB)]; B = G(1 − n)α(I)(1 − 0.4x)(1 − 0.4x_c); α(I) = α₀(I/I₀)^p; dn/dt = α(1 − n) − βn (per minute). μ = 0.23, τx = 24.2 h, k = 0.55, G = 33.75, α₀ = 0.05 min⁻¹, p = 0.5, I₀ = 9,500 lux, β = 0.0075 min⁻¹. The output oscillates between about −1 and 1. Fitted to human phase-response data (forger1999: a three-pulse phase-response experiment and a two-pulse amplitude study). [papatsimpa2021] (FT) gives the same structure in the seventh-order variant (μ = 0.13, q = 1/3, k = 0.55, τ = 24.2 h, a₀ = 0.1, β = 0.007, G = 37, α = a₀√(I/9500)·I/(I + 100)) and places the temperature minimum 0.97 h after the model phase −170.7°: a cross-check of the structure, not used for values. Use in E2d: inputs (`circTauH`, `circMu`, `circK`, `circG`, `circAlpha0`, `circP`, `circI0`, `circBeta`, `circSens`), *assumed* (human).
+- **Intrinsic period, human** [czeisler1999] (Abs) [H]: the intrinsic period of the human pacemaker averages 24.18 h in young and older adults under controlled dim light (forced desynchrony). Agrees with the model's τx = 24.2 h.
+- **Intrinsic period, macaques and squirrel monkeys** (cross-species context). [masudaZhdanova2010] (Abs, search agent) [M]: young adult rhesus macaques in constant dim light (about 10 lux) free-run at 23.4–25.1 h; brighter constant light (about 100 lux) lengthens the period. [zhdanova2012] (FT, search agent): controls 23.5–25.1 h under 10 lux or less (8 young males). [sulzman1979] (secondary, search snippet): squirrel monkeys about 25 h in constant light of 1, 60 or 600 lux. [hobanSulzman1985] (Abs, search agent): 1-h light pulses delay the squirrel monkey clock early in the subjective night and advance it late; none of 10 entrained to a day shorter than 23.5 h. No period has been published for chimpanzees or other great apes (searched). Use: the human 24.2 h lies inside the range of the two diurnal primates measured; the chimpanzee value is unknown.
+- **Light sensitivity, human** [zeitzer2000] (FT, search agent) [H]: one 6.5-h exposure in the early biological night, 3–9,100 lux (21 analysed): maximum delay about 3 h; half the maximal phase delay at 80–160 lux (about 100 lux), half the maximal melatonin suppression at about 50–130 lux; 90% of the maximum at about 550 lux (phase) and 200 lux (suppression); little shift below 15 lux. [khalsa2003] (Abs, search agent) [H]: 6.7-h bright-light pulses, 21 subjects: a type 1 phase-response curve with a fitted peak-to-trough amplitude of 5.02 h, delays before the temperature minimum and advances after it, and no dead zone in the subjective day. Use: context for the model's light drive (fitted to the same kind of data); not separate inputs.
+- **Melatonin and darkness, rhesus macaque** [reppert1979] (Abs, search agent) [M]: cerebrospinal-fluid melatonin was 2 to more than 15 times higher at night, rose shortly after lights-off and fell soon after lights-on (no minutes in the abstract); daytime darkness did not raise it, and the rhythm persisted 6.5 days in constant darkness (Reppert et al. 1981, as relayed). No chimpanzee melatonin rhythm was found. Use: direction (the rhythm is endogenous and light-entrained in a diurnal primate).
+
+**Sleep timing under natural light (targets and context; never inputs).**
+- **Captive chimpanzees under natural light** [videan2005] (FT, dissertation read here; the same data as [videan2006], Abs) [M] captive. Southwest Foundation (Texas) chimpanzees sleeping outdoors "typically retired 15–30 minutes after sunset and rose 45–60 minutes before sunrise" (retiring = reclining and staying inactive for at least 5 min; rising = leaving the sleeping place); an indoor group whose lights went off 3.5 h before sunset retired about 1 h after lights-off and also rose about 45 min before sunrise. Over the whole sample: 8.83 h of sleep (behavioural: lying still, eyes closed, at least 5 min), 10.30 h retired, efficiency 0.86, 3–5 awakenings a night averaging about 20 min (search agent); old adults slept 1.0–1.5 h longer than prime adults. Use in E2d: targets for the sleep episode and the time in the nest (captive, a different latitude, no food in the morning to go to).
+- **Captive chimpanzee sleep, EEG** [campbellTobler1984] (FT, search agent) relaying [bert1970] (secondary): 9.7 h of sleep in a 14-h night recording (17:00–07:00; 3 captive adults, natural light); [freemon1971] (secondary): 10.8 h of a 12-h recording in two 4-year-olds, with naps around 12:00–13:30. [rissGoodall1976] (secondary): six captive adolescents retired 17:48–18:05 indoors (sunset 19:40) and rose at sunrise; outdoors they retired 19:05–19:20 and rose about 06:40. Use: sleep need of chimpanzees, about 9–11 h (target and context).
+- **Humans under natural light** [wright2013] (FT, search agent) [M]: 8 adults camping in Colorado in July (14 h 40 min of daylight): all circadian markers about 2 h earlier than under electric light, melatonin onset near sunset, melatonin offset just after sunrise, sleep onset and offset about 1.2 h earlier, sleep 6.8 h. [stothard2017] (FT, search agent): in winter camping (9 h 20 min of daylight) sleep began about 2.5 h earlier and lasted 9.9 h, and the biological night (melatonin onset to offset) was 14.4 h against 10.0 h in summer. [yetish2015] (FT, search agent) [M]: Hadza, San and Tsimane fall asleep 2.5–4.4 h (mean 3.3 h) after sunset and usually wake before sunrise (about 1 h before in two of the three; the San in summer 1 h after), sleeping 5.7–7.1 h. Use: the human pacemaker entrains to natural light with melatonin onset near sunset; human sleep starts hours after dusk.
+- **Wild chimpanzee sleep** [hozer2026] (Abs, search agent): infrared video at Budongo; nesting in a group lengthened sleep and cut fragmentation but delayed nesting and brought waking earlier. No numbers were obtained (publisher blocked). Use: none yet.
+
+**Sources:**
+- *new* skeldonDijk2025: Skeldon AC, Dijk D-J 2025. The complexity and commonness of the two-process model of sleep regulation from a mathematical perspective. *npj Biological Timing and Sleep* 2:24. [doi:10.1038/s44323-025-00039-z](https://doi.org/10.1038/s44323-025-00039-z) (FT).
+- *new* daan1984: Daan S, Beersma DGM, Borbély AA 1984. Timing of human sleep: recovery process gated by a circadian pacemaker. *American Journal of Physiology* 246(2):R161–R183. [doi:10.1152/ajpregu.1984.246.2.R161](https://doi.org/10.1152/ajpregu.1984.246.2.R161) (bibliography; values through skeldonDijk2025). The E2a source key borbely1982 refers to this model.
+- *new* forger1999: Forger DB, Jewett ME, Kronauer RE 1999. A simpler model of the human circadian pacemaker. *Journal of Biological Rhythms* 14(6):533–538. [doi:10.1177/074873099129000867](https://doi.org/10.1177/074873099129000867) (Abs).
+- *new* crodelle2023: Crodelle J, Vanty C, Booth V 2023. Modeling homeostatic and circadian modulation of human pain sensitivity. *Frontiers in Neuroscience* 17:1166203. [doi:10.3389/fnins.2023.1166203](https://doi.org/10.3389/fnins.2023.1166203) (FT).
+- *new* papatsimpa2021: Papatsimpa C, Schlangen LJM, Smolders KCHJ, Linnartz J-PMG, de Kort YAW 2021. The interindividual variability of sleep timing and circadian phase in humans is influenced by daytime and evening light conditions. *Scientific Reports* 11:13709. [doi:10.1038/s41598-021-92863-z](https://doi.org/10.1038/s41598-021-92863-z) (FT).
+- *new* czeisler1999: Czeisler CA, Duffy JF, Shanahan TL, Brown EN, Mitchell JF, Rimmer DW, Ronda JM, Silva EJ, et al. 1999. Stability, precision, and near-24-hour period of the human circadian pacemaker. *Science* 284(5423):2177–2181. [doi:10.1126/science.284.5423.2177](https://doi.org/10.1126/science.284.5423.2177) (Abs).
+- *new* masudaZhdanova2010: Masuda K, Zhdanova IV 2010. Intrinsic activity rhythms in *Macaca mulatta*: their entrainment to light and melatonin. *Journal of Biological Rhythms* 25(5):361–371. [doi:10.1177/0748730410379382](https://doi.org/10.1177/0748730410379382) (Abs, search agent).
+- *new* zhdanova2012: Zhdanova IV, Masuda K, Bozhokin SV, Rosene DL, González-Martínez J, Schettler S, Samorodnitsky E 2012. Familial circadian rhythm disorder in the diurnal primate, *Macaca mulatta*. *PLoS ONE* 7(3):e33327. [doi:10.1371/journal.pone.0033327](https://doi.org/10.1371/journal.pone.0033327) (FT, search agent).
+- *new* sulzman1979: Sulzman FM, Fuller CA, Moore-Ede MC 1979. Tonic effects of light on the circadian system of the squirrel monkey. *Journal of Comparative Physiology* 129(1):43–50. [doi:10.1007/BF00679910](https://doi.org/10.1007/BF00679910) (secondary).
+- *new* hobanSulzman1985: Hoban TM, Sulzman FM 1985. Light effects on circadian timing system of a diurnal primate, the squirrel monkey. *American Journal of Physiology* 249(2):R274–R280. [doi:10.1152/ajpregu.1985.249.2.R274](https://doi.org/10.1152/ajpregu.1985.249.2.R274) (Abs, search agent).
+- *new* zeitzer2000: Zeitzer JM, Dijk D-J, Kronauer RE, Brown EN, Czeisler CA 2000. Sensitivity of the human circadian pacemaker to nocturnal light: melatonin phase resetting and suppression. *Journal of Physiology* 526(3):695–702. [doi:10.1111/j.1469-7793.2000.00695.x](https://doi.org/10.1111/j.1469-7793.2000.00695.x) (FT, search agent).
+- *new* khalsa2003: Khalsa SBS, Jewett ME, Cajochen C, Czeisler CA 2003. A phase response curve to single bright light pulses in human subjects. *Journal of Physiology* 549(3):945–952. [doi:10.1113/jphysiol.2003.040477](https://doi.org/10.1113/jphysiol.2003.040477) (Abs, search agent).
+- *new* reppert1979: Reppert SM, Perlow MJ, Tamarkin L, Klein DC 1979. A diurnal melatonin rhythm in primate cerebrospinal fluid. *Endocrinology* 104(2):295–301. [doi:10.1210/endo-104-2-295](https://doi.org/10.1210/endo-104-2-295) (Abs, search agent).
+- *new* videan2005: Videan EN 2005. Sleep and sleep-related behaviors in chimpanzee (*Pan troglodytes*). PhD dissertation, Miami University, Oxford, Ohio (OhioLINK ETD miami1114709943; no DOI) (FT).
+- *new* videan2006: Videan EN 2006. Sleep in captive chimpanzee (*Pan troglodytes*): the effects of individual and environmental factors on sleep duration and quality. *Behavioural Brain Research* 169(2):187–192. [doi:10.1016/j.bbr.2005.12.014](https://doi.org/10.1016/j.bbr.2005.12.014) (Abs). Already cited in this Track E section without a list entry.
+- *new* campbellTobler1984: Campbell SS, Tobler I 1984. Animal sleep: a review of sleep duration across phylogeny. *Neuroscience and Biobehavioral Reviews* 8(3):269–300. [doi:10.1016/0149-7634(84)90054-X](https://doi.org/10.1016/0149-7634(84)90054-X) (FT, search agent).
+- *new* bert1970: Bert J, Kripke D, Rhodes J 1970. Electroencephalogram of the mature chimpanzee: twenty-four hour recordings. *Electroencephalography and Clinical Neurophysiology* 28(4):368–373. [doi:10.1016/0013-4694(70)90229-4](https://doi.org/10.1016/0013-4694(70)90229-4) (secondary, through campbellTobler1984).
+- *new* freemon1971: Freemon FR, McNew JJ, Adey WR 1971. Chimpanzee sleep stages. *Electroencephalography and Clinical Neurophysiology* 31(5):485–489. [doi:10.1016/0013-4694(71)90169-6](https://doi.org/10.1016/0013-4694(71)90169-6) (secondary).
+- *new* rissGoodall1976: Riss D, Goodall J 1976. Sleeping behavior and associations in a group of captive chimpanzees. *Folia Primatologica* 25(1):1–11. [doi:10.1159/000155703](https://doi.org/10.1159/000155703) (secondary).
+- *new* wright2013: Wright KP Jr, McHill AW, Birks BR, Griffin BR, Rusterholz T, Chinoy ED 2013. Entrainment of the human circadian clock to the natural light-dark cycle. *Current Biology* 23(16):1554–1558. [doi:10.1016/j.cub.2013.06.039](https://doi.org/10.1016/j.cub.2013.06.039) (FT, search agent).
+- *new* stothard2017: Stothard ER, McHill AW, Depner CM, Birks BR, Moehlman TM, Ritchie HK, Guzzetti JR, Chinoy ED, LeBourgeois MK, Axelsson J, Wright KP Jr 2017. Circadian entrainment to the natural light-dark cycle across seasons and the weekend. *Current Biology* 27(4):508–513. [doi:10.1016/j.cub.2016.12.041](https://doi.org/10.1016/j.cub.2016.12.041) (FT, search agent).
+- *new* yetish2015: Yetish G, Kaplan H, Gurven M, Wood B, Pontzer H, Manger PR, Wilson C, McGregor R, Siegel JM 2015. Natural sleep and its seasonal variations in three pre-industrial societies. *Current Biology* 25(21):2862–2868. [doi:10.1016/j.cub.2015.09.046](https://doi.org/10.1016/j.cub.2015.09.046) (FT, search agent).
+- *new* hozer2026: Hozer C, Ahabwe F, Freymond N, Cirulnikow M, Chandia B, Mbotella M, Samson D, Zuberbühler K 2026. Rank and social context influence sleep in wild chimpanzees. *Current Biology* 36(1):199–208.e4. [doi:10.1016/j.cub.2025.11.057](https://doi.org/10.1016/j.cub.2025.11.057) (Abs, search agent).
+
+**Not verified:** a circadian period, phase-response curve or melatonin profile for chimpanzees or any great ape (none found); Erkert 2008 (*Biological Rhythm Research* 39:229–267, the source of the "1–85 lux" feeding range cited by tagg2018; publisher refused); the minutes between lights-off and the rise of macaque melatonin; Daan et al.'s skewed circadian waveform (the cosine form of skeldonDijk2025 is used); McNew et al. 1972 (a chimpanzee in constant light; no period found); wild chimpanzee sleep durations (hozer2026 numbers not reached).
+
+### E.23 Addendum: food energy from measured sugars, fibre digestibility and gut capacity (stage E1h, 1 October 2026)
+
+Evidence pass for stage E1h (`docs/staging/e1h-prereg.md`), 1 October 2026. Questions: the composition of the Kanyawara foods by type, the exact rule of the sugar-based energy formula, the best-supported fibre digestibility for chimpanzees, and chimpanzee gut capacity and throughput. Bibliographic data checked against Crossref on 1 October 2026. Access: NCBI BioC for PMC author manuscripts; the figshare API for a CC-BY supplement; Crossref and Europe PMC for abstracts and reference lists. Publisher pages that returned a challenge were not bypassed. Tags as in this Track E section.
+
+- **Composition by food type, Kanyawara** [uwimbabazi2019] (FT, PMC7450825 through BioC; Table 2 re-read in full) [H] for the observations. Extends the entries above with the fig and non-fig rows. % of organic matter, mean ± SE (n species):
+  - figs: lipid 3.5 ± 0.7, available protein 6.8 ± 1.9, NDF 49.0 ± 3.8, TNC 40.7 ± 3.6, WSC 9.2 ± 1.2, lignin 17.3 ± 2.7 (12);
+  - non-fig ripe fruit: 5.2 ± 1.9, 10.6 ± 1.3, 37.7 ± 2.9, 46.6 ± 3.7, 20.1 ± 1.2, lignin 10.9 ± 1.7 (24);
+  - all ripe fruit, young leaves and pith as listed above (WSC 16.5, 5.1, 15.5).
+  - Lipid + AP + NDF + TNC sums to 100 ± 0.1 in every row: TNC is by difference on an organic-matter basis.
+  - Use in Track E (E1h): the sugar-based energy of each food (derived): per 100 g organic matter, 4 (WSC + pectin) + 4 AP + 9 lipid + 1.6 NDF against the field formula's 4 TNC + …; ratio 0.746 drupes, 0.649 figs, 0.730 young leaves, 0.799 pith at pectin 5% of dry matter.
+- **The sugar-based formula, exact rule** [simmen2017] (electronic supplement FT, figshare doi:10.6084/m9.figshare.5032301, CC-BY; Note S2 and Tables S3, S5 re-read; main text still not reached) [M]. Corrects the rule as summarised in §E.21:
+  - where a study reported simple soluble sugars, the LEVD model adds 5% starch plus 5% pectin of the dry matter; **where it reported water-soluble carbohydrates (WSC), it adds only 5% pectin**; where only TNC by difference exists, it multiplies the published intake by 0.74;
+  - their review: starch 3–6% of dry matter in ripe and unripe fruit, 1–4% in vegetative parts; pectin 4–6% of dry matter in fruit and leaves eaten by wild howlers, the only primate data;
+  - sugars + starch + pectin = 68 ± 10% of TNC by difference in ripe-fruit diets (n 7), 44 ± 9% in leaf or unripe-fruit diets (n 11); LEVD ÷ HEVD 74 ± 8% overall (Table S3);
+  - Table S5: HEVD − DLW expenditure +1,770 ± 2,208 kJ/day (Wilcoxon W = 28, P < 0.02, 7 species); LEVD − DLW +144 ± 606 kJ/day (t = 0.492, P < 0.7, 8 species). No chimpanzee in the data set;
+  - the fibre term is species-specific digestibility × 3 kcal/g in both models.
+  - Use in Track E: the rule behind `ledgerFruitKcalPerMinSugar`, `ledgerFigKcalPerMinSugar` and `ledgerFallbackKcalPerMinSugar`; the starch and pectin ranges set their bounds.
+- **Chimpanzee fibre digestibility.** 0.543 for NDF in captive chimpanzees on a 34% NDF, about 2.5% lignin biscuit [miltonDemment1988], as reported by [conklinBrittain2006] (FT, re-checked by the field audit) [M] captive. The wild Kanyawara diet averages about 8% lignin (conklinBrittain2006). miltonDemment1988's own full text was not reached (the publisher returned a challenge page; the Elsevier text API refused). Reading: 0.543 is an upper value for wild food; E1b's 0.449 (gorillas on a fibrous diet) is kept.
+- **Gut morphology across primates** [chiversHladik1980] (Abs, via Crossref and Europe PMC) [M]. 180 individuals of 78 mammal species (117 primates); stomach, small intestine, caecum and colon measured by area, weight and volume; in frugivores the stomach and large intestine are "more voluminous" in larger species, while in faunivores their volume follows body size. No chimpanzee value in the abstract; the full text is closed. Use in Track E: the likely source of the captive chimpanzee gut capacity in nakamura2017 (its reference list, read through Crossref, cites no other gut-morphology study); direction only: isometric scaling of gut volume with body mass within a species is an assumption.
+- **Gut capacity, reference** [nakamura2017] (Abs; reference list through Crossref) [M]. No new number: 3,329 cm³ (derived from the abstract) stays the only chimpanzee gut capacity found; the captive animal's mass is not stated in the abstract. E1h's bounds, 60–111 mL/kg, divide it by 30–55 kg.
+- **Gastric emptying** [ardente2011] (Abs), already listed: more than 3 h, less than 16 h. E1b's 3-hour first-order emptying is at the fast end, so the dry-matter throughput it allows is, if anything, high.
+
+**Sources:**
+- *new* chiversHladik1980: Chivers DJ, Hladik CM 1980. Morphology of the gastrointestinal tract in primates: comparisons with other mammals in relation to diet. *Journal of Morphology* 166(3):337–386. [doi:10.1002/jmor.1051660306](https://doi.org/10.1002/jmor.1051660306) (Abs).
+- uwimbabazi2019, simmen2017, miltonDemment1988, conklinBrittain2006, nakamura2017 and ardente2011 are already listed; the entries above add findings.
+
+**Not verified:**
+- simmen2017 main text; miltonDemment1988 full text (digestibility of each fraction, dry-matter intake of the trial animals).
+- chiversHladik1980 full text: the chimpanzee's gut volume by segment and its body mass.
+- Starch, pectin and soluble-sugar profiles of Kibale foods; dry-matter concentration of ape digesta; maximum voluntary dry-matter intake of chimpanzees. None found.
+
+### E.24 Addendum: calls as decisions (stage E4c, 1 October 2026)
 
 Evidence pass for stage E4c (calls as decisions; `docs/staging/e4c-prereg.md`), 1 October 2026. Bibliographic data checked against Crossref on that day. Tags as in this Track E section (FT, Abs, secondary; [H], [M], [L] rate the observation in its own population). Values marked ≈ were read from a published figure, not a table. Spot-checked against the text by the E4c implementer: fedurek2014 (sample, context shares, fusion timing), southern2025 (rate, contexts, replies), bouchard2022a (arrival calls, bond partners), kalanBoesch2015 (event counts), gruberZuberbuhler2013 (calls when alone), crunchant2021 (rates), wilson2007 (time of day).
 

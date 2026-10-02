@@ -1,5 +1,6 @@
 import type { Chimp, Environment, World } from '../types';
 import { V } from './candidates';
+import { circadianOn, circadianTick } from './circadian';
 import { paramsOf, type Params } from './params';
 import { TICK_HOURS, TICK_SECONDS, ix } from './state';
 
@@ -68,13 +69,14 @@ export function sleepStep(P: Params, S: number, asleep: boolean): number {
 const STILL: Record<string, 1> = { rest: 1, shelter: 1, groom: 1, nurse: 1, nest: 1 };
 
 /** Per tick, from needs() when a rhythm switch is on: advances sleep pressure and the thermal load of one animal. */
-export function rhythmNeeds(world: World, c: Chimp, asleep: boolean): void {
+export function rhythmNeeds(world: World, c: Chimp, asleep: boolean): void { // asleep: in a finished nest (life.ts needs)
   const P = paramsOf(world), x = ix(c);
   if (P.rhythmSleep === 1) {
     // stage E2b (nurseWake): her infant drank in her nest last tick (execution.ts nestTick), so she was awake for it
     const nursed = P.nurseWake === 1 && x.nwk === world.tick - 1;
-    const S = sleepStep(P, x.slp ?? 1 - c.energy, asleep && !nursed);
-    x.slp = S; c.energy = 1 - sleepiness(S, world.environment.daylight);
+    // stage E2d (rhythmCircadian; circadian.ts): process C gates sleep, and only sleep, not lying in a nest, discharges S
+    if (circadianOn(P)) circadianTick(world, c, asleep, nursed);
+    else { const S = sleepStep(P, x.slp ?? 1 - c.energy, asleep && !nursed); x.slp = S; c.energy = 1 - sleepiness(S, world.environment.daylight); }
   }
   if (P.rhythmHeat !== 1) return;
   const p = c.position, a = c.action;

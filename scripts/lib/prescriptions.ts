@@ -42,7 +42,6 @@ export const OVERRIDES: Record<string, Override> = {
   nestEveningDrive: oe('clock', 'strength of the evening clock ramp (nestEveningStartH to nestEveningEndH): part of the nest clock'),
   nestMorningDrive: oe('clock', 'strength of the morning stay-in-nest drive: part of the nest clock', [], true),
   nestNightBonus: oe('bonus', 'extra nest drive because it is night: states sleeping at night'),
-  rhythmDarkW: oe('bonus', 'stage E2a nest value in the dark, set a priori to beat a starving animal\'s best meal (docs/staging/e2c-prereg.md §1): states staying in the nest while it is dark, with no consequence of darkness behind it (as nestNightBonus)'),
   boutRestMiddayMin: oe('clock', 'rest bouts are longer between 11:30 and 14:30 by rule (literal clock window in execution.ts)', ['T-ACT-4']),
   boutRestMiddayMax: oe('clock', 'rest bouts are longer between 11:30 and 14:30 by rule (literal clock window in execution.ts)', ['T-ACT-4']),
   boutNestMorningMin: oe('clock', 'nest bouts are short between 05:30 and 12:00 by rule (literal clock window in execution.ts)'),
@@ -74,6 +73,10 @@ export const OVERRIDES: Record<string, Override> = {
   ledgerFruitKcalPerMin: { cls: 'input', kind: 'physiology', reason: 'energy intake rate of a food: kcal per feeding minute on drupes (uwimbabazi2019), the rule\'s own example of an admissible input' },
   ledgerFigKcalPerMin: { cls: 'input', kind: 'physiology', reason: 'energy intake rate of a food: kcal per feeding minute on figs (uwimbabazi2019)' },
   ledgerFallbackKcalPerMin: { cls: 'input', kind: 'physiology', borderline: true, reason: 'energy intake rates of pith and young leaves (uwimbabazi2019), weighted by their Kanyawara feeding-time shares (potts2011): the weights are a field statistic of diet choice, as in fallbackRateRatio' },
+  // stage E1h: the same rates with the energy formula corrected from the foods' measured composition (simmen2017's rule)
+  ledgerFruitKcalPerMinSugar: { cls: 'input', kind: 'physiology', reason: 'energy intake rate of a food: drupes, from measured sugars, protein, lipid and fibre (uwimbabazi2019 Table 2, simmen2017\'s sugar-based formula)' },
+  ledgerFigKcalPerMinSugar: { cls: 'input', kind: 'physiology', reason: 'energy intake rate of a food: figs, from measured sugars, protein, lipid and fibre (uwimbabazi2019 Table 2, simmen2017\'s sugar-based formula)' },
+  ledgerFallbackKcalPerMinSugar: { cls: 'input', kind: 'physiology', borderline: true, reason: 'energy intake rates of pith and young leaves from their measured composition (uwimbabazi2019, simmen2017), weighted by their Kanyawara feeding-time shares (potts2011) as ledgerFallbackKcalPerMin' },
   ledgerWalkJPerKgM: { cls: 'input', kind: 'physics', reason: 'net cost of transport measured on walking chimpanzees (sockol2007 Table 1): the rule\'s "cost of walking a metre"' },
   // stage E2a (Track E audit): the rules call it a design weight; it states the outcome
   rhythmDarkW: oe('bonus', 'the nest\'s value in darkness, set a priori (2.2) so that a nest in the dark beats a starving animal\'s best meal: it states that animals stay in their nests while it is dark. Nothing in the simulated world makes darkness costly, and E2b found it sets the dawn departure (staged T-RHY-3) more than any food or competitor term', [], true),
@@ -209,7 +212,11 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   fallbackHungerPerH: { when: P => P.energyLedger !== 1, why: 'read only in the timer branches of forageTick (execution.ts) and leafRate (intake.ts), not while energyLedger is 1' },
   fallbackRateRatio: { when: P => P.energyLedger !== 1, why: 'read only in the timer branches (fallback.ts eatFallback, intake.ts); with energyLedger 1 fallback foods are worth ledgerFallbackKcalPerMin' },
   condTauD: { when: P => P.energyLedger !== 1, why: 'condition is a running average of 1 − hunger only without the ledger (src/sim/life.ts slowLife); with energyLedger 1 it reads reserves (energy.ts ledgerSlow)' },
-  ...same(['ledgerFruitKcalPerMin', 'ledgerFigKcalPerMin', 'ledgerFallbackKcalPerMin', 'ledgerWalkJPerKgM'], P => P.energyLedger === 1, 'read only by the energy ledger (src/sim/energy.ts, fallback.ts, intake.ts) while energyLedger is 1'),
+  ledgerWalkJPerKgM: { when: P => P.energyLedger === 1, why: 'read only by the energy ledger (src/sim/energy.ts) while energyLedger is 1' },
+  // stage E1h (docs/staging/e1h-prereg.md): ledgerFoodEnergyFix swaps the field formula's food energy for the sugar-based
+  // values (all inputs, so the count does not change)
+  ...same(['ledgerFruitKcalPerMin', 'ledgerFigKcalPerMin', 'ledgerFallbackKcalPerMin'], P => P.energyLedger === 1 && P.ledgerFoodEnergyFix !== 1, 'read only by the energy ledger (src/sim/energy.ts plantKcalPerMin, via fallback.ts and intake.ts) while energyLedger is 1, and not while ledgerFoodEnergyFix is 1 (stage E1h)'),
+  ...same(['ledgerFruitKcalPerMinSugar', 'ledgerFigKcalPerMinSugar', 'ledgerFallbackKcalPerMinSugar'], P => P.energyLedger === 1 && P.ledgerFoodEnergyFix === 1, 'read only while energyLedger and ledgerFoodEnergyFix are 1 (src/sim/energy.ts plantKcalPerMin, stage E1h)'),
   // stages E1b, E1c, E1e: design entries the sub-switches replace (they do not move the count)
   ...same(['selfFeedStartY', 'fruitIntakeYoungFactor'], P => !(P.energyLedger === 1 && P.ledgerInfantIntake === 1), 'replaced by intake capacity by body size (energy.ts intakeSize) in execution.ts forageTick, intake.ts and energy.ts while energyLedger and ledgerInfantIntake are 1 (stage E1c)'),
   ledgerGutCapKcalPerKg: { when: P => P.energyLedger === 1 && P.ledgerDigesta !== 1, why: 'read only by the energy ledger, and there only while ledgerDigesta is not 1: the digesta gut is sized in dry matter (src/sim/energy.ts gutCap, stage E1b)' },
@@ -222,7 +229,7 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   ...same(['energySleepPerH', 'energyRestPerH', 'energyRunPerH', 'energyWalkPerH', 'energyOtherPerH'], P => P.rhythmSleep !== 1,
     'with rhythmSleep 1 energy = 1 − sleep pressure × darkness, set every tick right after the timer step (src/sim/life.ts needs → rhythm.ts rhythmNeeds), and urgency.ts reads sleep pressure; the timer step survives only in the seed of sleep pressure at an animal\'s first tick (one 15 s step). src/decide/facts.ts still copies it into the Jev facts (model arms only)'),
   // stage E2c (docs/staging/e2c-prereg.md): darkCost replaces the darkness weight by the consequences of darkness
-  rhythmDarkW: { when: P => P.rhythmSleep === 1 && P.darkCost !== 1, why: 'read only by the E2a nest value (rhythmSleep 1), and not while darkCost is 1 (src/sim/rhythm.ts nestValue, src/sim/candidates.ts)' },
+  rhythmDarkW: { when: P => P.rhythmSleep === 1 && P.darkCost !== 1 && P.rhythmCircadian !== 1, why: 'read only by the E2a nest value (rhythmSleep 1), and not while darkCost is 1 or rhythmCircadian is 1 (src/sim/rhythm.ts nestValue, src/sim/candidates.ts; stage E2d: process C, src/sim/circadian.ts)' },
   // stage E2a: the thermal load replaces the midday rest clock
   ...same(['boutRestMiddayMin', 'boutRestMiddayMax'], P => P.rhythmHeat !== 1, 'the 11:30–14:30 rest bout is not evaluated while rhythmHeat is 1 (src/sim/execution.ts boutHours)'),
   // stage E1f (docs/staging/e1f-prereg.md): ledgerGrowPotential replaces the stylized growth knees by captive growth rates
@@ -256,6 +263,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   ledgerGrowPotential: { stage: 'E1f', needs: { energyLedger: 1, ledgerGrowSurplus: 1 }, removesNothing: 'replaces the stylized growth knees (ledgerMassMatureFemaleY, ledgerMassMatureMaleY, design) with captive growth rates (e1f-prereg)' },
   ledgerNurseBout: { stage: 'E1f', needs: { energyLedger: 1 }, removesNothing: 'one nursing rule in place of the E1d and E1e terms; the weaning refusal roll (weanRefuseMaxP) stays (e1f-prereg)' },
   ledgerDrive: { stage: 'E1e', needs: { energyLedger: 1 }, removesNothing: 'replaces the appetite readout (ledgerAppetiteSet, ledgerAppetiteGain, design) with a two-signal drive (e1e-prereg)' },
+  ledgerFoodEnergyFix: { stage: 'E1h', needs: { energyLedger: 1 }, removesNothing: 'corrects an input (food energy per feeding minute: the field formula\'s values out, the sugar-based values in, all classed input); no prescription is switched out (e1h-prereg §6)' },
   rhythmSleep: { stage: 'E2a', needs: {} },
   rhythmHeat: { stage: 'E2a', needs: {} },
   rhythmFreeNight: { stage: 'E2a', needs: { rhythmSleep: 1 } },
@@ -263,6 +271,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   nestLightDecide: { stage: 'E2b', needs: { rhythmSleep: 1 }, removesNothing: 're-decides at nest-bout ends in rising light; rgMaxAgeH stays in use elsewhere (e2b-prereg §8)' },
   nurseWake: { stage: 'E2b', needs: { energyLedger: 1, ledgerNightNurse: 1, rhythmSleep: 1 }, removesNothing: 'adds a waking tick to the mother\'s sleep pressure (e2b-prereg §8)' },
   darkCost: { stage: 'E2c', needs: { rhythmSleep: 1 } },
+  rhythmCircadian: { stage: 'E2d', needs: { rhythmSleep: 1 } },
   urgencyChoice: { stage: 'E3', needs: {} },
   urgencyPersist: { stage: 'E3', needs: {} },
   urgencySwitchCost: { stage: 'E3', needs: {} },

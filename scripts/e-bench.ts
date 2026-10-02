@@ -56,6 +56,14 @@ export const NEEDS_YEAR: Record<string, string> = {
   ...Object.fromEntries(['T-SOC-1', 'T-SOC-7', 'T-SOC-11', 'T-DEM-1', 'T-DEM-2', 'T-DEM-3', 'T-DEM-4', 'T-DEM-9', 'T-DEM-10', 'T-DEM-11', 'T-DEM-12', 'T-DEM-13'].map(id => [id, 'life history over years'])),
 };
 export const YEAR_DAYS = 365;
+/**
+ * Rare-event rows (Track E handoff §4.5, registered 1 October 2026). Under the 90-day cap each rests on a handful of
+ * events (T-HUN-4 a regression over few hunts, T-BRD-1 few border stops), so a perturbation that changes nothing but
+ * one draw moves each by up to ~1, and the two were two thirds of the baseline's held-out sum. They stay in every sum;
+ * every sum and every comparison is also reported without them, so no stage sets them aside by hand.
+ */
+export const RARE_EVENT_ROWS: readonly string[] = ['T-HUN-4', 'T-BRD-1'];
+const rare = (id: string) => RARE_EVENT_ROWS.includes(id);
 /** Flags under which the scorer reports a row but never counts it: kept out of the sums here too. */
 const EXCLUDING_FLAGS = ['compromised', 'not scorable', 'instrument below bar'];
 
@@ -100,10 +108,15 @@ export function benchRows(card: CardRow[], targets: Target[], days = YEAR_DAYS):
   });
 }
 
-export interface Distances { fitted: DistanceSum; heldOut: DistanceSum; fittedEncoded: DistanceSum; heldOutEncoded: DistanceSum; sealed: number }
+export interface Distances {
+  fitted: DistanceSum; heldOut: DistanceSum; fittedEncoded: DistanceSum; heldOutEncoded: DistanceSum;
+  /** The fitted and held-out sums without RARE_EVENT_ROWS. */
+  fittedNoRare: DistanceSum; heldOutNoRare: DistanceSum; sealed: number;
+}
 export function distances(rows: BenchRow[]): Distances {
   const sum = (keep: (r: BenchRow) => boolean) => sumDistances(rows.filter(r => !r.sealed && keep(r)).map(r => ({ d: { kind: r.kind as RowDistance['kind'], distance: r.distance, oneSided: r.oneSided, degenerate: r.degenerate }, verdict: r.verdict, excluded: r.excluded, window: r.window })));
-  return { fitted: sum(r => r.role === 'fitted'), heldOut: sum(r => r.role === 'held-out'), fittedEncoded: sum(r => r.role === 'fitted' && r.encoded), heldOutEncoded: sum(r => r.role === 'held-out' && r.encoded), sealed: rows.filter(r => r.sealed).length };
+  return { fitted: sum(r => r.role === 'fitted'), heldOut: sum(r => r.role === 'held-out'), fittedEncoded: sum(r => r.role === 'fitted' && r.encoded), heldOutEncoded: sum(r => r.role === 'held-out' && r.encoded),
+    fittedNoRare: sum(r => r.role === 'fitted' && !rare(r.id)), heldOutNoRare: sum(r => r.role === 'held-out' && !rare(r.id)), sealed: rows.filter(r => r.sealed).length };
 }
 
 export interface BenchDoc {
@@ -123,11 +136,14 @@ export interface BenchDoc {
 // ---------------------------------------------------------------------------------------------------------------------
 
 const counted = (r: BenchRow | undefined) => !!r && !r.sealed && !r.excluded && !r.window && r.kind === 'numeric' && r.distance !== null;
+export interface HeadlineChange { before: number; after: number; raw: number; common: number; commonRows: number; commonNoRare: number; commonRowsNoRare: number }
 export interface Comparison {
   rows: { id: string; role: string; before: number | null; after: number | null; delta: number | null; beforeVerdict: string; afterVerdict: string }[];
-  /** Change in each headline: `raw` over each run's own rows; `common` over rows summed in both runs (the fair comparison). */
-  fitted: { before: number; after: number; raw: number; common: number; commonRows: number };
-  heldOut: { before: number; after: number; raw: number; common: number; commonRows: number };
+  /**
+   * Change in each headline: `raw` over each run's own rows; `common` over rows summed in both runs (the fair
+   * comparison); `commonNoRare` the same without RARE_EVENT_ROWS.
+   */
+  fitted: HeadlineChange; heldOut: HeadlineChange;
   prescriptionCount: { before: number; after: number; delta: number };
   viability: { before: string; after: string };
   /** Rows summed in one run only (insufficient data in the other, or a changed flag). */
@@ -136,10 +152,16 @@ export interface Comparison {
 }
 export function compare(before: BenchDoc, after: BenchDoc): Comparison {
   const B = new Map(before.rows.map(r => [r.id, r])), rows: Comparison['rows'] = [], onlyBefore: string[] = [], onlyAfter: string[] = [];
-  const head = (role: 'fitted' | 'held-out', b: number, a: number) => {
-    let common = 0, n = 0;
-    for (const r of after.rows) { const p = B.get(r.id); if (r.role === role && counted(r) && counted(p)) { common += r.distance! - p!.distance!; n++; } }
-    return { before: b, after: a, raw: a - b, common, commonRows: n };
+  const head = (role: 'fitted' | 'held-out', b: number, a: number): HeadlineChange => {
+    let common = 0, n = 0, commonNoRare = 0, nNoRare = 0;
+    for (const r of after.rows) {
+      const p = B.get(r.id);
+      if (r.role !== role || !counted(r) || !counted(p)) continue;
+      const d = r.distance! - p!.distance!;
+      common += d; n++;
+      if (!rare(r.id)) { commonNoRare += d; nNoRare++; }
+    }
+    return { before: b, after: a, raw: a - b, common, commonRows: n, commonNoRare, commonRowsNoRare: nNoRare };
   };
   for (const r of after.rows) {
     if (r.sealed) continue;
@@ -173,6 +195,7 @@ export function benchMarkdown(doc: BenchDoc, cmp?: { other: string; c: Compariso
   o.push('## Headline', '', '| Number | Value |', '| --- | --- |');
   o.push(`| 1. Summed band distance, fitted rows | **${f(doc.headline.fittedDistance)}** over ${doc.distance.fitted.rows} rows (${doc.distance.fitted.outside} outside their band); left out: ${leftOut(doc.distance.fitted)} |`);
   o.push(`| 2. Summed band distance, held-out rows | **${f(doc.headline.heldOutDistance)}** over ${doc.distance.heldOut.rows} rows (${doc.distance.heldOut.outside} outside their band); left out: ${leftOut(doc.distance.heldOut)}, ${doc.distance.sealed} sealed |`);
+  o.push(`| 1–2 without the rare-event rows (${RARE_EVENT_ROWS.join(', ')}) | fitted ${f(doc.distance.fittedNoRare.sum)} over ${doc.distance.fittedNoRare.rows} rows; held-out ${f(doc.distance.heldOutNoRare.sum)} over ${doc.distance.heldOutNoRare.rows} rows |`);
   o.push(`| 3. Prescription count | **${doc.headline.prescriptionCount}** (${doc.prescriptions.registryActive} outcome-encoding registry entries in use + ${doc.prescriptions.literals} literals in src/sim) |`);
   o.push(`| Viability | **${doc.headline.viability}**${v ? `: births ${v.verdict.births}, deaths ${v.verdict.deaths}, births ÷ deaths ${f(v.verdict.ratio, 2)}, starvation deaths ${v.verdict.starvationDeaths}${v.verdict.fewEvents ? '; too few births and deaths to compare them' : ''}${v.verdict.reasons.length ? ` (${v.verdict.reasons.join('; ')})` : ''}` : ''} |`, '');
   o.push('Band distance is 0 inside a row\'s band, else the gap to the nearest edge ÷ the band width (one-sided bands: ÷ the edge value); rows scored on parts take the mean of their parts. Pattern rows have no distance and are counted apart; so are rows without a value. Rows that need a longer window than the run, and compromised, not-scorable and instrument-below-bar rows, are shown and never summed; sealed rows show nothing (scripts/lib/band-distance.ts).', '');
@@ -187,11 +210,11 @@ export function benchMarkdown(doc: BenchDoc, cmp?: { other: string; c: Compariso
     const c = cmp.c;
     o.push(`## Compared with ${cmp.other}`, '');
     if (!c.sameSettings) o.push('**The two runs differ in length or seeds: the differences below are not a like-for-like comparison.**', '');
-    o.push('| Number | Before | After | Change | Change on rows scored in both |', '| --- | --- | --- | --- | --- |');
-    o.push(`| Fitted distance | ${f(c.fitted.before)} | ${f(c.fitted.after)} | ${signed(c.fitted.raw)} | ${signed(c.fitted.common)} (${c.fitted.commonRows} rows) |`);
-    o.push(`| Held-out distance | ${f(c.heldOut.before)} | ${f(c.heldOut.after)} | ${signed(c.heldOut.raw)} | ${signed(c.heldOut.common)} (${c.heldOut.commonRows} rows) |`);
-    o.push(`| Prescription count | ${c.prescriptionCount.before} | ${c.prescriptionCount.after} | ${signed(c.prescriptionCount.delta, 0)} | |`);
-    o.push(`| Viability | ${c.viability.before} | ${c.viability.after} | | |`, '');
+    o.push(`| Number | Before | After | Change | Change on rows scored in both | … without ${RARE_EVENT_ROWS.join(' and ')} |`, '| --- | --- | --- | --- | --- | --- |');
+    o.push(`| Fitted distance | ${f(c.fitted.before)} | ${f(c.fitted.after)} | ${signed(c.fitted.raw)} | ${signed(c.fitted.common)} (${c.fitted.commonRows} rows) | ${signed(c.fitted.commonNoRare)} (${c.fitted.commonRowsNoRare} rows) |`);
+    o.push(`| Held-out distance | ${f(c.heldOut.before)} | ${f(c.heldOut.after)} | ${signed(c.heldOut.raw)} | ${signed(c.heldOut.common)} (${c.heldOut.commonRows} rows) | ${signed(c.heldOut.commonNoRare)} (${c.heldOut.commonRowsNoRare} rows) |`);
+    o.push(`| Prescription count | ${c.prescriptionCount.before} | ${c.prescriptionCount.after} | ${signed(c.prescriptionCount.delta, 0)} | | |`);
+    o.push(`| Viability | ${c.viability.before} | ${c.viability.after} | | | |`, '');
     if (c.onlyBefore.length || c.onlyAfter.length) o.push(`Rows summed in one run only: before ${c.onlyBefore.join(', ') || 'none'}; after ${c.onlyAfter.join(', ') || 'none'}.`, '');
     o.push('| Row | Role | Before | After | Change in distance | Verdict before → after |', '| --- | --- | --- | --- | --- | --- |');
     for (const r of [...c.rows].sort((a, b) => Math.abs(b.delta ?? 0) - Math.abs(a.delta ?? 0))) if ((r.delta ?? 0) !== 0 || r.beforeVerdict !== r.afterVerdict || (r.before === null) !== (r.after === null)) o.push(`| ${r.id} | ${r.role} | ${f(r.before)} | ${f(r.after)} | ${signed(r.delta)} | ${r.beforeVerdict} → ${r.afterVerdict} |`);
@@ -225,6 +248,7 @@ function printStdout(doc: BenchDoc, cmp?: Comparison) {
   const v = doc.viability;
   console.log(`\n1. fitted band distance     ${f(doc.headline.fittedDistance)}   (${sumLine(doc.distance.fitted)})`);
   console.log(`2. held-out band distance   ${f(doc.headline.heldOutDistance)}   (${sumLine(doc.distance.heldOut)}; ${doc.distance.sealed} sealed)`);
+  console.log(`   without ${RARE_EVENT_ROWS.join(' and ')}   fitted ${f(doc.distance.fittedNoRare.sum)} over ${doc.distance.fittedNoRare.rows} rows, held-out ${f(doc.distance.heldOutNoRare.sum)} over ${doc.distance.heldOutNoRare.rows} rows`);
   console.log(`3. prescription count       ${doc.headline.prescriptionCount}   (${doc.prescriptions.registryActive} registry entries in use + ${doc.prescriptions.literals} literals${doc.prescriptions.inactive.length ? `; not in use: ${doc.prescriptions.inactive.join(', ')}` : ''})`);
   console.log(`   viability                ${doc.headline.viability}${v ? `   births ${v.verdict.births}, deaths ${v.verdict.deaths}, ratio ${f(v.verdict.ratio, 2)}, starvation deaths ${v.verdict.starvationDeaths}${v.verdict.fewEvents ? '; too few births and deaths to compare them' : ''}${v.verdict.reasons.length ? `; ${v.verdict.reasons.join('; ')}` : ''}` : ''}`);
   if (v) for (const s of v.perSeed) console.log(`     seed ${pad(String(s.seed), 4)} living ${s.livingStart} → ${s.livingEnd}, births ${s.births}, deaths ${s.deaths}, ratio ${f(s.ratio, 2)}, starvation ${s.starvationDeaths}, adult hunger ${f(s.medianAdultHunger, 2)}, lactating ${f(s.medianLactatingHunger, 2)}`);
@@ -233,8 +257,9 @@ function printStdout(doc: BenchDoc, cmp?: Comparison) {
   for (const r of furthest(doc.rows)) console.log(`  ${pad(r.id, 10)} ${pad(r.role, 9)} ${pad(f(r.distance), 8)} ${r.metric} (band ${r.band}; value ${r.partDistances ? Object.entries(r.parts).filter(([k]) => k in r.partDistances!).map(([k, x]) => `${k} ${f(x, 2)}`).join(', ') : f(r.pooled, 2)})`);
   if (cmp) {
     console.log(`\nBefore → after${cmp.sameSettings ? '' : '   (the runs differ in length or seeds: not like for like)'}`);
-    console.log(`  fitted distance     ${f(cmp.fitted.before)} → ${f(cmp.fitted.after)}   ${signed(cmp.fitted.raw)}   (on ${cmp.fitted.commonRows} rows scored in both: ${signed(cmp.fitted.common)})`);
-    console.log(`  held-out distance   ${f(cmp.heldOut.before)} → ${f(cmp.heldOut.after)}   ${signed(cmp.heldOut.raw)}   (on ${cmp.heldOut.commonRows} rows scored in both: ${signed(cmp.heldOut.common)})`);
+    const common = (h: HeadlineChange) => `on ${h.commonRows} rows scored in both: ${signed(h.common)}; without ${RARE_EVENT_ROWS.join(' and ')}, on ${h.commonRowsNoRare}: ${signed(h.commonNoRare)}`;
+    console.log(`  fitted distance     ${f(cmp.fitted.before)} → ${f(cmp.fitted.after)}   ${signed(cmp.fitted.raw)}   (${common(cmp.fitted)})`);
+    console.log(`  held-out distance   ${f(cmp.heldOut.before)} → ${f(cmp.heldOut.after)}   ${signed(cmp.heldOut.raw)}   (${common(cmp.heldOut)})`);
     console.log(`  prescription count  ${cmp.prescriptionCount.before} → ${cmp.prescriptionCount.after}   ${signed(cmp.prescriptionCount.delta, 0)}`);
     console.log(`  viability           ${cmp.viability.before} → ${cmp.viability.after}`);
     if (cmp.onlyBefore.length || cmp.onlyAfter.length) console.log(`  rows summed in one run only: before ${cmp.onlyBefore.join(', ') || 'none'}; after ${cmp.onlyAfter.join(', ') || 'none'}`);

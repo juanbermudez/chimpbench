@@ -14,6 +14,8 @@ const TRACK_E_SWITCHES = [
   'departRace', 'nurseWake', 'nestLightDecide', // E2b
   'ledgerNurseBout', 'ledgerGrowPotential', // E1f
   'darkCost', // E2c
+  'rhythmCircadian', // E2d
+  'ledgerFoodEnergyFix', // E1h
   'callValue', // E4c
 ] as const;
 

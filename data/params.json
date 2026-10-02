@@ -2801,7 +2801,7 @@
    "symbol": "P.callValue",
    "file": "src/sim/calls.ts",
    "integer": true,
-   "notes": "Stage E4c switch (docs/staging/e4c-prereg.md): calls are value comparisons from the caller's own perception and memory (src/sim/calls.ts). A pant-hoot's gain is (contactCallBase + contactCallW × social need) × the share of the caller's ally bond weight not seen or heard within callFixH × the staleness of its own last pant-hoot (callFixH since it, or the distance moved since it ÷ sightDayM); its cost is the C6 hush and, at a crown, (contactCallBase + contactCallW) × the share of its need lost to the community members it remembers within earshot. It is offered as the 'call' act at decision points when positive (replacing the contact, chorus and food-call variants) and given on arrival in a crown when positive (replacing the 50% coin at rich figs). Travel hoos and food grunts are given when the bond with the companions who would otherwise not know exceeds the share of the need lost to them. Removes the travel pant-hoot hazard (travelCallPerH, travelCallGapH), the contact gate and quota (fewer than 2 in sight, contactCallGapH), the chorus clock windows (06:24–07:24, 18:00–19:00), the arrival coin, travelHooP, travelHooAllyP and the foodCall* probabilities. 0 = today, bit-identical. Ablation switch."
+   "notes": "Stage E4c switch (docs/staging/e4c-prereg.md): calls are value comparisons from the caller's own perception and memory (src/sim/calls.ts). A pant-hoot's gain is (contactCallBase + contactCallW × social need) × the share of the caller's ally bond weight not seen or heard within callFixH × the staleness of its own last pant-hoot (callFixH since it, or the distance moved since it ÷ sightDayM); its cost is the C6 hush and, at a crown, (contactCallBase + contactCallW) × the share of its need lost to the community members likely within earshot (iteration 1: every member aged 5 or more it does not see × the share of its range within hearPantHootM; e4c-prereg §8). It is offered as the 'call' act at decision points when positive (replacing the contact, chorus and food-call variants) and given on arrival in a crown when positive (replacing the 50% coin at rich figs). Travel hoos and food grunts are given when the bond with the companions who would otherwise not know exceeds the share of the need lost to them. Removes the travel pant-hoot hazard (travelCallPerH, travelCallGapH), the contact gate and quota (fewer than 2 in sight, contactCallGapH), the chorus clock windows (06:24–07:24, 18:00–19:00), the arrival coin, travelHooP, travelHooAllyP and the foodCall* probabilities. 0 = today, bit-identical. Ablation switch."
   },
   {
    "id": "callWhimperMin",
@@ -3088,6 +3088,293 @@
    },
    "notes": "Cell of the per-tick chimp spatial index for perception and parties; 0 = scan all living (compressed). Field: party-link size (design, performance).",
    "integer": true
+  },
+  {
+   "id": "circAlpha0",
+   "group": "needs",
+   "value": 0.05,
+   "units": "per min",
+   "range": [
+    0.025,
+    0.1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.001,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.circAlpha0",
+   "file": "src/sim/circadian.ts",
+   "notes": "Stage E2d (docs/staging/e2d-prereg.md, rhythmCircadian): photoreceptor activation rate at I0 (alpha_0; alpha = alpha_0 (I / I0)^p). Human circadian pacemaker model (forger1999, equations and values as in crodelle2023; research.md E.22) [H] for humans; no chimpanzee value exists, so assumed (cross-species)."
+  },
+  {
+   "id": "circAmp",
+   "group": "needs",
+   "value": 0.12,
+   "units": "S units",
+   "range": [
+    0.07,
+    0.2
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    0.4
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.circAmp",
+   "file": "src/sim/circadian.ts",
+   "notes": "Stage E2d (docs/staging/e2d-prereg.md, rhythmCircadian): amplitude of the circadian modulation of both thresholds (a; H = H0 + a C, C the oscillator's x). Two-process model standard value (daan1984 via skeldonDijk2025) [H] for humans; cross-species, assumed. Range: 0.07 in skeldonDijk2025's alternative simulations."
+  },
+  {
+   "id": "circBeta",
+   "group": "needs",
+   "value": 0.0075,
+   "units": "per min",
+   "range": [
+    0.00375,
+    0.015
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.0001,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.circBeta",
+   "file": "src/sim/circadian.ts",
+   "notes": "Stage E2d (docs/staging/e2d-prereg.md, rhythmCircadian): photoreceptor recovery rate (beta). Human circadian pacemaker model (forger1999, equations and values as in crodelle2023; research.md E.22) [H] for humans; no chimpanzee value exists, so assumed (cross-species)."
+  },
+  {
+   "id": "circEntrainD",
+   "group": "needs",
+   "value": 20,
+   "units": "d",
+   "range": [
+    10,
+    40
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    365
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "P.circEntrainD",
+   "file": "src/sim/circadian.ts",
+   "integer": true,
+   "notes": "Stage E2d (docs/staging/e2d-prereg.md, rhythmCircadian): length of the entrainment run that sets an animal's oscillator at its first tick with the switch on (floor light while awake, eyes closed while asleep, clear sky). Design: only the initial state; the 30-day burn-in removes what is left of it."
+  },
+  {
+   "id": "circG",
+   "group": "needs",
+   "value": 33.75,
+   "units": "",
+   "range": [
+    16.9,
+    67.5
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    500
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.circG",
+   "file": "src/sim/circadian.ts",
+   "notes": "Stage E2d (docs/staging/e2d-prereg.md, rhythmCircadian): scaling of the light drive B = G (1 - n) alpha (G). Human circadian pacemaker model (forger1999, equations and values as in crodelle2023; research.md E.22) [H] for humans; no chimpanzee value exists, so assumed (cross-species). 37 in the seventh-order variant (papatsimpa2021)."
+  },
+  {
+   "id": "circHLower",
+   "group": "needs",
+   "value": 0.17,
+   "units": "S units",
+   "range": [
+    0.1,
+    0.25
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    0.5
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.circHLower",
+   "file": "src/sim/circadian.ts",
+   "notes": "Stage E2d (docs/staging/e2d-prereg.md, rhythmCircadian): mean lower (waking) threshold of sleep pressure, H0-. Two-process model standard value (daan1984 via skeldonDijk2025) [H] for humans; cross-species, assumed."
+  },
+  {
+   "id": "circHUpper",
+   "group": "needs",
+   "value": 0.67,
+   "units": "S units",
+   "range": [
+    0.6,
+    0.75
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.3,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.circHUpper",
+   "file": "src/sim/circadian.ts",
+   "notes": "Stage E2d (docs/staging/e2d-prereg.md, rhythmCircadian): mean upper (sleep-onset) threshold of sleep pressure, H0+. Two-process model standard value (daan1984, as given in skeldonDijk2025; research.md E.22) [H] for humans; cross-species, assumed. Range: 0.75 in skeldonDijk2025's alternative simulations."
+  },
+  {
+   "id": "circI0",
+   "group": "needs",
+   "value": 9500,
+   "units": "lux",
+   "range": [
+    4750,
+    19000
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    100,
+    100000
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.circI0",
+   "file": "src/sim/circadian.ts",
+   "notes": "Stage E2d (docs/staging/e2d-prereg.md, rhythmCircadian): reference illuminance of the light-activation rate (I0). Human circadian pacemaker model (forger1999, equations and values as in crodelle2023; research.md E.22) [H] for humans; no chimpanzee value exists, so assumed (cross-species)."
+  },
+  {
+   "id": "circK",
+   "group": "needs",
+   "value": 0.55,
+   "units": "",
+   "range": [
+    0.275,
+    1.1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    5
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.circK",
+   "file": "src/sim/circadian.ts",
+   "notes": "Stage E2d (docs/staging/e2d-prereg.md, rhythmCircadian): effect of the light drive on the oscillator's period (k). Human circadian pacemaker model (forger1999, equations and values as in crodelle2023; research.md E.22) [H] for humans; no chimpanzee value exists, so assumed (cross-species)."
+  },
+  {
+   "id": "circMu",
+   "group": "needs",
+   "value": 0.23,
+   "units": "",
+   "range": [
+    0.13,
+    0.3
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.01,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.circMu",
+   "file": "src/sim/circadian.ts",
+   "notes": "Stage E2d (docs/staging/e2d-prereg.md, rhythmCircadian): stiffness of the van der Pol oscillator (mu). Human circadian pacemaker model (forger1999, equations and values as in crodelle2023; research.md E.22) [H] for humans; no chimpanzee value exists, so assumed (cross-species). Range: 0.13 in the seventh-order variant (papatsimpa2021)."
+  },
+  {
+   "id": "circP",
+   "group": "needs",
+   "value": 0.5,
+   "units": "",
+   "range": [
+    0.5,
+    0.6
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.1,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.circP",
+   "file": "src/sim/circadian.ts",
+   "notes": "Stage E2d (docs/staging/e2d-prereg.md, rhythmCircadian): exponent of the light-activation rate (p). Human circadian pacemaker model (forger1999, equations and values as in crodelle2023; research.md E.22) [H] for humans; no chimpanzee value exists, so assumed (cross-species). 0.6 in Kronauer et al. 1999 (as noted by the CSO model paper, PMC9552883)."
+  },
+  {
+   "id": "circSens",
+   "group": "needs",
+   "value": 0.4,
+   "units": "",
+   "range": [
+    0.2,
+    0.6
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    0.9
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.circSens",
+   "file": "src/sim/circadian.ts",
+   "notes": "Stage E2d (docs/staging/e2d-prereg.md, rhythmCircadian): circadian sensitivity modulator of the light drive, (1 - s x)(1 - s x_c). Human circadian pacemaker model (forger1999, equations and values as in crodelle2023; research.md E.22) [H] for humans; no chimpanzee value exists, so assumed (cross-species)."
+  },
+  {
+   "id": "circTauH",
+   "group": "needs",
+   "value": 24.2,
+   "units": "h",
+   "range": [
+    23.4,
+    25.1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    20,
+    28
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "P.circTauH",
+   "file": "src/sim/circadian.ts",
+   "notes": "Stage E2d (docs/staging/e2d-prereg.md, rhythmCircadian): intrinsic period of the oscillator (tau_x). Human circadian pacemaker model (forger1999, equations and values as in crodelle2023; research.md E.22) [H] for humans; no chimpanzee value exists, so assumed (cross-species). Human intrinsic period 24.18 h (czeisler1999); range: rhesus macaques free-run at 23.4-25.1 h in dim constant light (masudaZhdanova2010)."
   },
   {
    "id": "climbMps",
@@ -12609,7 +12896,35 @@
    "clock": "eco",
    "symbol": "fallbackKcalPerH",
    "file": "src/sim/energy.ts",
-   "notes": "Metabolisable energy intake on fallback foods at a mean cell (x the forage field, forageYield): pith 3.4 and young leaves 6.2 kcal/min weighted by their Kanyawara feeding shares 17.4 : 6.9 (uwimbabazi2019 rates, potts2011 shares; the same weighting as fallbackRateRatio 0.39 x 10.7)."
+   "notes": "Metabolisable energy intake on fallback foods at a mean cell (x the forage field, forageYield): pith 3.4 and young leaves 6.2 kcal/min weighted by their Kanyawara feeding shares 17.4 : 6.9 (uwimbabazi2019 rates, potts2011 shares; the same weighting as fallbackRateRatio 0.39 x 10.7). Stage E1h: the field formula's value (TNC by difference at 4 kcal/g); not read while ledgerFoodEnergyFix is 1 (the ...Sugar entry replaces it)."
+  },
+  {
+   "id": "ledgerFallbackKcalPerMinSugar",
+   "group": "feeding",
+   "value": 3.23,
+   "units": "kcal/min",
+   "range": [
+    3.17,
+    3.54
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    1000000.0
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "uwimbabazi2019",
+    "potts2011"
+   ],
+   "refs": [
+    "docs/research.md (§E.23, §E.21): simmen2017 electronic supplement, the sugar-based (LEVD) rule (WSC + 5% pectin of dry matter) and its match with doubly labelled water across primates; starch 3-6% (fruit), 1-4% (vegetative parts) and pectin 4-6% of dry matter for the range"
+   ],
+   "clock": "eco",
+   "symbol": "plantKcalPerMin",
+   "file": "src/sim/energy.ts",
+   "notes": "Stage E1h (with ledgerFoodEnergyFix 1): energy per feeding minute on fallback foods at a mean cell, sugar-based: pith 3.4 x 0.799 = 2.72 and young leaves 6.2 x 0.730 = 4.52 kcal/min weighted by their Kanyawara feeding shares 17.4 : 6.9 (potts2011), as ledgerFallbackKcalPerMin. Factor = (4 (WSC + pectin) + 4 AP + 9 lipid + 1.6 NDF) / (4 TNC + 4 AP + 9 lipid + 1.6 NDF) on uwimbabazi2019 Table 2 (% organic matter; pectin 5% of dry matter = 5.2% of organic matter, simmen2017's rule where WSC was measured). Derived [M]: [H] composition, a formula checked across primates (not chimpanzees). Range: pectin 4% (low) to pectin 6% + starch 4% of dry matter (high), simmen2017's ranges for vegetative parts."
   },
   {
    "id": "ledgerFigKcalPerMin",
@@ -12633,7 +12948,57 @@
    "clock": "eco",
    "symbol": "fruitKcalPerUnit",
    "file": "src/sim/energy.ts",
-   "notes": "Metabolisable energy intake of an adult feeding in a fig crown at full crop (Kanyawara females; uwimbabazi2019). Scaled by foraging skill, the under-5 factor, the self-feeding ramp and snare injury as the fruit intake is."
+   "notes": "Metabolisable energy intake of an adult feeding in a fig crown at full crop (Kanyawara females; uwimbabazi2019). Scaled by foraging skill, the under-5 factor, the self-feeding ramp and snare injury as the fruit intake is. Stage E1h: the field formula's value (TNC by difference at 4 kcal/g); not read while ledgerFoodEnergyFix is 1 (the ...Sugar entry replaces it)."
+  },
+  {
+   "id": "ledgerFigKcalPerMinSugar",
+   "group": "feeding",
+   "value": 8.12,
+   "units": "kcal/min",
+   "range": [
+    7.94,
+    9.33
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    1000000.0
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "uwimbabazi2019"
+   ],
+   "refs": [
+    "docs/research.md (§E.23, §E.21): simmen2017 electronic supplement, the sugar-based (LEVD) rule (WSC + 5% pectin of dry matter) and its match with doubly labelled water across primates; starch 3-6% (fruit), 1-4% (vegetative parts) and pectin 4-6% of dry matter for the range"
+   ],
+   "clock": "eco",
+   "symbol": "plantKcalPerMin",
+   "file": "src/sim/energy.ts",
+   "notes": "Stage E1h (with ledgerFoodEnergyFix 1): energy per feeding minute in a fig crown, sugar-based: 12.5 x 194.7 / 299.9 = 8.12 kcal/min (figs, uwimbabazi2019 Table 2: lipid 3.5, AP 6.8, NDF 49.0, TNC 40.7, WSC 9.2 % organic matter; pectin 5% of dry matter, simmen2017). Derived [M]. Range: pectin 4% (low) to pectin 6% + starch 6% of dry matter (high), simmen2017's ranges for fruit. Fig samples include their seeds (eaten whole), which no factor here corrects."
+  },
+  {
+   "id": "ledgerFoodEnergyFix",
+   "group": "feeding",
+   "value": 0,
+   "units": "flag",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "plantKcalPerMin",
+   "file": "src/sim/energy.ts",
+   "integer": true,
+   "notes": "Stage E1h (docs/staging/e1h-prereg.md), read only with energyLedger 1: 1 = plant foods carry metabolisable energy computed from measured water-soluble sugar plus pectin (5% of dry matter) in place of total non-structural carbohydrate by difference, which the field formula credits at 4 kcal/g (simmen2017's rule; that version matches doubly labelled water across primates, the field formula gives 1.13-1.92 x). ledgerFruitKcalPerMinSugar, ledgerFigKcalPerMinSugar and ledgerFallbackKcalPerMinSugar then replace ledgerFruitKcalPerMin, ledgerFigKcalPerMin and ledgerFallbackKcalPerMin wherever a plant food's energy is read (fruit unit energy, fallback per hour, the digesta composition, the intake valuation and the drive); dry matter per minute and fibre are unchanged. 0 = the field formula's values (hash-identical)."
   },
   {
    "id": "ledgerFruitKcalPerMin",
@@ -12657,7 +13022,34 @@
    "clock": "eco",
    "symbol": "fruitKcalPerUnit",
    "file": "src/sim/energy.ts",
-   "notes": "Metabolisable energy intake of an adult feeding on non-fig ripe fruit (drupes 9.9 kcal/min; all ripe fruit 10.7 +- 1.3; Kanyawara females, uwimbabazi2019). The crop still depletes at fruitIntakePerH fruit units per hour, so one fruit unit is worth 60 x this / fruitIntakePerH kcal."
+   "notes": "Metabolisable energy intake of an adult feeding on non-fig ripe fruit (drupes 9.9 kcal/min; all ripe fruit 10.7 +- 1.3; Kanyawara females, uwimbabazi2019). The crop still depletes at fruitIntakePerH fruit units per hour, so one fruit unit is worth 60 x this / fruitIntakePerH kcal. Stage E1h: the field formula's value (TNC by difference at 4 kcal/g); not read while ledgerFoodEnergyFix is 1 (the ...Sugar entry replaces it)."
+  },
+  {
+   "id": "ledgerFruitKcalPerMinSugar",
+   "group": "feeding",
+   "value": 7.39,
+   "units": "kcal/min",
+   "range": [
+    7.27,
+    8.25
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    1000000.0
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [
+    "uwimbabazi2019"
+   ],
+   "refs": [
+    "docs/research.md (§E.23, §E.21): simmen2017 electronic supplement, the sugar-based (LEVD) rule (WSC + 5% pectin of dry matter) and its match with doubly labelled water across primates; starch 3-6% (fruit), 1-4% (vegetative parts) and pectin 4-6% of dry matter for the range"
+   ],
+   "clock": "eco",
+   "symbol": "plantKcalPerMin",
+   "file": "src/sim/energy.ts",
+   "notes": "Stage E1h (with ledgerFoodEnergyFix 1): energy per feeding minute on drupes (non-fig ripe fruit), sugar-based: 9.9 x 250.7 / 335.9 = 7.39 kcal/min (uwimbabazi2019 Table 2, non-fig: lipid 5.2, AP 10.6, NDF 37.7, TNC 46.6, WSC 20.1 % organic matter; pectin 5% of dry matter, simmen2017). Derived [M]. Range: pectin 4% (low) to pectin 6% + starch 6% of dry matter (high), simmen2017's ranges for fruit."
   },
   {
    "id": "ledgerGrowFemaleKgPerY",
@@ -17679,6 +18071,29 @@
    "symbol": "P.rhythmCanopyM",
    "file": "src/sim/rhythm.ts",
    "notes": "Stage E2a heat balance: height at which an animal in a crown receives the crown share of sunlight (rhythmShadeCrown). Assumed canopy height."
+  },
+  {
+   "id": "rhythmCircadian",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmCircadian",
+   "file": "src/sim/circadian.ts",
+   "integer": true,
+   "notes": "Stage E2d (docs/staging/e2d-prereg.md, rhythmCircadian): process C of the two-process model as physiology. Each animal carries an oscillator (circadian.ts; forger1999) entrained by the light at its eyes (the E2c sky model x the E2a canopy share at its height, 0 while asleep), and a sleep latch: sleep starts when sleep pressure S reaches the upper threshold circHUpper + circAmp x C and ends at the lower circHLower + circAmp x C (daan1984 via skeldonDijk2025), C the oscillator's core-temperature variable. Only sleep (latch on, in its own finished nest or its mother's) discharges S; an asleep animal makes no decision until it wakes. The nest is worth the rest score without its fatigue term plus rhythmSleepW x felt sleepiness q (1 while the latch is on, else the position of S between the thresholds); rest outside a nest carries no sleep term; a new nest is offered under E2a's light gate (daylight < 1; iteration 2, after day nests took a third of the daytime when it was offered at any light). rhythmDarkW and the light masking S x (1 - daylight) are not read. A night or dusk menu with one option is that option. Result: a recorded null (e2d-prereg §8-9): sleep falls 97-102 min after sunset to 123-128 min before sunrise (8.2 h) and nobody leaves a nest during it, but nothing holds the two hours awake before dawn (adults wait only for the night menu; juveniles out 4-5% of the night). Needs rhythmSleep; no effect otherwise. 0 = E2a/E2b/E2c, bit-identical. Ablation switch."
   },
   {
    "id": "rhythmClimbExp",
