@@ -128,3 +128,14 @@ Reading rules, fixed now:
   closer detection; it is reported, but no detection distance is set from it (no source pins one; §2.3).
 - Movement: colobus travel per hour by day and by night against the party's travel; if colobus move at night or
   faster than the party, their drift adds encounters a home-ranging, day-active group would not.
+
+## 9. Results
+
+### Run log (each entry written before its run, unless marked)
+
+- **I0 identity and S0 smoke** (frozen checkout of f5a4bb5; logged after the run, as registered in §3). I0: R after
+  2 days gives 9deaf1df367a7d34 (seed 48) and 51357e4fb3248108 (seed 7), E4e's hashes: R is unchanged at this head and
+  the integrator's R quick realizations (R-quick, NR1q–NR3q at 612bf15) are this stage's reference. S0 (seed 48, 1 + 1
+  days): every readout produced; tool check holds (focal model rule 19.4175 per 100 h = T-HUN-3 `encountersPer100h`
+  19.4175); colobus travel 90.0 m/h by day and by night.
+- **D0 diagnosis** (as registered in §3): launched 06:00 from the same frozen checkout.
