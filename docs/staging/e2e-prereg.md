@@ -377,3 +377,39 @@ read in any arm (`rhythmCircadian` is on throughout).)
   rise 45–60 min before it, videan2005), and nest groups that are too small (T-PTY-1 2.8 against 3–9), which leaves half
   the adults without company at night.
 
+
+## 11. The social arm on the full physiological stack R (handoff §3; "if time allows")
+
+R = `{"energyLedger":1,"ledgerGrowSurplus":1,"ledgerNightNurse":1,"ledgerInfantIntake":1,"ledgerNurseBout":1,"ledgerGrowPotential":1,"ledgerDigesta":1,"ledgerDrive":1,"rhythmSleep":1,"rhythmHeat":1,"endoStates":1,"endoEscalate":1,"endoRedirect":1,"endoFast":1,"endoRainDisplay":1}`;
+RS2 = R + `nestCompany` + `nestAudience` (iteration 2). Both from the frozen final head cc7b03d, seeds 48 and 7, 30 + 30,
+`--workers 1`. R has no circadian gate, so `rhythmDarkW` is read and holds the night together with the menu.
+
+| Readout | R | RS2 |
+| --- | --- | --- |
+| Departure vs sunrise, median (min); before sunrise | 46; 0% | 49; 0% |
+| Last nest entry vs sunset, median (min) | -11 | -10 |
+| Active day h, male / lactating / other F | 11.3 / 11.3 / 11.2 | 10.5 / 11.0 / 10.7 |
+| Adults: night out of nest; m/night | 0.0%; 0 | 0.0%; 0 |
+| 5–8 y: out before dawn; m/morning | 0%; 0 | 0%; 0 |
+| Co-departures (5 min, 50 m) | 32% | 30% |
+| Night deaths | 0 | 0 |
+| Fitted, shared rows: all / w/o T-HUN-4, T-BRD-1 | 6.460 (ref) | -2.324 (16) / -2.324 (16) |
+| Held-out, shared rows: all / w/o | 2.985 (ref) | +0.969 (13) / +0.969 (12) |
+| Prescriptions | 103 | 103 |
+| Viability | pass | pass |
+
+```
+reference R: fitted 6.460, held-out 2.985, prescriptions 103, viability pass, commit cc7b03d dirty 0
+RS2: fitted 2.802, held-out 4.739, prescriptions 103, viability pass, commit cc7b03d dirty 0
+   on rows scored in both: fitted -2.324 (16 rows), held-out +0.969 (13 rows); without T-HUN-4 and T-BRD-1: fitted -2.324 (16), held-out +0.969 (12)
+   largest row moves: T-HUN-8 (h) +1.667, T-HUN-1 (f) -1.419, T-COM-11 (f) -0.833, T-IGE-2 (h) -0.500, T-HUN-2 (f) +0.475, T-ACT-3 (f) -0.370
+```
+
+- Night safety unchanged (nobody out of a nest at night in either). Company makes late departures later still: median
+  +46 → +49 min, p90 +51 → +155 min (rhythm-metrics), and the active day shorter (males 11.3 → 10.5 h, at the bottom of
+  staged T-RHY-1's 10.5–12 h). Where something else already holds the night (here `rhythmDarkW`), a company value that
+  does not fade with light holds some animals in their nests long after sunrise until hunger wins.
+- Benchmark: fitted −2.324 on 16 shared rows (beyond 1.5, but carried by hunting rows: T-HUN-1 −1.419, T-COM-11 −0.833),
+  held-out +0.969 on 13 (inside noise; T-HUN-8 +1.667). Hunting rows are the noisiest (handoff §4.5): a confirm would be
+  needed before reading anything into either sum. Viability pass; prescriptions 103 = 103.
+
