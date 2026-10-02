@@ -1,37 +1,55 @@
 // Builds the generated parts of docs/decision-guide.html, the visual guide to how the chimpanzees decide on the Track E
-// candidate stack S3, from the prescription ledger (scripts/prescription-ledger.ts, scripts/lib/prescriptions.ts) and
-// the editorial content in scripts/lib/decision-guide-content.ts.
+// candidate stack (STACK below), from the prescription ledger (scripts/prescription-ledger.ts,
+// scripts/lib/prescriptions.ts) and the editorial content in scripts/lib/decision-guide-content.ts.
 //
-//   pnpm exec tsx scripts/decision-guide.ts            # rewrite the generated regions of docs/decision-guide.html
-//   pnpm exec tsx scripts/decision-guide.ts --check    # exit 1 if the page is stale or disagrees with the ledger
+//   pnpm exec tsx scripts/decision-guide.ts                  # rewrite the generated regions of docs/decision-guide.html
+//   pnpm exec tsx scripts/decision-guide.ts --check          # exit 1 if the page is stale or disagrees with the ledger
+//   pnpm exec tsx scripts/decision-guide.ts --hosted out.html  # the copy for the public site (unlinked, noindex)
 //
-// Generated, never typed: which entries are prescriptions on today's model (every Track E switch 0) and on S3, their
-// values, units, classes, kinds and encoded target rows, the switch and stage that took each one out, every count on
-// the page, and what each layer outside S3 would remove. The page keeps its hand-written CSS, script and prose between
-// the regions; numbers in the prose sit in <span data-n="…"> elements that this script fills.
+// Generated, never typed: which entries are prescriptions on today's model (every Track E switch 0) and on the stack,
+// their values, units, classes, kinds and encoded target rows, the switch and stage that took each one out, every count
+// on the page, and what each layer outside the stack would remove. The page keeps its hand-written CSS, script and prose
+// between the regions; numbers and the stack's name in the prose sit in <span data-n="…"> elements that this script fills.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { execSync } from 'node:child_process';
 import { buildLedger } from './prescription-ledger';
 import { TRACK_E_SWITCHES } from './lib/prescriptions';
-import { DIAGRAMS, DOMAINS, IN_S3_BECAUSE, LITERALS, OVERVIEW, STAGES, STEP_OF, SWITCH_VERDICT, type DiagramSpec, type EdgeSpec, type NodeSpec, type Side, type Status, type Step } from './lib/decision-guide-content';
+import { DIAGRAMS, DOMAINS, IN_STACK_BECAUSE, LITERALS, OVERVIEW, STAGES, STEP_OF, SWITCH_VERDICT, type DiagramSpec, type EdgeSpec, type NodeSpec, type Side, type Status, type Step } from './lib/decision-guide-content';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PAGE = join(ROOT, 'docs/decision-guide.html');
 
-/** S3, the integrated confirm of the provisional candidates (docs/staging/e-stack2-confirm.md, "S3 confirm"). */
-export const S3: Record<string, number> = { energyLedger: 1, ledgerGrowSurplus: 1, ledgerNightNurse: 1, ledgerInfantIntake: 1, ledgerNurseBout: 1, ledgerGrowPotential: 1, ledgerDigesta: 1, ledgerDrive: 1, rhythmSleep: 1, rhythmHeat: 1, endoStates: 1, endoEscalate: 1, endoRedirect: 1, endoFast: 1, endoRainDisplay: 1, ledgerFoodEnergyFix: 1, ledgerSatiationReserve: 1, ledgerLactGut: 1, callValue: 1, rhythmCircadian: 1, departRace: 1, nestLightDecide: 1, sleepChimp: 1, rhythmFreeNight: 1, nestCompany: 1, nestAudience: 1, darkCost: 1, preyKanyawara: 1, waterLedger: 1 };
-/** Layers outside S3, each measured on S3 (handoff §3, e5a-prereg.md, e4e-prereg.md, e1k-prereg.md, e4d-prereg.md, e3-prereg.md). */
-export const LAYERS: { key: string; stage: string; label: string; status: string; on: Record<string, number> }[] = [
-  { key: 'E5a', stage: 'E5a', label: 'E4g + E5a, party cohesion', status: 'confirmed on its own, not integrated: interacts with calls', on: { followCarer: 1, cohesionValue: 1 } },
-  { key: 'E4g', stage: 'E4g', label: 'E4g alone, the care-follow fix', status: 'confirmed with E5a, not integrated', on: { followCarer: 1 } },
-  { key: 'E1n', stage: 'E1n', label: 'E1n, the mother decides', status: 'provisional keep candidate, not integrated', on: { weanDecide: 1 } },
+/** A candidate stack of the integrated confirms: its name, its switches as run there, and the document section that
+ *  reports its results (relative to docs/; the check fails until that heading exists). */
+export interface Stack { name: string; doc: string; section: string; switches: Record<string, number> }
+const S3_SWITCHES: Record<string, number> = { energyLedger: 1, ledgerGrowSurplus: 1, ledgerNightNurse: 1, ledgerInfantIntake: 1, ledgerNurseBout: 1, ledgerGrowPotential: 1, ledgerDigesta: 1, ledgerDrive: 1, rhythmSleep: 1, rhythmHeat: 1, endoStates: 1, endoEscalate: 1, endoRedirect: 1, endoFast: 1, endoRainDisplay: 1, ledgerFoodEnergyFix: 1, ledgerSatiationReserve: 1, ledgerLactGut: 1, callValue: 1, rhythmCircadian: 1, departRace: 1, nestLightDecide: 1, sleepChimp: 1, rhythmFreeNight: 1, nestCompany: 1, nestAudience: 1, darkCost: 1, preyKanyawara: 1, waterLedger: 1 };
+const S5_SWITCHES: Record<string, number> = { ...S3_SWITCHES, followCarer: 1, cohesionValue: 1, companyMargin: 1 };
+/** The stacks as docs/staging/e-stack2-confirm.md defines them (S5 = S4 + companyMargin, S4 = S3 + followCarer +
+ *  cohesionValue, S6 = S5 + E1o's arm B). */
+export const STACKS = {
+  S3: { name: 'S3', doc: 'staging/e-stack2-confirm.md', section: 'S3 results', switches: S3_SWITCHES },
+  S5: { name: 'S5', doc: 'staging/e-stack2-confirm.md', section: 'S5 results', switches: S5_SWITCHES },
+  S6: { name: 'S6', doc: 'staging/e-stack2-confirm.md', section: 'S6 results', switches: { ...S5_SWITCHES, weanDecide: 1, weanDeficit: 1 } },
+} satisfies Record<string, Stack>;
+/** The stack this page shows. Moving the page to another stack is this line, plus the prose its results change (the
+ *  check names every box and layer that no longer fits). */
+export const STACK: Stack = STACKS.S5;
+
+/** Stages outside the stack, each measured on it (handoff §0 and §3, and each stage's pre-registration). `verdict`
+ *  replaces the stage's own where the layer is one arm of a stage. A layer whose switches the stack holds is dropped. */
+export interface Layer { key: string; stage: string; label: string; status: string; verdict?: string; on: Record<string, number> }
+export const ALL_LAYERS: Layer[] = [
+  { key: 'E1o-B', stage: 'E1o', label: "E1o arm B, the mother's deficit decides", status: 'provisional keep candidate; S6 confirm running', verdict: 'arm B (weanDeficit with E1n\'s weanDecide): provisional keep candidate in quick mode; its 5-seed confirm (S6) is running', on: { weanDecide: 1, weanDeficit: 1 } },
+  { key: 'E1o-A', stage: 'E1o', label: 'E1o arm A, milk counted at what the gland gives', status: 'a defect fix, null for the milk volume', verdict: 'arm A (milkInDrive): a defect fix, null for the milk volume; not tested with arm B', on: { milkInDrive: 1 } },
+  { key: 'E5c', stage: 'E5c', label: 'E5c, a crown shared by its feeders', status: 'recorded, off', on: { crownShare: 1 } },
   { key: 'E4e', stage: 'E4e', label: 'E4e, a hunt valued as food', status: 'held off', on: { huntValue: 1 } },
   { key: 'E1k', stage: 'E1k', label: "E1k, the groomer's own need", status: 'recorded, off', on: { groomNeedDyad: 1 } },
   { key: 'E4d', stage: 'E4d', label: 'E4d, sleep-gated hormone rhythm', status: 'recorded, off', on: { endoRhythm: 1 } },
   { key: 'E3', stage: 'E3', label: 'E3, urgency', status: 'stopped, off', on: { urgencyChoice: 1, urgencyPersist: 1, urgencySwitchCost: 1 } },
 ];
+export const LAYERS: Layer[] = ALL_LAYERS.filter(l => !Object.keys(l.on).every(s => STACK.switches[s]));
 
 const fail = (msg: string): never => { throw new Error(`decision-guide: ${msg}`); };
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -39,15 +57,15 @@ const fmt = (v: number) => Number.isInteger(v) ? String(v) : String(+v.toPrecisi
 const clock = (h: number) => `${String(Math.floor(h)).padStart(2, '0')}:${String(Math.round((h % 1) * 60)).padStart(2, '0')}`;
 
 // ---------------------------------------------------------------------------------------------------------------------
-// The ledger, on today's model (B), on S3 and on each layer
+// The ledger, on today's model (B), on the stack and on each layer
 // ---------------------------------------------------------------------------------------------------------------------
 
 type Ledger = ReturnType<typeof buildLedger>;
 type Row = Ledger['rows'][number];
 export interface Entry {
   key: string; type: 'param' | 'literal'; label: string; value: string; units: string; cls: string; kind: string; evidence: string;
-  encodes: string[]; reason: string; borderline: boolean; b: boolean; s3: boolean; layers: Record<string, boolean>;
-  /** Replaced in S3: the switch that takes it out alone (with what it needs), its stage. */
+  encodes: string[]; reason: string; borderline: boolean; b: boolean; onStack: boolean; layers: Record<string, boolean>;
+  /** Replaced on the stack: the switch that takes it out alone (with what it needs), its stage. */
   by?: string; stage?: string; needs?: string[]; why?: string; where?: string; code?: string;
 }
 
@@ -68,19 +86,19 @@ function closure(s: string, acc = new Set<string>()): Set<string> {
 }
 
 export function buildData() {
-  const B = buildLedger({}), L3 = buildLedger(S3);
-  const layerLedgers = Object.fromEntries(LAYERS.map(l => [l.key, buildLedger({ ...S3, ...l.on } as never)]));
-  const setB = counted(B), set3 = counted(L3);
+  const B = buildLedger({}), LS = buildLedger(STACK.switches);
+  const layerLedgers = Object.fromEntries(LAYERS.map(l => [l.key, buildLedger({ ...STACK.switches, ...l.on } as never)]));
+  const setB = counted(B), setS = counted(LS);
   const layerSets = Object.fromEntries(Object.entries(layerLedgers).map(([k, L]) => [k, counted(L)]));
   // the switch that removes each replaced entry alone (with its needs), the one that needs least: the mechanism's own
-  const solo = Object.fromEntries(Object.keys(S3).map(s => [s, counted(buildLedger(Object.fromEntries([...closure(s)].map(q => [q, 1])) as never))]));
-  const reg = new Map<string, Row>(L3.rows.map(r => [r.id, r]));
+  const solo = Object.fromEntries(Object.keys(STACK.switches).map(s => [s, counted(buildLedger(Object.fromEntries([...closure(s)].map(q => [q, 1])) as never))]));
+  const reg = new Map<string, Row>(LS.rows.map(r => [r.id, r]));
   const entries = new Map<string, Entry>();
-  const allKeys = new Set([...setB, ...set3, ...Object.values(layerSets).flatMap(s => [...s])]);
+  const allKeys = new Set([...setB, ...setS, ...Object.values(layerSets).flatMap(s => [...s])]);
   for (const key of allKeys) {
     const lit = key.startsWith('lit:');
     const layers = Object.fromEntries(LAYERS.map(l => [l.key, layerSets[l.key].has(key)]));
-    const e: Entry = { key, type: lit ? 'literal' : 'param', label: key, value: '', units: '', cls: 'outcome-encoding', kind: '', evidence: '', encodes: [], reason: '', borderline: false, b: setB.has(key), s3: set3.has(key), layers };
+    const e: Entry = { key, type: lit ? 'literal' : 'param', label: key, value: '', units: '', cls: 'outcome-encoding', kind: '', evidence: '', encodes: [], reason: '', borderline: false, b: setB.has(key), onStack: setS.has(key), layers };
     if (lit) {
       const spec = LITERALS.find(l => l.key === key)!;
       const l = B.literals.find(q => q.file === spec.file && q.text.includes(spec.has)) ?? fail(`literal ${key} not found by the lint`);
@@ -90,18 +108,18 @@ export function buildData() {
       const units = r.units === 'h (time of day)' ? `h (${clock(r.fieldValue)})` : r.units;
       Object.assign(e, { value: fmt(r.fieldValue), units, cls: r.cls, kind: r.kind, evidence: r.evidence, encodes: r.encodes, reason: r.reason, borderline: r.borderline, where: r.file ? `src/sim/${r.file}` : undefined });
     }
-    if (e.b && !e.s3) {
-      const by = Object.keys(S3).filter(s => !solo[s].has(key)).sort((a, b) => closure(a).size - closure(b).size || a.localeCompare(b))[0] ?? fail(`no single S3 switch removes ${key}`);
+    if (e.b && !e.onStack) {
+      const by = Object.keys(STACK.switches).filter(s => !solo[s].has(key)).sort((a, b) => closure(a).size - closure(b).size || a.localeCompare(b))[0] ?? fail(`no single ${STACK.name} switch removes ${key}`);
       e.by = by; e.stage = TRACK_E_SWITCHES[by].stage; e.needs = [...closure(by)].filter(s => s !== by);
-      e.why = lit ? (L3.literals.find(q => literalKey(q.file, q.text) === key)?.why ?? '') : (L3.rows.find(q => q.id === key)?.activeNote ?? '');
+      e.why = lit ? (LS.literals.find(q => literalKey(q.file, q.text) === key)?.why ?? '') : (LS.rows.find(q => q.id === key)?.activeNote ?? '');
     }
     entries.set(key, e);
   }
   const layerEffect = Object.fromEntries(LAYERS.map(l => {
     const s = layerSets[l.key];
-    return [l.key, { total: layerLedgers[l.key].count.total, removed: [...set3].filter(k => !s.has(k)), added: [...s].filter(k => !set3.has(k)) }];
+    return [l.key, { total: layerLedgers[l.key].count.total, removed: [...setS].filter(k => !s.has(k)), added: [...s].filter(k => !setS.has(k)) }];
   }));
-  return { B, L3, entries, reg, setB, set3, layerEffect, layerLedgers };
+  return { B, LS, entries, reg, setB, setS, layerEffect, layerLedgers };
 }
 export type Data = ReturnType<typeof buildData>;
 
@@ -130,7 +148,7 @@ export function checkContent(D: Data): string[] {
     if (!inDomain.has(k)) errs.push(`counted prescription ${k} is in no domain`);
     if (!STEP_OF[k]) errs.push(`counted prescription ${k} has no step in STEP_OF`);
   }
-  for (const k of D.set3) if (!D.setB.has(k)) errs.push(`${k} is counted on S3 but not on today's model (the page assumes S3 only removes)`);
+  for (const k of D.setS) if (!D.setB.has(k)) errs.push(`${k} is counted on ${STACK.name} but not on today's model (the page assumes the stack only removes)`);
   for (const k of Object.keys(STEP_OF)) if (!D.setB.has(k)) errs.push(`STEP_OF names ${k}, not a counted prescription`);
   const shown = new Set<string>();
   for (const d of DGS) {
@@ -147,14 +165,21 @@ export function checkContent(D: Data): string[] {
         if (!r) { errs.push(`${d.key}.${n.k}: unknown registry id ${p}`); continue; }
         if (st === 'inp' && r.cls !== 'input') errs.push(`${d.key}.${n.k}: ${p} is ${r.cls}, shown on an input box`);
         if (st === 'des' && r.cls !== 'design') errs.push(`${d.key}.${n.k}: ${p} is ${r.cls}, shown on a design box`);
-        if (r.cls === 'outcome-encoding' && D.set3.has(p) && st !== 'rem') errs.push(`${d.key}.${n.k}: ${p} is still prescribed but listed on a ${st} box`);
+        if (r.cls === 'outcome-encoding' && D.setS.has(p) && st !== 'rem') errs.push(`${d.key}.${n.k}: ${p} is still prescribed but listed on a ${st} box`);
       }
       if (st === 'lay') {
         if (!n.layer) errs.push(`${d.key}.${n.k}: layer box without layer`);
         else {
           if (!STAGES[n.layer.stage]) errs.push(`${d.key}.${n.k}: unknown stage ${n.layer.stage}`);
-          for (const s of n.layer.sw) { if (!TRACK_E_SWITCHES[s]) errs.push(`${d.key}.${n.k}: unknown switch ${s}`); if (S3[s]) errs.push(`${d.key}.${n.k}: ${s} is in S3`); }
+          for (const s of n.layer.sw) { if (!TRACK_E_SWITCHES[s]) errs.push(`${d.key}.${n.k}: unknown switch ${s}`); if (STACK.switches[s]) errs.push(`${d.key}.${n.k}: ${s} is in ${STACK.name}: the box is no longer a layer`); }
+          const sw = n.layer.sw;
+          if (sw.length && !LAYERS.some(l => Object.keys(l.on).length === sw.length && sw.every(x => l.on[x]))) errs.push(`${d.key}.${n.k}: no layer in LAYERS runs exactly ${sw.join(' + ')}, so the ledger cannot measure the box`);
         }
+      }
+      for (const s of n.sw ?? []) {
+        if (!STACK.switches[s]) errs.push(`${d.key}.${n.k}: ${s} is named as part of ${STACK.name} but is not in it`);
+        if (!TRACK_E_SWITCHES[s] || !STAGES[TRACK_E_SWITCHES[s].stage]) errs.push(`${d.key}.${n.k}: switch ${s} has no stage entry`);
+        if (st !== 'des' && st !== 'inp') errs.push(`${d.key}.${n.k}: stack switches are named on design or input boxes only`);
       }
       if (st === 'rep' && !n.before) errs.push(`${d.key}.${n.k}: replaced box without its old rule`);
       if (st === 'rep' && !n.now) errs.push(`${d.key}.${n.k}: replaced box without its mechanism`);
@@ -169,9 +194,16 @@ export function checkContent(D: Data): string[] {
     for (const z of [...(d.notes ?? [])].join(' ').matchAll(/href="([^"#]+)/g)) if (!existsSync(join(ROOT, 'docs', z[1]))) errs.push(`${d.key}: broken link ${z[1]}`);
   }
   for (const k of D.setB) if (!shown.has(k)) errs.push(`counted prescription ${k} is shown in no diagram box`);
-  for (const s of Object.keys(S3)) if (!TRACK_E_SWITCHES[s] || !STAGES[TRACK_E_SWITCHES[s].stage]) errs.push(`S3 switch ${s} has no stage entry`);
-  for (const l of LAYERS) for (const s of Object.keys(l.on)) if (!TRACK_E_SWITCHES[s]) errs.push(`layer ${l.key}: unknown switch ${s}`);
+  for (const s of Object.keys(STACK.switches)) if (!TRACK_E_SWITCHES[s] || !STAGES[TRACK_E_SWITCHES[s].stage]) errs.push(`${STACK.name} switch ${s} has no stage entry`);
+  for (const l of ALL_LAYERS) {
+    for (const s of Object.keys(l.on)) if (!TRACK_E_SWITCHES[s]) errs.push(`layer ${l.key}: unknown switch ${s}`);
+    const inside = Object.keys(l.on).filter(s => STACK.switches[s]);
+    if (inside.length && inside.length < Object.keys(l.on).length) errs.push(`layer ${l.key} is partly in ${STACK.name} (${inside.join(', ')}): split it`);
+    if (!STAGES[l.stage]) errs.push(`layer ${l.key}: unknown stage ${l.stage}`);
+  }
   for (const st of Object.values(STAGES)) if (!existsSync(join(ROOT, 'docs', st.doc))) errs.push(`stage document ${st.doc} is missing`);
+  const confirm = existsSync(join(ROOT, 'docs', STACK.doc)) ? readFileSync(join(ROOT, 'docs', STACK.doc), 'utf8') : '';
+  if (!confirm.split('\n').some(l => /^#+ /.test(l) && l.includes(STACK.section))) errs.push(`${STACK.doc} has no heading "${STACK.section}": the stack's results are not recorded`);
   return errs;
 }
 
@@ -184,7 +216,7 @@ function textW(s: string, size: number, weight: number): number {
 
 function nodeStatus(D: Data, n: NodeSpec): Status | null {
   if (n.ids?.length) {
-    const sts = new Set(n.ids.map(k => D.setB.has(k) ? (D.set3.has(k) ? 'rem' : 'rep') : 'x'));
+    const sts = new Set(n.ids.map(k => D.setB.has(k) ? (D.setS.has(k) ? 'rem' : 'rep') : 'x'));
     return sts.size === 1 && !sts.has('x') ? [...sts][0] as Status : null;
   }
   return n.st ?? null;
@@ -195,14 +227,14 @@ function nodeStatus(D: Data, n: NodeSpec): Status | null {
 // ---------------------------------------------------------------------------------------------------------------------
 
 const ST: Record<Status, { chip: string; long: string; icon: string }> = {
-  rem: { chip: 'PRESCRIBED', long: 'Still prescribed in S3', icon: 'ic-rem' },
-  rep: { chip: 'REPLACED', long: 'Replaced in S3', icon: 'ic-rep' },
+  rem: { chip: 'PRESCRIBED', long: `Still prescribed in ${STACK.name}`, icon: 'ic-rem' },
+  rep: { chip: 'REPLACED', long: `Replaced in ${STACK.name}`, icon: 'ic-rep' },
   inp: { chip: 'INPUT', long: 'Physiology or physics input', icon: 'ic-inp' },
   des: { chip: 'DESIGN', long: 'Design weight or structure', icon: 'ic-des' },
-  lay: { chip: 'NOT IN S3', long: 'Not in S3', icon: 'ic-lay' },
+  lay: { chip: `NOT IN ${STACK.name}`, long: `Not in ${STACK.name}`, icon: 'ic-lay' },
 };
 const chipOf = (st: Status, n?: NodeSpec) => st === 'lay' && n?.layer ? n.layer.tag : ST[st].chip;
-const longOf = (st: Status, n?: NodeSpec) => st === 'lay' && n?.layer ? `Not in S3: ${n.layer.tag.toLowerCase()}` : ST[st].long;
+const longOf = (st: Status, n?: NodeSpec) => st === 'lay' && n?.layer ? `Not in ${STACK.name}: ${n.layer.tag.toLowerCase()}` : ST[st].long;
 
 type Box = { x: number; y: number; w: number; h: number };
 function port(b: Box, side: Side, off = 0): [number, number] {
@@ -297,10 +329,11 @@ function paramLine(D: Data, key: string): string {
 function stageLine(sw: string): string {
   const stg = TRACK_E_SWITCHES[sw].stage, st = STAGES[stg], own = SWITCH_VERDICT[sw];
   const needs = [...closure(sw)].filter(x => x !== sw);
-  const why = IN_S3_BECAUSE[sw] ? `; in S3: ${IN_S3_BECAUSE[sw]}` : '';
+  const why = IN_STACK_BECAUSE[sw] ? `; in ${STACK.name}: ${IN_STACK_BECAUSE[sw]}` : '';
   const doc = own?.doc ?? st.doc;
   return `<code>${esc(sw)}</code>${needs.length ? ` (with ${needs.map(x => `<code>${esc(x)}</code>`).join(', ')})` : ''} · stage ${esc(stg)}, ${esc(st.name)} · verdict: ${esc(own?.verdict ?? st.verdict)}${esc(why)} (<a href="${doc}">${esc(doc.replace('staging/', ''))}</a>)`;
 }
+const countedUnder = (n: NodeSpec) => n.see ? `Counted under ${esc(DOMAINS.find(x => x.key === n.see)!.title)}` : '';
 function tipHtml(D: Data, d: DiagramSpec, n: NodeSpec): string {
   const st = nodeStatus(D, n)!;
   const head = `<div class="tt-h"><span class="chip st-${st}"><svg class="ic" aria-hidden="true"><use href="#${ST[st].icon}"/></svg>${esc(longOf(st, n))}</span><b>${esc(n.t.replace(/\n/g, ' '))}</b></div>`;
@@ -310,21 +343,23 @@ function tipHtml(D: Data, d: DiagramSpec, n: NodeSpec): string {
     const bys = [...new Set(n.ids!.map(k => D.entries.get(k)!.by!))];
     parts.push(`<div class="tt-s"><span class="tt-k k-before">Before</span><p>${esc(n.before!)}</p><ul class="tt-ps">${ids}</ul></div>`);
     parts.push(`<div class="tt-s"><span class="tt-k k-now">Now</span><p>${esc(n.now!)}</p>${ps ? `<ul class="tt-ps">${ps}</ul>` : ''}</div>`);
-    parts.push(`<p class="tt-m">Switched out by ${bys.map(stageLine).join('; ')}${n.see ? `. Counted under ${esc(DOMAINS.find(x => x.key === n.see)!.title)}` : ''}.</p>`);
+    parts.push(`<p class="tt-m">Switched out by ${bys.map(stageLine).join('; ')}${n.see ? `. ${countedUnder(n)}` : ''}.</p>`);
     const whys = [...new Set(n.ids!.map(k => D.entries.get(k)!.why ?? '').filter(Boolean))];
     if (whys.length) parts.push(`<p class="tt-why">Ledger: ${whys.map(w => esc(w)).join(' · ')}</p>`);
   } else if (st === 'rem') {
     const would = LAYERS.filter(l => n.ids!.every(k => D.layerEffect[l.key].removed.includes(k)));
     parts.push(`<div class="tt-s"><span class="tt-k k-rem">Still prescribed</span><p>${esc(n.text ?? '')}</p><ul class="tt-ps">${ids}</ul>${ps ? `<ul class="tt-ps tt-rel">${ps}</ul>` : ''}</div>`);
-    if (would.length) parts.push(`<p class="tt-m">Would be switched out by ${would.map(l => `${esc(l.label)} (${esc(l.status)})`).join('; ')}.</p>`);
+    const meta = [would.length ? `Would be switched out by ${would.map(l => `${esc(l.label)} (${esc(l.status)})`).join('; ')}` : '', countedUnder(n)].filter(Boolean);
+    if (meta.length) parts.push(`<p class="tt-m">${meta.join('. ')}.</p>`);
   } else if (st === 'lay') {
     const same = (a: string[], b: string[]) => a.length === b.length && a.every(x => b.includes(x));
     const L = LAYERS.find(l => same(Object.keys(l.on), n.layer!.sw)) ?? LAYERS.find(l => l.stage === n.layer!.stage), eff = L ? D.layerEffect[L.key] : undefined, stg = STAGES[n.layer!.stage];
-    const removes = eff ? (eff.removed.length ? `Would switch out on S3: ${eff.removed.map(k => `<code>${esc(D.entries.get(k)?.label ?? k)}</code>`).join(' ')}${eff.added.length ? `, and bring back ${eff.added.map(k => `<code>${esc(k)}</code>`).join(' ')}` : ''} (${eff.total} prescriptions instead of ${D.L3.count.total}).` : `Switches out nothing on S3 (${eff.total} prescriptions).`) : 'Not merged: the ledger cannot measure it yet.';
+    const removes = eff ? (eff.removed.length ? `Would switch out on ${STACK.name}: ${eff.removed.map(k => `<code>${esc(D.entries.get(k)?.label ?? k)}</code>`).join(' ')}${eff.added.length ? `, and bring back ${eff.added.map(k => `<code>${esc(k)}</code>`).join(' ')}` : ''} (${eff.total} prescriptions instead of ${D.LS.count.total}).` : `Switches out nothing on ${STACK.name} (${eff.total} prescriptions).`) : 'Not merged: the ledger cannot measure it yet.';
     parts.push(`<div class="tt-s"><span class="tt-k k-lay">${esc(n.layer!.tag.toLowerCase())}</span><p>${esc(n.text ?? '')}</p></div>`);
-    parts.push(`<p class="tt-m">${n.layer!.sw.length ? `${n.layer!.sw.map(s => `<code>${esc(s)}</code>`).join(' ')} · ` : ''}stage ${esc(n.layer!.stage)}, ${esc(stg.name)} · ${esc(stg.verdict)} (<a href="${stg.doc}">${esc(stg.doc.replace('staging/', ''))}</a>). ${removes}</p>`);
+    parts.push(`<p class="tt-m">${n.layer!.sw.length ? `${n.layer!.sw.map(s => `<code>${esc(s)}</code>`).join(' ')} · ` : ''}stage ${esc(n.layer!.stage)}, ${esc(stg.name)} · ${esc(L?.verdict ?? stg.verdict)} (<a href="${stg.doc}">${esc(stg.doc.replace('staging/', ''))}</a>). ${removes}</p>`);
   } else {
     parts.push(`<div class="tt-s"><span class="tt-k k-${st}">${st === 'inp' ? 'Input' : 'Design'}</span><p>${esc(n.text ?? '')}</p>${ps ? `<ul class="tt-ps">${ps}</ul>` : ''}</div>`);
+    if (n.sw?.length) parts.push(`<p class="tt-m">In ${esc(STACK.name)}: ${n.sw.map(stageLine).join('; ')}. It switches no prescription out.</p>`);
     if (st === 'des') parts.push('<p class="tt-m">Design: a weight or structure that states no outcome; not counted as a prescription.</p>');
   }
   if (n.note) parts.push(`<p class="tt-n">${esc(n.note)}</p>`);
@@ -333,13 +368,13 @@ function tipHtml(D: Data, d: DiagramSpec, n: NodeSpec): string {
 
 function legendHtml(sts: Status[], layer: boolean): string {
   const items = (['rem', 'rep', 'inp', 'des', 'lay'] as Status[]).filter(s => sts.includes(s)).map(s => `<span class="lg st-${s}"><svg class="ic" aria-hidden="true"><use href="#${ST[s].icon}"/></svg>${esc(ST[s].long)}</span>`);
-  return `<div class="dg-legend">${items.join('')}${layer ? '<span class="lg lg-edge"><i class="sw-lay"></i>a layer outside S3 would change this</span>' : ''}</div>`;
+  return `<div class="dg-legend">${items.join('')}${layer ? `<span class="lg lg-edge"><i class="sw-lay"></i>a layer outside ${esc(STACK.name)} would change this</span>` : ''}</div>`;
 }
 
 // --- tallies ---------------------------------------------------------------------------------------------------------
 
 function tally(D: Data, ids: string[]) {
-  const rem = ids.filter(k => D.set3.has(k)), rep = ids.filter(k => D.setB.has(k) && !D.set3.has(k));
+  const rem = ids.filter(k => D.setS.has(k)), rep = ids.filter(k => D.setB.has(k) && !D.setS.has(k));
   return { b: ids.length, rem: rem.length, rep: rep.length, remIds: rem, repIds: rep };
 }
 function kinds(D: Data, ids: string[]): string {
@@ -348,7 +383,7 @@ function kinds(D: Data, ids: string[]): string {
   return Object.entries(c).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([k, n]) => `${n} ${k}`).join(' · ');
 }
 function tallyHtml(t: ReturnType<typeof tally>): string {
-  return `<span class="tl st-rem"><svg class="ic" aria-hidden="true"><use href="#ic-rem"/></svg><b>${t.rem}</b> still prescribed</span><span class="tl st-rep"><svg class="ic" aria-hidden="true"><use href="#ic-rep"/></svg><b>${t.rep}</b> replaced in S3</span><span class="tl tl-b">of ${t.b} on today's model</span>`;
+  return `<span class="tl st-rem"><svg class="ic" aria-hidden="true"><use href="#ic-rem"/></svg><b>${t.rem}</b> still prescribed</span><span class="tl st-rep"><svg class="ic" aria-hidden="true"><use href="#ic-rep"/></svg><b>${t.rep}</b> replaced in ${esc(STACK.name)}</span><span class="tl tl-b">of ${t.b} on today's model</span>`;
 }
 
 function countsHtml(D: Data): string {
@@ -360,15 +395,15 @@ function countsHtml(D: Data): string {
       + `<td class="k">${esc(kinds(D, t.remIds)) || '—'}${lay.length ? `<br><span class="k-lay">${lay.map(x => `−${x.n} with ${esc(x.l.label.split(',')[0])} (${esc(x.l.status)})`).join('; ')}</span>` : ''}</td></tr>`;
   }).join('');
   const all = tally(D, DOMAINS.flatMap(d => d.ids));
-  return `<div class="ct-wrap"><table class="ct"><caption class="sr">Prescriptions by domain on today's model and on S3</caption><thead><tr><th scope="col">Domain</th><th scope="col" class="n">Today</th><th scope="col" class="n">Replaced</th><th scope="col" class="n">Still prescribed</th><th scope="col"><span class="sr">Bar</span></th><th scope="col" class="k">Kinds still prescribed</th></tr></thead><tbody>${rows}</tbody>`
+  return `<div class="ct-wrap"><table class="ct"><caption class="sr">Prescriptions by domain on today's model and on ${esc(STACK.name)}</caption><thead><tr><th scope="col">Domain</th><th scope="col" class="n">Today</th><th scope="col" class="n">Replaced</th><th scope="col" class="n">Still prescribed</th><th scope="col"><span class="sr">Bar</span></th><th scope="col" class="k">Kinds still prescribed</th></tr></thead><tbody>${rows}</tbody>`
     + `<tfoot><tr><th scope="row">All</th><td class="n">${all.b}</td><td class="n rep">${all.rep}</td><td class="n rem">${all.rem}</td><td></td><td class="k">${esc(kinds(D, all.remIds))}</td></tr></tfoot></table></div>`;
 }
 
 function layersHtml(D: Data): string {
   return `<ul class="lyr">${LAYERS.map(l => {
     const e = D.layerEffect[l.key], stg = STAGES[l.stage];
-    const delta = e.total - D.L3.count.total;
-    return `<li><span class="lyr-n">${e.total}</span><div><b>${esc(l.label)}</b> <span class="lyr-s">${esc(l.status)}</span><p>${delta === 0 ? 'Switches out nothing on S3.' : `${delta} on S3: ${e.removed.map(k => `<code>${esc(D.entries.get(k)?.label ?? k)}</code>`).join(', ')}${e.added.length ? ` out; ${e.added.map(k => `<code>${esc(k)}</code>`).join(', ')} back in` : ''}.`} <a href="${stg.doc}">${esc(stg.doc.replace('staging/', ''))}</a></p></div></li>`;
+    const delta = e.total - D.LS.count.total;
+    return `<li><span class="lyr-n">${e.total}</span><div><b>${esc(l.label)}</b> <span class="lyr-s">${esc(l.status)}</span><p>${delta === 0 ? `Switches out nothing on ${esc(STACK.name)}.` : `${delta < 0 ? `−${-delta}` : `+${delta}`} on ${esc(STACK.name)}: ${e.removed.map(k => `<code>${esc(D.entries.get(k)?.label ?? k)}</code>`).join(', ')}${e.added.length ? ` out; ${e.added.map(k => `<code>${esc(k)}</code>`).join(', ')} back in` : ''}.`} <a href="${stg.doc}">${esc(stg.doc.replace('staging/', ''))}</a></p></div></li>`;
   }).join('')}</ul>`;
 }
 
@@ -391,7 +426,7 @@ function overviewSvg(D: Data): { svg: string; items: string } {
     const subs = b.s ? b.s.split('\n') : [];
     const title = `<text class="nd-t" x="${b.x + 12}" y="${b.y + (body ? 22 : 24)}">${esc(b.t)}</text>`;
     const sub = subs.map((l, i) => `<text class="nd-s" x="${b.x + 12}" y="${b.y + 42 + 13 * i}">${esc(l)}</text>`).join('');
-    const label = `${t.rem ? `${t.rem} still prescribed` : 'none still prescribed'}${t.rep ? `, ${t.rep} replaced in S3` : ''}`;
+    const label = `${t.rem ? `${t.rem} still prescribed` : 'none still prescribed'}${t.rep ? `, ${t.rep} replaced in ${STACK.name}` : ''}`;
     const svg = `<g class="nd ov st-${st}" tabindex="0" role="button" aria-label="${esc(`${b.t}: ${label}`)}" aria-describedby="${id}" data-tip="${id}">`
       + `<rect class="nd-ring" x="${b.x - 3}" y="${b.y - 3}" width="${b.w + 6}" height="${b.h + 6}" rx="10"/><rect class="nd-bg" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="8"/>`
       + `${title}${sub}${chips(b.x + 10, body ? b.y + 31 : b.y + b.h - 28, t)}</g>`;
@@ -399,10 +434,10 @@ function overviewSvg(D: Data): { svg: string; items: string } {
       const byDom = DOMAINS.map(d => ({ d, ks: ids.filter(k => d.ids.includes(k)) })).filter(x => x.ks.length);
       return `<ul class="tt-dom">${byDom.map(x => `<li><a href="#d-${x.d.key}">${esc(x.d.title)}</a> ${x.ks.map(k => `<code>${esc(D.entries.get(k)!.type === 'literal' ? D.entries.get(k)!.label : k)}</code>`).join(' ')}</li>`).join('')}</ul>`;
     };
-    const item = `<li class="tv st-${st}" id="${id}"><div class="tt-h"><span class="chip st-${st}"><svg class="ic" aria-hidden="true"><use href="#${ST[st].icon}"/></svg>${esc(st === 'rem' ? 'Carries prescriptions' : st === 'rep' ? 'All replaced in S3' : 'No prescriptions')}</span><b>${esc(b.t)}</b></div>`
+    const item = `<li class="tv st-${st}" id="${id}"><div class="tt-h"><span class="chip st-${st}"><svg class="ic" aria-hidden="true"><use href="#${ST[st].icon}"/></svg>${esc(st === 'rem' ? 'Carries prescriptions' : st === 'rep' ? `All replaced in ${STACK.name}` : 'No prescriptions')}</span><b>${esc(b.t)}</b></div>`
       + `<div class="tt-s"><p>${esc(text)}</p></div>`
       + (t.rem ? `<div class="tt-s"><span class="tt-k k-rem">Still prescribed here · ${t.rem}</span>${list(t.remIds)}</div>` : '')
-      + (t.rep ? `<div class="tt-s"><span class="tt-k k-now">Replaced in S3 · ${t.rep}</span>${list(t.repIds)}</div>` : '') + `</li>`;
+      + (t.rep ? `<div class="tt-s"><span class="tt-k k-now">Replaced in ${esc(STACK.name)} · ${t.rep}</span>${list(t.repIds)}</div>` : '') + `</li>`;
     return { svg, item };
   };
   const parts = [
@@ -453,29 +488,30 @@ function tocHtml(): string {
 // --- numbers in the prose, and the embedded data ---------------------------------------------------------------------
 
 function numbers(D: Data): Record<string, string> {
-  const repl = [...D.setB].filter(k => !D.set3.has(k));
+  const repl = [...D.setB].filter(k => !D.setS.has(k));
   const n: Record<string, string> = {
+    'stack': STACK.name, 'stack.section': STACK.section,
     'B.total': String(D.B.count.total), 'B.registry': String(D.B.count.registryActive), 'B.literals': String(D.B.count.literals),
-    'S3.total': String(D.L3.count.total), 'S3.registry': String(D.L3.count.registryActive), 'S3.literals': String(D.L3.count.literals),
+    'stack.total': String(D.LS.count.total), 'stack.registry': String(D.LS.count.registryActive), 'stack.literals': String(D.LS.count.literals),
     'replaced': String(repl.length), 'replaced.registry': String(repl.filter(k => !k.startsWith('lit:')).length), 'replaced.literals': String(repl.filter(k => k.startsWith('lit:')).length),
-    'S3.switches': String(Object.keys(S3).length), 'domains': String(DOMAINS.length), 'diagrams': String(DGS.length + 1),
-    'entries': String(D.B.entries), 'S3.outcome': String(D.B.classes['outcome-encoding']),
+    'stack.switches': String(Object.keys(STACK.switches).length), 'domains': String(DOMAINS.length), 'diagrams': String(DGS.length + 1),
+    'entries': String(D.B.entries), 'outcome': String(D.B.classes['outcome-encoding']),
   };
   for (const l of LAYERS) { const e = D.layerEffect[l.key]; n[`${l.key}.total`] = String(e.total); n[`${l.key}.removed`] = String(e.removed.length); n[`${l.key}.added`] = String(e.added.length); }
   for (const d of DOMAINS) { const t = tally(D, d.ids); n[`dom.${d.key}.rem`] = String(t.rem); n[`dom.${d.key}.rep`] = String(t.rep); n[`dom.${d.key}.b`] = String(t.b); }
   const remKinds: Record<string, number> = {};
-  for (const k of D.set3) { const e = D.entries.get(k)!; remKinds[e.kind] = (remKinds[e.kind] ?? 0) + 1; }
-  for (const [k, v] of Object.entries(remKinds)) n[`S3.kind.${k}`] = String(v);
+  for (const k of D.setS) { const e = D.entries.get(k)!; remKinds[e.kind] = (remKinds[e.kind] ?? 0) + 1; }
+  for (const [k, v] of Object.entries(remKinds)) n[`stack.kind.${k}`] = String(v);
   return n;
 }
 function dataJson(D: Data): string {
   const items = [...D.entries.values()].filter(e => e.b).sort((a, b) => a.key.localeCompare(b.key)).map(e => ({
     key: e.key, type: e.type, domain: DOMAINS.find(d => d.ids.includes(e.key))!.key, step: STEP_OF[e.key], value: e.value, units: e.units, kind: e.kind,
-    encodes: e.encodes, b: e.b, s3: e.s3, by: e.by ?? null, stage: e.stage ?? null, where: e.where ?? null,
+    encodes: e.encodes, today: e.b, stack: e.onStack, by: e.by ?? null, stage: e.stage ?? null, where: e.where ?? null,
     layers: Object.fromEntries(Object.entries(e.layers).map(([k, v]) => [k, v])),
   }));
-  const body = { tool: 'scripts/prescription-ledger.ts via scripts/decision-guide.ts', profile: 'field', S3, layers: LAYERS.map(l => ({ key: l.key, on: l.on, status: l.status })),
-    counts: { B: D.B.count.total, S3: D.L3.count.total, ...Object.fromEntries(LAYERS.map(l => [l.key, D.layerEffect[l.key].total])) }, items };
+  const body = { tool: 'scripts/prescription-ledger.ts via scripts/decision-guide.ts', profile: 'field', stack: STACK, layers: LAYERS.map(l => ({ key: l.key, on: l.on, status: l.status })),
+    counts: { today: D.B.count.total, stack: D.LS.count.total, ...Object.fromEntries(LAYERS.map(l => [l.key, D.layerEffect[l.key].total])) }, items };
   return JSON.stringify(body).replace(/</g, '\\u003c');
 }
 
@@ -485,20 +521,20 @@ function dataJson(D: Data): string {
 
 export function render(D: Data, html: string, commit: string): string {
   const ov = overviewSvg(D);
-  const overview = `<section class="sec" id="overview" aria-labelledby="h-overview" data-title="One decision" data-rem="${D.L3.count.total}" data-rep="${D.B.count.total - D.L3.count.total}">`
-    + `<header class="sh"><h2 id="h-overview">One decision</h2><p>Every act starts the same way. The map shows where in a decision the remaining prescriptions act, and where S3 replaced them. Hover, focus or tap a box for its list.</p></header>`
+  const overview = `<section class="sec" id="overview" aria-labelledby="h-overview" data-title="One decision" data-rem="${D.LS.count.total}" data-rep="${D.B.count.total - D.LS.count.total}">`
+    + `<header class="sh"><h2 id="h-overview">One decision</h2><p>Every act starts the same way. The map shows where in a decision the remaining prescriptions act, and where ${esc(STACK.name)} replaced them. Hover, focus or tap a box for its list.</p></header>`
     + figure('overview', 'One decision', 'One decision, from what a chimp senses to what it does', ov.svg, ov.items, ['rem', 'rep'], false) + `</section>`;
   const domains = `<section class="sec" id="domains" aria-labelledby="h-domains"><header class="sh"><h2 id="h-domains">Domain by domain</h2><p>One diagram per kind of decision. Each box is one rule or mechanism, marked by its status. The count under each title comes from the ledger.</p></header>`
     + DGS.map((d, i) => sectionHtml(D, d, i)).join('') + `</section>`;
   const remKinds: Record<string, number> = {};
-  for (const k of D.set3) { const e = D.entries.get(k)!; remKinds[e.kind] = (remKinds[e.kind] ?? 0) + 1; }
+  for (const k of D.setS) { const e = D.entries.get(k)!; remKinds[e.kind] = (remKinds[e.kind] ?? 0) + 1; }
   const kindsText = Object.entries(remKinds).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([k, v]) => `${v} ${esc(k)}`).join(', ');
-  const docs = [...new Set(['staging/e-stack2-confirm.md', 'staging/track-e-handoff.md', ...Object.values(STAGES).map(s => s.doc), 'simulation.md', 'research.md'])];
-  const sources = docs.map(d => `<li><a href="${d}">${esc(d.replace('staging/', ''))}</a>${d.includes('prereg') ? ` <span>${esc(Object.entries(STAGES).filter(([, s]) => s.doc === d).map(([k, s]) => `${k}, ${s.name}`).join('; '))}</span>` : d === 'staging/e-stack2-confirm.md' ? ' <span>integrated confirms S2, S3 and S4</span>' : d === 'staging/track-e-handoff.md' ? ' <span>Track E handoff and stage ledger</span>' : d === 'simulation.md' ? ' <span>how the simulation works</span>' : ' <span>evidence and sources</span>'}</li>`).join('');
+  const docs = [...new Set([STACK.doc, 'staging/track-e-handoff.md', ...Object.values(STAGES).map(s => s.doc), 'simulation.md', 'research.md'])];
+  const sources = docs.map(d => `<li><a href="${d}">${esc(d.replace('staging/', ''))}</a>${d.includes('prereg') ? ` <span>${esc(Object.entries(STAGES).filter(([, s]) => s.doc === d).map(([k, s]) => `${k}, ${s.name}`).join('; '))}</span>` : d === STACK.doc ? ' <span>integrated confirms of the candidate stacks, S2 onward</span>' : d === 'staging/track-e-handoff.md' ? ' <span>Track E handoff and stage ledger</span>' : d === 'simulation.md' ? ' <span>how the simulation works</span>' : ' <span>evidence and sources</span>'}</li>`).join('');
   const regions: Record<string, string> = {
     toc: tocHtml(), counts: countsHtml(D), layers: layersHtml(D), diagrams: overview + domains,
     data: `<script type="application/json" id="dg-data">${dataJson(D)}</script>`, kinds: kindsText, sources,
-    stack: esc(JSON.stringify(S3)), stamp: `Ledger run by <code>scripts/decision-guide.ts</code> on the field profile, at <code>${esc(commit)}</code> (the last commit to change the registry, the ledger rules or <code>src/sim</code>).`,
+    stack: esc(JSON.stringify(STACK.switches)), stamp: `Ledger run by <code>scripts/decision-guide.ts</code> on the field profile, at <code>${esc(commit)}</code> (the last commit to change the registry, the ledger rules or <code>src/sim</code>).`,
   };
   let out = html;
   for (const [name, body] of Object.entries(regions)) {
@@ -515,15 +551,18 @@ function checkPage(D: Data, html: string): string[] {
   const errs: string[] = [];
   const m = html.match(/<!--gen:data--><script type="application\/json" id="dg-data">([\s\S]*?)<\/script><!--\/gen:data-->/);
   if (!m) return ['no embedded data'];
-  const data = JSON.parse(m[1]) as { counts: Record<string, number>; items: { key: string; b: boolean; s3: boolean; by: string | null }[] };
+  const data = JSON.parse(m[1]) as { stack: Stack; counts: Record<string, number>; items: { key: string; today: boolean; stack: boolean; by: string | null }[] };
   // independent of the renderer: the page's lists against a fresh ledger run
-  const rem = new Set(data.items.filter(i => i.s3).map(i => i.key)), all = new Set(data.items.map(i => i.key));
+  const rem = new Set(data.items.filter(i => i.stack).map(i => i.key)), all = new Set(data.items.map(i => i.key));
   const same = (a: Set<string>, b: Set<string>) => a.size === b.size && [...a].every(k => b.has(k));
   if (!same(all, D.setB)) errs.push(`the page's prescriptions on today's model differ from the ledger (${all.size} vs ${D.setB.size})`);
-  if (!same(rem, D.set3)) errs.push(`the page's remaining prescriptions on S3 differ from the ledger (${rem.size} vs ${D.set3.size})`);
-  if (data.counts.B !== D.B.count.total || data.counts.S3 !== D.L3.count.total) errs.push('the page\'s headline counts differ from the ledger');
+  if (!same(rem, D.setS)) errs.push(`the page's remaining prescriptions on ${STACK.name} differ from the ledger (${rem.size} vs ${D.setS.size})`);
+  if (data.counts.today !== D.B.count.total || data.counts.stack !== D.LS.count.total) errs.push('the page\'s headline counts differ from the ledger');
+  if (JSON.stringify(data.stack.switches) !== JSON.stringify(STACK.switches)) errs.push('the page\'s stack differs from STACK');
   for (const l of LAYERS) if (data.counts[l.key] !== D.layerEffect[l.key].total) errs.push(`the page's count with ${l.key} differs from the ledger`);
-  for (const i of data.items) if (!i.s3 && !i.by) errs.push(`${i.key}: replaced without a switch`);
+  for (const i of data.items) if (!i.stack && !i.by) errs.push(`${i.key}: replaced without a switch`);
+  // a stack name in a structural label must be the stack's (prose that reports another stack's results says so in words)
+  for (const x of html.matchAll(/(?:still prescribed (?:in|on)|replaced in|not in|candidate stack|Layers outside) (S\d+)\b/gi)) if (x[1] !== STACK.name) errs.push(`label names ${x[1]}, not ${STACK.name}: "${x[0]}"`);
   for (const h of html.matchAll(/href="([^"#:]+)(#[^"]*)?"/g)) if (!existsSync(join(ROOT, 'docs', h[1]))) errs.push(`broken link ${h[1]}`);
   for (const h of html.matchAll(/href="#([^"]+)"/g)) if (!html.includes(`id="${h[1]}"`)) errs.push(`broken anchor #${h[1]}`);
   for (const u of html.matchAll(/<use[^>]*href="#([^"]+)"/g)) if (!html.includes(`id="${u[1]}"`)) errs.push(`missing symbol #${u[1]}`);
@@ -532,8 +571,37 @@ function checkPage(D: Data, html: string): string[] {
   return errs;
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+// The hosted copy (the public site deploys the page at /docs/decision-guide, unlinked)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/** Files the site does not deploy (with or without an #anchor): links to them become plain text. */
+const UNDEPLOYED = '(?:staging/[^"]*|simulation\\.md[^"]*|research\\.md[^"]*)';
+/** Outbound references the hosted copy may keep. */
+const HOSTED_OK = /^(?:data:|\/about|guide\/fonts\.css)/;
+
+/** The copy of the page for the public site: noindex; links to undeployed notes made plain text (`doc-ref`); the
+ *  footer's link to the illustrated guide pointed at /about (the site redirects architecture.html there); a provenance
+ *  comment. Fails if any outbound reference other than /about, data: URIs and guide/fonts.css remains. */
+export function hostedCopy(html: string, from: { branch: string; commit: string }): string {
+  const n0 = (html.match(new RegExp(`<a href="${UNDEPLOYED}"`, 'g')) ?? []).length;
+  let n = 0, k = 0, m = 0;
+  let s = html.replace(new RegExp(`<a href="${UNDEPLOYED}">([\\s\\S]*?)</a>`, 'g'), (_x, text: string) => { n++; return `<span class="doc-ref">${text}</span>`; });
+  if (n !== n0) fail(`hosted: ${n0} links to undeployed notes but ${n} made plain text (a link with other attributes?)`);
+  s = s.replace(/<a href="architecture\.html">/g, () => { k++; return '<a href="/about">'; });
+  if (k !== 1) fail(`hosted: expected the footer's one link to architecture.html, found ${k}`);
+  s = s.replace(/(<meta name="viewport"[^>]*>)/, (x: string) => { m++; return `${x}\n<meta name="robots" content="noindex, nofollow">`; });
+  if (m !== 1) fail('hosted: no viewport meta to put the robots meta after');
+  const left = [...s.matchAll(/(?:href|src)="([^"#][^"]*)"/g)].map(x => x[1]).filter(h => !HOSTED_OK.test(h));
+  if (left.length) fail(`hosted: outbound references left: ${[...new Set(left)].join(', ')}`);
+  if (!s.includes('<head>')) fail('hosted: no <head> for the provenance comment');
+  return s.replace('<head>', `<head>\n<!-- Hosted copy of docs/decision-guide.html from branch ${from.branch} ${from.commit}, made by scripts/decision-guide.ts --hosted: unlinked, noindex; links to undeployed notes are plain text. Regenerate, do not edit. -->`);
+}
+
 function main() {
-  const check = process.argv.includes('--check');
+  const args = process.argv.slice(2), check = args.includes('--check');
+  const hostedAt = args.indexOf('--hosted'), hostedOut = hostedAt >= 0 ? args[hostedAt + 1] : undefined;
+  if (hostedAt >= 0 && (!hostedOut || hostedOut.startsWith('--'))) fail('--hosted needs an output path');
   const D = buildData();
   const errs = checkContent(D);
   if (errs.length) { console.error(errs.map(e => `  - ${e}`).join('\n')); fail(`${errs.length} content error(s)`); }
@@ -543,8 +611,17 @@ function main() {
   const out = render(D, html, commit);
   const pageErrs = checkPage(D, out);
   if (pageErrs.length) { console.error(pageErrs.map(e => `  - ${e}`).join('\n')); fail(`${pageErrs.length} page error(s)`); }
-  const t3 = D.L3.count, tb = D.B.count;
-  console.log(`today's model ${tb.total} (${tb.registryActive} + ${tb.literals} literals); S3 ${t3.total} (${t3.registryActive} + ${t3.literals}); replaced ${tb.total - t3.total}; ${LAYERS.map(l => `${l.key} ${D.layerEffect[l.key].total}`).join(', ')}`);
+  const ts = D.LS.count, tb = D.B.count;
+  console.log(`today's model ${tb.total} (${tb.registryActive} + ${tb.literals} literals); ${STACK.name} ${ts.total} (${ts.registryActive} + ${ts.literals}); replaced ${tb.total - ts.total}; ${LAYERS.map(l => `${l.key} ${D.layerEffect[l.key].total}`).join(', ')}`);
+  if (hostedOut) {
+    // the hosted copy is made from the committed page, never from a page this run would still change
+    if (out !== html) fail('docs/decision-guide.html is out of date: run pnpm exec tsx scripts/decision-guide.ts, commit, then --hosted');
+    const git = (c: string) => execSync(`git ${c}`, { cwd: ROOT }).toString().trim();
+    const dirty = git('status --porcelain -- docs/decision-guide.html') ? '+uncommitted' : '';
+    writeFileSync(resolve(hostedOut), hostedCopy(html, { branch: git('rev-parse --abbrev-ref HEAD'), commit: git('rev-parse --short HEAD') + dirty }));
+    console.log(`wrote the hosted copy to ${hostedOut}${dirty ? ' (from an uncommitted page)' : ''}`);
+    return;
+  }
   if (check) {
     if (out !== html) { console.error('docs/decision-guide.html is out of date: run pnpm exec tsx scripts/decision-guide.ts'); process.exit(1); }
     console.log('docs/decision-guide.html is up to date and agrees with the ledger');
