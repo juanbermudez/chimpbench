@@ -1,0 +1,65 @@
+{
+ "about": "Stage E1j staging for data/targets.json (proposal; applied by the integrator, this branch never edits targets.json). One row: T-RNG-5 gains the method and sample of its one source and the other sites' sex-class day ranges found by the E1j audit (docs/staging/e1j-prereg.md §1, §2.3). The band is NOT changed here: the only strictly lactating sample is Budongo's, and any wider band would be chosen after the model's values were seen (R quick 0.706 ± 0.080 and confirm 0.777 ± 0.050 over four realizations; B 0.595 ± 0.123 and 0.629 ± 0.027). Applying the rows changes the targets hash: protocolLog entry and new freeze by the integrator.",
+ "targets": [
+  {
+   "id": "T-RNG-5",
+   "objectives": [
+    "O3",
+    "O9"
+   ],
+   "metric": "Lactating female day range relative to males",
+   "definition": "Ratio of mean day ranges.",
+   "observer": {
+    "protocol": "location fixes",
+    "interval_min": 5,
+    "unit": "follow-day"
+   },
+   "field": [
+    {
+     "population": "Budongo Sonso",
+     "years": "2002-2003",
+     "value": "lactating 1.2 ± 0.8, receptive 2.2 ± 0.8, males 2.7 ± 1.5 km",
+     "n": "15 adults (8 males; 6 lactating or gestating, pooled as 'lactating'; 1 receptive); 27, 13 and 3 follow-days of at least 8 h",
+     "method": "focal follows; GPS fix every 5 min while travelling, nothing recorded inside halts of 20 min or more",
+     "source": "batesByrne2009",
+     "note": "ratio of class means 0.44; about 0.26-0.63 with follow-days as independent units (derived, docs/staging/e1j-prereg.md §1)"
+    },
+    {
+     "population": "Gombe",
+     "years": "1972-1973",
+     "value": "median one-day range: females 2.8 km (most anoestrous), males 4.2 (northern) and 3.8 (southern)",
+     "n": "61 female days (10 females), 83 and 23 male days (8 and 7 males)",
+     "method": "nest-to-nest follows; 100 m grid lines crossed, moves under about 30 m ignored",
+     "source": "wrangham1975",
+     "note": "females ÷ males 0.67-0.74 (derived); juveniles' days were credited to their mothers"
+    },
+    {
+     "population": "Kanyawara; Gombe",
+     "years": "",
+     "value": "adult females 2.0, males 2.4 km/day (Kanyawara); 3.2 and 4.6 (Gombe)",
+     "n": "",
+     "method": "not seen (primary closed)",
+     "source": "pontzerWrangham2004",
+     "note": "as cited by wilson2021 (PMC7886264); adult females, not lactating females: 0.83 and 0.70 (derived)"
+    }
+   ],
+   "accept": {
+    "lo": 0.3,
+    "hi": 0.6,
+    "units": "ratio",
+    "basis": "one site (Budongo, the only strictly lactating sample); Gombe's mostly anoestrous females 0.67-0.74 and both sites of pontzerWrangham2004 (adult females, secondary) 0.70-0.83 lie above it"
+   },
+   "evidence": "M",
+   "role": "held-out",
+   "encoded": false,
+   "notes": "Stage E1j audit (2 October 2026): the model's observer differs from batesByrne2009's method (it sums every 5-min fix of the follow, inside halts too), but the field rule changes the ratio by -0.03 on R and 0.00 on B, inside R's own spread (0.080): no scorer change is proposed. The observer's mothers' mean rests on 13-24 complete follow-days per quick run (the field had 13); observer ÷ simulation truth ranged 0.75-1.04 for mothers across three arms against 0.83-0.85 for males, so single quick runs of this row carry about ±0.1 of sampling noise. For the integrator: either keep the band and label it 'Budongo, one site', or widen it to the cross-site range; the second choice is made after the model's values were seen.",
+   "sources": [
+    "batesByrne2009",
+    "pontzerWrangham2004",
+    "wilson2021",
+    "wrangham1975"
+   ],
+   "revisedPostFreeze": "C8c lactation-cost taper (docs/staging/c8c-lactation-taper.md; lactation-specific model-input correction made after this row's values were seen): model revised post-freeze; scored only on the fresh C8 set B (1717-2626, step 101); counts as validation only if no parameter was set by looking at it"
+  }
+ ]
+}

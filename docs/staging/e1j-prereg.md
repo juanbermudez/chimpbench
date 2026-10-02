@@ -324,3 +324,6 @@ path while each complete follow ran (`truthKm`), so that today's day range ÷ `t
 `truthKm` ÷ the class's truth path per chimp-day is the choice of days; and the share of daylight minutes above 15 m.
 Smoke test (2 days, seed 48, R): non-empty; identity unchanged. Runs: R, B and TP again, same seeds and window, from a
 frozen checkout of the commit that adds this section (the simulation is unchanged, so every earlier readout repeats).
+Also registered here (07:12, before their run): the same tool on R's three re-draws (R + `rgTemperature` 0.1641, 0.1639,
+0.16405: the integrator's NR1q–NR3q), seeds 48 and 7, same window and checkout, so that every readout of R in the final
+table is a mean ± SD over R's four realizations; their T-RNG-4/5 must equal NR1q–NR3q's per-seed values (identity).
