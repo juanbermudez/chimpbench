@@ -157,7 +157,88 @@ Both arms ran without error; readouts sane. R0 + S: 56% of departures before sun
 - None other known at registration.
 
 ## 8. Iterations
-(none yet)
+See §8b (after the results of the registered arms, which motivate them).
 
 ## 9. Results
-(none yet)
+
+Runs: field profile, seeds 48 and 7, 30-day burn-in + 30 days, `--workers 1` (load 9–11), frozen detached checkouts:
+R0 at 77c4163, the S arms at 786f26f. Every number below is printed by `e2e_table.py` / `e2e_bench.py` (scratch
+scripts reading the rhythm-metrics and e-bench JSON). Arms: **R0**; **S** = R0 + `nestCompany` + `nestAudience`;
+**F** = R0 + `rhythmFreeNight` (diagnostic); **FS** = F + S.
+
+### 9.1 The registered arms (rhythm-metrics)
+
+| Readout | R0 | S | F | FS |
+| --- | --- | --- | --- | --- |
+| departure, min after sunrise: median (p10–p90) | -13 (-14 to -13) | -13 (-14 to 12) | -124 (-131 to 4) | -57 (-129 to 28) |
+| departures before sunrise, adults (adult females) | 99% (99%), n 1770 | 83% (90%), n 1810 | 89% (95%), n 1806 | 80% (89%), n 1781 |
+| last nest entry, min after sunset (median) | -32 | -34 | -31 | -34 |
+| active day, h: male / lactating / other female | 11.86 / 12.04 / 11.88 | 11.56 / 11.90 / 11.72 | 13.08 / 13.89 / 13.37 | 12.22 / 13.47 / 12.63 |
+| adults: out of a nest, share of night; m per night | 0.1%; 1 m | 0.0%; 0 m | 14.7%; 488 m | 9.2%; 286 m |
+| adults: T-RHY-5 (night share of activity records) | 0.001 | 0.000 | 0.135 | 0.092 |
+| juveniles 5–15 y: out of a nest, share of night; m per night | 4.6%; 163 m | 2.4%; 75 m | 14.8%; 533 m | 9.5%; 349 m |
+| 5–8 y: out of a nest before dawn; m per morning | 96.0%; 576 m | 53.4%; 328 m | 97.6%; 658 m | 70.9%; 475 m |
+| co-departures (5 min, 50 m) | 43.3% | 35.0% | 22.6% | 22.3% |
+| last waking, min after sunrise (median) | -128 | -128 | -126 | -126 |
+| deaths (at night); causes | 0 (0); {} | 0 (0); {} | 0 (0); {} | 1 (0); {'illness': 1} |
+| pre-dawn rain ≥ 0.05 | 0.8% | 1.3% | 0.0% | 0.3% |
+
+e-bench --quick (S against R0; shared rows; noise threshold 1.5):
+
+```
+reference R0: fitted 4.267, held-out 6.429, prescriptions 115, viability pass, commit 77c4163 dirty 0
+S: fitted 5.600, held-out 5.370, prescriptions 115, viability pass, commit 786f26f dirty 0
+   on rows scored in both: fitted -0.195 (15 rows), held-out -1.715 (12 rows); without T-HUN-4 and T-BRD-1: fitted -0.195 (15), held-out -0.539 (11)
+   largest row moves: T-HUN-4 (h) -1.176, T-FOOD-10 (h) -0.787, T-HUN-7 (f) -0.625, T-HUN-1 (f) +0.337, T-HUN-8 (h) +0.333, T-SOC-2 (h) +0.135
+```
+
+Registered predictions:
+- **P-S1 fails.** Co-departures fell, 43.3% → 35.0% (predicted +10 points or more). R0's figure is an artefact of the
+  menu: every adult is released at the same tick (−13 min), so departures coincide; company spreads them out.
+- **P-S2 holds in direction.** Departures before sunrise 99% → 83% (adult females 99% → 90%); the median stays at −13
+  (most adults still leave when the menu opens), the p90 moves from −13 to +12. T-FOOD-10 1.00 → 0.83 (band 0.08–0.30):
+  still out of band.
+- **P-S3 holds.** 5–8 y out of a nest before dawn 96.0% → 53.4% (not below 50%: no "fix" claimed); juveniles' night
+  out-of-nest share halves (4.6% → 2.4%).
+- **P-S4 holds.** In the free night company moves the median departure from −124 to −57 min, not to −30 or later.
+- **P-S5 holds in direction, fails night safety.** Adults out of a nest 14.7% → 9.2% of night time (R0 0.1%); T-RHY-5
+  0.092 against the field's ≤ 0.033.
+- Diagnosis (`predawn-diag.ts`, seed 48, 30-day burn-in, 4 mornings, FS): adults with an adult nest-mate within 50 m at
+  solar midnight were out of a nest 29.1% of the pre-dawn window and left at a median sun altitude of −4.0° (about 16 min
+  before sunrise); adults with none were out 98.2% (they leave at waking). About 47% of adult pre-dawn time is spent by
+  animals that nested with no adult within 50 m (42% counting nest-mates of 5 y and more): the model's parties are small
+  (T-PTY-1 2.80 against 3–9), so company cannot hold them. The mean company value of an awake adult in a nest before dawn
+  was 0.94.
+
+### 9.2 Verdict on the registered arms
+- **S on R0:** viable, night safety better than R0 on every readout, shared-row change fitted −0.195 and held-out
+  −1.715 (−0.539 without T-HUN-4 and T-BRD-1: inside noise; the targeted row T-FOOD-10 moves −0.787). No prescription
+  removed (115 = 115), so by the Track E rule it is not a keep: a mechanism that improves night safety and spreads
+  departures, recorded, off by default.
+- **FS (the hold without the menu):** killed by criterion 2 (adult night out-of-nest 9.2%, T-RHY-5 0.092).
+- **T:** inert, not run (§3.3).
+
+## 8b. Iterations (logged before each run)
+
+### Iteration 1 (registered before its run): company needs darkness to cost something
+
+- **Reading of the registered arms (§9.1).** Company holds an animal only while its best option outside the nest is worth
+  less than staying. On R0 the night menu removes those options until −13 min, so S can act only after it opens. In the
+  free night (F) nothing outside the nest loses value in the dark (`darkCost` 0: intake, sight and pace ignore light), so
+  at waking a trip or a drink beats rest plus company, and an animal with no adult nest-mate within 50 m has no company
+  to stay for.
+- **Hypothesis (first principles).** An awake chimpanzee stays in its nest before dawn because a trip in the dark yields
+  little (E2c: light-limited acuity, shlaer1937 fit, and pace; existing switch `darkCost`, unchanged) *and* staying keeps
+  the company of its nest-mates (S). E2c showed the first alone does not hold (trips valued by the light on arrival and
+  drinks still win, e2c-prereg §8); P-S4 tests the second alone. Neither component is new or retuned.
+- **Arm I1** = R0 + `rhythmFreeNight` 1 + `darkCost` 1 + S (`nestCompany` 1, `nestAudience` 1). **Diagnostic I1d** =
+  R0 + F + `darkCost` 1 (vision without company), same commit. With `darkCost` 1 the night/dusk single-option guard in
+  rg.ts:168 does not apply (F is 1), so the menus are off for rules-driven chimps in both.
+- **Predictions:** (i) adults' night out-of-nest share: I1 below FS's 9.2% and below I1d's (direction, moderate
+  confidence). Passing night safety (§5.2: ≤ 3.3% and T-RHY-5 ≤ 0.033; juveniles 5–15 y not above R0's 4.6%) is **not
+  predicted** (low confidence either way): animals that nest without an adult within 50 m (about half the adult
+  pre-dawn time, §9.1) keep only the dark cost, and E2c found trips valued by the light on arrival and drinks still pull
+  animals out. (ii) I1's median adult departure later than FS's −57 min and its share before sunrise below FS's 80%
+  (direction, low confidence). (iii) 5–8 y pre-dawn out-of-nest share below FS's 70.9% (direction).
+- **Kill criterion:** §5 unchanged. Prescriptions with F: 113 (menus off) against R0's 115; `rhythmDarkW` not read
+  (circadian). If I1 passes §5.2 on `rhythm-metrics`, it goes to `e-bench --quick` against R0.
