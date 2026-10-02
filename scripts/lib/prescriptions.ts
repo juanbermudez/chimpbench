@@ -237,6 +237,8 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   // no prescription out (the weaning refusal roll, weanRefuseMaxP, stays)
   ledgerMassMatureFemaleY: { when: P => !(P.energyLedger === 1 && P.ledgerGrowSurplus === 1 && P.ledgerGrowPotential === 1), why: 'not read while ledgerGrowPotential (with ledgerGrowSurplus) is 1 (stage E1f)' },
   ledgerMassMatureMaleY: { when: P => !(P.energyLedger === 1 && P.ledgerGrowSurplus === 1 && P.ledgerGrowPotential === 1), why: 'not read while ledgerGrowPotential (with ledgerGrowSurplus) is 1 (stage E1f)' },
+  // stage E4e (huntValue; docs/staging/e4e-prereg.md §4): the hunt lead is scored as food (huntvalue.ts), with no community gap
+  huntGapH: { when: P => !(P.huntValue === 1 && P.energyLedger === 1 && P.ledgerDrive === 1), why: 'the community-wide gap since the last hunt in src/sim/candidates.ts meatAndHunting is not evaluated while huntValue, energyLedger and ledgerDrive are 1 (the lead is scored as food, huntvalue.ts)' },
   // stage E4c (callValue): no travel pant-hoot hazard and no contact-call quota; pant-hoots follow their value (calls.ts)
   ...same(['travelCallPerH', 'travelCallGapH'], P => P.callValue !== 1, 'the travel pant-hoot hazard in src/sim/execution.ts executeAction is not evaluated while callValue is 1'),
   contactCallGapH: { when: P => P.callValue !== 1, why: 'the contact-call quota (and the fewer-than-2-in-sight gate) in src/sim/candidates.ts patrolAndCalls is not evaluated while callValue is 1: the staleness of the own last pant-hoot (calls.ts callStaleness) replaces it' },
@@ -285,6 +287,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   endoFastRedirect: { stage: 'E4b', needs: { endoStates: 1, endoRedirect: 1, endoFast: 1 }, removesNothing: 'rescores the redirect that endoRedirect already took off the dice (e4b-prereg)' },
   callValue: { stage: 'E4c', needs: {} },
   endoRhythm: { stage: 'E4d', needs: { endoStates: 1 }, removesNothing: 'adds a sleep-gated secretion term to the stress and arousal states; no clock literal, hazard or roll encoded their daily course (e4d-prereg §3.1)' },
+  huntValue: { stage: 'E4e', needs: { energyLedger: 1, ledgerDrive: 1 } },
 };
 
 /** Whether an entry is in use: generated (not planned), non-zero under these resolved parameters, and not switched out. */

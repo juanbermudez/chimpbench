@@ -14,6 +14,7 @@ import { milkShare, milkWorth, nurseBoutWorth } from './energy';
 import { arrivalLight, brightening, needUnits, raceStake, rivalsAt } from './departure';
 import { endoOn, escalateScore, fastSpanH, rainFastScore, rainScore, redirectFastScore, redirectScore } from './endocrine';
 import { callValueOn, crownOf, pantHootValue } from './calls';
+import { huntRate, huntValueOn } from './huntvalue';
 import { awakeInNest, byIdIn, index, isTreeId, ix, NEVER, TREE_ID0, treesNear, simOf } from './state';
 
 // Variants refine an action's meaning (why a charge happens) for execution and reason text.
@@ -828,6 +829,16 @@ function meatAndHunting(world: World, c: Chimp): void {
     const female = c.sex === 'female' ? 0.8 : 0;
     // hunting is opportunistic and male-biased; success rises with hunters at Ngogo [M-H]
     if (hunt) offer('hunt', p.id, 1 + c.skills.hunting * P.huntJoinSkillW - female - dist / P.huntDistScaleM, V.JOIN, hunt.hunters.length);
+    // stage E4e (huntValue; docs/staging/e4e-prereg.md §4): a hunt is food. At the encounter (or on an experiment's hunting
+    // day) the lead is offered when a capture can be expected and scored as a crown trip delivering the same energy per
+    // hour (huntvalue.ts), in the crowns' currency and distance scale: no community gap, no hand-set lead value
+    else if (huntValueOn(P)) {
+      if (c.sex === 'male' && (((s.huntDay[c.troopId] ?? NEVER) > time && x.ownMales >= P.huntMinMales)
+        || (x.impulse === IMPULSE_HUNT && x.impulseTarget === p.id && x.impulseUntil > time && x.ownMales >= P.huntEncMinMales))) {
+        const r = huntRate(c, P, dist, x.ownMales);
+        if (r > 0) offer('hunt', p.id, (c.hunger * 1.6 + 0.1) * r - dist / P.forageDistScaleM, V.LEAD, x.ownMales);
+      }
+    }
     // hunts start only with several males together (no solo colobus hunts at Ngogo) [M-H]: on a community's hunting day,
     // or (hunting fix, huntEncounter) when he has just met this group in company, the impulse set at perception
     else if (c.sex === 'male' && time - (s.lastHunt[c.troopId] ?? NEVER) > P.huntGapH && (((s.huntDay[c.troopId] ?? NEVER) > time && x.ownMales >= P.huntMinMales)
