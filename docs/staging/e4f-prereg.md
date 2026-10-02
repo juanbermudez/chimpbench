@@ -138,4 +138,91 @@ Reading rules, fixed now:
   the integrator's R quick realizations (R-quick, NR1q–NR3q at 612bf15) are this stage's reference. S0 (seed 48, 1 + 1
   days): every readout produced; tool check holds (focal model rule 19.4175 per 100 h = T-HUN-3 `encountersPer100h`
   19.4175); colobus travel 90.0 m/h by day and by night.
-- **D0 diagnosis** (as registered in §3): launched 06:00 from the same frozen checkout.
+- **D0 diagnosis** (as registered in §3): launched 05:57 from the same frozen checkout.
+
+#### D0 result (f5a4bb5; R, seeds 48 and 7, 30 + 30 days; pooled by `artifacts/validation/e4f/d0_pool.py` from `diag/D0-{48,7}.json`)
+
+- Tool checks: the focal model rule reproduces R-quick's T-HUN-3 per seed (0.1236, 0.0847) and its encounter part
+  (12.13 and 7.97 per 100 h; e-bench pools by the seed mean, 10.05); truth 5.59 encounters per community-day (E4e's R:
+  5.59). The observer and the truth readouts are the reference's.
+- **Counting rule** (same scans): focal follows 10.04 → 8.82 per 100 h under gilby2015's rule (−12%); party follows
+  7.54 → 6.97 (−8%). Two or more groups within 100 m at 3–9% of positive scans.
+- **Follow type**: T-HUN-3 counts its encounters on focal follows (10.04 per 100 h); gilby2015's are party scans, and
+  the model's party follows (which already score T-HUN-1) give 7.54 (×0.75).
+- **Distance**: 83% (focal) and 73% (party) of encounters are first scanned 50–100 m away; party spread is small (mean
+  9–15 m, median 1–4 m), so "any member within 100 m" adds little (focal animal only: 8.00 against 8.82).
+- **Density**: 2.35 and 2.60 groups/km² inside the communities' ranges (map 2.48): placement is uniform, nothing
+  concentrates colobus where chimpanzees range.
+- **Movement**: colobus travel 90 m/h by day and 90 m/h by night (the literal; no rest at night); the followed party's
+  centroid 139–155 m/h. Colobus drift raises the relative speed by about 10% over stationary groups (mean relative
+  speed of two random headings), so ranging can account for at most ~10%.
+- **Decomposition of the 2.7 × (focal, today's rule, 10.04 against 3.73):** follow type ×1.33, counting rule ×1.08,
+  density (Ngogo against Kanyawara K-30, [L]) ×1.13, colobus drift ≤ ×1.1; on party follows with gilby2015's rule and
+  Kanyawara's density the model would record ~6.2 per 100 h, **1.7 × Kanyawara**. The remaining ×1.7 has no sourced
+  input behind it: the field counts colobus that "can be detected" (no detection probability in any source reached),
+  colobus avoidance of chimpanzees is not modelled (no rate found). **Decision:** the inputs (density, ranging) are
+  minor drivers; most of the excess is how the encounter is counted (scorer) plus an unexplained residual. The one
+  sourced, site-matched input correction is the density, and it is small.
+
+## 4. Correction (switch `preyKanyawara`, 0 = today; field profile only)
+
+### 4.1 Input: site-matched colobus density
+
+With `preyKanyawara` 1 in the field profile, the number of colobus groups (at world creation and as the respawn floor
+in `slowPrey`) is round(`colobusDensityKanyawaraPerKm2` × map area in km²) instead of `preyMinGroups` 159 (Ngogo
+1997–99). `colobusDensityKanyawaraPerKm2` = 2.22 groups/km² [L]: bonnell2010 (read in full) placed "five distinct social
+groups, of different sizes (70, 25, 84, 45, 40), as measured by Snaith and Chapman (2008), representing average density
+of red colobus in our study area" (Kanyawara K-30) on a 225 ha grid: 5 ÷ 2.25 km². chapman2010ecol (read in full,
+figures excepted): red colobus group density "remained fairly stable over time in all areas" (K-30, K-14, K-15, all in
+the Kanyawara study site; 26–36 years), and "no difference … between the unlogged and the heavily logged areas", so the
+K-30 value stands for the community's range [L]. 142 groups on the 8 × 8 km map. Compressed profile: unchanged.
+Removed: nothing (an input correction; `removesNothing` in the switch registry).
+
+Not changed, with the reason: group size (14–37, a literal, `src/sim/generation.ts:316`; Kanyawara's mean 53 [L] does
+not enter the encounter rate, a point has no size; it would change hunting outcomes, deferred); colobus speed and
+night travel (`src/sim/ecology.ts:30`, literals; no field day range reached: null; bounded at ≤ 10% by D0); group
+spread (a point; Kibale red colobus groups spread 50–1000 m, chapman2010ecol citing unpublished data, which would raise
+encounters, not lower them: not built); chimpanzee detection of colobus (100 m, design: null).
+
+### 4.2 Scorer correction, staged (not applied: a protocol change after the freeze is the integrator's decision)
+
+`docs/staging/e4f-protocol.patch.json`: T-HUN-3 and T-HUN-4 counted on the party follows that already score T-HUN-1,
+with gilby2015's run rule (a positive 15-min scan not immediately preceded by a positive scan; hunts matched to the
+run). Deferred defects with file:line: `src/field/metrics.ts:126` (new encounter when the nearest group's id changes),
+`src/field/config.ts:25` (T-HUN-3/4 not in `TARGET_FOLLOW`). Every arm reports both scorings from the tool; only the
+current scorer is judged.
+
+## 5. Readouts (defined in §3; all smoke-tested on S0/S1 before any arm)
+
+e-bench rows T-HUN-1..4 and sums (judged); the tool's observer encounters per 100 h and per follow-day (= per
+community-day with a follow) under both rules and both follow types, hunted share under both rules, T-HUN-4's odds per
+male recomputed from the tool's rows (pooled logistic, `diag_table.py`), detected hunts per follow-day, truth encounters
+per community-day, density in ranges. "Share hunted" in the report = e-bench T-HUN-3 (today's scorer).
+
+## 6. Arms and predictions (stated before any run of changed code)
+
+Reference: R-quick, NR1q–NR3q (e-bench, integrator's, 612bf15; valid by I0). Tool runs on R and its three re-draws at
+this stage's switch commit (`RD0`–`RD3`: R + `rgTemperature` 0.164, 0.1641, 0.1639, 0.16405; unchanged code) give the
+tool readouts a spread. Judged with `judge_vs_reps.py quick R` (copied from the integrator's scratch): z against R's mean,
+SD fitted 0.69, held-out 1.26, held-out without T-HUN-4 and T-BRD-1 0.48, or R's own spread if larger.
+
+- **H** = R + `huntValue` 1 (E4e's H1, same code): e-bench quick + tool. Must reproduce E4e's H1 rows (T-HUN-1 14.2,
+  T-HUN-3 0.0267): the "with huntValue" reference.
+- **K** (iteration 1) = R + `preyKanyawara` 1: e-bench quick + tool. Predictions against R's mean: observer
+  encounters per 100 h (T-HUN-3 part) about −11% (9.5 → ~8.5), truth encounters per community-day about −11%
+  (5.45 → ~4.9), T-HUN-1 about −11% in expectation (inside R's spread), T-HUN-3 unchanged in expectation, the encounter
+  rate still ≥ 2 × Kanyawara's; fitted and held-out sums inside noise; prescriptions 103 (unchanged); viability passes.
+- **KH** = K + `huntValue` 1: against H: T-HUN-1 about −11%; T-HUN-3 still below its band (~0.02–0.03): the site-matched
+  density does **not** let the hunt decision land T-HUN-1 and T-HUN-3 in band together. Under the staged scorer, T-HUN-3
+  rises (direction only).
+
+## 7. Kill criterion
+
+`preyKanyawara` stays off and is recorded if viability fails, or if held-out without T-HUN-4 and T-BRD-1 rises beyond
+noise (z > +2 against R's mean). It removes no rule, so the count leg does not apply. Otherwise it is recorded as the
+site-matched input, inside noise or not, for the integrator to decide (it is [L]).
+
+## 8. Iterations
+
+At most 3, each logged in §9 and committed before its run. Iteration 1 = K (with H and KH as its comparison runs).
+A further iteration only if a source for colobus day range or for detection distance is reached (registered first).
