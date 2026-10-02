@@ -334,6 +334,9 @@ mechanism does not run. This is the last iteration (at most 3).
   candidate scores only; no behavioural readout was looked at). Run from run-8afd86e, clean. Results §6.2.
 - **Iteration 3** (§3.2; arm A3): registered and committed before its run (cb45c86; the four unit tests and the smoke
   test ran after that commit). Run from run-cb45c86, clean, `--workers 1` (load 8.9–10.6). Results §6.3. Last iteration.
+- **Final checks** (after merging track-e e679b17 once): `gen-params --check` clean, `tsc --noEmit` clean, `pnpm test`
+  679 tests: 678 pass, 0 fail, 1 skipped. Outputs (gitignored, local): `artifacts/validation/e5a/` (e-bench JSON of RF ×4 and
+  A1–A3, `diag/`, `rng/`, `energy/`, and the table scripts).
 
 ## 6. Results
 
