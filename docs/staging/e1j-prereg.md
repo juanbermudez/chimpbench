@@ -287,8 +287,8 @@ R − B, lact: {'own trip': -0.276, 'joined trip': -0.053, 'follow party': 0.04,
 2. **Why R is worse than B (the integrator's question).** In truth R's males walk 0.34 km/day less than B's (own trips
    to food −0.39: 205 → 112 m each at about the same number; joined trips −0.22; to callers −0.10; partly offset by
    walks to water +0.09, patrols +0.11, following +0.08), while mothers lose only 0.05 (own trips −0.28, offset by walks
-   to water +0.14 and walks to play with the infant +0.08). Substituting B's own-trip length for both classes leaves the
-   ratio almost unchanged (−0.01): the stack shortens everyone's food trips, and in mothers the loss is refilled by
+   to water +0.14 and walks to play with the infant +0.08). Substituting B's own-trip distance per day for both classes leaves
+   the ratio almost unchanged (−0.01): the stack shortens everyone's food trips, and in mothers the loss is refilled by
    water and play walks.
 3. **Mother-side terms (truth, R):** mothers of infants under 2 y travel socially like other adult females (joined
    trips, callers and following: 0.88 km/day; with an adult male in 38% of daylight; ratio −0.13 if they travelled like
