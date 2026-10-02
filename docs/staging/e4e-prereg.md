@@ -242,3 +242,45 @@ Kanyawara's per follow-hour (§2.4; prey density and detection, outside this sta
 - Smoke (`artifacts/validation/e4e/diag/S0-48.json`, copied from the scratch run): every §5 readout is produced; 13
   impulses, 13 offers (`notOffered.gap` 0), 1 chosen; mean offer score 0.109 against 1.033 for the best other option;
   2 hunts in 6 community-days. No error. H1 launched next.
+
+#### H1 result: truth (5ca5b3c; `scripts/e4e-hunt-diagnose.ts`, seeds 48 and 7, 30 + 30 days; table printed by `artifacts/validation/e4e/diag_table.py` from `diag/{R,NR1q,NR2q,NR3q,H1}-{48,7}.json`; R and its three re-draws NRd on unchanged code)
+
+| readout (truth, pooled seeds; per-seed values joined by /) | R | NR1q | NR2q | NR3q | H1 |
+| --- | --- | --- | --- | --- | --- |
+| encPerCD | 5.59 | 5.71 | 5.63 | 4.88 | 6.24 |
+| epiPerCD | 2.86 | 2.98 | 2.78 | 2.74 | 3.28 |
+| impPerCD | 2.4 | 2.36 | 2.45 | 1.87 | 2.63 |
+| impShareOfEnc | 0.429 | 0.412 | 0.435 | 0.383 | 0.421 |
+| impWith3plus | 0.396 | 0.377 | 0.444 | 0.338 | 0.368 |
+| offeredPerImp | 0.706 | 0.693 | 0.705 | 0.798 | 0.939 |
+| gapBlocked | 0.255 | 0.276 | 0.274 | 0.169 | 0.00634 |
+| chosenPerOffer | 0.193 | 0.19 | 0.145 | 0.152 | 0.0315 |
+| huntsPerCD | 0.256 | 0.239 | 0.217 | 0.2 | 0.0722 |
+| huntsPerEpisode | 0.0895 | 0.0801 | 0.078 | 0.0729 | 0.022 |
+| huntScore | 0.434/0.431 | 0.367/0.433 | 0.408/0.403 | 0.39/0.386 | 0.067/0.0448 |
+| bestOther | 0.808/0.814 | 0.847/0.811 | 0.898/0.869 | 0.862/0.8 | 0.836/0.75 |
+| hungerChosen | 0.178/0.22 | 0.129/0.182 | 0.13/0.197 | 0.21/0.144 | 0.212/0.117 |
+| hungerNotChosen | 0.218/0.24 | 0.233/0.216 | 0.202/0.2 | 0.209/0.211 | 0.241/0.195 |
+| resChosen | 0.0036/0.0013 | 0.0034/0.0028 | 0.0031/-0.0015 | 0.0037/0.0018 | 0.0014/0.0031 |
+| fillChosen | 0.442/0.337 | 0.441/0.314 | 0.512/0.428 | 0.462/0.472 | 0.573/0.555 |
+| needChosen | 472/779 | 557/633 | 574/766 | 556/596 | 605/309 |
+| arousalChosen | 0.0675/0.089 | 0.0509/0.0186 | 0.0238/0.065 | 0.0579/0.0371 | 0.0518/0.0493 |
+| forage | 0.252 | 0.252 | 0.254 | 0.255 | 0.258 |
+| groom | 0.188 | 0.189 | 0.187 | 0.169 | 0.194 |
+| rest | 0.272 | 0.283 | 0.279 | 0.279 | 0.281 |
+| travel | 0.0854 | 0.0837 | 0.083 | 0.0874 | 0.0837 |
+| hunt | 0.0013 | 0.00115 | 0.0012 | 0.00085 | 0.00045 |
+
+(`gapBlocked` under H1 counts impulses whose lead was not offered within 6 h of a hunt for other reasons: an ongoing
+hunt to join, or no energy need; the gap itself is not read.)
+
+Against the registered truth predictions: offered ÷ impulse 0.71 → 0.94 (predicted ≥ 0.9: as predicted); chosen ÷
+offer 0.19 → 0.032 (≤ 0.08: as predicted); hunts per community-day 0.256 → 0.072 (≤ 0.13: as predicted; the four reference realizations give 0.200–0.256); males
+who chose the hunt hungrier than those who did not: **failed** (0.21/0.12 against 0.24/0.20; 14 chosen leads in all).
+The reason is the competition, not the hunt's own value: a crown's worth rises with hunger about twice as fast as the
+hunt's (its energy per hour is about twice the hunt's), so hunger favours feeding over hunting; sated males weigh
+a hunt worth about 0.05 (mean offer score 0.045–0.067) against a best option worth 0.75–0.84 (most often grooming:
+it wins 59 of 271 refused leads on seed 48 and 48 of 160 on seed 7, `winnerWhenNotChosen`), and the candidate jitter (±0.12) decides
+most of the rare hunts. Encounters and impulses per community-day sit slightly above the four reference realizations (6.24 against
+4.88–5.71; 2.63 against 1.87–2.45), possibly because fewer captures leave more colobus groups (not tested); adult
+males' daylight is unchanged (forage 0.26, groom 0.19).
