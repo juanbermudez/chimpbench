@@ -344,6 +344,11 @@ per-decision gradient by males: in the model's own physics a male's expected mea
 "more males, more hunting" now comes only from more males each weighing the hunt. The field gradient (+48% odds per male
 at Kanyawara) is stronger than that.
 
+For the record, `e-bench --rescore H1.json --compare R-quick.json` (one reference run, the superseded single-reference
+reading): fitted −2.69 on 18 rows scored in both; held-out +0.69 on 13 (+0.07 on 12 without T-HUN-4 and T-BRD-1).
+R-quick is the reference realization with the highest fitted sum (5.13 of 3.29–5.13 on the common rows), so the mean of
+four is the registered comparison.
+
 Viability replay (e-bench stdout): no deaths; median adult hunger 0.18 in every run; median lactating hunger 0.52 and
 0.53 against 0.47–0.51 in R's four realizations, slightly above their range (fewer captures, less meat begged; not
 tested).
