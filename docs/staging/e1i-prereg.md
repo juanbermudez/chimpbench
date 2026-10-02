@@ -356,3 +356,26 @@ Every run's JSON, scorecard and log, and the table scripts that generated the nu
 - Readout caveat (scripts/intake-diagnose.ts closeBout): the gate's reason is not the bout's trigger. A forage act that finishes at satiation usually draws as 'need-bucket' (hunger changed bucket since the intent), so satiation and a full gut are read from the state at the last eating tick, not from the reason.
 - Readout caveat (D1 'eat'): meat eaten from a carried piece while doing something else counts as eating (as in energy-diagnose); D4 bouts count only intake in the forage act.
 - No defect found in the code under test that bears on the measurement.
+
+## 8. Five-seed confirm (integrator, registered 2 October 2026 before its run)
+
+Integrator's reading of the pair before the confirm: `ledgerSatiationReserve` is a structural change with a mammalian
+basis and no free parameter. `ledgerLactGut` sizes the lactating gut to its extra load by construction (capacity grows
+with m ÷ (E − m)), which makes the mothers' balance easy by design: it stays a candidate only with its flag, and needs
+a measured mammalian or primate magnitude before it can carry a default.
+
+Runs: field profile, rules policy, from the frozen checkout `bench-run` at the commit that adds this section, one at a
+time, `--workers 2` (1 when the load is above 8):
+- **Identity:** T in quick mode, compared row for row with this stage's `T-quick.json` (cc51622). If it differs, T's
+  confirm realizations below are run fresh at this commit instead of reusing `e1h-T`.
+- **T realizations (confirm):** `e1h-T` (E1h confirm, 9392b67) plus three re-draws: T + `rgTemperature` 0.1641, 0.1639,
+  0.16405 (`e-bench --confirm`).
+- **B2 (confirm):** T + `ledgerSatiationReserve` 1 + `ledgerLactGut` 1 (`e-bench --confirm`) and
+  `energy-diagnose --seeds 48,7,21,5,11 --burn-in 30 --days 60` (simulation truth; T's is `e1h-T-energy`).
+
+Judgement (as §6 registered, on 5 seeds): viability = no starvation death and no class falling faster than 0.05% of its
+store a day (lactating females included); B2's fitted and held-out sums (with and without T-HUN-4 and T-BRD-1) against
+the mean of T's four realizations, z = (B2 − mean) ÷ (SD × √1.25), SD the confirm per-run SD (0.30 / 1.45 / 0.21) or
+T's own spread if larger; |z| > 2 is a result. Expected (integrator, before the run): mothers within −0.10 to +0.10% of
+the store a day (moderate confidence); no starvation (moderate); every sum inside noise (moderate); T-RNG-5 worse than
+T (low).
