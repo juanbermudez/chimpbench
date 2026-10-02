@@ -28,6 +28,7 @@ const TRACK_E_SWITCHES = [
   'followCarer', // E4g
   'weanDecide', // E1n
   'cohesionValue', // E5a
+  'companyMargin', // E5b
 ] as const;
 
 test('Track E switches are all 0 by default in both profiles', () => {
