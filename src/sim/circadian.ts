@@ -14,6 +14,8 @@ import { index, ix, TICK_HOURS, type ChimpX } from './state';
 //   sleep gate: the two-process thresholds (daan1984, as given in skeldonDijk2025): sleep starts when sleep pressure S
 //               reaches circHUpper + circAmp·x and ends when it falls to circHLower + circAmp·x, x the oscillator's
 //               core-temperature variable. A latch per animal (chimp.sim asl) holds the state between the thresholds.
+// Values (candidates.ts): the nest is worth the rest score + rhythmSleepW × felt sleepiness (sleepinessAt); new nests keep
+// E2a's light gate (e2d-prereg §8, iteration 2). Result: a recorded null (e2d-prereg §9); the switch stays off.
 // Nothing here reads the hour of the day (tests/sim-circadian.test.ts checks it): the sun enters only as the light at
 // the animal. Everything but circadianTick is pure.
 
