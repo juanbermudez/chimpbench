@@ -204,3 +204,30 @@ hour (§5.1), kept for comparability with E4a–E4c.
   within −0.15..0.15 (low); escalated attacks at most 10 per 60 seed-days, a larger morning share than R's (low);
   decided conflicts, T-COM-1, T-PTY-1 and the shared-row sums within noise (moderate); prescriptions unchanged (high);
   viability passes (high). Kill criterion and keep rule as §7.
+
+### Appendix: the gain computation behind §3 (added after the runs; it documents the computation that gave §3's values, unchanged)
+
+A state with time constant τ relaxes toward target 1 while awake (06:50–18:50) and toward k while asleep; the periodic
+solution is found by integrating 30 days in steps of 30 s from any start. The ratio is the mean over 07:00–07:59 ÷ the
+mean over 17:00–17:59; k is found by bisection so that the ratio equals the field's.
+
+```python
+import math
+def periodic(k, tau, wake=6 + 50/60, sleep=18 + 50/60, dt=1/120):
+    A = 1.0
+    for _ in range(30):
+        prof, t = [], 0.0
+        while t < 24 - 1e-9:
+            A += ((k if not (wake <= t < sleep) else 1.0) - A) * (1 - math.exp(-dt / tau)); prof.append((t, A)); t += dt
+    return prof
+def ratio(k, tau):
+    p = periodic(k, tau); m = lambda h: sum(a for t, a in p if h <= t < h + 1) / sum(1 for t, a in p if h <= t < h + 1)
+    return m(7) / m(17)
+def solve(R, tau, lo=1.0, hi=80.0):
+    for _ in range(50):
+        k = (lo + hi) / 2
+        lo, hi = (k, hi) if ratio(k, tau) < R else (lo, k)
+    return k
+# testosterone: solve(124/51, 6.0) = 4.35 (ratios 2.0 and 3.0: 3.04, 6.84)
+# cortisol:     solve(math.exp(0.97), 3.4) = 3.38 (ratios 2.2 and 3.5: 2.70, 4.83)
+```
