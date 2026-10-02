@@ -2644,7 +2644,7 @@ Read for stage E5c ([staging/e5c-prereg.md](staging/e5c-prereg.md) §2.2). Tags 
     observer scores T-PTY-2 on 15-min scans with crown radius and a linear R² (a staged scorer fix, e5c-prereg §2.2).
 - potts2011, chapman1995, newtonFisher2000 and charnov1976 are already listed; the entry above adds findings.
 
-### Addendum: E1o what an older infant drinks (2 October 2026)
+### E.40 Addendum: E1o what an older infant drinks (2 October 2026)
 
 Evidence pass for stage E1o ([staging/e1o-prereg.md](staging/e1o-prereg.md) §1–§2): why infants of 1–4 y drink the whole
 milk yield in the model, and what could lower it. research.md was searched first (E.11, E.14.3, E.37, E.38 hold the

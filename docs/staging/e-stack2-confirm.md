@@ -215,3 +215,34 @@ today's model, every activity row but travel inside its band, and the walking an
 is still the held-out rows without the rare ones, mostly T-FOOD-10 (2.30): E2h showed that row rests on 5 Taï mothers
 in fruit-scarce periods and is scored differently by the observer; its staged scoring (e2h-protocol.patch.json) would
 change this reading and needs the user's approval.
+
+## S6 confirm (registered 2 October 2026 before its runs)
+
+**S6 = S5 + E1o's arm B** (`weanDecide` 1, `weanDeficit` 1: the mother refuses suckling while her relative reserve
+deficit exceeds her infant's, and the refusal stands while she sleeps). E1o found it a provisional keep candidate in
+quick mode (milk at 1–4 y 240 / 224 / 213 kcal/day against the 307 cap; nursing mothers −0.114 → +0.010% of the store a
+day; sums inside noise; viable; night safe; 76 prescriptions). `milkInDrive` (arm A, a defect fix, null for the volume)
+is left out: E1o did not test it with B (§2.2 of its prereg).
+
+**Reference group, new:** S5 in confirm mode, the existing run (S5c) plus three re-draws (`rgTemperature` 0.1641,
+0.1639, 0.16405: S5c1, S5c2, S5c3), each with energy-diagnose (5 seeds, 30 + 60 days). Judged by e-noise.md amendment 2:
+z = (S6 − S5 mean) ÷ (SD × √(1 + 1/4)), SD = the registered confirm per-run SD (fitted 0.30, held-out 1.45, held-out
+without T-HUN-4 and T-BRD-1 0.21) or the group's own spread if larger; energy readouts against the group's spread.
+Runs: bench-run at this commit (code identical for S5: every new switch is 0 there), `--confirm`, workers 1–2 by load.
+
+**Keep rule (as every stage):** viability passes; held-out not up beyond noise against the S5 mean (with and without
+the rare rows); prescriptions fall (76 < 77). Night safety (rhythm-metrics, 5 seeds): adults out of a nest ≤ 3.3% of the
+night and T-RHY-5 ≤ 0.033.
+
+**Predictions (against the S5 group; moderate confidence unless stated).**
+
+| Quantity | S5c (one run) | Predicted S6 | Confidence |
+| --- | --- | --- | --- |
+| Prescriptions | 77 | 76 | high |
+| Viability | pass | pass | moderate |
+| Milk drunk, infants 1–2 / 2–3 / 3–4 y (kcal/day) | at the cap (307) | below the cap, falling with age | moderate |
+| Lactating females' reserves (%/day) | −0.146 (S5-energy) | better by ≥ 0.10 | moderate |
+| Mothers' balance by infant age | falls or flat | rises with infant age (T-ENE-5's direction) | moderate |
+| Juveniles' reserves (%/day) | −0.077 | within 0.05 | low |
+| Fitted; held-out; held-out without the rare rows | group mean | inside noise | moderate |
+| Night: adults out of a nest; T-RHY-5 | 2.73%; 0.0284 | ≤ 3.3%; ≤ 0.033 | moderate |

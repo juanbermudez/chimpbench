@@ -1728,7 +1728,7 @@ Archive capture of its Harvard DASH deposit; the live host shows a bot check) fo
 during a particular feeding bout"), patch size (DBH) and the ln–ln regression (R² 0.801 Ngogo, 0.227 Kanyawara). No new
 source.
 
-## Addendum: E1o what an older infant drinks (2 October 2026)
+## 40. Addendum: E1o what an older infant drinks (2 October 2026)
 
 Same text as research.md "Addendum: E1o what an older infant drinks": new source cohen1994 (Cohen, Brown, Canahuati,
 Rivera, Dewey 1994, Lancet 344(8918):288–293, doi:10.1016/s0140-6736(94)91337-4; abstract via PubMed 7914260):
