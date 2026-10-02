@@ -2160,6 +2160,8 @@ encounter rate. One input value is taken (the Kanyawara density, [L]); nothing i
   answered with a bot check: hosts dropped. chapman2002ajpa (PMC7159679): efetch abstract only. Not reached:
   chapman2000cons, chapman2005ijp, gillespieChapman2001, snaithChapman2008 full text, Struhsaker 1975 and 2010 (books).
   The transect densities by compartment (chapman2010ecol Fig. 2) are the missing site-matched census value.
+  chapman2023ajp (Am J Primatol 2023, doi:10.1002/ajp.23577; abstract only: Wiley host, no PMC or Wayback copy):
+  52 years of Kibale censuses, 1,466 km walked, 480 groups; populations "generally relatively stable"; no site values.
 
 **Sources:**
 - *new* bonnell2010: Bonnell TR, Sengupta RR, Chapman CA, Goldberg TL 2010. An agent-based model of red colobus
