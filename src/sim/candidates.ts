@@ -6,11 +6,11 @@ import { clamp, hash01, smoothstep } from './rng';
 import { paramsOf, type Params } from './params';
 import { fruitAt } from './phenology';
 import { bestFallbackNear, fallbackOn } from './fallback';
-import { fruitRate, leafRate, leafWorth, needFruit, treeIntake } from './intake';
+import { fruitRate, leafWorth, needFruit, treeIntake } from './intake';
 import { heatRestValue, nestValue, shelterValue, sleepPressure, thermalLoad } from './rhythm';
 import { darkOn, tripLight, visionNow, type TripLight } from './light';
 import { circadianOn, circadianSleepiness } from './circadian';
-import { driveOn, energyNeed, fruitKcalPerUnit, gutCap, milkShare, milkWorth, nurseBoutWorth } from './energy';
+import { driveOn, milkShare, milkWorth, nurseBoutWorth } from './energy';
 import { drinkWorth, waterOn } from './water';
 import { arrivalLight, brightening, needUnits, raceStake, rivalsAt } from './departure';
 import { endoOn, escalateScore, fastSpanH, rainFastScore, rainScore, redirectFastScore, redirectScore } from './endocrine';
@@ -326,22 +326,13 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     }
     return iv ? tripFrac(crop, feeders, d) : 1;
   };
-  // stage E5c (crownShare; docs/staging/e5c-prereg.md §3.1, iteration 2): a crown is worth the rate at which it lets this
-  // animal meet its energy need (E1e). It expects to eat E = the crop it believes, divided among the feeders it sees there
-  // and itself, up to the need, in the ledger's kcal (no fruitValueRef cap, no cap at one gut-full); whatever the crown cannot
-  // supply comes at the fallback's rate where it stands (leaves, pith: its guaranteed alternative). The share of the full
-  // fruit rate at which the need is met, need ÷ (E + (need − E) × fruit rate ÷ fallback rate), lies between the fallback's
-  // ratio and 1 and replaces the 0.55 + 0.45·min(1, crop ÷ fruitValueRef) shape; the walk is valued as before (tripWorth,
-  // the C13b rate of the next bout [charnov1976]). A crown's crop is shared by its feeders, so larger parties get less each
-  // [M: chapman1995, newtonFisher2000]; equal shares and the fallback as the alternative are design assumptions.
-  // Co-feeders cost what they take from the share, so the habitat-index crowding cost is off.
+  // stage E5c (crownShare; docs/staging/e5c-prereg.md §3.2, iteration 3): a crown's crop is shared by its feeders, so larger
+  // parties get less each [M: chapman1995, newtonFisher2000]. Co-feeders cost what they take from this animal's share of
+  // the bout (tripWorth: the crop it believes ÷ (1 + the feeders it sees), against its need and its gut), and a crown it has
+  // fed in is worth what it believes is left there (C7a's belief, set when it leaves). The two crop-blind terms that kept
+  // feeders apart whatever the crop are off: the habitat-index crowding cost and the devaluation of a crown just used
+  // (revisit, C6b design). Iterations 1 and 2 (the share at the scale of the day's need) are superseded.
   const cs = crownShareOn(P);
-  const csNeed = cs ? energyNeed(c, P) : 0, csFruitH = cs ? fruitRate(c, P).fruitPerH : 0, csLeafK = cs ? leafRate(world, px, pz, P, c) * gutCap(c, P) : 0;
-  const cover = (t: Tree, crop: number, feeders: number): number => {
-    if (!(csNeed > 0) || !(crop > 0)) return 0;
-    const k = fruitKcalPerUnit(P, t.common === 'fig'), E = Math.min(crop * k / (1 + feeders), csNeed), Rf = csFruitH * k;
-    return needFillRate(csNeed, E, Rf, csLeafK);
-  };
   if (!caretaker || (c.age >= 1.5 && !carried && caretaker.action === 'forage')) {
     for (let _i1 = 0; _i1 < x.trees.length; _i1++) { const id = x.trees[_i1];
       const t = idx.treeById.get(id)!;
@@ -352,7 +343,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       const crop = P.patchEcology === 1 ? fruitAt(world, t) : t.fruit;
       // contest competition grows with crowding when fruit is scarce (drives parties apart) [H]; stage E5c: the share instead
       const compete = byShare || cs ? 0 : crowd * P.crowdCompeteW * (P.crowdScarcityRef - env.fruitIndex) * (c.rank > P.crowdHighRank ? P.crowdHighRankFactor : 1);
-      const fw = cs ? (h * 1.6 + 0.1) * cover(t, crop, crowd) * tripWorth(t, crop, crowd, d) : (h * 1.6 + 0.1) * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) * tripWorth(t, crop, crowd, d);
+      const fw = (h * 1.6 + 0.1) * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) * tripWorth(t, crop, crowd, d);
       if (race && crowd > 0) raceG = Math.max(raceG, raceStake(fw, crop, crowd, need, 1)); // stage E2b: the feeders are eating now
       offer('forage', t.id, fw * (byShare ? shareWorth(crop, crowd) : 1) - d / P.forageDistScaleM - compete - rain * 0.45 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.6 - coreCostOf(t, coreW, troop, x) + (t.id === s.figTree && h > 0.2 ? 0.2 : 0) - revisit(x, t.id, time, P), V.NONE, crowd);
     }
@@ -379,7 +370,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
         if (d < P.memoryTreeMinM) continue;
         // stage C7a (field): a remembered tree is worth what the animal last saw in it
         const crop = x.treeCrop?.[t.id] ?? 0.2;
-        const worth = cs ? h * P.memTravelHungerW * cover(t, crop, 0) * tripWorth(t, crop, 0, d) : (P.memCropBelief === 1 ? h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) : h * P.memTravelHungerW) * tripWorth(t, crop, 0, d);
+        const worth = (P.memCropBelief === 1 ? h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) : h * P.memTravelHungerW) * tripWorth(t, crop, 0, d);
         if (race) { const nr = rivalsAt(c, t.id); if (nr > 0) raceG = Math.max(raceG, raceStake(worth, crop, nr, need, arrivalLight(env.daylight, dLdt, d, P))); } // stage E2b
         if (shortlist) { const rv = revisit(x, t.id, time, P); _mem.push(t, worth - tripCost(worth, crop, d, h, P, needFruit(c, P, h)) - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD)); continue; }
         if (!held) offer('travel', t.id, worth - tripCost(worth, crop, d, h, P, needFruit(c, P, h)) - revisit(x, t.id, time, P) - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay, V.TREE);
@@ -399,7 +390,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       const t = kt[i >> 1]; if (!t) continue;
       const d = dxz(t, px, pz);
       if (d < P.memoryTreeMinM) continue;
-      const crop = x.treeCrop?.[id] ?? known[i + 1], worth = cs ? h * P.memTravelHungerW * cover(t, crop, 0) * tripWorth(t, crop, 0, d) : h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) * tripWorth(t, crop, 0, d);
+      const crop = x.treeCrop?.[id] ?? known[i + 1], worth = h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) * tripWorth(t, crop, 0, d);
       if (race) { const nr = rivalsAt(c, id); if (nr > 0) raceG = Math.max(raceG, raceStake(worth, crop, nr, need, arrivalLight(env.daylight, dLdt, d, P))); } // stage E2b
       const rv = revisit(x, id, time, P);
       _mem.push(t, worth - tripCost(worth, crop, d, h, P, needFruit(c, P, h)) - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD));
@@ -462,7 +453,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     const crop = stamped(_sight, t.id, st) ? (P.patchEcology === 1 ? fruitAt(world, t) : t.fruit) : (x.treeCrop?.[t.id] ?? 0.2);
     let feeders = 0;
     for (let _k = 0; _k < x.seen.length; _k++) { const o = byId.get(x.seen[_k]); if (o && o.alive && o !== c && o.targetId === t.id && (o.action === 'forage' || o.action === 'travel')) feeders++; }
-    const worth = cs ? h * P.memTravelHungerW * cover(t, crop, feeders) * tripWorth(t, crop, feeders, d) : (P.memCropBelief === 1 ? h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) : h * P.memTravelHungerW) * tripWorth(t, crop, feeders, d);
+    const worth = (P.memCropBelief === 1 ? h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) : h * P.memTravelHungerW) * tripWorth(t, crop, feeders, d);
     return worth - tripCost(worth, crop, d, h, P, needFruit(c, P, h));
   };
   const joinValue = (L: Chimp): number => {
@@ -646,7 +637,8 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
 /** Stage C6b (field): a crown this individual has just fed in is worth less for a while (the fruit within reach is gone). */
 function revisit(x: ReturnType<typeof ix>, id: number, time: number, P: Params): number {
   const ft = x.fedTree;
-  if (!ft || P.revisitW <= 0) return 0;
+  // stage E5c (crownShare): what it believes is left in the crown carries the depletion it saw, whatever the crop
+  if (!ft || crownShareOn(P) || P.revisitW <= 0) return 0;
   // fed-tree ids are unique (execution.ts), so the stamped index is the list's lastIndexOf; valid for the decision in progress
   if (!stamped(_fed, id, _stamp)) return 0;
   return P.revisitW * Math.exp(-(time - x.fedAt![_fedK[id - TREE_ID0]]) / P.revisitTauH);
@@ -675,18 +667,7 @@ export const careFollow = (k: Chimp): boolean => k.action === 'follow' && (ix(k)
  * Field profile only (partyJoinTrip 1). 0 = the model before, bit-identical.
  */
 export const cohesionOn = (P: Params): boolean => P.cohesionValue === 1 && P.partyJoinTrip === 1;
-/**
- * Stage E5c (crownShare; docs/staging/e5c-prereg.md §3.1): the share of the full fruit rate `Rf` at which an animal meets
- * its energy `need` when a crown supplies `E` of it and the rest comes at the fallback rate `Rb` (kcal and kcal per hour):
- * (need ÷ Rf) ÷ (E ÷ Rf + (need − E) ÷ Rb). 1 when the crown meets the need, Rb ÷ Rf when it supplies nothing; E ÷ need
- * without a fallback. Pure.
- */
-export function needFillRate(need: number, E: number, Rf: number, Rb: number): number {
-  if (!(need > 0)) return 0;
-  const e = Math.max(0, Math.min(E, need));
-  return Rb > 0 && Rf > 0 ? need / (e + (need - e) * Rf / Rb) : e / need;
-}
-/** Stage E5c (crownShare; docs/staging/e5c-prereg.md §3): crowns valued by the food expected there; needs the E1e drive and the C13b intake valuation. */
+/** Stage E5c (crownShare; docs/staging/e5c-prereg.md §3.2): co-feeders cost their share of the bout (tripWorth with the feeders seen, the E1e drive and the C13b intake valuation), not a crop-blind crowding or revisit term. */
 export const crownShareOn = (P: Params): boolean => P.crownShare === 1 && P.energyLedger === 1 && P.ledgerDrive === 1 && P.intakeValue === 1;
 /** Party following runs: under cohesionValue, or (before E5a) while partyFollowW > 0, its gate (then partyFollowW is not read). */
 export const partyOn = (P: Params): boolean => cohesionOn(P) || P.partyFollowW > 0;

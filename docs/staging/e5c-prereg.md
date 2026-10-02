@@ -329,6 +329,51 @@ crown-share-diagnose (seeds 48 and 7, 30 + 30 days), from a frozen checkout; smo
 the five unit tests of tests/sim-crown-share.test.ts ran on the iteration-2 code before this commit (no behavioural
 readout).
 
+### 3.2 Iteration 3 (registered 2 October 2026, 14:20, before its run): the crop-blind separators off
+
+**Why (A1, A2, §6.1–6.2, and the diagnosis R4).** Valued at the scale of the day's need, the share binds for one animal
+in most crowns: it separated feeders everywhere (FPS 2.20 → 1.97) and cost the neediest (mothers −0.33 to −1.23% a
+day), with no crop relation. At the scale of a bout (today's `tripWorth`: E = min(share, need, gut room)) the share is
+already in the value; it binds only when the crop cannot give each feeder a bout, which at 1.3 feeders per crown never
+happens. What keeps companions out of each other's crowns are two terms that ignore the crop (§2.1): the revisit
+devaluation of a crown just used (R4: the main reason a companion's crown lost, 0.195; within-decision SD 0.129, the
+largest of all terms) and the habitat-index crowding cost (the only term that lowers co-feeding among crowns in view).
+
+**Change (same switch; iterations 1 and 2 are dropped).** Under `crownShare`:
+- the crown valuation is today's (0.55 + 0.45·min(1, crop ÷ `fruitValueRef`) × `tripWorth`): co-feeders cost what they
+  take from this animal's share of the bout (the crop it believes ÷ (1 + the feeders it sees), against its need and its
+  gut), the ecological constraint at the scale of a feeding bout (potts2011's FPS is per bout);
+- a crown the animal has fed in is worth the crop it believes is left there (C7a's belief, written when it leaves the
+  crown): the crop-blind devaluation `revisitW` × exp(−Δt ÷ `revisitTauH`) (C6b, design; "the fruit within reach has been
+  taken", no source) is not applied and the fed-tree list is not kept;
+- the habitat-index crowding cost is off (as in iterations 1 and 2).
+No new magnitude; the switched-out entries are design, so the count stays 77. Code: candidates.ts (`revisit`, the forage
+offer), execution.ts (the fed-tree list); tests/sim-crown-share.test.ts (a co-feeder costs nothing while the bout share is
+whole and the off model charges the crowding; six co-feeders cost a small crown; a crown just fed in keeps its worth on
+and loses `revisitW` off; the four switched-out entries unread over a field day).
+
+**Arm A3** = S5 + `crownShare` 1 at the commit that adds this section: e-bench quick, energy-diagnose, crown-share-diagnose
+(seeds 48 and 7, 30 + 30 days), from a frozen checkout; smoke test first (readouts filled only).
+
+**Predictions (A3 against the S5 mean ± SD; low confidence unless stated).**
+
+| Quantity | S5 | Predicted A3 | Confidence |
+| --- | --- | --- | --- |
+| Prescriptions | 77 | 77 | high |
+| A companion's crown taken (when one feeds in another crown) | 0.37 (diagnosis) | ≥ 0.45 | moderate |
+| FPS per bout | 2.20 ± 0.06 | 2.3–2.8 | low |
+| Feeders per occupied crown | 1.31 ± 0.01 | 1.35–1.6 | low |
+| Top − bottom crop tercile; R² feeders on crop; R² ln FPS on ln crop | −0.031; 0.000; 0.001 | −0.03 to +0.10; ≤ 0.02; ≤ 0.02 | low |
+| T-FOOD-4 trees per day | 7.5 ± 0.4 | 5–7 (crowns are re-used) | moderate |
+| T-ACT-2 males; true path, adult males | 0.234; 2.54 km | 0.19–0.24; 2.1–2.5 km | low |
+| Reserves, lactating / juveniles | −0.114 / −0.007 % a day | within 0.05 of the reference | moderate |
+| T-PTY-1 | 3.31 ± 0.17 | 3.2–4.0 | low |
+| Fitted; held-out without the rare rows | reference mean | inside noise | low |
+| Viability | pass | pass | moderate |
+
+**Kill criterion and verdict rule:** as iteration 1 (§3); this is the last iteration. Disclosure: A1 and A2 were read
+before this registration; the six unit tests ran on the iteration-3 code before this commit (no behavioural readout).
+
 ## 4. Reference and judging (docs/staging/e-noise.md amendment 2)
 
 - Reference **S5** (docs/staging/e-stack2-confirm.md, "S5 results"; 32 switches, parameters in
@@ -348,13 +393,14 @@ readout).
 
 (Each iteration is logged here and committed before its run; at most 3.)
 
-- **Iteration 1** (`crownShare` as in §3; arm A1): registered and committed before its run (this commit). Disclosure:
+- **Iteration 1** (`crownShare` as in §3; arm A1): registered and committed before its run (a6ea386). Results §6.1. Disclosure:
   the four unit tests of tests/sim-crown-share.test.ts ran on the iteration-1 code before this commit (scores of one
   constructed scene, determinism and parameter reads only; no behavioural readout was looked at). A first draft valued
   the walk at the full need (the time to eat the whole share) and dropped the fitted walk cost of crowns in view; it was
   replaced before any run because the walk is not the term the diagnosis names (R3: `trip` +0.005) and pricing the walk
   against hours of eating would have made walks nearly free.
-- **Iteration 2** (§3.1; arm A2): registered and committed before its run (this commit).
+- **Iteration 2** (§3.1; arm A2): registered and committed before its run (494425c). Results §6.2.
+- **Iteration 3** (§3.2; arm A3): registered and committed before its run (this commit). Last iteration.
 
 ## 6. Results
 
@@ -437,3 +483,81 @@ from 0.81 to 0.38 and their intake from 2,262 to 1,667 kcal a day (energy-diagno
 (T-FOOD-2) from 0.78 to 0.61. The needier the animal, the less a crown was worth to it: backwards. The crop relation did
 not emerge either: feeders per crown fell in every tercile (1.31 → 1.25) and FPS fell (2.20 → 1.97), because the share
 binds at the need scale for one or two feeders in all but the largest crowns, so co-feeding fell everywhere.
+
+### 6.2 Iteration 2: A2 = S5 + `crownShare` (the need-filling rate; run-494425c, clean; 13:50–13:57, load 4–8)
+
+Generated by `arm_report.sh` from the JSON. e-bench: {'commit': '494425c6ec0d84d4a0b446cdf0b65de287a797c4', 'branch': 'HEAD', 'dirty': 0} {'fittedDistance': 1.3684601378393682, 'heldOutDistance': 6.773271055706188, 'prescriptionCount': 77, 'viability': 'pass'}.
+
+```
+quick, reference custom (4 runs), rows counted in all runs: fitted 17, held-out 13
+  fitted             (17 rows) ref 3.00, 2.71, 3.75, 3.71 (mean 3.29, sd 0.52; used 0.69) | A2.json: 1.37, Δ -1.92, z -2.5 RESULT
+  held-out           (13 rows) ref 7.30, 8.55, 5.46, 5.29 (mean 6.65, sd 1.56; used 1.56) | A2.json: 6.77, Δ +0.12, z +0.1 (inside noise)
+  held-out w/o rare  (12 rows) ref 5.24, 5.19, 5.46, 5.29 (mean 5.30, sd 0.12; used 0.48) | A2.json: 5.25, Δ -0.04, z -0.1 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-HUN-1   fitted   ref 0.94±0.11 | A2.json 0.67 (inconclusive)
+   T-HUN-2   fitted   ref 1.14±0.39 | A2.json 0.19 (fail)
+   T-HUN-4   held-out ref 1.35±1.65 | A2.json 1.52 (fail)
+```
+
+| Readout | S5 (mean ± SD of 4) | A2 |
+| --- | --- | --- |
+| T-PTY-1 | 3.310 ± 0.168 | 3.608 (+1.8 SD) |
+| T-ACT-1 feeding, males | 0.383 ± 0.005 | 0.370 (-2.8 SD) |
+| T-ACT-1 feeding, females | 0.395 ± 0.011 | 0.370 (-2.2 SD) |
+| T-ACT-2 travel, males | 0.234 ± 0.012 | 0.199 (-3.0 SD) |
+| T-ACT-2 travel, females | 0.197 ± 0.012 | 0.202 (+0.4 SD) |
+| T-FOOD-2 fruit share | 0.780 ± 0.015 | 0.755 (-1.7 SD) |
+| T-FOOD-4 trees per day | 7.517 ± 0.437 | 7.119 (-0.9 SD) |
+| T-RNG-4 male day range (observer, km) | 2.448 ± 0.123 | 2.145 (-2.5 SD) |
+| true path, adult males (km/day) | 2.544 ± 0.049 | 2.245 (-6.1 SD) |
+| true path, lactating (km/day) | 2.347 ± 0.102 | 2.374 (+0.3 SD) |
+| true path, other females (km/day) | 2.137 ± 0.087 | 2.099 (-0.4 SD) |
+| true path, juveniles 5–12 y (km/day) | 2.490 ± 0.079 | 2.589 (+1.3 SD) |
+| reserves ÷ store, lactating (mean level) | -0.100 ± 0.007 | -0.144 (-6.6 SD) |
+| reserves ÷ store, juveniles 5–12 y (mean level) | -0.059 ± 0.003 | -0.044 (+5.4 SD) |
+| eating min, lactating | 287.620 ± 0.956 | 279.464 (-8.5 SD) |
+| reserves, lactating (% of store per day, OLS) | -0.114 ± 0.026 | -0.334 (-8.6 SD) |
+| reserves, juveniles 5–12 y (% per day) | -0.007 ± 0.014 | -0.022 (-1.0 SD) |
+| reserves, adult males (% per day) | 0.005 ± 0.007 | 0.003 (-0.3 SD) |
+| reserves, other females (% per day) | 0.020 ± 0.014 | 0.003 (-1.2 SD) |
+| prescriptions | 77, 77, 77, 77 | 77 |
+| viability | pass (0 deaths, 0 starvation), pass (0 deaths, 0 starvation), pass (0 deaths, 0 starvation), pass (0 deaths, 0 starvation) | pass (0 deaths, 0 starvation) |
+
+| Readout (truth unless stated) | S5 (mean ± SD of 4) | A2 |
+| --- | --- | --- |
+| feeders per occupied crown | 1.310 ± 0.008 | 1.251 (-7.7 SD) |
+| … crop tercile 1 | 1.315 ± 0.011 | 1.263 (-4.7 SD) |
+| … crop tercile 2 | 1.331 ± 0.014 | 1.268 (-4.4 SD) |
+| … crop tercile 3 | 1.284 ± 0.005 | 1.222 (-11.9 SD) |
+| top − bottom crop tercile | -0.031 ± 0.011 | -0.041 (-1.0 SD) |
+| R² feeders on crop | 0.000 ± 0.001 | 0.001 (+1.5 SD) |
+| R² feeders on crown radius | 0.002 ± 0.001 | 0.002 (+0.0 SD) |
+| FPS per bout (potts2011) | 2.197 ± 0.060 | 1.972 (-3.7 SD) |
+| R² ln FPS on ln crop | 0.001 ± 0.001 | 0.001 (+0.9 SD) |
+| R² ln FPS on ln radius | 0.005 ± 0.002 | 0.007 (+1.4 SD) |
+| observer feeding scans: R² on radius | 0.010 ± 0.011 | 0.010 (+0.0 SD) |
+| crop selectivity (units) | 0.007 ± 0.001 | 0.007 (+0.0 SD) |
+| share binds (crown options) | 0.026 ± 0.004 | 0.031 (+1.4 SD) |
+| chosen kind: join | 11382.250 ± 603.289 | 8978.000 (-4.0 SD) |
+| chosen kind: trip | 13606.000 ± 91.075 | 14590.000 (+10.8 SD) |
+| chosen kind: crown | 11435.750 ± 221.750 | 11631.000 (+0.9 SD) |
+| parties ≥2 feeders: share in one crown | 0.909 ± 0.006 | 0.872 (-6.0 SD) |
+| occupancy minutes (median) | 28.000 ± 0.000 | 28.000 |
+| crop eaten per occupancy | 0.110 ± 0.003 | 0.116 (+2.5 SD) |
+
+**Against the predictions.** Prescriptions 77: held. Reserves within 0.05% a day: **missed for nursing mothers**
+(−0.33 against −0.11 ± 0.03; juveniles −0.02, other females and males inside). T-FOOD-2 0.75–0.83: held (0.755).
+Crop selectivity ≥ 0.010: missed (0.007, the reference's). No clear crop relation (top − bottom −0.03 to +0.05;
+R² ≤ 0.01): held (−0.041; 0.001; ln FPS on ln crop 0.001). FPS 1.9–2.3: held (1.97). T-PTY-1 3.1–3.8: held (3.61).
+T-ACT-2 males within ±0.03: missed narrowly (0.199, −0.035). Sums inside noise: held for held-out (z +0.1, −0.1);
+**fitted better beyond noise (z −2.5)**, carried by the hunting rows (T-HUN-2 1.14 → 0.19, T-HUN-1 0.94 → 0.67), which
+the mechanism does not touch: a chance or indirect effect, not read as a result of the mechanism. Viability passed.
+
+**Kill criterion: met by (b)** (nursing mothers 0.22% of the store a day below S5). **Iteration 2 is a null.** Reading:
+the rate at which a crown meets the need, the rest at the fallback's rate, still divides by the need: for the same crop
+a needier animal values the crown less (a mother needing 3,000 kcal values a 1,500-kcal share at 0.57 of the full rate,
+a male needing 1,500 at 1.0), so mothers eat less (279 against 288 min) and lose more. Males gain (walk 0.3 km less,
+travel share 0.199). The crop relation is still absent: valued at the need scale, the share costs co-feeding in all but
+the largest crowns (FPS 2.20 → 1.97, feeders per crown 1.31 → 1.25) and creates no preference of feeders for large
+crowns. Iterations 1 and 2 together: at the scale of the need the share binds for one animal in most crowns, so it
+separates feeders everywhere and costs the neediest; at the scale of a bout (today's E) it never binds.
