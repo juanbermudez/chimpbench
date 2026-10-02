@@ -2219,9 +2219,9 @@ lactating or anoestrous females against males, and the method behind each (docs/
 - **One-day ranges by sex, Gombe** [wrangham1975] (FT, PhD thesis, Table 5.1) [M]. January 1972 – September 1973,
   nest-to-nest days; follows aborted when the target was lost; movements around a point (a food source, a grooming
   party) ignored unless more than about 30 m; path from 100 m grid lines crossed, checked against a hodometer
-  (r = 0.995, 24 records). Medians: northern males
-  4.2 km (83 days, 8 males), southern males 3.8 km (23 days, 7), females 2.8 km (61 days, 10 females; "most of the
-  females observed were anoestrous"; juveniles' days credited to their mothers). Derived [L]: females ÷ males 0.67–0.74.
+  (r = 0.995, 24 records). Medians: northern males 4.2 km (83 days, 8 males), southern males 3.8 km (23 days, 7),
+  females 2.8 km (61 days, 10 females; "most of the females observed were anoestrous"; a juvenile's record was assigned
+  to its mother when they travelled together). Derived [L]: females ÷ males 0.67–0.74.
 - **Day ranges by sex, Kanyawara and Gombe** [pontzerWrangham2004] as cited by [wilson2021] (FT of the citing review;
   the primary is closed) [L]: Kanyawara females 2.0 km/day, males 2.4 (0.83); Gombe females 3.2, males 4.6 (0.70). The
   class is adult females, not lactating females; n and method not seen. The earlier entry's "mothers about 1.9 km" was

@@ -30,7 +30,7 @@
      "years": "1972-1973",
      "value": "median one-day range: females 2.8 km (most anoestrous); northern males 4.2, southern males 3.8 (ratio 0.67 within the northern community, 0.74 against southern males)",
      "n": "61 female days (10 females); 83 and 23 male days (8 and 7 males)",
-     "method": "nest-to-nest follows, aborted when the target was lost; movements around a point (food source, grooming party) ignored unless more than about 30 m; distance from 100 m grid lines crossed, checked against a hodometer; juveniles' days credited to their mothers",
+     "method": "nest-to-nest follows, aborted when the target was lost; movements around a point (food source, grooming party) ignored unless more than about 30 m; distance from 100 m grid lines crossed, checked against a hodometer; a juvenile's record assigned to its mother when they travelled together",
      "source": "wrangham1975",
      "note": "primary, full text (PhD thesis Table 5.1). Female class mostly anoestrous, i.e. mostly lactating or pregnant, not strictly lactating"
     },
