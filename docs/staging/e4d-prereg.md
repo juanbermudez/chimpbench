@@ -348,6 +348,25 @@ T-END-8's hourly form and leave the association net of time of day, patrols and 
 that peaks after the night's fission (allies scattered over their nests and found again in the morning), which would
 leave T-END-8 genuine.
 
+### Amendment: the integrator's noise rule (2 October 2026; written after R, D1 and D2 ran and were read; disclosed)
+
+The integrator recorded the noise threshold after these runs (docs/staging/e-noise.md, Amendment 2, merged here from
+`track-e`) and asked every stage to judge arms against the mean of replicated references. Added now, before any further
+run, with no other change to the registration:
+- **Rn1, Rn2, Rn3**: R with `rgTemperature` 0.1641, 0.1639 and 0.16405 added to its overrides (re-draws of the same
+  model), each with endocrine-diagnose, calls-diagnose and `e-bench --quick`, from a frozen detached checkout of the
+  commit that adds this entry (its simulation code is identical to the R run's with `endoRhythm` 0: the commits since
+  0e92ab2 touch the switch-on path, tests, scripts and docs only).
+- On rows counted in all runs compared, z = (arm − mean of the four R runs) ÷ (SD × √(1 + 1/4)), SD the per-run SD of
+  the integrator's quick mode (fitted 0.69, held-out 1.26, held-out without T-HUN-4 and T-BRD-1 0.48) or the four R
+  runs' own SD if larger; |z| > 2 is a result, anything less is "inside noise". T-HUN-4 and T-BRD-1 cannot be judged
+  on one 60-day run.
+- For the diagnosis readouts (hourly profiles, ratios, T-END-8, call ratios, act counts) the four R runs' mean and SD
+  are reported beside each arm's value, and the same z is given.
+- Prediction (before the re-draws ran): D1 and D2 are inside noise on every sum; the hormone profiles of D2 lie many
+  SDs from the R runs' (the rhythm is a construction, §4.1); the call ratio and T-END-8 net of time of day of D1 and D2
+  lie within 2 SD of the R runs'; T-END-8 in fedurek2016's form of D2 lies beyond 2 SD below the R runs' (moderate).
+
 ### Appendix: the gain computation behind §3 (added after the runs; it documents the computation that gave §3's values, unchanged)
 
 A state with time constant τ relaxes toward target 1 while awake (06:50–18:50) and toward k while asleep; the periodic
