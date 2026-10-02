@@ -1,4 +1,4 @@
-# Track E handoff (integrator; refreshed 2 October 2026, 13:10)
+# Track E handoff (integrator; refreshed 2 October 2026, 17:55)
 
 Read this before anything else. It replaces `docs/staging/track-e-resume.md`. The canonical copy is on branch
 `track-e`; a copy sits in `~/Desktop/mgogo-session/` for the next session to find.
@@ -18,6 +18,10 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   why infants of 1–4 y drink the whole milk yield; mothers' deficit), from track-e c7a4c75, and **E3b** (`e3b-revisit`:
   what stops a chimp going back to a crown it just fed in; separates E5c's two crop-blind terms), from track-e 29202da;
   briefs in the session scratchpad (`integrator/e1o-prompt.txt`, `e3b-prompt.txt`).
+- **E3b merged** (`revisitByCrop`, off; a provisional keep candidate as a correction: a crown fed in is valued by the crop
+  believed left, not devalued for 12 h whatever is left): mothers in balance, walking −27–36%, T-HUN-1 into its band;
+  costs: fruit share 0.85 (above band), T-SOC-9 out. Removes no counted prescription. Observer fixes for T-FOOD-4/5/6
+  staged (e3b-protocol.patch.json), not applied. Next lever: party-level depletion (feeding together), not a weight.
 - **E5c merged** (`crownShare`, off; no switch kept): party members feed one or two at a time (1.3 per crown), so a
   crown's crop never limits them and no crown valuation makes feeders follow the crop. Side finding: with the
   crop-blind revisit devaluation (`revisitW`, design, no source) and the habitat-index crowding off, mothers balance
@@ -26,7 +30,14 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   (`bench-run/artifacts/validation/e/s5q/`, script `integrator/s5q.sh <label> [rgTemperature]`): **done** 13:29, all
   four viable and clean; fitted 3.00 / 2.71 / 3.75 / 3.71, held-out without the rare rows 5.24 / 5.19 / 5.46 / 5.29;
   both agents told. A quick run takes 3–6 min and energy-diagnose ~3 min.
-- **S5 done: the best integrated candidate so far** (e-stack2-confirm.md; S4 + `companyMargin`): 77 prescriptions
+- **S6 done: now the best integrated candidate** (e-stack2-confirm.md "S6 results"; S5 + `weanDecide` + `weanDeficit`):
+  76 prescriptions, viable, night safe (2.77%, T-RHY-5 0.0277), sums level with S5's four confirm runs; nursing mothers'
+  deficit halved (−0.244 → −0.125%/day), milk at 1–4 y below the cap and falling with age, mothers recovering as infants
+  grow. Cost: infants' reserves fall 0.11–0.15%/day while they still grow at the captive rate. Energy re-runs of S5c2
+  and S5c3 pending (killed at 17:3x by the background limit while the machine sat at load ~970 from other apps: hundreds
+  of iOS Simulator and computer-use node processes; not ours, not killed). Watch: T-IGE-3 is unstable on few events
+  (one S5 re-draw scored 21.6); treat it like a rare row in readings. Candidates outside S6: E3b `revisitByCrop`.
+- **S5 (superseded by S6)** (e-stack2-confirm.md; S4 + `companyMargin`): 77 prescriptions
   (today's model 135), viable, night safe; fitted better than R beyond noise (z −3.2) and level with or better than
   today's model (z −1.8); feeding, grooming, rest, party size in band, travel at its edge (0.258 / 0.216); males walk
   2.73 km; mothers −0.23%/day, juveniles −0.09%/day. Held-out without the rare rows still worse than today's model
@@ -38,6 +49,12 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   present; on S4 males walk 2.61 km instead of 3.32, travel back in band, juveniles stop losing reserve; sums inside noise).
 - **S4 done** (e-stack2-confirm.md): S3 + `followCarer` + `cohesionValue`: 77 prescriptions and viable, but males walk
   3.43 km a day (S3 2.93) and the deficits deepen: E5a interacts with value-based calls; E5b fixed it (S5).
+- **Hosted site, 2 October 14:50:** `site` now also holds the rewritten About page (merged `site-about` 4618daf: first-person
+  hero, stale sections cut, What's next) and the decision guide as a hidden page (`docs/decision-guide.html`, a Vite
+  input: unlinked, noindex, at /docs/decision-guide; made from track-e's guide by `integrator/hosted_guide.py` until the
+  `guide-s5` agent moves that into `scripts/decision-guide.ts --hosted`). `guide-s5` (worktree `.claude/worktrees/guide-s5`)
+  refreshes the guide from S3 to S5 (S6 if its confirm passes: message it the verdict). Build checked: no console errors,
+  data figures draw, dist 32 MB without audio. Still no deploy: the user has not said how to publish.
 - **Hosted site (user request):** branch `site` (worktree `.claude/worktrees/site`, from `main`) = a snapshot of the main
   checkout's uncommitted site work (UI, in-browser GLiNER, about page; an unrelated PDF and caches excluded) + Real time +
   GLiNER-only builds (`VITE_DECISION_PROVIDER` hides the provider picker and ignores ?provider=). Build for hosting:
@@ -202,6 +219,8 @@ mkdir -p ../<name>/artifacts/validation && ln -s /Users/juanbermudez/Desktop/MGO
 | E1k deficit | `groomNeedDyad` | null (marginal K1), off | Removes the mother–infant grooming loop (33% → 11% of daylight; female T-ACT-3 0.18 → 0.11); mothers gain little (extra minutes on fallback food). Line audit: no wild rate exists, only the direction. | e1k-prereg.md |
 | E2g water | `waterLedger` | provisional keep candidate, **confirmed on 5 seeds** (fitted cost on R: grooming fills the freed time; none on S3), off | Water ledger in place of the thirst timers: drinking 2.24 → 0.84 per adult-day, walks to water halved, males' path −0.38 km, prescriptions −6, sums inside noise. | e2g-prereg.md |
 | E5c crown share | `crownShare` | no switch kept; recorded, off | A crown is valued for one gut-full (~245 kcal against a ~2,000 kcal need), so crop and feeders never enter its value; a crown holds 8–12 feeder-bouts while 1.3 party members feed at once. Three valuations: share of the day's need (mothers −1.23%/day), need-filling rate (−0.33%/day), crop-blind terms off (viable, mothers balanced, walking −30%, but feeders fall with crop through depletion). The binding problem is feeding together (synchrony, party size), not crown value. | e5c-prereg.md |
+| E1o older infants' milk | `milkInDrive`, `weanDeficit` (with `weanDecide`) | B (`weanDeficit` + `weanDecide`) provisional keep candidate; A a defect fix, null for volume | On S5 infants of 1–4 y drink the whole yield because milk comes first (night suckling at any hunger above the stop; a hunger-free part of the nurse score). B: the mother refuses while her relative deficit exceeds her infant's, and the refusal stands while she sleeps: milk 240/224/213 kcal/day at 1–4 y, mothers in balance, prescriptions 76. Its 5-seed confirm on the stack is S6 (e-stack2-confirm.md). | e1o-prereg.md |
+| E3b revisits | `revisitByCrop` | provisional keep candidate as a correction (removes no counted prescription), off | The crop-blind revisit devaluation (`revisitW`, C6b design) did 80–110% of E5c's A3 change; without it 61% of returns come the same day and find what was left (a visit eats 11% of a crown). Valued by the crop believed left: mothers in balance, walking −27–36%, T-HUN-1 into band; costs: fruit share 0.85 above band, T-SOC-9 out. The term stood in for depletion parties do not cause. | e3b-prereg.md |
 | Integrated S2 | 28 switches | measured | 89 prescriptions; fitted = today's model; held-out without rare rows +2.9 (T-FOOD-10, travel). | e-stack2-confirm.md |
 | E1j ranging | — | done: no mechanism | Interim: in simulation truth mothers ÷ males is 0.69–0.77 (B, R, E1i pair); the observer's T-RNG-5 rests on 13–24 follow-days, so E1i's 0.84 was sampling; the band is Budongo only (Gombe 0.67–0.74, Kanyawara 0.83). R's real change vs B: males' food trips halve. | e1j-prereg.md |
 | E3 re-test | — | done (integrator) | The effect stands without the old hunger cap: persistence halves crown bouts (22 → 11 min) and the fruit share falls to 0.54. | e3-prereg.md, last section |
