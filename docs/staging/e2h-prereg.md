@@ -135,7 +135,7 @@ before its run. Seeds 48 and 7; no run longer than 90 days in all; rules policy 
 
 ## 8. Step 1 results (diagnosis, committed code, simulation truth and the frozen observer)
 
-Runs: `scratchpad/e2h/diag/e2h-diag.ts` from a frozen checkout at de0046b (one simulation per configuration and seed:
+Runs: `e2h-diag.ts` (scripts, outputs and tables kept locally in `artifacts/validation/e2h/`, gitignored) from a frozen checkout at de0046b (one simulation per configuration and seed:
 the observer exactly as e-bench runs it, plus every adult's morning exit from a nest), seeds 48 and 7, 30 + 30 days;
 R0 and its three `rgTemperature` re-draws (R1–R3), S3 (the integrated candidate stack, S3-params.json of bench-run) and B
 (all off). The R0 runs reproduce E2f's R0 references exactly (783 male departures, T-FOOD-10 90/90 per seed), so E2f's
