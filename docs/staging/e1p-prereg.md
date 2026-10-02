@@ -260,3 +260,21 @@ reserves ÷ 4,300 kcal/kg). Smoke tests (seed 48, S6 + each mode, 1-day burn-in 
 readout prints; Y1 pays 0.98–0.995 of the potential, Y2 0.04–0.38 in those two days (the window's first days are the
 dyads' transient, S < 0 in most groups), and Y2's books exist only on growing animals. No prediction was changed after
 the smoke tests.
+
+### 2.3 Extension check: the confirm's second month (registered 19:27, while Y1's bench ran and before any arm result was read; not an iteration: no mechanism changes)
+
+The diagnosis (§1.4) put the S6 infants' fall in the confirm's second month (sim days 60–90), which quick mode (days
+30–60) does not reach. So the arms' answer to the stage's question needs that month. Runs: `energy-diagnose` on seeds 48
+and 7, 30-day burn-in + 60 days (90 days in all, the cap), for S6, Y1 and Y2, one at a time from the frozen checkout
+27edc1b (S6 = `growYield` 0, identical to cac9598 by the hash check in §2.2). The integrator's S6c-energy.json pools five
+seeds and cannot be split, so S6 is run here on the two development seeds (disclosed: one extra reference simulation,
+for a window the shared reference does not cover). Judged by size (one run each), against S6 on the same seeds.
+
+Predictions (by hand):
+- S6: infants 0.5–2 and 2–5 y fall in the second 30 days by 0.05–0.20% of the store a day (moderate; the confirm pooled
+  five seeds at 0.11–0.15 over 60 days with most of it in the second month); growth paid ÷ potential 1.000.
+- Y1: pays 0.85–0.95 of the potential in the second 30 days at 0.5–4 y (moderate); the infants' second-month fall
+  10–40% slower than S6's (moderate: growth yields (1 − w) × G, 3–6 kcal/day at −8 to −13%, against a fall of 10–20).
+- Y2: pays 0.3–0.7 of the potential in the second month (low); the infants' second-month fall less than half of S6's
+  (low).
+- Mothers (lactating class) fall in the second month in all three; Y1 within 0.02%/day of S6 (moderate).
