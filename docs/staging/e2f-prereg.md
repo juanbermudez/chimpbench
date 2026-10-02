@@ -198,5 +198,32 @@ rhythm-metrics is not benchmarked.
 ## 9. Iterations
 At most three, each logged here and committed before its run. No input moves to hit a benchmark.
 
+### Iteration 1 (§4, §6; frozen 646af95): read so far (rhythm-metrics, 30 + 30, seeds 48 and 7)
+W as predicted on every readout: adults wake at −65 min (R0 −128), 9.71 h asleep, onset +67; with the menu they still
+leave at −13 (99% before sunrise); independent 5–8-year-olds are out of a nest 51% of the pre-dawn window (R0 96%);
+juveniles' share of night out of a nest 1.9% (R0 4.6%). WF (menu off) is **killed by night safety** as predicted:
+adults leave on waking (−63), out of a nest 6.2% of the night, T-RHY-5 0.064, juveniles 6.2%; not benchmarked. Full
+table in §10 after the sensitivity arms and W's benchmark.
+
+### Iteration 2 (registered before its run): the hold without the menu, on the chimpanzee window
+- **Reading.** The chimpanzee sleep amount leaves adults awake about 40–45 min before the night ends (−65 → −21 min,
+  daylight 0.03) instead of 105; captive chimpanzees under natural light leave their platform 45–60 min before sunrise
+  (videan2005), so an awake chimpanzee with nothing to hold it gets up, while wild ones stay in the nest until about
+  sunrise. The remaining hold is the wild animal's choice to stay, which the model can only give through the
+  mechanisms already built and recorded for it: E2e's company at the nest (`nestCompany`, `nestAudience`; held
+  animals with an adult nest-mate to a sun altitude of about −4°) and E2c's darkness (`darkCost`: vision and pace from
+  physics and human physiology).
+- **Arms (no code change; frozen at the commit that adds this entry):** **WFS** = WF + `nestCompany` + `nestAudience`;
+  **WFSD** = WFS + `darkCost`. rhythm-metrics first; e-bench --quick only for an arm that passes night safety (§7.2).
+  Prescriptions: 113 (the menus are off; the three switches remove nothing more with `rhythmCircadian` on).
+- **Predictions** (scaled from E2e's free-night arms, whose adults were awake 105 min before the night's end, to WF's
+  ~42 min): WFS adults out of a nest 3–4.5% of the night (T-RHY-5 0.03–0.045), juveniles 5–15 y 4–5.5%; WFSD 2.5–3.5%
+  (T-RHY-5 0.025–0.04), juveniles 3.5–4.5%. Departure median −35 to −10 min, 0.80–0.95 before sunrise (T-FOOD-10 and
+  T-RHY-3 still out of band); 5–8 y out of a nest 30–45% of the pre-dawn window; active day 12.2–12.6 h. Passing night
+  safety: WFSD possible (low confidence), WFS not expected. No night deaths.
+- **Kill criteria:** §7 unchanged. A pass would be the first hold of the pre-dawn hours without the night menu
+  (prescriptions 115 → 113), with a sourced sleep window, a physics-based darkness cost and a design-weighted company
+  value; it would still leave departures before sunrise.
+
 ## 10. Results
 (to be filled from the JSON by script)
