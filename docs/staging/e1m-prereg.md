@@ -130,7 +130,42 @@ the 0.05%/day line; infants' growth and weaning readouts must not get worse beyo
 is a finding about the input, not a reason to retune). At most 3 iterations, each logged here and committed before
 its run.
 
-## 6. Sources (STEP 0; filled in below as they are verified)
+## 6. Sources (STEP 0; filled in as they are verified)
 
-Pending (two helpers are verifying measured primate milk outputs and ape milk composition and allometry in parallel;
-existing entries in research.md §E.11, §E.13, §E.14.3 were read first).
+Two helpers verified sources in parallel with disjoint lists (measured outputs; composition and allometry); their
+notes with verbatim quotes and URLs are kept locally (`artifacts/validation/e1m/sources-*.md`, not tracked). Existing
+entries in research.md §E.11, §E.13 and §E.14.3 were read first. Blocked hosts (dropped at the first challenge, not
+routed around): www.sciencedirect.com (captcha; AJCN and J Nutr back issues now resolve there), discovery.ucl.ac.uk
+(Cloudflare), link.springer.com (client challenge).
+
+### 6.1 Measured milk energy output (isotope dilution, deuterium turnover, test-weighing)
+
+| Species | Source | Method, sample | Maternal mass | Milk energy output | Read | Verdict |
+| --- | --- | --- | --- | --- | --- | --- |
+| Baboon | roberts1985 (AJCN 41:1270) | energy intake, milk output and balance, ad libitum vs 80% and 60% of it; method, n and values not in the abstract (Hinde 2009 FT: "three captive baboons" restricted) | not verified | not verified | Abs (2 full-text routes: captcha, Cloudflare) | **not verified** |
+| Baboon | bussVoss1971 (J Nutr 101:901–909) | four methods of estimating yield | not verified | not verified | none (PubMed has no abstract; publisher host blocked) | **not verified** |
+| Rhesus | hinde2009 (PMC2615798) | 58 captive mothers; milk let down with oxytocin and stripped after 3.5–4 h separation: "should not be considered an estimate of the absolute or daily milk yield"; isotope and test-weighing methods were judged unsuitable for socially housed rhesus | 8.6 (1 mo) and 8.9 kg (3.5 mo) | not a daily output (11.4 g at 0.83 kcal/g and 17.0 g at 0.99 kcal/g per 3.5–4 h) | FT | not an output value (rule 1) |
+| Marmoset | tardif2001 (Behav Ecol Sociobiol 51:17) | cited by secondary sources for milk composition only | not verified | not verified | none (closed; Springer challenge) | **not verified** |
+| Other primates, great apes | PubMed and Europe PMC searches (terms in the helper's notes) | no measured milk output in any nonhuman primate other than the above; none in any great ape | — | — | searches | none exists that was found |
+| Human | butteKing2005 (FT, Cambridge PDF) | 749 g/day × 2.8 kJ/g × efficiency 0.80 = 2.62 MJ/day; the 749 g/day is a WHO review value (Brown, Dewey & Allen 1998) for exclusive breastfeeding to 5 months; **no maternal mass is stated** | not stated (the registry's 60 kg is an assumption) | 501 kcal/day | FT | the registered basis |
+| Human | butteKing2005 Tables 12 and 15 (FT): four studies with doubly labelled water and milk energy output, rows paired by their TEE | Lovelady 1993 (n 9, 12–24 wk), Goldberg 1991 (n 10, 4–12 wk), Forsum 1992 (n 23, 8 wk), Butte 2001 (n 24, 12 wk); milk method of the originals not stated in this text | 64.8, 58.6–58.9, 64.4, 62.8 kg | 2.20, 2.22–2.24, 1.97, 2.02 MJ/day (mean 2.15) | FT (secondary to the four studies) | **confirms the coefficient** (below) |
+| Human | daCosta2010 (J Nutr 140:2227; PMC3592484 front matter) | deuterium dose-to-mother, 1,115 infant measurements, 12 countries: intake 0.78 kg/day, above 0.80 kg/day until 6–7 months | not in the abstract | — | Abs | infant intake, no mass |
+
+Coefficients from butteKing2005's measured rows (`brackets.py`, local copy): Lovelady 23.0, Goldberg 25.1 (mean of 4, 8
+and 12 wk), Forsum 20.7, Butte 21.6 kcal/day per kg^0.75; mean of the four studies 22.6, weighted by n 22.0; the pooled
+mean output (2.15 MJ/day) at the four studies' mean mass (62.7 kg) gives 23.1. The registered 23.2 (501 kcal/day at an
+assumed 60 kg) sits inside the measured range (20.7–25.1), 3% above the unweighted mean and 5% above the n-weighted one.
+
+Efficiency of synthesis (`ledgerMilkEff` 0.80), butteKing2005 (FT): a biochemical derivation ("Applying this correction
+to the estimate of biochemical efficiency derived above (91–94%) would yield a figure of 80–85%") backed by a 1970
+estimate from food-intake differences of lactating and non-lactating women that measured no milk ("Given the imprecision
+of these estimates, the biochemical derivation of 80% seems reasonable"). No primate measurement was found (roberts1985's
+"increase in efficiency, estimated at 17–25%" under restriction is a change, not a level, and its full text was not
+reached).
+
+Also checked: emeryThompson2013 (Annu Rev Anthropol 42:287, the review research.md names for a chimpanzee lactation
+estimate): closed access; the abstract (OpenAlex) has no numbers. **Not verified.**
+
+### 6.2 Composition and allometry
+
+Pending (second helper).
