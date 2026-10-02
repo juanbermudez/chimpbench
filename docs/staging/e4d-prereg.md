@@ -30,6 +30,10 @@ and adult-male pant-hoots have no daily course (morning ÷ afternoon 1.0, field 
 | luboshitzky2001 (Abs, PubMed 11238497) | 10 men, fragmented sleep (7/13 min cycle) against continuous sleep | serum testosterone every 20 min | The nocturnal rise is sleep-related, linked to the first REM episode; fragmented sleep delayed it (03:24 vs 22:35 h) | [M] (human, abstract) |
 | emeryThompson2020 (Abs only: PMC7165472 has no full text in BioC or efetch) | Kanyawara | urinary cortisol | aging blunts the diurnal rhythm (direction only) | not used |
 
+Samples of the bench rows this stage may move (T-COM-1, T-COM-4, T-COM-8, T-PTY-1, T-IGE-1): as listed in e4c-prereg.md
+§2 ("Samples of the rows scored"), unchanged; the T-END rows' samples are in docs/staging/e-targets.patch.json (T-END-8:
+fedurek2016, above).
+
 Oxytocin-like state: no source in research.md, e-sources.md or the papers read here reports a daily rhythm of urinary
 oxytocin in chimpanzees (not searched further, time box). The affiliation state gets no rhythm.
 
