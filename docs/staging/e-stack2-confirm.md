@@ -90,3 +90,30 @@ and eating minutes by class), from `bench-run` at the commit that adds this sect
 Reading rule: a package is named as the source of the extra travel if leaving it out brings males' ground path at
 least halfway back from S2 to R; the water ledger "takes the walks out" if S3's males walk at least 0.4 km a day less
 than S2's (E2g measured 0.38 km on R). Single runs: differences under 0.2 km or 0.05%/day are reported as not resolved.
+
+### Attribution results (bench-run at 3329520, clean; energy-diagnose, seeds 48 and 7, 30 + 30 days; generated from the JSON)
+
+| Arm | Ground km per day: males / other females / lactating / juveniles | Eating min: males / lactating | Reserves %/day: lactating / juveniles / other females | Deaths |
+| --- | --- | --- | --- | --- |
+| R | 2.16 / 1.79 / 1.60 / 2.33 | 179 / 208 | −0.010 / −0.012 / −0.000 | 0 |
+| S2 | 3.71 / 3.43 / 3.07 / 3.95 | 253 / 287 | −0.191 / −0.148 / +0.009 | 0 |
+| S2 − rhythm package | 3.42 / 3.08 / 2.45 / 3.32 | 247 / 277 | −0.139 / −0.113 / −0.008 | 0 |
+| S2 − `callValue` | 2.97 / 2.70 / 2.61 / 3.12 | 255 / 292 | −0.135 / +0.004 / −0.017 | 0 |
+| S2 − E1i pair | 4.17 / 3.74 / 3.27 / 4.19 | 249 / 221 | −1.029 / −0.306 / −0.090 | 0 |
+| S3 = S2 + `waterLedger` | 2.82 / 2.58 / 2.45 / 2.79 | 246 / 288 | −0.159 / −0.071 / −0.022 | 0 |
+
+**Reading (registered rule).** No single package brings males' path halfway back from S2 (3.71 km) to R (2.16 km):
+leaving out `callValue` comes closest (−0.74 km, 48% of the gap; and the juveniles' deficit disappears), the rhythm
+package −0.29 km (19%). The extra walking is shared: value-based calls are its largest single source. Leaving out
+E1i's pair raises it (+0.46 km) and starves the mothers (−1.03%/day), as E1i predicts. **The water ledger takes the
+timed walks out** (S3 −0.89 km against S2, more than its −0.38 km on R) and halves the juveniles' deficit. Next: the
+integrated confirm of S3 (registered below), and a stage on why value-based calls add about 0.7 km of walking a day.
+
+## S3 confirm (registered 2 October 2026 before its run)
+
+S3 = S2 + `waterLedger` (E2g, provisional keep candidate). Same runs and judgement as S2 (§Runs, §Judgement):
+`e-bench --confirm`, `energy-diagnose` and `rhythm-metrics` on seeds 48, 7, 21, 5, 11, 30 + 60 days, from `bench-run`
+at the commit that adds this section; S3 against the four-run means of B and R, and against S2 (a single run; reported,
+not judged). Expected (integrator, before the run): prescriptions about 83 (high); viable (moderate); travel share
+(T-ACT-2) lower than S2's, still above its band for males (low); held-out without the rare-event rows still worse than
+B beyond noise (moderate: T-FOOD-10 is not touched by water); night safety holds (moderate).
