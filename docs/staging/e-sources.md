@@ -1515,3 +1515,35 @@ Evidence pass for stage E2g (the water ledger that replaces the thirst timers; `
 - simmen2010, pontzer2021, nelson2022, mackenzie2025 and wessling2018 are already listed; the entries above add findings.
 - *new* lindshield2021: Lindshield S, Hernandez-Aguilar RA, Korstjens AH, et al. 2021. Chimpanzees (*Pan troglodytes*) in savanna landscapes. *Evolutionary Anthropology* 30(6):399–420. [doi:10.1002/evan.21924](https://doi.org/10.1002/evan.21924) (FT).
 - *new* peter2022: Péter H, Zuberbühler K, Hobaiter C 2022. Well-digging in a community of forest-living wild East African chimpanzees (*Pan troglodytes schweinfurthii*). *Primates* 63(4):355–364. [doi:10.1007/s10329-022-00992-4](https://doi.org/10.1007/s10329-022-00992-4) (FT, PMC9273564).
+
+## Addendum: E4g calls and travel (2 October 2026)
+
+Stage E4g asked which part of the walking value-based calls add (docs/staging/e4g-prereg.md §1). Nothing below is a
+model input; the values are targets or readouts. All full texts were already cited; this adds methods and numbers read
+for the stage.
+
+- **Pant-hoots and party composition, Kanyawara** [fedurek2014] (FT; extends §24) [M]. Oct 2010 – Sep 2011, nest-to-nest
+  focal follows of adult males (169 days, mean 550 min), "instantaneous scan samples at 5-min intervals", party = "all
+  individuals within 50 m". A change in male composition = "one or more males left or joined the party in one scan,
+  compared with the previous scan": 6.33 ± 3.95 per focal day (females 6.52 ± 3.90), ≈ 0.69 per hour (derived [L]). Of
+  368 pant-hoots with no other call by the focal within two scans before or after, and none given while feeding (115
+  excluded "because ... independent attraction to food sources would confound"), males joined the caller's party within
+  ±2 scans in 25.27% (93), left in 10.32% (38); joins after the call (median 0.27 males) vs before (0.15) not significant
+  (P = 0.105); fusion was more likely in the two scans after the last call of a sequence than during it (β −0.65 ± 0.27).
+- **Others' arrivals at feeding events, Taï** [kalanBoesch2015] (FT; extends §24) [M] (*P. t. verus*). 557 complete
+  feeding events of 9 focal adults; others arrived within 30 min of the focal in 153 (27%); 89.9% of patches were empty on
+  arrival; "individuals who arrived always began to join in eating". All foods: food calls did not raise arrivals
+  (P = 0.21), pant hoots did (log-odds +0.72 ± 0.28); fruit only (319): food calls +0.81 ± 0.31, pant hoots +0.85 ± 0.38.
+  "Nearby" = seen with the focal in the 30 min before, not arriving with it ("a few hundred metres"); food calls carry
+  ≤ ~300 m at Taï.
+- **Fusion after inquiring pant-hoots, Loango** [southern2025] (FT; extends §24) [M]. Fusion = "the caller and responder
+  were in the same party composition within 30 min of the call, defined as having moved into the same party": 67% of
+  352 inquiring pant-hoots (a selected subset: travel with waiting or scanning), on average 5.16 ± 8.54 min later. Who
+  moved is not reported; caller–responder distances are in the supplement (not read).
+- **What no source read gives:** the distance listeners travel to a caller, or who moves in a fusion. fedurek2014 and
+  southern2025 count composition changes; only kalanBoesch2015 counts listeners arriving. clarkWrangham1994 (abstract):
+  arrival pant-hoots at Kanyawara did not change other parties' arrival.
+- **Use in E4g:** readouts in `scripts/approach-diagnose.ts` (composition changes per awake hour, the share of isolated
+  non-feeding pant-hoots with males joining or leaving within ±2 scans, the share of feeding events with others arriving
+  within 30 min); never fitted.
+- fedurek2014, kalanBoesch2015, southern2025 and clarkWrangham1994 are already listed; the entries above add findings.

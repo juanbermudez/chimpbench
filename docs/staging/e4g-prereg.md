@@ -295,8 +295,119 @@ defect fix (not a keep candidate by the track rule).
 
 ## 5. Iterations (at most three, each logged here and committed before its run)
 
-- **Iteration 1** (`followCarer` as in §3; arm A1, §4): written and committed before its run.
+- **Iteration 1** (`followCarer` as in §3; arm A1, §4): written and committed before its run (fbdc285); run from
+  run-fbdc285; results §6.1: null by the kill criterion (T-PTY-1 z −2.4).
 
 ## 6. Results
 
-Not run yet.
+### 6.1 Iteration 1: A1 = RC + `followCarer` (run-fbdc285, clean; 2 October 2026)
+
+**Identity.** approach-diagnose of RC at fbdc285 (`followCarer` absent, so 0) is byte-identical to the RC run at c34c513
+(`rc-identity.json` = `rc-diag1b.json`), so the switch-0 path is today's model and RC0–RC3 (d2e6e1d) are A1's reference.
+Smoke test (seed 48, 1 + 2 days, switch on): no adult follows a care follower (0 km), as stated.
+
+Every number below is printed by the scratch scripts `table.py`, `judge_vs_reps.py` (the integrator's, `custom`
+references), `rows.py` and `diag1b_table.py` from the JSON; none is typed. z = (A1 − mean) ÷ (SD × √1.25), SD the
+reference's own spread for truth readouts and observer values, the registered quick SD (or the spread if larger) for
+the sums.
+
+| Quantity | Reference mean ± SD (RC0, RC1, RC2, RC3) | A1 |
+| --- | --- | --- |
+| true day range, adult males (km/day) | 2.500 ± 0.102 | 2.216 (z -2.5) |
+| true day range, adult females (km/day) | 2.079 ± 0.061 | 1.942 (z -2.0) |
+| km/day approaching callers, adult males | 0.423 ± 0.048 | 0.375 (z -0.9) |
+| km/day approaching callers, adult females | 0.350 ± 0.034 | 0.329 (z -0.6) |
+| km/day joining or following a party, adult males | 0.903 ± 0.067 | 0.689 (z -2.8) |
+| km/day on food trips, adult males | 0.391 ± 0.019 | 0.395 (z +0.2) |
+| approaches per adult-male day | 1.951 ± 0.150 | 1.723 (z -1.4) |
+| true day range, juveniles 5–12 y (km/day) | 3.154 ± 0.065 | 3.056 (z -1.3) |
+| true day range, lactating females (km/day) | 1.868 ± 0.017 | 1.824 (z -2.4) |
+| follow-party km/day, adult males | 0.306 ± 0.027 | 0.146 (z -5.2) |
+| joined-trip km/day, adult males | 0.597 ± 0.040 | 0.544 (z -1.2) |
+| water km/day, adult males | 0.451 ± 0.014 | 0.449 (z -0.1) |
+| male composition changes / awake h (fedurek2014 ≈ 0.69) | 1.131 ± 0.102 | 0.959 (z -1.5) |
+| isolated calls with males joining (fedurek2014 0.25) | 0.264 ± 0.016 | 0.240 (z -1.3) |
+| feeding events with others arriving (kalanBoesch2015 0.27) | 0.194 ± 0.005 | 0.180 (z -2.5) |
+| T-ACT-2 travel share (pooled) | 0.178 ± 0.012 | 0.154 (z -1.9) |
+| T-ACT-2 males | 0.192 ± 0.015 | 0.167 (z -1.5) |
+| T-ACT-2 females | 0.166 ± 0.009 | 0.143 (z -2.2) |
+| T-PTY-1 party size | 4.337 ± 0.139 | 3.972 (z -2.4) |
+| T-IGE-1 encounters / community-year | 3.348 ± 3.923 | 6.112 (z +0.6) |
+| T-COM-1 male pant-hoots / h (observer) | 0.545 ± 0.037 | 0.513 (z -0.8) |
+| T-RNG-4 male day range (observer, km) | 2.313 ± 0.063 | 2.007 (z -4.4) |
+| adult-male pant-hoots / awake h (truth) | 0.589 ± 0.028 | 0.580 (z -0.3) |
+| juveniles 5–12 y reserves %/day | 0.005 ± 0.013 | -0.005 (z -0.7) |
+| lactating females reserves %/day | -0.002 ± 0.023 | 0.013 (z +0.6) |
+| other adult females reserves %/day | -0.000 ± 0.009 | -0.008 (z -0.7) |
+| adult males reserves %/day | -0.001 ± 0.001 | 0.001 (z +1.6) |
+| starvation deaths (truth) | 0.000 ± 0.000 | 0.000 |
+| prescriptions | 92.000 ± 0.000 | 92.000 |
+
+Provenance (e-bench JSON):
+- RC0: git d2e6e1d dirty 0, viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}, params {"callValue": 1}
+- RC1: git d2e6e1d dirty 0, viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}, params {"callValue": 1, "rgTemperature": 0.1641}
+- RC2: git d2e6e1d dirty 0, viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}, params {"callValue": 1, "rgTemperature": 0.1639}
+- RC3: git d2e6e1d dirty 0, viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}, params {"callValue": 1, "rgTemperature": 0.16405}
+- A1: git fbdc285 dirty 0, viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}, params {"callValue": 1, "followCarer": 1}
+
+Band-distance sums (rows counted in all five runs):
+
+```
+quick, reference custom (4 runs), rows counted in all runs: fitted 16, held-out 12
+  fitted             (16 rows) ref 4.69, 3.81, 5.05, 5.37 (mean 4.73, sd 0.67; used 0.69) | A1.json: 4.39, Δ -0.34, z -0.4 (inside noise)
+  held-out           (12 rows) ref 2.45, 2.67, 2.26, 2.15 (mean 2.38, sd 0.23; used 1.26) | A1.json: 3.51, Δ +1.13, z +0.8 (inside noise)
+  held-out w/o rare  (11 rows) ref 2.37, 2.22, 2.26, 2.04 (mean 2.22, sd 0.14; used 0.48) | A1.json: 2.63, Δ +0.41, z +0.8 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-HUN-4   held-out ref 0.16±0.20 | A1.json 0.89 (fail)
+```
+
+Rows whose distance moved by 0.1 or more (rows counted in all runs):
+
+| Row | role | reference distance mean ± SD | A1 |
+| --- | --- | --- | --- |
+| T-ACT-4 | fitted | 0.08 ± 0.16 | 0.31 (value 0.522) |
+| T-COM-11 | fitted | 0.69 ± 0.28 | 0.83 (value 0) |
+| T-COM-8 | fitted | 0.13 ± 0.08 | 0.03 (value 0.608) |
+| T-HUN-1 | fitted | 1.77 ± 0.62 | 1.49 (value 54.8) |
+| T-HUN-4 | held-out | 0.16 ± 0.20 | 0.89 (value 2.46) |
+| T-HUN-8 | held-out | 0.08 ± 0.17 | 0.33 (value 1) |
+| T-SOC-9 | fitted | 0.36 ± 0.42 | 0.13 (value 0.238) |
+
+Whom adults follow (RC0 against A1; single runs):
+
+| Class | follow-party km/day RC0 → A1 (Δ) | following an approacher RC0 → A1 | following a care follow (`V.MOTHER`) RC0 → A1 | approacher share of Δ | care share of Δ | care share of the follow path RC0 / A1 |
+| --- | --- | --- | --- | --- | --- | --- |
+| adult male | 0.329 → 0.147 (-0.182) | 0.129 → 0.108 | 0.126 → 0.000 | 12% | 69% | 38% / 0% |
+| adult female | 0.266 → 0.159 (-0.107) | 0.138 → 0.124 | 0.067 → 0.000 | 13% | 63% | 25% / 0% |
+| lactating | 0.196 → 0.124 (-0.072) | 0.116 → 0.099 | 0.039 → 0.000 | 24% | 54% | 20% / 0% |
+| female other | 0.327 → 0.190 (-0.137) | 0.157 → 0.145 | 0.093 → 0.000 | 9% | 68% | 28% / 0% |
+| adolescent 12–15 y | 0.350 → 0.193 (-0.157) | 0.163 → 0.141 | 0.116 → 0.000 | 14% | 74% | 33% / 0% |
+| juvenile 5–12 y | 0.375 → 0.186 (-0.189) | 0.162 → 0.146 | 0.135 → 0.000 | 8% | 71% | 36% / 0% |
+
+adult male: joined trips 0.613 → 0.543 (-0.070); of which behind a leader itself on a joined trip 0.514 → 0.458 (-0.056)
+
+adult female: joined trips 0.507 → 0.465 (-0.042); of which behind a leader itself on a joined trip 0.413 → 0.392 (-0.021)
+
+**Predictions (§4), scored.** Care-follow following below 0.02 km/day: confirmed (0). Adult males' true day range lower
+by 0.05–0.15: **missed, larger** (−0.28; z −2.5). Adult females lower by 0.02–0.08: **missed, larger** (−0.14; z −2.0).
+Juveniles lower by 0.05–0.15: confirmed (−0.10; z −1.3). Composition changes per awake hour lower than RC0's 1.24:
+confirmed (0.96; reference mean 1.13, z −1.5; field ≈ 0.69). T-PTY-1 within ±0.3 of 4.34: **missed** (3.97; z −2.4).
+T-ACT-2 lower by ≤ 0.02: missed narrowly (−0.024; z −1.9). Approaches and adult-male pant-hoots inside the spread:
+confirmed (z −1.4, −0.3). Viability passes, slopes inside the spread: confirmed (no death; every class |z| < 2).
+Prescriptions 92: confirmed. Sums inside noise: confirmed (fitted z −0.4, held-out z +0.8, without T-HUN-4 and T-BRD-1
+z +0.8; the moved held-out rows are hunting rows, T-HUN-4 and T-HUN-8).
+
+**Kill criterion (§4): met.** Party size falls beyond the reference's spread (T-PTY-1 3.97 against 4.34 ± 0.14, z −2.4;
+per seed 48: 4.37 against 4.93–5.17, seed 7: 3.57 against 3.48–3.84), so `followCarer` is **recorded as a null** by the
+registered rule, although T-PTY-1 stays inside its band (3–9). Everything else the rule names passes.
+
+**Reading.** Following a dependent who is keeping up with its carer is not a small artefact on R + `callValue`: it is
+38% of adult males' party-follow path, and removing it takes away about as much walking as `callValue` adds on R
+(adult males 2.50 → 2.22 km a day, against R's single run 2.20; party walking 0.90 → 0.69, z −2.8; the observer's
+T-RNG-4 2.31 → 2.01, z −4.4). Following an approacher falls a little too (0.129 → 0.108), and so do joined trips
+(0.613 → 0.543) and approaches (1.95 → 1.72 a day, inside noise): companions who no longer trail a mother–offspring unit
+are drawn into fewer chains. The same following was holding adults close to mothers: parties shrink by 0.37 (seed 48
+only), the share of feeding events joined by others falls further from the field (0.194 → 0.180 against 0.27; z −2.5),
+and the composition change rate moves toward the field (1.13 → 0.96 against ≈ 0.69). Field context, not a test:
+mothers are less gregarious than other adults at Kanyawara (otaliGilchrist2006, title only, research.md E.32), so
+adults no longer trailing mothers is the expected direction; the model has no row that scores it.
