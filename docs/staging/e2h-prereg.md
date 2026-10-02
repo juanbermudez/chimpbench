@@ -60,10 +60,30 @@ search running (§1b, filled in when it reports).
 So the observer counts as "before sunrise" departures up to 3.5 min after the field's sunrise, pools males and all
 females with mothers, all days with fruit-scarce ones, and every breakfast type with fruit breakfasts.
 
-## 3. Staged changes (never applied here; docs/staging/e2h-targets.patch.json)
-To be written from §1–§2: a T-FOOD-10 scorer fix (NOAA sunrise; adult females with a dependent offspring; fruit
-breakfasts; mornings after a complete follow; no 04:00 pseudo-departures; a fruit-scarce-day filter if the window has
-any) and a multi-site band for the general departure row (T-RHY-3), on the median departure relative to sunrise.
+## 3. Staged changes (never applied here; docs/staging/e2h-targets.patch.json and e2h-protocol.patch.json)
+
+**Disclosure.** Written after model values were seen in earlier stages' documents (R0: departures −13 min, 0.99 before
+sunrise, T-FOOD-10 1.00; S3: T-FOOD-10 0.686, truth 0.67 before sunrise; B 0.017; e-stack2-confirm.md, e2f-prereg.md)
+and before this stage's diagnosis runs were read. The rules below use field values only.
+
+**Band rule (registered here, 09:38).**
+- *Median departure relative to NOAA sunrise, adults* (proposed as the scored value of T-RHY-3; the share before sunrise
+  becomes a reported part): band = from the lowest to the highest site mean of adults in §1, rounded outward to 5 min:
+  Gombe males in the wet season −19.6 → **−20 min**; Taï mothers +13.0 → **+15 min**. Class parts reported, not scored:
+  adult females (Budongo lactating −3.9, receptive −12.9; Taï +13.0) and males (Gombe −13.9 to −19.6; Budongo +6.1).
+- *T-FOOD-10 share before sunrise* (kept as the Taï construct, scored like for like by the protocol fix below): the
+  lowest and highest site values for adult females with dependent offspring, each with the registered band's margins
+  (−0.10 below, +0.12 above the Taï 0.18): lower 0.18 − 0.10 = **0.08**; upper: Budongo lactating females, derived
+  0.60–0.66 (§1), 0.66 + 0.12 = **0.78**. The registered one-site band (0.08–0.30) is kept under `revisions`, and the
+  alternative of keeping it with basis "one site, a site with a twilight predator (boesch1991) absent at Kibale
+  (wood2017)" is given for the integrator to choose.
+
+**Protocol fix for T-FOOD-10 (staged, frozen observer untouched).** Score only follows whose focal is an adult female
+with a dependent offspring (lactating, or mother of a living offspring under 7 y), whose first food item after leaving
+the nest is fruit (janmaat2014: "Breakfast was defined as the first food item eaten after waking up"; water and milk
+are not food items), on fruit-scarce days if the scored window has any (the day's community fruit index below its
+long-run mean, `fruitIndexAtMean`; report n), with sunrise at −0.833° (NOAA) and without follows that start at 04:00
+with the focal already out of its nest (not a departure).
 
 ## 4. Step 1 diagnosis (registered readouts, before running)
 On R0 (`rhythmSleep`, `rhythmHeat`, `departRace`, `nestLightDecide`, `rhythmCircadian`) and S3, quick mode
