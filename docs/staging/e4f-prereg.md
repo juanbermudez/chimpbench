@@ -226,3 +226,11 @@ site-matched input, inside noise or not, for the integrator to decide (it is [L]
 
 At most 3, each logged in §9 and committed before its run. Iteration 1 = K (with H and KH as its comparison runs).
 A further iteration only if a source for colobus day range or for detection distance is reached (registered first).
+- **I1 identity and S1 smoke (before any arm).** Frozen checkout of 518295c (the switch commit). I1: R with
+  `preyKanyawara` 0, 2 days, seeds 48 and 7: E4e's hashes again. S1: R + `preyKanyawara` 1, seed 48, 1 + 2 days through
+  the tool: 142 groups, every readout produced, the model-rule hunted share on focal follows equals T-HUN-3's value.
+- **Iteration 1 (K, with H and KH; and the tool's reference spread).** Same frozen checkout, rules policy, seeds 48 and
+  7, 30 + 30 days. Two background chains, one process each (load ~11): (a) `e-bench --quick --workers 1` for H = R +
+  `huntValue` 1, K = R + `preyKanyawara` 1, KH = K + `huntValue` 1 (`artifacts/validation/e4f/{H,K,KH}.json`); (b) the
+  tool for RD0–RD3 (R and its three re-draws, unchanged code), H, K, KH (`artifacts/validation/e4f/diag/<label>-{48,7}.json`).
+  Judged by §6–§7: `judge_vs_reps.py quick R` on e-bench JSON; tool readouts by `diag_table.py` against RD0–RD3.
