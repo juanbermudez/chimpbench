@@ -63,7 +63,7 @@ on all six by the same rule:
 | NB3 | B | `rgTemperature` 0.16405 |
 | NR3 | R | `rgTemperature` 0.16405 |
 
-This amendment was written knowing the first three quick values (and before any confirm-mode noise arm had finished);
+This amendment was written knowing the first three quick values (one confirm-mode arm, NB1c, had finished but its result had not been read);
 it adds samples and leaves the rule unchanged. The E4a and E4c arms (other commits, other references) are reported
 beside the result, not pooled.
 
