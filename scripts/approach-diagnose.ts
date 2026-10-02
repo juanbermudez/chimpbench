@@ -10,6 +10,9 @@
 //   (ranging-diagnose's parts plus 'follow mother') and by purpose: food (own trip, to crown, in crown, ground forage),
 //   party (joined trip, follow party), callers (travel to a heard pant-hoot, V.CALLER), water (drink), patrol, other;
 //   locomotion kcal (walk + climb + carry, energyTap) by purpose.
+//   Step 1b (e4g-prereg §2.3): the 'follow party' path split by what the followed animal (the follow act's target) is
+//   doing in the same tick (its part, as above; 'leader gone' if dead or missing) ('followLeaderKmPerDay'); and the
+//   'joined trip' path split by its leader's part the same way ('joinedLeaderKmPerDay').
 // Approaches (travel to a heard pant-hoot or drum, candidates.ts V.CALLER), by class, from the bout's start to its end:
 //   start distance to the call's position; the call: given at food (the listener's joinRich, set when the caller was
 //   foraging with a target) or not, and the caller's act when it called; path, minutes and locomotion kcal of the bout;
@@ -88,9 +91,9 @@ function partOf(c: Chimp): Part {
 }
 const inCrown = (c: Chimp) => c.action === 'forage' && isTreeId(c.targetId) && ix(c).phase === 2;
 
-interface Acc { ticks: number; path: number; parts: Record<Part, number>; bouts: Record<Part, number>; kcal: Record<Purpose, number> }
+interface Acc { ticks: number; path: number; parts: Record<Part, number>; bouts: Record<Part, number>; kcal: Record<Purpose, number>; followBy: Record<string, number>; joinedBy: Record<string, number> }
 const blankAcc = (): Acc => ({ ticks: 0, path: 0, parts: Object.fromEntries(PARTS.map(p => [p, 0])) as Record<Part, number>, bouts: Object.fromEntries(PARTS.map(p => [p, 0])) as Record<Part, number>,
-  kcal: Object.fromEntries(PURPOSES.map(p => [p, 0])) as Record<Purpose, number> });
+  kcal: Object.fromEntries(PURPOSES.map(p => [p, 0])) as Record<Purpose, number>, followBy: {}, joinedBy: {} });
 const A = Object.fromEntries(CLASSES.map(k => [k, blankAcc()])) as Record<Cls, Acc>;
 
 interface Ap { n: number; atFood: number; d0: number; dBins: number[]; path: number; min: number; kcal: number; atPoint: number; abandoned: number; callerNear: number;
@@ -205,6 +208,10 @@ for (const seed of seeds) {
       const part = partOf(c), started = part !== lastPart.get(c.id);
       lastPart.set(c.id, part);
       for (const k of ks) { const a = A[k]; a.ticks++; a.path += d; a.parts[part] += d; if (started) a.bouts[part]++; }
+      if (d > 0 && (part === 'follow party' || part === 'joined trip')) {
+        const L = byId.get(part === 'follow party' ? c.targetId : x.aux), lp = L && L.alive ? `leader: ${partOf(L)}` : 'leader gone';
+        for (const k of ks) { const m = part === 'follow party' ? A[k].followBy : A[k].joinedBy; m[lp] = (m[lp] ?? 0) + d; }
+      }
       // approach bouts
       let b = bouts.get(c.id);
       if (b && (part !== 'to callers' || c.targetId !== b.callId)) {
@@ -308,6 +315,8 @@ const result = {
     partsKmPerDay: Object.fromEntries(PARTS.map(p => [p, r3(a.parts[p] / cd / 1000)])),
     boutsPerDay: Object.fromEntries(PARTS.map(p => [p, r3(a.bouts[p] / cd)])),
     locoKcalPerDay: Object.fromEntries(PURPOSES.map(p => [p, r3(a.kcal[p] / cd)])),
+    followLeaderKmPerDay: Object.fromEntries(Object.entries(a.followBy).sort((q, r) => r[1] - q[1]).map(([q, v]) => [q, r3(v / cd / 1000)])),
+    joinedLeaderKmPerDay: Object.fromEntries(Object.entries(a.joinedBy).sort((q, r) => r[1] - q[1]).map(([q, v]) => [q, r3(v / cd / 1000)])),
   }]; })),
   approaches: Object.fromEntries([...CLASSES.map(k => [k, AP[k]] as const), ...Object.entries(APF)].map(([k, s]) => {
     const n = Math.max(1, s.n), cd = CLASSES.includes(k as Cls) ? Math.max(1e-9, cdOf(k as Cls)) : NaN;

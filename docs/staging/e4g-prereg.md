@@ -134,6 +134,60 @@ a day are not resolved (single runs, 2 seeds).
 moderate), a call at food starts more approaches than one not at food (high), and fewer than 25% of approaches end
 with the joiner feeding in the caller's crown within 30 min (moderate). Viability passes in both (high).
 
+### 2.1 Diagnosis results (RC and R; seeds 48, 7; 30 + 30 days; run-d2e6e1d, clean)
+
+Generated from `rc-diag.json` and `r-diag.json` (scratch `e4g/out`); simulation truth, km per chimp-day.
+
+| | R | RC | Δ | share of Δ path |
+| --- | --- | --- | --- | --- |
+| Adult males: path | 2.204 | 2.540 | +0.336 | |
+| … party (joined trips + follow party) | 0.697 | 0.940 | +0.243 | 72% |
+| … approaching callers | 0.336 | 0.424 | +0.088 | 26% |
+| … food trips | 0.431 | 0.378 | −0.053 | |
+| … patrol | 0.146 | 0.183 | +0.037 | |
+| Adult females: path | 1.842 | 2.109 | +0.267 | |
+| … party | 0.576 | 0.772 | +0.196 | 73% |
+| … approaching callers | 0.270 | 0.359 | +0.089 | 33% |
+| Juveniles 5–12 y: path | 2.762 | 3.224 | +0.462 | party +0.192, other +0.153, callers +0.063, water +0.063 |
+
+- Bouts: follow-party bouts per adult-male day 2.82 → 4.69 (≈ 60–70 m each), joined trips 3.43 → 4.23, approaches 1.69
+  → 2.00 (females 1.26 → 1.69).
+- Calls: calls at food per community-day 4.9 → 11.1, each starting 1.10 → 1.25 approaches (≈ 12–13 listeners in range);
+  calls not at food 78 → 61, 0.16 approaches each. Approaches to calls at food 27% → 55% of adult males' approaches.
+- Approaches (adult males, RC): start 242 m (59% within 250 m, 1% beyond 750 m), walk 209 m in 10.7 min for 7.5 kcal;
+  69% end at the goal; the goal is moved by a later call in 44% (R 50%); the caller is within 50 m at the end in 50%
+  (R 36%). In the next 30 min: fed in the caller's crown 8% (calls at food: 14%), fed in another crown 38%, within 50 m
+  of the caller 63% (R 48%), nothing 23% (R 32%). Party size around the joiner at the end 4.60 (R 3.37).
+- Field readouts: male composition changes per awake hour R 0.89, RC 1.24 (fedurek2014 ≈ 0.69); isolated non-feeding
+  pant-hoots with males joining within ±2 scans R 0.245, RC 0.275 (0.25), leaving 0.21 / 0.245 (0.10); crown-feeding
+  events with others arriving R 0.16, RC 0.20 (kalanBoesch2015 0.27), after a pant-hoot 0.24 / 0.21 against 0.14 / 0.08
+  with no call.
+- Pant-hoots per awake hour, adult males R 0.80, RC 0.59. Viability: no deaths; reserves %/day RC (R): lactating −0.027
+  (−0.010), juveniles +0.001 (−0.013), other females −0.013 (0.000), males −0.002 (−0.002).
+- Observer (single runs, R-quick at 612bf15 against RC0 here): T-ACT-2 0.150 → 0.188 (males 0.153 → 0.207), T-PTY-1
+  3.70 → 4.24, T-RNG-4 1.84 → 2.39, T-COM-1 0.75 → 0.55.
+
+**Reading by the registered rule:** the largest Δ is **party** (joined trips and following a party member), 72–73% of
+the adults' extra path; approaches to callers are second (26–33%). The expectation that 'callers' would be the largest
+was wrong. Approaches end in the caller's company more often under RC (63% vs 48%), parties around joiners are larger,
+and followers then walk more.
+
+### 2.2 Why following rises: step 1b (registered before its run)
+
+The rule names party walking, but not why it rises with calls. Two readings predict different mechanisms: (a) companions
+follow an animal that is approaching a caller, so each approach drags its party along (the term is the approach);
+(b) larger parties give each member more departures to follow (the term is how following scales with party size). A
+2-day smoke test of a new readout (adult males, RC, seed 48) also showed adult males following animals that are
+themselves following their mothers ('follow party' offered for any companion in a follow act, `candidates.ts:487`,
+including a dependent's `V.MOTHER` follow), a possible defect.
+
+**Readout added** (`approach-diagnose`, step 1b): the 'follow party' path split by the followed animal's part in the
+same tick, and the 'joined trip' path split by its leader's part. **Runs:** RC and R again, same seeds and length, from
+a frozen checkout of the commit that adds this section. **Reading rule:** (a) if following an approacher carries at
+least half of the RC − R rise in follow-party path; (b) if following animals on other acts (trips, mothers, drinking)
+carries most of it; the dependent-follow defect is named if following an animal in a `V.MOTHER` follow carries more
+than 25% of adult follow-party path in either run.
+
 ## 3. Mechanism (step 2)
 
 Not started. Only for the term the diagnosis implicates.
