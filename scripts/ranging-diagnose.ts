@@ -14,7 +14,9 @@
 //               halt's first point, so movement inside halts adds nothing
 //   actKm     = the same with halts taken from activity: runs of 20 min or more with no point sample in the travel category
 //   halts and phases per follow-day, mean halt length (min), mean phase length (m), share of follow minutes with an
-//   adult male in the focal's party (point samples' partyAM, other than the focal)
+//   adult male in the focal's party (point samples' partyAM, other than the focal); follows started, lost and complete,
+//   and the focal's own per-tick path while each complete follow ran (truthKm: separates the 5-min resolution from the
+//   choice of days)
 // Truth (simulation state, every tick), per class, per chimp-day of that class:
 //   path (km/day, all movement; steps longer than 2·runMps·tick + 2 m are teleports and skipped) and its parts by the
 //   act being executed: own trip to food (travel to a tree, no leader), joined trip (travel to a leader's tree, C13e),
@@ -22,7 +24,8 @@
 //   ground forage (fallback, walking at the forage pace), drink (to water), patrol, consort, nest, groom approach, play,
 //   mate guarding, other; bouts of each part per chimp-day (entries into it) and metres per bout; the same path by
 //   action, and the daylight path;
-//   in daylight (> 0.1): share of minutes with another adult male in the own party, with no other member ≥ 5 y, mean
+//   in daylight (> 0.1): share of minutes above 15 m (the observer loses a focal 4 × as often there), with another adult
+//   male in the own party, with no other member ≥ 5 y, mean
 //   party size (members ≥ 5 y, self included); halts (the same 35 m / 20 min rule on 1-min positions) and trips (the
 //   movement between two halts) per chimp-day, trip length (m), halt length (min), path in trips (km/day);
 //   mothers only: minutes a day carrying an infant (candidates.ts isCarried; all day and in daylight), carry, walk and
@@ -97,10 +100,10 @@ interface Truth {
   ticks: number; path: number; dayPath: number; parts: Record<Part, number>; bouts: Record<Part, number>; byAction: Record<string, number>;
   dayMin: number; withMale: number; alone: number; partySize: number;
   halts: number; haltMin: number; trips: number; tripM: number; tripPathM: number;
-  carryMin: number; carryDayMin: number; carryKcal: number; walkKcal: number; climbKcal: number; nurseMin: number; nurseM: number; otherDayM: number;
+  highMin: number; carryMin: number; carryDayMin: number; carryKcal: number; walkKcal: number; climbKcal: number; nurseMin: number; nurseM: number; otherDayM: number;
 }
 const blank = (): Truth => ({ ticks: 0, path: 0, dayPath: 0, parts: Object.fromEntries(PARTS.map(p => [p, 0])) as Record<Part, number>, bouts: Object.fromEntries(PARTS.map(p => [p, 0])) as Record<Part, number>, byAction: {}, dayMin: 0, withMale: 0, alone: 0, partySize: 0,
-  halts: 0, haltMin: 0, trips: 0, tripM: 0, tripPathM: 0, carryMin: 0, carryDayMin: 0, carryKcal: 0, walkKcal: 0, climbKcal: 0, nurseMin: 0, nurseM: 0, otherDayM: 0 });
+  halts: 0, haltMin: 0, trips: 0, tripM: 0, tripPathM: 0, highMin: 0, carryMin: 0, carryDayMin: 0, carryKcal: 0, walkKcal: 0, climbKcal: 0, nurseMin: 0, nurseM: 0, otherDayM: 0 });
 const T = Object.fromEntries(CLASSES.map(k => [k, blank()])) as Record<Cls, Truth>;
 
 // per-id scratch: last position (path), and the streaming halt detector on 1-min daylight positions
@@ -143,6 +146,8 @@ function haltClose(): void { for (const h of halt.values()) h.open = false; }
 
 // follows: the focal's state at the start of each follow (pregnancy, infant age)
 const followX: { pregnant: boolean; infantAge: number }[] = [];
+/** Audit (prereg §5): the followed focal's own per-tick path while each follow runs, and each follow's index. */
+const followTruthM: number[] = [], followIdx = new Map<object, number>(), stepD: number[] = [];
 const t0 = performance.now();
 const ticks = Math.round(days * DAY);
 for (let i = 0; i < ticks; i++) {
@@ -150,6 +155,7 @@ for (let i = 0; i < ticks; i++) {
   observerStep(obs, w);
   while (followX.length < obs.rec.follows.length) {
     const f = obs.rec.follows[followX.length], c = index(w).byId.get(f.focal);
+    followIdx.set(f, followX.length); followTruthM.push(0);
     followX.push({ pregnant: !!c && c.pregnancy > 0 && !c.lactating, infantAge: youngAge.get(f.focal) ?? -1 });
   }
   const atMinute = w.tick % MIN === 0, day = w.environment.daylight > 0.1;
@@ -172,6 +178,7 @@ for (let i = 0; i < ticks; i++) {
     if (!ks) continue;
     let d = 0;
     if (lx !== undefined) { d = Math.hypot(x0 - lx, z0 - lz); if (d > MAX_STEP) d = 0; }
+    stepD[id] = d;
     const part = partOf(c), started = part !== lastPart[id];
     lastPart[id] = part;
     for (const k of ks) { const t = T[k]; t.ticks++; t.path += d; t.parts[part] += d; if (started) t.bouts[part]++; if (day) t.dayPath += d; if (d > 0) t.byAction[c.action] = (t.byAction[c.action] ?? 0) + d; }
@@ -183,10 +190,12 @@ for (let i = 0; i < ticks; i++) {
     if (atMinute && day && partyOf) {
       const q = partyOf.get(c.partyId);
       const males = q ? q.males.filter(m => m !== id).length : 0, size = q ? q.size : 1;
-      for (const k of ks) { const t = T[k]; t.dayMin++; if (males > 0) t.withMale++; if (size <= 1) t.alone++; t.partySize += size; }
+      const high = c.position[1] > 15;
+      for (const k of ks) { const t = T[k]; t.dayMin++; if (males > 0) t.withMale++; if (size <= 1) t.alone++; t.partySize += size; if (high) t.highMin++; }
       haltStep(c, ks);
     }
   }
+  for (const tm of obs.teams) { if (!tm.follow) continue; const fi = followIdx.get(tm.follow); if (fi !== undefined) followTruthM[fi] += stepD[tm.follow.focal] ?? 0; }
 }
 energyTap.fn = null;
 const simS = (performance.now() - t0) / 1000;
@@ -194,8 +203,10 @@ const simS = (performance.now() - t0) / 1000;
 // --- observer -------------------------------------------------------------------------------------------------------
 const rec = finishObserver(obs, w), dv = derive(rec), Pt = rec.points;
 const every = Math.round(5 / 60 / dv.tH), minTicks = 1 / 60 / dv.tH;
-interface Obs { days: number; today: number[]; field: number[]; act: number[]; halts: number; haltMin: number; phases: number; phaseM: number; mins: number; withMale: number; hours: number }
-const O = Object.fromEntries(CLASSES.map(k => [k, { days: 0, today: [], field: [], act: [], halts: 0, haltMin: 0, phases: 0, phaseM: 0, mins: 0, withMale: 0, hours: 0 } as Obs])) as Record<Cls, Obs>;
+interface Obs { days: number; today: number[]; field: number[]; act: number[]; truth: number[]; halts: number; haltMin: number; phases: number; phaseM: number; mins: number; withMale: number; hours: number; started: number; lost: number; complete: number }
+const O = Object.fromEntries(CLASSES.map(k => [k, { days: 0, today: [], field: [], act: [], truth: [], halts: 0, haltMin: 0, phases: 0, phaseM: 0, mins: 0, withMale: 0, hours: 0, started: 0, lost: 0, complete: 0 } as Obs])) as Record<Cls, Obs>;
+const clsOfFollow = (f: { sex: string; lactating: boolean }, fi: number): Cls[] => { const fx = followX[fi]; return f.sex === 'male' ? ['male'] : f.lactating ? ['lact', fx && fx.infantAge >= 2 ? 'lact >=2y' : 'lact <2y'] : [fx?.pregnant ? 'pregnant' : 'female other']; };
+rec.follows.forEach((f, fi) => { for (const k of clsOfFollow(f, fi)) { const o = O[k]; o.started++; if (f.lost) o.lost++; if (f.complete) o.complete++; } });
 /** Halt anchors on a follow's 1-min points: for each point, the index of its halt's first point, or −1. */
 function anchors(pts: number[], inRun: (j: number, a: number) => boolean): number[] {
   const out = new Array<number>(pts.length).fill(-1);
@@ -224,8 +235,7 @@ function pathOf(pts: number[], anc: number[] | null): number {
 }
 rec.follows.forEach((f, fi) => {
   if (!f.complete || f.end - f.start < 8) return;
-  const fx = followX[fi];
-  const ks: Cls[] = f.sex === 'male' ? ['male'] : f.lactating ? ['lact', fx && fx.infantAge >= 2 ? 'lact >=2y' : 'lact <2y'] : [fx?.pregnant ? 'pregnant' : 'female other'];
+  const ks = clsOfFollow(f, fi);
   const pts = dv.followPts[fi];
   const ancF = anchors(pts, near), ancA = anchors(pts, (j, a) => still(j) && still(a));
   let halts = 0, haltMin = 0, phases = 0, phaseM = 0, withMale = 0;
@@ -244,7 +254,7 @@ rec.follows.forEach((f, fi) => {
   }
   for (const k of ks) {
     const o = O[k];
-    o.days++; o.today.push(pathOf(pts, null)); o.field.push(pathOf(pts, ancF)); o.act.push(pathOf(pts, ancA));
+    o.days++; o.today.push(pathOf(pts, null)); o.field.push(pathOf(pts, ancF)); o.act.push(pathOf(pts, ancA)); o.truth.push(followTruthM[fi] / 1000);
     o.halts += halts; o.haltMin += haltMin; o.phases += phases; o.phaseM += phaseM; o.mins += pts.length; o.withMale += withMale; o.hours += f.end - f.start;
   }
 });
@@ -257,7 +267,8 @@ const result = {
   tool: 'ranging-diagnose', seed, burnIn, days, params, simS: r3(simS), identity,
   observer: Object.fromEntries(CLASSES.map(k => { const o = O[k]; return [k, { followDays: o.days, todayKm: r3(mean(o.today)), fieldKm: r3(mean(o.field)), actKm: r3(mean(o.act)),
     todayDays: o.today.map(r3), fieldDays: o.field.map(r3), actDays: o.act.map(r3), haltsPerDay: r3(o.halts / Math.max(1, o.days)), haltMin: r3(o.haltMin / Math.max(1, o.halts)),
-    phasesPerDay: r3(o.phases / Math.max(1, o.days)), phaseM: r3(o.phaseM / Math.max(1, o.phases)), withMaleShare: r3(o.withMale / Math.max(1, o.mins)), followH: r3(o.hours / Math.max(1, o.days)) }]; })),
+    phasesPerDay: r3(o.phases / Math.max(1, o.days)), phaseM: r3(o.phaseM / Math.max(1, o.phases)), withMaleShare: r3(o.withMale / Math.max(1, o.mins)), followH: r3(o.hours / Math.max(1, o.days)),
+    truthKm: r3(mean(o.truth)), truthDays: o.truth.map(r3), started: o.started, lost: o.lost, complete: o.complete }]; })),
   truth: Object.fromEntries(CLASSES.map(k => { const t = T[k], cd = t.ticks / DAY; return [k, { chimpDays: r3(cd), pathKmPerDay: r3(t.path / Math.max(1e-9, cd) / 1000), dayPathKmPerDay: r3(t.dayPath / Math.max(1e-9, cd) / 1000),
     byActionKmPerDay: Object.fromEntries(Object.entries(t.byAction).sort((a, b) => b[1] - a[1]).map(([a, v]) => [a, r3(v / Math.max(1e-9, cd) / 1000)])),
     partsKmPerDay: Object.fromEntries(PARTS.map(p => [p, r3(t.parts[p] / Math.max(1e-9, cd) / 1000)])),
@@ -266,7 +277,7 @@ const result = {
     withMaleShare: r3(t.withMale / Math.max(1, t.dayMin)), aloneShare: r3(t.alone / Math.max(1, t.dayMin)), partySize: r3(t.partySize / Math.max(1, t.dayMin)),
     haltsPerDay: r3(t.halts / Math.max(1e-9, cd)), haltMin: r3(t.haltMin / Math.max(1, t.halts)), tripsPerDay: r3(t.trips / Math.max(1e-9, cd)), tripM: r3(t.tripM / Math.max(1, t.trips)),
     tripPathKmPerDay: r3(t.tripPathM / Math.max(1e-9, cd) / 1000), carryMinPerDay: r3(t.carryMin / Math.max(1e-9, cd)), carryDayMinPerDay: r3(t.carryDayMin / Math.max(1e-9, cd)), carryKcalPerDay: r3(t.carryKcal / Math.max(1e-9, cd)),
-    walkKcalPerDay: r3(t.walkKcal / Math.max(1e-9, cd)), climbKcalPerDay: r3(t.climbKcal / Math.max(1e-9, cd)), nurseMinPerDay: r3(t.nurseMin / Math.max(1e-9, cd)),
+    highShare: r3(t.highMin / Math.max(1, t.dayMin)), walkKcalPerDay: r3(t.walkKcal / Math.max(1e-9, cd)), climbKcalPerDay: r3(t.climbKcal / Math.max(1e-9, cd)), nurseMinPerDay: r3(t.nurseMin / Math.max(1e-9, cd)),
     speedNursingMPerMin: r3(t.nurseM / Math.max(1e-9, t.nurseMin)), speedOtherDayMPerMin: r3(t.otherDayM / Math.max(1e-9, t.dayMin - t.nurseMin)) }]; })),
 };
 if (out) writeFileSync(out, JSON.stringify(result, null, 1));
