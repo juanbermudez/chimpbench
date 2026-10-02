@@ -1,4 +1,4 @@
-# Track E handoff (integrator, 1 October 2026, end of session)
+# Track E handoff (integrator; refreshed 2 October 2026, 03:40)
 
 Read this before anything else. It replaces `docs/staging/track-e-resume.md`. The canonical copy is on branch
 `track-e`; a copy sits in `~/Desktop/mgogo-session/` for the next session to find.
@@ -8,16 +8,18 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **What Track E is.** ChimpBench's behaviour is being rebuilt so it emerges from physiology (an energy ledger, a gut,
   sleep pressure, heat, hormone-like states) instead of clock hours, dice and bonuses. Field numbers are targets to
   benchmark against, never inputs. Every stage ships behind switches that are **0 by default**.
-- **State.** Every finished stage is merged on `track-e` (head: the commit that adds this file). `pnpm test`: **624
-  pass, 0 fail**. With all switches off the field world is hash-identical to `main` f24c9ae
-  (`tests/sim-track-e.test.ts`), and the compressed goldens have not moved. `main` has not been touched.
-- **Next action.** The 5-seed confirm of E1h with three arms (R, T, G) plus a fresh all-off baseline, from a frozen
-  checkout (§5.1). About 20–25 minutes of runs at low load.
-- **Two agents were stopped by the app restart.** E4c (calls) has 8 commits, unmerged, mid iteration 1, with a
-  disclosed protocol breach (§5.2). E2e (pre-dawn nest holding) has no commits and one uncommitted diagnostic edit
-  (§5.3).
-- **The biggest open scientific question** is the chimpanzee foregut capacity: it now decides whether the corrected
-  food energy keeps nursing mothers alive (§4.1).
+- **State (2 October, 03:40).** `track-e` holds every finished stage, switches off: E4c (calls), E2e (pre-dawn) and
+  the gut-sources pass were merged this session (`pnpm test` 639 pass, 0 fail, 1 skipped; tsc and gen-params clean).
+  `main` has not been touched.
+- **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
+  stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
+  kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
+- **Running now.** Agents E1i (why mothers stop eating; worktree `e1i-intake`) and E4d (a daily hormone rhythm;
+  `e4d-rhythm`). Integrator chains in `bench-run`: the noise-threshold arms (six per mode, docs/staging/e-noise.md),
+  then the E4c confirm (e4c-prereg.md §10). Scripts in the session scratchpad `integrator/` (noise.sh, noise2.sh,
+  e4c-confirm.sh, judge_e1h.py, noise_threshold.py).
+- **Next decisions.** Record the noise thresholds (quick and confirm) in e-noise.md and the plan, and message them to
+  E1i and E4d; judge the E4c confirm; merge E1i and E4d when they report.
 
 ## 1. The user's directives and the hard rules
 
@@ -53,10 +55,10 @@ Hard rules (AGENTS.md plus this track):
 
 | Where | What |
 | --- | --- |
-| `.claude/worktrees/track-e` (branch `track-e`) | Integration branch. All finished stages merged, switches off. 136+ commits ahead of `main`; `main` has not moved since f24c9ae, so there is no drift yet. |
-| `.claude/worktrees/e4c-calls` | E4c, **8 commits ahead of track-e, unmerged** (head 2b81df8). Stopped mid-work. |
-| `.claude/worktrees/e2e-predawn` | E2e, branched from track-e 8919bb2, **no commits**; uncommitted edit to `scripts/rhythm-metrics.ts` (pre-dawn readouts); `artifacts/validation/e2e/` exists. |
-| `.claude/worktrees/bench-run` | Frozen detached checkout for benchmarks, at 40fba03 (old). Holds `baseline-confirm.*` and `stack1-confirm.*`. Move it with `git -C … checkout --detach <commit>` before a run. |
+| `.claude/worktrees/track-e` (branch `track-e`) | Integration branch. All finished stages merged, switches off (E4c, gut sources and E2e merged 2 October). `main` has not moved since f24c9ae, so there is no drift yet. |
+| `.claude/worktrees/e4c-calls`, `e2e-predawn`, `e-gut-sources` | Merged into track-e on 2 October (heads 329e25c, 3132bc1, 5265666). |
+| `.claude/worktrees/e1i-intake`, `e4d-rhythm` | **Running agents** (E1i, E4d), branched from track-e 2f9129f. |
+| `.claude/worktrees/bench-run` | Frozen detached checkout for the integrator's benchmarks (612bf15 for the noise arms, then d8c1875 for the E4c confirm; the queued script moves it). `artifacts/validation/e/`: `base-head` (all off, 9392b67), `e1h-{R,T,G}` and their energy JSON, `rescored-*`, `noise/`. Move it only when nothing runs from it. |
 | `worktree-agent-a954b443db4b6f22a` | **Not Track E**: a colobus encounter fix (`preySightFactor` 1.39, fitted to Kanyawara encounters) from the earlier session, 7 commits, merged nowhere. Ask the user before touching it. |
 | Other `e*` and `worktree-agent-*` worktrees | Fully merged into `track-e` (0 commits ahead). Safe to remove **only if the user agrees**. |
 | `/Users/juanbermudez/Desktop/MGOGO` (`main`) | Other sessions' uncommitted work (UI, Jev, providers). Never commit, stash or reset there. |
@@ -85,16 +87,19 @@ mkdir -p ../<name>/artifacts/validation && ln -s /Users/juanbermudez/Desktop/MGO
 | E1f growth | `ledgerNurseBout`, `ledgerGrowPotential` | keep (provisional) | Nursing bouts in band; growth ~2 × Gombe; weaning ~6 y vs 4.7; mothers' year-2 recovery absent. | e1f-prereg.md |
 | E1g wild cost | `ledgerWildCostMult` (default 1) | finding, **headline invalid** | Said the field time budget needs k ≈ 1.6 (PAL ~2.15), beyond any measured wild primate. It compared the field's nursing mothers with pooled females; the audit replaced it. Keep the switch as a sensitivity tool only. | e1g-prereg.md |
 | Field audit | — (docs) | finding | T-ENE-1 (2,479 kcal) is inflated by the energy formula (TNC by difference 34%, fibre credit 26%) and its sample was 14 nursing mothers; sugar-based band 1,810–2,070. | e-field-audit.md |
-| E1h food energy | `ledgerFoodEnergyFix` | narrow null, **confirm pending** | Sugar-based kcal/min (drupes 7.39, figs 8.12, fallback 3.23). At the central gut (83 mL/kg) mothers lose 0.85%/day (viability fails); at 111 mL/kg intake 2,440 field-method kcal, T-ACT near bands, held-out +0.68 from one hunting row. | e1h-prereg.md |
+| E1h food energy | `ledgerFoodEnergyFix` | **keep conditional on the gut** (5-seed confirm, 2 Oct) | T (83 mL/kg): 4 starved mothers, −0.92%/day; G (111 mL/kg): fitted −1.58, held-out +0.33 vs R. But mothers' foregut is ≥ 95% full only 4–7% of daylight and starving mothers eat less than other adults: the appetite and their day bind, not the gut wall. | e1h-prereg.md §9 |
+| Gut sources | — (docs, §E.25) | finding | Captive capacity 3,322 cm³ (nakamura2017 full text), mass unknown: 57–76 mL/kg at captive female masses; 111 mL/kg implies 30 kg. Stomach 29% of the gut (foregut share 0.45 in question). | research.md §E.25 |
 | E2a rhythm | `rhythmSleep`, `rhythmHeat`, `rhythmFreeNight` | keep (provisional) | Nesting at dusk and active day 11 h 22 min emerge with no clock; no pre-sunrise departures; midday rest does not emerge. | e2a-prereg.md |
 | E2b departure | `departRace`, `nestLightDecide`, `nurseWake` | partial; all off | Pre-sunrise departures emerge on the timer reference, not on the full stack; `rhythmDarkW` (2.2, a prescription) sets departure timing. | e2b-prereg.md |
 | E2c darkness | `darkCost` | null | Light-limited vision and pace do not hold animals pre-dawn. | e2c-prereg.md |
 | E2d circadian | `rhythmCircadian` | null | Process C sets the sleep episode (onset ~100 min after sunset, waking ~125 min before sunrise) but nothing holds an awake chimp in the nest before dawn. Fixed a rhythm-metrics midnight bug. | e2d-prereg.md |
-| E2e pre-dawn | — | **stopped, no commits** | Thermal (nest insulation) vs social (coordinated departure) arms; the thermal arm looks inert, the social one live. | §5.3 |
+| E2e pre-dawn | `nestCompany`, `nestAudience` | recorded, not kept | Social arm: juvenile pre-dawn wandering 96% → 55%, departures still 84% before sunrise (field 18%); removes no prescription; fails night safety without the night menu. Thermal arm inert (offline heat balance), not built. | e2e-prereg.md |
 | E3 urgency | `urgencyChoice`, `urgencyPersist`, `urgencySwitchCost` | stopped after 3 it.; off | `urgencyChoice` viable, inside noise; persistence halves crown bouts and moves feeding to leaves. | e3-prereg.md |
 | E4a slow states | `endoStates`, `endoEscalate`, `endoRedirect`, `endoRainDisplay` | keep (provisional) for the first three | Leaky cortisol-, testosterone-, oxytocin-like states replace escalation and redirect dice; slow states cannot carry acute reactions. | e4a-prereg.md |
 | E4b fast arousal | `endoFast`, `endoFastRedirect` | `endoFast` + `endoRainDisplay` keep (provisional); `endoFastRedirect` off | Storm displays without a roll (2–5 × the old rate, no field row). T-END-8 fails because pant-hoots come from isolation and a fitted travel hazard. | e4b-prereg.md |
-| E4c calls | `callValue` | **in progress, unmerged** | Calls as a value comparison. | §5.2 |
+| E4c calls | `callValue` | provisional keep candidate; **5-seed confirm queued** | Iteration 1: arrival pant-hoots 0.28 (field 0.04–0.35), party size near the reference, prescriptions −11, held-out inside quick noise. Calls have no daily course (the arousal state rises through the day). | e4c-prereg.md §9–10 |
+| E1i intake | — | **running** (agent) | Why nursing mothers stop eating with room in the gut: diagnosis first, then arms. | e1i-prereg.md |
+| E4d rhythm | — | **running** (agent) | A circadian secretion term for the testosterone- and cortisol-like states. | e4d-prereg.md |
 | Prescription audit | — (tooling) | merged | The count now sees what E1 and E2a switch out: full stack 134 → 102. | scripts/lib/prescriptions.ts |
 | Full-stack confirm | 14 switches (E1–E1e, E2a, E4a, E4b) | not kept as a whole | Fitted 3.28 → 4.01; held-out 5.90 → 3.49, but T-BRD-1 alone is −2.10 (+0.70 worse without it). One cause: spare time (intake ends early, grooming and hunting fill the day). | IMPLEMENTATION_PLAN.md |
 
@@ -118,6 +123,11 @@ mkdir -p ../<name>/artifacts/validation && ln -s /Users/juanbermudez/Desktop/MGO
    the field budget returns without extra cost.
 5. The only chimpanzee gut-volume value is one captive figure reached through an abstract (nakamura2017 → probably
    Chivers & Hladik 1980; ~3,329 mL). Finding the primary number is now the highest-value source task.
+6. **2 October.** The gut-sources pass read nakamura2017 in full: 3,322 cm³ (stomach 965) in one captive female of
+   unknown mass, so 57–76 mL/kg at captive adult female masses and 111 mL/kg only for a 30 kg animal (§E.25). E1h's
+   5-seed confirm kept the fix conditional on the gut, but its daylight readouts show that nursing mothers stop eating
+   with room in the gut (foregut ≥ 95% full in 7.4% of daylight in T; 222 eating min against 238–248 for other adults
+   at higher hunger). Stage E1i asks why before any input moves.
 
 ### 4.2 Daily rhythm
 Nesting at dusk and the active-day length emerge (E2a). Process C sets the sleep episode (E2d). What still holds an
@@ -147,10 +157,15 @@ adult). Sources suggest milk output does not fall in year 2, so recovery must co
 - Track E's own rows (T-ENE, T-RHY, T-END, T-INF) are **staged** in `docs/staging/e-targets.patch.json`, not in
   `data/targets.json`. `e-bench` does not score them; the stage diagnosis scripts read them. Applying them needs the
   integrator, a protocolLog entry and a new freeze.
+- **2 October.** e-bench prints every sum and comparison with and without `RARE_EVENT_ROWS` (T-HUN-4, T-BRD-1;
+  d77f2cf). The noise threshold is being measured (docs/staging/e-noise.md): three quick arms gave a held-out threshold
+  of 0.4 on all shared rows, contradicted by the two earlier noise arms (E4a +1.1 raw, E4c −3.13 shared), so both
+  modes were extended to six arms before any stage used a threshold (amendment disclosed in the file).
 
 ## 5. Next steps, in priority order
 
 ### 5.1 E1h 5-seed confirm (decides whether corrected food energy is kept)
+**Done 2 October** (e1h-prereg.md §9): keep conditional on the gut; the reading points to the appetite (E1i).
 The old resume note said "two arms". That was wrong: E1h judged T and G **against R**, and no 5-seed R exists
 (`stack1-confirm` used a different stack). Also, `baseline-confirm.json` was made by the earlier session at
 e42ec915c8 on another branch with 5 uncommitted `src` files (19 + 19 rows, count 132), while `te-baseline-confirm` is
@@ -172,6 +187,7 @@ e1h-prereg.md §6 on rows scored in both runs, with and without T-HUN-4 and T-BR
 gut default from this run: G is a registered sensitivity arm, not a fit.
 
 ### 5.2 Resume E4c (calls)
+**Done 2 October**: merged; 5-seed confirm registered (e4c-prereg.md §10) and queued in `bench-run`.
 State: worktree `.claude/worktrees/e4c-calls` clean at 2b81df8, 8 commits ahead of track-e. `callValue` (src/sim/calls.ts)
 switches out 11 prescriptions. Pre-registration `docs/staging/e4c-prereg.md` (c1be203, 10bafa5) holds the reference,
 predictions, kill criterion, first-pass table and the iteration-1 entry. Two iterations remain.
@@ -196,6 +212,7 @@ predictions, kill criterion, first-pass table and the iteration-1 entry. Two ite
   registered ±1.1.
 
 ### 5.3 Restart E2e (pre-dawn nest holding)
+**Done 2 October**: merged, recorded and not kept (e2e-prereg.md).
 The agent ran 15 minutes; nothing is committed and there is no pre-registration. What it learned (from its transcript,
 not yet verified in the repo):
 - **Reference** (rhythmSleep, rhythmHeat, departRace, nestLightDecide, rhythmCircadian): every adult leaves at about
@@ -222,6 +239,7 @@ not yet verified in the repo):
   the test arm for 2 days (~3 s) before any benchmark.
 
 ### 5.4 Gut capacity sources (research only)
+**Done 2 October**: merged as research.md §E.25 / e-sources.md §25. Chivers & Hladik 1980 is deposited on HAL (hal-00561758) behind a bot check: a person can open it in an ordinary browser.
 Find the primary chimpanzee gut volume (Chivers & Hladik 1980, J Morphol 166:337–386; nakamura2017's reference list),
 any other hominoid gut volumes by mass, and foregut throughput or passage-rate numbers (Milton & Demment 1988, Lambert
 1998). Add to `docs/research.md` and `docs/staging/e-sources.md` with numbers and evidence tags. This decides whether
@@ -230,6 +248,7 @@ tried this session (publisher walls, Cloudflare): do not spend more than 10 minu
 can supply the PDFs through institutional access.
 
 ### 5.5 Benchmark hygiene (small, do before more stages)
+**2 October**: sums without the rare-event rows done (d77f2cf); the switch-count test already existed (tests/prescription-ledger.test.ts, "a Track E switch lowers the count from its base exactly when it has no removesNothing note"); a duplicate `rhythmDarkW` override removed; noise threshold in progress (e-noise.md).
 - Report every e-bench sum with and without T-HUN-4 and T-BRD-1 (or cap rare-event rows), registered once, so stages
   stop setting them aside by hand.
 - Set one noise threshold for quick and one for confirm, from 2–3 noise arms each, on rows scored in both; write it in
@@ -241,6 +260,13 @@ can supply the PDFs through institutional access.
 ### 5.6 Infants and weaning
 Weaning and the year-2 recovery need a source for maternal rejection by infant age or a stage-dependent fall in milk
 synthesis (Gombe weaning studies not yet read). Likely after the gut question, since mothers' intake is the lever.
+
+### 5.6b Candidate next stages (not started)
+- E2f: E2d wakes animals ~128 min before sunrise (captive chimpanzees 45–60 min, videan2005); a sourced chimpanzee
+  sleep need or phase, not a departure time, would be the input.
+- Parties are small on the reference (T-PTY-1 2.8, band 3–9): what holds a party together (E2e's open problem).
+- Hunting on the stack is ~2 × the band (T-HUN-1 35–40 against 5–25): `huntGapH` is next in the E4 order.
+- E3's units doubt (§8 item 14) before acting on its recommendation.
 
 ### 5.7 Later, with the user
 - Lifting the 90-day cap (every keep is provisional until a 365-day run).
@@ -432,10 +458,10 @@ Agents: the pre-flight block in §7.
 
 ## 9. Open questions for the user
 1. Lift the 90-day cap for a 365-day confirm of the kept stack?
-2. If the E1h confirm supports it, may the gut input move to the top of its sourced range, or must it wait for the
-   primary source (§5.4)?
+2. Gut input: the confirm kept the fix conditional on a 111 mL/kg gut, but the sources now lean to ~83 mL/kg or less
+   (low confidence) and the daylight readouts point at the appetite instead. Proposal: no change until E1i reports.
 3. May the staged target rows be applied to `data/targets.json` (new freeze)?
 4. May the merged worktrees be removed, and what should happen to the unmerged encounter-fix branch
    (`worktree-agent-a954b443db4b6f22a`)?
-5. Can you supply PDFs of Chivers & Hladik 1980 (J Morphol) and Milton & Demment 1988 (J Nutr) through institutional
-   access? They decide the gut input (§5.4).
+5. Can you open Chivers & Hladik 1980 on HAL (hal-00561758) in your browser, or supply it and Milton & Demment 1988
+   (J Nutr) through institutional access? The captive female's body mass decides the gut input (§E.25).
