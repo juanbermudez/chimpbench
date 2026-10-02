@@ -278,3 +278,142 @@ Predictions (by hand):
 - Y2: pays 0.3–0.7 of the potential in the second month (low); the infants' second-month fall less than half of S6's
   (low).
 - Mothers (lactating class) fall in the second month in all three; Y1 within 0.02%/day of S6 (moderate).
+
+### 2.4 Iteration 1 results (Y1 and Y2 at 27edc1b, `git.dirty` 0; reference S6q, S6q1–S6q3 at cac9598)
+
+Quick mode, seeds 48 and 7, 30 + 30 days, rules policy; one e-bench and one energy-diagnose per arm. Every number below
+was generated from the JSON by the scratch scripts `judge_extra.py` (the integrator's `judge_vs_reps.py` gives the same
+sums and z), `energy_compare.py` and `partition.py` (`e1p/tools/`, not tracked). Each arm is judged on the rows counted
+in the reference's four runs and that arm. T-IGE-3 is not among the rows counted in all runs in quick mode, so the sum
+without it equals the sum without T-HUN-4 and T-BRD-1.
+
+```
+Y1.json commit 27edc1b dirty 0 prescriptions 76 viability pass deaths 0 starvation 0
+rows counted in all runs: fitted 17, held-out 13
+fitted                           (17 rows) ref 2.64 / 3.60 / 3.39 / 1.70 (mean 2.83, sd 0.86; used 0.86) | Y1.json: 1.26, Δ -1.57, z -1.6
+held-out                         (13 rows) ref 4.95 / 5.11 / 5.09 / 4.20 (mean 4.84, sd 0.43; used 1.26) | Y1.json: 5.91, Δ +1.08, z +0.8
+held-out w/o rare                (12 rows) ref 4.95 / 5.11 / 4.97 / 4.20 (mean 4.80, sd 0.41; used 0.48) | Y1.json: 5.07, Δ +0.26, z +0.5
+held-out w/o rare, w/o T-IGE-3   (12 rows) ref 4.95 / 5.11 / 4.97 / 4.20 (mean 4.80, sd 0.41; used 0.48) | Y1.json: 5.07, Δ +0.26, z +0.5
+Y2.json commit 27edc1b dirty 0 prescriptions 76 viability pass deaths 0 starvation 0
+rows counted in all runs: fitted 16, held-out 12
+fitted                           (16 rows) ref 2.59 / 3.60 / 3.39 / 1.70 (mean 2.82, sd 0.86; used 0.86) | Y2.json: 2.43, Δ -0.39, z -0.4
+held-out                         (12 rows) ref 4.45 / 4.61 / 4.59 / 3.70 (mean 4.34, sd 0.43; used 1.26) | Y2.json: 5.59, Δ +1.26, z +0.9
+held-out w/o rare                (11 rows) ref 4.45 / 4.61 / 4.47 / 3.70 (mean 4.30, sd 0.41; used 0.48) | Y2.json: 4.12, Δ -0.19, z -0.3
+held-out w/o rare, w/o T-IGE-3   (11 rows) ref 4.45 / 4.61 / 4.47 / 3.70 (mean 4.30, sd 0.41; used 0.48) | Y2.json: 4.12, Δ -0.19, z -0.3
+```
+
+Rows beyond 2 SD of the reference runs (judge_vs_reps.py): Y1 T-RNG-5 1.30 (reference 0.62 ± 0.27), T-FOOD-10 1.96
+(2.17 ± 0.09, better), T-HUN-4 (rare) 0.85; Y2 T-HUN-1 1.34 (0.51 ± 0.26), T-HUN-4 (rare) 1.48.
+
+Energy and growth readouts against the reference's four runs (mean ± SD; * beyond 2 SD; the growth readouts have SD 0,
+every reference run grows at the potential; class-level reserve levels have SDs of 0.001–0.003 while single dyads vary
+by ±0.01–0.02 between the reference runs):
+
+| readout | S6q / S6q1 / S6q2 / S6q3 | S6 mean ± SD | Y1 | Y2 |
+| --- | --- | --- | --- | --- |
+| growth kg/y 0.5–1 y | 2.80 / 2.80 / 2.80 / 2.80 | 2.80 ± 0.00 | 2.65 * | 1.26 * |
+| weighed kg/y 0.5–1 y | 2.62 / 2.86 / 2.56 / 2.67 | 2.68 ± 0.13 | 2.21 * | 1.01 * |
+| milk kcal/d 0.5–1 y | 282 / 285 / 282 / 282 | 283 ± 1 | 275 * | 249 * |
+| own food kcal/d 0.5–1 y | 0 / 0 / 0 / -0 | -0 ± 0 | -0 | 0 |
+| infant reserves level 0.5–1 y | -0.050 / -0.052 / -0.048 / -0.048 | -0.049 ± 0.002 | -0.052 | -0.039 * |
+| mothers balance kcal/d 0.5–1 y | -15 / -9 / -18 / -13 | -14 ± 4 | -25 * | -5 * |
+| growth kg/y 1–2 y | 3.60 / 3.60 / 3.60 / 3.60 | 3.60 ± 0.00 | 3.38 * | 1.34 * |
+| weighed kg/y 1–2 y | 3.31 / 3.40 / 2.96 / 3.28 | 3.24 ± 0.19 | 3.20 | 1.03 * |
+| milk kcal/d 1–2 y | 240 / 251 / 236 / 235 | 241 ± 7 | 241 | 212 * |
+| own food kcal/d 1–2 y | 270 / 255 / 268 / 273 | 266 ± 8 | 266 | 246 * |
+| infant reserves level 1–2 y | -0.062 / -0.062 / -0.063 / -0.067 | -0.064 ± 0.002 | -0.061 | -0.049 * |
+| mothers balance kcal/d 1–2 y | -4 / -3 / -18 / -19 | -11 ± 9 | -17 | -17 |
+| growth kg/y 2–3 y | 3.60 / 3.60 / 3.60 / 3.60 | 3.60 ± 0.00 | 3.36 * | 1.41 * |
+| weighed kg/y 2–3 y | 3.67 / 3.21 / 3.39 / 3.42 | 3.42 ± 0.19 | 2.89 * | 1.21 * |
+| milk kcal/d 2–3 y | 224 / 216 / 222 / 217 | 220 ± 4 | 208 * | 196 * |
+| own food kcal/d 2–3 y | 428 / 432 / 427 / 433 | 430 ± 3 | 436 | 404 * |
+| infant reserves level 2–3 y | -0.054 / -0.056 / -0.056 / -0.053 | -0.055 ± 0.002 | -0.067 * | -0.049 * |
+| mothers balance kcal/d 2–3 y | 10 / 5 / 4 / -18 | 0 ± 13 | -15 | -21 |
+| growth kg/y 3–4 y | 3.60 / 3.60 / 3.60 / 3.60 | 3.60 ± 0.00 | 3.37 * | 1.57 * |
+| weighed kg/y 3–4 y | 4.07 / 4.11 / 4.34 / 3.50 | 4.00 ± 0.36 | 3.35 | 1.44 * |
+| milk kcal/d 3–4 y | 213 / 214 / 215 / 209 | 213 ± 2 | 199 * | 196 * |
+| own food kcal/d 3–4 y | 627 / 625 / 628 / 620 | 625 ± 3 | 632 * | 590 * |
+| infant reserves level 3–4 y | -0.056 / -0.053 / -0.059 / -0.057 | -0.056 ± 0.003 | -0.063 * | -0.050 * |
+| mothers balance kcal/d 3–4 y | 4 / 13 / 18 / 6 | 10 ± 6 | 23 * | -2 |
+| growth kg/y juv F 4–8 y | 3.40 / 3.40 / 3.40 / 3.40 | 3.40 ± 0.00 | 3.14 * | 1.51 * |
+| growth kg/y juv M 8–12 y | 3.80 / 3.80 / 3.80 / 3.80 | 3.80 ± 0.00 | 3.63 * | 1.83 * |
+| reserves %/day infant 0.5–2 y | -0.010 / -0.011 / -0.051 / -0.037 | -0.028 ± 0.020 | -0.050 | -0.037 |
+| reserves %/day infant 2–5 y | 0.030 / 0.016 / 0.029 / 0.000 | 0.019 ± 0.014 | 0.005 | -0.015 * |
+| reserves %/day juvenile 5–12 y | -0.020 / -0.014 / -0.001 / -0.016 | -0.013 ± 0.008 | -0.020 | -0.028 |
+| reserves %/day female, lactating | 0.010 / 0.000 / -0.006 / -0.019 | -0.004 ± 0.012 | -0.018 | -0.026 |
+| reserves level infant 0.5–2 y | -0.056 / -0.057 / -0.056 / -0.057 | -0.057 ± 0.001 | -0.057 | -0.044 * |
+| day hunger infant 0.5–2 y | 0.388 / 0.397 / 0.381 / 0.376 | 0.386 ± 0.009 | 0.387 | 0.359 * |
+| eating min infant 0.5–2 y | 49 / 46 / 49 / 49 | 48 ± 1 | 49 | 47 |
+| reserves level infant 2–5 y | -0.055 / -0.055 / -0.058 / -0.055 | -0.056 ± 0.001 | -0.065 * | -0.049 * |
+| day hunger infant 2–5 y | 0.350 / 0.355 / 0.352 / 0.354 | 0.353 ± 0.002 | 0.364 * | 0.349 |
+| eating min infant 2–5 y | 151 / 151 / 153 / 149 | 151 ± 2 | 154 | 141 * |
+| reserves level juvenile 5–12 y | -0.062 / -0.064 / -0.059 / -0.059 | -0.061 ± 0.003 | -0.057 | -0.050 * |
+| day hunger juvenile 5–12 y | 0.400 / 0.392 / 0.380 / 0.385 | 0.389 ± 0.009 | 0.386 | 0.391 |
+| eating min juvenile 5–12 y | 272 / 271 / 273 / 276 | 273 ± 2 | 271 | 253 * |
+| reserves level female, lactating | -0.055 / -0.056 / -0.057 / -0.056 | -0.056 ± 0.001 | -0.061 * | -0.047 * |
+| day hunger female, lactating | 0.452 / 0.457 / 0.455 / 0.457 | 0.455 ± 0.002 | 0.471 * | 0.450 * |
+| eating min female, lactating | 275 / 277 / 274 / 277 | 276 ± 1 | 275 | 267 * |
+| T-ENE-1 energy eaten kcal/d (lactating) | 1736 / 1743 / 1736 / 1726 | 1735 ± 7 | 1726 | 1688 * |
+| T-ENE-2 eating min (lactating) | 275 / 277 / 274 / 277 | 276 ± 1 | 275 | 267 * |
+| T-ENE-3 dry matter g/d (lactating) | 775 / 773 / 775 / 769 | 773 ± 3 | 772 | 758 * |
+| T-ENE-8 kcal out / M^0.75 | 98.9 / 99.5 / 99.0 / 99.2 | 99.1 ± 0.2 | 99.9 * | 98.8 |
+| T-INF-1 eating % daylight 1–2 y | 13.0 / 12.2 / 13.0 / 12.9 | 12.8 ± 0.4 | 12.9 | 12.5 |
+| T-INF-2 nurse act % daylight 1–2 y | 9.6 / 10.1 / 8.7 / 9.0 | 9.3 ± 0.6 | 9.1 | 7.7 * |
+| T-INF-5 bouts per daylight h 1–2 y | 0.93 / 0.98 / 0.82 / 0.93 | 0.91 ± 0.07 | 0.92 | 0.77 * |
+| T-INF-1 eating % daylight 2–3 y | 18.5 / 19.0 / 18.4 / 18.2 | 18.6 ± 0.3 | 19.4 * | 17.7 * |
+| T-INF-2 nurse act % daylight 2–3 y | 9.4 / 8.3 / 9.3 / 8.4 | 8.9 ± 0.6 | 8.7 | 7.9 |
+| T-INF-5 bouts per daylight h 2–3 y | 1.25 / 1.09 / 1.24 / 1.16 | 1.19 ± 0.07 | 1.16 | 1.07 |
+| T-INF-1 eating % daylight 3–4 y | 21.4 / 21.1 / 22.0 / 21.1 | 21.4 ± 0.4 | 21.4 | 19.7 * |
+| T-INF-2 nurse act % daylight 3–4 y | 8.8 / 9.2 / 9.5 / 9.6 | 9.3 ± 0.4 | 8.4 * | 8.1 * |
+| T-INF-5 bouts per daylight h 3–4 y | 1.28 / 1.27 / 1.35 / 1.36 | 1.31 ± 0.04 | 1.15 * | 1.18 * |
+| deaths by class | {} / {} / {} / {"adult male: illness": 1} | | {} | {} |
+(* beyond 2 SD of the reference runs; a reference SD of 0 marks any change)
+
+The partition, from the E1p section (per animal-day; S6q is the diagnosis run, identical to the reference's first run;
+reserve change = S − growth paid; share of the shortfall carried by growth = unpaid growth ÷ (unpaid growth + reserves
+lost), shown where either is positive):
+
+| group | S6q: paid / unpaid / reserve change kcal/d; paid ÷ potential; ticks below potential %; velocity / weighed kg/y; share of the shortfall carried by growth | Y1: paid / unpaid / reserve change kcal/d; paid ÷ potential; ticks below potential %; velocity / weighed kg/y; share of the shortfall carried by growth | Y2: paid / unpaid / reserve change kcal/d; paid ÷ potential; ticks below potential %; velocity / weighed kg/y; share of the shortfall carried by growth |
+| --- | --- | --- | --- |
+| 0.5–1 y | 34.5 / 0.0 / -2.1; 1.000; —; 2.80 / —; growth 0% | 32.7 / 1.8 / -5.3; 0.948; 100.0; 2.65 / 2.21; growth 26% | 15.6 / 18.9 / -3.0; 0.451; 79.5; 1.26 / 1.01; growth 86% |
+| 1–2 y | 44.4 / 0.0 / -3.5; 1.000; —; 3.60 / —; growth 0% | 41.7 / 2.7 / -2.2; 0.940; 100.0; 3.38 / 3.20; growth 55% | 16.5 / 27.9 / -3.6; 0.372; 84.3; 1.34 / 1.03; growth 89% |
+| 2–3 y | 44.4 / 0.0 / 0.8; 1.000; —; 3.60 / —; growth —% | 41.4 / 3.0 / -5.5; 0.933; 100.0; 3.36 / 2.89; growth 35% | 17.3 / 27.0 / -2.3; 0.391; 76.3; 1.41 / 1.21; growth 92% |
+| 3–4 y | 44.4 / 0.0 / 5.6; 1.000; —; 3.60 / —; growth —% | 41.6 / 2.8 / -0.3; 0.937; 100.0; 3.37 / 3.35; growth 90% | 19.3 / 25.0 / -1.5; 0.436; 69.0; 1.57 / 1.44; growth 94% |
+| juvenile 5–8 y F | 41.9 / 0.0 / -14.5; 1.000; —; 3.40 / —; growth 0% | 38.7 / 3.2 / -14.0; 0.923; 100.0; 3.14 / 1.95; growth 19% | 18.5 / 23.3 / -11.7; 0.443; 65.3; 1.51 / 0.51; growth 67% |
+| juvenile 8–12 y M | 46.8 / 0.0 / 6.2; 1.000; —; 3.80 / —; growth —% | 44.7 / 2.1 / 12.4; 0.955; 100.0; 3.63 / 4.68; growth 100% | 22.6 / 24.3 / -4.0; 0.482; 60.1; 1.83 / 1.49; growth 86% |
+
+Class slopes (OLS of the daily class means, %/day; reference −0.028 ± 0.020 / +0.019 ± 0.014 / −0.013 ± 0.008 / −0.004
+± 0.012 for infants 0.5–2 y, 2–5 y, juveniles, lactating females): Y1 −0.050 / +0.005 / −0.020 / −0.018; Y2 −0.037 /
+−0.015 / −0.028 / −0.026. Y1's infants of 0.5–2 y sit at −0.0501, inside the reference's spread (its run S6q2: −0.051).
+
+**Against the predictions (§2.2).**
+- *Y1.* Held: f paid 0.933–0.948 in infants and 0.923 / 0.955 in juveniles; velocity 2.65 (0.5–1 y), 3.36–3.38 (1–4 y),
+  3.14 (F 5–8 y), 3.63 kg/y (M 8–12 y); class slopes inside the reference's spread; juveniles' level up 0.004; infants'
+  hunger and own food unchanged; sums inside noise (fitted z −1.6, held-out +0.8, without the rare rows +0.5); 76
+  prescriptions; viable. Missed: the infants' level at 2–5 y fell 0.009 (−0.065 against −0.056 ± 0.001; beyond the class
+  spread, inside the spread of single dyads, of which two ended near −0.10); milk at 2–3 and 3–4 y fell 12 and 14
+  kcal/day (predicted within ±10); mothers' balance at 0.5–1 y −25 and at 3–4 y +23 kcal/day (outside the spread, in
+  opposite directions). Reading: the spared growth (1.8–3.2 kcal/day per animal) is below what the window resolves, and
+  the dyads' common level moved with their trajectories, not with the rule.
+- *Y2.* Held: juveniles paid 0.44 / 0.48 of the potential (1.51 and 1.83 kg/y), their level up 0.011 and eating minutes
+  −7%; infants' levels −0.044 / −0.049 (up 0.007–0.013); infants of 0.5–2 y less hungry (0.359 against 0.386) and own
+  food down 6–8% at 1–4 y (E1f's hidden shortfall: the appetite no longer asks for the growth it is not paying); milk
+  down 17–34 kcal/day; sums inside noise (fitted z −0.4, held-out +0.9, without the rare rows −0.3); 76; viable.
+  Missed: infants paid only 0.37–0.45 of the potential (predicted 0.45–0.85), 1.26 kg/y at 0.5–1 y and 1.34–1.57 at 1–4 y
+  (predicted 1.3–2.4 and 1.6–3.0); the infants' 2–5 y slope −0.015 against +0.019 ± 0.014 (worse); mothers' balance not
+  up (−5 / −17 / −21 / −2 kcal/day against −14 / −11 / 0 / +10): the mothers' reserves are higher (−0.047 against
+  −0.056), so they eat 9 minutes and 47 kcal a day less, and the milk they save does not reach their balance.
+- Y2's 1.3–1.6 kg/y sits near the Gombe-derived 1.6 kg/y; as in E1f iteration 1 that is not evidence for the rule: with
+  growth paid only from the surplus, velocity reports the appetite's operating point (hunger and own food fall with it).
+
+**Verdict for iteration 1 (registered rule).** Both arms are viable, their held-out sums are not up (|z| ≤ 0.9) and
+their fitted sums not up (z −1.6, −0.4): both are *provisional keep candidates* by the rule, neither removes a
+prescription, so neither can go on by default. Both answer the stage's question in the sense registered (growth at 1–4
+y below the reference beyond its spread), with opposite partitions:
+- Y1 (the order the sources give): growth carries 26–55% of the infants' shortfall at 0.5–3 y (90% at 3–4 y, where the
+  reserves barely fell) and 19% of the juvenile females'; the reserves carry the rest; 5–8% less growth, no measurable
+  gain for the reserves in 30 days.
+- Y2 (the brief's premise, a bound): growth carries 86–94% of the infants' shortfall and 67–86% of the juveniles'; growth
+  at 37–48% of the potential; the reserves gain 0.7–1.3% of the store; the appetite falls with the growth not paid.
+
+Next (§2.3, registered): the confirm's second month on the development seeds, where the S6 infants' fall happens.
