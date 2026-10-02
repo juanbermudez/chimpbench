@@ -357,7 +357,7 @@ function countsHtml(D: Data): string {
       + `<td class="k">${esc(kinds(D, t.remIds)) || '—'}${lay.length ? `<br><span class="k-lay">${lay.map(x => `−${x.n} with ${esc(x.l.label.split(',')[0])} (${esc(x.l.status)})`).join('; ')}</span>` : ''}</td></tr>`;
   }).join('');
   const all = tally(D, DOMAINS.flatMap(d => d.ids));
-  return `<div class="ct-wrap"><table class="ct"><caption class="sr">Prescriptions by domain on today's model and on S3</caption><thead><tr><th scope="col">Domain</th><th scope="col" class="n">Today</th><th scope="col" class="n">Replaced</th><th scope="col" class="n">Still prescribed</th><th scope="col"><span class="sr">Bar</span></th><th scope="col">Kinds still prescribed</th></tr></thead><tbody>${rows}</tbody>`
+  return `<div class="ct-wrap"><table class="ct"><caption class="sr">Prescriptions by domain on today's model and on S3</caption><thead><tr><th scope="col">Domain</th><th scope="col" class="n">Today</th><th scope="col" class="n">Replaced</th><th scope="col" class="n">Still prescribed</th><th scope="col"><span class="sr">Bar</span></th><th scope="col" class="k">Kinds still prescribed</th></tr></thead><tbody>${rows}</tbody>`
     + `<tfoot><tr><th scope="row">All</th><td class="n">${all.b}</td><td class="n rep">${all.rep}</td><td class="n rem">${all.rem}</td><td></td><td class="k">${esc(kinds(D, all.remIds))}</td></tr></tfoot></table></div>`;
 }
 
