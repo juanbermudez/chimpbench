@@ -2391,3 +2391,59 @@ Evidence pass for stage E2g (the water ledger that replaces the thirst timers; `
 - simmen2010, pontzer2021, nelson2022, mackenzie2025 and wessling2018 are already listed; the entries above add findings.
 - *new* lindshield2021: Lindshield S, Hernandez-Aguilar RA, Korstjens AH, et al. 2021. Chimpanzees (*Pan troglodytes*) in savanna landscapes. *Evolutionary Anthropology* 30(6):399–420. [doi:10.1002/evan.21924](https://doi.org/10.1002/evan.21924) (FT).
 - *new* peter2022: Péter H, Zuberbühler K, Hobaiter C 2022. Well-digging in a community of forest-living wild East African chimpanzees (*Pan troglodytes schweinfurthii*). *Primates* 63(4):355–364. [doi:10.1007/s10329-022-00992-4](https://doi.org/10.1007/s10329-022-00992-4) (FT, PMC9273564).
+
+### Addendum: E2h departure timing (2 October 2026)
+
+Read for stage E2h (docs/staging/e2h-prereg.md §1): when wild chimpanzees leave their night nests relative to sunrise,
+site by site, and how each source defines departure and sunrise. Offsets marked "derived" are this stage's: the
+sources give clock times, so the NOAA sunrise (sun's centre at −0.833°) was computed for each day of each study window
+(scripts/departure-bands-metrics.ts) and a mean departure set against a mean sunrise [L].
+
+- **Breakfast planning, Taï** [janmaat2014] (FT; extends E.17) [M]. The departure sample is 179 mornings, not 275 days:
+  "We only analyzed data from days that followed complete observation days" and "Only mornings where breakfast
+  consisted of fruit were considered (74% of all mornings)"; Fig. 2's "datapoints (n = 179) show the observed departure
+  times", and "18% of all departures were before sunrise" is said of that figure. Sunrise: "Astronomical sunrise times
+  were retrieved from the website www.esrl.noaa.gov/gmd/grad/solcalc/sunrise.html" (NOAA's apparent sunrise, not
+  astronomical twilight). Mean departure +13 min at average predictors (Table 1 intercept +779 s); a normal with that
+  mean and an 18% share has an SD of about 14 min (derived). Five mothers with offspring under 7 y, three fruit-scarce
+  periods, a site with leopards (boesch1991).
+- **Leaving the night nest by season, Gombe** [wrangham1975] (FT, PhD thesis, Table 3.1; extends E.32) [M]. Adult
+  males (target-male follows), "Mean times of leaving and entering night-nests are shown from all observations (N = 75)":
+  leaving 06:50 (dry, Jul–Sep 1972), 06:28 (wet, Nov 1972 – Jan 1973), 06:47 (dry, Jul–Sep 1973), 06:42 (May 1972 – Sep
+  1973). Derived: −14, −20, −17 and −18 min from NOAA sunrise (East Africa Time; mean nest entry then falls −33 to +4 min
+  from sunset, where UTC+2 would put it after dark). No SD. Anecdote: Southern males "reached the second fig in the dark
+  after leaving their nests before dawn".
+- **Leaving the night nest by class, Budongo** [batesByrne2009] (FT; extends E.17) [M]. Derived against the mean NOAA
+  sunrise of September 2002 – September 2003 (06:49.9, range 06:35.8–07:06.4): males +6 min (06:56 ± 32, n 21),
+  lactating females −4 (06:46 ± 13, n 12), receptive females −13 (06:37 ± 12, n 4), all 37 pooled +1. Shares before
+  sunrise if departures are normal: males 0.42–0.43, lactating 0.60–0.66, receptive 0.81–0.94 (derived; bounded by
+  departures tracking sunrise or independent of it).
+- **The first to leave a nesting party, Mahale** [zamma2014] (FT, Kyoto University repository manuscript; extends the
+  E2a entry, which read the abstract) [M]. M group, 5 nights, 26 August – 2 September 2011 (dry season, new moon on 29
+  August), parties of 21–47: recording "stopped when the first chimpanzee in the party left its bed in the morning (mean
+  finish time 6:48, range 6:07–7:13)". Derived: −15 min (−56 to +10) from NOAA sunrise (East Africa Time assumed). The
+  earliest of a large party: a lower bound of its departures.
+- **Before dawn at Kibale** [uwimbabazi2021] (FT, PMC8225573; extends its entry) [M]: Kanyawara female follows "started
+  at dawn when the focal individual left her nest", but "sometimes the focal individual had already left the nest before
+  dawn". [lacroux2022] (FT; extends its entry) [M]: Sebitoli camera traps, twilight = "30 min before sunrise to sunrise"
+  (and after sunset): 26 twilight and 10 night events of 36 nocturnal ones in the forest; "Most nocturnal activity
+  occurred in the early morning, within an hour before sunrise". No departure times.
+- **Fongoli** [stewart2011] (FT, PhD thesis) [M]: "the chimpanzees frequently nested and arose in the dark"; nests were
+  built on average 30 min after sunset.
+- **Issa** [drummondclarke2023] (FT, PMC10651548) [L], one morning: at 06:20 on 4 June 2020 eight males had "the entire
+  party still in their nests"; at 07:10 the party "began pant-hooting and ran". Context only (n = 1).
+- Use in E2h: targets only (a three-site band on the median departure, T-RHY-3, and a two-site band for mothers,
+  T-FOOD-10; docs/staging/e2h-targets.patch.json). Nothing here is an input.
+
+**Sources:**
+- *new* stewart2011: Stewart FA 2011. *The evolution of shelter: ecology and ethology of chimpanzee nest building.* PhD
+  thesis, University of Cambridge. [doi:10.17863/CAM.13968](https://doi.org/10.17863/CAM.13968) (FT).
+- *new* drummondclarke2023: Drummond-Clarke RC, Fryns C, Stewart FA, Piel AK 2023. A case of intercommunity lethal
+  aggression by chimpanzees in an open and dry landscape, Issa Valley, western Tanzania. *Primates* 64(6):599–608.
+  [doi:10.1007/s10329-023-01085-6](https://doi.org/10.1007/s10329-023-01085-6) (FT, PMC10651548).
+- janmaat2014, wrangham1975, batesByrne2009, zamma2014, uwimbabazi2021, lacroux2022 and boesch1991 are already listed;
+  the entries above add findings.
+
+**Not verified:** pruetz2018 full text; hozer2026 numbers (HAL served a bot check); nest-departure times at Ngogo,
+Kalinzu, Seringbara, Toro-Semliki, Goualougo, Lopé, Kahuzi and Mt Assirik; the Anderson reviews of primate sleep;
+Ghiglieri 1984 (a book).

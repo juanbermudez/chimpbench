@@ -66,5 +66,10 @@ for (const [k, a, b, dep, ent] of gombe) {
   const r = windowStats(a, b, -4.667, 29.633, true), s = windowStats(a, b, -4.667, 29.633, false);
   L.push(`  ${k}: sunrise mean ${hm(r.mean)} (${hm(r.min)}–${hm(r.max)}); departure ${hm(dep)} → ${sign(dep - r.mean)} min; nest entry ${hm(ent)} vs sunset ${hm(s.mean)} → ${sign(ent - s.mean)} min (UTC+2 clock: ${sign(ent + 60 - s.mean)})`);
 }
+// context, not a site mean (added after the band rule was registered; it does not enter the band): zamma2014 stopped
+// recording "when the first chimpanzee in the party left its bed in the morning (mean finish time 6:48, range
+// 6:07–7:13)", 5 nights, 26 Aug – 2 Sep 2011, Mahale M group (Kasoje, about 6.1°S 29.73°E), EAT assumed (Tanzania)
+const mah = windowStats([2011, 8, 26], [2011, 9, 2], -6.1, 29.73, true);
+L.push(`Mahale (zamma2014, the first of a party of 21–47 to leave its bed, 5 mornings): sunrise mean ${hm(mah.mean)} (${hm(mah.min)}–${hm(mah.max)}); first riser 06:48 (06:07–07:13) → ${sign(6 * 60 + 48 - mah.mean)} min (${sign(6 * 60 + 7 - mah.mean)} to ${sign(7 * 60 + 13 - mah.mean)})`);
 L.push('Taï (janmaat2014): reported relative to NOAA sunrise: Table 1 intercept +779 s = +13.0 min at average predictors; 18% of 179 departures before sunrise; a normal with that mean and share has SD ' + (13.0 / 0.915).toFixed(1) + ' min.');
 console.log(L.join('\n'));

@@ -44,8 +44,25 @@ T-RHY-3's (0.05–0.35) rest on the last alone; the two sites with all-season da
 a share near 0.5 or above is what they imply. Other sites (Kibale, Fongoli, Bossou, Mahale, camera and video studies):
 search running (§1b, filled in when it reports).
 
-### 1b. Other sites
-(Pending the source search; at most 2 routes or 10 minutes per source.)
+### 1b. Other sites (source search of this stage, 09:25–09:42; quotes re-checked in the saved texts)
+
+| Key | Access | Site, sample | Method, definition | Numbers |
+| --- | --- | --- | --- | --- |
+| zamma2014 | FT (Kyoto University repository manuscript) | Mahale M group; 5 nights, 26 Aug – 2 Sep 2011, dry season, new moon on 29 Aug; parties of 21–47 (mean 33.6) | night-long direct observation of a nesting party; recording "stopped when the first chimpanzee in the party left its bed in the morning" | "mean finish time 6:48, range 6:07–7:13"; derived −15.0 min (−56 to +10) from NOAA sunrise (EAT assumed; scripts/departure-bands-metrics.ts). The earliest of a large party, so a lower bound of the party's departures; context, not a site mean (it was found after the band rule was registered and does not enter it) |
+| uwimbabazi2021 | FT (PMC8225573) | Kanyawara, Kibale; female focal follows, January 2014 – June 2015 | follows "started at dawn when the focal individual left her nest" | "sometimes the focal individual had already left the nest before dawn" (no times) |
+| lacroux2022 | FT | Sebitoli, Kibale; 14 camera traps, January 2017 – April 2018 | camera events, not nest exits; twilight = "30 min before sunrise to sunrise" (and the same after sunset) | in the forest 26 twilight and 10 night events of 36 nocturnal; "Most nocturnal activity occurred in the early morning, within an hour before sunrise" |
+| stewart2011 | FT (PhD thesis) | Fongoli | afternoon-to-nest follows | "the chimpanzees frequently nested and arose in the dark"; nests built on average 30 min after sunset |
+| drummondclarke2023 | FT (PMC10651548) | Issa Valley; one morning (4 June 2020), 8 males | event narrative | 06:20 "the entire party still in their nests"; 07:10 the party "began pant-hooting and ran" (n = 1, context) |
+| hozer2026 | Abs | Budongo, infrared video | — | group nesting "delayed nesting times and advanced wake times"; no numbers (HAL served a bot check; not used) |
+
+Not verified: pruetz2018 full text (closed), Ngogo, Kalinzu, Seringbara, Toro-Semliki, Goualougo and Lopé, Kahuzi,
+Mt Assirik, the Anderson reviews of primate sleep, Ghiglieri 1984 (a book); link.springer.com and HAL served bot checks
+and were not used again.
+
+**Reading of 1 and 1b together.** Leaving the nest before sunrise is ordinary in the wild: three sites give a mean at or
+before sunrise for most classes (Gombe, Budongo, the first riser at Mahale), two Kibale studies and Fongoli describe it,
+and the one late site (Taï) is a site with a twilight predator, scored on mothers in fruit-scarce periods. What no
+source shows is a class leaving an hour before sunrise as its typical behaviour.
 
 ## 2. Step 0c: how the model scores departures (the observer and rhythm-metrics)
 

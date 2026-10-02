@@ -1,0 +1,146 @@
+{
+ "about": "Stage E2h staging for data/targets.json and for the staged Track E row T-RHY-3 (docs/staging/e-targets.patch.json); a proposal applied by the integrator, never by this branch. Two rows: T-FOOD-10 keeps the Taï construct (mothers, fruit breakfasts, fruit-scarce periods) with a second site for mothers and the corrected sample; T-RHY-3 becomes the median adult departure relative to sunrise with a three-site band (the share before sunrise is a reported part). The bands follow the rule in docs/staging/e2h-prereg.md §3, registered at 09:38 on 2 October 2026 before this stage's diagnosis was read; it uses field values only. Disclosure: model values were already seen in earlier stages' documents (R0: departures at −13 min, 0.99 before sunrise, T-FOOD-10 1.00; S3: T-FOOD-10 0.686; B 0.017). Each site's sample, method and definition is under `field`; the registered bands are kept under `revisions`; an alternative for T-FOOD-10 is given so the integrator can choose without this branch's influence. Applying either row changes the targets hash: protocolLog entry and new freeze by the integrator. The scorer fix that makes the observer read T-FOOD-10 like the field is in docs/staging/e2h-protocol.patch.json.",
+ "rule": "T-RHY-3: band from the lowest to the highest site mean of adult departures relative to NOAA sunrise (§1 of the prereg; scripts/departure-bands-metrics.ts), rounded outward to 5 min: Gombe males in the wet season −19.6 → −20 min; Taï mothers +13.0 → +15 min. T-FOOD-10: the lowest and highest site values for adult females with dependent offspring, each with the registered band's own margins around Taï's 0.18 (−0.10 below, +0.12 above): 0.18 − 0.10 = 0.08; Budongo lactating females, derived 0.60–0.66, 0.66 + 0.12 = 0.78. Alternative for T-FOOD-10: keep 0.08–0.30 and state the basis as one site with a twilight predator (boesch1991) that is absent at Kibale (wood2017).",
+ "targets": [
+  {
+   "id": "T-FOOD-10",
+   "objectives": [
+    "O7"
+   ],
+   "metric": "Breakfast planning",
+   "definition": "Share of nest departures before sunrise (NOAA: the sun's centre at −0.833°) by adult females with a dependent offspring, on mornings whose breakfast (the first food item after leaving the nest) is fruit, in fruit-scarce periods; earlier departure when the fig target is far.",
+   "observer": {
+    "protocol": "focal continuous",
+    "interval_min": 1,
+    "unit": "departure"
+   },
+   "field": [
+    {
+     "population": "Taï (P. t. verus)",
+     "years": "16 April 2009 – 30 August 2011, three fruit-scarce periods",
+     "value": "18% of departures before sunrise ('18% of all departures were before sunrise', said of Fig. 2, n = 179); mean departure +13 min at average predictors (Table 1 intercept +779 s); nested in the breakfast tree 4 of 179 (2%)",
+     "n": "5 adult females, all with offspring under 7 y; 179 fruit-breakfast mornings that followed complete observation days (275 follow days in all)",
+     "method": "focal nest-to-nest follows; departure in seconds from NOAA sunrise; breakfast = the first food item eaten after waking; only fruit breakfasts (74% of mornings)",
+     "source": "janmaat2014",
+     "note": "primary, full text. A site with leopards, which hunt with crepuscular peaks (boesch1991, jennyZuberbuhler2005); the authors read the late departures of mothers to far non-fig sites as avoiding twilight travel. Leopards are absent from Kibale (wood2017)."
+    },
+    {
+     "population": "Budongo Sonso (P. t. schweinfurthii)",
+     "years": "September 2002 – September 2003, all seasons",
+     "value": "lactating females left the night nest at 06:46 ± 13 min (clock time), −3.9 min from the window's mean NOAA sunrise; share before sunrise 0.60–0.66 if departures are normal (derived)",
+     "n": "6 lactating or gestating females, 12 departures",
+     "method": "focal follows 'from when it left its night nest at sunrise'; clock times; no sunrise reported (computed here, scripts/departure-bands-metrics.ts)",
+     "source": "batesByrne2009",
+     "note": "primary, full text; the share is derived [L]: no dates per departure, a normal shape assumed, bounded by departures tracking sunrise (0.66) or independent of it (0.60). No class difference in departure time (F2,36 = 1.31, P = 0.28)."
+    }
+   ],
+   "accept": {
+    "lo": 0.08,
+    "hi": 0.78,
+    "units": "fraction",
+    "basis": "two sites for mothers (Taï, fruit-scarce periods, a site with a twilight predator; Budongo, all seasons, derived), each with the registered margins"
+   },
+   "revisions": [
+    {
+     "accept": {
+      "lo": 0.08,
+      "hi": 0.3,
+      "units": "fraction",
+      "basis": "one site"
+     },
+     "field_n": "275 days",
+     "note": "registered band (data/targets.json); its n named the follow days, not the 179 scored mornings"
+    }
+   ],
+   "alternative": {
+    "accept": {
+     "lo": 0.08,
+     "hi": 0.3,
+     "units": "fraction",
+     "basis": "one site with a twilight predator (boesch1991) absent at Kibale (wood2017); transfer to the model's population [L]"
+    }
+   },
+   "evidence": "L",
+   "role": "held-out",
+   "encoded": false,
+   "notes": "Scored like for like only with the protocol fix (docs/staging/e2h-protocol.patch.json). In quick mode only seed 7's window is fruit-scarce (habitat fruit index below its long-run mean 0.6 on all 30 scored days; seed 48's is 0.95 throughout); report n.",
+   "sources": [
+    "janmaat2014",
+    "batesByrne2009",
+    "boesch1991",
+    "wood2017"
+   ]
+  },
+  {
+   "id": "T-RHY-3",
+   "objectives": [
+    "O1",
+    "O7"
+   ],
+   "metric": "Nest departure relative to sunrise",
+   "definition": "Median time adults leave the night nest, minutes after NOAA sunrise (the sun's centre at −0.833°). Parts, reported and not scored: medians by class (males, adult females, lactating females) and the share of departures before sunrise.",
+   "observer": {
+    "protocol": "focal continuous",
+    "interval_min": 1,
+    "unit": "individual-day"
+   },
+   "field": [
+    {
+     "population": "Gombe Kakombe (P. t. schweinfurthii)",
+     "years": "May 1972 – September 1973: dry Jul–Sep 1972, wet Nov 1972 – Jan 1973, dry Jul–Sep 1973",
+     "value": "mean time of leaving the night nest 06:50, 06:28, 06:47 (all 06:42), clock times; −13.9, −19.6, −17.2 (all −17.8) min from each window's mean NOAA sunrise (derived)",
+     "n": "adult males (target-male follows), N = 75 observations of leaving and entering night nests",
+     "method": "all-day focal follows of adult males; mean clock times (Table 3.1); time zone not stated, taken as East Africa Time because mean nest entry then falls −33 to +4 min from sunset (UTC+2 would put it 27–64 min after sunset)",
+     "source": "wrangham1975",
+     "note": "primary, full text (PhD thesis); offsets derived [L], no SD given"
+    },
+    {
+     "population": "Budongo Sonso (P. t. schweinfurthii)",
+     "years": "September 2002 – September 2003",
+     "value": "leaving the night nest, mean ± SD (clock time): males 06:56 ± 32 min, lactating females 06:46 ± 13, receptive females 06:37 ± 12; +6.1, −3.9 and −12.9 min from the window's mean NOAA sunrise (06:49.9; derived); all 37 pooled +0.8 min",
+     "n": "8 males (21 departures), 6 lactating or gestating females (12), 1 receptive female (4)",
+     "method": "focal follows 'from when it left its night nest at sunrise'; clock times; sunrise computed here",
+     "source": "batesByrne2009",
+     "note": "primary, full text; offsets derived [L]; no class difference (F2,36 = 1.31, P = 0.28)"
+    },
+    {
+     "population": "Taï (P. t. verus)",
+     "years": "2009–2011, three fruit-scarce periods",
+     "value": "+13 min at average predictors (Table 1 intercept +779 s from NOAA sunrise); 18% before sunrise",
+     "n": "5 adult females with offspring under 7 y; 179 fruit-breakfast mornings",
+     "method": "focal nest-to-nest follows; departure in seconds from NOAA sunrise",
+     "source": "janmaat2014",
+     "note": "primary, full text; one class, one season type, fruit breakfasts, a site with leopards"
+    }
+   ],
+   "accept": {
+    "lo": -20,
+    "hi": 15,
+    "units": "minutes after NOAA sunrise (median of adult departures)",
+    "basis": "range of three site means (Gombe males, Budongo by class, Taï mothers), rounded outward to 5 min; two of the three derived from clock times"
+   },
+   "revisions": [
+    {
+     "metric": "Nest departures before sunrise",
+     "definition": "Share of morning nest departures of adult females that happen before sunrise.",
+     "accept": {
+      "lo": 0.05,
+      "hi": 0.35,
+      "units": "fraction of departures",
+      "basis": "one site and one season type, widened"
+     },
+     "note": "staged in docs/staging/e-targets.patch.json (never applied): Taï only"
+    }
+   ],
+   "evidence": "L",
+   "role": "held-out",
+   "encoded": false,
+   "notes": "How to measure: the follow's start (leaving `nest` phase 2) against NOAA sunrise; leave out follows that start at 04:00 with the focal already out of its nest. The field's spread around each site mean: clock-time SDs 12–32 min at Budongo; about 14 min at Taï (derived from the mean and the share, normal shape). Direction rows of janmaat2014 stay with T-FOOD-10.",
+   "sources": [
+    "wrangham1975",
+    "batesByrne2009",
+    "janmaat2014"
+   ]
+  }
+ ]
+}
