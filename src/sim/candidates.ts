@@ -11,6 +11,7 @@ import { heatRestValue, nestValue, shelterValue, sleepPressure, thermalLoad } fr
 import { darkOn, tripLight, visionNow, type TripLight } from './light';
 import { circadianOn, circadianSleepiness } from './circadian';
 import { milkShare, milkWorth, nurseBoutWorth } from './energy';
+import { drinkWorth, waterOn } from './water';
 import { arrivalLight, brightening, needUnits, raceStake, rivalsAt } from './departure';
 import { endoOn, escalateScore, fastSpanH, rainFastScore, rainScore, redirectFastScore, redirectScore } from './endocrine';
 import { callValueOn, crownOf, pantHootValue } from './calls';
@@ -343,6 +344,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     // still has companions to leave (execution.ts departAttempt) [M: gruberZuberbuhler2013; design]
     const held = P.departPersist === 1 && x.tryAt !== undefined && time < x.tryAt && departAudience(world, c) > 0;
     const shortlist = P.patchEcology === 1; // field: many remembered trees; score the few best by distance and hunger
+    const water = waterOn(P); // stage E2g: thirst from the water ledger
     _mem.length = 0; _rk.length = 0; _dk.length = 0;
     const minD = P.memoryTreeMinM;
     for (let _i3 = 0; _i3 < c.memory.length; _i3++) { const m = c.memory[_i3];
@@ -356,9 +358,10 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
         if (race) { const nr = rivalsAt(c, t.id); if (nr > 0) raceG = Math.max(raceG, raceStake(worth, crop, nr, need, arrivalLight(env.daylight, dLdt, d, P))); } // stage E2b
         if (shortlist) { const rv = revisit(x, t.id, time, P); _mem.push(t, worth - tripCost(worth, crop, d, h, P, needFruit(c, P, h)) - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD)); continue; }
         if (!held) offer('travel', t.id, worth - tripCost(worth, crop, d, h, P, needFruit(c, P, h)) - revisit(x, t.id, time, P) - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay, V.TREE);
-      } else if (m.kind === 'water' && c.thirst > 0.25 && c.age >= 3) {
+      } else if (m.kind === 'water' && c.age >= 3 && (water ? c.thirst > 0 : c.thirst > 0.25)) {
         const d = Math.hypot(m.position[0] - px, m.position[2] - pz);
-        offer('drink', m.entityId, c.thirst * 1.5 - d / P.drinkDistScaleM - 0.05);
+        // stage E2g (waterLedger): thirst from the water deficit, the trip valued by the share of it spent drinking (water.ts)
+        offer('drink', m.entityId, water ? drinkWorth(c, P, d) : c.thirst * 1.5 - d / P.drinkDistScaleM - 0.05);
       }
     }
     // stage C7a (field): the community's best-known productive trees, valued by expectation unless seen (foraging.ts)

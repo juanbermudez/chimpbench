@@ -241,6 +241,14 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   huntGapH: { when: P => !(P.huntValue === 1 && P.energyLedger === 1 && P.ledgerDrive === 1), why: 'the community-wide gap since the last hunt in src/sim/candidates.ts meatAndHunting is not evaluated while huntValue, energyLedger and ledgerDrive are 1 (the lead is scored as food, huntvalue.ts)' },
   // stage E4c (callValue): no travel pant-hoot hazard and no contact-call quota; pant-hoots follow their value (calls.ts)
   ...same(['travelCallPerH', 'travelCallGapH'], P => P.callValue !== 1, 'the travel pant-hoot hazard in src/sim/execution.ts executeAction is not evaluated while callValue is 1'),
+  // stage E2g (waterLedger; docs/staging/e2g-prereg.md §5): thirst from a water ledger (src/sim/water.ts) replaces the
+  // thirst timers, the fruit factor, the drink relief rate and the drink distance scale; urgency.ts (stage E3) still reads
+  // drinkThirstPerH and the fruit factor (through intake.ts thirstPerHInclWalk) while urgencyChoice or urgencyPersist is 1
+  ...same(['thirstAwakePerH', 'thirstSleepPerH', 'thirstHotC', 'thirstHotPerH', 'thirstRainRelief'], P => !(P.waterLedger === 1 && P.energyLedger === 1 && P.ledgerDigesta === 1),
+    'copied into the timer rates (src/sim/life.ts needRates) but used only in the timer branch of needs(), not while the water ledger runs (waterLedger, energyLedger and ledgerDigesta 1; water.ts waterTick sets thirst)'),
+  ...same(['fruitThirstFactor', 'drinkThirstPerH'], P => !(P.waterLedger === 1 && P.energyLedger === 1 && P.ledgerDigesta === 1) || P.urgencyChoice === 1 || P.urgencyPersist === 1,
+    'read in the timer branches of execution.ts (forageTick, drink) and by urgency.ts payOf (through intake.ts thirstPerHInclWalk); with the water ledger fruit water and drinking are booked in mL (water.ts), so they stay in use only while urgencyChoice or urgencyPersist is 1'),
+  drinkDistScaleM: { when: P => !(P.waterLedger === 1 && P.energyLedger === 1 && P.ledgerDigesta === 1), why: 'the drink offer in src/sim/candidates.ts is valued by water.ts drinkWorth (the share of the trip spent drinking, walk included) while the water ledger runs' },
   contactCallGapH: { when: P => P.callValue !== 1, why: 'the contact-call quota (and the fewer-than-2-in-sight gate) in src/sim/candidates.ts patrolAndCalls is not evaluated while callValue is 1: the staleness of the own last pant-hoot (calls.ts callStaleness) replaces it' },
 };
 
@@ -292,6 +300,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   callValue: { stage: 'E4c', needs: {} },
   endoRhythm: { stage: 'E4d', needs: { endoStates: 1 }, removesNothing: 'adds a sleep-gated secretion term to the stress and arousal states; no clock literal, hazard or roll encoded their daily course (e4d-prereg §3.1)' },
   huntValue: { stage: 'E4e', needs: { energyLedger: 1, ledgerDrive: 1 } },
+  waterLedger: { stage: 'E2g', needs: { energyLedger: 1, ledgerDigesta: 1, rhythmHeat: 1 } },
   preyKanyawara: { stage: 'E4f', needs: {}, removesNothing: 'corrects an input (the field colobus density: Ngogo 1997-99 out, Kanyawara in, both inputs); no prescription is switched out (e4f-prereg §4.1)' },
 };
 

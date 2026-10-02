@@ -44,6 +44,13 @@ export function massOf(c: Chimp, P: Params): number {
  * and the vasodilated maximum plus evaporation. A surplus over the maximum is stored; a shortfall under the minimum is
  * a debt; otherwise the body pays back what it holds. Returns the new load.
  */
+/**
+ * Stage E2g (water ledger, water.ts): the evaporative part of the heat lost in the last heatStep (W/kg): none in the cold
+ * or while a heat debt is paid back, what the gain leaves above the vasodilated dry loss in balance, the full evaporative
+ * capacity while heat is stored or paid back. A side output read right after the step; it changes nothing in the step.
+ */
+export const heatOut = { evapW: 0 };
+
 export function heatStep(P: Params, load: number, massKg: number, met: number, moveW: number, exposure: number, rainShare: number, env: Environment, dtS: number): number {
   const sinAlt = Math.sin(env.sunAltitude);
   const sun = sinAlt > 0 ? P.rhythmSolarW * sinAlt * (1 - P.rhythmCloudAtt * Math.pow(env.cloud, P.rhythmCloudExp)) * P.rhythmCoatHeat * P.rhythmAreaM2 * exposure / Math.cbrt(massKg) : 0;
@@ -51,12 +58,15 @@ export function heatStep(P: Params, load: number, massKg: number, met: number, m
   const reach = env.rain * rainShare, wet = reach / (reach + P.rhythmSoakRain); // 0 dry, half soaked at rhythmSoakRain, → 1
   const cond = P.rhythmCondW * Math.pow(massKg, -P.rhythmCondExp) * (1 + (P.rhythmWetCond - 1) * wet);
   const dT = P.rhythmBodyC - env.temperature;
-  const lossMin = cond * dT, lossMax = Math.max(lossMin, cond * P.rhythmVaso * dT + P.rhythmEvapW);
+  const dryMax = cond * P.rhythmVaso * dT, lossMin = cond * dT, lossMax = Math.max(lossMin, dryMax + P.rhythmEvapW);
   const k = dtS * rates(P).perJ;
-  if (gain > lossMax) load += (gain - lossMax) * k;
-  else if (load > 0) load = Math.max(0, load - (lossMax - gain) * k); // stored heat leaves at full capacity
+  let evap = 0;
+  if (gain > lossMax) { load += (gain - lossMax) * k; evap = lossMax - Math.max(lossMin, dryMax); }
+  else if (load > 0) { load = Math.max(0, load - (lossMax - gain) * k); evap = lossMax - Math.max(lossMin, dryMax); } // stored heat leaves at full capacity
   else if (gain < lossMin) load -= (lossMin - gain) * k;
   else if (load < 0) load = Math.min(0, load + (gain - lossMin) * k);
+  else if (gain > dryMax) evap = gain - Math.max(lossMin, dryMax);
+  heatOut.evapW = evap > 0 ? evap : 0;
   return load > 1 ? 1 : load < -1 ? -1 : load;
 }
 
@@ -78,6 +88,7 @@ export function rhythmNeeds(world: World, c: Chimp, asleep: boolean): void { // 
     if (circadianOn(P)) circadianTick(world, c, asleep, nursed);
     else { const S = sleepStep(P, x.slp ?? 1 - c.energy, asleep && !nursed); x.slp = S; c.energy = 1 - sleepiness(S, world.environment.daylight); }
   }
+  heatOut.evapW = 0; // stage E2g: no evaporation is read for an animal whose heat balance does not run this tick
   if (P.rhythmHeat !== 1) return;
   const p = c.position, a = c.action;
   // an infant on its mother, or in her nest, shares her body's warmth and does no work of its own: always under 1.2 y,

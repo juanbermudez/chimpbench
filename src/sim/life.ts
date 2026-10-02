@@ -4,6 +4,7 @@ import { bond, femaleQueue, lifeStage } from './hierarchy';
 import { dailyRelations, noteEvent } from './relations';
 import { reproSlow } from './reproduction';
 import { rhythmNeeds } from './rhythm';
+import { waterOn, waterTick } from './water';
 import { expectedEpidemicHazard } from './disease';
 import { endoNeeds } from './endocrine';
 import { eat, energyTick, ledgerSlow, meatKcalPerUnit } from './energy';
@@ -100,6 +101,8 @@ interface NeedRates {
   stressFloor: number; stressRelax: number; meatEat: number; meatHunger: number;
   /** Stage E1: the energy ledger replaces the hunger timers (energy.ts). */
   ledger: boolean;
+  /** Stage E2g: the water ledger replaces the thirst timers (water.ts). */
+  water: boolean;
 }
 let ratesOf: Params | null = null;
 let R: NeedRates;
@@ -110,7 +113,7 @@ function needRates(P: Params): NeedRates {
     hLact: P.hungerLactationPerH, hPreg: P.hungerPregnancyPerH, tSleep: P.thirstSleepPerH, tAwake: P.thirstAwakePerH, tHotC: P.thirstHotC,
     tHot: P.thirstHotPerH, tRain: P.thirstRainRelief, eSleep: P.energySleepPerH, eRest: P.energyRestPerH, eRun: P.energyRunPerH,
     eWalk: P.energyWalkPerH, eOther: P.energyOtherPerH, sSleep: P.socialSleepPerH, sAwake: P.socialAwakePerH, stressFloor: P.stressFloor,
-    stressRelax: P.stressRelaxPerH, meatEat: P.meatEatPerH, meatHunger: P.meatHungerFactor, ledger: P.energyLedger === 1 };
+    stressRelax: P.stressRelaxPerH, meatEat: P.meatEatPerH, meatHunger: P.meatHungerFactor, ledger: P.energyLedger === 1, water: waterOn(P) };
   return R;
 }
 
@@ -146,7 +149,8 @@ export function needs(world: World, c: Chimp): void {
   // stage E1 (energyLedger): hunger is read from the energy balance instead of the timers
   if (r.ledger) energyTick(world, c, x, sleeping);
   else c.hunger += ((sleeping ? r.hSleep : RUNNING[a] ? r.hRun : r.hAwake) * body + (c.lactating ? r.hLact * lactationTaper(world, c, paramsOf(world)) : 0) + (c.pregnancy > 0 ? r.hPreg : 0)) * h;
-  c.thirst += (sleeping ? r.tSleep : r.tAwake + (env.temperature > r.tHotC ? r.tHot : 0) - env.rain * r.tRain) * h;
+  // stage E2g (waterLedger): thirst is read from the water balance (water.ts waterTick, below) instead of the timers
+  if (!r.water) c.thirst += (sleeping ? r.tSleep : r.tAwake + (env.temperature > r.tHotC ? r.tHot : 0) - env.rain * r.tRain) * h;
   c.energy += (sleeping ? r.eSleep : a === 'rest' || a === 'shelter' || a === 'groom' || a === 'nurse' ? r.eRest : RUNNING[a] ? -r.eRun : WALKING[a] ? -r.eWalk : -r.eOther) * h;
   c.social -= (sleeping ? r.sSleep : r.sAwake) * h;
   // stage E4a (endoStates): the stress load is a slow state with its own drivers (endocrine.ts) instead of a fixed relaxation
@@ -164,6 +168,7 @@ export function needs(world: World, c: Chimp): void {
   if (c.social > 1) c.social = 1; else if (c.social < 0) c.social = 0;
   if (c.stress > 1) c.stress = 1; else if (c.stress < 0) c.stress = 0;
   { const P = paramsOf(world); if (P.rhythmSleep === 1 || P.rhythmHeat === 1) rhythmNeeds(world, c, sleeping); } // stage E2a: sleep pressure and thermal load
+  if (r.water) waterTick(world, c, x); // stage E2g: the water balance, after the energy books and the heat balance it reads
   if (c.vocal !== null && world.time > c.vocalUntil) c.vocal = null;
   c.mood = moodFor(c, a);
 }

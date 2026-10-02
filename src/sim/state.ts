@@ -111,6 +111,8 @@ export interface ChimpX {
   cond: number; grow: number; bereft: number; gestCond: number;
   /** Stage E1 (energyLedger; energy.ts): the energy ledger, absent until the switch is on and the individual first ticks. */
   en?: EnergyLedger;
+  /** Stage E2g (waterLedger; water.ts): the water ledger, absent until the switch is on and the individual first ticks. */
+  wat?: WaterLedger;
   /**
    * Stage C8 health (docs/realism-design.md §5.7): eco-hour when the current respiratory illness ends (NEVER when well),
    * the outbreak that last infected this individual (-1 none; immune to it afterwards), a permanent snare injury
@@ -148,6 +150,14 @@ export interface EnergyLedger {
    */
   mAvg?: number; gAt?: number;
 }
+
+/**
+ * Stage E2g water ledger (mL; water.ts): the body water deficit below euhydration (≥ 0; a surplus is passed as urine at
+ * once), lifetime water in and out (in − out = −(def − its opening value)), and the energy ledger's `out` and passed
+ * faecal energy (`fec`) at the last water tick, so metabolic and faecal water follow the energy books; `mx` is milk energy
+ * exported since then (not oxidised, so no metabolic water).
+ */
+export interface WaterLedger { def: number; in: number; out: number; oAt: number; fAt: number; mx: number }
 
 /** The memory month in progress: tallies accumulate on events and are finalized into a MemoryDigest every 30 eco-days. */
 export interface MonthLedger { start: number; startRank: number; partners: Record<number, PartnerTally>; events: DigestEvent[]; encounters: number; lastEncounter: number }
@@ -216,7 +226,7 @@ export type SimWorld = World & { sim: SimState };
  * ChimpX and SimState keys that exist only once their mechanism has fired (so worlds with the switch off keep their
  * shape and hashes). The save check (src/persist/envelope.ts worldShapeProblem) ignores them.
  */
-export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'tryNest', 'en', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk', 'cx', 'cxc', 'cn', 'asl', 'phAt', 'phX', 'phZ', 'ard'];
+export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'tryNest', 'en', 'wat', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk', 'cx', 'cxc', 'cn', 'asl', 'phAt', 'phX', 'phZ', 'ard'];
 export const OPTIONAL_SIM: readonly string[] = ['fission', 'stormAt'];
 
 export function newX(): ChimpX {
