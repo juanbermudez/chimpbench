@@ -29,6 +29,7 @@ const TRACK_E_SWITCHES = [
   'weanDecide', // E1n
   'cohesionValue', // E5a
   'companyMargin', // E5b
+  'crownShare', // E5c
 ] as const;
 
 test('Track E switches are all 0 by default in both profiles', () => {

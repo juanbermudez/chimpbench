@@ -10,7 +10,7 @@ import { fruitRate, leafWorth, needFruit, treeIntake } from './intake';
 import { heatRestValue, nestValue, shelterValue, sleepPressure, thermalLoad } from './rhythm';
 import { darkOn, tripLight, visionNow, type TripLight } from './light';
 import { circadianOn, circadianSleepiness } from './circadian';
-import { driveOn, milkShare, milkWorth, nurseBoutWorth } from './energy';
+import { driveOn, energyNeed, fruitKcalPerUnit, milkShare, milkWorth, nurseBoutWorth } from './energy';
 import { drinkWorth, waterOn } from './water';
 import { arrivalLight, brightening, needUnits, raceStake, rivalsAt } from './departure';
 import { endoOn, escalateScore, fastSpanH, rainFastScore, rainScore, redirectFastScore, redirectScore } from './endocrine';
@@ -326,6 +326,16 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     }
     return iv ? tripFrac(crop, feeders, d) : 1;
   };
+  // stage E5c (crownShare; docs/staging/e5c-prereg.md §3): a crown is worth the food this animal expects to eat there, the
+  // crop it believes divided among the feeders it sees there and itself, up to its energy need (E1e), in the ledger's kcal,
+  // with no fruitValueRef cap and no cap at one gut-full (the gut empties while it stays): the share of its need the crown
+  // meets replaces the 0.55 + 0.45·min(1, crop ÷ fruitValueRef) shape; the walk is valued as before (the C13b rate of the
+  // next bout, tripWorth [charnov1976]). A crown's crop is shared by its feeders, so larger parties get less each [M:
+  // chapman1995, newtonFisher2000]; equal shares and the product form are design assumptions. Co-feeders cost what they take
+  // from the share, so the habitat-index crowding cost is off.
+  const cs = crownShareOn(P);
+  const csNeed = cs ? energyNeed(c, P) : 0;
+  const cover = (t: Tree, crop: number, feeders: number): number => csNeed > 0 && crop > 0 ? Math.min(crop * fruitKcalPerUnit(P, t.common === 'fig') / (1 + feeders), csNeed) / csNeed : 0;
   if (!caretaker || (c.age >= 1.5 && !carried && caretaker.action === 'forage')) {
     for (let _i1 = 0; _i1 < x.trees.length; _i1++) { const id = x.trees[_i1];
       const t = idx.treeById.get(id)!;
@@ -333,10 +343,10 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       const d = dxz(t, px, pz);
       let crowd = 0;
       for (let _i2 = 0; _i2 < x.seen.length; _i2++) { const sid = x.seen[_i2]; const o = byId.get(sid)!; if (o.action === 'forage' && o.targetId === t.id) crowd++; }
-      const crop = P.patchEcology === 1 ? fruitAt(world, t) : t.fruit, q = Math.min(1, crop / P.fruitValueRef);
-      // contest competition grows with crowding when fruit is scarce (drives parties apart) [H]
-      const compete = byShare ? 0 : crowd * P.crowdCompeteW * (P.crowdScarcityRef - env.fruitIndex) * (c.rank > P.crowdHighRank ? P.crowdHighRankFactor : 1);
-      const fw = (h * 1.6 + 0.1) * (0.55 + 0.45 * q) * tripWorth(t, crop, crowd, d);
+      const crop = P.patchEcology === 1 ? fruitAt(world, t) : t.fruit;
+      // contest competition grows with crowding when fruit is scarce (drives parties apart) [H]; stage E5c: the share instead
+      const compete = byShare || cs ? 0 : crowd * P.crowdCompeteW * (P.crowdScarcityRef - env.fruitIndex) * (c.rank > P.crowdHighRank ? P.crowdHighRankFactor : 1);
+      const fw = cs ? (h * 1.6 + 0.1) * cover(t, crop, crowd) * tripWorth(t, crop, crowd, d) : (h * 1.6 + 0.1) * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) * tripWorth(t, crop, crowd, d);
       if (race && crowd > 0) raceG = Math.max(raceG, raceStake(fw, crop, crowd, need, 1)); // stage E2b: the feeders are eating now
       offer('forage', t.id, fw * (byShare ? shareWorth(crop, crowd) : 1) - d / P.forageDistScaleM - compete - rain * 0.45 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.6 - coreCostOf(t, coreW, troop, x) + (t.id === s.figTree && h > 0.2 ? 0.2 : 0) - revisit(x, t.id, time, P), V.NONE, crowd);
     }
@@ -363,7 +373,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
         if (d < P.memoryTreeMinM) continue;
         // stage C7a (field): a remembered tree is worth what the animal last saw in it
         const crop = x.treeCrop?.[t.id] ?? 0.2;
-        const worth = (P.memCropBelief === 1 ? h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) : h * P.memTravelHungerW) * tripWorth(t, crop, 0, d);
+        const worth = cs ? h * P.memTravelHungerW * cover(t, crop, 0) * tripWorth(t, crop, 0, d) : (P.memCropBelief === 1 ? h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) : h * P.memTravelHungerW) * tripWorth(t, crop, 0, d);
         if (race) { const nr = rivalsAt(c, t.id); if (nr > 0) raceG = Math.max(raceG, raceStake(worth, crop, nr, need, arrivalLight(env.daylight, dLdt, d, P))); } // stage E2b
         if (shortlist) { const rv = revisit(x, t.id, time, P); _mem.push(t, worth - tripCost(worth, crop, d, h, P, needFruit(c, P, h)) - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD)); continue; }
         if (!held) offer('travel', t.id, worth - tripCost(worth, crop, d, h, P, needFruit(c, P, h)) - revisit(x, t.id, time, P) - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay, V.TREE);
@@ -383,7 +393,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       const t = kt[i >> 1]; if (!t) continue;
       const d = dxz(t, px, pz);
       if (d < P.memoryTreeMinM) continue;
-      const crop = x.treeCrop?.[id] ?? known[i + 1], worth = h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) * tripWorth(t, crop, 0, d);
+      const crop = x.treeCrop?.[id] ?? known[i + 1], worth = cs ? h * P.memTravelHungerW * cover(t, crop, 0) * tripWorth(t, crop, 0, d) : h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) * tripWorth(t, crop, 0, d);
       if (race) { const nr = rivalsAt(c, id); if (nr > 0) raceG = Math.max(raceG, raceStake(worth, crop, nr, need, arrivalLight(env.daylight, dLdt, d, P))); } // stage E2b
       const rv = revisit(x, id, time, P);
       _mem.push(t, worth - tripCost(worth, crop, d, h, P, needFruit(c, P, h)) - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD));
@@ -446,7 +456,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     const crop = stamped(_sight, t.id, st) ? (P.patchEcology === 1 ? fruitAt(world, t) : t.fruit) : (x.treeCrop?.[t.id] ?? 0.2);
     let feeders = 0;
     for (let _k = 0; _k < x.seen.length; _k++) { const o = byId.get(x.seen[_k]); if (o && o.alive && o !== c && o.targetId === t.id && (o.action === 'forage' || o.action === 'travel')) feeders++; }
-    const worth = (P.memCropBelief === 1 ? h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) : h * P.memTravelHungerW) * tripWorth(t, crop, feeders, d);
+    const worth = cs ? h * P.memTravelHungerW * cover(t, crop, feeders) * tripWorth(t, crop, feeders, d) : (P.memCropBelief === 1 ? h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) : h * P.memTravelHungerW) * tripWorth(t, crop, feeders, d);
     return worth - tripCost(worth, crop, d, h, P, needFruit(c, P, h));
   };
   const joinValue = (L: Chimp): number => {
@@ -659,6 +669,8 @@ export const careFollow = (k: Chimp): boolean => k.action === 'follow' && (ix(k)
  * Field profile only (partyJoinTrip 1). 0 = the model before, bit-identical.
  */
 export const cohesionOn = (P: Params): boolean => P.cohesionValue === 1 && P.partyJoinTrip === 1;
+/** Stage E5c (crownShare; docs/staging/e5c-prereg.md §3): crowns valued by the food expected there; needs the E1e drive and the C13b intake valuation. */
+export const crownShareOn = (P: Params): boolean => P.crownShare === 1 && P.energyLedger === 1 && P.ledgerDrive === 1 && P.intakeValue === 1;
 /** Party following runs: under cohesionValue, or (before E5a) while partyFollowW > 0, its gate (then partyFollowW is not read). */
 export const partyOn = (P: Params): boolean => cohesionOn(P) || P.partyFollowW > 0;
 /** The value of a mating with fertile female `o` to male `c`: the mate offer's own terms, before distance, hunger, guarding, night. */

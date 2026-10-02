@@ -4764,6 +4764,32 @@
    "notes": "Crowding cost scales with (ref - fruit index)."
   },
   {
+   "id": "crownShare",
+   "group": "social",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/research.md: chapman1995 and newtonFisher2000 (ecological constraints: a crown's crop is shared by its feeders, so larger parties get less each) [M], charnov1976 (a patch is worth its gain over travel plus handling time) [M as applied], potts2011 (feeding party size and patch size, the held-out pattern this must not encode)"
+   ],
+   "clock": "none",
+   "symbol": "P.crownShare",
+   "file": "src/sim/candidates.ts",
+   "integer": true,
+   "notes": "Stage E5c switch (docs/staging/e5c-prereg.md §3): with the energy ledger, the E1e drive and the C13b intake valuation on, every crown valuation (a crown in view, an own trip to a remembered or known tree, a leader's goal on a joined trip) weighs the food the animal expects to eat there: cover = min(believed crop x the ledger's kcal per fruit unit / (1 + feeders it sees there), its energy need) / its energy need, in place of the 0.55 + 0.45 min(1, crop / fruitValueRef) shape; the walk is valued as before (tripWorth, the C13b rate of the next bout). The habitat-index crowding cost (crowdCompeteW, crowdScarcityRef) is off: co-feeders cost what they take from the share. The E5c diagnosis found the bout's gut room setting the energy of almost every crown option (median 245 kcal against a need of about 2,000), so neither the crop nor the feeders entered the value (the share bound in 2.9% of crown options), and the crop term's spread across a decision's crowns below the choice noise. Equal shares and the product form are design assumptions; no new magnitude. Removes no counted prescription (the replaced entries are design). 0 = today, bit-identical. Ablation switch."
+  },
+  {
    "id": "cycleFallEndDay",
    "group": "reproduction",
    "value": 25.5,

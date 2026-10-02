@@ -1719,3 +1719,11 @@ re-read in full for the audit (staging/e1n-prereg.md §1; no rate of maternal re
 them; bray2018 gives no absolute ingestion rate in its text); new source trivers1974 (Parent-offspring conflict,
 American Zoologist 14(1):249–264, doi:10.1093/icb/14.1.249; theory, via maestripieri2002) for the form of the mother's
 decision (design assumption).
+
+## Addendum: E5c crown share (2 October 2026)
+
+Same text as research.md "Addendum: E5c crown share": potts2011 re-read in full (author copy through the Internet
+Archive capture of its Harvard DASH deposit; the live host shows a bot check) for the definition of feeding party size
+("the maximum number of independently-feeding chimpanzees, including the focal individual, co-feeding in a given patch
+during a particular feeding bout"), patch size (DBH) and the ln–ln regression (R² 0.801 Ngogo, 0.227 Kanyawara). No new
+source.
