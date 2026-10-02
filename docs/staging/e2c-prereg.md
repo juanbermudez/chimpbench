@@ -176,4 +176,47 @@ logged below, with its reason, before its run. A miss is a finding.
 
 ## 8. Results
 
-(to be written after the runs)
+Quick check throughout: field profile, seeds 48 and 7, 30 days after a 30-day burn-in, `--workers 1`, simulation truth
+(`scripts/rhythm-metrics.ts`) and `scripts/e-bench.ts --quick`; outputs in `artifacts/validation/e2c/` (not tracked).
+The reference reproduces E2b's AL3 exactly (fitted 5.965, held-out 2.469; 5% of adult females' departures before
+sunrise, median +18 min).
+
+### Iteration 1 (the mechanism of §2 as registered)
+
+| Readout | R | T1 (R + darkCost) | Field |
+| --- | --- | --- | --- |
+| Departures before sunrise, adult females / all adults | 0.05 / 0.03 | **1.00 / 1.00** | 0.18 (Taï) |
+| Median departure, min after sunrise (p10–p90) | +18 (+6 to +29) | **−38 (−121 to −13)** | about 0 (Budongo) |
+| Fig crowns < 150 / 150–500 / ≥ 500 m: median | 17 / 18 / 18 | −39 / −17 / −39 | far figs earliest |
+| Other crowns, same | 18 / 19 / 19 | −15 / −19 / −44 | far non-figs latest |
+| Open-sky lux at departure: median; share below 1 lux | 2,700; 0% | **0; 58%** | 1–85 lux (secondary) |
+| Last nest entry, min after sunset (median, p90); nests entered per evening | −4 (+14); 1.15 | **+34 (+334); 2.78** | males about −25 |
+| Active day, all; males / lactating | 11 h 43; 11 h 41 / 11 h 48 | **15 h 12; 16 h 01 / 14 h 51** | 11 h 34 / 10 h 57 |
+| Night out of a nest; m per animal-night; adults out at solar midnight | 0.0%; 0; 0.1% | **15.4%; 752; 18.7%** | 1.8% of activity records |
+| Night deaths; all deaths; viability | 0; 0; pass | 0; 0; pass | — |
+| Crop at sunset ÷ sunrise, figs / other (median) | 1.00 / 1.00 | 1.00 / 1.00 | — |
+
+Killed (criteria 2 and 3). A diagnostic of seed 48 (3 nights after the burn-in; `artifacts/e2c-diag/`, not tracked)
+shows how: animals left their nests at night to drink and to walk to remembered crowns, choices the night menu does not
+contain. With rest no longer offered inside the own nest, the night menu of an animal in its nest holds one option, the
+nest, and the rules policy treats a menu of fewer than two options as "rules decide" (rg.ts: argmax over the whole,
+unfiltered candidate list). The top of that list at night was a drink (thirst keeps rising at night) or a trip whose
+crown will be lit on arrival. So most of the night activity came through a hole in the menu machinery that the
+reference never reached (rest was always a second option), not through darkness. The substantive part shows in the
+departures from about −25 min on, after the night menu releases: trips are valued by the light on arrival, walking is
+barely slower (the floor is above Figueiro's 0.015 lux from about −7°), and far crowns win early.
+
+### Iteration 2 (change of mechanism, logged before its run)
+
+**A night or dusk menu with one option is that option (`darkCost` only; rg.ts).** Reason: iteration 1. The night and
+dusk menus (unchanged prescriptions of every arm) exist to keep rules-driven animals to what a nesting animal can do;
+falling back to the unfiltered list when the menu holds only the nest defeats them, and only `darkCost` produces that
+case. No parameter; no other change.
+
+Predictions (T2 = R + darkCost with the fix): night out of a nest back to about 0% (≤ 1%), night travel ≤ 5 m per
+animal-night, adults out at solar midnight ≤ 1%; departures now start when the night menu releases (daylight 0.03, sun
+about −6.5°, about 23 min before sunrise), far trips first: share before sunrise 0.6–1.0 (**T-RHY-3 overshoot
+persists**), median −22 to −5 min, far crowns earlier than near ones by 5–15 min, figs as other fruit; open-sky lux at
+departure median 2–200; last nest entry 0 to +30 min after sunset; active day 12 h 00 – 12 h 40 (**above T-RHY-1: killed
+on criterion 3 expected**). If so, the dawn departure is set by the night menu's boundary (a design threshold of the
+phase menus), not by darkness: the finding the prereg's §5 anticipated.
