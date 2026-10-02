@@ -359,7 +359,11 @@ function tipHtml(D: Data, d: DiagramSpec, n: NodeSpec): string {
     parts.push(`<p class="tt-m">${n.layer!.sw.length ? `${n.layer!.sw.map(s => `<code>${esc(s)}</code>`).join(' ')} · ` : ''}stage ${esc(n.layer!.stage)}, ${esc(stg.name)} · ${esc(L?.verdict ?? stg.verdict)} (<a href="${stg.doc}">${esc(stg.doc.replace('staging/', ''))}</a>). ${removes}</p>`);
   } else {
     parts.push(`<div class="tt-s"><span class="tt-k k-${st}">${st === 'inp' ? 'Input' : 'Design'}</span><p>${esc(n.text ?? '')}</p>${ps ? `<ul class="tt-ps">${ps}</ul>` : ''}</div>`);
-    if (n.sw?.length) parts.push(`<p class="tt-m">In ${esc(STACK.name)}: ${n.sw.map(stageLine).join('; ')}. It switches no prescription out.</p>`);
+    if (n.sw?.length) {
+      parts.push(`<p class="tt-m">Part of ${esc(STACK.name)}: ${n.sw.map(stageLine).join('; ')}.</p>`);
+      const why = n.sw.map(x => TRACK_E_SWITCHES[x].removesNothing).filter(Boolean);
+      if (why.length) parts.push(`<p class="tt-why">Ledger: ${why.map(w => esc(w!)).join(' · ')}</p>`);
+    }
     if (st === 'des') parts.push('<p class="tt-m">Design: a weight or structure that states no outcome; not counted as a prescription.</p>');
   }
   if (n.note) parts.push(`<p class="tt-n">${esc(n.note)}</p>`);
