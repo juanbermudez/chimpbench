@@ -132,10 +132,10 @@ export interface EnergyLedger {
    */
   eAvg?: number; sBed?: number; sWake?: number; slept?: number; outAt?: number;
   /**
-   * Stage E1f (ledgerGrowPotential), present only while the animal is below adult mass with that switch on: day-long
-   * averages (kcal/h) of energy absorbed and of everything spent except growth, and `out` at the last tick.
+   * Stage E1f (ledgerGrowPotential), present only while the animal is below adult mass with that switch on: the day-long
+   * average (kcal/h) of everything spent except growth, and `out` at the last tick.
    */
-  aAvg?: number; mAvg?: number; gAt?: number;
+  mAvg?: number; gAt?: number;
 }
 
 /** The memory month in progress: tallies accumulate on events and are finalized into a MemoryDigest every 30 eco-days. */

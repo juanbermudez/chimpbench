@@ -36,8 +36,9 @@
 // day nursing bout like a tree visit, by the milk it delivers over the time it takes, the milk-ejection latency included
 // (nurseBoutWorth; the act waits that latency before milk flows, execution.ts), and supersedes E1d's and E1e's nursing
 // terms; ledgerGrowPotential (with ledgerGrowSurplus) takes the growth potential from captive rates (growthPotential),
-// pays growth from the day's surplus of absorbed energy over all other spending (aAvg, mAvg), and lets the drive
-// (ledgerDrive) anticipate the potential growth (spendRate).
+// charges growth as spending at that potential, limited only by condition through C8's rule (min(1, cond ÷ condGood);
+// iteration 2: a shortfall draws on the reserves, which the drive reads), and lets the drive (ledgerDrive) anticipate
+// the potential growth (spendRate, from the day-long mean of all other spending, mAvg).
 import type { Chimp, World } from '../types';
 import { paramsOf, type Params } from './params';
 import { TICK_HOURS, TICK_SECONDS, ix, type ChimpX, type EnergyLedger } from './state';
@@ -201,14 +202,9 @@ function openDrive(c: Chimp, L: EnergyLedger, P: Params): void {
   L.sBed = 1 - Math.exp(-P.driveFirstDayH / P.rhythmSleepRiseH); L.sWake = 0; L.slept = 0; L.outAt = L.out;
 }
 
-/**
- * Stage E1f: open the growth books of an animal below adult mass: spending other than growth at the awake resting rate
- * (as openDrive), and absorption at that plus growth at the potential (a founder or newborn is taken to be in balance at
- * its potential; design).
- */
+/** Stage E1f: open the growth books of an animal below adult mass: spending other than growth at the awake resting rate (as openDrive). */
 function openGrowth(c: Chimp, L: EnergyLedger, P: Params): void {
-  L.mAvg = P.ledgerRmrCoef / 24 * Math.pow(massOf(c, P), P.ledgerRmrExp) * P.ledgerActRest;
-  L.aAvg = L.mAvg + rates(P).grow * growthPotential(c, P) / TICK_HOURS; L.gAt = L.out;
+  L.mAvg = P.ledgerRmrCoef / 24 * Math.pow(massOf(c, P), P.ledgerRmrExp) * P.ledgerActRest; L.gAt = L.out;
 }
 /**
  * Spending the drive expects (kcal/h): the day-long average of everything spent (E1e), or with ledgerGrowPotential, for
@@ -350,15 +346,16 @@ export function energyTick(world: World, c: Chimp, x: ChimpX, sleeping: boolean)
   if (c.lactating) { const y = r.milk * m75, full = y * r.milkTicks; L.milk = L.milk + y < full ? L.milk + y : full; } else if (L.milk !== 0) L.milk = 0;
   let grown = 0;
   if (P.ledgerGrowSurplus === 1 && growPot(P)) {
-    // stage E1f: growth from the day's surplus. f = (day-long mean absorbed − day-long mean of all other spending) ÷ the
-    // cost of growing at the captive potential, clamped 0..1 [west2001's allocation, over a day]; mass advances on the
-    // life-history clock, the cost is charged at the natural daily rate (as in E1)
+    // stage E1f (iteration 2): growth is spending at the captive potential, limited only by condition through C8's rule
+    // (f = min(1, cond ÷ condGood); growth falters only when condition is poor, design): a shortfall of intake draws on the
+    // reserves, which the drive reads. Mass advances on the life-history clock, the cost is charged at the natural daily
+    // rate (as in E1). (Iteration 1 paid growth from the day's surplus and hid every shortfall from the appetite.)
     if (L.kg === undefined) L.kg = potentialMass(c, P);
     const adult = adultMass(c, P);
     if (L.kg < adult) {
       if (L.mAvg === undefined) openGrowth(c, L, P);
-      const v = growthPotential(c, P), G = r.grow * v, s = (L.aAvg! - L.mAvg!) * TICK_HOURS;
-      let f = s <= 0 ? 0 : s >= G ? 1 : s / G;
+      const v = growthPotential(c, P), G = r.grow * v, q = x.cond / P.condGood;
+      let f = q >= 1 ? 1 : q > 0 ? q : 0;
       const step = v * f * TICK_HOURS / 24 / DAYS_PER_YEAR * (world.ageRate > 0 ? world.ageRate : 0);
       if (step > adult - L.kg) { f = f * (adult - L.kg) / step; L.kg = adult; } else L.kg += step;
       grown = G * f; out += grown; if (tap) tap(c, 'growth', grown);
@@ -392,12 +389,11 @@ export function energyTick(world: World, c: Chimp, x: ChimpX, sleeping: boolean)
   L.res += absorbed - out;
   L.out += out;
   if (L.mAvg !== undefined) {
-    // stage E1f: the day-long means of energy absorbed and of everything spent but growth (milk and carrying are charged
-    // elsewhere, so read the books); kept while the animal is below adult mass
+    // stage E1f: the day-long mean of everything spent but growth (milk and carrying are charged elsewhere, so read the
+    // books), for the drive; kept while the animal is below adult mass
     if (growPot(P) && L.kg !== undefined && L.kg < adultMass(c, P)) {
-      L.aAvg! += (absorbed / TICK_HOURS - L.aAvg!) * r.avg;
       L.mAvg += ((L.out - L.gAt! - grown) / TICK_HOURS - L.mAvg) * r.avg; L.gAt = L.out;
-    } else { delete L.mAvg; delete L.aAvg; delete L.gAt; }
+    } else { delete L.mAvg; delete L.gAt; }
   }
   if (driveOn(P)) {
     // stage E1e: the day-long average of everything spent (milk and carrying are charged elsewhere, so read the books),

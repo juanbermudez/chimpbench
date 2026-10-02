@@ -47,7 +47,7 @@ test('E1f: energy is conserved exactly for every individual, births included (fi
     assert.ok(Math.abs(flow - stock) < 1e-6 * Math.max(1, Math.abs(L.in), L.out), `${c.name}: flow ${flow} vs stock ${stock}`);
     const adult = c.sex === 'female' ? P.ledgerMassFemaleKg : P.ledgerMassMaleKg;
     assert.ok(L.kg! >= b.kg! && L.kg! <= adult + 1e-9, 'mass never falls, never above adult');
-    if (L.kg! < adult) { growing++; assert.ok(Number.isFinite(L.aAvg!) && Number.isFinite(L.mAvg!) && L.mAvg! > 0, 'growth books open below adult mass'); }
+    if (L.kg! < adult) { growing++; assert.ok(Number.isFinite(L.mAvg!) && L.mAvg! > 0, 'growth books open below adult mass'); }
     else assert.equal(L.mAvg, undefined, 'no growth books at adult mass');
     checked++;
   }
@@ -82,7 +82,7 @@ test('E1f growth potential: captive rates, founders open on the potential curve,
   if (oldF) assert.equal(massOf(oldF, P), P.ledgerMassFemaleKg, 'a female of 9+ y is at adult mass on the potential (8.9 y)');
 });
 
-test('E1f growth is paid from the day\'s surplus: none below maintenance, the potential at or above it, a fraction between', () => {
+test('E1f growth is spending at the captive potential, limited only by condition (C8: min(1, cond ÷ condGood))', () => {
   const w = createWorld(48, { profile: 'field', params: ON }), P = paramsOf(w);
   const [inf] = dyad(w, 1.5, 4), x = ix(inf), L = ledgerOf(inf, P);
   inf.action = 'rest';
@@ -91,15 +91,16 @@ test('E1f growth is paid from the day\'s surplus: none below maintenance, the po
   try {
     energyTick(w, inf, x, false); // opens the books
     const G = 1000 * P.ledgerGrowthKcalPerG / 365.25 / 24 * TICK_HOURS * growthPotential(inf, P); // kcal per tick at the potential
-    const at = (surplus: number) => { L.mAvg = 20; L.aAvg = 20 + surplus * G / TICK_HOURS; const kg = L.kg!; grown = 0; energyTick(w, inf, x, false); return [L.kg! - kg, grown] as const; };
-    const [k0, g0] = at(-1); assert.equal(k0, 0); assert.equal(g0, 0);
-    const [k1, g1] = at(2);
+    const at = (cond: number) => { x.cond = cond; L.gut = 0; L.dm = 0; L.fib = 0; const kg = L.kg!; grown = 0; energyTick(w, inf, x, false); return [L.kg! - kg, grown] as const; };
+    // good condition: the potential, whatever the day's intake (an empty gut here)
+    const [k1, g1] = at(P.ledgerCondSet);
     assert.ok(Math.abs(g1 - G) < 1e-9, `${g1} vs ${G}`);
     assert.ok(Math.abs(k1 - growthPotential(inf, P) / 24 / 365.25 * TICK_HOURS) < 1e-12);
-    const [k2, g2] = at(0.4);
-    assert.ok(Math.abs(g2 - 0.4 * G) < 1e-3 * G && Math.abs(k2 - 0.4 * k1) < 1e-3 * k1, 'a fraction of the potential');
-    // the reserve level does not gate it (E1c's gate is replaced)
-    L.res = -0.2 * reserveCap(inf, P); const [k3] = at(2); assert.ok(k3 > 0);
+    const [k2, g2] = at(0.4 * P.condGood);
+    assert.ok(Math.abs(g2 - 0.4 * G) < 1e-9 && Math.abs(k2 - 0.4 * k1) < 1e-12, 'in proportion to condition below condGood');
+    const [k3, g3] = at(0); assert.equal(k3, 0); assert.equal(g3, 0);
+    // the drive expects other spending plus growth at the potential
+    assert.ok(Number.isFinite(L.mAvg!) && L.mAvg! > 0 && L.gAt === L.out);
   } finally { energyTap.fn = null; }
 });
 
