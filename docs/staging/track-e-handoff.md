@@ -14,9 +14,12 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (12:10).** Agents: the decision-guide builder (`e-guide`), the about-page updater (`site-about`, from
-  branch `site`; brief `integrator/about-prompt.txt`) and E5b (the calls–cohesion interaction; `e5b-calls-cohesion`;
-  brief `integrator/e5b-prompt.txt`). Integrator: free.
+- **Running now (12:45).** The about-page updater (`site-about`). Integrator: the S5 integrated confirm (S4 +
+  `companyMargin`; registered in e-stack2-confirm.md; `bench-run` at 5911b36).
+- **Decision guide merged** (docs/decision-guide.html: 16 diagrams of the S3 candidate stack, before/now hovers, counts
+  from the ledger, a test keeps it in sync: if a stage changes the ledger, rerun `scripts/decision-guide.ts`).
+- **E5b merged** (`companyMargin`, off: an approach to a caller counts only the company added beyond the best companion
+  present; on S4 males walk 2.61 km instead of 3.32, travel back in band, juveniles stop losing reserve; sums inside noise).
 - **S4 done** (e-stack2-confirm.md): S3 + `followCarer` + `cohesionValue`: 77 prescriptions and viable, but males walk
   3.43 km a day (S3 2.93) and the deficits deepen: E5a interacts with value-based calls; S3 stays the best integrated
   candidate; E5b investigates.
@@ -132,7 +135,7 @@ Hard rules (AGENTS.md plus this track):
 | `.claude/worktrees/e1n-weaning` | Merged 2 October (head 66b19fb). |
 | `.claude/worktrees/feat-realtime` | Real time speed, from `main`; ready for the user to merge into `main`. |
 | `.claude/worktrees/site`, `site-about` | Hosted-site branch and the about-page update (agent running). |
-| `.claude/worktrees/e5b-calls-cohesion` | **Running agent** E5b, branched from track-e 8720097. |
+| `.claude/worktrees/e5b-calls-cohesion`, `e-guide` | Merged 2 October (heads cbeae05, e461176). |
 | `.claude/worktrees/e2h-departure` | **Running agent** E2h, branched from track-e 702027e. |
 | `.claude/worktrees/e1k-deficit` | Merged 2 October (head 5d2a01e). |
 | `.claude/worktrees/e2f-sleep` | Merged 2 October (head b5157a0). |
