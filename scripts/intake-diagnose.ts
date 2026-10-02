@@ -71,12 +71,13 @@ interface Acc {
   /** every rules decision by day: count and reason; interrupts by kind and by who */ allDec: number; allWhy: Record<string, number>; intrKind: Record<string, number>; intrWho: Record<string, number>;
   /** D4 */ bouts: number; boutTicks: number; boutEat: number; spacing: number; spacingN: number; fill0: number; fill1: number; hunger0: number; hunger1: number; ends: Record<string, number>; endsTo: Record<string, number>;
   /** D5 */ phi: number; sat: number; need: number; left: number; d5: number;
+  /** D6 (added after iteration 1): eating ticks at a foregut ≥ 95% full, and dry matter swallowed in them and in the others (g) */ eatTicks: number; eatWall: number; dmWall: number; dmFree: number;
 }
 const blankCats = () => Object.fromEntries(CATS.map(c => [c, 0])) as Record<Cat, number>;
 const blank = (): Acc => ({ ticks: 0, dayTicks: 0, cat: blankCats(), hunger: 0, fill: 0, ids: new Set(), nurse: 0, nurseMilk: 0, nurseCat: blankCats(),
   want: 0, wantCat: blankCats(), wantWhy: {}, wantMargin: 0, wantMarginN: 0, wantFeedOnMenu: 0, wantFeedTop: 0, wantFeedProb: 0, wantDrawn: 0,
   draws: 0, drawsFeed: 0, drawsFeedProb: 0, drawsFeedTop: 0, drawsFeedOnMenu: 0, drawsCat: blankCats(), drawsWhy: {}, drawsFeedScore: 0, drawsAltScore: 0, drawsIntr: {}, allDec: 0, allWhy: {}, intrKind: {}, intrWho: {},
-  bouts: 0, boutTicks: 0, boutEat: 0, spacing: 0, spacingN: 0, fill0: 0, fill1: 0, hunger0: 0, hunger1: 0, ends: {}, endsTo: {}, phi: 0, sat: 0, need: 0, left: 0, d5: 0 });
+  bouts: 0, boutTicks: 0, boutEat: 0, spacing: 0, spacingN: 0, fill0: 0, fill1: 0, hunger0: 0, hunger1: 0, ends: {}, endsTo: {}, phi: 0, sat: 0, need: 0, left: 0, d5: 0, eatTicks: 0, eatWall: 0, dmWall: 0, dmFree: 0 });
 const acc = Object.fromEntries(CLASSES.map(c => [c, blank()])) as Record<Cls, Acc>;
 const inc = (r: Record<string, number>, k: string, v = 1) => { r[k] = (r[k] ?? 0) + v; };
 
@@ -101,6 +102,7 @@ for (const seed of seeds) {
   for (let i = 0; i < burnIn * DAY; i++) tickWorld(w);
   const cls = new Map<number, Cls[]>(), prevIn = new Map<number, number>(), lastDec = new Map<number, Dec>(), bouts = new Map<number, Bout>(), lastEnd = new Map<number, number>();
   const milkNow = new Map<number, number>(); // infant id → milk kcal drunk this tick (from its ledger's intake while in the nurse act)
+  const prevDm = new Map<number, number>(); // D6: dry matter swallowed so far (L.dmIn) at the last tick
   let light = true;
   const fillOf = (c: Chimp) => { const L = ix(c).en; return L && L.dm !== undefined ? L.dm / digestaCaps(c, P)[0] : 0; };
   rgTap.fn = (c, list, menu, probs, chosen, why) => {
@@ -164,6 +166,8 @@ for (const seed of seeds) {
       if (!c.alive) continue;
       const x = ix(c), L = x.en, pin = prevIn.get(c.id) ?? L?.in ?? 0, din = L ? L.in - pin : 0;
       if (L) prevIn.set(c.id, L.in);
+      const dm0 = prevDm.get(c.id) ?? L?.dmIn ?? 0, ddm = L && L.dmIn !== undefined ? L.dmIn - dm0 : 0;
+      if (L && L.dmIn !== undefined) prevDm.set(c.id, L.dmIn);
       const k = cls.get(c.id) ?? []; if (!k.length) continue;
       for (const n of k) acc[n].ticks++;
       const fill = fillOf(c), eating = din > 1e-9 && c.action !== 'nurse', feeding = eating && c.action === 'forage';
@@ -190,6 +194,7 @@ for (const seed of seeds) {
       for (const n of k) {
         const a = acc[n];
         a.dayTicks++; a.cat[cat]++; a.hunger += c.hunger; a.fill += fill; a.ids.add(seed * 100000 + c.id);
+        if (eating) { a.eatTicks++; if (fill >= 0.95) { a.eatWall++; a.dmWall += ddm; } else a.dmFree += ddm; }
         // D2: the mother's own act while her infant is in the nurse act
         if (milkNow.has(c.id)) { a.nurse++; a.nurseCat[cat]++; if ((milkNow.get(c.id) ?? 0) > 1e-9) a.nurseMilk++; }
         // D3: neither eating nor in the forage act, with appetite and room
@@ -257,4 +262,8 @@ console.log('\nD5 the drive in daylight: φ (clamped), 1 − fill², hunger, ene
 console.log('| class | φ | 1 − fill² | hunger | need kcal | left h |');
 console.log('| --- | --- | --- | --- | --- | --- |');
 for (const n of CLASSES) if (show(n) && acc[n].d5) { const a = acc[n]; console.log(`| ${n} | ${f(a.phi / a.d5, 2)} | ${f(a.sat / a.d5, 2)} | ${f(a.hunger / a.dayTicks, 2)} | ${f(a.need / a.d5)} | ${f(a.left / a.d5, 1)} |`); }
+console.log('\nD6 eating at the gut wall (added after iteration 1): share of daylight eating ticks with the foregut ≥ 95% full, and dry matter per eating minute there and below it');
+console.log('| class | eating ticks at the wall % | g per eating min at the wall | g per eating min below |');
+console.log('| --- | --- | --- | --- |');
+for (const n of CLASSES) if (show(n) && acc[n].eatTicks) { const a = acc[n], wall = a.eatWall, free = a.eatTicks - a.eatWall; console.log(`| ${n} | ${pct(wall, a.eatTicks)} | ${f(wall ? a.dmWall / (wall / 4) : NaN, 2)} | ${f(free ? a.dmFree / (free / 4) : NaN, 2)} |`); }
 if (jsonOut) writeFileSync(jsonOut, JSON.stringify({ profile, seeds, burnIn, days, params, classes: Object.fromEntries(CLASSES.map(n => [n, { ...acc[n], ids: acc[n].ids.size }])) }, null, 1));

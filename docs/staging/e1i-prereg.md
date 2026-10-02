@@ -142,6 +142,82 @@ hunger = min(φ, 1) × (1 − w × fill²), clamped to 0..1, with w = max(0, 1 +
 
 Verdict if K1–K3 pass: **keep (provisional)** when viability passes (every class at or above −0.05%/day, no starvation); otherwise **partial (finding)**: the readout term is confirmed and what remains is the foregut's throughput at a full gut. Never grounds to change an input: a miss of T-ENE-2, T-ENE-3 or a T-ACT row.
 
+### Iteration 1: results
+
+Runs: arm B from a frozen checkout of 7391f9b (git.dirty 0), seeds 48 and 7, 30 + 30 days, rules policy; T from cc51622 (simulation identical: the switch-off tests pass). Outputs in `artifacts/validation/e1i/` of the frozen checkouts (gitignored): `B1-energy.json`, `B1-intake.json`, `B1-quick.json` (compared with `T-quick.json`). Tables generated from the JSON (`energy_table.py`, `diag_table.py`, `bench_table.py`, session scratch).
+
+Energy (simulation truth, `energy-diagnose`; reserve slopes by least squares over the daily means of the window):
+
+| quantity | T | B1 |
+| --- | --- | --- |
+| lactating: eating min/day | 231 | 322 |
+| lactating: dry matter g/day | 632 | 685 |
+| lactating: absorbed ÷ spent (kcal/day) | 0.807 (1344 / 1665) | 0.858 (1446 / 1684) |
+| lactating: field-method intake kcal/day | 1973 | 2132 |
+| lactating: foregut ≥ 95% full, share of daylight | 0.082 | 0.300 |
+| lactating: daylight hunger; condition | 0.44; 0.43 | 0.53; 0.49 |
+| reserves ÷ store, %/day: female, lactating | -0.786 | -0.585 |
+| reserves ÷ store, %/day: female, other | -0.055 | +0.016 |
+| reserves ÷ store, %/day: adult male | +0.017 | +0.014 |
+| reserves ÷ store, %/day: juvenile 5–12 y | -0.079 | +0.005 |
+| reserves ÷ store, %/day: infant 2–5 y | +0.004 | +0.020 |
+| reserves ÷ store, %/day: infant 0.5–2 y | -0.024 | +0.007 |
+| eating min/day: other females / pregnant / males / juveniles | 237 / 249 / 250 / 236 | 238 / 281 / 247 / 265 |
+| deaths (starvation) | 1 (0) | 1 (0) |
+
+Behaviour (`intake-diagnose`, arm B):
+
+| class | eat % | forage act, not eating % | groom % | rest % | travel with party % | play % | nest % | daylight hunger | daylight fill | φ | 1 − fill² | need kcal |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| lactating (all) | 42.7 | 1.3 | 21.9 | 8.0 | 5.1 | 4.5 | 8.9 | 0.53 | 0.78 | 1.00 | 0.32 | 13140 |
+| lactating, infant < 2 y | 45.5 | 1.4 | 13.3 | 11.5 | 7.6 | 4.0 | 9.0 | 0.50 | 0.81 | 1.00 | 0.28 | 13024 |
+| lactating, infant ≥ 2 y | 39.9 | 1.2 | 30.6 | 4.4 | 2.6 | 5.0 | 8.7 | 0.56 | 0.76 | 1.00 | 0.36 | 13256 |
+| other adult females | 31.6 | 1.4 | 11.9 | 25.3 | 9.3 | 1.0 | 10.8 | 0.30 | 0.69 | 0.76 | 0.44 | 1658 |
+| pregnant females | 37.3 | 1.3 | 9.2 | 19.9 | 11.9 | 0.6 | 10.1 | 0.36 | 0.75 | 0.95 | 0.37 | 3048 |
+| adult males | 32.8 | 1.3 | 13.6 | 20.6 | 8.8 | 0.5 | 10.7 | 0.28 | 0.63 | 0.60 | 0.52 | 1107 |
+
+| class | not feeding with appetite and room, % of daylight | of which grooming % | draws with appetite and room: P(feeding) | chose feeding % | best feeding score | best other score | interrupts per daylight h | of which "groomed by" % | from own unweaned infant % |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| lactating (all) | 25.5 | 35.2 | 0.413 | 40.9 | 0.568 | 0.726 | 1.16 | 48.5 | 47.7 |
+| lactating, infant < 2 y | 20.3 | 17.1 | 0.438 | 43.2 | 0.566 | 0.703 | 0.93 | 18.0 | 9.7 |
+| lactating, infant ≥ 2 y | 30.6 | 47.2 | 0.395 | 39.2 | 0.569 | 0.742 | 1.39 | 68.8 | 73.1 |
+| other adult females | 21.7 | 14.6 | 0.314 | 31.4 | 0.376 | 0.702 | 1.13 | 26.2 | 0.0 |
+| pregnant females | 27.5 | 11.0 | 0.332 | 33.0 | 0.413 | 0.661 | 0.96 | 15.2 | 0.0 |
+| adult males | 12.6 | 15.9 | 0.347 | 34.7 | 0.473 | 0.767 | 0.99 | 30.3 | 0.0 |
+
+| class | bouts per day | eating min per bout | spacing min | fill at bout start → end | hunger start → end | ends at a need-bucket redraw % | ends at satiation or a full gut % | ends by interrupt % | next act: groom / rest / play / other % |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| lactating (all) | 9.6 | 33.4 | 39 | 0.70 → 0.95 | 0.61 → 0.36 | 61.0 | 0.0 | 26.9 | 25 / 9 / 8 / 30 |
+| lactating, infant < 2 y | 10.5 | 32.6 | 33 | 0.73 → 0.96 | 0.58 → 0.35 | 55.9 | 0.0 | 31.1 | 18 / 10 / 6 / 32 |
+| lactating, infant ≥ 2 y | 8.8 | 34.4 | 46 | 0.66 → 0.95 | 0.65 → 0.38 | 67.0 | 0.0 | 21.9 | 34 / 7 / 9 / 29 |
+| other adult females | 9.6 | 24.7 | 45 | 0.63 → 0.89 | 0.39 → 0.13 | 37.6 | 0.0 | 21.5 | 6 / 27 / 2 / 34 |
+| pregnant females | 9.8 | 28.5 | 41 | 0.66 → 0.92 | 0.48 → 0.16 | 48.2 | 0.0 | 27.2 | 10 / 17 / 1 / 39 |
+| adult males | 8.9 | 27.3 | 48 | 0.58 → 0.85 | 0.35 → 0.13 | 27.0 | 0.0 | 19.5 | 9 / 20 / 1 / 36 |
+
+Bench (`e-bench --quick`): fitted −0.944 on 17 rows scored in both (−0.944 without T-HUN-4 and T-BRD-1); held-out −2.072 on 12 (+0.115 on 11 without them; T-HUN-4 −2.19); prescriptions 103 → 103; e-bench viability pass → pass (no starvation, one illness death in each arm). Rows:
+
+| row (band) | T | B1 |
+| --- | --- | --- |
+| T-ACT-1 (0.33–0.5) | 0.377 (M 0.378, F 0.376) pass | 0.417 (M 0.384, F 0.443) pass |
+| T-ACT-2 (0.12–0.25) | 0.178 (M 0.193, F 0.164) pass | 0.199 (M 0.210, F 0.191) pass |
+| T-ACT-3 (0.08–0.18) | 0.186 (M 0.161, F 0.207) fail | 0.156 (M 0.154, F 0.157) pass |
+| T-ACT-4 (0.3–0.47) | 0.374 pass | 0.293 fail |
+| T-FOOD-2 (0.6–0.78) | 0.800 fail | 0.785 fail |
+| T-FOOD-4 (4–15) | 7.582 pass | 7.514 pass |
+| T-HUN-1 (5–25) | 38.5 (P 1.275) inconclusive | 42.6 (P 1.361) fail |
+| T-RNG-4 (1.5–3.5) | 2.256 (P 1.820, N 0.452, S 0.271) fail | 2.402 (P 1.882, N 0.391, S 0.217) fail |
+| T-RNG-5 (0.3–0.6) | 0.670 (L 1.505, M 2.256) fail | 0.834 (L 2.017, M 2.402) fail |
+| T-PTY-1 (3–9) | 3.153 pass | 3.623 pass |
+
+**Kill criterion.** K1 passes (no starvation; every class other than the mothers improves: other females −0.055 → +0.016%/day, juveniles −0.079 → +0.005). K2 passes (mothers' daylight hunger +0.09, eating minutes +39%). K3 passes (held-out −2.07 on shared rows, +0.12 without the rare-event rows: inside noise either way). Viability fails on the lactating class alone (−0.59%/day). **Verdict: partial (finding)**, as registered: the readout term is confirmed, and what remains is the foregut's throughput.
+
+**Against the predictions.** Held: bout-end fill ≥ 0.93 (0.95); daylight fill 0.78 (0.78–0.86, at the low edge); ≥ 95% full 0.30 of daylight (0.15–0.40); grooming of mothers of older infants 30.6% (20–32%); T-ACT-3 −0.03 (into the band); no starvation; prescriptions unchanged; viability fails on the lactating class; held-out inside noise. Missed: eating minutes rose more (322, registered 255–310) and dry matter less (685 g, registered 690–790) than registered, so absorbed ÷ spent (0.858, registered 0.88–0.99) and the mothers' slope (−0.59%/day, registered −0.35 to 0) fell short; daylight hunger 0.53 (registered 0.55–0.70) and P(feeding) 0.41 (0.45–0.65) slightly low; 61% of bouts still end at a need-bucket redraw (registered 25–50%), now at fill 0.95; juveniles and other females improved more than registered; T-ACT-1 +0.040 (registered up to +0.03); T-ACT-4 0.374 → 0.293 (just below its band).
+
+**Reading.**
+- The deficit now reaches the mothers' behaviour: they feed 42.7% of daylight (322 min; field nursing mothers 309 ± 85 min, T-ENE-2 in band; Ngogo mothers 43%, badescu2016), groom less (27.4% → 21.9% of daylight), and every other class's small deficit closes. T-ENE-3 (685 g) and the field-method T-ENE-1 (2,132 kcal) enter their bands.
+- **Eating minutes rose 39%, dry matter 8%.** The added minutes are spent at a nearly full foregut (≥ 95% full in 30% of daylight against 8%), where intake is limited to what the foregut empties. So the binding term has moved from the readout to the foregut's throughput: at 83 mL/kg and a 3-hour emptying constant the foregut passes at most about 0.98 × 175 g ÷ 3 h × 12.6 h + 172 g ≈ 890 g a day even if it were full through all daylight; the field's nursing mothers pass 873 ± 289 g (T-ENE-3), at that ceiling, and the model's mothers need about 780 g.
+- The arm leaves a behavioural share as well: mothers' daylight fill is 0.78, not 0.95; after a bout ends at a redraw (fill 0.95) they spend 39 min on other acts (grooming 25% of next acts) before feeding again, and the rules give feeding P = 0.41 at draws with appetite and room (feeding options 0.57, the best other option 0.73).
+
 ## 7. Known defects and caveats in the code under test
 
 - Readout caveat (scripts/intake-diagnose.ts closeBout): the gate's reason is not the bout's trigger. A forage act that finishes at satiation usually draws as 'need-bucket' (hunger changed bucket since the intent), so satiation and a full gut are read from the state at the last eating tick, not from the reason.
