@@ -4,13 +4,14 @@
 // which are still in use on the candidate stack, their values, units, classes, target rows and the switch that took
 // each one out. Those come from scripts/prescription-ledger.ts at build time, and scripts/decision-guide.ts --check
 // fails when a box mixes statuses, names an unknown id, or when any counted entry is left out of every domain.
-// Sources of the text: the stage pre-registrations in docs/staging/, the Track E handoff (§3 stage ledger), the
-// integrated confirm (e-stack2-confirm.md), scripts/lib/prescriptions.ts and the code in src/sim/.
+// Sources of the text: the stage pre-registrations in docs/staging/, the Track E handoff (§0, §3 stage ledger), the
+// integrated confirms (e-stack2-confirm.md), scripts/lib/prescriptions.ts and the code in src/sim/. Results of a named
+// stack (S3, S4, S5) say so in words: they stay true when the page moves to another stack, and get rewritten then.
 
 export type Side = 'l' | 'r' | 't' | 'b';
-/** Status shown on a box: still prescribed, replaced in S3, input, design, or a layer that is not part of S3. */
+/** Status shown on a box: still prescribed, replaced on the stack, input, design, or a layer outside the stack. */
 export type Status = 'rem' | 'rep' | 'inp' | 'des' | 'lay';
-export type LayerTag = 'CANDIDATE' | 'HELD OFF' | 'RECORDED' | 'IN PROGRESS' | 'STOPPED';
+export type LayerTag = 'CANDIDATE' | 'DEFECT FIX' | 'HELD OFF' | 'RECORDED' | 'IN PROGRESS' | 'STOPPED';
 
 export interface NodeSpec {
   k: string; x: number; y: number; w: number; h: number;
@@ -25,6 +26,8 @@ export interface NodeSpec {
   /** Registry entries listed in the box's detail (their ledger class must match the box's status). */
   ps?: string[];
   layer?: { tag: LayerTag; sw: string[]; stage: string };
+  /** Stack switches a design or input box stands for (each must be in the stack): the detail names their stage. */
+  sw?: string[];
   /** Detail text: the old rule (replaced boxes), the mechanism now, or what the box is. */
   before?: string; now?: string; text?: string; note?: string;
   /** Counted in another domain (a box repeated for context). */
@@ -118,6 +121,7 @@ export const STAGES: Record<string, { name: string; verdict: string; doc: string
   E1i: { name: 'satiation and the lactating gut', verdict: 'null on 5 seeds (strict viability line), a large partial result', doc: 'staging/e1i-prereg.md' },
   E1k: { name: "the groomer's own need", verdict: 'null (marginal), off', doc: 'staging/e1k-prereg.md' },
   E1n: { name: 'weaning as a decision', verdict: 'provisional keep candidate (one prescription fewer); a null as a weaning mechanism', doc: 'staging/e1n-prereg.md' },
+  E1o: { name: 'what an older infant drinks', verdict: 'arm B (weanDeficit with weanDecide) a provisional keep candidate, confirmed on 5 seeds as S6; arm A (milkInDrive) a defect fix, null for the milk volume', doc: 'staging/e1o-prereg.md' },
   E2a: { name: 'sleep pressure, light and heat', verdict: 'keep (provisional)', doc: 'staging/e2a-prereg.md' },
   E2b: { name: 'leaving the nest', verdict: 'partial; off alone', doc: 'staging/e2b-prereg.md' },
   E2c: { name: 'the cost of darkness', verdict: 'null alone', doc: 'staging/e2c-prereg.md' },
@@ -125,6 +129,7 @@ export const STAGES: Record<string, { name: string; verdict: string; doc: string
   E2e: { name: 'company in the nest', verdict: 'recorded, not kept alone', doc: 'staging/e2e-prereg.md' },
   E2f: { name: 'chimpanzee sleep amount', verdict: 'keep candidate (provisional) as a package of five switches; night safety confirmed on 5 seeds', doc: 'staging/e2f-prereg.md' },
   E2g: { name: 'water ledger', verdict: 'provisional keep candidate, confirmed on 5 seeds', doc: 'staging/e2g-prereg.md' },
+  E3b: { name: 'what stops a return to a crown just fed in', verdict: 'provisional keep candidate as a correction (removes no prescription); off, not in S6', doc: 'staging/e3b-prereg.md' },
   E3: { name: 'urgency', verdict: 'stopped after 3 iterations; off', doc: 'staging/e3-prereg.md' },
   E4a: { name: 'slow hormone-like states', verdict: 'keep (provisional)', doc: 'staging/e4a-prereg.md' },
   E4b: { name: 'fast arousal', verdict: 'keep (provisional) with endoRainDisplay', doc: 'staging/e4b-prereg.md' },
@@ -133,7 +138,9 @@ export const STAGES: Record<string, { name: string; verdict: string; doc: string
   E4e: { name: 'a hunt valued as food', verdict: 'passes the keep rule on 5 seeds; held off', doc: 'staging/e4e-prereg.md' },
   E4f: { name: 'colobus encounters', verdict: 'recorded, off (a site-matched input, [L])', doc: 'staging/e4f-prereg.md' },
   E4g: { name: 'a care follow is not a departure', verdict: 'a defect fix; null by its own kill criterion (removes no prescription)', doc: 'staging/e4g-prereg.md' },
-  E5a: { name: 'party cohesion valued by company', verdict: 'provisional keep candidate, confirmed on 5 seeds on its own; not integrated: on the stack it interacts with value-based calls (S4)', doc: 'staging/e5a-prereg.md' },
+  E5a: { name: 'party cohesion valued by company', verdict: 'provisional keep candidate, confirmed on 5 seeds; integrated in S5 with E4g\'s fix and E5b\'s margin (without the margin, on S4, it added walking)', doc: 'staging/e5a-prereg.md' },
+  E5b: { name: 'calls and cohesion together', verdict: 'a correction of E5a\'s valuation, recommended to travel with cohesionValue (removes no prescription)', doc: 'staging/e5b-prereg.md' },
+  E5c: { name: 'a crown\'s crop shared by its feeders', verdict: 'no switch kept; recorded, off (removes nothing)', doc: 'staging/e5c-prereg.md' },
 };
 
 /** A switch whose verdict differs from its stage's (handoff §3: endoRainDisplay is E4a's switch, kept with E4b's endoFast). */
@@ -141,8 +148,9 @@ export const SWITCH_VERDICT: Record<string, { verdict: string; doc: string }> = 
   endoRainDisplay: { verdict: 'a null alone in E4a (slow states cannot carry it); with E4b\'s endoFast, keep (provisional)', doc: 'staging/e4b-prereg.md' },
 };
 
-/** Why a switch whose own stage was a null or a record is in S3 anyway (e-stack2-confirm.md "The stack S2"; handoff §3). */
-export const IN_S3_BECAUSE: Record<string, string> = {
+/** Why a switch whose own stage was a null or a record is in the stack anyway (e-stack2-confirm.md "The stack S2";
+ *  handoff §3). */
+export const IN_STACK_BECAUSE: Record<string, string> = {
   energyLedger: 'the base of the reference stack R',
   ledgerDigesta: 'part of the reference stack R',
   ledgerSatiationReserve: 'with ledgerLactGut, the only configuration with corrected food energy and no starvation',
@@ -156,6 +164,7 @@ export const IN_S3_BECAUSE: Record<string, string> = {
   rhythmFreeNight: 'part of the E2f package (night safety confirmed on 5 seeds)',
   sleepChimp: 'part of the E2f package (night safety confirmed on 5 seeds)',
   preyKanyawara: 'a site-matched input ([L])',
+  weanDecide: 'with E1o\'s weanDeficit (arm B), confirmed on 5 seeds as S6',
 };
 
 const L = 16, S = 288, R = 584, LW = 208, SW = 232, RW = 232;
@@ -202,14 +211,14 @@ export const DIAGRAMS: DiagramSpec[] = [
     ],
     notes: [
       'The rules policy is the same for every domain below; a model can replace the draw, never the checks (<a href="simulation.md">simulation.md §8</a>).',
-      'E3 is not part of S3. Its stage stopped after three iterations (<a href="staging/e3-prereg.md">e3-prereg.md</a>).',
+      'E3 is not part of <span data-n="stack">S5</span>. Its stage stopped after three iterations (<a href="staging/e3-prereg.md">e3-prereg.md</a>).',
     ],
   },
   // ---------------------------------------------------------------------------------------------------------------
   {
     key: 'feeding', cap: 'From a meal to the next feeding choice', nav: 'Feeding', title: 'Feeding and foraging',
     take: 'Hunger now comes from an energy ledger and a gut. What is still fitted is how far a meal is worth walking, how fast a crown empties and how fast an animal walks.',
-    desc: 'Flowchart of feeding on the candidate stack: food energy and bulk, the gut, reserves and hunger feed the value of feeding options, with fitted trip weights still attached.',
+    desc: 'Flowchart of feeding on the candidate stack: food energy and bulk, the gut, reserves and hunger feed the value of feeding options, with fitted trip weights still attached; a return valued by the crop left (E3b) and crown sharing (E5c) are layers outside the stack.',
     w: 832, h: 616,
     nodes: [
       { k: 'food', x: L, y: y(0), w: LW, h: 72, t: 'Food energy and bulk', s: 'kcal and dry matter per minute', st: 'inp',
@@ -241,6 +250,10 @@ export const DIAGRAMS: DiagramSpec[] = [
         text: 'How many units of fruit an animal takes from a crown per hour: it sets how fast a crown empties and how long a visit lasts in a trip\'s value. Fitted in C5a against T-ACT-2 and T-RNG-4.' },
       { k: 'feed', x: S, y: y(5), w: SW, h: 72, t: 'Feed, walk or eat leaves', s: 'forage · travel', st: 'des',
         text: 'The options go to the choice. Feeding fills the gut at the food\'s rate until the crown\'s share runs out or the animal stops.' },
+      { k: 'e3b', x: L, y: y(3), w: LW, h: 84, t: 'A return valued by\nthe crop left (E3b)', s: 'revisitByCrop', st: 'lay', layer: { tag: 'CANDIDATE', sw: ['revisitByCrop'], stage: 'E3b' },
+        text: 'A crown just fed in is devalued by 0.5, fading with a 12-hour time constant, whatever is left in it (revisitW, design, no source). E3b would value it like any other crown, by the crop the animal believes is left. On S5 in quick mode: viable, nursing mothers in balance, walking 27–36% less and hunting inside its band, but the fruit share rises above its band (0.85) and animals visit fewer crowns. A correction that removes no prescription; off, not in S6.' },
+      { k: 'e5c', x: R, y: y(5), w: RW, h: 88, t: 'A crown shared by\nits feeders (E5c)', s: 'crownShare', st: 'lay', layer: { tag: 'RECORDED', sw: ['crownShare'], stage: 'E5c' },
+        text: 'Would make other feeders cost the share of the bout they take, and value a crown just fed in by the crop believed left, with two crop-blind design terms off (the revisit devaluation and the habitat-wide crowding cost). Viable, mothers better and males walking 30% less, but none of three valuations made feeders follow the crop: party members feed one or two at a time (1.3 per crown), so the crop never limits them.' },
     ],
     edges: [
       { f: 'food', t: 'eaten', kind: 'side' }, { f: 'eaten', t: 'gut', kind: 'main' }, { f: 'gut', t: 'ledger', kind: 'main' },
@@ -248,9 +261,11 @@ export const DIAGRAMS: DiagramSpec[] = [
       { f: 'move', t: 'ledger', kind: 'side' }, { f: 'wild', t: 'ledger', fs: 'l', ts: 'r', kind: 'side' },
       { f: 'trip', t: 'opts', fs: 'l', ts: 'r', fo: -8, to: 0, kind: 'side' }, { f: 'speed', t: 'opts', kind: 'side' },
       { f: 'crop', t: 'feed', kind: 'side' },
+      { f: 'e5c', t: 'opts', fs: 'l', ts: 'r', fo: 0, to: 16, kind: 'lay' },
+      { f: 'e3b', t: 'opts', fs: 'r', ts: 'l', fo: 0, to: -16, kind: 'lay' },
     ],
     notes: [
-      'On S3 the activity budget\'s feeding row is back in its band, and nobody starves in 5 seeds × 60 days (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
+      'On S5 the feeding, grooming and rest rows of the activity budget are in their bands. No animal starves on S5 or S6 in 5 seeds × 60 days (S5: two deaths, both illness; S6: none) (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
       'Open: nursing mothers stop eating with room in the gut, so the limit is their appetite and their day, not the gut wall (<a href="staging/e1h-prereg.md">e1h-prereg.md §9</a>, <a href="staging/e1i-prereg.md">e1i-prereg.md</a>).',
     ],
   },
@@ -286,7 +301,7 @@ export const DIAGRAMS: DiagramSpec[] = [
     ],
     notes: [
       'Drinking fell from 2.24 to 0.84 bouts per adult-day and walks to water from 22% to 10% of movement (<a href="staging/e2g-prereg.md">e2g-prereg.md</a>).',
-      'On the stack, adding the water ledger cut males\' daily path from 3.79 to 2.93 km and six prescriptions (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, S3).',
+      'Adding the water ledger to the integrated stack (S2 → S3) cut males\' daily path from 3.79 to 2.93 km and six prescriptions (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
     ],
   },
   // ---------------------------------------------------------------------------------------------------------------
@@ -304,7 +319,7 @@ export const DIAGRAMS: DiagramSpec[] = [
       { k: 'value', x: S, y: y(2), w: SW, h: 72, t: 'What the nest is worth', s: 'nest clock switched out', ids: ['nestEveningFromH', 'nestEveningStartH', 'nestEveningEndH', 'nestEveningDrive', 'nestNightBonus', 'nestMorningDrive'],
         before: 'A nest clock: after 12:00 the nest\'s pull ramped from 17:54 to 18:54 up to 2.2, plus 0.6 at night. In the morning a stay-in-nest pull of up to 2.6 faded as daylight rose.',
         now: 'The nest is worth the rest score plus felt sleepiness from the sleep gate, plus its nest-mates\' company, less the cost of waiting while others eat a crown it wants (E2a, E2d, E2e, E2b).',
-        note: 'E2a\'s own darkness weight (rhythmDarkW 2.2, a prescription) is not read on S3: darkCost and rhythmCircadian replace it.' },
+        note: 'E2a\'s own darkness weight (rhythmDarkW 2.2, a prescription) is not read on the stack: darkCost and rhythmCircadian replace it.' },
       { k: 'build', x: S, y: y(3), w: SW, h: 72, t: 'Building a new nest', s: 'hour ≥ 12 gate switched out', ids: ['lit:nestGate'],
         before: 'A new nest could be built only from 12:00, or at night (candidates.ts).',
         now: 'Falling light opens it: a new nest is offered whenever daylight is below full (E2a).' },
@@ -313,15 +328,15 @@ export const DIAGRAMS: DiagramSpec[] = [
         now: 'In the dark a nest bout runs until rising light wakes the animal; in changing light the short 4–9 minute bout; in full light the day bout. While the light rises, an animal re-decides at the end of each bout (E2a, E2b).' },
       { k: 'night', x: S, y: y(5), w: SW, h: 72, t: 'No menu at night', s: 'menu.ts: night, dusk', ids: ['lit:nightMenu', 'lit:duskMenu'],
         before: 'After dark a rules-driven chimp could only nest, rest, nurse, flee, alarm, shelter or submit (plus self-defence). At dusk a last feed, drink, groom, call and a few more stayed open.',
-        now: 'Rules-driven chimps choose from the full menu at night; sleep, darkness and company keep them in their nests. On S3 adults are out of a nest 2.19% of the night, under the 3.3% line. Models keep the menus.' },
+        now: 'Rules-driven chimps choose from the full menu at night; sleep, darkness and company keep them in their nests. On S6 adults are out of a nest 2.77% of the night, under the 3.3% line. Models keep the menus.' },
       { k: 'amount', x: L, y: y(0), w: LW, h: 72, t: 'Chimpanzee sleep amount', s: 'sleepDriveShift', st: 'inp', ps: ['sleepDriveShift'],
         text: 'Captive chimpanzee sleep measured by EEG, 9.7 hours, lowers both thresholds of the sleep gate in place of the human amount (E2f).' },
       { k: 'light', x: L, y: y(1), w: LW, h: 72, t: 'Light at the eyes', s: 'sun · cloud · canopy', st: 'inp', ps: ['skyLuxSun', 'skyLuxNight'],
         text: 'Open-sky light from the sun\'s height under the day\'s cloud, times the share that reaches the animal\'s height in the canopy (E2c sky model, E2a canopy).' },
       { k: 'company', x: L, y: y(2), w: LW, h: 72, t: 'Company of nest-mates', s: 'nestCompany · nestAudience', st: 'des', ps: ['joinBase', 'joinBondW'],
-        text: 'Staying in its own nest keeps the company of nest-mates (the join terms, design), and a departure is noticed by awake animals in their nests (E2e). Recorded alone; in S3 as part of the E2f package.' },
+        text: 'Staying in its own nest keeps the company of nest-mates (the join terms, design), and a departure is noticed by awake animals in their nests (E2e). Recorded alone; on the stack as part of the E2f package.' },
       { k: 'dark', x: L, y: y(4), w: LW, h: 72, t: 'Darkness slows and blinds', s: 'walkDarkPace · sight acuity', st: 'inp', ps: ['walkDarkPace', 'sightAcuityHalfTd', 'sightAcuityExp'],
-        text: 'In poor light walking is slower (0.92 of daylight speed, measured in people) and food is found by sight, so feeding pays less before dawn (E2c). A null alone; in S3 as part of the E2f package.' },
+        text: 'In poor light walking is slower (0.92 of daylight speed, measured in people) and food is found by sight, so feeding pays less before dawn (E2c). A null alone; on the stack as part of the E2f package.' },
     ],
     edges: [
       { f: 'press', t: 'gate', kind: 'main' }, { f: 'gate', t: 'value', kind: 'main' }, { f: 'value', t: 'build', kind: 'main' },
@@ -331,7 +346,7 @@ export const DIAGRAMS: DiagramSpec[] = [
     ],
     notes: [
       'Nesting at dusk and an active day of 11 h 22 min emerge with no clock (<a href="staging/e2a-prereg.md">e2a-prereg.md</a>).',
-      'Still wrong: on S3, 67% of departures come before sunrise against 18% in the field. Nothing measured holds an awake wild chimpanzee in its nest until about sunrise (<a href="staging/e2f-prereg.md">e2f-prereg.md</a>, <a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
+      'Still wrong by its one-site row: on S5 the observer scores 81% of departures before sunrise, against 18% for five Taï mothers in fruit-scarce periods. E2h found that row scored differently from the field, and that on S3 the real miss was nursing mothers leaving about an hour early, hungry and thirsty (<a href="staging/e2h-prereg.md">e2h-prereg.md</a>, <a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
     ],
   },
   // ---------------------------------------------------------------------------------------------------------------
@@ -365,8 +380,8 @@ export const DIAGRAMS: DiagramSpec[] = [
   // ---------------------------------------------------------------------------------------------------------------
   {
     key: 'nursing', cap: 'From milk to weaning', nav: 'Nursing and weaning', title: 'Nursing and weaning',
-    take: 'Mothers now pay for the milk their infants drink. Weaning is still a dice roll; the mother\'s own decision can replace it, but does not yet wean.',
-    desc: 'Flowchart of nursing and weaning on the candidate stack: the mother pays for milk, nursing bouts are valued by the milk they deliver, the mother refuses by a roll, and weaning age is drawn.',
+    take: 'Mothers pay for the milk their infants drink and decide, by their own deficit, when to let them suckle: the weaning roll is gone. Milk now falls with the infant\'s age, but weaning itself does not emerge; its age is still drawn.',
+    desc: 'Flowchart of nursing and weaning on the candidate stack: the mother pays for milk, nursing bouts are valued by the milk they deliver, the mother lets a bout run by comparing her deficit with her infant\'s, and weaning age is drawn; an E1o arm outside the stack would count milk at what the gland gives.',
     w: 832, h: 424,
     nodes: [
       { k: 'milk', x: S, y: y(0), w: SW, h: 72, t: 'Mothers pay for milk', s: 'lactation and pregnancy timers out', ids: ['hungerLactationPerH', 'hungerPregnancyPerH'],
@@ -374,38 +389,42 @@ export const DIAGRAMS: DiagramSpec[] = [
         now: 'The ledger charges a mother for the milk her infant drinks, up to a human-scaled yield, and for gestation (E1).' },
       { k: 'bout', x: S, y: y(1), w: SW, h: 72, t: 'What a nursing bout is worth', s: 'ledgerNurseBout', st: 'des', ps: ['ledgerLetDownS', 'ledgerMilkYieldCoef'],
         text: 'A bout is worth the share of a full suckling rate it delivers over its time, including the wait for milk to flow (54 s, a human value). Infants also suckle in the mother\'s nest at night (E1c, E1f). Design terms replaced design terms; no prescription.' },
-      { k: 'refuse', x: S, y: y(2), w: SW, h: 72, t: 'Mother refuses the nipple', s: 'weanRefuseMaxP', ids: ['weanRefuseMaxP'], ps: ['weanRefuseAgeY', 'weanRefuseRampY'],
-        text: 'From 3.2 years of the infant\'s age, the mother refuses a bout with a probability that rises over 1.8 years to 0.8. No field study measures refusal by infant age (E1n\'s audit).' },
+      { k: 'refuse', x: S, y: y(2), w: SW, h: 72, t: 'The mother decides', s: 'weaning roll switched out', ids: ['weanRefuseMaxP'],
+        before: 'From 3.2 years of the infant\'s age the mother refused a bout by a roll whose chance rose over 1.8 years to 0.8 (weanRefuseAgeY, weanRefuseRampY, design). No field study measures refusal by infant age (E1n\'s audit).',
+        now: 'She lets a bout start and go on while her infant\'s reserve deficit, relative to its store, is at least her own, and while she sleeps her last decision stands (E1n\'s decision, E1o\'s currency). On S6 milk at 1–2, 2–3 and 3–4 years falls to 238, 198 and 190 kcal a day (cap 307).' },
       { k: 'wean', x: S, y: y(3), w: SW, h: 72, t: 'Weaning age', s: 'drawn between 4.1 and 5.2 y', st: 'inp', ps: ['weanAgeMinY', 'weanAgeSpanY'],
-        text: 'Each infant\'s weaning age is drawn between 4.1 and 5.2 years. Classed input by the ledger, although the weaned-age target (T-INF-3) is built in while these values set it (E1n\'s audit).' },
+        text: 'Each infant\'s weaning age is drawn between 4.1 and 5.2 years. Classed input by the ledger, although the weaned-age target (T-INF-3) is built in while these values set it (E1n\'s audit). Nothing in the model drives milk to zero before it (E1o).' },
       { k: 'size', x: L, y: y(1), w: LW, h: 72, t: 'Infant intake by size', s: 'ledgerInfantIntake', st: 'des', ps: ['ledgerMassBirthKg'],
         text: 'An infant eats solid food at a rate scaled by its body size (E1c), in place of a self-feeding ramp and an under-5 factor (both design).' },
       { k: 'grow', x: L, y: y(2), w: LW, h: 72, t: 'Growth potential', s: 'captive growth rates', st: 'inp', ps: ['ledgerGrowFirstYearKg', 'ledgerGrowFemaleKgPerY', 'ledgerGrowMaleKgPerY'],
         text: 'Growth follows captive rates, limited by condition and paid only from a surplus (E1c, E1f). It is part of what an infant needs, so part of what a bout is worth to it.' },
-      { k: 'e1n', x: R, y: y(2), w: RW, h: 88, t: 'The mother decides (E1n)', s: 'weanDecide', st: 'lay',
-        layer: { tag: 'CANDIDATE', sw: ['weanDecide'], stage: 'E1n' },
-        text: 'The mother lets a bout start and go on while the infant\'s need, judged on its own food, is at least her own hunger: parent–offspring conflict in the ledger\'s currency. A sleeping mother does not decide. Viable and inside noise, with one prescription fewer, but it does not wean: milk refused by day is drunk at night, so infants of 1–4 years stay at the milk cap. No field study measures refusal by infant age.' },
+      { k: 'e1oA', x: R, y: y(0), w: RW, h: 88, t: 'Milk counted at what\nthe gland gives (E1o, A)', s: 'milkInDrive', st: 'lay',
+        layer: { tag: 'DEFECT FIX', sw: ['milkInDrive'], stage: 'E1o' },
+        text: 'An unweaned infant\'s hunger counted milk at the full suckling rate all day; with the switch it counts what its mother\'s gland holds and will make. Infants then sit at their set point and drink the same: a defect fix, null for the milk volume. Not tested together with arm B.' },
+      { k: 'e1oB', x: R, y: y(2), w: RW, h: 88, t: 'Her deficit against\nher infant\'s (E1o)', s: 'weanDeficit', st: 'des', sw: ['weanDeficit'],
+        text: 'The currency of the mother\'s decision: her reserve deficit against her infant\'s, each relative to its store (equal weights, from equal relatedness; design), and a refusal that stands while she sleeps. With E1n\'s decision alone, her hunger against the infant\'s own-food drive, refused day milk was drunk at night and milk stayed at the cap.' },
     ],
     edges: [
       { f: 'milk', t: 'bout', kind: 'main' }, { f: 'bout', t: 'refuse', kind: 'main' }, { f: 'refuse', t: 'wean', kind: 'main' },
       { f: 'size', t: 'bout', kind: 'side' }, { f: 'grow', t: 'bout', fs: 'r', ts: 'l', to: 20, mx: 256, kind: 'side' },
-      { f: 'e1n', t: 'refuse', fs: 'l', ts: 'r', kind: 'lay' },
+      { f: 'e1oA', t: 'bout', fs: 'l', ts: 'r', kind: 'lay' },
+      { f: 'e1oB', t: 'refuse', fs: 'l', ts: 'r', fo: -8, to: 0, kind: 'side' },
     ],
     notes: [
-      'Infants are viable on the ledger and nurse in band; weaning comes at about 6 years against 4.7 in the field (<a href="staging/e1f-prereg.md">e1f-prereg.md</a>).',
-      'What keeps infants at the milk cap is free night access to a gland that stores a day\'s milk; no wild measurement of night nursing exists (<a href="staging/e1n-prereg.md">e1n-prereg.md</a>).',
-      'Infants of 1–4 years drink the full milk cap, so mothers pay a full lactation into the fourth year. On S3 nursing mothers lose 0.25% of their store a day (<a href="staging/track-e-handoff.md">handoff §0</a>, <a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
+      'On S6 milk at 1–2, 2–3 and 3–4 years falls to 238, 198 and 190 kcal a day (cap 307), nursing mothers lose 0.125% of their store a day instead of 0.244, and their balance improves as the infant grows (−79, −65, −43 kcal a day) (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, S6).',
+      'The cost: infants now carry part of the deficit. Their reserves fall 0.11–0.15% of the store a day while they still grow at the captive rate (3.6 kg a year against about 1.6 at Gombe); no infant died in 90 days (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, <a href="staging/e1o-prereg.md">e1o-prereg.md §5</a>).',
+      'Open: nothing drives milk to zero before the drawn weaning age (<a href="staging/e1o-prereg.md">e1o-prereg.md §5</a>).',
     ],
   },
   // ---------------------------------------------------------------------------------------------------------------
   {
     key: 'grooming', cap: 'From social need to grooming and play', nav: 'Grooming and play', title: 'Grooming and play',
-    take: 'Grooming and play are valued by state, but the social need they serve still runs on fixed timers.',
+    take: 'Grooming and play are valued by state, but the social need they serve, which party cohesion now reads too, still runs on fixed timers.',
     desc: 'Flowchart of grooming and play: a timer-driven social need feeds the value of grooming and of play; rough play is a dice roll.',
     w: 832, h: 328,
     nodes: [
       { k: 'need', x: S, y: y(0), w: SW, h: 72, t: 'Social need', s: 'socialAwakePerH · socialSleepPerH', ids: ['socialAwakePerH', 'socialSleepPerH'],
-        text: 'Loneliness rises on fixed timers, 0.035 per hour awake and 0.01 asleep; grooming, play and nursing restore it. The ledger ties it to the grooming-share target (T-ACT-3).' },
+        text: 'Loneliness rises on fixed timers, 0.035 per hour awake and 0.01 asleep; grooming, play and nursing restore it. The ledger ties it to the grooming-share target (T-ACT-3). Since S5 it also scales what a companion\'s company is worth (E5a).' },
       { k: 'groom', x: S, y: y(1), w: SW, h: 72, t: 'What grooming is worth', s: 'need · bond · kin · reciprocity', st: 'des',
         text: 'Need, bond, kinship, reciprocity, rank and an invitation, less tension, distance, hunger, rain and night: score weights written in the code (design, not counted).' },
       { k: 'play', x: R, y: y(1), w: RW, h: 72, t: 'What play is worth', s: 'playfulness · energy · age', st: 'des',
@@ -421,52 +440,55 @@ export const DIAGRAMS: DiagramSpec[] = [
       { f: 'dyad', t: 'groom', fs: 'r', ts: 'l', fo: -8, to: 0, kind: 'lay' },
     ],
     notes: [
-      'On the stack the grooming row is back in its band (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>). The need it serves is the next timer to replace.',
+      'On S5 the grooming row is in its band (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>). The need it serves is the next timer to replace.',
     ],
   },
   // ---------------------------------------------------------------------------------------------------------------
   {
     key: 'party', cap: 'From a departure to travelling together', nav: 'Following and joining', title: 'Party following and joining',
-    take: 'On S3, staying together still rests on six weights fitted to party size. A candidate values company by the animal\'s own social need instead; it passed on its own but not on the integrated stack.',
-    desc: 'Flowchart of party cohesion: a companion leaves, the join terms and six fitted weights value following, joining or approaching a caller; the E5a and E4g candidates would replace the weights.',
+    take: 'The six weights fitted to party size are gone: a companion\'s company is now worth what the animal\'s own social need makes it (E5a), with E4g\'s fix for following carers and E5b\'s margin for approaches to callers. Still fitted: how far a call is worth walking, and when a leaver tries again.',
+    desc: 'Flowchart of party cohesion on the candidate stack: a companion sets off; its company, scaled by the animal\'s social need, values following, joining or going to a caller in place of six fitted weights; a care-follow fix and a company margin are part of the stack; a distance scale and departure retries remain prescribed.',
     w: 832, h: 424,
     nodes: [
+      { k: 'carer', x: L, y: y(0), w: LW, h: 88, t: 'A care follow is not\na departure (E4g)', s: 'followCarer', st: 'des', sw: ['followCarer'],
+        text: 'Fixes a defect: adults followed a youngster that was only keeping up with its mother, so the companions of every mother–offspring unit trailed its foraging moves. Now a companion in a care follow is not counted as leaving; a carer who sets off herself is followed as before. The six party weights had been fitted with the defect in place.' },
       { k: 'leave', x: S, y: y(0), w: SW, h: 72, t: 'A companion sets off', s: 'in sight · or heard hooing', st: 'des',
-        text: 'A party member in sight travels or follows away, or a travel hoo is heard from one out of sight.' },
-      { k: 'who', x: S, y: y(1), w: SW, h: 72, t: 'Who is leaving', s: 'bond · ally · rank · sociability', st: 'des', ps: ['joinBase', 'joinBondW', 'joinAllyW', 'joinRankW', 'partyFollowSocialW'],
-        text: 'The bond with the leaver, an ally, a leader that dominates it, and the animal\'s own sociability (C13e; design).' },
-      { k: 'weights', x: S, y: y(2), w: SW, h: 96, t: 'Cohesion weights fitted\nto party size', s: 'partyFollow* · partyStayW\njoinSocialW · joinHooW', ids: ['partyFollowBase', 'partyFollowW', 'partyFollowMaleW', 'partyStayW', 'joinSocialW', 'joinHooW'],
-        text: 'Following a companion who travels off scores 0.7 + 1.0 × bond (+0.4 toward an adult male); leaving a party costs 0.05 per companion; an unmet social need pulls 0.55 toward pant-hooting callers; a heard travel hoo adds 0.094. Fitted to party size with travel share and day range; they were fitted with the care-follow defect in place.' },
+        text: 'A party member in sight travels or follows away, or a travel hoo is heard from one out of sight. A hoo gives every hearer a decision point.' },
+      { k: 'who', x: S, y: y(1), w: SW, h: 72, t: 'What a companion offers', s: 'bond · ally · rank · sociability', st: 'des', ps: ['joinBase', 'joinBondW', 'joinAllyW', 'joinRankW', 'partyFollowSocialW'],
+        text: 'The bond with the companion, an ally, a companion that dominates the animal, and the animal\'s own sociability: C13e\'s join terms (design). For a male, a fertile female also offers her mating value, the mate offer\'s own terms.' },
+      { k: 'need', x: L, y: y(2), w: LW, h: 72, t: 'Social need', s: 'socialAwakePerH · …SleepPerH', ids: ['socialAwakePerH', 'socialSleepPerH'], see: 'grooming',
+        text: 'What scales a companion\'s company is the social-need state, which still rises on fixed timers; grooming, play and nursing restore it.' },
+      { k: 'value', x: S, y: y(2), w: SW, h: 72, t: 'Company valued by need', s: 'six party weights switched out', ids: ['partyFollowBase', 'partyFollowW', 'partyFollowMaleW', 'partyStayW', 'joinSocialW', 'joinHooW'],
+        before: 'Following a companion who travels off scored 0.7 + 1.0 × bond, plus 0.4 toward an adult male; a trip that left companions cost 0.05 for each one in sight (up to 3); an unmet social need pulled 0.55 toward pant-hooting callers; a heard travel hoo added 0.094 to joining. Fitted to party size with travel share and day range in C5a (the hoo bonus to a recruitment rate in C13e), with the care-follow defect in place.',
+        now: 'A companion\'s company is worth its join terms scaled by the animal\'s social need, plus a fertile female\'s mating value for a male. Following is worth that company, less rain and the walk; joining a leader\'s trip adds the food at its tree, shared with the feeders there; going to a caller adds what the caller\'s company brings beyond the best companion already present (E5b). Leaving costs nothing, and a hoo informs without adding value (E5a).' },
+      { k: 'margin', x: R, y: y(2), w: RW, h: 88, t: 'An approach gains only\nthe company added (E5b)', s: 'companyMargin', st: 'des', sw: ['companyMargin'],
+        text: 'Going to a heard caller gains only the company the caller adds over the best settled companion already present. Without it, half of the approaches started in company and barely relieved the need, and males walked 3.43 km a day (S4); with it, 2.73 km on S5.' },
       { k: 'go', x: S, y: y(3) + 16, w: SW, h: 72, t: 'Travel together', s: 'follow, join, or go to callers', st: 'des',
         text: 'Follow the companion, join its trip to its tree, or walk toward the callers. These options go to the choice.' },
-      { k: 'callers', x: R, y: y(2), w: RW, h: 72, t: 'Walking to callers: distance', s: 'joinCallDistScaleM', ids: ['joinCallDistScaleM'],
-        text: 'A walk toward pant-hooting callers loses 1 point per 1,500 m (fitted in C5a against travel share and day range).' },
-      { k: 'retry', x: R, y: y(3) + 16, w: RW, h: 72, t: 'Departure attempts', s: 'retry 3.8 min · give up 13 min', ids: ['departRetryMin', 'departPersistMaxMin'],
+      { k: 'retry', x: L, y: y(3) + 16, w: LW, h: 72, t: 'Departure attempts', s: 'retry 3.8 min · give up 13 min', ids: ['departRetryMin', 'departPersistMaxMin'],
         text: 'After a failed departure attempt the leaver waits 3.8 minutes before trying again and gives up after 13: field values of the behaviour from 9 observed re-launches.' },
-      { k: 'e5a', x: L, y: y(2), w: LW, h: 88, t: 'Company valued by need\n(E5a)', s: 'cohesionValue', st: 'lay', layer: { tag: 'CANDIDATE', sw: ['cohesionValue', 'followCarer'], stage: 'E5a' },
-        text: 'A companion\'s company is valued by the animal that moves toward it, scaled by its own social need, plus a fertile female\'s mating value for males. Joining adds the food at the leader\'s tree; leaving costs nothing; a hoo informs and adds no value. Confirmed on its own (with E4g, 5 seeds): sums inside noise, viable. Not integrated: on the stack it interacts with value-based calls, and males walk about 0.5 km more a day (S4).' },
-      { k: 'e4g', x: L, y: y(0), w: LW, h: 88, t: 'A care follow is not\na departure (E4g)', s: 'followCarer', st: 'lay', layer: { tag: 'CANDIDATE', sw: ['followCarer'], stage: 'E4g' },
-        text: 'Fixes a defect: adults followed a youngster that was only keeping up with its mother. Confirmed together with E5a and, like it, not integrated; removes no prescription by itself.' },
+      { k: 'callers', x: R, y: y(3) + 16, w: RW, h: 72, t: 'Walking to callers: distance', s: 'joinCallDistScaleM', ids: ['joinCallDistScaleM'],
+        text: 'A walk toward pant-hooting callers loses 1 point per 1,500 m (fitted in C5a against travel share and day range).' },
     ],
     edges: [
-      { f: 'leave', t: 'who', kind: 'main' }, { f: 'who', t: 'weights', kind: 'main' }, { f: 'weights', t: 'go', kind: 'main' },
-      { f: 'callers', t: 'weights', fs: 'l', ts: 'r', fo: 0, to: -8, kind: 'side' }, { f: 'retry', t: 'go', fs: 'l', ts: 'r', kind: 'side' },
-      { f: 'e5a', t: 'weights', fs: 'r', ts: 'l', kind: 'lay' },
-      { f: 'e4g', t: 'leave', fs: 'r', ts: 'l', fo: -8, to: 0, kind: 'lay' },
+      { f: 'carer', t: 'leave', fs: 'r', ts: 'l', fo: -8, to: 0, kind: 'side' },
+      { f: 'leave', t: 'who', kind: 'main' }, { f: 'who', t: 'value', kind: 'main' }, { f: 'value', t: 'go', kind: 'main' },
+      { f: 'need', t: 'value', fs: 'r', ts: 'l', kind: 'side' }, { f: 'margin', t: 'value', fs: 'l', ts: 'r', fo: -8, to: 0, kind: 'side' },
+      { f: 'retry', t: 'go', fs: 'r', ts: 'l', kind: 'side' }, { f: 'callers', t: 'go', fs: 'l', ts: 'r', kind: 'side' },
     ],
     notes: [
-      'With E4g and E5a on the reference stack: prescriptions 103 → 97, sums inside noise, viable; mean party size 3.57 → 3.29 (<a href="staging/e5a-prereg.md">e5a-prereg.md</a>, five-seed confirm).',
-      'On S3 the pair is viable with 77 prescriptions, but males walk 3.43 km a day instead of 2.93 and the travel share leaves its band: party cohesion interacts with value-based calls, so S3 stays the best integrated candidate (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, S4). A stage on that interaction (E5b) is running (<a href="staging/track-e-handoff.md">handoff</a>).',
-      'Open: party size does not track crop size, and the party-size target\'s band (3–9) has no recorded derivation (<a href="staging/e5a-prereg.md">e5a-prereg.md §7</a>).',
+      'On S5 parties average 3.38 animals (band 3–9), males walk 2.73 km a day (S3 2.93, S4 3.43; S6 2.68), and the travel share sits at its band\'s edge (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
+      'E5a passed on five seeds on the reference stack (prescriptions 103 → 97, sums inside noise). On the integrated stack without E5b\'s margin it added half a kilometre of walking a day (<a href="staging/e5a-prereg.md">e5a-prereg.md</a>, <a href="staging/e5b-prereg.md">e5b-prereg.md §8</a>).',
+      'Open: party size does not track crop size, the party-size band (3–9) has no recorded derivation, and the same margin for following and joined trips is untested (<a href="staging/e5a-prereg.md">e5a-prereg.md §7</a>, <a href="staging/e5b-prereg.md">e5b-prereg.md §8</a>).',
     ],
   },
   // ---------------------------------------------------------------------------------------------------------------
   {
-    key: 'calls', cap: 'One value behind six kinds of call', nav: 'Calls', title: 'Calls',
-    take: 'Six call rules that were hazards, coins, quotas or clock windows are now one value comparison. Greetings and the sound of calls are still prescribed.',
-    desc: 'Diagram of calls on the candidate stack: one call value (gain to listeners against cost to the caller) drives six call types that were prescribed before; a greeting quota and call acoustics remain prescribed.',
-    w: 832, h: 520,
-    zones: [{ x: 16, y: 344, w: 800, h: 160, label: 'Outside the call value' }],
+    key: 'calls', cap: 'One value behind six kinds of call, and what listeners do', nav: 'Calls', title: 'Calls',
+    take: 'Six call rules that were hazards, coins, quotas or clock windows are now one value comparison, and since S5 what a listener does with a call is valued by company too. Greetings, the sound of calls and how far a call is worth walking are still prescribed.',
+    desc: 'Diagram of calls on the candidate stack: one call value (gain to listeners against cost to the caller) drives six call types that were prescribed before; listeners join after a hoo and go to callers by the company they gain; a greeting quota, call acoustics and the distance scale of walks to callers remain prescribed.',
+    w: 832, h: 648,
+    zones: [{ x: 16, y: 312, w: 800, h: 136, label: 'Listeners' }, { x: 16, y: 472, w: 800, h: 160, label: 'Outside the call value' }],
     nodes: [
       { k: 'value', x: S, y: y(1), w: SW, h: 88, t: 'A call is worth what\nlisteners learn, net', s: 'gain to allies − cost to caller', st: 'des', ps: ['callFixH', 'callSuppressW'],
         text: 'A call is a decision with a gain and a cost, read from the caller\'s own perception and memory (E4c). Gain: out-of-sight allies learn where it is, or companions notice a departure or food. Cost: neighbours hear it, and at food the share of its own meal it loses if listeners come. The exchange rates are design.' },
@@ -488,9 +510,17 @@ export const DIAGRAMS: DiagramSpec[] = [
       { k: 'hoo', x: L, y: y(2), w: LW, h: 72, t: 'Travel hoos', s: 'travelHooP · travelHooAllyP', ids: ['travelHooP', 'travelHooAllyP'],
         before: 'A leaver gave a travel hoo with probability 0.554, or 0.756 with an ally in sight: the source\'s own rates.',
         now: 'Given when the bond with companions who would not notice a silent departure outweighs the share of the meal it would lose to them at the destination.' },
-      { k: 'greet', x: 64, y: 392, w: 280, h: 72, t: 'Greeting quota', s: 'pantGruntRepeatH', ids: ['pantGruntRepeatH'],
+      { k: 'hooJoin', x: 48, y: 352, w: 232, h: 72, t: 'Joining after a hoo', s: 'joinHooW', ids: ['joinHooW'], see: 'party',
+        before: 'A heard travel hoo added 0.094 to the value of joining the leader\'s trip: the one value fitted in C13e, so that 71.4% of hooed departures recruit a companion within 5 minutes.',
+        now: 'The hoo gives every hearer a decision point and adds no value: joining is worth the leader\'s company and the food at its tree, shared with the feeders there (E5a).' },
+      { k: 'approach', x: 300, y: 352, w: 232, h: 72, t: 'Going to callers', s: 'joinSocialW', ids: ['joinSocialW'], see: 'party',
+        before: 'An unmet social need pulled 0.55 × (1 − social) toward pant-hooting community members, in full with fewer than 2 companions in sight and 0.4 of it otherwise (tuned in C5a to party size, travel share and day range).',
+        now: 'The call\'s own pull, plus the caller\'s company scaled by the listener\'s social need, counting only what the caller adds to the best companion already present (E5a, E5b).' },
+      { k: 'dist', x: 552, y: 352, w: 232, h: 72, t: 'Walking to callers: distance', s: 'joinCallDistScaleM', ids: ['joinCallDistScaleM'], see: 'party',
+        text: 'A walk toward callers loses 1 point per 1,500 m (fitted in C5a against travel share and day range).' },
+      { k: 'greet', x: 64, y: 520, w: 280, h: 72, t: 'Greeting quota', s: 'pantGruntRepeatH', ids: ['pantGruntRepeatH'],
         text: 'A subordinate pant-grunts to the same dominant at most once per 8 hours.' },
-      { k: 'sound', x: 488, y: 392, w: 280, h: 88, t: 'How calls sound', s: 'drumHits* · drumIntervalMs\nsigIdentitySD · sigCommunitySD', ids: ['drumHitsMedian', 'drumHitsSigma', 'drumIntervalMs', 'sigIdentitySD', 'sigCommunitySD'],
+      { k: 'sound', x: 488, y: 520, w: 280, h: 88, t: 'How calls sound', s: 'drumHits* · drumIntervalMs\nsigIdentitySD · sigCommunitySD', ids: ['drumHitsMedian', 'drumHitsSigma', 'drumIntervalMs', 'sigIdentitySD', 'sigCommunitySD'],
         text: 'Drumming bouts (median 4 hits, 229 ms apart) and pant-hoot voice signatures set so recordings are told apart as in the field (T-COM-5, T-COM-6). They shape what listeners can tell apart, not when anyone calls.' },
     ],
     edges: [
@@ -498,10 +528,14 @@ export const DIAGRAMS: DiagramSpec[] = [
       { f: 'value', t: 'chorus', fs: 'r', ts: 'l', fo: 24, kind: 'main' },
       { f: 'value', t: 'fig', fs: 'l', ts: 'r', fo: -24, kind: 'main' }, { f: 'value', t: 'grunt', fs: 'l', ts: 'r', fo: 0, kind: 'main' },
       { f: 'value', t: 'hoo', fs: 'l', ts: 'r', fo: 24, kind: 'main' },
+      { f: 'hoo', t: 'hooJoin', fs: 'b', ts: 't', my: 296, kind: 'side' },
+      { f: 'value', t: 'approach', fs: 'b', ts: 't', fo: 12, kind: 'side', l: 'heard', lx: 416, ly: 296 },
+      { f: 'dist', t: 'approach', fs: 'l', ts: 'r', kind: 'side' },
     ],
     notes: [
       'On 5 seeds adult males call 0.59 times an hour (field 0.5–1.5) and arrival calls sit in the field\'s range; 11 prescriptions fewer (<a href="staging/e4c-prereg.md">e4c-prereg.md §10</a>).',
-      'Costs carried forward: calls have no daily course (morning ÷ afternoon 1.02 against about 4.3 in the field), and on the stack value-based calls are the largest single source of extra walking (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, attribution).',
+      'Where calls meet company: on S4 males walked 3.43 km a day against 2.93 on S3, mostly approaches to callers valued in full even by animals already in company; with E5b\'s margin, 2.73 on S5 (<a href="staging/e5b-prereg.md">e5b-prereg.md §8</a>, <a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
+      'Cost carried forward: calls have no daily course (morning ÷ afternoon 1.02 against about 4.3 in the field) (<a href="staging/e4c-prereg.md">e4c-prereg.md</a>).',
     ],
   },
   // ---------------------------------------------------------------------------------------------------------------
@@ -569,7 +603,7 @@ export const DIAGRAMS: DiagramSpec[] = [
       { k: 'meat', x: S, y: y(4) + 16, w: SW, h: 72, t: 'Meat eaten per hour', s: 'meatEatPerH', ids: ['meatEatPerH'],
         text: '0.35 units of meat eaten per hour: a timer-style rate the ledger ties to the feeding-share target (T-ACT-1).' },
       { k: 'prey', x: L, y: y(0), w: LW, h: 72, t: 'Colobus density', s: 'preyKanyawara', st: 'des', ps: ['colobusDensityKanyawaraPerKm2'],
-        text: 'Kanyawara\'s density, 2.22 groups per km², in place of Ngogo\'s before its decline (E4f). A secondary value; recorded and off alone, in S3 as a site-matched input.' },
+        text: 'Kanyawara\'s density, 2.22 groups per km², in place of Ngogo\'s before its decline (E4f). A secondary value; recorded and off alone, on the stack as a site-matched input.' },
       { k: 'e4e', x: L, y: y(1) + 24, w: LW, h: 104, t: 'A hunt valued as food\n(E4e)', s: 'huntValue', st: 'lay', layer: { tag: 'HELD OFF', sw: ['huntValue'], stage: 'E4e' },
         text: 'The lead would be offered when a capture can be expected and scored like a crown trip delivering the same energy per hour: no community gap, no hand-set value. It passes the keep rule but is held off: its gain on the hunting-rate target is two errors cancelling (encounters too frequent, too few hunts per encounter).' },
     ],
@@ -580,7 +614,7 @@ export const DIAGRAMS: DiagramSpec[] = [
       { f: 'e4e', t: 'lead', fs: 'r', ts: 'l', fo: 24, kind: 'lay' },
     ],
     notes: [
-      'On S3 the model hunts 48 times per community-year; the hunting-rate band was never scaled to the model\'s 3–7 males (a 4–11 band is staged, not applied) (<a href="staging/e4e-prereg.md">e4e-prereg.md</a>, <a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
+      'On S5 the model hunts 34.7 times per community-year against a band of 5–25, which was never scaled to the model\'s 3–7 males (a 4–11 band is staged, not applied) (<a href="staging/e4e-prereg.md">e4e-prereg.md</a>, <a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
       'The observer meets colobus 2.7 times as often per follow-hour as at Kanyawara, mostly a scoring difference (<a href="staging/e4f-prereg.md">e4f-prereg.md</a>).',
     ],
   },
@@ -609,7 +643,7 @@ export const DIAGRAMS: DiagramSpec[] = [
       { f: 'strangers', t: 'route', fs: 'b', ts: 'r', kind: 'side', l: 'on contact', lx: 704, ly: 372 },
     ],
     notes: [
-      'All 12 patrol entries are still in use on S3. Lethal attacks during contact are in the next section.',
+      'All <span data-n="dom.patrols.rem">12</span> patrol entries are still in use on <span data-n="stack">S5</span>. Lethal attacks during contact are in the next section.',
     ],
   },
   // ---------------------------------------------------------------------------------------------------------------
@@ -718,7 +752,7 @@ export const DOMAINS: { key: string; title: string; ids: string[] }[] = [
 /** The overview: one decision, its steps and the body states (titles and plain-English lines). */
 export const OVERVIEW = {
   w: 832, h: 504,
-  desc: 'Map of one decision: perception, six body states, options and their values, the choice, the act and the world, each marked by how many prescriptions still act there and how many S3 replaced.',
+  desc: 'Map of one decision: perception, six body states, options and their values, the choice, the act and the world, each marked by how many prescriptions still act there and how many the candidate stack replaced.',
   steps: {
     perceive: { x: 16, y: 176, w: 136, h: 120, t: 'Perceive', s: 'sight, hearing,\nmemory', text: 'Only what is in sight or earshot, and what the animal remembers. Some impulses are still rolled here.' },
     options: { x: 392, y: 176, w: 136, h: 120, t: 'Options', s: 'what each act\nis worth', text: 'Code lists every legal act and scores it from the body states, perception and memory.' },
@@ -742,7 +776,7 @@ export const OVERVIEW = {
       'body:sleep': 'Sleep pressure, a circadian sleep gate and light (E2a, E2d, E2f).',
       'body:heat': 'A heat balance; at Kibale it stores almost no heat (E2a). The midday rest clock it replaced acted on options and bouts.',
       'body:endo': 'Slow stress, arousal and affiliation states, and a fast arousal state (E4a, E4b).',
-      'body:social': 'Loneliness still rises on fixed timers.',
+      'body:social': 'Loneliness still rises on fixed timers. Since S5 it also scales what a companion\'s company is worth (E5a).',
     } as Record<string, string>,
   },
 };
