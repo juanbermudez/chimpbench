@@ -225,5 +225,18 @@ table in §10 after the sensitivity arms and W's benchmark.
   (prescriptions 115 → 113), with a sourced sleep window, a physics-based darkness cost and a design-weighted company
   value; it would still leave departures before sunrise.
 
+#### Iteration 2 results (rhythm-metrics, frozen 9d4fac9; read before the benchmark)
+WFS fails night safety (adults out of a nest 3.93% of the night, T-RHY-5 0.044); **WFSD passes it, narrowly** (adults
+2.96% against ≤ 3.3%, T-RHY-5 0.030 against ≤ 0.033, juveniles 5–15 y 3.50% against R0's 4.61%, no night death):
+benchmarked (registered rule). Departures: median −60 (WFS) and −14 (WFSD), 83% before sunrise in both. Full table in
+§10.
+
+#### Replication of WFSD (registered before its run; measurement, no change of mechanism)
+The pass is within 0.3 points of the line, and R0's rhythm readouts barely vary between realizations while free-night
+arms may vary more. WFSD is re-drawn three times on rhythm-metrics (`rgTemperature` 0.1641, 0.1639, 0.16405 added; same
+frozen commit) to give its own spread. Reading rule: the night-safety pass stands if the mean of the four WFSD runs
+passes both lines (adults ≤ 3.3% of the night, T-RHY-5 ≤ 0.033); if any single run fails, the pass is reported as
+"marginal".
+
 ## 10. Results
 (to be filled from the JSON by script)
