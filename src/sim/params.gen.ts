@@ -2,7 +2,7 @@
 /* eslint-disable */
 export const REGISTRY_VERSION = 1;
 /** Content hash of every live default, hard range, profile value and integer flag. Stored with each world. */
-export const REGISTRY_HASH = 'f96e4c84ba6f00e5';
+export const REGISTRY_HASH = '815b0a3586318535';
 
 /** Registry defaults (the compressed profile). */
 export const DEFAULTS = {
@@ -558,6 +558,7 @@ export const DEFAULTS = {
   ledgerRmrCoef: 70,
   ledgerRmrExp: 0.75,
   ledgerWalkJPerKgM: 3.8,
+  ledgerWildCostMult: 1,
   maleDriftTauDays: 500,
   mapSizeM: 160,
   mateApproachS: 150,
@@ -1472,6 +1473,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   ledgerRmrCoef: [1, 1000000],
   ledgerRmrExp: [0.1, 1.5],
   ledgerWalkJPerKgM: [0, 1000000],
+  ledgerWildCostMult: [0.5, 4],
   maleDriftTauDays: [0, 1000000],
   mapSizeM: [160, 8000],
   mateApproachS: [1, 100000],

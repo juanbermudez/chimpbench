@@ -176,7 +176,7 @@ export const driveOn = (P: Params) => P.energyLedger === 1 && P.ledgerDrive === 
 
 /** Stage E1e: open the drive state: expenditure expected at the awake resting rate, a 12-hour waking day until the first night. */
 function openDrive(c: Chimp, L: EnergyLedger, P: Params): void {
-  L.eAvg = P.ledgerRmrCoef / 24 * Math.pow(massOf(c, P), P.ledgerRmrExp) * P.ledgerActRest;
+  L.eAvg = P.ledgerRmrCoef / 24 * Math.pow(massOf(c, P), P.ledgerRmrExp) * P.ledgerActRest * P.ledgerWildCostMult;
   L.sBed = 1 - Math.exp(-P.driveFirstDayH / P.rhythmSleepRiseH); L.sWake = 0; L.slept = 0; L.outAt = L.out;
 }
 
@@ -266,7 +266,7 @@ function setHunger(c: Chimp, L: EnergyLedger, P: Params): void {
  * Optional tap for diagnostics (scripts/energy-diagnose.ts): called with each expenditure term, and with 'suckled' (an
  * intake, not an expenditure: milk the infant drank). Never set by the app; reads only.
  */
-export type EnergyTerm = 'rest' | 'activity' | 'walk' | 'climb' | 'carry' | 'pregnancy' | 'growth' | 'milk' | 'digestion' | 'suckled';
+export type EnergyTerm = 'rest' | 'activity' | 'wild' | 'walk' | 'climb' | 'carry' | 'pregnancy' | 'growth' | 'milk' | 'digestion' | 'suckled';
 export const energyTap: { fn: ((c: Chimp, term: EnergyTerm, kcal: number) => void) | null } = { fn: null };
 
 /** One tick of the balance for `c` (called from needs()): absorption, expenditure, and the hunger readout. */
@@ -293,8 +293,12 @@ export function energyTick(world: World, c: Chimp, x: ChimpX, sleeping: boolean)
     out += tef; if (tap) tap(c, 'digestion', tef);
   } else { absorbed = L.gut * r.absorb; L.gut -= absorbed; }
   const base = r.rest * m75, act = sleeping ? P.ledgerActSleep : c.action === 'forage' ? P.ledgerActFeed : P.ledgerActRest;
-  out += base * act;
-  if (tap) { tap(c, 'rest', base); tap(c, 'activity', base * (act - 1)); }
+  // stage E1g (docs/staging/e1g-prereg.md): ledgerWildCostMult scales the non-locomotor maintenance term for wild costs no
+  // term models (thermoregulation, immune function, tissue repair, vigilance). Unmeasured in wild apes; 1 = the captive-based
+  // sum (a sensitivity parameter, assumed, never fitted)
+  const wild = P.ledgerWildCostMult;
+  out += base * act * wild;
+  if (tap) { tap(c, 'rest', base); tap(c, 'activity', base * (act - 1)); if (wild !== 1) tap(c, 'wild', base * act * (wild - 1)); }
   // NOT VALID AT ageRate > 1: gestation, milk synthesis and growth below are charged per ecological tick at their natural
   // daily rate, so at a life-course ageRate (365) reproduction and growth cost 1/ageRate of their real energy. Do not run
   // demography with the ledger on and trust it (docs/simulation.md; scripts/energy-diagnose.ts refuses it).
