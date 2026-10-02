@@ -265,7 +265,7 @@ export const DIAGRAMS: DiagramSpec[] = [
       { f: 'e3b', t: 'opts', fs: 'r', ts: 'l', fo: 0, to: -16, kind: 'lay' },
     ],
     notes: [
-      'On S5 the feeding, grooming and rest rows of the activity budget are in their bands. No animal starves on S5 or S6 in 5 seeds × 60 days (S5: two deaths, both illness; S6: none) (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
+      'On S6 the feeding, grooming and rest rows of the activity budget are in their bands. No animal starves on S5 or S6 in 5 seeds × 60 days (S5: two deaths, both illness; S6: none) (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
       'Open: nursing mothers stop eating with room in the gut, so the limit is their appetite and their day, not the gut wall (<a href="staging/e1h-prereg.md">e1h-prereg.md §9</a>, <a href="staging/e1i-prereg.md">e1i-prereg.md</a>).',
     ],
   },
@@ -346,7 +346,7 @@ export const DIAGRAMS: DiagramSpec[] = [
     ],
     notes: [
       'Nesting at dusk and an active day of 11 h 22 min emerge with no clock (<a href="staging/e2a-prereg.md">e2a-prereg.md</a>).',
-      'Still wrong by its one-site row: on S5 the observer scores 81% of departures before sunrise, against 18% for five Taï mothers in fruit-scarce periods. E2h found that row scored differently from the field, and that on S3 the real miss was nursing mothers leaving about an hour early, hungry and thirsty (<a href="staging/e2h-prereg.md">e2h-prereg.md</a>, <a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
+      'Still wrong by its one-site row: on S6 the observer scores 77% of departures before sunrise, against 18% for five Taï mothers in fruit-scarce periods. E2h found that row scored differently from the field, and that on S3 the real miss was nursing mothers leaving about an hour early, hungry and thirsty (<a href="staging/e2h-prereg.md">e2h-prereg.md</a>, <a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
     ],
   },
   // ---------------------------------------------------------------------------------------------------------------
@@ -440,7 +440,7 @@ export const DIAGRAMS: DiagramSpec[] = [
       { f: 'dyad', t: 'groom', fs: 'r', ts: 'l', fo: -8, to: 0, kind: 'lay' },
     ],
     notes: [
-      'On S5 the grooming row is in its band (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>). The need it serves is the next timer to replace.',
+      'On S6 the grooming row is in its band (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>). The need it serves is the next timer to replace.',
     ],
   },
   // ---------------------------------------------------------------------------------------------------------------
@@ -477,7 +477,7 @@ export const DIAGRAMS: DiagramSpec[] = [
       { f: 'retry', t: 'go', fs: 'r', ts: 'l', kind: 'side' }, { f: 'callers', t: 'go', fs: 'l', ts: 'r', kind: 'side' },
     ],
     notes: [
-      'On S5 parties average 3.38 animals (band 3–9), males walk 2.73 km a day (S3 2.93, S4 3.43; S6 2.68), and the travel share sits at its band\'s edge (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
+      'On S6 parties average 3.31 animals (band 3–9), males walk 2.68 km a day (S3 2.93, S4 3.43, S5 2.73), and the travel share is inside its band, males near its edge (0.24 and 0.21 against 0.12–0.25) (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
       'E5a passed on five seeds on the reference stack (prescriptions 103 → 97, sums inside noise). On the integrated stack without E5b\'s margin it added half a kilometre of walking a day (<a href="staging/e5a-prereg.md">e5a-prereg.md</a>, <a href="staging/e5b-prereg.md">e5b-prereg.md §8</a>).',
       'Open: party size does not track crop size, the party-size band (3–9) has no recorded derivation, and the same margin for following and joined trips is untested (<a href="staging/e5a-prereg.md">e5a-prereg.md §7</a>, <a href="staging/e5b-prereg.md">e5b-prereg.md §8</a>).',
     ],
@@ -614,7 +614,7 @@ export const DIAGRAMS: DiagramSpec[] = [
       { f: 'e4e', t: 'lead', fs: 'r', ts: 'l', fo: 24, kind: 'lay' },
     ],
     notes: [
-      'On S5 the model hunts 34.7 times per community-year against a band of 5–25, which was never scaled to the model\'s 3–7 males (a 4–11 band is staged, not applied) (<a href="staging/e4e-prereg.md">e4e-prereg.md</a>, <a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
+      'On S6 the model hunts 31.0 times per community-year against a band of 5–25, which was never scaled to the model\'s 3–7 males (a 4–11 band is staged, not applied) (<a href="staging/e4e-prereg.md">e4e-prereg.md</a>, <a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
       'The observer meets colobus 2.7 times as often per follow-hour as at Kanyawara, mostly a scoring difference (<a href="staging/e4f-prereg.md">e4f-prereg.md</a>).',
     ],
   },

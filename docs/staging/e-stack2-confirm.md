@@ -345,3 +345,18 @@ died; whether they settle or keep falling needs a run longer than the cap.
 **Verdict: S6 passes the keep rule and replaces S5 as the best integrated candidate** (76 prescriptions, viable, night
 safe, sums level with S5, nursing mothers' deficit halved and mothers recovering as infants grow), with the infants'
 reserves the open cost. Energy readouts of S5c2 and S5c3 to be re-run when the machine is free.
+
+**Rows the decision guide quotes** (printed by the integrator's rows_s6.py from the JSON; pooled over 5 seeds; S5 = its four confirm runs; T-ACT-2 on S6 by sex: males 0.242, females 0.213):
+
+| Row | Band | S5 runs | S5 mean ± SD | S6 |
+| --- | --- | --- | --- | --- |
+| T-ACT-1 | 0.33–0.5 | 0.382 / 0.381 / 0.387 / 0.383 | 0.383 ± 0.002 | 0.378 |
+| T-ACT-2 | 0.12–0.25 | 0.235 / 0.228 / 0.230 / 0.229 | 0.230 ± 0.003 | 0.226 |
+| T-ACT-3 | 0.08–0.18 | 0.158 / 0.169 / 0.161 / 0.165 | 0.163 ± 0.005 | 0.164 |
+| T-ACT-4 | 0.3–0.47 | 0.339 / 0.366 / 0.366 / 0.367 | 0.359 ± 0.014 | 0.377 |
+| T-PTY-1 | 3–9 | 3.376 / 3.374 / 3.408 / 3.372 | 3.382 ± 0.017 | 3.307 |
+| T-RNG-4 | 1.5–3.5 | 2.811 / 2.800 / 2.693 / 2.738 | 2.761 ± 0.055 | 2.575 |
+| T-HUN-1 | 5–25 | 34.685 / 33.878 / 33.365 / 34.570 | 34.125 ± 0.619 | 31.021 |
+| T-HUN-3 | 0.05–0.4 | 0.055 / 0.071 / 0.061 / 0.065 | 0.063 ± 0.007 | 0.057 |
+| T-FOOD-2 | 0.6–0.78 | 0.772 / 0.772 / 0.756 / 0.764 | 0.766 ± 0.008 | 0.761 |
+| T-FOOD-10 | 0.08–0.3 | 0.806 / 0.760 / 0.761 / 0.770 | 0.774 ± 0.022 | 0.766 |
