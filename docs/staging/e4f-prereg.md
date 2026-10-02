@@ -135,41 +135,6 @@ Reading rules, fixed now:
 - Movement: colobus travel per hour by day and by night against the party's travel; if colobus move at night or
   faster than the party, their drift adds encounters a home-ranging, day-active group would not.
 
-## 9. Results
-
-### Run log (each entry written before its run, unless marked)
-
-- **I0 identity and S0 smoke** (frozen checkout of f5a4bb5; logged after the run, as registered in §3). I0: R after
-  2 days gives 9deaf1df367a7d34 (seed 48) and 51357e4fb3248108 (seed 7), E4e's hashes: R is unchanged at this head and
-  the integrator's R quick realizations (R-quick, NR1q–NR3q at 612bf15) are this stage's reference. S0 (seed 48, 1 + 1
-  days): every readout produced; tool check holds (focal model rule 19.4175 per 100 h = T-HUN-3 `encountersPer100h`
-  19.4175); colobus travel 90.0 m/h by day and by night.
-- **D0 diagnosis** (as registered in §3): launched 05:57 from the same frozen checkout.
-
-#### D0 result (f5a4bb5; R, seeds 48 and 7, 30 + 30 days; pooled by `artifacts/validation/e4f/d0_pool.py` from `diag/D0-{48,7}.json`)
-
-- Tool checks: the focal model rule reproduces R-quick's T-HUN-3 per seed (0.1236, 0.0847) and its encounter part
-  (12.13 and 7.97 per 100 h; e-bench pools by the seed mean, 10.05); truth 5.59 encounters per community-day (E4e's R:
-  5.59). The observer and the truth readouts are the reference's.
-- **Counting rule** (same scans): focal follows 10.04 → 8.82 per 100 h under gilby2015's rule (−12%); party follows
-  7.54 → 6.97 (−8%). Two or more groups within 100 m at 3–9% of positive scans.
-- **Follow type**: T-HUN-3 counts its encounters on focal follows (10.04 per 100 h); gilby2015's are party scans, and
-  the model's party follows (which already score T-HUN-1) give 7.54 (×0.75).
-- **Distance**: 83% (focal) and 73% (party) of encounters are first scanned 50–100 m away; party spread is small (mean
-  9–15 m, median 1–4 m), so "any member within 100 m" adds little (focal animal only: 8.00 against 8.82).
-- **Density**: 2.35 and 2.60 groups/km² inside the communities' ranges (map 2.48): placement is uniform, nothing
-  concentrates colobus where chimpanzees range.
-- **Movement**: colobus travel 90 m/h by day and 90 m/h by night (the literal; no rest at night); the followed party's
-  centroid 139–155 m/h. Colobus drift raises the relative speed by about 10% over stationary groups (mean relative
-  speed of two random headings), so ranging can account for at most ~10%.
-- **Decomposition of the 2.7 × (focal, today's rule, 10.04 against 3.73):** follow type ×1.33, counting rule ×1.08,
-  density (Ngogo against Kanyawara K-30, [L]) ×1.13, colobus drift ≤ ×1.1; on party follows with gilby2015's rule and
-  Kanyawara's density the model would record ~6.2 per 100 h, **1.7 × Kanyawara**. The remaining ×1.7 has no sourced
-  input behind it: the field counts colobus that "can be detected" (no detection probability in any source reached),
-  colobus avoidance of chimpanzees is not modelled (no rate found). **Decision:** the inputs (density, ranging) are
-  minor drivers; most of the excess is how the encounter is counted (scorer) plus an unexplained residual. The one
-  sourced, site-matched input correction is the density, and it is small.
-
 ## 4. Correction (switch `preyKanyawara`, 0 = today; field profile only)
 
 ### 4.1 Input: site-matched colobus density
@@ -232,6 +197,17 @@ site-matched input, inside noise or not, for the integrator to decide (it is [L]
 
 At most 3, each logged in §9 and committed before its run. Iteration 1 = K (with H and KH as its comparison runs).
 A further iteration only if a source for colobus day range or for detection distance is reached (registered first).
+
+## 9. Results
+
+### Run log (each entry written before its run, unless marked)
+
+- **I0 identity and S0 smoke** (frozen checkout of f5a4bb5; logged after the run, as registered in §3). I0: R after
+  2 days gives 9deaf1df367a7d34 (seed 48) and 51357e4fb3248108 (seed 7), E4e's hashes: R is unchanged at this head and
+  the integrator's R quick realizations (R-quick, NR1q–NR3q at 612bf15) are this stage's reference. S0 (seed 48, 1 + 1
+  days): every readout produced; tool check holds (focal model rule 19.4175 per 100 h = T-HUN-3 `encountersPer100h`
+  19.4175); colobus travel 90.0 m/h by day and by night.
+- **D0 diagnosis** (as registered in §3): launched 05:57 from the same frozen checkout.
 - **I1 identity and S1 smoke (before any arm).** Frozen checkout of 518295c (the switch commit). I1: R with
   `preyKanyawara` 0, 2 days, seeds 48 and 7: E4e's hashes again. S1: R + `preyKanyawara` 1, seed 48, 1 + 2 days through
   the tool: 142 groups, every readout produced, the model-rule hunted share on focal follows equals T-HUN-3's value.
@@ -242,3 +218,27 @@ A further iteration only if a source for colobus day range or for detection dist
   `huntValue` 1, K = R + `preyKanyawara` 1, KH = K + `huntValue` 1 (`artifacts/validation/e4f/{H,K,KH}.json`); (b) the
   tool for RD0–RD3 (R and its three re-draws, unchanged code), H, K, KH (`artifacts/validation/e4f/diag/<label>-{48,7}.json`).
   Judged by §6–§7: `judge_vs_reps.py quick R` on e-bench JSON; tool readouts by `diag_table.py` against RD0–RD3.
+
+#### D0 result (f5a4bb5; R, seeds 48 and 7, 30 + 30 days; pooled by `artifacts/validation/e4f/d0_pool.py` from `diag/D0-{48,7}.json`, the frozen run's `R-{48,7}.json` renamed)
+
+- Tool checks: the focal model rule reproduces R-quick's T-HUN-3 per seed (0.1236, 0.0847) and its encounter part
+  (12.13 and 7.97 per 100 h; e-bench pools by the seed mean, 10.05); truth 5.59 encounters per community-day (E4e's R:
+  5.59). The observer and the truth readouts are the reference's.
+- **Counting rule** (same scans): focal follows 10.04 → 8.82 per 100 h under gilby2015's rule (−12%); party follows
+  7.54 → 6.97 (−8%). Two or more groups within 100 m at 3–9% of positive scans.
+- **Follow type**: T-HUN-3 counts its encounters on focal follows (10.04 per 100 h); gilby2015's are party scans, and
+  the model's party follows (which already score T-HUN-1) give 7.54 (×0.75).
+- **Distance**: 83% (focal) and 73% (party) of encounters are first scanned 50–100 m away; party spread is small (mean
+  9–15 m, median 1–4 m), so "any member within 100 m" adds little (focal animal only: 8.00 against 8.82).
+- **Density**: 2.35 and 2.60 groups/km² inside the communities' ranges (map 2.48): placement is uniform, nothing
+  concentrates colobus where chimpanzees range.
+- **Movement**: colobus travel 90 m/h by day and 90 m/h by night (the literal; no rest at night); the followed party's
+  centroid 139–155 m/h. Colobus drift raises the relative speed by about 10% over stationary groups (mean relative
+  speed of two random headings), so ranging can account for at most ~10%.
+- **Decomposition of the 2.7 × (focal, today's rule, 10.04 against 3.73):** follow type ×1.33, counting rule ×1.08,
+  density (Ngogo against Kanyawara K-30, [L]) ×1.13, colobus drift ≤ ×1.1; on party follows with gilby2015's rule and
+  Kanyawara's density the model would record ~6.2 per 100 h, **1.7 × Kanyawara**. The remaining ×1.7 has no sourced
+  input behind it: the field counts colobus that "can be detected" (no detection probability in any source reached),
+  colobus avoidance of chimpanzees is not modelled (no rate found). **Decision:** the inputs (density, ranging) are
+  minor drivers; most of the excess is how the encounter is counted (scorer) plus an unexplained residual. The one
+  sourced, site-matched input correction is the density, and it is small.
