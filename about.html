@@ -391,7 +391,7 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
         <li><a href="#decide">Decisions</a></li>
         <li><a href="#society">Society</a></li>
         <li><a href="#experiments">Field experiments</a></li>
-        <li><a href="#realism">Chimp data</a></li>
+        <li><a href="#realism">Field data</a></li>
         <li><a href="#sources">Credits</a></li>
       </ol>
     </nav>
@@ -406,7 +406,7 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
           <li><a href="#decide">Decisions</a></li>
           <li><a href="#society">Society</a></li>
           <li><a href="#experiments">Field experiments</a></li>
-          <li><a href="#realism">Chimp data</a></li>
+          <li><a href="#realism">Field data</a></li>
           <li><a href="#sources">Credits</a></li>
         </ol>
       </details>
@@ -517,7 +517,7 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
 
       <!-- Day -->
       <section class="sec" id="day" aria-labelledby="h-day">
-        <header class="sh"><h2 id="h-day">Daily routine</h2><p>The simulation keeps real equatorial time: sunrise and sunset just before seven, about twelve hours of daylight all year. The timeline shows what most chimps are doing across a typical day.</p></header>
+        <header class="sh"><h2 id="h-day">Daily routine</h2><p>The simulation keeps real equatorial time: sunrise and sunset just before seven, about twelve hours of daylight all year. You can watch it in real time or speed it up: keys 1 to 7 go from real time to as fast as your computer allows. The timeline shows what most chimps are doing across a typical day.</p></header>
         <div class="panel day">
           <div class="tl">
             <span class="tl-label tl-sky" aria-hidden="true">Light</span>
@@ -539,7 +539,7 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
               <li class="bed" style="--a:17.8;--b:21"><b>Build a nest, sleep</b><span class="t">from about 17:50 · a fresh nest, then sleep</span></li>
             </ol>
             <span class="tl-label"><svg class="i" aria-hidden="true"><use href="#i-flag"/></svg>Patrols</span>
-            <ol class="track" aria-label="Patrols"><li class="maybe" style="--a:8;--b:15.5"><b>A border patrol may set out</b><span class="t">08:00–15:30 · every week or two, a group of males heads for the border</span></li></ol>
+            <ol class="track" aria-label="Patrols"><li class="maybe" style="--a:8;--b:15.5"><b>A border patrol may set out</b><span class="t">08:00–15:30 · every few weeks, a group of males heads for the border</span></li></ol>
             <span class="tl-label"><svg class="i" aria-hidden="true"><use href="#i-storm"/></svg>Storms</span>
             <ol class="track" aria-label="Storms"><li class="storm" style="--a:12.5;--b:19"><b>Thunderstorms most likely</b><span class="t">12:30–19:00 · about two-thirds of the rain falls in the afternoon</span></li></ol>
             <span class="tl-hours-spacer" aria-hidden="true"></span>
@@ -549,12 +549,12 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
         <div class="year">
           <div class="prose">
             <h3>Rainy seasons</h3>
-            <p>Kibale gets rain from March to May and again from September to November, with drier spells in between. Fruit follows the rain about six weeks later.</p>
+            <p>Kibale gets rain from March to May and again from September to November, with drier spells in between. In the default forest, ripe fruit follows Ngogo&rsquo;s real fruit record, year by year (see <a href="#realism">Field data</a>).</p>
             <p>Figs are different: each tree fruits on its own schedule, so some figs are usually ripe when little else is.</p>
             <div class="temp"><div><b>15 °C</b><span>at dawn</span></div><div><b>24 °C</b><span>after lunch</span></div></div>
           </div>
           <figure class="panel rainfall">
-            <figcaption class="rainfall-head"><span><b>Rain per month</b>, mm, as simulated</span><span class="rkey">wet season</span></figcaption>
+            <figcaption class="rainfall-head"><span><b>Rain per month</b>, mm</span><span class="rkey">wet season</span></figcaption>
             <ol class="months" aria-label="Monthly rainfall in millimetres">
               <li style="--mm:62"><span class="v">62</span><i class="col"></i><span class="m" aria-label="January">J</span></li>
               <li style="--mm:78"><span class="v">78</span><i class="col"></i><span class="m" aria-label="February">F</span></li>
@@ -569,7 +569,7 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
               <li class="wet" style="--mm:180"><span class="v">180</span><i class="col"></i><span class="m" aria-label="November">N</span></li>
               <li style="--mm:95"><span class="v">95</span><i class="col"></i><span class="m" aria-label="December">D</span></li>
             </ol>
-            <p class="small muted">About 1,650 mm a year. Every new forest opens at 06:30 on 28 September, in the middle of the rains.</p>
+            <p class="small muted">The weather follows this monthly pattern; a simulated year gets about 1,500 to 1,700 mm. Every new forest opens at 06:30 on 28 September, in the middle of the rains.</p>
           </figure>
         </div>
         <div class="pair day-shots">
@@ -603,9 +603,9 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
             <p class="again"><svg class="i" aria-hidden="true"><use href="#i-loop"/></svg>…and back to step 1.</p>
           </div>
           <ul class="modes" aria-label="Who picks">
-            <li><h3>Rules</h3><p>The built-in rules score each option with a simple recipe (hungry plus fruit nearby means go eat) and take the top one.</p></li>
-            <li><h3>Decision model</h3><p>A small AI model running on your computer can make the pick instead. It reads only what that chimp perceives, feels and remembers, and chooses from the same list of possible moves.</p></li>
-            <li><h3>Checked either way</h3><p>Whoever picks, the simulation checks that the move is still possible before the chimp acts.</p></li>
+            <li><h3>Rules</h3><p>The built-in rules score each option with a simple recipe (hungry plus fruit nearby means go eat). The top score usually wins, but not every time.</p></li>
+            <li><h3>Decision model</h3><p>A small AI model, GLiNER2.5-Decide, can make the pick instead, by default for the chimp you select. It runs in your browser, reads only what that chimp perceives, feels and remembers, and chooses from the same list of possible moves. The first visit downloads it (about 0.9 GB, or 1.7 GB on CPU); you can skip that and continue with rules.</p></li>
+            <li><h3>Checked either way</h3><p>Only the simulation changes the world. Whoever picks, it checks that the move is still possible before the chimp acts.</p></li>
           </ul>
         </div>
       </section>
@@ -624,11 +624,11 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
           </li>
           <li class="mech">
             <svg viewBox="0 0 200 104" aria-hidden="true"><g fill="none" stroke="rgba(255,255,255,.18)"><circle cx="36" cy="52" r="20"/><circle cx="100" cy="52" r="20"/><circle cx="164" cy="52" r="20"/></g><g transform="translate(24 40)" class="mini-s" style="stroke:#ef7266"><path d="M13 2 4 14h7l-1 8 9-12h-7Z"/></g><g transform="translate(88 40)" class="mini-s"><path d="M5 9l7 7 7-7"/><path d="M5 4l7 7 7-7" opacity=".5"/></g><g transform="translate(152 40)" class="mini-s" style="stroke:#f2f2f3"><path d="M12 20s-7.5-4.6-9-9.3C2 7.4 4.3 4.5 7.4 4.5c2 0 3.4 1.2 4.6 2.8 1.2-1.6 2.6-2.8 4.6-2.8 3.1 0 5.4 2.9 4.4 6.2-1.5 4.7-9 9.3-9 9.3Z"/></g><g class="mini-s" style="stroke:#6f6f76"><path d="M61 52h13m-4-4 4 4-4 4M125 52h13m-4-4 4 4-4 4"/></g></svg>
-            <h3>Fights and making up</h3><p>Most conflicts are charges and bluffs; about 1 in 20 gets physical. Afterwards, rivals often reconcile and friends console the loser (<a class="cite" href="https://doi.org/10.1007/s10329-004-0082-z">Kutsukake &amp; Castles 2004</a>). A fight that never gets patched up leaves <b>tension</b> that fades over a few weeks, modeled on how chimps' relationships vary in value and compatibility (<a class="cite" href="https://doi.org/10.1111/j.1439-0310.2008.01527.x">Fraser, Schino &amp; Aureli 2008</a>).</p>
+            <h3>Fights and making up</h3><p>Most conflicts are charges and bluffs, and few come to blows. Afterwards, rivals often reconcile and friends console the loser (<a class="cite" href="https://doi.org/10.1007/s10329-004-0082-z">Kutsukake &amp; Castles 2004</a>). A fight that never gets patched up leaves <b>tension</b> that fades over a few weeks, modeled on how chimps' relationships vary in value and compatibility (<a class="cite" href="https://doi.org/10.1111/j.1439-0310.2008.01527.x">Fraser, Schino &amp; Aureli 2008</a>).</p>
           </li>
           <li class="mech">
             <svg viewBox="0 0 200 104" aria-hidden="true"><circle cx="58" cy="52" r="38" fill="rgba(234,139,96,.08)" stroke="#ea8b60" stroke-width="1.4"/><circle cx="156" cy="36" r="27" fill="rgba(119,182,225,.08)" stroke="#77b6e1" stroke-width="1.4"/><circle cx="150" cy="84" r="16" fill="rgba(226,141,174,.08)" stroke="#e28dae" stroke-width="1.4"/><path d="M84 22 C100 36 102 60 90 80" fill="none" stroke="#f2f2f3" stroke-width="1.4" stroke-dasharray="1 6" stroke-linecap="round"/><g fill="#f2f2f3"><circle cx="93" cy="36" r="2.8"/><circle cx="97" cy="46" r="2.8"/><circle cx="98" cy="56" r="2.8"/></g><g class="mini-s" style="stroke:#77b6e1"><path d="M122 42 q-5 6 0 12"/><path d="M116 38 q-8 10 0 20" opacity=".6"/></g></svg>
-            <h3>Territories and patrols</h3><p>Every week or two, a group of males patrols the border in silence (<a class="cite" href="https://sites.lsa.umich.edu/mitani/wp-content/uploads/sites/152/2014/08/watts_and_mitani_2001.pdf">Watts &amp; Mitani 2001</a>). Meeting strangers, they count heads: outnumber them and they charge; outnumbered, they slip quietly home. Most encounters are only heard, not seen (<a class="cite" href="https://doi.org/10.1016/j.anbehav.2011.11.004">Wilson et al. 2012</a>).</p>
+            <h3>Territories and patrols</h3><p>Every few weeks, a group of males patrols the border in silence (<a class="cite" href="https://sites.lsa.umich.edu/mitani/wp-content/uploads/sites/152/2014/08/watts_and_mitani_2001.pdf">Watts &amp; Mitani 2001</a>). Meeting strangers, they count heads: outnumber them and they charge; outnumbered, they slip quietly home. Most encounters are only heard, not seen (<a class="cite" href="https://doi.org/10.1016/j.anbehav.2011.11.004">Wilson et al. 2012</a>).</p>
           </li>
           <li class="mech">
             <svg viewBox="0 0 200 104" aria-hidden="true"><path d="M0 30 C20 22 36 34 56 26 C76 18 92 32 112 24 C132 16 150 30 170 22 C184 18 194 22 200 24" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="1.4"/><g fill="#a9a9b0"><ellipse cx="124" cy="18" rx="8" ry="5"/><circle cx="133" cy="13" r="3.6"/></g><path d="M116 19 C108 24 106 34 110 42" fill="none" stroke="#a9a9b0" stroke-width="1.6" stroke-linecap="round"/><g fill="#ea8b60"><circle cx="56" cy="86" r="6"/><circle cx="104" cy="92" r="6"/><circle cx="160" cy="84" r="6"/></g><g class="mini-s" style="stroke:#6f6f76"><path d="M62 80 L112 40M105 84 L120 44M156 78 L130 42"/></g></svg>
@@ -640,11 +640,11 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
           </li>
           <li class="mech">
             <svg viewBox="0 0 200 104" aria-hidden="true"><circle cx="52" cy="54" r="36" fill="rgba(226,141,174,.08)" stroke="#e28dae" stroke-width="1.4"/><circle cx="150" cy="54" r="36" fill="rgba(119,182,225,.08)" stroke="#77b6e1" stroke-width="1.4"/><path d="M58 44 C86 18 118 18 140 44" fill="none" stroke="#f2f2f3" stroke-width="1.4" stroke-dasharray="3 5" stroke-linecap="round"/><path d="M132 40 l8 4 -1 -9" fill="none" stroke="#f2f2f3" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="56" cy="50" r="4.5" fill="#e28dae"/><circle cx="144" cy="58" r="4.5" fill="#e28dae"/></svg>
-            <h3>Females change communities</h3><p>Around age 12, most young females move to a neighboring community and start at the bottom of the female pecking order. Males stay home for life.</p>
+            <h3>Females change communities</h3><p>In adolescence, most young females move to a neighboring community and start at the bottom of the female pecking order. Males stay home for life.</p>
           </li>
           <li class="mech">
             <svg viewBox="0 0 200 104" aria-hidden="true"><circle cx="60" cy="36" r="26" fill="rgba(255,255,255,.09)"/><path d="M60 62 V80" stroke="rgba(255,255,255,.18)" stroke-width="3"/><g fill="#a9a9b0"><circle cx="48" cy="30" r="2.2"/><circle cx="62" cy="24" r="2.2"/><circle cx="72" cy="36" r="2.2"/><circle cx="54" cy="44" r="2.2"/><circle cx="68" cy="48" r="2.2"/></g><g fill="#ea8b60"><circle cx="30" cy="88" r="4.5"/><circle cx="44" cy="92" r="4.5"/><circle cx="58" cy="88" r="4.5"/><circle cx="72" cy="92" r="4.5"/><circle cx="86" cy="88" r="4.5"/><circle cx="96" cy="94" r="3.5"/></g><circle cx="152" cy="52" r="14" fill="rgba(255,255,255,.09)"/><path d="M152 66 V80" stroke="rgba(255,255,255,.18)" stroke-width="3"/><g fill="#ea8b60"><circle cx="144" cy="90" r="4.5"/><circle cx="162" cy="90" r="4.5"/></g><g transform="translate(140 6)" class="mini-s" style="stroke:#9aadc2"><path d="M7 14h10.5a4 4 0 0 0 .6-8A6 6 0 0 0 6.6 7.2 3.5 3.5 0 0 0 7 14Z"/><path d="m8 17-1 3M12 17l-1 3M16 17l-1 3"/></g></svg>
-            <h3>Food and weather</h3><p>A community splits into <b>parties</b>, temporary subgroups that merge and split all day: big ones at a fig feast, small ones when fruit is scarce. Storms send everyone to shelter.</p>
+            <h3>Food and weather</h3><p>A community splits into <b>parties</b>, temporary subgroups that join and split all day as chimps follow food and each other. Storms send everyone to shelter.</p>
           </li>
         </ul>
         <div class="pair soc-shots">
@@ -659,9 +659,9 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
         <ul class="rows exps">
           <li class="row"><svg class="i" aria-hidden="true"><use href="#i-speaker"/></svg><h3>Stranger call playback</h3><p>A hidden speaker plays a strange male's pant-hoot. Do they go look, call back or sneak away? (<a class="cite" href="https://doi.org/10.1006/anbe.2000.1706">Wilson, Hauser &amp; Wrangham 2001</a>)</p></li>
           <li class="row"><svg class="i" aria-hidden="true"><use href="#i-snake"/></svg><h3>Snake model</h3><p>A fake viper on the trail. Who spots it, and do they warn the ones who haven't? (<a class="cite" href="https://doi.org/10.1016/j.cub.2011.11.053">Crockford et al. 2012</a>)</p></li>
-          <li class="row"><svg class="i" aria-hidden="true"><use href="#i-fig"/></svg><h3>Fig feast</h3><p>A giant fig ripens all at once. Watch everyone show up.</p></li>
+          <li class="row"><svg class="i" aria-hidden="true"><use href="#i-fig"/></svg><h3>Fig feast</h3><p>A big fig crop ripens all at once and stays for three days. Who finds it?</p></li>
           <li class="row"><svg class="i" aria-hidden="true"><use href="#i-storm"/></svg><h3>Storm</h3><p>A heavy downpour, right now. Everyone hunkers down; a few males do a rain display.</p></li>
-          <li class="row"><svg class="i" aria-hidden="true"><use href="#i-drought"/></svg><h3>Drought</h3><p>A few days with hardly any fruit. Parties shrink and squabbles over food go up.</p></li>
+          <li class="row"><svg class="i" aria-hidden="true"><use href="#i-drought"/></svg><h3>Drought</h3><p>Three days with far less fruit. Do parties shrink?</p></li>
           <li class="row"><svg class="i" aria-hidden="true"><use href="#i-noalpha"/></svg><h3>Remove the alpha</h3><p>The boss vanishes. Watch the struggle to fill the top spot.</p></li>
           <li class="row"><svg class="i" aria-hidden="true"><use href="#i-monkey"/></svg><h3>Monkeys arrive</h3><p>A group of red colobus moves in overhead. Hunting chance. (<a class="cite" href="https://sites.lsa.umich.edu/mitani/wp-content/uploads/sites/152/2014/08/watts_and_mitani_2002.pdf">Watts &amp; Mitani 2002</a>)</p></li>
           <li class="row"><svg class="i" aria-hidden="true"><use href="#i-flask"/></svg><h3>Before and after</h3><p>The Mind tab puts the chimp's choice right before the experiment next to the one right after.</p></li>
@@ -677,7 +677,7 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
            positions), and the scorecard, which joins data/targets.json to the latest field scorecards in artifacts/validation/
            and dates itself. Static text here stays free of results, so a new run never makes it stale. -->
       <section class="sec" id="realism" aria-labelledby="h-real">
-        <header class="sh"><h2 id="h-real">Chimp data</h2><p>The field data used to recreate a realistic forest and realistic chimps: open datasets from long-term studies at Ngogo, Gombe and Taï set the forest and its fruit seasons, and give the results the simulated chimps are checked against.</p></header>
+        <header class="sh"><h2 id="h-real">Field data</h2><p>Open datasets from long-term studies at Ngogo, Gombe and Taï have two jobs here. Ngogo&rsquo;s fruit record drives the default forest&rsquo;s fruit, year by year. The rest, with published figures from many other studies, set the targets: a virtual field observer follows the simulated chimps the way researchers follow wild ones, and what it records is scored against them.</p></header>
 
         <figure class="panel gv" data-gv="datasets" aria-labelledby="gv-ds-t">
           <figcaption class="gv-head"><b id="gv-ds-t">The field data used</b><span class="gv-legend"><span><i class="gv-sq" style="--k:var(--ngogo)"></i>Ngogo</span><span><i class="gv-sq" style="--k:var(--gombe)"></i>Gombe</span><span><i class="gv-sq" style="--k:var(--tai)"></i>Taï</span></span></figcaption>
@@ -688,7 +688,7 @@ footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; 
 
         <figure class="panel gv" data-gv="fruit" aria-labelledby="gv-fruit-t">
           <figcaption class="gv-head"><b id="gv-fruit-t">Twenty years of ripe fruit at Ngogo</b></figcaption>
-          <p class="gv-take">Ripe fruit comes in pulses, and no two years repeat. The simulated forest steps through these years in order, month by month.</p>
+          <p class="gv-take">Ripe fruit comes in pulses, and no two years repeat. The default forest steps through these years in order, month by month.</p>
           <p class="gv-sub" data-v="sub"></p>
           <div class="gv-plot" role="img" aria-label="Heat map of Ngogo's monthly ripe-fruit score, 1998 to 2017, with yearly rainfall on the right and median months below."><p class="ph">Loading the phenology record…</p></div>
           <div class="gv-legend" data-v="ramp"></div>
