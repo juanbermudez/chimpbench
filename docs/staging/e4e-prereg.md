@@ -337,7 +337,7 @@ against 0.270–0.296): males that hunt less feed more. Hunters' reserves at the
 the usable store above the set point in both): leaders are at the set point, neither in surplus nor in deficit.
 
 Hunts per impulse by adult males in view (truth; hunts with m males ÷ impulses with m males, from the diagnosis JSON;
-printed by a one-off script over `diag/*.json`): R's four realizations 0.087 (2 males, n 993), 0.121 (3, n 387), 0.140
+printed by `artifacts/validation/e4e/males_gradient.py`): R's four realizations 0.087 (2 males, n 993), 0.121 (3, n 387), 0.140
 (4, n 157), 0.156 (5, n 32); H1 0.030 (2, n 299), 0.023 (3, n 128), 0 (4, n 31), 0.067 (5, n 15). H1 loses the
 per-decision gradient by males: in the model's own physics a male's expected meat is nearly flat in the hunters present
 (success rises from 0.21 to 0.67 between 2 and 7 hunters while his chance to hold meat falls from 0.59 to 0.29), so any
