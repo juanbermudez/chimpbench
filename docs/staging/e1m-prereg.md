@@ -102,10 +102,11 @@ Reading:
   kcal/day at every age from 1 to 4 y and the mothers pay 384.
 - **What the infant side cannot check: the cap after 1 y.** From 1 y the need exceeds any plausible yield and own food
   fills the gap. At the field's eating time, the own food that would close the need is 0.6–1.6 kcal per eating minute
-  (milk at 307), against the model's 3.0–4.2 (E1f's finding, reproduced): the model's infants eat a third to a sixth
-  of the field's eating time and drink the whole yield. Whether wild mothers make 307 kcal/day after the first year is
-  not testable from the infant side: milk transfer has not been measured in chimpanzees (badescu2022 infers a plateau
-  from nipple time and isotopes; isotopes put the milk share falling from about 1–1.5 y to zero at 4–4.5 y).
+  (milk at 307), against the model's 3.0–4.2 (E1f's finding, reproduced): at 1–4 y the model's infants eat 0.31–0.55
+  of the field's eating minutes at 2.5–5.2 × the per-minute intake the field's time implies, and drink the whole
+  yield. Whether wild mothers make 307 kcal/day after the first year is not testable from the infant side: milk
+  transfer has not been measured in chimpanzees (badescu2022 infers a plateau from nipple time and isotopes; isotopes
+  put the milk share falling from about 1–1.5 y to zero at 4–4.5 y).
 - Bound from the infant side (registered reading, not an input): a chimpanzee yield below about 210–280 kcal/day at
   3–9 months could not feed an infant growing at the captive potential on milk alone (212 kcal/day = 16.0 per kg^0.75
   of a 31.3 kg mother at 3 months; 281 = 21.2 at 9 months); at Gombe's growth (about 1.6 kg/y, [L]) the 9-month need is
@@ -218,8 +219,8 @@ sits at the top of that bracket.
 ## 8. What the audit leaves open (for the integrator)
 
 - **The mothers' milk cost after the first year is set by the cap, not by a measured output.** From about 0.9 y every
-  infant drinks the whole yield (307 kcal/day, so the mother pays 384) at every age to 4 y, while it eats a third to a
-  sixth of the field's eating time at 2–5 × the per-minute intake the field's eating time implies (§3.1; E1f's open
+  infant drinks the whole yield (307 kcal/day, so the mother pays 384) at every age to 4 y, while it eats 0.31–0.55 of
+  the field's eating minutes at 2.5–5.2 × the per-minute intake the field's eating time implies (§3.1; E1f's open
   problem). In the field the milk share falls from about 1–1.5 y (isotopes), and no chimpanzee milk transfer has ever
   been measured. A lower cap would lower the mothers' cost, but no measured value supports one; the lever the evidence
   points to is the infants' intake rate per eating minute (`ledgerIntakeSizeExp`, design), a demand-side input, not the
