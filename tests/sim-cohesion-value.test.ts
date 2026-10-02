@@ -65,9 +65,14 @@ function scene(over: Record<string, number>, swelling: number, companionAct: 're
   return { w, m, f, k, out, join, P: paramsOf(w) };
 }
 
-test('companyValue: a fertile unrelated female is worth her mating value more to an adult male', () => {
+test('companyValue: the social part follows the social drive; a fertile unrelated female adds her mating value for an adult male', () => {
   const s0 = scene({}, 0, 'rest'), s1 = scene({}, 1, 'rest');
   assert.ok(Math.abs(companyValue(s1.m, s1.f, s1.P) - companyValue(s0.m, s0.f, s0.P) - mateWorth(s1.m, s1.f)) < 1e-12);
+  // the social part is valued by the social drive: a socially sated male values her company at nothing but the mating value
+  s0.m.social = 1; s1.m.social = 1;
+  assert.equal(companyValue(s0.m, s0.f, s0.P), 0);
+  assert.ok(Math.abs(companyValue(s1.m, s1.f, s1.P) - mateWorth(s1.m, s1.f)) < 1e-12);
+  s0.m.social = 0;
   assert.ok(companyValue(s0.m, s0.f, s0.P) >= s0.P.joinBase);
   // a female's company for a female carries no mating value
   assert.ok(Math.abs(companyValue(s1.f, s1.k, s1.P) - companyValue(s0.f, s0.k, s0.P)) < 1e-12);

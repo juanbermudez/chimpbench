@@ -658,15 +658,16 @@ export const partyOn = (P: Params): boolean => cohesionOn(P) || P.partyFollowW >
 /** The value of a mating with fertile female `o` to male `c`: the mate offer's own terms, before distance, hunger, guarding, night. */
 export const mateWorth = (c: Chimp, o: Chimp): number => 0.3 + o.swelling * 0.5 + (c.age >= 15 ? 0.15 : 0) + c.rank * 0.1;
 /**
- * Stage E5a: what the company of `o` is worth to `c`, the same whether the pair moves or stays (as E2e's nestCompanyValue):
- * C13e's join terms without what belongs to a departure (joinBase + joinBondW·bond + joinAllyW·[ally] + joinRankW·[o
- * dominates c] + partyFollowSocialW·sociability), plus, for a male of 10 y or more with a fertile female (swelling ≥ 0.75,
- * not maternal kin, as the mate offer), the mating value she offers (mateWorth): association with receptive females is
- * worth their mating opportunities [M: emeryThompson2014, receptive females raise the number of males in parties]. No new
- * magnitude: the join terms are C13e's design assumptions and the mating value is the mate offer's.
+ * Stage E5a: what the company of `o` is worth to `c`. Its social part is C13e's join terms without what belongs to a
+ * departure (joinBase + joinBondW·bond + joinAllyW·[ally] + joinRankW·[o dominates c] + partyFollowSocialW·sociability),
+ * valued by c's social drive (1 − social: the model's social-need state, restored by grooming, play and nursing; the
+ * value of a stimulus depends on the internal state [H: cabanac1971], drive × incentive as E1k's grooming). For a male of
+ * 10 y or more with a fertile female (swelling ≥ 0.75, not maternal kin, as the mate offer) the mating value she offers
+ * is added unscaled, as in the mate offer (mateWorth): receptive females raise the number of males in parties [M:
+ * emeryThompson2014]. No new magnitude: the join terms are C13e's design assumptions, the mating value is the mate offer's.
  */
 export function companyValue(c: Chimp, o: Chimp, P: Params): number {
-  let v = P.joinBase + P.joinBondW * bond(c, o) + (c.allies.includes(o.id) ? P.joinAllyW : 0) + (dominates(o, c) ? P.joinRankW : 0) + c.personality.sociability * P.partyFollowSocialW;
+  let v = (1 - c.social) * (P.joinBase + P.joinBondW * bond(c, o) + (c.allies.includes(o.id) ? P.joinAllyW : 0) + (dominates(o, c) ? P.joinRankW : 0) + c.personality.sociability * P.partyFollowSocialW);
   if (c.sex === 'male' && c.age >= 10 && o.sex === 'female' && o.age >= 10 && o.swelling >= 0.75 && !maternalKin(c, o)) v += mateWorth(c, o);
   return v;
 }
