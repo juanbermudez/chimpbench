@@ -159,8 +159,9 @@ Both arms ran without error; readouts sane. R0 + S: 56% of departures before sun
   (src/sim/execution.ts `startAction` drops `c.nest`) and nest-sitters were never told of a departure (execution.ts notice
   loops, perception.ts travel hoo). Fixed in iteration 2 (b732e40); its effect on the aggregates was inside run-to-run
   variation.
-- The diagnosis scripts (`predawn-diag.ts`, `attempt-diag.ts`, `e2e_table.py`, `e2e_bench.py`, `e2e_report.py`) live in
-  the agent's scratch directory, not in the repository: measurement only.
+- The diagnosis and table scripts (`predawn-diag.ts`, `attempt-diag.ts`, `thermal-offline.ts`, `e2e_table.py`,
+  `e2e_bench.py`, `e2e_report.py`) and every run's JSON and report are kept locally in `artifacts/validation/e2e/`
+  (`scripts/`, `runs/`; gitignored) of the `e2e-predawn` worktree, not in the repository: measurement only.
 
 ## 8. Iterations
 See §8b (after the results of the registered arms, which motivate them).
