@@ -219,3 +219,11 @@ Kanyawara's per follow-hour (§2.4; prey density and detection, outside this sta
 ## 9. Results
 
 ### Run log (each entry written before its run)
+
+- **S0 (smoke test and identity; before any arm).** Frozen checkout of 5ca5b3c. (1) Identity: R with `huntValue` 0,
+  2 days, seeds 48 and 7 (`scratchpad/e4e/ident.mts`) must give §3's hashes. (2) Smoke: R + `huntValue` 1, seed 48,
+  1-day burn-in + 2 days, `scripts/e4e-hunt-diagnose.ts`: every §5 truth readout is produced; leads are offered at
+  impulses without the gap (`notOffered.gap` 0); offer scores are value scores (well below today's ~0.43).
+- **H1 (iteration 1).** Frozen checkout of 5ca5b3c. `e-bench --quick --params R+{"huntValue":1} --workers 1 --out
+  artifacts/validation/e4e/H1`, then `scripts/e4e-hunt-diagnose.ts` on seeds 48 and 7 (30 + 30 days) with the same
+  parameters. Judged by §6–§7 against R-quick and NR1q–NR3q.
