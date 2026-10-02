@@ -43,7 +43,8 @@ const withParams = (overrides: Record<string, number>): World => {
   settings.overrides = { ...settings.overrides, ...overrides };
   return w;
 };
-const ON = { partyFollowW: 1, partyFollowBase: 0.7, partyLeaderFollow: 1, partyJoinTrip: 1, joinChoice: 1, cohesionValue: 1 };
+// the field's party switches and its energetic distance scale (the compressed one prices a 160 m map)
+const ON = { partyFollowW: 1, partyFollowBase: 0.7, partyLeaderFollow: 1, partyJoinTrip: 1, joinChoice: 1, travelDistScaleM: 62900, cohesionValue: 1 };
 
 /** An adult male at rest; an unrelated adult female of his community 6 m away travels off to a tree; another adult rests 4 m away. */
 function scene(over: Record<string, number>, swelling: number, companionAct: 'rest' | 'travel') {
@@ -75,7 +76,8 @@ test('companyValue: a fertile unrelated female is worth her mating value more to
 });
 
 test('cohesionValue: joining her trip is offered and is worth more with a fertile female; the tuned weights do not move it', () => {
-  const s0 = scene({}, 0, 'rest'), s1 = scene({}, 1, 'rest');
+  // the other companion travels home, so nothing settled is forfeited and both party offers are on the list
+  const s0 = scene({}, 0, 'travel'), s1 = scene({}, 1, 'travel');
   assert.ok(s0.join && s1.join, 'the joint trip is offered');
   assert.ok(Math.abs(s1.join!.score - s0.join!.score - mateWorth(s1.m, s1.f)) < 1e-9, 'the mating value is added to her company');
   // a second companion travelling home 4 m away brings in the plain party follow (V.PARTY)
