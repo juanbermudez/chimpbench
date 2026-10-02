@@ -32,9 +32,62 @@ row T-PTY-2).
    tagged design; no tuned constant; no per-animal feeding area or crown capacity (no source, c7b).
 3. At most three iterations, each logged here and committed before its run; arms = S5 + the switch, quick mode.
 
-## 2. Diagnosis (to be registered before its runs)
+## 2. Diagnosis (step 1; registered 2 October 2026, 13:35, before its runs)
 
-(Filled in and committed before any diagnosis run.)
+**What S5 changes in the paths of §0 (read at c7a4c75, field profile with S5's 32 switches).** The forage value of a
+crown in view is `(1.6 h + 0.1)·(0.55 + 0.45·min(1, crop ÷ fruitValueRef))·tripWorth − d ÷ forageDistScaleM −
+compete − rain·0.45 − territory·0.6 − core − revisit + fig + jitter (+ continueBonus 0.25 to the act in progress, −0.5
+once finished)` (candidates.ts:331–342). Under S5 (`energyLedger`, `ledgerDrive`, `intakeValue` 1) `tripWorth` is the
+share of the full intake rate a trip delivers: the bout's energy `E = min(crop ÷ (1 + feeders seen)·kcal, energy need,
+the bout's gut room)` over walk + feeding time (intake.ts `treeIntake`), so for an animal in the crown it is 1 whatever
+the crop and the feeders while E > 0. `fruitValueRef` is 1 unit in the field. `compete = feeders seen ×
+crowdCompeteW 0.1 × (crowdScarcityRef 1.3 − habitat fruit index) × (0.5 for rank > 0.6)` (`crowdByShare` 0 in S5).
+Own trips to remembered or known trees: `h·memTravelHungerW·(0.55 + 0.45·min(1, believed crop))·tripWorth(feeders 0)
+− d ÷ travelDistScaleM − revisit − rain·0.4 − territory·0.8 − core + sociability·fruit index·0.1` (no feeders: the
+share is never read). Joined trips (E5a): the leader's company + the trip valued with the feeders seen there. The gate's
+patch test (rg.ts `patchPoorHere`) compares other crowns' `perHourInclWalk` with the full rate here. `revisitW` 0.5
+(τ 12 h, C6b design): a crown the individual has just left after feeding is worth 0.5 less, whatever is left in it.
+Choice: softmax at `rgTemperature` 0.164 over a bounded menu, each score with a uniform jitter of ±0.12
+(`candidateJitterSpan` 0.24). Feeding takes `min(crop, want)` per tick (execution.ts `forageTick`, phenology.ts
+`eatFruit`) and a bout ends below 0.02 units, so no feeder's intake per tick can fall because others feed there
+until the crown is nearly empty; the depletion deficit recovers with τ ≈ 34 h (`patchRecoverPerDay` 0.7).
+
+**Tool.** `scripts/crown-share-diagnose.ts` (new; its header defines every readout). Simulation truth on e-bench's world
+(createWorld + 30-day burn-in + 30 days, seeds 48 and 7, rules policy, S5's params), with e-bench's party-follow team
+set for the T-PTY-1 identity check (must equal `S5q.json` per seed) and its focal team set for the observer's feeding
+scans. Run from a frozen detached checkout of the commit that adds this section. Smoke test (seed 48, 1 + 2 days, S5):
+done before this registration, every readout filled. **Disclosure:** its two-day numbers were seen (crop effect absent,
+the crop share rarely binding, revisit and the trips' sociability bonus the largest terms in the crop-selectivity
+counterfactual, 95% of the feeders of a party in one crown); the expectations below are written knowing them.
+
+**Readouts** (header of the script): crowns (feeders, crop, crown radius; terciles; R² on crop, ln crop and radius);
+feeding scans (truth, the observer's count for every subject ≥ 12 y: party members in the same crown; R² on radius and
+crop) and the focal observer's own feeding scans (T-PTY-2's patch part without its 4-month rule); crown choices
+(chosen against the best rejected tree option, each score split into base, crop, trip, share, crowd, cont(inuation),
+revisit, place (territory and core area), rain, social (the trips' sociability × fruit bonus; a joined trip's company),
+jitter, other (residual, a check)); crop and co-feeding selectivity of the softmax over a decision's tree options, with
+each term removed in turn; companions feeding in another crown at a crown choice; parties with ≥ 2 feeders; crown
+occupancy episodes (crop fall per hour, how they end); intake per feeding tick against the full rate, by feeders.
+
+**Reading rules (registered).**
+- *R1, crop effect:* absent if R² of feeders on crop < 0.05 and feeders per occupied crown differ by < 0.2 between the
+  top and bottom crop terciles (E5a's rule); the same for crown radius.
+- *R2, does the crop share limit anyone:* "the share never binds" if it binds in < 10% of crown options, < 1% of
+  feeding ticks are crop-limited and < 10% of occupancy episodes end with the crop below 0.06.
+- *R3, the term that keeps the choice blind to the crop:* among the terms, the one whose removal raises the crop
+  selectivity over all tree options the most is named if that rise is ≥ 0.01 fruit units and at least twice the next
+  term's; if none qualifies, the crop term itself is named as too weak against the choice noise when its
+  within-decision SD over crown options is below the jitter's (0.069).
+- *R4, why companions feed in another crown:* when a companion's crown was an option and lost, the term with the
+  largest mean |difference| (chosen − companion's crown) is named.
+
+**Expected (low confidence unless stated).** R1: absent on crop and radius (moderate). R2: the share never binds (high
+for intake per tick, from the code; moderate for the rest). R3: `revisit` or the trips' sociability bonus (low). R4:
+`revisit` (low). Feeders per occupied crown 1.2–1.5 (moderate).
+
+**Known defects in the code under test.** None found in the paths read. Noted, not changed (design choices of earlier
+stages, part of what is diagnosed): `revisit` is crop-blind (C6b); own trips ignore the feeders at the goal (C7a);
+`compete` reads the habitat index (C5a).
 
 ## 3. Field rows scored here: samples
 
