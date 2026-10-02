@@ -86,6 +86,8 @@ export function emitCall(world: World, caller: Chimp, kind: CallKind): number {
   // stage C10: pant-hoots carry the caller's signature, drums their inter-hit intervals (the key is absent when off)
   if (P.callSignatures === 1) { if (kind === 'pant-hoot') call.features = pantHootFeatures(P, caller.id, caller.natalTroopId, id); else if (kind === 'drum') call.features = drumIntervals(P, id); }
   world.calls.push(call);
+  // stage E4c (callValue): listeners' cues now point here (calls.ts staleness of the caller's own last pant-hoot)
+  if (kind === 'pant-hoot' && P.callValue === 1) { const x = ix(caller); x.phAt = world.time; x.phX = caller.position[0]; x.phZ = caller.position[2]; }
   if (hearHook && (kind === 'pant-hoot' || kind === 'drum' || kind === 'alarm-hoo' || kind === 'scream' || kind === 'travel-hoo')) {
     const r2 = radius * radius;
     for (const o of index(world).alive) {

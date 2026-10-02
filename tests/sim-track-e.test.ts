@@ -14,6 +14,7 @@ const TRACK_E_SWITCHES = [
   'departRace', 'nurseWake', 'nestLightDecide', // E2b
   'ledgerNurseBout', 'ledgerGrowPotential', // E1f
   'darkCost', // E2c
+  'callValue', // E4c
 ] as const;
 
 test('Track E switches are all 0 by default in both profiles', () => {

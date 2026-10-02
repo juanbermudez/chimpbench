@@ -2582,6 +2582,28 @@
    "notes": "How long a Drum call is shown and audible."
   },
   {
+   "id": "callFixH",
+   "group": "communication",
+   "value": 0.3,
+   "units": "h",
+   "range": [
+    0.15,
+    0.6
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0.01,
+    24
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "P.callFixH",
+   "file": "src/sim/calls.ts",
+   "notes": "Stage E4c (callValue): how long a sighting or a heard pant-hoot keeps an ally located, and how long a caller's own pant-hoot keeps its listeners informed of where it was. Design: the life of a heard pant-hoot as a travel cue for listeners (the 0.3 h join-cue window in candidates.ts), so the caller's estimate of what its listeners know uses the listeners' own rule. Not fitted to any call rate. Read only while callValue is 1."
+  },
+  {
    "id": "callFoodGruntMin",
    "group": "communication",
    "value": 0.75,
@@ -2757,6 +2779,29 @@
    "symbol": "P.callTravelHooMin",
    "file": "src/sim/events.ts",
    "notes": "Stage C10: how long a travel hoo is shown and audible (the call itself lasts ~0.125 s; one tick is the shortest display, design)."
+  },
+  {
+   "id": "callValue",
+   "group": "communication",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.callValue",
+   "file": "src/sim/calls.ts",
+   "integer": true,
+   "notes": "Stage E4c switch (docs/staging/e4c-prereg.md): calls are value comparisons from the caller's own perception and memory (src/sim/calls.ts). A pant-hoot's gain is (contactCallBase + contactCallW × social need) × the share of the caller's ally bond weight not seen or heard within callFixH × the staleness of its own last pant-hoot (callFixH since it, or the distance moved since it ÷ sightDayM); its cost is the C6 hush and, at a crown, (contactCallBase + contactCallW) × the share of its need lost to the community members it remembers within earshot. It is offered as the 'call' act at decision points when positive (replacing the contact, chorus and food-call variants) and given on arrival in a crown when positive (replacing the 50% coin at rich figs). Travel hoos and food grunts are given when the bond with the companions who would otherwise not know exceeds the share of the need lost to them. Removes the travel pant-hoot hazard (travelCallPerH, travelCallGapH), the contact gate and quota (fewer than 2 in sight, contactCallGapH), the chorus clock windows (06:24–07:24, 18:00–19:00), the arrival coin, travelHooP, travelHooAllyP and the foodCall* probabilities. 0 = today, bit-identical. Ablation switch."
   },
   {
    "id": "callWhimperMin",

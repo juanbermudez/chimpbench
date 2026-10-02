@@ -319,6 +319,7 @@ The slow step runs *before* the chimps in its tick. A chimp that dies in `slowLi
 | Impulses | `impulse`, `impulseTarget`, `impulseUntil`, `patrolRoll` (last patrol-hazard roll) |
 | Slow internal states (stage E4a, [endocrine.ts](../src/sim/endocrine.ts); absent until `endoStates` is on) | `arousal` (competitive arousal, adult males), `affil` (affiliation); the stress load is `chimp.stress` |
 | Fast arousal and E4a fixes (stage E4b, [endocrine.ts](../src/sim/endocrine.ts); absent until their switch fires) | `fast`, `fastAt` (the fast state as last kicked, read with decay by `fastNow`); `aggKick` (last aggression stamp that kicked the stress load), `heardFrom` (start of the current hearing episode) |
+| Calls as decisions (stage E4c, [calls.ts](../src/sim/calls.ts); absent until the switch is on and the animal first pant-hoots) | `phAt`, `phX`, `phZ` (when and where it last pant-hooted: where its listeners' cues point) |
 | Life history | `cycleLen`, `cops`, `near`, `sireId`, `amenUntil`, `firstSwell`, `gestation`, `weanAge`, `weaned`, `caretaker`, `immigrantAge`, `disperser`, `transferTo`, `guardBy`, `carryDead`, `nestTree` |
 | Space | female core area `coreX/coreZ` |
 | Relationships and memory ([relations.ts](../src/sim/relations.ts)) | `tension` (directed 0..1 by partner id), `incident` (last incident per partner: `[time, code]`, code 0 threat given, 1 threat received, 2 attack given, 3 attack received), `month` (the memory month in progress: `start`, `startRank`, per-partner `partners` tallies, `events`, `encounters`, `lastEncounter`), `monthsSinceYear` |
@@ -1183,6 +1184,7 @@ Every evidence-tagged constant and every distance lives in the parameter registr
 | Fast-state switches (E4b) | 0 (off) | switch | `endoFast` `endoFastRedirect` | design | docs/staging/e4b-prereg.md; 0 = E4a |
 | Fast arousal (E4b) | τ 5 min; storm and threat kicks 0.8; options open 3 τ | eco-min, state | `endoFastTauMin` `endoFastStormKick` `endoFastThreatKick` `endoFastSpanTau` | assumed (τ), design | τ between catecholamine clearance (secondary) and post-conflict anxiety (fraser2008, research.md E.15) |
 | Hearing episode (E4b fix) | 0.25 | h | `endoHeardEpisodeH` | design | only the start of an episode of stranger calls kicks the stress load |
+| Calls as decisions (E4c; off by default) | `callValue` 0 = today; with 1, pant-hoots, travel hoos and food grunts follow their value (calls.ts); an ally sighting or heard pant-hoot, and a caller's own pant-hoot, keep their information for 0.3 h | switch, h | `callValue` `callFixH` | design | docs/staging/e4c-prereg.md; `callFixH` = the listeners' join-cue window |
 | Reconciliation window | 0.3 | h | `reconcileWindowH` | design | wild 14–22% reconciled |
 | Consolation window, bond | 0.15 h, ≥ 0.55 |  | `consoleWindowH` `consoleBondMin` | design [M] |  |
 | Pant-grunt repeat | 8 | h per dyad | `pantGruntRepeatH` | design |  |
