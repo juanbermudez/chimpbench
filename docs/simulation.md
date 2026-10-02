@@ -319,6 +319,7 @@ The slow step runs *before* the chimps in its tick. A chimp that dies in `slowLi
 | Impulses | `impulse`, `impulseTarget`, `impulseUntil`, `patrolRoll` (last patrol-hazard roll) |
 | Slow internal states (stage E4a, [endocrine.ts](../src/sim/endocrine.ts); absent until `endoStates` is on) | `arousal` (competitive arousal, adult males), `affil` (affiliation); the stress load is `chimp.stress` |
 | Fast arousal and E4a fixes (stage E4b, [endocrine.ts](../src/sim/endocrine.ts); absent until their switch fires) | `fast`, `fastAt` (the fast state as last kicked, read with decay by `fastNow`); `aggKick` (last aggression stamp that kicked the stress load), `heardFrom` (start of the current hearing episode) |
+| Calls as decisions (stage E4c, [calls.ts](../src/sim/calls.ts); absent until the switch is on and the animal first pant-hoots) | `phAt`, `phX`, `phZ` (when and where it last pant-hooted: where its listeners' cues point) |
 | Life history | `cycleLen`, `cops`, `near`, `sireId`, `amenUntil`, `firstSwell`, `gestation`, `weanAge`, `weaned`, `caretaker`, `immigrantAge`, `disperser`, `transferTo`, `guardBy`, `carryDead`, `nestTree` |
 | Space | female core area `coreX/coreZ` |
 | Relationships and memory ([relations.ts](../src/sim/relations.ts)) | `tension` (directed 0..1 by partner id), `incident` (last incident per partner: `[time, code]`, code 0 threat given, 1 threat received, 2 attack given, 3 attack received), `month` (the memory month in progress: `start`, `startRank`, per-partner `partners` tallies, `events`, `encounters`, `lastEncounter`), `monthsSinceYear` |
@@ -1078,6 +1079,11 @@ Cycling starts at the first-swelling age (10.2–11.4 y) once lactational amenor
 
 Stranger-call listeners count distinct callers of the calling community heard in the last 3 minutes (`heardN`). Same-community calls carry whether the caller is feeding at a tree (`joinRich`), and a rich call pulls harder when fruit is plentiful [M].
 
+**Calls as decisions** (stage E4c, [calls.ts](../src/sim/calls.ts), [docs/staging/e4c-prereg.md](staging/e4c-prereg.md); switch `callValue`, 0 by default). With 1, eleven prescriptions go (the travel pant-hoot hazard and its gap, the contact-call quota, the chorus windows, the rich-fig arrival coin, the travel-hoo probabilities, the food-call probability terms), and each call is valued from the caller's own perception and memory, with no draw from `world.rng`:
+- Pant-hoot: gain = (`contactCallBase` + `contactCallW` × social need) × the share of its ally bond weight it has neither seen nor heard within `callFixH` × how stale its own last pant-hoot is; cost = the C6 hush and, at a crown, the share of its need it would lose to the community members likely within earshot (iteration 1: every member aged 5 or more it does not see × the share of its range within `hearPantHootM`). Offered as the 'call' act, and given on arrival in a crown, when the net value is positive.
+- Travel hoo and food grunt: the bond with the companions within earshot who would not notice a silent departure (hoo) or are not yet feeding (grunt), against the share of the need lost to them.
+- **Result** (quick check, seeds 48 and 7, 30 + 30 days, timer needs and the stack; prereg §9). Adult males call 0.49 (timer) and 0.59 (stack) times per awake hour with no rate written anywhere, and 28% and 20% of their arrivals in a crown carry a pant-hoot (field 4–35%; the first pass, which counted only remembered competitors, gave 63–73%). Party size, intergroup contacts and the fitted distance return to the reference, held-out distance stays inside noise, viability passes and prescriptions fall 129 → 118 (stack 103 → 92): provisional keep candidate, off by default. Misses: T-COM-1 0.46 in the timer world; food calls at arrival above the Taï arrival-minute value; no daily course (a burst after the night, then flat, where the field calls about 4 times more at 07–08 h than at 15–18 h); choruses 6–7% (no reply is modelled); low-ranking males call more. T-END-8 turns positive on the stack for the wrong reason: the slow arousal state rises through the day, while field testosterone falls.
+
 ---
 
 ## 16. Field experiments
@@ -1190,6 +1196,7 @@ Every evidence-tagged constant and every distance lives in the parameter registr
 | Fast-state switches (E4b) | 0 (off) | switch | `endoFast` `endoFastRedirect` | design | docs/staging/e4b-prereg.md; 0 = E4a |
 | Fast arousal (E4b) | τ 5 min; storm and threat kicks 0.8; options open 3 τ | eco-min, state | `endoFastTauMin` `endoFastStormKick` `endoFastThreatKick` `endoFastSpanTau` | assumed (τ), design | τ between catecholamine clearance (secondary) and post-conflict anxiety (fraser2008, research.md E.15) |
 | Hearing episode (E4b fix) | 0.25 | h | `endoHeardEpisodeH` | design | only the start of an episode of stranger calls kicks the stress load |
+| Calls as decisions (E4c; off by default) | `callValue` 0 = today; with 1, pant-hoots, travel hoos and food grunts follow their value (calls.ts); an ally sighting or heard pant-hoot, and a caller's own pant-hoot, keep their information for 0.3 h | switch, h | `callValue` `callFixH` | design | docs/staging/e4c-prereg.md; `callFixH` = the listeners' join-cue window |
 | Reconciliation window | 0.3 | h | `reconcileWindowH` | design | wild 14–22% reconciled |
 | Consolation window, bond | 0.15 h, ≥ 0.55 |  | `consoleWindowH` `consoleBondMin` | design [M] |  |
 | Pant-grunt repeat | 8 | h per dyad | `pantGruntRepeatH` | design |  |

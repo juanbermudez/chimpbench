@@ -13,6 +13,7 @@ import { circadianOn, circadianSleepiness } from './circadian';
 import { milkShare, milkWorth, nurseBoutWorth } from './energy';
 import { arrivalLight, brightening, needUnits, raceStake, rivalsAt } from './departure';
 import { endoOn, escalateScore, fastSpanH, rainFastScore, rainScore, redirectFastScore, redirectScore } from './endocrine';
+import { callValueOn, crownOf, pantHootValue } from './calls';
 import { byIdIn, index, isTreeId, ix, NEVER, TREE_ID0, treesNear, simOf } from './state';
 
 // Variants refine an action's meaning (why a charge happens) for execution and reason text.
@@ -884,11 +885,15 @@ function patrolAndCalls(world: World, c: Chimp, isAlpha: boolean): void {
   // calls are fewer where neighbours range or the community lost before (stage C6) [M: quiet at edges]
   const hush = P.callSuppressW > 0 ? P.callSuppressW * pressureAt(world, c, c.position[0], c.position[2]) : 0;
   const callReady = time - x.lastCall > 0.5;
-  if (callReady && c.action === 'forage' && x.fruitNear >= 0.6) offer('call', -1, 0.3 + pers.sociability * 0.25 - hush, V.FOODCALL);
-  if (time - x.lastCall > 1.5 && ((hour >= 18 && hour < 19) || (hour >= 6.4 && hour < 7.4)) && env.daylight > 0.05) offer('call', -1, 0.28 + pers.sociability * 0.2 - hush, V.CHORUS);
+  // stage E4c (callValue; calls.ts, docs/staging/e4c-prereg.md): one pant-hoot value, what out-of-sight allies learn
+  // against what neighbours and competitors learn, replaces the food-call, chorus-window and contact variants below
+  const cv = callValueOn(P);
+  if (cv && env.daylight > P.contactCallMinDaylight) { const v = pantHootValue(world, c, P, crownOf(world, c, P)); if (v > 0) offer('call', -1, v, V.CONTACT); }
+  if (!cv && callReady && c.action === 'forage' && x.fruitNear >= 0.6) offer('call', -1, 0.3 + pers.sociability * 0.25 - hush, V.FOODCALL);
+  if (!cv && time - x.lastCall > 1.5 && ((hour >= 18 && hour < 19) || (hour >= 6.4 && hour < 7.4)) && env.daylight > 0.05) offer('call', -1, 0.28 + pers.sociability * 0.2 - hush, V.CHORUS);
   if (callReady && x.newcomers > 0 && c.sex === 'male') offer('call', -1, 0.3 + pers.boldness * 0.1 - hush, V.REUNION);
   // field profile: long-distance pant-hoots keep dispersed community members in contact (design; they carry ~1 km, P-SCALE-3)
-  if (P.contactCallW > 0 && time - x.lastCall > P.contactCallGapH && env.daylight > P.contactCallMinDaylight && x.visibleOwn < 2)
+  if (!cv && P.contactCallW > 0 && time - x.lastCall > P.contactCallGapH && env.daylight > P.contactCallMinDaylight && x.visibleOwn < 2)
     offer('call', -1, P.contactCallBase + (1 - c.social) * P.contactCallW + (c.sex === 'male' ? P.contactCallMaleW : 0) - hush, V.CONTACT);
 }
 
@@ -1018,7 +1023,7 @@ export function reasonFor(world: World, c: Chimp, sl: Slot): string {
       if (sl.v === V.FOODCALL) return 'Pant-hoot to announce the ripe fruit here';
       if (sl.v === V.CHORUS) return world.hour >= 12 ? 'Join the evening pant-hoot chorus before nesting' : 'Pant-hoot at dawn to locate the others';
       if (sl.v === V.COUNTERCALL) return cap(`Pant-hoot back at the strangers; we have ${x.ownMales} adult males`);
-      if (sl.v === V.CONTACT) return 'Pant-hoot to find the others; few of my community are in sight';
+      if (sl.v === V.CONTACT) return callValueOn(paramsOf(world)) ? 'Pant-hoot so my allies out of sight know where I am' : 'Pant-hoot to find the others; few of my community are in sight';
       return 'Pant-hoot and drum as the party reunites';
     case 'hunt': {
       const p = world.prey.find(q => q.id === sl.target);

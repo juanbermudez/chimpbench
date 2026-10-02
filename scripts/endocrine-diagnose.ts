@@ -158,6 +158,8 @@ for (const seed of seeds) {
     for (const c of w.chimps) if (c.alive) startKey.set(c.id, `${c.action}:${c.targetId}:${ix(c).v}`);
     if (i % HOUR === 0) hoots.clear();
   }
+  // stage E4c: the pooled daily profiles behind T-END-8 (mean arousal and pant-hoots per sampled male-hour, by hour 07-18)
+  for (const [, p0] of prof) for (let b = 7; b < 18; b++) { S(`T-END-8 profile: arousal at ${String(b).padStart(2, '0')} h`).add(p0.n[b] ? p0.a[b] / p0.n[b] : 0); S(`T-END-8 profile: pant-hoots per male-hour at ${String(b).padStart(2, '0')} h`).add(p0.n[b] ? p0.h[b] / p0.n[b] : 0); }
   for (const [, p0] of prof) {
     const bins = [...Array(24).keys()].filter(b => p0.n[b] >= 3), A = bins.map(b => p0.a[b] / p0.n[b]), H = bins.map(b => p0.h[b] / p0.n[b]);
     const r = pearson(A, H);

@@ -182,12 +182,9 @@ export function classify(p: RegistryEntry): Classified {
  */
 export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => boolean; why: string }> = {
   huntDayPerMale: { when: P => P.huntEncounter !== 1, why: 'no hunting-day lottery is drawn while huntEncounter is 1 (src/sim/tick.ts)' },
-  foodCallBase: { when: P => P.foodCallRule === 1, why: 'read only while foodCallRule is 1' },
-  foodCallCropW: { when: P => P.foodCallRule === 1, why: 'read only while foodCallRule is 1' },
-  foodCallMaleW: { when: P => P.foodCallRule === 1, why: 'read only while foodCallRule is 1' },
-  foodCallPartnerW: { when: P => P.foodCallRule === 1, why: 'read only while foodCallRule is 1' },
-  travelHooP: { when: P => P.travelHoo === 1, why: 'read only while travelHoo is 1' },
-  travelHooAllyP: { when: P => P.travelHoo === 1, why: 'read only while travelHoo is 1' },
+  // stage E4c (callValue; docs/staging/e4c-prereg.md): the food grunt and the travel hoo are value comparisons, no probability
+  ...same(['foodCallBase', 'foodCallCropW', 'foodCallMaleW', 'foodCallPartnerW'], P => P.foodCallRule === 1 && P.callValue !== 1, 'read only while foodCallRule is 1, and not while callValue is 1 (src/sim/execution.ts forageTick: calls.ts gruntWorth)'),
+  ...same(['travelHooP', 'travelHooAllyP'], P => P.travelHoo === 1 && P.callValue !== 1, 'read only while travelHoo is 1, and not while callValue is 1 (src/sim/execution.ts travelHoo: calls.ts hooWorth)'),
   joinHooW: { when: P => P.travelHoo === 1 && P.joinChoice === 1, why: 'read only while travelHoo and joinChoice are 1' },
   rgTemperature: { when: P => P.rgOn === 1 && P.urgencyChoice !== 1, why: 'read only while rgOn is 1 and urgencyChoice is not (stage E3)' },
   rgMaxAgeH: { when: P => P.rgOn === 1 && P.urgencyPersist !== 1, why: 'read only while rgOn is 1 and urgencyPersist is not (stage E3)' },
@@ -240,6 +237,9 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   // no prescription out (the weaning refusal roll, weanRefuseMaxP, stays)
   ledgerMassMatureFemaleY: { when: P => !(P.energyLedger === 1 && P.ledgerGrowSurplus === 1 && P.ledgerGrowPotential === 1), why: 'not read while ledgerGrowPotential (with ledgerGrowSurplus) is 1 (stage E1f)' },
   ledgerMassMatureMaleY: { when: P => !(P.energyLedger === 1 && P.ledgerGrowSurplus === 1 && P.ledgerGrowPotential === 1), why: 'not read while ledgerGrowPotential (with ledgerGrowSurplus) is 1 (stage E1f)' },
+  // stage E4c (callValue): no travel pant-hoot hazard and no contact-call quota; pant-hoots follow their value (calls.ts)
+  ...same(['travelCallPerH', 'travelCallGapH'], P => P.callValue !== 1, 'the travel pant-hoot hazard in src/sim/execution.ts executeAction is not evaluated while callValue is 1'),
+  contactCallGapH: { when: P => P.callValue !== 1, why: 'the contact-call quota (and the fewer-than-2-in-sight gate) in src/sim/candidates.ts patrolAndCalls is not evaluated while callValue is 1: the staleness of the own last pant-hoot (calls.ts callStaleness) replaces it' },
 };
 
 /** One ACTIVE_WHEN rule for several entries. */
@@ -281,6 +281,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   endoRainDisplay: { stage: 'E4a', needs: { endoStates: 1 } },
   endoFast: { stage: 'E4b', needs: { endoStates: 1 }, removesNothing: 'runs the fast state; the roll it lets go (rainDisplayP) is switched out by endoRainDisplay (e4b-prereg)' },
   endoFastRedirect: { stage: 'E4b', needs: { endoStates: 1, endoRedirect: 1, endoFast: 1 }, removesNothing: 'rescores the redirect that endoRedirect already took off the dice (e4b-prereg)' },
+  callValue: { stage: 'E4c', needs: {} },
 };
 
 /** Whether an entry is in use: generated (not planned), non-zero under these resolved parameters, and not switched out. */
@@ -327,6 +328,9 @@ export const LITERAL_OFF: { file: string; has: string; off: (P: Record<string, n
   { file: 'execution.ts', has: "action === 'rest' && P.rhythmHeat !== 1 && world.hour >= 11.5", off: P => P.rhythmHeat === 1, why: 'the 11:30–14:30 rest bout: not evaluated while rhythmHeat is 1 (boutHours, stage E2a)' },
   // stage E2a: the night and dusk menus, for rules-driven chimps
   ...(['night', 'dusk'] as const).map(m => ({ file: 'menu.ts', has: `${m}: new Set<Action>(`, off: (P: Record<string, number>) => P.rhythmFreeNight === 1, why: `rules-driven chimps are not filtered by the ${m} menu while rhythmFreeNight is 1 (rg.ts rgMenu, urgency.ts; stage E2a). Model-driven chimps keep it (src/decision.ts); Track E runs the rules policy only` })),
+  // stage E4c (callValue): the chorus clock windows and the arrival coin at rich figs
+  { file: 'candidates.ts', has: '((hour >= 18 && hour < 19) || (hour >= 6.4 && hour < 7.4))', off: P => P.callValue === 1, why: 'the dawn and dusk chorus windows: with callValue 1 a pant-hoot follows its value at any hour (calls.ts pantHootValue, stage E4c)' },
+  { file: 'execution.ts', has: "(t.common === 'fig' || t.id === simOf(world).figTree) && random(world) < 0.5", off: P => P.callValue === 1, why: 'the 50% arrival pant-hoot at rich figs: with callValue 1 the arrival pant-hoot is given when its value is positive (calls.ts, stage E4c)' },
 ];
 
 const HOUR = /\b(?:world\.)?hour\s*(?:>=|<=|<|>)\s*(\d+(?:\.\d+)?)/g;

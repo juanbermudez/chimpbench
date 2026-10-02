@@ -17,6 +17,7 @@ import type { ParamId } from './params.gen';
 import { NEVER, TICK_HOURS, TICK_SECONDS, byIdIn, huntOf, index, isTreeId, ix, simOf } from './state';
 import { resolveHunt } from './ecology';
 import { endoOn, endoShared, endoThreat } from './endocrine';
+import { callValueOn, crownOf, gruntWorth, hooWorth, pantHootValue } from './calls';
 import { eatFruit, forageYield, fruitAt } from './phenology';
 import { bestFallbackNear, eatFallback, fallbackOn, fallbackStock, fallbackValue } from './fallback';
 import { recordAggression, recordConsolation, recordGrooming, recordMating, recordMeat, recordReconciliation, recordSupport } from './relations';
@@ -426,6 +427,9 @@ function startPatrol(world: World, c: Chimp): void {
  */
 function travelHoo(world: World, c: Chimp): void {
   const P = paramsOf(world), x = ix(c), idx = index(world);
+  // stage E4c (callValue; calls.ts hooWorth): no probability; the hoo is given when the bond with the companions who would
+  // not notice a silent departure exceeds the share of the need lost to them at the destination
+  if (callValueOn(P)) { const t = idx.treeById.get(c.targetId); if (t && hooWorth(world, c, P, t)) emitCall(world, c, 'travel-hoo'); return; }
   let companion = false, ally = false;
   for (const id of x.seen) {
     const o = idx.byId.get(id);
@@ -527,7 +531,8 @@ export function executeAction(world: World, c: Chimp): void {
   c.actionTime += TICK_SECONDS;
   // males pant-hoot around travel (1.4 calls per male-hour, 43% after travelling; mitaniNishida1993) [M]; fewer where
   // neighbours range (stage C6). Patrols stay silent.
-  if (P.travelCallPerH > 0 && (c.action === 'travel' || c.action === 'follow') && c.sex === 'male' && c.age >= 15 && world.environment.daylight > P.contactCallMinDaylight
+  // stage E4c (callValue): no hazard; a travelling male pant-hoots when he chooses to (calls.ts)
+  if (P.travelCallPerH > 0 && P.callValue !== 1 && (c.action === 'travel' || c.action === 'follow') && c.sex === 'male' && c.age >= 15 && world.environment.daylight > P.contactCallMinDaylight
     && world.time - x.lastCall > P.travelCallGapH && random(world) < 1 - Math.exp(-P.travelCallPerH * TICK_HOURS)
     && random(world) >= P.callSuppressW * pressureAt(world, c, c.position[0], c.position[2])) { x.lastCall = world.time; emitCall(world, c, 'pant-hoot'); }
   const idx = index(world);
@@ -901,7 +906,11 @@ function forageTick(world: World, c: Chimp): void {
     x.phase = 2;
     const time = world.time;
     const crop = lazy ? fruitAt(world, t) : t.fruit;
-    if (crop > 0.55 && c.age >= 12 && time - x.lastCall > 0.75 && (t.common === 'fig' || t.id === simOf(world).figTree) && random(world) < 0.5) {
+    // stage E4c (callValue; calls.ts): the arrival pant-hoot and the food grunt are given when they are worth more than silence
+    if (callValueOn(P)) {
+      if (c.age >= 12 && world.environment.daylight > P.contactCallMinDaylight && pantHootValue(world, c, P, crownOf(world, c, P)) > 0) { x.lastCall = time; emitCall(world, c, 'pant-hoot'); c.mood = 'excited'; }
+      else if (gruntWorth(world, c, P, t, crop)) { x.lastFoodCall = time; emitCall(world, c, 'food-grunt'); }
+    } else if (crop > 0.55 && c.age >= 12 && time - x.lastCall > 0.75 && (t.common === 'fig' || t.id === simOf(world).figTree) && random(world) < 0.5) {
       // arrival pant-hoots at rich fruit sources attract others [H]
       x.lastCall = time; emitCall(world, c, 'pant-hoot'); c.mood = 'excited';
     } else if (time - x.lastFoodCall > 0.3 && crop > 0.3 && (P.foodCallRule !== 1 || random(world) < foodCallChance(world, c, crop))) { x.lastFoodCall = time; emitCall(world, c, 'food-grunt'); }
