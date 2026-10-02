@@ -14,6 +14,7 @@ import { index, ix, TICK_HOURS, type ChimpX } from './state';
 //   sleep gate: the two-process thresholds (daan1984, as given in skeldonDijk2025): sleep starts when sleep pressure S
 //               reaches circHUpper + circAmp·x and ends when it falls to circHLower + circAmp·x, x the oscillator's
 //               core-temperature variable. A latch per animal (chimp.sim asl) holds the state between the thresholds.
+// Stage E2f (sleepChimp): both thresholds lower by sleepDriveShift, the chimpanzee sleep amount in place of the human one.
 // Values (candidates.ts): the nest is worth the rest score + rhythmSleepW × felt sleepiness (sleepinessAt); new nests keep
 // E2a's light gate (e2d-prereg §8, iteration 2). Result: a recorded null (e2d-prereg §9); the switch stays off.
 // Nothing here reads the hour of the day (tests/sim-circadian.test.ts checks it): the sun enters only as the light at
@@ -41,9 +42,17 @@ export function oscStep(P: Params, o: Osc, lux: number, dtH: number): void {
   o.xc = xc + w * (P.circMu * (xc - 4 * xc * xc * xc / 3) - x * (f * f + P.circK * B)) * dtH;
 }
 
-/** The two thresholds of sleep pressure at oscillator value `x`: [waking, sleep onset]. */
+/**
+ * The two thresholds of sleep pressure at oscillator value `x`: [waking, sleep onset]. Stage E2f (sleepChimp,
+ * docs/staging/e2f-prereg.md): the chimpanzee sleep amount lowers both by sleepDriveShift, the drive to sleep-active
+ * neurons (it lowers the mean of the thresholds and leaves their distance; across species a larger drive gives a larger
+ * share of time asleep: skeldonDijk2025 Fig. 5 and its account of Phillips et al.). The shift is derived from captive
+ * chimpanzee EEG sleep (bert1970, 9.7 h) through the model's own steady state (scripts/sleep-calibrate.ts) [M].
+ */
 export function thresholds(P: Params, x: number): [number, number] {
-  return [P.circHLower + P.circAmp * x, P.circHUpper + P.circAmp * x];
+  if (P.sleepChimp !== 1) return [P.circHLower + P.circAmp * x, P.circHUpper + P.circAmp * x];
+  const d = P.sleepDriveShift;
+  return [P.circHLower - d + P.circAmp * x, P.circHUpper - d + P.circAmp * x];
 }
 
 /**
@@ -53,7 +62,7 @@ export function thresholds(P: Params, x: number): [number, number] {
  */
 export function sleepinessAt(P: Params, S: number, x: number, latch: boolean): number {
   if (latch) return 1;
-  const lo = P.circHLower + P.circAmp * x, hi = P.circHUpper + P.circAmp * x, q = (S - lo) / (hi - lo);
+  const [lo, hi] = thresholds(P, x), q = (S - lo) / (hi - lo);
   return q > 1 ? 1 : q < 0 ? 0 : q;
 }
 

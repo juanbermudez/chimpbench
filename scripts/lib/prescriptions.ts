@@ -278,6 +278,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   rhythmCircadian: { stage: 'E2d', needs: { rhythmSleep: 1 } },
   nestAudience: { stage: 'E2e', needs: {}, removesNothing: 'widens the audience of departPersist to awake animals in finished nests; adds no term and removes none (e2e-prereg §2.2)' },
   nestCompany: { stage: 'E2e', needs: {}, removesNothing: 'adds the company of nest-mates to staying in a nest with the C13e join terms (design); removes no rule (e2e-prereg §2.2)' },
+  sleepChimp: { stage: 'E2f', needs: { rhythmSleep: 1, rhythmCircadian: 1 }, removesNothing: 'replaces the human mean levels of the two-process thresholds (assumed inputs) with a chimpanzee sleep amount (EEG, bert1970; an input); no prescription is switched out (e2f-prereg §4)' },
   urgencyChoice: { stage: 'E3', needs: {} },
   urgencyPersist: { stage: 'E3', needs: {} },
   urgencySwitchCost: { stage: 'E3', needs: {} },

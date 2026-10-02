@@ -21,6 +21,7 @@ const TRACK_E_SWITCHES = [
   'endoRhythm', // E4d
   'ledgerSatiationReserve', 'ledgerLactGut', // E1i
   'huntValue', // E4e
+  'sleepChimp', // E2f
   'preyKanyawara', // E4f
 ] as const;
 
