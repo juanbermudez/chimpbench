@@ -334,3 +334,12 @@ change 3 of `docs/staging/e4f-protocol.patch.json`; it needs a registered test b
   near Kanyawara (hunted share 0.087, 17 matched hunts a year at 1.7 × its encounter rate), so E4e's premise that
   T-HUN-1's excess is the encounter rate does not hold. Then resolve the residual ×1.5 with a detection source, never a
   fit.
+
+#### Merge and final checks
+
+`track-e` (7ed452c: E2f `sleepChimp`, handoff) merged once, at 642fb98 (conflicts: the switch list in
+`tests/sim-track-e.test.ts`, union; `docs/research.md` and `docs/staging/e-sources.md`, both addenda kept, E4f's
+unnumbered after E2f's E.30 / §30; `src/sim/params.gen.ts`, ours, regenerated). R stays hash-identical at 2 days
+(seeds 48 and 7) after the merge with `preyKanyawara` at 0. At f0f47b6: `gen-params --check` clean, `tsc` clean,
+`pnpm test` 662 tests, 661 pass, 0 fail, 1 skipped; `git ls-files data/raw node_modules` prints nothing. Prescription
+count: R 103, R + `preyKanyawara` 103 (an input correction), R + `huntValue` 102.
