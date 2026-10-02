@@ -220,3 +220,84 @@ persists**), median −22 to −5 min, far crowns earlier than near ones by 5–
 departure median 2–200; last nest entry 0 to +30 min after sunset; active day 12 h 00 – 12 h 40 (**above T-RHY-1: killed
 on criterion 3 expected**). If so, the dawn departure is set by the night menu's boundary (a design threshold of the
 phase menus), not by darkness: the finding the prereg's §5 anticipated.
+
+### Iteration 2 results
+
+T2 = R + darkCost (with the fix). The full Track E stack was run as the extra arm: S = R + `energyLedger`,
+`ledgerGrowSurplus`, `ledgerNightNurse`, `ledgerInfantIntake`, `ledgerNurseByMilk`, `ledgerDigesta`, `ledgerDrive`;
+ST2 = S + darkCost (same code as T2).
+
+| Readout | R | T2 | S (full stack) | ST2 | Field |
+| --- | --- | --- | --- | --- | --- |
+| Departures before sunrise, adult females (all adults) | 0.05 (0.03) | **1.00 (1.00)** | 0.00 (0.00) | **0.73 (0.67)** | 0.18 (Taï; T-RHY-3 0.05–0.35) |
+| … males / lactating / other females | 0.01 / 0.07 / 0.03 | 1.00 / 1.00 / 1.00 | 0 / 0 / 0 | 0.59 / 0.99 / 0.50 | — |
+| Median departure, min after sunrise (p10–p90) | +18 (+6 to +29) | −13 (−14 to −11) | +27 (+18 to +37) | −10 (−14 to +39) | about 0 (Budongo); +13 to +27 (Taï) |
+| Figs < 150 / 150–500 / ≥ 500 m: median (share before sunrise) | 17 / 18 / 18 (0.05 / 0.03 / 0.00) | −13 / −13 / −13 (1.0) | 29 / 26 / 26 (0 / 0 / 0.02) | **+11 / −13 / −13 (0.39 / 0.76 / 0.81)** | far figs earlier |
+| Other fruit, same | 18 / 19 / 19 (0.04 / 0.03 / 0.02) | −13 / −13 / −13 (1.0) | 28 / 28 / 28 (0) | **+5 / −13 / −13 (0.44 / 0.78 / 0.93)** | far non-figs later |
+| Open-sky lux at departure, median (share 1–85 lux) | 2,700 (0.6%) | 24 (95%) | 4,630 (0.1%) | 60 (53%) | 1–85 lux, great-ape feeding (secondary) |
+| Last nest entry, min after sunset (median); nests per evening | −4; 1.15 | +14; 1.13 | −11; 1.31 | +12; 1.65 | males about −25 (derived) |
+| Active day: all; males / lactating / other females | 11 h 43; 11 h 41 / 11 h 48 / 11 h 42 | **12 h 31**; 12 h 27 / 12 h 40 / 12 h 29 | 11 h 29; 11 h 30 / 11 h 30 / 11 h 28 | **12 h 15**; 12 h 09 / 12 h 33 / 12 h 07 | 11 h 34 / 10 h 57 (T-RHY-1 10.5–12) |
+| Night out of a nest; m per animal-night; adults out at solar midnight | 0.0%; 0; 0.1% | 1.5%; **62**; **3.0%** | 0.0%; 0; 0.0% | 1.0%; **38**; **2.6%** | 1.8% of activity records (tagg2018) |
+| Night deaths; deaths; starvation | 0; 0; 0 | 0; 0; 0 | 0; 0; 0 | 0; 0; 0 | — |
+| Crop at sunset ÷ sunrise, figs / other | 1.00 / 1.00 | 1.00 / 1.00 | 1.00 / 1.00 | 1.00 / 1.00 | — (no frugivores modelled) |
+| Rest / feed / travel, 07:00–19:00 | 18.1 / 40.3 / 18.9% | 18.3 / 41.1 / 18.8% | 27.2 / 27.4 / 15.8% | 27.9 / 28.5 / 15.4% | — |
+| Fitted / held-out distance | 5.965 / 2.469 | 2.487 / 24.448 | 3.635 / 3.503 | 3.468 / 6.822 | — |
+| … on rows scored in both, against R or S | — | −0.573 / **+22.479** | — | +0.370 / **+3.819** | noise floor 0.8 |
+| Prescription count (rhythmDarkW counted) | 140 | **139** | 140 | **139** | — |
+| Viability | pass | pass | pass | pass | — |
+
+Held-out rises come from T-FOOD-10 (the field observer's share of departures before sunrise: 0.00 → 1.00 in T2, +3.18;
+0.00 → 0.98 in ST2, +2.74) and T-HUN-4 (a male-count ratio of hunting that swings between runs: +18.8 in T2, +1.0 in
+ST2).
+
+Diagnostic (seed 48, 5 nights after the burn-in, `artifacts/e2c-diag/night2.ts`): the night activity that remains is
+three quarters juveniles of 5–15 years (4,792 of 6,505 animal-ticks out of a finished nest at night), drinking, walking
+to a crown that will be lit on arrival, resting and finishing a nest. Animals under 8 are decided by the argmax rules,
+which the night menu has never filtered; in every earlier arm the darkness weight kept them in their nests.
+
+Reading:
+- **The fix worked**: night activity fell from 15% to 1.0–1.5% of night time. It did not fall to the reference's 0:
+  juveniles are not covered by the night menu, and nothing physical holds them. Killed on criterion 2 (adults out at
+  solar midnight 2.6–3.0%; 38–62 m moved per animal-night).
+- **Dawn**: on the timer-needs reference every adult leaves at the first decision after light arousal cuts the dark nest
+  bout (daylight 0.1, 13 minutes before sunrise; E2a's design threshold). The nest is worth the rest score (about 0.15
+  after a night's sleep), and a breakfast trip at the vision the crowns have then (0.4) is worth more. On the full stack
+  (where adults other than lactating females are less hungry) departures split: hungry animals and far crowns go at
+  the arousal, sated animals and near crowns wait until 0–50 min after sunrise. **Far crowns are left for earlier than
+  near ones** (figs +11 → −13 min, other fruit +5 → −13 min), the janmaat2014 direction for figs, through the light
+  expected on arrival; **far non-figs are not later**, and figs are not earlier than other fruit (nothing makes figs
+  more contested; §3).
+- **Light at departure** falls to 24–60 lux (median), inside the 1–85 lux range quoted for great-ape feeding activity
+  (secondary), against 2,700–4,600 lux in the references.
+- **Dusk**: without the darkness weight animals nest after sunset (+12 to +14 min), and the active day is 12 h 15 –
+  12 h 31, above T-RHY-1. Killed on criterion 3.
+- **The registered expectation held** (§5): the measurable consequences of darkness at Kibale (vision recovers in the
+  crowns about 15 minutes before sunrise; walking slows by under 10% down to 0.015 lux; no predators) do not keep a
+  chimpanzee in its nest until about sunrise, nor bring it back before sunset. Departure time is then set by the light
+  arousal threshold and the night menu boundary, both design values of E2a, not by darkness.
+
+Iteration 3 was not run. The two remaining failures are not of a kind a darkness mechanism with sourced inputs can
+address: (1) the juveniles' nights would be fixed by extending the night menu to the argmax rules, i.e. by widening a
+prescription, which is the opposite of this track; (2) the timing needs a reason to stay in the nest when it is light
+enough to see, and no further physical consequence of darkness with a measured value was found (falls in poor light:
+no source; walking below 0.015 lux: no source; predators: absent at Kibale).
+
+## 9. Verdict
+
+| Switch | Result | Decision |
+| --- | --- | --- |
+| `darkCost` | Removes `rhythmDarkW` (prescriptions 140 → 139). Night safety fails (juveniles out of the night menu wander; adults out at solar midnight 2.6–3.0%), the active day is 12 h 15 – 12 h 31 (T-RHY-1 above), T-RHY-3 overshoots (0.73–1.00), held-out distance rises (T-FOOD-10). Viability passes. Far crowns earlier than near ones on the full stack | **off: null** under the kill criteria (2, 3, 4). Kept in the code as an ablation switch |
+
+What the darkness weight stood for. Not darkness: the physics and physiology of light at Kibale leave a chimpanzee able
+to see and walk well enough to feed from about 15 minutes before sunrise until about 15 minutes after sunset. The
+field departure at about sunrise (Budongo) and nesting before sunset need another cause. Candidates, none modelled:
+an endogenous circadian sleep gate (the two-process model's process C, which E2a replaced with the light-masking of
+sleepiness); safety from falls when climbing down or building in poor light; predation risk where leopards live (Taï:
+boesch1991, jennyZuberbuhler2005), which would act through the expected cost of moving, not through a weight.
+
+Biggest open problem: the nest's value in light. With rhythmDarkW gone, a nest is worth only the rest score once sleep
+pressure has discharged, so any meal beats it at first light; nothing physical in the model makes an animal stay in a
+nest in twilight or go to one before dark. Second, there is still no measured rate of fruit removal by other
+frugivores, so figs cannot be ephemeral by the forest's clock; the fig contrast of janmaat2014 needs that rate first
+(Gautier-Hion & Michaloud 1989, Poulsen et al. 2002, Olupot et al. 1998 and the janmaat2014 supplement are the likely
+sources, all behind paywalls).
