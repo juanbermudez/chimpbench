@@ -14,8 +14,10 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (08:45).** No agents. Integrator: the attribution runs of the integrated confirm (leave-one-out and
-  + `waterLedger`, energy-diagnose in quick mode; registered in docs/staging/e-stack2-confirm.md; `bench-run` at 3329520).
+- **Running now (09:00).** Agent E4g (why value-based calls add ~0.7 km of walking a day; `e4g-calltravel`; brief
+  `integrator/e4g-prompt.txt`). Integrator: the S3 confirm (S2 + `waterLedger`; registered in e-stack2-confirm.md;
+  `s3-confirm.sh` in `bench-run` at d066cdc). Attribution of S2 done: calls are the largest source of the extra
+  walking (−0.74 km without them), the rhythm package −0.29 km, the water ledger takes 0.89 km out.
 - **Integrated confirm S2 done** (e-stack2-confirm.md): 89 prescriptions (B 135), viable, fitted equal to today's
   model, held-out without the rare rows worse (+2.9, z 11.6: T-FOOD-10's early departures and the travel share);
   night safe; mothers −0.29%/day, juveniles −0.17%/day; every class walks 3.2–3.9 km a day.
@@ -87,6 +89,7 @@ Hard rules (AGENTS.md plus this track):
 | `.claude/worktrees/e4f-encounters` | Merged 2 October (head e7dacde). |
 | `.claude/worktrees/e1j-ranging` | Merged 2 October (head c898395). |
 | `.claude/worktrees/e2g-water` | Merged 2 October (head 1fe91ff). |
+| `.claude/worktrees/e4g-calltravel` | **Running agent** E4g, branched from track-e d066cdc. |
 | `.claude/worktrees/e1k-deficit` | Merged 2 October (head 5d2a01e). |
 | `.claude/worktrees/e2f-sleep` | Merged 2 October (head b5157a0). |
 | `.claude/worktrees/bench-run-2` | Second frozen checkout (6069e15) for the E2f night-safety check. Remove when done. |
