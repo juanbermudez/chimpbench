@@ -134,7 +134,7 @@ Pooled adult-female intake and eating minutes are the individual-day-weighted me
 
 ## 7. Results
 
-(Filled in after the runs.)
+Runs: field profile, seeds 48 and 7, 30-day burn-in + 60 days, `--workers 2`, one at a time, rules policy, on commit 7cfc8bb (code as registered in e7419f6). Outputs in `artifacts/validation/e1g/` (not tracked): `k<k>.{json,md,scorecard.*}`, `k<k>-energy.{json,txt}`, `a1*`, `analysis.md`. Unit tests: `tests/sim-wild-cost.test.ts` (default 1 in both profiles; k scales the resting × activity cost and the tap reports the extra as `wild`; energy conserved at k 1.6); `pnpm test` 591 pass, 1 skipped, 0 fail; the field pin in `tests/sim-track-e.test.ts` did not move.
 
 ### 7.0 Attribution run, registered after the sweep and before it ran (not a candidate)
 
@@ -142,3 +142,125 @@ The sweep showed adult females' formula intake stopping at about 1,950–1,980 k
 - **A1:** k 1.6 + `digestaGutMlPerKg` 111 (the top of its assumed range, 1.34 × the central 83; foregut 7.5 g/kg). Same seeds, window and tools (`e-bench --quick --days 60`, `energy-diagnose`).
 - **Expected if the gut binds:** female dry matter and intake rise about in proportion (toward 850–880 g and 2,500–2,650 formula kcal), non-reproducing females and mothers stop losing reserves, starvation deaths fall to 0–2, eating minutes rise above 250. **If time or choice binds instead:** intake stays near 1,950 and deaths persist.
 - Whatever it shows, the gut volume stays an assumption (E1b); A1 is attribution, not a proposal.
+
+### 7.1 Energy (simulation truth, `energy-diagnose`), kcal per day
+
+| k | Female, other: spend / formula eaten / dry matter g / eating min | Lactating: spend / eaten / min | Male: spend / eaten / g / min | Adult females pooled: eaten / g / min (T-ENE-1, T-ENE-3, T-ENE-2) | Foregut fill (all day), females | Daylight hunger, other / lactating / male |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1.0 | 1,258 / 1,308 / 459 / 178 | 1,684 / 1,719 / 206 | 1,511 / 1,568 / 525 / 182 | 1,520 / 518 / 193 | 0.33 | 0.21 / 0.41 / 0.21 |
+| 1.3 | 1,628 / 1,680 / 578 / 223 | 2,046 / 1,896 / 226 | 1,945 / 2,010 / 661 / 225 | 1,805 / 605 / 225 | 0.41 | 0.29 / 0.45 / 0.25 |
+| 1.6 | 1,996 / 1,962 / 658 / 251 | 2,369 / 1,928 / 230 | 2,394 / 2,451 / 797 / 270 | 1,952 / 648 / 242 | 0.48 | 0.38 / 0.45 / 0.36 |
+| 1.9 | 2,316 / 1,982 / 661 / 251 | 2,690 / 1,961 / 232 | 2,779 / 2,552 / 827 / 282 | 1,983 / 659 / 247 | 0.48 | 0.39 / 0.44 / 0.39 |
+| field | — | — | — | 2,479 ± 858 / 872 ± 289 / 309 ± 85 | — | — |
+
+- Spending followed the registered arithmetic within 2% (non-reproducing females 1,628 / 1,996 / 2,316 against 1,606 / 1,956 / 2,306 predicted).
+- **Intake did not follow spending.** Adult females' intake stopped at about 1,950–1,980 formula kcal (650–660 g dry matter, about 250 eating minutes) whatever their need: at k 1.6 and 1.9 non-reproducing females ate 1,962 and 1,982 against 1,996 and 2,316 spent, lactating females 1,928 and 1,961 against 2,369 and 2,690. Mothers hit it first, at k 1.3 (1,896 eaten, 2,046 spent). Males (39 kg, a larger gut) stopped at about 2,450–2,550.
+- At the ceiling the gut was not physically full (full 12% of daylight; mean fill 0.48 over the day), but hunger was held at 0.38–0.45 although reserves were 20–80% into the store: the drive φ was saturated, so hunger = 1 − fill², which puts the daytime foregut at about 0.75–0.8 full. Throughput = fill × capacity ÷ 3 h: about 650 g/day for a 31 kg female (75–80% of the hard ceiling of 835 g computed in §4.1, not the 85–90% guessed).
+
+### 7.2 Rows (observer scorecard, `e-bench`; 2 seeds pooled)
+
+| Row | Band | k 1.0 | 1.3 | 1.6 | 1.9 | Registered (1.3 / 1.6 / 1.9) |
+| --- | --- | --- | --- | --- | --- | --- |
+| T-ACT-1 feeding (M, F) | 0.33–0.50 | 0.30 (0.29, 0.31) fail | 0.35 (0.35, 0.36) pass | 0.40 (0.42, 0.39) pass | 0.40 (0.43, 0.38) pass | 0.37 / 0.43 / 0.47–0.50: rose less, stopped at 1.6 |
+| T-ACT-2 travel | 0.12–0.25 | 0.16 pass | 0.18 pass | 0.21 pass | 0.19 pass | 0.17 / 0.18 / 0.19: as registered |
+| T-ACT-3 grooming (M, F) | 0.08–0.18 | 0.24 (0.23, 0.24) fail | 0.20 (0.18, 0.21) fail | 0.15 (0.11, 0.18) pass | 0.16 (0.14, 0.18) fail by 0.002 | 0.19 / 0.15 / 0.11: as registered to 1.6, then stopped |
+| T-ACT-4 rest + groom | 0.30–0.47 | 0.48 fail | 0.39 pass | 0.33 pass | 0.33 pass | 0.42 / 0.35 / 0.28–0.32: as registered to 1.6 |
+| T-ACT-5 (held out) | pattern | pass | pass | pass | pass | — |
+| T-HUN-1 hunts per community-year | 5–25 | 40.6 | 38.5 | 50.7 | 53.7 | within ±30%: as registered to 1.6, +32% at 1.9 |
+| T-HUN-2 hunt success | 0.5–0.8 | 0.26 | 0.35 | 0.24 | 0.25 | — (noisy) |
+| T-FOOD-2 fruit share | 0.60–0.78 | 0.67 | 0.74 | 0.77 | 0.78 | 0.70 / 0.74 / 0.76–0.80: as registered |
+| T-FOOD-4 trees per day (held out) | 4–15 | 5.1 | 6.3 | 8.4 | 8.7 | 5.5 / 6.5 / 7.5: same direction, larger |
+| T-PTY-1 party size | 3–9 | 3.59 | 3.65 | 3.41 | 3.13 | 3.3 / 3.1 / 2.9: flat at 1.3, then falling, less than registered |
+| T-RNG-4 male day range, km (scorer holds the verdict as fail, a tuned row; distance 0) | 1.5–3.5 | 1.85 | 2.23 | 2.52 | 2.23 | 2.1 / 2.3 / 2.5: as registered to 1.6 |
+| T-RNG-5 lactating ÷ male day range (held out) | 0.3–0.6 | 0.74 | 0.71 | 0.76 | 0.78 | falling to 0.65: **no trend** |
+
+| Band distance (e-bench) | k 1.0 | 1.3 | 1.6 | 1.9 |
+| --- | --- | --- | --- | --- |
+| Fitted, all scored rows | 3.618 (19 rows, 9 out) | 1.500 (19, 5) | 3.215 (17, 4) | 2.878 (18, 6) |
+| Held-out, all scored rows | 3.005 (18, 10) | 5.291 (18, 12) | 4.045 (13, 9) | 4.196 (18, 11) |
+| Fitted, 17 rows scored in all four | 3.340 | 1.347 | 3.215 | 2.823 |
+| Held-out, 13 rows scored in all four | 2.665 | 3.595 | 4.045 | 3.209 |
+| Prescription count | 134 | 134 | 134 | 134 |
+
+The activity rows account for −0.79 of fitted distance from k 1.3 on. The rest is rare-event noise of the size E0 measured (up to 0.8 between seed sets): T-COM-11 (alarm calls) 0.83 / 0 / 0.83 / 0.17, T-HUN-1 and T-HUN-2, and on the held-out side T-HUN-4 (more males, more hunting) 0.09 / 0.90 / 1.31 / 0.69, T-IGE-2 0.08 → 0.50. No held-out row moved toward its band beyond noise.
+
+### 7.3 Reserves, deaths and weaning (truth)
+
+| k | Deaths in the window (living 98 at day 30) | Reserves ÷ store, change per day: males / other females / lactating / juveniles / infants 2–5 y / infants 0.5–2 y | Median hunger, adults / lactating (e-bench) |
+| --- | --- | --- | --- |
+| 1.0 | 0 | −0.003% / −0.007% / **−0.071%** / −0.007% / −0.003% / +0.001% | 0.19 / 0.52–0.54 |
+| 1.3 | 0 | −0.016% / −0.036% / **−0.535%** / −0.027% / −0.005% / **−0.115%** | 0.28–0.31 / 0.77–0.80 |
+| 1.6 | **17**: 15 starvation (13 lactating females, 2 infants 0.5–2 y), 2 orphaned infants | −0.058% / −0.405% / survivors only / −0.542% / −0.353% / −0.255% | 0.59–0.65 / 0.77 |
+| 1.9 | **49**: 35 starvation (14 lactating, 5 other and 3 pregnant females, 10 juveniles, 1 adolescent, 2 infants), 14 orphaned infants | −0.623% / −0.981% / all died / −0.708% / — / — | 0.74–0.75 / 0.77 |
+
+Weaning readouts, unweaned infants (milk kcal/day; own food kcal/day; daytime nursing %; daytime eating %; growth kg/y):
+
+| k | 0–1 y | 1–2 y | 2–3 y | 3–4 y |
+| --- | --- | --- | --- | --- |
+| 1.0 | 268; 0; 10.6; 0; 2.06 | 307; 81; 14.4; 3.3; 1.48 | 307; 187; 14.9; 7.2; 1.05 | 306; 333; 13.4; 10.2; 0.93 |
+| 1.3 | 307; 0; 16.0; 0; 0.62 | 307; 160; 15.3; 6.6; 0 | 307; 323; 14.6; 12.3; 0 | 307; 513; 13.7; 15.9; 0 |
+| 1.6 | 307; 0; 16.2; 0; — | 307; 315; 15.0; 11.4; 0 | 307; 478; 14.5; 18.7; 0 | 307; 719; 13.2; 21.9; 0 |
+| 1.9 | 306; 1; 16.0; 0.1; — | 307; 356; 14.6; 15.6; — | 306; 522; 14.1; 20.8; — | 306; 734; 13.4; 22.7; — |
+
+- Milk is pinned at the mother's yield (307 kcal/day) from k 1.3; growth (paid only from surplus) stops at k ≥ 1.3 from age 1; infants of 1–4 y eat 2–2.5 × more of their own food and their daytime eating share rises toward the field's 25–47% (E1d). Daytime nursing stays at 13–16% (field about 3%).
+- Viability, by the registered rule (no starvation death and no class falling faster than 0.05% of its store a day): **k 1.0 fails it narrowly** (lactating females −0.071%/day; this is the stack's own state, not caused by k); **k 1.3 fails** (mothers −0.54%/day: −0.16 → −0.48 of the store over the window, on course to exhaust it about 3 months later; infants 0.5–2 y −0.12%/day), with no death inside 60 days; **k 1.6 and 1.9 fail with deaths**.
+
+### 7.4 Attribution run A1 (k 1.6, gut volume 111 mL/kg)
+
+| | k 1.6 (gut 83) | A1 (gut 111) |
+| --- | --- | --- |
+| Females, other: spend / eaten / g / min | 1,996 / 1,962 / 658 / 251 | 1,988 / 2,069 / 699 / 246 |
+| Lactating: spend / eaten / min | 2,369 / 1,928 / 230 | 2,420 / 2,459 / 272 |
+| Adult females pooled: eaten / g / min | 1,952 / 648 / 242 | **2,261 / 751 / 259** |
+| Males: eaten / g | 2,451 / 797 | 2,450 / 800 |
+| Reserves per day: other females / lactating / juveniles / infants 0.5–2 y | −0.405% / — / −0.542% / −0.255% | **−0.010% / −0.134% / −0.028% / −0.205%** |
+| Starvation deaths | 15 | **2** (both infants 0.5–2 y) |
+| T-ACT-1 / 2 / 3 / 4 | 0.40 / 0.21 / 0.15 / 0.33 | 0.40 / 0.18 / 0.175 (F 0.187, fail by 0.03) / 0.34 |
+| T-FOOD-2; T-HUN-1; T-PTY-1 | 0.77; 50.7; 3.41 | 0.79 (above by 0.01); 47.7; 3.15 |
+| Fitted / held-out distance | 3.215 / 4.045 | 3.322 / 3.979 |
+
+As registered for "the gut binds": with 1.34 × the foregut, females' dry matter rose to 700–800 g, adults balanced, deaths fell from 15 to 2 and both remaining deaths are infants under 2 y, held by the milk yield (−0.2%/day). Males, who were not at their ceiling, did not change. **The ceiling of §7.1 is the foregut's throughput** (E1b's assumed capacity and 3-hour emptying, held below capacity by E1e's design satiation curve 1 − fill²), not time or choice.
+
+### 7.5 Predictions against results
+
+Held:
+- spending (within 2%);
+- the direction and size of T-ACT-2, T-ACT-3 and T-ACT-4 up to k 1.6;
+- T-FOOD-2, T-FOOD-4 and T-RNG-4 directions;
+- T-HUN-1 within ±30% up to 1.6;
+- the milk yield binding for infants under 2 y;
+- starvation at 1.9.
+
+Missed:
+- intake and eating minutes beyond 1.3. Registered 2,252 and 2,615 kcal and 284 and 327 min (pooled females); measured 1,952 and 1,983 kcal and 242 and 247 min. The gut ceiling binds at about 78% of the hard ceiling and for every adult female, not only mothers;
+- T-ACT-1, which stopped at 0.40 instead of reaching 0.47–0.50;
+- viability at 1.3, registered as pass or marginal for infants: mothers fail first (−0.54%/day), and at 1.6 13 of the 15 starved are lactating females, not infants;
+- T-RNG-5, flat instead of falling;
+- other adults' median hunger, higher than registered (0.59–0.75 against 0.3–0.4 at 1.6–1.9).
+
+Refutation tests (§5):
+- T-ACT-3 is in band at k 1.6, so within the model the high grooming is freed time;
+- females' eating minutes rose +25% from k 1.0 to 1.6 (under +50%), so something other than demand limits feeding, and A1 names it: the foregut;
+- infants under 1.2 y lose reserves from k 1.3 (milk yield binding).
+
+### 7.6 The answer
+
+- **k_t, time budget.** T-ACT-1 enters its band at k ≈ 1.2 (interpolated: males 1.19, females 1.14). T-ACT-4 enters at ≈ 1.03. T-ACT-3 enters at ≈ 1.58 (females 0.240 → 0.213 → 0.177; males already at 1.3). T-ACT-2 is in band throughout. **All four are in band at k ≈ 1.6** (swept: 1.6). Beyond that the rows stop moving, because intake stops.
+- **k_i, intake.** Pooled adult-female formula intake enters T-ENE-1's band (1,900) at k ≈ 1.5 (interpolated between 1,805 at 1.3 and 1,952 at 1.6) and never reaches the field mean (2,479): it stops at about 1,980. T-ENE-2 eating minutes never enter their band (250–370): they stop at 247. With the gut at the top of its assumed range (A1) both are in band at 1.6 (2,261 kcal, 259 min), still 9% and 16% below the field means.
+- **Consistency.** At the level of bands, the k that fits the time budget (≈ 1.6) is consistent with intake (T-ENE-1 in band from ≈ 1.5). At the level of means, no k fits: the field's 2,479 kcal in 309 min needs k ≈ 1.8–2.0 (pooled females; §4.1) and a foregut that passes the field's 872 g of dry matter, which the assumed gut cannot pass at any k.
+- **Viability.** No k above 1.0 is viable on the present inputs: k 1.3 starves mothers slowly, 1.6 kills 15 of 98 animals in 60 days, 1.9 half the population. With the larger gut (A1) k 1.6 is viable for adults and juveniles; infants under 2 y still starve on the human-scaled milk yield.
+- **The quantified claim.** The model reproduces the field activity budget only if wild maintenance expenditure is about **1.6 × the captive-based estimate**: a total of about 2,000 kcal/day for a 31 kg non-reproducing female, PAL ≈ 2.15 on Kleiber's resting rate. It can sustain that only if, in addition, the foregut passes about 1.3 × the assumed dry matter (≥ 700 g/day for a 31 kg female) and infants under 2 y get more than the human-scaled milk yield. The default stays 1.
+
+### 7.7 Reading
+
+The k that the field time budget needs (≈ 1.6, PAL ≈ 2.15) lies above every wild non-human primate measured by doubly labelled water (PAL ≤ 1.89, k ≤ 1.42) and matches free-living humans only at the Hadza men's end. And it cannot be carried by the rest of the model's physiology.
+
+So "unmodelled wild costs" is not a sufficient explanation of the field paradox on present evidence. It needs chimpanzees to be metabolically exceptional among measured primates and, at the same time, to process food faster than the assumed gut allows.
+
+What the sweep does show is that the activity rows are energy-limited in the model: grooming, rest and feeding all move into their bands together when demand rises by about 60%. The field's feeding time is therefore a measure of how much the animals must eat. Either wild chimpanzees spend about 2,000 kcal/day, or the field's 309 minutes contain time that is not ingestion at the measured 8 kcal/min (searching and handling inside a crown, feeding interruptions, low-yield fallback minutes; a hypothesis, not checked against uwimbabazi2019's protocol). Then the field's intake (rate × minutes) would overstate true intake, true intake could match a captive-like expenditure, and the long feeding time would be time the model does not represent: its eating minutes are all ingestion (forage act 184 min, eating 178 min for non-reproducing females at k 1).
+
+The same arithmetic shows that the field's 872 g/day of dry matter exceeds what the E1b foregut (5.6 g/kg, 3 h) can pass; that input, an assumption, is under-sized if the field figure is right.
+
+The testable prediction for field energetics:
+- doubly labelled water (or calibrated accelerometry) on wild Kibale adult females should give about 1,900–2,100 kcal/day (PAL ≈ 2.0–2.2) if energy demand explains their time budget;
+- a value near the captive 1,300–1,450 kcal/day (PAL 1.4–1.6) would refute it and put the cause in how feeding minutes are counted or in non-energetic time costs.
