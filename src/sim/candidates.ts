@@ -13,7 +13,7 @@ import { circadianOn, circadianSleepiness } from './circadian';
 import { milkShare, milkWorth, nurseBoutWorth } from './energy';
 import { arrivalLight, brightening, needUnits, raceStake, rivalsAt } from './departure';
 import { endoOn, escalateScore, fastSpanH, rainFastScore, rainScore, redirectFastScore, redirectScore } from './endocrine';
-import { byIdIn, index, isTreeId, ix, NEVER, TREE_ID0, treesNear, simOf } from './state';
+import { awakeInNest, byIdIn, index, isTreeId, ix, NEVER, TREE_ID0, treesNear, simOf } from './state';
 
 // Variants refine an action's meaning (why a charge happens) for execution and reason text.
 export const V = {
@@ -1110,12 +1110,12 @@ export function nestCompanyValue(world: World, c: Chimp, P: Params): number {
  * site is an attempt as by day. Sleeping nest-mates cannot join an attempt (design assumption).
  */
 export function departAudience(world: World, c: Chimp): number {
-  const P = paramsOf(world), alive = index(world).alive, l2 = P.partyLinkM * P.partyLinkM, nestAud = P.nestAudience === 1;
+  const P = paramsOf(world), alive = index(world).alive, l2 = P.partyLinkM * P.partyLinkM;
   let n = 0;
   for (let i = 0; i < alive.length; i++) {
     const o = alive[i];
     if (o === c || o.troopId !== c.troopId || o.age < 12) continue;
-    if (o.action === 'nest' && ix(o).phase >= 2 && (!nestAud || ix(o).asl === 1)) continue;
+    if (o.action === 'nest' && ix(o).phase >= 2 && !awakeInNest(P, o)) continue;
     const dx = o.position[0] - c.position[0], dz = o.position[2] - c.position[2];
     if (dx * dx + dz * dz <= l2) n++;
   }

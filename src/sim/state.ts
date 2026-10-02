@@ -55,6 +55,8 @@ export interface ChimpX {
    * its own trips to trees come back on the menu after a failed attempt.
    */
   tryN?: number; trySince?: number; tryAt?: number;
+  /** Stage E2e (nestAudience, iteration 2): the finished nest an attempt under way set off from (absent otherwise). */
+  tryNest?: { treeId: number; position: number[] };
   /** Stage C13 (rgOn): the rules policy's current intention (absent until the first RG decision, so worlds with the switch off are unchanged). */
   rgIntent?: Intent;
   trees: number[]; fruitNear: number; preyId: number; stims: number[];
@@ -210,7 +212,7 @@ export type SimWorld = World & { sim: SimState };
  * ChimpX and SimState keys that exist only once their mechanism has fired (so worlds with the switch off keep their
  * shape and hashes). The save check (src/persist/envelope.ts worldShapeProblem) ignores them.
  */
-export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'en', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk', 'cx', 'cxc', 'cn', 'asl'];
+export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'tryNest', 'en', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk', 'cx', 'cxc', 'cn', 'asl'];
 export const OPTIONAL_SIM: readonly string[] = ['fission', 'stormAt'];
 
 export function newX(): ChimpX {
@@ -234,6 +236,10 @@ export function newX(): ChimpX {
   };
 }
 
+/** Stage E2e (nestAudience; docs/staging/e2e-prereg.md): an animal awake in its finished nest (no circadian latch, or the latch off) is a companion like any other. */
+export function awakeInNest(P: { nestAudience: number }, o: Chimp): boolean {
+  return P.nestAudience === 1 && o.action === 'nest' && ix(o).phase >= 2 && ix(o).asl !== 1;
+}
 export function ix(chimp: Chimp): ChimpX {
   const c = chimp as SimChimp;
   return c.sim ?? (c.sim = newX());

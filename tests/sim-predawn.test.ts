@@ -62,3 +62,25 @@ test('audience: a nest-sitter counts only with nestAudience, and only awake', ()
     assert.ok(sitters > 0, 'animals sit in finished nests at 04:30');
   }
 });
+
+test('iteration 2: a nest left by an attempt is kept only while that attempt is open, and never shared with the nest', () => {
+  const w = run(createWorld(48, { profile: 'field', params: ON }), PREDAWN - 240);
+  let open = 0, resumed = 0;
+  const prev = new Map<number, boolean>();
+  for (let i = 0; i < 960; i++) { // 03:30 to 07:30
+    tickWorld(w);
+    for (const c of w.chimps) {
+      if (!c.alive) continue;
+      const x = ix(c);
+      if (x.tryNest) {
+        open++;
+        assert.equal(c.action, 'travel', c.name);
+        assert.ok(x.tryN !== undefined, `${c.name}: an attempt is open`);
+        assert.ok(!c.nest || c.nest.position !== x.tryNest.position, 'no shared arrays');
+      }
+      if (prev.get(c.id) && c.action === 'nest' && c.reason === 'Stayed in its nest: nobody came along') { resumed++; assert.ok(c.nest && x.phase === 2); }
+      prev.set(c.id, x.tryNest !== undefined);
+    }
+  }
+  assert.ok(open > 0, `attempts from a nest were open (${open} ticks; ${resumed} given up in the nest)`);
+});
