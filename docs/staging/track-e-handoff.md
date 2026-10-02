@@ -18,8 +18,11 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   `e4d-rhythm`). Integrator chains in `bench-run`: the noise-threshold arms (six per mode, docs/staging/e-noise.md),
   then the E4c confirm (e4c-prereg.md §10). Scripts in the session scratchpad `integrator/` (noise.sh, noise2.sh,
   e4c-confirm.sh, judge_e1h.py, noise_threshold.py).
-- **Next decisions.** Record the noise thresholds (quick and confirm) in e-noise.md and the plan, and message them to
-  E1i and E4d; judge the E4c confirm; merge E1i and E4d when they report.
+- **Noise threshold recorded (04:10)**: judge every arm against the mean of replicated references (the reference plus
+  three `rgTemperature` re-draws); per-run SD quick 0.69 / 1.26 / 0.48, confirm 0.30 / 1.45 / 0.21 (fitted / held-out /
+  held-out without T-HUN-4 and T-BRD-1). The single-reference rule was biased (e-noise.md). E1i and E4d were told.
+- **Next decisions.** Judge the E4c confirm (e4c-prereg.md §10) against R's four confirm realizations; merge E1i and
+  E4d when they report.
 
 ## 1. The user's directives and the hard rules
 
@@ -160,7 +163,11 @@ adult). Sources suggest milk output does not fall in year 2, so recovery must co
 - **2 October.** e-bench prints every sum and comparison with and without `RARE_EVENT_ROWS` (T-HUN-4, T-BRD-1;
   d77f2cf). The noise threshold is being measured (docs/staging/e-noise.md): three quick arms gave a held-out threshold
   of 0.4 on all shared rows, contradicted by the two earlier noise arms (E4a +1.1 raw, E4c −3.13 shared), so both
-  modes were extended to six arms before any stage used a threshold (amendment disclosed in the file).
+  modes were extended to six arms before any stage used a threshold (amendment disclosed in the file). Result: the
+  single-reference rule is biased (all twelve confirm-mode changes negative: the references were unlucky draws);
+  amendment 2 judges arms against the mean of replicated references. With it, E1h's T has a real fitted gain (z −2.9,
+  the activity rows) and every held-out change of T and G is inside noise; the stack R is worse than B on held-out rows
+  without the rare ones (+0.79, mostly T-RNG-5).
 
 ## 5. Next steps, in priority order
 
