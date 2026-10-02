@@ -3045,6 +3045,293 @@
    "integer": true
   },
   {
+   "id": "circAlpha0",
+   "group": "needs",
+   "value": 0.05,
+   "units": "per min",
+   "range": [
+    0.025,
+    0.1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.001,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.circAlpha0",
+   "file": "src/sim/circadian.ts",
+   "notes": "Stage E2d (docs/staging/e2d-prereg.md, rhythmCircadian): photoreceptor activation rate at I0 (alpha_0; alpha = alpha_0 (I / I0)^p). Human circadian pacemaker model (forger1999, equations and values as in crodelle2023; research.md E.22) [H] for humans; no chimpanzee value exists, so assumed (cross-species)."
+  },
+  {
+   "id": "circAmp",
+   "group": "needs",
+   "value": 0.12,
+   "units": "S units",
+   "range": [
+    0.07,
+    0.2
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    0.4
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.circAmp",
+   "file": "src/sim/circadian.ts",
+   "notes": "Stage E2d (docs/staging/e2d-prereg.md, rhythmCircadian): amplitude of the circadian modulation of both thresholds (a; H = H0 + a C, C the oscillator's x). Two-process model standard value (daan1984 via skeldonDijk2025) [H] for humans; cross-species, assumed. Range: 0.07 in skeldonDijk2025's alternative simulations."
+  },
+  {
+   "id": "circBeta",
+   "group": "needs",
+   "value": 0.0075,
+   "units": "per min",
+   "range": [
+    0.00375,
+    0.015
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.0001,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.circBeta",
+   "file": "src/sim/circadian.ts",
+   "notes": "Stage E2d (docs/staging/e2d-prereg.md, rhythmCircadian): photoreceptor recovery rate (beta). Human circadian pacemaker model (forger1999, equations and values as in crodelle2023; research.md E.22) [H] for humans; no chimpanzee value exists, so assumed (cross-species)."
+  },
+  {
+   "id": "circEntrainD",
+   "group": "needs",
+   "value": 20,
+   "units": "d",
+   "range": [
+    10,
+    40
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    365
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "P.circEntrainD",
+   "file": "src/sim/circadian.ts",
+   "integer": true,
+   "notes": "Stage E2d (docs/staging/e2d-prereg.md, rhythmCircadian): length of the entrainment run that sets an animal's oscillator at its first tick with the switch on (floor light while awake, eyes closed while asleep, clear sky). Design: only the initial state; the 30-day burn-in removes what is left of it."
+  },
+  {
+   "id": "circG",
+   "group": "needs",
+   "value": 33.75,
+   "units": "",
+   "range": [
+    16.9,
+    67.5
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    500
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.circG",
+   "file": "src/sim/circadian.ts",
+   "notes": "Stage E2d (docs/staging/e2d-prereg.md, rhythmCircadian): scaling of the light drive B = G (1 - n) alpha (G). Human circadian pacemaker model (forger1999, equations and values as in crodelle2023; research.md E.22) [H] for humans; no chimpanzee value exists, so assumed (cross-species). 37 in the seventh-order variant (papatsimpa2021)."
+  },
+  {
+   "id": "circHLower",
+   "group": "needs",
+   "value": 0.17,
+   "units": "S units",
+   "range": [
+    0.1,
+    0.25
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    0.5
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.circHLower",
+   "file": "src/sim/circadian.ts",
+   "notes": "Stage E2d (docs/staging/e2d-prereg.md, rhythmCircadian): mean lower (waking) threshold of sleep pressure, H0-. Two-process model standard value (daan1984 via skeldonDijk2025) [H] for humans; cross-species, assumed."
+  },
+  {
+   "id": "circHUpper",
+   "group": "needs",
+   "value": 0.67,
+   "units": "S units",
+   "range": [
+    0.6,
+    0.75
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.3,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.circHUpper",
+   "file": "src/sim/circadian.ts",
+   "notes": "Stage E2d (docs/staging/e2d-prereg.md, rhythmCircadian): mean upper (sleep-onset) threshold of sleep pressure, H0+. Two-process model standard value (daan1984, as given in skeldonDijk2025; research.md E.22) [H] for humans; cross-species, assumed. Range: 0.75 in skeldonDijk2025's alternative simulations."
+  },
+  {
+   "id": "circI0",
+   "group": "needs",
+   "value": 9500,
+   "units": "lux",
+   "range": [
+    4750,
+    19000
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    100,
+    100000
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.circI0",
+   "file": "src/sim/circadian.ts",
+   "notes": "Stage E2d (docs/staging/e2d-prereg.md, rhythmCircadian): reference illuminance of the light-activation rate (I0). Human circadian pacemaker model (forger1999, equations and values as in crodelle2023; research.md E.22) [H] for humans; no chimpanzee value exists, so assumed (cross-species)."
+  },
+  {
+   "id": "circK",
+   "group": "needs",
+   "value": 0.55,
+   "units": "",
+   "range": [
+    0.275,
+    1.1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    5
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.circK",
+   "file": "src/sim/circadian.ts",
+   "notes": "Stage E2d (docs/staging/e2d-prereg.md, rhythmCircadian): effect of the light drive on the oscillator's period (k). Human circadian pacemaker model (forger1999, equations and values as in crodelle2023; research.md E.22) [H] for humans; no chimpanzee value exists, so assumed (cross-species)."
+  },
+  {
+   "id": "circMu",
+   "group": "needs",
+   "value": 0.23,
+   "units": "",
+   "range": [
+    0.13,
+    0.3
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.01,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.circMu",
+   "file": "src/sim/circadian.ts",
+   "notes": "Stage E2d (docs/staging/e2d-prereg.md, rhythmCircadian): stiffness of the van der Pol oscillator (mu). Human circadian pacemaker model (forger1999, equations and values as in crodelle2023; research.md E.22) [H] for humans; no chimpanzee value exists, so assumed (cross-species). Range: 0.13 in the seventh-order variant (papatsimpa2021)."
+  },
+  {
+   "id": "circP",
+   "group": "needs",
+   "value": 0.5,
+   "units": "",
+   "range": [
+    0.5,
+    0.6
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.1,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.circP",
+   "file": "src/sim/circadian.ts",
+   "notes": "Stage E2d (docs/staging/e2d-prereg.md, rhythmCircadian): exponent of the light-activation rate (p). Human circadian pacemaker model (forger1999, equations and values as in crodelle2023; research.md E.22) [H] for humans; no chimpanzee value exists, so assumed (cross-species). 0.6 in Kronauer et al. 1999 (as noted by the CSO model paper, PMC9552883)."
+  },
+  {
+   "id": "circSens",
+   "group": "needs",
+   "value": 0.4,
+   "units": "",
+   "range": [
+    0.2,
+    0.6
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    0.9
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.circSens",
+   "file": "src/sim/circadian.ts",
+   "notes": "Stage E2d (docs/staging/e2d-prereg.md, rhythmCircadian): circadian sensitivity modulator of the light drive, (1 - s x)(1 - s x_c). Human circadian pacemaker model (forger1999, equations and values as in crodelle2023; research.md E.22) [H] for humans; no chimpanzee value exists, so assumed (cross-species)."
+  },
+  {
+   "id": "circTauH",
+   "group": "needs",
+   "value": 24.2,
+   "units": "h",
+   "range": [
+    23.4,
+    25.1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    20,
+    28
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "eco",
+   "symbol": "P.circTauH",
+   "file": "src/sim/circadian.ts",
+   "notes": "Stage E2d (docs/staging/e2d-prereg.md, rhythmCircadian): intrinsic period of the oscillator (tau_x). Human circadian pacemaker model (forger1999, equations and values as in crodelle2023; research.md E.22) [H] for humans; no chimpanzee value exists, so assumed (cross-species). Human intrinsic period 24.18 h (czeisler1999); range: rhesus macaques free-run at 23.4-25.1 h in dim constant light (masudaZhdanova2010)."
+  },
+  {
    "id": "climbMps",
    "group": "movement",
    "value": 0.22,
@@ -17634,6 +17921,29 @@
    "symbol": "P.rhythmCanopyM",
    "file": "src/sim/rhythm.ts",
    "notes": "Stage E2a heat balance: height at which an animal in a crown receives the crown share of sunlight (rhythmShadeCrown). Assumed canopy height."
+  },
+  {
+   "id": "rhythmCircadian",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rhythmCircadian",
+   "file": "src/sim/circadian.ts",
+   "integer": true,
+   "notes": "Stage E2d (docs/staging/e2d-prereg.md, rhythmCircadian): process C of the two-process model as physiology. Each animal carries an oscillator (circadian.ts; forger1999) entrained by the light at its eyes (the E2c sky model x the E2a canopy share at its height, 0 while asleep), and a sleep latch: sleep starts when sleep pressure S reaches the upper threshold circHUpper + circAmp x C and ends at the lower circHLower + circAmp x C (daan1984 via skeldonDijk2025), C the oscillator's core-temperature variable. Only sleep (latch on, in its own finished nest or its mother's) discharges S; an asleep animal makes no decision until it wakes. The nest is worth the rest score without its fatigue term plus rhythmSleepW x felt sleepiness q (1 while the latch is on, else the position of S between the thresholds); rest outside a nest carries no sleep term; a new nest is offered under E2a's light gate (daylight < 1; iteration 2, after day nests took a third of the daytime when it was offered at any light). rhythmDarkW and the light masking S x (1 - daylight) are not read. A night or dusk menu with one option is that option. Result: a recorded null (e2d-prereg §8-9): sleep falls 97-102 min after sunset to 123-128 min before sunrise (8.2 h) and nobody leaves a nest during it, but nothing holds the two hours awake before dawn (adults wait only for the night menu; juveniles out 4-5% of the night). Needs rhythmSleep; no effect otherwise. 0 = E2a/E2b/E2c, bit-identical. Ablation switch."
   },
   {
    "id": "rhythmClimbExp",

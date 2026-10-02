@@ -12,6 +12,7 @@ import { paramsOf, type Params } from './params';
 import { fruitAt } from './phenology';
 import { random } from './rng';
 import { darkOn } from './light';
+import { circadianOn } from './circadian';
 import { IMPULSE_HUNT } from './perception';
 import { index, isChimpId, isTreeId, ix } from './state';
 
@@ -162,8 +163,9 @@ export function rgChoice(world: World, c: Chimp, list: Candidate[]): Candidate |
   }
   const menu = rgMenu(world, c, list);
   // stage E2c (darkCost; e2c-prereg §8 iteration 2): a night or dusk menu left with one option (the nest, once rest is
-  // no longer offered inside it) is that option; the unfiltered argmax would skip the phase menus
-  if (menu.length === 1 && darkOn(P) && P.rhythmFreeNight !== 1) {
+  // no longer offered inside it) is that option; the unfiltered argmax would skip the phase menus. Stage E2d
+  // (rhythmCircadian) offers no rest inside the nest either, so the same holds there (e2d-prereg §2.4)
+  if (menu.length === 1 && (darkOn(P) || circadianOn(P)) && P.rhythmFreeNight !== 1) {
     const ph = dayPhase(world);
     if (ph === 'night' || ph === 'dusk') {
       const pick = findCandidate(list, menu[0].action, menu[0].targetId)!, meta = candidateMeta.get(pick) ?? { v: V.NONE, aux: -1 };

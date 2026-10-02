@@ -9,6 +9,7 @@ import { bestFallbackNear, fallbackOn } from './fallback';
 import { fruitRate, leafWorth, needFruit, treeIntake } from './intake';
 import { heatRestValue, nestValue, shelterValue, sleepPressure, thermalLoad } from './rhythm';
 import { darkOn, tripLight, visionNow, type TripLight } from './light';
+import { circadianOn, circadianSleepiness } from './circadian';
 import { milkShare, milkWorth, nurseBoutWorth } from './energy';
 import { arrivalLight, brightening, needUnits, raceStake, rivalsAt } from './departure';
 import { endoOn, escalateScore, fastSpanH, rainFastScore, rainScore, redirectFastScore, redirectScore } from './endocrine';
@@ -226,7 +227,13 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   // animal in its own finished nest rests by staying in it.
   const dark = darkOn(P);
   const restScore = 0.12 + (1 - e) * 0.9 + midday + (h < 0.2 ? 0.2 : 0) + (!rH && env.temperature > 23 ? 0.1 : 0) + c.injury * 0.5 + (night && !rS ? 0.4 : 0) + (caretaker ? 0.1 : 0) + (x.ill > time ? P.epidemicRestW : 0);
-  let nestDrive = dark ? restScore
+  // stage E2d (rhythmCircadian; circadian.ts, docs/staging/e2d-prereg.md §2.4): process C replaces the darkness weight and
+  // the light masking. The nest is the rest score without its fatigue term plus the felt sleepiness of the two-process
+  // gate (S between the C-modulated thresholds); rest outside a nest has no sleep term. A new nest is offered under
+  // E2a's light gate (iteration 2: offered at any light, day nests took a third of the daytime; e2d-prereg §8)
+  const circ = circadianOn(P), restBase = restScore - (1 - e) * 0.9;
+  let nestDrive = circ ? restBase + P.rhythmSleepW * circadianSleepiness(P, c)
+    : dark ? restScore
     : rS ? nestValue(P, c, env.daylight)
     : hour >= P.nestEveningFromH ? smoothstep(P.nestEveningStartH, P.nestEveningEndH, hour) * P.nestEveningDrive + (night ? P.nestNightBonus : 0)
       : (1 - smoothstep(P.nestMorningDaylightLow, P.nestMorningDaylightHigh, env.daylight)) * P.nestMorningDrive;
@@ -235,7 +242,8 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     if (caretaker.action === 'nest' && isTreeId(caretaker.targetId)) offer('nest', caretaker.targetId, nestDrive + 0.4, V.MOTHER, caretaker.id);
   } else if (c.age >= 3 && !race) offerOwnNest(world, c, inNest, nestDrive, rS ? env.daylight < 1 : hour >= 12 || night);
   // felt sleepiness, (1 − energy) under rhythmSleep, is what only the nest relieves: rest keeps the rest of its score
-  if (!dark) offer('rest', -1, restScore);
+  if (circ) { if (!inNest) offer('rest', -1, restBase); }
+  else if (!dark) offer('rest', -1, restScore);
   else if (!inNest) offer('rest', -1, restScore - P.rhythmSleepW * sleepPressure(c) * (1 - env.daylight));
   if (rH) { if (rain >= 0.12 && !inNest && !carried) { const cold = shelterValue(P, c); if (cold > 0) offer('shelter', -1, cold); } }
   else if (rain >= 0.3 && !inNest && !night && !carried) offer('shelter', -1, 0.2 + rain * 1.6 - h * 0.2);
