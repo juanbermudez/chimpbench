@@ -191,4 +191,84 @@ logged below, with its reason, before its run. A miss is a finding.
 
 ## 8. Results
 
-(to be filled after the runs)
+Quick check throughout: field profile, seeds 48 and 7, 30 days after a 30-day burn-in, `--workers 1`, simulation truth
+(`scripts/rhythm-metrics.ts`) and `scripts/e-bench.ts --quick`; outputs in `artifacts/validation/e2d/` (not tracked).
+The reference reproduces E2c's R (fitted 5.965, held-out 2.469; 5% of adult females' departures before sunrise, median
++18 min). Prescription counts are the ledger's current ones (R 116; E2c's 140 was counted before later audits).
+
+**Measurement fix (before reading any arm).** `rhythm-metrics.ts` counted the first measured tick (06:30, right after a
+whole-day burn-in) as a solar midnight, because it started with "the sun was not rising". Animals already up at 06:30
+were then counted as out of a nest at midnight, and that night twice. Under T1 and TD1, where adults leave at 06:27,
+this produced "adults out at solar midnight 3.1–3.2%"; with the fix it is 0.0%. **E2c's "adults out at solar midnight
+2.6–3.0%" (T2, ST2, departures at −13 and −10 min) was very likely the same artefact**; its other night readouts (night
+time out of a nest, metres per night) are not affected. All arms below are the corrected metric (commit dd7b751).
+
+### Iteration 1 (the mechanism of §2 as registered; commit 5c8a410)
+
+| Readout | R | T1 (R + rhythmCircadian) | TD1 (T1 + darkCost) | Field or captive |
+| --- | --- | --- | --- | --- |
+| Sleep onset vs sunset; last waking vs sunrise (adults, median, p10–p90) | — | +101 (97 to 105); −123 (−128 to −120) min | +102; −122 min | captive: retire +15–30, rise −45 to −60 |
+| Hours asleep per night | — | 8.17 | 8.17 | 8.8 h (captive video); 9.7 h of 14 (captive EEG) |
+| Temperature minimum (oscillator minimum) vs sunrise | — | −334 min (01:05) | −333 min | — |
+| Start of the last nest, min before sunset (median) | 9 | 46 | 45 | T-RHY-4 −30 to +90: R, T1, TD1 inside |
+| Last nest entry vs sunset (median) | −4 | −41 | −40 | males about −25 (derived) |
+| Nests entered per afternoon and evening | 1.15 | **4.10** | **3.90** | — |
+| Nest, rest, groom (07:00–19:00, adults) | 3.7%, 18.1%, 16.4% | **34.7%, 6.1%, 8.2%** | **32.3%, 5.8%, 9.0%** | — |
+| Departure vs sunrise, adult females (median); share before sunrise | +15 to +19; 0.05 | −13; **0.71** | −13; **0.78** | about 0 (Budongo); 0.18 (Taï; T-RHY-3 0.05–0.35) |
+| Active day, all adults (mean) | 11 h 43 | **9 h 17** | **9 h 40** | T-RHY-1 10.5–12 h |
+| Active day, males / lactating (lactating − male) | 11 h 41 / 11 h 48 (+7) | 8 h 36 / 10 h 40 (+124) | 8 h 56 / 10 h 55 (+119) | 11 h 34 / 10 h 57 (−37) |
+| Night out of a nest, adults; m per adult-night; out at solar midnight | 0.0%; 0; 0.0% | 0.2%; 1; 0.0% | 0.1%; 0; 0.0% | 1.8–3.3% of activity records |
+| Night out of a nest, juveniles 5–15 y; m per juvenile-night; out at solar midnight | 0.0%; 0; 0.0% | **4.6%; 167**; 0.0% | **4.1%; 282**; 0.0% | — |
+| Juveniles out of a nest at 04, 05, 06 h | 0, 0, 0% | 10.6, 30.0, 29.9% | 9.4, 26.7, 28.7% | — |
+| Open-sky lux at departure (median) | 2,700 | — | 24 | 1–85 lux for great-ape feeding (secondary) |
+| Night deaths; deaths; viability | 0; 0; pass | 0; 0; pass | 0; 0; pass | — |
+| Fitted / held-out distance | 5.965 / 2.469 | 1.671 / 5.309 | 2.692 / 4.968 | — |
+| … on rows scored in both, against R | — | −1.893 / **+2.840** | −3.051 / **+2.499** | noise floor 0.8 |
+| Prescription count | 116 | 115 | 115 | — |
+
+Held-out rises come from T-FOOD-10 (the field observer's share of departures before sunrise: 0.00 → 1.00, +3.18 in
+both); fitted falls come from rows that swing between runs (T-HUN-2, T-COM-11, T-SOC-9) and are within seed noise.
+
+Reading:
+- **Process C behaves as computed in §4**, to the minute: sleep starts 101 min after sunset and ends 122 min before
+  sunrise, 8.2 h a night, with the temperature minimum at about 01:00. During the sleep episode no animal acts: from
+  21:00 to 04:00 not one tick out of a nest, juveniles included, with no darkness weight and no night menu needed.
+- **The night outside the sleep episode is not held.** Adults are held by the night menu (a prescription, unchanged).
+  Juveniles under 8, whom no menu filters, wake with everyone at about 04:40 and leave: 10–30% of juvenile time out of
+  a nest from 04:00 to sunrise, 167 m a night feeding in crowns (T1) or 282 m walking toward crowns that will be lit
+  on arrival (TD1; E2c's walking pace in the dark is a floor taken from humans at 0.015 lux, far brighter than a forest
+  floor under starlight). Killed on criterion 1, as predicted.
+- **Day nests.** With a sleep term on the nest that is above zero all afternoon (q 0.2–0.7) and none on rest, and the
+  nest offered at any light, resting animals build nests by day: a third of adult daytime is spent in day nests, rest
+  falls from 18% to 6% and grooming from 16% to 8%. The departure and active-day readouts (last exit from a nest
+  before noon, last entry after noon) then measure day nests: the active day falls to 9 h 17 – 9 h 40 and the class
+  contrast is meaningless. Killed on criterion 3. This is an artefact of the iteration-1 offer rule (§2.4), not of
+  process C: under the two-process model no sleep can start by day (S stays below the upper threshold), so a day nest
+  gives nothing a rest on the ground does not.
+- **Evening.** The median start of the last nest is 45–46 min before sunset (inside T-RHY-4), from sleepiness alone:
+  q reaches 0.7–0.8 in the last hour of daylight.
+- **Dawn.** Adults leave at the first decision after the night menu releases them (light arousal at daylight 0.1,
+  13 min before sunrise): 71–78% of adult females' departures are before sunrise (T-RHY-3 overshoot, T-FOOD-10 fails).
+  They have been awake for two hours, so nothing in the nest holds them once a choice is offered.
+- Kill criteria 1 (juvenile nights), 3 (active day) and 4 (held-out +2.5 to +2.8, T-FOOD-10) are met for both arms.
+
+### Iteration 2 (change of mechanism, logged before its run)
+
+**A new nest is offered only in falling or low light again (E2a's gate, `daylight < 1`), with process C still setting
+its value.** Reason: iteration 1. The day nests are an artefact of opening the nest at any light (§2.4) while the
+sleep term on it is above zero all afternoon; with E2a's gate the nest differs from E2c's only in its value (process
+C's felt sleepiness in place of the light masking), so the two stages compare directly. The gate is not a weight and
+is not counted as a prescription (it is E2a's design, kept by E2b and E2c); its role is reported. No parameter; nothing
+else changes. Staying in a finished nest is offered at any light, as before.
+
+Predictions (T2 = R + rhythmCircadian, TD2 = T2 + darkCost): sleep as in iteration 1; nests entered per evening
+1.05–1.3; nest share of 07:00–19:00 back to R's (3–6%), rest and grooming back near R; start of the last nest 35–50 min
+before sunset (most adults start within minutes of the gate opening, about 48 min before sunset, because q is already
+0.7 there: the gate will set the evening for sated animals, and that will be reported); active day 11 h 20 – 11 h 45;
+lactating − male active day positive (hungrier animals nest later); departures still at −13 min (T-RHY-3 0.6–0.8,
+T-FOOD-10 fails); juveniles still out before dawn (4–5%): **killed again on criteria 1 and 4**, and no longer on 3.
+
+Extra arms with the same code, to answer the stage's questions (not mechanism changes): S (the full stack of E2c: R +
+energyLedger, ledgerGrowSurplus, ledgerNightNurse, ledgerInfantIntake, ledgerNurseByMilk, ledgerDigesta, ledgerDrive)
+and ST2 = S + rhythmCircadian; and T2F = T2 + rhythmFreeNight (night menu off), to see what holds awake adults when the
+menu does not: predicted adults out of a nest at night 3–6%, almost all between waking and dawn.
