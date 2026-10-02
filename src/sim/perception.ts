@@ -11,6 +11,7 @@ import { noteContact } from './contact';
 import { featureDistance, perceivedFeatures } from './signals';
 import { endoHeard, endoOn } from './endocrine';
 import { noteFeeders } from './departure';
+import { darkOn, sightAt, visionNow } from './light';
 import { NEVER, aliveNear, byIdIn, index, ix, simOf, treesNear } from './state';
 
 export const IMPULSE_TRANSFER = 1, IMPULSE_ESCALATE = 2, IMPULSE_INFANTICIDE = 3, IMPULSE_RAIN = 4, IMPULSE_GANG = 5, IMPULSE_PATROL = 6, IMPULSE_HUNT = 7;
@@ -21,7 +22,8 @@ const ttl = (P: Params, kind: Memory['kind']) => kind === 'chimp' ? P.memTtlChim
 export function sightRadius(world: World, c: Chimp): number {
   const env = world.environment;
   const P = paramsOf(world);
-  let r = P.sightNightM + (P.sightDayM - P.sightNightM) * env.daylight;
+  // stage E2c (darkCost): the same interpolation, driven by vision at the animal's height instead of the daylight scale
+  let r = darkOn(P) ? sightAt(P, visionNow(world, c.position[1])) : P.sightNightM + (P.sightDayM - P.sightNightM) * env.daylight;
   r *= 1 - 0.3 * env.rain;
   if (c.position[1] > 4) r *= 1.15;
   if (c.age < 3) r *= 0.8;

@@ -42,6 +42,7 @@ export const OVERRIDES: Record<string, Override> = {
   nestEveningDrive: oe('clock', 'strength of the evening clock ramp (nestEveningStartH to nestEveningEndH): part of the nest clock'),
   nestMorningDrive: oe('clock', 'strength of the morning stay-in-nest drive: part of the nest clock', [], true),
   nestNightBonus: oe('bonus', 'extra nest drive because it is night: states sleeping at night'),
+  rhythmDarkW: oe('bonus', 'stage E2a nest value in the dark, set a priori to beat a starving animal\'s best meal (docs/staging/e2c-prereg.md §1): states staying in the nest while it is dark, with no consequence of darkness behind it (as nestNightBonus)'),
   boutRestMiddayMin: oe('clock', 'rest bouts are longer between 11:30 and 14:30 by rule (literal clock window in execution.ts)', ['T-ACT-4']),
   boutRestMiddayMax: oe('clock', 'rest bouts are longer between 11:30 and 14:30 by rule (literal clock window in execution.ts)', ['T-ACT-4']),
   boutNestMorningMin: oe('clock', 'nest bouts are short between 05:30 and 12:00 by rule (literal clock window in execution.ts)'),
@@ -59,6 +60,8 @@ export const OVERRIDES: Record<string, Override> = {
   fallbackRateRatio: { cls: 'input', kind: 'physiology', reason: 'ratio of measured energy intake rates (kcal per minute on pith and young leaves ÷ ripe fruit, uwimbabazi2019)' },
   travelDistScaleM: { cls: 'input', kind: 'physics', borderline: true, reason: 'field value derived from the cost of walking a metre (taylor1982, sockol2007) and a day\'s energy; the earlier tuned value was replaced at C7c. It still contains memTravelHungerW, which is tuned' },
   patchesPerHa: { cls: 'input', kind: 'ecology', reason: 'field value is the measured density of feeding-size trees (janmaat2016); the earlier value tuned to T-FOOD-11 was replaced at C7a' },
+  // stage E2c: physics of light and human physiology measured apart from any chimpanzee behaviour
+  walkDarkPace: { cls: 'input', kind: 'physiology', reason: 'measured walking speed in near-darkness over daylight speed (figueiro2011, humans), cross-species' },
   // stage E1b: food properties measured on the food or on the feeding rate, like ledgerFruitKcalPerMin's kcal per minute
   digestaDrupeDmGPerMin: { cls: 'input', kind: 'physiology', reason: 'measured dry matter ingested per feeding minute on drupes (uwimbabazi2019 Table 1), the bulk companion of the kcal per minute' },
   digestaFigDmGPerMin: { cls: 'input', kind: 'physiology', reason: 'measured dry matter ingested per feeding minute on figs (uwimbabazi2019 Table 1)' },
@@ -221,7 +224,8 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   ...same(['boutNestMorningMin', 'boutNestMorningMax'], P => P.rhythmSleep !== 1, 'the 05:30–12:00 window that made it a prescription (src/sim/execution.ts boutHours) is not read while rhythmSleep is 1. The value is still read there as the bout in changing light (and by rhythm.ts lightArousal): a re-decision cadence with no clock, like boutNestDay*, which the ledger classes design'),
   ...same(['energySleepPerH', 'energyRestPerH', 'energyRunPerH', 'energyWalkPerH', 'energyOtherPerH'], P => P.rhythmSleep !== 1,
     'with rhythmSleep 1 energy = 1 − sleep pressure × darkness, set every tick right after the timer step (src/sim/life.ts needs → rhythm.ts rhythmNeeds), and urgency.ts reads sleep pressure; the timer step survives only in the seed of sleep pressure at an animal\'s first tick (one 15 s step). src/decide/facts.ts still copies it into the Jev facts (model arms only)'),
-  rhythmDarkW: { when: P => P.rhythmSleep === 1, why: 'read only by nestValue (src/sim/rhythm.ts) while rhythmSleep is 1' },
+  // stage E2c (docs/staging/e2c-prereg.md): darkCost replaces the darkness weight by the consequences of darkness
+  rhythmDarkW: { when: P => P.rhythmSleep === 1 && P.darkCost !== 1, why: 'read only by the E2a nest value (rhythmSleep 1), and not while darkCost is 1 (src/sim/rhythm.ts nestValue, src/sim/candidates.ts)' },
   // stage E2a: the thermal load replaces the midday rest clock
   ...same(['boutRestMiddayMin', 'boutRestMiddayMax'], P => P.rhythmHeat !== 1, 'the 11:30–14:30 rest bout is not evaluated while rhythmHeat is 1 (src/sim/execution.ts boutHours)'),
   // stage E1f (docs/staging/e1f-prereg.md): ledgerGrowPotential replaces the stylized growth knees by captive growth rates
@@ -258,6 +262,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   departRace: { stage: 'E2b', needs: { rhythmSleep: 1 }, removesNothing: 'adds a term to the nest\'s value; without rhythmSleep the hour >= 12 nest gate moves to the race branch of candidates.ts and is counted there instead (e2b-prereg §8)' },
   nestLightDecide: { stage: 'E2b', needs: { rhythmSleep: 1 }, removesNothing: 're-decides at nest-bout ends in rising light; rgMaxAgeH stays in use elsewhere (e2b-prereg §8)' },
   nurseWake: { stage: 'E2b', needs: { energyLedger: 1, ledgerNightNurse: 1, rhythmSleep: 1 }, removesNothing: 'adds a waking tick to the mother\'s sleep pressure (e2b-prereg §8)' },
+  darkCost: { stage: 'E2c', needs: { rhythmSleep: 1 } },
   urgencyChoice: { stage: 'E3', needs: {} },
   urgencyPersist: { stage: 'E3', needs: {} },
   urgencySwitchCost: { stage: 'E3', needs: {} },

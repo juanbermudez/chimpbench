@@ -8,6 +8,7 @@ import { paramsOf, type Params } from './params';
 import { eat, fallbackKcalPerH, fruitKcalPerUnit, glandEmpty, gutRoom, intakeSize, ledgerOn, nurseTick, sharePlant } from './energy';
 import { snareIntake } from './snares';
 import { lightArousal } from './rhythm';
+import { darkOn, paceAt, visionNow } from './light';
 import { noteFeeders } from './departure';
 import { doTransfer, recordCopulation } from './reproduction';
 import { IMPULSE_HUNT, forget } from './perception';
@@ -56,7 +57,10 @@ function boutHours(world: World, c: Chimp, action: Action): number {
 
 export function speedFactor(world: World, c: Chimp): number {
   const stage = c.age < 2 ? 0.55 : c.age < 5 ? 0.7 : c.age < 10 ? 0.88 : c.age >= 40 ? 0.82 : 1;
-  return stage * (1 - 0.6 * c.injury) * (0.7 + 0.3 * c.energy) * (1 - 0.3 * world.environment.rain);
+  const f = stage * (1 - 0.6 * c.injury) * (0.7 + 0.3 * c.energy) * (1 - 0.3 * world.environment.rain);
+  // stage E2c (darkCost): walking and climbing slow a little in poor light (light.ts paceAt; figueiro2011, cross-species)
+  const P = paramsOf(world);
+  return darkOn(P) ? f * paceAt(P, visionNow(world, c.position[1])) : f;
 }
 
 /**
@@ -875,7 +879,8 @@ function forageTick(world: World, c: Chimp): void {
     if (x.gx !== 0 || x.gz !== 0) moveTo(world, c, x.gx, 0, x.gz, WALK * 0.3, 0.2);
     // leaves, pith and herbs: lower-quality fallback foods [H]; the field profile's forage field varies by habitat and season
     // stage E1c (ledgerInfantIntake): intake capacity by body size replaces C8's ramp under the ledger
-    const self = (P.ledgerInfantIntake === 1 && ledgerOn(P) ? intakeSize(c, P) : selfFeed(c, P)) * snareIntake(c, P);
+    // stage E2c (darkCost): leaves are found by sight, so intake follows vision on the floor (light.ts)
+    const self = (P.ledgerInfantIntake === 1 && ledgerOn(P) ? intakeSize(c, P) : selfFeed(c, P)) * snareIntake(c, P) * (darkOn(P) ? visionNow(world, c.position[1]) : 1);
     if (ledgerOn(P)) eat(c, P, fallbackKcalPerH(P) * TICK_HOURS * (P.patchEcology === 1 ? forageYield(world, c.position[0], c.position[2]) : 1) * self, 'fallback');
     else if (P.patchEcology === 1) c.hunger = clamp(c.hunger - P.fallbackHungerPerH * TICK_HOURS * forageYield(world, c.position[0], c.position[2]) * self);
     else c.hunger = clamp(c.hunger - P.fallbackHungerPerH * TICK_HOURS * self);
@@ -908,6 +913,7 @@ function forageTick(world: World, c: Chimp): void {
   let want = led && P.ledgerInfantIntake === 1
     ? P.fruitIntakePerH * TICK_HOURS * (P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging) * intakeSize(c, P) * snareIntake(c, P)
     : P.fruitIntakePerH * TICK_HOURS * (P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging) * (c.age < 5 ? P.fruitIntakeYoungFactor : 1) * selfFeed(c, P) * snareIntake(c, P);
+  if (darkOn(P)) want *= visionNow(world, c.position[1]); // stage E2c (darkCost): ripe fruit is found and chosen by sight
   if (led) want = Math.min(want, gutRoom(c, P, fig ? 'fig' : 'drupe') / kcalPerFruit);
   let intake: number;
   if (lazy) intake = eatFruit(world, t, want);
@@ -941,8 +947,10 @@ function fallbackTick(world: World, c: Chimp): void {
   }
   if (x.gx !== 0 || x.gz !== 0) moveTo(world, c, x.gx, 0, x.gz, P.walkMps * 0.3, 0.2);
   // the ledger: the cell loses only what the gut takes (E1c: by body size); the timers: the hunger removed
-  if (ledgerOn(P)) { const k = P.ledgerInfantIntake === 1 ? intakeSize(c, P) : 1; eatFallback(world, c, TICK_HOURS, g => eat(c, P, g * k, 'fallback')); }
-  else c.hunger = clamp(c.hunger - eatFallback(world, c, TICK_HOURS));
+  // stage E2c (darkCost): feeding time is worth what vision on the floor allows (light.ts)
+  const dtH = darkOn(P) ? TICK_HOURS * visionNow(world, c.position[1]) : TICK_HOURS;
+  if (ledgerOn(P)) { const k = P.ledgerInfantIntake === 1 ? intakeSize(c, P) : 1; eatFallback(world, c, dtH, g => eat(c, P, g * k, 'fallback')); }
+  else c.hunger = clamp(c.hunger - eatFallback(world, c, dtH));
 }
 
 function pairTick(world: World, c: Chimp, o: Chimp | undefined): void {
