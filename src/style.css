@@ -291,11 +291,11 @@ body.preview .viewport { background: #3a3d38; }
 .td-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 .td-readout { display: flex; align-items: baseline; gap: 8px; }
 .td-legend { font-size: 11px; }
-.tb-speeds { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; padding: 3px; border-radius: 10px; background: var(--well); border: 1px solid var(--line); }
+.tb-speeds { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; padding: 3px; border-radius: 10px; background: var(--well); border: 1px solid var(--line); }
 .tb-speeds button { position: relative; height: 32px; border-radius: 7px; font-size: 12px; color: var(--ink-3); white-space: nowrap; text-align: center; font-variant-numeric: tabular-nums; transition: background .15s, color .15s; }
 .tb-speeds button:hover { background: var(--hover); color: var(--ink); }
 .tb-speeds button[aria-checked="true"] { color: var(--ink); background: rgba(255, 255, 255, .12); font-weight: 600; box-shadow: inset 0 0 0 1px var(--line-2); }
-.sp-key { display: none; } /* keys 1–6 are named in the panel header and each button's tooltip */
+.sp-key { display: none; } /* keys 1–7 are named in the panel header and each button's tooltip */
 .tb-rate { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .tb-tps { font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-3); white-space: nowrap; }
 .tb-state { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 11.5px; color: var(--ink-3); min-width: 0; }

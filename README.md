@@ -31,7 +31,7 @@ pnpm exec tsx scripts/bench-sim.ts
 
 ## Time
 
-Every chimp runs every 15-second ecological tick at every speed. Faster playback runs more ticks per frame; it never enlarges the tick. Presets: 1 min/s, 10 min/s, 1 h/s, 6 h/s, 1 day/s, and Max (as many ticks as fit in the frame: about 65% of the frame, minus render and UI time, adapted to 60 or 120 Hz). The time bar shows the achieved rate and says when the simulation, not the preset, is the limit. The default world simulates a day in about 0.13 s in Node (Apple M3 Pro). Animals are drawn between the last two ticks, so motion stays continuous at every speed.
+Every chimp runs every 15-second ecological tick at every speed. Faster playback runs more ticks per frame; it never enlarges the tick. Presets: real time (1 s/s: one tick every 15 real seconds, with motion interpolated between ticks), 1 min/s, 10 min/s, 1 h/s, 6 h/s, 1 day/s, and Max (as many ticks as fit in the frame: about 65% of the frame, minus render and UI time, adapted to 60 or 120 Hz). The time bar shows the achieved rate and says when the simulation, not the preset, is the limit. The default world simulates a day in about 0.13 s in Node (Apple M3 Pro). Animals are drawn between the last two ticks, so motion stays continuous at every speed.
 
 Settings also offer a life-course clock (one biological year per ecological day) for watching generations. Behavior stays on ecological time; this separation is an experimental control, not a biological claim.
 
@@ -76,7 +76,7 @@ Model scores are softmax scores, uncalibrated for chimpanzee behavior. A working
 ## Controls
 
 - **Mouse:** drag to pan, right-drag to orbit, scroll to zoom. Click a chimp, roster entry, event or minimap point to select.
-- **Playback:** Space pauses; `1`–`6` pick speeds.
+- **Playback:** Space pauses; `1`–`7` pick speeds (`1` is real time).
 - **Camera:** `F` focuses, `C` toggles close view, `V` toggles the cinematic director, `R` returns to the overview (strategy view). The overview shows a map scale bar; Reset camera frames the whole map.
 - **Panels:** `T` opens the society overlay (kinship forest, dominance ladders, bond network, alpha history). `E` opens experiments, `M` the model panel, `I` the inspector. `L` toggles labels. `[` and `]` cycle chimps. Esc closes.
 - **Sound:** starts on your first click or key (browser autoplay rule). `S` or the speaker button mutes; Settings › Sound has Master, Ambience, Animals and Weather volumes.

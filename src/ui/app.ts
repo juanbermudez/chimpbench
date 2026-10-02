@@ -431,7 +431,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
       return;
     }
     if (k === ' ' && !(tgt.tagName === 'BUTTON' || tgt.getAttribute('role') === 'button' || tgt.tagName === 'A')) { e.preventDefault(); deps.setPlaying(!deps.clock.playing); ctx.refresh(); return; }
-    if (/^[1-6]$/.test(k)) { const p = deps.speedPresets[Number(k) - 1]; if (p) ctx.setSpeed(p.id); return; }
+    if (/^[1-9]$/.test(k)) { const p = deps.speedPresets[Number(k) - 1]; if (p) ctx.setSpeed(p.id); return; }
     switch (k.toLowerCase()) {
       case 'f': deps.getScene()?.focusChimp(state.selectedId); break;
       case 'c': ctx.setView(state.view === 'close' ? 'rts' : 'close'); break;

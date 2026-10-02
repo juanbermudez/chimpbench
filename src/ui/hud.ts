@@ -33,7 +33,7 @@ export function createHud(root: HTMLElement, ctx: Ctx) {
   <div class="bar-sep" data-sim></div>
   <div class="bar-group bar-clockctl">
     <button class="tc-play" data-k="play" aria-keyshortcuts="Space" aria-label="Pause (Space)" title="Play / pause (Space)">${icon('pause')}</button>
-    <button class="tc-rate" data-act="time" aria-haspopup="dialog" aria-expanded="false" aria-controls="time-drop" title="Time controls and decision model (speeds 1–6)">
+    <button class="tc-rate" data-act="time" aria-haspopup="dialog" aria-expanded="false" aria-controls="time-drop" title="Time controls and decision model (speeds 1–7)">
       <span class="tc-text"><span class="tc-speed" data-k="speed">1 min/s</span><span class="tc-achieved" data-k="achieved">—</span></span>${icon('chevron')}
     </button>
   </div>
