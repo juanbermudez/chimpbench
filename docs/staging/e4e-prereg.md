@@ -294,3 +294,48 @@ it wins 59 of 271 refused leads on seed 48 and 48 of 160 on seed 7, `winnerWhenN
 most of the rare hunts. Encounters and impulses per community-day sit slightly above the four reference realizations (6.24 against
 4.88–5.71; 2.63 against 1.87–2.45), possibly because fewer captures leave more colobus groups (not tested); adult
 males' daylight is unchanged (forage 0.26, groom 0.19).
+
+#### H1 result: benchmark (e-bench --quick, 5ca5b3c, `git.dirty` 0; against R-quick and NR1q–NR3q; tables printed by `artifacts/validation/e4e/report_table.py` and `judge_vs_reps.py` from the JSON)
+
+rows counted in every run: 28 (fitted 16, held-out 12)
+| readout | R (ref) | H1 |
+| --- | --- | --- |
+| enc/100h (obs) | 9.5 ± 0.42 (n 4) | 12 |
+| T-HUN-3 share hunted | 0.102 ± 0.015 (n 4) | 0.0267 |
+| T-HUN-1 | 45.6 ± 13 (n 4) | 14.2 |
+| T-HUN-2 | 0.32 ± 0.1 (n 4) | 0.273 |
+| T-HUN-4 | 1.92 ± 0.35 (n 4) | 2.27 |
+| hunts/community-year (truth, e-bench) | 83.1 ± 8.9 (n 4) | 26.4 |
+| prescriptions | 103 ± 0 (n 4) | 102 |
+| viability | pass | pass |
+| encounters/community-day (truth) | 5.45 ± 0.38 (n 4) | 6.24 |
+| hunts/community-day (truth) | 0.228 ± 0.024 (n 4) | 0.0722 |
+| leaders reserves/store (truth) | 0.00228 ± 0.001 (n 4) | 0.00225 |
+| fitted sum (z) | 3.9 ± 0.84 (n 4) | 2.25 (z -1.8) |
+| held-out sum (z) | 2.53 ± 0.35 (n 4) | 3.18 (z +0.5) |
+| held-out w/o rare sum (z) | 2.29 ± 0.13 (n 4) | 2.56 (z +0.5) |
+
+```
+quick, reference R (4 runs), rows counted in all runs: fitted 16, held-out 12
+  fitted             (16 rows) ref 5.13, 3.76, 3.42, 3.29 (mean 3.90, sd 0.84; used 0.84) | H1.json: 2.25, Δ -1.65, z -1.8 (inside noise)
+  held-out           (12 rows) ref 2.48, 2.40, 2.23, 3.03 (mean 2.53, sd 0.35; used 1.26) | H1.json: 3.18, Δ +0.64, z +0.5 (inside noise)
+  held-out w/o rare  (11 rows) ref 2.48, 2.24, 2.23, 2.21 (mean 2.29, sd 0.13; used 0.48) | H1.json: 2.56, Δ +0.26, z +0.5 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-ACT-1   fitted   ref 0.20±0.05 | H1.json 0.07 (fail)
+   T-HUN-4   held-out ref 0.24±0.39 | H1.json 0.62 (fail)
+```
+
+Against the registered predictions: T-HUN-3 0.027 (predicted 0.01–0.05, failing low: as predicted); T-HUN-1 14.2
+(predicted 8–25, inside the old band and above the staged 4–11: as predicted; per seed 28.4 and 0, so it rests on a
+handful of observed hunts); T-HUN-4 2.27 (predicted above 1 and unresolved: above 1, and seed 7 is degenerate); fitted
+sum −1.65 (z −1.8, inside noise; predicted down: as predicted); held-out +0.64 and without the rare rows +0.26 (both z
++0.5, inside noise: as predicted); prescriptions 103 → 102 and viability pass (as predicted). Not predicted: the
+observer's colobus encounter rate rose to 12.0 per 100 follow-hours (reference 9.5 ± 0.4; truth 6.24 against
+5.45 ± 0.38 per community-day), possibly because fewer captures leave more or calmer colobus groups (not tested); and
+T-ACT-1 moved beyond 2 SD of the reference, toward its band (feeding share 0.319 against 0.289–0.310; males 0.308
+against 0.270–0.296): males that hunt less feed more. Hunters' reserves at the start of a hunt are unchanged (0.0023 of
+the usable store above the set point in both): leaders are at the set point, neither in surplus nor in deficit.
+
+Quick reading under §7: viability passes, held-out without the rare rows is not up beyond noise, the count falls, and
+hunting does not vanish (truth 0.072 hunts per community-day) — a provisional keep candidate on the keep rule's legs,
+with T-HUN-3 turned from pass to fail. The confirm (H1c) decides.
