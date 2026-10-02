@@ -334,3 +334,153 @@ Never grounds to change a weight: a miss of T-ACT-3, T-ENE-2/3 or T-INF-6 is a f
 - `scripts/energy-diagnose.ts` (traj): seed-mean daily reserves; class composition changes with births and age
   classes (as in E1i).
 - No defect found in the code under test that bears on the measurement.
+
+## 8. Iteration 1: results
+
+Runs: arm G1 from a frozen checkout of 1478967 (`git.dirty` 0 in the bench JSON); the reference B2 and its three
+re-draws from frozen checkouts of 7b6435a (bench, energy) and bc44538 (intake), identical simulation code (the
+switch-off identity test passes; B2's quick bench equals E1i's `B2-quick.json` row for row). Seeds 48 and 7; bench 30 +
+30 days, energy and intake 30 + 60 days; rules policy. Every number below was generated from the JSON by the stage
+scripts (`final_table.py`, `zscore.py`, `k1_check.py`, `diag_e1k.py`, `abs_spent.py`, `diet_gut.py`; stage scratch,
+copied to `artifacts/validation/e1k/` of the frozen checkouts, gitignored).
+
+**Against the mean of B2's four realizations** (energy and intake readouts: the reference's own spread; bench sums:
+SD = max(registered quick SD, the reference's own); z = (G1 − mean) ÷ (SD × √1.25)):
+
+| readout | B2 mean ± SD (4 runs) | G1 (z) |
+| --- | --- | --- |
+| mothers reserves %/day, quick window | -0.034 ± 0.005 | -0.016 (+3.3) |
+| juveniles reserves %/day, quick window | +0.000 ± 0.024 | -0.022 (-0.8) |
+| mothers eating min/day, quick window | 279 ± 1.513 | 294 (+8.5) |
+| mothers dry matter g/day, quick window | 798 ± 3.639 | 816 (+4.4) |
+| mothers absorbed ÷ spent, quick window | 0.992 ± 0.001 | 0.993 (+0.8) |
+| mothers reserves %/day, decline | -0.210 ± 0.045 | -0.213 (-0.1) |
+| juveniles reserves %/day, decline | -0.108 ± 0.010 | -0.110 (-0.1) |
+| mothers eating min/day, decline | 275 ± 2.314 | 287 (+4.6) |
+| mothers dry matter g/day, decline | 776 ± 6.124 | 802 (+3.7) |
+| mothers absorbed ÷ spent, decline | 0.949 ± 0.009 | 0.948 (-0.1) |
+| mothers reserves %/day, 60 d | -0.093 ± 0.018 | -0.088 (+0.3) |
+| juveniles reserves %/day, 60 d | -0.046 ± 0.008 | -0.058 (-1.4) |
+| grooming share of daylight, lact: infant < 2 y | 0.134 ± 0.002 | 0.099 (-15.6) |
+| grooming share of daylight, lact: infant ≥ 2 y | 0.324 ± 0.006 | 0.141 (-26.0) |
+| grooming share of daylight, female, other | 0.118 ± 0.007 | 0.108 (-1.3) |
+| T-ACT-1 | 0.410 ± 0.007 | 0.414 (+0.5) |
+| T-ACT-1 male | 0.389 ± 0.007 | 0.388 (-0.2) |
+| T-ACT-1 female | 0.427 ± 0.008 | 0.432 (+0.6) |
+| T-ACT-3 | 0.163 ± 0.014 | 0.120 (-2.7) |
+| T-ACT-3 male | 0.139 ± 0.024 | 0.135 (-0.1) |
+| T-ACT-3 female | 0.183 ± 0.007 | 0.110 (-8.8) |
+| prescriptions | 103 ± 0.000 | 103 |
+| starvation deaths (energy run) | 0 ± 0.000 | 0 |
+G1: fitted 16 rows: 2.33 vs 2.91 ± 0.85 (z -0.6); held-out 13 rows: 4.28 vs 3.38 ± 0.44 (z +0.6); held-out, no rare 12 rows: 2.83 vs 2.88 ± 0.67 (z -0.1); viability pass
+
+Every class's 60-day reserve slope against the reference (K1):
+
+| class | reference mean ± SD | arm | z | below mean − 2 SD |
+| --- | --- | --- | --- | --- |
+| adult male | -0.019 ± 0.003 | -0.021 | -0.6 | no |
+| female, other | -0.033 ± 0.001 | -0.026 | +8.3 | no |
+| female, lactating | -0.093 ± 0.018 | -0.088 | +0.3 | no |
+| juvenile 5–12 y | -0.046 ± 0.008 | -0.058 | -1.4 | no |
+| infant 2–5 y | -0.015 ± 0.006 | -0.017 | -0.3 | no |
+| infant 0.5–2 y | +0.002 ± 0.001 | -0.005 | -8.8 | yes |
+
+Behaviour of G1 (intake-diagnose; compare §5):
+
+A. Daylight time by act (% of daylight ticks; eat = own food swallowed) and daylight hunger
+| class | n | eat | rest | groom (own act) | play | travel (all) | nest | hunger | foregut fill |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| lact: infant 0.5–1 y | 4 | 39.5 | 21.6 | 9.5 | 1.2 | 11.3 | 10.5 | 0.39 | 0.70 |
+| lact: infant 1–2 y | 6 | 38.9 | 15.0 | 10.2 | 9.1 | 10.7 | 10.2 | 0.45 | 0.71 |
+| lact: infant 2–3 y | 6 | 38.0 | 14.7 | 12.4 | 9.6 | 10.2 | 9.6 | 0.46 | 0.70 |
+| lact: infant 3–4 y | 4 | 38.1 | 14.1 | 16.0 | 6.9 | 9.0 | 9.7 | 0.44 | 0.70 |
+| lact: infant < 2 y | 8 | 39.1 | 18.1 | 9.9 | 5.4 | 11.0 | 10.3 | 0.42 | 0.71 |
+| lact: infant ≥ 2 y | 10 | 38.0 | 14.4 | 14.1 | 8.3 | 9.6 | 9.7 | 0.45 | 0.70 |
+| female, other | 12 | 32.1 | 23.6 | 10.8 | 0.9 | 12.9 | 11.0 | 0.34 | 0.69 |
+| adult male | 28 | 32.9 | 20.7 | 12.6 | 0.5 | 14.3 | 11.1 | 0.29 | 0.63 |
+| juvenile 5–12 y | 12 | 34.2 | 10.0 | 7.5 | 11.7 | 14.6 | 9.4 | 0.41 | 0.72 |
+| female, lactating [early] | 16 | 39.0 | 16.4 | 12.3 | 6.6 | 9.9 | 10.0 | 0.41 | 0.71 |
+| female, lactating [late] | 16 | 38.1 | 15.9 | 12.0 | 7.3 | 10.7 | 9.9 | 0.46 | 0.70 |
+| lact: infant ≥ 2 y [early] | 8 | 38.4 | 14.8 | 14.3 | 8.3 | 8.7 | 9.9 | 0.42 | 0.70 |
+| lact: infant ≥ 2 y [late] | 10 | 37.7 | 14.1 | 13.9 | 8.3 | 10.4 | 9.5 | 0.48 | 0.69 |
+| juvenile 5–12 y [early] | 12 | 34.6 | 9.8 | 8.4 | 10.8 | 14.5 | 9.3 | 0.40 | 0.72 |
+| juvenile 5–12 y [late] | 12 | 33.8 | 10.2 | 6.6 | 12.5 | 14.7 | 9.6 | 0.42 | 0.72 |
+B. G1 grooming between a mother and her own unweaned infant (daylight)
+| class | episodes per daylight h | min per episode | % of daylight | time: mother only / infant only / both % | started by mother / infant / both % | ended by mother / infant / both % | mother hunger start → end | foregut fill start → end |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| lact: infant 1–2 y | 0.17 | 20.4 | 5.6 | 100.0 / 0.0 / 0.0 | 100.0 / 0.0 / 0.0 | 100.0 / 0.0 / 0.0 | 0.29 → 0.43 | 0.86 → 0.77 |
+| lact: infant 2–3 y | 0.21 | 22.6 | 7.8 | 99.3 / 0.2 / 0.5 | 99.0 / 0.6 / 0.4 | 99.2 / 0.6 / 0.3 | 0.32 → 0.46 | 0.84 → 0.75 |
+| lact: infant 3–4 y | 0.38 | 23.8 | 15.0 | 100.0 / 0.0 / 0.0 | 100.0 / 0.0 / 0.0 | 100.0 / 0.0 / 0.0 | 0.30 → 0.45 | 0.84 → 0.74 |
+| lact: infant ≥ 2 y | 0.29 | 23.3 | 11.2 | 99.7 / 0.1 / 0.2 | 99.6 / 0.2 / 0.2 | 99.7 / 0.2 / 0.1 | 0.31 → 0.45 | 0.84 → 0.74 |
+
+Mothers' diet and gut (60 days):
+
+lact: infant ≥ 2 y:
+| readout | reference mean ± SD | G1 |
+| --- | --- | --- |
+| fruit share of plant intake | 0.860 ± 0.005 | 0.785 |
+| foregut ≥ 95% full, share of daylight | 0.082 ± 0.005 | 0.106 |
+| eating ticks at the gut wall | 0.147 ± 0.011 | 0.179 |
+| dry matter per eating min (g) | 2.885 ± 0.035 | 2.804 |
+| absorbed kcal per g dry matter | 2.126 ± 0.008 | 2.075 |
+| ground km/day | 1.584 ± 0.043 | 1.954 |
+| daylight foregut fill | 0.666 ± 0.003 | 0.697 |
+female, lactating:
+| readout | reference mean ± SD | G1 |
+| --- | --- | --- |
+| fruit share of plant intake | 0.802 ± 0.003 | 0.758 |
+| foregut ≥ 95% full, share of daylight | 0.094 ± 0.004 | 0.114 |
+| eating ticks at the gut wall | 0.160 ± 0.008 | 0.190 |
+| dry matter per eating min (g) | 2.839 ± 0.016 | 2.785 |
+| absorbed kcal per g dry matter | 2.106 ± 0.005 | 2.067 |
+| ground km/day | 1.774 ± 0.029 | 2.048 |
+| daylight foregut fill | 0.680 ± 0.002 | 0.701 |
+
+What the extra feeding minutes returned (G1 minus the reference mean, per window half):
+
+| class, window half | extra eating min/day | extra absorbed kcal/day | kcal per extra minute | extra spent kcal/day | net kcal/day |
+| --- | --- | --- | --- | --- | --- |
+| female, lactating, quick window | +15 | +15 | 1.0 | +13 | +2 |
+| female, lactating, decline | +12 | +13 | 1.1 | +15 | -2 |
+| lact: infant ≥ 2 y, quick window | +19 | +25 | 1.3 | +20 | +5 |
+| lact: infant ≥ 2 y, decline | +19 | +31 | 1.6 | +22 | +9 |
+
+**Kill criterion.** K2 passes (episodes 33.5% → 11.2% of daylight; eating share of mothers of infants ≥ 2 y 34.8% →
+38.0%). K3 passes (fitted z −0.6, held-out z +0.6, held-out without T-HUN-4 and T-BRD-1 z −0.1; prescriptions 103 →
+103; viability pass). **K1 fails by its letter**: infants of 0.5–2 y fall at −0.005%/day against +0.002 ± 0.001 (z −8.8;
+far inside the 0.05%/day line; the reference spread of this class is tiny). And the mothers' 60-day slope (−0.088 against
+−0.093 ± 0.018, z +0.3) is inside the reference spread. **Verdict: null**, as registered; `groomNeedDyad` stays off.
+
+**Against the predictions.** Held: episodes 11.2% (3–12); infants grooming their mother 0.0–0.1% (0–5); mothers ≥ 2 y
+eat 38.0% (37–40) and rest 14.4% (10–20) at hunger 0.45 (0.44–0.50); mothers' eating minutes 294 and 287 (285–300,
+280–295); juveniles unchanged; T-ACT-3 M unchanged (0.135), T-ACT-1 F 0.432 (0.42–0.46); sums inside noise;
+prescriptions 103; viable; mothers' reserves −0.016 / −0.213 / −0.088%/day inside their registered ranges (−0.02 to
++0.04 / −0.22 to −0.05 / −0.10 to 0.00), the last two at their edges and not different from B2. Missed: mothers' absorbed
+÷ spent 0.993 and 0.948 (registered 1.00–1.03 and 0.95–0.99); mothers of infants of 2–3 y −0.192%/day (registered
+−0.12 to 0.00; 3–4 y −0.077 held); T-ACT-3 F 0.110 (registered 0.12–0.17, now below it).
+
+**Reading.**
+1. *The mechanism does what it says.* With the dyad's grooming valued by the groomer's own need, the loop is gone:
+   infants stop starting it (their need at a groom decision is now 0.35–0.46, not 0.02), mothers of older infants groom
+   their infant 11% of daylight (all of it self-started; field 2.8–3.1%, stanton2014), eat 3.2 points more, rest 10
+   points more, and their hunger falls from 0.53 to 0.45. Females' grooming share (T-ACT-3 F, giving or receiving)
+   falls from 0.183 to 0.110 (field mothers 0.12, villioth2025).
+2. *Time was not what held the last 4%.* The mothers' extra 12–19 eating minutes a day returned 1.0–1.6 kcal each
+   (their average minute returns about 6) and cost about as much again in walking, carrying and digestion (ground
+   1.58 → 1.95 km/day): net +2 to +9 kcal/day. The extra time went to fallback food (fruit share 0.86 → 0.785; absorbed
+   per gram 2.13 → 2.08) and to eating at the gut wall (eating ticks at a ≥ 95% full foregut 0.147 → 0.179). In the
+   quick window the mothers' slope improves beyond noise (−0.034 → −0.016%/day, z +3.3); in the decline nothing
+   changes (−0.210 → −0.213).
+3. *So the term that holds the last 4% is the energy the mothers' gut passes on the food at hand,* not a decision.
+   With φ saturated (0.93–0.98 for mothers, §5 D5), their hunger is the satiation term 1 − w × fill², which reads bulk:
+   the fibre-rich fallback that fills in the fruit decline satiates like fruit but yields less, and the only
+   compensation is the slow store feedback w (E1i). That is a question of inputs and physiology (gut capacity and
+   passage, the diet's energy density, whether satiation reads nutrients as well as distension; E1i, E1h, the gut
+   sources), not a decision weight; building a decision mechanism toward it would be tuning toward the reserve trend.
+   No iteration 2 or 3 was run.
+4. *The line.* In the fruit decline every class falls (§1.5), as the field's C-peptide falls with fruit (T-ENE-4).
+   After 6 months postpartum the field's mothers gain (§1.4), so the model's mothers are still the wrong sign; but the
+   size of the 5-seed deficit is mostly a seasonal term that a 0.05%/day line over that window cannot separate from
+   viability.
+5. *Cost:* infants of 0.5–2 y lose −0.005%/day (K1 by its letter); not diagnosed (a guess: they follow mothers who now
+   walk 0.27 km/day more to food).
