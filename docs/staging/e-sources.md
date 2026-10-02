@@ -1245,3 +1245,13 @@ Evidence pass for stage E1h (`docs/staging/e1h-prereg.md`), 1 October 2026. Ques
 - simmen2017 main text; miltonDemment1988 full text (digestibility of each fraction, dry-matter intake of the trial animals).
 - chiversHladik1980 full text: the chimpanzee's gut volume by segment and its body mass.
 - Starch, pectin and soluble-sugar profiles of Kibale foods; dry-matter concentration of ape digesta; maximum voluntary dry-matter intake of chimpanzees. None found.
+
+## Addendum: E-gut sources (gut capacity and throughput, 1–2 October 2026)
+
+Evidence pass for the gut input `digestaGutMlPerKg` (track-e-handoff.md §5.4; e1h-prereg.md §1.4 and §8.5). Research only: no parameter or code changed. Access: OpenAlex locations; the Kyoto University repository (KURENAI) through its DSpace REST API. HAL's document server (hal.science) answered with a bot challenge (Anubis proof-of-work) and was not used further. Tags as in this file.
+
+- **Gut capacity of a chimpanzee: the value and its sample** [nakamura2017] (FT, author's accepted manuscript, KURENAI hdl:2433/226629) [M] for the reported value, n = 1. Corrects §16 and §23, which derived about 3,329 cm³ from the abstract:
+  - Discussion: the seeds fill 14.7% of the whole tract (stomach, small intestine, caecum and large intestine), whose capacity was "3,322 cm3 (965 cm3 for the stomach alone) in a captive female chimpanzee", citing chiversHladik1980. The source is now confirmed (not "probably").
+  - So: total 3,322 cm³; stomach 965 cm³, 29% of the total (derived); one captive female. Her body mass is not given. Divided by 30–55 kg: 111–60 mL/kg (derived; the same bounds as E1h).
+  - The wild corpse was an adolescent or adult female by body size, not weighed; the authors set the seeds' 258.8 g against the Mahale female mean of 35.2 kg (ueharaNishida1987).
+  - Same paper, Methods: the seed passage time used is 31.5 h, taken from lambert2002; defecations 6.7 per day from wrangham1994. Their corpse implies 11.8 defecations per 24 h (derived by the authors), so night defecation is likely.
