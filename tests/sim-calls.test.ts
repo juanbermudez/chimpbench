@@ -97,9 +97,12 @@ test('callValue switches the hazard, quota, coin and probabilities out: changing
 
 test('with callValue on: deterministic, pant-hoots happen and are recorded, and the world stays plain, loadable data', () => {
   const T = 14 * HOUR;
-  const a = field(ON, T, 7), b = field(ON, T, 7);
+  const a = createWorld(7, { profile: 'field', params: ON });
+  let hoots = 0, seen = a.nextId;
+  for (let i = 0; i < T; i++) { tickWorld(a); for (const k of a.calls) if (k.id >= seen && k.kind === 'pant-hoot') hoots++; seen = a.nextId; }
+  const b = field(ON, T, 7);
   assert.equal(worldHash(a), worldHash(b));
-  assert.ok(a.calls.some(k => k.kind === 'pant-hoot'), 'pant-hoots are given');
+  assert.ok(hoots > 0, 'pant-hoots are given');
   assert.ok(a.chimps.some(c => ix(c).phAt !== undefined), 'callers record where they called');
   assert.deepEqual(plainDataProblems(a), []);
   assert.equal(worldShapeProblem(a), '');
