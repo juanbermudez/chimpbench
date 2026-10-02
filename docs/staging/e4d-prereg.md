@@ -54,6 +54,8 @@ with its own time constant (stress 3.4 h, arousal 6 h, both E4a). Event kicks an
   does not run (E4a), so the target is k_T × the drive the male last had awake: the axis secretes through the night at
   the set point the day gave it. A male with no rival or swollen female in view at his last waking step has no
   nocturnal rise (E4a's state is the challenge component; it has no basal of its own, and none is added: §4.2).
+  *Iteration 2 (§9, logged before its run) replaced the held drive: it is the waking drive integrated over the waking
+  slow steps with `endoArousalTauH`, held through sleep. The text above is the registered iteration 1.*
 
 | Parameter | Value | Basis |
 | --- | --- | --- |
