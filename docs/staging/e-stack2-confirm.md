@@ -117,3 +117,31 @@ at the commit that adds this section; S3 against the four-run means of B and R, 
 not judged). Expected (integrator, before the run): prescriptions about 83 (high); viable (moderate); travel share
 (T-ACT-2) lower than S2's, still above its band for males (low); held-out without the rare-event rows still worse than
 B beyond noise (moderate: T-FOOD-10 is not touched by water); night safety holds (moderate).
+
+### S3 results (bench-run at d066cdc, clean; numbers generated from the JSON)
+
+| | B (4 runs) | R (4 runs) | S2 | **S3 = S2 + `waterLedger`** |
+| --- | --- | --- | --- | --- |
+| Prescriptions | 135 | 103 | 89 | **83** |
+| Viability | pass | pass | pass | pass (0 deaths) |
+| Fitted against B's mean (16 rows) | 2.65 | — | +0.04 (z +0.1) | +0.17 (z +0.4) |
+| Fitted against R's mean (18 rows) | — | 3.87 | — | −0.45 (z −0.8) |
+| Held-out against B's mean (14 rows) | 4.74 | — | +2.41 (z +1.5) | +0.69 (z +0.4) |
+| Held-out without T-HUN-4 and T-BRD-1 against B's mean (12 rows) | 1.78 | — | +2.92 (z +11.6) | **+2.97 (z +11.8)** |
+| T-ACT-2 travel share, males / females (band 0.12–0.25) | 0.22 / 0.17 (base-head) | — | 0.32 / 0.29 | **0.26 / 0.24** |
+| T-FOOD-10 breakfast planning (band 0.08–0.30) | 0.017 | 0 | 0.764 | 0.686 |
+| Ground km per day, males / lactating (simulation truth) | — | 2.16 / 1.60 (quick) | 3.79 / 3.17 | **2.93 / 2.56** |
+| Reserves %/day, lactating / juveniles | — | −0.068 / −0.014 (e1h-R) | −0.289 / −0.173 | **−0.249 / −0.118** |
+| Adults out of a nest at night; departures before sunrise | — | — | 2.37%; 0.73 | 2.19%; 0.67 |
+
+**Against the S3 expectations:** prescriptions about 83 held (83); viable held; travel share lower than S2's held, and
+still above its band for males held (0.262); held-out without the rare rows still worse than B beyond noise held;
+night safety held.
+
+**Reading.** The water ledger removes most of the extra walking (males 3.79 → 2.93 km) and brings the travel share to
+the edge of its band, with six fewer prescriptions, and softens the mothers' and juveniles' deficits. It does not touch
+the held-out cost without the rare rows (+3.0 against today's model), which rests on T-FOOD-10 (the rhythm package's
+departures before sunrise, 1.75) and on rows that need longer windows or better scoring (T-RNG-5, follow-day sampling;
+T-FOOD-5, T-FOOD-7). Remaining problems of the candidate stack, in order of cost: departures before sunrise (67% vs
+18%), the nursing and juvenile deficits (−0.25 and −0.12% of the store a day), hunting (T-HUN-1 48 per community-year,
+with the scorer fixes of E4f unapplied), T-RNG-5 (single-site band, staged).
