@@ -27,6 +27,7 @@ const TRACK_E_SWITCHES = [
   'waterLedger', // E2g
   'followCarer', // E4g
   'weanDecide', // E1n
+  'cohesionValue', // E5a
 ] as const;
 
 test('Track E switches are all 0 by default in both profiles', () => {

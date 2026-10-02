@@ -200,6 +200,10 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   const pers = c.personality;
   const caretaker = dependentOn(world, c);
   const carried = caretaker ? isCarried(c, caretaker) : false;
+  // stage E5a (cohesionValue; docs/staging/e5a-prereg.md §3–§3.2, iteration 3): a companion's company is valued by the animal
+  // that moves toward it (following, joining, approaching a caller), never as a cost of leaving: a departure alerts the
+  // companions, who weigh the leaver's company in their own choice to come
+  const cohesion = cohesionOn(P);
   const px = c.position[0], pz = c.position[2];
   const unstable = (s.unstableUntil[c.troopId] ?? NEVER) > time ? 1 : 0;
   const isAlpha = troop?.alphaId === c.id;
@@ -343,7 +347,8 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     const leafV = (iv ? leafWorth(world, c, px, pz, P, fruitH) : 1) * (dark ? visionNow(world, 0) : 1); // E2c: leaves are found by sight
     offer('forage', -1, h * P.fallbackForageW * (fallbackOn(P) ? bestFallbackNear(world, px, pz, x.sight, _fb) : 1) * leafV + 0.03 - rain * 0.3);
     // field profile: leaving companions for a food tree of one's own has a cost (parties travel together; design, T-PTY-1)
-    const stay = (P.partyStayW > 0 ? P.partyStayW * Math.min(x.visibleOwn, P.partyStayMaxN) : 0) + oestrusNear;
+    // stage E5a (cohesionValue): none; the companions value the leaver's company in their own choice to come
+    const stay = cohesion ? 0 : (P.partyStayW > 0 ? P.partyStayW * Math.min(x.visibleOwn, P.partyStayMaxN) : 0) + oestrusNear;
     // stage departPersist: after a failed departure attempt its own trips to trees wait for the re-launch time, while it
     // still has companions to leave (execution.ts departAttempt) [M: gruberZuberbuhler2013; design]
     const held = P.departPersist === 1 && x.tryAt !== undefined && time < x.tryAt && departAudience(world, c) > 0;
@@ -406,7 +411,9 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       const d = Math.hypot(x.joinX - px, x.joinZ - pz);
       let pull = x.joinRich ? 0.15 + env.fruitIndex * 0.35 + h * 0.3 + pers.sociability * 0.15 : pers.sociability * 0.3 * env.fruitIndex - 0.05;
       // field profile: an individual with few companions and an unmet social need goes to the callers; males to males (design; T-PTY-1)
-      if (P.joinSocialW > 0) { const caller = byId.get(x.joinCaller); pull += (1 - c.social) * P.joinSocialW * (x.visibleOwn < 2 ? 1 : P.joinSocialInPartyF) + (male && c.age >= 15 && caller && isAdultMale(caller) ? P.joinMaleW : 0); }
+      // stage E5a (cohesionValue): the caller's company, in place of the tuned social pull
+      if (cohesion) { const caller = byId.get(x.joinCaller); if (caller && caller.alive) pull += companyValue(c, caller, P); }
+      else if (P.joinSocialW > 0) { const caller = byId.get(x.joinCaller); pull += (1 - c.social) * P.joinSocialW * (x.visibleOwn < 2 ? 1 : P.joinSocialInPartyF) + (male && c.age >= 15 && caller && isAdultMale(caller) ? P.joinMaleW : 0); }
       if (P.assocBondW > 0) { const caller = byId.get(x.joinCaller); if (caller) pull += P.assocBondW * bond(c, caller); } // stage C9: bond with the caller (off by default)
       if (d > P.joinCallMinM) offer('travel', x.joinCall, pull * (1 - rain * 0.5) - d / P.joinCallDistScaleM, V.CALLER, x.joinCaller);
     }
@@ -425,12 +432,35 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   // of it for allies [H] gruberZuberbuhler2013. A travel hoo heard from the leader adds joinHooW (fitted to the 71.4% of
   // vocal initiations that recruited a follower). Staying: its own hunger times the crop quality of the tree it is
   // feeding in. Every magnitude except joinHooW is a design assumption.
+  // stage E5a (cohesionValue; docs/staging/e5a-prereg.md §3): going with a departing leader is worth the leader's company
+  // plus the food at the leader's tree shared with the animals feeding there or going there
+  // (the leader included), valued and walked as the animal's own trip to a remembered tree (memory belief of the crop,
+  // or 0.2 as for any unremembered crop; the trip's share from treeIntake with those feeders). The hoo informs (it gives
+  // a decision point), it adds no value; the crown being left is worth its own forage option, so no stay term.
+  const destWorth = (L: Chimp): number => {
+    const t = isTreeId(L.targetId) ? idx.treeById.get(L.targetId) : undefined;
+    if (!t) return 0;
+    const d = dxz(t, px, pz);
+    const crop = stamped(_sight, t.id, st) ? (P.patchEcology === 1 ? fruitAt(world, t) : t.fruit) : (x.treeCrop?.[t.id] ?? 0.2);
+    let feeders = 0;
+    for (let _k = 0; _k < x.seen.length; _k++) { const o = byId.get(x.seen[_k]); if (o && o.alive && o !== c && o.targetId === t.id && (o.action === 'forage' || o.action === 'travel')) feeders++; }
+    const worth = (P.memCropBelief === 1 ? h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) : h * P.memTravelHungerW) * tripWorth(t, crop, feeders, d);
+    return worth - tripCost(worth, crop, d, h, P, needFruit(c, P, h));
+  };
   const joinValue = (L: Chimp): number => {
+    if (cohesion) return companyValue(c, L, P) + destWorth(L) - rain * 0.3;
     const heard = P.travelHoo === 1 && x.hooFrom === L.id && time - (x.hooAt ?? NEVER) <= P.travelHooWindowMin / 60;
     let stay = 0;
     if (c.action === 'forage' && isTreeId(c.targetId)) { const t = idx.treeById.get(c.targetId); if (t) stay = h * Math.min(1, (P.patchEcology === 1 ? fruitAt(world, t) : t.fruit) / P.fruitValueRef); }
     return P.joinBase + P.joinBondW * bond(c, L) + (c.allies.includes(L.id) ? P.joinAllyW : 0) + (dominates(L, c) ? P.joinRankW : 0) + pers.sociability * P.partyFollowSocialW
       + (heard ? P.joinHooW : 0) - P.joinStayW * stay - rain * 0.3;
+  };
+  // party cohesion (field profile) before stage E5a: the score of following a party member who travels off (C5a, tuned)
+  const followScore = (lead: number, L: Chimp | undefined, o: Chimp, b: number, her: number): number => {
+    // stage C10 addendum 1: a travel hoo heard from this companion (or its leader) in the last few minutes raises following it
+    const hoo = P.travelHoo === 1 && x.hooFrom !== undefined && (x.hooFrom === lead || x.hooFrom === o.id) && time - (x.hooAt ?? NEVER) <= P.travelHooWindowMin / 60 ? P.travelHooFollowW : 0;
+    return P.partyFollowBase + b * P.partyFollowW + pers.sociability * P.partyFollowSocialW + (isAdultMale(o) ? P.partyFollowMaleW : 0) - h * P.partyFollowHungerW - rain * 0.3 + hoo + her
+      + (P.assocBondW > 0 && L ? P.assocBondW * bond(c, L) : 0); // stage C9: bond with the leader (off by default)
   };
   // --- social: seen individuals -----------------------------------------------
   let bestGrunt = -1, bestGruntScore = -Infinity;
@@ -490,18 +520,18 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     // stage E4g (followCarer; docs/staging/e4g-prereg.md §3): a care follow (a dependent keeping up with its carer) is not a
     // departure: the carer's own act says whether the unit moves, so neither the follower nor a leader chain reads it
     const careSkip = P.followCarer === 1;
-    if (P.partyFollowW > 0 && !carried && c.age >= 5 && d < P.partyLinkM && (o.action === 'travel' || o.action === 'follow') && o.targetId !== c.id && !night && !(careSkip && careFollow(o))) {
+    if (partyOn(P) && !carried && c.age >= 5 && d < P.partyLinkM && (o.action === 'travel' || o.action === 'follow') && o.targetId !== c.id && !night && !(careSkip && careFollow(o))) {
       const lead = P.partyLeaderFollow === 1 ? leaderOf(o, c, byId, x.seen, careSkip) : o.id, L = byId.get(lead);
       const trip = P.partyJoinTrip === 1 && !!L && L.action === 'travel' && ix(L).v === V.TREE && isTreeId(L.targetId);
       // stage C13e: the joint trip has a tree as its goal, so it needs no minimum distance to the leader (at the departure
       // cue the leader is still next to its companions); its value is the join value, no longer near-automatic
       const her = Math.max(oestrusOf(o), oestrusOf(L)); // a female in oestrus who travels off, or whose leader does
-      if (P.joinChoice === 1 && trip) offer('travel', L!.targetId, joinValue(L!) + her, V.TREE, L!.id);
+      if (P.joinChoice === 1 && trip) offer('travel', L!.targetId, joinValue(L!) + (cohesion ? 0 : her), V.TREE, L!.id);
       else if (d > P.partyFollowMinM) {
-      // stage C10 addendum 1: a travel hoo heard from this companion (or its leader) in the last few minutes raises following it
-      const hoo = P.travelHoo === 1 && x.hooFrom !== undefined && (x.hooFrom === lead || x.hooFrom === o.id) && time - (x.hooAt ?? NEVER) <= P.travelHooWindowMin / 60 ? P.travelHooFollowW : 0;
-      const sc = P.partyFollowBase + b * P.partyFollowW + pers.sociability * P.partyFollowSocialW + (isAdultMale(o) ? P.partyFollowMaleW : 0) - h * P.partyFollowHungerW - rain * 0.3 + hoo + her
-        + (P.assocBondW > 0 && L ? P.assocBondW * bond(c, L) : 0); // stage C9: bond with the leader (off by default)
+      // stage E5a (cohesionValue): following is worth the followed animal's company less the walk (tripCost's energetic
+      // distance scale), in place of the tuned base, bond and male weights; the hoo adds no value
+      const F = L ?? o;
+      const sc = cohesion ? companyValue(c, F, P) - rain * 0.3 - dxz(F, px, pz) / P.travelDistScaleM : followScore(lead, L, o, b, her);
       // stage C7c (field; c7b-prereg §6.2): a companion on a committed trip to a tree lends its goal: go there with it (shared goal) [H: joint travel, gruberZuberbuhler2013]
       if (trip) offer('travel', L!.targetId, sc, V.TREE, L!.id);
       else offer('follow', lead, sc, V.PARTY);
@@ -529,11 +559,11 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   if (bestGrunt > 0) offer('pant-grunt', bestGrunt, bestGruntScore);
   // stage C13e (noticing): a travel hoo reaches companions who do not see the leader; while it is still within earshot
   // they may join its trip (the hoo names the departure; hearTravelHooM as the limit is a design assumption)
-  if (P.joinChoice === 1 && P.partyFollowW > 0 && P.partyJoinTrip === 1 && P.travelHoo === 1 && !carried && c.age >= 5 && !night
+  if (P.joinChoice === 1 && partyOn(P) && P.partyJoinTrip === 1 && P.travelHoo === 1 && !carried && c.age >= 5 && !night
     && x.hooFrom !== undefined && time - (x.hooAt ?? NEVER) <= P.travelHooWindowMin / 60 && !x.seen.includes(x.hooFrom)) {
     const L = byId.get(x.hooFrom);
     if (L && L.alive && L.troopId === c.troopId && L.action === 'travel' && ix(L).v === V.TREE && isTreeId(L.targetId) && dxz(L, px, pz) < P.hearTravelHooM)
-      offer('travel', L.targetId, joinValue(L) + oestrusOf(L), V.TREE, L.id);
+      offer('travel', L.targetId, joinValue(L) + (cohesion ? 0 : oestrusOf(L)), V.TREE, L.id);
   }
 
   const adolescentOrAdult = c.age >= 12 && !caretaker;
@@ -620,6 +650,31 @@ export function tripCost(worth: number, crop: number, d: number, h: number, P: P
 
 /** A care follow: a dependent keeping up with its caretaker (V.MOTHER) or a weaned juvenile with its guardian (V.JUVENILE). */
 export const careFollow = (k: Chimp): boolean => k.action === 'follow' && (ix(k).v === V.MOTHER || ix(k).v === V.JUVENILE);
+
+/**
+ * Stage E5a (cohesionValue; docs/staging/e5a-prereg.md §3): party cohesion valued from what association yields, in place
+ * of the weights tuned to party size (partyFollowBase, partyFollowW, partyFollowMaleW, partyStayW, joinHooW, joinSocialW).
+ * Field profile only (partyJoinTrip 1). 0 = the model before, bit-identical.
+ */
+export const cohesionOn = (P: Params): boolean => P.cohesionValue === 1 && P.partyJoinTrip === 1;
+/** Party following runs: under cohesionValue, or (before E5a) while partyFollowW > 0, its gate (then partyFollowW is not read). */
+export const partyOn = (P: Params): boolean => cohesionOn(P) || P.partyFollowW > 0;
+/** The value of a mating with fertile female `o` to male `c`: the mate offer's own terms, before distance, hunger, guarding, night. */
+export const mateWorth = (c: Chimp, o: Chimp): number => 0.3 + o.swelling * 0.5 + (c.age >= 15 ? 0.15 : 0) + c.rank * 0.1;
+/**
+ * Stage E5a: what the company of `o` is worth to `c`. Its social part is C13e's join terms without what belongs to a
+ * departure (joinBase + joinBondW·bond + joinAllyW·[ally] + joinRankW·[o dominates c] + partyFollowSocialW·sociability),
+ * valued by c's social drive (1 − social: the model's social-need state, restored by grooming, play and nursing; the
+ * value of a stimulus depends on the internal state [H: cabanac1971], drive × incentive as E1k's grooming). For a male of
+ * 10 y or more with a fertile female (swelling ≥ 0.75, not maternal kin, as the mate offer) the mating value she offers
+ * is added unscaled, as in the mate offer (mateWorth): receptive females raise the number of males in parties [M:
+ * emeryThompson2014]. No new magnitude: the join terms are C13e's design assumptions, the mating value is the mate offer's.
+ */
+export function companyValue(c: Chimp, o: Chimp, P: Params): number {
+  let v = (1 - c.social) * (P.joinBase + P.joinBondW * bond(c, o) + (c.allies.includes(o.id) ? P.joinAllyW : 0) + (dominates(o, c) ? P.joinRankW : 0) + c.personality.sociability * P.partyFollowSocialW);
+  if (c.sex === 'male' && c.age >= 10 && o.sex === 'female' && o.age >= 10 && o.swelling >= 0.75 && !maternalKin(c, o)) v += mateWorth(c, o);
+  return v;
+}
 
 /**
  * Stage C7a (field): the animal a party follower is ultimately following, if in sight (up to three links), else `o`.
@@ -810,7 +865,7 @@ function reproduction(world: World, c: Chimp, isAlpha: boolean): void {
       const g = byId.get(ix(o).guardBy);
       const guarded = !!g && g.alive && g !== c && dcc(c, g) < P.guardedRangeM && dominates(g, c);
       const invited = o.action === 'mate' && o.targetId === c.id ? 0.6 : 0;
-      if (time - x.lastMate > P.mateIntervalH) offer('mate', o.id, 0.3 + o.swelling * 0.5 + (c.age >= 15 ? 0.15 : 0) + c.rank * 0.1 - (guarded ? 1 : 0) - dist / P.mateDistScaleM - c.hunger * 0.2 - (night ? 2 : 0) + invited, invited ? V.ACCEPT : V.NONE);
+      if (time - x.lastMate > P.mateIntervalH) offer('mate', o.id, mateWorth(c, o) - (guarded ? 1 : 0) - dist / P.mateDistScaleM - c.hunger * 0.2 - (night ? 2 : 0) + invited, invited ? V.ACCEPT : V.NONE);
       // possessive mate-guarding by high-ranking males [M]
       if (c.age >= 15 && (c.rankOrder <= 2 || isAlpha) && o.swelling >= P.guardSwellingMin && !guarded && !(g && g !== c && g.alive && dcc(c, g) < P.guardRivalRangeM))
         offer('guard', o.id, 0.55 + (isAlpha ? 0.35 : 0.15) + o.swelling * 0.2 - c.hunger * 0.9 - (night ? 2 : 0));

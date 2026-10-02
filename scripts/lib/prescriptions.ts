@@ -185,7 +185,11 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   // stage E4c (callValue; docs/staging/e4c-prereg.md): the food grunt and the travel hoo are value comparisons, no probability
   ...same(['foodCallBase', 'foodCallCropW', 'foodCallMaleW', 'foodCallPartnerW'], P => P.foodCallRule === 1 && P.callValue !== 1, 'read only while foodCallRule is 1, and not while callValue is 1 (src/sim/execution.ts forageTick: calls.ts gruntWorth)'),
   ...same(['travelHooP', 'travelHooAllyP'], P => P.travelHoo === 1 && P.callValue !== 1, 'read only while travelHoo is 1, and not while callValue is 1 (src/sim/execution.ts travelHoo: calls.ts hooWorth)'),
-  joinHooW: { when: P => P.travelHoo === 1 && P.joinChoice === 1, why: 'read only while travelHoo and joinChoice are 1' },
+  joinHooW: { when: P => P.travelHoo === 1 && P.joinChoice === 1 && !(P.cohesionValue === 1 && P.partyJoinTrip === 1), why: 'read only while travelHoo and joinChoice are 1, and not while cohesionValue (with partyJoinTrip) is 1: the hoo informs and adds no value (src/sim/candidates.ts joinValue; stage E5a)' },
+  // stage E5a (cohesionValue; docs/staging/e5a-prereg.md §3): party cohesion valued by company, the food at the goal and the
+  // walk; the C5a cohesion weights tuned to party size are not read (partyOn short-circuits the partyFollowW gate)
+  ...same(['partyFollowBase', 'partyFollowW', 'partyFollowMaleW', 'partyFollowHungerW', 'partyStayW', 'joinSocialW'], P => !(P.cohesionValue === 1 && P.partyJoinTrip === 1),
+    'not read while cohesionValue (with partyJoinTrip) is 1: following, joining and approaching callers are valued by companyValue and the food at the goal, and leaving costs nothing (src/sim/candidates.ts; execution.ts gates through partyOn)'),
   rgTemperature: { when: P => P.rgOn === 1 && P.urgencyChoice !== 1, why: 'read only while rgOn is 1 and urgencyChoice is not (stage E3)' },
   rgMaxAgeH: { when: P => P.rgOn === 1 && P.urgencyPersist !== 1, why: 'read only while rgOn is 1 and urgencyPersist is not (stage E3)' },
   continueBonus: { when: P => P.urgencySwitchCost !== 1, why: 'not read while urgencySwitchCost is 1 (stage E3)' },
@@ -308,6 +312,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   preyKanyawara: { stage: 'E4f', needs: {}, removesNothing: 'corrects an input (the field colobus density: Ngogo 1997-99 out, Kanyawara in, both inputs); no prescription is switched out (e4f-prereg §4.1)' },
   followCarer: { stage: 'E4g', needs: {}, removesNothing: 'corrects which companions\' acts the party-follow rule reads (a care follow is not a departure); adds no term and switches no prescription out (e4g-prereg §3)' },
   weanDecide: { stage: 'E1n', needs: { energyLedger: 1, ledgerDrive: 1 } },
+  cohesionValue: { stage: 'E5a', needs: {} },
 };
 
 /** Whether an entry is in use: generated (not planned), non-zero under these resolved parameters, and not switched out. */
