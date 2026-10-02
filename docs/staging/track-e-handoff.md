@@ -14,10 +14,11 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (07:30).** Agents E1j (mothers' ranging; interim: the T-RNG-5 excess is follow-day sampling and a
-  single-site band; `e1j-ranging`) and E1k (nursing mothers' remaining deficit: audit the 0.05%/day line, then the
-  infant grooming loop; `e1k-deficit`; brief `integrator/e1k-prompt.txt`). Integrator: the integrated confirm of every
-  provisional candidate (S2, docs/staging/e-stack2-confirm.md; `s2-confirm.sh` in `bench-run`: bench, energy, rhythm).
+- **Running now (07:45).** Agents E1k (nursing mothers' remaining deficit; `e1k-deficit`) and E2g (water balance in
+  place of the thirst timers; `e2g-water`; brief `integrator/e2g-prompt.txt`). Integrator: the integrated confirm S2
+  (docs/staging/e-stack2-confirm.md; `s2-confirm.sh` in `bench-run`).
+- **E1j merged** (no mechanism: T-RNG-5's band is Budongo alone and the observer's ratio is mostly follow-day sampling;
+  a multi-site band is staged in e1j-targets.patch.json, not applied; the thirst timers drive males' walks).
 - **Decided since the morning refresh:** E4f merged (`preyKanyawara`, off: the colobus encounter excess is mostly the
   observer's scoring; three scorer fixes staged in `docs/staging/e4f-protocol.patch.json`, not applied, user decision);
   E2f's night safety confirmed on 5 seeds (adults 2.99% of the night); E2f merged (`sleepChimp`: chimpanzee EEG sleep 9.7 h moves waking from
@@ -78,7 +79,8 @@ Hard rules (AGENTS.md plus this track):
 | `.claude/worktrees/e4d-rhythm` | Merged 2 October (head da916df). |
 | `.claude/worktrees/e4e-hunting` | Merged 2 October (head dcca0dc). |
 | `.claude/worktrees/e4f-encounters` | Merged 2 October (head e7dacde). |
-| `.claude/worktrees/e1j-ranging` | **Running agent** E1j, branched from track-e b0cb6e5. |
+| `.claude/worktrees/e1j-ranging` | Merged 2 October (head c898395). |
+| `.claude/worktrees/e2g-water` | **Running agent** E2g, branched from track-e f64cf55. |
 | `.claude/worktrees/e1k-deficit` | **Running agent** E1k, branched from track-e 6f2ee87. |
 | `.claude/worktrees/e2f-sleep` | Merged 2 October (head b5157a0). |
 | `.claude/worktrees/bench-run-2` | Second frozen checkout (6069e15) for the E2f night-safety check. Remove when done. |
@@ -127,7 +129,7 @@ mkdir -p ../<name>/artifacts/validation && ln -s /Users/juanbermudez/Desktop/MGO
 | E4e hunting | `huntValue` | passes the keep rule on 5 seeds; **held off** | A hunt valued as food (expected meat from the model's success curve; no gap, no lead value): T-HUN-1 into band (9.7 confirm), fitted z −2.8, but T-HUN-3 fails low: the model meets colobus 2.7 × Kanyawara's rate and now hunts 0.28 × the field's share. T-HUN-1's band was never scaled (staged 4–11). | e4e-prereg.md |
 | E4f encounters | `preyKanyawara` | recorded, off ([L] site-matched input) | The 2.55 × encounter excess: observer scoring ×1.42 (focal vs party follows) and ×1.07 (a new encounter per change of nearest group), density ×1.12 (Ngogo pre-decline vs Kanyawara 2.22 groups/km²), residual ×1.5 unsourced. Scorer fixes staged, not applied. | e4f-prereg.md |
 | E1k deficit | — | **running** (agent) | Mothers still absorb 0.96 of spending with E1i's pair: audit the line, then the infant grooming loop. | e1k-prereg.md |
-| E1j ranging | — | **running** (agent) | Interim: in simulation truth mothers ÷ males is 0.69–0.77 (B, R, E1i pair); the observer's T-RNG-5 rests on 13–24 follow-days, so E1i's 0.84 was sampling; the band is Budongo only (Gombe 0.67–0.74, Kanyawara 0.83). R's real change vs B: males' food trips halve. | e1j-prereg.md |
+| E1j ranging | — | done: no mechanism | Interim: in simulation truth mothers ÷ males is 0.69–0.77 (B, R, E1i pair); the observer's T-RNG-5 rests on 13–24 follow-days, so E1i's 0.84 was sampling; the band is Budongo only (Gombe 0.67–0.74, Kanyawara 0.83). R's real change vs B: males' food trips halve. | e1j-prereg.md |
 | E3 re-test | — | done (integrator) | The effect stands without the old hunger cap: persistence halves crown bouts (22 → 11 min) and the fruit share falls to 0.54. | e3-prereg.md, last section |
 | Prescription audit | — (tooling) | merged | The count now sees what E1 and E2a switch out: full stack 134 → 102. | scripts/lib/prescriptions.ts |
 | Full-stack confirm | 14 switches (E1–E1e, E2a, E4a, E4b) | not kept as a whole | Fitted 3.28 → 4.01; held-out 5.90 → 3.49, but T-BRD-1 alone is −2.10 (+0.70 worse without it). One cause: spare time (intake ends early, grooming and hunting fill the day). | IMPLEMENTATION_PLAN.md |
