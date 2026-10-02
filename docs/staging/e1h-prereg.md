@@ -236,3 +236,51 @@ Runs: field profile, `e-bench --confirm` (seeds 48, 7, 21, 5, 11; 30-day burn-in
 Judgement: §6 unchanged (viability; check 2, eating minutes +20% in classes that are not gut-bound; check 3, fitted > +0.3 or held-out > +0.5 on rows scored in both arm and R). Every shared-row sum is reported twice: all shared rows, and without T-HUN-4 and T-BRD-1. **The verdict uses all shared rows, as registered.** If it differs without the two rare-event rows, it is written as "null as registered; passes without the rare-event rows" and is not flipped by this run. The single noise threshold that the integrator sets next (handoff §5.5, from noise arms on other perturbations, independent of these results) may then be applied to the saved JSONs with `--rescore`, no new simulation, and recorded as a separate, later reading. Deaths are checked by cause (respiratory outbreaks kill animals at random); only starvation deaths count against viability. G stays a sensitivity arm: the default of `digestaGutMlPerKg` does not move from this run.
 
 Expected (integrator, before the run): T fails viability as on 2 seeds (lactating reserves −0.7 to −1.0% of the store a day; moderate confidence); the gut binds in T (moderate); G passes viability (moderate); fitted distance falls by at least 0.5 against R in both T and G (moderate); G's held-out change on shared rows within ±0.5 once T-HUN-4 is pooled over 5 seeds (low).
+
+### 9.1 Results (integrator, 2 October 2026)
+
+Every number below was generated from the JSON by the integrator's judge script (`judge_e1h.py`, checked first against the 2-seed files: it reproduces every figure of §8.1). All runs at 9392b67, clean (`git.dirty` 0); benches re-scored at 612bf15 (scripts only) for the sums without the rare-event rows. Outputs: `artifacts/validation/e/{base-head,e1h-R,e1h-T,e1h-G}*` and `rescored-*` in the `bench-run` worktree (gitignored).
+
+**Energy, simulation truth** (`energy-diagnose`, seeds 48, 7, 21, 5, 11; 30 + 60 days); per day: eaten (R field-formula kcal, T and G sugar-based kcal) / absorbed / spent / eating min / dry matter g / foregut fill:
+
+| Class | R | T (fix) | G (fix + gut 111 mL/kg) |
+| --- | --- | --- | --- |
+| Adult males | 1565 / 1507 / 1509 / 182 / 527 / 0.30 | 1608 / 1528 / 1543 / 248 / 737 / 0.42 | 1610 / 1529 / 1531 / 243 / 744 / 0.32 |
+| Other adult females | 1308 / 1254 / 1257 / 178 / 463 / 0.33 | 1340 / 1269 / 1293 / 238 / 631 / 0.45 | 1346 / 1274 / 1276 / 229 / 641 / 0.34 |
+| Pregnant females | 1424 / 1367 / 1374 / 188 / 499 / 0.36 | 1396 / 1323 / 1411 / 245 / 652 / 0.47 | 1442 / 1364 / 1374 / 244 / 688 / 0.37 |
+| Lactating females | 1719 / 1655 / 1691 / 206 / 574 / 0.41 | 1343 / 1275 / 1665 / 222 / 616 / 0.44 | 1713 / 1627 / 1705 / 265 / 783 / 0.42 |
+| Juveniles 5–12 y | 1262 / 1218 / 1223 / 172 / 412 / 0.33 | 1245 / 1185 / 1240 / 228 / 559 / 0.45 | 1290 / 1228 / 1235 / 232 / 582 / 0.35 |
+
+| Reserves ÷ store, change per day (least squares over the 60 days) | R | T | G |
+| --- | --- | --- | --- |
+| Lactating females | −0.068% | **−0.922%** | −0.162% |
+| Other adult females | −0.008% | −0.053% | −0.013% |
+| Adult males | −0.005% | −0.025% | −0.007% |
+| Juveniles 5–12 y | −0.014% | **−0.144%** | −0.023% |
+| Infants 2–5 y / 0.5–2 y | −0.010% / −0.000% | −0.026% / +0.004% | −0.017% / −0.001% |
+| Lactating reserves ÷ store, start → end of window | −0.047 → −0.097 | −0.272 → **−0.824** | −0.062 → −0.174 |
+| Deaths in the window (starvation) | 0 (0) | 6 (**4, all lactating females**; 2 illness) | 1 (0; illness) |
+
+Gut-binding test (§4, as registered on the 24-hour mean fill), T: lactating females absorb 0.765 of what they spend at a foregut fill of 0.442, pregnant females 0.937 at 0.472: **the test holds** (but see the reading: in daylight the foregut is rarely full). Eating minutes against R (check 2): adult males +36.5% (T) / +33.4% (G), other females +33.3% / +28.3%, pregnant +30.6% / +30.0%, juveniles +32.7% / +35.2%; lactating +7.8% (T, gut-bound) / +28.3% (G).
+
+**Staged energy rows, lactating females** (R / T / G): field-method intake 1,744 / 1,911 / **2,424** kcal (band 1,900–3,100); ledger truth 1,719 field-formula / 1,343 / 1,713 sugar-based kcal (comparison band 1,810–2,070); eating 206 / 222 / **265** min (250–370); dry matter 574 / 616 / **783** g (650–1,100); T-ENE-8 96.2 / 98.5 / 97.7 (85–130).
+
+**Bench** (`e-bench --confirm`, rows scored in both runs):
+
+| Comparison | Fitted, all shared rows | Held-out, all shared rows | Held-out without T-HUN-4 and T-BRD-1 | Prescriptions | Viability |
+| --- | --- | --- | --- | --- | --- |
+| T vs R | **−1.657** (17) | **−0.170** (14) | −0.579 (12) | 103 → 103 | pass → **fail** (4 starvation deaths) |
+| G vs R | **−1.577** (19) | **+0.333** (18) | −0.304 (16) | 103 → 103 | pass → pass |
+| R vs B (context: the stack against today's model) | +0.596 (17) | +0.704 (14) | +0.670 (12) | 135 → 103 | pass → pass |
+| T vs B (context) | −0.913 (16) | +0.534 (14) | +0.091 (12) | 135 → 103 | pass → fail |
+| G vs B (context) | −0.424 (17) | +1.148 (14) | +0.476 (12) | 135 → 103 | pass → pass |
+
+Rows (B / R / T / G): T-ACT-1 feeding pass / **fail** / pass / pass; T-ACT-3 grooming (female) 0.152 / 0.253 / 0.200 / 0.190 (band 0.08–0.18); T-ACT-4 0.357 / 0.471 / 0.371 / 0.355; T-HUN-1 hunts per community-year 26.8 / 39.7 / 37.3 / 34.9 (5–25); T-FOOD-2 fruit share 0.885 / 0.669 / 0.746 / 0.739 (0.60–0.78); T-RNG-5 0.613 / 0.759 / 0.704 / 0.762 (0.3–0.6). The rare-event rows swing in both directions between arms (T-HUN-4 distance 2.59 / 0.45 / 1.02 / 1.95; T-BRD-1 1.53 / 3.70 / 3.54 / 2.84).
+
+**Verdict (§6, as registered): keep conditional on the gut (finding).** T fails viability (4 starvation deaths, all nursing mothers; mothers −0.92% and juveniles −0.14% of the store a day, R −0.07% and −0.01%); the gut binds in T; G passes viability as worded (no starvation death; the only class beyond −0.05%/day is the lactating one, and R's lactating class is beyond it too), the mechanism check (+28–35% eating minutes in every class that is not gut-bound) and the band check (fitted −1.58; held-out +0.33 against the registered +0.5). `ledgerFoodEnergyFix` stays 0 (it removes no prescription); the default of `digestaGutMlPerKg` does not move. The 2-seed null (§8.4) rested on T-HUN-4 in G (+0.96 on 2 seeds) and does not reproduce over 5 seeds. All five expectations registered in §9 held.
+
+**Reading.**
+- *In substance G's mothers are not balanced.* They lose reserve 2.4 × as fast as R's (−0.162 against −0.068% a day; −0.06 → −0.17 of the store in 60 days). The registered wording passes only because R's own mothers are already past the 0.05% line.
+- *What binds is the appetite and the mothers' day, not the gut wall* (moderate confidence). The registered binding test reads the 24-hour mean fill (0.41–0.44 for mothers in every arm), which includes the overnight emptying. In daylight a mother's foregut is at least 95% full in only 5.5% (R), 7.4% (T) and 3.8% (G) of the time (`foreFullDay`). In T the mothers eat fewer minutes than other adults (222 against 238–248) although their daylight hunger is higher (0.46 against 0.30–0.37); mothers of infants of 2 y or more eat least (206 min at a hunger of 0.50), and the mothers' condition is down to 0.33. Capacity acts through the fill readout (the satiation term 1 − fill² and the bout's room), not as a wall: a larger gut (G) lowers the fill that the same contents give. Why starving mothers stop eating with room in the gut is the open question.
+- *The gut size that the verdict needs is the least supported part of its range* (low confidence). The E-gut sources addendum reads the captive capacity as 3,322 cm³ in nakamura2017's full text (Chivers & Hladik 1980's animal, mass not given): at typical captive adult female masses (43.5–58.7 kg) that is 57–76 mL/kg, and 111 mL/kg implies a 30 kg animal. The same figure puts the stomach at 29% of the gut (Milton 1987 via a secondary source: 17–20%), so the foregut share (0.45) is also in question.
+- *Next* (stage E1i, pre-registered before any run): why nursing mothers stop eating with room in the gut. Diagnose their daylight time budget first (nursing, travel, rest and grooming against feeding, and what option beats feeding while hunger is high); then test from first principles: nursing that displaces the mother's own feeding; satiation that yields to a reserve deficit (E1e's curve is design); lactational enlargement of the gut, documented in other mammals; the foregut share re-sourced. Field intake rows stay targets.
