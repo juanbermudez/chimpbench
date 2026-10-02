@@ -496,3 +496,8 @@ Sonso 2.7 / 1.2), and the mothers' and juveniles' deficits shrink (−0.159 → 
   (S3 + `followCarer`: adults 2.2–2.6 km a day, deficits smaller) and a T-PTY-1 judged on its band rather than on a
   shift from a fitted reference; the party-follow weights fitted with the artefact should be re-derived from first
   principles in a stage of their own (party cohesion), not re-tuned.
+
+**Outputs.** Every JSON behind the tables, and the table scripts (`table.py`, `rows.py`, `diag_table.py`,
+`diag1b_table.py`, `stack_table.py`; their paths point at the session scratch `e4g/out`), are copied to
+`artifacts/validation/e4g/` in this worktree (gitignored, local only). Final check after merging track-e (9776530):
+`gen-params --check` clean, `tsc` clean, `pnpm test` 675 tests, 674 pass, 0 fail, 1 skipped.
