@@ -14,7 +14,7 @@
 // Development seeds only (AGENTS.md lists the reserved ones). burn-in + days ≤ 90.
 import { writeFileSync } from 'node:fs';
 import { V } from '../src/sim/candidates';
-import { isAdultMale } from '../src/sim/hierarchy';
+import { isAdultMale, maternalKin } from '../src/sim/hierarchy';
 import { paramsOf } from '../src/sim/params';
 import { fruitAt } from '../src/sim/phenology';
 import { index, isTreeId, ix } from '../src/sim/state';
@@ -53,6 +53,12 @@ for (const seed of seeds) {
   const version = new Map<number, number>(), prevAct = new Map<number, Action>(), prevV = new Map<number, number>(), prevPhase = new Map<number, number>(), prevTarget = new Map<number, number>();
   for (const c of w.chimps) { version.set(c.id, c.decisionVersion); prevAct.set(c.id, c.action); prevV.set(c.id, ix(c).v); prevPhase.set(c.id, ix(c).phase); prevTarget.set(c.id, c.targetId); }
   const awakeH = new Map<number, number>(), hoots = new Map<number, number>();
+  // hourly windows of adult males: pant-hoots in the hour, by what held at its start (a swollen parous female within the
+  // party link) and whether the set of adult males within the party link changed over it (fission-fusion with males)
+  const winHoots = new Map<number, number>(), winStart = new Map<number, { males: string; swollen: boolean }>();
+  const near = (c: Chimp, pred: (o: Chimp) => boolean) => w.chimps.filter(o => o !== c && o.alive && o.troopId === c.troopId && pred(o) && Math.hypot(o.position[0] - c.position[0], o.position[2] - c.position[2]) <= P.partyLinkM);
+  const snap = (c: Chimp) => ({ males: near(c, isAdultMale).map(o => o.id).sort((a, b) => a - b).join(','),
+    swollen: near(c, o => o.sex === 'female' && o.swelling >= 0.85 && (o.age >= P.endoParousAgeY || ix(o).amenUntil > 0) && !maternalKin(c, o)).length > 0 });
   const recentHoots: { t: number; id: number; troop: number; x: number; z: number }[] = [];
   let seenCall = w.nextId;
   for (let i = 0; i < days * DAY; i++) {
@@ -69,7 +75,8 @@ for (const seed of seeds) {
       const k = cls(c), awake = !(c.action === 'nest' && x.phase >= 2) && day > 0.3;
       if (awake && c.age >= 12) {
         bump(`hours | ${k}`, TICK_H); bump(`hours | ${k} | ${CAT(a0)}`, TICK_H);
-        if (k === 'adult male') { awakeH.set(c.id, (awakeH.get(c.id) ?? 0) + TICK_H); hourMaleH[Math.floor(w.hour) % 24] += TICK_H; }
+        if (k === 'adult male') { awakeH.set(c.id, (awakeH.get(c.id) ?? 0) + TICK_H); hourMaleH[Math.floor(w.hour) % 24] += TICK_H;
+          if (a0 === 'forage') bump(`hours | adult male | feeding on ${isTreeId(prevTarget.get(c.id) ?? -1) ? 'fruit (a crown)' : 'ground foods'}`, TICK_H); }
       }
       const mine = callsBy.get(c.id);
       // arrivals in a crown: the forage act moved from walking to feeding this tick
@@ -110,7 +117,8 @@ for (const seed of seeds) {
         const src = started && callAct(c.action) ? `${c.action}${x.v ? '/' + (VNAME[x.v] ?? x.v) : ''}` : arrived ? 'arrival in a crown' : callAct(a0) ? `${a0}${v0 ? '/' + (VNAME[v0] ?? v0) : ''}`
           : trav(a0) || trav(c.action) ? 'travelling (hazard)' : `other: ${a0} -> ${c.action}`;
         bump(`pant-hoots | ${k}`); bump(`pant-hoots | ${k} | source ${src}`); bump(`pant-hoots | ${k} | context ${CAT(a0)}`);
-        if (k === 'adult male') { hoots.set(c.id, (hoots.get(c.id) ?? 0) + 1); hourHoots[Math.floor(w.hour) % 24]++; }
+        if (k === 'adult male') { hoots.set(c.id, (hoots.get(c.id) ?? 0) + 1); hourHoots[Math.floor(w.hour) % 24]++; winHoots.set(c.id, (winHoots.get(c.id) ?? 0) + 1);
+          if (a0 === 'forage') bump(`pant-hoots | adult male | feeding on ${isTreeId(prevTarget.get(c.id) ?? -1) ? 'fruit (a crown)' : 'ground foods'}`); }
         // a chorus: another community member pant-hooted within 1 min and 100 m
         const chorus = recentHoots.some(r => r.id !== c.id && r.troop === c.troopId && time - r.t <= 1 / 60 && Math.hypot(r.x - c.position[0], r.z - c.position[2]) <= 100);
         bump(`pant-hoots in a chorus | ${k}`, chorus ? 1 : 0);
@@ -119,6 +127,17 @@ for (const seed of seeds) {
       version.set(c.id, c.decisionVersion); prevAct.set(c.id, c.action); prevV.set(c.id, x.v); prevPhase.set(c.id, x.phase); prevTarget.set(c.id, c.targetId);
     }
     while (recentHoots.length && time - recentHoots[0].t > 1 / 60) recentHoots.shift();
+    if (i % HOUR === 0) for (const c of w.chimps) {
+      if (!c.alive || !isAdultMale(c)) continue;
+      const st = winStart.get(c.id), awake = !(c.action === 'nest' && ix(c).phase >= 2) && day > 0.3, now = snap(c);
+      if (st && awake) {
+        const n = winHoots.get(c.id) ?? 0, ff = st.males !== now.males ? 'males joined or left' : 'no change in males';
+        bump(`male hours | ${ff}`); bump(`male hour pant-hoots | ${ff}`, n);
+        const sw = st.swollen ? 'swollen parous female in the party' : 'no swollen parous female';
+        bump(`male hours | ${sw}`); bump(`male hour pant-hoots | ${sw}`, n);
+      }
+      winHoots.set(c.id, 0); if (awake) winStart.set(c.id, now); else winStart.delete(c.id);
+    }
     // party company at hourly samples (adults awake in daylight)
     if (i % HOUR === 0 && day > 0.3) for (const c of w.chimps) {
       if (!c.alive || c.age < 15 || (c.action === 'nest' && ix(c).phase >= 2)) continue;
@@ -141,6 +160,11 @@ const sources = Object.keys(count).filter(k => k.startsWith('pant-hoots | adult 
 out.adultMaleBySource = Object.fromEntries(sources.map(k => [k.replace('pant-hoots | adult male | source ', ''), { perHour: rate(k, 'hours | adult male'), share: share(k, 'pant-hoots | adult male') }]));
 out.adultMaleByContext = Object.fromEntries(['travel', 'feed', 'rest', 'social', 'other'].map(c => [c, { perHourInContext: rate(`pant-hoots | adult male | context ${c}`, `hours | adult male | ${c}`), shareOfCalls: share(`pant-hoots | adult male | context ${c}`, 'pant-hoots | adult male'), shareOfTime: share(`hours | adult male | ${c}`, 'hours | adult male') }]));
 out.adultMaleByHour = Object.fromEntries(hourHoots.map((n, h) => [h, hourMaleH[h] > 1 ? +(n / hourMaleH[h]).toFixed(3) : null]).filter(([, v]) => v !== null));
+{ const H = out.adultMaleByHour as Record<string, number>, m = (hs: number[]) => { const v = hs.map(h => H[h]).filter(x => x !== undefined); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+  const am = m([7, 8]), pm = m([15, 16, 17, 18]); out.morningAfternoon = { '07–08 h': am, '15–18 h': pm, ratio: am !== null && pm ? +(am / pm).toFixed(2) : null, field: 'fedurek2016 Fig. 4 (≈, read from the figure): 1.46 and 1.25 at 07 and 08 h, 0.46, 0.44, 0.24, 0.13 at 15–18 h, ratio ≈ 4.3' }; }
+out.adultMaleHourWindows = Object.fromEntries(['males joined or left', 'no change in males', 'swollen parous female in the party', 'no swollen parous female'].map(k => [k, { perHour: rate(`male hour pant-hoots | ${k}`, `male hours | ${k}`), hours: count[`male hours | ${k}`] ?? 0 }]));
+out.adultMaleFeeding = Object.fromEntries(['fruit (a crown)', 'ground foods'].map(k => [k, { perHour: rate(`pant-hoots | adult male | feeding on ${k}`, `hours | adult male | feeding on ${k}`), hours: +(count[`hours | adult male | feeding on ${k}`] ?? 0).toFixed(1) }]));
+out.femaleToMale = (() => { const r = out.ratesPerHour as Record<string, number | null>; return r['adult male'] && r['adult female'] !== null ? +((r['adult female'] as number) / (r['adult male'] as number)).toFixed(3) : null; })();
 out.chorusShare = Object.fromEntries(groups.map(g => [g, share(`pant-hoots in a chorus | ${g}`, `pant-hoots | ${g}`)]));
 const taus = seeds.map(s => kendall(perMale.filter(m => m.seed === s).map(m => m.rankNo), perMale.filter(m => m.seed === s).map(m => m.hoots / m.hours)));
 out.rankTau = { perSeed: taus, pooled: kendall(perMale.map(m => m.rankNo), perMale.map(m => m.hoots / m.hours)), males: perMale.length, note: 'Kendall τ of rank number (1 = top) against pant-hoots per awake daylight hour; negative = high-ranking males call more (T-COM-2)' };
