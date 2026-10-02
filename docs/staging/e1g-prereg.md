@@ -135,3 +135,10 @@ Pooled adult-female intake and eating minutes are the individual-day-weighted me
 ## 7. Results
 
 (Filled in after the runs.)
+
+### 7.0 Attribution run, registered after the sweep and before it ran (not a candidate)
+
+The sweep showed adult females' formula intake stopping at about 1,950–1,980 kcal/day (650–670 g dry matter) at k 1.6 and 1.9, whatever their need, with eating minutes stopping at about 250, mean foregut fill 0.46–0.49 and daylight hunger 0.38–0.39 although reserves were deep in deficit (so the drive φ is saturated and hunger = 1 − fill²). The reading to test: the ceiling is the foregut's throughput (capacity ÷ the 3-hour emptying constant, held below capacity by the satiation curve), not time or choice.
+- **A1:** k 1.6 + `digestaGutMlPerKg` 111 (the top of its assumed range, 1.34 × the central 83; foregut 7.5 g/kg). Same seeds, window and tools (`e-bench --quick --days 60`, `energy-diagnose`).
+- **Expected if the gut binds:** female dry matter and intake rise about in proportion (toward 850–880 g and 2,500–2,650 formula kcal), non-reproducing females and mothers stop losing reserves, starvation deaths fall to 0–2, eating minutes rise above 250. **If time or choice binds instead:** intake stays near 1,950 and deaths persist.
+- Whatever it shows, the gut volume stays an assumption (E1b); A1 is attribution, not a proposal.
