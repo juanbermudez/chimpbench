@@ -155,6 +155,12 @@ export interface EnergyLedger {
    * average (kcal/h) of everything spent except growth, and `out` at the last tick.
    */
   mAvg?: number; gAt?: number;
+  /**
+   * Stage E1o (milkInDrive; energy.ts), present only on an unweaned animal with that switch on: the milk its mother's
+   * gland holds (kcal) and her synthesis rate (kcal/h), read from her ledger once a tick, so the drive can count milk at
+   * what the gland delivers (0 and 0 without a lactating mother).
+   */
+  gm?: number; gy?: number;
 }
 
 /**

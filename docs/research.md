@@ -2643,3 +2643,26 @@ Read for stage E5c ([staging/e5c-prereg.md](staging/e5c-prereg.md) §2.2). Tags 
   - Use: the definition of T-PTY-2's patch part and of E5c's FPS readout (per bout, maximum co-feeders, ln–ln). The
     observer scores T-PTY-2 on 15-min scans with crown radius and a linear R² (a staged scorer fix, e5c-prereg §2.2).
 - potts2011, chapman1995, newtonFisher2000 and charnov1976 are already listed; the entry above adds findings.
+
+### Addendum: E1o what an older infant drinks (2 October 2026)
+
+Evidence pass for stage E1o ([staging/e1o-prereg.md](staging/e1o-prereg.md) §1–§2): why infants of 1–4 y drink the whole
+milk yield in the model, and what could lower it. research.md was searched first (E.11, E.14.3, E.37, E.38 hold the
+lactation sources); one new source was read (PubMed abstract, 2 October 2026).
+
+- **Infants regulate their total energy intake, and solids displace milk** [cohen1994] (Abs) [H] human, cross-species.
+  Randomised trial in Honduras, 141 low-income primiparous mothers who had exclusively breastfed for 4 months: continued
+  exclusive breastfeeding to 6 months (n 50), complementary foods from 4 months with ad libitum nursing (n 47), or with
+  nursing frequency kept at baseline (n 44). Breast-milk intake at 4 months 797 (139) g/day; from 4 to 6 months it was
+  unchanged without solids (+6 g) and fell with them (−103 g ad libitum, −62 g with nursing frequency held; P < 0.001);
+  total energy intake and weight and length gain did not differ between groups. The authors: "breastfed infants
+  self-regulate their total energy intake when other foods are introduced". Use in E1o: an infant's milk intake is the
+  remainder of one appetite after its other food (direction; mechanism citation for counting milk and solids in one
+  drive, arm A), so milk can fall below supply only when other food covers more of the need; in the model the infant's own food
+  rises with its hunger (e1o-prereg.md §2.2: with milk limited by its mother, 27–52% more), the same direction.
+- *new* cohen1994: Cohen RJ, Brown KH, Canahuati J, Rivera LL, Dewey KG 1994. Effects of age of introduction of
+  complementary foods on infant breast milk intake, total energy intake, and growth: a randomised intervention study in
+  Honduras. *Lancet* 344(8918):288–293. [doi:10.1016/s0140-6736(94)91337-4](https://doi.org/10.1016/s0140-6736(94)91337-4) (Abs, PubMed 7914260).
+- Already listed and used in E1o without new reading: trivers1974 and maestripieri2002 (the form of the mother's
+  decision, arm B), emeryThompson2012 (her cost tied to her energy state: cycling resumes after sustained energy gain),
+  kent1999, daly1993 and deweyLonnerdal1986 (synthesis follows the infant's removal, the existing store rule).

@@ -1727,3 +1727,13 @@ Archive capture of its Harvard DASH deposit; the live host shows a bot check) fo
 ("the maximum number of independently-feeding chimpanzees, including the focal individual, co-feeding in a given patch
 during a particular feeding bout"), patch size (DBH) and the ln–ln regression (R² 0.801 Ngogo, 0.227 Kanyawara). No new
 source.
+
+## Addendum: E1o what an older infant drinks (2 October 2026)
+
+Same text as research.md "Addendum: E1o what an older infant drinks": new source cohen1994 (Cohen, Brown, Canahuati,
+Rivera, Dewey 1994, Lancet 344(8918):288–293, doi:10.1016/s0140-6736(94)91337-4; abstract via PubMed 7914260):
+complementary foods from 4 months lowered breast-milk intake by 103 g/day (62 g with nursing frequency held) while
+total energy intake and growth did not change; "breastfed infants self-regulate their total energy intake when other
+foods are introduced" [H] human, cross-species; direction and mechanism citation for counting milk and solids in one
+drive (staging/e1o-prereg.md arm A). Already listed: trivers1974, maestripieri2002, emeryThompson2012 (arm B), kent1999,
+daly1993, deweyLonnerdal1986.
