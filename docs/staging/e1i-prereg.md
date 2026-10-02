@@ -58,6 +58,10 @@ Arms, sources and predictions for the implicated term(s) are registered in §6 b
 - Prescription count from e-bench (a switch that adds a design curve does not lower it; a switch that removes a named rule must).
 - At most 3 iterations, each logged here and committed before its run.
 
+## 4a. Amendment: the noise rule (logged 2 October 2026, on the integrator's instruction; docs/staging/e-noise.md Amendment 2, track-e b71e77a)
+
+Written after the T and B1 quick benches had been read and while B2's bench was queued; it changes how the bench sums are judged, nothing else (viability and the energy readouts stay as registered). Each arm is judged against the **mean of four realizations of the reference**: T-quick plus three re-draws of T with `rgTemperature` 0.1641, 0.1639 and 0.16405 added to its overrides (quick mode, the same frozen checkout as T-quick, cc51622). On rows counted in every run compared: z = (arm − reference mean) ÷ (SD × √(1 + 1/4)), SD = the integrator's per-run SD for quick mode (fitted 0.69, held-out 1.26, held-out without T-HUN-4 and T-BRD-1 0.48) or this stage's own reference spread if larger; |z| > 2 is a result, anything less is "inside noise" (in quick mode a change beyond 1.6 fitted, 2.9 held-out, 1.1 held-out without the rare-event rows). T-HUN-4 and T-BRD-1 cannot be judged on a single 30-day run. K3 of each iteration is read with this rule; the provisional 1.5 is replaced.
+
 ## 5. Diagnosis results (registered before any arm)
 
 Run: arm T, seeds 48 and 7, 30-day burn-in + 30 days, rules policy, from a frozen checkout of f022f3b (`artifacts/validation/e1i/T-intake.json`, gitignored). Every number below was generated from the JSON by a script (`diag_table.py`, session scratch). Reference energy run (`energy-diagnose`, same seeds and window, frozen checkout of cc51622; switch-off identity is tested): lactating females eat 231 min and 632 g of dry matter a day, absorb 1,344 kcal and spend 1,665 (0.807), reserves −0.79% of the store a day; other females −0.055%/day, juveniles −0.079%/day; no starvation death (one infant died of illness).
