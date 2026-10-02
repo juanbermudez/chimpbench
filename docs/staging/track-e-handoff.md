@@ -14,9 +14,15 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (11:05).** Agents E1n (weaning as a decision; `e1n-weaning`) and the decision-guide builder (a visual
-  guide of how decisions work on the candidate stack, remaining prescriptions marked, before/after hovers;
-  `e-guide`, deliverable docs/decision-guide.html; brief `integrator/guide-prompt.txt`; on Opus). Integrator: free.
+- **Running now (11:40).** The decision-guide builder (`e-guide`, docs/decision-guide.html; told E5a is confirmed).
+  Integrator: the S4 integrated confirm (S3 + `followCarer` + `cohesionValue`; registered in e-stack2-confirm.md;
+  `bench-run` at d256096).
+- **E1n merged** (`weanDecide`, off: the mother's decision in place of the weaning roll; a provisional keep candidate,
+  prescriptions −1, but null as a weaning mechanism: refused day milk is drunk at night, infants stay at the cap).
+- **Outside Track E (user request, 2 October):** branch `feat-realtime` (worktree `.claude/worktrees/feat-realtime`,
+  from `main` f24c9ae, head cb6044e) adds a Real time speed (1 s/s) as the first preset, keys 1–7, a steady readout
+  ("1 s/s · 1 tick / 15 s"); tests and build pass; a three-way merge check against the main checkout's uncommitted
+  files is clean. The user (or the session that owns those files) merges it into `main` after committing that work.
 - **E5a confirmed on 5 seeds** (R + `followCarer` + `cohesionValue`: sums inside noise, prescriptions 103 → 97,
   viable): a provisional keep candidate.
 - **E5a merged** (`cohesionValue`, off: the companion's company weighted by the animal's own social need replaces the
@@ -113,8 +119,9 @@ Hard rules (AGENTS.md plus this track):
 | `.claude/worktrees/e5a-cohesion` | Merged 2 October (head 338ea91). |
 | `.claude/worktrees/e2h-departure` | Merged 2 October (head 2de32ae). |
 | `.claude/worktrees/e1m-milk` | Merged 2 October (head 679215a). |
-| `.claude/worktrees/e1n-weaning` | **Running agent** E1n, branched from track-e 8b53de0. |
 | `.claude/worktrees/e-guide` | **Running agent** (decision guide), branched from track-e e78f402. |
+| `.claude/worktrees/e1n-weaning` | Merged 2 October (head 66b19fb). |
+| `.claude/worktrees/feat-realtime` | Real time speed, from `main`; ready for the user to merge into `main`. |
 | `.claude/worktrees/e2h-departure` | **Running agent** E2h, branched from track-e 702027e. |
 | `.claude/worktrees/e1k-deficit` | Merged 2 October (head 5d2a01e). |
 | `.claude/worktrees/e2f-sleep` | Merged 2 October (head b5157a0). |
