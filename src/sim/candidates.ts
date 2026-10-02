@@ -637,8 +637,8 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
 /** Stage C6b (field): a crown this individual has just fed in is worth less for a while (the fruit within reach is gone). */
 function revisit(x: ReturnType<typeof ix>, id: number, time: number, P: Params): number {
   const ft = x.fedTree;
-  // stage E5c (crownShare): what it believes is left in the crown carries the depletion it saw, whatever the crop
-  if (!ft || crownShareOn(P) || P.revisitW <= 0) return 0;
+  // stage E5c (crownShare) and stage E3b (revisitByCrop): what it believes is left in the crown carries the depletion it saw
+  if (!ft || crownShareOn(P) || P.revisitByCrop === 1 || P.revisitW <= 0) return 0;
   // fed-tree ids are unique (execution.ts), so the stamped index is the list's lastIndexOf; valid for the decision in progress
   if (!stamped(_fed, id, _stamp)) return 0;
   return P.revisitW * Math.exp(-(time - x.fedAt![_fedK[id - TREE_ID0]]) / P.revisitTauH);

@@ -18202,6 +18202,32 @@
    "notes": "The alpha position stays contested for up to this long."
   },
   {
+   "id": "revisitByCrop",
+   "group": "feeding",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/research.md, Addendum: E3b revisits: normand2009 (revisits by the same individual, valued by the time it ate there before and the fruit it expects) [M], ban2014 (abstract: chimpanzees anticipate the amount of fruit in a tree they revisit) [M], houle2014 (ripe fruit is a small standing stock that ripening replaces) [M, direction]"
+   ],
+   "clock": "none",
+   "symbol": "P.revisitByCrop",
+   "file": "src/sim/candidates.ts",
+   "integer": true,
+   "notes": "Stage E3b switch (docs/staging/e3b-prereg.md §5, iteration 1): a crown the individual has fed in is valued like any other crown, by the crop it believes is there (C7a's belief, written when it leaves the crown; the truth while it is in view), through the existing crop shape and trip valuation. The crop-blind devaluation of a crown just used (revisitW x exp(-hours since / revisitTauH); C6b design, no source: 'the fruit within reach has been taken') is not applied and the fed-tree list is not kept. Field: returns are made to trees where the animal ate longer and expects fruit (normand2009; ban2014 abstract); a crown's ripe crop is what feeding removes and ripening replaces (houle2014; in the model the fruitAt deficit and its recovery, patchRecoverPerDay, design). No new magnitude. Removes no counted prescription (revisitW and revisitTauH are design). 0 = today, bit-identical. Ablation switch."
+  },
+  {
    "id": "revisitTauH",
    "group": "feeding",
    "value": 12,

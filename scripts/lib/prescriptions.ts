@@ -257,8 +257,12 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   // stage E5c (crownShare; docs/staging/e5c-prereg.md §3.2): co-feeders cost their share of the bout and a crown just used is
   // worth what is believed left, so the habitat-index crowding cost and the revisit devaluation are not evaluated (all design:
   // the count does not change)
-  ...same(['crowdCompeteW', 'crowdScarcityRef', 'revisitW', 'revisitTauH'], P => !(P.crownShare === 1 && P.energyLedger === 1 && P.ledgerDrive === 1 && P.intakeValue === 1),
-    'the habitat-index crowding cost and the revisit devaluation in src/sim/candidates.ts are not evaluated while crownShare, energyLedger, ledgerDrive and intakeValue are 1: co-feeders cost their share of the bout, a crown just used is worth what is believed left (stage E5c)'),
+  ...same(['crowdCompeteW', 'crowdScarcityRef'], P => !(P.crownShare === 1 && P.energyLedger === 1 && P.ledgerDrive === 1 && P.intakeValue === 1),
+    'the habitat-index crowding cost in src/sim/candidates.ts is not evaluated while crownShare, energyLedger, ledgerDrive and intakeValue are 1: co-feeders cost their share of the bout (stage E5c)'),
+  // stage E3b (revisitByCrop; docs/staging/e3b-prereg.md §5): a crown just used is worth the crop believed left, so the
+  // crop-blind devaluation is not evaluated (design: the count does not change); crownShare (E5c) switches it off too
+  ...same(['revisitW', 'revisitTauH'], P => !(P.crownShare === 1 && P.energyLedger === 1 && P.ledgerDrive === 1 && P.intakeValue === 1) && P.revisitByCrop !== 1,
+    'the revisit devaluation in src/sim/candidates.ts (and the fed-tree list in execution.ts) is not evaluated while revisitByCrop is 1 (stage E3b), or while crownShare, energyLedger, ledgerDrive and intakeValue are 1 (stage E5c): a crown just used is worth the crop believed left'),
   // stage E1n (weanDecide; docs/staging/e1n-prereg.md §3): the mother decides by her drive against the infant's own-food
   // drive (energy.ts ownDrive), so the weaning roll and its ramp are not evaluated
   ...same(['weanRefuseMaxP', 'weanRefuseAgeY', 'weanRefuseRampY'], P => !(P.weanDecide === 1 && P.energyLedger === 1 && P.ledgerDrive === 1),
@@ -319,6 +323,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   weanDecide: { stage: 'E1n', needs: { energyLedger: 1, ledgerDrive: 1 } },
   cohesionValue: { stage: 'E5a', needs: {} },
   crownShare: { stage: 'E5c', needs: { energyLedger: 1, ledgerDrive: 1 }, removesNothing: 'switches off two crop-blind design terms (the habitat-index crowding cost, the revisit devaluation of a crown just used); co-feeders then cost their share of the bout through tripWorth and a used crown is worth the crop believed left; no counted prescription is switched out (e5c-prereg §3.2)' },
+  revisitByCrop: { stage: 'E3b', needs: {}, removesNothing: 'switches off a crop-blind design term (the devaluation of a crown just used, revisitW × exp(−h / revisitTauH)); a crown fed in is then worth the crop believed left (C7a), as any other crown; no counted prescription is switched out (e3b-prereg §5)' },
   companyMargin: { stage: 'E5b', needs: { cohesionValue: 1 }, removesNothing: 'values an approach to a caller by the company it adds over the company the animal already has (E5a\'s companyValue and settled-companion set); adds no magnitude and switches no prescription out (e5b-prereg §5)' },
 };
 
