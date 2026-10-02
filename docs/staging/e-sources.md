@@ -1426,3 +1426,21 @@ switch `preyKanyawara`). Entries in full in docs/research.md, "Addendum: E4f col
 - **snaithChapman2008** (Abs) [M]: larger groups have larger home ranges, longer daily travel and wider spread; no values.
 - Dead ends this stage (do not retry): Wiley and Oxford Academic hosts (bot check); chapman2002ajpa PMC7159679 (efetch
   abstract only); chapman2000cons, chapman2005ijp, gillespieChapman2001 (closed).
+
+## Addendum: E1j mothers' ranging (2 October 2026)
+
+- **batesByrne2009** (FT, accepted manuscript) [M]: day ranges from focal follows of at least 8 h (27 male, 13
+  lactating/gestating, 3 receptive days); fixes "every five minutes when it was travelling", nothing inside 20+ min
+  halts; males 2.7 ± 1.5 km, lactating 1.2 ± 0.8, receptive 2.2 ± 0.8; halts 6.5 against 4.5 a day, 60 against 95 min;
+  357 against 277 m between halts.
+- **wrangham1975** (FT, PhD thesis Table 5.1) [M]: Gombe medians, males 4.2 km (83 days, 8) and 3.8 (23, 7), mostly
+  anoestrous females 2.8 (61 days, 10): 0.67–0.74.
+- **pontzerWrangham2004 via wilson2021** (FT of the citing review, PMC7886264) [L]: Kanyawara adult females 2.0, males
+  2.4 km/day (0.83); Gombe 3.2 and 4.6 (0.70).
+- **pontzerWrangham2006 via stanton2017** (FT of the citing paper, PMC5659293) [L]: maternal day range rose with the
+  juvenile's body size, not with infant carrying.
+- **lowe2019** (Abs, open access) [M]: Sonso, 33 intra-community infanticide attacks on 30 victims in 24 years, mostly by
+  males, two thirds of victims of known age under one week old.
+- Dead ends this stage (do not retry): pontzerWrangham2004, pontzerWrangham2006 and otaliGilchrist2006 primaries (closed;
+  no abstract on OpenAlex, Crossref, PubMed or Semantic Scholar; link.springer.com bot check); Deep Blue (Ngogo theses,
+  Cloudflare check).
