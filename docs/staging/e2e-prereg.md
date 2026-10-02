@@ -155,6 +155,12 @@ Both arms ran without error; readouts sane. R0 + S: 56% of departures before sun
 ## 7. Known defects (fix before measuring, or listed here)
 - `rhythm-metrics` co-departure readout is quadratic in departures per run (fine at 30 days).
 - None other known at registration.
+- Found after the registered runs (§8b): with `nestAudience` a given-up attempt left the initiator outside its nest
+  (src/sim/execution.ts `startAction` drops `c.nest`) and nest-sitters were never told of a departure (execution.ts notice
+  loops, perception.ts travel hoo). Fixed in iteration 2 (b732e40); its effect on the aggregates was inside run-to-run
+  variation.
+- The diagnosis scripts (`predawn-diag.ts`, `attempt-diag.ts`, `e2e_table.py`, `e2e_bench.py`, `e2e_report.py`) live in
+  the agent's scratch directory, not in the repository: measurement only.
 
 ## 8. Iterations
 See §8b (after the results of the registered arms, which motivate them).
@@ -294,4 +300,80 @@ Registered predictions:
   low); night safety unchanged (menu). FS2: still fails night safety (solitary nesters, ≈ half of adult pre-dawn time,
   are untouched; high confidence).
 - **Kill criterion:** §5 unchanged.
+
+
+#### Iteration 2 results (frozen b732e40; rhythm-metrics 30 + 30 and e-bench --quick, seeds 48 and 7, `--workers 2`)
+
+| Readout | R0 | S | S2 | F | FS2 |
+| --- | --- | --- | --- | --- | --- |
+| departure, min after sunrise: median (p10–p90) | -13 (-14 to -13) | -13 (-14 to 12) | -13 (-14 to 9) | -124 (-131 to 4) | -62 (-131 to 22) |
+| departures before sunrise, adults (adult females) | 99% (99%), n 1770 | 83% (90%), n 1810 | 84% (90%), n 1774 | 89% (95%), n 1806 | 78% (85%), n 1773 |
+| last nest entry, min after sunset (median) | -32 | -34 | -34 | -31 | -33 |
+| active day, h: male / lactating / other female | 11.86 / 12.04 / 11.88 | 11.56 / 11.90 / 11.72 | 11.60 / 11.96 / 11.75 | 13.08 / 13.89 / 13.37 | 12.30 / 13.44 / 12.60 |
+| adults: out of a nest, share of night; m per night | 0.1%; 1 m | 0.0%; 0 m | 0.1%; 1 m | 14.7%; 488 m | 9.2%; 287 m |
+| adults: T-RHY-5 (night share of activity records) | 0.001 | 0.000 | 0.001 | 0.135 | 0.091 |
+| juveniles 5–15 y: out of a nest, share of night; m per night | 4.6%; 163 m | 2.4%; 75 m | 2.5%; 81 m | 14.8%; 533 m | 10.6%; 379 m |
+| 5–8 y: out of a nest before dawn; m per morning | 96.0%; 576 m | 53.4%; 328 m | 55.0%; 338 m | 97.6%; 658 m | 76.9%; 530 m |
+| co-departures (5 min, 50 m) | 43.3% | 35.0% | 36.0% | 22.6% | 25.1% |
+| last waking, min after sunrise (median) | -128 | -128 | -127 | -126 | -127 |
+| deaths (at night); causes | 0 (0); {} | 0 (0); {} | 0 (0); {} | 0 (0); {} | 0 (0); {} |
+| pre-dawn rain ≥ 0.05 | 0.8% | 1.3% | 1.4% | 0.0% | 2.1% |
+
+```
+reference R0: fitted 4.267, held-out 6.429, prescriptions 115, viability pass, commit 77c4163 dirty 0
+S: fitted 5.600, held-out 5.370, prescriptions 115, viability pass, commit 786f26f dirty 0
+   on rows scored in both: fitted -0.195 (15 rows), held-out -1.715 (12 rows); without T-HUN-4 and T-BRD-1: fitted -0.195 (15), held-out -0.539 (11)
+   largest row moves: T-HUN-4 (h) -1.176, T-FOOD-10 (h) -0.787, T-HUN-7 (f) -0.625, T-HUN-1 (f) +0.337, T-HUN-8 (h) +0.333, T-SOC-2 (h) +0.135
+S2: fitted 5.160, held-out 4.944, prescriptions 115, viability pass, commit b732e40 dirty 0
+   on rows scored in both: fitted -0.933 (16 rows), held-out -1.985 (12 rows); without T-HUN-4 and T-BRD-1: fitted -0.933 (16), held-out -0.120 (11)
+   largest row moves: T-HUN-4 (h) -1.865, T-FOOD-10 (h) -0.533, T-SOC-9 (f) -0.456, T-HUN-7 (f) -0.375, T-HUN-8 (h) +0.333, T-FOOD-2 (f) -0.197
+```
+
+- **S2 against S: inside run-to-run variation on every readout.** Co-departures 35.0% → 36.0% (direction as predicted,
+  negligible), departures before sunrise 83% → 84% (predicted to fall: no), 5–8 y 53.4% → 55.0%. T-FOOD-10 (e-bench
+  observer) 0.83 (S) and 0.88 (S2) against R0's 1.00. The defect touched about 7% of morning exits (§8b), too few to move
+  the aggregates.
+- **FS2: night safety fails as predicted** (adults out of a nest 9.2% of night time, T-RHY-5 0.091), identical to FS.
+- S2 on shared rows against R0: fitted −0.933 (16 rows), held-out −1.985 (12 rows); without T-HUN-4 and T-BRD-1 fitted
+  −0.933, held-out −0.120. Inside the registered 1.5 except held-out with all rows, which is T-HUN-4 alone (−1.865).
+- No third iteration: the remaining failure (solitary nesters) is outside both registered arms (§10).
+
+## 10. Verdict
+
+| Readout | R0 | S | S2 |
+| --- | --- | --- | --- |
+| Departure vs sunrise, median (min); before sunrise | -13; 99% | -13; 83% | -13; 84% |
+| Last nest entry vs sunset, median (min) | -32 | -34 | -34 |
+| Active day h, male / lactating / other F | 11.9 / 12.0 / 11.9 | 11.6 / 11.9 / 11.7 | 11.6 / 12.0 / 11.7 |
+| Adults: night out of nest; m/night | 0.1%; 1 | 0.0%; 0 | 0.1%; 1 |
+| 5–8 y: out before dawn; m/morning | 96%; 576 | 53%; 328 | 55%; 338 |
+| Co-departures (5 min, 50 m) | 43% | 35% | 36% |
+| Night deaths | 0 | 0 | 0 |
+| Fitted, shared rows: all / w/o T-HUN-4, T-BRD-1 | 4.267 (ref) | -0.195 (15) / -0.195 (15) | -0.933 (16) / -0.933 (16) |
+| Held-out, shared rows: all / w/o | 6.429 (ref) | -1.715 (12) / -0.539 (11) | -1.985 (12) / -0.120 (11) |
+| Prescriptions | 115 | 115 | 115 |
+| Viability | pass | pass | pass |
+
+(R0 = reference; S = the registered social arm; S2 = S after iteration 2. Shared-row changes against R0, rows in
+brackets; noise threshold 1.5. T and S + T: not run, T inert by the registered offline check. `rhythmDarkW` is not
+read in any arm (`rhythmCircadian` is on throughout).)
+
+- **Social arm (`nestCompany` + `nestAudience`), on R0:** viable; night safety better than R0 on every readout
+  (5–8 y out before dawn 96% → 53–55%, juveniles' night activity halved); departures spread past sunrise (99% → 83–84%
+  before; T-FOOD-10 1.00 → 0.83–0.88, still above its 0.08–0.30 band); co-departures fall (P-S1 failed: R0's 43% was the
+  menu releasing everyone at one tick). Benchmark changes inside noise without the rare-event rows. No prescription
+  removed (115), so by the Track E rule **not a keep**: a recorded mechanism, off by default, worth carrying into a stack
+  that removes the menu once something holds solitary nesters.
+- **The hold without the night menu (FS, FS2, I1): killed** by night safety in every form (adults out 7–9% of night time
+  against R0's 0.1% and the field's ≤ 3.3% of activity records). Company holds animals that nest with an adult nest-mate
+  until a sun altitude of about −4° (some 16 min before sunrise, close to the field's departures); it cannot hold the
+  animals that nest with no adult within 50 m, about half the adults' pre-dawn time in this model, and E2c's darkness
+  cost adds little (I1d).
+- **Thermal arm: inert, not run** (§3.3): no dry heat debt for any class at the model's 15 °C pre-dawn air; pre-dawn
+  rain 0.8% of the window.
+- **Biggest open problem:** what keeps a *solitary* chimpanzee in its nest for two hours before dawn. Nothing in the
+  model's physics does: vision (E2c), process C (E2d), insulation (here) and company (here) all fail for it. Candidates:
+  the waking time itself (E2d wakes animals ~128 min before sunrise with human pacemaker values, captive chimpanzees
+  rise 45–60 min before it, videan2005), and nest groups that are too small (T-PTY-1 2.8 against 3–9), which leaves half
+  the adults without company at night.
 
