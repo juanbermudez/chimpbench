@@ -121,7 +121,7 @@ export const STAGES: Record<string, { name: string; verdict: string; doc: string
   E1i: { name: 'satiation and the lactating gut', verdict: 'null on 5 seeds (strict viability line), a large partial result', doc: 'staging/e1i-prereg.md' },
   E1k: { name: "the groomer's own need", verdict: 'null (marginal), off', doc: 'staging/e1k-prereg.md' },
   E1n: { name: 'weaning as a decision', verdict: 'provisional keep candidate (one prescription fewer); a null as a weaning mechanism', doc: 'staging/e1n-prereg.md' },
-  E1o: { name: 'what an older infant drinks', verdict: 'arm B (weanDeficit with weanDecide) a provisional keep candidate, its 5-seed confirm (S6) running; arm A (milkInDrive) a defect fix, null for the milk volume', doc: 'staging/e1o-prereg.md' },
+  E1o: { name: 'what an older infant drinks', verdict: 'arm B (weanDeficit with weanDecide) a provisional keep candidate, confirmed on 5 seeds as S6; arm A (milkInDrive) a defect fix, null for the milk volume', doc: 'staging/e1o-prereg.md' },
   E2a: { name: 'sleep pressure, light and heat', verdict: 'keep (provisional)', doc: 'staging/e2a-prereg.md' },
   E2b: { name: 'leaving the nest', verdict: 'partial; off alone', doc: 'staging/e2b-prereg.md' },
   E2c: { name: 'the cost of darkness', verdict: 'null alone', doc: 'staging/e2c-prereg.md' },
@@ -129,6 +129,7 @@ export const STAGES: Record<string, { name: string; verdict: string; doc: string
   E2e: { name: 'company in the nest', verdict: 'recorded, not kept alone', doc: 'staging/e2e-prereg.md' },
   E2f: { name: 'chimpanzee sleep amount', verdict: 'keep candidate (provisional) as a package of five switches; night safety confirmed on 5 seeds', doc: 'staging/e2f-prereg.md' },
   E2g: { name: 'water ledger', verdict: 'provisional keep candidate, confirmed on 5 seeds', doc: 'staging/e2g-prereg.md' },
+  E3b: { name: 'what stops a return to a crown just fed in', verdict: 'provisional keep candidate as a correction (removes no prescription); off, not in S6', doc: 'staging/e3b-prereg.md' },
   E3: { name: 'urgency', verdict: 'stopped after 3 iterations; off', doc: 'staging/e3-prereg.md' },
   E4a: { name: 'slow hormone-like states', verdict: 'keep (provisional)', doc: 'staging/e4a-prereg.md' },
   E4b: { name: 'fast arousal', verdict: 'keep (provisional) with endoRainDisplay', doc: 'staging/e4b-prereg.md' },
@@ -163,6 +164,7 @@ export const IN_STACK_BECAUSE: Record<string, string> = {
   rhythmFreeNight: 'part of the E2f package (night safety confirmed on 5 seeds)',
   sleepChimp: 'part of the E2f package (night safety confirmed on 5 seeds)',
   preyKanyawara: 'a site-matched input ([L])',
+  weanDecide: 'with E1o\'s weanDeficit (arm B), confirmed on 5 seeds as S6',
 };
 
 const L = 16, S = 288, R = 584, LW = 208, SW = 232, RW = 232;
@@ -216,7 +218,7 @@ export const DIAGRAMS: DiagramSpec[] = [
   {
     key: 'feeding', cap: 'From a meal to the next feeding choice', nav: 'Feeding', title: 'Feeding and foraging',
     take: 'Hunger now comes from an energy ledger and a gut. What is still fitted is how far a meal is worth walking, how fast a crown empties and how fast an animal walks.',
-    desc: 'Flowchart of feeding on the candidate stack: food energy and bulk, the gut, reserves and hunger feed the value of feeding options, with fitted trip weights still attached; a crown-sharing layer (E5c) is recorded, off.',
+    desc: 'Flowchart of feeding on the candidate stack: food energy and bulk, the gut, reserves and hunger feed the value of feeding options, with fitted trip weights still attached; a return valued by the crop left (E3b) and crown sharing (E5c) are layers outside the stack.',
     w: 832, h: 616,
     nodes: [
       { k: 'food', x: L, y: y(0), w: LW, h: 72, t: 'Food energy and bulk', s: 'kcal and dry matter per minute', st: 'inp',
@@ -248,6 +250,8 @@ export const DIAGRAMS: DiagramSpec[] = [
         text: 'How many units of fruit an animal takes from a crown per hour: it sets how fast a crown empties and how long a visit lasts in a trip\'s value. Fitted in C5a against T-ACT-2 and T-RNG-4.' },
       { k: 'feed', x: S, y: y(5), w: SW, h: 72, t: 'Feed, walk or eat leaves', s: 'forage · travel', st: 'des',
         text: 'The options go to the choice. Feeding fills the gut at the food\'s rate until the crown\'s share runs out or the animal stops.' },
+      { k: 'e3b', x: L, y: y(3), w: LW, h: 84, t: 'A return valued by\nthe crop left (E3b)', s: 'revisitByCrop', st: 'lay', layer: { tag: 'CANDIDATE', sw: ['revisitByCrop'], stage: 'E3b' },
+        text: 'A crown just fed in is devalued by 0.5, fading with a 12-hour time constant, whatever is left in it (revisitW, design, no source). E3b would value it like any other crown, by the crop the animal believes is left. On S5 in quick mode: viable, nursing mothers in balance, walking 27–36% less and hunting inside its band, but the fruit share rises above its band (0.85) and animals visit fewer crowns. A correction that removes no prescription; off, not in S6.' },
       { k: 'e5c', x: R, y: y(5), w: RW, h: 88, t: 'A crown shared by\nits feeders (E5c)', s: 'crownShare', st: 'lay', layer: { tag: 'RECORDED', sw: ['crownShare'], stage: 'E5c' },
         text: 'Would make other feeders cost the share of the bout they take, and value a crown just fed in by the crop believed left, with two crop-blind design terms off (the revisit devaluation and the habitat-wide crowding cost). Viable, mothers better and males walking 30% less, but none of three valuations made feeders follow the crop: party members feed one or two at a time (1.3 per crown), so the crop never limits them.' },
     ],
@@ -258,9 +262,10 @@ export const DIAGRAMS: DiagramSpec[] = [
       { f: 'trip', t: 'opts', fs: 'l', ts: 'r', fo: -8, to: 0, kind: 'side' }, { f: 'speed', t: 'opts', kind: 'side' },
       { f: 'crop', t: 'feed', kind: 'side' },
       { f: 'e5c', t: 'opts', fs: 'l', ts: 'r', fo: 0, to: 16, kind: 'lay' },
+      { f: 'e3b', t: 'opts', fs: 'r', ts: 'l', fo: 0, to: -16, kind: 'lay' },
     ],
     notes: [
-      'On S5 the feeding, grooming and rest rows of the activity budget are in their bands, and no animal starves in 5 seeds × 60 days (two deaths, both illness) (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
+      'On S5 the feeding, grooming and rest rows of the activity budget are in their bands. No animal starves on S5 or S6 in 5 seeds × 60 days (S5: two deaths, both illness; S6: none) (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
       'Open: nursing mothers stop eating with room in the gut, so the limit is their appetite and their day, not the gut wall (<a href="staging/e1h-prereg.md">e1h-prereg.md §9</a>, <a href="staging/e1i-prereg.md">e1i-prereg.md</a>).',
     ],
   },
@@ -323,7 +328,7 @@ export const DIAGRAMS: DiagramSpec[] = [
         now: 'In the dark a nest bout runs until rising light wakes the animal; in changing light the short 4–9 minute bout; in full light the day bout. While the light rises, an animal re-decides at the end of each bout (E2a, E2b).' },
       { k: 'night', x: S, y: y(5), w: SW, h: 72, t: 'No menu at night', s: 'menu.ts: night, dusk', ids: ['lit:nightMenu', 'lit:duskMenu'],
         before: 'After dark a rules-driven chimp could only nest, rest, nurse, flee, alarm, shelter or submit (plus self-defence). At dusk a last feed, drink, groom, call and a few more stayed open.',
-        now: 'Rules-driven chimps choose from the full menu at night; sleep, darkness and company keep them in their nests. On S5 adults are out of a nest 2.73% of the night, under the 3.3% line. Models keep the menus.' },
+        now: 'Rules-driven chimps choose from the full menu at night; sleep, darkness and company keep them in their nests. On S6 adults are out of a nest 2.77% of the night, under the 3.3% line. Models keep the menus.' },
       { k: 'amount', x: L, y: y(0), w: LW, h: 72, t: 'Chimpanzee sleep amount', s: 'sleepDriveShift', st: 'inp', ps: ['sleepDriveShift'],
         text: 'Captive chimpanzee sleep measured by EEG, 9.7 hours, lowers both thresholds of the sleep gate in place of the human amount (E2f).' },
       { k: 'light', x: L, y: y(1), w: LW, h: 72, t: 'Light at the eyes', s: 'sun · cloud · canopy', st: 'inp', ps: ['skyLuxSun', 'skyLuxNight'],
@@ -375,8 +380,8 @@ export const DIAGRAMS: DiagramSpec[] = [
   // ---------------------------------------------------------------------------------------------------------------
   {
     key: 'nursing', cap: 'From milk to weaning', nav: 'Nursing and weaning', title: 'Nursing and weaning',
-    take: 'Mothers now pay for the milk their infants drink. Weaning is still a dice roll and a drawn age; the mother\'s decision in her own deficit\'s currency (E1o) would replace the roll and bring milk below the cap, but weaning still does not emerge.',
-    desc: 'Flowchart of nursing and weaning on the candidate stack: the mother pays for milk, nursing bouts are valued by the milk they deliver, the mother refuses by a roll, and weaning age is drawn; two E1o arms outside the stack would count milk at what the gland gives and let the mother decide by her deficit.',
+    take: 'Mothers pay for the milk their infants drink and decide, by their own deficit, when to let them suckle: the weaning roll is gone. Milk now falls with the infant\'s age, but weaning itself does not emerge; its age is still drawn.',
+    desc: 'Flowchart of nursing and weaning on the candidate stack: the mother pays for milk, nursing bouts are valued by the milk they deliver, the mother lets a bout run by comparing her deficit with her infant\'s, and weaning age is drawn; an E1o arm outside the stack would count milk at what the gland gives.',
     w: 832, h: 424,
     nodes: [
       { k: 'milk', x: S, y: y(0), w: SW, h: 72, t: 'Mothers pay for milk', s: 'lactation and pregnancy timers out', ids: ['hungerLactationPerH', 'hungerPregnancyPerH'],
@@ -384,8 +389,9 @@ export const DIAGRAMS: DiagramSpec[] = [
         now: 'The ledger charges a mother for the milk her infant drinks, up to a human-scaled yield, and for gestation (E1).' },
       { k: 'bout', x: S, y: y(1), w: SW, h: 72, t: 'What a nursing bout is worth', s: 'ledgerNurseBout', st: 'des', ps: ['ledgerLetDownS', 'ledgerMilkYieldCoef'],
         text: 'A bout is worth the share of a full suckling rate it delivers over its time, including the wait for milk to flow (54 s, a human value). Infants also suckle in the mother\'s nest at night (E1c, E1f). Design terms replaced design terms; no prescription.' },
-      { k: 'refuse', x: S, y: y(2), w: SW, h: 72, t: 'Mother refuses the nipple', s: 'weanRefuseMaxP', ids: ['weanRefuseMaxP'], ps: ['weanRefuseAgeY', 'weanRefuseRampY'],
-        text: 'From 3.2 years of the infant\'s age, the mother refuses a bout with a probability that rises over 1.8 years to 0.8. No field study measures refusal by infant age (E1n\'s audit).' },
+      { k: 'refuse', x: S, y: y(2), w: SW, h: 72, t: 'The mother decides', s: 'weaning roll switched out', ids: ['weanRefuseMaxP'],
+        before: 'From 3.2 years of the infant\'s age the mother refused a bout by a roll whose chance rose over 1.8 years to 0.8 (weanRefuseAgeY, weanRefuseRampY, design). No field study measures refusal by infant age (E1n\'s audit).',
+        now: 'She lets a bout start and go on while her infant\'s reserve deficit, relative to its store, is at least her own, and while she sleeps her last decision stands (E1n\'s decision, E1o\'s currency). On S6 milk at 1–2, 2–3 and 3–4 years falls to 238, 198 and 190 kcal a day (cap 307).' },
       { k: 'wean', x: S, y: y(3), w: SW, h: 72, t: 'Weaning age', s: 'drawn between 4.1 and 5.2 y', st: 'inp', ps: ['weanAgeMinY', 'weanAgeSpanY'],
         text: 'Each infant\'s weaning age is drawn between 4.1 and 5.2 years. Classed input by the ledger, although the weaned-age target (T-INF-3) is built in while these values set it (E1n\'s audit). Nothing in the model drives milk to zero before it (E1o).' },
       { k: 'size', x: L, y: y(1), w: LW, h: 72, t: 'Infant intake by size', s: 'ledgerInfantIntake', st: 'des', ps: ['ledgerMassBirthKg'],
@@ -395,20 +401,19 @@ export const DIAGRAMS: DiagramSpec[] = [
       { k: 'e1oA', x: R, y: y(0), w: RW, h: 88, t: 'Milk counted at what\nthe gland gives (E1o, A)', s: 'milkInDrive', st: 'lay',
         layer: { tag: 'DEFECT FIX', sw: ['milkInDrive'], stage: 'E1o' },
         text: 'An unweaned infant\'s hunger counted milk at the full suckling rate all day; with the switch it counts what its mother\'s gland holds and will make. Infants then sit at their set point and drink the same: a defect fix, null for the milk volume. Not tested together with arm B.' },
-      { k: 'e1oB', x: R, y: y(2), w: RW, h: 88, t: 'The mother decides by\nher deficit (E1o, B)', s: 'weanDecide · weanDeficit', st: 'lay',
-        layer: { tag: 'CANDIDATE', sw: ['weanDecide', 'weanDeficit'], stage: 'E1o' },
-        text: 'She lets a bout start and go on while her infant\'s reserve deficit, relative to its store, is at least her own, and while she sleeps her last decision stands. E1n\'s decision alone (weanDecide) only moved refused day milk to the night. With both, milk at 1–4 years falls below the cap and with age (240, 224, 213 kcal a day against 307), nursing mothers stop losing reserve (−0.114 → +0.010% of the store a day) and infants eat 27–52% more of their own food; viable and night safe. Weaning still does not emerge. Quick mode; the 5-seed confirm (S6) is running.' },
+      { k: 'e1oB', x: R, y: y(2), w: RW, h: 88, t: 'Her deficit against\nher infant\'s (E1o)', s: 'weanDeficit', st: 'des', sw: ['weanDeficit'],
+        text: 'The currency of the mother\'s decision: her reserve deficit against her infant\'s, each relative to its store (equal weights, from equal relatedness; design), and a refusal that stands while she sleeps. With E1n\'s decision alone, her hunger against the infant\'s own-food drive, refused day milk was drunk at night and milk stayed at the cap.' },
     ],
     edges: [
       { f: 'milk', t: 'bout', kind: 'main' }, { f: 'bout', t: 'refuse', kind: 'main' }, { f: 'refuse', t: 'wean', kind: 'main' },
       { f: 'size', t: 'bout', kind: 'side' }, { f: 'grow', t: 'bout', fs: 'r', ts: 'l', to: 20, mx: 256, kind: 'side' },
       { f: 'e1oA', t: 'bout', fs: 'l', ts: 'r', kind: 'lay' },
-      { f: 'e1oB', t: 'refuse', fs: 'l', ts: 'r', fo: -8, to: 0, kind: 'lay' },
+      { f: 'e1oB', t: 'refuse', fs: 'l', ts: 'r', fo: -8, to: 0, kind: 'side' },
     ],
     notes: [
-      'Infants are viable on the ledger and nurse in band; weaning comes at about 6 years against 4.7 in the field (<a href="staging/e1f-prereg.md">e1f-prereg.md</a>).',
-      'On S5 infants of 1–4 years still drink the full milk cap (307–309 kcal a day), so mothers pay a full lactation into the fourth year and lose 0.23% of their store a day (<a href="staging/e1o-prereg.md">e1o-prereg.md</a>, <a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
-      'Open: infants grow at the captive rate (3.6 kg a year against about 1.6 at Gombe), and nothing drives milk to zero before the drawn weaning age (<a href="staging/e1o-prereg.md">e1o-prereg.md §5</a>).',
+      'On S6 milk at 1–2, 2–3 and 3–4 years falls to 238, 198 and 190 kcal a day (cap 307), nursing mothers lose 0.125% of their store a day instead of 0.244, and their balance improves as the infant grows (−79, −65, −43 kcal a day) (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, S6).',
+      'The cost: infants now carry part of the deficit. Their reserves fall 0.11–0.15% of the store a day while they still grow at the captive rate (3.6 kg a year against about 1.6 at Gombe); no infant died in 90 days (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, <a href="staging/e1o-prereg.md">e1o-prereg.md §5</a>).',
+      'Open: nothing drives milk to zero before the drawn weaning age (<a href="staging/e1o-prereg.md">e1o-prereg.md §5</a>).',
     ],
   },
   // ---------------------------------------------------------------------------------------------------------------
@@ -419,7 +424,7 @@ export const DIAGRAMS: DiagramSpec[] = [
     w: 832, h: 328,
     nodes: [
       { k: 'need', x: S, y: y(0), w: SW, h: 72, t: 'Social need', s: 'socialAwakePerH · socialSleepPerH', ids: ['socialAwakePerH', 'socialSleepPerH'],
-        text: 'Loneliness rises on fixed timers, 0.035 per hour awake and 0.01 asleep; grooming, play and nursing restore it. The ledger ties it to the grooming-share target (T-ACT-3). On S5 it also scales what a companion\'s company is worth (E5a).' },
+        text: 'Loneliness rises on fixed timers, 0.035 per hour awake and 0.01 asleep; grooming, play and nursing restore it. The ledger ties it to the grooming-share target (T-ACT-3). Since S5 it also scales what a companion\'s company is worth (E5a).' },
       { k: 'groom', x: S, y: y(1), w: SW, h: 72, t: 'What grooming is worth', s: 'need · bond · kin · reciprocity', st: 'des',
         text: 'Need, bond, kinship, reciprocity, rank and an invitation, less tension, distance, hunger, rain and night: score weights written in the code (design, not counted).' },
       { k: 'play', x: R, y: y(1), w: RW, h: 72, t: 'What play is worth', s: 'playfulness · energy · age', st: 'des',
@@ -472,7 +477,7 @@ export const DIAGRAMS: DiagramSpec[] = [
       { f: 'retry', t: 'go', fs: 'r', ts: 'l', kind: 'side' }, { f: 'callers', t: 'go', fs: 'l', ts: 'r', kind: 'side' },
     ],
     notes: [
-      'On S5 parties average 3.38 animals (band 3–9), males walk 2.73 km a day (S3 2.93, S4 3.43), and the travel share sits at its band\'s edge (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, S5).',
+      'On S5 parties average 3.38 animals (band 3–9), males walk 2.73 km a day (S3 2.93, S4 3.43; S6 2.68), and the travel share sits at its band\'s edge (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
       'E5a passed on five seeds on the reference stack (prescriptions 103 → 97, sums inside noise). On the integrated stack without E5b\'s margin it added half a kilometre of walking a day (<a href="staging/e5a-prereg.md">e5a-prereg.md</a>, <a href="staging/e5b-prereg.md">e5b-prereg.md §8</a>).',
       'Open: party size does not track crop size, the party-size band (3–9) has no recorded derivation, and the same margin for following and joined trips is untested (<a href="staging/e5a-prereg.md">e5a-prereg.md §7</a>, <a href="staging/e5b-prereg.md">e5b-prereg.md §8</a>).',
     ],
@@ -480,7 +485,7 @@ export const DIAGRAMS: DiagramSpec[] = [
   // ---------------------------------------------------------------------------------------------------------------
   {
     key: 'calls', cap: 'One value behind six kinds of call, and what listeners do', nav: 'Calls', title: 'Calls',
-    take: 'Six call rules that were hazards, coins, quotas or clock windows are now one value comparison, and on S5 what a listener does with a call is valued by company too. Greetings, the sound of calls and how far a call is worth walking are still prescribed.',
+    take: 'Six call rules that were hazards, coins, quotas or clock windows are now one value comparison, and since S5 what a listener does with a call is valued by company too. Greetings, the sound of calls and how far a call is worth walking are still prescribed.',
     desc: 'Diagram of calls on the candidate stack: one call value (gain to listeners against cost to the caller) drives six call types that were prescribed before; listeners join after a hoo and go to callers by the company they gain; a greeting quota, call acoustics and the distance scale of walks to callers remain prescribed.',
     w: 832, h: 648,
     zones: [{ x: 16, y: 312, w: 800, h: 136, label: 'Listeners' }, { x: 16, y: 472, w: 800, h: 160, label: 'Outside the call value' }],
@@ -771,7 +776,7 @@ export const OVERVIEW = {
       'body:sleep': 'Sleep pressure, a circadian sleep gate and light (E2a, E2d, E2f).',
       'body:heat': 'A heat balance; at Kibale it stores almost no heat (E2a). The midday rest clock it replaced acted on options and bouts.',
       'body:endo': 'Slow stress, arousal and affiliation states, and a fast arousal state (E4a, E4b).',
-      'body:social': 'Loneliness still rises on fixed timers. On S5 it also scales what a companion\'s company is worth (E5a).',
+      'body:social': 'Loneliness still rises on fixed timers. Since S5 it also scales what a companion\'s company is worth (E5a).',
     } as Record<string, string>,
   },
 };

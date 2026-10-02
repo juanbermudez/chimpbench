@@ -35,14 +35,15 @@ export const STACKS = {
 } satisfies Record<string, Stack>;
 /** The stack this page shows. Moving the page to another stack is this line, plus the prose its results change (the
  *  check names every box and layer that no longer fits). */
-export const STACK: Stack = STACKS.S5;
+export const STACK: Stack = STACKS.S6;
 
 /** Stages outside the stack, each measured on it (handoff §0 and §3, and each stage's pre-registration). `verdict`
  *  replaces the stage's own where the layer is one arm of a stage. A layer whose switches the stack holds is dropped. */
 export interface Layer { key: string; stage: string; label: string; status: string; verdict?: string; on: Record<string, number> }
 export const ALL_LAYERS: Layer[] = [
-  { key: 'E1o-B', stage: 'E1o', label: "E1o arm B, the mother's deficit decides", status: 'provisional keep candidate; S6 confirm running', verdict: 'arm B (weanDeficit with E1n\'s weanDecide): provisional keep candidate in quick mode; its 5-seed confirm (S6) is running', on: { weanDecide: 1, weanDeficit: 1 } },
+  { key: 'E1o-B', stage: 'E1o', label: "E1o arm B, the mother's deficit decides", status: 'provisional keep candidate, confirmed as S6', verdict: 'arm B (weanDeficit with E1n\'s weanDecide): provisional keep candidate, confirmed on 5 seeds as S6', on: { weanDecide: 1, weanDeficit: 1 } },
   { key: 'E1o-A', stage: 'E1o', label: 'E1o arm A, milk counted at what the gland gives', status: 'a defect fix, null for the milk volume', verdict: 'arm A (milkInDrive): a defect fix, null for the milk volume; not tested with arm B', on: { milkInDrive: 1 } },
+  { key: 'E3b', stage: 'E3b', label: 'E3b, a return valued by the crop left', status: 'provisional keep candidate as a correction, off', on: { revisitByCrop: 1 } },
   { key: 'E5c', stage: 'E5c', label: 'E5c, a crown shared by its feeders', status: 'recorded, off', on: { crownShare: 1 } },
   { key: 'E4e', stage: 'E4e', label: 'E4e, a hunt valued as food', status: 'held off', on: { huntValue: 1 } },
   { key: 'E1k', stage: 'E1k', label: "E1k, the groomer's own need", status: 'recorded, off', on: { groomNeedDyad: 1 } },
