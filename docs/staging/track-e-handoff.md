@@ -1,4 +1,4 @@
-# Track E handoff (integrator; refreshed 2 October 2026, 13:10)
+# Track E handoff (integrator; refreshed 2 October 2026, 17:55)
 
 Read this before anything else. It replaces `docs/staging/track-e-resume.md`. The canonical copy is on branch
 `track-e`; a copy sits in `~/Desktop/mgogo-session/` for the next session to find.
@@ -30,7 +30,14 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   (`bench-run/artifacts/validation/e/s5q/`, script `integrator/s5q.sh <label> [rgTemperature]`): **done** 13:29, all
   four viable and clean; fitted 3.00 / 2.71 / 3.75 / 3.71, held-out without the rare rows 5.24 / 5.19 / 5.46 / 5.29;
   both agents told. A quick run takes 3–6 min and energy-diagnose ~3 min.
-- **S5 done: the best integrated candidate so far** (e-stack2-confirm.md; S4 + `companyMargin`): 77 prescriptions
+- **S6 done: now the best integrated candidate** (e-stack2-confirm.md "S6 results"; S5 + `weanDecide` + `weanDeficit`):
+  76 prescriptions, viable, night safe (2.77%, T-RHY-5 0.0277), sums level with S5's four confirm runs; nursing mothers'
+  deficit halved (−0.244 → −0.125%/day), milk at 1–4 y below the cap and falling with age, mothers recovering as infants
+  grow. Cost: infants' reserves fall 0.11–0.15%/day while they still grow at the captive rate. Energy re-runs of S5c2
+  and S5c3 pending (killed at 17:3x by the background limit while the machine sat at load ~970 from other apps: hundreds
+  of iOS Simulator and computer-use node processes; not ours, not killed). Watch: T-IGE-3 is unstable on few events
+  (one S5 re-draw scored 21.6); treat it like a rare row in readings. Candidates outside S6: E3b `revisitByCrop`.
+- **S5 (superseded by S6)** (e-stack2-confirm.md; S4 + `companyMargin`): 77 prescriptions
   (today's model 135), viable, night safe; fitted better than R beyond noise (z −3.2) and level with or better than
   today's model (z −1.8); feeding, grooming, rest, party size in band, travel at its edge (0.258 / 0.216); males walk
   2.73 km; mothers −0.23%/day, juveniles −0.09%/day. Held-out without the rare rows still worse than today's model
