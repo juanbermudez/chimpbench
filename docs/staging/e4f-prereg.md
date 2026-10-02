@@ -149,7 +149,7 @@ the Kanyawara study site; 26–36 years), and "no difference … between the unl
 K-30 value stands for the community's range [L]. 142 groups on the 8 × 8 km map. Compressed profile: unchanged.
 Removed: nothing (an input correction; `removesNothing` in the switch registry).
 
-Not changed, with the reason: group size (14–37, a literal, `src/sim/generation.ts:316`; Kanyawara's mean 53 [L] does
+Not changed, with the reason (lines at 6781cb7): group size (14–37, a literal, `src/sim/generation.ts:316`; Kanyawara's mean 53 [L] does
 not enter the encounter rate, a point has no size; it would change hunting outcomes, deferred); colobus speed and
 night travel (`src/sim/ecology.ts:30`, literals; no field day range reached: null; bounded at ≤ 10% by D0); group
 spread (a point; Kibale red colobus groups spread 50–1000 m, chapman2010ecol citing unpublished data, which would raise
