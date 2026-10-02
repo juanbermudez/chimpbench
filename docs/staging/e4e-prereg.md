@@ -347,3 +347,12 @@ at Kanyawara) is stronger than that.
 Quick reading under §7: viability passes, held-out without the rare rows is not up beyond noise, the count falls, and
 hunting does not vanish (truth 0.072 hunts per community-day) — a provisional keep candidate on the keep rule's legs,
 with T-HUN-3 turned from pass to fail. The confirm (H1c) decides.
+
+#### Merge and final checks
+
+`track-e` (23f189b: E1i, handoff, E4c confirm record) merged once, at 88a1cbf (conflicts: the switch list in
+`tests/sim-track-e.test.ts`, union; `docs/research.md`, both addenda kept; `src/sim/params.gen.ts`, ours, regenerated).
+R stays hash-identical at 2 days (seeds 48 and 7) with `huntValue` and the E1i switches at 0. At 02e7777: `gen-params
+--check` clean, `tsc` clean, `pnpm test` 656 tests, 655 pass, 0 fail, 1 skipped; `git ls-files data/raw node_modules`
+prints nothing. Prescription count (merged head): R 103, R + `huntValue` 102; with every switch off 135 either way (the
+switch acts only with the ledger and its drive).
