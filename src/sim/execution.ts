@@ -8,6 +8,7 @@ import { paramsOf, type Params } from './params';
 import { eat, fallbackKcalPerH, fruitKcalPerUnit, glandEmpty, gutRoom, intakeSize, ledgerOn, nurseTick, sharePlant } from './energy';
 import { snareIntake } from './snares';
 import { lightArousal } from './rhythm';
+import { drinkTick, waterOn } from './water';
 import { darkOn, paceAt, visionNow } from './light';
 import { noteFeeders } from './departure';
 import { doTransfer, recordCopulation } from './reproduction';
@@ -575,6 +576,8 @@ export function executeAction(world: World, c: Chimp): void {
       if (!w) return finish(world, c);
       // drinking spots sit on the stream bank; drink at the spot itself
       if (moveTo(world, c, w.position[0], 0, w.position[2], WALK, 0.9)) {
+        // stage E2g (waterLedger): drink at the measured rate until the deficit is replaced (water.ts)
+        if (waterOn(P)) { if (drinkTick(c, P)) finish(world, c); return; }
         c.thirst = clamp(c.thirst - P.drinkThirstPerH * TICK_HOURS);
         if (c.thirst < 0.05) finish(world, c);
       }
@@ -793,7 +796,7 @@ export function executeAction(world: World, c: Chimp): void {
         x.prog += TICK_SECONDS;
         const k = clamp((x.prog - P.ledgerLetDownS) / TICK_SECONDS);
         const drunk = k > 0 ? nurseTick(c, m, P, k) : 0;
-        if (k > 0) c.thirst = clamp(c.thirst - 0.4 * TICK_HOURS * k);
+        if (k > 0 && !waterOn(P)) c.thirst = clamp(c.thirst - 0.4 * TICK_HOURS * k); // stage E2g: milk water is booked by eat
         c.social = clamp(c.social + 0.2 * TICK_HOURS);
         m.energy = clamp(m.energy - 0.02 * TICK_HOURS);
         if (c.hunger < NURSE_DONE || (k > 0 && drunk < k * P.ledgerMilkKcalPerMin * 60 * TICK_HOURS * (1 - 1e-9))) { x.prog = 0; finish(world, c); }
@@ -801,7 +804,7 @@ export function executeAction(world: World, c: Chimp): void {
       }
       if (ledgerOn(P)) nurseTick(c, m, P); // stage E1: milk into the infant's gut, its cost out of the mother's reserves
       else c.hunger = clamp(c.hunger - 0.5 * TICK_HOURS * (1 - c.age / 6));
-      c.thirst = clamp(c.thirst - 0.4 * TICK_HOURS);
+      if (!waterOn(P)) c.thirst = clamp(c.thirst - 0.4 * TICK_HOURS); // stage E2g: milk water is booked by eat
       c.social = clamp(c.social + 0.2 * TICK_HOURS);
       m.energy = clamp(m.energy - 0.02 * TICK_HOURS);
       // stage E1d (ledgerNurseByMilk): the bout also ends when the gland can no longer sustain the suckling rate
@@ -954,7 +957,7 @@ function forageTick(world: World, c: Chimp): void {
   else { intake = Math.min(t.fruit, want); t.fruit -= intake; }
   if (led) eat(c, P, intake * kcalPerFruit, fig ? 'fig' : 'drupe');
   else c.hunger = clamp(c.hunger - intake * P.fruitHungerFactor);
-  c.thirst = clamp(c.thirst - intake * P.fruitThirstFactor);
+  if (!waterOn(P)) c.thirst = clamp(c.thirst - intake * P.fruitThirstFactor); // stage E2g: fruit water is booked by eat (water.ts)
   c.skills.foraging = clamp(c.skills.foraging + (1 - c.skills.foraging) * TICK_HOURS * 0.002);
   if (c.hunger < 0.06) finish(world, c);
   else if (t.fruit < 0.02) { forget(c, t.id, 'tree'); finish(world, c); } // eatFruit leaves the current crop in t.fruit

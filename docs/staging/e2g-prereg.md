@@ -170,3 +170,88 @@ So a day of R's feeding brings in ~1.2–1.7 L of food water and leaves a surplu
 while a night without food builds a deficit of 1.7–2.2% of body mass by dawn (faeces and urine continue: the faecal term
 is a human water fraction applied to E1b's fibre-only faecal dry matter, passed continuously). Expectation: thirst at
 dawn, sated by a drink or by a fruit breakfast (~9 mL of water per feeding minute on drupes), and little thirst by day.
+
+## 5. Mechanism, switch, arms, predictions, kill criterion (registered before any run of changed code)
+
+**Rule removed.** The thirst timers and their conversions: `thirstAwakePerH`, `thirstSleepPerH`, `thirstHotPerH`
+(outcome-encoding timers), `thirstHotC`, `thirstRainRelief` (design), `fruitThirstFactor` (tuned in C5a against T-ACT-2
+and T-RNG-4), `drinkThirstPerH` (timer) and `drinkDistScaleM` (tuned in C5a). Switch **`waterLedger`** (0 = today,
+hash-identical; read only with `energyLedger` and `ledgerDigesta` 1; regulated evaporation needs `rhythmHeat`).
+Prescription count (`prescription-ledger --count`): R 103 → R + `waterLedger` **97** (all six counted prescriptions out
+while E3's `urgencyChoice` and `urgencyPersist` are 0; ACTIVE_WHEN in scripts/lib/prescriptions.ts).
+
+**Mechanism** (src/sim/water.ts; hooks in life.ts needs, energy.ts eat and nurseTick, rhythm.ts heatStep, execution.ts
+drink/forage/nurse, candidates.ts drink offer). Per individual, a deficit `def` (mL below euhydration, opened at 0):
+- in: food water when eaten (the food's dry matter per kcal from E1b × water share ÷ dry share; §1.1 shares), metabolic
+  water (0.14 mL per kcal of the energy ledger's spending, milk energy exported excluded), drinking (3.1 mL/kg/min at a
+  site, until the deficit is replaced);
+- out: regulated evaporation (the evaporative part of E2a's heat loss, `heatOut.evapW`, ÷ 2,426 J/g), insensible
+  respiration and skin diffusion (Fanger / ISO 7730 at the energy ledger's metabolic rate per m² of skin and the air's
+  vapour pressure from `env.temperature` and `env.humidity`), faecal water (E1b's passed dry matter × 0.75 ÷ 0.25),
+  obligatory urine (10.7 mL/kg/day), milk water (the mother loses what her infant's eat books in), and any water above
+  euhydration as urine at once;
+- thirst = clamp((def ÷ mass as % − 1) ÷ (2 − 1)); the drink offer (age ≥ 3, thirst > 0) is worth thirst × 1.5 × the
+  share of the trip spent drinking (deficit at the drinking rate against the walk at `walkMps`: a food trip's valuation
+  under the ledger, the share of the full intake rate delivered, walk included) − 0.05 (the offer's existing weights).
+  No hourly thirst rate, no hot-hour bonus, no fruit factor, no distance scale.
+- Tests (tests/sim-water.test.ts, 7 pass): conservation in − out = −Δdef per individual over a day in both profiles,
+  milk water in = milk water out; switch-off identity (default, with the ledgers, and the switch alone without them);
+  the six timers have no effect with the switch on; determinism however ticks are batched; saves round-trip; thirst
+  scale and drinking; Fanger at 25 °C and 80% RH within 350–500 g/m²/day.
+
+**Smoke tests** (≤ 2 days, switch on) check the readouts and the budget; a defect found there is fixed and logged here
+before the arm runs (not an iteration).
+
+**Known defects and limits, deferred (file:line):**
+1. src/sim/urgency.ts:108, :115–116 (E3, off in every arm here): with `urgencyChoice` or `urgencyPersist` 1, payOf still
+   values drinking by `drinkThirstPerH` and fruit by `fruitThirstFactor` (intake.ts:69, :76) on the ledger's thirst.
+2. src/sim/energy.ts sharePlant: a shared piece moves without water (the giver booked it when eating). Minor.
+3. src/sim/candidates.ts drink offer gate `c.age >= 3` (existing): dependants under 3 y never drink.
+4. Water sites hold no stock and no kind (src/sim/generation.ts:260, :272): every site fills any deficit; T-RHY-7 not
+   scorable.
+5. Skin diffusion is a human bare-skin model (fur not modelled); faecal dry matter is E1b's unfermented fibre only; the
+   energy of growth is counted as oxidised; dehydration has no effect on health or survival (the deficit is a readout
+   judged in viability below).
+6. The observer folds time at the water into feeding (src/field/categories.ts:47): T-ACT-1 falls by whatever drinking
+   time falls (R: 1.6–1.9% of daylight).
+
+**Arm (iteration 1).** W1 = R + `{"waterLedger":1}`. Quick mode (seeds 48, 7; 30 + 30 days; rules policy), from a
+frozen checkout of the commit that adds this section: `e-bench --quick --workers 1 --compare R-quick` and
+`water-diagnose` on both seeds. Judged against R's four quick realizations (`R-quick`, `NR1q`–`NR3q`; identity at this
+head shown in §4) by e-noise.md amendment 2: z = (arm − mean) ÷ (SD × √1.25), SD = max(registered quick SD, R's own
+spread); |z| > 2 is a result, reported with and without T-HUN-4 and T-BRD-1. Diagnosis readouts against R's diagnosis
+(one realization, §4).
+
+**Predictions (W1; registered ranges):**
+
+| Readout | R | W1 expected |
+| --- | --- | --- |
+| walks to water per adult-day | 2.6–3.1 | 0.3–1.5 |
+| drinking events per 12 h of daylight (truth, adults) | 2.0–2.3 | 0.3–1.5 |
+| minutes per event | 5.8–6.1 | 2–8 |
+| daylight minutes drinking (Gombe mothers 0.12%) | 1.6–1.9% | 0.1–0.7% |
+| adult events starting 07:00–09:00 | 28% | ≥ 35% (thirst after the night) |
+| walk to water (km/day) | 0.41–0.49 | 0.05–0.30 |
+| walks with mates that end split | 0.69–0.73 | 0.55–0.80 (the per-walk mechanics are unchanged) |
+| mean deficit (% of body mass), adult classes | — | 0.3–1.2; no class mean above 2 |
+| truth day range, males / mothers (km/day) | 2.20 / 1.70 | 1.55–2.00 / 1.30–1.60 |
+| T-RNG-4 (R mean ± SD 1.897 ± 0.126) | | 1.45–1.85 |
+| T-RNG-5 (0.706 ± 0.080) | | 0.65–0.90 |
+| T-PTY-1 (3.80 ± 0.15) | | 3.9–4.5 |
+| T-ACT-1 feeding (0.298 ± 0.009; includes drinking) | | 0.27–0.30 |
+| T-ACT-2 travel (0.152 ± 0.005) | | 0.11–0.145 |
+| T-ACT-3 grooming (0.243 ± 0.014) | | 0.25–0.32 |
+| fitted, held-out, held-out without T-HUN-4 and T-BRD-1 | | inside noise (\|z\| < 2); fitted may rise (A1: z +1.32) |
+| prescription count | 103 | 97 |
+| viability | pass | pass: no starvation, reserve slopes within R's range ± 0.05%/day |
+
+**Kill criterion (iteration 1).** (a) Physiology fails: any adult class's mean deficit above 2% of body mass, or an
+individual held above 5%: the inputs cannot be met through the model's access to water; stop and report. (b) Viability
+fails (a starvation death, or any class's reserve slope 0.05%/day below R's). **Keep rule** (Track E): viability passes,
+held-out not up beyond noise (z ≤ +2, both row sets), count down → provisional keep candidate, confirm recommended.
+
+## 6. Run log
+
+| Iteration | Registered (commit) | Arm | Status |
+| --- | --- | --- | --- |
+| 1 | this commit | W1 = R + `waterLedger` 1 | registered; smoke test next |

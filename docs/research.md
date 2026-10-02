@@ -2258,3 +2258,74 @@ lactating or anoestrous females against males, and the method behind each (docs/
   less gregarious than nonmothers and males: the infant safety hypothesis. *Behavioral Ecology and Sociobiology*
   59(4):561–570. [doi:10.1007/s00265-005-0081-0](https://doi.org/10.1007/s00265-005-0081-0) (title only; not verified).
 - batesByrne2009 and pontzerWrangham2004 are already cited; the entries above add findings.
+
+### Addendum: E2g water balance (2 October 2026)
+
+Evidence pass for stage E2g (the water ledger that replaces the thirst timers; `docs/staging/e2g-prereg.md` §1), 2 October
+2026, by two subagents with disjoint source lists. Inputs are physiology or physics; drinking rates are targets.
+
+- **Water in wild ape foods** [masi2015] (FT, PMC4495928) [M]. Western gorillas, Bai Hokou (CAR): dry-matter fraction of
+  fresh food 0.25 ± 0.09 for pulpy and 0.32 ± 0.11 for fibrous fruit (18 fruit species; fresh weighing, field and lab
+  drying): about 75% and 68% water. Use in E2g: ripe fruit 0.75 (`waterFruitFrac`); the stand-in for figs and fallback foods.
+- **Moisture of Bwindi gorilla foods** [rothman2006] (Abs) [M]: 127 plant parts of 84 species, moisture 7–96% of fresh
+  mass; values by food type in paywalled tables (not seen).
+- **Metabolic water** [blumstein2024] (FT, PMC11979454) [L]: oxidation yields 0.60 g of water per g of carbohydrate, 1.07
+  of fat, 0.41 of protein (0.15, 0.12 and 0.10 g per kcal). [sawka2015] (FT, PMC4672008) [L]: in sedentary humans
+  respiratory loss 250–350 mL/day, urine 500–1,000, faeces 100–200, insensible 450–1,900, metabolic water +250–350.
+- **Insensible evaporation, Fanger / ISO 7730** [rinjea2022] (FT, PMC9324884) [L]: respiratory latent heat 1.7×10⁻⁵ · M ·
+  (5,867 − pa) W/m², skin diffusion 3.05×10⁻³ · (5,733 − 6.99 · M − pa) W/m² (M metabolic rate per m², pa vapour pressure
+  in Pa); about 117 and 303 g/m²/day at 25 °C and 80% RH. Human bare skin.
+- **Faeces and urine** [rose2015] (FT, PMC4500995) [L]: human faeces a median 75% water (n 47; 63–86%; vegetarian 78.9%);
+  urine 1.42 L/day, 50–1,200 mOsm/kg. [popkin2010] (FT, PMC2908954) [L]: urine up to 1,400 mOsm/kg; a solute load of
+  900–1,200 mOsm/day needs 0.75–1.0 L/day of urine at most; maximum urine output about 1 L/h; plasma held at 275–290
+  mOsm/kg.
+- **Latent heat** [baker2019] (FT, PMC6773238): 2,426 J per g of evaporated sweat. Physics.
+- **Thirst and drinking** [armstrongKavouras2019] (FT, PMC6950074) [L]: thirst perceived from 1–2% body-mass loss; total
+  body water 60% of mass; "dehydrated humans drink to satiation rapidly across 3–10 min".
+- **Human water turnover** [yamada2022] (FT, PMC9764345) [L]: 5,604 people, ²H elimination; turnover 0.33 ± 0.09 L per MJ
+  spent; metabolic water about 10% of turnover; turnover rises with physical activity, mass, humidity and heat. Context.
+- **Chimpanzee sweat glands** [kamberov2018] (FT, PMC6289065) [M]: eccrine density in hairy skin about 10 × higher in
+  humans than in chimpanzees (4 chimpanzees; as used by E2a for `rhythmEvapW`). [hiley1976] (Abs) [M]: captive
+  chimpanzees' cutaneous moisture loss rose under heat to 40 °C (no rates in the abstract).
+- **Ape water turnover** [pontzer2021] (Abs only; full text behind a Cloudflare check, not in PMC) [M]: zoo and sanctuary
+  apes take in about 2.8 mL of water per kcal (humans 1.5); wild values are estimated, not measured. No isotope water
+  turnover of any wild great ape was found (moderate confidence). Nearest wild primate: [simmen2010] (FT, PMC2845615) [M],
+  doubly labelled water in wild ring-tailed and brown lemurs (Berenty): water flux 317–551 mL/day, 139–308 mL/kg/day,
+  2.1–3.7 mL/kcal.
+- **Drinking at Gombe: minutes, not bouts** [nelson2022] (FT, accepted manuscript, NSF PAR) [H] as drinking time. The
+  analysed counts are 1-min point samples scored as drinking ("ingestion of freestanding water"): 788 for mothers in
+  10,517 h and 352 for offspring in 10,680 h. Drinking takes about 0.12% of mothers' observed time (per-bin mean 0.001 ±
+  0.002), 0.055% of offspring's; mothers drink about 2.9 × more in the dry season (May–October; derived from the GLMM's
+  season estimate −1.060). No bout rate is printed: research.md's earlier "0.075 per hour, about 0.9 per 12-hour day" is
+  minutes of drinking, not drinks (T-RHY-6's staged field value carries the same error; correction staged in
+  e2g-prereg.md §1.3).
+- **Drinking at Kanyawara** [mackenzie2025] (FT, PMC12011317) [H]: all occurrences during 15-min party scans on full-day
+  follows, 2005–2018; an event is "any instance where an identified chimpanzee was observed drinking water"; 77.6% of the
+  3,993 events with a known location were at streams; females drank more than males. Observation effort is only in the
+  supplement (not retrieved): no rate per day.
+- **Drinking and dehydration at Taï and Fongoli** [wessling2018] (FT) [M]: "drinks per focal observation time" 0.059 ±
+  0.072 (unit not stated); Taï chimpanzees were as dehydrated as Fongoli's late in the dry season (urinary creatinine).
+- **Savanna and dry-season water** [lindshield2021] (FT, review) [L]: at Fongoli individuals "drink water almost daily"
+  (secondary); [peter2022] (FT, PMC9273564) [M]: Budongo Waibira has no permanent river, one pool in the December–March
+  dry season, wells dug in 7 dry seasons.
+- Not verified (2 routes each): conklinWrangham1994 (Kibale figs; ScienceDirect 403), wendeln2000 (no values in the
+  abstract), nguessan2009 (Springer bot check), whitford1976 (chimpanzee sweating; host blocked), gart2015 (dog lapping;
+  not open access), pontzer2021 full text, the mackenzie2025 supplement, McGrew et al. 1981 (Mt Assirik), Hunt & McGrew
+  2002, Wrangham 1977 (origin of "chimpanzees rarely drink").
+
+**Sources:**
+- *new* masi2015: Masi S, Mundry R, Ortmann S, Cipolletta C, Boitani L, Robbins MM 2015. The influence of seasonal frugivory on nutrient and energy intake in wild western gorillas. *PLoS ONE* 10(7):e0129254. [doi:10.1371/journal.pone.0129254](https://doi.org/10.1371/journal.pone.0129254) (FT, PMC4495928).
+- *new* rothman2006: Rothman JM, Dierenfeld ES, Molina DO, Shaw AV, Hintz HF, Pell AN 2006. Nutritional chemistry of foods eaten by gorillas in Bwindi Impenetrable National Park, Uganda. *American Journal of Primatology* 68(7):675–691. [doi:10.1002/ajp.20243](https://doi.org/10.1002/ajp.20243) (Abs).
+- *new* blumstein2024: Blumstein DM, Colella JP, Linder E, MacManes MD, Scheibe J 2024. High total water loss driven by low-fat diet in desert-adapted mice. *Journal of Mammalogy* 106(2):293–303. [doi:10.1093/jmammal/gyae093](https://doi.org/10.1093/jmammal/gyae093) (FT, PMC11979454).
+- *new* sawka2015: Sawka MN, Cheuvront SN, Kenefick RW 2015. Hypohydration and human performance: impact of environment and physiological mechanisms. *Sports Medicine* 45(Suppl 1):S51–S60. [doi:10.1007/s40279-015-0395-7](https://doi.org/10.1007/s40279-015-0395-7) (FT, PMC4672008).
+- *new* rinjea2022: Rînjea C, Chivu OR, Darabont D-C, et al. 2022. Influence of the thermal environment on occupational health and safety in automotive industry: a case study. *International Journal of Environmental Research and Public Health* 19(14):8572. [doi:10.3390/ijerph19148572](https://doi.org/10.3390/ijerph19148572) (FT, PMC9324884). Carries the Fanger / ISO 7730 equations.
+- *new* rose2015: Rose C, Parker A, Jefferson B, Cartmell E 2015. The characterization of feces and urine: a review of the literature to inform advanced treatment technology. *Critical Reviews in Environmental Science and Technology* 45(17):1827–1879. [doi:10.1080/10643389.2014.1000761](https://doi.org/10.1080/10643389.2014.1000761) (FT, PMC4500995).
+- *new* popkin2010: Popkin BM, D'Anci KE, Rosenberg IH 2010. Water, hydration, and health. *Nutrition Reviews* 68(8):439–458. [doi:10.1111/j.1753-4887.2010.00304.x](https://doi.org/10.1111/j.1753-4887.2010.00304.x) (FT, PMC2908954).
+- *new* baker2019: Baker LB 2019. Physiology of sweat gland function: the roles of sweating and sweat composition in human health. *Temperature* 6(3):211–259. [doi:10.1080/23328940.2019.1632145](https://doi.org/10.1080/23328940.2019.1632145) (FT, PMC6773238).
+- *new* armstrongKavouras2019: Armstrong LE, Kavouras SA 2019. Thirst and drinking paradigms: evolution from single factor effects to brainwide dynamic networks. *Nutrients* 11(12):2864. [doi:10.3390/nu11122864](https://doi.org/10.3390/nu11122864) (FT, PMC6950074).
+- *new* yamada2022: Yamada Y, Zhang X, Henderson MET, Sagayama H, et al. 2022. Variation in human water turnover associated with environmental and lifestyle factors. *Science* 378(6622):909–915. [doi:10.1126/science.abm8668](https://doi.org/10.1126/science.abm8668) (FT, PMC9764345).
+- *new* hiley1976: Hiley PG 1976. The thermoregulatory responses of the galago (*Galago crassicaudatus*), the baboon (*Papio cynocephalus*) and the chimpanzee (*Pan troglodytes*) to heat stress. *Journal of Physiology* 254(3):657–671. [doi:10.1113/jphysiol.1976.sp011251](https://doi.org/10.1113/jphysiol.1976.sp011251) (Abs).
+- *new* kamberov2018: Kamberov YG, Guhan SM, DeMarchis A, et al. 2018. Comparative evidence for the independent evolution of hair and sweat gland traits in primates. *Journal of Human Evolution* 125:99–105. [doi:10.1016/j.jhevol.2018.10.008](https://doi.org/10.1016/j.jhevol.2018.10.008) (FT, PMC6289065).
+- simmen2010, pontzer2021, nelson2022, mackenzie2025 and wessling2018 are already listed; the entries above add findings.
+- *new* lindshield2021: Lindshield S, Hernandez-Aguilar RA, Korstjens AH, et al. 2021. Chimpanzees (*Pan troglodytes*) in savanna landscapes. *Evolutionary Anthropology* 30(6):399–420. [doi:10.1002/evan.21924](https://doi.org/10.1002/evan.21924) (FT).
+- *new* peter2022: Péter H, Zuberbühler K, Hobaiter C 2022. Well-digging in a community of forest-living wild East African chimpanzees (*Pan troglodytes schweinfurthii*). *Primates* 63(4):355–364. [doi:10.1007/s10329-022-00992-4](https://doi.org/10.1007/s10329-022-00992-4) (FT, PMC9273564).

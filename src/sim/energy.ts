@@ -50,6 +50,7 @@
 import type { Chimp, World } from '../types';
 import { paramsOf, type Params } from './params';
 import { TICK_HOURS, TICK_SECONDS, ix, type ChimpX, type EnergyLedger } from './state';
+import { eatWater, milkWaterOut, waterOn } from './water';
 
 const J_PER_KCAL = 4184, G_MPS2 = 9.81, DAYS_PER_YEAR = 365.25;
 
@@ -469,6 +470,12 @@ export function gutRoom(c: Chimp, P: Params, kind: FoodKind = 'drupe'): number {
   return room > 0 ? room : 0;
 }
 
+/** Stage E2g (water.ts): dry matter (g) per kcal of formula energy of food `kind` (E1b's digesta; 0 without ledgerDigesta). */
+export function dryMatterPerKcal(P: Params, kind: FoodKind): number {
+  const D = rates(P).dig;
+  return D ? D.food[kind].g : 0;
+}
+
 /**
  * Eat up to `kcal` of formula energy of food `kind`: what fits goes into the gut. Returns the energy taken and refreshes
  * the hunger readout. Stage E1b: the food fills the foregut by its dry matter, and its fibre enters the books at its
@@ -491,6 +498,7 @@ export function eat(c: Chimp, P: Params, kcal: number, kind: FoodKind = 'drupe')
     L.gut += nf; L.dm! += dm; L.fib! += fib;
     L.in += nf + fib * P.digestaFermentKcalPerG; L.fin! += take; L.dmIn! += dm;
     if (energyTap.fn) energyTap.fn(c, 'eaten', take, kind);
+    if (waterOn(P)) eatWater(c, P, take, kind); // stage E2g: the food's water enters the body (water.ts)
   }
   setHunger(c, L, P);
   return take;
@@ -526,6 +534,7 @@ export function nurseTick(infant: Chimp, mother: Chimp, P: Params, frac = 1): nu
   if (milk <= 0) return 0;
   const cost = milk / P.ledgerMilkEff;
   ML.milk -= milk; ML.res -= cost; ML.out += cost;
+  if (waterOn(P)) milkWaterOut(mother, P, milk); // stage E2g: the milk's water leaves her (her infant's eat books it in)
   if (energyTap.fn) { energyTap.fn(mother, 'milk', cost); energyTap.fn(infant, 'suckled', milk); }
   return milk;
 }

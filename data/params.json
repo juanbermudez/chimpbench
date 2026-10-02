@@ -22330,6 +22330,298 @@
    "notes": "Walking speed. Compressed profile stylized; field profile from 2.7 km/day over ~21% of an 11.5 h day (effective speed including pauses)."
   },
   {
+   "id": "waterDrinkMlPerKgMin",
+   "group": "needs",
+   "value": 3.1,
+   "units": "mL/kg/min",
+   "range": [
+    2.0,
+    6.7
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    1000
+   ],
+   "calibrate": false,
+   "evidence": "L",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Addendum: E2g water balance): armstrongKavouras2019 (FT, PMC6950074)"
+   ],
+   "clock": "none",
+   "symbol": "water.ts drinkTick",
+   "file": "src/sim/water.ts",
+   "notes": "Stage E2g (waterLedger): water drunk per minute at a drinking site, per kg of body mass. Derived from human drinking: \"dehydrated humans drink to satiation rapidly across 3-10 min\" (armstrongKavouras2019); the deficit of full thirst (waterThirstFullPct, 2% of mass) replaced in the middle of that window (6.5 min) = 3.1 mL/kg/min; range 2% in 10 min to 2% in 3 min. No primate drinking rate was found (gart2015, dog lapping, not open access). Cross-species [L]."
+  },
+  {
+   "id": "waterFaecalFrac",
+   "group": "needs",
+   "value": 0.75,
+   "units": "fraction of faecal mass",
+   "range": [
+    0.63,
+    0.86
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    0.99
+   ],
+   "calibrate": false,
+   "evidence": "L",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Addendum: E2g water balance): rose2015 (FT, PMC4500995)"
+   ],
+   "clock": "none",
+   "symbol": "water.ts waterTick",
+   "file": "src/sim/water.ts",
+   "notes": "Stage E2g (waterLedger): water share of faeces; faecal water = faecal dry matter x f / (1 - f). Human median 75% (47 study means; range 63-86%; vegetarian 78.9%; rose2015). Applied to the dry matter E1b passes out (unfermented fibre only), so faecal water is underestimated if seeds and undigested non-fibre matter are counted in real faeces. No chimpanzee or primate value found. Cross-species [L]."
+  },
+  {
+   "id": "waterFallbackFrac",
+   "group": "needs",
+   "value": 0.75,
+   "units": "fraction of fresh mass",
+   "range": [
+    0.66,
+    0.9
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    0.99
+   ],
+   "calibrate": false,
+   "evidence": "L",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Addendum: E2g water balance): masi2015 (FT, PMC4495928), rothman2006 (Abs)"
+   ],
+   "clock": "none",
+   "symbol": "water.ts foodWater",
+   "file": "src/sim/water.ts",
+   "notes": "Stage E2g (waterLedger): water share of fallback foods (young leaves, pith; fresh mass). No verified value for leaves or pith (rothman2006: Bwindi gorilla foods 7-96% moisture); the pulpy-fruit value of masi2015 stands in. [L], assumed."
+  },
+  {
+   "id": "waterFigFrac",
+   "group": "needs",
+   "value": 0.75,
+   "units": "fraction of fresh mass",
+   "range": [
+    0.66,
+    0.84
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    0.99
+   ],
+   "calibrate": false,
+   "evidence": "L",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Addendum: E2g water balance): masi2015 (FT, PMC4495928)"
+   ],
+   "clock": "none",
+   "symbol": "water.ts foodWater",
+   "file": "src/sim/water.ts",
+   "notes": "Stage E2g (waterLedger): water share of figs (fresh mass). No fig value verified (conklinWrangham1994, Kibale figs, unreachable); masi2015 pulpy fruit (dry-matter fraction 0.25 +- 0.09) stands in. [L]."
+  },
+  {
+   "id": "waterFruitFrac",
+   "group": "needs",
+   "value": 0.75,
+   "units": "fraction of fresh mass",
+   "range": [
+    0.66,
+    0.84
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    0.99
+   ],
+   "calibrate": false,
+   "evidence": "M",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Addendum: E2g water balance): masi2015 (FT, PMC4495928)"
+   ],
+   "clock": "none",
+   "symbol": "water.ts foodWater",
+   "file": "src/sim/water.ts",
+   "notes": "Stage E2g (waterLedger): water share of ripe fruit (drupes; fresh mass): 3.0 g water per g dry matter. masi2015: dry-matter fraction 0.25 +- 0.09 for pulpy and 0.32 +- 0.11 for fibrous fruit, western gorilla foods at Bai Hokou (18 fruit species, weighed fresh, field and lab drying). Range = pulpy mean +- 1 SD. [M] (adjacent species and site)."
+  },
+  {
+   "id": "waterLatentJPerG",
+   "group": "needs",
+   "value": 2426,
+   "units": "J/g",
+   "range": [
+    2400,
+    2450
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    2000,
+    3000
+   ],
+   "calibrate": false,
+   "evidence": "L",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Addendum: E2g water balance): baker2019 (FT, PMC6773238)"
+   ],
+   "clock": "none",
+   "symbol": "water.ts waterTick",
+   "file": "src/sim/water.ts",
+   "notes": "Stage E2g (waterLedger): latent heat of evaporation of water at skin temperature, 2426 J per g (baker2019: \"580 kcal of heat per 1 kg of evaporated sweat\"). Physics; converts evaporative heat loss (E2a heat balance; insensible terms) to water."
+  },
+  {
+   "id": "waterLedger",
+   "group": "needs",
+   "value": 0,
+   "units": "flag",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.waterLedger",
+   "file": "src/sim/water.ts",
+   "integer": true,
+   "notes": "Stage E2g (docs/staging/e2g-prereg.md): 1 = thirst is read from a water ledger in mL (src/sim/water.ts; needs energyLedger, ledgerDigesta and rhythmHeat): water in from food (by its dry matter and water share), metabolic water and drinking; out by regulated evaporation (E2a heat balance), insensible respiration and skin diffusion, faeces, urine and milk. Drinking is valued by the deficit a site can fill over the trip, walk included. The thirst timers (thirstAwakePerH, thirstSleepPerH, thirstHotC, thirstHotPerH, thirstRainRelief), the fruit factor (fruitThirstFactor), the drink relief rate (drinkThirstPerH) and the drink distance scale (drinkDistScaleM) are then not read. 0 = the timers (hash-identical to before E2g)."
+  },
+  {
+   "id": "waterMeatFrac",
+   "group": "needs",
+   "value": 0.73,
+   "units": "fraction of fresh mass",
+   "range": [
+    0.7,
+    0.76
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    0.99
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "water.ts foodWater",
+   "file": "src/sim/water.ts",
+   "notes": "Stage E2g (waterLedger): water share of meat, the complement of the 27% dry matter digestaMeatDmGPerKcal already assumes. Assumed."
+  },
+  {
+   "id": "waterMetabolicMlPerKcal",
+   "group": "needs",
+   "value": 0.14,
+   "units": "mL/kcal",
+   "range": [
+    0.1,
+    0.15
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "L",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Addendum: E2g water balance): blumstein2024 (FT, PMC11979454), sawka2015 (FT, PMC4672008)"
+   ],
+   "clock": "none",
+   "symbol": "water.ts waterTick",
+   "file": "src/sim/water.ts",
+   "notes": "Stage E2g (waterLedger): water made by oxidising food, per kcal of energy spent (the energy ledger's expenditure, milk energy exported excluded). blumstein2024: 0.60 g per g carbohydrate, 1.07 fat, 0.41 protein = 0.15, 0.12 and 0.10 g/kcal; a fruit diet is mostly sugar; sawka2015's +250-350 mL/day at 2500-3000 kcal/day = 0.10-0.12. Stoichiometry [L]."
+  },
+  {
+   "id": "waterMilkFrac",
+   "group": "needs",
+   "value": 0.876,
+   "units": "fraction of fresh mass",
+   "range": [
+    0.86,
+    0.89
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    0.99
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "water.ts foodWater",
+   "file": "src/sim/water.ts",
+   "notes": "Stage E2g (waterLedger): water share of milk, the complement of the 12.4% solids digestaMilkDmGPerKcal already assumes (human milk). The mother loses what her infant drinks. Assumed, cross-species."
+  },
+  {
+   "id": "waterRespCoef",
+   "group": "needs",
+   "value": 1.7e-05,
+   "units": "W/m2 per W/m2 per Pa",
+   "range": [
+    1.5e-05,
+    1.9e-05
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "L",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Addendum: E2g water balance): rinjea2022 (FT, PMC9324884; Fanger / ISO 7730)"
+   ],
+   "clock": "none",
+   "symbol": "water.ts insensible",
+   "file": "src/sim/water.ts",
+   "notes": "Stage E2g (waterLedger): respiratory latent heat loss = this x M x (waterRespPa - pa) W/m2, M the metabolic rate per m2 of skin, pa the ambient water-vapour pressure (Pa) from air temperature and humidity (Fanger / ISO 7730, as implemented in rinjea2022). About 117 g/m2/day at 25 C, 80% RH, consistent with sawka2015's 250-350 mL/day in humans. Human model [L]; range assumed +-10%."
+  },
+  {
+   "id": "waterRespPa",
+   "group": "needs",
+   "value": 5867,
+   "units": "Pa",
+   "range": [
+    5867,
+    5867
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    10000
+   ],
+   "calibrate": false,
+   "evidence": "L",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Addendum: E2g water balance): rinjea2022 (FT, PMC9324884; Fanger / ISO 7730)"
+   ],
+   "clock": "none",
+   "symbol": "water.ts insensible",
+   "file": "src/sim/water.ts",
+   "notes": "Stage E2g (waterLedger): water-vapour pressure of expired air in the Fanger respiratory latent heat term (ISO 7730). Constant of the human model [L]."
+  },
+  {
    "id": "waterSitesPerKm2",
    "group": "needs",
    "value": 0,
@@ -22354,6 +22646,178 @@
     "field": 4
    },
    "notes": "Extra drinking spots (stream pools, tree holes) per km² of community range; 0 = bank sites only (compressed). Field: design."
+  },
+  {
+   "id": "waterSkinAreaM2",
+   "group": "needs",
+   "value": 0.1,
+   "units": "m2/kg^(2/3)",
+   "range": [
+    0.09,
+    0.11
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "clock": "none",
+   "symbol": "water.ts insensible",
+   "file": "src/sim/water.ts",
+   "notes": "Stage E2g (waterLedger): body surface = this x mass^(2/3) (Meeh), the geometry E2a assumes (rhythmAreaM2 is a quarter of it). Assumed."
+  },
+  {
+   "id": "waterSkinDiffCoef",
+   "group": "needs",
+   "value": 0.00305,
+   "units": "W/m2 per Pa",
+   "range": [
+    0.0027,
+    0.0034
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "L",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Addendum: E2g water balance): rinjea2022 (FT, PMC9324884; Fanger / ISO 7730)"
+   ],
+   "clock": "none",
+   "symbol": "water.ts insensible",
+   "file": "src/sim/water.ts",
+   "notes": "Stage E2g (waterLedger): insensible skin diffusion = this x (waterSkinPa - waterSkinMetCoef x M - pa) W/m2 (Fanger / ISO 7730, rinjea2022): about 303 g/m2/day at 25 C, 80% RH. Human bare skin; a furred coat is not modelled. [L]; range assumed +-10%."
+  },
+  {
+   "id": "waterSkinMetCoef",
+   "group": "needs",
+   "value": 6.99,
+   "units": "Pa per W/m2",
+   "range": [
+    6.99,
+    6.99
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    100
+   ],
+   "calibrate": false,
+   "evidence": "L",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Addendum: E2g water balance): rinjea2022 (FT, PMC9324884; Fanger / ISO 7730)"
+   ],
+   "clock": "none",
+   "symbol": "water.ts insensible",
+   "file": "src/sim/water.ts",
+   "notes": "Stage E2g (waterLedger): the Fanger skin-diffusion term's fall of skin vapour pressure with metabolic rate (ISO 7730). Constant of the human model [L]."
+  },
+  {
+   "id": "waterSkinPa",
+   "group": "needs",
+   "value": 5733,
+   "units": "Pa",
+   "range": [
+    5733,
+    5733
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    10000
+   ],
+   "calibrate": false,
+   "evidence": "L",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Addendum: E2g water balance): rinjea2022 (FT, PMC9324884; Fanger / ISO 7730)"
+   ],
+   "clock": "none",
+   "symbol": "water.ts insensible",
+   "file": "src/sim/water.ts",
+   "notes": "Stage E2g (waterLedger): skin water-vapour pressure constant of the Fanger skin-diffusion term (ISO 7730). Constant of the human model [L]."
+  },
+  {
+   "id": "waterThirstFullPct",
+   "group": "needs",
+   "value": 2,
+   "units": "% of body mass",
+   "range": [
+    1.5,
+    3
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    20
+   ],
+   "calibrate": false,
+   "evidence": "L",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Addendum: E2g water balance): armstrongKavouras2019 (FT, PMC6950074)"
+   ],
+   "clock": "none",
+   "symbol": "water.ts setThirst",
+   "file": "src/sim/water.ts",
+   "notes": "Stage E2g (waterLedger): water deficit (% of body mass) at which thirst is full (1). armstrongKavouras2019: thirst is perceived \"beginning at the level of 1%-2% body mass loss\"; the top of that range. Humans [L]; the linear rise from waterThirstOnsetPct is a design assumption."
+  },
+  {
+   "id": "waterThirstOnsetPct",
+   "group": "needs",
+   "value": 1,
+   "units": "% of body mass",
+   "range": [
+    0.5,
+    2
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    20
+   ],
+   "calibrate": false,
+   "evidence": "L",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Addendum: E2g water balance): armstrongKavouras2019 (FT, PMC6950074)"
+   ],
+   "clock": "none",
+   "symbol": "water.ts setThirst",
+   "file": "src/sim/water.ts",
+   "notes": "Stage E2g (waterLedger): water deficit (% of body mass) below which there is no thirst. armstrongKavouras2019: thirst perceived from 1-2% body-mass loss; the bottom of that range. Humans [L]."
+  },
+  {
+   "id": "waterUrineMinMlPerKgD",
+   "group": "needs",
+   "value": 10.7,
+   "units": "mL/kg/day",
+   "range": [
+    10.7,
+    14.3
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    100
+   ],
+   "calibrate": false,
+   "evidence": "L",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Addendum: E2g water balance): popkin2010 (FT, PMC2908954)"
+   ],
+   "clock": "none",
+   "symbol": "water.ts waterTick",
+   "file": "src/sim/water.ts",
+   "notes": "Stage E2g (waterLedger): obligatory urine, passed even when the body is short of water: a solute load of 900-1200 mOsm/day needs 0.75-1.0 L/day at the maximum concentration of 1400 mOsm/kg (popkin2010; adult human, ~70 kg) = 10.7-14.3 mL/kg/day; the lower end, as a fruit diet carries less protein and salt. Water above euhydration is passed at once (renal excess clearance, up to ~1 L/h in humans, far above the model's inflows). Cross-species [L]."
   },
   {
    "id": "weanAgeMinY",

@@ -23,6 +23,7 @@ const TRACK_E_SWITCHES = [
   'huntValue', // E4e
   'sleepChimp', // E2f
   'preyKanyawara', // E4f
+  'waterLedger', // E2g
 ] as const;
 
 test('Track E switches are all 0 by default in both profiles', () => {
