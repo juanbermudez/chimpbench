@@ -554,3 +554,16 @@ refuse less (E1o's rule compares the two deficits).
 **Verdict: both pass the keep rule for a correction.** S7a is small and in the sources' direction. S7b is large: every
 class's balance improves, walking and hunting move into their bands and held-out improves beyond noise, at the cost of
 two fitted rows leaving their bands (fruit share, grooming). Next: both together on S6 (S8).
+
+## S8 confirm (registered 2 October 2026 before its run)
+
+**S8 = S6 + `growYield` 1 + `revisitByCrop` 1** (both corrections that passed as S7a and S7b). Judged against the same S6
+group (S6c, S6c1–S6c3) by the same rule as S7a and S7b; bench-run stays at cf22cde (code identical to this commit, which
+changes only this file); bench, energy-diagnose and rhythm-metrics, 5 seeds, 30 + 60 days.
+
+**Predictions (against the S6 group; moderate confidence unless stated).** Prescriptions 76 (high); viability and night
+safety pass; nursing mothers' reserves near S7b's (−0.054 ± 0.02 %/day); infants' reserves less negative than S7b's
+(−0.090 / −0.035 at 0.5–2 / 2–5 y; low); growth at 1–4 y 3.3–3.55 kg/y (low: S7b's better reserves leave less to yield);
+males' ground km 1.9–2.1; T-ACT-2 males 0.17–0.21; T-RNG-4 1.8–2.1; T-HUN-1 15–28 (low); T-FOOD-2 0.80–0.83 and T-ACT-3
+0.18–0.21, both above their bands (the costs S7b showed); fitted inside noise; held-out without the rare rows better
+beyond noise, as S7b.
