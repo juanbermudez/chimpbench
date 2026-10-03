@@ -1754,7 +1754,7 @@ PMC: 1,599 children, 8 cohorts; the change in weight-for-length over 6 months is
 length); thissen1994 (abstract, Europe PMC: energy deprivation lowers IGF-I). New: schoenbuchner2019, richard2012,
 thissen1994. Not verified: Kooijman 2001 (abstract only), a primate growth response in reserve units.
 
-## Addendum: E5d why a chimpanzee grooms (2 October 2026)
+## 43. Addendum: E5d why a chimpanzee grooms (2 October 2026)
 
 Same text as research.md "Addendum: E5d why a chimpanzee grooms": villioth2025's sample (community of at least 88; 10
 adult males, 9 adult females, 7 lactating; follows from the night nest, 4.1 ± 2.6 h); lehmann2007 and lehmann2008

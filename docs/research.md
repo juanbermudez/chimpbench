@@ -2757,7 +2757,7 @@ the BioC open-access set), so the dynamic-energy-budget rule (growth from a rese
 cited for any form; any primate measurement of growth velocity against fat or reserve state; the steepness of the
 growth response in any species in reserve units.
 
-### Addendum: E5d why a chimpanzee grooms (2 October 2026)
+### E.43 Addendum: E5d why a chimpanzee grooms (2 October 2026)
 
 Read for stage E5d ([staging/e5d-prereg.md](staging/e5d-prereg.md)): what sets the time wild chimpanzees spend grooming
 (hygiene, tension reduction, relationship maintenance) and what happens to grooming when time is short or free.
