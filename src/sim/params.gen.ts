@@ -2,7 +2,7 @@
 /* eslint-disable */
 export const REGISTRY_VERSION = 1;
 /** Content hash of every live default, hard range, profile value and integer flag. Stored with each world. */
-export const REGISTRY_HASH = 'af98ef27c06ae4ba';
+export const REGISTRY_HASH = '9797b124383bfb58';
 
 /** Registry defaults (the compressed profile). */
 export const DEFAULTS = {
@@ -1872,7 +1872,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   snareWound: [0, 1],
   socialAwakePerH: [0, 1000000],
   socialSleepPerH: [0, 1000000],
-  socialUpkeep: [0, 1],
+  socialUpkeep: [0, 2],
   startDoy: [271, 271],
   startHour: [6.5, 6.5],
   statusTensionW: [-10, 10],

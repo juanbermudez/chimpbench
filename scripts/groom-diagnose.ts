@@ -283,7 +283,9 @@ for (const seed of seeds) {
       // the need's rise: the timers, or under socialUpkeep (stage E5d) the relationships' daily loss (upkeep.ts; read-only:
       // upkeepNow is pure, x.upk is the value needs() used)
       const timer = (P.socialUpkeep === 1 ? NEED_PER_BOND * (x.upk ?? upkeepNow(w, c, P)) / 24 : pr.sleep ? P.socialSleepPerH : P.socialAwakePerH) * TICK_HOURS;
-      const rG = giving ? 0.18 * TICK_HOURS : 0, rR = 0.3 * TICK_HOURS * by.length, rP = c.action === 'play' && x.phase >= 1 ? 0.15 * TICK_HOURS : 0, rN = c.action === 'nurse' && x.phase >= 1 ? 0.2 * TICK_HOURS : 0;
+      // under socialUpkeep 2 (E5d iteration 2) play and nursing restore nothing (execution.ts)
+      const only = P.socialUpkeep === 2;
+      const rG = giving ? 0.18 * TICK_HOURS : 0, rR = 0.3 * TICK_HOURS * by.length, rP = !only && c.action === 'play' && x.phase >= 1 ? 0.15 * TICK_HOURS : 0, rN = !only && c.action === 'nurse' && x.phase >= 1 ? 0.2 * TICK_HOURS : 0;
       const expected = pr.s - timer + rG + rR + rP + rN, hi = expected > 1 ? expected - Math.max(1, c.social) : 0, lo = expected < 0 ? expected : 0;
       const n = 1 - c.social;
       for (const cl of k) {

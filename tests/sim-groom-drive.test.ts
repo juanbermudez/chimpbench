@@ -117,3 +117,31 @@ test('switches on: deterministic under batching and plain data', () => {
   assert.deepEqual(plainDataProblems(a), []);
   assert.ok(a.chimps.some(c => c.alive && ix(c).upk !== undefined), 'the upkeep state exists');
 });
+
+test('socialUpkeep 2: play and nursing restore no social need (only grooming meets it); 1 keeps them', () => {
+  // over a quarter day, every animal that plays or nurses through a whole tick, grooms nobody and is groomed by nobody
+  // loses exactly the upkeep rate under 2, and gains under 1 (play +0.15/h, nursing +0.2/h, execution.ts)
+  for (const v of [2, 1]) {
+    const w = createWorld(48, { profile: 'field', params: { ...S8, socialUpkeep: v } });
+    run(w, 240);
+    let n = 0, gained = 0;
+    for (let i = 0; i < DAY / 4; i++) {
+      const groomed = new Set(w.chimps.filter(g => g.alive && g.action === 'groom' && ix(g).phase >= 1).map(g => g.targetId));
+      const pre = new Map(w.chimps.filter(c => c.alive && (c.action === 'play' || c.action === 'nurse') && ix(c).phase >= 1 && !groomed.has(c.id) && c.social > 0.05 && c.social < 0.95)
+        .map(c => [c.id, { s: c.social, a: c.action, rate: NEED_PER_BOND * (ix(c).upk ?? 0) / 24 }]));
+      const day = Math.floor(w.time / 24);
+      tickWorld(w);
+      if (Math.floor(w.time / 24) !== day) continue; // the daily step may reset the rate within the tick
+      for (const c of w.chimps) {
+        const p = pre.get(c.id);
+        if (!p || c.action !== p.a || ix(c).phase < 1 || groomed.has(c.id)) continue;
+        if (w.chimps.some(g => g.alive && g.action === 'groom' && g.targetId === c.id && ix(g).phase >= 1)) continue;
+        n++;
+        if (c.social > p.s - p.rate * TICK_HOURS + 1e-12) gained++;
+        if (v === 2) assert.ok(Math.abs(c.social - (p.s - p.rate * TICK_HOURS)) < 1e-12, `${c.name} ${p.a}: ${c.social} vs ${p.s - p.rate * TICK_HOURS}`);
+      }
+    }
+    assert.ok(n > 20, `value ${v}: enough playing or nursing ticks (${n})`);
+    if (v === 1) assert.ok(gained > n / 2, `value 1: play and nursing still restore (${gained} of ${n})`);
+  }
+});

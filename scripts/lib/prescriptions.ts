@@ -265,8 +265,8 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
     'the revisit devaluation in src/sim/candidates.ts (and the fed-tree list in execution.ts) is not evaluated while revisitByCrop is 1 (stage E3b), or while crownShare, energyLedger, ledgerDrive and intakeValue are 1 (stage E5c): a crown just used is worth the crop believed left'),
   // stage E5d (socialUpkeep; docs/staging/e5d-prereg.md §4): the social need rises by what the animal's relationships lose
   // to the daily relaxation of bonds (upkeep.ts), so the awake and asleep timers are not read
-  ...same(['socialAwakePerH', 'socialSleepPerH'], P => P.socialUpkeep !== 1,
-    'copied into the timer rates (src/sim/life.ts needRates) but used only in the timer branch of needs(), not while socialUpkeep is 1 (upkeep.ts upkeepPerH sets the rise). src/decide/facts.ts still copies them into the Jev facts (model arms only)'),
+  ...same(['socialAwakePerH', 'socialSleepPerH'], P => !(P.socialUpkeep >= 1),
+    'copied into the timer rates (src/sim/life.ts needRates) but used only in the timer branch of needs(), not while socialUpkeep is 1 or 2 (upkeep.ts upkeepPerH sets the rise). src/decide/facts.ts still copies them into the Jev facts (model arms only)'),
   // stage E1n (weanDecide; docs/staging/e1n-prereg.md §3): the mother decides by her drive against the infant's own-food
   // drive (energy.ts ownDrive), so the weaning roll and its ramp are not evaluated
   ...same(['weanRefuseMaxP', 'weanRefuseAgeY', 'weanRefuseRampY'], P => !(P.weanDecide === 1 && P.energyLedger === 1 && P.ledgerDrive === 1),

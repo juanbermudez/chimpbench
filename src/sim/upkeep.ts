@@ -20,7 +20,14 @@ export const GROOM_SOCIAL_ACTOR = 0.18, GROOM_BOND_ACTOR = 0.012, GROOM_SOCIAL_R
 /** Social satisfaction restored per unit of bond built in grooming (both sides of a bout give the same ratio, 15). */
 export const NEED_PER_BOND = GROOM_SOCIAL_ACTOR / GROOM_BOND_ACTOR;
 
-export const upkeepOn = (P: Params) => P.socialUpkeep === 1;
+export const upkeepOn = (P: Params) => P.socialUpkeep >= 1;
+/**
+ * socialUpkeep 2 (iteration 2, docs/staging/e5d-prereg.md §4.1): only grooming meets the relationship need. Play and
+ * nursing restore social satisfaction in the timer model (v0.1) but build no bond, so under the upkeep accounting they
+ * would meet a need that stands for relationships while maintaining none (iteration 1: mothers' play met their need,
+ * 41% of their restoration landing on a met need).
+ */
+export const upkeepOnly = (P: Params) => P.socialUpkeep === 2;
 
 /** True when `o` is maternal kin of `c` (the baseline the daily relaxation uses, life.ts dailyLife). */
 const kinOf = (c: Chimp, o: Chimp) => o.motherId === c.id || c.motherId === o.id || (c.motherId > 0 && c.motherId === o.motherId);
