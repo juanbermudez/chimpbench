@@ -456,8 +456,17 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     const worth = (P.memCropBelief === 1 ? h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) : h * P.memTravelHungerW) * tripWorth(t, crop, feeders, d);
     return worth - tripCost(worth, crop, d, h, P, needFruit(c, P, h));
   };
+  // stage E5d (followMargin; docs/staging/e5d-prereg.md §4.2): a departing companion's company counts only for what it adds
+  // over the best companion the animal keeps by staying (E5b's margin for approaches, extended to joining and following);
+  // computed once per decision, when first needed
+  let keptCompany = -1;
+  const companyGain = (o: Chimp): number => {
+    if (P.followMargin !== 1) return companyValue(c, o, P);
+    if (keptCompany < 0) keptCompany = presentCompany(world, c, P);
+    return Math.max(0, companyValue(c, o, P) - keptCompany);
+  };
   const joinValue = (L: Chimp): number => {
-    if (cohesion) return companyValue(c, L, P) + destWorth(L) - rain * 0.3;
+    if (cohesion) return companyGain(L) + destWorth(L) - rain * 0.3;
     const heard = P.travelHoo === 1 && x.hooFrom === L.id && time - (x.hooAt ?? NEVER) <= P.travelHooWindowMin / 60;
     let stay = 0;
     if (c.action === 'forage' && isTreeId(c.targetId)) { const t = idx.treeById.get(c.targetId); if (t) stay = h * Math.min(1, (P.patchEcology === 1 ? fruitAt(world, t) : t.fruit) / P.fruitValueRef); }
@@ -544,7 +553,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       // stage E5a (cohesionValue): following is worth the followed animal's company less the walk (tripCost's energetic
       // distance scale), in place of the tuned base, bond and male weights; the hoo adds no value
       const F = L ?? o;
-      const sc = cohesion ? companyValue(c, F, P) - rain * 0.3 - dxz(F, px, pz) / P.travelDistScaleM : followScore(lead, L, o, b, her);
+      const sc = cohesion ? companyGain(F) - rain * 0.3 - dxz(F, px, pz) / P.travelDistScaleM : followScore(lead, L, o, b, her);
       // stage C7c (field; c7b-prereg §6.2): a companion on a committed trip to a tree lends its goal: go there with it (shared goal) [H: joint travel, gruberZuberbuhler2013]
       if (trip) offer('travel', L!.targetId, sc, V.TREE, L!.id);
       else offer('follow', lead, sc, V.PARTY);

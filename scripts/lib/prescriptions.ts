@@ -334,6 +334,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   companyMargin: { stage: 'E5b', needs: { cohesionValue: 1 }, removesNothing: 'values an approach to a caller by the company it adds over the company the animal already has (E5a\'s companyValue and settled-companion set); adds no magnitude and switches no prescription out (e5b-prereg §5)' },
   groomDrive: { stage: 'E5d', needs: {}, removesNothing: 'weights the design grooming terms of every pair (literal score weights, no registry entry) by the groomer\'s social need (a state), E1k\'s groomNeedDyad form for every partner; adds no rule and removes none (e5d-prereg §4)' },
   socialUpkeep: { stage: 'E5d', needs: {} },
+  followMargin: { stage: 'E5d', needs: { cohesionValue: 1 }, removesNothing: 'values following and joining by the company they add over the best companion kept by staying (E5b\'s margin, extended; E5a\'s companyValue and presentCompany); adds no magnitude and switches no prescription out (e5d-prereg §4.2)' },
 };
 
 /** Whether an entry is in use: generated (not planned), non-zero under these resolved parameters, and not switched out. */

@@ -9014,6 +9014,34 @@
    "notes": "Stage C7b (field; c7b-prereg 3.1): a party follow of a companion on a committed trip to a tree (travelCommit) lasts until that trip ends, instead of a 4-8 min follow bout that drops followers halfway (C7b diagnosis: 22% following 5 min after a departure, 40% of companions kept). Interrupts still apply. Joint travel after recruitment (gruberZuberbuhler2013) [M]; following to the destination is a design assumption. 0 = off. Pre-registered field value 1; off by default after the C7b direction check (c7b-prereg addendum): party size fell (2.38 -> 2.13 on C7a) because long follows end alone when the traveller gets more than 1.6 x sight ahead."
   },
   {
+   "id": "followMargin",
+   "group": "movement",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "charnov1976",
+    "keverne1989",
+    "cabanac1971"
+   ],
+   "clock": "none",
+   "symbol": "computeCandidates (joinValue, party follow)",
+   "file": "src/sim/candidates.ts",
+   "integer": true,
+   "notes": "Stage E5d (docs/staging/e5d-prereg.md section 4.2, iteration 3): 1 (with cohesionValue) = following a departing party member and joining a leader's trip to a tree are worth the companion's company less the best company the animal keeps by staying (presentCompany, E5b's settled companions in sight within the party link), never below 0, plus the food at the leader's tree for a joint trip as before: E5b's margin (companyMargin, approaches to callers) extended to the moves it left at full value. The social need company is valued by is relieved by grooming, which a companion present offers as well as a distant one (keverne1989, cabanac1971); a move is worth its gain over the alternative (charnov1976). No new magnitude. 0 = today (hash-identical)."
+  },
+  {
    "id": "followMotherDistScaleM",
    "group": "social",
    "value": 10,

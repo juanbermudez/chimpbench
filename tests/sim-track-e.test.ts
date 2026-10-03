@@ -33,7 +33,7 @@ const TRACK_E_SWITCHES = [
   'crownShare', // E5c
   'revisitByCrop', // E3b
   'growYield', // E1p
-  'groomDrive', 'socialUpkeep', // E5d
+  'groomDrive', 'socialUpkeep', 'followMargin', // E5d
 ] as const;
 
 test('Track E switches are all 0 by default in both profiles', () => {

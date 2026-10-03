@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createWorld, tickWorld } from '../src/simulation';
-import { computeCandidates } from '../src/sim/candidates';
+import { computeCandidates, V } from '../src/sim/candidates';
 import { dailyLife } from '../src/sim/life';
 import { paramsOf, type Overrides } from '../src/sim/params';
 import { index, ix, TICK_HOURS } from '../src/sim/state';
@@ -144,4 +144,36 @@ test('socialUpkeep 2: play and nursing restore no social need (only grooming mee
     assert.ok(n > 20, `value ${v}: enough playing or nursing ticks (${n})`);
     if (v === 1) assert.ok(gained > n / 2, `value 1: play and nursing still restore (${gained} of ${n})`);
   }
+});
+
+test('followMargin: off leaves worlds unchanged; on, following and joining are worth only the company they add over a companion kept by staying', () => {
+  const p = { ...S8, groomDrive: 1, socialUpkeep: 2 };
+  const a = createWorld(7, { profile: 'field', params: p }), b = createWorld(7, { profile: 'field', params: { ...p, followMargin: 0 } });
+  run(a, DAY / 4); run(b, DAY / 4);
+  assert.equal(worldHash(a), worldHash(b));
+  const c = createWorld(7, { profile: 'field', params: { ...p, followMargin: 1 } });
+  run(c, DAY / 4);
+  assert.notEqual(worldHash(a), worldHash(c));
+  // a companion departs on a trip to a tree; a second, close companion stays settled: with the margin the move toward the
+  // leaver loses what staying keeps (here its whole social value, the settled companion being as good company)
+  const score = (m: number, keep: boolean): number | undefined => {
+    const w = createWorld(48, { profile: 'field', params: { ...p, followMargin: m } });
+    run(w, 240);
+    const adults = w.chimps.filter(k => k.alive && k.sex === 'female' && k.age >= 15 && !k.lactating);
+    const [me, L, St] = [adults[0], adults.find(k => k.troopId === adults[0].troopId && k !== adults[0])!, adults.find(k => k.troopId === adults[0].troopId && k !== adults[0])!];
+    const S2 = w.chimps.find(k => k.alive && k.troopId === me.troopId && k.age >= 15 && k !== me && k !== L)!;
+    const tree = w.trees[0];
+    me.action = 'rest'; me.targetId = -1; me.hunger = 0.3; me.social = 0;
+    L.position = [me.position[0] + 3, 0, me.position[2]]; L.action = 'travel'; L.targetId = tree.id; ix(L).v = V.TREE;
+    S2.position = [me.position[0] - 2, 0, me.position[2]]; S2.action = keep ? 'rest' : 'travel'; S2.targetId = keep ? -1 : tree.id;
+    me.bonds[L.id] = 0.6; me.bonds[S2.id] = 0.6;
+    ix(me).seen = [L.id, S2.id];
+    void St;
+    const list = computeCandidates(w, me, []);
+    return list.find(q => (q.action === 'travel' || q.action === 'follow') && (q.targetId === tree.id || q.targetId === L.id))?.score;
+  };
+  const off = score(0, true), onKeep = score(1, true), onAlone = score(1, false);
+  assert.ok(off !== undefined && onAlone !== undefined, `the joint trip is offered (${off}, ${onAlone})`);
+  assert.ok(onKeep === undefined || onKeep < off! - 0.05, `a companion kept lowers the move (${onKeep} vs ${off})`);
+  assert.ok(Math.abs(onAlone! - off!) < 0.13, `alone, the whole company still counts (${onAlone} vs ${off}; jitter ±0.12)`);
 });
