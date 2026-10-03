@@ -1745,7 +1745,7 @@ revisit method (same individual, trees < 30 m apart one resource, two females fo
 chimpanzees revisit a tree within 5.37 days"); ban2014's abstract (Europe PMC; full text behind a bot check, not used);
 houle2014 recalled (ripe fruit < 0.5% of the fruit in a tree). No new source.
 
-## Addendum: E1p growth and the body's state (2 October 2026)
+## 42. Addendum: E1p growth and the body's state (2 October 2026)
 
 Same text as research.md "Addendum: E1p growth and the body's state": schoenbuchner2019 read in full (PMC6669055
 through NCBI BioC: 5,160 Gambian children under 2 y, 64,342 measurements; wasting predicts stunting 3 months later, OR

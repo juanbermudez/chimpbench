@@ -2702,7 +2702,7 @@ has just fed in. Tags as above.
 **Not verified:** ban2014's Methods (how its 2.5-day interval was measured); a ripening rate, a ripe-fruit persistence
 time or a within-crown reach for any chimpanzee food tree.
 
-### Addendum: E1p growth and the body's state (2 October 2026)
+### E.42 Addendum: E1p growth and the body's state (2 October 2026)
 
 Read for stage E1p ([staging/e1p-prereg.md](staging/e1p-prereg.md) §2): in what order a growing primate gives up tissue
 reserve and structural growth when energy is short, and whether growth reads the reserve or the day's balance.
