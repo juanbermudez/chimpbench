@@ -504,7 +504,11 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       // partner terms alone. The motivation to be groomed falls as grooming feeds back on it [M: keverne1989]; the value
       // of a stimulus depends on the internal state [H, cabanac1971]; the product form is a design assumption with no
       // free parameter. Costs (tension, distance, hunger, rain, night, age) and the bout's persistence are unchanged.
-      const needDyad = P.groomNeedDyad === 1 && ((o.motherId === c.id && !ix(o).weaned) || (c.motherId === o.id && !x.weaned));
+      // stage E5d (groomDrive; docs/staging/e5d-prereg.md §4): the same drive × incentive for every partner. A partner's
+      // bond, kinship, reciprocity and rank say whom to groom when grooming is needed, not that grooming pays when the
+      // need is met (the diagnosis: 35–40% of adults' grooming restored a full need, filling free time at the expense of
+      // rest; the field gives spare time to rest, lehmann2008, couturier2022 [M])
+      const needDyad = P.groomDrive === 1 || (P.groomNeedDyad === 1 && ((o.motherId === c.id && !ix(o).weaned) || (c.motherId === o.id && !x.weaned)));
       offer('groom', o.id, needDyad
         ? (grooming ? (time >= x.actEnd ? -0.25 : 0.35) : 0) + (1 - c.social) * (0.55 + b * 0.4 + (kin ? 0.2 : 0) + recip * 0.2 + up + alphaAlly + (invited ? 0.7 : 0) - femaleOffset) - tn * P.groomTensionW - d / P.groomDistScaleM - h * 0.6 - rain * 0.6 - (night ? 1.5 : 0) - (c.age < 5 ? 0.3 : 0)
         : (grooming ? (time >= x.actEnd ? -0.25 : 0.35) : 0) - femaleOffset + (1 - c.social) * 0.55 + b * 0.4 + (kin ? 0.2 : 0) + recip * 0.2 + up + alphaAlly + invited - tn * P.groomTensionW - d / P.groomDistScaleM - h * 0.6 - rain * 0.6 - (night ? 1.5 : 0) - (c.age < 5 ? 0.3 : 0),

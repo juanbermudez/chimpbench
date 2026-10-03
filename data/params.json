@@ -10011,6 +10011,35 @@
    "notes": "Grooming score falls by 1 per this many metres to the partner. Compressed stand-in scaled with sight (field ≈ compressed × 35/15, design)."
   },
   {
+   "id": "groomDrive",
+   "group": "social",
+   "value": 0,
+   "units": "flag",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "cabanac1971",
+    "keverne1989",
+    "lehmann2008",
+    "couturier2022"
+   ],
+   "clock": "none",
+   "symbol": "computeCandidates (groom offer)",
+   "file": "src/sim/candidates.ts",
+   "integer": true,
+   "notes": "Stage E5d (docs/staging/e5d-prereg.md section 4): 1 = every groom option's social terms (need 0.55, bond 0.4, kin 0.2, reciprocity 0.2, rank, alpha ally, invitation 0.7, female non-kin offset) are multiplied by the groomer's social need 1 - social (drive x incentive), E1k's groomNeedDyad form for every partner: today's score at full need, only persistence and costs once the need is met. Partner terms say whom to groom when grooming is needed, not that grooming pays at a met need (the E5d diagnosis: 35-40 percent of adults' grooming restored a full need, filling free time at the expense of rest; the field gives spare time to rest, lehmann2008, couturier2022 [M]); principle cabanac1971 [H], keverne1989 [M]; product form design, no free parameter. 0 = today (hash-identical)."
+  },
+  {
    "id": "groomFemaleNonKinOffset",
    "group": "decision",
    "value": 0.12,
@@ -20693,6 +20722,35 @@
    "symbol": "needs() socialSleepPerH",
    "file": "src/sim/life.ts",
    "notes": "Social satisfaction lost sleeping (subtracted)."
+  },
+  {
+   "id": "socialUpkeep",
+   "group": "needs",
+   "value": 0,
+   "units": "flag",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "dunbar1991",
+    "lehmann2007",
+    "mitani2009",
+    "gomes2009"
+   ],
+   "clock": "eco",
+   "symbol": "needs() / dailyLife (upkeep.ts)",
+   "file": "src/sim/upkeep.ts",
+   "integer": true,
+   "notes": "Stage E5d (docs/staging/e5d-prereg.md section 4): 1 = the social need rises by what the animal's bonds toward living members of its community lose to the daily relaxation toward their baseline (bondRelaxPerDay x the gap above it, set at each daily step for the next day), times 15 satisfaction units per bond unit (the ratio of grooming's existing effects, 0.18/0.012 for the groomer and 0.3/0.02 for the recipient), spread over 24 h, in place of socialAwakePerH and socialSleepPerH. Grooming's main function is relationship upkeep (grooming time follows group size, not body size: dunbar1991, lehmann2007 [M] structure; enduring bonds kept by equitable grooming: mitani2009, gomes2009 [M]); the decay rate is the model's existing design term, no new number. 0 = today (hash-identical)."
   },
   {
    "id": "speciesSynchrony",

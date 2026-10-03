@@ -25,6 +25,7 @@ import { recordAggression, recordConsolation, recordGrooming, recordMating, reco
 import { BANK_A, BANK_B, CHANNEL, FORD, bankOf, bestFord, dryPoint, fordExits, streamCell, tangentNear } from './stream';
 import { markDanger, noteContact, sectorContact } from './contact';
 import { cellAt, gridOf, neighbourSectors, pressureAt, rangeEdge, sectorDir, useLevels } from './territory';
+import { GROOM_BOND_ACTOR, GROOM_BOND_RECIP, GROOM_SOCIAL_ACTOR, GROOM_SOCIAL_RECIP } from './upkeep';
 
 // Bout durations in eco-minutes [min, max] (registry bout*Min / bout*Max).
 const DUR: Record<Action, [ParamId, ParamId]> = {
@@ -1097,9 +1098,10 @@ function pairTick(world: World, c: Chimp, o: Chimp | undefined): void {
   face(c, o);
   x.prog += TICK_SECONDS;
   if (c.action === 'groom') {
-    c.social = clamp(c.social + 0.18 * TICK_HOURS); o.social = clamp(o.social + 0.3 * TICK_HOURS);
+    // grooming's effects per hour of contact (named in upkeep.ts, whose socialUpkeep reads their ratio; values unchanged)
+    c.social = clamp(c.social + GROOM_SOCIAL_ACTOR * TICK_HOURS); o.social = clamp(o.social + GROOM_SOCIAL_RECIP * TICK_HOURS);
     c.stress = clamp(c.stress - 0.1 * TICK_HOURS); o.stress = clamp(o.stress - 0.25 * TICK_HOURS);
-    addBond(c, o.id, 0.012 * TICK_HOURS); addBond(o, c.id, 0.02 * TICK_HOURS);
+    addBond(c, o.id, GROOM_BOND_ACTOR * TICK_HOURS); addBond(o, c.id, GROOM_BOND_RECIP * TICK_HOURS);
     recordGrooming(world, c, o);
     const ox = ix(o); ox.groomRecv[c.id] = (ox.groomRecv[c.id] ?? 0) + TICK_HOURS;
     c.skills.social = clamp(c.skills.social + (1 - c.skills.social) * TICK_HOURS * 0.002);

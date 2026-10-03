@@ -19,7 +19,8 @@
 //      ≥ 0.6); partner dominant or not (hierarchy.ts dominates); partner class.
 //   C  the social need n = 1 − social: daylight mean and shares (n < 0.1, 0.1–0.4, ≥ 0.4: the rules' 'none' bucket ends
 //      at 0.4); mean n while giving, receiving, resting (not groomed) and eating; the daily budget per subject-day:
-//      timer rise (socialAwakePerH awake, socialSleepPerH asleep, life.ts needs; sleeping as there), restoration by
+//      timer rise (socialAwakePerH awake, socialSleepPerH asleep, life.ts needs; sleeping as there; under socialUpkeep the
+//      relationships' daily loss × 15 ÷ 24 per hour, upkeep.ts, split awake and asleep the same way), restoration by
 //      grooming given (+0.18/h), received (+0.3/h per groomer), play (+0.15/h) and nursing (+0.2/h, the infant)
 //      (execution.ts), and the clamp: expected = before − timer + restoration, clampHi = expected − after when > 0 (lost
 //      at social 1), clampLo the same below 0; the residual (after − before − (restoration − timer − clamps)) checks
@@ -31,7 +32,8 @@
 //      the groom act (rg.ts gate reason or argmax under rgMinAge; interrupts by kind), the chosen option's score, the
 //      best non-grooming option's score, P(that option) at a draw, and the score's terms recomputed from the state at
 //      the decision (candidates.ts groom offer): need 0.55·n, partner (0.4·bond + 0.2 kin + 0.2·reciprocity + rank
-//      0.12 + alpha ally 0.35 − female non-kin offset), invitation (0.3 + 0.4·n), costs (tension, distance, 0.6·hunger,
+//      0.12 + alpha ally 0.35 − female non-kin offset), invitation (0.3 + 0.4·n), both × n under groomDrive (E5d) or in
+//      the mother–infant dyad under groomNeedDyad (E1k; the invitation then 0.7·n), costs (tension, distance, 0.6·hunger,
 //      0.6·rain, night, under 5), persistence (±), residual (jitter, continuation bonus); the act it displaced (the act
 //      at the decision) and what followed the bout; why it ended (the decision in the end tick: gate reason → new act;
 //      partner moved away; no decision), n and hunger at the end.
@@ -54,6 +56,7 @@ import { bond, dominates, maternalKin } from '../src/sim/hierarchy';
 import { paramsOf } from '../src/sim/params';
 import { rgTap } from '../src/sim/rg';
 import { index, ix, TICK_HOURS } from '../src/sim/state';
+import { NEED_PER_BOND, upkeepNow } from '../src/sim/upkeep';
 import { createWorld, tickWorld } from '../src/simulation';
 import type { Action, Candidate, Chimp, World } from '../src/types';
 
@@ -181,7 +184,11 @@ for (const seed of seeds) {
     const femaleOffset = c.sex === 'female' && c.age >= 12 && !kin ? P.groomFemaleNonKinOffset : 0;
     const grooming = c.action === 'groom' && c.targetId === o.id;
     const d = Math.hypot(o.position[0] - c.position[0], o.position[2] - c.position[2]), env = w.environment, night = env.daylight < 0.1;
-    return { need: 0.55 * n, partner: 0.4 * b + (kin ? 0.2 : 0) + 0.2 * recip + up + alphaAlly - femaleOffset, invite: invited ? 0.3 + 0.4 * n : 0,
+    // stage E5d (groomDrive) and E1k (groomNeedDyad, inside the mother–infant dyad): the partner terms and the invitation
+    // enter multiplied by the groomer's need (candidates.ts), so they are reported as they enter the score
+    const dyad = (o.motherId === c.id && !ix(o).weaned) || (c.motherId === o.id && !x.weaned), drive = P.groomDrive === 1 || (P.groomNeedDyad === 1 && dyad);
+    const partner = 0.4 * b + (kin ? 0.2 : 0) + 0.2 * recip + up + alphaAlly - femaleOffset;
+    return { need: 0.55 * n, partner: drive ? n * partner : partner, invite: invited ? (drive ? 0.7 * n : 0.3 + 0.4 * n) : 0,
       costs: -((x.tension[o.id] ?? 0) * P.groomTensionW + d / P.groomDistScaleM + c.hunger * 0.6 + env.rain * 0.6 + (night ? 1.5 : 0) + (c.age < 5 ? 0.3 : 0)),
       persist: grooming ? (w.time >= x.actEnd ? -0.25 : 0.35) : 0 };
   };
@@ -273,7 +280,9 @@ for (const seed of seeds) {
       }
       if (!k.length || !pr) continue;
       // social need budget (every tick, day and night)
-      const timer = (pr.sleep ? P.socialSleepPerH : P.socialAwakePerH) * TICK_HOURS;
+      // the need's rise: the timers, or under socialUpkeep (stage E5d) the relationships' daily loss (upkeep.ts; read-only:
+      // upkeepNow is pure, x.upk is the value needs() used)
+      const timer = (P.socialUpkeep === 1 ? NEED_PER_BOND * (x.upk ?? upkeepNow(w, c, P)) / 24 : pr.sleep ? P.socialSleepPerH : P.socialAwakePerH) * TICK_HOURS;
       const rG = giving ? 0.18 * TICK_HOURS : 0, rR = 0.3 * TICK_HOURS * by.length, rP = c.action === 'play' && x.phase >= 1 ? 0.15 * TICK_HOURS : 0, rN = c.action === 'nurse' && x.phase >= 1 ? 0.2 * TICK_HOURS : 0;
       const expected = pr.s - timer + rG + rR + rP + rN, hi = expected > 1 ? expected - Math.max(1, c.social) : 0, lo = expected < 0 ? expected : 0;
       const n = 1 - c.social;

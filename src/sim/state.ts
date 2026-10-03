@@ -83,6 +83,12 @@ export interface ChimpX {
    * new act. Absent until then, and cleared when a bout is let start.
    */
   wr?: number;
+  /**
+   * Stage E5d (socialUpkeep; src/sim/upkeep.ts): the bond units per eco-day that this animal's bonds toward living members
+   * of its community lost at the last daily relaxation (life.ts dailyLife), which sets its social need's rise for the day.
+   * Absent until the switch is on (computed from the bonds present at its first tick, then at every daily step).
+   */
+  upk?: number;
   // reproduction and life history
   cycleLen: number; cops: Record<number, number>; sireId: number; amenUntil: number; firstSwell: number; gestation: number;
   weanAge: number; weaned: boolean; caretaker: number; immigrantAge: number; disperser: boolean; transferTo: number;
@@ -243,7 +249,7 @@ export type SimWorld = World & { sim: SimState };
  * ChimpX and SimState keys that exist only once their mechanism has fired (so worlds with the switch off keep their
  * shape and hashes). The save check (src/persist/envelope.ts worldShapeProblem) ignores them.
  */
-export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'tryNest', 'en', 'wat', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk', 'cx', 'cxc', 'cn', 'asl', 'phAt', 'phX', 'phZ', 'ard', 'wr'];
+export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'tryNest', 'en', 'wat', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk', 'cx', 'cxc', 'cn', 'asl', 'phAt', 'phX', 'phZ', 'ard', 'wr', 'upk'];
 export const OPTIONAL_SIM: readonly string[] = ['fission', 'stormAt'];
 
 export function newX(): ChimpX {
