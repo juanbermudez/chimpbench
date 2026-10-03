@@ -14,7 +14,12 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (21:55).** Nothing.
+- **Running now (22:05).** **E5d** (`e5d-grooming`, from track-e 9503ed4: the social need's fixed timers
+  `socialAwakePerH`/`socialSleepPerH`, counted prescriptions encoding T-ACT-3, set grooming time once S8 frees time;
+  brief `integrator/e5d-prompt.txt`); **guide-s5** agent updating the decision guide to S8 on a new branch `guide-s8`
+  (its worktree `.claude/worktrees/guide-s5`); integrator: the S8 quick reference, 4 runs (`integrator/s8q.sh`, outputs
+  `bench-run/artifacts/validation/e/s8q/`; message E5d when all four exist). Note: `scripts/prescription-ledger.ts`
+  without `--count` writes artifacts/validation/e/e0-ledger.* (restored in bench-run 21:58).
 - **S8 done: now the best integrated candidate** (e-stack2-confirm.md "S8 results"; S6 + `growYield` + `revisitByCrop`):
   76 prescriptions, viable, night safe; every class's balance up (mothers −0.046%/day, infants −0.067 / −0.030), walking,
   travel and hunting in band, held-out without the rare rows better beyond noise (z −6.9). Costs: grooming (T-ACT-3
