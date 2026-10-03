@@ -241,4 +241,9 @@ by the timers); G1 is the control (removes nothing) and is recorded. Night safet
 
 (Each iteration is logged here and committed before its run; at most 3.)
 
-- **Iteration 1** (§4; arms G1 and G2): registered in this commit, before any code of the mechanism exists.
+- **Iteration 1** (§4; arms G1 and G2): registered at 1940c7b, before any code of the mechanism existed; implemented at
+  5abafba (`src/sim/upkeep.ts`, `life.ts`, `candidates.ts`, `execution.ts` constants, tests/sim-groom-drive.test.ts: 7
+  pass; prescription count S8 76, G1 76, G2 74). Switch-off identity: an S8 world hashes the same after 3 days at 4e1fa4d
+  and 5abafba (34d7e2cb94a01b6e). Smoke test (seed 48, 1 + 1 days, G1 and G2): every groom-diagnose readout filled; the
+  score terms are reported as they enter the score (× n under the switch; fixed in the tool before the arms, residual
+  0.04–0.09 = jitter and continuation). Runs from the frozen checkout `run-5abafba` (clean), started 23:12, G1 then G2.
