@@ -678,3 +678,36 @@ freed goes to grooming and rest, so grooming (T-ACT-3, a fitted row) and fruit s
 males' path (1.88 km) and T-RNG-4 (1.75) sit in the lower half of their bands. Infants drink more milk again (279 / 239 /
 234 kcal/day at 1–2 / 2–3 / 3–4 y) because better-fed mothers refuse less; mothers' balance stays near −15 to −27 kcal/day
 at every infant age. The next lever these costs name is what fills free time: the social need still rises on fixed timers.
+
+## S9 confirm (registered 3 October 2026 before its runs)
+
+**S9 = S8 + E5d's G4** (`groomDrive` 1, `socialUpkeep` 2, `followMargin` 1): partner terms of grooming weighted by the
+groomer's need; the social need rises by what relationships lose to their daily relaxation and only grooming meets it
+(the two social timers `socialAwakePerH` and `socialSleepPerH` out: 76 → 74 prescriptions); the company margin of E5b
+extended to every move toward a companion. In quick mode G4 put grooming in band for both sexes and had the stage's best
+fitted sum, but failed held-out without the rare rows (z +2.2), all of it T-RNG-5 (the observer's ratio of mothers' to
+males' day range, on 9–10 follow-days per seed; E1j showed that row is mostly follow-day sampling).
+
+**Reference group, new:** S8 in confirm mode, the existing run (S8, cf22cde) plus three re-draws (`rgTemperature` 0.1641,
+0.1639, 0.16405: S8c1, S8c2, S8c3), each with energy-diagnose. Judged by e-noise.md amendment 2 as before.
+
+**Keep rule (the standard one):** viability passes; held-out not up beyond noise against the S8 mean, with and without
+T-HUN-4 and T-BRD-1 (and reported without T-IGE-3); prescriptions fall (74 < 76); night safe (≤ 3.3%, T-RHY-5 ≤ 0.033).
+**Reported, not part of the test:** the true ratio of nursing mothers' to adult males' ground path (energy-diagnose) and a
+sensitivity of the held-out sums without T-RNG-5, labelled as such.
+
+**Predictions (against the S8 group; moderate confidence unless stated).**
+
+| Quantity | S8 (one run) | Predicted S9 |
+| --- | --- | --- |
+| Prescriptions | 76 | 74 (high) |
+| Viability; night safe | pass; 2.59% | pass; ≤ 3.3% |
+| T-ACT-3 (band 0.08–0.18) | 0.208 | 0.08–0.13, both sexes in band |
+| Grooming minutes per day, every adult class | — | lower than S8 (high) |
+| T-ACT-2 (band 0.12–0.25) | 0.161 | 0.14–0.21 |
+| T-PTY-1 (band 3–9) | 3.32 | 3.6–4.6 |
+| Nursing mothers' reserves (%/day) | −0.046 | within ± 0.03 of S8 (low) |
+| Juveniles' reserves (%/day) | −0.042 | worse than S8, above −0.08 (low) |
+| Mothers ÷ males, true ground path | 0.81 | 0.85–0.95 (low) |
+| Fitted | group mean | inside noise or better |
+| Held-out, with and without the rare rows | group mean | inside noise (low: quick mode gave z +2.2 without the rare rows) |
