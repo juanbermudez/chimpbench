@@ -341,8 +341,12 @@ is safe; this is the last iteration.
   S8 and G2 hash the same after 3 days at 5abafba and 96792c1 (34d7e2cb94a01b6e, bb9c142ad3ed94bf), so value 1 is
   unchanged. Runs from the frozen checkout `run-96792c1` (clean): G3 (bench, energy, groom), then rhythm-metrics for G3
   and G1.
-- **Iteration 3** (§4.2; arm G4 = G3 + `followMargin` 1): registered 3 October 2026 in this commit, after iteration 2's
-  results (§8) and before any code of it. Last iteration.
+- **Iteration 3** (§4.2; arm G4 = G3 + `followMargin` 1): registered at 0260b77, after iteration 2's results (§8) and
+  before any code of it; implemented at 19489e6 (tests/sim-groom-drive.test.ts 9 pass, the joint-trip check exercised;
+  G4's count 74). Smoke test (seed 48, 1 + 1 days, G4): every readout filled, budget residual −0.002 to −0.010. Identity:
+  S8 and G2 hash as before at 19489e6 (34d7e2cb94a01b6e, bb9c142ad3ed94bf). Runs from `run-19489e6` (clean): G4 (bench,
+  energy, groom), rhythm-metrics, cohesion-diagnose. Last iteration. Night safety of iteration 2's arms (rhythm-metrics,
+  seeds 48 and 7, 30 + 30 days): G1 adults out of a nest 1.97% of the night, T-RHY-5 0.0202; G3 2.32%, 0.0258 (both safe).
 
 ## 7. Iteration 1 results (arms G1, G2; run-5abafba, clean; every number below printed by the stage's `e5d_judge.py`, `diag_compact.py`, `extra_blocks.py` from the JSON)
 
