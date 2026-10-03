@@ -14,11 +14,15 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (20:11).** No agents. Integrator: the S7a (S6 + `growYield` 1) and S7b (S6 + `revisitByCrop` 1)
-  confirms, registered in e-stack2-confirm.md (cf22cde), and S6's confirm group (S6c + re-draws S6c1–S6c3): bench-run
-  at cf22cde, script `integrator/conf7.sh <label> <S6|S7a|S7b> [rg|-] [rhythm]`, outputs in
-  `bench-run/artifacts/validation/e/s7/`. Running: S7a, S7b, S6c1; next S6c2 (0.1639), S6c3 (0.16405). Judge with a copy
-  of `integrator/judge_s6.py` pointed at s7/. The machine's load spikes intermittently (other apps): restart killed runs.
+- **Running now (21:30).** No agents. Integrator: the S8 confirm (S6 + `growYield` + `revisitByCrop`; registered in
+  e-stack2-confirm.md f1d749c; bench-run cf22cde; `integrator/conf7.sh S8 S8 - rhythm`, outputs in
+  `bench-run/artifacts/validation/e/s7/S8*`), judged against S6's confirm group with `integrator/judge_s7.py` (add S8 to
+  its ARMS).
+- **S7a and S7b done** (e-stack2-confirm.md): both corrections pass the keep rule on S6's group of four. S7a
+  (`growYield`): growth −7 to −8%, infants' and mothers' losses slower, sums inside noise. S7b (`revisitByCrop`): every
+  class's balance up (mothers −0.117 → −0.054%/day), males walk 2.00 km, T-ACT-2 0.17, T-RNG-4 1.95, T-HUN-1 23.8 (in
+  band), held-out without the rare rows better beyond noise (z −3.3); costs: T-FOOD-2 0.811 and T-ACT-3 0.194 above their
+  bands; infants drink more milk as mothers refuse less.
 - **E1p merged** (`growYield`, off; Y1 a provisional keep candidate as a correction: growth in proportion to the relative
   store, as the sources order it, reserves first; the brief's premise "growth gives way first" was contradicted). Growth
   at twice Gombe's rate is fed growth (infant intake per eating minute, the captive potential), the next lever.
