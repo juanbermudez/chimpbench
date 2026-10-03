@@ -41,8 +41,9 @@ row (named). Rows the mechanism can move are marked ●.
 T-ACT-3's only source is a community of at least 88 members; the model's West community has 22. The one quantitative
 relation in hand (lehmann2007, 40 primate populations; [M] as structure, [L] as a rule within chimpanzees) has grooming
 time rising with group size up to about 40 members and levelling off above it (P. t. schweinfurthii 59.2 members, 11.7%;
-P. t. verus 40.3, 8.3%; bonobos 27.8, 5.7%; its chimpanzee-parameter model gives about 5.5% at 22 members). If that
-relation holds within chimpanzees, the field's 0.12–0.15 is an upper reference for a 22-member community. No chimpanzee
+P. t. verus 40.3, 8.3%; bonobos 27.8, 5.7%; its log model with a chimpanzee sex ratio of 1 and female dispersal gives
+4.5% at 22 members and 7.4% at 47; lehmann2008's linear equation 6.1% at 22). If that relation holds within chimpanzees,
+the field's 0.12–0.15 is an upper reference for a 22-member community. No chimpanzee
 study in hand measures grooming in a community of about 22, so no band is staged; the row stays as scored and the
 comparison is flagged in the results.
 
