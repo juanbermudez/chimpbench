@@ -26,16 +26,18 @@ const PAGE = join(ROOT, 'docs/decision-guide.html');
 export interface Stack { name: string; doc: string; section: string; switches: Record<string, number> }
 const S3_SWITCHES: Record<string, number> = { energyLedger: 1, ledgerGrowSurplus: 1, ledgerNightNurse: 1, ledgerInfantIntake: 1, ledgerNurseBout: 1, ledgerGrowPotential: 1, ledgerDigesta: 1, ledgerDrive: 1, rhythmSleep: 1, rhythmHeat: 1, endoStates: 1, endoEscalate: 1, endoRedirect: 1, endoFast: 1, endoRainDisplay: 1, ledgerFoodEnergyFix: 1, ledgerSatiationReserve: 1, ledgerLactGut: 1, callValue: 1, rhythmCircadian: 1, departRace: 1, nestLightDecide: 1, sleepChimp: 1, rhythmFreeNight: 1, nestCompany: 1, nestAudience: 1, darkCost: 1, preyKanyawara: 1, waterLedger: 1 };
 const S5_SWITCHES: Record<string, number> = { ...S3_SWITCHES, followCarer: 1, cohesionValue: 1, companyMargin: 1 };
+const S6_SWITCHES: Record<string, number> = { ...S5_SWITCHES, weanDecide: 1, weanDeficit: 1 };
 /** The stacks as docs/staging/e-stack2-confirm.md defines them (S5 = S4 + companyMargin, S4 = S3 + followCarer +
- *  cohesionValue, S6 = S5 + E1o's arm B). */
+ *  cohesionValue, S6 = S5 + E1o's arm B, S8 = S6 + E1p's growYield + E3b's revisitByCrop). */
 export const STACKS = {
   S3: { name: 'S3', doc: 'staging/e-stack2-confirm.md', section: 'S3 results', switches: S3_SWITCHES },
   S5: { name: 'S5', doc: 'staging/e-stack2-confirm.md', section: 'S5 results', switches: S5_SWITCHES },
-  S6: { name: 'S6', doc: 'staging/e-stack2-confirm.md', section: 'S6 results', switches: { ...S5_SWITCHES, weanDecide: 1, weanDeficit: 1 } },
+  S6: { name: 'S6', doc: 'staging/e-stack2-confirm.md', section: 'S6 results', switches: S6_SWITCHES },
+  S8: { name: 'S8', doc: 'staging/e-stack2-confirm.md', section: 'S8 results', switches: { ...S6_SWITCHES, growYield: 1, revisitByCrop: 1 } },
 } satisfies Record<string, Stack>;
 /** The stack this page shows. Moving the page to another stack is this line, plus the prose its results change (the
  *  check names every box and layer that no longer fits). */
-export const STACK: Stack = STACKS.S6;
+export const STACK: Stack = STACKS.S8;
 
 /** Stages outside the stack, each measured on it (handoff §0 and §3, and each stage's pre-registration). `verdict`
  *  replaces the stage's own where the layer is one arm of a stage. A layer whose switches the stack holds is dropped. */
@@ -182,6 +184,8 @@ export function checkContent(D: Data): string[] {
         if (!TRACK_E_SWITCHES[s] || !STAGES[TRACK_E_SWITCHES[s].stage]) errs.push(`${d.key}.${n.k}: switch ${s} has no stage entry`);
         if (st !== 'des' && st !== 'inp') errs.push(`${d.key}.${n.k}: stack switches are named on design or input boxes only`);
       }
+      if ((st === 'des' || st === 'inp') && (n.before || n.now) && !(n.before && n.now && n.sw?.length)) errs.push(`${d.key}.${n.k}: a replaced design stand-in needs its old rule, its mechanism and the stack switch that replaced it`);
+      if ((n.before || n.now) && st !== 'rep' && st !== 'des' && st !== 'inp') errs.push(`${d.key}.${n.k}: Before/Now on a ${st} box`);
       if (st === 'rep' && !n.before) errs.push(`${d.key}.${n.k}: replaced box without its old rule`);
       if (st === 'rep' && !n.now) errs.push(`${d.key}.${n.k}: replaced box without its mechanism`);
       const need = 42 + 15 * (n.t.split('\n').length - 1) + (n.s ? 16 + 13 * (n.s.split('\n').length - 1) : 0) + 10;
@@ -358,6 +362,13 @@ function tipHtml(D: Data, d: DiagramSpec, n: NodeSpec): string {
     const removes = eff ? (eff.removed.length ? `Would switch out on ${STACK.name}: ${eff.removed.map(k => `<code>${esc(D.entries.get(k)?.label ?? k)}</code>`).join(' ')}${eff.added.length ? `, and bring back ${eff.added.map(k => `<code>${esc(k)}</code>`).join(' ')}` : ''} (${eff.total} prescriptions instead of ${D.LS.count.total}).` : `Switches out nothing on ${STACK.name} (${eff.total} prescriptions).`) : 'Not merged: the ledger cannot measure it yet.';
     parts.push(`<div class="tt-s"><span class="tt-k k-lay">${esc(n.layer!.tag.toLowerCase())}</span><p>${esc(n.text ?? '')}</p></div>`);
     parts.push(`<p class="tt-m">${n.layer!.sw.length ? `${n.layer!.sw.map(s => `<code>${esc(s)}</code>`).join(' ')} · ` : ''}stage ${esc(n.layer!.stage)}, ${esc(stg.name)} · ${esc(L?.verdict ?? stg.verdict)} (<a href="${stg.doc}">${esc(stg.doc.replace('staging/', ''))}</a>). ${removes}</p>`);
+  } else if (n.before) {
+    // a design stand-in that a stack switch replaced: the ledger never counted it, so the box keeps its design status
+    parts.push(`<div class="tt-s"><span class="tt-k k-before">Before</span><p>${esc(n.before)}</p>${ps ? `<ul class="tt-ps">${ps}</ul>` : ''}</div>`);
+    parts.push(`<div class="tt-s"><span class="tt-k k-now">Now</span><p>${esc(n.now!)}</p></div>`);
+    parts.push(`<p class="tt-m">Replaced in ${esc(STACK.name)} by ${n.sw!.map(stageLine).join('; ')}. A design stand-in, not a counted prescription: the count does not move.</p>`);
+    const why = n.sw!.map(x => TRACK_E_SWITCHES[x].removesNothing).filter(Boolean);
+    if (why.length) parts.push(`<p class="tt-why">Ledger: ${why.map(w => esc(w!)).join(' · ')}</p>`);
   } else {
     parts.push(`<div class="tt-s"><span class="tt-k k-${st}">${st === 'inp' ? 'Input' : 'Design'}</span><p>${esc(n.text ?? '')}</p>${ps ? `<ul class="tt-ps">${ps}</ul>` : ''}</div>`);
     if (n.sw?.length) {
