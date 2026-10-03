@@ -14,10 +14,13 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (21:30).** No agents. Integrator: the S8 confirm (S6 + `growYield` + `revisitByCrop`; registered in
-  e-stack2-confirm.md f1d749c; bench-run cf22cde; `integrator/conf7.sh S8 S8 - rhythm`, outputs in
-  `bench-run/artifacts/validation/e/s7/S8*`), judged against S6's confirm group with `integrator/judge_s7.py` (add S8 to
-  its ARMS).
+- **Running now (21:55).** Nothing.
+- **S8 done: now the best integrated candidate** (e-stack2-confirm.md "S8 results"; S6 + `growYield` + `revisitByCrop`):
+  76 prescriptions, viable, night safe; every class's balance up (mothers −0.046%/day, infants −0.067 / −0.030), walking,
+  travel and hunting in band, held-out without the rare rows better beyond noise (z −6.9). Costs: grooming (T-ACT-3
+  0.208) and fruit share (T-FOOD-2 0.811) above their bands. Next lever: the social need's fixed timers (what fills
+  free time). The decision guide still shows S6 (switch `STACK` to S8 and write Before/Now for the revisit devaluation
+  and the growth gate).
 - **S7a and S7b done** (e-stack2-confirm.md): both corrections pass the keep rule on S6's group of four. S7a
   (`growYield`): growth −7 to −8%, infants' and mothers' losses slower, sums inside noise. S7b (`revisitByCrop`): every
   class's balance up (mothers −0.117 → −0.054%/day), males walk 2.00 km, T-ACT-2 0.17, T-RNG-4 1.95, T-HUN-1 23.8 (in

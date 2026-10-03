@@ -567,3 +567,114 @@ safety pass; nursing mothers' reserves near S7b's (−0.054 ± 0.02 %/day); infa
 males' ground km 1.9–2.1; T-ACT-2 males 0.17–0.21; T-RNG-4 1.8–2.1; T-HUN-1 15–28 (low); T-FOOD-2 0.80–0.83 and T-ACT-3
 0.18–0.21, both above their bands (the costs S7b showed); fitted inside noise; held-out without the rare rows better
 beyond noise, as S7b.
+
+### S8 results (bench-run at cf22cde, clean; printed by judge_s7.py and night.py from the JSON; S7a and S7b repeated beside it)
+
+```
+bench reference runs: ['S6c', 'S6c1', 'S6c2', 'S6c3']; energy reference runs: ['S6c', 'S6c1', 'S6c2', 'S6c3']; arms: ['S7a', 'S7b', 'S8']
+  S6c: cac9598 dirty 0 prescriptions 76
+  S6c1: cf22cde dirty 0 prescriptions 76
+  S6c2: cf22cde dirty 0 prescriptions 76
+  S6c3: cf22cde dirty 0 prescriptions 76
+  S7a: cf22cde dirty 0 prescriptions 76
+  S7b: cf22cde dirty 0 prescriptions 76
+  S8: cf22cde dirty 0 prescriptions 76
+
+confirm, reference custom (4 runs), rows counted in all runs: fitted 17, held-out 14
+  fitted             (17 rows) ref 1.99, 2.27, 1.40, 2.02 (mean 1.92, sd 0.37; used 0.37) | S7a.json: 1.41, Δ -0.51, z -1.2 (inside noise) | S7b.json: 2.01, Δ +0.09, z +0.2 (inside noise) | S8.json: 1.85, Δ -0.08, z -0.2 (inside noise)
+  held-out           (14 rows) ref 7.07, 5.71, 9.61, 6.33 (mean 7.18, sd 1.71; used 1.71) | S7a.json: 7.99, Δ +0.81, z +0.4 (inside noise) | S7b.json: 7.43, Δ +0.25, z +0.1 (inside noise) | S8.json: 5.49, Δ -1.69, z -0.9 (inside noise)
+  held-out w/o rare  (12 rows) ref 5.39, 5.32, 4.98, 5.22 (mean 5.23, sd 0.18; used 0.21) | S7a.json: 5.44, Δ +0.22, z +0.9 (inside noise) | S7b.json: 4.45, Δ -0.77, z -3.3 RESULT | S8.json: 3.60, Δ -1.63, z -6.9 RESULT
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-ACT-3   fitted   ref 0.04±0.02 | S7a.json 0.03 (fail) | S7b.json 0.21 (fail) | S8.json 0.26 (fail)
+   T-BRD-1   held-out ref 1.31±1.28 | S7a.json 1.65 (fail) | S7b.json 1.77 (fail) | S8.json 1.39 (fail)
+   T-FOOD-10 held-out ref 2.14±0.03 | S7a.json 2.08 (fail) | S7b.json 1.96 (fail) | S8.json 1.82 (fail)
+   T-FOOD-2  fitted   ref 0.00±0.00 | S7a.json 0.00 (inconclusive) | S7b.json 0.17 (fail) | S8.json 0.17 (fail)
+   T-FOOD-5  held-out ref 0.23±0.01 | S7a.json 0.25 (fail) | S7b.json 0.00 (inconclusive) | S8.json 0.00 (inconclusive)
+   T-HUN-4   held-out ref 0.64±0.62 | S7a.json 0.89 (fail) | S7b.json 1.21 (fail) | S8.json 0.50 (inconclusive)
+   T-IGE-2   held-out ref 0.50±0.00 | S7a.json 0.50 (fail) | S7b.json 0.50 (fail) | S8.json 0.08 (inconclusive)
+   T-RNG-5   held-out ref 1.07±0.11 | S7a.json 1.39 (fail) | S7b.json 0.49 (fail) | S8.json 0.52 (fail)
+   T-SOC-9   fitted   ref 0.04±0.05 | S7a.json 0.00 (inconclusive) | S7b.json 0.19 (inconclusive) | S8.json 0.00 (inconclusive)
+
+held-out without T-HUN-4, T-BRD-1 and T-IGE-3 (12 rows): S6 5.39 / 5.32 / 4.98 / 5.22 (mean 5.23, sd 0.18; used 0.21); S7a 5.44 (z +0.9); S7b 4.45 (z -3.3); S8 3.60 (z -6.9)
+T-IGE-3 distance by run: [1.34, None, 0.8, None, 1.44, 2.32, None]
+
+| Reserves ÷ store, % per day (OLS) | S6 runs | S6 mean ± SD | S7a | S7b | S8 |
+| --- | --- | --- | --- | --- | --- |
+| adult male | -0.031 / -0.032 / -0.033 / -0.029 | -0.031 ± 0.002 | -0.031 (z +0.3) | -0.021 (z +5.4) | -0.020 (z +6.3) |
+| female, other | -0.028 / -0.045 / -0.047 / -0.035 | -0.039 ± 0.009 | -0.046 (z -0.7) | -0.029 (z +0.9) | -0.023 (z +1.5) |
+| female, lactating | -0.125 / -0.106 / -0.113 / -0.124 | -0.117 ± 0.009 | -0.094 (z +2.3) | -0.054 (z +6.1) | -0.046 (z +7.0) |
+| juvenile 5–12 y | -0.075 / -0.088 / -0.087 / -0.078 | -0.082 ± 0.006 | -0.068 (z +2.0) | -0.033 (z +6.8) | -0.042 (z +5.6) |
+| infant 2–5 y | -0.106 / -0.082 / -0.086 / -0.107 | -0.095 ± 0.013 | -0.068 (z +1.8) | -0.035 (z +4.1) | -0.030 (z +4.4) |
+| infant 0.5–2 y | -0.147 / -0.140 / -0.190 / -0.145 | -0.156 ± 0.023 | -0.124 (z +1.2) | -0.090 (z +2.5) | -0.067 (z +3.5) |
+| infant < 0.5 y | +0.000 / +0.000 / +0.000 / +0.000 | +0.000 ± 0.000 | +0.000 (z +nan) | +0.000 (z +nan) | +0.000 (z +nan) |
+
+| Growth, kg/y (unweaned infants) | S6 runs | S6 mean ± SD | S7a | S7b | S8 |
+| --- | --- | --- | --- | --- | --- |
+| 0.5–1 y | 2.94 / 2.94 / 2.93 / 2.94 | 2.94 ± 0.00 | 2.73 (z -37.1) | 2.96 (z +4.0) | 2.79 (z -26.4) |
+| 1–2 y | 3.60 / 3.60 / 3.60 / 3.60 | 3.60 ± 0.00 | 3.35 (z +nan) | 3.60 (z +nan) | 3.46 (z +nan) |
+| 2–3 y | 3.60 / 3.60 / 3.62 / 3.60 | 3.60 ± 0.01 | 3.30 (z -27.3) | 3.60 (z -0.4) | 3.42 (z -16.5) |
+| 3–4 y | 3.60 / 3.60 / 3.60 / 3.60 | 3.60 ± 0.00 | 3.32 (z +nan) | 3.60 (z +nan) | 3.45 (z +nan) |
+
+| Milk drunk, kcal per infant-day | S6 runs | S6 mean ± SD | S7a | S7b | S8 |
+| --- | --- | --- | --- | --- | --- |
+| 0.5–1 y | 279 / 278 / 279 / 279 | 279 ± 0 | 276 (z -6.7) | 282 (z +6.0) | 279 (z -0.2) |
+| 1–2 y | 238 / 237 / 234 / 235 | 236 ± 2 | 240 (z +1.8) | 274 (z +18.8) | 279 (z +20.9) |
+| 2–3 y | 198 / 201 / 206 / 194 | 200 ± 5 | 197 (z -0.5) | 236 (z +6.5) | 239 (z +6.9) |
+| 3–4 y | 190 / 190 / 196 / 187 | 191 ± 4 | 184 (z -1.5) | 236 (z +10.4) | 234 (z +10.0) |
+
+| Mothers' balance, kcal/day by infant age | S6 runs | S6 mean ± SD | S7a | S7b | S8 |
+| --- | --- | --- | --- | --- | --- |
+| 0.5–1 y | -36 / -39 / -41 / -38 | -39 ± 2 | -39 (z -0.2) | -26 (z +6.2) | -19 (z +9.2) |
+| 1–2 y | -79 / -69 / -74 / -82 | -76 ± 6 | -64 (z +1.9) | -42 (z +5.4) | -27 (z +7.8) |
+| 2–3 y | -65 / -53 / -50 / -67 | -58 ± 9 | -47 (z +1.2) | -21 (z +3.9) | -22 (z +3.8) |
+| 3–4 y | -43 / -42 / -39 / -51 | -44 ± 5 | -32 (z +2.0) | -14 (z +5.1) | -15 (z +5.0) |
+
+| Ground km / eating min / fruit share | S6 runs | S6 mean ± SD | S7a | S7b | S8 |
+| --- | --- | --- | --- | --- | --- |
+| adult male: groundKm | 2.68 / 2.73 / 2.74 / 2.71 | 2.71 ± 0.03 | 2.74 (z +1.0) | 2.00 (z -25.3) | 1.88 (z -29.5) |
+| adult male: eatingMin | 255.76 / 255.39 / 254.97 / 254.74 | 255.21 ± 0.45 | 254.12 (z -2.2) | 237.91 (z -34.3) | 237.21 (z -35.6) |
+| adult male: fruitShare | 0.75 / 0.76 / 0.76 / 0.76 | 0.75 ± 0.00 | 0.76 (z +1.4) | 0.83 (z +21.8) | 0.83 (z +20.5) |
+| female, other: groundKm | 2.22 / 2.35 / 2.28 / 2.36 | 2.30 ± 0.07 | 2.35 (z +0.7) | 1.67 (z -8.6) | 1.57 (z -10.0) |
+| female, other: eatingMin | 248.73 / 251.10 / 247.71 / 246.46 | 248.50 ± 1.97 | 249.33 (z +0.4) | 228.77 (z -9.0) | 228.99 (z -8.9) |
+| female, other: fruitShare | 0.63 / 0.63 / 0.64 / 0.64 | 0.63 ± 0.00 | 0.64 (z +0.6) | 0.69 (z +13.3) | 0.70 (z +14.1) |
+| female, lactating: groundKm | 2.50 / 2.48 / 2.44 / 2.54 | 2.49 ± 0.04 | 2.44 (z -1.1) | 1.59 (z -19.7) | 1.52 (z -21.3) |
+| female, lactating: eatingMin | 268.45 / 271.67 / 271.37 / 269.39 | 270.22 ± 1.56 | 271.11 (z +0.5) | 264.30 (z -3.4) | 266.76 (z -2.0) |
+| female, lactating: fruitShare | 0.81 / 0.80 / 0.81 / 0.80 | 0.81 ± 0.01 | 0.80 (z -0.8) | 0.85 (z +5.6) | 0.84 (z +4.2) |
+| juvenile 5–12 y: groundKm | 2.66 / 2.71 / 2.71 / 2.71 | 2.70 ± 0.02 | 2.68 (z -0.8) | 1.81 (z -36.6) | 1.73 (z -39.9) |
+| juvenile 5–12 y: eatingMin | 268.48 / 269.58 / 270.10 / 268.46 | 269.15 ± 0.82 | 267.75 (z -1.5) | 257.70 (z -12.5) | 259.59 (z -10.4) |
+| juvenile 5–12 y: fruitShare | 0.89 / 0.90 / 0.89 / 0.89 | 0.89 ± 0.00 | 0.90 (z +1.7) | 0.92 (z +17.3) | 0.91 (z +13.4) |
+
+| Row (pooled) | Band | S6 runs | S6 mean ± SD | S7a | S7b | S8 |
+| --- | --- | --- | --- | --- | --- | --- |
+| T-ACT-1 | 0.33–0.5 | 0.378 / 0.378 / 0.380 / 0.376 | 0.378 ± 0.002 | 0.377 | 0.366 | 0.359 |
+| T-ACT-2 | 0.12–0.25 | 0.226 / 0.225 / 0.228 / 0.225 | 0.226 ± 0.001 | 0.224 | 0.169 | 0.161 |
+| T-ACT-3 | 0.08–0.18 | 0.164 / 0.165 / 0.161 / 0.165 | 0.164 ± 0.002 | 0.168 | 0.194 | 0.208 |
+| T-ACT-4 | 0.3–0.47 | 0.377 / 0.335 / 0.356 / 0.377 | 0.361 ± 0.020 | 0.355 | 0.418 | 0.430 |
+| T-PTY-1 | 3–9 | 3.307 / 3.448 / 3.293 / 3.427 | 3.369 ± 0.080 | 3.416 | 3.305 | 3.317 |
+| T-RNG-4 | 1.5–3.5 | 2.575 / 2.576 / 2.701 / 2.628 | 2.620 ± 0.059 | 2.572 | 1.948 | 1.754 |
+| T-HUN-1 | 5–25 | 31.021 / 35.776 / 25.755 / 33.401 | 31.488 ± 4.287 | 28.201 | 23.769 | 23.796 |
+| T-HUN-3 | 0.05–0.4 | 0.057 / 0.059 / 0.057 / 0.053 | 0.057 ± 0.002 | 0.068 | 0.062 | 0.053 |
+| T-FOOD-2 | 0.6–0.78 | 0.761 / 0.764 / 0.766 / 0.755 | 0.761 ± 0.005 | 0.764 | 0.811 | 0.811 |
+| T-FOOD-4 | 4–15 | 7.493 / 7.376 / 7.521 / 7.482 | 7.468 ± 0.063 | 7.596 | 8.006 | 7.861 |
+| T-FOOD-6 | 2–7 | 5.214 / 4.927 / 5.216 / 4.901 | 5.065 ± 0.174 | 5.021 | 5.431 | 5.325 |
+| T-FOOD-10 | 0.08–0.3 | 0.766 / 0.781 / 0.772 / 0.766 | 0.771 ± 0.007 | 0.757 | 0.732 | 0.701 |
+S7a T-ACT-2 by sex: {'male': 0.23481900163659986, 'female': 0.21483996158074822}
+S7b T-ACT-2 by sex: {'male': 0.1922357084524383, 'female': 0.14929181902489427}
+S8 T-ACT-2 by sex: {'male': 0.1821861000386548, 'female': 0.1431784819283101}
+/Users/juanbermudez/Desktop/MGOGO/.claude/worktrees/bench-run/artifacts/validation/e/s7/S8-rhythm5.json: adults out of a nest 2.59% of night; T-RHY-5 0.0260; night deaths 0; deaths 0
+```
+
+**Against the predictions.** Prescriptions 76, viability (no deaths) and night (2.59%, T-RHY-5 0.0260): held. Nursing
+mothers near S7b's: held (−0.046). Infants' reserves less negative than S7b's: held (−0.067 / −0.030 against −0.090 /
+−0.035). Growth at 1–4 y 3.3–3.55: held (3.42–3.46). Males' ground km 1.9–2.1: missed narrowly (1.88). T-ACT-2 males
+0.17–0.21: held (0.182). T-RNG-4 1.8–2.1: missed narrowly (1.75, inside its band 1.5–3.5). T-HUN-1 15–28: held (23.8).
+T-FOOD-2 and T-ACT-3 above their bands: held (0.811; 0.208). Fitted inside noise: held (z −0.2). Held-out without the
+rare rows better beyond noise: held (z −6.9: 5.23 → 3.60; T-RNG-5, T-FOOD-10, T-FOOD-5 and T-IGE-2 move most).
+
+**Verdict: S8 passes the keep rule and replaces S6 as the best integrated candidate.** 76 prescriptions; every class's
+energy balance improves (nursing mothers −0.117 → −0.046% of the store a day, infants −0.156 / −0.095 → −0.067 / −0.030);
+walking, travel share and hunting inside their bands; held-out better beyond noise. Costs: the time walking and eating
+freed goes to grooming and rest, so grooming (T-ACT-3, a fitted row) and fruit share (T-FOOD-2, fitted) leave their bands;
+males' path (1.88 km) and T-RNG-4 (1.75) sit in the lower half of their bands. Infants drink more milk again (279 / 239 /
+234 kcal/day at 1–2 / 2–3 / 3–4 y) because better-fed mothers refuse less; mothers' balance stays near −15 to −27 kcal/day
+at every infant age. The next lever these costs name is what fills free time: the social need still rises on fixed timers.
