@@ -404,3 +404,36 @@ reserves the open cost. Energy readouts of S5c2 and S5c3 to be re-run when the m
 | infant 2–5 y: groundKm | 0.18 / 0.19 / 0.20 / 0.19 | 0.19 ± 0.01 | 0.23 | +6.4 |
 | infant 2–5 y: eatingMin | 109 / 109 / 109 / 110 | 109 ± 1 | 150 | +72.2 |
 | infant 2–5 y: reserves | -0.019 / -0.020 / -0.020 / -0.019 | -0.020 ± 0.001 | -0.082 | -110.5 |
+
+## S7a and S7b confirms (registered 2 October 2026 before their runs)
+
+Two corrections, each a provisional keep candidate in quick mode, confirmed on S6 one at a time so each effect is its own:
+- **S7a = S6 + `growYield` 1** (E1p: growth in proportion to the relative store, reserves first as the sources order it).
+- **S7b = S6 + `revisitByCrop` 1** (E3b: a crown fed in is valued by the crop believed left, not devalued for 12 h).
+
+**Reference group, new:** S6 in confirm mode, the existing run (S6c, cac9598) plus three re-draws (`rgTemperature`
+0.1641, 0.1639, 0.16405: S6c1, S6c2, S6c3), each with energy-diagnose. Judged by e-noise.md amendment 2 against the
+group's mean (registered confirm per-run SD or the group's own spread if larger); sums reported with and without T-HUN-4
+and T-BRD-1, and without T-IGE-3 as well (unstable on few events, S6 results). Runs: bench-run at this commit (code
+identical for S6: every newer switch is 0), `--confirm`, workers 1–2 by load; energy-diagnose and rhythm-metrics (5 seeds,
+30 + 60 days) for both arms.
+
+**Keep rule for a correction (as E4g's `followCarer` was taken into S4 and S5):** viability passes; held-out not up
+beyond noise against the S6 mean; night safe (adults out of a nest ≤ 3.3% of the night, T-RHY-5 ≤ 0.033); the count of
+prescriptions does not rise (a correction removes a design stand-in, not a counted prescription; its case rests on its
+stage's sources: E1p's partition, E3b's absence of any source for time-decay avoidance).
+
+**Predictions (against the S6 group; moderate confidence unless stated).**
+
+| Quantity | S6c (one run) | S7a | S7b |
+| --- | --- | --- | --- |
+| Prescriptions | 76 | 76 (high) | 76 (high) |
+| Viability; night safe | pass; 2.77% | pass; ≤ 3.3% | pass; ≤ 3.3% |
+| Growth, infants 1–4 y (kg/y) | 3.6 | 3.3–3.5 | unchanged (low) |
+| Reserves, infants 0.5–2 / 2–5 y (%/day, slope) | −0.147 / −0.106 | less negative by ≥ 25% (low) | — |
+| Reserves, nursing mothers (%/day, slope) | −0.125 | less negative (low) | less negative by ≥ 0.05 |
+| Males' ground km per day | 2.68 | unchanged | 1.75–2.0 |
+| T-ACT-2 males; T-RNG-4 (observer, km) | 0.242; 2.58 | unchanged | 0.16–0.21; 1.8–2.3 (low) |
+| T-HUN-1 (per community-year, band 5–25) | 31.0 | unchanged | 15–25 |
+| T-FOOD-2 fruit share (band 0.6–0.78) | 0.761 | unchanged | 0.80–0.88, above its band (a known cost) |
+| Fitted; held-out with and without the rare rows | group mean | inside noise | inside noise (low: T-FOOD-5's scorer counts a return as a nearest-tree choice) |
