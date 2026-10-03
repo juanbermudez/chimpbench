@@ -248,3 +248,205 @@ by the timers); G1 is the control (removes nothing) and is recorded. Night safet
   and 5abafba (34d7e2cb94a01b6e). Smoke test (seed 48, 1 + 1 days, G1 and G2): every groom-diagnose readout filled; the
   score terms are reported as they enter the score (× n under the switch; fixed in the tool before the arms, residual
   0.04–0.09 = jitter and continuation). Runs from the frozen checkout `run-5abafba` (clean), started 23:12, G1 then G2.
+
+## 7. Iteration 1 results (arms G1, G2; run-5abafba, clean; every number below printed by the stage's `e5d_judge.py`, `diag_compact.py`, `extra_blocks.py` from the JSON)
+
+Runs: e-bench quick, energy-diagnose and groom-diagnose (seeds 48 and 7; 30 + 30 days) for each arm, 23:11–23:26 on
+2 October, `--workers 2` (load 5–9); cohesion-diagnose on S8 and G1 afterwards (same window). The night-safety run of G1
+(rhythm-metrics, `--workers 1`) was killed by the session's interruption at 23:35 and is re-run with iteration 2.
+Deaths: none in G1; one in G2 (an adult male, respiratory outbreak, seed 7); no starvation.
+
+```
+quick, reference custom (4 runs), rows counted in all runs: fitted 16, held-out 13
+  fitted             (16 rows) ref 1.94, 1.46, 2.46, 3.02 (mean 2.22, sd 0.67; used 0.69) | G1.json: 2.42, Δ +0.21, z +0.3 (inside noise) | G2.json: 5.33, Δ +3.11, z +4.0 RESULT
+  held-out           (13 rows) ref 3.45, 4.91, 5.19, 5.19 (mean 4.69, sd 0.83; used 1.26) | G1.json: 3.85, Δ -0.84, z -0.6 (inside noise) | G2.json: 4.12, Δ -0.57, z -0.4 (inside noise)
+  held-out w/o rare  (12 rows) ref 3.45, 4.02, 4.23, 3.24 (mean 3.74, sd 0.47; used 0.48) | G1.json: 3.60, Δ -0.14, z -0.3 (inside noise) | G2.json: 4.09, Δ +0.36, z +0.7 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-ACT-3   fitted   ref 0.25±0.03 | G1.json 0.00 (pass) | G2.json 0.11 (fail)
+   T-COM-8   fitted   ref 0.00±0.00 | G1.json 0.40 (fail) | G2.json 0.00 (pass)
+   T-HUN-1   fitted   ref 0.28±0.33 | G1.json 1.06 (fail) | G2.json 0.35 (inconclusive)
+   T-HUN-4   held-out ref 0.95±0.80 | G1.json 0.25 (fail) | G2.json 0.02 (fail)
+   T-SOC-3   held-out ref 0.42±0.07 | G1.json 0.00 (pass) | G2.json 0.19 (fail)
+   T-SOC-5   held-out ref 0.00±0.00 | G1.json 0.00 (pass) | G2.json 0.16 (fail)
+```
+
+| Row (pooled; by sex where scored) | S8 runs | S8 mean ± SD | G1 | G2 |
+| --- | --- | --- | --- | --- |
+| T-ACT-1 | 0.349 / 0.356 / 0.359 / 0.362 | 0.356 ± 0.005 | 0.367 (z +1.6) | 0.359 (z +0.5) |
+| T-ACT-1 male | 0.346 / 0.347 / 0.361 / 0.369 | 0.356 ± 0.011 | 0.354 (z -0.1) | 0.351 (z -0.4) |
+| T-ACT-1 female | 0.352 / 0.364 / 0.357 / 0.356 | 0.357 ± 0.005 | 0.377 (z +3.5) | 0.366 (z +1.6) |
+| T-ACT-2 | 0.160 / 0.161 / 0.166 / 0.164 | 0.163 ± 0.003 | 0.225 (z +20.5) | 0.173 (z +3.3) |
+| T-ACT-2 male | 0.184 / 0.181 / 0.205 / 0.201 | 0.193 ± 0.012 | 0.236 (z +3.2) | 0.207 (z +1.0) |
+| T-ACT-2 female | 0.141 / 0.145 / 0.134 / 0.136 | 0.139 ± 0.005 | 0.217 (z +14.6) | 0.145 (z +1.0) |
+| T-ACT-3 | 0.210 / 0.200 / 0.185 / 0.190 | 0.196 ± 0.011 | 0.119 (z -6.3) | 0.085 (z -9.0) |
+| T-ACT-3 male | 0.184 / 0.155 / 0.136 / 0.143 | 0.155 ± 0.021 | 0.122 (z -1.4) | 0.117 (z -1.6) |
+| T-ACT-3 female | 0.230 / 0.237 / 0.225 / 0.226 | 0.229 ± 0.006 | 0.117 (z -18.1) | 0.058 (z -27.6) |
+| T-ACT-4 | 0.431 / 0.421 / 0.405 / 0.397 | 0.414 ± 0.015 | 0.360 (z -3.2) | 0.393 (z -1.2) |
+| T-PTY-1 | 3.433 / 3.624 / 3.498 / 3.679 | 3.559 ± 0.113 | 4.680 (z +8.9) | 3.302 (z -2.0) |
+| T-SOC-2 | 0.824 / 0.857 / 0.895 / 0.792 | 0.842 ± 0.044 | 0.842 (z +0.0) | 0.882 (z +0.8) |
+| T-SOC-3 | 0.926 / 0.970 / 0.928 / 0.964 | 0.947 ± 0.023 | 0.745 (z -7.7) | 0.867 (z -3.0) |
+| T-SOC-5 | 0.361 / 0.289 / 0.472 / 0.508 | 0.407 ± 0.101 | 0.487 (z +0.7) | 0.121 (z -2.5) |
+| T-SOC-6 | 0.423 / 0.437 / 0.382 / 0.503 | 0.436 ± 0.050 | 0.462 (z +0.5) | 0.474 (z +0.7) |
+| T-SOC-9 | 0.246 / 0.124 / 0.165 / 0.116 | 0.163 ± 0.060 | 0.124 (z -0.6) | 0.536 (z +5.6) |
+| T-SOC-10 | 0.276 / 0.269 / 0.246 / 0.296 | 0.271 ± 0.021 | 0.256 (z -0.7) | 0.249 (z -1.0) |
+| T-RNG-4 | 1.866 / 1.974 / 2.238 / 2.363 | 2.110 ± 0.230 | 2.630 (z +2.0) | 1.904 (z -0.8) |
+| T-HUN-1 | 19.945 / 24.199 / 33.907 / 38.315 | 29.092 ± 8.482 | 46.126 (z +1.8) | 32.088 (z +0.3) |
+
+| Reserves ÷ store, % per day (OLS over the window) | S8 runs | S8 mean ± SD | G1 | G2 |
+| --- | --- | --- | --- | --- |
+| adult male | +0.000 / +0.003 / -0.006 / +0.020 | +0.005 ± +0.011 | +0.016 (z +0.9) | -0.005 (z -0.7) |
+| female, other | +0.014 / +0.009 / -0.000 / -0.002 | +0.005 ± +0.007 | +0.013 (z +0.9) | -0.023 (z -3.5) |
+| female, lactating | +0.014 / -0.002 / -0.008 / -0.002 | +0.000 ± +0.010 | +0.003 (z +0.2) | +0.006 (z +0.5) |
+| juvenile 5–12 y | +0.018 / -0.012 / +0.004 / +0.000 | +0.003 ± +0.012 | -0.029 (z -2.3) | -0.013 (z -1.1) |
+| infant 2–5 y | +0.004 / +0.003 / -0.002 / +0.006 | +0.003 ± +0.003 | -0.001 (z -1.0) | +0.020 (z +4.9) |
+| infant 0.5–2 y | +0.015 / -0.007 / -0.016 / -0.006 | -0.003 ± +0.013 | +0.006 (z +0.6) | -0.002 (z +0.1) |
+| infant < 0.5 y | +0.000 / +0.000 / +0.000 / +0.000 | +0.000 ± +0.000 | +0.000 (z +nan) | +0.000 (z +nan) |
+
+| Ground km / eating min (energy-diagnose) | S8 runs | S8 mean ± SD | G1 | G2 |
+| --- | --- | --- | --- | --- |
+| adult male: groundKm | 1.85 / 1.88 / 1.98 / 1.99 | 1.93 ± 0.07 | 2.64 (z +9.1) | 2.07 (z +1.8) |
+| adult male: eatingMin | 236.75 / 237.12 / 236.61 / 237.22 | 236.92 ± 0.29 | 241.46 (z +13.9) | 236.10 (z -2.5) |
+| female, other: groundKm | 1.49 / 1.49 / 1.56 / 1.51 | 1.51 ± 0.03 | 2.21 (z +20.2) | 1.64 (z +3.6) |
+| female, other: eatingMin | 228.19 / 223.59 / 220.90 / 223.84 | 224.13 ± 3.02 | 226.65 (z +0.7) | 225.50 (z +0.4) |
+| female, lactating: groundKm | 1.41 / 1.45 / 1.45 / 1.47 | 1.45 ± 0.02 | 2.35 (z +33.8) | 1.54 (z +3.7) |
+| female, lactating: eatingMin | 265.42 / 264.09 / 267.41 / 266.23 | 265.79 ± 1.40 | 279.58 (z +8.8) | 286.36 (z +13.2) |
+| juvenile 5–12 y: groundKm | 1.68 / 1.64 / 1.74 / 1.82 | 1.72 ± 0.08 | 2.50 (z +9.1) | 1.67 (z -0.6) |
+| juvenile 5–12 y: eatingMin | 245.17 / 245.93 / 248.06 / 241.31 | 245.12 ± 2.82 | 270.61 (z +8.1) | 254.96 (z +3.1) |
+
+| Grooming (groom-diagnose, simulation truth, per subject-day) | S8 runs | S8 mean ± SD | G1 | G2 |
+| --- | --- | --- | --- | --- |
+| adult male: grooming min/day (daylight, given or received) | 119.329 / 122.415 / 119.782 / 112.589 | 118.529 ± 4.187 | 86.288 (z -6.9) | 82.580 (z -7.7) |
+| female, other: grooming min/day (daylight, given or received) | 127.250 / 117.345 / 119.687 / 117.769 | 120.513 ± 4.606 | 88.408 (z -6.2) | 45.725 (z -14.5) |
+| female, lactating: grooming min/day (daylight, given or received) | 242.802 / 246.814 / 228.941 / 232.666 | 237.806 ± 8.389 | 82.553 (z -16.6) | 30.023 (z -22.2) |
+| lact: infant < 2 y: grooming min/day (daylight, given or received) | 151.635 / 152.323 / 133.889 / 134.997 | 143.211 ± 10.138 | 82.304 (z -5.4) | 34.336 (z -9.6) |
+| lact: infant ≥ 2 y: grooming min/day (daylight, given or received) | 333.968 / 341.304 / 323.993 / 330.334 | 332.400 ± 7.227 | 82.802 (z -30.9) | 25.709 (z -38.0) |
+| adolescent 12–15 y: grooming min/day (daylight, given or received) | 99.953 / 87.965 / 90.429 / 82.193 | 90.135 ± 7.400 | 66.506 (z -2.9) | 40.138 (z -6.0) |
+| juvenile 5–12 y: grooming min/day (daylight, given or received) | 89.978 / 78.953 / 74.651 / 77.288 | 80.218 ± 6.744 | 51.910 (z -3.8) | 14.800 (z -8.7) |
+| infant 1–6 y: grooming min/day (daylight, given or received) | 273.744 / 278.297 / 261.081 / 266.201 | 269.831 ± 7.675 | 77.831 (z -22.4) | 29.239 (z -28.0) |
+| adult male: rest min/day (daylight) | 157.984 / 158.801 / 160.210 / 151.002 | 156.999 ± 4.103 | 153.876 (z -0.7) | 190.146 (z +7.2) |
+| female, other: rest min/day (daylight) | 204.867 / 207.689 / 201.784 / 214.738 | 207.269 ± 5.532 | 196.683 (z -1.7) | 277.440 (z +11.3) |
+| female, lactating: rest min/day (daylight) | 79.801 / 79.707 / 89.377 / 91.349 | 85.058 ± 6.178 | 134.222 (z +7.1) | 194.218 (z +15.8) |
+| juvenile 5–12 y: rest min/day (daylight) | 124.316 / 128.839 / 124.079 / 128.069 | 126.326 ± 2.479 | 77.510 (z -17.6) | 164.842 (z +13.9) |
+| adult male: daylight need | 0.342 / 0.325 / 0.309 / 0.335 | 0.328 ± 0.014 | 0.532 (z +12.8) | 0.504 (z +11.0) |
+| female, other: daylight need | 0.312 / 0.352 / 0.359 / 0.331 | 0.339 ± 0.021 | 0.530 (z +8.0) | 0.319 (z -0.8) |
+| female, lactating: daylight need | 0.107 / 0.100 / 0.126 / 0.129 | 0.116 ± 0.014 | 0.406 (z +18.3) | 0.115 (z -0.0) |
+| juvenile 5–12 y: daylight need | 0.341 / 0.357 / 0.332 / 0.349 | 0.345 ± 0.011 | 0.626 (z +23.5) | 0.237 (z -9.0) |
+| adult male: restoration at a full need (share) | 0.377 / 0.399 / 0.398 / 0.362 | 0.384 ± 0.018 | 0.027 (z -17.9) | 0.029 (z -17.8) |
+| female, other: restoration at a full need (share) | 0.394 / 0.335 / 0.348 / 0.337 | 0.353 ± 0.028 | 0.030 (z -10.4) | 0.113 (z -7.7) |
+| female, lactating: restoration at a full need (share) | 0.670 / 0.672 / 0.651 / 0.653 | 0.661 ± 0.011 | 0.029 (z -51.3) | 0.414 (z -20.0) |
+| lact: infant ≥ 2 y: restoration at a full need (share) | 0.770 / 0.773 / 0.764 / 0.765 | 0.768 ± 0.004 | 0.032 (z -157.2) | 0.515 (z -54.0) |
+| juvenile 5–12 y: restoration at a full need (share) | 0.312 / 0.285 / 0.244 / 0.283 | 0.281 ± 0.028 | 0.004 (z -8.9) | 0.288 (z +0.2) |
+| adult male: need rise per day (timers or upkeep) | 0.516 / 0.518 / 0.519 / 0.514 | 0.517 ± 0.002 | 0.524 (z +2.9) | 0.483 (z -13.6) |
+| female, other: need rise per day (timers or upkeep) | 0.527 / 0.524 / 0.526 / 0.528 | 0.526 ± 0.002 | 0.530 (z +2.0) | 0.236 (z -152.0) |
+| female, lactating: need rise per day (timers or upkeep) | 0.545 / 0.547 / 0.547 / 0.547 | 0.546 ± 0.001 | 0.544 (z -2.2) | 0.238 (z -275.9) |
+| juvenile 5–12 y: need rise per day (timers or upkeep) | 0.540 / 0.538 / 0.540 / 0.541 | 0.540 ± 0.001 | 0.541 (z +0.9) | 0.214 (z -231.5) |
+
+Grooming in detail (simulation truth; compare §2.1):
+
+| readout (G1 / G2) | adult male | other adult F | lactating | lact., infant ≥ 2 y | juvenile 5–12 y |
+| --- | --- | --- | --- | --- | --- |
+| grooming, given or received (daylight min/day) | 86 / 83 | 88 / 46 | 83 / 30 | 83 / 26 | 52 / 15 |
+|   given / mutual (min/day) | 64·36 / 63·32 | 64·34 / 28·12 | 68·17 / 21·3 | 73·11 / 21·1 | 47·21 / 10·4 |
+| rest, not groomed (daylight min/day) | 154 / 190 | 197 / 277 | 134 / 194 | 129 / 176 | 78 / 165 |
+| free time (daylight − eat − forage − travel − nest, min/day) | 275 / 294 | 303 / 338 | 296 / 342 | 312 / 357 | 230 / 280 |
+| daylight social need n (mean) | 0.53 / 0.50 | 0.53 / 0.32 | 0.41 / 0.12 | 0.37 / 0.05 | 0.63 / 0.24 |
+| need budget/day: timers | 0.52 / 0.48 | 0.53 / 0.24 | 0.54 / 0.24 | 0.54 / 0.23 | 0.54 / 0.21 |
+| need budget/day: restored by grooming | 0.51 / 0.47 | 0.51 / 0.24 | 0.37 / 0.13 | 0.33 / 0.09 | 0.28 / 0.08 |
+| need budget/day: restored at a full need (clamped) | 0.01 / 0.01 | 0.02 / 0.03 | 0.02 / 0.17 | 0.02 / 0.24 | 0.00 / 0.09 |
+|   clamped share of all restoration | 3% / 3% | 3% / 11% | 3% / 41% | 3% / 51% | 0% / 29% |
+| bouts started: n at start | 0.62 / 0.60 | 0.63 / 0.43 | 0.51 / 0.18 | 0.48 / 0.05 | 0.71 / 0.46 |
+|   score: need term (0.55·n) | 0.34 / 0.33 | 0.35 / 0.24 | 0.28 / 0.10 | 0.26 / 0.03 | 0.39 / 0.26 |
+|   score: partner terms (bond, kin, reciprocity, rank) | 0.23 / 0.23 | 0.14 / 0.11 | 0.20 / 0.05 | 0.22 / 0.02 | 0.37 / 0.23 |
+|   score: invitation | 0.11 / 0.10 | 0.14 / 0.09 | 0.06 / 0.03 | 0.02 / 0.00 | 0.03 / 0.03 |
+|   score: costs | -0.16 / -0.16 | -0.18 / -0.19 | -0.19 / -0.19 | -0.19 / -0.19 | -0.19 / -0.17 |
+|   score chosen / best non-grooming option | 0.56·0.47 / 0.53·0.45 | 0.48·0.44 / 0.30·0.38 | 0.38·0.40 / 0.11·0.36 | 0.35·0.40 / 0.02·0.35 | 0.65·0.48 / 0.43·0.42 |
+|   partner: mean bond; share kin | 0.58·0.20 / 0.59·0.17 | 0.48·0.20 / 0.45·0.24 | 0.71·0.60 / 0.68·0.58 | 0.81·0.75 / 0.81·0.76 | 0.67·0.63 / 0.63·0.63 |
+|   displaced act: rest / feed / travel (share) | 0.28·0.25·0.07 / 0.27·0.29·0.08 | 0.33·0.22·0.08 / 0.32·0.26·0.11 | 0.25·0.32·0.08 / 0.27·0.28·0.08 | 0.21·0.35·0.07 / 0.25·0.28·0.09 | 0.13·0.33·0.22 / 0.21·0.32·0.23 |
+| decisions with a groom option that chose another act: best groom / best rest score | 0.24·0.30 / 0.22·0.29 | 0.19·0.28 / 0.09·0.28 | 0.15·0.22 / 0.03·0.22 | 0.15·0.21 / 0.01·0.21 | 0.24·0.21 / 0.06·0.24 |
+| a settled partner in reach (share of daylight) | 0.38 / 0.38 | 0.39 / 0.32 | 0.55 / 0.59 | 0.61 / 0.67 | 0.35 / 0.27 |
+| stress; affiliation (daylight) | 0.13·0.08 / 0.11·0.07 | 0.13·0.07 / 0.14·0.03 | 0.14·0.12 / 0.14·0.06 | 0.14·0.14 / 0.14·0.06 | 0.16·0.05 / 0.16·0.01 |
+
+T-SOC-9's sample, and what restores the need of mothers, juveniles and infants:
+
+| run | T-SOC-9 per seed (individuals with ≥ 3 PC–MC pairs) | truth: reconciliations ÷ decided conflicts | detected conflicts (T-SOC-10 denominator) |
+| --- | --- | --- | --- |
+| S8q | 0.206 (6) / 0.286 (8) | 0.161 / 0.222 | 107 / 194 |
+| S8q1 | 0.247 (15) / 0.000 (2) | 0.205 / 0.177 | 158 / 54 |
+| S8q2 | 0.125 (2) / 0.205 (9) | 0.137 / 0.190 | 49 / 175 |
+| S8q3 | 0.149 (14) / 0.083 (4) | 0.185 / 0.181 | 203 / 115 |
+| G1 | 0.142 (16) / 0.107 (9) | 0.168 / 0.138 | 272 / 251 |
+| G2 | 0.343 (3) / 0.729 (4) | 0.189 / 0.229 | 76 / 93 |
+
+| run | class | need rise/day | restored by grooming given / received | by play | by nursing | at a full need | play min/day |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| S8q | female, lactating | 0.545 | 0.680 / 0.886 | 0.121 | 0.000 | 1.130 | 48 |
+| S8q | juvenile 5–12 y | 0.540 | 0.253 / 0.326 | 0.209 | 0.000 | 0.246 | 83 |
+| S8q | infant 1–6 y | 0.546 | 0.523 / 1.343 | 0.074 | 0.320 | 1.666 | 29 |
+| G1 | female, lactating | 0.544 | 0.204 / 0.169 | 0.187 | 0.000 | 0.016 | 74 |
+| G1 | juvenile 5–12 y | 0.541 | 0.141 / 0.138 | 0.244 | 0.000 | 0.002 | 97 |
+| G1 | infant 1–6 y | 0.544 | 0.005 / 0.412 | 0.125 | 0.283 | 0.250 | 49 |
+| G2 | female, lactating | 0.238 | 0.064 / 0.062 | 0.289 | 0.000 | 0.172 | 115 |
+| G2 | juvenile 5–12 y | 0.214 | 0.029 / 0.047 | 0.243 | 0.000 | 0.092 | 97 |
+| G2 | infant 1–6 y | 0.258 | 0.000 / 0.150 | 0.096 | 0.340 | 0.312 | 38 |
+
+Where G1's extra walking goes (cohesion-diagnose, S8 → G1, km per day by part):
+
+| class | km/day S8 → G1 | joined trips | to callers | own trips |
+| --- | --- | --- | --- | --- |
+| adult male | 1.90 → 2.71 | 0.46 → 1.03 | 0.34 → 0.64 | 0.64 → 0.45 |
+| lactating | 1.52 → 2.52 | 0.23 → 0.81 | 0.17 → 0.65 | 0.70 → 0.51 |
+| female other | 1.54 → 2.40 | 0.47 → 1.00 | 0.34 → 0.65 | 0.38 → 0.30 |
+| adolescent | 2.11 → 2.93 | 0.63 → 1.10 | 0.36 → 0.65 | 0.48 → 0.44 |
+joins per subject-day 4.98 → 11.91; pair time together 0.132 → 0.193; T-PTY-1 (tool) 3.43 → 4.68
+
+**Kill criteria.**
+- G1: K1 passes (no death; juveniles' slope −0.029%/day is below S8's mean − 2 SD but above the −0.03 floor; every other
+  class inside or better). K2 passes (clamped share 0.027 males, 0.030 other females). K3 passes (fitted z +0.3,
+  held-out −0.6, without the rare rows −0.3). Prescriptions 76 (it removes nothing).
+- G2: K1 passes (no starvation; other females −0.023%/day, below S8's mean − 2 SD, above the floor). K2 passes (0.029,
+  0.113; count 74; the timers do not move the world under the switch, tests/sim-groom-drive.test.ts). **K3 fails: fitted
+  z +4.0** (5.33 against 2.22). The excess is T-SOC-9 (distance 2.26 against 0.05 ± 0.09): its corrected conciliatory
+  tendency rests on 3 and 4 individuals with three or more PC–MC pairs (the reference's runs: 2–16), while simulation
+  truth (reconciliations per decided conflict, 0.189 / 0.229) is inside the reference's 0.137–0.222. Without T-SOC-9 G2's
+  fitted sum is 3.07 against 2.17 (z +1.1, printed by the stage's check). Held-out and held-out without the rare rows are
+  inside noise. **G2 is a null by its registered rule.**
+
+**Predictions scored.**
+- G1: count 76, clamped share ≤ 0.10, grooming of males (86), other females (88), lactating (83), mothers of infants
+  ≥ 2 y (83) and juveniles (52) inside their ranges, need rise unchanged, males' daylight need 0.53 (0.40–0.60), T-ACT-3
+  0.119 / M 0.122 / F 0.117 (all inside), T-ACT-1 0.367, mothers' eating +14 min, sums, viability: held. Missed: T-ACT-4
+  0.360 (registered 0.37–0.44), T-ACT-2 0.225 (0.16–0.20), males' ground km 2.64 (1.9–2.3), T-PTY-1 4.68 (3.4–4.5), T-SOC-3
+  0.745 (0.75–0.93; now inside its field band 0.45–0.80), juveniles' reserves (below S8's 2-SD range).
+- G2: count 74; grooming of males 83 (55–90), other females 46 (35–65), mothers of infants ≥ 2 y 26 (≤ 100); need rise per
+  day (males 0.48, other females 0.24, lactating 0.24: inside); T-ACT-3 0.085 / M 0.117 / F 0.058 (all inside the
+  registered ranges); T-ACT-4 0.393, T-ACT-1 0.359, T-ACT-2 0.173, males' ground km 2.07, T-PTY-1 3.30, T-SOC-3 0.867;
+  mothers' eating +21 min (+5 to +25): held. Missed: other females' clamped share 0.113 (≤ 0.10), lactating grooming 30
+  (35–80), juveniles' 15 (25–55), T-SOC-5 0.121 and T-SOC-9 0.536 (outside the reference spread), the fitted sum.
+
+**Reading.**
+1. *The drive × incentive works as stated in both arms.* Grooming at a met need goes (clamped share 0.38 → 0.03 for
+   males), mothers no longer groom their older infants at a need of 0.03 (332 → 83 or 26 min a day; Gombe mothers groom
+   infants about 3% of the time), reciprocity falls toward its band (T-SOC-3 0.947 → 0.745 / 0.867).
+2. *G1: the need, now held where grooming pays (males 0.33 → 0.53, juveniles 0.35 → 0.63), is the drive E5a's company
+   value reads.* Freed grooming time goes to joining (joined trips +0.5 km a day per class) and approaching callers
+   (+0.3–0.5 km), not to rest: joins per subject-day 5.0 → 11.9, parties 3.6 → 4.7, every class walks 0.7–1.0 km a day more,
+   hunting 29 → 46. Inside their bands except hunting, and the sums are inside noise; but the field gives spare time to
+   rest (lehmann2008, couturier2022), and here company is valued by a need that company does not relieve (only grooming,
+   play and nursing restore it).
+3. *G2: relationship upkeep sets the need's rise by the bonds each animal holds above baseline.* Males hold about twice
+   the value of females (rise 0.48 against 0.24 a day), so males groom about as in G1 (83 min, T-ACT-3 M 0.117) and
+   females half (46, 30; T-ACT-3 F 0.058, below its band); spare time goes to rest (rest +33 to +109 min a day; T-ACT-2
+   0.173, parties 3.3: no company cascade, because only males' need stays high). The females' shortfall has a specific
+   cause in the mechanism, not in its inputs: under `socialUpkeep` the need stands for relationship upkeep, yet play and
+   nursing still restore it without building any bond. Mothers play 115 min a day with their infants (S8 48) and play
+   restores 0.289 of their 0.238 daily rise, so 41% of mothers' restoration lands on a met need and they groom 30 min;
+   juveniles' play restores 0.243 of 0.214; infants' nursing 0.340 of 0.258. G2's low female affiliation is also why its
+   T-SOC-9 inflates (a corrected tendency rises as baseline affiliation falls) on few conflicts (76 / 93 detected against
+   49–203).
+4. *T-ACT-3's comparison* (§1.1): field 0.15 (M) and 0.12 (F) from a community of at least 88; the model's is 22.
+
+**Verdict (iteration 1).** G1 (`groomDrive`) passes the kill criteria; it removes no prescription, so it is a candidate
+correction only (T-ACT-3 and T-SOC-3 into their bands; cost: company-seeking walks, hunting). G2 (`groomDrive` +
+`socialUpkeep`) removes both timers (76 → 74) and its spare time goes to rest as in the field, but it is a null by K3
+(T-SOC-9 on 3–4 individuals), with the females' grooming below its band traced to a defect of the mechanism's own
+accounting (play and nursing restore a relationship need while building no relationship).
