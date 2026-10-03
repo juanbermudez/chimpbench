@@ -10196,6 +10196,32 @@
    "notes": "Stage C8 (life.ts slowLife): time constant of the growth record, an average of min(1, cond / condGood)."
   },
   {
+   "id": "growYield",
+   "group": "needs",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    2
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    2
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Addendum: E1p growth and the body's state): schoenbuchner2019, richard2012, thissen1994"
+   ],
+   "clock": "none",
+   "symbol": "P.growYield (growFraction)",
+   "file": "src/sim/energy.ts",
+   "integer": true,
+   "notes": "Stage E1p switch (docs/staging/e1p-prereg.md §2.2), read only with energyLedger, ledgerGrowSurplus and ledgerGrowPotential 1: which state the share of the growth potential paid reads. 0 = C8's rule, min(1, cond / condGood) (growth yields only about 29% below the reserve set point; E1f iteration 2), bit-identical. 1 = in proportion to the relative store, min(1, cond / ledgerCondSet) = min(1, max(0, 1 + reserves / usable store)): the tissue reserve gives way first and growth yields as it is depleted, continuously from the set point (schoenbuchner2019, richard2012 [M] human; thissen1994 [M]); the proportional form is a design assumption with no free parameter. 2 = C8's rule, and no more than the day-long mean surplus after maintenance pays, (aAvg - mAvg) / the potential's cost (aAvg the day-long mean of energy absorbed, driveAvgH; E1f iteration 1's books; west2001), a bound whose order (growth before reserve) is the reverse of schoenbuchner2019's. No new number; removes no counted prescription (condGood is still read by fertility and the growth record)."
+  },
+  {
    "id": "grudgeAggrW",
    "group": "decision",
    "value": 0.25,

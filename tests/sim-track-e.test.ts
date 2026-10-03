@@ -32,6 +32,7 @@ const TRACK_E_SWITCHES = [
   'companyMargin', // E5b
   'crownShare', // E5c
   'revisitByCrop', // E3b
+  'growYield', // E1p
 ] as const;
 
 test('Track E switches are all 0 by default in both profiles', () => {

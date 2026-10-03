@@ -27,10 +27,15 @@
 // hunger-free part against the best own food, what else wins), own-food limits (carried, mother foraging, eating at a
 // full foregut, intake size), and mothers by their youngest infant's age (eating minutes, daylight fill and hunger).
 //
+// Stage E1p (docs/staging/e1p-prereg.md §1.2): growth against the body's state, for unweaned infants by age and weaned
+// juveniles (5–8, 8–12 y, by sex): absorbed energy, spending other than growth, growth paid against the potential, the
+// condition gate (f), the day's surplus against growth (day and night), the drive's day-long mean (mAvg), velocity and
+// the reserves' course.
+//
 //   pnpm exec tsx scripts/energy-diagnose.ts [--seeds 48,7] [--burn-in 30] [--days 30] [--profile field] [--params '{"energyLedger":1}'] [--term-births] [--json f.json]
 import { writeFileSync } from 'node:fs';
 import { createWorld, tickWorld } from '../src/simulation';
-import { digestaCaps, energyTap, fruitKcalPerUnit, intakeSize, massOf, nurseBoutWorth, ownDrive, plantKcalPerMin, reserveCap, gutCap, type EnergyTerm, type FoodKind } from '../src/sim/energy';
+import { digestaCaps, energyTap, fruitKcalPerUnit, growthPotential, intakeSize, massOf, nurseBoutWorth, ownDrive, plantKcalPerMin, reserveCap, gutCap, type EnergyTerm, type FoodKind } from '../src/sim/energy';
 import { isCarried, V } from '../src/sim/candidates';
 import { paramsOf, type Profile } from '../src/sim/params';
 import { isTreeId, ix } from '../src/sim/state';
@@ -72,6 +77,25 @@ const blankE1o = (): E1o => ({ ownDmIn: 0, ownDmOut: 0, capPass: 0, mCrown: 0, m
   dec: 0, ownOn: 0, treeOn: 0, carriedDec: 0, mForDec: 0, freeBeats: 0, both: 0, other: {}, dayTicks: 0, carried: 0, mFor: 0, eat: 0, eatFull: 0, size: 0,
   mTicks: 0, mDay: 0, mEat: 0, mFill: 0, mHunger: 0, mRes: 0 });
 const e1o = Object.fromEntries(BINS.map(b => [b, blankE1o()])) as Record<string, E1o>;
+/**
+ * Stage E1p (docs/staging/e1p-prereg.md §1.2): growth against the body's state, for unweaned infants with a living mother
+ * (by the infant bins) and weaned immatures under 12 y (5–8 and 8–12 y by sex). Per tick: absorbed = Δ(reserves + kcal
+ * spent) (exact: the ledger books res += absorbed − out), growth paid (tap), spending other than growth, the potential's
+ * cost at f = 1, f = min(1, cond ÷ condGood) as energyTick computes it, condition, reserves ÷ store, the drive's mAvg;
+ * per animal-day: the surplus S = absorbed − spending other than growth against growth paid.
+ */
+interface E1p { ticks: number; growing: number; abs: number; ng: number; gr: number; pot: number; f: number; fLow: number; cond: number; condMin: number; res: number; resMin: number;
+  mAvg: number; mAvgN: number; ngAtM: number; absDay: number; absNight: number; ngDay: number; ngNight: number; grDay: number; grNight: number; dayTicks: number;
+  aDays: number; dLtG: number; dLt0: number; gFromS: number; gDays: number; gSum: number; vSum: number; vN: number; drSum: number; rN: number; r0Sum: number; r1Sum: number;
+  /** Growing ticks with growth paid below the potential (any rule); velocity of the weighed mass (kg + reserves ÷ TISSUE_KCAL_PER_KG). */ paidLow: number; wvSum: number }
+const blankE1p = (): E1p => ({ ticks: 0, growing: 0, abs: 0, ng: 0, gr: 0, pot: 0, f: 0, fLow: 0, cond: 0, condMin: Infinity, res: 0, resMin: Infinity, mAvg: 0, mAvgN: 0, ngAtM: 0,
+  absDay: 0, absNight: 0, ngDay: 0, ngNight: 0, grDay: 0, grNight: 0, dayTicks: 0, aDays: 0, dLtG: 0, dLt0: 0, gFromS: 0, gDays: 0, gSum: 0, vSum: 0, vN: 0, drSum: 0, rN: 0, r0Sum: 0, r1Sum: 0, paidLow: 0, wvSum: 0 });
+const e1p: Record<string, E1p> = {};
+/** Stage E1p: daily mean reserves ÷ store by group (sums and counts per day, pooled over seeds). */
+const e1pTraj: Record<string, { s: number[]; n: number[] }> = {};
+/** Stage E1p readout constant (not a sim input): the registry note of ledgerReserveKcalPerKg, the usable store is about 30% of body mass at about 4,300 kcal/kg of mixed fat and lean tissue, so a scale weighs reserves ÷ 4,300 kg on top of the ledger's mass. */
+const TISSUE_KCAL_PER_KG = 4300;
+const juvBin = (c: Chimp) => `juvenile ${c.age < 8 ? '5–8' : '8–12'} y ${c.sex === 'female' ? 'F' : 'M'}`;
 /** An own-food option of an infant: feeding or foraging, a travel to a tree, begging. */
 const ownFood = (a: string, t: number) => a === 'forage' || a === 'beg' || (a === 'travel' && isTreeId(t));
 /** Per infant over the window: age, mass and reserves (÷ store) at the start and end, and its mother's mean reserves. */
@@ -134,6 +158,10 @@ for (const seed of seeds) {
   const prevDig = new Map<number, [number, number, number]>(); // stage E1b: fin, dmIn, fec at the last tick
   let light = true;
   const binNow = new Map<number, string>(), motherOf = new Map<number, Chimp>(), milkOf = new Map<number, number>(), milkTick = new Map<number, number>();
+  // stage E1p: growth paid this tick (tap), the books at the last tick (res + out), each animal's day so far (S, growth), and
+  // its first sighting in the window (mass, age, reserves ÷ store) for velocities and reserve changes
+  const growNow = new Map<number, number>(), booksPrev = new Map<number, [number, number]>(), pDay = new Map<number, { S: number; g: number; grp: string }>();
+  const pStart = new Map<number, { grp: string; kg0: number; age0: number; r0: number; m0: number }>();
   // stage E1h: each plant food at the field formula's kcal/min (what the field method credits for the same food eaten)
   const fieldPerKcal: Record<FoodKind, number> = { drupe: P.ledgerFruitKcalPerMin / plantKcalPerMin(P, 'drupe'), fig: P.ledgerFigKcalPerMin / plantKcalPerMin(P, 'fig'),
     fallback: P.ledgerFallbackKcalPerMin / plantKcalPerMin(P, 'fallback'), meat: 1, milk: 0 };
@@ -146,6 +174,7 @@ for (const seed of seeds) {
       return;
     }
     const k = cls.get(c.id); if (k) for (const n of k) { acc[n].out[term] += kcal; dayOf(n).out += kcal; }
+    if (term === 'growth') growNow.set(c.id, (growNow.get(c.id) ?? 0) + kcal); // stage E1p
     const b = binNow.get(c.id);
     if (b) { inf[b].out += kcal; if (term === 'growth') inf[b].growth += kcal; }
   };
@@ -348,6 +377,35 @@ for (const seed of seeds) {
       if (m && m.alive && ix(m).en) { const r = ix(m).en!.res / reserveCap(m, P); B.mothers++; B.motherRes += r; const st = start.get(id); if (st) { st.mRes += r; st.mN++; } }
     }
     milkTick.clear();
+    // stage E1p: growth against the body's state (docs/staging/e1p-prereg.md §1.2), every tick, read-only
+    if (on) for (const c of w.chimps) {
+      if (!c.alive) continue;
+      const x = ix(c), L = x.en; if (!L) continue;
+      const b = binNow.get(c.id), grp = b ?? (x.weaned && c.age >= 5 && c.age < 12 ? juvBin(c) : undefined);
+      const prev = booksPrev.get(c.id), g = growNow.get(c.id) ?? 0;
+      booksPrev.set(c.id, [L.res, L.out]);
+      if (!grp || prev === undefined) continue;
+      const E = (e1p[grp] ??= blankE1p()), cap = reserveCap(c, P), dOut = L.out - prev[1], abs = L.res - prev[0] + dOut, ng = dOut - g;
+      const adult = c.sex === 'female' ? P.ledgerMassFemaleKg : P.ledgerMassMaleKg, kg = L.kg ?? massOf(c, P), growing = kg < adult - 1e-9;
+      const pot = growing ? growthPotential(c, P) * 1000 * P.ledgerGrowthKcalPerG / 365.25 / DAY : 0;
+      const q = x.cond / P.condGood, fr = q >= 1 ? 1 : q > 0 ? q : 0, r = L.res / cap;
+      E.ticks++; E.abs += abs; E.ng += ng; E.gr += g; E.pot += pot;
+      if (growing) { E.growing++; E.f += fr; if (fr < 1) E.fLow++; if (g < pot * (1 - 1e-9)) E.paidLow++; }
+      E.cond += x.cond; if (x.cond < E.condMin) E.condMin = x.cond; E.res += r; if (r < E.resMin) E.resMin = r;
+      if (L.mAvg !== undefined) { E.mAvg += L.mAvg; E.mAvgN++; E.ngAtM += ng * 240; } // kcal/h (240 ticks an hour)
+      if (light) { E.dayTicks++; E.absDay += abs; E.ngDay += ng; E.grDay += g; } else { E.absNight += abs; E.ngNight += ng; E.grNight += g; }
+      const pd = pDay.get(c.id) ?? { S: 0, g: 0, grp }; pd.S += abs - ng; pd.g += g; pd.grp = grp; pDay.set(c.id, pd);
+      if (!pStart.has(c.id)) pStart.set(c.id, { grp, kg0: kg, age0: c.age, r0: r, m0: kg + L.res / TISSUE_KCAL_PER_KG });
+      if (i % DAY === DAY / 2) { const T = (e1pTraj[grp] ??= { s: [], n: [] }), dd = Math.floor(i / DAY); T.s[dd] = (T.s[dd] ?? 0) + r; T.n[dd] = (T.n[dd] ?? 0) + 1; }
+    }
+    growNow.clear();
+    if (on && i % DAY === DAY - 1) {
+      for (const pd of pDay.values()) {
+        const E = e1p[pd.grp]; E.aDays++; if (pd.S < 0) E.dLt0++;
+        if (pd.g > 0) { E.gDays++; E.gSum += pd.g; E.gFromS += Math.min(pd.g, Math.max(pd.S, 0)); if (pd.S < pd.g) E.dLtG++; }
+      }
+      pDay.clear();
+    }
     // stage E1f: each mother's change of reserves over the day, binned by her youngest unweaned infant's age (T-ENE-5)
     if (on && i % DAY === DAY - 1) {
       const yg = youngest(w);
@@ -365,6 +423,13 @@ for (const seed of seeds) {
     }
   }
   energyTap.fn = null; nurseTap.fn = null;
+  // stage E1p: velocity (kg per bio-year) and reserve change (÷ store per day) of each tracked animal, in the group it started in
+  for (const [id, st] of pStart) {
+    const c = w.chimps.find(k => k.id === id)!, L = ix(c).en;
+    if (!c.alive || !L) continue;
+    const E = e1p[st.grp], dy = c.age - st.age0, kg1 = L.kg ?? massOf(c, P), r1 = L.res / reserveCap(c, P);
+    if (dy > 1 / 365.25) { E.vSum += (kg1 - st.kg0) / dy; E.wvSum += (kg1 + L.res / TISSUE_KCAL_PER_KG - st.m0) / dy; E.vN++; E.drSum += (r1 - st.r0) / (dy * 365.25 / Math.max(1e-9, w.ageRate)); E.rN++; E.r0Sum += st.r0; E.r1Sum += r1; }
+  }
   for (const [id, j] of juv0) { const c = w.chimps.find(k => k.id === id)!; if (c.alive) juvs.push({ seed, id, sex: c.sex, age0: j.age0, kg0: j.kg0, kg1: massOf(c, P), days }); }
   for (const [id, st] of start) {
     const c = w.chimps.find(k => k.id === id)!;
@@ -502,7 +567,28 @@ for (const b of BINS) {
 }
 const jv = (sex: string, lo: number, hi: number) => { const j = juvs.filter(x => x.sex === sex && x.age0 >= lo && x.age0 < hi); return j.length ? `${f(j.reduce((s, x) => s + (x.kg1 - x.kg0) / (x.days / 365.25), 0) / j.length, 2)} kg/y (n ${j.length}, mean ${f(j.reduce((s, x) => s + x.kg0, 0) / j.length, 1)} kg at ${f(j.reduce((s, x) => s + x.age0, 0) / j.length, 1)} y)` : '—'; };
 console.log(`juvenile growth velocity, weaned to 12 y: female 4–8 y ${jv('female', 4, 8)}, 8–12 y ${jv('female', 8, 12)}; male 4–8 y ${jv('male', 4, 8)}, 8–12 y ${jv('male', 8, 12)}`);
+// stage E1p: growth against the body's state (docs/staging/e1p-prereg.md §1.2)
+const e1pOut: Record<string, Record<string, number | number[]>> = {};
+{
+  const order = [...BINS.filter(b => e1p[b]), ...Object.keys(e1p).filter(k => k.startsWith('juvenile')).sort()];
+  console.log('\nstage E1p: growth against the body\'s state (per animal-day; S = absorbed − spending other than growth; f = min(1, cond ÷ condGood) as energyTick reads it; velocity kg per bio-year and reserve change per day per animal over the window)');
+  console.log('| group | animal-days | absorbed | spending other than growth | growth paid | potential cost (f = 1) | paid ÷ potential | S | S day / night | growth day / night | mean f (growing ticks) | f < 1 % | cond mean / min | reserves ÷ store mean / min | mAvg kcal/h against realised | days S < growth % | days S < 0 % | growth paid out of S % | growing ticks paid below the potential % | velocity kg/y (n) | weighed-mass velocity kg/y | Δ reserves ÷ store per day % (n) | first-half / second-half slope %/day |');
+  console.log('| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+  for (const k of order) {
+    const E = e1p[k], d = E.ticks / DAY; if (!d) continue;
+    const T = e1pTraj[k], tr = T ? T.s.map((v, j) => T.n[j] ? v / T.n[j] : NaN) : [];
+    const slope = (a: number[]) => { const p = a.map((v, j) => [j, v] as [number, number]).filter(([, v]) => Number.isFinite(v)); if (p.length < 2) return NaN; const n = p.length, mx = p.reduce((s, q) => s + q[0], 0) / n, my = p.reduce((s, q) => s + q[1], 0) / n; return p.reduce((s, q) => s + (q[0] - mx) * (q[1] - my), 0) / p.reduce((s, q) => s + (q[0] - mx) ** 2, 0); };
+    const h = Math.floor(tr.length / 2);
+    const o = { animalDays: d, absorbed: E.abs / d, spendOther: E.ng / d, growth: E.gr / d, potential: E.pot / d, paidShare: E.pot > 0 ? E.gr / E.pot : NaN, S: (E.abs - E.ng) / d,
+      Sday: (E.absDay - E.ngDay) / d, Snight: (E.absNight - E.ngNight) / d, growthDay: E.grDay / d, growthNight: E.grNight / d, dayShare: E.dayTicks / Math.max(1, E.ticks),
+      f: E.growing ? E.f / E.growing : NaN, fLow: E.growing ? E.fLow / E.growing : NaN, cond: E.cond / E.ticks, condMin: E.condMin, res: E.res / E.ticks, resMin: E.resMin,
+      mAvg: E.mAvgN ? E.mAvg / E.mAvgN : NaN, ngPerH: E.mAvgN ? E.ngAtM / E.mAvgN : NaN, daysSltG: E.gDays ? E.dLtG / E.gDays : NaN, daysSlt0: E.aDays ? E.dLt0 / E.aDays : NaN, paidFromS: E.gSum > 0 ? E.gFromS / E.gSum : NaN,
+      velocity: E.vN ? E.vSum / E.vN : NaN, weighedVelocity: E.vN ? E.wvSum / E.vN : NaN, paidLow: E.growing ? E.paidLow / E.growing : NaN, vN: E.vN, rN: E.rN, dRes: E.rN ? E.drSum / E.rN : NaN, r0: E.rN ? E.r0Sum / E.rN : NaN, r1: E.rN ? E.r1Sum / E.rN : NaN, slope: slope(tr), slope1: slope(tr.slice(0, h)), slope2: slope(tr.slice(h)), traj: tr };
+    e1pOut[k] = o;
+    console.log(`| ${k} | ${f(d)} | ${f(o.absorbed)} | ${f(o.spendOther)} | ${f(o.growth, 1)} | ${f(o.potential, 1)} | ${f(o.paidShare, 3)} | ${f(o.S, 1)} | ${f(o.Sday, 1)} / ${f(o.Snight, 1)} | ${f(o.growthDay, 1)} / ${f(o.growthNight, 1)} | ${f(o.f, 3)} | ${f(100 * o.fLow, 1)} | ${f(o.cond, 3)} / ${f(o.condMin, 3)} | ${f(o.res, 3)} / ${f(o.resMin, 3)} | ${f(o.mAvg, 1)} / ${f(o.ngPerH, 1)} | ${f(100 * o.daysSltG, 1)} | ${f(100 * o.daysSlt0, 1)} | ${f(100 * o.paidFromS, 1)} | ${f(100 * o.paidLow, 1)} | ${f(o.velocity, 2)} (${o.vN}) | ${f(o.weighedVelocity, 2)} | ${f(100 * o.dRes, 3)} (${o.rN}) | ${f(100 * o.slope1, 3)} / ${f(100 * o.slope2, 3)} |`);
+  }
+}
 console.log('dyads (seed, id, age at start, kg start → end, reserves start → end, milk kcal/d, mother mean reserves):');
 for (const x of dyads) console.log(`  ${x.seed} ${x.id} ${x.age0.toFixed(2)} y  ${x.kg0.toFixed(2)} → ${x.kg1.toFixed(2)} kg  ${x.res0.toFixed(3)} → ${x.res1.toFixed(3)}  milk ${x.milk.toFixed(0)}  mother ${x.mRes.toFixed(3)}`);
 for (const [n, t] of Object.entries(traj)) console.log(`reserves ÷ store, ${n}, every 5 d: ${t.filter((_, i) => i % 5 === 0).map(v => f(v, 3)).join(' ')}`);
-if (jsonOut) writeFileSync(jsonOut, JSON.stringify({ profile, seeds, burnIn, days, params, termBirths, rows, births, deaths, deathsByClass, living: [livingStart, livingEnd], traj, daily, infants: inf, dyads, juvs, wean: weanOut, e1o: e1oOut }, null, 1));
+if (jsonOut) writeFileSync(jsonOut, JSON.stringify({ profile, seeds, burnIn, days, params, termBirths, rows, births, deaths, deathsByClass, living: [livingStart, livingEnd], traj, daily, infants: inf, dyads, juvs, wean: weanOut, e1o: e1oOut, e1p: e1pOut }, null, 1));

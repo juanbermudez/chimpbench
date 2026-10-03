@@ -156,6 +156,11 @@ export interface EnergyLedger {
    */
   mAvg?: number; gAt?: number;
   /**
+   * Stage E1p (growYield 2; energy.ts), present only while the animal is below adult mass with that switch at 2: the
+   * day-long average of energy absorbed (kcal/h), against which growth is paid only from the surplus after maintenance.
+   */
+  aAvg?: number;
+  /**
    * Stage E1o (milkInDrive; energy.ts), present only on an unweaned animal with that switch on: the milk its mother's
    * gland holds (kcal) and her synthesis rate (kcal/h), read from her ledger once a tick, so the drive can count milk at
    * what the gland delivers (0 and 0 without a lactating mother).
