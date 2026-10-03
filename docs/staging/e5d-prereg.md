@@ -289,8 +289,13 @@ noise); G3 is a keep candidate (provisional) if K1–K3 pass. Night safety as re
   and 5abafba (34d7e2cb94a01b6e). Smoke test (seed 48, 1 + 1 days, G1 and G2): every groom-diagnose readout filled; the
   score terms are reported as they enter the score (× n under the switch; fixed in the tool before the arms, residual
   0.04–0.09 = jitter and continuation). Runs from the frozen checkout `run-5abafba` (clean), started 23:12, G1 then G2.
-- **Iteration 2** (§4.1; arm G3 = S8 + `groomDrive` 1 + `socialUpkeep` 2): registered 3 October 2026 in this commit, after
-  iteration 1's results (§7) and before any code of it.
+- **Iteration 2** (§4.1; arm G3 = S8 + `groomDrive` 1 + `socialUpkeep` 2): registered at 95e4e83, after iteration 1's
+  results (§7) and before any code of it; implemented at 7829eda (tests/sim-groom-drive.test.ts 8 pass; G3's count 74).
+  The 2-day smoke test (seed 48, G3) found that groom-diagnose still read the timers' rise under value 2 (the residual
+  of the need budget was +0.08 to +0.33 a day); fixed at 96792c1 before any arm (residual −0.003 to −0.007). Identity:
+  S8 and G2 hash the same after 3 days at 5abafba and 96792c1 (34d7e2cb94a01b6e, bb9c142ad3ed94bf), so value 1 is
+  unchanged. Runs from the frozen checkout `run-96792c1` (clean): G3 (bench, energy, groom), then rhythm-metrics for G3
+  and G1.
 
 ## 7. Iteration 1 results (arms G1, G2; run-5abafba, clean; every number below printed by the stage's `e5d_judge.py`, `diag_compact.py`, `extra_blocks.py` from the JSON)
 
