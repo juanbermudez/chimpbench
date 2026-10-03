@@ -223,6 +223,47 @@ by the timers); G1 is the control (removes nothing) and is recorded. Night safet
 ≤ 3.3% of the night and T-RHY-5 ≤ 0.033 (`rhythm-metrics`, as the S-stack confirms). A grooming share outside its band
 (e.g. G2's females below 0.08) is a finding about the bonds the model keeps, never grounds to change a weight or rate.
 
+### 4.1 Iteration 2 (registered 3 October 2026, after iteration 1's results, before any code of it): only grooming meets the relationship need
+
+**Why (iteration 1, §7).** Under `socialUpkeep` 1 the social need stands for relationship upkeep: it rises by the bond
+value the animal's relationships lose, in the units in which grooming restores it while rebuilding bonds (15 per bond
+unit). Play (+0.15/h) and nursing (+0.2/h, the infant) still restore the need from v0.1's timer model, yet in the model
+neither builds any bond. G2's diagnosis shows the consequence: mothers play 115 min a day with their infants and play
+restores 0.289 of their 0.238 daily rise, so 41% of their restoration lands on a met need and they groom 30 min a day;
+juveniles' play restores 0.243 of 0.214, infants' nursing 0.340 of 0.258. The mechanism's own accounting is broken there:
+an act that maintains no relationship meets a need that stands for relationships. (Disclosure: the change is expected
+to raise the grooming of mothers and juveniles, one of the rows G2 missed; its case rests on the mechanism's premise, not
+on that row.)
+
+**Change (same switch, a new value; 1 keeps iteration 1's form).** `socialUpkeep` 2 = value 1, and play and nursing
+restore no social need (`execution.ts`: the +0.15/h of play and the two +0.2/h of nursing are not applied): only grooming,
+whose bond building fixes the exchange rate, meets the relationship need. No new number. Not chosen: letting play and
+nursing build bonds at the same exchange rate (0.01/h and 0.013/h), which would add an effect of play on relationships
+that no source in hand supports. Count 74, as value 1.
+
+**Arm G3** = S8 + `groomDrive` 1 + `socialUpkeep` 2, from a frozen checkout of the commit that implements this section,
+after a 2-day smoke test with the switch on: e-bench quick, energy-diagnose, groom-diagnose (its budget counts no play or
+nursing restoration under value 2), rhythm-metrics (night safety); and rhythm-metrics for G1 again (killed on 2 October).
+
+**Predictions** (against S8's four realizations, G2 in brackets; low confidence unless stated):
+
+| Quantity | S8 mean ± SD | G3 |
+| --- | --- | --- |
+| Prescriptions | 76 | 74 (high) |
+| Clamped share: lactating; juveniles; infants 1–6 y | 0.66; 0.28; — | ≤ 0.10; ≤ 0.10; ≤ 0.15 (moderate) [0.41; 0.29; 0.31] |
+| Grooming, min/day: lactating; juveniles; infants 1–6 y | 238; 80; 270 | 40–90; 30–60; 40–100 [30; 15; 29] |
+| Grooming, min/day: males; other females | 119; 121 | 70–95; 35–65 [83; 46] |
+| Daylight need: lactating; juveniles | 0.116; 0.345 | 0.25–0.50; 0.35–0.60 [0.115; 0.237] |
+| T-ACT-3 pooled; M; F | 0.196; 0.155; 0.229 | 0.08–0.11; 0.10–0.13; 0.06–0.09 [0.085; 0.117; 0.058] |
+| T-ACT-2; T-PTY-1 | 0.163; 3.56 | 0.165–0.20; 3.2–4.2 (a higher need in mothers and juveniles values company more) |
+| T-SOC-9 | 0.163 ± 0.060 | 0.10–0.35 [0.536] |
+| Reserves, every class | S8 values | inside S8 mean ± 2 SD or above −0.03%/day (moderate) |
+| Fitted; held-out; held-out without T-HUN-4, T-BRD-1 | S8 mean | inside noise |
+| Viability | pass | pass (high) |
+
+**Kill criteria and verdict** as iteration 1 (§4: K1 harm, K2 mechanism with the count 74 and the timers not read, K3
+noise); G3 is a keep candidate (provisional) if K1–K3 pass. Night safety as registered.
+
 ## 5. Known defects and limits in the code under test
 
 - `scripts/groom-diagnose.ts` (budget): the need-rise readout assumes the timers; fixed before the arms to read the
@@ -248,6 +289,8 @@ by the timers); G1 is the control (removes nothing) and is recorded. Night safet
   and 5abafba (34d7e2cb94a01b6e). Smoke test (seed 48, 1 + 1 days, G1 and G2): every groom-diagnose readout filled; the
   score terms are reported as they enter the score (× n under the switch; fixed in the tool before the arms, residual
   0.04–0.09 = jitter and continuation). Runs from the frozen checkout `run-5abafba` (clean), started 23:12, G1 then G2.
+- **Iteration 2** (§4.1; arm G3 = S8 + `groomDrive` 1 + `socialUpkeep` 2): registered 3 October 2026 in this commit, after
+  iteration 1's results (§7) and before any code of it.
 
 ## 7. Iteration 1 results (arms G1, G2; run-5abafba, clean; every number below printed by the stage's `e5d_judge.py`, `diag_compact.py`, `extra_blocks.py` from the JSON)
 
