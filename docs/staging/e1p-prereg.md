@@ -570,3 +570,11 @@ the JSON).** Y1: adults out of a nest 2.81% of the night, T-RHY-5 0.0286, no dea
   world creation the 30-day burn-in removes it.
 - Both modes leave the drive expecting growth at the potential (`spendRate`, fao2004 §4.4); in Y2 the reserve term of
   the need dominates, so the appetite still falls when growth is not paid.
+
+## 5. Final checks (after merging `track-e` once, 15940a6: S6 quick reference and energy group, handoff refreshes)
+
+No conflicts (track-e changed only docs/staging/e-stack2-confirm.md and the handoff). `gen-params --check` clean (991
+entries, lint clean); `tsc --noEmit -p .` clean; `pnpm test` 712 tests, 711 pass, 0 fail, 1 skipped; the compressed
+goldens and the field pin did not move (`growYield` 0 is hash-identical to the stack before the change, §2.2).
+`git ls-files data/raw node_modules` prints nothing. Run outputs, the table scripts and the run scripts are in
+`artifacts/validation/e1p/` of this worktree (local, not tracked); the frozen checkouts used for every run were removed.
