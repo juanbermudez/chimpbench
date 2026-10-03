@@ -11,6 +11,7 @@ import { eat, energyTick, ledgerSlow, meatKcalPerUnit } from './energy';
 import { clamp, random } from './rng';
 import { paramsOf, type Params } from './params';
 import { NEVER, SLOW_HOURS, TICK_HOURS, index, ix, markAliveChanged, simOf, type SimChimp } from './state';
+import { upkeepOn, upkeepPerH } from './upkeep';
 
 export function killChimp(world: World, c: Chimp, cause: string, severity = 2, text?: string): void {
   if (!c.alive) return;
@@ -103,6 +104,8 @@ interface NeedRates {
   ledger: boolean;
   /** Stage E2g: the water ledger replaces the thirst timers (water.ts). */
   water: boolean;
+  /** Stage E5d: the social need rises by the relationships' daily loss (upkeep.ts) instead of the timers. */
+  upkeep: boolean;
 }
 let ratesOf: Params | null = null;
 let R: NeedRates;
@@ -113,7 +116,7 @@ function needRates(P: Params): NeedRates {
     hLact: P.hungerLactationPerH, hPreg: P.hungerPregnancyPerH, tSleep: P.thirstSleepPerH, tAwake: P.thirstAwakePerH, tHotC: P.thirstHotC,
     tHot: P.thirstHotPerH, tRain: P.thirstRainRelief, eSleep: P.energySleepPerH, eRest: P.energyRestPerH, eRun: P.energyRunPerH,
     eWalk: P.energyWalkPerH, eOther: P.energyOtherPerH, sSleep: P.socialSleepPerH, sAwake: P.socialAwakePerH, stressFloor: P.stressFloor,
-    stressRelax: P.stressRelaxPerH, meatEat: P.meatEatPerH, meatHunger: P.meatHungerFactor, ledger: P.energyLedger === 1, water: waterOn(P) };
+    stressRelax: P.stressRelaxPerH, meatEat: P.meatEatPerH, meatHunger: P.meatHungerFactor, ledger: P.energyLedger === 1, water: waterOn(P), upkeep: upkeepOn(P) };
   return R;
 }
 
@@ -152,7 +155,9 @@ export function needs(world: World, c: Chimp): void {
   // stage E2g (waterLedger): thirst is read from the water balance (water.ts waterTick, below) instead of the timers
   if (!r.water) c.thirst += (sleeping ? r.tSleep : r.tAwake + (env.temperature > r.tHotC ? r.tHot : 0) - env.rain * r.tRain) * h;
   c.energy += (sleeping ? r.eSleep : a === 'rest' || a === 'shelter' || a === 'groom' || a === 'nurse' ? r.eRest : RUNNING[a] ? -r.eRun : WALKING[a] ? -r.eWalk : -r.eOther) * h;
-  c.social -= (sleeping ? r.sSleep : r.sAwake) * h;
+  // stage E5d (socialUpkeep; upkeep.ts): the social need rises by what the animal's relationships lose to the daily
+  // relaxation of bonds, in the units grooming restores it, instead of the awake and asleep timers
+  c.social -= (r.upkeep ? upkeepPerH(world, c, paramsOf(world)) : sleeping ? r.sSleep : r.sAwake) * h;
   // stage E4a (endoStates): the stress load is a slow state with its own drivers (endocrine.ts) instead of a fixed relaxation
   if (paramsOf(world).endoStates === 1) endoNeeds(world, c, x, sleeping, r.stressFloor + x.bereft); else c.stress -= (c.stress - (r.stressFloor + x.bereft)) * r.stressRelax * h;
   if (c.carryingMeat > 0 && !sleeping) {
@@ -272,8 +277,9 @@ export function hourlyLife(world: World): void {
 
 /** Daily upkeep: bonds relax toward baseline; bonds to the long dead are dropped unless kin; tension decays and memory months close. */
 export function dailyLife(world: World): void {
-  const byId = index(world).byId, P = paramsOf(world);
+  const byId = index(world).byId, P = paramsOf(world), up = upkeepOn(P);
   for (const c of index(world).alive) {
+    let loss = 0;
     for (const k in c.bonds) {
       const id = +k;
       const o = byId.get(id);
@@ -281,8 +287,13 @@ export function dailyLife(world: World): void {
       if (!o.alive && !(o.motherId === c.id || c.motherId === o.id || (c.motherId > 0 && c.motherId === o.motherId)) && world.time - (o.deathTime ?? 0) > 24 * 30) { delete c.bonds[id]; continue; }
       // relationships need upkeep: without grooming, bonds relax toward a baseline over weeks (design)
       const kin = o.motherId === c.id || c.motherId === o.id || (c.motherId > 0 && c.motherId === o.motherId);
-      c.bonds[id] = c.bonds[id] + ((kin ? P.bondBaselineKin : P.bondBaselineOther) - c.bonds[id]) * P.bondRelaxPerDay;
+      const b0 = c.bonds[id], base = kin ? P.bondBaselineKin : P.bondBaselineOther;
+      c.bonds[id] = b0 + (base - b0) * P.bondRelaxPerDay;
+      // stage E5d (socialUpkeep; upkeep.ts): what the relationships with living community members lost today sets the
+      // social need's rise until the next daily step (a bond below its baseline relaxes up, which is no loss)
+      if (up && b0 > base && o.alive && o.troopId === c.troopId) loss += b0 - c.bonds[id];
     }
+    if (up) ix(c).upk = loss;
   }
   dailyRelations(world);
   slimDead(world);

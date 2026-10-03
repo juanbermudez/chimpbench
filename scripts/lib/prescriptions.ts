@@ -263,6 +263,10 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   // crop-blind devaluation is not evaluated (design: the count does not change); crownShare (E5c) switches it off too
   ...same(['revisitW', 'revisitTauH'], P => !(P.crownShare === 1 && P.energyLedger === 1 && P.ledgerDrive === 1 && P.intakeValue === 1) && P.revisitByCrop !== 1,
     'the revisit devaluation in src/sim/candidates.ts (and the fed-tree list in execution.ts) is not evaluated while revisitByCrop is 1 (stage E3b), or while crownShare, energyLedger, ledgerDrive and intakeValue are 1 (stage E5c): a crown just used is worth the crop believed left'),
+  // stage E5d (socialUpkeep; docs/staging/e5d-prereg.md §4): the social need rises by what the animal's relationships lose
+  // to the daily relaxation of bonds (upkeep.ts), so the awake and asleep timers are not read
+  ...same(['socialAwakePerH', 'socialSleepPerH'], P => !(P.socialUpkeep >= 1),
+    'copied into the timer rates (src/sim/life.ts needRates) but used only in the timer branch of needs(), not while socialUpkeep is 1 or 2 (upkeep.ts upkeepPerH sets the rise). src/decide/facts.ts still copies them into the Jev facts (model arms only)'),
   // stage E1n (weanDecide; docs/staging/e1n-prereg.md §3): the mother decides by her drive against the infant's own-food
   // drive (energy.ts ownDrive), so the weaning roll and its ramp are not evaluated
   ...same(['weanRefuseMaxP', 'weanRefuseAgeY', 'weanRefuseRampY'], P => !(P.weanDecide === 1 && P.energyLedger === 1 && P.ledgerDrive === 1),
@@ -328,6 +332,9 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   revisitByCrop: { stage: 'E3b', needs: {}, removesNothing: 'switches off a crop-blind design term (the devaluation of a crown just used, revisitW × exp(−h / revisitTauH)); a crown fed in is then worth the crop believed left (C7a), as any other crown; no counted prescription is switched out (e3b-prereg §5)' },
   growYield: { stage: 'E1p', needs: { energyLedger: 1, ledgerGrowSurplus: 1, ledgerGrowPotential: 1 }, removesNothing: 'changes which state the share of the growth potential reads (1: the relative store from the set point; 2: also the day-long surplus after maintenance) in place of C8\'s knee at condGood; condGood stays in use (fertility, the growth record), no registry entry or literal is switched out (e1p-prereg §2.2)' },
   companyMargin: { stage: 'E5b', needs: { cohesionValue: 1 }, removesNothing: 'values an approach to a caller by the company it adds over the company the animal already has (E5a\'s companyValue and settled-companion set); adds no magnitude and switches no prescription out (e5b-prereg §5)' },
+  groomDrive: { stage: 'E5d', needs: {}, removesNothing: 'weights the design grooming terms of every pair (literal score weights, no registry entry) by the groomer\'s social need (a state), E1k\'s groomNeedDyad form for every partner; adds no rule and removes none (e5d-prereg §4)' },
+  socialUpkeep: { stage: 'E5d', needs: {} },
+  followMargin: { stage: 'E5d', needs: { cohesionValue: 1 }, removesNothing: 'values following and joining by the company they add over the best companion kept by staying (E5b\'s margin, extended; E5a\'s companyValue and presentCompany); adds no magnitude and switches no prescription out (e5d-prereg §4.2)' },
 };
 
 /** Whether an entry is in use: generated (not planned), non-zero under these resolved parameters, and not switched out. */

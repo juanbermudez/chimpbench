@@ -1753,3 +1753,15 @@ through NCBI BioC: 5,160 Gambian children under 2 y, 64,342 measurements; wastin
 PMC: 1,599 children, 8 cohorts; the change in weight-for-length over 6 months is directly associated with later
 length); thissen1994 (abstract, Europe PMC: energy deprivation lowers IGF-I). New: schoenbuchner2019, richard2012,
 thissen1994. Not verified: Kooijman 2001 (abstract only), a primate growth response in reserve units.
+
+## Addendum: E5d why a chimpanzee grooms (2 October 2026)
+
+Same text as research.md "Addendum: E5d why a chimpanzee grooms": villioth2025's sample (community of at least 88; 10
+adult males, 9 adult females, 7 lactating; follows from the night nest, 4.1 ± 2.6 h); lehmann2007 and lehmann2008
+(grooming a requirement set by community size, levelling off above about 40; spare time is uncommitted rest);
+dunbar1991 (group size, not body size); couturier2022 (Sebitoli: extra travel came out of rest); mitani2009 (enduring
+bonds kept by equitable grooming); gomes2009 (dyads groom about once a week, balanced over the long term);
+kaburuNewtonFisher2015 (reciprocity at Sonso and Mahale); silk2010; hygiene (tanaka1993, zamma2002, akinyi2013:
+macaques and baboons); tension (wittig2016 duration check, schino1988, shutt2007). New: lehmann2007, dunbar1991,
+couturier2022, gomes2009, silk2010, tanaka1993, zamma2002, akinyi2013, schino1988, shutt2007. Not verified:
+dunbarDunbar1988, dunbar1992, watts2000 I–II, doran1997, any louse growth rate, any rate of bond fading without contact.

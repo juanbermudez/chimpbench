@@ -2756,3 +2756,125 @@ BioC, two abstracts through Europe PMC). Tags as above.
 the BioC open-access set), so the dynamic-energy-budget rule (growth from a reserve flux after maintenance) is not
 cited for any form; any primate measurement of growth velocity against fat or reserve state; the steepness of the
 growth response in any species in reserve units.
+
+### Addendum: E5d why a chimpanzee grooms (2 October 2026)
+
+Read for stage E5d ([staging/e5d-prereg.md](staging/e5d-prereg.md)): what sets the time wild chimpanzees spend grooming
+(hygiene, tension reduction, relationship maintenance) and what happens to grooming when time is short or free.
+research.md was searched first (keverne1989, cabanac1971, wittig2016, crockford2013, aureli1999, fraser2008, lehmann2008
+for rest, villioth2025 for feeding, stanton2014, lonsdorf2014, pusey1990, nishida1988 were listed). Read on 2 October
+2026 through NCBI BioC, efetch, OpenAlex, J-STAGE and the Bournemouth University repository by two source agents and the
+stage; link.springer.com served a bot challenge and was dropped. Tags: [H] replicated, [M] one good study, [L] weak or
+cross-species.
+
+**Time budgets and relationships.**
+- **Grooming share and sample, Waibira** [villioth2025] (FT, PMC12701709 via BioC) [M]. The community had "at least 88
+  known individual chimpanzees, including 17 adult males (≥ 16 years old) and 29 adult females"; habituation ongoing.
+  Focal follows from first light at the night nest, 10 adult males of high, mid and low rank and 9 adult females (7
+  lactating, 2 not lactating with one juvenile each); 4.1 ± 2.6 h (1–12 h, median 4), 491 h, follows under 1 h excluded.
+  Categories: "grooming (giving or receiving)"; resting is sitting or lying for more than 1 min without another
+  behaviour. Males vs females: feeding 36 vs 37%, resting 28 vs 31%, grooming 15 vs 12%, travelling 21 vs 20%. No
+  relation of grooming to feeding, travel or season is reported (an unusually dry year). Use in E5d: T-ACT-3's only
+  source is a community four times the size of the model's West community (22).
+- **Grooming time and group size, primates** [lehmann2007] (FT, author manuscript, Bournemouth repository) [M] structure,
+  [L] as a rule within chimpanzees. 40 Old World primate species or populations (16 ape populations). Grooming time
+  rises with group size and levels off above about 40 members ("grooming time is asymptotic when group size exceeds 40
+  individuals"); the best model is log10(grooming + 1) = 0.05 + 0.56·log10(group size) − 0.06·sex ratio + 0.24·dispersal;
+  grooming "can occupy up to 20% of the total day" in the most social species; Table 1: *P. t. schweinfurthii* 59.2
+  members, 11.67%; *P. t. verus* 40.3, 8.27%; bonobos 27.8, 5.7%. The authors infer that members of large groups groom
+  less than the requirement. Not a chimpanzee measurement of grooming per partner.
+- **Ape time-budget model** [lehmann2008] (FT, already listed for rest) [M] structure, [L] coefficient. Grooming is a
+  requirement set by community size (generic equation % grooming = 1.01 + 0.23 × group size, Table 2; not fitted to
+  chimpanzees); time left after feeding, moving, enforced rest and grooming is "uncommitted" rest, and "grooming time
+  might be traded for more urgent activities". Nothing in the model gives spare time to grooming.
+- **Social, not hygienic** [dunbar1991] (Abs, OpenAlex) [L] for chimpanzees. Grooming frequencies of 44 free-living
+  primate species "correlate with group size but not body size": grooming's main function is social.
+- **Rest absorbs extra demand, Sebitoli (Kibale)** [couturier2022] (FT, PMC8996920 via BioC) [M]. 20 chimpanzees, 37
+  months (January 2016 to January 2019), 206 nest-to-nest focal follows (budgets from follows of 6 h or more): rest 31%,
+  travel 29.8%, feeding 25.5%, socializing 9.5% (grooming, self-grooming, vocalizing, play, display, copulation). In the
+  maize season travel rose (32.6 against 26.2%) and rest fell (28.5 against 34.2%) while forest feeding stayed level:
+  the extra travel came out of rest. Social time was not tested against food. No verified wild study found grooming time
+  changing with fruit availability.
+- **Enduring bonds kept by equitable grooming, Ngogo** [mitani2009] (FT, author PDF) [M]. 35 adult males (≥ 16 y) over
+  1998–2007, 36 months of observation, hour-long focal samples with 10-min scans of partners within 5 m or grooming,
+  5,410 h. Bonds were stable across years; maternal brothers and males that groomed each other equitably kept
+  longer-lasting bonds; 26 of 28 males kept at least one enduring bond, and most formed their longest bond with an
+  unrelated male (T-SOC-2's source).
+- **Long-term reciprocity, Taï** [gomes2009] (Abs, efetch PMC2660945 front matter) [M]. 3,000 h of all-day focal follows
+  of females and males: grooming is reciprocated more symmetrically over the long term than within days; "dyads groomed
+  an average of once every 7 days"; exchanges are tracked over at least a week.
+- **Grooming reciprocity and rank, Sonso and Mahale** [kaburuNewtonFisher2015] (FT, PMC4287234 via BioC) [M]. Sonso:
+  8 adult males (≥ 16 y), December 2003–August 2004; Mahale M group: 10 adult males (stable period) and 9 (unstable),
+  February–November 2011. All-occurrence grooming within focal parties, durations; a bout ends when neither grooms for
+  30 s. Grooming given was predicted by grooming received in both communities (β 0.679 ± 0.088 at Sonso with support in
+  the model; 0.721 ± 0.083 and 0.515 ± 0.134 at Mahale); grooming was traded for support only under Sonso's steep
+  hierarchy (T-SOC-3 and T-SOC-5's source).
+- **Stable bonds, chacma baboons** [silk2010] (Abs) [M] cross-species: over 16 years females kept stable bonds with close
+  kin and age-mates. No source in hand measures how fast a primate relationship fades without contact.
+
+**Hygiene.**
+- **Lice eggs are what grooming removes, Japanese macaques** [tanaka1993] (FT, J-STAGE PDF) [M] macaques, [L]
+  chimpanzees. Jigokudani, September 1990–May 1992; video of 157 grooming pairs (59 groomers): 4,475 pick-ups, of which
+  4,411 louse eggs, 48 adult lice and 16 unidentified items, all eaten; 4.86 ± 0.07 s per item and 11.0 ± 0.2 s between
+  items (about 3.8 items per minute of grooming, derived). No egg-laying or reinfestation rate.
+- **Grooming site follows lice, Japanese macaques** [zamma2002] (Abs, PubMed 12091746) [M] macaques. Louse eggs sit on
+  the outer body and grooming favours the outer body; about 550 eggs per adult female; lice multiply fast, so monkeys
+  "need to be groomed almost every day". Not a chimpanzee study (the title concerns Arashiyama macaques).
+- **Grooming lowers tick load, Amboseli baboons** [akinyi2013] (FT, PMC3961061 via BioC) [M] baboons, [L] chimpanzees.
+  65 adults darted in 2007 and 2008 (62 with grooming data): more grooming received in the previous 6 months, fewer ticks
+  (β −0.0076 per bout, P < 0.0001); ticks lowered packed cell volume (β −0.037 per tick); males were groomed less.
+  Hygiene is a benefit of grooming received; none of the three gives the parasite load's growth rate.
+
+**Tension reduction and hormones.**
+- **Bond partners and stress hormones, Sonso** [wittig2016] (already listed; checked for duration) [M]. Longer events of
+  every type raised urinary glucocorticoids (+0.45 points per minute, P = 0.006, not differing by event type): no evidence
+  that longer grooming lowers them more; grooming a bond partner left levels 13.3 ± 6.5 points below the expected value
+  (n 10), a non-bond partner +2.7 ± 4.1 (n 11, not significant); bond partners are relationships kept for at least 6
+  months. No time course of the effect.
+- **Grooming and tension, long-tailed macaques** [schino1988] (Abs, OpenAlex) [L]. Captive pairs (2 males, 11 females, 1 h
+  a day for 5 days): being groomed lowered the male's displacement activities during and outside the interaction, in
+  proportion to the grooming received; they rose in the 10 s after a bout ended.
+- **Giving grooming and glucocorticoids, Barbary macaques** [shutt2007] (Abs, efetch PMC2464693) [L]. Free-ranging;
+  faecal glucocorticoids lower with grooming given, not received. No numbers in the abstract.
+- crockford2013 (oxytocin after grooming with bond partners, Sonso) and keverne1989 (opioid regulation of the motivation
+  to be groomed) were re-checked: abstracts only, no time course of the urge after a bout.
+
+**Use in E5d.** Direction and structure only; no magnitude is taken from these sources. Relationship maintenance is
+grooming's main function in the comparative evidence (group size, not body size, predicts grooming time), grooming is
+directed to bond partners and balanced over weeks, and spare time goes to rest. The model's own relationship dynamics
+(bonds relax toward a baseline, `bondRelaxPerDay`, design) carry the maintenance demand in the stage's mechanism.
+
+- *new* lehmann2007: Lehmann J, Korstjens AH, Dunbar RIM 2007. Group size, grooming and social cohesion in primates.
+  *Animal Behaviour* 74(6):1617–1629. [doi:10.1016/j.anbehav.2006.10.025](https://doi.org/10.1016/j.anbehav.2006.10.025)
+  (FT, author manuscript, eprints.bournemouth.ac.uk/900).
+- *new* dunbar1991: Dunbar RIM 1991. Functional significance of social grooming in primates. *Folia Primatologica*
+  57(3):121–131. [doi:10.1159/000156574](https://doi.org/10.1159/000156574) (Abs).
+- *new* couturier2022: Couturier C, Bortolamiol S, Ortmann S, Okimat JP, Asalu E, Krief S 2022. All-you-can-eat: influence
+  of proximity to maize gardens on the wild diet and the forest activities of the Sebitoli chimpanzee community in Kibale
+  National Park. *Animals* 12(7):806.
+  [doi:10.3390/ani12070806](https://doi.org/10.3390/ani12070806) (FT, PMC8996920).
+- *new* gomes2009: Gomes CM, Mundry R, Boesch C 2009. Long-term reciprocation of grooming in wild West African
+  chimpanzees. *Proceedings of the Royal Society B* 276(1657):699–706.
+  [doi:10.1098/rspb.2008.1324](https://doi.org/10.1098/rspb.2008.1324) (Abs).
+- *new* silk2010: Silk JB, Beehner JC, Bergman TJ, Crockford C, Engh AL, Moscovice LR, Wittig RM, Seyfarth RM, Cheney DL
+  2010. Female chacma baboons form strong, equitable, and enduring social bonds. *Behavioral Ecology and Sociobiology*
+  64(11):1733–1747. [doi:10.1007/s00265-010-0986-0](https://doi.org/10.1007/s00265-010-0986-0) (Abs).
+- *new* tanaka1993: Tanaka I, Takefushi H 1993. Elimination of external parasites (lice) is the primary function of
+  grooming in free-ranging Japanese macaques. *Anthropological Science* 101(2):187–193.
+  [doi:10.1537/ase.101.187](https://doi.org/10.1537/ase.101.187) (FT, J-STAGE).
+- *new* zamma2002: Zamma K 2002. Grooming site preferences determined by lice infection among Japanese macaques in
+  Arashiyama. *Primates* 43(1):41–49. [doi:10.1007/BF02629575](https://doi.org/10.1007/BF02629575) (Abs).
+- *new* akinyi2013: Akinyi MY, Tung J, Jeneby M, Patel NB, Altmann J, Alberts SC 2013. Role of grooming in reducing tick
+  load in wild baboons (*Papio cynocephalus*). *Animal Behaviour* 85(3):559–568.
+  [doi:10.1016/j.anbehav.2012.12.012](https://doi.org/10.1016/j.anbehav.2012.12.012) (FT, PMC3961061).
+- *new* schino1988: Schino G, Scucchi S, Maestripieri D, Turillazzi PG 1988. Allogrooming as a tension-reduction
+  mechanism: a behavioral approach. *American Journal of Primatology* 16(1):43–50.
+  [doi:10.1002/ajp.1350160106](https://doi.org/10.1002/ajp.1350160106) (Abs).
+- *new* shutt2007: Shutt K, MacLarnon A, Heistermann M, Semple S 2007. Grooming in Barbary macaques: better to give than
+  to receive? *Biology Letters* 3(3):231–233. [doi:10.1098/rsbl.2007.0052](https://doi.org/10.1098/rsbl.2007.0052) (Abs).
+- villioth2025, lehmann2008, mitani2009, kaburuNewtonFisher2015, wittig2016, crockford2013 and keverne1989 are already
+  listed (data/targets.json or above); the entries above add findings.
+
+**Not verified:** dunbarDunbar1988 (gelada mothers' time budgets; OpenAlex closed, no Wayback copy), dunbar1992 and
+watts2000 I–II (Springer bot challenge), doran1997 (Taï seasonality; closed); any chimpanzee louse load or egg-laying
+rate; any measurement of how fast a primate relationship weakens without contact.

@@ -25,6 +25,7 @@ import { recordAggression, recordConsolation, recordGrooming, recordMating, reco
 import { BANK_A, BANK_B, CHANNEL, FORD, bankOf, bestFord, dryPoint, fordExits, streamCell, tangentNear } from './stream';
 import { markDanger, noteContact, sectorContact } from './contact';
 import { cellAt, gridOf, neighbourSectors, pressureAt, rangeEdge, sectorDir, useLevels } from './territory';
+import { GROOM_BOND_ACTOR, GROOM_BOND_RECIP, GROOM_SOCIAL_ACTOR, GROOM_SOCIAL_RECIP, upkeepOnly } from './upkeep';
 
 // Bout durations in eco-minutes [min, max] (registry bout*Min / bout*Max).
 const DUR: Record<Action, [ParamId, ParamId]> = {
@@ -810,7 +811,7 @@ export function executeAction(world: World, c: Chimp): void {
         const k = clamp((x.prog - P.ledgerLetDownS) / TICK_SECONDS);
         const drunk = k > 0 ? nurseTick(c, m, P, k) : 0;
         if (k > 0 && !waterOn(P)) c.thirst = clamp(c.thirst - 0.4 * TICK_HOURS * k); // stage E2g: milk water is booked by eat
-        c.social = clamp(c.social + 0.2 * TICK_HOURS);
+        if (!upkeepOnly(P)) c.social = clamp(c.social + 0.2 * TICK_HOURS); // stage E5d (socialUpkeep 2): nursing builds no bond, so it meets no relationship need
         m.energy = clamp(m.energy - 0.02 * TICK_HOURS);
         if (c.hunger < NURSE_DONE || (k > 0 && drunk < k * P.ledgerMilkKcalPerMin * 60 * TICK_HOURS * (1 - 1e-9))) { x.prog = 0; finish(world, c); }
         return;
@@ -818,7 +819,7 @@ export function executeAction(world: World, c: Chimp): void {
       if (ledgerOn(P)) nurseTick(c, m, P); // stage E1: milk into the infant's gut, its cost out of the mother's reserves
       else c.hunger = clamp(c.hunger - 0.5 * TICK_HOURS * (1 - c.age / 6));
       if (!waterOn(P)) c.thirst = clamp(c.thirst - 0.4 * TICK_HOURS); // stage E2g: milk water is booked by eat
-      c.social = clamp(c.social + 0.2 * TICK_HOURS);
+      if (!upkeepOnly(P)) c.social = clamp(c.social + 0.2 * TICK_HOURS); // stage E5d (socialUpkeep 2), as above
       m.energy = clamp(m.energy - 0.02 * TICK_HOURS);
       // stage E1d (ledgerNurseByMilk): the bout also ends when the gland can no longer sustain the suckling rate
       if (c.hunger < NURSE_DONE || (P.ledgerNurseByMilk === 1 && ledgerOn(P) && glandEmpty(m, P))) finish(world, c);
@@ -1082,7 +1083,7 @@ function pairTick(world: World, c: Chimp, o: Chimp | undefined): void {
     const k = world.tick * 0.45 + c.id;
     moveTo(world, c, o.position[0] + Math.cos(k) * 1.1, o.position[1], o.position[2] + Math.sin(k) * 1.1, WALK * 1.4, 0.1);
     c.energy = clamp(c.energy - 0.03 * TICK_HOURS);
-    c.social = clamp(c.social + 0.15 * TICK_HOURS);
+    if (!upkeepOnly(P)) c.social = clamp(c.social + 0.15 * TICK_HOURS); // stage E5d (socialUpkeep 2): play builds no bond, so it meets no relationship need
     c.skills.climbing = clamp(c.skills.climbing + (1 - c.skills.climbing) * TICK_HOURS * 0.003);
     if (c.actionTime % 120 === 0) emitCall(world, c, 'laugh');
     // rough play occasionally escalates [H]
@@ -1097,9 +1098,10 @@ function pairTick(world: World, c: Chimp, o: Chimp | undefined): void {
   face(c, o);
   x.prog += TICK_SECONDS;
   if (c.action === 'groom') {
-    c.social = clamp(c.social + 0.18 * TICK_HOURS); o.social = clamp(o.social + 0.3 * TICK_HOURS);
+    // grooming's effects per hour of contact (named in upkeep.ts, whose socialUpkeep reads their ratio; values unchanged)
+    c.social = clamp(c.social + GROOM_SOCIAL_ACTOR * TICK_HOURS); o.social = clamp(o.social + GROOM_SOCIAL_RECIP * TICK_HOURS);
     c.stress = clamp(c.stress - 0.1 * TICK_HOURS); o.stress = clamp(o.stress - 0.25 * TICK_HOURS);
-    addBond(c, o.id, 0.012 * TICK_HOURS); addBond(o, c.id, 0.02 * TICK_HOURS);
+    addBond(c, o.id, GROOM_BOND_ACTOR * TICK_HOURS); addBond(o, c.id, GROOM_BOND_RECIP * TICK_HOURS);
     recordGrooming(world, c, o);
     const ox = ix(o); ox.groomRecv[c.id] = (ox.groomRecv[c.id] ?? 0) + TICK_HOURS;
     c.skills.social = clamp(c.skills.social + (1 - c.skills.social) * TICK_HOURS * 0.002);

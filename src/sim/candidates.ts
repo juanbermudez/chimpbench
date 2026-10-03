@@ -456,8 +456,17 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     const worth = (P.memCropBelief === 1 ? h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) : h * P.memTravelHungerW) * tripWorth(t, crop, feeders, d);
     return worth - tripCost(worth, crop, d, h, P, needFruit(c, P, h));
   };
+  // stage E5d (followMargin; docs/staging/e5d-prereg.md §4.2): a departing companion's company counts only for what it adds
+  // over the best companion the animal keeps by staying (E5b's margin for approaches, extended to joining and following);
+  // computed once per decision, when first needed
+  let keptCompany = -1;
+  const companyGain = (o: Chimp): number => {
+    if (P.followMargin !== 1) return companyValue(c, o, P);
+    if (keptCompany < 0) keptCompany = presentCompany(world, c, P);
+    return Math.max(0, companyValue(c, o, P) - keptCompany);
+  };
   const joinValue = (L: Chimp): number => {
-    if (cohesion) return companyValue(c, L, P) + destWorth(L) - rain * 0.3;
+    if (cohesion) return companyGain(L) + destWorth(L) - rain * 0.3;
     const heard = P.travelHoo === 1 && x.hooFrom === L.id && time - (x.hooAt ?? NEVER) <= P.travelHooWindowMin / 60;
     let stay = 0;
     if (c.action === 'forage' && isTreeId(c.targetId)) { const t = idx.treeById.get(c.targetId); if (t) stay = h * Math.min(1, (P.patchEcology === 1 ? fruitAt(world, t) : t.fruit) / P.fruitValueRef); }
@@ -504,7 +513,11 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       // partner terms alone. The motivation to be groomed falls as grooming feeds back on it [M: keverne1989]; the value
       // of a stimulus depends on the internal state [H, cabanac1971]; the product form is a design assumption with no
       // free parameter. Costs (tension, distance, hunger, rain, night, age) and the bout's persistence are unchanged.
-      const needDyad = P.groomNeedDyad === 1 && ((o.motherId === c.id && !ix(o).weaned) || (c.motherId === o.id && !x.weaned));
+      // stage E5d (groomDrive; docs/staging/e5d-prereg.md §4): the same drive × incentive for every partner. A partner's
+      // bond, kinship, reciprocity and rank say whom to groom when grooming is needed, not that grooming pays when the
+      // need is met (the diagnosis: 35–40% of adults' grooming restored a full need, filling free time at the expense of
+      // rest; the field gives spare time to rest, lehmann2008, couturier2022 [M])
+      const needDyad = P.groomDrive === 1 || (P.groomNeedDyad === 1 && ((o.motherId === c.id && !ix(o).weaned) || (c.motherId === o.id && !x.weaned)));
       offer('groom', o.id, needDyad
         ? (grooming ? (time >= x.actEnd ? -0.25 : 0.35) : 0) + (1 - c.social) * (0.55 + b * 0.4 + (kin ? 0.2 : 0) + recip * 0.2 + up + alphaAlly + (invited ? 0.7 : 0) - femaleOffset) - tn * P.groomTensionW - d / P.groomDistScaleM - h * 0.6 - rain * 0.6 - (night ? 1.5 : 0) - (c.age < 5 ? 0.3 : 0)
         : (grooming ? (time >= x.actEnd ? -0.25 : 0.35) : 0) - femaleOffset + (1 - c.social) * 0.55 + b * 0.4 + (kin ? 0.2 : 0) + recip * 0.2 + up + alphaAlly + invited - tn * P.groomTensionW - d / P.groomDistScaleM - h * 0.6 - rain * 0.6 - (night ? 1.5 : 0) - (c.age < 5 ? 0.3 : 0),
@@ -540,7 +553,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       // stage E5a (cohesionValue): following is worth the followed animal's company less the walk (tripCost's energetic
       // distance scale), in place of the tuned base, bond and male weights; the hoo adds no value
       const F = L ?? o;
-      const sc = cohesion ? companyValue(c, F, P) - rain * 0.3 - dxz(F, px, pz) / P.travelDistScaleM : followScore(lead, L, o, b, her);
+      const sc = cohesion ? companyGain(F) - rain * 0.3 - dxz(F, px, pz) / P.travelDistScaleM : followScore(lead, L, o, b, her);
       // stage C7c (field; c7b-prereg §6.2): a companion on a committed trip to a tree lends its goal: go there with it (shared goal) [H: joint travel, gruberZuberbuhler2013]
       if (trip) offer('travel', L!.targetId, sc, V.TREE, L!.id);
       else offer('follow', lead, sc, V.PARTY);
