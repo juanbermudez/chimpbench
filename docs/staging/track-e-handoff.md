@@ -14,7 +14,12 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (21:55).** Nothing.
+- **Running now (22:05).** **E5d** (`e5d-grooming`, from track-e 9503ed4: the social need's fixed timers
+  `socialAwakePerH`/`socialSleepPerH`, counted prescriptions encoding T-ACT-3, set grooming time once S8 frees time;
+  brief `integrator/e5d-prompt.txt`). S8 quick reference done (`bench-run/artifacts/validation/e/s8q/`, 4 runs, all
+  viable; E5d told). Decision guide on **S8** (merged `guide-s8` at 43e15f2); hosted copy on `site` 911e738, build
+  checked (no console errors on /docs/decision-guide or /about). Note: `scripts/prescription-ledger.ts`
+  without `--count` writes artifacts/validation/e/e0-ledger.* (restored in bench-run 21:58).
 - **S8 done: now the best integrated candidate** (e-stack2-confirm.md "S8 results"; S6 + `growYield` + `revisitByCrop`):
   76 prescriptions, viable, night safe; every class's balance up (mothers −0.046%/day, infants −0.067 / −0.030), walking,
   travel and hunting in band, held-out without the rare rows better beyond noise (z −6.9). Costs: grooming (T-ACT-3
@@ -62,8 +67,8 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   3.43 km a day (S3 2.93) and the deficits deepen: E5a interacts with value-based calls; E5b fixed it (S5).
 - **Hosted site, 2 October 14:50:** `site` now also holds the rewritten About page (merged `site-about` 4618daf: first-person
   hero, stale sections cut, What's next) and the decision guide as a hidden page (`docs/decision-guide.html`, a Vite
-  input: unlinked, noindex, at /docs/decision-guide). The guide now shows **S6** (76 prescribed, 59 replaced; merged
-  `guide-s5`; `STACK = STACKS.S6` in scripts/decision-guide.ts) and the site copy is written by
+  input: unlinked, noindex, at /docs/decision-guide). The guide now shows **S8** (76 prescribed, 59 replaced; merged
+  `guide-s8`; `STACK = STACKS.S8` in scripts/decision-guide.ts) and the site copy is written by
   `pnpm exec tsx scripts/decision-guide.ts --hosted <site>/docs/decision-guide.html` (site 149701c from track-e 8f5319e;
   `integrator/hosted_guide.py` retired). Build checked: no console errors, data figures draw, dist 32 MB without audio.
   Still no deploy: the user has not said how to publish.
