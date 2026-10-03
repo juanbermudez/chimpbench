@@ -264,6 +264,51 @@ nursing restoration under value 2), rhythm-metrics (night safety); and rhythm-me
 **Kill criteria and verdict** as iteration 1 (§4: K1 harm, K2 mechanism with the count 74 and the timers not read, K3
 noise); G3 is a keep candidate (provisional) if K1–K3 pass. Night safety as registered.
 
+### 4.2 Iteration 3 (registered 3 October 2026, after iteration 2's results, before any code of it): company at the margin for every move toward a companion
+
+**Why (§7, §8).** In every arm the social need, once no longer met by grooming at a full need (G1) or by play (G3), sits
+where grooming pays, and that need is the drive E5a's company value reads: joined trips and approaches to callers double
+in G1 (every class +0.7–1.0 km a day); in G3 juveniles (need 0.66) travel 25 min a day more and lose reserves (K1).
+Company does not relieve the need in the model; only grooming does, and a companion present offers grooming as well as a
+distant one. E5b (`companyMargin`) applied exactly that argument to approaches to callers ("the social drive is relieved
+by grooming, which a companion present offers as well as a distant one"; the marginal value of a move, charnov1976;
+keverne1989, cabanac1971) and left following and joined trips at full value ("whether the same margin belongs there is
+untested", simulation.md §15). The coupling the arms expose runs through those two moves (G1: joined trips +0.5 km a day
+per class).
+
+**Change (switch `followMargin`, 0 = today, read only with `cohesionValue`).** Following a departing party member (the
+V.PARTY follow and its shared trip) and joining a leader's trip to a tree are worth the departing companion's company
+less the best company the animal keeps by staying (`presentCompany`: its best settled companion in sight within the
+party link, E5b's set), never below 0, plus, for the joint trip, the food at the leader's tree as today: value =
+max(0, companyValue(leader) − presentCompany) + food − rain × 0.3 (joining); max(0, companyValue(followed) −
+presentCompany) − rain × 0.3 − walk (following). An animal left alone (no settled companion) still values the whole
+company. No new magnitude; removes no counted prescription (`removesNothing`). Scope: the moves the diagnosis implicates;
+E5b's approach margin is unchanged (on in S8).
+
+**Arm G4** = S8 + `groomDrive` 1 + `socialUpkeep` 2 + `followMargin` 1 (G3 plus the switch), from a frozen checkout of
+the commit that implements this section, after a 2-day smoke test: e-bench quick, energy-diagnose, groom-diagnose,
+rhythm-metrics, cohesion-diagnose (joins, splits, path by part).
+
+**Predictions** (against S8's four realizations, G3 in brackets; low confidence unless stated):
+
+| Quantity | S8 mean ± SD | G4 |
+| --- | --- | --- |
+| Prescriptions | 76 | 74 (high) |
+| Juveniles' reserves (%/day) | +0.003 ± 0.012 | ≥ −0.025 [−0.039] |
+| Ground km: juveniles; mothers; males | 1.72; 1.45; 1.93 | 1.6–2.0; 1.4–1.7; 1.8–2.2 [2.24; 1.79; 2.38] |
+| Joins per subject-day (cohesion-diagnose) | S8 4.98 (one run) | below G3's |
+| T-PTY-1 | 3.56 ± 0.11 | 2.8–3.8 (parties split more: fewer joint departures) [3.88] |
+| T-ACT-2 | 0.163 ± 0.003 | 0.14–0.19 [0.199] |
+| T-RNG-5 | — | below G3's 0.787 |
+| Grooming min/day: males; other F; lactating; juveniles | 119; 121; 238; 80 | 70–95; 40–65; 50–90; 35–60 [82; 51; 64; 48] |
+| T-ACT-3 pooled; M; F | 0.196; 0.155; 0.229 | 0.08–0.12; 0.10–0.13; 0.07–0.10 [0.098; 0.122; 0.078] |
+| Reserves, every other class | S8 values | inside S8 mean ± 2 SD or above −0.03%/day |
+| Fitted; held-out; held-out without T-HUN-4, T-BRD-1 | S8 mean | inside noise |
+| Viability; night | pass; ≤ 3.3%, T-RHY-5 ≤ 0.033 | pass; pass |
+
+**Kill criteria and verdict** as before (§4: K1, K2, K3). G4 is a keep candidate (provisional) if K1–K3 pass and the night
+is safe; this is the last iteration.
+
 ## 5. Known defects and limits in the code under test
 
 - `scripts/groom-diagnose.ts` (budget): the need-rise readout assumes the timers; fixed before the arms to read the
@@ -296,6 +341,8 @@ noise); G3 is a keep candidate (provisional) if K1–K3 pass. Night safety as re
   S8 and G2 hash the same after 3 days at 5abafba and 96792c1 (34d7e2cb94a01b6e, bb9c142ad3ed94bf), so value 1 is
   unchanged. Runs from the frozen checkout `run-96792c1` (clean): G3 (bench, energy, groom), then rhythm-metrics for G3
   and G1.
+- **Iteration 3** (§4.2; arm G4 = G3 + `followMargin` 1): registered 3 October 2026 in this commit, after iteration 2's
+  results (§8) and before any code of it. Last iteration.
 
 ## 7. Iteration 1 results (arms G1, G2; run-5abafba, clean; every number below printed by the stage's `e5d_judge.py`, `diag_compact.py`, `extra_blocks.py` from the JSON)
 
