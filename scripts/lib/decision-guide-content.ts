@@ -359,7 +359,7 @@ export const DIAGRAMS: DiagramSpec[] = [
         text: 'Open-sky light from the sun\'s height under the day\'s cloud, times the share that reaches the animal\'s height in the canopy (E2c sky model, E2a canopy).' },
       { k: 'company', x: L, y: y(2), w: LW, h: 72, t: 'Company of nest-mates', s: 'nestCompany · nestAudience', st: 'des', sw: ['choiceBelief'], ps: ['joinBase', 'joinBondW'],
         before: 'Staying in its own nest kept the company of its best nest-mate, asleep or awake (the join terms, design), and a departure was noticed by awake animals in their nests (E2e; on the stack as part of the E2f package).',
-        now: 'Staying keeps the company of nest-mates asleep and, while it is dark (night, dawn, dusk), of awake ones too; in daylight an awake nest-mate can leave with the animal, so leaving does not lose it (E3e). Without a temperature to break it, the old rule held nest groups in their nests through the day in E3e\'s first smoke tests.' },
+        now: 'Staying keeps the company of nest-mates asleep and, outside full daylight (night, dawn, dusk), of awake ones too; in full daylight an awake nest-mate can leave with the animal, so leaving does not lose it (E3e). Without a temperature to break it, the old rule held nest groups in their nests through the day in E3e\'s first smoke tests.' },
       { k: 'dark', x: L, y: y(4), w: LW, h: 72, t: 'Darkness slows and blinds', s: 'walkDarkPace · sight acuity', st: 'inp', ps: ['walkDarkPace', 'sightAcuityHalfTd', 'sightAcuityExp'],
         text: 'In poor light walking is slower (0.92 of daylight speed, measured in people) and food is found by sight, so feeding pays less before dawn (E2c). A null alone; on the stack as part of the E2f package.' },
     ],
