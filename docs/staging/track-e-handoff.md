@@ -14,12 +14,10 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 10:15; deploy held by the user).** Stage agents **E4n** (`e4n-hunt-rate`: why hunting
-  fell below its band once the choice temperature left) and **E2j** (`e2j-climbing`: climbing, halts and the cost of
-  walkGait, so it can join the stack), both from track-e 0d08525, briefs `integrator/e4n-prompt.txt`, `e2j-prompt.txt`;
-  decision guide on **S22** (merged `guide-s22` at 6f441cd; hosted copy on `site` dfc5b8d, build checked). Integrator: the S22 quick reference re-drawn
-  by `rngSalt` 1–3 (`integrator/s22q.sh`, outputs `bench-run3/artifacts/validation/e/s22q/`; message both agents when all
-  four exist).
+- **Running now (4 October 10:55; deploy held by the user).** Stage agent **E2j** (`e2j-climbing`). Integrator: S22's
+  confirm group (S22 at ea794ff + S22c1–S22c3 by `rngSalt` in bench-run3, `integrator/conf22.sh`; S22c2 and S22c3
+  running) and the **S25** confirm (S22 + `huntDrive` 1; registered 7cd6bb1) in bench-run2 moved to 7cd6bb1
+  (`integrator/conf25.sh`), judged with `integrator/judge_s22group.py`.
 - **S22 is the best integrated candidate (43)**; S24 (S22 + S23) not adopted: held-out without the rare rows worse
   beyond noise (z +2.4, through T-RNG-5 and T-FOOD-10) and walking's energy cost on mothers (−0.090), juveniles (−0.108)
   and infants 0.5–2 y (−0.133 %/day). Open next: hunting below its band on the S21/S22 stack (T-HUN-1 2–4); walkGait's
