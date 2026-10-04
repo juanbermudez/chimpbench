@@ -15,13 +15,13 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
 - **Running now (4 October 03:00; deploy held by the user).** Stage agent **E4j** (`e4j-encounters`, from track-e
-  0777e95: why intergroup encounters doubled on S16; brief `integrator/e4j-prompt.txt`); **guide-s5** agent moving the
-  decision guide to S16 (branch `guide-s16`); integrator: the S16 quick reference (`integrator/s16q.sh`, outputs
+  0777e95: why intergroup encounters doubled on S16; brief `integrator/e4j-prompt.txt`); decision guide on **S16** (merged
+  `guide-s16` at 95d1f7c; hosted copy on `site` fbe84fc, build checked); integrator: the S16 quick reference (`integrator/s16q.sh`, outputs
   `bench-run4/artifacts/validation/e/s16q/`; message E4j when all four exist).
 - **S16 done: now the best integrated candidate by the keep rule** (e-stack2-confirm.md "S16 results"; S13 +
   `socialTiming` 15 + `patrolValue` 2): 49 prescriptions, viable, night safe, held-out inside noise, patrol rows in band.
   **Fitted worse beyond noise (z +3.9)**, mostly T-IGE-1 22.8 (twice its band's top) and T-HUN-2. Next problem: the
-  patrol and encounter rate (design constants in `patrolValue`). The decision guide and hosted copy still show S13.
+  patrol and encounter rate (design constants in `patrolValue`). Decision guide and hosted copy on S16.
 - **S14 and S15 done** (e-stack2-confirm.md): both pass the keep rule against S13's four runs. S14 (`socialTiming` 15,
   60): sums inside noise, mothers in range; costs: other females' and juveniles' reserves lower, T-HUN-1 28.5. S15
   (`patrolValue` 2, 54): sums inside noise, the registered mothers' line held (mothers better, −0.051); patrol rows
@@ -102,8 +102,8 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   3.43 km a day (S3 2.93) and the deficits deepen: E5a interacts with value-based calls; E5b fixed it (S5).
 - **Hosted site, 2 October 14:50:** `site` now also holds the rewritten About page (merged `site-about` 4618daf: first-person
   hero, stale sections cut, What's next) and the decision guide as a hidden page (`docs/decision-guide.html`, a Vite
-  input: unlinked, noindex, at /docs/decision-guide). The guide now shows **S13** (65 prescribed, 70 replaced; merged
-  `guide-s13`; `STACK = STACKS.S13` in scripts/decision-guide.ts) and the site copy is written by
+  input: unlinked, noindex, at /docs/decision-guide). The guide now shows **S16** (49 prescribed, 86 replaced; merged
+  `guide-s16`; `STACK = STACKS.S16` in scripts/decision-guide.ts) and the site copy is written by
   `pnpm exec tsx scripts/decision-guide.ts --hosted <site>/docs/decision-guide.html` (site 149701c from track-e 8f5319e;
   `integrator/hosted_guide.py` retired). Build checked: no console errors, data figures draw, dist 32 MB without audio.
   Still no deploy: the user has not said how to publish.
