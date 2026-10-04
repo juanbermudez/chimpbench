@@ -1812,3 +1812,12 @@ border-ward travel and hill stops less likely late in the day; advances rise wit
 toward the border), langergraber2017 (participation falls with the community's male count, as recorded), samuni2021 and
 massaro2022 (female participation; no young-infant effect at Taï), sobolewski2012 still not verified. No new source
 keys. Not verified: amsler2010, mitaniWatts2005, wattsMitani2001, watts2006 (closed; as recorded at C6p).
+
+## Addendum: E4j encounters (4 October 2026)
+
+Same text as research.md "Addendum: E4j encounters": how Kanyawara's encounters were counted (wilson2012, FT: compiled
+from narrative notes and the field diary, foreign calls attributed by distance and direction toward or beyond the range
+edge, acoustic encounters with or without a vocal response, encounters more than 1 h apart separate, rates per 100 h on
+party follows; 120 encounters on 103 of 5,527 follows); contact on patrols (wattsMitani2001 19 of 52, watts2006 30 of 95,
+as recorded); party fusion after at least 1 h apart (girardButtoz2022, as E5e) as the basis of `reunionH` in
+`patrolFusion`. No new source keys. Not verified: field observers' detection range for pant-hoots.
