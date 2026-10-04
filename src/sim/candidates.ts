@@ -30,6 +30,18 @@ export const V = {
 export interface CandidateMeta { v: number; aux: number }
 export const candidateMeta = new WeakMap<Candidate, CandidateMeta>();
 
+/** The five gates of stage E5e (docs/staging/e5e-prereg.md §2). */
+export type QuotaKind = 'greet' | 'feed' | 'immigrant' | 'consort' | 'caller';
+/**
+ * Stage E5e diagnosis (scripts/quota-diagnose.ts; docs/staging/e5e-prereg.md §2): called at four gates when every other
+ * condition of the option holds, with whether the quota or the clock blocked it ('greet': pantGruntRepeatH; 'feed':
+ * feedChargeGapH; 'immigrant': immigrantChargeGapH; 'consort': consortLatestHour), `a` the hours since the gated event
+ * (the last greeting of this dominant, the last aggression) or the hour of day, and `b` the score the option has or would
+ * have; and at every approach to a caller offered ('caller': `a` the distance, `b` the score). Null in every simulation;
+ * it reads only and draws nothing, so the world is unchanged.
+ */
+export const quotaTrace: { on: ((kind: QuotaKind, c: Chimp, o: Chimp | undefined, blocked: boolean, a: number, b: number) => void) | null } = { on: null };
+
 const CODE: Record<Action, number> = {
   rest: 1, forage: 2, drink: 3, travel: 4, groom: 5, play: 6, follow: 7, climb: 8, patrol: 9, display: 10, flee: 11, hunt: 12, mate: 13,
   nurse: 14, dead: 15, nest: 16, 'pant-grunt': 17, charge: 18, attack: 19, submit: 20, reconcile: 21, console: 22, share: 23, beg: 24,
@@ -439,7 +451,11 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       if (cohesion) { const caller = byId.get(x.joinCaller); if (caller && caller.alive) pull += P.companyMargin === 1 ? Math.max(0, companyValue(c, caller, P) - presentCompany(world, c, P)) : companyValue(c, caller, P); }
       else if (P.joinSocialW > 0) { const caller = byId.get(x.joinCaller); pull += (1 - c.social) * P.joinSocialW * (x.visibleOwn < 2 ? 1 : P.joinSocialInPartyF) + (male && c.age >= 15 && caller && isAdultMale(caller) ? P.joinMaleW : 0); }
       if (P.assocBondW > 0) { const caller = byId.get(x.joinCaller); if (caller) pull += P.assocBondW * bond(c, caller); } // stage C9: bond with the caller (off by default)
-      if (d > P.joinCallMinM) offer('travel', x.joinCall, pull * (1 - rain * 0.5) - d / P.joinCallDistScaleM, V.CALLER, x.joinCaller);
+      if (d > P.joinCallMinM) {
+        const sc = pull * (1 - rain * 0.5) - d / P.joinCallDistScaleM;
+        if (quotaTrace.on) quotaTrace.on('caller', c, byId.get(x.joinCaller), false, d, sc);
+        offer('travel', x.joinCall, sc, V.CALLER, x.joinCaller);
+      }
     }
     // beyond the own range (UD isopleth, stage C6) the pull home grows; the equal-area circle is not the range's shape
     const here = lv[c.troopId]?.[cellAt(tg, px, pz)] ?? 0;
@@ -580,12 +596,13 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       offer('follow', o.id, 0.2 + (time - x.victimAt < 1 ? 0.3 : 0) - h * 0.3, V.PARTY, 1);
     // pant-grunt: subordinates greet dominants, especially the alpha and displaying males [H]
     if (c.age >= 5 && !carried && d < P.pantGruntRangeM && ((o.sex === 'male' && o.age >= P.pantGruntMaleAgeY) || o.age >= 15) && dominates(o, c)) {
-      const last = x.greet[o.id] ?? NEVER;
-      if (time - last > P.pantGruntRepeatH) {
+      const last = x.greet[o.id] ?? NEVER, open = time - last > P.pantGruntRepeatH;
+      if (open || quotaTrace.on) {
         const displaying = (o.action === 'display' || o.action === 'charge') && d < P.displayNearM;
         const sc = 0.3 + (troop?.alphaId === o.id ? 0.4 : 0.05) + (displaying ? 0.8 : 0) + c.stress * 0.3 + (x.newcomers > 0 ? 0.15 : 0)
           + (o.sex === 'male' && c.sex === 'female' ? 0.1 : 0) - d / P.pantGruntDistScaleM - h * 0.2 - (night ? 2 : 0);
-        if (sc > bestGruntScore) { bestGruntScore = sc; bestGrunt = o.id; }
+        if (quotaTrace.on) quotaTrace.on('greet', c, o, !open, time - last, sc);
+        if (open && sc > bestGruntScore) { bestGruntScore = sc; bestGrunt = o.id; }
       }
     }
     // male status rivalry [H]
@@ -811,18 +828,27 @@ function aggression(world: World, c: Chimp, rival: number, rivalCloseness: numbe
     if (male && c.age >= 15 && o.sex === 'female' && o.swelling >= P.coerceSwellingMin && dist < P.coerceRangeM && !kin && cooled && (ix(o).coerce[c.id] ?? 0) < P.coerceMaxRepeats)
       offer('charge', o.id, pers.aggression * 0.35 + c.rank * 0.1 - 0.12 - deter, V.COERCE);
     // resident females target recent immigrants [M]
-    if (!male && c.age >= 15 && o.sex === 'female' && dist < P.immigrantChargeRangeM && time - x.lastAgg > P.immigrantChargeGapH) {
+    const immOpen = time - x.lastAgg > P.immigrantChargeGapH;
+    if (!male && c.age >= 15 && o.sex === 'female' && dist < P.immigrantChargeRangeM && (immOpen || quotaTrace.on)) {
       const ox = ix(o);
       const tenureC = ix(c).immigrantAge < 0 ? c.age - 10 : c.age - ix(c).immigrantAge;
-      if (ox.immigrantAge >= 0 && o.age - ox.immigrantAge < 2 && tenureC >= 3)
-        offer('charge', o.id, 0.06 + pers.aggression * 0.45 + (forageTree > 0 && o.targetId === forageTree ? 0.3 : 0) + (c.rank > o.rank ? 0.1 : 0) - deter, V.IMMIGRANT);
+      if (ox.immigrantAge >= 0 && o.age - ox.immigrantAge < 2 && tenureC >= 3) {
+        const sc = 0.06 + pers.aggression * 0.45 + (forageTree > 0 && o.targetId === forageTree ? 0.3 : 0) + (c.rank > o.rank ? 0.1 : 0) - deter;
+        if (quotaTrace.on) quotaTrace.on('immigrant', c, o, !immOpen, time - x.lastAgg, sc);
+        if (immOpen) offer('charge', o.id, sc, V.IMMIGRANT);
+      }
     }
     // feeding competition when fruit is scarce [H for contest competition; strength L]
     // (a guardian never supplants its ward; a seen guardian deters supplants of its ward: C8 feeding-tolerance lever)
-    if (o.action === 'forage' && o.targetId > 0 && (o.targetId === forageTree || (h > P.feedChargeHungerMin && x.trees.includes(o.targetId))) && dist < P.feedChargeRangeM && time - x.lastAgg > P.feedChargeGapH && o.age >= 5 && !kin && dominates(c, o) && guardianOf(world, o) !== c) {
+    const feedOpen = time - x.lastAgg > P.feedChargeGapH;
+    if (o.action === 'forage' && o.targetId > 0 && (o.targetId === forageTree || (h > P.feedChargeHungerMin && x.trees.includes(o.targetId))) && dist < P.feedChargeRangeM && (feedOpen || quotaTrace.on) && o.age >= 5 && !kin && dominates(c, o) && guardianOf(world, o) !== c) {
       const t = idx.treeById.get(o.targetId);
       const scarce = world.environment.fruitIndex < 0.4 || (t !== undefined && (P.patchEcology === 1 ? fruitAt(world, t) : t.fruit) < 0.3);
-      if (t && scarce) offer('charge', o.id, (0.55 - world.environment.fruitIndex) * 0.9 + pers.aggression * 0.3 + h * 0.35 + tn * P.feedTensionW - 0.12 - (deter ? P.guardFeedDeterW : 0), V.FEED);
+      if (t && scarce) {
+        const sc = (0.55 - world.environment.fruitIndex) * 0.9 + pers.aggression * 0.3 + h * 0.35 + tn * P.feedTensionW - 0.12 - (deter ? P.guardFeedDeterW : 0);
+        if (quotaTrace.on) quotaTrace.on('feed', c, o, !feedOpen, time - x.lastAgg, sc);
+        if (feedOpen) offer('charge', o.id, sc, V.FEED);
+      }
     }
     // adolescent males establishing dominance over females [H]
     if (male && c.age >= 12 && c.age < P.femaleDomMaxAgeY && o.sex === 'female' && o.age >= 15 && dist < P.femaleDomRangeM && cooled && !kin)
@@ -948,8 +974,11 @@ function reproduction(world: World, c: Chimp, isAlpha: boolean): void {
       if (c.age >= 15 && (c.rankOrder <= 2 || isAlpha) && o.swelling >= P.guardSwellingMin && !guarded && !(g && g !== c && g.alive && dcc(c, g) < P.guardRivalRangeM))
         offer('guard', o.id, 0.55 + (isAlpha ? 0.35 : 0.15) + o.swelling * 0.2 - c.hunger * 0.9 - (night ? 2 : 0));
       // consortships: a pair leaves for the periphery [M]
-      if (c.age >= 15 && !isAlpha && o.swelling >= P.consortSwellingMin && bond(c, o) >= P.consortBondMin && !guarded && world.hour < P.consortLatestHour && c.action !== 'consort')
-        offer('consort', o.id, 0.08 + bond(c, o) * 0.5 + (c.rankOrder > 2 ? 0.15 : 0) - c.hunger * 0.2);
+      if (c.age >= 15 && !isAlpha && o.swelling >= P.consortSwellingMin && bond(c, o) >= P.consortBondMin && !guarded && c.action !== 'consort') {
+        const open = world.hour < P.consortLatestHour;
+        if (quotaTrace.on) quotaTrace.on('consort', c, o, !open, world.hour, 0.08 + bond(c, o) * 0.5 + (c.rankOrder > 2 ? 0.15 : 0) - c.hunger * 0.2);
+        if (open) offer('consort', o.id, 0.08 + bond(c, o) * 0.5 + (c.rankOrder > 2 ? 0.15 : 0) - c.hunger * 0.2);
+      }
     }
     if (c.sex === 'female' && c.swelling >= 0.75 && o.age >= 10 && dist < P.mateFemaleRangeM && time - x.lastMate > 0.3 && time - ix(o).lastMate > P.mateIntervalH) {
       const approaching = o.action === 'mate' && o.targetId === c.id;
