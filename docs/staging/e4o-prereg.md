@@ -320,5 +320,8 @@ night unsafe.
 
 - **Smoke, switch on** (to run at the commit that adds this text, before A1): S27 + `bodyRules` 2, seed 48, 1 + 2 days
   with `e4o-diagnose`: every readout produced, no defence charge for a ward that holds its own.
+- **Smoke result** (logged after the runs, at da0759f): seed 48, 1 + 2 days, and seed 7, 1 + 12 days: every readout
+  produced; one guard-qualified charge (a ward of 8–12 y that cannot hold its own), no defence charge; prescription count
+  41. A1 runs from the next commit (this note only).
 - **A1** (as registered in §7): from `scratchpad/e4o/frozen-a1` (the commit that adds this entry), `run-arm.sh frozen-a1
   A1 '{"bodyRules":2}'`; outputs `frozen-a1/artifacts/validation/e4o/A1*`.
