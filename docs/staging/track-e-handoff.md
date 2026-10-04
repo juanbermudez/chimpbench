@@ -14,14 +14,14 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 15:20; deploy held by the user).** Agents: **E0b** (`e0b-hidden-timers`: an honest count of
-  literal timers and quotas; no simulations) and **E3g** (`e3g-redecide-trips`, from d8417b5: why re-deciding adds trips
-  and hunts; reference the S28 quick group `bench-run3/artifacts/validation/e/s27q/S28q*`, re-draws running via
-  `integrator/s28q-group.sh`). Integrator: **S30** (`bodyRules` 1; bench-run at 6980f48, `s30/`). Done against the S27
-  group: **S28 passes with costs** (39; fitted z +2.4 via hunting 57/yr; males +1.0 km; reserves of other females,
-  juveniles, young infants fall faster), **S29 passes cleanly** (39; every sum inside noise; parties 4.05). Next: the
-  combined confirm S31 = S27 + `departValue` 2 + `bodyRules` 1 (if S30 passes), then S32 = S31 + `redecideValue` 2.
-  Guide on S27 (41); hosted copy in `site` 4f19ace still shows 42; nothing deployed.
+- **Running now (4 October 16:25; deploy held by the user).** Agents: **E3g** (re-deciding's cost, on S28), **E4p** (mating
+  gaps), **E4q** (aggression cooldowns). Integrator: S32 re-draws S32c1–S32c3 (bench-run at 4111971, `…/e/s3132/`,
+  `integrator/s32c-group.sh`) as the reference group for confirms on S32. Decision guide on S32 (merged `guide-s32`,
+  c09d6b1); hosted copy in `site` 0ff7cdc, built and checked (S32, 45, 102 replaced, no console errors), not deployed.
+- **S32 is the best integrated candidate (45 on E0b's ledger)** by the registered decision (e-stack2-confirm.md "S31 and
+  S32 results"): S27 + `departValue` 2 + `bodyRules` 1 + `redecideValue` 2; every sum inside noise; **large energy cost**
+  (every class's reserve falls faster: mothers −0.132, infants 0.5–2 y −0.198 %/day; adults +1.2–1.3 km a day; hunting
+  40/yr). **S31 (48) is the cost-free alternative**; fall back to it if E3g does not remove the cost.
 - **E0b merged (3c82e11): the ledger now counts literal time quotas** (an interval that blocks an act for a fixed time
   after the animal's own last act; rule 5e for literals). Today's model 147, S27 51, S28 48, S29 49, S30 50, S31 48,
   S32 45 (before: 134, 41, 39, 39, 40, 38, 36). Earlier counts in the docs stay as written.
