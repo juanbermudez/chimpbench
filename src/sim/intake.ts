@@ -84,16 +84,19 @@ export function treeIntake(c: Chimp, P: Params, crop: number, feeders: number, d
  * intake rate; its need is not in it (hunger decides whether to forage, through the drive; not where). C is the energy
  * of the walk and the climb (locomotionKcal: sockol2007's net cost of transport, the ledger's climbing work). The walk
  * takes distM ÷ (walkMps × pace) and feeding runs at the vision `see` (E2c's light on arrival; 1 by day). A tree whose
- * bout does not pay its walk is worth 0. Drupe energy, as treeIntake. Pure.
+ * bout does not pay its walk is worth 0. Drupe energy, as treeIntake. Stage E2j (tripBodyCost): `extraH` hours of climbing
+ * join the walk's time and `carryK` kcal of a riding load join the trip's energy (gait.ts tripClimbH, riderKcal). Pure.
  */
-export function netRateShare(c: Chimp, P: Params, crop: number, feeders: number, distM: number, climbM: number, pace = 1, see = 1, speed = P.walkMps): number {
+export function netRateShare(c: Chimp, P: Params, crop: number, feeders: number, distM: number, climbM: number, pace = 1, see = 1, speed = P.walkMps, extraH = 0, carryK = 0): number {
   const kcal = fruitKcalPerUnit(P, false), R = fruitRate(c, P).fruitPerH * kcal;
   if (!(R > 0) || !(see > 0)) return 0;
   const E = Math.min(Math.max(0, crop) / (1 + feeders) * kcal, boutRoom(c, P, R));
   if (!(E > 0)) return 0;
-  const C = locomotionKcal(c, P, distM, climbM);
+  // stage E2j (tripBodyCost; gait.ts): `carryK` the energy of a load riding on the animal, `extraH` the hours spent
+  // climbing down and up; both 0 with the switch off (adding 0 leaves today's numbers bit for bit)
+  const C = locomotionKcal(c, P, distM, climbM) + carryK;
   // stage E2i (walkGait): `speed` is the animal's walking speed (gait.ts tripSpeed), walkMps by default
-  return E > C ? (E - C) / (distM / (speed * pace) / 3600 + E / (R * see)) / R : 0;
+  return E > C ? (E - C) / (distM / (speed * pace) / 3600 + extraH + E / (R * see)) / R : 0;
 }
 
 /**

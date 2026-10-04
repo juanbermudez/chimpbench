@@ -1877,3 +1877,13 @@ hunter's 18.9% against 2.3% of encounters hunted, as recorded. Why chimpanzees h
 only): males and party size (gilby2015, mitaniWattsMuller2002), diet quality (gilbyWrangham2007), sharing with allies
 (mitaniWatts2001), no nutritional data on prey flesh (tennie2014), meat eaten at 348 g/h (hardus2012, secondary). No
 magnitude for a non-energy value of a hunt in any of them. No new keys.
+
+## Addendum: E2j climbing (4 October 2026)
+
+Same text as research.md "Addendum: E2j climbing": wild Kanyawara chimpanzees spend about ten times more energy per day
+on terrestrial travel than on vertical climbing (pontzerWrangham2004, abstract verified on PubMed, PMID 14984786; distances
+and equations not in it; the earlier dead-end note is corrected for the abstract), a target relation the model misses
+(1.2–2.0); neufuss2018 (FT) gives climbing gait timing but no speed, so 0.5 m/s (nguessan2009 citing pontzerWrangham2004,
+secondary [L]) is still the only chimpanzee climbing speed; the forager's rate counts all the time an option takes besides
+eating (charnov1976, stephensKrebs1986). New key: neufuss2018 (cited by name in the gait entry before). Not verified: pontzerWrangham2004's distances and equations, a
+measured wild climbing speed, crown-to-crown crossings without descent.

@@ -22578,6 +22578,36 @@
    "notes": "Visible fruit trees are ranked by crop / (1 + d / this). Compressed stand-in scaled with sight (field ≈ compressed × 35/15, design)."
   },
   {
+   "id": "tripBodyCost",
+   "group": "movement",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/research.md (E3c): charnov1976, stephensKrebs1986 (the rate's time is all the time a trip takes); sockol2007 and energy.ts rideTick (a carried infant's metres cost its carrier)"
+   ],
+   "clock": "none",
+   "symbol": "P.tripBodyCost",
+   "file": "src/sim/gait.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage E2j switch (docs/staging/e2j-prereg.md §4): with 1 (under forageRate) the net energy rate of a crown or a trip (intake.ts netRateShare) charges the time and the energy the body spends on it, as moveTo and the ledger do: the descent from where the animal stands when the goal is more than 3 m away (at 1.4 x the climbing speed) and the climb to the crown (at climbMps x bodySpeed, before rain and light, which keep their own terms) join the walk's time; the metres of a dependent riding on the animal (every dependent under 4 y on a trip's walk, under 1.2 y on a feeding approach and up the crown; candidates.ts isCarried) join the trip's energy at the rider's mass (energy.ts rideTick). No new magnitude: climbMps, the descent factor and the costs per metre are the ones the movement and the ledger already use. Removes no counted prescription. 0 = today, bit for bit. Design."
+  },
+  {
    "id": "tripRateValue",
    "group": "movement",
    "value": 0,
@@ -23848,6 +23878,36 @@
    "symbol": "slowLife",
    "file": "src/sim/life.ts",
    "notes": "Wounds heal over days of ecological time (assumed rate)."
+  },
+  {
+   "id": "youngArrival",
+   "group": "movement",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "src/decide/gate.ts and src/sim/rg.ts redecide: a trip that reaches its tree becomes feeding there when that is legal (design A, C13 and E3d)"
+   ],
+   "clock": "none",
+   "symbol": "P.youngArrival",
+   "file": "src/sim/rg.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage E2j switch (docs/staging/e2j-prereg.md §9-10): with 1 an animal below rgMinAge (whose rules decide by argmax) whose trip to a tree has just ended within GATE.arriveM of that tree feeds there when feeding there is legal, by the arrival rule older animals already follow: under redecideValue 2 redecide's (no need or light change since the trip was chosen; the trip's jitter kept), otherwise the C13 gate's (rg.ts gate: no interrupt, need, period or age change since the trip was chosen); every other choice stays the argmax. With 0 the argmax re-opens every arrival. No new magnitude; removes no counted prescription. 0 = today, bit for bit. Design."
   },
   {
    "id": "youngLeafAmp",

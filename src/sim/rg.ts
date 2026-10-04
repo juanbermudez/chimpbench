@@ -216,6 +216,21 @@ export function rgChoice(world: World, c: Chimp, list: Candidate[]): Candidate |
   const P = paramsOf(world), x = ix(c);
   if (P.rgOn !== 1 || c.age < P.rgMinAge) {
     if (P.redecideValue === 2) return argmaxKeep(world, c, list, P);
+    // stage E2j (youngArrival, iteration 3; docs/staging/e2j-prereg.md §10): below rgMinAge the argmax still decides every
+    // choice, but a trip that has just reached its tree becomes feeding there by the gate's own arrival rule (the C13 policy
+    // of older animals: no interrupt, need, period or age change since the trip was chosen; the tree in view within
+    // GATE.arriveM; feeding there legal). The intent of each argmax choice is kept for that test.
+    if (P.youngArrival === 1 && P.rgOn === 1 && P.redecideValue !== 1) {
+      const g = gate(world, c, x.rgIntent, list);
+      if (typeof g !== 'string' && g.arrived) {
+        x.rgIntent = { ...intentOf(world, c, 'forage', g.keep.targetId, candidateMeta.get(g.keep)?.v ?? V.NONE), buckets: x.rgIntent!.buckets };
+        return g.keep;
+      }
+      const top = list[0], meta = top ? candidateMeta.get(top) : undefined;
+      if (top && top.action !== 'dead') x.rgIntent = intentOf(world, c, top.action, top.targetId, meta?.v ?? V.NONE, meta?.aux ?? -1);
+      else delete x.rgIntent;
+      return null;
+    }
     if (x.rgIntent) delete x.rgIntent;
     return P.redecideValue === 1 ? argmaxKeep(world, c, list, P) : null;
   }
@@ -389,6 +404,16 @@ function argmaxKeep(world: World, c: Chimp, list: Candidate[], P: Params): Candi
   // iteration 2: a need or light change since the choice re-opens it (the choice's needs and phase kept in rgIntent)
   if (P.redecideValue === 2) {
     const it = x.rgIntent, open = !it || it.action !== c.action || it.targetId !== c.targetId || !!changedSince(world, c, it);
+    // stage E2j (youngArrival; docs/staging/e2j-prereg.md §9): a trip that has just reached its tree becomes feeding there
+    // when that is legal and nothing the animal feels or sees has changed since it chose the trip, as redecide's arrival
+    // does for animals at or above rgMinAge; the jitter of the decision that chose the trip is kept (x.jv unchanged)
+    if (P.youngArrival === 1 && it && x.finished && !changedSince(world, c, it) && c.action === 'travel' && it.action === 'travel' && it.variant === V.TREE && it.targetId === c.targetId && isTreeId(it.targetId)) {
+      const t = x.trees.includes(it.targetId) ? index(world).treeById.get(it.targetId) : undefined, feed = findCandidate(list, 'forage', it.targetId);
+      if (t && feed && Math.hypot(t.position[0] - c.position[0], t.position[2] - c.position[2]) <= GATE.arriveM) {
+        x.rgIntent = { ...intentOf(world, c, 'forage', feed.targetId, candidateMeta.get(feed)?.v ?? V.NONE), buckets: it.buckets };
+        return feed;
+      }
+    }
     if (cur && !open && x.jv !== undefined) {
       const jv = x.jv, val = (k: Candidate) => rawOf(k) + (hash01(c.id, jv, CODE[k.action], k.targetId) - 0.5) * P.candidateJitterSpan;
       const v = val(cur);

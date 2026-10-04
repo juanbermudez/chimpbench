@@ -1,8 +1,8 @@
 import type { Chimp, World } from '../types';
 import { dependentOn, isCarried } from './candidates';
-import { massOf } from './energy';
+import { locomotionKcal, massOf } from './energy';
 import type { Params } from './params';
-import { alertPace, injuryPace, lifeStage } from './huntpursuit';
+import { alertPace, bodySpeed, injuryPace, lifeStage } from './huntpursuit';
 import { index } from './state';
 
 // Stage E2i (walkGait; docs/staging/e2i-prereg.md §4): how fast a chimpanzee walks. With the switch off every walk and
@@ -74,3 +74,44 @@ export const runSpeedOf = (c: Chimp, P: Params): number => gaitOn(P) ? P.runMps 
  * have their own terms (the rain costs of the offers; E2c's tripLight pace). Pure.
  */
 export const tripSpeed = (world: World, c: Chimp, P: Params): number => gaitOn(P) ? gaitSpeed(world, c, P) * bodyState(c) : P.walkMps;
+
+// Stage E2j (tripBodyCost; docs/staging/e2j-prereg.md §4): a trip's valuation charges the time and the energy the body
+// spends on it, as the movement (execution.ts moveTo) and the ledger (energy.ts energyTick, rideTick) do. With the switch
+// off the net energy rate of a crown or a trip counted the walk's time and the animal's own walk and climb energy, not the
+// time spent climbing down and up nor the metres of a dependent riding on it. Field and compressed alike (the switch reads
+// forageRate's valuation only); no new magnitude: the climbing speed, the descent factor and the costs per metre are the
+// movement's and the ledger's own. Pure: no RNG, no state.
+
+/** The switch (read only where forageRate's netRateShare is used). */
+export const tripBodyOn = (P: Params): boolean => P.tripBodyCost === 1;
+/** The body's climbing speed (m/s) before rain and light: climbMps × bodySpeed, the factor moveTo's climb applies (gait on: bodyState × the life stage below 10 y; off: bodySpeed). */
+export const climbSpeedOf = (c: Chimp, P: Params): number => P.climbMps * bodySpeed(c);
+/**
+ * Hours a trip to a goal `distM` away spends climbing: down from where the animal stands when the goal is more than 3 m
+ * away (moveTo descends first, at 1.4 × the climbing speed) and up `climbM` metres to the crown (a negative climb is none).
+ */
+export function tripClimbH(c: Chimp, P: Params, distM: number, climbM: number): number {
+  const v = climbSpeedOf(c, P);
+  if (!(v > 0)) return 0;
+  const down = distM > 3 && c.position[1] > 0.05 ? c.position[1] / (1.4 * v) : 0;
+  return (down + (climbM > 0 ? climbM : 0) / v) / 3600;
+}
+/**
+ * The energy (kcal) the dependents riding on this animal would cost it over a trip of `distM` metres and a climb of
+ * `climbM` (energy.ts rideTick: the rider's metres at the rider's mass, the ledger's costs per metre): on the walk of a
+ * travel act every dependent under 4 y rides, on a feeding approach and up the crown only one under 1.2 y (candidates.ts
+ * isCarried: always below 1.2 y; below 4 y while the carrier travels or nests).
+ */
+export function riderKcal(world: World, c: Chimp, P: Params, distM: number, climbM: number, travel: boolean): number {
+  const l = dependentsOf(world, c);
+  if (!l) return 0;
+  let k = 0;
+  for (let i = 0; i < l.length; i++) {
+    const d = l[i];
+    if (!d.alive) continue;
+    const always = d.age < 1.2;
+    if (!always && !travel) continue;
+    k += locomotionKcal(d, P, distM, always && climbM > 0 ? climbM : 0);
+  }
+  return k;
+}

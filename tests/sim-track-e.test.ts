@@ -44,6 +44,7 @@ const TRACK_E_SWITCHES = [
   'choiceBelief', // E3e
   'leftoverRules', // E4m
   'walkGait', // E2i
+  'tripBodyCost', 'youngArrival', // E2j
   'huntDrive', // E4n
 ] as const;
 

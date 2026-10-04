@@ -376,6 +376,8 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   choiceBelief: { stage: 'E3e', needs: {} },
   leftoverRules: { stage: 'E4m', needs: {} },
   walkGait: { stage: 'E2i', needs: {} },
+  youngArrival: { stage: 'E2j', needs: {}, removesNothing: 'gives animals below rgMinAge the arrival rule older animals already follow (rg.ts gate, or redecide under redecideValue 2: a trip that reaches its tree becomes feeding there when legal); every other choice stays the argmax; adds no magnitude and switches no prescription out (e2j-prereg §9-10)' },
+  tripBodyCost: { stage: 'E2j', needs: { energyLedger: 1, ledgerDrive: 1, forageRate: 1 }, removesNothing: 'charges a trip\'s climbing time and a riding dependent\'s metres in forageRate\'s net energy rate (the movement\'s and the ledger\'s own speeds and costs); adds no magnitude and switches no prescription out (e2j-prereg §4)' },
   huntDrive: { stage: 'E4n', needs: { energyLedger: 1, ledgerDrive: 1, huntValue: 1 }, removesNothing: 'weighs the hunt lead (huntValue) with the energy-deficit part of the E1e drive instead of the appetite now, which includes the distension satiation: a capture is held and eaten as the gut takes it; adds no magnitude and switches no prescription out (e4n-prereg §4)' },
   patrolFusion: { stage: 'E4j', needs: { patrolValue: 2 }, removesNothing: 'corrects the occasion on which patrolValue 2 weighs the lead (a fusion of a party holding patrolMinMales adult males, judged by the males seen within reunionH, in place of a flicker of the 35 m view); adds no magnitude and switches no prescription out (e4j-prereg §4)' },
 };
