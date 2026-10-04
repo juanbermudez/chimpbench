@@ -31,8 +31,7 @@
 import { writeFileSync } from 'node:fs';
 import { isMainThread, parentPort } from 'node:worker_threads';
 import { V } from '../src/sim/candidates';
-import { crownKcalPerUnit } from '../src/sim/crop';
-import { boutRoom, cropEnergyOn, digestaCaps, energyNeed, energyTap, fruitKcalPerH, fruitKcalPerUnit, gutCap, intakeSize, plantKcalPerMin } from '../src/sim/energy';
+import { boutRoom, digestaCaps, energyNeed, energyTap, fruitKcalPerUnit, gutCap, intakeSize, plantKcalPerMin } from '../src/sim/energy';
 import { paramsOf, type Params } from '../src/sim/params';
 import { cropTarget, fruitAt } from '../src/sim/phenology';
 import { rgTap } from '../src/sim/rg';
@@ -59,10 +58,8 @@ interface Result {
   classDays: Record<string, number>; unattributedKcal: number; deaths: Record<string, number>; living: [number, number];
 }
 
-/** kcal per crop unit of a tree: the simulation's (crop.ts; with cropEnergy 0 fruitKcalPerUnit of its food). */
-function cropKcalPerUnit(P: Params, t: Tree): number { return crownKcalPerUnit(P, t); }
-/** Median kcal per unit over figs or non-figs (one number for the unit thresholds' kcal meaning). */
-function medianKpu(w: World, P: Params, fig: boolean): number { const v = w.trees.filter(t => (t.common === 'fig') === fig).map(t => cropKcalPerUnit(P, t)).sort((a, b) => a - b); return v.length ? v[v.length >> 1] : NaN; }
+/** kcal per crop unit of a tree: today's conversion (the crop depletes at fruitIntakePerH units per hour). */
+function cropKcalPerUnit(P: Params, t: Tree): number { return fruitKcalPerUnit(P, t.common === 'fig'); }
 /** The crop below which a feeding bout ends (execution.ts forageTick), in units. */
 function emptyUnits(_P: Params, _t: Tree): number { return EMPTY; }
 
@@ -90,7 +87,7 @@ export function runSeed(job: Job): Result {
   const P = paramsOf(w);
   for (let i = 0; i < burnIn * DAY; i++) tickWorld(w);
   const dead0 = new Set(w.chimps.filter(c => !c.alive).map(c => c.id));
-  const R: Result = { seed, days, kpuDrupe: medianKpu(w, P, false), kpuFig: medianKpu(w, P, true), kcalMinDrupe: plantKcalPerMin(P, 'drupe'), kcalMinFig: plantKcalPerMin(P, 'fig'), visits: [], episodes: [], crowns: {},
+  const R: Result = { seed, days, kpuDrupe: fruitKcalPerUnit(P, false), kpuFig: fruitKcalPerUnit(P, true), kcalMinDrupe: plantKcalPerMin(P, 'drupe'), kcalMinFig: plantKcalPerMin(P, 'fig'), visits: [], episodes: [], crowns: {},
     samples: { k: [], n: [] }, land: { fig: [], drupe: [], perDay: [] }, capBySp: {}, classDays: {}, unattributedKcal: 0, deaths: {}, living: [w.chimps.filter(c => c.alive).length, 0] };
   for (const n of CLS) R.classDays[n] = 0;
   for (const t of w.trees) (R.capBySp[t.species] ??= []).push(Math.round(t.maxFruit * cropKcalPerUnit(P, t)));
@@ -145,7 +142,7 @@ export function runSeed(job: Job): Result {
           o.tLast = w.time; o.tickLast = i; o.crop1 = crop; o.minCrop = Math.min(o.minCrop, crop); o.ate += kcal; o.fill = fill; o.hunger = c.hunger;
         } else {
           if (o) { if (!o.endSet) { o.end = 'switch'; o.next = 'crown in view'; o.why = 'none'; } closeVisit(c, o); }
-          const full = cropEnergyOn(P) ? fruitKcalPerH(c, P, t.common === 'fig' ? 'fig' : 'drupe') : P.fruitIntakePerH * (P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging) * (P.ledgerInfantIntake === 1 ? intakeSize(c, P) : 1) * fruitKcalPerUnit(P, t.common === 'fig');
+          const full = P.fruitIntakePerH * (P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging) * (P.ledgerInfantIntake === 1 ? intakeSize(c, P) : 1) * fruitKcalPerUnit(P, t.common === 'fig');
           const n0 = Math.max(1, nIn.get(tree) ?? 1);
           open.set(c.id, { tree, t0: w.time, tLast: w.time, tickLast: i, crop0: crop, crop1: crop, tgt0: cropTarget(w, t, w.time), minCrop: crop, ate: kcal, n0,
             room0: boutRoom(c, P, full), need0: energyNeed(c, P), fill, hunger: c.hunger, end: '', next: '', why: '', endSet: false });

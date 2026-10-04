@@ -1,5 +1,5 @@
 import type { Chimp } from '../types';
-import { cropEnergyOn, energyNeed, fruitKcalPerH, fruitKcalPerUnit, meatKcalPerUnit } from './energy';
+import { energyNeed, fruitKcalPerUnit, meatKcalPerUnit } from './energy';
 import { fruitRate } from './intake';
 import type { Params } from './params';
 import { evenCaptures, pursuitCone, pursuitOn } from './huntpursuit';
@@ -28,7 +28,7 @@ export function huntRate(c: Chimp, P: Params, distM: number, hunters: number, ap
     : P.huntSuccessMax * (1 - Math.exp(-P.huntSuccessRate * (hunters - 1))) * (1 / hunters + (1 - 1 / hunters) * P.huntExtraKillP); // ecology.ts resolveHunt (design curve)
   const E = Math.min(Math.max(0, energyNeed(c, P)), expected * meatKcalPerUnit(P));
   if (!(E > 0)) return 0;
-  const R = cropEnergyOn(P) ? fruitKcalPerH(c, P) : fruitRate(c, P).fruitPerH * fruitKcalPerUnit(P, false); // stage E3f: kcal, no fruit units
+  const R = fruitRate(c, P).fruitPerH * fruitKcalPerUnit(P, false);
   // stage E2i (walkGait): `approach` is the speed the hunt moves at (candidates.ts: RUN × 0.8 × the body's state), walkMps by default
   const T = distM / approach / 3600 + (P.huntResolveMinMin + P.huntResolveSpanMin / 2) / 60 + E / (60 * P.ledgerMeatKcalPerMin);
   return R > 0 && T > 0 ? E / T / R : 0;

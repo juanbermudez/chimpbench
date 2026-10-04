@@ -277,7 +277,6 @@ export function feedHorizon(c: Chimp, L: EnergyLedger, P: Params): [number, numb
 
 /** Intake while feeding (kcal/h): ripe fruit at the animal's skill and size (as intake.ts fruitRate), plus milk while unweaned. */
 function feedRate(c: Chimp, P: Params): number {
-  if (cropEnergyOn(P)) return fruitKcalPerH(c, P) + (ix(c).weaned ? 0 : P.ledgerMilkKcalPerMin * 60); // stage E3f: no fruit units
   const fruitPerH = P.fruitIntakePerH * (P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging) * (P.ledgerInfantIntake === 1 ? intakeSize(c, P) : c.age < 5 ? P.fruitIntakeYoungFactor : 1);
   return fruitPerH * fruitKcalPerUnit(P, false) + (ix(c).weaned ? 0 : P.ledgerMilkKcalPerMin * 60);
 }
@@ -615,21 +614,8 @@ export function plantKcalPerMin(P: Params, kind: 'drupe' | 'fig' | 'fallback'): 
   if (kind === 'fig') return fix ? P.ledgerFigKcalPerMinSugar : P.ledgerFigKcalPerMin;
   return fix ? P.ledgerFallbackKcalPerMinSugar : P.ledgerFallbackKcalPerMin;
 }
-/** Energy of one fruit unit (the crop still depletes at fruitIntakePerH fruit units per hour). Stage E3f: not read under cropEnergy (crop.ts crownKcalPerUnit). */
+/** Energy of one fruit unit (the crop still depletes at fruitIntakePerH fruit units per hour). */
 export const fruitKcalPerUnit = (P: Params, fig: boolean) => plantKcalPerMin(P, fig ? 'fig' : 'drupe') * 60 / P.fruitIntakePerH;
-/**
- * Stage E3f (cropEnergy; docs/staging/e3f-prereg.md §5): a crown's crop holds the energy of its fruit (src/sim/crop.ts),
- * not fruit units × kcal per minute × 60 ÷ fruitIntakePerH. Read only with the ledger and its drive, in the field profile.
- */
-export const cropEnergyOn = (P: Params) => P.cropEnergy === 1 && P.energyLedger === 1 && P.ledgerDrive === 1 && P.patchEcology === 1;
-/**
- * Stage E3f: an animal's full ripe-fruit intake (kcal/h) without fruit units: kcal per feeding minute × 60 × its skill ×
- * its size (intakeSize with ledgerInfantIntake, else the under-5 factor), what fruitRate's units × fruitKcalPerUnit give
- * with fruitIntakePerH cancelled. Drupes unless `kind` says figs (valuations use drupes, as fruitKcalPerUnit(P, false)).
- */
-export function fruitKcalPerH(c: Chimp, P: Params, kind: 'drupe' | 'fig' = 'drupe'): number {
-  return plantKcalPerMin(P, kind) * 60 * (P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging) * (P.ledgerInfantIntake === 1 ? intakeSize(c, P) : c.age < 5 ? P.fruitIntakeYoungFactor : 1);
-}
 /** Energy of one unit of carried meat (eaten at meatEatPerH units per hour). */
 export const meatKcalPerUnit = (P: Params) => P.ledgerMeatKcalPerMin * 60 / P.meatEatPerH;
 /** Fallback foods at a mean cell at full stock (kcal per hour). */

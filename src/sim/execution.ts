@@ -5,8 +5,7 @@ import { addEvent, emitCall, endInteraction, episode, findInteraction, flashInte
 import { nestPoint } from './generation';
 import { addBond, dominates, eloUpdate, rankedMale } from './hierarchy';
 import { paramsOf, type Params } from './params';
-import { cropEnergyOn, driveOn, eat, fallbackKcalPerH, fruitKcalPerH, fruitKcalPerUnit, glandEmpty, gutRoom, intakeSize, ledgerOn, massOf, nurseTick, ownDrive, relDeficit, sharePlant } from './energy';
-import { crownKcalPerUnit } from './crop';
+import { driveOn, eat, fallbackKcalPerH, fruitKcalPerUnit, glandEmpty, gutRoom, intakeSize, ledgerOn, massOf, nurseTick, ownDrive, relDeficit, sharePlant } from './energy';
 import { snareIntake } from './snares';
 import { lightArousal } from './rhythm';
 import { drinkTick, waterOn } from './water';
@@ -1034,11 +1033,8 @@ function forageTick(world: World, c: Chimp): void {
   // feeding: up to fruitIntakePerH (0.055 fruit units/h, scaled by foraging skill), x4.4 = up to ~0.24 hunger/h, so chimps feed about half the day (design; field feeding shares are 33-50% of daytime, docs/realism-design.md T-ACT-1)
   // stage E1 (energyLedger): the same fruit intake, worth kcal by food type, and no more than the gut can take
   // stage E1c (ledgerInfantIntake): the young factor and C8's ramp give way to intake capacity by body size
-  // stage E3f (cropEnergy; docs/staging/e3f-prereg.md §5): the units taken are those that carry the kcal eaten at the crown's
-  // own energy per unit (crop.ts), the rate in kcal per hour without fruit units, so the crop falls by the energy eaten
-  const led = ledgerOn(P), fig = t.common === 'fig', ce = cropEnergyOn(P), kcalPerFruit = led ? (ce ? crownKcalPerUnit(P, t) : fruitKcalPerUnit(P, fig)) : 0;
-  let want = ce ? (kcalPerFruit > 0 ? fruitKcalPerH(c, P, fig ? 'fig' : 'drupe') * TICK_HOURS * (P.ledgerInfantIntake === 1 ? 1 : selfFeed(c, P)) * snareIntake(c, P) / kcalPerFruit : 0)
-    : led && P.ledgerInfantIntake === 1
+  const led = ledgerOn(P), fig = t.common === 'fig', kcalPerFruit = led ? fruitKcalPerUnit(P, fig) : 0;
+  let want = led && P.ledgerInfantIntake === 1
     ? P.fruitIntakePerH * TICK_HOURS * (P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging) * intakeSize(c, P) * snareIntake(c, P)
     : P.fruitIntakePerH * TICK_HOURS * (P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging) * (c.age < 5 ? P.fruitIntakeYoungFactor : 1) * selfFeed(c, P) * snareIntake(c, P);
   if (darkOn(P)) want *= visionNow(world, c.position[1]); // stage E2c (darkCost): ripe fruit is found and chosen by sight

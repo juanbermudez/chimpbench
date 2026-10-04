@@ -4,7 +4,6 @@ import { softmax } from '../decide/policies';
 import { candidateMeta, V } from './candidates';
 import { dayPhase } from './environment';
 import { leafRate, treeIntake } from './intake';
-import { valueKpu } from './crop';
 import { phaseMenu } from './menu';
 import type { Params } from './params';
 import { fruitAt } from './phenology';
@@ -107,7 +106,7 @@ export function payOf(world: World, c: Chimp, k: Pick<Candidate, 'action' | 'tar
       let feeders = 0;
       if (inView) for (let i = 0; i < x.seen.length; i++) { const o = idx.byId.get(x.seen[i]); if (o && o.alive && o.id !== c.id && o.action === 'forage' && o.targetId === t.id) feeders++; }
       const crop = inView ? (P.patchEcology === 1 ? fruitAt(world, t) : t.fruit) : x.treeCrop?.[t.id] ?? UNKNOWN_CROP;
-      const ti = treeIntake(c, P, crop, feeders, Math.hypot(t.position[0] - px, t.position[2] - pz), true, spd, valueKpu(P, t)); // stage E3f: the crown's kcal per unit
+      const ti = treeIntake(c, P, crop, feeders, Math.hypot(t.position[0] - px, t.position[2] - pz), true, spd);
       return H * ti.perHourInclWalk + T * ti.thirstPerHInclWalk - F * walkE * (1 - frac(ti.feedH, ti.walkH));
     }
     case 'drink': {

@@ -5,7 +5,6 @@ import { drawIndex, softmax } from '../decide/policies';
 import { choiceProbs, stillPaying, urgency, urgencyTemperature } from './urgency';
 import { CODE, candidateMeta, findCandidate, treeFoodWorth, V } from './candidates';
 import { fruitRate, leafRate, treeIntake } from './intake';
-import { valueKpu } from './crop';
 import { brightening } from './departure';
 import { dayPhase } from './environment';
 import { boundedCandidates, phaseMenu, RESPONSE_ACTIONS } from './menu';
@@ -157,12 +156,12 @@ export function patchPoorHere(world: World, c: Chimp, tree: number, P: Params): 
     if (!t) continue;
     let feeders = 0;
     for (const sid of x.seen) { const o = idx.byId.get(sid); if (o && o.alive && o.id !== c.id && o.action === 'forage' && o.targetId === t.id) feeders++; }
-    best = Math.max(best, treeIntake(c, P, P.patchEcology === 1 ? fruitAt(world, t) : t.fruit, feeders, Math.hypot(t.position[0] - px, t.position[2] - pz), true, spd, valueKpu(P, t)).perHourInclWalk);
+    best = Math.max(best, treeIntake(c, P, P.patchEcology === 1 ? fruitAt(world, t) : t.fruit, feeders, Math.hypot(t.position[0] - px, t.position[2] - pz), true, spd).perHourInclWalk);
   }
   for (const m of c.memory) {
     if (m.kind !== 'tree' || m.entityId === tree || x.trees.includes(m.entityId) || world.time - m.seenAt >= P.memTravelHorizonH || !idx.treeById.get(m.entityId)) continue;
     const d = Math.hypot(m.position[0] - px, m.position[2] - pz);
-    if (d >= P.memoryTreeMinM) best = Math.max(best, treeIntake(c, P, x.treeCrop?.[m.entityId] ?? UNKNOWN_CROP, 0, d, true, spd, valueKpu(P, idx.treeById.get(m.entityId))).perHourInclWalk); // stage E3f: the crown's kcal per unit
+    if (d >= P.memoryTreeMinM) best = Math.max(best, treeIntake(c, P, x.treeCrop?.[m.entityId] ?? UNKNOWN_CROP, 0, d, true, spd).perHourInclWalk);
   }
   const here = isTreeId(tree) && x.trees.includes(tree) ? fruitRate(c, P).hungerPerH : leafRate(world, px, pz, P, c);
   return best >= GATE.patchRatio * here && best > 0;

@@ -302,9 +302,6 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   ...same(['huntSuccessMax', 'huntSuccessRate', 'huntExtraKillP'], P => !(P.huntPursuit >= 1), 'not read while huntPursuit is 1 or 2: a hunt succeeds when the hunters at canopy height leave the colobus no escape direction, one monkey per disjoint closing set (src/sim/ecology.ts resolveHunt, src/sim/huntvalue.ts huntRate; stage E4k)'),
   // stage E4m (leftoverRules; docs/staging/e4m-prereg.md §5): a sum of bits, one per entry switched out
   roughPlayP: { when: P => (P.leftoverRules & 1) === 0, why: 'not read while leftoverRules has bit 1: play turns rough when the player\'s acute drive times its mass exceeds the partner\'s mass times (1 − its acute drive) (src/sim/execution.ts roughByForce; no die, no age rule)' },
-  // stage E3f (cropEnergy; docs/staging/e3f-prereg.md §5): a crown's crop holds the energy of its fruit (crop.ts), the intake
-  // rate is kcal per hour without fruit units (energy.ts fruitKcalPerH): no fruit-unit rate converts crops into kcal
-  fruitIntakePerH: { when: P => !(P.cropEnergy === 1 && P.energyLedger === 1 && P.ledgerDrive === 1 && P.patchEcology === 1), why: 'not read while cropEnergy is 1 with the energy ledger and its drive in the field profile: a crown\'s crop is worth its fruit\'s energy (src/sim/crop.ts crownKcalPerUnit), the units eaten carry the kcal eaten (execution.ts forageTick) and every valuation reads kcal per hour (energy.ts fruitKcalPerH; intake.ts, huntvalue.ts, candidates.ts, rg.ts, calls.ts, departure.ts). The timers (energyLedger 0) still read it' },
   patrolStopEveryMin: { when: P => (P.leftoverRules & 2) === 0, why: 'not read while leftoverRules has bit 2: the leader stops at the waypoints and after a stranger chorus heard by a member, outside one caller-counting window (src/sim/parties.ts updatePatrols, chorusHeard)' },
 };
 
@@ -383,7 +380,6 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   tripBodyCost: { stage: 'E2j', needs: { energyLedger: 1, ledgerDrive: 1, forageRate: 1 }, removesNothing: 'charges a trip\'s climbing time and a riding dependent\'s metres in forageRate\'s net energy rate (the movement\'s and the ledger\'s own speeds and costs); adds no magnitude and switches no prescription out (e2j-prereg §4)' },
   crownMove: { stage: 'E1q', needs: {}, removesNothing: 'an animal whose goal lies in the crown it is in moves through that crown instead of descending to the ground first (moveTo\'s 3-m descent rule), a follower in the same crown keeps to the followed animal\'s height, and a crown it is in is valued with the climb from its height; adds no magnitude and switches no prescription out (e1q-prereg §4)' },
   huntDrive: { stage: 'E4n', needs: { energyLedger: 1, ledgerDrive: 1, huntValue: 1 }, removesNothing: 'weighs the hunt lead (huntValue) with the energy-deficit part of the E1e drive instead of the appetite now, which includes the distension satiation: a capture is held and eaten as the gut takes it; adds no magnitude and switches no prescription out (e4n-prereg §4)' },
-  cropEnergy: { stage: 'E3f', needs: { energyLedger: 1, ledgerDrive: 1 } },
   patrolFusion: { stage: 'E4j', needs: { patrolValue: 2 }, removesNothing: 'corrects the occasion on which patrolValue 2 weighs the lead (a fusion of a party holding patrolMinMales adult males, judged by the males seen within reunionH, in place of a flicker of the 35 m view); adds no magnitude and switches no prescription out (e4j-prereg §4)' },
 };
 
