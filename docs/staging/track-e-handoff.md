@@ -14,7 +14,13 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 08:15; deploy held by the user).** Nothing.
+- **Running now (4 October 08:20; deploy held by the user).** Stage agents **E2i** (`e2i-walking`: walking speed from
+  the body in place of `walkMps`, a copy of the day range and travel share) and **E4m** (`e4m-leftovers`: roughPlayP,
+  patrolStopEveryMin, meatEatPerH, guardMaxAgeY), both from track-e 6871f3d, briefs `integrator/e2i-prompt.txt`,
+  `e4m-prompt.txt`; **guide-s5** agent moving the decision guide to S21 (branch `guide-s21`). Integrator: the S21 quick
+  reference re-drawn by `rngSalt` 1–3 (`integrator/s21q.sh`, outputs `bench-run2/artifacts/validation/e/s21q/`; message
+  both agents when all four exist). Remaining 45 prescriptions: 25 in rare-event families (lethal conflict 12, mortality
+  7, disease 3, reproduction 3) need runs past the 90-day cap (the user's decision).
 - **S21 done: now the best integrated candidate** (e-stack2-confirm.md "S21 results"; S19 + `choiceBelief` 2): 45
   prescriptions, viable, night safe, held-out without the rare rows better beyond noise (z −5.0; T-FOOD-10 0.81 → 0.58),
   T-HUN-2 0.50 (in band). Costs: T-PAT-1 0.093 (just below band), T-HUN-1 5.2 (floor). Decision guide and hosted copy
