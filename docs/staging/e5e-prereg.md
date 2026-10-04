@@ -303,6 +303,20 @@ mean; (c) held-out worse beyond noise (z > +2) with or without T-HUN-4 and T-BRD
 **Keep rule (standard):** viability passes; held-out not worse beyond noise with and without the rare rows (reported
 without T-IGE-3 too); prescriptions 65 → 60. Then a provisional keep candidate for the integrator's 5-seed confirm.
 
+### 4.8 Known defects and limits in the code under test (deferred, with file:line at 7be3a02)
+
+- T-SOC-6's observer divides by every pant-grunt detected in the community, of any giver (src/field/metrics.ts:876–884,
+  `maleDominance` at :138–157), while its source counts the pant-grunts given by males (gilby2013). Changing it changes the
+  frozen observer (protocolLog and a new freeze: the user's decision). Truth reports the males' share beside it.
+- Two reunion definitions under bit 1: `newcomers` (the greeting score's +0.15 and the display's reunion term) counts a
+  reunion by time alone (perception.ts:132), the greeting memory also needs the other out of sight at the previous look
+  (perception.ts:136). Left so: `newcomers` is unchanged at 0 and is not this stage's entry.
+- A consortship in the model is a bout of minutes (D0: 0.06 ± 0.04 h; the female stops reciprocating), not the days of
+  the field (wroblewski2009's strict definition: at least 3 days); the light gate prices the walk the male would lead,
+  not a multi-day absence (candidates.ts reproduction, execution.ts consort). A stylization, recorded.
+- The approach's food part reads the caller's crown at hearing (`jt`): a listener knows which crown a
+  call at food came from, as `joinRich` already assumed (E4c), not its crop (perception.ts:326).
+
 ## 5. Reference and judging
 
 Reference: S13 quick (docs/staging/e-stack2-confirm.md "S13 results"), run once plus three re-draws (`rgTemperature`
