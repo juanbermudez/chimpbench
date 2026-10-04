@@ -17,14 +17,14 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Running now (4 October 08:20; deploy held by the user).** Stage agents **E2i** (`e2i-walking`: walking speed from
   the body in place of `walkMps`, a copy of the day range and travel share) and **E4m** (`e4m-leftovers`: roughPlayP,
   patrolStopEveryMin, meatEatPerH, guardMaxAgeY), both from track-e 6871f3d, briefs `integrator/e2i-prompt.txt`,
-  `e4m-prompt.txt`; **guide-s5** agent moving the decision guide to S21 (branch `guide-s21`). Integrator: the S21 quick
+  `e4m-prompt.txt`; decision guide on **S21** (merged `guide-s21` at 52f7f46; hosted copy on `site` 3e10930, build checked). Integrator: the S21 quick
   reference re-drawn by `rngSalt` 1–3 (`integrator/s21q.sh`, outputs `bench-run2/artifacts/validation/e/s21q/`; message
   both agents when all four exist). Remaining 45 prescriptions: 25 in rare-event families (lethal conflict 12, mortality
   7, disease 3, reproduction 3) need runs past the 90-day cap (the user's decision).
 - **S21 done: now the best integrated candidate** (e-stack2-confirm.md "S21 results"; S19 + `choiceBelief` 2): 45
   prescriptions, viable, night safe, held-out without the rare rows better beyond noise (z −5.0; T-FOOD-10 0.81 → 0.58),
   T-HUN-2 0.50 (in band). Costs: T-PAT-1 0.093 (just below band), T-HUN-1 5.2 (floor). Decision guide and hosted copy
-  show S19 (S21 needs STACKS.S21 and Before/Now for the temperature).
+  on S21.
 - **S20 not adopted; S19 is the best integrated candidate** (e-stack2-confirm.md "S20 results"): S20 (S17 + S18 + S19,
   44) passed the registered sums only through a reference spread inflated by T-IGE-3 (S17c1 24.7) and is worse beyond
   noise without it (z +3.0), with rest at 0.252 and juveniles −0.125 %/day. S19 (46) passed every sum. e-noise.md
@@ -134,8 +134,8 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   3.43 km a day (S3 2.93) and the deficits deepen: E5a interacts with value-based calls; E5b fixed it (S5).
 - **Hosted site, 2 October 14:50:** `site` now also holds the rewritten About page (merged `site-about` 4618daf: first-person
   hero, stale sections cut, What's next) and the decision guide as a hidden page (`docs/decision-guide.html`, a Vite
-  input: unlinked, noindex, at /docs/decision-guide). The guide now shows **S19** (46 prescribed, 89 replaced; merged
-  `guide-s19`; `STACK = STACKS.S19` in scripts/decision-guide.ts) and the site copy is written by
+  input: unlinked, noindex, at /docs/decision-guide). The guide now shows **S21** (45 prescribed, 90 replaced; merged
+  `guide-s21`; `STACK = STACKS.S21` in scripts/decision-guide.ts) and the site copy is written by
   `pnpm exec tsx scripts/decision-guide.ts --hosted <site>/docs/decision-guide.html` (site 149701c from track-e 8f5319e;
   `integrator/hosted_guide.py` retired). Build checked: no console errors, data figures draw, dist 32 MB without audio.
   Still no deploy: the user has not said how to publish.
