@@ -413,3 +413,34 @@ picture is a capture when the monkeys are cut off.
   T-HUN-2 up (toward or into its band); T-HUN-7 1.0; T-HUN-3 below its band; T-HUN-4 high (rare); sums inside noise
   against S17q (with and without the rare rows and T-IGE-3); prescriptions 46; viability passes; juveniles' reserves:
   no prediction beyond reporting them (P1's −0.014 %/day is unexplained). Kill criterion as §7.
+
+#### P2 result: quick (9b8715c frozen, `git.dirty` 0; against S17q, S17q1–3; `report.py P1 P2` from the JSON)
+
+```
+P1q.json: 9b3f213 dirty 0 prescriptions 46
+P1h.json: 9b3f213 dirty 0 prescriptions 46
+P2q.json: 9b8715c dirty 0 prescriptions 46
+
+quick, reference custom (4 runs), rows counted in all runs: fitted 17, held-out 13
+  fitted             (17 rows) ref 1.50, 0.94, 2.08, 3.66 (mean 2.04, sd 1.17; used 1.17) | P1q.json: 1.97, Δ -0.08, z -0.1 (inside noise) | P2q.json: 1.38, Δ -0.66, z -0.5 (inside noise)
+  held-out           (13 rows) ref 4.03, 4.51, 4.61, 3.90 (mean 4.26, sd 0.35; used 1.26) | P1q.json: 5.56, Δ +1.29, z +0.9 (inside noise) | P2q.json: 4.89, Δ +0.63, z +0.4 (inside noise)
+  held-out w/o rare  (12 rows) ref 3.88, 4.29, 4.61, 3.90 (mean 4.17, sd 0.35; used 0.48) | P1q.json: 4.14, Δ -0.03, z -0.1 (inside noise) | P2q.json: 4.51, Δ +0.34, z +0.6 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-HUN-4   held-out ref 0.09±0.11 | P1q.json 1.42 (fail) | P2q.json 0.38 (fail)
+   T-HUN-7   fitted   ref 0.00±0.00 | P1q.json 0.25 (fail) | P2q.json 0.25 (fail)
+   T-SOC-3   held-out ref 0.00±0.00 | P1q.json 0.00 (pass) | P2q.json 0.17 (fail)
+   T-SOC-6   held-out ref 0.39±0.06 | P1q.json 0.28 (fail) | P2q.json 0.24 (fail)
+
+held-out without T-HUN-4, T-BRD-1 and T-IGE-3 (12 rows): S17q 3.88 / 4.29 / 4.61 / 3.90 (mean 4.17, sd 0.35; used 0.48); P1q.json 4.14 (z -0.1); P2q.json 4.51 (z +0.6)
+
+| hunt rows, quick (30 + 30 d) | S17q / S17q1 / S17q2 / S17q3 | P1q | P2q |
+| --- | --- | --- | --- |
+| T-HUN-1 (n) | 15.9 (8) / 23.7 (12) / 24.1 (12) / 13.9 (7) | 11.8 (6) | 7.98 (4) |
+| T-HUN-2 (n) | 0.5 (4) / 0.286 (7) / 0.214 (14) / 0.333 (9) | 0.333 (6) | 0.4 (5) |
+| T-HUN-3 (n) | 0.0275 (109) / 0.0439 (114) / 0.024 (125) / 0.0278 (144) | 0.0197 (152) | 0.0472 (106) |
+| T-HUN-4 (n) | 1.91 (109) / 1.97 (114) / 1.15 (125) / 1.73 (144) | 2.87 (152) | 2.09 (106) |
+| T-HUN-7 (n) | 2 (2) / 1.5 (2) / 1.33 (3) / 1.33 (3) | 1 (2) | 1 (2) |
+| T-HUN-8 (n) | 0.75 (4) / 1 (3) / 1 (4) / 1 (4) | 1 (2) | 1 (2) |
+| truth hunts per community-year | 30.4 / 36.5 / 46.6 / 42.6 | 14.2 | 16.2 |
+| truth success | 0.111 / 0.133 / 0.227 / 0.286 | 0.417 | 0.5 |
+```
