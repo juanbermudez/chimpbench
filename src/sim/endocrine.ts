@@ -152,8 +152,11 @@ export function endoThreat(world: World, o: Chimp): void {
   if (endoOn(P, 'endoFast')) endoKick(world, o, P.endoFastThreatKick, P);
 }
 
-/** The acute drive of a male competitive act: the fast state, amplified by competitive arousal up to twice (design). */
-function acuteDrive(x: ChimpX, time: number, P: Params): number {
+/**
+ * The acute drive of a male competitive act: the fast state, amplified by competitive arousal up to twice (design).
+ * Stage E4m (leftoverRules bit 1) reads it for every player (competitive arousal is absent below adult males). Pure.
+ */
+export function acuteDrive(x: ChimpX, time: number, P: Params): number {
   const d = fastNow(x, time, P) * (1 + (x.arousal ?? 0));
   return d > 1 ? 1 : d;
 }
