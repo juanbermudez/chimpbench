@@ -214,7 +214,7 @@ export function summarize(res: Result[]) {
     crop0Kcal: dist(v.map(x => x.crop0 * x.kpu)), tgt0Kcal: mean(v.map(x => x.tgt0 * x.kpu)), capKcal: mean(v.map(x => x.cap * x.kpu)), crop0Units: mean(v.map(x => x.crop0)),
     ateKcal: dist(v.map(x => x.ate)), ateShareOfCrop0: mean(v.filter(x => x.crop0 > EMPTY).map(x => x.ate / (x.crop0 * x.kpu))),
     feedersAtStart: mean(v.map(x => x.n0)), room0: mean(v.map(x => x.room0).filter(Number.isFinite)), need0: mean(v.map(x => x.need0)),
-    cropShareBelowRoom: share(v, x => x.crop0 * x.kpu / x.n0 < x.room0), visitsTheCropHolds: dist(v.filter(x => x.ate > 0).map(x => x.crop0 * x.kpu / mean(v.map(y => y.ate)))) });
+    cropShareBelowRoom: share(v, x => x.crop0 * x.kpu / x.n0 < x.room0), visitsTheCropHolds: (() => { const m = mean(v.map(y => y.ate)); return dist(v.map(x => x.crop0 * x.kpu / m)); })() });
   S.visits = { all5: vstat(V5), adults12: vstat(V12), fig: vstat(V5.filter(v => v.fig === 1)), nonFig: vstat(V5.filter(v => v.fig === 0)),
     canopyCuts: cuts, bySize: Object.fromEntries(['small', 'mid', 'large'].map(s => [s, vstat(V5.filter(v => sizeOf(v.canopy) === s))])),
     bySpecies: Object.fromEntries([...new Set(V5.map(v => v.sp))].sort().map(sp => [sp, vstat(V5.filter(v => v.sp === sp))])) };
