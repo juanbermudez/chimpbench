@@ -506,3 +506,163 @@ rows scored in every run: ['T-HUN-1', 'T-HUN-2', 'T-HUN-3'] ; not scored somewhe
   A1h: T-HUN-1 0.000, T-HUN-2 0.000, T-HUN-3 0.095; sum 0.095
 reference mean (first two runs) 1.422
 ```
+
+#### A1r result: the re-draw (b500cf8 frozen, `git.dirty` 0; `e4n_judge.py`, `report.py`, `hunt_sum.py`)
+
+No outbreak and no death in A1r's quick or 30 + 60-day runs.
+
+```
+  S22q: ea794ff dirty 0 prescriptions 43 viability pass deaths 48: 0 {}; 7: 0 {}
+  S22q1: ea794ff dirty 0 prescriptions 43 viability pass deaths 48: 0 {}; 7: 0 {}
+  S22q2: ea794ff dirty 0 prescriptions 43 viability pass deaths 48: 0 {}; 7: 0 {}
+  S22q3: ea794ff dirty 0 prescriptions 43 viability pass deaths 48: 0 {}; 7: 0 {}
+  A1q: b500cf8 dirty 0 prescriptions 43 viability pass deaths 48: 3 {'respiratory illness (outbreak)': 3}; 7: 0 {}
+  A1rq: b500cf8 dirty 0 prescriptions 43 viability pass deaths 48: 0 {}; 7: 0 {}
+
+quick, reference custom (4 runs), rows counted in all runs: fitted 14, held-out 10
+  fitted             (14 rows) ref 1.59, 1.20, 1.69, 1.59 (mean 1.52, sd 0.22; used 0.69) | A1q.json: 1.28, Δ -0.24, z -0.3 (inside noise) | A1rq.json: 2.91, Δ +1.39, z +1.8 (inside noise)
+  held-out           (10 rows) ref 3.40, 2.84, 4.08, 3.33 (mean 3.41, sd 0.51; used 1.26) | A1q.json: 3.85, Δ +0.44, z +0.3 (inside noise) | A1rq.json: 3.38, Δ -0.04, z -0.0 (inside noise)
+  held-out w/o rare  (10 rows) ref 3.40, 2.84, 4.08, 3.33 (mean 3.41, sd 0.51; used 0.51) | A1q.json: 3.85, Δ +0.44, z +0.8 (inside noise) | A1rq.json: 3.38, Δ -0.04, z -0.1 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-SOC-9   fitted   ref 0.28±0.47 | A1q.json 0.00 (pass) | A1rq.json 2.47 (fail)
+
+
+| Reserves ÷ store, % per day (OLS) | S22q runs | S22q mean ± SD | A1q | A1rq |
+| --- | --- | --- | --- | --- |
+| adult male | +0.009 / -0.000 / +0.010 / +0.004 | +0.006 ± 0.005 | +0.013 (z +1.4) | +0.004 (z -0.3) |
+| female, other | +0.003 / +0.019 / +0.007 / -0.010 | +0.005 ± 0.012 | -0.023 (z -2.1) | +0.006 (z +0.1) |
+| female, lactating | +0.006 / -0.003 / -0.013 / +0.014 | +0.001 ± 0.012 | -0.010 (z -0.8) | -0.014 (z -1.2) |
+| juvenile 5–12 y | +0.004 / -0.009 / +0.009 / +0.015 | +0.005 ± 0.010 | +0.017 (z +1.0) | +0.010 (z +0.5) |
+| infant 2–5 y | +0.016 / -0.002 / -0.033 / +0.007 | -0.003 ± 0.021 | -0.152 (z -6.2) | -0.033 (z -1.3) |
+| infant 0.5–2 y | -0.006 / +0.010 / +0.014 / +0.022 | +0.010 ± 0.012 | -0.247 (z -19.4) | -0.009 (z -1.4) |
+| infant < 0.5 y | +0.000 / +0.000 / +0.000 / +0.000 | +0.000 ± 0.000 | +0.000 (z +nan) | +0.000 (z +nan) |
+
+| Ground km / eating min / fruit share (energy-diagnose) | S22q runs | S22q mean ± SD | A1q | A1rq |
+| --- | --- | --- | --- | --- |
+| adult male: groundKm | 1.646 / 2.030 / 1.761 / 1.826 | 1.816 ± 0.161 | 1.917 (z +0.6) | 1.748 (z -0.4) |
+| adult male: eatingMin | 226.228 / 228.795 / 229.469 / 227.908 | 228.100 ± 1.402 | 231.748 (z +2.3) | 229.554 (z +0.9) |
+| adult male: fruitShare | 0.906 / 0.903 / 0.893 / 0.914 | 0.904 ± 0.009 | 0.873 (z -3.2) | 0.885 (z -2.0) |
+| female, other: groundKm | 1.071 / 1.483 / 1.370 / 1.454 | 1.345 ± 0.189 | 1.505 (z +0.8) | 1.307 (z -0.2) |
+| female, other: eatingMin | 229.294 / 231.502 / 229.376 / 231.298 | 230.367 ± 1.195 | 237.283 (z +5.2) | 237.367 (z +5.2) |
+| female, other: fruitShare | 0.591 / 0.665 / 0.653 / 0.643 | 0.638 ± 0.033 | 0.613 (z -0.7) | 0.627 (z -0.3) |
+| female, lactating: groundKm | 1.632 / 1.679 / 1.698 / 1.628 | 1.659 ± 0.035 | 1.851 (z +5.0) | 1.693 (z +0.9) |
+| female, lactating: eatingMin | 299.514 / 296.185 / 304.076 / 293.369 | 298.286 ± 4.605 | 303.655 (z +1.0) | 302.921 (z +0.9) |
+| female, lactating: fruitShare | 0.653 / 0.667 / 0.632 / 0.691 | 0.661 ± 0.025 | 0.645 (z -0.6) | 0.639 (z -0.8) |
+| juvenile 5–12 y: groundKm | 1.734 / 1.982 / 1.758 / 1.820 | 1.824 ± 0.112 | 2.058 (z +1.9) | 1.892 (z +0.5) |
+| juvenile 5–12 y: eatingMin | 282.357 / 276.603 / 278.817 / 274.942 | 278.180 ± 3.206 | 277.690 (z -0.1) | 276.394 (z -0.5) |
+| juvenile 5–12 y: fruitShare | 0.843 / 0.870 / 0.844 / 0.870 | 0.857 ± 0.015 | 0.881 (z +1.4) | 0.862 (z +0.3) |
+
+| Row (pooled) | S22q runs | S22q mean ± SD | A1q | A1rq |
+| --- | --- | --- | --- | --- |
+| T-ACT-1 | 0.374 / 0.369 / 0.372 / 0.378 | 0.373 ± 0.004 | 0.379 (z +1.4) | 0.374 (z +0.1) |
+| T-ACT-2 | 0.152 / 0.166 / 0.153 / 0.163 | 0.158 ± 0.007 | 0.165 (z +0.9) | 0.156 (z -0.3) |
+| T-ACT-3 | 0.094 / 0.094 / 0.107 / 0.093 | 0.097 ± 0.007 | 0.095 (z -0.3) | 0.103 (z +0.8) |
+| T-ACT-4 | 0.409 / 0.334 / 0.389 / 0.322 | 0.363 ± 0.042 | 0.381 (z +0.4) | 0.387 (z +0.5) |
+| T-PTY-1 | 3.661 / 4.088 / 4.532 / 3.995 | 4.069 ± 0.359 | 4.315 (z +0.6) | 4.355 (z +0.7) |
+| T-RNG-4 | 1.607 / 1.719 / 1.324 / 1.502 | 1.538 ± 0.168 | 1.448 (z -0.5) | 1.499 (z -0.2) |
+| T-HUN-1 | 0.000 / 4.033 / 0.000 / 0.000 | 1.008 ± 2.017 | 18.149 (z +7.6) | 8.022 (z +3.1) |
+| T-HUN-2 | — / 1.000 / — / — | 1.000 ± — | 0.625 (z +nan) | 0.400 (z +nan) |
+| T-HUN-3 | 0.000 / 0.007 / 0.000 / 0.000 | 0.002 ± 0.003 | 0.018 (z +4.2) | 0.018 (z +4.0) |
+| T-FOOD-2 | 0.776 / 0.814 / 0.791 / 0.791 | 0.793 ± 0.016 | 0.765 (z -1.6) | 0.796 (z +0.1) |
+| T-FOOD-10 | 0.497 / 0.530 / 0.436 / 0.464 | 0.482 ± 0.041 | 0.464 (z -0.4) | 0.497 (z +0.3) |
+| T-IGE-1 | 8.982 / 3.032 / 1.532 / 9.240 | 5.697 ± 3.992 | 7.400 (z +0.4) | 7.415 (z +0.4) |
+| T-PAT-1 | 0.077 / 0.154 / 0.039 / 0.193 | 0.116 ± 0.070 | 0.115 (z -0.0) | 0.077 (z -0.5) |
+| T-PAT-6 | — / 0.200 / 0.167 / 0.143 | 0.170 ± 0.029 | 0.200 (z +0.9) | 0.833 (z +20.7) |
+| T-SOC-5 | 0.070 / 0.605 / 0.530 / 0.263 | 0.367 ± 0.247 | 0.483 (z +0.4) | 0.219 (z -0.5) |
+| T-SOC-9 | -0.057 / 0.143 / 0.080 / 0.062 | 0.057 ± 0.083 | 0.177 (z +1.3) | 0.565 (z +5.4) |
+```
+
+In the quick group no rare row (T-HUN-4, T-BRD-1, T-IGE-3) is scored in every run, so the sums with and without them are
+the same rows. A1rq's fitted sum rises through T-SOC-9 (reconciliation, distance 2.47: the observer's corrected
+conciliatory tendency on 5 and 3 individuals, against 12 and 13 in A1q; truth reconciliations ÷ decided conflicts 0.19
+and 0.08); without that row its fitted sum is 0.44. T-PAT-6 0.833 rests on few patrols (S22's own confirm read 0.808).
+
+| row | A1q | A1rq |
+| --- | --- | --- |
+| commit (dirty) | b500cf8 (0) | b500cf8 (0) |
+| seeds; burn-in + days | 48,7; 30 + 30 | 48,7; 30 + 30 |
+| truth hunts per seed (scorecard counts); per community-year | [7, 12]; 38.5 | [5, 5]; 20.3 |
+| hunts detected by the observer per seed | [4, 4] | [1, 4] |
+| T-HUN-1 pooled (per seed) [verdict] | 18.149 (16.044, 20.278) [pass] | 8.022 (8.022, 8.022) [pass] |
+| T-HUN-2 pooled (per seed) [verdict] | 0.625 (0.500, 0.750) [pass] | 0.400 (0, 0.500) [fail] |
+| T-HUN-3 pooled (per seed) [verdict] | 0.018 (0.015, 0.022) [fail] | 0.018 (0, 0.031) [fail] |
+| T-HUN-4 pooled (per seed) [verdict] | 1.176 (0.000, 6.091) [pass] | 3.807 (—, 37825067.694) [fail] |
+| T-HUN-7 pooled (per seed) [verdict] | 1 (1, 1) [fail] | 1 (—, 1) [fail] |
+| T-HUN-8 pooled (per seed) [verdict] | 1 (1, 1) [fail] | 1 (—, 1) [fail] |
+| colobus encounters per 100 follow-h (T-HUN-3 part) | 7.21 | 7.41 |
+| T-ACT-1 pooled [verdict] | 0.379 [pass] | 0.374 [pass] |
+| T-ACT-2 pooled [verdict] | 0.165 [pass] | 0.156 [pass] |
+| T-ACT-3 pooled [verdict] | 0.095 [fail] | 0.103 [fail] |
+| T-ACT-4 pooled [verdict] | 0.381 [pass] | 0.387 [pass] |
+| fitted / held-out sums (headline) | 1.53 / 4.19 | 3.94 / 6.88 |
+| prescriptions | 43 | 43 |
+| viability; deaths by cause | pass; 48: 3 {'respiratory illness (outbreak)': 3}; 7: 0 {} | pass; 48: 0 {}; 7: 0 {} |
+
+Hunt rows at 30 + 60 days, both realizations:
+
+| row | H0 | H0r | A1h | A1rh |
+| --- | --- | --- | --- | --- |
+| commit (dirty) | ef07577 (0) | ef07577 (0) | b500cf8 (0) | b500cf8 (0) |
+| seeds; burn-in + days | 48,7; 30 + 60 | 48,7; 30 + 60 | 48,7; 30 + 60 | 48,7; 30 + 60 |
+| truth hunts per seed (scorecard counts); per community-year | [0, 3]; 3.0 | [1, 2]; 3.0 | [17, 26]; 43.6 | [11, 24]; 35.5 |
+| hunts detected by the observer per seed | [0, 2] | [1, 0] | [10, 6] | [5, 9] |
+| T-HUN-1 pooled (per seed) [verdict] | 3.025 (0, 6.050) [inconclusive] | 2.022 (2.017, 2.028) [inconclusive] | 20.222 (18.250, 22.182) [pass] | 16.133 (10.027, 22.306) [pass] |
+| T-HUN-2 pooled (per seed) [verdict] | 0 (—, 0) [fail] | 1 (1, —) [fail] | 0.625 (0.600, 0.667) [pass] | 0.429 (0.400, 0.444) [fail] |
+| T-HUN-3 pooled (per seed) [verdict] | 0.004 (0, 0.008) [fail] | 0.004 (0.006, 0) [fail] | 0.017 (0.008, 0.026) [fail] | 0.038 (0.010, 0.058) [fail] |
+| T-HUN-4 pooled (per seed) [verdict] | 6.071 (—, 4472.659) [fail] | 1.291 (1.239, —) [pass] | 1.760 (0.000, 10.191) [pass] | 3.759 (1.454, 173157.561) [fail] |
+| T-HUN-7 pooled (per seed) [verdict] | — (—, —) [insufficient] | 1 (1, —) [fail] | 1 (1, 1) [fail] | 1 (1, 1) [fail] |
+| T-HUN-8 pooled (per seed) [verdict] | — (—, —) [insufficient] | 1 (1, —) [fail] | 1 (1, 1) [fail] | 1 (1, 1) [fail] |
+| colobus encounters per 100 follow-h (T-HUN-3 part) | 8.45 | 9.00 | 7.77 | 7.88 |
+| prescriptions | 43 | 43 | 43 | 43 |
+| viability; deaths by cause | pass; 48: 0 {}; 7: 0 {} | pass; 48: 1 {'illness': 1}; 7: 0 {} | pass; 48: 8 {'respiratory illness (outbreak)': 7, 'orphaned infant, did not survive without its mother': 1}; 7: 0 {} | pass; 48: 0 {}; 7: 0 {} |
+
+```
+rows scored in every run: ['T-HUN-1', 'T-HUN-2', 'T-HUN-3'] ; not scored somewhere: ['T-HUN-7']
+  H0: T-HUN-1 0.099, T-HUN-2 1.667, T-HUN-3 0.131; sum 1.897
+  H0r: T-HUN-1 0.149, T-HUN-2 0.667, T-HUN-3 0.132; sum 0.948
+  A1h: T-HUN-1 0.000, T-HUN-2 0.000, T-HUN-3 0.095; sum 0.095
+  A1rh: T-HUN-1 0.000, T-HUN-2 0.238, T-HUN-3 0.035; sum 0.273
+reference mean (first two runs) 1.422
+```
+
+#### A1 against its registration (§6–§7)
+
+- Truth: the hunt's mean value 0.63 (predicted 0.52–0.65: as predicted); draws won 23% (8–20%: missed, a little high);
+  hunts 43.6 and 35.5 per community-year at 30 + 60 days, 38.5 and 20.3 in the quick windows (20–60: as predicted);
+  success 0.60 (0.3–0.7: as predicted); one kill per success (1.0–1.3: as predicted); adult males eat 16.1 kcal of meat a
+  day (≥ 10: as predicted).
+- Hunt rows at 30 + 60 days: T-HUN-1 20.2 and 16.1 (12–40: as predicted; inside the registered 5–25, above the staged
+  4–11); T-HUN-3 0.017 and 0.038 (0.02–0.07: missed low once); T-HUN-2 0.63 and 0.43 (0.3–0.7: as predicted); T-HUN-7
+  1.0 (as predicted); T-HUN-8 1.0 (≥ 0.8: as predicted; above its band's top, 0.95); T-HUN-4 unresolved (1.76, 3.76).
+- Quick sums: held-out (the same rows with and without the rare ones) z +0.3 / +0.8 and −0.0 / −0.1, fitted z −0.3 and
+  +1.8: inside noise (as predicted). T-ACT-1..4 inside the group's spread in both (|z| ≤ 1.4; as predicted). Reserves
+  (A1r): every class inside the group's spread (|z| ≤ 1.4; as predicted); A1q's infant and other-female losses follow the
+  outbreak's two dead mothers on day 12, not hunting. Prescriptions 43 (as predicted). Viability passes in all four runs.
+- Not predicted: other females eat 7 minutes a day more in both realizations (237 against 230 ± 1 min, z +5.2 twice),
+  adult males' fruit share falls (z −3.2, −2.0: meat in the diet); offered draws fall from 286–361 to 187 (fewer impulses
+  with three or more adult males: 264 against 348–514; not tested); the hunt wins mostly at midday, from males whose
+  foregut is full of fruit (fill 0.74 against 0.36 at the draws it loses) and whose deficit ratio is high (φ 0.72
+  against 0.39), with the hunger readout no different (0.29 against 0.31).
+
+### Verdict
+
+- **Diagnosis (finding).** On S22 the stack's males lead 3 hunts per community-year in truth. 58–65% of hunt impulses
+  carry only two adult males and the pursuit expects nothing of them (no offer); offered, the hunt is worth 0.39–0.42
+  against 0.93–0.99 and tops the menu in 1% of draws. Its energy rate is right by the model's physics (r 0.74 of a
+  ceiling of 0.925), and the binding term is the crowns' appetite weight it borrowed. S19's 13–19 hunts a year were the
+  fitted temperature's chance picks (17–21 a year predicted from S22's own menus). The per-draw outcome is a knife-edge,
+  so no design value for the debated non-energy reasons to hunt was built.
+- **`huntDrive` 1 (iteration 1): a correction, recommended for a 5-seed confirm on the stack (S22 + `huntDrive` 1).**
+  The lead weighed at the energy-deficit part of the E1e drive, without the distension satiation (a capture is held and
+  eaten as the gut takes it; no new magnitude, removes no prescription): viable, every sum inside noise in two quick
+  realizations, reserves inside spread, hunting rows closer to their bands at 30 + 60 days (T-HUN-1, -2, -3 summed 0.10
+  and 0.27 against H0/H0r's 1.42); hunts 36–44 a year in truth, T-HUN-1 16–20, success 0.43–0.63. It meets every
+  criterion of §7.
+- **No second iteration.** What A1 leaves is outside its mechanism and has no source-based fix here: the pair limit of
+  the pursuit (75% of A1's impulses carry two males; E4k's design ratio; Taï's lone hunters succeed 16%), T-HUN-3 below
+  its band (the observer's colobus encounters are about twice Kanyawara's; E4f's staged scorer fixes), one kill per
+  success (T-HUN-7; E4k), captors all adult males (T-HUN-8 1.0), the hand-set join value, and the field's surplus
+  direction (gilbyWrangham2007), which `huntDrive` does not produce (φ is low in surplus).
+- **Open.** Why chimpanzees hunt beyond energy (nutrients, sharing) has a direction and no magnitude in any source read;
+  T-HUN-1 now sits above the staged 4–11 band (scaled to the model's males) while T-HUN-3 sits below its band: E4e's tie
+  of the two rows through the encounter rate.
