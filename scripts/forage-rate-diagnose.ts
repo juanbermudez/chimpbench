@@ -51,14 +51,17 @@
 //   energy (energy-diagnose's definitions, for the class net rate): per class eating minutes, ground km, Δ in, passed
 //     out (fec), walking cost; class net rate = (in − passed out − walking) ÷ (eating min + ground km ÷ walkMps).
 //
+// With forageRate 1 (stage E3c's arms) the food worth is the arm's (the crown's drive × netRateShare, no distance term on
+// crowns, no tripCost); the counterfactual variants then re-score from it as written above (actual and identity hold).
+//
 //   pnpm exec tsx scripts/forage-rate-diagnose.ts [--seeds 48,7] [--burn-in 30] [--days 30] [--params '{…}'] [--workers 2] [--json f.json]
 // Development seeds only (AGENTS.md lists the reserved ones); burn-in + days ≤ 90.
 import { writeFileSync } from 'node:fs';
 import { isMainThread, parentPort } from 'node:worker_threads';
-import { candidateMeta, companyValue, presentCompany, V } from '../src/sim/candidates';
+import { candidateMeta, companyValue, forageRateOn, presentCompany, V } from '../src/sim/candidates';
 import { hash01 } from '../src/sim/rng';
 import { boutRoom, energyNeed, energyTap, fruitKcalPerUnit, massOf } from '../src/sim/energy';
-import { fruitRate, leafWorth, treeIntake } from '../src/sim/intake';
+import { fruitRate, leafWorth, netRateShare, treeIntake } from '../src/sim/intake';
 import { darkOn, tripLight, visionNow, type TripLight } from '../src/sim/light';
 import { paramsOf, resolveParams, type Params } from '../src/sim/params';
 import { fruitAt } from '../src/sim/phenology';
@@ -168,6 +171,14 @@ export function runSeed(job: Job): Result {
     if (!ft || P.revisitByCrop === 1 || (P.crownShare === 1 && P.energyLedger === 1 && P.ledgerDrive === 1 && P.intakeValue === 1) || P.revisitW <= 0) return 0;
     const k = ft.lastIndexOf(id); return k < 0 ? 0 : P.revisitW * Math.exp(-(w.time - x.fedAt![k]) / P.revisitTauH);
   };
+  // stage E3c (forageRate): the food worth the arm's candidates.ts gives (the crown's drive × netRateShare; no distance
+  // term on crowns, no tripCost on trips), so the decomposition and the identity check hold with the switch on
+  const FR = forageRateOn(P);
+  const rateFood = (c: Chimp, t: Tree, crop: number, n: number, d: number): number => {
+    const crownY = t.height * CROWN_Y, climb = c.targetId === t.id ? crownY - c.position[1] : crownY;
+    const r = dark && (tripLight(w, P, d, crownY, tl).pace < 1 || tl.see < 1) ? netRateShare(c, P, crop, n, d, climb, tl.pace, tl.see) : netRateShare(c, P, crop, n, d, climb);
+    return (1.6 * c.hunger + 0.1) * r;
+  };
   const settle = (kind: Kind, k: Candidate, raw: number): number => {
     if (k.score > 0 && k.score < 3 && Math.abs(raw - k.score) >= 0.0006) R0.rawMismatch[kind] = (R0.rawMismatch[kind] ?? 0) + 1;
     return k.score <= 0 ? raw : k.score;
@@ -179,13 +190,13 @@ export function runSeed(job: Job): Result {
     if (k.action === 'forage' && k.targetId === -1) {
       const kcal = fruitKcalPerUnit(P, false), R = fruitRate(c, P).fruitPerH * kcal;
       const leafV = (P.intakeValue === 1 ? leafWorth(w, c, px, pz, P, fruitRate(c, P).hungerPerH) : 1) * (dark ? visionNow(w, 0) : 1);
-      const food = h * P.fallbackForageW * leafV + 0.03;
+      const food = FR ? D * leafV : h * P.fallbackForageW * leafV + 0.03;
       // the published score is clamped at 0: rebuild the raw one (candidates.ts offer: rain, jitter, continuation)
       const jitter = (hash01(c.id, c.decisionVersion, 2, -1) - 0.5) * P.candidateJitterSpan;
       const cont = P.urgencySwitchCost !== 1 && c.action === 'forage' && c.targetId === -1 ? (x.finished ? -P.finishedPenalty : w.time < x.actEnd ? P.continueBonus : 0) : 0;
       const raw = food - w.environment.rain * 0.3 + jitter + cont;
       if (k.score > 0 && k.score < 3 && Math.abs(raw - k.score) >= 0.0006) R0.fbRawMismatch++;
-      const t = { ...blank, food, rest: raw - food, fbW: food - D * leafV };
+      const t = { ...blank, food, rest: raw - food, fbW: FR ? 0 : food - D * leafV };
       return { kind: 'fallback', target: -1, score: Math.abs(raw - k.score) < 0.0006 || k.score <= 0 ? raw : k.score, clamped, t, d: 0, crop: NaN, n: 0, h, D, Q: 1, tw: 1, R, eBout: NaN, eNN: NaN, eStay: NaN, C: 0, gross: R * leafV, net: R * leafV, netStay: R * leafV, grossNN: R * leafV, netNN: R * leafV, bind: 'none', tWalkH: 0, see: 1, leafV };
     }
     if (!isTreeId(k.targetId)) return null;
@@ -193,12 +204,12 @@ export function runSeed(job: Job): Result {
     const d = Math.hypot(t.position[0] - px, t.position[2] - pz);
     if (k.action === 'forage') {
       const crop = P.patchEcology === 1 ? fruitAt(w, t) : t.fruit, n = seenFeeders(c, t.id, false);
-      const Q = 0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef), tw = tripWorth(c, t, crop, n, d), food = D * Q * tw, dist = -d / P.forageDistScaleM;
+      const Q = 0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef), tw = tripWorth(c, t, crop, n, d), food = FR ? rateFood(c, t, crop, n, d) : D * Q * tw, dist = FR ? 0 : -d / P.forageDistScaleM;
       const crowd = P.crowdByShare === 1 || (P.crownShare === 1 && P.energyLedger === 1 && P.ledgerDrive === 1 && P.intakeValue === 1) ? 0 : -n * P.crowdCompeteW * (P.crowdScarcityRef - w.environment.fruitIndex) * (c.rank > P.crowdHighRank ? P.crowdHighRankFactor : 1);
       const r = ratesOf(c, t, crop, n, d, c.action === 'forage' && c.targetId === t.id && x.phase >= 2);
       const raw = food + dist + crowd - w.environment.rain * 0.45 - placeOf(c, t, 0.6) + (t.id === simOf(w).figTree && h > 0.2 ? 0.2 : 0) - revisitOf(c, t.id) + jitterOf(c, 2, t.id) + contOf(c, 'forage', t.id);
       const score = settle('crown', k, raw);
-      const tt = { ...blank, food, dist, crowd, rest: score - food - dist - crowd, shape: -(1 - Q) * D * tw, distW: dist };
+      const tt = { ...blank, food, dist, crowd, rest: score - food - dist - crowd, shape: FR ? 0 : -(1 - Q) * D * tw, distW: dist };
       return { kind: 'crown', target: t.id, score, clamped, t: tt, d, crop, n, h, D, Q, tw, ...r, leafV: NaN };
     }
     if (k.action === 'travel' && meta?.v === V.TREE) {
@@ -206,7 +217,7 @@ export function runSeed(job: Job): Result {
       const crop = join ? (inView ? (P.patchEcology === 1 ? fruitAt(w, t) : t.fruit) : (x.treeCrop?.[t.id] ?? 0.2)) : (x.treeCrop?.[t.id] ?? (!remembered ? knownCrop(c, t.id) : undefined) ?? 0.2);
       const n = join ? seenFeeders(c, t.id, true) : 0;
       const Q = P.memCropBelief === 1 ? 0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef) : 1, tw = tripWorth(c, t, crop, n, d), W = h * P.memTravelHungerW;
-      const food = W * Q * tw, dist = -(d / P.travelDistScaleM);
+      const food = FR ? rateFood(c, t, crop, n, d) : W * Q * tw, dist = FR ? 0 : -(d / P.travelDistScaleM);
       const lead = join ? index(w).byId.get(meta.aux) : undefined;
       const company = lead ? (P.followMargin === 1 ? Math.max(0, companyValue(c, lead, P) - presentCompany(w, c, P)) : companyValue(c, lead, P)) : 0;
       const r = ratesOf(c, t, crop, n, d, false);
@@ -214,7 +225,7 @@ export function runSeed(job: Job): Result {
       const raw = join ? food + dist + company - rain * 0.3 + jitterOf(c, 4, t.id) + contOf(c, 'travel', t.id)
         : food + dist - revisitOf(c, t.id) - rain * 0.4 - placeOf(c, t, 0.8) + (P.crowdByShare === 1 ? 0 : c.personality.sociability * w.environment.fruitIndex * 0.1) + jitterOf(c, 4, t.id) + contOf(c, 'travel', t.id);
       const score = settle(join ? 'join' : 'trip', k, raw);
-      const tt = { ...blank, food, dist, company: join ? company : 0, rest: score - food - dist - (join ? company : 0), shape: -(1 - Q) * W * tw, distW: dist, memW: (W - D) * Q * tw };
+      const tt = { ...blank, food, dist, company: join ? company : 0, rest: score - food - dist - (join ? company : 0), shape: FR ? 0 : -(1 - Q) * W * tw, distW: dist, memW: FR ? 0 : (W - D) * Q * tw };
       return { kind: join ? 'join' : 'trip', target: t.id, score, clamped, t: tt, d, crop, n, h, D, Q, tw, ...r, leafV: NaN };
     }
     return null;
