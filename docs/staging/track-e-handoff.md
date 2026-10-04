@@ -14,11 +14,10 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 08:55; deploy held by the user).** Stage agent **E2i** (`e2i-walking`). Integrator: S21's
-  confirm group (S21 at e7d8d8e + S21c1–S21c3 by `rngSalt` 1–3 in bench-run2, `integrator/conf21s.sh`; S21c1 and S21c2
-  running as a detached chain (no task notification: check `bench-run2/artifacts/validation/e/s21/S21c*`), S21c3 to
-  start) and the **S22** confirm (S21 + `leftoverRules` 3; registered ea794ff) in bench-run3 moved to ea794ff
-  (`integrator/conf22.sh`). Judge with a copy of `integrator/judge_s19group.py` pointed at the S21 group.
+- **Running now (4 October 09:20; deploy held by the user).** No agents. Integrator: S21's confirm group (bench-run2;
+  S21c2 detached chain, S21c3 task), **S22** (S21 + `leftoverRules` 3; bench-run3 ea794ff) and **S23** (S21 + `walkGait`;
+  registered 23db70b; bench-run4 moved to 23db70b, `integrator/conf23.sh`), both judged with
+  `integrator/judge_s21group.py` (`ARM=S22` / `ARM=S23`).
 - **S21 done: now the best integrated candidate** (e-stack2-confirm.md "S21 results"; S19 + `choiceBelief` 2): 45
   prescriptions, viable, night safe, held-out without the rare rows better beyond noise (z −5.0; T-FOOD-10 0.81 → 0.58),
   T-HUN-2 0.50 (in band). Costs: T-PAT-1 0.093 (just below band), T-HUN-1 5.2 (floor). Decision guide and hosted copy
