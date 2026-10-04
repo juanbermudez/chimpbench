@@ -135,6 +135,10 @@ h_patrol is measured, not assumed.
   one after the other, from a frozen detached checkout of the commit that adds this entry
   (`scratchpad/e4j/frozen-p`); outputs `artifacts/validation/e4j/P16{a,b}.json` there. Load ~10–19 at launch (other
   agents' runs), hence one worker.
+- **P16a, P16b results** (logged after the runs; 8bda1b3, `git.dirty` 0, printed from the JSON): fitted 5.07 and 2.94,
+  held-out 7.29 and 6.06 (5.95 and 6.06 without T-HUN-4 and T-BRD-1), prescriptions 49, viable (one illness death in
+  P16b); T-IGE-1 32.9 and 22.3 (per seed 25.2, 40.5 and 20.7, 23.9: the S16 confirm's seeds 48 and 7 exactly). The rows
+  are the tool's (§3.6), so the tool's D16 runs carry the reference from here on.
 
 ### 3.6 Diagnosis results (D, E and F runs; every number printed by `scratchpad/e4j/diag_table.py` and `v2_table.py` from the tool's JSON)
 
@@ -272,6 +276,37 @@ quarter-hours with members of two communities within 1 km: 4.6% → 9.3%), and t
   deep patrols pull each range's use, centre and familiar area toward the neighbour they face.
 No patrol turns violent on the observer (T-PAT-7 0–0.08) and seen contacts stay rare (0–14 per community-year).
 
+**With the S16 reference at four draws** (D16c and D16d, registered in §5 and run with A1; logged after the runs). The two
+added draws carry less time within earshot (5.66% and 5.59%) at T-IGE-1 20.0 and 19.8, so on four draws against S13's two
+the rise is smaller in truth and the same in kind (printed by the same scripts):
+
+```
+## Decomposition S13 -> S16 (both draws and both seeds pooled): E 12.32 -> 23.79, dE +11.47
+  patrol         h 0.005 -> 0.015, r  319.7 ->  464.6: exposure part +4.08, rate part +1.43
+  pursuit        h 0.000 -> 0.000, r    0.0 -> 7055.4: exposure part +0.18, rate part +0.18
+  incursion      h 0.000 -> 0.003, r    0.0 ->  247.5: exposure part +0.31, rate part +0.42
+  border-forage  h 0.058 -> 0.050, r   12.8 ->   18.6: exposure part -0.14, rate part +0.31
+  border-other   h 0.088 -> 0.079, r   63.8 ->   79.8: exposure part -0.66, rate part +1.33
+  core-forage    h 0.338 -> 0.340, r    2.2 ->    2.2: exposure part +0.00, rate part -0.01
+  core-other     h 0.510 -> 0.513, r    7.3 ->   15.1: exposure part +0.03, rate part +3.98
+  sum +11.47 (check against dE +11.47)
+  more patrols (exposure) +4.08; more contacts per patrol (rate) +1.43; outside patrols +5.95 (exposure -0.26, rate +6.21)
+  scoring readouts: concurrent 0 -> 0.00775; field-attributable 1 -> 0.977; seen share 0 -> 0.00775
+
+S13 patrol 0.38 leaver 0.07 pursuit 0.01 incursion 0.20 border 2.18 core 1.75 total 4.60
+S16 patrol 1.72 leaver 0.36 pursuit 0.03 incursion 0.41 border 2.39 core 2.55 total 7.47
+change S13 -> S16 (points): patrol +1.34 leaver +0.29 pursuit +0.02 incursion +0.21 border +0.21 core +0.81 total +2.87
+  patrol-linked (patrol, leaver, pursuit, incursion) +1.85 (64%); border + core +1.02 (36%)
+S13: 12 pair-runs, mean change of centre gaps -35 m (min -141, max +107)
+S16: 24 pair-runs, mean change of centre gaps -109 m (min -272, max +61)
+A1: 12 pair-runs, mean change of centre gaps -42 m (min -284, max +245)
+```
+
+The reading stands with smaller numbers: on the observer the rise (12.3 → 23.8) is half outside patrols (+6.0, a rate change
+at unchanged exposure) and half patrols (+4.1 exposure, +1.4 per patrol hour); the time within earshot rises 1.6 times
+(4.6% → 7.5%), two thirds of it patrol-linked, a third border and core; the centres close three times faster (−109 against
+−35 m); the scoring and calling are unchanged.
+
 ## 4. Mechanism (switch `patrolFusion`, 0 = today; src/sim/perception.ts, committed with this section)
 
 **What the diagnosis implicates.** Every part of the doubling runs through the patrol rate: patrol trips put patrol
@@ -365,3 +400,196 @@ defect, an omitted cost or state), never a weight to move a row. Iteration 1 is 
   this entry: chain Q `e-bench --quick --params <A1> --out artifacts/validation/e4j/A1q` then `energy-diagnose --seeds 48,7
   --burn-in 30 --days 30 --params <A1> --json artifacts/validation/e4j/A1q-energy.json`; chain T the v3 tool A1a, A1b, D16c,
   D16d (seeds 48 then 7 each). Load checked before launch; one process per chain.
+
+### A1 results (frozen-a1 at 41a8fd2, clean; printed by `scratchpad/e4j/judge_e4j.py` and `final_table.py` from the JSON)
+
+```
+A1q: 41a8fd2 dirty 0 prescriptions 49 viability pass; deaths by cause [{}, {}]; starvation [0, 0]
+  ref S16q.json: 721b0fb dirty 0 prescriptions 49
+  ref S16q1.json: 721b0fb dirty 0 prescriptions 49
+  ref S16q2.json: 721b0fb dirty 0 prescriptions 49
+  ref S16q3.json: 721b0fb dirty 0 prescriptions 49
+quick, reference custom (4 runs), rows counted in all runs: fitted 16, held-out 12
+  fitted             (16 rows) ref 4.82, 1.70, 2.25, 3.95 (mean 3.18, sd 1.45; used 1.45) | A1q.json: 1.50, Δ -1.69, z -1.0 (inside noise)
+  held-out           (12 rows) ref 3.38, 3.80, 4.52, 3.88 (mean 3.90, sd 0.47; used 1.26) | A1q.json: 3.69, Δ -0.20, z -0.1 (inside noise)
+  held-out w/o rare  (11 rows) ref 3.38, 3.80, 4.52, 3.88 (mean 3.90, sd 0.47; used 0.48) | A1q.json: 3.54, Δ -0.35, z -0.7 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-HUN-4   held-out ref 0.00±0.00 | A1q.json 0.15 (fail)
+   T-SOC-9   fitted   ref 0.02±0.05 | A1q.json 0.55 (fail)
+
+held-out without T-HUN-4, T-BRD-1 and T-IGE-3 (11 rows): S16q 3.38 / 3.80 / 4.52 / 3.88 (mean 3.90, sd 0.47; used 0.48); A1q.json 3.54 (z -0.7)
+fitted rows, distance (S16q group mean ± SD | arms):
+  T-ACT-1   0.00 ± 0.00 | A1q.json 0.00 (value 0.412)
+  T-ACT-2   0.02 ± 0.02 | A1q.json 0.00 (value 0.175)
+  T-ACT-3   0.07 ± 0.03 | A1q.json 0.02 (value 0.095)
+  T-ACT-4   0.00 ± 0.00 | A1q.json 0.00 (value 0.344)
+  T-COM-1   0.00 ± 0.00 | A1q.json 0.00 (value 0.711)
+  T-COM-11  0.52 ± 0.27 | A1q.json 0.83 (value 0)
+  T-COM-5   0.00 ± 0.00 | A1q.json 0.00 (value 2.72)
+  T-COM-8   0.07 ± 0.06 | A1q.json 0.03 (value 0.609)
+  T-FOOD-2  0.00 ± 0.00 | A1q.json 0.00 (value 0.688)
+  T-HUN-1   0.00 ± 0.00 | A1q.json 0.00 (value 15.9)
+  T-HUN-2   1.03 ± 0.62 | A1q.json 0.00 (value 0.5)
+  T-HUN-3   0.05 ± 0.04 | A1q.json 0.06 (value 0.0275)
+  T-IGE-1   1.39 ± 0.73 | A1q.json 0.00 (value 8.97)
+  T-PTY-1   0.00 ± 0.00 | A1q.json 0.00 (value 4.1)
+  T-RNG-4   0.00 ± 0.00 | A1q.json 0.00 (value 1.99)
+  T-SOC-9   0.02 ± 0.05 | A1q.json 0.55 (value 0.00327)
+
+| Reserves ÷ store, % per day (OLS) | S16q runs | S16q mean ± SD | A1 |
+| --- | --- | --- | --- |
+| adult male | -0.002 / -0.002 / -0.004 / -0.011 | -0.005 ± 0.004 | -0.004 (z +0.1) |
+| female, other | -0.003 / -0.026 / +0.007 / -0.004 | -0.007 ± 0.014 | +0.008 (z +0.9) |
+| female, lactating | -0.009 / -0.007 / -0.007 / -0.041 | -0.016 ± 0.017 | +0.007 (z +1.2) |
+| juvenile 5–12 y | -0.019 / -0.015 / -0.054 / -0.020 | -0.027 ± 0.018 | +0.001 (z +1.4) |
+| infant 2–5 y | -0.013 / +0.005 / +0.007 / -0.031 | -0.008 ± 0.018 | -0.008 (z -0.0) |
+| infant 0.5–2 y | -0.003 / -0.024 / -0.022 / -0.044 | -0.023 ± 0.017 | +0.013 (z +2.0) |
+| infant < 0.5 y | +0.000 / +0.000 / +0.000 / +0.000 | +0.000 ± 0.000 | +0.000 (z +nan) |
+
+| Ground km / eating min | S16q runs | S16q mean ± SD | A1 |
+| --- | --- | --- | --- |
+| adult male: groundKm | 2.52 / 2.49 / 2.61 / 2.35 | 2.49 ± 0.11 | 2.21 (z -2.4) |
+| adult male: eatingMin | 255.60 / 254.75 / 257.07 / 254.24 | 255.41 ± 1.24 | 256.15 (z +0.5) |
+| female, other: groundKm | 1.87 / 1.73 / 1.92 / 1.80 | 1.83 ± 0.08 | 1.46 (z -4.2) |
+| female, other: eatingMin | 266.62 / 261.52 / 273.33 / 264.35 | 266.45 ± 5.03 | 259.78 (z -1.2) |
+| female, lactating: groundKm | 2.11 / 1.97 / 2.28 / 2.07 | 2.11 ± 0.13 | 1.96 (z -1.0) |
+| female, lactating: eatingMin | 318.59 / 316.41 / 320.53 / 318.05 | 318.40 ± 1.70 | 322.33 (z +2.1) |
+| juvenile 5–12 y: groundKm | 2.34 / 2.15 / 2.06 / 2.26 | 2.20 ± 0.13 | 2.02 (z -1.3) |
+| juvenile 5–12 y: eatingMin | 283.23 / 289.57 / 295.28 / 281.56 | 287.41 ± 6.28 | 275.44 (z -1.7) |
+A1 energy deaths: {}
+
+30 + 60, seeds 48 and 7 (tool rows = e-bench rows); S16 reference runs ['D16a', 'D16b', 'D16c', 'D16d']; arms ['A1a', 'A1b']; S13 confirm runs (5 seeds) beside
+| Row (pooled) | S16 runs | S16 mean ± SD | A1a | A1b | S13 tool (D13a, D13b) | S13 confirm runs (5 seeds) |
+| --- | --- | --- | --- | --- | --- | --- |
+| T-IGE-1 | 32.9 / 22.3 / 20 / 19.8 | 23.8 ± 6.2 | 12.6 (z -1.6) | 10.2 (z -2.0) | 18 / 6.7 | 11.4 / 7.19 / 7.46 / 6.55 |
+| T-IGE-2 | 0.957 / 1 / 1 / 0.958 | 0.979 ± 0.024 | 1 (z +0.8) | 1 (z +0.8) | 0.962 / 1 | 0.971 / 1 / 1 / 1 |
+| T-IGE-3 | — / — / — / — | — | — | — | — / — | 0.286 / 0.701 / 0.349 / 2.5 |
+| T-PAT-1 | 0.252 / 0.251 / 0.116 / 0.193 | 0.203 ± 0.064 | 0.154 (z -0.7) | 0.135 (z -0.9) | 0.116 / 0.0773 | 0.0851 / 0.0463 / 0.0923 / 0.0772 |
+| T-PAT-2 | — / — / — / — | — | — | — | — / — | 2.86 / 1.64 / 2.95 / 3.28 |
+| T-PAT-3 | — / — / — / — | — | — | — | — / — | 0.594 / 0.626 / 0.59 / 0.738 |
+| T-PAT-5 | — / — / — / — | — | — | — | — / — | 148 / 158 / 121 / 192 |
+| T-PAT-6 | 0.548 / 0.652 / 0.435 / 0.5 | 0.534 ± 0.092 | 0.588 (z +0.5) | 0.5 (z -0.3) | 0.562 / 0.154 | 0.385 / 0.174 / 0.0526 / 0.25 |
+| T-PAT-7 | 0.0769 / 0 / 0 / 0.1 | 0.0442 ± 0.052 | 0 (z -0.8) | 0 (z -0.8) | 0 / 0 | 0 / 0 / 0 / 0 |
+| T-BRD-1 | — / — / — / — | — | — | — | — / — | 0.21 / 0.0672 / 0.0197 / -0.242 |
+
+| Readout | S16 runs | S16 mean ± SD | A1a | A1b | S13 (D13a / D13b) |
+| --- | --- | --- | --- | --- | --- |
+| T-IGE-1 (tool) | 32.9 / 22.3 / 20 / 19.8 | 23.8 ± 6.2 | 12.6 (z -1.6) | 10.2 (z -2.0) | 18 / 6.7 |
+| observer encounters on patrols, per CY | 11 / 7.43 / 4.45 / 5.87 | 7.18 ± 2.8 | 2.97 (z -1.3) | 2.9 (z -1.4) | 2.99 / 0 |
+| observer encounters outside patrols, per CY | 21.9 / 14.9 / 15.6 / 13.9 | 16.6 ± 3.6 | 9.67 (z -1.7) | 7.26 (z -2.3) | 15 / 6.7 |
+| truth patrols per community-week | 2 / 1.69 / 2.26 / 1.36 | 1.83 ± 0.39 | 0.836 (z -2.3) | 1.19 (z -1.5) | 0.739 / 0.622 |
+| patrols reaching 3 adult males | 0.515 / 0.471 / 0.543 / 0.471 | 0.5 ± 0.035 | 0.512 (z +0.3) | 0.475 (z -0.6) | 0.658 / 0.719 |
+| patrol incursions (leader in a neighbour range) | 0.447 / 0.425 / 0.284 / 0.386 | 0.386 ± 0.072 | 0.605 (z +2.7) | 0.41 (z +0.3) | 0.263 / 0.219 |
+| contacts per patrol (truth hearing episodes, listener on it) | 0.65 / 0.483 / 0.362 / 0.629 | 0.531 ± 0.13 | 0.628 (z +0.6) | 0.508 (z -0.2) | 0.368 / 0.281 |
+| observer encounters per followed patrol | 0.484 / 0.417 / 0.24 / 0.421 | 0.39 ± 0.1 | 0.4 (z +0.1) | 0.286 (z -0.9) | 0.333 / 0 |
+| led formings that were flicker | 0.388 / 0.523 / 0.444 / 0.514 | 0.467 ± 0.063 | 0 (z -6.6) | 0 (z -6.6) | 0.15 / 0.25 |
+| time within earshot, % | 10.1 / 8.5 / 5.66 / 5.59 | 7.47 ± 2.2 | 4.26 (z -1.3) | 4.42 (z -1.2) | 5.02 / 4.17 |
+|   patrol-linked, % | 3.85 / 2.27 / 2.14 / 1.82 | 2.52 ± 0.91 | 1.46 (z -1.0) | 1.41 (z -1.1) | 0.901 / 0.442 |
+|   border + core, % | 6.27 / 6.22 / 3.52 / 3.77 | 4.95 ± 1.5 | 2.79 (z -1.3) | 3.01 (z -1.1) | 4.12 / 3.73 |
+| centre gap change over 60 d, m | -137 / -80.2 / -138 / -80.7 | -109 ± 33 | 28.3 (z +3.7) | -113 (z -0.1) | -70.5 / 0.5 |
+| truth hearing episodes per listener community-year | 316 / 270 / 179 / 186 | 238 ± 67 | 149 (z -1.2) | 152 (z -1.2) | 152 / 140 |
+| seen contacts per community-year (truth) | 14.2 / 6.08 / 2.03 / 4.06 | 6.59 ± 5.3 | 0 (z -1.1) | 4.06 (z -0.4) | 4.06 / 0 |
+| stats.intergroupEncounters per community-week | 2.64 / 2.31 / 1.81 / 1.77 | 2.13 ± 0.42 | 1.46 (z -1.4) | 1.44 (z -1.5) | 1.44 / 1.21 |
+A1a: patrol classifier p/r (focal, males) per seed [(1, 0.8333333333333334, 1, 0.7142857142857143), (1, 0.75, 0.8888888888888888, 0.9230769230769231)]; deaths [{}, {}]
+A1b: patrol classifier p/r (focal, males) per seed [(1, 0.7777777777777778, 1, 0.8125), (1, 0.25, 0.7777777777777778, 0.4117647058823529)]; deaths [{}, {}]
+```
+
+```
+| Readout | S16 ref (4 draws, mean ± SD) | A1 | S13 confirm runs (5 seeds) |
+| --- | --- | --- | --- |
+| T-IGE-1 (30 + 60) | 23.8 ± 6.2 | 12.6 / 10.2 (mean 11.4) | 11.4 / 7.19 / 7.46 / 6.55 |
+| T-IGE-2 (30 + 60) | 0.979 ± 0.0243 | 1 / 1 (mean 1) | 0.971 / 1 / 1 / 1 |
+| T-IGE-3 (30 + 60) | — | — | 0.286 / 0.701 / 0.349 / 2.5 |
+| T-PAT-1 (30 + 60) | 0.203 ± 0.0641 | 0.154 / 0.135 (mean 0.145) | 0.0851 / 0.0463 / 0.0923 / 0.0772 |
+| T-PAT-6 (30 + 60) | 0.534 ± 0.0916 | 0.588 / 0.5 (mean 0.544) | 0.385 / 0.174 / 0.0526 / 0.25 |
+| T-PAT-7 (30 + 60) | 0.0442 ± 0.0519 | 0 / 0 (mean 0) | 0 / 0 / 0 / 0 |
+| truth patrols per community-week (30 + 60) | 1.83 ± 0.39 | 0.84 / 1.19 (mean 1.01) | — |
+| contacts per patrol (truth hearing episodes, a listener on it) | 0.53 ± 0.13 | 0.63 / 0.51 (mean 0.57) | — |
+| observer encounters outside patrols, per community-year | 16.6 ± 3.6 | 9.7 / 7.3 (mean 8.5) | — |
+| quick sums vs S16q group (rows counted in all runs; arm value, z) | fitted 4.82 / 1.70 / 2.25 / 3.95 ; held-out 3.38 / 3.80 / 4.52 / 3.88 ; held-out w/o rare 3.38 / 3.80 / 4.52 / 3.88 | fitted 1.50 (z -1.0); held-out 3.69 (z -0.1); w/o T-HUN-4, T-BRD-1 3.54 (z -0.7) | — |
+| prescriptions; viability (quick) | 49; pass | 49; pass (deaths [{}, {}]) | 65; pass |
+```
+
+```
+S16 reference T-IGE-1 (4 runs): 32.92 / 22.29 / 20.05 / 19.81; mean 23.76, SD 6.20; threshold mean - 2 SD = 11.36
+A1: 12.64 / 10.16; mean 11.40; (mean - ref mean) / SD = -1.99; criterion (below mean - 2 SD): not met
+
+## Decomposition S16 -> A1 (both draws and both seeds pooled): E 23.79 -> 11.39, dE -12.40
+  patrol         h 0.015 -> 0.007, r  464.6 ->  432.1: exposure part -3.71, rate part -0.36
+  pursuit        h 0.000 -> 0.000, r 7055.4 ->    0.0: exposure part -0.16, rate part -0.21
+  incursion      h 0.003 -> 0.001, r  247.5 ->  656.9: exposure part -0.84, rate part +0.84
+  border-forage  h 0.050 -> 0.050, r   18.6 ->    7.3: exposure part +0.01, rate part -0.56
+  border-other   h 0.079 -> 0.082, r   79.8 ->   53.5: exposure part +0.25, rate part -2.11
+  core-forage    h 0.340 -> 0.343, r    2.2 ->    1.1: exposure part +0.00, rate part -0.38
+  core-other     h 0.513 -> 0.516, r   15.1 ->    5.0: exposure part +0.03, rate part -5.20
+  sum -12.40 (check against dE -12.40)
+  more patrols (exposure) -3.71; more contacts per patrol (rate) -0.36; outside patrols -8.33 (exposure -0.71, rate -7.62)
+  scoring readouts: concurrent 0.00775 -> 0; field-attributable 0.977 -> 1; seen share 0.00775 -> 0
+
+S16 patrol 1.72 leaver 0.36 pursuit 0.03 incursion 0.41 border 2.39 core 2.55 total 7.47
+A1 patrol 1.04 leaver 0.10 pursuit 0.00 incursion 0.29 border 1.66 core 1.24 total 4.34
+change S16 -> A1 (points): patrol -0.68 leaver -0.26 pursuit -0.02 incursion -0.12 border -0.73 core -1.31 total -3.13
+  patrol-linked (patrol, leaver, pursuit, incursion) -1.08 (35%); border + core -2.04 (65%)
+S13: 12 pair-runs, mean change of centre gaps -35 m (min -141, max +107)
+S16: 24 pair-runs, mean change of centre gaps -109 m (min -272, max +61)
+A1: 12 pair-runs, mean change of centre gaps -42 m (min -284, max +245)
+```
+
+**Against the predictions.** Prescriptions 49: held. Viability, no starvation: held (no death in the quick runs or in the
+four 90-day tool runs). Led formings that were sight flicker 0: held. Truth patrols 0.8–1.4 per community-week: held
+(0.84, 1.19). Time within earshot 6–8.5%: **missed low** — 4.26% and 4.42% (S16's four draws 7.47 ± 2.23; S13 5.02, 4.17);
+patrol-linked 1.3–2.3: held (1.46, 1.41). T-IGE-1 15–24, still above 12: **missed low** — 12.6 and 10.2 (mean 11.4, inside the band; S16's four draws 23.8 ± 6.2).
+Observer encounters on patrols down 30–60%: held against the four S16 draws (7.18 ± 2.8 → 2.97 and 2.90 per
+community-year); outside patrols lower: held (16.6 ± 3.6 → 9.67 and 7.26). T-PAT-1 0.12–0.22: held (0.154, 0.135). T-PAT-6 0.4–0.7 and T-PAT-7 0–0.1: held (0.588, 0.5; 0, 0). Quick
+sums inside noise: held (fitted z −1.0, held-out −0.1, without the rare rows −0.7). Nursing mothers' and juveniles'
+reserve trends within 2 SD: held, both higher (z +1.2, +1.4). No kill criterion is met.
+
+**Not predicted.** The border and core part of the time within earshot fell further than the patrol rate (4.95 ± 1.5 on
+S16's four draws → 2.79 and 3.01, below S13's 4.12 and 3.73): once patrols stop pulling the ranges together, parties in
+their ranges are no closer to neighbours than on S13 (centre gaps −42 m over 60 days, S13 −35, S16 −109). Walking falls (adult males 2.21 km, z −2.4; other females 1.46 km, z −4.2) with eating time
+unchanged. Patrols reaching three adult males stay at half (0.51, 0.48): the occasion was not the reason. In quick mode
+T-SOC-9 (reconciliation, fitted; 11 individuals' PC–MC tendencies) fell to 0.003 against the group's 0.07–0.21
+(distance 0.55 against 0.02 ± 0.05): no path from the patrol occasion to reconciliation is known; a reading for the
+confirm.
+
+## 8. Verdict
+
+**`patrolFusion` 1 (iteration 1, A1) is recorded, off, by the registered reading, narrowly.** Its T-IGE-1 at 30 + 60
+(two draws 12.64 and 10.16, mean 11.40; `criterion.py`) sits 1.99 SD below S16's four-draw mean (23.76 ± 6.20) against
+the registered line of 2 SD (11.36). No kill criterion is met; the standard keep rule cannot pass (a correction: 49 = 49
+prescriptions); in quick mode every sum is inside noise against S16's four realizations (fitted z −1.0, held-out −0.1,
+without T-HUN-4 and T-BRD-1 −0.7, without T-IGE-3 as well −0.7); viable, no death; every class's reserve trend at or above
+the group's; walking lower. A 5-seed confirm (S17 = S16 + `patrolFusion` 1, against S16's confirm group) decides: two
+seeds × 60 days leave the observer row an SD of 6.2 on 23.8.
+
+What the stage shows:
+- **The excess is real and is not the scoring.** The observer's definition follows wilson2012's except for one encounter
+  per neighbour community and the caller's community read from the call; applying the source's community-blind 1-h rule
+  or its attribution by direction changes at most 2.3% of encounters in either stack. Calling did not change either.
+- **It is time within earshot, and the patrol rate drives it.** Communities spend 1.6 times longer within 1 km of each
+  other on S16 (4.6% → 7.5% of daylight quarter-hours): two thirds on patrol trips (truth patrols 0.68 → 1.83 per
+  community-week), a third because frequent, deep patrols pull the ranges together (centres closing −109 against −35 m in
+  60 days) while members spend no more time at their periphery. On the observer, half the rise is encounters outside
+  patrols, half on them.
+- **Half the S16 patrol rate was an artefact of the occasion.** 39–52% of the patrols that started did so at a flicker of
+  sight inside a party that already held three adult males (a 35 m view inside a 50 m party chain). Counting a male's party
+  as the adult males he has been with within `reunionH` (the model's reunion span; no new magnitude) halves the patrols
+  (0.84, 1.19 per community-week), brings the time within earshot back to S13's (4.26%, 4.42%), halves encounters outside
+  patrols with contacts per patrol unchanged, and puts T-IGE-1 in its band in both draws' mean.
+- **No second or third iteration.** Nothing else is implicated: what remains sets the rate through E4i's design constants,
+  and moving them to lower T-IGE-1 further would be tuning to the row. No scorer change is staged (the diagnosis did not
+  put the excess in the scoring).
+
+**Open problems and known defects, deferred (file:line at 41a8fd2).**
+- The rate of patrolling still follows from design constants (the lead's ceiling, `patrolStaleTauDays`, RG's sampling at a
+  fusion; src/sim/patrol.ts `leadValue`), and T-PAT-1 on focal follows sees about one truth patrol in seven (0.136–0.143
+  in S13, S16 and A1), so no scored row polices the truth rate (~1 per community-week on A1).
+- Half the patrols never hold three adult males: the males in view at the fusion decide on joining one by one
+  (src/sim/candidates.ts:1153), and nothing makes a patrol that leaves with fewer turn back.
+- Patrol trips count as use in the range distribution like any party (src/sim/parties.ts:85, territory.ts:181 `recordUse`):
+  the pull of frequent, deep patrols on the ranges is real in the model and has no field rate to check against.
+- The listening cadence `patrolStopEveryMin` (src/sim/parties.ts:195) is still prescribed (E4i).
+- The absolute encounter level rests on the 1 km pant-hoot audibility ([L], every source secondary): 58–70% of the
+  opening calls the observer heard came from 750–1,000 m.
+- In quick mode T-SOC-9 fell to 0.003 (11 individuals' PC–MC tendencies; group 0.07–0.21) with no known path from the
+  patrol occasion; the confirm should read it.
