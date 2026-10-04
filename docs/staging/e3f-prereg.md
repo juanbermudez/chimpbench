@@ -237,8 +237,8 @@ conversion: intake.ts, candidates.ts, rg.ts, calls.ts, departure.ts, huntvalue.t
 switch-off hash-identical on S27 and on the all-off field world) is withdrawn and stays in the branch's history (ed8c724,
 b50680e; reverted in 34a28d1) for a later stage.
 
-**What would unblock it.** houleWrangham2021's full text (metabolizable energy per m³ of crown, drupe and fig trees at
-Kanyawara; free to read at the publisher, whose page asks a person to prove they are human) with the model's crown
+**What would unblock it.** houleWrangham2021's full text (metabolizable energy per m³ of crown by crown depth, drupe and fig trees, from its
+abstract; free to read at the publisher, whose page asks a person to prove they are human) with the model's crown
 radius would give every crown an energy; Valenta & Nevo 2021's Dryad table (fruit masses of wild Ugandan fruits, CC0)
 would add fruit masses; Chapman & Chapman 1996 the share of *Mimusops* and *Uvariopsis* crops removed. All three need a
 person's browser (the user's decision).
@@ -319,7 +319,7 @@ trees (2–18 × what a model fig crown ripens per cycle at the design turnover)
 
 ## 9. Open problems
 
-1. **A sourced crown energy.** houleWrangham2021 (metabolizable energy per m³ of crown, drupe and fig trees, Kanyawara)
+1. **A sourced crown energy.** houleWrangham2021 (metabolizable energy per m³ of crown, drupe and fig trees, from its abstract)
    with the model's crown radius would give every crown an energy; Valenta & Nevo 2021 (Dryad, fruit masses) and
    Chapman & Chapman 1996 (crop shares removed) would check it. All need a person's browser.
 2. **The ripe stock's turnover.** The design recovery (`patchRecoverPerDay` 0.7 of the deficit a day) supplies at least
