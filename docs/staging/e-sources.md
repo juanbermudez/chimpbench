@@ -1844,7 +1844,7 @@ exploration and an uncertainty bonus, value-only choice fitted worse); decision 
 (normandBoesch2009, normand2009, ban2014, janmaat2013a/b, already cited). New keys: gershman2018, wilson2014, costa2019.
 Not verified (not searched or fetched this stage): a Weber fraction for food quantity in chimpanzees, Thompson 1933, Krebs et al. 1978.
 
-## Addendum: E4m four small rules (4 October 2026)
+## 51. Addendum: E4m four small rules (4 October 2026)
 
 Same text as research.md "Addendum: E4m four small rules": the stronger partner in play limits its force
 (self-handicapping), and chimpanzee play rarely escalates (cordoni2018, FT, captive: 0.003 ± 0.001 escalations per

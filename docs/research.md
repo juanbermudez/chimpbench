@@ -3301,7 +3301,7 @@ fetched (the algorithm is quoted from gershman2018).
 - normandBoesch2009, normand2009, ban2014, janmaat2013a and janmaat2013b are already cited; the entries above add
   findings.
 
-### Addendum: E4m four small rules (4 October 2026)
+### E.51 Addendum: E4m four small rules (4 October 2026)
 
 Read for stage E4m (docs/staging/e4m-prereg.md): rough play, listening stops on patrols, meat per capture. No input
 value was taken from the play sources; they give the mechanism's direction (restraint and its failure) and context for
