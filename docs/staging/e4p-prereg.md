@@ -123,6 +123,303 @@ of copulation-gate ticks blocked, name what sets the rate. Males are "absent for
 her party, they leave while the mate offer is blocked and no option at her is on the list; "absent by distance" if most
 absent dyad-hours are out of sight beyond 250 m without having seen her swollen in 24 h.
 
+## 4. Diagnosis result (D0 = S27, D1 = S27 + `rngSalt` 1; seeds 48 and 7, 30 + 60 days; frozen-d at fd5bf77, clean; printed by `artifacts/validation/e4p/diag_table.py` from the JSON)
+
+D0 and D1 reproduce E4o's D0b and D1b exactly (2,764 and 2,955 copulations): the same worlds. One readout defect,
+found reading this table and fixed in the tool before any arm (disclosed): the male inter-copulation interval read 0 h,
+because the in-tick stamp of a copulation (added so that a decision later in the same tick is not read as blocked by a
+failed-approach block) was also the interval's start; intervals now use the copulations seen in the scored window
+(E4o's D0b gives the median, 2.1 h). No other readout reads that stamp.
+
+```
+| Readout (e4p-diagnose, seeds 48 + 7, 30 + 60 days) | D0 | D1 |
+| --- | --- | --- |
+| max-swollen female daylight h | 2385 | 2529 |
+| adult males in her party (per max-swollen daylight h) | 1.423 | 1.431 |
+| adult males with an anoestrous adult female (per daylight h) | 0.676 | 0.680 |
+| party size, max-swollen female | 4.51 | 4.75 |
+| party size, anoestrous adult female | 4.08 | 4.24 |
+|   share of max-swollen daylight h with 0 adult males | 0.307 | 0.303 |
+|   share of max-swollen daylight h with 1-2 adult males | 0.495 | 0.500 |
+|   share of max-swollen daylight h with 3-4 adult males | 0.166 | 0.161 |
+|   share of max-swollen daylight h with 5-6 adult males | 0.030 | 0.032 |
+|   share of max-swollen daylight h with 7+ adult males | 0.001 | 0.004 |
+|   seed 48 community 1: adult males in community / in her party / share / OSR | — | — |
+|   seed 48 community 2: adult males in community / in her party / share / OSR | — | — |
+|   seed 48 community 3: adult males in community / in her party / share / OSR | — | — |
+|   seed 7 community 1: adult males in community / in her party / share / OSR | — | — |
+|   seed 7 community 2: adult males in community / in her party / share / OSR | — | — |
+|   seed 7 community 3: adult males in community / in her party / share / OSR | — | — |
+  D0 seed 48: community 1: 7.0 males, 2.04 with her (0.29), OSR 10.4636, 506 female-h; community 2: 4.0 males, 1.00 with her (0.25), OSR 5.8197, 523 female-h; community 3: 3.0 males, 1.16 with her (0.39), OSR 4.9287, 455 female-h; OSR all 7.1247
+  D0 seed 7: community 1: 7.0 males, 1.81 with her (0.26), OSR 9.4411, 547 female-h; community 2: 4.0 males, 0.94 with her (0.24), OSR 13.1581, 229 female-h; community 3: 3.0 males, 0.88 with her (0.29), OSR 17.7595, 126 female-h; OSR all 11.5287
+  D1 seed 48: community 1: 7.0 males, 2.03 with her (0.29), OSR 12.6131, 425 female-h; community 2: 4.0 males, 1.17 with her (0.29), OSR 5.8197, 523 female-h; community 3: 3.0 males, 1.06 with her (0.35), OSR 4.9287, 455 female-h; OSR all 7.5636
+  D1 seed 7: community 1: 7.0 males, 2.16 with her (0.31), OSR 9.2343, 560 female-h; community 2: 4.0 males, 1.03 with her (0.26), OSR 10.2128, 290 female-h; community 3: 3.0 males, 0.55 with her (0.18), OSR 8.0848, 276 female-h; OSR all 9.2058
+
+| Dyad daylight hours by place (share) | D0 | D1 |
+| --- | --- | --- |
+| her party | 0.309 | 0.323 |
+| out of sight 100-250 m | 0.152 | 0.149 |
+| out of sight 250-500 m | 0.182 | 0.178 |
+| out of sight 500-1000 m | 0.153 | 0.162 |
+| out of sight <100 m | 0.036 | 0.042 |
+| out of sight >=1000 m | 0.158 | 0.134 |
+| sees her, not in her party | 0.011 | 0.011 |
+
+| Dyad daylight hours by place and knowledge (share of all dyad-h) | D0 | D1 |
+| --- | --- | --- |
+| her party | not seen swollen in 24 h | 0.005 | 0.004 |
+| her party | saw her swollen in the last 24 h | 0.305 | 0.320 |
+| out of sight 100-250 m | not seen swollen in 24 h | 0.018 | 0.014 |
+| out of sight 100-250 m | saw her swollen in the last 24 h | 0.134 | 0.136 |
+| out of sight 250-500 m | not seen swollen in 24 h | 0.041 | 0.041 |
+| out of sight 250-500 m | saw her swollen in the last 24 h | 0.141 | 0.137 |
+| out of sight 500-1000 m | not seen swollen in 24 h | 0.058 | 0.087 |
+| out of sight 500-1000 m | saw her swollen in the last 24 h | 0.095 | 0.075 |
+| out of sight <100 m | not seen swollen in 24 h | 0.004 | 0.003 |
+| out of sight <100 m | saw her swollen in the last 24 h | 0.032 | 0.039 |
+| out of sight >=1000 m | not seen swollen in 24 h | 0.111 | 0.095 |
+| out of sight >=1000 m | saw her swollen in the last 24 h | 0.047 | 0.039 |
+| sees her, not in her party | saw her swollen in the last 24 h | 0.011 | 0.011 |
+
+| absence.absentActH: share (top 10) | D0 | D1 |
+| --- | --- | --- |
+| forage | 0.332 | 0.334 |
+| rest | 0.326 | 0.328 |
+| nest | 0.108 | 0.108 |
+| groom | 0.096 | 0.092 |
+| travel:TREE | 0.067 | 0.074 |
+| travel:CALLER | 0.032 | 0.031 |
+| drink | 0.009 | 0.009 |
+| patrol | 0.008 | 0.008 |
+| guard | 0.008 | 0.006 |
+| travel:HOME | 0.003 | 0.000 |
+
+| absence.presentActH: share (top 10) | D0 | D1 |
+| --- | --- | --- |
+| forage | 0.297 | 0.295 |
+| rest | 0.209 | 0.207 |
+| guard | 0.213 | 0.200 |
+| nest | 0.096 | 0.091 |
+| travel:TREE | 0.080 | 0.091 |
+| groom | 0.060 | 0.072 |
+| travel:CALLER | 0.011 | 0.010 |
+| charge | 0.005 | 0.005 |
+| mate | 0.005 | 0.005 |
+| drink | 0.004 | 0.004 |
+
+| splitsJoins.splits: share (top 5) | D0 | D1 |
+| --- | --- | --- |
+| he moved | 0.299 | 0.308 |
+| she moved | 0.307 | 0.288 |
+| neither moving (the chain broke) | 0.244 | 0.252 |
+| both moving | 0.149 | 0.152 |
+
+| splitsJoins.splitMaleAct: share (top 8) | D0 | D1 |
+| --- | --- | --- |
+| travel:TREE | 0.300 | 0.328 |
+| forage | 0.245 | 0.242 |
+| rest | 0.164 | 0.168 |
+| travel:CALLER | 0.080 | 0.071 |
+| groom | 0.071 | 0.057 |
+| nest | 0.050 | 0.061 |
+| drink | 0.052 | 0.036 |
+| hunt | 0.007 | 0.015 |
+
+| splitsJoins.joins: share (top 5) | D0 | D1 |
+| --- | --- | --- |
+| he moved | 0.291 | 0.311 |
+| she moved | 0.300 | 0.285 |
+| neither moving (the chain joined) | 0.244 | 0.260 |
+| both moving | 0.166 | 0.144 |
+
+| splitsJoins.joinMaleAct: share (top 8) | D0 | D1 |
+| --- | --- | --- |
+| forage | 0.250 | 0.255 |
+| travel:TREE | 0.222 | 0.267 |
+| travel:CALLER | 0.183 | 0.155 |
+| rest | 0.155 | 0.164 |
+| groom | 0.063 | 0.050 |
+| nest | 0.031 | 0.035 |
+| drink | 0.031 | 0.024 |
+| guard | 0.018 | 0.013 |
+| median bout together (h), seed mean | 0.33 | 0.30 |
+
+| Decisions of adult males in a max-swollen female's party | D0 | D1 |
+| --- | --- | --- |
+| decisions | 42633 | 47621 |
+|   her (share) | 0.309 | 0.312 |
+|   stay (share) | 0.534 | 0.525 |
+|   leave (share) | 0.156 | 0.164 |
+|   guarded by a dominant (courtship −1) (share) | 0.162 | 0.152 |
+|   leave, mate offer blocked: mateIntervalH (share of leaves) | 0.491 | 0.482 |
+|   leave, mate offer blocked: failed-approach block (share of leaves) | 0.001 | 0.004 |
+|   leave, mate offer open (share of leaves) | 0.207 | 0.175 |
+|   leave, mate offer none: out of mating range (share of leaves) | 0.170 | 0.193 |
+|   leave, mate offer none: night (share of leaves) | 0.003 | 0.002 |
+|   leave, mate offer none: other (share of leaves) | 0.127 | 0.144 |
+|   leave, no option at her (share of leaves) | 0.382 | 0.418 |
+|   leave: top − best option at her, median (seed mean) | 0.351 | 0.372 |
+|   her company value when leaving / staying, median (seed mean) | 1.385 | 1.371 |
+|   (staying) | 1.374 | 1.359 |
+
+| decisions.leave.herOption: share (top 8) | D0 | D1 |
+| --- | --- | --- |
+| no option at her | 0.382 | 0.418 |
+| an option at her (charge:COERCE) | 0.208 | 0.192 |
+| an option at her (guard:NONE) | 0.125 | 0.108 |
+| an option at her (mate:NONE) | 0.110 | 0.101 |
+| an option at her (groom:NONE) | 0.065 | 0.078 |
+| an option at her (travel:TREE) | 0.040 | 0.038 |
+| an option at her (follow:PARTY) | 0.020 | 0.021 |
+| an option at her (charge:FEED) | 0.015 | 0.012 |
+
+| decisions.leave.chosenAct: share (top 5) | D0 | D1 |
+| --- | --- | --- |
+| travel:TREE | 0.838 | 0.867 |
+| travel:CALLER | 0.112 | 0.089 |
+| drink:NONE | 0.039 | 0.031 |
+| hunt:JOIN | 0.005 | 0.006 |
+| hunt:LEAD | 0.001 | 0.003 |
+
+| Mate acts (adult males, max-swollen females) | D0 | D1 |
+| --- | --- | --- |
+| male attempts | 832 | 984 |
+| attempts per dyad daylight h | 0.245 | 0.272 |
+| female solicitations | 421 | 503 |
+
+| mateActs.outcomes: share (top 10) | D0 | D1 |
+| --- | --- | --- |
+| male: copulated | 0.638 | 0.634 |
+| female: copulated | 0.335 | 0.336 |
+| male: ended otherwise | 0.020 | 0.016 |
+| male: partner refusing | 0.005 | 0.007 |
+| male: block: approach timed out | 0.001 | 0.004 |
+| female: ended otherwise | 0.001 | 0.003 |
+| male: block: beside her, no copulation | 0.001 | 0.000 |
+
+| mateActs.femaleAnswer: share (top 10) | D0 | D1 |
+| --- | --- | --- |
+| other (rest) | 0.203 | 0.243 |
+| accept (mate at him) | 0.160 | 0.188 |
+| other (travel) | 0.172 | 0.166 |
+| other (forage) | 0.145 | 0.153 |
+| other (pant-grunt) | 0.085 | 0.064 |
+| refuse (flee) | 0.075 | 0.045 |
+| other (play) | 0.069 | 0.041 |
+| other (groom) | 0.029 | 0.041 |
+| other (mate) | 0.014 | 0.028 |
+| other (drink) | 0.013 | 0.008 |
+
+| Gaps (counts, two seeds) | D0 | D1 |
+| --- | --- | --- |
+| backdates | 6 | 17 |
+| backdatesBeside | 1 | 1 |
+| chase: blocked by the 0.25-h gap | 11032 | 11178 |
+| chase: open | 2299 | 2386 |
+| copConsort: blocked by mateIntervalH | 22 | 25 |
+| copGuard: blocked by mateIntervalH | 187926 | 188818 |
+| copGuard: blocked only by a failed-approach block | 0 | 14 |
+| copGuard: open | 626 | 580 |
+| copMate: blocked by mateIntervalH | 2981 | 3492 |
+| copMate: open | 2138 | 2375 |
+| female offer (own gap open): blocked by the male's mateIntervalH | 16576 | 18374 |
+| female offer (own gap open): blocked by the male's mateIntervalH, would top the list | 5150 | 5632 |
+| female offer (own gap open): open | 9122 | 10033 |
+| female offer: her own 0.3-h gap closed | 22983 | 24438 |
+| female offer: her own 0.3-h gap closed, would top the list | 7165 | 7775 |
+| female offer: her own gap open | 25698 | 28407 |
+| male offer: blocked by mateIntervalH | 39687 | 42612 |
+| male offer: blocked by mateIntervalH, would top the list | 14279 | 15504 |
+| male offer: blocked only by a failed-approach block | 44 | 131 |
+| male offer: blocked only by a failed-approach block, would top the list | 9 | 33 |
+| male offer: open | 16290 | 17470 |
+| male offer: open and on top | 2541 | 2845 |
+
+| Guarding | D0 | D1 |
+| --- | --- | --- |
+| guard daylight h | 818 | 809 |
+| guard acts started | 2530 | 2421 |
+|   by the alpha (rank order 1) | 1449 | 1616 |
+| rival chases started | 1362 | 1313 |
+
+| Rates (daylight; adult males, max-swollen females) | D0 | D1 | field |
+| --- | --- | --- | --- |
+| copulations (all) | 2764 | 2955 | — |
+| per max-swollen female daylight h | 0.831 | 0.857 | Taï 0.14 (oestrous h); Kalinzu 0.43; Mahale 0.79 |
+| per dyad daylight h (pooled) | 0.584 | 0.599 | Kanyawara 0.03–0.064; Kalinzu 0.12 per male with her |
+| per-male median of dyadic rates (seed mean) | 0.586 | 0.611 | Kanyawara 0.03–0.064 |
+| per adult male daylight h | 0.094 | 0.103 | — |
+|   per max-swollen female daylight h, 0 adult males | 0.053 | 0.063 |  |
+|   per max-swollen female daylight h, 1-2 adult males | 0.950 | 0.943 |  |
+|   per max-swollen female daylight h, 3-4 adult males | 2.127 | 2.274 |  |
+|   per max-swollen female daylight h, 5-6 adult males | 3.009 | 3.119 |  |
+|   per max-swollen female daylight h, 7+ adult males | 3.371 | 4.316 |  |
+| male interval median h (seed mean) | 0.00 | 0.00 | — |
+| female interval median h (seed mean) | 0.66 | 0.65 | — |
+
+| rates.copsByMaleAct: share (top 8) | D0 | D1 |
+| --- | --- | --- |
+| mate | 0.345 | 0.381 |
+| forage | 0.216 | 0.216 |
+| guard | 0.219 | 0.188 |
+| rest | 0.085 | 0.080 |
+| groom | 0.036 | 0.040 |
+| travel | 0.029 | 0.031 |
+| nest | 0.024 | 0.023 |
+| submit | 0.012 | 0.012 |
+
+| Males' feeding (forage-act daylight min per adult-male day) | D0 | D1 |
+| --- | --- | --- |
+| days with a max-swollen parous female in his party | 435 | 478 |
+|   feeding min, with | 242.3 | 239.2 |
+|   feeding min, without | 236.9 | 240.6 |
+
+deaths: {'D0': [{}, {}], 'D1': [{}, {}]}
+
+E4o D0b–D3b (same worlds for S27 and rngSalt 1–3; e4o-diagnose): copulations [2764, 2955, 2578, 2543]
+```
+
+**What sets the rates (with numbers from the table).**
+- **`mateIntervalH` sets every copulation path.** Of the male offers to a maximally swollen female in range, 39,687 /
+  42,612 were blocked by it (71%) and 14,279 / 15,504 of those would have topped the list, against 2,541 / 2,845 open
+  offers chosen: without it males would choose to mate ~5.6× as often (E4o: ~6×). Inside guarding the copulation gate was
+  closed 187,926 / 188,818 guard-ticks and open 626 / 580 times (each an in-guard copulation, 22% / 19% of copulations);
+  inside mate acts 2,981 / 3,492 ticks closed, 2,138 / 2,375 open. Males' intervals: 25% end within 0.1 h of the quota
+  (E4o). The dyadic rate is the quota's ceiling: 0.584 / 0.599 per dyad daylight hour (ceiling 1/1.5 = 0.67), 5× Kalinzu's
+  0.12 per male with a swollen female and 9–20× Kanyawara's 0.03–0.064.
+- **The female's own 0.3-h gap binds second**: it closed 22,983 / 24,438 of her offers (47%), 7,165 / 7,775 of which would
+  have topped her list; with her gap open, the male's quota closed 16,576 / 18,374 of her offers (64%; 5,150 / 5,632 would
+  top). Female-initiated copulations are a third of all (0.335 / 0.336 of mate acts ending in copulation).
+- **The failed-approach block hardly acts**: 6 / 17 backdated stamps in 60 days on two seeds; male offers blocked
+  only by it 44 / 131 (9 / 33 would top). It exists because the quota exists (it backdates the quota stamp).
+- **The guard's 0.25-h gap sets the chase rate**: of guard checks finding a qualifying rival (courting or beside her,
+  dominated), 11,032 / 11,178 were blocked by the gap and 2,299 / 2,386 open; 1,362 / 1,313 chases started.
+- **Female choice does not bind**: at a male's approach the female's act one tick later was acceptance (mate at him) in
+  16% / 19% of approaches and a refusal (flee) in 7.5% / 4.5%; the rest went on with what they did (rest, travel, forage,
+  greeting, play), yet 96% of male acts ended in copulation (`mateTick` copulates unless she is fleeing, charging,
+  attacking or submitting). robertsRoberts2015: females approach for copulation after a median 0.28 of courtship
+  sequences.
+
+**Why males are "absent": they are not, measured per community.** Adult males in a maximally swollen female's party:
+1.42 / 1.43 per daylight hour (0 males 31%, 1–2 males 50%, 3–4 males 16%, 5+ males 3%), against 0.68 with an
+anoestrous adult female: receptive females already double the males with them (emeryThompson2014's direction). The
+communities hold 7, 4 and 3 adult males; the share of a community's adult males in her party is 0.18–0.39 by community
+and seed (Kalinzu, from the largest parties: 4.43 of 16, 0.28). The model's operational sex ratio is 7.1–11.5 overall
+(by community 4.9–17.8): between Mahale's 4.2 and Gombe's 12.3, the values the brief read as party counts (§2). Within her
+party, 16% of an adult male's decisions leave her (84% on a trip to a tree); in half of those the quota had closed the
+mate offer and in 38–42% no option at her was on the list at all: the quota removes her value between copulations, so it
+also sends males away. Out of her party, dyad-hours spread over distance (37% of all dyad-hours out of sight within 500 m, 13–16% beyond
+1 km), and 65–67% of the out-of-party hours are by males who saw her maximally swollen within 24 h. Splits are moves by him (30%), by her (29–31%), both (15%)
+or a broken chain (24–25%); median bout together 0.30–0.33 h. Males feed as long on days with a maximally swollen parous
+female in their party as without (242 / 239 against 237 / 241 min): georgiev2014's direction (less) is absent.
+
+**Reading (registered rule, §3).** `mateIntervalH` binds: it sets the dyadic rate at its ceiling and every in-act
+copulation; the female's gap binds second; the failed-approach block exists only as the quota's appendage; the chase gap
+sets how often a guard chases. Males are absent neither for lack of value in the sense of the brief (they leave mostly
+when the quota has removed her value) nor by distance beyond what the field shows per community; the brief's "4–12 males"
+is the operational sex ratio, which the model matches. The discrepancy is the dyadic rate (5–20×) with too few males per
+female to dilute it, and a female whose acceptance is not needed.
+
 ## 9. Run log (each entry written before its run, unless marked)
 
 - **Smoke** (logged after the run, at the hooked code; scripts only): S27, seeds 48 and 7, 1 + 2 days: every readout

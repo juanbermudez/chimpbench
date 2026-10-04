@@ -101,7 +101,7 @@ let cops = 0, copsDay = 0, copsAdultMaxDay = 0, copsAdultAnyDay = 0, dyadDayH = 
 const copsByMales: Record<string, number> = {}, copsByMaleAct: Record<string, number> = {};
 const dyadHours = new Map<string, number>(), dyadCops = new Map<string, number>();
 const intervalsM: number[] = [], intervalsF: number[] = [];
-const lastCopF = new Map<number, number>();
+const lastCopF = new Map<number, number>(), lastCopM = new Map<number, number>(); // intervals: copulations seen in the scored window only
 // --- 9. feeding on days with a swollen parous female ------------------------------------------------------------------
 const dayFeed = new Map<number, { feedMin: number; swollenParous: boolean; awakeMin: number }>();
 const feedDays: { with: number[]; without: number[] } = { with: [], without: [] };
@@ -180,7 +180,7 @@ for (let i = 0; i < days * DAY; i++) {
     const m = idx.byId.get(it.actorId), f = idx.byId.get(it.targetId); if (!m || !f) continue;
     cops++; if (day) copsDay++;
     copulatedNow.add(m.id); copulatedNow.add(f.id);
-    const pm = trueLastCop.get(m.id); if (pm !== undefined && pm > -1e8) intervalsM.push(r4(time - pm)); trueLastCop.set(m.id, time);
+    const pm = lastCopM.get(m.id); if (pm !== undefined) intervalsM.push(r4(time - pm)); lastCopM.set(m.id, time); trueLastCop.set(m.id, time);
     const pf = lastCopF.get(f.id); if (pf !== undefined) intervalsF.push(r4(time - pf)); lastCopF.set(f.id, time);
     for (const id of [m.id, f.id]) { const k = openMate.get(id); if (k) k.copulated = true; }
     bump(copsByMaleAct, prevAct.get(m.id) ?? m.action);
