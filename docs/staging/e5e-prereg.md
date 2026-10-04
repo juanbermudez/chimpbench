@@ -612,3 +612,11 @@ Costs and open problems: nursing mothers' reserves in A2 (above; A1 the opposite
 reunion span (`reunionH`) is the observer's fusion convention and the model's own literal, not a measurement, and its
 sensitivity is untested; the consortship is a bout of minutes, not the field's days; T-SOC-6's observer counts every
 pant-grunt (§4.8), so the row cannot show the greeting's concentration on top males (truth 0.81).
+
+## 8. Files and final checks
+
+- Outputs (local, gitignored): \`artifacts/validation/e5e/\` (copied from the session scratch \`e5e/\`): \`diag/\` (the four
+  D0 diagnoses and the five scratch arms, \`table.txt\`), \`arms/\` (A1 and A2: e-bench, energy and quota JSON, the judge's
+  output), \`smoke/\`, the table scripts \`diag_table.py\` and \`e5e_judge.py\` (they read the reference from bench-run3 s13q).
+- After merging track-e once (e4f8ae2 → 333fc5c; no conflicts): \`gen-params --check\` clean, \`tsc --noEmit\` clean,
+  \`pnpm test\` 742 tests: 741 pass, 0 fail, 1 skipped; \`git ls-files data/raw node_modules\` empty.
