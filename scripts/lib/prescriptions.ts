@@ -202,6 +202,10 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   redirectWindowH: { when: P => P.endoRedirect !== 1 || P.endoStates !== 1, why: "the defeat is considered once, at the loser's first choice after it, while endoRedirect and endoStates are 1" },
   rainDisplayP: { when: P => P.endoRainDisplay !== 1 || P.endoStates !== 1, why: 'no rain-display roll while endoRainDisplay and endoStates are 1 (src/sim/tick.ts)' },
   stressRelaxPerH: { when: P => P.endoStates !== 1, why: 'the stress load is a leaky integrator with its own drivers while endoStates is 1 (src/sim/endocrine.ts)' },
+  // stage E4h (contestAssess; docs/staging/e4h-prereg.md §4): how far a contest goes follows the animals' assessments
+  hitP: { when: P => P.contestAssess !== 1, why: 'no hit is drawn while contestAssess is 1: a target that conceded is not struck, one that ignored the charge is struck when the charger prevails (src/sim/conflict.ts resolveCharge)' },
+  ...same(['escalationBaseP', 'escalationEvenP'], P => P.contestAssess !== 1, 'no escalation is drawn while contestAssess is 1: a counter-charge met by a charger that persisted after being challenged becomes a contact fight (src/sim/conflict.ts resolveCharge)'),
+  ...same(['coalitionBondP', 'coalitionStrangerP'], P => P.contestAssess !== 1, 'no alert is drawn while contestAssess is 1: every eligible bystander is alerted and joining is its own choice, scored by the coalition\'s assessed odds (src/sim/conflict.ts notifyAllies; candidates.ts coalition offer)'),
   ...Object.fromEntries(['digestaDrupeDmGPerMin', 'digestaFigDmGPerMin', 'digestaFallbackDmGPerMin', 'digestaFruitNdf', 'digestaFallbackNdf', 'digestaNdfCreditKcalPerG',
     'digestaFermentKcalPerG', 'digestaNdfDigestibility', 'digestaMrtH', 'digestaGutMlPerKg', 'digestaForegutShare', 'digestaForegutDmGPerMl', 'digestaHindgutDmGPerMl',
     'digestaMeatDmGPerKcal', 'digestaMilkDmGPerKcal', 'digestaTefFrac'].map(id => [id, { when: (P: Record<string, number>) => P.energyLedger === 1 && P.ledgerDigesta === 1, why: 'read only while energyLedger and ledgerDigesta are 1 (stage E1b)' }])),
@@ -341,6 +345,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   socialUpkeep: { stage: 'E5d', needs: {} },
   forageRate: { stage: 'E3c', needs: { energyLedger: 1, ledgerDrive: 1 } },
   followMargin: { stage: 'E5d', needs: { cohesionValue: 1 }, removesNothing: 'values following and joining by the company they add over the best companion kept by staying (E5b\'s margin, extended; E5a\'s companyValue and presentCompany); adds no magnitude and switches no prescription out (e5d-prereg §4.2)' },
+  contestAssess: { stage: 'E4h', needs: {} },
 };
 
 /** Whether an entry is in use: generated (not planned), non-zero under these resolved parameters, and not switched out. */

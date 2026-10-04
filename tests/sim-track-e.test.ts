@@ -35,6 +35,7 @@ const TRACK_E_SWITCHES = [
   'growYield', // E1p
   'groomDrive', 'socialUpkeep', 'followMargin', // E5d
   'forageRate', // E3c
+  'contestAssess', // E4h
 ] as const;
 
 test('Track E switches are all 0 by default in both profiles', () => {

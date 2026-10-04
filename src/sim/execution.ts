@@ -654,7 +654,9 @@ export function executeAction(world: World, c: Chimp): void {
         const it = startInteraction(world, 'chase', c, o.id, [c.id, o.id], 0.7);
         it.end = x.actEnd;
       }
-      if (arrived || c.actionTime >= 60 || (c.actionTime >= 30 && hd(c, o) > P.chargeGiveUpM)) { if (!resolveCharge(world, c, o)) finish(world, c); }
+      // stage E4h (contestAssess): not before the charge's second tick, so its target (interrupted at the start) has answered;
+      // at run speed a charge covers 37.5 m in one tick and was otherwise decided before the target could respond
+      if ((arrived || c.actionTime >= 60 || (c.actionTime >= 30 && hd(c, o) > P.chargeGiveUpM)) && !(P.contestAssess === 1 && c.actionTime <= TICK_SECONDS)) { if (!resolveCharge(world, c, o)) finish(world, c); }
       return;
     }
     case 'attack': {

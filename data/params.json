@@ -4387,6 +4387,35 @@
    "notes": "§5.3.1 P2: per-chimp contact memory holds at most this many hot spots (contact and loss weights); the weakest is evicted when full. Design (pre-registered)."
   },
   {
+   "id": "contestAssess",
+   "group": "conflict",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "parker1974",
+    "enquistLeimar1983",
+    "wittigBoesch2003b",
+    "bissonnette2009"
+   ],
+   "clock": "none",
+   "symbol": "resolveCharge, resolveFight, notifyAllies; computeCandidates (threatResponses, coalition offer)",
+   "file": "src/sim/conflict.ts",
+   "integer": true,
+   "notes": "Stage E4h (docs/staging/e4h-prereg.md section 4): how far a contest goes is decided by the animals' assessments, not by dice. 1 = (a) a charge is resolved no earlier than its second tick, so its target, interrupted at the start, has answered (defect: at run speed a charge covers 37.5 m in one 15-s tick and was decided before its target could answer, 79 percent of 'stood its ground' outcomes on S9); (b) a target's answer reads its assessed chance against its aggressor in place of binary dominance, the old values at the extremes: where the two keep a dominance relationship, the Elo expected score of the relationship plus the present cues (strength with condition and wounds, supporters), log-odds on log-odds (iteration 3); otherwise the contest function; (c) contact only where neither side conceded (parker1974: escalation where both judge it worth it): a counter-charge met by a charger that persisted after being challenged becomes a contact fight, a target that conceded (submitted, fled, pant-grunted) is not struck, a target that ignored the charge is struck when the charger prevails; (d) every eligible bystander is alerted and joining is its own choice, the coalition charge scored by the difference joining makes to the partner's assessed odds and by the joiner's own risk (0.25 x (q1 - q0) - 0.45 x (1 - q1), the old binary term's two values; iteration 2) instead of dominance over the target; a target yielding to any aggressor of the conflict has conceded (iteration 1); (e) wounds scale with the striker's mass over the struck animal's. Removes hitP, escalationBaseP, escalationEvenP, coalitionBondP, coalitionStrangerP; seriousInjuryP stays (not implicated by the diagnosis). Design, no fitted value. 0 = today (hash-identical)."
+  },
+  {
    "id": "contestExponent",
    "group": "conflict",
    "value": 3,

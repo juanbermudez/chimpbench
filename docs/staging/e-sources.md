@@ -1773,3 +1773,21 @@ details only; charnov1976 already cited): an option is worth the net energy it y
 forager's need is not a divisor of that rate; sockol2007 (the ledger's walking cost) and the Mahale walking speeds
 (nguessan2009 citing Hunt 1989, secondary [L]) recalled. New: stephensKrebs1986. Not verified: within-crown diminishing
 returns for chimpanzees; a primary wild travel speed between feeding trees.
+
+## Addendum: E4h contests (3 October 2026)
+
+Same text as research.md "Addendum: E4h contests": contest theory (parker1974: escalation only where both contestants'
+chances exceed their stake-set thresholds; enquistLeimar1983, 1987, 1990; arnottElwood2009; the meta-analyses pinto2019
+and massote2025, which favour self-assessment in species that fight with contact: a known conflict with the mechanism's
+mutual assessment); benitez2017 (mutual assessment in geladas); coalitions (ihara2024: a helper maximises P(win)·b −
+P(lose)·c; bissonnette2009: outcomes follow the strength asymmetry, targets counterattack more as it shrinks; enigk2020:
+Kanyawara coalition rate follows rank); drews1996 (baboon wounds: under 1% of contests); field rates: wittigBoesch2003b
+(Taï contact 19% / 37% / 36% at large / middle / small rank difference), mouginot2024 (Gombe males: 15.1% of 654
+interactions with contact, 0.013 contact acts per hour; 13.2% of male-initiated aggression coalitionary),
+wranghamWilsonMuller2006 (male attack rates, median ≈ 0.023 per hour), mullerWrangham2004b (now FT), muller2007,
+kahlenberg2008, massaro2024 (wounds per community-year 7–84), mullerMitani2005, mitani2002, kaburu2013, and T-SOC-5's
+method (kaburuNewtonFisher2015). New: parker1974, enquistLeimar1983, enquistLeimar1987, enquistLeimar1990,
+leimarMcNamara2023, arnottElwood2009, pinto2019, massote2025, benitez2017, ihara2024, bissonnette2009, enigk2020,
+drews1996, wittigBoesch2003b, wittigBoesch2003c, mouginot2024, wranghamWilsonMuller2006, muller2007, kahlenberg2008,
+massaro2024, mullerMitani2005, mitani2002, kaburu2013. Not verified: Kitchen et al. 2005, van Schaik et al. 2004, Pandit
+& van Schaik 2003, Muller 2002, Watts 2002, Nishida & Hosaka 1996.
