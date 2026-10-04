@@ -1887,3 +1887,18 @@ and equations not in it; the earlier dead-end note is corrected for the abstract
 secondary [L]) is still the only chimpanzee climbing speed; the forager's rate counts all the time an option takes besides
 eating (charnov1976, stephensKrebs1986). New key: neufuss2018 (cited by name in the gait entry before). Not verified: pontzerWrangham2004's distances and equations, a
 measured wild climbing speed, crown-to-crown crossings without descent.
+
+## Addendum: E1q climbing (4 October 2026)
+
+Same text as research.md "Addendum: E1q climbing": pontzerWrangham2004's "about ten times" was computed with a climbing
+equation that couturier2022 (FT) transmits: climbing O₂ = walking O₂ at 1.9 m/s (human rock climbing, Mermier et al.
+1997), per vertical metre at 0.5 m/s, i.e. 13–22 J per kg per vertical metre (44–73% muscular efficiency, derived [L]),
+implying 53–90 vertical metres a day for Kanyawara adults with its day ranges (derived [L]); measured vertical climbing
+costs humans 40.1 J/kg/m incrementally (24% efficiency) plus a holding cost, 61.5 at 0.28 m/s, similar to other primates
+(kozmaPontzer2021, FT accepted manuscript, [M] for a hominoid); a running chimpanzee lifts its body uphill for about 15.5
+J/kg/m and recovers about 90% of it downhill (taylor1972, abstract, [M] for incline running); steep downhill walking
+costs about 0.2 of uphill (minetti2002, abstract, [L]); Kibale night nests 8.1–9.1 m high (krief2012, FT, [H]); chimpanzees
+spend 34–65% of their time in trees but 8–18% of their locomotion is arboreal, half of it climbing (sarringhaus2022, FT,
+Table 1 after Doran & Hunt, [H]). New keys: kozmaPontzer2021, taylor1972, minetti2002, krief2012, sarringhaus2022. Not
+verified: pontzerWrangham2004's measured distances, Mermier et al. 1997 beyond its citation, Pontzer 2016, Venkataraman
+et al. 2013, Crompton et al. 2010, a Kibale feeding height, a measured wild climbing speed.

@@ -3467,3 +3467,68 @@ chimpanzees measured directly; any measurement of how often chimpanzees cross be
   [doi:10.1111/jzo.12577](https://doi.org/10.1111/jzo.12577) (FT, the authors' institute's PDF; the gait entry above
   cites it by name).
 - pontzerWrangham2004, nguessan2009, charnov1976 and stephensKrebs1986 are already cited; the entries above add findings.
+
+### Addendum: E1q climbing (4 October 2026)
+
+Read for stage E1q ([staging/e1q-prereg.md](staging/e1q-prereg.md)): what a vertical metre costs a chimpanzee, how many
+metres wild chimpanzees climb, and what the "about ten times" of pontzerWrangham2004 is made of. research.md was searched
+first (pontzerWrangham2004, hanna2008, hannaSchmitt2011, nguessan2009, couturier2022, wilson2021, neufuss2018). Routes:
+NCBI BioC and efetch, Europe PMC abstracts, an institutional repository (accepted manuscript); a research subagent of
+the stage fetched them and the load-bearing passages were re-read here; tags as above.
+
+- **The equations behind the walking ÷ climbing ratio** [couturier2022] (FT, PMC8996920; equations from the efetch XML)
+  [L] for pontzerWrangham2004's method. Sebitoli (Kibale), 20 chimpanzees. Climbing O₂ is taken as walking O₂ at 1.9 m/s
+  (Mermier et al. 1997, human indoor rock climbing, as cited), an assessment "tested on wild chimpanzees by Pontzer and
+  Wrangham", per vertical metre at an ascent speed of 0.5 m/s "estimated by Pontzer and Wrangham"; walking O₂ = 0.523
+  M^−0.298 v + 0.345 M^−0.157 mL kg⁻¹ s⁻¹ (eqs 4–7), 4.8 kcal per L O₂. Derived (E1q, `target_audit.py`): 21–22 J per kg
+  per vertical metre gross, 13–14 net, at 31–39 kg, i.e. a muscular efficiency of 44–73%; one vertical metre is priced
+  as 2.5–3.8 walking metres (the model: 12.9). With pontzerWrangham2004's day ranges (males 2.4, females 2.0 km, via
+  wilson2021) a ratio of ten implies 53–90 vertical metres a day for Kanyawara adults (derived [L]). Sebitoli
+  chimpanzees spent 4.2% of the day moving in trees. Use in E1q: the target relation rests on this equation; with the
+  model's sourced costs the same distances give a walking ÷ climbing energy of 1.9–2.9.
+- **Cost of vertical climbing in humans** [kozmaPontzer2021] (FT, accepted manuscript, KU Leuven repository) [M] for a
+  hominoid, [L] for chimpanzees. 12 adult rock climbers (53.7–96.1 kg) on a vertical wall: net cost of locomotion rises
+  with velocity at 40.1 ± 3.1 J kg⁻¹ m⁻¹ (efficiency 24%, 95% CI 21–29%) over a holding cost of 5.98 ± 0.7 J kg⁻¹ s⁻¹ above
+  standing; 61.5 J kg⁻¹ m⁻¹ at 0.28 m/s; observed efficiencies never above 19%. Mass-specific climbing costs are "essentially
+  identical to those of arboreally adapted primates when accounting for velocity"; cross-species climbing efficiency about
+  10% (Hanna 2006, hanna2008, Pontzer 2016 as cited). Use in E1q: the model's 49.05 J/kg/m (m·g ÷ 0.20) lies inside the
+  measured range (40 incremental; 52–67 with the holding cost at 0.5–0.22 m/s, derived); no correction.
+- **Running up and down hills** [taylor1972] (abstract, Europe PMC, PMID 5086836) [M] for incline running. A 17.5 kg
+  captive chimpanzee and 30 g mice on an inclined treadmill: level running 5.17 and 42.6 J kg⁻¹ m⁻¹; "the additional energy
+  required to lift 1 kilogram of body weight 1 meter while running uphill" about 15.5 J kg⁻¹ m⁻¹ in both; both "recover
+  about 90 percent of the energy stored running uphill on the way down". Use in E1q: running on an incline, not vertical
+  climbing (an apparent efficiency of 63%, derived); descent is cheap, as the ledger has it.
+- **Uphill and downhill walking** [minetti2002] (abstract, Europe PMC) [L] (10 human runners, treadmill −0.45 to +0.45):
+  walking costs 17.33 ± 1.11 J kg⁻¹ m⁻¹ at +0.45 and 3.46 ± 0.95 at −0.45 (minimum 0.81 at −0.10); above +0.15 the
+  efficiency is that of concentric muscle work. Derived: about 38–42 J per kg per vertical metre uphill; descending about
+  0.2 of ascending.
+- **Night-nest heights, Kibale** [krief2012] (FT, PMC3515334) [H]. Kanyawara 9.1 m (n = 74) and Kanyanchu 8.1 m (n = 30),
+  not different (P = 0.12); nests at 3–17 m. Use in E1q: the model's nest climbs (9.2–10.0 m) match.
+- **Arboreal locomotion, Mahale and Gombe** [sarringhaus2022] (FT, PMC9828227, Table 1 compiling Doran & Hunt's data
+  through Carlson) [H] as compiled. *P. t. schweinfurthii* females/males: 52/34% of time in trees, 12/8% of locomotion
+  arboreal; within arboreal locomotion, climbing 49/52%, suspension 8/7%, scrambling 10/3%; *P. t. verus* (Taï) 65/49%,
+  18/15%, climbing 51/59%. Use in E1q: chimpanzees move within trees, and most of their travel is on the ground; no open
+  text splits within-crown from between-crown movement.
+
+**Not verified:** pontzerWrangham2004's measured distances (closed; no open citing text quotes them); Mermier et al.
+1997 beyond its use by couturier2022 (scanned, abstract only); Pontzer 2016's climbing scaling (no body); Venkataraman
+et al. 2013 and Crompton et al. 2010 (not in the open BioC set); nguessan2009's full text (bot check); a feeding height
+for Kibale chimpanzees; a measured climbing speed of wild chimpanzees.
+
+- *new* kozmaPontzer2021: Kozma EE, Pontzer H 2021. Determinants of climbing energetic costs in humans. *Journal of
+  Experimental Biology* 224(13):jeb234567. [doi:10.1242/jeb.234567](https://doi.org/10.1242/jeb.234567) (FT, accepted
+  manuscript).
+- *new* taylor1972: Taylor CR, Caldwell SL, Rowntree VJ 1972. Running up and down hills: some consequences of size.
+  *Science* 178(4065):1096–1097. [doi:10.1126/science.178.4065.1096](https://doi.org/10.1126/science.178.4065.1096) (Abs).
+- *new* minetti2002: Minetti AE, Moia C, Roi GS, Susta D, Ferretti G 2002. Energy cost of walking and running at extreme
+  uphill and downhill slopes. *Journal of Applied Physiology* 93(3):1039–1046.
+  [doi:10.1152/japplphysiol.01177.2001](https://doi.org/10.1152/japplphysiol.01177.2001) (Abs).
+- *new* krief2012: Krief S, Levrero F, Krief J-M, Thanapongpichat S, Imwong M, Snounou G, Kasenene JM, Cibot M, Gantier
+  J-C 2012. Investigations on anopheline mosquitoes close to the nest sites of chimpanzees subject to malaria infection in
+  Ugandan highlands. *Malaria Journal* 11:116. [doi:10.1186/1475-2875-11-116](https://doi.org/10.1186/1475-2875-11-116)
+  (FT, PMC3515334).
+- *new* sarringhaus2022: Sarringhaus L, Lewton KL, Iqbal S, Carlson KJ 2022. Ape femoral-humeral rigidities and arboreal
+  locomotion. *American Journal of Biological Anthropology* 179(4):624–639.
+  [doi:10.1002/ajpa.24632](https://doi.org/10.1002/ajpa.24632) (FT, PMC9828227).
+- couturier2022, pontzerWrangham2004, wilson2021, hannaSchmitt2011 and nguessan2009 are already cited; the entries above
+  add findings.
