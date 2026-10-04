@@ -38,6 +38,7 @@ const TRACK_E_SWITCHES = [
   'contestAssess', // E4h
   'socialTiming', // E5e
   'patrolValue', // E4i
+  'patrolFusion', // E4j
 ] as const;
 
 test('Track E switches are all 0 by default in both profiles', () => {
