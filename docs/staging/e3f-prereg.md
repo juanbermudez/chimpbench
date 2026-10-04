@@ -2,8 +2,9 @@
 
 Status: complete (4 October 2026): diagnosis (§2.1), sources (§3), no mechanism (§5: no source gives the crop energy of
 the model's crowns; recorded and stopped, no switch), a sensitivity of the fitted scale (§6). Skeleton committed at the
-start of the stage (branch `e3f-crop-energy`, from `track-e` eea2d85), before any run and before any code change. Track E, stage E3f. Rule served: field values of behaviour are targets, never inputs; no
-value, bonus or weight is added or set to reach a feeding time, a travel share, a day range or a party size.
+start of the stage (branch `e3f-crop-energy`, from `track-e` eea2d85), before any run and before any code change.
+Track E, stage E3f. Rule served: field values of behaviour are targets, never inputs; no value, bonus or weight is added
+or set to reach a feeding time, a travel share, a day range or a party size.
 
 ## 0. The problem
 
@@ -191,7 +192,7 @@ rules of the brief, about 25 minutes) fetched the open texts; the load-bearing p
 | Quantity a crown's crop energy needs | What exists (evidence) | For which model species |
 | --- | --- | --- |
 | Crop per crown, by size | Whole-cycle crops of 10 large Kanyawara fig trees, 228–2,052 kg wet weight, reconstructed from fallen figs plus each frugivore's removals; chimpanzees took 0–84.3% (wrangham1993 [M]); one *F. sansibarica* tree 1,146 / 56 / 472 kg in three cycles (chapman1992 [M], one tree). No crop by DBH or crown size; *Uvariopsis* crop on DBH reported as r² only (chapman1992) | *F. natalensis*, *F. sansibarica* (and *F. exasperata*, not modelled). **None of the six non-fig species (84% of the model's trees by species weight), nor *F. mucuso*** |
-| Fruit mass | Fresh fig weight by species, *Mimusops* 3.1 g (wrangham1993 Table I [H]); fruit dimensions only for *Uvariopsis* and *Pterygota* (chapman1992) | three figs, *Mimusops* |
+| Fruit mass | Fresh fig weight by species, *Mimusops* 3.1 g (wrangham1993 Table I [H]); fruit dimensions only for *Uvariopsis* and *Pterygota* (chapman1992) | *F. natalensis*, *F. sansibarica*, *Mimusops* (not *F. mucuso*) |
 | Water content (fresh → dry) | No Kibale value; the registry's `waterFigFrac` / `waterFruitFrac` 0.75 are masi2015's gorilla fruits standing in [L] | — |
 | Energy per g dry matter | Fig pulp 242.5 ± 45.7 kcal/100 g (nine species), *Mimusops* 289.6 (wrangham1993 Table II [H]); the ledger's own whole-fig and drupe energies per g eaten (E1h: 1.93 and 2.46 kcal/g) | all |
 | Ripe share standing at once (the stock the model depletes) | Ripe fruit < 0.5% and mid-ripe 3–8% of a crown's fruit (houle2014, abstract [M]); no ripening or removal rate | — |
