@@ -347,6 +347,30 @@ switch 0 hash-identical (S9 seed 48 day 8 422bb3edd2db147e).
 the reference's range); upsets fewer than A3's; contact share 0.06–0.15 with male–male contact at a small rank difference
 still above large; coalition joins per conflict 0.12–0.30; sums inside noise; prescriptions 69; viability passes.
 
+
+### A4 result (iteration 3; d656c0d, clean; tables in §8.4)
+
+Keep rule passed (fitted z −1.0, held-out −0.2, without the rare rows +0.6, without T-HUN-4, T-BRD-1 and T-IGE-3 +0.6;
+viable, no death; prescriptions 69). Against the predictions: alpha changes 0 and 6 swaps in the adult-male order (inside
+the reference's range: held); contact share 0.097 (0.06–0.15: held), males ≥ 12 y 0.101; male–male contact 0.151 / 0.127 /
+0.035 at a small / middle / large rank difference (small above large: held; the reference was flat, 0.057 / 0.046 / 0.058);
+coalition joins per conflict 0.241 (0.12–0.30: held); prescriptions 69 and viability (held). Not predicted: wounds ≥ 0.05 per
+individual-year 2.86 (S9 0.40 ± 0.40), coalition types 43 / 15 / 11 (conservative still the commonest).
+
+### Verdict
+
+**`contestAssess` (iterations 1–3): a provisional keep candidate, recommended for a 5-seed confirm on S9.** It removes five
+counted prescriptions (S9 74 → 69: `hitP`, `escalationBaseP`, `escalationEvenP`, `coalitionBondP`, `coalitionStrangerP`),
+every sum stays inside noise in all four arms, viability passes with no death, and three things the dice could not do now
+emerge: contact follows from whether either side conceded (0.063 → 0.097 of contests; field 0.15 for Gombe males, 0.19–0.37
+at Taï), it rises as the rank difference shrinks (wittigBoesch2003b's direction; flat under the dice), and support follows
+each bystander's own choice (coalitionary share of males' aggression 0.095 → 0.165; Gombe 0.132, Kasekela 0.202). It also
+fixes a defect the dice hid (39% of charges decided before their target could answer). Costs and open problems: wounds of
+0.05 or more are seven times the reference's (mass-scaled strikes on smaller animals; the model's injury scale has no
+field anchor per contact), and conservative coalitions stay the commonest type (62% of male coalitions; Taï 1 of 13,
+Mahale 6 of 19): a joiner gains no rank from a coalition win (Elo moves only between the primary pair), so nothing makes
+bridging or revolutionary support worth more. One realization per arm: every reading is provisional until the confirm.
+
 ## 8. Results
 
 Every number below is printed by `e4h_results.sh` (scratch: `judge_vs_reps.py quick custom` against the four S9 quick
@@ -572,4 +596,80 @@ T-HUN-1: S9 37.896 / 43.641 / 39.891 / 53.852 | A1.json 29.595 (inconclusive) | 
 | reserves %/day, female, lactating | 0.001 / -0.007 / 0.007 / -0.008 | -0.002 ± 0.007 | 0.001 | 0.000 | -0.000 |
 | reserves %/day, juvenile 5–12 y | -0.029 / 0.001 / -0.013 / -0.015 | -0.014 ± 0.012 | -0.034 | 0.002 | -0.014 |
 | deaths (energy run) | {} / {'respiratory illness (outbreak)': 2} / {} / {} | — | {} | {} | {} |
+```
+
+### 8.4 A4 (iteration 3, d656c0d, clean), beside A1–A3
+
+```
+A1.json commit f0ff48c dirty 0 prescriptions 69 viability True deaths [{}, {}]
+A2.json commit ca17a1f dirty 0 prescriptions 69 viability True deaths [{}, {}]
+A3.json commit 9db2cbb dirty 0 prescriptions 69 viability True deaths [{}, {}]
+A4.json commit d656c0d dirty 0 prescriptions 69 viability True deaths [{}, {}]
+quick, reference custom (4 runs), rows counted in all runs: fitted 16, held-out 13
+  fitted             (16 rows) ref 1.96, 2.56, 1.94, 3.91 (mean 2.59, sd 0.92; used 0.92) | A1.json: 2.04, Δ -0.55, z -0.5 (inside noise) | A2.json: 1.71, Δ -0.88, z -0.9 (inside noise) | A3.json: 2.24, Δ -0.35, z -0.3 (inside noise) | A4.json: 1.52, Δ -1.07, z -1.0 (inside noise)
+  held-out           (13 rows) ref 5.57, 5.02, 5.49, 4.15 (mean 5.06, sd 0.65; used 1.26) | A1.json: 6.55, Δ +1.50, z +1.1 (inside noise) | A2.json: 3.50, Δ -1.56, z -1.1 (inside noise) | A3.json: 4.75, Δ -0.31, z -0.2 (inside noise) | A4.json: 4.81, Δ -0.25, z -0.2 (inside noise)
+  held-out w/o rare  (12 rows) ref 4.91, 4.39, 4.83, 3.91 (mean 4.51, sd 0.46; used 0.48) | A1.json: 4.39, Δ -0.12, z -0.2 (inside noise) | A2.json: 3.50, Δ -1.01, z -1.9 (inside noise) | A3.json: 3.96, Δ -0.55, z -1.0 (inside noise) | A4.json: 4.81, Δ +0.30, z +0.6 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-HUN-1   fitted   ref 0.94±0.35 | A1.json 0.23 (inconclusive) | A2.json 0.33 (inconclusive) | A3.json 0.74 (inconclusive) | A4.json 0.36 (inconclusive)
+   T-HUN-4   held-out ref 0.55±0.20 | A1.json 2.16 (fail) | A2.json 0.00 (pass) | A3.json 0.79 (fail) | A4.json 0.00 (pass)
+   T-RNG-5   held-out ref 1.02±0.45 | A1.json 0.56 (fail) | A2.json 0.00 (pass) | A3.json 0.37 (fail) | A4.json 1.07 (fail)
+   T-SOC-10  held-out ref 0.00±0.00 | A1.json 0.13 (fail) | A2.json 0.09 (fail) | A3.json 0.00 (pass) | A4.json 0.00 (pass)
+   T-SOC-3   held-out ref 0.01±0.03 | A1.json 0.19 (fail) | A2.json 0.03 (fail) | A3.json 0.00 (pass) | A4.json 0.00 (pass)
+held-out without T-HUN-4, T-BRD-1 and T-IGE-3 (12 rows): S9 4.91 / 4.39 / 4.83 / 3.91 (mean 4.51, sd 0.46; used 0.48); A1.json 4.39 (z -0.2); A2.json 3.50 (z -1.9); A3.json 3.96 (z -1.0); A4.json 4.81 (z +0.6)
+T-SOC-5: S9 0.519 / 0.190 / 0.464 / 0.288 | A1.json 0.470 (pass) | A2.json 0.405 (pass) | A3.json 0.307 (pass) | A4.json 0.479 (pass)
+T-SOC-9: S9 0.186 / 0.144 / 0.260 / 0.068 | A1.json 0.155 (pass) | A2.json 0.146 (pass) | A3.json 0.187 (pass) | A4.json 0.218 (pass)
+T-SOC-10: S9 0.237 / 0.223 / 0.298 / 0.301 | A1.json 0.325 (fail) | A2.json 0.318 (fail) | A3.json 0.249 (pass) | A4.json 0.242 (pass)
+T-SOC-6: S9 0.485 / 0.403 / 0.420 / 0.432 | A1.json 0.408 (fail) | A2.json 0.430 (fail) | A3.json 0.423 (fail) | A4.json 0.438 (fail)
+T-ACT-1: S9 0.379 / 0.368 / 0.365 / 0.370 | A1.json 0.371 (pass) | A2.json 0.369 (pass) | A3.json 0.373 (pass) | A4.json 0.361 (pass)
+T-ACT-2: S9 0.166 / 0.162 / 0.176 / 0.188 | A1.json 0.175 (pass) | A2.json 0.157 (pass) | A3.json 0.162 (pass) | A4.json 0.184 (pass)
+T-ACT-3: S9 0.101 / 0.100 / 0.095 / 0.094 | A1.json 0.088 (fail) | A2.json 0.111 (pass) | A3.json 0.101 (pass) | A4.json 0.091 (fail)
+T-ACT-4: S9 0.396 / 0.376 / 0.391 / 0.400 | A1.json 0.384 (pass) | A2.json 0.400 (pass) | A3.json 0.403 (pass) | A4.json 0.361 (pass)
+T-PTY-1: S9 4.096 / 3.938 / 3.861 / 3.942 | A1.json 3.869 (pass) | A2.json 4.256 (pass) | A3.json 3.848 (pass) | A4.json 4.005 (pass)
+T-HUN-1: S9 37.896 / 43.641 / 39.891 / 53.852 | A1.json 29.595 (inconclusive) | A2.json 31.568 (inconclusive) | A3.json 39.891 (inconclusive) | A4.json 32.265 (inconclusive)
+| Readout | S9q / S9q1 / S9q2 / S9q3 | S9 mean ± SD | A1 | A2 | A3 | A4 |
+| --- | --- | --- | --- | --- | --- | --- |
+| conflicts / AM-day | 1.627 / 1.262 / 1.560 / 1.220 | 1.417 ± 0.206 | 1.636 | 2.110 | 1.555 | 1.804 |
+| contacts / AM-day | 0.104 / 0.079 / 0.088 / 0.070 | 0.085 ± 0.014 | 0.264 | 0.282 | 0.190 | 0.163 |
+| fights / AM-day | 0.002 / 0.002 / 0.005 / 0.015 | 0.006 ± 0.006 | 0.013 | 0.039 | 0.031 | 0.021 |
+| escalations by the die / AM-day | 0 / 0.002 / 0.005 / 0.013 | 0.005 ± 0.006 | 0.011 | 0.025 | 0.026 | 0.014 |
+| injuries (>= 0.05) / AM-day | 0.001 / 0.001 / 0.002 / 0.008 | 0.003 ± 0.003 | 0.007 | 0.021 | 0.017 | 0.011 |
+| decided conflicts (n) | 1562 / 1133 / 1499 / 1266 | 1365.000 ± 200.325 | 1547 | 1800 | 1502 | 1591 |
+| contact share of conflicts | 0.065 / 0.069 / 0.057 / 0.063 | 0.063 ± 0.005 | 0.169 | 0.129 | 0.111 | 0.096 |
+| hits (n) | 100 / 76 / 83 / 73 | 83.000 ± 12.083 | 244 | 204 | 146 | 141 |
+| fights (n) | 1 / 2 / 2 / 7 | 3.000 ± 2.708 | 17 | 29 | 20 | 12 |
+| counter-charges (n) | 2 / 11 / 5 / 16 | 8.500 ± 6.245 | 16 | 23 | 18 | 11 |
+| injuries (n) | 1 / 2 / 2 / 8 | 3.250 ± 3.202 | 43 | 43 | 29 | 23 |
+| serious (n) | 0 / 0 / 0 / 0 | 0.000 ± 0.000 | 1 | 1 | 2 | 0 |
+| coalition joins / conflict | 0.061 / 0.100 / 0.069 / 0.086 | 0.079 ± 0.017 | 0.275 | 0.363 | 0.240 | 0.241 |
+| ally alerts drawn (n) | 1200 / 1392 / 1435 / 1376 | 1350.750 ± 103.542 | 1160 | 1838 | 1201 | 1487 |
+| rank swaps, adult males (n) | 2 / 1 / 1 / 7 | 2.750 ± 2.872 | 11 | 31 | 14 | 6 |
+| alpha changes (n) | 0 / 1 / 0 / 0 | 0.250 ± 0.500 | 0 | 1 | 6 | 0 |
+| takeovers (n) | 0 / 0 / 0 / 0 | 0.000 ± 0.000 | 0 | 1 | 1 | 0 |
+| Elo moved through a die (share) | 0.099 / 0.168 / 0.073 / 0.344 | 0.171 ± 0.122 | 0.310 | 0.273 | 0.276 | 0.153 |
+| deaths (n) | 0 / 2 / 0 / 0 | 0.500 ± 1.000 | 0 | 0 | 0 | 0 |
+| deaths by cause | none / respiratory illness (outbreak) 2 / none / none | — | none | none | none | none |
+| R1 contact share, males >= 12 y | 0.059 / 0.061 / 0.053 / 0.057 | 0.057 ± 0.003 | 0.179 | 0.129 | 0.124 | 0.101 |
+| R1b contact share, all contests | 0.065 / 0.069 / 0.057 / 0.064 | 0.064 ± 0.005 | 0.170 | 0.129 | 0.111 | 0.097 |
+| R2 female-female middle | 0.075 / 0.061 / 0.056 / 0.093 | 0.071 ± 0.017 | 0.155 | 0.056 | 0.085 | 0.032 |
+| R2 female-female small | 0.083 / 0.070 / 0.030 / 0.098 | 0.070 ± 0.029 | 0.144 | 0.141 | 0.078 | 0.070 |
+| R2 male-male large | 0.067 / 0.065 / 0.059 / 0.040 | 0.058 ± 0.012 | 0.181 | 0.100 | 0.073 | 0.035 |
+| R2 male-male middle | 0.057 / 0.057 / 0.051 / 0.020 | 0.046 ± 0.018 | 0.087 | 0.088 | 0.083 | 0.127 |
+| R2 male-male small | 0.053 / 0.039 / 0.051 / 0.086 | 0.057 ± 0.020 | 0.261 | 0.209 | 0.262 | 0.151 |
+| R2 female-female middle (n) | 53 / 66 / 72 / 54 | 61.250 ± 9.287 | 58 | 54 | 47 | 62 |
+| R2 female-female small (n) | 157 / 57 / 133 / 112 | 114.750 ± 42.664 | 188 | 149 | 116 | 142 |
+| R2 male-male large (n) | 285 / 310 / 324 / 202 | 280.250 ± 54.604 | 270 | 391 | 314 | 398 |
+| R2 male-male middle (n) | 194 / 106 / 157 / 98 | 138.750 ± 45.162 | 173 | 182 | 109 | 126 |
+| R2 male-male small (n) | 207 / 102 / 177 / 187 | 168.250 ± 45.894 | 180 | 254 | 145 | 166 |
+| R3 coalitionary share, males >= 12 y | 0.070 / 0.112 / 0.090 / 0.109 | 0.095 ± 0.019 | 0.206 | 0.266 | 0.174 | 0.165 |
+| R9 wounds per individual-year | 0.124 / 0.251 / 0.248 / 0.993 | 0.404 ± 0.397 | 5.338 | 5.338 | 3.600 | 2.855 |
+| stood share of charges | 0.377 / 0.387 / 0.399 / 0.389 | 0.388 ± 0.009 | 0.229 | 0.188 | 0.151 | 0.156 |
+| T-SOC-5 | 0.519 / 0.190 / 0.464 / 0.288 | 0.365 ± 0.153 | 0.470 | 0.405 | 0.307 | 0.479 |
+| T-SOC-9 | 0.186 / 0.144 / 0.260 / 0.068 | 0.164 ± 0.080 | 0.155 | 0.146 | 0.187 | 0.218 |
+| T-SOC-10 | 0.237 / 0.223 / 0.298 / 0.301 | 0.265 ± 0.041 | 0.325 | 0.318 | 0.249 | 0.242 |
+| T-DEM-23 | sealed / sealed / sealed / sealed | — | sealed | sealed | sealed | sealed |
+| prescriptions | 74 / 74 / 74 / 74 | 74.000 ± 0.000 | 69 | 69 | 69 | 69 |
+| viability | pass / pass / pass / pass | — | pass | pass | pass | pass |
+| reserves %/day, female, lactating | 0.001 / -0.007 / 0.007 / -0.008 | -0.002 ± 0.007 | 0.001 | 0.000 | -0.000 | 0.005 |
+| reserves %/day, juvenile 5–12 y | -0.029 / 0.001 / -0.013 / -0.015 | -0.014 ± 0.012 | -0.034 | 0.002 | -0.014 | -0.028 |
+| deaths (energy run) | {} / {'respiratory illness (outbreak)': 2} / {} / {} | — | {} | {} | {} | {} |
 ```
