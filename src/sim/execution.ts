@@ -17,6 +17,7 @@ import { clamp, hash01, random } from './rng';
 import type { ParamId } from './params.gen';
 import { NEVER, TICK_HOURS, TICK_SECONDS, awakeInNest, byIdIn, huntOf, index, isTreeId, ix, simOf, type ChimpX } from './state';
 import { resolveHunt } from './ecology';
+import { HUNT_CLIMB, HUNT_STANDOFF_M, bodySpeed, pursuitEachTick, pursuitOn, spreadBearing } from './huntpursuit';
 import { endoOn, endoShared, endoThreat } from './endocrine';
 import { callValueOn, crownOf, gruntWorth, hooWorth, pantHootValue } from './calls';
 import { eatFruit, forageYield, fruitAt } from './phenology';
@@ -60,11 +61,38 @@ function boutHours(world: World, c: Chimp, action: Action): number {
 }
 
 export function speedFactor(world: World, c: Chimp): number {
-  const stage = c.age < 2 ? 0.55 : c.age < 5 ? 0.7 : c.age < 10 ? 0.88 : c.age >= 40 ? 0.82 : 1;
-  const f = stage * (1 - 0.6 * c.injury) * (0.7 + 0.3 * c.energy) * (1 - 0.3 * world.environment.rain);
+  const f = bodySpeed(c) * (1 - 0.3 * world.environment.rain); // life stage, injury and alertness (huntpursuit.ts), then rain
   // stage E2c (darkCost): walking and climbing slow a little in poor light (light.ts paceAt; figueiro2011, cross-species)
   const P = paramsOf(world);
   return darkOn(P) ? f * paceAt(P, visionNow(world, c.position[1])) : f;
+}
+
+/**
+ * Stage E4k (huntPursuit; docs/staging/e4k-prereg.md §4.2): a hunter heads for the widest escape gap the other hunters
+ * still on this group leave (huntpursuit.ts spreadBearing), at today's standoff and approach height. In the canopy at the
+ * group he moves around it by a chord short enough that moveTo never makes him climb down (it descends for goals more
+ * than 3 m away): the turn is halved until the goal lies within 2.8 m of him (a movement constraint, not a behaviour).
+ */
+function huntPursuitMove(world: World, c: Chimp, ids: readonly number[], g: readonly number[], speed: number): void {
+  const byId = index(world).byId, others: number[] = [];
+  for (const id of ids) {
+    if (id === c.id) continue;
+    const o = byId.get(id);
+    if (o && o.alive && o.action === 'hunt' && o.targetId === c.targetId) others.push(Math.atan2(o.position[0] - g[0], o.position[2] - g[2]));
+  }
+  const dx = c.position[0] - g[0], dz = c.position[2] - g[2], own = Math.atan2(dx, dz), y = g[1] * HUNT_CLIMB;
+  let tb = spreadBearing(own, others);
+  if (c.position[1] > 0.05 && Math.hypot(dx, dz) <= HUNT_STANDOFF_M + 1) {
+    let turn = tb - own;
+    turn = turn - 2 * Math.PI * Math.round(turn / (2 * Math.PI));
+    for (let k = 0; k < 12; k++) {
+      const gx = g[0] + Math.sin(own + turn) * HUNT_STANDOFF_M, gz = g[2] + Math.cos(own + turn) * HUNT_STANDOFF_M;
+      if (Math.hypot(gx - c.position[0], gz - c.position[2]) <= 2.8) break;
+      turn *= 0.5;
+    }
+    tb = own + turn;
+  }
+  moveTo(world, c, g[0] + Math.sin(tb) * HUNT_STANDOFF_M, y, g[2] + Math.cos(tb) * HUNT_STANDOFF_M, speed, 0.5);
 }
 
 /**
@@ -771,9 +799,13 @@ export function executeAction(world: World, c: Chimp): void {
       const h = huntOf(s.hunts, c.targetId, c.troopId);
       const p = byIdIn(world.prey, c.targetId);
       if (!h || !p) return finish(world, c);
-      const a = hash01(c.id, p.id, 4) * Math.PI * 2;
-      moveTo(world, c, p.position[0] + Math.cos(a) * 2, p.position[1] * 0.85, p.position[2] + Math.sin(a) * 2, RUN * 0.8, 0.5);
-      if (time >= h.resolveAt) resolveHunt(world, h);
+      if (pursuitOn(P)) huntPursuitMove(world, c, h.hunters, p.position, RUN * 0.8);
+      else {
+        const a = hash01(c.id, p.id, 4) * Math.PI * 2;
+        moveTo(world, c, p.position[0] + Math.cos(a) * 2, p.position[1] * 0.85, p.position[2] + Math.sin(a) * 2, RUN * 0.8, 0.5);
+      }
+      // stage E4k iteration 2 (huntPursuit 2): the pursuit is read at the end of the tick (tick.ts, ecology.ts pursuitStep)
+      if (time >= h.resolveAt && !pursuitEachTick(P)) resolveHunt(world, h);
       return;
     }
     case 'nurse': {

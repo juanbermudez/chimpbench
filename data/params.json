@@ -11935,6 +11935,55 @@
    "notes": "Adult males together needed to start a hunt (no solo colobus hunts at Ngogo)."
   },
   {
+   "id": "huntPursuit",
+   "group": "hunting",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    2
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    2
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "mitaniWatts1999",
+    "samuni2018cb"
+   ],
+   "clock": "none",
+   "symbol": "P.huntPursuit",
+   "file": "src/sim/huntpursuit.ts",
+   "integer": true,
+   "notes": "Stage E4k switch (docs/staging/e4k-prereg.md §4): whether a hunt succeeds and how many colobus die come from the pursuit instead of two dice. At the resolution the hunters in the pursuit (still hunting this group, within huntCaptureRangeM, at canopy height: samuni2018cb's hunters chase at canopy height) each cut off the escape directions within asin(k) of their bearing from the group (the Apollonius circle of a pursuer at k times the fleeing monkey's speed; every direction when k > 1), k = huntPursuitSpeedRatio x the hunter's own movement factor for age, injury and alertness. The group is trapped when no escape direction is left (at k = 1, inside the convex hull of the hunters: three or more around it); one monkey dies per disjoint set of hunters that closes the circle (greedy, smallest set first), its captor the set member with the highest 0.6 x skill + hash (today's rule). During the hunt each hunter heads for the widest escape gap the other hunters leave (individually opportunistic, mitaniWatts1999), moving around the group in the canopy. The valuation (huntvalue.ts) expects the same function on n hunters spread evenly. Removes huntSuccessMax, huntSuccessRate and huntExtraKillP (not read). 1: the circle is read at the resolution moment (iteration 1, P1); 2: it is read at the end of every tick, after every animal has moved, and the hunt ends with captures at the first closure or with an escape at the resolution time (iteration 2, e4k-prereg.md §9). At 0 bit-identical. Design, not fitted. Ablation switch."
+  },
+  {
+   "id": "huntPursuitSpeedRatio",
+   "group": "hunting",
+   "value": 1,
+   "units": "ratio",
+   "range": [
+    0.5,
+    2
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0.01,
+    100
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.huntPursuitSpeedRatio",
+   "file": "src/sim/huntpursuit.ts",
+   "notes": "Stage E4k (huntPursuit; docs/staging/e4k-prereg.md §4.1): a prime, rested, uninjured adult chimpanzee's pursuit speed through the canopy over a fleeing red colobus's escape speed. 1: neither is assumed faster; no measurement of either speed was found (research.md, Addendum: E4k hunt success). Each hunter's own ratio is this times his movement factor for age, injury and alertness. At 1 three hunters around a group can trap it and two cannot (geometry); below 1 more are needed, above 1 a single hunter can. Read only with huntPursuit 1. Design, not fitted."
+  },
+  {
    "id": "huntResolveMinMin",
    "group": "hunting",
    "value": 5,

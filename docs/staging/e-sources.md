@@ -1821,3 +1821,14 @@ edge, acoustic encounters with or without a vocal response, encounters more than
 party follows; 120 encounters on 103 of 5,527 follows); contact on patrols (wattsMitani2001 19 of 52, watts2006 30 of 95,
 as recorded); party fusion after at least 1 h apart (girardButtoz2022, as E5e) as the basis of `reunionH` in
 `patrolFusion`. No new source keys. Not verified: field observers' detection range for pant-hoots.
+
+## Addendum: E4k hunt success (4 October 2026)
+
+Same text as research.md "Addendum: E4k hunt success": community success and prey per success (gilby2015 Table 1:
+Mitumba with 2.9 adult males 53.2%, 1.30); Ngogo (mitaniWatts1999, FT: high continuous canopy 25–30 m, noncooperative
+massing, mobbing largely ineffective, success rising with party size and male hunters, 3.4 kills per success); Taï
+(samuni2018cb, FT: single hunters 16%, group hunts 61%, 3.08 hunters, one monkey in 84% of successes; hunters are those
+chasing at canopy height); broken canopy and numbers make capture easier (wattsMitani2002, gilby2006, boesch1994coop,
+abstracts); colobus defence (stanford1995, abstract); the Apollonius pursuit geometry (design). New keys: samuni2018cb,
+gilby2013, gilby2006, boesch1994coop, boesch1994prey, stanford1995. Not verified: wattsMitani2002 full text, Busse 1977
+(an earlier DOI was wrong), Tennie et al. 2009.

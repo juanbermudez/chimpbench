@@ -3169,3 +3169,80 @@ copy, downloaded at stage E5a).
 
 No new source keys. Not verified this stage: field observers' detection range for pant-hoots (the 1 km audibility stays
 [L], every source secondary); amsler2010, mitaniWatts2005, wattsMitani2001, watts2006 (closed; as recorded at C6p).
+
+### Addendum: E4k hunt success (4 October 2026)
+
+Read for stage E4k (docs/staging/e4k-prereg.md): what decides whether a hunt of red colobus succeeds and how many monkeys
+die. Every figure below is a target, a definition or a direction; the stage takes no success probability or kill count
+from them. Access by a search helper this stage (NCBI BioC first, then OpenAlex, then Wayback `id_` copies; bibliographic
+data checked against Crossref on 4 October 2026); full texts re-read by the stage where FT.
+
+- **Success and kills by community size** [gilby2015] (FT, the PMC page saved at E4f; Table 1) [H]. Kanyawara, Kasekela,
+  Mitumba: adult males 11.4 (9–14), 10.4 (6–14), 2.9 (2–5); hunts 194, 1,498, 263; successful 119 (61.3%), 934 (62.3%),
+  140 (53.2%); prey per success 1.28, 1.90, 1.30. A hunt is at least one chimpanzee climbing in pursuit (Gombe) or to the
+  height of the lowest monkey (Kanyawara); a success is at least one monkey killed. No group-level analysis of success
+  against hunters. Use in E4k: T-HUN-2 and T-HUN-7 samples; a community of about three adult males still succeeds about
+  half the time.
+- **Ngogo: success, kills, canopy and mobbing** [mitaniWatts1999] (FT, author PDF) [H]. 49 hunts seen in full over 23
+  months (1995–98); success 36/49 (73%), red colobus 32/41 (78%); 3.4 ± 1.8 kills per successful colobus hunt (n = 32),
+  several kills in 26 of 32; successful hunts had larger parties (26.3 against 18.2 individuals) and more adult males
+  (14.3 against 10.6); kills by adult males 86% of 90, adolescent males 12%, females 3%. Discussion: "Hunting success in
+  this and other studies increases as a function of chimpanzee party size and the number of male hunters"; Ngogo is "a
+  forest habitat with a high, continuous canopy (height ≈25–30 m)", where "mostly noncooperative chimpanzees" succeed
+  by "massing large numbers of hunters, whose largely opportunistic pursuit tactics make their hunts highly successful";
+  colobus mobbing at Ngogo is "largely ineffective"; cooperation among chimpanzees "is generally lacking during hunts at
+  all East African study sites"; East African chimpanzees prey selectively on immature colobus. Table 7 (other sites, as
+  cited there): success Gombe 52%, Mahale 61%, Taï 54%; kills per success 1.62, 1.36, 1.15. Use in E4k: the model's
+  implicit continuous canopy matches Kibale's; the pursuit is individually opportunistic, not coordinated; males' defence
+  is not built for a Kibale model.
+- **Taï: single hunters against groups** [samuni2018cb] (FT, NCBI BioC PMC6131550) [H] (*P. t. verus*). 143 hunts in
+  2013–15, 56% successful (all monkey species; 58 successes on red colobus); group hunts 86% of hunts; "success rates
+  for single hunters being at 16%, as opposed to 61% for group hunts"; 3.08 ± 1.48 hunters per hunt; number of hunters
+  odds ratio 2.52 per SD (P = 0.0004); "In 84% of successful hunt cases, individuals trapped a single monkey". Hunters
+  are "any individuals playing an active role in approaching or chasing prey at canopy height". Use in E4k: the
+  definition of a hunter in the pursuit (at canopy height); success rises with hunters in tall continuous canopy, where
+  lone hunters rarely succeed; one capture in most successful hunts (direction checks, not inputs).
+- **Canopy structure** [wattsMitani2002] (Abs, Wayback copy of the publisher page; full text not reached) [M]: "the
+  number of kills and the offtake of meat per hunt increase with the number of hunters"; "hunts are easier where the
+  canopy is broken" (the broken-canopy figures recorded as P-HUN-3, 64% against 15% hunted and 92% against 55% success,
+  stay unverified). [gilby2006] (Abs) [M]: at Gombe hunts were more likely to occur and to succeed in woodland and
+  semideciduous forest than in evergreen forest. [boesch1994coop] (Abs) [M]: at Taï it pays to hunt in groups of three
+  or four rather than alone or in pairs; at Gombe "hunting success is very high for single hunters". [boesch1994prey]
+  (Abs) [M]: Gombe colobus are more aggressive than Taï colobus, the lower Gombe trees the likely cause. Use in E4k:
+  the direction (broken canopy and numbers make capture easier); the model has no canopy structure to carry it.
+- **Colobus defence** [stanford1995] (Abs) [M]: colobus groups in the chimpanzees' core hunting area are 46% smaller than
+  on the periphery; males close ranks to defend. As cited by mitaniWatts1999: mobbing effectiveness rose with males per
+  colobus group at Gombe only for hunting parties of five or fewer. Not built (the model's colobus have no composition;
+  mobbing is ineffective at Ngogo).
+- **Kills at the range edge** [gilby2013] (FT, NCBI BioC PMC4231443) [M]: Kasekela 1976–2007, 1,782 encounters, 1,159
+  hunts (65.0%), 719 with a kill (62.0%); a kill more likely at the periphery of the range than the centre (odds ratio
+  2.41, adjusted for males and swollen females). Use: context only.
+- **Pursuit geometry (design, no source needed for the mathematics).** A fleeing animal that moves in a straight line at
+  speed v_e from a pursuer at speed v_p = k·v_e (k ≤ 1) is intercepted only if it flees within asin(k) of the pursuer's
+  bearing (the Apollonius circle of the pair); at equal speeds that cone is the half-plane, and an evader is cut off from
+  every direction exactly when it lies inside the convex hull of its pursuers. No measurement of a chimpanzee's pursuit
+  speed or a red colobus's escape speed through the canopy was found.
+
+**Not verified this stage:** wattsMitani2002 full text (closed; the University of Michigan repository behind a bot check);
+Busse 1977 (*Evolution* 31(4):907–911; the DOI 10.2307/2407454 recorded by an earlier pass is wrong: it belongs to
+another paper; the correct one is 10.2307/2407456 or 10.1111/j.1558-5646.1977.tb01087.x; no abstract reached); Tennie,
+Gilby and Mundry 2009 (bot checks on both hosts; hosts dropped); Gilby, Eberly and Wrangham 2008 (abstract only).
+
+**Sources:**
+- *new* samuni2018cb: Samuni L, Preis A, Deschner T, Crockford C, Wittig RM 2018. Reward of labor coordination and
+  hunting success in wild chimpanzees. *Communications Biology* 1:138.
+  [doi:10.1038/s42003-018-0142-3](https://doi.org/10.1038/s42003-018-0142-3) (FT, PMC6131550).
+- *new* gilby2013: Gilby IC, Wilson ML, Pusey AE 2013. Ecology rather than psychology explains co-occurrence of predation
+  and border patrols in male chimpanzees. *Animal Behaviour* 86(1):61–74.
+  [doi:10.1016/j.anbehav.2013.04.012](https://doi.org/10.1016/j.anbehav.2013.04.012) (FT, PMC4231443).
+- *new* gilby2006: Gilby IC, Eberly LE, Pintea L, Pusey AE 2006. Ecological and social influences on the hunting
+  behaviour of wild chimpanzees, *Pan troglodytes schweinfurthii*. *Animal Behaviour* 72(1):169–180.
+  [doi:10.1016/j.anbehav.2006.01.013](https://doi.org/10.1016/j.anbehav.2006.01.013) (Abs).
+- *new* boesch1994coop: Boesch C 1994. Cooperative hunting in wild chimpanzees. *Animal Behaviour* 48(3):653–667.
+  [doi:10.1006/anbe.1994.1285](https://doi.org/10.1006/anbe.1994.1285) (Abs).
+- *new* boesch1994prey: Boesch C 1994. Chimpanzees–red colobus monkeys: a predator–prey system. *Animal Behaviour*
+  47(5):1135–1148. [doi:10.1006/anbe.1994.1152](https://doi.org/10.1006/anbe.1994.1152) (Abs).
+- *new* stanford1995: Stanford CB 1995. The influence of chimpanzee predation on group size and anti-predator behaviour in
+  red colobus monkeys. *Animal Behaviour* 49(3):577–587.
+  [doi:10.1016/0003-3472(95)80191-X](https://doi.org/10.1016/0003-3472(95)80191-X) (Abs).
+- gilby2015, mitaniWatts1999 and wattsMitani2002 are already listed; the entries above add findings.

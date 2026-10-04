@@ -1,7 +1,7 @@
 import type { Chimp, World } from '../types';
 import { dependentOn, isCarried } from './candidates';
 import { decisionPoint } from './decide';
-import { movePrey, slowPrey } from './ecology';
+import { movePrey, pursuitStep, slowPrey } from './ecology';
 import { updateClock, updateFruit, updateSeason, updateSun, updateWeatherValues, weatherTransition } from './environment';
 import { addEvent, gate, interrupt } from './events';
 import { executeAction } from './execution';
@@ -50,6 +50,7 @@ export function tickWorld(world: World): void {
     executeAction(world, c);
     if (x.finished && c.alive) decisionPoint(world, c);
   }
+  pursuitStep(world); // stage E4k iteration 2 (huntPursuit 2): hunts read after every animal has moved; no-op otherwise
   carryInfants(world);
   if (world.tick % PARTY_EVERY === 0) { computeParties(world); updatePatrols(world); }
   if (paramsOf(world).fissionOn === 1) fissionStep(world); // stage C9 (off by default)
