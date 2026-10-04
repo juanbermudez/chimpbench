@@ -3247,7 +3247,7 @@ Gilby and Mundry 2009 (bot checks on both hosts; hosts dropped); Gilby, Eberly a
   [doi:10.1016/0003-3472(95)80191-X](https://doi.org/10.1016/0003-3472(95)80191-X) (Abs).
 - gilby2015, mitaniWatts1999 and wattsMitani2002 are already listed; the entries above add findings.
 
-### Addendum: E3e choice noise (4 October 2026)
+### E.50 Addendum: E3e choice noise (4 October 2026)
 
 Read for stage E3e ([staging/e3e-prereg.md](staging/e3e-prereg.md)): why an animal does not always take the option it
 values most, and how choice variability should depend on what it knows. research.md was searched first (charnov1976,

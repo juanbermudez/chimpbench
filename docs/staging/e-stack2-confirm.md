@@ -2287,3 +2287,16 @@ combine with S19 yet: its costs (rest below band, females' and infants' reserves
 joins T-HUN-4 and T-BRD-1 as a rare-event row: decisive held-out sums are computed with and without all three. Reason:
 on few events it scores 20–30 in about one run in six (S5c2 21.6; S8c1 30.5; S8c3 22.3; S17c1 24.7; S20 23.8), which
 makes a reference group's spread uninformative.
+
+## S21 confirm (registered 4 October 2026 before its run)
+
+**S21 = S19 + E3e's `choiceBelief` 2** (no fitted temperature: unseen crops drawn from the animal's belief, the rules'
+jitter as evaluation noise, awake nest-mates holding each other in the dark; `rgTemperature` out: 46 → 45). Judged
+against S19's confirm group (S19, ef13aa8, plus re-draws S19c1–S19c3 by `rgTemperature`, bench-run4) by the standard keep
+rule with amendment 3's rare rows (T-HUN-4, T-BRD-1, T-IGE-3). Bench, energy-diagnose and rhythm-metrics, 5 seeds,
+30 + 60 days, from bench-run2 moved to this commit. From S21 on, replicate references are re-drawn with `rngSalt`.
+
+**Predictions (against the S19 group; moderate confidence unless stated).** Prescriptions 45 (high); viability and night
+safety pass (adults out of a nest ≤ 3.3%); T-ACT-2 lower (0.14–0.18) and T-ACT-4 higher (0.36–0.42); T-FOOD-2 higher
+(0.72–0.79); T-RNG-4 lower (1.4–1.9; low); nursing mothers' and infants' reserves better than S19's; fitted and held-out
+inside noise or better.

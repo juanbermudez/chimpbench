@@ -1833,7 +1833,7 @@ abstracts); colobus defence (stanford1995, abstract); the Apollonius pursuit geo
 gilby2013, gilby2006, boesch1994coop, boesch1994prey, stanford1995. Not verified: wattsMitani2002 full text, Busse 1977
 (an earlier DOI was wrong), Tennie et al. 2009.
 
-## Addendum: E3e choice noise (4 October 2026)
+## 50. Addendum: E3e choice noise (4 October 2026)
 
 Same text as research.md "Addendum: E3e choice noise": a softmax with a fixed temperature ignores the chooser's
 uncertainty; Thompson sampling draws each option's value from the belief and takes the best draw, so choices vary more
