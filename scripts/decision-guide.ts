@@ -29,20 +29,22 @@ const S5_SWITCHES: Record<string, number> = { ...S3_SWITCHES, followCarer: 1, co
 const S6_SWITCHES: Record<string, number> = { ...S5_SWITCHES, weanDecide: 1, weanDeficit: 1 };
 const S8_SWITCHES: Record<string, number> = { ...S6_SWITCHES, growYield: 1, revisitByCrop: 1 };
 const S9_SWITCHES: Record<string, number> = { ...S8_SWITCHES, groomDrive: 1, socialUpkeep: 2, followMargin: 1 };
+const S13_SWITCHES: Record<string, number> = { ...S9_SWITCHES, huntValue: 1, forageRate: 1, contestAssess: 1 };
 /** The stacks as docs/staging/e-stack2-confirm.md defines them (S5 = S4 + companyMargin, S4 = S3 + followCarer +
  *  cohesionValue, S6 = S5 + E1o's arm B, S8 = S6 + E1p's growYield + E3b's revisitByCrop, S9 = S8 + E5d's G4,
- *  S13 = S9 + E4e's huntValue + E3c's forageRate + E4h's contestAssess). */
+ *  S13 = S9 + E4e's huntValue + E3c's forageRate + E4h's contestAssess, S16 = S13 + E5e's socialTiming + E4i's patrolValue). */
 export const STACKS = {
   S3: { name: 'S3', doc: 'staging/e-stack2-confirm.md', section: 'S3 results', switches: S3_SWITCHES },
   S5: { name: 'S5', doc: 'staging/e-stack2-confirm.md', section: 'S5 results', switches: S5_SWITCHES },
   S6: { name: 'S6', doc: 'staging/e-stack2-confirm.md', section: 'S6 results', switches: S6_SWITCHES },
   S8: { name: 'S8', doc: 'staging/e-stack2-confirm.md', section: 'S8 results', switches: S8_SWITCHES },
   S9: { name: 'S9', doc: 'staging/e-stack2-confirm.md', section: 'S9 results', switches: S9_SWITCHES },
-  S13: { name: 'S13', doc: 'staging/e-stack2-confirm.md', section: 'S13 results', switches: { ...S9_SWITCHES, huntValue: 1, forageRate: 1, contestAssess: 1 } },
+  S13: { name: 'S13', doc: 'staging/e-stack2-confirm.md', section: 'S13 results', switches: S13_SWITCHES },
+  S16: { name: 'S16', doc: 'staging/e-stack2-confirm.md', section: 'S16 results', switches: { ...S13_SWITCHES, socialTiming: 15, patrolValue: 2 } },
 } satisfies Record<string, Stack>;
 /** The stack this page shows. Moving the page to another stack is this line, plus the prose its results change (the
  *  check names every box and layer that no longer fits). */
-export const STACK: Stack = STACKS.S13;
+export const STACK: Stack = STACKS.S16;
 
 /** Stages outside the stack, each measured on it (handoff §0 and §3, and each stage's pre-registration). `verdict`
  *  replaces the stage's own where the layer is one arm of a stage. A layer whose switches the stack holds is dropped. */
@@ -101,6 +103,9 @@ export function buildData() {
   // the switch that removes each replaced entry alone (with its needs), the one that needs least: the mechanism's own
   const solo = Object.fromEntries(Object.keys(STACK.switches).map(s => [s, counted(buildLedger(Object.fromEntries([...closure(s)].map(q => [q, STACK.switches[q] ?? 1])) as never))]));
   const reg = new Map<string, Row>(LS.rows.map(r => [r.id, r]));
+  const left = new Map<string, Set<string>>();
+  const leaveOut = (s: string) => left.get(s) ?? left.set(s, counted(buildLedger(Object.fromEntries(Object.entries(STACK.switches).filter(([k]) => k !== s)) as never))).get(s)!;
+  const firstIn = (s: string) => Object.values(STACKS).findIndex(st => s in st.switches);
   const entries = new Map<string, Entry>();
   const allKeys = new Set([...setB, ...setS, ...Object.values(layerSets).flatMap(s => [...s])]);
   for (const key of allKeys) {
@@ -117,8 +122,17 @@ export function buildData() {
       Object.assign(e, { value: fmt(r.fieldValue), units, cls: r.cls, kind: r.kind, evidence: r.evidence, encodes: r.encodes, reason: r.reason, borderline: r.borderline, where: r.file ? `src/sim/${r.file}` : undefined });
     }
     if (e.b && !e.onStack) {
-      const by = Object.keys(STACK.switches).filter(s => !solo[s].has(key)).sort((a, b) => closure(a).size - closure(b).size || a.localeCompare(b))[0] ?? fail(`no single ${STACK.name} switch removes ${key}`);
-      e.by = by; e.stage = TRACK_E_SWITCHES[by].stage; e.needs = [...closure(by)].filter(s => s !== by);
+      const by = Object.keys(STACK.switches).filter(s => !solo[s].has(key)).sort((a, b) => closure(a).size - closure(b).size || a.localeCompare(b))[0];
+      if (by) { e.by = by; e.needs = [...closure(by)].filter(s => s !== by); }
+      else {
+        // no single switch removes it (its rule reads several, e.g. a bit of socialTiming with cohesionValue and forageRate):
+        // it needs the switches whose removal from the stack brings it back, and is credited to the one that joined last
+        const needed = Object.keys(STACK.switches).filter(s => leaveOut(s).has(key));
+        if (!needed.length) fail(`no ${STACK.name} switch or set of switches removes ${key}`);
+        e.by = [...needed].sort((a, b) => firstIn(b) - firstIn(a) || a.localeCompare(b))[0];
+        e.needs = needed.filter(s => s !== e.by);
+      }
+      e.stage = TRACK_E_SWITCHES[e.by!].stage;
       e.why = lit ? (LS.literals.find(q => literalKey(q.file, q.text) === key)?.why ?? '') : (LS.rows.find(q => q.id === key)?.activeNote ?? '');
     }
     entries.set(key, e);
@@ -336,9 +350,9 @@ function paramLine(D: Data, key: string): string {
   const units = r.units === 'h (time of day)' ? `h (${clock(r.fieldValue)})` : r.units;
   return `<li><code>${esc(key)}</code> <span class="tt-v">${esc(fmt(r.fieldValue))} ${esc(units)}</span> <em>· ${esc(r.cls)}${r.evidence ? `, evidence ${esc(r.evidence)}` : ''}</em></li>`;
 }
-function stageLine(sw: string): string {
+function stageLine(sw: string, extra: string[] = []): string {
   const stg = TRACK_E_SWITCHES[sw].stage, st = STAGES[stg], own = SWITCH_VERDICT[sw];
-  const needs = [...closure(sw)].filter(x => x !== sw);
+  const needs = [...new Set([...closure(sw), ...extra])].filter(x => x !== sw);
   const why = IN_STACK_BECAUSE[sw] ? `; in ${STACK.name}: ${IN_STACK_BECAUSE[sw]}` : '';
   const doc = own?.doc ?? st.doc;
   return `<code>${esc(sw)}</code>${needs.length ? ` (with ${needs.map(x => `<code>${esc(x)}</code>`).join(', ')})` : ''} · stage ${esc(stg)}, ${esc(st.name)} · verdict: ${esc(own?.verdict ?? st.verdict)}${esc(why)} (<a href="${doc}">${esc(doc.replace('staging/', ''))}</a>)`;
@@ -350,10 +364,11 @@ function tipHtml(D: Data, d: DiagramSpec, n: NodeSpec): string {
   const ids = (n.ids ?? []).map(k => paramLine(D, k)).join(''), ps = (n.ps ?? []).map(k => paramLine(D, k)).join('');
   const parts: string[] = [head];
   if (st === 'rep') {
-    const bys = [...new Set(n.ids!.map(k => D.entries.get(k)!.by!))];
+    const bys = new Map<string, Set<string>>();
+    for (const k of n.ids!) { const e = D.entries.get(k)!; const set = bys.get(e.by!) ?? bys.set(e.by!, new Set()).get(e.by!)!; for (const q of e.needs ?? []) set.add(q); }
     parts.push(`<div class="tt-s"><span class="tt-k k-before">Before</span><p>${esc(n.before!)}</p><ul class="tt-ps">${ids}</ul></div>`);
     parts.push(`<div class="tt-s"><span class="tt-k k-now">Now</span><p>${esc(n.now!)}</p>${ps ? `<ul class="tt-ps">${ps}</ul>` : ''}</div>`);
-    parts.push(`<p class="tt-m">Switched out by ${bys.map(stageLine).join('; ')}${n.see ? `. ${countedUnder(n)}` : ''}.</p>`);
+    parts.push(`<p class="tt-m">Switched out by ${[...bys].map(([b, q]) => stageLine(b, [...q])).join('; ')}${n.see ? `. ${countedUnder(n)}` : ''}.</p>`);
     const whys = [...new Set(n.ids!.map(k => D.entries.get(k)!.why ?? '').filter(Boolean))];
     if (whys.length) parts.push(`<p class="tt-why">Ledger: ${whys.map(w => esc(w)).join(' · ')}</p>`);
   } else if (st === 'rem') {
@@ -371,13 +386,13 @@ function tipHtml(D: Data, d: DiagramSpec, n: NodeSpec): string {
     // a design stand-in that a stack switch replaced: the ledger never counted it, so the box keeps its design status
     parts.push(`<div class="tt-s"><span class="tt-k k-before">Before</span><p>${esc(n.before)}</p>${ps ? `<ul class="tt-ps">${ps}</ul>` : ''}</div>`);
     parts.push(`<div class="tt-s"><span class="tt-k k-now">Now</span><p>${esc(n.now!)}</p></div>`);
-    parts.push(`<p class="tt-m">Replaced in ${esc(STACK.name)} by ${n.sw!.map(stageLine).join('; ')}. A design stand-in, not a counted prescription: the count does not move.</p>`);
+    parts.push(`<p class="tt-m">Replaced in ${esc(STACK.name)} by ${n.sw!.map(x => stageLine(x)).join('; ')}. A design stand-in, not a counted prescription: the count does not move.</p>`);
     const why = n.sw!.map(x => TRACK_E_SWITCHES[x].removesNothing).filter(Boolean);
     if (why.length) parts.push(`<p class="tt-why">Ledger: ${why.map(w => esc(w!)).join(' · ')}</p>`);
   } else {
     parts.push(`<div class="tt-s"><span class="tt-k k-${st}">${st === 'inp' ? 'Input' : 'Design'}</span><p>${esc(n.text ?? '')}</p>${ps ? `<ul class="tt-ps">${ps}</ul>` : ''}</div>`);
     if (n.sw?.length) {
-      parts.push(`<p class="tt-m">Part of ${esc(STACK.name)}: ${n.sw.map(stageLine).join('; ')}.</p>`);
+      parts.push(`<p class="tt-m">Part of ${esc(STACK.name)}: ${n.sw.map(x => stageLine(x)).join('; ')}.</p>`);
       const why = n.sw.map(x => TRACK_E_SWITCHES[x].removesNothing).filter(Boolean);
       if (why.length) parts.push(`<p class="tt-why">Ledger: ${why.map(w => esc(w!)).join(' · ')}</p>`);
     }
