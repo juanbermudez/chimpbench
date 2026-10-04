@@ -14,7 +14,11 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 12:00; deploy held by the user).** Nothing.
+- **Running now (4 October 12:10; deploy held by the user).** Stage agent **E1q** (`e1q-climbing-energy`, from
+  track-e c39488f: audit why climbing costs 1/1.2–1/2.2 of walking energy against ~1/10 in wild chimpanzees; arms with
+  and without walkGait; brief `integrator/e1q-prompt.txt`); **guide-s5** agent moving the decision guide to S25 (branch
+  `guide-s25`). Integrator: the S25 quick reference re-drawn by `rngSalt` 1–3 (`integrator/s25q.sh`, outputs
+  `bench-run2/artifacts/validation/e/s25q/`; message E1q when all four exist).
 - **S25 is the best integrated candidate (43)** (e-stack2-confirm.md "S25 results"; S22 + `huntDrive` 1): hunting back
   in band (T-HUN-1 17.4), every sum inside noise; its infant drop is one outbreak seed. Decision guide and hosted copy
   show S22 (S25 adds a correction to hunting; counts unchanged).
