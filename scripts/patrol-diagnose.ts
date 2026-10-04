@@ -130,7 +130,7 @@ for (let i = 0; i < days * DAY; i++) {
       const rec = o.rec, ended = evs.find(e => e.troopId === t.id && e.kind === 'territory' && /patrol ended/.test(e.text));
       rec.release = ended ? /chorus/.test(ended.text) : null;
       // 'empty': no member was on it at the last check (parties.ts ends it with no leader, and no release); 'cap': patrolMaxH
-      rec.end = P.patrolValue !== 1 && time > rec.until ? 'cap' : o.nowMembers === 0 ? 'empty' : 'home';
+      rec.end = !(P.patrolValue >= 1) && time > rec.until ? 'cap' : o.nowMembers === 0 ? 'empty' : 'home';
       rec.incursionDie = !!(o.obj as { incursion?: boolean }).incursion; // E4i: decided at the range edge (the die's field otherwise)
       rec.endT = time; rec.endHour = r4(hour); rec.lightLeftEnd = daylightLeftH(time);
       rec.endState = stMean(o.lastMembers.filter(isAdultMale).map(stateOf));
