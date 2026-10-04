@@ -332,4 +332,9 @@ trees (2–18 × what a model fig crown ripens per cycle at the design turnover)
 
 ## 10. Merge and final checks
 
-(Pending.)
+track-e merged once (da4058e, track-e 4952a26) before the final test run: `gen-params --check` and `tsc` clean,
+`pnpm test` 808 tests, 807 pass, 0 fail, 1 skipped; `git ls-files data/raw node_modules` empty. The code is track-e's
+plus `scripts/crop-energy-diagnose.ts` (reads only). Every run's JSON and log (the four diagnosis realizations, K2, K05
+and their energy runs) and the table scripts (`crowntab.py`, `final.py`, `figcheck.py`, `judge_e3f.py`, the run scripts,
+`hash.mts`) are in `artifacts/validation/e3f/` of this worktree (gitignored), copied from the stage's scratch directory;
+the downloaded source texts stayed in the scratch directory (copyrighted; never to be committed or published).
