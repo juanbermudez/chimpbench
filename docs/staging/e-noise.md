@@ -113,3 +113,11 @@ at 0 is unchanged (the field pin and an identity run check it).
   (inside).
 - Rare-event rows: T-BRD-1 has a per-run SD of 1.55 on R and 0.38 on B; T-HUN-4 1.10 on B and 0.25 on R. A single
   60-day run cannot judge either.
+
+## Amendment 3 (4 October 2026, integrator; before any confirm registered after S20)
+
+**T-IGE-3 is treated as a rare-event row**, like T-HUN-4 and T-BRD-1: every decisive held-out sum is computed with all
+rows and without the three rare rows. Reason: the row (approach depends on own males, a logistic slope over few
+intergroup events) scored 20–30 in about one confirm run in six (S5c2 21.6, S8c1 30.5, S8c3 22.3, S17c1 24.7, S20 23.8),
+and one such run in a reference group inflates its held-out SD past any effect a stage can have (S20's reading:
+e-stack2-confirm.md, "S20 results"). Judgements registered before this amendment stand as recorded.

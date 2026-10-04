@@ -14,9 +14,12 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 06:20; deploy held by the user).** No agents. Integrator: the **S20** confirm (S17 +
-  `redecideValue` 2 + `huntPursuit` 2, 44 prescriptions; registered 9b3aee1) in bench-run4 (ef13aa8;
-  `integrator/conf20.sh`), judged against S17's group with `integrator/judge_s17group.py` (add S20).
+- **Running now (4 October 06:45; deploy held by the user).** Nothing.
+- **S20 not adopted; S19 is the best integrated candidate** (e-stack2-confirm.md "S20 results"): S20 (S17 + S18 + S19,
+  44) passed the registered sums only through a reference spread inflated by T-IGE-3 (S17c1 24.7) and is worse beyond
+  noise without it (z +3.0), with rest at 0.252 and juveniles −0.125 %/day. S19 (46) passed every sum. e-noise.md
+  amendment 3: T-IGE-3 joins T-HUN-4 and T-BRD-1 as a rare-event row in decisive sums. Next: S18's costs (rest below
+  band, more feeding on less fruit) need a stage before re-decision joins the stack; the decision guide shows S16.
 - **S18 and S19 done** (e-stack2-confirm.md): both pass the keep rule against S17's four runs. S18 (`redecideValue` 2,
   47): costs: rest below its band (0.288), fruit share 0.61, mothers −0.086, other females −0.078, infants 0.5–2 y
   −0.151 %/day. S19 (`huntPursuit` 2, 46): T-HUN-1 10.1, T-IGE-1 7.1 (into band); costs: success 0.32 (below band), one
