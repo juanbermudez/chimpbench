@@ -14,7 +14,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { execSync } from 'node:child_process';
-import { buildLedger } from './prescription-ledger';
+import { buildLedger, prescriptionCount } from './prescription-ledger';
 import { TRACK_E_SWITCHES } from './lib/prescriptions';
 import { DIAGRAMS, DOMAINS, IN_STACK_BECAUSE, LITERALS, OVERVIEW, STAGES, STEP_OF, SWITCH_VERDICT, type DiagramSpec, type EdgeSpec, type NodeSpec, type Side, type Status, type Step } from './lib/decision-guide-content';
 
@@ -28,18 +28,21 @@ const S3_SWITCHES: Record<string, number> = { energyLedger: 1, ledgerGrowSurplus
 const S5_SWITCHES: Record<string, number> = { ...S3_SWITCHES, followCarer: 1, cohesionValue: 1, companyMargin: 1 };
 const S6_SWITCHES: Record<string, number> = { ...S5_SWITCHES, weanDecide: 1, weanDeficit: 1 };
 const S8_SWITCHES: Record<string, number> = { ...S6_SWITCHES, growYield: 1, revisitByCrop: 1 };
+const S9_SWITCHES: Record<string, number> = { ...S8_SWITCHES, groomDrive: 1, socialUpkeep: 2, followMargin: 1 };
 /** The stacks as docs/staging/e-stack2-confirm.md defines them (S5 = S4 + companyMargin, S4 = S3 + followCarer +
- *  cohesionValue, S6 = S5 + E1o's arm B, S8 = S6 + E1p's growYield + E3b's revisitByCrop, S9 = S8 + E5d's G4). */
+ *  cohesionValue, S6 = S5 + E1o's arm B, S8 = S6 + E1p's growYield + E3b's revisitByCrop, S9 = S8 + E5d's G4,
+ *  S13 = S9 + E4e's huntValue + E3c's forageRate + E4h's contestAssess). */
 export const STACKS = {
   S3: { name: 'S3', doc: 'staging/e-stack2-confirm.md', section: 'S3 results', switches: S3_SWITCHES },
   S5: { name: 'S5', doc: 'staging/e-stack2-confirm.md', section: 'S5 results', switches: S5_SWITCHES },
   S6: { name: 'S6', doc: 'staging/e-stack2-confirm.md', section: 'S6 results', switches: S6_SWITCHES },
   S8: { name: 'S8', doc: 'staging/e-stack2-confirm.md', section: 'S8 results', switches: S8_SWITCHES },
-  S9: { name: 'S9', doc: 'staging/e-stack2-confirm.md', section: 'S9 results', switches: { ...S8_SWITCHES, groomDrive: 1, socialUpkeep: 2, followMargin: 1 } },
+  S9: { name: 'S9', doc: 'staging/e-stack2-confirm.md', section: 'S9 results', switches: S9_SWITCHES },
+  S13: { name: 'S13', doc: 'staging/e-stack2-confirm.md', section: 'S13 results', switches: { ...S9_SWITCHES, huntValue: 1, forageRate: 1, contestAssess: 1 } },
 } satisfies Record<string, Stack>;
 /** The stack this page shows. Moving the page to another stack is this line, plus the prose its results change (the
  *  check names every box and layer that no longer fits). */
-export const STACK: Stack = STACKS.S9;
+export const STACK: Stack = STACKS.S13;
 
 /** Stages outside the stack, each measured on it (handoff §0 and §3, and each stage's pre-registration). `verdict`
  *  replaces the stage's own where the layer is one arm of a stage. A layer whose switches the stack holds is dropped. */
@@ -515,6 +518,7 @@ function numbers(D: Data): Record<string, string> {
     'stack.switches': String(Object.keys(STACK.switches).length), 'domains': String(DOMAINS.length), 'diagrams': String(DGS.length + 1),
     'entries': String(D.B.entries), 'outcome': String(D.B.classes['outcome-encoding']),
   };
+  for (const [k, st] of Object.entries(STACKS)) n[`stacks.${k}.total`] = String(prescriptionCount(st.switches as never).total);
   for (const l of LAYERS) { const e = D.layerEffect[l.key]; n[`${l.key}.total`] = String(e.total); n[`${l.key}.removed`] = String(e.removed.length); n[`${l.key}.added`] = String(e.added.length); }
   for (const d of DOMAINS) { const t = tally(D, d.ids); n[`dom.${d.key}.rem`] = String(t.rem); n[`dom.${d.key}.rep`] = String(t.rep); n[`dom.${d.key}.b`] = String(t.b); }
   const remKinds: Record<string, number> = {};
