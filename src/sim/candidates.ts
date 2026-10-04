@@ -41,13 +41,15 @@ export interface CandidateMeta { v: number; aux: number; raw?: number; jit?: num
 export const candidateMeta = new WeakMap<Candidate, CandidateMeta>();
 
 /** The five gates of stage E5e (docs/staging/e5e-prereg.md §2). */
-export type QuotaKind = 'greet' | 'feed' | 'immigrant' | 'consort' | 'caller';
+export type QuotaKind = 'greet' | 'feed' | 'immigrant' | 'consort' | 'caller' | 'mate' | 'mateF';
 /**
  * Stage E5e diagnosis (scripts/quota-diagnose.ts; docs/staging/e5e-prereg.md §2): called at four gates when every other
  * condition of the option holds, with whether the quota or the clock blocked it ('greet': pantGruntRepeatH; 'feed':
  * feedChargeGapH; 'immigrant': immigrantChargeGapH; 'consort': consortLatestHour), `a` the hours since the gated event
  * (the last greeting of this dominant, the last aggression) or the hour of day, and `b` the score the option has or would
- * have; and at every approach to a caller offered ('caller': `a` the distance, `b` the score). Null in every simulation;
+ * have; and at every approach to a caller offered ('caller': `a` the distance, `b` the score). Stage E4o adds the mating
+ * quota (mateIntervalH): 'mate' at a male's offer to a swollen female in range, 'mateF' at a swollen female's offer to a
+ * male (`a` the hours since the male's last copulation, `b` the offer's score without the jitter). Null in every simulation;
  * it reads only and draws nothing, so the world is unchanged.
  */
 export const quotaTrace: { on: ((kind: QuotaKind, c: Chimp, o: Chimp | undefined, blocked: boolean, a: number, b: number) => void) | null } = { on: null };
@@ -1105,7 +1107,12 @@ function reproduction(world: World, c: Chimp, isAlpha: boolean): void {
       const g = byId.get(ix(o).guardBy);
       const guarded = !!g && g.alive && g !== c && dcc(c, g) < P.guardedRangeM && dominates(g, c);
       const invited = o.action === 'mate' && o.targetId === c.id ? 0.6 : 0;
-      if (time - x.lastMate > P.mateIntervalH) offer('mate', o.id, mateWorth(c, o) - (guarded ? 1 : 0) - dist / P.mateDistScaleM - c.hunger * 0.2 - (night ? 2 : 0) + invited, invited ? V.ACCEPT : V.NONE);
+      const mateOpen = time - x.lastMate > P.mateIntervalH;
+      if (mateOpen || quotaTrace.on) { // stage E4o diagnosis: the quota's gate, traced with the score the offer has or would have
+        const sc = mateWorth(c, o) - (guarded ? 1 : 0) - dist / P.mateDistScaleM - c.hunger * 0.2 - (night ? 2 : 0) + invited;
+        if (quotaTrace.on) quotaTrace.on('mate', c, o, !mateOpen, time - x.lastMate, sc);
+        if (mateOpen) offer('mate', o.id, sc, invited ? V.ACCEPT : V.NONE);
+      }
       // possessive mate-guarding by high-ranking males [M]
       if (c.age >= 15 && (c.rankOrder <= 2 || isAlpha) && o.swelling >= P.guardSwellingMin && !guarded && !(g && g !== c && g.alive && dcc(c, g) < P.guardRivalRangeM))
         offer('guard', o.id, 0.55 + (isAlpha ? 0.35 : 0.15) + o.swelling * 0.2 - c.hunger * 0.9 - (night ? 2 : 0));
@@ -1121,11 +1128,18 @@ function reproduction(world: World, c: Chimp, isAlpha: boolean): void {
         if (open) offer('consort', o.id, sc);
       }
     }
-    if (c.sex === 'female' && c.swelling >= 0.75 && o.age >= 10 && dist < P.mateFemaleRangeM && time - x.lastMate > 0.3 && time - ix(o).lastMate > P.mateIntervalH) {
-      const approaching = o.action === 'mate' && o.targetId === c.id;
-      const coercion = Math.min(3, x.coerce[o.id] ?? 0);
-      offer('mate', o.id, 0.1 + c.swelling * 0.25 + o.rank * 0.25 + coercion * 0.15 + bond(c, o) * 0.2 + (approaching ? 0.7 : 0) - dist / P.mateFemaleDistScaleM - (night ? 2 : 0), approaching ? V.ACCEPT : V.NONE);
-      if (o.action === 'consort' && o.targetId === c.id) offer('consort', o.id, 0.6 + bond(c, o) * 0.5, V.ACCEPT);
+    if (c.sex === 'female' && c.swelling >= 0.75 && o.age >= 10 && dist < P.mateFemaleRangeM && time - x.lastMate > 0.3) {
+      const maleOpen = time - ix(o).lastMate > P.mateIntervalH;
+      if (maleOpen || quotaTrace.on) { // stage E4o diagnosis: the male's quota gates her offer too
+        const approaching = o.action === 'mate' && o.targetId === c.id;
+        const coercion = Math.min(3, x.coerce[o.id] ?? 0);
+        const sc = 0.1 + c.swelling * 0.25 + o.rank * 0.25 + coercion * 0.15 + bond(c, o) * 0.2 + (approaching ? 0.7 : 0) - dist / P.mateFemaleDistScaleM - (night ? 2 : 0);
+        if (quotaTrace.on) quotaTrace.on('mateF', c, o, !maleOpen, time - ix(o).lastMate, sc);
+        if (maleOpen) {
+          offer('mate', o.id, sc, approaching ? V.ACCEPT : V.NONE);
+          if (o.action === 'consort' && o.targetId === c.id) offer('consort', o.id, 0.6 + bond(c, o) * 0.5, V.ACCEPT);
+        }
+      }
     }
   }
 }
