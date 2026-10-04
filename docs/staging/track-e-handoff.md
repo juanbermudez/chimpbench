@@ -17,14 +17,14 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Running now (4 October 10:15; deploy held by the user).** Stage agents **E4n** (`e4n-hunt-rate`: why hunting
   fell below its band once the choice temperature left) and **E2j** (`e2j-climbing`: climbing, halts and the cost of
   walkGait, so it can join the stack), both from track-e 0d08525, briefs `integrator/e4n-prompt.txt`, `e2j-prompt.txt`;
-  **guide-s5** agent moving the decision guide to S22 (branch `guide-s22`). Integrator: the S22 quick reference re-drawn
+  decision guide on **S22** (merged `guide-s22` at 6f441cd; hosted copy on `site` dfc5b8d, build checked). Integrator: the S22 quick reference re-drawn
   by `rngSalt` 1–3 (`integrator/s22q.sh`, outputs `bench-run3/artifacts/validation/e/s22q/`; message both agents when all
   four exist).
 - **S22 is the best integrated candidate (43)**; S24 (S22 + S23) not adopted: held-out without the rare rows worse
   beyond noise (z +2.4, through T-RNG-5 and T-FOOD-10) and walking's energy cost on mothers (−0.090), juveniles (−0.108)
   and infants 0.5–2 y (−0.133 %/day). Open next: hunting below its band on the S21/S22 stack (T-HUN-1 2–4); walkGait's
   energy cost (travel phases slower than the field's, climbing 16–19% of travel); the 25 rare-event prescriptions need
-  runs past the 90-day cap (the user's decision). Decision guide and hosted copy show S21.
+  runs past the 90-day cap (the user's decision). Decision guide and hosted copy on S22.
 - **S22 and S23 done** (e-stack2-confirm.md): both pass the keep rule against S21's four runs (re-drawn by `rngSalt`).
   S22 (`leftoverRules` 3, 43): juveniles' and males' reserves better; costs: T-PAT-6 above band, hunting lower (2.0).
   S23 (`walkGait`, 44): hunting into band (6.5), day ranges 3.0–3.4 km; costs: every class's reserves lower, T-FOOD-10
@@ -146,8 +146,8 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   3.43 km a day (S3 2.93) and the deficits deepen: E5a interacts with value-based calls; E5b fixed it (S5).
 - **Hosted site, 2 October 14:50:** `site` now also holds the rewritten About page (merged `site-about` 4618daf: first-person
   hero, stale sections cut, What's next) and the decision guide as a hidden page (`docs/decision-guide.html`, a Vite
-  input: unlinked, noindex, at /docs/decision-guide). The guide now shows **S21** (45 prescribed, 90 replaced; merged
-  `guide-s21`; `STACK = STACKS.S21` in scripts/decision-guide.ts) and the site copy is written by
+  input: unlinked, noindex, at /docs/decision-guide). The guide now shows **S22** (43 prescribed, 92 replaced; merged
+  `guide-s22`; `STACK = STACKS.S22` in scripts/decision-guide.ts) and the site copy is written by
   `pnpm exec tsx scripts/decision-guide.ts --hosted <site>/docs/decision-guide.html` (site 149701c from track-e 8f5319e;
   `integrator/hosted_guide.py` retired). Build checked: no console errors, data figures draw, dist 32 MB without audio.
   Still no deploy: the user has not said how to publish.
