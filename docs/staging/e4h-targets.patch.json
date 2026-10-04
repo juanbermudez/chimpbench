@@ -1,0 +1,52 @@
+{
+ "about": "Stage E4h staging for data/targets.json (proposal; applied by the integrator and the user, this branch never edits targets.json or src/field). Three new held-out rows on how far within-community aggression goes and who joins it, from wild sources read in full for this stage (docs/research.md 'Addendum: E4h contests'). Disclosure: written after the S9 reference's simulation-truth values were seen (contact share of decided conflicts 0.057-0.069; coalition charges 0.06-0.10 per decided conflict), before any run of the stage's switch. The bands span the verified field values and follow no model value. None is scorable until the observer gains the protocols below (a protocol change: protocolLog entry and a new freeze).",
+ "targets": [
+  {
+   "id": "T-SOC-14",
+   "objectives": ["O11"],
+   "metric": "Contact share of aggression among individuals of 12 y and over",
+   "definition": "Share of dyadic aggressive interactions (all-occurrence during focal follows, individuals >= 12 y, a male >= 12 y as actor or recipient) that involve physical contact between aggressor and victim (hit, pull, bite, kick, jump-on); acts between the same pair within 1 min count once.",
+   "observer": {"protocol": "focal all-occurrence aggression + contact flag", "interval_min": null, "unit": "interaction"},
+   "field": [
+    {"population": "Gombe Kasekela and Mitumba", "years": "2006-2009", "value": "99 of 654 interactions (15.1%) with contact; median 0.013 contact acts per focal-male hour (range 0-0.025)", "n": "14 males >= 12 y, 7,309 focal hours", "method": "male focal follows, all-occurrence aggression with the focal male as actor or recipient", "source": "mouginot2024", "note": ""},
+    {"population": "Tai North", "years": "1996-1999", "value": "contact (intensity levels 4-5) in 19% of conflicts at a large rank difference, 37% middle, 36% small", "n": "876 dyadic conflicts; 4 adult males, 10-12 adult females", "method": "five ordinal intensities by the likelihood of injury; the conflict scored by its most intense act", "source": "wittigBoesch2003b", "note": "both sexes; not restricted to males"},
+    {"population": "Kanyawara", "years": "1998", "value": "attacks (all contact aggression) about 8% of charging displays, chases and attacks of adult males (derived, low confidence)", "n": "9-11 adult males", "method": "focal follows; displays, chases and attacks per hour", "source": "mullerWrangham2004b", "note": "derived by stage E4h from the displays per hour (0.21-0.26) and the attack rate per 100,000 h (wranghamWilsonMuller2006: 2,670)"}
+   ],
+   "accept": {"lo": 0.08, "hi": 0.37, "units": "fraction of aggressive interactions", "basis": "spans the three sites' values (Kanyawara derived, Gombe, Tai by rank difference); the lower bound rests on a derived, low-confidence value"},
+   "evidence": "M",
+   "role": "held-out",
+   "encoded": false,
+   "notes": "Stage E4h (docs/staging/e4h-prereg.md section 3). Before E4h the model's contact was a 12% coin on caught targets that gave way (hitP); with contestAssess it follows from whether either side conceded."
+  },
+  {
+   "id": "T-SOC-15",
+   "objectives": ["O11"],
+   "metric": "Contact falls with rank difference",
+   "definition": "Within same-sex dyads, the share of conflicts with physical contact at a large rank difference against the share at a small or middle one (rank difference in the community's dominance order; categories as the source: males neighbours small, two apart middle, three or more large; females <= 3 small, 4-6 middle, > 6 large).",
+   "observer": {"protocol": "all-occurrence aggression + contact flag + dominance order", "interval_min": null, "unit": "conflict"},
+   "field": [
+    {"population": "Tai North", "years": "1996-1999", "value": "non-contact aggression 81% at a large rank difference against 63% middle and 64% small (GLZ, P = 0.0018), independent of context", "n": "876 dyadic conflicts", "method": "five ordinal intensities; levels 4-5 physical contact", "source": "wittigBoesch2003b", "note": ""}
+   ],
+   "accept": {"lo": null, "hi": null, "units": "pattern", "basis": "contact share at a large rank difference below the share at small and middle differences; insufficient below 20 conflicts per category"},
+   "evidence": "M",
+   "role": "held-out",
+   "encoded": false,
+   "notes": "Stage E4h. One site; the direction is also the contest-theory prediction (parker1974, enquistLeimar1983), so a pass is a test of the model's assessment, not of a fitted rate."
+  },
+  {
+   "id": "T-SOC-16",
+   "objectives": ["O11"],
+   "metric": "Coalitionary share of male-initiated aggression",
+   "definition": "Share of aggressive interactions initiated by a male >= 12 y in which he acts together with other males against the same opponent (all-occurrence during his focal follows; opponents >= 12 y).",
+   "observer": {"protocol": "focal all-occurrence aggression + co-aggressors", "interval_min": null, "unit": "interaction"},
+   "field": [
+    {"population": "Gombe Kasekela and Mitumba", "years": "2006-2009", "value": "54 of 407 (13.2%); Kasekela 20.2% (14 males >= 12 y), Mitumba 3.2% (2 males)", "n": "14 males, 7,309 focal hours", "method": "male focal follows", "source": "mouginot2024", "note": "rises with the number of males available as partners"}
+   ],
+   "accept": {"lo": 0.03, "hi": 0.2, "units": "fraction", "basis": "between the two Gombe communities (2 and 14 males >= 12 y); the model's communities hold 3-7 adult males"},
+   "evidence": "M",
+   "role": "held-out",
+   "encoded": false,
+   "notes": "Stage E4h. Before E4h a 0.5 x bond (0.8 against strangers) coin decided which bystanders could join; with contestAssess every eligible bystander is alerted and joining is its choice."
+  }
+ ]
+}
