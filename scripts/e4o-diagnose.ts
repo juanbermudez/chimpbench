@@ -79,7 +79,12 @@ interface Cop { t: number; m: number; f: number; maleAct: string; femaleAct: str
 const cops: Cop[] = [];
 let lastInterId = Math.max(0, ...w.interactions.map(i => i.id));
 let maxSwollenH = 0, swollen75H = 0, maxSwollenDayH = 0, maxSwollenParousH = 0, dyadH = 0, dyadParousH = 0, dyadDayH = 0;
-const dyadHours = new Map<string, number>(); const dyadCops = new Map<string, number>();
+const dyadHours = new Map<string, number>(); const dyadCops = new Map<string, number>(); // daylight hours together (the field's observation hours)
+// a maximally swollen female's daylight hours and copulations by the adult males (>= 15 y, unrelated) in her party
+const MALE_BINS = ['0', '1-2', '3-4', '5-6', '7+'];
+const maleBin = (n: number) => (n === 0 ? '0' : n <= 2 ? '1-2' : n <= 4 ? '3-4' : n <= 6 ? '5-6' : '7+');
+const femaleHByMales: Record<string, number> = {}, copsByMales: Record<string, number> = {};
+const malesWith = new Map<number, number>(); // per female, adult males in her party at the tick's end
 const lastCopM = new Map<number, number>(), lastCopF = new Map<number, number>();
 const intervalsM: number[] = [], intervalsF: number[] = [];
 // mate gates at decisions: per animal, the quota traces of its candidate build in this tick
@@ -127,7 +132,8 @@ for (let i = 0; i < days * DAY; i++) {
       cops.push({ t: time, m: m.id, f: f.id, maleAct: am[0], femaleAct: af[0], femaleInit: af[0] === 'mate' && af[1] === m.id, swelling: r4(f.swelling), maleAge: r4(m.age), maleRankOrder: m.rankOrder, parous: parous(f), daylight: r4(w.environment.daylight), hour: r4(w.hour) });
       const pm = lastCopM.get(m.id); if (pm !== undefined) intervalsM.push(r4(time - pm)); lastCopM.set(m.id, time);
       const pf = lastCopF.get(f.id); if (pf !== undefined) intervalsF.push(r4(time - pf)); lastCopF.set(f.id, time);
-      const key = `${m.id}-${f.id}`; dyadCops.set(key, (dyadCops.get(key) ?? 0) + 1);
+      const key = `${m.id}-${f.id}`; if (w.environment.daylight > 0.1 && f.swelling >= 0.999 && m.age >= 15) dyadCops.set(key, (dyadCops.get(key) ?? 0) + 1);
+      if (w.environment.daylight > 0.1 && f.swelling >= 0.999) { const b = maleBin(malesWith.get(f.id) ?? 0); copsByMales[b] = (copsByMales[b] ?? 0) + 1; }
     }
   }
 
@@ -145,11 +151,15 @@ for (let i = 0; i < days * DAY; i++) {
     swollen75H += TICK_HOURS;
     if (f.swelling < 0.999) continue;
     maxSwollenH += TICK_HOURS; if (daylight) maxSwollenDayH += TICK_HOURS; const par = parous(f); if (par) maxSwollenParousH += TICK_HOURS;
+    let nm = 0;
     for (const m of idx.alive) {
       if (m.sex !== 'male' || m.age < 15 || m.troopId !== f.troopId || m.partyId !== f.partyId || m.motherId === f.id || (f.motherId > 0 && m.motherId === f.motherId)) continue;
+      nm++;
       dyadH += TICK_HOURS; if (par) dyadParousH += TICK_HOURS; if (daylight) dyadDayH += TICK_HOURS;
-      const key = `${m.id}-${f.id}`; dyadHours.set(key, (dyadHours.get(key) ?? 0) + TICK_HOURS);
+      if (daylight) { const key = `${m.id}-${f.id}`; dyadHours.set(key, (dyadHours.get(key) ?? 0) + TICK_HOURS); }
     }
+    malesWith.set(f.id, nm);
+    if (daylight) { const b = maleBin(nm); femaleHByMales[b] = (femaleHByMales[b] ?? 0) + TICK_HOURS; }
   }
 
   // meat episodes by community (as e4m-diagnose; kcal from the ledger's own books)
@@ -249,6 +259,10 @@ const result = {
     copsPerDyadH: r4(cops.filter(c => c.swelling >= 0.999 && c.maleAge >= 15).length / Math.max(1e-9, dyadH)),
     copsPerParousDyadH: r4(cops.filter(c => c.swelling >= 0.999 && c.maleAge >= 15 && c.parous).length / Math.max(1e-9, dyadParousH)),
     dyadsWith5h: dyads.filter(d => d.h >= 5).length, dyadRateMedian5h: median(dyads.filter(d => d.h >= 5).map(d => d.n / d.h)),
+    // muller2007's statistic, reduced to what 60 days allow: per adult male, the median of his dyadic rates (copulations per
+    // daylight hour together while she is maximally swollen) over dyads with >= 5 h, then the median over males
+    perMaleMedianOfDyadRates: median([...new Set(dyads.filter(d => d.h >= 5).map(d => d.k.split('-')[0]))].map(mid => median(dyads.filter(d => d.h >= 5 && d.k.split('-')[0] === mid).map(d => d.n / d.h))!)),
+    byMalesInParty: Object.fromEntries(MALE_BINS.map(b => [b, { femaleDayH: r4(femaleHByMales[b] ?? 0), cops: copsByMales[b] ?? 0, rate: femaleHByMales[b] ? r4((copsByMales[b] ?? 0) / femaleHByMales[b]) : null }])),
     intervalsMaleMedianH: median(intervalsM), intervalsMaleHist: hist(intervalsM, [0, 0.25, 0.5, 1, 1.5, 1.6, 1.75, 2, 3, 6, 24, 1e9]),
     intervalsFemaleMedianH: median(intervalsF), intervalsFemaleHist: hist(intervalsF, [0, 0.1, 0.25, 0.5, 1, 1.5, 2, 3, 6, 24, 1e9]),
     gateMale: gate('mate'), gateFemale: gate('mateF'),

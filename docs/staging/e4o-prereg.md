@@ -116,3 +116,11 @@ re-run.
   1 + 2 days: every readout produced (89 copulations, 0 captures, 0 guard-qualified charges in two days).
 - **D0, D1–D3** (as registered above), from `scratchpad/e4o/frozen-d0` (the commit that adds this entry): seeds 48 then 7,
   one process at a time if the load is above 8, else two; outputs `artifacts/validation/e4o/D{0,1,2,3}-{48,7}.json`.
+- **Readouts added after D0 and before any arm (disclosed; D0–D3 re-run as D0b–D3b, the tables use only these).** Reading
+  D0 showed that the dyad readout counted the night: the field's denominator is observation hours, so a dyad's hours and
+  copulations are now counted in daylight only (daylight > 0.1; copulations with a maximally swollen female and a male
+  ≥ 15 y), and two readouts are added: muller2007's statistic in the reduced form 60 days allow (per adult male, the median
+  of his dyadic rates over dyads with ≥ 5 daylight hours together, then the median over males), and a maximally swollen
+  female's copulations per daylight hour by the adult males in her party (0, 1–2, 3–4, 5–6, ≥ 7; the party at the
+  previous tick's end), the form in which party size enters field copulation rates. Simulation code unchanged
+  (`scratchpad/e4o/frozen-d0b`, the commit that adds this entry); outputs `D{0,1,2,3}b-{48,7}.json`.
