@@ -3240,3 +3240,195 @@ slightly (T-PTY-1 4.51 against 4.04).
 replaces S25 as the best integrated candidate**: the walking speed is set by the body (`walkGait`) instead of a fixed
 `walkMps`, and the extra walking pays for itself in food. The open cost is the pre-dawn departure share (T-FOOD-10),
 off target on S25 too (0.556).
+
+## S28q, a quick check of re-decision on S27 (registered 4 October 2026 before its run)
+
+**S28q = S27 + E3d's `redecideValue` 2** (a fresh choice when a need changes level or the light changes phase; removes
+`rgMaxAgeH` and `continueBonus`: 42 → 40). S18 passed alone on S17; S20 (with `huntPursuit`) was not adopted, and its
+verdict asked that S18's costs (rest below its band; females' and young infants' reserves) get their own stage first.
+**Reading to test, not assume:** those costs came from re-drawn choices under the fitted choice temperature (E3d's open
+problem: the noise picked feeding options the animal could rank by rate), which `choiceBelief` removed in S21; on S27 the
+re-decisions would then cost little. **Run:** quick mode (seeds 48 and 7, 30 + 30 days) plus energy-diagnose, from
+bench-run3 at 28d249e (code identical to track-e for these switches), judged with judge_vs_reps.py against the S27 quick
+group (S27q, S27q1–S27q3 by `rngSalt` 1, 2, 3); night safety from rhythm-metrics (seeds 48 and 7, 30 + 30).
+
+**Predictions (against the S27q group).** 40 prescriptions (high). Viability and night safety pass (moderate). Sums inside
+noise, with and without the rare rows (moderate). Rest (T-ACT-4) inside its band, 0.30–0.47 (low: S18 put it below).
+Fruit share (T-FOOD-2) within the group's spread (moderate). Nursing mothers', juveniles' and young infants' reserves
+within 0.03 %/day of the group's mean (low).
+
+**Decision rule.** If the sums are inside noise, viability and night safety pass and rest stays in its band, a 5-seed
+confirm (S28) is registered next; otherwise the costs go to a stage of their own, and `redecideValue` stays off the stack.
+
+## S27q-noCM, an ablation of `crownMove` on S27 (registered 4 October 2026 before its run)
+
+**S27q-noCM = S27 without `crownMove`** (= S25 + `walkGait`), quick mode (seeds 48 and 7, 30 + 30 days) plus
+energy-diagnose, from bench-run3 at 28d249e, against the S27 quick group. **Question:** "S26 and S27 results" left open
+whether `crownMove` or S25's `huntDrive` is why the body-set walk holds on S27 where S24 failed. If removing `crownMove`
+alone brings back S24's cost, `crownMove` is why. **Predictions (against the S27q group).** 41 prescriptions (`crownMove` is
+a correction; high). Climbing cost per class higher by 10–25% (moderate; S26 cut it 7–25%). Reserves: males', juveniles'
+and nursing mothers' within the group's spread or lower by up to 0.03 %/day (low: S27's intake rose with its spending,
+and climbing is a small share of the walk's cost). Sums inside noise (moderate). This is an ablation for attribution,
+not a candidate: nothing is adopted from it.
+
+### S28q and S27q-noCM results (bench-run3 28d249e, all clean; judged against the four S27q runs; printed by judge_s27q.py and night.py from the JSON)
+
+No deaths in either arm.
+
+```
+bench reference runs: ['S27q', 'S27q1', 'S27q2', 'S27q3']; energy reference runs: ['S27q', 'S27q1', 'S27q2', 'S27q3']; arms: ['S28q', 'S27q-noCM']
+  S27q: 28d249e dirty 0 prescriptions 42
+  S27q1: 28d249e dirty 0 prescriptions 42
+  S27q2: 28d249e dirty 0 prescriptions 42
+  S27q3: 28d249e dirty 0 prescriptions 42
+  S28q: 28d249e dirty 0 prescriptions 40
+  S27q-noCM: 28d249e dirty 0 prescriptions 42
+
+quick, reference custom (4 runs), rows counted in all runs: fitted 16, held-out 12
+  fitted             (16 rows) ref 1.50, 2.68, 1.04, 2.26 (mean 1.87, sd 0.74; used 0.74) | S28q.json: 2.61, Δ +0.74, z +0.9 (inside noise) | S27q-noCM.json: 1.12, Δ -0.75, z -0.9 (inside noise)
+  held-out           (12 rows) ref 4.27, 4.04, 3.73, 3.22 (mean 3.82, sd 0.46; used 1.26) | S28q.json: 3.21, Δ -0.60, z -0.4 (inside noise) | S27q-noCM.json: 5.07, Δ +1.25, z +0.9 (inside noise)
+  held-out w/o rare  (11 rows) ref 3.45, 4.04, 3.73, 3.22 (mean 3.61, sd 0.36; used 0.48) | S28q.json: 2.91, Δ -0.69, z -1.3 (inside noise) | S27q-noCM.json: 3.99, Δ +0.39, z +0.7 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-COM-8   fitted   ref 0.11±0.02 | S28q.json 0.31 (fail) | S27q-noCM.json 0.08 (fail)
+   T-HUN-4   held-out ref 0.21±0.41 | S28q.json 0.30 (fail) | S27q-noCM.json 1.07 (fail)
+   T-RNG-5   held-out ref 1.34±0.33 | S28q.json 0.40 (fail) | S27q-noCM.json 1.38 (fail)
+
+held-out without T-HUN-4, T-BRD-1 and T-IGE-3 (11 rows): S27q 3.45 / 4.04 / 3.73 / 3.22 (mean 3.61, sd 0.36; used 0.48); S28q 2.91 (z -1.3); S27q-noCM 3.99 (z +0.7)
+Sensitivity, not the registered test: held-out without T-HUN-4, T-BRD-1, T-IGE-3 and T-RNG-5 (10 rows): S27q 2.44 / 2.51 / 2.62 / 1.52 (mean 2.27, sd 0.51; used 0.51); S28q 2.52 (z +0.4); S27q-noCM 2.62 (z +0.6)
+T-RNG-5 distance by run (S27q group, then arms): [1.01, 1.53, 1.11, 1.7, 0.4, 1.38]
+T-IGE-3 distance by run: [None, None, None, None, None, None]
+
+| Reserves ÷ store, % per day (OLS) | S27q runs | S27q mean ± SD | S28q | S27q-noCM |
+| --- | --- | --- | --- | --- |
+| adult male | -0.002 / +0.007 / +0.001 / +0.003 | +0.002 ± 0.004 | +0.003 (z +0.2) | +0.002 (z -0.1) |
+| female, other | -0.017 / +0.008 / -0.007 / +0.038 | +0.006 ± 0.024 | -0.054 (z -2.2) | +0.005 (z -0.0) |
+| female, lactating | +0.005 / -0.008 / -0.005 / +0.006 | -0.000 ± 0.007 | -0.036 (z -4.6) | +0.004 (z +0.6) |
+| juvenile 5–12 y | -0.015 / -0.016 / -0.019 / -0.059 | -0.027 ± 0.021 | -0.086 (z -2.5) | +0.016 (z +1.8) |
+| infant 2–5 y | +0.007 / -0.036 / -0.016 / +0.001 | -0.011 ± 0.019 | -0.016 (z -0.2) | +0.002 (z +0.6) |
+| infant 0.5–2 y | +0.012 / +0.011 / +0.006 / +0.007 | +0.009 ± 0.003 | -0.051 (z -16.6) | +0.008 (z -0.2) |
+| infant < 0.5 y | +0.000 / +0.000 / +0.000 / +0.000 | +0.000 ± 0.000 | +0.000 (z +nan) | +0.000 (z +nan) |
+
+| Growth, kg/y (unweaned infants) | S27q runs | S27q mean ± SD | S28q | S27q-noCM |
+| --- | --- | --- | --- | --- |
+| 0.5–1 y | 2.73 / 2.72 / 2.70 / 2.72 | 2.72 ± 0.01 | 2.62 (z -6.9) | 2.71 (z -0.5) |
+| 1–2 y | 3.48 / 3.45 / 3.47 / 3.48 | 3.47 ± 0.01 | 3.43 (z -2.5) | 3.47 (z +0.0) |
+| 2–3 y | 3.53 / 3.53 / 3.52 / 3.53 | 3.53 ± 0.00 | 3.45 (z -13.9) | 3.52 (z -1.3) |
+| 3–4 y | 3.47 / 3.48 / 3.49 / 3.48 | 3.48 ± 0.01 | 3.46 (z -2.2) | 3.45 (z -3.3) |
+
+| Milk drunk, kcal per infant-day | S27q runs | S27q mean ± SD | S28q | S27q-noCM |
+| --- | --- | --- | --- | --- |
+| 0.5–1 y | 284 / 284 / 282 / 281 | 283 ± 2 | 272 (z -5.8) | 281 (z -0.7) |
+| 1–2 y | 280 / 275 / 286 / 278 | 280 ± 5 | 259 (z -3.9) | 277 (z -0.5) |
+| 2–3 y | 289 / 283 / 291 / 294 | 289 ± 5 | 242 (z -9.3) | 271 (z -3.6) |
+| 3–4 y | 237 / 248 / 245 / 256 | 246 ± 8 | 220 (z -2.9) | 232 (z -1.6) |
+
+| Mothers' balance, kcal/day by infant age | S27q runs | S27q mean ± SD | S28q | S27q-noCM |
+| --- | --- | --- | --- | --- |
+| 0.5–1 y | +11 / +3 / +17 / +4 | +9 ± 7 | -46 (z -7.4) | +15 (z +0.9) |
+| 1–2 y | -12 / +9 / -6 / +6 | -1 ± 10 | +2 (z +0.3) | +1 (z +0.2) |
+| 2–3 y | -2 / -4 / +1 / +2 | -1 ± 3 | -1 (z -0.1) | +11 (z +4.1) |
+| 3–4 y | -6 / -18 / -4 / +1 | -7 ± 8 | -16 (z -1.1) | -11 (z -0.5) |
+
+| Ground km / eating min / fruit share | S27q runs | S27q mean ± SD | S28q | S27q-noCM |
+| --- | --- | --- | --- | --- |
+| adult male: groundKm | 2.87 / 2.98 / 2.86 / 2.53 | 2.81 ± 0.19 | 4.02 (z +5.5) | 2.70 (z -0.5) |
+| adult male: eatingMin | 233.50 / 234.82 / 233.74 / 230.72 | 233.19 ± 1.75 | 242.40 (z +4.7) | 234.03 (z +0.4) |
+| adult male: fruitShare | 0.91 / 0.90 / 0.91 / 0.91 | 0.91 ± 0.00 | 0.93 (z +4.6) | 0.91 (z +1.5) |
+| female, other: groundKm | 2.01 / 2.05 / 2.24 / 1.99 | 2.08 ± 0.12 | 3.09 (z +7.8) | 2.01 (z -0.5) |
+| female, other: eatingMin | 232.78 / 221.89 / 233.42 / 234.87 | 230.74 ± 5.97 | 244.45 (z +2.1) | 239.35 (z +1.3) |
+| female, other: fruitShare | 0.66 / 0.71 / 0.66 / 0.67 | 0.68 ± 0.03 | 0.66 (z -0.7) | 0.63 (z -1.7) |
+| female, lactating: groundKm | 2.44 / 2.45 / 2.57 / 2.46 | 2.48 ± 0.06 | 3.66 (z +17.9) | 2.54 (z +0.9) |
+| female, lactating: eatingMin | 310.16 / 313.31 / 316.04 / 313.31 | 313.20 ± 2.41 | 330.97 (z +6.6) | 320.76 (z +2.8) |
+| female, lactating: fruitShare | 0.64 / 0.62 / 0.63 / 0.64 | 0.63 ± 0.01 | 0.63 (z -0.2) | 0.61 (z -2.1) |
+| juvenile 5–12 y: groundKm | 2.75 / 2.88 / 2.96 / 2.74 | 2.83 ± 0.11 | 3.87 (z +8.6) | 2.86 (z +0.2) |
+| juvenile 5–12 y: eatingMin | 281.27 / 280.49 / 283.56 / 297.76 | 285.77 ± 8.10 | 294.18 (z +0.9) | 292.37 (z +0.7) |
+| juvenile 5–12 y: fruitShare | 0.89 / 0.90 / 0.88 / 0.82 | 0.87 ± 0.04 | 0.88 (z +0.2) | 0.89 (z +0.5) |
+
+| Row (pooled) | Band | S27q runs | S27q mean ± SD | S28q | S27q-noCM |
+| --- | --- | --- | --- | --- | --- |
+| T-ACT-1 | 0.33–0.5 | 0.378 / 0.377 / 0.378 / 0.368 | 0.375 ± 0.005 | 0.406 | 0.387 |
+| T-ACT-2 | 0.12–0.25 | 0.116 / 0.121 / 0.125 / 0.103 | 0.116 ± 0.009 | 0.158 | 0.108 |
+| T-ACT-3 | 0.08–0.18 | 0.099 / 0.088 / 0.102 / 0.104 | 0.098 ± 0.007 | 0.090 | 0.105 |
+| T-ACT-4 | 0.3–0.47 | 0.418 / 0.406 / 0.410 / 0.450 | 0.421 ± 0.020 | 0.412 | 0.397 |
+| T-PTY-1 | 3–9 | 4.781 / 4.630 / 4.487 / 4.448 | 4.586 ± 0.151 | 4.944 | 4.848 |
+| T-RNG-4 | 1.5–3.5 | 2.424 / 2.179 / 2.519 / 1.934 | 2.264 ± 0.262 | 3.558 | 2.235 |
+| T-HUN-1 | 5–25 | 13.886 / 45.625 / 22.182 / 22.182 | 25.969 ± 13.675 | 49.863 | 15.870 |
+| T-HUN-2 | 0.5–0.8 | 0.667 / 0.737 / 0.364 / 0.700 | 0.617 ± 0.171 | 0.562 | 0.667 |
+| T-HUN-3 | 0.05–0.4 | 0.057 / 0.080 / 0.078 / 0.057 | 0.068 ± 0.013 | 0.069 | 0.070 |
+| T-FOOD-2 | 0.6–0.78 | 0.819 / 0.766 / 0.818 / 0.830 | 0.808 ± 0.029 | 0.820 | 0.794 |
+| T-FOOD-4 | 4–15 | 9.426 / 9.249 / 8.891 / 9.682 | 9.312 ± 0.332 | 13.965 | 9.214 |
+| T-FOOD-6 | 2–7 | 4.072 / 3.871 / 4.115 / 3.719 | 3.944 ± 0.184 | 3.663 | 4.381 |
+| T-FOOD-10 | 0.08–0.3 | 0.599 / 0.643 / 0.607 / 0.503 | 0.588 ± 0.060 | 0.599 | 0.613 |
+| T-HUN-7 | 1.2–2 | 1.000 / 1.000 / 1.000 / 1.000 | 1.000 ± 0.000 | 1.000 | 1.000 |
+| T-IGE-1 | 5–12 | 9.167 / 3.010 / 10.398 / 0.000 | 5.644 ± 4.960 | 19.279 | 6.101 |
+| T-PAT-1 | 0.1–0.5 | 0.038 / 0.114 / 0.153 / 0.039 | 0.086 ± 0.057 | 0.115 | 0.000 |
+| T-PAT-6 | 0.4–0.7 | 0.250 / 0.667 / 0.875 / 0.250 | 0.510 ± 0.312 | 0.375 | 0.000 |
+| T-PAT-7 | 0.15–0.45 | 0.000 / 0.000 / 0.250 / 0.000 | 0.062 ± 0.125 | 0.000 | — |
+| T-SOC-3 | 0.45–0.8 | 0.535 / 0.646 / 0.410 / 0.612 | 0.551 ± 0.105 | 0.782 | 0.428 |
+| T-SOC-5 | 0.2–0.7 | 0.521 / 0.558 / 0.332 / 0.358 | 0.442 ± 0.114 | 0.443 | 0.534 |
+| T-SOC-9 | 0.08–0.22 | 0.180 / 0.043 / 0.132 / 0.342 | 0.174 ± 0.125 | 0.119 | 0.205 |
+S27q T-ACT-2 by sex: {'male': 0.125, 'female': 0.109}; T-ACT-3 by sex: {'male': 0.127, 'female': 0.074}
+S27q1 T-ACT-2 by sex: {'male': 0.136, 'female': 0.109}; T-ACT-3 by sex: {'male': 0.123, 'female': 0.06}
+S27q2 T-ACT-2 by sex: {'male': 0.137, 'female': 0.114}; T-ACT-3 by sex: {'male': 0.123, 'female': 0.084}
+S27q3 T-ACT-2 by sex: {'male': 0.106, 'female': 0.1}; T-ACT-3 by sex: {'male': 0.149, 'female': 0.069}
+S28q T-ACT-2 by sex: {'male': 0.177, 'female': 0.141}; T-ACT-3 by sex: {'male': 0.123, 'female': 0.062}
+S27q-noCM T-ACT-2 by sex: {'male': 0.12, 'female': 0.098}; T-ACT-3 by sex: {'male': 0.148, 'female': 0.069}
+
+True ground path, nursing mothers ÷ adult males (energy-diagnose; reported, not the test):
+  S27q: 2.44 ÷ 2.87 = 0.848
+  S27q1: 2.45 ÷ 2.98 = 0.821
+  S27q2: 2.57 ÷ 2.86 = 0.898
+  S27q3: 2.46 ÷ 2.53 = 0.972
+  S28q: 3.66 ÷ 4.02 = 0.911
+  S27q-noCM: 2.54 ÷ 2.70 = 0.940
+
+Climbing cost, kcal/day (energy-diagnose; linear in metres climbed at a class's mass)
+| class | S27q mean ± SD | S28q | S27q-noCM |
+| --- | --- | --- | --- |
+| adult male | 59.0 ± 2.4 | 96.2 (+63%) | 65.7 (+11%) |
+| female, other | 34.2 ± 2.0 | 56.9 (+67%) | 39.7 (+16%) |
+| female, pregnant | 32.4 ± 1.6 | 50.2 (+55%) | 39.0 (+20%) |
+| female, lactating | 37.5 ± 1.2 | 56.8 (+52%) | 42.1 (+12%) |
+| lact: infant 0.5–2 y | 39.2 ± 1.0 | 58.9 (+50%) | 44.8 (+14%) |
+| lact: infant ≥ 2 y | 35.8 ± 2.6 | 54.7 (+53%) | 39.4 (+10%) |
+| juvenile 5–12 y | 41.5 ± 1.8 | 56.5 (+36%) | 52.5 (+26%) |
+| infant 2–5 y | 13.3 ± 0.9 | 17.7 (+34%) | 15.8 (+19%) |
+| infant 0.5–2 y | 5.9 ± 0.3 | 7.3 (+25%) | 7.6 (+29%) |
+
+/Users/juanbermudez/Desktop/MGOGO/.claude/worktrees/bench-run3/artifacts/validation/e/s27q/S28q-rhythm.json: adults out of a nest 2.26% of night; T-RHY-5 0.0194; night deaths 0; deaths 0
+```
+
+**S28q against the predictions.** 40 prescriptions: held. Viability and night safety (2.26%, 0.0194): held. Sums inside
+noise: held (fitted z +0.9, held-out −0.4, without the rare rows −1.3). Rest inside its band: held (T-ACT-4 0.412). Fruit
+share within the group's spread: held (T-FOOD-2 0.820 against 0.808 ± 0.029). Nursing mothers', juveniles' and young
+infants' reserves within 0.03 %/day of the group's mean: **missed** (−0.036 against −0.000; −0.086 against −0.027; −0.051
+against +0.009; other females −0.054 against +0.006).
+
+**The registered reading is not supported.** With the choice noise gone, re-deciding still adds walking (adult males
+2.81 → 4.02 km a day, nursing mothers 2.48 → 3.66), climbing (+25% to +67% by class) and feeding time (nursing mothers
+313 → 331 min), and lowers the reserves above. Other rows move with it: T-RNG-4 3.56 (band top 3.5), T-FOOD-4 14.0 against
+9.3 ± 0.3, T-HUN-1 49.9 (group 26.0 ± 13.7; band 5–25), T-IGE-1 19.3 (group 5.6 ± 5.0; band 5–12).
+
+**Decision (the registered rule).** The sums are inside noise, viability and night safety pass and rest stays in its
+band, so the 5-seed confirm S28 is registered next. The energy cost is reported with it, as S13's and S16's were; the
+keep rule decides.
+
+**S27q-noCM against the predictions.** 41 prescriptions: **missed, a counting slip in the registration** (42: `crownMove`
+is a correction and removes nothing, so S27 without it is S25 + `walkGait`, 43 − 1). Climbing cost 10–25% higher: held
+for 7 of 9 classes (+10% to +20%; juveniles +26%, infants 0.5–2 y +29%). Reserves within the group's spread or lower by
+up to 0.03 %/day: held (every class inside its spread). Sums inside noise: held (fitted z −0.9, held-out +0.9, without the
+rare rows +0.7). **Reading:** removing `crownMove` does not bring back S24's cost on S27, so `crownMove` is not why the
+body-set walk holds here (moderate confidence: 2 seeds, 30 days). What differs from S24 is S25's `huntDrive` and the
+reference (S24 was judged against S21's group); not separated further.
+
+## S28 confirm (registered 4 October 2026 before its run)
+
+**S28 = S27 + E3d's `redecideValue` 2** (40 prescriptions). **Reference group:** S27 in confirm mode (28d249e, `s26/S27`)
+plus three re-draws by `rngSalt` 1, 2, 3 (S27c1–S27c3, `s28/`), all from bench-run3 at 28d249e. Keep rule: standard
+(prescriptions fall, 42 → 40); rare rows per amendment 3; night safe. Bench, energy-diagnose and rhythm-metrics, 5 seeds,
+30 + 60 days; judged with `integrator/judge_s27group.py`.
+
+**Predictions (against the S27 group; moderate confidence unless stated).** 40 prescriptions (high). Viability and night
+safety pass. Sums inside noise (low: the quick run's held-out without the rare rows was better, z −1.3). Adult males walk
+3.6–4.6 km a day (S27 3.26). Adults' climbing cost up by 25% or more. Nursing mothers', juveniles' and infants' 0.5–2 y
+reserves lower than the group's mean by more than its SD. T-RNG-4 above 3.0. Rest (T-ACT-4) inside its band.

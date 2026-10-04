@@ -14,8 +14,15 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 13:20; deploy held by the user).** No agents, no runs. Next: the decision guide and hosted
-  copy move to S27 (`STACK = STACKS.S27`, then `--hosted`); bench-run3 (28d249e) holds the S26 and S27 runs.
+- **Running now (4 October 13:40; deploy held by the user).** Agents: **E3f** (`e3f-crop-energy`: what a crown holds,
+  `fruitIntakePerH`), **E5f** (`e5f-departing`: `departRetryMin`, `departPersistMaxMin`), **E4o** (`e4o-small-rules`:
+  `meatEatPerH`, `guardMaxAgeY`, `mateIntervalH`), all from track-e eea2d85, judged against the S27 quick group
+  (bench-run3 28d249e, `artifacts/validation/e/s27q/`; told it is ready). Integrator: **S28 confirm** (S27 +
+  `redecideValue` 2, 40; registered c31f285) and its reference re-draws S27c1–S27c3 (`integrator/conf28.sh`,
+  `conf28-group.sh`; outputs `bench-run3/artifacts/validation/e/s28/`; judge `integrator/judge_s27group.py`). S28q
+  passed the quick bar but re-deciding adds walking (males 2.8 → 4.0 km), climbing (+25–67%) and lowers mothers',
+  juveniles' and young infants' reserves. S27q-noCM: `crownMove` is not why walkGait holds on S27. Guide and hosted
+  copy on S27 (site 4f19ace, built and checked, not deployed).
 - **S27 is the best integrated candidate (42)** (e-stack2-confirm.md "S26 and S27 results"; S25 + `crownMove` 1 +
   `walkGait` 1): every sum inside noise against S25's four runs, viable, night safe (2.48%); `walkMps` out of use; the
   longer walks (males 3.26 km) pay for themselves in food (males +48 kcal in, +47 out), so reserves hold; T-ACT-2 0.132
