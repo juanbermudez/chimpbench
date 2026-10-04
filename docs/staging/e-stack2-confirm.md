@@ -1903,3 +1903,124 @@ moved to this commit.
 **Predictions (against the S17 group; moderate confidence unless stated).** Prescriptions 46 (high); viability and night
 safety pass; T-HUN-1 lower than S17's but inside its band (10–20); T-HUN-2 0.4–0.6 (low); T-HUN-7 1.0, below its band;
 juveniles' reserves lower than S17's (low: the quick run's z −4.9 was untested); fitted and held-out inside noise.
+
+### S18 results (bench-run3 0044bfe for S18, bench-run2 37f04e8 for the S17 group, all clean; printed by judge_s17group.py and night.py from the JSON)
+
+One S17 re-draw (S17c1) scored T-IGE-3 at 24.7, so the group's held-out spread is wide; the sums without T-IGE-3 as well
+are tight (4.52–4.60) and are the informative test here.
+
+```
+bench reference runs: ['S17', 'S17c1', 'S17c2', 'S17c3']; energy reference runs: ['S17', 'S17c1', 'S17c2', 'S17c3']; arms: ['S18']
+  S17: 37f04e8 dirty 0 prescriptions 49
+  S17c1: 37f04e8 dirty 0 prescriptions 49
+  S17c2: 37f04e8 dirty 0 prescriptions 49
+  S17c3: 37f04e8 dirty 0 prescriptions 49
+  S18: 0044bfe dirty 0 prescriptions 47
+
+confirm, reference custom (4 runs), rows counted in all runs: fitted 17, held-out 15
+  fitted             (17 rows) ref 1.08, 2.20, 2.84, 2.65 (mean 2.19, sd 0.79; used 0.79) | S18.json: 2.55, Δ +0.36, z +0.4 (inside noise)
+  held-out           (15 rows) ref 6.34, 29.45, 5.63, 5.83 (mean 11.81, sd 11.76; used 11.76) | S18.json: 7.96, Δ -3.86, z -0.3 (inside noise)
+  held-out w/o rare  (13 rows) ref 4.97, 29.26, 5.52, 5.22 (mean 11.24, sd 12.01; used 12.01) | S18.json: 5.90, Δ -5.34, z -0.4 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-BRD-1   held-out ref 0.57±0.58 | S18.json 2.05 (fail)
+   T-HUN-4   held-out ref 0.00±0.00 | S18.json 0.00 (inconclusive)
+
+held-out without T-HUN-4, T-BRD-1 and T-IGE-3 (12 rows): S17 4.52 / 4.59 / 4.60 / 4.53 (mean 4.56, sd 0.04; used 0.21); S18 4.62 (z +0.3)
+Sensitivity, not the registered test: held-out without T-HUN-4, T-BRD-1, T-IGE-3 and T-RNG-5 (11 rows): S17 3.70 / 3.50 / 3.59 / 3.54 (mean 3.58, sd 0.09; used 0.21); S18 3.57 (z -0.1)
+T-RNG-5 distance by run (S17 group, then arms): [0.81, 1.1, 1.0, 0.99, 1.05]
+T-IGE-3 distance by run: [0.45, 24.66, 0.93, 0.69, 1.28]
+
+| Reserves ÷ store, % per day (OLS) | S17 runs | S17 mean ± SD | S18 |
+| --- | --- | --- | --- |
+| adult male | -0.035 / -0.039 / -0.039 / -0.038 | -0.038 ± 0.002 | -0.024 (z +6.3) |
+| female, other | -0.047 / -0.052 / -0.049 / -0.033 | -0.045 ± 0.008 | -0.078 (z -3.6) |
+| female, lactating | -0.059 / -0.072 / -0.062 / -0.059 | -0.063 ± 0.006 | -0.086 (z -3.4) |
+| juvenile 5–12 y | -0.069 / -0.082 / -0.100 / -0.068 | -0.080 ± 0.015 | -0.083 (z -0.2) |
+| infant 2–5 y | -0.050 / -0.056 / -0.042 / -0.050 | -0.049 ± 0.006 | -0.050 (z -0.2) |
+| infant 0.5–2 y | -0.075 / -0.099 / -0.095 / -0.078 | -0.087 ± 0.012 | -0.151 (z -4.8) |
+| infant < 0.5 y | +0.000 / +0.000 / +0.000 / +0.000 | +0.000 ± 0.000 | +0.000 (z +nan) |
+
+| Growth, kg/y (unweaned infants) | S17 runs | S17 mean ± SD | S18 |
+| --- | --- | --- | --- |
+| 0.5–1 y | 2.79 / 2.77 / 2.75 / 2.78 | 2.77 ± 0.02 | 2.68 (z -4.8) |
+| 1–2 y | 3.45 / 3.44 / 3.46 / 3.46 | 3.45 ± 0.01 | 3.40 (z -4.9) |
+| 2–3 y | 3.48 / 3.47 / 3.49 / 3.47 | 3.48 ± 0.01 | 3.47 (z -0.7) |
+| 3–4 y | 3.47 / 3.47 / 3.47 / 3.49 | 3.48 ± 0.01 | 3.47 (z -0.4) |
+
+| Milk drunk, kcal per infant-day | S17 runs | S17 mean ± SD | S18 |
+| --- | --- | --- | --- |
+| 0.5–1 y | 277 / 277 / 275 / 278 | 277 ± 1 | 272 (z -3.7) |
+| 1–2 y | 281 / 269 / 278 / 279 | 277 ± 5 | 266 (z -1.7) |
+| 2–3 y | 250 / 244 / 254 / 244 | 248 ± 5 | 253 (z +0.9) |
+| 3–4 y | 235 / 236 / 238 / 252 | 240 ± 8 | 242 (z +0.2) |
+
+| Mothers' balance, kcal/day by infant age | S17 runs | S17 mean ± SD | S18 |
+| --- | --- | --- | --- |
+| 0.5–1 y | -36 / -39 / -45 / -33 | -38 ± 5 | -63 (z -4.4) |
+| 1–2 y | -37 / -57 / -33 / -41 | -42 ± 10 | -53 (z -0.9) |
+| 2–3 y | -38 / -32 / -30 / -33 | -33 ± 3 | -25 (z +2.5) |
+| 3–4 y | -21 / -30 / -27 / -19 | -24 ± 5 | -22 (z +0.3) |
+
+| Ground km / eating min / fruit share | S17 runs | S17 mean ± SD | S18 |
+| --- | --- | --- | --- |
+| adult male: groundKm | 2.69 / 2.77 / 2.84 / 2.80 | 2.78 ± 0.06 | 2.75 (z -0.4) |
+| adult male: eatingMin | 254.53 / 253.82 / 259.05 / 256.02 | 255.85 ± 2.32 | 274.51 (z +7.2) |
+| adult male: fruitShare | 0.76 / 0.77 / 0.75 / 0.76 | 0.76 ± 0.01 | 0.69 (z -8.9) |
+| female, other: groundKm | 2.02 / 2.11 / 2.24 / 2.12 | 2.12 ± 0.09 | 2.20 (z +0.8) |
+| female, other: eatingMin | 267.90 / 267.88 / 273.97 / 267.54 | 269.32 ± 3.10 | 332.28 (z +18.1) |
+| female, other: fruitShare | 0.52 / 0.52 / 0.51 / 0.52 | 0.52 ± 0.01 | 0.41 (z -12.0) |
+| female, lactating: groundKm | 2.50 / 2.62 / 2.53 / 2.50 | 2.54 ± 0.06 | 2.53 (z -0.2) |
+| female, lactating: eatingMin | 313.77 / 314.57 / 315.87 / 314.21 | 314.60 ± 0.90 | 356.31 (z +41.3) |
+| female, lactating: fruitShare | 0.63 / 0.63 / 0.64 / 0.63 | 0.63 ± 0.00 | 0.54 (z -28.6) |
+| juvenile 5–12 y: groundKm | 2.47 / 2.59 / 2.62 / 2.56 | 2.56 ± 0.06 | 2.62 (z +0.8) |
+| juvenile 5–12 y: eatingMin | 283.95 / 286.44 / 288.86 / 282.95 | 285.55 ± 2.65 | 296.88 (z +3.8) |
+| juvenile 5–12 y: fruitShare | 0.80 / 0.82 / 0.79 / 0.81 | 0.81 ± 0.01 | 0.77 (z -3.1) |
+
+| Row (pooled) | Band | S17 runs | S17 mean ± SD | S18 |
+| --- | --- | --- | --- | --- |
+| T-ACT-1 | 0.33–0.5 | 0.404 / 0.396 / 0.401 / 0.395 | 0.399 ± 0.004 | 0.449 |
+| T-ACT-2 | 0.12–0.25 | 0.216 / 0.232 / 0.230 / 0.229 | 0.227 ± 0.007 | 0.231 |
+| T-ACT-3 | 0.08–0.18 | 0.085 / 0.086 / 0.084 / 0.086 | 0.085 ± 0.001 | 0.077 |
+| T-ACT-4 | 0.3–0.47 | 0.334 / 0.323 / 0.330 / 0.321 | 0.327 ± 0.006 | 0.288 |
+| T-PTY-1 | 3–9 | 3.930 / 4.130 / 3.972 / 4.007 | 4.010 ± 0.086 | 4.045 |
+| T-RNG-4 | 1.5–3.5 | 2.549 / 2.543 / 2.478 / 2.613 | 2.546 ± 0.055 | 2.479 |
+| T-HUN-1 | 5–25 | 24.226 / 30.182 / 20.121 / 32.159 | 26.672 ± 5.517 | 32.194 |
+| T-HUN-2 | 0.5–0.8 | 0.347 / 0.246 / 0.191 / 0.243 | 0.257 ± 0.065 | 0.189 |
+| T-HUN-3 | 0.05–0.4 | 0.042 / 0.051 / 0.054 / 0.040 | 0.047 ± 0.007 | 0.072 |
+| T-FOOD-2 | 0.6–0.78 | 0.674 / 0.683 / 0.698 / 0.685 | 0.685 ± 0.010 | 0.611 |
+| T-FOOD-4 | 4–15 | 8.515 / 8.581 / 8.706 / 8.410 | 8.553 ± 0.124 | 8.460 |
+| T-FOOD-6 | 2–7 | 5.147 / 4.815 / 4.991 / 4.882 | 4.959 ± 0.145 | 4.990 |
+| T-FOOD-10 | 0.08–0.3 | 0.813 / 0.804 / 0.837 / 0.798 | 0.813 ± 0.017 | 0.825 |
+| T-HUN-7 | 1.2–2 | 1.353 / 1.375 / 1.308 / 1.294 | 1.332 ± 0.038 | 1.471 |
+| T-IGE-1 | 5–12 | 13.153 / 13.964 / 18.955 / 14.387 | 15.115 ± 2.611 | 14.478 |
+| T-IGE-2 | 0.7–0.9 | 1.000 / 0.985 / 0.962 / 0.980 | 0.982 ± 0.016 | 0.981 |
+| T-PAT-1 | 0.1–0.5 | 0.154 / 0.177 / 0.146 / 0.146 | 0.156 ± 0.015 | 0.200 |
+| T-PAT-6 | 0.4–0.7 | 0.419 / 0.618 / 0.422 / 0.561 | 0.505 ± 0.100 | 0.429 |
+| T-PAT-7 | 0.15–0.45 | 0.000 / 0.000 / 0.000 / 0.000 | 0.000 ± 0.000 | 0.038 |
+| T-SOC-5 | 0.2–0.7 | 0.490 / 0.600 / 0.643 / 0.542 | 0.569 ± 0.067 | 0.615 |
+| T-SOC-9 | 0.08–0.22 | 0.121 / 0.114 / 0.101 / 0.065 | 0.100 ± 0.025 | 0.114 |
+S17 T-ACT-2 by sex: {'male': 0.249, 'female': 0.188}; T-ACT-3 by sex: {'male': 0.101, 'female': 0.073}
+S17c1 T-ACT-2 by sex: {'male': 0.257, 'female': 0.212}; T-ACT-3 by sex: {'male': 0.109, 'female': 0.067}
+S17c2 T-ACT-2 by sex: {'male': 0.249, 'female': 0.214}; T-ACT-3 by sex: {'male': 0.107, 'female': 0.065}
+S17c3 T-ACT-2 by sex: {'male': 0.257, 'female': 0.206}; T-ACT-3 by sex: {'male': 0.106, 'female': 0.069}
+S18 T-ACT-2 by sex: {'male': 0.252, 'female': 0.214}; T-ACT-3 by sex: {'male': 0.102, 'female': 0.056}
+
+True ground path, nursing mothers ÷ adult males (energy-diagnose; reported, not the test):
+  S17: 2.50 ÷ 2.69 = 0.929
+  S17c1: 2.62 ÷ 2.77 = 0.948
+  S17c2: 2.53 ÷ 2.84 = 0.888
+  S17c3: 2.50 ÷ 2.80 = 0.892
+  S18: 2.53 ÷ 2.75 = 0.919
+/Users/juanbermudez/Desktop/MGOGO/.claude/worktrees/bench-run3/artifacts/validation/e/s18/S18-rhythm5.json: adults out of a nest 2.57% of night; T-RHY-5 0.0272; night deaths 1; deaths 1
+```
+
+**Against the predictions.** Prescriptions 47: held. Viability (one death, not starvation) and night (2.57%, 0.0272):
+held. T-ACT-1 0.42–0.46: held (0.449). T-ACT-2 0.20–0.24: held (0.231). T-ACT-4 in band: **missed** (0.288, below the
+band's floor 0.30). T-FOOD-2 0.63–0.68: missed low (0.611, inside its band). T-RNG-4 2.2–2.5: held (2.48). Nursing
+mothers 0.02–0.04 %/day lower: held (−0.063 → −0.086). T-HUN-1 above its band: held (32.2). Fitted and held-out inside
+noise: held (z +0.4; −0.3; −0.4; +0.3 without T-IGE-3 as well). Not predicted: other females (−0.045 → −0.078) and
+infants 0.5–2 y (−0.087 → −0.151) lower; males better (−0.038 → −0.024).
+
+**Verdict: S18 passes the keep rule** (47 prescriptions: no re-decision clock, no fixed persistence bonus). Costs: rest
+below its band, fruit share near its floor, nursing mothers', other females' and young infants' reserves lower (more
+feeding time with a lower fruit share). Judged with S19 for the next stack.
