@@ -3590,3 +3590,28 @@ Ugandan fruits; the download needs a token or shows a bot check, a person can fe
   urban-forest mosaic landscape in KwaZulu-Natal, South Africa. *African Journal of Ecology* 60(4):1357–1362.
   [doi:10.1111/aje.13017](https://doi.org/10.1111/aje.13017) (OpenAlex record text; bibliographic data from OpenAlex).
 - chapman1992, conklinBrittain1998 and houle2014 are already cited; the entries above add findings.
+
+### Addendum: E5f leaving together (4 October 2026)
+
+Read for stage E5f ([staging/e5f-prereg.md](staging/e5f-prereg.md)): what the moving-together stage's two timers
+(`departRetryMin` 3.8 min, `departPersistMaxMin` 13 min) were copied from, and what the source's numbers count. No input
+value was taken from it.
+
+- **Travel initiations, re-read in full** [gruberZuberbuhler2013] (FT, PMC3783376 via NCBI BioC, 4 October 2026) [M].
+  - Sample: Budongo Sonso (74 individuals); 33 focal animals, "N=15 males, aged 8 to 49; N=18 females, aged 12 to 47";
+    focal follows 07:00–16:00, January–March 2009 and September 2009 – September 2010. Mass and reproductive state not
+    reported (females scored for swelling).
+  - A travel event "began with the termination of a non-locomotion activity, followed by locomotion of at least 10m";
+    the "initiation phase ... typically lasted for about one minute"; recruitment succeeded "if at least one individual
+    followed the initiator". "Typically, recruitment happened almost instantly, so that 'waiting' may be more a
+    consequence of unsuccessful recruitment attempts."
+  - Persistence: of 92 vocal events by individuals recorded more than once on the same day, "18 ... were given by the
+    same individual and during the same travel event (9 different events total) and to the same audience"; in those 9
+    the caller "re-launched his or her efforts shortly thereafter (N=9, mean=3.80 min, range 0–13 min)"; one silent case
+    was also classed as persistence; "low sample size prevented more systematic analyses". The 3.80 min is the interval
+    between two hoo events of one effort: a start-to-start reading.
+  - Not reported: how often a failed initiator left alone, gave up and stayed, or re-launched later than 13 min.
+- **Use in E5f.** The re-launch delays (mean 3.80, 0–13 min, 9 cases) are a target readout, never an input; the direction
+  (an unanswered initiator may re-launch to the same audience) motivates `departValue`, whose magnitudes are existing
+  design terms (E5a's companyValue). gruberZuberbuhler2013 is already cited; the entries above add the sample and the
+  persistence definition. No new keys.

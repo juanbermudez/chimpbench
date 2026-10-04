@@ -57,6 +57,11 @@ export interface ChimpX {
   tryN?: number; trySince?: number; tryAt?: number;
   /** Stage E2e (nestAudience, iteration 2): the finished nest an attempt under way set off from (absent otherwise). */
   tryNest?: { treeId: number; position: number[] };
+  /**
+   * Stage E5f (departValue): the audience an attempt of this animal last went unanswered by (a hash of who was there and
+   * what each was doing, candidates.ts audienceSig); absent otherwise, so worlds with the switch off are unchanged.
+   */
+  dfa?: number;
   /** Stage C13 (rgOn): the rules policy's current intention (absent until the first RG decision, so worlds with the switch off are unchanged). */
   rgIntent?: Intent;
   /** Stage E3d (redecideValue): below rgMinAge, the decision count of the decision that chose the current act (its jitter; rg.ts argmaxKeep). */
@@ -259,7 +264,7 @@ export type SimWorld = World & { sim: SimState };
  * ChimpX and SimState keys that exist only once their mechanism has fired (so worlds with the switch off keep their
  * shape and hashes). The save check (src/persist/envelope.ts worldShapeProblem) ignores them.
  */
-export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'tryNest', 'en', 'wat', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk', 'cx', 'cxc', 'cn', 'asl', 'phAt', 'phX', 'phZ', 'ard', 'wr', 'upk', 'jt', 'nbm', 'jv'];
+export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'tryNest', 'dfa', 'en', 'wat', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk', 'cx', 'cxc', 'cn', 'asl', 'phAt', 'phX', 'phZ', 'ard', 'wr', 'upk', 'jt', 'nbm', 'jv'];
 export const OPTIONAL_SIM: readonly string[] = ['fission', 'stormAt'];
 
 export function newX(): ChimpX {

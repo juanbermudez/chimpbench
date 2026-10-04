@@ -1916,3 +1916,13 @@ figs per tree by branch counts (rajiDowns2022, [L], another region). New keys: w
 Not verified: houleWrangham2021 (metabolizable energy per m³ of crown, drupe and fig trees; publisher bot check), Houle et
 al. 2006, 2007 and 2010, Chapman & Chapman 1996, Tweheyo & Lye 2003, Peters et al. 1988, Conklin & Wrangham 1994, Valenta &
 Nevo 2021 (Dryad fruit masses; a person can download it). No source gives the crop of any non-fig model species.
+
+## Addendum: E5f leaving together (4 October 2026)
+
+Same text as research.md "Addendum: E5f leaving together": gruberZuberbuhler2013 re-read in full (PMC3783376 via NCBI
+BioC): 33 focal animals of the Sonso community (15 males aged 8–49, 18 females aged 12–47), 07:00–16:00 follows; a
+travel event starts when a non-locomotion activity ends and at least 10 m of locomotion follow; the initiation phase
+"typically lasted for about one minute"; recruitment "happened almost instantly"; persistence = 9 vocal events (of 92
+recorded more than once on a day) re-launched to the same audience in the same travel event, mean 3.80 min, range 0–13
+(start to start, between the two hoo events); not reported how often a failed initiator left alone. Use: a target readout
+and a direction, never an input. No new keys.
