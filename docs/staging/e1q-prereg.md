@@ -132,6 +132,16 @@ model: sockol2007's net 3.8 J/kg/m; 49.05 J/kg/m up, descent free); 1.52 / 1.51 
 0.83 m/s and nguessan2009's human rock-climbing climb (≈ 22 J/kg/m net). No combination of sourced costs reaches 10 on
 the model's metres.
 
+### 2.2 Amendment 1 (registered 4 October 2026 after §2.1 was read, before the readout it adds was run on S25 and W)
+
+A third of adults' metres climbed (and three quarters of infants') follow a ground gap of under 10 m. Whether those
+re-climbs return into the crown the animal just left is what a movement rule (moveTo descends for any goal more than 3 m
+away) would decide, so one readout is added to climb-diagnose (header, "Crown of a perch"): each ascent that starts on
+the ground after a descent is classed by the crown it ends in against the crown that descent began in (same crown,
+touching crown, other crown, no crown), with its metres. Smoke-tested on 2 days of S25 (seed 48, burn-in 1 day): fills;
+the classes sum to the ascents from the ground after a descent (12.93 a day for adult males). Run on S25 and W from a
+frozen checkout of the commit that registers it; the earlier outputs are kept beside them.
+
 ## 3. Sources (to be read; addenda "Addendum: E1q climbing" in research.md and e-sources.md)
 
 Per term: metres climbed per day by wild chimpanzees (pontzerWrangham2004's distances: primary closed and a listed dead
