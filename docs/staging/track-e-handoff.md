@@ -14,12 +14,15 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (3 October 23:55; deploy held by the user).** No agents. Integrator: S9's confirm group (S9 +
-  S9c1–S9c3; bench-run 2bcbd33, `integrator/conf10.sh`, outputs `bench-run/artifacts/validation/e/s10/`; S9c2 and S9c3
-  running) judges three arms: **S10** (S9 + `huntValue`; done, bench-run 2bcbd33), **S11** (S9 + `forageRate`; running in
-  `bench-run2` at dd83395, `integrator/conf11.sh`) and **S12** (S9 + `contestAssess`; running in `bench-run3` at
-  ea92d20, `integrator/conf12.sh`). Judge with `integrator/judge_s10.py` (copy it for S11 and S12, pointing ARMS at
-  bench-run2 and bench-run3). Registrations: e-stack2-confirm.md (72e93ae, dd83395, ea92d20).
+- **Running now (4 October 00:30; deploy held by the user).** No agents. Integrator: the **S13** confirm (S9 +
+  `huntValue` + `forageRate` + `contestAssess`, 65 prescriptions; registered 8e25a29) in `bench-run3` at ea92d20
+  (`integrator/conf13.sh`, outputs `bench-run3/artifacts/validation/e/s13/`), judged against S9's confirm group with
+  `integrator/judge_s9group.py` (add S13 to `_ARMS`, run with `ARM=S13`).
+- **S10, S11, S12 done** (e-stack2-confirm.md): each passes the keep rule against S9's four runs. S10 (`huntValue`,
+  73): T-HUN-1 37 → 23.4 (in band), T-HUN-3 stays in band (0.054), fitted better beyond noise; mothers and infants a
+  little lower. S11 (`forageRate`, 71): sums inside noise, fruit share in band; costs: every adult class's balance falls
+  as walking and feeding rise (males 2.55 km; infants 0.5–2 y −0.108 %/day), rest at its floor. S12 (`contestAssess`,
+  69): sums inside noise, no deaths, T-SOC-5 0.618, energy within spread.
 - **S9 done: now the best integrated candidate** (e-stack2-confirm.md "S9 results"; S8 + `groomDrive` + `socialUpkeep` 2 +
   `followMargin`): 74 prescriptions (the social timers out), grooming in band for both sexes (0.101), viable, night safe,
   sums inside noise (held-out without the rare rows z +1.2: E5d's quick-mode failure did not replicate). Costs: T-HUN-1
