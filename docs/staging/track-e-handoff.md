@@ -14,7 +14,7 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 13:30; deploy held by the user).** Agents: **E3f** (`e3f-crop-energy`: what a crown holds,
+- **Running now (4 October 13:25; deploy held by the user).** Agents: **E3f** (`e3f-crop-energy`: what a crown holds,
   `fruitIntakePerH`), **E5f** (`e5f-departing`: re-launch and go-alone timers `departRetryMin`, `departPersistMaxMin`),
   **E4o** (`e4o-small-rules`: `meatEatPerH`, `guardMaxAgeY`, `mateIntervalH`), all from track-e eea2d85, judged against
   the S27 quick group (bench-run3 28d249e, `artifacts/validation/e/s27q/`: S27q, S27q1–S27q3 by `rngSalt`;

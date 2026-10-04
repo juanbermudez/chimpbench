@@ -3259,3 +3259,14 @@ within 0.03 %/day of the group's mean (low).
 
 **Decision rule.** If the sums are inside noise, viability and night safety pass and rest stays in its band, a 5-seed
 confirm (S28) is registered next; otherwise the costs go to a stage of their own, and `redecideValue` stays off the stack.
+
+## S27q-noCM, an ablation of `crownMove` on S27 (registered 4 October 2026 before its run)
+
+**S27q-noCM = S27 without `crownMove`** (= S25 + `walkGait`), quick mode (seeds 48 and 7, 30 + 30 days) plus
+energy-diagnose, from bench-run3 at 28d249e, against the S27 quick group. **Question:** "S26 and S27 results" left open
+whether `crownMove` or S25's `huntDrive` is why the body-set walk holds on S27 where S24 failed. If removing `crownMove`
+alone brings back S24's cost, `crownMove` is why. **Predictions (against the S27q group).** 41 prescriptions (`crownMove` is
+a correction; high). Climbing cost per class higher by 10–25% (moderate; S26 cut it 7–25%). Reserves: males', juveniles'
+and nursing mothers' within the group's spread or lower by up to 0.03 %/day (low: S27's intake rose with its spending,
+and climbing is a small share of the walk's cost). Sums inside noise (moderate). This is an ablation for attribution,
+not a candidate: nothing is adopted from it.
