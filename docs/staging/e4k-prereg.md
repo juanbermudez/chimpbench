@@ -149,3 +149,122 @@ positions, climbing and skill only as degenerate stand-ins (hash bearings, a fix
 skill), and it does not carry the canopy's continuity (no structure the colobus move in) or the colobus' composition
 and defence. The low success is the design curve at small n (0.21 at 2 hunters against 0.53–0.61 for Kanyawara and
 Mitumba hunts) plus the n ≥ 2 rule on solo hunts.
+
+### 2.3 What the sources re-read this stage add (research.md "Addendum: E4k hunt success"; written before §4)
+
+- Kibale's forest has a high, continuous canopy (Ngogo 25–30 m, mitaniWatts1999 FT); there "mostly noncooperative
+  chimpanzees" succeed by "massing large numbers of hunters, whose largely opportunistic pursuit tactics make their
+  hunts highly successful"; colobus mobbing is "largely ineffective"; cooperation "is generally lacking during hunts at
+  all East African study sites". Success rises with party size and male hunters (mitaniWatts1999 Table 4 and its
+  review of Taï and Gombe). In tall continuous canopy lone hunters rarely succeed (Taï 16% against 61% for group hunts,
+  3.08 hunters per hunt; one monkey in 84% of successes; samuni2018cb FT); broken canopy makes capture easier (Ngogo,
+  Gombe; abstracts). A community of 2.9 adult males (Mitumba) succeeds 53.2% with 1.30 prey per success (gilby2015).
+- So for the model (Kibale, continuous canopy): the colobus escape through the canopy in any direction; what cuts the
+  escape off is the hunters around them, each pursuing on his own; males' defence is not decisive. The canopy's
+  structure (gaps) is the field's second determinant and the model has none: not built (§4.4).
+
+## 4. Mechanism (switch `huntPursuit`, 0 = today; registered before any run of changed code)
+
+### 4.1 Capture from the pursuit (`src/sim/huntpursuit.ts`, read by `resolveHunt`)
+
+At the resolution (the existing moment, 5–11 min after the start, design) with `huntPursuit` 1:
+
+1. **Who is in the pursuit:** the listed hunters still hunting this group within `huntCaptureRangeM` (today's filter)
+   **and at canopy height**, i.e. no more than 0.5 m below the approach height (0.85 × the group's height, today's
+   approach target): hunters are those "chasing prey at canopy height" (samuni2018cb's definition). A hunter still on
+   the ground or on the trunk cuts nothing off (climbing).
+2. **What each cuts off:** a fleeing monkey moving straight away at speed v_e from a pursuer at speed v_p = k·v_e is
+   intercepted only if it flees within asin(k) of that pursuer's bearing (the Apollonius circle; for k ≥ 1 every
+   direction, a faster pursuer catches it). k_i = `huntPursuitSpeedRatio` × the hunter's own movement factor (the
+   model's `speedFactor` terms for age, injury and alertness, without rain and light, which slow the colobus too):
+   `huntPursuitSpeedRatio` 1 (design: a prime, rested, uninjured adult chimpanzee pursues as fast as a red colobus
+   flees through the canopy; no measurement of either speed was found, so neither is assumed faster). Condition enters
+   here: a tired, injured or old hunter covers a narrower cone.
+3. **Capture:** the group is trapped when the hunters' cones leave no escape direction (with a 0.001-rad margin, so two
+   hunters exactly opposite do not close it). At k = 1 this is the classic result that an evader is caught exactly when
+   it lies inside the convex hull of equally fast pursuers: it needs at least three hunters around the group; one or
+   two never trap it in continuous canopy.
+4. **Kills from the same scene:** one monkey per disjoint set of hunters that closes the circle, found greedily (the
+   smallest closing set first, ties by join order; each later set from the hunters left). Each set's captor is its
+   member with the highest 0.6 × skill + hash (today's rule: skill decides who seizes the monkey). Extra captures only
+   while the group holds more than 4 (today's guard). No draw from `world.rng`.
+
+### 4.2 Where the hunters go (`execution.ts` 'hunt', under the switch)
+
+Each hunter heads for the widest escape gap left by the other hunters still hunting this group (the middle of the widest
+angular gap between their bearings, seen from the group), or straight at the group when alone: the monkeys flee where no
+one is, so a hunter after a monkey of his own goes there (individually opportunistic, not a coordinated role:
+mitaniWatts1999). Standoff 2 m and height 0.85 × the group's (today's approach target, design). In the canopy he moves
+around the group by at most a 2.5 m chord per tick, because the movement engine makes an animal climb down for any goal
+more than 3 m away (a movement constraint, not a behavioural value). This replaces the approach bearing drawn from a
+hash of the hunter's and the group's ids (a stylization).
+
+### 4.3 The valuation expects the same (`huntvalue.ts`, same function, no second curve)
+
+`huntRate` under the switch: expected meat E = min(energy need, `meatKcalPerUnit` × captures(n) ÷ n), where captures(n)
+is `pursuitCaptures` (§4.1) on n hunters evenly spread around the group (where §4.2 leads them), each with the leader's
+own k (his expectation); n = adult males in view, himself included (E4e's design: they join). Offered only if
+captures(n) > 0. Time T and the crown currency unchanged.
+
+### 4.4 Not built, with the reason
+
+Canopy structure (gaps, broken canopy): the model has none; its trees are food patches covering 2.5–15% of the ground
+around hunts (§3.3), so reading them as a canopy would make every hunt a broken-canopy hunt. Colobus composition and
+males' defence: no composition in the model; mobbing ineffective at Ngogo. Colobus individuals spread over many trees:
+the group stays a point. Joining (`huntJoinSkillW`, the hand-set join value, `candidates.ts:1088`): unchanged; deferred.
+The hunter's expectation that every male in view joins (`huntvalue.ts`): unchanged; deferred. The colobus drift speed
+(0.025 + 0.1 × alert m/s, `ecology.ts:30`, a literal): not the escape speed; unchanged.
+
+### 4.5 Registry and ledger
+
+New: `huntPursuit` (switch, 0/1, design) and `huntPursuitSpeedRatio` (1, ratio, design). Removed under the switch
+(`ACTIVE_WHEN` in `scripts/lib/prescriptions.ts`): `huntSuccessMax`, `huntSuccessRate` (T-HUN-2) and `huntExtraKillP`
+(T-HUN-7): S17's count 49 → 46. If the count does not fall by three, `scripts/param-reads.ts` checks the tool.
+
+## 5. Readouts (defined before any arm; smoke-tested with the switch on, §9)
+
+- e-bench rows T-HUN-1..8 (definitions in `src/field/metrics.ts`: T-HUN-2 "share of observed hunts with at least one
+  capture (gilby2015)", T-HUN-7 "captures per successful observed hunt (gilby2015)", T-HUN-8 share of captures by adult
+  males); sums with and without T-HUN-4 and T-BRD-1, and without T-IGE-3; prescriptions; viability; deaths by cause.
+- Truth (`scripts/e4k-hunt-diagnose.ts`, §3.2 definitions, extended for the switch: hunters in the pursuit, their cone
+  half-angles, closing sets): hunts per community-year, success, success by hunters in the pursuit, kills per success,
+  captures per hunter in the pursuit (meat per hunter), solo and pair resolutions, captors by class.
+- `scripts/energy-diagnose.ts` (seeds 48 and 7, 30 + 30 days, as the integrator's S17q energy runs): reserves ÷ store
+  %/day of nursing mothers and juveniles.
+
+## 6. Arms and predictions (stated before any run of changed code)
+
+**P1** (iteration 1) = S17 + `huntPursuit` 1, from a frozen checkout of the switch commit, rules policy:
+(a) `e-bench --quick` (seeds 48, 7; 30 + 30 days) judged with `judge_vs_reps.py quick custom` against S17q, S17q1–3;
+(b) `e-bench --seeds 48,7 --burn-in 30 --days 60` (hunt rows against H0 and H0r); (c) the diagnosis tool on seeds 48
+and 7, 30 + 60 days; (d) energy-diagnose as above.
+
+Predictions against S17 (moderate confidence unless stated):
+- Truth: no hunt resolves with a capture by one or two hunters in the pursuit (high: geometry). Leaders no longer start
+  hunts with two adult males in view (their value is 0; high); hunts per community-year fall from 46.6 but stay above 5
+  (the value of a hunt with three or more males roughly doubles). Success (truth) 0.5–0.8, set by how many alerted males
+  join. Kills per success 1.0–1.3 (parties of three to five close one circle).
+- Rows: T-HUN-2 up, into its band 0.5–0.8; T-HUN-1 down, inside 5–25; T-HUN-3 down, further below its band (high);
+  T-HUN-4 up (rare row; likely above 1.8); T-HUN-7 1.0–1.3 (may fall below 1.2); T-HUN-8 ≥ 0.8.
+- Sums (quick, against the four S17q runs): fitted inside noise (T-HUN-2's gain against T-HUN-3's and T-HUN-7's
+  losses), held-out inside noise with and without the rare rows and without T-IGE-3. Prescriptions 46 (high). Viability
+  passes; mothers' and juveniles' reserve trends inside S17q's spread (hunting is about 0.1% of males' daylight).
+
+## 7. Kill criterion
+
+`huntPursuit` stays off (null, recorded) if viability fails, if held-out without T-HUN-4 and T-BRD-1 rises beyond noise
+(z > +2 against the S17q mean), or if the prescription count is not 46. If hunting nearly vanishes (truth below 5 hunts
+per community-year, pooled), the result is a finding (the pursuit at the model's party sizes cannot pay), not a keep
+candidate. Otherwise a provisional keep candidate for a 5-seed confirm on the stack.
+
+## 8. Iterations and known defects
+
+At most 3 iterations, each logged in §9 and committed before its run; a further iteration only for what P1's readouts
+implicate (for example, joining, if too few alerted males join for three to surround). Deferred defects (file:line at
+793d3da): the hand-set join value (`src/sim/candidates.ts:1088`); the leader's expectation that every male in view joins
+(`src/sim/huntvalue.ts:21`); the colobus drift literal (`src/sim/ecology.ts:30`); the group-size literal 14–37
+(`src/sim/generation.ts`, `spawnPrey`); the resolution time drawn by hash (`src/sim/execution.ts:347`, design).
+
+## 9. Results
+
+### Run log (each entry written before its run)
