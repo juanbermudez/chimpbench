@@ -281,3 +281,9 @@ act); bit 2 leaves ≥ 8 stops per patrol or makes patrols never stop (it fails 
 - **Smoke, switch on, amendment 1** (logged after the runs; working tree at 373e62d plus amendment 1): seed 48, 1 + 2 days
   (190 play bouts, 0 rough) and 1 + 12 days (1,379 play bouts, 0 rough; 1 patrol: 1 stop after a sound, 2 at waypoints).
   The readouts work with the switch on.
+- **Readout added before A1** (scripts only): `e4m-diagnose.ts` records the actor's acute drive when a play bout's contact
+  begins (`boutStarts`, `boutsStartedAcuteOver0`, `boutsStartedAcuteOver05`), for amendment 1's added prediction.
+- **A1** (as registered in §7): S21 + `leftoverRules` 3, from a frozen detached checkout of the commit that adds this
+  entry (`scratchpad/e4m/frozen-a1`): `e-bench --quick` (workers 2 below load 8, else 1) and `energy-diagnose` (seeds
+  48, 7; 30 + 30) exactly as scratchpad/integrator/s21q.sh, then judged with judge_vs_reps.py against S21q, S21q1–q3;
+  `e4m-diagnose` 30 + 60 days, seeds 48 then 7, beside them. Outputs `artifacts/validation/e4m/A1*`.

@@ -30,7 +30,7 @@ import { writeFileSync } from 'node:fs';
 import { createWorld, tickWorld } from '../src/simulation';
 import { V, guardianOf } from '../src/sim/candidates';
 import { huntTap } from '../src/sim/ecology';
-import { fastNow } from '../src/sim/endocrine';
+import { acuteDrive, fastNow } from '../src/sim/endocrine';
 import { energyNeed, massOf, meatKcalPerUnit } from '../src/sim/energy';
 import { dominates, isAdultMale } from '../src/sim/hierarchy';
 import { evenCaptures, pursuitCone, pursuitOn } from '../src/sim/huntpursuit';
@@ -62,6 +62,7 @@ interface Rough { t: number; c: number; o: number; ageC: number; ageO: number; k
 const roughs: Rough[] = [];
 const bouts: { ageC: number; ageO: number; gap: number; minutes: number; rough: boolean; adultInit: boolean }[] = [];
 const contact = new Map<number, { o: number; t0: number; gap: number; ageC: number; ageO: number }>(); // play contact under way, by actor
+const boutStartAcute: number[] = []; // the actor's acute drive (E4b) when a bout's contact begins
 let eligibleTicks = 0, playContactTicks = 0, immatureDays = 0;
 const playMinByAge: Record<string, number> = {}; const immDaysByAge: Record<string, number> = {};
 
@@ -135,6 +136,7 @@ for (let i = 0; i < days * DAY; i++) {
       if (k) bouts.push({ ageC: k.ageC, ageO: k.ageO, gap: k.gap, minutes: r4((time - k.t0) * 60), rough: roughs.some(r => r.c === c.id && r.t > k.t0 && r.t <= time), adultInit: k.ageC >= 15 });
       const o = idx.byId.get(c.targetId);
       contact.set(c.id, { o: c.targetId, t0: time, gap: o ? r4(c.age - o.age) : NaN, ageC: r4(c.age), ageO: o ? r4(o.age) : NaN });
+      boutStartAcute.push(acuteDrive(x, time, P));
     } else if (!inContact && k) {
       bouts.push({ ageC: k.ageC, ageO: k.ageO, gap: k.gap, minutes: r4((time - k.t0) * 60), rough: roughs.some(r => r.c === c.id && r.t > k.t0 && r.t <= time), adultInit: k.ageC >= 15 });
       contact.delete(c.id);
@@ -265,6 +267,7 @@ const result = {
     roughMinIntoBoutMedian: median(roughs.map(r => r.minIntoBout).filter(v => v >= 0)), roughMassRatioMedian: median(roughs.map(r => r.kgC / Math.max(1, r.kgO))),
     roughFastInitMean: mean(roughs.map(r => r.fastC)), roughFastVictimMean: mean(roughs.map(r => r.fastO)),
     roughDefended: roughs.filter(r => r.defended).length, roughWithGuardian: roughs.filter(r => r.guardian !== null).length, roughConsoled: roughs.filter(r => r.consoled).length,
+    boutsStartedAcuteOver05: boutStartAcute.filter(a => a > 0.5).length, boutsStartedAcuteOver0: boutStartAcute.filter(a => a > 0).length, boutStarts: boutStartAcute.length,
     roughKin: roughs.filter(r => r.kin).length, victimStressRise: mean(roughs.filter(r => r.stressO2 !== null).map(r => r.stressO2! - r.stressO)),
   },
   patrols: {
