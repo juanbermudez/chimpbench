@@ -1926,3 +1926,23 @@ travel event starts when a non-locomotion activity ends and at least 10 m of loc
 recorded more than once on a day) re-launched to the same audience in the same travel event, mean 3.80 min, range 0–13
 (start to start, between the two hoo events); not reported how often a failed initiator left alone. Use: a target readout
 and a direction, never an input. No new keys.
+
+## 58. Addendum: E4o three small rules (4 October 2026)
+
+Same text as research.md "Addendum: E4o three small rules": adult red colobus masses 7.9–10.9 kg (males) and 6.7 kg
+(females) (sanders2003, FT, citing Delson et al. 2000, [L]); no measured immature masses in any reachable source
+(bugir2021's 75%-of-adult-female rule is a convention); prey are eaten whole (boeschBoesch1989, FT, Taï: one carcass of 81
+not finished; eating time 48 min for immatures, 141 min for adults; ~10 eaters per kill; watts2008, FT, Ngogo;
+newtonFisher2007, FT review); raw monkey meat 112–118 kcal per 100 g (cawthornHoffman2015, FT, [L]); red colobus groups
+of 42–48 with ~41% non-adults in one counted group (miyamoto2013, mitani2000, FT); so the edible energy of an average
+capture is not computable and `meatEatPerH` stays. Copulation rates: Taï 262 copulations in 1,814 oestrous female-hours,
+5 adult males (gomesBoesch2009, FT, [H]; the "0.14/h" of `mateIntervalH`'s note, verified); Kanyawara dyadic medians
+0.03–0.064 per hour together (muller2007); Kalinzu 0.43 per maximally swollen female-hour and 0.12 per adult male-hour,
+Mahale 0.79 and 0.20–0.22 (furuichiHashimoto2001, FT in Japanese, figure readings, [L]); Ngogo's "3.5/h" not verified
+(watts2007, Abs: rates high and rising with the males present); females rarely refused (watts2022, Abs); courtship
+(robertsRoberts2015, FT). No refractory period of male chimpanzees found; captive males ejaculated hourly six times in a
+row with sperm per ejaculate falling from 1,278 to 587 × 10⁶ (marson1989, Abs, [M]); testosterone tracks aggression, not
+copulation (mullerWrangham2004b). New keys: sanders2003, boeschBoesch1989, watts2008, newtonFisher2007,
+cawthornHoffman2015, miyamoto2013, mitani2000, gomesBoesch2009, furuichiHashimoto2001, watts2007, watts2022,
+robertsRoberts2015, marson1989. Not verified: immature red colobus masses, the edible share's mean, Watts 2007's numbers,
+Tutin 1979, Stumpf & Boesch, Deschner et al. 2004 and Marson et al. 1989 in full.

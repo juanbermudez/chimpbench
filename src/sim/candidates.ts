@@ -41,13 +41,15 @@ export interface CandidateMeta { v: number; aux: number; raw?: number; jit?: num
 export const candidateMeta = new WeakMap<Candidate, CandidateMeta>();
 
 /** The five gates of stage E5e (docs/staging/e5e-prereg.md §2). */
-export type QuotaKind = 'greet' | 'feed' | 'immigrant' | 'consort' | 'caller';
+export type QuotaKind = 'greet' | 'feed' | 'immigrant' | 'consort' | 'caller' | 'mate' | 'mateF';
 /**
  * Stage E5e diagnosis (scripts/quota-diagnose.ts; docs/staging/e5e-prereg.md §2): called at four gates when every other
  * condition of the option holds, with whether the quota or the clock blocked it ('greet': pantGruntRepeatH; 'feed':
  * feedChargeGapH; 'immigrant': immigrantChargeGapH; 'consort': consortLatestHour), `a` the hours since the gated event
  * (the last greeting of this dominant, the last aggression) or the hour of day, and `b` the score the option has or would
- * have; and at every approach to a caller offered ('caller': `a` the distance, `b` the score). Null in every simulation;
+ * have; and at every approach to a caller offered ('caller': `a` the distance, `b` the score). Stage E4o adds the mating
+ * quota (mateIntervalH): 'mate' at a male's offer to a swollen female in range, 'mateF' at a swollen female's offer to a
+ * male (`a` the hours since the male's last copulation, `b` the offer's score without the jitter). Null in every simulation;
  * it reads only and draws nothing, so the world is unchanged.
  */
 export const quotaTrace: { on: ((kind: QuotaKind, c: Chimp, o: Chimp | undefined, blocked: boolean, a: number, b: number) => void) | null } = { on: null };
@@ -147,22 +149,40 @@ export function dependentOn(world: World, c: Chimp): Chimp | undefined {
  * A juvenile's guardian (stage C8, docs/staging/early-life-prereg.md §2.1): its mother while she is alive and in its
  * community, else its adoptive caretaker while the ward is under guardMaxAgeY and the caretaker is alive and in the
  * community. With maternalLevers 0 (ablation) only dependents keep one. Pure: no RNG, no perception (callers check it).
+ * Stage E4o (bodyRules bit 1): the caretaker stays the guardian at any age, as a mother does; what her protection
+ * covers is decided threat by threat (wardHoldsOwn), not by the ward's age.
  */
 export function guardianOf(world: World, c: Chimp): Chimp | undefined {
   const P = paramsOf(world), byId = index(world).byId, x = ix(c);
   if (P.maternalLevers !== 1 && (x.weaned || c.age >= 6)) return undefined;
   const m = byId.get(c.motherId);
   if (m && m.alive && m.troopId === c.troopId) return m;
-  if (x.caretaker < 0 || x.caretaker === c.motherId || c.age >= P.guardMaxAgeY) return undefined;
+  if (x.caretaker < 0 || x.caretaker === c.motherId || (!guardBySize(P) && c.age >= P.guardMaxAgeY)) return undefined;
   const k = byId.get(x.caretaker);
   return k && k.alive && k.troopId === c.troopId ? k : undefined;
 }
 
-/** The guardian presence test (early-life-prereg §2.2–2.3): o's guardian is seen by c, within defendRangeM of o and not dominated by c. */
+/** Stage E4o (bodyRules bit 1; docs/staging/e4o-prereg.md §5): protection follows the ward's own strength, not an age. */
+export const guardBySize = (P: Params): boolean => (P.bodyRules & 1) !== 0;
+/**
+ * Stage E4o (bodyRules bit 1): whether a ward can hold its own against a threat, by its assessed chance against it (E4h
+ * assessOdds: strength from the growth curve with condition and wounds, the supporters charging on each side, and the
+ * remembered dominance relationship where the two keep one) at or above even. A ward that cannot is protected; the
+ * age at which protection ends then follows from growth. The even point is the definition of "more likely to lose than
+ * to win" (design, no fitted value; lint-ok: even odds is a definition, not a parameter). Pure.
+ */
+export const wardHoldsOwn = (world: World, ward: Chimp, threat: Chimp, P: Params): boolean => assessOdds(world, ward, threat, P) >= 0.5;
+
+/**
+ * The guardian presence test (early-life-prereg §2.2–2.3): o's guardian is seen by c, within defendRangeM of o and not
+ * dominated by c. Stage E4o (bodyRules bit 1): no age limit; the guardian deters c while its ward cannot hold its own
+ * against c (wardHoldsOwn).
+ */
 function guarded(world: World, c: Chimp, o: Chimp, seen: number[], P: Params): boolean {
-  if (o.age >= P.guardMaxAgeY) return false;
+  const bySize = guardBySize(P);
+  if (!bySize && o.age >= P.guardMaxAgeY) return false;
   const g = guardianOf(world, o);
-  return !!g && g !== c && seen.includes(g.id) && hd2(g, o) < P.defendRangeM * P.defendRangeM && !dominates(c, g);
+  return !!g && g !== c && seen.includes(g.id) && hd2(g, o) < P.defendRangeM * P.defendRangeM && !dominates(c, g) && (!bySize || !wardHoldsOwn(world, o, c, P));
 }
 
 const AFFILIATIVE: Partial<Record<Action, true>> = { reconcile: true, groom: true, console: true, play: true, share: true };
@@ -996,11 +1016,13 @@ function aggression(world: World, c: Chimp, rival: number, rivalCloseness: numbe
     // adolescent males establishing dominance over females [H]
     if (male && c.age >= 12 && c.age < P.femaleDomMaxAgeY && o.sex === 'female' && o.age >= 15 && dist < P.femaleDomRangeM && cooled && !kin)
       offer('charge', o.id, 0.03 + pers.aggression * 0.3 + (dominates(c, o) ? 0 : 0.1), V.FEMALE_DOM);
-    // guardians (mothers, or caretakers of wards under guardMaxAgeY) defend them
+    // guardians (mothers, or caretakers of wards under guardMaxAgeY) defend them; stage E4o (bodyRules bit 1): while the
+    // ward cannot hold its own against its aggressor (wardHoldsOwn), at any age
     const ox = ix(o);
     if (time - ox.victimAt < 0.05 && guardianOf(world, o) === c) {
       const ag = byId.get(ox.victimOf);
-      if (ag && ag.alive && ag.id !== c.id && dcc(c, ag) < P.defendRangeM && ag.troopId === c.troopId && hd2(ag, o) < P.defendAggressorNearM * P.defendAggressorNearM) offer('charge', ag.id, 0.4 + bond(c, o) * 0.2 - (dominates(ag, c) ? 0.45 : 0), V.DEFEND, o.id);
+      if (ag && ag.alive && ag.id !== c.id && dcc(c, ag) < P.defendRangeM && ag.troopId === c.troopId && hd2(ag, o) < P.defendAggressorNearM * P.defendAggressorNearM
+        && (!guardBySize(P) || !wardHoldsOwn(world, o, ag, P))) offer('charge', ag.id, 0.4 + bond(c, o) * 0.2 - (dominates(ag, c) ? 0.45 : 0), V.DEFEND, o.id);
     }
   }
   // coalition support: nearby allies join conflicts, likelier with stronger bonds [M-H]
@@ -1112,7 +1134,12 @@ function reproduction(world: World, c: Chimp, isAlpha: boolean): void {
       const g = byId.get(ix(o).guardBy);
       const guarded = !!g && g.alive && g !== c && dcc(c, g) < P.guardedRangeM && dominates(g, c);
       const invited = o.action === 'mate' && o.targetId === c.id ? 0.6 : 0;
-      if (time - x.lastMate > P.mateIntervalH) offer('mate', o.id, mateWorth(c, o) - (guarded ? 1 : 0) - dist / P.mateDistScaleM - c.hunger * 0.2 - (night ? 2 : 0) + invited, invited ? V.ACCEPT : V.NONE);
+      const mateOpen = time - x.lastMate > P.mateIntervalH;
+      if (mateOpen || quotaTrace.on) { // stage E4o diagnosis: the quota's gate, traced with the score the offer has or would have
+        const sc = mateWorth(c, o) - (guarded ? 1 : 0) - dist / P.mateDistScaleM - c.hunger * 0.2 - (night ? 2 : 0) + invited;
+        if (quotaTrace.on) quotaTrace.on('mate', c, o, !mateOpen, time - x.lastMate, sc);
+        if (mateOpen) offer('mate', o.id, sc, invited ? V.ACCEPT : V.NONE);
+      }
       // possessive mate-guarding by high-ranking males [M]
       if (c.age >= 15 && (c.rankOrder <= 2 || isAlpha) && o.swelling >= P.guardSwellingMin && !guarded && !(g && g !== c && g.alive && dcc(c, g) < P.guardRivalRangeM))
         offer('guard', o.id, 0.55 + (isAlpha ? 0.35 : 0.15) + o.swelling * 0.2 - c.hunger * 0.9 - (night ? 2 : 0));
@@ -1128,11 +1155,18 @@ function reproduction(world: World, c: Chimp, isAlpha: boolean): void {
         if (open) offer('consort', o.id, sc);
       }
     }
-    if (c.sex === 'female' && c.swelling >= 0.75 && o.age >= 10 && dist < P.mateFemaleRangeM && time - x.lastMate > 0.3 && time - ix(o).lastMate > P.mateIntervalH) {
-      const approaching = o.action === 'mate' && o.targetId === c.id;
-      const coercion = Math.min(3, x.coerce[o.id] ?? 0);
-      offer('mate', o.id, 0.1 + c.swelling * 0.25 + o.rank * 0.25 + coercion * 0.15 + bond(c, o) * 0.2 + (approaching ? 0.7 : 0) - dist / P.mateFemaleDistScaleM - (night ? 2 : 0), approaching ? V.ACCEPT : V.NONE);
-      if (o.action === 'consort' && o.targetId === c.id) offer('consort', o.id, 0.6 + bond(c, o) * 0.5, V.ACCEPT);
+    if (c.sex === 'female' && c.swelling >= 0.75 && o.age >= 10 && dist < P.mateFemaleRangeM && time - x.lastMate > 0.3) {
+      const maleOpen = time - ix(o).lastMate > P.mateIntervalH;
+      if (maleOpen || quotaTrace.on) { // stage E4o diagnosis: the male's quota gates her offer too
+        const approaching = o.action === 'mate' && o.targetId === c.id;
+        const coercion = Math.min(3, x.coerce[o.id] ?? 0);
+        const sc = 0.1 + c.swelling * 0.25 + o.rank * 0.25 + coercion * 0.15 + bond(c, o) * 0.2 + (approaching ? 0.7 : 0) - dist / P.mateFemaleDistScaleM - (night ? 2 : 0);
+        if (quotaTrace.on) quotaTrace.on('mateF', c, o, !maleOpen, time - ix(o).lastMate, sc);
+        if (maleOpen) {
+          offer('mate', o.id, sc, approaching ? V.ACCEPT : V.NONE);
+          if (o.action === 'consort' && o.targetId === c.id) offer('consort', o.id, 0.6 + bond(c, o) * 0.5, V.ACCEPT);
+        }
+      }
     }
   }
 }

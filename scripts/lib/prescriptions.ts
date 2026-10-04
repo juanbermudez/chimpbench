@@ -307,6 +307,8 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   // stage E4m (leftoverRules; docs/staging/e4m-prereg.md §5): a sum of bits, one per entry switched out
   roughPlayP: { when: P => (P.leftoverRules & 1) === 0, why: 'not read while leftoverRules has bit 1: play turns rough when the player\'s acute drive times its mass exceeds the partner\'s mass times (1 − its acute drive) (src/sim/execution.ts roughByForce; no die, no age rule)' },
   patrolStopEveryMin: { when: P => (P.leftoverRules & 2) === 0, why: 'not read while leftoverRules has bit 2: the leader stops at the waypoints and after a stranger chorus heard by a member, outside one caller-counting window (src/sim/parties.ts updatePatrols, chorusHeard)' },
+  // stage E4o (bodyRules; docs/staging/e4o-prereg.md §5): a sum of bits, one per entry switched out
+  guardMaxAgeY: { when: P => (P.bodyRules & 1) === 0, why: 'not read while bodyRules has bit 1: a guardian deters a charger and defends its ward while the ward cannot hold its own against that animal (E4h assessOdds below even; src/sim/candidates.ts guarded, wardHoldsOwn); a caretaker stays guardian and coalition kin at any age' },
 };
 
 /** One ACTIVE_WHEN rule for several entries. */
@@ -379,6 +381,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   huntPursuit: { stage: 'E4k', needs: {} },
   choiceBelief: { stage: 'E3e', needs: {} },
   leftoverRules: { stage: 'E4m', needs: {} },
+  bodyRules: { stage: 'E4o', needs: {} },
   walkGait: { stage: 'E2i', needs: {} },
   youngArrival: { stage: 'E2j', needs: {}, removesNothing: 'gives animals below rgMinAge the arrival rule older animals already follow (rg.ts gate, or redecide under redecideValue 2: a trip that reaches its tree becomes feeding there when legal); every other choice stays the argmax; adds no magnitude and switches no prescription out (e2j-prereg §9-10)' },
   tripBodyCost: { stage: 'E2j', needs: { energyLedger: 1, ledgerDrive: 1, forageRate: 1 }, removesNothing: 'charges a trip\'s climbing time and a riding dependent\'s metres in forageRate\'s net energy rate (the movement\'s and the ledger\'s own speeds and costs); adds no magnitude and switches no prescription out (e2j-prereg §4)' },

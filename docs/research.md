@@ -3615,3 +3615,111 @@ value was taken from it.
   (an unanswered initiator may re-launch to the same audience) motivates `departValue`, whose magnitudes are existing
   design terms (E5a's companyValue). gruberZuberbuhler2013 is already cited; the entries above add the sample and the
   persistence definition. No new keys.
+
+### E.58 Addendum: E4o three small rules (4 October 2026)
+
+Read for stage E4o (docs/staging/e4o-prereg.md): the energy of a capture (`meatEatPerH`), the end of protection
+(`guardMaxAgeY`) and the mating quota (`mateIntervalH`). Two source searches (subagents with disjoint lists, BioC first,
+two routes or 10 minutes per source); every number below was checked against the downloaded text by the stage. No value
+is taken as a behavioural input.
+
+**Meat per capture: still not computable from sources.**
+- **Adult red colobus masses** [sanders2003] (FT, author copy) [L]: Table 1 "Piliocolobus badius 7.9–10.9 kg (m)" and
+  6.70 kg (f), footnote "Body masses from Delson et al. (2000)" (secondary). [newtonFisher2007] (FT, author copy, review)
+  [L]: adult male red colobus up to 13 kg (citing Kingdon 1997).
+- **Immature red colobus masses: not found.** No measured series for infants, juveniles or subadults in any reachable
+  source; bugir2021's rule (immature prey = 75% of adult female mass, after Jooste et al. 2013) is a convention, not a
+  measurement. Immatures are 66% of Ngogo kills (mitaniWatts1999 Table 3) and most kills elsewhere (Gombe 101 of 130 and
+  Taï 31 of 58 red colobus kills infants or juveniles, [boeschBoesch1989] Table 5).
+- **What is eaten** [boeschBoesch1989] (FT, author copy; Taï 1979–86, 81 captures) [M]: prey are eaten whole; "This was
+  the only case in which chimpanzees were seen not to eat all the prey" (remains 3 kg of a prey of about 10 kg); eating
+  time per prey: immatures 48 min on average (n = 16), adults 141 min (n = 23); about 10 chimpanzees eat per kill.
+  [watts2008] (FT, author copy; Ngogo) [M]: "chimpanzees completely consume most prey immediately after hunts".
+  [newtonFisher2007] [L]: "Commonly, the entire animal is consumed, including bones and skin". An edible share between
+  about 0.7 and 1.0 is supported; no measured mean.
+- **Energy density** [cawthornHoffman2015] (FT, PMC7126303) [L]: raw monkey meat 112–118 kcal per 100 g (blue monkey,
+  vervet, yellow baboon; Table 1, citing Malaisse 2010); USDA FoodData Central, raw lean game (rabbit, squirrel, antelope,
+  deer) 114–120 kcal per 100 g [M, other species]; the model's 115 kcal per 100 g and 348 g/h are hardus2012's (FT)
+  citations of USDA and of Wrangham & Conklin-Brittain 2003 / Gilby 2006 (both closed, not verified).
+- **Red colobus group composition** [miyamoto2013] (FT, PMC3609894; Kanyawara) [M]: one group (Small Camp) of 59 with
+  "10 breeding males and 25 breeding females" (2006–07; 41% non-adults, derived); mean group size 48 (16 groups) and 43
+  (27 groups); [mitani2000] (FT, author copy; Ngogo) [M]: 2.04 groups per km², 86 animals per km², mean group size 42. No
+  split of the non-adults into infants, juveniles and subadults was found.
+- Reading: with adult masses only and immature masses unsourced, the edible energy of an average capture cannot be
+  computed (one adult female eaten whole would be ~7,700 kcal at 1.15 kcal/g; today's 1,149 kcal is ~1.0 kg of meat), so
+  `meatEatPerH` stays (as at E4m).
+
+**Protection.** No new source: the mechanism uses the model's own contest assessment (E4h, research.md "Addendum: E4h
+contests").
+
+**Copulation rates (benchmark values; nothing set from them).**
+- **Taï** [gomesBoesch2009] (FT, PMC2663035) [H]: "We observed a total of 262 copulations during the 1814 h that females
+  were observed in estrous" (Taï South 2003–06; 5 adult males, 8 oestrous females; data "from 3000 h of focal target
+  follows"; oestrus includes partial swelling): 0.14 copulations per oestrous female-hour (derived), ~0.03 per adult
+  male per oestrous female-hour (derived, 5 males). This is the "Taï 0.14/h" of `mateIntervalH`'s note, now verified.
+- **Kanyawara** [muller2007] (FT, already cited): per male–female dyad while she is maximally swollen and both are in one
+  party (≥ 25 h together), medians 0.064 and 0.03 copulations per hour (all-occurrence sampling).
+- **Kalinzu, Mahale, Gombe** [furuichiHashimoto2001] (FT, in Japanese with an English summary; values read from its
+  figures by the stage's source search, translation not checked) [L]: per adult female during maximal swelling 0.43/h
+  (Kalinzu, 43 copulations in 1,207 five-minute units), 0.79/h (Mahale, cited), 0.52/h per adult male near the female
+  (Gombe, Tutin 1979 cited); per adult male 0.12/h (Kalinzu), 0.20–0.22/h (Mahale, cited); adult males per maximally
+  swollen female 4.2 (Mahale), 12.3 (Gombe), ~4.8 (Kalinzu).
+- **Ngogo** [watts2007] (Abs) [M]: "Daily copulation rates for fully swollen females vary" and are "high compared with
+  those reported from other research sites", rising with the males she associates with; no number in the abstract, so
+  the note's "Ngogo 3.5/h" is **not verified**. [watts2022] (Abs) [M]: "Males initiated most copulations and females
+  rarely refused mating attempts."
+- **Courtship** [robertsRoberts2015] (FT, PMC4633128; Sonso) [M]: males gestured to females a median 2.60 times an hour;
+  females approached to copulate after a median 0.28 of gesture sequences (6 males, 11 copulations).
+
+**Male physiology: no refractory period found.**
+- [marson1989] (Abs; captive, 6 males) [M]: "When semen collection was repeated every hour for 5 h, the ejaculate volume
+  increased from 2.6 ± 0.7 to 4.7 ± 0.6 ml ..., whereas total sperm count decreased from 1278 ± 872 × 10⁶ to 587 ± 329 ×
+  10⁶ ... between the 1st and the 6th ejaculate": males ejaculate hourly six times in a row, with fewer sperm each time.
+- [mullerWrangham2004b] (FT now, via the Kibale project's archived copy) [H]: testosterone with cycling parous females is
+  "associated with aggression rather than sexual behaviour", and levels are sufficient for copulation all year.
+- No measured post-ejaculatory refractory interval or inter-copulation interval of male chimpanzees (wild or captive)
+  in any reachable source. Reading: a physiological refractory of an hour or less cannot set field rates of 0.12–0.22
+  copulations per adult male-hour; the limit in the wild is social and ecological (who is in the party, competition,
+  female choice), so `mateIntervalH` stays (e4o-prereg.md §4).
+
+**Not verified:** immature red colobus masses (Struhsaker 1975 and 2010 books; Teelen 2007 and 2008, Watts & Mitani
+2002, Stanford 1994–1996, Pobiner 2007 full text, Smith & Jungers 1997, Snaith & Chapman 2008, Watts & Amsler 2013,
+Gogarten 2014: closed); Wrangham & Conklin-Brittain 2003 (repository bot check), Gilby 2006 and Wrangham & Riss 1990
+(closed or a host already dropped); Tennie et al. 2014 full text (Cloudflare); Watts 2007's numbers; Tutin 1979; Stumpf &
+Boesch 2005, 2006 and 2010; Deschner et al. 2004 full text (bot check); Emery Thompson & Wrangham 2008; Marson et al.
+1989 full text (Cloudflare); Dixson & Mundy 1994 beyond its abstract.
+
+**Sources:**
+- *new* sanders2003: Sanders WJ, Trapani J, Mitani JC 2003. Taphonomic aspects of crowned hawk-eagle predation on
+  monkeys. *Journal of Human Evolution* 44(1):87–105. [doi:10.1016/S0047-2484(02)00196-3](https://doi.org/10.1016/S0047-2484(02)00196-3) (FT, author copy).
+- *new* boeschBoesch1989: Boesch C, Boesch H 1989. Hunting behavior of wild chimpanzees in the Taï National Park.
+  *American Journal of Physical Anthropology* 78(4):547–573 (FT, author copy).
+- *new* watts2008: Watts DP 2008. Scavenging by chimpanzees at Ngogo and the relevance of chimpanzee scavenging to early
+  hominin behavioral ecology. *Journal of Human Evolution* 54(1):125–133. [doi:10.1016/j.jhevol.2007.07.008](https://doi.org/10.1016/j.jhevol.2007.07.008) (FT, author copy).
+- *new* newtonFisher2007: Newton-Fisher NE 2007. Chimpanzee hunting behavior. In Henke W, Tattersall I (eds) *Handbook of
+  Paleoanthropology*. Springer, Berlin (FT, author copy, Kent repository KAR 27815).
+- *new* cawthornHoffman2015: Cawthorn D-M, Hoffman LC 2015. The bushmeat and food security nexus: a global account of the
+  contributions, conundrums and ethical collisions. *Food Research International* 76:906–925.
+  [doi:10.1016/j.foodres.2015.03.025](https://doi.org/10.1016/j.foodres.2015.03.025) (FT, PMC7126303).
+- *new* miyamoto2013: Miyamoto MM, Allen JM, Gogarten JF, Chapman CA 2013. Microsatellite DNA suggests that group size
+  affects sex-biased dispersal patterns in red colobus monkeys. *American Journal of Primatology* 75(5):478–490.
+  [doi:10.1002/ajp.22124](https://doi.org/10.1002/ajp.22124) (FT, PMC3609894).
+- *new* mitani2000: Mitani JC, Struhsaker TT, Lwanga JS 2000. Primate community dynamics in old growth forest over 23.5
+  years at Ngogo, Kibale National Park, Uganda: implications for conservation and census methods. *International Journal of
+  Primatology* 21(2):269–286 (FT, author copy).
+- *new* gomesBoesch2009: Gomes CM, Boesch C 2009. Wild chimpanzees exchange meat for sex on a long-term basis. *PLoS ONE*
+  4(4):e5116. [doi:10.1371/journal.pone.0005116](https://doi.org/10.1371/journal.pone.0005116) (FT, PMC2663035).
+- *new* furuichiHashimoto2001: Furuichi T, Hashimoto C 2001. [Sexual behaviour of bonobos and chimpanzees reconsidered; in
+  Japanese with an English summary.] *Primate Research* 17:243–257. [doi:10.2354/psj.17.243](https://doi.org/10.2354/psj.17.243) (FT, J-STAGE).
+- *new* watts2007: Watts DP 2007. Effects of male group size, parity, and cycle stage on female chimpanzee copulation
+  rates at Ngogo, Kibale National Park, Uganda. *Primates* 48(3):222–231.
+  [doi:10.1007/s10329-007-0037-2](https://doi.org/10.1007/s10329-007-0037-2) (Abs).
+- *new* watts2022: Watts DP 2022. Male chimpanzee sexual coercion and mating success at Ngogo. *American Journal of
+  Primatology* 84(2):e23361. [doi:10.1002/ajp.23361](https://doi.org/10.1002/ajp.23361) (Abs).
+- *new* robertsRoberts2015: Roberts AI, Roberts SGB 2015. Gestural communication and mating tactics in wild
+  chimpanzees. *PLoS ONE* 10(11):e0139683. [doi:10.1371/journal.pone.0139683](https://doi.org/10.1371/journal.pone.0139683) (FT, PMC4633128).
+- *new* marson1989: Marson J, Gervais D, Meuris S, Cooper RW, Jouannet P 1989. Influence of ejaculation frequency on semen
+  characteristics in chimpanzees (*Pan troglodytes*). *Journal of Reproduction and Fertility* 85(1):43–50.
+  [doi:10.1530/jrf.0.0850043](https://doi.org/10.1530/jrf.0.0850043) (Abs).
+- muller2007, mullerWrangham2004b, mitaniWatts1999, hardus2012 and bugir2021 are already cited; the entries above add
+  findings.
