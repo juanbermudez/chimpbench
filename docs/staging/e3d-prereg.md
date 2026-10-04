@@ -463,6 +463,12 @@ section: energy-diagnose, redecide-diagnose, then `e-bench --quick` (seeds 48 an
 
 **Kill criterion and verdict rule:** as iteration 1 (§5.1), unchanged.
 
+- **Final checks** (after merging track-e 44e39b1 once, 3945c41): `gen-params --check` clean, `tsc --noEmit` clean,
+  `pnpm test` 756 tests: 755 pass, 0 fail, 1 skipped. Outputs (local, gitignored, copied from the session scratch `e3d/`
+  to `artifacts/validation/e3d/`): `diag/` (the four S17 diagnoses and the exploration run), `arms/` (A1's and A2's
+  e-bench, energy, redecide and rhythm JSON, the judge output), `smoke/` (the 2-day smoke tests, the unregistered
+  variants of §5.2 included), `tools/` (`diag_table.py`, `e3d_judge.py`, `final_table.py`), the arms' parameters.
+
 ## 6. Results
 
 ### 6.1 Iteration 1: A1 = S17 + `redecideValue` 1 (frozen checkout of a9eaa3d)
