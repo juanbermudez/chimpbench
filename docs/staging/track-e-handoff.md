@@ -14,10 +14,11 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 07:40; deploy held by the user).** No agents. Integrator: S19's confirm group (S19 at
-  ef13aa8 + S19c1–S19c3 in bench-run4, `integrator/conf19.sh`; S19c2 and S19c3 running) and the **S21** confirm (S19 +
-  `choiceBelief` 2, 45 prescriptions; registered e7d8d8e) in bench-run2 moved to e7d8d8e (`integrator/conf21.sh`),
-  judged with `integrator/judge_s19group.py`. From S21 on, replicate references use `rngSalt`, not `rgTemperature`.
+- **Running now (4 October 08:15; deploy held by the user).** Nothing.
+- **S21 done: now the best integrated candidate** (e-stack2-confirm.md "S21 results"; S19 + `choiceBelief` 2): 45
+  prescriptions, viable, night safe, held-out without the rare rows better beyond noise (z −5.0; T-FOOD-10 0.81 → 0.58),
+  T-HUN-2 0.50 (in band). Costs: T-PAT-1 0.093 (just below band), T-HUN-1 5.2 (floor). Decision guide and hosted copy
+  show S19 (S21 needs STACKS.S21 and Before/Now for the temperature).
 - **S20 not adopted; S19 is the best integrated candidate** (e-stack2-confirm.md "S20 results"): S20 (S17 + S18 + S19,
   44) passed the registered sums only through a reference spread inflated by T-IGE-3 (S17c1 24.7) and is worse beyond
   noise without it (z +3.0), with rest at 0.252 and juveniles −0.125 %/day. S19 (46) passed every sum. e-noise.md
