@@ -20,7 +20,9 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   dice replaced by mutual assessment), both from track-e 37a2042, briefs `integrator/e3c-prompt.txt`, `e4h-prompt.txt`.
   Integrator: the S9 quick reference (`integrator/s9q.sh`, `bench-run/artifacts/validation/e/s9q/`; message both agents
   when all four exist); the S10 confirm (S9 + `huntValue`; registered 72e93ae) with S9's confirm group (S9 + S9c1–S9c3):
-  `integrator/conf10.sh <label> <S9|S10> [rg|-] [rhythm]`, outputs `.../e/s10/`; S9c2 and S9c3 still to start.
+  `integrator/conf10.sh <label> <S9|S10> [rg|-] [rhythm]`, outputs `.../e/s10/`; S9c2, S9c3 running. **E3c merged**;
+  the S11 confirm (S9 + `forageRate`; registered dd83395) runs from a second frozen checkout `.claude/worktrees/bench-run2`
+  at dd83395 (`integrator/conf11.sh`, outputs `bench-run2/artifacts/validation/e/s11/`), judged against the same S9 group.
   Remaining prescriptions on S9 by family (74): conflict 17, patrol 12, mortality 7, social 7, communication 5, needs 4,
   decision 4, movement 4, hunting 4, reproduction 3, disease 3, feeding 3 (`integrator/s9-ledger.json`).
 - **S9 done: now the best integrated candidate** (e-stack2-confirm.md "S9 results"; S8 + `groomDrive` + `socialUpkeep` 2 +
