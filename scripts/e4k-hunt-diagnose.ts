@@ -91,7 +91,7 @@ huntTap.fn = (world: World, r: HuntResolution) => {
   const counted = new Set(r.hunters.map(c => c.id));
   const listed = r.listed.map(c => {
     const d = Math.hypot(c.position[0] - p.position[0], c.position[2] - p.position[2]);
-    const why = counted.has(c.id) ? 'counted' : !c.alive ? 'dead' : c.action !== 'hunt' ? `action:${c.action}` : c.targetId !== p.id ? 'other target' : d >= P.huntCaptureRangeM ? 'out of range' : P.huntPursuit === 1 ? 'below canopy' : '?';
+    const why = counted.has(c.id) ? 'counted' : !c.alive ? 'dead' : c.action !== 'hunt' ? `action:${c.action}` : c.targetId !== p.id ? 'other target' : d >= P.huntCaptureRangeM ? 'out of range' : P.huntPursuit >= 1 ? 'below canopy' : '?';
     const k = r.hunters.indexOf(c);
     return { id: c.id, sex: c.sex, age: r4(c.age), cls: klass(c), skill: r4(k >= 0 ? r.skillsBefore[k] : c.skills.hunting), ...stateOf(c), joinMin: st && st.join[c.id] !== undefined ? r4((st.join[c.id] - st.tick) * 0.25) : null, why, distM: r4(d), belowM: r4(p.position[1] - c.position[1]), bearing: r4(Math.atan2(c.position[0] - p.position[0], c.position[2] - p.position[2]) * 180 / Math.PI) };
   });

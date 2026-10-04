@@ -468,3 +468,39 @@ included), so moveTo never makes him climb down; §4.3's `pursuitCaptures` is `e
 - P1h.json viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}: seed 48 deaths 0 {} starvation 0; seed 7 deaths 0 {} starvation 0
 - P2q.json viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}: seed 48 deaths 0 {} starvation 0; seed 7 deaths 0 {} starvation 0
 - P2h.json viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}: seed 48 deaths 0 {} starvation 0; seed 7 deaths 0 {} starvation 0
+
+#### P2 result: truth (diagnosis tool, 30 + 60 days, seeds 48 and 7; `report.py P1 P2` and `fail_table.py` from `diag/P2-{48,7}.json`)
+
+| truth (diagnosis, 30 + 60 d, seeds 48 and 7) | S17 | P1 | P2 |
+| --- | --- | --- | --- |
+| hunts resolved | 46 | 13 | 20 |
+| hunts per community-year | 46.639 | 13.181 | 20.278 |
+| success | 0.283 | 0.308 | 0.450 |
+| kills per successful hunt | 1.385 | 1.000 | 1.000 |
+| captures per hunter in the pursuit (meat units) | 0.173 | 0.133 | 0.184 |
+| hunters per hunt (in the pursuit / counted) | 2.261 | 2.308 | 2.450 |
+| hunters listed per hunt | 2.326 | 2.615 | 2.850 |
+| hunts with fewer than 3 hunters at the resolution | 31 | 6 | 11 |
+| success by hunters (n: hunts, successes) | 1: 11, 0; 2: 20, 6; 3: 8, 4; 4: 6, 2; 5: 1, 1 | 1: 4, 0; 2: 2, 0; 3: 6, 3; 4: 1, 1 | 1: 5, 0; 2: 6, 0; 3: 5, 5; 4: 3, 3; 5: 1, 1 |
+| captors by class | {'adultMale': 16, 'female': 1, 'adolescentMale': 1} | {'adultMale': 4} | {'adultMale': 9} |
+| leader's adult males in view at hunt start | {2: 30, 3: 13, 4: 2, 5: 1} | {3: 9, 4: 2, 5: 1, 6: 1} | {3: 11, 4: 4, 5: 4, 6: 1} |
+
+
+```
+## P2: 20 hunts, 9 successes
+failures by reason: {'fewer than three ever joined': 8, 'three or more joined, fewer in the pursuit at the resolution': 3}
+listed hunters' fate at the resolution (all hunts): {'counted': 49, '?': 6, 'action:forage': 1, 'out of range': 1}
+leader's adult males in view -> hunters in the pursuit (all hunts): {(3, 1): 3, (3, 2): 3, (3, 3): 4, (3, 4): 1, (4, 2): 2, (4, 4): 2, (5, 1): 1, (5, 2): 1, (5, 3): 1, (5, 5): 1, (6, 1): 1}
+hunters listed -> in the pursuit: {(1, 1): 4, (2, 2): 4, (3, 2): 2, (3, 3): 4, (4, 3): 1, (4, 4): 3, (5, 5): 1, (6, 1): 1}
+  n 3 gap 126 halves [71.4946, 71.7331, 71.4973] sets [3] success True minutes 10.2
+  n 3 gap 126 halves [63.716, 63.3111, 63.5081] sets [3] success True minutes 6.1
+  n 5 gap 92 halves [72.1703, 72.1193, 72.0438, 72.224, 51.3829] sets [4] success True minutes 6.5
+  n 4 gap 105 halves [55.5185, 55.4705, 55.6107, 55.5315] sets [4] success True minutes 10.7
+  n 3 gap 133 halves [79.3088, 53.7815, 79.0851] sets [3] success True minutes 7.0
+  n 4 gap 106 halves [81.8708, 81.7036, 81.8183, 54.2632] sets [3] success True minutes 10.7
+  n 4 gap 107 halves [72.1234, 72.0761, 72.2396, 72.6088] sets [4] success True minutes 10.5
+  n 3 gap 129 halves [80.7976, 80.2954, 80.407] sets [3] success True minutes 9.3
+  n 3 gap 147 halves [74.2955, 74.0275, 74.2457] sets [3] success True minutes 8.8
+```
+
+(In this run the tool labelled the listed hunters in range but below canopy height "?" under `huntPursuit` 2: its label tested the value 1 only; fixed in the tool after the run, the data unchanged.)
