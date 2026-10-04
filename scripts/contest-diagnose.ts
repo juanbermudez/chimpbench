@@ -106,6 +106,10 @@ for (const seed of seeds) {
         cDominates: dominates(c, o), allies: al, hitP: e.hitP, inRange: e.inRange, hit: e.hit, escP: r3(e.escP), escalated: e.escalated, dominant: e.dominant, winP: r3(e.winP), won: e.won,
         // what the target was doing when the charge was resolved (a target that "stood its ground" did not answer this charge)
         oAction: o.action, oAtC: o.targetId === c.id, oV: VNAME[ix(o).v] ?? ix(o).v, oSinceCharged: r3((time - ix(o).victimAt) * 60), oVictimOfC: ix(o).victimOf === c.id, oAsleep: asleep(o),
+        // a coalition charge: the partner it supports, and the dominance of joiner and partner over the target (ihara2024's types)
+        ...(cx.v === V.COALITION && cx.aux > 0 ? (() => { const a = index(w).byId.get(cx.aux); return a ? { partner: side(w, a, P), cDomO: dominates(c, o), aDomO: dominates(a, o) } : {}; })() : {}),
+        // the target yields to another aggressor of this conflict (its act's target is charging or attacking it)
+        oYieldsToOther: (o.action === 'submit' || o.action === 'flee' || o.action === 'pant-grunt') && o.targetId !== c.id && (() => { const t = index(w).byId.get(o.targetId); return !!t && (t.action === 'charge' || t.action === 'attack') && t.targetId === o.id; })(),
       };
       events.push(ev);
       bump(`charges resolved: ${e.response}`);
@@ -266,12 +270,24 @@ const byRd: Record<string, { n: number; contact: number; share: number | null }>
 for (const k of contests) { const cat = rdCat(k); if (!cat) continue; const b = byRd[cat] ?? (byRd[cat] = { n: 0, contact: 0, share: null }); b.n++; if (k.contact) b.contact++; }
 for (const b of Object.values(byRd)) b.share = r3(b.contact / Math.max(1, b.n));
 const sumCount = (k: string) => all.reduce((s, a) => s + ((a.summary.count as Record<string, number>)[k] ?? 0), 0);
+// ihara2024 Table 1 (chimpanzee males): conservative (joiner and partner both dominate the target), bridging (one does),
+// revolutionary (neither does); coalition charges of ranked males (>= 10 y) for ranked male partners against ranked males
+const coalTypes: Record<string, number> = { conservative: 0, bridging: 0, revolutionary: 0 };
+for (const e of charges) {
+  if (e.variant !== 'COALITION' || e.partner === undefined) continue;
+  const c = e.c as Side, o = e.o as Side, a = e.partner as Side;
+  if (!male(c) || !male(o) || !male(a) || !((c.rankOrder as number) > 0 && (o.rankOrder as number) > 0 && (a.rankOrder as number) > 0)) continue;
+  const n = (e.cDomO ? 1 : 0) + (e.aDomO ? 1 : 0);
+  coalTypes[n === 2 ? 'conservative' : n === 1 ? 'bridging' : 'revolutionary']++;
+}
 const field = {
   contactShareMales12: { n: m12.length, contact: m12.filter(k => k.contact).length, share: r3(m12.filter(k => k.contact).length / Math.max(1, m12.length)) },
   contactShareAll: r3(contests.filter(k => k.contact).length / Math.max(1, contests.length)),
   byRankDifference: Object.fromEntries(Object.entries(byRd).sort()),
   coalitionaryShareMales12: r3(sumCount('coalition aggression started by males >= 12 at >= 12') / Math.max(1, sumCount('aggression started by males >= 12 at >= 12'))),
   woundsPerIndividualYear: r3((injDec.length + winnerWounds.length) / Math.max(1e-9, all.reduce((s, a) => s + (a.summary.indYears as number), 0))),
+  coalitionTypesMales: coalTypes,
+  stoodYieldingToOther: charges.filter(e => e.response === 'stood' && e.oYieldsToOther).length,
 };
 const responses = table(charges, e => `${(e.c as Side).cls}>${(e.o as Side).cls}: ${e.response}`, () => 1);
 const out = {

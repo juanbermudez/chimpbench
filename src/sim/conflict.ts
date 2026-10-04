@@ -154,7 +154,10 @@ export function resolveCharge(world: World, c: Chimp, o: Chimp): boolean {
     return false;
   }
   const responded = o.targetId === c.id;
-  const gaveWay = (o.action === 'submit' || o.action === 'flee' || o.action === 'pant-grunt') && responded;
+  const yielding = o.action === 'submit' || o.action === 'flee' || o.action === 'pant-grunt';
+  // stage E4h iteration 1 (contestAssess): a target yielding to another aggressor of the same conflict (the one it submits
+  // to or flees from is charging or attacking it, as a coalition partner's first charge does) has conceded too
+  const gaveWay = yielding && (responded || (assessOn(P) && yieldsToAggressor(world, o)));
   if (gaveWay) {
     // stage E4h (contestAssess): the target conceded before contact, so the contest is settled without it (parker1974:
     // escalation only where both judge it worth it); no hit is drawn
@@ -204,6 +207,12 @@ export function resolveCharge(world: World, c: Chimp, o: Chimp): boolean {
   } else if (won) decided(world, c, o, 'charge', 0);
   else decided(world, o, c, 'charge', 0);
   return false;
+}
+
+/** Stage E4h iteration 1: the animal `o` submits to, flees from or pant-grunts at is charging or attacking it. Pure. */
+function yieldsToAggressor(world: World, o: Chimp): boolean {
+  const t = index(world).byId.get(o.targetId);
+  return t !== undefined && t.alive && (t.action === 'charge' || t.action === 'attack') && t.targetId === o.id;
 }
 
 /** Turn a charge into a contact fight: the charger resolves it; the opponent grapples without resolving. */
