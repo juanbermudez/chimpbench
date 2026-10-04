@@ -73,6 +73,75 @@ behaviour in both D0 (pooled) and its arm: "too few to name". Only literals that
 a literal that trims or is inert is switched out under the stage's switch without replacement (as E5e's bit 8: its
 removal is what the scratch arm measured), and the arm confirms it.
 
+### 2.1 Diagnosis results (frozen checkout of fbfeb29, clean for D0; D1–D3 each one literal at 0; S27, seeds 48 and 7, 30 + 30 days; simulation truth)
+
+Printed by `diag_summary.py` and `diag_table.py` (stage scratch `e4q/`) from the aggression-diagnose JSON; D0 = mean ± SD of
+S27 and its three re-draws; each scratch arm as its value and its ratio to the D0 mean. D2's world is identical to D0's
+(every readout equal to the first D0 run): the stranger literal never changed a decision.
+
+```
+| Literal (gate) | offered per run | blocked share | outranked the chosen option (binds), pooled | binds per male-hour | behaviour per male-hour, D0 mean ± SD | scratch arm | ratio | verdict |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| cooldown 1.5 h (challenge, escalate, grudge, coerce, femaleDom) | 46220 | 0.260 | 123 | 0.0027 | 0.0043 ± 0.0007 (events pooled 198) | D1 0.0053 (events 59) | ×1.22 | trims |
+| strangers 0.2 h (stranger, gang) | 2 | 0.000 | 0 | 0.0000 | 0.0000 ± 0.0000 (events pooled 0) | D2 0 (events 0) | ×nan | inert (does not bind) |
+| display 0.75 h (display) | 90738 | 0.151 | 4219 | 0.0925 | 0.1813 ± 0.0116 (events pooled 8277) | D3 0.257 (events 2935) | ×1.42 | trims |
+
+Per gate (pooled over D0): offered, blocked, compared, binds; mean score blocked / open; at binding: hours since, arousal, stress, fast, odds, same target
+  challenge  offered  31349 blocked   4168 compared  3345 binds    19 | score blocked 0.037 open 0.003 | binding: since 0.17 h, arousal 0.144, stress 0.247, fast 0.300, odds 0.513, same target 0.68
+  escalate   offered   8006 blocked   1467 compared  1213 binds     1 | score blocked 0.084 open 0.039 | binding: since 1.07 h, arousal 0.498, stress 0.148, fast 0.000, odds 0.698, same target 1.00
+  grudge     offered  12460 blocked   5442 compared  3720 binds    15 | score blocked 0.148 open 0.120 | binding: since 0.36 h, arousal 0.261, stress 0.564, fast 0.323, odds 0.912, same target 0.00
+  coerce     offered  83752 blocked  32542 compared 23988 binds    29 | score blocked 0.148 open 0.136 | binding: since 0.25 h, arousal 0.387, stress 0.505, fast 0.278, odds 0.819, same target 0.45
+  femaleDom  offered  49314 blocked   4403 compared  2240 binds    59 | score blocked 0.220 open 0.197 | binding: since 0.37 h, arousal 0.000, stress 0.349, fast 0.133, odds 0.537, same target 0.64
+  stranger   offered      5 blocked      0 compared     0 binds     0 | score blocked 0.000 open 0.843
+  gang       offered      2 blocked      0 compared     0 binds     0 | score blocked 0.000 open 1.186
+  display    offered 362954 blocked  54681 compared 39125 binds  4219 | score blocked 0.308 open 0.212 | binding: since 0.28 h, arousal 0.061, stress 0.120, fast 0.024, odds 0.484, same target 0.11
+display chosen instead at binding decisions (D0 pooled): rest 1910, a trip to a tree 1007, feeding 527, grooming 177, reunion call 156, pant-grunt 125, …
+
+readout (D0 mean ± SD [runs] | scratch arms)
+gatedAggressionPerMale12H     0.0043 ± 0.0007  [0.0048 / 0.0035 / 0.0050 / 0.0041] | D1 0.0053 ×1.22 (z +1.4) | D2 0.0048 | D3 0.0039 ×0.90
+challengesPerMale12H          0.0005 ± 0.0003  [0.0009 / 0.0003 / 0.0004 / 0.0004] | D1 0.0003 ×0.60 | D3 0.0004
+gatedDisplaysPerMale12H       0.1813 ± 0.0116  [0.1983 / 0.1724 / 0.1781 / 0.1765] | D1 0.1807 ×1.00 | D3 0.2570 ×1.42 (z +6.5)
+adult displaysPerH            0.2230 ± 0.0116  [0.2396 / 0.2129 / 0.2203 / 0.2190] | D1 0.2283 | D3 0.3108 ×1.39 (z +7.6)
+adult statusChargesPerH       0.0006 ± 0.0003                                       | D1 0.0003 | D3 0.0004
+adult communityChargesPerH    0.1283 ± 0.0209                                       | D1 0.0993 ×0.77 | D3 0.1102 ×0.86
+adult contactGivenPerH        0.0050 ± 0.0004                                       | D1 0.0036 ×0.72 (z -3.6) | D3 0.0049
+field displaysPerH all/R/NR   0.2438 ± 0.0121 / 0.1769 ± 0.0155 / 0.2556 ± 0.0114 | D1 0.2511 / 0.1948 / 0.2591 | D3 0.3577 / 0.2873 / 0.3733
+field chasesAttacksPerH all/R/NR 0.0071 ± 0.0014 / 0.0268 ± 0.0017 / 0.0036 ± 0.0013 | D1 0.0055 / 0.0322 / 0.0017 | D3 0.0056 / 0.0258 / 0.0011
+field maleMalePerDyadH        0.0974 ± 0.0156  [0.1071 / 0.0880 / 0.1138 / 0.0806] | D1 0.0760 | D3 0.0824
+contests: decided 1425 ± 179 | D1 1308 | D3 1247; fights 1 ± 1 | D1 5 (z +3.9) | D3 2; wounds ≥ 0.05 per run 4 ± 1 | D1 10 (z +6.5) | D3 3
+adult males' acts per run (D0 mean ± SD | D1 | D3): mate-guard charges 713.8 ± 96.2 | 540 | 687; coalition 229.8 ± 74.0 | 168 | 131; redirect
+  180.0 ± 20.1 | 135 | 161; counter 59.8 ± 24.4; status 5.2 ± 2.6 | 3 | 4; grudge 4.8 ± 2.9 | 0 | 1; coercive 5.2 ± 3.1 | 9 | 4;
+  displays (status, reunion, rival) 2,039 | 1,985 | 2,867; males 12–15 y: female-dominance charges 33.5 ± 4.8 | 47 | 36
+intervals between a male's displays (h; <0.25, <0.5, <0.75, <1, <1.5, <3, ≥3): D0 [0, 1, 0, 283, 450, 525, 990] … D3 [482, 256, 265, 208, 309, 454, 980]
+```
+
+**Reading by the registered rule.** No literal sets its behaviour's rate:
+- **The 1.5-h cooldown trims.** It blocks 26% of the offers it gates, but they would have been chosen at 123 decisions in
+  four runs (0.0027 per male-hour; female-dominance charges 59, coercive 29, status challenges 19, grudges 15, escalated
+  attacks 1). Removed (D1), the five acts rise ×1.22 (0.0043 → 0.0053 per male-hour, z +1.4). **What sets the challenge
+  rate is the challenge's own score:** a status charge at the closest-rank rival scores 0.003 on average when open and is
+  the best option at 0.6% of the decisions where the cooldown blocks it; adult males challenge 0.0006 times an hour
+  (5 per run). Removing the cooldown has one cost beyond its rate: fights 1 ± 1 → 5 and wounds ≥ 0.05 4 ± 1 → 10 per run.
+- **The 0.2-h gap at strangers is inert.** Its condition (at least three own adult males in view, two more than the
+  strangers' males) held at 2 decisions per run, none within 0.2 h of the male's last aggression.
+- **The 0.75-h display gap trims, by the registered threshold.** It binds often (4,219 decisions, 0.093 per male-hour;
+  the display was then the best option over resting, 45%, a trip to a tree, 24%, feeding, 12%), and the displays pile up
+  just after the gap lapses (199–283 per run 0.75–1 h after the last, none before); removed (D3), status, reunion and
+  rival displays rise ×1.42 (0.181 → 0.257 per male-hour, z +6.5), just under the registered ×1.5. What sets most of the
+  display rate is the display's own score against resting, travel and feeding.
+- States at binding are low (display: competitive arousal 0.06, stress 0.12, fast arousal 0.02, 0.28 h after the last
+  display); nothing in them carries what the gap does.
+
+**Against the field (D0, adult males):** displays per hour in parties with ≥ 2 adult males 0.244 ± 0.012 (with a
+maximally swollen parous female 0.177, without 0.256) against Kanyawara's 0.259 ± 0.075 and 0.212 ± 0.074 (the model's
+direction is reversed); chases and attacks 0.0071 (0.027 and 0.0036) against 0.169 ± 0.039 and 0.066 ± 0.017 (10–20 times
+fewer); male → male aggression per co-present dyad-hour 0.097 ± 0.016 against 0.015 ± 0.003 (6.5 times more; mate-guard
+charges are 714 ± 96 of about 1,200 adult-male charges per run: stage E4p's literal, not this stage's); contact given
+0.0050 ± 0.0004 per hour against 0.027. **The cooldowns do not set these rates.**
+
+**Step 2 therefore** (the registered consequence): the three literals are switched out without replacement, one bit each
+(§4); the arm confirms it. No mechanism is added for a rate the diagnosis did not tie to a literal.
+
 ## 3. Field rows and readouts
 
 **Readouts with a field value (no row in data/targets.json; reported, not scored).** Kibale first, with the Methods
@@ -119,9 +188,52 @@ by immatures) is a sealed C8 proof row: e-bench does not compute it, and sealed 
 (early-life-prereg.md, the C8 ruling), so it is not computed here either; the brief's statement that it is scored does
 not hold for e-bench.
 
-## 4. Mechanism
+## 4. Mechanism: switch `aggressionGaps` (registered after the diagnosis, before any code of it)
 
-(after the diagnosis)
+One switch, 0 = today, bit-identical; a sum of bits, one per literal, so that iterations can separate them:
+
+| Bit | Literal switched out (not read) | Replaced by |
+| --- | --- | --- |
+| 1 | the 1.5-h cooldown after the animal's own last aggression (candidates.ts `cooled`) at the status challenge, E4a's escalated attack, the grudge, coercive and female-dominance charges | nothing new: each offer's own score and the target's answer (E4h) govern repetition (trims ×1.22, §2.1) |
+| 2 | the 0.2-h gap after the animal's own last aggression at the charge at strangers (and the gang attack in the same branch) | nothing new (inert, §2.1) |
+| 4 | the 0.75-h display gap after the animal's own last display | nothing new: the display's own score against the other options (trims ×1.42, §2.1); the fatigue gate (energy > 0.3) stays |
+
+No magnitude, weight or time constant is added. Code: candidates.ts (`aggrBit`; the three gates read the bit before the
+literal, so the literal is not evaluated with the bit set), data/params.json (`aggressionGaps`, design switch, 0–7),
+scripts/lib/prescriptions.ts (TRACK_E_SWITCHES; three LITERAL_OFF entries, verified by a code read and
+`param-reads.ts --literals`), tests/sim-track-e.test.ts (switch list), tests/sim-aggression-gaps.test.ts (0 by default in
+both profiles; switch 0 leaves the world unchanged; each bit opens its offer within the gap; the count on S27 51 → 48). The
+literal lines change text; the ledger test's pieces and the decision guide's `has` follow (the count at 0 is unchanged).
+
+### 4.1 Arm A1, predictions and kill criterion
+
+**A1** = S27 + `aggressionGaps` 7, quick (seeds 48, 7; 30 + 30 days), from a frozen detached checkout of the commit that
+adds the code: `e-bench --quick` (`--workers` 1 above load 8, else 2), `energy-diagnose`, `aggression-diagnose`,
+`rhythm-metrics` (night safety). Judged against the four S27q realizations (e-bench, energy; `judge_vs_reps.py quick
+custom`, e-noise.md amendment 2, with and without T-HUN-4, T-BRD-1 and T-IGE-3) and the four D0 diagnoses (readouts).
+
+| Quantity | S27q / D0 (mean ± SD) | Predicted A1 | Confidence |
+| --- | --- | --- | --- |
+| Prescriptions | 51 | 48 | high |
+| Viability; deaths from fights | pass; 0 | pass; 0 | moderate |
+| Fitted, held-out, held-out without the rare rows | group mean | inside noise (\|z\| ≤ 2) | moderate |
+| Status, reunion and rival displays per male(≥ 12 y)-hour | 0.181 ± 0.012 | 0.22–0.30 (D3 0.257) | moderate |
+| Displays per adult-male hour in parties with ≥ 2 adult males | 0.244 ± 0.012 (field 0.21–0.26) | 0.30–0.42 (D3 0.358) | moderate |
+| The five acts the cooldown gated, per male-hour | 0.0043 ± 0.0007 | 0.003–0.007 (D1 0.0053) | moderate |
+| Charges at strangers per male-hour | 0 | 0 to a handful of events | high |
+| Male → male aggression per co-present dyad-hour | 0.097 ± 0.016 (field 0.015) | 0.06–0.11 | moderate |
+| Fights; wounds ≥ 0.05 per run (both seeds) | 1 ± 1; 4 ± 1 | up (D1 5; 10) | low |
+| Reserves %/day, every class | S27q mean ± SD | within 0.03 of the mean | moderate |
+| T-ACT-1..4, T-SOC-5, T-SOC-9, T-COM-1 | S27q spread | inside their bands as the group | moderate |
+| Night safety (adults out of a nest; T-RHY-5) | — | ≤ 3.3%; ≤ 0.033 | high |
+
+**Kill criterion (the switch stays off and the result is recorded as a null)**: (a) viability fails (a starvation death,
+or a seed below 80% of its start); (b) a death from a within-community fight; (c) held-out worse beyond noise (z > +2)
+with or without the rare rows; (d) wounds ≥ 0.05 above 0.05 per adult male-day (E4h's line); (e) any class's reserve slope
+more than 0.05% of the store a day below the S27q mean; (f) night safety fails.
+
+**Keep rule (standard):** viability passes; held-out not worse beyond noise with and without the rare rows; prescriptions
+51 → 48. Then a provisional keep candidate for the integrator's 5-seed confirm.
 
 ## 5. Reference and judging
 
