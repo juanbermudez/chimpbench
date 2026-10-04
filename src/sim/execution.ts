@@ -513,11 +513,22 @@ function departAttempt(world: World, c: Chimp): void {
   if (c.action !== 'travel' || x.v !== V.TREE || x.aux > 0) { delete x.tryNest; return; } // only an own trip to a tree is an initiation
   const cap = P.departPersistMaxMin / 60;
   // an effort that was not re-launched within the window is over: the next departure starts a new one
-  if (x.trySince !== undefined && time - (x.tryAt ?? -1e9) > cap) { delete x.trySince; delete x.tryAt; }
+  if (x.trySince !== undefined && time - (x.tryAt ?? -1e9) > cap) { if (departTap.fn) departTap.fn(c, 'lapsed', 0); delete x.trySince; delete x.tryAt; }
   const audience = departAudience(world, c);
-  if (audience === 0 || (x.trySince !== undefined && time - x.trySince >= cap)) { delete x.trySince; delete x.tryAt; delete x.tryNest; return; } // nobody to leave, or it has waited long enough: it goes
+  if (audience === 0 || (x.trySince !== undefined && time - x.trySince >= cap)) { if (departTap.fn) departTap.fn(c, audience === 0 ? 'free' : 'alone', audience); delete x.trySince; delete x.tryAt; delete x.tryNest; return; } // nobody to leave, or it has waited long enough: it goes
   x.tryN = audience;
+  if (departTap.fn) departTap.fn(c, 'attempt', audience);
 }
+
+/**
+ * Optional tap for diagnostics (scripts/depart-diagnose.ts, stage E5f): called at each step of a departure attempt
+ * (departPersist), before the attempt's state changes: 'attempt' (an own trip to a tree started with an audience; n the
+ * audience), 'alone' (started with an audience once the effort's cap has passed: it goes; n the audience), 'free' (started
+ * with no audience), 'lapsed' (the effort was over: not re-launched within the cap), 'recruited' (n the companion who
+ * joined or followed while it checked), 'given-up' (nobody came within the check). Never set by the app; reads only, so the
+ * simulation is unchanged.
+ */
+export const departTap: { fn: ((c: Chimp, ev: 'attempt' | 'alone' | 'free' | 'lapsed' | 'recruited' | 'given-up', n: number) => void) | null } = { fn: null };
 
 /** The initiator stands and checks; true while the attempt is still open (or was just given up). */
 function departWait(world: World, c: Chimp): boolean {
@@ -527,11 +538,13 @@ function departWait(world: World, c: Chimp): boolean {
     if (o === c || !o.alive || o.troopId !== c.troopId) continue;
     const ox = ix(o);
     if ((o.action === 'travel' && o.targetId === c.targetId && ox.aux === c.id) || (o.action === 'follow' && o.targetId === c.id && ox.v === V.PARTY)) {
+      if (departTap.fn) departTap.fn(c, 'recruited', o.id);
       delete x.tryN; delete x.trySince; delete x.tryAt; delete x.tryNest; // recruited: the party moves
       return false;
     }
   }
   if (c.actionTime < P.departCheckMin * 60) { x.actEnd += TICK_HOURS; c.nextDecision = x.actEnd; return true; } // waiting, checking back
+  if (departTap.fn) departTap.fn(c, 'given-up', 0);
   delete x.tryN;
   if (x.trySince === undefined) x.trySince = world.time - c.actionTime / 3600;
   x.tryAt = world.time + P.departRetryMin / 60;
