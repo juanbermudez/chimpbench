@@ -1,6 +1,6 @@
 # E2j pre-registration: climbing, halts and the cost of a faster walk
 
-Status: in progress (4 October 2026): diagnosis (the trip's valuation); iteration 1 B1 (`tripBodyCost` 1) recorded, not kept (§7, §8 written after it); iteration 2 B2 (`youngArrival`) registered (§9). Skeleton committed at the start of the stage (branch `e2j-climbing`, from `track-e`
+Status: in progress (4 October 2026): diagnosis (the trip's valuation); iteration 1 B1 (`tripBodyCost` 1) recorded, not kept (§7, §8 written after it); iteration 2 B2 (`youngArrival`) inert by an implementation error (§9.1); iteration 3 B3 registered (§10). Skeleton committed at the start of the stage (branch `e2j-climbing`, from `track-e`
 0d08525), before any run and before any code change. Track E, stage E2j. Rule served: field values of behaviour are
 targets, never inputs. No speed, halt length or multiplier is set from a day range or a travel share, or tuned to reach
 them.
@@ -535,6 +535,31 @@ Predictions (moderate confidence unless stated):
 rare rows worse beyond noise (z > +2) in either draw; the count is not 42; the two-draw mean of nursing mothers', infants'
 0.5–2 y or juveniles' reserve trend more than 2 SD below S22's mean; night safety (rhythm-metrics on B2) above 3.3% of
 the night. This is the stage's last mechanism iteration on the trip's term (§8's recommendation is revised after it).
+
+### 9.1 Result, iteration 2 (B2, B2r; frozen bb6da94): inert, an implementation error
+
+B2 reproduced B1 bit for bit (every readout of climb-diagnose equal, e.g. juveniles' travel episodes 17.31 a day and 1,627
+retargets below 8 y in both). S22's stack has `redecideValue` 0 (S18 was not adopted, e-stack2-confirm.md), so below
+rgMinAge the rules take the plain argmax (rg.ts rgChoice: the intent is deleted and null returned) and older animals the
+C13 gate; the registered code sat in argmaxKeep's `redecideValue` 2 branch, which this stack never runs. A check of the
+decision points (a throwaway script, not committed: 243 finished trips of under-8s in 3 days, every one with no intent)
+found it. My error in reading the stack, not a result about the mechanism; B2r was run and is not reported further.
+
+## 10. Mechanism, iteration 3 (B3; registered 4 October 2026 before its runs)
+
+The same mechanism, placed where this stack runs: `youngArrival` 1 in rgChoice's branch below rgMinAge (src/sim/rg.ts;
+for `redecideValue` 0) applies the C13 gate's own arrival rule (rg.ts gate: no interrupt, need, period or age change since
+the trip was chosen; the tree in view within GATE.arriveM; feeding there legal) and otherwise leaves the argmax to decide
+as today; the intent of each argmax choice is kept for that test (an OPTIONAL_X key already). The `redecideValue` 2 branch
+of §9 stays (the arrival rule of whichever policy older animals follow). Smoke-tested on 3 days of B1's parameters: under-8
+retargets 93 → 28, of them at their own tree 65 → 7; juveniles' trips ending in feeding at their target 1.5 → 6.2 a day.
+
+Arms **B3** = S22 + `walkGait` 1 + `tripBodyCost` 1 + `youngArrival` 1 and **B3r** (`rngSalt` 1): e-bench, energy-diagnose,
+climb-diagnose `--a3`, from a frozen checkout of the commit that registers this section; judged as §9 (each draw by
+e-noise.md amendment 2; the energy line on the mean of the two draws). Predictions and kill criterion: §9's, unchanged
+(2: under-8 retargets at their own tree at most half of B1's 1,050; 3: juveniles' travel episodes 13–16 a day and their
+walking in trips 44–51 kcal/day; 4: juveniles', mothers' and infants' 0.5–2 y two-draw reserve means within 2 SD of S22's).
+This is the stage's last iteration.
 
 ## 8. Stage verdict (4 October 2026)
 

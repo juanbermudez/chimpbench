@@ -216,6 +216,21 @@ export function rgChoice(world: World, c: Chimp, list: Candidate[]): Candidate |
   const P = paramsOf(world), x = ix(c);
   if (P.rgOn !== 1 || c.age < P.rgMinAge) {
     if (P.redecideValue === 2) return argmaxKeep(world, c, list, P);
+    // stage E2j (youngArrival, iteration 3; docs/staging/e2j-prereg.md §10): below rgMinAge the argmax still decides every
+    // choice, but a trip that has just reached its tree becomes feeding there by the gate's own arrival rule (the C13 policy
+    // of older animals: no interrupt, need, period or age change since the trip was chosen; the tree in view within
+    // GATE.arriveM; feeding there legal). The intent of each argmax choice is kept for that test.
+    if (P.youngArrival === 1 && P.rgOn === 1 && P.redecideValue !== 1) {
+      const g = gate(world, c, x.rgIntent, list);
+      if (typeof g !== 'string' && g.arrived) {
+        x.rgIntent = { ...intentOf(world, c, 'forage', g.keep.targetId, candidateMeta.get(g.keep)?.v ?? V.NONE), buckets: x.rgIntent!.buckets };
+        return g.keep;
+      }
+      const top = list[0], meta = top ? candidateMeta.get(top) : undefined;
+      if (top && top.action !== 'dead') x.rgIntent = intentOf(world, c, top.action, top.targetId, meta?.v ?? V.NONE, meta?.aux ?? -1);
+      else delete x.rgIntent;
+      return null;
+    }
     if (x.rgIntent) delete x.rgIntent;
     return P.redecideValue === 1 ? argmaxKeep(world, c, list, P) : null;
   }

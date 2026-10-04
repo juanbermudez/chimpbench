@@ -100,6 +100,31 @@ test('youngArrival is 0 by default in both profiles', () => {
   for (const profile of ['field', 'compressed'] as const) assert.equal(paramsOf(createWorld(5, { profile })).youngArrival, 0);
 });
 
+const fedAtOwnTree = (params: Record<string, number>) => {
+  const w = createWorld(48, { profile: 'field', params }), P = paramsOf(w);
+  const prev = new Map<number, { a: string; t: number }>();
+  let fed = 0;
+  for (let i = 0; i < 5760; i++) {
+    tickWorld(w);
+    for (const c of index(w).alive) {
+      const p = prev.get(c.id);
+      if (p && c.age >= 5 && c.age < P.rgMinAge && p.a === 'travel' && c.action === 'forage' && c.targetId === p.t) fed++;
+      prev.set(c.id, { a: c.action, t: c.targetId });
+    }
+  }
+  return { fed, hash: worldHash(w), w };
+};
+
+test('youngArrival on (the C13 gate, redecideValue 0): more of the young animals\' trips end feeding at their own tree; deterministic, JSON-lossless', () => {
+  const p0 = { ...BASE, tripBodyCost: 1 };
+  assert.equal(paramsOf(createWorld(48, { profile: 'field', params: p0 })).redecideValue, 0);
+  const off = fedAtOwnTree(p0), on = fedAtOwnTree({ ...p0, youngArrival: 1 }), again = fedAtOwnTree({ ...p0, youngArrival: 1 });
+  assert.ok(on.fed > off.fed, `trips ending in feeding at their tree, under ${paramsOf(on.w).rgMinAge} y: ${on.fed} against ${off.fed}`);
+  assert.equal(on.hash, again.hash);
+  assert.deepEqual(JSON.parse(JSON.stringify(on.w)) as World, on.w);
+  assert.equal(prescriptionCount({ ...p0, youngArrival: 1 }).total, prescriptionCount(p0).total);
+});
+
 test('youngArrival on: more of the young animals\' trips end feeding at their own tree; deterministic, JSON-lossless; no counted prescription changes', () => {
   const count = (params: Record<string, number>) => {
     const w = createWorld(48, { profile: 'field', params }), P = paramsOf(w);
