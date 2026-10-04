@@ -278,17 +278,64 @@ Crowns (crop-energy-diagnose, simulation truth):
 
 Field rows, day ranges, reserves and sums (e-bench, energy-diagnose):
 
-<!-- final.py table -->
+| Readout | S27 quick: 4 runs | mean ± SD | K2 | K05 |
+| --- | --- | --- | --- | --- |
+| crop kcal of a fruiting crown, median (all / figs / non-figs) | 2053/3056/1895 ; 2056/3056/1905 ; 2056/3056/1906 ; 2039/3056/1895 | 2051/3056/1900 ± 8/0/6 | 4112/6112/3870 | 1008/1506/947 |
+| crop kcal at a visit start, median | 1243 / 1168 / 1198 / 1158 | 1192 ± 38 | 2985 (z +47.0) | 590 (z -15.8) |
+| visit length, median min | 19.0 / 19.0 / 19.0 / 19.5 | 19.1 ± 0.2 | 18.5 (z -2.5) | 18.5 (z -2.5) |
+| feeders per occupied crown | 1.42 / 1.39 / 1.40 / 1.37 | 1.39 ± 0.02 | 1.42 (z +1.0) | 1.37 (z -1.1) |
+| crop share below the bout room | 0.158 / 0.171 / 0.171 / 0.166 | 0.166 ± 0.006 | 0.042 (z -21.5) | 0.341 (z +30.0) |
+| bouts ended with the crown empty | 0.046 / 0.051 / 0.046 / 0.042 | 0.046 ± 0.004 | 0.005 (z -11.2) | 0.184 (z +37.4) |
+| bouts ended sated | 0.549 / 0.548 / 0.520 / 0.561 | 0.544 ± 0.017 | 0.573 (z +1.6) | 0.393 (z -8.7) |
+| T-ACT-1 | 0.378 / 0.377 / 0.378 / 0.368 | 0.375 ± 0.005 | 0.374 (z -0.4) | 0.420 (z +9.4) |
+| T-ACT-2 | 0.116 / 0.121 / 0.125 / 0.103 | 0.116 ± 0.009 | 0.098 (z -1.9) | 0.156 (z +4.2) |
+| T-ACT-3 | 0.099 / 0.088 / 0.102 / 0.104 | 0.098 ± 0.007 | 0.099 (z +0.0) | 0.089 (z -1.3) |
+| T-ACT-4 | 0.418 / 0.406 / 0.410 / 0.450 | 0.421 ± 0.020 | 0.377 (z -2.2) | 0.366 (z -2.8) |
+| T-PTY-1 | 4.781 / 4.630 / 4.487 / 4.448 | 4.586 ± 0.151 | 4.813 (z +1.5) | 3.805 (z -5.2) |
+| T-RNG-4 | 2.424 / 2.179 / 2.519 / 1.934 | 2.264 ± 0.262 | 1.701 (z -2.1) | 3.860 (z +6.1) |
+| T-RNG-5 | 0.902 / 1.060 / 0.932 / 1.109 | 1.001 ± 0.099 | 1.259 (z +2.6) | 0.741 (z -2.6) |
+| T-FOOD-2 | 0.819 / 0.766 / 0.818 / 0.830 | 0.808 ± 0.029 | 0.816 (z +0.3) | 0.708 (z -3.5) |
+| T-FOOD-4 | 9.426 / 9.249 / 8.891 / 9.682 | 9.312 ± 0.332 | 9.120 (z -0.6) | 8.464 (z -2.6) |
+| T-FOOD-6 | 4.072 / 3.871 / 4.115 / 3.719 | 3.944 ± 0.184 | 3.703 (z -1.3) | 5.637 (z +9.2) |
+| T-HUN-1 | 13.886 / 45.625 / 22.182 / 22.182 | 25.969 ± 13.675 | 14.038 (z -0.9) | 35.707 (z +0.7) |
+| true ground km/day, adult male | 2.87 / 2.98 / 2.86 / 2.53 | 2.81 ± 0.19 | 2.05 (z -3.9) | 4.12 (z +6.7) |
+| true ground km/day, female, other | 2.01 / 2.05 / 2.24 / 1.99 | 2.08 ± 0.12 | 1.83 (z -2.1) | 2.60 (z +4.6) |
+| true ground km/day, female, lactating | 2.44 / 2.45 / 2.57 / 2.46 | 2.48 ± 0.06 | 2.22 (z -4.3) | 3.59 (z +18.9) |
+| true ground km/day, juvenile 5–12 y | 2.75 / 2.88 / 2.96 / 2.74 | 2.83 ± 0.11 | 2.41 (z -3.9) | 3.95 (z +10.4) |
+| reserves %/day, adult male | -0.002 / +0.007 / +0.001 / +0.003 | +0.002 ± 0.004 | -0.005 (z -1.8) | +0.004 (z +0.4) |
+| reserves %/day, female, other | -0.017 / +0.008 / -0.007 / +0.038 | +0.006 ± 0.024 | +0.008 (z +0.1) | -0.036 (z -1.7) |
+| reserves %/day, female, lactating | +0.005 / -0.008 / -0.005 / +0.006 | -0.000 ± 0.007 | -0.012 (z -1.7) | -0.044 (z -6.4) |
+| reserves %/day, juvenile 5–12 y | -0.015 / -0.016 / -0.019 / -0.059 | -0.027 ± 0.021 | +0.012 (z +1.9) | -0.108 (z -3.8) |
+| reserves %/day, infant 2–5 y | +0.007 / -0.036 / -0.016 / +0.001 | -0.011 ± 0.019 | -0.024 (z -0.7) | -0.016 (z -0.2) |
+| reserves %/day, infant 0.5–2 y | +0.012 / +0.011 / +0.006 / +0.007 | +0.009 ± 0.003 | -0.032 (z -12.6) | -0.070 (z -24.5) |
+| fitted sum (16 rows) | 1.50 / 2.68 / 1.04 / 2.26 | 1.87 ± 0.74 (SD used 0.74) | 2.67 (z +1.0) | 2.18 (z +0.4) |
+| held-out sum (12 rows) | 4.27 / 4.04 / 3.73 / 3.22 | 3.82 ± 0.46 (SD used 1.26) | 4.87 (z +0.7) | 4.92 (z +0.8) |
+| held-out w/o rare sum (11 rows) | 3.45 / 4.04 / 3.73 / 3.22 | 3.61 ± 0.36 (SD used 0.48) | 4.72 (z +2.1) | 3.18 (z -0.8) |
+| prescriptions | 42 / 42 / 42 / 42 | | 42 | 42 |
+| viability | pass / pass / pass / pass | | pass | pass |
+  S27q: 28d249e dirty 0; deaths 0, starvation 0
+  S27q1: 28d249e dirty 0; deaths 0, starvation 0
+  S27q2: 28d249e dirty 0; deaths 0, starvation 0
+  S27q3: 28d249e dirty 0; deaths 0, starvation 0
+  K2: 592cfe9 dirty 0; deaths 1, starvation 0
+  K05: 592cfe9 dirty 0; deaths 0, starvation 0
 
 **Reading.**
 - **Half the energy (K05) makes the crop bind.** The crop share at arrival is below the bout's gut room in 34% of visits
   (17%), 18% of bouts end with the crown empty (4.6%) and 10% with a full gut, two thirds of the crowns fed in are
-  emptied below 0.02 units (a third). Animals feed and travel more, adult males' observed day range leaves its band,
-  parties shrink, the fruit share falls and returns to a crown space out (T-ACT-1, T-ACT-2, T-RNG-4, T-PTY-1, T-FOOD-2,
-  T-FOOD-6 in the table); nursing mothers take 153 kcal a day less from crowns. Sums inside noise.
-- **Double the energy (K2) takes the crop out of nearly every bout** (crop binding 4%, crown empty 0.5%); adult males'
-  observed day range falls to 1.7 km and the travel share to 0.10; held-out without the rare rows is worse beyond noise
-  (z +2.1, through T-RNG-5).
+  emptied below 0.02 units (a third). Animals feed and travel more, adult males' observed day range leaves its band
+  (3.86 km, band 1.5–3.5), parties shrink, the fruit share falls and returns to a crown space out (T-ACT-1, T-ACT-2,
+  T-RNG-4, T-PTY-1, T-FOOD-2, T-FOOD-6 in the table); every class walks 1.1–1.3 km a day more (true ground path: adult
+  males 4.12 km against 2.81 ± 0.19, nursing mothers 3.59 against 2.48 ± 0.06, juveniles 3.95 against 2.83 ± 0.11) and
+  eats longer (nursing mothers 355 min against 313), nursing mothers take 153 kcal a day less from crowns, and the
+  reserves of nursing mothers (−0.044 %/day), juveniles (−0.108) and infants of 0.5–2 y (−0.070) fall beyond the
+  reference's spread. Sums inside noise (the departures before sunrise, T-FOOD-10, rise to 0.72).
+- **Double the energy (K2) takes the crop out of nearly every bout** (crop binding 4%, crown empty 0.5%); every class
+  walks less (true ground path: adult males 2.05 km against 2.81 ± 0.19, nursing mothers 2.22 against 2.48 ± 0.06,
+  juveniles 2.41 against 2.83 ± 0.11) and spends and eats a little less (energy-diagnose); adult males' observed day
+  range falls to 1.7 km and the travel share to 0.10; held-out without the rare rows is worse beyond noise (z +2.1,
+  through T-RNG-5). The infants' 0.5–2 y trend (−0.032 %/day) is one infant of 0.6 y on seed 48 (−0.15 %/day; the same
+  infant gained in all four reference runs); an adult male died of illness.
 - **Neither changes how many feed together or how long a visit lasts**: 1.42 and 1.37 feeders per occupied crown (1.39 ±
   0.02), visits of 18.5 min (19.1), 140–142 kcal per visit. The crown's energy acts through depletion: how far animals
   travel, how parties split, how much mothers eat; co-feeding stays E5c's open problem.
@@ -297,9 +344,10 @@ Field rows, day ranges, reserves and sums (e-bench, energy-diagnose):
 
 **No switch; the stage records and stops (§5).** Under the ledger `fruitIntakePerH` is the energy scale of every crown
 (one unit = 4,031 kcal of drupes, 4,429 of figs; a median fruiting crown 2,051 kcal) and of every crop threshold, not an
-intake rate. Through depletion it sets how far animals travel and how parties split (halving it pushes males' day range
-out of its band and shrinks parties; doubling it shortens day ranges and worsens held-out through T-RNG-5), not how
-many feed together. No open source gives the crop of the model's crowns: whole-cycle crops of ten large Kanyawara fig
+intake rate. Through depletion it sets how far animals travel, how parties split and what mothers and the young can
+store (halving it adds 1.1–1.3 km of walking a day in every class, pushes males' day range out of its band, shrinks
+parties and lowers nursing mothers', juveniles' and young infants' reserves; doubling it shortens every class's path by
+0.25–0.8 km and worsens held-out through T-RNG-5), not how many feed together. No open source gives the crop of the model's crowns: whole-cycle crops of ten large Kanyawara fig
 trees (2–18 × what a model fig crown ripens per cycle at the design turnover), nothing for the non-fig species that are
 84% of the trees. `fruitIntakePerH` stays; prescriptions 42 (unchanged).
 
