@@ -2878,3 +2878,31 @@ directed to bond partners and balanced over weeks, and spare time goes to rest. 
 **Not verified:** dunbarDunbar1988 (gelada mothers' time budgets; OpenAlex closed, no Wayback copy), dunbar1992 and
 watts2000 I–II (Springer bot challenge), doran1997 (Taï seasonality; closed); any chimpanzee louse load or egg-laying
 rate; any measurement of how fast a primate relationship weakens without contact.
+
+### Addendum: E3c forage rate (3 October 2026)
+
+Read for stage E3c ([staging/e3c-prereg.md](staging/e3c-prereg.md)): the currency in which a forager compares where to
+eat. Tags as above.
+
+- **The rate-maximizing currency** [stephensKrebs1986] (book; standard reference, not read in full here; bibliographic
+  details checked on Crossref) and [charnov1976] (theory) [M as applied]. Classical foraging models score a feeding
+  option by the long-term average rate of net energy gain: the energy an option yields, less the energy spent getting
+  it, divided by the time it takes (travel or search plus handling). The marginal value theorem applies it to the choice
+  of when to leave a patch; the patch and prey models to which option to take. The currency does not divide by the
+  forager's need: how hungry the forager is enters through whether it forages (and through risk-sensitive models,
+  which E3c does not use), not through the rate of an option. Use in E3c: the form of an option's value (energy over
+  time, net of the walk); no magnitude is taken from these sources.
+- **Walking cost** [sockol2007] (FT; §E entries above) [H]: already the ledger's input (`ledgerWalkJPerKgM` 3.8 J/kg/m,
+  net of resting). Use in E3c: the energy a walk costs, charged against the option it reaches.
+- **Walking speed, wild** (Mahale, Hunt 1989 as cited by nguessan2009, secondary) [L]: 0.88 m/s males, 0.78 m/s females,
+  0.75 m/s with an infant, while walking. Context for `walkMps` (field 0.35 m/s, a copy of the day range over the travel
+  share, pauses included); not used as an input in E3c (§0 of the pre-registration).
+
+- *new* stephensKrebs1986: Stephens DW, Krebs JR 1986. *Foraging Theory*. Princeton University Press (Monographs in
+  Behavior and Ecology), Princeton, NJ. [doi:10.1515/9780691206790](https://doi.org/10.1515/9780691206790) (book;
+  standard reference).
+- charnov1976, sockol2007 and nguessan2009 are already cited; the entries above add findings.
+
+**Not verified:** a measured chimpanzee intake rate per feeding minute that falls as a crown is used (diminishing
+returns within a crown); the travel speed of wild chimpanzees between feeding trees (pauses included) from a primary
+source.
