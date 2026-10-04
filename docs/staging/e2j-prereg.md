@@ -135,6 +135,179 @@ of decisions at a body speed, e2i-prereg.md §2.1). Smoke-tested on 2 days of W.
 of the commit that registers this amendment. Reading registered now: if the omissions change the top option in under a
 third of the decisions the walking speed changes (under ~2.4%), correcting them cannot by itself undo the trip increase.
 
+### 2.3 Diagnosis results (frozen checkouts 7017f22, b1fbacd and 268a72f, clean; quick, seeds 48 and 7, 30 + 30 days; every number printed by the stage's scripts `table.py`, `compact.py`, `episodes.py` from the JSON in the stage's scratch directory, `runs/`)
+
+W = S22 + `walkGait` 1 (bench, energy-diagnose, climb-diagnose) against the integrator's four S22 quick realizations
+(bench and energy-diagnose, bench-run3 ea794ff) and this stage's climb-diagnose runs of the same four parameter sets.
+
+```
+  S22q: ea794ff dirty 0 prescriptions 43 viability pass deaths 0 starvation 0
+  S22q1: ea794ff dirty 0 prescriptions 43 viability pass deaths 0 starvation 0
+  S22q2: ea794ff dirty 0 prescriptions 43 viability pass deaths 0 starvation 0
+  S22q3: ea794ff dirty 0 prescriptions 43 viability pass deaths 0 starvation 0
+  W: 7017f22 dirty 0 prescriptions 42 viability pass deaths 0 starvation 0
+quick, reference custom (4 runs), rows counted in all runs: fitted 14, held-out 10
+  fitted             (14 rows) ref 1.59, 1.20, 1.69, 1.59 (mean 1.52, sd 0.22; used 0.69) | W.json: 1.24, Δ -0.28, z -0.4 (inside noise)
+  held-out           (10 rows) ref 3.40, 2.84, 4.08, 3.33 (mean 3.41, sd 0.51; used 1.26) | W.json: 3.13, Δ -0.29, z -0.2 (inside noise)
+  held-out w/o rare  (10 rows) ref 3.40, 2.84, 4.08, 3.33 (mean 3.41, sd 0.51; used 0.51) | W.json: 3.13, Δ -0.29, z -0.5 (inside noise)
+   T-FOOD-2  fitted   ref 0.08±0.08 | W.json 0.31 (fail)
+```
+
+| Readout | S22 runs | S22 mean ± SD | W |
+| --- | --- | --- | --- |
+| T-RNG-4 | 1.607 / 1.719 / 1.324 / 1.502 | 1.538 ± 0.168 | 2.188 (z +3.5) |
+| T-RNG-5 | 0.947 / 0.940 / 1.254 / 1.140 | 1.070 ± 0.153 | 1.033 (z -0.2) |
+| T-ACT-1 | 0.374 / 0.369 / 0.372 / 0.378 | 0.373 ± 0.004 | 0.384 (z +2.6) |
+| T-ACT-2 | 0.152 / 0.166 / 0.153 / 0.163 | 0.158 ± 0.007 | 0.118 (z -5.4) |
+| T-ACT-3 | 0.094 / 0.094 / 0.107 / 0.093 | 0.097 ± 0.007 | 0.104 (z +0.9) |
+| T-ACT-4 | 0.409 / 0.334 / 0.389 / 0.322 | 0.363 ± 0.042 | 0.416 (z +1.1) |
+| T-FOOD-10 | 0.497 / 0.530 / 0.436 / 0.464 | 0.482 ± 0.041 | 0.517 (z +0.8) |
+| T-FOOD-4 | 7.783 / 8.543 / 7.922 / 8.217 | 8.116 ± 0.337 | 9.366 (z +3.3) |
+| T-FOOD-2 | 0.776 / 0.814 / 0.791 / 0.791 | 0.793 ± 0.016 | 0.835 (z +2.4) |
+| T-PTY-1 | 3.661 / 4.088 / 4.532 / 3.995 | 4.069 ± 0.359 | 4.736 (z +1.7) |
+| T-HUN-1 | 0.000 / 4.033 / 0.000 / 0.000 | 1.008 ± 2.017 | 0.000 (z -0.4) |
+| reserves %/day, adult male | 0.009 / -0.000 / 0.010 / 0.004 | 0.006 ± 0.005 | 0.001 (z -1.0) |
+| reserves %/day, female, other | 0.003 / 0.019 / 0.007 / -0.010 | 0.005 ± 0.012 | 0.010 (z +0.4) |
+| reserves %/day, female, lactating | 0.006 / -0.003 / -0.013 / 0.014 | 0.001 ± 0.012 | -0.049 (z -3.9) |
+| reserves %/day, juvenile 5–12 y | 0.004 / -0.009 / 0.009 / 0.015 | 0.005 ± 0.010 | -0.000 (z -0.4) |
+| reserves %/day, infant 2–5 y | 0.016 / -0.002 / -0.033 / 0.007 | -0.003 ± 0.021 | -0.038 (z -1.5) |
+| reserves %/day, infant 0.5–2 y | -0.006 / 0.010 / 0.014 / 0.022 | 0.010 ± 0.012 | -0.047 (z -4.3) |
+| true day range km, adult male | 1.65 / 2.03 / 1.76 / 1.83 | 1.82 ± 0.16 | 2.71 (z +5.0) |
+| true day range km, female, other | 1.07 / 1.48 / 1.37 / 1.45 | 1.34 ± 0.19 | 2.08 (z +3.5) |
+| true day range km, female, lactating | 1.63 / 1.68 / 1.70 / 1.63 | 1.66 ± 0.03 | 2.72 (z +27.5) |
+| true day range km, juvenile 5–12 y | 1.73 / 1.98 / 1.76 / 1.82 | 1.82 ± 0.11 | 2.99 (z +9.3) |
+| true day range km, infant 2–5 y | 0.27 / 0.27 / 0.30 / 0.28 | 0.28 ± 0.01 | 0.44 (z +9.9) |
+| true day range km, infant 0.5–2 y | 0.14 / 0.18 / 0.18 / 0.16 | 0.16 ± 0.02 | 0.28 (z +6.2) |
+| climbing kcal/d, adult male | 49.7 / 61.9 / 56.2 / 55.5 | 55.8 ± 5.0 | 66.2 (z +1.9) |
+| walking kcal/d, adult male | 59.6 / 73.5 / 63.9 / 66.2 | 65.8 ± 5.8 | 98.2 (z +5.0) |
+| climbing kcal/d, female, lactating | 33.2 / 34.8 / 35.5 / 35.3 | 34.7 ± 1.0 | 41.3 (z +5.6) |
+| walking kcal/d, female, lactating | 51.0 / 52.6 / 52.5 / 51.4 | 51.9 ± 0.8 | 82.0 (z +32.7) |
+| climbing kcal/d, juvenile 5–12 y | 41.4 / 45.5 / 46.5 / 43.6 | 44.3 ± 2.2 | 50.4 (z +2.4) |
+| walking kcal/d, juvenile 5–12 y | 55.5 / 61.0 / 57.3 / 57.8 | 57.9 ± 2.3 | 87.3 (z +11.5) |
+| climbing kcal/d, infant 2–5 y | 11.8 / 12.1 / 13.1 / 12.8 | 12.5 ± 0.6 | 14.6 (z +3.2) |
+| walking kcal/d, infant 2–5 y | 3.6 / 3.7 / 4.0 / 4.0 | 3.8 ± 0.2 | 5.8 (z +8.6) |
+| climbing min/d (up + down), adult male | 19.1 / 23.8 / 21.6 / 21.4 | 21.5 ± 2.0 | 25.4 (z +1.8) |
+| climbing min/d (up + down), female, lactating | 16.0 / 16.8 / 17.2 / 17.1 | 16.8 ± 0.5 | 19.8 (z +5.0) |
+| climbing min/d (up + down), juvenile 5–12 y | 25.4 / 28.3 / 28.6 / 27.1 | 27.3 ± 1.5 | 31.3 (z +2.4) |
+| climbing min/d (up + down), infant 2–5 y | 19.8 / 20.0 / 22.3 / 21.8 | 21.0 ± 1.3 | 24.0 (z +2.1) |
+| halts per travel bout, adult male | 0.62 / 0.64 / 0.65 / 0.63 | 0.63 ± 0.01 | 0.69 (z +4.7) |
+| halts per travel bout, female, lactating | 0.50 / 0.43 / 0.50 / 0.46 | 0.48 ± 0.03 | 0.47 (z -0.2) |
+| halts per travel bout, juvenile 5–12 y | 0.71 / 0.75 / 0.75 / 0.79 | 0.75 ± 0.03 | 0.92 (z +4.5) |
+| phase speed km/h, adult male | 0.83 / 0.80 / 0.81 / 0.83 | 0.82 ± 0.02 | 1.21 (z +20.3) |
+| halts ≥ 20 min per day, adult male | 6.2 / 7.2 / 6.6 / 6.7 | 6.7 ± 0.4 | 8.3 (z +3.3) |
+| phase speed km/h, female, lactating | 0.83 / 0.83 / 0.82 / 0.82 | 0.82 ± 0.01 | 1.15 (z +50.0) |
+| halts ≥ 20 min per day, female, lactating | 5.2 / 5.6 / 5.2 / 5.4 | 5.4 ± 0.2 | 6.5 (z +5.4) |
+| prescriptions | 43 / 43 / 43 / 43 | 43 ± 0 | 42 |
+
+The registered decomposition (§2), Δ = W − the S22 mean, with the counts that make it (climb-diagnose amendment 1 for the
+episode rows; activity, digestion, milk given, expenditure and absorbed from energy-diagnose):
+
+| term (kcal/day unless stated): S22 mean of 4 → W (Δ; z) | nursing mothers | infants 0.5–2 y | infants 2–5 y | juveniles 5–12 y | adult males |
+| --- | --- | --- | --- | --- | --- |
+| own walking in trips (travel act) | 38.9 → 65.3 (+26.4; z +29.8) | 0 | 0 | 34.7 → 54.7 (+20.0; z +6.5) | 54.1 → 77.3 (+23.2; z +6.1) |
+| own walking, all other acts | 13.0 → 16.7 (+3.7; z +7.3) | 1.9 → 2.9 (+1.0; z +4.8) | 3.8 → 5.8 (+1.9; z +8.6) | 23.1 → 32.6 (+9.4; z +4.5) | 11.7 → 20.9 (+9.2; z +3.1) |
+| own climbing into crowns (forage act) | 26.0 → 31.1 (+5.1; z +5.3) | 0.19 → 0.18 (-0.02; z -1.1) | 1.02 → 1.04 (+0.01; z +0.1) | 27.9 → 31.5 (+3.7; z +2.4) | 40.1 → 47.5 (+7.4; z +2.5) |
+| own climbing behind a carer (follow act) | 0 | 4.1 → 6.2 (+2.1; z +4.4) | 9.0 → 10.7 (+1.7; z +6.8) | 1.9 → 3.6 (+1.8; z +3.9) | 0.00 → 0.00 (+0.0) |
+| own climbing, all other acts | 8.7 → 10.2 (+1.5; z +2.7) | 1.5 → 2.2 (+0.7; z +5.6) | 2.4 → 2.9 (+0.4; z +1.3) | 14.5 → 15.2 (+0.7; z +0.9) | 15.7 → 18.7 (+3.0; z +1.1) |
+| carrying a dependent (walking + climbing) | 13.6 → 21.7 (+8.1; z +16.2) | 0 | 0 | 0 | 0 |
+| activity (time at 1.25 / 1.38 × resting) | 141.1 → 145.3 (+4.3; z +4.9) | 31.3 → 31.9 (+0.6; z +1.8) | 58.9 → 60.0 (+1.2; z +3.8) | 125.8 → 127.4 (+1.6; z +2.8) | 151.8 → 153.2 (+1.4; z +4.4) |
+| digestion | 168.9 → 170.5 (+1.6; z +1.9) | 36.0 → 36.3 (+0.4; z +1.5) | 61.1 → 61.2 (+0.1; z +0.3) | 123.1 → 127.1 (+4.0; z +7.7) | 152.2 → 156.7 (+4.5; z +4.5) |
+| milk given | 351.6 → 331.7 (-19.9; z -2.7) | 0 | 0 | 0 | 0 |
+| expenditure, all terms | 1688.4 → 1718.8 (+30.3; z +5.0) | 360.0 → 364.4 (+4.5; z +5.9) | 611.0 → 615.6 (+4.6; z +7.2) | 1227.5 → 1268.4 (+40.9; z +8.7) | 1518.1 → 1566.7 (+48.6; z +3.7) |
+| absorbed (kcal in − passed out) | 1689.5 → 1706.1 (+16.6; z +2.1) | 360.0 → 362.7 (+2.7; z +1.4) | 610.4 → 613.3 (+2.9; z +0.9) | 1230.5 → 1270.8 (+40.4; z +8.9) | 1521.6 → 1566.1 (+44.4; z +4.5) |
+| net (absorbed − expenditure) | 1.0 → -12.7 (-13.7; z -4.3) | 0.04 → -1.71 (-1.75; z -1.2) | -0.5 → -2.2 (-1.7; z -0.5) | 3.0 → 2.4 (-0.5; z -0.1) | 3.5 → -0.6 (-4.1; z -1.0) |
+| milk drunk | 0 | 283.0 → 283.3 (+0.3; z +0.1) | 279.6 → 247.5 (-32.1; z -3.5) | 0 | 0 |
+| travel episodes per day (count) | 11.5 → 15.3 (+3.9; z +8.1) | 0 | 0 | 14.0 → 19.0 (+5.0; z +4.3) | 14.9 → 18.9 (+4.1; z +2.7) |
+| … ending fed at their target (count) | 4.4 → 6.0 (+1.6; z +4.7) | 0 | 0 | 2.9 → 3.2 (+0.3; z +1.4) | 5.2 → 7.0 (+1.8; z +2.7) |
+| km/day in travel episodes | 1.4 → 2.3 (+0.9; z +28.8) | 0 | 0 | 1.4 → 2.3 (+0.9; z +7.1) | 1.5 → 2.2 (+0.7; z +6.0) |
+| … of it in episodes not ending fed at the target | 0.83 → 1.46 (+0.63; z +12.0) | 0 | 0 | 1.05 → 1.76 (+0.71; z +8.1) | 0.92 → 1.32 (+0.40; z +7.0) |
+| foregut room at a trip's start (share) | 0.44 → 0.39 (-0.04; z -4.3) | — | — | 0.44 → 0.41 (-0.03; z -5.5) | 0.46 → 0.44 (-0.02; z -1.7) |
+| crown visits per day (count) | 8.1 → 9.0 (+0.8; z +4.6) | 1.10 → 1.14 (+0.04; z +1.7) | 5.0 → 5.2 (+0.2; z +1.8) | 10.3 → 11.0 (+0.7; z +1.7) | 9.7 → 10.9 (+1.2; z +2.7) |
+| kcal eaten per crown visit | 176.6 → 156.9 (-19.7; z -6.9) | 37.1 → 38.0 (+0.9; z +0.5) | 53.4 → 52.8 (-0.6; z -0.5) | 115.8 → 115.0 (-0.8; z -0.3) | 155.4 → 143.9 (-11.4; z -1.9) |
+| visits left for another trip before sated, per day | 1.4 → 2.1 (+0.7; z +4.8) | 0 | 0 | 1.36 → 1.54 (+0.18; z +2.2) | 1.51 → 1.99 (+0.48; z +1.8) |
+| metres climbed per day | 94.6 → 112.5 (+17.9; z +5.6) | 69.4 → 103.5 (+34.1; z +4.8) | 92.7 → 107.3 (+14.6; z +2.9) | 139.6 → 160.1 (+20.5; z +2.5) | 122.1 → 144.7 (+22.6; z +1.9) |
+| eating min per day | 298.3 → 320.7 (+22.5; z +4.4) | 35.5 → 37.3 (+1.8; z +2.5) | 126.5 → 138.7 (+12.2; z +7.0) | 278.2 → 285.6 (+7.4; z +2.1) | 228.1 → 233.6 (+5.5; z +3.5) |
+| fallback food eaten (formula kcal) | 370.0 → 435.4 (+65.4; z +1.8) | 12.4 → 12.4 (+0.0; z +0.0) | 36.3 → 45.1 (+8.8; z +3.7) | 92.4 → 65.3 (-27.1; z -2.2) | 78.8 → 63.2 (-15.6; z -1.7) |
+
+Walking ÷ climbing energy per day (energy-diagnose; pontzerWrangham2004's wild Kanyawara chimpanzees: about 10, from
+measured distances and published equations): S22 1.18 (males), 1.51 (nursing mothers), 1.30 (juveniles); W 1.48, 1.99,
+1.73. Amendment 2's counterfactual: adding the climb's and the descent's time to every tree option's rate changes the
+top option in 2.66% of W's 115,631 daylight rules decisions (2.79% with a riding infant's metres; nursing mothers 3.04%
+and 3.73%), and a trip loses the top in 1.49% (1.60%); in S22q 2.45% (2.53%) and 1.08% (1.15%). E2i's walking speed
+changed the top option in 7.1%.
+
+**The term (registered rule, §2).** Over the classes that pay (in quick mode nursing mothers, reserves 0.001 ± 0.012 →
+−0.049 %/day, z −3.9, net −13.7 kcal/day; infants 0.5–2 y, 0.010 ± 0.012 → −0.047, z −4.3; juveniles do not pay here,
+net −0.5), the added locomotion is walking in trips: mothers +26.4 kcal/day of own walking in the travel act and +8.1 of
+carrying (mostly on the walk), against +5.1 climbing into crowns; juveniles +20.0 against +3.7. It comes from more trips,
+not longer ones: travel episodes +34–36% a day (mothers 11.5 → 15.3, juveniles 14.0 → 19.0, males 14.9 → 18.9) at the
+same start distance (median 98 → 110 m mothers, 106 → 106 males), the share of travel km in episodes that end feeding at
+their target unchanged (mothers 39% → 36%, males 40% → 39%, juveniles 25% → 22%): every kind of trip scales. Mothers set
+off with less room in the foregut (0.44 → 0.39 of capacity), leave crowns for another trip before they are sated more
+often (1.4 → 2.1 a day) and eat 11% less per crown visit (177 → 157 kcal), while their absorbed energy rises 1% (+16.6
+kcal/day: the extra 22 min of eating is mostly fibrous fallback, +65 kcal eaten, foregut full in 11.6% of daylight
+against 8.6%). Each added trip costs a mother ~11.5 kcal (walk, carry, one climb). The infants' added cost is their own
+climbing behind their mothers (+2.1 of +3.8 kcal/day: 34 m more a day, ascents 8.1 → 11.7); infants of 2–5 y pay in
+milk (−32 kcal/day: mothers refuse more, E1o's weanDeficit). Halts inside travel cost the resting rate; they change
+little (mothers 0.48 → 0.47 per bout; males 6.7 → 8.3 halts ≥ 20 min a day).
+
+**Named:** the trip's valuation. A faster walk shortens every trip's time in the forager's rate (E3c: (E − C) ÷ (walk +
+eating)), so trips win against staying, resting or socializing at lower hunger, and every trip's walk, carry and climb
+is paid in energy that the gut-limited intake of nursing mothers cannot return. Amendment 2 shows the trip's rate also
+omits two parts of what a trip costs the body: the climb's and descent's time and a riding infant's metres (§4).
+
+## 3. Sources (read 4 October 2026; addenda "Addendum: E2j climbing" in research.md and e-sources.md)
+
+- **pontzerWrangham2004** (abstract, PubMed PMID 14984786, read in full; the e-sources dead-end note "no abstract on
+  PubMed" is wrong for this paper; the full text stays closed) [M]: Kanyawara, wild chimpanzees, "we measured the
+  distance climbed and walked per day ... and used published equations to calculate the relative daily energy costs.
+  ... chimpanzees spend approximately ten-times more energy per day on terrestrial travel than on vertical climbing".
+  Distances, sample and equations are not in the abstract (not verified: two routes, PubMed and Europe PMC's open citing
+  papers). Use: a target relation (walking ÷ climbing energy), never an input; the model's 1.2–2.0 is a reported miss.
+- **charnov1976, stephensKrebs1986** (already cited, E3c): the rate's time is all the time an option takes besides
+  eating (travel or search). Use: the climb's and the descent's time belong in a trip's rate.
+- **sockol2007** and the ledger's climbing work (already cited): the costs per metre the ledger charges, also for a
+  riding infant (energy.ts rideTick); Use: a trip's energy includes the rider's metres.
+- **neufuss2018** (FT; cited by name in research.md before, key added; read for a climbing speed): cycle durations and duty factors of semi-free-ranging
+  chimpanzees, no speed. The only chimpanzee climbing speed on record is 0.5 m/s (nguessan2009 citing pontzerWrangham2004,
+  secondary [L]); `climbMps` (0.22, stylized) is left as it is (the stage's term is not a speed).
+
+## 4. Mechanism (iteration 1, B1; registered 4 October 2026 before its run)
+
+`tripBodyCost` 1 (src/sim/gait.ts `tripClimbH`, `riderKcal`; src/sim/intake.ts `netRateShare`; src/sim/candidates.ts
+`rateWorth`, `treeFoodWorth`; read only under `forageRate`; 0 = today, bit for bit): the net energy rate of a crown or
+a trip charges the time and the energy the body spends on it, as the movement and the ledger already do.
+- *Time:* the descent from where the animal stands when the goal is more than 3 m away (moveTo descends first, at 1.4 ×
+  the climbing speed) and the climb to the crown (at `climbMps` × bodySpeed, the factor moveTo's climb applies before
+  rain and light) join the walk's time in the rate's denominator.
+- *Energy:* the metres of a dependent riding on the animal join the trip's energy at the rider's mass (energy.ts
+  rideTick): on a trip's walk every dependent under 4 y, on a feeding approach and up the crown only one under 1.2 y
+  (candidates.ts isCarried).
+- No new magnitude; no pause added; no speed changed. Removes no counted prescription (42 with `walkGait`).
+
+## 5. Predictions and kill criterion (iteration 1; registered before its run)
+
+Arm **B1** = S22 + `walkGait` 1 + `tripBodyCost` 1, quick (seeds 48 and 7, burn-in 30, 30 days): e-bench, energy-diagnose
+and climb-diagnose from a frozen checkout of the commit that registers this section; judged against the four S22 quick
+realizations by e-noise.md amendment 2 with amendment 3's rare rows; W reported beside it.
+
+Predictions (moderate confidence on direction, low on size; amendment 2 sized the omissions at about a third of the
+walking speed's effect on choices):
+1. Prescriptions 42 (high); viability passes; sums inside noise.
+2. Travel episodes a day between S22's and W's: mothers 13.5–15.0 (W 15.3), males 16.5–18.6 (W 18.9); crown visits and
+   metres climbed a day between them as well.
+3. Mothers' own walking in trips 55–64 kcal/day (W 65.3, S22 38.9); carrying 17–21 (W 21.7, S22 13.6).
+4. Mothers' reserves −0.045 to −0.020 %/day (W −0.049, S22 0.001 ± 0.012): still beyond 2 SD below S22's mean (z < −2):
+   the omissions are real but small, so iteration 1 does not by itself let walkGait join (moderate).
+5. Infants 0.5–2 y: reserves between W's −0.047 and S22's 0.010; their climbing behind their mothers falls (low).
+6. T-RNG-4 between S22's 1.54 and W's 2.19; T-ACT-2 within ±0.01 of W's 0.118; T-FOOD-10 inside the reference spread
+   (low).
+
+**Kill criterion (B1 recorded, not a keep candidate, if any holds):** viability fails; held-out without the rare rows worse
+beyond noise (z > +2); night safety fails (> 3.3% of the night, rhythm-metrics, run only on a kept arm); the count is not
+42; nursing mothers' or infants' 0.5–2 y reserve trend more than 2 SD below S22's mean (the stage's goal: walkGait joins
+without their energy loss). An iteration 2 is registered only for a term B1's diagnosis names.
+
 ## 6. Known defects (file:line at 0d08525)
 
 - `netRateShare` (intake.ts :89–96) charges the walk's time and the climb's energy, not the climb's time

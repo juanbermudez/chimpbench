@@ -376,6 +376,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   choiceBelief: { stage: 'E3e', needs: {} },
   leftoverRules: { stage: 'E4m', needs: {} },
   walkGait: { stage: 'E2i', needs: {} },
+  tripBodyCost: { stage: 'E2j', needs: { energyLedger: 1, ledgerDrive: 1, forageRate: 1 }, removesNothing: 'charges a trip\'s climbing time and a riding dependent\'s metres in forageRate\'s net energy rate (the movement\'s and the ledger\'s own speeds and costs); adds no magnitude and switches no prescription out (e2j-prereg §4)' },
   patrolFusion: { stage: 'E4j', needs: { patrolValue: 2 }, removesNothing: 'corrects the occasion on which patrolValue 2 weighs the lead (a fusion of a party holding patrolMinMales adult males, judged by the males seen within reunionH, in place of a flicker of the 35 m view); adds no magnitude and switches no prescription out (e4j-prereg §4)' },
 };
 

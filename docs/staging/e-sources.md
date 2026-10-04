@@ -1867,3 +1867,13 @@ numbers (alexanderJayes1983, Abs; raichlen2013, FT) scale an immature's speed by
 similarity (design). New keys: hunt1989, jang2019, luciano2024, alexanderJayes1983, raichlen2013. Not verified: how
 sockol2007 chose 1.0 m/s, pontzer2014jhe and Pontzer et al. 2009 full texts, Finestone et al. 2018's speeds, Hunt 1989,
 juvenile great apes' walking speeds by age.
+
+## Addendum: E2j climbing (4 October 2026)
+
+Same text as research.md "Addendum: E2j climbing": wild Kanyawara chimpanzees spend about ten times more energy per day
+on terrestrial travel than on vertical climbing (pontzerWrangham2004, abstract verified on PubMed, PMID 14984786; distances
+and equations not in it; the earlier dead-end note is corrected for the abstract), a target relation the model misses
+(1.2–2.0); neufuss2018 (FT) gives climbing gait timing but no speed, so 0.5 m/s (nguessan2009 citing pontzerWrangham2004,
+secondary [L]) is still the only chimpanzee climbing speed; the forager's rate counts all the time an option takes besides
+eating (charnov1976, stephensKrebs1986). New key: neufuss2018 (cited by name in the gait entry before). Not verified: pontzerWrangham2004's distances and equations, a
+measured wild climbing speed, crown-to-crown crossings without descent.

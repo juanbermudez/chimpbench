@@ -3413,3 +3413,34 @@ Hunt 1989 (dissertation); Hoyt & Taylor 1981 beyond its first paragraph; any wal
   (FT, PMC3798186).
 - nguessan2009, batesByrne2009, sockol2007, pontzer2014jhe and pontzerWrangham2006 are already cited; the entries above
   add findings.
+
+### Addendum: E2j climbing (4 October 2026)
+
+Read for stage E2j ([staging/e2j-prereg.md](staging/e2j-prereg.md)): what a chimpanzee's climbing costs against its
+walking, and how a trip's time and energy enter the forager's currency. research.md was searched first (pontzerWrangham2004,
+hanna2008, hannaSchmitt2011, nguessan2009, Neufuss et al. 2018, charnov1976, stephensKrebs1986, sockol2007). Routes: PubMed
+E-utilities (abstract), Europe PMC search of open citing papers, NCBI BioC; tags as above.
+
+- **Daily climbing against walking, Kanyawara** [pontzerWrangham2004] (abstract, PubMed PMID 14984786, read in full) [M].
+  Wild chimpanzees; the distance climbed and walked per day was measured and the relative daily energy costs computed
+  with published equations: "chimpanzees spend approximately ten-times more energy per day on terrestrial travel than on
+  vertical climbing". The distances, the sample and the equations are not in the abstract; the full text is closed (a
+  Europe PMC search of open citing papers gave no numbers). The earlier note that this paper has no abstract on PubMed
+  (Addendum E1j) is corrected. Use in E2j: a target relation, never an input: the model's walking ÷ climbing energy per
+  day is 1.2–2.0 (S22 and S22 + walkGait, quick), a reported miss whose cause (metres climbed or cost per metre) the
+  abstract cannot settle.
+- **Vertical climbing gait** [neufuss2018] (FT, read for a speed): cycle duration, duty factor and stride frequency of
+  semi-free-ranging chimpanzees and mountain gorillas; no climbing speed. The only chimpanzee climbing speed on record
+  remains 0.5 m/s (nguessan2009 citing pontzerWrangham2004, secondary [L]).
+- **The rate's time** [charnov1976, stephensKrebs1986] (already cited, E3c): the long-term rate divides the net gain by
+  all the time an option takes besides eating (travel or search). Use in E2j: the climb's and the descent's time belong
+  in a trip's rate as the walk's does.
+
+**Not verified:** pontzerWrangham2004's daily distances and equations (full text closed); a climbing speed of wild
+chimpanzees measured directly; any measurement of how often chimpanzees cross between crowns without descending.
+
+- *new* neufuss2018: Neufuss J, Robbins MM, Baeumer J, Humle T, Kivell TL 2018. Gait characteristics of vertical
+  climbing in mountain gorillas and chimpanzees. *Journal of Zoology* 306(2):129–138.
+  [doi:10.1111/jzo.12577](https://doi.org/10.1111/jzo.12577) (FT, the authors' institute's PDF; the gait entry above
+  cites it by name).
+- pontzerWrangham2004, nguessan2009, charnov1976 and stephensKrebs1986 are already cited; the entries above add findings.
