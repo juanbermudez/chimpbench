@@ -235,14 +235,6 @@ more than 0.05% of the store a day below the S27q mean; (f) night safety fails.
 **Keep rule (standard):** viability passes; held-out not worse beyond noise with and without the rare rows; prescriptions
 51 → 48. Then a provisional keep candidate for the integrator's 5-seed confirm.
 
-## 5. Reference and judging
-
-Reference: S27 quick (docs/staging/e-stack2-confirm.md, "S26 and S27 results"), run once plus three re-draws (`rngSalt`
-1, 2, 3) at bench-run3 28d249e (simulation code identical to aa698bd for S27), each with energy-diagnose (seeds 48 and 7,
-burn-in 30, days 30): `bench-run3/artifacts/validation/e/s27q/{S27q,S27q1,S27q2,S27q3}.json` and `…-energy.json`.
-Judged by docs/staging/e-noise.md amendment 2 (`judge_vs_reps.py quick custom`): |z| > 2 is a result; sums with and
-without T-HUN-4, T-BRD-1 and T-IGE-3 (amendment 3). Readouts against the reference's own spread (mean ± SD of its 4 runs).
-
 ### 4.2 Code checks before any arm (c735a73, c518339)
 
 - Switch 0 leaves the S27 world unchanged and bit 7 changes it; each bit opens its offer inside its gap (a coercive charge
@@ -255,6 +247,14 @@ without T-HUN-4, T-BRD-1 and T-IGE-3 (amendment 3). Readouts against the referen
 - Readouts smoke-tested with the switch on (seed 48, 1 + 2 days): every gate reports 0 blocked; displays come inside
   0.75 h of the last.
 
+## 5. Reference and judging
+
+Reference: S27 quick (docs/staging/e-stack2-confirm.md, "S26 and S27 results"), run once plus three re-draws (`rngSalt`
+1, 2, 3) at bench-run3 28d249e (simulation code identical to aa698bd for S27), each with energy-diagnose (seeds 48 and 7,
+burn-in 30, days 30): `bench-run3/artifacts/validation/e/s27q/{S27q,S27q1,S27q2,S27q3}.json` and `…-energy.json`.
+Judged by docs/staging/e-noise.md amendment 2 (`judge_vs_reps.py quick custom`): |z| > 2 is a result; sums with and
+without T-HUN-4, T-BRD-1 and T-IGE-3 (amendment 3). Readouts against the reference's own spread (mean ± SD of its 4 runs).
+
 ## 6. Iteration log
 
 (each entry written and committed before its run)
@@ -262,3 +262,96 @@ without T-HUN-4, T-BRD-1 and T-IGE-3 (amendment 3). Readouts against the referen
 - **A1** (§4.1; `aggressionGaps` 7 on S27): registered 4 October 2026 at the commit that adds this line; run from a
   frozen detached checkout of it: `e-bench --quick` (`--workers` 1 above load 8, else 2), `energy-diagnose`,
   `aggression-diagnose`, `rhythm-metrics` (seeds 48, 7; 30 + 30 days).
+
+## 7. Results
+
+### 7.1 A1 (S27 + `aggressionGaps` 7; 6bb9a5a, clean): printed by the integrator's `judge_vs_reps.py` and the stage's `e4q_judge.py`, `diag_table.py`, `final_table.py` and `night.py` from the JSON
+
+```
+quick, reference custom (4 runs), rows counted in all runs: fitted 16, held-out 12
+  fitted             (16 rows) ref 1.50, 2.68, 1.04, 2.26 (mean 1.87, sd 0.74; used 0.74) | A1.json: 1.59, Δ -0.28, z -0.3 (inside noise)
+  held-out           (12 rows) ref 4.27, 4.04, 3.73, 3.22 (mean 3.82, sd 0.46; used 1.26) | A1.json: 4.69, Δ +0.88, z +0.6 (inside noise)
+  held-out w/o rare  (11 rows) ref 3.45, 4.04, 3.73, 3.22 (mean 3.61, sd 0.36; used 0.48) | A1.json: 3.02, Δ -0.59, z -1.1 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-COM-8   fitted   ref 0.11±0.02 | A1.json 0.28 (fail)
+   T-HUN-4   held-out ref 0.21±0.41 | A1.json 1.67 (fail)
+(T-IGE-3 not scored in any of the five runs; the sum without T-HUN-4, T-BRD-1 and T-IGE-3 is the 11-row line)
+
+| Readout | S27 reference, mean ± SD (4 runs) | A1 |
+| --- | --- | --- |
+| Challenges per adult-male hour (status charges + escalated attacks) | 0.0006 ± 0.0003 | 0.0005 |
+| Charges at strangers per adult-male hour | 0.0000 ± 0.0000 | 0.0000 |
+| Displays per adult-male hour (all variants) | 0.2230 ± 0.0116 | 0.2993 |
+| Displays per adult-male hour, parties ≥ 2 adult males (field 0.21–0.26) | 0.2438 ± 0.0121 | 0.3578 |
+| Chases + attacks per adult-male hour, same parties (field 0.07–0.17) | 0.0071 ± 0.0014 | 0.0061 |
+| Male → male aggression per dyad-hour (field 0.015) | 0.0974 ± 0.0156 | 0.1105 |
+| The five acts the cooldown gated, per male(≥ 12 y)-hour | 0.0043 ± 0.0007 | 0.0065 |
+| Wounds ≥ 0.05 per run (both seeds) | 4 ± 1 | 6 |
+| T-DEM-23 (aggression received by immatures) | sealed (C8 proof row; never computed) | sealed |
+| T-ACT-1 (band 0.33–0.5) | 0.375 ± 0.005 | 0.373 |
+| T-ACT-2 (band 0.12–0.25) | 0.116 ± 0.009 | 0.105 |
+| T-ACT-3 (band 0.08–0.18) | 0.098 ± 0.007 | 0.095 |
+| T-ACT-4 (band 0.3–0.47) | 0.421 ± 0.020 | 0.446 |
+| Reserves %/day, males | +0.002 ± 0.004 | -0.003 |
+| Reserves %/day, nursing mothers | -0.000 ± 0.007 | +0.020 |
+| Reserves %/day, juveniles | -0.027 ± 0.021 | +0.004 |
+| fitted (16 rows): sum (z) | 1.87 ± 0.74 | 1.59 (z -0.3) |
+| held-out (12 rows): sum (z) | 3.82 ± 0.46 | 4.69 (z +0.6) |
+| held-out w/o rare (11 rows): sum (z) | 3.61 ± 0.36 | 3.02 (z -1.1) |
+| Prescriptions (e-bench JSON at the arm's commit) | 51 (current ledger; the reference JSON at 28d249e printed 42) | 48 |
+| Viability | pass (4/4) | pass (deaths 0, starvation 0) |
+
+reserves ÷ store, % per day (OLS), other classes: female, other +0.006 ± 0.024 | +0.001; infant 2–5 y −0.011 ± 0.019 |
+  +0.019; infant 0.5–2 y +0.009 ± 0.003 | +0.015
+rows (pooled; S27q mean ± SD | A1): T-SOC-5 0.442 ± 0.114 | 0.440; T-SOC-9 0.174 ± 0.125 | 0.268 (band 0.08–0.22);
+  T-SOC-10 0.182 ± 0.039 | 0.168; T-SOC-6 0.494 ± 0.029 | 0.513; T-COM-1 0.510 ± 0.070 | 0.552; T-COM-8 pooled 0.634
+  (0.628–0.640) | 0.684 (band 0.3–0.6); T-RNG-4 2.264 ± 0.262 | 1.761; T-HUN-1 25.97 ± 13.68 | 14.04; T-IGE-1 5.64 ± 4.96 | 3.00
+aggression-diagnose (D0 mean ± SD | A1): fights 1 ± 1 | 5; decided conflicts 1425 ± 179 | 1322; contact by adult males
+  47 ± 4 | 41; female-dominance charges (males 12–15 y) 33.5 ± 4.8 | 58; coercive 5.2 ± 3.1 | 9; status 5.2 ± 2.6 | 5;
+  mate-guard charges 713.8 ± 96.2 | 717; displays NONE / REUNION / RIVAL / RAIN 1101 / 777 / 161 / 52 | 1426 / 1055 / 251 / 79;
+  intervals between a male's displays (<0.25, <0.5, <0.75, <1, <1.5, <3, ≥3 h) D0 [0, 1, 0, 283, 450, 525, 990] | A1 [346, 231, 255, 177, 312, 498, 976]
+night: adults out of a nest 2.34% of night; T-RHY-5 0.0169; night deaths 0; deaths 0
+```
+
+**Against the predictions (§4.1).** Prescriptions 48: held. Viability and no fight death: held. Sums inside noise: held
+(fitted z −0.3, held-out +0.6, without the rare rows −1.1). Status, reunion and rival displays per male(≥ 12 y)-hour 0.22–0.30:
+held (0.241). Displays per adult-male hour in parties with ≥ 2 adult males 0.30–0.42: held (0.358). The five gated acts
+0.003–0.007: held (0.0065). Charges at strangers 0 to a handful: held (0). Male → male aggression 0.06–0.11: missed by a
+hair (0.1105). Fights and wounds up: held (5 and 6 against 1 ± 1 and 4 ± 1). Reserves within 0.03 %/day of the mean: held
+for every class but juveniles (+0.031 above it: better). T-ACT-1..4, T-SOC-5, T-COM-1 as the group: held (T-ACT-2 0.105
+below its band, as the group's mean 0.116); T-SOC-9: missed (0.268 above its band's 0.22; the group's runs 0.043–0.342).
+Night safety: held (2.34%, 0.0169).
+
+**Kill criterion (§4.1): none met** (viable; no fight death; held-out z +0.6 and −1.1; adult males' wounds 0.006 per
+male-day against the 0.05 line; no class's reserves lower by 0.05 %/day; night safe).
+
+**Costs found.** Displays rise by a third (0.22 → 0.30 per adult-male hour; in parties with ≥ 2 adult males 0.24 → 0.36,
+above Kanyawara's 0.21–0.26 ± 0.07; with a swollen parous female 0.24, as the field's 0.26, without one 0.38 against
+0.21); 12% of them now come within 15 min of the male's last display and 30% within the old 45-min gap. Arrival calls at fruiting trees (T-COM-8, fitted) 0.634 → 0.684:
+displays end with a pant-hoot, and more of them fall at arrivals. Fights 1 → 5 and wounds ≥ 0.05 4 → 6 in 60 seed-days,
+with more female-dominance and coercive charges (33.5 → 58; 5 → 9).
+
+### 7.2 Stage verdict
+
+**`aggressionGaps` 7: a provisional keep candidate (S27 51 → 48), by the keep rule in quick mode**: viable, every sum inside
+noise against S27's four realizations, night safe, three counted prescriptions out. A 5-seed confirm on the stack should
+decide, watching the display rate, T-COM-8, T-SOC-9 and wounds.
+
+**The brief's premise did not hold.** The cooldowns do not set how often males challenge, charge and display: the
+challenge's own score (about 0) sets the challenge rate; the condition for a charge at strangers almost never arises; the
+display gap trims a rate its score sets. Without them nothing new is needed and nothing replaces them.
+
+**No iteration was run.** A1 meets the keep rule and no kill criterion; its costs are readings against field values that
+are not rows (no band was registered), and building toward them would tune to a rate.
+
+**Open problems (the biggest first):**
+- The model's male aggression has the wrong structure, and no cooldown is why: mate-guard charges are 59% of adult males'
+  charges, so male → male aggression per dyad-hour is 6.5 × Kanyawara's (0.097 against 0.015); chases and attacks are
+  10–20 × fewer (0.007 against 0.07–0.17 per male-hour), contact 5 × less (0.005 against 0.027), and status challenges
+  almost never win a decision. The mate guard's 0.25-h chase gap is stage E4p's.
+- Displays fall, not rise, with a swollen parous female in the party (the field: +24%): the display score does not read
+  the mating context, and in such parties males guard instead.
+- T-DEM-23 is sealed and cannot be read here; no row scores adult aggression or display rates (staging them is the user's
+  decision).
+- Known approximation of the binding readout: the chosen option's belief offset (choiceBelief) is not known to the tool;
+  254 of the 4,219 display binds (6%) were against an option with a belief part.
