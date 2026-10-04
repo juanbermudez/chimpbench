@@ -14,7 +14,15 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (3 October 20:45).** Nothing.
+- **Running now (3 October 22:45; the user said "continue working and hold the deploy").** Stage agents **E3c**
+  (`e3c-forage-rate`: where to eat valued as a net energy rate; targets forageDistScaleM, fallbackForageW,
+  memTravelHungerW, all fitted to T-ACT-2/T-RNG-4) and **E4h** (`e4h-contests`: escalation, hit, injury and coalition
+  dice replaced by mutual assessment), both from track-e 37a2042, briefs `integrator/e3c-prompt.txt`, `e4h-prompt.txt`.
+  Integrator: the S9 quick reference (`integrator/s9q.sh`, `bench-run/artifacts/validation/e/s9q/`; message both agents
+  when all four exist); the S10 confirm (S9 + `huntValue`; registered 72e93ae) with S9's confirm group (S9 + S9c1–S9c3):
+  `integrator/conf10.sh <label> <S9|S10> [rg|-] [rhythm]`, outputs `.../e/s10/`; S9c2 and S9c3 still to start.
+  Remaining prescriptions on S9 by family (74): conflict 17, patrol 12, mortality 7, social 7, communication 5, needs 4,
+  decision 4, movement 4, hunting 4, reproduction 3, disease 3, feeding 3 (`integrator/s9-ledger.json`).
 - **S9 done: now the best integrated candidate** (e-stack2-confirm.md "S9 results"; S8 + `groomDrive` + `socialUpkeep` 2 +
   `followMargin`): 74 prescriptions (the social timers out), grooming in band for both sexes (0.101), viable, night safe,
   sums inside noise (held-out without the rare rows z +1.2: E5d's quick-mode failure did not replicate). Costs: T-HUN-1
