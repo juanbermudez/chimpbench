@@ -107,6 +107,20 @@ continuous focal, resting includes grooming; and villioth2025); T-FOOD-4 (janmaa
 offspring, 275 full days; normand2009, 2 females, 28 days); T-FOOD-10 (janmaat2014, Taï, 5 adult females with
 offspring followed from nest to nest in fruit-scarce periods, 179 days, unweighed; 18% of departures before sunrise).
 
+### 2.1 Amendment 1 (registered 4 October 2026 after reading the first realizations, before the readouts it adds were run)
+
+Read so far (climb-diagnose of W and S22q, one realization each; energy-diagnose of W against S22q, S22q1, S22q2): with
+the faster walk adults and juveniles start 34–49% more trips a day at an unchanged start distance (males 15.3 → 21.2,
+nursing mothers 12.6 → 16.9, juveniles 14.0 → 20.8; median 92–110 m in both), reach 12–17% more crowns and eat 11–17%
+less per crown visit; walking in trips is the largest added term (+20–27 kcal/day of walking in the travel act for males,
+mothers and juveniles), climbing into crowns next (+5–10), mothers' carrying +8. Trips outnumber crown visits 1.6 to 1 on
+S22 and 1.9 to 1 on W, so many trips do not end at their tree. To read why before naming the term, two readouts are added
+to climb-diagnose (header, "travel episodes"): each travel episode's kind, its foregut room and hunger at the start, its
+metres and minutes, and its outcome (fed at the target, fed at another tree, retargeted, fallback, follow, nest, other);
+and each crown visit's foregut room at arrival and why it ended (sated, emptied, the next act). Smoke-tested on 2 days of
+W (every readout fills; walk kcal still equal to the ledger's). Run on W and the four S22 parameter sets from a frozen
+checkout of the commit that registers this amendment; the earlier climb-diagnose outputs are kept beside them.
+
 ## 6. Known defects (file:line at 0d08525)
 
 - `netRateShare` (intake.ts :89–96) charges the walk's time and the climb's energy, not the climb's time

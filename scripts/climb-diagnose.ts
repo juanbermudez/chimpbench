@@ -26,6 +26,12 @@
 //   per crown visit (arrival to the next decision): kcal eaten there (energyTap 'eaten' while in that crown), and the
 //     locomotion spent since the previous crown visit ended (own walk + climb + carry), its walk metres and climb metres.
 //   trips: the distance to the tree at the start of an own or joined trip (median, mean, p90).
+//   travel episodes (amendment 1, e2j-prereg.md §2.1): a run of ticks in the travel act with one target (own, joined, caller
+//     or home; a switch between own and joined to the same tree continues it): its kind at the start, the foregut room at
+//     the start as a share of the gut's capacity (energy.ts gutRoom ÷ gutCap, drupes), hunger at the start, metres walked
+//     and minutes, and its outcome by the next act: forage at the same tree, forage at another tree, fallback, travel to
+//     another target, follow, nest, other. Crown visits: the foregut room at arrival and why the visit ended (sated:
+//     hunger < 0.06, forageTick's end; emptied: the crop below 0.02; else the next act).
 //   intake: kcal eaten by food (energyTap 'eaten': drupe, fig, fallback, meat; formula energy into the gut), milk drunk
 //     ('suckled'); energyTap totals of every expenditure term.
 //   halts inside travel (observer travel, src/field/categories.ts activityCategory = travel; animals ≥ 5 y, daylight):
@@ -41,7 +47,8 @@
 import { writeFileSync } from 'node:fs';
 import { isMainThread, parentPort } from 'node:worker_threads';
 import { dependentOn, isCarried, V } from '../src/sim/candidates';
-import { energyTap, locomotionKcal, type EnergyTerm, type FoodKind } from '../src/sim/energy';
+import { energyTap, gutCap, gutRoom, locomotionKcal, type EnergyTerm, type FoodKind } from '../src/sim/energy';
+import { fruitAt } from '../src/sim/phenology';
 import { paramsOf } from '../src/sim/params';
 import { index, isTreeId, ix, simOf, TICK_HOURS } from '../src/sim/state';
 import { createWorld, tickWorld } from '../src/simulation';
@@ -66,6 +73,7 @@ interface ActAcc { t: number[]; dayT: number[]; hM: number; walkM: number; upM: 
 const blankAct = (): ActAcc => ({ t: new Array(STATES.length).fill(0), dayT: new Array(STATES.length).fill(0), hM: 0, walkM: 0, upM: 0, downM: 0, walkK: 0, climbK: 0, carryWalkK: 0, carryClimbK: 0, carryWalkM: 0, carryUpM: 0 });
 interface ClsAcc {
   ticks: number; dayTicks: number; acts: Record<string, ActAcc>; tap: Record<string, number>; eaten: Record<string, number>; suckled: number;
+  /** Amendment 1: travel episodes by kind and outcome: [count, room share at start, hunger at start, metres, ticks]. */ ep: Record<string, number[]>; visitRoom: number[]; visitEnd: Record<string, number>;
   trips: number; tripD: number[]; crowns: number; ascents: number; ascentsBy: Record<string, number>; ascentM: number; descents: number;
   visitEat: number[]; visitLoc: number[]; visitWalkM: number[]; visitUpM: number[];
   tbouts: number; tboutTicks: number; halts: number; haltTicks: number; haltWhy: number[]; haltWhyTicks: number[];
@@ -74,7 +82,7 @@ interface ClsAcc {
 }
 const HB = 0.025, HN = 160;
 const blankCls = (): ClsAcc => ({ ticks: 0, dayTicks: 0, acts: Object.fromEntries(ACTS.map(a => [a, blankAct()])), tap: Object.fromEntries(TERMS.map(t => [t, 0])), eaten: Object.fromEntries(FOODS.map(f => [f, 0])), suckled: 0,
-  trips: 0, tripD: [], crowns: 0, ascents: 0, ascentsBy: {}, ascentM: 0, descents: 0, visitEat: [], visitLoc: [], visitWalkM: [], visitUpM: [],
+  ep: {}, visitRoom: [], visitEnd: {}, trips: 0, tripD: [], crowns: 0, ascents: 0, ascentsBy: {}, ascentM: 0, descents: 0, visitEat: [], visitLoc: [], visitWalkM: [], visitUpM: [],
   tbouts: 0, tboutTicks: 0, halts: 0, haltTicks: 0, haltWhy: new Array(WHY.length).fill(0), haltWhyTicks: new Array(WHY.length).fill(0), tripMoveM: 0, tripMoveTicks: 0, tripHist: new Array(HN).fill(0), byAction: {} });
 interface Job { seed: number; burnIn: number; days: number; params: Record<string, number> }
 interface Result { seed: number; days: number; cls: Record<string, ClsAcc>; ids: Record<string, number>; deaths: Record<string, number>; living: [number, number]; phases: { cls: string; m: number; min: number }[]; halts20: { cls: string; n: number; min: number; fixes: number }[] }
@@ -111,7 +119,7 @@ const pct = (a: number[], q: number) => { if (!a.length) return NaN; const s = [
 const mean = (a: number[]) => a.length ? a.reduce((s, v) => s + v, 0) / a.length : NaN;
 const histPct = (h: number[], q: number) => { const n = h.reduce((s, v) => s + v, 0); if (!n) return NaN; let k = 0; for (let i = 0; i < h.length; i++) { k += h[i]; if (k >= q * n) return (i + 0.5) * HB; } return NaN; };
 
-interface Prev { x: number; y: number; z: number; dv: number; prog: number; act: Act; target: number; trav: boolean; tbHalt: boolean; up: boolean; down: boolean; crownId: number; locK: number; locWalkM: number; locUpM: number; visitEat: number }
+interface Prev { tripT: number; tripKind: string; tripRoom: number; tripH: number; tripM: number; tripTicks: number; x: number; y: number; z: number; dv: number; prog: number; act: Act; target: number; trav: boolean; tbHalt: boolean; up: boolean; down: boolean; crownId: number; locK: number; locWalkM: number; locUpM: number; visitEat: number }
 
 export function runSeed(job: Job): Result {
   const { seed, burnIn, days, params } = job;
@@ -199,7 +207,8 @@ export function runSeed(job: Job): Result {
         const isTrip = act === 'own trip' || act === 'joined trip' || act === 'caller';
         const up = st === 2;
         const atCrown = c.action === 'forage' && isTreeId(c.targetId) && x.phase === 2;
-        const cur: Prev = { x: c.position[0], y: c.position[1], z: c.position[2], dv: c.decisionVersion, prog: x.prog, act, target: c.targetId, trav: false, tbHalt: false, up, down: st === 3,
+        const cur: Prev = { tripT: p?.tripT ?? -1, tripKind: p?.tripKind ?? '', tripRoom: p?.tripRoom ?? 0, tripH: p?.tripH ?? 0, tripM: p?.tripM ?? 0, tripTicks: p?.tripTicks ?? 0,
+          x: c.position[0], y: c.position[1], z: c.position[2], dv: c.decisionVersion, prog: x.prog, act, target: c.targetId, trav: false, tbHalt: false, up, down: st === 3,
           crownId: p?.crownId ?? -1, locK: p?.locK ?? 0, locWalkM: p?.locWalkM ?? 0, locUpM: p?.locUpM ?? 0, visitEat: p?.visitEat ?? 0 };
         // locomotion this tick (the ledger's formula on the ledger's move filter); carried animals move no metres of their own
         const ownWalkK = valid && !carried ? locomotionKcal(c, P, dh, 0) : 0, ownClimbK = valid && !carried && dy > 0 ? locomotionKcal(c, P, 0, dy) : 0;
@@ -207,17 +216,32 @@ export function runSeed(job: Job): Result {
         // crown visits: a visit runs from the arrival in a crown to the act's end; locomotion accumulates between visits
         const inVisit = cur.crownId >= 0 && atCrown && c.targetId === cur.crownId;
         if (cur.crownId >= 0 && !inVisit) {
-          for (const k of ks) R.cls[k].visitEat.push(cur.visitEat);
+          const t = idx.treeById.get(cur.crownId);
+          const why = c.hunger < 0.06 ? 'sated' : t && fruitAt(w, t) < 0.02 ? 'emptied' : `next: ${c.action}`;
+          for (const k of ks) { R.cls[k].visitEat.push(cur.visitEat); R.cls[k].visitEnd[why] = (R.cls[k].visitEnd[why] ?? 0) + 1; }
           cur.crownId = -1; cur.visitEat = 0;
         }
         if (cur.crownId >= 0) cur.visitEat += eatNow.get(c.id) ?? 0;
         else {
           cur.locK += ownWalkK + ownClimbK + (cy ? cy.walkK + cy.climbK : 0); cur.locWalkM += valid && !carried ? dh : 0; cur.locUpM += valid && !carried && dy > 0 ? dy : 0;
           if (atCrown) {
-            for (const k of ks) { const A = R.cls[k]; A.crowns++; A.visitLoc.push(cur.locK); A.visitWalkM.push(cur.locWalkM); A.visitUpM.push(cur.locUpM); }
+            const room = gutRoom(c, P, 'drupe') / Math.max(1e-9, gutCap(c, P));
+            for (const k of ks) { const A = R.cls[k]; A.crowns++; A.visitLoc.push(cur.locK); A.visitWalkM.push(cur.locWalkM); A.visitUpM.push(cur.locUpM); A.visitRoom.push(room); }
             cur.crownId = c.targetId; cur.visitEat = eatNow.get(c.id) ?? 0; cur.locK = 0; cur.locWalkM = 0; cur.locUpM = 0;
           }
         }
+        // amendment 1: travel episodes (one target), their state at the start and their outcome
+        const inTrip = c.action === 'travel' && !carried;
+        if (cur.tripT !== -1 && (!inTrip || c.targetId !== cur.tripT)) {
+          const out = c.action === 'forage' && isTreeId(c.targetId) ? (c.targetId === cur.tripT ? 'forage here' : 'forage other tree') : c.action === 'forage' ? 'fallback'
+            : c.action === 'travel' ? 'travel elsewhere' : c.action === 'follow' ? 'follow' : c.action === 'nest' ? 'nest' : 'other';
+          for (const k of ks) { const e = (R.cls[k].ep[`${cur.tripKind}|${out}`] ??= [0, 0, 0, 0, 0]); e[0]++; e[1] += cur.tripRoom; e[2] += cur.tripH; e[3] += cur.tripM; e[4] += cur.tripTicks; }
+          cur.tripT = -1;
+        }
+        if (inTrip && cur.tripT === -1) {
+          cur.tripT = c.targetId; cur.tripKind = act === 'joined trip' ? 'own trip' : act; cur.tripRoom = gutRoom(c, P, 'drupe') / Math.max(1e-9, gutCap(c, P)); cur.tripH = c.hunger; cur.tripM = 0; cur.tripTicks = 0;
+        }
+        if (cur.tripT !== -1) { cur.tripTicks++; if (valid) cur.tripM += dh; }
         // observer travel bouts and the halts inside them (animals ≥ 5 y, daylight)
         const atWater = c.action === 'drink' && (() => { const wt = idx.waterById.get(c.targetId); return !!wt && Math.hypot(wt.position[0] - c.position[0], wt.position[2] - c.position[2]) <= 1.0; })();
         const trav = light && c.age >= 5 && !carried && activityCategory(c.action, x.phase, c.targetId, false, false, atWater) === CAT_TRAVEL;
@@ -290,6 +314,8 @@ function summarize(res: Result[]) {
     const A = blankCls();
     for (const r of res) {
       const a = r.cls[n];
+      for (const [k, v] of Object.entries(a.ep)) { const e = (A.ep[k] ??= [0, 0, 0, 0, 0]); for (let i = 0; i < 5; i++) e[i] += v[i]; }
+      A.visitRoom.push(...a.visitRoom); for (const [k, v] of Object.entries(a.visitEnd)) A.visitEnd[k] = (A.visitEnd[k] ?? 0) + v;
       A.ticks += a.ticks; A.dayTicks += a.dayTicks; A.suckled += a.suckled; A.trips += a.trips; A.tripD.push(...a.tripD); A.crowns += a.crowns; A.ascents += a.ascents; A.ascentM += a.ascentM; A.descents += a.descents;
       for (const [k, v] of Object.entries(a.ascentsBy)) A.ascentsBy[k] = (A.ascentsBy[k] ?? 0) + v;
       A.visitEat.push(...a.visitEat); A.visitLoc.push(...a.visitLoc); A.visitWalkM.push(...a.visitWalkM); A.visitUpM.push(...a.visitUpM);
@@ -321,6 +347,8 @@ function summarize(res: Result[]) {
     byCls[n] = {
       individuals: res.reduce((s, r) => s + r.ids[n], 0), animalDays: d, acts, total: tot,
       tap: Object.fromEntries(TERMS.map(t => [t, A.tap[t] / d])), eaten: Object.fromEntries(FOODS.map(f => [f, A.eaten[f] / d])), eatenTotal: FOODS.reduce((s, f) => s + A.eaten[f], 0) / d, suckled: A.suckled / d,
+      episodes: Object.fromEntries(Object.entries(A.ep).map(([k, e]) => [k, { perDay: e[0] / d, roomAtStart: e[1] / Math.max(1, e[0]), hungerAtStart: e[2] / Math.max(1, e[0]), metres: e[3] / Math.max(1, e[0]), minutes: e[4] / Math.max(1, e[0]) * TICK_HOURS * 60 }])),
+      visitRoomMean: mean(A.visitRoom), visitRoomMedian: pct(A.visitRoom, 0.5), visitEndPerDay: Object.fromEntries(Object.entries(A.visitEnd).map(([k, v]) => [k, v / d])),
       tripsPerDay: A.trips / d, tripDMedian: pct(A.tripD, 0.5), tripDMean: mean(A.tripD), tripDP90: pct(A.tripD, 0.9),
       crownsPerDay: A.crowns / d, ascentsPerDay: A.ascents / d, ascentsBy: Object.fromEntries(Object.entries(A.ascentsBy).map(([k, v]) => [k, v / d])), ascentMPerDay: A.ascentM / d, meanAscentM: A.ascentM / Math.max(1, A.ascents), descentsPerDay: A.descents / d,
       visit: { n: A.visitLoc.length, eatMean: mean(A.visitEat), eatMedian: pct(A.visitEat, 0.5), locMean: mean(A.visitLoc), locMedian: pct(A.visitLoc, 0.5), walkMMean: mean(A.visitWalkM), walkMMedian: pct(A.visitWalkM, 0.5), upMMean: mean(A.visitUpM) },
