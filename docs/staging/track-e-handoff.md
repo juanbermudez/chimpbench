@@ -17,14 +17,13 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Running now (4 October 01:00; deploy held by the user).** Stage agents **E4i** (`e4i-patrols`: the 12 patrol
   prescriptions; uses 30 + 60-day runs for patrol rows) and **E5e** (`e5e-social-quotas`: pant-grunt, charge and
   consort quotas and clocks, and the call-joining distance scale), both from track-e 8cae2c4, briefs
-  `integrator/e4i-prompt.txt`, `e5e-prompt.txt`. **guide-s5** agent moving the decision guide to S13 (branch
-  `guide-s13`). Integrator: the S13 quick reference, 4 runs (`integrator/s13q.sh`, outputs
+  `integrator/e4i-prompt.txt`, `e5e-prompt.txt`. Decision guide on **S13** (merged `guide-s13` at 8f2a1d4; hosted copy
+  on `site` d863eaf, build checked). Integrator: the S13 quick reference, 4 runs (`integrator/s13q.sh`, outputs
   `bench-run3/artifacts/validation/e/s13q/`; message E4i and E5e when all four exist).
 - **S13 done: now the best integrated candidate** (e-stack2-confirm.md "S13 results"; S9 + `huntValue` + `forageRate` +
   `contestAssess`): 65 prescriptions, viable, night safe, sums inside noise against S9's four runs; T-HUN-1 18.9.
   Costs: walking and feeding up (males 2.57 km), males −0.033, mothers −0.077, infants 0.5–2 y −0.093 %/day; T-HUN-3
-  0.043 and T-FOOD-10 0.810 outside their bands. The decision guide and hosted copy still show S9 (S13 needs STACKS.S13
-  and Before/Now for hunting, foraging and contests).
+  0.043 and T-FOOD-10 0.810 outside their bands. Decision guide and hosted copy on S13.
 - **S10, S11, S12 done** (e-stack2-confirm.md): each passes the keep rule against S9's four runs. S10 (`huntValue`,
   73): T-HUN-1 37 → 23.4 (in band), T-HUN-3 stays in band (0.054), fitted better beyond noise; mothers and infants a
   little lower. S11 (`forageRate`, 71): sums inside noise, fruit share in band; costs: every adult class's balance falls
@@ -91,8 +90,8 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   3.43 km a day (S3 2.93) and the deficits deepen: E5a interacts with value-based calls; E5b fixed it (S5).
 - **Hosted site, 2 October 14:50:** `site` now also holds the rewritten About page (merged `site-about` 4618daf: first-person
   hero, stale sections cut, What's next) and the decision guide as a hidden page (`docs/decision-guide.html`, a Vite
-  input: unlinked, noindex, at /docs/decision-guide). The guide now shows **S9** (74 prescribed, 61 replaced; merged
-  `guide-s9`; `STACK = STACKS.S9` in scripts/decision-guide.ts) and the site copy is written by
+  input: unlinked, noindex, at /docs/decision-guide). The guide now shows **S13** (65 prescribed, 70 replaced; merged
+  `guide-s13`; `STACK = STACKS.S13` in scripts/decision-guide.ts) and the site copy is written by
   `pnpm exec tsx scripts/decision-guide.ts --hosted <site>/docs/decision-guide.html` (site 149701c from track-e 8f5319e;
   `integrator/hosted_guide.py` retired). Build checked: no console errors, data figures draw, dist 32 MB without audio.
   Still no deploy: the user has not said how to publish.
