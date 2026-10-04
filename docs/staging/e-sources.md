@@ -1822,7 +1822,7 @@ party follows; 120 encounters on 103 of 5,527 follows); contact on patrols (watt
 as recorded); party fusion after at least 1 h apart (girardButtoz2022, as E5e) as the basis of `reunionH` in
 `patrolFusion`. No new source keys. Not verified: field observers' detection range for pant-hoots.
 
-## Addendum: E4k hunt success (4 October 2026)
+## 49. Addendum: E4k hunt success (4 October 2026)
 
 Same text as research.md "Addendum: E4k hunt success": community success and prey per success (gilby2015 Table 1:
 Mitumba with 2.9 adult males 53.2%, 1.30); Ngogo (mitaniWatts1999, FT: high continuous canopy 25–30 m, noncooperative

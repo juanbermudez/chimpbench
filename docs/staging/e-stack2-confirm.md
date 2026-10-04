@@ -1892,3 +1892,14 @@ Bench, energy-diagnose and rhythm-metrics, 5 seeds, 30 + 60 days, from bench-run
 **Predictions (against the S17 group; moderate confidence unless stated).** Prescriptions 47 (high); viability and night
 safety pass; T-ACT-1 0.42–0.46, T-ACT-2 0.20–0.24, T-ACT-4 in band; T-FOOD-2 0.63–0.68 (in band); T-RNG-4 2.2–2.5;
 nursing mothers 0.02–0.04 %/day lower than S17's (low); T-HUN-1 above its band (low); fitted and held-out inside noise.
+
+## S19 confirm (registered 4 October 2026 before its run)
+
+**S19 = S17 + E4k's `huntPursuit` 2** (success and kills from the pursuit, read each tick; `huntSuccessMax`,
+`huntSuccessRate` and `huntExtraKillP` out: 49 → 46 prescriptions). Judged against S17's confirm group (S17,
+S17c1–S17c3) by the standard keep rule. Bench, energy-diagnose and rhythm-metrics, 5 seeds, 30 + 60 days, from bench-run4
+moved to this commit.
+
+**Predictions (against the S17 group; moderate confidence unless stated).** Prescriptions 46 (high); viability and night
+safety pass; T-HUN-1 lower than S17's but inside its band (10–20); T-HUN-2 0.4–0.6 (low); T-HUN-7 1.0, below its band;
+juveniles' reserves lower than S17's (low: the quick run's z −4.9 was untested); fitted and held-out inside noise.

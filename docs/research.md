@@ -3170,7 +3170,7 @@ copy, downloaded at stage E5a).
 No new source keys. Not verified this stage: field observers' detection range for pant-hoots (the 1 km audibility stays
 [L], every source secondary); amsler2010, mitaniWatts2005, wattsMitani2001, watts2006 (closed; as recorded at C6p).
 
-### Addendum: E4k hunt success (4 October 2026)
+### E.49 Addendum: E4k hunt success (4 October 2026)
 
 Read for stage E4k (docs/staging/e4k-prereg.md): what decides whether a hunt of red colobus succeeds and how many monkeys
 die. Every figure below is a target, a definition or a direction; the stage takes no success probability or kill count
