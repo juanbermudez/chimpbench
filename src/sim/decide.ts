@@ -32,10 +32,18 @@ export function decisionPoint(world: World, c: Chimp): void {
 }
 
 /**
+ * Optional tap for diagnostics (scripts/redecide-diagnose.ts, stage E3d): called at every rules decision with the
+ * candidate list, before the RG policy or the argmax acts, while the animal's current act, its scheduled end and its
+ * `finished` flag are still those the candidates were scored with. Never set by the app; reads only.
+ */
+export const rulesTap: { fn: ((c: Chimp, list: Candidate[], policy: boolean) => void) | null } = { fn: null };
+
+/**
  * Rules decide from the current candidates (best first). `policy`: a rules-driven chimp's own decision, which follows
  * the RG policy when rgOn (stage C13, src/sim/rg.ts); a model chimp's late-answer fallback keeps the argmax.
  */
 export function decideByRules(world: World, c: Chimp, policy = false): boolean {
+  if (rulesTap.fn) rulesTap.fn(c, c.candidates, policy);
   const best = c.candidates[0];
   if (!best || best.action === 'dead') { ix(c).finished = false; return false; }
   startAction(world, c, (policy && rgChoice(world, c, c.candidates)) || best, 'rules');
