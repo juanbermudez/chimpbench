@@ -1,7 +1,8 @@
 # E5f pre-registration: leaving together without timers
 
-Status: skeleton committed at the start of the stage (branch `e5f-departing`, from `track-e` eea2d85), before any run and
-before any code change. Track E, stage E5f. Rule served: field values of behaviour are targets, never inputs; no value,
+Status: complete (4 October 2026): diagnosis (§2), iteration 1 `departValue` 1 (A1) and iteration 2 `departValue` 2 (A2)
+both pass the keep rule in quick mode; A2 recommended for a 5-seed confirm (§7). Skeleton committed at the start of the
+stage (branch `e5f-departing`, from `track-e` eea2d85), before any run and before any code change. Track E, stage E5f. Rule served: field values of behaviour are targets, never inputs; no value,
 bonus or weight is set to reach a waiting time, a party size or a departure rate.
 
 ## 0. The problem
@@ -513,3 +514,119 @@ nobody in reach (2.22 own trips a day without an audience against 1.82 ± 0.14).
 42 → 40, night safe): a provisional keep candidate. Side effect beyond the group's spread: smaller parties (a fitted row,
 reported, not used to choose). The two defects of its definitions read from these runs (§5.1) are what iteration 2
 addresses.
+
+### 6.2 Iteration 2: A2 = S27 + `departValue` 2 (frozen checkout of 941986c, clean)
+
+Printed by `e5f_judge.py` (A1 repeated beside it), as §6.1:
+
+```
+S27q: 28d249e dirty 0 prescriptions 42 viability pass
+  S27q1: 28d249e dirty 0 prescriptions 42 viability pass
+  S27q2: 28d249e dirty 0 prescriptions 42 viability pass
+  S27q3: 28d249e dirty 0 prescriptions 42 viability pass
+  A1: 368356f dirty 0 prescriptions 40 viability pass
+  A2: 941986c dirty 0 prescriptions 40 viability pass
+
+quick, reference custom (4 runs), rows counted in all runs: fitted 16, held-out 12
+  fitted             (16 rows) ref 1.50, 2.68, 1.04, 2.26 (mean 1.87, sd 0.74; used 0.74) | A1.json: 2.46, Δ +0.59, z +0.7 (inside noise) | A2.json: 1.39, Δ -0.48, z -0.6 (inside noise)
+  held-out           (12 rows) ref 4.27, 4.04, 3.73, 3.22 (mean 3.82, sd 0.46; used 1.26) | A1.json: 3.89, Δ +0.08, z +0.1 (inside noise) | A2.json: 4.58, Δ +0.76, z +0.5 (inside noise)
+  held-out w/o rare  (11 rows) ref 3.45, 4.04, 3.73, 3.22 (mean 3.61, sd 0.36; used 0.48) | A1.json: 3.75, Δ +0.14, z +0.3 (inside noise) | A2.json: 3.15, Δ -0.46, z -0.9 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-COM-8   fitted   ref 0.11±0.02 | A1.json 0.00 (pass) | A2.json 0.02 (fail)
+   T-HUN-4   held-out ref 0.21±0.41 | A1.json 0.15 (fail) | A2.json 1.43 (fail)
+   T-HUN-8   held-out ref 0.25±0.17 | A1.json 0.89 (fail) | A2.json 0.00 (pass)
+
+| readout | S27 runs (S27q, q1, q2, q3) | S27 mean ± SD | A1 | A2 |
+| --- | --- | --- | --- | --- |
+| attempts/adult-day | 6.600 / 6.798 / 6.669 / 6.436 | 6.626 ± 0.150 | 6.513 (z -0.7) | 6.333 (z -1.7) |
+| success | 0.405 / 0.404 / 0.410 / 0.386 | 0.401 ± 0.010 | 0.376 (z -2.2) | 0.363 (z -3.3) |
+| relaunch delay median | 53.500 / 52.250 / 50.750 / 54.000 | 52.625 ± 1.451 | 44.250 (z -5.2) | 47.750 (z -3.0) |
+| relaunch delay min | 4.750 / 4.750 / 4.750 / 4.750 | 4.750 ± 0.000 | 1.000 | 1.000 |
+| relaunch delay max | 2809.000 / 2361.000 / 2233.500 / 1605.250 | 2252.187 ± 496.910 | 2398.500 (z +0.3) | 1603.250 (z -1.2) |
+| relaunch ≤13 min: median | 7.750 / 7.500 / 7.500 / 7.500 | 7.563 ± 0.125 | 2.000 (z -39.8) | 3.250 (z -30.9) |
+| relaunch ≤13 min: mean | 7.980 / 7.897 / 7.757 / 7.812 | 7.861 ± 0.098 | 3.941 (z -35.9) | 4.550 (z -30.3) |
+| relaunch ≤13 min (share of unanswered) | 0.093 / 0.104 / 0.108 / 0.103 | 0.102 ± 0.006 | 0.176 (z +10.7) | 0.137 (z +4.9) |
+| relaunch (share of unanswered) | 0.736 / 0.731 / 0.724 / 0.736 | 0.732 ± 0.006 | 0.708 (z -3.9) | 0.695 (z -6.0) |
+| go alone (share of unanswered) | 0.067 / 0.074 / 0.071 / 0.073 | 0.071 ± 0.003 | 0.111 (z +11.9) | 0.125 (z +16.1) |
+| go alone delay median | 14.500 / 14.750 / 14.500 / 14.750 | 14.625 ± 0.144 | 1.000 (z -84.4) | 1.000 (z -84.4) |
+| no audience next (share) | 0.087 / 0.088 / 0.092 / 0.086 | 0.088 ± 0.002 | 0.083 (z -1.9) | 0.083 (z -1.9) |
+| own trip at first decision after the check | 0.025 / 0.030 / 0.031 / 0.031 | 0.029 ± 0.003 | 0.177 (z +47.0) | 0.158 (z +41.0) |
+| T-PTY-1 (tool, identity) | 4.781 / 4.630 / 4.487 / 4.448 | 4.586 ± 0.151 | 3.957 (z -3.7) | 4.273 (z -1.9) |
+| pair splits/subject-day | 11.320 / 12.508 / 12.309 / 10.831 | 11.742 ± 0.799 | 10.347 (z -1.6) | 9.583 (z -2.4) |
+| pair joins/subject-day | 11.352 / 12.515 / 12.335 / 10.850 | 11.763 ± 0.795 | 10.363 (z -1.6) | 9.605 (z -2.4) |
+| pair time together | 0.184 / 0.196 / 0.192 / 0.178 | 0.188 ± 0.008 | 0.166 (z -2.4) | 0.172 (z -1.7) |
+| splits by own trips alone (share) | 0.026 / 0.029 / 0.024 / 0.025 | 0.026 ± 0.002 | 0.022 (z -1.7) | 0.028 (z +0.8) |
+| night out of nest % | 2.473 / 2.286 / 2.308 / 2.357 | 2.356 ± 0.084 | 2.475 (z +1.3) | 2.484 (z +1.4) |
+| T-RHY-5 | 0.019 / 0.017 / 0.018 / 0.017 | 0.018 ± 0.001 | 0.019 (z +1.6) | 0.020 (z +2.2) |
+| T-PTY-1 | 4.781 / 4.630 / 4.487 / 4.448 | 4.586 ± 0.151 | 3.957 (z -3.7) | 4.273 (z -1.9) |
+| T-ACT-2 | 0.116 / 0.121 / 0.125 / 0.103 | 0.116 ± 0.009 | 0.109 (z -0.7) | 0.117 (z +0.1) |
+| T-FOOD-10 | 0.599 / 0.643 / 0.607 / 0.503 | 0.588 ± 0.060 | 0.623 (z +0.5) | 0.650 (z +0.9) |
+| T-RNG-4 | 2.424 / 2.179 / 2.519 / 1.934 | 2.264 ± 0.262 | 2.170 (z -0.3) | 2.430 (z +0.6) |
+| T-ACT-1 | 0.378 / 0.377 / 0.378 / 0.368 | 0.375 ± 0.005 | 0.384 (z +1.6) | 0.366 (z -1.8) |
+| T-ACT-3 | 0.099 / 0.088 / 0.102 / 0.104 | 0.098 ± 0.007 | 0.093 (z -0.7) | 0.092 (z -0.8) |
+| T-ACT-4 | 0.418 / 0.406 / 0.410 / 0.450 | 0.421 ± 0.020 | 0.422 (z +0.0) | 0.444 (z +1.0) |
+| prescriptions | 42 / 42 / 42 / 42 | 42 ± 0.000 | 40 | 40 |
+| reserves %/day: adult male | -0.002 / 0.007 / 0.001 / 0.003 | 0.002 ± 0.004 | 0.003 (z +0.1) | 0.000 (z -0.5) |
+| reserves %/day: female, lactating | 0.005 / -0.008 / -0.005 / 0.006 | -0.000 ± 0.007 | 0.006 (z +0.8) | -0.020 (z -2.6) |
+| reserves %/day: female, other | -0.017 / 0.008 / -0.007 / 0.038 | 0.006 ± 0.024 | 0.023 (z +0.6) | -0.005 (z -0.4) |
+| reserves %/day: juvenile 5–12 y | -0.015 / -0.016 / -0.019 / -0.059 | -0.027 ± 0.021 | 0.034 (z +2.6) | -0.028 (z -0.1) |
+| reserves %/day: infant 2–5 y | 0.007 / -0.036 / -0.016 / 0.001 | -0.011 ± 0.019 | 0.005 (z +0.7) | -0.018 (z -0.3) |
+| reserves %/day: infant 0.5–2 y | 0.012 / 0.011 / 0.006 / 0.007 | 0.009 ± 0.003 | 0.001 (z -2.1) | -0.022 (z -8.5) |
+| ground km: adult male | 2.873 / 2.983 / 2.858 / 2.532 | 2.811 ± 0.194 | 2.792 (z -0.1) | 2.876 (z +0.3) |
+| ground km: female, lactating | 2.437 / 2.448 / 2.565 / 2.461 | 2.478 ± 0.059 | 2.564 (z +1.3) | 2.727 (z +3.8) |
+| ground km: juvenile 5–12 y | 2.747 / 2.879 / 2.962 / 2.738 | 2.831 ± 0.108 | 2.802 (z -0.2) | 3.220 (z +3.2) |
+| deaths | 0 / 0 / 0 / 0 | 0 ± 0.000 | 1 | 0 |
+```
+
+Printed from the per-seed records by the stage's scripts (§5.1's readouts): after an unanswered attempt from the
+initiator's own nest the next own trip is a departure alone in 116 of 267 (43%, a median 1 min after the attempt began),
+a re-attempt in 116 (median 50 min) and a departure with no audience in 35 (A1: 38 of 240 alone, 168 re-attempts at a
+median 55 min; the S27 runs: 15–17% alone and re-attempts at 4.75 min, the hold's end); re-launches to the same
+audience within 2 min after 5.6% of unanswered attempts (A1 9.1%, the S27 runs 0). Departures before sunrise (all
+adults, rhythm-metrics): A2 0.55, A1 0.53, the S27 runs 0.49–0.52.
+
+**Against the predictions (§5.2).** Prescriptions 40: held. Viability and night: held (no death; adults out of a nest
+2.48% of the night, T-RHY-5 0.020, z +2.2 against the group's narrow spread, below the 0.033 line). Departures alone after
+an unanswered nest attempt above A1's, within 2 min: held (43%, 1 min). Departures before sunrise 0.50–0.62: held (0.55).
+Re-launches within 2 min below A1's: held (5.6% against 9.1%). Going alone at least A1's: held (12.5% against 11.1%).
+T-PTY-1 3.6–4.4: held (4.27; z −1.9). Reserves within 0.03 of the mean: held for every class but infants of 0.5–2 y
+(−0.022 against +0.009 ± 0.003: 0.031 below; z −8.5); nursing mothers −0.020 (z −2.6). Sums inside noise: held (fitted
+z −0.6, held-out +0.5, without the rare rows −0.9).
+
+**Costs beyond the group's spread (reported, inside the kill lines).** Nursing mothers walk 2.73 km a day (2.48 ±
+0.06; walking +7 kcal, carrying +2 kcal a day) and juveniles 3.22 (2.83 ± 0.11): mothers leave alone after unanswered
+attempts 0.42 times a day (the S27 runs 0.11–0.15, A1 0.26) and juveniles set off with nobody in reach 3.1 times a day
+(2.0–2.2; A1 2.3). Mothers' reserve trend −0.020 %/day (z −2.6) and their infants' of 0.5–2 y −0.022 (z −8.5).
+
+**Verdict by the registered rule:** A2 passes the keep rule (viable, held-out inside noise in both row sets, prescriptions
+42 → 40, night safe): a provisional keep candidate; by §5.2's rule it is the one recommended (no double count of the
+nest company; companions in transit not taken for company), with the costs above.
+
+## 7. Stage verdict
+
+- **Diagnosis (S27, quick, simulation truth).** `departRetryMin` decides what a failed initiator does next: at 57% of
+  give-ups it removes the initiator's best option (an own trip to another tree; 3.05 such decisions per animal-day), and
+  the bout of what it does instead (a crown in view, rest, another's trip) then sets when it can try again; inside an
+  effort re-launches fall at 4.75–13 min (median 7.75), the floor the check plus the hold, the ceiling the cap, against
+  the field's 0–13 (mean 3.8, 9 cases). `departPersistMaxMin` sends 7% of failed efforts off alone (0.21 departures a
+  day per adult), 14.5 min after the failed attempt began. At those give-ups the company the initiator would leave
+  (median 0.44) exceeds the trip's margin over the best other option (median 0.094) in 86%.
+- **Mechanism.** `departValue` (off by default): an attempt nobody answers within the check ends in the initiator's own
+  decision. It notes what its companions are doing; while they are as noted, every own trip is a departure alone, worth
+  its value less the company it leaves (E5a's companyValue, the best companion; E5b's margin, nothing known at a goal out
+  of sight); once they change, a trip is an attempt again. No hold, no cap: two counted prescriptions out (S27 42 → 40
+  with the ledger at this branch's base; 41 → 39 with track-e's corrected ledger, §8). Iteration 1 (A1) watched the whole
+  audience and charged its company; iteration 2 (A2) takes both over the settled audience (E5b's settled companion), which
+  removes a double count of nest-mates' company and stops companions in transit from re-opening attempts.
+- **Result (quick, against S27's four realizations).** Both pass the keep rule; every sum inside noise. Without the timers
+  failed initiators re-launch sooner (within 13 min after 14–18% of unanswered attempts, a mean 3.9–4.6 min start to start;
+  the S27 runs 10%, 7.9 min) and those with little company to lose leave alone at once (11–13% of unanswered attempts,
+  median 1 min; the S27 runs 7%, 14.6 min). Costs: parties smaller in A1 (T-PTY-1 3.96 against 4.59 ± 0.15) and less so in
+  A2 (4.27); in A2 nursing mothers and juveniles walk more (+0.25 and +0.39 km a day) and mothers' and young infants'
+  reserve trends fall (−0.020 and −0.022 %/day, inside the kill line).
+- **Recommendation.** A 5-seed confirm of S27 + `departValue` 2 (A2), with A1 as the registered alternative. Open:
+  whether wild initiators leave alone after a failed attempt as often as the model's socially sated ones (the source does
+  not say); the audience's choice, not the initiator's, still sets recruitment (17% of deciding companions join;
+  success 0.36–0.38 against the field's 0.71 vocal and 0.34 silent); a companion in its nest in the day phase is neither
+  company staying keeps nor company leaving loses in A2 (E5b's settled definition excludes nest-sitters; `candidates.ts`
+  `audienceOf`, deferred).
