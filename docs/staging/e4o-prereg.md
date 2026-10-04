@@ -337,3 +337,141 @@ night unsafe.
   kept. Re-run on unchanged simulation code from `scratchpad/e4o/frozen-d0c` (the commit that adds this entry): D0c–D3c
   (S27 and its re-draws) and A1c (A1's parameters), 30 + 60 days, seeds 48 and 7; the worlds are those of D0b–D3b and A1
   (deterministic), only the readout is new. The kill criterion is read on the corrected readout; both are reported.
+
+## 10. Results (A1 against S27's four quick realizations and D0c–D3c; printed by `artifacts/validation/e4o/judge_e4o.py`, `report_table.py`, `diag_table.py`, the integrator's `judge_vs_reps.py` and `night.py`, from the JSON)
+
+Sums (`judge_vs_reps.py quick custom`, REFS = S27q, S27q1–3 at bench-run3 28d249e; A1 at a3283ca, `git.dirty` 0):
+
+```
+quick, reference custom (4 runs), rows counted in all runs: fitted 16, held-out 12
+  fitted             (16 rows) ref 1.50, 2.68, 1.04, 2.26 (mean 1.87, sd 0.74; used 0.74) | A1.json: 1.37, Δ -0.49, z -0.6 (inside noise)
+  held-out           (12 rows) ref 4.27, 4.04, 3.73, 3.22 (mean 3.82, sd 0.46; used 1.26) | A1.json: 3.70, Δ -0.12, z -0.1 (inside noise)
+  held-out w/o rare  (11 rows) ref 3.45, 4.04, 3.73, 3.22 (mean 3.61, sd 0.36; used 0.48) | A1.json: 3.65, Δ +0.04, z +0.1 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-COM-8   fitted   ref 0.11±0.02 | A1.json 0.00 (fail)
+   T-HUN-4   held-out ref 0.21±0.41 | A1.json 0.05 (fail)
+artifacts/validation/e4o/a1/A1-rhythm.json: adults out of a nest 2.21% of night; T-RHY-5 0.0167; night deaths 1; deaths 1
+```
+
+The fixed table (bench rows against the S27q group; truth readouts, 30 + 60 days, against D0c–D3c, which are the worlds of
+D0b–D3b with the corrected readout; z = (A1 − mean) ÷ SD of the four reference runs; sums by amendment 2):
+
+```
+| Readout | S27 reference mean ± SD (4 runs) | A1 |
+| --- | --- | --- |
+| meat kcal per capture (truth, 30 + 60 d) | 1115 ± 18 | 1126 (z +0.6) |
+| meat kcal per eater (truth) | 487 ± 29 | 541 (z +1.9) |
+| T-HUN-1 hunts per community-year (5–25) | 26.0 ± 13.7 | 22.2 (z -0.3) |
+| T-HUN-9 share of adults present who eat (~0.5) | 0.193 ± 0.054 | — |
+| defence charges, ward 5-8 y (truth, 2 seeds) | 3.0 ± 2.2 | 1.0 (z -0.9) |
+| defence charges, ward 8-12 y (truth, 2 seeds) | 1.0 ± 1.4 | 1.0 (z +0.0) |
+| defence charges, ward 12-15 y (truth, 2 seeds) | 8.2 ± 1.0 | 1.0 (z -7.6) |
+| defence charges, ward 15-20 y (truth, 2 seeds) | 1.8 ± 1.7 | 1.0 (z -0.4) |
+| defence charges, ward >=20 y (truth, 2 seeds) | 1.0 ± 1.4 | 0.0 (z -0.7) |
+| defence charges for a ward that holds its own (as decided) | 7.2 ± 2.2 | 0.0 (z -3.3) |
+| copulations per max-swollen female daylight hour | 0.970 ± 0.025 | 0.904 (z -2.6) |
+| T-ACT-1 (0.33–0.5) | 0.375 ± 0.005 | 0.376 (z +0.2) |
+| T-ACT-2 (0.12–0.25) | 0.116 ± 0.009 | 0.105 (z -1.2) |
+| T-ACT-3 (0.08–0.18) | 0.098 ± 0.007 | 0.082 (z -2.4) |
+| T-ACT-4 (0.3–0.47) | 0.421 ± 0.020 | 0.422 (z +0.0) |
+| reserves ÷ store %/day, adult male | +0.002 ± +0.004 | +0.002 (z -0.1) |
+| reserves ÷ store %/day, female, lactating | -0.000 ± +0.007 | +0.008 (z +1.2) |
+| reserves ÷ store %/day, juvenile 5–12 y | -0.027 ± +0.021 | -0.013 (z +0.7) |
+| fitted (16 rows) | 1.87 ± 0.74 | 1.37 (z -0.6) |
+| held-out (12 rows) | 3.82 ± 0.46 | 3.70 (z -0.1) |
+| held-out w/o rare (11 rows) | 3.61 ± 0.36 | 3.65 (z +0.1) |
+| prescriptions | 42 | 41 |
+| viability (deaths; starvation) | pass (0; 0) / pass (0; 0) / pass (0; 0) / pass (0; 0) | pass (1; 0) |
+```
+
+Guarding, simulation truth (`diag_table.py`, D0c–D3c and A1c; A1c is A1's world: captures, charges, copulations identical):
+
+```
+| Readout (e4o-diagnose, seeds 48 + 7, 30 + 60 days) | D0c | D1c | D2c | D3c | ref mean ± SD | A1c |
+| --- | --- | --- | --- | --- | --- | --- |
+| charges and attacks (2 seeds) | 4705 | 4691 | 4498 | 4251 | 4536 ± 212 | 4417 (z -0.6) |
+| guard-qualified charges | 109 | 127 | 91 | 80 | 102 ± 20.646 | 47 (z -2.7) |
+|   age limit decides (target >= 12 y) | 78 | 71 | 60 | 57 | 66.500 ± 9.747 | 19 (z -4.9) |
+|   deterred, age rule (< 12 y) | 31 | 56 | 31 | 23 | 35.250 ± 14.338 | 28 (z -0.5) |
+|   deterred, odds rule (odds < 0.5) | 57 | 84 | 54 | 47 | 60.500 ± 16.217 | 25 (z -2.2) |
+|   young but holds its own | 2 | 12 | 1 | 3 | 4.500 ± 5.066 | 10 (z +1.1) |
+|   12+ y and cannot hold its own | 28 | 40 | 24 | 27 | 29.750 ± 7.042 | 7 (z -3.2) |
+| defence charges | 10 | 15 | 15 | 21 | 15.250 ± 4.500 | 4 (z -2.5) |
+|   ward holds its own (odds >= 0.5) | 7 | 11 | 13 | 16 | 11.750 ± 3.775 | 2 (z -2.6) |
+|   ward holds its own without the defender (as decided) | 5 | 6 | 10 | 8 | 7.250 ± 2.217 | 0 (z -3.3) |
+|   deterred, odds rule without the guardian (as decided) | 58 | 98 | 56 | 52 | 66 ± 21.479 | 25 (z -1.9) |
+|   12+ y and cannot hold its own, without the guardian | 29 | 43 | 26 | 29 | 31.750 ± 7.632 | 7 (z -3.2) |
+|   young but holds its own, without the guardian | 2 | 1 | 1 | 0 | 1 ± 0.816 | 10 (z +11.0) |
+| caretaker ward-days | 0 | 0 | 0 | 0 | 0 ± 0 | 0 (z +0.0) |
+| copulations in guarding | 604 | 556 | 424 | 471 | 514 ± 81.267 | 583 (z +0.9) |
+```
+
+Reserves (energy-diagnose, seeds 48 and 7, 30 + 30 days):
+
+```
+| Reserves ÷ store, % per day (OLS) | S27q runs | S27q mean ± SD | A1 |
+| --- | --- | --- | --- |
+| adult male | -0.002 / +0.007 / +0.001 / +0.003 | +0.002 ± 0.004 | +0.002 (z -0.1) |
+| female, other | -0.017 / +0.008 / -0.007 / +0.038 | +0.006 ± 0.024 | -0.014 (z -0.7) |
+| female, lactating | +0.005 / -0.008 / -0.005 / +0.006 | -0.000 ± 0.007 | +0.008 (z +1.1) |
+| juvenile 5–12 y | -0.015 / -0.016 / -0.019 / -0.059 | -0.027 ± 0.021 | -0.013 (z +0.6) |
+| infant 2–5 y | +0.007 / -0.036 / -0.016 / +0.001 | -0.011 ± 0.019 | +0.016 (z +1.2) |
+| infant 0.5–2 y | +0.012 / +0.011 / +0.006 / +0.007 | +0.009 ± 0.003 | -0.006 (z -4.2) |
+| infant < 0.5 y | +0.000 / +0.000 / +0.000 / +0.000 | +0.000 ± 0.000 | +0.000 (z +nan) |```
+
+The infant 0.5–2 y line is one infant (seed 7) that fell ill and died in the arm's run (the bench's and the energy run's
+only death, "illness"): its decline enters the class trajectory until it dies. The surviving infants of that class
+changed −0.066 to +0.056 %/day per dyad, inside the reference runs' per-dyad range (−0.084 to +0.113); mothers' balance at
+infant age 0.5–1 y (−21 kcal/day against +9 ± 7) includes its mother. Not attributable to protection (no defence or
+deterrence change touches an infant's illness; the run is one realization).
+
+**Against the predictions (§8):**
+
+| Quantity | Predicted | Observed (A1; reference mean ± SD) | Verdict |
+| --- | --- | --- | --- |
+| Prescription count | 42 → 41 (high) | 41 (after merging track-e's counting fix, 1d177f8: S27 41 → A1 40) | held |
+| Defence charges for a ward that holds its own | 0 (by construction) | 0 as decided (7.2 ± 2.2); 2 by the after-tick readout (11.8 ± 3.8), the defending mother's own support counted, §9 | held (corrected readout, disclosed) |
+| Defence charges | ≤ 6 (15 ± 4.5) | 4 | held |
+| Charges started at 12+ y who cannot hold their own (qualified guardian) | below 29.8 ± 7 (low) | 7 (31.8 ± 7.6 as decided) | held |
+| Charges and attacks; copulations; captures; meat per capture | inside the D spread | charges 4,417 (4,536 ± 212), captures 25 (27.5 ± 7.9), meat 1,126 kcal per capture (1,115 ± 18), copulations 2,434 (2,710 ± 190); but copulations per maximally swollen female-hour 0.90 (0.97 ± 0.03, z −2.6), with fewer female-hours in parties of 3–6 males (rates per male in the party unchanged) | held, one readout outside |
+| T-SOC-5, T-SOC-9, T-SOC-10 | inside the S27q spread (low) | 0.474 (0.442 ± 0.114), 0.135 (0.174 ± 0.125), 0.216 (0.182 ± 0.039) | held |
+| Reserves %/day by class | inside the spread (high) | every class within 1.2 SD except infants 0.5–2 y (−0.006, z −4.2: one infant's fatal illness, above) | held except the illness |
+| Fitted, held-out, held-out without the rare rows | inside noise | z −0.6, −0.1, +0.1 | held |
+| Viability; night | pass | pass (one illness death, no starvation); adults out of a nest 2.21% of the night, T-RHY-5 0.0167 | held |
+
+Not predicted: under-12-year-olds who hold their own against the charger now draw more charges (10 as decided, against
+1 ± 0.8): the deterrent they lost; grooming T-ACT-3 0.082 (0.098 ± 0.007, z −2.4, in band; males 0.108 against
+0.123–0.149).
+
+**Kill criterion (§8): not met** (on the corrected readout; on the registered after-tick readout 2 defences of a ward
+"holding its own" would have met it: both were decided while the ward could not, as the corrected readout shows).
+
+### Verdict
+
+- **`guardMaxAgeY`: replaced; `bodyRules` 2 a provisional keep candidate** (42 → 41 by the count at this branch's base;
+  41 → 40 after track-e's counting fix). Viable, night safe, every sum inside noise (z −0.6, −0.1, +0.1). Protection now
+  ends where the ward's strength makes it unnecessary: deterred charges at 12–15-year-olds who cannot hold their own fall
+  from 31.8 ± 7.6 to 7, defence charges from 15 ± 4.5 to 4 (none for a ward that could hold its own, against 7.2 ± 2.2),
+  and under-12-year-olds strong enough to hold their own lose the deterrent. A 5-seed confirm on the stack should decide.
+- **`meatEatPerH`: stays.** No measured mass of an immature red colobus in any reachable source (§2.1), while immatures
+  are most kills; the edible energy of a capture cannot be computed.
+- **`mateIntervalH`: stays.** It sets the copulation rate (§4), but no measured refractory physiology exists and captive
+  males ejaculate hourly: the limit in the wild is social (who is in the party, competition, female choice).
+
+## 11. Open problems and deferred defects
+
+- **The mating quota stands in for social limits the model lacks** (the biggest): per dyad the model copulates 10–20× the
+  field's rate (0.59 per hour together against 0.03–0.064 at Kanyawara and ~0.03 at Taï), and matches the field per male
+  (0.12 per adult male-hour, Kalinzu 0.12, Mahale 0.20–0.22) only because males are rarely with a swollen female (most
+  maximally swollen female-hours have 0–2 adult males in the party, against 4–12 in the field). A replacement needs a
+  value of copulation in the model's own currency (the share of a cycle's paternity it adds, with the conception
+  saturation) and the parties that gather around swollen females; a candidate stage.
+- **Meat per capture** needs immature red colobus masses (Struhsaker 1975, 2010; Teelen 2007, 2008; Watts & Mitani 2002;
+  Stanford 1994: closed or books); with them, a capture drawn from the group's composition (miyamoto2013, mitani2000,
+  ~41% non-adults, split not found) would give each carcass its mass and eating time. The model's 2.3 eaters per capture
+  against ~10 at Taï and 12.1 at Ngogo is a separate gap (the share is 0.2 of a carcass whatever its size).
+- **Protection by caretakers** is untested: no adoptive caretaker in ten seed-runs (D0c–D3c, A1c), so bit 2's caretaker
+  rule never acted.
+- Deferred defects (file:line in §5): the captor's meat overwrite and the share clamp; the female's 0.3-h mating literal
+  and the 0.5-h block after a failed approach. Readout: the after-tick odds counted a defending guardian as her ward's
+  supporter (corrected, §9).
