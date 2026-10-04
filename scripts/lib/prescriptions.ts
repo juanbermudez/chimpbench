@@ -263,6 +263,11 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   // crop-blind devaluation is not evaluated (design: the count does not change); crownShare (E5c) switches it off too
   ...same(['revisitW', 'revisitTauH'], P => !(P.crownShare === 1 && P.energyLedger === 1 && P.ledgerDrive === 1 && P.intakeValue === 1) && P.revisitByCrop !== 1,
     'the revisit devaluation in src/sim/candidates.ts (and the fed-tree list in execution.ts) is not evaluated while revisitByCrop is 1 (stage E3b), or while crownShare, energyLedger, ledgerDrive and intakeValue are 1 (stage E5c): a crown just used is worth the crop believed left'),
+  // stage E3c (forageRate; docs/staging/e3c-prereg.md §5): every feeding option is worth the drive times the net energy rate
+  // it promises (intake.ts netRateShare); the fitted weights of the fallback, the trips and the distance of crowns in view are
+  // not read (forageDistScaleM also not on hunts under huntValue: the walk is in the hunt's rate)
+  ...same(['forageDistScaleM', 'fallbackForageW', 'memTravelHungerW'], P => !(P.forageRate === 1 && P.energyLedger === 1 && P.ledgerDrive === 1 && P.intakeValue === 1),
+    'not read while forageRate, energyLedger, ledgerDrive and intakeValue are 1: crowns, the fallback, own and joined trips (and hunts under huntValue) are valued by the drive times the net energy rate they promise, walk included (src/sim/candidates.ts, intake.ts netRateShare; stage E3c)'),
   // stage E5d (socialUpkeep; docs/staging/e5d-prereg.md §4): the social need rises by what the animal's relationships lose
   // to the daily relaxation of bonds (upkeep.ts), so the awake and asleep timers are not read
   ...same(['socialAwakePerH', 'socialSleepPerH'], P => !(P.socialUpkeep >= 1),
@@ -334,6 +339,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   companyMargin: { stage: 'E5b', needs: { cohesionValue: 1 }, removesNothing: 'values an approach to a caller by the company it adds over the company the animal already has (E5a\'s companyValue and settled-companion set); adds no magnitude and switches no prescription out (e5b-prereg §5)' },
   groomDrive: { stage: 'E5d', needs: {}, removesNothing: 'weights the design grooming terms of every pair (literal score weights, no registry entry) by the groomer\'s social need (a state), E1k\'s groomNeedDyad form for every partner; adds no rule and removes none (e5d-prereg §4)' },
   socialUpkeep: { stage: 'E5d', needs: {} },
+  forageRate: { stage: 'E3c', needs: { energyLedger: 1, ledgerDrive: 1 } },
   followMargin: { stage: 'E5d', needs: { cohesionValue: 1 }, removesNothing: 'values following and joining by the company they add over the best companion kept by staying (E5b\'s margin, extended; E5a\'s companyValue and presentCompany); adds no magnitude and switches no prescription out (e5d-prereg §4.2)' },
 };
 

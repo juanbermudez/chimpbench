@@ -1,5 +1,5 @@
 import type { Chimp, World } from '../types';
-import { boutRoom, energyNeed, fallbackKcalPerH, fruitKcalPerUnit, gutCap, gutRoom, intakeSize, refGutCap } from './energy';
+import { boutRoom, energyNeed, fallbackKcalPerH, fruitKcalPerUnit, gutCap, gutRoom, intakeSize, locomotionKcal, refGutCap } from './energy';
 import { fallbackOn, fallbackValue } from './fallback';
 import type { Params } from './params';
 import { forageYield } from './phenology';
@@ -74,6 +74,25 @@ export function treeIntake(c: Chimp, P: Params, crop: number, feeders: number, d
   const feedH = Math.max(0, hungerCap ? Math.min(byCrop, capH / Math.max(1e-9, hungerPerH)) : byCrop);
   const frac = feedH > 0 ? feedH / (walkH + feedH) : 0;
   return { rateH: hungerPerH, feedH, walkH, perHourInclWalk: hungerPerH * frac, thirstPerHInclWalk: fruitPerH * P.fruitThirstFactor * frac };
+}
+
+/**
+ * Stage E3c (forageRate; docs/staging/e3c-prereg.md §5): the net energy rate a fruit tree promises, as a share of this
+ * animal's own full ripe-fruit rate R (kcal/h): (E − C) ÷ (walk + E ÷ (R × see)) ÷ R, the long-term average rate of net
+ * energy gain of the classical foraging models [charnov1976, stephensKrebs1986]. E is the energy of one bout there: the
+ * crop it believes ÷ (1 + the feeders it sees), up to what its foregut takes while it eats (E1e's boutRoom), at its own
+ * intake rate; its need is not in it (hunger decides whether to forage, through the drive; not where). C is the energy
+ * of the walk and the climb (locomotionKcal: sockol2007's net cost of transport, the ledger's climbing work). The walk
+ * takes distM ÷ (walkMps × pace) and feeding runs at the vision `see` (E2c's light on arrival; 1 by day). A tree whose
+ * bout does not pay its walk is worth 0. Drupe energy, as treeIntake. Pure.
+ */
+export function netRateShare(c: Chimp, P: Params, crop: number, feeders: number, distM: number, climbM: number, pace = 1, see = 1): number {
+  const kcal = fruitKcalPerUnit(P, false), R = fruitRate(c, P).fruitPerH * kcal;
+  if (!(R > 0) || !(see > 0)) return 0;
+  const E = Math.min(Math.max(0, crop) / (1 + feeders) * kcal, boutRoom(c, P, R));
+  if (!(E > 0)) return 0;
+  const C = locomotionKcal(c, P, distM, climbM);
+  return E > C ? (E - C) / (distM / (P.walkMps * pace) / 3600 + E / (R * see)) / R : 0;
 }
 
 /**
