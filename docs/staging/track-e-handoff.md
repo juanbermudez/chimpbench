@@ -14,10 +14,13 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 03:00; deploy held by the user).** Stage agent **E4j** (`e4j-encounters`, from track-e
-  0777e95: why intergroup encounters doubled on S16; brief `integrator/e4j-prompt.txt`); decision guide on **S16** (merged
-  `guide-s16` at 95d1f7c; hosted copy on `site` fbe84fc, build checked); integrator: the S16 quick reference (`integrator/s16q.sh`, outputs
-  `bench-run4/artifacts/validation/e/s16q/`; message E4j when all four exist).
+- **Running now (4 October 04:20; deploy held by the user).** Nothing.
+- **S17 done: now the best integrated candidate** (e-stack2-confirm.md "S17 results"; S16 + `patrolFusion` 1): 49
+  prescriptions, viable, night safe, held-out inside noise, fitted better than S16 beyond noise (T-IGE-1 13.2); S16's
+  cost removed. Decision guide and hosted copy show S16 (same counts; S17 adds a design correction to patrols).
+  Remaining prescriptions (49): lethal conflict ~11, mortality and adoption 7, communication 5, needs 4, decision 4,
+  movement 3, hunting 3, reproduction 3, disease 3, social 2, feeding 1, patrol listening 1 (rare-event families need
+  runs beyond the 90-day cap to judge).
 - **S16 done: now the best integrated candidate by the keep rule** (e-stack2-confirm.md "S16 results"; S13 +
   `socialTiming` 15 + `patrolValue` 2): 49 prescriptions, viable, night safe, held-out inside noise, patrol rows in band.
   **Fitted worse beyond noise (z +3.9)**, mostly T-IGE-1 22.8 (twice its band's top) and T-HUN-2. Next problem: the
