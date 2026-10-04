@@ -95,7 +95,7 @@ drops the `ate > 0` filter from "visits the crop holds", as §2 defines it).
 
 | Readout (truth) | S27 / r1 / r2 / r3 | mean ± SD |
 | --- | --- | --- |
-| kcal per unit, drupe / fig | 4031 / 4031 / 4031 / 4031 | 4031 ± 0 |
+| kcal per unit, drupes | 4031 / 4031 / 4031 / 4031 | 4031 ± 0 |
 | landscape: fruiting crowns per day (>= 0.06 units) | 2455 / 2456 / 2455 / 2456 | 2455 ± 0 |
 | landscape: crop kcal of a fruiting crown, median (all) | 2053 / 2056 / 2056 / 2039 | 2051 ± 8 |
 | landscape: crop kcal, median, figs | 3056 / 3056 / 3056 / 3056 | 3056 ± 0 |
@@ -254,7 +254,7 @@ Crowns (crop-energy-diagnose, simulation truth):
 
 | Readout (truth) | S27 / r1 / r2 / r3 | mean ± SD | K2 (×2) | K05 (×0.5) |
 | --- | --- | --- | --- | --- |
-| kcal per unit, drupe / fig | 4031 / 4031 / 4031 / 4031 | 4031 ± 0 | 8062 (z +nan) | 2015 (z +nan) |
+| kcal per unit, drupes | 4031 / 4031 / 4031 / 4031 | 4031 ± 0 | 8062 | 2015 |
 | landscape: crop kcal of a fruiting crown, median (all) | 2053 / 2056 / 2056 / 2039 | 2051 ± 8 | 4112 (z +253.7) | 1008 (z -128.4) |
 | visit start: crop kcal, median (>= 5 y) | 1243 / 1168 / 1198 / 1158 | 1192 ± 38 | 2985 (z +47.0) | 590 (z -15.8) |
 | visit length, median min | 19.0 / 19.0 / 19.0 / 19.5 | 19.1 ± 0.250 | 18.5 (z -2.5) | 18.5 (z -2.5) |
