@@ -396,7 +396,7 @@ integrator's 5-seed confirm; otherwise it is recorded and stays off. Travel, day
 against the reference, never used to choose.
 
 - **Final checks** (after merging track-e 22de34b once, da893b1): `gen-params --check` clean, `tsc --noEmit` clean,
-  `pnpm test` 728 tests: 727 pass, 0 fail, 1 skipped. Outputs (session scratch `e3c/`, local): `diag/` (the four S9
+  `pnpm test` 728 tests: 727 pass, 0 fail, 1 skipped. Outputs (local, gitignored, copied from the session scratch `e3c/` to `artifacts/validation/e3c/`): `diag/` (the four S9
   diagnoses, revisit-diagnose on S9q), `arms/` (A1's e-bench, energy and rate JSON, the judge's output), the table scripts
   `diag_table.py`, `e3c_judge.py`, `final_table.py`, `fill_diag.py`.
 
