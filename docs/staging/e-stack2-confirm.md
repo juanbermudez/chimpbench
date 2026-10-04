@@ -833,3 +833,38 @@ edge (T-FOOD-2 0.814 → 0.783); reciprocity better (T-SOC-3). Costs: hunting ba
 35.5), juveniles' and other females' reserves a little lower (−0.046 → −0.060; −0.031 → −0.045 %/day), every class
 walking 0.1–0.2 km a day more, and nursing mothers eating 17 more minutes a day. The open problem E5d named stands:
 company is valued by a need that only grooming relieves.
+
+## S10 confirm (registered 3 October 2026 before its runs)
+
+**S10 = S9 + E4e's `huntValue` 1**: the hunt lead valued as food (expected meat from the model's own success curve, in
+the ledger's currency), with no community-wide gap since the last hunt (`huntGapH` switched out: 74 → 73
+prescriptions). E4e passed the keep rule on 5 seeds on R but was held off because T-HUN-3 (the share of colobus
+encounters that become hunts) fell below its band while the model meets colobus far more often than Kanyawara's
+observers report (E4f; scorer fixes staged, not applied: the user's decision). On S9 hunting is above its band again
+(T-HUN-1 35.5), so whether `huntValue` belongs in the stack is tested here, under the scoring in force.
+
+**Reference group, new:** S9 in confirm mode, the existing run (S9, 2bcbd33) plus three re-draws (`rgTemperature`
+0.1641, 0.1639, 0.16405: S9c1, S9c2, S9c3), each with energy-diagnose. Judged by e-noise.md amendment 2 as before; sums
+with and without T-HUN-4 and T-BRD-1, and without T-IGE-3.
+
+**Keep rule (the standard one):** viability passes; held-out not up beyond noise against the S9 mean; prescriptions
+fall (73 < 74); night safe. **Reported, not part of the test:** T-HUN-3 under the scoring in force, with E4f's reading.
+
+**Predictions (against the S9 group; moderate confidence unless stated).** Prescriptions 73 (high); viability and night
+safety pass; T-HUN-1 inside its band 5–25 (E4e's confirm on R: 9.7); T-HUN-3 below its band (0.05–0.4) (E4e: 0.28 × the
+field's share); T-HUN-2 (success) unchanged within its spread (low); males' and juveniles' reserves within the group's
+spread (low: less meat); fitted inside noise or better; held-out inside noise (low: T-HUN-3 is held out).
+
+## S11 confirm (registered 3 October 2026 before its run)
+
+**S11 = S9 + E3c's `forageRate` 1** (every feeding option valued by the net energy rate it promises; `forageDistScaleM`,
+`fallbackForageW` and `memTravelHungerW` switched out: 74 → 71 prescriptions). Judged against S9's confirm group (S9,
+S9c1–S9c3; shared with S10) by the standard keep rule (viability; held-out not up beyond noise with and without the
+rare rows, and without T-IGE-3; prescriptions fall; night safe). Bench, energy-diagnose and rhythm-metrics, 5 seeds,
+30 + 60 days, bench-run at 2bcbd33 is not enough (the switch is newer): bench-run moves to this commit for S11 only
+after the S9 group's runs finish, or S11 runs from a second frozen checkout of this commit.
+
+**Predictions (against the S9 group; moderate confidence unless stated).** Prescriptions 71 (high); viability and night
+safety pass; T-ACT-4 0.29–0.34 (rest near its band floor 0.30); T-ACT-2 0.20–0.23; T-ACT-3 0.08–0.10 (low); T-FOOD-2
+0.68–0.74 (into its band); T-RNG-4 2.3–2.8; T-HUN-1 20–30 (low); nursing mothers' reserves a little lower than S9's
+(−0.06 to −0.09 %/day; low); juveniles within the group's spread (low); fitted and held-out inside noise.

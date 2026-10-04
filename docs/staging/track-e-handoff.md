@@ -14,7 +14,17 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (3 October 20:45).** Nothing.
+- **Running now (3 October 22:45; the user said "continue working and hold the deploy").** Stage agents **E3c**
+  (`e3c-forage-rate`: where to eat valued as a net energy rate; targets forageDistScaleM, fallbackForageW,
+  memTravelHungerW, all fitted to T-ACT-2/T-RNG-4) and **E4h** (`e4h-contests`: escalation, hit, injury and coalition
+  dice replaced by mutual assessment), both from track-e 37a2042, briefs `integrator/e3c-prompt.txt`, `e4h-prompt.txt`.
+  Integrator: the S9 quick reference (`integrator/s9q.sh`, `bench-run/artifacts/validation/e/s9q/`; message both agents
+  when all four exist); the S10 confirm (S9 + `huntValue`; registered 72e93ae) with S9's confirm group (S9 + S9c1–S9c3):
+  `integrator/conf10.sh <label> <S9|S10> [rg|-] [rhythm]`, outputs `.../e/s10/`; S9c2, S9c3 running. **E3c merged**;
+  the S11 confirm (S9 + `forageRate`; registered dd83395) runs from a second frozen checkout `.claude/worktrees/bench-run2`
+  at dd83395 (`integrator/conf11.sh`, outputs `bench-run2/artifacts/validation/e/s11/`), judged against the same S9 group.
+  Remaining prescriptions on S9 by family (74): conflict 17, patrol 12, mortality 7, social 7, communication 5, needs 4,
+  decision 4, movement 4, hunting 4, reproduction 3, disease 3, feeding 3 (`integrator/s9-ledger.json`).
 - **S9 done: now the best integrated candidate** (e-stack2-confirm.md "S9 results"; S8 + `groomDrive` + `socialUpkeep` 2 +
   `followMargin`): 74 prescriptions (the social timers out), grooming in band for both sexes (0.101), viable, night safe,
   sums inside noise (held-out without the rare rows z +1.2: E5d's quick-mode failure did not replicate). Costs: T-HUN-1
@@ -31,6 +41,8 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   class's balance up (mothers −0.117 → −0.054%/day), males walk 2.00 km, T-ACT-2 0.17, T-RNG-4 1.95, T-HUN-1 23.8 (in
   band), held-out without the rare rows better beyond noise (z −3.3); costs: T-FOOD-2 0.811 and T-ACT-3 0.194 above their
   bands; infants drink more milk as mothers refuse less.
+- **E3c merged** (`forageRate`, off; provisional keep candidate, 74 → 71): where to eat valued as a net energy rate,
+  hunger deciding only whether to forage; three fitted foraging weights out. Confirm on S9 as S11.
 - **E5d merged** (`groomDrive`, `socialUpkeep`, `followMargin`, off; no switch kept). The social timers are not what
   overfills grooming: partner terms ignore the need. Replacing the timers works for grooming (G4: T-ACT-3 0.101, both
   sexes in band, 74 prescriptions) but couples into company-seeking travel through E5a; G4 failed held-out by one
@@ -244,6 +256,7 @@ mkdir -p ../<name>/artifacts/validation && ln -s /Users/juanbermudez/Desktop/MGO
 | E3b revisits | `revisitByCrop` | provisional keep candidate as a correction (removes no counted prescription), off | The crop-blind revisit devaluation (`revisitW`, C6b design) did 80–110% of E5c's A3 change; without it 61% of returns come the same day and find what was left (a visit eats 11% of a crown). Valued by the crop believed left: mothers in balance, walking −27–36%, T-HUN-1 into band; costs: fruit share 0.85 above band, T-SOC-9 out. The term stood in for depletion parties do not cause. | e3b-prereg.md |
 | E1p growth | `growYield` | Y1 (1, growth in proportion to the relative store) provisional keep candidate as a correction; Y2 (2, growth only from the day's surplus) not recommended | Growth never saw the body's state (C8's `condGood` gate at −29% of the store, never reached), so reserves carried every shortfall. Sources (schoenbuchner2019, richard2012, thissen1994): tissue reserves give way first, growth slows after. Y1: growth −5 to −8%, second-month falls of immatures and mothers 30–50% slower; removes no prescription. Wild growth (half the captive rate) is fed growth: infant intake, not the partition. | e1p-prereg.md |
 | E5d grooming | `groomDrive`, `socialUpkeep` (1, 2), `followMargin` | no switch kept; G1 (`groomDrive`) a correction only; G4 recommended for a 5-seed confirm | On S8 grooming is not limited by the social need: partner and invitation terms (~0.6 of the score) ignore it, so 35–38% of adults' grooming (77% for mothers of older infants) restores a full need; the timers set only the need-limited part. G1 (partner terms weighted by need): grooming and reciprocity in band, but walking +0.7–1.0 km (E5a reads the higher need). G2–G4 replace the timers (76 → 74): G2 null by T-SOC-9 (3–4 individuals), G3 by juveniles' reserves, G4 by held-out (z +2.2, all T-RNG-5 on 9–10 follow-days per seed). | e5d-prereg.md |
+| E3c forage rate | `forageRate` | provisional keep candidate (74 → 71) | On S9 the fitted foraging weights value fallback food at a quarter of its rate and trips below theirs; only 60% of chosen feeding options promise a higher net rate than the best rejected one. A1: every feeding option worth its net energy rate (a bout's kcal minus walk and climb cost, over walk plus eating time) relative to the animal's own fruit rate; `forageDistScaleM`, `fallbackForageW`, `memTravelHungerW` out. Viable, sums inside noise; fruit share into band, T-HUN-1 25.9; costs: rest at its band floor, females' grooming below band, mothers' balance a little lower, choices no longer follow the crop. | e3c-prereg.md |
 | Integrated S2 | 28 switches | measured | 89 prescriptions; fitted = today's model; held-out without rare rows +2.9 (T-FOOD-10, travel). | e-stack2-confirm.md |
 | E1j ranging | — | done: no mechanism | Interim: in simulation truth mothers ÷ males is 0.69–0.77 (B, R, E1i pair); the observer's T-RNG-5 rests on 13–24 follow-days, so E1i's 0.84 was sampling; the band is Budongo only (Gombe 0.67–0.74, Kanyawara 0.83). R's real change vs B: males' food trips halve. | e1j-prereg.md |
 | E3 re-test | — | done (integrator) | The effect stands without the old hunger cap: persistence halves crown bouts (22 → 11 min) and the fruit share falls to 0.54. | e3-prereg.md, last section |

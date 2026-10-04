@@ -9298,6 +9298,34 @@
    "notes": "Visible fruit trees: forage score falls by 1 per this many metres. Travel-cost scale (score falls by 1 per this many metres). Compressed literal before C5a; field value set for real distances between food patches (design, tuned to T-ACT-2 and T-RNG-4 in stage C5a)."
   },
   {
+   "id": "forageRate",
+   "group": "feeding",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [
+    "charnov1976"
+   ],
+   "refs": [
+    "docs/research.md, Addendum: E3c forage rate: stephensKrebs1986 (the long-term average rate of net energy gain, the classical foraging currency) and charnov1976 (theory) [M as applied]; sockol2007 (the net cost of transport, the ledger's ledgerWalkJPerKgM) [H]"
+   ],
+   "clock": "none",
+   "symbol": "P.forageRate",
+   "file": "src/sim/candidates.ts",
+   "integer": true,
+   "notes": "Stage E3c switch (docs/staging/e3c-prereg.md §5): every feeding option (a crown in view, the fallback where the animal stands, an own trip to a remembered or known tree, a joined trip) is worth the crown's drive (1.6 x hunger + 0.1) times the net energy rate it promises as a share of the animal's own full ripe-fruit rate (intake.ts netRateShare): the energy of one bout there (the crop believed left / (1 + the feeders seen), up to what the foregut takes while it eats, E1e's boutRoom), less the energy of the walk and the climb (the ledger's own costs: ledgerWalkJPerKgM, sockol2007; ledgerClimbEff), over the walk (walkMps, the dark pace) and the eating time; the fallback at its own rate here. Hunger decides whether to forage, the rate where. Not read: the crop shape (fruitValueRef), forageDistScaleM, fallbackForageW, memTravelHungerW and the trips' tripCost (their energy is in the rate). Acts only with energyLedger, ledgerDrive and intakeValue 1. No new magnitude. 0 = today, bit-identical. Ablation switch."
+  },
+  {
    "id": "forageYieldMax",
    "group": "feeding",
    "value": 1,

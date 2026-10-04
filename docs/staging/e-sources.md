@@ -1766,6 +1766,14 @@ macaques and baboons); tension (wittig2016 duration check, schino1988, shutt2007
 couturier2022, gomes2009, silk2010, tanaka1993, zamma2002, akinyi2013, schino1988, shutt2007. Not verified:
 dunbarDunbar1988, dunbar1992, watts2000 I–II, doran1997, any louse growth rate, any rate of bond fading without contact.
 
+## 44. Addendum: E3c forage rate (3 October 2026)
+
+Same text as research.md "Addendum: E3c forage rate": the rate-maximizing currency (stephensKrebs1986, book, Crossref
+details only; charnov1976 already cited): an option is worth the net energy it yields over the time it takes, and the
+forager's need is not a divisor of that rate; sockol2007 (the ledger's walking cost) and the Mahale walking speeds
+(nguessan2009 citing Hunt 1989, secondary [L]) recalled. New: stephensKrebs1986. Not verified: within-crown diminishing
+returns for chimpanzees; a primary wild travel speed between feeding trees.
+
 ## Addendum: E4h contests (3 October 2026)
 
 Same text as research.md "Addendum: E4h contests": contest theory (parker1974: escalation only where both contestants'

@@ -535,6 +535,16 @@ export function rideTick(rider: Chimp, carrier: Chimp, P: Params): void {
   if (energyTap.fn) energyTap.fn(carrier, 'carry', cost);
 }
 
+/**
+ * Stage E3c (forageRate; docs/staging/e3c-prereg.md §5): the energy (kcal) this animal spends walking `distM` metres on
+ * the ground and climbing `climbM` metres, as energyTick charges it (the net cost of transport per kg and metre,
+ * sockol2007, and the climbing work at ledgerClimbEff), at its own mass. Pure.
+ */
+export function locomotionKcal(c: Chimp, P: Params, distM: number, climbM: number): number {
+  const r = rates(P);
+  return (distM * r.walk + (climbM > 0 ? climbM * r.climb : 0)) * massOf(c, P);
+}
+
 /** Energy the gut can still take (kcal of `kind`; stage E1b: by the food's dry matter per kcal). */
 export function gutRoom(c: Chimp, P: Params, kind: FoodKind = 'drupe'): number {
   const D = rates(P).dig, L = ledgerOf(c, P);
