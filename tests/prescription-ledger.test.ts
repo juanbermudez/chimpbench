@@ -215,6 +215,7 @@ test('lint (E0b): every allow and off entry matches exactly its lines, with a li
     .filter(([s, n]) => s.includes(e.has) && lits.some(l => l.file === e.file && l.line === n && (!e.kind || l.kind === e.kind)));
   for (const e of LITERAL_ALLOW) assert.equal(lines(e).length, e.n ?? 1, `allow ${e.file} "${e.has}" (${e.kind ?? 'any kind'})`);
   for (const e of LITERAL_OFF) assert.equal(lines(e).length, 1, `off ${e.file} "${e.has}" (${e.kind ?? 'any kind'})`);
+  for (const e of LITERAL_OFF.filter(x => x.same)) assert.equal(lines({ file: e.file, has: e.same!, kind: e.kind }).length, 1, `twin of ${e.file} "${e.has}"`);
   for (const e of LITERAL_JUDGEMENT) {
     assert.equal(lines(e).length, 1, `judgement ${e.file} "${e.has}"`);
     const l = lits.find(q => q.file === e.file && q.line === lines(e)[0][1] && q.kind === e.kind)!;

@@ -413,7 +413,7 @@ export interface Literal {
   text: string; values: number[];
   /** interval and bonus: [start, end) offsets in the line of each literal's text (scripts/param-reads.ts --literals moves them). */
   spans?: [number, number][];
-  /** interval and bonus: the units of the values (h on the clock, s of the current act, ticks; score for a bonus). */
+  /** interval and bonus: the units of the values (h on the clock, s of the current act, ticks, × a named unit; score for a bonus). */
   units?: string;
   /** Counted as a prescription, or the reason it is not. */
   counted: boolean; why: string;
@@ -490,9 +490,11 @@ export const LITERAL_JUDGEMENT: { file: string; has: string; kind: Literal['kind
 ];
 /**
  * Literals switched out by a registry parameter (later stages add theirs): the literal is not counted while `off`
- * returns true for the resolved parameters. Without `kind` an entry covers every kind of literal on its line.
+ * returns true for the resolved parameters. Without `kind` an entry covers every kind of literal on its line. `same`
+ * names (a piece of) the line in the same file that holds the same prescription (e0b-prereg §2 L7): while that line is
+ * counted, this one may still run without being counted again.
  */
-export const LITERAL_OFF: { file: string; has: string; kind?: Literal['kind']; off: (P: Record<string, number>) => boolean; why: string }[] = [
+export const LITERAL_OFF: { file: string; has: string; kind?: Literal['kind']; off: (P: Record<string, number>) => boolean; why: string; same?: string }[] = [
   // stage E2a: the hour >= 12 gate on building a nest, on two exclusive lines (the second is E2b's departRace branch)
   { file: 'candidates.ts', has: 'c.age >= 3 && !race) offerOwnNest', off: P => P.rhythmSleep === 1 || P.departRace === 1, why: 'the hour >= 12 nest gate: with rhythmSleep 1 falling light (daylight < 1) opens a new nest; with departRace 1 this branch is not taken (the gate is counted on the race line)' },
   { file: 'candidates.ts', has: 'if (race && !caretaker && c.age >= 3) offerOwnNest', off: P => P.rhythmSleep === 1 || P.departRace !== 1, why: 'the same hour >= 12 gate on the departRace branch (stage E2b): run only while departRace is 1 and rhythmSleep is not' },
@@ -513,8 +515,8 @@ export const LITERAL_OFF: { file: string; has: string; kind?: Literal['kind']; o
   // the two branches of the grooming score: counted on the need-weighted branch while groomDrive is 1 (every pair takes it),
   // else on the general branch (with groomNeedDyad 1 both run: counted on the general one, e0b §2 L7); neither applies
   // the terms while redecideValue is 1 or 2 (stage E3d: a bout is kept while it is still the best, rg.ts)
-  { file: 'candidates.ts', has: '0.35) : 0) + (1 - c.social) * (0.55', kind: 'bonus', off: P => P.groomDrive !== 1 || P.redecideValue >= 1, why: 'the grooming continuation terms on the need-weighted branch: counted here only while groomDrive is 1, otherwise once on the general branch; not applied while redecideValue is 1 or 2 (stage E3d)' },
-  { file: 'candidates.ts', has: '0.35) : 0) - femaleOffset + (1 - c.social) * 0.55', kind: 'bonus', off: P => P.groomDrive === 1 || P.redecideValue >= 1, why: 'the grooming continuation terms on the general branch: not reached while groomDrive is 1 (every pair takes the need-weighted branch, which holds the same terms); not applied while redecideValue is 1 or 2 (stage E3d)' },
+  { file: 'candidates.ts', has: '0.35) : 0) + (1 - c.social) * (0.55', kind: 'bonus', off: P => P.groomDrive !== 1 || P.redecideValue >= 1, why: 'the grooming continuation terms on the need-weighted branch: counted here only while groomDrive is 1, otherwise once on the general branch (with groomNeedDyad 1 mother–offspring pairs run this line too); not applied while redecideValue is 1 or 2 (stage E3d)', same: '0.35) : 0) - femaleOffset + (1 - c.social) * 0.55' },
+  { file: 'candidates.ts', has: '0.35) : 0) - femaleOffset + (1 - c.social) * 0.55', kind: 'bonus', off: P => P.groomDrive === 1 || P.redecideValue >= 1, why: 'the grooming continuation terms on the general branch: not reached while groomDrive is 1 (every pair takes the need-weighted branch, which holds the same terms); not applied while redecideValue is 1 or 2 (stage E3d)', same: '0.35) : 0) + (1 - c.social) * (0.55' },
 ];
 
 const HOUR = /\b(?:world\.)?hour\s*(?:>=|<=|<|>)\s*(\d+(?:\.\d+)?)/g;
@@ -602,7 +604,10 @@ export function lintSource(file: string, text: string, P: Record<string, number>
     // stage E0b: string text is blanked (same length, so the offsets hold) before the time forms are read
     const code = line.replace(/`(?:[^`\\]|\\.)*`|'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"/g, s => ' '.repeat(s.length));
     const iv = new Map<number, [number, number]>(), unit = new Map<number, string>();
-    for (const re of INTERVAL) for (const m of code.matchAll(re)) { const [a, b] = m.indices![1]; iv.set(a, [a, b]); unit.set(a, /%/.test(m[0]) ? (/actionTime/.test(m[0]) ? 's' : 'ticks') : 'h'); }
+    for (const re of INTERVAL) for (const m of code.matchAll(re)) {
+      const [a, b] = m.indices![1], named = /[A-Z][A-Z0-9_]*/.exec(m[1]);
+      iv.set(a, [a, b]); unit.set(a, /%/.test(m[0]) ? (/actionTime/.test(m[0]) ? 's' : 'ticks') : named ? `× ${named[0]}` : 'h');
+    }
     for (const sp of gateSpans(code)) { iv.set(sp[0], sp); unit.set(sp[0], 'h'); }
     if (iv.size) { const sp = [...iv.values()].sort((p, q) => p[0] - q[0]); add('interval', sp.map(([a, b]) => numValue(code.slice(a, b))), sp, unit.get(sp[0][0])); }
     const bonus: [number, number][] = [], bv: number[] = [];
