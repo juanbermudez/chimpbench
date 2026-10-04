@@ -14,11 +14,12 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (3 October 19:50).** No agents. Integrator: the S9 confirm (S8 + E5d's G4; registered in
-  e-stack2-confirm.md 2bcbd33) and S8's confirm group (S8 at cf22cde + re-draws S8c1–S8c3): bench-run at 2bcbd33, script
-  `integrator/conf9.sh <label> <S8|S9> [rg|-] [rhythm]`, outputs `bench-run/artifacts/validation/e/s9/`. Judge with a
-  copy of `integrator/judge_s7.py` (reference S8 group, arm S9), plus the true mothers ÷ males ground-path ratio and a
-  held-out sensitivity without T-RNG-5 (reported, not the test). Decision guide and hosted copy are on S8.
+- **Running now (3 October 20:45).** Nothing.
+- **S9 done: now the best integrated candidate** (e-stack2-confirm.md "S9 results"; S8 + `groomDrive` + `socialUpkeep` 2 +
+  `followMargin`): 74 prescriptions (the social timers out), grooming in band for both sexes (0.101), viable, night safe,
+  sums inside noise (held-out without the rare rows z +1.2: E5d's quick-mode failure did not replicate). Costs: T-HUN-1
+  35.5 (above band), juveniles −0.060 and other females −0.045 %/day, +0.1–0.2 km walking. The decision guide and the
+  hosted copy still show S8 (S9 needs STACKS.S9 and Before/Now for the two social timers).
 - **S8 done: now the best integrated candidate** (e-stack2-confirm.md "S8 results"; S6 + `growYield` + `revisitByCrop`):
   76 prescriptions, viable, night safe; every class's balance up (mothers −0.046%/day, infants −0.067 / −0.030), walking,
   travel and hunting in band, held-out without the rare rows better beyond noise (z −6.9). Costs: grooming (T-ACT-3
