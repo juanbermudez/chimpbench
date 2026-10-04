@@ -3047,7 +3047,7 @@ and Pandit & van Schaik 2003 (seen only as summarised by ihara2024 and Bissonnet
 agonism chapter); Watts 2002; Nishida & Hosaka 1996; any primate measure of a fight's damage by the fighters' masses; any
 wild chimpanzee wound rate per individual-year or per conflict.
 
-### Addendum: E5e social quotas and clocks (4 October 2026)
+### E.46 Addendum: E5e social quotas and clocks (4 October 2026)
 
 When a subordinate greets a dominant, what limits a consortship to the hours it can use, and what a walk to a caller
 costs. Read for stage E5e ([staging/e5e-prereg.md](staging/e5e-prereg.md)); full texts through NCBI BioC where marked
