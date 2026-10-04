@@ -27,17 +27,19 @@ export interface Stack { name: string; doc: string; section: string; switches: R
 const S3_SWITCHES: Record<string, number> = { energyLedger: 1, ledgerGrowSurplus: 1, ledgerNightNurse: 1, ledgerInfantIntake: 1, ledgerNurseBout: 1, ledgerGrowPotential: 1, ledgerDigesta: 1, ledgerDrive: 1, rhythmSleep: 1, rhythmHeat: 1, endoStates: 1, endoEscalate: 1, endoRedirect: 1, endoFast: 1, endoRainDisplay: 1, ledgerFoodEnergyFix: 1, ledgerSatiationReserve: 1, ledgerLactGut: 1, callValue: 1, rhythmCircadian: 1, departRace: 1, nestLightDecide: 1, sleepChimp: 1, rhythmFreeNight: 1, nestCompany: 1, nestAudience: 1, darkCost: 1, preyKanyawara: 1, waterLedger: 1 };
 const S5_SWITCHES: Record<string, number> = { ...S3_SWITCHES, followCarer: 1, cohesionValue: 1, companyMargin: 1 };
 const S6_SWITCHES: Record<string, number> = { ...S5_SWITCHES, weanDecide: 1, weanDeficit: 1 };
+const S8_SWITCHES: Record<string, number> = { ...S6_SWITCHES, growYield: 1, revisitByCrop: 1 };
 /** The stacks as docs/staging/e-stack2-confirm.md defines them (S5 = S4 + companyMargin, S4 = S3 + followCarer +
- *  cohesionValue, S6 = S5 + E1o's arm B, S8 = S6 + E1p's growYield + E3b's revisitByCrop). */
+ *  cohesionValue, S6 = S5 + E1o's arm B, S8 = S6 + E1p's growYield + E3b's revisitByCrop, S9 = S8 + E5d's G4). */
 export const STACKS = {
   S3: { name: 'S3', doc: 'staging/e-stack2-confirm.md', section: 'S3 results', switches: S3_SWITCHES },
   S5: { name: 'S5', doc: 'staging/e-stack2-confirm.md', section: 'S5 results', switches: S5_SWITCHES },
   S6: { name: 'S6', doc: 'staging/e-stack2-confirm.md', section: 'S6 results', switches: S6_SWITCHES },
-  S8: { name: 'S8', doc: 'staging/e-stack2-confirm.md', section: 'S8 results', switches: { ...S6_SWITCHES, growYield: 1, revisitByCrop: 1 } },
+  S8: { name: 'S8', doc: 'staging/e-stack2-confirm.md', section: 'S8 results', switches: S8_SWITCHES },
+  S9: { name: 'S9', doc: 'staging/e-stack2-confirm.md', section: 'S9 results', switches: { ...S8_SWITCHES, groomDrive: 1, socialUpkeep: 2, followMargin: 1 } },
 } satisfies Record<string, Stack>;
 /** The stack this page shows. Moving the page to another stack is this line, plus the prose its results change (the
  *  check names every box and layer that no longer fits). */
-export const STACK: Stack = STACKS.S8;
+export const STACK: Stack = STACKS.S9;
 
 /** Stages outside the stack, each measured on it (handoff §0 and §3, and each stage's pre-registration). `verdict`
  *  replaces the stage's own where the layer is one arm of a stage. A layer whose switches the stack holds is dropped. */
@@ -94,7 +96,7 @@ export function buildData() {
   const setB = counted(B), setS = counted(LS);
   const layerSets = Object.fromEntries(Object.entries(layerLedgers).map(([k, L]) => [k, counted(L)]));
   // the switch that removes each replaced entry alone (with its needs), the one that needs least: the mechanism's own
-  const solo = Object.fromEntries(Object.keys(STACK.switches).map(s => [s, counted(buildLedger(Object.fromEntries([...closure(s)].map(q => [q, 1])) as never))]));
+  const solo = Object.fromEntries(Object.keys(STACK.switches).map(s => [s, counted(buildLedger(Object.fromEntries([...closure(s)].map(q => [q, STACK.switches[q] ?? 1])) as never))]));
   const reg = new Map<string, Row>(LS.rows.map(r => [r.id, r]));
   const entries = new Map<string, Entry>();
   const allKeys = new Set([...setB, ...setS, ...Object.values(layerSets).flatMap(s => [...s])]);
