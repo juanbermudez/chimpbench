@@ -96,3 +96,13 @@ Runs (frozen detached checkout of the commit that adds the tool, in `scratchpad/
 every readout produced); D0 = the tool on S13, seeds 48 and 7, 30 + 60 days, one seed per process; P0, P1 = e-bench on
 S13 at 30 + 60 days (P1 with `rgTemperature` 0.1641). The shared quick reference (S13q and its three re-draws, the
 integrator's) is not re-run.
+
+### Run log (each entry written before its run, unless marked)
+
+- **Smoke** (logged after the run; working tree at the tool commit, scripts only): S13, seed 48, 1 + 1 days and 3 + 12
+  days. Every readout is produced; 2 patrols in 12 days, both traced from the fired roll to the release; no patrol
+  without a fired roll (tool check).
+- **D0, P0, P1** (as registered in §3), from a frozen detached checkout of the commit that adds this entry:
+  `scratchpad/e4i/frozen-d0`. D0 = `scripts/patrol-diagnose.ts` on S13, seeds 48 and 7 (one process each), 30 + 60 days,
+  `artifacts/validation/e4i/D0-{48,7}.json`; P0 = `e-bench --seeds 48,7 --burn-in 30 --days 60 --params <S13>`; P1 =
+  the same with `rgTemperature` 0.1641 (`artifacts/validation/e4i/P{0,1}.json`).
