@@ -16,6 +16,7 @@ import { arrivalLight, brightening, needUnits, raceStake, rivalsAt } from './dep
 import { endoOn, escalateScore, fastSpanH, rainFastScore, rainScore, redirectFastScore, redirectScore } from './endocrine';
 import { callValueOn, crownOf, pantHootValue } from './calls';
 import { huntRate, huntValueOn } from './huntvalue';
+import { joinShare, leadValue, patrolValueOn } from './patrol';
 import { awakeInNest, byIdIn, index, isTreeId, ix, NEVER, TREE_ID0, treesNear, simOf } from './state';
 
 // Variants refine an action's meaning (why a charge happens) for execution and reason text.
@@ -1045,11 +1046,22 @@ function patrolAndCalls(world: World, c: Chimp, isAlpha: boolean): void {
   const env = world.environment;
   const patrol = s.patrols[c.troopId];
   // border patrols: male-biased parties travel silently to the periphery (Watts & Mitani 2001) [H]
+  // stage E4i (patrolValue; patrol.ts): no hazard and no clock open the lead, and no female site setting scores joining
+  const pv = patrolValueOn(P);
   if (patrol) {
     const leader = byId.get(patrol.leaderId);
-    if (c.action === 'patrol') offer('patrol', patrol.leaderId === c.id ? -1 : patrol.leaderId, 1.25 + (c.sex === 'female' ? P.patrolFemaleStay : 0) - Math.max(0, c.hunger - 0.6), V.CONTINUE);
-    else if (leader && leader.alive && leader.id !== c.id && x.seen.includes(leader.id) && c.hunger < 0.75)
-      offer('patrol', leader.id, (c.sex === 'male' ? 0.85 + bond(c, leader) * 0.3 + pers.boldness * 0.2 - (c.age < 15 ? 0.2 : 0) : c.lactating ? P.patrolLactatingJoin : P.patrolFemaleJoin), V.JOIN); // female terms: site settings (§5.3.1 P3)
+    if (c.action === 'patrol') offer('patrol', patrol.leaderId === c.id ? -1 : patrol.leaderId, 1.25 + (c.sex === 'female' && !pv ? P.patrolFemaleStay : 0) - Math.max(0, c.hunger - 0.6), V.CONTINUE);
+    else if (leader && leader.alive && leader.id !== c.id && x.seen.includes(leader.id) && c.hunger < 0.75) {
+      // stage E4i: everyone is scored as a male is, by the share of a male's power it adds to the patrol (patrol.ts joinShare)
+      if (pv) offer('patrol', leader.id, (0.85 + bond(c, leader) * 0.3 + pers.boldness * 0.2 - (c.age < 15 ? 0.2 : 0)) * joinShare(world, c, patrol.file, P), V.JOIN);
+      else offer('patrol', leader.id, (c.sex === 'male' ? 0.85 + bond(c, leader) * 0.3 + pers.boldness * 0.2 - (c.age < 15 ? 0.2 : 0) : c.lactating ? P.patrolLactatingJoin : P.patrolFemaleJoin), V.JOIN); // female terms: site settings (§5.3.1 P3)
+    }
+  } else if (pv) {
+    // stage E4i: an adult male with enough males in view weighs leading a patrol by its value (information, odds, daylight, fatigue)
+    if (isAdultMale(c) && x.ownMales >= P.patrolMinMales && c.hunger < P.patrolMaxHunger && env.rain < P.patrolMaxRain) {
+      const v = leadValue(world, c, P);
+      if (v > 0) offer('patrol', -1, v, V.LEAD, x.ownMales);
+    }
   } else if (x.impulse === IMPULSE_PATROL && x.impulseUntil > time && isAdultMale(c) && x.ownMales >= P.patrolMinMales && c.hunger < P.patrolMaxHunger && env.rain < P.patrolMaxRain) {
     // the patrol hazard was rolled at perception (perception.ts; realism plan §5.3)
     // who leads is weakly evidenced (party males, boldness: design); no alpha bonus (§5.3.1 A4)

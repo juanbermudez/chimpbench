@@ -100,6 +100,8 @@ interface Patrol {
   maxAdultMales: number; maxAdolMales: number; maxFemales: number; maxLactating: number; members: Member[]; pathM: number; enteredNeighbour: boolean;
   contact: boolean; turnedBack: boolean; stopsSchedule: number; stopsWaypoint: number; end: string | null; release: boolean | null; endT: number | null;
   lightLeftEnd: number | null; endHour: number | null; startState: Record<string, number | null>; endState: Record<string, number | null> | null;
+  /** E4i (patrolValue): the leader's lead score when he set out and whether he remembered the neighbour's males. */
+  leadScore: number | null; remembered: number | null;
 }
 const patrols: Patrol[] = [];
 const open = new Map<number, { rec: Patrol; obj: object; phase: number; stops: number; lx: number; lz: number; lastMembers: Chimp[]; nowMembers: number }>();
@@ -137,6 +139,7 @@ for (let i = 0; i < days * DAY; i++) {
       const leader = idx.byId.get(p.leaderId)!;
       const rec: Patrol = { troop: t.id, startT: time, startHour: r4(hour), lightLeftStart: daylightLeftH(time), leader: p.leaderId, malesInView: ix(leader).ownMales, incursionDie: !!p.incursion, sector: p.sector, until: p.until,
         maxAdultMales: 0, maxAdolMales: 0, maxFemales: 0, maxLactating: 0, members: [], pathM: 0, enteredNeighbour: false, contact: false, turnedBack: false, stopsSchedule: 0, stopsWaypoint: 0,
+        leadScore: leader.candidates.find(q => q.action === 'patrol' && q.targetId === -1)?.score ?? null, remembered: ix(leader).nbm?.[p.neighborId] ?? null,
         end: null, release: null, endT: null, lightLeftEnd: null, endHour: null, startState: stMean([leader, ...ix(leader).seen.map(id => idx.byId.get(id)!).filter(o2 => o2 && o2.alive && o2.troopId === t.id && isAdultMale(o2))].map(stateOf)), endState: null };
       patrols.push(rec);
       open.set(t.id, { rec, obj: p, phase: p.phase, stops: p.stops, lx: leader.position[0], lz: leader.position[2], lastMembers: [leader], nowMembers: 1 });
@@ -273,6 +276,7 @@ const result = {
     withFemales: r4(done.filter(p => p.maxFemales + p.maxLactating > 0).length / Math.max(1, done.length)), contact: r4(done.filter(p => p.contact).length / Math.max(1, done.length)),
     turnedBack: r4(done.filter(p => p.turnedBack).length / Math.max(1, done.length)), lightLeftStart: median(patrols.map(p => p.lightLeftStart)), lightLeftEnd: median(done.map(p => p.lightLeftEnd!)),
     leftEarly: tally(done.flatMap(p => p.members.filter(m => m.leftTo !== null && m.leftAt! < p.endT!).map(m => m.leftTo!))),
+    leadScore: mean(patrols.map(p => p.leadScore).filter((v): v is number => v !== null)), rememberedShare: r4(patrols.filter(p => p.remembered !== null).length / Math.max(1, patrols.length)),
     startState: stMean(patrols.map(p => p.startState as unknown as St)), endState: stMean(done.map(p => p.endState as unknown as St)),
   },
   dayStats: { communityDays: dm.length, patrolDays: dm.filter(d => d.patrol).length, m15: mean(dm.map(d => d.m15)), m15PatrolDays: mean(dm.filter(d => d.patrol).map(d => d.m15)), m15Other: mean(dm.filter(d => !d.patrol).map(d => d.m15)),

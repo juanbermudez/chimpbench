@@ -182,3 +182,139 @@ ref 2: git 52cafa5 dirty 0, fitted 2.24, held-out 4.13, prescriptions 65, viabil
 - **Rows.** T-PAT-1, -2, -3, -5, -7 sit below the instrument bar in both references; T-PAT-7 is 0 (no classified patrol
   with a seen encounter); T-BRD-1 is insufficient at two seeds; T-IGE-1 18.0 and 6.7, T-IGE-2 0.96 and 1.00 (encounters
   heard, almost never seen), T-IGE-3 0.10 and insufficient. No deaths.
+
+### Reading (what the diagnosis implicates)
+
+- The start is a die that ignores the males' state, place and odds; the clock stands in for what the hours carry (later
+  hours hold hungrier, sleepier males with less light left). Implicated: `patrolH0`, `patrolMaleOddsRatio`,
+  `patrolStartH`, `patrolEndH`.
+- The incursion is a die. Implicated: `patrolIncursionP`.
+- The end is already the animals' state (members leave as hunger rises; the cap never binds), so `patrolMaxH` decides
+  nothing on S13 and can go without a replacement; the release dice decide a call act that the call rules (E4c
+  `callValue`, in S13) already value. Implicated: `patrolMaxH`, `patrolReleaseP`, `patrolReleaseContactP`.
+- Joining is set for females by Ngogo's absence written in. Implicated: `patrolFemaleJoin`, `patrolFemaleStay`,
+  `patrolLactatingJoin`.
+- **Not implicated here, deferred:** `patrolStopEveryMin` (the 15-min listening cadence). It makes 83% of stops, but it
+  encodes no target row, the patrol classifier of the observer (≥ 2 listening stops) and T-BRD-1 depend on stops, and no
+  source gives what sets a cadence (a stop samples a few minutes of sound; neighbours call intermittently). Replacing it
+  needs a model of the value of listening; recorded as open (src/sim/parties.ts updatePatrols, `listen(71)`).
+- A first idea, a decision at each arrival of a male party at the periphery (gilbyWilsonPusey2013's periphery visits),
+  was checked before any code (D1, tool a96271d, read-only): parties with ≥ 3 adult males reach the own-use periphery
+  only 2.33 and 1.01 times per community-week, where the neighbours' use is about 0 (0.012, 0.001) and one seed's males
+  hold almost no contact memory; a lead valued there would start about 0.04 patrols per community-week. The model's
+  large male parties stay in the core; patrols carry them out. So the decision is taken where the males are, as today,
+  with the trip's cost and the daylight it needs in the value.
+
+## 4. Mechanism (switch `patrolValue`, 0 = today; src/sim/patrol.ts, committed with this section)
+
+One switch, both profiles default 0 (bit-identical at 0: S13 seed 48 after 12 days, 2 patrols on the path,
+80f6d376f3127173 before and after; S13 seed 7 after 4 days and all-off seed 7 after 6 days, identical). With it on:
+
+1. **The lead is an option valued from state** (candidates.ts `patrolAndCalls`, patrol.ts `leadValue`). No hazard roll,
+   no odds ratio, no clock. At a decision point an adult male with ≥ `patrolMinMales` adult males of his community in
+   view, no patrol under way, hunger below `patrolMaxHunger` and rain below `patrolMaxRain` (the design gates kept) is
+   offered the lead at
+   `V = ceiling × min(1, S × q × D × (1 − sleep pressure) × (1 + arousal))`, the E4a rule (the score the dice-opened
+   option had is the ceiling; levels in 0..1 multiply it; no new score constant):
+   - ceiling = `patrolLeadScore` + `patrolLeadMaleW` × (males in view − `patrolMinMales`) + `patrolLeadBoldW` × boldness
+     (the C6 lead score, design);
+   - S = 1 − exp(−days since the route sector's periphery was last used by a party with an adult male ÷
+     `patrolStaleTauDays`): the information a check brings (the hazard's own term; route by Amendment A1, unchanged:
+     contested edges attract, losses repel unless many males);
+   - q = his males' summed strength (in view, himself included) against the neighbour's males as he last saw them
+     together or heard them call together, each assessed as strong as his party's average adult male, by the model's
+     contest function (`contestExponent`): numerical assessment [H] (wilson2001; lemoine2023 [M]); parity (0.5) when
+     he remembers nothing of that neighbour (design);
+   - D = the share of the trip that fits before sunset: out to the sector's range edge, a quarter circle along it and
+     home to the centre, at `walkMps` (design geometry) — daylight in place of the clock;
+   - 1 − sleep pressure (E2a's state; 1 − energy without it): fatigue in place of the clock;
+   - 1 + competitive arousal: E4b's gain of a male competitive act (the testosterone-like state; sobolewski2012 not
+     verified: design).
+   The energy of the trip is not a level: the lead competes in the same draw with feeding options worth the drive times
+   their energy rate (E3c), so a hungry male rarely leads, and members leave by the same comparison. The option is drawn
+   like any other (RG softmax); `patrolImpulseDecides` does not apply (no roll raised it).
+2. **Incursion by assessed odds** (parties.ts `updatePatrols`, at the first waypoint, the own range edge): the leader
+   pushes into the neighbour's range when the patrol's odds (its members' summed strength on it against the neighbour's
+   males as he remembers them, each as strong as the patrol's average adult male) are above 0.5 and the way in and home
+   (to the incursion point, then to the own centre, at `walkMps`) fits in the daylight left; otherwise the patrol sweeps
+   along the edge as today. Parity (nothing remembered) means no push.
+3. **Retreat by the same odds**: the patrol turns home when its odds against the strangers perceived (adult males seen,
+   or callers heard within `patrolHeardWindowH`) are 0.5 or less (today: when their count matches the males the leader
+   sees). Contact memory writes are unchanged.
+4. **No length cap and no release dice**: a patrol ends when its route comes home or no member is left (members leave
+   by the continuation score against their other options, as on S13). After it the males call or not by the call rules.
+5. **Joining**: every community member with the leader in view is scored as a male is (0.85 + 0.3 × bond with the
+   leader + 0.2 × boldness − 0.2 under 15 y, the C6 literals) times its strength over the patrol's average adult male
+   on it now, capped at 1: the share of a male's contribution to the patrol's power it adds (E4h's currency: joining is
+   worth what it changes). No female join or stay score; no lactation term (samuni2021: no young-infant effect).
+6. **Memory**: `x.nbm` (ChimpX, lazily added, in OPTIONAL_X), neighbour community id → adult males seen together, or
+   distinct callers heard together, at the last contact (perception.ts; written only with the switch on).
+
+Removes (ACTIVE_WHEN, scripts/lib/prescriptions.ts): `patrolH0`, `patrolMaleOddsRatio`, `patrolStartH`, `patrolEndH`,
+`patrolIncursionP`, `patrolMaxH`, `patrolReleaseP`, `patrolReleaseContactP`, `patrolFemaleJoin`, `patrolFemaleStay`,
+`patrolLactatingJoin`: **S13 65 → 54** (`prescription-ledger.ts --count`); today's model 135 → 124. Stays counted:
+`patrolStopEveryMin` (deferred above). Draws removed: the hazard roll, the incursion die, the release dice. No new
+randomness.
+
+Rows encoded or genuine under the switch: T-PAT-4's male effect stays partly built in (the lead score's design male
+term and the odds both rise with males; the 1.17 ratio itself is gone); T-PAT-1, -2, -3, -5, -6, -7, T-BRD-1 and T-IGE-1..3
+are genuine (no rate, share, hour, length or joining value is written in); T-PAT-9 stays encoded-descriptive (route A1).
+
+## 5. Readouts (defined before any arm; smoke-tested with the switch on, 2 days, before any arm)
+
+From `scripts/patrol-diagnose.ts` (truth) unless stated; the observer rows from e-bench.
+- **Patrols per community-week**: patrols started (`s.patrols` set) per community-week. Source sense
+  (gilbyWilsonPusey2013): patrols are bouts in which "chimpanzees travelled cautiously and … appeared to be watching or
+  listening for chimpanzees from neighbouring communities"; the observer's T-PAT-1 classifier is the scored version.
+- **Start hour**: the clock hour of the start, the truth version of "the first instance in which chimpanzees were
+  identified as patrolling" (gilbyWilsonPusey2013). Share of starts outside 08:00–15:30.
+- **Duration and path**: start to end (min), leader path (km); T-PAT-5 (amsler2010) is the scored version.
+- **Incursion**: the leader's cell inside a neighbour's 95% use isopleth at any tick (truth); T-PAT-6, "Share of patrols
+  that enter the neighbour's range (beyond the own 95% isopleth into the neighbour's)", the scored version.
+- **Contact and turn-back**: patrols with a stranger seen or heard (`p.contact`); turned back by assessment.
+- **Composition and joining**: most adult males on at once; ≥ 3 adult males; patrols with a female; joins ÷ later
+  opportunities by class (adult and adolescent males, adult and lactating females).
+- **How patrols end**: home, no member left; members leaving early and to what; hunger and sleep pressure at start and end.
+- **Lead value at the start** (leader's lead score) and the share of leaders remembering the neighbour's males.
+- **Energy**: reserves ÷ store %/day by class (energy-diagnose, OLS as the integrator's judge scripts), quick mode.
+- **Intergroup**: T-IGE-1..3 (observer), encounters per community-week (`stats.intergroupEncounters`), deaths by cause.
+
+## 6. Arm, predictions and kill criterion
+
+**Arm A1** = S13 + `patrolValue` 1. Runs (frozen detached checkout of the commit that adds this section, rules
+policy, seeds 48 and 7): (a) `e-bench --quick` and `energy-diagnose` (30 + 30 days), judged against the four S13 quick
+realizations (`judge_vs_reps.py quick custom`, REFS = S13q, S13q1, S13q2, S13q3), with and without T-HUN-4 and T-BRD-1
+and without T-IGE-3; (b) `e-bench --seeds 48,7 --burn-in 30 --days 60` and `patrol-diagnose.ts` (30 + 60), patrol rows
+against P0/P1 and truth against D0b.
+
+| Quantity | S13 reference (D0b, P0/P1) | Prediction for A1 | Confidence |
+| --- | --- | --- | --- |
+| Prescriptions | 65 | 54 | high |
+| Viability; starvation deaths | pass; 0 | pass; 0 | moderate |
+| Truth patrols per community-week | 0.74 | 0.2–3 (a lead option of value ~0.1–0.4 against best options ~0.9–1.2, drawn at RG's temperature) | low |
+| Starts outside 08:00–15:30 | 0% (by construction) | ≥ 10% | moderate |
+| Median start hour | 12 | earlier (≤ 11): sleep pressure lowest after waking, daylight short late | low |
+| Truth incursion share | 0.26 | 0.1–0.5 (only with a remembered smaller neighbour party) | low |
+| Patrols reaching 3 adult males | 0.66 | 0.5–0.8 (prime males' joining unchanged) | moderate |
+| Patrols with a female | 4 of 38 | up (≥ 20%): females join at about half a male's score instead of 0.2 / −1 | moderate |
+| Female joins ÷ later opportunities | 1 / 36 (lactating 0 / 20) | ≥ 0.1 (lactating ≥ 0.05) | moderate |
+| Median duration; > 6 h | 162 min; 0 | 100–220 min; ≤ 1 | moderate |
+| Ended with no member left | 19 of 38 | 30–70% | low |
+| Turned back | 0.11 | 0.05–0.2 | low |
+| Releases (chorus, drum, display at the end) | 11 of 38 | 0 (by construction) | high |
+| Fitted; held-out with and without T-HUN-4 and T-BRD-1 (quick, vs S13q group) | group mean | inside noise | moderate |
+| T-PAT rows (30 + 60, vs P0/P1) | see §3 | no direction predicted (two-seed observer rows on few patrols) | — |
+| Adult males', nursing mothers' and juveniles' reserves (quick) | S13q group | within 2 SD unless the patrol rate exceeds 2 per community-week (then males and females on patrols lower) | low |
+
+**Kill criterion** (`patrolValue` stays off and the result is recorded): viability fails or any starvation death the
+reference group does not have; held-out up beyond noise (z > 2) with or without the rare rows; patrolling degenerate
+(truth rate below 0.05 or above 5 per community-week); nursing mothers' or juveniles' reserves more than 3 SD below the
+S13 group's mean.
+
+**Keep rule (standard):** viable; held-out not up beyond noise with and without the rare rows; prescriptions fall
+(54 < 65).
+
+## 7. Iterations
+
+At most 3, each logged here and committed before its run. An iteration changes the mechanism from first principles
+(a defect, an omitted cost or state), never a weight to move a row.

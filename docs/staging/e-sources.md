@@ -1791,3 +1791,12 @@ leimarMcNamara2023, arnottElwood2009, pinto2019, massote2025, benitez2017, ihara
 drews1996, wittigBoesch2003b, wittigBoesch2003c, mouginot2024, wranghamWilsonMuller2006, muller2007, kahlenberg2008,
 massaro2024, mullerMitani2005, mitani2002, kaburu2013. Not verified: Kitchen et al. 2005, van Schaik et al. 2004, Pandit
 & van Schaik 2003, Muller 2002, Watts 2002, Nishida & Hosaka 1996.
+
+## Addendum: E4i patrols (4 October 2026)
+
+Same text as research.md "Addendum: E4i patrols": gilbyWilsonPusey2013 (FT: patrol criteria and start-time rule; GEE of a
+patrol day on the day's maximum male party size, +0.1 per male, and distance travelled, +0.43 per km), lemoine2023 (FT:
+border-ward travel and hill stops less likely late in the day; advances rise with a favourable imbalance of power and
+toward the border), langergraber2017 (participation falls with the community's male count, as recorded), samuni2021 and
+massaro2022 (female participation; no young-infant effect at Taï), sobolewski2012 still not verified. No new source
+keys. Not verified: amsler2010, mitaniWatts2005, wattsMitani2001, watts2006 (closed; as recorded at C6p).

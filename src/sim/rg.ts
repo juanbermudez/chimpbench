@@ -158,7 +158,8 @@ export function rgChoice(world: World, c: Chimp, list: Candidate[]): Candidate |
   // decision. When leading it is the rules' top pick, it is taken: the gate does not hold the old intention over it and
   // it is not drawn a second time (design assumption; the C6 hazard was fitted as the rate of patrols started)
   const top = list[0];
-  if (P.patrolImpulseDecides === 1 && top && top.action === 'patrol' && candidateMeta.get(top)?.v === V.LEAD) {
+  // stage E4i (patrolValue): no roll raised the lead, so it is drawn like any other option
+  if (P.patrolImpulseDecides === 1 && P.patrolValue !== 1 && top && top.action === 'patrol' && candidateMeta.get(top)?.v === V.LEAD) {
     if (rgTally.on) rgTally.lead++;
     x.rgIntent = intentOf(world, c, top.action, top.targetId, V.LEAD, candidateMeta.get(top)?.aux ?? -1);
     if (rgTap.fn) rgTap.fn(c, list, [], [], top, 'lead');

@@ -1,12 +1,13 @@
 import type { Chimp, Party, World } from '../types';
 import { addEvent, emitCall, endInteraction, flashInteraction, interrupt } from './events';
-import { isAdultMale } from './hierarchy';
+import { isAdultMale, strength } from './hierarchy';
 import { hash01, random } from './rng';
 import { noteEncounter } from './relations';
 import { paramsOf } from './params';
 import { PARTY_EVERY, TICK_HOURS, chimpCells, index, ix, simOf } from './state';
 import { markDanger, noteContact } from './contact';
 import { SECTORS, cellAt, gridOf, incursionPoint, rangeEdge, recordUse, sectorDir, useLevels } from './territory';
+import { daylightLeftH, patrolPower, patrolValueOn, powerOdds } from './patrol';
 
 const parent: number[] = [];
 function find(i: number): number { while (parent[i] !== i) { parent[i] = parent[parent[i]]; i = parent[i]; } return i; }
@@ -144,6 +145,7 @@ export function updatePatrols(world: World): void {
   const s = simOf(world);
   const idx = index(world);
   const P = paramsOf(world);
+  const pv = patrolValueOn(P); // stage E4i: no length cap, no release dice, odds decide the incursion and the retreat
   for (const troop of world.troops) {
     const p = s.patrols[troop.id];
     if (!p) continue;
@@ -156,18 +158,27 @@ export function updatePatrols(world: World): void {
       endInteraction(world, p.interId);
       s.patrols[troop.id] = null;
       // the release (§5.3.1 P4a): after contact, or on returning to the core, the males pant-hoot in chorus, drum and display [M]
-      if (leader && leader.alive && (p.contact || home) && random(world) < (p.contact ? P.patrolReleaseContactP : P.patrolReleaseP)) {
+      // stage E4i: no release dice; after the patrol the males call (or not) by the call rules, as on any other trip
+      if (!pv && leader && leader.alive && (p.contact || home) && random(world) < (p.contact ? P.patrolReleaseContactP : P.patrolReleaseP)) {
         for (const id of p.file) { const m = idx.byId.get(id); if (m && m.alive && m.action === 'patrol' && isAdultMale(m)) emitCall(world, m, 'pant-hoot'); }
         emitCall(world, leader, 'drum');
         flashInteraction(world, 'display', leader, -1, [leader.id], 0.8);
         addEvent(world, `The ${troop.name} patrol ended with a pant-hoot chorus and drumming`, 'territory', [leader.id], troop.id, 1);
       } else addEvent(world, `The ${troop.name} patrol ended`, 'territory', leader ? [leader.id] : [], troop.id, 0);
     };
-    if (!leader || world.time > p.until) { done(false); continue; }
+    if (!leader || (!pv && world.time > p.until)) { done(false); continue; }
     const lx = ix(leader), time = world.time;
     if (lx.strangers > 0 || (time - lx.heardAt < P.patrolHeardWindowH && lx.heardTroop > 0)) p.contact = true;
     // numerical assessment: stranger males seen, or heard calling, that match our males send the patrol home [M-H]
-    const outnumbered = lx.strangerMales > 0 && lx.strangerMales >= lx.ownMales || (time - lx.heardAt < P.patrolHeardWindowH && lx.heardTroop > 0 && lx.heardN >= lx.ownMales);
+    const heardNow = time - lx.heardAt < P.patrolHeardWindowH && lx.heardTroop > 0;
+    let outnumbered: boolean;
+    if (pv) {
+      // stage E4i: the patrol's assessed odds (patrol.ts): its members' summed strength against the strangers perceived, each
+      // assessed as strong as the patrol's average adult male; the patrol turns back when the odds are not in its favour
+      const pw = patrolPower(world, p.file, P), avg = pw.males > 0 ? pw.malePower / pw.males : strength(leader, P);
+      const rivals = Math.max(lx.strangerMales, heardNow ? lx.heardN : 0);
+      outnumbered = rivals > 0 && powerOdds(pw.power, rivals * avg, P) <= 0.5;
+    } else outnumbered = lx.strangerMales > 0 && lx.strangerMales >= lx.ownMales || (heardNow && lx.heardN >= lx.ownMales);
     if (outnumbered && p.phase < 2) {
       // a patrol turning back: a loss for every member still on it (contact memory, §5.3.1 P2)
       if (P.patrolContactMemory === 1) { for (const id of p.file) { const m = idx.byId.get(id); if (m && m.alive && m.action === 'patrol') noteContact(world, m, leader.position[0], leader.position[2], 0, P.dangerFleeW); } }
@@ -188,6 +199,16 @@ export function updatePatrols(world: World): void {
       p.phase = 1;
       listen(72);
       const nb = idx.troopById.get(p.neighborId);
+      if (pv && nb) {
+        // stage E4i: at the range edge the leader pushes into the neighbour's range when the patrol's odds against the
+        // neighbour's males as he remembers them favour it (parity when unknown: no push) and the way in and home fits
+        // in the daylight left (at walkMps; design geometry)
+        const pw = patrolPower(world, p.file, P), avg = pw.males > 0 ? pw.malePower / pw.males : strength(leader, P), m = lx.nbm?.[nb.id];
+        const odds = m && m > 0 ? powerOdds(pw.power, m * avg, P) : 0.5;
+        const [ix0, iz0] = incursionPoint(world, nb, p.wx, p.wz, Math.floor(p.start));
+        const wayH = (Math.hypot(ix0 - leader.position[0], iz0 - leader.position[2]) + Math.hypot(troop.center[0] - ix0, troop.center[2] - iz0)) / P.walkMps / 3600;
+        p.incursion = odds > 0.5 && daylightLeftH(time) >= wayH;
+      }
       if (nb && p.incursion) {
         [p.wx, p.wz] = incursionPoint(world, nb, p.wx, p.wz, Math.floor(p.start));
       } else {

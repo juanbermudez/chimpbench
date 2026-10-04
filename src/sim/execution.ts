@@ -23,8 +23,9 @@ import { eatFruit, forageYield, fruitAt } from './phenology';
 import { bestFallbackNear, eatFallback, fallbackOn, fallbackStock, fallbackValue } from './fallback';
 import { recordAggression, recordConsolation, recordGrooming, recordMating, recordMeat, recordReconciliation, recordSupport } from './relations';
 import { BANK_A, BANK_B, CHANNEL, FORD, bankOf, bestFord, dryPoint, fordExits, streamCell, tangentNear } from './stream';
-import { markDanger, noteContact, sectorContact } from './contact';
-import { cellAt, gridOf, neighbourSectors, pressureAt, rangeEdge, sectorDir, useLevels } from './territory';
+import { markDanger, noteContact } from './contact';
+import { cellAt, gridOf, pressureAt, rangeEdge, sectorDir, useLevels } from './territory';
+import { patrolRoute, patrolValueOn } from './patrol';
 import { GROOM_BOND_ACTOR, GROOM_BOND_RECIP, GROOM_SOCIAL_ACTOR, GROOM_SOCIAL_RECIP, upkeepOnly } from './upkeep';
 
 // Bout durations in eco-minutes [min, max] (registry bout*Min / bout*Max).
@@ -408,19 +409,18 @@ function startPatrol(world: World, c: Chimp): void {
     return;
   }
   // route (§5.3.1 Amendment A1): the neighbour-facing sector with the best additive score of staleness, the leader's
-  // contacts there and, weighed by the numerical risk, its losses; first waypoint at the own range edge in that sector
-  const risk = 1 / (1 + P.riskMaleW * x.ownMales), mem = sectorContact(world, troop, c);
-  let st = neighbourSectors(world, troop)[0], best = -Infinity;
-  for (const q of neighbourSectors(world, troop)) {
-    const score = P.patrolStaleW * (1 - Math.exp(-q.days / P.patrolStaleTauDays)) + P.patrolContactW * Math.min(1, mem.c[q.sector] / P.dangerScale) - P.patrolLossW * Math.min(1, mem.l[q.sector] / P.dangerScale) * risk;
-    if (score > best + 1e-12) { best = score; st = q; }
-  }
+  // contacts there and, weighed by the numerical risk, its losses (patrol.ts patrolRoute); first waypoint at the own range
+  // edge in that sector
+  const st = patrolRoute(world, troop, c, P);
   const neighbor = st.neighbor;
   const [dx, dz] = sectorDir(st.sector);
   const [wx, wz] = rangeEdge(world, troop, dx, dz);
-  const incursion = random(world) < P.patrolIncursionP;
+  // stage E4i (patrolValue): no incursion die (the leader decides at the range edge by the patrol's odds, parties.ts) and
+  // no length cap (members leave by their own state)
+  const pv = patrolValueOn(P);
+  const incursion = pv ? false : random(world) < P.patrolIncursionP;
   const it = startInteraction(world, 'patrol', c, -1, [c.id], 0.6);
-  s.patrols[c.troopId] = { leaderId: c.id, neighborId: neighbor, start: world.time, phase: 0, wx, wz, until: world.time + P.patrolMaxH, interId: it.id,
+  s.patrols[c.troopId] = { leaderId: c.id, neighborId: neighbor, start: world.time, phase: 0, wx, wz, until: pv ? world.time : world.time + P.patrolMaxH, interId: it.id,
     sector: st.sector, incursion, stopUntil: -1e9, lastStop: world.time, stops: 0, file: [c.id], contact: false };
   c.vocal = null;
   addEvent(world, `${troop.name} males set out on a silent border patrol led by ${c.name}`, 'territory', [c.id], troop.id, 1);
