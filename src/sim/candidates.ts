@@ -10,6 +10,7 @@ import { fruitRate, leafWorth, needFruit, netRateShare, treeIntake } from './int
 import { heatRestValue, nestValue, shelterValue, sleepPressure, thermalLoad } from './rhythm';
 import { darkOn, tripLight, visionNow, type TripLight } from './light';
 import { circadianOn, circadianSleepiness } from './circadian';
+import { dayPhase } from './environment';
 import { driveOn, milkShare, milkWorth, nurseBoutWorth } from './energy';
 import { drinkWorth, waterOn } from './water';
 import { arrivalLight, brightening, needUnits, raceStake, rivalsAt } from './departure';
@@ -31,8 +32,11 @@ export const V = {
 /**
  * `raw` and `jit` (stage E3d, redecideValue only): the option's value (every term, the finished penalty included) before
  * the candidate jitter, and the jitter; src/sim/rg.ts keeps an act while it is still the best by the valuation that chose it.
+ * `bel` (stage E3e, choiceBelief only; docs/staging/e3e-prereg.md §5.1): a trip to a tree out of sight, valued at a crop
+ * the animal cannot see now: [tree id, the crop it values the tree at, hours since it last saw the tree (Infinity when
+ * never), feeders it counts there, the distance]; rg.ts draws the crop from that belief (treeFoodWorth).
  */
-export interface CandidateMeta { v: number; aux: number; raw?: number; jit?: number }
+export interface CandidateMeta { v: number; aux: number; raw?: number; jit?: number; bel?: number[] }
 export const candidateMeta = new WeakMap<Candidate, CandidateMeta>();
 
 /** The five gates of stage E5e (docs/staging/e5e-prereg.md §2). */
@@ -90,8 +94,8 @@ export const CODE: Record<Action, number> = {
 // Targets kept per action: forage P.slotsForage, these P.slotsMulti, everything else one.
 const MULTI: Partial<Record<Action, true>> = { groom: true, play: true, charge: true, travel: true, mate: true, follow: true, flee: true, share: true, attack: true, patrol: true };
 
-interface Slot { action: Action; target: number; score: number; v: number; aux: number; raw: number; jit: number }
-const pool: Slot[] = Array.from({ length: 48 }, () => ({ action: 'rest' as Action, target: -1, score: 0, v: 0, aux: 0, raw: 0, jit: 0 }));
+interface Slot { action: Action; target: number; score: number; v: number; aux: number; raw: number; jit: number; bel: number[] | null }
+const pool: Slot[] = Array.from({ length: 48 }, () => ({ action: 'rest' as Action, target: -1, score: 0, v: 0, aux: 0, raw: 0, jit: 0, bel: null }));
 let n = 0;
 let cur: Chimp;
 let curTime = 0;
@@ -101,7 +105,7 @@ let curP: Params;
 /** A patrol member on the way out, at stops or in an incursion: no calls and no displays until the release (§5.3.1 P4a). */
 let curSilent = false;
 
-function offer(action: Action, target: number, score: number, v: number = V.NONE, aux = -1): void {
+function offer(action: Action, target: number, score: number, v: number = V.NONE, aux = -1, bel: number[] | null = null): void {
   if (!(score > -0.4)) return;
   if (curSilent && (action === 'call' || action === 'display')) return;
   const base = score, jit = (hash01(cur.id, cur.decisionVersion, CODE[action], target) - 0.5) * curP.candidateJitterSpan;
@@ -120,7 +124,7 @@ function offer(action: Action, target: number, score: number, v: number = V.NONE
   for (let i = 0; i < n; i++) {
     const s = pool[i];
     if (s.action !== action) continue;
-    if (s.target === target) { if (score > s.score) { s.score = score; s.v = v; s.aux = aux; s.raw = raw; s.jit = jit; } return; }
+    if (s.target === target) { if (score > s.score) { s.score = score; s.v = v; s.aux = aux; s.raw = raw; s.jit = jit; s.bel = bel; } return; }
     if (grouped && (s.v === V.TREE && s.aux > 0) !== join) continue;
     count++;
     if (worst < 0 || s.score < pool[worst].score) worst = i;
@@ -128,7 +132,7 @@ function offer(action: Action, target: number, score: number, v: number = V.NONE
   let slot: Slot;
   if (count >= (join ? 1 : action === 'forage' ? curP.slotsForage : MULTI[action] ? curP.slotsMulti : 1)) { if (score <= pool[worst].score) return; slot = pool[worst]; }
   else { if (n >= pool.length) return; slot = pool[n++]; }
-  slot.action = action; slot.target = target; slot.score = score; slot.v = v; slot.aux = aux; slot.raw = raw; slot.jit = jit;
+  slot.action = action; slot.target = target; slot.score = score; slot.v = v; slot.aux = aux; slot.raw = raw; slot.jit = jit; slot.bel = bel;
 }
 
 export function dependentOn(world: World, c: Chimp): Chimp | undefined {
@@ -171,6 +175,7 @@ export function isCarried(c: Chimp, mother: Chimp | undefined): boolean {
 const _near: number[] = [];
 const _mem: (Tree | number)[] = [];
 const _rk: number[] = [], _dk: number[] = []; // stages C7d-C7e: believed value (worth − revisit) and distance of each shortlist entry
+const _bl: number[] = []; // stage E3e (choiceBelief): per shortlist entry, the crop it is valued at, the hours since the tree was seen, the distance
 const _fb: [number, number] = [0, 0];
 
 function chooseNestTree(world: World, c: Chimp): Tree | undefined {
@@ -304,7 +309,11 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       : (1 - smoothstep(P.nestMorningDaylightLow, P.nestMorningDaylightHigh, env.daylight)) * P.nestMorningDrive;
   nestDrive += (rS ? 0 : (1 - e) * 0.3) + (night && rain > 0.3 ? 0.3 : 0);
   // stage E2e (nestCompany): staying in its own finished nest keeps the company of its nest-mates (nestCompanyValue)
-  const company = P.nestCompany === 1 && inNest && !caretaker && c.age >= 5 ? nestCompanyValue(world, c, P) : 0;
+  // stage E3e (choiceBelief; docs/staging/e3e-prereg.md §5.1–5.2): only the company leaving would lose. 1: that of nest-mates
+  // asleep. 2: in the day light phase that of nest-mates asleep; in the dark (night, dawn, dusk) an awake nest-mate also
+  // stays behind (it will not walk off into the dark: darkCost), so its company counts as E2e has it
+  const asleepOnly = P.choiceBelief === 1 || (P.choiceBelief === 2 && dayPhase(world) === 'day');
+  const company = P.nestCompany === 1 && inNest && !caretaker && c.age >= 5 ? nestCompanyValue(world, c, P, asleepOnly) : 0;
   if (caretaker) {
     if (caretaker.action === 'nest' && isTreeId(caretaker.targetId)) offer('nest', caretaker.targetId, nestDrive + 0.4, V.MOTHER, caretaker.id);
   } else if (c.age >= 3 && !race) offerOwnNest(world, c, inNest, company ? nestDrive + company : nestDrive, rS ? env.daylight < 1 : hour >= 12 || night);
@@ -404,6 +413,10 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     if (dark && (tripLight(world, P, d, crownY, _tl).pace < 1 || _tl.see < 1)) return netRateShare(c, P, crop, feeders, d, climb, _tl.pace, _tl.see);
     return netRateShare(c, P, crop, feeders, d, climb);
   };
+  // stage E3e (choiceBelief; docs/staging/e3e-prereg.md §5.1): a trip to a tree out of sight carries the animal's belief
+  // about its crop (the crop it values the tree at, the hours since it last saw the tree), so rg.ts can draw the crop
+  const cb = fr && P.choiceBelief >= 1;
+  const seenH = (id: number): number => { for (let i = 0; i < c.memory.length; i++) { const m = c.memory[i]; if (m.kind === 'tree' && m.entityId === id) return time - m.seenAt; } return Infinity; };
   if (!caretaker || (c.age >= 1.5 && !carried && caretaker.action === 'forage')) {
     for (let _i1 = 0; _i1 < x.trees.length; _i1++) { const id = x.trees[_i1];
       const t = idx.treeById.get(id)!;
@@ -433,7 +446,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     const held = P.departPersist === 1 && x.tryAt !== undefined && time < x.tryAt && departAudience(world, c) > 0;
     const shortlist = P.patchEcology === 1; // field: many remembered trees; score the few best by distance and hunger
     const water = waterOn(P); // stage E2g: thirst from the water ledger
-    _mem.length = 0; _rk.length = 0; _dk.length = 0;
+    _mem.length = 0; _rk.length = 0; _dk.length = 0; _bl.length = 0;
     const minD = P.memoryTreeMinM;
     for (let _i3 = 0; _i3 < c.memory.length; _i3++) { const m = c.memory[_i3];
       if (m.kind === 'tree' && time - m.seenAt < P.memTravelHorizonH && !stamped(_sight, m.entityId, st)) {
@@ -445,8 +458,8 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
         const worth = fr ? fd * rateWorth(t, crop, 0, d) : (P.memCropBelief === 1 ? h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) : h * P.memTravelHungerW) * tripWorth(t, crop, 0, d);
         if (race) { const nr = rivalsAt(c, t.id); if (nr > 0) raceG = Math.max(raceG, raceStake(worth, crop, nr, need, arrivalLight(env.daylight, dLdt, d, P))); } // stage E2b
         const tc = fr ? 0 : tripCost(worth, crop, d, h, P, needFruit(c, P, h)); // stage E3c: the walk's energy is in the rate
-        if (shortlist) { const rv = revisit(x, t.id, time, P); _mem.push(t, worth - tc - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD)); continue; }
-        if (!held) offer('travel', t.id, worth - tc - revisit(x, t.id, time, P) - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay, V.TREE);
+        if (shortlist) { const rv = revisit(x, t.id, time, P); _mem.push(t, worth - tc - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD)); if (cb) _bl.push(crop, time - m.seenAt, d); continue; }
+        if (!held) offer('travel', t.id, worth - tc - revisit(x, t.id, time, P) - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay, V.TREE, -1, cb ? [t.id, crop, time - m.seenAt, 0, d] : null);
       } else if (m.kind === 'water' && c.age >= 3 && (water ? c.thirst > 0 : c.thirst > 0.25)) {
         const d = Math.hypot(m.position[0] - px, m.position[2] - pz);
         // stage E2g (waterLedger): thirst from the water deficit, the trip valued by the share of it spent drinking (water.ts)
@@ -467,6 +480,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       if (race) { const nr = rivalsAt(c, id); if (nr > 0) raceG = Math.max(raceG, raceStake(worth, crop, nr, need, arrivalLight(env.daylight, dLdt, d, P))); } // stage E2b
       const rv = revisit(x, id, time, P);
       _mem.push(t, worth - (fr ? 0 : tripCost(worth, crop, d, h, P, needFruit(c, P, h))) - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD));
+      if (cb) _bl.push(crop, Infinity, d); // never in its own memory (the loop skips remembered trees)
     }
     // stage C7d (field; c7b-prereg §8.3): route chaining, the nearest unused known resource weighted by value (janson2014) [M]:
     // offer only the tree with the most believed value per metre, at its usual score. Stage C7e (§9): with goalDistScaleM D > 0
@@ -476,15 +490,17 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       let bi = -1, br = -Infinity;
       for (let i = 0; i < _rk.length; i++) { const r = D > 0 ? _rk[i] * D / (D + _dk[i]) : _rk[i] / _dk[i]; if (r > br) { br = r; bi = i; } }
       const t = _mem[2 * bi] as Tree, base = _mem[2 * bi + 1] as number;
-      _mem.length = 0;
-      if (!held) offer('travel', t.id, base - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay, V.TREE);
+      const bel = cb ? [t.id, _bl[3 * bi], _bl[3 * bi + 1], 0, _bl[3 * bi + 2]] : null;
+      _mem.length = 0; _bl.length = 0;
+      if (!held) offer('travel', t.id, base - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay, V.TREE, -1, bel);
     }
     if (shortlist) for (let k = 0; k < 4 && _mem.length; k++) {
       let bi = 1;
       for (let i = 3; i < _mem.length; i += 2) if ((_mem[i] as number) > (_mem[bi] as number)) bi = i;
-      const t = _mem[bi - 1] as Tree, base = _mem[bi] as number;
-      _mem.splice(bi - 1, 2);
-      if (!held) offer('travel', t.id, base - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay, V.TREE);
+      const t = _mem[bi - 1] as Tree, base = _mem[bi] as number, e = (bi - 1) >> 1;
+      const bel = cb ? [t.id, _bl[3 * e], _bl[3 * e + 1], 0, _bl[3 * e + 2]] : null;
+      _mem.splice(bi - 1, 2); if (cb) _bl.splice(3 * e, 3);
+      if (!held) offer('travel', t.id, base - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay, V.TREE, -1, bel);
     }
     const callerRate = socialBit(P, 4) && cohesion && fr; // stage E5e: see the branch below
     if (!callerRate && x.joinCall > 0 && time - x.joinAt < 0.3 && c.action !== 'patrol') {
@@ -513,16 +529,18 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
         const caller = byId.get(x.joinCaller), alive = !!caller && caller.alive;
         let v = alive ? (P.companyMargin === 1 ? Math.max(0, companyValue(c, caller!, P) - presentCompany(world, c, P)) : companyValue(c, caller!, P)) : 0;
         const t = x.jt !== undefined && x.jt > 0 ? idx.treeById.get(x.jt) : undefined;
+        let bel: number[] | null = null;
         if (t) {
-          const crop = stamped(_sight, t.id, st) ? (P.patchEcology === 1 ? fruitAt(world, t) : t.fruit) : (x.treeCrop?.[t.id] ?? 0.2);
+          const inSight = stamped(_sight, t.id, st), crop = inSight ? (P.patchEcology === 1 ? fruitAt(world, t) : t.fruit) : (x.treeCrop?.[t.id] ?? 0.2);
           let feeders = 1; // the caller, heard feeding there
           for (let _k = 0; _k < x.seen.length; _k++) { const o = byId.get(x.seen[_k]); if (o && o.alive && o !== c && o !== caller && o.targetId === t.id && (o.action === 'forage' || o.action === 'travel')) feeders++; }
           v += fd * rateWorth(t, crop, feeders, dxz(t, px, pz));
+          if (cb && !inSight) bel = [t.id, crop, seenH(t.id), feeders, dxz(t, px, pz)]; // stage E3e: the caller's crown is out of sight
         } else v -= d / P.travelDistScaleM;
         if (P.assocBondW > 0 && caller) v += P.assocBondW * bond(c, caller); // stage C9 (off by default), as above
         const sc = v - rain * 0.3;
         if (quotaTrace.on) quotaTrace.on('caller', c, caller, false, d, sc);
-        offer('travel', x.joinCall, sc, V.CALLER, x.joinCaller);
+        offer('travel', x.joinCall, sc, V.CALLER, x.joinCaller, bel);
       }
     }
     // beyond the own range (UD isopleth, stage C6) the pull home grows; the equal-area circle is not the range's shape
@@ -545,13 +563,17 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   // (the leader included), valued and walked as the animal's own trip to a remembered tree (memory belief of the crop,
   // or 0.2 as for any unremembered crop; the trip's share from treeIntake with those feeders). The hoo informs (it gives
   // a decision point), it adds no value; the crown being left is worth its own forage option, so no stay term.
+  // stage E3e (choiceBelief): the belief about the crop of the last goal tree valued here, when it is out of sight
+  let destBel: number[] | null = null;
   const destWorth = (L: Chimp): number => {
+    destBel = null;
     const t = isTreeId(L.targetId) ? idx.treeById.get(L.targetId) : undefined;
     if (!t) return 0;
     const d = dxz(t, px, pz);
-    const crop = stamped(_sight, t.id, st) ? (P.patchEcology === 1 ? fruitAt(world, t) : t.fruit) : (x.treeCrop?.[t.id] ?? 0.2);
+    const inSight = stamped(_sight, t.id, st), crop = inSight ? (P.patchEcology === 1 ? fruitAt(world, t) : t.fruit) : (x.treeCrop?.[t.id] ?? 0.2);
     let feeders = 0;
     for (let _k = 0; _k < x.seen.length; _k++) { const o = byId.get(x.seen[_k]); if (o && o.alive && o !== c && o.targetId === t.id && (o.action === 'forage' || o.action === 'travel')) feeders++; }
+    if (cb && !inSight) destBel = [t.id, crop, seenH(t.id), feeders, d];
     if (fr) return fd * rateWorth(t, crop, feeders, d); // stage E3c: the trip's net rate, walk and climb included
     const worth = (P.memCropBelief === 1 ? h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) : h * P.memTravelHungerW) * tripWorth(t, crop, feeders, d);
     return worth - tripCost(worth, crop, d, h, P, needFruit(c, P, h));
@@ -651,7 +673,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       // stage C13e: the joint trip has a tree as its goal, so it needs no minimum distance to the leader (at the departure
       // cue the leader is still next to its companions); its value is the join value, no longer near-automatic
       const her = Math.max(oestrusOf(o), oestrusOf(L)); // a female in oestrus who travels off, or whose leader does
-      if (P.joinChoice === 1 && trip) offer('travel', L!.targetId, joinValue(L!) + (cohesion ? 0 : her), V.TREE, L!.id);
+      if (P.joinChoice === 1 && trip) { const jv = joinValue(L!) + (cohesion ? 0 : her); offer('travel', L!.targetId, jv, V.TREE, L!.id, cohesion ? destBel : null); }
       else if (d > P.partyFollowMinM) {
       // stage E5a (cohesionValue): following is worth the followed animal's company less the walk (tripCost's energetic
       // distance scale), in place of the tuned base, bond and male weights; the hoo adds no value
@@ -692,7 +714,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     && x.hooFrom !== undefined && time - (x.hooAt ?? NEVER) <= P.travelHooWindowMin / 60 && !x.seen.includes(x.hooFrom)) {
     const L = byId.get(x.hooFrom);
     if (L && L.alive && L.troopId === c.troopId && L.action === 'travel' && ix(L).v === V.TREE && isTreeId(L.targetId) && dxz(L, px, pz) < P.hearTravelHooM)
-      offer('travel', L.targetId, joinValue(L) + (cohesion ? 0 : oestrusOf(L)), V.TREE, L.id);
+      { const jv = joinValue(L) + (cohesion ? 0 : oestrusOf(L)); offer('travel', L.targetId, jv, V.TREE, L.id, cohesion ? destBel : null); }
   }
 
   const adolescentOrAdult = c.age >= 12 && !caretaker;
@@ -748,7 +770,8 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   }
   for (let _i7 = 0; _i7 < order.length; _i7++) { const sl = order[_i7];
     const cand: Candidate = { action: sl.action, targetId: sl.target, score: Math.round(clamp(sl.score, 0, 3) * 1000) / 1000, reason: reasonFor(world, c, sl) };
-    candidateMeta.set(cand, P.redecideValue >= 1 ? { v: sl.v, aux: sl.aux, raw: sl.raw, jit: sl.jit } : { v: sl.v, aux: sl.aux });
+    candidateMeta.set(cand, P.choiceBelief >= 1 ? (sl.bel ? { v: sl.v, aux: sl.aux, raw: sl.raw, jit: sl.jit, bel: sl.bel } : { v: sl.v, aux: sl.aux, raw: sl.raw, jit: sl.jit })
+      : P.redecideValue >= 1 ? { v: sl.v, aux: sl.aux, raw: sl.raw, jit: sl.jit } : { v: sl.v, aux: sl.aux });
     out.push(cand);
   }
   return out;
@@ -791,6 +814,19 @@ export const cohesionOn = (P: Params): boolean => P.cohesionValue === 1 && P.par
 export const crownShareOn = (P: Params): boolean => P.crownShare === 1 && P.energyLedger === 1 && P.ledgerDrive === 1 && P.intakeValue === 1;
 /** Stage E3c (forageRate; docs/staging/e3c-prereg.md §5): feeding options valued by the net energy rate they promise (intake.ts netRateShare), with the ledger's drive and kcal. */
 export const forageRateOn = (P: Params): boolean => P.forageRate === 1 && P.energyLedger === 1 && P.ledgerDrive === 1 && P.intakeValue === 1;
+
+const _tlB: TripLight = { pace: 1, see: 1 };
+/**
+ * Stage E3e (choiceBelief; docs/staging/e3e-prereg.md §5.1): the food term of a trip to tree `t` under forageRate at a
+ * given crop: the crown's drive (1.6 h + 0.1) × the net energy rate share of one bout there (intake.ts netRateShare, the
+ * walk and the climb in it; E2c's light on the way and on arrival), as computeCandidates values it. rg.ts evaluates it
+ * at the crop the animal believes and at a crop drawn from that belief. Pure.
+ */
+export function treeFoodWorth(world: World, c: Chimp, P: Params, t: Tree, crop: number, feeders: number, d: number): number {
+  const fd = c.hunger * 1.6 + 0.1, crownY = t.height * CROWN_Y, climb = c.targetId === t.id ? crownY - c.position[1] : crownY;
+  if (darkOn(P) && (tripLight(world, P, d, crownY, _tlB).pace < 1 || _tlB.see < 1)) return fd * netRateShare(c, P, crop, feeders, d, climb, _tlB.pace, _tlB.see);
+  return fd * netRateShare(c, P, crop, feeders, d, climb);
+}
 /** Party following runs: under cohesionValue, or (before E5a) while partyFollowW > 0, its gate (then partyFollowW is not read). */
 export const partyOn = (P: Params): boolean => cohesionOn(P) || P.partyFollowW > 0;
 /** The value of a mating with fertile female `o` to male `c`: the mate offer's own terms, before distance, hunger, guarding, night. */
@@ -1389,12 +1425,15 @@ export function findCandidate(list: Candidate[], action: string, targetId: numbe
  * sleeping companion is also left behind) within the party link. Nest-mates within the party link are known without being
  * seen (they nested together at dusk; design assumption). No new magnitude: every term is C13e's (design assumptions there).
  */
-export function nestCompanyValue(world: World, c: Chimp, P: Params): number {
+export function nestCompanyValue(world: World, c: Chimp, P: Params, asleepOnly = false): number {
   const alive = index(world).alive, l2 = P.partyLinkM * P.partyLinkM;
   let best = 0; // company never makes staying worse: an unwelcome nest-mate is worth nothing, not less
   for (let i = 0; i < alive.length; i++) {
     const o = alive[i];
     if (o === c || o.troopId !== c.troopId || o.age < 12 || o.action !== 'nest') continue;
+    // stage E3e (choiceBelief): an awake nest-mate can leave with the animal (nestAudience), so staying keeps only the
+    // company of nest-mates asleep (the circadian latch), the company a departure would lose
+    if (asleepOnly && ix(o).asl !== 1) continue;
     const dx = o.position[0] - c.position[0], dz = o.position[2] - c.position[2];
     if (dx * dx + dz * dz > l2) continue;
     const v = P.joinBase + P.joinBondW * bond(c, o) + (c.allies.includes(o.id) ? P.joinAllyW : 0) + (dominates(o, c) ? P.joinRankW : 0) + c.personality.sociability * P.partyFollowSocialW;

@@ -1832,3 +1832,14 @@ chasing at canopy height); broken canopy and numbers make capture easier (wattsM
 abstracts); colobus defence (stanford1995, abstract); the Apollonius pursuit geometry (design). New keys: samuni2018cb,
 gilby2013, gilby2006, boesch1994coop, boesch1994prey, stanford1995. Not verified: wattsMitani2002 full text, Busse 1977
 (an earlier DOI was wrong), Tennie et al. 2009.
+
+## Addendum: E3e choice noise (4 October 2026)
+
+Same text as research.md "Addendum: E3e choice noise": a softmax with a fixed temperature ignores the chooser's
+uncertainty; Thompson sampling draws each option's value from the belief and takes the best draw, so choices vary more
+where the chooser knows less (gershman2018, FT: 44 and 45 adults, two-armed bandits; both uncertainty-scaled random
+exploration and an uncertainty bonus, value-only choice fitted worse); decision noise is regulated by the horizon
+(wilson2014, FT, context); rhesus macaques prefer options of unknown value, less when the best known option is better
+(costa2019, FT, three males); chimpanzees know distances to remembered trees well and their crop beliefs can be wrong
+(normandBoesch2009, normand2009, ban2014, janmaat2013a/b, already cited). New keys: gershman2018, wilson2014, costa2019.
+Not verified (not searched or fetched this stage): a Weber fraction for food quantity in chimpanzees, Thompson 1933, Krebs et al. 1978.

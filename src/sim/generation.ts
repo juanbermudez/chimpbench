@@ -306,6 +306,10 @@ export function createWorld(seed = 48, opts: { profile?: Profile; params?: Overr
   world.events.length = 0;
   const scale = patches ? ` · field scale ${(world.size / 1000).toFixed(0)} km, ${world.trees.length} food patches, ${phenologySource(world) === 'synthetic' ? 'synthetic phenology' : `phenology ${phenologySource(world)}`}` : '';
   addEvent(world, `Synthetic Kibale-like forest · ${world.chimps.length} chimpanzees in 3 communities${scale} · 28 September, 06:30 (civil twilight), chimpanzees still in night nests`, 'system', [], -1, 1);
+  // Track E noise protocol (stage E3e, docs/staging/e3e-prereg.md §4; rngSalt, design): a re-draw lever. A non-zero salt is
+  // mixed into the stream once the world is built, so every later draw is another realization of the same model (the
+  // initial world is unchanged); 0 leaves the stream as it was
+  if (P.rngSalt) world.rng = mixSeed((world.rng ^ Math.imul(P.rngSalt | 0, 0x9e3779b1)) >>> 0);
   return world;
 }
 

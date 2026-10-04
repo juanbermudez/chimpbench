@@ -3090,6 +3090,36 @@
    "integer": true
   },
   {
+   "id": "choiceBelief",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    2
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    2
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [
+    "normandBoesch2009",
+    "janmaat2013b"
+   ],
+   "clock": "none",
+   "symbol": "P.choiceBelief",
+   "file": "src/sim/rg.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage E3e switch (docs/staging/e3e-prereg.md §5.1): why an animal does not always take its best option. With 1 a rules draw (rgMinAge and over) takes the menu option with the highest value sampled from the animal's own belief (Thompson sampling, gershman2018 in research.md): the menu is built from the options' values (every term, the continuation terms included, without the candidate jitter), and only the part of a value that rests on what the animal cannot perceive now is sampled. An option about its own state, the place it stands or a target it sees is taken by its value. A trip to a tree out of sight (an own trip to a remembered or community-known tree, a joined trip or an approach to a caller whose crown it does not see) is valued at a crop drawn from its belief: the crop it values the tree at (its memory of the crop, the community's list value or 0.2) plus a normal error whose SD grows from 0 with the hours since it last saw the tree, at the rate a fed crown returns to its phenology level (patchRecoverPerDay), to the crop itself when it has never seen it (design); the distance is known (normandBoesch2009: nearly straight travel to out-of-sight trees). With redecideValue the sampled parts are the noise held in the intention. rgTemperature is not read (46 -> 45 on S19). Below rgMinAge the argmax is unchanged. Under the switch E2e's nest company counts only the company leaving would lose: 1, nest-mates asleep; 2, nest-mates asleep in the day light phase and awake ones too in the dark (night, dawn, dusk), which do not walk off into it (darkCost). Iteration 1 (1) compares the options' values alone (recorded null, e3e-prereg.md §6.1); iteration 2 (2, §5.2) keeps the rules' own evaluation noise (the candidate jitter, design, in every published score) in the comparison and in the held noise and adds only the belief, with no temperature on top. 0 = today, bit for bit. Design, not fitted."
+  },
+  {
    "id": "circAlpha0",
    "group": "needs",
    "value": 0.05,
@@ -19618,6 +19648,33 @@
    "symbol": "RIVAL_TENSION",
    "file": "src/sim/relations.ts",
    "notes": "Tension at which a community member counts as a rival and avoidance or grudge charges start."
+  },
+  {
+   "id": "rngSalt",
+   "group": "scale",
+   "value": 0,
+   "units": "",
+   "range": [
+    0,
+    1000
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1000000
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.rngSalt",
+   "file": "src/sim/generation.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Re-draw lever of the Track E noise protocol (stage E3e, docs/staging/e3e-prereg.md §4; docs/staging/e-noise.md): a non-zero integer is mixed into world.rng once the world is built (createWorld), so every later draw is a different realization of the same model (the initial world is unchanged). It changes no distribution and no behaviour, only which random numbers are drawn; it replaces small changes of rgTemperature as the re-draw lever where rgTemperature is not read (choiceBelief). 0 = no salt (today, bit for bit). Design."
   },
   {
    "id": "roughPlayP",

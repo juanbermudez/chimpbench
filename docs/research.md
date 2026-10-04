@@ -3246,3 +3246,57 @@ Gilby and Mundry 2009 (bot checks on both hosts; hosts dropped); Gilby, Eberly a
   red colobus monkeys. *Animal Behaviour* 49(3):577–587.
   [doi:10.1016/0003-3472(95)80191-X](https://doi.org/10.1016/0003-3472(95)80191-X) (Abs).
 - gilby2015, mitaniWatts1999 and wattsMitani2002 are already listed; the entries above add findings.
+
+### Addendum: E3e choice noise (4 October 2026)
+
+Read for stage E3e ([staging/e3e-prereg.md](staging/e3e-prereg.md)): why an animal does not always take the option it
+values most, and how choice variability should depend on what it knows. research.md was searched first (charnov1976,
+stephensKrebs1986, keramatiGutkin2014 cover currencies, not choice variability; janmaat2013a/b, normand2009, ban2014,
+normandBoesch2009 cover chimpanzees' knowledge of trees). Three sources were read in full on 4 October 2026 through NCBI
+BioC (author manuscripts in PMC). Tags as above; every figure below is a definition or a direction, none an input.
+
+- **Softmax against uncertainty-scaled exploration** [gershman2018] (FT, PMC5801139) [M as applied; theory and human
+  data]. Definitions used here: a softmax "with a fixed source of stochasticity" chooses with probabilities set by the
+  estimated values alone, so "if an agent samples an action 10 times, she should have more uncertainty about its value
+  than if she samples it 100 times, but the softmax policy will produce the same action probabilities as long as the
+  value estimates are the same"; Thompson sampling "draws random values from the posterior and then chooses greedily
+  with respect to these random values", so "the agent will explore more when she is more uncertain"; an uncertainty
+  bonus (UCB) adds the uncertainty to the estimate instead. Sample: two experiments with 44 and 45 adults (Amazon
+  Mechanical Turk), two-armed bandits with Gaussian rewards, 20 games of 10 trials. Result: choices showed both the slope
+  change predicted by Thompson sampling (total uncertainty) and the bias predicted by an uncertainty bonus (relative
+  uncertainty); a model in which choice depends on the value difference alone fitted worse than the hybrid. Use in E3e:
+  the principle that choice variability comes from the chooser's uncertainty about each option (a value sampled from its
+  belief), so an option it knows exactly is taken by its value; the uncertainty bonus (directed exploration) is not built.
+- **Random and directed exploration are both regulated** [wilson2014] (FT, PMC5635655) [M as applied; human data]: in
+  the "Horizon task" participants "were more information seeking and had higher decision noise with the longer
+  horizon"; "both information seeking and choice variability can be controlled and put to use in the service of
+  exploration". Use: context (choice variability is not a fixed constant of the chooser); nothing built from it.
+- **Primates explore options of unknown value** [costa2019] (FT, PMC6687547) [M as applied; three adult male rhesus
+  macaques, a three-armed bandit in which one option was replaced at random by a novel one]: "The monkeys showed a novelty
+  preference", then shifted to the best known option as they learned it; "novelty-driven exploration scaled with
+  opportunity costs": as the best alternative's value rose, the novel option was chosen less. Use: direction (a primate's
+  choices depart from its best known option toward options whose value it does not know, less so when the known option
+  is better), never an input.
+- **What a chimpanzee knows about a tree it cannot see** (already cited; directions): travel to out-of-sight resources
+  is nearly straight (linearity 0.962, normandBoesch2009), so distances to remembered trees are known well; chimpanzees
+  revisit trees by the fruit they expect (normand2009, ban2014) and monitor large trees across seasons (janmaat2013a),
+  and they inspect trees of species fruiting synchronously and find some empty (janmaat2013b): their belief about a crop
+  out of sight can be wrong, and it is corrected on arrival. Use in E3e: the crop of a tree out of sight is the uncertain
+  part of a trip's value; its distance and the value of options in view are not.
+
+**Not verified:** a measurement of how variable a wild primate's choice between two visible foods of known value is (a
+Weber fraction for food quantity in chimpanzees, e.g. from captive quantity tests such as Hanus & Call 2007, was not
+searched this stage); Thompson 1933 and Krebs, Kacelnik & Taylor 1978 (great tits sampling two patches) were not
+fetched (the algorithm is quoted from gershman2018).
+
+**Sources:**
+- *new* gershman2018: Gershman SJ 2018. Deconstructing the human algorithms for exploration. *Cognition* 173:34–42.
+  [doi:10.1016/j.cognition.2017.12.014](https://doi.org/10.1016/j.cognition.2017.12.014) (FT, PMC5801139).
+- *new* wilson2014: Wilson RC, Geana A, White JM, Ludvig EA, Cohen JD 2014. Humans use directed and random exploration
+  to solve the explore–exploit dilemma. *Journal of Experimental Psychology: General* 143(6):2074–2081.
+  [doi:10.1037/a0038199](https://doi.org/10.1037/a0038199) (FT, PMC5635655).
+- *new* costa2019: Costa VD, Mitz AR, Averbeck BB 2019. Subcortical substrates of explore-exploit decisions in primates.
+  *Neuron* 103(3):533–545. [doi:10.1016/j.neuron.2019.05.017](https://doi.org/10.1016/j.neuron.2019.05.017) (FT,
+  PMC6687547).
+- normandBoesch2009, normand2009, ban2014, janmaat2013a and janmaat2013b are already cited; the entries above add
+  findings.
