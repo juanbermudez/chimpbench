@@ -376,6 +376,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   choiceBelief: { stage: 'E3e', needs: {} },
   leftoverRules: { stage: 'E4m', needs: {} },
   walkGait: { stage: 'E2i', needs: {} },
+  huntDrive: { stage: 'E4n', needs: { energyLedger: 1, ledgerDrive: 1, huntValue: 1 }, removesNothing: 'weighs the hunt lead (huntValue) with the energy-deficit part of the E1e drive instead of the appetite now, which includes the distension satiation: a capture is held and eaten as the gut takes it; adds no magnitude and switches no prescription out (e4n-prereg §4)' },
   patrolFusion: { stage: 'E4j', needs: { patrolValue: 2 }, removesNothing: 'corrects the occasion on which patrolValue 2 weighs the lead (a fusion of a party holding patrolMinMales adult males, judged by the males seen within reunionH, in place of a flicker of the 35 m view); adds no magnitude and switches no prescription out (e4j-prereg §4)' },
 };
 

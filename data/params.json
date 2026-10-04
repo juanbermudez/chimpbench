@@ -11761,6 +11761,33 @@
    "notes": "Hunt score falls by 1 per this many metres to the prey. Field: prey are detected within 100 m (gilby2015; design scale)."
   },
   {
+   "id": "huntDrive",
+   "group": "hunting",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "gilbyWrangham2007",
+    "hardus2012"
+   ],
+   "clock": "none",
+   "symbol": "P.huntDrive",
+   "file": "src/sim/candidates.ts",
+   "integer": true,
+   "notes": "Stage E4n switch (docs/staging/e4n-prereg.md §4): the drive a hunt lead is weighed with. 0: the crowns' drive at the male's appetite now (1.6 x hunger + 0.1, the hunger readout including the distension satiation 1 - w x fill^2). 1: the same form at the energy-deficit ratio phi of the E1e drive (energy.ts deficitDrive: the need over the waking time left and the fast after it, over the feeding capacity over the waking time left, at most 1), without the distension satiation, because a capture is held and eaten while awake as the gut takes it (life.ts carried meat at meatEatPerH; meat 0.23 g dry matter per kcal, no fibre), so a full foregut now does not limit what it delivers. Acts only with huntValue 1, energyLedger 1 and ledgerDrive 1. Adds no magnitude and switches no prescription out (a correction). At 0 bit-identical. Design, not fitted."
+  },
+  {
    "id": "huntEarshotM",
    "group": "hunting",
    "value": 30,

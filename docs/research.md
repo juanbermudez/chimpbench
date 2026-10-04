@@ -3413,3 +3413,26 @@ Hunt 1989 (dissertation); Hoyt & Taylor 1981 beyond its first paragraph; any wal
   (FT, PMC3798186).
 - nguessan2009, batesByrne2009, sockol2007, pontzer2014jhe and pontzerWrangham2006 are already cited; the entries above
   add findings.
+
+### Addendum: E4n hunt rate (4 October 2026)
+
+Read for stage E4n ([staging/e4n-prereg.md](staging/e4n-prereg.md)): why hunting fell below its band once the fitted
+choice temperature left the stack, and which value a hunt lacks. No input value was taken from these sources.
+
+- **The rows' definitions, re-opened** [gilby2015] (FT, the PMC article page, PMC4633842) [H]: at Kanyawara "every 15 min,
+  the field assistants record party composition", and "whether colobus can be detected within 100 m of the
+  chimpanzees"; "hunt attempts are defined as instances when a chimpanzee climbs to the height of the lowest monkey".
+  Table 1 (Kanyawara): 224 months, 11.4 adult males, 2,461 encounters (3.73 per 100 h), 194 hunt attempts (7.9%), 119
+  successful (61.3%), 152 prey (1.28 per success). Parties with the impact hunter AJ hunted 18.9% (157/830) of
+  encounters, 2.3% (37/1,594) without him. As E4f recorded; nothing changed.
+- **Why chimpanzees hunt, as the cited sources put it** (used for direction, never for a value): more adult males, more
+  hunting at every site [gilby2015] [H]; Ngogo males hunt when success is likely and forgo most attempts in small parties,
+  and hunting rose with fruit through party size [mitaniWattsMuller2002] (FT, review) [M]; at Kanyawara hunting rises with
+  the ripe drupe fruit eaten after controlling for males and swollen females ("risk-prone hunting ... during periods of
+  high diet quality") [gilbyWrangham2007] (title; finding as recorded in T-HUN-5) [M]; meat is shared with allies and
+  grooming partners [mitaniWatts2001] (closed; as recorded) [M]; no nutritional data exist on the flesh of chimpanzee prey
+  [tennie2014] (Abs) [M]; meat is eaten at 348 g/h, up to 1.9 kg/h [hardus2012] (FT, secondary) [L]. None of them gives a
+  magnitude for a non-energy value of a hunt (nutrients, social returns), and E4n finds the per-decision outcome a
+  knife-edge (a value about 0.1 higher would set the rate), so no such value is built.
+- gilby2015, mitaniWattsMuller2002, gilbyWrangham2007, mitaniWatts2001, tennie2014 and hardus2012 are already cited; the
+  entries above add access notes and the stage's use. No new keys.
