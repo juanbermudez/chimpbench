@@ -91,3 +91,33 @@ test('tripBodyCost on (field): deterministic over a day, JSON-lossless; no count
   assert.deepEqual(JSON.parse(JSON.stringify(a)) as World, a);
   assert.equal(prescriptionCount(p).total, prescriptionCount(BASE).total);
 });
+
+// Stage E2j iteration 2 (youngArrival; docs/staging/e2j-prereg.md §9): below rgMinAge a trip that reaches its tree becomes
+// feeding there when legal, as older animals' RG policy does (rg.ts redecide's arrival).
+const YOUNG = { ...BASE, redecideValue: 2, tripBodyCost: 1 };
+
+test('youngArrival is 0 by default in both profiles', () => {
+  for (const profile of ['field', 'compressed'] as const) assert.equal(paramsOf(createWorld(5, { profile })).youngArrival, 0);
+});
+
+test('youngArrival on: more of the young animals\' trips end feeding at their own tree; deterministic, JSON-lossless; no counted prescription changes', () => {
+  const count = (params: Record<string, number>) => {
+    const w = createWorld(48, { profile: 'field', params }), P = paramsOf(w);
+    const prev = new Map<number, { a: string; t: number }>();
+    let fedAtTree = 0;
+    for (let i = 0; i < 5760; i++) {
+      tickWorld(w);
+      for (const c of index(w).alive) {
+        const p = prev.get(c.id);
+        if (p && c.age >= 5 && c.age < P.rgMinAge && p.a === 'travel' && c.action === 'forage' && c.targetId === p.t) fedAtTree++;
+        prev.set(c.id, { a: c.action, t: c.targetId });
+      }
+    }
+    return { fedAtTree, hash: worldHash(w), w };
+  };
+  const off = count(YOUNG), on = count({ ...YOUNG, youngArrival: 1 }), again = count({ ...YOUNG, youngArrival: 1 });
+  assert.ok(on.fedAtTree > off.fedAtTree, `trips ending in feeding at their tree, under ${paramsOf(on.w).rgMinAge} y: ${on.fedAtTree} against ${off.fedAtTree}`);
+  assert.equal(on.hash, again.hash);
+  assert.deepEqual(JSON.parse(JSON.stringify(on.w)) as World, on.w);
+  assert.equal(prescriptionCount({ ...YOUNG, youngArrival: 1 }).total, prescriptionCount(YOUNG).total);
+});

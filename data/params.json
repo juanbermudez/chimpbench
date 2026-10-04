@@ -23853,6 +23853,36 @@
    "notes": "Wounds heal over days of ecological time (assumed rate)."
   },
   {
+   "id": "youngArrival",
+   "group": "movement",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "src/decide/gate.ts and src/sim/rg.ts redecide: a trip that reaches its tree becomes feeding there when that is legal (design A, C13 and E3d)"
+   ],
+   "clock": "none",
+   "symbol": "P.youngArrival",
+   "file": "src/sim/rg.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage E2j switch (docs/staging/e2j-prereg.md §9): with 1 (under redecideValue 2) an animal below rgMinAge whose trip to a tree has just ended within GATE.arriveM of that tree, with no need or light change since it chose the trip, feeds there when feeding there is legal, keeping the jitter of the decision that chose the trip, as the RG policy of older animals does (rg.ts redecide's arrival); with 0 the under-8 argmax re-opens the choice at every arrival with a fresh jitter. No new magnitude; removes no counted prescription. 0 = today, bit for bit. Design."
+  },
+  {
    "id": "youngLeafAmp",
    "group": "feeding",
    "value": 0,

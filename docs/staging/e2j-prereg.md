@@ -1,6 +1,6 @@
 # E2j pre-registration: climbing, halts and the cost of a faster walk
 
-Status: complete (4 October 2026): diagnosis (the trip's valuation), iteration 1 B1 (`tripBodyCost` 1) recorded, not kept (§8). Skeleton committed at the start of the stage (branch `e2j-climbing`, from `track-e`
+Status: in progress (4 October 2026): diagnosis (the trip's valuation); iteration 1 B1 (`tripBodyCost` 1) recorded, not kept (§7, §8 written after it); iteration 2 B2 (`youngArrival`) registered (§9). Skeleton committed at the start of the stage (branch `e2j-climbing`, from `track-e`
 0d08525), before any run and before any code change. Track E, stage E2j. Rule served: field values of behaviour are
 targets, never inputs. No speed, halt length or multiplier is set from a day range or a travel share, or tuned to reach
 them.
@@ -500,6 +500,41 @@ a finished trip re-opens the argmax with a fresh jitter. To tell whether juvenil
 the way, amendment 3's readout adds whether the animal stood within GATE.arriveM (6 m) of the old trip's tree. Run on
 B1's parameters (frozen checkout of the commit that registers this amendment). Reading registered now: if most under-8
 retargets come at their tree, the missing arrival rule is the term; if on the way, the keep test.
+
+**Amendment 4 results** (B1's parameters, frozen 5af3d44, clean): juveniles under 8 y retarget at their own tree in 65%
+of their retargets (1,627; the largest kind "own → own, argmax, at its tree", 574), juveniles of 8–12 y in 49% (440),
+nursing mothers in 55% (1,724) and males in 52% (3,810), the older animals by "ended" (their arrival rule found feeding
+there not legal). By the registered reading the term is the missing arrival rule below rgMinAge: about 5 retargets a day
+at their own tree for each juvenile under 8 y, against about 2 a day for a nursing mother whose arrival rule applies.
+
+## 9. Mechanism, iteration 2 (B2; registered 4 October 2026 before its runs; code at the commit that registers it)
+
+`youngArrival` 1 (src/sim/rg.ts argmaxKeep; under `redecideValue` 2; 0 = today, bit for bit): an animal below `rgMinAge`
+whose trip to a tree has just ended within GATE.arriveM (6 m) of it, with no need or light change since it chose the trip
+(the same reopening test the older animals' policy applies first), feeds there when feeding there is legal, keeping the
+jitter of the decision that chose the trip — the arrival rule older animals already follow (rg.ts redecide; decide/gate.ts
+"a trip that arrives becomes feeding at that tree"). No new magnitude, no constant; removes no counted prescription.
+
+Arms: **B2** = S22 + `walkGait` 1 + `tripBodyCost` 1 + `youngArrival` 1, and its re-draw **B2r** (`rngSalt` 1), quick,
+e-bench, energy-diagnose and climb-diagnose (`--a3`), from a frozen checkout of the commit that registers this section;
+judged against the four S22 quick realizations by e-noise.md amendment 2 with amendment 3's rare rows, each draw. Because
+§7.1 showed single draws of the per-class reserve trends straying beyond 2 SD in both directions under `walkGait`, the
+stage's energy line is judged on the mean of the two draws: z = (mean − S22 mean) ÷ (SD × √(1/2 + 1/4)), SD of S22's four.
+
+Predictions (moderate confidence unless stated):
+1. Prescriptions 42 (high); viable; every sum inside noise in both draws.
+2. Retargets of juveniles under 8 y at their own tree at most half of B1's (574 of the "own → own" kind, 1,057 in all at
+   their tree; high for the direction).
+3. Juveniles' travel episodes 13–16 a day (B1 17.3, S22 14.0) and their walking in trips 44–51 kcal/day (B1 54.1, S22
+   34.7) (low).
+4. Juveniles' reserves (mean of the two draws) within 2 SD of S22's mean (low-moderate); nursing mothers' and infants'
+   0.5–2 y within 2 SD as well (moderate, low).
+5. Nursing mothers', males' and infants' locomotion as in B1 (the switch acts below 8 y only) (moderate).
+
+**Kill criterion (B2 recorded, not a keep candidate, if any holds):** viability fails in either draw; held-out without the
+rare rows worse beyond noise (z > +2) in either draw; the count is not 42; the two-draw mean of nursing mothers', infants'
+0.5–2 y or juveniles' reserve trend more than 2 SD below S22's mean; night safety (rhythm-metrics on B2) above 3.3% of
+the night. This is the stage's last mechanism iteration on the trip's term (§8's recommendation is revised after it).
 
 ## 8. Stage verdict (4 October 2026)
 
