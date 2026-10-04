@@ -93,3 +93,9 @@ its three `rngSalt` re-draws, the integrator's) is not re-run.
 
 ### Run log (each entry written before its run, unless marked)
 
+- **Smoke** (logged after the run; working tree at the tool commit, scripts only): S21, seed 48, 1 + 1 days. Every
+  readout is produced (no patrol or hunt in one day, as expected); 3 rough escalations, all on eligible pairs (tool
+  check 0 ineligible), 2 of them by a mother playing with her own infant (she is the victim's guardian).
+- **D0** (as registered in §3), from a frozen detached checkout of the commit that adds this entry
+  (`scratchpad/e4m/frozen-d0`): `scripts/e4m-diagnose.ts` on S21, seed 48 then seed 7 (load above 8: one process at a
+  time), 30 + 60 days, `artifacts/validation/e4m/D0-{48,7}.json`.
