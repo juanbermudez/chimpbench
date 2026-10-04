@@ -2878,3 +2878,143 @@ directed to bond partners and balanced over weeks, and spare time goes to rest. 
 **Not verified:** dunbarDunbar1988 (gelada mothers' time budgets; OpenAlex closed, no Wayback copy), dunbar1992 and
 watts2000 I–II (Springer bot challenge), doran1997 (Taï seasonality; closed); any chimpanzee louse load or egg-laying
 rate; any measurement of how fast a primate relationship weakens without contact.
+
+### Addendum: E4h contests (3 October 2026)
+
+What decides how far a within-community contest goes (display, contact, wounds) and who joins it. Read for stage E4h
+(docs/staging/e4h-prereg.md) by two source helpers; numbers checked against the saved texts where they enter a target or
+the mechanism. "Derived" = this stage's arithmetic. Bibliographic data Crossref-verified.
+
+**Theory (structure only; no magnitude is taken from it).**
+- **Escalation needs both sides to judge it worth it** [parker1974] (Abs) theory: each contestant estimates its chance
+  of winning from relative resource-holding power and compares it with a threshold set by what it stands to gain and
+  lose; escalation happens only where both chances exceed their thresholds, so mostly between closely matched opponents,
+  and outside that range the weaker withdraws after display.
+- **Sequential assessment** [enquistLeimar1983] (Abs; the authors' summary in leimarMcNamara2023, FT) theory: each
+  exchange gives a noisy sample of relative strength; fights between similar opponents last longer and reach the costly
+  phases. Raising the stake raises the cost a contestant accepts [enquistLeimar1987] (Abs); severe injury evolves where the
+  stake is at least the value of the future [enquistLeimar1990] (Abs).
+- **Self- against mutual assessment** [arnottElwood2009] (Abs) review; meta-analyses [pinto2019] (Abs) and
+  [massote2025] (FT, 80 effect sizes, 36 species) [M]: contest duration follows the loser's own power more than the
+  difference in most species, and species that fight with contact show the self-assessment pattern; escalation still falls
+  as the power gap grows. **Known conflict:** the mechanism below uses mutual assessment (both read both powers).
+- **Mutual assessment in a wild primate** [benitez2017] (FT) [M]: gelada males' responses to playbacks and their joining
+  of natural displays (20 unit males, 291 displays) depended on their own and the rival's call quality.
+- **Coalitions** [ihara2024] (FT) theory: a helper backs the side that maximises P(win)·b − P(lose)·c, P(win) from summed
+  power; observed chimpanzee coalition types (conservative / bridging / revolutionary): Taï 1/4/8, Mahale 6/8/5.
+  [bissonnette2009] (Abs) [M]: Barbary macaques, 90 two-against-one coalitions, 72.2% successful; the strength asymmetry
+  (summed partners against the target) explains up to 78.6% of outcomes, targets counterattack more as it shrinks, and
+  partners form coalitions with larger asymmetries than chance. [enigk2020] (FT) [M]: Kanyawara, 18 males, 1,517 coalitions
+  in 12 years; rank alone best predicts a male's coalition rate.
+- **Injury** [drews1996] (Abs) [M]: male yellow baboons, wounds mostly canine slashes, under 1% of aggressive contests
+  wound, and the winner is sometimes the one wounded. No primate source relating the damage of a fight to the fighters'
+  body masses was found: the mass scaling below is design.
+
+**Field rates (wild chimpanzees; targets and context).**
+- **Contact by rank difference, Taï** [wittigBoesch2003b] (FT, author manuscript) [M]: 876 dyadic conflicts (4 adult males,
+  10–12 adult females, 1996–1999), each scored by its most intense act on five levels ordered by the likelihood of injury,
+  levels 4–5 physical contact. Non-contact share 81% at a large rank difference, 63% at a middle and 64% at a small one
+  (contact 19%, 37%, 36%), independent of context (food, sex, social); categories by rank-difference cut-offs within dyad
+  type (males: neighbours small, two apart middle, three apart large). Dominant initiators won 92%, subordinate initiators
+  60%; draws under 4%.
+- **Contact share and rate, Gombe males** [mouginot2024] (FT, author manuscript) [M]: Kasekela and Mitumba, 2006–2009,
+  14 males ≥ 12 y, 7,309 focal hours: 654 dyadic aggressive interactions among identified individuals ≥ 12 y with the focal
+  male as actor or recipient (median 0.085 per hour), 99 (15.1%) with physical contact (hit, pull, bite, kick, jump-on;
+  median 0.013 per hour, range 0–0.025); acts between the same pair within 1 min count once. Coalitionary: 13.2% of
+  focal-male-initiated aggression (54 of 407; Kasekela 20.2%, Mitumba 3.2%).
+- **Attack rates** [wranghamWilsonMuller2006] (FT) [M]: contact aggression given per 100,000 h, males: Kanyawara 1998 2,670
+  (11 males), Gombe 1970 3,030, 1976 1,931, 1978 1,464 (median ≈ 0.023 per male-hour); females median 911 (Kanyawara 620).
+  [mullerWrangham2004b] (FT now; was secondary) [M]: Kanyawara 1998, 9 focal males: chases and attacks were 29% of male
+  agonism without and 46% with maximally tumescent parous females in the party; 107 decided agonistic encounters between
+  male dyads, three of them reversals. [muller2007] (FT) [M]: per-dyad aggression 0.017 per hour male→female, 0.015 between
+  males (Kanyawara).
+- **Wounds** [massaro2024] (FT, author manuscript) [M]: newly seen wounds from conspecifics (intra- and intergroup) in
+  health records: Kasekela 160 in 190 months, Mitumba 109 in 184, Kanyawara 502 in 166, Fongoli 497 in 71 (≈ 10, 7, 36 and
+  84 per community-year, derived); per individual-year or per conflict not reported. [kaburu2013] (Abs): four
+  within-community killings of adult males known at Mahale.
+- **Coalition frequency** [gilby2013] (FT): Gombe 1995–2008, 233 two- or three-male coalitions against males (365 dyadic);
+  [mitani2002] (FT) Ngogo: 709 dyadic coalitions in 22 months among 38 males (≈ 20 memberships per male-year, derived);
+  [kaburuNewtonFisher2015] (FT): agonistic support at Sonso 62 in 1,109.5 h (8 males); [kahlenberg2008] (FT) [M]: males
+  intervened in 57 of 251 conflicts between Kanyawara females (23%), mostly for the lower-ranked female. [mullerMitani2005]
+  (FT, review): within-community rates of wounding are rarely published; status fights "frequently" cause injury.
+- **T-SOC-5's method** [kaburuNewtonFisher2015] (FT): steepness is the slope of normalized David's scores against rank
+  from decided contact aggression, chases and directed charging displays (pant-grunts only checked the order); Sonso
+  2003–04 (8 males, 1,109.5 h) 0.70; Mahale M 2011 (10 males, 800.9 h) 0.30 stable, 0.26 unstable; six further values from
+  published matrices of unstated interaction type (0.22–0.57).
+
+**Use in E4h.** Structure from parker1974 (escalation where neither side concedes) and ihara2024 (a joiner weighs P(win)·b
+against P(lose)·c); every magnitude is the model's own (its contest function, its existing score values) or design. The
+field rates are targets (staged in docs/staging/e4h-targets.patch.json), never inputs.
+
+- *new* parker1974: Parker GA 1974. Assessment strategy and the evolution of fighting behaviour. *Journal of Theoretical
+  Biology* 47(1):223–243. [doi:10.1016/0022-5193(74)90111-8](https://doi.org/10.1016/0022-5193(74)90111-8) (Abs).
+- *new* enquistLeimar1983: Enquist M, Leimar O 1983. Evolution of fighting behaviour: decision rules and assessment of
+  relative strength. *Journal of Theoretical Biology* 102(3):387–410.
+  [doi:10.1016/0022-5193(83)90376-4](https://doi.org/10.1016/0022-5193(83)90376-4) (Abs).
+- *new* enquistLeimar1987: Enquist M, Leimar O 1987. Evolution of fighting behaviour: the effect of variation in resource
+  value. *Journal of Theoretical Biology* 127(2):187–205.
+  [doi:10.1016/S0022-5193(87)80130-3](https://doi.org/10.1016/S0022-5193(87)80130-3) (Abs).
+- *new* enquistLeimar1990: Enquist M, Leimar O 1990. The evolution of fatal fighting. *Animal Behaviour* 39(1):1–9.
+  [doi:10.1016/S0003-3472(05)80721-3](https://doi.org/10.1016/S0003-3472(05)80721-3) (Abs).
+- *new* leimarMcNamara2023: Leimar O, McNamara JM 2023. Game theory in biology: 50 years and onwards. *Philosophical
+  Transactions of the Royal Society B* 378:20210509. [doi:10.1098/rstb.2021.0509](https://doi.org/10.1098/rstb.2021.0509)
+  (FT, PMC10024991).
+- *new* arnottElwood2009: Arnott G, Elwood RW 2009. Assessment of fighting ability in animal contests. *Animal Behaviour*
+  77(5):991–1004. [doi:10.1016/j.anbehav.2009.02.010](https://doi.org/10.1016/j.anbehav.2009.02.010) (Abs).
+- *new* pinto2019: Pinto NS, Palaoro AV, Peixoto PEC 2019. All by myself? Meta-analysis of animal contests shows stronger
+  support for self than for mutual assessment models. *Biological Reviews* 94(4):1430–1442.
+  [doi:10.1111/brv.12509](https://doi.org/10.1111/brv.12509) (Abs).
+- *new* massote2025: Massote C, Palaoro AV, Arnott G, Jennings D, Peixoto PEC 2025. Do lifetime contest costs affect the
+  evolution of assessment strategies? A meta-analysis. *Journal of Animal Ecology* 94(7):1335–1345.
+  [doi:10.1111/1365-2656.70058](https://doi.org/10.1111/1365-2656.70058) (FT, PMC12214450).
+- *new* benitez2017: Benitez ME, Pappano DJ, Beehner JC, Bergman TJ 2017. Evidence for mutual assessment in a wild primate.
+  *Scientific Reports* 7:2952. [doi:10.1038/s41598-017-02903-w](https://doi.org/10.1038/s41598-017-02903-w) (FT, PMC5462830).
+- *new* ihara2024: Ihara Y 2024. Models of animal coalitions and their implications for human evolution. *Proceedings of
+  the Royal Society B* 291(2033):20241227. [doi:10.1098/rspb.2024.1227](https://doi.org/10.1098/rspb.2024.1227) (FT,
+  PMC11521593).
+- *new* bissonnette2009: Bissonnette A, de Vries H, van Schaik CP 2009. Coalitions in male Barbary macaques, *Macaca
+  sylvanus*: strength, success and rules of thumb. *Animal Behaviour* 78(2):329–335.
+  [doi:10.1016/j.anbehav.2009.05.010](https://doi.org/10.1016/j.anbehav.2009.05.010) (Abs).
+- *new* enigk2020: Enigk DK, Emery Thompson M, Machanda ZP, Wrangham RW, Muller MN 2020. Competitive ability determines
+  coalition participation and partner selection during maturation in wild male chimpanzees. *Behavioral Ecology and
+  Sociobiology* 74(7):89. [doi:10.1007/s00265-020-02872-7](https://doi.org/10.1007/s00265-020-02872-7) (FT, PMC7990237).
+- *new* drews1996: Drews C 1996. Contexts and patterns of injuries in free-ranging male baboons (*Papio cynocephalus*).
+  *Behaviour* 133(5–6):443–474. [doi:10.1163/156853996X00530](https://doi.org/10.1163/156853996X00530) (Abs).
+- *new* wittigBoesch2003b: Wittig RM, Boesch C 2003. "Decision-making" in conflicts of wild chimpanzees (*Pan
+  troglodytes*): an extension of the Relational Model. *Behavioral Ecology and Sociobiology* 54(5):491–504.
+  [doi:10.1007/s00265-003-0654-8](https://doi.org/10.1007/s00265-003-0654-8) (FT, author manuscript). A different paper
+  from [wittig2003].
+- *new* wittigBoesch2003c: Wittig RM, Boesch C 2003. Food competition and linear dominance hierarchy among female
+  chimpanzees of the Taï National Park. *International Journal of Primatology* 24(4):847–867.
+  [doi:10.1023/A:1024632923180](https://doi.org/10.1023/A:1024632923180) (FT): 10 adult females, 1,028 focal hours, 103 food
+  conflicts (≈ 0.1 per hour); monopolizable food was 8% of feeding time but 50% of the conflicts.
+- *new* mouginot2024: Mouginot M, Wilson ML, Desai N, Surbeck M 2024. Differences in expression of male aggression between
+  wild bonobos and chimpanzees. *Current Biology* 34(8):1780–1785.e4.
+  [doi:10.1016/j.cub.2024.02.071](https://doi.org/10.1016/j.cub.2024.02.071) (FT, PMC11167569).
+- *new* wranghamWilsonMuller2006: Wrangham RW, Wilson ML, Muller MN 2006. Comparative rates of violence in chimpanzees and
+  humans. *Primates* 47(1):14–26. [doi:10.1007/s10329-005-0140-1](https://doi.org/10.1007/s10329-005-0140-1) (FT).
+- *new* muller2007: Muller MN, Kahlenberg SM, Emery Thompson M, Wrangham RW 2007. Male coercion and the costs of
+  promiscuous mating for female chimpanzees. *Proceedings of the Royal Society B* 274(1612):1009–1014.
+  [doi:10.1098/rspb.2006.0206](https://doi.org/10.1098/rspb.2006.0206) (FT).
+- *new* kahlenberg2008: Kahlenberg SM, Emery Thompson M, Muller MN, Wrangham RW 2008. Immigration costs for female
+  chimpanzees and male protection as an immigrant counterstrategy to intrasexual aggression. *Animal Behaviour*
+  76(5):1497–1509. [doi:10.1016/j.anbehav.2008.05.029](https://doi.org/10.1016/j.anbehav.2008.05.029) (FT).
+- *new* massaro2024: Massaro AP, Lonsdorf EV, Mwacha D, Emery Thompson M, Machanda Z, Pruetz J, Koops K, Kaburu S et al.
+  2024 (issue 2025). Genital wounding in chimpanzees (*Pan troglodytes*): targeted attacks or happenstance? *International
+  Journal of Primatology* 46(1):145–157. [doi:10.1007/s10764-024-00454-2](https://doi.org/10.1007/s10764-024-00454-2) (FT,
+  PMC13035354).
+- *new* mullerMitani2005: Muller MN, Mitani JC 2005. Conflict and cooperation in wild chimpanzees. *Advances in the Study
+  of Behavior* 35:275–331. [doi:10.1016/S0065-3454(05)35007-8](https://doi.org/10.1016/S0065-3454(05)35007-8) (FT).
+- *new* mitani2002: Mitani JC, Watts DP, Pepper JW, Merriwether DA 2002. Demographic and social constraints on male
+  chimpanzee behaviour. *Animal Behaviour* 64(5):727–737.
+  [doi:10.1006/anbe.2002.4014](https://doi.org/10.1006/anbe.2002.4014) (FT).
+- *new* kaburu2013: Kaburu SSK, Inoue S, Newton-Fisher NE 2013. Death of the alpha: within-community lethal violence
+  among chimpanzees of the Mahale Mountains National Park. *American Journal of Primatology* 75(8):789–797.
+  [doi:10.1002/ajp.22135](https://doi.org/10.1002/ajp.22135) (Abs).
+- mullerWrangham2004b (access now FT), gilby2013, foerster2016 and kaburuNewtonFisher2015 are already listed (above or in
+  data/targets.json); the entries above add findings.
+
+**Not verified:** Kitchen, Cheney & Seyfarth 2005 (baboon contests; Springer bot check); van Schaik, Pandit & Vogel 2004
+and Pandit & van Schaik 2003 (seen only as summarised by ihara2024 and Bissonnette et al. 2015); Muller 2002 (Kanyawara
+agonism chapter); Watts 2002; Nishida & Hosaka 1996; any primate measure of a fight's damage by the fighters' masses; any
+wild chimpanzee wound rate per individual-year or per conflict.

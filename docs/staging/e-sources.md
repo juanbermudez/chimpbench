@@ -1765,3 +1765,21 @@ kaburuNewtonFisher2015 (reciprocity at Sonso and Mahale); silk2010; hygiene (tan
 macaques and baboons); tension (wittig2016 duration check, schino1988, shutt2007). New: lehmann2007, dunbar1991,
 couturier2022, gomes2009, silk2010, tanaka1993, zamma2002, akinyi2013, schino1988, shutt2007. Not verified:
 dunbarDunbar1988, dunbar1992, watts2000 I–II, doran1997, any louse growth rate, any rate of bond fading without contact.
+
+## Addendum: E4h contests (3 October 2026)
+
+Same text as research.md "Addendum: E4h contests": contest theory (parker1974: escalation only where both contestants'
+chances exceed their stake-set thresholds; enquistLeimar1983, 1987, 1990; arnottElwood2009; the meta-analyses pinto2019
+and massote2025, which favour self-assessment in species that fight with contact: a known conflict with the mechanism's
+mutual assessment); benitez2017 (mutual assessment in geladas); coalitions (ihara2024: a helper maximises P(win)·b −
+P(lose)·c; bissonnette2009: outcomes follow the strength asymmetry, targets counterattack more as it shrinks; enigk2020:
+Kanyawara coalition rate follows rank); drews1996 (baboon wounds: under 1% of contests); field rates: wittigBoesch2003b
+(Taï contact 19% / 37% / 36% at large / middle / small rank difference), mouginot2024 (Gombe males: 15.1% of 654
+interactions with contact, 0.013 contact acts per hour; 13.2% of male-initiated aggression coalitionary),
+wranghamWilsonMuller2006 (male attack rates, median ≈ 0.023 per hour), mullerWrangham2004b (now FT), muller2007,
+kahlenberg2008, massaro2024 (wounds per community-year 7–84), mullerMitani2005, mitani2002, kaburu2013, and T-SOC-5's
+method (kaburuNewtonFisher2015). New: parker1974, enquistLeimar1983, enquistLeimar1987, enquistLeimar1990,
+leimarMcNamara2023, arnottElwood2009, pinto2019, massote2025, benitez2017, ihara2024, bissonnette2009, enigk2020,
+drews1996, wittigBoesch2003b, wittigBoesch2003c, mouginot2024, wranghamWilsonMuller2006, muller2007, kahlenberg2008,
+massaro2024, mullerMitani2005, mitani2002, kaburu2013. Not verified: Kitchen et al. 2005, van Schaik et al. 2004, Pandit
+& van Schaik 2003, Muller 2002, Watts 2002, Nishida & Hosaka 1996.
