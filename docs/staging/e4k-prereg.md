@@ -444,3 +444,8 @@ held-out without T-HUN-4, T-BRD-1 and T-IGE-3 (12 rows): S17q 3.88 / 4.29 / 4.61
 | truth hunts per community-year | 30.4 / 36.5 / 46.6 / 42.6 | 14.2 | 16.2 |
 | truth success | 0.111 / 0.133 / 0.227 / 0.286 | 0.417 | 0.5 |
 ```
+
+**Disclosed differences between §4 and the code (found at review, no effect on a registered reading):** §4.2's "a 2.5 m
+chord per tick" is implemented as halving the turn until the goal lies within 2.8 m of the hunter (the group's own drift
+included), so moveTo never makes him climb down; §4.3's `pursuitCaptures` is `evenCaptures` over `closingSets`
+(`src/sim/huntpursuit.ts`).
