@@ -147,6 +147,8 @@ export const STAGES: Record<string, { name: string; verdict: string; doc: string
   E3e: { name: 'why a chimp does not always take its best option', verdict: 'value 2 a provisional keep candidate (iteration 2); passed its confirm on S19 as S21', doc: 'staging/e3e-prereg.md' },
   E4m: { name: 'four small rules left', verdict: 'leftoverRules 3 (rough play and listening stops) a provisional keep candidate; passed its confirm on S21 as S22; meat eating and the end of protection not built', doc: 'staging/e4m-prereg.md' },
   E2i: { name: 'how fast a chimp walks', verdict: 'provisional keep candidate (iteration 1); passed its confirm on S21 as S23, but not adopted with S22 (S24): the energy of longer walks needs its own stage first', doc: 'staging/e2i-prereg.md' },
+  E2j: { name: 'climbing, halts and the cost of a faster walk', verdict: 'tripBodyCost (iteration 1) and youngArrival (iteration 3) recorded, off: neither kept', doc: 'staging/e2j-prereg.md' },
+  E4n: { name: 'why the stack\'s chimpanzees stopped hunting', verdict: 'huntDrive 1 a correction (removes no prescription); passed its confirm on S22 as S25', doc: 'staging/e4n-prereg.md' },
   E4f: { name: 'colobus encounters', verdict: 'recorded, off (a site-matched input, [L])', doc: 'staging/e4f-prereg.md' },
   E4g: { name: 'a care follow is not a departure', verdict: 'a defect fix; null by its own kill criterion (removes no prescription)', doc: 'staging/e4g-prereg.md' },
   E5a: { name: 'party cohesion valued by company', verdict: 'provisional keep candidate, confirmed on 5 seeds; integrated in S5 with E4g\'s fix and E5b\'s margin (without the margin, on S4, it added walking)', doc: 'staging/e5a-prereg.md' },
@@ -241,7 +243,7 @@ export const DIAGRAMS: DiagramSpec[] = [
   {
     key: 'feeding', cap: 'From a meal to the next feeding choice', nav: 'Feeding', title: 'Feeding and foraging',
     take: 'Hunger comes from an energy ledger and a gut, and since S13 where to eat comes from the net energy rate each option promises. Still fitted: how fast a crown empties and how fast an animal walks.',
-    desc: 'Flowchart of feeding on the candidate stack: food energy and bulk, the gut, reserves and hunger feed the value of feeding options, each worth the net energy rate it promises in place of three fitted weights; a return is valued by the crop left; crown sharing (E5c) and walking speed from the body (E2i) are layers outside the stack.',
+    desc: 'Flowchart of feeding on the candidate stack: food energy and bulk, the gut, reserves and hunger feed the value of feeding options, each worth the net energy rate it promises in place of three fitted weights; a return is valued by the crop left; crown sharing (E5c), walking speed from the body (E2i) and a trip\'s climb and riders (E2j) are layers outside the stack.',
     w: 832, h: 616,
     nodes: [
       { k: 'food', x: L, y: y(0), w: LW, h: 72, t: 'Food energy and bulk', s: 'kcal and dry matter per minute', st: 'inp',
@@ -277,6 +279,8 @@ export const DIAGRAMS: DiagramSpec[] = [
       { k: 'e3b', x: L, y: y(3), w: LW, h: 84, t: 'A return valued by\nthe crop left (E3b)', s: 'revisitByCrop', st: 'des', sw: ['revisitByCrop'], ps: ['revisitW', 'revisitTauH'],
         before: 'A crown the animal had just fed in lost 0.5 of its value, fading with a 12-hour time constant, whatever was left in it (C6b, design, no source). It stood in for the depletion that parties do not cause in the model: a visit eats about 11% of a crown.',
         now: 'A crown fed in is valued like any other crown, by the crop the animal believes is left, so a return is worth what remains (E3b). On S8 males walk 1.88 km a day (S6 2.71) and hunting falls into its band, but the fruit share rises above its band (0.811).' },
+      { k: 'e2j', x: L, y: y(1), w: LW, h: 72, t: 'Climbs and riders (E2j)', s: 'tripBodyCost · youngArrival', st: 'lay', layer: { tag: 'RECORDED', sw: ['tripBodyCost', 'youngArrival'], stage: 'E2j' },
+        text: 'Tested with E2i\'s faster walk, which costs energy through the trip\'s value: trips win at lower hunger, so animals make more of them. tripBodyCost would charge a trip\'s climbing time and a riding infant\'s metres in its rate; it removed most of the added trips of mothers and males, not juveniles\'. youngArrival would give animals under 8 the arrival rule older ones follow; it restored juveniles, but mothers\' and young infants\' reserves fell. Both recorded, off.' },
       { k: 'e2i', x: R, y: y(3), w: RW, h: 72, t: 'Speed from the body (E2i)', s: 'walkGait', st: 'lay', layer: { tag: 'PASSES ALONE', sw: ['walkGait'], stage: 'E2i' },
         text: 'Would replace the copied walking speed with the speed the body sets: measured adult walking speeds (0.88 m/s for males, 0.78 for females, 0.75 carrying a dependant), scaled by body mass below adult size and read by every walk and every trip\'s value. Alone on S21 (as S23) it passed the keep rule, with males walking 3.36 km a day (S21\'s runs 2.26) and every class\'s reserves lower; with S22 (as S24) held-out got worse beyond noise and the cost fell on mothers, juveniles and infants: not adopted.' },
       { k: 'e5c', x: R, y: y(5), w: RW, h: 88, t: 'A crown shared by\nits feeders (E5c)', s: 'crownShare', st: 'lay', layer: { tag: 'RECORDED', sw: ['crownShare'], stage: 'E5c' },
@@ -290,12 +294,13 @@ export const DIAGRAMS: DiagramSpec[] = [
       { f: 'crop', t: 'feed', kind: 'side' },
       { f: 'e5c', t: 'opts', fs: 'l', ts: 'r', fo: 0, to: 16, kind: 'lay' },
       { f: 'e2i', t: 'opts', fs: 'l', ts: 'r', fo: 0, to: -16, kind: 'lay' },
+      { f: 'e2j', t: 'move', fs: 'b', ts: 't', kind: 'lay' },
       { f: 'e3b', t: 'opts', fs: 'r', ts: 'l', fo: 0, to: -16, kind: 'side' },
     ],
     notes: [
-      'On S22 the feeding row is 0.380 and rest is 0.383 (band 0.30–0.47), males walk 2.07 km a day (S19\'s runs 2.77), and the fruit share is inside its band (0.755; band 0.6–0.78). One animal died on S22 in 5 seeds × 60 days, not of starvation (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
+      'On S25 the feeding row is 0.376 and rest is 0.395 (band 0.30–0.47), males walk 2.21 km a day (S19\'s runs 2.77), and the fruit share is inside its band (0.758; band 0.6–0.78). Eight animals died on S25 in 5 seeds × 60 days, seven of them in one respiratory outbreak; none starved (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
       'Valuing food by rate exposed two prescriptions the weights had compensated: the choice\'s noise (rgTemperature) blurred rate differences, and a crop beyond one bout adds nothing, so choices do not follow the crop (<a href="staging/e3c-prereg.md">e3c-prereg.md §8</a>). Since S21 the temperature is gone and a tree out of sight is valued at a crop drawn from the animal\'s belief (see the choice itself); a crop beyond one bout still adds nothing (<a href="staging/e3e-prereg.md">e3e-prereg.md</a> §8).',
-      'Open: the walking speed (0.35 m/s) is still a field copy with the field\'s pauses folded in; E2i\'s speed from the body passes alone, but its longer walks cost every class energy, and even with it travel phases stay slower than the field\'s, with more halts (<a href="staging/e2i-prereg.md">e2i-prereg.md</a> §8, <a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
+      'Open: the walking speed (0.35 m/s) is still a field copy with the field\'s pauses folded in; E2i\'s speed from the body passes alone, but its longer walks cost every class energy, and even with it travel phases stay slower than the field\'s, with more halts. E2j found that the model spends 1/1.2–1/2.2 as much energy climbing as walking, against about 1/10 in wild chimpanzees (<a href="staging/e2j-prereg.md">e2j-prereg.md §8</a>, <a href="staging/e2i-prereg.md">e2i-prereg.md</a> §8, <a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
       'Open: nursing mothers stop eating with room in the gut, so the limit is their appetite and their day, not the gut wall (<a href="staging/e1h-prereg.md">e1h-prereg.md §9</a>, <a href="staging/e1i-prereg.md">e1i-prereg.md</a>).',
     ],
   },
@@ -358,7 +363,7 @@ export const DIAGRAMS: DiagramSpec[] = [
         now: 'In the dark a nest bout runs until rising light wakes the animal; in changing light the short 4–9 minute bout; in full light the day bout. While the light rises, an animal re-decides at the end of each bout (E2a, E2b).' },
       { k: 'night', x: S, y: y(5), w: SW, h: 72, t: 'No menu at night', s: 'menu.ts: night, dusk', ids: ['lit:nightMenu', 'lit:duskMenu'],
         before: 'After dark a rules-driven chimp could only nest, rest, nurse, flee, alarm, shelter or submit (plus self-defence). At dusk a last feed, drink, groom, call and a few more stayed open.',
-        now: 'Rules-driven chimps choose from the full menu at night; sleep, darkness and company keep them in their nests. On S22 adults are out of a nest 1.89% of the night, under the 3.3% line. Models keep the menus.' },
+        now: 'Rules-driven chimps choose from the full menu at night; sleep, darkness and company keep them in their nests. On S25 adults are out of a nest 1.84% of the night, under the 3.3% line. Models keep the menus.' },
       { k: 'amount', x: L, y: y(0), w: LW, h: 72, t: 'Chimpanzee sleep amount', s: 'sleepDriveShift', st: 'inp', ps: ['sleepDriveShift'],
         text: 'Captive chimpanzee sleep measured by EEG, 9.7 hours, lowers both thresholds of the sleep gate in place of the human amount (E2f).' },
       { k: 'light', x: L, y: y(1), w: LW, h: 72, t: 'Light at the eyes', s: 'sun · cloud · canopy', st: 'inp', ps: ['skyLuxSun', 'skyLuxNight'],
@@ -377,7 +382,7 @@ export const DIAGRAMS: DiagramSpec[] = [
     ],
     notes: [
       'Nesting at dusk and an active day of 11 h 22 min emerge with no clock (<a href="staging/e2a-prereg.md">e2a-prereg.md</a>).',
-      'Still above its one-site band: on S22 the observer scores 0.535 of departures before sunrise (S19\'s runs 0.81), against 0.18 for five Taï mothers in fruit-scarce periods. E2h found that row scored differently from the field, and that on S3 the real miss was nursing mothers leaving about an hour early, hungry and thirsty (<a href="staging/e2h-prereg.md">e2h-prereg.md</a>, <a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
+      'Still above its one-site band: on S25 the observer scores 0.549 of departures before sunrise (S19\'s runs 0.81), against 0.18 for five Taï mothers in fruit-scarce periods. E2h found that row scored differently from the field, and that on S3 the real miss was nursing mothers leaving about an hour early, hungry and thirsty (<a href="staging/e2h-prereg.md">e2h-prereg.md</a>, <a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
     ],
   },
   // ---------------------------------------------------------------------------------------------------------------
@@ -422,7 +427,7 @@ export const DIAGRAMS: DiagramSpec[] = [
         text: 'A bout is worth the share of a full suckling rate it delivers over its time, including the wait for milk to flow (54 s, a human value). Infants also suckle in the mother\'s nest at night (E1c, E1f). Design terms replaced design terms; no prescription.' },
       { k: 'refuse', x: S, y: y(2), w: SW, h: 72, t: 'The mother decides', s: 'weaning roll switched out', ids: ['weanRefuseMaxP'],
         before: 'From 3.2 years of the infant\'s age the mother refused a bout by a roll whose chance rose over 1.8 years to 0.8 (weanRefuseAgeY, weanRefuseRampY, design). No field study measures refusal by infant age (E1n\'s audit).',
-        now: 'She lets a bout start and go on while her infant\'s reserve deficit, relative to its store, is at least her own, and while she sleeps her last decision stands (E1n\'s decision, E1o\'s currency). On S6 milk at 1–2, 2–3 and 3–4 years fell to 238, 198 and 190 kcal a day (cap 307); with mothers better fed it rose again, to 283, 264 and 260 on S22.' },
+        now: 'She lets a bout start and go on while her infant\'s reserve deficit, relative to its store, is at least her own, and while she sleeps her last decision stands (E1n\'s decision, E1o\'s currency). On S6 milk at 1–2, 2–3 and 3–4 years fell to 238, 198 and 190 kcal a day (cap 307); with mothers better fed it rose again, to 278, 263 and 253 on S25.' },
       { k: 'wean', x: S, y: y(3), w: SW, h: 72, t: 'Weaning age', s: 'drawn between 4.1 and 5.2 y', st: 'inp', ps: ['weanAgeMinY', 'weanAgeSpanY'],
         text: 'Each infant\'s weaning age is drawn between 4.1 and 5.2 years. Classed input by the ledger, although the weaned-age target (T-INF-3) is built in while these values set it (E1n\'s audit). Nothing in the model drives milk to zero before it (E1o).' },
       { k: 'size', x: L, y: y(1), w: LW, h: 72, t: 'Infant intake by size', s: 'ledgerInfantIntake', st: 'des', ps: ['ledgerMassBirthKg'],
@@ -446,8 +451,8 @@ export const DIAGRAMS: DiagramSpec[] = [
       { f: 'e1oB', t: 'refuse', fs: 'l', ts: 'r', fo: -8, to: 0, kind: 'side' },
     ],
     notes: [
-      'On S22 nursing mothers lose 0.068% of their store a day (S21\'s four runs 0.071) and their balance sits between −24 and −39 kcal a day by infant age. Infants of 1–2, 2–3 and 3–4 years drink 283, 264 and 260 kcal a day (cap 307), more than on S6 because better-fed mothers refuse less (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, S22).',
-      'Infants\' reserves fall 0.090% and 0.052% of the store a day at 0.5–2 and 2–5 years (S21\'s four runs 0.089 and 0.060), and they grow 3.47–3.50 kg a year at 1–4 years, still about twice Gombe\'s 1.6 (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, <a href="staging/e1p-prereg.md">e1p-prereg.md §3</a>).',
+      'On S25 nursing mothers lose 0.061% of their store a day (S22\'s four runs 0.065) and their balance sits between −32 and −38 kcal a day by infant age. Infants of 1–2, 2–3 and 3–4 years drink 278, 263 and 253 kcal a day (cap 307), more than on S6 because better-fed mothers refuse less (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, S25).',
+      'Infants\' reserves fall 0.088% and 0.120% of the store a day at 0.5–2 and 2–5 years (S22\'s four runs 0.084 and 0.052; the drop at 2–5 years is the outbreak seed\'s), and they grow 3.39–3.49 kg a year at 1–4 years, still about twice Gombe\'s 1.6 (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, <a href="staging/e1p-prereg.md">e1p-prereg.md §3</a>).',
       'Open: nothing drives milk to zero before the drawn weaning age (<a href="staging/e1o-prereg.md">e1o-prereg.md §5</a>).',
     ],
   },
@@ -484,7 +489,7 @@ export const DIAGRAMS: DiagramSpec[] = [
       { f: 'dyad', t: 'groom', fs: 'r', ts: 'l', fo: 0, to: 16, mx: 256, kind: 'lay' },
     ],
     notes: [
-      'On S22 grooming is inside its band overall (0.091; males 0.125) but below it for females (0.062), as it has been since E3c; rest is inside its band (0.383), and so is grooming reciprocity (T-SOC-3 0.650, band 0.45–0.8; 0.32 in E4m\'s quick runs) (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, <a href="staging/e3c-prereg.md">e3c-prereg.md §8</a>).',
+      'On S25 grooming is inside its band overall (0.087; males 0.113) but below it for females (0.065), as it has been since E3c; rest is inside its band (0.395), and so is grooming reciprocity (T-SOC-3 0.714, band 0.45–0.8; 0.32 in E4m\'s quick runs) (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, <a href="staging/e3c-prereg.md">e3c-prereg.md §8</a>).',
       'Open: the bond dynamics the need now follows are design (founder bonds, baselines of 0.2 and 0.6, 1.5% a day relaxation), and E5a values company by a need that company does not relieve (<a href="staging/e5d-prereg.md">e5d-prereg.md §10</a>).',
     ],
   },
@@ -524,7 +529,7 @@ export const DIAGRAMS: DiagramSpec[] = [
       { f: 'retry', t: 'go', fs: 'r', ts: 'l', kind: 'side' }, { f: 'callers', t: 'go', fs: 'l', ts: 'r', kind: 'side' },
     ],
     notes: [
-      'On S22 parties average 3.88 animals (band 3–9) and males walk 2.07 km a day (S19\'s runs 2.77); the travel share is inside its band (0.179; males 0.199, females 0.162; band 0.12–0.25) (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
+      'On S25 parties average 4.05 animals (band 3–9) and males walk 2.21 km a day (S19\'s runs 2.77); the travel share is inside its band (0.183; males 0.203, females 0.167; band 0.12–0.25) (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
       'E5a passed on five seeds on the reference stack (prescriptions 103 → 97, sums inside noise). On the integrated stack without E5b\'s margin it added half a kilometre of walking a day (<a href="staging/e5a-prereg.md">e5a-prereg.md</a>, <a href="staging/e5b-prereg.md">e5b-prereg.md §8</a>).',
       'Open: party size does not track crop size, the party-size band (3–9) has no recorded derivation, and company is valued by a need that company does not relieve; only grooming does (<a href="staging/e5a-prereg.md">e5a-prereg.md §7</a>, <a href="staging/e5d-prereg.md">e5d-prereg.md §10</a>).',
     ],
@@ -637,15 +642,15 @@ export const DIAGRAMS: DiagramSpec[] = [
     ],
     notes: [
       'Slow states keep the acts rare and well-timed: redirects come within a minute of the defeat and stay at 2–4% of decided conflicts (<a href="staging/e4a-prereg.md">e4a-prereg.md</a>).',
-      'On S22 the male hierarchy\'s steepness stays inside its band (0.55; band 0.2–0.7). In E4h contact rose as the rank difference shrank, the field\'s direction (flat under the dice); three contest rows (contact share, contact by rank difference, coalitionary share) are staged, not applied (<a href="staging/e4h-prereg.md">e4h-prereg.md</a>, <a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
+      'On S25 the male hierarchy\'s steepness stays inside its band (0.61; band 0.2–0.7). In E4h contact rose as the rank difference shrank, the field\'s direction (flat under the dice); three contest rows (contact share, contact by rank difference, coalitionary share) are staged, not applied (<a href="staging/e4h-prereg.md">e4h-prereg.md</a>, <a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
       'Open: slow states cannot carry acute reactions, hence the fast state; the calling–testosterone link still fails because calls have no daily course (<a href="staging/e4b-prereg.md">e4b-prereg.md</a>, <a href="staging/e4d-prereg.md">e4d-prereg.md</a>).',
     ],
   },
   // ---------------------------------------------------------------------------------------------------------------
   {
     key: 'hunting', cap: 'From a colobus encounter to meat', nav: 'Hunting', title: 'Hunting',
-    take: 'Since S19 a hunt succeeds when the hunters leave the colobus no way out (E4k); since S13 it is valued as food, with no gap between hunts (E4e). Only how fast meat is eaten is still prescribed.',
-    desc: 'Flowchart of hunting on the candidate stack: a colobus encounter in company; the lead offered when the pursuit can be expected to capture, valued as the meat it promises, with no community gap; hunters spread to where the monkeys would flee; a capture when hunters at canopy height close every escape direction; meat eaten per hour remains prescribed.',
+    take: 'Since S19 a hunt succeeds when the hunters leave the colobus no way out (E4k); since S13 it is valued as food, with no gap between hunts (E4e), and since S25 weighed by the energy the hunter will need, not by how full his gut is (E4n). Only how fast meat is eaten is still prescribed.',
+    desc: 'Flowchart of hunting on the candidate stack: a colobus encounter in company; the lead offered when the pursuit can be expected to capture, valued as the meat it promises and weighed by the hunter\'s energy need, with no community gap; hunters spread to where the monkeys would flee; a capture when hunters at canopy height close every escape direction; meat eaten per hour remains prescribed.',
     w: 832, h: 496,
     nodes: [
       { k: 'meet', x: S, y: y(0), w: SW, h: 72, t: 'Colobus met in company', s: 'encounter impulse', st: 'des', ps: ['huntEncMinMales'],
@@ -656,6 +661,9 @@ export const DIAGRAMS: DiagramSpec[] = [
       { k: 'lead', x: S, y: y(2), w: SW, h: 72, t: 'A hunt valued as food', s: 'huntValue · hand-set lead out', st: 'des', sw: ['huntValue', 'huntPursuit'],
         before: 'Leading a hunt was worth 0.5, plus 0.15 per adult male above 3, plus skill and boldness, less distance: weights written in the code (design, not counted).',
         now: 'The lead is worth the meat a capture can be expected to bring, scored like a trip to a crown delivering the same energy per hour, walk included (E4e). Since S19 the captures expected come from the pursuit itself, run on the adult males in view spread evenly around the group: with fewer than three the lead is worth nothing and is not offered (E4k).' },
+      { k: 'appetite', x: R, y: y(2), w: RW, h: 72, t: 'Weighed by energy need', s: 'huntDrive · fullness term out', st: 'des', sw: ['huntDrive'],
+        before: 'The lead was weighed by the hunter\'s appetite now, the crowns\' weight (1.6 × hunger + 0.1), and that hunger falls as the gut fills: a weight borrowed from fruit trees, whose crop is eaten on the spot. On S22 the hunt topped the menu in 1% of draws and males led 3 hunts a community-year (E4n\'s diagnosis).',
+        now: 'Weighed by the energy part of the appetite alone, what the male will need before his next chance to feed, without the fullness term: a carcass is carried and eaten as the gut allows. No new magnitude (E4n). On S25 the model hunts 17.4 times per community-year, inside its band of 5–25 (S22\'s runs 2.0–4.0).' },
       { k: 'end', x: S, y: y(3), w: SW, h: 72, t: 'Capture from the pursuit', s: 'success curve, kill die out', ids: ['huntSuccessMax', 'huntSuccessRate', 'huntExtraKillP'], ps: ['huntPursuitSpeedRatio'],
         before: 'Success = 0.8 × (1 − e^(−0.3 × (hunters − 1))), a design curve (field 53–82%), drawn once, 5–11 minutes after the start. In a success each other hunter made a capture of his own with probability 0.17, derived from Ngogo\'s kills per successful hunt.',
         now: 'Each tick the hunters at canopy height are read against the group. A hunter cuts off the escape directions he can intercept, a cone set by his speed over the monkeys\' (a design ratio of 1, times his own factor for age, injury and alertness); the group is caught when the cones leave no way out, which takes at least three hunters around it. One monkey per set of hunters that closes the circle; if none closes it by the resolution time, the monkeys escape (E4k).' },
@@ -669,12 +677,13 @@ export const DIAGRAMS: DiagramSpec[] = [
     ],
     edges: [
       { f: 'meet', t: 'gap', kind: 'main' }, { f: 'gap', t: 'lead', kind: 'main' }, { f: 'lead', t: 'end', kind: 'main' }, { f: 'end', t: 'meat', kind: 'main' },
-      { f: 'prey', t: 'meet', kind: 'side' }, { f: 'pursuit', t: 'end', fs: 'l', ts: 'r', kind: 'side' },
+      { f: 'prey', t: 'meet', kind: 'side' }, { f: 'pursuit', t: 'end', fs: 'l', ts: 'r', kind: 'side' }, { f: 'appetite', t: 'lead', fs: 'l', ts: 'r', kind: 'side' },
     ],
     notes: [
-      'On S22 the model hunts 2.0 times per community-year, below its band of 5–25 (S21\'s four runs 3.2–5.2; the band was never scaled to the model\'s 3–7 males, and a 4–11 band is staged). Hunts succeed less often than in the field (0.375 against 0.5–0.8), every success takes one monkey (1.0 against 1.2–2), and hunts are a smaller share of colobus encounters (0.011 against 0.05–0.4) (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, <a href="staging/e4e-prereg.md">e4e-prereg.md</a>).',
+      'On S25 the model hunts 17.4 times per community-year, inside its band of 5–25 (S22\'s four runs 2.0–4.0; the band was never scaled to the model\'s 3–7 males, and the staged 4–11 band would put it above). Hunts succeed 0.61 of the time (band 0.5–0.8), every success takes one monkey (1.0 against 1.2–2), and hunts are a smaller share of colobus encounters than in the field (0.035 against 0.05–0.4) (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, <a href="staging/e4e-prereg.md">e4e-prereg.md</a>).',
       'Open: lone hunters and pairs never capture, and about half the adult males a leader sees join him, by a hand-set join value; the three-hunter threshold rests on the design speed ratio (at 0.8 it would take four), not tested. The model has no canopy structure and no colobus composition (<a href="staging/e4k-prereg.md">e4k-prereg.md</a>).',
       'The observer meets colobus 2.7 times as often per follow-hour as at Kanyawara, mostly a scoring difference; three scorer fixes are staged, not applied (<a href="staging/e4f-prereg.md">e4f-prereg.md</a>).',
+      'Open: why chimpanzees hunt beyond energy (meat\'s nutrients, sharing with allies) has a direction and no magnitude in any source read, and the field hunts more when fruit is good, which an energy need does not produce (<a href="staging/e4n-prereg.md">e4n-prereg.md</a> §2.2).',
     ],
   },
   // ---------------------------------------------------------------------------------------------------------------
@@ -715,7 +724,7 @@ export const DIAGRAMS: DiagramSpec[] = [
       { f: 'fusion', t: 'hazard', fs: 'l', ts: 'r', to: -16, kind: 'side' },
     ],
     notes: [
-      'On S22 patrols run 0.124 a week, inside their band of 0.1–0.5 (T-PAT-1; S21 0.093), but 0.81 of them enter the neighbours\' range, above its band of 0.4–0.7 (T-PAT-6; S21\'s runs 0.39–0.74); intergroup encounters stay inside their band (T-IGE-1 10.7 per community-year, band 5–12; S16 22.8) (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, <a href="staging/e4j-prereg.md">e4j-prereg.md</a>).',
+      'On S25 patrols run 0.070 a week, below their band of 0.1–0.5 (T-PAT-1; S22\'s runs 0.077–0.124), and 0.72 of them enter the neighbours\' range, above its band of 0.4–0.7 (T-PAT-6); intergroup encounters stay inside their band (T-IGE-1 6.4 per community-year, band 5–12; S16 22.8) (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, <a href="staging/e4j-prereg.md">e4j-prereg.md</a>).',
       'Open: listening has no value in the model\'s perception (hearing does not depend on the listener\'s own movement), so a stop gains only time to count a chorus, and patrols stop 2.8 times where the field reports frequent stops (<a href="staging/e4m-prereg.md">e4m-prereg.md</a> §11).',
       'Open: the patrol rate follows design constants set while choices were noisy (the lead\'s ceiling, the 7-day staleness constant); with E3d\'s re-decision on S21\'s choice, patrols lasted longer and intergroup encounters tripled; half the patrols never hold three adult males; lethal attacks during contact are in the next section (<a href="staging/e4i-prereg.md">e4i-prereg.md §8</a>, <a href="staging/e4j-prereg.md">e4j-prereg.md §8</a>, <a href="staging/e3e-prereg.md">e3e-prereg.md</a> §6.3).',
     ],
