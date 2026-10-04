@@ -288,3 +288,31 @@ implicate (for example, joining, if too few alerted males join for three to surr
 Every §5 truth readout is produced. Two hunts resolved (S17 on the same window: six), each with three hunters in the
 pursuit at cone half-angles 74–80° (alertness 0.75–0.85), largest angular gap 144° and 147° (below the 148–160° the
 cones need), one closing set and one capture each; success probability 0 and no draw. P1 launched next (04:57).
+
+#### P1 result: quick (9b3f213 frozen, `git.dirty` 0; against S17q, S17q1–3 at bench-run2 37f04e8; printed by `artifacts/validation/e4k/report.py P1` from the JSON)
+
+```
+P1q.json: 9b3f213 dirty 0 prescriptions 46
+
+quick, reference custom (4 runs), rows counted in all runs: fitted 17, held-out 13
+  fitted             (17 rows) ref 1.50, 0.94, 2.08, 3.66 (mean 2.04, sd 1.17; used 1.17) | P1q.json: 1.97, Δ -0.08, z -0.1 (inside noise)
+  held-out           (13 rows) ref 4.03, 4.51, 4.61, 3.90 (mean 4.26, sd 0.35; used 1.26) | P1q.json: 5.56, Δ +1.29, z +0.9 (inside noise)
+  held-out w/o rare  (12 rows) ref 3.88, 4.29, 4.61, 3.90 (mean 4.17, sd 0.35; used 0.48) | P1q.json: 4.14, Δ -0.03, z -0.1 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-HUN-4   held-out ref 0.09±0.11 | P1q.json 1.42 (fail)
+   T-HUN-7   fitted   ref 0.00±0.00 | P1q.json 0.25 (fail)
+
+held-out without T-HUN-4, T-BRD-1 and T-IGE-3 (12 rows): S17q 3.88 / 4.29 / 4.61 / 3.90 (mean 4.17, sd 0.35; used 0.48); P1q.json 4.14 (z -0.1)
+
+| hunt rows, quick (30 + 30 d) | S17q / S17q1 / S17q2 / S17q3 | P1q |
+| --- | --- | --- |
+| T-HUN-1 (n) | 15.9 (8) / 23.7 (12) / 24.1 (12) / 13.9 (7) | 11.8 (6) |
+| T-HUN-2 (n) | 0.5 (4) / 0.286 (7) / 0.214 (14) / 0.333 (9) | 0.333 (6) |
+| T-HUN-3 (n) | 0.0275 (109) / 0.0439 (114) / 0.024 (125) / 0.0278 (144) | 0.0197 (152) |
+| T-HUN-4 (n) | 1.91 (109) / 1.97 (114) / 1.15 (125) / 1.73 (144) | 2.87 (152) |
+| T-HUN-7 (n) | 2 (2) / 1.5 (2) / 1.33 (3) / 1.33 (3) | 1 (2) |
+| T-HUN-8 (n) | 0.75 (4) / 1 (3) / 1 (4) / 1 (4) | 1 (2) |
+| truth hunts per community-year | 30.4 / 36.5 / 46.6 / 42.6 | 14.2 |
+| truth success | 0.111 / 0.133 / 0.227 / 0.286 | 0.417 |
+
+```
