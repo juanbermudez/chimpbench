@@ -149,22 +149,40 @@ export function dependentOn(world: World, c: Chimp): Chimp | undefined {
  * A juvenile's guardian (stage C8, docs/staging/early-life-prereg.md §2.1): its mother while she is alive and in its
  * community, else its adoptive caretaker while the ward is under guardMaxAgeY and the caretaker is alive and in the
  * community. With maternalLevers 0 (ablation) only dependents keep one. Pure: no RNG, no perception (callers check it).
+ * Stage E4o (bodyRules bit 2): the caretaker stays the guardian at any age, as a mother does; what her protection
+ * covers is decided threat by threat (wardHoldsOwn), not by the ward's age.
  */
 export function guardianOf(world: World, c: Chimp): Chimp | undefined {
   const P = paramsOf(world), byId = index(world).byId, x = ix(c);
   if (P.maternalLevers !== 1 && (x.weaned || c.age >= 6)) return undefined;
   const m = byId.get(c.motherId);
   if (m && m.alive && m.troopId === c.troopId) return m;
-  if (x.caretaker < 0 || x.caretaker === c.motherId || c.age >= P.guardMaxAgeY) return undefined;
+  if (x.caretaker < 0 || x.caretaker === c.motherId || (!guardBySize(P) && c.age >= P.guardMaxAgeY)) return undefined;
   const k = byId.get(x.caretaker);
   return k && k.alive && k.troopId === c.troopId ? k : undefined;
 }
 
-/** The guardian presence test (early-life-prereg §2.2–2.3): o's guardian is seen by c, within defendRangeM of o and not dominated by c. */
+/** Stage E4o (bodyRules bit 2; docs/staging/e4o-prereg.md §5): protection follows the ward's own strength, not an age. */
+export const guardBySize = (P: Params): boolean => (P.bodyRules & 2) !== 0;
+/**
+ * Stage E4o (bodyRules bit 2): whether a ward can hold its own against a threat, by its assessed chance against it (E4h
+ * assessOdds: strength from the growth curve with condition and wounds, the supporters charging on each side, and the
+ * remembered dominance relationship where the two keep one) at or above even. A ward that cannot is protected; the
+ * age at which protection ends then follows from growth. The even point is the definition of "more likely to lose than
+ * to win" (design, no fitted value; lint-ok: even odds is a definition, not a parameter). Pure.
+ */
+export const wardHoldsOwn = (world: World, ward: Chimp, threat: Chimp, P: Params): boolean => assessOdds(world, ward, threat, P) >= 0.5;
+
+/**
+ * The guardian presence test (early-life-prereg §2.2–2.3): o's guardian is seen by c, within defendRangeM of o and not
+ * dominated by c. Stage E4o (bodyRules bit 2): no age limit; the guardian deters c while its ward cannot hold its own
+ * against c (wardHoldsOwn).
+ */
 function guarded(world: World, c: Chimp, o: Chimp, seen: number[], P: Params): boolean {
-  if (o.age >= P.guardMaxAgeY) return false;
+  const bySize = guardBySize(P);
+  if (!bySize && o.age >= P.guardMaxAgeY) return false;
   const g = guardianOf(world, o);
-  return !!g && g !== c && seen.includes(g.id) && hd2(g, o) < P.defendRangeM * P.defendRangeM && !dominates(c, g);
+  return !!g && g !== c && seen.includes(g.id) && hd2(g, o) < P.defendRangeM * P.defendRangeM && !dominates(c, g) && (!bySize || !wardHoldsOwn(world, o, c, P));
 }
 
 const AFFILIATIVE: Partial<Record<Action, true>> = { reconcile: true, groom: true, console: true, play: true, share: true };
@@ -991,11 +1009,13 @@ function aggression(world: World, c: Chimp, rival: number, rivalCloseness: numbe
     // adolescent males establishing dominance over females [H]
     if (male && c.age >= 12 && c.age < P.femaleDomMaxAgeY && o.sex === 'female' && o.age >= 15 && dist < P.femaleDomRangeM && cooled && !kin)
       offer('charge', o.id, 0.03 + pers.aggression * 0.3 + (dominates(c, o) ? 0 : 0.1), V.FEMALE_DOM);
-    // guardians (mothers, or caretakers of wards under guardMaxAgeY) defend them
+    // guardians (mothers, or caretakers of wards under guardMaxAgeY) defend them; stage E4o (bodyRules bit 2): while the
+    // ward cannot hold its own against its aggressor (wardHoldsOwn), at any age
     const ox = ix(o);
     if (time - ox.victimAt < 0.05 && guardianOf(world, o) === c) {
       const ag = byId.get(ox.victimOf);
-      if (ag && ag.alive && ag.id !== c.id && dcc(c, ag) < P.defendRangeM && ag.troopId === c.troopId && hd2(ag, o) < P.defendAggressorNearM * P.defendAggressorNearM) offer('charge', ag.id, 0.4 + bond(c, o) * 0.2 - (dominates(ag, c) ? 0.45 : 0), V.DEFEND, o.id);
+      if (ag && ag.alive && ag.id !== c.id && dcc(c, ag) < P.defendRangeM && ag.troopId === c.troopId && hd2(ag, o) < P.defendAggressorNearM * P.defendAggressorNearM
+        && (!guardBySize(P) || !wardHoldsOwn(world, o, ag, P))) offer('charge', ag.id, 0.4 + bond(c, o) * 0.2 - (dominates(ag, c) ? 0.45 : 0), V.DEFEND, o.id);
     }
   }
   // coalition support: nearby allies join conflicts, likelier with stronger bonds [M-H]

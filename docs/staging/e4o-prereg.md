@@ -58,8 +58,29 @@ truth beside the readouts' sourced values (context, never summed).
 | T-SOC-5, T-SOC-10 (held-out; guarding can touch them) | kaburuNewtonFisher2015 (Sonso, 8 adult males, 1,109.5 h; Mahale M, 10 adult males); wittigBoesch2010 (Taï 1996–99, 18 individuals of both sexes, 876 conflicts) | e4h-prereg §3 |
 | T-DEM-15, -16, -17, -24 (orphans; held-out, need years) | crockford2020 (Taï, sons orphaned at 4–12 y), stanton2020 (Gombe), hobaiter2014 (Sonso adoptions), nakamura2014 (Mahale) | not scorable under the 90-day cap (reported insufficient) |
 | (context) copulation rate per male–female dyad-hour | **muller2007 (re-opened this stage, FT, author copy):** Kanyawara 1998–2005, 13 adult males and 15 parous females (long-term data); "Copulations, defined as mounting with intromission and pelvic thrusting, were recorded using all-occurrence sampling"; dyads "observed together for at least 25 h when the female was in oestrus" (oestrus = maximal swelling); per male, median copulation rates with the parous females he was more aggressive towards 0.064 ± 0.008 copulations per hour, less aggressive 0.03 ± 0.006 (Figure 2; n = 13 males, 2–14 females per male); parous females < 500 copulations per conception, nulliparous > 1,000 (Wrangham 2002 as cited) | FT this stage |
-| (context) copulations per swollen female-hour; male physiology | pending (a source search for the "Taï 0.14/h, Ngogo 3.5/h" of `mateIntervalH`'s note and for male refractory physiology; results go in §2.1 before any mechanism) | — |
-| (context) energy of a capture | pending (red colobus masses by age class, the edible share, meat's energy density; results go in §2.1 before any mechanism) | — |
+| (context) copulations per oestrous or maximally swollen female-hour | **gomesBoesch2009 (FT):** Taï South 2003–06, 5 adult males, 8 oestrous females; "data on copulations ... came from 3000 h of focal target follows" of females; "We observed a total of 262 copulations during the 1814 h that females were observed in estrous" (oestrus includes partial swelling): 0.14 per female-hour (the note's "Taï 0.14/h", verified), ~0.03 per adult male per oestrous female-hour (derived). **furuichiHashimoto2001 (FT, Japanese; figure readings [L]):** per adult female at maximal swelling 0.43/h (Kalinzu, 1997–98, 43 copulations), 0.79/h (Mahale, cited); per adult male 0.12/h (Kalinzu, 16 males), 0.20–0.22/h (Mahale, cited); 4.2–12.3 adult males per swollen female. Ngogo (watts2007, Abs): high and rising with the males present; "3.5/h" **not verified** | FT/Abs this stage (§2.1) |
+| (context) energy of a capture | not computable: adult masses only (§2.1) | §2.1 |
+
+### 2.1 What the source searches found (research.md "Addendum: E4o three small rules"; written after the searches, before §5)
+
+- **Meat (`meatEatPerH`): the brief's candidate cannot be built on sources.** Adult red colobus masses are citable only
+  secondarily (7.9–10.9 kg males, 6.7 kg females; sanders2003 citing Delson et al. 2000, [L]); no measured mass of an
+  infant, juvenile or subadult red colobus was found in any reachable source, while immatures are 66% of Ngogo kills
+  (mitaniWatts1999) and most kills at Gombe and Taï (boeschBoesch1989 Table 5); bugir2021's 75%-of-adult-female rule is a
+  convention. Prey are eaten whole (an edible share of ~0.7–1.0: boeschBoesch1989, watts2008, newtonFisher2007, no mean);
+  raw monkey meat is 112–118 kcal per 100 g (cawthornHoffman2015, [L]; the model's 115 is within it). Red colobus groups:
+  42–48 animals, one counted group 41% non-adults, no split of the non-adults (miyamoto2013, mitani2000). So the edible
+  energy of an average capture, or of a capture drawn from the group's composition, cannot be computed: the rule stays
+  (as E4m found), and no bit is defined for it.
+- **Mating (`mateIntervalH`): no refractory physiology exists in the reachable literature.** No measured
+  post-ejaculatory refractory period or inter-copulation interval of male chimpanzees, wild or captive; captive males
+  ejaculated hourly six times in a row, sperm per ejaculate falling from 1,278 to 587 × 10⁶ (marson1989, Abs, [M]);
+  testosterone with cycling parous females goes with aggression, not sex (mullerWrangham2004b, FT); females rarely refuse
+  (watts2022, Abs) and approach to copulate after a median 0.28 of male courtship sequences (robertsRoberts2015, FT). A
+  physiological limit of an hour or less cannot set the field's 0.12–0.22 copulations per adult male-hour, so the brief's
+  candidate (the male's state with a sourced refractory physiology) has no input: the rule stays, and no bit is defined
+  for it (§4 names what it decides).
+- **Protection (`guardMaxAgeY`):** no new source needed; the mechanism reads the model's own contest assessment (E4h).
 
 ## 3. Diagnosis plan (step 1; unchanged simulation code; written and committed before any run)
 
@@ -124,3 +145,180 @@ re-run.
   female's copulations per daylight hour by the adult males in her party (0, 1–2, 3–4, 5–6, ≥ 7; the party at the
   previous tick's end), the form in which party size enters field copulation rates. Simulation code unchanged
   (`scratchpad/e4o/frozen-d0b`, the commit that adds this entry); outputs `D{0,1,2,3}b-{48,7}.json`.
+
+## 4. Diagnosis result (D0b–D3b: S27 and its three `rngSalt` re-draws, seeds 48 and 7, 30 + 60 days, 0.99 community-years each; printed by `artifacts/validation/e4o/diag_table.py` from the JSON)
+
+```
+| Readout (e4o-diagnose, seeds 48 + 7, 30 + 60 days) | D0b | D1b | D2b | D3b | ref mean ± SD |  |
+| --- | --- | --- | --- | --- | --- |
+| captures (2 seeds) | 27 | 36 | 17 | 30 | 27.500 ± 7.937 |  |
+| carcass episodes | 24 | 33 | 17 | 29 | 25.750 ± 6.898 |  |
+| meat kcal per capture | 1097 | 1127 | 1135 | 1103 | 1115 ± 18.092 |  |
+| eaters per capture | 2.259 | 2.278 | 2.529 | 2.133 | 2.300 ± 0.166 |  |
+| meat kcal per eater (episode mean) | 486 | 495 | 449 | 517 | 487 ± 28.502 |  |
+| captor share of carcass kcal | 0.685 | 0.565 | 0.579 | 0.663 | 0.623 ± 0.060 |  |
+| meat shares per capture | 2.037 | 2.583 | 2.412 | 1.800 | 2.208 ± 0.355 |  |
+| begs per capture | 4.370 | 6.028 | 4.353 | 3.333 | 4.521 ± 1.115 |  |
+| holder-min awake per capture | 169 | 173 | 173 | 175 | 172 ± 2.667 |  |
+| min capture to last unit (median) | 106 | 103 | 102 | 109 | 105 ± 3.272 |  |
+| gut-limited share of holder ticks | 0.120 | 0.117 | 0.110 | 0.172 | 0.130 ± 0.029 |  |
+| charges and attacks (2 seeds) | 4705 | 4691 | 4498 | 4251 | 4536 ± 212 |  |
+| guard-qualified charges | 109 | 127 | 91 | 80 | 102 ± 20.646 |  |
+|   age limit decides (target >= 12 y) | 78 | 71 | 60 | 57 | 66.500 ± 9.747 |  |
+|   deterred, age rule (< 12 y) | 31 | 56 | 31 | 23 | 35.250 ± 14.338 |  |
+|   deterred, odds rule (odds < 0.5) | 57 | 84 | 54 | 47 | 60.500 ± 16.217 |  |
+|   young but holds its own | 2 | 12 | 1 | 3 | 4.500 ± 5.066 |  |
+|   12+ y and cannot hold its own | 28 | 40 | 24 | 27 | 29.750 ± 7.042 |  |
+| defence charges | 10 | 15 | 15 | 21 | 15.250 ± 4.500 |  |
+|   ward holds its own (odds >= 0.5) | 7 | 11 | 13 | 16 | 11.750 ± 3.775 |  |
+| caretaker ward-days | 0 | 0 | 0 | 0 | 0 ± 0 |  |
+| copulations (2 seeds) | 2764 | 2955 | 2578 | 2543 | 2710 ± 190 |  |
+| copulations per max-swollen female daylight hour | 0.935 | 0.974 | 0.994 | 0.976 | 0.970 ± 0.025 |  |
+| copulations per adult male-swollen female dyad-hour (all h) | 0.304 | 0.314 | 0.302 | 0.299 | 0.305 ± 0.006 |  |
+| copulations per dyad daylight hour | 0.584 | 0.599 | 0.604 | 0.591 | 0.594 ± 0.009 |  |
+| copulations per parous dyad-hour (all h) | 0.298 | 0.326 | 0.321 | 0.307 | 0.313 ± 0.013 |  |
+| dyad rate median (>= 5 daylight h together), seed mean | 0.577 | 0.610 | 0.599 | 0.593 | 0.595 ± 0.014 |  |
+| per-male median of dyadic rates (muller2007 form), seed mean | 0.586 | 0.611 | 0.597 | 0.590 | 0.596 ± 0.011 |  |
+| rate per max-swollen female daylight h, 0 adult males in party | 0.055 | 0.067 | 0.059 | 0.075 | 0.064 ± 0.009 |  |
+| rate per max-swollen female daylight h, 1-2 adult males in party | 0.955 | 0.954 | 0.962 | 0.998 | 0.967 ± 0.021 |  |
+| rate per max-swollen female daylight h, 3-4 adult males in party | 2.115 | 2.251 | 2.216 | 2.039 | 2.155 ± 0.097 |  |
+| rate per max-swollen female daylight h, 5-6 adult males in party | 2.967 | 3.033 | 3.103 | 2.962 | 3.016 ± 0.066 |  |
+| rate per max-swollen female daylight h, 7+ adult males in party | 3.708 | 4.211 | 3.719 | 3.267 | 3.726 ± 0.385 |  |
+| max-swollen female daylight h, 0 adult males in party | 733 | 767 | 630 | 755 | 721 ± 62.307 |  |
+| max-swollen female daylight h, 1-2 adult males in party | 1181 | 1263 | 991 | 891 | 1082 ± 171 |  |
+| max-swollen female daylight h, 3-4 adult males in party | 397 | 407 | 372 | 409 | 396 ± 17.155 |  |
+| max-swollen female daylight h, 5-6 adult males in party | 71.446 | 81.763 | 73.796 | 94.879 | 80.471 ± 10.572 |  |
+| max-swollen female daylight h, 7+ adult males in party | 2.967 | 9.500 | 4.033 | 15.917 | 8.104 ± 5.943 |  |
+| male intervals 1.5-1.6 h share | 0.258 | 0.253 | 0.228 | 0.247 | 0.247 ± 0.013 |  |
+| male interval median (h), seed mean | 2.077 | 2.076 | 2.190 | 2.157 | 2.125 ± 0.057 |  |
+| copulations in guarding | 604 | 556 | 424 | 471 | 514 ± 81.267 |  |
+| copulations in a male mate act | 954 | 1127 | 1031 | 922 | 1008 ± 91.289 |  |
+| female-initiated copulations | 578 | 697 | 549 | 539 | 591 ± 72.739 |  |
+| male gate: decisions | 56021 | 60213 | 53928 | 53425 | 55897 ± 3089 |  |
+|   blocked by the quota | 39731 | 42743 | 38076 | 37932 | 39620 ± 2236 |  |
+|   blocked and would top the list | 14288 | 15537 | 13416 | 13522 | 14191 ± 978 |  |
+|   open and on top | 2543 | 2846 | 2680 | 2535 | 2651 ± 146 |  |
+|   open, not on top | 13747 | 14624 | 13172 | 12958 | 13625 ± 745 |  |
+|   at night | 763 | 768 | 750 | 774 | 764 ± 10.210 |  |
+| female gate: decisions | 25698 | 28407 | 24890 | 24632 | 25907 ± 1728 |  |
+|   blocked by the male quota | 16576 | 18374 | 15655 | 15839 | 16611 ± 1241 |  |
+|   blocked and would top the list  | 5150 | 5632 | 4475 | 4597 | 4964 ± 534 |  |
+| mate acts (male) / copulated | 1245 / 954 | 1408 / 1127 | 1342 / 1031 | 1190 / 922 | — |  |
+| mate acts (female) / copulated | 582 / 580 | 704 / 700 | 559 / 554 | 546 / 540 | — |  |
+| mate acts ended with partner refusing | 30 | 18 | 24 | 18 | 22.500 ± 5.745 |  |
+```
+
+Pooled over the eight seed-runs, the charges the age limit touched were REDIRECT 150, COALITION 58, FEED 54, TENSION 1,
+COUNTER 1, DEFEND 2 (266 of 18,145 charges and attacks, 1.5%); COALITION, COUNTER and DEFEND charges do not read the
+deterrent, so the limit changed the score of 205 (1.1%), by `guardDeterW` 0.3 (or `guardFeedDeterW` on feeding
+supplants). Qualifying chargers: 333 females, 74 males.
+
+**What each entry decides (with numbers):**
+
+- **`meatEatPerH` sets the energy of every capture and its eating time.** K = 1,149 kcal per capture (1,115 ± 18 eaten
+  per capture, the rest lost to the 0.005-unit floor), eaten at the sourced rate (402 kcal/h), so 172 ± 3 holder-minutes
+  awake and 105 ± 3 min (median) from capture to the last unit; the captor eats 0.62 ± 0.06 of it, 2.2 ± 0.4 shares of
+  0.2 units (230 kcal each) and 4.5 ± 1.1 begs per capture leave 2.3 ± 0.2 eaters and 487 ± 29 kcal per eater; the gut
+  limits 13% of holder ticks. The same K caps the hunt's value (E = min(need, expected share × K); E4m: binding in every
+  valuation). Field context (§2.1): prey are eaten whole, ~10 eaters per kill at Taï (boeschBoesch1989), immatures in 48
+  min and adults in 141; the observer's T-HUN-9 share of adults present who eat is 0.15–0.27 in the S27q runs (field
+  about half). The replacement needs immature colobus masses: not found (§2.1). **Stays.**
+- **`guardMaxAgeY` trims.** Of 4,536 ± 212 charges and attacks per realization, a guardian (always a mother: no adoptive
+  caretaker in eight seed-runs) qualified for the deterrence test in 102 ± 21 (2.2%); the age limit removed it from
+  66.5 ± 9.7, almost all at 12–15-year-olds, and changed the score of 1.1% of all charges. Defence charges are rare
+  (15 ± 4.5, wards 8–15 y) and 77% of them (11.8 ± 3.8) defend a ward that holds its own against its aggressor (assessed
+  odds ≥ 0.5). An odds rule (the ward cannot hold its own: assessed odds < 0.5) would deter 60.5 ± 16 of the qualified
+  charges instead of 35 ± 14 under the age rule: it adds 12–15-year-olds who cannot hold their own (29.8 ± 7) and drops
+  under-12s who can (4.5 ± 5.1). **Replaced (bit 2, §5)**: no new magnitude, and the age at which protection ends
+  follows from the growth curve of the model's strength.
+- **`mateIntervalH` sets the copulation rate.** 2,710 ± 190 copulations per realization; 0.97 ± 0.03 per maximally
+  swollen female-hour of daylight; 0.59 ± 0.01 per adult male–swollen female dyad-hour together in daylight (per-male
+  median of dyadic rates 0.60 ± 0.01). The rate is the quota's: a female's rate is ~0.6 per adult male in her party at
+  every party size (0.97 ± 0.02 with 1–2 males, 2.16 ± 0.10 with 3–4, 3.02 ± 0.07 with 5–6, 3.7 ± 0.4 with ≥ 7); 25 ± 1%
+  of a male's intervals end within 0.1 h of the quota (1.5–1.6 h; median 2.1 h); at the decisions of a male with a
+  swollen female in range the quota blocked 71% (39,620 ± 2,236 of 55,897 ± 3,089), and in 14,191 ± 978 of them the mate
+  offer would have topped every option, against 2,651 ± 146 in which an open offer did: without the quota males would
+  choose to mate about six times as often. The female's choice barely binds (22.5 ± 5.7 mate acts ended by her refusal;
+  591 ± 73 copulations she initiated); night never (no copulation at night); distance only through the offers' range
+  (median 2.5–2.8 m when traced). Against the field (§2, §2.1): the dyadic rate is 10–20× Kanyawara's (0.03–0.064 per
+  hour together, muller2007) and Taï's (~0.03, derived from gomesBoesch2009); the per-female rate is above Taï's 0.14,
+  Kalinzu's 0.43 and Mahale's 0.79 with fewer males present (most maximally swollen female-hours have 0–2 adult males in
+  the party); per adult male, 0.12 copulations per daylight hour (D0b: 0.14 seed 48, 0.09 seed 7; adult males ≥ 15 y,
+  10,548 daylight male-hours per seed, counted by `scratchpad/e4o/malehours.mts` on the same worlds), at the field's level
+  (Kalinzu 0.12, Mahale 0.20–0.22): two errors cancel, males are rarely with a swollen female and copulate at the quota's
+  rate when they are. The quota stands in for what limits copulation in the wild (who is in the party, competition, female
+  choice), not for a physiology: captive males ejaculate hourly (marson1989). The replacement the brief names (a sourced
+  refractory physiology) has no input (§2.1). **Stays.**
+
+## 5. Mechanism: `bodyRules` (one switch, a bit per rule; 0 = today)
+
+**Bit 2: protection follows the ward's own strength** (`src/sim/candidates.ts` `guarded`, `wardHoldsOwn`, `guardianOf`,
+the defence charge; `src/sim/conflict.ts` `coalitionKin`). A ward holds its own against a threat when its assessed
+chance against that animal is at least even: `assessOdds(ward, threat)` ≥ 0.5 (E4h: strength from the growth curve with
+condition and wounds, the supporters charging on each side, and, where the two keep a dominance relationship, the
+remembered Elo relationship as the prior). With the bit:
+- the guardian presence test has no age limit: a seen guardian within `defendRangeM` of its ward, not dominated by the
+  charger, deters the charger (−`guardDeterW`, −`guardFeedDeterW` on feeding supplants) while the ward cannot hold its
+  own against that charger;
+- a guardian's defence charge at its ward's aggressor is offered while the ward cannot hold its own against that
+  aggressor (today: always, for a mother at any age);
+- an adoptive caretaker stays the guardian and coalition kin at any age, as a mother does (what the protection covers is
+  decided threat by threat).
+No new parameter; the even point is the definition of "more likely to lose than to win" (design). `guardMaxAgeY` is not
+read; the ledger switches it out (42 → 41 on S27). Switch 0 hash-identical (S27 seed 48, 2 days, 6005ce06d37e5df1; the
+field pin and the goldens in `pnpm test`). Tests: `tests/sim-body-rules.test.ts`.
+
+**Bits 1 (meat) and 4 (mating) are not defined** (§2.1, §4): no measured immature red colobus mass, and no measured
+refractory physiology of male chimpanzees. A replacement for the mating quota would need a value of copulation in the
+model's own currency (the share of paternity a copulation adds to a cycle's conception), a mechanism beyond this stage.
+
+**Known defects deferred (file:line at this commit; the code under test is the guarding code, which they do not touch):**
+`src/sim/ecology.ts` resolveHunt (`captor.carryingMeat = 1` and the extra captures) overwrites meat a captor already
+holds; `src/sim/execution.ts` share (`o.carryingMeat = clamp(...)`) loses meat above one unit; the female's mate offer
+(`candidates.ts` reproduction, `time - x.lastMate > 0.3`) carries an unregistered 0.3-h quota and `mateTick`
+(`execution.ts` mateTick) a 0.5-h block after a failed approach, both tied to the mating quota.
+
+## 6. Readouts (defined before any arm; the guarding readouts smoke-tested with the switch on, run log)
+
+- Simulation truth from `scripts/e4o-diagnose.ts` (§3 definitions, unchanged; 30 + 60 days, seeds 48 and 7), against
+  D0b–D3b (mean ± SD): guard-qualified charges by age and odds class; the deterred count under the odds rule; charges at
+  12+ y that cannot hold their own (started); defence charges and those for wards that hold their own; the meat and
+  mating readouts (untouched mechanisms, reported).
+- `e-bench --quick` (seeds 48, 7; 30 + 30 days): fitted and held-out sums against S27q and its three re-draws
+  (`judge_vs_reps.py quick custom`, amendment 2; with and without T-HUN-4, T-BRD-1, T-IGE-3); T-SOC-5, T-SOC-9, T-SOC-10;
+  T-HUN-1..9; T-ACT-1..4; prescription count; viability and deaths by cause. `energy-diagnose` (seeds 48, 7; 30 + 30):
+  reserves ÷ store %/day by class (`artifacts/validation/e4o/judge_e4o.py`, the integrator's judge_s27q.py with the arms
+  passed in). `rhythm-metrics` (seeds 48, 7; 30 + 30): adults out of a nest share of the night, T-RHY-5.
+
+## 7. Arms
+
+- **A1** = S27 + `bodyRules` 2. `e-bench --quick` and `energy-diagnose` exactly as the integrator ran S27q
+  (`scratchpad/integrator/s27q.sh`: workers 2 below load 8, else 1), `e4o-diagnose` (30 + 60, both seeds) and
+  `rhythm-metrics`, from a frozen detached checkout of the commit that registers A1's run in §9 (`scratchpad/e4o/run-arm.sh`).
+  Judged against S27q, S27q1, S27q2, S27q3 (bench-run3 28d249e) and D0b–D3b.
+
+## 8. Predictions and kill criterion (A1 against the S27 group; moderate confidence unless stated)
+
+| Quantity | Prediction |
+| --- | --- |
+| Prescription count | 42 → 41 (high) |
+| Defence charges for a ward that holds its own | 0 (by construction, high) |
+| Defence charges | ≤ 6 (D group 15 ± 4.5; the 77% for wards that hold their own go) |
+| Charges started at 12+-year-olds with a qualifying guardian, who cannot hold their own | below the D group's 29.8 ± 7 (low: the deterrent lowers a score by 0.3, it does not forbid) |
+| Charges and attacks; copulations; captures; meat per capture | inside the D group's spread (no other mechanism changes) |
+| T-SOC-5, T-SOC-9, T-SOC-10 | inside the S27q group's spread (low) |
+| Reserves %/day by class | inside the S27q group's spread (high) |
+| Fitted, held-out, held-out without the rare rows | inside noise (\|z\| ≤ 2) |
+| Viability; night (adults out ≤ 3.3% of the night, T-RHY-5 ≤ 0.033) | pass (high) |
+
+**Kill criterion** (the switch stays off and the result is recorded as a null): viability fails (a starvation death the
+reference does not have, or a seed below 80% of its start); held-out without the rare rows worse beyond noise (z > +2);
+the prescription count does not fall by 1; any defence charge for a ward that holds its own (the mechanism does not act);
+night unsafe.
+
+## 9. Run log (each entry written before its run)
+
+- **Smoke, switch on** (to run at the commit that adds this text, before A1): S27 + `bodyRules` 2, seed 48, 1 + 2 days
+  with `e4o-diagnose`: every readout produced, no defence charge for a ward that holds its own.
+- **A1** (as registered in §7): from `scratchpad/e4o/frozen-a1` (the commit that adds this entry), `run-arm.sh frozen-a1
+  A1 '{"bodyRules":2}'`; outputs `frozen-a1/artifacts/validation/e4o/A1*`.

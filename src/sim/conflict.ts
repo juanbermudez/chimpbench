@@ -34,13 +34,14 @@ let lastWinP = -1;
 
 /**
  * Coalition kin of `w` (stage C8, early-life-prereg §2.5): its mother (for weaned offspring only while maternalLevers is on,
- * the ablation switch), its maternal siblings, and an adoptive caretaker while the ward is under guardMaxAgeY.
+ * the ablation switch), its maternal siblings, and an adoptive caretaker while the ward is under guardMaxAgeY. Stage E4o
+ * (bodyRules bit 2): the caretaker stays kin at any age, as the mother does (whether it joins is its own choice).
  */
 export function coalitionKin(o: Chimp, w: Chimp, P: Params): boolean {
   const wx = ix(w);
   if (w.motherId === o.id) return P.maternalLevers === 1 || (!wx.weaned && w.age < 6);
   if (w.motherId > 0 && o.motherId === w.motherId) return true;
-  return wx.caretaker === o.id && w.age < P.guardMaxAgeY && (P.maternalLevers === 1 || (!wx.weaned && w.age < 6));
+  return wx.caretaker === o.id && ((P.bodyRules & 2) !== 0 || w.age < P.guardMaxAgeY) && (P.maternalLevers === 1 || (!wx.weaned && w.age < 6));
 }
 
 /** Nearby bonded individuals are alerted and may join either side (coalitions). [M-H] */
