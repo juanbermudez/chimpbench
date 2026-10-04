@@ -580,5 +580,6 @@ track-e merged once (a1809f0, decision guide on S25) before the final test run: 
 `pnpm test` 808 tests, 807 pass, 0 fail, 1 skipped; `git ls-files data/raw node_modules` empty. Every run's JSON and log
 (S25 and W climb-diagnose with both readout amendments, the S25 re-draws' climb-diagnose, C, Cr, CW, CWr, W, rhythm-metrics
 of C and CW) and the table scripts (`tables.py`, `climbtable.py`, `crowntable.py`, `equations.py`, `target_audit.py`,
-`final.py`, `twodraw.py`) are in the stage's scratch directory (`runs/`); the downloaded source texts in `sources/`
-(copyrighted; never to be committed or published).
+`final.py`, `twodraw.py`) are in `artifacts/validation/e1q/` of this worktree (gitignored), copied from the stage's
+scratch directory; the downloaded source texts stayed in the scratch directory (copyrighted; never to be committed or
+published).
