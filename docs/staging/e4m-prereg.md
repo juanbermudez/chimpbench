@@ -287,3 +287,7 @@ act); bit 2 leaves ≥ 8 stops per patrol or makes patrols never stop (it fails 
   entry (`scratchpad/e4m/frozen-a1`): `e-bench --quick` (workers 2 below load 8, else 1) and `energy-diagnose` (seeds
   48, 7; 30 + 30) exactly as scratchpad/integrator/s21q.sh, then judged with judge_vs_reps.py against S21q, S21q1–q3;
   `e4m-diagnose` 30 + 60 days, seeds 48 then 7, beside them. Outputs `artifacts/validation/e4m/A1*`.
+- **D1–D3** (the spread of the truth readouts on S21; no change of code or readouts): `e4m-diagnose` on S21 with
+  `rngSalt` 1, 2, 3 (the parameters of S21q1–S21q3), 30 + 60 days, seeds 48 then 7, from `scratchpad/e4m/frozen-a1`
+  (2783988: every switch-gated change is off at `leftoverRules` 0, field pin unchanged), after A1's diagnosis finishes;
+  `artifacts/validation/e4m/D{1,2,3}-diag-{48,7}.json`. The arm's truth readouts are then judged against D0–D3 (mean ± SD).
