@@ -1,7 +1,8 @@
 # E2i pre-registration: how fast a chimp walks
 
-Status: skeleton committed at the start of the stage (branch `e2i-walking`, from `track-e` 6871f3d), before any run and
-before any code change. Track E, stage E2i. Rule served: field values of behaviour are targets, never inputs. No speed
+Status: complete (4 October 2026): diagnosis on S21 (quick), one iteration (G1) and a replicate (G1r); `walkGait` 1 a
+provisional keep candidate (§8). Skeleton committed at the start of the stage (branch `e2i-walking`, from `track-e`
+6871f3d), before any run and before any code change. Track E, stage E2i. Rule served: field values of behaviour are targets, never inputs. No speed
 is set from a day range or a travel share, or tuned to reach them.
 
 ## 0. The problem
@@ -417,3 +418,76 @@ G1 re-drawn with `rngSalt` 1 (the behaviour-free re-draw lever), bench and energ
 code (0d97ab3), to see whether the two unpredicted single-row changes (T-SOC-3, T-FOOD-10) replicate before the
 integrator's confirm. Expected (low confidence): T-FOOD-10 stays above the reference's range (a mechanism, above);
 T-SOC-3 inside the reference's range if it was a draw, below it again if it is the walk.
+
+**G1r results** (frozen 0d97ab3, clean; printed by the judge and `e2i_table.py` from the JSON):
+
+```
+quick, reference custom (4 runs), rows counted in all runs: fitted 15, held-out 15
+  fitted             (15 rows) ref 1.23, 2.15, 0.84, 1.36 (mean 1.39, sd 0.55; used 0.69) | G1.json: 1.74, Δ +0.35, z +0.4 (inside noise) | G1r.json: 1.02, Δ -0.37, z -0.5 (inside noise)
+  held-out           (15 rows) ref 5.77, 3.47, 4.78, 4.47 (mean 4.63, sd 0.95; used 1.26) | G1.json: 4.20, Δ -0.43, z -0.3 (inside noise) | G1r.json: 5.50, Δ +0.88, z +0.6 (inside noise)
+  held-out w/o rare  (15 rows) ref 5.77, 3.47, 4.78, 4.47 (mean 4.63, sd 0.95; used 0.95) | G1.json: 4.20, Δ -0.43, z -0.4 (inside noise) | G1r.json: 5.50, Δ +0.88, z +0.8 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-FOOD-10 held-out ref 1.06±0.21 | G1.json 1.70 (fail) | G1r.json 1.27 (fail)
+   T-SOC-3   held-out ref 0.01±0.02 | G1.json 0.41 (fail) | G1r.json 0.00 (pass)
+
+| Readout | ref runs | ref mean ± SD | G1.json | G1r.json |
+| --- | --- | --- | --- | --- |
+| T-RNG-4 | 1.487 / 1.722 / 1.572 / 1.569 | 1.587 ± 0.098 | 2.435 (z +8.7) | 2.026 (z +4.5) |
+| T-RNG-5 | 0.929 / 0.806 / 1.188 / 1.089 | 1.003 ± 0.169 | 0.692 (z -1.8) | 1.222 (z +1.3) |
+| T-ACT-1 | 0.378 / 0.369 / 0.374 / 0.371 | 0.373 ± 0.004 | 0.387 (z +3.7) | 0.383 (z +2.7) |
+| T-ACT-2 | 0.151 / 0.156 / 0.162 / 0.172 | 0.160 ± 0.009 | 0.111 (z -5.7) | 0.112 (z -5.6) |
+| T-ACT-3 | 0.094 / 0.092 / 0.094 / 0.090 | 0.092 ± 0.002 | 0.087 (z -2.4) | 0.097 (z +2.1) |
+| T-ACT-4 | 0.391 / 0.358 / 0.372 / 0.368 | 0.372 ± 0.014 | 0.392 (z +1.5) | 0.434 (z +4.5) |
+| T-FOOD-4 | 7.796 / 7.909 / 8.039 / 8.533 | 8.069 ± 0.325 | 9.397 (z +4.1) | 8.787 (z +2.2) |
+| T-PTY-1 | 4.017 / 4.123 / 4.385 / 4.318 | 4.211 ± 0.170 | 4.339 (z +0.8) | 4.511 (z +1.8) |
+| T-ACT-2 male | 0.160 / 0.175 / 0.190 / 0.183 | 0.177 ± 0.013 | 0.130 (z -3.6) | 0.115 (z -4.7) |
+| T-ACT-2 female | 0.144 / 0.142 / 0.139 / 0.163 | 0.147 ± 0.011 | 0.096 (z -4.8) | 0.109 (z -3.6) |
+| true day range km, adult male | 1.87 / 1.83 / 1.89 / 2.02 | 1.90 ± 0.08 | 2.68 (z +9.8) | 2.82 (z +11.7) |
+| true day range km, female, other | 1.33 / 1.41 / 1.29 / 1.57 | 1.40 ± 0.12 | 1.91 (z +4.1) | 1.98 (z +4.7) |
+| true day range km, female, lactating | 1.66 / 1.70 / 1.75 / 1.71 | 1.70 ± 0.04 | 2.41 (z +19.0) | 2.56 (z +23.0) |
+| true day range km, juvenile 5–12 y | 1.80 / 1.96 / 1.87 / 2.03 | 1.92 ± 0.10 | 2.86 (z +9.1) | 3.15 (z +12.0) |
+| true day range km, infant 2–5 y | 0.27 / 0.28 / 0.30 / 0.30 | 0.29 ± 0.01 | 0.42 (z +9.9) | 0.43 (z +10.4) |
+| reserves %/day, adult male | 0.011 / -0.005 / -0.007 / 0.013 | 0.003 ± 0.010 | 0.010 (z +0.7) | 0.003 (z -0.0) |
+| reserves %/day, female, other | 0.011 / 0.011 / -0.020 / 0.007 | 0.002 ± 0.015 | 0.005 (z +0.2) | 0.025 (z +1.5) |
+| reserves %/day, female, lactating | 0.026 / 0.014 / -0.030 / 0.021 | 0.008 ± 0.025 | 0.010 (z +0.1) | 0.002 (z -0.2) |
+| reserves %/day, juvenile 5–12 y | -0.001 / 0.020 / -0.040 / -0.008 | -0.007 ± 0.025 | 0.005 (z +0.5) | -0.057 (z -2.0) |
+| reserves %/day, infant 2–5 y | 0.040 / 0.010 / -0.012 / 0.014 | 0.013 ± 0.021 | 0.011 (z -0.1) | 0.006 (z -0.3) |
+| reserves %/day, infant 0.5–2 y | 0.013 / 0.004 / -0.034 / 0.037 | 0.005 ± 0.029 | 0.005 (z -0.0) | -0.019 (z -0.8) |
+| eating min, adult male | 229 / 228 / 229 / 233 | 230 ± 2 | 235 (z +2.3) | 236 (z +3.1) |
+| eating min, female, lactating | 299 / 302 / 306 / 300 | 302 ± 3 | 322 (z +6.7) | 317 (z +5.0) |
+| fitted sum | 1.48 / 2.87 / 0.84 / 1.61 | 1.70 ± 0.85 | 1.99 (z +0.3) | 2.61 (z +1.1) |
+| held-out sum | 7.13 / 3.47 / 4.78 / 4.92 | 5.08 ± 1.52 | 5.41 (z +0.2) | 6.15 (z +0.7) |
+| prescriptions | 45 / 45 / 45 / 45 | 45 ± 0 | 44 | 44 |
+| viability | True / True / True / True | | True (deaths 0, starvation 0) | True (deaths 0, starvation 0) |
+| git | e7d8d8e d0 / e7d8d8e d0 / e7d8d8e d0 / e7d8d8e d0 | | 0d97ab3 d0 | 0d97ab3 d0 |
+```
+
+Against the registered expectation: T-SOC-3 is back in its band (0.63; per seed 0.76 and 0.50): G1's 0.31 was a draw.
+T-FOOD-10 0.58, the top of the reference's range (0.50–0.59): G1's 0.67 was partly a draw; the direction (earlier first
+departures) is not established. Also a draw: G1's T-RNG-5 0.69 (G1r 1.22). Replicated in both: T-ACT-2 0.111–0.112
+(below its band; males 0.115–0.130, females 0.096–0.109), T-RNG-4 up (2.03–2.43 km, inside its band), true day ranges
++36–64% for every class (males 2.68–2.82 km), T-ACT-4 up (0.392–0.434), T-FOOD-4 up (8.8–9.4), eating up (mothers +15–20
+min), every sum inside noise, viable, 44 prescriptions. Reserves: every class inside ±2 SD in both runs except juveniles
+in G1r (−0.057 %/day, z −2.0; G1 +0.005).
+
+## 8. Stage verdict
+
+**`walkGait` 1 is a provisional keep candidate** (quick, two realizations against S21's four): it passes the keep rule in
+both (viable, held-out inside noise, night safe in G1, 45 → 44 prescriptions) and removes the field copy that set every
+walk and every trip's time. Recommended: a 5-seed confirm on the stack. What it changes, replicated: animals walk at the
+speed their body sets (0.67–0.79 m/s while moving instead of 0.29–0.32), so the same decisions take less time; trips cost
+less of a crown's rate, animals walk 40–60% farther a day (T-RNG-4 1.6 → 2.0–2.4 km, inside its band) and visit more
+trees, and the time freed goes to feeding and rest. Costs: the travel share falls below its band (T-ACT-2 0.16 → 0.11);
+juveniles' reserves fell in one of the two runs.
+
+**What the speed copy set** (diagnosis, §2.1): every walk at 0.29–0.33 m/s, so 83–87% of adults' travel time was moving
+slowly (the field's pauses walked); movement phases 2.4–2.8 times slower than in the source of the copy itself
+(batesByrne2009) with the field's number of halts; walking 9–24% of a chosen trip's time, deciding the best tree option
+in 11% of decisions.
+
+**Open problems.** (1) The travel share below its band: the model's phases still run at 1.1–1.25 km/h against Sonso's
+1.9–2.2 with more and longer halts (males 8.0 a day of 81 min against 6.5 of 60), and the field's travel share counts
+movement within the canopy (villioth2025), which the model does not have; neither is a reason to slow walking. (2)
+Climbing at the stylized `climbMps` 0.22 m/s (0.5 m/s cited for wild chimpanzees, secondary) is now 16–19% of adults'
+travel time: the next speed to derive from the body. (3) Walking on fallback food at 0.3 × the walking speed (a design
+multiplier) doubled with it (deferred, §6).
