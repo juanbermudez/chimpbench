@@ -1902,3 +1902,13 @@ spend 34–65% of their time in trees but 8–18% of their locomotion is arborea
 Table 1 after Doran & Hunt, [H]). New keys: kozmaPontzer2021, taylor1972, minetti2002, krief2012, sarringhaus2022. Not
 verified: pontzerWrangham2004's measured distances, Mermier et al. 1997 beyond its citation, Pontzer 2016, Venkataraman
 et al. 2013, Crompton et al. 2010, a Kibale feeding height, a measured wild climbing speed.
+
+## Addendum: E5f leaving together (4 October 2026)
+
+Same text as research.md "Addendum: E5f leaving together": gruberZuberbuhler2013 re-read in full (PMC3783376 via NCBI
+BioC): 33 focal animals of the Sonso community (15 males aged 8–49, 18 females aged 12–47), 07:00–16:00 follows; a
+travel event starts when a non-locomotion activity ends and at least 10 m of locomotion follow; the initiation phase
+"typically lasted for about one minute"; recruitment "happened almost instantly"; persistence = 9 vocal events (of 92
+recorded more than once on a day) re-launched to the same audience in the same travel event, mean 3.80 min, range 0–13
+(start to start, between the two hoo events); not reported how often a failed initiator left alone. Use: a target readout
+and a direction, never an input. No new keys.
