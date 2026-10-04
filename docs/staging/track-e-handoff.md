@@ -14,12 +14,14 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 14:45; deploy held by the user).** Agent: **E0b** (`e0b-hidden-timers`, from 6980f48: an honest
-  count of literal timers and quotas in src/sim; no simulations). Integrator confirms against the S27 group (S27 at
-  28d249e + S27c1–S27c3, `bench-run3/artifacts/validation/e/s28/`): **S28** (`redecideValue` 2; done, awaiting the group),
-  **S29** (`departValue` 2; bench-run4 at 87cdda4, `s29/`), **S30** (`bodyRules` 1; bench-run at 6980f48, `s30/`); judge
-  `integrator/judge_s27group.py`. E3f, E5f and E4o merged. Guide on S27 (41 after the counting fix); hosted copy in
-  `site` 4f19ace still shows 42 (refresh with the next stack); nothing deployed.
+- **Running now (4 October 15:20; deploy held by the user).** Agents: **E0b** (`e0b-hidden-timers`: an honest count of
+  literal timers and quotas; no simulations) and **E3g** (`e3g-redecide-trips`, from d8417b5: why re-deciding adds trips
+  and hunts; reference the S28 quick group `bench-run3/artifacts/validation/e/s27q/S28q*`, re-draws running via
+  `integrator/s28q-group.sh`). Integrator: **S30** (`bodyRules` 1; bench-run at 6980f48, `s30/`). Done against the S27
+  group: **S28 passes with costs** (39; fitted z +2.4 via hunting 57/yr; males +1.0 km; reserves of other females,
+  juveniles, young infants fall faster), **S29 passes cleanly** (39; every sum inside noise; parties 4.05). Next: the
+  combined confirm S31 = S27 + `departValue` 2 + `bodyRules` 1 (if S30 passes), then S32 = S31 + `redecideValue` 2.
+  Guide on S27 (41); hosted copy in `site` 4f19ace still shows 42; nothing deployed.
 - **Counting fix merged (1d177f8):** "never fitted" now reads as a denial; `ledgerWildCostMult` (identity, E1g) is design.
   Today's model 134, S27 41, S28 39 (replaced 93 unchanged). Earlier counts in the docs stay as written.
 - **S27 is the best integrated candidate (42)** (e-stack2-confirm.md "S26 and S27 results"; S25 + `crownMove` 1 +
