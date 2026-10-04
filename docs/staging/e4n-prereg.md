@@ -369,3 +369,140 @@ implicate. Known defects deferred (not fixed here; file:line at b84009f):
   `e-bench --quick` (A1rq) and `e-bench --seeds 48,7 --burn-in 30 --days 60` (A1rh). Reading: the reserves of A1r (if no
   outbreak, or with the dead mothers' infants named) against the S22q group; A1's and A1r's sums and hunt rows both
   reported. No other change.
+
+#### A1 result: truth (b500cf8 frozen; the diagnosis tool, seeds 48 and 7, 30 + 60 days; `diag_table.py D0 D0r A1`)
+
+Tool checks: value = raw at all 187 draws (maximum difference 0); truth hunts per seed equal e-bench's (A1-48 17 and A1-7
+26; A1h [17, 26]).
+
+| readout (simulation truth, seeds 48 and 7 pooled; 30-day burn-in + 60 days) | D0 | D0r | A1 |
+| --- | --- | --- | --- |
+| community-days | 360 | 360 | 360 |
+| encounters (adult males) per community-day | 5.21 | 5.64 | 5.54 |
+| hunt impulses per community-day | 2.76 | 3.40 | 2.96 |
+| impulses by adult males in view (2 / 3 / 4 / 5 / 6+) | 646 / 230 / 78 / 34 / 6 | 711 / 321 / 117 / 49 / 27 | 802 / 181 / 50 / 24 / 9 |
+| impulses with the lead offered | 286 (0.288) | 361 (0.295) | 187 (0.175) |
+| not offered: no capture expected (fewer than 3 males) / timer energy ≤ 0.35 / rain / an ongoing hunt / no need / other | 621 / 77 / 10 / 0 / 0 / 0 | 733 / 126 / 5 / 0 / 0 / 0 | 737 / 122 / 17 / 2 / 1 / 0 |
+| hunt draws (lead on the menu at an RG choice) | 286 | 361 | 187 |
+| hunt draws won (hunts led) | 3 | 3 | 43 |
+| hunts started (truth); per community-year | 3; 3.04 | 3; 3.04 | 43; 43.60 |
+| hunts the temperature 0.164 would have started (Σ softmax probability); per community-year | 17.14; 17.38 | 20.34; 20.62 | 38.65; 39.19 |
+| hunt draws by males in view (3 / 4 / 5 / 6+) | 178 / 68 / 34 / 6 | 187 / 104 / 45 / 25 | 124 / 35 / 23 / 5 |
+| hunt's expected share of a carcass (captures ÷ n): mean | 0.298 | 0.291 | 0.301 |
+| expected meat E (kcal): mean (10% / 90%) | 342 (230 / 383) | 333 (230 / 383) | 346 (230 / 383) |
+| E capped by the need (share of draws) | 0.003 | 0.014 | 0.011 |
+| time T (h): approach / chase / eating | 0.069 / 0.133 / 0.850 | 0.066 / 0.133 / 0.829 | 0.067 / 0.133 / 0.861 |
+| meat energy per hour of the hunt E ÷ T (kcal/h) | 323 | 322 | 325 |
+| his ripe-fruit rate R (kcal/h); meat-eating rate (kcal/h) | 435; 402 | 435; 402 | 434; 402 |
+| r = E ÷ T ÷ R: mean (10% / 90%); ceiling R_meat ÷ R | 0.743 (0.691 / 0.781); 0.925 | 0.741 (0.692 / 0.778); 0.925 | 0.748 (0.688 / 0.784); 0.926 |
+| hunger h; drive 1.6 h + 0.1 (mean) | 0.264; 0.523 | 0.291; 0.565 | 0.304; 0.843 |
+| hunt's value = drive × r: mean (10% / 90%) | 0.390 (0.161 / 0.598) | 0.420 (0.213 / 0.642) | 0.631 (0.362 / 1.231) |
+| best other option's published score: mean (10% / 90%) | 0.927 (0.430 / 1.497) | 0.994 (0.482 / 1.520) | 0.998 (0.430 / 1.557) |
+| margin (best other − hunt), median; hunt rank in the menu, median; menu size | 0.437; 4; 7.5 | 0.505; 4; 7.5 | 0.285; 3; 7.3 |
+| leaders' state at draws: reserves ÷ store, foregut fill, need (kcal) | -0.009 / 0.488 / 1308 | -0.009 / 0.442 / 1340 | -0.009 / 0.451 / 1276 |
+| lost draws the hunt would win with (a) r at its ceiling / (b) drive 1.7 (h = 1) / (c) E not capped by the need / (d) value 1 | 0.032 / 0.795 / 0.000 / 0.615 | 0.036 / 0.729 / 0.000 / 0.545 | 0.146 / 0.653 / 0.000 / 0.417 |
+
+A1: options that won the 144 lost draws (share; mean published score): patrol 0.24 (1.26), travel: joined trip 0.23 (1.35), travel: own trip 0.13 (0.64), nest 0.11 (1.52), feed: crown 0.06 (0.81), rest 0.06 (0.49), groom 0.03 (0.97), guard 0.03 (0.96), pant-grunt 0.03 (0.77), mate 0.02 (0.91), submit 0.01 (1.71), display 0.01 (0.57), call 0.01 (0.48), feed: fallback 0.01 (0.49), follow: party 0.01 (0.74); food options (crown, fallback, trips) 0.43
+
+A1: hunts resolved 43, success 26/43, captures 26, kills per success 1.00, hunters in the pursuit 2.86 (listed 3.05), captures per hunter in the pursuit 0.174, leader's males in view {3: 34, 4: 5, 5: 4}
+   meat kcal per animal-day by class: adolescentMale 5.1, adultMale 16.1, femaleLactating 0.3, femaleOther 0.0, infant 0.0, juvenile 0.6; adult males' meat: hunters 25841 kcal, other adult males 250 kcal
+   adult males' daylight (mean of seeds): forage 0.329, rest 0.300, travel 0.139, nest 0.087, groom 0.079, guard 0.038, patrol 0.010, drink 0.004
+
+A1: share of hunt draws the hunt would top (published score above the best other's) at m × its value: ×1: 0.225, ×1.25: 0.342, ×1.5: 0.476, ×2: 0.658, ×2.5: 0.786, ×3: 0.861; won in the run 0.230; under the temperature 0.207; offered draws per community-day 0.52
+
+State at the draws (from the same JSON): draws the hunt won came from males with a fuller foregut (fill 0.741 against
+0.364 at the draws it lost), the same hunger readout (0.287 against 0.309) and a larger deficit ratio (φ 0.715 against
+0.390), at midday (mean hour 12.4 against 10.3); by adult males in view the hunt won 34 of 124 draws with 3, 5 of 35 with
+4, 4 of 23 with 5, 0 of 5 with 6.
+
+#### A1 result: quick sums and rows (e-bench `--quick`, b500cf8, `git.dirty` 0; against S22q and S22q1–3; `e4n_judge.py`)
+
+```
+  S22q: ea794ff dirty 0 prescriptions 43 viability pass deaths 48: 0 {}; 7: 0 {}
+  S22q1: ea794ff dirty 0 prescriptions 43 viability pass deaths 48: 0 {}; 7: 0 {}
+  S22q2: ea794ff dirty 0 prescriptions 43 viability pass deaths 48: 0 {}; 7: 0 {}
+  S22q3: ea794ff dirty 0 prescriptions 43 viability pass deaths 48: 0 {}; 7: 0 {}
+  A1q: b500cf8 dirty 0 prescriptions 43 viability pass deaths 48: 3 {'respiratory illness (outbreak)': 3}; 7: 0 {}
+
+quick, reference custom (4 runs), rows counted in all runs: fitted 14, held-out 10
+  fitted             (14 rows) ref 1.59, 1.20, 1.69, 1.59 (mean 1.52, sd 0.22; used 0.69) | A1q.json: 1.28, Δ -0.24, z -0.3 (inside noise)
+  held-out           (10 rows) ref 3.40, 2.84, 4.08, 3.33 (mean 3.41, sd 0.51; used 1.26) | A1q.json: 3.85, Δ +0.44, z +0.3 (inside noise)
+  held-out w/o rare  (10 rows) ref 3.40, 2.84, 4.08, 3.33 (mean 3.41, sd 0.51; used 0.51) | A1q.json: 3.85, Δ +0.44, z +0.8 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+
+
+| Reserves ÷ store, % per day (OLS) | S22q runs | S22q mean ± SD | A1q |
+| --- | --- | --- | --- |
+| adult male | +0.009 / -0.000 / +0.010 / +0.004 | +0.006 ± 0.005 | +0.013 (z +1.4) |
+| female, other | +0.003 / +0.019 / +0.007 / -0.010 | +0.005 ± 0.012 | -0.023 (z -2.1) |
+| female, lactating | +0.006 / -0.003 / -0.013 / +0.014 | +0.001 ± 0.012 | -0.010 (z -0.8) |
+| juvenile 5–12 y | +0.004 / -0.009 / +0.009 / +0.015 | +0.005 ± 0.010 | +0.017 (z +1.0) |
+| infant 2–5 y | +0.016 / -0.002 / -0.033 / +0.007 | -0.003 ± 0.021 | -0.152 (z -6.2) |
+| infant 0.5–2 y | -0.006 / +0.010 / +0.014 / +0.022 | +0.010 ± 0.012 | -0.247 (z -19.4) |
+| infant < 0.5 y | +0.000 / +0.000 / +0.000 / +0.000 | +0.000 ± 0.000 | +0.000 (z +nan) |
+
+| Ground km / eating min / fruit share (energy-diagnose) | S22q runs | S22q mean ± SD | A1q |
+| --- | --- | --- | --- |
+| adult male: groundKm | 1.646 / 2.030 / 1.761 / 1.826 | 1.816 ± 0.161 | 1.917 (z +0.6) |
+| adult male: eatingMin | 226.228 / 228.795 / 229.469 / 227.908 | 228.100 ± 1.402 | 231.748 (z +2.3) |
+| adult male: fruitShare | 0.906 / 0.903 / 0.893 / 0.914 | 0.904 ± 0.009 | 0.873 (z -3.2) |
+| female, other: groundKm | 1.071 / 1.483 / 1.370 / 1.454 | 1.345 ± 0.189 | 1.505 (z +0.8) |
+| female, other: eatingMin | 229.294 / 231.502 / 229.376 / 231.298 | 230.367 ± 1.195 | 237.283 (z +5.2) |
+| female, other: fruitShare | 0.591 / 0.665 / 0.653 / 0.643 | 0.638 ± 0.033 | 0.613 (z -0.7) |
+| female, lactating: groundKm | 1.632 / 1.679 / 1.698 / 1.628 | 1.659 ± 0.035 | 1.851 (z +5.0) |
+| female, lactating: eatingMin | 299.514 / 296.185 / 304.076 / 293.369 | 298.286 ± 4.605 | 303.655 (z +1.0) |
+| female, lactating: fruitShare | 0.653 / 0.667 / 0.632 / 0.691 | 0.661 ± 0.025 | 0.645 (z -0.6) |
+| juvenile 5–12 y: groundKm | 1.734 / 1.982 / 1.758 / 1.820 | 1.824 ± 0.112 | 2.058 (z +1.9) |
+| juvenile 5–12 y: eatingMin | 282.357 / 276.603 / 278.817 / 274.942 | 278.180 ± 3.206 | 277.690 (z -0.1) |
+| juvenile 5–12 y: fruitShare | 0.843 / 0.870 / 0.844 / 0.870 | 0.857 ± 0.015 | 0.881 (z +1.4) |
+
+| Row (pooled) | S22q runs | S22q mean ± SD | A1q |
+| --- | --- | --- | --- |
+| T-ACT-1 | 0.374 / 0.369 / 0.372 / 0.378 | 0.373 ± 0.004 | 0.379 (z +1.4) |
+| T-ACT-2 | 0.152 / 0.166 / 0.153 / 0.163 | 0.158 ± 0.007 | 0.165 (z +0.9) |
+| T-ACT-3 | 0.094 / 0.094 / 0.107 / 0.093 | 0.097 ± 0.007 | 0.095 (z -0.3) |
+| T-ACT-4 | 0.409 / 0.334 / 0.389 / 0.322 | 0.363 ± 0.042 | 0.381 (z +0.4) |
+| T-PTY-1 | 3.661 / 4.088 / 4.532 / 3.995 | 4.069 ± 0.359 | 4.315 (z +0.6) |
+| T-RNG-4 | 1.607 / 1.719 / 1.324 / 1.502 | 1.538 ± 0.168 | 1.448 (z -0.5) |
+| T-HUN-1 | 0.000 / 4.033 / 0.000 / 0.000 | 1.008 ± 2.017 | 18.149 (z +7.6) |
+| T-HUN-2 | — / 1.000 / — / — | 1.000 ± — | 0.625 (z +nan) |
+| T-HUN-3 | 0.000 / 0.007 / 0.000 / 0.000 | 0.002 ± 0.003 | 0.018 (z +4.2) |
+| T-FOOD-2 | 0.776 / 0.814 / 0.791 / 0.791 | 0.793 ± 0.016 | 0.765 (z -1.6) |
+| T-FOOD-10 | 0.497 / 0.530 / 0.436 / 0.464 | 0.482 ± 0.041 | 0.464 (z -0.4) |
+| T-IGE-1 | 8.982 / 3.032 / 1.532 / 9.240 | 5.697 ± 3.992 | 7.400 (z +0.4) |
+| T-PAT-1 | 0.077 / 0.154 / 0.039 / 0.193 | 0.116 ± 0.070 | 0.115 (z -0.0) |
+| T-PAT-6 | — / 0.200 / 0.167 / 0.143 | 0.170 ± 0.029 | 0.200 (z +0.9) |
+| T-SOC-5 | 0.070 / 0.605 / 0.530 / 0.263 | 0.367 ± 0.247 | 0.483 (z +0.4) |
+| T-SOC-9 | -0.057 / 0.143 / 0.080 / 0.062 | 0.057 ± 0.083 | 0.177 (z +1.3) |
+```
+
+The reserve and walking columns of A1q are not interpretable as the switch's effect: its seed-48 world drew a
+respiratory outbreak on day 12 of the window (an adult male and two lactating females died), and the dead mothers'
+infants (0.5–2 y and 2–5 y) then lost reserves (the pooled infant trajectory falls from day 12: −0.029 → −0.094 of the
+store). A1r (registered above) re-draws it.
+
+#### A1 result: hunt rows at 30 + 60 days (e-bench, b500cf8, `git.dirty` 0; `report.py hunt`, `hunt_sum.py`)
+
+| row | H0 | H0r | A1h |
+| --- | --- | --- | --- |
+| commit (dirty) | ef07577 (0) | ef07577 (0) | b500cf8 (0) |
+| seeds; burn-in + days | 48,7; 30 + 60 | 48,7; 30 + 60 | 48,7; 30 + 60 |
+| truth hunts per seed (scorecard counts); per community-year | [0, 3]; 3.0 | [1, 2]; 3.0 | [17, 26]; 43.6 |
+| hunts detected by the observer per seed | [0, 2] | [1, 0] | [10, 6] |
+| T-HUN-1 pooled (per seed) [verdict] | 3.025 (0, 6.050) [inconclusive] | 2.022 (2.017, 2.028) [inconclusive] | 20.222 (18.250, 22.182) [pass] |
+| T-HUN-2 pooled (per seed) [verdict] | 0 (—, 0) [fail] | 1 (1, —) [fail] | 0.625 (0.600, 0.667) [pass] |
+| T-HUN-3 pooled (per seed) [verdict] | 0.004 (0, 0.008) [fail] | 0.004 (0.006, 0) [fail] | 0.017 (0.008, 0.026) [fail] |
+| T-HUN-4 pooled (per seed) [verdict] | 6.071 (—, 4472.659) [fail] | 1.291 (1.239, —) [pass] | 1.760 (0.000, 10.191) [pass] |
+| T-HUN-7 pooled (per seed) [verdict] | — (—, —) [insufficient] | 1 (1, —) [fail] | 1 (1, 1) [fail] |
+| T-HUN-8 pooled (per seed) [verdict] | — (—, —) [insufficient] | 1 (1, —) [fail] | 1 (1, 1) [fail] |
+| colobus encounters per 100 follow-h (T-HUN-3 part) | 8.45 | 9.00 | 7.77 |
+| prescriptions | 43 | 43 | 43 |
+| viability; deaths by cause | pass; 48: 0 {}; 7: 0 {} | pass; 48: 1 {'illness': 1}; 7: 0 {} | pass; 48: 8 {'respiratory illness (outbreak)': 7, 'orphaned infant, did not survive without its mother': 1}; 7: 0 {} |
+
+```
+rows scored in every run: ['T-HUN-1', 'T-HUN-2', 'T-HUN-3'] ; not scored somewhere: ['T-HUN-7']
+  H0: T-HUN-1 0.099, T-HUN-2 1.667, T-HUN-3 0.131; sum 1.897
+  H0r: T-HUN-1 0.149, T-HUN-2 0.667, T-HUN-3 0.132; sum 0.948
+  A1h: T-HUN-1 0.000, T-HUN-2 0.000, T-HUN-3 0.095; sum 0.095
+reference mean (first two runs) 1.422
+```
