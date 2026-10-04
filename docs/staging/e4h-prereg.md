@@ -673,3 +673,10 @@ T-HUN-1: S9 37.896 / 43.641 / 39.891 / 53.852 | A1.json 29.595 (inconclusive) | 
 | reserves %/day, juvenile 5–12 y | -0.029 / 0.001 / -0.013 / -0.015 | -0.014 ± 0.012 | -0.034 | 0.002 | -0.014 | -0.028 |
 | deaths (energy run) | {} / {'respiratory illness (outbreak)': 2} / {} / {} | — | {} | {} | {} | {} |
 ```
+
+### 8.5 Final checks (after `git merge --no-ff track-e` at 1002bb4: conflicts in research.md, e-sources.md, params.gen.ts and the switch list resolved as handoff §6)
+
+`gen-params --check` clean (996 entries); `tsc --noEmit -p .` clean; `pnpm test` 733 tests, 732 pass, 0 fail, 1 skipped;
+prescriptions after the merge: S9 74, S9 + `contestAssess` 69; switch 0 hash-identical (S9 seed 48 day 8 422bb3edd2db147e);
+`git ls-files data/raw node_modules` empty. Arm outputs (JSON, tables, scripts, the source helpers' notes) in
+`artifacts/validation/e4h/` (gitignored, local; the PDFs among the source notes are copyrighted and stay local).
