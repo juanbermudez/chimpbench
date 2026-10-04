@@ -269,3 +269,151 @@ G1 diagnosis names (for example a wait or a catch-up that was sized for the old 
   pontzerWrangham2004 (secondary, [L]). Out of this stage's scope; listed for a climbing stage.
 - Observer mapping: villioth2025 scores movement within the canopy as travel; the model has no within-crown movement
   (feeding is scored feed), so the model's travel share omits that part (no correction made).
+
+## 7. Results, iteration 1 (G1 = S21 + `walkGait` 1; frozen checkout 0d97ab3, clean; quick, seeds 48 and 7; printed by `report.sh` and `walktab.py` from the JSON in the stage's scratch directory, `runs/`)
+
+The reference group is the integrator's four S21 quick realizations (S21q, S21q1–3 by `rngSalt`; bench-run2 e7d8d8e,
+clean); the walk-diagnose rows of the reference are this stage's runs of the same four parameter sets (frozen 93c4379,
+the S21 code). The rare rows (T-HUN-4, T-BRD-1, T-IGE-3) were not scored in these quick runs, so "without" equals "with".
+
+```
+== judge (e-noise amendment 2; rare rows per amendment 3)
+quick, reference custom (4 runs), rows counted in all runs: fitted 15, held-out 15
+  fitted             (15 rows) ref 1.23, 2.15, 0.84, 1.36 (mean 1.39, sd 0.55; used 0.69) | G1.json: 1.74, Δ +0.35, z +0.4 (inside noise)
+  held-out           (15 rows) ref 5.77, 3.47, 4.78, 4.47 (mean 4.63, sd 0.95; used 1.26) | G1.json: 4.20, Δ -0.43, z -0.3 (inside noise)
+  held-out w/o rare  (15 rows) ref 5.77, 3.47, 4.78, 4.47 (mean 4.63, sd 0.95; used 0.95) | G1.json: 4.20, Δ -0.43, z -0.4 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-FOOD-10 held-out ref 1.06±0.21 | G1.json 1.70 (fail)
+   T-SOC-3   held-out ref 0.01±0.02 | G1.json 0.41 (fail)
+
+== fixed table
+| Readout | ref runs | ref mean ± SD | G1.json |
+| --- | --- | --- | --- |
+| T-RNG-4 | 1.487 / 1.722 / 1.572 / 1.569 | 1.587 ± 0.098 | 2.435 (z +8.7) |
+| T-RNG-5 | 0.929 / 0.806 / 1.188 / 1.089 | 1.003 ± 0.169 | 0.692 (z -1.8) |
+| T-ACT-1 | 0.378 / 0.369 / 0.374 / 0.371 | 0.373 ± 0.004 | 0.387 (z +3.7) |
+| T-ACT-2 | 0.151 / 0.156 / 0.162 / 0.172 | 0.160 ± 0.009 | 0.111 (z -5.7) |
+| T-ACT-3 | 0.094 / 0.092 / 0.094 / 0.090 | 0.092 ± 0.002 | 0.087 (z -2.4) |
+| T-ACT-4 | 0.391 / 0.358 / 0.372 / 0.368 | 0.372 ± 0.014 | 0.392 (z +1.5) |
+| T-FOOD-4 | 7.796 / 7.909 / 8.039 / 8.533 | 8.069 ± 0.325 | 9.397 (z +4.1) |
+| T-PTY-1 | 4.017 / 4.123 / 4.385 / 4.318 | 4.211 ± 0.170 | 4.339 (z +0.8) |
+| T-ACT-2 male | 0.160 / 0.175 / 0.190 / 0.183 | 0.177 ± 0.013 | 0.130 (z -3.6) |
+| T-ACT-2 female | 0.144 / 0.142 / 0.139 / 0.163 | 0.147 ± 0.011 | 0.096 (z -4.8) |
+| true day range km, adult male | 1.87 / 1.83 / 1.89 / 2.02 | 1.90 ± 0.08 | 2.68 (z +9.8) |
+| true day range km, female, other | 1.33 / 1.41 / 1.29 / 1.57 | 1.40 ± 0.12 | 1.91 (z +4.1) |
+| true day range km, female, lactating | 1.66 / 1.70 / 1.75 / 1.71 | 1.70 ± 0.04 | 2.41 (z +19.0) |
+| true day range km, juvenile 5–12 y | 1.80 / 1.96 / 1.87 / 2.03 | 1.92 ± 0.10 | 2.86 (z +9.1) |
+| true day range km, infant 2–5 y | 0.27 / 0.28 / 0.30 / 0.30 | 0.29 ± 0.01 | 0.42 (z +9.9) |
+| reserves %/day, adult male | 0.011 / -0.005 / -0.007 / 0.013 | 0.003 ± 0.010 | 0.010 (z +0.7) |
+| reserves %/day, female, other | 0.011 / 0.011 / -0.020 / 0.007 | 0.002 ± 0.015 | 0.005 (z +0.2) |
+| reserves %/day, female, lactating | 0.026 / 0.014 / -0.030 / 0.021 | 0.008 ± 0.025 | 0.010 (z +0.1) |
+| reserves %/day, juvenile 5–12 y | -0.001 / 0.020 / -0.040 / -0.008 | -0.007 ± 0.025 | 0.005 (z +0.5) |
+| reserves %/day, infant 2–5 y | 0.040 / 0.010 / -0.012 / 0.014 | 0.013 ± 0.021 | 0.011 (z -0.1) |
+| reserves %/day, infant 0.5–2 y | 0.013 / 0.004 / -0.034 / 0.037 | 0.005 ± 0.029 | 0.005 (z -0.0) |
+| eating min, adult male | 229 / 228 / 229 / 233 | 230 ± 2 | 235 (z +2.3) |
+| eating min, female, lactating | 299 / 302 / 306 / 300 | 302 ± 3 | 322 (z +6.7) |
+| fitted sum | 1.48 / 2.87 / 0.84 / 1.61 | 1.70 ± 0.85 | 1.99 (z +0.3) |
+| held-out sum | 7.13 / 3.47 / 4.78 / 4.92 | 5.08 ± 1.52 | 5.41 (z +0.2) |
+| prescriptions | 45 / 45 / 45 / 45 | 45 ± 0 | 44 |
+| viability | True / True / True / True | | True (deaths 0, starvation 0) |
+| git | e7d8d8e d0 / e7d8d8e d0 / e7d8d8e d0 / e7d8d8e d0 | | 0d97ab3 d0 |
+
+| walk-diagnose readout | ref runs | ref mean ± SD | G1-walk.json |
+| --- | --- | --- | --- |
+| moving speed in trips m/s, adult male | 0.316 / 0.314 / 0.313 / 0.312 | 0.314 ± 0.002 | 0.787 (z +298.1) |
+| moving speed in trips m/s, female, other | 0.291 / 0.300 / 0.295 / 0.299 | 0.296 ± 0.004 | 0.667 (z +97.4) |
+| moving speed in trips m/s, female, lactating | 0.325 / 0.324 / 0.325 / 0.324 | 0.324 ± 0.000 | 0.692 (z +1022.4) |
+| moving speed in trips m/s, juvenile 5–12 y | 0.290 / 0.291 / 0.290 / 0.290 | 0.290 ± 0.000 | 0.707 (z +1178.9) |
+| phase speed km/h, adult male | 0.80 / 0.78 / 0.78 / 0.79 | 0.79 ± 0.01 | 1.25 (z +36.8) |
+| halts ≥ 20 min per day, adult male | 6.5 / 6.8 / 6.8 / 6.9 | 6.7 ± 0.2 | 8.0 (z +7.8) |
+| phase speed km/h, female, lactating | 0.79 / 0.79 / 0.79 / 0.79 | 0.79 ± 0.00 | 1.13 (z +98.7) |
+| halts ≥ 20 min per day, female, lactating | 5.4 / 5.5 / 5.5 / 5.4 | 5.5 ± 0.1 | 6.4 (z +14.1) |
+| phase speed km/h, female, other | 0.77 / 0.76 / 0.75 / 0.76 | 0.76 ± 0.01 | 1.16 (z +55.3) |
+| halts ≥ 20 min per day, female, other | 5.2 / 5.6 / 5.5 / 5.8 | 5.5 ± 0.2 | 6.2 (z +3.1) |
+| travel share in truth, adult male | 0.148 / 0.146 / 0.151 / 0.156 | 0.150 ± 0.004 | 0.098 (z -12.4) |
+| moving share of travel, adult male | 0.83 / 0.82 / 0.82 / 0.83 | 0.82 ± 0.00 | 0.71 (z -24.8) |
+| travel share in truth, female, other | 0.104 / 0.109 / 0.102 / 0.116 | 0.108 ± 0.006 | 0.077 (z -4.9) |
+| moving share of travel, female, other | 0.87 / 0.85 / 0.84 / 0.84 | 0.85 ± 0.01 | 0.75 (z -8.4) |
+| travel share in truth, female, lactating | 0.110 / 0.114 / 0.115 / 0.112 | 0.113 ± 0.002 | 0.083 (z -12.6) |
+| moving share of travel, female, lactating | 0.85 / 0.85 / 0.86 / 0.86 | 0.86 ± 0.01 | 0.79 (z -12.0) |
+| walk-diagnose day range km, adult male | 1.87 / 1.83 / 1.89 / 2.02 | 1.90 ± 0.08 | 2.68 (z +9.8) |
+| walk-diagnose day range km, female, other | 1.33 / 1.41 / 1.29 / 1.57 | 1.40 ± 0.12 | 1.91 (z +4.1) |
+| walk-diagnose day range km, female, lactating | 1.65 / 1.70 / 1.75 / 1.71 | 1.70 ± 0.04 | 2.41 (z +19.0) |
+| walk-diagnose day range km, juvenile 5–12 y | 1.80 / 1.96 / 1.87 / 2.03 | 1.92 ± 0.10 | 2.85 (z +9.1) |
+
+== night
+G1-rhythm.json: adults out of a nest 2.42% of night; T-RHY-5 0.0182; night deaths 0; deaths 0
+
+== prescriptions
+G1.json 44 git 0d97ab3 dirty 0
+
+## speeds by act (all classes): in-act ticks, moving/climb/still shares, speed while moving mean/p10/p50/p90, movement factor
+own trip         n= 179285 mov 0.84 clb 0.04 still 0.12 | v 0.733 p10 0.638 p50 0.713 p90 0.838 f 0.917 | why departure wait 0.94, party wait 0.06
+joined trip      n= 172825 mov 0.92 clb 0.08 still 0.00 | v 0.732 p10 0.613 p50 0.738 p90 0.863 f 0.903 | why departure wait 1.00
+caller           n=  89617 mov 0.96 clb 0.04 still 0.00 | v 0.714 p10 0.588 p50 0.738 p90 0.863 f 0.904 | why at goal 1.00
+home             n=     61 mov 1.00 clb 0.00 still 0.00 | v 0.832 p10 0.838 p50 0.838 p90 0.838 f 0.946 | why 
+party follow     n=   3182 mov 0.60 clb 0.07 still 0.34 | v 0.722 p10 0.537 p50 0.763 p90 0.863 f 0.901 | why beside leader (≤ 5 m) 1.00, other 0.00
+care follow      n= 107907 mov 0.16 clb 0.15 still 0.69 | v 0.503 p10 0.013 p50 0.663 p90 0.812 f 0.908 | why beside leader (≤ 5 m) 1.00
+crown approach   n=  69642 mov 0.09 clb 0.91 still 0.00 | v 0.716 p10 0.613 p50 0.713 p90 0.838 f 0.885 | why 
+in crown         n=1893601 mov 0.00 clb 0.01 still 0.99 | v 0.000 p10 — p50 — p90 — f 0.000 | why other 1.00
+fallback         n= 588858 mov 0.09 clb 0.01 still 0.90 | v 0.083 p10 0.038 p50 0.038 p90 0.213 f 0.886 | why other 1.00
+drink            n=  78294 mov 0.47 clb 0.05 still 0.48 | v 0.729 p10 0.613 p50 0.713 p90 0.863 f 0.923 | why other 1.00
+nest             n=6526782 mov 0.00 clb 0.00 still 1.00 | v 0.598 p10 0.488 p50 0.613 p90 0.663 f 0.867 | why other 1.00
+patrol           n=  15298 mov 0.84 clb 0.00 still 0.16 | v 0.689 p10 0.463 p50 0.663 p90 1.038 f 0.915 | why listening stop 0.93, other 0.07
+hunt             n=    204 mov 0.11 clb 0.35 still 0.54 | v 1.790 p10 1.613 p50 1.913 p90 1.963 f 0.895 | why other 1.00
+flee             n=   2476 mov 0.66 clb 0.34 still 0.00 | v 1.013 p10 0.812 p50 0.913 p90 1.388 f 0.904 | why 
+pair approach    n=  14985 mov 0.09 clb 0.86 still 0.05 | v 0.609 p10 0.088 p50 0.738 p90 1.012 f 0.917 | why other 1.00
+run              n=   3244 mov 0.03 clb 0.96 still 0.01 | v 0.746 p10 0.013 p50 0.388 p90 1.938 f 0.909 | why other 1.00
+social other     n= 145505 mov 0.06 clb 0.14 still 0.80 | v 0.453 p10 0.088 p50 0.562 p90 0.888 f 0.917 | why other 1.00
+still acts       n=3320021 mov 0.03 clb 0.00 still 0.97 | v 0.075 p10 0.038 p50 0.038 p90 0.138 f 0.908 | why other 1.00
+
+## movement phases (batesByrne2009 Table 1: males 357 m 1.94 km/h; lactating 277 m 1.91; receptive 319 m 2.21; halts/day males 6.5, lactating 4.5; halt min 60 / 95)
+adult male         phases 5728 dist 273 m speed mean 1.25 km/h (pooled 1.27, median 1.18) halts/day 8.0 halt min 81 days 840
+female, lactating  phases 2474 dist 231 m speed mean 1.13 km/h (pooled 1.16, median 1.04) halts/day 6.4 halt min 105 days 480
+female, other      phases 1908 dist 234 m speed mean 1.16 km/h (pooled 1.19, median 1.11) halts/day 6.2 halt min 108 days 379
+female, pregnant   phases 643 dist 250 m speed mean 1.20 km/h (pooled 1.28, median 1.13) halts/day 5.2 halt min 130 days 161
+```
+
+S21q's own rhythm run (one realization, frozen 93c4379, same settings) for the departure readouts: adults out of a nest
+2.01% of the night; departures before sunrise 0.46 of adult departures (males 0.25, lactating 0.73, other females 0.55;
+median +8 min after sunrise), against G1's 0.53 (0.31, 0.85, 0.60; median −5 min).
+
+**Against the predictions (§5).**
+1. Prescriptions 44: held.
+2. Moving speed in trips: males 0.787 m/s (0.74–0.84), other females 0.667 and lactating 0.692 (0.62–0.74), juveniles
+   0.707 (0.55–0.72): held.
+3. Movement phases: males 1.25 km/h, other females 1.16, lactating 1.13 (predicted 1.2–1.7: held for males, missed narrowly
+   for females); below batesByrne2009's 1.91–2.21: held. Halts of 20 min or more rose (males 6.7 → 8.0 a day, the field's
+   6.5; lactating 5.5 → 6.4, the field's 4.5): the faster the walk, the more of a phase the model's fixed stops take
+   (climbing at the stylized `climbMps` 0.22 m/s is now 16–19% of adults' travel time; the departure wait two thirds of
+   the standing).
+4. Travel share in truth: males 0.150 → 0.098 (0.07–0.11): held; T-ACT-2 0.160 → 0.111 (0.08–0.12, below the band's
+   floor): held.
+5. T-RNG-4 1.59 → 2.43 km (1.7–2.4): missed by 0.03 (into the band's middle; the reference sat at its floor); true day
+   ranges +36–49% for every adult class (5–40%): missed high (males 1.90 → 2.68 km, lactating 1.70 → 2.41, other females
+   1.40 → 1.91, juveniles 1.92 → 2.86).
+6. T-RNG-5 1.00 → 0.69 (inside the spread: z −1.8; distance 1.16 → 0.31, toward its band 0.3–0.6): held. T-ACT-4 +0.020
+   (0.00–0.05): held. T-ACT-1 +0.014 (±0.02): held. T-ACT-3 0.087 (0.08–0.12): held. T-PTY-1 inside the spread: held.
+   T-FOOD-4 +16% (0–25%): held.
+7. Reserves of every class within ±1 SD of the reference: held. Nursing mothers eat 20 min more (302 → 322 min).
+8. Night safety 2.42% (≤ 3.3%) and viability (no death): held.
+9. Fitted sum +0.35 (z +0.4, inside noise; T-ACT-2's distance 0.09 included) and held-out −0.43 (z −0.4, inside noise):
+   held.
+
+Rows beyond 2 SD of the reference: T-FOOD-10 (departures before sunrise 0.67 against 0.50–0.59; distance 1.06 → 1.70):
+every trip's rate rises when its walk takes less time, so at dawn the first trip beats the nest earlier (males leave 16
+min earlier); and T-SOC-3 (grooming reciprocity among adult males 0.31 against 0.58–0.82, both seeds low: 0.29 and
+0.32), a cost the stage did not predict and does not explain (more trips a day, +16% trees, may cut bouts before they are
+returned; not diagnosed). Fruit share 0.80 (the reference's 0.76–0.80).
+
+**Kill criterion (§5): none holds** (viable, held-out inside noise and lower, night safe, 44 prescriptions). G1 passes the
+keep rule in quick mode: a provisional keep candidate. The diagnosis of G1 names no defect sized for the old speed (the
+stops that grew are the fixed stops: climbing at a stylized speed, the departure wait, listening stops), so no
+mechanism iteration is registered (§5: never a speed).
+
+### 7.1 Replicate G1r (registered 4 October 2026 before its run; not an iteration)
+
+G1 re-drawn with `rngSalt` 1 (the behaviour-free re-draw lever), bench and energy-diagnose only, same settings and frozen
+code (0d97ab3), to see whether the two unpredicted single-row changes (T-SOC-3, T-FOOD-10) replicate before the
+integrator's confirm. Expected (low confidence): T-FOOD-10 stays above the reference's range (a mechanism, above);
+T-SOC-3 inside the reference's range if it was a draw, below it again if it is the walk.
