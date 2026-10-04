@@ -306,6 +306,141 @@ E2j found single quick draws of the per-class energy lines straying beyond S22's
 same frozen code), each draw's sums are judged by e-noise.md amendment 2 as registered, and the kill criterion's energy
 line is judged on the two-draw mean: z = (mean − S25 mean) ÷ (SD × √(1/2 + 1/4)), SD of S25's four runs.
 
+## 6. Results, iteration 1, first draws (C, CW; frozen dd0e1a3, clean; quick, seeds 48 and 7; printed by `final.py`, `climbtable.py`, `crowntable.py`, `target_audit.py` from the JSON in the stage's scratch directory, `runs/`)
+
+S25's climbing readouts are this stage's climb-diagnose runs of the integrator's four S25 parameter sets (S25q at
+95786a8, S25q1–3 at dd0e1a3, switch 0: the same simulation as the integrator's runs, whose books they reproduce).
+
+```
+| readout | S25 mean ± SD (4 runs) | W | C | CW |
+| ascents/day, males | 12.8 ± 0.9 (n 4) | 15.1 (+2.2) | 12.7 (-0.2) | 14.8 (+2.0) |
+| ascents/day, nursing mothers | 9.9 ± 0.4 (n 4) | 11.9 (+4.3) | 9.8 (-0.3) | 11.3 (+3.1) |
+| metres climbed/day, males | 121 ± 8 (n 4) | 144 (+2.5) | 114 (-0.8) | 131 (+1.1) |
+| metres climbed/day, nursing mothers | 95 ± 4 (n 4) | 115 (+4.4) | 89 (-1.4) | 102 (+1.4) |
+| metres climbed/day, infants 0.5–2 y | 72 ± 6 (n 4) | 91 (+2.9) | 47 (-4.0) | 64 (-1.3) |
+| climbs back into the crown just left, males /day | 3.82 ± 0.33 (n 4) | 4.02 (+0.6) | 2.56 (-3.4) | 2.77 (-2.8) |
+| climb kcal/day, males | 55.5 ± 3.7 (n 4) | 65.7 (+2.5) | 52.2 (-0.8) | 60.1 (+1.1) |
+| climb kcal/day, nursing mothers | 34.9 ± 1.5 (n 4) | 42.1 (+4.4) | 32.6 (-1.4) | 37.3 (+1.4) |
+| walk ÷ climb energy, males | 1.21 ± 0.05 (n 4) | 1.49 (+4.7) | 1.37 (+2.7) | 1.73 (+8.6) |
+| walk ÷ climb energy, nursing mothers | 1.52 ± 0.12 (n 4) | 1.82 (+2.3) | 1.67 (+1.1) | 1.99 (+3.6) |
+| true day range km, males | 1.84 ± 0.07 (n 4) | 2.70 (+11.1) | 1.97 (+1.7) | 2.87 (+13.3) |
+| true day range km, nursing mothers | 1.71 ± 0.10 (n 4) | 2.54 (+7.3) | 1.76 (+0.4) | 2.44 (+6.4) |
+| T-RNG-4 | 1.52 ± 0.10 (n 4) | 2.23 (+6.3) | 1.69 (+1.5) | 2.42 (+8.0) |
+| T-RNG-5 | 1.11 ± 0.17 (n 4) | 1.01 (-0.5) | 0.86 (-1.4) | 0.90 (-1.1) |
+| T-ACT-1 | 0.371 ± 0.007 (n 4) | 0.387 (+2.0) | 0.377 (+0.8) | 0.378 (+0.9) |
+| T-ACT-2 | 0.163 ± 0.005 (n 4) | 0.108 (-10.4) | 0.157 (-1.1) | 0.116 (-8.9) |
+| T-ACT-3 | 0.100 ± 0.005 (n 4) | 0.105 (+1.0) | 0.094 (-1.2) | 0.099 (-0.1) |
+| T-ACT-4 | 0.395 ± 0.013 (n 4) | 0.397 (+0.2) | 0.395 (-0.0) | 0.418 (+1.6) |
+| T-FOOD-10 | 0.499 ± 0.032 (n 4) | 0.613 (+3.2) | 0.538 (+1.1) | 0.599 (+2.8) |
+| reserves %/day, nursing mothers | -0.010 ± 0.009 (n 4) | +0.004 (+1.4) | -0.005 (+0.5) | +0.005 (+1.5) |
+| reserves %/day, juveniles 5–12 y | -0.000 ± 0.019 (n 4) | +0.016 (+0.8) | -0.021 (-1.0) | -0.015 (-0.7) |
+| reserves %/day, infants 2–5 y | -0.051 ± 0.068 (n 4) | +0.002 (+0.7) | -0.002 (+0.7) | +0.007 (+0.8) |
+| reserves %/day, infants 0.5–2 y | -0.068 ± 0.120 (n 4) | +0.008 (+0.6) | -0.010 (+0.4) | +0.012 (+0.6) |
+| reserves %/day, adult males | +0.008 ± 0.004 (n 4) | +0.002 (-1.2) | +0.004 (-0.7) | -0.002 (-2.1) |
+| prescriptions | 43 ± 0 (n 4) | 42 | 43 | 42 |
+
+W: 398a5c3 dirty 0 viability pass deaths 0 starvation 0 causes [{}, {}]
+C: dd0e1a3 dirty 0 viability pass deaths 0 starvation 0 causes [{}, {}]
+CW: dd0e1a3 dirty 0 viability pass deaths 0 starvation 0 causes [{}, {}]
+quick, reference custom (4 runs), rows counted in all runs: fitted 16, held-out 12
+  fitted             (16 rows) ref 1.53, 3.49, 1.48, 1.10 (mean 1.90, sd 1.08; used 1.08) | W.json: 1.12, Δ -0.78, z -0.6 (inside noise) | C.json: 1.32, Δ -0.58, z -0.5 (inside noise) | CW.json: 1.50, Δ -0.40, z -0.3 (inside noise)
+  held-out           (12 rows) ref 4.19, 6.38, 2.89, 5.92 (mean 4.84, sd 1.61; used 1.61) | W.json: 5.07, Δ +0.23, z +0.1 (inside noise) | C.json: 3.25, Δ -1.60, z -0.9 (inside noise) | CW.json: 4.27, Δ -0.57, z -0.3 (inside noise)
+  held-out w/o rare  (11 rows) ref 4.19, 3.71, 2.89, 3.85 (mean 3.66, sd 0.55; used 0.55) | W.json: 3.99, Δ +0.34, z +0.5 (inside noise) | C.json: 3.25, Δ -0.41, z -0.7 (inside noise) | CW.json: 3.45, Δ -0.21, z -0.3 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-FOOD-10 held-out ref 0.90±0.14 | W.json 1.42 (fail) | C.json 1.08 (fail) | CW.json 1.36 (fail)
+   T-HUN-4   held-out ref 1.19±1.39 | W.json 1.07 (fail) | C.json 0.00 (pass) | CW.json 0.83 (fail)
+   T-SOC-3   held-out ref 0.01±0.02 | W.json 0.06 (fail) | C.json 0.24 (fail) | CW.json 0.00 (pass)
+```
+
+Climbs by the crown they end in against the crown the descent left (S25 and W: §2.3's runs; C and CW: this iteration):
+
+```
+| class | run | metres climbed/day | from a perch | same crown: per day (m/day) | touching crown: per day (m/day) | other crown: per day (m/day) | no crown: per day (m/day) | same crown, by act (m/day) |
+| adult male | S25 | 125 | 6 | 3.95 (39; 32%) | 0.40 (4; 3%) | 6.74 (71; 57%) | 0.37 (3; 2%) | crown approach 19, social other 10, pair approach 6, nest 5, still acts 0 |
+| adult male | C | 114 | 9 | 2.56 (24; 21%) | 0.26 (3; 3%) | 6.87 (74; 65%) | 0.53 (4; 4%) | crown approach 16, social other 6, pair approach 2, nest 1, still acts 0 |
+| adult male | W | 144 | 7 | 4.02 (39; 27%) | 0.24 (3; 2%) | 8.57 (91; 63%) | 0.48 (4; 3%) | crown approach 17, social other 12, pair approach 6, nest 4, still acts 0 |
+| adult male | CW | 131 | 9 | 2.77 (25; 19%) | 0.32 (4; 3%) | 8.46 (89; 68%) | 0.58 (4; 3%) | crown approach 15, social other 8, pair approach 2, nest 1, still acts 0 |
+| female, other | S25 | 99 | 3 | 3.22 (33; 33%) | 0.48 (5; 5%) | 5.34 (57; 57%) | 0.11 (1; 1%) | crown approach 13, social other 10, nest 5, pair approach 3, party follow 2 |
+| female, other | C | 85 | 5 | 1.94 (19; 22%) | 0.26 (3; 3%) | 5.34 (57; 68%) | 0.10 (1; 1%) | crown approach 9, social other 5, nest 2, party follow 2, pair approach 1 |
+| female, other | W | 108 | 3 | 3.07 (30; 28%) | 0.15 (2; 2%) | 6.80 (72; 66%) | 0.08 (1; 1%) | social other 11, crown approach 10, nest 5, pair approach 2, party follow 1 |
+| female, other | CW | 88 | 6 | 1.69 (16; 18%) | 0.20 (2; 3%) | 6.08 (63; 72%) | 0.06 (0; 1%) | crown approach 8, social other 4, nest 2, party follow 2, pair approach 1 |
+| female, lactating | S25 | 94 | 3 | 2.88 (29; 31%) | 0.20 (2; 3%) | 5.48 (58; 62%) | 0.20 (1; 1%) | crown approach 13, social other 7, nest 5, pair approach 3, still acts 0 |
+| female, lactating | C | 89 | 5 | 2.20 (22; 25%) | 0.19 (2; 2%) | 5.36 (58; 66%) | 0.24 (2; 2%) | crown approach 13, social other 4, pair approach 3, nest 2, still acts 0 |
+| female, lactating | W | 115 | 3 | 3.23 (32; 28%) | 0.17 (2; 2%) | 6.91 (75; 65%) | 0.30 (2; 2%) | crown approach 12, social other 11, nest 5, pair approach 3, still acts 1 |
+| female, lactating | CW | 102 | 5 | 1.85 (18; 18%) | 0.18 (2; 2%) | 6.84 (74; 72%) | 0.34 (2; 2%) | crown approach 10, social other 4, nest 2, pair approach 2, still acts 0 |
+| juvenile 5–12 y | S25 | 136 | 6 | 4.56 (46; 34%) | 0.66 (7; 5%) | 6.35 (65; 48%) | 1.28 (12; 9%) | crown approach 19, pair approach 13, social other 7, nest 4, still acts 2 |
+| juvenile 5–12 y | C | 117 | 11 | 2.04 (20; 17%) | 0.33 (4; 3%) | 6.62 (71; 61%) | 1.13 (11; 10%) | crown approach 12, pair approach 3, social other 2, nest 1, care follow 1 |
+| juvenile 5–12 y | W | 166 | 6 | 5.46 (56; 34%) | 0.33 (4; 2%) | 7.88 (84; 50%) | 1.70 (16; 10%) | crown approach 24, pair approach 14, social other 9, nest 5, still acts 2 |
+| juvenile 5–12 y | CW | 131 | 11 | 2.06 (20; 15%) | 0.41 (4; 3%) | 7.64 (78; 60%) | 1.88 (18; 14%) | crown approach 11, pair approach 3, social other 3, care follow 2, nest 1 |
+| infant 2–5 y | S25 | 86 | 5 | 4.08 (41; 47%) | 0.37 (4; 4%) | 1.17 (12; 13%) | 2.69 (25; 29%) | care follow 27, pair approach 7, crown approach 3, social other 1, still acts 1 |
+| infant 2–5 y | C | 82 | 14 | 2.78 (28; 35%) | 0.40 (4; 5%) | 1.05 (10; 13%) | 2.62 (25; 31%) | care follow 21, pair approach 4, crown approach 1, social other 1, still acts 1 |
+| infant 2–5 y | W | 117 | 7 | 4.70 (47; 40%) | 0.43 (5; 4%) | 1.12 (11; 9%) | 4.87 (48; 41%) | care follow 30, pair approach 13, still acts 1, crown approach 1, social other 1 |
+| infant 2–5 y | CW | 101 | 14 | 2.05 (20; 20%) | 0.42 (4; 4%) | 1.07 (10; 9%) | 5.60 (53; 52%) | care follow 13, pair approach 5, crown approach 1, social other 1, still acts 0 |
+| infant 0.5–2 y | S25 | 71 | 4 | 3.74 (35; 49%) | 0.41 (4; 5%) | 0.87 (9; 12%) | 2.39 (19; 27%) | care follow 22, pair approach 11, crown approach 1, social other 1, still acts 0 |
+| infant 0.5–2 y | C | 47 | 8 | 1.85 (17; 36%) | 0.20 (2; 4%) | 0.64 (6; 13%) | 1.55 (14; 30%) | care follow 12, pair approach 4, social other 1, still acts 0, crown approach 0 |
+| infant 0.5–2 y | W | 91 | 6 | 4.27 (41; 46%) | 0.28 (3; 3%) | 1.00 (9; 10%) | 3.63 (32; 35%) | care follow 26, pair approach 15, social other 0, crown approach 0, still acts 0 |
+| infant 0.5–2 y | CW | 64 | 9 | 1.66 (15; 23%) | 0.23 (2; 4%) | 0.52 (5; 7%) | 3.59 (33; 52%) | care follow 8, pair approach 6, social other 0, still acts 0, crown approach 0 |
+```
+
+```
+| readout (per animal-day) | males: S25 → C → W → CW | other females: S25 → C → W → CW | nursing mothers: S25 → C → W → CW | juveniles 5–12 y: S25 → C → W → CW | infants 2–5 y: S25 → C → W → CW | infants 0.5–2 y: S25 → C → W → CW |
+| ascents/day | 13.1 → 12.7 → 15.1 → 14.8 | 10.3 → 9.6 → 11.4 → 10.2 | 9.8 → 9.8 → 11.9 → 11.3 | 15.1 → 14.1 → 17.6 → 16.1 | 9.3 → 9.5 → 12.6 → 12.2 | 8.5 → 6.2 → 10.6 → 8.5 |
+| metres per ascent | 9.5 → 9.0 → 9.5 → 8.9 | 9.7 → 8.9 → 9.4 → 8.6 | 9.5 → 9.1 → 9.7 → 9.0 | 9.0 → 8.3 → 9.4 → 8.1 | 9.2 → 8.6 → 9.3 → 8.3 | 8.4 → 7.6 → 8.6 → 7.5 |
+| metres climbed/day | 125 → 114 → 144 → 131 | 99 → 85 → 108 → 88 | 94 → 89 → 115 → 102 | 136 → 117 → 166 → 131 | 86 → 82 → 117 → 101 | 71 → 47 → 91 → 64 |
+| metres descended/day | 125 → 114 → 144 → 131 | 99 → 85 → 108 → 88 | 93 → 89 → 115 → 102 | 136 → 117 → 166 → 131 | 58 → 54 → 83 → 65 | 57 → 32 → 71 → 46 |
+| climb kcal/day (own) | 57.0 → 52.2 → 65.7 → 60.1 | 36.4 → 31.1 → 39.7 → 32.3 | 34.3 → 32.6 → 42.1 → 37.3 | 43.4 → 37.3 → 52.5 → 41.6 | 11.5 → 10.9 → 15.8 → 13.6 | 6.0 → 3.8 → 7.6 → 5.4 |
+| kcal per ascent | 4.36 → 4.12 → 4.34 → 4.05 | 3.55 → 3.25 → 3.47 → 3.16 | 3.50 → 3.33 → 3.55 → 3.30 | 2.86 → 2.65 → 2.98 → 2.58 | 1.24 → 1.16 → 1.26 → 1.11 | 0.70 → 0.61 → 0.72 → 0.64 |
+| J per kg per metre climbed | 49.05 → 49.05 → 49.05 → 49.05 | 49.05 → 49.05 → 49.05 → 49.05 | 49.05 → 49.05 → 49.05 → 49.05 | 49.05 → 49.05 → 49.05 → 49.05 | 49.05 → 49.05 → 49.05 → 49.05 | 49.05 → 49.05 → 49.05 → 49.05 |
+| walk kcal/day (own) | 69.5 → 71.4 → 97.9 → 104.0 | 43.9 → 39.5 → 58.8 → 58.5 | 56.9 → 54.5 → 76.5 → 74.2 | 63.5 → 62.3 → 84.7 → 84.7 | 7.4 → 3.5 → 6.2 → 5.9 | 3.1 → 1.4 → 2.8 → 2.9 |
+| walk ÷ climb, own | 1.22 → 1.37 → 1.49 → 1.73 | 1.21 → 1.27 → 1.48 → 1.81 | 1.66 → 1.67 → 1.82 → 1.99 | 1.47 → 1.67 → 1.61 → 2.04 | 0.64 → 0.32 → 0.39 → 0.44 | 0.52 → 0.37 → 0.37 → 0.54 |
+| walk ÷ climb, with carrying | 1.22 → 1.37 → 1.49 → 1.73 | 1.21 → 1.27 → 1.48 → 1.81 | 1.87 → 1.88 → 2.07 → 2.27 | 1.47 → 1.67 → 1.61 → 2.04 | 0.64 → 0.32 → 0.39 → 0.44 | 0.52 → 0.37 → 0.37 → 0.54 |
+| crown visits/day | 9.7 → 9.8 → 11.0 → 11.0 | 7.7 → 7.4 → 8.7 → 8.4 | 8.1 → 8.2 → 9.2 → 9.2 | 10.2 → 10.6 → 11.1 → 11.4 | 5.1 → 4.9 → 5.0 → 5.2 | 1.5 → 1.0 → 1.2 → 1.1 |
+| crown-approach ascents per crown visit | 0.87 → 0.86 → 0.90 → 0.89 | 0.84 → 0.80 → 0.85 → 0.80 | 0.84 → 0.81 → 0.87 → 0.85 | 0.82 → 0.74 → 0.86 → 0.74 | 0.23 → 0.14 → 0.15 → 0.13 | 0.36 → 0.14 → 0.17 → 0.16 |
+| metres/day: to crowns | 89 → 88 → 104 → 101 | 68 → 62 → 76 → 68 | 70 → 70 → 86 → 83 | 84 → 79 → 101 → 85 | 11 → 5 → 6 → 5 | 5 → 1 → 2 → 1 |
+| metres/day: to nests | 10 → 6 → 10 → 6 | 11 → 8 → 11 → 8 | 10 → 8 → 9 → 7 | 10 → 7 → 11 → 7 | 1 → 0 → 0 → 0 | 0 → 0 → 0 → 0 |
+| metres/day: behind a carer | 0 → 0 → 0 → 0 | 0 → 0 → 0 → 0 | 0 → 0 → 0 → 0 | 5 → 6 → 12 → 12 | 61 → 64 → 89 → 82 | 48 → 36 → 66 → 49 |
+| metres/day: to a partner or other social | 24 → 17 → 28 → 22 | 20 → 14 → 20 → 11 | 12 → 9 → 18 → 9 | 33 → 21 → 37 → 23 | 11 → 9 → 19 → 11 | 16 → 9 → 21 → 12 |
+| metres/day: other acts | 2 → 3 → 2 → 2 | 1 → 1 → 1 → 1 | 1 → 1 → 2 → 2 | 5 → 3 → 5 → 3 | 3 → 2 → 3 → 2 | 1 → 1 → 2 → 1 |
+| share of metres climbed after a ground gap < 10 m | 0.36 → 0.25 → 0.28 → 0.21 | 0.38 → 0.25 → 0.31 → 0.20 | 0.33 → 0.27 → 0.30 → 0.20 | 0.44 → 0.28 → 0.41 → 0.25 | 0.75 → 0.65 → 0.70 → 0.59 | 0.78 → 0.65 → 0.75 → 0.65 |
+| climbing min/day (up + down) | 21.9 → 20.1 → 25.2 → 23.3 | 18.3 → 16.0 → 20.0 → 16.6 | 16.6 → 16.0 → 20.2 → 18.2 | 26.8 → 23.1 → 32.5 → 26.0 | 19.4 → 18.1 → 25.9 → 22.4 | 20.1 → 12.8 → 24.9 → 17.9 |
+```
+
+The target decomposition (§2.4) on C, then CW:
+
+```
+| class (target: sex, km) | model walk ÷ climb | log share: cost per metre (model ÷ target) | metres climbed (model ÷ target-implied) | walking (model ÷ target) | same-crown metres (share) | metres without them ÷ target-implied |
+| adult male (2.4 km) | 1.37 | 3.66 (65%) | 1.81 (30%) | 0.91 (+5%) | 24 (21%) | 1.42 |
+| female, other (2.0 km) | 1.27 | 3.43 (60%) | 1.61 (23%) | 0.70 (+17%) | 19 (22%) | 1.25 |
+| female, lactating (2.0 km) | 1.67 | 3.43 (69%) | 1.69 (29%) | 0.97 (+2%) | 22 (25%) | 1.28 |
+| class (target: sex, km) | model walk ÷ climb | log share: cost per metre (model ÷ target) | metres climbed (model ÷ target-implied) | walking (model ÷ target) | same-crown metres (share) | metres without them ÷ target-implied |
+| adult male (2.4 km) | 1.73 | 3.66 (74%) | 2.08 (42%) | 1.32 (-16%) | 25 (19%) | 1.68 |
+| female, other (2.0 km) | 1.81 | 3.43 (72%) | 1.67 (30%) | 1.04 (-2%) | 16 (18%) | 1.37 |
+| female, lactating (2.0 km) | 1.99 | 3.43 (76%) | 1.93 (41%) | 1.32 (-17%) | 18 (18%) | 1.58 |
+```
+
+**Against the predictions (§5), first draws.**
+1. Prescriptions 43 (C) and 42 (CW), viable (no death), every sum inside noise (fitted z −0.5 and −0.3; held-out −0.9 and
+   −0.3; without the rare rows −0.7 and −0.3): held.
+2. Climbs back into the crown just left at most half of S25's (W's) for adults and juveniles: held for juveniles (4.56 →
+   2.04 a day; W 5.46 → CW 2.06) and other females on CW (3.07 → 1.69); **missed** for males (3.95 → 2.56; 4.02 → 2.77)
+   and nursing mothers (2.88 → 2.20; 3.23 → 1.85). What remains follows time on the ground (mean 12–43 min between the
+   descent and the climb back for adults' crown approaches): the animal came down for a goal on the ground (a trip,
+   fallback food, a companion below) and decided to return: decisions, not the movement rule.
+3. Metres climbed −15 to −35% for adults and juveniles: **missed** on C (males −9%, other females −14%, nursing mothers −5%,
+   juveniles −14%), held on CW against W (−9%, −19%, −11%, −21%); climbing kcal (energy-diagnose) males 55.5 ± 3.7 → 52.2,
+   nursing mothers 34.9 ± 1.5 → 32.6. Walking ÷ climbing for adults 1.4–2.3 on C: males 1.37 (missed by 0.03), nursing
+   mothers 1.67 (held); CW 1.73 and 1.99. Infants 0.5–2 y climb a third less (72 ± 6 → 47 m/day; CW 64).
+4. Reserves within or above S25's spread on C: held for every class (z −1.0 to +0.7). CW's nursing mothers', juveniles' and
+   infants' trends within 2 SD of S25's mean: held in this draw (z +1.5, −0.7, +0.8, +0.6); adult males −2.1 (not in the
+   kill line).
+5. T-RNG-4, T-ACT-1, T-ACT-3, T-ACT-4 within S25's spread and T-ACT-2 at most 0.02 lower on C: held (1.69 at the spread's
+   top, 0.377, 0.094, 0.395; T-ACT-2 0.157).
+
+Not predicted: infants' climbs from and to points outside every crown ("no crown") stay (C) or grow (CW: 52% of infants'
+metres climbed): an infant that stops 1 m from a mother at a small crown's edge, or that climbs while still up to 3 m
+from her (moveTo climbs once within 3 m of the goal), perches outside the crown's radius, so the crown rule does not apply
+to its next move (§4: the crown is the canopy radius, no reach added).
+
 ## 4. Samples of the field rows the arms are scored on
 
 As opened for E2i and E2j (e2i-prereg.md §3; e2j-prereg.md §2; the source lists in data/targets.json checked on 4 October
