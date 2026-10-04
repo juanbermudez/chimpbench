@@ -182,9 +182,49 @@ energy and every unit threshold ×2) and 0.22 (×0.5), quick e-bench plus crop-e
 added to the two sensitivity realizations (same parameters, seeds, burn-in and window), so the stage's table can show
 true day ranges and reserve trends by class beside the reference's.
 
-## 3. Sources
+## 3. Sources (docs/research.md and docs/staging/e-sources.md, "Addendum: E3f what a crown holds")
 
-(Pending: docs/research.md and docs/staging/e-sources.md, "Addendum: E3f crop energy".)
+research.md and e-sources.md were searched first. A research subagent of the stage (disjoint candidate list, the source
+rules of the brief, about 25 minutes) fetched the open texts; the load-bearing passages were re-read here.
+
+| Quantity a crown's crop energy needs | What exists (evidence) | For which model species |
+| --- | --- | --- |
+| Crop per crown, by size | Whole-cycle crops of 10 large Kanyawara fig trees, 228–2,052 kg wet weight, reconstructed from fallen figs plus each frugivore's removals; chimpanzees took 0–84.3% (wrangham1993 [M]); one *F. sansibarica* tree 1,146 / 56 / 472 kg in three cycles (chapman1992 [M], one tree). No crop by DBH or crown size; *Uvariopsis* crop on DBH reported as r² only (chapman1992) | *F. natalensis*, *F. sansibarica* (and *F. exasperata*, not modelled). **None of the six non-fig species (84% of the model's trees by species weight), nor *F. mucuso*** |
+| Fruit mass | Fresh fig weight by species, *Mimusops* 3.1 g (wrangham1993 Table I [H]); fruit dimensions only for *Uvariopsis* and *Pterygota* (chapman1992) | three figs, *Mimusops* |
+| Water content (fresh → dry) | No Kibale value; the registry's `waterFigFrac` / `waterFruitFrac` 0.75 are masi2015's gorilla fruits standing in [L] | — |
+| Energy per g dry matter | Fig pulp 242.5 ± 45.7 kcal/100 g (nine species), *Mimusops* 289.6 (wrangham1993 Table II [H]); the ledger's own whole-fig and drupe energies per g eaten (E1h: 1.93 and 2.46 kcal/g) | all |
+| Ripe share standing at once (the stock the model depletes) | Ripe fruit < 0.5% and mid-ripe 3–8% of a crown's fruit (houle2014, abstract [M]); no ripening or removal rate | — |
+| Crop energy per crown volume | houleWrangham2021 (metabolizable energy per m³ of crown by depth, drupe and fig trees): **not verified** (publisher bot check) | would cover all |
+
+**The fitted scale against the only measured crops** (`figcheck.py` from the diagnosis JSON and the registry; the model's
+own dynamics: a crown's ripe stock relaxes to its phenology crop at `patchRecoverPerDay` 0.7 a day, so with no chimpanzee
+feeding a fig crown ripens 0.7 × its capacity × 23 days of shape over its 30-day window; whole-fig energy 1.93 kcal per g
+dry matter; water 0.75 [L]). A model *F. natalensis* or *F. sansibarica* crown of median capacity (3,455 kcal at
+today's conversion; 7.1 kg wet standing at its peak) ripens 55,625 kcal, 115 kg wet, over a cycle (p10–p90 80–156 kg): the
+ten measured crops are 2.0–17.8 times that, the single tree's three cycles 0.5–10.0 times; against the standing peak
+alone, 32–287 times. Direction only: the measured trees were large, water content is a stand-in, and the model's
+turnover (0.7 a day) is design, so the comparison changes with it.
+
+## 5. Step 2: no mechanism (decided 4 October 2026, after §3)
+
+**No source gives the crop energy of the model's crowns within the source rules.** A crown's energy needs its crop by
+size for every species. The sources give whole-cycle crops of ten large fig trees of two model species (range only, no
+central value, no size relation), and nothing for the six non-fig species that are 84% of the model's trees and most of
+its drupe diet. Even for figs, the measured quantity is a cycle's total, while the model depletes a standing ripe stock;
+turning one into the other needs the ripe share or the ripe-fruit turnover (no rate in any open text; houle2014's
+abstract gives only < 0.5% ripe) and a water content (a stand-in [L]). A switch built on these would carry a design scale
+for most crowns (the species capacities, 0.45–1.0 units, design) and a design turnover for the rest: it would replace
+`fruitIntakePerH` by design numbers and remove nothing. By the brief's rule the stage records this and stops. No switch
+is added; the plumbing written while the sources were read (a crown's kcal per unit threaded through every crop-to-kcal
+conversion: intake.ts, candidates.ts, rg.ts, calls.ts, departure.ts, huntvalue.ts, execution.ts, foraging.ts, urgency.ts;
+switch-off hash-identical on S27 and on the all-off field world) is withdrawn and stays in the branch's history (ed8c724,
+b50680e; reverted in 34a28d1) for a later stage.
+
+**What would unblock it.** houleWrangham2021's full text (metabolizable energy per m³ of crown, drupe and fig trees at
+Kanyawara; free to read at the publisher, whose page asks a person to prove they are human) with the model's crown
+radius would give every crown an energy; Valenta & Nevo 2021's Dryad table (fruit masses of wild Ugandan fruits, CC0)
+would add fruit masses; Chapman & Chapman 1996 the share of *Mimusops* and *Uvariopsis* crops removed. All three need a
+person's browser (the user's decision).
 
 ## 4. Samples of the field rows the arms are scored on
 
@@ -202,7 +242,7 @@ follow; potts2011, Kanyawara and Ngogo 2005–2006 focal follows, feeding partie
 model's communities, derivation undocumented). T-FOOD-2 (watts2012a, Ngogo diet 72% fruit; emeryThompson2020, Kanyawara
 64%; feeding-time shares from focal and scan records, both sexes).
 
-## 5. Known defects (file:line at eea2d85)
+## 8. Known defects (file:line at eea2d85)
 
 - candidates.ts:818 (`tripCost`'s feeding time `min(crop, need) ÷ fruitIntakePerH`) is not reached on S27:
   `intakeValue` is 1 by default, so `tripCost` returns before it (candidates.ts:816), and `forageRate` sets the trip cost
