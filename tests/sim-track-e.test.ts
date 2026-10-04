@@ -36,6 +36,7 @@ const TRACK_E_SWITCHES = [
   'groomDrive', 'socialUpkeep', 'followMargin', // E5d
   'forageRate', // E3c
   'contestAssess', // E4h
+  'socialTiming', // E5e
   'patrolValue', // E4i
 ] as const;
 

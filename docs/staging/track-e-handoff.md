@@ -14,12 +14,15 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 00:55; deploy held by the user).** Nothing.
+- **Running now (4 October 01:40; deploy held by the user).** Stage agent **E4i** (`e4i-patrols`). Integrator:
+  S13's confirm group (S13 at ea92d20 + S13c1–S13c3 in bench-run3, `integrator/conf13.sh`; S13c1 done, S13c2 and S13c3
+  running) and the **S14** confirm (S13 + `socialTiming` 15; registered 26f6ea1) in bench-run2 moved to 26f6ea1
+  (`integrator/conf14.sh`, outputs `bench-run2/artifacts/validation/e/s14/`). Judge S14 with a copy of
+  `integrator/judge_s9group.py` pointed at the S13 group. Decision guide and hosted copy on S13.
 - **S13 done: now the best integrated candidate** (e-stack2-confirm.md "S13 results"; S9 + `huntValue` + `forageRate` +
   `contestAssess`): 65 prescriptions, viable, night safe, sums inside noise against S9's four runs; T-HUN-1 18.9.
   Costs: walking and feeding up (males 2.57 km), males −0.033, mothers −0.077, infants 0.5–2 y −0.093 %/day; T-HUN-3
-  0.043 and T-FOOD-10 0.810 outside their bands. The decision guide and hosted copy still show S9 (S13 needs STACKS.S13
-  and Before/Now for hunting, foraging and contests).
+  0.043 and T-FOOD-10 0.810 outside their bands. Decision guide and hosted copy on S13.
 - **S10, S11, S12 done** (e-stack2-confirm.md): each passes the keep rule against S9's four runs. S10 (`huntValue`,
   73): T-HUN-1 37 → 23.4 (in band), T-HUN-3 stays in band (0.054), fitted better beyond noise; mothers and infants a
   little lower. S11 (`forageRate`, 71): sums inside noise, fruit share in band; costs: every adult class's balance falls
@@ -41,6 +44,8 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   class's balance up (mothers −0.117 → −0.054%/day), males walk 2.00 km, T-ACT-2 0.17, T-RNG-4 1.95, T-HUN-1 23.8 (in
   band), held-out without the rare rows better beyond noise (z −3.3); costs: T-FOOD-2 0.811 and T-ACT-3 0.194 above their
   bands; infants drink more milk as mothers refuse less.
+- **E5e merged** (`socialTiming`, off; 15 a provisional keep candidate, 65 → 60): greeting, charges, consort timing and
+  the walk to callers from state, memory and energy instead of quotas, a clock and a fitted scale. Confirm on S13 as S14.
 - **E4h merged** (`contestAssess`, off; A4 a provisional keep candidate, 74 → 69): contests settled by mutual
   assessment instead of escalation, hit and ally dice; costs: more contact, support and wounds (no field anchor for wounds
   per contact). Three target rows staged, not applied (the user's decision). Confirm on S9 as S12.
@@ -86,8 +91,8 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   3.43 km a day (S3 2.93) and the deficits deepen: E5a interacts with value-based calls; E5b fixed it (S5).
 - **Hosted site, 2 October 14:50:** `site` now also holds the rewritten About page (merged `site-about` 4618daf: first-person
   hero, stale sections cut, What's next) and the decision guide as a hidden page (`docs/decision-guide.html`, a Vite
-  input: unlinked, noindex, at /docs/decision-guide). The guide now shows **S9** (74 prescribed, 61 replaced; merged
-  `guide-s9`; `STACK = STACKS.S9` in scripts/decision-guide.ts) and the site copy is written by
+  input: unlinked, noindex, at /docs/decision-guide). The guide now shows **S13** (65 prescribed, 70 replaced; merged
+  `guide-s13`; `STACK = STACKS.S13` in scripts/decision-guide.ts) and the site copy is written by
   `pnpm exec tsx scripts/decision-guide.ts --hosted <site>/docs/decision-guide.html` (site 149701c from track-e 8f5319e;
   `integrator/hosted_guide.py` retired). Build checked: no console errors, data figures draw, dist 32 MB without audio.
   Still no deploy: the user has not said how to publish.
@@ -261,6 +266,7 @@ mkdir -p ../<name>/artifacts/validation && ln -s /Users/juanbermudez/Desktop/MGO
 | E5d grooming | `groomDrive`, `socialUpkeep` (1, 2), `followMargin` | no switch kept; G1 (`groomDrive`) a correction only; G4 recommended for a 5-seed confirm | On S8 grooming is not limited by the social need: partner and invitation terms (~0.6 of the score) ignore it, so 35–38% of adults' grooming (77% for mothers of older infants) restores a full need; the timers set only the need-limited part. G1 (partner terms weighted by need): grooming and reciprocity in band, but walking +0.7–1.0 km (E5a reads the higher need). G2–G4 replace the timers (76 → 74): G2 null by T-SOC-9 (3–4 individuals), G3 by juveniles' reserves, G4 by held-out (z +2.2, all T-RNG-5 on 9–10 follow-days per seed). | e5d-prereg.md |
 | E3c forage rate | `forageRate` | provisional keep candidate (74 → 71) | On S9 the fitted foraging weights value fallback food at a quarter of its rate and trips below theirs; only 60% of chosen feeding options promise a higher net rate than the best rejected one. A1: every feeding option worth its net energy rate (a bout's kcal minus walk and climb cost, over walk plus eating time) relative to the animal's own fruit rate; `forageDistScaleM`, `fallbackForageW`, `memTravelHungerW` out. Viable, sums inside noise; fruit share into band, T-HUN-1 25.9; costs: rest at its band floor, females' grooming below band, mothers' balance a little lower, choices no longer follow the crop. | e3c-prereg.md |
 | E4h contests | `contestAssess` | A4 (1) provisional keep candidate (74 → 69) | Contact was the 12% hit die (91–99% of contact landed on targets already giving way); the escalation die made the fights that caused most wounds; the ally die drew ~1,300 times a run; 39% of charges were decided before the target could answer (a timing defect, fixed under the switch). A4: escalation, contact and support from each animal's assessment (remembered Elo relationship as the starting estimate; joining valued by how much it changes the partner's odds): contact now falls as rank difference grows (the field's direction); hierarchy as stable as the reference; costs: contacts ~2×, coalition joins ~3×, wounds ≥ 0.05 ~7× with no field anchor per contact. New rows staged (e4h-targets.patch.json: T-SOC-14, -15, -16). | e4h-prereg.md |
+| E5e social quotas | `socialTiming` | 15 (iteration 1) a provisional keep candidate (65 → 60) | `pantGruntRepeatH` set the greeting rate (removing it ×3.7), `joinCallDistScaleM` how far animals walk to callers, `consortLatestHour` the consortships' timing; `feedChargeGapH` was inert, `immigrantChargeGapH` only trimmed. A2: a greeting reopens after a reunion or a charge at the animal (`reunionH` 1 h, a convention), consortships need daylight left, the walk to a caller costs energy in E3c's currency, charges repeat by state; all five entries out. Sums inside noise; open cost: nursing mothers' reserves −0.026 %/day (z −3.4) in one arm and +0.012 in the other. | e5e-prereg.md |
 | Integrated S2 | 28 switches | measured | 89 prescriptions; fitted = today's model; held-out without rare rows +2.9 (T-FOOD-10, travel). | e-stack2-confirm.md |
 | E1j ranging | — | done: no mechanism | Interim: in simulation truth mothers ÷ males is 0.69–0.77 (B, R, E1i pair); the observer's T-RNG-5 rests on 13–24 follow-days, so E1i's 0.84 was sampling; the band is Budongo only (Gombe 0.67–0.74, Kanyawara 0.83). R's real change vs B: males' food trips halve. | e1j-prereg.md |
 | E3 re-test | — | done (integrator) | The effect stands without the old hunger cap: persistence halves crown bouts (22 → 11 min) and the fruit share falls to 0.54. | e3-prereg.md, last section |

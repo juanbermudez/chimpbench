@@ -1792,6 +1792,18 @@ drews1996, wittigBoesch2003b, wittigBoesch2003c, mouginot2024, wranghamWilsonMul
 massaro2024, mullerMitani2005, mitani2002, kaburu2013. Not verified: Kitchen et al. 2005, van Schaik et al. 2004, Pandit
 & van Schaik 2003, Muller 2002, Watts 2002, Nishida & Hosaka 1996.
 
+## 46. Addendum: E5e social quotas and clocks (4 October 2026)
+
+Same text as research.md "Addendum: E5e social quotas and clocks": greeting at approach and fusion (girardButtoz2022,
+FT: the pant-grunt is given during approaches to dominants; a fusion is two parties reuniting after at least 1 h apart,
+when "dominance and bonding relationships are re-established after a period of absence"); greetings at encounters
+(dunphyLelii2019, FT, Ngogo 2016); female greetings at Mahale (nakamura2022, Abs: 6.5 female–female pant-grunts per 100
+observation hours, an order of magnitude fewer than to males); consortships as a walk away from the party to the range's
+edge, at least 3 days (wroblewski2009, FT); T-SOC-6's sample (gilby2013, FT: the top three males receive over 75% of the
+pant-grunts given by males; the observer counts all pant-grunts). New: girardButtoz2022, dunphyLelii2019, nakamura2022,
+wroblewski2009. Not verified: Laporte & Zuberbühler 2010 (two routes failed); a wild per-dyad greeting rate; the hour at
+which consortships begin.
+
 ## Addendum: E4i patrols (4 October 2026)
 
 Same text as research.md "Addendum: E4i patrols": gilbyWilsonPusey2013 (FT: patrol criteria and start-time rule; GEE of a

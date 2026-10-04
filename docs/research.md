@@ -3047,6 +3047,64 @@ and Pandit & van Schaik 2003 (seen only as summarised by ihara2024 and Bissonnet
 agonism chapter); Watts 2002; Nishida & Hosaka 1996; any primate measure of a fight's damage by the fighters' masses; any
 wild chimpanzee wound rate per individual-year or per conflict.
 
+### E.46 Addendum: E5e social quotas and clocks (4 October 2026)
+
+When a subordinate greets a dominant, what limits a consortship to the hours it can use, and what a walk to a caller
+costs. Read for stage E5e ([staging/e5e-prereg.md](staging/e5e-prereg.md)); full texts through NCBI BioC where marked
+FT. Bibliographic data Crossref-verified. Tags as above.
+
+- **Greeting at approach and at fusion** [girardButtoz2022] (FT, PMC9399282) [M]: Taï East, North and South (1998–2000,
+  2018–2020) and Budongo Sonso (2007–2010, 2012); 118 greeting-hoot sequences from 38 individuals (adult males and
+  females) recorded in focal and ad libitum sampling, each coded for four contexts. The pant-grunt is "a greeting
+  vocalization ... during approaches to dominant individuals"; given alone it is predicted by an approach within 5 m and
+  by a higher-ranking recipient, and it occurred at fusions in 16% of cases (greeting hoots 36%). A fusion is "when two
+  parties that were apart for at least 1 h reunited"; fusions "can be tense, highly vocal events ... as dominance and
+  bonding relationships are re-established after a period of absence". The authors argue that a signal given at a
+  distance limits aggression "when encountering community members not seen for some hours or days" (their reasoning, not
+  a measurement). Use in E5e: the structure of the greeting rule (a greeting re-establishes the relationship at an
+  encounter, so one per association; an approach by a displaying or charging dominant reopens it); the 1-h separation is
+  the observer convention for a fusion, matching the model's own reunion span (perception.ts), not a measured threshold.
+- **Greeting on encounter, Ngogo** [dunphyLelii2019] (FT, author manuscript, PMC6504967) [M]: Ngogo, July–December 2016,
+  90 greetings of adult males by mother–infant dyads scored "at the moment of encountering the male"; base rates not
+  calculable from the sample. Use: context (greetings are given at encounters).
+- **Female greetings, Mahale** [nakamura2022] (Abs) [M]: 405 female–female greetings 1994–2018 (10.9 per 100 observation
+  hours), 242 of them pant-grunts (6.5 per 100 observation hours); pant-grunts among females "an order of magnitude less
+  than those directed toward males"; most by females under 20 y toward older females. The unit (per observation hour of
+  the observer) is not a per-dyad rate. Use: context for the per-dyad rates the model produces; no row.
+- **Consortships** [wroblewski2009] (FT, author manuscript, PMC2689943) [M]: Gombe, 33 conceptions 1984–2005.
+  "Consortship occurs when a male–female dyad travels alone and mates away from other members of the community"; "pairs
+  often travel to the edge of the community range where they risk attack by neighbouring chimpanzee communities"; the
+  strict definition needs the pair's mutual absence for at least 3 consecutive days; consortships were linked to 9.7–19%
+  of conceptions, more often by low-ranking fathers. Use in E5e: a consortship is a walk away from the party toward the
+  range's edge, so its start needs the light to make that walk (the model's own light on a trip, E2c); no hour is taken
+  from the source.
+- **The walk's cost in the forager's currency**: charnov1976, stephensKrebs1986 and sockol2007 as in "Addendum: E3c forage
+  rate". Use in E5e: an approach to a caller at food is valued as a trip to its crown at the net energy rate (E3c), and an
+  approach to company pays the walk's energy at the ledger's derived scale (`travelDistScaleM`, E5a's follow).
+- **T-SOC-6's sample** [gilby2013] (FT, PMC3582680) [M]: Gombe Kasekela 1995–2008, full-day focal follows of adults;
+  annual male ranks from pant-grunts in the narrative notes; "The three highest-ranking males received over 75% of all
+  pant grunts given by males each year" (16 males). The frozen observer scores T-SOC-6 over every pant-grunt in the
+  community, of any giver (src/field/metrics.ts T-SOC-6), not over males' pant-grunts: a scorer difference reported in
+  the E5e pre-registration, not changed here.
+
+- *new* girardButtoz2022: Girard-Buttoz C, Bortolato T, Laporte M, Grampp M, Zuberbühler K, Wittig RM, Crockford C 2022.
+  Population-specific call order in chimpanzee greeting vocal sequences. *iScience* 25(9):104851.
+  [doi:10.1016/j.isci.2022.104851](https://doi.org/10.1016/j.isci.2022.104851) (FT, PMC9399282).
+- *new* dunphyLelii2019: Dunphy-Lelii S, Mitani JC 2019. Wild chimpanzees show a decrease in pant grunting over their
+  first 6 years of life. *Folia Primatologica* 90(2):77–88. [doi:10.1159/000495108](https://doi.org/10.1159/000495108) (FT,
+  author manuscript, PMC6504967).
+- *new* nakamura2022: Nakamura M 2022. Greetings among female chimpanzees in Mahale, Tanzania. *American Journal of
+  Primatology* 84(9):e23417. [doi:10.1002/ajp.23417](https://doi.org/10.1002/ajp.23417) (Abs).
+- *new* wroblewski2009: Wroblewski EE, Murray CM, Keele BF, Schumacher-Stankey JC, Hahn BH, Pusey AE 2009. Male dominance
+  rank and reproductive success in chimpanzees, *Pan troglodytes schweinfurthii*. *Animal Behaviour* 77(4):873–885.
+  [doi:10.1016/j.anbehav.2008.12.014](https://doi.org/10.1016/j.anbehav.2008.12.014) (FT, author manuscript, PMC2689943).
+- gilby2013, charnov1976, stephensKrebs1986 and sockol2007 are already cited; the entries above add findings.
+
+**Not verified:** Laporte & Zuberbühler 2010 (*Animal Behaviour* 80:467–473, doi:10.1016/j.anbehav.2010.06.005: female
+greeting by audience; the repository copy OpenAlex lists returns 410 and the archived copy could not be fetched); any
+wild per-dyad pant-grunt rate or interval between greetings of the same dominant; the time of day at which consortships
+begin.
+
 ### Addendum: E4i patrols (4 October 2026)
 
 What stage E4i (`patrolValue`, docs/staging/e4i-prereg.md) reads from sources already listed above ("Patrols"); every

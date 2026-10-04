@@ -1333,3 +1333,16 @@ from its band (0.754 → 0.810); adult males' balance −0.022 → −0.033 %/da
 hunts valued as food. Costs: the foraging rate raises walking and feeding (T-RNG-4 2.39, males 2.57 km a day), so males',
 mothers' and infants' reserves fall faster than on S9; T-HUN-3 and T-FOOD-10 sit outside their bands (both rows with
 staged scorer fixes awaiting the user).
+
+## S14 confirm (registered 4 October 2026 before its run)
+
+**S14 = S13 + E5e's `socialTiming` 15** (iteration 1: a greeting reopens after a reunion or a charge at the animal;
+consortships need daylight left; the walk to a caller costs energy in E3c's currency; charges repeat by state;
+`pantGruntRepeatH`, `feedChargeGapH`, `immigrantChargeGapH`, `consortLatestHour` and `joinCallDistScaleM` out: 65 → 60
+prescriptions). **Reference group, new:** S13 in confirm mode (S13, ea92d20) plus three re-draws (`rgTemperature` 0.1641,
+0.1639, 0.16405: S13c1–S13c3, bench-run3 ea92d20). Standard keep rule. Bench, energy-diagnose and rhythm-metrics, 5 seeds,
+30 + 60 days, from bench-run2 moved to this commit.
+
+**Predictions (against the S13 group; moderate confidence unless stated).** Prescriptions 60 (high); viability and night
+safety pass; T-ACT-1..4 and T-RNG-4 within the group's spread; T-SOC-5 inside its band; nursing mothers' reserves within
+± 0.03 %/day of the group's mean (low: E5e's two arms disagreed in sign); fitted and held-out inside noise.
