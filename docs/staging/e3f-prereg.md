@@ -243,6 +243,65 @@ radius would give every crown an energy; Valenta & Nevo 2021's Dryad table (frui
 would add fruit masses; Chapman & Chapman 1996 the share of *Mimusops* and *Uvariopsis* crops removed. All three need a
 person's browser (the user's decision).
 
+## 6. Sensitivity of the fitted scale (amendments 2 and 3; frozen checkout 592cfe9, clean; one realization each; printed by `final.py` and `crowntab.py` from the JSON in the stage's scratch directory, `runs/`)
+
+K2: `fruitIntakePerH` 0.055 (every crown's energy and every unit threshold × 2); K05: 0.22 (× 0.5). Not arms: nothing
+is adopted from them. A single readout's z is (value − mean) ÷ SD of the four S27 runs, descriptive only; the sums are
+judged by e-noise.md amendment 2 (quick floors, amendment 3's rare rows).
+
+Crowns (crop-energy-diagnose, simulation truth):
+
+| Readout (truth) | S27 / r1 / r2 / r3 | mean ± SD | K2 (×2) | K05 (×0.5) |
+| --- | --- | --- | --- | --- |
+| kcal per unit, drupe / fig | 4031 / 4031 / 4031 / 4031 | 4031 ± 0 | 8062 (z +nan) | 2015 (z +nan) |
+| landscape: crop kcal of a fruiting crown, median (all) | 2053 / 2056 / 2056 / 2039 | 2051 ± 8 | 4112 (z +253.7) | 1008 (z -128.4) |
+| visit start: crop kcal, median (>= 5 y) | 1243 / 1168 / 1198 / 1158 | 1192 ± 38 | 2985 (z +47.0) | 590 (z -15.8) |
+| visit length, median min | 19.0 / 19.0 / 19.0 / 19.5 | 19.1 ± 0.250 | 18.5 (z -2.5) | 18.5 (z -2.5) |
+| visit length, median min, adults >= 12 y | 18.5 / 18.3 / 18.3 / 19.0 | 18.5 ± 0.354 | 18.8 (z +0.7) | 17.8 (z -2.1) |
+| kcal eaten per visit, mean | 142 / 142 / 141 / 144 | 142 ± 1 | 142 (z -0.3) | 140 (z -1.9) |
+| share of the starting crop eaten per visit | 0.143 / 0.149 / 0.144 / 0.152 | 0.147 ± 0.004 | 0.062 (z -19.9) | 0.273 (z +29.8) |
+| crop share below the bout room (crop binds) | 0.158 / 0.171 / 0.171 / 0.166 | 0.166 ± 0.006 | 0.042 (z -21.5) | 0.341 (z +30.0) |
+| visits the starting crop holds, median | 8.729 / 8.210 / 8.505 / 8.015 | 8.365 ± 0.315 | 21.0 (z +40.1) | 4.223 (z -13.1) |
+| feeders per occupied crown (crown-weighted) | 1.416 / 1.390 / 1.403 / 1.367 | 1.394 ± 0.021 | 1.415 (z +1.0) | 1.371 (z -1.1) |
+| feeders per crown (feeder-weighted) | 1.814 / 1.763 / 1.799 / 1.716 | 1.773 ± 0.044 | 1.822 (z +1.1) | 1.707 (z -1.5) |
+| episodes: kcal eaten / crop at start | 0.264 / 0.268 / 0.267 / 0.266 | 0.266 ± 0.001 | 0.119 (z -109.6) | 0.469 (z +151.3) |
+| crowns fed in: share fell below 0.02 units | 0.318 / 0.327 / 0.333 / 0.315 | 0.323 ± 0.009 | 0.048 (z -32.3) | 0.672 (z +41.0) |
+| bout end (>= 12 y): sated | 0.549 / 0.548 / 0.520 / 0.561 | 0.544 ± 0.017 | 0.573 (z +1.6) | 0.393 (z -8.7) |
+| bout end: crown empty | 0.046 / 0.051 / 0.046 / 0.042 | 0.046 ± 0.004 | 0.005 (z -11.2) | 0.184 (z +37.4) |
+| bout end: gut full | 0.038 / 0.029 / 0.040 / 0.038 | 0.036 ± 0.005 | 0.034 (z -0.5) | 0.099 (z +12.7) |
+| bout end: party leaving | 0.087 / 0.086 / 0.088 / 0.074 | 0.084 ± 0.007 | 0.087 (z +0.5) | 0.081 (z -0.4) |
+| bout end: other decision | 0.280 / 0.285 / 0.306 / 0.286 | 0.289 ± 0.011 | 0.301 (z +1.0) | 0.242 (z -4.1) |
+| kcal from crowns per day, adult male | 1567 / 1560 / 1565 / 1542 | 1559 ± 12 | 1565 (z +0.5) | 1509 (z -4.3) |
+| kcal from crowns per day, female lactating | 1455 / 1432 / 1448 / 1465 | 1450 ± 14 | 1491 (z +2.9) | 1297 (z -11.0) |
+| crown minutes per day, adult male | 215 / 215 / 216 / 213 | 215 ± 1 | 216 (z +0.6) | 207 (z -5.1) |
+
+Field rows, day ranges, reserves and sums (e-bench, energy-diagnose):
+
+<!-- final.py table -->
+
+**Reading.**
+- **Half the energy (K05) makes the crop bind.** The crop share at arrival is below the bout's gut room in 34% of visits
+  (17%), 18% of bouts end with the crown empty (4.6%) and 10% with a full gut, two thirds of the crowns fed in are
+  emptied below 0.02 units (a third). Animals feed and travel more, adult males' observed day range leaves its band,
+  parties shrink, the fruit share falls and returns to a crown space out (T-ACT-1, T-ACT-2, T-RNG-4, T-PTY-1, T-FOOD-2,
+  T-FOOD-6 in the table); nursing mothers take 153 kcal a day less from crowns. Sums inside noise.
+- **Double the energy (K2) takes the crop out of nearly every bout** (crop binding 4%, crown empty 0.5%); adult males'
+  observed day range falls to 1.7 km and the travel share to 0.10; held-out without the rare rows is worse beyond noise
+  (z +2.1, through T-RNG-5).
+- **Neither changes how many feed together or how long a visit lasts**: 1.42 and 1.37 feeders per occupied crown (1.39 ±
+  0.02), visits of 18.5 min (19.1), 140–142 kcal per visit. The crown's energy acts through depletion: how far animals
+  travel, how parties split, how much mothers eat; co-feeding stays E5c's open problem.
+
+## 7. Verdict
+
+**No switch; the stage records and stops (§5).** Under the ledger `fruitIntakePerH` is the energy scale of every crown
+(one unit = 4,031 kcal of drupes, 4,429 of figs; a median fruiting crown 2,051 kcal) and of every crop threshold, not an
+intake rate. Through depletion it sets how far animals travel and how parties split (halving it pushes males' day range
+out of its band and shrinks parties; doubling it shortens day ranges and worsens held-out through T-RNG-5), not how
+many feed together. No open source gives the crop of the model's crowns: whole-cycle crops of ten large Kanyawara fig
+trees (2–18 × what a model fig crown ripens per cycle at the design turnover), nothing for the non-fig species that are
+84% of the trees. `fruitIntakePerH` stays; prescriptions 42 (unchanged).
+
 ## 8. Known defects (file:line at eea2d85)
 
 - candidates.ts:818 (`tripCost`'s feeding time `min(crop, need) ÷ fruitIntakePerH`) is not reached on S27:
@@ -257,3 +316,19 @@ person's browser (the user's decision).
   drupe rate), while feeding uses the fig values in a fig crown (execution.ts:1036): a fig crown is valued at 4,031 kcal
   per unit and 7.39 kcal/min instead of 4,429 and 8.12. The bout's time (energy ÷ rate) is the same either way; only the
   energy against the walk's cost differs (about 10%). Recorded, not changed (no switch in this stage).
+
+## 9. Open problems
+
+1. **A sourced crown energy.** houleWrangham2021 (metabolizable energy per m³ of crown, drupe and fig trees, Kanyawara)
+   with the model's crown radius would give every crown an energy; Valenta & Nevo 2021 (Dryad, fruit masses) and
+   Chapman & Chapman 1996 (crop shares removed) would check it. All need a person's browser.
+2. **The ripe stock's turnover.** The design recovery (`patchRecoverPerDay` 0.7 of the deficit a day) supplies at least
+   70% of what crowns give over a month, and any whole-cycle crop source can only become the standing ripe stock the
+   model depletes through it (houle2014: ripe fruit under 0.5% of a crown's fruit at a time). It is the next unsourced
+   number on the feeding path, with an effect of the same order as the crop scale.
+3. **Co-feeding.** At half and double the crowns' energy, 1.4 animals feed per occupied crown: what makes a party feed
+   together is not in the crop (E5c's finding, now at both ends of the scale).
+
+## 10. Merge and final checks
+
+(Pending.)
