@@ -630,3 +630,13 @@ nest company; companions in transit not taken for company), with the costs above
   success 0.36–0.38 against the field's 0.71 vocal and 0.34 silent); a companion in its nest in the day phase is neither
   company staying keeps nor company leaving loses in A2 (E5b's settled definition excludes nest-sitters; `candidates.ts`
   `audienceOf`, deferred).
+
+## 8. Merge and final checks
+
+- Merged `track-e` once (aa2889e: E3f integrated, the S28 confirm registered, the ledger's counting fix) before the final
+  test run: conflicts only in the two appended addenda (research.md, e-sources.md), both kept (E3f's numbered E.56 / 56
+  first, this stage's unnumbered addendum after).
+- **Prescriptions with track-e's corrected ledger** (`ledgerWildCostMult` no longer counted): S27 41; S27 + `departValue`
+  1 or 2: 39 (`prescription-ledger --count`). The arms' e-bench JSON, run before the merge, print the old count (S27 42,
+  arms 40): the same two entries out either way.
+- `gen-params --check` clean; `tsc --noEmit` clean; `pnpm test` 814 tests: 813 pass, 0 fail, 1 skipped.
