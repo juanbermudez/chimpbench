@@ -1,6 +1,6 @@
 # E1q pre-registration: what climbing costs
 
-Status: in progress. Skeleton committed at the start of the stage (branch `e1q-climbing-energy`, from `track-e` c39488f),
+Status: complete (4 October 2026): audit (§2.4: the target's climbing equation; the model's re-climbs), iteration 1 `crownMove` (§4–§7: C a provisional keep candidate as a correction, CW recommended for a confirm). Skeleton committed at the start of the stage (branch `e1q-climbing-energy`, from `track-e` c39488f),
 before any run and before any code change. Track E, stage E1q, an input audit. Rule served: field values of behaviour are
 targets, never inputs; a physiological input (a cost, an efficiency) may be corrected from sources, never set to reach a
 day range, a travel share, a reserve trend or the walking-to-climbing ratio itself.
@@ -440,6 +440,117 @@ Not predicted: infants' climbs from and to points outside every crown ("no crown
 metres climbed): an infant that stops 1 m from a mother at a small crown's edge, or that climbs while still up to 3 m
 from her (moveTo climbs once within 3 m of the goal), perches outside the crown's radius, so the crown rule does not apply
 to its next move (§4: the crown is the canopy radius, no reach added).
+
+### 6.1 Replicates and night safety (Cr, CWr by `rngSalt` 1; frozen dd0e1a3, clean; `final.py`, `twodraw.py`, the integrator's `night.py`)
+
+```
+| readout | S25 mean ± SD (4 runs) | W | C | Cr | CW | CWr |
+| ascents/day, males | 12.8 ± 0.9 (n 4) | 15.1 (+2.2) | 12.7 (-0.2) | — | 14.8 (+2.0) | — |
+| ascents/day, nursing mothers | 9.9 ± 0.4 (n 4) | 11.9 (+4.3) | 9.8 (-0.3) | — | 11.3 (+3.1) | — |
+| metres climbed/day, males | 121 ± 8 (n 4) | 144 (+2.5) | 114 (-0.8) | — | 131 (+1.1) | — |
+| metres climbed/day, nursing mothers | 95 ± 4 (n 4) | 115 (+4.4) | 89 (-1.4) | — | 102 (+1.4) | — |
+| metres climbed/day, infants 0.5–2 y | 72 ± 6 (n 4) | 91 (+2.9) | 47 (-4.0) | — | 64 (-1.3) | — |
+| climbs back into the crown just left, males /day | 3.82 ± 0.33 (n 4) | 4.02 (+0.6) | 2.56 (-3.4) | — | 2.77 (-2.8) | — |
+| climb kcal/day, males | 55.5 ± 3.7 (n 4) | 65.7 (+2.5) | 52.2 (-0.8) | 51.5 (-1.0) | 60.1 (+1.1) | 61.1 (+1.4) |
+| climb kcal/day, nursing mothers | 34.9 ± 1.5 (n 4) | 42.1 (+4.4) | 32.6 (-1.4) | 30.4 (-2.8) | 37.3 (+1.4) | 38.2 (+2.0) |
+| walk ÷ climb energy, males | 1.21 ± 0.05 (n 4) | 1.49 (+4.7) | 1.37 (+2.7) | 1.31 (+1.7) | 1.73 (+8.6) | 1.77 (+9.2) |
+| walk ÷ climb energy, nursing mothers | 1.52 ± 0.12 (n 4) | 1.82 (+2.3) | 1.67 (+1.1) | 1.72 (+1.5) | 1.99 (+3.6) | 1.95 (+3.3) |
+| true day range km, males | 1.84 ± 0.07 (n 4) | 2.70 (+11.1) | 1.97 (+1.7) | 1.86 (+0.2) | 2.87 (+13.3) | 2.98 (+14.7) |
+| true day range km, nursing mothers | 1.71 ± 0.10 (n 4) | 2.54 (+7.3) | 1.76 (+0.4) | 1.68 (-0.3) | 2.44 (+6.4) | 2.45 (+6.5) |
+| T-RNG-4 | 1.52 ± 0.10 (n 4) | 2.23 (+6.3) | 1.69 (+1.5) | 1.69 (+1.5) | 2.42 (+8.0) | 2.18 (+5.8) |
+| T-RNG-5 | 1.11 ± 0.17 (n 4) | 1.01 (-0.5) | 0.86 (-1.4) | 0.87 (-1.3) | 0.90 (-1.1) | 1.06 (-0.3) |
+| T-ACT-1 | 0.371 ± 0.007 (n 4) | 0.387 (+2.0) | 0.377 (+0.8) | 0.371 (-0.1) | 0.378 (+0.9) | 0.377 (+0.7) |
+| T-ACT-2 | 0.163 ± 0.005 (n 4) | 0.108 (-10.4) | 0.157 (-1.1) | 0.155 (-1.6) | 0.116 (-8.9) | 0.121 (-7.9) |
+| T-ACT-3 | 0.100 ± 0.005 (n 4) | 0.105 (+1.0) | 0.094 (-1.2) | 0.087 (-2.4) | 0.099 (-0.1) | 0.088 (-2.2) |
+| T-ACT-4 | 0.395 ± 0.013 (n 4) | 0.397 (+0.2) | 0.395 (-0.0) | 0.367 (-1.9) | 0.418 (+1.6) | 0.406 (+0.8) |
+| T-FOOD-10 | 0.499 ± 0.032 (n 4) | 0.613 (+3.2) | 0.538 (+1.1) | 0.462 (-1.0) | 0.599 (+2.8) | 0.643 (+4.1) |
+| reserves %/day, nursing mothers | -0.010 ± 0.009 (n 4) | +0.004 (+1.4) | -0.005 (+0.5) | +0.008 (+1.8) | +0.005 (+1.5) | -0.008 (+0.2) |
+| reserves %/day, juveniles 5–12 y | -0.000 ± 0.019 (n 4) | +0.016 (+0.8) | -0.021 (-1.0) | +0.024 (+1.1) | -0.015 (-0.7) | -0.016 (-0.8) |
+| reserves %/day, infants 2–5 y | -0.051 ± 0.068 (n 4) | +0.002 (+0.7) | -0.002 (+0.7) | +0.015 (+0.9) | +0.007 (+0.8) | -0.036 (+0.2) |
+| reserves %/day, infants 0.5–2 y | -0.068 ± 0.120 (n 4) | +0.008 (+0.6) | -0.010 (+0.4) | +0.004 (+0.5) | +0.012 (+0.6) | +0.011 (+0.6) |
+| reserves %/day, adult males | +0.008 ± 0.004 (n 4) | +0.002 (-1.2) | +0.004 (-0.7) | +0.006 (-0.3) | -0.002 (-2.1) | +0.007 (-0.0) |
+| prescriptions | 43 ± 0 (n 4) | 42 | 43 | 43 | 42 | 42 |
+
+W: 398a5c3 dirty 0 viability pass deaths 0 starvation 0 causes [{}, {}]
+C: dd0e1a3 dirty 0 viability pass deaths 0 starvation 0 causes [{}, {}]
+Cr: dd0e1a3 dirty 0 viability pass deaths 0 starvation 0 causes [{}, {}]
+CW: dd0e1a3 dirty 0 viability pass deaths 0 starvation 0 causes [{}, {}]
+CWr: dd0e1a3 dirty 0 viability pass deaths 0 starvation 0 causes [{}, {}]
+quick, reference custom (4 runs), rows counted in all runs: fitted 16, held-out 12
+  fitted             (16 rows) ref 1.53, 3.49, 1.48, 1.10 (mean 1.90, sd 1.08; used 1.08) | W.json: 1.12, Δ -0.78, z -0.6 (inside noise) | C.json: 1.32, Δ -0.58, z -0.5 (inside noise) | Cr.json: 2.70, Δ +0.80, z +0.7 (inside noise) | CW.json: 1.50, Δ -0.40, z -0.3 (inside noise) | CWr.json: 2.68, Δ +0.78, z +0.6 (inside noise)
+  held-out           (12 rows) ref 4.19, 6.38, 2.89, 5.92 (mean 4.84, sd 1.61; used 1.61) | W.json: 5.07, Δ +0.23, z +0.1 (inside noise) | C.json: 3.25, Δ -1.60, z -0.9 (inside noise) | Cr.json: 2.77, Δ -2.07, z -1.1 (inside noise) | CW.json: 4.27, Δ -0.57, z -0.3 (inside noise) | CWr.json: 4.04, Δ -0.80, z -0.4 (inside noise)
+  held-out w/o rare  (11 rows) ref 4.19, 3.71, 2.89, 3.85 (mean 3.66, sd 0.55; used 0.55) | W.json: 3.99, Δ +0.34, z +0.5 (inside noise) | C.json: 3.25, Δ -0.41, z -0.7 (inside noise) | Cr.json: 2.77, Δ -0.88, z -1.4 (inside noise) | CW.json: 3.45, Δ -0.21, z -0.3 (inside noise) | CWr.json: 4.04, Δ +0.38, z +0.6 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-FOOD-10 held-out ref 0.90±0.14 | W.json 1.42 (fail) | C.json 1.08 (fail) | Cr.json 0.73 (fail) | CW.json 1.36 (fail) | CWr.json 1.56 (fail)
+   T-HUN-1   fitted   ref 0.00±0.00 | W.json 0.00 (pass) | C.json 0.00 (pass) | Cr.json 0.00 (pass) | CW.json 0.00 (pass) | CWr.json 1.03 (fail)
+   T-HUN-2   fitted   ref 0.13±0.16 | W.json 0.00 (pass) | C.json 0.00 (pass) | Cr.json 1.11 (fail) | CW.json 0.00 (pass) | CWr.json 0.00 (pass)
+   T-HUN-4   held-out ref 1.19±1.39 | W.json 1.07 (fail) | C.json 0.00 (pass) | Cr.json 0.00 (pass) | CW.json 0.83 (fail) | CWr.json 0.00 (pass)
+   T-SOC-3   held-out ref 0.01±0.02 | W.json 0.06 (fail) | C.json 0.24 (fail) | Cr.json 0.00 (pass) | CW.json 0.00 (pass) | CWr.json 0.00 (pass)
+```
+
+Two-draw energy line (§5.1; reserves %/day; z = (mean − S25 mean) ÷ (SD × √(1/2 + 1/4))):
+
+```
+adult male         S25 +0.008 ± 0.004 | C: +0.004, +0.006, mean +0.005 (z -0.7) | CW: -0.002, +0.007, mean +0.003 (z -1.4)
+female, other      S25 +0.001 ± 0.021 | C: -0.006, +0.020, mean +0.007 (z +0.4) | CW: -0.017, +0.008, mean -0.004 (z -0.3)
+female, lactating  S25 -0.010 ± 0.009 | C: -0.005, +0.008, mean +0.001 (z +1.4) | CW: +0.005, -0.008, mean -0.001 (z +1.1)
+juvenile 5–12 y    S25 -0.000 ± 0.019 | C: -0.021, +0.024, mean +0.002 (z +0.1) | CW: -0.015, -0.016, mean -0.015 (z -0.9)
+infant 2–5 y       S25 -0.051 ± 0.068 | C: -0.002, +0.015, mean +0.007 (z +1.0) | CW: +0.007, -0.036, mean -0.014 (z +0.6)
+infant 0.5–2 y     S25 -0.068 ± 0.120 | C: -0.010, +0.004, mean -0.003 (z +0.6) | CW: +0.012, +0.011, mean +0.012 (z +0.8)
+```
+
+S25's infant spread is wide because S25q's seed 48 had a respiratory outbreak (infants −0.152 and −0.247 %/day there);
+against S25's other three runs (infants 2–5 y −0.018 ± 0.013, 0.5–2 y −0.008 ± 0.013, nursing mothers −0.010 ± 0.011,
+juveniles −0.006 ± 0.018, derived) the two-draw means of C and CW are still inside 2 SD. Night (rhythm-metrics, quick):
+C adults out of a nest 1.98% of the night, T-RHY-5 0.0167; CW 2.47%, 0.0189; no night deaths (line 3.3%).
+
+Other rows, not predicted: grooming lower in both re-draws (T-ACT-3 0.087 and 0.088 against 0.100 ± 0.005, z −2.4 and
+−2.2; in band); departures before sunrise up with `walkGait` (T-FOOD-10 0.599 and 0.643 on CW, as on W, 0.613); CWr's
+hunting 45.6 per community-year (one draw; CW 13.9, S25's runs 8–18); travel share below its band on CW (0.116; W
+0.108), back at its floor on CWr (0.121).
+
+## 7. Verdict (iteration 1; the stage's last: no further term is implicated that a quick run could judge)
+
+**The audit.** Climbing is not too expensive per metre: the target's "about ten times" was priced with a human
+rock-climbing equation (couturier2022 transmitting pontzerWrangham2004) at 13–22 J per kg per vertical metre, a muscular
+efficiency of 44–73%; measured vertical climbing (kozmaPontzer2021: 40.1 J/kg/m incrementally, 24% efficiency, plus a
+holding cost; small primates 105–135) sits at or above the ledger's 49. With the ledger's costs the target's own
+distances read 1.9–2.9. No input moves. What the model adds is metres: 1.8–2.0 × the target's implied daily climb, a
+third of it (half of infants') climbs back into the crown just left.
+
+**C (S25 + `crownMove` 1)**: kill criterion not met in either draw; viable, every sum inside noise (held-out without the
+rare rows z −0.7 and −1.4), 43 prescriptions, energy lines inside 2 SD (two-draw), night safe. Climbs back into the
+crown just left −35 to −55% for males and juveniles (−24% nursing mothers), metres climbed −5 to −14% for adults and
+juveniles, −34% for infants 0.5–2 y; walking ÷ climbing 1.21 → 1.31–1.37 (males), 1.52 → 1.67–1.72 (nursing mothers).
+**A provisional keep candidate as a correction** (removes no prescription; like `huntDrive`).
+
+**CW (S25 + `walkGait` 1 + `crownMove` 1)**: kill criterion not met in either draw; viable, every sum inside noise, 42
+prescriptions, energy lines inside 2 SD, night safe; climbing kcal below W's (males 65.7 → 60.1–61.1, nursing mothers
+42.1 → 37.3–38.2; juveniles 52.5 → 41.6), walking ÷ climbing 1.73–1.77 (males) and 1.95–1.99 (nursing mothers). In quick
+mode `walkGait` combines with `crownMove`; but W itself showed no reserve cost in its quick draw either (S24's cost
+appeared in confirm mode), so quick mode cannot settle it: **recommended for a confirm** (S26 = S25 + `crownMove`, S27 =
+S25 + `walkGait` + `crownMove`). Costs carried from `walkGait`: travel share at or below its band's floor, departures
+before sunrise up.
+
+**Against the registered predictions:** held 1, 4, 5; missed 2 (the cut of climbs back into the crown is half or less
+only for juveniles) and 3 for C (metres −5 to −14% against −15 to −35%), because what remains of them follows time on the
+ground (the animal came down for a goal on the ground and decided to return), which no movement rule should remove.
+
+## 8. Open problems
+
+- **Infants' climbs from the crown's edge.** Infants' climbs from or to points outside every crown are 30–52% of their
+  metres climbed (C, CW): an infant that climbs while still up to 3 m from its mother (moveTo climbs once within 3 m of
+  the goal) or stops 1 m beyond her at a small crown's edge perches outside the canopy radius, so the crown rule does not
+  apply to its next move. A next step: membership by the tree an animal climbed into (state) instead of geometry; or the
+  climb started only under the crown. Not built (no quick readout of infants' reserves can judge it: S25's infant lines
+  carry an outbreak).
+- **The target.** Restate T-relation "walking ÷ climbing about 10" as the implied vertical distance (53–90 m a day for
+  Kanyawara adults, derived [L]) or as a ratio with sourced costs (1.9–2.9): staged for the integrator, not applied.
+- **Two climbing costs.** The heat balance charges a metre at 107.4 × M^−0.119 (≈ 70 J/kg/m, small primates
+  extrapolated) and the ledger at 49; measured hominoid climbing (40 incremental, 52–67 with the holding cost at the
+  model's speeds) lies between: align them in one place (a known defect, §6).
+- Descent is free in the ledger; downhill running recovers about 90% (taylor1972), steep downhill walking costs about 0.2
+  of uphill (minetti2002): an under-charge of at most ~10–20% of climbing energy, left as it is.
 
 ## 4. Samples of the field rows the arms are scored on
 
