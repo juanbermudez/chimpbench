@@ -380,6 +380,8 @@ time; the E2f line 3.3%): rhythm-metrics, on a kept arm.
 - **Iteration 2** (`choiceBelief` 2; arms A2, A2r): registered in §5.2 and committed (0ec4316) before its run. Results
   §6.2: A2 a provisional keep candidate; A2r passes the keep rule with a fitted cost beyond noise.
 - **No iteration 3** (§6.3, recorded before any further run).
+- **Final checks** (after merging track-e c793917 once, 9226681): `gen-params --check` clean, `tsc --noEmit` clean,
+  `pnpm test` 778 tests: 777 pass, 0 fail, 1 skipped; `git ls-files data/raw node_modules` empty.
 
 ### 5.1 Iteration 1 (registered before its run): a choice varies only through what the animal does not know (`choiceBelief` 1)
 
