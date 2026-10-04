@@ -316,3 +316,86 @@ held-out without T-HUN-4, T-BRD-1 and T-IGE-3 (12 rows): S17q 3.88 / 4.29 / 4.61
 | truth success | 0.111 / 0.133 / 0.227 / 0.286 | 0.417 |
 
 ```
+
+#### P1 result: hunt rows at 30 + 60 days (9b3f213 frozen, `git.dirty` 0; against H0 and H0r; same script)
+
+
+| hunt rows, 30 + 60 d, seeds 48 and 7 | H0 / H0r | P1h |
+| --- | --- | --- |
+| T-HUN-1 (n) | 26.3 (26) / 31.2 (31) | 9.07 (9) |
+| T-HUN-2 (n) | 0.562 (16) / 0.346 (26) | 0.273 (11) |
+| T-HUN-3 (n) | 0.0431 (209) / 0.0566 (265) | 0.019 (315) |
+| T-HUN-4 (n) | 2.19 (209) / 1.74 (265) | 2.58 (315) |
+| T-HUN-7 (n) | 1.44 (9) / 1.11 (9) | 1 (3) |
+| T-HUN-8 (n) | 0.923 (13) / 0.9 (10) | 1 (3) |
+| truth hunts per community-year | 46.6 / 50.7 | 13.2 |
+| truth success | 0.262 / 0.296 | 0.287 |
+
+#### P1 result: truth (diagnosis tool, 30 + 60 days, seeds 48 and 7; `report.py P1` and `fail_table.py` from `diag/P1-{48,7}.json`)
+
+| truth (diagnosis, 30 + 60 d, seeds 48 and 7) | S17 | P1 |
+| --- | --- | --- |
+| hunts resolved | 46 | 13 |
+| hunts per community-year | 46.639 | 13.181 |
+| success | 0.283 | 0.308 |
+| kills per successful hunt | 1.385 | 1.000 |
+| captures per hunter in the pursuit (meat units) | 0.173 | 0.133 |
+| hunters per hunt (in the pursuit / counted) | 2.261 | 2.308 |
+| hunters listed per hunt | 2.326 | 2.615 |
+| hunts with fewer than 3 hunters at the resolution | 31 | 6 |
+| success by hunters (n: hunts, successes) | 1: 11, 0; 2: 20, 6; 3: 8, 4; 4: 6, 2; 5: 1, 1 | 1: 4, 0; 2: 2, 0; 3: 6, 3; 4: 1, 1 |
+| captors by class | {'adultMale': 16, 'female': 1, 'adolescentMale': 1} | {'adultMale': 4} |
+| leader's adult males in view at hunt start | {2: 30, 3: 13, 4: 2, 5: 1} | {3: 9, 4: 2, 5: 1, 6: 1} |
+
+```
+## P1: 13 hunts, 4 successes
+failures by reason: {'three or more in the pursuit, circle not closed': 3, 'fewer than three ever joined': 6}
+listed hunters' fate at the resolution (all hunts): {'counted': 30, 'out of range': 2, 'below canopy': 2}
+leader's adult males in view -> hunters in the pursuit (all hunts): {(3, 1): 3, (3, 2): 1, (3, 3): 5, (4, 2): 1, (4, 3): 1, (5, 4): 1, (6, 1): 1}
+hunters listed -> in the pursuit: {(1, 1): 4, (2, 2): 2, (3, 3): 4, (4, 3): 1, (5, 3): 1, (5, 4): 1}
+  n 3 gap 131 halves [71.3104, 71.5441, 71.3018] sets [3] success True minutes 10.2
+  n 3 gap 181 halves [61.946, 61.8, 62.1025] sets [] success False minutes 8.8
+  n 3 gap 146 halves [63.0083, 62.8651, 47.0208] sets [] success False minutes 7.4
+  n 3 gap 142 halves [78.6308, 78.5717, 78.4909] sets [3] success True minutes 8.1
+  n 3 gap 146 halves [78.5318, 78.4573, 78.4842] sets [3] success True minutes 9.4
+  n 3 gap 146 halves [69.3372, 69.7774, 69.8918] sets [] success False minutes 6.4
+  n 4 gap 119 halves [70.4584, 69.8891, 70.1108, 70.3251] sets [3] success True minutes 10.6
+alerted at the start who never joined, at the resolution: {'female:forage': 9, 'adultMale:forage': 8, 'female:rest': 5, 'female:travel': 4, 'adultMale:guard': 4, 'female:play': 4, 'adultMale:travel': 3, 'adultMale:rest': 2, 'adultMale:groom': 2, 'adolescentMale:forage': 2, 'adolescentMale:rest': 1, 'female:flee': 1}
+```
+
+| Reserves ÷ store, % per day (OLS; quick energy runs) | S17q runs | mean ± SD | P1 |
+| --- | --- | --- | --- |
+| adult male | -0.004 / +0.011 / +0.001 / +0.002 | +0.002 ± 0.006 | +0.005 (z +0.4) |
+| female, other | +0.008 / +0.024 / -0.007 / -0.017 | +0.002 ± 0.018 | +0.016 (z +0.7) |
+| female, lactating | +0.007 / -0.003 / -0.006 / +0.010 | +0.002 ± 0.008 | +0.024 (z +2.6) |
+| juvenile 5–12 y | +0.001 / +0.006 / +0.006 / +0.008 | +0.005 ± 0.003 | -0.014 (z -5.2) |
+| infant 2–5 y | -0.008 / -0.000 / -0.016 / +0.022 | -0.000 ± 0.016 | +0.047 (z +2.6) |
+| infant 0.5–2 y | +0.013 / +0.001 / -0.003 / -0.001 | +0.002 ± 0.007 | -0.010 (z -1.5) |
+
+P1q.json viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}: seed 48 deaths 0 {} starvation 0; seed 7 deaths 0 {} starvation 0
+P1h.json viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}: seed 48 deaths 0 {} starvation 0; seed 7 deaths 0 {} starvation 0
+
+#### P1 against its registration
+
+Prescriptions 46 (as predicted); viability passes, no deaths; no capture with fewer than three hunters in the pursuit
+(as predicted); every hunt now starts with three or more adult males in the leader's view (as predicted); hunts fall
+from 46.6 to 13.2 per community-year in truth, above 5 (as predicted); kills per success 1.0 (as predicted); T-HUN-1
+9.1 (60 d) and 11.8 (quick), inside 5–25 (as predicted); T-HUN-3 0.019 and 0.020, further below its band (as
+predicted); T-HUN-4 2.58 and 2.87 (rare row, above its band, as predicted); T-HUN-7 1.0 (below 1.2, as anticipated);
+T-HUN-8 1.0; sums inside noise (fitted z −0.1, held-out +0.9, without the rare rows −0.1, also without T-IGE-3 −0.1).
+**Missed:** success did not rise: 0.308 in truth at 60 days (S17 0.283; H0/H0r 0.262/0.296) and 0.417 in the quick run
+(7 hunts); T-HUN-2 0.273 (60 d, 11 observed hunts) and 0.333 (quick), not into its band. **Missed:** reserves —
+nursing mothers better (+0.024 %/day, z +2.6), juveniles worse (−0.014, z −5.2 against a reference spread of 0.003).
+Kill criterion (§7) not met: by the registered rule a provisional keep candidate, but the reading below says the
+success it produces is set by two defects of P1's own implementation and by joining.
+
+**Why P1's hunts fail (diagnosis; table above):** 6 of 9 failures had fewer than three hunters ever joining (four
+leaders alone) although every leader saw three or more adult males: about half the males in view join (the hand-set
+join value, `candidates.ts:1088`, outside this mechanism). The other 3 had three hunters in the pursuit whose cones
+(62–70°; alertness 0.61–0.80) could close only if they stood within a few degrees of 120° apart, but their largest
+gaps were 146–181°. Two artefacts of the implementation explain the spread: (a) the outcome is read inside the first
+hunter's action at the resolution tick, after the group has drifted 1.1–1.9 m that tick (alert 0.5–1) but before the
+hunters later in the update order have moved, so against a 2 m standoff their bearings are read up to ~30° from where
+they are heading (the counted hunters stood 1.5–3.5 m from the group's point); (b) the circle is read only at the one
+hashed moment (5–11 min after the start), not whenever the hunters close it during the pursuit, while the field
+picture is a capture when the monkeys are cut off.
