@@ -573,3 +573,12 @@ nest in fruit-scarce periods, 179 days, unweighed; 18% of departures before sunr
 - Descent is free in the ledger (energy.ts :499, :502; stylized) and in the valuation.
 - `climbMps` 0.22 m/s is stylized; descent at 1.4 × it (execution.ts :139).
 - E2j's: climb-diagnose's crown-visit locomotion is everything spent between two crown visits, not a per-trip cost.
+
+## 9. Merge and final checks
+
+track-e merged once (a1809f0, decision guide on S25) before the final test run: `gen-params --check` and `tsc` clean,
+`pnpm test` 808 tests, 807 pass, 0 fail, 1 skipped; `git ls-files data/raw node_modules` empty. Every run's JSON and log
+(S25 and W climb-diagnose with both readout amendments, the S25 re-draws' climb-diagnose, C, Cr, CW, CWr, W, rhythm-metrics
+of C and CW) and the table scripts (`tables.py`, `climbtable.py`, `crowntable.py`, `equations.py`, `target_audit.py`,
+`final.py`, `twodraw.py`) are in the stage's scratch directory (`runs/`); the downloaded source texts in `sources/`
+(copyrighted; never to be committed or published).
