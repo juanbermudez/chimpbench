@@ -191,8 +191,8 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   ...same(['partyFollowBase', 'partyFollowW', 'partyFollowMaleW', 'partyFollowHungerW', 'partyStayW', 'joinSocialW'], P => !(P.cohesionValue === 1 && P.partyJoinTrip === 1),
     'not read while cohesionValue (with partyJoinTrip) is 1: following, joining and approaching callers are valued by companyValue and the food at the goal, and leaving costs nothing (src/sim/candidates.ts; execution.ts gates through partyOn)'),
   rgTemperature: { when: P => P.rgOn === 1 && P.urgencyChoice !== 1, why: 'read only while rgOn is 1 and urgencyChoice is not (stage E3)' },
-  rgMaxAgeH: { when: P => P.rgOn === 1 && P.urgencyPersist !== 1, why: 'read only while rgOn is 1 and urgencyPersist is not (stage E3)' },
-  continueBonus: { when: P => P.urgencySwitchCost !== 1, why: 'not read while urgencySwitchCost is 1 (stage E3)' },
+  rgMaxAgeH: { when: P => P.rgOn === 1 && P.urgencyPersist !== 1 && P.redecideValue !== 1, why: 'read only while rgOn is 1 and neither urgencyPersist (stage E3) nor redecideValue (stage E3d: an act is kept while it is still the best by the valuation that chose it, rg.ts) is' },
+  continueBonus: { when: P => P.urgencySwitchCost !== 1 && P.redecideValue !== 1, why: 'not read while urgencySwitchCost (stage E3) or redecideValue (stage E3d: no forced draw at an interrupt; the keep test carries persistence, rg.ts) is 1' },
   finishedPenalty: { when: P => P.urgencySwitchCost !== 1, why: 'not read while urgencySwitchCost is 1 (stage E3)' },
   // stage E4a (docs/staging/e4a-prereg.md): the slow internal states replace these dice and the fixed stress relaxation
   escalateImpulseBase: { when: P => P.endoEscalate !== 1 || P.endoStates !== 1, why: 'no escalation impulse is drawn while endoEscalate and endoStates are 1 (src/sim/perception.ts)' },
@@ -361,6 +361,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   contestAssess: { stage: 'E4h', needs: {} },
   socialTiming: { stage: 'E5e', needs: {} },
   patrolValue: { stage: 'E4i', needs: {} },
+  redecideValue: { stage: 'E3d', needs: {} },
   patrolFusion: { stage: 'E4j', needs: { patrolValue: 2 }, removesNothing: 'corrects the occasion on which patrolValue 2 weighs the lead (a fusion of a party holding patrolMinMales adult males, judged by the males seen within reunionH, in place of a flicker of the 35 m view); adds no magnitude and switches no prescription out (e4j-prereg §4)' },
 };
 

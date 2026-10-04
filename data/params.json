@@ -18171,6 +18171,35 @@
    "notes": "Reconciliation offered within this time of a decided conflict (wild 14-22% reconciled)."
   },
   {
+   "id": "redecideValue",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [
+    "charnov1976"
+   ],
+   "clock": "none",
+   "symbol": "P.redecideValue",
+   "file": "src/sim/rg.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage E3d switch (docs/staging/e3d-prereg.md §5.1): when an animal stops what it is doing and chooses again. With 1 an act is kept while it is still the best by the valuation that chose it: the rules' draw is a Gumbel-max over the menu (the same softmax at rgTemperature), its noise (the candidate jitter plus the temperature times the Gumbel draw) is held in the intention, and at every later decision point (bout end or interrupt) the act's value now plus its noise is compared with every option's value now plus its own (fresh noise for options new since the draw); a draw follows only when another option out-values it, when the act ended, or on another stage's salient event (a hunt or patrol impulse, rising light in the nest). It replaces the gate's need buckets, period, patch test and maximum age (rgMaxAgeH, a clock) and the forced draw at an interrupt where continueBonus acted (both counted prescriptions; 49 -> 47 on S17), and the grooming bout's own +0.35/-0.25 literals. Below rgMinAge the argmax keeps an act while it is the best by its values plus the jitter of the decision that chose it. The finished penalty is unchanged (not implicated). The principle is the marginal value theorem (charnov1976: leave when continuing is worth less than the best alternative, its switching cost in its own value) with the noise of a choice held until the values change; no new magnitude. 0 = today, bit for bit. Design, not fitted."
+  },
+  {
    "id": "redirectAggrP",
    "group": "conflict",
    "value": 0.15,

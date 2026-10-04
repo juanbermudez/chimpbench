@@ -3,14 +3,14 @@ import { bucketOf, periodNow, UNKNOWN_CROP } from '../decide/facts';
 import { GATE, intentOf, type Intent } from '../decide/gate';
 import { drawIndex, softmax } from '../decide/policies';
 import { choiceProbs, stillPaying, urgency, urgencyTemperature } from './urgency';
-import { candidateMeta, findCandidate, V } from './candidates';
+import { CODE, candidateMeta, findCandidate, V } from './candidates';
 import { fruitRate, leafRate, treeIntake } from './intake';
 import { brightening } from './departure';
 import { dayPhase } from './environment';
 import { boundedCandidates, phaseMenu, RESPONSE_ACTIONS } from './menu';
 import { paramsOf, type Params } from './params';
 import { fruitAt } from './phenology';
-import { random } from './rng';
+import { hash01, random } from './rng';
 import { darkOn } from './light';
 import { circadianOn } from './circadian';
 import { IMPULSE_HUNT, IMPULSE_PATROL } from './perception';
@@ -25,6 +25,14 @@ import { index, isChimpId, isTreeId, ix } from './state';
 // Stage E3 (docs/staging/e3-prereg.md; src/sim/urgency.ts): with urgencyChoice the temperature comes from the animal's
 // urgency instead of rgTemperature; with urgencyPersist the gate's need buckets, maximum age and patch ratio give way to
 // one rule, keep the act while it still pays. Both off (the default): the C13 policy, bit for bit.
+// Stage E3d (docs/staging/e3d-prereg.md §5.1; redecideValue): an act is kept while it is still the best by the valuation
+// that chose it. The draw is a Gumbel-max over the menu (the softmax at the same temperature) whose noise, with the
+// candidate jitter, is held in the intention; at every later decision point (bout end or interrupt) the act's value now
+// plus its noise is compared with every option's value now plus its own (fresh noise for options new since the draw).
+// It replaces the gate's need buckets, period, maximum age (rgMaxAgeH) and patch test, and the forced draw at an
+// interrupt (where continueBonus acted). Other stages' salient events (a hunt or patrol impulse, rising light in the
+// nest) and an act that ended still open a draw. Below rgMinAge the argmax keeps an act while it is the best by its
+// values plus the jitter of the decision that chose it (no rng). Off (0): today, bit for bit.
 
 /**
  * Diagnostic counters for scripts (not world state; the sim never reads them): RG decisions by outcome, re-decisions by
@@ -161,7 +169,7 @@ export function gate(world: World, c: Chimp, it: Intent | undefined, list: Candi
  */
 export function rgChoice(world: World, c: Chimp, list: Candidate[]): Candidate | null {
   const P = paramsOf(world), x = ix(c);
-  if (P.rgOn !== 1 || c.age < P.rgMinAge) { if (x.rgIntent) delete x.rgIntent; return null; }
+  if (P.rgOn !== 1 || c.age < P.rgMinAge) { if (x.rgIntent) delete x.rgIntent; return P.redecideValue === 1 ? argmaxKeep(c, list, P) : null; }
   // stage C14 (patrolImpulseDecides): a patrol the hazard has just raised (perception.ts) is itself the stochastic
   // decision. When leading it is the rules' top pick, it is taken: the gate does not hold the old intention over it and
   // it is not drawn a second time (design assumption; the C6 hazard was fitted as the rate of patrols started)
@@ -173,6 +181,7 @@ export function rgChoice(world: World, c: Chimp, list: Candidate[]): Candidate |
     if (rgTap.fn) rgTap.fn(c, list, [], [], top, 'lead');
     return top;
   }
+  if (P.redecideValue === 1) return redecide(world, c, list, P);
   const held = x.rgIntent?.action ?? 'none', g = gate(world, c, x.rgIntent, list);
   if (typeof g !== 'string') {
     if (rgTally.on) { if (g.arrived) rgTally.arrived++; else rgTally.kept++; }
@@ -209,3 +218,112 @@ export function rgChoice(world: World, c: Chimp, list: Candidate[]): Candidate |
   if (rgTap.fn) rgTap.fn(c, list, menu, probs, pick, g);
   return pick;
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Stage E3d (redecideValue; docs/staging/e3d-prereg.md §5.1): when to stop and choose again
+// ---------------------------------------------------------------------------------------------------------------------
+
+const keyOf = (k: Pick<Candidate, 'action' | 'targetId'>) => `${k.action}:${k.targetId}`;
+/** An option's value (candidates.ts: every term, before the jitter); its published score when the meta lacks it. */
+const rawOf = (k: Candidate) => candidateMeta.get(k)?.raw ?? k.score;
+/** The candidate jitter the option was scored with. */
+const jitOf = (k: Candidate) => candidateMeta.get(k)?.jit ?? 0;
+/** A standard Gumbel draw from world.rng: argmax over (value + T × Gumbel) is a draw from the softmax at T. */
+function gumbel(world: World): number { const u = Math.min(1 - 1e-12, Math.max(1e-12, random(world))); return -Math.log(-Math.log(u)); }
+
+/**
+ * The keep test: is the ongoing act still the best by the valuation that chose it? Each option is worth its value now
+ * plus the noise it had in that valuation (the jitter and the Gumbel draw held in the intention); an option new since
+ * then gets its own (the jitter it is scored with now and a Gumbel draw from world.rng, drawn for every new option in
+ * menu order). The noise kept afterwards is that of the options in view now (the current act and the menu).
+ */
+function stillBest(world: World, it: Intent, current: Candidate, menu: Candidate[], T: number): boolean {
+  const old = it.noise ?? {}, next: Record<string, number> = {};
+  const val = (k: Candidate) => { const key = keyOf(k); let n = next[key] ?? old[key]; if (n === undefined) n = jitOf(k) + T * gumbel(world); next[key] = n; return rawOf(k) + n; };
+  const v = val(current);
+  let kept = true;
+  for (const k of menu) if ((k.action !== current.action || k.targetId !== current.targetId) && val(k) > v) kept = false;
+  it.noise = next;
+  return kept;
+}
+
+/** RG under redecideValue: the keep test in place of the gate's triggers, and a Gumbel-max draw that keeps its noise. */
+function redecide(world: World, c: Chimp, list: Candidate[], P: Params): Candidate | null {
+  const x = ix(c), it = x.rgIntent, menu = rgMenu(world, c, list);
+  const byUrgency = P.urgencyChoice === 1, T = byUrgency ? urgencyTemperature(urgency(c, menu, P), P) : P.rgTemperature;
+  let why = 'no-intent';
+  if (it) {
+    const L = world.environment.daylight;
+    if (P.nestLightDecide === 1 && it.action === 'nest' && c.action === 'nest' && x.phase === 2 && x.v !== V.MOTHER && world.time >= x.actEnd && L > 0 && L < 1 && brightening(world) > 0) why = 'light';
+    else if (x.impulse === IMPULSE_HUNT && x.impulseUntil > world.time && findCandidate(list, 'hunt', x.impulseTarget)) why = 'hunt';
+    else if (P.patrolValue >= 2 && x.impulse === IMPULSE_PATROL && x.impulseUntil > world.time && list.some(isPatrolLead)) why = 'patrol';
+    else {
+      const current = findCandidate(list, it.action, it.targetId);
+      if (!x.finished && c.action === it.action && c.targetId === it.targetId && current) {
+        if (stillBest(world, it, current, menu, T)) {
+          if (rgTally.on) rgTally.kept++;
+          if (rgTap.fn) rgTap.fn(c, list, [], [], current, 'kept');
+          return current;
+        }
+        why = 'outvalued';
+      } else {
+        // a trip that ends at its tree becomes feeding there when that is legal (the gate's arrival), with the trip's noise
+        if (it.action === 'travel' && it.variant === V.TREE && isTreeId(it.targetId)) {
+          const t = x.trees.includes(it.targetId) ? index(world).treeById.get(it.targetId) : undefined, feed = findCandidate(list, 'forage', it.targetId);
+          if (t && Math.hypot(t.position[0] - c.position[0], t.position[2] - c.position[2]) <= GATE.arriveM && feed) {
+            const noise = { ...(it.noise ?? {}) }, n = noise[keyOf(it)];
+            if (n !== undefined) noise[keyOf(feed)] = n;
+            x.rgIntent = { ...intentOf(world, c, 'forage', feed.targetId, candidateMeta.get(feed)?.v ?? V.NONE), noise };
+            if (rgTally.on) rgTally.arrived++;
+            if (rgTap.fn) rgTap.fn(c, list, [], [], feed, 'arrived');
+            return feed;
+          }
+        }
+        why = 'ended';
+      }
+    }
+  }
+  // stage E2c/E2d: a night or dusk menu left with one option is that option (as rgChoice)
+  if (menu.length === 1 && (darkOn(P) || circadianOn(P)) && P.rhythmFreeNight !== 1) {
+    const ph = dayPhase(world);
+    if (ph === 'night' || ph === 'dusk') {
+      const pick = findCandidate(list, menu[0].action, menu[0].targetId)!, meta = candidateMeta.get(pick) ?? { v: V.NONE, aux: -1 };
+      x.rgIntent = intentOf(world, c, pick.action, pick.targetId, meta.v, meta.aux);
+      if (rgTap.fn) rgTap.fn(c, list, menu, [1], pick, 'phase');
+      return pick;
+    }
+  }
+  if (menu.length < 2) { if (rgTally.on) rgTally.argmax++; delete x.rgIntent; if (rgTap.fn && list[0]) rgTap.fn(c, list, menu, [], list[0], 'argmax'); return null; }
+  // the draw: argmax over value + jitter + T × Gumbel (the softmax at T over the jittered scores), its noise kept
+  const noise: Record<string, number> = {};
+  let i = 0, best = -Infinity;
+  for (let j = 0; j < menu.length; j++) {
+    const k = menu[j], n = jitOf(k) + T * gumbel(world), v = rawOf(k) + n;
+    noise[keyOf(k)] = n;
+    if (v > best) { best = v; i = j; }
+  }
+  const o = menu[i], pick = findCandidate(list, o.action, o.targetId)!, meta = candidateMeta.get(pick) ?? { v: V.NONE, aux: -1 };
+  x.rgIntent = { ...intentOf(world, c, pick.action, pick.targetId, meta.v, meta.aux), noise };
+  if (rgTally.on) { rgTally.drawn++; rgTally.why[why] = (rgTally.why[why] ?? 0) + 1; if (o.score >= Math.max(...menu.map(k => k.score))) rgTally.top++; }
+  if (rgTap.fn) rgTap.fn(c, list, menu, byUrgency ? choiceProbs(menu.map(k => k.score), T) : softmax(menu.map(k => k.score), T), pick, why);
+  return pick;
+}
+
+/**
+ * Below rgMinAge under redecideValue: the argmax keeps an ongoing act while it is still the best by its values plus the
+ * jitter of the decision that chose it (chimp.sim.jv, the decision count then; no rng: the T → 0 limit of the keep
+ * test); otherwise the argmax decides (null) and this decision's count is kept.
+ */
+function argmaxKeep(c: Chimp, list: Candidate[], P: Params): Candidate | null {
+  const x = ix(c), cur = x.finished ? undefined : findCandidate(list, c.action, c.targetId);
+  if (cur && x.jv !== undefined) {
+    const jv = x.jv, val = (k: Candidate) => rawOf(k) + (hash01(c.id, jv, CODE[k.action], k.targetId) - 0.5) * P.candidateJitterSpan;
+    const v = val(cur);
+    let kept = true;
+    for (const k of list) if (k !== cur && k.action !== 'dead' && val(k) > v) { kept = false; break; }
+    if (kept) return cur;
+  }
+  x.jv = c.decisionVersion;
+  return null;
+}
+
