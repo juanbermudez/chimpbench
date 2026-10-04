@@ -76,7 +76,9 @@ test('bit 1: once per association, again when challenged; the quota no longer de
     s.x.greet[s.m.id] = s.w.time - 9;
     assert.equal(greets(s.w, s.f, s.m), bits === 0, `bits ${bits}: greeted 9 h ago in the same association: the quota reopens it, the memory does not`);
     s.x.greet[s.m.id] = s.w.time - 0.1; s.m.action = 'display';
-    assert.equal(greets(s.w, s.f, s.m), bits === 1, `bits ${bits}: a displaying dominant reopens it under the memory only`);
+    assert.equal(greets(s.w, s.f, s.m), false, `bits ${bits}: a display does not reopen it (iteration 1)`);
+    s.m.action = 'charge'; s.m.targetId = s.f.id;
+    assert.equal(greets(s.w, s.f, s.m), bits === 1, `bits ${bits}: a charge at this animal reopens it under the memory only`);
   }
 });
 

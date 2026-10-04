@@ -654,10 +654,10 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     // pant-grunt: subordinates greet dominants, especially the alpha and displaying males [H]
     if (c.age >= 5 && !carried && d < P.pantGruntRangeM && ((o.sex === 'male' && o.age >= P.pantGruntMaleAgeY) || o.age >= 15) && dominates(o, c)) {
       const last = x.greet[o.id] ?? NEVER, displaying = (o.action === 'display' || o.action === 'charge') && d < P.displayNearM;
-      // stage E5e (socialTiming bit 1; e5e-prereg §4.1): once per association (perception.ts clears the record when the two
-      // meet again after more than reunionH apart), and again when the dominant challenges it: a display within
-      // displayNearM, or a charge at this animal
-      const open = greetMem ? x.greet[o.id] === undefined || (o.action === 'display' && d < P.displayNearM) || (o.action === 'charge' && o.targetId === c.id) : time - last > P.pantGruntRepeatH;
+      // stage E5e (socialTiming bit 1; e5e-prereg §4.1, §7.2): once per association (perception.ts clears the record when the
+      // two meet again after more than reunionH apart), and again when the dominant contests the relationship: a charge or an
+      // attack at this animal (a display asserts status to the party and only raises an open greeting's score)
+      const open = greetMem ? x.greet[o.id] === undefined || ((o.action === 'charge' || o.action === 'attack') && o.targetId === c.id) : time - last > P.pantGruntRepeatH;
       if (open || quotaTrace.on) {
         const sc = 0.3 + (troop?.alphaId === o.id ? 0.4 : 0.05) + (displaying ? 0.8 : 0) + c.stress * 0.3 + (x.newcomers > 0 ? 0.15 : 0)
           + (o.sex === 'male' && c.sex === 'female' ? 0.1 : 0) - d / P.pantGruntDistScaleM - h * 0.2 - (night ? 2 : 0);
