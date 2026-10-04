@@ -331,6 +331,17 @@ runs: S27 ['S27q', 'S27q2', 'S27q3']; S28 ['S28q', 'S28q2', 'S28q3']
   kept the held act at 32% of S28's hunt draws before the bout's scheduled end). Truth hunts 33.8 ± 6.5 (S27, three
   runs) against 82.5 ± 2.3 per community-year.
 
+**A term `departValue` would amplify (noted at the integrator's request, 4 October, after S32 = S27 + `departValue` 2
++ `bodyRules` 1 + `redecideValue` 2 showed re-deciding's cost larger than S28's).** On S28 the keep test's largest flow
+ends rest for an own trip (3.4 per adult-day), and two thirds of own trips never feed at their target, 68–70% of those
+closing more than 6 m from it, mostly departures nobody followed that `departPersist` gives up after its check (the
+animal has barely moved: km per own trip 0.08). Under `departValue` 2 such an attempt ends in the initiator's own decision
+and, while its audience is unchanged, its next own trip goes alone with no give-up, so the same keep-test switches become
+walked trips (more km per trip, more crowns reached and climbed, more empty crowns found) instead of aborted attempts.
+That is the direction S32 shows (nursing mothers 4.46 km a day against S28's 3.98). The valuation error this stage
+targets (trips valued at a full meal they rarely deliver) is the same on both stacks; the reading for S32 is a
+prediction, not tested here.
+
 **What this says.** Re-deciding adds trips because the keep test lets the valuation decide at every bout end and
 interrupt, and the valuation promises far more from a trip than trips deliver: a remembered or unknown crown is valued
 as a full gut-room meal, while two thirds of trips end at an empty crown or never reach theirs and a fed trip eats about
