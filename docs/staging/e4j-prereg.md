@@ -44,15 +44,68 @@ full this stage (author copy, the E5a stage's download); the rest as E4i recorde
 | T-BRD-1 (held-out, rare row; 0.037–0.107) | lemoine2023: Taï East and South 2013–16, 625 stops ≥ 5 min on 283 group-days, adults present | advance vs retreat at border stops | logistic slope of the focal's advance on adults present at halts at 0.8–1.0 R |
 | T-LET-* | need a year (NEEDS_YEAR) | — | reported from truth only (deaths by cause) |
 
-## 3. Diagnosis plan (step 1; unchanged code; to be detailed and committed before any run)
+## 3. Diagnosis plan (step 1; unchanged code; written and committed before the diagnosis runs)
 
-Cheapest decisive check first: a read-only tool (`scripts/e4j-encounter-diagnose.ts`, new) on S16 and on S13, seeds
-48 and 7, 30-day burn-in + 60 days (simulation truth and the observer's own records), logging every intergroup
-contact: context (patrol, incursion, foraging near the border, pursuit of strangers, other), seen or heard, the pair
-of communities, distance, the listener's and the caller's positions relative to both ranges, and whether the
-observer's party-follow team counted it. Then: encounters per patrol, encounters outside patrols, and the observer's
-definition against wilson2012's Methods. The question to answer with numbers: did more patrols, more contacts per
-patrol, more contacts outside patrols, or the scoring double the encounters?
+Cheapest decisive check first: a read-only tool (`scripts/e4j-encounter-diagnose.ts`, new; its header defines every
+readout) on S16 and on S13, seeds 48 and 7, 30-day burn-in + 60 days. It runs e-bench's world and its three observer
+team sets with e-bench's observer seeds (no field experiments: they act on copies), so its follows, encounter records
+and T-IGE / T-PAT / T-BRD rows are e-bench's. **Tool check:** its T-IGE-1 per seed on S16 must equal P16a's.
+
+### 3.1 What the observer counts, against wilson2012's Methods
+
+wilson2012 compiled encounters from the day's narrative notes and the field diary, keeping "only events that observers
+inferred to be intergroup encounters" and rejecting ambiguous cases; an acoustic encounter is "vocalizations heard from
+foreign chimpanzees, with or without vocal response"; distant calls were taken as foreign when they came from a
+distance and direction toward or beyond the edge of the range; "Encounters that were separated by more than 1 h were
+scored as separate encounters"; the rate is per 100 h of observation (party follows, larger subgroup). The model's
+observer (src/field/protocols.ts `processCalls`, `encounterStep`): an encounter opens when the team hears a stranger
+long call (pant-hoot or drum) within the call's radius (the chimps' own 1 km, P-SCALE) or the followed party sees
+strangers; it is kept **per neighbour community** until 60 min pass without a detection of that community; the
+caller's community is read from the call (the code calls it "an optimistic proxy" of the field's attribution).
+Readouts that test the three differences, on the party-larger observer's encounters:
+- **Community-blind 1-h rule:** the share of encounters opened while another neighbour's encounter was open on the
+  same team (`concurrent` > 0): a field team that cannot tell communities apart by ear would score them as one.
+- **Attribution by direction:** the share of heard encounters whose opening call stood outside the team's own 95%
+  isopleth (beyond the edge, `cLevelL` > 0.95) or in its periphery (`cLevelL` ≥ 0.8) farther from its centre than the
+  team (`cRL` > `tRL`: toward the edge); the rest came from inside the own range or from the core side, which a field
+  observer attributing by direction would not have taken as foreign.
+- **Distance of the opening call** by band (0–250, 250–500, 500–750, 750–1000 m): how much of the count rests on the
+  1 km audibility (an [L] input whose sources are all secondary).
+
+### 3.2 Readouts (each from the tool's JSON; pooled over the two seeds)
+
+- Observer encounters per community-year as T-IGE-1 scores them (encounters ÷ party follow-hours × 2,339 h), split
+  by the followed focal's context at the encounter's start (`patrol`, `pursuit`, `incursion`, `border-forage`,
+  `border-other`, `core-forage`, `core-other`; header of the tool) and by the opening caller's context and answer flag.
+- **Exposure × rate:** follow-hours by the focal's context (share) and encounters per follow-hour in each context.
+- Truth hearing episodes (community L hears C; 60-min gap) per community-year by listener context, caller context
+  and answer flag; the share the party-larger observer recorded; seen contacts per community-year.
+- Per patrol: hearing episodes with a listener on the patrol, seen contacts with a member, observer encounters while
+  the team's focal was on it; patrols per community-week; share followed by the party-larger team.
+- `stats.intergroupEncounters` (12-h pair episodes) per community-week; deaths by cause.
+- T-IGE-1..3, T-PAT-1..3, -5..7, T-BRD-1 per seed and pooled (num ÷ den), with the patrol classifier's precision and
+  recall.
+
+### 3.3 Decision rule (fixed now): what doubled the encounters
+
+With E = encounters per community-year on the observer and E = Σ_k h_k · r_k over focal contexts k (h_k follow-hour
+share, r_k encounters per follow-hour × 2,339), the change S13 → S16 splits into: **more patrols** = Δh_patrol ·
+r_patrol(S13 ∪ S16 mean); **more contacts per patrol** = Δr_patrol · h_patrol(mean); **outside patrols** = Σ over the
+other contexts of Δ(h_k r_k); **the scoring** = the change in the shares counted by the community-blind and
+direction-attribution readouts (§3.1), and a seen/heard shift. The component carrying more than half of ΔE (pooled
+over seeds 48 and 7, both draws of each stack) is named the cause; if none does, the two largest are named. Because a
+patrol is the largest party, the party-larger team follows it whenever it is the community's larger subgroup, so
+h_patrol is measured, not assumed.
+
+### 3.4 Runs
+
+- **Smoke** (logged after the run): S16 seed 48 1 + 1 and 2 + 10 days, S13 seed 7 2 + 6 days: every readout produced;
+  one tool fix before the runs (the opening call is looked up without the radius test: the observer tests it before
+  its follow step moves the team).
+- **D16a, D16b, D13a, D13b**: the tool on S16 and S13 (P16a's parameters; S13 = S16 without `socialTiming` and
+  `patrolValue`, identical to bench-run3's `S13-params.json`), a and b = without and with `rgTemperature` 0.1641, seeds
+  48 and 7, 30 + 60 days, from a frozen detached checkout of the commit that adds this section
+  (`scratchpad/e4j/frozen-d`), two chains (S16, S13) one process each. Outputs `artifacts/validation/e4j/D{16,13}{a,b}-{48,7}.json`.
 
 ### Run log (each entry written before its run, unless marked)
 
