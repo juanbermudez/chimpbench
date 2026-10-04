@@ -16,12 +16,12 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
 - **Running now (4 October 12:10; deploy held by the user).** Stage agent **E1q** (`e1q-climbing-energy`, from
   track-e c39488f: audit why climbing costs 1/1.2–1/2.2 of walking energy against ~1/10 in wild chimpanzees; arms with
-  and without walkGait; brief `integrator/e1q-prompt.txt`); **guide-s5** agent moving the decision guide to S25 (branch
-  `guide-s25`). Integrator: the S25 quick reference re-drawn by `rngSalt` 1–3 (`integrator/s25q.sh`, outputs
+  and without walkGait; brief `integrator/e1q-prompt.txt`); decision guide on **S25** (merged `guide-s25` at ff48770;
+  hosted copy on `site` b9fc4a6, build checked). Integrator: the S25 quick reference re-drawn by `rngSalt` 1–3 (`integrator/s25q.sh`, outputs
   `bench-run2/artifacts/validation/e/s25q/`; message E1q when all four exist).
 - **S25 is the best integrated candidate (43)** (e-stack2-confirm.md "S25 results"; S22 + `huntDrive` 1): hunting back
   in band (T-HUN-1 17.4), every sum inside noise; its infant drop is one outbreak seed. Decision guide and hosted copy
-  show S22 (S25 adds a correction to hunting; counts unchanged).
+  on S25.
 - **S22 is the best integrated candidate (43)**; S24 (S22 + S23) not adopted: held-out without the rare rows worse
   beyond noise (z +2.4, through T-RNG-5 and T-FOOD-10) and walking's energy cost on mothers (−0.090), juveniles (−0.108)
   and infants 0.5–2 y (−0.133 %/day). Open next: hunting below its band on the S21/S22 stack (T-HUN-1 2–4); walkGait's
@@ -152,8 +152,8 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   3.43 km a day (S3 2.93) and the deficits deepen: E5a interacts with value-based calls; E5b fixed it (S5).
 - **Hosted site, 2 October 14:50:** `site` now also holds the rewritten About page (merged `site-about` 4618daf: first-person
   hero, stale sections cut, What's next) and the decision guide as a hidden page (`docs/decision-guide.html`, a Vite
-  input: unlinked, noindex, at /docs/decision-guide). The guide now shows **S22** (43 prescribed, 92 replaced; merged
-  `guide-s22`; `STACK = STACKS.S22` in scripts/decision-guide.ts) and the site copy is written by
+  input: unlinked, noindex, at /docs/decision-guide). The guide now shows **S25** (43 prescribed, 92 replaced; merged
+  `guide-s25`; `STACK = STACKS.S25` in scripts/decision-guide.ts) and the site copy is written by
   `pnpm exec tsx scripts/decision-guide.ts --hosted <site>/docs/decision-guide.html` (site 149701c from track-e 8f5319e;
   `integrator/hosted_guide.py` retired). Build checked: no console errors, data figures draw, dist 32 MB without audio.
   Still no deploy: the user has not said how to publish.
