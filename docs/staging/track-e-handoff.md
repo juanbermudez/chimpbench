@@ -14,15 +14,12 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 13:40; deploy held by the user).** Agents: **E3f** (`e3f-crop-energy`: what a crown holds,
-  `fruitIntakePerH`), **E5f** (`e5f-departing`: `departRetryMin`, `departPersistMaxMin`), **E4o** (`e4o-small-rules`:
-  `meatEatPerH`, `guardMaxAgeY`, `mateIntervalH`), all from track-e eea2d85, judged against the S27 quick group
-  (bench-run3 28d249e, `artifacts/validation/e/s27q/`; told it is ready). Integrator: **S28 confirm** (S27 +
-  `redecideValue` 2, 40; registered c31f285) and its reference re-draws S27c1–S27c3 (`integrator/conf28.sh`,
-  `conf28-group.sh`; outputs `bench-run3/artifacts/validation/e/s28/`; judge `integrator/judge_s27group.py`). S28q
-  passed the quick bar but re-deciding adds walking (males 2.8 → 4.0 km), climbing (+25–67%) and lowers mothers',
-  juveniles' and young infants' reserves. S27q-noCM: `crownMove` is not why walkGait holds on S27. Guide and hosted
-  copy on S27 (site 4f19ace, built and checked, not deployed).
+- **Running now (4 October 14:45; deploy held by the user).** Agent: **E0b** (`e0b-hidden-timers`, from 6980f48: an honest
+  count of literal timers and quotas in src/sim; no simulations). Integrator confirms against the S27 group (S27 at
+  28d249e + S27c1–S27c3, `bench-run3/artifacts/validation/e/s28/`): **S28** (`redecideValue` 2; done, awaiting the group),
+  **S29** (`departValue` 2; bench-run4 at 87cdda4, `s29/`), **S30** (`bodyRules` 1; bench-run at 6980f48, `s30/`); judge
+  `integrator/judge_s27group.py`. E3f, E5f and E4o merged. Guide on S27 (41 after the counting fix); hosted copy in
+  `site` 4f19ace still shows 42 (refresh with the next stack); nothing deployed.
 - **Counting fix merged (1d177f8):** "never fitted" now reads as a denial; `ledgerWildCostMult` (identity, E1g) is design.
   Today's model 134, S27 41, S28 39 (replaced 93 unchanged). Earlier counts in the docs stay as written.
 - **S27 is the best integrated candidate (42)** (e-stack2-confirm.md "S26 and S27 results"; S25 + `crownMove` 1 +
