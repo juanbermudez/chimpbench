@@ -1,6 +1,6 @@
 # E3c pre-registration: where to eat, valued as an energy rate
 
-Status: skeleton committed at the start of the stage (3 October 2026, 22:55, branch `e3c-forage-rate`, from `track-e`
+Status: skeleton committed at the start of the stage (3 October 2026, 22:46, branch `e3c-forage-rate`, from `track-e`
 37a2042), before any run and before any code change. Track E, stage E3c. Rule served: field values of behaviour are
 targets, never inputs. No weight or scale is tuned to a travel share, a day range, a number of trees or a fruit share.
 
