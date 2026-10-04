@@ -82,16 +82,16 @@ function kindOf(a: Action, target: number, v: number, aux: number): string {
 }
 
 interface Job { seed: number; burnIn: number; days: number; params: Record<string, number> }
-interface Snap { t: number; h: number; th: number; s: number; f: number; x: number; z: number; seen: number[]; held: number; alt: number; top: string }
+interface Snap { t: number; h: number; th: number; s: number; f: number; x: number; z: number; seen: number[]; held: number; alt: number; top: string; topKind: string; topV: number }
 interface Draw {
-  cls: Cls; day: boolean; why: string; held: string; heldAct: Act; heldKind: string; chosen: string; sw: boolean; pHeld: number; heldTop: boolean;
+  cls: Cls; day: boolean; why: string; held: string; heldAct: Act; heldKind: string; topKind: string; gap: number; chosen: string; sw: boolean; pHeld: number; heldTop: boolean;
   /** max-age: would the gate have kept the act without the clock (ongoing, legal, not patch-poor). */
   wouldKeep: boolean;
   /** since the intention was set (null when no snapshot) */
   ch: null | { min: number; dh: number; dth: number; ds: number; df: number; moved: number; comp: number; dHeld: number; dAlt: number; topChanged: boolean };
 }
 interface Cf { kind: 'bonus' | 'penalty' | 'groom+' | 'groom-'; cls: Cls; day: boolean; act: Act; actKind: string; draw: boolean; pWith: number; pWithout: number; topWith: boolean; topWithout: boolean; why: string }
-interface Run { cls: Cls; act: Act; kind: string; min: number; end: string; startTop: boolean | null; cross: number | null; rg: boolean }
+interface Run { cls: Cls; act: Act; kind: string; min: number; end: string; startTop: boolean | null; cross: number | null; rg: boolean; topKind: string; gap: number }
 interface Result {
   seed: number; draws: Draw[]; cfs: Cf[]; runs: Run[];
   counts: Record<string, Record<string, number>>; // class → verdict → n (daylight)
@@ -124,24 +124,25 @@ export function runSeed(job: Job): Result {
   const rawOf = (c: Chimp, k: Candidate) => { if (k.score <= 0) return 0; const [cb, gl] = contOf(c, k); return k.score - jitterOf(c, k) - cb - gl; };
   /** Raw values of the list: the raw top's key, the value of `heldKey` (−∞ when absent) and the best other value. */
   const rawView = (c: Chimp, list: Candidate[], heldKey: string) => {
-    let top = '', topV = -Infinity, held = -Infinity, alt = -Infinity;
+    let top = '', topV = -Infinity, held = -Infinity, alt = -Infinity, topK: Candidate | null = null;
     const done = ix(c).finished;
     for (const k of list) {
       if (k.action === 'dead' || (done && k.action === c.action && k.targetId === c.targetId)) continue;
       const v = rawOf(c, k), kk = key(k);
-      if (v > topV) { topV = v; top = kk; }
+      if (v > topV) { topV = v; top = kk; topK = k; }
       if (kk === heldKey) held = v; else if (v > alt) alt = v;
     }
-    return { top, held, alt };
+    const m = topK ? candidateMeta.get(topK) : undefined;
+    return { top, held, alt, topV, topKind: topK ? kindOf(topK.action, topK.targetId, m?.v ?? V.NONE, m?.aux ?? -1) : '' };
   };
   const ownSeen = (c: Chimp) => { const byId = index(w).byId; return ix(c).seen.filter(id => { const o = byId.get(id); return !!o && o.alive && o.troopId === c.troopId; }); };
-  const snap = (c: Chimp, list: Candidate[], heldKey: string): Snap => { const v = rawView(c, list, heldKey); return { t: w.time, h: c.hunger, th: c.thirst, s: 1 - c.social, f: 1 - c.energy, x: c.position[0], z: c.position[2], seen: ownSeen(c), held: v.held, alt: v.alt, top: v.top }; };
+  const snap = (c: Chimp, list: Candidate[], heldKey: string): Snap => { const v = rawView(c, list, heldKey); return { t: w.time, h: c.hunger, th: c.thirst, s: 1 - c.social, f: 1 - c.energy, x: c.position[0], z: c.position[2], seen: ownSeen(c), held: v.held, alt: v.alt, top: v.top, topKind: v.topKind, topV: v.topV }; };
   const snaps = new Map<number, Snap>();
   /** The intention each RG animal held before its current decision (rg.ts stores the new one before the tap). */
   const intents = new Map<number, Intent | undefined>();
   /** Per animal: the trigger of its decision this tick that changed its act, and its open run. */
   const lastWhy = new Map<number, string>();
-  interface Open { key: string; act: Act; kind: string; cls: Cls; t0: number; day: boolean; startTop: boolean | null; cross: number | null; rg: boolean }
+  interface Open { key: string; act: Act; kind: string; cls: Cls; t0: number; day: boolean; startTop: boolean | null; cross: number | null; rg: boolean; topKind: string; gap: number }
   const open = new Map<number, Open>();
   let windowOn = false;
   const day = () => w.environment.daylight > 0.1;
@@ -223,7 +224,7 @@ export function runSeed(job: Job): Result {
     }
     if (d) {
       const seen = ownSeen(c);
-      R.draws.push({ cls: clsOf(c), day: d, why: trig, held: heldKey, heldAct: actOf(c.action), heldKind: kindOf(c.action, c.targetId, x.v, x.aux), chosen: key(chosen), sw, pHeld, heldTop: v.top === `${c.action}:${c.targetId}`, wouldKeep,
+      R.draws.push({ cls: clsOf(c), day: d, why: trig, held: heldKey, heldAct: actOf(c.action), heldKind: kindOf(c.action, c.targetId, x.v, x.aux), topKind: v.topKind, gap: v.topV - v.held, chosen: key(chosen), sw, pHeld, heldTop: v.top === `${c.action}:${c.targetId}`, wouldKeep,
         ch: s0 ? { min: (w.time - s0.t) * 60, dh: c.hunger - s0.h, dth: c.thirst - s0.th, ds: (1 - c.social) - s0.s, df: (1 - c.energy) - s0.f, moved: Math.hypot(c.position[0] - s0.x, c.position[2] - s0.z),
           comp: seen.filter(id => !s0.seen.includes(id)).length + s0.seen.filter(id => !seen.includes(id)).length, dHeld: v.held - s0.held, dAlt: v.alt - s0.alt, topChanged: v.top !== s0.top } : null });
     }
@@ -255,12 +256,12 @@ export function runSeed(job: Job): Result {
       if (o && o.key === k) continue;
       const why = lastWhy.get(c.id) ?? 'other';
       if (o) {
-        if (o.day && o.t0 >= 0) R.runs.push({ cls: o.cls, act: o.act, kind: o.kind, min: (w.time - o.t0) * 60, end: why, startTop: o.startTop, cross: o.cross, rg: o.rg });
+        if (o.day && o.t0 >= 0) R.runs.push({ cls: o.cls, act: o.act, kind: o.kind, min: (w.time - o.t0) * 60, end: why, startTop: o.startTop, cross: o.cross, rg: o.rg, topKind: o.topKind, gap: o.gap });
       }
       const rg = P.rgOn === 1 && c.age >= P.rgMinAge, sn = snaps.get(c.id);
-      const startTop = rg && sn && Math.abs(sn.t - w.time) < 1e-9 ? sn.top === k : null;
+      const fresh = rg && sn && Math.abs(sn.t - w.time) < 1e-9, startTop = fresh ? sn!.top === k : null;
       // the first run of each animal in the window is censored (t0 −1: started before the window)
-      open.set(c.id, { key: k, act: actOf(c.action), kind: kindOf(c.action, c.targetId, x.v, x.aux), cls, t0: o ? w.time : -1, day: d, startTop, cross: null, rg });
+      open.set(c.id, { key: k, act: actOf(c.action), kind: kindOf(c.action, c.targetId, x.v, x.aux), cls, t0: o ? w.time : -1, day: d, startTop, cross: null, rg, topKind: fresh ? sn!.topKind : '', gap: fresh ? sn!.topV - sn!.held : NaN });
       if (o && d) R.runsStarted[cls]++;
     }
   }
@@ -317,7 +318,10 @@ if (!isMainThread) {
     clockCausedEndsPerAnimalHour: r3(ma.filter(d => d.wouldKeep && d.sw).length / H), clockCausedShareOfAllSwitches: r3(ma.filter(d => d.wouldKeep && d.sw).length / Math.max(1, sws.length)),
     pHeldMean: r3(mean(ma.map(d => d.pHeld))), heldWasTop: r3(mean(ma.map(d => +d.heldTop))), switchWhenHeldTop: r3(mean(ma.filter(d => d.heldTop).map(d => +d.sw))), switchWhenHeldNotTop: r3(mean(ma.filter(d => !d.heldTop).map(d => +d.sw))),
     byHeldAct: Object.fromEntries(ACTS.map(a => { const L = ma.filter(d => d.heldAct === a); return [a, { n: L.length, perAnimalHour: r3(L.length / H), switchShare: r3(mean(L.map(d => +d.sw))), heldWasTop: r3(mean(L.map(d => +d.heldTop))), clockEndsPerAnimalHour: r3(L.filter(d => d.wouldKeep && d.sw).length / H) }]; })),
-    byHeldKind: Object.fromEntries([...new Set(ma.map(d => d.heldKind))].sort().map(kd => { const L = ma.filter(d => d.heldKind === kd); return [kd, { n: L.length, perAnimalHour: r3(L.length / H), switchShare: r3(mean(L.map(d => +d.sw))), heldWasTop: r3(mean(L.map(d => +d.heldTop))) }]; })),
+    byHeldKind: Object.fromEntries([...new Set(ma.map(d => d.heldKind))].sort().map(kd => { const L = ma.filter(d => d.heldKind === kd), N = L.filter(d => !d.heldTop), t: Record<string, number> = {};
+      for (const d of N) t[d.topKind] = (t[d.topKind] ?? 0) + 1;
+      return [kd, { n: L.length, perAnimalHour: r3(L.length / H), switchShare: r3(mean(L.map(d => +d.sw))), heldWasTop: r3(mean(L.map(d => +d.heldTop))), gapMedian: r3(med(N.map(d => d.gap))),
+        topKindWhenNotTop: Object.fromEntries(Object.entries(t).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k2, n2]) => [k2, r3(n2 / N.length)])) }]; })),
     byClass: Object.fromEntries(rgCls.map(k => { const L = ma.filter(d => d.cls === k); return [k, { perAnimalHour: r3(L.length / Math.max(1e-9, dayH[k])), switchShare: r3(mean(L.map(d => +d.sw))), clockEndsPerAnimalHour: r3(L.filter(d => d.wouldKeep && d.sw).length / Math.max(1e-9, dayH[k])) }]; })),
     changed: chOf(ma), changedWhenSwitched: chOf(ma.filter(d => d.sw)),
   };
@@ -348,6 +352,8 @@ if (!isMainThread) {
   const runOf = (L: Run[]) => { const top = L.filter(r => r.startTop === true), cr = top.filter(r => r.cross !== null);
     return { n: L.length, medianMin: r3(med(L.map(r => r.min))), meanMin: r3(mean(L.map(r => r.min))), p90Min: r3(q(L.map(r => r.min), 0.9)),
       startTop: r3(mean(L.filter(r => r.startTop !== null).map(r => +r.startTop!))),
+      notTopGapMedian: r3(med(L.filter(r => r.startTop === false).map(r => r.gap))),
+      notTopTopKind: (() => { const N = L.filter(r => r.startTop === false); const t: Record<string, number> = {}; for (const r of N) t[r.topKind] = (t[r.topKind] ?? 0) + 1; return Object.fromEntries(Object.entries(t).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k2, n2]) => [k2, r3(n2 / N.length)])); })(),
       crossMedianMin: r3(med(cr.map(r => r.cross!))), crossedShare: r3(top.length ? cr.length / top.length : NaN),
       endedBeforeCross: r3(top.length ? top.filter(r => r.cross === null).length / top.length : NaN),
       endBy: Object.fromEntries([...new Set(L.map(r => r.end))].sort().map(e => [e, r3(L.filter(r => r.end === e).length / L.length)])) }; };
