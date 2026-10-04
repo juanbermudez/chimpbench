@@ -669,6 +669,14 @@ wild Kanyawara chimpanzees (pontzerWrangham2004), with every crown a full climb 
 infants climbing behind their mothers; the source's distances and equations are not open, so the miss cannot yet be
 assigned to metres climbed or to cost per metre.
 
+**Merge and checks.** track-e merged once (149c01d, E4n) before the final test run: gen-params --check and tsc clean,
+`pnpm test` 804 tests, 803 pass, 0 fail, 1 skipped; `git ls-files data/raw node_modules` empty.
+
+**Files.** Every run's JSON and log (W, Wr, B1, B1r, B2, B2r, B3, B3r; the four S22 climb-diagnose runs; the
+counterfactual and retarget readouts; B1's rhythm-metrics) and the table scripts (`table.py`, `compact.py`, `episodes.py`,
+`final.py`, `twodraw.py`, `decomp.py`, `diag.py`) are in `artifacts/validation/e2j/` of this worktree (gitignored), copied
+from the stage's scratch directory.
+
 ## 6. Known defects (file:line at 0d08525)
 
 - `netRateShare` (intake.ts :89–96) charges the walk's time and the climb's energy, not the climb's time
