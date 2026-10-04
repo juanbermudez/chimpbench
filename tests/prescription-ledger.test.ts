@@ -39,6 +39,9 @@ test('encoded target rows are read from the notes, and denials are respected', (
   assert.deepEqual(fittedIn('Design value 0.4, not fitted (the observer cannot count it).'), { fitted: false, targets: [] });
   assert.deepEqual(fittedIn('May be refitted once to T-COM-8\'s band centre.'), { fitted: false, targets: [] });
   assert.deepEqual(fittedIn('Copulations that do not fit accelerated time.'), { fitted: false, targets: [] });
+  // "never fitted" is a denial too: ledgerWildCostMult (E1g) is a sensitivity parameter at the identity, swept and never fitted
+  assert.deepEqual(fittedIn('A sensitivity parameter, swept and never fitted.'), { fitted: false, targets: [] });
+  assert.notEqual(classify(byId.get('ledgerWildCostMult')!).cls, 'outcome-encoding');
   const known = new Set(targets.map(t => t.id));
   for (const e of entries) for (const t of classify(e).encodes) assert.ok(known.has(t), `${e.id} names ${t}`);
 });

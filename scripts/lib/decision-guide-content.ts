@@ -80,7 +80,7 @@ export const STEP_OF: Record<string, Step> = {
   infanticideNewAlphaP: 'perceive', infanticideStrangerP: 'perceive', escalateImpulseBase: 'perceive', escalateImpulseAggr: 'perceive',
   // life.ts needs, energy.ts: body state
   hungerAwakePerH: 'body:energy', hungerRunPerH: 'body:energy', hungerSleepPerH: 'body:energy', hungerLactationPerH: 'body:energy',
-  hungerPregnancyPerH: 'body:energy', fruitHungerFactor: 'body:energy', fallbackHungerPerH: 'body:energy', ledgerWildCostMult: 'body:energy',
+  hungerPregnancyPerH: 'body:energy', fruitHungerFactor: 'body:energy', fallbackHungerPerH: 'body:energy',
   thirstAwakePerH: 'body:water', thirstSleepPerH: 'body:water', thirstHotPerH: 'body:water', fruitThirstFactor: 'body:water',
   energySleepPerH: 'body:sleep', energyRestPerH: 'body:sleep', energyRunPerH: 'body:sleep', energyWalkPerH: 'body:sleep', energyOtherPerH: 'body:sleep',
   stressRelaxPerH: 'body:endo', socialAwakePerH: 'body:social', socialSleepPerH: 'body:social',
@@ -265,9 +265,8 @@ export const DIAGRAMS: DiagramSpec[] = [
         text: 'Each feeding option is worth the hunger drive times the energy it delivers per hour, walk included, against the animal\'s own rate on ripe fruit: hunger decides whether to eat, the rate decides where (E3c). Other feeders in a crown take their share of it, and a crowding cost applies when fruit is scarce.' },
       { k: 'move', x: L, y: y(2), w: LW, h: 72, t: 'Cost of moving', s: '3.8 J per kg per metre', st: 'inp', ps: ['ledgerWalkJPerKgM', 'travelDistScaleM'],
         text: 'The net cost of walking measured on chimpanzees: 3.8 J per kg per metre. The trip\'s energy cost per metre is derived from it.' },
-      { k: 'wild', x: R, y: y(2), w: RW, h: 72, t: 'Wild cost multiplier', s: 'ledgerWildCostMult = 1', ids: ['ledgerWildCostMult'],
-        text: 'Multiplies resting spending for wild costs no term models. Its value is 1, the captive-based sum, so it changes nothing.',
-        note: 'Counted because its notes say "swept and never fitted": the ledger\'s fitted-word rule does not catch "never". Probably a classification error; shown as the tool counts it.' },
+      { k: 'wild', x: R, y: y(2), w: RW, h: 72, t: 'Wild cost multiplier', s: 'ledgerWildCostMult = 1 · assumed', st: 'des', ps: ['ledgerWildCostMult'],
+        text: 'Multiplies resting spending for wild costs no term models (temperature, immunity, repair, vigilance). Its value is 1, the captive-based sum, so it changes nothing; E1g kept it as a sensitivity tool, swept and never fitted. The ledger counted it as fitted until its fitted-word rule learned to read "never fitted".' },
       { k: 'trip', x: R, y: y(4), w: RW, h: 88, t: 'Feeding valued by\nnet energy rate', s: 'three fitted weights switched out', ids: ['forageDistScaleM', 'memTravelHungerW', 'fallbackForageW'],
         before: 'Three weights fitted in C5a against the travel share and day range (T-ACT-2, T-RNG-4): a crown in view lost 1 point per 400 m; a remembered crown scaled with 1.25 × hunger and leaves underfoot with 0.45 × hunger. In the crown\'s own currency the fallback would have been chosen four times as often and trips 58% more often.',
         now: 'Every feeding option is worth the hunger drive times the net energy rate it promises, as a share of the animal\'s own rate on ripe fruit: a bout\'s energy (its share of the crop it believes, up to what the gut can take) less the walk\'s and the climb\'s cost, over the walk and the eating time. A crown in view, a trip to a remembered tree and a joined trip are valued alike, the fallback at its own rate where it stands, and a tree whose bout does not pay its walk is worth nothing (E3c).' },
@@ -275,7 +274,7 @@ export const DIAGRAMS: DiagramSpec[] = [
         before: 'Every walk moved at 0.35 m/s, a speed taken from the field\'s day range (2.7 km) and travel share (21% of an 11.5-hour day), with the field\'s pauses folded in: the two outcomes it helps produce (ledger).',
         now: 'The body sets the speed: measured adult walking speeds (0.88 m/s for males, 0.78 for females, 0.75 carrying a dependant), scaled by body mass below adult size, read by every walk and every trip\'s value; pauses are the animal\'s own decisions (E2i). On S27 adult males walk 3.26 km a day (S25\'s runs 2.18) and the travel share is 0.132, inside its band.' },
       { k: 'crop', x: L, y: y(5), w: LW, h: 72, t: 'Fruit eaten per feeding hour', s: 'fruitIntakePerH', ids: ['fruitIntakePerH'],
-        text: 'How many units of fruit an animal takes from a crown per hour: it sets how fast a crown empties and how long a visit lasts in a trip\'s value. Fitted in C5a against T-ACT-2 and T-RNG-4.' },
+        text: 'Fitted in C5a against T-ACT-2 and T-RNG-4. Under the energy ledger it no longer sets intake (measured kcal per feeding minute does); it sets how much energy a crown holds: one fruit unit is worth about 4,030 kcal of drupes or 4,430 of figs, so a median fruiting crown holds about 2,050 kcal and a visit takes about 140. No measured crop energy exists for most of the model\'s trees, so it stays (E3f).' },
       { k: 'feed', x: S, y: y(5), w: SW, h: 72, t: 'Feed, walk or eat leaves', s: 'forage · travel', st: 'des',
         text: 'The options go to the choice. Feeding fills the gut at the food\'s rate until the crown\'s share runs out or the animal stops.' },
       { k: 'e3b', x: L, y: y(3), w: LW, h: 84, t: 'A return valued by\nthe crop left (E3b)', s: 'revisitByCrop', st: 'des', sw: ['revisitByCrop'], ps: ['revisitW', 'revisitTauH'],
@@ -821,7 +820,7 @@ export const DIAGRAMS: DiagramSpec[] = [
 /** Domains for the counts: every counted entry of today's model belongs to exactly one. The order is the page's. */
 export const DOMAINS: { key: string; title: string; ids: string[] }[] = [
   { key: 'choice', title: 'The choice itself', ids: ['rgTemperature', 'rgMaxAgeH', 'continueBonus', 'finishedPenalty'] },
-  { key: 'feeding', title: 'Feeding and foraging', ids: ['hungerAwakePerH', 'hungerRunPerH', 'hungerSleepPerH', 'fruitHungerFactor', 'fallbackHungerPerH', 'ledgerWildCostMult', 'forageDistScaleM', 'memTravelHungerW', 'fallbackForageW', 'walkMps', 'fruitIntakePerH'] },
+  { key: 'feeding', title: 'Feeding and foraging', ids: ['hungerAwakePerH', 'hungerRunPerH', 'hungerSleepPerH', 'fruitHungerFactor', 'fallbackHungerPerH', 'forageDistScaleM', 'memTravelHungerW', 'fallbackForageW', 'walkMps', 'fruitIntakePerH'] },
   { key: 'drinking', title: 'Drinking', ids: ['thirstAwakePerH', 'thirstSleepPerH', 'thirstHotPerH', 'fruitThirstFactor', 'drinkDistScaleM', 'drinkThirstPerH'] },
   { key: 'sleep', title: 'Sleep and the nest', ids: ['energySleepPerH', 'energyRestPerH', 'energyRunPerH', 'energyWalkPerH', 'energyOtherPerH', 'nestEveningFromH', 'nestEveningStartH', 'nestEveningEndH', 'nestEveningDrive', 'nestNightBonus', 'nestMorningDrive', 'lit:nestGate', 'nestWakeHour', 'boutNestMorningMin', 'boutNestMorningMax', 'lit:morningNest', 'lit:nightMenu', 'lit:duskMenu'] },
   { key: 'rest', title: 'Rest and heat', ids: ['lit:middayRest', 'boutRestMiddayMin', 'boutRestMiddayMax', 'lit:middayBout'] },
