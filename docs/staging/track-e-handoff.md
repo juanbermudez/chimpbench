@@ -14,7 +14,10 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 03:00; deploy held by the user).** Nothing.
+- **Running now (4 October 03:00; deploy held by the user).** Stage agent **E4j** (`e4j-encounters`, from track-e
+  0777e95: why intergroup encounters doubled on S16; brief `integrator/e4j-prompt.txt`); **guide-s5** agent moving the
+  decision guide to S16 (branch `guide-s16`); integrator: the S16 quick reference (`integrator/s16q.sh`, outputs
+  `bench-run4/artifacts/validation/e/s16q/`; message E4j when all four exist).
 - **S16 done: now the best integrated candidate by the keep rule** (e-stack2-confirm.md "S16 results"; S13 +
   `socialTiming` 15 + `patrolValue` 2): 49 prescriptions, viable, night safe, held-out inside noise, patrol rows in band.
   **Fitted worse beyond noise (z +3.9)**, mostly T-IGE-1 22.8 (twice its band's top) and T-HUN-2. Next problem: the
