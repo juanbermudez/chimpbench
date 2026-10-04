@@ -14,10 +14,13 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 09:20; deploy held by the user).** No agents. Integrator: S21's confirm group (bench-run2;
-  S21c2 detached chain, S21c3 task), **S22** (S21 + `leftoverRules` 3; bench-run3 ea794ff) and **S23** (S21 + `walkGait`;
-  registered 23db70b; bench-run4 moved to 23db70b, `integrator/conf23.sh`), both judged with
-  `integrator/judge_s21group.py` (`ARM=S22` / `ARM=S23`).
+- **Running now (4 October 10:05; deploy held by the user).** No agents. Integrator: the **S24** confirm (S21 +
+  `leftoverRules` 3 + `walkGait`, 42 prescriptions; registered b908cf2) in bench-run4 (23db70b; `integrator/conf24.sh`),
+  judged with `integrator/judge_s21group.py` (`ARM=S24`).
+- **S22 and S23 done** (e-stack2-confirm.md): both pass the keep rule against S21's four runs (re-drawn by `rngSalt`).
+  S22 (`leftoverRules` 3, 43): juveniles' and males' reserves better; costs: T-PAT-6 above band, hunting lower (2.0).
+  S23 (`walkGait`, 44): hunting into band (6.5), day ranges 3.0–3.4 km; costs: every class's reserves lower, T-FOOD-10
+  back up (0.71). Hunting on the S21 stack is below its band (4.1 ± 0.8): a candidate next stage.
 - **S21 done: now the best integrated candidate** (e-stack2-confirm.md "S21 results"; S19 + `choiceBelief` 2): 45
   prescriptions, viable, night safe, held-out without the rare rows better beyond noise (z −5.0; T-FOOD-10 0.81 → 0.58),
   T-HUN-2 0.50 (in band). Costs: T-PAT-1 0.093 (just below band), T-HUN-1 5.2 (floor). Decision guide and hosted copy
