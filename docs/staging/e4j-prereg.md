@@ -106,6 +106,18 @@ h_patrol is measured, not assumed.
   `patrolValue`, identical to bench-run3's `S13-params.json`), a and b = without and with `rgTemperature` 0.1641, seeds
   48 and 7, 30 + 60 days, from a frozen detached checkout of the commit that adds this section
   (`scratchpad/e4j/frozen-d`), two chains (S16, S13) one process each. Outputs `artifacts/validation/e4j/D{16,13}{a,b}-{48,7}.json`.
+- **Tool v2 and the E runs** (written after D16a/D13a were read, before any v2 run). The first draw split S13 → S16
+  (observer, 18.0 → 32.9 per community-year) about equally into patrols (exposure +6.6, rate +1.4) and outside patrols
+  (+7.0, mostly a doubled rate of encounters for followed parties in their own core), with stranger-heard calls per
+  community-day doubled (1.33 → 2.68) while calls per community-day did not rise (84 → 77). Three readouts are added to
+  decide what brings communities within earshot and what sets the patrol rate (scripts only; the world is unchanged):
+  **formings** (the E4i occasion: a perception first seeing ≥ 3 adult males; 'flicker' when the other males in view had
+  all been seen within `reunionH`, the model's reunion span, so no fusion happened), **ranges** (daily centres, radii,
+  distances between centres) and **proximity** (every 15 min in daylight, the least distance between independent
+  members of each pair of communities; shares within the pant-hoot radius and half of it). Smoke: S16 seed 48, 2 + 6
+  days, every readout produced. Runs **E16a, E16b, E13a, E13b**: the v2 tool on the same eight seed-configurations as
+  the D runs, from a frozen detached checkout of the commit that adds this entry (`scratchpad/e4j/frozen-e`), two chains;
+  every v1 readout must reproduce the D runs exactly (tool check).
 
 ### Run log (each entry written before its run, unless marked)
 

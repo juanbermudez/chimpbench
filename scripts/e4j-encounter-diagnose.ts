@@ -40,6 +40,16 @@
 //   toward or beyond the range edge.
 //   Follow exposure: per tick with a team following, the focal's context class (hours), so encounters per follow-hour
 //   split into exposure × rate.
+// Formings (v2; the E4i patrolValue 2 occasion, perception.ts): an adult male's perception that sees >= patrolMinMales
+//   adult males of his community (himself included) after fewer at his previous perception, no patrol of his community
+//   under way at the start of the tick, rain below patrolMaxRain (recorded whatever the switch). 'flicker': before this
+//   perception he had seen at least patrolMinMales − 1 of the other adult males now in view within reunionH (their metAt
+//   before it), so the party already held that many males and one only stepped out of his sight; otherwise a fusion.
+//   'led': he started a patrol within impulseDurationH of it.
+// Ranges (v2): daily, each community's use-weighted centre and equal-area radius (troop.center, troop.radius) and the
+//   pairwise distances between centres.
+// Proximity (v2): every 15 min in daylight > 0.1, for each pair of communities the least distance between any of their
+//   independent members (weaned or >= 6 y); shares of quarter-hours within the pant-hoot radius and within half of it.
 // Rows: T-IGE-1..3, T-PAT-1..3, -5..7, T-BRD-1 per seed as runFieldJob computes them (value, num, den, parts), the
 //   patrol classifier's precision and recall (focal and male-party team sets) and the encounter classifier's accuracy on
 //   party follows; stats.intergroupEncounters (12-h community-pair episodes) over the window; deaths by cause.
@@ -255,9 +265,63 @@ function followExposure(): void {
   for (const tm of pobs.teams) { if (tm.state !== 2) continue; const f = byId.get(tm.focal); if (!f) continue; const k = ctxOf(f); exposure[k] = (exposure[k] ?? 0) + TICK_HOURS; }
 }
 
+// ------------------------------------------------------------------------------------ formings, ranges, proximity (v2)
+interface Forming { id: number; troop: number; t: number; males: number; flicker: boolean; led: boolean }
+const formings: Forming[] = [];
+const lastLook = new Map<number, number>(), prevOwn = new Map<number, number>(), shadow = new Map<number, Map<number, number>>();
+function trackFormings(patrolAtStart: Set<number>): void {
+  const byId = index(w).byId;
+  for (const c of index(w).alive) {
+    if (!c.alive || !isAdultMale(c)) continue;
+    const x = ix(c);
+    if (lastLook.get(c.id) === x.seenAt) continue;
+    lastLook.set(c.id, x.seenAt);
+    const before = prevOwn.get(c.id) ?? x.ownMales, sh = shadow.get(c.id);
+    prevOwn.set(c.id, x.ownMales);
+    if (x.ownMales >= P.patrolMinMales && before < P.patrolMinMales && !patrolAtStart.has(c.troopId) && w.environment.rain < P.patrolMaxRain) {
+      let known = 0;
+      for (const id of x.seen) { const o = byId.get(id); if (o && o.alive && o.troopId === c.troopId && isAdultMale(o) && sh && (sh.get(id) ?? -1e9) >= x.seenAt - P.reunionH) known++; }
+      formings.push({ id: c.id, troop: c.troopId, t: r3(w.time), males: x.ownMales, flicker: known + 1 >= P.patrolMinMales, led: false });
+    }
+    const m = sh ?? new Map<number, number>();
+    for (const id of x.seen) { const o = byId.get(id); if (o && o.alive && o.troopId === c.troopId && isAdultMale(o)) m.set(id, x.metAt[id] ?? x.seenAt); }
+    shadow.set(c.id, m);
+  }
+}
+const rangesDaily: { day: number; troops: { id: number; cx: number; cz: number; r: number }[]; gaps: Record<string, number> }[] = [];
+let lastDay = -1;
+function trackRanges(): void {
+  if (w.day === lastDay) return;
+  lastDay = w.day;
+  const T = w.troops.map(t => ({ id: t.id, cx: Math.round(t.center[0]), cz: Math.round(t.center[2]), r: Math.round(t.radius) })), gaps: Record<string, number> = {};
+  for (let i = 0; i < T.length; i++) for (let j = i + 1; j < T.length; j++) gaps[`${T[i].id}-${T[j].id}`] = Math.round(Math.hypot(T[i].cx - T[j].cx, T[i].cz - T[j].cz));
+  rangesDaily.push({ day: w.day, troops: T, gaps });
+}
+const prox: Record<string, { n: number; inHear: number; inHalf: number; sumMin: number }> = {};
+let lastQuarter = -1;
+function trackProximity(): void {
+  const q = Math.floor(w.time * 4);
+  if (q === lastQuarter) return;
+  lastQuarter = q;
+  if (w.environment.daylight <= 0.1) return;
+  const by: Chimp[][] = [];
+  for (const c of index(w).alive) { if (!c.alive || !(ix(c).weaned || c.age >= 6)) continue; (by[c.troopId] ??= []).push(c); }
+  const R = P.hearPantHootM;
+  for (let a = 0; a < w.troops.length; a++) for (let b = a + 1; b < w.troops.length; b++) {
+    const A = by[w.troops[a].id] ?? [], B = by[w.troops[b].id] ?? [];
+    let best = Infinity;
+    for (const p of A) for (const o of B) { const dd = Math.hypot(p.position[0] - o.position[0], p.position[2] - o.position[2]); if (dd < best) best = dd; }
+    if (!Number.isFinite(best)) continue;
+    const k = `${w.troops[a].id}-${w.troops[b].id}`, e = prox[k] ??= { n: 0, inHear: 0, inHalf: 0, sumMin: 0 };
+    e.n++; e.sumMin += best; if (best <= R) e.inHear++; if (best <= R / 2) e.inHalf++;
+  }
+}
+
 // ------------------------------------------------------------------------------------------------------------------- run
 const enc0 = w.stats.intergroupEncounters, deaths0 = new Set(w.chimps.filter(c => !c.alive).map(c => c.id));
+for (const c of index(w).alive) if (isAdultMale(c)) { lastLook.set(c.id, ix(c).seenAt); prevOwn.set(c.id, ix(c).ownMales); }
 for (let i = 0; i < days * DAY; i++) {
+  const patrolAtStart = new Set(w.troops.filter(t => !!s.patrols[t.id]).map(t => t.id));
   tickWorld(w);
   logCalls();
   observerStep(obs, w); observerStep(pobs, w); observerStep(mobs, w);
@@ -265,7 +329,11 @@ for (let i = 0; i < days * DAY; i++) {
   snapEncounters(pobs);
   logSeen();
   followExposure();
+  trackFormings(patrolAtStart);
+  trackRanges();
+  trackProximity();
 }
+for (const f of formings) f.led = patrols.some(p => p.leader === f.id && p.t0 >= f.t && p.t0 <= f.t + P.impulseDurationH + 1e-9);
 for (const [t, o] of openPatrol) patrols[o.i].t1 = r3(w.time);
 const rec = finishObserver(obs, w), prec = finishObserver(pobs, w), mrec = finishObserver(mobs, w);
 const d = derive(rec), pd = derive(prec), md = derive(mrec);
@@ -292,6 +360,9 @@ const result = {
   observer: obsEnc,
   observerRecords: prec.encounters.map(e => ({ team: e.team, troop: e.troop, other: e.other, t0: r3(e.t0), t1: r3(e.t1), modality: e.modality, ownAM: e.ownAM, approach: e.approach, patrolling: e.patrolling })),
   episodes, seen: seenEps, patrols,
+  formings: { n: formings.length, flicker: formings.filter(f => f.flicker).length, led: formings.filter(f => f.led).length, ledFlicker: formings.filter(f => f.led && f.flicker).length, list: formings },
+  ranges: rangesDaily,
+  proximity: Object.fromEntries(Object.entries(prox).map(([k, e]) => [k, { n: e.n, inHear: r3(e.inHear / e.n), inHalf: r3(e.inHalf / e.n), meanMin: Math.round(e.sumMin / e.n) }])),
   calls: { n: calls.length, heardByStrangers: calls.filter(c => c.heard.length > 0).length, byTroop: tally(calls.map(c => c.troop)),
     strangerHeard: calls.filter(c => c.heard.length > 0).map(c => ({ t: c.t, kind: c.kind, troop: c.troop, am: c.am, ctx: c.ctx, v: c.v, answers: c.answers, patrol: c.patrol, own: c.own, inOther: c.inOther, heard: c.heard })),
     allByCtx: tally(calls.map(c => c.ctx)), allByV: tally(calls.map(c => c.v)) },
