@@ -515,3 +515,11 @@ candidate (a replacement that misses both ranges does not replace what the quota
   Unit tests `tests/sim-mating-value.test.ts` 4 pass; ledger and Track E tests pass; S27 51 → 47.
 - **A1** (as registered in §7): from `scratchpad/e4p/frozen-a1` (the commit that adds this entry),
   `run-arm.sh frozen-a1 A1 '{"matingValue":1}'`; outputs `frozen-a1/artifacts/validation/e4p/A1*`.
+- **Readout added while A1 ran, before any of its results were read (disclosed; the integrator relayed E4q's request):**
+  male → male aggression per co-present adult-male dyad-hour, E4q's definition (e4q-prereg.md §3: charges and attacks
+  started by adult males at adult males of their community, plus displays aimed at one, per ordered pair of awake adult
+  males of one party in daylight; muller2007's 0.015 per hour at Kanyawara), with the mate guard's chases (variant
+  GUARD) apart. E4q's S27 reference: 0.097 ± 0.016 (30 + 30 days, four runs), 59% of adult males' charges guard chases.
+  Re-runs on unchanged worlds from `scratchpad/e4p/frozen-m` (the commit that adds this entry): D0m, D1m (S27, S27 +
+  `rngSalt` 1) and A1m (A1's parameters; matingValue 1 is hash-identical with the WIP code of iteration 2 present, S27
+  seed 48 after 2 days dba5143146a2b7b4), 30 + 60 days, seeds 48 and 7; outputs `scratchpad/e4p/diagm/`.

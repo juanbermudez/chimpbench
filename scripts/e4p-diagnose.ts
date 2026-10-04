@@ -107,11 +107,19 @@ const lastCopF = new Map<number, number>(), lastCopM = new Map<number, number>()
 // and per completed cycle the weighted copulations her record held when it was cleared (ovulation passed: wrap or conception)
 const copsByWeight: Record<string, number> = {};
 const cycleCops: number[] = [], copRecord = new Map<number, number>();
+// --- 10. male → male aggression per co-present adult-male dyad-hour (E4q's readout, docs/staging/e4q-prereg.md §3:
+// muller2007's "male aggression received by males", 0.015 per hour at Kanyawara): charges and attacks started by adult
+// males (lastAgg set this tick) at adult males of their community, plus displays started (lastDisplay set this tick) aimed
+// at one; per ordered pair of awake adult males of one party in daylight; the mate guard's chases (variant GUARD) apart
+const prevAgg = new Map<number, number>(), prevDisp = new Map<number, number>();
+let mmAgg = 0, mmGuard = 0, mmDyadH = 0;
+const mmByVariant: Record<string, number> = {};
 // --- 9. feeding on days with a swollen parous female ------------------------------------------------------------------
 const dayFeed = new Map<number, { feedMin: number; swollenParous: boolean; awakeMin: number }>();
 const feedDays: { with: number[]; without: number[] } = { with: [], without: [] };
 
-for (const c of w.chimps) if (c.alive) { trueLastCop.set(c.id, ix(c).lastMate); prevLastMate.set(c.id, ix(c).lastMate); }
+for (const c of w.chimps) if (c.alive) { trueLastCop.set(c.id, ix(c).lastMate); prevLastMate.set(c.id, ix(c).lastMate); prevAgg.set(c.id, ix(c).lastAgg); prevDisp.set(c.id, ix(c).lastDisplay); }
+const sleeping = (c: Chimp) => c.action === 'nest' && ix(c).phase >= 2; // as E4q's aggression-diagnose.ts
 let lastInterId = Math.max(0, ...w.interactions.map(i => i.id));
 const prevAct = new Map<number, string>(); for (const c of index(w).alive) prevAct.set(c.id, c.action);
 
@@ -305,6 +313,25 @@ for (let i = 0; i < days * DAY; i++) {
   }
   if ((i + 1) % DAY === 0) { for (const r of dayFeed.values()) if (r.awakeMin > 300) (r.swollenParous ? feedDays.with : feedDays.without).push(r.feedMin); dayFeed.clear(); }
 
+  // 10: male → male aggression (E4q's definition)
+  const awakeAM = new Map<number, number>();
+  for (const c of alive) if (adultMale(c) && !sleeping(c)) awakeAM.set(c.partyId, (awakeAM.get(c.partyId) ?? 0) + 1);
+  for (const c of alive) {
+    const x = ix(c);
+    if (day && adultMale(c) && !sleeping(c)) { const am = awakeAM.get(c.partyId) ?? 0; if (am >= 2) mmDyadH += (am - 1) * H; }
+    if (x.lastAgg !== prevAgg.get(c.id)) {
+      prevAgg.set(c.id, x.lastAgg);
+      const o = idx.byId.get(c.targetId);
+      if (x.lastAgg === time && adultMale(c) && o && o.sex === 'male' && o.age >= 15 && o.troopId === c.troopId && (c.action === 'charge' || c.action === 'attack')) {
+        mmAgg++; bump(mmByVariant, `${c.action}:${vName(x.v)}`); if (x.v === V.GUARD) mmGuard++;
+      }
+    }
+    if (x.lastDisplay !== prevDisp.get(c.id)) {
+      prevDisp.set(c.id, x.lastDisplay);
+      const o = idx.byId.get(c.targetId);
+      if (x.lastDisplay === time && adultMale(c) && o && o.sex === 'male' && o.age >= 15 && o.troopId === c.troopId) { mmAgg++; bump(mmByVariant, `display:${vName(x.v)}`); }
+    }
+  }
   for (const c of alive) prevAct.set(c.id, c.action);
 }
 
@@ -344,6 +371,7 @@ const result = {
     intervalsMaleMedianH: median(intervalsM), intervalsMaleHist: hist(intervalsM, [0, 0.25, 0.5, 1, 1.5, 1.6, 1.75, 2, 3, 6, 24, 1e9]),
     intervalsFemaleMedianH: median(intervalsF), intervalsFemaleHist: hist(intervalsF, [0, 0.1, 0.25, 0.3, 0.5, 1, 1.5, 2, 3, 6, 24, 1e9]),
   },
+  maleMale: { aggression: mmAgg, guardChases: mmGuard, dyadH: r4(mmDyadH), perDyadH: mmDyadH ? r4(mmAgg / mmDyadH) : null, guardPerDyadH: mmDyadH ? r4(mmGuard / mmDyadH) : null, byVariant: round(mmByVariant) },
   feeding: { daysWith: feedDays.with.length, daysWithout: feedDays.without.length, feedMinWith: mean(feedDays.with), feedMinWithout: mean(feedDays.without) },
   deaths: deaths.reduce((a, k) => { bump(a, k); return a; }, {} as Record<string, number>),
 };
