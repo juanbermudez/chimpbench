@@ -567,3 +567,158 @@ A2 at 30 + 60 (observer; P0/P1 the S13 references; printed by `patrol_rows.py` f
 as in both references); T-BRD-1 insufficient (as both references); T-IGE-1 22.8 (18.0, 6.7), T-IGE-2 1.0, T-IGE-3 0.77;
 viable, 6 deaths from a respiratory outbreak on seed 48, no starvation. A1 at 30 + 60: T-PAT-1 0.25, T-PAT-2 8.7, T-PAT-3
 0.63, T-PAT-5 148, T-PAT-6 0.74, T-PAT-7 0, T-BRD-1 0.31 (scored), T-IGE-1 49, T-IGE-3 1.09.
+
+### A3 results (iteration 2; frozen-a3 at 5237a8b, clean; judged on its own against the four S13 quick runs)
+
+```
+quick references: ['S13q.json', 'S13q1.json', 'S13q2.json', 'S13q3.json'] | patrol references: ['P0.json', 'P1.json', 'D1-48.json', 'D1-7.json']
+  A3q.json: 5237a8b dirty 0 prescriptions 54 viability True deaths 0 starvation 0
+quick, reference custom (4 runs), rows counted in all runs: fitted 17, held-out 12
+  fitted             (17 rows) ref 2.60, 2.54, 3.04, 2.27 (mean 2.61, sd 0.32; used 0.69) | A3q.json: 2.33, Δ -0.28, z -0.4 (inside noise)
+  held-out           (12 rows) ref 4.68, 3.84, 5.78, 3.61 (mean 4.48, sd 0.98; used 1.26) | A3q.json: 4.13, Δ -0.34, z -0.2 (inside noise)
+  held-out w/o rare  (11 rows) ref 4.68, 3.84, 4.44, 3.61 (mean 4.14, sd 0.50; used 0.50) | A3q.json: 3.97, Δ -0.17, z -0.3 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-HUN-4   held-out ref 0.33±0.67 | A3q.json 0.16 (fail)
+   T-HUN-7   fitted   ref 0.25±0.00 | A3q.json 0.00 (pass)
+   T-SOC-3   held-out ref 0.02±0.05 | A3q.json 0.18 (fail)
+
+held-out without T-HUN-4, T-BRD-1 and T-IGE-3 (11 rows): S13q 4.68 / 3.84 / 4.44 / 3.61 (mean 4.14, sd 0.50; used 0.50); A3q.json 3.97 (z -0.3)
+
+| Reserves ÷ store, % per day (OLS) | S13q runs | mean ± SD | A3 |
+| --- | --- | --- | --- |
+| adult male | -0.007 / +0.012 / -0.002 / -0.005 | -0.000 ± 0.009 | -0.001 (z -0.0) |
+| female, other | +0.010 / +0.016 / -0.004 / +0.014 | +0.009 ± 0.009 | +0.011 (z +0.2) |
+| female, lactating | -0.003 / +0.002 / -0.011 / +0.003 | -0.002 ± 0.006 | -0.022 (z -2.8) |
+| juvenile 5–12 y | -0.023 / -0.018 / -0.029 / -0.011 | -0.020 ± 0.008 | -0.011 (z +1.1) |
+| infant 2–5 y | +0.012 / +0.030 / -0.012 / -0.007 | +0.006 ± 0.019 | -0.013 (z -0.9) |
+| infant 0.5–2 y | -0.018 / -0.022 / -0.022 / +0.010 | -0.013 ± 0.016 | -0.033 (z -1.1) |
+| infant < 0.5 y | +0.000 / +0.000 / +0.000 / +0.000 | +0.000 ± 0.000 | +0.000 (z +nan) |
+
+| Ground km / eating min | S13q runs | mean ± SD | A3 |
+| --- | --- | --- | --- |
+| adult male: groundKm | 2.39 / 2.36 / 2.19 / 2.31 | 2.31 ± 0.09 | 2.56 (z +2.5) |
+| adult male: eatingMin | 253.71 / 255.39 / 250.65 / 250.70 | 252.61 ± 2.34 | 251.57 (z -0.4) |
+| female, other: groundKm | 1.74 / 1.75 / 1.69 / 1.76 | 1.73 ± 0.03 | 1.86 (z +3.8) |
+| female, other: eatingMin | 264.53 / 256.05 / 265.99 / 264.62 | 262.80 ± 4.55 | 263.67 (z +0.2) |
+| female, lactating: groundKm | 2.12 / 2.14 / 2.01 / 1.96 | 2.06 ± 0.09 | 2.14 (z +0.9) |
+| female, lactating: eatingMin | 315.61 / 315.84 / 316.81 / 316.30 | 316.14 ± 0.53 | 318.12 (z +3.3) |
+| juvenile 5–12 y: groundKm | 2.16 / 2.22 / 2.00 / 2.16 | 2.13 ± 0.10 | 2.20 (z +0.6) |
+| juvenile 5–12 y: eatingMin | 283.43 / 275.03 / 288.52 / 293.35 | 285.08 ± 7.83 | 273.64 (z -1.3) |
+deaths (energy-diagnose): {'S13q': {}, 'S13q1': {}, 'S13q2': {}, 'S13q3': {}, 'A3': {}}
+```
+
+```
+## A3 (5237a8b): 2 seeds, 51.4 community-weeks
+patrols started 91 = 1.77 per community-week (truth)
+daylight opportunities (adult male perception, >= 3 adult males in view, no patrol, rain below the gate): 14661; in the 08:00-15:30 window 0, outside 14661 (100%)
+expected impulses (sum of roll probabilities): in window 0.0, blocked by the clock 6.2 (100% of the would-be total); impulses fired 0, of which led 0
+  clock-blocked: males 3.40, party 5.7, r/R 0.44, periphery 0.19, heard 24 h 0.197, contact 2.59, loss 0.68, border crop 0.88, light left 3.0 h | hunger 0.51, sleep 0.45, thirst 0.258, arousal 0.150, stress 0.19, reserve -0.020
+rolls by adult males in view (n, expected, fired): {}
+start hour: {7: 12, 8: 8, 9: 8, 10: 8, 11: 11, 12: 6, 13: 7, 14: 8, 15: 10, 16: 9, 17: 4} | outside 08:00-15:30: 32/91 | median 11.7 h
+lead score at the start: median 0.201 (range 0.000-0.925); leaders remembering the neighbour males: 82/91
+duration min: median 158, range 36-316, > 6 h 0; path km median 2.18
+ended by: {'home': 38, 'empty': 53} | release: 0 of 91 | release after contact: 0 of 41
+incursion die true 46/91 (0.51); entered a neighbour 95% isopleth: die true 38/46, die false 16/45; overall 0.59
+contact 0.45, turned back 0.25 (at the boundary, too few: 1)
+stops: on schedule 637, at waypoints 114
+most adult males at once: {1: 12, 2: 34, 3: 37, 4: 7, 5: 1} | >= 3: 0.49; with females 42/91
+joining (opportunities, joined): {'adultFemale': [68, 8], 'adultMale': [175, 61], 'adolescentMale': [21, 4], 'lactatingFemale': [31, 6]}
+members leaving early, to: {'travel': 161, 'forage': 46, 'flee': 17, 'nest': 16, 'drink': 2, 'mate': 2, 'guard': 1, 'display': 1}
+adult male members at start -> end: hunger 0.22 -> 0.65, sleep 0.33 -> 0.42, thirst 0.070 -> 0.153, arousal 0.094 -> 0.083
+daylight left at start median 7.0 h, at end 3.8 h
+patrol day vs most adult males in one party (truth, per seed): OR [1.952, 1.8457] | mean max males patrol days [4.6939, 3.9714] other days [2.8015, 2.9793]
+intergroup encounters per community-week (stats): [1.4389, 2.5278] | deaths: [{'respiratory illness (outbreak)': 6}, {}]
+periphery arrivals (planned decision point) per community-week: [0.9333, 1.8667] | n [24, 48] | expected patrols at V0 (sum of softmax shares): [1.2413, 1.7718]
+   means {'g': 0.0335, 'contact': 5.1653, 'kappa': 0.4584, 'light': 7.4618, 'tripH': 1.3494, 'D': 0.9068, 'sleep': 0.294, 'arousal': 0.074, 'ceiling': 1.3216, 'v0': 0.1541, 'share': 0.0517, 'males': 3.1667} | top score 0.9405 | kappa 0: 10 | by males {'3': 20, '4': 4} | by hour {'6': 4, '7': 3, '8': 3, '10': 2, '12': 4, '13': 1, '14': 1, '15': 3, '18': 3}
+   means {'g': 0.0127, 'contact': 4.5211, 'kappa': 0.398, 'light': 8.7344, 'tripH': 1.3742, 'D': 0.9932, 'sleep': 0.2501, 'arousal': 0.0234, 'ceiling': 1.2767, 'v0': 0.1827, 'share': 0.0369, 'males': 3.0208} | top score 0.9046 | kappa 0: 11 | by males {'3': 47, '4': 1} | by hour {'6': 2, '7': 15, '8': 6, '9': 6, '10': 4, '11': 8, '12': 1, '17': 6}
+```
+
+**Against the predictions.** Truth patrols 1.77 per community-week (predicted 1.3–2.4: held). Patrols turning back at the
+boundary: **1 of 91** (predicted 10–40%: missed; leaders mostly remember one or two callers, so the patrol's odds are
+rarely below parity at the edge). Contact 0.45 (predicted 0.25–0.40: missed); median duration 158 min (predicted shorter
+than A2's 160: not distinguishable); incursion 0.59 (held); patrols reaching three adult males 0.49 (held, unchanged);
+sums inside noise (fitted z −0.4, held-out −0.2, without the rare rows −0.3, without T-IGE-3 too −0.3): held;
+prescriptions 54, viability: held. Nursing mothers −0.0217 %/day against −0.0021 ± 0.0062 (−3.15 SD; z −2.8 with
+√(1 + 1/n)): the registered line is crossed again (predicted within 3 SD: missed). Iteration 2 is nearly inert (one
+retreat), so A3 is close to a re-draw of A2, and the mothers' value replicates (A2 −3.58 SD, A3 −3.15 SD; A1 −1.56).
+At 30 + 60: T-PAT-1 0.29, T-PAT-2 9.9, T-PAT-3 0.70, T-PAT-5 169, T-PAT-6 0.63, T-PAT-7 0, all below the instrument bar;
+T-BRD-1 insufficient; T-IGE-1 26, T-IGE-3 0.89; six deaths from the same respiratory outbreak on seed 48.
+
+## 8. Verdict
+
+| | S13 | A1 (value 1) | A2 (value 2, iteration 1) | A3 (value 3, iteration 2) |
+| --- | --- | --- | --- | --- |
+| Keep rule (viable; held-out not up; 54 < 65) | — | passes | passes | passes |
+| Kill criterion (§6) | — | not met | **met** (nursing mothers −3.58 SD) | **met** (−3.15 SD) |
+| Fitted (quick, vs S13 group) | — | z +8.3 (T-IGE-1 49 per community-year) | z −0.9 | z −0.4 |
+
+The comparison table (every number printed by `scratchpad/e4i/final_table.py` from the JSON; truth from
+patrol-diagnose at 30 + 60, observer rows from e-bench at 30 + 60, sums from e-bench quick):
+
+| Quantity | S13 (reference) | A1 | A2 | A3 |
+| --- | --- | --- | --- | --- |
+| patrols per community-week (truth) | 0.74 (38) | 3.95 (203) | 1.85 (95) | 1.77 (91) |
+| adult males per patrol, median of most at once (share >= 3) | 3 (0.66) | 3 (0.51) | 2 (0.48) | 2 (0.49) |
+| start hour, median (outside 08:00-15:30) | 12.1 (0/38) | 12.6 (51/203) | 11.6 (31/95) | 11.7 (32/91) |
+| duration, median min | 163 | 156 | 160 | 158 |
+| incursion share (truth: entered a neighbour range) | 0.26 | 0.63 | 0.61 | 0.59 |
+| contact share (truth) | 0.37 | 0.55 | 0.42 | 0.45 |
+| patrols with a female | 4/38 | 71/203 | 45/95 | 42/91 |
+| ended with no member left | 19/38 | 123/203 | 54/95 | 53/91 |
+| intergroup encounters per community-week (truth) | 0.86 / 2.02 | 2.72 / 4.16 | 1.44 / 2.64 | 1.44 / 2.53 |
+| deaths (truth run) | {} / {} | {"illness": 1} / {} | {"respiratory illness (outbreak)": 6} / {} | {"respiratory illness (outbreak)": 6} / {} |
+| T-PAT-1 (30 + 60; x = below the bar, ins = insufficient) | 0.116 x / 0.0773 x | 0.251 x | 0.27 x | 0.29 x |
+| T-PAT-2 (30 + 60; x = below the bar, ins = insufficient) | 4.33 x / 2.6 x | 8.65 x | 9.06 x | 9.93 x |
+| T-PAT-3 (30 + 60; x = below the bar, ins = insufficient) | 0.688 x / 0.546 x | 0.627 x | 0.709 x | 0.698 x |
+| T-PAT-5 (30 + 60; x = below the bar, ins = insufficient) | 155 x / 189 x | 148 x | 153 x | 169 x |
+| T-PAT-6 (30 + 60; x = below the bar, ins = insufficient) | 0.562 / 0.154 x | 0.741 x | 0.529 x | 0.625 x |
+| T-PAT-7 (30 + 60; x = below the bar, ins = insufficient) | 0 x / 0 x | 0 x | 0 x | 0 x |
+| T-BRD-1 (30 + 60; x = below the bar, ins = insufficient) | — ins / — ins | 0.312 | — ins | — ins |
+| T-IGE-1 (30 + 60; x = below the bar, ins = insufficient) | 18 / 6.7 x | 49 | 22.8 | 26 |
+| T-IGE-2 (30 + 60; x = below the bar, ins = insufficient) | 0.962 / 1 x | 1 | 1 | 1 |
+| T-IGE-3 (30 + 60; x = below the bar, ins = insufficient) | 0.104 / — ins | 1.09 | 0.765 | 0.889 |
+| quick fitted (Δ, z vs S13q mean) | group: 2.77 / 2.59 / 4.38 / 2.27 | — | — | — |
+| prescriptions | 65 | 54 | 54 | 54 |
+| viability (quick; 30 + 60) | True / True / True / True; True / True | True; True | True; True | True; True |
+| quick fitted (arm, Δ, z vs S13q mean) | — | 8.74, Δ +6.37, z +8.3 RESULT | 1.92, Δ -0.70, z -0.9 (inside noise) | 2.33, Δ -0.28, z -0.4 (inside noise) |
+| quick held-out (arm, Δ, z vs S13q mean) | — | 3.98, Δ -0.17, z -0.1 (inside noise) | 3.79, Δ -0.69, z -0.5 (inside noise) | 4.13, Δ -0.34, z -0.2 (inside noise) |
+| quick held-out w/o rare (arm, Δ, z vs S13q mean) | — | 3.98, Δ +0.17, z +0.3 (inside noise) | 3.73, Δ -0.41, z -0.7 (inside noise) | 3.97, Δ -0.17, z -0.3 (inside noise) |
+
+**`patrolValue` stays off and is recorded** (kill criterion met by A2 and A3 on nursing mothers' reserve trend). What
+the stage shows:
+- On S13 the patrol entries decided their parts outright: the hazard die every start (state- and place-blind; 2.5 × its
+  own fit), the clock 40% of the opportunities, the incursion die every incursion, the release dice the closing chorus,
+  the 15-min quota 83% of the listening stops, and the female copies kept females off (1 join in 56 later
+  opportunities); only the 6 h cap decided nothing (it never bound: members leave as their hunger rises).
+- Patrolling as a decision works without any of the eleven: valued from information (the route's staleness), the
+  males' odds against the neighbour as remembered, the daylight the trip needs and fatigue, weighed when a party first
+  holds three adult males (value 2), it gives 1.8 truth patrols per community-week with starts from 07:00 to 17:00, an
+  incursion share of 0.6 (T-PAT-6's band 0.4–0.7), females on half of the patrols (Taï- and Gombe-like for communities of
+  3–7 males), observer rows T-PAT-2, -3, -5, -6 inside their bands at 30 + 60 days (below the classifier's bar, as on S13),
+  and sums inside noise.
+- Offered at every decision point (value 1), the lead is drawn at RG's sampling floor (median value 0.11 when taken): 5 ×
+  the rate and T-IGE-1 out of band. Rare collective acts need an occasion, as hunts have the colobus encounter.
+- **Cost that killed it (unexplained):** nursing mothers' reserve trend in quick mode, −0.022 to −0.024 % of the store a
+  day against S13's −0.002 ± 0.006, replicated in A2 and A3; their daily budget is inside S13's range (intake 2,315–2,319
+  against 2,299–2,325 kcal, expenditure 1,715–1,717 against 1,705–1,714, eating 318–319 against 316–317 min, walking
+  2.14–2.16 against 1.96–2.14 km) and they spent about 3 min a day on patrols. A 5-seed confirm of value 2 or 3 on S13
+  would decide whether it is real (the integrator's call; S13's own confirm had mothers at −0.077).
+
+**Known defects and limits, deferred (file:line at the merge commit):**
+- The listening cadence `patrolStopEveryMin` stays (src/sim/parties.ts `listen(71)`): a model of the value of listening
+  is needed.
+- Half of the patrols never hold three adult males: the males in view at the forming decide on joining one by one (the C6
+  join literal, src/sim/candidates.ts `patrolAndCalls`), and the edge retreat rarely applies because the remembered
+  neighbour is usually one or two callers heard (src/sim/perception.ts `rememberRivals` in `hear`): a heard chorus is a
+  lower bound of a party.
+- The truth rate (1.8 per community-week; S13 0.74) follows from design constants left in place: the staleness time
+  constant (`patrolStaleTauDays` 7), the C6 lead score and RG's temperature; none was moved.
+- T-BRD-1 is insufficient at two seeds and 60 days in every run but A1; T-PAT-7 is 0 in every run (the classifier's
+  contact needs a seen encounter; patrols' contacts are heard).
+
+**Final checks** (after `git merge --no-ff track-e` at ce2d632: conflicts in perception.ts imports, OPTIONAL_X, the switch
+lists, research.md and e-sources.md addenda resolved as handoff §6, params.gen.ts regenerated): `gen-params --check`
+clean, `tsc` clean, `pnpm test` 742 tests, 741 pass, 0 fail, 1 skipped; S13 with `patrolValue` 0 hash-identical before
+and after the stage (seed 48 day 12, seed 7 all-off day 6); prescription count S13 65, with `patrolValue` 1, 2 or 3: 54.
+Artifacts: `artifacts/validation/e4i/` in this worktree (gitignored): D0b, D1, P0, P1 (S13), A1, A2, A3 (quick, energy,
+30 + 60 bench, diagnosis); scripts `diag_table.py`, `patrol_rows.py`, `judge_e4i.py`, `final_table.py`, `probe-draws.mts`.
