@@ -560,3 +560,10 @@ reading above suggests A2's value was not the patrols' doing). Kill criterion an
 
 **Runs**: as A1 and A2, label A3, from a frozen detached checkout of the commit that adds this entry
 (`scratchpad/e4i/frozen-a3`).
+
+A2 at 30 + 60 (observer; P0/P1 the S13 references; printed by `patrol_rows.py` from the JSON): T-PAT-1 0.27 per week
+(references 0.12, 0.08), T-PAT-2 9.1 per male-year (4.3, 2.6; band 7–18), T-PAT-3 0.71 (0.69, 0.55), T-PAT-5 153 min
+(155, 189), T-PAT-6 0.53 (0.56, 0.15), T-PAT-7 0 (0, 0), all below the classifier's instrument bar (excluded from sums,
+as in both references); T-BRD-1 insufficient (as both references); T-IGE-1 22.8 (18.0, 6.7), T-IGE-2 1.0, T-IGE-3 0.77;
+viable, 6 deaths from a respiratory outbreak on seed 48, no starvation. A1 at 30 + 60: T-PAT-1 0.25, T-PAT-2 8.7, T-PAT-3
+0.63, T-PAT-5 148, T-PAT-6 0.74, T-PAT-7 0, T-BRD-1 0.31 (scored), T-IGE-1 49, T-IGE-3 1.09.
