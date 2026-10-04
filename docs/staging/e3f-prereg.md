@@ -1,7 +1,8 @@
 # E3f pre-registration: what a crown holds
 
-Status: skeleton committed at the start of the stage (branch `e3f-crop-energy`, from `track-e` eea2d85), before any run
-and before any code change. Track E, stage E3f. Rule served: field values of behaviour are targets, never inputs; no
+Status: complete (4 October 2026): diagnosis (§2.1), sources (§3), no mechanism (§5: no source gives the crop energy of
+the model's crowns; recorded and stopped, no switch), a sensitivity of the fitted scale (§6). Skeleton committed at the
+start of the stage (branch `e3f-crop-energy`, from `track-e` eea2d85), before any run and before any code change. Track E, stage E3f. Rule served: field values of behaviour are targets, never inputs; no
 value, bonus or weight is added or set to reach a feeding time, a travel share, a day range or a party size.
 
 ## 0. The problem
@@ -205,6 +206,22 @@ ten measured crops are 2.0–17.8 times that, the single tree's three cycles 0.5
 alone, 32–287 times. Direction only: the measured trees were large, water content is a stand-in, and the model's
 turnover (0.7 a day) is design, so the comparison changes with it.
 
+## 4. Samples of the field rows the arms are scored on
+
+As opened for E1q, E2i and E2j (e1q-prereg.md §4; e2i-prereg.md §3; e2j-prereg.md §2): T-RNG-4 and T-RNG-5
+(batesByrne2009, Budongo Sonso, 15 adults, unweighed, 5-min GPS or trail-grid fixes while travelling, focal follows ≥ 8 h;
+males 2.7 ± 1.5 km, lactating 1.2 ± 0.8 km; T-RNG-4 also jang2019); T-ACT-1–3 (villioth2025, Budongo Waibira, 10 adult
+males and 9 adult females, 7 lactating, unweighed, continuous focal follows from the night nest; travel includes arboreal
+climbing and movement within the canopy; T-ACT-1 also uwimbabazi2019, 14 Kanyawara nursing mothers; T-ACT-2 also
+amsler2010); T-ACT-4 (potts2011, Ngogo and Kanyawara monthly means, continuous focal, resting includes grooming; and
+villioth2025); T-FOOD-4 (janmaat2013b, Taï, 5 adult females with offspring, 275 full days; normand2009, 2 females, 28 days);
+T-FOOD-10 (janmaat2014, Taï, 5 adult females with offspring followed from nest to nest in fruit-scarce periods, 179 days,
+unweighed). T-PTY-1 (e5a-prereg.md §1.1: wilson2012, Kanyawara 1992–2006, a community of a median 47 with 11 adult males
+and 15 adult females, 5,527 party follows at 15-min scans, observers staying with the larger subgroup: 9.2 ± 7.0 per
+follow; potts2011, Kanyawara and Ngogo 2005–2006 focal follows, feeding parties 8.39 and 7.29; band 3–9 scaled to the
+model's communities, derivation undocumented). T-FOOD-2 (watts2012a, Ngogo diet 72% fruit; emeryThompson2020, Kanyawara
+64%; feeding-time shares from focal and scan records, both sexes).
+
 ## 5. Step 2: no mechanism (decided 4 October 2026, after §3)
 
 **No source gives the crop energy of the model's crowns within the source rules.** A crown's energy needs its crop by
@@ -225,22 +242,6 @@ Kanyawara; free to read at the publisher, whose page asks a person to prove they
 radius would give every crown an energy; Valenta & Nevo 2021's Dryad table (fruit masses of wild Ugandan fruits, CC0)
 would add fruit masses; Chapman & Chapman 1996 the share of *Mimusops* and *Uvariopsis* crops removed. All three need a
 person's browser (the user's decision).
-
-## 4. Samples of the field rows the arms are scored on
-
-As opened for E1q, E2i and E2j (e1q-prereg.md §4; e2i-prereg.md §3; e2j-prereg.md §2): T-RNG-4 and T-RNG-5
-(batesByrne2009, Budongo Sonso, 15 adults, unweighed, 5-min GPS or trail-grid fixes while travelling, focal follows ≥ 8 h;
-males 2.7 ± 1.5 km, lactating 1.2 ± 0.8 km; T-RNG-4 also jang2019); T-ACT-1–3 (villioth2025, Budongo Waibira, 10 adult
-males and 9 adult females, 7 lactating, unweighed, continuous focal follows from the night nest; travel includes arboreal
-climbing and movement within the canopy; T-ACT-1 also uwimbabazi2019, 14 Kanyawara nursing mothers; T-ACT-2 also
-amsler2010); T-ACT-4 (potts2011, Ngogo and Kanyawara monthly means, continuous focal, resting includes grooming; and
-villioth2025); T-FOOD-4 (janmaat2013b, Taï, 5 adult females with offspring, 275 full days; normand2009, 2 females, 28 days);
-T-FOOD-10 (janmaat2014, Taï, 5 adult females with offspring followed from nest to nest in fruit-scarce periods, 179 days,
-unweighed). T-PTY-1 (e5a-prereg.md §1.1: wilson2012, Kanyawara 1992–2006, a community of a median 47 with 11 adult males
-and 15 adult females, 5,527 party follows at 15-min scans, observers staying with the larger subgroup: 9.2 ± 7.0 per
-follow; potts2011, Kanyawara and Ngogo 2005–2006 focal follows, feeding parties 8.39 and 7.29; band 3–9 scaled to the
-model's communities, derivation undocumented). T-FOOD-2 (watts2012a, Ngogo diet 72% fruit; emeryThompson2020, Kanyawara
-64%; feeding-time shares from focal and scan records, both sexes).
 
 ## 8. Known defects (file:line at eea2d85)
 
