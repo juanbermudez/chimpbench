@@ -14,17 +14,12 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (3 October 22:45; the user said "continue working and hold the deploy").** Stage agents **E3c**
-  (`e3c-forage-rate`: where to eat valued as a net energy rate; targets forageDistScaleM, fallbackForageW,
-  memTravelHungerW, all fitted to T-ACT-2/T-RNG-4) and **E4h** (`e4h-contests`: escalation, hit, injury and coalition
-  dice replaced by mutual assessment), both from track-e 37a2042, briefs `integrator/e3c-prompt.txt`, `e4h-prompt.txt`.
-  Integrator: the S9 quick reference (`integrator/s9q.sh`, `bench-run/artifacts/validation/e/s9q/`; message both agents
-  when all four exist); the S10 confirm (S9 + `huntValue`; registered 72e93ae) with S9's confirm group (S9 + S9c1–S9c3):
-  `integrator/conf10.sh <label> <S9|S10> [rg|-] [rhythm]`, outputs `.../e/s10/`; S9c2, S9c3 running. **E3c merged**;
-  the S11 confirm (S9 + `forageRate`; registered dd83395) runs from a second frozen checkout `.claude/worktrees/bench-run2`
-  at dd83395 (`integrator/conf11.sh`, outputs `bench-run2/artifacts/validation/e/s11/`), judged against the same S9 group.
-  Remaining prescriptions on S9 by family (74): conflict 17, patrol 12, mortality 7, social 7, communication 5, needs 4,
-  decision 4, movement 4, hunting 4, reproduction 3, disease 3, feeding 3 (`integrator/s9-ledger.json`).
+- **Running now (3 October 23:55; deploy held by the user).** No agents. Integrator: S9's confirm group (S9 +
+  S9c1–S9c3; bench-run 2bcbd33, `integrator/conf10.sh`, outputs `bench-run/artifacts/validation/e/s10/`; S9c2 and S9c3
+  running) judges three arms: **S10** (S9 + `huntValue`; done, bench-run 2bcbd33), **S11** (S9 + `forageRate`; running in
+  `bench-run2` at dd83395, `integrator/conf11.sh`) and **S12** (S9 + `contestAssess`; running in `bench-run3` at
+  ea92d20, `integrator/conf12.sh`). Judge with `integrator/judge_s10.py` (copy it for S11 and S12, pointing ARMS at
+  bench-run2 and bench-run3). Registrations: e-stack2-confirm.md (72e93ae, dd83395, ea92d20).
 - **S9 done: now the best integrated candidate** (e-stack2-confirm.md "S9 results"; S8 + `groomDrive` + `socialUpkeep` 2 +
   `followMargin`): 74 prescriptions (the social timers out), grooming in band for both sexes (0.101), viable, night safe,
   sums inside noise (held-out without the rare rows z +1.2: E5d's quick-mode failure did not replicate). Costs: T-HUN-1
