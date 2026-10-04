@@ -1774,7 +1774,7 @@ forager's need is not a divisor of that rate; sockol2007 (the ledger's walking c
 (nguessan2009 citing Hunt 1989, secondary [L]) recalled. New: stephensKrebs1986. Not verified: within-crown diminishing
 returns for chimpanzees; a primary wild travel speed between feeding trees.
 
-## Addendum: E4h contests (3 October 2026)
+## 45. Addendum: E4h contests (3 October 2026)
 
 Same text as research.md "Addendum: E4h contests": contest theory (parker1974: escalation only where both contestants'
 chances exceed their stake-set thresholds; enquistLeimar1983, 1987, 1990; arnottElwood2009; the meta-analyses pinto2019

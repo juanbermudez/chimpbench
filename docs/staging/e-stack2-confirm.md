@@ -868,3 +868,16 @@ after the S9 group's runs finish, or S11 runs from a second frozen checkout of t
 safety pass; T-ACT-4 0.29–0.34 (rest near its band floor 0.30); T-ACT-2 0.20–0.23; T-ACT-3 0.08–0.10 (low); T-FOOD-2
 0.68–0.74 (into its band); T-RNG-4 2.3–2.8; T-HUN-1 20–30 (low); nursing mothers' reserves a little lower than S9's
 (−0.06 to −0.09 %/day; low); juveniles within the group's spread (low); fitted and held-out inside noise.
+
+## S12 confirm (registered 3 October 2026 before its run)
+
+**S12 = S9 + E4h's `contestAssess` 1** (A4: escalation, contact and coalition support decided by each animal's
+assessment, the remembered dominance relationship as its starting estimate; `escalationBaseP`, `escalationEvenP`, `hitP`,
+`coalitionBondP`, `coalitionStrangerP` switched out: 74 → 69 prescriptions). Judged against S9's confirm group (S9,
+S9c1–S9c3; shared with S10 and S11) by the standard keep rule. Bench, energy-diagnose and rhythm-metrics, 5 seeds,
+30 + 60 days, from a third frozen checkout of this commit (`.claude/worktrees/bench-run3`).
+
+**Predictions (against the S9 group; moderate confidence unless stated).** Prescriptions 69 (high); viability and night
+safety pass; no deaths from injury (low); T-SOC-5 inside its band 0.2–0.7; fitted and held-out inside noise; reported
+from the bench and conflict readouts where the e-bench JSON carries them (low: contacts and coalition joins about twice
+and three times S9's, as in quick mode).

@@ -2907,7 +2907,7 @@ eat. Tags as above.
 returns within a crown); the travel speed of wild chimpanzees between feeding trees (pauses included) from a primary
 source.
 
-### Addendum: E4h contests (3 October 2026)
+### E.45 Addendum: E4h contests (3 October 2026)
 
 What decides how far a within-community contest goes (display, contact, wounds) and who joins it. Read for stage E4h
 (docs/staging/e4h-prereg.md) by two source helpers; numbers checked against the saved texts where they enter a target or
