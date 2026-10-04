@@ -14,10 +14,11 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 02:40; deploy held by the user).** No agents. Integrator: the **S16** confirm (S13 +
-  `socialTiming` 15 + `patrolValue` 2, 49 prescriptions; registered 027628a) in bench-run4 (721b0fb;
-  `integrator/conf16.sh`, outputs `bench-run4/artifacts/validation/e/s16/`), judged against S13's group with
-  `integrator/judge_s13group.py` (add S16).
+- **Running now (4 October 03:00; deploy held by the user).** Nothing.
+- **S16 done: now the best integrated candidate by the keep rule** (e-stack2-confirm.md "S16 results"; S13 +
+  `socialTiming` 15 + `patrolValue` 2): 49 prescriptions, viable, night safe, held-out inside noise, patrol rows in band.
+  **Fitted worse beyond noise (z +3.9)**, mostly T-IGE-1 22.8 (twice its band's top) and T-HUN-2. Next problem: the
+  patrol and encounter rate (design constants in `patrolValue`). The decision guide and hosted copy still show S13.
 - **S14 and S15 done** (e-stack2-confirm.md): both pass the keep rule against S13's four runs. S14 (`socialTiming` 15,
   60): sums inside noise, mothers in range; costs: other females' and juveniles' reserves lower, T-HUN-1 28.5. S15
   (`patrolValue` 2, 54): sums inside noise, the registered mothers' line held (mothers better, −0.051); patrol rows
