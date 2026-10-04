@@ -282,3 +282,9 @@ implicate (for example, joining, if too few alerted males join for three to surr
   --workers 2 --out artifacts/validation/e4k/P1h`; (c) the diagnosis tool, seeds 48 and 7, 30 + 60 days
   (`artifacts/validation/e4k/diag/P1-{48,7}.json`); (d) `scripts/energy-diagnose.ts` seeds 48 and 7, burn-in 30, 30 days
   (`P1q-energy.json`). One at a time, `--workers 1` above load 8. Judged by §6–§7.
+
+#### S1 result (9b3f213 frozen; seed 7, 25 days, no burn-in)
+
+Every §5 truth readout is produced. Two hunts resolved (S17 on the same window: six), each with three hunters in the
+pursuit at cone half-angles 74–80° (alertness 0.75–0.85), largest angular gap 144° and 147° (below the 148–160° the
+cones need), one closing set and one capture each; success probability 0 and no draw. P1 launched next (04:57).
