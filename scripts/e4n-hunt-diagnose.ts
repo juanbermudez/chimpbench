@@ -21,7 +21,7 @@
 //   meat        energyTap 'eaten' of kind meat, kcal per animal-day by class; meat eaten within 6 h after a hunt by its
 //               pursuit hunters
 //
-//   pnpm exec tsx scripts/e4n-hunt-diagnose.ts [--seed 48] [--burn-in 30] [--days 60] [--params '{…}'] [--out f.json]
+//   pnpm exec tsx scripts/e4n-hunt-diagnose.ts [--seed 48] [--burn-in 30] [--days 60] [--params '{…}'] [--out f.json] [--hash]
 // Development seeds only (AGENTS.md lists the reserved ones); burn-in + days ≤ 90.
 import { writeFileSync } from 'node:fs';
 import { createWorld, tickWorld } from '../src/simulation';
@@ -193,6 +193,7 @@ const result = {
   meanCapturesPerHunterInPursuit: r4(mean(hunts.map(h => (h.inPursuit as number) ? (h.captures as number) / (h.inPursuit as number) : 0))),
   draws, hunts,
 };
+if (process.argv.includes('--hash')) Object.assign(result, { worldHash: (await import('../tests/fixtures/golden')).worldHash(w) }); // tool check: the taps change nothing
 const text = JSON.stringify(result);
 if (out) writeFileSync(out, text + '\n');
-console.log(JSON.stringify({ seed, counts: result.counts, identity: result.identity, huntsWonUnderT19: result.huntsWonUnderT19, huntsPerCommunityYear: result.huntsPerCommunityYear, winners }));
+console.log(JSON.stringify({ seed, worldHash: (result as { worldHash?: string }).worldHash, counts: result.counts, identity: result.identity, huntsWonUnderT19: result.huntsWonUnderT19, huntsPerCommunityYear: result.huntsPerCommunityYear, winners }));
