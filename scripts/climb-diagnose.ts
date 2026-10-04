@@ -55,7 +55,8 @@
 //     travel to another target, by class (juveniles split 5–8 y, under rgMinAge's argmax, and 8–12 y): the kind of the
 //     ending and of the new trip (own; joined behind its mother; joined behind another; caller; home), the rules' reason
 //     for the decision that changed it (rg.ts rgTap: need-bucket, light-phase, outvalued, ended, …; 'argmax' when no
-//     rgTap call was made, the under-8 rule) and whether the animal had an interrupt pending (x.intr) at that tick.
+//     rgTap call was made, the under-8 rule), whether the animal had an interrupt pending (x.intr) at that tick, and
+//     (amendment 4) whether it stood within 6 m of the old trip's tree (GATE.arriveM: arrived) or was still on the way.
 //   pnpm exec tsx scripts/climb-diagnose.ts [--seeds 48,7] [--burn-in 30] [--days 30] [--params '{…}'] [--workers 2] [--json f.json]
 // Development seeds only (AGENTS.md lists the reserved ones); burn-in + days ≤ 90.
 import { writeFileSync } from 'node:fs';
@@ -324,7 +325,8 @@ export function runSeed(job: Job): Result {
           for (const k of ks) { const e = (R.cls[k].ep[`${cur.tripKind}|${out}`] ??= [0, 0, 0, 0, 0]); e[0]++; e[1] += cur.tripRoom; e[2] += cur.tripH; e[3] += cur.tripM; e[4] += cur.tripTicks; }
           if (job.a3 && R.a3 && out === 'travel elsewhere' && ks.length) {
             const band = ks[0] === 'juvenile 5–12 y' ? (c.age < P.rgMinAge ? 'juvenile 5–8 y' : 'juvenile 8–12 y') : ks[0];
-            const key = `${band}|${cur.tripSub} → ${subOf(c)}|${lastWhy.get(c.id) ?? 'argmax'}|${intrNow.get(c.id) ? 'interrupted' : 'no interrupt'}`;
+            const t0 = idx.treeById.get(cur.tripT), at = t0 && Math.hypot(t0.position[0] - c.position[0], t0.position[2] - c.position[2]) <= 6 ? 'at its tree' : 'on the way';
+            const key = `${band}|${cur.tripSub} → ${subOf(c)}|${lastWhy.get(c.id) ?? 'argmax'}|${intrNow.get(c.id) ? 'interrupted' : 'no interrupt'}|${at}`;
             R.a3[key] = (R.a3[key] ?? 0) + 1;
           }
           cur.tripT = -1;
