@@ -41,6 +41,12 @@
 //     decision an audience member makes while the attempt is open: whether the joined trip (travel V.TREE, aux = the
 //     initiator) and the party follow of the initiator were on its list, their values against its top, what it chose;
 //     audience members who made no decision during the attempt ("did not notice or did not decide").
+//   timer-free readouts (amendment, prereg §2.2; computed from the per-seed `events` by the table script): every own-trip
+//     event of an initiator in time order (attempt and alone with their audience ids, free, recruited, given-up, and
+//     'continue': its first decision after an unanswered check kept the same trip, a departure alone); after each
+//     unanswered attempt, the initiator's next own-trip event: a re-launch (an attempt sharing an audience member: the
+//     source's "same audience"), an attempt to a new audience, a departure alone, a departure with no audience; its delay
+//     start to start. `afterCheck`: that first decision (what it chose, whether an own trip was the top option, the values).
 //   pairs (cohesion-diagnose's definitions): subjects ≥ 12 y, awake, daylight, 1-min resolution; together = one 50-m chain,
 //     apart = not one 90-m chain; joins and splits per subject-day, by the mover's part (own trips split by how they
 //     started: free, alone at the cap, recruited attempt), pair time together.
@@ -121,14 +127,18 @@ interface Values { trip: number | null; tripScore: number | null; crop: number |
 interface Company { max: number; sum: number; present: number }
 interface Attempt {
   id: number; cls: Cls; t0: number; day: boolean; hour: number; daylight: number; audience: number; relaunch: boolean; k: number; fromNest: boolean;
-  tree: number; state: State; values: Values | null; company: Company; audParts: Record<string, number>; hoo: boolean;
+  tree: number; aud: number[]; state: State; values: Values | null; company: Company; audParts: Record<string, number>; hoo: boolean;
   outcome: 'recruited' | 'given-up' | 'interrupted' | 'open'; min: number | null; joiner: string; joinerAct: string; switchedTo: string;
   audDecided: number; audJoinOffered: number; audJoined: number; audChose: Record<string, number>; audJoinGap: number[];
 }
 interface Effort { id: number; cls: Cls; tFirst: number; attempts: number[]; giveUps: number[]; outcome: string; tEnd: number | null; fromNest: boolean; preWindow: boolean }
 interface Hold { cls: Cls; day: boolean; first: boolean; sinceFail: number; chosenKind: string; tripTop: boolean; tripMargin: number | null; sameTop: boolean; sameMargin: number | null; state: State; values: Values; company: Company; effortAge: number }
+/** An own-trip event of an initiator, in time order (timer-free readouts, computed by the table script). */
+interface Ev { i: number; t: number; k: 'attempt' | 'alone' | 'free' | 'recruited' | 'given-up' | 'continue'; aud?: number[]; tree?: number; cls: Cls }
+/** The initiator's first decision after an unanswered check: what it chose, and the values then. */
+interface AfterCheck { i: number; t: number; cls: Cls; chosenKind: string; sameTrip: boolean; ownTrip: boolean; tripTop: boolean; tripMargin: number | null; state: State; values: Values; company: Company }
 interface Result {
-  seed: number; tpty1: number | null; animalDays: Record<string, number>; dayAnimalDays: Record<string, number>;
+  seed: number; tpty1: number | null; events: Ev[]; afterCheck: AfterCheck[]; animalDays: Record<string, number>; dayAnimalDays: Record<string, number>;
   trips: Record<string, Record<string, number>>; attempts: Attempt[]; efforts: Effort[]; holds: Hold[];
   afterHold: { cls: Cls; waitMin: number; chosenKind: string; ownTrip: boolean }[];
   alone: { cls: Cls; sinceFirst: number; sinceLast: number; attempts: number; state: State; values: Values | null; company: Company }[];
@@ -184,7 +194,7 @@ export function runSeed(job: Job): Result {
   for (let i = 0; i < burnIn * DAY; i++) tickWorld(w);
   const pobs = createObserver(w, { seed: 1 + 7919, profile: PROFILES.field, truth: true, followMode: 'party-larger', lite: true, pointIntervalMin: 2 });
   const dead0 = new Set(w.chimps.filter(c => !c.alive).map(c => c.id));
-  const R: Result = { seed, tpty1: null, animalDays: {}, dayAnimalDays: {}, trips: {}, attempts: [], efforts: [], holds: [], afterHold: [], alone: [],
+  const R: Result = { seed, tpty1: null, events: [], afterCheck: [], animalDays: {}, dayAnimalDays: {}, trips: {}, attempts: [], efforts: [], holds: [], afterHold: [], alone: [],
     pairs: { joins: 0, splits: 0, joinBy: {}, splitBy: {}, pairDaysTogether: 0, pairDays: 0, subjectDays: 0 }, deaths: {}, living: [w.chimps.filter(c => c.alive).length, 0] };
   for (const k of CLS) { R.animalDays[k] = 0; R.dayAnimalDays[k] = 0; R.trips[k] = {}; }
   let windowOn = false;
@@ -196,6 +206,7 @@ export function runSeed(job: Job): Result {
   const tripStart = new Map<number, string>(); // own trip kind by animal: free / alone / attempt
   const holdEnd = new Map<number, { tryAt: number; cls: Cls }>(); // for the first decision after the hold
   const firstAfterFail = new Set<number>(); // the decision right after a give-up (same tick)
+  const pendingCheck = new Map<number, number>(); // initiator → tree of its unanswered attempt, until its next decision
   let nextId = 1;
   const scratch: Candidate[] = [];
 
@@ -220,6 +231,17 @@ export function runSeed(job: Job): Result {
     }
     if (!cls) return;
     const first = firstAfterFail.has(c.id); firstAfterFail.delete(c.id); // the decision right after a give-up (same tick by day)
+    // the initiator's first decision after an unanswered check (same tick under departPersist's give-up; the next tick when
+    // the check ends in a decision): continuing the same trip is a departure alone
+    const pc = pendingCheck.get(c.id);
+    if (pc !== undefined) {
+      pendingCheck.delete(c.id);
+      const same = !!chosen && chosen.action === 'travel' && chosen.targetId === pc && isOwnTrip(chosen);
+      let top: Candidate | undefined, trip: Candidate | undefined;
+      for (const k of list) { if (k.action === 'dead') continue; if (!top || k.score > top.score) top = k; if (isOwnTrip(k) && (!trip || k.score > trip.score)) trip = k; }
+      R.afterCheck.push({ i: c.id, t, cls, chosenKind: values.chosenKind, sameTrip: same, ownTrip: !!chosen && isOwnTrip(chosen), tripTop: !!trip && trip === top, tripMargin: trip && top ? trip.score - top.score : null, state: stateOf(c, P), values, company: companyOf(w, c, P) });
+      if (same && c.action === 'travel' && c.targetId === pc) R.events.push({ i: c.id, t, k: 'continue', tree: pc, cls });
+    }
     // the first decision after the hold ended
     const he = holdEnd.get(c.id);
     if (he && t >= he.tryAt) { R.afterHold.push({ cls, waitMin: (t - he.tryAt) * 60, chosenKind: values.chosenKind, ownTrip: !!chosen && isOwnTrip(chosen) }); holdEnd.delete(c.id); }
@@ -249,6 +271,7 @@ export function runSeed(job: Job): Result {
     const x = ix(c), t = w.time, cls = clsOf(c);
     if (!cls) return;
     if (ev === 'free' || ev === 'alone' || ev === 'attempt') inc(R.trips[cls], ev === 'attempt' ? (x.trySince !== undefined ? 'relaunch' : 'attempt') : ev);
+    if (ev !== 'lapsed') R.events.push(ev === 'attempt' || ev === 'alone' ? { i: c.id, t, k: ev, aud: audienceIds(w, c, P), tree: c.targetId, cls } : { i: c.id, t, k: ev, tree: c.targetId, cls });
     if (ev === 'free' || ev === 'alone') { tripStart.set(c.id, ev); holdEnd.delete(c.id); }
     if (ev === 'free' || ev === 'alone' || ev === 'attempt') {
       // an attempt still open (its initiator chose another trip during the check) ends there
@@ -276,7 +299,7 @@ export function runSeed(job: Job): Result {
       const aud = audienceIds(w, c, P), parts: Record<string, number> = {};
       for (const id of aud) { const o = index(w).byId.get(id); if (o) inc(parts, partOf(o)); }
       const a: Attempt = { id: nextId++, cls, t0: t, day: day(), hour: w.hour, daylight: w.environment.daylight, audience: n, relaunch, k: e.attempts.length + 1, fromNest: !!x.tryNest,
-        tree: c.targetId, state: stateOf(c, P), values: d && d.t === t ? d.values : null, company: companyOf(w, c, P), audParts: parts, hoo: false,
+        tree: c.targetId, aud, state: stateOf(c, P), values: d && d.t === t ? d.values : null, company: companyOf(w, c, P), audParts: parts, hoo: false,
         outcome: 'open', min: null, joiner: '', joinerAct: '', switchedTo: '', audDecided: 0, audJoinOffered: 0, audJoined: 0, audChose: {}, audJoinGap: [] };
       e.attempts.push(a.id); R.attempts.push(a); open.set(c.id, a); audOf.set(c.id, aud); audSeen.set(c.id, new Set());
       return;
@@ -293,6 +316,7 @@ export function runSeed(job: Job): Result {
       if (ef) ef.giveUps.push(t);
       holdEnd.set(c.id, { tryAt: t + P.departRetryMin / 60, cls });
       firstAfterFail.add(c.id);
+      pendingCheck.set(c.id, c.targetId);
     }
   };
 
@@ -400,11 +424,13 @@ if (!isMainThread) {
     attemptsPerEffort: r3(mean(E.map(e => e.attempts.length))), attemptsPerFailedEffort: r3(mean(failed.map(e => e.attempts.length))),
     effortMinutes: dist(E.filter(e => e.tEnd !== null).map(e => (e.tEnd! - e.tFirst) * 60)) };
   // re-launch delays
-  const byId = new Map(A.map(a => [a.id, a]));
   const s2s: number[] = [], g2r: number[] = [];
-  for (const e of E) for (let i = 1; i < e.attempts.length; i++) {
-    const a0 = byId.get(e.attempts[i - 1]), a1 = byId.get(e.attempts[i]); if (!a0 || !a1) continue;
-    s2s.push((a1.t0 - a0.t0) * 60); if (e.giveUps[i - 1] !== undefined) g2r.push((a1.t0 - e.giveUps[i - 1]) * 60);
+  for (const r of res) { // attempt ids are per seed
+    const byId = new Map(r.attempts.map(a => [a.id, a]));
+    for (const e of r.efforts) for (let i = 1; i < e.attempts.length; i++) {
+      const a0 = byId.get(e.attempts[i - 1]), a1 = byId.get(e.attempts[i]); if (!a0 || !a1 || a0.outcome !== 'given-up') continue;
+      s2s.push((a1.t0 - a0.t0) * 60); g2r.push((a1.t0 - a0.t0) * 60 - (a0.min ?? 0));
+    }
   }
   const AL = all(r => r.alone);
   out.relaunch = { startToStart: dist(s2s), giveUpToRelaunch: dist(g2r), aloneSinceFirstFailure: dist(AL.map(a => a.sinceFirst)), aloneSinceLastFailure: dist(AL.map(a => a.sinceLast)) };
@@ -429,5 +455,5 @@ if (!isMainThread) {
   const shares = (m: Record<string, number>, n: number) => Object.fromEntries(Object.entries(m).sort((a, b) => b[1] - a[1]).map(([k, v]) => [k, r3(v / Math.max(1, n))]));
   out.pairs = { joinsPerSubjectDay: r3(joins / Math.max(1e-9, subjectDays)), splitsPerSubjectDay: r3(splits / Math.max(1e-9, subjectDays)), joinMoverPart: shares(pj, joins), splitMoverPart: shares(ps, splits), pairTimeTogether: r3(pdT / Math.max(1e-9, pdA)), daylightSubjectDays: r3(sd) };
   console.log(JSON.stringify(out, null, 1));
-  if (jsonOut) writeFileSync(jsonOut, JSON.stringify({ ...out, perSeed: res.map(r => ({ seed: r.seed, attempts: r.attempts, efforts: r.efforts, holds: r.holds, afterHold: r.afterHold, alone: r.alone, trips: r.trips, animalDays: r.animalDays })) }, (_k, v) => typeof v === 'number' && !Number.isFinite(v) ? null : v));
+  if (jsonOut) writeFileSync(jsonOut, JSON.stringify({ ...out, perSeed: res.map(r => ({ seed: r.seed, attempts: r.attempts, efforts: r.efforts, holds: r.holds, afterHold: r.afterHold, alone: r.alone, trips: r.trips, animalDays: r.animalDays, events: r.events, afterCheck: r.afterCheck })) }, (_k, v) => typeof v === 'number' && !Number.isFinite(v) ? null : v));
 }

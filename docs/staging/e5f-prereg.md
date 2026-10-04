@@ -109,3 +109,129 @@ success 0.25–0.45; ≥ 90% of recruitments in the first tick (moderate); start
 be top in 35–65% (rule 1: "decides"); first decisions after the hold mostly later than 1 min (rule 2: the chosen act's
 bout); the audience mostly decides (≥ 70%) but rarely joins (≤ 25%) (rule 6: "outvalued"). T-PTY-1 per seed equal to
 S27q's (high: identity).
+
+### 2.1 Diagnosis results (frozen checkout of a00c3bd, clean; S27, seeds 48 and 7, 30 + 30 days; simulation truth)
+
+Printed by `artifacts/validation/e5f/diag_table.py` (a copy of the stage's table script) from `S27-depart.json`; night by
+the integrator's night.py from `S27-rhythm.json`. **Identity:** the tool's T-PTY-1 per seed equals S27q's (5.032 /
+4.529), so its worlds are e-bench's. **A defect in the tool's printed summary** (found reading this run, fixed at the
+next commit, measurement only): its re-launch delays keyed attempts by an id that restarts per seed, so delays paired
+attempts of different seeds; the table below computes them from the per-seed records (the second block).
+
+| readout | S27 |
+| --- | --- |
+| T-PTY-1 per seed (identity with e-bench) | 48: 5.032, 7: 4.529 |
+| deaths | 48: {}; 7: {} |
+| attempts (first) per adult-day | 6.243 |
+| re-launches per adult-day | 0.358 |
+| attempts (first + re-launch) per adult-day | 6.601 |
+| departures alone at the cap per adult-day | 0.211 |
+| own trips with no audience per adult-day | 1.669 |
+|   adult male: attempt / re-launch / alone / free per day | 8.742 / 0.518 / 0.354 / 1.29 |
+|   female, lactating: attempt / re-launch / alone / free per day | 4.196 / 0.254 / 0.113 / 2.488 |
+|   female, other: attempt / re-launch / alone / free per day | 4.174 / 0.2 / 0.076 / 1.53 |
+|   adolescent 12–15 y: attempt / re-launch / alone / free per day | 8.754 / 0.446 / 0.379 / 1.338 |
+|   juvenile 5–12 y: attempt / re-launch / alone / free per day | 8.928 / 0.867 / 0.603 / 1.961 |
+| attempts n; outcome shares | 18010; {'recruited': 0.405, 'given-up': 0.57, 'interrupted': 0.025, 'open': 0} |
+| success share (recruited ÷ ended) | 0.405 |
+|   first attempts: success | 0.411 |
+|   re-launches: n; success | 1084; 0.299 |
+|   from own nest: n; success | 439; 0.267 |
+|   with a travel hoo: share; success | 0.385; 0.462 |
+|   silent: success | 0.368 |
+| minutes to recruitment (median, p90, max) | 0.25, 0.5, 1 |
+| recruitments in the first tick (< 0.3 min) share | None |
+| audience per attempt | 2.866 |
+| audience acts at attempt (share) | {'rest': 0.304, 'in crown': 0.218, 'other': 0.117, 'ground forage': 0.069, 'groom': 0.066, 'own trip': 0.064} |
+| audience members deciding during the attempt (share) | 0.819 |
+|   of deciders: join offered; joined | 0.692; 0.17 |
+|   their choices (counts) | {'joined trip': 10805, 'rest': 9009, 'crown': 6028, 'own trip': 3974, 'pant-grunt': 2572, 'groom': 2211, 'ground forage': 1485} |
+|   top − join option (median, p10, p90) | 0.174, 0, 0.571 |
+| efforts n; outcome | 16928; {'recruited': 0.43, 'lapsed': 0.494, 'audience gone': 0.007, 'interrupted': 0.025, 'alone at cap': 0.041, 'lapsed (window end)': 0.002, 'open': 0.001} |
+| efforts with a failure: n; outcome | 9547; {'lapsed': 0.876, 'audience gone': 0.013, 'alone at cap': 0.073, 'recruited': 0.034, 'lapsed (window end)': 0.003, 'open': 0.001} |
+| attempts per failed effort | 1.113 |
+| re-launch delay, start to start: n, mean, median, p10–p90, min–max | 1082, 24.003, 7.5, -1684–1697.5, -3853.5–3998.25 |
+| re-launch delay, give-up to re-launch: n, mean, median, p10–p90, min–max | 1081, 405.676, 8.5, 4–1829, -1–3997.25 |
+| alone at cap: min since first failure: n, mean, median, p10–p90, min–max | 700, 16.296, 15.5, 13.5–21, 13–29.25 |
+| alone at cap: min since last failure: n, mean, median, p10–p90, min–max | 700, 12.794, 13.5, 6.75–16.25, 4–16.75 |
+| re-launch delay bins (start to start) | {'<2': 189, '<4': 6, '<6': 226, '<8': 141, '<10': 127, '<13': 175, '<Infinity': 218} |
+| hold decisions n; per adult-day blocked while best (all classes) | 14273; 3.052 |
+|   at the give-up decision: n; own trip top w/o hold; same tree top | 9912; 0.573; 0 |
+|   later hold decisions: n; own trip top; same tree top | 4361; 0.419; 0.176 |
+|   give-up decision: chosen (share) | {'crown': 0.381, 'rest': 0.157, 'joined trip': 0.117, 'ground forage': 0.115, 'groom': 0.052, 'to callers': 0.036} |
+| first decision after the hold: n; min after its end (median, p10, p90); own trip chosen | 10210; 9.45, 0.95, 25.7; 0.154 |
+|   within 1 min of the hold end (share) | None |
+| values at attempt: n, hunger, relRes, social need, trip, stay, trip−stay, company max/sum/present, crop, seen h, dist | 18010, 0.319, -0.019, 0.467, 0.533, 0.499, 0.034, 0.516/1.183/0.461, 0.29, 8.875, 114.02 |
+| values at attempt recruited: n, hunger, relRes, social need, trip, stay, trip−stay, company max/sum/present, crop, seen h, dist | 7286, 0.307, -0.015, 0.447, 0.537, 0.5, 0.037, 0.503/1.172/0.45, 0.288, 6.704, 105.51 |
+| values at attempt given up: n, hunger, relRes, social need, trip, stay, trip−stay, company max/sum/present, crop, seen h, dist | 10271, 0.325, -0.021, 0.479, 0.53, 0.497, 0.033, 0.522/1.175/0.467, 0.293, 13.513, 119.323 |
+| values at alone at cap: n, hunger, relRes, social need, trip, stay, trip−stay, company max/sum/present, crop, seen h, dist | 700, 0.404, -0.028, 0.562, 0.643, 0.549, 0.094, 0.687/1.717/0.617, 0.29, 16.396, 122.53 |
+| values at give-up decision: n, hunger, relRes, social need, trip, stay, trip−stay, company max/sum/present, crop, seen h, dist | 9912, 0.314, -0.02, 0.475, None, 0.522, None, 0.522/1.167/0.446, None, None, None |
+|   give-up decision: own-trip margin over top w/o hold (median, p10, p90) | 0.024, -0.164, 0.215 |
+| pairs: joins / splits per subject-day; pair time together | 11.352 / 11.32; 0.184 |
+|   split mover part (top 8) | {'joined trip': 0.342, 'to callers': 0.134, 'to crown': 0.111, 'own trip (recruited)': 0.099, 'in crown': 0.067, 'drink': 0.066, 'other': 0.039, 'rest': 0.03} |
+|   join mover part (top 6) | {'to callers': 0.403, 'joined trip': 0.251, 'own trip (recruited)': 0.051, 'drink': 0.048, 'own trip (free)': 0.042, 'rest': 0.042} |
+
+| readout (per-seed records) | S27 |
+| --- | --- |
+| re-launch delay, start to start | n 1075, mean 7.97, median 7.75, p10–p90 4.75–11.75, min–max 4.75–13.00 |
+|   bins (min) | {'0–1': 0, '1–2': 0, '2–4': 0, '4–6': 354, '6–8': 216, '8–10': 200, '10–13': 304, '13–∞': 1} |
+| re-launch delay, give-up to re-launch | n 1075, mean 7.14, median 7.00, p10–p90 4.00–11.00, min–max 4.00–12.00 |
+| recruitments in the first tick (share) | 0.871 |
+| first decision after the hold within 1 min of its end (share) | 0.102 |
+| give-ups where the own trip would be top and company max > its margin over the top (share of those top) | 0.856 |
+| give-ups where own trip top: margin over top (median, p90); company max (median) | 0.094, 0.286; 0.441 |
+| attempts given up: trip − stay at the attempt (median, p10, p90) | 0.013, -0.093, 0.176 |
+| attempts by day / night (share at night) | 0.032 |
+| unanswered attempts: n; next own-trip event (share) | 0; {} |
+| re-launch to the same audience: delay start to start | n 0 |
+|   bins (min) | {'0–1': 0, '1–2': 0, '2–4': 0, '4–6': 0, '6–8': 0, '8–10': 0, '10–13': 0, '13–30': 0, '30–60': 0, '60–∞': 0} |
+|   share of unanswered attempts re-launched to the same audience within 13 min | 0.0 |
+| departure alone after an unanswered attempt: delay from its start | n 0 |
+| first decision after an unanswered check: n; own trip chosen; same trip (alone); own trip top | 0; 0.0; 0.0; 0.0 |
+|   chosen (share, top 6) | {} |
+
+Night (rhythm-metrics, S27 quick): out/S27-rhythm.json: adults out of a nest 2.47% of night; T-RHY-5 0.0189; night deaths 0; deaths 0
+
+**Reading by the registered rules.**
+1. *departRetryMin decides* (rule 1): at 57.3% of give-ups an own trip (to another tree: the tree just given up carries
+   the finished penalty and is never the top) would be the initiator's top option without the hold; it does instead what
+   it can do with its companions (a crown in view 38%, rest 16%, another's trip 12%, ground forage 12%). Over the whole
+   hold, 3.05 decisions per animal-day are blocked while an own trip is best.
+2. *What sets the re-launch delay* (rule 2): the bout of the act chosen at the give-up. The first decision after the hold
+   comes a median 9.45 min after its end (within 1 min in 10%), and an own trip is then chosen in 15%. Re-launches after a
+   give-up (1,075) fall at 4.75–13.0 min start to start (median 7.75, mean 7.97) against the field's 0–13 (mean 3.80, 9
+   cases): the floor is the check plus the hold (1 + 3.8 min, in ticks 4.75), the ceiling is the cap (a later trip
+   starts a new effort).
+3. *departPersistMaxMin* (rule 3): 7.3% of efforts with a failure end alone at the cap (0.21 departures per adult-day;
+   adult males 0.35), 13.5 min (median) after the last failure: "rarely" by the rule. 87.6% of failed efforts lapse: the
+   initiator's next own trip comes more than 13 min after its failure.
+4. *The check* (rule 4): 87.1% of recruitments come in the first tick and all within the window (by construction): by
+   the rule the window binds a few (13% at 0.5–1 min); for failed attempts it sets the minute the initiator stands.
+5. *Values* (rule 5): at the attempt the trip is worth 0.53 against 0.50 for the best other option (margin 0.034; given
+   up 0.013); the initiator's hunger 0.32, relative reserve −0.02, social need 0.47; the audience's best companyValue
+   0.52 (presentCompany 0.46). At give-ups where an own trip would be top, the company it would leave (median 0.44)
+   exceeds the trip's margin over the top (median 0.094, p90 0.29) in 86%: a valuation with the company in it would
+   mostly keep the initiator, as the hold does now, and send it alone in the rest.
+6. *The audience* (rule 6): 82% of audience members decide during an attempt and 69% of those are offered the join, but
+   17% join: joining is outvalued (top minus the join option: median 0.17); they rest, feed in their crown, start their
+   own trips or join someone else's.
+7. *Fission* (rule 7): own trips make 17% of pair splits (recruited 9.9%, no audience 2.8%, alone at the cap 2.6%, open
+   attempts 1.5%); joined trips (34%) and approaches to callers (13%) make more.
+
+**What the two timers decide, in three lines.** `departRetryMin` decides what a failed initiator does next: at 57% of
+give-ups it removes the initiator's best option (3.05 blocked decisions per animal-day) and sets the re-launch floor
+(4.75 min; the model's re-launches 4.75–13, median 7.75, against the field's 0–13, mean 3.8). `departPersistMaxMin`
+sends 7% of failed efforts off alone (0.21 per adult-day) and cuts the delay distribution at 13 min; 88% of failed
+efforts lapse. At those give-ups the company the initiator would leave (0.44) outweighs the trip's margin (0.09) in 86%.
+
+### 2.2 Amendment: timer-free readouts (registered before the re-run; measurement only)
+
+The readouts of §2 are partly defined by the timers themselves (an "effort" ends at the cap or lapses after 13 min), so an
+arm without the timers cannot be read on them. Added to the tool (header): every own-trip event in time order, and for
+each unanswered attempt (nobody joined or followed within the check) the initiator's **next own-trip event**: a
+re-launch to the same audience (an attempt sharing at least one audience member: the source's "to the same audience"),
+an attempt to a new audience, a departure alone (with an audience present: the cap's departure, or a continued trip), a
+departure with no audience, or none; its delay start to start. Also the initiator's first decision after an unanswered
+check (what it chose; whether an own trip was the top). The tool's summary defect (above) is fixed. The S27 diagnosis is
+re-run with the amended tool from a frozen checkout of the commit that adds this section (the same simulation: the
+identity check is repeated); these readouts are the ones arms are compared on.
