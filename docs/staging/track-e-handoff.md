@@ -14,9 +14,12 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 10:05; deploy held by the user).** No agents. Integrator: the **S24** confirm (S21 +
-  `leftoverRules` 3 + `walkGait`, 42 prescriptions; registered b908cf2) in bench-run4 (23db70b; `integrator/conf24.sh`),
-  judged with `integrator/judge_s21group.py` (`ARM=S24`).
+- **Running now (4 October 10:45; deploy held by the user).** Nothing.
+- **S22 is the best integrated candidate (43)**; S24 (S22 + S23) not adopted: held-out without the rare rows worse
+  beyond noise (z +2.4, through T-RNG-5 and T-FOOD-10) and walking's energy cost on mothers (−0.090), juveniles (−0.108)
+  and infants 0.5–2 y (−0.133 %/day). Open next: hunting below its band on the S21/S22 stack (T-HUN-1 2–4); walkGait's
+  energy cost (travel phases slower than the field's, climbing 16–19% of travel); the 25 rare-event prescriptions need
+  runs past the 90-day cap (the user's decision). Decision guide and hosted copy show S21.
 - **S22 and S23 done** (e-stack2-confirm.md): both pass the keep rule against S21's four runs (re-drawn by `rngSalt`).
   S22 (`leftoverRules` 3, 43): juveniles' and males' reserves better; costs: T-PAT-6 above band, hunting lower (2.0).
   S23 (`walkGait`, 44): hunting into band (6.5), day ranges 3.0–3.4 km; costs: every class's reserves lower, T-FOOD-10
