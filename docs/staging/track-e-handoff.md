@@ -14,10 +14,14 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 13:05; deploy held by the user).** No agents. Integrator: **S26** (S25 + `crownMove`) and
-  **S27** (S25 + `walkGait` + `crownMove`), registered 28d249e, both in bench-run3 moved to 28d249e
-  (`integrator/conf26.sh <label> <S26|S27> - rhythm`, outputs `bench-run3/artifacts/validation/e/s26/`), judged against
-  S25's confirm group with `integrator/judge_s25group.py` (`ARM=S26` / `ARM=S27`).
+- **Running now (4 October 13:20; deploy held by the user).** No agents, no runs. Next: the decision guide and hosted
+  copy move to S27 (`STACK = STACKS.S27`, then `--hosted`); bench-run3 (28d249e) holds the S26 and S27 runs.
+- **S27 is the best integrated candidate (42)** (e-stack2-confirm.md "S26 and S27 results"; S25 + `crownMove` 1 +
+  `walkGait` 1): every sum inside noise against S25's four runs, viable, night safe (2.48%); `walkMps` out of use; the
+  longer walks (males 3.26 km) pay for themselves in food (males +48 kcal in, +47 out), so reserves hold; T-ACT-2 0.132
+  in band. Costs: T-FOOD-10 0.656 (S25 0.556; band 0.08–0.30), T-RNG-4 2.56 (in band). Not separated: whether
+  `crownMove` or `huntDrive` is why this holds where S24 failed. S26 (`crownMove` alone) passes as a correction
+  (climbing −7 to −25% by class, walking unchanged).
 - **S25 is the best integrated candidate (43)** (e-stack2-confirm.md "S25 results"; S22 + `huntDrive` 1): hunting back
   in band (T-HUN-1 17.4), every sum inside noise; its infant drop is one outbreak seed. Decision guide and hosted copy
   on S25.
