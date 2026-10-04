@@ -47,7 +47,7 @@ kill criterion) before any run of changed code; every iteration in the run log (
    stages nothing new in the model.
 4. At most three iterations, each logged here and committed before its run.
 
-## 2. Target rows and sources (step 0; written 4 October 10:40–10:55, before any run)
+## 2. Target rows and sources (step 0; written 4 October 10:08–10:15, committed at ef07577 before any run)
 
 ### 2.1 Samples of the rows scored here
 
