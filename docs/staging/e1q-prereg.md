@@ -299,6 +299,13 @@ juveniles 5–12 y, infants 0.5–2 y or infants 2–5 y more than 2 SD below S2
 a kept arm) above 3.3% of the night. Keep rule for a correction (removes no prescription): viable, held-out not up beyond
 noise, prescriptions not up, night safe. An iteration 2 is registered only for a term this one's diagnosis names.
 
+### 5.1 Replicates (registered 4 October 2026 while C's first run was running, before any arm's result was read; not iterations)
+
+E2j found single quick draws of the per-class energy lines straying beyond S22's spread in both directions under
+`walkGait` (e2j-prereg.md §7.1). So each arm is re-drawn once with `rngSalt` 1 (Cr, CWr; e-bench and energy-diagnose,
+same frozen code), each draw's sums are judged by e-noise.md amendment 2 as registered, and the kill criterion's energy
+line is judged on the two-draw mean: z = (mean − S25 mean) ÷ (SD × √(1/2 + 1/4)), SD of S25's four runs.
+
 ## 4. Samples of the field rows the arms are scored on
 
 As opened for E2i and E2j (e2i-prereg.md §3; e2j-prereg.md §2; the source lists in data/targets.json checked on 4 October
