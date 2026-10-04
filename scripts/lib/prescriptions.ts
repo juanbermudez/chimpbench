@@ -117,7 +117,7 @@ const NON_BEHAVIOUR = new Set(['weather', 'phenology', 'prey', 'disease', 'scale
 const MEASURED = new Set(['H', 'M', 'assumed', 'calibrated']);
 const TARGET = /T-[A-Z]+-\d+/g;
 const FIT_WORD = /\b(re)?(fitted|tuned)\b/i;
-const FIT_NEGATED = /\bnot (re)?(fitted|tuned)\b|\bmay be (re)?(fitted|tuned)\b|\bplanned as fitted\b|\bnothing is fitted\b/i;
+const FIT_NEGATED = /\b(not|never) (re)?(fitted|tuned)\b|\bmay be (re)?(fitted|tuned)\b|\bplanned as fitted\b|\bnothing is fitted\b/i;
 const sentences = (s: string) => s.split(/(?<=\.)\s+/);
 
 /** Sentences of the notes that say the value was fitted or tuned (and do not deny it), with the target rows they name. */
