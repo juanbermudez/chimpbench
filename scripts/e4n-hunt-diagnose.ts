@@ -12,7 +12,8 @@
 //               (evenCaptures(n, cone) = 0), no energy need, other
 //   draw        an RG decision (rgTap) whose menu holds the lead hunt: the hunt's value and its parts recomputed with the
 //               sim's own functions (identity: value = the option's stored raw value), the menu, the option taken, and
-//               the hunt's softmax probability over the same published scores at rgTemperature 0.164 (S19's choice)
+//               the hunt's softmax probability over the same published scores at rgTemperature 0.164 (S19's choice);
+//               the drive as candidates.ts takes it (stage E4n huntDrive: the deficit drive phi, energy.ts deficitDrive)
 //   sensitivity whether the hunt would beat the best other published score if (a) r were at its ceiling R_meat ÷ R (no
 //               approach, no chase), (b) the drive were 1.7 (h = 1), (c) E were not capped by the need, (d) its value
 //               were 1; belief offsets of unseen crops are not included (they enter the real choice)
@@ -27,7 +28,7 @@ import { writeFileSync } from 'node:fs';
 import { createWorld, tickWorld } from '../src/simulation';
 import { candidateMeta, V } from '../src/sim/candidates';
 import { huntTap, type HuntResolution } from '../src/sim/ecology';
-import { digestaCaps, energyNeed, energyTap, fruitKcalPerUnit, meatKcalPerUnit, reserveCap } from '../src/sim/energy';
+import { deficitDrive, digestaCaps, energyNeed, energyTap, fruitKcalPerUnit, meatKcalPerUnit, reserveCap } from '../src/sim/energy';
 import { bodyState, gaitOn, runSpeedOf } from '../src/sim/gait';
 import { isAdultMale } from '../src/sim/hierarchy';
 import { evenCaptures, pursuitCone } from '../src/sim/huntpursuit';
@@ -80,11 +81,13 @@ function parts(c: Chimp, d: number, n: number) {
   const E = Math.min(need, share * K), R = fruitRate(c, P).fruitPerH * fruitKcalPerUnit(P, false);
   const speed = gaitOn(P) ? runSpeedOf(c, P) * 0.8 * bodyState(c) : P.walkMps;
   const tApp = d / speed / 3600, tCh = (P.huntResolveMinMin + P.huntResolveSpanMin / 2) / 60, Rm = 60 * P.ledgerMeatKcalPerMin;
-  const tEat = E / Rm, T = tApp + tCh + tEat, r = E > 0 && R > 0 ? E / T / R : 0, drive = c.hunger * 1.6 + 0.1;
+  // stage E4n (huntDrive): the lead's drive is the deficit drive under the switch (candidates.ts), the appetite now otherwise
+  const phi = L && L.eAvg !== undefined ? deficitDrive(c, P) : NaN;
+  const tEat = E / Rm, T = tApp + tCh + tEat, r = E > 0 && R > 0 ? E / T / R : 0, drive = P.huntDrive === 1 ? phi * 1.6 + 0.1 : c.hunger * 1.6 + 0.1;
   const rCheck = huntRate(c, P, d, n, speed);
   // (c) E not capped by the need
   const Ec = share * K, rc = Ec > 0 && R > 0 ? Ec / (tApp + tCh + Ec / Rm) / R : 0;
-  return { n, coneDeg: cone * 180 / Math.PI, caps, share, K, need, E, R, tApp, tCh, tEat, EperT: T > 0 ? E / T : 0, r, rCheck, drive, value: drive * r, rCeil: Rm / R, rUncapped: rc, Rm };
+  return { n, coneDeg: cone * 180 / Math.PI, caps, share, K, need, E, R, tApp, tCh, tEat, EperT: T > 0 ? E / T : 0, r, rCheck, drive, value: drive * r, rCeil: Rm / R, rUncapped: rc, Rm, phi };
 }
 
 // --- per-tick bookkeeping ------------------------------------------------------------------------------------------
