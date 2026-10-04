@@ -422,8 +422,8 @@ The target decomposition (§2.4) on C, then CW:
 1. Prescriptions 43 (C) and 42 (CW), viable (no death), every sum inside noise (fitted z −0.5 and −0.3; held-out −0.9 and
    −0.3; without the rare rows −0.7 and −0.3): held.
 2. Climbs back into the crown just left at most half of S25's (W's) for adults and juveniles: held for juveniles (4.56 →
-   2.04 a day; W 5.46 → CW 2.06) and other females on CW (3.07 → 1.69); **missed** for males (3.95 → 2.56; 4.02 → 2.77)
-   and nursing mothers (2.88 → 2.20; 3.23 → 1.85). What remains follows time on the ground (mean 12–43 min between the
+   2.04 a day; W 5.46 → CW 2.06); **missed** for adults (C against S25: males 3.95 → 2.56, other females 3.22 → 1.94,
+   nursing mothers 2.88 → 2.20; CW against W: 4.02 → 2.77, 3.07 → 1.69, 3.23 → 1.85, i.e. 0.55–0.76 of the reference). What remains follows time on the ground (mean 12–43 min between the
    descent and the climb back for adults' crown approaches): the animal came down for a goal on the ground (a trip,
    fallback food, a companion below) and decided to return: decisions, not the movement rule.
 3. Metres climbed −15 to −35% for adults and juveniles: **missed** on C (males −9%, other females −14%, nursing mothers −5%,
