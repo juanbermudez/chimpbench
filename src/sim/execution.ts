@@ -27,7 +27,7 @@ import { BANK_A, BANK_B, CHANNEL, FORD, bankOf, bestFord, dryPoint, fordExits, s
 import { markDanger, noteContact } from './contact';
 import { cellAt, gridOf, pressureAt, rangeEdge, sectorDir, useLevels } from './territory';
 import { patrolRoute, patrolValueOn } from './patrol';
-import { bodyState, gaitOn, runSpeedOf, tripSpeed, walkSpeedOf, youngStage } from './gait';
+import { bodyState, crownMoveOn, gaitOn, runSpeedOf, sameCrown, tripSpeed, walkSpeedOf, youngStage } from './gait';
 import { GROOM_BOND_ACTOR, GROOM_BOND_RECIP, GROOM_SOCIAL_ACTOR, GROOM_SOCIAL_RECIP, upkeepOnly } from './upkeep';
 
 // Bout durations in eco-minutes [min, max] (registry bout*Min / bout*Max).
@@ -134,7 +134,8 @@ export function moveTo(world: World, c: Chimp, gx: number, gy: number, gz: numbe
   let hd = Math.sqrt(dx * dx + dz * dz);
   const goalD = detour ? Math.hypot(gx - p[0], gz - p[2]) : hd;
   if (hd > 0.01) c.heading = Math.atan2(dx, dz);
-  if (goalD > 3 && p[1] > 0.05) {
+  // stage E1q (crownMove; gait.ts): a goal in the crown the animal is in is reached through that crown, not from the ground
+  if (goalD > 3 && p[1] > 0.05 && !(crownMoveOn(paramsOf(world)) && sameCrown(world, p[0], p[1], p[2], gx, gy, gz))) {
     if (stream && streamCell(world, p[0], p[2]) === CHANNEL && hd > 0.01) { p[0] += dx / hd * 0.8; p[2] += dz / hd * 0.8; return false; } // move through the crown until above the bank
     p[1] = Math.max(0, p[1] - paramsOf(world).climbMps * TICK_SECONDS * fc * 1.4);
     return false;
@@ -637,7 +638,9 @@ export function executeAction(world: World, c: Chimp): void {
         if (c.actionTime > TICK_SECONDS && moved < 0.5 && d < 5) return finish(world, c);
       }
       const stop = x.v === V.MOTHER ? 1 : x.v === V.JUVENILE ? 3 : 2.5;
-      moveTo(world, c, o.position[0], d < 3 ? o.position[1] : 0, o.position[2], o.action === 'flee' || o.action === 'charge' ? RUN * 0.8 : WALK * 1.15, stop);
+      // stage E1q (crownMove): in the crown the followed animal is in, the follower keeps to its height
+      const up = d < 3 || (crownMoveOn(P) && sameCrown(world, c.position[0], c.position[1], c.position[2], o.position[0], o.position[1], o.position[2]));
+      moveTo(world, c, o.position[0], up ? o.position[1] : 0, o.position[2], o.action === 'flee' || o.action === 'charge' ? RUN * 0.8 : WALK * 1.15, stop);
       return;
     }
     case 'climb': {

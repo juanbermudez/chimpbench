@@ -1,9 +1,9 @@
-import type { Chimp, World } from '../types';
+import type { Chimp, Tree, World } from '../types';
 import { dependentOn, isCarried } from './candidates';
 import { locomotionKcal, massOf } from './energy';
 import type { Params } from './params';
 import { alertPace, bodySpeed, injuryPace, lifeStage } from './huntpursuit';
-import { index } from './state';
+import { index, treesNear } from './state';
 
 // Stage E2i (walkGait; docs/staging/e2i-prereg.md §4): how fast a chimpanzee walks. With the switch off every walk and
 // every valuation read walkMps, a field copy of the day range over the travel share (2.7 km over 21% of an 11.5 h day,
@@ -81,6 +81,43 @@ export const tripSpeed = (world: World, c: Chimp, P: Params): number => gaitOn(P
 // time spent climbing down and up nor the metres of a dependent riding on it. Field and compressed alike (the switch reads
 // forageRate's valuation only); no new magnitude: the climbing speed, the descent factor and the costs per metre are the
 // movement's and the ledger's own. Pure: no RNG, no state.
+
+// Stage E1q (crownMove; docs/staging/e1q-prereg.md §4): an animal moves within the crown it is in. moveTo sends any
+// animal whose goal is more than 3 m away horizontally to the ground first, so a move across its own crown (to another
+// feeding place, a partner, a nest site, its mother) was a descent and a full new climb: a third of adults' metres
+// climbed and half of infants' (e1q-prereg.md §2.3). Wild chimpanzees spend a third to two thirds of their time in trees
+// and half of their arboreal locomotion is not climbing (sarringhaus2022, Doran & Hunt as compiled) [H]. A crown is the
+// tree's canopy radius around its trunk, up to its height (generation.ts); no new magnitude. Pure: no RNG, no state (the
+// largest canopy is derived from the trees, which never change after generation).
+
+/** The switch. */
+export const crownMoveOn = (P: Params): boolean => P.crownMove === 1;
+const maxCanopy = new WeakMap<World, number>();
+const _crown: number[] = [];
+/** True when tree `t`'s crown holds the point: above the ground, within its canopy radius of the trunk, no higher than the tree. */
+export const crownHolds = (t: Tree, x: number, y: number, z: number): boolean =>
+  y > 0.3 && y <= t.height + 0.5 && Math.hypot(t.position[0] - x, t.position[2] - z) <= t.canopy;
+/** The tree whose crown holds the point (the nearest trunk if several), or undefined. */
+export function crownAt(world: World, x: number, y: number, z: number): Tree | undefined {
+  if (!(y > 0.3)) return undefined;
+  let r = maxCanopy.get(world);
+  if (r === undefined) { r = 0; for (const t of world.trees) if (t.canopy > r) r = t.canopy; maxCanopy.set(world, r); }
+  const n = treesNear(world, x, z, r, _crown);
+  let best: Tree | undefined, bd = Infinity;
+  for (let i = 0; i < n; i++) {
+    const t = world.trees[_crown[i]];
+    if (!crownHolds(t, x, y, z)) continue;
+    const d = Math.hypot(t.position[0] - x, t.position[2] - z);
+    if (d < bd) { bd = d; best = t; }
+  }
+  return best;
+}
+/** True when a point above the ground and a goal above the ground lie in one crown, so the way between them is through it. */
+export function sameCrown(world: World, x: number, y: number, z: number, gx: number, gy: number, gz: number): boolean {
+  if (!(y > 0.3 && gy > 0.3)) return false;
+  const t = crownAt(world, x, y, z);
+  return t !== undefined && crownHolds(t, gx, gy, gz);
+}
 
 /** The switch (read only where forageRate's netRateShare is used). */
 export const tripBodyOn = (P: Params): boolean => P.tripBodyCost === 1;

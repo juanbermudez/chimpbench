@@ -46,6 +46,7 @@ const TRACK_E_SWITCHES = [
   'walkGait', // E2i
   'tripBodyCost', 'youngArrival', // E2j
   'huntDrive', // E4n
+  'crownMove', // E1q
 ] as const;
 
 test('Track E switches are all 0 by default in both profiles', () => {

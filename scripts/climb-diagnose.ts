@@ -57,19 +57,32 @@
 //     for the decision that changed it (rg.ts rgTap: need-bucket, light-phase, outvalued, ended, …; 'argmax' when no
 //     rgTap call was made, the under-8 rule), whether the animal had an interrupt pending (x.intr) at that tick, and
 //     (amendment 4) whether it stood within 6 m of the old trip's tree (GATE.arriveM: arrived) or was still on the way.
+//   ascent geometry (stage E1q, docs/staging/e1q-prereg.md §2; always on, reads only): each ascent (a run of up ticks of an
+//     animal not carried) is keyed by where it starts and what it climbs for: 'from a perch' (it starts 0.3 m or more above
+//     the ground), else the ground gap = the horizontal distance from the point where the animal's previous descent reached
+//     the ground (y < 0.3 at the end of a run of down ticks) to the ascent's start, binned < 3 m, 3–10 m, 10–30 m, ≥ 30 m,
+//     or 'no descent seen' (none since the window opened); the act at its start (the 18 categories above); and 'same tree'
+//     when the animal climbs to forage in the tree it was feeding in (or approaching) when that descent began. Per key:
+//     ascents, metres risen (the run's summed rise) and minutes on the ground since that descent. Perch height = the height
+//     at the end of each ascent (histogram, 0.5 m bins). Cost per kg and metre climbed = Σ own climb kcal × 4184 ÷
+//     Σ (mass × metres risen), the ledger's own number (49.05 J/kg/m at ledgerClimbEff 0.2), as a check.
+//     Crown of a perch (E1q amendment 1): the tree whose crown holds the point (horizontal distance to its trunk ≤ its
+//     canopy radius and height ≤ its height; the nearest trunk if several); each ascent that starts on the ground after a
+//     descent is classed by the crown it ends in against the crown that descent began in: 'same crown', 'touching crown'
+//     (trunks no farther apart than the two canopy radii summed), 'other crown', 'no crown' (either point in none).
 //   pnpm exec tsx scripts/climb-diagnose.ts [--seeds 48,7] [--burn-in 30] [--days 30] [--params '{…}'] [--workers 2] [--json f.json]
 // Development seeds only (AGENTS.md lists the reserved ones); burn-in + days ≤ 90.
 import { writeFileSync } from 'node:fs';
 import { isMainThread, parentPort } from 'node:worker_threads';
 import { candidateMeta, dependentOn, isCarried, V } from '../src/sim/candidates';
-import { boutRoom, energyTap, fruitKcalPerUnit, gutCap, gutRoom, locomotionKcal, type EnergyTerm, type FoodKind } from '../src/sim/energy';
+import { boutRoom, energyTap, fruitKcalPerUnit, gutCap, gutRoom, locomotionKcal, massOf, type EnergyTerm, type FoodKind } from '../src/sim/energy';
 import { fruitRate } from '../src/sim/intake';
 import { rgTap } from '../src/sim/rg';
 import { bodyState, tripSpeed, youngStage } from '../src/sim/gait';
 import type { Candidate, Tree } from '../src/types';
 import { fruitAt } from '../src/sim/phenology';
 import { paramsOf } from '../src/sim/params';
-import { index, isTreeId, ix, simOf, TICK_HOURS } from '../src/sim/state';
+import { index, isTreeId, ix, simOf, TICK_HOURS, treesNear } from '../src/sim/state';
 import { createWorld, tickWorld } from '../src/simulation';
 import { activityCategory, CAT_TRAVEL } from '../src/field/categories';
 import type { Chimp, World } from '../src/types';
@@ -98,11 +111,14 @@ interface ClsAcc {
   tbouts: number; tboutTicks: number; halts: number; haltTicks: number; haltWhy: number[]; haltWhyTicks: number[];
   tripMoveM: number; tripMoveTicks: number; tripHist: number[];
   /** By raw action (c.action): ticks, horizontal metres, metres up, own walk and climb kcal. */ byAction: Record<string, number[]>;
+  /** E1q: ascents by 'start|act|tree': [count, metres risen, ticks on the ground since the previous descent]; perch heights (0.5 m bins); Σ mass × metres risen. */
+  asc: Record<string, number[]>; perch: number[]; upKgM: number;
+  /** E1q amendment 1: re-climbs by the crown they end in against the crown the previous descent left: [count, metres]. */ crownRe: Record<string, number[]>;
 }
-const HB = 0.025, HN = 160;
+const HB = 0.025, HN = 160, PB = 0.5, PN = 100;
 const blankCls = (): ClsAcc => ({ ticks: 0, dayTicks: 0, acts: Object.fromEntries(ACTS.map(a => [a, blankAct()])), tap: Object.fromEntries(TERMS.map(t => [t, 0])), eaten: Object.fromEntries(FOODS.map(f => [f, 0])), suckled: 0,
   ep: {}, visitRoom: [], visitEnd: {}, trips: 0, tripD: [], crowns: 0, ascents: 0, ascentsBy: {}, ascentM: 0, descents: 0, visitEat: [], visitLoc: [], visitWalkM: [], visitUpM: [],
-  tbouts: 0, tboutTicks: 0, halts: 0, haltTicks: 0, haltWhy: new Array(WHY.length).fill(0), haltWhyTicks: new Array(WHY.length).fill(0), tripMoveM: 0, tripMoveTicks: 0, tripHist: new Array(HN).fill(0), byAction: {} });
+  tbouts: 0, tboutTicks: 0, halts: 0, haltTicks: 0, haltWhy: new Array(WHY.length).fill(0), haltWhyTicks: new Array(WHY.length).fill(0), tripMoveM: 0, tripMoveTicks: 0, tripHist: new Array(HN).fill(0), byAction: {}, asc: {}, perch: new Array(PN).fill(0), upKgM: 0, crownRe: {} });
 interface Job { seed: number; burnIn: number; days: number; params: Record<string, number>; cf?: boolean; a3?: boolean }
 /** Amendment 2: per variant (b, c): decisions, top changed, a trip on top that loses it, Σ Δrate of trips and n, Σ Δrate of crowns in view and n. */
 interface Cf { dec: number; top: number[]; tripLost: number[]; dTrip: number[]; nTrip: number; dCrown: number[]; nCrown: number; byCls: Record<string, number[]> }
@@ -140,7 +156,8 @@ const pct = (a: number[], q: number) => { if (!a.length) return NaN; const s = [
 const mean = (a: number[]) => a.length ? a.reduce((s, v) => s + v, 0) / a.length : NaN;
 const histPct = (h: number[], q: number) => { const n = h.reduce((s, v) => s + v, 0); if (!n) return NaN; let k = 0; for (let i = 0; i < h.length; i++) { k += h[i]; if (k >= q * n) return (i + 0.5) * HB; } return NaN; };
 
-interface Prev { tripSub: string; tripT: number; tripKind: string; tripRoom: number; tripH: number; tripM: number; tripTicks: number; x: number; y: number; z: number; dv: number; prog: number; act: Act; target: number; trav: boolean; tbHalt: boolean; up: boolean; down: boolean; crownId: number; locK: number; locWalkM: number; locUpM: number; visitEat: number }
+interface Prev { tripSub: string; tripT: number; tripKind: string; tripRoom: number; tripH: number; tripM: number; tripTicks: number; x: number; y: number; z: number; dv: number; prog: number; act: Act; target: number; trav: boolean; tbHalt: boolean; up: boolean; down: boolean; crownId: number; locK: number; locWalkM: number; locUpM: number; visitEat: number;
+  /** E1q: where the last descent reached the ground (NaN: none), its tick, the tree of the perch it left; the open ascent. */ dX: number; dZ: number; dT: number; perchTree: number; aKey: string; aRise: number; aGround: number; dCrown: number; aFromGround: boolean }
 
 export function runSeed(job: Job): Result {
   const { seed, burnIn, days, params } = job;
@@ -148,6 +165,14 @@ export function runSeed(job: Job): Result {
   const P = paramsOf(w);
   for (let i = 0; i < burnIn * DAY; i++) tickWorld(w);
   const maxStep = 2 * P.runMps * TICK_S + 2; // energy.ts rates().maxStep
+  // E1q amendment 1: the tree whose crown holds a point (index into w.trees, -1 if none; nearest trunk if several)
+  const nearT: number[] = [];
+  let maxCanopy = 0; for (const t of w.trees) if (t.canopy > maxCanopy) maxCanopy = t.canopy;
+  const crownAt = (x: number, z: number, y: number): number => {
+    const n = treesNear(w, x, z, maxCanopy, nearT); let best = -1, bd = Infinity;
+    for (let j = 0; j < n; j++) { const t = w.trees[nearT[j]]; const d = Math.hypot(t.position[0] - x, t.position[2] - z); if (d <= t.canopy && y <= t.height + 0.5 && d < bd) { bd = d; best = nearT[j]; } }
+    return best;
+  };
   const dead0 = new Set(w.chimps.filter(c => !c.alive).map(c => c.id));
   const R: Result = { seed, days, cls: Object.fromEntries(CLS.map(n => [n, blankCls()])), ids: {}, deaths: {}, living: [w.chimps.filter(c => c.alive).length, 0], phases: [], halts20: [] };
   const idSets = Object.fromEntries(CLS.map(n => [n, new Set<number>()])) as Record<Cls, Set<number>>;
@@ -296,7 +321,8 @@ export function runSeed(job: Job): Result {
         const atCrown = c.action === 'forage' && isTreeId(c.targetId) && x.phase === 2;
         const cur: Prev = { tripSub: p?.tripSub ?? '', tripT: p?.tripT ?? -1, tripKind: p?.tripKind ?? '', tripRoom: p?.tripRoom ?? 0, tripH: p?.tripH ?? 0, tripM: p?.tripM ?? 0, tripTicks: p?.tripTicks ?? 0,
           x: c.position[0], y: c.position[1], z: c.position[2], dv: c.decisionVersion, prog: x.prog, act, target: c.targetId, trav: false, tbHalt: false, up, down: st === 3,
-          crownId: p?.crownId ?? -1, locK: p?.locK ?? 0, locWalkM: p?.locWalkM ?? 0, locUpM: p?.locUpM ?? 0, visitEat: p?.visitEat ?? 0 };
+          crownId: p?.crownId ?? -1, locK: p?.locK ?? 0, locWalkM: p?.locWalkM ?? 0, locUpM: p?.locUpM ?? 0, visitEat: p?.visitEat ?? 0,
+          dX: p?.dX ?? NaN, dZ: p?.dZ ?? NaN, dT: p?.dT ?? -1, perchTree: p?.perchTree ?? -1, aKey: p?.aKey ?? '', aRise: p?.aRise ?? 0, aGround: p?.aGround ?? 0, dCrown: p?.dCrown ?? -1, aFromGround: p?.aFromGround ?? false };
         // locomotion this tick (the ledger's formula on the ledger's move filter); carried animals move no metres of their own
         const ownWalkK = valid && !carried ? locomotionKcal(c, P, dh, 0) : 0, ownClimbK = valid && !carried && dy > 0 ? locomotionKcal(c, P, 0, dy) : 0;
         const cy = carry.get(c.id);
@@ -372,6 +398,34 @@ export function runSeed(job: Job): Result {
             if ((act === 'own trip' || act === 'joined trip') && st === 1 && !newDecision) { A.tripMoveM += dh; A.tripMoveTicks++; A.tripHist[Math.min(HN - 1, Math.floor(dh / TICK_S / HB))]++; }
           }
         }
+        // E1q: ascent geometry (reads only). A descent's start remembers the perch's tree; its end on the ground, the point.
+        if (p) {
+          const down = st === 3;
+          if (down && !p.down) { cur.perchTree = (p.act === 'in crown' || p.act === 'crown approach') && isTreeId(p.target) ? p.target : -1; cur.dCrown = crownAt(p.x, p.z, p.y); }
+          if (p.down && !down && p.y < 0.3) { cur.dX = p.x; cur.dZ = p.z; cur.dT = i - 1; }
+          // an open ascent closes when the up run ends (or the animal is carried)
+          if (p.up && !(up && !carried) && cur.aKey) {
+            for (const k of ks) { const e = (R.cls[k].asc[cur.aKey] ??= [0, 0, 0]); e[0]++; e[1] += cur.aRise; e[2] += cur.aGround; R.cls[k].perch[Math.min(PN - 1, Math.floor(p.y / PB))]++; }
+            if (cur.aFromGround) {
+              const a = cur.dCrown, b = crownAt(p.x, p.z, p.y);
+              const ta = a >= 0 ? w.trees[a] : undefined, tb2 = b >= 0 ? w.trees[b] : undefined;
+              const rel = !ta || !tb2 ? 'no crown' : a === b ? 'same crown' : Math.hypot(ta.position[0] - tb2.position[0], ta.position[2] - tb2.position[2]) <= ta.canopy + tb2.canopy ? 'touching crown' : 'other crown';
+              const key = `${rel}|${cur.aKey.split('|')[1]}`;
+              for (const k of ks) { const e = (R.cls[k].crownRe[key] ??= [0, 0]); e[0]++; e[1] += cur.aRise; }
+            }
+            cur.aKey = ''; cur.aRise = 0; cur.aGround = 0; cur.aFromGround = false;
+          }
+          if (up && !carried && valid) {
+            if (!p.up) {
+              const gap = p.y >= 0.3 ? 'from a perch' : Number.isNaN(cur.dX) ? 'no descent seen' : (() => { const g = Math.hypot(p.x - cur.dX, p.z - cur.dZ); return g < 3 ? 'gap < 3 m' : g < 10 ? 'gap 3–10 m' : g < 30 ? 'gap 10–30 m' : 'gap ≥ 30 m'; })();
+              const same = c.action === 'forage' && isTreeId(c.targetId) && c.targetId === cur.perchTree ? 'same tree' : 'other';
+              cur.aKey = `${gap}|${act}|${same}`; cur.aRise = 0; cur.aGround = gap.startsWith('gap') ? i - cur.dT : 0; cur.aFromGround = gap.startsWith('gap');
+            }
+            cur.aRise += dy;
+          }
+          // the same move filter as the own climb kcal (ownClimbK), so the ratio is the ledger's cost per kg and metre
+          if (valid && !carried && dy > 0) { const kgM = massOf(c, P) * dy; for (const k of ks) R.cls[k].upKgM += kgM; }
+        }
         // descents: a run of down ticks
         if (p && st === 3 && !p.down) for (const k of ks) R.cls[k].descents++;
         // travel bouts and halts
@@ -416,6 +470,10 @@ function summarize(res: Result[]) {
       for (let i = 0; i < WHY.length; i++) { A.haltWhy[i] += a.haltWhy[i]; A.haltWhyTicks[i] += a.haltWhyTicks[i]; }
       A.tripMoveM += a.tripMoveM; A.tripMoveTicks += a.tripMoveTicks; for (let i = 0; i < HN; i++) A.tripHist[i] += a.tripHist[i];
       for (const [k, v] of Object.entries(a.byAction)) { const b = (A.byAction[k] ??= [0, 0, 0, 0, 0]); for (let i = 0; i < 5; i++) b[i] += v[i]; }
+      for (const [k, v] of Object.entries(a.asc)) { const b = (A.asc[k] ??= [0, 0, 0]); for (let i = 0; i < 3; i++) b[i] += v[i]; }
+      for (let i = 0; i < PN; i++) A.perch[i] += a.perch[i];
+      A.upKgM += a.upKgM;
+      for (const [k, v] of Object.entries(a.crownRe)) { const b = (A.crownRe[k] ??= [0, 0]); b[0] += v[0]; b[1] += v[1]; }
       for (const t of TERMS) A.tap[t] += a.tap[t];
       for (const f of FOODS) A.eaten[f] += a.eaten[f];
       for (const k of ACTS) {
@@ -450,6 +508,11 @@ function summarize(res: Result[]) {
         haltWhy: Object.fromEntries(WHY.map((k, i) => [k, A.haltWhy[i] / Math.max(1, A.halts)])), haltWhyMinPerDay: Object.fromEntries(WHY.map((k, i) => [k, minPer(A.haltWhyTicks[i])])) },
       tripSpeed: { mean: A.tripMoveM / Math.max(1, A.tripMoveTicks) / TICK_S, p50: histPct(A.tripHist, 0.5) },
       byAction: Object.fromEntries(Object.entries(A.byAction).map(([k, v]) => [k, { min: v[0] * TICK_HOURS * 60 / d, hKm: v[1] / d / 1000, upM: v[2] / d, walkK: v[3] / d, climbK: v[4] / d }])),
+      // E1q: ascent geometry
+      ascentGeometry: Object.fromEntries(Object.entries(A.asc).sort((a, b) => b[1][1] - a[1][1]).map(([k, v]) => [k, { perDay: v[0] / d, mPerDay: v[1] / d, meanRiseM: v[1] / Math.max(1, v[0]), meanGroundMin: v[2] / Math.max(1, v[0]) * TICK_HOURS * 60 }])),
+      perchHeight: (() => { const n = A.perch.reduce((s2, v) => s2 + v, 0), q = (f: number) => { let k = 0; for (let i = 0; i < PN; i++) { k += A.perch[i]; if (k >= f * n) return (i + 0.5) * PB; } return NaN; }; return { n, p10: q(0.1), p50: q(0.5), p90: q(0.9) }; })(),
+      climbJPerKgM: tot.climbK * 4184 / Math.max(1e-9, A.upKgM / d),
+      reclimbByCrown: Object.fromEntries(Object.entries(A.crownRe).sort((a, b) => b[1][1] - a[1][1]).map(([k, v]) => [k, { perDay: v[0] / d, mPerDay: v[1] / d }])),
     };
   }
   S.byClass = byCls;

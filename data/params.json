@@ -4823,6 +4823,36 @@
    "notes": "Crowding cost scales with (ref - fruit index)."
   },
   {
+   "id": "crownMove",
+   "group": "movement",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Addendum: E1q climbing): sarringhaus2022 (chimpanzees spend 34-65% of their time in trees, 8-18% of their locomotion is arboreal, about half of it climbing, the rest suspension, scrambling and walking on boughs; Doran & Hunt as compiled) [H]; krief2012 (Kibale night nests 8-9 m high) [H]; kozmaPontzer2021 and taylor1972 (what a metre climbed costs; unchanged)"
+   ],
+   "clock": "none",
+   "symbol": "P.crownMove",
+   "file": "src/sim/gait.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage E1q switch (docs/staging/e1q-prereg.md §4): with 1 an animal above the ground whose goal above the ground lies in the crown it is in (the tree whose crown holds a point: its trunk within the tree's canopy radius horizontally, the point no higher than the tree; gait.ts crownAt) moves to it through that crown instead of descending to the ground first (execution.ts moveTo descends before any goal more than 3 m away); a follower in the same crown as the animal it follows goes to that animal's height (today: the ground once it is 3 m or more away); a crown option is valued with the climb from the animal's height when it is already in that crown (candidates.ts rateWorth and treeFoodWorth; today only when the crown is its current target). The audit (e1q-prereg.md §2.3-2.4): a third of adults' metres climbed and half of infants' were climbs back into the crown just left. No new magnitude: speeds and costs per metre are unchanged (a horizontal metre in a crown costs what the ledger charges any horizontal metre). Removes no counted prescription. 0 = today, bit for bit. Design."
+  },
+  {
    "id": "crownShare",
    "group": "social",
    "value": 0,
