@@ -122,3 +122,12 @@ top the list, or a copulation gate reached); the share of male decisions blocked
 of copulation-gate ticks blocked, name what sets the rate. Males are "absent for lack of value" if, at their decisions in
 her party, they leave while the mate offer is blocked and no option at her is on the list; "absent by distance" if most
 absent dyad-hours are out of sight beyond 250 m without having seen her swollen in 24 h.
+
+## 9. Run log (each entry written before its run, unless marked)
+
+- **Smoke** (logged after the run, at the hooked code; scripts only): S27, seeds 48 and 7, 1 + 2 days: every readout
+  produced (89 and 87 copulations; communities of 7, 4 and 3 adult males). The operational-sex-ratio readout registered in
+  §3 was missing from the first version of the tool and was added before any diagnosis run (smoke: 5.0, 4.0, 3.0 by
+  community, seed 48).
+- **D0, D1** (as registered in §3), from `scratchpad/e4p/frozen-d` (a detached checkout of the commit that adds this
+  entry): seeds 48 and 7, two processes at a time (one if the load is above 8); outputs `scratchpad/e4p/diag/D{0,1}-{48,7}.json`.

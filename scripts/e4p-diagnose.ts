@@ -65,6 +65,7 @@ const femaleDayHByMales: Record<string, number> = {}, anoestrousDayHByMales: Rec
 let maxSwollenDayH = 0, maleSumDayH = 0, anoestrousDayH = 0, anoestrousMaleSum = 0, partySizeSwollen = 0, partySizeAnoestrous = 0;
 const adultMalesPerTroop: Record<string, number[]> = {};
 const byTroopH: Record<string, number> = {}, byTroopMaleSum: Record<string, number> = {}, byTroopMalesInTroop: Record<string, number> = {};
+const osrMaleH: Record<string, number> = {}, osrSwollenH: Record<string, number> = {};
 // --- 2. where absent males are ---------------------------------------------------------------------------------------
 const placeH: Record<string, number> = {}, placeInformedH: Record<string, number> = {}, absentActH: Record<string, number> = {}, presentActH: Record<string, number> = {};
 const lastSeenSwollen = new Map<string, number>(); // dyad key → last time the male saw her maximally swollen
@@ -240,6 +241,9 @@ for (let i = 0; i < days * DAY; i++) {
   const troopMales: Record<number, number> = {};
   for (const m of males) troopMales[m.troopId] = (troopMales[m.troopId] ?? 0) + 1;
   if (i % 240 === 0) for (const t of w.troops) (adultMalesPerTroop[t.id] ??= []).push(troopMales[t.id] ?? 0);
+  // the operational sex ratio (furuichiHashimoto2001's 発情性比): the community's adult males ÷ its maximally swollen females
+  for (const m of males) bump(osrMaleH, String(m.troopId), H);
+  for (const f of swollen) bump(osrSwollenH, String(f.troopId), H);
   if (day) adultMaleDayH += males.length * H;
   const partySize = new Map<number, number>(); for (const c of alive) partySize.set(c.partyId, (partySize.get(c.partyId) ?? 0) + 1);
   for (const f of alive) {
@@ -303,6 +307,8 @@ const result = {
     adultMalesPerTroop: Object.fromEntries(Object.entries(adultMalesPerTroop).map(([k, v]) => [k, mean(v)])),
     // by the female's community: her daylight hours, the adult males in her party, and the share of the community's adult
     // males (unrelated ones counted in the party; all adult males in the community as the denominator)
+    operationalSexRatio: Object.fromEntries(Object.keys(osrMaleH).map(k => [k, osrSwollenH[k] ? r4(osrMaleH[k] / osrSwollenH[k]) : null])),
+    operationalSexRatioAll: Object.values(osrSwollenH).reduce((a, b) => a + b, 0) ? r4(Object.values(osrMaleH).reduce((a, b) => a + b, 0) / Object.values(osrSwollenH).reduce((a, b) => a + b, 0)) : null,
     byTroop: Object.fromEntries(Object.keys(byTroopH).map(k => [k, { femaleDayH: r4(byTroopH[k]), adultMalesInParty: r4(byTroopMaleSum[k] / byTroopH[k]), adultMalesInCommunity: r4(byTroopMalesInTroop[k] / byTroopH[k]), shareOfCommunityMales: byTroopMalesInTroop[k] ? r4(byTroopMaleSum[k] / byTroopMalesInTroop[k]) : null }])),
   },
   absence: { placeH: round(placeH), placeInformedH: round(placeInformedH), absentActH: round(absentActH), presentActH: round(presentActH) },
