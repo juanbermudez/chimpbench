@@ -50,6 +50,11 @@
 //   pairwise distances between centres.
 // Proximity (v2): every 15 min in daylight > 0.1, for each pair of communities the least distance between any of their
 //   independent members (weaned or >= 6 y); shares of quarter-hours within the pant-hoot radius and within half of it.
+//   v3: each quarter-hour within the radius is classed by the closest pair (in this order): 'patrol' (either on its
+//   community's patrol), 'leaver' (either in the file of its community's patrol under way but off it), 'pursuit',
+//   'incursion' (either outside its own 95% isopleth and inside another's), 'border' (both at own use isopleth >= 0.8),
+//   'core' (at least one inside its own 0.8 isopleth); and per community the share of its independent members' daylight
+//   quarter-hours at own isopleth >= 0.8 and > 0.95, with and without patrol members.
 // Rows: T-IGE-1..3, T-PAT-1..3, -5..7, T-BRD-1 per seed as runFieldJob computes them (value, num, den, parts), the
 //   patrol classifier's precision and recall (focal and male-party team sets) and the encounter classifier's accuracy on
 //   party follows; stats.intergroupEncounters (12-h community-pair episodes) over the window; deaths by cause.
@@ -298,6 +303,18 @@ function trackRanges(): void {
   rangesDaily.push({ day: w.day, troops: T, gaps });
 }
 const prox: Record<string, { n: number; inHear: number; inHalf: number; sumMin: number }> = {};
+const proxCls: Record<string, number> = {};
+const borderUse: Record<number, { n: number; peri: number; out: number; nNoPat: number; periNoPat: number; outNoPat: number }> = {};
+function proxClass(a: Chimp, b: Chimp): string {
+  const ca = ctxOf(a), cb = ctxOf(b);
+  if (ca === 'patrol' || cb === 'patrol') return 'patrol';
+  const leaver = (c: Chimp) => { const pt = s.patrols[c.troopId]; return !!pt && pt.file.includes(c.id); };
+  if (leaver(a) || leaver(b)) return 'leaver';
+  if (ca === 'pursuit' || cb === 'pursuit') return 'pursuit';
+  if (ca === 'incursion' || cb === 'incursion') return 'incursion';
+  if (ca.startsWith('border') && cb.startsWith('border')) return 'border';
+  return 'core';
+}
 let lastQuarter = -1;
 function trackProximity(): void {
   const q = Math.floor(w.time * 4);
@@ -305,15 +322,22 @@ function trackProximity(): void {
   lastQuarter = q;
   if (w.environment.daylight <= 0.1) return;
   const by: Chimp[][] = [];
-  for (const c of index(w).alive) { if (!c.alive || !(ix(c).weaned || c.age >= 6)) continue; (by[c.troopId] ??= []).push(c); }
+  for (const c of index(w).alive) {
+    if (!c.alive || !(ix(c).weaned || c.age >= 6)) continue;
+    (by[c.troopId] ??= []).push(c);
+    const pl = placeOf(c.troopId, c.position[0], c.position[2]), u = borderUse[c.troopId] ??= { n: 0, peri: 0, out: 0, nNoPat: 0, periNoPat: 0, outNoPat: 0 };
+    u.n++; if (pl.own >= P.peripheryLevel) u.peri++; if (pl.own > P.udRangeLevel) u.out++;
+    if (!onPatrol(c)) { u.nNoPat++; if (pl.own >= P.peripheryLevel) u.periNoPat++; if (pl.own > P.udRangeLevel) u.outNoPat++; }
+  }
   const R = P.hearPantHootM;
   for (let a = 0; a < w.troops.length; a++) for (let b = a + 1; b < w.troops.length; b++) {
     const A = by[w.troops[a].id] ?? [], B = by[w.troops[b].id] ?? [];
-    let best = Infinity;
-    for (const p of A) for (const o of B) { const dd = Math.hypot(p.position[0] - o.position[0], p.position[2] - o.position[2]); if (dd < best) best = dd; }
+    let best = Infinity, pa: Chimp | undefined, pb: Chimp | undefined;
+    for (const p of A) for (const o of B) { const dd = Math.hypot(p.position[0] - o.position[0], p.position[2] - o.position[2]); if (dd < best) { best = dd; pa = p; pb = o; } }
     if (!Number.isFinite(best)) continue;
     const k = `${w.troops[a].id}-${w.troops[b].id}`, e = prox[k] ??= { n: 0, inHear: 0, inHalf: 0, sumMin: 0 };
     e.n++; e.sumMin += best; if (best <= R) e.inHear++; if (best <= R / 2) e.inHalf++;
+    if (best <= R && pa && pb) { const c = proxClass(pa, pb); proxCls[c] = (proxCls[c] ?? 0) + 1; }
   }
 }
 
@@ -363,6 +387,8 @@ const result = {
   formings: { n: formings.length, flicker: formings.filter(f => f.flicker).length, led: formings.filter(f => f.led).length, ledFlicker: formings.filter(f => f.led && f.flicker).length, list: formings },
   ranges: rangesDaily,
   proximity: Object.fromEntries(Object.entries(prox).map(([k, e]) => [k, { n: e.n, inHear: r3(e.inHear / e.n), inHalf: r3(e.inHalf / e.n), meanMin: Math.round(e.sumMin / e.n) }])),
+  proximityClass: proxCls,
+  borderUse: Object.fromEntries(Object.entries(borderUse).map(([k, u]) => [k, { peri: r3(u.peri / u.n), out: r3(u.out / u.n), periNoPatrol: r3(u.periNoPat / u.nNoPat), outNoPatrol: r3(u.outNoPat / u.nNoPat), n: u.n }])),
   calls: { n: calls.length, heardByStrangers: calls.filter(c => c.heard.length > 0).length, byTroop: tally(calls.map(c => c.troop)),
     strangerHeard: calls.filter(c => c.heard.length > 0).map(c => ({ t: c.t, kind: c.kind, troop: c.troop, am: c.am, ctx: c.ctx, v: c.v, answers: c.answers, patrol: c.patrol, own: c.own, inOther: c.inOther, heard: c.heard })),
     allByCtx: tally(calls.map(c => c.ctx)), allByV: tally(calls.map(c => c.v)) },

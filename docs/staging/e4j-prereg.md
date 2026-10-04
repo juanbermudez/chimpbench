@@ -118,6 +118,15 @@ h_patrol is measured, not assumed.
   days, every readout produced. Runs **E16a, E16b, E13a, E13b**: the v2 tool on the same eight seed-configurations as
   the D runs, from a frozen detached checkout of the commit that adds this entry (`scratchpad/e4j/frozen-e`), two chains;
   every v1 readout must reproduce the D runs exactly (tool check).
+- **Tool v3 and the F runs** (written after E13a/E16a were read, before any v3 run). The first draws put the doubling in
+  the time communities spend within earshot (daylight quarter-hours with members of two communities within 1 km: 5.0%
+  → 10.1%), with hearing episodes per quarter-hour within earshot unchanged (0.165, 0.170) and centres and radii moved
+  little. To say whose positions make that time (patrols, members who left a patrol under way, pursuit, incursions,
+  both parties at their borders, or a party in its core), v3 classes every quarter-hour within earshot by the closest
+  pair's contexts, and records each community's share of daylight member-time at its periphery (own isopleth ≥ 0.8) and
+  outside its range (> 0.95), with and without patrol members. Smoke: S16 seed 48, 2 + 6 days. Runs **F16a, F16b, F13a,
+  F13b**: the v3 tool on the eight seed-configurations, from a frozen detached checkout of the commit that adds this
+  entry (`scratchpad/e4j/frozen-f`); v1 and v2 readouts must reproduce exactly.
 
 ### Run log (each entry written before its run, unless marked)
 
