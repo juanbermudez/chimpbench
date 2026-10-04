@@ -405,27 +405,85 @@ export function isActive(c: { id: string; planned: boolean }, P: Record<string, 
 
 export interface Literal {
   file: string; line: number;
-  /** hour: an hour-of-day comparison; probability: a dice roll against a number; menu: a set of acts allowed by time of day. */
-  kind: 'hour' | 'probability' | 'menu';
+  /** hour: an hour-of-day comparison; probability: a dice roll against a number; menu: a set of acts allowed by time of
+   *  day; interval (stage E0b): a time literal in the clock's arithmetic (an elapsed time compared with it, a deadline or
+   *  a backdated stamp, a cadence, the event log's rate limit); bonus (stage E0b): a literal score term that a comparison
+   *  of the clock with a stored time switches on. Rules: docs/staging/e0b-prereg.md §1–§3. */
+  kind: 'hour' | 'probability' | 'menu' | 'interval' | 'bonus';
   text: string; values: number[];
+  /** interval and bonus: [start, end) offsets in the line of each literal's text (scripts/param-reads.ts --literals moves them). */
+  spans?: [number, number][];
   /** Counted as a prescription, or the reason it is not. */
   counted: boolean; why: string;
 }
 
 /** Files that model the world, not behaviour: their literals are reported and not counted. */
 const WORLD_FILES = new Set(['environment.ts', 'phenology.ts', 'weather.ts', 'stream.ts', 'generation.ts']);
-/** Literals that are not prescriptions, by file and a piece of the line. */
-export const LITERAL_ALLOW: { file: string; has: string; why: string }[] = [
+/**
+ * Literals that are not prescriptions, by file and a piece of the line; `kind` limits an entry to one kind of literal on
+ * its line, `n` (default 1) is the number of lines it must match (tests/prescription-ledger.test.ts checks both, so an
+ * entry never covers new code silently). Stage E0b's entries cite the rule of docs/staging/e0b-prereg.md that excuses
+ * the literal (§2 L1 not behaviour, L6 design, L7 counted once elsewhere; §3 B3 a design weight).
+ */
+export const LITERAL_ALLOW: { file: string; has: string; kind?: Literal['kind']; n?: number; why: string }[] = [
   { file: 'reproduction.ts', has: "'female' : 'male'", why: 'sex ratio at birth (biology)' },
   { file: 'parties.ts', has: 'SECTORS - 1 : 1', why: 'symmetric left or right coin' },
   { file: 'conflict.ts', has: 'w.injury = clamp(w.injury', why: 'chance that the winner is hurt too: an injury outcome, not a choice' },
   { file: 'conflict.ts', has: 'wounds from a fight', why: 'death from near-total injury: mortality, not a choice' },
+  // stage E0b (docs/staging/e0b-prereg.md §2, §3): time literals that are not prescriptions
+  // L1 not behaviour: scheduling, logging, display, storage, the instruments, the model's loop
+  { file: 'tick.ts', has: 'time - s.lastHourly >= 1', kind: 'interval', why: 'scheduling: the hourly pass of world processes (allies, hourly life, shared contacts) (e0b §2 L1a)' },
+  { file: 'tick.ts', has: 'time - s.lastSummary >= 6', kind: 'interval', why: 'scheduling: the six-hourly summary (e0b §2 L1a)' },
+  { file: 'tick.ts', has: 'time - s.lastDaily >= 24', kind: 'interval', why: 'scheduling: the daily pass of world processes (e0b §2 L1a)' },
+  { file: 'tick.ts', has: 'time - it.end <= 0.5', kind: 'interval', why: 'display: an ended interaction is kept 0.5 h for drawing (e0b §2 L1c)' },
+  { file: 'tick.ts', has: 'time - calls[i].time <= 10 / 60', kind: 'interval', why: 'storage: calls are kept 10 min; the longest window that reads them, strangerCallerWindowH, is 0.05 h (e0b §2 L1d)' },
+  { file: 'tick.ts', has: "gate(world, 'rain-onset'", kind: 'interval', why: 'logging: rate limit of the event log line for rain (events.ts gate) (e0b §2 L1b)' },
+  { file: 'events.ts', has: 'world.time - last.time < 0.25', kind: 'interval', why: 'logging: an episode repeated within 0.25 h updates the last entry (e0b §2 L1b)' },
+  { file: 'events.ts', has: 'it.end = world.time + 1 / 60', kind: 'interval', why: 'display: a brief interaction is drawn for 1 min (e0b §2 L1c)' },
+  { file: 'execution.ts', has: 'gate(world, `', kind: 'interval', n: 10, why: 'logging: rate limits of event log lines (events.ts gate; each call writes addEvent or episode) (e0b §2 L1b)' },
+  { file: 'conflict.ts', has: 'gate(world, key, severity', kind: 'interval', why: 'logging: rate limit of the event log line for a conflict (events.ts gate) (e0b §2 L1b)' },
+  { file: 'relations.ts', has: 'world.time - m.lastEncounter < 6', kind: 'interval', why: 'logging: one intergroup encounter per 6 h in the monthly digest (text and the model\'s facts) (e0b §2 L1b)' },
+  { file: 'observe.ts', has: 'time - x.lastIntrAt < 0.05', kind: 'interval', why: 'display: observe() text for model-driven chimps (an interrupt shown 3 min) (e0b §2 L1c)' },
+  { file: 'observe.ts', has: 'time - x.heardAt < 0.25 ? x.heardN', kind: 'interval', why: 'display: observe() text for model-driven chimps (strangers heard in the last 0.25 h) (e0b §2 L1c)' },
+  { file: 'life.ts', has: 'time - s.gates[k] > 48', kind: 'interval', why: 'storage: event-gate keys older than 48 h are pruned; the longest gate is 24 h (e0b §2 L1d)' },
+  { file: 'life.ts', has: 'time - s.encounters[k] > 24', kind: 'interval', why: 'storage: encounter keys older than 24 h are pruned; encounterGapH (12 h) and the 0.2-h party key read them (e0b §2 L1d)' },
+  { file: 'interventions.ts', has: 'st.end < world.time - 0.25', kind: 'interval', why: 'the instruments: an experiment\'s stimulus is removed 0.25 h after its end, with the list of animals aware of it (e0b §2 L1e)' },
+  { file: 'decide.ts', has: 'c.nextDecision = world.time + 1 / 60', kind: 'interval', why: 'the model\'s loop: a model-driven chimp waiting for its decision re-checks every minute (model arms only) (e0b §2 L1f)' },
+  // L6 design: windows on an event, a percept, an impulse or a memory; cadences of a check or an interrupt; durations of
+  // the current act; episode definitions
+  { file: 'candidates.ts', has: 'x.joinCall > 0 && time - x.joinAt < 0.3', kind: 'interval', n: 2, why: 'window: a pant-hoot heard from a community member stays a call to join for 0.3 h, on both branches (socialTiming bit 4 or not; the stamp is the call heard; as strangerCallerWindowH) (e0b §2 L6a)' },
+  { file: 'candidates.ts', has: '0.2 + (time - x.victimAt < 1 ? 0.3 : 0)', kind: 'interval', why: 'window: a recent immigrant female follows an adult male more in the hour after she was attacked (the stamp is the attack; as redirectWindowH) (e0b §2 L6a)' },
+  { file: 'candidates.ts', has: '0.2 + (time - x.victimAt < 1 ? 0.3 : 0)', kind: 'bonus', why: 'a weight on the response to an event (being attacked), not a persistence or clock term (e0b §3 B3)' },
+  { file: 'candidates.ts', has: 'const unstable = (s.unstableUntil[c.troopId] ?? NEVER) > time ? 1 : 0', kind: 'bonus', why: 'an indicator of a state (the hierarchy unstable for instabilityH after a change at the top) that design weights multiply (e0b §3 B3)' },
+  { file: 'candidates.ts', has: 'if (time - ox.victimAt < 0.05 && guardianOf(world, o) === c)', kind: 'interval', why: 'window: a guardian defends its ward for 3 min after the ward was attacked (the stamp is the attack on the ward; as coalitionWindowH) (e0b §2 L6a)' },
+  { file: 'candidates.ts', has: 'if (world.time - x.victimAt > 0.03) return;', kind: 'interval', why: 'window: the responses to a charge or an attack (flee, submit, counter) are open for 1.8 min after it (an event that happened to the animal) (e0b §2 L6a)' },
+  { file: 'candidates.ts', has: 'x.heardN > 0 && time - x.heardAt < 0.2 && x.strangers === 0', kind: 'interval', why: 'window: the response to stranger pant-hoots heard (approach, counter-call, flee) is open for 0.2 h (a percept; as patrolHeardWindowH) (e0b §2 L6a)' },
+  { file: 'candidates.ts', has: '(time - x.lastCall < 0.03 ? 0.4 : 0)', kind: 'interval', why: 'the window of the counted alarm penalty on this line: one prescription, counted as the bonus (e0b §3)' },
+  { file: 'rg.ts', has: 'if (time - x.heardAt < 0.25 && x.heardN > 0) return true;', kind: 'interval', why: 'window: stranger pant-hoots heard in the last 0.25 h keep a response on the rules\' menu (a percept) (e0b §2 L6a)' },
+  { file: 'perception.ts', has: 'const heard = world.time - x.heardAt < 24 ? 1 : 0;', kind: 'interval', why: 'memory window: strangers heard in the last 24 h raise the C6 patrol hazard by patrolHeardBeta (0 in the field profile) (e0b §2 L6a)' },
+  { file: 'perception.ts', has: 'const heard = world.time - x.heardAt < 24 ? 1 : 0;', kind: 'bonus', why: 'an indicator of a memory (strangers heard), multiplied by a registry weight (e0b §3 B3)' },
+  { file: 'perception.ts', has: 'world.time - x.lastHeard > 0.08', kind: 'interval', why: 'cadence of an interrupt: hearing strangers interrupts the animal at most every 0.08 h (as interruptSpacingMin) (e0b §2 L6b)' },
+  { file: 'parties.ts', has: 'world.time - (s.encounters[pk] ?? -1e9) < 0.2', kind: 'interval', why: 'cadence of an interrupt: two parties of different communities in sight are processed (members interrupted, the meeting noted) at most every 0.2 h; the encounter count has its own encounterGapH (e0b §2 L6b)' },
+  { file: 'conflict.ts', has: 'world.time - ox.coalAt < 0.1 && (ox.coalB', kind: 'interval', why: 'episode: a bystander alerted to a conflict between the same two animals in the last 0.1 h is not alerted again (the stamp is the alert, not its own act) (e0b §2 L6d)' },
+  { file: 'conflict.ts', has: 'if (world.time - ox.gangAt > 0.5) {', kind: 'interval', why: 'episode (judgement call): the lethal outcome of a gang attack is drawn once per attack on a victim (0.5 h), however many attackers\' ticks reach it; the killing rate is set by the gangKill* probabilities, which are counted (as encounterGapH defines one encounter) (e0b §2 L6d)' },
+  { file: 'conflict.ts', has: 'x.actEnd = world.time + 1.5 / 60; c.nextDecision', kind: 'interval', why: 'duration of the current act: a contact fight lasts 1.5 min (a bout length, design) (e0b §2 L6c)' },
+  { file: 'conflict.ts', has: 'ox.actEnd = world.time + 1.5 / 60; o.nextDecision', kind: 'interval', why: 'duration of the current act: the opponent\'s side of the same fight (e0b §2 L6c)' },
+  { file: 'reproduction.ts', has: 'x.impulseUntil = world.time + 2;', kind: 'interval', why: 'window: the impulse to transfer, once the dispersal hazard (counted) has fired, stays open 2 h (as impulseDurationH) (e0b §2 L6a)' },
+  { file: 'ecology.ts', has: 'world.time > s.hunts[i].resolveAt + 0.25', kind: 'interval', why: 'window and storage: a hunt its hunters left unresolved stays joinable and is pruned 0.25 h after its resolution time (a resolved hunt is removed at once by resolveHunt) (e0b §2 L6a, L1d)' },
+  { file: 'life.ts', has: 'world.time - (o.deathTime ?? 0) > 24 * 30', kind: 'interval', why: 'memory window: the bond to a dead non-kin animal is dropped 30 days after the death (as memTtl*) (e0b §2 L6a)' },
+  { file: 'relations.ts', has: 'time - x.incident[k][0] > 3 * MONTH', kind: 'interval', why: 'memory window: an incident (who threatened or attacked whom) is forgotten after 3 months (as memTtl*); grudge charges read it (e0b §2 L6a)' },
+  { file: 'execution.ts', has: 'if (world.tick % 4 === 0) {', kind: 'interval', why: 'cadence of a check: a guarding male scans for rival males every 4 ticks (1 min; as departCheckMin) (e0b §2 L6b)' },
+  { file: 'execution.ts', has: 'if (world.tick % 16 === (c.id % 16)) {', kind: 'interval', n: 2, why: 'cadence of a re-target: an animal feeding on the ground picks a new spot every 16 ticks (4 min), staggered by id (e0b §2 L6b)' },
+  { file: 'execution.ts', has: 'x.actEnd = c.nextDecision = world.time + 2 * TICK_HOURS', kind: 'interval', why: 'duration of the current act: a feeding bout in a crown not yet emptied is extended two ticks at a time, up to feedMaxMin (a bout length, design) (e0b §2 L6c)' },
+  { file: 'execution.ts', has: "if (c.actionTime % 120 === 0) emitCall(world, c, 'laugh');", kind: 'interval', why: 'display: a laugh every 2 min of play; no animal hears laughs (events.ts emitCall\'s hearing hook takes pant-hoots, drums, alarm hoos, screams and travel hoos) (e0b §2 L1c)' },
+  // L7: one prescription written on two lines is counted once
+  { file: 'execution.ts', has: 'if (c.actionTime > P.mateApproachS || x.phase > 8) { x.lastMate = Math.max(x.lastMate, world.time - MATE_INTERVAL_H + 0.5)', kind: 'interval', why: 'the same 0.5-h block after a failed approach as mateTick\'s first exit above: one prescription, counted there (e0b §2 L7)' },
 ];
 /**
  * Literals switched out by a registry parameter (later stages add theirs): the literal is not counted while `off`
- * returns true for the resolved parameters.
+ * returns true for the resolved parameters. Without `kind` an entry covers every kind of literal on its line.
  */
-export const LITERAL_OFF: { file: string; has: string; off: (P: Record<string, number>) => boolean; why: string }[] = [
+export const LITERAL_OFF: { file: string; has: string; kind?: Literal['kind']; off: (P: Record<string, number>) => boolean; why: string }[] = [
   // stage E2a: the hour >= 12 gate on building a nest, on two exclusive lines (the second is E2b's departRace branch)
   { file: 'candidates.ts', has: 'c.age >= 3 && !race) offerOwnNest', off: P => P.rhythmSleep === 1 || P.departRace === 1, why: 'the hour >= 12 nest gate: with rhythmSleep 1 falling light (daylight < 1) opens a new nest; with departRace 1 this branch is not taken (the gate is counted on the race line)' },
   { file: 'candidates.ts', has: 'if (race && !caretaker && c.age >= 3) offerOwnNest', off: P => P.rhythmSleep === 1 || P.departRace !== 1, why: 'the same hour >= 12 gate on the departRace branch (stage E2b): run only while departRace is 1 and rhythmSleep is not' },
@@ -438,6 +496,16 @@ export const LITERAL_OFF: { file: string; has: string; off: (P: Record<string, n
   // stage E4c (callValue): the chorus clock windows and the arrival coin at rich figs
   { file: 'candidates.ts', has: '((hour >= 18 && hour < 19) || (hour >= 6.4 && hour < 7.4))', off: P => P.callValue === 1, why: 'the dawn and dusk chorus windows: with callValue 1 a pant-hoot follows its value at any hour (calls.ts pantHootValue, stage E4c)' },
   { file: 'execution.ts', has: "(t.common === 'fig' || t.id === simOf(world).figTree) && random(world) < 0.5", off: P => P.callValue === 1, why: 'the 50% arrival pant-hoot at rich figs: with callValue 1 the arrival pant-hoot is given when its value is positive (calls.ts, stage E4c)' },
+  // stage E0b (docs/staging/e0b-prereg.md §4; verified by a code read and scripts/param-reads.ts --literals, §6): time
+  // literals a Track E switch takes out of use. The chorus line's 1.5-h gap and the fig line's 0.75-h gap go with the two
+  // entries above (no kind: the whole line)
+  { file: 'execution.ts', has: 'time - x.lastFoodCall > 0.3', kind: 'interval', off: P => P.callValue === 1, why: 'the food grunt\'s 0.3-h gap: with callValue 1 the branch above gives the food grunt by its value (calls.ts gruntWorth) and this else-branch is not reached (stage E4c)' },
+  // the grooming bout's continuation terms (+0.35 while the bout runs, −0.25 after its scheduled end), one prescription on
+  // the two branches of the grooming score: counted on the need-weighted branch while groomDrive is 1 (every pair takes it),
+  // else on the general branch (with groomNeedDyad 1 both run: counted on the general one, e0b §2 L7); neither applies
+  // the terms while redecideValue is 1 or 2 (stage E3d: a bout is kept while it is still the best, rg.ts)
+  { file: 'candidates.ts', has: '0.35) : 0) + (1 - c.social) * (0.55', kind: 'bonus', off: P => P.groomDrive !== 1 || P.redecideValue >= 1, why: 'the grooming continuation terms on the need-weighted branch: counted here only while groomDrive is 1, otherwise once on the general branch; not applied while redecideValue is 1 or 2 (stage E3d)' },
+  { file: 'candidates.ts', has: '0.35) : 0) - femaleOffset + (1 - c.social) * 0.55', kind: 'bonus', off: P => P.groomDrive === 1 || P.redecideValue >= 1, why: 'the grooming continuation terms on the general branch: not reached while groomDrive is 1 (every pair takes the need-weighted branch, which holds the same terms); not applied while redecideValue is 1 or 2 (stage E3d)' },
 ];
 
 const HOUR = /\b(?:world\.)?hour\s*(?:>=|<=|<|>)\s*(\d+(?:\.\d+)?)/g;
@@ -445,27 +513,91 @@ const DICE = /\b(?:random\(world\)|hash01\([^)]*\))\s*<\s*(0?\.\d+)/g;
 const MENU = /^\s*(night|dusk):\s*new Set<Action>\(/;
 const TEXT_ONLY = /return\s+(?:cap\()?[`'"]|\?\s*[`'"]/;
 
-/** Lints one source file of src/sim (its base name and text) for hour-of-day literals, dice against literals and time-of-day menus. */
+// stage E0b (docs/staging/e0b-prereg.md §1): time literals. The clock is world.time or a local copy named time or now; a
+// literal is a number, or numbers and UPPER_CASE unit constants multiplied or divided (10 / 60, 3 * MONTH), never a
+// prefix of a longer operand (24 * P.epidemicIllDays converts the units of a registry value: not a literal interval)
+const CLOCK = String.raw`(?<![\w.$])(?:world\.time|time|now)(?![\w$])`;
+const NUM = String.raw`\d+(?:\.\d+)?(?:\s*[*/]\s*(?:\d+(?:\.\d+)?|[A-Z][A-Z0-9_]*))*`;
+const NUM_END = String.raw`(?![\w.]|\s*[*/]\s*[a-zA-Z(])`;
+const PAR = String.raw`\((?:[^()]|\([^()]*\))*\)`;
+/** An operand: a member path with calls and indexing, or a parenthesised expression (one level of nesting inside). */
+const OPND = String.raw`(?:${PAR}|[\w$]+(?:${PAR})?(?:\??\.[\w$]+|\[[^\]]*\]|${PAR})*)`;
+const CMP = String.raw`(?:<=|>=|<|>)`;
+const rx = (s: string) => new RegExp(s, 'gd');
+/** The interval forms; capture group 1 is the literal. */
+const INTERVAL: RegExp[] = [
+  rx(String.raw`${CLOCK}\s*-\s*${OPND}(?:\s*\)?\s*[*/]\s*[\w.]+)?\s*\)?\s*${CMP}\s*\(?\s*(${NUM})${NUM_END}`), // T − s ⋚ N, (T − s) / k ⋚ N
+  rx(String.raw`(${NUM})${NUM_END}\s*${CMP}\s*\(?\s*${CLOCK}\s*-`), // N ⋚ T − s
+  rx(String.raw`${CMP}\s*${CLOCK}\s*-\s*(${NUM})${NUM_END}`), // s ⋚ T − N
+  rx(String.raw`${CLOCK}\s*${CMP}\s*${OPND}\s*\+\s*(${NUM})${NUM_END}`), // T ⋚ s + N
+  rx(String.raw`${CLOCK}\s*\+\s*(${NUM})${NUM_END}`), // a deadline: T + N
+  rx(String.raw`${CLOCK}\s*-\s*[A-Za-z_$][\w.$]*\s*\+\s*(${NUM})${NUM_END}`), // a backdated stamp: T − S + N
+  rx(String.raw`(?:\btick|\bactionTime)\s*%\s*(${NUM})${NUM_END}`), // a cadence: tick % N, actionTime % N
+];
+/** A ternary switched by a comparison of the clock with a stored time, with literal branches; groups 1–4: sign, number, sign, number. */
+const BONUS = rx(String.raw`(?:${CLOCK}\s*-\s*${OPND}\s*${CMP}\s*${NUM}${NUM_END}|${CLOCK}\s*${CMP}\s*${OPND}|${OPND}\s*${CMP}\s*${CLOCK})\s*\?\s*(-?)\s*(\d+(?:\.\d+)?)\s*:\s*(-?)\s*(\d+(?:\.\d+)?)(?=\s*[),;])`);
+/** The value of a literal expression: its numbers multiplied and divided in order; unit constants are left out (3 * MONTH → 3). */
+function numValue(s: string): number {
+  const t = s.split(/\s*([*/])\s*/);
+  let v = +t[0];
+  for (let k = 1; k + 1 < t.length; k += 2) if (/^\d/.test(t[k + 1])) v = t[k] === '*' ? v * +t[k + 1] : v / +t[k + 1];
+  return +v.toPrecision(6);
+}
+/** Every numeric literal in the third argument of each gate(world, key, gap) call (events.ts: the event log's rate limit). */
+function gateSpans(code: string): [number, number][] {
+  const out: [number, number][] = [];
+  for (const m of code.matchAll(/\bgate\(\s*world\s*,/g)) {
+    const commas: number[] = [];
+    let depth = 0, j = m.index! + m[0].indexOf('(') + 1;
+    for (; j < code.length; j++) {
+      const ch = code[j];
+      if (ch === '(' || ch === '[' || ch === '{') depth++;
+      else if (ch === ')' || ch === ']' || ch === '}') { if (depth === 0) break; depth--; }
+      else if (ch === ',' && depth === 0) commas.push(j);
+    }
+    if (commas.length !== 2) continue; // rg.ts has its own gate(world, c, it, list)
+    const a = commas[1] + 1;
+    for (const n of code.slice(a, j).matchAll(/(?<![\w.$])\d+(?:\.\d+)?(?![\w$.])/g)) out.push([a + n.index!, a + n.index! + n[0].length]);
+  }
+  return out;
+}
+
+/** Lints one source file of src/sim (its base name and text) for hour-of-day literals, dice against literals, time-of-day
+ *  menus, time literals in the clock's arithmetic and literal bonuses switched by the clock. */
 export function lintSource(file: string, text: string, P: Record<string, number> = {}): Literal[] {
   const found: Literal[] = [];
   if (/\.gen\.ts$/.test(file)) return found;
   text.split('\n').forEach((raw, i) => {
     const line = raw.replace(/\/\/.*$/, '');
     if (/^\s*(\*|\/\*)/.test(raw)) return;
-    const add = (kind: Literal['kind'], values: number[]) => {
-      const allow = LITERAL_ALLOW.find(a => a.file === file && raw.includes(a.has));
-      const off = LITERAL_OFF.find(a => a.file === file && raw.includes(a.has) && a.off(P));
+    const add = (kind: Literal['kind'], values: number[], spans?: [number, number][]) => {
+      const hits = (a: { file: string; has: string; kind?: Literal['kind'] }) => a.file === file && raw.includes(a.has) && (!a.kind || a.kind === kind);
+      const allow = LITERAL_ALLOW.find(hits);
+      const off = LITERAL_OFF.find(a => hits(a) && a.off(P));
       const world = WORLD_FILES.has(file);
       const textOnly = kind === 'hour' && TEXT_ONLY.test(line.slice(line.search(HOUR)));
       HOUR.lastIndex = 0;
       const why = world ? 'models the world (weather, phenology), not behaviour' : allow ? allow.why : textOnly ? 'chooses the wording of a reason text; no decision depends on it' : off ? `switched off: ${off.why}` : '';
-      found.push({ file, line: i + 1, kind, text: raw.trim().slice(0, 200), values, counted: !why, why: why || (kind === 'hour' ? 'an hour of the day written into behaviour code' : kind === 'probability' ? 'a dice roll against a fixed number in behaviour code' : 'acts allowed or barred by the time of day') });
+      const counted = kind === 'hour' ? 'an hour of the day written into behaviour code' : kind === 'probability' ? 'a dice roll against a fixed number in behaviour code'
+        : kind === 'menu' ? 'acts allowed or barred by the time of day'
+        : kind === 'interval' ? 'a fixed interval in behaviour code: an act barred until it has passed since the animal\'s own last act of its kind, or repeated at a fixed period (a quota, rule 5e; e0b-prereg §2 L3)'
+        : 'a fixed bonus or penalty, switched by the clock, for carrying on with or repeating an act (as continueBonus and finishedPenalty; e0b-prereg §3 B1)';
+      found.push({ file, line: i + 1, kind, text: raw.trim().slice(0, 200), values, ...(spans ? { spans } : {}), counted: !why, why: why || counted });
     };
     const hours = [...line.matchAll(HOUR)].map(m => +m[1]);
     if (hours.length) add('hour', hours);
     const dice = [...line.matchAll(DICE)].map(m => +m[1]);
     if (dice.length) add('probability', dice);
     if (file === 'menu.ts' && MENU.test(line)) add('menu', []);
+    // stage E0b: string text is blanked (same length, so the offsets hold) before the time forms are read
+    const code = line.replace(/`(?:[^`\\]|\\.)*`|'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"/g, s => ' '.repeat(s.length));
+    const iv = new Map<number, [number, number]>();
+    for (const re of INTERVAL) for (const m of code.matchAll(re)) { const [a, b] = m.indices![1]; iv.set(a, [a, b]); }
+    for (const sp of gateSpans(code)) iv.set(sp[0], sp);
+    if (iv.size) { const sp = [...iv.values()].sort((p, q) => p[0] - q[0]); add('interval', sp.map(([a, b]) => numValue(code.slice(a, b))), sp); }
+    const bonus: [number, number][] = [], bv: number[] = [];
+    for (const m of code.matchAll(BONUS)) for (const g of [2, 4]) { const [a, b] = m.indices![g]; if (+m[g] !== 0) { bonus.push([a, b]); bv.push((m[g - 1] ? -1 : 1) * +m[g]); } }
+    if (bonus.length) add('bonus', bv, bonus);
   });
   return found;
 }
