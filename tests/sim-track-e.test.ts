@@ -39,6 +39,7 @@ const TRACK_E_SWITCHES = [
   'socialTiming', // E5e
   'patrolValue', // E4i
   'patrolFusion', // E4j
+  'redecideValue', // E3d
   'huntPursuit', // E4k
 ] as const;
 

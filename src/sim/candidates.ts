@@ -28,7 +28,11 @@ export const V = {
   CONTACT: 41,
 } as const;
 
-export interface CandidateMeta { v: number; aux: number }
+/**
+ * `raw` and `jit` (stage E3d, redecideValue only): the option's value (every term, the finished penalty included) before
+ * the candidate jitter, and the jitter; src/sim/rg.ts keeps an act while it is still the best by the valuation that chose it.
+ */
+export interface CandidateMeta { v: number; aux: number; raw?: number; jit?: number }
 export const candidateMeta = new WeakMap<Candidate, CandidateMeta>();
 
 /** The five gates of stage E5e (docs/staging/e5e-prereg.md §2). */
@@ -77,7 +81,8 @@ export function consortWalkLight(world: World, c: Chimp, o: Chimp, P: Params): n
   return _cl.pace * _cl.see;
 }
 
-const CODE: Record<Action, number> = {
+/** Action codes of the candidate jitter (offer); exported for diagnostics that rebuild a score without it (stage E3d). */
+export const CODE: Record<Action, number> = {
   rest: 1, forage: 2, drink: 3, travel: 4, groom: 5, play: 6, follow: 7, climb: 8, patrol: 9, display: 10, flee: 11, hunt: 12, mate: 13,
   nurse: 14, dead: 15, nest: 16, 'pant-grunt': 17, charge: 18, attack: 19, submit: 20, reconcile: 21, console: 22, share: 23, beg: 24,
   guard: 25, consort: 26, shelter: 27, call: 28, transfer: 29, alarm: 30,
@@ -85,8 +90,8 @@ const CODE: Record<Action, number> = {
 // Targets kept per action: forage P.slotsForage, these P.slotsMulti, everything else one.
 const MULTI: Partial<Record<Action, true>> = { groom: true, play: true, charge: true, travel: true, mate: true, follow: true, flee: true, share: true, attack: true, patrol: true };
 
-interface Slot { action: Action; target: number; score: number; v: number; aux: number }
-const pool: Slot[] = Array.from({ length: 48 }, () => ({ action: 'rest' as Action, target: -1, score: 0, v: 0, aux: 0 }));
+interface Slot { action: Action; target: number; score: number; v: number; aux: number; raw: number; jit: number }
+const pool: Slot[] = Array.from({ length: 48 }, () => ({ action: 'rest' as Action, target: -1, score: 0, v: 0, aux: 0, raw: 0, jit: 0 }));
 let n = 0;
 let cur: Chimp;
 let curTime = 0;
@@ -99,10 +104,15 @@ let curSilent = false;
 function offer(action: Action, target: number, score: number, v: number = V.NONE, aux = -1): void {
   if (!(score > -0.4)) return;
   if (curSilent && (action === 'call' || action === 'display')) return;
-  score += (hash01(cur.id, cur.decisionVersion, CODE[action], target) - 0.5) * curP.candidateJitterSpan;
+  const base = score, jit = (hash01(cur.id, cur.decisionVersion, CODE[action], target) - 0.5) * curP.candidateJitterSpan;
+  score += jit;
   // stage E3 (urgencySwitchCost; docs/staging/e3-prereg.md §5): no continuation bonus or finished penalty. The cost of
   // switching (time and travel to the alternative) is already in each alternative's score, and staying is the pay test's job
-  if (action === cur.action && target === cur.targetId && curP.urgencySwitchCost !== 1) score += curDone ? -curP.finishedPenalty : curTime < curEnd ? curP.continueBonus : 0;
+  // stage E3d (redecideValue 1 or 2; docs/staging/e3d-prereg.md §5): no continuation bonus; an act is kept while it is
+  // still the best (rg.ts keep tests). The finished penalty stays (not implicated by the E3d diagnosis)
+  let cont = 0;
+  if (action === cur.action && target === cur.targetId && curP.urgencySwitchCost !== 1) { cont = curDone ? -curP.finishedPenalty : curTime < curEnd && !(curP.redecideValue >= 1) ? curP.continueBonus : 0; score += cont; }
+  const raw = base + cont;
   // stage C13e (joinChoice): the joint trip (travel to a companion's goal tree, aux = its leader) keeps one slot of its
   // own, so the animal's own trips cannot crowd it out of the choice; a trip to the same tree still merges
   const grouped = curP.joinChoice === 1 && action === 'travel', join = grouped && v === V.TREE && aux > 0;
@@ -110,7 +120,7 @@ function offer(action: Action, target: number, score: number, v: number = V.NONE
   for (let i = 0; i < n; i++) {
     const s = pool[i];
     if (s.action !== action) continue;
-    if (s.target === target) { if (score > s.score) { s.score = score; s.v = v; s.aux = aux; } return; }
+    if (s.target === target) { if (score > s.score) { s.score = score; s.v = v; s.aux = aux; s.raw = raw; s.jit = jit; } return; }
     if (grouped && (s.v === V.TREE && s.aux > 0) !== join) continue;
     count++;
     if (worst < 0 || s.score < pool[worst].score) worst = i;
@@ -118,7 +128,7 @@ function offer(action: Action, target: number, score: number, v: number = V.NONE
   let slot: Slot;
   if (count >= (join ? 1 : action === 'forage' ? curP.slotsForage : MULTI[action] ? curP.slotsMulti : 1)) { if (score <= pool[worst].score) return; slot = pool[worst]; }
   else { if (n >= pool.length) return; slot = pool[n++]; }
-  slot.action = action; slot.target = target; slot.score = score; slot.v = v; slot.aux = aux;
+  slot.action = action; slot.target = target; slot.score = score; slot.v = v; slot.aux = aux; slot.raw = raw; slot.jit = jit;
 }
 
 export function dependentOn(world: World, c: Chimp): Chimp | undefined {
@@ -594,6 +604,9 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       const alphaAlly = isAlpha && c.allies.includes(o.id) ? 0.35 : 0;
       const grooming = c.action === 'groom' && c.targetId === o.id;
       // grooming bouts persist: an ongoing bout is not abandoned for someone else's invitation
+      // stage E3d (redecideValue; docs/staging/e3d-prereg.md §5.1): the bout's own continuation terms (+0.35 while it runs,
+      // −0.25 after its scheduled end; literals) are not applied: a bout is kept while it is still the best by the
+      // valuation that chose it (rg.ts), and its value falls as the groomer's social need is met
       const invited = o.action === 'groom' && o.targetId === c.id && c.action !== 'groom' ? 0.3 + 0.4 * (1 - c.social) : 0;
       // East African males are the most avid groomers; adult females groom mostly kin (design weighting) [H]
       const femaleOffset = c.sex === 'female' && c.age >= 12 && !kin ? P.groomFemaleNonKinOffset : 0;
@@ -609,8 +622,8 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       // rest; the field gives spare time to rest, lehmann2008, couturier2022 [M])
       const needDyad = P.groomDrive === 1 || (P.groomNeedDyad === 1 && ((o.motherId === c.id && !ix(o).weaned) || (c.motherId === o.id && !x.weaned)));
       offer('groom', o.id, needDyad
-        ? (grooming ? (time >= x.actEnd ? -0.25 : 0.35) : 0) + (1 - c.social) * (0.55 + b * 0.4 + (kin ? 0.2 : 0) + recip * 0.2 + up + alphaAlly + (invited ? 0.7 : 0) - femaleOffset) - tn * P.groomTensionW - d / P.groomDistScaleM - h * 0.6 - rain * 0.6 - (night ? 1.5 : 0) - (c.age < 5 ? 0.3 : 0)
-        : (grooming ? (time >= x.actEnd ? -0.25 : 0.35) : 0) - femaleOffset + (1 - c.social) * 0.55 + b * 0.4 + (kin ? 0.2 : 0) + recip * 0.2 + up + alphaAlly + invited - tn * P.groomTensionW - d / P.groomDistScaleM - h * 0.6 - rain * 0.6 - (night ? 1.5 : 0) - (c.age < 5 ? 0.3 : 0),
+        ? (grooming && !(P.redecideValue >= 1) ? (time >= x.actEnd ? -0.25 : 0.35) : 0) + (1 - c.social) * (0.55 + b * 0.4 + (kin ? 0.2 : 0) + recip * 0.2 + up + alphaAlly + (invited ? 0.7 : 0) - femaleOffset) - tn * P.groomTensionW - d / P.groomDistScaleM - h * 0.6 - rain * 0.6 - (night ? 1.5 : 0) - (c.age < 5 ? 0.3 : 0)
+        : (grooming && !(P.redecideValue >= 1) ? (time >= x.actEnd ? -0.25 : 0.35) : 0) - femaleOffset + (1 - c.social) * 0.55 + b * 0.4 + (kin ? 0.2 : 0) + recip * 0.2 + up + alphaAlly + invited - tn * P.groomTensionW - d / P.groomDistScaleM - h * 0.6 - rain * 0.6 - (night ? 1.5 : 0) - (c.age < 5 ? 0.3 : 0),
         invited ? V.ACCEPT : alphaAlly ? V.COALITION : V.NONE);
     }
     // play [H]
@@ -735,7 +748,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   }
   for (let _i7 = 0; _i7 < order.length; _i7++) { const sl = order[_i7];
     const cand: Candidate = { action: sl.action, targetId: sl.target, score: Math.round(clamp(sl.score, 0, 3) * 1000) / 1000, reason: reasonFor(world, c, sl) };
-    candidateMeta.set(cand, { v: sl.v, aux: sl.aux });
+    candidateMeta.set(cand, P.redecideValue >= 1 ? { v: sl.v, aux: sl.aux, raw: sl.raw, jit: sl.jit } : { v: sl.v, aux: sl.aux });
     out.push(cand);
   }
   return out;

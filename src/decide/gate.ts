@@ -16,6 +16,11 @@ export interface Intent {
   chosenAt: number;
   period: Situation['period'];
   buckets: Situation['buckets'];
+  /**
+   * Stage E3d (redecideValue, src/sim/rg.ts): the noise of the valuation that chose the act, by option key
+   * (`action:targetId`): the candidate jitter plus the temperature times a Gumbel draw. Absent otherwise.
+   */
+  noise?: Record<string, number>;
 }
 /** Per-chimp intents, by chimp id. Plain data. */
 export interface GateState { intents: Record<number, Intent> }
