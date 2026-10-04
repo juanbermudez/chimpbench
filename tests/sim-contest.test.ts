@@ -13,12 +13,20 @@ import { worldHash } from './fixtures/golden';
 const ON: Overrides = { contestAssess: 1 };
 const run = (w: World, ticks: number) => { for (let i = 0; i < ticks; i++) tickWorld(w); return w; };
 /** Every contest event of a field world over `days`, read through the diagnosis hook (which draws and writes nothing). */
-function traced(params: Overrides, seed: number, days: number): { w: World; ev: ContestTrace[] } {
+function traced(params: Overrides, seed: number, days: number): { w: World; ev: ContestTrace[]; struckWhileYielding: number } {
   const ev: ContestTrace[] = [];
   const w = createWorld(seed, { profile: 'field', params });
-  contestTrace.on = e => { ev.push(e); };
+  let struckWhileYielding = 0;
+  contestTrace.on = e => {
+    ev.push(e);
+    // iteration 1: a target yielding to any of its aggressors has conceded and is never struck
+    if (e.kind === 'charge' && e.hit && ['submit', 'flee', 'pant-grunt'].includes(e.o.action)) {
+      const t = index(w).byId.get(e.o.targetId);
+      if (t && (t.action === 'charge' || t.action === 'attack') && t.targetId === e.o.id) struckWhileYielding++;
+    }
+  };
   try { run(w, days * 5760); } finally { contestTrace.on = null; }
-  return { w, ev };
+  return { w, ev, struckWhileYielding };
 }
 
 test('contestAssess 0 is the model before E4h; 1 changes the world and is deterministic', () => {
@@ -31,7 +39,8 @@ test('contestAssess 0 is the model before E4h; 1 changes the world and is determ
 });
 
 test('with contestAssess a conceding target is never struck, every counter-charge met by a persisting charger goes to contact, and allies are alerted without a draw', () => {
-  const { ev } = traced(ON, 7, 2);
+  const { ev, struckWhileYielding } = traced(ON, 7, 2);
+  assert.equal(struckWhileYielding, 0);
   const charges = ev.filter(e => e.kind === 'charge');
   assert.ok(charges.length >= 5, `charges ${charges.length}`);
   for (const e of charges) {
