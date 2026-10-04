@@ -178,6 +178,10 @@ name what `fruitIntakePerH` decides in behaviour, not only in kcal: S27 with `fr
 energy and every unit threshold ×2) and 0.22 (×0.5), quick e-bench plus crop-energy-diagnose, one realization each
 (labels `K2` and `K05`), read against S27's four realizations. Nothing is fitted or chosen from it.
 
+**Amendment 3 (4 October 2026, while K2's bench ran, before any result of K2 or K05 was read).** energy-diagnose is
+added to the two sensitivity realizations (same parameters, seeds, burn-in and window), so the stage's table can show
+true day ranges and reserve trends by class beside the reference's.
+
 ## 3. Sources
 
 (Pending: docs/research.md and docs/staging/e-sources.md, "Addendum: E3f crop energy".)
