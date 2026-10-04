@@ -554,3 +554,13 @@ failures: 8 of 11 hunts that fewer than three hunters ever joined, 3 that ended 
   hand-set, `candidates.ts:1088`) and two inputs the model lacks (canopy structure; colobus composition): no defect of
   the mechanism is implicated. The three-hunter threshold rests on the design speed ratio (0.8 → four hunters, above 1 →
   one), not tested.
+
+#### Merge and final checks
+
+`track-e` (1ac0e3c: E3d `redecideValue`, handoff) merged once, at 64d29a4 (conflicts: the switch lists in
+`tests/sim-track-e.test.ts` and `scripts/lib/prescriptions.ts`, union; `src/sim/params.gen.ts`, ours, regenerated). After
+the merge S17 is hash-identical at 2 days (seeds 48 and 7: 8cf9a253bfee1100, 5505c10ab3b8baff) and S17 + `huntPursuit` 2
+at 25 days (seed 7: 15e6b18d7f1e874c, as at 9b8715c). At 810d266: `gen-params --check` clean, `tsc` clean, `pnpm test`
+767 tests, 766 pass, 0 fail, 1 skipped; `git ls-files data/raw node_modules` prints nothing. Prescription count: S17 49;
+S17 + `huntPursuit` 1 or 2: 46. Run artifacts (gitignored) in `artifacts/validation/e4k/` of this worktree; the frozen
+checkouts (`…/scratchpad/e4k/ref` at b6630b9, `…/scratchpad/e4k/diag` at 9b8715c) hold the same files.
