@@ -14,12 +14,10 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 12:10; deploy held by the user).** Stage agent **E1q** (`e1q-climbing-energy`, from
-  track-e c39488f: audit why climbing costs 1/1.2–1/2.2 of walking energy against ~1/10 in wild chimpanzees; arms with
-  and without walkGait; brief `integrator/e1q-prompt.txt`); decision guide on **S25** (merged `guide-s25` at ff48770;
-  hosted copy on `site` b9fc4a6, build checked). Integrator: S25 quick reference done (E1q told); S25's confirm group complete (S25 + S25c1–S25c3 by `rngSalt`,
-  bench-run2 7cd6bb1, outputs `.../e/s25/`), ready to judge E1q's arm (copy `integrator/judge_s22group.py` with REF = the
-  S25 group).
+- **Running now (4 October 13:05; deploy held by the user).** No agents. Integrator: **S26** (S25 + `crownMove`) and
+  **S27** (S25 + `walkGait` + `crownMove`), registered 28d249e, both in bench-run3 moved to 28d249e
+  (`integrator/conf26.sh <label> <S26|S27> - rhythm`, outputs `bench-run3/artifacts/validation/e/s26/`), judged against
+  S25's confirm group with `integrator/judge_s25group.py` (`ARM=S26` / `ARM=S27`).
 - **S25 is the best integrated candidate (43)** (e-stack2-confirm.md "S25 results"; S22 + `huntDrive` 1): hunting back
   in band (T-HUN-1 17.4), every sum inside noise; its infant drop is one outbreak seed. Decision guide and hosted copy
   on S25.
