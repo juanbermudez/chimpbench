@@ -20,6 +20,14 @@
 //   release, adult male members' mean states at start and end, and every member who left early (when, to what, hunger).
 // Joining: every community member (>= 12 y, awake) with the leader in view at a perception during a patrol and not on
 //   it, by class, and whether it joined that patrol.
+// Periphery arrivals (readouts for the E4i mechanism, defined in docs/staging/e4i-prereg.md §4 before its code ran): an
+//   adult male's perception in the own-use periphery (isopleth >= peripheryLevel), in any sector, with the sun up, >= patrolMinMales adult males in view, no patrol under way and rain
+//   below patrolMaxRain, when since his last arrival he has been inside the core (isopleth <= udCoreLevel). At each: the
+//   neighbours' use where he stands (sum of 1 − their familiarity level, as territory.ts pressureAt), his contact weight
+//   in the sector, daylight left over the trip (a quarter circle along the edge plus the way home, at walkMps), sleep
+//   pressure, arousal, the lead ceiling, the top candidate scores, and the softmax share at rgTemperature that a lead
+//   option of value V0 = ceiling × min(1, 0.5 × κ × D × (1 − sleep) × (1 + arousal)) would get against the eight best
+//   candidates (κ = min(1, neighbours' use + contact ÷ dangerScale); 0.5 = the odds at parity, no memory yet).
 // Days: per community-day the most adult males (>= 15 y) and males >= 13 y in one party (party updates, daylight > 0.3)
 //   and whether a patrol started: the truth version of mitaniWatts2005's predictor (odds per male, pooled logistic).
 //
@@ -34,7 +42,7 @@ import { paramsOf } from '../src/sim/params';
 import { IMPULSE_PATROL } from '../src/sim/perception';
 import { fruitAt } from '../src/sim/phenology';
 import { index, ix, simOf } from '../src/sim/state';
-import { cellAt, gridOf, sectorOf, stalestSector, useLevels, SECTORS } from '../src/sim/territory';
+import { cellAt, gridOf, levels, sectorOf, stalestSector, useLevels, SECTORS } from '../src/sim/territory';
 import type { Chimp, Troop } from '../src/types';
 
 const arg = (k: string, d: string) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
@@ -100,6 +108,8 @@ const clsOf = (c: Chimp) => (c.sex === 'male' ? (c.age >= 15 ? 'adultMale' : 'ad
 const prevRoll = new Map<number, number>(), prevSeen = new Map<number, number>(), prevImpulse = new Map<number, number>(), prevUntil = new Map<number, number>();
 for (const c of w.chimps) { const x = ix(c); prevRoll.set(c.id, x.patrolRoll); prevSeen.set(c.id, x.seenAt); prevImpulse.set(c.id, x.impulse); prevUntil.set(c.id, x.impulseUntil); }
 const dayMax = new Map<string, { m15: number; m13: number; patrol: boolean }>(); // `${troop}:${day}`
+interface Arr { g: number; contact: number; kappa: number; light: number; tripH: number; D: number; sleep: number; arousal: number; ceiling: number; v0: number; top: number[]; share: number; hour: number; males: number }
+const arrivals: Arr[] = [], inVisit = new Map<number, boolean>();
 const enc0 = w.stats.intergroupEncounters, deaths0 = new Set(w.chimps.filter(c => !c.alive).map(c => c.id));
 let foodDay = -1;
 
@@ -168,6 +178,28 @@ for (let i = 0; i < days * DAY; i++) {
     for (const id of party.members) { const c = idx.byId.get(id); if (c && c.alive && c.sex === 'male') { if (c.age >= 15) m15++; if (c.age >= 13) m13++; } }
     const dk = `${party.troopId}:${w.day}`, d = dayMax.get(dk) ?? { m15: 0, m13: 0, patrol: false };
     d.m15 = Math.max(d.m15, m15); d.m13 = Math.max(d.m13, m13); dayMax.set(dk, d);
+  }
+  // periphery arrivals (planned E4i decision point; read-only)
+  for (const c of idx.alive) {
+    const x = ix(c);
+    if (x.seenAt !== time || !isAdultMale(c)) continue;
+    const t = idx.troopById.get(c.troopId); if (!t) continue;
+    const L = useLevels(w)[t.id]; if (!L) continue;
+    const k = cellAt(g, c.position[0], c.position[2]), lv = L[k];
+    if (lv <= P.udCoreLevel) { inVisit.set(c.id, false); continue; }
+    if (lv < P.peripheryLevel || inVisit.get(c.id)) continue;
+    const sec = sectorOf(t, c.position[0], c.position[2]);
+    if (sunAltitudeAt(time) <= 0 || x.ownMales < P.patrolMinMales || patrolBefore.get(c.troopId) || w.environment.rain >= P.patrolMaxRain) continue;
+    inVisit.set(c.id, true);
+    const fam = levels(w); let gsum = 0; for (const o of w.troops) if (o.id !== t.id && fam[o.id]) gsum += 1 - fam[o.id][k];
+    const mem = sectorContact(w, t, c), kappa = Math.min(1, gsum + mem.c[sec] / P.dangerScale);
+    const dHome = Math.hypot(c.position[0] - t.center[0], c.position[2] - t.center[2]), tripH = (Math.PI / 4 * t.radius + dHome) / P.walkMps / 3600;
+    const light = daylightLeftH(time), D = Math.min(1, light / tripH), sl = x.slp ?? 1 - c.energy, a = x.arousal ?? 0;
+    const ceiling = P.patrolLeadScore + P.patrolLeadMaleW * (x.ownMales - P.patrolMinMales) + c.personality.boldness * P.patrolLeadBoldW;
+    const v0 = ceiling * Math.min(1, 0.5 * kappa * D * (1 - sl) * (1 + a));
+    const top = c.candidates.slice(0, 8).map(q => q.score), T = P.rgTemperature, mx = Math.max(v0, ...top);
+    const e0 = Math.exp((v0 - mx) / T), es = top.reduce((acc, v) => acc + Math.exp((v - mx) / T), 0);
+    arrivals.push({ g: r4(gsum), contact: r4(mem.c[sec]), kappa: r4(kappa), light, tripH: r4(tripH), D: r4(D), sleep: r4(sl), arousal: r4(a), ceiling: r4(ceiling), v0: r4(v0), top: top.slice(0, 3).map(r4), share: r4(e0 / (e0 + es)), hour: Math.floor(hour), males: x.ownMales });
   }
   // opportunities
   for (const c of idx.alive) {
@@ -243,8 +275,11 @@ const result = {
     leftEarly: tally(done.flatMap(p => p.members.filter(m => m.leftTo !== null && m.leftAt! < p.endT!).map(m => m.leftTo!))),
     startState: stMean(patrols.map(p => p.startState as unknown as St)), endState: stMean(done.map(p => p.endState as unknown as St)),
   },
-  days: { communityDays: dm.length, patrolDays: dm.filter(d => d.patrol).length, m15: mean(dm.map(d => d.m15)), m15PatrolDays: mean(dm.filter(d => d.patrol).map(d => d.m15)), m15Other: mean(dm.filter(d => !d.patrol).map(d => d.m15)),
+  dayStats: { communityDays: dm.length, patrolDays: dm.filter(d => d.patrol).length, m15: mean(dm.map(d => d.m15)), m15PatrolDays: mean(dm.filter(d => d.patrol).map(d => d.m15)), m15Other: mean(dm.filter(d => !d.patrol).map(d => d.m15)),
     logitM15: logit(dm.map(d => d.m15), dm.map(d => (d.patrol ? 1 : 0))), logitM13: logit(dm.map(d => d.m13), dm.map(d => (d.patrol ? 1 : 0))), m15Hist: tally(dm.map(d => d.m15)) },
+  arrivals: { perCommunityWeek: r4(arrivals.length / communityWeeks), n: arrivals.length, expectedPatrolsIfV0: r4(arrivals.reduce((acc, a) => acc + a.share, 0)),
+    mean: Object.fromEntries((['g', 'contact', 'kappa', 'light', 'tripH', 'D', 'sleep', 'arousal', 'ceiling', 'v0', 'share', 'males'] as const).map(k => [k, mean(arrivals.map(a => a[k]))])),
+    topScore: mean(arrivals.map(a => a.top[0] ?? NaN).filter(Number.isFinite)), byHour: tally(arrivals.map(a => a.hour)), byMales: tally(arrivals.map(a => a.males)), kappaZero: arrivals.filter(a => a.kappa === 0).length },
   encountersPerCommunityWeek: r4((w.stats.intergroupEncounters - enc0) / communityWeeks),
   deaths: tally(w.chimps.filter(c => !c.alive && !deaths0.has(c.id)).map(c => c.causeOfDeath ?? '?')),
   patrols,
