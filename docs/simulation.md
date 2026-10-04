@@ -480,6 +480,8 @@ These are stylized for the compressed map. The speed factor multiplies them by:
 - `(0.7 + 0.3·energy)`
 - `(1 − 0.3·rain)`
 
+**How fast a chimpanzee walks** (stage E2i, switch `walkGait`, 0 by default; [staging/e2i-prereg.md](staging/e2i-prereg.md); diagnosis tool `scripts/walk-diagnose.ts`; [gait.ts](../src/sim/gait.ts)). The field profile's `walkMps` (0.35 m/s) is a field copy: 2.7 km a day over 21% of the day, pauses included. On S21 (quick, simulation truth) every walk moves at it times the movement factor (0.29–0.33 m/s in trips), adults spend 83–87% of their travel time moving and 3–6% standing, so the copy's pauses are walked; between halts of 20 min the model's movement phases run at 0.77–0.81 km/h against batesByrne2009's 1.91–2.21 km/h with the field's number of halts; and walking is 9–24% of a chosen trip's time, so a body speed changes the best tree option in 11% of decisions. `walkGait` 1 moves every walk at the speed the body sets while walking (Mahale: 0.88 m/s males, 0.78 females, 0.75 carrying an infant, [L], nguessan2009 citing Hunt 1989; below adult mass × (mass ÷ adult mass)^⅙, equal Froude number), keeps today's act multipliers and the movement factor (without its life stage below 10 y for walking), values every walk at the same speed × the body state, and values the hunt's approach at the hunt's own speed; no pause is added. `walkMps` is not read (45 → 44 on S21). Result: pending (the prereg §7).
+
 Chimps in a tree climb down before walking more than 3 m, and climb once within 3 m of an elevated goal. On the ground the stream channel is impassable except at fords ([§14](#14-environment)). Positions are clamped 1 m inside the map edge.
 
 **Infant carrying** (`carryInfants`, `isCarried` [H]):
