@@ -280,6 +280,12 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   // drive (energy.ts ownDrive), so the weaning roll and its ramp are not evaluated
   ...same(['weanRefuseMaxP', 'weanRefuseAgeY', 'weanRefuseRampY'], P => !(P.weanDecide === 1 && P.energyLedger === 1 && P.ledgerDrive === 1),
     'the weaning refusal roll in src/sim/execution.ts (nurse act) is not evaluated while weanDecide, energyLedger and ledgerDrive are 1: the mother\'s decision replaces it'),
+  // stage E5e (socialTiming; docs/staging/e5e-prereg.md §4): a sum of bits, one per entry switched out
+  pantGruntRepeatH: { when: P => (P.socialTiming & 1) === 0, why: 'not read while socialTiming has bit 1: a subordinate greets a dominant once per association (the record is cleared at a reunion, perception.ts) and again when challenged (src/sim/candidates.ts)' },
+  consortLatestHour: { when: P => (P.socialTiming & 2) === 0, why: 'not read while socialTiming has bit 2: a consortship is worth what it offers times the light of the walk to the male\'s goal (light.ts tripLight; src/sim/candidates.ts)' },
+  joinCallDistScaleM: { when: P => !((P.socialTiming & 4) !== 0 && P.cohesionValue === 1 && P.partyJoinTrip === 1 && P.forageRate === 1 && P.energyLedger === 1 && P.ledgerDrive === 1 && P.intakeValue === 1),
+    why: 'not read while socialTiming has bit 4 with cohesionValue and forageRate (and their needs): an approach to a caller at food is valued as a trip to its crown at the net energy rate, to any other caller as a follow (src/sim/candidates.ts)' },
+  ...same(['feedChargeGapH', 'immigrantChargeGapH'], P => (P.socialTiming & 8) === 0, 'not read while socialTiming has bit 8: neither gap sets its behaviour (e5e-prereg §2.2); the target\'s concession and the charge\'s own score govern repetition (src/sim/candidates.ts aggression)'),
 };
 
 /** One ACTIVE_WHEN rule for several entries. */
@@ -346,6 +352,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   forageRate: { stage: 'E3c', needs: { energyLedger: 1, ledgerDrive: 1 } },
   followMargin: { stage: 'E5d', needs: { cohesionValue: 1 }, removesNothing: 'values following and joining by the company they add over the best companion kept by staying (E5b\'s margin, extended; E5a\'s companyValue and presentCompany); adds no magnitude and switches no prescription out (e5d-prereg §4.2)' },
   contestAssess: { stage: 'E4h', needs: {} },
+  socialTiming: { stage: 'E5e', needs: {} },
 };
 
 /** Whether an entry is in use: generated (not planned), non-zero under these resolved parameters, and not switched out. */

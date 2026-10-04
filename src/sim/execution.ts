@@ -1,5 +1,5 @@
 import type { Action, Candidate, Chimp, DecisionSource, InteractionKind, World } from '../types';
-import { candidateMeta, crownShareOn, departAudience, dependentOn, isCarried, nearestNeighbor, partyOn, V } from './candidates';
+import { candidateMeta, consortGoal, crownShareOn, departAudience, dependentOn, isCarried, nearestNeighbor, partyOn, V } from './candidates';
 import { notifyAllies, resolveCharge, resolveFight } from './conflict';
 import { addEvent, emitCall, endInteraction, episode, findInteraction, flashInteraction, gate, interrupt, startInteraction } from './events';
 import { nestPoint } from './generation';
@@ -227,6 +227,7 @@ export function startAction(world: World, c: Chimp, cand: Candidate, source: Dec
   if (!same) onStart(world, c);
 }
 
+const _goal: [number, number] = [0, 0];
 function onStart(world: World, c: Chimp): void {
   const P = paramsOf(world);
   const x = ix(c);
@@ -369,12 +370,7 @@ function onStart(world: World, c: Chimp): void {
       if (!o) break;
       x.consortId = o.id;
       if (x.v !== V.ACCEPT && x.v !== V.CONTINUE && c.sex === 'male') {
-        const t = idx.troopById.get(c.troopId)!;
-        let ax = c.position[0] - t.center[0], az = c.position[2] - t.center[2];
-        const l = Math.hypot(ax, az) || 1; ax /= l; az /= l;
-        const rot = (hash01(c.id, o.id, world.day) - 0.5) * 1.6;
-        const cx = ax * Math.cos(rot) - az * Math.sin(rot), cz = ax * Math.sin(rot) + az * Math.cos(rot);
-        x.gx = t.center[0] + cx * t.radius * 0.85; x.gz = t.center[2] + cz * t.radius * 0.85;
+        consortGoal(world, c, o, _goal); x.gx = _goal[0]; x.gz = _goal[1]; // the same goal the option's light reads (stage E5e)
         x.interId = startInteraction(world, 'consort', c, o.id, [c.id, o.id], 0.3).id;
         interrupt(world, o, `${c.name} is leading me away on a consortship`);
         if (gate(world, `consort-${c.id}`, 12)) addEvent(world, `${c.name} and ${o.name} left the party on a consortship`, 'reproduction', [c.id, o.id], c.troopId, 1);

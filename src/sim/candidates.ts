@@ -42,6 +42,40 @@ export type QuotaKind = 'greet' | 'feed' | 'immigrant' | 'consort' | 'caller';
  */
 export const quotaTrace: { on: ((kind: QuotaKind, c: Chimp, o: Chimp | undefined, blocked: boolean, a: number, b: number) => void) | null } = { on: null };
 
+/**
+ * Stage E5e (docs/staging/e5e-prereg.md §4): `socialTiming` is a sum of bits, one per entry it switches out: 1 the
+ * greeting quota (greeting by memory of the association), 2 the consortship clock (the light of the walk away), 4 the
+ * callers' distance scale (the approach in the forager's currency), 8 the two charge gaps (no replacement). 0 = today.
+ */
+export const socialBit = (P: Params, bit: number): boolean => (P.socialTiming & bit) !== 0;
+
+/**
+ * Where a male leads a consortship (execution.ts onStart): a point at 0.85 of the community's range radius from its
+ * centre, on the bearing of the male from the centre turned by a hash of the pair and the day. Pure; writes `out`.
+ */
+export function consortGoal(world: World, c: Chimp, o: Chimp, out: [number, number]): [number, number] {
+  const t = index(world).troopById.get(c.troopId);
+  if (!t) { out[0] = c.position[0]; out[1] = c.position[2]; return out; }
+  let ax = c.position[0] - t.center[0], az = c.position[2] - t.center[2];
+  const l = Math.hypot(ax, az) || 1; ax /= l; az /= l;
+  const rot = (hash01(c.id, o.id, world.day) - 0.5) * 1.6;
+  const cx = ax * Math.cos(rot) - az * Math.sin(rot), cz = ax * Math.sin(rot) + az * Math.cos(rot);
+  out[0] = t.center[0] + cx * t.radius * 0.85; out[1] = t.center[2] + cz * t.radius * 0.85;
+  return out;
+}
+const _cg: [number, number] = [0, 0];
+const _cl: TripLight = { pace: 1, see: 1 };
+/**
+ * Stage E5e (socialTiming bit 2; docs/staging/e5e-prereg.md §4.2): the light of a consortship's walk from where the male
+ * stands to his goal (consortGoal), E2c's tripLight on the floor: the mean walking pace times the vision on arrival
+ * (1 when the sun stays high until arrival, near 0 arriving in darkness). Pure.
+ */
+export function consortWalkLight(world: World, c: Chimp, o: Chimp, P: Params): number {
+  const g = consortGoal(world, c, o, _cg);
+  tripLight(world, P, Math.hypot(g[0] - c.position[0], g[1] - c.position[2]), 0, _cl);
+  return _cl.pace * _cl.see;
+}
+
 const CODE: Record<Action, number> = {
   rest: 1, forage: 2, drink: 3, travel: 4, groom: 5, play: 6, follow: 7, climb: 8, patrol: 9, display: 10, flee: 11, hunt: 12, mate: 13,
   nurse: 14, dead: 15, nest: 16, 'pant-grunt': 17, charge: 18, attack: 19, submit: 20, reconcile: 21, console: 22, share: 23, beg: 24,
@@ -216,6 +250,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   // that moves toward it (following, joining, approaching a caller), never as a cost of leaving: a departure alerts the
   // companions, who weigh the leaver's company in their own choice to come
   const cohesion = cohesionOn(P);
+  const greetMem = socialBit(P, 1); // stage E5e
   const px = c.position[0], pz = c.position[2];
   const unstable = (s.unstableUntil[c.troopId] ?? NEVER) > time ? 1 : 0;
   const isAlpha = troop?.alphaId === c.id;
@@ -440,7 +475,8 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       _mem.splice(bi - 1, 2);
       if (!held) offer('travel', t.id, base - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay, V.TREE);
     }
-    if (x.joinCall > 0 && time - x.joinAt < 0.3 && c.action !== 'patrol') {
+    const callerRate = socialBit(P, 4) && cohesion && fr; // stage E5e: see the branch below
+    if (!callerRate && x.joinCall > 0 && time - x.joinAt < 0.3 && c.action !== 'patrol') {
       // parties gather at rich food and split up when fruit is scarce (fission-fusion tracks fruit) [H]
       const d = Math.hypot(x.joinX - px, x.joinZ - pz);
       let pull = x.joinRich ? 0.15 + env.fruitIndex * 0.35 + h * 0.3 + pers.sociability * 0.15 : pers.sociability * 0.3 * env.fruitIndex - 0.05;
@@ -454,6 +490,27 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       if (d > P.joinCallMinM) {
         const sc = pull * (1 - rain * 0.5) - d / P.joinCallDistScaleM;
         if (quotaTrace.on) quotaTrace.on('caller', c, byId.get(x.joinCaller), false, d, sc);
+        offer('travel', x.joinCall, sc, V.CALLER, x.joinCaller);
+      }
+    } else if (callerRate && x.joinCall > 0 && time - x.joinAt < 0.3 && c.action !== 'patrol') {
+      // stage E5e (socialTiming bit 4; e5e-prereg §4.3): the approach in the forager's currency. A call given in a crown is a
+      // trip to that crown, as E5a's joined trip under E3c (the company the caller adds plus the crown's drive × the trip's
+      // net energy rate, walk and climb in the rate); any other call a move to a companion, as E5a's follow (the company
+      // added less the walk's energy at the ledger's derived scale). The call's design pull and joinCallDistScaleM are not read
+      const d = Math.hypot(x.joinX - px, x.joinZ - pz);
+      if (d > P.joinCallMinM) {
+        const caller = byId.get(x.joinCaller), alive = !!caller && caller.alive;
+        let v = alive ? (P.companyMargin === 1 ? Math.max(0, companyValue(c, caller!, P) - presentCompany(world, c, P)) : companyValue(c, caller!, P)) : 0;
+        const t = x.jt !== undefined && x.jt > 0 ? idx.treeById.get(x.jt) : undefined;
+        if (t) {
+          const crop = stamped(_sight, t.id, st) ? (P.patchEcology === 1 ? fruitAt(world, t) : t.fruit) : (x.treeCrop?.[t.id] ?? 0.2);
+          let feeders = 1; // the caller, heard feeding there
+          for (let _k = 0; _k < x.seen.length; _k++) { const o = byId.get(x.seen[_k]); if (o && o.alive && o !== c && o !== caller && o.targetId === t.id && (o.action === 'forage' || o.action === 'travel')) feeders++; }
+          v += fd * rateWorth(t, crop, feeders, dxz(t, px, pz));
+        } else v -= d / P.travelDistScaleM;
+        if (P.assocBondW > 0 && caller) v += P.assocBondW * bond(c, caller); // stage C9 (off by default), as above
+        const sc = v - rain * 0.3;
+        if (quotaTrace.on) quotaTrace.on('caller', c, caller, false, d, sc);
         offer('travel', x.joinCall, sc, V.CALLER, x.joinCaller);
       }
     }
@@ -596,9 +653,12 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       offer('follow', o.id, 0.2 + (time - x.victimAt < 1 ? 0.3 : 0) - h * 0.3, V.PARTY, 1);
     // pant-grunt: subordinates greet dominants, especially the alpha and displaying males [H]
     if (c.age >= 5 && !carried && d < P.pantGruntRangeM && ((o.sex === 'male' && o.age >= P.pantGruntMaleAgeY) || o.age >= 15) && dominates(o, c)) {
-      const last = x.greet[o.id] ?? NEVER, open = time - last > P.pantGruntRepeatH;
+      const last = x.greet[o.id] ?? NEVER, displaying = (o.action === 'display' || o.action === 'charge') && d < P.displayNearM;
+      // stage E5e (socialTiming bit 1; e5e-prereg §4.1): once per association (perception.ts clears the record when the two
+      // meet again after more than reunionH apart), and again when the dominant challenges it: a display within
+      // displayNearM, or a charge at this animal
+      const open = greetMem ? x.greet[o.id] === undefined || (o.action === 'display' && d < P.displayNearM) || (o.action === 'charge' && o.targetId === c.id) : time - last > P.pantGruntRepeatH;
       if (open || quotaTrace.on) {
-        const displaying = (o.action === 'display' || o.action === 'charge') && d < P.displayNearM;
         const sc = 0.3 + (troop?.alphaId === o.id ? 0.4 : 0.05) + (displaying ? 0.8 : 0) + c.stress * 0.3 + (x.newcomers > 0 ? 0.15 : 0)
           + (o.sex === 'male' && c.sex === 'female' ? 0.1 : 0) - d / P.pantGruntDistScaleM - h * 0.2 - (night ? 2 : 0);
         if (quotaTrace.on) quotaTrace.on('greet', c, o, !open, time - last, sc);
@@ -809,6 +869,9 @@ function aggression(world: World, c: Chimp, rival: number, rivalCloseness: numbe
     if (o && o.alive && dcc(c, o) < P.infanticideAttackRangeM) offer('attack', o.id, 1.1, V.INFANTICIDE);
   }
   const forageTree = c.action === 'forage' ? c.targetId : -1;
+  // stage E5e (socialTiming bit 8; e5e-prereg §2.2, §4.4): neither charge gap sets its behaviour; the target's concession
+  // (E4h) and the charge's own score govern repetition, so the gaps are not read
+  const gapsOff = socialBit(P, 8);
   for (let _i8 = 0; _i8 < x.seen.length; _i8++) { const sid = x.seen[_i8];
     const o = byId.get(sid)!;
     if (o.troopId !== c.troopId || !o.alive) continue;
@@ -828,7 +891,7 @@ function aggression(world: World, c: Chimp, rival: number, rivalCloseness: numbe
     if (male && c.age >= 15 && o.sex === 'female' && o.swelling >= P.coerceSwellingMin && dist < P.coerceRangeM && !kin && cooled && (ix(o).coerce[c.id] ?? 0) < P.coerceMaxRepeats)
       offer('charge', o.id, pers.aggression * 0.35 + c.rank * 0.1 - 0.12 - deter, V.COERCE);
     // resident females target recent immigrants [M]
-    const immOpen = time - x.lastAgg > P.immigrantChargeGapH;
+    const immOpen = gapsOff || time - x.lastAgg > P.immigrantChargeGapH;
     if (!male && c.age >= 15 && o.sex === 'female' && dist < P.immigrantChargeRangeM && (immOpen || quotaTrace.on)) {
       const ox = ix(o);
       const tenureC = ix(c).immigrantAge < 0 ? c.age - 10 : c.age - ix(c).immigrantAge;
@@ -840,7 +903,7 @@ function aggression(world: World, c: Chimp, rival: number, rivalCloseness: numbe
     }
     // feeding competition when fruit is scarce [H for contest competition; strength L]
     // (a guardian never supplants its ward; a seen guardian deters supplants of its ward: C8 feeding-tolerance lever)
-    const feedOpen = time - x.lastAgg > P.feedChargeGapH;
+    const feedOpen = gapsOff || time - x.lastAgg > P.feedChargeGapH;
     if (o.action === 'forage' && o.targetId > 0 && (o.targetId === forageTree || (h > P.feedChargeHungerMin && x.trees.includes(o.targetId))) && dist < P.feedChargeRangeM && (feedOpen || quotaTrace.on) && o.age >= 5 && !kin && dominates(c, o) && guardianOf(world, o) !== c) {
       const t = idx.treeById.get(o.targetId);
       const scarce = world.environment.fruitIndex < 0.4 || (t !== undefined && (P.patchEcology === 1 ? fruitAt(world, t) : t.fruit) < 0.3);
@@ -975,9 +1038,14 @@ function reproduction(world: World, c: Chimp, isAlpha: boolean): void {
         offer('guard', o.id, 0.55 + (isAlpha ? 0.35 : 0.15) + o.swelling * 0.2 - c.hunger * 0.9 - (night ? 2 : 0));
       // consortships: a pair leaves for the periphery [M]
       if (c.age >= 15 && !isAlpha && o.swelling >= P.consortSwellingMin && bond(c, o) >= P.consortBondMin && !guarded && c.action !== 'consort') {
-        const open = world.hour < P.consortLatestHour;
-        if (quotaTrace.on) quotaTrace.on('consort', c, o, !open, world.hour, 0.08 + bond(c, o) * 0.5 + (c.rankOrder > 2 ? 0.15 : 0) - c.hunger * 0.2);
-        if (open) offer('consort', o.id, 0.08 + bond(c, o) * 0.5 + (c.rankOrder > 2 ? 0.15 : 0) - c.hunger * 0.2);
+        // stage E5e (socialTiming bit 2; e5e-prereg §4.2): no clock hour; the consortship is worth what it offers times the
+        // light of the walk to the male's goal at the range's edge (E2c tripLight: mean pace and vision on arrival)
+        const light = socialBit(P, 2), open = light || world.hour < P.consortLatestHour;
+        const base = 0.08 + bond(c, o) * 0.5 + (c.rankOrder > 2 ? 0.15 : 0) - c.hunger * 0.2;
+        let sc = base;
+        if (light && base > 0) sc = base * consortWalkLight(world, c, o, P);
+        if (quotaTrace.on) quotaTrace.on('consort', c, o, !open, world.hour, sc);
+        if (open) offer('consort', o.id, sc);
       }
     }
     if (c.sex === 'female' && c.swelling >= 0.75 && o.age >= 10 && dist < P.mateFemaleRangeM && time - x.lastMate > 0.3 && time - ix(o).lastMate > P.mateIntervalH) {

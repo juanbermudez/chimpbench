@@ -31,6 +31,12 @@
 //   locomotion kcal (energyTap), and whether they reached the call's position (within joinCallStopM + 2 m); the km a
 //   day walked to callers; every class's daily path (steps over 2·runMps·tick + 2 m are teleports and skipped).
 //
+// Under socialTiming (stage E5e, docs/staging/e5e-prereg.md §4): bit 1, the greeting trace's "blocked" is the memory gate
+//   (no greeting since the association began, unless challenged), and each open opportunity is labelled by why it is open
+//   (association: no greeting recorded since the reunion; challenge: greeted, the dominant displaying or charging); the
+//   greetings an RG decision chose are labelled the same way; greetings given are also counted by hour of day, and the
+//   repeats within an observer's association bout by hour. Bit 4 (with cohesionValue and forageRate): the distance term
+//   and the choice probability without it are not computed (the approach has no such term).
 //   pnpm exec tsx scripts/quota-diagnose.ts [--seeds 48,7] [--burn-in 30] [--days 30] [--params '{…}' | --params-file f.json] [--json f.json]
 // Development seeds only (AGENTS.md lists the reserved ones); burn-in + days ≤ 90.
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -77,7 +83,10 @@ const am = { feed: { lastVar: {} as Record<string, number>, sameTarget: 0, resp:
 const consortHour: Record<number, [number, number]> = {};
 const cm = { daylightLeftSum: 0, sleepSum: 0, energySum: 0, n: 0 };
 // pant-grunts given
-const pg = { n: 0, byClass: {} as Record<string, number>, toAlpha: 0, mm: 0, mmTop3: 0, first: 0, repeat: 0, latencySum: 0, latencyN: 0, nightN: 0 };
+const pg = { n: 0, byClass: {} as Record<string, number>, toAlpha: 0, mm: 0, mmTop3: 0, first: 0, repeat: 0, latencySum: 0, latencyN: 0, nightN: 0,
+  byHour: {} as Record<number, number>, repeatByHour: {} as Record<number, number> };
+// socialTiming bit 1: open greeting opportunities by why they are open, and RG-chosen greetings by the same label
+const openWhy = { association: 0, challenge: 0 }, chosenWhy = { association: 0, challenge: 0, quota: 0 };
 let dyadDays = 0, coDyadDays = 0, reunions = 0, boutsWithGreet = 0; // co-present dyad-days: ordered pairs with ≥ 1 greeting opportunity that day
 // charges and consortships started
 const charges = { FEED: 0, IMMIGRANT: 0, all: 0, byVar: {} as Record<string, number>, resp: { FEED: {} as Record<string, number>, IMMIGRANT: {} as Record<string, number> } };
@@ -98,6 +107,9 @@ for (const seed of seeds) {
   const coToday = new Set<number>();
   // per decision: gates opened or blocked, for the decision counts and the outrank check (cleared every tick)
   const pendBlk = new Map<number, { tick: number; s: Partial<Record<QuotaKind, number>> }>(), pendCaller = new Map<number, { tick: number; d: number }>();
+  const greetMem = (P.socialTiming & 1) !== 0;
+  const callerRate = (P.socialTiming & 4) !== 0 && P.cohesionValue === 1 && P.partyJoinTrip === 1 && P.forageRate === 1 && P.energyLedger === 1 && P.ledgerDrive === 1 && P.intakeValue === 1;
+  const pendGreet = new Map<number, { tick: number; why: Record<number, string> }>();
   const decKey = new Set<string>();
   const firstGreet = new Map<number, number>(); // ordered dyad → the bout start of its last greeting
   const lastAgg = new Map<number, { v: number; target: number; t: number }>(), lastResp = new Map<number, { target: number; resp: string }>();
@@ -111,7 +123,7 @@ for (const seed of seeds) {
     const k = clsOf(c) ?? 'infant';
     if (kind === 'caller') {
       pendCaller.set(c.id, { tick: w.tick, d: a });
-      callers.offers++; callers.offerByClass[k] = (callers.offerByClass[k] ?? 0) + 1; callers.distBins[binOf(a, DIST_EDGES)]++; callers.dSum += a; callers.termSum += a / P.joinCallDistScaleM; callers.scoreSum += b;
+      callers.offers++; callers.offerByClass[k] = (callers.offerByClass[k] ?? 0) + 1; callers.distBins[binOf(a, DIST_EDGES)]++; callers.dSum += a; if (!callerRate) callers.termSum += a / P.joinCallDistScaleM; callers.scoreSum += b;
       return;
     }
     if (kind === 'greet' && o) {
@@ -126,7 +138,16 @@ for (const seed of seeds) {
     g.opp++; const bc = g.byClass[k] ?? (g.byClass[k] = [0, 0]); bc[0]++;
     const key = `${kind}:${c.id}:${c.decisionVersion}`;
     if (!decKey.has(key)) { decKey.add(key); g.oppDecisions++; }
-    if (!blocked) { g.openScore += b; return; }
+    if (!blocked) {
+      g.openScore += b;
+      if (kind === 'greet' && o) {
+        const why = !greetMem ? 'quota' : a > 1e6 ? 'association' : 'challenge';
+        if (why !== 'quota') openWhy[why]++;
+        let pg2 = pendGreet.get(c.id); if (!pg2 || pg2.tick !== w.tick) { pg2 = { tick: w.tick, why: {} }; pendGreet.set(c.id, pg2); }
+        pg2.why[o.id] = why;
+      }
+      return;
+    }
     g.blocked++; bc[1]++; g.blockedScore += b;
     if (!decKey.has(key + ':b')) { decKey.add(key + ':b'); g.blockedDecisions++; }
     let pe = pendBlk.get(c.id);
@@ -164,6 +185,7 @@ for (const seed of seeds) {
   };
   rgTap.fn = (c, _list, menu, probs, chosen) => {
     decisionsRG++;
+    if (chosen.action === 'pant-grunt') { const pg2 = pendGreet.get(c.id); const why = pg2 && pg2.tick === w.tick ? pg2.why[chosen.targetId] : undefined; if (why) chosenWhy[why as keyof typeof chosenWhy]++; }
     const pe = pendBlk.get(c.id);
     if (pe && pe.tick === w.tick) {
       for (const kind of ['greet', 'feed', 'immigrant', 'consort'] as const) {
@@ -174,7 +196,7 @@ for (const seed of seeds) {
       pendBlk.delete(c.id);
     }
     const pc = pendCaller.get(c.id);
-    if (pc && pc.tick === w.tick && menu.length >= 2 && probs.length === menu.length) {
+    if (!callerRate && pc && pc.tick === w.tick && menu.length >= 2 && probs.length === menu.length) {
       const j = menu.findIndex(k => k.action === 'travel' && candidateMeta.get(k)?.v === V.CALLER);
       if (j >= 0) {
         const T = P.rgTemperature, sc = menu.map(k => k.score);
@@ -210,7 +232,8 @@ for (const seed of seeds) {
         if (lt === undefined || t - lt > REUNION_H + 1e-9) { boutStart.set(p, t); reunions++; }
         lastTog.set(p, t);
         const bs = boutStart.get(p)!;
-        if (firstGreet.get(od) === bs) pg.repeat++; else { firstGreet.set(od, bs); pg.first++; pg.latencySum += t - bs; pg.latencyN++; boutsWithGreet++; }
+        const hr = Math.floor(w.hour); pg.byHour[hr] = (pg.byHour[hr] ?? 0) + 1;
+        if (firstGreet.get(od) === bs) { pg.repeat++; pg.repeatByHour[hr] = (pg.repeatByHour[hr] ?? 0) + 1; } else { firstGreet.set(od, bs); pg.first++; pg.latencySum += t - bs; pg.latencyN++; boutsWithGreet++; }
       } else if (it.kind === 'charge' || it.kind === 'fight' || it.kind === 'coalition' || it.kind === 'intergroup' || it.kind === 'infanticide') {
         const x = ix(a);
         if ((a.action === 'charge' || a.action === 'attack') && x.interId === it.id) {
@@ -303,7 +326,9 @@ const result = {
       meanBoutAgeH: r3(gm.boutAgeSum / Math.max(1, gm.boutAgeN)), toAlpha: gm.alpha, dominantDisplaying: gm.displaying, meanEloGap: r3(gm.eloGapSum / Math.max(1, gm.eloGapN)) },
     given: { n: pg.n, byClass: pg.byClass, perSubordinateDay: r3(pg.n / Math.max(1e-9, sub)), perDyadDay: r3(pg.n / Math.max(1, dyadDays)), perCoPresentDyadDay: r3(pg.n / Math.max(1, coDyadDays)),
       dyadDays, coPresentDyadDays: coDyadDays, toAlphaShare: r3(pg.toAlpha / Math.max(1, pg.n)), maleMale: pg.mm, maleMaleTop3Share: r3(pg.mmTop3 / Math.max(1, pg.mm)),
-      firstInBout: pg.first, repeatInBout: pg.repeat, meanLatencyFromReunionMin: r3(pg.latencySum / Math.max(1, pg.latencyN) * 60), atNight: pg.nightN },
+      firstInBout: pg.first, repeatInBout: pg.repeat, meanLatencyFromReunionMin: r3(pg.latencySum / Math.max(1, pg.latencyN) * 60), atNight: pg.nightN,
+      byHour: pg.byHour, repeatByHour: pg.repeatByHour },
+    socialTiming: { openWhy, chosenWhy },
     reunions, boutsWithGreet },
   feed: { gate: gate('feed'), atBlocked: { lastAggression: am.feed.lastVar, sameTarget: am.feed.sameTarget, lastResponse: am.feed.resp },
     started: charges.FEED, perAdultDay: r3(charges.FEED / Math.max(1e-9, chimpDays['adult male'] + chimpDays['adult female'])), perChargerClassDay12: r3(charges.FEED / Math.max(1e-9, chimpDays['adult male'] + chimpDays['adult female'] + chimpDays['adolescent 12–15 y'])),

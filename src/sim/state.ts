@@ -89,6 +89,12 @@ export interface ChimpX {
    * Absent until the switch is on (computed from the bonds present at its first tick, then at every daily step).
    */
   upk?: number;
+  /**
+   * Stage E5e (socialTiming bit 4; docs/staging/e5e-prereg.md §4.3): the crown the caller of the last heard community
+   * pant-hoot was feeding in when it called (-1 when it was not feeding in a crown). Absent until the bit is on and a call
+   * is heard.
+   */
+  jt?: number;
   // reproduction and life history
   cycleLen: number; cops: Record<number, number>; sireId: number; amenUntil: number; firstSwell: number; gestation: number;
   weanAge: number; weaned: boolean; caretaker: number; immigrantAge: number; disperser: boolean; transferTo: number;
@@ -249,7 +255,7 @@ export type SimWorld = World & { sim: SimState };
  * ChimpX and SimState keys that exist only once their mechanism has fired (so worlds with the switch off keep their
  * shape and hashes). The save check (src/persist/envelope.ts worldShapeProblem) ignores them.
  */
-export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'tryNest', 'en', 'wat', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk', 'cx', 'cxc', 'cn', 'asl', 'phAt', 'phX', 'phZ', 'ard', 'wr', 'upk'];
+export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'tryNest', 'en', 'wat', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk', 'cx', 'cxc', 'cn', 'asl', 'phAt', 'phX', 'phZ', 'ard', 'wr', 'upk', 'jt'];
 export const OPTIONAL_SIM: readonly string[] = ['fission', 'stormAt'];
 
 export function newX(): ChimpX {

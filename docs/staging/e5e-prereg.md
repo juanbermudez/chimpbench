@@ -212,6 +212,13 @@ again when the dominant challenges it:
 - **Gate** (candidates.ts): the greeting is open toward a dominant the animal has not greeted in the current association,
   or toward one displaying or charging within `displayNearM` (the existing displaying term's condition: a challenge to the
   relationship reopens it). `pantGruntRepeatH` is not read. The score is unchanged.
+- **Revised before any arm, after the switch-on smoke test (seed 48, 1 + 2 days; disclosed).** As first written, 86 of
+  273 greetings in two days repeated one within an observer's association bout, from two sources the text above did not
+  intend: (a) an animal that saw the dominant at its last look and then went more than an hour without a look (a long
+  bout) counted the next look as a reunion; (b) a dominant charging a third animal within 35 m reopened every bystander's
+  greeting. Now (a) a reunion also needs the other to have been out of sight at the animal's previous look (perception's
+  last look before this one; no time constant), and (b) the challenge is a display within `displayNearM` or a charge at
+  this animal. Smoke after the revision: 39 repeats of 231. The predictions of §4.7 are left as registered.
 
 ### 4.2 Consortships by the light on the walk away (bit 2)
 

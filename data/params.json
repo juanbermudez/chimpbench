@@ -18368,6 +18368,31 @@
    "notes": "The alpha position stays contested for up to this long."
   },
   {
+   "id": "reunionH",
+   "group": "social",
+   "value": 1,
+   "units": "h",
+   "range": [
+    0.5,
+    2
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1000000
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "girardButtoz2022"
+   ],
+   "clock": "eco",
+   "symbol": "perceive",
+   "file": "src/sim/perception.ts",
+   "notes": "Two members of a community who perceive each other again after more than this long apart are reuniting: a newcomer for the reunion terms (displays, the greeting score) and, under socialTiming bit 1, a new association in which a greeting is due. The model's reunion span (a literal of perception.ts before stage E5e, same value); the observer convention for a fusion, parties apart for at least 1 h (girardButtoz2022). Design, not fitted; its sensitivity is untested."
+  },
+  {
    "id": "revisitByCrop",
    "group": "feeding",
    "value": 0,
@@ -20807,6 +20832,35 @@
    "symbol": "needs() socialSleepPerH",
    "file": "src/sim/life.ts",
    "notes": "Social satisfaction lost sleeping (subtracted)."
+  },
+  {
+   "id": "socialTiming",
+   "group": "social",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    15
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    15
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "girardButtoz2022",
+    "wroblewski2009",
+    "charnov1976",
+    "sockol2007"
+   ],
+   "clock": "none",
+   "symbol": "computeCandidates (greeting, consortship, approach to a caller, feeding and immigrant charges); perceive, hear",
+   "file": "src/sim/candidates.ts",
+   "integer": true,
+   "notes": "Stage E5e (docs/staging/e5e-prereg.md section 4): a sum of bits, one per entry; 0 = today (hash-identical). 1: a subordinate greets a dominant once per association (its record of having greeted that animal is cleared when the two perceive each other again after more than reunionH apart, perception.ts) and again when the dominant displays or charges within displayNearM; pantGruntRepeatH is not read (girardButtoz2022: the pant-grunt re-establishes the dominance relationship at an encounter). 2: a consortship's value is multiplied by the light of the walk to the male's goal at the range's edge (E2c tripLight: the mean walking pace and the vision on arrival; wroblewski2009: a consortship is a walk away from the party); consortLatestHour is not read. 4 (with cohesionValue and forageRate): an approach to a caller at food is valued as a trip to its crown (the company margin plus the crown's drive x the net energy rate of the trip, E3c), an approach to any other caller as a follow (the company margin less the walk's energy at travelDistScaleM, E5a); joinCallDistScaleM and the call's design pull are not read. 8: feedChargeGapH and immigrantChargeGapH are not read (neither sets its behaviour, e5e-prereg section 2.2; the target's concession limits repetition, E4h). Design, no fitted value."
   },
   {
    "id": "socialUpkeep",
