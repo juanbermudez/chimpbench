@@ -89,6 +89,90 @@ every crown readout is reported as the mean ± SD of four realizations. Frozen c
 6d3019e was stopped unread: its summary was quadratic in the number of visits; the fix computes the pooled mean once and
 drops the `ate > 0` filter from "visits the crop holds", as §2 defines it).
 
+### 2.1 Results (frozen checkout 592cfe9, clean; S27 and its re-draws by `rngSalt` 1–3; seeds 48 and 7, burn-in 30, 30 days; about 65–90 s per seed; printed by `crowntab.py` from the JSON in the stage's scratch directory, `runs/diag-S27*.json`)
+
+| Readout (truth) | S27 / r1 / r2 / r3 | mean ± SD |
+| --- | --- | --- |
+| kcal per unit, drupe / fig | 4031 / 4031 / 4031 / 4031 | 4031 ± 0 |
+| landscape: fruiting crowns per day (>= 0.06 units) | 2455 / 2456 / 2455 / 2456 | 2455 ± 0 |
+| landscape: crop kcal of a fruiting crown, median (all) | 2053 / 2056 / 2056 / 2039 | 2051 ± 8 |
+| landscape: crop kcal, median, figs | 3056 / 3056 / 3056 / 3056 | 3056 ± 0 |
+| landscape: crop kcal, median, non-figs | 1895 / 1905 / 1906 / 1895 | 1900 ± 6 |
+| landscape: crop kcal, p90 (all) | 3366 / 3357 / 3346 / 3366 | 3359 ± 10 |
+| visit start: crop kcal, median (>= 5 y) | 1243 / 1168 / 1198 / 1158 | 1192 ± 38 |
+| visit start: crop kcal, mean | 1447 / 1371 / 1406 / 1345 | 1392 ± 44 |
+| visit start: crop kcal, median, figs | 2093 / 1692 / 1829 / 1646 | 1815 ± 201 |
+| visit start: crop kcal, median, non-figs | 1094 / 1068 / 1092 / 1079 | 1083 ± 12 |
+| visit start: crop kcal, median, small crowns | 932 / 926 / 922 / 923 | 926 ± 4 |
+| visit start: crop kcal, median, large crowns | 1787 / 1471 / 1541 / 1463 | 1566 ± 152 |
+| visit start: phenology crop kcal, mean | 2720 / 2646 / 2647 / 2602 | 2654 ± 49 |
+| visit start: crop units, mean | 0.347 / 0.331 / 0.339 / 0.325 | 0.336 ± 0.010 |
+| visits (>= 5 y) | 23994 / 23978 / 24262 / 23364 | 23900 ± 380 |
+| visit length, median min | 19.0 / 19.0 / 19.0 / 19.5 | 19.1 ± 0.250 |
+| visit length, mean min | 21.2 / 21.0 / 21.0 / 21.6 | 21.2 ± 0.278 |
+| visit length, median min, adults >= 12 y | 18.5 / 18.3 / 18.3 / 19.0 | 18.5 ± 0.354 |
+| kcal eaten per visit, mean | 142 / 142 / 141 / 144 | 142 ± 1 |
+| kcal eaten per visit, median | 127 / 126 / 126 / 130 | 127 ± 2 |
+| share of the starting crop eaten per visit | 0.143 / 0.149 / 0.144 / 0.152 | 0.147 ± 0.004 |
+| feeders in the crown at a visit start | 1.699 / 1.676 / 1.723 / 1.624 | 1.680 ± 0.042 |
+| bout room at start, kcal (mean) | 317 / 321 / 320 / 326 | 321 ± 3 |
+| energy need at start, kcal (mean) | 1294 / 1312 / 1291 / 1263 | 1290 ± 20 |
+| crop share below the bout room (crop binds) | 0.158 / 0.171 / 0.171 / 0.166 | 0.166 ± 0.006 |
+| visits the starting crop holds, median | 8.729 / 8.210 / 8.505 / 8.015 | 8.365 ± 0.315 |
+| feeders per occupied crown (crown-weighted) | 1.416 / 1.390 / 1.403 / 1.367 | 1.394 ± 0.021 |
+| feeders per crown (feeder-weighted) | 1.814 / 1.763 / 1.799 / 1.716 | 1.773 ± 0.044 |
+| share of occupied crown-minutes with one feeder | 0.692 / 0.708 / 0.704 / 0.721 | 0.706 ± 0.012 |
+| feeders (crown-wt), crop tercile 1 | 1.452 / 1.424 / 1.452 / 1.404 | 1.433 ± 0.023 |
+| feeders (crown-wt), crop tercile 3 | 1.373 / 1.360 / 1.348 / 1.311 | 1.348 ± 0.027 |
+| episodes: minutes, median | 24.2 / 23.8 / 24.2 / 24.2 | 24.1 ± 0.250 |
+| episodes: kcal eaten / crop at start | 0.264 / 0.268 / 0.267 / 0.266 | 0.266 ± 0.001 |
+| episodes: visits per episode | 1.941 / 1.893 / 1.947 / 1.834 | 1.904 ± 0.052 |
+| episodes: ended below 0.06 units | 0.159 / 0.173 / 0.164 / 0.164 | 0.165 ± 0.006 |
+| crowns fed in: share fell below 0.06 units | 0.502 / 0.505 / 0.542 / 0.521 | 0.517 ± 0.018 |
+| crowns fed in: share fell below 0.02 units | 0.318 / 0.327 / 0.333 / 0.315 | 0.323 ± 0.009 |
+| crowns: kcal eaten / first phenology crop (window) | 3.023 / 3.275 / 3.492 / 3.709 | 3.375 ± 0.294 |
+| bout end (>= 12 y): sated | 0.549 / 0.548 / 0.520 / 0.561 | 0.544 ± 0.017 |
+| bout end: crown empty | 0.046 / 0.051 / 0.046 / 0.042 | 0.046 ± 0.004 |
+| bout end: gut full | 0.038 / 0.029 / 0.040 / 0.038 | 0.036 ± 0.005 |
+| bout end: party leaving | 0.087 / 0.086 / 0.088 / 0.074 | 0.084 ± 0.007 |
+| bout end: care follow | nan / nan / nan / nan | nan ± nan |
+| bout end: switch crown | 0.000 / 0.000 / 0.000 / 0.000 | 0.000 ± 0.000 |
+| bout end: other decision | 0.280 / 0.285 / 0.306 / 0.286 | 0.289 ± 0.011 |
+| kcal from crowns per day, adult male | 1567 / 1560 / 1565 / 1542 | 1559 ± 12 |
+| kcal from crowns per day, female lactating | 1455 / 1432 / 1448 / 1465 | 1450 ± 14 |
+| crown minutes per day, adult male | 215 / 215 / 216 / 213 | 215 ± 1 |
+| crown visits per day, adult male | 10.6 / 10.3 / 10.8 / 10.2 | 10.5 ± 0.255 |
+
+Other decisions that end a bout (29%): the rules reason is an interrupt in 49%, a need changing level 19%, the act's end 16%,
+its age 10%, a light phase 6%; the next act is rest 25%, an own trip 20%, a pant-grunt 11%, a caller 7%, grooming 6%.
+By class (sated / crown empty / gut full / party leaving): adult males 0.56 / 0.057 / 0.009 / 0.083, other females
+0.62 / 0.035 / 0.038 / 0.062, nursing mothers 0.48 / 0.040 / 0.062 / 0.108. Crowns fed in: a median 16 visits and 2,556 kcal
+eaten per crown over the 30 days (means of the four runs' medians); median 14–15 visits until a crown first falls below 0.06 units.
+
+**What `fruitIntakePerH` decides (S27).**
+1. **The energy of every crown and of every crop threshold.** One fruit unit is 4,031 kcal of drupes or 4,429 of figs
+   (7.39 or 8.12 kcal/min × 60 ÷ 0.11). A fruiting crown holds a median 2,051 kcal (figs 3,056, non-figs 1,900; 90th
+   percentile 3,359): 4.6 hours of an adult's feeding at the sourced 443 kcal/h. Capacities run from a median 1,572 kcal
+   (*Celtis*) to 3,853 (*Ficus mucuso*). A crown below 242 kcal (0.06 units) is not seen as fruiting, below 161 kcal is
+   forgotten, a bout ends below 81 kcal, an unseen crown is believed to hold 806 kcal. Every one of these scales as
+   1 ÷ `fruitIntakePerH`; nothing else in the model sets a crown's energy.
+2. **It does not set intake.** A visit lasts 19 min and takes 142 kcal at the sourced rate whatever the crop; adult
+   males take 1,559 and nursing mothers 1,450 kcal a day from crowns.
+3. **The crop rarely limits a bout, so crop and feeders stay apart.** Animals reach crowns already half emptied (crop
+   at a visit's start 1,392 kcal on average against a phenology crop of 2,654) and a visit takes 15% of what is there; the
+   crop share at arrival is below the bout's gut room in 17% of visits; 4.6% of bouts end with the crown empty, 54%
+   sated, 3.6% with a full gut, 8.4% as the party leaves, 29% on other decisions. Feeders at once: 1.39 per occupied
+   crown (70% of crown-minutes have one feeder), the same in poor and rich crowns (1.43 lowest crop tercile, 1.35
+   highest).
+4. **Depletion is real but slow, and recovery feeds the crowns.** An occupancy episode (24 min, 1.9 visits) takes 27% of
+   the crop; half the crowns fed in fall below the visibility threshold within the 30 days (a third below 0.02 units),
+   after a median 14–15 visits; over the window a crown yields 3.4 × its first phenology crop, so about two thirds of what
+   crowns give comes from the design recovery (`patchRecoverPerDay` 0.7 of the deficit per day).
+
+Field comparison (potts2011, research.md): patch residency 27 (Ngogo) to 46 (Kanyawara) minutes with feeding parties of
+7.3–8.4, i.e. 3.3–6.5 chimp-hours, about 1,460–2,880 kcal at 443 kcal/h, per party visit; the model's occupancy episode
+takes a median 203 kcal (1.9 visits). The model's median fruiting crown (2,051 kcal) holds about one such party visit.
+
 ## 3. Sources
 
 (Pending: docs/research.md and docs/staging/e-sources.md, "Addendum: E3f crop energy".)
