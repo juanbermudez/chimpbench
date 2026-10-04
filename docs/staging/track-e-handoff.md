@@ -23,6 +23,8 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   passed the quick bar but re-deciding adds walking (males 2.8 → 4.0 km), climbing (+25–67%) and lowers mothers',
   juveniles' and young infants' reserves. S27q-noCM: `crownMove` is not why walkGait holds on S27. Guide and hosted
   copy on S27 (site 4f19ace, built and checked, not deployed).
+- **Counting fix merged (1d177f8):** "never fitted" now reads as a denial; `ledgerWildCostMult` (identity, E1g) is design.
+  Today's model 134, S27 41, S28 39 (replaced 93 unchanged). Earlier counts in the docs stay as written.
 - **S27 is the best integrated candidate (42)** (e-stack2-confirm.md "S26 and S27 results"; S25 + `crownMove` 1 +
   `walkGait` 1): every sum inside noise against S25's four runs, viable, night safe (2.48%); `walkMps` out of use; the
   longer walks (males 3.26 km) pay for themselves in food (males +48 kcal in, +47 out), so reserves hold; T-ACT-2 0.132
