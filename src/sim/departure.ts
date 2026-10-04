@@ -31,8 +31,8 @@ export function brightening(world: World): number {
 }
 
 /** a: daylight expected when the animal reaches a crown `distM` away, from the current light and its trend. */
-export function arrivalLight(L: number, dLdt: number, distM: number, P: Params): number {
-  const v = L + distM / P.walkMps / 3600 * dLdt;
+export function arrivalLight(L: number, dLdt: number, distM: number, P: Params, speed = P.walkMps): number {
+  const v = L + distM / speed / 3600 * dLdt; // stage E2i (walkGait): the animal's walking speed (gait.ts tripSpeed), walkMps by default
   return v < 0 ? 0 : v > 1 ? 1 : v;
 }
 

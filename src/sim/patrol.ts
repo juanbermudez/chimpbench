@@ -5,6 +5,7 @@ import { isAdultMale, strength } from './hierarchy';
 import type { Params } from './params';
 import { index, ix, type ChimpX } from './state';
 import { neighbourSectors, rangeEdge, sectorDir } from './territory';
+import { tripSpeed } from './gait';
 
 // Stage E4i (patrolValue; docs/staging/e4i-prereg.md §4): patrolling as the males' own decision. The hazard roll, its
 // per-male odds ratio and the 08:00–15:30 clock give way to a lead option whose value is read from the males' state and
@@ -98,7 +99,7 @@ export function leadValue(world: World, c: Chimp, P: Params): number {
   const q = rememberedOdds(c, route.neighbor, power, n, P);
   const [dx, dz] = sectorDir(route.sector), [ex, ez] = rangeEdge(world, troop, dx, dz);
   const tripM = Math.hypot(ex - c.position[0], ez - c.position[2]) + Math.PI / 4 * troop.radius + troop.radius;
-  const D = Math.min(1, light / (tripM / P.walkMps / 3600));
+  const D = Math.min(1, light / (tripM / tripSpeed(world, c, P) / 3600)); // stage E2i (walkGait): his walking speed (gait.ts), walkMps when off
   const fatigue = 1 - (x.slp ?? 1 - c.energy);
   const ceiling = P.patrolLeadScore + P.patrolLeadMaleW * (x.ownMales - P.patrolMinMales) + c.personality.boldness * P.patrolLeadBoldW;
   return ceiling * Math.min(1, S * q * D * Math.max(0, fatigue) * (1 + (x.arousal ?? 0)));

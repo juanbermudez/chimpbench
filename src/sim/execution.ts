@@ -27,6 +27,7 @@ import { BANK_A, BANK_B, CHANNEL, FORD, bankOf, bestFord, dryPoint, fordExits, s
 import { markDanger, noteContact } from './contact';
 import { cellAt, gridOf, pressureAt, rangeEdge, sectorDir, useLevels } from './territory';
 import { patrolRoute, patrolValueOn } from './patrol';
+import { bodyState, gaitOn, runSpeedOf, tripSpeed, walkSpeedOf, youngStage } from './gait';
 import { GROOM_BOND_ACTOR, GROOM_BOND_RECIP, GROOM_SOCIAL_ACTOR, GROOM_SOCIAL_RECIP, upkeepOnly } from './upkeep';
 
 // Bout durations in eco-minutes [min, max] (registry bout*Min / bout*Max).
@@ -61,9 +62,11 @@ function boutHours(world: World, c: Chimp, action: Action): number {
 }
 
 export function speedFactor(world: World, c: Chimp): number {
-  const f = bodySpeed(c) * (1 - 0.3 * world.environment.rain); // life stage, injury and alertness (huntpursuit.ts), then rain
-  // stage E2c (darkCost): walking and climbing slow a little in poor light (light.ts paceAt; figueiro2011, cross-species)
   const P = paramsOf(world);
+  // life stage, injury and alertness (huntpursuit.ts), then rain; stage E2i (walkGait): without the life stage below 10 y,
+  // which the body's walking speed carries by mass (gait.ts) and runSpeedOf and the climb in moveTo restore
+  const f = (gaitOn(P) ? bodyState(c) : bodySpeed(c)) * (1 - 0.3 * world.environment.rain);
+  // stage E2c (darkCost): walking and climbing slow a little in poor light (light.ts paceAt; figueiro2011, cross-species)
   return darkOn(P) ? f * paceAt(P, visionNow(world, c.position[1])) : f;
 }
 
@@ -104,6 +107,7 @@ function huntPursuitMove(world: World, c: Chimp, ids: readonly number[], g: read
 export function moveTo(world: World, c: Chimp, gx: number, gy: number, gz: number, speed: number, stop: number): boolean {
   const p = c.position;
   const f = speedFactor(world, c);
+  const fc = gaitOn(paramsOf(world)) ? f * youngStage(c) : f; // stage E2i (walkGait): climbing keeps its life-stage factor
   const stream = world.stream;
   const ground = p[1] < 0.3;
   let tx = gx, tz = gz, detour = false;
@@ -132,7 +136,7 @@ export function moveTo(world: World, c: Chimp, gx: number, gy: number, gz: numbe
   if (hd > 0.01) c.heading = Math.atan2(dx, dz);
   if (goalD > 3 && p[1] > 0.05) {
     if (stream && streamCell(world, p[0], p[2]) === CHANNEL && hd > 0.01) { p[0] += dx / hd * 0.8; p[2] += dz / hd * 0.8; return false; } // move through the crown until above the bank
-    p[1] = Math.max(0, p[1] - paramsOf(world).climbMps * TICK_SECONDS * f * 1.4);
+    p[1] = Math.max(0, p[1] - paramsOf(world).climbMps * TICK_SECONDS * fc * 1.4);
     return false;
   }
   const halt = detour ? 0 : stop;
@@ -166,7 +170,7 @@ export function moveTo(world: World, c: Chimp, gx: number, gy: number, gz: numbe
   if (detour) return false;
   const dy = gy - p[1];
   if (Math.abs(dy) > 0.05) {
-    const st = paramsOf(world).climbMps * TICK_SECONDS * f;
+    const st = paramsOf(world).climbMps * TICK_SECONDS * fc;
     if (Math.abs(dy) <= st) p[1] = gy; else { p[1] += Math.sign(dy) * st; return false; }
   }
   return hd <= stop + 0.05;
@@ -239,7 +243,8 @@ export function startAction(world: World, c: Chimp, cand: Candidate, source: Dec
   // stage C7a (field): a trip to a remembered tree is not re-decided on the way; the bout lasts the walk plus 5 min
   if (cand.action === 'travel' && meta.v === V.TREE && paramsOf(world).travelCommit === 1) {
     const t = index(world).treeById.get(cand.targetId);
-    if (t) x.actEnd = Math.max(x.actEnd, world.time + (Math.hypot(t.position[0] - c.position[0], t.position[2] - c.position[2]) / paramsOf(world).walkMps / 60 + 5) / 60);
+    // stage E2i (walkGait): the walk at the speed the animal will walk at (gait.ts tripSpeed; walkMps when off)
+    if (t) x.actEnd = Math.max(x.actEnd, world.time + (Math.hypot(t.position[0] - c.position[0], t.position[2] - c.position[2]) / tripSpeed(world, c, paramsOf(world)) / 60 + 5) / 60);
   }
   // stage C7b (field; docs/staging/c7b-prereg.md 3.1): a party follower of a companion on such a trip stays with it until
   // the trip ends (joint travel after recruitment, gruberZuberbuhler2013 [M]; to the destination: design)
@@ -579,7 +584,8 @@ function waitForParty(world: World, c: Chimp, gx: number, gz: number): boolean {
 
 /** Per-tick execution of the current action. */
 export function executeAction(world: World, c: Chimp): void {
-  const P = paramsOf(world), WALK = P.walkMps, RUN = P.runMps, MATE_INTERVAL_H = P.mateIntervalH;
+  // stage E2i (walkGait): the body's walking speed and the unchanged running speed (gait.ts; walkMps and runMps when off)
+  const P = paramsOf(world), WALK = walkSpeedOf(world, c, P), RUN = runSpeedOf(c, P), MATE_INTERVAL_H = P.mateIntervalH;
   const x = ix(c);
   c.actionTime += TICK_SECONDS;
   // males pant-hoot around travel (1.4 calls per male-hour, 43% after travelling; mitaniNishida1993) [M]; fewer where
@@ -917,7 +923,7 @@ function nightAllowed(P: Params, c: Chimp, x: ChimpX, m: Chimp): boolean {
 }
 
 function nestTick(world: World, c: Chimp): void {
-  const P = paramsOf(world), WALK = P.walkMps;
+  const P = paramsOf(world), WALK = walkSpeedOf(world, c, P); // stage E2i (walkGait)
   const x = ix(c);
   const idx = index(world);
   if (P.rhythmSleep === 1) lightArousal(world, c);
@@ -977,7 +983,7 @@ export function selfFeed(c: Chimp, P: Params): number {
 }
 
 function forageTick(world: World, c: Chimp): void {
-  const P = paramsOf(world), WALK = P.walkMps;
+  const P = paramsOf(world), WALK = walkSpeedOf(world, c, P); // stage E2i (walkGait)
   const x = ix(c);
   const idx = index(world);
   if (c.targetId < 0) {
@@ -1060,7 +1066,7 @@ function fallbackTick(world: World, c: Chimp): void {
       x.gx = px + Math.sin(a) * 30; x.gz = pz + Math.cos(a) * 30;
     } else { const a = hash01(c.id, world.tick, 3) * Math.PI * 2; x.gx = px + Math.sin(a) * 0.8; x.gz = pz + Math.cos(a) * 0.8; }
   }
-  if (x.gx !== 0 || x.gz !== 0) moveTo(world, c, x.gx, 0, x.gz, P.walkMps * 0.3, 0.2);
+  if (x.gx !== 0 || x.gz !== 0) moveTo(world, c, x.gx, 0, x.gz, walkSpeedOf(world, c, P) * 0.3, 0.2); // stage E2i (walkGait): the body's speed
   // the ledger: the cell loses only what the gut takes (E1c: by body size); the timers: the hunger removed
   // stage E2c (darkCost): feeding time is worth what vision on the floor allows (light.ts)
   const dtH = darkOn(P) ? TICK_HOURS * visionNow(world, c.position[1]) : TICK_HOURS;
@@ -1081,7 +1087,7 @@ export function roughByForce(c: Chimp, o: Chimp, time: number, P: Params): boole
 }
 
 function pairTick(world: World, c: Chimp, o: Chimp | undefined): void {
-  const P = paramsOf(world), WALK = P.walkMps;
+  const P = paramsOf(world), WALK = walkSpeedOf(world, c, P); // stage E2i (walkGait)
   const x = ix(c);
   if (!o || !o.alive || o.troopId !== c.troopId) return finish(world, c);
   const d = hd(c, o);
@@ -1162,7 +1168,7 @@ function copulate(world: World, m: Chimp, f: Chimp): void {
 }
 
 function mateTick(world: World, c: Chimp, o: Chimp | undefined): void {
-  const P = paramsOf(world), WALK = P.walkMps, MATE_INTERVAL_H = P.mateIntervalH;
+  const P = paramsOf(world), WALK = walkSpeedOf(world, c, P), MATE_INTERVAL_H = P.mateIntervalH; // stage E2i (walkGait)
   if (!o || !o.alive) return finish(world, c);
   const x = ix(c);
   if (!moveTo(world, c, o.position[0], o.position[1], o.position[2], WALK * 1.2, 1)) { if (c.actionTime > P.mateApproachS) { x.lastMate = Math.max(x.lastMate, world.time - MATE_INTERVAL_H + 0.5); finish(world, c); } return; }

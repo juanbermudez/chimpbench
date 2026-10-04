@@ -8,6 +8,7 @@ import { PARTY_EVERY, TICK_HOURS, chimpCells, index, ix, simOf } from './state';
 import { markDanger, noteContact } from './contact';
 import { SECTORS, cellAt, gridOf, incursionPoint, rangeEdge, recordUse, sectorDir, useLevels } from './territory';
 import { daylightLeftH, patrolPower, patrolValueOn, powerOdds } from './patrol';
+import { tripSpeed } from './gait';
 
 const parent: number[] = [];
 function find(i: number): number { while (parent[i] !== i) { parent[i] = parent[parent[i]]; i = parent[i]; } return i; }
@@ -210,7 +211,7 @@ export function updatePatrols(world: World): void {
         const pw = patrolPower(world, p.file, P), avg = pw.males > 0 ? pw.malePower / pw.males : strength(leader, P), m = lx.nbm?.[nb.id];
         const odds = m && m > 0 ? powerOdds(pw.power, m * avg, P) : 0.5;
         const [ix0, iz0] = incursionPoint(world, nb, p.wx, p.wz, Math.floor(p.start));
-        const wayH = (Math.hypot(ix0 - leader.position[0], iz0 - leader.position[2]) + Math.hypot(troop.center[0] - ix0, troop.center[2] - iz0)) / P.walkMps / 3600;
+        const wayH = (Math.hypot(ix0 - leader.position[0], iz0 - leader.position[2]) + Math.hypot(troop.center[0] - ix0, troop.center[2] - iz0)) / tripSpeed(world, leader, P) / 3600; // stage E2i (walkGait): the leader's walking speed (gait.ts), walkMps when off
         p.incursion = odds > 0.5 && daylightLeftH(time) >= wayH;
         // iteration 2 (patrolValue 3): advance, hold or retreat by the same odds (lemoine2023): a patrol whose members on it
         // are outmatched by the neighbour's males as remembered turns home at the edge instead of holding it

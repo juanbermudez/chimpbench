@@ -43,6 +43,7 @@ const TRACK_E_SWITCHES = [
   'huntPursuit', // E4k
   'choiceBelief', // E3e
   'leftoverRules', // E4m
+  'walkGait', // E2i
 ] as const;
 
 test('Track E switches are all 0 by default in both profiles', () => {

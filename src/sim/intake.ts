@@ -55,9 +55,9 @@ export interface TreeIntake {
  * crop share alone (stage C13c, `intakeCropOnly`: the rules' food worth already scales with hunger, so capping the time
  * by hunger too counted it twice). The Jev facts keep the cap.
  */
-export function treeIntake(c: Chimp, P: Params, crop: number, feeders: number, distM: number, hungerCap = true): TreeIntake {
+export function treeIntake(c: Chimp, P: Params, crop: number, feeders: number, distM: number, hungerCap = true, speed = P.walkMps): TreeIntake {
   const { fruitPerH, hungerPerH } = fruitRate(c, P);
-  const walkH = distM / P.walkMps / 3600;
+  const walkH = distM / speed / 3600; // stage E2i (walkGait): the animal's walking speed (gait.ts tripSpeed), walkMps by default
   // feeding lasts until the crown's share is eaten or the hunger is gone, whichever comes first
   const share = crop / (1 + feeders);
   if (P.energyLedger === 1 && P.ledgerDrive === 1) {
@@ -86,13 +86,14 @@ export function treeIntake(c: Chimp, P: Params, crop: number, feeders: number, d
  * takes distM ÷ (walkMps × pace) and feeding runs at the vision `see` (E2c's light on arrival; 1 by day). A tree whose
  * bout does not pay its walk is worth 0. Drupe energy, as treeIntake. Pure.
  */
-export function netRateShare(c: Chimp, P: Params, crop: number, feeders: number, distM: number, climbM: number, pace = 1, see = 1): number {
+export function netRateShare(c: Chimp, P: Params, crop: number, feeders: number, distM: number, climbM: number, pace = 1, see = 1, speed = P.walkMps): number {
   const kcal = fruitKcalPerUnit(P, false), R = fruitRate(c, P).fruitPerH * kcal;
   if (!(R > 0) || !(see > 0)) return 0;
   const E = Math.min(Math.max(0, crop) / (1 + feeders) * kcal, boutRoom(c, P, R));
   if (!(E > 0)) return 0;
   const C = locomotionKcal(c, P, distM, climbM);
-  return E > C ? (E - C) / (distM / (P.walkMps * pace) / 3600 + E / (R * see)) / R : 0;
+  // stage E2i (walkGait): `speed` is the animal's walking speed (gait.ts tripSpeed), walkMps by default
+  return E > C ? (E - C) / (distM / (speed * pace) / 3600 + E / (R * see)) / R : 0;
 }
 
 /**

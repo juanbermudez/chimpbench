@@ -27,9 +27,12 @@ export const HUNT_STANDOFF_M = 2;
  * the rain and light terms, which slow a fleeing colobus as much and so stay out of the pursuit's speed ratio. Pure.
  */
 export function bodySpeed(c: Chimp): number {
-  const stage = c.age < 2 ? 0.55 : c.age < 5 ? 0.7 : c.age < 10 ? 0.88 : c.age >= 40 ? 0.82 : 1;
-  return stage * (1 - 0.6 * c.injury) * (0.7 + 0.3 * c.energy);
+  return lifeStage(c) * injuryPace(c) * alertPace(c);
 }
+/** bodySpeed's parts (stage E2i, gait.ts, reads them apart; the product above is unchanged): life stage, injury, alertness. */
+export const lifeStage = (c: Chimp): number => c.age < 2 ? 0.55 : c.age < 5 ? 0.7 : c.age < 10 ? 0.88 : c.age >= 40 ? 0.82 : 1;
+export const injuryPace = (c: Chimp): number => 1 - 0.6 * c.injury;
+export const alertPace = (c: Chimp): number => 0.7 + 0.3 * c.energy;
 
 /** Half-angle (rad) of the escape directions a pursuer at k times the evader's speed cuts off: asin(k), all (π) when k > 1. */
 export const coneHalfAngle = (k: number): number => (k > 1 ? Math.PI : Math.asin(Math.max(0, k)));

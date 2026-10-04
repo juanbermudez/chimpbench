@@ -15,6 +15,7 @@ import { darkOn } from './light';
 import { circadianOn } from './circadian';
 import { IMPULSE_HUNT, IMPULSE_PATROL } from './perception';
 import { index, isChimpId, isTreeId, ix } from './state';
+import { tripSpeed } from './gait';
 
 // Stage C13 (docs/realism-design.md "C13 pre-registration"): the rules decision policy RG. At a decision point a
 // rules-driven chimp aged rgMinAge+ first asks the intention gate of the Jev free arms (src/decide/gate.ts, design A
@@ -147,7 +148,7 @@ export function rgMenu(world: World, c: Chimp, all: Candidate[]): Candidate[] {
  * view or a remembered one offers per hour, walk included. tests/sim-rg.test.ts checks it against the facts version.
  */
 export function patchPoorHere(world: World, c: Chimp, tree: number, P: Params): boolean {
-  const x = ix(c), idx = index(world), px = c.position[0], pz = c.position[2];
+  const x = ix(c), idx = index(world), px = c.position[0], pz = c.position[2], spd = tripSpeed(world, c, P); // stage E2i (walkGait): gait.ts
   let best = 0;
   for (const id of x.trees) {
     if (id === tree) continue;
@@ -155,12 +156,12 @@ export function patchPoorHere(world: World, c: Chimp, tree: number, P: Params): 
     if (!t) continue;
     let feeders = 0;
     for (const sid of x.seen) { const o = idx.byId.get(sid); if (o && o.alive && o.id !== c.id && o.action === 'forage' && o.targetId === t.id) feeders++; }
-    best = Math.max(best, treeIntake(c, P, P.patchEcology === 1 ? fruitAt(world, t) : t.fruit, feeders, Math.hypot(t.position[0] - px, t.position[2] - pz)).perHourInclWalk);
+    best = Math.max(best, treeIntake(c, P, P.patchEcology === 1 ? fruitAt(world, t) : t.fruit, feeders, Math.hypot(t.position[0] - px, t.position[2] - pz), true, spd).perHourInclWalk);
   }
   for (const m of c.memory) {
     if (m.kind !== 'tree' || m.entityId === tree || x.trees.includes(m.entityId) || world.time - m.seenAt >= P.memTravelHorizonH || !idx.treeById.get(m.entityId)) continue;
     const d = Math.hypot(m.position[0] - px, m.position[2] - pz);
-    if (d >= P.memoryTreeMinM) best = Math.max(best, treeIntake(c, P, x.treeCrop?.[m.entityId] ?? UNKNOWN_CROP, 0, d).perHourInclWalk);
+    if (d >= P.memoryTreeMinM) best = Math.max(best, treeIntake(c, P, x.treeCrop?.[m.entityId] ?? UNKNOWN_CROP, 0, d, true, spd).perHourInclWalk);
   }
   const here = isTreeId(tree) && x.trees.includes(tree) ? fruitRate(c, P).hungerPerH : leafRate(world, px, pz, P, c);
   return best >= GATE.patchRatio * here && best > 0;
