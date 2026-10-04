@@ -2425,3 +2425,16 @@ into its band (0.377 → 0.500); adult males' reserves better (−0.043 → −0
 
 **Verdict: S21 passes the keep rule and replaces S19 as the best integrated candidate** (45 prescriptions; no fitted
 choice temperature; held-out better beyond noise; the longest-standing miss, T-FOOD-10, halved).
+
+## S22 confirm (registered 4 October 2026 before its run)
+
+**S22 = S21 + E4m's `leftoverRules` 3** (rough play only when the stronger player is acutely aroused relative to the
+size gap; aroused animals rarely start play; patrol listening stops at waypoints and after a heard chorus; `roughPlayP`
+and `patrolStopEveryMin` out: 45 → 43). **Reference group, new:** S21 in confirm mode (S21, e7d8d8e) plus three re-draws
+by `rngSalt` 1, 2, 3 (S21c1–S21c3, bench-run2). Standard keep rule with amendment 3's rare rows. Bench, energy-diagnose
+and rhythm-metrics, 5 seeds, 30 + 60 days, from bench-run3 moved to this commit.
+
+**Predictions (against the S21 group; moderate confidence unless stated).** Prescriptions 43 (high); viability and night
+safety pass; T-ACT-4 a little higher than S21's (low); T-PAT-1 lower or unscored (the observer's patrol classifier needs
+two listening stops; low); T-SOC-3 and T-SOC-5 within or just below the group's spread (low); reserves within spread;
+fitted and held-out inside noise.

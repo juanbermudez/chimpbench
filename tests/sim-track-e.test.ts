@@ -42,6 +42,7 @@ const TRACK_E_SWITCHES = [
   'redecideValue', // E3d
   'huntPursuit', // E4k
   'choiceBelief', // E3e
+  'leftoverRules', // E4m
   'walkGait', // E2i
 ] as const;
 

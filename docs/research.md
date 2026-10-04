@@ -3301,6 +3301,55 @@ fetched (the algorithm is quoted from gershman2018).
 - normandBoesch2009, normand2009, ban2014, janmaat2013a and janmaat2013b are already cited; the entries above add
   findings.
 
+### E.51 Addendum: E4m four small rules (4 October 2026)
+
+Read for stage E4m (docs/staging/e4m-prereg.md): rough play, listening stops on patrols, meat per capture. No input
+value was taken from the play sources; they give the mechanism's direction (restraint and its failure) and context for
+the model's escalation rate, never a target.
+
+- **Play escalates when restraint fails, and rarely in chimpanzees** [cordoni2018] (FT, PMC5841745; captive, ZooParc de
+  Beauval, one group of 15 chimpanzees and one of 8 lowland gorillas, video-coded play sessions; a session ends when the
+  players stop or one moves away, a new one after 10 s) [M, captive]. Introduction: "individuals that are more dominant
+  and physically powerful generally limit their strength in order to balance the session while playing with
+  subordinates or physically weaker subjects (self-handicapping behaviour)". Results: play sessions "escalated into real
+  aggression more frequently in gorillas (mean 0.031 ± 0.009SE) than in chimpanzees (mean 0.003 ± 0.001SE)"; dyadic
+  sessions lasted 67.9 ± 13.1 s in chimpanzees; chimpanzees "successfully manage unbalanced and unpredictable playful
+  interactions, which rarely escalated into real aggression". Use in E4m: direction (the stronger partner restrains its
+  force; escalation is its failure) and context for the rate per session; nothing set from it.
+- **What counts as an escalated session** [palagiCordoni2012] (FT, PMC3530486; captive, 8 infant, 7 juvenile and 21
+  adult chimpanzees at Beauval and Amersfoort, focal sampling, 31 ± 1.4 h per individual) [M, captive]: "We classified as
+  'escalated' those play sessions that ended with screaming and/or bared-teeth by one of the players and/or ended with
+  an aggressive interaction (e.g., chase/flee) between them"; chimpanzee and bonobo infants did not differ in escalation,
+  juvenile chimpanzees escalated more than juvenile bonobos (rates in a figure only). Use: the definition of the
+  readout (a play bout that ends in the partner's scream).
+- **Restraint grows with competition in play** [cordoniPalagi2011] (FT, PMC3217932; captive, Beauval, infants and
+  juveniles) [M, captive]: "As play in juveniles is more competitive than in infants, the former have to restrain
+  themselves in order to maintain as much as possible a symmetrical session and to limit the risk of escalation into
+  serious fighting"; play with mothers is an infant's first social play. Use: direction.
+- **The prey a capture yields: not resolved** (for `meatEatPerH`, which sets the energy of a capture at 60 ×
+  `ledgerMeatKcalPerMin` ÷ 0.35 = 1,149 kcal). Verified: Ngogo red colobus kills by age-sex class 2 adult males, 18 adult
+  females, 11 subadults, 45 juveniles, 20 infants of 96 (mitaniWatts1999, Table 3, FT; 66% immature, Table 6); ashy red
+  colobus body weight 7.6 kg as the species value used in a prey-preference analysis of four East African sites
+  [bugir2021] (FT, PMC8216973; a secondary species mean, not a Kibale measurement). Not verified (time box):
+  immature red colobus body masses (Struhsaker 1975 and 2010 are books; Teelen 2008 and Watts & Mitani 2002 closed) and
+  the edible share of a carcass. Without them the edible energy of an average capture cannot be computed, so no input
+  replaces the hourly rate this stage.
+
+**Sources:**
+- *new* cordoni2018: Cordoni G, Norscia I, Bobbio M, Palagi E 2018. Differences in play can illuminate differences in
+  affiliation: a comparative study on chimpanzees and gorillas. *PLoS ONE* 13(3):e0193096.
+  [doi:10.1371/journal.pone.0193096](https://doi.org/10.1371/journal.pone.0193096) (FT, PMC5841745).
+- *new* palagiCordoni2012: Palagi E, Cordoni G 2012. The right time to happen: play developmental divergence in the two
+  Pan species. *PLoS ONE* 7(12):e52767. [doi:10.1371/journal.pone.0052767](https://doi.org/10.1371/journal.pone.0052767)
+  (FT, PMC3530486).
+- *new* cordoniPalagi2011: Cordoni G, Palagi E 2011. Ontogenetic trajectories of chimpanzee social play: similarities
+  with humans. *PLoS ONE* 6(11):e27344. [doi:10.1371/journal.pone.0027344](https://doi.org/10.1371/journal.pone.0027344)
+  (FT, PMC3217932).
+- *new* bugir2021: Bugir CK, Butynski TM, Hayward MW 2021. Prey preferences of the chimpanzee (*Pan troglodytes*).
+  *Ecology and Evolution* 11(12):7138–7146. [doi:10.1002/ece3.7633](https://doi.org/10.1002/ece3.7633) (FT,
+  PMC8216973).
+- mitaniWatts1999, wattsMitani2001 and wilson2001 are already cited; the entries above add findings.
+
 ### Addendum: E2i walking speed (4 October 2026)
 
 Read for stage E2i ([staging/e2i-prereg.md](staging/e2i-prereg.md)): the speed a chimpanzee walks at while walking, as

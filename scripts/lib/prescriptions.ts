@@ -300,6 +300,9 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   // stage E4k (huntPursuit; docs/staging/e4k-prereg.md §4): success and extra captures come from the pursuit geometry
   // (src/sim/huntpursuit.ts), in resolveHunt and in the hunt's valuation (huntvalue.ts): no success curve, no capture die
   ...same(['huntSuccessMax', 'huntSuccessRate', 'huntExtraKillP'], P => !(P.huntPursuit >= 1), 'not read while huntPursuit is 1 or 2: a hunt succeeds when the hunters at canopy height leave the colobus no escape direction, one monkey per disjoint closing set (src/sim/ecology.ts resolveHunt, src/sim/huntvalue.ts huntRate; stage E4k)'),
+  // stage E4m (leftoverRules; docs/staging/e4m-prereg.md §5): a sum of bits, one per entry switched out
+  roughPlayP: { when: P => (P.leftoverRules & 1) === 0, why: 'not read while leftoverRules has bit 1: play turns rough when the player\'s acute drive times its mass exceeds the partner\'s mass times (1 − its acute drive) (src/sim/execution.ts roughByForce; no die, no age rule)' },
+  patrolStopEveryMin: { when: P => (P.leftoverRules & 2) === 0, why: 'not read while leftoverRules has bit 2: the leader stops at the waypoints and after a stranger chorus heard by a member, outside one caller-counting window (src/sim/parties.ts updatePatrols, chorusHeard)' },
 };
 
 /** One ACTIVE_WHEN rule for several entries. */
@@ -371,6 +374,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   redecideValue: { stage: 'E3d', needs: {} },
   huntPursuit: { stage: 'E4k', needs: {} },
   choiceBelief: { stage: 'E3e', needs: {} },
+  leftoverRules: { stage: 'E4m', needs: {} },
   walkGait: { stage: 'E2i', needs: {} },
   patrolFusion: { stage: 'E4j', needs: { patrolValue: 2 }, removesNothing: 'corrects the occasion on which patrolValue 2 weighs the lead (a fusion of a party holding patrolMinMales adult males, judged by the males seen within reunionH, in place of a flicker of the 35 m view); adds no magnitude and switches no prescription out (e4j-prereg §4)' },
 };

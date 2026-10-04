@@ -14,11 +14,15 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 08:15; deploy held by the user).** Nothing.
+- **Running now (4 October 08:55; deploy held by the user).** Stage agent **E2i** (`e2i-walking`). Integrator: S21's
+  confirm group (S21 at e7d8d8e + S21c1–S21c3 by `rngSalt` 1–3 in bench-run2, `integrator/conf21s.sh`; S21c1 and S21c2
+  running as a detached chain (no task notification: check `bench-run2/artifacts/validation/e/s21/S21c*`), S21c3 to
+  start) and the **S22** confirm (S21 + `leftoverRules` 3; registered ea794ff) in bench-run3 moved to ea794ff
+  (`integrator/conf22.sh`). Judge with a copy of `integrator/judge_s19group.py` pointed at the S21 group.
 - **S21 done: now the best integrated candidate** (e-stack2-confirm.md "S21 results"; S19 + `choiceBelief` 2): 45
   prescriptions, viable, night safe, held-out without the rare rows better beyond noise (z −5.0; T-FOOD-10 0.81 → 0.58),
   T-HUN-2 0.50 (in band). Costs: T-PAT-1 0.093 (just below band), T-HUN-1 5.2 (floor). Decision guide and hosted copy
-  show S19 (S21 needs STACKS.S21 and Before/Now for the temperature).
+  on S21.
 - **S20 not adopted; S19 is the best integrated candidate** (e-stack2-confirm.md "S20 results"): S20 (S17 + S18 + S19,
   44) passed the registered sums only through a reference spread inflated by T-IGE-3 (S17c1 24.7) and is worse beyond
   noise without it (z +3.0), with rest at 0.252 and juveniles −0.125 %/day. S19 (46) passed every sum. e-noise.md
@@ -68,6 +72,8 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   class's balance up (mothers −0.117 → −0.054%/day), males walk 2.00 km, T-ACT-2 0.17, T-RNG-4 1.95, T-HUN-1 23.8 (in
   band), held-out without the rare rows better beyond noise (z −3.3); costs: T-FOOD-2 0.811 and T-ACT-3 0.194 above their
   bands; infants drink more milk as mothers refuse less.
+- **E4m merged** (`leftoverRules`, off; 3 a provisional keep candidate, 45 → 43): rough play and patrol listening stops
+  from state and events instead of a die and a schedule. Confirm on S21 as S22.
 - **E3e merged** (`choiceBelief`, off; 2 a provisional keep candidate, 46 → 45): no fitted temperature; unseen
   crops sampled from the animal's belief; the rules' jitter as evaluation noise. New `rngSalt` re-draws a world without
   changing behaviour (for replicate references once `rgTemperature` is out). Confirm on S19 as S21.
@@ -128,8 +134,8 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   3.43 km a day (S3 2.93) and the deficits deepen: E5a interacts with value-based calls; E5b fixed it (S5).
 - **Hosted site, 2 October 14:50:** `site` now also holds the rewritten About page (merged `site-about` 4618daf: first-person
   hero, stale sections cut, What's next) and the decision guide as a hidden page (`docs/decision-guide.html`, a Vite
-  input: unlinked, noindex, at /docs/decision-guide). The guide now shows **S19** (46 prescribed, 89 replaced; merged
-  `guide-s19`; `STACK = STACKS.S19` in scripts/decision-guide.ts) and the site copy is written by
+  input: unlinked, noindex, at /docs/decision-guide). The guide now shows **S21** (45 prescribed, 90 replaced; merged
+  `guide-s21`; `STACK = STACKS.S21` in scripts/decision-guide.ts) and the site copy is written by
   `pnpm exec tsx scripts/decision-guide.ts --hosted <site>/docs/decision-guide.html` (site 149701c from track-e 8f5319e;
   `integrator/hosted_guide.py` retired). Build checked: no console errors, data figures draw, dist 32 MB without audio.
   Still no deploy: the user has not said how to publish.
@@ -309,6 +315,7 @@ mkdir -p ../<name>/artifacts/validation && ln -s /Users/juanbermudez/Desktop/MGO
 | E3d re-decision | `redecideValue` | 2 a provisional keep candidate (49 → 47) | `rgMaxAgeH` ended 7.4% of switches, 76% of them when the act was no longer best; `continueBonus` doubled carrying on at an interrupt; `finishedPenalty` mostly stopped a finished joined trip from restarting. A1 (keep an act while it stays best, holding the choice's random part) was null: a random pick of leaves was never undone (leaf bouts 33 → 78 min). A2 adds a fresh choice when a need changes level or the light changes phase: viable, sums inside noise, night safe; costs: fruit share 0.65, T-HUN-1 36, mothers −0.03 %/day. Open: the choice noise (`rgTemperature`) still decides between feeding options the animal could rank by rate. | e3d-prereg.md |
 | E4k hunt success | `huntPursuit` | 2 a provisional keep candidate (49 → 46) | The success draw decided 76% of hunts, the two-hunter rule the rest; positions (hash bearings), climbing and skill carried no information; no canopy structure or colobus composition. P2: a group is caught when hunters at canopy height leave it no escape direction (each cuts off a cone set by his speed against the colobus, `huntPursuitSpeedRatio` 1, design), read every tick; one kill per closing set; the hunt's value uses the same function. Success 0.48 (truth), hunts −55%, T-HUN-7 1.0 (below band), juveniles' trend lower. Open: only half the males a leader sees join him (hand-set join value); no canopy structure or colobus composition. | e4k-prereg.md |
 | E3e choice noise | `choiceBelief` (1, 2); `rngSalt` | 2 a provisional keep candidate (46 → 45); `rngSalt` a behaviour-free re-draw lever | On S19 38% of draws took a non-top option, half between options the animal could see or feel (22% of rest, 30% of grooming, 18% of feeding); a visible option and a tree unseen for days were taken at the same rate. A1 (exact values only, unseen crops drawn from belief): null (acts not held, nearest crowns, earlier departures). A2 keeps the rules' existing ±0.12 jitter as evaluation noise and nest-mates hold each other in the dark: every sum lower, reserves up, night safe. With `redecideValue` 2 (A2r): fitted worse (z +6.5), encounters triple. Open: the noise covered missing value terms (switching cost in place, a crop's value beyond one bout); the jitter's size was never derived. | e3e-prereg.md |
+| E4m four small rules | `leftoverRules` (1–3) | 3 a provisional keep candidate (45 → 43) | `roughPlayP` set every escalation of play (0.475 per immature-day, mostly answered by the victim's mother); `patrolStopEveryMin` set 79–86% of listening stops, which heard nothing walking would not; `meatEatPerH` sets every capture's energy (1,149 kcal) but no sourced carcass energy could replace it (not built); `guardMaxAgeY` only trims. Value 3: rough play only when the stronger player is acutely aroused relative to the size gap (aroused animals rarely start play); stops at waypoints and after a heard chorus. Costs: rest up (z +2.4), patrols harder for the observer's classifier (needs two stops). | e4m-prereg.md |
 | Integrated S2 | 28 switches | measured | 89 prescriptions; fitted = today's model; held-out without rare rows +2.9 (T-FOOD-10, travel). | e-stack2-confirm.md |
 | E1j ranging | — | done: no mechanism | Interim: in simulation truth mothers ÷ males is 0.69–0.77 (B, R, E1i pair); the observer's T-RNG-5 rests on 13–24 follow-days, so E1i's 0.84 was sampling; the band is Budongo only (Gombe 0.67–0.74, Kanyawara 0.83). R's real change vs B: males' food trips halve. | e1j-prereg.md |
 | E3 re-test | — | done (integrator) | The effect stands without the old hunger cap: persistence halves crown bouts (22 → 11 min) and the fruit share falls to 0.54. | e3-prereg.md, last section |

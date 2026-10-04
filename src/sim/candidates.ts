@@ -14,7 +14,7 @@ import { dayPhase } from './environment';
 import { driveOn, milkShare, milkWorth, nurseBoutWorth } from './energy';
 import { drinkWorth, waterOn } from './water';
 import { arrivalLight, brightening, needUnits, raceStake, rivalsAt } from './departure';
-import { endoOn, escalateScore, fastSpanH, rainFastScore, rainScore, redirectFastScore, redirectScore } from './endocrine';
+import { acuteDrive, endoOn, escalateScore, fastSpanH, rainFastScore, rainScore, redirectFastScore, redirectScore } from './endocrine';
 import { callValueOn, crownOf, pantHootValue } from './calls';
 import { huntRate, huntValueOn } from './huntvalue';
 import { joinShare, leadValue, patrolValueOn } from './patrol';
@@ -607,6 +607,8 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       + (P.assocBondW > 0 && L ? P.assocBondW * bond(c, L) : 0); // stage C9: bond with the leader (off by default)
   };
   // --- social: seen individuals -----------------------------------------------
+  // stage E4m (leftoverRules bit 1): the share of restraint the acute drive leaves (1 at rest; 1 without the bit)
+  const relaxed = (P.leftoverRules & 1) !== 0 ? 1 - acuteDrive(x, time, P) : 1;
   let bestGrunt = -1, bestGruntScore = -Infinity;
   let rival = -1, rivalCloseness = 0;
   let alliesNear = 0;
@@ -655,10 +657,16 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     // play [H]
     if (!carried && d < P.playRangeM && o.age >= 1 && !busy) {
       const invited = o.action === 'play' && o.targetId === c.id ? 0.7 : 0;
-      if (c.age >= 1 && c.age < 15 && o.age < 15 && Math.abs(o.age - c.age) < 7 && !(dependentOn(world, o) && isCarried(o, dependentOn(world, o))))
-        offer('play', o.id, pers.playfulness * 0.4 + e * 0.25 + (c.age < 10 ? 0.2 : 0.05) + (1 - c.social) * 0.15 + invited * 0.8 - d / P.playDistScaleM - h * 0.7 - rain * 0.7 - (night ? 1.5 : 0), invited ? V.ACCEPT : V.NONE);
-      else if (c.age >= 15 && o.age < 8 && o.age >= 1)
-        offer('play', o.id, 0.02 + pers.playfulness * 0.3 + (o.motherId === c.id ? 0.2 : 0) + invited - d / P.playAdultDistScaleM - h * 0.5 - rain * 0.7 - (night ? 1.5 : 0), invited ? V.ACCEPT : V.NONE);
+      // stage E4m (leftoverRules bit 1; docs/staging/e4m-prereg.md §5, amendment 1): play is initiated in a relaxed
+      // context (Burghardt's fifth criterion, as cited by cordoniPalagi2011), so its incentive terms count by the share of
+      // the animal's restraint its acute drive leaves (1 − A); the costs are unchanged. Without the bit, today's sums
+      if (c.age >= 1 && c.age < 15 && o.age < 15 && Math.abs(o.age - c.age) < 7 && !(dependentOn(world, o) && isCarried(o, dependentOn(world, o)))) {
+        const inc = pers.playfulness * 0.4 + e * 0.25 + (c.age < 10 ? 0.2 : 0.05) + (1 - c.social) * 0.15 + invited * 0.8;
+        offer('play', o.id, (relaxed < 1 ? relaxed * inc : inc) - d / P.playDistScaleM - h * 0.7 - rain * 0.7 - (night ? 1.5 : 0), invited ? V.ACCEPT : V.NONE);
+      } else if (c.age >= 15 && o.age < 8 && o.age >= 1) {
+        const inc = 0.02 + pers.playfulness * 0.3 + (o.motherId === c.id ? 0.2 : 0) + invited;
+        offer('play', o.id, (relaxed < 1 ? relaxed * inc : inc) - d / P.playAdultDistScaleM - h * 0.5 - rain * 0.7 - (night ? 1.5 : 0), invited ? V.ACCEPT : V.NONE);
+      }
     }
     // avoid a tense dominant who comes close or approaches (approach-retreat), not one resting a few metres away and
     // not one approaching to reconcile, groom, console, play or share, which would block repair

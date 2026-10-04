@@ -193,7 +193,11 @@ export function updatePatrols(world: World): void {
     const d = Math.hypot(leader.position[0] - p.wx, leader.position[2] - p.wz);
     const listen = (salt: number) => { p.stopUntil = time + (P.patrolStopMinMin + (P.patrolStopMaxMin - P.patrolStopMinMin) * hash01(p.leaderId, p.stops, salt)) / 60; p.lastStop = time; p.stops++; };
     if (d > P.patrolWaypointM) {
-      if (p.phase < 2 && time - p.lastStop >= P.patrolStopEveryMin / 60) listen(71);
+      // stage E4m (leftoverRules bit 2; docs/staging/e4m-prereg.md §5): no scheduled stop. On the way out the leader stops
+      // after a stranger chorus heard by a member since the last update, so the callers can be counted (the numerical
+      // assessment above) before the patrol walks on toward them, unless a stop began within one counting window
+      if ((P.leftoverRules & 2) !== 0) { if (p.phase < 2 && time - p.lastStop >= P.strangerCallerWindowH && chorusHeard(world, p.file, troop.id, time)) listen(74); }
+      else if (p.phase < 2 && time - p.lastStop >= P.patrolStopEveryMin / 60) listen(71);
       continue;
     }
     if (p.phase === 0) {
@@ -231,6 +235,22 @@ export function updatePatrols(world: World): void {
     } else done(true);
   }
   patrolParties(world);
+}
+
+/**
+ * Stage E4m (leftoverRules bit 2): whether a member on the patrol heard a stranger community call since the last patrol
+ * update (updatePatrols runs every PARTY_EVERY ticks; hear() sets heardTroop only for callers of another community).
+ * Pure.
+ */
+export function chorusHeard(world: World, file: readonly number[], troopId: number, time: number): boolean {
+  const byId = index(world).byId;
+  for (const id of file) {
+    const m = byId.get(id);
+    if (!m || !m.alive || m.action !== 'patrol') continue;
+    const x = ix(m);
+    if (x.heardTroop >= 0 && x.heardTroop !== troopId && Math.round((time - x.heardAt) / TICK_HOURS) < PARTY_EVERY) return true;
+  }
+  return false;
 }
 
 /**

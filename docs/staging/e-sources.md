@@ -1844,6 +1844,17 @@ exploration and an uncertainty bonus, value-only choice fitted worse); decision 
 (normandBoesch2009, normand2009, ban2014, janmaat2013a/b, already cited). New keys: gershman2018, wilson2014, costa2019.
 Not verified (not searched or fetched this stage): a Weber fraction for food quantity in chimpanzees, Thompson 1933, Krebs et al. 1978.
 
+## 51. Addendum: E4m four small rules (4 October 2026)
+
+Same text as research.md "Addendum: E4m four small rules": the stronger partner in play limits its force
+(self-handicapping), and chimpanzee play rarely escalates (cordoni2018, FT, captive: 0.003 ± 0.001 escalations per
+session against 0.031 in gorillas; dyadic sessions about 68 s); an escalated session ends in a scream, bared teeth or
+an aggressive interaction (palagiCordoni2012, FT, captive); juveniles restrain themselves to limit escalation
+(cordoniPalagi2011, FT, captive). Meat per capture not resolved: Ngogo red colobus kills were 66% immature
+(mitaniWatts1999 Table 3: 2 adult males, 18 adult females, 11 subadults, 45 juveniles, 20 infants of 96), ashy red
+colobus 7.6 kg as a species value (bugir2021, FT); immature masses and the edible share not verified. New keys:
+cordoni2018, palagiCordoni2012, cordoniPalagi2011, bugir2021.
+
 ## Addendum: E2i walking speed (4 October 2026)
 
 Same text as research.md "Addendum: E2i walking speed": wild chimpanzees walk at 0.88 m/s (males), 0.78 m/s (females) and
