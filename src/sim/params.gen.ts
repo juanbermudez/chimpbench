@@ -2,7 +2,7 @@
 /* eslint-disable */
 export const REGISTRY_VERSION = 1;
 /** Content hash of every live default, hard range, profile value and integer flag. Stored with each world. */
-export const REGISTRY_HASH = '060ba547a0ff0dea';
+export const REGISTRY_HASH = 'de9cd3f221188b33';
 
 /** Registry defaults (the compressed profile). */
 export const DEFAULTS = {
@@ -1254,7 +1254,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   departPersistMaxMin: [0, 600],
   departRace: [0, 1],
   departRetryMin: [0, 600],
-  departValue: [0, 1],
+  departValue: [0, 2],
   digestaDrupeDmGPerMin: [0.001, 1000000],
   digestaFallbackDmGPerMin: [0.001, 1000000],
   digestaFallbackNdf: [0, 1],

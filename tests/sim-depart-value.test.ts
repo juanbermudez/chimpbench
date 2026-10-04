@@ -96,3 +96,33 @@ test('departValue (field): deterministic over 12 h, JSON-lossless; departRetryMi
   assert.deepEqual(JSON.parse(JSON.stringify(a)), a);
   assert.equal(prescriptionCount(T).total, prescriptionCount({}).total - 2);
 });
+
+test('departValue 2: the audience watched and the company left are the settled companions only (not travelling, following or in a nest)', () => {
+  const one = scene(), two = scene({ departValue: 2 });
+  for (const s of [one, two]) s.a.social = 0.8;
+  // a resting companion is settled: the same company and signature under 1 and 2
+  assert.ok(audienceCompany(one.w, one.a, one.P) > 0);
+  assert.equal(audienceCompany(two.w, two.a, two.P), audienceCompany(one.w, one.a, one.P));
+  assert.equal(audienceSig(two.w, two.a), audienceSig(one.w, one.a));
+  // a companion on the move is audience (it may join) but not company staying keeps
+  for (const s of [one, two]) { s.b.action = 'travel'; s.b.targetId = s.far.id; ix(s.b).v = V.TREE; ix(s.b).aux = -1; }
+  assert.ok(departAudience(two.w, two.a) >= 1, 'still an audience: a trip is an attempt');
+  assert.ok(audienceCompany(one.w, one.a, one.P) > 0, 'iteration 1 counts it');
+  assert.equal(audienceCompany(two.w, two.a, two.P), 0, 'iteration 2 does not');
+  // what iteration 2 watches does not change while companions in transit change course
+  const sig = audienceSig(two.w, two.a);
+  two.b.targetId = two.w.trees.find(t => t.id !== two.far.id)!.id;
+  assert.equal(audienceSig(two.w, two.a), sig);
+});
+
+test('departValue 2 (field): deterministic over 12 h, JSON-lossless; the hold and the cap are not read; count −2', () => {
+  const T = { departValue: 2 };
+  const a = createWorld(48, { profile: 'field', params: T }), b = createWorld(48, { profile: 'field', params: T });
+  const read = new Set<string>();
+  traceParamReads(a, read);
+  for (let i = 0; i < 2880; i++) { tickWorld(a); tickWorld(b); }
+  assert.equal(worldHash(a), worldHash(b));
+  assert.ok(!read.has('departRetryMin') && !read.has('departPersistMaxMin'));
+  assert.deepEqual(JSON.parse(JSON.stringify(a)), a);
+  assert.equal(prescriptionCount(T).total, prescriptionCount({}).total - 2);
+});

@@ -5494,12 +5494,12 @@
    "units": "switch",
    "range": [
     0,
-    1
+    2
    ],
    "rangeBasis": "assumed",
    "hardRange": [
     0,
-    1
+    2
    ],
    "calibrate": false,
    "evidence": "design",
@@ -5516,7 +5516,7 @@
     "compressed": 0,
     "field": 0
    },
-   "notes": "Stage E5f switch (docs/staging/e5f-prereg.md §3): with departPersist 1, an attempt nobody joins or follows within departCheckMin ends in the initiator's own decision instead of a give-up and a re-launch hold: it records what it perceives of its audience (who is there and what each is doing; chimp.sim.dfa, candidates.ts audienceSig) and decides at once (an interrupt; from its own nest it is back in the nest, deciding). While that audience is unchanged, every own trip to a tree is a departure alone (execution.ts departAttempt: no attempt) worth its value less the company it would leave (candidates.ts audienceCompany: the best E5a companyValue among the audience; E5b's margin, nothing known at a goal out of sight); once the audience has changed, a trip is an attempt again, valued as before. No hold (departRetryMin not read) and no cap (departPersistMaxMin not read): re-launching and leaving alone follow from the initiator's valuation and what its companions do. No new magnitude. 0 = today, bit for bit. Design."
+   "notes": "Stage E5f switch (docs/staging/e5f-prereg.md §3): 1 (iteration 1): with departPersist 1, an attempt nobody joins or follows within departCheckMin ends in the initiator's own decision instead of a give-up and a re-launch hold: it records what it perceives of its audience (who is there and what each is doing; chimp.sim.dfa, candidates.ts audienceSig) and decides at once (an interrupt; from its own nest it is back in the nest, deciding). While that audience is unchanged, every own trip to a tree is a departure alone (execution.ts departAttempt: no attempt) worth its value less the company it would leave (candidates.ts audienceCompany: the best E5a companyValue among the audience; E5b's margin, nothing known at a goal out of sight); once the audience has changed, a trip is an attempt again, valued as before. No hold (departRetryMin not read) and no cap (departPersistMaxMin not read): re-launching and leaving alone follow from the initiator's valuation and what its companions do. 2 (iteration 2, e5f-prereg.md §5.2): the same, with the audience watched and the company left taken over the settled audience only (not travelling, following or in a nest: E5b's settled companion; nest-mates' company is already in the nest's own value, E2e nestCompany, so it is not charged twice). No new magnitude. 0 = today, bit for bit. Design."
   },
   {
    "id": "digestaDrupeDmGPerMin",

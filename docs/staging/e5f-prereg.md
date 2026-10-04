@@ -357,3 +357,67 @@ re-launch delays and the go-alone share are reported against the reference, neve
   `tryN` until its next trip (harmless: only a travelling initiator checks); the tool counts it "interrupted".
 - `src/sim/candidates.ts` audienceSig: a companion moving within its crown keeps its act and target (no change); one
   re-targeting the same act to another tree is a change (by definition).
+
+## 5. Iteration log
+
+(Each iteration is logged here and committed before its run; at most 3.)
+
+- **Iteration 1** (`departValue` 1, §3; arm A1): registered and committed with the code before any run of it (368356f);
+  run from a frozen checkout of 368356f (clean). Reference diagnostics (depart-diagnose and rhythm-metrics on S27q1–3,
+  switch off) from the same checkout. Results §6.1.
+- **Iteration 2** (`departValue` 2, §5.2; arm A2): registered and committed with the code before any run of it (this
+  commit). Disclosed: two unit tests and a 2-day smoke test (seed 48) ran on the iteration-2 code before this commit
+  (§5.2), and one probe of A1's code (below) was read.
+
+### 5.1 What A1 showed that iteration 2 addresses (read from A1's runs before registering iteration 2)
+
+A1 passes every registered criterion (§6.1), with two defects of its own definitions, found reading its runs:
+- **Company counted twice in the nest.** In the dark phases staying in a finished nest is already worth the company of
+  the nest-mates (E2e `nestCompany`, with E3e's rule: awake nest-mates count until the day phase). A1 also charges the
+  best awake audience member's company to every trip after an unanswered nest attempt, so a failed nest initiator is
+  held by the same company twice: after an unanswered nest attempt A1's next own trip is a re-attempt a median 55 min
+  later (168), a departure alone (38) or with no audience (34), against S27's re-attempt at the hold's end, 4.75 min (231).
+- **Companions in transit are watched as company.** The audience includes companions on their way somewhere (travelling
+  or following); their act or target changes within minutes, so the audience "changes" for reasons that do not bear on
+  the company the initiator keeps by staying. A1 re-launches to the same audience within 2 min after 9% of unanswered
+  attempts (925 of 10,324). A probe of A1's code (S27 + `departValue` 1, seed 48, 3 days after a 3-day burn-in; script
+  kept in the stage's scratch, not committed; disclosed, not a result): of 75 re-launches within 0.5 min of the check's
+  end, the changes before them were a companion in transit changing target (24), one arriving at its crown and starting
+  to feed (22), one leaving the party link (18), and single others.
+
+### 5.2 Iteration 2 (registered before its run): the company the animal has, as E5b defines it (`departValue` 2)
+
+**Change (same switch, value 2; candidates.ts `audienceOf` with `settled`, `audienceSig`, `audienceCompany`).** As
+iteration 1, except that both the audience the initiator watches and the company it would leave are taken over its
+**settled** audience: departAudience's set without the companions travelling, following or in a nest (E5b's settled
+companion: the company staying keeps; the nest-mates' company is already in the nest's own value, E2e). Whether a trip
+is an attempt is still decided by the whole audience (departAudience: anyone who could join). Consequences by
+construction: after an unanswered nest attempt the initiator weighs the trip against the nest with its nest-mates'
+company once; companions changing course in transit do not re-open attempts; a companion settling in, or a settled one
+leaving or changing what it does, does. No new magnitude; prescriptions as iteration 1 (42 → 40).
+
+**Smoke test (done before this registration; disclosed; seed 48, 1 + 2 days; not a result).** The mechanism runs (own
+trip chosen at 12.8% of first decisions after an unanswered check; going alone after 10.6% of unanswered attempts,
+median 1 min after the start; re-launches to the same audience within 2 min 20 of 366, A1's smoke 24 of 350). Unit tests
+(tests/sim-depart-value.test.ts, 6 with iteration 2's) pass.
+
+**Arm A2** = S27 + `departValue` 2: e-bench `--quick`, energy-diagnose, depart-diagnose and rhythm-metrics (seeds 48 and
+7, 30 + 30), from a frozen checkout of this commit; judged against the S27 group as A1 (§3).
+
+**Predictions (A2 against the S27 group, and against A1 where stated; low confidence unless stated).**
+
+| Quantity | S27 group / A1 | A2 | Confidence |
+| --- | --- | --- | --- |
+| Prescriptions | 42 / 40 | 40 | high |
+| Viability; night (adults out of a nest; T-RHY-5) | pass; 2.47%, 0.019 / A1 2.47%, 0.019 | pass; ≤ 3.3%, ≤ 0.033 | moderate |
+| After an unanswered nest attempt, a departure alone (share; median delay) | S27 13%, 4.75 min / A1 16%, 1 min | above A1's; ≤ 2 min | moderate |
+| Departures before sunrise (rhythm-metrics, all adults) | S27 0.52 / A1 0.53 | 0.50–0.62 | low |
+| Re-launches to the same audience within 2 min (share of unanswered) | A1 9.0% | below A1's | low |
+| Going alone after an unanswered attempt (share) | S27 6.7% / A1 11.1% | ≥ A1's | moderate |
+| T-PTY-1 | 4.59 ± 0.15 / A1 3.96 | 3.6–4.4 | low |
+| Reserves %/day, every class | S27 mean | within 0.03 of the mean | low |
+| Fitted; held-out with and without the rare rows | S27 mean | inside noise | moderate |
+
+**Kill criterion and verdict rule:** as iteration 1 (§3), unchanged. If A1 and A2 both pass, A2 is recommended on the
+registered grounds (no double count of the nest company; transit not taken for company), never on fitted rows; if A2
+fails, A1 stands as recorded with these two defects listed.

@@ -460,6 +460,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     const dv = P.departPersist === 1 && P.departValue >= 1;
     const held = P.departPersist === 1 && !dv && x.tryAt !== undefined && time < x.tryAt && departAudience(world, c) > 0;
     const lost = dv && x.dfa !== undefined && x.dfa === audienceSig(world, c) ? audienceCompany(world, c, P) : 0;
+    // (departValue 2, iteration 2: both over the settled audience, the company the animal has, E5b; see audienceSig)
     const shortlist = P.patchEcology === 1; // field: many remembered trees; score the few best by distance and hunger
     const water = waterOn(P); // stage E2g: thirst from the water ledger
     _mem.length = 0; _rk.length = 0; _dk.length = 0; _bl.length = 0;
@@ -1482,17 +1483,22 @@ export function nestCompanyValue(world: World, c: Chimp, P: Params, asleepOnly =
  * site is an attempt as by day. Sleeping nest-mates cannot join an attempt (design assumption).
  */
 export function departAudience(world: World, c: Chimp): number {
-  return audienceOf(world, c, null);
+  return audienceOf(world, c, null, false);
 }
 
-/** departAudience's set: own-community animals of 12 y or more within the party link of `c`, not asleep in a nest. */
-function audienceOf(world: World, c: Chimp, out: Chimp[] | null): number {
+/**
+ * departAudience's set: own-community animals of 12 y or more within the party link of `c`, not asleep in a nest. With
+ * `settled` (stage E5f, departValue 2) only those settled where they are: not travelling, following or in a nest (E5b's
+ * settled companion; the company staying keeps, nest-mates' being in the nest's own value, E2e).
+ */
+function audienceOf(world: World, c: Chimp, out: Chimp[] | null, settled: boolean): number {
   const P = paramsOf(world), alive = index(world).alive, l2 = P.partyLinkM * P.partyLinkM;
   let n = 0;
   for (let i = 0; i < alive.length; i++) {
     const o = alive[i];
     if (o === c || o.troopId !== c.troopId || o.age < 12) continue;
     if (o.action === 'nest' && ix(o).phase >= 2 && !awakeInNest(P, o)) continue;
+    if (settled && (o.action === 'travel' || o.action === 'follow' || o.action === 'nest')) continue;
     const dx = o.position[0] - c.position[0], dz = o.position[2] - c.position[2];
     if (dx * dx + dz * dz <= l2) { n++; if (out) out.push(o); }
   }
@@ -1503,11 +1509,13 @@ const _aud: Chimp[] = [];
 /**
  * Stage E5f (departValue; docs/staging/e5f-prereg.md §3): what `c` perceives of its audience (departAudience's set), as
  * one number: who is there and what each is doing (act and target), in id order (FNV-1a over the integers). Equal
- * numbers = the same companions doing the same things. Pure.
+ * numbers = the same companions doing the same things. Iteration 2 (departValue 2, §5.2): over the settled audience only
+ * (companions travelling, following or in a nest are not company staying keeps: E5b's settled set; nest-mates' company is
+ * in the nest's own value, E2e). Pure.
  */
 export function audienceSig(world: World, c: Chimp): number {
   _aud.length = 0;
-  audienceOf(world, c, _aud);
+  audienceOf(world, c, _aud, paramsOf(world).departValue >= 2);
   _aud.sort((a, b) => a.id - b.id);
   let h = 0x811c9dc5;
   const mix = (v: number) => { h = Math.imul((h ^ (v | 0)) >>> 0, 0x01000193) >>> 0; };
@@ -1523,7 +1531,7 @@ export function audienceSig(world: World, c: Chimp): number {
  */
 export function audienceCompany(world: World, c: Chimp, P: Params): number {
   _aud.length = 0;
-  audienceOf(world, c, _aud);
+  audienceOf(world, c, _aud, P.departValue >= 2);
   let best = 0;
   for (let i = 0; i < _aud.length; i++) { const v = companyValue(c, _aud[i], P); if (v > best) best = v; }
   _aud.length = 0;
