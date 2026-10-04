@@ -32,3 +32,16 @@ reproductive state, mass, method) written here before any run. Sources grepped f
 `docs/staging/e-sources.md`; new sources added there first, as an addendum titled "Addendum: E4k hunt success".
 
 ## 3. Diagnosis plan (step 1; unchanged code; to be committed before it runs)
+
+### 3.1 Hunt reference (unchanged code; registered before its runs)
+
+The quick reference (S17q and its three re-draws, the integrator's, bench-run2 37f04e8) judges the sums. Hunting rows
+rest on a handful of hunts in 30 days, so this stage also runs S17 at 30 + 60 days on seeds 48 and 7, once plus one
+re-draw, as its hunt reference:
+
+- **H0** = S17 (`artifacts/validation/e/s17q/S17q-params.json` in bench-run2), `e-bench --seeds 48,7 --burn-in 30
+  --days 60` (custom), and **H0r** = the same plus `rgTemperature` 0.1641. Frozen detached checkout of b6630b9 in the
+  stage scratch directory (`…/scratchpad/e4k/ref`; simulation code identical to b3d28c7 and to bench-run2 37f04e8),
+  `--workers 2` while the load is below 8 (else 1), one run at a time. Outputs `artifacts/validation/e4k/{H0,H0r}.json`
+  in that checkout (copied to this worktree's gitignored `artifacts/validation/e4k/`).
+- Every hunt row of every arm is reported against H0 and H0r (mean of two), beside the quick judgement.
