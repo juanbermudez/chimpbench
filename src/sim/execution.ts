@@ -542,6 +542,17 @@ function departAttempt(world: World, c: Chimp): void {
  */
 export const departTap: { fn: ((c: Chimp, ev: 'attempt' | 'alone' | 'free' | 'lapsed' | 'recruited' | 'given-up', n: number) => void) | null } = { fn: null };
 
+/**
+ * Stage E4p diagnosis (scripts/e4p-diagnose.ts; docs/staging/e4p-prereg.md §3): called inside the acts where the mating
+ * gaps bind, when every other condition holds. 'chase': a guarding male sees a rival that qualifies for a chase (courting
+ * or beside the guarded female, dominated by him), `a` the hours since his own last aggression (the 0.25-h gap's literal
+ * stays on its own line: the reader compares). 'copGuard', 'copConsort', 'copMate': a copulation is due inside guarding,
+ * consorting or the mate act (partners close, swelling, no refusal), `blocked` whether the male's mateIntervalH holds it,
+ * `a` the hours since his last copulation; `o` the partner. Null in every simulation; it reads only and draws nothing.
+ */
+export type MateTraceKind = 'chase' | 'copGuard' | 'copConsort' | 'copMate';
+export const mateTrace: { on: ((kind: MateTraceKind, c: Chimp, o: Chimp, blocked: boolean, a: number) => void) | null } = { on: null };
+
 /** The initiator stands and checks; true while the attempt is still open (or was just given up). */
 function departWait(world: World, c: Chimp): boolean {
   const P = paramsOf(world), x = ix(c), alive = index(world).alive;
@@ -804,9 +815,11 @@ export function executeAction(world: World, c: Chimp): void {
           const r = idx.byId.get(sid);
           if (!r || !r.alive || r === c || r.sex !== 'male' || r.age < 10 || r.troopId !== c.troopId) continue;
           const courting = (r.action === 'mate' || r.action === 'follow' || r.action === 'consort' || r.action === 'groom') && r.targetId === o.id;
+          if (mateTrace.on && (courting || hd(r, o) < 2.5) && dominates(c, r)) mateTrace.on('chase', c, r, false, time - x.lastAgg); // stage E4p diagnosis
           if ((courting || hd(r, o) < 2.5) && dominates(c, r) && time - x.lastAgg > 0.25) { x.rivalId = r.id; interrupt(world, c, `${r.name} is close to ${o.name}`); break; }
         }
       }
+      if (mateTrace.on && hd(c, o) < 2.5 && o.swelling >= 0.8 && o.action !== 'flee') mateTrace.on('copGuard', c, o, !(time - x.lastMate > MATE_INTERVAL_H), time - x.lastMate); // stage E4p diagnosis
       if (hd(c, o) < 2.5 && time - x.lastMate > MATE_INTERVAL_H && o.swelling >= 0.8 && o.action !== 'flee') copulate(world, c, o);
       return;
     }
@@ -819,6 +832,7 @@ export function executeAction(world: World, c: Chimp): void {
       } else {
         const d = Math.hypot(x.gx - c.position[0], x.gz - c.position[2]);
         if (hd(c, o) > P.consortWaitM) face(c, o); else moveTo(world, c, x.gx, 0, x.gz, WALK * 0.9, d < 4 ? d : 2);
+        if (mateTrace.on && hd(c, o) < 2.5 && o.swelling >= 0.6) mateTrace.on('copConsort', c, o, !(time - x.lastMate > MATE_INTERVAL_H), time - x.lastMate); // stage E4p diagnosis
         if (hd(c, o) < 2.5 && time - x.lastMate > MATE_INTERVAL_H && o.swelling >= 0.6) copulate(world, c, o);
       }
       return;
@@ -1213,6 +1227,7 @@ function mateTick(world: World, c: Chimp, o: Chimp | undefined): void {
   face(c, o);
   const m = c.sex === 'male' ? c : o, f = c.sex === 'male' ? o : c;
   const refusing = f.action === 'flee' || f.action === 'charge' || f.action === 'attack' || f.action === 'submit';
+  if (mateTrace.on && !refusing && f.swelling >= 0.6) mateTrace.on('copMate', c, o, !(world.time - ix(m).lastMate > MATE_INTERVAL_H), world.time - ix(m).lastMate); // stage E4p diagnosis
   if (!refusing && world.time - ix(m).lastMate > MATE_INTERVAL_H && f.swelling >= 0.6) { copulate(world, m, f); return finish(world, c); }
   if (c.actionTime > P.mateApproachS || x.phase > 8) { x.lastMate = Math.max(x.lastMate, world.time - MATE_INTERVAL_H + 0.5); finish(world, c); }
   x.phase++;

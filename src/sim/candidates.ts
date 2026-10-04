@@ -41,7 +41,7 @@ export interface CandidateMeta { v: number; aux: number; raw?: number; jit?: num
 export const candidateMeta = new WeakMap<Candidate, CandidateMeta>();
 
 /** The five gates of stage E5e (docs/staging/e5e-prereg.md §2). */
-export type QuotaKind = 'greet' | 'feed' | 'immigrant' | 'consort' | 'caller' | 'mate' | 'mateF';
+export type QuotaKind = 'greet' | 'feed' | 'immigrant' | 'consort' | 'caller' | 'mate' | 'mateF' | 'mateFgap';
 /**
  * Stage E5e diagnosis (scripts/quota-diagnose.ts; docs/staging/e5e-prereg.md §2): called at four gates when every other
  * condition of the option holds, with whether the quota or the clock blocked it ('greet': pantGruntRepeatH; 'feed':
@@ -49,8 +49,10 @@ export type QuotaKind = 'greet' | 'feed' | 'immigrant' | 'consort' | 'caller' | 
  * (the last greeting of this dominant, the last aggression) or the hour of day, and `b` the score the option has or would
  * have; and at every approach to a caller offered ('caller': `a` the distance, `b` the score). Stage E4o adds the mating
  * quota (mateIntervalH): 'mate' at a male's offer to a swollen female in range, 'mateF' at a swollen female's offer to a
- * male (`a` the hours since the male's last copulation, `b` the offer's score without the jitter). Null in every simulation;
- * it reads only and draws nothing, so the world is unchanged.
+ * male (`a` the hours since the male's last copulation, `b` the offer's score without the jitter). Stage E4p adds
+ * 'mateFgap': every offer of a swollen female to a male in range, before her own 0.3-h gap after her last copulation (`a`
+ * the hours since it; `blocked` always false: the reader compares `a` with the gap). Null in every simulation; it reads
+ * only and draws nothing, so the world is unchanged.
  */
 export const quotaTrace: { on: ((kind: QuotaKind, c: Chimp, o: Chimp | undefined, blocked: boolean, a: number, b: number) => void) | null } = { on: null };
 
@@ -1155,12 +1157,14 @@ function reproduction(world: World, c: Chimp, isAlpha: boolean): void {
         if (open) offer('consort', o.id, sc);
       }
     }
+    // stage E4p diagnosis: every offer of a swollen female to a male in range, before her own gap after her last copulation
+    // (`a` the hours since it; the gap's literal stays on the line below, so the trace passes the elapsed time, not a verdict)
+    if (quotaTrace.on && c.sex === 'female' && c.swelling >= 0.75 && o.age >= 10 && dist < P.mateFemaleRangeM) quotaTrace.on('mateFgap', c, o, false, time - x.lastMate, femaleMateScore(c, o, x, dist, night, P));
     if (c.sex === 'female' && c.swelling >= 0.75 && o.age >= 10 && dist < P.mateFemaleRangeM && time - x.lastMate > 0.3) {
       const maleOpen = time - ix(o).lastMate > P.mateIntervalH;
       if (maleOpen || quotaTrace.on) { // stage E4o diagnosis: the male's quota gates her offer too
         const approaching = o.action === 'mate' && o.targetId === c.id;
-        const coercion = Math.min(3, x.coerce[o.id] ?? 0);
-        const sc = 0.1 + c.swelling * 0.25 + o.rank * 0.25 + coercion * 0.15 + bond(c, o) * 0.2 + (approaching ? 0.7 : 0) - dist / P.mateFemaleDistScaleM - (night ? 2 : 0);
+        const sc = femaleMateScore(c, o, x, dist, night, P);
         if (quotaTrace.on) quotaTrace.on('mateF', c, o, !maleOpen, time - ix(o).lastMate, sc);
         if (maleOpen) {
           offer('mate', o.id, sc, approaching ? V.ACCEPT : V.NONE);
@@ -1169,6 +1173,13 @@ function reproduction(world: World, c: Chimp, isAlpha: boolean): void {
       }
     }
   }
+}
+
+/** A swollen female's offer to mate with male `o` (her presenting score; the literals of the original offer, unchanged). Pure. */
+function femaleMateScore(c: Chimp, o: Chimp, x: ReturnType<typeof ix>, dist: number, night: boolean, P: Params): number {
+  const approaching = o.action === 'mate' && o.targetId === c.id;
+  const coercion = Math.min(3, x.coerce[o.id] ?? 0);
+  return 0.1 + c.swelling * 0.25 + o.rank * 0.25 + coercion * 0.15 + bond(c, o) * 0.2 + (approaching ? 0.7 : 0) - dist / P.mateFemaleDistScaleM - (night ? 2 : 0);
 }
 
 function meatAndHunting(world: World, c: Chimp): void {
