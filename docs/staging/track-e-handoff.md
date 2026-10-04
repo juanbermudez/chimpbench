@@ -14,14 +14,12 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 15:20; deploy held by the user).** Agents: **E0b** (`e0b-hidden-timers`: an honest count of
-  literal timers and quotas; no simulations) and **E3g** (`e3g-redecide-trips`, from d8417b5: why re-deciding adds trips
-  and hunts; reference the S28 quick group `bench-run3/artifacts/validation/e/s27q/S28q*`, re-draws running via
-  `integrator/s28q-group.sh`). Integrator: **S30** (`bodyRules` 1; bench-run at 6980f48, `s30/`). Done against the S27
-  group: **S28 passes with costs** (39; fitted z +2.4 via hunting 57/yr; males +1.0 km; reserves of other females,
-  juveniles, young infants fall faster), **S29 passes cleanly** (39; every sum inside noise; parties 4.05). Next: the
-  combined confirm S31 = S27 + `departValue` 2 + `bodyRules` 1 (if S30 passes), then S32 = S31 + `redecideValue` 2.
-  Guide on S27 (41); hosted copy in `site` 4f19ace still shows 42; nothing deployed.
+- **Running now (4 October 15:50; deploy held by the user).** Agents: **E3g** (`e3g-redecide-trips`: why re-deciding adds
+  trips and hunts; reference the S28 quick group, ready), **E4p** (`e4p-mating`: the four mating gaps and quota) and **E4q**
+  (`e4q-aggression`: three aggression and display cooldowns), both from aa698bd against the S27 quick group.
+  Integrator: **S31** (S27 + `departValue` 2 + `bodyRules` 1; bench-run4 at 4111971) and **S32** (S31 + `redecideValue` 2;
+  bench-run at 4111971), outputs `…/e/s3132/`, judge `integrator/judge_s27group.py`. S28, S29 and S30 all pass alone.
+  Counts now on E0b's ledger (S27 51). Guide on S27; hosted copy in `site` 4f19ace stale (42); nothing deployed.
 - **E0b merged (3c82e11): the ledger now counts literal time quotas** (an interval that blocks an act for a fixed time
   after the animal's own last act; rule 5e for literals). Today's model 147, S27 51, S28 48, S29 49, S30 50, S31 48,
   S32 45 (before: 134, 41, 39, 39, 40, 38, 36). Earlier counts in the docs stay as written.
