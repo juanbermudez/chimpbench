@@ -504,3 +504,53 @@ hunters listed -> in the pursuit: {(1, 1): 4, (2, 2): 4, (3, 2): 2, (3, 3): 4, (
 ```
 
 (In this run the tool labelled the listed hunters in range but below canopy height "?" under `huntPursuit` 2: its label tested the value 1 only; fixed in the tool after the run, the data unchanged.)
+
+#### P2 result: reserves (energy-diagnose, seeds 48 and 7, 30 + 30 days; `report.py P1 P2`)
+
+| Reserves ÷ store, % per day (OLS; quick energy runs) | S17q runs | mean ± SD | P1 | P2 |
+| --- | --- | --- | --- | --- |
+| adult male | -0.004 / +0.011 / +0.001 / +0.002 | +0.002 ± 0.006 | +0.005 (z +0.4) | +0.001 (z -0.2) |
+| female, other | +0.008 / +0.024 / -0.007 / -0.017 | +0.002 ± 0.018 | +0.016 (z +0.7) | +0.016 (z +0.7) |
+| female, lactating | +0.007 / -0.003 / -0.006 / +0.010 | +0.002 ± 0.008 | +0.024 (z +2.6) | +0.018 (z +2.0) |
+| juvenile 5–12 y | +0.001 / +0.006 / +0.006 / +0.008 | +0.005 ± 0.003 | -0.014 (z -5.2) | -0.013 (z -4.9) |
+| infant 2–5 y | -0.008 / -0.000 / -0.016 / +0.022 | -0.000 ± 0.016 | +0.047 (z +2.6) | +0.017 (z +1.0) |
+| infant 0.5–2 y | +0.013 / +0.001 / -0.003 / -0.001 | +0.002 ± 0.007 | -0.010 (z -1.5) | +0.017 (z +1.8) |
+
+
+Juveniles' daily intake stays inside S17q's range (1,639 and 1,648 kcal against 1,644–1,657), so the lower reserve trend
+(z −5.2 and −4.9 against a reference spread of 0.003 %/day) is a small trajectory difference whose cause was not
+tested (less meat begged is one candidate: captures fall with hunting).
+
+#### P2 against its registration
+
+Hunts with three or more hunters in the pursuit captured in 9 of 9 (predicted ≥ 6 of 7 at P1's rate: as predicted);
+success (truth) 0.479 at 60 days (9 of 20 hunts) and 0.500 in the quick run (predicted 0.45–0.65: as predicted); hunts
+20.3 per community-year in truth (predicted 9–17: missed high; S17's own pair of runs differ by 4, P1 13.2); T-HUN-2 0.46
+(60 d, 13 observed hunts) and 0.40 (quick), up from P1 and toward its band, not into it (as predicted); T-HUN-7 1.0 (as
+predicted); T-HUN-3 0.053 (60 d) and 0.047 (quick), at the band's floor (predicted below it: missed narrowly); T-HUN-4
+1.74 (60 d, inside its band) and 2.09 (quick) (predicted high: half right); sums inside noise against S17q (fitted
+z −0.5, held-out +0.4, without T-HUN-4 and T-BRD-1 +0.6; T-IGE-3 is insufficient in every quick run, so the sum without it
+is the same) (as predicted); prescriptions 46 (as predicted); viability passes, no deaths (as predicted). Remaining
+failures: 8 of 11 hunts that fewer than three hunters ever joined, 3 that ended with joiners still below the canopy.
+
+### Verdict
+
+- **Diagnosis (finding).** On S17 the draw against the success curve decided 35 of 46 hunts (76%) and the two-hunter
+  rule the other 11 (lone leaders, 10 of them joined by nobody); 24 extra-capture draws made 5 captures. The scene the
+  dice ignore varies (group size 17–34, hunters' hunger 0.13–0.37), but the model carries only the number of hunters,
+  the group's size and the hunters' condition with a physical meaning: positions were hash bearings 2.3 m from a point,
+  climbing a fixed 2.55 m below it, skill a near-constant design value; there is no canopy structure (the trees are
+  food patches, 2.5–15% crown cover around hunts) and no colobus composition.
+- **`huntPursuit` 2 (iteration 2): a provisional keep candidate.** Success and kills from the pursuit (Apollonius cones
+  at a design speed ratio of 1 times each hunter's own movement factor; three hunters around the group at least; one
+  monkey per closing set; an opportunistic spread to the widest escape gap; the valuation on the same function), read
+  every tick: viable, held-out without the rare rows inside noise (z +0.6), prescriptions 49 → 46 (`huntSuccessMax`,
+  `huntSuccessRate`, `huntExtraKillP`); success 0.26–0.30 → 0.48 (truth, 60 d). Recommended: a 5-seed confirm on the
+  stack (S17 + `huntPursuit` 2). Iteration 1 (`huntPursuit` 1) is recorded, not kept: two implementation defects.
+- **Costs.** Hunting falls from 46.6–50.7 to 20.3 per community-year in truth (only parties of three or more adult males
+  hunt; T-HUN-1 13.0, inside its band); T-HUN-7 1.0, below its band (every success one monkey, as at Taï's 84%);
+  juveniles' reserve trend lower beyond the reference's spread (above); lone hunters and pairs never capture.
+- **No third iteration:** what is left is joining (about half the adult males a leader sees join him; the join value is
+  hand-set, `candidates.ts:1088`) and two inputs the model lacks (canopy structure; colobus composition): no defect of
+  the mechanism is implicated. The three-hunter threshold rests on the design speed ratio (0.8 → four hunters, above 1 →
+  one), not tested.
