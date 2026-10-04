@@ -17044,12 +17044,12 @@
    "units": "switch",
    "range": [
     0,
-    2
+    3
    ],
    "rangeBasis": "assumed",
    "hardRange": [
     0,
-    2
+    3
    ],
    "calibrate": false,
    "evidence": "design",
@@ -17058,7 +17058,7 @@
    "symbol": "P.patrolValue",
    "file": "src/sim/patrol.ts",
    "integer": true,
-   "notes": "Stage E4i switch (docs/staging/e4i-prereg.md §4): patrolling as the males' own decision. No hazard roll, odds ratio or clock window: an adult male with patrolMinMales adult males in view is offered the lead at a value read from state, the C6 lead score times min(1, S x q x D x (1 - sleep pressure) x (1 + arousal)): S the staleness of the route's sector (the hazard's own term), q his males' summed strength against the neighbour's males as he last saw or heard them (contest function, contestExponent; parity when unknown), D the share of the trip (out, a quarter circle along the edge, home) that fits in the daylight left, sleep pressure E2a's, arousal E4a's testosterone-like state; drawn like any option (no patrolImpulseDecides). No incursion die: at the range edge the patrol pushes in when its odds against the remembered neighbour favour it and the way fits the daylight. Turn-back by the same odds against the strangers perceived. No 6 h cap and no release dice. Joining: everyone scored as a male is, times its strength over the patrol's average adult male (no female site settings). Removes patrolH0, patrolMaleOddsRatio, patrolStartH, patrolEndH, patrolIncursionP, patrolMaxH, patrolReleaseP, patrolReleaseContactP, patrolFemaleJoin, patrolFemaleStay, patrolLactatingJoin. Value 2 (iteration 1, §7): the lead is weighed only when his party first holds patrolMinMales adult males (fewer at his last perception), once, as a hunt is at a colobus encounter (an impulse with no roll; the RG gate weighs it); value 1 offers it at every decision point. At 0, today's rules, bit-identical. Ablation switch."
+   "notes": "Stage E4i switch (docs/staging/e4i-prereg.md §4): patrolling as the males' own decision. No hazard roll, odds ratio or clock window: an adult male with patrolMinMales adult males in view is offered the lead at a value read from state, the C6 lead score times min(1, S x q x D x (1 - sleep pressure) x (1 + arousal)): S the staleness of the route's sector (the hazard's own term), q his males' summed strength against the neighbour's males as he last saw or heard them (contest function, contestExponent; parity when unknown), D the share of the trip (out, a quarter circle along the edge, home) that fits in the daylight left, sleep pressure E2a's, arousal E4a's testosterone-like state; drawn like any option (no patrolImpulseDecides). No incursion die: at the range edge the patrol pushes in when its odds against the remembered neighbour favour it and the way fits the daylight. Turn-back by the same odds against the strangers perceived. No 6 h cap and no release dice. Joining: everyone scored as a male is, times its strength over the patrol's average adult male (no female site settings). Removes patrolH0, patrolMaleOddsRatio, patrolStartH, patrolEndH, patrolIncursionP, patrolMaxH, patrolReleaseP, patrolReleaseContactP, patrolFemaleJoin, patrolFemaleStay, patrolLactatingJoin. Value 2 (iteration 1, §7): the lead is weighed only when his party first holds patrolMinMales adult males (fewer at his last perception), once, as a hunt is at a colobus encounter (an impulse with no roll; the RG gate weighs it); value 1 offers it at every decision point. Value 3 (iteration 2): as 2, and at the range edge a patrol whose members on it are outmatched by the neighbour's males as remembered (odds below parity) turns home instead of holding the edge. At 0, today's rules, bit-identical. Ablation switch."
   },
   {
    "id": "patrolWaypointM",

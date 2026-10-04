@@ -252,7 +252,7 @@ function rollImpulses(world: World, c: Chimp, metPrey: number, prevOwn: number):
   // stage E4i (patrolValue): no hazard, no clock; leading a patrol is an option valued from state (patrol.ts, candidates.ts).
   // Iteration 1 (patrolValue 2): a party that first holds patrolMinMales adult males in his view (fewer at his last
   // perception) is a salient change, and the lead is weighed then, once, as a hunt is at a colobus encounter. Nothing is drawn.
-  if (P.patrolValue === 2 && x.ownMales >= P.patrolMinMales && prevOwn < P.patrolMinMales && !simOf(world).patrols[c.troopId] && world.environment.rain < P.patrolMaxRain) {
+  if (P.patrolValue >= 2 && x.ownMales >= P.patrolMinMales && prevOwn < P.patrolMinMales && !simOf(world).patrols[c.troopId] && world.environment.rain < P.patrolMaxRain) {
     x.impulse = IMPULSE_PATROL; x.impulseTarget = -1; x.impulseUntil = world.time + P.impulseDurationH; return;
   }
   if (!patrolValueOn(P) && P.patrolH0 > 0 && x.ownMales >= P.patrolMinMales && hour >= P.patrolStartH && hour < P.patrolEndH && !s.patrols[c.troopId] && world.environment.rain < P.patrolMaxRain) {

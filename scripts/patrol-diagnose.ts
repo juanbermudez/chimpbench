@@ -99,7 +99,7 @@ interface Member { id: number; cls: string; joinAt: number; leftAt: number | nul
 interface Patrol {
   troop: number; startT: number; startHour: number; lightLeftStart: number; leader: number; malesInView: number; incursionDie: boolean; sector: number; until: number;
   maxAdultMales: number; maxAdolMales: number; maxFemales: number; maxLactating: number; members: Member[]; pathM: number; enteredNeighbour: boolean;
-  contact: boolean; turnedBack: boolean; stopsSchedule: number; stopsWaypoint: number; end: string | null; release: boolean | null; endT: number | null;
+  contact: boolean; turnedBack: boolean; edgeRetreat?: boolean; stopsSchedule: number; stopsWaypoint: number; end: string | null; release: boolean | null; endT: number | null;
   lightLeftEnd: number | null; endHour: number | null; startState: Record<string, number | null>; endState: Record<string, number | null> | null;
   /** E4i (patrolValue): the leader's lead score when he set out and whether he remembered the neighbour's males. */
   leadScore: number | null; remembered: number | null;
@@ -165,6 +165,7 @@ for (let i = 0; i < days * DAY; i++) {
       }
       rec.contact ||= !!p.contact;
       if (evs.some(e => e.troopId === t.id && /turned back/.test(e.text))) rec.turnedBack = true;
+      if (evs.some(e => e.troopId === t.id && /at the boundary/.test(e.text))) rec.edgeRetreat = true; // E4i iteration 2
       if (p.stops > oo.stops) { if (p.phase !== oo.phase) rec.stopsWaypoint += p.stops - oo.stops; else rec.stopsSchedule += p.stops - oo.stops; }
       oo.stops = p.stops; oo.phase = p.phase; oo.nowMembers = members.length; if (members.length) oo.lastMembers = members;
       // joining opportunities: members >= 12 y of the community, awake, perceiving now, the leader in view, not on it
@@ -276,7 +277,7 @@ const result = {
     pathKm: median(done.map(p => p.pathM / 1000)), maxAdultMales: tally(done.map(p => p.maxAdultMales)), reachThreeAdultMales: r4(done.filter(p => p.maxAdultMales >= 3).length / Math.max(1, done.length)),
     shareOfCommunityMales: mean(done.map(p => { const n = w.chimps.filter(c => c.troopId === p.troop && isAdultMale(c) && c.alive).length; return n ? p.maxAdultMales / n : NaN; }).filter(Number.isFinite)),
     withFemales: r4(done.filter(p => p.maxFemales + p.maxLactating > 0).length / Math.max(1, done.length)), contact: r4(done.filter(p => p.contact).length / Math.max(1, done.length)),
-    turnedBack: r4(done.filter(p => p.turnedBack).length / Math.max(1, done.length)), lightLeftStart: median(patrols.map(p => p.lightLeftStart)), lightLeftEnd: median(done.map(p => p.lightLeftEnd!)),
+    turnedBack: r4(done.filter(p => p.turnedBack).length / Math.max(1, done.length)), edgeRetreat: r4(done.filter(p => p.edgeRetreat).length / Math.max(1, done.length)), lightLeftStart: median(patrols.map(p => p.lightLeftStart)), lightLeftEnd: median(done.map(p => p.lightLeftEnd!)),
     leftEarly: tally(done.flatMap(p => p.members.filter(m => m.leftTo !== null && m.leftAt! < p.endT!).map(m => m.leftTo!))),
     leadScore: mean(patrols.map(p => p.leadScore).filter((v): v is number => v !== null)), rememberedShare: r4(patrols.filter(p => p.remembered !== null).length / Math.max(1, patrols.length)),
     startState: stMean(patrols.map(p => p.startState as unknown as St)), endState: stMean(done.map(p => p.endState as unknown as St)),

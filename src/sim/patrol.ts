@@ -17,7 +17,7 @@ import { neighbourSectors, rangeEdge, sectorDir } from './territory';
 // power [M]). A stranger male is assessed as strong as the average adult male of the assessor's own party (design: he
 // cannot know their strengths); with nothing remembered of a neighbour the prior is parity (odds 0.5; design).
 
-/** 1: the lead offered at every decision point (A1); 2: weighed once when a party first holds enough males (iteration 1). */
+/** 1: the lead offered at every decision point (A1); 2: weighed once when a party first holds enough males (iteration 1); 3: 2 plus the retreat at the edge when the patrol's own odds are below parity (iteration 2). */
 export const patrolValueOn = (P: Params): boolean => P.patrolValue >= 1;
 
 /**

@@ -454,3 +454,109 @@ Kill criterion and keep rule as §6.
 
 **Runs**: as A1 (chains X and Y), label A2, from a frozen detached checkout of the commit that adds this entry
 (`scratchpad/e4i/frozen-a2`), `--workers 1` while the load is above 8.
+
+### A2 results (iteration 1; frozen-a2 at fc16dcb, clean; judged on its own against the four S13 quick runs)
+
+The diagnosis was re-run from `frozen-d1` at ef693ac (a tool fix only: with `patrolValue` 2 the tool still read every
+end as the cap; the world is A2's, scripts only differ); the observer rows at 30 + 60 follow when A2p ends.
+
+```
+quick references: ['S13q.json', 'S13q1.json', 'S13q2.json', 'S13q3.json'] | patrol references: ['P0.json', 'P1.json', 'D1-48.json', 'D1-7.json']
+  A2q.json: fc16dcb dirty 0 prescriptions 54 viability True deaths 0 starvation 0
+quick, reference custom (4 runs), rows counted in all runs: fitted 17, held-out 12
+  fitted             (17 rows) ref 2.60, 2.54, 3.04, 2.27 (mean 2.61, sd 0.32; used 0.69) | A2q.json: 1.92, Δ -0.70, z -0.9 (inside noise)
+  held-out           (12 rows) ref 4.68, 3.84, 5.78, 3.61 (mean 4.48, sd 0.98; used 1.26) | A2q.json: 3.79, Δ -0.69, z -0.5 (inside noise)
+  held-out w/o rare  (11 rows) ref 4.68, 3.84, 4.44, 3.61 (mean 4.14, sd 0.50; used 0.50) | A2q.json: 3.73, Δ -0.41, z -0.7 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-HUN-4   held-out ref 0.33±0.67 | A2q.json 0.06 (fail)
+   T-HUN-7   fitted   ref 0.25±0.00 | A2q.json 0.00 (pass)
+   T-SOC-3   held-out ref 0.02±0.05 | A2q.json 0.14 (fail)
+
+held-out without T-HUN-4, T-BRD-1 and T-IGE-3 (11 rows): S13q 4.68 / 3.84 / 4.44 / 3.61 (mean 4.14, sd 0.50; used 0.50); A2q.json 3.73 (z -0.7)
+
+| Reserves ÷ store, % per day (OLS) | S13q runs | mean ± SD | A2 |
+| --- | --- | --- | --- |
+| adult male | -0.007 / +0.012 / -0.002 / -0.005 | -0.000 ± 0.009 | +0.001 (z +0.2) |
+| female, other | +0.010 / +0.016 / -0.004 / +0.014 | +0.009 ± 0.009 | +0.011 (z +0.2) |
+| female, lactating | -0.003 / +0.002 / -0.011 / +0.003 | -0.002 ± 0.006 | -0.024 (z -3.2) |
+| juvenile 5–12 y | -0.023 / -0.018 / -0.029 / -0.011 | -0.020 ± 0.008 | +0.006 (z +3.2) |
+| infant 2–5 y | +0.012 / +0.030 / -0.012 / -0.007 | +0.006 ± 0.019 | -0.013 (z -0.9) |
+| infant 0.5–2 y | -0.018 / -0.022 / -0.022 / +0.010 | -0.013 ± 0.016 | -0.042 (z -1.7) |
+| infant < 0.5 y | +0.000 / +0.000 / +0.000 / +0.000 | +0.000 ± 0.000 | +0.000 (z +nan) |
+
+| Ground km / eating min | S13q runs | mean ± SD | A2 |
+| --- | --- | --- | --- |
+| adult male: groundKm | 2.39 / 2.36 / 2.19 / 2.31 | 2.31 ± 0.09 | 2.61 (z +3.0) |
+| adult male: eatingMin | 253.71 / 255.39 / 250.65 / 250.70 | 252.61 ± 2.34 | 252.40 (z -0.1) |
+| female, other: groundKm | 1.74 / 1.75 / 1.69 / 1.76 | 1.73 ± 0.03 | 1.91 (z +5.2) |
+| female, other: eatingMin | 264.53 / 256.05 / 265.99 / 264.62 | 262.80 ± 4.55 | 261.01 (z -0.4) |
+| female, lactating: groundKm | 2.12 / 2.14 / 2.01 / 1.96 | 2.06 ± 0.09 | 2.16 (z +1.0) |
+| female, lactating: eatingMin | 315.61 / 315.84 / 316.81 / 316.30 | 316.14 ± 0.53 | 319.42 (z +5.5) |
+| juvenile 5–12 y: groundKm | 2.16 / 2.22 / 2.00 / 2.16 | 2.13 ± 0.10 | 2.24 (z +1.0) |
+| juvenile 5–12 y: eatingMin | 283.43 / 275.03 / 288.52 / 293.35 | 285.08 ± 7.83 | 274.31 (z -1.2) |
+deaths (energy-diagnose): {'S13q': {}, 'S13q1': {}, 'S13q2': {}, 'S13q3': {}, 'A2': {}}
+```
+
+```
+## A2 (fc16dcb; diagnosis re-run with the tool fixed, ef693ac): 2 seeds, 51.4 community-weeks
+patrols started 95 = 1.85 per community-week (truth)
+daylight opportunities (adult male perception, >= 3 adult males in view, no patrol, rain below the gate): 15132; in the 08:00-15:30 window 0, outside 15132 (100%)
+expected impulses (sum of roll probabilities): in window 0.0, blocked by the clock 6.3 (100% of the would-be total); impulses fired 0, of which led 0
+  clock-blocked: males 3.59, party 6.8, r/R 0.50, periphery 0.07, heard 24 h 0.068, contact 1.99, loss 0.56, border crop 0.92, light left 3.4 h | hunger 0.53, sleep 0.43, thirst 0.399, arousal 0.101, stress 0.19, reserve -0.027
+rolls by adult males in view (n, expected, fired): {}
+start hour: {7: 13, 8: 8, 9: 10, 10: 10, 11: 8, 12: 6, 13: 9, 14: 12, 15: 6, 16: 9, 17: 4} | outside 08:00-15:30: 31/95 | median 11.6 h
+lead score at the start: median 0.226 (range 0.000-0.851); leaders remembering the neighbour males: 86/95
+duration min: median 160, range 47-354, > 6 h 0; path km median 2.32
+ended by: {'home': 41, 'empty': 54} | release: 0 of 95 | release after contact: 0 of 40
+incursion die true 46/95 (0.48); entered a neighbour 95% isopleth: die true 38/46, die false 20/49; overall 0.61
+contact 0.42, turned back 0.21 (at the boundary, too few: 0)
+stops: on schedule 690, at waypoints 123
+most adult males at once: {1: 14, 2: 35, 3: 39, 4: 7} | >= 3: 0.48; with females 45/95
+joining (opportunities, joined): {'adultFemale': [72, 8], 'adultMale': [183, 56], 'adolescentMale': [22, 4], 'lactatingFemale': [32, 6]}
+members leaving early, to: {'travel': 161, 'forage': 51, 'flee': 16, 'nest': 15, 'drink': 2, 'mate': 2, 'guard': 1, 'display': 1, 'pant-grunt': 1, 'rest': 1}
+adult male members at start -> end: hunger 0.23 -> 0.63, sleep 0.32 -> 0.42, thirst 0.074 -> 0.146, arousal 0.087 -> 0.073
+daylight left at start median 7.2 h, at end 3.8 h
+patrol day vs most adult males in one party (truth, per seed): OR [1.952, 2.1065] | mean max males patrol days [4.6939, 3.7692] other days [2.8015, 2.7872]
+intergroup encounters per community-week (stats): [1.4389, 2.6444] | deaths: [{'respiratory illness (outbreak)': 6}, {}]
+periphery arrivals (planned decision point) per community-week: [0.9333, 1.4389] | n [24, 37] | expected patrols at V0 (sum of softmax shares): [1.2413, 0.7095]
+   means {'g': 0.0335, 'contact': 5.1653, 'kappa': 0.4584, 'light': 7.4618, 'tripH': 1.3494, 'D': 0.9068, 'sleep': 0.294, 'arousal': 0.074, 'ceiling': 1.3216, 'v0': 0.1541, 'share': 0.0517, 'males': 3.1667} | top score 0.9405 | kappa 0: 10 | by males {'3': 20, '4': 4} | by hour {'6': 4, '7': 3, '8': 3, '10': 2, '12': 4, '13': 1, '14': 1, '15': 3, '18': 3}
+   means {'g': 0.0118, 'contact': 1.838, 'kappa': 0.2203, 'light': 7.3018, 'tripH': 1.4977, 'D': 0.879, 'sleep': 0.3012, 'arousal': 0.0771, 'ceiling': 1.2778, 'v0': 0.0776, 'share': 0.0192, 'males': 3.027} | top score 1.0346 | kappa 0: 7 | by males {'3': 36, '4': 1} | by hour {'7': 5, '8': 5, '9': 11, '11': 2, '12': 4, '14': 3, '16': 1, '18': 6}
+```
+
+**Against the predictions.** Truth patrols **1.85 per community-week** (predicted 0.3–2: held; 2.5 × S13, half of A1).
+Fitted back inside noise (z −0.9; T-IGE-1 0.19, near the group): held. Held-out inside noise (z −0.5; without the rare
+rows −0.8): held. Patrols reaching three adult males 0.48 (predicted ≥ 0.5: missed, at the floor again). Starts outside
+08:00–15:30 31 of 95 (held); median start 11.6 h. Incursion share 0.61 (held, 0.4–0.8). Patrols with a female 45 of 95
+(held). Prescriptions 54, viability (no death in the quick runs; one outbreak killed 6 on seed 48 in the 90-day
+diagnosis run): held. Reserves: adult males and other females in band; juveniles better (z +3.2); **nursing mothers
+−0.024 %/day against −0.002 ± 0.006 (−3.7 SD of the group: the registered kill line of 3 SD is crossed)**; infants
+0.5–2 y −0.042 (z −1.7). Other females walk 1.91 km (z +5.2), adult males 2.61 (z +3.0).
+
+**Reading.** By the registered criterion A2 is killed (nursing mothers below 3 SD of the S13 group). The patrols
+themselves do not carry that cost: lactating females spent 36.6 member-hours on patrols in 120 seed-days (two seeds,
+truth), about 3 minutes a mother-day; the quick group's spread for mothers is narrow (0.006). Whether it is the patrols'
+indirect effect (more walking by the party) or a realization of noise needs a re-draw or a confirm, which the protocol
+leaves to the integrator. Half of the patrols still never hold three adult males, because the males in view at the
+forming decide on joining one by one, and a patrol whose members on it are outmatched still holds the edge (it sweeps
+along it for about an hour). Iteration 2 takes that up.
+
+### Iteration 2 (written after A2, before its run): advance, hold or retreat at the edge by the patrol's own odds
+
+**Change** (`patrolValue` 3 = 2 plus this; values 1 and 2 unchanged, bit for bit: A2 seed 48 after 4 days
+28abef43d7fac09a before and after; switch 0 unchanged). At the own range edge (the first waypoint) the leader compares
+the patrol's members on it with the neighbour's males as he remembers them, by the same contest odds as before:
+above parity it pushes in (as A1/A2, if the way fits the daylight), at parity (nothing remembered) it holds the edge
+(the sweep), **below parity it turns home** (event "turned back at the boundary"; no loss is written to contact memory:
+nothing was perceived). This completes "advance or retreat by assessed odds" (lemoine2023: advances follow a favourable
+balance of power, retreats an unfavourable one; wilson2001: small parties do not approach) for the outmatched case, which
+A1 and A2 sent along the edge. No new constant; same 54 prescriptions.
+
+**Predictions** (A3 = S13 + `patrolValue` 3; against A2 and S13): truth patrols per community-week unchanged from A2
+(1.3–2.4; the start is unchanged; moderate); patrols that turn back at the boundary 10–40% (low); contact share lower
+than A2's 0.42 (0.25–0.40; low); median duration shorter than A2's 160 min (low); incursion share 0.4–0.7 (low); patrols
+reaching three adult males unchanged (~0.5; the start is unchanged; moderate); fitted and held-out inside noise
+(moderate); prescriptions 54 (high); viability passes (moderate); nursing mothers within 3 SD of the S13 group (low: the
+reading above suggests A2's value was not the patrols' doing). Kill criterion and keep rule as §6.
+
+**Runs**: as A1 and A2, label A3, from a frozen detached checkout of the commit that adds this entry
+(`scratchpad/e4i/frozen-a3`).

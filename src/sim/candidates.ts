@@ -1060,7 +1060,7 @@ function patrolAndCalls(world: World, c: Chimp, isAlpha: boolean): void {
     // stage E4i: an adult male with enough males in view weighs leading a patrol by its value (information, odds, daylight,
     // fatigue); iteration 1 (patrolValue 2): only while the party's forming has raised the patrol impulse (perception.ts)
     if (isAdultMale(c) && x.ownMales >= P.patrolMinMales && c.hunger < P.patrolMaxHunger && env.rain < P.patrolMaxRain
-      && (P.patrolValue !== 2 || (x.impulse === IMPULSE_PATROL && x.impulseUntil > time))) {
+      && (!(P.patrolValue >= 2) || (x.impulse === IMPULSE_PATROL && x.impulseUntil > time))) {
       const v = leadValue(world, c, P);
       if (v > 0) offer('patrol', -1, v, V.LEAD, x.ownMales);
     }

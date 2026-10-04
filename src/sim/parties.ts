@@ -208,6 +208,13 @@ export function updatePatrols(world: World): void {
         const [ix0, iz0] = incursionPoint(world, nb, p.wx, p.wz, Math.floor(p.start));
         const wayH = (Math.hypot(ix0 - leader.position[0], iz0 - leader.position[2]) + Math.hypot(troop.center[0] - ix0, troop.center[2] - iz0)) / P.walkMps / 3600;
         p.incursion = odds > 0.5 && daylightLeftH(time) >= wayH;
+        // iteration 2 (patrolValue 3): advance, hold or retreat by the same odds (lemoine2023): a patrol whose members on it
+        // are outmatched by the neighbour's males as remembered turns home at the edge instead of holding it
+        if (P.patrolValue === 3 && odds < 0.5) {
+          p.phase = 2; p.wx = troop.center[0]; p.wz = troop.center[2];
+          addEvent(world, `The ${troop.name} patrol turned back at the boundary, too few to go on`, 'territory', [leader.id], troop.id, 0);
+          continue;
+        }
       }
       if (nb && p.incursion) {
         [p.wx, p.wz] = incursionPoint(world, nb, p.wx, p.wz, Math.floor(p.start));

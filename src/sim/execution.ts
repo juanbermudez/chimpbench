@@ -225,7 +225,7 @@ export function startAction(world: World, c: Chimp, cand: Candidate, source: Dec
   if (c.nest && cand.action !== 'nest') c.nest = null;
   if (x.impulse !== 0 && (cand.action === 'attack' || cand.action === 'transfer' || (cand.action === 'patrol' && x.v === V.LEAD) || (cand.action === 'display' && x.v === V.RAIN))) { x.impulse = 0; x.impulseUntil = -1e9; }
   if (x.impulse === IMPULSE_HUNT) { x.impulse = 0; x.impulseUntil = -1e9; } // hunting fix: the hunt is considered once per encounter, whatever he chose
-  if (x.impulse === IMPULSE_PATROL && paramsOf(world).patrolValue === 2) { x.impulse = 0; x.impulseUntil = -1e9; } // stage E4i iteration 1: once per party forming
+  if (x.impulse === IMPULSE_PATROL && paramsOf(world).patrolValue >= 2) { x.impulse = 0; x.impulseUntil = -1e9; } // stage E4i iteration 1: once per party forming
   if (!same) onStart(world, c);
 }
 
