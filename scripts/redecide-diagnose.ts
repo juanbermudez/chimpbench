@@ -48,6 +48,48 @@
 // With redecideValue 1 or 2 (stage E3d's arms) the draws' trigger 'outvalued' is the keep test's; the continuation
 // counterfactuals then see only the finished penalty.
 //
+// Stage E3g readouts (docs/staging/e3g-prereg.md §2; reads only: rgTap, rulesTap, energyTap and the world after each tick):
+//   act category (of the held act, and of an option): feed-crown (forage at a tree), feed-fallback, rest, groom, trip-own
+//     (travel V.TREE, no leader), trip-joined (V.TREE behind a leader), trip-caller, home, follow-party, follow-care, nest,
+//     hunt-lead, hunt-join, drink, play, patrol, other:<action>; a chosen option is 'same' when it is the held act and target, and a
+//     forage option at a tree in view other than the held one is 'crown-in-view'.
+//   trigger of a decision: rg.ts's reason (S27: interrupt, need-bucket, period, max-age, ended, patch-poor, hunt, patrol,
+//     light; S28: need-bucket, light-phase, outvalued, ended, hunt, patrol, light; both: no-intent, lead, phase, argmax),
+//     with a detail: need-bucket, the needs whose bucket differs from the held intent's (hunger, thirst, fatigue =
+//     1 − energy, loneliness = 1 − social; '+' rising into a higher bucket, '-' falling); light-phase, the held intent's
+//     light phase and today's (dayPhase); period (S27), the held period and today's; outvalued (S28), the category of the
+//     option that out-valued the act in the keep test, whether its noise was held or drawn fresh there, and whether its
+//     value alone (no noise) exceeds the act's value with its held noise ('value') or not ('noise'); a fresh noise is
+//     'fresh:back' when the option was on a menu since the draw and left it (rg.ts keeps noise only for options in view
+//     now), 'fresh:new' otherwise. Animals under
+//     rgMinAge: 'young' (S28 with a detail: need-bucket or light-phase when the intent held for the keep test differs,
+//     ended when the act finished, else keep-test).
+//   draws (daylight, RG animals): held category, whether the act had finished, whether the decision fell before the bout's
+//     scheduled end (an interrupt), chosen category, switch; the held act's raw value now (this script's rawOf: published
+//     score less jitter and continuation terms) and the chosen option's; for a held crown, its crop (units) and the foregut
+//     fill (digesta dry matter ÷ capacity); S28 only: the keep-test counterfactual at need-bucket and light-phase draws
+//     (rg.ts stillBest on the menu drawn from, the noise held in the intention for the options it holds and the draw's own
+//     noise for options new since: an independent sample of the same fresh noise): 1 if the act would have been kept; and
+//     the bonus counterfactual at every draw of an ongoing act before its scheduled end: whether the draw's winner, by its
+//     own noise, becomes the held act with continueBonus added to it (S27's term).
+//   chains: an animal's acts from one switching decision to the next ('arrived' and 'kept' continue a chain; a change of
+//     act with no rules decision of the animal opens an 'other' chain; the window's first chain is 'start'). Each chain
+//     carries the trigger and the category of the decision that opened it. Attributed to the chain that executed: ground
+//     metres (energy-diagnose's: the step between ticks when below 0.3 m, < 100 m), the ledger's walk and climb kcal
+//     (energyTap, charged at the next tick's needs for the move just made), carry kcal (the carrier's, same tick), kcal
+//     eaten by food (energyTap 'eaten'), crown visits (a tick eating fruit in a crown other than the last one, or after a
+//     gap of 10 min or more: the observer's T-FOOD-4 rule). Sums by the class at each tick, trigger and opening category.
+//   trips (chains opened by trip-own, trip-joined or trip-caller) and hunts (hunt-lead, hunt-join), daylight starts, RG
+//     animals: at the start the distance to the target, foregut fill, hunger, the held category, the raw values of the
+//     held act and the trip, and (S28) the trip's noise; the outcome: the first crown eaten in during the chain (the
+//     target, another crown; else fallback eaten, else none; a caller's target is the crown the caller was heard in, x.jt);
+//     for hunts meat eaten or not; the chain's ground km, walk, climb and carry kcal, kcal eaten (fruit, fallback, meat),
+//     minutes and the trigger of the decision that closed it; the kcal per minute the animal ate (own food) in the 10 min
+//     before it opened (the rate it left; marginal value theorem, charnov1976) against the chain's net kcal per minute.
+//   hunts: lead hunts started (V.LEAD hunt acts opened) and joins by trigger; at 'hunt' draws (the encounter impulse) of
+//     adult males the held category, interrupt or bout end, lead chosen, and (S28) the bonus counterfactual.
+//   feeding trees: distinct trees fed in per animal-day by class (truth analog of T-FOOD-4, per animal and calendar day).
+//
 //   pnpm exec tsx scripts/redecide-diagnose.ts [--seeds 48,7] [--burn-in 30] [--days 30] [--params '{…}'] [--workers 2] [--json f.json]
 // Development seeds only (AGENTS.md lists the reserved ones); burn-in + days ≤ 90.
 import { writeFileSync } from 'node:fs';
@@ -55,12 +97,15 @@ import { isMainThread, parentPort } from 'node:worker_threads';
 import { CODE, candidateMeta, findCandidate, V } from '../src/sim/candidates';
 import { rulesTap } from '../src/sim/decide';
 import { gate, patchPoorHere, rgMenu, rgTap } from '../src/sim/rg';
-import { bucketOf } from '../src/decide/facts';
+import { bucketOf, periodNow } from '../src/decide/facts';
+import { digestaCaps, energyTap } from '../src/sim/energy';
+import { dayPhase } from '../src/sim/environment';
+import { fruitAt } from '../src/sim/phenology';
 import type { Intent } from '../src/decide/gate';
 import { softmax } from '../src/decide/policies';
 import { hash01 } from '../src/sim/rng';
 import { paramsOf, type Params } from '../src/sim/params';
-import { index, isChimpId, ix, TICK_HOURS } from '../src/sim/state';
+import { index, isChimpId, isTreeId, ix, TICK_HOURS } from '../src/sim/state';
 import { createWorld, tickWorld } from '../src/simulation';
 import type { Action, Candidate, Chimp, World } from '../src/types';
 import { runPool } from './lib/pool';
@@ -95,8 +140,19 @@ interface Draw {
 }
 interface Cf { kind: 'bonus' | 'penalty' | 'groom+' | 'groom-'; cls: Cls; day: boolean; act: Act; actKind: string; draw: boolean; pWith: number; pWithout: number; topWith: boolean; topWithout: boolean; why: string }
 interface Run { cls: Cls; act: Act; kind: string; min: number; end: string; startTop: boolean | null; cross: number | null; rg: boolean; topKind: string; gap: number }
+/** Stage E3g: a daylight draw of an RG animal (header, "draws"). NaN where not applicable; cf* −1 when not applicable. */
+interface GDraw { cls: Cls; why: string; detail: string; held: string; fin: boolean; intr: boolean; chosen: string; sw: boolean; rawCur: number; rawCh: number; crop: number; fill: number; hunger: number; cfKeep: number; cfBonus: number }
+/** Stage E3g: a chain (header, "chains"); the trip and hunt records keep the start fields. */
+interface GChain { cls: Cls; why: string; detail: string; held: string; kind: string; target: number; t0: number; day: boolean; rg: boolean;
+  d0: number; fill0: number; hunger0: number; rawCur: number; rawCh: number; noise: number; cfKeep: number;
+  km: number; walkK: number; climbK: number; carryK: number; fruitK: number; fallK: number; meatK: number; visits: number; first: number; fell: boolean; t1: number;
+  /** the trigger of the decision that closed it; the kcal per minute the animal ate in the 10 min before it opened */
+  endWhy: string; rate10: number }
+/** Stage E3g: sums attributed to chains, keyed `${class now}|${trigger}|${opening category}`. */
+interface GSum { km: number; walkK: number; climbK: number; carryK: number; fruitK: number; fallK: number; meatK: number; visits: number; chains: number }
 interface Result {
   seed: number; draws: Draw[]; cfs: Cf[]; runs: Run[];
+  g: { draws: GDraw[]; trips: GChain[]; sums: Record<string, GSum>; leads: Record<string, number>; joins: Record<string, number>; hunts: number; treeDays: Record<string, [number, number]>; days: number; troops: number; clsTicks: Record<string, number> };
   counts: Record<string, Record<string, number>>; // class → verdict → n (daylight)
   nightCounts: Record<string, Record<string, number>>;
   dayTicks: Record<string, number>; runsStarted: Record<string, number>;
@@ -110,9 +166,10 @@ export function runSeed(job: Job): Result {
   const w = createWorld(seed, { profile: 'field', params });
   const P = paramsOf(w);
   for (let i = 0; i < burnIn * DAY; i++) tickWorld(w);
-  const dead0 = new Set(w.chimps.filter(c => !c.alive).map(c => c.id));
+  const dead0 = new Set(w.chimps.filter(c => !c.alive).map(c => c.id)), hunts0 = w.stats.hunts;
   const R: Result = { seed, draws: [], cfs: [], runs: [], counts: {}, nightCounts: {}, dayTicks: {}, runsStarted: {}, identity: { menuMismatch: 0, probErr: 0, checked: 0 },
-    male: { ticks: 0, eating: 0, walked: 0 }, living: [w.chimps.filter(c => c.alive).length, 0], deaths: {} };
+    male: { ticks: 0, eating: 0, walked: 0 }, living: [w.chimps.filter(c => c.alive).length, 0], deaths: {},
+    g: { draws: [], trips: [], sums: {}, leads: {}, joins: {}, hunts: 0, treeDays: {}, days, troops: w.troops.length, clsTicks: {} } };
   for (const k of CLS) { R.counts[k] = {}; R.nightCounts[k] = {}; R.dayTicks[k] = 0; R.runsStarted[k] = 0; }
   const key = (k: { action: string; targetId: number }) => `${k.action}:${k.targetId}`;
   const jitterOf = (c: Chimp, k: Candidate) => (hash01(c.id, c.decisionVersion, CODE[k.action], k.targetId) - 0.5) * P.candidateJitterSpan;
@@ -184,15 +241,156 @@ export function runSeed(job: Job): Result {
     if (v.top !== o.key) o.cross = (w.time - o.t0) * 60;
   };
 
+  // ---- Stage E3g (docs/staging/e3g-prereg.md §2; header "Stage E3g readouts"): reads only ----
+  const BUCKETS = ['none', 'mild', 'moderate', 'strong', 'severe'];
+  const rgRaw = (k: Candidate) => candidateMeta.get(k)?.raw ?? k.score; // rg.ts rawOf: every term, the finished penalty included
+  const catOf = (a: Action, target: number, v: number, aux: number): string => {
+    switch (a) {
+      case 'forage': return target > 0 ? 'feed-crown' : 'feed-fallback';
+      case 'travel': return v === V.TREE ? (aux > 0 ? 'trip-joined' : 'trip-own') : v === V.CALLER ? 'trip-caller' : v === V.HOME ? 'home' : 'travel-other';
+      case 'follow': return v === V.PARTY ? 'follow-party' : v === V.MOTHER || v === V.JUVENILE ? 'follow-care' : 'follow-other';
+      case 'hunt': return v === V.LEAD ? 'hunt-lead' : 'hunt-join';
+      case 'rest': case 'groom': case 'nest': case 'drink': case 'play': case 'patrol': return a;
+      default: return `other:${a}`;
+    }
+  };
+  const heldCat = (c: Chimp) => { const x = ix(c); return catOf(c.action, c.targetId, x.v, x.aux); };
+  const optCat = (c: Chimp, k: Candidate) => {
+    if (k.action === c.action && k.targetId === c.targetId) return 'same';
+    const m = candidateMeta.get(k), cat = catOf(k.action, k.targetId, m?.v ?? V.NONE, m?.aux ?? -1);
+    return cat === 'feed-crown' ? 'crown-in-view' : cat;
+  };
+  const fillOf = (c: Chimp): number => { const L = ix(c).en; if (!L || L.dm === undefined) return NaN; const cap = digestaCaps(c, P)[0]; return cap > 0 ? L.dm / cap : NaN; };
+  const needDetail = (c: Chimp, it: Intent | undefined): string => {
+    if (!it) return '';
+    const now = { hunger: bucketOf(c.hunger), thirst: bucketOf(c.thirst), fatigue: bucketOf(1 - c.energy), loneliness: bucketOf(1 - c.social) };
+    const parts: string[] = [];
+    for (const k of ['hunger', 'thirst', 'fatigue', 'loneliness'] as const) if (now[k] !== it.buckets[k]) parts.push(`${k}${BUCKETS.indexOf(now[k]) > BUCKETS.indexOf(it.buckets[k]) ? '+' : '-'}`);
+    return parts.join(' ');
+  };
+  const phaseOfPeriod = (p: Intent['period']) => p === 'morning' || p === 'midday' || p === 'afternoon' ? 'day' : p;
+  const blankSum = (): GSum => ({ km: 0, walkK: 0, climbK: 0, carryK: 0, fruitK: 0, fallK: 0, meatK: 0, visits: 0, chains: 0 });
+  /** The sums' trigger key: the trigger, with the first need changed (need-bucket), the phases (light-phase, period) or young's detail. */
+  const whyKey = (ch: GChain) => ch.why === 'need-bucket' ? `need-bucket:${ch.detail.split(' ')[0]}` : ch.why === 'light-phase' || ch.why === 'period' || ch.why === 'young' ? `${ch.why}:${ch.detail}` : ch.why;
+  const sumOf = (cls: Cls, ch: GChain): GSum => R.g.sums[`${cls}|${whyKey(ch)}|${ch.kind}`] ??= blankSum();
+  const gOpen = new Map<number, GChain>(), execNow = new Map<number, GChain>(), execPrev = new Map<number, GChain>();
+  let pendNow: GChain[] = [], pendOld: GChain[] = [];
+  /** Rules decisions this tick: RG ones (rgTap) and young ones (rulesTap: [post-execution, detail]). */
+  const gDecided = new Set<number>(), gYoung = new Map<number, [boolean, string]>();
+  /** The live intention object at the end of each RG decision (rg.ts stillBest replaces its noise during the next keep test). */
+  const gLive = new Map<number, Intent | undefined>();
+  /** Option keys on any menu since the animal's last draw (a fresh noise for one of them is a re-entry, not a new option). */
+  const gSeen = new Map<number, Set<string>>();
+  const lastFruit = new Map<number, [number, number]>(), treeSet = new Map<number, Set<number>>(), gKey = new Map<number, string>();
+  const newChain = (c: Chimp, why: string, detail: string, held: string, kind: string, target: number, rg: boolean): GChain => ({ cls: clsOf(c), why, detail, held, kind, target, t0: w.time, day: day(), rg,
+    d0: NaN, fill0: NaN, hunger0: c.hunger, rawCur: NaN, rawCh: NaN, noise: NaN, cfKeep: -1, km: 0, walkK: 0, climbK: 0, carryK: 0, fruitK: 0, fallK: 0, meatK: 0, visits: 0, first: 0, fell: false, t1: NaN, endWhy: '', rate10: NaN });
+  /** Close the animal's open chain; `post`: the act it held executed this tick (a decision after execution). */
+  const closeChain = (c: Chimp, post: boolean, why: string) => { const ch = gOpen.get(c.id); if (!ch) return; ch.t1 = w.time; ch.endWhy = why; if (post) execNow.set(c.id, ch); pendNow.push(ch); gOpen.delete(c.id); };
+  /** kcal eaten (own food) by the animal in the last 10 minutes, as [time, kcal] pairs */
+  const eat10 = new Map<number, number[]>();
+  const rate10Of = (c: Chimp) => { const e = eat10.get(c.id); if (!e) return 0; let k = 0; for (let i = 0; i < e.length; i += 2) if (e[i] > w.time - 10 / 60 + 1e-9) k += e[i + 1]; return k / 10; };
+  const openChain = (c: Chimp, ch: GChain) => { gOpen.set(c.id, ch); sumOf(clsOf(c), ch).chains++; };
+  const isTrip = (k: string) => k === 'trip-own' || k === 'trip-joined' || k === 'trip-caller';
+  /** A closed chain, read one tick after it closed (its last move is charged at the next tick's needs). */
+  const settle = (ch: GChain) => { if ((isTrip(ch.kind) || ch.kind === 'hunt-lead' || ch.kind === 'hunt-join') && ch.rg && ch.day) R.g.trips.push(ch); };
+  energyTap.fn = (c, term, kcal, kind) => {
+    if (!windowOn) return;
+    if (term === 'walk' || term === 'climb') { const ch = execPrev.get(c.id); if (ch) { const s = sumOf(clsOf(c), ch); if (term === 'walk') { ch.walkK += kcal; s.walkK += kcal; } else { ch.climbK += kcal; s.climbK += kcal; } } return; }
+    if (term === 'carry') { const ch = execNow.get(c.id) ?? gOpen.get(c.id); if (ch) { ch.carryK += kcal; sumOf(clsOf(c), ch).carryK += kcal; } return; }
+    if (term !== 'eaten') return;
+    if (kind !== 'milk') { let e = eat10.get(c.id); if (!e) eat10.set(c.id, e = []); e.push(w.time, kcal); while (e.length && e[0] <= w.time - 10 / 60 + 1e-9) e.splice(0, 2); }
+    const ch = gOpen.get(c.id); if (!ch) return;
+    const s = sumOf(clsOf(c), ch);
+    if (kind === 'drupe' || kind === 'fig') {
+      ch.fruitK += kcal; s.fruitK += kcal;
+      const tree = c.action === 'forage' && isTreeId(c.targetId) ? c.targetId : -1;
+      if (tree > 0) {
+        const lf = lastFruit.get(c.id);
+        if (!lf || lf[0] !== tree || w.time - lf[1] >= 10 / 60 - 1e-9) { ch.visits++; s.visits++; if (!ch.first) ch.first = tree; }
+        lastFruit.set(c.id, [tree, w.time]);
+        let ts = treeSet.get(c.id); if (!ts) treeSet.set(c.id, ts = new Set()); ts.add(tree);
+      }
+    } else if (kind === 'fallback') { ch.fallK += kcal; s.fallK += kcal; ch.fell = true; }
+    else if (kind === 'meat') { ch.meatK += kcal; s.meatK += kcal; }
+  };
+  /** An RG decision (called first in rgTap). */
+  const gRg = (c: Chimp, list: Candidate[], menu: Candidate[], chosen: Candidate, why: string) => {
+    gDecided.add(c.id);
+    const x = ix(c), held = intents.get(c.id), live = gLive.get(c.id), d = day();
+    gLive.set(c.id, x.rgIntent);
+    const key = (k: { action: string; targetId: number }) => `${k.action}:${k.targetId}`;
+    const seen = gSeen.get(c.id);
+    if (why === 'kept' || why === 'arrived') { if (seen) for (const k of menu) seen.add(key(k)); return; } // the chain continues
+    gSeen.set(c.id, new Set(menu.map(key)));
+    const sw = chosen.action !== c.action || chosen.targetId !== c.targetId;
+    let detail = '';
+    if (why === 'need-bucket') detail = needDetail(c, held);
+    else if (why === 'light-phase') detail = held ? `${phaseOfPeriod(held.period)}>${dayPhase(w)}` : '';
+    else if (why === 'period') detail = held ? `${held.period}>${periodNow(w)}` : '';
+    const cur = findCandidate(list, c.action, c.targetId), newNoise = x.rgIntent?.noise;
+    if (why === 'outvalued' && live?.noise && cur) {
+      // the option that out-valued the act in rg.ts stillBest (its noise: live.noise, set there), and whether that noise was held
+      const vCur = rgRaw(cur) + (live.noise[key(cur)] ?? 0);
+      let best: Candidate | null = null, bv = vCur;
+      for (const k of menu) if (key(k) !== key(cur)) { const v = rgRaw(k) + (live.noise[key(k)] ?? 0); if (v > bv) { bv = v; best = k; } }
+      if (best) detail = `${optCat(c, best)} ${held?.noise && key(best) in held.noise ? 'held' : seen?.has(key(best)) ? 'fresh:back' : 'fresh:new'} ${rgRaw(best) > vCur ? 'value' : 'noise'}`;
+    }
+    const ongoing = !!held && !!cur && !x.finished && c.action === held.action && c.targetId === held.targetId;
+    let cfKeep = -1, cfBonus = -1;
+    if (P.redecideValue >= 1 && newNoise && ongoing) {
+      const nz = (k: Candidate) => held!.noise?.[key(k)] ?? newNoise[key(k)] ?? 0;
+      if (why === 'need-bucket' || why === 'light-phase') {
+        const v0 = rgRaw(cur!) + nz(cur!);
+        cfKeep = menu.some(k => key(k) !== key(cur!) && rgRaw(k) + nz(k) > v0) ? 0 : 1;
+      }
+      if (sw && w.time < x.actEnd && menu.length >= 2) {
+        // S27's continueBonus on the held act, added to the draw's own values (rg.ts redecide: raw + the noise drawn)
+        let bk = cur!, bv = rgRaw(cur!) + (newNoise[key(cur!)] ?? 0) + P.continueBonus;
+        for (const k of menu) if (key(k) !== key(cur!)) { const v = rgRaw(k) + (newNoise[key(k)] ?? 0); if (v > bv) { bv = v; bk = k; } }
+        cfBonus = bk === cur ? 1 : 0;
+      }
+    }
+    const chosenCat = optCat(c, chosen);
+    if (d) {
+      const t = c.action === 'forage' && isTreeId(c.targetId) ? index(w).treeById.get(c.targetId) : undefined;
+      R.g.draws.push({ cls: clsOf(c), why, detail, held: heldCat(c), fin: x.finished, intr: !x.finished && w.time < x.actEnd, chosen: chosenCat, sw, rawCur: cur ? rawOf(c, cur) : NaN, rawCh: rawOf(c, chosen),
+        crop: t ? fruitAt(w, t) : NaN, fill: fillOf(c), hunger: c.hunger, cfKeep, cfBonus });
+    }
+    if (!sw) return; // a draw that re-chose the held act and target: the chain continues
+    const m = candidateMeta.get(chosen), kind = catOf(chosen.action, chosen.targetId, m?.v ?? V.NONE, m?.aux ?? -1);
+    if (kind === 'hunt-lead') R.g.leads[why] = (R.g.leads[why] ?? 0) + 1;
+    if (kind === 'hunt-join') R.g.joins[why] = (R.g.joins[why] ?? 0) + 1;
+    closeChain(c, x.finished, why);
+    const ch = newChain(c, why, detail, heldCat(c), kind, kind === 'trip-caller' ? (x.jt !== undefined && x.jt > 0 ? x.jt : -1) : chosen.targetId, true);
+    if (isTrip(kind) || kind === 'hunt-lead' || kind === 'hunt-join') {
+      const tr = isTreeId(chosen.targetId) ? index(w).treeById.get(chosen.targetId) : undefined, pr = kind.startsWith('hunt') ? w.prey.find(p => p.id === chosen.targetId) : undefined;
+      const pos = tr?.position ?? pr?.position;
+      ch.d0 = pos ? Math.hypot(pos[0] - c.position[0], pos[2] - c.position[2]) : NaN; ch.fill0 = fillOf(c);
+      ch.rawCur = cur ? rawOf(c, cur) : NaN; ch.rawCh = rawOf(c, chosen); ch.noise = newNoise?.[key(chosen)] ?? NaN; ch.cfKeep = cfKeep; ch.rate10 = rate10Of(c);
+    }
+    openChain(c, ch);
+  };
+
   rulesTap.fn = (c, list) => {
     if (!windowOn || !c.alive) return;
     if (P.rgOn === 1 && c.age >= P.rgMinAge) return; // RG decisions are read by rgTap
+    {
+      // stage E3g: a young animal's decision; the chain switches at the end of the tick if its act changed
+      const x = ix(c), it = x.rgIntent;
+      let det = 'argmax';
+      if (P.redecideValue === 2) {
+        const nd = needDetail(c, it);
+        det = !it ? 'no-intent' : x.finished ? 'ended' : nd ? 'need-bucket' : phaseOfPeriod(it.period) !== dayPhase(w) ? 'light-phase' : 'keep-test';
+      }
+      gYoung.set(c.id, [x.finished, det]);
+    }
     bump(c, 'young');
     if (day()) cfAll(c, list, false, 'young');
     lastWhy.set(c.id, 'young');
   };
   rgTap.fn = (c, list, menu, probs, chosen, why) => {
     if (!windowOn) return;
+    gRg(c, list, menu, chosen, why); // stage E3g (reads only; before the intents map below moves on)
     const x = ix(c), held = intents.get(c.id), heldKey = held ? `${held.action}:${held.targetId}` : 'none';
     let trig = why;
     if (why === 'argmax' && !(P.redecideValue >= 1)) { const g = gate(w, c, held, list); trig = typeof g === 'string' ? g : 'kept?'; }
@@ -238,14 +436,33 @@ export function runSeed(job: Job): Result {
   };
 
   for (const c of w.chimps) if (c.alive && ix(c).rgIntent) intents.set(c.id, { ...ix(c).rgIntent! });
+  // stage E3g: the window's first chains ('start') and the live intentions
+  for (const c of w.chimps) if (c.alive) { gLive.set(c.id, ix(c).rgIntent); gKey.set(c.id, `${c.action}:${c.targetId}`); openChain(c, newChain(c, 'start', '', heldCat(c), heldCat(c), c.targetId, P.rgOn === 1 && c.age >= P.rgMinAge)); }
   windowOn = true;
   const prevPos = new Map<number, [number, number]>(), prevIn = new Map<number, number>(), maleCls = new Map<number, boolean>();
   for (let i = 0; i < days * DAY; i++) {
     lastWhy.clear();
+    gDecided.clear(); gYoung.clear(); execNow.clear();
     tickWorld(w);
     if (i % 240 === 0) for (const c of w.chimps) if (c.alive) maleCls.set(c.id, c.age >= 15 && c.sex === 'male');
     const d = day();
     for (const c of w.chimps) {
+      // stage E3g: chains after the tick (young and unruled act changes, the ground step, what executed)
+      if (gOpen.has(c.id)) {
+        if (!c.alive) { closeChain(c, true, 'death'); execPrev.delete(c.id); }
+        else {
+          const k = `${c.action}:${c.targetId}`, changed = k !== gKey.get(c.id), yd = gYoung.get(c.id);
+          let pre = false;
+          if (changed && yd) { pre = !yd[0]; const was = gOpen.get(c.id)?.kind ?? ''; closeChain(c, yd[0], 'young'); openChain(c, newChain(c, 'young', yd[1], was, heldCat(c), c.targetId, false)); }
+          else if (changed && !gDecided.has(c.id)) { closeChain(c, true, 'other'); openChain(c, newChain(c, 'other', '', '', heldCat(c), c.targetId, false)); }
+          gKey.set(c.id, k);
+          { const kc = clsOf(c); R.g.clsTicks[kc] = (R.g.clsTicks[kc] ?? 0) + 1; }
+          const pp = prevPos.get(c.id), step = pp && c.position[1] < 0.3 ? Math.hypot(c.position[0] - pp[0], c.position[2] - pp[1]) : 0;
+          const ex = pre ? gOpen.get(c.id)! : execNow.get(c.id) ?? gOpen.get(c.id)!;
+          if (step < 100 && step > 0) { ex.km += step / 1000; sumOf(clsOf(c), ex).km += step / 1000; }
+          execPrev.set(c.id, ex);
+        }
+      }
       if (!c.alive) { const o = open.get(c.id); if (o) open.delete(c.id); continue; }
       const x = ix(c), cls = clsOf(c);
       // identity with energy-diagnose (adult males, its class refresh every 240 ticks)
@@ -268,8 +485,20 @@ export function runSeed(job: Job): Result {
       open.set(c.id, { key: k, act: actOf(c.action), kind: kindOf(c.action, c.targetId, x.v, x.aux), cls, t0: o ? w.time : -1, day: d, startTop, cross: null, rg, topKind: fresh ? sn!.topKind : '', gap: fresh ? sn!.topV - sn!.held : NaN });
       if (o && d) R.runsStarted[cls]++;
     }
+    // stage E3g: chains closed last tick have had their last move charged; distinct feeding trees per animal-day
+    for (const ch of pendOld) settle(ch);
+    pendOld = pendNow; pendNow = [];
+    if (i % DAY === DAY - 1) {
+      for (const c of w.chimps) if (c.alive) { const k = clsOf(c), t = R.g.treeDays[k] ??= [0, 0]; t[0] += treeSet.get(c.id)?.size ?? 0; t[1]++; }
+      treeSet.clear();
+    }
   }
-  rulesTap.fn = null; rgTap.fn = null;
+  // stage E3g: the chains still open at the window's end (censored) are settled as they stand
+  for (const ch of pendOld) settle(ch);
+  for (const ch of pendNow) settle(ch);
+  for (const ch of gOpen.values()) settle(ch);
+  R.g.hunts = w.stats.hunts - hunts0;
+  rulesTap.fn = null; rgTap.fn = null; energyTap.fn = null;
   for (const c of w.chimps) if (!c.alive && !dead0.has(c.id)) { const why = c.causeOfDeath ?? 'unknown'; R.deaths[why] = (R.deaths[why] ?? 0) + 1; }
   R.living[1] = w.chimps.filter(c => c.alive).length;
   return R;
@@ -366,6 +595,89 @@ if (!isMainThread) {
   out.runKinds = Object.fromEntries([...new Set(runs.map(r => r.kind))].sort().map(kd => [kd, runOf(runs.filter(r => r.kind === kd && actCls.includes(r.cls)))]));
   out.actsPerAnimalHour = Object.fromEntries(CLS.map(k => [k, r3(res.reduce((a, r) => a + r.runsStarted[k], 0) / Math.max(1e-9, dayH[k]))]));
   out.temperature = P.rgTemperature;
+  // ---- Stage E3g aggregation (docs/staging/e3g-prereg.md §2) ----
+  {
+    const ADULT = ['adult male', 'female, lactating', 'female, other'] as Cls[];
+    const aDays = Object.fromEntries(CLS.map(k => [k, res.reduce((a, r) => a + (r.g.clsTicks[k] ?? 0), 0) / DAY])) as Record<Cls, number>;
+    const adultDays = ADULT.reduce((a, k) => a + aDays[k], 0);
+    const gd = res.flatMap(r => r.g.draws), ad = gd.filter(d => ADULT.includes(d.cls));
+    const share = (L: { [k: string]: unknown }[], f: (x: never) => boolean) => r3(L.length ? L.filter(f as never).length / L.length : NaN);
+    const dist = (L: string[]) => { const t: Record<string, number> = {}; for (const v of L) t[v] = (t[v] ?? 0) + 1; return Object.fromEntries(Object.entries(t).sort((a, b) => b[1] - a[1]).map(([k, n]) => [k, r3(n / L.length)])); };
+    const perDay = (n: number, days: number) => r3(n / Math.max(1e-9, days));
+    const TRIP = (k: string) => k === 'trip-own' || k === 'trip-joined' || k === 'trip-caller';
+    const drawsOf = (L: GDraw[], days: number) => {
+      const S = L.filter(d => d.sw), adv = S.filter(d => Number.isFinite(d.rawCur) && Number.isFinite(d.rawCh));
+      const crownS = S.filter(d => d.held === 'feed-crown'), kc = L.filter(d => d.cfKeep >= 0), kb = S.filter(d => d.cfBonus >= 0);
+      return { draws: perDay(L.length, days), switches: perDay(S.length, days), toTrip: perDay(S.filter(d => TRIP(d.chosen)).length, days), toHunt: perDay(S.filter(d => d.chosen.startsWith('hunt')).length, days),
+        toCrownInView: perDay(S.filter(d => d.chosen === 'crown-in-view').length, days), interruptShare: r3(L.length ? L.filter(d => d.intr).length / L.length : NaN), finishedShare: r3(L.length ? L.filter(d => d.fin).length / L.length : NaN),
+        chosen: dist(S.map(d => d.chosen)), held: dist(S.map(d => d.held)),
+        advMedian: r3(med(adv.map(d => d.rawCh - d.rawCur))), chosenWorthLess: r3(adv.length ? adv.filter(d => d.rawCh < d.rawCur).length / adv.length : NaN),
+        heldCrownCropMedian: r3(med(crownS.map(d => d.crop))), heldCrownFillMedian: r3(med(crownS.map(d => d.fill))), hungerMedian: r3(med(S.map(d => d.hunger))),
+        keepTest: { n: kc.length, wouldKeep: r3(kc.length ? kc.filter(d => d.cfKeep === 1).length / kc.length : NaN), switchesWouldKeepPerDay: perDay(kc.filter(d => d.cfKeep === 1 && d.sw).length, days),
+          tripsWouldKeepPerDay: perDay(kc.filter(d => d.cfKeep === 1 && d.sw && TRIP(d.chosen)).length, days), huntsWouldKeepPerDay: perDay(kc.filter(d => d.cfKeep === 1 && d.sw && d.chosen.startsWith('hunt')).length, days) },
+        bonus: { n: kb.length, wouldStay: r3(kb.length ? kb.filter(d => d.cfBonus === 1).length / kb.length : NaN) } };
+    };
+    const whys = [...new Set(gd.map(d => d.why))].sort();
+    const e3g: Record<string, unknown> = { animalDays: Object.fromEntries(CLS.map(k => [k, r3(aDays[k])])), adultDays: r3(adultDays) };
+    e3g.decisionsAdults = Object.fromEntries(whys.map(t => [t, drawsOf(ad.filter(d => d.why === t), adultDays)]));
+    e3g.decisionsAdultsAll = drawsOf(ad, adultDays);
+    e3g.decisionsByDetailAdults = Object.fromEntries(whys.filter(t => ad.some(d => d.why === t && d.detail)).map(t => {
+      const L = ad.filter(d => d.why === t), dets = [...new Set(L.map(d => d.detail))].sort();
+      return [t, Object.fromEntries(dets.map(dt => { const D = L.filter(d => d.detail === dt), S = D.filter(d => d.sw);
+        return [dt || '(none)', { draws: perDay(D.length, adultDays), switches: perDay(S.length, adultDays), toTrip: perDay(S.filter(d => TRIP(d.chosen)).length, adultDays), toHunt: perDay(S.filter(d => d.chosen.startsWith('hunt')).length, adultDays),
+          wouldKeep: r3(D.filter(d => d.cfKeep >= 0).length ? D.filter(d => d.cfKeep === 1).length / D.filter(d => d.cfKeep >= 0).length : NaN) }]; }))];
+    }));
+    e3g.decisionsByClass = Object.fromEntries((['adult male', 'female, lactating', 'female, other', 'adolescent 12–15 y', 'juvenile 8–12 y'] as Cls[]).map(k => [k, Object.fromEntries(whys.map(t => {
+      const L = gd.filter(d => d.cls === k && d.why === t), S = L.filter(d => d.sw);
+      return [t, { draws: perDay(L.length, aDays[k]), switches: perDay(S.length, aDays[k]), toTrip: perDay(S.filter(d => TRIP(d.chosen)).length, aDays[k]), toHunt: perDay(S.filter(d => d.chosen.startsWith('hunt')).length, aDays[k]) }];
+    }))]));
+    // chains: per animal-day by class and trigger (and trips vs the rest)
+    const sums: Record<string, GSum> = {};
+    for (const r of res) for (const [k, s] of Object.entries(r.g.sums)) { const t = sums[k] ??= { km: 0, walkK: 0, climbK: 0, carryK: 0, fruitK: 0, fallK: 0, meatK: 0, visits: 0, chains: 0 }; for (const f of Object.keys(t) as (keyof GSum)[]) t[f] += s[f]; }
+    const roll = (cls: Cls, pick: (why: string, kind: string) => string | null) => {
+      const t: Record<string, GSum> = {};
+      for (const [k, s] of Object.entries(sums)) { const [c, why, kind] = k.split('|'); if (c !== cls) continue; const g = pick(why, kind); if (g === null) continue; const u = t[g] ??= { km: 0, walkK: 0, climbK: 0, carryK: 0, fruitK: 0, fallK: 0, meatK: 0, visits: 0, chains: 0 }; for (const f of Object.keys(u) as (keyof GSum)[]) u[f] += s[f]; }
+      const D = Math.max(1e-9, aDays[cls]);
+      return Object.fromEntries(Object.entries(t).sort().map(([g, s]) => [g, Object.fromEntries(Object.entries(s).map(([f, v]) => [f, r3(v / D)]))]));
+    };
+    const coarse = (why: string) => why.split(':')[0];
+    const chainCls = ['adult male', 'female, lactating', 'female, other', 'juvenile 8–12 y', 'juvenile 5–8 y'] as Cls[];
+    e3g.chainsByTrigger = Object.fromEntries(chainCls.map(k => [k, roll(k, why => coarse(why))]));
+    e3g.chainsByTriggerDetail = Object.fromEntries(chainCls.map(k => [k, roll(k, why => why)]));
+    e3g.chainsByTriggerTrip = Object.fromEntries(chainCls.map(k => [k, roll(k, (why, kind) => `${coarse(why)} ${TRIP(kind) ? 'trip' : kind.startsWith('hunt') ? 'hunt' : kind === 'feed-crown' ? 'crown' : 'other'}`)]));
+    e3g.chainsTotal = Object.fromEntries(chainCls.map(k => [k, roll(k, () => 'all').all]));
+    // trips and hunts opened at decisions (adults, daylight starts)
+    const trips = res.flatMap(r => r.g.trips).filter(t => ADULT.includes(t.cls));
+    const outcome = (t: GChain) => t.kind.startsWith('hunt') ? (t.meatK > 0 ? 'meat' : 'no meat') : t.first === t.target ? 'fed at target' : t.first ? 'fed at another crown' : t.fell ? 'fallback only' : 'not fed';
+    const tripOf = (L: GChain[]) => ({ perAdultDay: perDay(L.length, adultDays), outcome: dist(L.map(outcome)), kind: dist(L.map(t => t.kind)), held: dist(L.map(t => t.held)),
+      d0Median: r3(med(L.map(t => t.d0))), fill0Mean: r3(mean(L.map(t => t.fill0).filter(Number.isFinite))), hunger0Mean: r3(mean(L.map(t => t.hunger0))),
+      kmMean: r3(mean(L.map(t => t.km))), spentMean: r3(mean(L.map(t => t.walkK + t.climbK + t.carryK))), climbMean: r3(mean(L.map(t => t.climbK))), fruitMean: r3(mean(L.map(t => t.fruitK))), gainMean: r3(mean(L.map(t => t.fruitK + t.fallK + t.meatK))),
+      netMean: r3(mean(L.map(t => t.fruitK + t.fallK + t.meatK - t.walkK - t.climbK - t.carryK))), minMean: r3(mean(L.map(t => ((Number.isFinite(t.t1) ? t.t1 : t.t0) - t.t0) * 60))),
+      chosenWorthLess: r3(L.filter(t => Number.isFinite(t.rawCur)).length ? L.filter(t => Number.isFinite(t.rawCur) && t.rawCh < t.rawCur).length / L.filter(t => Number.isFinite(t.rawCur)).length : NaN),
+      kmPerAdultDay: perDay(L.reduce((a, t) => a + t.km, 0), adultDays), climbPerAdultDay: perDay(L.reduce((a, t) => a + t.climbK, 0), adultDays),
+      wouldKeep: { n: L.filter(t => t.cfKeep >= 0).length, share: r3(L.filter(t => t.cfKeep >= 0).length ? L.filter(t => t.cfKeep === 1).length / L.filter(t => t.cfKeep >= 0).length : NaN) },
+      endWhy: dist(L.map(t => t.endWhy || 'open')), endWhyNotFed: dist(L.filter(t => outcome(t) === 'not fed').map(t => t.endWhy || 'open')),
+      rate10Mean: r3(mean(L.map(t => t.rate10).filter(Number.isFinite))),
+      netRateMean: r3((() => { const F = L.filter(t => Number.isFinite(t.t1) && t.t1 > t.t0); const m = F.reduce((a, t) => a + (t.t1 - t.t0) * 60, 0); return m > 0 ? F.reduce((a, t) => a + t.fruitK + t.fallK + t.meatK - t.walkK - t.climbK - t.carryK, 0) / m : NaN; })()),
+      fromCrown: (() => { const F = L.filter(t => t.held === 'feed-crown' && Number.isFinite(t.t1) && t.t1 > t.t0); const m = F.reduce((a, t) => a + (t.t1 - t.t0) * 60, 0); return { n: F.length, rate10Mean: r3(mean(F.map(t => t.rate10))), netRate: r3(m > 0 ? F.reduce((a, t) => a + t.fruitK + t.fallK + t.meatK - t.walkK - t.climbK - t.carryK, 0) / m : NaN), fedAtTarget: r3(F.length ? F.filter(t => outcome(t) === 'fed at target').length / F.length : NaN) }; })() });
+    const tw = [...new Set(trips.map(t => t.why))].sort();
+    e3g.tripsAdults = Object.fromEntries(tw.map(t => [t, tripOf(trips.filter(q => q.why === t && TRIP(q.kind)))]));
+    e3g.tripsAdultsAll = tripOf(trips.filter(q => TRIP(q.kind)));
+    e3g.tripsAdultsWouldKeep = tripOf(trips.filter(q => TRIP(q.kind) && q.cfKeep === 1));
+    e3g.huntsAdults = Object.fromEntries([...new Set(trips.filter(q => q.kind.startsWith('hunt')).map(t => t.why))].sort().map(t => [t, tripOf(trips.filter(q => q.why === t && q.kind.startsWith('hunt')))]));
+    const troopYears = res.reduce((a, r) => a + r.g.troops * r.g.days / 365, 0);
+    const sumRec = (f: (r: Result) => Record<string, number>) => { const t: Record<string, number> = {}; for (const r of res) for (const [k, n] of Object.entries(f(r))) t[k] = (t[k] ?? 0) + n; return Object.fromEntries(Object.entries(t).map(([k, n]) => [k, r3(n / troopYears)])); };
+    const maleDays = aDays['adult male'], hd = gd.filter(d => d.cls === 'adult male' && d.why === 'hunt');
+    e3g.hunting = { truthHuntsPerCommunityYear: r3(res.reduce((a, r) => a + r.g.hunts, 0) / troopYears), leadsPerCommunityYearByTrigger: sumRec(r => r.g.leads), joinsPerCommunityYearByTrigger: sumRec(r => r.g.joins),
+      huntDrawsPerMaleDay: perDay(hd.length, maleDays), leadShareAtHuntDraws: r3(hd.length ? hd.filter(d => d.chosen === 'hunt-lead').length / hd.length : NaN), heldAtHuntDraws: dist(hd.map(d => d.held)),
+      interruptShareAtHuntDraws: r3(hd.length ? hd.filter(d => d.intr).length / hd.length : NaN), bonusWouldStay: drawsOf(hd, maleDays).bonus,
+      leadShareAtInterrupt: r3(hd.filter(d => d.intr).length ? hd.filter(d => d.intr && d.chosen === 'hunt-lead').length / hd.filter(d => d.intr).length : NaN),
+      leadShareAtBoutEnd: r3(hd.filter(d => !d.intr).length ? hd.filter(d => !d.intr && d.chosen === 'hunt-lead').length / hd.filter(d => !d.intr).length : NaN) };
+    const td: Record<string, [number, number]> = {};
+    for (const r of res) for (const [k, v] of Object.entries(r.g.treeDays)) { const t = td[k] ??= [0, 0]; t[0] += v[0]; t[1] += v[1]; }
+    e3g.feedingTreesPerAnimalDay = Object.fromEntries(Object.entries(td).map(([k, v]) => [k, r3(v[0] / Math.max(1, v[1]))]));
+    out.e3g = e3g;
+  }
   if (jsonOut) writeFileSync(jsonOut, JSON.stringify(out, null, 1));
   console.log(JSON.stringify({ identity: out.identity, maleIdentity: out.maleIdentity, maxAge: { ...(out.maxAge as object), byClass: undefined, changed: undefined, changedWhenSwitched: undefined } }, null, 1));
   console.log('decides', JSON.stringify(out.decides));
