@@ -1750,3 +1750,17 @@ twice S13's, as in S15) and T-HUN-2 (back to 0.97 after S15's 0.59).
 integrated candidate by that rule, **with a fitted cost beyond noise** that the rule does not test: intergroup encounters
 at twice the band's top. The patrol rate and encounter rate are the next problem (E4i: the rate is set by design
 constants; half the patrols never hold three adult males).
+
+## S17 confirm (registered 4 October 2026 before its run)
+
+**S17 = S16 + E4j's `patrolFusion` 1** (the patrol lead weighed only when a party truly joins up, judged by the adult
+males met in the last hour; a correction: no counted prescription changes, 49). **Reference group, new:** S16 in confirm
+mode (S16, 721b0fb) plus three re-draws (`rgTemperature` 0.1641, 0.1639, 0.16405: S16c1–S16c3, bench-run4). **Keep rule
+for a correction:** viability; held-out not up beyond noise (with and without the rare rows, and without T-IGE-3);
+prescriptions not up; night safe. Reported: T-IGE-1 (fitted) and the patrol rows. Bench, energy-diagnose and
+rhythm-metrics, 5 seeds, 30 + 60 days, from a frozen checkout of this commit (bench-run2 moved here).
+
+**Predictions (against the S16 group; moderate confidence unless stated).** Prescriptions 49 (high); viability and night
+safety pass; T-IGE-1 inside its band 5–12 (moderate; S16 22.8); T-PAT-1 lower than S16's but inside its band (low);
+nursing mothers' and juveniles' reserves no worse than S16's; fitted better (T-IGE-1) and held-out inside noise; T-SOC-9
+reported (it fell in quick mode).

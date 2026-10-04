@@ -3144,7 +3144,7 @@ C6 evidence check (docs/patrol-evidence.md, full texts read then).
 **Not verified this stage:** amsler2010 (energetic costs of patrols; Wiley, closed; abstract only); mitaniWatts2005,
 wattsMitani2001, watts2006 (closed; as recorded at C6p); any source on the time of day patrols start.
 
-### Addendum: E4j encounters (4 October 2026)
+### E.48 Addendum: E4j encounters (4 October 2026)
 
 What stage E4j (`patrolFusion`, docs/staging/e4j-prereg.md) reads from sources already listed; every value below is a
 target, a definition or a direction, never an input. Read this stage: wilson2012's Methods and Results in full (author

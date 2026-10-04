@@ -1813,7 +1813,7 @@ toward the border), langergraber2017 (participation falls with the community's m
 massaro2022 (female participation; no young-infant effect at Taï), sobolewski2012 still not verified. No new source
 keys. Not verified: amsler2010, mitaniWatts2005, wattsMitani2001, watts2006 (closed; as recorded at C6p).
 
-## Addendum: E4j encounters (4 October 2026)
+## 48. Addendum: E4j encounters (4 October 2026)
 
 Same text as research.md "Addendum: E4j encounters": how Kanyawara's encounters were counted (wilson2012, FT: compiled
 from narrative notes and the field diary, foreign calls attributed by distance and direction toward or beyond the range
