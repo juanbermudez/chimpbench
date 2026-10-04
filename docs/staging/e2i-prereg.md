@@ -87,6 +87,77 @@ detached checkout of this commit; `--json` into the stage's scratch directory.
 - The model's movement-phase speed against batesByrne2009's Table 1 (a target, never an input) says how much of the gap
   between a gait speed and the field's phase speed the model's own stops would have to supply.
 
+### 2.1 Results (frozen checkout 93c4379, clean; `diag-S21.json` in the stage's scratch directory; printed by `walktab.py` from the JSON; S21's parameters, seeds 48 and 7, burn-in 30, 30 days; 89 s per seed)
+
+```
+## speeds by act (all classes): in-act ticks, moving/climb/still shares, speed while moving mean/p10/p50/p90, movement factor
+own trip         n= 282135 mov 0.92 clb 0.02 still 0.06 | v 0.314 p10 0.288 p50 0.312 p90 0.338 f 0.898 | why departure wait 0.98, party wait 0.02
+joined trip      n= 258775 mov 0.96 clb 0.04 still 0.00 | v 0.311 p10 0.263 p50 0.312 p90 0.338 f 0.889 | why departure wait 1.00
+caller           n= 149524 mov 0.98 clb 0.02 still 0.00 | v 0.308 p10 0.263 p50 0.312 p90 0.338 f 0.884 | why at goal 1.00
+home             n=    822 mov 1.00 clb 0.00 still 0.00 | v 0.283 p10 0.238 p50 0.288 p90 0.312 f 0.808 | why 
+party follow     n=   4152 mov 0.87 clb 0.03 still 0.10 | v 0.315 p10 0.263 p50 0.312 p90 0.338 f 0.880 | why beside leader (≤ 5 m) 0.98, other 0.02
+care follow      n=  77714 mov 0.25 clb 0.18 still 0.57 | v 0.246 p10 0.088 p50 0.263 p90 0.338 f 0.702 | why beside leader (≤ 5 m) 1.00, other 0.00
+crown approach   n=  70094 mov 0.21 clb 0.79 still 0.00 | v 0.302 p10 0.263 p50 0.312 p90 0.338 f 0.864 | why 
+in crown         n=1823162 mov 0.00 clb 0.01 still 0.99 | v 0.144 p10 0.038 p50 0.138 p90 0.213 f 0.622 | why other 1.00
+fallback         n= 575039 mov 0.08 clb 0.01 still 0.91 | v 0.051 p10 0.038 p50 0.038 p90 0.088 f 0.861 | why other 1.00
+drink            n=  72410 mov 0.59 clb 0.04 still 0.37 | v 0.314 p10 0.288 p50 0.312 p90 0.338 f 0.912 | why other 1.00
+nest             n=6607783 mov 0.00 clb 0.00 still 1.00 | v 0.225 p10 0.213 p50 0.238 p90 0.263 f 0.658 | why other 1.00
+patrol           n=  32294 mov 0.85 clb 0.00 still 0.15 | v 0.266 p10 0.188 p50 0.288 p90 0.388 f 0.910 | why listening stop 0.95, other 0.05
+hunt             n=    286 mov 0.07 clb 0.37 still 0.56 | v 1.782 p10 1.488 p50 1.763 p90 1.913 f 0.891 | why other 1.00
+flee             n=   2228 mov 0.85 clb 0.15 still 0.00 | v 0.517 p10 0.363 p50 0.513 p90 0.613 f 0.894 | why 
+pair approach    n=  16705 mov 0.16 clb 0.78 still 0.06 | v 0.294 p10 0.113 p50 0.312 p90 0.388 f 0.816 | why other 1.00
+run              n=   3005 mov 0.01 clb 0.98 still 0.01 | v 0.652 p10 0.013 p50 0.288 p90 1.838 f 0.877 | why other 1.00
+social other     n=  70352 mov 0.08 clb 0.18 still 0.73 | v 0.236 p10 0.062 p50 0.288 p90 0.388 f 0.880 | why other 1.00
+still acts       n=3152941 mov 0.02 clb 0.00 still 0.97 | v 0.061 p10 0.038 p50 0.038 p90 0.138 f 0.833 | why other 1.00
+
+## observer travel (adults, daylight)
+adult male         share 0.148 (111 min/day; moving 92) moving 0.83 climb 0.11 still 0.06 | eff speed 0.257 moving speed 0.310 | path in travel 0.97 (1.72 km/day) | still why departure wait 0.60, party wait 0.01, at goal 0.03, beside leader (≤ 5 m) 0.00, listening stop 0.18, other 0.17
+female, other      share 0.104 (78 min/day; moving 68) moving 0.87 climb 0.11 still 0.03 | eff speed 0.251 moving speed 0.291 | path in travel 0.97 (1.18 km/day) | still why departure wait 0.67, party wait 0.01, at goal 0.01, beside leader (≤ 5 m) 0.00, listening stop 0.11, other 0.21
+female, lactating  share 0.110 (83 min/day; moving 70) moving 0.85 climb 0.11 still 0.04 | eff speed 0.273 moving speed 0.320 | path in travel 0.94 (1.35 km/day) | still why departure wait 0.68, party wait 0.01, at goal 0.02, beside leader (≤ 5 m) 0.00, listening stop 0.07, other 0.22
+female, pregnant   share 0.092 (69 min/day; moving 59) moving 0.85 climb 0.11 still 0.04 | eff speed 0.274 moving speed 0.322 | path in travel 0.95 (1.14 km/day) | still why departure wait 0.68, party wait 0.00, at goal 0.01, beside leader (≤ 5 m) 0.14, other 0.17
+
+## valuations: decisions 96309 top changed 0.071 best tree changed 0.110 best tree d median 72 -> 89 mean 111 -> 123
+crown        n 97397 chosen 13658 d med 4 chosen d med 3 p90 26 | walk min 0.1 -> 0.1 feed min 32.5 | walk share 0.00 -> 0.00 | rate 0.978 -> 0.982 zero-rate 0.01
+own trip     n 159010 chosen 14777 d med 140 chosen d med 104 p90 234 | walk min 5.0 -> 2.1 feed min 41.5 | walk share 0.11 -> 0.05 | rate 0.866 -> 0.924 zero-rate 0.03
+joined trip  n 32720 chosen 11220 d med 74 chosen d med 61 p90 181 | walk min 2.9 -> 1.3 feed min 30.7 | walk share 0.09 -> 0.04 | rate 0.878 -> 0.927 zero-rate 0.03
+caller trip  n 7181 chosen 2089 d med 237 chosen d med 220 p90 705 | walk min 10.5 -> 4.4 feed min 34.2 | walk share 0.24 -> 0.12 | rate 0.722 -> 0.837 zero-rate 0.09
+drinks {'n': 193, 'dMedian': 60.2805567577447, 'walkMin0': 2.870502702749748, 'walkMinB': 1.2649242330947068}
+hunts {'n': 19, 'dMedian': 62.01237721250557, 'walkMin0': 2.9529703434526464, 'walkMinB': 1.1744768411459388}
+
+## movement phases (batesByrne2009 Table 1: males 357 m 1.94 km/h; lactating 277 m 1.91; receptive 319 m 2.21; halts/day males 6.5, lactating 4.5; halt min 60 / 95)
+adult male         phases 4317 dist 257 m speed mean 0.80 km/h (pooled 0.83, median 0.82) halts/day 6.5 halt min 98 days 840
+female, lactating  phases 1964 dist 200 m speed mean 0.79 km/h (pooled 0.82, median 0.80) halts/day 5.4 halt min 123 days 480
+female, other      phases 1136 dist 206 m speed mean 0.77 km/h (pooled 0.79, median 0.79) halts/day 5.2 halt min 128 days 285
+female, pregnant   phases 882 dist 200 m speed mean 0.81 km/h (pooled 0.85, median 0.83) halts/day 4.7 halt min 144 days 255
+```
+
+True day ranges (energy-diagnose's definition, the same world as the integrator's S21q): adult males 1.87, other females
+1.33, lactating females 1.65, juveniles 5–12 y 1.80, infants 2–5 y walking 0.61 km a day.
+
+**Reading (what the effective-speed copy sets).**
+1. *Speed.* Every walk moves at `walkMps` × the movement factor: in trips 0.29–0.33 m/s (p50 0.31; factor 0.83–0.93),
+   follows the same, patrols 0.27. 83–87% of adults' observer-travel time is moving at that speed, 11% climbing, 3–6%
+   standing (two thirds of it the departure wait). So the travel share (males 0.148 of daylight in truth, 111 min a day
+   for 1.72 km) is the path ÷ a slow speed, not path plus pauses: the copy's pauses (it is 2.7 km ÷ 21% of the day) are
+   walked, and the model's own stops come on top.
+2. *Movement phases.* Between halts of 20 min the model moves at 0.77–0.81 km/h; batesByrne2009 (the source of the copy's
+   2.7 km) measured 1.91–2.21 km/h in the same unit: the model's phases are 2.4–2.8 times slower. Its halts are the
+   field's already (males 6.5 a day, the field's 6.5; lactating 5.4 against 4.5), but 40–60% longer (98 against 60 min,
+   123 against 95). The pauses the copy folds into the speed are decisions the model already makes.
+3. *Valuations.* Walking is 9–11% of a chosen trip's time (own trips 104 m: 5.0 min against 41.5 min of eating; joined
+   trips 61 m; callers' crowns 220 m: 24%); at a walking speed of the body (vB) it halves, and the best tree option
+   changes in 11.0% of decisions (the top option in 7.1%); its median distance goes from 72 to 89 m. Drinks and hunts
+   are short (60–62 m, 3 min at walkMps). The hunt's approach is valued at walkMps (3.0 min for 62 m) while hunters move
+   at `RUN × 0.8` (1.8 m/s while moving): a valuation–movement mismatch (§6).
+
+**Against the registered criteria (§2).** At least 75% of travel time moves at the act's nominal speed (83–87%): the
+mechanism replaces the speed and adds no pause. The best tree option changes in 11% ≥ 5% of decisions: every valuation
+reads the same walking speed. The model's phases are 2.4–2.8 times slower than the field's with the field's number of
+halts. Moving at 0.31 m/s, the model spends at most 72% of a phase moving (0.80 km/h = 0.22 m/s); at a gait speed of
+about 0.79 m/s (0.88 × the factor 0.9) and the same stops, a male's phases would run at about 1.4 km/h (0.22 ÷ (0.72 ÷
+2.55 + 0.28)), still below the field's 1.94: the model's own stops inside phases would then be longer than the field's,
+not shorter. The field's phase speed is the stage's check on the pauses (a target, never an input).
+
 ## 3. Sources
 
 ## 4. Mechanism
