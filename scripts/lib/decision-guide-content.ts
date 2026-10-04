@@ -54,18 +54,34 @@ export interface DiagramSpec {
   notes?: string[];
 }
 
-/** Counted literals in src/sim, by a stable key (file and a piece of the line, as LITERAL_OFF matches them). */
-export const LITERALS: { key: string; file: string; has: string; label: string }[] = [
-  { key: 'lit:nestGate', file: 'candidates.ts', has: 'c.age >= 3 && !race) offerOwnNest', label: 'hour ≥ 12 gate on building a nest' },
-  { key: 'lit:nestGateRace', file: 'candidates.ts', has: 'if (race && !caretaker && c.age >= 3) offerOwnNest', label: 'hour ≥ 12 gate on building a nest (departRace branch)' },
-  { key: 'lit:middayRest', file: 'candidates.ts', has: 'const midday = rH ? heatRestValue(P, c) : hour >= 11.5', label: '11:30–14:30 rest bonus (+0.3)' },
-  { key: 'lit:middayBout', file: 'execution.ts', has: "action === 'rest' && P.rhythmHeat !== 1 && world.hour >= 11.5", label: '11:30–14:30 rest bout' },
-  { key: 'lit:morningNest', file: 'execution.ts', has: 'if (world.hour >= 5.5 && world.hour < 12) { a = P.boutNestMorningMin', label: '05:30–12:00 short nest bout' },
-  { key: 'lit:nightMenu', file: 'menu.ts', has: 'night: new Set<Action>(', label: 'night menu' },
-  { key: 'lit:duskMenu', file: 'menu.ts', has: 'dusk: new Set<Action>(', label: 'dusk menu' },
-  { key: 'lit:chorus', file: 'candidates.ts', has: '((hour >= 18 && hour < 19) || (hour >= 6.4 && hour < 7.4))', label: 'dawn and dusk chorus windows' },
-  { key: 'lit:figCoin', file: 'execution.ts', has: "(t.common === 'fig' || t.id === simOf(world).figTree) && random(world) < 0.5", label: '50% arrival pant-hoot at rich figs' },
-  { key: 'lit:defend', file: 'conflict.ts', has: 'defended = random(world) < 0.35', label: "mother's defence roll against infanticide" },
+/** Counted literals in src/sim, by a stable key (file, kind and a piece of the line, as LITERAL_OFF matches them). Stage
+ *  E0b added the time literals (kind interval: a quota written in the code; bonus: a fixed term for carrying on with or
+ *  repeating an act); `judgement` marks the ledger's judgement calls (docs/staging/e0b-prereg.md §2, §3). */
+export const LITERALS: { key: string; file: string; kind: 'hour' | 'probability' | 'menu' | 'interval' | 'bonus'; has: string; label: string; judgement?: boolean }[] = [
+  { key: 'lit:nestGate', file: 'candidates.ts', kind: 'hour', has: 'c.age >= 3 && !race) offerOwnNest', label: 'hour ≥ 12 gate on building a nest' },
+  { key: 'lit:nestGateRace', file: 'candidates.ts', kind: 'hour', has: 'if (race && !caretaker && c.age >= 3) offerOwnNest', label: 'hour ≥ 12 gate on building a nest (departRace branch)' },
+  { key: 'lit:middayRest', file: 'candidates.ts', kind: 'hour', has: 'const midday = rH ? heatRestValue(P, c) : hour >= 11.5', label: '11:30–14:30 rest bonus (+0.3)' },
+  { key: 'lit:middayBout', file: 'execution.ts', kind: 'hour', has: "action === 'rest' && P.rhythmHeat !== 1 && world.hour >= 11.5", label: '11:30–14:30 rest bout' },
+  { key: 'lit:morningNest', file: 'execution.ts', kind: 'hour', has: 'if (world.hour >= 5.5 && world.hour < 12) { a = P.boutNestMorningMin', label: '05:30–12:00 short nest bout' },
+  { key: 'lit:nightMenu', file: 'menu.ts', kind: 'menu', has: 'night: new Set<Action>(', label: 'night menu' },
+  { key: 'lit:duskMenu', file: 'menu.ts', kind: 'menu', has: 'dusk: new Set<Action>(', label: 'dusk menu' },
+  { key: 'lit:chorus', file: 'candidates.ts', kind: 'hour', has: '((hour >= 18 && hour < 19) || (hour >= 6.4 && hour < 7.4))', label: 'dawn and dusk chorus windows' },
+  { key: 'lit:figCoin', file: 'execution.ts', kind: 'probability', has: "(t.common === 'fig' || t.id === simOf(world).figTree) && random(world) < 0.5", label: '50% arrival pant-hoot at rich figs' },
+  { key: 'lit:defend', file: 'conflict.ts', kind: 'probability', has: 'defended = random(world) < 0.35', label: "mother's defence roll against infanticide" },
+  // stage E0b: quotas and continuation terms written as literals
+  { key: 'lit:chorusGap', file: 'candidates.ts', kind: 'interval', has: '!cv && time - x.lastCall > 1.5', label: 'chorus at most once per 1.5 h after a call' },
+  { key: 'lit:figCallGap', file: 'execution.ts', kind: 'interval', has: 'c.age >= 12 && time - x.lastCall > 0.75', label: 'arrival pant-hoot at most once per 0.75 h after a call' },
+  { key: 'lit:foodGruntGap', file: 'execution.ts', kind: 'interval', has: 'time - x.lastFoodCall > 0.3', label: 'food grunt at most once per 0.3 h' },
+  { key: 'lit:callGap', file: 'candidates.ts', kind: 'interval', has: 'const callReady = time - x.lastCall > 0.5', label: 'food and reunion calls at most once per 0.5 h after a call' },
+  { key: 'lit:alarmPenalty', file: 'candidates.ts', kind: 'bonus', has: '(time - x.lastCall < 0.03 ? 0.4 : 0)', label: 'alarm call −0.4 within 1.8 min of a call', judgement: true },
+  { key: 'lit:alarmHoo', file: 'execution.ts', kind: 'interval', has: 'c.actionTime % 60 === 0', label: 'an alarm hoo every 60 s while alarming', judgement: true },
+  { key: 'lit:displayGap', file: 'candidates.ts', kind: 'interval', has: 'time - x.lastDisplay > 0.75', label: 'a display at most once per 0.75 h' },
+  { key: 'lit:aggCooldown', file: 'candidates.ts', kind: 'interval', has: 'const cooled = time - x.lastAgg > 1.5', label: 'no status, grudge or coercive charge within 1.5 h of the last aggression' },
+  { key: 'lit:strangerGap', file: 'candidates.ts', kind: 'interval', has: 'time - x.lastAgg > 0.2', label: 'no charge at strangers within 0.2 h of the last aggression' },
+  { key: 'lit:femaleMateGap', file: 'candidates.ts', kind: 'interval', has: 'time - x.lastMate > 0.3', label: 'a female solicits at most once per 0.3 h after mating' },
+  { key: 'lit:mateBlock', file: 'execution.ts', kind: 'interval', has: 'WALK * 1.2, 1)) { if (c.actionTime > P.mateApproachS)', label: 'no mating for 0.5 h after a failed approach' },
+  { key: 'lit:guardChaseGap', file: 'execution.ts', kind: 'interval', has: 'time - x.lastAgg > 0.25', label: 'a mate guard chases a rival at most once per 0.25 h after aggression' },
+  { key: 'lit:groomContinue', file: 'candidates.ts', kind: 'bonus', has: '(time >= x.actEnd ? -0.25 : 0.35)', label: 'grooming bout carried on: +0.35, −0.25 after its end' },
 ];
 
 /** Steps of one decision (the overview). Every counted entry acts at exactly one step. */
@@ -92,6 +108,9 @@ export const STEP_OF: Record<string, Step> = {
   joinCallDistScaleM: 'options', pantGruntRepeatH: 'options', feedChargeGapH: 'options', immigrantChargeGapH: 'options', huntGapH: 'options',
   mateIntervalH: 'options', consortLatestHour: 'options', patrolFemaleJoin: 'options', patrolFemaleStay: 'options', patrolLactatingJoin: 'options',
   guardMaxAgeY: 'options', continueBonus: 'options', finishedPenalty: 'options',
+  // stage E0b: quotas and continuation terms written in candidates.ts
+  'lit:chorusGap': 'options', 'lit:callGap': 'options', 'lit:alarmPenalty': 'options', 'lit:displayGap': 'options', 'lit:aggCooldown': 'options',
+  'lit:strangerGap': 'options', 'lit:femaleMateGap': 'options', 'lit:groomContinue': 'options',
   // rg.ts and menu.ts: the choice
   rgTemperature: 'choice', rgMaxAgeH: 'choice', 'lit:nightMenu': 'choice', 'lit:duskMenu': 'choice',
   // execution.ts, conflict.ts, ecology.ts, parties.ts, signals.ts: carrying out the act and its dice
@@ -104,6 +123,8 @@ export const STEP_OF: Record<string, Step> = {
   meatEatPerH: 'act', weanRefuseMaxP: 'act', roughPlayP: 'act', walkMps: 'act', departRetryMin: 'act', departPersistMaxMin: 'act',
   patrolIncursionP: 'act', patrolMaxH: 'act', patrolStopEveryMin: 'act', patrolReleaseP: 'act', patrolReleaseContactP: 'act',
   drumHitsMedian: 'act', drumHitsSigma: 'act', drumIntervalMs: 'act', sigIdentitySD: 'act', sigCommunitySD: 'act',
+  // stage E0b: quotas written in execution.ts
+  'lit:figCallGap': 'act', 'lit:foodGruntGap': 'act', 'lit:alarmHoo': 'act', 'lit:mateBlock': 'act', 'lit:guardChaseGap': 'act',
   // tick.ts, life.ts, disease.ts, snares.ts, reproduction.ts, generation.ts: the world, outside any choice
   rainDisplayP: 'world', epidemicArrivalPerY: 'world', epidemicBetaPerH: 'world', epidemicFatality: 'world', snareHazardPerKm: 'world',
   adoptOtherP: 'world', adoptSiblingP: 'world', adoptSiblingInfantP: 'world', adoptOtherMinAgeY: 'world', adoptSiblingMinAgeY: 'world',
@@ -462,7 +483,7 @@ export const DIAGRAMS: DiagramSpec[] = [
   // ---------------------------------------------------------------------------------------------------------------
   {
     key: 'grooming', cap: 'From relationships to grooming and play', nav: 'Grooming and play', title: 'Grooming and play',
-    take: 'Since S9 the social need is relationship upkeep: it rises by what the animal\'s bonds lose each day, only grooming meets it, and grooming\'s partner terms count only as far as the groomer needs grooming. Since S22 play turns rough only when a player is acutely aroused relative to the size gap, not by a die (E4m).',
+    take: 'Since S9 the social need is relationship upkeep: it rises by what the animal\'s bonds lose each day, only grooming meets it, and grooming\'s partner terms count only as far as the groomer needs grooming. Since S22 play turns rough only when a player is acutely aroused relative to the size gap, not by a die (E4m). Still prescribed: the fixed terms that carry a grooming bout on.',
     desc: 'Flowchart of grooming and play on the candidate stack: bonds relax each day; the social need rises by what they lose and only grooming meets it; grooming\'s partner terms are weighted by the groomer\'s need; play reads the need; play turns rough from arousal and size, not by a die.',
     w: 832, h: 344,
     nodes: [
@@ -481,6 +502,8 @@ export const DIAGRAMS: DiagramSpec[] = [
       { k: 'rough', x: R, y: y(2) + 32, w: RW, h: 72, t: 'Play turns rough', s: 'rough-play die switched out', ids: ['roughPlayP'],
         before: 'Each 15-second play tick in contact in which the initiator was more than 2 years older than its partner, a die (0.0015) turned the play rough: the partner screamed and was marked the player\'s victim, its guardian could charge in defence, and the play ended. In E4m\'s diagnosis runs on S21, 56–64% of these escalations were by the victim\'s own mother.',
         now: 'Play turns rough only when a player\'s acute arousal times its body mass outweighs its partner\'s mass, discounted by the partner\'s own arousal: the stronger player\'s restraint fails. No die and no age rule. Arousal comes from storm onsets and aggression received, and an aroused animal rarely starts to play, so play almost never turns rough: guardians\' defence charges, which nearly all followed rough play, fell from 221 to 14 in E4m\'s runs (E4m).' },
+      { k: 'cont', x: S, y: y(2) + 32, w: SW, h: 72, t: 'Carrying on grooming', s: '+0.35 in the bout · −0.25 after', ids: ['lit:groomContinue'],
+        text: 'A grooming bout under way is worth +0.35 until its scheduled end and −0.25 after it, on top of the choice\'s own bonus for carrying on: fixed terms written in the code that set how long grooming bouts last, counted as the bonus for carrying on is (since E0b). E3d would drop them with the other continuation terms.' },
       { k: 'dyad', x: L, y: y(2) + 32, w: LW, h: 88, t: 'Mother and infant:\nthe groomer\'s own need', s: 'groomNeedDyad', st: 'lay',
         layer: { tag: 'RECORDED', sw: ['groomNeedDyad'], stage: 'E1k' },
         text: 'Between a mother and her unweaned infant, the groomer\'s own need would weight every social term. It cut the mother–infant grooming loop from 33% to 11% of daylight but removes no prescription. On S9 E5d\'s groomDrive already weights every pair this way.' },
@@ -490,6 +513,7 @@ export const DIAGRAMS: DiagramSpec[] = [
       { f: 'need', t: 'groom', kind: 'main' }, { f: 'need', t: 'play', fs: 'r', ts: 't', kind: 'main' }, { f: 'play', t: 'rough', kind: 'main' },
       { f: 'drive', t: 'groom', fs: 'r', ts: 'l', fo: -8, to: 0, kind: 'side' },
       { f: 'dyad', t: 'groom', fs: 'r', ts: 'l', fo: 0, to: 16, mx: 256, kind: 'lay' },
+      { f: 'cont', t: 'groom', kind: 'side' },
     ],
     notes: [
       'On S27 grooming is inside its band overall (0.093; males 0.123) but below it for females (0.068), as it has been since E3c; rest is inside its band (0.426), and so is grooming reciprocity (T-SOC-3 0.719, band 0.45–0.8; 0.32 in E4m\'s quick runs) (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, <a href="staging/e3c-prereg.md">e3c-prereg.md §8</a>).',
@@ -540,10 +564,10 @@ export const DIAGRAMS: DiagramSpec[] = [
   // ---------------------------------------------------------------------------------------------------------------
   {
     key: 'calls', cap: 'One value behind six kinds of call, and what listeners do', nav: 'Calls', title: 'Calls',
-    take: 'Six call rules that were hazards, coins, quotas or clock windows are now one value comparison, and since S5 what a listener does with a call is valued by company too. Since S16 greetings follow the memory of an association and the walk to a caller is valued in energy; how calls sound is still prescribed.',
+    take: 'Six call rules that were hazards, coins, quotas or clock windows are now one value comparison, and since S5 what a listener does with a call is valued by company too. Since S16 greetings follow the memory of an association and the walk to a caller is valued in energy. Still prescribed: how calls sound, the gap after a call that holds reunion pant-hoots, and the timing of alarm calls at a snake.',
     desc: 'Diagram of calls on the candidate stack: one call value (gain to listeners against cost to the caller) drives six call types that were prescribed before; listeners join after a hoo and go to callers by the company they gain; greetings follow the memory of an association; call acoustics remain prescribed.',
-    w: 832, h: 648,
-    zones: [{ x: 16, y: 312, w: 800, h: 136, label: 'Listeners' }, { x: 16, y: 472, w: 800, h: 160, label: 'Outside the call value' }],
+    w: 832, h: 752,
+    zones: [{ x: 16, y: 312, w: 800, h: 136, label: 'Listeners' }, { x: 16, y: 472, w: 800, h: 264, label: 'Outside the call value' }],
     nodes: [
       { k: 'value', x: S, y: y(1), w: SW, h: 88, t: 'A call is worth what\nlisteners learn, net', s: 'gain to allies − cost to caller', st: 'des', ps: ['callFixH', 'callSuppressW'],
         text: 'A call is a decision with a gain and a cost, read from the caller\'s own perception and memory (E4c). Gain: out-of-sight allies learn where it is, or companions notice a departure or food. Cost: neighbours hear it, and at food the share of its own meal it loses if listeners come. The exchange rates are design.' },
@@ -553,14 +577,14 @@ export const DIAGRAMS: DiagramSpec[] = [
       { k: 'contact', x: R, y: y(1), w: RW, h: 72, t: 'Contact pant-hoots', s: 'contactCallGapH', ids: ['contactCallGapH'],
         before: 'With fewer than 2 community members in sight, a contact pant-hoot at most once per 0.75 h.',
         now: 'No quota: how stale its own last pant-hoot is (time since it, or distance moved since) enters the value.' },
-      { k: 'chorus', x: R, y: y(2), w: RW, h: 72, t: 'Dawn and dusk choruses', s: '06:24–07:24 · 18:00–19:00', ids: ['lit:chorus'],
-        before: 'Chorus pant-hoots were offered only between 06:24 and 07:24 and between 18:00 and 19:00 (clock windows in the code).',
+      { k: 'chorus', x: R, y: y(2), w: RW, h: 72, t: 'Dawn and dusk choruses', s: '06:24–07:24 · 18:00–19:00', ids: ['lit:chorus', 'lit:chorusGap'],
+        before: 'Chorus pant-hoots were offered only between 06:24 and 07:24 and between 18:00 and 19:00, and at most once per 1.5 h after the caller\'s own last call (clock windows and a gap in the code).',
         now: 'A pant-hoot follows its value at any hour.' },
-      { k: 'fig', x: L, y: y(0), w: LW, h: 72, t: 'Arrival call at figs', s: '50% coin', ids: ['lit:figCoin'],
-        before: 'Arriving at a rich fig, a 50% coin decided an arrival pant-hoot.',
+      { k: 'fig', x: L, y: y(0), w: LW, h: 72, t: 'Arrival call at figs', s: '50% coin · 0.75-h gap', ids: ['lit:figCoin', 'lit:figCallGap'],
+        before: 'Arriving at a rich fig, a 50% coin decided an arrival pant-hoot, at most once per 0.75 h after the caller\'s own last call.',
         now: 'The arrival pant-hoot is weighed on arrival in a crown and given when its value is positive.' },
-      { k: 'grunt', x: L, y: y(1), w: LW, h: 72, t: 'Food grunts', s: 'foodCallBase · foodCall*', ids: ['foodCallBase', 'foodCallCropW', 'foodCallMaleW', 'foodCallPartnerW'],
-        before: 'On arriving in a crown with a crop above 0.3, a grunt with probability 0.35 + 0.3 × (crop − 0.3) + 0.05 per adult male in sight (up to 3) + 0.15 with a close partner or the alpha in sight.',
+      { k: 'grunt', x: L, y: y(1), w: LW, h: 72, t: 'Food grunts', s: 'foodCallBase · foodCall*', ids: ['foodCallBase', 'foodCallCropW', 'foodCallMaleW', 'foodCallPartnerW', 'lit:foodGruntGap'],
+        before: 'On arriving in a crown with a crop above 0.3, at most once per 0.3 h, a grunt with probability 0.35 + 0.3 × (crop − 0.3) + 0.05 per adult male in sight (up to 3) + 0.15 with a close partner or the alpha in sight.',
         now: 'Given when the bond with companions within earshot not yet feeding there outweighs the share of its own meal it would lose to them.' },
       { k: 'hoo', x: L, y: y(2), w: LW, h: 72, t: 'Travel hoos', s: 'travelHooP · travelHooAllyP', ids: ['travelHooP', 'travelHooAllyP'],
         before: 'A leaver gave a travel hoo with probability 0.554, or 0.756 with an ally in sight: the source\'s own rates.',
@@ -579,6 +603,10 @@ export const DIAGRAMS: DiagramSpec[] = [
         now: 'A subordinate greets a dominant once per association: the memory of having greeted is cleared at a reunion, after more than an hour out of sight, and the greeting reopens when the dominant charges or attacks it (E5e). The greeting\'s score is unchanged.' },
       { k: 'sound', x: 488, y: 520, w: 280, h: 88, t: 'How calls sound', s: 'drumHits* · drumIntervalMs\nsigIdentitySD · sigCommunitySD', ids: ['drumHitsMedian', 'drumHitsSigma', 'drumIntervalMs', 'sigIdentitySD', 'sigCommunitySD'],
         text: 'Drumming bouts (median 4 hits, 229 ms apart) and pant-hoot voice signatures set so recordings are told apart as in the field (T-COM-5, T-COM-6). They shape what listeners can tell apart, not when anyone calls.' },
+      { k: 'reunion', x: 64, y: 632, w: 280, h: 72, t: 'A gap after a call', s: 'reunion and food calls: 0.5 h', ids: ['lit:callGap'],
+        text: 'A male\'s pant-hoot at a reunion, and the food call before the call value, wait 0.5 h after the animal\'s own last call: a fixed gap written in the code, a quota counted since E0b. The call value replaced the food call; the reunion pant-hoot still runs on the gap.' },
+      { k: 'alarm', x: 488, y: 632, w: 280, h: 88, t: 'Alarm calls at a snake', s: 'a hoo every 60 s while alarming\n−0.4 within 1.8 min of a call', ids: ['lit:alarmHoo', 'lit:alarmPenalty'],
+        text: 'An animal that alarms at a snake model hoos at once and every 60 s after, and listeners near the snake learn of it from the hoos; an alarm is worth 0.4 less within 1.8 min of the animal\'s own last call. Fixed terms written in the code, counted since E0b as judgement calls; snakes appear only in experiments.' },
     ],
     edges: [
       { f: 'value', t: 'travel', fs: 'r', ts: 'l', fo: -24, kind: 'main' }, { f: 'value', t: 'contact', fs: 'r', ts: 'l', fo: 0, to: 0, kind: 'main' },
@@ -598,7 +626,7 @@ export const DIAGRAMS: DiagramSpec[] = [
   // ---------------------------------------------------------------------------------------------------------------
   {
     key: 'aggression', cap: 'From internal states to how a contest ends', nav: 'Aggression and displays', title: 'Aggression and displays',
-    take: 'Hormone-like states open escalated attacks, redirected aggression and rain displays, and since S13 how far a contest goes follows each animal\'s assessment of its chances: contact only where neither side concedes, and allies join by choice, and charges repeat by state. Serious wounds are still prescribed.',
+    take: 'Hormone-like states open escalated attacks, redirected aggression and rain displays, and since S13 how far a contest goes follows each animal\'s assessment of its chances: contact only where neither side concedes, and allies join by choice, and charges repeat by state. Still prescribed: serious wounds, and the fixed gaps after an animal\'s own aggression.',
     desc: 'Flowchart of aggression on the candidate stack: slow and fast hormone-like states open escalation, redirection and rain displays; contact follows the contestants\' assessments, allies join by choice; serious wounds remain prescribed.',
     w: 832, h: 424,
     nodes: [
@@ -607,6 +635,8 @@ export const DIAGRAMS: DiagramSpec[] = [
         now: 'Three leaky states, updated every 5 minutes from what the animal perceives and kicked by events: stress (cortisol-like), competitive arousal (testosterone-like, adult males) and affiliation (oxytocin-like), which speeds recovery from stress (E4a).' },
       { k: 'rhythm', x: L, y: y(1), w: LW, h: 72, t: 'Sleep-gated rhythm (E4d)', s: 'endoRhythm', st: 'lay', layer: { tag: 'RECORDED', sw: ['endoRhythm'], stage: 'E4d' },
         text: 'Would make both slow states peak at waking and fall through the day from each animal\'s own sleep. Recorded and off: it removes no prescription, and morning escalations rose beyond noise.' },
+      { k: 'gaps', x: L, y: y(2), w: LW, h: 88, t: 'Gaps after aggression', s: '1.5 h · 0.2 h strangers\n0.75 h between displays', ids: ['lit:aggCooldown', 'lit:strangerGap', 'lit:displayGap'],
+        text: 'Status, grudge and coercive charges, a young male\'s charges at adult females and escalated attacks wait 1.5 h after the animal\'s own last charge or attack; a charge at strangers waits 0.2 h; a male displays at most once per 0.75 h. Fixed gaps written in the code, whatever the animal\'s state: quotas, counted since E0b. E5e took out the two registry gaps beside them.' },
       { k: 'fast', x: L, y: y(3) + 16, w: LW, h: 72, t: 'Fast arousal', s: 'minutes · storms and threats', st: 'des', ps: ['endoFastTauMin'],
         text: 'A fast state with a time constant of minutes, kicked by a storm\'s onset or a threat (E4b).' },
       { k: 'charge', x: S, y: y(0), w: SW, h: 72, t: 'Charges offered', s: 'rivalry · food · immigrants', st: 'des',
@@ -642,6 +672,7 @@ export const DIAGRAMS: DiagramSpec[] = [
       { f: 'redir', t: 'dice', fs: 'r', ts: 'l', fo: 0, to: 28, mx: 556, kind: 'main' },
       { f: 'dice', t: 'wound', kind: 'main' },
       { f: 'allies', t: 'dice', fs: 'r', ts: 'r', fo: 0, to: 24, via: [[816, 356], [816, 180]], kind: 'side' },
+      { f: 'gaps', t: 'esc', fs: 'r', ts: 'l', fo: -20, to: 24, mx: 268, kind: 'side' },
     ],
     notes: [
       'Slow states keep the acts rare and well-timed: redirects come within a minute of the defeat and stay at 2–4% of decided conflicts (<a href="staging/e4a-prereg.md">e4a-prereg.md</a>).',
@@ -763,16 +794,16 @@ export const DIAGRAMS: DiagramSpec[] = [
   // ---------------------------------------------------------------------------------------------------------------
   {
     key: 'mating', cap: 'From a fertile female to leaving home', nav: 'Mating and dispersal', title: 'Mating and dispersal',
-    take: 'Mating and leaving the natal community run on a quota, a hazard and a probability; since S16 a consortship follows the daylight left.',
-    desc: 'Flowchart of mating and dispersal: reproductive physiology makes fertile females; a consortship valued by the light of its walk; a mating quota, a transfer hazard and a disperser share remain prescribed.',
+    take: 'Mating and leaving the natal community run on quotas, a hazard and a probability; since S16 a consortship follows the daylight left.',
+    desc: 'Flowchart of mating and dispersal: reproductive physiology makes fertile females; a consortship valued by the light of its walk; mating quotas, a transfer hazard and a disperser share remain prescribed.',
     w: 832, h: 328,
     nodes: [
       { k: 'cycle', x: L, y: y(0), w: LW, h: 72, t: 'Cycles and swellings', s: 'reproductive physiology', st: 'inp', ps: ['cycleLenMinDays', 'gestationMinDays', 'fecundityMax'],
         text: 'Cycle length, gestation and fecundity by age: life-history inputs.' },
       { k: 'fertile', x: S, y: y(0), w: SW, h: 72, t: 'A fertile female in reach', s: 'swelling ≥ 0.75', st: 'des',
         text: 'Males value mating by her swelling, their age and rank (design weights).' },
-      { k: 'mate', x: S, y: y(1), w: SW, h: 72, t: 'Mating quota', s: 'mateIntervalH 1.5 h', ids: ['mateIntervalH'],
-        text: 'A male mates at most once per 1.5 hours.' },
+      { k: 'mate', x: S, y: y(1), w: SW, h: 72, t: 'Mating quotas', s: '1.5 h · 0.5 h · 0.3 h · 0.25 h', ids: ['mateIntervalH', 'lit:mateBlock', 'lit:femaleMateGap', 'lit:guardChaseGap'],
+        text: 'A male mates at most once per 1.5 hours and waits 0.5 h after a failed approach; a swollen female solicits at most once per 0.3 h after mating; a guarding male chases a rival at most once per 0.25 h after his own last aggression. The first is a registry entry; the other three are written in the code (counted since E0b).' },
       { k: 'consort', x: R, y: y(1), w: RW, h: 88, t: 'Consortships by\nthe light left', s: 'consort clock switched out', ids: ['consortLatestHour'],
         before: 'A consortship could start only before 16:00.',
         now: 'A consortship is worth what it offers times the light of the walk away from the party to the range\'s edge: full when the sun stays high until arrival, near zero arriving in darkness (E5e). In E5e\'s runs one started after 16:00 and none in darkness.' },
@@ -825,14 +856,14 @@ export const DOMAINS: { key: string; title: string; ids: string[] }[] = [
   { key: 'sleep', title: 'Sleep and the nest', ids: ['energySleepPerH', 'energyRestPerH', 'energyRunPerH', 'energyWalkPerH', 'energyOtherPerH', 'nestEveningFromH', 'nestEveningStartH', 'nestEveningEndH', 'nestEveningDrive', 'nestNightBonus', 'nestMorningDrive', 'lit:nestGate', 'nestWakeHour', 'boutNestMorningMin', 'boutNestMorningMax', 'lit:morningNest', 'lit:nightMenu', 'lit:duskMenu'] },
   { key: 'rest', title: 'Rest and heat', ids: ['lit:middayRest', 'boutRestMiddayMin', 'boutRestMiddayMax', 'lit:middayBout'] },
   { key: 'nursing', title: 'Nursing and weaning', ids: ['hungerLactationPerH', 'hungerPregnancyPerH', 'weanRefuseMaxP'] },
-  { key: 'grooming', title: 'Grooming and play', ids: ['socialAwakePerH', 'socialSleepPerH', 'roughPlayP'] },
+  { key: 'grooming', title: 'Grooming and play', ids: ['socialAwakePerH', 'socialSleepPerH', 'roughPlayP', 'lit:groomContinue'] },
   { key: 'party', title: 'Party following and joining', ids: ['partyFollowBase', 'partyFollowW', 'partyFollowMaleW', 'partyStayW', 'joinSocialW', 'joinHooW', 'joinCallDistScaleM', 'departRetryMin', 'departPersistMaxMin'] },
-  { key: 'calls', title: 'Calls', ids: ['travelCallPerH', 'travelCallGapH', 'contactCallGapH', 'lit:chorus', 'lit:figCoin', 'foodCallBase', 'foodCallCropW', 'foodCallMaleW', 'foodCallPartnerW', 'travelHooP', 'travelHooAllyP', 'pantGruntRepeatH', 'drumHitsMedian', 'drumHitsSigma', 'drumIntervalMs', 'sigIdentitySD', 'sigCommunitySD'] },
-  { key: 'aggression', title: 'Aggression and displays', ids: ['stressRelaxPerH', 'escalateImpulseBase', 'escalateImpulseAggr', 'redirectBaseP', 'redirectAggrP', 'rainDisplayP', 'feedChargeGapH', 'immigrantChargeGapH', 'escalationBaseP', 'escalationEvenP', 'hitP', 'seriousInjuryP', 'coalitionBondP', 'coalitionStrangerP'] },
+  { key: 'calls', title: 'Calls', ids: ['travelCallPerH', 'travelCallGapH', 'contactCallGapH', 'lit:chorus', 'lit:figCoin', 'foodCallBase', 'foodCallCropW', 'foodCallMaleW', 'foodCallPartnerW', 'travelHooP', 'travelHooAllyP', 'pantGruntRepeatH', 'drumHitsMedian', 'drumHitsSigma', 'drumIntervalMs', 'sigIdentitySD', 'sigCommunitySD', 'lit:chorusGap', 'lit:figCallGap', 'lit:foodGruntGap', 'lit:callGap', 'lit:alarmPenalty', 'lit:alarmHoo'] },
+  { key: 'aggression', title: 'Aggression and displays', ids: ['stressRelaxPerH', 'escalateImpulseBase', 'escalateImpulseAggr', 'redirectBaseP', 'redirectAggrP', 'rainDisplayP', 'feedChargeGapH', 'immigrantChargeGapH', 'escalationBaseP', 'escalationEvenP', 'hitP', 'seriousInjuryP', 'coalitionBondP', 'coalitionStrangerP', 'lit:aggCooldown', 'lit:strangerGap', 'lit:displayGap'] },
   { key: 'hunting', title: 'Hunting', ids: ['huntGapH', 'huntSuccessMax', 'huntSuccessRate', 'huntExtraKillP', 'meatEatPerH'] },
   { key: 'patrols', title: 'Patrols and neighbours', ids: ['patrolStartH', 'patrolEndH', 'patrolH0', 'patrolMaleOddsRatio', 'patrolFemaleJoin', 'patrolFemaleStay', 'patrolLactatingJoin', 'patrolIncursionP', 'patrolMaxH', 'patrolStopEveryMin', 'patrolReleaseP', 'patrolReleaseContactP'] },
   { key: 'lethal', title: 'Gang attacks and infanticide', ids: ['gangImpulseP', 'gangMinOwnMales', 'gangRollGapH', 'gangVictimGapH', 'gangKillMalePerAttacker', 'gangKillMaleMax', 'gangKillInfantP', 'gangKillOtherP', 'infanticideStrangerP', 'infanticideNewAlphaP', 'infanticideKillP', 'lit:defend'] },
-  { key: 'mating', title: 'Mating and dispersal', ids: ['mateIntervalH', 'consortLatestHour', 'dispersalHazardPerY', 'disperserP'] },
+  { key: 'mating', title: 'Mating and dispersal', ids: ['mateIntervalH', 'lit:mateBlock', 'lit:femaleMateGap', 'lit:guardChaseGap', 'consortLatestHour', 'dispersalHazardPerY', 'disperserP'] },
   { key: 'life', title: 'Life, death and care', ids: ['epidemicArrivalPerY', 'epidemicBetaPerH', 'epidemicFatality', 'snareHazardPerKm', 'adoptSiblingP', 'adoptSiblingInfantP', 'adoptOtherP', 'adoptSiblingMinAgeY', 'adoptOtherMinAgeY', 'carryDeadP', 'bereaveHalfLifeD', 'bereaveMaxAgeY', 'guardMaxAgeY'] },
 ];
 

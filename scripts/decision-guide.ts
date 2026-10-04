@@ -95,13 +95,13 @@ export interface Entry {
   by?: string; stage?: string; needs?: string[]; why?: string; where?: string; code?: string;
 }
 
-function literalKey(file: string, text: string): string | undefined {
-  const hits = LITERALS.filter(l => l.file === file && text.includes(l.has));
+function literalKey(file: string, text: string, kind: string): string | undefined {
+  const hits = LITERALS.filter(l => l.file === file && l.kind === kind && text.includes(l.has));
   if (hits.length > 1) fail(`literal ${file} "${text.slice(0, 60)}" matches ${hits.length} keys`);
   return hits[0]?.key;
 }
 const counted = (L: Ledger) => new Set([...L.rows.filter(r => r.cls === 'outcome-encoding' && r.active).map(r => r.id),
-  ...L.literals.filter(l => l.counted).map(l => literalKey(l.file, l.text) ?? fail(`counted literal ${l.file}:${l.line} has no key in LITERALS`))]);
+  ...L.literals.filter(l => l.counted).map(l => literalKey(l.file, l.text, l.kind) ?? fail(`counted ${l.kind} literal ${l.file}:${l.line} has no key in LITERALS`))]);
 
 /** Switches a switch needs, itself included (TRACK_E_SWITCHES.needs, transitively). */
 function closure(s: string, acc = new Set<string>()): Set<string> {
@@ -130,8 +130,12 @@ export function buildData() {
     const e: Entry = { key, type: lit ? 'literal' : 'param', label: key, value: '', units: '', cls: 'outcome-encoding', kind: '', evidence: '', encodes: [], reason: '', borderline: false, b: setB.has(key), onStack: setS.has(key), layers };
     if (lit) {
       const spec = LITERALS.find(l => l.key === key)!;
-      const l = B.literals.find(q => q.file === spec.file && q.text.includes(spec.has)) ?? fail(`literal ${key} not found by the lint`);
-      Object.assign(e, { label: spec.label, value: l.values.join(', '), units: l.kind === 'hour' ? 'hour of day' : l.kind === 'probability' ? 'probability' : 'acts allowed', kind: l.kind === 'hour' ? 'clock (code)' : l.kind === 'probability' ? 'dice (code)' : 'menu (code)', where: `src/sim/${l.file}:${l.line}`, code: l.text.slice(0, 140), reason: l.why });
+      // the line counted on today's model (stage E0b: one prescription written on two lines is counted on one of them)
+      const match = (q: Ledger['literals'][number]) => q.file === spec.file && q.kind === spec.kind && q.text.includes(spec.has);
+      const l = B.literals.find(q => match(q) && q.counted) ?? B.literals.find(match) ?? fail(`literal ${key} not found by the lint`);
+      const UNITS: Record<string, string> = { hour: 'hour of day', probability: 'probability', menu: 'acts allowed', interval: l.units ?? 'h', bonus: 'score' };
+      const KIND: Record<string, string> = { hour: 'clock (code)', probability: 'dice (code)', menu: 'menu (code)', interval: 'quota (code)', bonus: 'bonus (code)' };
+      Object.assign(e, { label: spec.label, value: l.values.join(', ') + (l.kind === 'interval' ? ` ${l.units ?? 'h'}` : ''), units: UNITS[l.kind], kind: KIND[l.kind], borderline: !!spec.judgement, where: `src/sim/${l.file}:${l.line}`, code: l.text.slice(0, 140), reason: l.why });
     } else {
       const r = reg.get(key) ?? fail(`unknown registry id ${key}`);
       const units = r.units === 'h (time of day)' ? `h (${clock(r.fieldValue)})` : r.units;
@@ -149,7 +153,7 @@ export function buildData() {
         e.needs = needed.filter(s => s !== e.by);
       }
       e.stage = TRACK_E_SWITCHES[e.by!].stage;
-      e.why = lit ? (LS.literals.find(q => literalKey(q.file, q.text) === key)?.why ?? '') : (LS.rows.find(q => q.id === key)?.activeNote ?? '');
+      e.why = lit ? (LS.literals.find(q => literalKey(q.file, q.text, q.kind) === key)?.why ?? '') : (LS.rows.find(q => q.id === key)?.activeNote ?? '');
     }
     entries.set(key, e);
   }

@@ -35,7 +35,7 @@ test('choiceBelief on (field): deterministic over a day, JSON-lossless; rgTemper
   assert.ok(read.has('patchRecoverPerDay'), 'the belief spread reads patchRecoverPerDay');
   assert.deepEqual(JSON.parse(JSON.stringify(a)), a);
   assert.equal(prescriptionCount({ choiceBelief: 1 }).total, prescriptionCount({}).total - 1);
-  assert.equal(prescriptionCount({ choiceBelief: 1, redecideValue: 2 }).total, prescriptionCount({}).total - 3);
+  assert.equal(prescriptionCount({ choiceBelief: 1, redecideValue: 2 }).total, prescriptionCount({}).total - 4); // with the grooming continuation terms (stage E0b)
 });
 
 test('choiceBelief with redecideValue 2: deterministic, JSON-lossless; the held noise is finite', () => {

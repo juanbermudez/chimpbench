@@ -9,6 +9,8 @@ export interface PoolOptions {
   size?: number;
   /** Called when a job finishes (index, result, milliseconds). */
   onDone?: (index: number, ms: number) => void;
+  /** A new worker for every job (a job that imports its own copy of the code leaves nothing behind for the next). */
+  fresh?: boolean;
 }
 
 export async function runPool<J, R>(workerFile: URL, jobs: J[], opts: PoolOptions = {}): Promise<R[]> {
@@ -16,21 +18,25 @@ export async function runPool<J, R>(workerFile: URL, jobs: J[], opts: PoolOption
   const results = new Array<R>(jobs.length);
   let next = 0, failed: Error | null = null;
   const lane = () => new Promise<void>((resolve, reject) => {
-    const w = new Worker(workerFile);
-    let current = -1, started = 0;
+    let current = -1, started = 0, w: Worker;
+    const start = () => {
+      w = new Worker(workerFile);
+      w.on('message', (m: { index: number; result?: R; error?: string }) => {
+        if (m.error) { failed = new Error(`job ${m.index}: ${m.error}`); void w.terminate(); reject(failed); return; }
+        results[m.index] = m.result as R;
+        opts.onDone?.(m.index, performance.now() - started);
+        if (opts.fresh) { const old = w; void old.terminate().then(() => { if (failed || next >= jobs.length) resolve(); else { start(); feed(); } }); return; }
+        feed();
+      });
+      w.on('error', e => { failed = e instanceof Error ? e : new Error(String(e)); reject(failed); });
+      w.on('exit', code => { if (code !== 0 && !failed && current >= 0 && results[current] === undefined) { failed = new Error(`worker exited with code ${code} during job ${current}`); reject(failed); } });
+    };
     const feed = () => {
       if (failed || next >= jobs.length) { void w.terminate(); resolve(); return; }
       current = next++; started = performance.now();
       w.postMessage({ index: current, job: jobs[current] });
     };
-    w.on('message', (m: { index: number; result?: R; error?: string }) => {
-      if (m.error) { failed = new Error(`job ${m.index}: ${m.error}`); void w.terminate(); reject(failed); return; }
-      results[m.index] = m.result as R;
-      opts.onDone?.(m.index, performance.now() - started);
-      feed();
-    });
-    w.on('error', e => { failed = e instanceof Error ? e : new Error(String(e)); reject(failed); });
-    w.on('exit', code => { if (code !== 0 && !failed && current >= 0 && results[current] === undefined) { failed = new Error(`worker exited with code ${code} during job ${current}`); reject(failed); } });
+    start();
     feed();
   });
   await Promise.all(Array.from({ length: size }, lane));
