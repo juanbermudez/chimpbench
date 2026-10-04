@@ -360,3 +360,12 @@ implicate. Known defects deferred (not fixed here; file:line at b84009f):
   --json …/A1-energy.json` (one after the other, beside the e-bench chain). Judged per §6–§7: the quick sums against S22q
   and S22q1–3 (`judge_vs_reps.py quick custom`), the hunt rows against H0 and H0r, the reserves against S22q's four energy
   runs.
+- **A1r (a re-draw of A1; logged after A1's runs were read, before its own run; disclosed).** A1's seed-48 world drew a
+  respiratory outbreak (disease.ts dailyDisease: arrival 0.1 per community-year, a world.rng draw): 3 deaths in the quick
+  window (an adult male and two lactating females, whose infants then lost reserves: infants 0.5–2 y −0.247%/day pooled),
+  8 by day 90 in A1h (7 outbreak, 1 orphaned infant). None of S22's six realizations had one. The registered reserve
+  comparison cannot separate the switch from that draw, so A1 is re-drawn once by `rngSalt` 1 (the behaviour-free lever):
+  A1r = S22 + `huntDrive` 1 + `rngSalt` 1, from the same frozen checkout: `energy-diagnose` (seeds 48 and 7, 30 + 30),
+  `e-bench --quick` (A1rq) and `e-bench --seeds 48,7 --burn-in 30 --days 60` (A1rh). Reading: the reserves of A1r (if no
+  outbreak, or with the dead mothers' infants named) against the S22q group; A1's and A1r's sums and hunt rows both
+  reported. No other change.
