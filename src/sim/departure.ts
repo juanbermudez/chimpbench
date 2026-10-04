@@ -13,9 +13,12 @@ import { TICK_HOURS, ix } from './state';
 // ones, the daylight expected at its arrival from the brightening it perceives: competitors are diurnal, a design
 // assumption). No clock hour, no departure time, no fig rule. Pure: no rng, no mutation (read by computeCandidates).
 
-/** Fruit units that would sate this animal: its hunger over the hunger one unit removes (fruitRate's own conversion). */
-export function needUnits(c: Chimp, P: Params): number {
-  return P.energyLedger === 1 ? c.hunger * gutCap(c, P) / fruitKcalPerUnit(P, false) : c.hunger / P.fruitHungerFactor;
+/**
+ * Fruit units that would sate this animal: its hunger over the hunger one unit removes (fruitRate's own conversion).
+ * Stage E3f (cropEnergy): `kpu` the kcal per unit to count in (1: kcal; candidates.ts then gives each crop in kcal).
+ */
+export function needUnits(c: Chimp, P: Params, kpu?: number): number {
+  return P.energyLedger === 1 ? c.hunger * gutCap(c, P) / (kpu ?? fruitKcalPerUnit(P, false)) : c.hunger / P.fruitHungerFactor;
 }
 
 /** lim: the part of the meal `n` others take of a crop `crop` when they eat with the animal instead of after it (0..1). */

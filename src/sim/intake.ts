@@ -1,5 +1,5 @@
 import type { Chimp, World } from '../types';
-import { boutRoom, energyNeed, fallbackKcalPerH, fruitKcalPerUnit, gutCap, gutRoom, intakeSize, locomotionKcal, refGutCap } from './energy';
+import { boutRoom, cropEnergyOn, energyNeed, fallbackKcalPerH, fruitKcalPerH, fruitKcalPerUnit, gutCap, gutRoom, intakeSize, locomotionKcal, refGutCap } from './energy';
 import { fallbackOn, fallbackValue } from './fallback';
 import type { Params } from './params';
 import { forageYield } from './phenology';
@@ -10,9 +10,14 @@ import { forageYield } from './phenology';
 // so both compute the same numbers. Pure.
 // Stage E1 (energyLedger): the same rates in kcal, expressed as the share of the animal's gut capacity filled per hour
 // (the unit of the derived hunger at full appetite), so every ratio and feeding time below keeps its meaning.
+// Stage E3f (cropEnergy; docs/staging/e3f-prereg.md §5): a crop's energy is the crown's own (crop.ts crownKcalPerUnit,
+// passed as `kpu`); the intake rate is kcal per hour without fruit units (energy.ts fruitKcalPerH), so fruitIntakePerH is
+// not read. `kpu` undefined keeps today's conversion (fruitKcalPerUnit of drupes for every crown).
 
 /** Ripe fruit intake for this animal (fruit units per hour) and the hunger it removes per hour: intake × skill × young factor. */
 export function fruitRate(c: Chimp, P: Params): { fruitPerH: number; hungerPerH: number } {
+  // stage E3f (cropEnergy): no fruit units per hour (a unit's energy depends on the crown); the hunger rate from kcal
+  if (cropEnergyOn(P)) return { fruitPerH: NaN, hungerPerH: fruitKcalPerH(c, P) / gutCap(c, P) };
   // stage E1c (ledgerInfantIntake): intake capacity by body size instead of the young factor
   const fruitPerH = P.energyLedger === 1 && P.ledgerInfantIntake === 1
     ? P.fruitIntakePerH * (P.fruitIntakeSkillBase + P.fruitIntakeSkillGain * c.skills.foraging) * intakeSize(c, P)
@@ -55,7 +60,7 @@ export interface TreeIntake {
  * crop share alone (stage C13c, `intakeCropOnly`: the rules' food worth already scales with hunger, so capping the time
  * by hunger too counted it twice). The Jev facts keep the cap.
  */
-export function treeIntake(c: Chimp, P: Params, crop: number, feeders: number, distM: number, hungerCap = true, speed = P.walkMps): TreeIntake {
+export function treeIntake(c: Chimp, P: Params, crop: number, feeders: number, distM: number, hungerCap = true, speed = P.walkMps, kpu?: number): TreeIntake {
   const { fruitPerH, hungerPerH } = fruitRate(c, P);
   const walkH = distM / speed / 3600; // stage E2i (walkGait): the animal's walking speed (gait.ts tripSpeed), walkMps by default
   // feeding lasts until the crown's share is eaten or the hunger is gone, whichever comes first
@@ -63,7 +68,7 @@ export function treeIntake(c: Chimp, P: Params, crop: number, feeders: number, d
   if (P.energyLedger === 1 && P.ledgerDrive === 1) {
     // stage E1e: the energy the crown can deliver over a bout that ends at the crop share, the need or a full foregut
     // (energy.ts boutRoom), at the intake rate; the hunger cap does not apply (the need replaces it)
-    const kcalPerFruit = fruitKcalPerUnit(P, false), R = fruitPerH * kcalPerFruit, cap = gutCap(c, P);
+    const kcalPerFruit = kpu ?? fruitKcalPerUnit(P, false), R = cropEnergyOn(P) ? fruitKcalPerH(c, P) : fruitPerH * kcalPerFruit, cap = gutCap(c, P); // stage E3f: the crown's kcal per unit
     const E = Math.max(0, Math.min(share * kcalPerFruit, energyNeed(c, P), boutRoom(c, P, R))), t = R > 0 ? E / R : 0;
     const span = walkH + t;
     return { rateH: hungerPerH, feedH: t, walkH, perHourInclWalk: span > 0 ? E / span / cap : 0, thirstPerHInclWalk: span > 0 ? E / kcalPerFruit * P.fruitThirstFactor / span : 0 };
@@ -87,8 +92,9 @@ export function treeIntake(c: Chimp, P: Params, crop: number, feeders: number, d
  * bout does not pay its walk is worth 0. Drupe energy, as treeIntake. Stage E2j (tripBodyCost): `extraH` hours of climbing
  * join the walk's time and `carryK` kcal of a riding load join the trip's energy (gait.ts tripClimbH, riderKcal). Pure.
  */
-export function netRateShare(c: Chimp, P: Params, crop: number, feeders: number, distM: number, climbM: number, pace = 1, see = 1, speed = P.walkMps, extraH = 0, carryK = 0): number {
-  const kcal = fruitKcalPerUnit(P, false), R = fruitRate(c, P).fruitPerH * kcal;
+export function netRateShare(c: Chimp, P: Params, crop: number, feeders: number, distM: number, climbM: number, pace = 1, see = 1, speed = P.walkMps, extraH = 0, carryK = 0, kpu?: number): number {
+  // stage E3f (cropEnergy): `kpu` the crown's kcal per crop unit, and the rate in kcal without fruit units
+  const kcal = kpu ?? fruitKcalPerUnit(P, false), R = cropEnergyOn(P) ? fruitKcalPerH(c, P) : fruitRate(c, P).fruitPerH * kcal;
   if (!(R > 0) || !(see > 0)) return 0;
   const E = Math.min(Math.max(0, crop) / (1 + feeders) * kcal, boutRoom(c, P, R));
   if (!(E > 0)) return 0;
@@ -104,8 +110,8 @@ export function netRateShare(c: Chimp, P: Params, crop: number, feeders: number,
  * hunger ÷ fruitHungerFactor; under the ledger the gut's kcal at this hunger (or, stage E1e, the energy need) ÷ the energy
  * of a fruit unit. (Under the ledger these rules used the timers' conversion; both are off by default.)
  */
-export function needFruit(c: Chimp, P: Params, h: number): number {
+export function needFruit(c: Chimp, P: Params, h: number, kpu?: number): number {
   if (P.energyLedger !== 1) return h / P.fruitHungerFactor;
   const kcal = P.ledgerDrive === 1 ? Math.max(0, energyNeed(c, P)) : h * gutCap(c, P);
-  return kcal / fruitKcalPerUnit(P, false);
+  return kcal / (kpu ?? fruitKcalPerUnit(P, false)); // stage E3f: in units of the crown it is compared with
 }

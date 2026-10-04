@@ -1,5 +1,6 @@
 import type { Chimp, Tree, World } from '../types';
 import { UNKNOWN_CROP } from '../decide/facts';
+import { valueKpu } from './crop';
 import { needFruit } from './intake';
 import type { Params } from './params';
 import { fruitAt } from './phenology';
@@ -43,9 +44,9 @@ export function callStaleness(world: World, c: Chimp, x: ChimpX, P: Params): num
 }
 
 /** Share of its own need (fruit units, intake.ts needFruit) the caller loses at a crown with `crop` and `feeders` others if `k` more come: crop / (1 + feeders) against crop / (1 + feeders + k). */
-export function cropLoss(c: Chimp, P: Params, crop: number, feeders: number, k: number): number {
+export function cropLoss(c: Chimp, P: Params, crop: number, feeders: number, k: number, kpu?: number): number {
   if (k <= 0 || !(crop > 0)) return 0;
-  const N = needFruit(c, P, c.hunger);
+  const N = needFruit(c, P, c.hunger, kpu); // stage E3f (cropEnergy): `kpu` the crown's kcal per unit
   if (!(N > 0)) return 0;
   return (Math.min(N, crop / (1 + feeders)) - Math.min(N, crop / (1 + feeders + k))) / N;
 }
@@ -76,11 +77,11 @@ function feedersIn(world: World, c: Chimp, x: ChimpX, treeId: number): number {
 }
 
 /** The crown the caller is feeding in, if any: its crop and the feeders in view there. */
-export function crownOf(world: World, c: Chimp, P: Params): { crop: number; feeders: number } | null {
+export function crownOf(world: World, c: Chimp, P: Params): { crop: number; feeders: number; kpu?: number } | null {
   if (c.action !== 'forage' || !isTreeId(c.targetId) || ix(c).phase !== 2) return null;
   const t = index(world).treeById.get(c.targetId);
   if (!t) return null;
-  return { crop: P.patchEcology === 1 ? fruitAt(world, t) : t.fruit, feeders: feedersIn(world, c, ix(c), t.id) };
+  return { crop: P.patchEcology === 1 ? fruitAt(world, t) : t.fruit, feeders: feedersIn(world, c, ix(c), t.id), kpu: valueKpu(P, t) };
 }
 
 /**
@@ -88,11 +89,11 @@ export function crownOf(world: World, c: Chimp, P: Params): { crop: number; feed
  * staleness of the own last pant-hoot, minus the C6 hush and, at a crown, (contactCallBase + contactCallW) × the share
  * of its need the caller would lose to the community members likely within earshot (listenersInEarshot).
  */
-export function pantHootValue(world: World, c: Chimp, P: Params, crown: { crop: number; feeders: number } | null): number {
+export function pantHootValue(world: World, c: Chimp, P: Params, crown: { crop: number; feeders: number; kpu?: number } | null): number {
   const x = ix(c), K = P.contactCallBase + P.contactCallW;
   const gain = (P.contactCallBase + P.contactCallW * (1 - c.social)) * unlocatedShare(world, c, x, P) * callStaleness(world, c, x, P);
   let cost = P.callSuppressW > 0 ? P.callSuppressW * pressureAt(world, c, c.position[0], c.position[2]) : 0;
-  if (crown) cost += K * cropLoss(c, P, crown.crop, crown.feeders, listenersInEarshot(world, c, x, P));
+  if (crown) cost += K * cropLoss(c, P, crown.crop, crown.feeders, listenersInEarshot(world, c, x, P), crown.kpu);
   return gain - cost;
 }
 
@@ -119,7 +120,7 @@ export function hooWorth(world: World, c: Chimp, P: Params, tree: Tree): boolean
   if (k === 0) return false;
   const inView = x.trees.includes(tree.id);
   const crop = x.treeCrop?.[tree.id] ?? (inView ? (P.patchEcology === 1 ? fruitAt(world, tree) : tree.fruit) : UNKNOWN_CROP);
-  return gain > cropLoss(c, P, crop, inView ? feedersIn(world, c, x, tree.id) : 0, k);
+  return gain > cropLoss(c, P, crop, inView ? feedersIn(world, c, x, tree.id) : 0, k, valueKpu(P, tree));
 }
 
 /** Food grunt on arrival in `tree` (crop `crop`): the bond with the companions within earshot not yet feeding in it, against the share of the need lost to them here. */
@@ -134,5 +135,5 @@ export function gruntWorth(world: World, c: Chimp, P: Params, tree: Tree, crop: 
     if (dx * dx + dz * dz > r2) continue;
     gain += c.bonds[o.id] ?? 0.15; k++;
   }
-  return k > 0 && gain > cropLoss(c, P, crop, f, k);
+  return k > 0 && gain > cropLoss(c, P, crop, f, k, valueKpu(P, tree));
 }

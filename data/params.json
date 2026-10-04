@@ -4578,6 +4578,32 @@
    "notes": "Stage C8: coughs per waking hour of a sick animal. Coughing is the clinical sign by which field teams recognise respiratory outbreaks (negrey2019, scully2018); the rate is design. Display and sound only: no animal reacts to a cough, and the observer does not record it."
   },
   {
+   "id": "cropEnergy",
+   "group": "phenology",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/staging/e3f-prereg.md §5 (the sourced inputs of a crown's crop energy)"
+   ],
+   "clock": "none",
+   "symbol": "P.cropEnergy",
+   "file": "src/sim/crop.ts",
+   "integer": true,
+   "notes": "Stage E3f switch (docs/staging/e3f-prereg.md §5): with the energy ledger and its drive in the field profile, a crown's crop holds the energy of its fruit (src/sim/crop.ts crownPeakKcal, from sourced inputs) instead of fruit units x kcal per feeding minute x 60 / fruitIntakePerH (energy.ts fruitKcalPerUnit). Crops stay in fruit units (capacity maxFruit x the phenology shape), so the visibility and end-of-bout thresholds keep their meaning as shares of a crown's capacity; a unit is worth the crown's peak energy / its capacity, and eating removes the units that carry the kcal eaten, so the crop falls by the energy the ledger takes in. The intake rate is kcal per hour without units (energy.ts fruitKcalPerH). fruitIntakePerH (fitted) is not read. 0 = today, bit-identical. Ablation switch."
+  },
+  {
    "id": "cropFallRate",
    "group": "phenology",
    "value": 0.5,

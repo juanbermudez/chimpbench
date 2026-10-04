@@ -4,6 +4,8 @@
 // inside the familiar range (95% familiarity isopleth) with the highest expected crop, capacity × the share of that
 // species' trees in fruit today, are listed as flat [treeId, expected crop, …] pairs in world.sim.knownTrees.
 import type { World } from '../types';
+import { crownKcalPerUnit } from './crop';
+import { cropEnergyOn } from './energy';
 import { paramsOf } from './params';
 import { cropTarget, meanFullness } from './phenology';
 import { simOf } from './state';
@@ -28,18 +30,20 @@ export function dailyKnownTrees(world: World): void {
   // stage C7b: this year's fullness of a crown is learned only by seeing it, so the expectation uses the mean (ranking unchanged)
   const full = meanFullness(P);
   const g = gridOf(world, P), L = levels(world), known: Record<number, number[]> = {};
+  // stage E3f (cropEnergy): ranked by the expected crop's energy (units × the crown's kcal per unit); the units are listed
+  const ce = cropEnergyOn(P);
   for (const troop of world.troops) {
     const lv = L[troop.id];
     if (!lv) continue;
-    const top: { id: number; e: number }[] = [];
+    const top: { id: number; e: number; r: number }[] = [];
     for (let i = 0; i < world.trees.length; i++) {
       const t = world.trees[i], sh = share.get(t.species) ?? 0;
       if (sh <= 0 || lv[cellAt(g, t.position[0], t.position[2])] > P.udRangeLevel) continue;
-      const e = Math.round(t.maxFruit * sh * full * 1000) / 1000;
-      if (top.length === K && e <= top[K - 1].e) continue;
+      const e = Math.round(t.maxFruit * sh * full * 1000) / 1000, r = ce ? e * crownKcalPerUnit(P, t) : e;
+      if (top.length === K && r <= top[K - 1].r) continue;
       let j = top.length < K ? top.length : K - 1;
-      if (top.length < K) top.push({ id: t.id, e }); else top[j] = { id: t.id, e };
-      while (j > 0 && (top[j - 1].e < top[j].e || (top[j - 1].e === top[j].e && top[j - 1].id > top[j].id))) { const tmp = top[j]; top[j] = top[j - 1]; top[j - 1] = tmp; j--; }
+      if (top.length < K) top.push({ id: t.id, e, r }); else top[j] = { id: t.id, e, r };
+      while (j > 0 && (top[j - 1].r < top[j].r || (top[j - 1].r === top[j].r && top[j - 1].id > top[j].id))) { const tmp = top[j]; top[j] = top[j - 1]; top[j - 1] = tmp; j--; }
     }
     const flat: number[] = [];
     for (const q of top) flat.push(q.id, q.e);
