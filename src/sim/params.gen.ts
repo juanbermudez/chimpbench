@@ -2,7 +2,7 @@
 /* eslint-disable */
 export const REGISTRY_VERSION = 1;
 /** Content hash of every live default, hard range, profile value and integer flag. Stored with each world. */
-export const REGISTRY_HASH = 'c6cf70673f7b5bc3';
+export const REGISTRY_HASH = '20a40b33f1ceb44d';
 
 /** Registry defaults (the compressed profile). */
 export const DEFAULTS = {
@@ -1715,7 +1715,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   patrolStopEveryMin: [0, 1000000],
   patrolStopMaxMin: [0, 1000000],
   patrolStopMinMin: [0, 1000000],
-  patrolValue: [0, 1],
+  patrolValue: [0, 2],
   patrolWaypointM: [0, 1000000],
   peripheryLevel: [0, 1],
   phenologyForcing: [0, 1],

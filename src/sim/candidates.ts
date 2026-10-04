@@ -1057,8 +1057,10 @@ function patrolAndCalls(world: World, c: Chimp, isAlpha: boolean): void {
       else offer('patrol', leader.id, (c.sex === 'male' ? 0.85 + bond(c, leader) * 0.3 + pers.boldness * 0.2 - (c.age < 15 ? 0.2 : 0) : c.lactating ? P.patrolLactatingJoin : P.patrolFemaleJoin), V.JOIN); // female terms: site settings (§5.3.1 P3)
     }
   } else if (pv) {
-    // stage E4i: an adult male with enough males in view weighs leading a patrol by its value (information, odds, daylight, fatigue)
-    if (isAdultMale(c) && x.ownMales >= P.patrolMinMales && c.hunger < P.patrolMaxHunger && env.rain < P.patrolMaxRain) {
+    // stage E4i: an adult male with enough males in view weighs leading a patrol by its value (information, odds, daylight,
+    // fatigue); iteration 1 (patrolValue 2): only while the party's forming has raised the patrol impulse (perception.ts)
+    if (isAdultMale(c) && x.ownMales >= P.patrolMinMales && c.hunger < P.patrolMaxHunger && env.rain < P.patrolMaxRain
+      && (P.patrolValue !== 2 || (x.impulse === IMPULSE_PATROL && x.impulseUntil > time))) {
       const v = leadValue(world, c, P);
       if (v > 0) offer('patrol', -1, v, V.LEAD, x.ownMales);
     }

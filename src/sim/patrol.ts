@@ -17,7 +17,8 @@ import { neighbourSectors, rangeEdge, sectorDir } from './territory';
 // power [M]). A stranger male is assessed as strong as the average adult male of the assessor's own party (design: he
 // cannot know their strengths); with nothing remembered of a neighbour the prior is parity (odds 0.5; design).
 
-export const patrolValueOn = (P: Params): boolean => P.patrolValue === 1;
+/** 1: the lead offered at every decision point (A1); 2: weighed once when a party first holds enough males (iteration 1). */
+export const patrolValueOn = (P: Params): boolean => P.patrolValue >= 1;
 
 /**
  * Perception (perception.ts): strangers of community `troopId` seen (adult males in view) or heard (distinct callers)

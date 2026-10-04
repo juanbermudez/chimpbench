@@ -13,7 +13,7 @@ import { fruitAt } from './phenology';
 import { random } from './rng';
 import { darkOn } from './light';
 import { circadianOn } from './circadian';
-import { IMPULSE_HUNT } from './perception';
+import { IMPULSE_HUNT, IMPULSE_PATROL } from './perception';
 import { index, isChimpId, isTreeId, ix } from './state';
 
 // Stage C13 (docs/realism-design.md "C13 pre-registration"): the rules decision policy RG. At a decision point a
@@ -71,6 +71,9 @@ function disturbed(world: World, c: Chimp): boolean {
   return x.seen.some(id => { const o = byId.get(id); return !!o && o.alive && (o.action === 'display' || o.action === 'charge' || o.action === 'attack'); });
 }
 
+/** The patrol lead option (stage E4i). */
+const isPatrolLead = (k: Candidate) => k.action === 'patrol' && candidateMeta.get(k)?.v === V.LEAD;
+
 /** The bounded menu at this decision point (the same construction as src/decision.ts buildRequest). */
 export function rgMenu(world: World, c: Chimp, all: Candidate[]): Candidate[] {
   // stage E2a (rhythmFreeNight): rules-driven chimps are not held by the night and dusk menus; sleep pressure and darkness keep them in their nests
@@ -81,7 +84,9 @@ export function rgMenu(world: World, c: Chimp, all: Candidate[]): Candidate[] {
   const join = paramsOf(world).joinChoice === 1 ? phased.find(k => k.action === 'travel' && (candidateMeta.get(k)?.aux ?? -1) > 0 && candidateMeta.get(k)?.v === V.TREE) : undefined;
   // hunting fix (huntEncounter): a hunt he may lead at a colobus encounter stays on the menu, as a response does
   const x = ix(c), hunt = x.impulse === IMPULSE_HUNT && x.impulseUntil > world.time ? phased.find(k => k.action === 'hunt') : undefined;
-  return boundedCandidates(phased, [best, response, join, hunt]);
+  // stage E4i iteration 1 (patrolValue 2): the lead weighed at a party's forming stays on the menu, as the hunt does
+  const lead = paramsOf(world).patrolValue === 2 && x.impulse === IMPULSE_PATROL && x.impulseUntil > world.time ? phased.find(isPatrolLead) : undefined;
+  return boundedCandidates(phased, [best, response, join, hunt, lead]);
 }
 
 /**
@@ -128,6 +133,8 @@ function gate(world: World, c: Chimp, it: Intent | undefined, list: Candidate[])
   if (x.lastIntrAt > it.chosenAt) return 'interrupt';
   // hunting fix (huntEncounter): meeting a colobus group in company is a salient change, so the hunt is weighed
   if (x.impulse === IMPULSE_HUNT && x.impulseUntil > world.time && findCandidate(list, 'hunt', x.impulseTarget)) return 'hunt';
+  // stage E4i iteration 1 (patrolValue 2): a party first holding enough males is a salient change, so the lead is weighed
+  if (P.patrolValue === 2 && x.impulse === IMPULSE_PATROL && x.impulseUntil > world.time && list.some(isPatrolLead)) return 'patrol';
   // stage E3 (urgencyPersist): the buckets and the maximum age are replaced by the pay test below
   if (!persist && (bucketOf(c.hunger) !== it.buckets.hunger || bucketOf(c.thirst) !== it.buckets.thirst || bucketOf(1 - c.energy) !== it.buckets.fatigue || bucketOf(1 - c.social) !== it.buckets.loneliness)) return 'need-bucket';
   if (periodNow(world) !== it.period) return 'period';
@@ -159,7 +166,7 @@ export function rgChoice(world: World, c: Chimp, list: Candidate[]): Candidate |
   // it is not drawn a second time (design assumption; the C6 hazard was fitted as the rate of patrols started)
   const top = list[0];
   // stage E4i (patrolValue): no roll raised the lead, so it is drawn like any other option
-  if (P.patrolImpulseDecides === 1 && P.patrolValue !== 1 && top && top.action === 'patrol' && candidateMeta.get(top)?.v === V.LEAD) {
+  if (P.patrolImpulseDecides === 1 && !(P.patrolValue >= 1) && top && top.action === 'patrol' && candidateMeta.get(top)?.v === V.LEAD) {
     if (rgTally.on) rgTally.lead++;
     x.rgIntent = intentOf(world, c, top.action, top.targetId, V.LEAD, candidateMeta.get(top)?.aux ?? -1);
     if (rgTap.fn) rgTap.fn(c, list, [], [], top, 'lead');
