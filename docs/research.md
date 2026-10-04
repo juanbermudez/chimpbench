@@ -3591,7 +3591,7 @@ Ugandan fruits; the download needs a token or shows a bot check, a person can fe
   [doi:10.1111/aje.13017](https://doi.org/10.1111/aje.13017) (OpenAlex record text; bibliographic data from OpenAlex).
 - chapman1992, conklinBrittain1998 and houle2014 are already cited; the entries above add findings.
 
-### Addendum: E5f leaving together (4 October 2026)
+### E.57 Addendum: E5f leaving together (4 October 2026)
 
 Read for stage E5f ([staging/e5f-prereg.md](staging/e5f-prereg.md)): what the moving-together stage's two timers
 (`departRetryMin` 3.8 min, `departPersistMaxMin` 13 min) were copied from, and what the source's numbers count. No input

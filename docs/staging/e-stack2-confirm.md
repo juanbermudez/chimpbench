@@ -3432,3 +3432,17 @@ plus three re-draws by `rngSalt` 1, 2, 3 (S27c1–S27c3, `s28/`), all from bench
 safety pass. Sums inside noise (low: the quick run's held-out without the rare rows was better, z −1.3). Adult males walk
 3.6–4.6 km a day (S27 3.26). Adults' climbing cost up by 25% or more. Nursing mothers', juveniles' and infants' 0.5–2 y
 reserves lower than the group's mean by more than its SD. T-RNG-4 above 3.0. Rest (T-ACT-4) inside its band.
+
+## S29 confirm (registered 4 October 2026 before its run)
+
+**S29 = S27 + E5f's `departValue` 2** (an unanswered departure attempt ends in the initiator's own decision, valued over
+its settled companions; `departRetryMin` and `departPersistMaxMin` out: 39 with the corrected ledger, S27 41).
+**Reference group:** the S27 confirm group (S27 at 28d249e plus S27c1–S27c3 by `rngSalt` 1, 2, 3, bench-run3); the arm runs
+from bench-run4 moved to this commit (E5f's code behind a switch that is 0 in S27; S27's behaviour is unchanged). Keep rule:
+standard (prescriptions fall, 41 → 39 on the corrected ledger); rare rows per amendment 3; night safe. Bench,
+energy-diagnose and rhythm-metrics, 5 seeds, 30 + 60 days; judged with `integrator/judge_s27group.py`.
+
+**Predictions (against the S27 group; low confidence unless stated: E5f's quick runs are the only evidence).** 39
+prescriptions (high). Viability and night safety pass (moderate). Sums inside noise (moderate). Parties a little smaller:
+T-PTY-1 lower than the group's mean by 0.1–0.5. Nursing mothers and juveniles walk 0.1–0.4 km a day more. Nursing mothers'
+and young infants' reserves within 0.03 %/day of the group's mean.

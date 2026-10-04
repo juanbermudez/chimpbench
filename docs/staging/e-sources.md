@@ -1917,7 +1917,7 @@ Not verified: houleWrangham2021 (metabolizable energy per m³ of crown, drupe an
 al. 2006, 2007 and 2010, Chapman & Chapman 1996, Tweheyo & Lye 2003, Peters et al. 1988, Conklin & Wrangham 1994, Valenta &
 Nevo 2021 (Dryad fruit masses; a person can download it). No source gives the crop of any non-fig model species.
 
-## Addendum: E5f leaving together (4 October 2026)
+## 57. Addendum: E5f leaving together (4 October 2026)
 
 Same text as research.md "Addendum: E5f leaving together": gruberZuberbuhler2013 re-read in full (PMC3783376 via NCBI
 BioC): 33 focal animals of the Sonso community (15 males aged 8–49, 18 females aged 12–47), 07:00–16:00 follows; a
