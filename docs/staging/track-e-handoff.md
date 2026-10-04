@@ -17,8 +17,9 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Running now (4 October 12:10; deploy held by the user).** Stage agent **E1q** (`e1q-climbing-energy`, from
   track-e c39488f: audit why climbing costs 1/1.2–1/2.2 of walking energy against ~1/10 in wild chimpanzees; arms with
   and without walkGait; brief `integrator/e1q-prompt.txt`); decision guide on **S25** (merged `guide-s25` at ff48770;
-  hosted copy on `site` b9fc4a6, build checked). Integrator: the S25 quick reference re-drawn by `rngSalt` 1–3 (`integrator/s25q.sh`, outputs
-  `bench-run2/artifacts/validation/e/s25q/`; message E1q when all four exist).
+  hosted copy on `site` b9fc4a6, build checked). Integrator: S25 quick reference done (E1q told); S25's confirm group complete (S25 + S25c1–S25c3 by `rngSalt`,
+  bench-run2 7cd6bb1, outputs `.../e/s25/`), ready to judge E1q's arm (copy `integrator/judge_s22group.py` with REF = the
+  S25 group).
 - **S25 is the best integrated candidate (43)** (e-stack2-confirm.md "S25 results"; S22 + `huntDrive` 1): hunting back
   in band (T-HUN-1 17.4), every sum inside noise; its infant drop is one outbreak seed. Decision guide and hosted copy
   on S25.
