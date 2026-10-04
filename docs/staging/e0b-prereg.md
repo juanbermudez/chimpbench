@@ -1,7 +1,8 @@
 # E0b pre-registration: hidden timers, an honest count
 
-Status: rules (§0–§5) committed before any change to the lint, its tables or its tests (branch `e0b-hidden-timers`,
-from `track-e` 6980f48; 4 October 2026). Track E, stage E0b. This stage is about the honesty of the prescription
+Status: complete (4 October 2026): 13 time literals newly counted on today's model (134 → 147) and 10 on S27 (41 → 51);
+results in §6. The rules (§0–§5) were committed (d6bfccc) before any change to the lint, its tables or its tests (branch
+`e0b-hidden-timers`, from `track-e` 6980f48). Track E, stage E0b. This stage is about the honesty of the prescription
 count, not about behaviour: no simulation benchmark, no behaviour change, no literal moved into `data/params.json`,
 goldens unchanged. Rule served: a prescription is counted by what it does, whether it is written as a registry entry or
 as a literal.
@@ -158,7 +159,204 @@ switched by darkness) are outside this stage's lint; they are listed in the resu
 
 Anything the rules above cannot decide is listed in the results and left as it is, not guessed.
 
-## 6. Results
+## 6. Results (4 October 2026; §0–§5 unchanged since d6bfccc)
 
-(Written after step 2, below this line; §0–§5 are not edited after their commit. Amendments, if any, are added here
-and disclosed.)
+Tables generated from the ledger and the JSON of `scripts/param-reads.ts --literals` by
+`artifacts/validation/e0b/tables.mts` (local, gitignored, with the runs' JSON and Markdown); none typed.
+
+### 6.1 What the lint finds
+
+At 24c0cef the two new kinds find 68 records in `src/sim` (world files excluded). 13 prescriptions are counted on
+today's model and 10 on S27; they are 14 records, because the grooming continuation terms are one prescription written
+on two lines, counted on whichever line the switches run (L7; `LITERAL_OFF` `same`). The other 54 records are not
+counted, each with the rule of §2 or §3 that excuses it (§6.5). Every allow, off, twin and judgement entry matches exactly
+its lines (tests/prescription-ledger.test.ts), so no entry can cover new code silently, and a time literal that no entry
+names is counted. No literal counts on S27 that does not count on today's model (U4).
+
+### 6.2 Counts before and after
+
+Counts (`scripts/prescription-ledger.ts --count`; before: §0 at 6980f48; after: 24c0cef):
+
+| Parameter set | Before | After | Registry entries in use | Literals | Time literals counted |
+| --- | --- | --- | --- | --- | --- |
+| today's model (every switch 0) | 134 | 147 | 125 | 22 | 13 |
+| S27 | 41 | 51 | 40 | 11 | 10 |
+| S27 + `redecideValue` 2 | 39 | 48 | 38 | 10 | 9 |
+| S27 + `departValue` 2 | 39 | 49 | 38 | 11 | 10 |
+| S27 + `bodyRules` 1 | 40 | 50 | 39 | 11 | 10 |
+
+The candidates on S27 before → after: `redecideValue` 2 removes 2 → 3 (it also takes out the grooming continuation
+terms, which E3d had already stopped applying in code: candidates.ts, "the bout's own continuation terms (+0.35 while it
+runs, −0.25 after its scheduled end; literals) are not applied"); `departValue` 2 removes 2 → 2; `bodyRules` 1 removes
+1 → 1. No new literal sits on code that `departValue` or `bodyRules` change. Tests that pinned `redecideValue`'s delta
+move by one (tests/sim-redecide.test.ts 2 → 3, tests/sim-choice-belief.test.ts 3 → 4).
+
+### 6.3 Every newly counted literal
+
+Every newly counted literal (the `interval` and `bonus` records counted on today's model or on S27). "In use" is the ledger's verdict (U1); "moved" is `scripts/param-reads.ts --literals` (seeds 48, 7, 5 eco-days): in how many seeds moving the literal ×2 changed that world.
+
+| Where | Code | Kind | Value | In use today | In use S27 | Moved today (5 d; 20 d; 1 d + snake-model) | Moved S27 (5 d; 20 d; 1 d + snake-model) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| src/sim/candidates.ts:686 | `? (grooming && !(P.redecideValue >= 1) ? (time >= x.actEnd ? -0.25 : 0.35) : 0) + (1 - …` | bonus | -0.25, 0.35 score | no | yes | 0/2; ·; · | 2/2; ·; · |
+| src/sim/candidates.ts:687 | `: (grooming && !(P.redecideValue >= 1) ? (time >= x.actEnd ? -0.25 : 0.35) : 0) - femal…` | bonus | -0.25, 0.35 score | yes | no | 2/2; ·; · | 0/2; ·; · |
+| src/sim/candidates.ts:775 | `if (male && e > 0.3 && time - x.lastDisplay > 0.75) {` | interval | 0.75 h | yes | yes | 2/2; ·; · | 2/2; ·; · |
+| src/sim/candidates.ts:799 | `if (c.age >= 5 && d < P.snakeAlarmRangeM) offer('alarm', -1, 0.2 + 0.32 * Math.min(unaw…` | bonus | 0.4 score | yes | yes | 0/2; ·; 2/2 | 0/2; ·; 1/2 |
+| src/sim/candidates.ts:946 | `const cooled = time - x.lastAgg > 1.5;` | interval | 1.5 h | yes | yes | 2/2; 2/2; · | 0/2; 2/2; · |
+| src/sim/candidates.ts:1098 | `else if (c.sex === 'male' && own >= 3 && own >= str + 2 && time - x.lastAgg > 0.2) {` | interval | 0.2 h | yes | yes | 0/2; 0/2; · | 0/2; 0/2; · |
+| src/sim/candidates.ts:1158 | `if (c.sex === 'female' && c.swelling >= 0.75 && o.age >= 10 && dist < P.mateFemaleRange…` | interval | 0.3 h | yes | yes | 2/2; ·; · | 2/2; ·; · |
+| src/sim/candidates.ts:1288 | `const callReady = time - x.lastCall > 0.5;` | interval | 0.5 h | yes | yes | 2/2; ·; · | 2/2; ·; · |
+| src/sim/candidates.ts:1294 | `if (!cv && time - x.lastCall > 1.5 && ((hour >= 18 && hour < 19) \|\| (hour >= 6.4 && hou…` | interval | 1.5 h | yes | no | 2/2; ·; · | 0/2; ·; · |
+| src/sim/execution.ts:807 | `if ((courting \|\| hd(r, o) < 2.5) && dominates(c, r) && time - x.lastAgg > 0.25) { x.riv…` | interval | 0.25 h | yes | yes | 2/2; ·; · | 2/2; ·; · |
+| src/sim/execution.ts:838 | `if (c.actionTime % 60 === 0 && c.actionTime > 0) emitCall(world, c, 'alarm-hoo');` | interval | 60 s | yes | yes | 0/2; ·; 2/2 | 0/2; ·; 1/2 |
+| src/sim/execution.ts:1063 | `} else if (crop > 0.55 && c.age >= 12 && time - x.lastCall > 0.75 && (t.common === 'fig…` | interval | 0.75 h | yes | no | 2/2; ·; · | 0/2; ·; · |
+| src/sim/execution.ts:1066 | `} else if (time - x.lastFoodCall > 0.3 && crop > 0.3 && (P.foodCallRule !== 1 \|\| random…` | interval | 0.3 h | yes | no | 2/2; ·; · | 0/2; ·; · |
+| src/sim/execution.ts:1212 | `if (!moveTo(world, c, o.position[0], o.position[1], o.position[2], WALK * 1.2, 1)) { if…` | interval | 0.5 h | yes | yes | 2/2; 2/2; · | 0/2; 0/2; · |
+
+The five families (all there are):
+1. **Call gaps** (4; candidates.ts, execution.ts): the food call and a male's reunion pant-hoot wait 0.5 h after the
+   caller's own last call (`callReady`), the chorus 1.5 h, the arrival pant-hoot at figs 0.75 h, the food grunt 0.3 h
+   after the last food grunt. `callValue` takes three out; the reunion pant-hoot keeps the 0.5-h gap on S27.
+2. **Aggression gaps** (3; candidates.ts): status, grudge and coercive charges, an adolescent male's charges at adult
+   females and E4a's escalated attack wait 1.5 h after the animal's own last charge or attack (`cooled`); a charge at
+   strangers waits 0.2 h; a display 0.75 h after the last display. E5e took out the two registry gaps beside them
+   (`feedChargeGapH`, `immigrantChargeGapH`); these stayed because they were literals.
+3. **Mating gaps** (3; candidates.ts, execution.ts): a swollen female solicits at most once per 0.3 h after mating; a male
+   is blocked 0.5 h after a failed approach (mateTick, counted once for its two exits, L7); a mate guard chases a rival at
+   most once per 0.25 h after his own last aggression. E4o found the first two (e4o-prereg.md §5).
+4. **Snake alarms** (2; candidates.ts, execution.ts; both judgement calls, †): an alarm call is worth 0.4 less within
+   1.8 min of the animal's own last call (B1, by `finishedPenalty`'s judgement); an alarming animal hoos every 60 s and
+   listeners near the snake become aware from the hoos (L3, by `patrolStopEveryMin`'s judgement). Snakes appear only in
+   experiments.
+5. **Grooming continuation** (1; candidates.ts): +0.35 while a grooming bout runs and −0.25 after its scheduled end, on
+   top of `continueBonus` (B1: `continueBonus`'s and `finishedPenalty`'s own judgement, not a judgement call).
+
+### 6.4 In use (§4)
+
+- **LITERAL_OFF entries (U2)**: the code read of each (food grunt: the `else` branch after `callValueOn(P)`; the
+  grooming terms: `grooming && !(P.redecideValue >= 1)` and `needDyad`'s branch) and `param-reads --literals` (seeds
+  48 and 7, 5 eco-days, eight arms) agree: every literal the ledger switches out under an arm leaves that arm's world
+  hash-identical when moved ×2, and moves the world wherever it is counted. No over-claim.
+
+The switch arms (LITERAL_OFF entries, U2): ledger verdict and moves under each arm.
+
+| Where | Kind | off | S27 | callValue | groomDrive | redecideValue | S27+redecideValue=2 | S27+departValue=2 | S27+bodyRules=1 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| src/sim/candidates.ts:686 | bonus | off 0/2 | counted 2/2 | off 0/2 | counted 2/2 | off 0/2 | off 0/2 | counted 2/2 | counted 2/2 |
+| src/sim/candidates.ts:687 | bonus | counted 2/2 | off 0/2 | counted 2/2 | off 0/2 | off 0/2 | off 0/2 | off 0/2 | off 0/2 |
+| src/sim/candidates.ts:775 | interval | counted 2/2 | counted 2/2 | counted 2/2 | counted 2/2 | counted 2/2 | counted 2/2 | counted 2/2 | counted 2/2 |
+| src/sim/candidates.ts:799 | bonus | counted 0/2 | counted 0/2 | counted 0/2 | counted 0/2 | counted 0/2 | counted 0/2 | counted 0/2 | counted 0/2 |
+| src/sim/candidates.ts:946 | interval | counted 2/2 | counted 0/2 | counted 2/2 | counted 2/2 | counted 2/2 | counted 1/2 | counted 1/2 | counted 0/2 |
+| src/sim/candidates.ts:1098 | interval | counted 0/2 | counted 0/2 | counted 0/2 | counted 0/2 | counted 0/2 | counted 0/2 | counted 0/2 | counted 0/2 |
+| src/sim/candidates.ts:1158 | interval | counted 2/2 | counted 2/2 | counted 2/2 | counted 2/2 | counted 2/2 | counted 2/2 | counted 2/2 | counted 2/2 |
+| src/sim/candidates.ts:1288 | interval | counted 2/2 | counted 2/2 | counted 2/2 | counted 2/2 | counted 2/2 | counted 2/2 | counted 0/2 | counted 2/2 |
+| src/sim/candidates.ts:1294 | interval | counted 2/2 | off 0/2 | off 0/2 | counted 2/2 | counted 2/2 | off 0/2 | off 0/2 | off 0/2 |
+| src/sim/execution.ts:807 | interval | counted 2/2 | counted 2/2 | counted 2/2 | counted 1/2 | counted 0/2 | counted 2/2 | counted 2/2 | counted 2/2 |
+| src/sim/execution.ts:838 | interval | counted 0/2 | counted 0/2 | counted 0/2 | counted 0/2 | counted 0/2 | counted 0/2 | counted 0/2 | counted 0/2 |
+| src/sim/execution.ts:1063 | interval | counted 2/2 | off 0/2 | off 0/2 | counted 2/2 | counted 2/2 | off 0/2 | off 0/2 | off 0/2 |
+| src/sim/execution.ts:1066 | interval | counted 2/2 | off 0/2 | off 0/2 | counted 2/2 | counted 2/2 | off 0/2 | off 0/2 | off 0/2 |
+| src/sim/execution.ts:1212 | interval | counted 2/2 | counted 0/2 | counted 1/2 | counted 1/2 | counted 0/2 | counted 0/2 | counted 0/2 | counted 0/2 |
+
+- **The twin lines (L7)**: under `groomNeedDyad` 1 (E1k, recorded, off) mother–offspring pairs run the need-weighted
+  line while every other pair runs the general one; the prescription is counted once, on the general line, and the tool
+  marks the other "twin counted" (seeds 48 and 7, 3 eco-days):
+
+| Literal | Kind | Values | off | groomNeedDyad | groomDrive |
+| --- | --- | --- | --- | --- | --- |
+| src/sim/candidates.ts:686 | bonus | -0.25, 0.35 | off, moves 0/2 | off, moves 2/2 **twin counted (L7)** | counted, moves 2/2 |
+| src/sim/candidates.ts:687 | bonus | -0.25, 0.35 | counted, moves 2/2 | counted, moves 2/2 | off, moves 0/2 |
+
+- **Counted literals in use (U3)**: every counted literal is on a path no switch of S27 or of the three candidates takes
+  out, and moving it changes today's model or S27 within the windows above, except two: the charge at strangers
+  (candidates.ts:1098; inert in 5 and 20 days on both models and seeds: it waits for a male who sees strangers with at
+  least three own males, two more than theirs, within 0.2–0.4 h of his own last aggression) and, on S27 only, the block
+  after a failed mating approach (execution.ts:1212; it moves today's model, and waits on S27 for a failed approach). For
+  these two nothing is claimed beyond the code read. The two snake-alarm literals change both worlds once a snake model is
+  presented (`--intervene snake-model@8`, 1 eco-day): today's model 2/2 seeds, S27 1/2.
+
+### 6.5 Not counted
+
+Not counted (54 records; LITERAL_ALLOW, with the rule that excuses each):
+
+| Where | Kind | Values | Why |
+| --- | --- | --- | --- |
+| src/sim/candidates.ts:295 | bonus | 1 score | an indicator of a state (the hierarchy unstable for instabilityH after a change at the top) that design weights multiply (e0b §3 B3) |
+| src/sim/candidates.ts:543 | interval | 0.3 h | window: a pant-hoot heard from a community member stays a call to join for 0.3 h, on both branches (socialTiming bit 4 or not; the stamp is the call heard; as strangerCallerWindowH) (e0b §2 L6a) |
+| src/sim/candidates.ts:559 | interval | 0.3 h | window: a pant-hoot heard from a community member stays a call to join for 0.3 h, on both branches (socialTiming bit 4 or not; the stamp is the call heard; as strangerCallerWindowH) (e0b §2 L6a) |
+| src/sim/candidates.ts:734 | interval | 1 h | window: a recent immigrant female follows an adult male more in the hour after she was attacked (the stamp is the attack; as redirectWindowH) (e0b §2 L6a) |
+| src/sim/candidates.ts:734 | bonus | 0.3 score | a weight on the response to an event (being attacked), not a persistence or clock term (e0b §3 B3) |
+| src/sim/candidates.ts:799 | interval | 0.03 h | the window of the counted alarm penalty on this line: one prescription, counted as the bonus (e0b §3) |
+| src/sim/candidates.ts:1022 | interval | 0.05 h | window: a guardian defends its ward for 3 min after the ward was attacked (the stamp is the attack on the ward; as coalitionWindowH) (e0b §2 L6a) |
+| src/sim/candidates.ts:1053 | interval | 0.03 h | window: the responses to a charge or an attack (flee, submit, counter) are open for 1.8 min after it (an event that happened to the animal) (e0b §2 L6a) |
+| src/sim/candidates.ts:1112 | interval | 0.2 h | window: the response to stranger pant-hoots heard (approach, counter-call, flee) is open for 0.2 h (a percept; as patrolHeardWindowH) (e0b §2 L6a) |
+| src/sim/conflict.ts:58 | interval | 0.1 h | episode: a bystander alerted to a conflict between the same two animals in the last 0.1 h is not alerted again (the stamp is the alert, not its own act) (e0b §2 L6d) |
+| src/sim/conflict.ts:128 | interval | 1, 0.75, 2 h | logging: rate limit of the event log line for a conflict (events.ts gate) (e0b §2 L1b) |
+| src/sim/conflict.ts:225 | interval | 0.025 h | duration of the current act: a contact fight lasts 1.5 min (a bout length, design) (e0b §2 L6c) |
+| src/sim/conflict.ts:228 | interval | 0.025 h | duration of the current act: the opponent's side of the same fight (e0b §2 L6c) |
+| src/sim/conflict.ts:274 | interval | 0.5 h | episode (judgement call): the lethal outcome of a gang attack is drawn once per attack on a victim (0.5 h), however many attackers' ticks reach it; the killing rate is set by the gangKill* probabilities, which are counted (as encounterGapH defines one encounter) (e0b §2 L6d) |
+| src/sim/decide.ts:28 | interval | 0.0166667 h | the model's loop: a model-driven chimp waiting for its decision re-checks every minute (model arms only) (e0b §2 L1f) |
+| src/sim/ecology.ts:49 | interval | 0.25 h | window and storage: a hunt its hunters left unresolved stays joinable and is pruned 0.25 h after its resolution time (a resolved hunt is removed at once by resolveHunt) (e0b §2 L6a, L1d) |
+| src/sim/events.ts:28 | interval | 0.25 h | logging: an episode repeated within 0.25 h updates the last entry (e0b §2 L1b) |
+| src/sim/events.ts:60 | interval | 0.0166667 h | display: a brief interaction is drawn for 1 min (e0b §2 L1c) |
+| src/sim/execution.ts:313 | interval | 3 h | logging: rate limits of event log lines (events.ts gate; each call writes addEvent or episode) (e0b §2 L1b) |
+| src/sim/execution.ts:412 | interval | 12 h | logging: rate limits of event log lines (events.ts gate; each call writes addEvent or episode) (e0b §2 L1b) |
+| src/sim/execution.ts:418 | interval | 24 h | logging: rate limits of event log lines (events.ts gate; each call writes addEvent or episode) (e0b §2 L1b) |
+| src/sim/execution.ts:700 | interval | 2 h | logging: rate limits of event log lines (events.ts gate; each call writes addEvent or episode) (e0b §2 L1b) |
+| src/sim/execution.ts:774 | interval | 1 h | logging: rate limits of event log lines (events.ts gate; each call writes addEvent or episode) (e0b §2 L1b) |
+| src/sim/execution.ts:802 | interval | 4 ticks | cadence of a check: a guarding male scans for rival males every 4 ticks (1 min; as departCheckMin) (e0b §2 L6b) |
+| src/sim/execution.ts:1030 | interval | 16 ticks | cadence of a re-target: an animal feeding on the ground picks a new spot every 16 ticks (4 min), staggered by id (e0b §2 L6b) |
+| src/sim/execution.ts:1087 | interval | 2 × TICK_HOURS | duration of the current act: a feeding bout in a crown not yet emptied is extended two ticks at a time, up to feedMaxMin (a bout length, design) (e0b §2 L6c) |
+| src/sim/execution.ts:1098 | interval | 16 ticks | cadence of a re-target: an animal feeding on the ground picks a new spot every 16 ticks (4 min), staggered by id (e0b §2 L6b) |
+| src/sim/execution.ts:1145 | interval | 4 h | logging: rate limits of event log lines (events.ts gate; each call writes addEvent or episode) (e0b §2 L1b) |
+| src/sim/execution.ts:1157 | interval | 1 h | logging: rate limits of event log lines (events.ts gate; each call writes addEvent or episode) (e0b §2 L1b) |
+| src/sim/execution.ts:1164 | interval | 2 h | logging: rate limits of event log lines (events.ts gate; each call writes addEvent or episode) (e0b §2 L1b) |
+| src/sim/execution.ts:1175 | interval | 120 s | display: a laugh every 2 min of play; no animal hears laughs (events.ts emitCall's hearing hook takes pant-hoots, drums, alarm hoos, screams and travel hoos) (e0b §2 L1c) |
+| src/sim/execution.ts:1179 | interval | 3 h | logging: rate limits of event log lines (events.ts gate; each call writes addEvent or episode) (e0b §2 L1b) |
+| src/sim/execution.ts:1205 | interval | 3 h | logging: rate limits of event log lines (events.ts gate; each call writes addEvent or episode) (e0b §2 L1b) |
+| src/sim/execution.ts:1217 | interval | 0.5 h | the same 0.5-h block after a failed approach as mateTick's first exit above: one prescription, counted there (e0b §2 L7) |
+| src/sim/interventions.ts:140 | interval | 0.25 h | the instruments: an experiment's stimulus is removed 0.25 h after its end, with the list of animals aware of it (e0b §2 L1e) |
+| src/sim/life.ts:287 | interval | 720 h | memory window: the bond to a dead non-kin animal is dropped 30 days after the death (as memTtl*) (e0b §2 L6a) |
+| src/sim/life.ts:342 | interval | 48 h | storage: event-gate keys older than 48 h are pruned; the longest gate is 24 h (e0b §2 L1d) |
+| src/sim/life.ts:343 | interval | 24 h | storage: encounter keys older than 24 h are pruned; encounterGapH (12 h) and the 0.2-h party key read them (e0b §2 L1d) |
+| src/sim/observe.ts:83 | interval | 0.05 h | display: observe() text for model-driven chimps (an interrupt shown 3 min) (e0b §2 L1c) |
+| src/sim/observe.ts:114 | interval | 0.25 h | display: observe() text for model-driven chimps (strangers heard in the last 0.25 h) (e0b §2 L1c) |
+| src/sim/parties.ts:116 | interval | 0.2 h | cadence of an interrupt: two parties of different communities in sight are processed (members interrupted, the meeting noted) at most every 0.2 h; the encounter count has its own encounterGapH (e0b §2 L6b) |
+| src/sim/perception.ts:291 | interval | 24 h | memory window: strangers heard in the last 24 h raise the C6 patrol hazard by patrolHeardBeta (0 in the field profile) (e0b §2 L6a) |
+| src/sim/perception.ts:291 | bonus | 1 score | an indicator of a memory (strangers heard), multiplied by a registry weight (e0b §3 B3) |
+| src/sim/perception.ts:387 | interval | 0.08 h | cadence of an interrupt: hearing strangers interrupts the animal at most every 0.08 h (as interruptSpacingMin) (e0b §2 L6b) |
+| src/sim/relations.ts:115 | interval | 6 h | logging: one intergroup encounter per 6 h in the monthly digest (text and the model's facts) (e0b §2 L1b) |
+| src/sim/relations.ts:134 | interval | 3 × MONTH | memory window: an incident (who threatened or attacked whom) is forgotten after 3 months (as memTtl*); grudge charges read it (e0b §2 L6a) |
+| src/sim/reproduction.ts:85 | interval | 2 h | window: the impulse to transfer, once the dispersal hazard (counted) has fired, stays open 2 h (as impulseDurationH) (e0b §2 L6a) |
+| src/sim/rg.ts:89 | interval | 0.25 h | window: stranger pant-hoots heard in the last 0.25 h keep a response on the rules' menu (a percept) (e0b §2 L6a) |
+| src/sim/tick.ts:94 | interval | 3 h | logging: rate limit of the event log line for rain (events.ts gate) (e0b §2 L1b) |
+| src/sim/tick.ts:110 | interval | 0.5 h | display: an ended interaction is kept 0.5 h for drawing (e0b §2 L1c) |
+| src/sim/tick.ts:114 | interval | 0.166667 h | storage: calls are kept 10 min; the longest window that reads them, strangerCallerWindowH, is 0.05 h (e0b §2 L1d) |
+| src/sim/tick.ts:118 | interval | 1 h | scheduling: the hourly pass of world processes (allies, hourly life, shared contacts) (e0b §2 L1a) |
+| src/sim/tick.ts:124 | interval | 6 h | scheduling: the six-hourly summary (e0b §2 L1a) |
+| src/sim/tick.ts:125 | interval | 24 h | scheduling: the daily pass of world processes (e0b §2 L1a) |
+
+### 6.6 Judgement calls, and what this stage did not decide
+
+- Counted as judgement calls (†, LITERAL_JUDGEMENT): the alarm hoo every 60 s (L3, `patrolStopEveryMin`'s judgement)
+  and the alarm penalty (B1, `finishedPenalty`'s). Not counted, a judgement call: the gang attack's kill draw, once per
+  0.5 h per victim (conflict.ts:274; L6d, `encounterGapH`'s judgement: it defines one attack for a counted
+  probability). Read instead as a quota on the outcome draw, it would add one on both models.
+- Outside this stage's lint, listed and not classed (§3): fixed scores for carrying on with an act (`V.CONTINUE`: the
+  consortship's 0.9, candidates.ts:1128; the patrol's 1.25, candidates.ts:1267; the transfer's 1.2 and 1.3,
+  candidates.ts:803); 9 score terms switched by darkness (`night ? N : 0`, e.g. grooming −1.5, mating −2) and 5 offers
+  barred in darkness (`!night`); the 3-male rule for confronting strangers (ENCODED_BY T-IGE-4). By the registry's
+  judgement (`continueBonus`, `nestNightBonus`, the night menu) some of these may be prescriptions; a later stage
+  decides.
+- Durations of the current act (give-up times, a fight's 30 s, a display's 45 s) are design by the ledger's convention
+  for bout lengths (§1); the lint does not look at them.
+
+### 6.7 The decision guide
+
+`scripts/lib/decision-guide-content.ts`: `LITERALS` carry a kind (two kinds can share a line: the chorus line holds a
+clock window and a gap), the 13 new keys with one plain label each (`judgement` on the two snake-alarm literals), their
+domains (grooming 1, calls 6, aggression 3, mating 3) and steps. Boxes: new "Carrying on grooming", "Gaps after
+aggression" (edge to the escalated attack, which reads the same 1.5-h gap), "A gap after a call" and "Alarm calls at a
+snake" (the calls diagram's lower zone grows to two rows); the chorus, fig, food-grunt and mating boxes take their gaps.
+Page prose (outside the generated regions): what counts now names the two new kinds; "What is still prescribed" names the
+aggression, mating and call gaps and gets a grooming row; "What this page cannot show" lists what stays outside the lint.
+Two stale sentences were removed while there: the wild-cost multiplier "counted by mistake" (design since the counting fix
+1d177f8). `scripts/decision-guide.ts --check` passes; screenshots of the four changed figures (local) show no overlap.
