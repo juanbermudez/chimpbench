@@ -166,9 +166,135 @@ consortships by hour (D0 group, then arms): [{'8': 1, '9': 2, '11': 1, '13': 1, 
 **Step 2 therefore covers** greeting (`pantGruntRepeatH`: rate), consortships (`consortLatestHour`: timing) and
 approaches to callers (`joinCallDistScaleM`: rate). The two charge gaps do not set their behaviour (§4.4).
 
-## 3. Field rows scored and their samples (to be written before any arm)
+## 3. Field rows scored and their samples (written before any arm)
 
-## 4. Mechanism (to be written before any code of it)
+Sources opened for this stage (research.md "Addendum: E5e social quotas and clocks") or by the stage that last scored
+the row (named). Rows the mechanism can move are marked ●.
+
+| Row | Band | Source and sample (sex, reproductive state, mass, method) | Opened |
+| --- | --- | --- | --- |
+| ● T-SOC-6 pant-grunts to the top 3 males (held-out) | 0.6–0.9 | gilby2013: Gombe Kasekela 1995–2008, 16 males; full-day focal follows of adults, pant-grunts from the narrative notes; "The three highest-ranking males received over 75% of all pant grunts given by males each year"; mass not reported. **Scorer difference (known, deferred; src/field/metrics.ts T-SOC-6, maleDominance):** the frozen observer divides by every pant-grunt detected in the community, of any giver (females, juveniles), not by males' pant-grunts; S13q scores 0.45 ± 0.04 while the truth share of males' pant-grunts is 0.80 ± 0.02 (§2.1). Changing the observer needs a protocolLog entry and a freeze (the user's decision). | here (BioC, PMC3582680) |
+| ● T-SOC-5 hierarchy steepness (held-out), with a pant-grunt part | 0.2–0.7 | kaburuNewtonFisher2015 (as e4h-prereg §3): Sonso 8 adult males, Mahale M 10; decided contact aggression, chases, directed displays; pant-grunts only checked the order | E4h |
+| ● T-ACT-1..4 (fitted) | 0.33–0.5; 0.12–0.25; 0.08–0.18; 0.3–0.47 | villioth2025 (Waibira, 10 adult males and 9 adult females, 7 of them lactating; continuous focal recording, 491 h; travelling = "terrestrial quadrupedal walking as well as arboreal climbing and movement within the canopy"; mass not reported), potts2011 (Ngogo and Kanyawara focal follows; rest includes grooming), amsler2010 (Ngogo non-patrol days 0.14), uwimbabazi2019 (14 Kanyawara nursing mothers) | E3c §3, E5d §1 |
+| ● T-RNG-4 adult male day range (fitted) | 1.5–3.5 km | batesByrne2009: Budongo Sonso 2002–03, 8 adult males, GPS every 5 min while travelling on full-day follows; mass not reported | E3c §3 |
+| ● T-RNG-5 lactating ÷ male day range (held-out) | 0.3–0.6 | batesByrne2009: 15 adults (lactating 1.2 ± 0.8 km, males 2.7 ± 1.5), GPS; one site (a multi-site band staged by E1j, not applied) | E1j |
+| ● T-PTY-1 party size (fitted) | 3–9 | wilson2012: Kanyawara 1992–2006, 5,527 party follows, 15-min scans | E5a |
+| T-SOC-2, -3, -4, -9, -10 (held-out; -9 fitted) | as JSON | mitani2009, kaburuNewtonFisher2015, foerster2015, kutsukakeCastles2004, wittigBoesch2010 (as E5d §1, E4h §3) | E5d, E4h |
+| T-COM-1 male pant-hoot rate (fitted) | 0.5–1.5 per male-hour | mitaniNishida1993 (Mahale M 1990, 7 males, 175 h, focal-initiated bouts); wilson2007 (Kanyawara, 12 males, ~200 h, focal) | targets.json (not re-opened; no call term changes here) |
+| Truth readouts: greetings, charges, consortships, approaches, paths (quota-diagnose); reserves %/day, ground km (energy-diagnose) | none scored | defined in §2 and the tools' headers; smoke-tested before any arm (§4.6) | — |
+
+No wild per-dyad pant-grunt rate or interval between greetings of the same dominant was found (research.md addendum,
+"Not verified"); nakamura2022's female rates are per observation hour of the observer, not per dyad. The model's
+greeting rates are therefore reported, not scored.
+
+## 4. Mechanism: switch `socialTiming` (registered before any code of it)
+
+One switch, 0 = today, bit-identical. Its value is a sum of bits, one per entry, so that iterations can separate them:
+
+| Bit | Entry switched out | Replaced by |
+| --- | --- | --- |
+| 1 | `pantGruntRepeatH` (quota) | the memory of the current association (§4.1) |
+| 2 | `consortLatestHour` (clock hour) | the light on the walk away from the party (§4.2) |
+| 4 | `joinCallDistScaleM` (fitted distance scale) | the foraging currency of E3c and the walking energy of E5a (§4.3) |
+| 8 | `feedChargeGapH`, `immigrantChargeGapH` (quotas) | nothing new: the target's concession (E4h) already limits repetition (§4.4) |
+
+### 4.1 Greeting by memory of the association (bit 1)
+
+A pant-grunt re-establishes the dominance relationship when two animals meet (girardButtoz2022: "dominance and bonding
+relationships are re-established after a period of absence"; the pant-grunt is given during approaches to dominants;
+dunphyLelii2019: at the moment of encountering the male). So a subordinate greets a dominant once per association, and
+again when the dominant challenges it:
+- **Memory** (perception.ts): when an animal perceives a member of its community whom it last perceived more than
+  `reunionH` ago (or never), the two are reuniting, and its record of having greeted that animal (`x.greet`) is cleared.
+  `reunionH` is the model's existing reunion span (the 1-h literal of perception.ts's newcomers, now a registry entry
+  with the same value, so every world is unchanged): the observer's convention for a fusion (girardButtoz2022: parties
+  apart for at least 1 h); design, not fitted, its sensitivity untested.
+- **Gate** (candidates.ts): the greeting is open toward a dominant the animal has not greeted in the current association,
+  or toward one displaying or charging within `displayNearM` (the existing displaying term's condition: a challenge to the
+  relationship reopens it). `pantGruntRepeatH` is not read. The score is unchanged.
+
+### 4.2 Consortships by the light on the walk away (bit 2)
+
+A consortship is a pair's walk away from the party toward the range's edge (wroblewski2009), where the male leads the
+female (execution.ts: to a point at 0.85 of the range radius away from the centre). It is worth starting only if the
+walk can be made in light: its option's value is multiplied by the light of that walk, the mean walking pace and the
+vision on arrival from E2c's `tripLight` (light.ts: both 1 when the sun stays high until arrival; less in twilight,
+near 0 arriving in darkness), the walk's distance being the one the male would lead (the same goal as execution.ts,
+computed by one shared function, `consortGoal`). `consortLatestHour` is not read. A negative value is left as it is
+(the light scales what the consortship is worth, not what it costs). The nest's own value (sleep pressure, darkness;
+E2a) competes with it as before. No new magnitude.
+
+### 4.3 Approaches to callers in the foraging currency (bit 4; acts with `cohesionValue`, `forageRate` and their needs)
+
+A walk to a caller costs energy and time in the forager's currency (E3c; charnov1976, stephensKrebs1986; sockol2007's
+cost of transport, the ledger's input). E5a already values the two moves this is made of; the approach takes their forms:
+- **A call given at food** (the caller feeding in a crown; the listener stores the crown when it hears the call, a new
+  lazily added `ChimpX` key `jt`): a trip to that crown, as E5a's joined trip under E3c: the company the caller adds over
+  the company the animal has (E5b's margin) plus the crown's drive × the net energy rate of the trip (`rateWorth`: the
+  crop it believes there, or the 0.2 of an unremembered crown as E5a's destWorth, shared with the caller and the
+  companions it sees going there; walk and climb in the rate), less rain × 0.3.
+- **Any other call**: a move to a companion, as E5a's follow: the company margin less the walk's energy at the ledger's
+  derived scale (`travelDistScaleM`, an input), less rain × 0.3.
+- Not read under the bit: `joinCallDistScaleM` and the call's design pull (0.15 + 0.35 × fruit index + 0.3 × hunger +
+  0.15 × sociability at food; 0.3 × sociability × fruit index − 0.05 otherwise): the food it stood for is now valued as
+  food. `assocBondW` (C9, 0) is kept. The approach's act (travel to the call's position) is unchanged. No new magnitude.
+
+### 4.4 The charge gaps (bit 8)
+
+The diagnosis shows neither gap sets its behaviour: the feeding gap blocks 7% of its opportunities (its charge would
+have won 1.2% of those decisions; removed, 0.049 → 0.044 charges per adult-day, inside the reference's spread), and the
+immigrant gap trims (removed, 0.141 → 0.143 per resident female-day): the targets gave way in 56 of 63 (feeding) and 62 of
+65 (immigrant) resolved charges and moved off. Repetition already follows from the target's response (E4h: a concession
+ends the contest) and from the charge's own score (hunger, scarcity, aggression, tension). Under bit 8 neither gap is
+read; nothing replaces them. (Added after the diagnosis, before any arm, as a removal the diagnosis measured directly,
+D2 and D3; it is not a mechanism for a rate-setting entry.)
+
+### 4.5 Code, tests and the ledger
+
+Code: candidates.ts (`socialTiming` bits; `consortGoal`; the approach's two forms; the gates), perception.ts
+(`reunionH`; the greeting memory; `jt` at hearing), execution.ts (onStart reads `consortGoal`), state.ts (`jt` in
+OPTIONAL_X), data/params.json (`socialTiming` design switch, hard range 0–15; `reunionH` design, 1 h, girardButtoz2022),
+scripts/lib/prescriptions.ts (ACTIVE_WHEN for the five entries; TRACK_E_SWITCHES), tests/sim-social-timing.test.ts (0 by
+default in both profiles; switch 0 hash-identical; on changes the world; each bit's gate and value; the five entries
+unread; the count 65 → 60 on S13, one per bit and two for bit 8).
+
+### 4.6 Readouts (smoke-tested with the switch on before any arm)
+
+quota-diagnose (§2) gains nothing; under bit 1 its greeting trace reports the memory gate (blocked = not open), under
+bit 2 the consortship trace reports the score after the light (the hour is still recorded), under bit 8 the gaps are
+never blocked. energy-diagnose and e-bench as the reference. Smoke test: S13 + `socialTiming` 15, seed 48, 1 + 1 days.
+
+### 4.7 Arm A1, predictions and kill criterion
+
+**A1** = S13 + `socialTiming` 15 (every bit), quick (seeds 48, 7; 30 + 30 days), from a frozen detached checkout of the
+commit that adds the code: `e-bench --quick` (`--workers` 1 above load 8, else 2), `energy-diagnose`, `quota-diagnose`.
+Judged against the four S13q realizations (e-bench, energy) and the four D0 diagnoses (quota readouts) with
+`e5e_judge.py` (stage scratch; the integrator's `judge_vs_reps.py` for the sums).
+
+| Quantity | S13q / D0 (mean ± SD) | Predicted A1 | Confidence |
+| --- | --- | --- | --- |
+| Prescriptions | 65 | 60 | high |
+| Viability; deaths | pass; 0 | pass; 0 | moderate |
+| Pant-grunts per subordinate-day | 2.24 ± 0.10 | 1.8–3.4 (no quota, one per association, reunions within 8 h now greeted) | moderate |
+| Greetings repeated within an association | 308 ± 24 | ≤ 615 (challenges only) | moderate |
+| Share of greetings to the alpha; males' greetings to the top 3 (truth) | 0.235 ± 0.007; 0.80 ± 0.02 | 0.19–0.30; ≥ 0.70 | low |
+| T-SOC-6 (observer) | 0.449 ± 0.044 | 0.35–0.55 | low |
+| Consortship minutes in darkness | 0 (D4 without the clock: 51) | ≤ 5 | moderate |
+| Consortships started at or after 16:00 | 0 | some (> 0) when the walk is short | low |
+| Approaches to callers per adult-male-day; km a day to callers (males) | 2.38 ± 0.22; 0.44 ± 0.03 | × 1.2–2.0; × 1.2–2.0 | low |
+| Daily path, adult males (truth) | 2.37 ± 0.09 km | 2.5–3.2 km | low |
+| T-ACT-2; T-RNG-4 | 0.193 ± 0.005; 2.08 ± 0.17 | 0.19–0.26; 2.1–2.9 | low |
+| Feeding charges per adult-day; charges at immigrants per resident female-day | 0.049 ± 0.004; 0.141 ± 0.048 | 0.03–0.08; 0.05–0.25 | low |
+| Reserves %/day, every class | S13q mean ± SD | none more than 0.03 below the mean | low |
+| Fitted; held-out with and without T-HUN-4 and T-BRD-1 | reference mean | inside noise (\|z\| ≤ 2) | low |
+
+**Kill criterion (the switch stays off and the result is recorded as a null)**: (a) viability fails (a starvation
+death, or a seed below 80% of its start); (b) any class's reserve slope more than 0.05% of the store a day below the S13q
+mean; (c) held-out worse beyond noise (z > +2) with or without T-HUN-4 and T-BRD-1; (d) the greeting memory does not hold
+(repeats within an association above 5 × D0's mean); (e) consortships run into darkness as without the clock (≥ 51 min).
+
+**Keep rule (standard):** viability passes; held-out not worse beyond noise with and without the rare rows (reported
+without T-IGE-3 too); prescriptions 65 → 60. Then a provisional keep candidate for the integrator's 5-seed confirm.
 
 ## 5. Reference and judging
 
