@@ -407,6 +407,61 @@ prescriptions 49 → 47, night safe. If none of (a)–(e) holds and the keep rul
 candidate** for the integrator's 5-seed confirm; otherwise it is recorded and stays off. Bout lengths, activity rows,
 travel and reserves are reported against the reference, never used to choose.
 
+### 5.2 Iteration 2 (registered before its run): iteration 1's keep test, re-opened by a change the animal feels or sees (`redecideValue` 2)
+
+**Why (§6.1).** Holding the noise of the draw replaced the clock's work wherever values change (rest ended at its value
+crossing, grooming as the need was met, switching fell from 3.41 to 2.81 per animal-hour), but it froze choices among
+options whose values move together: every feeding option carries the same drive, so a draw that chose the fallback
+over a better fruit trip was never re-opened while the animal ate. The gate already had triggers for that: a need
+crossing into another state and a new period of the day. Iteration 1 dropped them with the clock; they are changes the
+animal feels (a need) or sees (the light), not a timer, and they re-open the choice with a fresh draw. The gate's
+midday and afternoon hours (11:30, 14:30; src/decide/facts.ts:150) are a clock and stay out.
+
+**Considered and smoke-tested before this registration (seed 48, 1 + 2 days; disclosed; none registered or run in
+full).** (K) keep while the act is the best by value alone, today's draw: act switches 5.9 per animal-hour (switch off,
+same smoke: 3.3; feeding runs median 10 min): a non-top choice is re-decided at once and the draw is noisy again, so
+near-ties dither. (G2) iteration 1 with an option's noise drawn afresh once its value has moved by one temperature unit:
+3.05 per animal-hour, fallback runs still long (mean 69 min): a stable drive moves no value. (G′) the act being done
+valued without its noise (doing reveals value), the alternatives with theirs: 5.2 per animal-hour (the act's true value
+against the best of several noisy estimates loses too often). This iteration: 3.17 per animal-hour; fallback runs mean 57
+min (off 36); rest median 19 min, mean 33 (off 30.5, 29.5); adults out of a nest 3.5% of the night (off 2.7%) over two
+nights. Not representative and not used below except as disclosed context.
+
+**Change (switch `redecideValue` 2; rg.ts `redecide`, `changedSince`, `argmaxKeep`).** Iteration 1 (§5.1) and, in
+addition: at a decision point a draw follows when, since the choice, a need has crossed into another state (the gate's
+buckets of hunger, thirst, fatigue and loneliness: 0.4, 0.55, 0.7, 0.88, design) or the light has passed into another
+phase (night, dawn, day, dusk: `dayPhase`, daylight 0.03 and 0.97); as in the gate, a trip that arrives keeps the
+trip's needs. Below `rgMinAge` the same: the act is kept by the jitter of its choice until a need or the light changes
+or another option out-values it, then the argmax decides (its needs and phase kept in `rgIntent`). The same entries are
+switched out (`rgMaxAgeH`, `continueBonus`: 49 → 47); the finished penalty, the menu, the draw and the bout lengths are
+unchanged. No new magnitude. Tests (tests/sim-redecide.test.ts): deterministic and JSON-lossless over a field day,
+`rgMaxAgeH` and `continueBonus` unread, count −2; an interrupt alone keeps the act; a need in another state and another
+light phase each re-open it; a clock period within the same light phase does not; below `rgMinAge` the act is kept by
+the jitter of its choice until the light changes.
+
+**Arm A2** = S17 + `redecideValue` 2 (S17q's parameters), from a frozen detached checkout of the commit that adds this
+section: energy-diagnose, redecide-diagnose, then `e-bench --quick` (seeds 48 and 7, burn-in 30, 30 days; `--workers`
+2, 1 above load 8); rhythm-metrics (seeds 48 and 7, 30 + 30) if the arm is kept.
+
+**Predictions (A2 against the S17q mean ± SD of its four realizations; low confidence unless stated).**
+
+| Quantity | S17q (mean ± SD) | Predicted A2 | Confidence |
+| --- | --- | --- | --- |
+| Prescriptions | 49 | 47 | high |
+| Viability | pass | pass | moderate |
+| Act switches per animal-hour (RG, daylight) | 3.41 ± 0.12 | 2.9–3.6 | moderate |
+| Acts per animal-hour, adult classes | 3.3–4.1 | each within ± 15% | low |
+| Rest runs, median / mean (min) | 28.2 / 28.2 | median 16–24; mean ≥ 26 | low |
+| Fallback runs, mean (min) | 32.6 | 40–65 (no clock; released by needs, light and values) | low |
+| Crown runs, median; grooming runs, median (min) | 19.3; 13.4 | 15–22; 10–16 | low |
+| T-ACT-1, T-ACT-2, T-ACT-3, T-ACT-4 | reference | each within ± 0.04 | low |
+| T-FOOD-2; T-FOOD-4; T-RNG-4 | reference | within ± 0.06; ± 1.5; ± 0.4 | low |
+| Reserves %/day, every class | reference | within ± 0.03 of the reference mean | low |
+| Night: adults out of a nest (rhythm-metrics, if kept) | S17 confirm 2.57% | ≤ 3.3% | low |
+| Fitted; held-out with and without T-HUN-4 and T-BRD-1 | reference mean | inside noise | low |
+
+**Kill criterion and verdict rule:** as iteration 1 (§5.1), unchanged.
+
 ## 6. Results
 
 ### 6.1 Iteration 1: A1 = S17 + `redecideValue` 1 (frozen checkout of a9eaa3d)

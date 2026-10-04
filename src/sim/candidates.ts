@@ -108,10 +108,10 @@ function offer(action: Action, target: number, score: number, v: number = V.NONE
   score += jit;
   // stage E3 (urgencySwitchCost; docs/staging/e3-prereg.md §5): no continuation bonus or finished penalty. The cost of
   // switching (time and travel to the alternative) is already in each alternative's score, and staying is the pay test's job
-  // stage E3d (redecideValue; docs/staging/e3d-prereg.md §5.1): no continuation bonus; an act is kept while it is still
-  // the best by the valuation that chose it (rg.ts). The finished penalty stays (not implicated by the E3d diagnosis)
+  // stage E3d (redecideValue 1 or 2; docs/staging/e3d-prereg.md §5): no continuation bonus; an act is kept while it is
+  // still the best (rg.ts keep tests). The finished penalty stays (not implicated by the E3d diagnosis)
   let cont = 0;
-  if (action === cur.action && target === cur.targetId && curP.urgencySwitchCost !== 1) { cont = curDone ? -curP.finishedPenalty : curTime < curEnd && curP.redecideValue !== 1 ? curP.continueBonus : 0; score += cont; }
+  if (action === cur.action && target === cur.targetId && curP.urgencySwitchCost !== 1) { cont = curDone ? -curP.finishedPenalty : curTime < curEnd && !(curP.redecideValue >= 1) ? curP.continueBonus : 0; score += cont; }
   const raw = base + cont;
   // stage C13e (joinChoice): the joint trip (travel to a companion's goal tree, aux = its leader) keeps one slot of its
   // own, so the animal's own trips cannot crowd it out of the choice; a trip to the same tree still merges
@@ -622,8 +622,8 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       // rest; the field gives spare time to rest, lehmann2008, couturier2022 [M])
       const needDyad = P.groomDrive === 1 || (P.groomNeedDyad === 1 && ((o.motherId === c.id && !ix(o).weaned) || (c.motherId === o.id && !x.weaned)));
       offer('groom', o.id, needDyad
-        ? (grooming && P.redecideValue !== 1 ? (time >= x.actEnd ? -0.25 : 0.35) : 0) + (1 - c.social) * (0.55 + b * 0.4 + (kin ? 0.2 : 0) + recip * 0.2 + up + alphaAlly + (invited ? 0.7 : 0) - femaleOffset) - tn * P.groomTensionW - d / P.groomDistScaleM - h * 0.6 - rain * 0.6 - (night ? 1.5 : 0) - (c.age < 5 ? 0.3 : 0)
-        : (grooming && P.redecideValue !== 1 ? (time >= x.actEnd ? -0.25 : 0.35) : 0) - femaleOffset + (1 - c.social) * 0.55 + b * 0.4 + (kin ? 0.2 : 0) + recip * 0.2 + up + alphaAlly + invited - tn * P.groomTensionW - d / P.groomDistScaleM - h * 0.6 - rain * 0.6 - (night ? 1.5 : 0) - (c.age < 5 ? 0.3 : 0),
+        ? (grooming && !(P.redecideValue >= 1) ? (time >= x.actEnd ? -0.25 : 0.35) : 0) + (1 - c.social) * (0.55 + b * 0.4 + (kin ? 0.2 : 0) + recip * 0.2 + up + alphaAlly + (invited ? 0.7 : 0) - femaleOffset) - tn * P.groomTensionW - d / P.groomDistScaleM - h * 0.6 - rain * 0.6 - (night ? 1.5 : 0) - (c.age < 5 ? 0.3 : 0)
+        : (grooming && !(P.redecideValue >= 1) ? (time >= x.actEnd ? -0.25 : 0.35) : 0) - femaleOffset + (1 - c.social) * 0.55 + b * 0.4 + (kin ? 0.2 : 0) + recip * 0.2 + up + alphaAlly + invited - tn * P.groomTensionW - d / P.groomDistScaleM - h * 0.6 - rain * 0.6 - (night ? 1.5 : 0) - (c.age < 5 ? 0.3 : 0),
         invited ? V.ACCEPT : alphaAlly ? V.COALITION : V.NONE);
     }
     // play [H]
@@ -748,7 +748,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   }
   for (let _i7 = 0; _i7 < order.length; _i7++) { const sl = order[_i7];
     const cand: Candidate = { action: sl.action, targetId: sl.target, score: Math.round(clamp(sl.score, 0, 3) * 1000) / 1000, reason: reasonFor(world, c, sl) };
-    candidateMeta.set(cand, P.redecideValue === 1 ? { v: sl.v, aux: sl.aux, raw: sl.raw, jit: sl.jit } : { v: sl.v, aux: sl.aux });
+    candidateMeta.set(cand, P.redecideValue >= 1 ? { v: sl.v, aux: sl.aux, raw: sl.raw, jit: sl.jit } : { v: sl.v, aux: sl.aux });
     out.push(cand);
   }
   return out;

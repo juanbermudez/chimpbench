@@ -33,6 +33,10 @@ import { index, isChimpId, isTreeId, ix } from './state';
 // interrupt (where continueBonus acted). Other stages' salient events (a hunt or patrol impulse, rising light in the
 // nest) and an act that ended still open a draw. Below rgMinAge the argmax keeps an act while it is the best by its
 // values plus the jitter of the decision that chose it (no rng). Off (0): today, bit for bit.
+// redecideValue 2 (iteration 2, §5.2): the same keep test, and a change the animal feels or sees re-opens the choice
+// with a fresh draw: one of its needs crossing into another state (the gate's need buckets) or the light passing into
+// another phase (dawn, day, dusk, night, by daylight; the gate's midday hours are not read). Below rgMinAge the same:
+// held choice-time jitter, re-opened by a need or light change.
 
 /**
  * Diagnostic counters for scripts (not world state; the sim never reads them): RG decisions by outcome, re-decisions by
@@ -169,7 +173,11 @@ export function gate(world: World, c: Chimp, it: Intent | undefined, list: Candi
  */
 export function rgChoice(world: World, c: Chimp, list: Candidate[]): Candidate | null {
   const P = paramsOf(world), x = ix(c);
-  if (P.rgOn !== 1 || c.age < P.rgMinAge) { if (x.rgIntent) delete x.rgIntent; return P.redecideValue === 1 ? argmaxKeep(c, list, P) : null; }
+  if (P.rgOn !== 1 || c.age < P.rgMinAge) {
+    if (P.redecideValue === 2) return argmaxKeep(world, c, list, P);
+    if (x.rgIntent) delete x.rgIntent;
+    return P.redecideValue === 1 ? argmaxKeep(world, c, list, P) : null;
+  }
   // stage C14 (patrolImpulseDecides): a patrol the hazard has just raised (perception.ts) is itself the stochastic
   // decision. When leading it is the rules' top pick, it is taken: the gate does not hold the old intention over it and
   // it is not drawn a second time (design assumption; the C6 hazard was fitted as the rate of patrols started)
@@ -181,7 +189,7 @@ export function rgChoice(world: World, c: Chimp, list: Candidate[]): Candidate |
     if (rgTap.fn) rgTap.fn(c, list, [], [], top, 'lead');
     return top;
   }
-  if (P.redecideValue === 1) return redecide(world, c, list, P);
+  if (P.redecideValue >= 1) return redecide(world, c, list, P);
   const held = x.rgIntent?.action ?? 'none', g = gate(world, c, x.rgIntent, list);
   if (typeof g !== 'string') {
     if (rgTally.on) { if (g.arrived) rgTally.arrived++; else rgTally.kept++; }
@@ -231,6 +239,7 @@ const jitOf = (k: Candidate) => candidateMeta.get(k)?.jit ?? 0;
 /** A standard Gumbel draw from world.rng: argmax over (value + T × Gumbel) is a draw from the softmax at T. */
 function gumbel(world: World): number { const u = Math.min(1 - 1e-12, Math.max(1e-12, random(world))); return -Math.log(-Math.log(u)); }
 
+
 /**
  * The keep test: is the ongoing act still the best by the valuation that chose it? Each option is worth its value now
  * plus the noise it had in that valuation (the jitter and the Gumbel draw held in the intention); an option new since
@@ -247,6 +256,17 @@ function stillBest(world: World, it: Intent, current: Candidate, menu: Candidate
   return kept;
 }
 
+/** The light phase of a gate period (night, dawn, day, dusk: the day's three periods are one phase). */
+const phaseOf = (p: Intent['period']) => p === 'morning' || p === 'midday' || p === 'afternoon' ? 'day' : p;
+/**
+ * Iteration 2 (redecideValue 2): a change felt or seen since the choice, which re-opens it: a need in another state (the
+ * gate's buckets of hunger, thirst, fatigue and loneliness) or another light phase (dayPhase, by daylight). '' if none.
+ */
+function changedSince(world: World, c: Chimp, it: Intent): string {
+  if (bucketOf(c.hunger) !== it.buckets.hunger || bucketOf(c.thirst) !== it.buckets.thirst || bucketOf(1 - c.energy) !== it.buckets.fatigue || bucketOf(1 - c.social) !== it.buckets.loneliness) return 'need-bucket';
+  return phaseOf(it.period) !== dayPhase(world) ? 'light-phase' : '';
+}
+
 /** RG under redecideValue: the keep test in place of the gate's triggers, and a Gumbel-max draw that keeps its noise. */
 function redecide(world: World, c: Chimp, list: Candidate[], P: Params): Candidate | null {
   const x = ix(c), it = x.rgIntent, menu = rgMenu(world, c, list);
@@ -257,6 +277,7 @@ function redecide(world: World, c: Chimp, list: Candidate[], P: Params): Candida
     if (P.nestLightDecide === 1 && it.action === 'nest' && c.action === 'nest' && x.phase === 2 && x.v !== V.MOTHER && world.time >= x.actEnd && L > 0 && L < 1 && brightening(world) > 0) why = 'light';
     else if (x.impulse === IMPULSE_HUNT && x.impulseUntil > world.time && findCandidate(list, 'hunt', x.impulseTarget)) why = 'hunt';
     else if (P.patrolValue >= 2 && x.impulse === IMPULSE_PATROL && x.impulseUntil > world.time && list.some(isPatrolLead)) why = 'patrol';
+    else if (P.redecideValue === 2 && changedSince(world, c, it)) why = changedSince(world, c, it);
     else {
       const current = findCandidate(list, it.action, it.targetId);
       if (!x.finished && c.action === it.action && c.targetId === it.targetId && current) {
@@ -274,6 +295,7 @@ function redecide(world: World, c: Chimp, list: Candidate[], P: Params): Candida
             const noise = { ...(it.noise ?? {}) }, n = noise[keyOf(it)];
             if (n !== undefined) noise[keyOf(feed)] = n;
             x.rgIntent = { ...intentOf(world, c, 'forage', feed.targetId, candidateMeta.get(feed)?.v ?? V.NONE), noise };
+            if (P.redecideValue === 2) x.rgIntent.buckets = it.buckets; // iteration 2: as the gate, the trip's needs carry over
             if (rgTally.on) rgTally.arrived++;
             if (rgTap.fn) rgTap.fn(c, list, [], [], feed, 'arrived');
             return feed;
@@ -314,8 +336,24 @@ function redecide(world: World, c: Chimp, list: Candidate[], P: Params): Candida
  * jitter of the decision that chose it (chimp.sim.jv, the decision count then; no rng: the T → 0 limit of the keep
  * test); otherwise the argmax decides (null) and this decision's count is kept.
  */
-function argmaxKeep(c: Chimp, list: Candidate[], P: Params): Candidate | null {
+function argmaxKeep(world: World, c: Chimp, list: Candidate[], P: Params): Candidate | null {
   const x = ix(c), cur = x.finished ? undefined : findCandidate(list, c.action, c.targetId);
+  // iteration 2: a need or light change since the choice re-opens it (the choice's needs and phase kept in rgIntent)
+  if (P.redecideValue === 2) {
+    const it = x.rgIntent, open = !it || it.action !== c.action || it.targetId !== c.targetId || !!changedSince(world, c, it);
+    if (cur && !open && x.jv !== undefined) {
+      const jv = x.jv, val = (k: Candidate) => rawOf(k) + (hash01(c.id, jv, CODE[k.action], k.targetId) - 0.5) * P.candidateJitterSpan;
+      const v = val(cur);
+      let kept = true;
+      for (const k of list) if (k !== cur && k.action !== 'dead' && val(k) > v) { kept = false; break; }
+      if (kept) return cur;
+    }
+    x.jv = c.decisionVersion;
+    const top = list[0], meta = top ? candidateMeta.get(top) : undefined;
+    if (top && top.action !== 'dead') x.rgIntent = intentOf(world, c, top.action, top.targetId, meta?.v ?? V.NONE, meta?.aux ?? -1);
+    else delete x.rgIntent;
+    return null;
+  }
   if (cur && x.jv !== undefined) {
     const jv = x.jv, val = (k: Candidate) => rawOf(k) + (hash01(c.id, jv, CODE[k.action], k.targetId) - 0.5) * P.candidateJitterSpan;
     const v = val(cur);

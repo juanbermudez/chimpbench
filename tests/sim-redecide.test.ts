@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { computeCandidates } from '../src/sim/candidates';
+import { candidateMeta, computeCandidates } from '../src/sim/candidates';
 import { intentOf } from '../src/decide/gate';
+import { periodNow } from '../src/decide/facts';
 import { paramsOf, traceParamReads } from '../src/sim/params';
 import { rgChoice, rgMenu, rgTap } from '../src/sim/rg';
 import { index, ix } from '../src/sim/state';
@@ -89,4 +90,60 @@ test('redecideValue: below rgMinAge the argmax keeps an act that is the best by 
   x.jv = c.decisionVersion; // chosen now: the act is the best of this decision's own scores only if it is the top
   const kept = rgChoice(w, c, list);
   assert.equal(kept === cur, list[0] === cur, 'kept exactly when it is the best by the jitter of its choice');
+});
+
+// Iteration 2 (redecideValue 2; e3d-prereg.md §5.2): iteration 1's keep test, and a need crossing into another state or
+// the light passing into another phase re-opens the choice with a fresh draw; the gate's midday hours are not read.
+test('redecideValue 2 (field): deterministic over a day, JSON-lossless; rgMaxAgeH and continueBonus are not read; count −2', () => {
+  const T = { redecideValue: 2 };
+  const a = createWorld(48, { profile: 'field', params: T }), b = createWorld(48, { profile: 'field', params: T });
+  const read = new Set<string>();
+  traceParamReads(a, read);
+  for (let i = 0; i < 5760; i++) { tickWorld(a); tickWorld(b); }
+  assert.equal(worldHash(a), worldHash(b));
+  for (const id of ['rgMaxAgeH', 'continueBonus']) assert.ok(!read.has(id), `${id} is not read`);
+  for (const id of ['finishedPenalty', 'rgTemperature']) assert.ok(read.has(id), `${id} is read`);
+  assert.deepEqual(JSON.parse(JSON.stringify(a)), a);
+  assert.equal(prescriptionCount(T).total, prescriptionCount({}).total - 2);
+});
+
+const snapshot2 = (() => { let s = ''; return (): World => { if (!s) { const w = createWorld(48, { profile: 'field', params: { redecideValue: 2 } }); for (let i = 0; i < 5760 + 600; i++) tickWorld(w); s = JSON.stringify(w); } return JSON.parse(s) as World; }; })();
+
+function decideWith(w: World, c: Chimp, list: Candidate[], edit: (it: ReturnType<typeof intentOf>) => void): string {
+  const x = ix(c), it = { ...intentOf(w, c, 'rest', -1, 0), noise: { 'rest:-1': 100 } };
+  edit(it);
+  x.rgIntent = it;
+  let why = '';
+  rgTap.fn = (_c, _l, _m, _p, _k, y) => { why = y; };
+  rgChoice(w, c, list);
+  rgTap.fn = null;
+  return why;
+}
+
+test('redecideValue 2: kept on its held valuation (interrupts included); a need in another state or another light phase re-opens it; the midday hours do not', () => {
+  const w = snapshot2(), { c, list } = resting(w);
+  ix(c).lastIntrAt = w.time;
+  assert.equal(decideWith(w, c, list, () => {}), 'kept', 'an interrupt alone does not re-open the choice');
+  const other = (b: string) => (b === 'none' ? 'severe' : 'none') as typeof b;
+  assert.equal(decideWith(w, c, list, it => { it.buckets = { ...it.buckets, loneliness: other(it.buckets.loneliness) as never }; }), 'need-bucket');
+  const phase = periodNow(w), night = phase === 'night' ? 'dawn' : 'night';
+  assert.equal(decideWith(w, c, list, it => { it.period = night; }), 'light-phase');
+  if (phase === 'morning' || phase === 'midday' || phase === 'afternoon') {
+    const sameLight = phase === 'midday' ? 'morning' : 'midday';
+    assert.equal(decideWith(w, c, list, it => { it.period = sameLight; }), 'kept', 'a clock period within the same light phase is not a change');
+  }
+});
+
+test('redecideValue 2: below rgMinAge an ongoing act is kept by the jitter of its choice until a need or the light changes', () => {
+  const w = snapshot2(), P = paramsOf(w);
+  const c = index(w).alive.find(k => k.age >= 5 && k.age < P.rgMinAge && !ix(k).finished)!;
+  const x = ix(c), list: Candidate[] = [];
+  computeCandidates(w, c, list);
+  const cur = list.find(k => k.action === c.action && k.targetId === c.targetId);
+  if (!cur) return;
+  candidateMeta.get(cur)!.raw = 100; // the best by far: kept unless the choice is re-opened
+  x.rgIntent = intentOf(w, c, c.action, c.targetId, 0); x.jv = c.decisionVersion;
+  assert.equal(rgChoice(w, c, list), cur);
+  x.rgIntent = { ...intentOf(w, c, c.action, c.targetId, 0), period: periodNow(w) === 'night' ? 'dawn' : 'night' };
+  assert.equal(rgChoice(w, c, list), null, 'a light change re-opens it: the argmax decides');
 });

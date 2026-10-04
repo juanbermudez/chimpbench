@@ -2,7 +2,7 @@
 /* eslint-disable */
 export const REGISTRY_VERSION = 1;
 /** Content hash of every live default, hard range, profile value and integer flag. Stored with each world. */
-export const REGISTRY_HASH = 'c52af3f029111845';
+export const REGISTRY_HASH = 'f6e14ce323b8d0ab';
 
 /** Registry defaults (the compressed profile). */
 export const DEFAULTS = {
@@ -1767,7 +1767,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   reconcileRepairW: [-10, 10],
   reconcileStressW: [-10, 10],
   reconcileWindowH: [0, 1000000],
-  redecideValue: [0, 1],
+  redecideValue: [0, 2],
   redirectAggrP: [0, 1],
   redirectAggrW: [-10, 10],
   redirectBase: [-10, 10],

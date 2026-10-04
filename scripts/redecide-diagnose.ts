@@ -45,7 +45,7 @@
 //     at the run's end when it never is).
 //   acts per animal-hour: runs started per daylight animal-hour, by class.
 //
-// With redecideValue 1 (stage E3d's arms) the draws' trigger 'outvalued' is the keep test's; the continuation
+// With redecideValue 1 or 2 (stage E3d's arms) the draws' trigger 'outvalued' is the keep test's; the continuation
 // counterfactuals then see only the finished penalty.
 //
 //   pnpm exec tsx scripts/redecide-diagnose.ts [--seeds 48,7] [--burn-in 30] [--days 30] [--params '{…}'] [--workers 2] [--json f.json]
@@ -120,7 +120,7 @@ export function runSeed(job: Job): Result {
   const contOf = (c: Chimp, k: Candidate): [number, number] => {
     if (k.action !== c.action || k.targetId !== c.targetId) return [0, 0];
     const x = ix(c);
-    const on = P.redecideValue === 1; // stage E3d: no bonus and no grooming literal under the switch (the finished penalty stays)
+    const on = P.redecideValue >= 1; // stage E3d: no bonus and no grooming literal under the switch (the finished penalty stays)
     const cb = P.urgencySwitchCost !== 1 ? (x.finished ? -P.finishedPenalty : w.time < x.actEnd && !on ? P.continueBonus : 0) : 0;
     const gl = !on && k.action === 'groom' && isChimpId(k.targetId) ? (w.time >= x.actEnd ? -0.25 : 0.35) : 0;
     return [cb, gl];
@@ -195,7 +195,7 @@ export function runSeed(job: Job): Result {
     if (!windowOn) return;
     const x = ix(c), held = intents.get(c.id), heldKey = held ? `${held.action}:${held.targetId}` : 'none';
     let trig = why;
-    if (why === 'argmax' && P.redecideValue !== 1) { const g = gate(w, c, held, list); trig = typeof g === 'string' ? g : 'kept?'; }
+    if (why === 'argmax' && !(P.redecideValue >= 1)) { const g = gate(w, c, held, list); trig = typeof g === 'string' ? g : 'kept?'; }
     bump(c, why === 'argmax' ? `argmax (${trig})` : why);
     const d = day();
     if (why === 'kept' || why === 'arrived') {
