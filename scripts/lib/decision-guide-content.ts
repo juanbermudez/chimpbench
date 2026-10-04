@@ -145,6 +145,8 @@ export const STAGES: Record<string, { name: string; verdict: string; doc: string
   E4k: { name: 'why a hunt succeeds', verdict: 'provisional keep candidate (iteration 2); passed its confirm on S17 as S19', doc: 'staging/e4k-prereg.md' },
   E3d: { name: 'when to stop and choose again', verdict: 'provisional keep candidate (iteration 2); passed its confirm on S17 as S18, but not adopted with S19 (S20); with E3e\'s choice (A2r) it passed the keep rule while intergroup encounters tripled: the patrol valuation needs its own stage first', doc: 'staging/e3d-prereg.md' },
   E3e: { name: 'why a chimp does not always take its best option', verdict: 'value 2 a provisional keep candidate (iteration 2); passed its confirm on S19 as S21', doc: 'staging/e3e-prereg.md' },
+  E4m: { name: 'four small rules left', verdict: 'leftoverRules 3 (rough play and listening stops) a provisional keep candidate; passed its confirm on S21 as S22; meat eating and the end of protection not built', doc: 'staging/e4m-prereg.md' },
+  E2i: { name: 'how fast a chimp walks', verdict: 'provisional keep candidate (iteration 1); passed its confirm on S21 as S23, but not adopted with S22 (S24): the energy of longer walks needs its own stage first', doc: 'staging/e2i-prereg.md' },
   E4f: { name: 'colobus encounters', verdict: 'recorded, off (a site-matched input, [L])', doc: 'staging/e4f-prereg.md' },
   E4g: { name: 'a care follow is not a departure', verdict: 'a defect fix; null by its own kill criterion (removes no prescription)', doc: 'staging/e4g-prereg.md' },
   E5a: { name: 'party cohesion valued by company', verdict: 'provisional keep candidate, confirmed on 5 seeds; integrated in S5 with E4g\'s fix and E5b\'s margin (without the margin, on S4, it added walking)', doc: 'staging/e5a-prereg.md' },
@@ -239,7 +241,7 @@ export const DIAGRAMS: DiagramSpec[] = [
   {
     key: 'feeding', cap: 'From a meal to the next feeding choice', nav: 'Feeding', title: 'Feeding and foraging',
     take: 'Hunger comes from an energy ledger and a gut, and since S13 where to eat comes from the net energy rate each option promises. Still fitted: how fast a crown empties and how fast an animal walks.',
-    desc: 'Flowchart of feeding on the candidate stack: food energy and bulk, the gut, reserves and hunger feed the value of feeding options, each worth the net energy rate it promises in place of three fitted weights; a return is valued by the crop left; crown sharing (E5c) is a layer outside the stack.',
+    desc: 'Flowchart of feeding on the candidate stack: food energy and bulk, the gut, reserves and hunger feed the value of feeding options, each worth the net energy rate it promises in place of three fitted weights; a return is valued by the crop left; crown sharing (E5c) and walking speed from the body (E2i) are layers outside the stack.',
     w: 832, h: 616,
     nodes: [
       { k: 'food', x: L, y: y(0), w: LW, h: 72, t: 'Food energy and bulk', s: 'kcal and dry matter per minute', st: 'inp',
@@ -275,6 +277,8 @@ export const DIAGRAMS: DiagramSpec[] = [
       { k: 'e3b', x: L, y: y(3), w: LW, h: 84, t: 'A return valued by\nthe crop left (E3b)', s: 'revisitByCrop', st: 'des', sw: ['revisitByCrop'], ps: ['revisitW', 'revisitTauH'],
         before: 'A crown the animal had just fed in lost 0.5 of its value, fading with a 12-hour time constant, whatever was left in it (C6b, design, no source). It stood in for the depletion that parties do not cause in the model: a visit eats about 11% of a crown.',
         now: 'A crown fed in is valued like any other crown, by the crop the animal believes is left, so a return is worth what remains (E3b). On S8 males walk 1.88 km a day (S6 2.71) and hunting falls into its band, but the fruit share rises above its band (0.811).' },
+      { k: 'e2i', x: R, y: y(3), w: RW, h: 72, t: 'Speed from the body (E2i)', s: 'walkGait', st: 'lay', layer: { tag: 'PASSES ALONE', sw: ['walkGait'], stage: 'E2i' },
+        text: 'Would replace the copied walking speed with the speed the body sets: measured adult walking speeds (0.88 m/s for males, 0.78 for females, 0.75 carrying a dependant), scaled by body mass below adult size and read by every walk and every trip\'s value. Alone on S21 (as S23) it passed the keep rule, with males walking 3.36 km a day (S21\'s runs 2.26) and every class\'s reserves lower; with S22 (as S24) held-out got worse beyond noise and the cost fell on mothers, juveniles and infants: not adopted.' },
       { k: 'e5c', x: R, y: y(5), w: RW, h: 88, t: 'A crown shared by\nits feeders (E5c)', s: 'crownShare', st: 'lay', layer: { tag: 'RECORDED', sw: ['crownShare'], stage: 'E5c' },
         text: 'Would make other feeders cost the share of the bout they take, and value a crown just fed in by the crop believed left, with two crop-blind design terms off (the revisit devaluation and the habitat-wide crowding cost). Viable, mothers better and males walking 30% less, but none of three valuations made feeders follow the crop: party members feed one or two at a time (1.3 per crown), so the crop never limits them.' },
     ],
@@ -285,11 +289,13 @@ export const DIAGRAMS: DiagramSpec[] = [
       { f: 'trip', t: 'opts', fs: 'l', ts: 'r', fo: -8, to: 0, kind: 'side' }, { f: 'speed', t: 'opts', kind: 'side' },
       { f: 'crop', t: 'feed', kind: 'side' },
       { f: 'e5c', t: 'opts', fs: 'l', ts: 'r', fo: 0, to: 16, kind: 'lay' },
+      { f: 'e2i', t: 'opts', fs: 'l', ts: 'r', fo: 0, to: -16, kind: 'lay' },
       { f: 'e3b', t: 'opts', fs: 'r', ts: 'l', fo: 0, to: -16, kind: 'side' },
     ],
     notes: [
-      'On S21 the feeding row is 0.376 and rest is 0.402 (band 0.30–0.47), males walk 2.19 km a day (S19\'s runs 2.77), and the fruit share is inside its band (0.759; band 0.6–0.78). One animal died on S21 in 5 seeds × 60 days, not of starvation (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
+      'On S22 the feeding row is 0.380 and rest is 0.383 (band 0.30–0.47), males walk 2.07 km a day (S19\'s runs 2.77), and the fruit share is inside its band (0.755; band 0.6–0.78). One animal died on S22 in 5 seeds × 60 days, not of starvation (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
       'Valuing food by rate exposed two prescriptions the weights had compensated: the choice\'s noise (rgTemperature) blurred rate differences, and a crop beyond one bout adds nothing, so choices do not follow the crop (<a href="staging/e3c-prereg.md">e3c-prereg.md §8</a>). Since S21 the temperature is gone and a tree out of sight is valued at a crop drawn from the animal\'s belief (see the choice itself); a crop beyond one bout still adds nothing (<a href="staging/e3e-prereg.md">e3e-prereg.md</a> §8).',
+      'Open: the walking speed (0.35 m/s) is still a field copy with the field\'s pauses folded in; E2i\'s speed from the body passes alone, but its longer walks cost every class energy, and even with it travel phases stay slower than the field\'s, with more halts (<a href="staging/e2i-prereg.md">e2i-prereg.md</a> §8, <a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
       'Open: nursing mothers stop eating with room in the gut, so the limit is their appetite and their day, not the gut wall (<a href="staging/e1h-prereg.md">e1h-prereg.md §9</a>, <a href="staging/e1i-prereg.md">e1i-prereg.md</a>).',
     ],
   },
@@ -352,7 +358,7 @@ export const DIAGRAMS: DiagramSpec[] = [
         now: 'In the dark a nest bout runs until rising light wakes the animal; in changing light the short 4–9 minute bout; in full light the day bout. While the light rises, an animal re-decides at the end of each bout (E2a, E2b).' },
       { k: 'night', x: S, y: y(5), w: SW, h: 72, t: 'No menu at night', s: 'menu.ts: night, dusk', ids: ['lit:nightMenu', 'lit:duskMenu'],
         before: 'After dark a rules-driven chimp could only nest, rest, nurse, flee, alarm, shelter or submit (plus self-defence). At dusk a last feed, drink, groom, call and a few more stayed open.',
-        now: 'Rules-driven chimps choose from the full menu at night; sleep, darkness and company keep them in their nests. On S21 adults are out of a nest 2.03% of the night, under the 3.3% line. Models keep the menus.' },
+        now: 'Rules-driven chimps choose from the full menu at night; sleep, darkness and company keep them in their nests. On S22 adults are out of a nest 1.89% of the night, under the 3.3% line. Models keep the menus.' },
       { k: 'amount', x: L, y: y(0), w: LW, h: 72, t: 'Chimpanzee sleep amount', s: 'sleepDriveShift', st: 'inp', ps: ['sleepDriveShift'],
         text: 'Captive chimpanzee sleep measured by EEG, 9.7 hours, lowers both thresholds of the sleep gate in place of the human amount (E2f).' },
       { k: 'light', x: L, y: y(1), w: LW, h: 72, t: 'Light at the eyes', s: 'sun · cloud · canopy', st: 'inp', ps: ['skyLuxSun', 'skyLuxNight'],
@@ -371,7 +377,7 @@ export const DIAGRAMS: DiagramSpec[] = [
     ],
     notes: [
       'Nesting at dusk and an active day of 11 h 22 min emerge with no clock (<a href="staging/e2a-prereg.md">e2a-prereg.md</a>).',
-      'Still above its one-site band: on S21 the observer scores 58% of departures before sunrise (S19\'s runs 81%), against 18% for five Taï mothers in fruit-scarce periods. E2h found that row scored differently from the field, and that on S3 the real miss was nursing mothers leaving about an hour early, hungry and thirsty (<a href="staging/e2h-prereg.md">e2h-prereg.md</a>, <a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
+      'Still above its one-site band: on S22 the observer scores 0.535 of departures before sunrise (S19\'s runs 0.81), against 0.18 for five Taï mothers in fruit-scarce periods. E2h found that row scored differently from the field, and that on S3 the real miss was nursing mothers leaving about an hour early, hungry and thirsty (<a href="staging/e2h-prereg.md">e2h-prereg.md</a>, <a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
     ],
   },
   // ---------------------------------------------------------------------------------------------------------------
@@ -416,7 +422,7 @@ export const DIAGRAMS: DiagramSpec[] = [
         text: 'A bout is worth the share of a full suckling rate it delivers over its time, including the wait for milk to flow (54 s, a human value). Infants also suckle in the mother\'s nest at night (E1c, E1f). Design terms replaced design terms; no prescription.' },
       { k: 'refuse', x: S, y: y(2), w: SW, h: 72, t: 'The mother decides', s: 'weaning roll switched out', ids: ['weanRefuseMaxP'],
         before: 'From 3.2 years of the infant\'s age the mother refused a bout by a roll whose chance rose over 1.8 years to 0.8 (weanRefuseAgeY, weanRefuseRampY, design). No field study measures refusal by infant age (E1n\'s audit).',
-        now: 'She lets a bout start and go on while her infant\'s reserve deficit, relative to its store, is at least her own, and while she sleeps her last decision stands (E1n\'s decision, E1o\'s currency). On S6 milk at 1–2, 2–3 and 3–4 years fell to 238, 198 and 190 kcal a day (cap 307); with mothers better fed it rose again, to 284, 248 and 258 on S21.' },
+        now: 'She lets a bout start and go on while her infant\'s reserve deficit, relative to its store, is at least her own, and while she sleeps her last decision stands (E1n\'s decision, E1o\'s currency). On S6 milk at 1–2, 2–3 and 3–4 years fell to 238, 198 and 190 kcal a day (cap 307); with mothers better fed it rose again, to 283, 264 and 260 on S22.' },
       { k: 'wean', x: S, y: y(3), w: SW, h: 72, t: 'Weaning age', s: 'drawn between 4.1 and 5.2 y', st: 'inp', ps: ['weanAgeMinY', 'weanAgeSpanY'],
         text: 'Each infant\'s weaning age is drawn between 4.1 and 5.2 years. Classed input by the ledger, although the weaned-age target (T-INF-3) is built in while these values set it (E1n\'s audit). Nothing in the model drives milk to zero before it (E1o).' },
       { k: 'size', x: L, y: y(1), w: LW, h: 72, t: 'Infant intake by size', s: 'ledgerInfantIntake', st: 'des', ps: ['ledgerMassBirthKg'],
@@ -440,16 +446,16 @@ export const DIAGRAMS: DiagramSpec[] = [
       { f: 'e1oB', t: 'refuse', fs: 'l', ts: 'r', fo: -8, to: 0, kind: 'side' },
     ],
     notes: [
-      'On S21 nursing mothers lose 0.066% of their store a day (S19\'s four runs 0.072) and their balance sits between −30 and −39 kcal a day by infant age. Infants of 1–2, 2–3 and 3–4 years drink 284, 248 and 258 kcal a day (cap 307), more than on S6 because better-fed mothers refuse less (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, S21).',
-      'Infants\' reserves fall 0.092% and 0.049% of the store a day at 0.5–2 and 2–5 years (S19\'s four runs 0.103 and 0.053), and they grow 3.46–3.51 kg a year at 1–4 years, still about twice Gombe\'s 1.6 (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, <a href="staging/e1p-prereg.md">e1p-prereg.md §3</a>).',
+      'On S22 nursing mothers lose 0.068% of their store a day (S21\'s four runs 0.071) and their balance sits between −24 and −39 kcal a day by infant age. Infants of 1–2, 2–3 and 3–4 years drink 283, 264 and 260 kcal a day (cap 307), more than on S6 because better-fed mothers refuse less (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, S22).',
+      'Infants\' reserves fall 0.090% and 0.052% of the store a day at 0.5–2 and 2–5 years (S21\'s four runs 0.089 and 0.060), and they grow 3.47–3.50 kg a year at 1–4 years, still about twice Gombe\'s 1.6 (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, <a href="staging/e1p-prereg.md">e1p-prereg.md §3</a>).',
       'Open: nothing drives milk to zero before the drawn weaning age (<a href="staging/e1o-prereg.md">e1o-prereg.md §5</a>).',
     ],
   },
   // ---------------------------------------------------------------------------------------------------------------
   {
     key: 'grooming', cap: 'From relationships to grooming and play', nav: 'Grooming and play', title: 'Grooming and play',
-    take: 'Since S9 the social need is relationship upkeep: it rises by what the animal\'s bonds lose each day, only grooming meets it, and grooming\'s partner terms count only as far as the groomer needs grooming. Rough play is still a dice roll.',
-    desc: 'Flowchart of grooming and play on the candidate stack: bonds relax each day; the social need rises by what they lose and only grooming meets it; grooming\'s partner terms are weighted by the groomer\'s need; play reads the need; rough play is a dice roll.',
+    take: 'Since S9 the social need is relationship upkeep: it rises by what the animal\'s bonds lose each day, only grooming meets it, and grooming\'s partner terms count only as far as the groomer needs grooming. Since S22 play turns rough only when a player is acutely aroused relative to the size gap, not by a die (E4m).',
+    desc: 'Flowchart of grooming and play on the candidate stack: bonds relax each day; the social need rises by what they lose and only grooming meets it; grooming\'s partner terms are weighted by the groomer\'s need; play reads the need; play turns rough from arousal and size, not by a die.',
     w: 832, h: 344,
     nodes: [
       { k: 'bonds', x: L, y: y(0), w: LW, h: 88, t: 'Bonds relax\neach day', s: 'bondRelaxPerDay 0.015', st: 'des', ps: ['bondRelaxPerDay'],
@@ -464,8 +470,9 @@ export const DIAGRAMS: DiagramSpec[] = [
         text: 'Need, bond, kinship, reciprocity, rank and an invitation, less tension, distance, hunger, rain and night: score weights written in the code (design, not counted). Since S9 the partner terms are weighted by the need.' },
       { k: 'play', x: R, y: y(1) + 16, w: RW, h: 72, t: 'What play is worth', s: 'playfulness · energy · age', st: 'des',
         text: 'Playfulness, energy, youth, an invitation and, for players under 15, the social need, less distance, hunger, rain and night (design). Since S9 play no longer meets that need.' },
-      { k: 'rough', x: R, y: y(2) + 32, w: RW, h: 72, t: 'Play turns rough', s: 'roughPlayP', ids: ['roughPlayP'],
-        text: 'A play bout with a partner more than 2 years younger turns rough with probability 0.0015 every 15 seconds.' },
+      { k: 'rough', x: R, y: y(2) + 32, w: RW, h: 72, t: 'Play turns rough', s: 'rough-play die switched out', ids: ['roughPlayP'],
+        before: 'Each 15-second play tick in contact in which the initiator was more than 2 years older than its partner, a die (0.0015) turned the play rough: the partner screamed and was marked the player\'s victim, its guardian could charge in defence, and the play ended. In E4m\'s diagnosis runs on S21, 56–64% of these escalations were by the victim\'s own mother.',
+        now: 'Play turns rough only when a player\'s acute arousal times its body mass outweighs its partner\'s mass, discounted by the partner\'s own arousal: the stronger player\'s restraint fails. No die and no age rule. Arousal comes from storm onsets and aggression received, and an aroused animal rarely starts to play, so play almost never turns rough: guardians\' defence charges, which nearly all followed rough play, fell from 221 to 14 in E4m\'s runs (E4m).' },
       { k: 'dyad', x: L, y: y(2) + 32, w: LW, h: 88, t: 'Mother and infant:\nthe groomer\'s own need', s: 'groomNeedDyad', st: 'lay',
         layer: { tag: 'RECORDED', sw: ['groomNeedDyad'], stage: 'E1k' },
         text: 'Between a mother and her unweaned infant, the groomer\'s own need would weight every social term. It cut the mother–infant grooming loop from 33% to 11% of daylight but removes no prescription. On S9 E5d\'s groomDrive already weights every pair this way.' },
@@ -477,7 +484,7 @@ export const DIAGRAMS: DiagramSpec[] = [
       { f: 'dyad', t: 'groom', fs: 'r', ts: 'l', fo: 0, to: 16, mx: 256, kind: 'lay' },
     ],
     notes: [
-      'On S21 grooming is inside its band overall (0.090; males 0.125) but below it for females (0.061), as it has been since E3c; rest is inside its band (0.402) (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, <a href="staging/e3c-prereg.md">e3c-prereg.md §8</a>).',
+      'On S22 grooming is inside its band overall (0.091; males 0.125) but below it for females (0.062), as it has been since E3c; rest is inside its band (0.383), and so is grooming reciprocity (T-SOC-3 0.650, band 0.45–0.8; 0.32 in E4m\'s quick runs) (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, <a href="staging/e3c-prereg.md">e3c-prereg.md §8</a>).',
       'Open: the bond dynamics the need now follows are design (founder bonds, baselines of 0.2 and 0.6, 1.5% a day relaxation), and E5a values company by a need that company does not relieve (<a href="staging/e5d-prereg.md">e5d-prereg.md §10</a>).',
     ],
   },
@@ -517,7 +524,7 @@ export const DIAGRAMS: DiagramSpec[] = [
       { f: 'retry', t: 'go', fs: 'r', ts: 'l', kind: 'side' }, { f: 'callers', t: 'go', fs: 'l', ts: 'r', kind: 'side' },
     ],
     notes: [
-      'On S21 parties average 4.01 animals (band 3–9) and males walk 2.19 km a day (S19\'s runs 2.77); the travel share is inside its band (0.184; males 0.204, females 0.167; band 0.12–0.25) (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
+      'On S22 parties average 3.88 animals (band 3–9) and males walk 2.07 km a day (S19\'s runs 2.77); the travel share is inside its band (0.179; males 0.199, females 0.162; band 0.12–0.25) (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
       'E5a passed on five seeds on the reference stack (prescriptions 103 → 97, sums inside noise). On the integrated stack without E5b\'s margin it added half a kilometre of walking a day (<a href="staging/e5a-prereg.md">e5a-prereg.md</a>, <a href="staging/e5b-prereg.md">e5b-prereg.md §8</a>).',
       'Open: party size does not track crop size, the party-size band (3–9) has no recorded derivation, and company is valued by a need that company does not relieve; only grooming does (<a href="staging/e5a-prereg.md">e5a-prereg.md §7</a>, <a href="staging/e5d-prereg.md">e5d-prereg.md §10</a>).',
     ],
@@ -630,7 +637,7 @@ export const DIAGRAMS: DiagramSpec[] = [
     ],
     notes: [
       'Slow states keep the acts rare and well-timed: redirects come within a minute of the defeat and stay at 2–4% of decided conflicts (<a href="staging/e4a-prereg.md">e4a-prereg.md</a>).',
-      'On S21 the male hierarchy\'s steepness stays inside its band (0.56; band 0.2–0.7). In E4h contact rose as the rank difference shrank, the field\'s direction (flat under the dice); three contest rows (contact share, contact by rank difference, coalitionary share) are staged, not applied (<a href="staging/e4h-prereg.md">e4h-prereg.md</a>, <a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
+      'On S22 the male hierarchy\'s steepness stays inside its band (0.55; band 0.2–0.7). In E4h contact rose as the rank difference shrank, the field\'s direction (flat under the dice); three contest rows (contact share, contact by rank difference, coalitionary share) are staged, not applied (<a href="staging/e4h-prereg.md">e4h-prereg.md</a>, <a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
       'Open: slow states cannot carry acute reactions, hence the fast state; the calling–testosterone link still fails because calls have no daily course (<a href="staging/e4b-prereg.md">e4b-prereg.md</a>, <a href="staging/e4d-prereg.md">e4d-prereg.md</a>).',
     ],
   },
@@ -665,7 +672,7 @@ export const DIAGRAMS: DiagramSpec[] = [
       { f: 'prey', t: 'meet', kind: 'side' }, { f: 'pursuit', t: 'end', fs: 'l', ts: 'r', kind: 'side' },
     ],
     notes: [
-      'On S21 the model hunts 5.2 times per community-year, at the floor of its band of 5–25 (never scaled to the model\'s 3–7 males; a 4–11 band is staged). Half the hunts succeed, the floor of the field\'s 0.5–0.8 (S19 0.32); every success takes one monkey (1.0 against 1.2–2), and hunts are a smaller share of colobus encounters (0.014 against 0.05–0.4) (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, <a href="staging/e4e-prereg.md">e4e-prereg.md</a>).',
+      'On S22 the model hunts 2.0 times per community-year, below its band of 5–25 (S21\'s four runs 3.2–5.2; the band was never scaled to the model\'s 3–7 males, and a 4–11 band is staged). Hunts succeed less often than in the field (0.375 against 0.5–0.8), every success takes one monkey (1.0 against 1.2–2), and hunts are a smaller share of colobus encounters (0.011 against 0.05–0.4) (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, <a href="staging/e4e-prereg.md">e4e-prereg.md</a>).',
       'Open: lone hunters and pairs never capture, and about half the adult males a leader sees join him, by a hand-set join value; the three-hunter threshold rests on the design speed ratio (at 0.8 it would take four), not tested. The model has no canopy structure and no colobus composition (<a href="staging/e4k-prereg.md">e4k-prereg.md</a>).',
       'The observer meets colobus 2.7 times as often per follow-hour as at Kanyawara, mostly a scoring difference; three scorer fixes are staged, not applied (<a href="staging/e4f-prereg.md">e4f-prereg.md</a>).',
     ],
@@ -673,8 +680,8 @@ export const DIAGRAMS: DiagramSpec[] = [
   // ---------------------------------------------------------------------------------------------------------------
   {
     key: 'patrols', cap: 'From a party of males to the patrol\'s end', nav: 'Patrols and neighbours', title: 'Patrols and neighbours',
-    take: 'Since S16 patrolling is the males\' own decision, weighed from the border, their odds against the neighbour, daylight, fatigue and arousal (E4i), and since S19 only when their party truly joins up (E4j). Only the listening cadence is still prescribed.',
-    desc: 'Flowchart of border patrols on the candidate stack: daylight and fatigue in place of a clock; the lead weighed when a fusion first brings a party to three adult males; joining by strength; advance and retreat by assessed odds; calls by the call rules; listening stops still on a quota.',
+    take: 'Since S16 patrolling is the males\' own decision, weighed from the border, their odds against the neighbour, daylight, fatigue and arousal (E4i), and since S19 only when their party truly joins up (E4j). Since S22 the leader stops to listen at the waypoints and after a heard chorus, not on a schedule (E4m): no counted prescription is left in patrolling.',
+    desc: 'Flowchart of border patrols on the candidate stack: daylight and fatigue in place of a clock; the lead weighed when a fusion first brings a party to three adult males; joining by strength; advance and retreat by assessed odds; calls by the call rules; listening stops at the waypoints and after a heard chorus.',
     w: 832, h: 536, dx: -192,
     nodes: [
       { k: 'window', x: S, y: y(0), w: SW, h: 72, t: 'Daylight and fatigue', s: 'patrol clock switched out', ids: ['patrolStartH', 'patrolEndH'],
@@ -697,8 +704,9 @@ export const DIAGRAMS: DiagramSpec[] = [
         now: 'Weighed only when his party truly joins up: the adult males he had been with in the last hour (the model\'s reunion span) were fewer than three, and three or more are now in view. No new magnitude (E4j). In E4j\'s runs this halved the patrols and brought intergroup encounters back into their band.' },
       { k: 'strangers', x: R, y: y(1), w: RW, h: 88, t: 'Strangers seen or heard', s: 'own males ≥ 3 and ≥ theirs + 2', st: 'des',
         text: 'Charge or approach with at least 3 of its own males and 2 more than the strangers, otherwise flee. A written rule designed from a playback study (T-IGE-4); the ledger\'s lint does not count it.' },
-      { k: 'stop', x: R, y: y(4) + 48, w: RW, h: 72, t: 'Listening stops', s: 'patrolStopEveryMin 15 min', ids: ['patrolStopEveryMin'],
-        text: 'The leader stops to listen every 15 minutes of travel: still a quota; a model of what listening is worth is needed (E4i).' },
+      { k: 'stop', x: R, y: y(4) + 48, w: RW, h: 72, t: 'Listening stops', s: 'listening schedule switched out', ids: ['patrolStopEveryMin'], ps: ['patrolStopMinMin', 'patrolStopMaxMin'],
+        before: 'On the way out the leader stopped to listen for 2–4 minutes every 15 minutes of travel, besides the stops at each waypoint, and the party waited: a quota that E4i left in place.',
+        now: 'The leader stops where a stop has something to give: at the waypoints (the range edge facing the neighbour, the end of the incursion or sweep) and, on the way out, after a member hears a stranger chorus, holding the patrol still while the callers are counted. No schedule and no new value (E4m). In E4m\'s runs patrols stopped 2.8 times instead of 10.5.' },
     ],
     edges: [
       { f: 'window', t: 'hazard', kind: 'main' }, { f: 'hazard', t: 'join', kind: 'main' }, { f: 'join', t: 'route', kind: 'main' }, { f: 'route', t: 'release', kind: 'main' },
@@ -707,7 +715,8 @@ export const DIAGRAMS: DiagramSpec[] = [
       { f: 'fusion', t: 'hazard', fs: 'l', ts: 'r', to: -16, kind: 'side' },
     ],
     notes: [
-      'On S21 patrols run 0.093 a week, just below their band of 0.1–0.5 (T-PAT-1; S19 0.18), while intergroup encounters stay inside theirs (T-IGE-1 9.4 per community-year, band 5–12; S16 22.8) and 0.46 of patrols enter the neighbours\' range (T-PAT-6, band 0.4–0.7) (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, <a href="staging/e4j-prereg.md">e4j-prereg.md</a>).',
+      'On S22 patrols run 0.124 a week, inside their band of 0.1–0.5 (T-PAT-1; S21 0.093), but 0.81 of them enter the neighbours\' range, above its band of 0.4–0.7 (T-PAT-6; S21\'s runs 0.39–0.74); intergroup encounters stay inside their band (T-IGE-1 10.7 per community-year, band 5–12; S16 22.8) (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, <a href="staging/e4j-prereg.md">e4j-prereg.md</a>).',
+      'Open: listening has no value in the model\'s perception (hearing does not depend on the listener\'s own movement), so a stop gains only time to count a chorus, and patrols stop 2.8 times where the field reports frequent stops (<a href="staging/e4m-prereg.md">e4m-prereg.md</a> §11).',
       'Open: the patrol rate follows design constants set while choices were noisy (the lead\'s ceiling, the 7-day staleness constant); with E3d\'s re-decision on S21\'s choice, patrols lasted longer and intergroup encounters tripled; half the patrols never hold three adult males; lethal attacks during contact are in the next section (<a href="staging/e4i-prereg.md">e4i-prereg.md §8</a>, <a href="staging/e4j-prereg.md">e4j-prereg.md §8</a>, <a href="staging/e3e-prereg.md">e3e-prereg.md</a> §6.3).',
     ],
   },
