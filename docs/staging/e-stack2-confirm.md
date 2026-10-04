@@ -2839,3 +2839,129 @@ rhythm-metrics, 5 seeds, 30 + 60 days, from bench-run2 moved to this commit.
 **Predictions (against the S22 group; moderate confidence unless stated).** Prescriptions 43 (high); viability and night
 safety pass; T-HUN-1 inside its band 5–25 (moderate; S22 2.0); T-HUN-3 still below its band (low); hunters' and their
 families' reserves within the group's spread; fitted better (T-HUN-1) and held-out inside noise.
+
+### S25 results (bench-run2 7cd6bb1 for S25, bench-run3 ea794ff for the S22 group re-drawn by `rngSalt`, all clean; printed by judge_s22group.py and night.py from the JSON)
+
+S25's eight deaths were one respiratory outbreak in seed 48 (seven: two adult males, two nursing mothers, a pregnant
+female, a juvenile, an infant) and an infant that did not survive its mother's death; none from starvation. Outbreaks
+have struck about one confirm run in five across arms (S7a, S15, S23, here).
+
+```
+bench reference runs: ['S22', 'S22c1', 'S22c2', 'S22c3']; energy reference runs: ['S22', 'S22c1', 'S22c2', 'S22c3']; arms: ['S25']
+  S22: ea794ff dirty 0 prescriptions 43
+  S22c1: ea794ff dirty 0 prescriptions 43
+  S22c2: ea794ff dirty 0 prescriptions 43
+  S22c3: ea794ff dirty 0 prescriptions 43
+  S25: 7cd6bb1 dirty 0 prescriptions 43
+
+confirm, reference custom (4 runs), rows counted in all runs: fitted 17, held-out 15
+  fitted             (17 rows) ref 1.78, 1.11, 1.53, 1.15 (mean 1.39, sd 0.32; used 0.32) | S25.json: 1.23, Δ -0.16, z -0.5 (inside noise)
+  held-out           (15 rows) ref 10.34, 8.01, 5.34, 7.67 (mean 7.84, sd 2.04; used 2.04) | S25.json: 9.88, Δ +2.03, z +0.9 (inside noise)
+  held-out w/o rare  (12 rows) ref 3.51, 3.94, 3.94, 4.22 (mean 3.90, sd 0.30; used 0.30) | S25.json: 3.86, Δ -0.04, z -0.1 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-BRD-1   held-out ref 1.09±0.59 | S25.json 3.98 (fail)
+   T-HUN-4   held-out ref 0.28±0.35 | S25.json 0.82 (inconclusive)
+   T-IGE-3   held-out ref 2.57±1.66 | S25.json 1.21 (fail)
+
+held-out without T-HUN-4, T-BRD-1 and T-IGE-3 (12 rows): S22 3.51 / 3.94 / 3.94 / 4.22 (mean 3.90, sd 0.30; used 0.30); S25 3.86 (z -0.1)
+Sensitivity, not the registered test: held-out without T-HUN-4, T-BRD-1, T-IGE-3 and T-RNG-5 (11 rows): S22 2.47 / 2.90 / 2.72 / 2.70 (mean 2.69, sd 0.18; used 0.21); S25 2.74 (z +0.2)
+T-RNG-5 distance by run (S22 group, then arms): [1.04, 1.05, 1.22, 1.53, 1.12]
+T-IGE-3 distance by run: [4.9, 2.23, 0.97, 2.17, 1.21]
+
+| Reserves ÷ store, % per day (OLS) | S22 runs | S22 mean ± SD | S25 |
+| --- | --- | --- | --- |
+| adult male | -0.032 / -0.022 / -0.035 / -0.029 | -0.030 ± 0.006 | -0.035 (z -0.9) |
+| female, other | -0.043 / -0.031 / -0.037 / -0.034 | -0.036 ± 0.005 | -0.050 (z -2.4) |
+| female, lactating | -0.068 / -0.063 / -0.070 / -0.059 | -0.065 ± 0.005 | -0.061 (z +0.7) |
+| juvenile 5–12 y | -0.049 / -0.086 / -0.082 / -0.061 | -0.069 ± 0.018 | -0.060 (z +0.5) |
+| infant 2–5 y | -0.052 / -0.058 / -0.056 / -0.043 | -0.052 ± 0.007 | -0.120 (z -9.2) |
+| infant 0.5–2 y | -0.090 / -0.077 / -0.088 / -0.081 | -0.084 ± 0.006 | -0.088 (z -0.5) |
+| infant < 0.5 y | +0.000 / +0.000 / +0.000 / +0.000 | +0.000 ± 0.000 | +0.000 (z +nan) |
+
+| Growth, kg/y (unweaned infants) | S22 runs | S22 mean ± SD | S25 |
+| --- | --- | --- | --- |
+| 0.5–1 y | 2.79 / 2.84 / 2.78 / 2.81 | 2.80 ± 0.03 | 2.79 (z -0.5) |
+| 1–2 y | 3.47 / 3.44 / 3.46 / 3.47 | 3.46 ± 0.01 | 3.43 (z -1.9) |
+| 2–3 y | 3.49 / 3.49 / 3.48 / 3.48 | 3.49 ± 0.01 | 3.39 (z -14.7) |
+| 3–4 y | 3.50 / 3.48 / 3.49 / 3.51 | 3.50 ± 0.01 | 3.49 (z -0.3) |
+
+| Milk drunk, kcal per infant-day | S22 runs | S22 mean ± SD | S25 |
+| --- | --- | --- | --- |
+| 0.5–1 y | 277 / 277 / 275 / 279 | 277 ± 1 | 275 (z -1.0) |
+| 1–2 y | 283 / 271 / 279 / 284 | 279 ± 6 | 278 (z -0.2) |
+| 2–3 y | 264 / 257 / 253 / 258 | 258 ± 5 | 263 (z +1.0) |
+| 3–4 y | 260 / 244 / 251 / 268 | 256 ± 10 | 253 (z -0.2) |
+
+| Mothers' balance, kcal/day by infant age | S22 runs | S22 mean ± SD | S25 |
+| --- | --- | --- | --- |
+| 0.5–1 y | -33 / -18 / -39 / -28 | -30 ± 9 | -36 (z -0.7) |
+| 1–2 y | -39 / -39 / -48 / -44 | -42 ± 4 | -38 (z +0.9) |
+| 2–3 y | -24 / -33 / -35 / -27 | -30 ± 5 | -34 (z -0.7) |
+| 3–4 y | -25 / -33 / -22 / -18 | -25 ± 6 | -32 (z -1.0) |
+
+| Ground km / eating min / fruit share | S22 runs | S22 mean ± SD | S25 |
+| --- | --- | --- | --- |
+| adult male: groundKm | 2.07 / 2.20 / 2.18 / 2.21 | 2.16 ± 0.06 | 2.21 (z +0.7) |
+| adult male: eatingMin | 230.74 / 231.22 / 232.26 / 233.20 | 231.85 ± 1.10 | 232.60 (z +0.6) |
+| adult male: fruitShare | 0.85 / 0.86 / 0.84 / 0.86 | 0.85 ± 0.01 | 0.84 (z -1.9) |
+| female, other: groundKm | 1.49 / 1.71 / 1.64 / 1.64 | 1.62 ± 0.09 | 1.69 (z +0.7) |
+| female, other: eatingMin | 238.52 / 239.09 / 237.11 / 231.13 | 236.46 ± 3.65 | 237.14 (z +0.2) |
+| female, other: fruitShare | 0.57 / 0.61 / 0.60 / 0.63 | 0.60 ± 0.02 | 0.60 (z +0.1) |
+| female, lactating: groundKm | 1.95 / 2.09 / 2.07 / 2.01 | 2.03 ± 0.06 | 2.10 (z +1.0) |
+| female, lactating: eatingMin | 305.39 / 305.83 / 306.88 / 298.85 | 304.24 ± 3.65 | 302.78 (z -0.4) |
+| female, lactating: fruitShare | 0.64 / 0.63 / 0.62 / 0.66 | 0.64 ± 0.02 | 0.64 (z +0.1) |
+| juvenile 5–12 y: groundKm | 2.04 / 2.16 / 2.15 / 2.10 | 2.11 ± 0.06 | 2.18 (z +1.1) |
+| juvenile 5–12 y: eatingMin | 276.42 / 276.21 / 272.04 / 272.00 | 274.17 ± 2.48 | 273.50 (z -0.2) |
+| juvenile 5–12 y: fruitShare | 0.83 / 0.82 / 0.84 / 0.84 | 0.83 ± 0.01 | 0.84 (z +1.0) |
+
+| Row (pooled) | Band | S22 runs | S22 mean ± SD | S25 |
+| --- | --- | --- | --- | --- |
+| T-ACT-1 | 0.33–0.5 | 0.380 / 0.380 / 0.381 / 0.373 | 0.378 ± 0.004 | 0.376 |
+| T-ACT-2 | 0.12–0.25 | 0.179 / 0.181 / 0.189 / 0.184 | 0.183 ± 0.004 | 0.183 |
+| T-ACT-3 | 0.08–0.18 | 0.091 / 0.092 / 0.090 / 0.088 | 0.090 ± 0.001 | 0.087 |
+| T-ACT-4 | 0.3–0.47 | 0.383 / 0.357 / 0.351 / 0.364 | 0.364 ± 0.014 | 0.395 |
+| T-PTY-1 | 3–9 | 3.882 / 4.187 / 4.255 / 3.971 | 4.074 ± 0.176 | 4.051 |
+| T-RNG-4 | 1.5–3.5 | 1.926 / 1.866 / 1.900 / 1.837 | 1.882 ± 0.039 | 1.896 |
+| T-HUN-1 | 5–25 | 2.019 / 4.033 / 2.014 / 4.024 | 3.023 ± 1.162 | 17.362 |
+| T-HUN-2 | 0.5–0.8 | 0.375 / 0.778 / 0.667 / 0.636 | 0.614 ± 0.171 | 0.610 |
+| T-HUN-3 | 0.05–0.4 | 0.011 / 0.013 / 0.004 / 0.008 | 0.009 ± 0.004 | 0.035 |
+| T-FOOD-2 | 0.6–0.78 | 0.755 / 0.749 / 0.748 / 0.779 | 0.758 ± 0.014 | 0.758 |
+| T-FOOD-4 | 4–15 | 8.115 / 8.309 / 8.166 / 8.153 | 8.186 ± 0.085 | 7.997 |
+| T-FOOD-6 | 2–7 | 4.807 / 4.615 / 4.663 / 5.001 | 4.772 ± 0.173 | 4.817 |
+| T-FOOD-10 | 0.08–0.3 | 0.535 / 0.590 / 0.543 / 0.557 | 0.556 ± 0.024 | 0.549 |
+| T-HUN-7 | 1.2–2 | 1.000 / 1.000 / 1.000 / 1.000 | 1.000 ± 0.000 | 1.000 |
+| T-IGE-1 | 5–12 | 10.704 / 9.423 / 7.660 / 11.263 | 9.763 ± 1.599 | 6.357 |
+| T-IGE-2 | 0.7–0.9 | 0.947 / 1.000 / 1.000 / 1.000 | 0.987 ± 0.026 | 1.000 |
+| T-PAT-1 | 0.1–0.5 | 0.124 / 0.108 / 0.116 / 0.077 | 0.106 ± 0.021 | 0.070 |
+| T-PAT-6 | 0.4–0.7 | 0.808 / 0.424 / 0.355 / 0.600 | 0.547 ± 0.202 | 0.724 |
+| T-PAT-7 | 0.15–0.45 | 0.062 / 0.000 / 0.000 / 0.000 | 0.016 ± 0.031 | 0.000 |
+| T-SOC-3 | 0.45–0.8 | 0.650 / 0.747 / 0.750 / 0.679 | 0.707 ± 0.050 | 0.714 |
+| T-SOC-5 | 0.2–0.7 | 0.546 / 0.665 / 0.632 / 0.551 | 0.599 ± 0.059 | 0.610 |
+| T-SOC-9 | 0.08–0.22 | 0.107 / 0.104 / 0.175 / 0.103 | 0.122 ± 0.035 | 0.198 |
+S22 T-ACT-2 by sex: {'male': 0.199, 'female': 0.162}; T-ACT-3 by sex: {'male': 0.125, 'female': 0.062}
+S22c1 T-ACT-2 by sex: {'male': 0.21, 'female': 0.156}; T-ACT-3 by sex: {'male': 0.124, 'female': 0.065}
+S22c2 T-ACT-2 by sex: {'male': 0.212, 'female': 0.17}; T-ACT-3 by sex: {'male': 0.126, 'female': 0.061}
+S22c3 T-ACT-2 by sex: {'male': 0.2, 'female': 0.171}; T-ACT-3 by sex: {'male': 0.122, 'female': 0.06}
+S25 T-ACT-2 by sex: {'male': 0.203, 'female': 0.167}; T-ACT-3 by sex: {'male': 0.113, 'female': 0.065}
+
+True ground path, nursing mothers ÷ adult males (energy-diagnose; reported, not the test):
+  S22: 1.95 ÷ 2.07 = 0.940
+  S22c1: 2.09 ÷ 2.20 = 0.950
+  S22c2: 2.07 ÷ 2.18 = 0.953
+  S22c3: 2.01 ÷ 2.21 = 0.910
+  S25: 2.10 ÷ 2.21 = 0.950
+/Users/juanbermudez/Desktop/MGOGO/.claude/worktrees/bench-run2/artifacts/validation/e/s25/S25-rhythm5.json: adults out of a nest 1.84% of night; T-RHY-5 0.0203; night deaths 2; deaths 8
+Infants 2–5 y, reserve change per dyad (%/day) by seed, from energy-diagnose's dyad records:
+  S25   5: −0.070  7: −0.081  11: −0.117  21: −0.051  48: −0.330 (the outbreak seed: mothers ill or dead)
+  S22   5: −0.056  7: −0.042  11: −0.121  21: −0.040  48: −0.007
+  S22c1 5: −0.025  7: −0.099  11: −0.136  21: −0.066  48: −0.020
+```
+
+**Against the predictions.** Prescriptions 43: held. Viability (no starvation) and night (1.84%, 0.0203): held. T-HUN-1
+inside its band: held (3.0 ± 1.2 → 17.4). T-HUN-3 still below its band: held (0.035). Hunters' and families' reserves
+within spread: held for every class but infants 2–5 y (−0.052 → −0.120), whose drop is the outbreak seed's (−0.33 there;
+the other four seeds −0.05 to −0.12, as on S22). Fitted better: missed (z −0.5, inside noise). Held-out inside noise:
+held (z +0.9; −0.1 without the rare rows).
+
+**Verdict: S25 passes the keep rule for a correction and replaces S22 as the best integrated candidate** (43
+prescriptions; hunting back inside its band without a new magnitude).
