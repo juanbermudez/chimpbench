@@ -33,11 +33,12 @@ const S13_SWITCHES: Record<string, number> = { ...S9_SWITCHES, huntValue: 1, for
 const S16_SWITCHES: Record<string, number> = { ...S13_SWITCHES, socialTiming: 15, patrolValue: 2 };
 const S19_SWITCHES: Record<string, number> = { ...S16_SWITCHES, patrolFusion: 1, huntPursuit: 2 };
 const S21_SWITCHES: Record<string, number> = { ...S19_SWITCHES, choiceBelief: 2 };
+const S22_SWITCHES: Record<string, number> = { ...S21_SWITCHES, leftoverRules: 3 };
 /** The stacks as docs/staging/e-stack2-confirm.md defines them (S5 = S4 + companyMargin, S4 = S3 + followCarer +
  *  cohesionValue, S6 = S5 + E1o's arm B, S8 = S6 + E1p's growYield + E3b's revisitByCrop, S9 = S8 + E5d's G4,
  *  S13 = S9 + E4e's huntValue + E3c's forageRate + E4h's contestAssess, S16 = S13 + E5e's socialTiming + E4i's patrolValue,
  *  S19 = S17 + E4k's huntPursuit, S17 = S16 + E4j's patrolFusion, S21 = S19 + E3e's choiceBelief, S22 = S21 + E4m's
- *  leftoverRules). */
+ *  leftoverRules, S25 = S22 + E4n's huntDrive). */
 export const STACKS = {
   S3: { name: 'S3', doc: 'staging/e-stack2-confirm.md', section: 'S3 results', switches: S3_SWITCHES },
   S5: { name: 'S5', doc: 'staging/e-stack2-confirm.md', section: 'S5 results', switches: S5_SWITCHES },
@@ -48,11 +49,12 @@ export const STACKS = {
   S16: { name: 'S16', doc: 'staging/e-stack2-confirm.md', section: 'S16 results', switches: S16_SWITCHES },
   S19: { name: 'S19', doc: 'staging/e-stack2-confirm.md', section: 'S19 results', switches: S19_SWITCHES },
   S21: { name: 'S21', doc: 'staging/e-stack2-confirm.md', section: 'S21 results', switches: S21_SWITCHES },
-  S22: { name: 'S22', doc: 'staging/e-stack2-confirm.md', section: 'S22 results', switches: { ...S21_SWITCHES, leftoverRules: 3 } },
+  S22: { name: 'S22', doc: 'staging/e-stack2-confirm.md', section: 'S22 results', switches: S22_SWITCHES },
+  S25: { name: 'S25', doc: 'staging/e-stack2-confirm.md', section: 'S25 results', switches: { ...S22_SWITCHES, huntDrive: 1 } },
 } satisfies Record<string, Stack>;
 /** The stack this page shows. Moving the page to another stack is this line, plus the prose its results change (the
  *  check names every box and layer that no longer fits). */
-export const STACK: Stack = STACKS.S22;
+export const STACK: Stack = STACKS.S25;
 
 /** Stages outside the stack, each measured on it (handoff §0 and §3, and each stage's pre-registration). `verdict`
  *  replaces the stage's own where the layer is one arm of a stage. A layer whose switches the stack holds is dropped. */
@@ -65,6 +67,7 @@ export const ALL_LAYERS: Layer[] = [
   { key: 'E4e', stage: 'E4e', label: 'E4e, a hunt valued as food', status: 'held off', on: { huntValue: 1 } },
   { key: 'E1k', stage: 'E1k', label: "E1k, the groomer's own need", status: 'recorded, off', on: { groomNeedDyad: 1 } },
   { key: 'E4d', stage: 'E4d', label: 'E4d, sleep-gated hormone rhythm', status: 'recorded, off', on: { endoRhythm: 1 } },
+  { key: 'E2j', stage: 'E2j', label: "E2j, a trip's climb and riders; the young's arrival", status: 'recorded, off', on: { tripBodyCost: 1, youngArrival: 1 } },
   { key: 'E2i', stage: 'E2i', label: 'E2i, walking speed from the body', status: 'passes alone as S23; with S22, not adopted', on: { walkGait: 1 } },
   { key: 'E3d', stage: 'E3d', label: 'E3d, an act kept while it is the best', status: 'passes alone as S18; with choiceBelief, encounters tripled', on: { redecideValue: 2 } },
   { key: 'E3', stage: 'E3', label: 'E3, urgency', status: 'stopped, off', on: { urgencyChoice: 1, urgencyPersist: 1, urgencySwitchCost: 1 } },
