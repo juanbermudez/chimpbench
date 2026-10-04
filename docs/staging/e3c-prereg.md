@@ -46,7 +46,7 @@ targets, never inputs. No weight or scale is tuned to a travel share, a day rang
    prescription count must fall accordingly.
 3. At most three iterations, each logged here and committed before its run; arms = S9 + the switch, quick mode.
 
-## 2. Diagnosis (step 1; registered 3 October 2026, 23:10, before its runs)
+## 2. Diagnosis (step 1; registered 3 October 2026, 22:59, commit bdb03ac, before its runs)
 
 **What the code does (read at 37a2042, field profile, S9's 39 switches).** A non-dependent animal's feeding options
 (candidates.ts:289–457):
@@ -118,9 +118,33 @@ gut room binds in ≥ 70% of crown options, the need in < 15% (moderate, E5c: 99
 ± 25%. R5: feeding options chosen more often (food is worth more against rest and grooming once the discounts go),
 walking per decision up.
 
-## 3. Field rows scored here: samples
+## 3. Field rows scored here: samples (sources opened or as recorded by the stage that read them; written before any arm)
 
-(To follow, before any arm.)
+| Row | Source | Sample, method (quoted where it decides the readout) | Value, band |
+| --- | --- | --- | --- |
+| T-ACT-1, T-ACT-2, T-ACT-3 (fitted) | villioth2025 (FT, PMC12701709 through NCBI BioC, opened here 3 October) | Budongo Waibira 2016–17, 10 adult males and 9 adult females: "Seven of the females were lactating, while two females were not lactating but travelled with a single juvenile offspring"; 491 h of focal sampling, follows 1–12 h (median 4 h); "the behavioural state of the focal individual was recorded continuously ... feeding (all behaviours related to food handling; the entire process of picking and ingesting food items), travelling (terrestrial quadrupedal walking as well as arboreal climbing and movement within the canopy), grooming (giving or receiving), resting (any period > 1 min in which the individual was sitting or lying ...)"; mass not reported | feeding 0.36 M / 0.37 F (band 0.33–0.5; uwimbabazi2019's Kanyawara mothers 309 ± 85 min); travel 0.21 / 0.20 (band 0.12–0.25; amsler2010 Ngogo control days 0.14); grooming 0.15 / 0.12 (band 0.08–0.18) |
+| T-ACT-4 rest + groom (fitted) | potts2011 (read in full by E5c, Harvard DASH through Wayback), villioth2025 | Ngogo 2005–06 (1,059 h) and Kanyawara 2006 (961 h): continuous focal follows of adult males, cycling females and pregnant or lactating females; "resting includes grooming"; monthly means; mass not reported | 0.340 (Ngogo), 0.448 (Kanyawara); Waibira ≈ 0.43 (derived); band 0.3–0.47 |
+| T-RNG-4 male day range (fitted) | batesByrne2009 (as e5c-prereg §2.2, e3b-prereg §3) | Budongo Sonso 2002–03, 8 adult males, GPS every 5 min while travelling, full-day follows; mass not reported | 2.7 ± 1.5 km/day; band 1.5–3.5 |
+| T-FOOD-2 fruit share (fitted) | watts2012a, emeryThompson2020 (as e5c-prereg §2.2) | Ngogo 1995–2010, 125 months, focal + 15-min scans; Kanyawara 1994–2018, 240,601 feeding scans; all age-sex classes in the feeding scans; mass not reported | 72.1%, 64.0%; band 0.60–0.78 |
+| T-FOOD-4 trees per day (held out, compromised) | janmaat2013b, normand2009 (as e3b-prereg §3) | Taï, 5 adult females with young, 275 full-day follows; normand2009's two females over 28 days | 7.14; 14.0 and 18.1; band 4–15 (the observer counts returns after ≥ 10 min as visits, e3b-prereg §7) |
+| T-FOOD-6 revisit interval (held out) | normand2009 (FT, read by E3b), ban2014 (abstract) | Taï, the same individual, trees < 30 m apart one resource, two females followed 28 consecutive days; "On average, chimpanzees revisit a tree within 5.37 days" | 5.37; 2.5 days; band 2–7 (observer pools focals, e3b-prereg §7) |
+| T-FOOD-10 departures before sunrise (held out) | janmaat2014 (FT, read by E2h) | Taï, "five adult habituated female chimpanzees", "all with young offspring (<7 y)", three fruit-scarce periods; 179 fruit-breakfast mornings; mass not given | 18% of departures before sunrise; band 0.08–0.3 |
+| T-HUN-1 hunts per community-year (fitted) | gilby2015, wattsMitani2002 (as e4e-prereg §2) | Kanyawara 1996–2014: 194 hunts in 224 months, mean 11.4 adult males, all-occurrence by the followed party; Ngogo ~24 males | ≈ 10.4 per year (Kanyawara); band 5–25 (unscaled; e4e's staged 4–11 not applied) |
+| True day ranges by class; reserves %/day; net energy rate by class (truth) | none scored by e-bench | energy-diagnose: ground km (horizontal steps on the ground, < 100 m a tick), the OLS slope of the daily reserves ÷ usable store (the integrator's judge convention); net rate defined in §2's tool header and below | judged against the S9 reference's own spread |
+
+**Readouts the predictions need, and where they come from** (each defined in its tool's header; all smoke-tested on 2
+days with the switch on before any arm, §5):
+- T-ACT-1..4, T-RNG-4, T-FOOD-2, T-FOOD-4, T-FOOD-6, T-FOOD-10, T-HUN-1, T-PTY-1: e-bench's observer rows (pooled values
+  and distances), as the sources define them through the frozen observer (src/field/metrics.ts); the known scorer
+  differences for T-FOOD-4/5/6 are e3b-prereg §7's (not changed).
+- True day ranges (ground km per day), eating minutes, fruit share of eating, reserves %/day by class: energy-diagnose
+  (seeds 48 and 7, 30 + 30 days), the integrator's reference files for S9 and one run per arm.
+- **Net energy rate by class** (simulation truth; no field row): from energy-diagnose's rows, (energy taken into the
+  books − passed out unabsorbed − walking cost) ÷ (eating minutes + ground km ÷ `walkMps`), kcal per minute: "kcal
+  absorbed per minute of walking plus feeding, net of walking cost" with walking minutes at the model's walking pace
+  (the ground path is walked at `walkMps` except the forage pace inside a fallback cell, so this is a lower bound on the
+  minutes); forage-rate-diagnose reports the same per class and per chosen option (episodes).
+- Walking by purpose (own trip, joined trip, crown approach, fallback, caller, …): revisit-diagnose (E3b).
 
 ## 4. Reference and judging (docs/staging/e-noise.md amendment 2)
 
