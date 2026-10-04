@@ -291,3 +291,162 @@ act); bit 2 leaves ≥ 8 stops per patrol or makes patrols never stop (it fails 
   `rngSalt` 1, 2, 3 (the parameters of S21q1–S21q3), 30 + 60 days, seeds 48 then 7, from `scratchpad/e4m/frozen-a1`
   (2783988: every switch-gated change is off at `leftoverRules` 0, field pin unchanged), after A1's diagnosis finishes;
   `artifacts/validation/e4m/D{1,2,3}-diag-{48,7}.json`. The arm's truth readouts are then judged against D0–D3 (mean ± SD).
+- **A1 note** (logged after the run): bench 08:35–08:37 (2 workers), energy 08:37–08:42, diagnosis 08:35–08:39; D1–D3
+  08:38–08:51; all from `frozen-a1` (2783988, clean: `git.dirty` 0). Readout defect found while reading A1, deferred (the
+  readout is not used for a decision): `e4m-diagnose.ts` counts a guardian's defence charge as answering rough play only
+  when it starts after the escalation's tick (`dtH > 0`), but the partner's scream interrupts its mother, who can charge
+  in the same tick, so "of them answering rough play" undercounts (D0: 110 of 232); the defence charges by ward age are
+  unaffected and show the full link (wards under 8 y: 212 → 1).
+
+## 10. Results (A1 against S21's four quick realizations and D0–D3; printed by `artifacts/validation/e4m/judge_e4m.py` from the JSON)
+
+```
+reference runs: ['S21q', 'S21q1', 'S21q2', 'S21q3'] ; arms: ['A1']
+  S21q: e7d8d8e dirty 0 prescriptions 45 viability pass deaths 0 starvation 0 causes [{}, {}]
+  S21q1: e7d8d8e dirty 0 prescriptions 45 viability pass deaths 1 starvation 0 causes [{'illness': 1}, {}]
+  S21q2: e7d8d8e dirty 0 prescriptions 45 viability pass deaths 0 starvation 0 causes [{}, {}]
+  S21q3: e7d8d8e dirty 0 prescriptions 45 viability pass deaths 0 starvation 0 causes [{}, {}]
+  A1: 2783988 dirty 0 prescriptions 43 viability pass deaths 0 starvation 0 causes [{}, {}]
+
+quick, reference custom (4 runs), rows counted in all runs: fitted 15, held-out 15
+  fitted             (15 rows) ref 1.23, 2.15, 0.84, 1.36 (mean 1.39, sd 0.55; used 0.69) | A1.json: 1.65, Δ +0.25, z +0.3 (inside noise)
+  held-out           (15 rows) ref 5.77, 3.47, 4.78, 4.47 (mean 4.63, sd 0.95; used 1.26) | A1.json: 5.13, Δ +0.50, z +0.4 (inside noise)
+  held-out w/o rare  (15 rows) ref 5.77, 3.47, 4.78, 4.47 (mean 4.63, sd 0.95; used 0.95) | A1.json: 5.13, Δ +0.50, z +0.5 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-COM-11  fitted   ref 0.69±0.28 | A1.json 0.09 (fail)
+   T-SOC-3   held-out ref 0.01±0.02 | A1.json 0.37 (fail)
+   T-SOC-5   held-out ref 0.00±0.00 | A1.json 0.26 (fail)
+
+
+| Reserves ÷ store, % per day (OLS) | S21 runs | S21 mean ± SD | A1 |
+| --- | --- | --- | --- |
+| adult male | +0.011 / -0.005 / -0.007 / +0.013 | +0.003 ± 0.010 | +0.009 (z +0.5) |
+| female, other | +0.011 / +0.011 / -0.020 / +0.007 | +0.002 ± 0.015 | +0.003 (z +0.1) |
+| female, lactating | +0.026 / +0.014 / -0.030 / +0.021 | +0.008 ± 0.025 | +0.006 (z -0.1) |
+| juvenile 5–12 y | -0.001 / +0.020 / -0.040 / -0.008 | -0.007 ± 0.025 | +0.004 (z +0.4) |
+| infant 2–5 y | +0.040 / +0.010 / -0.012 / +0.014 | +0.013 ± 0.021 | +0.016 (z +0.1) |
+| infant 0.5–2 y | +0.013 / +0.004 / -0.034 / +0.037 | +0.005 ± 0.029 | -0.006 (z -0.4) |
+| infant < 0.5 y | +0.000 / +0.000 / +0.000 / +0.000 | +0.000 ± 0.000 | +0.000 (z +nan) |
+
+deaths (energy-diagnose): {'S21q': {}, 'S21q1': {'adult male: illness': 1}, 'S21q2': {}, 'S21q3': {}, 'A1': {}}
+
+| Row (pooled; verdict) | Band | S21 runs | S21 mean ± SD | A1 |
+| --- | --- | --- | --- | --- |
+| T-ACT-1 | 0.33–0.5 | 0.378 (pass) / 0.369 (pass) / 0.374 (pass) / 0.371 (pass) | 0.373 ± 0.004 | 0.374 (pass) z +0.3 |
+| T-ACT-2 | 0.12–0.25 | 0.151 (pass) / 0.156 (pass) / 0.162 (pass) / 0.172 (pass) | 0.160 ± 0.009 | 0.152 (pass) z -0.8 |
+| T-ACT-3 | 0.08–0.18 | 0.094 (fail) / 0.092 (fail) / 0.094 (fail) / 0.090 (fail) | 0.092 ± 0.002 | 0.094 (fail) z +0.8 |
+| T-ACT-4 | 0.3–0.47 | 0.391 (pass) / 0.358 (pass) / 0.372 (pass) / 0.368 (pass) | 0.372 ± 0.014 | 0.409 (pass) z +2.4 |
+| T-PAT-1 | 0.1–0.5 | 0.038 (inconclusive) / 0.232 (pass) / 0.115 (pass) / 0.115 (pass) | 0.125 ± 0.080 | 0.077 (inconclusive) z -0.5 |
+| T-PAT-2 | 7–18 | 1.262 (fail) / 9.055 (pass) / 4.724 (fail) / 4.474 (fail) | 4.878 ± 3.200 | 2.173 (fail) z -0.8 |
+| T-PAT-3 | 0.55–0.85 | 1.000 (fail) / 0.808 (pass) / 0.607 (pass) / 0.750 (pass) | 0.791 ± 0.163 | 0.464 (fail) z -1.8 |
+| T-PAT-5 | 60–240 | 300.000 (fail) / 189.875 (pass) / 210.250 (pass) / 112.750 (pass) | 203.219 ± 76.982 | 152.000 (pass) z -0.6 |
+| T-PAT-6 | 0.4–0.7 | 0.600 (pass) / 0.333 (fail) / 0.667 (pass) / 0.167 (fail) | 0.442 ± 0.233 | — |
+| T-PAT-7 | 0.15–0.45 | 0.000 (fail) / 0.167 (pass) / 0.000 (fail) / 0.000 (fail) | 0.042 ± 0.083 | 0.000 (fail) z -0.4 |
+| T-BRD-1 | 0.037–0.107 | — / — / — / — | — | — |
+| T-HUN-1 | 5–25 | 6.016 (pass) / 0.000 (inconclusive) / 0.000 (inconclusive) / 4.011 (inconclusive) | 2.507 ± 3.008 | 0.000 (inconclusive) z -0.7 |
+| T-HUN-2 | 0.5–0.8 | 0.500 (pass) / — / — / 0.500 (pass) | 0.500 ± 0.000 | — |
+| T-HUN-3 | 0.05–0.4 | 0.007 (fail) / 0.000 (fail) / 0.000 (fail) / 0.008 (fail) | 0.004 ± 0.004 | 0.000 (fail) z -0.8 |
+| T-HUN-4 | 1.05–1.8 | 2.568 (fail) / — / — / 1.885 (fail) | 2.227 ± 0.483 | — |
+| T-HUN-7 | 1.2–2 | 1.000 (fail) / — / — / 1.000 (fail) | 1.000 ± 0.000 | — |
+| T-HUN-8 | 0.8–0.95 | 1.000 (fail) / — / — / 1.000 (fail) | 1.000 ± 0.000 | — |
+| T-IGE-1 | 5–12 | 8.977 (pass) / 1.535 (inconclusive) / 1.480 (inconclusive) / 6.072 (pass) | 4.516 ± 3.671 | 8.982 (pass) z +1.1 |
+| T-IGE-2 | 0.7–0.9 | 1.000 (fail) / 0.500 (fail) / 1.000 (fail) / 1.000 (fail) | 0.875 ± 0.250 | 1.000 (fail) z +0.4 |
+| T-IGE-3 | 0.25–0.75 | — / — / — / — | — | — |
+| T-SOC-9 | 0.08–0.22 | 0.082 (pass) / -0.042 (fail) / 0.079 (fail) / 0.117 (pass) | 0.059 ± 0.070 | -0.057 (fail) z -1.5 |
+| T-SOC-10 | 0.1–0.3 | 0.173 (pass) / 0.238 (pass) / 0.165 (pass) / 0.240 (pass) | 0.204 ± 0.041 | 0.203 (pass) z -0.0 |
+  S21q T-PAT-1 parts: {'perMaleFollowWeek': 0.081, 'withStopsPerWeek': 0.038, 'maleParties': 0.194}
+  S21q1 T-PAT-1 parts: {'perMaleFollowWeek': 0.438, 'withStopsPerWeek': 0.232, 'maleParties': 0.467}
+  S21q2 T-PAT-1 parts: {'perMaleFollowWeek': 0.254, 'withStopsPerWeek': 0.115, 'maleParties': 0.231}
+  S21q3 T-PAT-1 parts: {'perMaleFollowWeek': 0.175, 'withStopsPerWeek': 0.114, 'maleParties': 0.233}
+  A1 T-PAT-1 parts: {'perMaleFollowWeek': 0.171, 'withStopsPerWeek': 0.077, 'maleParties': 0}
+
+| Truth readouts (e4m-diagnose, 30 + 60 days, seeds 48 + 7) | S21 runs | S21 mean ± SD | A1 |
+| --- | --- | --- | --- |
+| rough escalations per immature-day | 0.494 / 0.448 / 0.502 / 0.458 | 0.475 ± 0.027 | 0.001 (z -16.0) |
+| play bouts per immature-day | 7.458 / 7.386 / 7.615 / 6.750 | 7.302 ± 0.380 | 6.043 (z -3.0) |
+| play min per day, immatures 5–8 y | 121.998 / 128.044 / 127.654 / 110.757 | 122.113 ± 8.059 | 131.199 (z +1.0) |
+| guardian defence charges (2 seeds) | 232.000 / 215.000 / 228.000 / 210.000 | 221.250 ± 10.436 | 14.000 (z -17.8) |
+|   of them answering rough play | 110.000 / 97.000 / 112.000 / 93.000 | 103.000 ± 9.416 | 0.000 (z -9.8) |
+| patrols (truth, 2 seeds) | 27.000 / 24.000 / 34.000 / 19.000 | 26.000 ± 6.272 | 22.000 (z -0.6) |
+| listening stops per patrol | 11.630 / 11.000 / 11.382 / 8.105 | 10.529 ± 1.637 | 2.818 (z -4.2) |
+|   at waypoints per patrol | 1.593 / 1.917 / 1.824 / 1.737 | 1.767 ± 0.138 | 1.818 (z +0.3) |
+|   schedule (S21) or after a sound (arm) per patrol | 10.037 / 9.083 / 9.559 / 6.368 | 8.762 ± 1.642 | 1.000 (z -4.2) |
+| outbound share of time stopped | 0.195 / 0.195 / 0.189 / 0.200 | 0.195 ± 0.004 | 0.042 (z -31.8) |
+| patrols with >= 2 stops | 27.000 / 24.000 / 34.000 / 19.000 | 26.000 ± 6.272 | 20.000 (z -0.9) |
+| captures (2 seeds) | 4.000 / 3.000 / 3.000 / 4.000 | 3.500 ± 0.577 | 0.000 (z -5.4) |
+| kcal per capture | 1148.571 / 1148.571 / 1148.571 / 1148.571 | 1148.571 ± 0.000 | — |
+| kcal per hunt | 765.714 / 344.571 / 861.429 / 656.327 | 657.010 ± 224.516 | 0.000 (z -2.6) |
+| holder-minutes awake per carcass | 183.625 / 173.583 / 184.167 / 171.688 | 178.266 ± 6.551 | — |
+| charges at 12+ y with a qualifying mother (age limit decides) | 66.000 / 112.000 / 71.000 / 147.000 | 99.000 ± 38.061 | 63.000 (z -0.8) |
+| defence charges, ward <5 y | 164.000 / 137.000 / 168.000 / 134.000 | 150.750 ± 17.727 | 0.000 (z -7.6) |
+| defence charges, ward 5-8 y | 48.000 / 36.000 / 36.000 / 31.000 | 37.750 ± 7.228 | 1.000 (z -4.5) |
+| defence charges, ward 8-12 y | 10.000 / 27.000 / 9.000 / 21.000 | 16.750 ± 8.732 | 3.000 (z -1.4) |
+| defence charges, ward 12-15 y | 9.000 / 11.000 / 13.000 / 22.000 | 13.750 ± 5.737 | 4.000 (z -1.5) |
+| defence charges, ward 15-20 y | 0.000 / 4.000 / 1.000 / 2.000 | 1.750 ± 1.708 | 6.000 (z +2.2) |
+| defence charges, ward >=20 y | 1.000 / 0.000 / 1.000 / 0.000 | 0.500 ± 0.577 | 0.000 (z -0.8) |
+  A1: play bouts started with acute drive > 0: 3164 of 10152; > 0.5: 0; rough initiators by age [{}, {'5-8': 1, '<5': 1}]; deaths [{}, {}]
+```
+
+**Against the predictions (§8 and amendment 1):**
+
+| Quantity | Predicted | Observed (A1; S21 mean ± SD of four realizations) | Verdict |
+| --- | --- | --- | --- |
+| Prescription count | 45 → 43 (high) | 43 | held |
+| Rough escalations per immature-day | ≤ 0.05 (from 0.48–0.51) | 0.001 (0.475 ± 0.027): 2 escalations in two seeds, one pair in one tick, each rough with the other (the lighter one can be rough only when both are aroused: a kick in that tick, both fast states 0 before it) | held |
+| Guardian defence charges | 35–55% fewer | 14 against 221 ± 10 (−94%); wards under 8 y 212 → 1 | missed: nearly every defence charge followed rough play (the D0 attribution readout undercounted it, run log) |
+| Play bouts per immature-day | within 15% of D0 (low) | 6.04 against 7.30 ± 0.38 (−17%, z −3.0); play minutes of 5–8-year-olds 131 against 122 ± 8 (z +1.0): fewer, longer bouts | missed narrowly |
+| Bouts begun with acute drive > 0.5 | ≤ 5% | 0 of 10,152 (31% begin with some arousal above 0) | held |
+| Stops per patrol | 2–4 | 2.82 (10.53 ± 1.64): 1.82 at waypoints (1.77 ± 0.14), 1.00 after a sound | held |
+| Outbound time stopped | ≤ 8% | 4.2% (19.5 ± 0.4%) | held |
+| T-PAT-1 | not higher than the S21 runs; may go unscored | 0.077, inconclusive (0.125 ± 0.080; S21q 0.038); its male-party part 0 (0.19–0.47); T-PAT-6 below the classifier's instrument bar (unscored) | held |
+| Patrols (truth) | within the S21 spread (low) | 22 against 26 ± 6 (z −0.6) | held |
+| T-HUN rows, T-ACT-1..4 | inside the S21 spread | T-HUN rows unscored or at the reference's values (hunts 3 against 4–10, captures 0 against 3–4: counts too small to judge, P(0 captures at a mean of 3.5) ≈ 0.03); T-ACT-1..3 inside; **T-ACT-4 rest 0.409 against 0.372 ± 0.014 (z +2.4)**, in band | missed (rest) |
+| Reserves %/day | inside the S21 spread (high) | every class within ±0.5 SD | held |
+| Fitted, held-out, held-out without the rare rows | inside noise | z +0.3, +0.4, +0.5 (the rare rows went unscored in every quick run) | held |
+| Viability | passes (high) | passes; no death (S21q1 one illness death) | held |
+
+**Kill criterion (§8): not met.** Viable; held-out without the rare rows inside noise (z +0.5); count 45 → 43; rough play
+0.001 per immature-day (the mechanism acts); 2.8 stops per patrol (they neither stay at the schedule's level nor stop).
+
+**Beyond the reference's spread, not registered:** T-SOC-3 (grooming reciprocity slope 0.32 against 0.58–0.82; band
+0.45–0.8) and T-SOC-5 (male hierarchy steepness 0.07 against 0.21–0.41) fail where the four reference runs passed;
+T-COM-11 better (0.22 against 0–0.17). Both seeds move the same way for T-SOC-3 (0.25, 0.40 against 0.49–0.93). A
+plausible route for T-SOC-5 is the loss of the conflict chain that rough play fed (rough play → the mother's defence
+charge → the juvenile's loss and redirected charges: charges at 12–15-year-olds with a qualifying mother were mostly
+redirects); not tested here. Both are held-out rows inside the summed noise; the confirm decides.
+
+### Verdict
+
+**`leftoverRules` 3: a provisional keep candidate (45 → 43)**, by the keep rule in quick mode: viable, every sum inside
+noise against S21's four realizations, prescriptions down by the two entries the diagnosis implicated. A 5-seed confirm
+on the stack (S21 + `leftoverRules` 3) should decide, watching rest (T-ACT-4), T-SOC-3, T-SOC-5 and the patrol rows'
+instrument bar.
+
+What the switch changes: play no longer turns rough by a die, so mothers are no longer made rough with their own infants
+(56–64% of S21's escalations in D0–D3 were by the victim's own mother), and the guardians' defence charges, which nearly
+all followed rough play, fall from 221 ± 10 to 14; rough
+play now arises only when a player is acutely aroused during play (a storm onset, aggression received), which almost
+never happens because an aroused animal rarely starts to play. Patrols stop where the model gives a stop something to do
+(the range edge, the end of the incursion, and after a heard chorus while it is counted): 2.8 stops instead of 10.5,
+19.5% → 4.2% of the way out spent still.
+
+Not built: `meatEatPerH` (implicated; the edible energy of an average red colobus capture could not be sourced, §4) and
+`guardMaxAgeY` (trims). Both stay counted.
+
+## 11. Open problems and deferred defects
+
+- **Listening has no value in the model's perception** (the biggest): hearing does not depend on the listener's own
+  movement, so a stop gains nothing but time to count a chorus, and patrols now stop 2.8 times instead of the field's
+  "frequent stops"; the observer's classifier, which needs ≥ 2 listening stops (wattsMitani2001's definition), then
+  misses more patrols (T-PAT-6 below its instrument bar, male-party T-PAT-1 part 0). Stops at field frequency need a
+  perception in which stillness pays (calls masked by the party's own movement), a perception change beyond this stage.
+- **Rough play has no source inside play.** With arousal only from storms and aggression, play almost never turns rough
+  (0.001 per immature-day against captive chimpanzees' 0.003 escalations per session of about a minute, cordoni2018,
+  context only). Field play fighting is a contest (cordoniPalagi2011: competitive in juveniles, restraint needed); the
+  model's play has no exchange of advantage that could build arousal, so no escalation arises from play itself.
+- **Meat per capture** (`meatEatPerH`): needs immature red colobus masses and the edible share of a carcass
+  (Struhsaker 1975/2010, Teelen 2008 and Watts & Mitani 2002 not reachable openly).
+- **`guardMaxAgeY`** trims (no caretaker ward in 10 seed-runs of 60 days, D0–D3 and A1; it changes the deterrent of
+  43–118 of 2,831–4,439 charges, 1.3–2.7%).
+- Deferred readout defect: same-tick defence charges (run log, A1 note); `e4m-diagnose.ts` encounter-impulse valuations
+  read none (D0 note).
