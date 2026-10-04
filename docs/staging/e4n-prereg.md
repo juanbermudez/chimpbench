@@ -666,3 +666,13 @@ reference mean (first two runs) 1.422
 - **Open.** Why chimpanzees hunt beyond energy (nutrients, sharing) has a direction and no magnitude in any source read;
   T-HUN-1 now sits above the staged 4–11 band (scaled to the model's males) while T-HUN-3 sits below its band: E4e's tie
   of the two rows through the encounter rate.
+
+#### Merge and final checks
+
+`track-e` (62b64bf: the decision guide on S22, handoff) merged once, at e8fa4e4, with no conflict. After the merge S22 is
+hash-identical at 2 days with `huntDrive` 0 (seeds 48 and 7: e8ed493db46eb3a6, 644263a5233a5f32). `gen-params --check`
+clean, `tsc` clean, `pnpm test` 795 tests: 794 pass, 0 fail, 1 skipped; `git ls-files data/raw node_modules` prints
+nothing. Prescription count: S22 43, S22 + `huntDrive` 1 43 (a correction). Run artifacts (gitignored) in this
+worktree's `artifacts/validation/e4n/` (H0, H0r, A1q, A1h, A1rq, A1rh and their scorecards, A1/A1r energy, the diagnosis
+JSON `diag/{D0,D0r,A1}-{48,7}.json`, E4k's tool on S22 seed 7) with the table scripts `diag_table.py`, `report.py`,
+`hunt_sum.py`, `e4n_judge.py`; the frozen checkouts (`…/scratchpad/e4n/{ref,diag,a1}`) hold the same files.
