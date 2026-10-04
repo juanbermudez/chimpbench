@@ -1888,7 +1888,7 @@ secondary [L]) is still the only chimpanzee climbing speed; the forager's rate c
 eating (charnov1976, stephensKrebs1986). New key: neufuss2018 (cited by name in the gait entry before). Not verified: pontzerWrangham2004's distances and equations, a
 measured wild climbing speed, crown-to-crown crossings without descent.
 
-## Addendum: E1q climbing (4 October 2026)
+## 55. Addendum: E1q climbing (4 October 2026)
 
 Same text as research.md "Addendum: E1q climbing": pontzerWrangham2004's "about ten times" was computed with a climbing
 equation that couturier2022 (FT) transmits: climbing O₂ = walking O₂ at 1.9 m/s (human rock climbing, Mermier et al.

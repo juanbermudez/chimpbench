@@ -2965,3 +2965,16 @@ held (z +0.9; −0.1 without the rare rows).
 
 **Verdict: S25 passes the keep rule for a correction and replaces S22 as the best integrated candidate** (43
 prescriptions; hunting back inside its band without a new magnitude).
+
+## S26 and S27 confirms (registered 4 October 2026 before their runs)
+
+**S26 = S25 + E1q's `crownMove` 1** (moving within a crown without descending; a correction: 43 prescriptions).
+**S27 = S25 + `walkGait` 1 + `crownMove` 1** (whether the body-set walk combines once re-climbs are gone: 42). **Reference
+group:** S25 in confirm mode (S25, 7cd6bb1) plus three re-draws by `rngSalt` 1, 2, 3 (S25c1–S25c3, bench-run2). Keep rule:
+standard for S27 (prescriptions fall), for a correction for S26; rare rows per amendment 3; night safe. Bench,
+energy-diagnose and rhythm-metrics, 5 seeds, 30 + 60 days, from bench-run3 moved to this commit.
+
+**Predictions (against the S25 group; moderate confidence unless stated).** S26: 43 prescriptions; viability and night
+safety pass; metres climbed lower (males −5 to −15%), infants' reserves no worse; sums inside noise. S27: 42; viability and
+night safety pass; day ranges longer (males 2.6–3.1 km), T-ACT-2 at or just below its band's floor (0.11–0.14), nursing
+mothers', juveniles' and infants' reserves within 0.03 %/day of the group's (low: S24's cost); sums inside noise (low).

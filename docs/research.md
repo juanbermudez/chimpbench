@@ -3468,7 +3468,7 @@ chimpanzees measured directly; any measurement of how often chimpanzees cross be
   cites it by name).
 - pontzerWrangham2004, nguessan2009, charnov1976 and stephensKrebs1986 are already cited; the entries above add findings.
 
-### Addendum: E1q climbing (4 October 2026)
+### E.55 Addendum: E1q climbing (4 October 2026)
 
 Read for stage E1q ([staging/e1q-prereg.md](staging/e1q-prereg.md)): what a vertical metre costs a chimpanzee, how many
 metres wild chimpanzees climb, and what the "about ten times" of pontzerWrangham2004 is made of. research.md was searched
