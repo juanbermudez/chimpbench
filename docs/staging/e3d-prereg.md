@@ -40,7 +40,73 @@ setup, lost position), and re-decide when something it perceives or feels change
 3. At most three iterations, each logged here and committed before its run; arms = S17 + the switch, quick mode,
    judged against the integrator's four S17 quick realizations (e-noise.md amendment 2).
 
-## 2. Diagnosis (to be registered before its runs)
+## 2. Diagnosis (step 1; registered 4 October 2026 before its runs)
+
+**What the code does (read at b3d28c7, field profile, S17's 45 switches).** A rules-driven animal reaches a decision
+point when its scheduled bout ends (`c.nextDecision` = `actEnd`, a hash draw between the act's `bout*Min` and
+`bout*Max`: rest 8–20 min, feeding 20–45, grooming 5–18, travel 12–22; a trip to a remembered tree lasts its walk + 5
+min under `travelCommit`), when an interrupt arrives, or in the tick its act finishes itself (`finish()`: arrived,
+sated, crop gone, partner gone, drink done, a call or display given). There (src/sim/decide.ts, rg.ts), an animal of
+`rgMinAge` (8 y) or more asks the intention gate (rg.ts `gate`, the Jev free arms' gate): it keeps its act and target
+unless an interrupt came since the choice, a hunt or patrol impulse is new, a need changed bucket (hunger, thirst,
+fatigue, loneliness at 0.4 / 0.55 / 0.7 / 0.88, design), the period changed (night, dawn, morning, midday 11:30–14:30,
+afternoon, dusk: light phases plus two clock hours, src/decide/facts.ts:150), **the intention is older than
+`rgMaxAgeH`** (rg.ts:142), the act ended or became illegal, or it is feeding at hunger ≥ 0.4 and a known crown offers
+twice the rate (the patch test). Otherwise it draws from the bounded menu with a softmax at `rgTemperature` (0.164).
+Younger animals take the argmax. Every candidate's score carries a hash jitter (± 0.12, `candidateJitterSpan`) and, on
+the current act and target, **`continueBonus` +0.25 while its scheduled bout runs (in practice at interrupts) or
+`finishedPenalty` −0.5 once it has finished itself** (candidates.ts:105). Grooming's own offer adds a literal **+0.35
+while its bout runs and −0.25 after its scheduled end** on the current partner (candidates.ts:612–613; no registry entry,
+not counted by the ledger). A kept act is restarted with a new bout (decision count +1, a new jitter) but the
+intention's age runs from the draw that chose it, so an act chosen and never re-drawn is drawn again at the first bout
+end after 30 min.
+
+**Tool.** `scripts/redecide-diagnose.ts` (new; its header defines every readout): the taps rg.ts `rgTap` (RG decisions)
+and a new read-only `rulesTap` in decide.ts (argmax decisions of animals under 8 y) read every rules decision; rg.ts
+`gate` and candidates.ts `CODE` are now exported for it (no behaviour change: the exports and an unset tap). Readouts:
+decision points per daylight animal-hour by verdict; draws by trigger (switch share, P(held act), held act raw top);
+max-age draws (clock-caused act ends: draws the gate would otherwise have kept that switched; by held act; what changed
+since the choice); the continuation terms by static counterfactual (P(continue) with and without each term, the menu
+rebuilt with `rgMenu`, softmax at `rgTemperature`; the expected continuations caused or restarts prevented; top flips;
+argmax flips for animals under 8 y); runs (act bouts) by activity and class with what ended them and the value
+crossing (first decision point at which the run's act is no longer the raw top of the animal's own unjittered
+valuation, without the continuation terms); acts (runs started) per daylight animal-hour by class. Identity: the menu
+rebuilt from the published list must equal the menu drawn from and its softmax the probabilities; adult males' eating
+minutes and ground km must equal energy-diagnose's for the same world.
+
+**Smoke test (seed 48, 1 + 2 days, S17; done before this registration; disclosed):** identity exact (4,212 draws, 0 menu
+mismatches, probability error 0). Seen (not representative, not used below): RG animals switch acts 3.3 times per
+daylight hour; max-age draws 0.44 per animal-hour, 89% of them on acts the gate would otherwise have kept, the held act
+the raw top in 24% (rest: 21%), switch share 78%; clock-caused act ends 9% of switches; the bonus at interrupts raises
+P(continue) from 0.25 to 0.48 (continuations caused: 8% of switches); the finished penalty acts mostly on joined trips
+that arrive without becoming feeding and are re-chosen (P 0.69 with it, 0.92 without: a futile loop); the grooming
+literal 1% of switches. Rest runs: median 30.5 min against a value crossing of 16 min; 29% end by max-age.
+
+**Runs.** redecide-diagnose on S17q's parameters and its three re-draws (`rgTemperature` 0.1641, 0.1639, 0.16405; seeds
+48 and 7, burn-in 30, 30 days, `--workers` 2, 1 above load 8), from a frozen detached checkout of the commit that adds
+this section. Identity: adult males' eating minutes and ground km equal `S17q-energy.json` (same world: 256.149 min,
+2.207 km) and the re-draws' energy files.
+
+**Reading rules (registered).**
+- *D1, what each entry decides* (daylight, RG animals ≥ 8 y, per animal-hour and as a share of their act switches):
+  `rgMaxAgeH` the clock-caused act ends; `continueBonus` the continuations it causes at draws (Σ P with − P without);
+  `finishedPenalty` the restarts it prevents; the grooming literal both ways. An entry is **implicated** if what it
+  decides is ≥ 5% of all act switches in each of the four realizations; below that it is reported as minor.
+- *D2, bout lengths against the act's own value:* per activity (feeding, grooming, rest, travel) and class, the median
+  run against the median value crossing (runs that started as the raw top), the share of such runs held past their
+  crossing, and what ended the runs (by trigger). An entry **sets** an activity's bouts if ≥ 10% of its runs end by it
+  (max-age) or the continuations it causes are ≥ 10% of that activity's runs.
+- *D3, what changed when it re-decided* (max-age draws against interrupts and need-bucket draws): the share where
+  "nothing changed" (header definition), the share where the raw top changed, the median change of the held act's raw
+  value and of the best alternative. Max-age re-decides **without new information** if "nothing changed" ≥ 25% of its
+  draws, and **on a change the gate does not detect** if the held act is no longer the raw top in ≥ 50%.
+- Young animals (argmax, < 8 y) and night decisions are reported, not read.
+
+**Expected (low confidence; written knowing the smoke test).** D1: `rgMaxAgeH` and `continueBonus` implicated (5–15% of
+switches each); `finishedPenalty` minor (≤ 3%) but acting on a defect (joined trips re-chosen after they arrive); the
+grooming literal minor. D2: rest and fallback feeding set by max-age (≥ 20% of their runs), crown feeding by its own
+end (sated or crop gone) and interrupts; rest held about twice its value crossing. D3: max-age re-decides on value
+changes the gate does not detect (held act not the raw top in ≥ 60%), rarely without new information (< 15%).
 
 ## 3. Field rows scored here: samples
 

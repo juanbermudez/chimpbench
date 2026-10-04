@@ -77,7 +77,8 @@ export function consortWalkLight(world: World, c: Chimp, o: Chimp, P: Params): n
   return _cl.pace * _cl.see;
 }
 
-const CODE: Record<Action, number> = {
+/** Action codes of the candidate jitter (offer); exported for diagnostics that rebuild a score without it (stage E3d). */
+export const CODE: Record<Action, number> = {
   rest: 1, forage: 2, drink: 3, travel: 4, groom: 5, play: 6, follow: 7, climb: 8, patrol: 9, display: 10, flee: 11, hunt: 12, mate: 13,
   nurse: 14, dead: 15, nest: 16, 'pant-grunt': 17, charge: 18, attack: 19, submit: 20, reconcile: 21, console: 22, share: 23, beg: 24,
   guard: 25, consort: 26, shelter: 27, call: 28, transfer: 29, alarm: 30,

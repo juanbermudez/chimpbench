@@ -118,9 +118,10 @@ export function patchPoorHere(world: World, c: Chimp, tree: number, P: Params): 
  * The gate verdict (src/decide/gate.ts gateCheck, which the free arms ran on model-controlled chimps). There a chimp
  * whose act had finished, or had become illegal, was set to rest while it waited, so its intent counted as ended; the
  * rules path keeps the act, so `ended` says so explicitly. A finished trip to a tree in view within GATE.arriveM
- * becomes feeding there when that is legal.
+ * becomes feeding there when that is legal. Exported for diagnostics (scripts/redecide-diagnose.ts, stage E3d): pure,
+ * it reads the world and the intent it is given and writes nothing.
  */
-function gate(world: World, c: Chimp, it: Intent | undefined, list: Candidate[]): { keep: Candidate; arrived: boolean } | string {
+export function gate(world: World, c: Chimp, it: Intent | undefined, list: Candidate[]): { keep: Candidate; arrived: boolean } | string {
   if (!it) return 'no-intent';
   const x = ix(c), P = paramsOf(world), persist = P.urgencyPersist === 1;
   // stage E2b (nestLightDecide; docs/staging/e2b-prereg.md §7, iterations 2–3): while the light rises an animal in its
