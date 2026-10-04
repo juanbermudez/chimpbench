@@ -1903,7 +1903,7 @@ Table 1 after Doran & Hunt, [H]). New keys: kozmaPontzer2021, taylor1972, minett
 verified: pontzerWrangham2004's measured distances, Mermier et al. 1997 beyond its citation, Pontzer 2016, Venkataraman
 et al. 2013, Crompton et al. 2010, a Kibale feeding height, a measured wild climbing speed.
 
-## Addendum: E3f what a crown holds (4 October 2026)
+## 56. Addendum: E3f what a crown holds (4 October 2026)
 
 Same text as research.md "Addendum: E3f what a crown holds": ten large Kanyawara fig trees (*F. exasperata*, *F.
 natalensis*, *F. sansibarica* subsp. *macrosperma*) had whole-cycle crops of 228–2,052 kg wet weight, reconstructed from

@@ -3533,7 +3533,7 @@ for Kibale chimpanzees; a measured climbing speed of wild chimpanzees.
 - couturier2022, pontzerWrangham2004, wilson2021, hannaSchmitt2011 and nguessan2009 are already cited; the entries above
   add findings.
 
-### Addendum: E3f what a crown holds (4 October 2026)
+### E.56 Addendum: E3f what a crown holds (4 October 2026)
 
 Read for stage E3f ([staging/e3f-prereg.md](staging/e3f-prereg.md)): how much energy the ripe crop of a chimpanzee food
 tree holds, by species and size (fruit count × fruit mass × energy, or a crop allometry). research.md and e-sources.md were
