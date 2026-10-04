@@ -330,7 +330,10 @@ without T-HUN-4 and T-BRD-1, and without T-IGE-3. Readouts against the reference
 - **A1** (the registered mechanism, §4; every bit, `socialTiming` 15): run 4 October 01:22–01:25 from a frozen detached
   checkout of 7be3a02 (clean), `--workers` 2 (load 7.2); e-bench, energy-diagnose, quota-diagnose. Result in §7.1:
   kill criterion (d) met.
-- **Iteration 1** (written after A1, before its run; one change): see §7.2.
+- **Iteration 1** (written after A1, before its run; one change): see §7.2. **A2** run 01:27–01:33 from the frozen
+  checkout moved to 3815a9a (clean), `--workers` 1 (load 8.7). Result in §7.3: no kill criterion met; keep rule passed.
+- No further iteration: A2 meets the keep rule and no kill criterion; its costs (§7.3) are single-run readings that need
+  the confirm, not a mechanism change.
 
 ## 7. Results
 
@@ -471,3 +474,141 @@ bits are unchanged. Switch 0 still hash-identical.
 *Expected (against A1 and the reference; low confidence on sizes):* repeats within an association ≤ 615 (moderate);
 pant-grunts per subordinate-day 2.4–3.2; the alpha's share 0.20–0.27; feeding and immigrant charges, consortships,
 approaches and paths as A1 within its noise; prescriptions 60; viability; sums inside noise. Kill criterion as §4.7.
+
+### 7.3 A2 (iteration 1; 3815a9a, clean), beside A1: printed by `e5e_judge.py` from the JSON
+
+```
+reference: ['S13q', 'S13q1', 'S13q2', 'S13q3']; arms: ['A1', 'A2']
+  S13q: ea92d20 dirty 0 prescriptions 65 viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}
+  S13q1: ea92d20 dirty 0 prescriptions 65 viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}
+  S13q2: ea92d20 dirty 0 prescriptions 65 viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}
+  S13q3: ea92d20 dirty 0 prescriptions 65 viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}
+  A1: 7be3a02 dirty 0 prescriptions 60 viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}
+  A2: 3815a9a dirty 0 prescriptions 60 viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}
+quick, reference custom (4 runs), rows counted in all runs: fitted 16, held-out 11
+  fitted             (16 rows) ref 2.35, 2.29, 2.79, 2.02 (mean 2.36, sd 0.32; used 0.69) | A1.json: 3.05, Δ +0.69, z +0.9 (inside noise) | A2.json: 1.71, Δ -0.66, z -0.9 (inside noise)
+  held-out           (11 rows) ref 4.34, 3.51, 5.45, 3.28 (mean 4.15, sd 0.98; used 1.26) | A1.json: 4.15, Δ +0.01, z +0.0 (inside noise) | A2.json: 3.42, Δ -0.72, z -0.5 (inside noise)
+  held-out w/o rare  (10 rows) ref 4.34, 3.51, 4.11, 3.28 (mean 3.81, sd 0.50; used 0.50) | A1.json: 3.94, Δ +0.13, z +0.2 (inside noise) | A2.json: 3.42, Δ -0.39, z -0.7 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-HUN-2   fitted   ref 0.90±0.35 | A1.json 1.67 (fail) | A2.json 0.62 (fail)
+   T-HUN-4   held-out ref 0.33±0.67 | A1.json 0.21 (fail) | A2.json 0.00 (pass)
+
+held-out without T-HUN-4, T-BRD-1 and T-IGE-3 (10 rows): S13q 4.34 / 3.51 / 4.11 / 3.28 (mean 3.81, sd 0.50; used 0.50); A1 3.94 (z +0.2); A2 3.42 (z -0.7)
+
+| Row (pooled value; band in the JSON) | S13q runs | mean ± SD | A1 | A2 |
+| --- | --- | --- | --- | --- |
+| T-ACT-1 (0.33–0.5) | 0.393 / 0.396 / 0.387 / 0.398 | 0.394 ± 0.005 | 0.388 (z -1.0) | 0.398 (z +0.8) |
+| T-ACT-2 (0.12–0.25) | 0.195 / 0.197 / 0.191 / 0.186 | 0.193 ± 0.005 | 0.197 (z +0.7) | 0.190 (z -0.4) |
+| T-ACT-3 (0.08–0.18) | 0.097 / 0.092 / 0.091 / 0.090 | 0.093 ± 0.003 | 0.094 (z +0.4) | 0.094 (z +0.5) |
+| T-ACT-4 (0.3–0.47) | 0.325 / 0.332 / 0.369 / 0.338 | 0.341 ± 0.019 | 0.332 (z -0.4) | 0.331 (z -0.5) |
+| T-RNG-4 (1.5–3.5) | 1.927 / 2.318 / 2.005 / 2.081 | 2.083 ± 0.169 | 2.015 (z -0.4) | 2.234 (z +0.8) |
+| T-RNG-5 (0.3–0.6) | 1.039 / 0.681 / 0.886 / 0.770 | 0.844 ± 0.155 | 0.942 (z +0.6) | 0.743 (z -0.6) |
+| T-PTY-1 (3–9) | 4.336 / 4.314 / 4.336 / 4.087 | 4.268 ± 0.121 | 4.363 (z +0.7) | 3.974 (z -2.2) |
+| T-SOC-2 (0.55–0.9) | 0.762 / 0.750 / 0.909 / 0.857 | 0.820 ± 0.077 | 0.895 (z +0.9) | 0.889 (z +0.8) |
+| T-SOC-3 (0.45–0.8) | 0.834 / 0.696 / 0.784 / 0.772 | 0.771 ± 0.057 | 0.726 (z -0.7) | 0.822 (z +0.8) |
+| T-SOC-4 (0.1–0.3) | 0.246 / 0.245 / 0.222 / 0.234 | 0.237 ± 0.012 | 0.209 (z -2.2) | 0.203 (z -2.6) |
+| T-SOC-5 (0.2–0.7) | 0.363 / 0.223 / 0.249 / 0.277 | 0.278 ± 0.061 | 0.414 (z +2.0) | 0.327 (z +0.7) |
+| T-SOC-6 (0.6–0.9) | 0.483 / 0.385 / 0.452 / 0.475 | 0.449 ± 0.044 | 0.448 (z -0.0) | 0.454 (z +0.1) |
+| T-SOC-9 (0.08–0.22) | 0.037 / 0.033 / 0.031 / 0.390 | 0.123 ± 0.178 | 0.143 (z +0.1) | 0.125 (z +0.0) |
+| T-SOC-10 (0.1–0.3) | 0.270 / 0.255 / 0.213 / 0.156 | 0.224 ± 0.051 | 0.215 (z -0.1) | 0.249 (z +0.4) |
+| T-COM-1 (0.5–1.5) | 0.768 / 0.781 / 0.696 / 0.715 | 0.740 ± 0.041 | 0.770 (z +0.7) | 0.711 (z -0.6) |
+| T-COM-5 (2–4) | 2.922 / 3.225 / 2.960 / 2.898 | 3.001 ± 0.151 | 3.004 (z +0.0) | 2.812 (z -1.1) |
+| T-COM-8 (0.3–0.6) | 0.634 / 0.636 / 0.597 / 0.596 | 0.616 ± 0.022 | 0.656 (z +1.6) | 0.601 (z -0.6) |
+| T-COM-11 (0.25–0.55) | 0.091 / 0.100 / 0.000 / 0.200 | 0.098 ± 0.082 | 0.000 (z -1.1) | 0.000 (z -1.1) |
+| T-HUN-1 (5–25) | 22.182 / 20.055 / 32.088 / 15.956 | 22.570 ± 6.851 | 15.956 (z -0.9) | 27.622 (z +0.7) |
+| T-HUN-3 (0.05–0.4) | 0.056 / 0.036 / 0.088 / 0.040 | 0.055 ± 0.024 | 0.025 (z -1.1) | 0.081 (z +1.0) |
+| T-FOOD-2 (0.6–0.78) | 0.720 / 0.720 / 0.711 / 0.683 | 0.708 ± 0.017 | 0.728 (z +1.0) | 0.722 (z +0.7) |
+| T-FOOD-10 (0.08–0.3) | 0.746 / 0.775 / 0.802 / 0.731 | 0.763 ± 0.032 | 0.727 (z -1.0) | 0.750 (z -0.4) |
+| T-IGE-1 (5–12) | 17.158 / 6.066 / 5.839 / 5.830 | 8.723 ± 5.624 | 3.012 (z -0.9) | 12.376 (z +0.6) |
+
+| Reserves ÷ store, % per day (OLS) | S13q runs | mean ± SD | A1 | A2 |
+| --- | --- | --- | --- | --- |
+| adult male | -0.007 / +0.012 / -0.002 / -0.005 | -0.000 ± 0.009 | +0.009 (z +1.0) | +0.001 (z +0.2) |
+| female, other | +0.010 / +0.016 / -0.004 / +0.014 | +0.009 ± 0.009 | +0.005 (z -0.4) | +0.013 (z +0.4) |
+| female, lactating | -0.003 / +0.002 / -0.011 / +0.003 | -0.002 ± 0.006 | +0.012 (z +2.0) | -0.026 (z -3.4) |
+| juvenile 5–12 y | -0.023 / -0.018 / -0.029 / -0.011 | -0.020 ± 0.008 | -0.001 (z +2.3) | -0.019 (z +0.1) |
+| infant 2–5 y | +0.012 / +0.030 / -0.012 / -0.007 | +0.006 ± 0.019 | +0.006 (z +0.0) | -0.017 (z -1.1) |
+| infant 0.5–2 y | -0.018 / -0.022 / -0.022 / +0.010 | -0.013 ± 0.016 | +0.024 (z +2.1) | -0.025 (z -0.7) |
+| infant < 0.5 y | +0.000 / +0.000 / +0.000 / +0.000 | +0.000 ± 0.000 | +0.000 (z +nan) | +0.000 (z +nan) |
+
+| Energy (energy-diagnose) | S13q runs | mean ± SD | A1 | A2 |
+| --- | --- | --- | --- | --- |
+| adult male: groundKm | 2.39 / 2.36 / 2.19 / 2.31 | 2.31 ± 0.09 | 2.27 (z -0.5) | 2.21 (z -1.1) |
+| adult male: eatingMin | 253.71 / 255.39 / 250.65 / 250.70 | 252.61 ± 2.34 | 252.12 (z -0.2) | 250.55 (z -0.8) |
+| adult male: kcalIn | 2085.02 / 2074.00 / 2062.09 / 2056.08 | 2069.30 ± 12.86 | 2080.37 (z +0.8) | 2045.04 (z -1.7) |
+| female, other: groundKm | 1.74 / 1.75 / 1.69 / 1.76 | 1.73 ± 0.03 | 1.62 (z -3.2) | 1.57 (z -4.6) |
+| female, other: eatingMin | 264.53 / 256.05 / 265.99 / 264.62 | 262.80 ± 4.55 | 259.94 (z -0.6) | 263.07 (z +0.1) |
+| female, other: kcalIn | 1762.01 / 1756.31 / 1747.38 / 1749.42 | 1753.78 ± 6.68 | 1754.55 (z +0.1) | 1744.70 (z -1.2) |
+| female, lactating: groundKm | 2.12 / 2.14 / 2.01 / 1.96 | 2.06 ± 0.09 | 2.12 (z +0.7) | 1.95 (z -1.1) |
+| female, lactating: eatingMin | 315.61 / 315.84 / 316.81 / 316.30 | 316.14 ± 0.53 | 315.45 (z -1.2) | 313.06 (z -5.2) |
+| female, lactating: kcalIn | 2312.29 / 2298.85 / 2310.04 / 2324.84 | 2311.51 ± 10.66 | 2321.09 (z +0.8) | 2303.24 (z -0.7) |
+| juvenile 5–12 y: groundKm | 2.16 / 2.22 / 2.00 / 2.16 | 2.13 ± 0.10 | 2.08 (z -0.5) | 2.15 (z +0.2) |
+| juvenile 5–12 y: eatingMin | 283.43 / 275.03 / 288.52 / 293.35 | 285.08 ± 7.83 | 283.55 (z -0.2) | 282.59 (z -0.3) |
+| juvenile 5–12 y: kcalIn | 1646.64 / 1642.69 / 1635.70 / 1648.57 | 1643.40 ± 5.68 | 1653.61 (z +1.6) | 1646.06 (z +0.4) |
+
+deaths (energy): {'S13q': {}, 'S13q1': {}, 'S13q2': {}, 'S13q3': {}, 'A1': {}, 'A2': {}}
+
+| Quota readouts (quota-diagnose) | S13q runs | mean ± SD | A1 | A2 |
+| --- | --- | --- | --- | --- |
+| pant-grunts per subordinate-day | 2.328 / 2.246 / 2.286 / 2.090 | 2.237 ± 0.104 | 3.293 (z +9.1) | 2.436 (z +1.7) |
+| pant-grunts per dyad-day | 0.357 / 0.344 / 0.346 / 0.320 | 0.342 ± 0.016 | 0.508 (z +9.5) | 0.374 (z +1.9) |
+| pant-grunts per co-present dyad-day | 0.661 / 0.709 / 0.689 / 0.668 | 0.682 ± 0.022 | 0.932 (z +10.3) | 0.755 (z +3.0) |
+| greetings: repeats in association | 285.000 / 319.000 / 336.000 / 290.000 | 307.500 ± 24.201 | 1674.000 (z +50.5) | 326.000 (z +0.7) |
+| greetings: first in association | 5441.000 / 5207.000 / 5287.000 / 4851.000 | 5196.500 ± 249.967 | 6427.000 (z +4.4) | 5667.000 (z +1.7) |
+| greetings: to the alpha (share) | 0.244 / 0.237 / 0.228 / 0.232 | 0.235 ± 0.007 | 0.267 (z +4.1) | 0.255 (z +2.6) |
+| greetings male→male to top 3 (truth) | 0.821 / 0.803 / 0.770 / 0.801 | 0.799 ± 0.021 | 0.818 (z +0.8) | 0.810 (z +0.5) |
+| greet gate blocked share | 0.490 / 0.507 / 0.507 / 0.505 | 0.502 ± 0.008 | 0.481 (z -2.3) | 0.509 (z +0.7) |
+| feeding charges per adult-day | 0.048 / 0.055 / 0.047 / 0.046 | 0.049 ± 0.004 | 0.063 (z +3.1) | 0.052 (z +0.7) |
+| charges at immigrants per resident female-day | 0.088 / 0.131 / 0.205 / 0.142 | 0.141 ± 0.048 | 0.271 (z +2.4) | 0.124 (z -0.3) |
+| charges at immigrants per adult-day | 0.047 / 0.070 / 0.109 / 0.076 | 0.075 ± 0.026 | 0.144 (z +2.4) | 0.066 (z -0.3) |
+| consortships started | 12.000 / 39.000 / 0.000 / 26.000 | 19.250 ± 16.919 | 30.000 (z +0.6) | 12.000 (z -0.4) |
+| consortships per adult-male-day | 0.014 / 0.046 / 0.000 / 0.031 | 0.023 ± 0.020 | 0.036 (z +0.6) | 0.014 (z -0.4) |
+| consort minutes in darkness | 0.000 / 0.000 / 0.000 / 0.000 | 0.000 ± 0.000 | 0.000 (z +nan) | 5.000 (z +nan) |
+| approaches to callers per adult-male-day | 2.615 / 2.406 / 2.401 / 2.088 | 2.377 ± 0.217 | 1.932 (z -1.8) | 1.744 (z -2.6) |
+| approaches per adult-female-day | 1.945 / 1.836 / 1.828 / 1.758 | 1.842 ± 0.077 | 1.673 (z -2.0) | 1.666 (z -2.0) |
+| approaches per juvenile-day | 2.256 / 2.292 / 2.231 / 2.261 | 2.260 ± 0.025 | 2.158 (z -3.6) | 2.136 (z -4.4) |
+| km/day to callers, adult males | 0.471 / 0.455 / 0.409 / 0.430 | 0.441 ± 0.027 | 0.439 (z -0.1) | 0.433 (z -0.3) |
+| km/day to callers, adult females | 0.331 / 0.323 / 0.317 / 0.331 | 0.326 ± 0.007 | 0.348 (z +3.0) | 0.381 (z +7.3) |
+| km/day to callers, juveniles | 0.420 / 0.442 / 0.384 / 0.463 | 0.427 ± 0.034 | 0.470 (z +1.1) | 0.524 (z +2.6) |
+| approach: mean start distance m | 233.532 / 241.081 / 223.456 / 249.963 | 237.008 ± 11.257 | 294.983 (z +4.6) | 330.130 (z +7.4) |
+| approach: reached share | 0.462 / 0.469 / 0.465 / 0.475 | 0.468 ± 0.006 | 0.425 (z -6.8) | 0.398 (z -11.1) |
+| path km/day adult males (truth) | 2.451 / 2.419 / 2.251 / 2.364 | 2.371 ± 0.088 | 2.326 (z -0.5) | 2.264 (z -1.1) |
+| path km/day adult females (truth) | 2.071 / 2.049 / 1.962 / 1.968 | 2.013 ± 0.056 | 2.037 (z +0.4) | 1.960 (z -0.8) |
+| path km/day juveniles (truth) | 2.668 / 2.731 / 2.515 / 2.607 | 2.630 ± 0.092 | 2.594 (z -0.4) | 2.671 (z +0.4) |
+
+consortships by hour: {'S13q': {'8': 1, '9': 2, '11': 1, '13': 1, '14': 3, '15': 4}, 'S13q1': {'7': 1, '8': 5, '9': 5, '10': 1, '11': 6, '12': 6, '13': 5, '14': 5, '15': 5}, 'S13q2': {}, 'S13q3': {'7': 1, '8': 5, '9': 3, '10': 5, '11': 3, '12': 4, '13': 1, '14': 1, '15': 3}, 'A1': {'6': 1, '9': 4, '10': 3, '11': 3, '13': 1, '14': 5, '15': 6, '16': 1, '17': 5, '18': 1}, 'A2': {'6': 2, '9': 1, '10': 3, '11': 2, '13': 2, '14': 1, '16': 1}}
+```
+
+A2 greetings by why open (RG decisions that chose a pant-grunt, kept bouts included): association 7,587, challenge 222.
+Gates never blocked under the switch (feeding 4,568 and immigrant 1,412 opportunities); consortships 12 of 252
+opportunities, one at 16:00 or later, one bout running 5 minutes into darkness.
+
+**Against the predictions.** §7.2: repeats within an association 326 (≤ 615): held; pant-grunts per subordinate-day 2.44
+(2.4–3.2): held; the alpha's share 0.255 (0.20–0.27): held; feeding charges 0.052 and charges at immigrants 0.124 per
+resident female-day, back inside the reference's spread (A1's rises were not repeated); prescriptions 60, viability and
+sums inside noise: held. §4.7's predictions that A2 shares with A1: approaches to callers × 0.73 for adult males (missed:
+fewer approaches, started farther, 330 m against 237 ± 11, reached 40% against 47%), but km a day to callers equal for
+males and up for females (0.38 against 0.33 ± 0.01) and juveniles (0.52 against 0.43 ± 0.03); daily paths unchanged (males
+2.26 km, inside the reference); T-RNG-4 2.23 (held), T-ACT-2 0.190 (held); consortship minutes in darkness 5 (≤ 5: held,
+at the line). T-PTY-1 3.97 (z −2.2, in band) and T-SOC-4 0.203 (z −2.6, in band) lower.
+
+**Kill criterion:** none met. (b): nursing mothers −0.026% of the store a day against −0.002 ± 0.006 (z −3.4; the line is
+0.05 below the mean), with eating minutes 313 against 316.1 ± 0.5; A1 had them at +0.012 (z +2.0) with the same switch
+except the challenge clause, so one quick realization per arm cannot place this cost: a reading for the confirm.
+
+### 7.4 Stage verdict
+
+**`socialTiming` 15 (iteration 1): a provisional keep candidate, recommended for a 5-seed confirm on S13.** It removes five
+counted prescriptions (S13 65 → 60: `pantGruntRepeatH`, `consortLatestHour`, `joinCallDistScaleM`, `feedChargeGapH`,
+`immigrantChargeGapH`), viability passes with no death, every sum is inside noise (fitted z −0.9, held-out −0.5, without
+T-HUN-4 and T-BRD-1 −0.7, without T-IGE-3 too −0.7). What now produces each behaviour: a greeting re-establishes the
+relationship once per association (the memory of the last meeting, cleared at a reunion after more than an hour out of
+sight) and again when the dominant charges the animal, at the reference's rate (2.44 against 2.24 ± 0.10 per
+subordinate-day) without the 8-h quota; a consortship is offered at any hour, worth what the light of the walk away allows
+(one started after 16:00, none in darkness at its start); an approach to a caller is valued as a trip to its crown or as a
+follow, in the forager's currency, with no fitted distance scale (walking unchanged; fewer, longer approaches); the
+charge gaps go without replacement, the target's concession limiting repetition (rates inside the reference's spread).
+Costs and open problems: nursing mothers' reserves in A2 (above; A1 the opposite), fewer approaches reached; the 1-h
+reunion span (`reunionH`) is the observer's fusion convention and the model's own literal, not a measurement, and its
+sensitivity is untested; the consortship is a bout of minutes, not the field's days; T-SOC-6's observer counts every
+pant-grunt (§4.8), so the row cannot show the greeting's concentration on top males (truth 0.81).
