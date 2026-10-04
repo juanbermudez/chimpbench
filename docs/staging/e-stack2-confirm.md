@@ -3446,3 +3446,16 @@ energy-diagnose and rhythm-metrics, 5 seeds, 30 + 60 days; judged with `integrat
 prescriptions (high). Viability and night safety pass (moderate). Sums inside noise (moderate). Parties a little smaller:
 T-PTY-1 lower than the group's mean by 0.1–0.5. Nursing mothers and juveniles walk 0.1–0.4 km a day more. Nursing mothers'
 and young infants' reserves within 0.03 %/day of the group's mean.
+
+## S30 confirm (registered 4 October 2026 before its run)
+
+**S30 = S27 + E4o's `bodyRules` 1** (a guardian deters and defends while its ward's assessed chance against that threat is
+below even; `guardMaxAgeY` out: 40 on the corrected ledger, S27 41). **Reference group:** the S27 confirm group (S27 at
+28d249e plus S27c1–S27c3, bench-run3); the arm runs from bench-run moved to this commit (`bodyRules` is 0 in S27).
+Keep rule: standard (41 → 40); rare rows per amendment 3; night safe. Bench, energy-diagnose and rhythm-metrics, 5 seeds,
+30 + 60 days; judged with `integrator/judge_s27group.py`.
+
+**Predictions (against the S27 group; moderate confidence unless stated).** 40 prescriptions (high). Viability and night
+safety pass. Sums inside noise. Reserves of every class within the group's spread (E4o's quick run: within 1.2 SD except
+one infant's fatal illness). Grooming (T-ACT-3) at or below the group's mean (low: E4o's quick run 0.082 against
+0.098 ± 0.007).
