@@ -51,6 +51,11 @@
 //     (c) as (b) with a carried infant's mass in the trip's energy (energy.ts rideTick). Each option's score moves by fd ×
 //     Δrate (fd = 1.6 hunger + 0.1); reported: decisions, the share whose top option changes, the share whose top option is
 //     a trip that loses the top, and the mean Δrate of trips and of crowns in view.
+//   retargeted trips (amendment 3, e2j-prereg.md §7.2; --a3 only): at the end of a travel episode whose next act is a
+//     travel to another target, by class (juveniles split 5–8 y, under rgMinAge's argmax, and 8–12 y): the kind of the
+//     ending and of the new trip (own; joined behind its mother; joined behind another; caller; home), the rules' reason
+//     for the decision that changed it (rg.ts rgTap: need-bucket, light-phase, outvalued, ended, …; 'argmax' when no
+//     rgTap call was made, the under-8 rule) and whether the animal had an interrupt pending (x.intr) at that tick.
 //   pnpm exec tsx scripts/climb-diagnose.ts [--seeds 48,7] [--burn-in 30] [--days 30] [--params '{…}'] [--workers 2] [--json f.json]
 // Development seeds only (AGENTS.md lists the reserved ones); burn-in + days ≤ 90.
 import { writeFileSync } from 'node:fs';
@@ -97,10 +102,10 @@ const HB = 0.025, HN = 160;
 const blankCls = (): ClsAcc => ({ ticks: 0, dayTicks: 0, acts: Object.fromEntries(ACTS.map(a => [a, blankAct()])), tap: Object.fromEntries(TERMS.map(t => [t, 0])), eaten: Object.fromEntries(FOODS.map(f => [f, 0])), suckled: 0,
   ep: {}, visitRoom: [], visitEnd: {}, trips: 0, tripD: [], crowns: 0, ascents: 0, ascentsBy: {}, ascentM: 0, descents: 0, visitEat: [], visitLoc: [], visitWalkM: [], visitUpM: [],
   tbouts: 0, tboutTicks: 0, halts: 0, haltTicks: 0, haltWhy: new Array(WHY.length).fill(0), haltWhyTicks: new Array(WHY.length).fill(0), tripMoveM: 0, tripMoveTicks: 0, tripHist: new Array(HN).fill(0), byAction: {} });
-interface Job { seed: number; burnIn: number; days: number; params: Record<string, number>; cf?: boolean }
+interface Job { seed: number; burnIn: number; days: number; params: Record<string, number>; cf?: boolean; a3?: boolean }
 /** Amendment 2: per variant (b, c): decisions, top changed, a trip on top that loses it, Σ Δrate of trips and n, Σ Δrate of crowns in view and n. */
 interface Cf { dec: number; top: number[]; tripLost: number[]; dTrip: number[]; nTrip: number; dCrown: number[]; nCrown: number; byCls: Record<string, number[]> }
-interface Result { cf?: Cf; seed: number; days: number; cls: Record<string, ClsAcc>; ids: Record<string, number>; deaths: Record<string, number>; living: [number, number]; phases: { cls: string; m: number; min: number }[]; halts20: { cls: string; n: number; min: number; fixes: number }[] }
+interface Result { a3?: Record<string, number>; cf?: Cf; seed: number; days: number; cls: Record<string, ClsAcc>; ids: Record<string, number>; deaths: Record<string, number>; living: [number, number]; phases: { cls: string; m: number; min: number }[]; halts20: { cls: string; n: number; min: number; fixes: number }[] }
 
 function youngest(w: World): Map<number, number> {
   const m = new Map<number, number>();
@@ -134,7 +139,7 @@ const pct = (a: number[], q: number) => { if (!a.length) return NaN; const s = [
 const mean = (a: number[]) => a.length ? a.reduce((s, v) => s + v, 0) / a.length : NaN;
 const histPct = (h: number[], q: number) => { const n = h.reduce((s, v) => s + v, 0); if (!n) return NaN; let k = 0; for (let i = 0; i < h.length; i++) { k += h[i]; if (k >= q * n) return (i + 0.5) * HB; } return NaN; };
 
-interface Prev { tripT: number; tripKind: string; tripRoom: number; tripH: number; tripM: number; tripTicks: number; x: number; y: number; z: number; dv: number; prog: number; act: Act; target: number; trav: boolean; tbHalt: boolean; up: boolean; down: boolean; crownId: number; locK: number; locWalkM: number; locUpM: number; visitEat: number }
+interface Prev { tripSub: string; tripT: number; tripKind: string; tripRoom: number; tripH: number; tripM: number; tripTicks: number; x: number; y: number; z: number; dv: number; prog: number; act: Act; target: number; trav: boolean; tbHalt: boolean; up: boolean; down: boolean; crownId: number; locK: number; locWalkM: number; locUpM: number; visitEat: number }
 
 export function runSeed(job: Job): Result {
   const { seed, burnIn, days, params } = job;
@@ -231,8 +236,23 @@ export function runSeed(job: Job): Result {
       if (isTrip(list[t0]) && !isTrip(list[tb2])) { cf.tripLost[0]++; bc[3]++; } if (isTrip(list[t0]) && !isTrip(list[tc])) { cf.tripLost[1]++; bc[4]++; }
     };
   }
+  // amendment 3 (--a3): the rules' reason of each animal's last decision this tick (rg.ts rgTap; reads only)
+  const lastWhy = new Map<number, string>(), intrNow = new Map<number, boolean>();
+  if (job.a3) {
+    R.a3 = {};
+    const prevTap = rgTap.fn;
+    rgTap.fn = (c: Chimp, list: Candidate[], m: Candidate[], pr: number[], ch: Candidate, why: string) => { lastWhy.set(c.id, why); if (prevTap) prevTap(c, list, m, pr, ch, why); };
+  }
+  const subOf = (c: Chimp): string => {
+    const x = ix(c);
+    if (x.v === V.CALLER) return 'caller';
+    if (x.v === V.HOME || c.targetId < 0) return 'home';
+    if (x.aux > 0) return x.aux === c.motherId ? 'joined behind its mother' : 'joined behind another';
+    return 'own';
+  };
   try {
     for (let i = 0; i < days * DAY; i++) {
+      if (job.a3) { lastWhy.clear(); intrNow.clear(); for (const c of w.chimps) if (c.alive && ix(c).intr) intrNow.set(c.id, true); }
       const young = youngest(w);
       clsNow = new Map(w.chimps.filter(c => c.alive).map(c => [c.id, classesOf(c, young)]));
       eatNow.clear();
@@ -273,7 +293,7 @@ export function runSeed(job: Job): Result {
         const isTrip = act === 'own trip' || act === 'joined trip' || act === 'caller';
         const up = st === 2;
         const atCrown = c.action === 'forage' && isTreeId(c.targetId) && x.phase === 2;
-        const cur: Prev = { tripT: p?.tripT ?? -1, tripKind: p?.tripKind ?? '', tripRoom: p?.tripRoom ?? 0, tripH: p?.tripH ?? 0, tripM: p?.tripM ?? 0, tripTicks: p?.tripTicks ?? 0,
+        const cur: Prev = { tripSub: p?.tripSub ?? '', tripT: p?.tripT ?? -1, tripKind: p?.tripKind ?? '', tripRoom: p?.tripRoom ?? 0, tripH: p?.tripH ?? 0, tripM: p?.tripM ?? 0, tripTicks: p?.tripTicks ?? 0,
           x: c.position[0], y: c.position[1], z: c.position[2], dv: c.decisionVersion, prog: x.prog, act, target: c.targetId, trav: false, tbHalt: false, up, down: st === 3,
           crownId: p?.crownId ?? -1, locK: p?.locK ?? 0, locWalkM: p?.locWalkM ?? 0, locUpM: p?.locUpM ?? 0, visitEat: p?.visitEat ?? 0 };
         // locomotion this tick (the ledger's formula on the ledger's move filter); carried animals move no metres of their own
@@ -302,10 +322,15 @@ export function runSeed(job: Job): Result {
           const out = c.action === 'forage' && isTreeId(c.targetId) ? (c.targetId === cur.tripT ? 'forage here' : 'forage other tree') : c.action === 'forage' ? 'fallback'
             : c.action === 'travel' ? 'travel elsewhere' : c.action === 'follow' ? 'follow' : c.action === 'nest' ? 'nest' : 'other';
           for (const k of ks) { const e = (R.cls[k].ep[`${cur.tripKind}|${out}`] ??= [0, 0, 0, 0, 0]); e[0]++; e[1] += cur.tripRoom; e[2] += cur.tripH; e[3] += cur.tripM; e[4] += cur.tripTicks; }
+          if (job.a3 && R.a3 && out === 'travel elsewhere' && ks.length) {
+            const band = ks[0] === 'juvenile 5–12 y' ? (c.age < P.rgMinAge ? 'juvenile 5–8 y' : 'juvenile 8–12 y') : ks[0];
+            const key = `${band}|${cur.tripSub} → ${subOf(c)}|${lastWhy.get(c.id) ?? 'argmax'}|${intrNow.get(c.id) ? 'interrupted' : 'no interrupt'}`;
+            R.a3[key] = (R.a3[key] ?? 0) + 1;
+          }
           cur.tripT = -1;
         }
         if (inTrip && cur.tripT === -1) {
-          cur.tripT = c.targetId; cur.tripKind = act === 'joined trip' ? 'own trip' : act; cur.tripRoom = gutRoom(c, P, 'drupe') / Math.max(1e-9, gutCap(c, P)); cur.tripH = c.hunger; cur.tripM = 0; cur.tripTicks = 0;
+          cur.tripT = c.targetId; cur.tripSub = subOf(c); cur.tripKind = act === 'joined trip' ? 'own trip' : act; cur.tripRoom = gutRoom(c, P, 'drupe') / Math.max(1e-9, gutCap(c, P)); cur.tripH = c.hunger; cur.tripM = 0; cur.tripTicks = 0;
         }
         if (cur.tripT !== -1) { cur.tripTicks++; if (valid) cur.tripM += dh; }
         // observer travel bouts and the halts inside them (animals ≥ 5 y, daylight)
@@ -434,6 +459,11 @@ function summarize(res: Result[]) {
       speedKmhPooled: km / Math.max(1e-9, hrs), haltsPerDay: h.reduce((s2, q) => s2 + q.n, 0) / Math.max(1, h.length),
       haltMinMean: h.reduce((s2, q) => s2 + q.min, 0) / Math.max(1, h.reduce((s2, q) => s2 + q.n, 0)), days: h.length }];
   }));
+  if (res.some(r => r.a3)) {
+    const a: Record<string, number> = {};
+    for (const r of res) if (r.a3) for (const [k, v] of Object.entries(r.a3)) a[k] = (a[k] ?? 0) + v;
+    S.a3 = a;
+  }
   if (res.some(r => r.cf)) {
     const c0: Cf = { dec: 0, top: [0, 0], tripLost: [0, 0], dTrip: [0, 0], nTrip: 0, dCrown: [0, 0], nCrown: 0, byCls: {} };
     for (const r of res) if (r.cf) { const f = r.cf; c0.dec += f.dec; c0.nTrip += f.nTrip; c0.nCrown += f.nCrown; for (let i = 0; i < 2; i++) { c0.top[i] += f.top[i]; c0.tripLost[i] += f.tripLost[i]; c0.dTrip[i] += f.dTrip[i]; c0.dCrown[i] += f.dCrown[i]; }
@@ -455,7 +485,7 @@ if (!isMainThread) {
   const seeds = arg('seeds', '48,7').split(',').map(Number), burnIn = +arg('burn-in', '30'), days = +arg('days', '30');
   const params = JSON.parse(arg('params', '{}')), jsonOut = arg('json', ''), workers = +arg('workers', '2');
   if (burnIn + days > 90) throw new Error('burn-in + days > 90 (user limit)');
-  const jobs: Job[] = seeds.map(seed => ({ seed, burnIn, days, params, cf: process.argv.includes('--cf') }));
+  const jobs: Job[] = seeds.map(seed => ({ seed, burnIn, days, params, cf: process.argv.includes('--cf'), a3: process.argv.includes('--a3') }));
   const t0 = performance.now();
   const res = await runPool<Job, Result>(new URL(import.meta.url), jobs, { size: workers, onDone: (i, ms) => console.error(`seed ${jobs[i].seed} in ${(ms / 1000).toFixed(0)} s`) });
   const S = summarize(res);

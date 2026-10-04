@@ -422,6 +422,64 @@ juveniles' costs and the mothers' recovery replicate before an iteration 2 is ch
 within 2 SD of S22's mean in B1r; infants 0.5–2 y between W and S22 again; juveniles inside S22's spread if B1's fall was
 a draw (E2i's G1r: juveniles −0.057 in one of two W-like draws).
 
+**Replicate results (B1r, Wr; frozen 8978d18, clean; printed by `table.py` and the energy nets by an inline script from
+the JSON):**
+
+```
+  S22q: ea794ff dirty 0 prescriptions 43 viability pass deaths 0 starvation 0
+  S22q1: ea794ff dirty 0 prescriptions 43 viability pass deaths 0 starvation 0
+  S22q2: ea794ff dirty 0 prescriptions 43 viability pass deaths 0 starvation 0
+  S22q3: ea794ff dirty 0 prescriptions 43 viability pass deaths 0 starvation 0
+  W: 7017f22 dirty 0 prescriptions 42 viability pass deaths 0 starvation 0
+  Wr: 8978d18 dirty 0 prescriptions 42 viability pass deaths 0 starvation 0
+  B1: 8978d18 dirty 0 prescriptions 42 viability pass deaths 0 starvation 0
+  B1r: 8978d18 dirty 0 prescriptions 42 viability pass deaths 0 starvation 0
+quick, reference custom (4 runs), rows counted in all runs: fitted 14, held-out 10
+  fitted             (14 rows) ref 1.59, 1.20, 1.69, 1.59 (mean 1.52, sd 0.22; used 0.69) | W.json: 1.24, Δ -0.28, z -0.4 (inside noise) | Wr.json: 1.28, Δ -0.24, z -0.3 (inside noise) | B1.json: 1.45, Δ -0.07, z -0.1 (inside noise) | B1r.json: 1.38, Δ -0.14, z -0.2 (inside noise)
+  held-out           (10 rows) ref 3.40, 2.84, 4.08, 3.33 (mean 3.41, sd 0.51; used 1.26) | W.json: 3.13, Δ -0.29, z -0.2 (inside noise) | Wr.json: 2.61, Δ -0.81, z -0.6 (inside noise) | B1.json: 3.46, Δ +0.05, z +0.0 (inside noise) | B1r.json: 3.51, Δ +0.10, z +0.1 (inside noise)
+  held-out w/o rare  (10 rows) ref 3.40, 2.84, 4.08, 3.33 (mean 3.41, sd 0.51; used 0.51) | W.json: 3.13, Δ -0.29, z -0.5 (inside noise) | Wr.json: 2.61, Δ -0.81, z -1.4 (inside noise) | B1.json: 3.46, Δ +0.05, z +0.1 (inside noise) | B1r.json: 3.51, Δ +0.10, z +0.2 (inside noise)
+```
+
+| Readout | S22 runs | S22 mean ± SD | W | Wr | B1 | B1r |
+| --- | --- | --- | --- | --- | --- | --- |
+| T-RNG-4 | 1.607 / 1.719 / 1.324 / 1.502 | 1.538 ± 0.168 | 2.188 (z +3.5) | 2.558 (z +5.4) | 2.173 (z +3.4) | 2.058 (z +2.8) |
+| T-RNG-5 | 0.947 / 0.940 / 1.254 / 1.140 | 1.070 ± 0.153 | 1.033 (z -0.2) | 0.723 (z -2.0) | 0.980 (z -0.5) | 0.877 (z -1.1) |
+| T-ACT-1 | 0.374 / 0.369 / 0.372 / 0.378 | 0.373 ± 0.004 | 0.384 (z +2.6) | 0.375 (z +0.4) | 0.392 (z +4.2) | 0.385 (z +2.7) |
+| T-ACT-2 | 0.152 / 0.166 / 0.153 / 0.163 | 0.158 ± 0.007 | 0.118 (z -5.4) | 0.116 (z -5.7) | 0.111 (z -6.4) | 0.103 (z -7.4) |
+| T-ACT-3 | 0.094 / 0.094 / 0.107 / 0.093 | 0.097 ± 0.007 | 0.104 (z +0.9) | 0.091 (z -0.8) | 0.096 (z -0.1) | 0.094 (z -0.4) |
+| T-ACT-4 | 0.409 / 0.334 / 0.389 / 0.322 | 0.363 ± 0.042 | 0.416 (z +1.1) | 0.393 (z +0.6) | 0.407 (z +0.9) | 0.415 (z +1.1) |
+| T-FOOD-10 | 0.497 / 0.530 / 0.436 / 0.464 | 0.482 ± 0.041 | 0.517 (z +0.8) | 0.607 (z +2.7) | 0.624 (z +3.1) | 0.654 (z +3.8) |
+| reserves %/day, adult male | 0.009 / -0.000 / 0.010 / 0.004 | 0.006 ± 0.005 | 0.001 (z -1.0) | -0.004 (z -2.0) | -0.003 (z -1.8) | 0.006 (z +0.1) |
+| reserves %/day, female, other | 0.003 / 0.019 / 0.007 / -0.010 | 0.005 ± 0.012 | 0.010 (z +0.4) | -0.012 (z -1.3) | -0.003 (z -0.6) | -0.005 (z -0.8) |
+| reserves %/day, female, lactating | 0.006 / -0.003 / -0.013 / 0.014 | 0.001 ± 0.012 | -0.049 (z -3.9) | 0.002 (z +0.1) | 0.004 (z +0.2) | 0.024 (z +1.8) |
+| reserves %/day, juvenile 5–12 y | 0.004 / -0.009 / 0.009 / 0.015 | 0.005 ± 0.010 | -0.000 (z -0.4) | -0.040 (z -3.9) | -0.033 (z -3.2) | -0.041 (z -3.9) |
+| reserves %/day, infant 2–5 y | 0.016 / -0.002 / -0.033 / 0.007 | -0.003 ± 0.021 | -0.038 (z -1.5) | 0.002 (z +0.2) | 0.029 (z +1.3) | 0.044 (z +2.0) |
+| reserves %/day, infant 0.5–2 y | -0.006 / 0.010 / 0.014 / 0.022 | 0.010 ± 0.012 | -0.047 (z -4.3) | 0.007 (z -0.2) | -0.024 (z -2.5) | 0.007 (z -0.2) |
+| prescriptions | 43 / 43 / 43 / 43 | 43 ± 0 | 42 | 42 | 42 | 42 |
+
+Net energy (absorbed − expenditure, kcal/day; S22 mean ± SD; W, Wr, B1, B1r): nursing mothers 1.0 ± 2.9; −12.7, +0.3,
+−2.0, +4.8. Juveniles 3.0 ± 5.0; +2.4, −7.3, −7.5, −11.0. Infants 0.5–2 y 0.0 ± 1.3; −1.7, +1.5, 0.0, −1.6. The walking,
+carrying and climbing costs replicate (mothers' walking 82.0, 79.7, 73.9, 73.2 kcal/day against 51.9 ± 0.8; juveniles'
+87.3, 90.5, 86.8, 89.5 against 57.9 ± 2.3); intake does not (mothers' absorbed +17, +43, +28, +20 kcal/day).
+
+**Reading.** W's nursing-mother loss (net −12.7, reserves −0.049) did not replicate (Wr +0.3, +0.002): in quick mode their
+intake covers the added walking in one draw of two. The robust payer in quick mode is juveniles (reserves −0.000, −0.040,
+−0.033, −0.041 %/day against 0.005 ± 0.010): `tripBodyCost` removes most of the added trips of mothers and males but not
+of juveniles (travel episodes 17.3 a day in B1 against 19.0 in W and 14.0 on S22; walking +29 kcal/day in all four arms).
+Infants 0.5–2 y: their climbing behind their mothers rises in every arm (+1.2 to +2.8 kcal/day), their reserves fall in
+one draw of two in each pair. The question for an iteration 2 is why juveniles' trips do not respond.
+
+### 7.2 Amendment 3 (registered 4 October 2026 after the replicates were read, before its run)
+
+Juveniles' travel episodes that end in a trip to another target ("travel elsewhere") are their largest added walking
+(0.50 → 0.85–0.91 km/day, 136 → 164–177 m each). One readout is added to climb-diagnose (`--a3`, header): at each such end,
+by class (juveniles split at `rgMinAge`, 8 y: below it the rules choose by argmax without the menu, rg.ts argmaxKeep),
+the kinds of the old and the new trip (own; joined behind its mother; joined behind another; caller; home), the rules'
+reason for the decision (rg.ts: ended — the trip reached its tree and feeding there was not taken —, need-bucket,
+light-phase, outvalued, …; argmax for the under-8 rule) and whether an interrupt was pending. Smoke-tested on 2 days of
+B1 (fills; adults' retargets mostly "ended", juveniles under 8 y "argmax"). Run on B1's parameters from a frozen checkout
+of the commit that registers this amendment.
+
 ## 6. Known defects (file:line at 0d08525)
 
 - `netRateShare` (intake.ts :89–96) charges the walk's time and the climb's energy, not the climb's time
