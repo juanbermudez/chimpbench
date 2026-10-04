@@ -46,9 +46,77 @@ targets, never inputs. No weight or scale is tuned to a travel share, a day rang
    prescription count must fall accordingly.
 3. At most three iterations, each logged here and committed before its run; arms = S9 + the switch, quick mode.
 
-## 2. Diagnosis (step 1)
+## 2. Diagnosis (step 1; registered 3 October 2026, 23:10, before its runs)
 
-(Registered before its runs; to follow.)
+**What the code does (read at 37a2042, field profile, S9's 39 switches).** A non-dependent animal's feeding options
+(candidates.ts:289–457):
+- a crown in view (sight 35 m by day): `(1.6 h + 0.1)·Q·tw(n) − d ÷ 400 − n·0.1·(1.3 − fruit index)·(rank factor) −
+  0.45·rain − 0.6·territory − core + fig bonus`, with Q = 0.55 + 0.45·min(1, crop) the crop shape and tw(n) the C13b
+  share of the animal's own full fruit rate a bout delivers, walk included (`treeIntake`: E = min(crop ÷ (1 + n) × kcal
+  per unit, energy need, the bout's gut room), tw = (E ÷ R) ÷ (walk + E ÷ R); the E2c dark branch in poor light);
+- the fallback where it stands: `0.45·h·leafV + 0.03 − 0.3·rain`, leafV = the fallback's kcal per hour here ÷ the
+  animal's fruit rate (≈ 0.44 × the forage field's yield ÷ the skill factor; × vision in the dark);
+- an own trip to a remembered or community-known tree (shortlist of 4, two travel slots): `1.25·h·Q·tw(0) −
+  d ÷ 62,900 − 0.4·rain − 0.8·territory − core + sociability·fruit index·0.1`;
+- a joined trip (E5a): `1.25·h·Q·tw(n at the goal) − d ÷ 62,900 + company margin − 0.3·rain`.
+All carry the hash jitter (± 0.12) and the continuation bonus (+0.25, −0.5 once finished). The bounded menu holds one
+option per action (menu.ts `boundedCandidates`: "places stay single"), so the fallback competes with the best crown in
+view for the single forage place, and own trips with callers and the home pull for the travel place (the joined trip
+keeps its own); a softmax at `rgTemperature` 0.164 draws from it. So against a crown in view, the fallback is valued at
+0.45 h ÷ (1.6 h + 0.1) ≈ 0.26 of its rate and a trip at 1.25 h ÷ (1.6 h + 0.1) ≈ 0.72 of its rate, and every fruit
+option carries Q (0.55–1).
+
+**Tools.** (1) `scripts/revisit-diagnose.ts` (E3b, unchanged): walking by purpose per class, visits, returns, what ends a
+visit, trees per day. **Disclosure:** it ran on S9q's parameters (seeds 48 and 7, 30 + 30 days) at 22:53–22:55, before
+this registration, from the frozen checkout of f007a48 (simulation code identical); its output has not been read.
+(2) `scripts/forage-rate-diagnose.ts` (new; its header defines every readout): for rules decisions of animals ≥ 8 y in
+daylight (fresh draws) whose menu holds a feeding option: every feeding option's score split into its food worth, the
+distance term, the crowding term and the rest, and the named contributions of the weights (crop shape; `forageDistScaleM`
+on crowns, the energetic tripCost on trips; `fallbackForageW` against the crown's drive 1.6 h + 0.1; `memTravelHungerW`
+against the same drive); the expected rates of every option in kcal per hour from the model's own physics (E_bout as
+treeIntake, E without the need, E without the gut cap; walk time at `walkMps` with the dark pace; walking and climbing
+cost from sockol2007's net cost of transport, the ledger's own); a static counterfactual of the choice (the menu rebuilt
+with rg.ts `rgMenu` from the re-scored candidate list and the softmax at `rgTemperature`; identity check: the unchanged
+variant must reproduce the menu and probabilities drawn from, and every rebuilt raw score must equal the published one
+where it is not clamped); the realized net rate of every chosen feeding option (episodes); class energy as
+energy-diagnose defines it. Static means: each decision's own options re-scored, no feedback on hunger, position or
+later choices; options dropped from the candidate list (beyond the slot limits, or scored ≤ −0.4) cannot enter.
+
+**Smoke test (seed 48, 1 + 2 days, S9; done before this registration; disclosed):** identity exact (4,483 decisions, 0
+menu mismatches, probability error 0, raw scores exact for all 18,043 options); every readout filled. Seen: crown options
+bind E on the gut room in 78% (need 13%, share 10%), walk 0.1 min and cost 1.7% of E (median); trips 205 m, 9.8 min,
+cost 3.7% of E; the fallback's rate 0.49 of the fruit rate; counterfactual walking per decision 33 m, +47% with trips at
+the crown's drive, +11% without the crop shape, −13% with the fallback at the crown's drive, +62% with the full net-rate
+valuation (feeding options chosen 32% → 48% of decisions). Two days after a one-day burn-in are not representative; no
+expectation below is a fit to them.
+
+**Runs.** forage-rate-diagnose on S9q's parameters and its three re-draws (`rgTemperature` 0.1641, 0.1639, 0.16405;
+seeds 48 and 7, 30 + 30 days, `--workers` 1 above load 8), from a frozen detached checkout of the commit that adds this
+section. Identity: adult males' eating minutes and ground km equal `S9q-energy.json` (energy-diagnose, same world) when
+the integrator's file exists.
+
+**Reading rules (registered).**
+- *R1, what each weight contributes to where animals eat:* each term put in the crown's currency alone (`-dist`: crowns
+  lose d ÷ `forageDistScaleM`; `fbD`: the fallback at (1.6 h + 0.1)·leafV; `memD`: trips and joins at (1.6 h +
+  0.1)·Q·tw; `noQ`: Q = 1; `noCrowd`: the habitat-index crowding off). The term is **implicated** if, in each of the
+  four realizations, it moves the expected share of a chosen kind (crown, fallback, own trip + joined trip, any feeding
+  option) or the expected walking distance per decision by ≥ 10% of its actual value.
+- *R2, do choices follow the net rate:* among decisions with a chosen and a rejected feeding option, the share where the
+  chosen one promises the higher net rate (E without the need), and both rates. Choices "follow the rate" if ≥ 70%.
+- *R3, what bounds a bout's energy:* the shares of crown and trip options where the crop share, the need or the gut room
+  binds E_bout; the need "matters" as a cap if it binds in ≥ 10% of either kind.
+- *R4, are the expectations right:* realized net rate of chosen options by kind against the median expected; "calibrated"
+  within ± 20%.
+- *R5, what a net-rate valuation would change (the static `rate` variant against `actual`):* the change of each chosen
+  kind's share, of the walking distance per decision and of the feeding share of decisions, reported with the reference
+  spread; and by class (adult males, nursing mothers, other females, juveniles 8–12 y).
+
+**Expected (low confidence unless stated; written knowing the smoke test).** R1: `memD` and `noQ` implicated (trips up,
+distance up), `fbD` implicated (fallback up, distance down), `-dist` not implicated (crowns in view are within 35 m, so
+d ÷ 400 ≤ 0.09; moderate), `noCrowd` not implicated. R2: chosen options promise the higher net rate in 60–90%. R3: the
+gut room binds in ≥ 70% of crown options, the need in < 15% (moderate, E5c: 99.8% gut room below the need). R4: within
+± 25%. R5: feeding options chosen more often (food is worth more against rest and grooming once the discounts go),
+walking per decision up.
 
 ## 3. Field rows scored here: samples
 
