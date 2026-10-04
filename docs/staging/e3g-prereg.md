@@ -128,9 +128,57 @@ both stacks ~58% of trips did not end feeding at the target. Expected in the ful
 'ended' cascade), not need-bucket or light-phase; R2 not supported; R3 open (the trips are chosen above the act held by
 value, but most do not feed at the target).
 
-## 3. Field rows scored here: samples
+### 2.1 Amendment 1 (registered 4 October 2026 after reading the first realizations, before the readouts it adds ran)
 
-(Written before any arm.)
+Read so far (frozen checkout a465f38; S27q and S28q, the registered readouts; S27q1 also finished, not read; identity exact:
+the tool's adult males' eating minutes and ground km equal energy-diagnose's, 233.496 / 2.873 and 242.403 / 4.018):
+by R1 S28's 'outvalued' chains carry +1.38 km and +31 kcal climbing per adult-day against a net +1.13 km and +28 kcal
+(counted whole), 'ended' +0.46 km (≥ 1/3, a cascade), need-bucket +0.23 and light-phase +0.16; most outvalued switches
+are an option new since the draw whose value alone beats the act held (a joined trip after a companion's departure, an
+own trip, grooming, a pant-grunt); the switches the keep test would have kept at need-bucket and light-phase draws carry
+0.04 km per adult-day. In both stacks 62–63% of trips do not feed at their target, trips that leave a crown realize a
+lower net rate than the rate left, and S28's hunt-impulse draws per male-day are ×5 S27's. To read why trips do not feed
+at their target, whether a trip delivers the bout energy it is valued at, and where the hunt impulses come from before
+any mechanism is chosen, four readouts are added to the tool (header, "amendment 1"): (a) outvalued draws by held act and
+out-valuer; (b) trips by kind (own, joined, caller), fed at the target counting the next act when it feeds at the target,
+and for unfed trips the state at the close (trigger, distance to the target, the target's crop, in view, its forage option
+on the list, the next act); (c) the bout energy E0 a trip was valued at (intake.ts netRateShare's E) against the fruit
+eaten at the target; (d) decisions with a hunt impulse open (any trigger), the lead share, and re-sightings of a colobus
+group the same male perceived at a decision in the hour before. Smoke-tested on 2 days of S28 (seed 48; every readout
+fills; identity unchanged).
+
+**Reading rules for the added readouts (registered).**
+- *A1-a:* the largest held > out-valuer flows per adult-day name what the keep test ends and for what.
+- *A1-b:* "trips are abandoned on the way" if ≥ 50% of unfed own trips close more than 6 m (GATE.arriveM) from their
+  target; "targets are empty" if ≥ 50% of unfed trips that close at their target find a crop below 0.06 units.
+- *A1-c:* "a trip delivers the bout energy it is valued at" if the fruit eaten at the target when fed is ≥ 2/3 of E0;
+  otherwise the bout energy is overvalued.
+- *A1-d:* "S28's extra hunts come from re-sightings" if re-sighting impulses carry ≥ 1/2 of Δ impulses per male-day.
+
+**Runs.** The amended tool (it reproduces every registered readout of the same world) on S27q and S28q, then on S27q2,
+S28q2, S27q3, S28q3, from a frozen checkout of the commit that registers this amendment; no run starts above load 30.
+S27q1 and S28q1 keep the original tool's outputs (registered readouts only).
+
+## 3. Field rows scored here: samples (written before any arm)
+
+As recorded by the stages that read each source in full on 4 October (E3d §3, E4n §2, E2j §2, E2i §3); not re-opened here.
+The rows this stage's readouts lean on are travel, ranging, feeding trees and hunting; none was fitted by this stage.
+
+| Row | Source | Sample, method | Value, band |
+| --- | --- | --- | --- |
+| T-ACT-1, T-ACT-2, T-ACT-3 (fitted) | villioth2025 | Budongo Waibira, Oct 2016 – Jun 2017: "ten adult males and nine adult females ... Seven of the females were lactating"; continuous focal follows of 1–12 h (491 h); travelling = "terrestrial quadrupedal walking as well as arboreal climbing and movement within the canopy"; mass not reported (E3d §3) | feeding 0.36 M / 0.37 F (0.33–0.5); travel 0.21 / 0.20 (0.12–0.25); grooming 0.15 / 0.12 (0.08–0.18) |
+| T-ACT-4 (fitted) | potts2011, villioth2025 | Ngogo 2005–06 (1,059 h), Kanyawara 2006 (961 h), continuous focal follows of adult males, cycling and pregnant or lactating females; resting includes grooming; monthly means (E3d §3) | 0.340, 0.448; band 0.3–0.47 |
+| T-RNG-4 (fitted) | batesByrne2009 | Budongo Sonso 2002–03, 8 adult males, GPS every 5 min while travelling, full-day follows; mass not reported (E3d §3, E2j §2) | 2.7 ± 1.5 km/day; band 1.5–3.5 |
+| T-FOOD-2 (fitted) | watts2012a, emeryThompson2020 | Ngogo 1995–2010 (125 months, focal + 15-min scans); Kanyawara 1994–2018 (240,601 feeding scans); all age-sex classes (E3d §3) | 72.1%, 64.0%; band 0.60–0.78 |
+| T-FOOD-4 (held-out, flagged compromised) | janmaat2013b, normand2009 | Taï, 5 adult females with young, 275 full-day follows; two females over 28 days (E3d §3) | 7.14; 14.0 and 18.1; band 4–15 |
+| T-HUN-1 (fitted; band 5–25, a band 4–11 staged by E4e) | gilby2015, wattsMitani2002 | Kanyawara 1996–2014, 224 months, 11.4 adult males: "every 15 min, the field assistants record party composition"; an encounter is colobus "within 100 m"; "hunt attempts are defined as instances when a chimpanzee climbs to the height of the lowest monkey"; 194 attempts (≈ 10.4 per year, derived); party follows, community-level counts, no sex, reproductive-state or mass restriction. Ngogo 1995–99, ~24 adult males, 45.1 successful hunts a year (E4n §2) | band 5–25 per community-year |
+| T-HUN-3 (fitted) | gilby2015, mitaniWatts2001 | as T-HUN-1: 0.079 of 2,461 encounters hunted (E4n §2) | band 0.05–0.40 |
+| Reserves %/day by class | no field row (T-ENE rows staged, e-targets.patch.json) | — | read against the S28q and S27q groups only |
+
+**Readouts the predictions need** (each defined in its tool's header; smoke-tested on 2 days with the stage's switch on
+before any arm): e-bench's observer rows (src/field/metrics.ts) and sums; energy-diagnose's ground km, climbing kcal,
+eating minutes and reserves (%/day, OLS slope; the integrator's judge convention); redecide-diagnose's E3g readouts (§2);
+rhythm-metrics' night share (adults out of a nest, T-RHY-5) for a kept arm.
 
 ## 4. Reference and judging (docs/staging/e-noise.md amendment 2, amendment 3's rare rows)
 

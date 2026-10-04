@@ -89,6 +89,16 @@
 //   hunts: lead hunts started (V.LEAD hunt acts opened) and joins by trigger; at 'hunt' draws (the encounter impulse) of
 //     adult males the held category, interrupt or bout end, lead chosen, and (S28) the bonus counterfactual.
 //   feeding trees: distinct trees fed in per animal-day by class (truth analog of T-FOOD-4, per animal and calendar day).
+//   amendment 1 (docs/staging/e3g-prereg.md §2.1): outvalued draws of adults by held category > the out-valuer's category;
+//     trips by kind (own, joined, caller): fed at the target counting the next act when it is feeding at the target (a trip
+//     converted by a draw rather than the arrival rule), E0 = the bout energy the trip was valued at (intake.ts netRateShare:
+//     the believed crop ÷ (1 + the feeders counted) in kcal, or the bout room if smaller) against the fruit kcal eaten at the
+//     target (in the chain and in the next one when it feeds at the target); for trips that did not feed at the target, the
+//     state at the close: the trigger, the distance to the target (within 6 m: GATE.arriveM), the target's crop (units;
+//     below 0.06 it is not seen as fruiting), whether it was in view and its forage option on the list, and the next act;
+//     hunt impulses: decisions of adult males with the hunt impulse open and the hunt on the list, by trigger, the share
+//     choosing the lead, and the share that re-sight a colobus group the same male perceived at a decision in the hour
+//     before (perception.ts counts a group as met when it differs from the group perceived at the previous decision point).
 //
 //   pnpm exec tsx scripts/redecide-diagnose.ts [--seeds 48,7] [--burn-in 30] [--days 30] [--params '{…}'] [--workers 2] [--json f.json]
 // Development seeds only (AGENTS.md lists the reserved ones); burn-in + days ≤ 90.
@@ -98,7 +108,9 @@ import { CODE, candidateMeta, findCandidate, V } from '../src/sim/candidates';
 import { rulesTap } from '../src/sim/decide';
 import { gate, patchPoorHere, rgMenu, rgTap } from '../src/sim/rg';
 import { bucketOf, periodNow } from '../src/decide/facts';
-import { digestaCaps, energyTap } from '../src/sim/energy';
+import { boutRoom, digestaCaps, energyTap, fruitKcalPerUnit } from '../src/sim/energy';
+import { fruitRate } from '../src/sim/intake';
+import { IMPULSE_HUNT } from '../src/sim/perception';
 import { dayPhase } from '../src/sim/environment';
 import { fruitAt } from '../src/sim/phenology';
 import type { Intent } from '../src/decide/gate';
@@ -147,12 +159,17 @@ interface GChain { cls: Cls; why: string; detail: string; held: string; kind: st
   d0: number; fill0: number; hunger0: number; rawCur: number; rawCh: number; noise: number; cfKeep: number;
   km: number; walkK: number; climbK: number; carryK: number; fruitK: number; fallK: number; meatK: number; visits: number; first: number; fell: boolean; t1: number;
   /** the trigger of the decision that closed it; the kcal per minute the animal ate in the 10 min before it opened */
-  endWhy: string; rate10: number }
+  endWhy: string; rate10: number;
+  /** amendment 1: E assumed at the start (min of the believed crop share and the bout room, intake.ts netRateShare), fruit eaten at
+   * the target (in the chain and in the next one when it feeds at the target), and the state at the close */
+  e0: number; fruitT: number; dEnd: number; cropEnd: number; inView: number; feedOpt: number; next: string; nextAtT: boolean; parent?: GChain }
 /** Stage E3g: sums attributed to chains, keyed `${class now}|${trigger}|${opening category}`. */
 interface GSum { km: number; walkK: number; climbK: number; carryK: number; fruitK: number; fallK: number; meatK: number; visits: number; chains: number }
 interface Result {
   seed: number; draws: Draw[]; cfs: Cf[]; runs: Run[];
-  g: { draws: GDraw[]; trips: GChain[]; sums: Record<string, GSum>; leads: Record<string, number>; joins: Record<string, number>; hunts: number; treeDays: Record<string, [number, number]>; days: number; troops: number; clsTicks: Record<string, number> };
+  g: { draws: GDraw[]; trips: GChain[]; sums: Record<string, GSum>; leads: Record<string, number>; joins: Record<string, number>; hunts: number; treeDays: Record<string, [number, number]>; days: number; troops: number; clsTicks: Record<string, number>;
+    /** amendment 1: outvalued draws of adults (daylight) by held category > out-valuer category; hunt-impulse decisions of adult males */
+    ovx: Record<string, number>; hi: { n: number; lead: number; resight: number; resightLead: number; byWhy: Record<string, number> } };
   counts: Record<string, Record<string, number>>; // class → verdict → n (daylight)
   nightCounts: Record<string, Record<string, number>>;
   dayTicks: Record<string, number>; runsStarted: Record<string, number>;
@@ -169,7 +186,7 @@ export function runSeed(job: Job): Result {
   const dead0 = new Set(w.chimps.filter(c => !c.alive).map(c => c.id)), hunts0 = w.stats.hunts;
   const R: Result = { seed, draws: [], cfs: [], runs: [], counts: {}, nightCounts: {}, dayTicks: {}, runsStarted: {}, identity: { menuMismatch: 0, probErr: 0, checked: 0 },
     male: { ticks: 0, eating: 0, walked: 0 }, living: [w.chimps.filter(c => c.alive).length, 0], deaths: {},
-    g: { draws: [], trips: [], sums: {}, leads: {}, joins: {}, hunts: 0, treeDays: {}, days, troops: w.troops.length, clsTicks: {} } };
+    g: { draws: [], trips: [], sums: {}, leads: {}, joins: {}, hunts: 0, treeDays: {}, days, troops: w.troops.length, clsTicks: {}, ovx: {}, hi: { n: 0, lead: 0, resight: 0, resightLead: 0, byWhy: {} } } };
   for (const k of CLS) { R.counts[k] = {}; R.nightCounts[k] = {}; R.dayTicks[k] = 0; R.runsStarted[k] = 0; }
   const key = (k: { action: string; targetId: number }) => `${k.action}:${k.targetId}`;
   const jitterOf = (c: Chimp, k: Candidate) => (hash01(c.id, c.decisionVersion, CODE[k.action], k.targetId) - 0.5) * P.candidateJitterSpan;
@@ -281,11 +298,25 @@ export function runSeed(job: Job): Result {
   const gLive = new Map<number, Intent | undefined>();
   /** Option keys on any menu since the animal's last draw (a fresh noise for one of them is a re-entry, not a new option). */
   const gSeen = new Map<number, Set<string>>();
+  /** amendment 1: per adult male, when each colobus group was last perceived at one of his decisions */
+  const gPrey = new Map<number, Map<number, number>>();
   const lastFruit = new Map<number, [number, number]>(), treeSet = new Map<number, Set<number>>(), gKey = new Map<number, string>();
   const newChain = (c: Chimp, why: string, detail: string, held: string, kind: string, target: number, rg: boolean): GChain => ({ cls: clsOf(c), why, detail, held, kind, target, t0: w.time, day: day(), rg,
-    d0: NaN, fill0: NaN, hunger0: c.hunger, rawCur: NaN, rawCh: NaN, noise: NaN, cfKeep: -1, km: 0, walkK: 0, climbK: 0, carryK: 0, fruitK: 0, fallK: 0, meatK: 0, visits: 0, first: 0, fell: false, t1: NaN, endWhy: '', rate10: NaN });
+    d0: NaN, fill0: NaN, hunger0: c.hunger, rawCur: NaN, rawCh: NaN, noise: NaN, cfKeep: -1, km: 0, walkK: 0, climbK: 0, carryK: 0, fruitK: 0, fallK: 0, meatK: 0, visits: 0, first: 0, fell: false, t1: NaN, endWhy: '', rate10: NaN,
+    e0: NaN, fruitT: 0, dEnd: NaN, cropEnd: NaN, inView: -1, feedOpt: -1, next: '', nextAtT: false });
   /** Close the animal's open chain; `post`: the act it held executed this tick (a decision after execution). */
-  const closeChain = (c: Chimp, post: boolean, why: string) => { const ch = gOpen.get(c.id); if (!ch) return; ch.t1 = w.time; ch.endWhy = why; if (post) execNow.set(c.id, ch); pendNow.push(ch); gOpen.delete(c.id); };
+  const closeChain = (c: Chimp, post: boolean, why: string, list?: Candidate[], chosen?: Candidate): GChain | undefined => {
+    const ch = gOpen.get(c.id); if (!ch) return undefined; ch.t1 = w.time; ch.endWhy = why; if (post) execNow.set(c.id, ch); pendNow.push(ch); gOpen.delete(c.id);
+    // amendment 1: the trip's (or hunt's) state at its close
+    if (isTrip(ch.kind) || ch.kind.startsWith('hunt')) {
+      const tr = isTreeId(ch.target) ? index(w).treeById.get(ch.target) : undefined, pr = ch.kind.startsWith('hunt') ? w.prey.find(q => q.id === ch.target) : undefined, pos = tr?.position ?? pr?.position;
+      ch.dEnd = pos ? Math.hypot(pos[0] - c.position[0], pos[2] - c.position[2]) : NaN; ch.cropEnd = tr ? fruitAt(w, tr) : NaN; ch.inView = tr ? (ix(c).trees.includes(tr.id) ? 1 : 0) : -1;
+      ch.feedOpt = tr && list ? (findCandidate(list, 'forage', tr.id) ? 1 : 0) : -1;
+      if (chosen) { const m = candidateMeta.get(chosen); ch.next = catOf(chosen.action, chosen.targetId, m?.v ?? V.NONE, m?.aux ?? -1); ch.nextAtT = !!tr && chosen.action === 'forage' && chosen.targetId === tr.id; }
+      else ch.next = why;
+    }
+    return ch;
+  };
   /** kcal eaten (own food) by the animal in the last 10 minutes, as [time, kcal] pairs */
   const eat10 = new Map<number, number[]>();
   const rate10Of = (c: Chimp) => { const e = eat10.get(c.id); if (!e) return 0; let k = 0; for (let i = 0; i < e.length; i += 2) if (e[i] > w.time - 10 / 60 + 1e-9) k += e[i + 1]; return k / 10; };
@@ -308,6 +339,8 @@ export function runSeed(job: Job): Result {
         const lf = lastFruit.get(c.id);
         if (!lf || lf[0] !== tree || w.time - lf[1] >= 10 / 60 - 1e-9) { ch.visits++; s.visits++; if (!ch.first) ch.first = tree; }
         lastFruit.set(c.id, [tree, w.time]);
+        if (tree === ch.target) ch.fruitT += kcal;
+        if (ch.parent && tree === ch.parent.target) ch.parent.fruitT += kcal;
         let ts = treeSet.get(c.id); if (!ts) treeSet.set(c.id, ts = new Set()); ts.add(tree);
       }
     } else if (kind === 'fallback') { ch.fallK += kcal; s.fallK += kcal; ch.fell = true; }
@@ -318,6 +351,17 @@ export function runSeed(job: Job): Result {
     gDecided.add(c.id);
     const x = ix(c), held = intents.get(c.id), live = gLive.get(c.id), d = day();
     gLive.set(c.id, x.rgIntent);
+    // amendment 1: decisions with a hunt impulse open and the hunt on the list (adult males); a re-sighting = the same colobus
+    // group perceived at one of this animal's decisions in the hour before
+    if (c.sex === 'male' && c.age >= 15) {
+      const lp = gPrey.get(c.id) ?? new Map<number, number>();
+      if (x.impulse === IMPULSE_HUNT && x.impulseUntil > w.time && list.some(k => k.action === 'hunt' && k.targetId === x.impulseTarget)) {
+        const hi = R.g.hi, re = (lp.get(x.impulseTarget) ?? -1e9) >= w.time - 1 - 1e-9, lead = chosen.action === 'hunt' && candidateMeta.get(chosen)?.v === V.LEAD;
+        hi.n++; hi.byWhy[why] = (hi.byWhy[why] ?? 0) + 1; if (lead) hi.lead++; if (re) { hi.resight++; if (lead) hi.resightLead++; }
+      }
+      if (x.preyId > 0) lp.set(x.preyId, w.time);
+      gPrey.set(c.id, lp);
+    }
     const key = (k: { action: string; targetId: number }) => `${k.action}:${k.targetId}`;
     const seen = gSeen.get(c.id);
     if (why === 'kept' || why === 'arrived') { if (seen) for (const k of menu) seen.add(key(k)); return; } // the chain continues
@@ -334,6 +378,7 @@ export function runSeed(job: Job): Result {
       let best: Candidate | null = null, bv = vCur;
       for (const k of menu) if (key(k) !== key(cur)) { const v = rgRaw(k) + (live.noise[key(k)] ?? 0); if (v > bv) { bv = v; best = k; } }
       if (best) detail = `${optCat(c, best)} ${held?.noise && key(best) in held.noise ? 'held' : seen?.has(key(best)) ? 'fresh:back' : 'fresh:new'} ${rgRaw(best) > vCur ? 'value' : 'noise'}`;
+      if (best && d && (c.age >= 15)) { const kx = `${heldCat(c)}>${optCat(c, best)}`; R.g.ovx[kx] = (R.g.ovx[kx] ?? 0) + 1; } // amendment 1
     }
     const ongoing = !!held && !!cur && !x.finished && c.action === held.action && c.targetId === held.targetId;
     let cfKeep = -1, cfBonus = -1;
@@ -360,14 +405,19 @@ export function runSeed(job: Job): Result {
     const m = candidateMeta.get(chosen), kind = catOf(chosen.action, chosen.targetId, m?.v ?? V.NONE, m?.aux ?? -1);
     if (kind === 'hunt-lead') R.g.leads[why] = (R.g.leads[why] ?? 0) + 1;
     if (kind === 'hunt-join') R.g.joins[why] = (R.g.joins[why] ?? 0) + 1;
-    closeChain(c, x.finished, why);
+    const old = closeChain(c, x.finished, why, list, chosen);
     const ch = newChain(c, why, detail, heldCat(c), kind, kind === 'trip-caller' ? (x.jt !== undefined && x.jt > 0 ? x.jt : -1) : chosen.targetId, true);
     if (isTrip(kind) || kind === 'hunt-lead' || kind === 'hunt-join') {
       const tr = isTreeId(chosen.targetId) ? index(w).treeById.get(chosen.targetId) : undefined, pr = kind.startsWith('hunt') ? w.prey.find(p => p.id === chosen.targetId) : undefined;
       const pos = tr?.position ?? pr?.position;
       ch.d0 = pos ? Math.hypot(pos[0] - c.position[0], pos[2] - c.position[2]) : NaN; ch.fill0 = fillOf(c);
       ch.rawCur = cur ? rawOf(c, cur) : NaN; ch.rawCh = rawOf(c, chosen); ch.noise = newNoise?.[key(chosen)] ?? NaN; ch.cfKeep = cfKeep; ch.rate10 = rate10Of(c);
+      // amendment 1: the bout energy the trip was valued at (intake.ts netRateShare's E: the believed crop share or the bout room)
+      const bel = m?.bel, ttree = isTreeId(ch.target) ? index(w).treeById.get(ch.target) : undefined, unit = fruitKcalPerUnit(P, false);
+      const crop = bel ? bel[1] : ttree ? fruitAt(w, ttree) : NaN, feeders = bel ? bel[3] : 0;
+      if (Number.isFinite(crop)) ch.e0 = Math.min(Math.max(0, crop) / (1 + feeders) * unit, boutRoom(c, P, fruitRate(c, P).fruitPerH * unit));
     }
+    if (old && (isTrip(old.kind)) && chosen.action === 'forage' && chosen.targetId === old.target) ch.parent = old;
     openChain(c, ch);
   };
 
@@ -676,6 +726,29 @@ if (!isMainThread) {
     const td: Record<string, [number, number]> = {};
     for (const r of res) for (const [k, v] of Object.entries(r.g.treeDays)) { const t = td[k] ??= [0, 0]; t[0] += v[0]; t[1] += v[1]; }
     e3g.feedingTreesPerAnimalDay = Object.fromEntries(Object.entries(td).map(([k, v]) => [k, r3(v[0] / Math.max(1, v[1]))]));
+    // amendment 1 (docs/staging/e3g-prereg.md §2.1): what out-values what; trips by kind and their end states; hunt impulses
+    const ovx: Record<string, number> = {};
+    for (const r of res) for (const [k, n] of Object.entries(r.g.ovx)) ovx[k] = (ovx[k] ?? 0) + n;
+    e3g.outvaluedHeldByOutvaluer = Object.fromEntries(Object.entries(ovx).sort((a, b) => b[1] - a[1]).slice(0, 30).map(([k, n]) => [k, perDay(n, adultDays)]));
+    const tripsT = trips.filter(q => TRIP(q.kind));
+    const fedT = (t: GChain) => t.first === t.target || t.nextAtT;
+    const endOf = (L: GChain[]) => {
+      const U = L.filter(t => !fedT(t)), at = U.filter(t => t.dEnd <= 6);
+      return { n: L.length, perAdultDay: perDay(L.length, adultDays), fedAtTargetInclNext: r3(L.length ? L.filter(fedT).length / L.length : NaN), nextAtTarget: r3(L.length ? L.filter(t => t.nextAtT).length / L.length : NaN),
+        e0Mean: r3(mean(L.map(t => t.e0).filter(Number.isFinite))), fruitAtTargetMean: r3(mean(L.map(t => t.fruitT))), fruitAtTargetWhenFed: r3(mean(L.filter(fedT).map(t => t.fruitT))), e0WhenFed: r3(mean(L.filter(fedT).map(t => t.e0).filter(Number.isFinite))),
+        kmMean: r3(mean(L.map(t => t.km))), climbMean: r3(mean(L.map(t => t.climbK))),
+        unfed: { n: U.length, endWhy: dist(U.map(t => t.endWhy || 'open')), within6m: r3(U.length ? at.length / U.length : NaN), dEndMedian: r3(med(U.map(t => t.dEnd))),
+          atTarget: { n: at.length, cropBelowSeen: r3(at.length ? at.filter(t => t.cropEnd < 0.06).length / at.length : NaN), cropMedian: r3(med(at.map(t => t.cropEnd))), inView: r3(at.filter(t => t.inView >= 0).length ? at.filter(t => t.inView === 1).length / at.filter(t => t.inView >= 0).length : NaN),
+            feedOption: r3(at.filter(t => t.feedOpt >= 0).length ? at.filter(t => t.feedOpt === 1).length / at.filter(t => t.feedOpt >= 0).length : NaN), next: dist(at.map(t => t.next)) },
+          away: { next: dist(U.filter(t => !(t.dEnd <= 6)).map(t => t.next)) } } };
+    };
+    e3g.tripsByKind = Object.fromEntries(['trip-own', 'trip-joined', 'trip-caller'].map(k => [k, endOf(tripsT.filter(t => t.kind === k))]));
+    e3g.tripsByKindTrigger = Object.fromEntries(['trip-own', 'trip-joined', 'trip-caller'].map(k => [k, Object.fromEntries([...new Set(tripsT.filter(t => t.kind === k).map(t => t.why))].sort().map(w => [w, endOf(tripsT.filter(t => t.kind === k && t.why === w))]))]));
+    const hiAll = res.reduce((a, r) => ({ n: a.n + r.g.hi.n, lead: a.lead + r.g.hi.lead, resight: a.resight + r.g.hi.resight, resightLead: a.resightLead + r.g.hi.resightLead }), { n: 0, lead: 0, resight: 0, resightLead: 0 });
+    const hiWhy: Record<string, number> = {};
+    for (const r of res) for (const [k, n] of Object.entries(r.g.hi.byWhy)) hiWhy[k] = (hiWhy[k] ?? 0) + n;
+    e3g.huntImpulses = { perMaleDay: perDay(hiAll.n, maleDays), leadShare: r3(hiAll.n ? hiAll.lead / hiAll.n : NaN), resightShare: r3(hiAll.n ? hiAll.resight / hiAll.n : NaN),
+      leadsPerMaleDay: perDay(hiAll.lead, maleDays), resightLeadsPerMaleDay: perDay(hiAll.resightLead, maleDays), byTrigger: Object.fromEntries(Object.entries(hiWhy).map(([k, n]) => [k, perDay(n, maleDays)])) };
     out.e3g = e3g;
   }
   if (jsonOut) writeFileSync(jsonOut, JSON.stringify(out, null, 1));
