@@ -491,3 +491,5 @@ movement within the canopy (villioth2025), which the model does not have; neithe
 Climbing at the stylized `climbMps` 0.22 m/s (0.5 m/s cited for wild chimpanzees, secondary) is now 16–19% of adults'
 travel time: the next speed to derive from the body. (3) Walking on fallback food at 0.3 × the walking speed (a design
 multiplier) doubled with it (deferred, §6).
+
+**Files.** Every run's JSON and log (G1, G1r, the four S21 walk-diagnose runs, S21q's rhythm run) and the table scripts (`walktab.py`, `e2i_table.py`, `report.sh`, `run-arm.sh`) are in `artifacts/validation/e2i/` of the e2i-walking worktree (gitignored), copied from the stage's scratch directory.
