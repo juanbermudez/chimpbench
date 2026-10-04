@@ -1867,3 +1867,13 @@ numbers (alexanderJayes1983, Abs; raichlen2013, FT) scale an immature's speed by
 similarity (design). New keys: hunt1989, jang2019, luciano2024, alexanderJayes1983, raichlen2013. Not verified: how
 sockol2007 chose 1.0 m/s, pontzer2014jhe and Pontzer et al. 2009 full texts, Finestone et al. 2018's speeds, Hunt 1989,
 juvenile great apes' walking speeds by age.
+
+## Addendum: E4n hunt rate (4 October 2026)
+
+Same text as research.md "Addendum: E4n hunt rate": gilby2015 re-opened (PMC article page): the Kanyawara encounter
+(colobus "detected within 100 m" at 15-min party scans), the hunt attempt (a chimpanzee "climbs to the height of the
+lowest monkey"), Table 1 (194 attempts in 2,461 encounters, 61.3% successful, 1.28 prey per success) and the impact
+hunter's 18.9% against 2.3% of encounters hunted, as recorded. Why chimpanzees hunt, as the cited sources put it (direction
+only): males and party size (gilby2015, mitaniWattsMuller2002), diet quality (gilbyWrangham2007), sharing with allies
+(mitaniWatts2001), no nutritional data on prey flesh (tennie2014), meat eaten at 348 g/h (hardus2012, secondary). No
+magnitude for a non-energy value of a hunt in any of them. No new keys.
