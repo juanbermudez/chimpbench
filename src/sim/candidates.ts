@@ -1,5 +1,5 @@
 import type { Action, Candidate, Chimp, Tree, Troop, World } from '../types';
-import { bond, dominates, isAdultMale, maternalKin, rankLabel, rankedMale, strength, winOdds } from './hierarchy';
+import { assessOdds, bond, dominates, isAdultMale, maternalKin, rankLabel, rankedMale, strength, winOdds } from './hierarchy';
 import { IMPULSE_ESCALATE, IMPULSE_GANG, IMPULSE_HUNT, IMPULSE_INFANTICIDE, IMPULSE_PATROL, IMPULSE_RAIN, IMPULSE_TRANSFER } from './perception';
 import { cellAt, gridOf, levels, pressureAt, territoryCost } from './territory';
 import { clamp, hash01, smoothstep } from './rng';
@@ -852,9 +852,9 @@ function threatResponses(world: World, c: Chimp, carried: boolean): void {
   const dom = stranger || dominates(ag, c);
   const ratio = strength(c, P) / Math.max(0.05, strength(ag, P));
   // stage E4h (contestAssess; docs/staging/e4h-prereg.md §4): within the community the answer reads the target's assessed
-  // chance against its aggressor (the contest function: strength with condition and wounds, rank edge, supporters), not
-  // binary dominance: y = 1 − q weights the dominated values, so the old values hold at q = 0 and q = 1 (parker1974)
-  const y = P.contestAssess === 1 && !stranger ? 1 - winOdds(world, c, ag, P) : -1;
+  // chance against its aggressor, not binary dominance: y = 1 − q weights the dominated values, so the old values hold at
+  // q = 0 and q = 1 (parker1974). Iteration 3: the remembered dominance relationship is the assessment's prior (assessOdds)
+  const y = P.contestAssess === 1 && !stranger ? 1 - assessOdds(world, c, ag, P) : -1;
   if (!carried) {
     offer('submit', ag.id, (y >= 0 ? 0.25 + 1.25 * y : dom ? 1.5 : 0.25) + c.stress * 0.3 - (ratio > 1.1 ? 0.4 : 0) - (stranger ? 0.9 : 0), V.AGGRESSOR);
     offer('flee', ag.id, (y >= 0 ? 0.2 + 1.0 * y : dom ? 1.2 : 0.2) + c.injury * 0.4 + (ag.action === 'attack' ? 0.4 : 0) + (stranger ? 0.8 : 0), V.AGGRESSOR);

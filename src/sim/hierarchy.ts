@@ -74,6 +74,23 @@ export function supporters(world: World, a: Chimp, target: Chimp): Chimp[] {
 }
 
 /**
+ * Stage E4h iteration 3 (contestAssess; docs/staging/e4h-prereg.md §7): a threatened animal's assessed chance against its
+ * aggressor. Where the two keep a dominance relationship (same sex, both ranked: Elo is updated only there) the
+ * remembered relationship is prior evidence and the present cues add to it, log-odds on log-odds: the Elo expected score
+ * (eloLogisticScale, as eloUpdate) plus the contest function's odds from strength with condition and wounds and the
+ * supporters on each side, without its rank edge (the rank enters once, through the memory). Elsewhere, winOdds. Pure.
+ */
+export function assessOdds(world: World, a: Chimp, b: Chimp, P: Params): number {
+  const ranked = a.sex === b.sex && (a.sex === 'male' ? rankedMale(a) && rankedMale(b) : rankedFemale(a) && rankedFemale(b));
+  if (!ranked) return winOdds(world, a, b, P);
+  let pa = strength(a, P), pb = strength(b, P);
+  for (const s of supporters(world, a, b)) pa += strength(s, P) * P.powerAllyWeight;
+  for (const s of supporters(world, b, a)) pb += strength(s, P) * P.powerAllyWeight;
+  const logit = P.eloLogisticScale * (a.elo - b.elo) + P.contestExponent * Math.log(Math.max(1e-6, pa) / Math.max(1e-6, pb));
+  return 1 / (1 + Math.exp(-logit));
+}
+
+/**
  * The chance that a beats b as a contest decides it (conflict.ts contest): power with the supporters charging each
  * side's opponent, plus `extraA` added to a's power (a joiner's contribution, contestAssess). Pure.
  */

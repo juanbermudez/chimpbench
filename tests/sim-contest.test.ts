@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { contestTrace, notifyAllies, type ContestTrace } from '../src/sim/conflict';
-import { isAdultMale, winOdds } from '../src/sim/hierarchy';
+import { isAdultMale, strength, winOdds } from '../src/sim/hierarchy';
 import { paramsOf, type Overrides } from '../src/sim/params';
 import { index, ix } from '../src/sim/state';
 import { createWorld, tickWorld } from '../src/simulation';
@@ -85,4 +85,22 @@ test('winOdds is the contest function: two opponents\' odds sum to one, and a su
   const q = winOdds(w, a, b, P), r = winOdds(w, b, a, P);
   assert.ok(Math.abs(q + r - 1) < 1e-9, `${q} + ${r}`);
   assert.ok(winOdds(w, a, b, P, 0.5) > q);
+});
+
+test('assessOdds: the remembered relationship is the prior; equal Elo leaves the present cues, across sexes the contest function', async () => {
+  const { assessOdds } = await import('../src/sim/hierarchy');
+  const w = run(createWorld(7, { profile: 'field', params: ON }), 5760 / 4);
+  const P = paramsOf(w);
+  const males = index(w).alive.filter(c => isAdultMale(c) && c.troopId === 1);
+  const [a, b] = males;
+  const ea = a.elo, eb = b.elo;
+  try {
+    a.elo = 2000; b.elo = 1700; // a 300 Elo above b: the memory dominates whatever the strengths
+    assert.ok(assessOdds(w, a, b, P) > 0.85 && assessOdds(w, b, a, P) < 0.15);
+    a.elo = b.elo = 1800; // no memory: the cues (strength ratio to the contest exponent) decide
+    const q = assessOdds(w, a, b, P), sa = strength(a, P), sb = strength(b, P);
+    assert.ok(Math.abs(q - sa ** P.contestExponent / (sa ** P.contestExponent + sb ** P.contestExponent)) < 1e-9);
+  } finally { a.elo = ea; b.elo = eb; }
+  const f = index(w).alive.find(c => c.sex === 'female' && c.age >= 15 && c.troopId === 1)!;
+  assert.equal(assessOdds(w, f, a, P), winOdds(w, f, a, P));
 });
