@@ -4,7 +4,7 @@ import { preyGroupsOf, spawnPrey } from './generation';
 import { hash01, random } from './rng';
 import { paramsOf } from './params';
 import { PREY_ID0, SLOW_HOURS, TICK_SECONDS, index, simOf, type HuntState } from './state';
-import { HUNT_CLIMB, HUNT_CLIMB_TOL_M, closingSets, pursuitCone, pursuitOn } from './huntpursuit';
+import { HUNT_CLIMB, HUNT_CLIMB_TOL_M, closingSets, pursuitCone, pursuitEachTick, pursuitOn } from './huntpursuit';
 
 /** Red colobus groups drift through the canopy; alarmed groups move fast. Per tick, no rng. */
 // sin and cos of each group's heading, recomputed only when the heading changes (every slow step or at a border);
@@ -61,6 +61,30 @@ export interface HuntResolution {
 }
 export const huntTap: { fn: ((world: World, r: HuntResolution) => void) | null } = { fn: null };
 
+/** Stage E4k: the hunters at canopy height (in the pursuit) among those counted at the resolution. */
+const inPursuit = (hunters: Chimp[], p: PreyGroup) => hunters.filter(c => c.position[1] >= HUNT_CLIMB * p.position[1] - HUNT_CLIMB_TOL_M);
+const bearingsFrom = (cs: Chimp[], p: PreyGroup) => cs.map(c => Math.atan2(c.position[0] - p.position[0], c.position[2] - p.position[2]));
+
+/**
+ * Stage E4k iteration 2 (huntPursuit 2; docs/staging/e4k-prereg.md §9): the pursuit is read at the end of every tick,
+ * after every animal has moved, so the hunters' bearings are read where they stand relative to the group this tick: a
+ * hunt ends with captures at the first tick at which the hunters at canopy height close every escape direction, and
+ * with an escape at its resolution time if they never do. No draw.
+ */
+export function pursuitStep(world: World): void {
+  const s = simOf(world), P = paramsOf(world);
+  if (!pursuitEachTick(P) || !s.hunts.length) return;
+  const byId = index(world).byId;
+  for (const h of [...s.hunts]) {
+    const p = world.prey.find(q => q.id === h.preyId);
+    if (!p) continue;
+    if (world.time >= h.resolveAt) { resolveHunt(world, h); continue; }
+    const hunters = inPursuit(h.hunters.map(id => byId.get(id)!).filter(c => c && c.alive && c.action === 'hunt' && c.targetId === p.id
+      && Math.hypot(c.position[0] - p.position[0], c.position[2] - p.position[2]) < P.huntCaptureRangeM), p);
+    if (hunters.length && closingSets(bearingsFrom(hunters, p), hunters.map(c => pursuitCone(c, P))).length) resolveHunt(world, h);
+  }
+}
+
 /** Success rises with the number of hunters (Mitani & Watts 1999, Ngogo) [M-H]; curve is a design assumption. */
 export function resolveHunt(world: World, h: HuntState): void {
   const s = simOf(world);
@@ -84,9 +108,9 @@ export function resolveHunt(world: World, h: HuntState): void {
   // stage E4k (huntPursuit; docs/staging/e4k-prereg.md §4.1): the hunters at canopy height cut off the escape directions
   // within their pursuit cones; the group is caught when none is left, one monkey per disjoint closing set; no draw
   const pursuit = pursuitOn(P);
-  const chase = pursuit ? hunters.filter(c => c.position[1] >= HUNT_CLIMB * p.position[1] - HUNT_CLIMB_TOL_M) : hunters;
+  const chase = pursuit ? inPursuit(hunters, p) : hunters;
   const halves = pursuit ? chase.map(c => pursuitCone(c, P)) : [];
-  const sets = pursuit ? closingSets(chase.map(c => Math.atan2(c.position[0] - p.position[0], c.position[2] - p.position[2])), halves) : [];
+  const sets = pursuit ? closingSets(bearingsFrom(chase, p), halves) : [];
   // success rises with hunters, and a lone chimpanzee does not catch colobus [M-H]. Field success is 53-82% across
   // sites (Ngogo: 73% of all hunts, 78% of red colobus hunts; Mitani & Watts 1999); this design curve gives ~35-45%
   // overall here, below the field range (to be revisited in realism stage C7).

@@ -2,7 +2,7 @@
 /* eslint-disable */
 export const REGISTRY_VERSION = 1;
 /** Content hash of every live default, hard range, profile value and integer flag. Stored with each world. */
-export const REGISTRY_HASH = '098506543130b485';
+export const REGISTRY_HASH = '712eaa5ec8937a92';
 
 /** Registry defaults (the compressed profile). */
 export const DEFAULTS = {
@@ -1508,7 +1508,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   huntGapH: [0, 1000000],
   huntJoinSkillW: [-10, 10],
   huntMinMales: [1, 1000000],
-  huntPursuit: [0, 1],
+  huntPursuit: [0, 2],
   huntPursuitSpeedRatio: [0.01, 100],
   huntResolveMinMin: [0, 1000000],
   huntResolveSpanMin: [0, 1000000],

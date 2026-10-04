@@ -17,7 +17,7 @@ import { clamp, hash01, random } from './rng';
 import type { ParamId } from './params.gen';
 import { NEVER, TICK_HOURS, TICK_SECONDS, awakeInNest, byIdIn, huntOf, index, isTreeId, ix, simOf, type ChimpX } from './state';
 import { resolveHunt } from './ecology';
-import { HUNT_CLIMB, HUNT_STANDOFF_M, bodySpeed, pursuitOn, spreadBearing } from './huntpursuit';
+import { HUNT_CLIMB, HUNT_STANDOFF_M, bodySpeed, pursuitEachTick, pursuitOn, spreadBearing } from './huntpursuit';
 import { endoOn, endoShared, endoThreat } from './endocrine';
 import { callValueOn, crownOf, gruntWorth, hooWorth, pantHootValue } from './calls';
 import { eatFruit, forageYield, fruitAt } from './phenology';
@@ -804,7 +804,8 @@ export function executeAction(world: World, c: Chimp): void {
         const a = hash01(c.id, p.id, 4) * Math.PI * 2;
         moveTo(world, c, p.position[0] + Math.cos(a) * 2, p.position[1] * 0.85, p.position[2] + Math.sin(a) * 2, RUN * 0.8, 0.5);
       }
-      if (time >= h.resolveAt) resolveHunt(world, h);
+      // stage E4k iteration 2 (huntPursuit 2): the pursuit is read at the end of the tick (tick.ts, ecology.ts pursuitStep)
+      if (time >= h.resolveAt && !pursuitEachTick(P)) resolveHunt(world, h);
       return;
     }
     case 'nurse': {

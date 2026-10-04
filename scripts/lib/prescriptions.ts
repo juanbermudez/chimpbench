@@ -295,7 +295,7 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   ...same(['feedChargeGapH', 'immigrantChargeGapH'], P => (P.socialTiming & 8) === 0, 'not read while socialTiming has bit 8: neither gap sets its behaviour (e5e-prereg §2.2); the target\'s concession and the charge\'s own score govern repetition (src/sim/candidates.ts aggression)'),
   // stage E4k (huntPursuit; docs/staging/e4k-prereg.md §4): success and extra captures come from the pursuit geometry
   // (src/sim/huntpursuit.ts), in resolveHunt and in the hunt's valuation (huntvalue.ts): no success curve, no capture die
-  ...same(['huntSuccessMax', 'huntSuccessRate', 'huntExtraKillP'], P => P.huntPursuit !== 1, 'not read while huntPursuit is 1: a hunt succeeds when the hunters at canopy height leave the colobus no escape direction, one monkey per disjoint closing set (src/sim/ecology.ts resolveHunt, src/sim/huntvalue.ts huntRate; stage E4k)'),
+  ...same(['huntSuccessMax', 'huntSuccessRate', 'huntExtraKillP'], P => !(P.huntPursuit >= 1), 'not read while huntPursuit is 1 or 2: a hunt succeeds when the hunters at canopy height leave the colobus no escape direction, one monkey per disjoint closing set (src/sim/ecology.ts resolveHunt, src/sim/huntvalue.ts huntRate; stage E4k)'),
 };
 
 /** One ACTIVE_WHEN rule for several entries. */

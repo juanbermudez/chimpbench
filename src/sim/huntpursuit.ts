@@ -11,7 +11,9 @@ import type { Params } from './params';
 // ratio is design (huntPursuitSpeedRatio 1: no measurement of either species' speed through the canopy was found). Pure:
 // no RNG, no state.
 
-export const pursuitOn = (P: Params) => P.huntPursuit === 1;
+export const pursuitOn = (P: Params) => P.huntPursuit >= 1;
+/** Iteration 2 (huntPursuit 2): the pursuit is read at the end of every tick (ecology.ts pursuitStep), not at the resolution moment. */
+export const pursuitEachTick = (P: Params) => P.huntPursuit === 2;
 
 /** Approach height of a hunter, as a share of the colobus group's height (today's approach target, execution.ts 'hunt'). */
 export const HUNT_CLIMB = 0.85;

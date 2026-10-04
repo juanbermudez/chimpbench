@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { resolveHunt } from '../src/sim/ecology';
+import { pursuitStep, resolveHunt } from '../src/sim/ecology';
 import { ledgerOf, meatKcalPerUnit, reserveCap } from '../src/sim/energy';
 import { HUNT_CLIMB, bodySpeed, closes, closingSets, coneHalfAngle, evenCaptures, pursuitCone, spreadBearing } from '../src/sim/huntpursuit';
 import { huntRate } from '../src/sim/huntvalue';
@@ -123,4 +123,28 @@ test('the valuation expects the same function: nothing below three hunters, the 
   assert.ok(r3 > 0, `r(3) ${r3}`);
   assert.ok(r6 >= r3 * 0.99, 'six hunters close two circles: the same share each');
   assert.ok(meatKcalPerUnit(P) > 0);
+});
+
+test('iteration 2 (huntPursuit 2): the pursuit is read every tick, a capture at the first closure, an escape at the resolution time', () => {
+  const closed = huntScene({ huntPursuit: 2 }, [0, 120, 240].map(deg));
+  closed.h.resolveAt = closed.w.time + 1; // an hour left
+  const rng = closed.w.rng;
+  pursuitStep(closed.w);
+  assert.equal(simOf(closed.w).hunts.includes(closed.h), false, 'resolved at the closure');
+  assert.equal(closed.hunters.filter(c => c.carryingMeat > 0).length, 1);
+  assert.equal(closed.w.rng, rng, 'no draw');
+
+  const open = huntScene({ huntPursuit: 2 }, [0, 180].map(deg));
+  open.h.resolveAt = open.w.time + 1;
+  pursuitStep(open.w);
+  assert.equal(simOf(open.w).hunts.includes(open.h), true, 'two hunters: the pursuit goes on');
+  open.h.resolveAt = open.w.time;
+  pursuitStep(open.w);
+  assert.equal(simOf(open.w).hunts.includes(open.h), false, 'the colobus get away at the resolution time');
+  assert.equal(open.hunters.filter(c => c.carryingMeat > 0).length, 0);
+
+  const one = huntScene({ huntPursuit: 1 }, [0, 120, 240].map(deg));
+  one.h.resolveAt = one.w.time + 1;
+  pursuitStep(one.w);
+  assert.equal(simOf(one.w).hunts.includes(one.h), true, 'huntPursuit 1 reads the circle only at the resolution');
 });
