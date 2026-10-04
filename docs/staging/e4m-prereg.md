@@ -264,3 +264,20 @@ act); bit 2 leaves ≥ 8 stops per patrol or makes patrols never stop (it fails 
 
 ## 9. Run log (each entry written before its run)
 
+- **Smoke, switch on** (logged after the run; working tree at 373e62d plus nothing else): S21 + `leftoverRules` 3, seed 48,
+  1 + 2 days. Every readout is produced; but rough play stayed at 0.5 per immature-day, in cascades: a 6-year-old (21.6
+  kg) with fast arousal 0.67 was rough with a 1.8-year-old, the infant's mother charged him (kicking his fast state),
+  he went back to play with the infant at once and was rough again, seven times in four minutes; two adolescents aroused
+  by a conflict played and were rough with each other. The rule did what it says; what was missing is that an aroused
+  animal still chose to play, because no play score reads arousal.
+- **Amendment 1 to §5 (bit 1), written after the smoke test above and before any arm; disclosed.** Play is initiated in a
+  relaxed context: Burghardt's fifth criterion of play, as cited by cordoniPalagi2011 ("a playful behavior must be ...
+  initiated in a relaxed context"). With bit 1 the incentive terms of both play offers (`candidates.ts`: playfulness,
+  energy, youth, social need and the partner's invitation for immatures; the base, playfulness, own-infant and invitation
+  terms for adults with young) count by the share of restraint the animal's acute drive leaves, 1 − A; the costs
+  (distance, hunger, rain, night) are unchanged; no new parameter. Without the bit the sums are today's. A test pins it
+  (`tests/sim-leftover-rules.test.ts`). §8's predictions stand as registered (rough play ≤ 0.05 per immature-day; play
+  bouts within 15% of D0); added: play bouts started by an animal with A > 0.5 are rare (≤ 5% of bouts).
+- **Smoke, switch on, amendment 1** (logged after the runs; working tree at 373e62d plus amendment 1): seed 48, 1 + 2 days
+  (190 play bouts, 0 rough) and 1 + 12 days (1,379 play bouts, 0 rough; 1 patrol: 1 stop after a sound, 2 at waypoints).
+  The readouts work with the switch on.

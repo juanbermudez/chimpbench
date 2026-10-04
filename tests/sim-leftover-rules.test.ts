@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { computeCandidates } from '../src/sim/candidates';
 import { massOf } from '../src/sim/energy';
 import { roughByForce } from '../src/sim/execution';
 import { chorusHeard } from '../src/sim/parties';
 import { paramsOf, traceParamReads } from '../src/sim/params';
 import { PARTY_EVERY, TICK_HOURS, index, ix } from '../src/sim/state';
 import { createWorld, tickWorld } from '../src/simulation';
+import type { Candidate } from '../src/types';
 import { prescriptionCount } from '../scripts/prescription-ledger';
 import { worldHash } from './fixtures/golden';
 
@@ -76,4 +78,25 @@ test('bit 0 reads roughPlayP (the die is still drawn in play), so the switch is 
   traceParamReads(w, read);
   for (let i = 0; i < 5760; i++) tickWorld(w);
   assert.ok(read.has('roughPlayP'));
+});
+
+test('bit 1, amendment 1: an aroused animal values play less (play is initiated in a relaxed context); costs unchanged', () => {
+  const w = createWorld(48, { profile: 'field', params: { leftoverRules: 1 } });
+  for (let i = 0; i < 240; i++) tickWorld(w);
+  const playScores = (c: ReturnType<typeof index>['alive'][number]) => { const list: Candidate[] = []; computeCandidates(w, c, list); return list.filter(q => q.action === 'play').map(q => q.score); };
+  const c = index(w).alive.find(o => o.age >= 2 && o.age < 10 && playScores(o).length > 0);
+  assert.ok(c, 'an immature with a play option');
+  const x = ix(c!); x.fast = 0;
+  const calm = playScores(c!);
+  x.fast = 0.9; x.fastAt = w.time;
+  const aroused = playScores(c!);
+  assert.equal(aroused.length, calm.length);
+  for (let k = 0; k < calm.length; k++) assert.ok(aroused[k] < calm[k], `aroused ${aroused[k]} < calm ${calm[k]}`);
+  // without the bit the same arousal changes nothing
+  const w0 = createWorld(48, { profile: 'field' });
+  for (let i = 0; i < 240; i++) tickWorld(w0);
+  const c0 = index(w0).byId.get(c!.id)!, x0 = ix(c0);
+  const list0: Candidate[] = []; x0.fast = 0; computeCandidates(w0, c0, list0); const a0 = list0.filter(q => q.action === 'play').map(q => q.score);
+  const list1: Candidate[] = []; x0.fast = 0.9; x0.fastAt = w0.time; computeCandidates(w0, c0, list1); const a1 = list1.filter(q => q.action === 'play').map(q => q.score);
+  assert.deepEqual(a1, a0);
 });
