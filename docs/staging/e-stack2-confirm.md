@@ -2827,3 +2827,15 @@ without T-RNG-5 is +0.8, so T-RNG-5 and T-FOOD-10 carry it.
 and infants). **The best integrated candidate is S22** (43 prescriptions; every sum inside noise; juveniles' and males'
 reserves better than S21's). S23 (`walkGait`) passes alone but does not yet combine: its energy cost needs its own stage
 (E2i's open problem: travel phases still slower than the field's with more halts, and climbing takes 16–19% of travel).
+
+## S25 confirm (registered 4 October 2026 before its run)
+
+**S25 = S22 + E4n's `huntDrive` 1** (the hunt weighed at the energy-deficit drive without the distension satiation; a
+correction: 43 prescriptions, unchanged). **Reference group, new:** S22 in confirm mode (S22, ea794ff) plus three re-draws
+by `rngSalt` 1, 2, 3 (S22c1–S22c3, bench-run3). **Keep rule for a correction:** viability; held-out not up beyond noise
+(with and without the rare rows of amendment 3); prescriptions not up; night safe. Bench, energy-diagnose and
+rhythm-metrics, 5 seeds, 30 + 60 days, from bench-run2 moved to this commit.
+
+**Predictions (against the S22 group; moderate confidence unless stated).** Prescriptions 43 (high); viability and night
+safety pass; T-HUN-1 inside its band 5–25 (moderate; S22 2.0); T-HUN-3 still below its band (low); hunters' and their
+families' reserves within the group's spread; fitted better (T-HUN-1) and held-out inside noise.

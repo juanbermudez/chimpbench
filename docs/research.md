@@ -3414,7 +3414,7 @@ Hunt 1989 (dissertation); Hoyt & Taylor 1981 beyond its first paragraph; any wal
 - nguessan2009, batesByrne2009, sockol2007, pontzer2014jhe and pontzerWrangham2006 are already cited; the entries above
   add findings.
 
-### Addendum: E4n hunt rate (4 October 2026)
+### E.53 Addendum: E4n hunt rate (4 October 2026)
 
 Read for stage E4n ([staging/e4n-prereg.md](staging/e4n-prereg.md)): why hunting fell below its band once the fitted
 choice temperature left the stack, and which value a hunt lacks. No input value was taken from these sources.

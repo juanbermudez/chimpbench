@@ -1868,7 +1868,7 @@ similarity (design). New keys: hunt1989, jang2019, luciano2024, alexanderJayes19
 sockol2007 chose 1.0 m/s, pontzer2014jhe and Pontzer et al. 2009 full texts, Finestone et al. 2018's speeds, Hunt 1989,
 juvenile great apes' walking speeds by age.
 
-## Addendum: E4n hunt rate (4 October 2026)
+## 53. Addendum: E4n hunt rate (4 October 2026)
 
 Same text as research.md "Addendum: E4n hunt rate": gilby2015 re-opened (PMC article page): the Kanyawara encounter
 (colobus "detected within 100 m" at 15-min party scans), the hunt attempt (a chimpanzee "climbs to the height of the
