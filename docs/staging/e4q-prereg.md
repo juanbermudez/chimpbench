@@ -243,6 +243,22 @@ burn-in 30, days 30): `bench-run3/artifacts/validation/e/s27q/{S27q,S27q1,S27q2,
 Judged by docs/staging/e-noise.md amendment 2 (`judge_vs_reps.py quick custom`): |z| > 2 is a result; sums with and
 without T-HUN-4, T-BRD-1 and T-IGE-3 (amendment 3). Readouts against the reference's own spread (mean ± SD of its 4 runs).
 
+### 4.2 Code checks before any arm (c735a73, c518339)
+
+- Switch 0 leaves the S27 world unchanged and bit 7 changes it; each bit opens its offer inside its gap (a coercive charge
+  30 min after the last aggression, a charge at strangers 6 min after, a display 6 min after the last); the fatigue gate
+  stays; the count falls one per bit (S27 51 → 48, today's model 147 → 144): tests/sim-aggression-gaps.test.ts.
+- `param-reads.ts --literals` (seeds 48 and 7, 5 eco-days, arms S27 and S27 + `aggressionGaps` 7): moving each literal
+  ×2 leaves the switched world hash-identical (0/2 for all three: no over-claim); without the switch the display gap
+  moves both worlds and the cooldown and the stranger gap are inert in the window (E0b found the cooldown moves S27 in
+  20 days; the stranger gap never).
+- Readouts smoke-tested with the switch on (seed 48, 1 + 2 days): every gate reports 0 blocked; displays come inside
+  0.75 h of the last.
+
 ## 6. Iteration log
 
 (each entry written and committed before its run)
+
+- **A1** (§4.1; `aggressionGaps` 7 on S27): registered 4 October 2026 at the commit that adds this line; run from a
+  frozen detached checkout of it: `e-bench --quick` (`--workers` 1 above load 8, else 2), `energy-diagnose`,
+  `aggression-diagnose`, `rhythm-metrics` (seeds 48, 7; 30 + 30 days).
