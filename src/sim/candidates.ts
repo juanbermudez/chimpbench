@@ -821,11 +821,13 @@ function aggression(world: World, c: Chimp, rival: number, rivalCloseness: numbe
     const a = byId.get(x.coalA), b = byId.get(x.coalB);
     if (a && b && a.alive && b.alive && b.id !== c.id && dcc(c, b) < P.coalitionChargeRangeM) {
       // stage E4h (contestAssess; docs/staging/e4h-prereg.md §4): the joiner weighs the gain from the bond and the outcome
-      // against its own risk: the coalition's assessed odds q (the contest function with the joiner added to the partner
-      // as a supporter) replace dominance over the target, the old term's two values at q = 1 and q = 0 (bissonnette2009:
-      // coalition outcomes follow the strength asymmetry; parker1974)
+      // against its own risk, with the coalition's assessed odds (the contest function with the joiner added to the partner
+      // as a supporter) in place of dominance over the target (bissonnette2009: coalition outcomes follow the strength
+      // asymmetry; ihara2024: P(win)·b − P(lose)·c with the old term's two values). Iteration 2: the outcome counts by the
+      // difference joining makes, q1 − q0 (the partner's odds with and without the joiner), not by the odds themselves: a
+      // partner who wins anyway gains nothing from the support; the risk is the joiner's own, (1 − q1)·c
       const risk = b.troopId !== c.troopId ? 0.25 : P.contestAssess === 1
-        ? (q => 0.25 * q - 0.45 * (1 - q))(winOdds(world, a, b, P, strength(c, P) * P.powerAllyWeight)) : dominates(c, b) ? 0.25 : -0.45;
+        ? (q0 => (q1 => 0.25 * (q1 - q0) - 0.45 * (1 - q1))(winOdds(world, a, b, P, strength(c, P) * P.powerAllyWeight)))(winOdds(world, a, b, P)) : dominates(c, b) ? 0.25 : -0.45;
       offer('charge', b.id, bond(c, a) * 0.8 + risk + (maternalKin(c, a) ? 0.25 : 0) + pers.boldness * 0.15 - (x.tension[a.id] ?? 0) * P.coalitionChargeTensionW - (c.age < 12 ? 0.4 : 0) - 0.3, V.COALITION, a.id);
     }
   }
