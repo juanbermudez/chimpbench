@@ -593,3 +593,11 @@ What the stage shows:
   opening calls the observer heard came from 750–1,000 m.
 - In quick mode T-SOC-9 fell to 0.003 (11 individuals' PC–MC tendencies; group 0.07–0.21) with no known path from the
   patrol occasion; the confirm should read it.
+
+**Final checks** (after `git merge --no-ff track-e` at e60dc85: no conflicts; track-e had moved the decision guide to S16
+and the handoff): `gen-params --check` clean, `tsc` clean, `pnpm test` 747 tests, 746 pass, 0 fail,
+1 skipped (before the merge as well: 747, 746, 0, 1); switch 0 hash-identical to the code under test before the
+stage (S16 seed 48 day 4 `81794c794db1ae0e`, S13 seed 7 day 3 `f49c113e3e8f1ebf`); prescription count S16 49, with
+`patrolFusion` 1 49; `git ls-files data/raw node_modules` prints nothing. Artifacts (every run's JSON, the analysis
+scripts and their printed tables) are in this worktree's `artifacts/validation/e4j/` (gitignored); the frozen checkouts
+in the session scratchpad were removed after the copy, so the scripts' paths point there and need the copy's paths to rerun.
