@@ -142,13 +142,113 @@ touching crown, other crown, no crown), with its metres. Smoke-tested on 2 days 
 the classes sum to the ascents from the ground after a descent (12.93 a day for adult males). Run on S25 and W from a
 frozen checkout of the commit that registers it; the earlier outputs are kept beside them.
 
-## 3. Sources (to be read; addenda "Addendum: E1q climbing" in research.md and e-sources.md)
+### 2.3 Amendment 1 results (frozen 95786a8, clean; `crowntable.py` from the JSON)
 
-Per term: metres climbed per day by wild chimpanzees (pontzerWrangham2004's distances: primary closed and a listed dead
-end, so only through open citing papers); climbs per day and their heights (positional-behaviour studies, feeding and
-nest heights at Kibale); the cost of a vertical metre for a chimpanzee-sized primate (hanna2008, hannaSchmitt2011, any
-ape or human vertical-climbing measurement); the cost of descent (eccentric work). At most 2 routes or 10 minutes per
-source.
+Ascents that start on the ground after a descent, by the crown they end in against the crown the descent left (metres a
+day; share of the class's metres climbed), S25 → W:
+
+```
+| class | metres climbed/day | same crown | touching crown | other crown | no crown | same crown, by act (m/day) |
+| adult male | 125 → 144 | 39 (32%) → 39 (27%) | 4 (3%) → 3 (2%) | 71 (57%) → 91 (63%) | 3 (2%) → 4 (3%) | S25: crown approach 19, social other 10, pair approach 6, nest 5 |
+| female, other | 99 → 108 | 33 (33%) → 30 (28%) | 5 (5%) → 2 (2%) | 57 (57%) → 72 (66%) | 1 (1%) → 1 (1%) | S25: crown approach 13, social other 10, nest 5, pair approach 3 |
+| female, lactating | 94 → 115 | 29 (31%) → 32 (28%) | 2 (3%) → 2 (2%) | 58 (62%) → 75 (65%) | 1 (1%) → 2 (2%) | S25: crown approach 13, social other 7, nest 5, pair approach 3 |
+| juvenile 5–12 y | 136 → 166 | 46 (34%) → 56 (34%) | 7 (5%) → 4 (2%) | 65 (48%) → 84 (50%) | 12 (9%) → 16 (10%) | S25: crown approach 19, pair approach 13, social other 7, nest 4 |
+| infant 2–5 y | 86 → 117 | 41 (47%) → 47 (40%) | 4 (4%) → 5 (4%) | 12 (13%) → 11 (9%) | 25 (29%) → 48 (41%) | S25: care follow 27, pair approach 7, crown approach 3 |
+| infant 0.5–2 y | 71 → 91 | 35 (49%) → 41 (46%) | 4 (5%) → 3 (3%) | 9 (12%) → 9 (10%) | 19 (27%) → 32 (35%) | S25: care follow 22, pair approach 11 |
+```
+
+A third of adults' and juveniles' metres climbed, and about half of infants', are climbs back into the crown the animal
+has just come down from: moveTo sends any animal whose goal is more than 3 m away horizontally to the ground first, so a
+move across its own crown (to another feeding place, a partner, a nest site, a mother) is a descent and a full new climb.
+Infants' "no crown" re-climbs mostly start beside a crown's edge (a throwaway check on 3 days of S25, not committed: 125
+of 273 infants' re-climb descents begin inside a crown, 71 within 3 m outside it).
+
+### 2.4 Sources per term (read 4 October 2026; e-sources.md and research.md "Addendum: E1q climbing")
+
+**What the target is made of.** pontzerWrangham2004's ratio ("approximately ten-times more energy per day on terrestrial
+travel than on vertical climbing", abstract, [M] as a measurement of distances) was computed with published equations.
+couturier2022 (FT, PMC8996920; Sebitoli, Kibale) transmits them [L]: climbing O₂ = walking O₂ at 1.9 m/s (mermier1997's
+human rock climbing), "tested on wild chimpanzees by Pontzer and Wrangham", per vertical metre at an ascent speed of 0.5
+m/s "estimated by Pontzer and Wrangham"; walking O₂ = 0.523 M^−0.298 v + 0.345 M^−0.157 mL kg⁻¹ s⁻¹ (eqs 4–7), 4.8 kcal
+per L O₂. With wilson2021's day ranges for Kanyawara (males 2.4, females 2.0 km, [L]) and Hunt's walking speeds
+(nguessan2009, [L]) (`target_audit.py`, derived):
+
+```
+| sex | mass kg | day range km | walking speed m/s | basis | walking J/kg/m | climbing J/kg/m | climbing efficiency (9.81 ÷ cost) | vertical m/day implied by a ratio of 10 | ratio with the model's costs (3.8, 49.05) on those metres |
+| male | 39.0 | 2.4 | 0.88 | gross | 7.95 | 21.19 | 46% | 90 | 2.06 |
+| male | 39.0 | 2.4 | 0.88 | net | 3.53 | 13.40 | 73% | 63 | 2.94 |
+| female | 31.3 | 2.0 | 0.78 | gross | 8.94 | 22.37 | 44% | 80 | 1.94 |
+| female | 31.3 | 2.0 | 0.78 | net | 3.76 | 14.30 | 69% | 53 | 2.94 |
+```
+
+The target's equation charges a vertical metre 2.5–3.8 walking metres; the model charges 12.9. Its climbing cost (13–22
+J/kg/m) implies a muscular efficiency of 44–73%, beyond the ~25% muscle reaches for positive work (kozmaPontzer2021, Hill
+1922 as cited there).
+
+**Each term, source against model** (evidence levels as research.md):
+- *Cost per vertical metre.* Measured vertical climbing: humans 40.1 ± 3.1 J/kg/m incremental (efficiency 24%, CI 21–29%)
+  plus a holding cost of 5.98 J kg⁻¹ s⁻¹ above standing, 61.5 J/kg/m at 0.28 m/s, "essentially identical to those of
+  arboreally adapted primates when accounting for velocity" (kozmaPontzer2021, FT accepted manuscript, 12 adults; [M] for a
+  hominoid, [L] for chimpanzees); five small primates 104.6–135.0 J/kg/m on a vertical rope-mill (hannaSchmitt2011, [L]);
+  cross-species climbing efficiency about 10% (Pontzer 2016 as cited by kozmaPontzer2021, [L]). Incline running: a 17.5 kg
+  captive chimpanzee about 15.5 J/kg per metre lifted while running uphill (taylor1972, abstract; [M] for running on an
+  incline, not vertical climbing). The model: 49.05 (m·g ÷ 0.20), inside the measured vertical-climbing range (40 to
+  52–67 with the holding cost at 0.5–0.22 m/s, derived); the target's 13–22 lies below all of it.
+- *Metres climbed per day.* No wild distance is open (pontzerWrangham2004's are closed; couturier2022 gives only "4.2%" of
+  the day moving in trees at Sebitoli). Implied by the target's ratio, equation and day ranges: 53–63 m (net basis) to
+  80–90 m (gross) a day for adults (derived [L]). The model: males 125, other females 99, nursing mothers 94 (S25).
+- *Climbs per day.* Feeding trees per adult-day 4–15 (T-FOOD-4, janmaat2013b/normand2009, [M]); the model's crown visits
+  7.7–9.7 a day (observer 7.7–8.3): in band. One night nest a day. No wild count of ascents.
+- *Metres per climb.* Night nests at Kanyawara 9.1 m (n = 74) and Kanyanchu 8.1 m (n = 30), 3–17 m (krief2012, FT, [H]);
+  the model's nest climbs 9.2–10.0 m. No Kibale feeding height found (feeding trees at Issa, a savanna site, 12.8–17.3 m
+  tall, drummondClarke2025 [M], context); the model's crown climbs 10.1–10.5 m.
+- *Moving within trees.* Mahale and Gombe chimpanzees spend 34–52% of their time in trees but only 8–12% of their
+  locomotion is arboreal; climbing is about half of it (49–52%), the rest suspension, scrambling and walking on boughs
+  (Doran & Hunt via carlson2008 and sarringhaus2022 Table 1, FT; [H]). No open text splits within-crown from between-crown
+  movement.
+- *Descent.* The model charges none; running downhill, chimpanzees and mice "recover about 90 percent of the energy stored
+  running uphill" (taylor1972, abstract, [M]); walking down steep slopes costs about 0.2 of walking up them (minetti2002,
+  abstract, derived, [L]). Descent is not charged like ascent: hypothesis (c) of §0 is false; if anything the ledger
+  under-charges it.
+
+**The term (registered rule, §2).** Decomposition of the model's miss on the net basis (`target_audit.py`; model ÷ target):
+
+```
+| class (target: sex, km) | model walk ÷ climb | log share: cost per metre (model ÷ target) | metres climbed (model ÷ target-implied) | walking (model ÷ target) | same-crown metres (share) | metres without them ÷ target-implied |
+| adult male (2.4 km) | 1.22 | 3.66 (62%) | 1.97 (32%) | 0.88 (+6%) | 39 (32%) | 1.35 |
+| female, other (2.0 km) | 1.21 | 3.43 (58%) | 1.88 (30%) | 0.78 (+12%) | 33 (33%) | 1.26 |
+| female, lactating (2.0 km) | 1.66 | 3.43 (69%) | 1.78 (32%) | 1.01 (-1%) | 29 (31%) | 1.23 |
+```
+
+**Named: the cost per vertical metre** (58–69% of the log gap): an input, but one the sources do not correct. The target
+prices a vertical metre at 13–22 J/kg/m through a human rock-climbing equation that implies 44–73% muscular efficiency;
+every measured vertical climb (humans 40–62, small primates 105–135 J/kg/m) is at or above the model's 49. Like E1h's
+food energy, the miss is the field number's formula, here in the other direction: with the model's sourced costs the
+target's own distances read 1.9–2.9, not 10. No input moves (moving `ledgerClimbEff` toward the target would need an
+efficiency of 0.44–0.73). The staged reading of the target: a walking ÷ climbing energy ratio of about 1.9–2.9 for
+Kanyawara adults (derived [L]), or better the implied distance, 53–90 vertical metres a day.
+
+**Second term: metres climbed per day** (30–32% of the log gap; model 1.8–2.0 × the target's implied distance): a
+behaviour the model produces. A third of adults' metres (half of infants') are climbs back into the crown just left,
+because moveTo descends before any move of more than 3 m; chimpanzees move within trees (half of their arboreal
+locomotion is not climbing). Without them adults climb 1.2–1.4 × the net-basis distance, inside the gross-basis one.
+
+### 2.5 Amendment 2: what step 2 builds (registered 4 October 2026 after §2.4, before any code for it)
+
+The named term admits no model correction (§2.4), so step 2 builds for the second term, the one the model produces:
+a mechanism, behind a new switch, that keeps an animal in the crown it is in when its goal lies in that crown (§4). No
+cost, efficiency or speed changes; nothing is chosen to reach a ratio, a distance or a reserve trend.
+
+## 3. Sources
+
+Read for this stage: couturier2022 (FT), kozmaPontzer2021 (FT, accepted manuscript), taylor1972 (abstract, Europe PMC),
+minetti2002 (abstract), krief2012 (FT), carlson2008 and sarringhaus2022 (FT), drummondClarke2025 (FT), kilgas2017
+(abstract); hannaSchmitt2011, nguessan2009, wilson2021 and pontzerWrangham2004 as already cited. Not verified (2 routes
+each or a bot check): pontzerWrangham2004's distances, venkataraman2013 and crompton2010 (not in the open BioC set), the
+pontzer2016 climbing scaling (no body), mermier1997 (scanned, abstract only), abbott1952 (scanned), nguessan2009's full
+text (Springer bot check). Research by a subagent of this stage (routes and raw texts in the stage's scratch
+directory); the load-bearing passages above were re-read here (couturier2022's equations from the efetch XML,
+kozmaPontzer2021, taylor1972's abstract, krief2012, sarringhaus2022 Table 1).
 
 ## 4. Samples of the field rows the arms are scored on
 
