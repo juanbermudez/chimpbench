@@ -18,6 +18,9 @@
 //              crowns whose edge lies within 2 m and 5 m of the edge of the crown holding (or nearest to) the group
 //   draw       success probability (the curve at n counted), the draw (none when n < 2), outcome, captor (class, skill
 //              rank among counted hunters), extra-capture draws and captures, group size after
+//   pursuit    with huntPursuit 1 (stage E4k §4.1): "counted" = in the pursuit (in range and at canopy height; a listed
+//              hunter in range below it is 'below canopy'), each one's cone half-angle (degrees) and the sizes of the
+//              closing sets (one capture each); the success probability is 0 and no draw is made
 // The colobus group's sex composition does not exist in the model (a group is a point with a size).
 //
 //   pnpm exec tsx scripts/e4k-hunt-diagnose.ts [--seed 48] [--burn-in 30] [--days 60] [--params '{…}'] [--out f.json]
@@ -88,7 +91,7 @@ huntTap.fn = (world: World, r: HuntResolution) => {
   const counted = new Set(r.hunters.map(c => c.id));
   const listed = r.listed.map(c => {
     const d = Math.hypot(c.position[0] - p.position[0], c.position[2] - p.position[2]);
-    const why = counted.has(c.id) ? 'counted' : !c.alive ? 'dead' : c.action !== 'hunt' ? `action:${c.action}` : c.targetId !== p.id ? 'other target' : d >= P.huntCaptureRangeM ? 'out of range' : '?';
+    const why = counted.has(c.id) ? 'counted' : !c.alive ? 'dead' : c.action !== 'hunt' ? `action:${c.action}` : c.targetId !== p.id ? 'other target' : d >= P.huntCaptureRangeM ? 'out of range' : P.huntPursuit === 1 ? 'below canopy' : '?';
     const k = r.hunters.indexOf(c);
     return { id: c.id, sex: c.sex, age: r4(c.age), cls: klass(c), skill: r4(k >= 0 ? r.skillsBefore[k] : c.skills.hunting), ...stateOf(c), joinMin: st && st.join[c.id] !== undefined ? r4((st.join[c.id] - st.tick) * 0.25) : null, why, distM: r4(d), belowM: r4(p.position[1] - c.position[1]), bearing: r4(Math.atan2(c.position[0] - p.position[0], c.position[2] - p.position[2]) * 180 / Math.PI) };
   });
@@ -101,6 +104,7 @@ huntTap.fn = (world: World, r: HuntResolution) => {
     troop: r.h.troopId, startH: r4(r.h.start), hour: r4(world.hour), minutes: r4((r.h.resolveAt - r.h.start) * 60), size: r.sizeBefore, sizeAfter: p.size, alert: r4(p.alert), preyY: r4(p.position[1]),
     listedN: r.listed.length, n: r.hunters.length, nAdultMales: r.hunters.filter(isAdultMale).length,
     pSuccess: r4(r.pSuccess), draw: r4(r.draw), success: r.success, captures: r.captors.length,
+    halfAnglesDeg: (r.halves ?? []).map(a => r4(a * 180 / Math.PI)), closingSets: (r.sets ?? []).map(q => q.length),
     captors: r.captors.map(c => ({ id: c.id, cls: klass(c), skillRank: ranks.indexOf(c.id) + 1 })), extraDraws: r.extraDraws.map(u => r4(u)),
     gapDeg: r4(gap), listed, alerted: st ? st.alerted.length : null, alertedAdultMales: st ? st.alertedAdultMales : null, leaderOwnMales: st ? st.leaderOwnMales : null, notJoined,
     canopy: canopyAt(world, p.position[0], p.position[2]),

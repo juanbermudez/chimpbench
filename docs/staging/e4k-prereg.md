@@ -268,3 +268,17 @@ implicate (for example, joining, if too few alerted males join for three to surr
 ## 9. Results
 
 ### Run log (each entry written before its run)
+
+- **I1 identity (switch commit; run before this entry was written, unchanged code paths at 0).** S17 with `huntPursuit`
+  0 gives the §3.2 hashes again: 8cf9a253bfee1100 and 5505c10ab3b8baff (2 days, seeds 48 and 7), bda608df593f3ab2 and
+  92dbdddf67512f30 (25 days, seeds 7 and 48; one successful hunt on seed 7). Prescription count: S17 49, S17 +
+  `huntPursuit` 46 (`--count`). Unit tests: `tests/sim-hunt-pursuit.test.ts` (10 pass).
+- **S1 smoke (before any arm).** Frozen checkout of the switch commit: S17 + `huntPursuit` 1 through
+  `scripts/e4k-hunt-diagnose.ts`, seed 7, no burn-in, 25 days: every §5 truth readout is produced (hunters in the
+  pursuit, cone half-angles, closing sets), no capture resolves with fewer than three hunters in the pursuit, and the
+  success probability and draw are empty.
+- **P1 (iteration 1).** Same frozen checkout; S17 + `huntPursuit` 1 (`P1-params.json` = S17q-params + `"huntPursuit":1`):
+  (a) `e-bench --quick --workers 2 --out artifacts/validation/e4k/P1q`; (b) `e-bench --seeds 48,7 --burn-in 30 --days 60
+  --workers 2 --out artifacts/validation/e4k/P1h`; (c) the diagnosis tool, seeds 48 and 7, 30 + 60 days
+  (`artifacts/validation/e4k/diag/P1-{48,7}.json`); (d) `scripts/energy-diagnose.ts` seeds 48 and 7, burn-in 30, 30 days
+  (`P1q-energy.json`). One at a time, `--workers 1` above load 8. Judged by §6–§7.

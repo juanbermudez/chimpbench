@@ -293,6 +293,9 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   joinCallDistScaleM: { when: P => !((P.socialTiming & 4) !== 0 && P.cohesionValue === 1 && P.partyJoinTrip === 1 && P.forageRate === 1 && P.energyLedger === 1 && P.ledgerDrive === 1 && P.intakeValue === 1),
     why: 'not read while socialTiming has bit 4 with cohesionValue and forageRate (and their needs): an approach to a caller at food is valued as a trip to its crown at the net energy rate, to any other caller as a follow (src/sim/candidates.ts)' },
   ...same(['feedChargeGapH', 'immigrantChargeGapH'], P => (P.socialTiming & 8) === 0, 'not read while socialTiming has bit 8: neither gap sets its behaviour (e5e-prereg §2.2); the target\'s concession and the charge\'s own score govern repetition (src/sim/candidates.ts aggression)'),
+  // stage E4k (huntPursuit; docs/staging/e4k-prereg.md §4): success and extra captures come from the pursuit geometry
+  // (src/sim/huntpursuit.ts), in resolveHunt and in the hunt's valuation (huntvalue.ts): no success curve, no capture die
+  ...same(['huntSuccessMax', 'huntSuccessRate', 'huntExtraKillP'], P => P.huntPursuit !== 1, 'not read while huntPursuit is 1: a hunt succeeds when the hunters at canopy height leave the colobus no escape direction, one monkey per disjoint closing set (src/sim/ecology.ts resolveHunt, src/sim/huntvalue.ts huntRate; stage E4k)'),
 };
 
 /** One ACTIVE_WHEN rule for several entries. */
@@ -361,6 +364,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   contestAssess: { stage: 'E4h', needs: {} },
   socialTiming: { stage: 'E5e', needs: {} },
   patrolValue: { stage: 'E4i', needs: {} },
+  huntPursuit: { stage: 'E4k', needs: {} },
   patrolFusion: { stage: 'E4j', needs: { patrolValue: 2 }, removesNothing: 'corrects the occasion on which patrolValue 2 weighs the lead (a fusion of a party holding patrolMinMales adult males, judged by the males seen within reunionH, in place of a flicker of the 35 m view); adds no magnitude and switches no prescription out (e4j-prereg §4)' },
 };
 
