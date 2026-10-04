@@ -250,6 +250,55 @@ text (Springer bot check). Research by a subagent of this stage (routes and raw 
 directory); the load-bearing passages above were re-read here (couturier2022's equations from the efetch XML,
 kozmaPontzer2021, taylor1972's abstract, krief2012, sarringhaus2022 Table 1).
 
+## 4. Mechanism, iteration 1 (registered 4 October 2026 before its runs; code at the commit that registers it)
+
+`crownMove` 1 (src/sim/gait.ts `crownAt`, `sameCrown`; execution.ts `moveTo` and the follow act; candidates.ts `rateWorth`
+and `treeFoodWorth`; 0 = today, bit for bit):
+- *Movement.* An animal above the ground whose goal above the ground lies in the crown it is in moves to it through that
+  crown (the horizontal step at the act's speed at its height, then the height change within 3 m, as moveTo already does
+  near a goal) instead of descending to the ground first. A crown is the tree's canopy radius around its trunk, above
+  0.3 m and up to the tree's height (+0.5 m); a point in two crowns belongs to the nearer trunk. Goals on the ground and
+  goals in another crown are reached as today (down, walk, up).
+- *Following.* A follower in the same crown as the animal it follows goes to that animal's height (today: to the ground
+  once it is 3 m or more away, then back up).
+- *Valuation.* A crown the animal is in is valued with the climb from its height (today only when that crown is its
+  current target), as the movement now reaches it.
+- No new magnitude: speeds, climbing speed, costs per metre unchanged (a horizontal metre in a crown costs what the
+  ledger charges any horizontal metre, sockol2007's 3.8 J/kg/m: no arboreal locomotion cost exists for chimpanzees).
+  Removes no counted prescription (43 on S25, 42 with `walkGait`: `prescription-ledger --count`). Not handled: crossings
+  between touching crowns (2–5% of adults' metres climbed, §2.3); with `tripBodyCost` 1, tripClimbH would still charge a
+  descent for a goal in the same crown (gait.ts tripClimbH; not in this stage's arms).
+- Smoke test (2 days of S25 + `crownMove` 1, seed 48, burn-in 1 day; climb-diagnose): readouts fill; climbs back into the
+  crown just left fall for every adult class and juveniles (males 5.5 → 3.2 a day, nursing mothers 2.9 → 1.3, juveniles
+  4.0 → 0.8), metres climbed fall (males 140 → 117, mothers 95 → 83, juveniles 137 → 99); infants of 2–5 y climb more in
+  this draw (94 → 105 m/day; their re-climbs from points at the crown's edge or after a dismount at 0.55 m rise), so their
+  direction is not predicted with confidence. Not a result (one seed, 2 days, diverging trajectories).
+
+## 5. Predictions and kill criterion (iteration 1; registered before its runs)
+
+Arms (quick: seeds 48 and 7, burn-in 30, 30 days; e-bench, energy-diagnose, climb-diagnose; from a frozen checkout of the
+commit that registers this section): **C** = S25 + `crownMove` 1; **CW** = S25 + `walkGait` 1 + `crownMove` 1. Judged
+each against the integrator's four S25 quick realizations (S25q, S25q1–3; e-noise.md amendment 2, with and without
+amendment 3's rare rows); W (S25 + `walkGait`, §2.1) reported beside CW.
+
+Predictions (moderate confidence on direction, low on size, unless stated):
+1. Prescriptions 43 (C) and 42 (CW) (high); viability passes; every sum inside noise.
+2. Climbs back into the crown just left (§2.3's readout) at most half of S25's (W's for CW) for adults and juveniles
+   (high for the direction).
+3. Metres climbed per day −15 to −35% for adults and juveniles (S25: males 125, nursing mothers 94, juveniles 136; CW
+   against W), and climbing kcal/day by the same share; walking ÷ climbing energy for adults 1.4–2.3 on C (S25 1.2–1.7),
+   higher on CW. Reported against the restated target (1.9–2.9, derived [L], §2.4), not a test.
+4. Reserve trends of every class within S25's spread or above it (C); on CW, nursing mothers', juveniles' and infants'
+   (0.5–2 y, 2–5 y) within 2 SD of S25's mean (low: the question whether walkGait combines).
+5. T-RNG-4, T-ACT-1, T-ACT-3, T-ACT-4 within S25's spread (C); T-ACT-2 at most 0.02 lower (climbing time is travel in the
+   observer's category) (low).
+
+**Kill criterion (an arm is recorded, not a keep candidate, if any holds):** viability fails; held-out (with or without
+the rare rows) worse beyond noise (z > +2); the count is not 43 (C) or 42 (CW); a reserve trend of nursing mothers,
+juveniles 5–12 y, infants 0.5–2 y or infants 2–5 y more than 2 SD below S25's mean; night safety (rhythm-metrics, run on
+a kept arm) above 3.3% of the night. Keep rule for a correction (removes no prescription): viable, held-out not up beyond
+noise, prescriptions not up, night safe. An iteration 2 is registered only for a term this one's diagnosis names.
+
 ## 4. Samples of the field rows the arms are scored on
 
 As opened for E2i and E2j (e2i-prereg.md §3; e2j-prereg.md §2; the source lists in data/targets.json checked on 4 October

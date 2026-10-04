@@ -19,7 +19,7 @@ import { callValueOn, crownOf, pantHootValue } from './calls';
 import { huntRate, huntValueOn } from './huntvalue';
 import { joinShare, leadValue, patrolValueOn } from './patrol';
 import { awakeInNest, byIdIn, index, isTreeId, ix, NEVER, TREE_ID0, treesNear, simOf } from './state';
-import { bodyState, gaitOn, riderKcal, runSpeedOf, tripBodyOn, tripClimbH, tripSpeed } from './gait';
+import { bodyState, crownAt, crownMoveOn, gaitOn, riderKcal, runSpeedOf, tripBodyOn, tripClimbH, tripSpeed } from './gait';
 
 // Variants refine an action's meaning (why a charge happens) for execution and reason text.
 export const V = {
@@ -414,9 +414,11 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   // stage E2j (tripBodyCost; gait.ts): the climbing's time and a riding dependent's metres in the rate; `travel` false for a
   // crown in view (approached in the feeding act, so only an infant under 1.2 y rides), true for a trip
   const tbc = tripBodyOn(P);
+  // stage E1q (crownMove; gait.ts): the crown the animal is in, reached through it (moveTo), so its climb starts at its height
+  const inCrown = crownMoveOn(P) ? crownAt(world, px, c.position[1], pz) : undefined;
   const rateWorth = (t: Tree, crop: number, feeders: number, d: number, travel = true): number => {
     // the climb: to the crown from the ground, or what is left of it inside this crown
-    const crownY = t.height * CROWN_Y, climb = c.targetId === t.id ? crownY - c.position[1] : crownY;
+    const crownY = t.height * CROWN_Y, climb = c.targetId === t.id || t === inCrown ? crownY - c.position[1] : crownY;
     const xh = tbc ? tripClimbH(c, P, d, climb) : 0, ck = tbc ? riderKcal(world, c, P, d, climb, travel) : 0;
     if (dark && (tripLight(world, P, d, crownY, _tl, spd).pace < 1 || _tl.see < 1)) return netRateShare(c, P, crop, feeders, d, climb, _tl.pace, _tl.see, spd, xh, ck);
     return netRateShare(c, P, crop, feeders, d, climb, 1, 1, spd, xh, ck);
@@ -839,7 +841,9 @@ const _tlB: TripLight = { pace: 1, see: 1 };
  * at the crop the animal believes and at a crop drawn from that belief. Pure.
  */
 export function treeFoodWorth(world: World, c: Chimp, P: Params, t: Tree, crop: number, feeders: number, d: number): number {
-  const fd = c.hunger * 1.6 + 0.1, crownY = t.height * CROWN_Y, climb = c.targetId === t.id ? crownY - c.position[1] : crownY;
+  // stage E1q (crownMove): a crown the animal is in is climbed from its height (moveTo reaches it through the crown)
+  const here = c.targetId === t.id || (crownMoveOn(P) && crownAt(world, c.position[0], c.position[1], c.position[2]) === t);
+  const fd = c.hunger * 1.6 + 0.1, crownY = t.height * CROWN_Y, climb = here ? crownY - c.position[1] : crownY;
   const spd = tripSpeed(world, c, P); // stage E2i (walkGait): gait.ts, walkMps when off
   // stage E2j (tripBodyCost): the climbing's time and a riding dependent's metres, as computeCandidates values a trip
   const tbc = tripBodyOn(P), xh = tbc ? tripClimbH(c, P, d, climb) : 0, ck = tbc ? riderKcal(world, c, P, d, climb, true) : 0;
