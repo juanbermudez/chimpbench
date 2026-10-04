@@ -636,8 +636,8 @@ reference mean (first two runs) 1.422
   1.0 (as predicted); T-HUN-8 1.0 (≥ 0.8: as predicted; above its band's top, 0.95); T-HUN-4 unresolved (1.76, 3.76).
 - Quick sums: held-out (the same rows with and without the rare ones) z +0.3 / +0.8 and −0.0 / −0.1, fitted z −0.3 and
   +1.8: inside noise (as predicted). T-ACT-1..4 inside the group's spread in both (|z| ≤ 1.4; as predicted). Reserves
-  (A1r): every class inside the group's spread (|z| ≤ 1.4; as predicted); A1q's infant and other-female losses follow the
-  outbreak's two dead mothers on day 12, not hunting. Prescriptions 43 (as predicted). Viability passes in all four runs.
+  (A1r): every class inside the group's spread (|z| ≤ 1.4; as predicted); A1q's infant losses follow the outbreak's two
+  dead mothers on day 12, and its other females' (−0.023, z −2.1) are back inside the spread in A1r (+0.006). Prescriptions 43 (as predicted). Viability passes in all four runs.
 - Not predicted: other females eat 7 minutes a day more in both realizations (237 against 230 ± 1 min, z +5.2 twice),
   adult males' fruit share falls (z −3.2, −2.0: meat in the diet); offered draws fall from 286–361 to 187 (fewer impulses
   with three or more adult males: 264 against 348–514; not tested); the hunt wins mostly at midday, from males whose
@@ -656,7 +656,7 @@ reference mean (first two runs) 1.422
   The lead weighed at the energy-deficit part of the E1e drive, without the distension satiation (a capture is held and
   eaten as the gut takes it; no new magnitude, removes no prescription): viable, every sum inside noise in two quick
   realizations, reserves inside spread, hunting rows closer to their bands at 30 + 60 days (T-HUN-1, -2, -3 summed 0.10
-  and 0.27 against H0/H0r's 1.42); hunts 36–44 a year in truth, T-HUN-1 16–20, success 0.43–0.63. It meets every
+  and 0.27 against H0/H0r's 1.42); hunts 35–44 a year in truth, T-HUN-1 16–20, T-HUN-2 0.43–0.63. It meets every
   criterion of §7.
 - **No second iteration.** What A1 leaves is outside its mechanism and has no source-based fix here: the pair limit of
   the pursuit (75% of A1's impulses carry two males; E4k's design ratio; Taï's lone hunters succeed 16%), T-HUN-3 below
