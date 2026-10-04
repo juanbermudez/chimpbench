@@ -1902,3 +1902,17 @@ spend 34–65% of their time in trees but 8–18% of their locomotion is arborea
 Table 1 after Doran & Hunt, [H]). New keys: kozmaPontzer2021, taylor1972, minetti2002, krief2012, sarringhaus2022. Not
 verified: pontzerWrangham2004's measured distances, Mermier et al. 1997 beyond its citation, Pontzer 2016, Venkataraman
 et al. 2013, Crompton et al. 2010, a Kibale feeding height, a measured wild climbing speed.
+
+## Addendum: E3f what a crown holds (4 October 2026)
+
+Same text as research.md "Addendum: E3f what a crown holds": ten large Kanyawara fig trees (*F. exasperata*, *F.
+natalensis*, *F. sansibarica* subsp. *macrosperma*) had whole-cycle crops of 228–2,052 kg wet weight, reconstructed from
+fallen figs plus the figs each frugivore removed, of which chimpanzees took 0–84.3% (wrangham1993, FT, [M]); fresh fig
+weights, pulp shares of dry matter and pulp energy (fig pulp 242.5 ± 45.7 kcal per 100 g dry matter, nine species) are in
+its Tables I–II, with no water content, no crop by tree size and no standing ripe crop; one *F. sansibarica* tree
+produced 1,146, 56 and 472 kg in three cycles (chapman1992, FT, [M], one tree), whose *Uvariopsis* crop-on-DBH fit is
+reported as r² only; fibre of Kibale fruits by species (wrangham1998, FT, [H]); South African fig crops of 1,780–48,550
+figs per tree by branch counts (rajiDowns2022, [L], another region). New keys: wrangham1993, wrangham1998, rajiDowns2022.
+Not verified: houleWrangham2021 (metabolizable energy per m³ of crown, drupe and fig trees; publisher bot check), Houle et
+al. 2006, 2007 and 2010, Chapman & Chapman 1996, Tweheyo & Lye 2003, Peters et al. 1988, Conklin & Wrangham 1994, Valenta &
+Nevo 2021 (Dryad fruit masses; a person can download it). No source gives the crop of any non-fig model species.
