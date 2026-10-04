@@ -20,6 +20,7 @@ import { huntRate, huntValueOn } from './huntvalue';
 import { joinShare, leadValue, patrolValueOn } from './patrol';
 import { awakeInNest, byIdIn, index, isTreeId, ix, NEVER, TREE_ID0, treesNear, simOf } from './state';
 import { bodyState, crownAt, crownMoveOn, gaitOn, riderKcal, runSpeedOf, tripBodyOn, tripClimbH, tripSpeed } from './gait';
+import { matingValueOn, paternityGain } from './mating';
 
 // Variants refine an action's meaning (why a charge happens) for execution and reason text.
 export const V = {
@@ -1127,6 +1128,9 @@ function reproduction(world: World, c: Chimp, isAlpha: boolean): void {
   const byId = index(world).byId;
   const time = world.time;
   const night = world.environment.daylight < 0.1;
+  // stage E4p (matingValue; docs/staging/e4p-prereg.md §5): no quota or gap; a copulation is worth the share of her cycle's
+  // paternity it adds (mating.ts paternityGain, the model's own rule), which scales the value terms of both partners' offers
+  const mv = matingValueOn(P);
   if (c.action === 'consort') { const p = byId.get(c.targetId); if (p && p.alive) offer('consort', p.id, 0.9, V.CONTINUE); }
   for (let _i9 = 0; _i9 < x.seen.length; _i9++) { const sid = x.seen[_i9];
     const o = byId.get(sid)!;
@@ -1136,11 +1140,13 @@ function reproduction(world: World, c: Chimp, isAlpha: boolean): void {
       const g = byId.get(ix(o).guardBy);
       const guarded = !!g && g.alive && g !== c && dcc(c, g) < P.guardedRangeM && dominates(g, c);
       const invited = o.action === 'mate' && o.targetId === c.id ? 0.6 : 0;
-      const mateOpen = time - x.lastMate > P.mateIntervalH;
-      if (mateOpen || quotaTrace.on) { // stage E4o diagnosis: the quota's gate, traced with the score the offer has or would have
-        const sc = mateWorth(c, o) - (guarded ? 1 : 0) - dist / P.mateDistScaleM - c.hunger * 0.2 - (night ? 2 : 0) + invited;
+      const mateOpen = mv || time - x.lastMate > P.mateIntervalH;
+      const pg = mv ? paternityGain(o, c, P) : 1; // stage E4p: the paternity this copulation adds (1 = a cycle's first)
+      if ((mateOpen && pg > 0) || quotaTrace.on) { // stage E4o diagnosis: the quota's gate, traced with the score the offer has or would have
+        const sc = mv ? (mateWorth(c, o) + invited) * pg - (guarded ? 1 : 0) - dist / P.mateDistScaleM - c.hunger * 0.2 - (night ? 2 : 0)
+          : mateWorth(c, o) - (guarded ? 1 : 0) - dist / P.mateDistScaleM - c.hunger * 0.2 - (night ? 2 : 0) + invited;
         if (quotaTrace.on) quotaTrace.on('mate', c, o, !mateOpen, time - x.lastMate, sc);
-        if (mateOpen) offer('mate', o.id, sc, invited ? V.ACCEPT : V.NONE);
+        if (mateOpen && pg > 0) offer('mate', o.id, sc, invited ? V.ACCEPT : V.NONE);
       }
       // possessive mate-guarding by high-ranking males [M]
       if (c.age >= 15 && (c.rankOrder <= 2 || isAlpha) && o.swelling >= P.guardSwellingMin && !guarded && !(g && g !== c && g.alive && dcc(c, g) < P.guardRivalRangeM))
@@ -1159,26 +1165,32 @@ function reproduction(world: World, c: Chimp, isAlpha: boolean): void {
     }
     // stage E4p diagnosis: every offer of a swollen female to a male in range, before her own gap after her last copulation
     // (`a` the hours since it; the gap's literal stays on the line below, so the trace passes the elapsed time, not a verdict)
-    if (quotaTrace.on && c.sex === 'female' && c.swelling >= 0.75 && o.age >= 10 && dist < P.mateFemaleRangeM) quotaTrace.on('mateFgap', c, o, false, time - x.lastMate, femaleMateScore(c, o, x, dist, night, P));
-    if (c.sex === 'female' && c.swelling >= 0.75 && o.age >= 10 && dist < P.mateFemaleRangeM && time - x.lastMate > 0.3) {
-      const maleOpen = time - ix(o).lastMate > P.mateIntervalH;
-      if (maleOpen || quotaTrace.on) { // stage E4o diagnosis: the male's quota gates her offer too
+    if (quotaTrace.on && c.sex === 'female' && c.swelling >= 0.75 && o.age >= 10 && dist < P.mateFemaleRangeM) quotaTrace.on('mateFgap', c, o, false, time - x.lastMate, femaleMateScore(c, o, x, dist, night, P, mv ? paternityGain(c, o, P) : 1));
+    if (c.sex === 'female' && c.swelling >= 0.75 && o.age >= 10 && dist < P.mateFemaleRangeM && (time - x.lastMate > 0.3 || mv)) {
+      const maleOpen = mv || time - ix(o).lastMate > P.mateIntervalH;
+      const pg = mv ? paternityGain(c, o, P) : 1; // stage E4p: the paternity share the copulation adds to him (her own counts)
+      if ((maleOpen && pg > 0) || quotaTrace.on) { // stage E4o diagnosis: the male's quota gates her offer too
         const approaching = o.action === 'mate' && o.targetId === c.id;
-        const sc = femaleMateScore(c, o, x, dist, night, P);
+        const sc = femaleMateScore(c, o, x, dist, night, P, pg);
         if (quotaTrace.on) quotaTrace.on('mateF', c, o, !maleOpen, time - ix(o).lastMate, sc);
-        if (maleOpen) {
+        if (maleOpen && pg > 0) {
           offer('mate', o.id, sc, approaching ? V.ACCEPT : V.NONE);
-          if (o.action === 'consort' && o.targetId === c.id) offer('consort', o.id, 0.6 + bond(c, o) * 0.5, V.ACCEPT);
+          if (o.action === 'consort' && o.targetId === c.id) offer('consort', o.id, (0.6 + bond(c, o) * 0.5) * pg, V.ACCEPT);
         }
       }
     }
   }
 }
 
-/** A swollen female's offer to mate with male `o` (her presenting score; the literals of the original offer, unchanged). Pure. */
-function femaleMateScore(c: Chimp, o: Chimp, x: ReturnType<typeof ix>, dist: number, night: boolean, P: Params): number {
+/**
+ * A swollen female's offer to mate with male `o` (her presenting score; the literals of the original offer, unchanged).
+ * Stage E4p (matingValue): its value terms (proceptivity, his rank, past coercion, the bond, answering his approach) are
+ * scaled by `pg`, the paternity share the copulation adds (1 = today); distance and night are costs. Pure.
+ */
+function femaleMateScore(c: Chimp, o: Chimp, x: ReturnType<typeof ix>, dist: number, night: boolean, P: Params, pg = 1): number {
   const approaching = o.action === 'mate' && o.targetId === c.id;
   const coercion = Math.min(3, x.coerce[o.id] ?? 0);
+  if (pg !== 1) return (0.1 + c.swelling * 0.25 + o.rank * 0.25 + coercion * 0.15 + bond(c, o) * 0.2 + (approaching ? 0.7 : 0)) * pg - dist / P.mateFemaleDistScaleM - (night ? 2 : 0);
   return 0.1 + c.swelling * 0.25 + o.rank * 0.25 + coercion * 0.15 + bond(c, o) * 0.2 + (approaching ? 0.7 : 0) - dist / P.mateFemaleDistScaleM - (night ? 2 : 0);
 }
 

@@ -31,6 +31,7 @@ import { CODE, V, candidateMeta, companyValue, quotaTrace } from '../src/sim/can
 import { rulesTap } from '../src/sim/decide';
 import { mateTrace } from '../src/sim/execution';
 import { dominates, maternalKin } from '../src/sim/hierarchy';
+import { copulationWeight } from '../src/sim/mating';
 import { paramsOf } from '../src/sim/params';
 import { hash01 } from '../src/sim/rng';
 import { TICK_HOURS, index, ix } from '../src/sim/state';
@@ -102,6 +103,10 @@ const copsByMales: Record<string, number> = {}, copsByMaleAct: Record<string, nu
 const dyadHours = new Map<string, number>(), dyadCops = new Map<string, number>();
 const intervalsM: number[] = [], intervalsF: number[] = [];
 const lastCopF = new Map<number, number>(), lastCopM = new Map<number, number>(); // intervals: copulations seen in the scored window only
+// copulations by their paternity weight at the time (recordCopulation's rule: 0 outside maximal swelling, 1, 2 periovulatory),
+// and per completed cycle the weighted copulations her record held when it was cleared (ovulation passed: wrap or conception)
+const copsByWeight: Record<string, number> = {};
+const cycleCops: number[] = [], copRecord = new Map<number, number>();
 // --- 9. feeding on days with a swollen parous female ------------------------------------------------------------------
 const dayFeed = new Map<number, { feedMin: number; swollenParous: boolean; awakeMin: number }>();
 const feedDays: { with: number[]; without: number[] } = { with: [], without: [] };
@@ -119,8 +124,8 @@ quotaTrace.on = (kind, c, o, blocked, a, b) => {
 mateTrace.on = (kind, c, o, blocked, a) => {
   if (kind === 'chase') { bump(gate, a > 0.25 ? 'chase: open' : 'chase: blocked by the 0.25-h gap'); return; }
   const m = c.sex === 'male' ? c : o;
-  bump(gate, `${kind}: ${blocked ? 'blocked by mateIntervalH' : 'open'}`);
-  if (blocked && w.time - (trueLastCop.get(m.id) ?? -1e9) > P.mateIntervalH) bump(gate, `${kind}: blocked only by a failed-approach block`);
+  bump(gate, `${kind}: ${blocked ? (P.matingValue >= 1 ? 'partner not consenting' : 'blocked by mateIntervalH') : 'open'}`);
+  if (blocked && P.matingValue < 1 && w.time - (trueLastCop.get(m.id) ?? -1e9) > P.mateIntervalH) bump(gate, `${kind}: blocked only by a failed-approach block`);
   // an open copulation gate is a copulation (execution.ts calls copulate() right after it, on all three paths): the male's
   // true last copulation is stamped now, so a decision later in the same tick is not read as blocked by a backdate
   if (!blocked) trueLastCop.set(m.id, w.time);
@@ -184,8 +189,17 @@ for (let i = 0; i < days * DAY; i++) {
     const pf = lastCopF.get(f.id); if (pf !== undefined) intervalsF.push(r4(time - pf)); lastCopF.set(f.id, time);
     for (const id of [m.id, f.id]) { const k = openMate.get(id); if (k) k.copulated = true; }
     bump(copsByMaleAct, prevAct.get(m.id) ?? m.action);
+    bump(copsByWeight, String(copulationWeight(f, P)));
     if (day && adultMale(m)) { copsAdultAnyDay++; if (maxSwollen(f)) { copsAdultMaxDay++; const key = `${m.id}-${f.id}`; dyadCops.set(key, (dyadCops.get(key) ?? 0) + 1); } }
     if (day && maxSwollen(f)) { let nm = 0; for (const mm of males) if (dyadOk(mm, f) && mm.partyId === f.partyId) nm++; bump(copsByMales, maleBin(nm)); }
+  }
+  // a female's weighted copulations this cycle; a drop to a smaller total is a cleared record (a new cycle or a conception)
+  for (const f of alive) {
+    if (f.sex !== 'female') continue;
+    let C = 0; const cs = ix(f).cops; for (const k in cs) C += cs[k];
+    const prev = copRecord.get(f.id) ?? 0;
+    if (C < prev) cycleCops.push(prev);
+    copRecord.set(f.id, C);
   }
   // backdated lastMate without a copulation: the block after a failed approach (execution.ts mateTick's two exits)
   for (const c of alive) {
@@ -325,7 +339,8 @@ const result = {
     perAdultMaleDayH: adultMaleDayH ? r4(copsAdultMaxDay / adultMaleDayH) : null, perAdultMaleDayHAnyFemale: adultMaleDayH ? r4(copsAdultAnyDay / adultMaleDayH) : null, adultMaleDayH: r4(adultMaleDayH),
     perMaleMedianOfDyadRates: median([...new Set(dyads.filter(d => d.h >= 5).map(d => d.k.split('-')[0]))].map(mid => median(dyads.filter(d => d.h >= 5 && d.k.split('-')[0] === mid).map(d => d.n / d.h))!)),
     byMalesInParty: Object.fromEntries(MALE_BINS.map(b => [b, { femaleDayH: r4(femaleDayHByMales[b] ?? 0), cops: copsByMales[b] ?? 0, rate: femaleDayHByMales[b] ? r4((copsByMales[b] ?? 0) / femaleDayHByMales[b]) : null }])),
-    copsByMaleAct: round(copsByMaleAct),
+    copsByMaleAct: round(copsByMaleAct), copsByWeight: round(copsByWeight),
+    weightedCopsPerClearedCycle: { n: cycleCops.length, median: median(cycleCops), mean: mean(cycleCops) },
     intervalsMaleMedianH: median(intervalsM), intervalsMaleHist: hist(intervalsM, [0, 0.25, 0.5, 1, 1.5, 1.6, 1.75, 2, 3, 6, 24, 1e9]),
     intervalsFemaleMedianH: median(intervalsF), intervalsFemaleHist: hist(intervalsF, [0, 0.1, 0.25, 0.3, 0.5, 1, 1.5, 2, 3, 6, 24, 1e9]),
   },

@@ -420,6 +420,87 @@ when the quota has removed her value) nor by distance beyond what the field show
 is the operational sex ratio, which the model matches. The discrepancy is the dyadic rate (5–20×) with too few males per
 female to dilute it, and a female whose acceptance is not needed.
 
+## 5. Mechanism (step 2): `matingValue` (one switch; 0 = today, hash-identical)
+
+**Principle.** What limits copulation in the wild is not a male physiology (captive males ejaculate hourly, marson1989)
+but the partners and their competitors (E4o §11; §4 above: the quota sets every path, the female's acceptance never
+binds). Two first principles replace the four gaps: (a) **a copulation needs both partners' choice** (female choice:
+robertsRoberts2015, females answer a median 0.28 of courtship sequences by approaching to copulate; watts2022, females
+rarely refuse outright); (b) **a copulation is worth the paternity it adds**, in the model's own currency of paternity
+(reproduction.ts: conception min(1, C / `matingSaturation`), the sire drawn in proportion to the cycle's weighted
+copulations C, weights 1, and 2 in the periovulatory days, 0 outside maximal swelling): the value of one more falls as
+the cycle's copulations accumulate (the brief's mechanism).
+
+**Iteration 1 (A1, `matingValue` 1; src/sim/mating.ts, candidates.ts `reproduction`, execution.ts `mateTick`, guard,
+consort, `startAction`):**
+- `paternityGain(f, m)` = [E(k + w, C + w) − E(k, C)] ÷ min(1, 1 / S), E(k, C) = min(1, C / S) · k / C, with C her cycle's
+  weighted copulations, k the male's, w the weight now (recordCopulation's rule), S = `matingSaturation` (3, design): 1 for
+  a cycle's first copulation, 2 for a first periovulatory one, falling as C grows, 0 for a sole mate once conception has
+  saturated, 0 outside maximal swelling. Both partners read her counts (design simplification: the female knows her own
+  copulations; males are taken to know them, copulations being conspicuous; an open problem).
+- It scales the value terms of the male's mate offer (`mateWorth` and the 0.6 for her invitation) and of the female's
+  (her presenting terms, his rank, past coercion, the bond, the 0.7 for answering his approach) and her consort
+  acceptance; the costs (distance, hunger, night, a dominant guard's −1) are unchanged; an offer worth nothing (gain 0)
+  is not made.
+- Consent: an approach interrupts the partner whichever sex starts it (today only a male's); a copulation happens when
+  the actor reaches the partner and the partner's own act is mating with the actor, or, for a male, guarding or
+  consorting with her; the partner's mate act ends with it (one agreement, one copulation). Guarding and consorting no
+  longer copulate by themselves: the female presents to the guard or consort.
+- Not read: `mateIntervalH`; the female's 0.3-h gap (short-circuited); the 0.5-h block after a failed approach (the
+  backdated stamp is written but nothing reads `lastMate` under the switch); the guard's 0.25-h gap (a second branch of
+  the same line chases while the rival courts her or stays beside her).
+- Unchanged on purpose (not implicated by §4): who is with her (`companyValue`'s mating term, the guard and consort
+  offers keep today's values), coercion charges, the guard's chase score (1.3).
+- No new magnitude. Prescriptions: S27 51 → 47 (`scripts/prescription-ledger.ts --count`; today's model 147 → 143):
+  `mateIntervalH` through ACTIVE_WHEN, the three literals through LITERAL_OFF. Switch 0 hash-identical: S27 seed 48
+  after 2 days 6005ce06d37e5df1 with the code at this commit (hooks off and on). Tests: `tests/sim-mating-value.test.ts`.
+
+## 6. Readouts (defined before any arm; smoke-tested with the switch on, run log)
+
+- Simulation truth from `scripts/e4p-diagnose.ts` (§3 definitions; 30 + 60 days, seeds 48 and 7) against D0–D1 (and
+  E4o's D0b–D3b for copulation counts), plus two readouts added with the switch, before any arm: copulations by their
+  paternity weight at the time (0, 1, 2 = periovulatory), and the weighted copulations a female's record held when it was
+  cleared (a cycle's total; not available for D0–D1, which ran before it); under the switch the copulation gates of mate
+  acts are labelled "partner not consenting" instead of "blocked by mateIntervalH".
+- `e-bench --quick` (seeds 48, 7; 30 + 30 days) against S27q and its three re-draws (`judge_vs_reps.py quick custom`,
+  amendment 2; with and without T-HUN-4, T-BRD-1, T-IGE-3); T-PTY-1, T-ACT-1..4; prescription count; viability and deaths
+  by cause. `energy-diagnose` (seeds 48, 7; 30 + 30): reserves ÷ store %/day by class. `rhythm-metrics` (seeds 48, 7;
+  30 + 30): adults out of a nest share of the night, T-RHY-5. All exactly as the integrator ran S27q
+  (`scratchpad/integrator/s27q.sh`) and E4o its arm.
+
+## 7. Arms
+
+- **A1** = S27 + `matingValue` 1, from a frozen detached checkout of the commit that registers its run in §9
+  (`scratchpad/e4p/run-arm.sh`: e-bench quick, energy-diagnose, e4p-diagnose 30 + 60, rhythm-metrics; `--workers 1` above
+  load 8).
+
+## 8. Predictions and kill criterion (A1 against the S27 references)
+
+The smoke test with the switch on (seed 48, 1 + 2 days, run log) was seen before these predictions were written: 5
+copulations in 2 days against 89 at switch 0, females at C = 3–10 weighted copulations within the first day, the gain of
+the next copulation 0.2–0.43 and the mate offers 0.16–0.34 against best options of 0.8–1.6; a sole mate's gain 0.
+
+| Quantity | Reference (D0 / D1; S27q group) | Prediction (A1) |
+| --- | --- | --- |
+| Prescriptions | 51 | 47 (high) |
+| Copulations per maximally swollen female daylight hour | 0.83 / 0.86 | ≤ 0.07, below Taï's 0.14 (high) |
+| Copulations per dyad daylight hour | 0.58 / 0.60 | ≤ 0.05 (high) |
+| Weighted copulations per cleared cycle | (not measured) | ≤ 12 (moderate) |
+| Share of male intervals under 0.25 h | ~0 (the quota) | ≥ 0.3: no refractory, so copulations come in bursts (moderate) |
+| Male approaches ending without consent (share of male mate acts) | ≤ 0.03 | ≥ 0.3 (moderate) |
+| Adult males with a maximally swollen female (per daylight h) | 1.42 / 1.43 | lower, toward the anoestrous 0.68 (moderate: her mating value no longer holds them) |
+| Fitted, held-out, held-out without the rare rows | S27q group | inside noise (moderate) |
+| T-ACT-1..4, T-PTY-1, reserves %/day | S27q group | inside its spread (moderate) |
+| Viability; night (≤ 3.3%, T-RHY-5 ≤ 0.033) | pass | pass (high) |
+
+**Kill criterion (null; the switch stays off, recorded):** viability fails (a starvation death the references lack, or
+a seed below 80% of its start); held-out without the rare rows worse beyond noise (z > +2); the count does not fall to
+47; night unsafe; the mechanism does not run (copulations unchanged within the D spread, or no approach ends without
+consent). **Rate line (the stage's own, registered):** the mechanism replaces the quota as a keep candidate only if the
+rates it produces sit inside the sourced ranges, per maximally swollen female daylight hour 0.14–0.79 (Taï–Mahale) and
+per dyad daylight hour 0.03–0.12 (Kanyawara–Kalinzu); outside them it is recorded as a mechanism finding, not a keep
+candidate (a replacement that misses both ranges does not replace what the quota set).
+
 ## 9. Run log (each entry written before its run, unless marked)
 
 - **Smoke** (logged after the run, at the hooked code; scripts only): S27, seeds 48 and 7, 1 + 2 days: every readout
@@ -428,3 +509,9 @@ female to dilute it, and a female whose acceptance is not needed.
   community, seed 48).
 - **D0, D1** (as registered in §3), from `scratchpad/e4p/frozen-d` (a detached checkout of the commit that adds this
   entry): seeds 48 and 7, two processes at a time (one if the load is above 8); outputs `scratchpad/e4p/diag/D{0,1}-{48,7}.json`.
+- **Smoke, switch on** (logged after the run, at the code of this commit before it was committed; scripts and tests only
+  beyond it): S27 + `matingValue` 1, seed 48, 1 + 2 days, e4p-diagnose and a read-only trace of the mate offers
+  (`scratchpad/e4p/dbg1.mts`): every readout produced; 5 copulations (switch 0: 89); the offers' gains as in §8.
+  Unit tests `tests/sim-mating-value.test.ts` 4 pass; ledger and Track E tests pass; S27 51 → 47.
+- **A1** (as registered in §7): from `scratchpad/e4p/frozen-a1` (the commit that adds this entry),
+  `run-arm.sh frozen-a1 A1 '{"matingValue":1}'`; outputs `frozen-a1/artifacts/validation/e4p/A1*`.

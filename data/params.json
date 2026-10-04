@@ -14702,6 +14702,30 @@
    "notes": "Mating units at which the mating factor saturates."
   },
   {
+   "id": "matingValue",
+   "group": "reproduction",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [],
+   "clock": "none",
+   "symbol": "matingValueOn, paternityGain, consents (src/sim/mating.ts); reproduction (candidates.ts); mateTick, guard, consort (execution.ts)",
+   "file": "src/sim/mating.ts",
+   "integer": true,
+   "notes": "Stage E4p (docs/staging/e4p-prereg.md section 5): 0 = today (hash-identical). 1: mating without quotas. A copulation needs the partner's choice: the approach interrupts the partner, who accepts by mating back (a male guarding or consorting with her consents by that act), in place of a copulation unless the female flees, charges, attacks or submits; guarding and consorting do not copulate by themselves. A copulation is worth the share of her cycle's paternity it adds by the model's own rule (ovulate: conception min(1, C / matingSaturation), the sire drawn in proportion to the weighted copulations; recordCopulation's weights 0, 1, 2), relative to a first copulation outside the periovulatory days; it scales the value terms of the male's mate offer (mateWorth and the invitation) and of the female's (her presenting terms and the answer to an approach); costs are unchanged. Not read: mateIntervalH, the female's 0.3-h gap after her own last copulation, the 0.5-h block after a failed approach, the guard's 0.25-h gap between chases. No new magnitude: every value term is the existing offer's, the paternity rule is reproduction.ts's (design)."
+  },
+  {
    "id": "meatAlertM",
    "group": "hunting",
    "value": 25,
