@@ -360,3 +360,11 @@ Page prose (outside the generated regions): what counts now names the two new ki
 aggression, mating and call gaps and gets a grooming row; "What this page cannot show" lists what stays outside the lint.
 Two stale sentences were removed while there: the wild-cost multiplier "counted by mistake" (design since the counting fix
 1d177f8). `scripts/decision-guide.ts --check` passes; screenshots of the four changed figures (local) show no overlap.
+
+### 6.8 Final checks (after `git merge --no-ff track-e` at 4111971, docs only)
+
+`gen-params --check` clean (0 evidence-tagged literals outside the registry); `tsc --noEmit -p .` clean; `pnpm test` 825
+tests, 824 pass, 0 fail, 1 skipped; no file under `src/`, `data/` or `tests/fixtures/` changed since 6980f48, so the
+goldens cannot move; `scripts/decision-guide.ts --check` passes after the merge. For the integrator: the confirms track-e
+registered meanwhile count, on this ledger, S31 (S27 + `departValue` 2 + `bodyRules` 1) 48 and S32 (+ `redecideValue` 2)
+45 (`prescription-ledger.ts --count`; 38 and 36 on the old one).
