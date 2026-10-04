@@ -378,6 +378,82 @@ rhythm-metrics' night share (adults out of a nest, T-RHY-5) for a kept arm.
 
 (Each iteration is logged here and committed before its run; at most 3.)
 
+### 5.1 Iteration 1 (registered before its run): values that follow experience (`experienceValue` 1 and 3)
+
+**Why (§2.2).** The keep test lets the valuation decide at every bout end and interrupt, and the valuation promises far
+more from a trip than trips deliver: a trip to a crown out of sight is valued (intake.ts `netRateShare`, E3c) as a full
+bout there, E = the believed crop's share or the gut room, but trips deliver 13–31% of that energy at their target (two
+thirds never feed there: crowns found empty, departures nobody followed; fed trips eat about a third of it), and leaving a
+crown for a trip lowers the intake rate. S27's gate, clock and bonus hid the error by holding acts; the keep test exposes
+it. Separately, 57% of S28's extra hunt impulses re-sight a group the male perceived within the hour.
+
+**Principle.** A forager judges leaving against what leaving yields, a rate it knows from its own returns (the marginal
+value theorem's average rate, charnov1976); an animal that keeps valuing trips at what its beliefs promise while its
+trips deliver a fraction of it is miscalibrated, and the miscalibration is what the keep test turns into trips. The
+fix is not a weight on trips but the animal's own record: each trip's outcome (the energy eaten at its target ÷ the
+energy it was valued at) moves its expectation, and trips are valued at that expected meal. For hunting, a colobus group
+seen again within the hour is not a new encounter: the meeting that opened the hunt decision has already been weighed,
+and the same group in view brings no new information (the brief's "a trigger that cannot change which option is best not
+causing a fresh choice"; E4j's correction of patrol fusion uses the same span, `reunionH`).
+
+**Change (switch `experienceValue`, 0 = today; a sum of bits; src/sim/experience.ts, intake.ts, candidates.ts,
+execution.ts, perception.ts).**
+- *Bit 1.* An episode opens when a trip to a crown starts (an own or known tree, a joined trip's goal, a caller's crown;
+  chimp.sim.tt: the target crown, the bout energy E0 it was valued at, kcal eaten there) and closes at the first act that
+  is neither that trip nor feeding at that crown; its outcome y = min(1, kcal eaten at the target ÷ E0) moves the animal's
+  expectation `ty` (absent = 1: it trusts its beliefs until a trip ends) by `tripYieldRate` (0.1, design: an exponential
+  average over about its last ten trips): ty ← ty + 0.1 (y − ty). Every trip's food term is valued at the expected meal:
+  netRateShare's E × ty (energy and eating time); crowns in view (the act being done, or a crown it sees) are valued as
+  today. E0 = netRateShare's E at the start (the believed crop's share from the trip's belief, the crop seen for a crown
+  in view, else the gut room).
+- *Bit 2.* perception.ts: a colobus group the animal perceived at one of its decision points within `reunionH` (1 h,
+  E5e's convention) is not met anew, so it raises no hunt impulse; everything else is unchanged.
+- No counted entry is read less (a correction; prescriptions unchanged, 39 on the corrected ledger, 48 on E0b's).
+  One new design magnitude (`tripYieldRate`), not fitted. Tests (tests/sim-experience.test.ts): 0 by default in both
+  profiles; a trip's value falls with ty and a crown in view's does not; an episode's outcome moves ty by the rate (a
+  trip that never fed at its target counts 0); a group seen half an hour ago raises no impulse with bit 2 and does
+  without; deterministic and JSON-lossless over a field day with value 3, ty in [0, 1]; the count unchanged. Switch off:
+  the field pin and the compressed goldens hold (tests/sim-track-e.test.ts).
+
+**Smoke test with the switch on (seed 48, 1 + 2 days; disclosed; not representative):** with bit 1 adult males walk
+1.82 km a day (S28 smoke 3.68), adults start 12.7 trips a day (26.7) and switch 52 times (64); ty after three days 0.22
+(median 0.18); bits 1 + 2 identical over these days (no re-sighting impulse in them).
+
+**Arms** (from a frozen detached checkout of the commit that adds this section): **X1** = S28 + `experienceValue` 1,
+**X3** = S28 + `experienceValue` 3 (S28q's parameters plus the switch); e-bench `--quick`, energy-diagnose,
+redecide-diagnose and rhythm-metrics each (seeds 48 and 7, burn-in 30, 30 days; `--workers` 1 above load 8; no run starts
+above load 30).
+
+**Predictions (against the S28q group, mean ± SD of its four runs; S27q's mean for the costs to recover; low confidence
+unless stated).**
+
+| Quantity | S28q (mean ± SD) | S27q mean | X1 | X3 | Confidence |
+| --- | --- | --- | --- | --- | --- |
+| Prescriptions | 39 | 41 | 39 | 39 | high |
+| Viability; night safety (≤ 3.3%, T-RHY-5 ≤ 0.033) | pass | pass | pass | pass | moderate |
+| Trips per adult-day (truth) | 26.9 ± 1.2 | 15.4 | 13–21 | 13–21 | moderate |
+| Ground km a day: adult males; nursing mothers; juveniles 5–12 y | 3.92 ± 0.14; 3.61 ± 0.07; 3.84 ± 0.05 | 2.81; 2.48; 2.83 | 2.3–3.3; 2.2–3.1; 2.6–3.4 | as X1 | moderate |
+| Climbing kcal a day, adults | 74.2 ± 3.8 | 46.0 | 45–62 | 45–62 | moderate |
+| T-FOOD-4 | 13.68 ± 0.30 | 9.31 | 9–12 | 9–12 | moderate |
+| T-RNG-4 | 3.18 ± 0.32 | 2.26 | 2.0–2.9 | 2.0–2.9 | low |
+| T-HUN-1 | 47.8 ± 6.2 | 26.0 | 25–45 | 12–30 | low |
+| T-ACT-2 | 0.158 ± 0.006 | 0.116 | 0.11–0.15 | 0.11–0.15 | low |
+| Reserves %/day: other females; juveniles; infants 0.5–2 y | −0.033 ± 0.014; −0.078 ± 0.007; −0.046 ± 0.014 | +0.006; −0.027; +0.009 | each at or above the S28q mean | as X1 | low |
+| ty, adults' mean at the window's end | — | — | 0.2–0.5 | 0.2–0.5 | low |
+| Fitted; held-out with and without the rare rows | reference mean | — | inside noise | fitted at or below the mean, held-out inside noise | low |
+
+**Kill criterion (registered).** An arm is null if (a) viability fails (a starvation death, or a seed below 80% of its
+start); (b) any class's reserve slope is more than 0.05% of the store a day below the S28q mean; (c) held-out is worse
+beyond noise (z > +2) with or without the rare rows; (d) the mechanism does not run (no `ty` learned, or trips per
+adult-day inside the S28q group's mean ± 2 SD); (e) night safety fails (adults out of a nest more than 3.3% of the night,
+or T-RHY-5 above 0.033).
+
+**Verdict rule (registered).** `experienceValue` removes no counted prescription, so an arm is judged as a correction:
+a **provisional keep candidate** if none of (a)–(e) holds and it recovers at least half of S28's cost on each of adult
+males' ground km, adults' climbing kcal and T-FOOD-4 (its value at least half-way from the S28q mean to the S27q mean);
+otherwise recorded and off. Between two arms that both qualify, X3 is preferred if its T-HUN-1 is lower than X1's and its
+fitted sum is not higher; hunting, rest, travel share and reserves are reported against both groups, never used to choose.
+
 ## 6. Results
 
 ## 7. Known defects in the code under test

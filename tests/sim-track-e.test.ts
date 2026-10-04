@@ -49,6 +49,7 @@ const TRACK_E_SWITCHES = [
   'crownMove', // E1q
   'departValue', // E5f
   'bodyRules', // E4o
+  'experienceValue', // E3g
 ] as const;
 
 test('Track E switches are all 0 by default in both profiles', () => {

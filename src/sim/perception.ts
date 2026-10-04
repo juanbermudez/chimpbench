@@ -212,7 +212,13 @@ export function perceive(world: World, c: Chimp): void {
     if (d2 < preyD) { preyD = d2; x.preyId = p.id; }
   }
   // a colobus encounter: a group in sight that was not the group perceived at the previous decision point (hunting fix)
-  const metPrey = x.preyId !== prevPrey ? x.preyId : -1;
+  let metPrey = x.preyId !== prevPrey ? x.preyId : -1;
+  // stage E3g (experienceValue bit 2; docs/staging/e3g-prereg.md §5): a group this animal perceived at one of its decision
+  // points within reunionH is not met anew (its memory still holds that sighting): seeing it again brings no new information
+  // for the hunt decision, which the first meeting opened
+  if (metPrey > 0 && (paramsOf(world).experienceValue & 2) !== 0) {
+    for (const m of c.memory) if (m.kind === 'prey' && m.entityId === metPrey) { if (world.time - m.seenAt < paramsOf(world).reunionH) metPrey = -1; break; }
+  }
   if (x.preyId < 0) {
     // an ongoing hunt by our community is loud: its prey is known to anyone within earshot
     for (const h of simOf(world).hunts) {

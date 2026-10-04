@@ -99,6 +99,8 @@
 //     hunt impulses: decisions of adult males with the hunt impulse open and the hunt on the list, by trigger, the share
 //     choosing the lead, and the share that re-sight a colobus group the same male perceived at a decision in the hour
 //     before (perception.ts counts a group as met when it differs from the group perceived at the previous decision point).
+//   trip yield (stage E3g iteration 1, experienceValue bit 1): each living adult's chimp.sim.ty at the window's end (1 when
+//     absent): the share of a trip's valued bout energy its trips deliver.
 //
 //   pnpm exec tsx scripts/redecide-diagnose.ts [--seeds 48,7] [--burn-in 30] [--days 30] [--params '{…}'] [--workers 2] [--json f.json]
 // Development seeds only (AGENTS.md lists the reserved ones); burn-in + days ≤ 90.
@@ -169,7 +171,9 @@ interface Result {
   seed: number; draws: Draw[]; cfs: Cf[]; runs: Run[];
   g: { draws: GDraw[]; trips: GChain[]; sums: Record<string, GSum>; leads: Record<string, number>; joins: Record<string, number>; hunts: number; treeDays: Record<string, [number, number]>; days: number; troops: number; clsTicks: Record<string, number>;
     /** amendment 1: outvalued draws of adults (daylight) by held category > out-valuer category; hunt-impulse decisions of adult males */
-    ovx: Record<string, number>; hi: { n: number; lead: number; resight: number; resightLead: number; byWhy: Record<string, number> } };
+    ovx: Record<string, number>; hi: { n: number; lead: number; resight: number; resightLead: number; byWhy: Record<string, number> };
+    /** stage E3g iteration 1: each living adult's trip-yield expectation at the window's end (chimp.sim.ty; 1 when absent) */
+    ty: number[] };
   counts: Record<string, Record<string, number>>; // class → verdict → n (daylight)
   nightCounts: Record<string, Record<string, number>>;
   dayTicks: Record<string, number>; runsStarted: Record<string, number>;
@@ -186,7 +190,7 @@ export function runSeed(job: Job): Result {
   const dead0 = new Set(w.chimps.filter(c => !c.alive).map(c => c.id)), hunts0 = w.stats.hunts;
   const R: Result = { seed, draws: [], cfs: [], runs: [], counts: {}, nightCounts: {}, dayTicks: {}, runsStarted: {}, identity: { menuMismatch: 0, probErr: 0, checked: 0 },
     male: { ticks: 0, eating: 0, walked: 0 }, living: [w.chimps.filter(c => c.alive).length, 0], deaths: {},
-    g: { draws: [], trips: [], sums: {}, leads: {}, joins: {}, hunts: 0, treeDays: {}, days, troops: w.troops.length, clsTicks: {}, ovx: {}, hi: { n: 0, lead: 0, resight: 0, resightLead: 0, byWhy: {} } } };
+    g: { draws: [], trips: [], sums: {}, leads: {}, joins: {}, hunts: 0, treeDays: {}, days, troops: w.troops.length, clsTicks: {}, ovx: {}, hi: { n: 0, lead: 0, resight: 0, resightLead: 0, byWhy: {} }, ty: [] } };
   for (const k of CLS) { R.counts[k] = {}; R.nightCounts[k] = {}; R.dayTicks[k] = 0; R.runsStarted[k] = 0; }
   const key = (k: { action: string; targetId: number }) => `${k.action}:${k.targetId}`;
   const jitterOf = (c: Chimp, k: Candidate) => (hash01(c.id, c.decisionVersion, CODE[k.action], k.targetId) - 0.5) * P.candidateJitterSpan;
@@ -548,6 +552,7 @@ export function runSeed(job: Job): Result {
   for (const ch of pendNow) settle(ch);
   for (const ch of gOpen.values()) settle(ch);
   R.g.hunts = w.stats.hunts - hunts0;
+  for (const c of w.chimps) if (c.alive && c.age >= 15) R.g.ty.push(ix(c).ty ?? 1);
   rulesTap.fn = null; rgTap.fn = null; energyTap.fn = null;
   for (const c of w.chimps) if (!c.alive && !dead0.has(c.id)) { const why = c.causeOfDeath ?? 'unknown'; R.deaths[why] = (R.deaths[why] ?? 0) + 1; }
   R.living[1] = w.chimps.filter(c => c.alive).length;
@@ -749,6 +754,7 @@ if (!isMainThread) {
     for (const r of res) for (const [k, n] of Object.entries(r.g.hi.byWhy)) hiWhy[k] = (hiWhy[k] ?? 0) + n;
     e3g.huntImpulses = { perMaleDay: perDay(hiAll.n, maleDays), leadShare: r3(hiAll.n ? hiAll.lead / hiAll.n : NaN), resightShare: r3(hiAll.n ? hiAll.resight / hiAll.n : NaN),
       leadsPerMaleDay: perDay(hiAll.lead, maleDays), resightLeadsPerMaleDay: perDay(hiAll.resightLead, maleDays), byTrigger: Object.fromEntries(Object.entries(hiWhy).map(([k, n]) => [k, perDay(n, maleDays)])) };
+    { const ty = res.flatMap(r => r.g.ty ?? []); e3g.tripYield = { n: ty.length, mean: r3(mean(ty)), median: r3(med(ty)) }; }
     out.e3g = e3g;
   }
   if (jsonOut) writeFileSync(jsonOut, JSON.stringify(out, null, 1));
