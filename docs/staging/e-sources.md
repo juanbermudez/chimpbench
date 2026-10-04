@@ -1766,7 +1766,7 @@ macaques and baboons); tension (wittig2016 duration check, schino1988, shutt2007
 couturier2022, gomes2009, silk2010, tanaka1993, zamma2002, akinyi2013, schino1988, shutt2007. Not verified:
 dunbarDunbar1988, dunbar1992, watts2000 I–II, doran1997, any louse growth rate, any rate of bond fading without contact.
 
-## Addendum: E3c forage rate (3 October 2026)
+## 44. Addendum: E3c forage rate (3 October 2026)
 
 Same text as research.md "Addendum: E3c forage rate": the rate-maximizing currency (stephensKrebs1986, book, Crossref
 details only; charnov1976 already cited): an option is worth the net energy it yields over the time it takes, and the

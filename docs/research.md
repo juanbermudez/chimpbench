@@ -2879,7 +2879,7 @@ directed to bond partners and balanced over weeks, and spare time goes to rest. 
 watts2000 I–II (Springer bot challenge), doran1997 (Taï seasonality; closed); any chimpanzee louse load or egg-laying
 rate; any measurement of how fast a primate relationship weakens without contact.
 
-### Addendum: E3c forage rate (3 October 2026)
+### E.44 Addendum: E3c forage rate (3 October 2026)
 
 Read for stage E3c ([staging/e3c-prereg.md](staging/e3c-prereg.md)): the currency in which a forager compares where to
 eat. Tags as above.
