@@ -544,8 +544,9 @@ ground (the animal came down for a goal on the ground and decided to return), wh
   apply to its next move. A next step: membership by the tree an animal climbed into (state) instead of geometry; or the
   climb started only under the crown. Not built (no quick readout of infants' reserves can judge it: S25's infant lines
   carry an outbreak).
-- **The target.** Restate T-relation "walking ÷ climbing about 10" as the implied vertical distance (53–90 m a day for
-  Kanyawara adults, derived [L]) or as a ratio with sourced costs (1.9–2.9): staged for the integrator, not applied.
+- **The target.** "Walking ÷ climbing about 10" is no row of data/targets.json (E2j used it as a reference relation). If a
+  row is ever made of it, it should be the implied vertical distance (53–90 m a day for Kanyawara adults, derived [L]) or
+  the ratio with sourced costs (1.9–2.9), not 10. Nothing staged.
 - **Two climbing costs.** The heat balance charges a metre at 107.4 × M^−0.119 (≈ 70 J/kg/m, small primates
   extrapolated) and the ledger at 49; measured hominoid climbing (40 incremental, 52–67 with the holding cost at the
   model's speeds) lies between: align them in one place (a known defect, §6).
