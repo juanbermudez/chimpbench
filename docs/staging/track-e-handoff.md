@@ -14,7 +14,12 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 06:45; deploy held by the user).** Nothing.
+- **Running now (4 October 06:35; deploy held by the user).** Stage agent **E3e** (`e3e-choice-noise`, from track-e
+  aa353fa: choice variability from the animal's own uncertainty in place of the fitted `rgTemperature`; tested with and
+  without `redecideValue` 2; must keep a behaviour-free re-draw lever for the noise protocol; brief
+  `integrator/e3e-prompt.txt`). **guide-s5** agent moving the decision guide to S19 (branch `guide-s19`). Integrator: the
+  S19 quick reference (`integrator/s19q.sh`, outputs `bench-run4/artifacts/validation/e/s19q/`; message E3e when all four
+  exist). The judge script `integrator/judge_vs_reps.py` now drops T-IGE-3 with the rare rows (amendment 3).
 - **S20 not adopted; S19 is the best integrated candidate** (e-stack2-confirm.md "S20 results"): S20 (S17 + S18 + S19,
   44) passed the registered sums only through a reference spread inflated by T-IGE-3 (S17c1 24.7) and is worse beyond
   noise without it (z +3.0), with rest at 0.252 and juveniles −0.125 %/day. S19 (46) passed every sum. e-noise.md
