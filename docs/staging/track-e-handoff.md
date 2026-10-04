@@ -14,10 +14,12 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 00:30; deploy held by the user).** No agents. Integrator: the **S13** confirm (S9 +
-  `huntValue` + `forageRate` + `contestAssess`, 65 prescriptions; registered 8e25a29) in `bench-run3` at ea92d20
-  (`integrator/conf13.sh`, outputs `bench-run3/artifacts/validation/e/s13/`), judged against S9's confirm group with
-  `integrator/judge_s9group.py` (add S13 to `_ARMS`, run with `ARM=S13`).
+- **Running now (4 October 00:55; deploy held by the user).** Nothing.
+- **S13 done: now the best integrated candidate** (e-stack2-confirm.md "S13 results"; S9 + `huntValue` + `forageRate` +
+  `contestAssess`): 65 prescriptions, viable, night safe, sums inside noise against S9's four runs; T-HUN-1 18.9.
+  Costs: walking and feeding up (males 2.57 km), males −0.033, mothers −0.077, infants 0.5–2 y −0.093 %/day; T-HUN-3
+  0.043 and T-FOOD-10 0.810 outside their bands. The decision guide and hosted copy still show S9 (S13 needs STACKS.S13
+  and Before/Now for hunting, foraging and contests).
 - **S10, S11, S12 done** (e-stack2-confirm.md): each passes the keep rule against S9's four runs. S10 (`huntValue`,
   73): T-HUN-1 37 → 23.4 (in band), T-HUN-3 stays in band (0.054), fitted better beyond noise; mothers and infants a
   little lower. S11 (`forageRate`, 71): sums inside noise, fruit share in band; costs: every adult class's balance falls
