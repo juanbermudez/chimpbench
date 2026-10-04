@@ -1,5 +1,5 @@
 import type { Action, Candidate, Chimp, DecisionSource, InteractionKind, World } from '../types';
-import { candidateMeta, consortGoal, crownShareOn, departAudience, dependentOn, isCarried, nearestNeighbor, partyOn, V } from './candidates';
+import { audienceSig, candidateMeta, consortGoal, crownShareOn, departAudience, dependentOn, isCarried, nearestNeighbor, partyOn, V } from './candidates';
 import { notifyAllies, resolveCharge, resolveFight } from './conflict';
 import { addEvent, emitCall, endInteraction, episode, findInteraction, flashInteraction, gate, interrupt, startInteraction } from './events';
 import { nestPoint } from './generation';
@@ -511,6 +511,18 @@ function departAttempt(world: World, c: Chimp): void {
   const P = paramsOf(world), x = ix(c), time = world.time;
   delete x.tryN;
   if (c.action !== 'travel' || x.v !== V.TREE || x.aux > 0) { delete x.tryNest; return; } // only an own trip to a tree is an initiation
+  // stage E5f (departValue; docs/staging/e5f-prereg.md §3): no effort, hold or cap. A trip with companions there is an
+  // attempt, unless they are the companions (doing what they did) who just let an attempt go unanswered: then it goes
+  // alone, as its value (less their company, candidates.ts) chose
+  if (P.departValue >= 1) {
+    const audience = departAudience(world, c);
+    if (audience === 0) { if (departTap.fn) departTap.fn(c, 'free', 0); delete x.dfa; delete x.tryNest; return; }
+    if (x.dfa !== undefined && x.dfa === audienceSig(world, c)) { if (departTap.fn) departTap.fn(c, 'alone', audience); delete x.dfa; delete x.tryNest; return; }
+    delete x.dfa;
+    x.tryN = audience;
+    if (departTap.fn) departTap.fn(c, 'attempt', audience);
+    return;
+  }
   const cap = P.departPersistMaxMin / 60;
   // an effort that was not re-launched within the window is over: the next departure starts a new one
   if (x.trySince !== undefined && time - (x.tryAt ?? -1e9) > cap) { if (departTap.fn) departTap.fn(c, 'lapsed', 0); delete x.trySince; delete x.tryAt; }
@@ -539,16 +551,25 @@ function departWait(world: World, c: Chimp): boolean {
     const ox = ix(o);
     if ((o.action === 'travel' && o.targetId === c.targetId && ox.aux === c.id) || (o.action === 'follow' && o.targetId === c.id && ox.v === V.PARTY)) {
       if (departTap.fn) departTap.fn(c, 'recruited', o.id);
-      delete x.tryN; delete x.trySince; delete x.tryAt; delete x.tryNest; // recruited: the party moves
+      delete x.tryN; delete x.trySince; delete x.tryAt; delete x.tryNest; delete x.dfa; // recruited: the party moves
       return false;
     }
   }
   if (c.actionTime < P.departCheckMin * 60) { x.actEnd += TICK_HOURS; c.nextDecision = x.actEnd; return true; } // waiting, checking back
   if (departTap.fn) departTap.fn(c, 'given-up', 0);
   delete x.tryN;
+  // stage E5f (departValue): nobody came. The initiator notes what its companions are doing and decides at once, its trip
+  // still on the menu (now a departure alone, worth less their company: candidates.ts); no hold. From its own nest it is
+  // back in that nest, deciding (E2e's staying means staying in the nest)
+  if (P.departValue >= 1) {
+    x.dfa = audienceSig(world, c);
+    if (x.tryNest) resumeNest(world, c, world.time);
+    else { x.actEnd = world.time; c.nextDecision = world.time; interrupt(world, c, 'Nobody came along', true); }
+    return true;
+  }
   if (x.trySince === undefined) x.trySince = world.time - c.actionTime / 3600;
   x.tryAt = world.time + P.departRetryMin / 60;
-  if (x.tryNest) resumeNest(world, c); // stage E2e (nestAudience, iteration 2): it gave the attempt up and stays in its nest
+  if (x.tryNest) resumeNest(world, c, x.tryAt); // stage E2e (nestAudience, iteration 2): it gave the attempt up and stays in its nest
   else finish(world, c);
   return true;
 }
@@ -557,9 +578,10 @@ function departWait(world: World, c: Chimp): boolean {
  * Stage E2e (nestAudience, iteration 2; docs/staging/e2e-prereg.md §8b): an attempt that set off from the initiator's own
  * finished nest and recruited nobody is given up in the nest: the animal is back in that nest (same tree and place,
  * finished) until its own trips to trees return to its menu (departRetryMin), as the moving-together initiator stays
- * where it was. The nest is the one it left (kept in tryNest while the attempt was open).
+ * where it was. The nest is the one it left (kept in tryNest while the attempt was open). Stage E5f (departValue): until
+ * now, so it decides at once (no hold).
  */
-function resumeNest(world: World, c: Chimp): void {
+function resumeNest(world: World, c: Chimp, until: number): void {
   const x = ix(c), n = x.tryNest!;
   delete x.tryNest;
   cleanupPrevious(world, c);
@@ -567,7 +589,7 @@ function resumeNest(world: World, c: Chimp): void {
   c.nest = { treeId: n.treeId, position: [n.position[0], n.position[1], n.position[2]] };
   c.position[0] = n.position[0]; c.position[1] = n.position[1]; c.position[2] = n.position[2];
   x.phase = 2; x.prog = 0; x.v = V.NONE; x.aux = -1; x.finished = false; x.nestTree = n.treeId;
-  x.actEnd = x.tryAt!; c.nextDecision = x.actEnd;
+  x.actEnd = until; c.nextDecision = x.actEnd;
 }
 
 /**

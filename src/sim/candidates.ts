@@ -453,7 +453,13 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     const stay = cohesion ? 0 : (P.partyStayW > 0 ? P.partyStayW * Math.min(x.visibleOwn, P.partyStayMaxN) : 0) + oestrusNear;
     // stage departPersist: after a failed departure attempt its own trips to trees wait for the re-launch time, while it
     // still has companions to leave (execution.ts departAttempt) [M: gruberZuberbuhler2013; design]
-    const held = P.departPersist === 1 && x.tryAt !== undefined && time < x.tryAt && departAudience(world, c) > 0;
+    // stage E5f (departValue; docs/staging/e5f-prereg.md §3): no hold. After an attempt nobody answered, a trip while the
+    // same companions are there doing what they did goes alone (execution.ts departAttempt), so it is worth its value
+    // less the company it leaves (lost: the best E5a companyValue among them; nothing is known of company at a goal out
+    // of sight, so E5b's margin over it is the whole company)
+    const dv = P.departPersist === 1 && P.departValue >= 1;
+    const held = P.departPersist === 1 && !dv && x.tryAt !== undefined && time < x.tryAt && departAudience(world, c) > 0;
+    const lost = dv && x.dfa !== undefined && x.dfa === audienceSig(world, c) ? audienceCompany(world, c, P) : 0;
     const shortlist = P.patchEcology === 1; // field: many remembered trees; score the few best by distance and hunger
     const water = waterOn(P); // stage E2g: thirst from the water ledger
     _mem.length = 0; _rk.length = 0; _dk.length = 0; _bl.length = 0;
@@ -469,7 +475,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
         if (race) { const nr = rivalsAt(c, t.id); if (nr > 0) raceG = Math.max(raceG, raceStake(worth, crop, nr, need, arrivalLight(env.daylight, dLdt, d, P, spd))); } // stage E2b
         const tc = fr ? 0 : tripCost(worth, crop, d, h, P, needFruit(c, P, h), spd); // stage E3c: the walk's energy is in the rate
         if (shortlist) { const rv = revisit(x, t.id, time, P); _mem.push(t, worth - tc - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD)); if (cb) _bl.push(crop, time - m.seenAt, d); continue; }
-        if (!held) offer('travel', t.id, worth - tc - revisit(x, t.id, time, P) - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay, V.TREE, -1, cb ? [t.id, crop, time - m.seenAt, 0, d] : null);
+        if (!held) offer('travel', t.id, worth - tc - revisit(x, t.id, time, P) - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay - lost, V.TREE, -1, cb ? [t.id, crop, time - m.seenAt, 0, d] : null);
       } else if (m.kind === 'water' && c.age >= 3 && (water ? c.thirst > 0 : c.thirst > 0.25)) {
         const d = Math.hypot(m.position[0] - px, m.position[2] - pz);
         // stage E2g (waterLedger): thirst from the water deficit, the trip valued by the share of it spent drinking (water.ts)
@@ -502,7 +508,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       const t = _mem[2 * bi] as Tree, base = _mem[2 * bi + 1] as number;
       const bel = cb ? [t.id, _bl[3 * bi], _bl[3 * bi + 1], 0, _bl[3 * bi + 2]] : null;
       _mem.length = 0; _bl.length = 0;
-      if (!held) offer('travel', t.id, base - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay, V.TREE, -1, bel);
+      if (!held) offer('travel', t.id, base - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay - lost, V.TREE, -1, bel);
     }
     if (shortlist) for (let k = 0; k < 4 && _mem.length; k++) {
       let bi = 1;
@@ -510,7 +516,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       const t = _mem[bi - 1] as Tree, base = _mem[bi] as number, e = (bi - 1) >> 1;
       const bel = cb ? [t.id, _bl[3 * e], _bl[3 * e + 1], 0, _bl[3 * e + 2]] : null;
       _mem.splice(bi - 1, 2); if (cb) _bl.splice(3 * e, 3);
-      if (!held) offer('travel', t.id, base - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay, V.TREE, -1, bel);
+      if (!held) offer('travel', t.id, base - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay - lost, V.TREE, -1, bel);
     }
     const callerRate = socialBit(P, 4) && cohesion && fr; // stage E5e: see the branch below
     if (!callerRate && x.joinCall > 0 && time - x.joinAt < 0.3 && c.action !== 'patrol') {
@@ -1476,6 +1482,11 @@ export function nestCompanyValue(world: World, c: Chimp, P: Params, asleepOnly =
  * site is an attempt as by day. Sleeping nest-mates cannot join an attempt (design assumption).
  */
 export function departAudience(world: World, c: Chimp): number {
+  return audienceOf(world, c, null);
+}
+
+/** departAudience's set: own-community animals of 12 y or more within the party link of `c`, not asleep in a nest. */
+function audienceOf(world: World, c: Chimp, out: Chimp[] | null): number {
   const P = paramsOf(world), alive = index(world).alive, l2 = P.partyLinkM * P.partyLinkM;
   let n = 0;
   for (let i = 0; i < alive.length; i++) {
@@ -1483,7 +1494,38 @@ export function departAudience(world: World, c: Chimp): number {
     if (o === c || o.troopId !== c.troopId || o.age < 12) continue;
     if (o.action === 'nest' && ix(o).phase >= 2 && !awakeInNest(P, o)) continue;
     const dx = o.position[0] - c.position[0], dz = o.position[2] - c.position[2];
-    if (dx * dx + dz * dz <= l2) n++;
+    if (dx * dx + dz * dz <= l2) { n++; if (out) out.push(o); }
   }
   return n;
+}
+const _aud: Chimp[] = [];
+
+/**
+ * Stage E5f (departValue; docs/staging/e5f-prereg.md §3): what `c` perceives of its audience (departAudience's set), as
+ * one number: who is there and what each is doing (act and target), in id order (FNV-1a over the integers). Equal
+ * numbers = the same companions doing the same things. Pure.
+ */
+export function audienceSig(world: World, c: Chimp): number {
+  _aud.length = 0;
+  audienceOf(world, c, _aud);
+  _aud.sort((a, b) => a.id - b.id);
+  let h = 0x811c9dc5;
+  const mix = (v: number) => { h = Math.imul((h ^ (v | 0)) >>> 0, 0x01000193) >>> 0; };
+  for (let i = 0; i < _aud.length; i++) { const o = _aud[i]; mix(o.id); mix(CODE[o.action]); mix(o.targetId); }
+  _aud.length = 0;
+  return h;
+}
+
+/**
+ * Stage E5f (departValue): the company `c` would leave by departing alone: the best E5a companyValue (social drive ×
+ * C13e's join terms, plus a fertile female's mating value for a male) among its audience. One companion's worth, as
+ * E5a and E5b count company (design assumption there). Pure.
+ */
+export function audienceCompany(world: World, c: Chimp, P: Params): number {
+  _aud.length = 0;
+  audienceOf(world, c, _aud);
+  let best = 0;
+  for (let i = 0; i < _aud.length; i++) { const v = companyValue(c, _aud[i], P); if (v > best) best = v; }
+  _aud.length = 0;
+  return best;
 }

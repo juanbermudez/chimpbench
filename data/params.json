@@ -5488,6 +5488,37 @@
    "notes": "Moving-together stage: after a failed attempt the initiator's own trips to trees are off its menu for this long, while it still has an audience (mean re-launch delay 3.80 min, 9 cases)."
   },
   {
+   "id": "departValue",
+   "group": "movement",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Food landscape: tree size, crop size and patch use; E5f): gruberZuberbuhler2013, initiators wait and check back; after a failed recruitment some re-launched the effort to the same audience (9 cases, 0-13 min); how often a failed initiator left alone is not reported",
+    "docs/staging/e5a-prereg.md and e5b-prereg.md: companyValue (the company of a companion valued by the animal's social drive) and the margin of company over the company the animal keeps"
+   ],
+   "clock": "none",
+   "symbol": "P.departValue",
+   "file": "src/sim/execution.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage E5f switch (docs/staging/e5f-prereg.md §3): with departPersist 1, an attempt nobody joins or follows within departCheckMin ends in the initiator's own decision instead of a give-up and a re-launch hold: it records what it perceives of its audience (who is there and what each is doing; chimp.sim.dfa, candidates.ts audienceSig) and decides at once (an interrupt; from its own nest it is back in the nest, deciding). While that audience is unchanged, every own trip to a tree is a departure alone (execution.ts departAttempt: no attempt) worth its value less the company it would leave (candidates.ts audienceCompany: the best E5a companyValue among the audience; E5b's margin, nothing known at a goal out of sight); once the audience has changed, a trip is an attempt again, valued as before. No hold (departRetryMin not read) and no cap (departPersistMaxMin not read): re-launching and leaving alone follow from the initiator's valuation and what its companions do. No new magnitude. 0 = today, bit for bit. Design."
+  },
+  {
    "id": "digestaDrupeDmGPerMin",
    "group": "feeding",
    "value": 3.0,

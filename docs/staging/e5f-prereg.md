@@ -235,3 +235,125 @@ departure with no audience, or none; its delay start to start. Also the initiato
 check (what it chose; whether an own trip was the top). The tool's summary defect (above) is fixed. The S27 diagnosis is
 re-run with the amended tool from a frozen checkout of the commit that adds this section (the same simulation: the
 identity check is repeated); these readouts are the ones arms are compared on.
+
+### 2.3 The timer-free readouts on S27 (frozen checkout of 8a7c36e, clean; the same worlds: T-PTY-1 per seed 5.032 / 4.529)
+
+Printed by the stage's table script from `S27b-depart.json` (every earlier readout is identical to §2.1's run):
+
+| first decision after the hold within 1 min of its end (share) | 0.102 |
+| give-ups where the own trip would be top and company max > its margin over the top (share of those top) | 0.856 |
+| give-ups where own trip top: margin over top (median, p90); company max (median) | 0.094, 0.286; 0.441 |
+| attempts given up: trip − stay at the attempt (median, p10, p90) | 0.013, -0.093, 0.176 |
+| attempts by day / night (share at night) | 0.032 |
+| unanswered attempts: n; next own-trip event (share) | 10271; {'re-launch (same audience)': 0.736, 'attempt, new audience': 0.106, 'no audience': 0.087, 'alone (alone)': 0.067, 'none (window end)': 0.004} |
+| re-launch to the same audience: delay start to start | n 7558, mean 140.51, median 53.50, p10–p90 10.75–314.50, min–max 4.75–2809.00 |
+|   bins (min) | {'0–1': 0, '1–2': 0, '2–4': 0, '4–6': 317, '6–8': 188, '8–10': 178, '10–13': 277, '13–30': 916, '30–60': 2253, '60–∞': 3429} |
+|   share of unanswered attempts re-launched to the same audience within 13 min | 0.093 |
+| departure alone after an unanswered attempt: delay from its start | n 692, mean 13.61, median 14.50, p10–p90 7.50–17.00, min–max 4.75–17.75 |
+| first decision after an unanswered check: n; own trip chosen; same trip (alone); own trip top | 10271; 0.025; 0.004; 0.028 |
+|   chosen (share, top 6) | {'crown': 0.371, 'rest': 0.152, 'joined trip': 0.114, 'ground forage': 0.112, 'groom': 0.05, 'to callers': 0.036} |
+
+- After an unanswered attempt (10,271), the initiator's next own trip is a re-launch to the same audience in 74% of
+  cases, but a median 54 min later (within 13 min in 9%); an attempt to a new audience 11%, a departure with no audience
+  9%, a departure alone from the same companions (the cap) 7%, a median 14.5 min after the failed attempt started.
+- At its first decision after the unanswered check (the hold on), an own trip is the top of what is offered in 3%
+  (when the audience has gone, the hold lifts) and it chooses a crown in view 37%, rest 15%, another's trip 11%, ground
+  forage 11%.
+
+## 3. Mechanism (step 2): `departValue`, iteration 1 (registered 4 October 2026 before any run of it)
+
+**Principle.** An initiator's attempt is a proposal: it sets off and checks whether the companions come (C13e's joined
+trip and party follow, each companion valuing the leader's company and the food at its tree, E5a). When none comes, it
+has learned that these companions, doing what they are doing, do not come now. From then on a departure leaves them: it
+is worth the trip's value (food under its own drive and belief, E3c/E3e) less the company it would leave (E5a's
+companyValue: its social drive × C13e's join terms, plus a fertile female's mating value for a male; E5b's margin over
+the company it would have at the goal, which it cannot see). Proposing again to the same companions doing the same
+things would get the same answer; when they change (a companion arrives, leaves, or changes what it is doing: what the
+initiator perceives), a departure is a proposal again. So re-launching and leaving alone follow from the initiator's
+valuation and from what its companions do, with no waiting time and no deadline. Directions: initiators wait and check
+back, and some re-launch to the same audience after a failure [M: gruberZuberbuhler2013]; company is valued by the
+animal's social state [E5a, cabanac1971]. Every magnitude is an existing design term; no new parameter but the switch.
+
+**Change (switch `departValue`, 0 = today in both profiles; read only with `departPersist` 1; field profile).**
+- *The check* (`departCheckMin`, 1 min, design) stays. A companion who joins or follows within it ends the attempt as
+  now (recruited).
+- *Nobody came* (execution.ts `departWait`): instead of giving up, the initiator records what it perceives of its
+  audience (departAudience's set: own-community animals of 12 y or more within the party link, not asleep; who is there
+  and each one's act and target, as one number, candidates.ts `audienceSig`, in chimp.sim.dfa) and decides at once (an
+  urgent interrupt; its trip's continuation terms are neutral: the scheduled end is now, the act not finished). From its
+  own finished nest (E2e) it is back in that nest, deciding now (`resumeNest` until now).
+- *While the audience is as recorded* (candidates.ts): every own trip to a tree is worth its value less `lost` = the best
+  companyValue among the audience (`audienceCompany`), and a trip started then goes alone (execution.ts `departAttempt`:
+  no attempt). Continuing the trip it stands in is such a departure.
+- *Once the audience differs* (or the animal has none), trips are valued as before and a trip with an audience is an
+  attempt again: a re-launch.
+- *Not read:* `departRetryMin` (no hold) and `departPersistMaxMin` (no cap, no effort). Prescriptions on S27 42 → 40
+  (prescription-ledger `--count`; ACTIVE_WHEN in scripts/lib/prescriptions.ts; tests/sim-depart-value.test.ts traces a
+  field half-day: neither is read, `departCheckMin` is).
+- State: one lazy key, chimp.sim.dfa (an integer below 2³², JSON-safe), in OPTIONAL_X. Switch off: today's code path,
+  bit for bit (the field pin and the compressed goldens hold; the diagnostic tap `departTap` is null in every run).
+
+**Design assumptions (labelled).** That an unanswered attempt is information about the audience until it changes; that
+"changes" means membership or any member's act or target; one companion's worth (the best) as the company left, as E5a
+and E5b count it; that the change is noticed at the initiator's own next decision point (no interrupt on a change:
+iteration 1). The check window and the audience definition are unchanged design assumptions of the moving-together stage.
+
+**Not built, with reasons.** (a) The company as a cost of every departure (E5a iteration 1 froze parties): here it applies
+only after an unanswered attempt and only while the audience is unchanged. (b) A probability of recruitment estimated by
+the initiator: it would need a model of others' choices with a time scale (a timer in disguise). (c) An interrupt when
+the audience changes: would make re-launches sooner; held for iteration 2 if the diagnosis of A1 shows the initiator's
+own decision cadence, not its valuation, sets the delays.
+
+**Smoke test (done before this registration; disclosed; seed 48, 1 + 2 days, S27 + the switch; not a result).** The
+readouts fill and the mechanism runs: at the first decision after an unanswered check an own trip is chosen in 10%
+(S27's smoke 5%), continuing the same trip 1.7%; departures alone after an unanswered attempt a median 1.25 min after its
+start (S27 14); re-launches to the same audience within 13 min 11% (S27 9.5%), the shortest 1 min (S27 4.75). Unit tests
+(tests/sim-depart-value.test.ts, 4) pass; the field pin, party-food, ledger and pre-dawn tests pass with the switch off.
+
+**Arm A1** = S27 (S27q-params.json) + `departValue` 1, from a frozen detached checkout of the commit that adds this
+section: e-bench `--quick` (seeds 48 and 7, burn-in 30, 30 days), energy-diagnose, depart-diagnose and rhythm-metrics
+(same seeds and window); `--workers 2`, 1 above load 8. **Reference:** the integrator's four S27 quick realizations
+(S27q, S27q1–3; e-bench and energy-diagnose); depart-diagnose and rhythm-metrics on the same four parameter sets run
+here from the same frozen checkout (the switch is off in them: today's code path).
+
+**Judging (e-noise.md amendment 2, amendment 3).** `REFS=<S27q, S27q1, S27q2, S27q3 .json> judge_vs_reps.py quick custom
+A1.json`: fitted, held-out, held-out without T-HUN-4, T-BRD-1 and T-IGE-3; |z| > 2 a result. Readouts against the four
+runs' mean ± SD.
+
+**Predictions (A1 against the S27 group; low confidence unless stated).**
+
+| Quantity | S27 (group mean ± SD; the diagnosis where single) | A1 | Confidence |
+| --- | --- | --- | --- |
+| Prescriptions | 42 | 40 | high |
+| Viability; night (adults out of a nest; T-RHY-5) | pass; 2.47%, 0.019 (S27q) | pass; ≤ 3.3%, ≤ 0.033 | moderate |
+| Attempts per adult-day | 6.6 (S27q diagnosis) | 5–8 | moderate |
+| Success share | 0.41 | 0.35–0.45 | moderate |
+| After an unanswered attempt: own trip chosen at the next decision | 3% (hold) | 5–20% | moderate |
+| Departure alone from the same companions (share of unanswered attempts) | 7% (the cap), median 14.5 min after the start | 3–15%, median below 5 min | low |
+| Re-launch to the same audience within 13 min (share of unanswered) | 9% | 5–20% | low |
+| Re-launch delay, start to start (same audience, all) | median 54 min; within 13 min no shorter than 4.75 | shortest below 4.75; median 20–80 min | low |
+| T-PTY-1 | 4.59 ± 0.15 | 4.2–5.0 | low |
+| T-ACT-2 | 0.116 ± 0.009 | 0.10–0.13 | low |
+| T-FOOD-10 | 0.59 ± 0.06 | 0.45–0.70 | low |
+| Reserves %/day: males, nursing mothers, juveniles | +0.002, −0.000, −0.027 | each within 0.03 of the mean | low |
+| Fitted; held-out, with and without the rare rows | group mean | inside noise | moderate |
+
+**Kill criterion (registered).** Null if (a) viability fails (a starvation death, or a seed below 80% of its start); (b)
+any class's reserve slope (energy-diagnose: adult males, other females, nursing mothers, juveniles 5–12 y) is more than
+0.05% of the store a day below the S27 group mean; (c) held-out is worse beyond noise (z > +2) with or without the rare
+rows; (d) night safety fails (adults out of a nest > 3.3% of the night, or T-RHY-5 > 0.033); (e) the mechanism does not
+run (no first decision after an unanswered check with an own trip on the menu, or `departRetryMin` / `departPersistMaxMin`
+still read).
+
+**Verdict rule (registered).** `departValue` removes two counted prescriptions, so the track's keep rule applies: viable,
+held-out (both row sets) not worse beyond noise, prescriptions down (42 → 40), night safe: a **provisional keep
+candidate** for the integrator's 5-seed confirm; otherwise recorded, off. Party size, travel, departures before sunrise,
+re-launch delays and the go-alone share are reported against the reference, never used to choose.
+
+**Known defects in the code under test (deferred, file:line at this commit).**
+- `src/sim/execution.ts` departWait: a recruit is any own-community animal joining or following, of any age, while the
+  audience counts animals of 12 y or more (moving-together design; unchanged).
+- `src/sim/execution.ts` departAttempt: an attempt whose initiator is interrupted and switches act during the check keeps
+  `tryN` until its next trip (harmless: only a travelling initiator checks); the tool counts it "interrupted".
+- `src/sim/candidates.ts` audienceSig: a companion moving within its crown keeps its act and target (no change); one
+  re-targeting the same act to another tree is a change (by definition).
