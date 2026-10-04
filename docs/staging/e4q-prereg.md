@@ -1,8 +1,9 @@
 # E4q pre-registration: aggression without cooldowns
 
-Status: skeleton committed in the stage's first 15 minutes (4 October 2026, branch `e4q-aggression`, from `track-e`
-aa698bd). The diagnosis readouts, field rows and their samples, mechanism, predictions and kill criterion are added and
-committed before any run of a switch on. Track E, stage E4, piece q.
+Status: complete (4 October 2026). `aggressionGaps` 7 is a provisional keep candidate (S27 51 → 48; §7.2); no literal set
+its behaviour's rate (§2.1). Skeleton committed in the stage's first 15 minutes (branch `e4q-aggression`, from `track-e`
+aa698bd, 31f6457); the diagnosis, readouts, field rows, mechanism, predictions and kill criterion were committed before any
+run of the switch on (fbfeb29, c44d425, 6bb9a5a). Track E, stage E4, piece q.
 
 Rule served: field values of behaviour are targets, never inputs. No interval, value, bonus or weight is chosen to hit an
 aggression or display rate.
@@ -126,7 +127,7 @@ intervals between a male's displays (h; <0.25, <0.5, <0.75, <1, <1.5, <3, ≥3):
   strangers' males) held at 2 decisions per run, none within 0.2 h of the male's last aggression.
 - **The 0.75-h display gap trims, by the registered threshold.** It binds often (4,219 decisions, 0.093 per male-hour;
   the display was then the best option over resting, 45%, a trip to a tree, 24%, feeding, 12%), and the displays pile up
-  just after the gap lapses (199–283 per run 0.75–1 h after the last, none before); removed (D3), status, reunion and
+  just after the gap lapses (199–283 per run 0.75–1 h after the last; 1–19 before it, rain and stranger displays, which it does not gate); removed (D3), status, reunion and
   rival displays rise ×1.42 (0.181 → 0.257 per male-hour, z +6.5), just under the registered ×1.5. What sets most of the
   display rate is the display's own score against resting, travel and feeding.
 - States at binding are low (display: competitive arousal 0.06, stress 0.12, fast arousal 0.02, 0.28 h after the last
@@ -262,6 +263,9 @@ without T-HUN-4, T-BRD-1 and T-IGE-3 (amendment 3). Readouts against the referen
 - **A1** (§4.1; `aggressionGaps` 7 on S27): registered 4 October 2026 at the commit that adds this line; run from a
   frozen detached checkout of it: `e-bench --quick` (`--workers` 1 above load 8, else 2), `energy-diagnose`,
   `aggression-diagnose`, `rhythm-metrics` (seeds 48, 7; 30 + 30 days).
+  Run 16:21–16:27 from a frozen detached checkout of 6bb9a5a (clean), `--workers` 2 (load 5.9). Result in §7.1: keep rule
+  passed, no kill criterion met.
+- No further iteration (§7.2).
 
 ## 7. Results
 
@@ -354,4 +358,20 @@ are not rows (no band was registered), and building toward them would tune to a 
 - T-DEM-23 is sealed and cannot be read here; no row scores adult aggression or display rates (staging them is the user's
   decision).
 - Known approximation of the binding readout: the chosen option's belief offset (choiceBelief) is not known to the tool;
-  254 of the 4,219 display binds (6%) were against an option with a belief part.
+  1,018 of the 4,219 display binds (24%; 254 ± 87 a run) were against a chosen trip with a belief part, so the display's
+  binding count is uncertain by up to that share. The verdicts do not rest on it: the ≥ 30 binding line holds without
+  them, and "sets the rate" is read from the scratch arms, which are exact.
+
+## 8. Files and final checks
+
+- Outputs (local, gitignored): `artifacts/validation/e4q/` (copied from the stage scratch `e4q/`): `diag/` (the four D0
+  diagnoses, the three scratch arms D1–D3 and A1's diagnosis), `arms/` (A1: e-bench, energy, aggression and rhythm JSON),
+  the tables printed for §2.1 and §7.1, and the table scripts (`diag_table.py`, `diag_summary.py`, `e4q_judge.py` (a copy of
+  the integrator's `judge_s27q.py` reading A1), `final_table.py`) and the run scripts.
+- Code: `src/sim/candidates.ts` (`aggrBit`; the three gates; the diagnosis kinds of `quotaTrace`), `data/params.json`
+  (`aggressionGaps`), `scripts/aggression-diagnose.ts`, `scripts/lib/prescriptions.ts` (TRACK_E_SWITCHES, three LITERAL_OFF
+  entries), `tests/sim-aggression-gaps.test.ts`; text pieces in `tests/prescription-ledger.test.ts` and
+  `scripts/lib/decision-guide-content.ts`; `docs/decision-guide.html` regenerated.
+- After merging `track-e` once (2e12dcd → e8de2c5; the generated guide's conflict resolved by regenerating it on S32):
+  `gen-params --check` clean, `tsc --noEmit` clean, `pnpm test` 831 tests: 830 pass, 0 fail, 1 skipped;
+  `decision-guide.ts --check` up to date; `git ls-files data/raw node_modules` empty.
