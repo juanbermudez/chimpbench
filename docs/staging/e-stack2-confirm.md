@@ -3240,3 +3240,22 @@ slightly (T-PTY-1 4.51 against 4.04).
 replaces S25 as the best integrated candidate**: the walking speed is set by the body (`walkGait`) instead of a fixed
 `walkMps`, and the extra walking pays for itself in food. The open cost is the pre-dawn departure share (T-FOOD-10),
 off target on S25 too (0.556).
+
+## S28q, a quick check of re-decision on S27 (registered 4 October 2026 before its run)
+
+**S28q = S27 + E3d's `redecideValue` 2** (a fresh choice when a need changes level or the light changes phase; removes
+`rgMaxAgeH` and `continueBonus`: 42 → 40). S18 passed alone on S17; S20 (with `huntPursuit`) was not adopted, and its
+verdict asked that S18's costs (rest below its band; females' and young infants' reserves) get their own stage first.
+**Reading to test, not assume:** those costs came from re-drawn choices under the fitted choice temperature (E3d's open
+problem: the noise picked feeding options the animal could rank by rate), which `choiceBelief` removed in S21; on S27 the
+re-decisions would then cost little. **Run:** quick mode (seeds 48 and 7, 30 + 30 days) plus energy-diagnose, from
+bench-run3 at 28d249e (code identical to track-e for these switches), judged with judge_vs_reps.py against the S27 quick
+group (S27q, S27q1–S27q3 by `rngSalt` 1, 2, 3); night safety from rhythm-metrics (seeds 48 and 7, 30 + 30).
+
+**Predictions (against the S27q group).** 40 prescriptions (high). Viability and night safety pass (moderate). Sums inside
+noise, with and without the rare rows (moderate). Rest (T-ACT-4) inside its band, 0.30–0.47 (low: S18 put it below).
+Fruit share (T-FOOD-2) within the group's spread (moderate). Nursing mothers', juveniles' and young infants' reserves
+within 0.03 %/day of the group's mean (low).
+
+**Decision rule.** If the sums are inside noise, viability and night safety pass and rest stays in its band, a 5-seed
+confirm (S28) is registered next; otherwise the costs go to a stage of their own, and `redecideValue` stays off the stack.
