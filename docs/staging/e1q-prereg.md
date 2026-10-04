@@ -90,6 +90,48 @@ sources cannot give a wild value for a factor, the factor is reported as unaudit
 a behaviour leads to a mechanism (step 2), not to a cost change; a factor implicated as an input leads to a sourced
 correction tagged by its evidence level, never to a value chosen for the ratio.
 
+### 2.1 Diagnosis results, the model's side (frozen checkout 398a5c3, clean; quick, seeds 48 and 7, 30 + 30 days; every number printed by the stage's scripts `tables.py`, `climbtable.py`, `equations.py` from the JSON in the stage's scratch directory, `runs/`)
+
+S25 = the integrator's S25q parameters (climb-diagnose run here: its walk and climb kcal equal S25q-energy.json's books,
+69.5 / 57.0 kcal/day for males); W = S25 + `walkGait` 1 (climb-diagnose, e-bench, energy-diagnose).
+
+```
+| readout (per animal-day) | males: S25 → W | other females: S25 → W | nursing mothers: S25 → W | juveniles 5–12 y: S25 → W | infants 2–5 y: S25 → W | infants 0.5–2 y: S25 → W |
+| ascents/day | 13.1 → 15.1 | 10.3 → 11.4 | 9.8 → 11.9 | 15.1 → 17.6 | 9.3 → 12.6 | 8.5 → 10.6 |
+| metres per ascent | 9.5 → 9.5 | 9.7 → 9.4 | 9.5 → 9.7 | 9.0 → 9.4 | 9.2 → 9.3 | 8.4 → 8.6 |
+| metres climbed/day | 125 → 144 | 99 → 108 | 94 → 115 | 136 → 166 | 86 → 117 | 71 → 91 |
+| metres descended/day | 125 → 144 | 99 → 108 | 93 → 115 | 136 → 166 | 58 → 83 | 57 → 71 |
+| climb kcal/day (own) | 57.0 → 65.7 | 36.4 → 39.7 | 34.3 → 42.1 | 43.4 → 52.5 | 11.5 → 15.8 | 6.0 → 7.6 |
+| kcal per ascent | 4.36 → 4.34 | 3.55 → 3.47 | 3.50 → 3.55 | 2.86 → 2.98 | 1.24 → 1.26 | 0.70 → 0.72 |
+| J per kg per metre climbed | 49.05 → 49.05 | 49.05 → 49.05 | 49.05 → 49.05 | 49.05 → 49.05 | 49.05 → 49.05 | 49.05 → 49.05 |
+| walk kcal/day (own) | 69.5 → 97.9 | 43.9 → 58.8 | 56.9 → 76.5 | 63.5 → 84.7 | 7.4 → 6.2 | 3.1 → 2.8 |
+| walk ÷ climb, own | 1.22 → 1.49 | 1.21 → 1.48 | 1.66 → 1.82 | 1.47 → 1.61 | 0.64 → 0.39 | 0.52 → 0.37 |
+| walk ÷ climb, with carrying | 1.22 → 1.49 | 1.21 → 1.48 | 1.87 → 2.07 | 1.47 → 1.61 | 0.64 → 0.39 | 0.52 → 0.37 |
+| crown visits/day | 9.7 → 11.0 | 7.7 → 8.7 | 8.1 → 9.2 | 10.2 → 11.1 | 5.1 → 5.0 | 1.5 → 1.2 |
+| crown-approach ascents per crown visit | 0.87 → 0.90 | 0.84 → 0.85 | 0.84 → 0.87 | 0.82 → 0.86 | 0.23 → 0.15 | 0.36 → 0.17 |
+| metres/day: to crowns | 89 → 104 | 68 → 76 | 70 → 86 | 84 → 101 | 11 → 6 | 5 → 2 |
+| metres/day: to nests | 10 → 10 | 11 → 11 | 10 → 9 | 10 → 11 | 1 → 0 | 0 → 0 |
+| metres/day: behind a carer | 0 → 0 | 0 → 0 | 0 → 0 | 5 → 12 | 61 → 89 | 48 → 66 |
+| metres/day: to a partner or other social | 24 → 28 | 20 → 20 | 12 → 18 | 33 → 37 | 11 → 19 | 16 → 21 |
+| metres/day: other acts | 2 → 2 | 1 → 1 | 1 → 2 | 5 → 5 | 3 → 3 | 1 → 2 |
+| share of metres climbed after a ground gap < 10 m | 0.36 → 0.28 | 0.38 → 0.31 | 0.33 → 0.30 | 0.44 → 0.41 | 0.75 → 0.70 | 0.78 → 0.75 |
+| climbing min/day (up + down) | 21.9 → 25.2 | 18.3 → 20.0 | 16.6 → 20.2 | 26.8 → 32.5 | 19.4 → 25.9 | 20.1 → 24.9 |
+```
+
+Walking ÷ climbing energy per day (energy-diagnose, the ledger's books), S25's four runs against W: males 1.22 / 1.24 /
+1.24 / 1.12 (1.21 ± 0.05) → 1.49; other females 1.17 ± 0.07 → 1.48; nursing mothers 1.52 ± 0.12 → 1.82; juveniles 1.35
+± 0.09 → 1.61; infants 0.4 (they climb behind their mothers and walk little). W's bench: fitted z −0.6, held-out z +0.1,
+without the rare rows z +0.5 (inside noise); T-RNG-4 2.24 (S25 1.52 ± 0.10), T-ACT-2 0.108 (below its band; 0.163 ±
+0.005), T-FOOD-10 0.613 (0.499 ± 0.032); reserves inside S25's spread in this draw.
+
+The same metres costed by other published equations (`equations.py`; mass derived from the ledger's own climb kcal):
+walking ÷ climbing for males / other females / nursing mothers / juveniles on S25 = 1.22 / 1.21 / 1.66 / 1.47 (the
+model: sockol2007's net 3.8 J/kg/m; 49.05 J/kg/m up, descent free); 1.52 / 1.51 / 2.07 / 1.83 with climbing at m·g·h ÷
+0.25 (39.2 J/kg/m); 1.35 / 1.43 / 1.97 / 1.81 with taylor1982's net walking cost and m·g·h ÷ 0.25; 0.92 / 0.98 / 1.35 /
+1.24 with descent charged as negative work (m·g·h ÷ 1.2); 4.1 / 4.4 / 6.0 / 5.5 with taylor1982's gross walking cost at
+0.83 m/s and nguessan2009's human rock-climbing climb (≈ 22 J/kg/m net). No combination of sourced costs reaches 10 on
+the model's metres.
+
 ## 3. Sources (to be read; addenda "Addendum: E1q climbing" in research.md and e-sources.md)
 
 Per term: metres climbed per day by wild chimpanzees (pontzerWrangham2004's distances: primary closed and a listed dead
