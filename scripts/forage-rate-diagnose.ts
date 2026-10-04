@@ -333,7 +333,7 @@ const med = (v: number[]) => { const q = [...v].sort((a, b) => a - b); return q.
 export function summarize(res: Result[], P: Params, days: number): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   const decs = res.flatMap(r => r.decisions);
-  out.identity = { decisions: decs.length, menuMismatch: decs.filter(d => !d.menuMatch).length, maxProbError: r3(Math.max(0, ...decs.map(d => d.idErr))) * 1, clampedOptions: res.reduce((a, r) => a + r.clamped, 0), options: res.reduce((a, r) => a + r.options, 0),
+  out.identity = { decisions: decs.length, menuMismatch: decs.filter(d => !d.menuMatch).length, maxProbError: r3(decs.reduce((a, d) => Math.max(a, d.idErr), 0)), clampedOptions: res.reduce((a, r) => a + r.clamped, 0), options: res.reduce((a, r) => a + r.options, 0),
     clampedByKind: Object.fromEntries(['crown', 'fallback', 'trip', 'join'].map(k => [k, res.reduce((a, r) => a + (r.clampedByKind[k] ?? 0), 0)])), fallbackRawMismatch: res.reduce((a, r) => a + r.fbRawMismatch, 0),
     rawMismatch: Object.fromEntries(['crown', 'trip', 'join'].map(k => [k, res.reduce((a, r) => a + (r.rawMismatch[k] ?? 0), 0)])) };
   // terms of the chosen and the best rejected feeding option
