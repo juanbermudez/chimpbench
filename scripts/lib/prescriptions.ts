@@ -413,8 +413,12 @@ export interface Literal {
   text: string; values: number[];
   /** interval and bonus: [start, end) offsets in the line of each literal's text (scripts/param-reads.ts --literals moves them). */
   spans?: [number, number][];
+  /** interval and bonus: the units of the values (h on the clock, s of the current act, ticks; score for a bonus). */
+  units?: string;
   /** Counted as a prescription, or the reason it is not. */
   counted: boolean; why: string;
+  /** A counted literal the ledger counts by a judgement call (LITERAL_JUDGEMENT). */
+  borderline?: boolean;
 }
 
 /** Files that model the world, not behaviour: their literals are reported and not counted. */
@@ -479,6 +483,11 @@ export const LITERAL_ALLOW: { file: string; has: string; kind?: Literal['kind'];
   // L7: one prescription written on two lines is counted once
   { file: 'execution.ts', has: 'if (c.actionTime > P.mateApproachS || x.phase > 8) { x.lastMate = Math.max(x.lastMate, world.time - MATE_INTERVAL_H + 0.5)', kind: 'interval', why: 'the same 0.5-h block after a failed approach as mateTick\'s first exit above: one prescription, counted there (e0b §2 L7)' },
 ];
+/** Counted literals that are judgement calls (marked † in the ledger, as OVERRIDES' borderline entries), with the reason. */
+export const LITERAL_JUDGEMENT: { file: string; has: string; kind: Literal['kind']; why: string }[] = [
+  { file: 'execution.ts', has: "c.actionTime % 60 === 0 && c.actionTime > 0) emitCall(world, c, 'alarm-hoo')", kind: 'interval', why: 'an alarm hoo repeated every 60 s of an alarm bout, and listeners near the snake model learn of it from the hoos: an act on a fixed schedule, a quota by patrolStopEveryMin\'s judgement (e0b-prereg §2 L3)' },
+  { file: 'candidates.ts', has: '(time - x.lastCall < 0.03 ? 0.4 : 0)', kind: 'bonus', why: 'a fixed penalty of 0.4 on an alarm call within 1.8 min of the animal\'s own last call (the alarm included): it sets the repetition of alarm calls, a bonus by finishedPenalty\'s judgement (e0b-prereg §3 B1)' },
+];
 /**
  * Literals switched out by a registry parameter (later stages add theirs): the literal is not counted while `off`
  * returns true for the resolved parameters. Without `kind` an entry covers every kind of literal on its line.
@@ -494,8 +503,8 @@ export const LITERAL_OFF: { file: string; has: string; kind?: Literal['kind']; o
   // stage E2a: the night and dusk menus, for rules-driven chimps
   ...(['night', 'dusk'] as const).map(m => ({ file: 'menu.ts', has: `${m}: new Set<Action>(`, off: (P: Record<string, number>) => P.rhythmFreeNight === 1, why: `rules-driven chimps are not filtered by the ${m} menu while rhythmFreeNight is 1 (rg.ts rgMenu, urgency.ts; stage E2a). Model-driven chimps keep it (src/decision.ts); Track E runs the rules policy only` })),
   // stage E4c (callValue): the chorus clock windows and the arrival coin at rich figs
-  { file: 'candidates.ts', has: '((hour >= 18 && hour < 19) || (hour >= 6.4 && hour < 7.4))', off: P => P.callValue === 1, why: 'the dawn and dusk chorus windows: with callValue 1 a pant-hoot follows its value at any hour (calls.ts pantHootValue, stage E4c)' },
-  { file: 'execution.ts', has: "(t.common === 'fig' || t.id === simOf(world).figTree) && random(world) < 0.5", off: P => P.callValue === 1, why: 'the 50% arrival pant-hoot at rich figs: with callValue 1 the arrival pant-hoot is given when its value is positive (calls.ts, stage E4c)' },
+  { file: 'candidates.ts', has: '((hour >= 18 && hour < 19) || (hour >= 6.4 && hour < 7.4))', off: P => P.callValue === 1, why: 'the dawn and dusk chorus windows and the 1.5-h gap after a call on the same line: with callValue 1 a pant-hoot follows its value at any hour (calls.ts pantHootValue, stage E4c)' },
+  { file: 'execution.ts', has: "(t.common === 'fig' || t.id === simOf(world).figTree) && random(world) < 0.5", off: P => P.callValue === 1, why: 'the 50% arrival pant-hoot at rich figs and its 0.75-h gap after a call: with callValue 1 the arrival pant-hoot is given when its value is positive (calls.ts, stage E4c)' },
   // stage E0b (docs/staging/e0b-prereg.md §4; verified by a code read and scripts/param-reads.ts --literals, §6): time
   // literals a Track E switch takes out of use. The chorus line's 1.5-h gap and the fig line's 0.75-h gap go with the two
   // entries above (no kind: the whole line)
@@ -570,10 +579,11 @@ export function lintSource(file: string, text: string, P: Record<string, number>
   text.split('\n').forEach((raw, i) => {
     const line = raw.replace(/\/\/.*$/, '');
     if (/^\s*(\*|\/\*)/.test(raw)) return;
-    const add = (kind: Literal['kind'], values: number[], spans?: [number, number][]) => {
+    const add = (kind: Literal['kind'], values: number[], spans?: [number, number][], units?: string) => {
       const hits = (a: { file: string; has: string; kind?: Literal['kind'] }) => a.file === file && raw.includes(a.has) && (!a.kind || a.kind === kind);
       const allow = LITERAL_ALLOW.find(hits);
       const off = LITERAL_OFF.find(a => hits(a) && a.off(P));
+      const judge = LITERAL_JUDGEMENT.find(hits);
       const world = WORLD_FILES.has(file);
       const textOnly = kind === 'hour' && TEXT_ONLY.test(line.slice(line.search(HOUR)));
       HOUR.lastIndex = 0;
@@ -582,7 +592,7 @@ export function lintSource(file: string, text: string, P: Record<string, number>
         : kind === 'menu' ? 'acts allowed or barred by the time of day'
         : kind === 'interval' ? 'a fixed interval in behaviour code: an act barred until it has passed since the animal\'s own last act of its kind, or repeated at a fixed period (a quota, rule 5e; e0b-prereg §2 L3)'
         : 'a fixed bonus or penalty, switched by the clock, for carrying on with or repeating an act (as continueBonus and finishedPenalty; e0b-prereg §3 B1)';
-      found.push({ file, line: i + 1, kind, text: raw.trim().slice(0, 200), values, ...(spans ? { spans } : {}), counted: !why, why: why || counted });
+      found.push({ file, line: i + 1, kind, text: raw.trim().slice(0, 200), values, ...(spans ? { spans, units } : {}), counted: !why, why: why || (judge ? `judgement call: ${judge.why}` : counted), ...(!why && judge ? { borderline: true } : {}) });
     };
     const hours = [...line.matchAll(HOUR)].map(m => +m[1]);
     if (hours.length) add('hour', hours);
@@ -591,13 +601,13 @@ export function lintSource(file: string, text: string, P: Record<string, number>
     if (file === 'menu.ts' && MENU.test(line)) add('menu', []);
     // stage E0b: string text is blanked (same length, so the offsets hold) before the time forms are read
     const code = line.replace(/`(?:[^`\\]|\\.)*`|'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"/g, s => ' '.repeat(s.length));
-    const iv = new Map<number, [number, number]>();
-    for (const re of INTERVAL) for (const m of code.matchAll(re)) { const [a, b] = m.indices![1]; iv.set(a, [a, b]); }
-    for (const sp of gateSpans(code)) iv.set(sp[0], sp);
-    if (iv.size) { const sp = [...iv.values()].sort((p, q) => p[0] - q[0]); add('interval', sp.map(([a, b]) => numValue(code.slice(a, b))), sp); }
+    const iv = new Map<number, [number, number]>(), unit = new Map<number, string>();
+    for (const re of INTERVAL) for (const m of code.matchAll(re)) { const [a, b] = m.indices![1]; iv.set(a, [a, b]); unit.set(a, /%/.test(m[0]) ? (/actionTime/.test(m[0]) ? 's' : 'ticks') : 'h'); }
+    for (const sp of gateSpans(code)) { iv.set(sp[0], sp); unit.set(sp[0], 'h'); }
+    if (iv.size) { const sp = [...iv.values()].sort((p, q) => p[0] - q[0]); add('interval', sp.map(([a, b]) => numValue(code.slice(a, b))), sp, unit.get(sp[0][0])); }
     const bonus: [number, number][] = [], bv: number[] = [];
     for (const m of code.matchAll(BONUS)) for (const g of [2, 4]) { const [a, b] = m.indices![g]; if (+m[g] !== 0) { bonus.push([a, b]); bv.push((m[g - 1] ? -1 : 1) * +m[g]); } }
-    if (bonus.length) add('bonus', bv, bonus);
+    if (bonus.length) add('bonus', bv, bonus, 'score');
   });
   return found;
 }
