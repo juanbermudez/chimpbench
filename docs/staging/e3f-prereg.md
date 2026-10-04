@@ -34,7 +34,7 @@ value, bonus or weight is added or set to reach a feeding time, a travel share, 
    truth: each crown's crop in kcal at the start of each visit (by species group and crown size), kcal eaten per visit and
    per feeder, feeders per crown at once, visits to empty a crown, why bouts end, what the crop units are; name what
    `fruitIntakePerH` decides, with numbers.
-2. **Sources** (§3; added to docs/research.md and docs/staging/e-sources.md first, as "Addendum: E3f crop energy"):
+2. **Sources** (§3; added to docs/research.md and docs/staging/e-sources.md first, as "Addendum: E3f what a crown holds"):
    crop sizes of Kibale fruit trees (fruit counts by DBH or crown size, fruit mass and energy by species), how long
    parties feed in one crown and how many feed together, how often crowns are left before they are empty.
 3. **Mechanism** behind a new switch (0 = today), from first principles: a crown's crop expressed in energy from sourced
@@ -166,7 +166,7 @@ eaten per crown over the 30 days (means of the four runs' medians); median 14–
    highest).
 4. **Depletion is real but slow, and recovery feeds the crowns.** An occupancy episode (24 min, 1.9 visits) takes 27% of
    the crop; half the crowns fed in fall below the visibility threshold within the 30 days (a third below 0.02 units),
-   after a median 14–15 visits; over the window a crown yields 3.4 × its first phenology crop, so about two thirds of what
+   after a median 14–15 visits; over the window a crown yields 3.4 × its first phenology crop, so at least 70% of what
    crowns give comes from the design recovery (`patchRecoverPerDay` 0.7 of the deficit per day).
 
 Field comparison (potts2011, research.md): patch residency 27 (Ngogo) to 46 (Kanyawara) minutes with feeding parties of
