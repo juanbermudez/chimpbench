@@ -83,6 +83,12 @@ and 7, burn-in 30, 30 days. Definitions:
 
 Smoke test: the script on S27 for 2 days (seed 48, burn-in 1) before the run.
 
+**Amendment 1 (4 October 2026, before any result of the diagnosis was read).** The crown readouts have no reference
+spread: the script also runs on S27's three re-draws (`rngSalt` 1, 2, 3, the integrator's S27q1–S27q3 parameters), so
+every crown readout is reported as the mean ± SD of four realizations. Frozen checkout 592cfe9 (the first launch at
+6d3019e was stopped unread: its summary was quadratic in the number of visits; the fix computes the pooled mean once and
+drops the `ate > 0` filter from "visits the crop holds", as §2 defines it).
+
 ## 3. Sources
 
 (Pending: docs/research.md and docs/staging/e-sources.md, "Addendum: E3f crop energy".)
