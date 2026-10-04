@@ -3890,3 +3890,5 @@ night safety pass; sums inside noise; parties smaller by 0.1–0.5 (S29); reserv
 spread; walking within the group's spread. S32: 36 (high); viability and night safety pass; held-out sums inside noise
 (low); the fitted sum worse beyond noise through hunting (S28); adult males walk 3.9–4.6 km a day; other females',
 juveniles' and young infants' reserves below the group's mean by more than its SD; T-RNG-4 above 3.2.
+
+**Integrator note (4 October 2026, after E0b merged, 3c82e11; before any result of S31 or S32).** From here on counts use E0b's ledger, which also counts literal time quotas: S27 51, S28 48, S29 49, S30 50, S31 48, S32 45 (registered above as 41, 39, 39, 40, 38 and 36 on the ledger at 4111971). The keep rule's "prescriptions fall" holds on both ledgers for every arm. S31 and S32 run at 4111971, so their e-bench JSON prints the old counts.
