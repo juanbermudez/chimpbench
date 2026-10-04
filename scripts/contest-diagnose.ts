@@ -104,6 +104,8 @@ for (const seed of seeds) {
         k: 'charge', t: r3(time - t0), variant: VNAME[cx.v] ?? cx.v, response: e.response, dist: r3(hd(c, o)),
         c: side(w, c, P), o: side(w, o, P), dElo: Math.round(c.elo - o.elo), even: r3(Math.min(sc, so) / Math.max(0.05, sc, so)), strRatio: r3(sc / Math.max(0.05, so)),
         cDominates: dominates(c, o), allies: al, hitP: e.hitP, inRange: e.inRange, hit: e.hit, escP: r3(e.escP), escalated: e.escalated, dominant: e.dominant, winP: r3(e.winP), won: e.won,
+        // what the target was doing when the charge was resolved (a target that "stood its ground" did not answer this charge)
+        oAction: o.action, oAtC: o.targetId === c.id, oV: VNAME[ix(o).v] ?? ix(o).v, oSinceCharged: r3((time - ix(o).victimAt) * 60), oVictimOfC: ix(o).victimOf === c.id, oAsleep: asleep(o),
       };
       events.push(ev);
       bump(`charges resolved: ${e.response}`);
@@ -116,13 +118,13 @@ for (const seed of seeds) {
       const origin = esc !== undefined && time - esc < 0.1 ? 'escalated counter-charge' : `attack ${VNAME[e.variant] ?? e.variant}`;
       if (esc !== undefined) escalatedAt.delete(key);
       const ev: Ev = { k: 'fight', t: r3(time - t0), origin, variant: VNAME[e.variant] ?? e.variant, c: side(w, c, P), o: side(w, o, P), dElo: Math.round(c.elo - o.elo),
-        winP: r3(e.winP), won: e.won, injury: r3(e.injury), seriousP: e.seriousP, serious: e.serious, winnerWound: r3(e.winnerWound), died: e.died };
+        winP: r3(e.winP), won: e.won, injury: e.injury, seriousP: e.seriousP, serious: e.serious, winnerWound: e.winnerWound, died: e.died };
       events.push(ev);
       bump(`fights: ${origin}`);
       return;
     }
     // decided
-    const ev: Ev = { k: 'decided', t: r3(time - t0), how: e.how, w: e.w.id, l: e.l.id, wcls: cls(e.w), lcls: cls(e.l), injury: r3(e.injury), eloW: Math.round(e.eloW), eloL: Math.round(e.eloL),
+    const ev: Ev = { k: 'decided', t: r3(time - t0), how: e.how, w: e.w.id, l: e.l.id, wcls: cls(e.w), lcls: cls(e.l), injury: e.injury, eloW: Math.round(e.eloW), eloL: Math.round(e.eloL),
       dElo: r3(e.dElo), upset: e.eloW < e.eloL, allies: e.allies, takeover: e.takeover };
     events.push(ev);
     if (isAdultMale(e.w) && isAdultMale(e.l) && e.w.troopId === e.l.troopId) { const k2 = e.w.id < e.l.id ? `${e.w.id}-${e.l.id}` : `${e.l.id}-${e.w.id}`; dyadConf.set(k2, (dyadConf.get(k2) ?? 0) + 1); }
