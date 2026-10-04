@@ -71,6 +71,9 @@ any run):**
   climbing animal could make in the canopy (adjacent crowns), a move of under 3 m is a re-climb at the same spot.
 - *ascent height by act* (metres per ascent, crown approach, nest, care follow, pair approach, other).
 - *perch height* at the end of each ascent (mean and p10/p50/p90), against the trees' heights.
+- Smoke test (2 days of S25, seed 48, burn-in 1 day; before any run): every readout fills; the ascents by key sum to
+  `ascentsPerDay` (14.79 against 14.8 for adult males); the cost per kg and metre climbed reads 49.05 J/kg/m in every
+  class (the ledger's own number). Not a result (one seed, 2 days, no burn-in).
 
 **Runs** (quick: seeds 48 and 7, burn-in 30, 30 days, field profile; from a frozen detached checkout of the commit that
 registers the tool amendment): climb-diagnose on S25 (S25q-params.json) and on S25 + `walkGait` 1; energy-diagnose on S25
