@@ -5,7 +5,7 @@ import { addEvent, emitCall, endInteraction, episode, findInteraction, flashInte
 import { nestPoint } from './generation';
 import { addBond, dominates, eloUpdate, rankedMale } from './hierarchy';
 import { paramsOf, type Params } from './params';
-import { driveOn, eat, fallbackKcalPerH, fruitKcalPerUnit, glandEmpty, gutRoom, intakeSize, ledgerOn, nurseTick, ownDrive, relDeficit, sharePlant } from './energy';
+import { driveOn, eat, fallbackKcalPerH, fruitKcalPerUnit, glandEmpty, gutRoom, intakeSize, ledgerOn, massOf, nurseTick, ownDrive, relDeficit, sharePlant } from './energy';
 import { snareIntake } from './snares';
 import { lightArousal } from './rhythm';
 import { drinkTick, waterOn } from './water';
@@ -18,7 +18,7 @@ import type { ParamId } from './params.gen';
 import { NEVER, TICK_HOURS, TICK_SECONDS, awakeInNest, byIdIn, huntOf, index, isTreeId, ix, simOf, type ChimpX } from './state';
 import { resolveHunt } from './ecology';
 import { HUNT_CLIMB, HUNT_STANDOFF_M, bodySpeed, pursuitEachTick, pursuitOn, spreadBearing } from './huntpursuit';
-import { endoOn, endoShared, endoThreat } from './endocrine';
+import { acuteDrive, endoOn, endoShared, endoThreat } from './endocrine';
 import { callValueOn, crownOf, gruntWorth, hooWorth, pantHootValue } from './calls';
 import { eatFruit, forageYield, fruitAt } from './phenology';
 import { bestFallbackNear, eatFallback, fallbackOn, fallbackStock, fallbackValue } from './fallback';
@@ -1068,6 +1068,18 @@ function fallbackTick(world: World, c: Chimp): void {
   else c.hunger = clamp(c.hunger - eatFallback(world, c, dtH));
 }
 
+/**
+ * Stage E4m (leftoverRules bit 1; docs/staging/e4m-prereg.md §5): play turns rough when the stronger player's restraint
+ * fails. The share of its force it no longer holds back is its acute drive (E4b: the fast state, with competitive arousal
+ * as gain); what the partner can take is its mass, less the share its own acute drive takes away: A_c·m_c > (1 − A_o)·m_o.
+ * Self-handicapping in play (cordoni2018, cordoniPalagi2011, captive [M]); the comparison is a design assumption [L].
+ * No die, no age rule. Pure: no RNG, no state.
+ */
+export function roughByForce(c: Chimp, o: Chimp, time: number, P: Params): boolean {
+  const a = acuteDrive(ix(c), time, P);
+  return a > 0 && a * massOf(c, P) > (1 - acuteDrive(ix(o), time, P)) * massOf(o, P);
+}
+
 function pairTick(world: World, c: Chimp, o: Chimp | undefined): void {
   const P = paramsOf(world), WALK = P.walkMps;
   const x = ix(c);
@@ -1117,8 +1129,8 @@ function pairTick(world: World, c: Chimp, o: Chimp | undefined): void {
     if (!upkeepOnly(P)) c.social = clamp(c.social + 0.15 * TICK_HOURS); // stage E5d (socialUpkeep 2): play builds no bond, so it meets no relationship need
     c.skills.climbing = clamp(c.skills.climbing + (1 - c.skills.climbing) * TICK_HOURS * 0.003);
     if (c.actionTime % 120 === 0) emitCall(world, c, 'laugh');
-    // rough play occasionally escalates [H]
-    if (o.age + 2 < c.age && random(world) < P.roughPlayP) {
+    // rough play occasionally escalates [H]; stage E4m (leftoverRules bit 1): when the player's restraint fails, no die
+    if ((P.leftoverRules & 1) !== 0 ? roughByForce(c, o, world.time, P) : o.age + 2 < c.age && random(world) < P.roughPlayP) {
       emitCall(world, o, 'scream'); const ox = ix(o); ox.victimOf = c.id; ox.victimAt = world.time; o.mood = 'distressed';
       if (gate(world, `roughplay-${c.troopId}`, 3)) addEvent(world, `Rough play between ${c.name} and ${o.name} escalated; ${o.name} screamed`, 'play', [c.id, o.id], c.troopId, 0);
       return finish(world, c);
