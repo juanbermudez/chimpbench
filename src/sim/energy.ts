@@ -282,6 +282,21 @@ function feedRate(c: Chimp, P: Params): number {
 }
 
 /**
+ * Stage E4n (huntDrive; docs/staging/e4n-prereg.md §4): the energy-deficit part of the E1e drive, min(1, φ), as
+ * setHunger computes it before the distension satiation (1 − w·fill²): the need over the waking time left and the fast
+ * after it, over what the animal can take while feeding in the waking time left (with milkInDrive, an unweaned animal's
+ * milk capacity). A capture is held and eaten as the gut takes it, so its worth is weighed by this, not by the fill now.
+ * Pure when the drive's books are open (as energyNeed: it opens them on first use).
+ */
+export function deficitDrive(c: Chimp, P: Params): number {
+  const L = ledgerOf(c, P);
+  if (L.eAvg === undefined) openDrive(c, L, P);
+  const [left, fast] = feedHorizon(c, L, P), need = -L.res - gutEnergy(L, P, rates(P).dig) + spendRate(c, L, P) * (left + fast);
+  const phi = need > 0 ? need / (P.milkInDrive === 1 && !ix(c).weaned ? milkCapacity(c, L, P, left, fast) : feedRate(c, P) * (left > TICK_HOURS ? left : TICK_HOURS)) : 0;
+  return phi > 1 ? 1 : phi;
+}
+
+/**
  * Stage E1e: energy the animal needs before its next chance to feed (kcal): the reserve deficit (a surplus counts
  * against it), less what the gut will still yield, plus the expenditure expected over the waking time left and the fast
  * after it, at the day-long average rate. Positive = hungry ahead or behind.

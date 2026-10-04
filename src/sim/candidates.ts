@@ -11,7 +11,7 @@ import { heatRestValue, nestValue, shelterValue, sleepPressure, thermalLoad } fr
 import { darkOn, tripLight, visionNow, type TripLight } from './light';
 import { circadianOn, circadianSleepiness } from './circadian';
 import { dayPhase } from './environment';
-import { driveOn, milkShare, milkWorth, nurseBoutWorth } from './energy';
+import { deficitDrive, driveOn, milkShare, milkWorth, nurseBoutWorth } from './energy';
 import { drinkWorth, waterOn } from './water';
 import { arrivalLight, brightening, needUnits, raceStake, rivalsAt } from './departure';
 import { acuteDrive, endoOn, escalateScore, fastSpanH, rainFastScore, rainScore, redirectFastScore, redirectScore } from './endocrine';
@@ -1163,7 +1163,10 @@ function meatAndHunting(world: World, c: Chimp): void {
         // stage E2i (walkGait): the approach at the speed the hunt moves at (execution.ts: RUN × 0.8 × the body's state)
         const r = huntRate(c, P, dist, x.ownMales, gaitOn(P) ? runSpeedOf(c, P) * 0.8 * bodyState(c) : P.walkMps);
         // stage E3c (forageRate): the walk is in the hunt's rate (huntRate's time), so no separate distance scale
-        if (r > 0) offer('hunt', p.id, (c.hunger * 1.6 + 0.1) * r - (forageRateOn(P) ? 0 : dist / P.forageDistScaleM), V.LEAD, x.ownMales);
+        // stage E4n (huntDrive; docs/staging/e4n-prereg.md §4): a capture is held and eaten as the gut takes it, so the crowns'
+        // drive is taken at the energy-deficit ratio (energy.ts deficitDrive), not at the appetite now with its distension term
+        const fd = P.huntDrive === 1 ? deficitDrive(c, P) * 1.6 + 0.1 : c.hunger * 1.6 + 0.1;
+        if (r > 0) offer('hunt', p.id, fd * r - (forageRateOn(P) ? 0 : dist / P.forageDistScaleM), V.LEAD, x.ownMales);
       }
     }
     // hunts start only with several males together (no solo colobus hunts at Ngogo) [M-H]: on a community's hunting day,
