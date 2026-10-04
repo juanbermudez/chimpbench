@@ -226,7 +226,8 @@ supplants). Qualifying chargers: 333 females, 74 males.
 - **`guardMaxAgeY` trims.** Of 4,536 ± 212 charges and attacks per realization, a guardian (always a mother: no adoptive
   caretaker in eight seed-runs) qualified for the deterrence test in 102 ± 21 (2.2%); the age limit removed it from
   66.5 ± 9.7, almost all at 12–15-year-olds, and changed the score of 1.1% of all charges. Defence charges are rare
-  (15 ± 4.5, wards 8–15 y) and 77% of them (11.8 ± 3.8) defend a ward that holds its own against its aggressor (assessed
+  (15 ± 4.5 per realization; by ward age 5–8 y 3.0 ± 2.2, 8–12 y 1.0 ± 1.4, 12–15 y 8.2 ± 1.0, 15–20 y 1.8 ± 1.7,
+  ≥ 20 y 1.0 ± 1.4; corrected before A1's results were read: an earlier draft said "wards 8–15 y", from D0 alone) and 77% of them (11.8 ± 3.8) defend a ward that holds its own against its aggressor (assessed
   odds ≥ 0.5). An odds rule (the ward cannot hold its own: assessed odds < 0.5) would deter 60.5 ± 16 of the qualified
   charges instead of 35 ± 14 under the age rule: it adds 12–15-year-olds who cannot hold their own (29.8 ± 7) and drops
   under-12s who can (4.5 ± 5.1). **Replaced (bit 2, §5)**: no new magnitude, and the age at which protection ends
@@ -325,3 +326,14 @@ night unsafe.
   41. A1 runs from the next commit (this note only).
 - **A1** (as registered in §7): from `scratchpad/e4o/frozen-a1` (the commit that adds this entry), `run-arm.sh frozen-a1
   A1 '{"bodyRules":2}'`; outputs `frozen-a1/artifacts/validation/e4o/A1*`.
+- **A1 note** (logged after the run): bench 14:00–14:06 (1 worker, load 9–24 from other applications), energy
+  14:06–14:10, diagnosis 14:10–14:12, rhythm 14:12–14:14; `frozen-a1` at a3283ca, clean (`git.dirty` 0).
+- **Readout correction after A1, before its guarding readouts are judged (disclosed).** A1 shows 2 defence charges "for a
+  ward that holds its own", against 0 by construction. The readout computes the ward's odds after the tick, when the
+  defending guardian already charges the aggressor and so counts among the ward's supporters (`supporters()`), while her
+  decision was taken before she joined: the readout, not the mechanism, can put such a defence above even. Added to
+  `e4o-diagnose.ts`: the same odds without the defending guardian (defences) and without the ward's guardian (deterrence
+  charges), "as decided" (`oddsExcluding`, the assessOdds formula with one supporter removed); the existing readouts are
+  kept. Re-run on unchanged simulation code from `scratchpad/e4o/frozen-d0c` (the commit that adds this entry): D0c–D3c
+  (S27 and its re-draws) and A1c (A1's parameters), 30 + 60 days, seeds 48 and 7; the worlds are those of D0b–D3b and A1
+  (deterministic), only the readout is new. The kill criterion is read on the corrected readout; both are reported.

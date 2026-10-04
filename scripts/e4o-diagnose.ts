@@ -27,7 +27,7 @@ import { CODE, V, guardianOf, quotaTrace } from '../src/sim/candidates';
 import { rulesTap } from '../src/sim/decide';
 import { huntTap } from '../src/sim/ecology';
 import { energyTap, meatKcalPerUnit } from '../src/sim/energy';
-import { assessOdds, dominates, winOdds } from '../src/sim/hierarchy';
+import { assessOdds, dominates, power, rankedFemale, rankedMale, strength, supporters, winOdds } from '../src/sim/hierarchy';
 import { paramsOf } from '../src/sim/params';
 import { hash01 } from '../src/sim/rng';
 import { TICK_HOURS, index, ix } from '../src/sim/state';
@@ -52,6 +52,21 @@ const oddsClass = (q: number) => (q < 0.1 ? '<0.1' : q < 0.3 ? '0.1-0.3' : q < 0
 const ODDS_CLASSES = ['<0.1', '0.1-0.3', '0.3-0.5', '0.5-0.7', '>=0.7'];
 const vName = (v: number) => Object.entries(V).find(([, k]) => k === v)?.[0] ?? String(v);
 const parous = (f: Chimp) => f.age >= P.endoParousAgeY || ix(f).amenUntil > 0; // as endocrine.ts parous()
+/**
+ * a's assessed odds against b as assessOdds computes them, without one animal among the supporters (the readout runs after
+ * the tick, when a defending guardian already charges the aggressor and so counts as the ward's supporter; the decision
+ * was taken before she joined). Added after A1 (e4o-prereg.md §9).
+ */
+function oddsExcluding(a: Chimp, b: Chimp, excl: Chimp | undefined): number {
+  const ranked = a.sex === b.sex && (a.sex === 'male' ? rankedMale(a) && rankedMale(b) : rankedFemale(a) && rankedFemale(b));
+  const sa = supporters(w, a, b).filter(s => s !== excl), sb = supporters(w, b, a).filter(s => s !== excl);
+  if (!ranked) { const pa = power(a, b, sa, P), pb = power(b, a, sb, P); return pa ** P.contestExponent / Math.max(1e-6, pa ** P.contestExponent + pb ** P.contestExponent); }
+  let pa = strength(a, P), pb = strength(b, P);
+  for (const x of sa) pa += strength(x, P) * P.powerAllyWeight;
+  for (const x of sb) pb += strength(x, P) * P.powerAllyWeight;
+  const logit = P.eloLogisticScale * (a.elo - b.elo) + P.contestExponent * Math.log(Math.max(1e-6, pa) / Math.max(1e-6, pb));
+  return 1 / (1 + Math.exp(-logit));
+}
 
 // --- meat -----------------------------------------------------------------------------------------------------------
 interface Episode { troop: number; t0: number; t1: number | null; captures: number; captors: number[]; kcal: number; kcalBy: Map<number, number>; holderTicks: number; awakeHolderTicks: number; gutLimited: number; shares: number; recipients: Set<number>; begs: number; overnight: boolean }
@@ -66,9 +81,9 @@ energyTap.fn = (c, term, kcal, kind) => { if (term === 'eaten' && kind === 'meat
 const K = meatKcalPerUnit(P), offerPerTick = P.meatEatPerH * TICK_HOURS;
 
 // --- guarding -------------------------------------------------------------------------------------------------------
-interface Charge { c: number; o: number; ageO: number; v: string; act: string; guardQual: boolean; ageLimited: boolean; guardianKind: string | null; qAssess: number; qWin: number; chargerAge: number; chargerSex: string }
+interface Charge { c: number; o: number; ageO: number; v: string; act: string; guardQual: boolean; ageLimited: boolean; guardianKind: string | null; qAssess: number; qWin: number; chargerAge: number; chargerSex: string; qExcl: number }
 const charges: Charge[] = [];
-const defences: { wardAge: number; guardianKind: string; aggressorAge: number; qAssess: number }[] = [];
+const defences: { wardAge: number; guardianKind: string; aggressorAge: number; qAssess: number; qExcl: number }[] = [];
 const caretakerWardDays: Record<string, number> = {};
 const prevAct = new Map<number, string>(), prevTarget = new Map<number, number>();
 for (const c of w.chimps) { prevAct.set(c.id, c.action); prevTarget.set(c.id, c.targetId); }
@@ -199,10 +214,10 @@ for (let i = 0; i < days * DAY; i++) {
     if (!started) continue;
     const o = idx.byId.get(c.targetId); if (!o || !o.alive || o.troopId !== c.troopId) continue;
     const qA = assessOdds(w, o, c, P), qW = winOdds(w, o, c, P);
-    if (x.v === V.DEFEND) { const ward = idx.byId.get(x.aux); if (ward) defences.push({ wardAge: r4(ward.age), guardianKind: ward.motherId === c.id ? 'mother' : 'caretaker', aggressorAge: r4(o.age), qAssess: r4(assessOdds(w, ward, o, P)) }); }
+    if (x.v === V.DEFEND) { const ward = idx.byId.get(x.aux); if (ward) defences.push({ wardAge: r4(ward.age), guardianKind: ward.motherId === c.id ? 'mother' : 'caretaker', aggressorAge: r4(o.age), qAssess: r4(assessOdds(w, ward, o, P)), qExcl: r4(oddsExcluding(ward, o, c)) }); }
     const gd = guardianOf(w, o);
     const qual = !!gd && gd !== c && x.seen.includes(gd.id) && d2(gd, o) < P.defendRangeM * P.defendRangeM && !dominates(c, gd);
-    charges.push({ c: c.id, o: o.id, ageO: r4(o.age), v: vName(x.v), act: c.action, guardQual: qual, ageLimited: qual && o.age >= P.guardMaxAgeY, guardianKind: kindOf(o, gd), qAssess: r4(qA), qWin: r4(qW), chargerAge: r4(c.age), chargerSex: c.sex });
+    charges.push({ c: c.id, o: o.id, ageO: r4(o.age), v: vName(x.v), act: c.action, guardQual: qual, ageLimited: qual && o.age >= P.guardMaxAgeY, guardianKind: kindOf(o, gd), qAssess: r4(qA), qWin: r4(qW), chargerAge: r4(c.age), chargerSex: c.sex, qExcl: r4(oddsExcluding(o, c, gd)) });
   }
   if (w.tick % 20 === 0) for (const o of idx.alive) { const ox = ix(o); if (ox.caretaker >= 0 && ox.caretaker !== o.motherId) { const ac = ageClass(o.age); caretakerWardDays[ac] = (caretakerWardDays[ac] ?? 0) + 20 * TICK_HOURS / 24; } }
 }
@@ -246,6 +261,10 @@ const result = {
     qualifiedByVariant: tally(qual.map(c => c.v)), qualifiedByChargerSex: tally(qual.map(c => c.chargerSex)),
     defences: defences.length, defencesByWardAge: byAge(defences.map(d => ({ a: d.wardAge }))), defencesByGuardian: tally(defences.map(d => d.guardianKind)),
     defencesByWardOdds: tally(defences.map(d => oddsClass(d.qAssess))), defencesWardHoldsOwn: defences.filter(d => d.qAssess >= 0.5).length,
+    // the same without the defending guardian's own support (as the decision saw it) and, for charges, without the ward's guardian
+    defencesWardHoldsOwnExcl: defences.filter(d => d.qExcl >= 0.5).length, defencesByWardOddsExcl: tally(defences.map(d => oddsClass(d.qExcl))),
+    deterredUnderOddsRuleExcl: qual.filter(c => c.qExcl < 0.5).length,
+    ruleDisagreeExcl: { youngButHoldsOwn: qual.filter(c => c.ageO < P.guardMaxAgeY && c.qExcl >= 0.5).length, oldButCannot: qual.filter(c => c.ageO >= P.guardMaxAgeY && c.qExcl < 0.5).length },
     caretakerWardDays: Object.fromEntries(Object.entries(caretakerWardDays).map(([k, v]) => [k, r4(v)])),
   },
   mate: {
