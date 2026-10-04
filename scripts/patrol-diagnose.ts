@@ -84,7 +84,7 @@ function dailyFood(): void {
   }
 }
 
-interface Opp { id: number; t: number; inWindow: boolean; hour: number; males: number; party: number; rR: number; level: number; heard1: boolean; heard24: boolean; contact: number; loss: number; food: number; st: St; h: number; p: number; fired: boolean; led: boolean }
+interface Opp { id: number; t: number; light: number; inWindow: boolean; hour: number; males: number; party: number; rR: number; level: number; heard1: boolean; heard24: boolean; contact: number; loss: number; food: number; st: St; h: number; p: number; fired: boolean; led: boolean }
 const opps: Opp[] = [];
 interface Member { id: number; cls: string; joinAt: number; leftAt: number | null; leftTo: string | null; leftHunger: number | null }
 interface Patrol {
@@ -94,7 +94,7 @@ interface Patrol {
   lightLeftEnd: number | null; endHour: number | null; startState: Record<string, number | null>; endState: Record<string, number | null> | null;
 }
 const patrols: Patrol[] = [];
-const open = new Map<number, { rec: Patrol; obj: object; phase: number; stops: number; lx: number; lz: number; lastMembers: Chimp[] }>();
+const open = new Map<number, { rec: Patrol; obj: object; phase: number; stops: number; lx: number; lz: number; lastMembers: Chimp[]; nowMembers: number }>();
 const joinOpp = new Map<string, { cls: string; joined: boolean }>(); // `${patrol index}:${chimp id}`
 const clsOf = (c: Chimp) => (c.sex === 'male' ? (c.age >= 15 ? 'adultMale' : 'adolescentMale') : c.lactating ? 'lactatingFemale' : 'adultFemale');
 const prevRoll = new Map<number, number>(), prevSeen = new Map<number, number>(), prevImpulse = new Map<number, number>(), prevUntil = new Map<number, number>();
@@ -116,7 +116,8 @@ for (let i = 0; i < days * DAY; i++) {
     if (o && (!p || p !== o.obj)) { // ended
       const rec = o.rec, ended = evs.find(e => e.troopId === t.id && e.kind === 'territory' && /patrol ended/.test(e.text));
       rec.release = ended ? /chorus/.test(ended.text) : null;
-      rec.end = time > rec.until ? 'cap' : o.lastMembers.length === 0 ? 'empty' : 'home';
+      // 'empty': no member was on it at the last check (parties.ts ends it with no leader, and no release); 'cap': patrolMaxH
+      rec.end = time > rec.until ? 'cap' : o.nowMembers === 0 ? 'empty' : 'home';
       rec.endT = time; rec.endHour = r4(hour); rec.lightLeftEnd = daylightLeftH(time);
       rec.endState = stMean(o.lastMembers.filter(isAdultMale).map(stateOf));
       for (const m of rec.members) if (m.leftAt === null) m.leftAt = time;
@@ -128,7 +129,7 @@ for (let i = 0; i < days * DAY; i++) {
         maxAdultMales: 0, maxAdolMales: 0, maxFemales: 0, maxLactating: 0, members: [], pathM: 0, enteredNeighbour: false, contact: false, turnedBack: false, stopsSchedule: 0, stopsWaypoint: 0,
         end: null, release: null, endT: null, lightLeftEnd: null, endHour: null, startState: stMean([leader, ...ix(leader).seen.map(id => idx.byId.get(id)!).filter(o2 => o2 && o2.alive && o2.troopId === t.id && isAdultMale(o2))].map(stateOf)), endState: null };
       patrols.push(rec);
-      open.set(t.id, { rec, obj: p, phase: p.phase, stops: p.stops, lx: leader.position[0], lz: leader.position[2], lastMembers: [leader] });
+      open.set(t.id, { rec, obj: p, phase: p.phase, stops: p.stops, lx: leader.position[0], lz: leader.position[2], lastMembers: [leader], nowMembers: 1 });
       const dk = `${t.id}:${w.day}`, d = dayMax.get(dk) ?? { m15: 0, m13: 0, patrol: false }; d.patrol = true; dayMax.set(dk, d);
     }
     const oo = open.get(t.id);
@@ -150,7 +151,7 @@ for (let i = 0; i < days * DAY; i++) {
       rec.contact ||= !!p.contact;
       if (evs.some(e => e.troopId === t.id && /turned back/.test(e.text))) rec.turnedBack = true;
       if (p.stops > oo.stops) { if (p.phase !== oo.phase) rec.stopsWaypoint += p.stops - oo.stops; else rec.stopsSchedule += p.stops - oo.stops; }
-      oo.stops = p.stops; oo.phase = p.phase; if (members.length) oo.lastMembers = members;
+      oo.stops = p.stops; oo.phase = p.phase; oo.nowMembers = members.length; if (members.length) oo.lastMembers = members;
       // joining opportunities: members >= 12 y of the community, awake, perceiving now, the leader in view, not on it
       if (leader) for (const c of idx.alive) {
         if (c.troopId !== t.id || c.age < 12 || c.id === leader.id || c.action === 'patrol' || c.action === 'nest') continue;
@@ -188,7 +189,7 @@ for (let i = 0; i < days * DAY; i++) {
     const fired = rolled && ((x.impulse === IMPULSE_PATROL && Math.abs(x.impulseUntil - (time + P.impulseDurationH)) < 1e-6) || (newPatrol && !(pi === IMPULSE_PATROL && pu > time - 1e-9)));
     const wh = where(c, t), mem = sectorContact(w, t, c), sec = sectorOf(t, c.position[0], c.position[2]);
     const party = x.seen.filter(id => { const o = idx.byId.get(id); return !!o && o.alive && o.troopId === c.troopId; }).length + 1;
-    opps.push({ id: c.id, t: time, inWindow, hour: Math.floor(hour), males: x.ownMales, party, rR: r4(wh.rR), level: r4(wh.level), heard1: time - x.heardAt < 1, heard24: time - x.heardAt < 24, contact: r4(mem.c[sec]), loss: r4(mem.l[sec]),
+    opps.push({ id: c.id, t: time, light: daylightLeftH(time), inWindow, hour: Math.floor(hour), males: x.ownMales, party, rR: r4(wh.rR), level: r4(wh.level), heard1: time - x.heardAt < 1, heard24: time - x.heardAt < 24, contact: r4(mem.c[sec]), loss: r4(mem.l[sec]),
       food: borderFood.get(t.id)?.[st.sector] ?? NaN, st: stateOf(c), h: r4(h), p: pNow, fired, led: false });
   }
 }
@@ -198,7 +199,7 @@ for (const o of opps) if (o.fired) o.led = patrols.some(p => p.leader === o.id &
 const rolls = opps.filter(o => o.inWindow), blocked = opps.filter(o => !o.inWindow), fired = rolls.filter(o => o.fired);
 const by = <T,>(rows: T[], f: (r: T) => string | number, v: (r: T[]) => unknown) => { const m: Record<string, T[]> = {}; for (const r of rows) (m[String(f(r))] ??= []).push(r); return Object.fromEntries(Object.entries(m).map(([k, rs]) => [k, v(rs)])); };
 const oppSummary = (rows: Opp[]) => ({ n: rows.length, expectedImpulses: r4(rows.reduce((a, o) => a + o.p, 0)), hazardMean: mean(rows.map(o => o.h)), males: mean(rows.map(o => o.males)), party: mean(rows.map(o => o.party)),
-  rR: mean(rows.map(o => o.rR)), periphery: mean(rows.map(o => (o.level >= P.peripheryLevel ? 1 : 0))), heard1: mean(rows.map(o => (o.heard1 ? 1 : 0))), heard24: mean(rows.map(o => (o.heard24 ? 1 : 0))),
+  lightLeftH: mean(rows.map(o => o.light)), rR: mean(rows.map(o => o.rR)), periphery: mean(rows.map(o => (o.level >= P.peripheryLevel ? 1 : 0))), heard1: mean(rows.map(o => (o.heard1 ? 1 : 0))), heard24: mean(rows.map(o => (o.heard24 ? 1 : 0))),
   contact: mean(rows.map(o => o.contact)), loss: mean(rows.map(o => o.loss)), food: mean(rows.map(o => o.food).filter(Number.isFinite)), state: stMean(rows.map(o => o.st)) });
 const communityWeeks = w.troops.length * days / 7;
 const dm = [...dayMax.values()];
@@ -229,6 +230,7 @@ const result = {
     incursionDieTrue: r4(done.filter(p => p.incursionDie).length / Math.max(1, done.length)), enteredNeighbour: r4(done.filter(p => p.enteredNeighbour).length / Math.max(1, done.length)),
     enteredGivenDie: { dieTrue: r4(done.filter(p => p.incursionDie && p.enteredNeighbour).length / Math.max(1, done.filter(p => p.incursionDie).length)), dieFalse: r4(done.filter(p => !p.incursionDie && p.enteredNeighbour).length / Math.max(1, done.filter(p => !p.incursionDie).length)) },
     endedBy: tally(done.map(p => p.end ?? '?')), release: tally(done.map(p => String(p.release))), releaseAfterContact: tally(done.filter(p => p.contact).map(p => String(p.release))),
+    releaseHome: tally(done.filter(p => p.end === 'home').map(p => `${p.contact ? 'contact' : 'none'}:${p.release}`)), durationByEnd: by(done, p => p.end ?? '?', rs => median((rs as Patrol[]).map(p => (p.endT! - p.startT) * 60))),
     stopsSchedule: done.reduce((a, p) => a + p.stopsSchedule, 0), stopsWaypoint: done.reduce((a, p) => a + p.stopsWaypoint, 0),
     joining: by(joins, j => j.cls, rs => ({ opportunities: (rs as typeof joins).length, joined: (rs as typeof joins).filter(j => j.joined).length })),
   },
