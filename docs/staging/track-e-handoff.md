@@ -14,12 +14,18 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 06:45; deploy held by the user).** Nothing.
+- **Running now (4 October 06:35; deploy held by the user).** Stage agent **E3e** (`e3e-choice-noise`, from track-e
+  aa353fa: choice variability from the animal's own uncertainty in place of the fitted `rgTemperature`; tested with and
+  without `redecideValue` 2; must keep a behaviour-free re-draw lever for the noise protocol; brief
+  `integrator/e3e-prompt.txt`). Decision guide on **S19** (merged `guide-s19` at bd7d9bb; hosted copy on `site` c345ff2, build
+  checked). Integrator: the
+  S19 quick reference (`integrator/s19q.sh`, outputs `bench-run4/artifacts/validation/e/s19q/`; message E3e when all four
+  exist). The judge script `integrator/judge_vs_reps.py` now drops T-IGE-3 with the rare rows (amendment 3).
 - **S20 not adopted; S19 is the best integrated candidate** (e-stack2-confirm.md "S20 results"): S20 (S17 + S18 + S19,
   44) passed the registered sums only through a reference spread inflated by T-IGE-3 (S17c1 24.7) and is worse beyond
   noise without it (z +3.0), with rest at 0.252 and juveniles −0.125 %/day. S19 (46) passed every sum. e-noise.md
   amendment 3: T-IGE-3 joins T-HUN-4 and T-BRD-1 as a rare-event row in decisive sums. Next: S18's costs (rest below
-  band, more feeding on less fruit) need a stage before re-decision joins the stack; the decision guide shows S16.
+  band, more feeding on less fruit) need a stage before re-decision joins the stack; decision guide and hosted copy on S19.
 - **S18 and S19 done** (e-stack2-confirm.md): both pass the keep rule against S17's four runs. S18 (`redecideValue` 2,
   47): costs: rest below its band (0.288), fruit share 0.61, mothers −0.086, other females −0.078, infants 0.5–2 y
   −0.151 %/day. S19 (`huntPursuit` 2, 46): T-HUN-1 10.1, T-IGE-1 7.1 (into band); costs: success 0.32 (below band), one
@@ -121,8 +127,8 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   3.43 km a day (S3 2.93) and the deficits deepen: E5a interacts with value-based calls; E5b fixed it (S5).
 - **Hosted site, 2 October 14:50:** `site` now also holds the rewritten About page (merged `site-about` 4618daf: first-person
   hero, stale sections cut, What's next) and the decision guide as a hidden page (`docs/decision-guide.html`, a Vite
-  input: unlinked, noindex, at /docs/decision-guide). The guide now shows **S16** (49 prescribed, 86 replaced; merged
-  `guide-s16`; `STACK = STACKS.S16` in scripts/decision-guide.ts) and the site copy is written by
+  input: unlinked, noindex, at /docs/decision-guide). The guide now shows **S19** (46 prescribed, 89 replaced; merged
+  `guide-s19`; `STACK = STACKS.S19` in scripts/decision-guide.ts) and the site copy is written by
   `pnpm exec tsx scripts/decision-guide.ts --hosted <site>/docs/decision-guide.html` (site 149701c from track-e 8f5319e;
   `integrator/hosted_guide.py` retired). Build checked: no console errors, data figures draw, dist 32 MB without audio.
   Still no deploy: the user has not said how to publish.
