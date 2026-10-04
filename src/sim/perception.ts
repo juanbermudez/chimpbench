@@ -12,7 +12,7 @@ import { featureDistance, perceivedFeatures } from './signals';
 import { endoHeard, endoOn } from './endocrine';
 import { noteFeeders } from './departure';
 import { darkOn, sightAt, visionNow } from './light';
-import { NEVER, aliveNear, awakeInNest, byIdIn, index, ix, simOf, treesNear } from './state';
+import { NEVER, aliveNear, awakeInNest, byIdIn, index, isTreeId, ix, simOf, treesNear } from './state';
 
 export const IMPULSE_TRANSFER = 1, IMPULSE_ESCALATE = 2, IMPULSE_INFANTICIDE = 3, IMPULSE_RAIN = 4, IMPULSE_GANG = 5, IMPULSE_PATROL = 6, IMPULSE_HUNT = 7;
 
@@ -95,8 +95,10 @@ export function perceive(world: World, c: Chimp): void {
   for (let i = c.memory.length - 1; i >= 0; i--) if (time - c.memory[i].seenAt > ttl(P, c.memory[i].kind)) dropMemory(c.memory, i);
   const r = sightRadius(world, c);
   const r2 = r * r;
+  const prevLook = x.seenAt; // stage E5e: the animal's previous look (perception at its last decision point)
   x.sight = r; x.seenAt = time;
   x.seen.length = 0;
+  const greetMem = (P.socialTiming & 1) !== 0;
   x.strangers = 0; x.strangerMales = 0; x.strangerTroop = -1; x.isolated = -1; x.nearestStranger = -1; x.newcomers = 0;
   x.ownMales = isAdultMale(c) ? 1 : 0; x.visibleOwn = 0;
   const px = c.position[0], pz = c.position[2];
@@ -125,9 +127,13 @@ export function perceive(world: World, c: Chimp): void {
     } else {
       x.visibleOwn++;
       if (isAdultMale(o)) x.ownMales++;
-      // a reunion: an adolescent or adult not seen for over an hour
+      // a reunion: an adolescent or adult not seen for over reunionH (1 h)
       const last = x.metAt[o.id];
-      if (o.age >= 10 && last !== undefined && time - last > 1) x.newcomers++;
+      if (o.age >= 10 && last !== undefined && time - last > P.reunionH) x.newcomers++;
+      // stage E5e (socialTiming bit 1; docs/staging/e5e-prereg.md §4.1): meeting again after more than reunionH apart, the
+      // other out of sight at the previous look (not merely unattended through a long bout), begins a new association in
+      // which a greeting is due: the record of having greeted is cleared
+      if (greetMem && x.greet[o.id] !== undefined && (last === undefined || (time - last > P.reunionH && last < prevLook))) delete x.greet[o.id];
       x.metAt[o.id] = time;
     }
   }
@@ -316,6 +322,8 @@ function hear(world: World, o: Chimp, callId: number, kind: CallKind, caller: Ch
   if (caller.troopId === o.troopId) {
     x.joinCall = callId; x.joinCaller = caller.id; x.joinAt = world.time; x.joinX = caller.position[0]; x.joinZ = caller.position[2];
     x.joinRich = caller.action === 'forage' && caller.targetId > 0 ? 1 : 0; // arrival pant-hoots at food carry information about it [M]
+    // stage E5e (socialTiming bit 4; docs/staging/e5e-prereg.md §4.3): the crown the call was given in, valued as a trip
+    if ((paramsOf(world).socialTiming & 4) !== 0) x.jt = caller.action === 'forage' && isTreeId(caller.targetId) ? caller.targetId : -1;
     return;
   }
   // Stranger pant-hoots or drumming: count distinct callers of that community heard in the last 3 minutes.
