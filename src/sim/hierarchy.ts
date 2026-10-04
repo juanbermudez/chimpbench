@@ -62,6 +62,26 @@ export function power(c: Chimp, rival: Chimp, allies: Chimp[], P: Params): numbe
   return p;
 }
 
+/** Individuals of the actor's community currently charging or attacking the same target nearby (contest power's allies). */
+export function supporters(world: World, a: Chimp, target: Chimp): Chimp[] {
+  const out: Chimp[] = [];
+  const P = paramsOf(world);
+  for (const o of index(world).alive) {
+    if (o === a || !o.alive || o.troopId !== a.troopId) continue;
+    if ((o.action === 'charge' || o.action === 'attack') && o.targetId === target.id && Math.hypot(o.position[0] - target.position[0], o.position[2] - target.position[2]) < P.supporterNearM) out.push(o);
+  }
+  return out;
+}
+
+/**
+ * The chance that a beats b as a contest decides it (conflict.ts contest): power with the supporters charging each
+ * side's opponent, plus `extraA` added to a's power (a joiner's contribution, contestAssess). Pure.
+ */
+export function winOdds(world: World, a: Chimp, b: Chimp, P: Params, extraA = 0): number {
+  const pa = power(a, b, supporters(world, a, b), P) + extraA, pb = power(b, a, supporters(world, b, a), P);
+  return pa ** P.contestExponent / Math.max(1e-6, pa ** P.contestExponent + pb ** P.contestExponent);
+}
+
 /** Dominance direction between two individuals of one community. */
 export function dominates(a: Chimp, b: Chimp): boolean {
   if (a.sex === b.sex) {

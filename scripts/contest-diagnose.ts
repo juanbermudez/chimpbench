@@ -79,7 +79,7 @@ for (const seed of seeds) {
   const bump = (k: string, n = 1) => { count[k] = (count[k] ?? 0) + n; };
   const escalatedAt = new Map<string, number>(); // "c>o" → time of the escalation by the die
   const pendingFight = new Map<string, Ev>();
-  let amHours = 0, dyadHours = 0;
+  let amHours = 0, dyadHours = 0, indHours = 0;
   const dyadConf = new Map<string, number>();
   const alpha0 = new Map(w.troops.map(t => [t.id, t.alphaId]));
   const hist0 = new Map(w.troops.map(t => [t.id, t.alphaHistory.length]));
@@ -142,11 +142,14 @@ for (const seed of seeds) {
           const within = o && o.troopId === c.troopId;
           bump(`${c.action} started${within ? '' : ' (stranger)'}: ${VNAME[x.v] ?? x.v}`);
           if (within && c.action === 'charge' && x.v === V.COALITION) bump('coalition charges started');
+          // mouginot2024's coalitionary share: aggression initiated by males >= 12 y at community members >= 12 y
+          if (within && o && c.sex === 'male' && c.age >= 12 && o.age >= 12) { bump('aggression started by males >= 12 at >= 12'); if (x.v === V.COALITION) bump('coalition aggression started by males >= 12 at >= 12'); }
         }
       }
       version.set(c.id, c.decisionVersion); prevKey.set(c.id, key);
     }
     if (i % HOUR === 0) {
+      indHours += index(w).alive.filter(c => c.alive).length;
       for (const t of w.troops) {
         const am = index(w).alive.filter(c => c.alive && c.troopId === t.id && isAdultMale(c));
         amHours += am.length; dyadHours += am.length * (am.length - 1) / 2;
@@ -166,7 +169,7 @@ for (const seed of seeds) {
   for (const c of w.chimps) if (!c.alive && !dead0.has(c.id)) { const cause = (c.causeOfDeath ?? 'unknown').replace(/ by [A-Z][a-z]+.*$| with [A-Z][a-z]+.*$| from a fight with .*$/, ''); deaths[cause] = (deaths[cause] ?? 0) + 1; }
   const alphaChanges = w.troops.reduce((s, t) => s + (t.alphaHistory.length - (hist0.get(t.id) ?? 0)), 0);
   const alphaNow = w.troops.map(t => ({ troop: t.id, alpha0: alpha0.get(t.id), alpha: t.alphaId, since: r3(t.alphaSince) }));
-  all.push({ seed, events, summary: { amDays: r3(amDays), dyadDays: r3(dyadDays), count, deaths, alphaChanges, alphaNow, orderSwaps, dyadConflicts: Object.fromEntries(dyadConf) } });
+  all.push({ seed, events, summary: { amDays: r3(amDays), dyadDays: r3(dyadDays), indYears: indHours / 24 / 365, count, deaths, alphaChanges, alphaNow, orderSwaps, dyadConflicts: Object.fromEntries(dyadConf) } });
   console.error(`seed ${seed}: ${events.length} events, adult-male days ${amDays.toFixed(1)}`);
 }
 
@@ -239,13 +242,44 @@ const contestDie = { counterNotEscalated: counters.filter(e => !e.escalated).len
   stoodDominant: charges.filter(e => e.response === 'stood' && e.dominant).length, fights: fights.length,
   upsetsCounter: counters.filter(e => !e.escalated && e.won !== ((e.dElo as number) > 0)).length, meanWinPCounter: r3(sum(counters.filter(e => !e.escalated), e => Math.max(e.winP as number, 1 - (e.winP as number))) / Math.max(1, counters.filter(e => !e.escalated).length)) };
 const resources = table(charges, e => String(e.variant), e => e.escalated || e.hit ? 1 : 0);
+// Field readouts (E4h prereg §5). A contest's contact: a landed hit or strike, an escalation to a fight, or a fight begun
+// as an attack (its own contest). mouginot2024: dyadic interactions between individuals >= 12 y with a male >= 12 y as a
+// party; wittigBoesch2003b: contact share by rank difference within same-sex ranked dyads (males: neighbours small, two
+// apart middle, three or more large; females: <= 3 small, 4-6 middle, > 6 large; their cut-offs, Table 1).
+type Contest = { cs: Side; os: Side; contact: boolean };
+const contests: Contest[] = [
+  ...charges.map(e => ({ cs: e.c as Side, os: e.o as Side, contact: !!(e.hit || e.escalated) })),
+  ...fights.filter(e => e.origin !== 'escalated counter-charge').map(e => ({ cs: e.c as Side, os: e.o as Side, contact: true })),
+];
+const male = (x: Side) => x.cls === 'AM' || x.cls === 'adolM';
+const m12 = contests.filter(k => (k.cs.age as number) >= 12 && (k.os.age as number) >= 12 && ((male(k.cs) && (k.cs.age as number) >= 12) || (male(k.os) && (k.os.age as number) >= 12)));
+const rdCat = (k: Contest) => {
+  const a = k.cs.rankOrder as number, b = k.os.rankOrder as number;
+  if (!(a > 0 && b > 0)) return null;
+  const mm = male(k.cs) && male(k.os), ff = !male(k.cs) && !male(k.os) && (k.cs.age as number) >= 15 && (k.os.age as number) >= 15;
+  const d = Math.abs(a - b);
+  if (mm) return `male-male ${d <= 1 ? 'small' : d === 2 ? 'middle' : 'large'}`;
+  if (ff) return `female-female ${d <= 3 ? 'small' : d <= 6 ? 'middle' : 'large'}`;
+  return null;
+};
+const byRd: Record<string, { n: number; contact: number; share: number | null }> = {};
+for (const k of contests) { const cat = rdCat(k); if (!cat) continue; const b = byRd[cat] ?? (byRd[cat] = { n: 0, contact: 0, share: null }); b.n++; if (k.contact) b.contact++; }
+for (const b of Object.values(byRd)) b.share = r3(b.contact / Math.max(1, b.n));
+const sumCount = (k: string) => all.reduce((s, a) => s + ((a.summary.count as Record<string, number>)[k] ?? 0), 0);
+const field = {
+  contactShareMales12: { n: m12.length, contact: m12.filter(k => k.contact).length, share: r3(m12.filter(k => k.contact).length / Math.max(1, m12.length)) },
+  contactShareAll: r3(contests.filter(k => k.contact).length / Math.max(1, contests.length)),
+  byRankDifference: Object.fromEntries(Object.entries(byRd).sort()),
+  coalitionaryShareMales12: r3(sumCount('coalition aggression started by males >= 12 at >= 12') / Math.max(1, sumCount('aggression started by males >= 12 at >= 12'))),
+  woundsPerIndividualYear: r3((injDec.length + winnerWounds.length) / Math.max(1e-9, all.reduce((s, a) => s + (a.summary.indYears as number), 0))),
+};
 const responses = table(charges, e => `${(e.c as Side).cls}>${(e.o as Side).cls}: ${e.response}`, () => 1);
 const out = {
   tool: 'contest-diagnose', seeds, burnIn, days, params, amDays: r3(amDays), dyadDays: r3(dyadDays),
   totals: { decided: decided.length, charges: charges.length, counters: counters.length, escalatedByDie: counters.filter(e => e.escalated).length, fights: fights.length, hits: hits.length, contacts,
     injuries: injDec.length + winnerWounds.length, injuriesLoser: injDec.length, injuriesWinner: winnerWounds.length, serious: decided.filter(e => (e.injury as number) >= 0.3).length,
     takeovers: decided.filter(e => e.takeover).length, coalitionJoins, alphaChanges: all.reduce((s, a) => s + (a.summary.alphaChanges as number), 0), orderSwaps: all.reduce((s, a) => s + (a.summary.orderSwaps as number), 0) },
-  perAMDay, perDyadDay, path, totalElo, escalation, hitDie, seriousDie, allyDie, contestDie, resources, responses,
+  perAMDay, perDyadDay, path, totalElo, escalation, hitDie, seriousDie, allyDie, contestDie, resources, responses, field,
   deaths: all.map(a => ({ seed: a.seed, deaths: a.summary.deaths })), perSeed: all.map(a => ({ seed: a.seed, ...a.summary, dyadConflicts: undefined })),
 };
 console.log(JSON.stringify({ ...out, events: undefined }, null, 1));

@@ -1,16 +1,22 @@
 import type { Chimp, World } from '../types';
 import { V } from './candidates';
 import { addEvent, emitCall, endInteraction, episode, flashInteraction, gate, interrupt, startInteraction } from './events';
-import { bond, dominates, eloUpdate, isAdultMale, power, strength, tryTakeover } from './hierarchy';
+import { bond, dominates, eloUpdate, isAdultMale, strength, supporters, tryTakeover, winOdds } from './hierarchy';
 import { killChimp } from './life';
 import { clamp, random } from './rng';
 import { noteEvent, recordAggression, recordWound, tensionOf } from './relations';
 import { paramsOf, type Params } from './params';
 import { endoOn, endoThreat } from './endocrine';
 import { markDanger, noteContact, witnesses } from './contact';
+import { massOf } from './energy';
 import { index, ix, simOf } from './state';
 
 const hd = (a: Chimp, b: Chimp) => Math.hypot(a.position[0] - b.position[0], a.position[2] - b.position[2]);
+
+/** Stage E4h (contestAssess; docs/staging/e4h-prereg.md §4): how far a contest goes follows the animals' assessments. */
+export const assessOn = (P: Params) => P.contestAssess === 1;
+/** Stage E4h: a wound scales with the striker's body mass over the struck animal's (design: force grows with the mass behind the blow). */
+const massRatio = (striker: Chimp, struck: Chimp, P: Params) => massOf(striker, P) / Math.max(1, massOf(struck, P));
 
 /**
  * Diagnosis hook (stage E4h, scripts/contest-diagnose.ts; docs/staging/e4h-prereg.md): null in every simulation. A
@@ -51,6 +57,19 @@ export function notifyAllies(world: World, a: Chimp, v: Chimp): void {
     if (((o.action === 'charge' || o.action === 'attack') && (o.targetId === v.id || o.targetId === a.id)) || (world.time - ox.coalAt < 0.1 && (ox.coalB === v.id || ox.coalB === a.id))) continue;
     const joiner = o.sex === 'male' && o.age >= 12;
     if (!joiner && !kinOfA && !kinOfV) continue;
+    // stage E4h (contestAssess): no draw. Every bystander the gates admit perceives the conflict and is alerted; whether it
+    // joins is its own choice (the coalition charge, scored by the coalition's assessed odds in candidates.ts). A bystander
+    // bonded to both sides is alerted for the one it values more (kin counts as a full bond; ties: the aggressor's side)
+    if (assessOn(P)) {
+      const gateA = o.troopId === a.troopId && (bond(o, a) > P.coalitionBondMin || kinOfA) && (v.troopId !== a.troopId || !kinOfV) && dv < (v.troopId !== a.troopId ? P.coalitionRangeStrangerM : P.coalitionRangeM);
+      const gateV = o.troopId === v.troopId && (bond(o, v) > P.coalitionBondMin || kinOfV) && dv < P.coalitionRangeM;
+      if (!gateA && !gateV) continue;
+      const forA = gateA && (!gateV || (kinOfA ? 1 : bond(o, a)) >= (kinOfV ? 1 : bond(o, v)));
+      if (contestTrace.on) contestTrace.on({ kind: 'ally', o, a: forA ? a : v, v: forA ? v : a, side: forA ? 'aggressor' : 'victim', p: 1, joined: true });
+      ox.coalA = forA ? a.id : v.id; ox.coalB = forA ? v.id : a.id; ox.coalAt = world.time;
+      interrupt(world, o, forA ? `${a.name} is ${a.action === 'attack' ? 'attacking' : 'charging'} ${v.name}` : `${v.name} is under attack by ${a.name}`);
+      continue;
+    }
     // tension with the one who needs help lowers the chance of joining (design) [M: compatibility]
     // (E4h: written as two steps, the gate and the draw, so the diagnosis hook can read them; the draws are unchanged)
     let joinA = false;
@@ -74,16 +93,6 @@ export function notifyAllies(world: World, a: Chimp, v: Chimp): void {
   }
 }
 
-/** Individuals of the actor's community currently charging or attacking the same target nearby. */
-function supporters(world: World, a: Chimp, target: Chimp): Chimp[] {
-  const out: Chimp[] = [];
-  const P = paramsOf(world);
-  for (const o of index(world).alive) {
-    if (o === a || !o.alive || o.troopId !== a.troopId) continue;
-    if ((o.action === 'charge' || o.action === 'attack') && o.targetId === target.id && hd(o, target) < P.supporterNearM) out.push(o);
-  }
-  return out;
-}
 
 function decided(world: World, w: Chimp, l: Chimp, how: 'charge' | 'fight', injury: number): void {
   const time = world.time;
@@ -126,9 +135,7 @@ function decided(world: World, w: Chimp, l: Chimp, how: 'charge' | 'fight', inju
 
 /** Probability that a beats b in a contest, from relative power (strength, rank edge, coalition partners). */
 export function contest(world: World, a: Chimp, b: Chimp): boolean {
-  const P = paramsOf(world);
-  const pa = power(a, b, supporters(world, a, b), P), pb = power(b, a, supporters(world, b, a), P);
-  lastWinP = pa ** P.contestExponent / Math.max(1e-6, pa ** P.contestExponent + pb ** P.contestExponent);
+  lastWinP = winOdds(world, a, b, paramsOf(world));
   return random(world) < lastWinP;
 }
 
@@ -149,6 +156,13 @@ export function resolveCharge(world: World, c: Chimp, o: Chimp): boolean {
   const responded = o.targetId === c.id;
   const gaveWay = (o.action === 'submit' || o.action === 'flee' || o.action === 'pant-grunt') && responded;
   if (gaveWay) {
+    // stage E4h (contestAssess): the target conceded before contact, so the contest is settled without it (parker1974:
+    // escalation only where both judge it worth it); no hit is drawn
+    if (assessOn(P)) {
+      if (contestTrace.on) contestTrace.on({ kind: 'charge', c, o, response: 'gave-way', hitP: 0, inRange: hd(c, o) < P.hitRangeM, hit: false, escP: 0, escalated: false, dominant: true, winP: 1, won: true });
+      decided(world, c, o, 'charge', 0);
+      return false;
+    }
     // a minority of charges end in a brief hit or slap when the target is caught (contact is the exception) [H]
     const inRange = hd(c, o) < P.hitRangeM;
     const hit = inRange && random(world) < P.hitP;
@@ -158,6 +172,13 @@ export function resolveCharge(world: World, c: Chimp, o: Chimp): boolean {
     return false;
   }
   if ((o.action === 'charge' || o.action === 'attack') && responded) {
+    // stage E4h (contestAssess): the target answered with a counter-charge and the charger, challenged and having chosen
+    // again (threatResponses: yield or persist, by its assessed odds), is still charging: neither conceded, so the
+    // contest goes to contact (parker1974); no draw
+    if (assessOn(P)) {
+      if (contestTrace.on) contestTrace.on({ kind: 'charge', c, o, response: 'counter', hitP: 0, inRange: false, hit: false, escP: 1, escalated: true, dominant: false, winP: -1, won: false });
+      escalate(world, c, o); return true;
+    }
     // evenly matched opponents escalate to contact more often (design) [M for rarity of contact]
     const pa = strength(c, P), pb = strength(o, P);
     const even = Math.min(pa, pb) / Math.max(0.05, pa, pb);
@@ -173,8 +194,14 @@ export function resolveCharge(world: World, c: Chimp, o: Chimp): boolean {
   }
   const dominant = dominates(c, o);
   const won = dominant || contest(world, c, o);
-  if (contestTrace.on) contestTrace.on({ kind: 'charge', c, o, response: 'stood', hitP: 0, inRange: false, hit: false, escP: 0, escalated: false, dominant, winP: dominant ? 1 : lastWinP, won });
-  if (won) decided(world, c, o, 'charge', 0);
+  // stage E4h (contestAssess): a target that neither conceded nor resisted (it chose to go on with what it was doing) has
+  // not given way, so a charger that prevails settles it by contact: a strike, its wound scaled by the masses
+  const strike = assessOn(P) && won && hd(c, o) < P.hitRangeM;
+  if (contestTrace.on) contestTrace.on({ kind: 'charge', c, o, response: 'stood', hitP: 0, inRange: hd(c, o) < P.hitRangeM, hit: strike, escP: 0, escalated: false, dominant, winP: dominant ? 1 : lastWinP, won });
+  if (strike) {
+    flashInteraction(world, 'fight', c, o.id, [c.id, o.id], 0.7); emitCall(world, o, 'scream');
+    decided(world, c, o, 'charge', (0.01 + random(world) * 0.04) * massRatio(c, o, P));
+  } else if (won) decided(world, c, o, 'charge', 0);
   else decided(world, o, c, 'charge', 0);
   return false;
 }
@@ -203,17 +230,20 @@ export function resolveFight(world: World, c: Chimp, o: Chimp, variant: number):
   let injury = P.fightInjuryMin + random(world) * P.fightInjurySpan;
   const serious = random(world) < P.seriousInjuryP;
   if (serious) injury += P.seriousInjuryAdd;
+  // stage E4h (contestAssess): wounds scale with the mass behind the blows (winner over loser, and loser over winner)
+  const assess = assessOn(P);
+  if (assess) injury *= massRatio(w, l, P);
   const w0 = w.injury;
-  if (random(world) < 0.2) w.injury = clamp(w.injury + 0.02 + random(world) * 0.04);
+  if (random(world) < 0.2) w.injury = clamp(w.injury + (0.02 + random(world) * 0.04) * (assess ? massRatio(l, w, P) : 1));
   const winnerWound = w.injury - w0;
   emitCall(world, l, 'scream');
   decided(world, w, l, 'fight', injury);
   recordWound(world, w, l, injury);
   if (l.action === 'attack' && ix(l).flag === 2) { ix(l).flag = 0; ix(l).finished = true; }
   interrupt(world, l, `lost a fight with ${w.name}`, true);
-  const died = l.injury >= 0.98 && random(world) < 0.1;
+  let died = false;
+  if (l.injury >= 0.98 && random(world) < 0.1) { died = true; killChimp(world, l, `wounds from a fight with ${w.name}`, 2); }
   if (contestTrace.on) contestTrace.on({ kind: 'fight', c, o, variant: ix(c).v, winP, won: aWins, injury, seriousP: P.seriousInjuryP, serious, winnerWound, died });
-  if (died) killChimp(world, l, `wounds from a fight with ${w.name}`, 2);
 }
 
 /** Gang attacks on isolated strangers: rare and sometimes lethal (Mitani et al. 2010; Wilson et al. 2014). [M] */

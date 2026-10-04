@@ -1,5 +1,5 @@
 import type { Action, Candidate, Chimp, Tree, Troop, World } from '../types';
-import { bond, dominates, isAdultMale, maternalKin, rankLabel, rankedMale, strength } from './hierarchy';
+import { bond, dominates, isAdultMale, maternalKin, rankLabel, rankedMale, strength, winOdds } from './hierarchy';
 import { IMPULSE_ESCALATE, IMPULSE_GANG, IMPULSE_HUNT, IMPULSE_INFANTICIDE, IMPULSE_PATROL, IMPULSE_RAIN, IMPULSE_TRANSFER } from './perception';
 import { cellAt, gridOf, levels, pressureAt, territoryCost } from './territory';
 import { clamp, hash01, smoothstep } from './rng';
@@ -819,8 +819,15 @@ function aggression(world: World, c: Chimp, rival: number, rivalCloseness: numbe
   // coalition support: nearby allies join conflicts, likelier with stronger bonds [M-H]
   if (time - x.coalAt < P.coalitionWindowH) {
     const a = byId.get(x.coalA), b = byId.get(x.coalB);
-    if (a && b && a.alive && b.alive && b.id !== c.id && dcc(c, b) < P.coalitionChargeRangeM)
-      offer('charge', b.id, bond(c, a) * 0.8 + (dominates(c, b) || b.troopId !== c.troopId ? 0.25 : -0.45) + (maternalKin(c, a) ? 0.25 : 0) + pers.boldness * 0.15 - (x.tension[a.id] ?? 0) * P.coalitionChargeTensionW - (c.age < 12 ? 0.4 : 0) - 0.3, V.COALITION, a.id);
+    if (a && b && a.alive && b.alive && b.id !== c.id && dcc(c, b) < P.coalitionChargeRangeM) {
+      // stage E4h (contestAssess; docs/staging/e4h-prereg.md §4): the joiner weighs the gain from the bond and the outcome
+      // against its own risk: the coalition's assessed odds q (the contest function with the joiner added to the partner
+      // as a supporter) replace dominance over the target, the old term's two values at q = 1 and q = 0 (bissonnette2009:
+      // coalition outcomes follow the strength asymmetry; parker1974)
+      const risk = b.troopId !== c.troopId ? 0.25 : P.contestAssess === 1
+        ? (q => 0.25 * q - 0.45 * (1 - q))(winOdds(world, a, b, P, strength(c, P) * P.powerAllyWeight)) : dominates(c, b) ? 0.25 : -0.45;
+      offer('charge', b.id, bond(c, a) * 0.8 + risk + (maternalKin(c, a) ? 0.25 : 0) + pers.boldness * 0.15 - (x.tension[a.id] ?? 0) * P.coalitionChargeTensionW - (c.age < 12 ? 0.4 : 0) - 0.3, V.COALITION, a.id);
+    }
   }
   if (c.action === 'guard' && x.rivalId > 0) {
     const r = byId.get(x.rivalId);
@@ -842,12 +849,16 @@ function threatResponses(world: World, c: Chimp, carried: boolean): void {
   const stranger = ag.troopId !== c.troopId;
   const dom = stranger || dominates(ag, c);
   const ratio = strength(c, P) / Math.max(0.05, strength(ag, P));
+  // stage E4h (contestAssess; docs/staging/e4h-prereg.md §4): within the community the answer reads the target's assessed
+  // chance against its aggressor (the contest function: strength with condition and wounds, rank edge, supporters), not
+  // binary dominance: y = 1 − q weights the dominated values, so the old values hold at q = 0 and q = 1 (parker1974)
+  const y = P.contestAssess === 1 && !stranger ? 1 - winOdds(world, c, ag, P) : -1;
   if (!carried) {
-    offer('submit', ag.id, (dom ? 1.5 : 0.25) + c.stress * 0.3 - (ratio > 1.1 ? 0.4 : 0) - (stranger ? 0.9 : 0), V.AGGRESSOR);
-    offer('flee', ag.id, (dom ? 1.2 : 0.2) + c.injury * 0.4 + (ag.action === 'attack' ? 0.4 : 0) + (stranger ? 0.8 : 0), V.AGGRESSOR);
+    offer('submit', ag.id, (y >= 0 ? 0.25 + 1.25 * y : dom ? 1.5 : 0.25) + c.stress * 0.3 - (ratio > 1.1 ? 0.4 : 0) - (stranger ? 0.9 : 0), V.AGGRESSOR);
+    offer('flee', ag.id, (y >= 0 ? 0.2 + 1.0 * y : dom ? 1.2 : 0.2) + c.injury * 0.4 + (ag.action === 'attack' ? 0.4 : 0) + (stranger ? 0.8 : 0), V.AGGRESSOR);
   }
   if (c.age >= 12 && !carried && (c.sex === ag.sex || stranger)) {
-    offer('charge', ag.id, (dom ? 0.05 : 0.95) + (ratio - 1) * 0.8 + c.personality.aggression * 0.3 + c.allies.length * 0.05, V.COUNTER);
+    offer('charge', ag.id, (y >= 0 ? 0.95 - 0.9 * y : dom ? 0.05 : 0.95) + (ratio - 1) * 0.8 + c.personality.aggression * 0.3 + c.allies.length * 0.05, V.COUNTER);
     if (ag.action === 'attack' && d < P.fightBackRangeM) offer('attack', ag.id, 0.3 + (ratio - 0.7) * 0.8 + c.personality.aggression * 0.2, V.FIGHTBACK);
   }
 }
