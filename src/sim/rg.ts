@@ -42,7 +42,9 @@ import { index, isChimpId, isTreeId, ix } from './state';
 // value sampled from the animal's belief is taken (Thompson sampling: gershman2018). What it perceives now (its own
 // state, the place it stands, targets in view) has no spread, so it is taken by its value; a trip to a tree out of sight
 // is valued at a crop drawn from its belief about that tree (beliefOffset). No temperature (rgTemperature is not read);
-// with redecideValue the sampled parts are the noise held in the intention.
+// with redecideValue the sampled parts are the noise held in the intention. Iteration 1 (1) compares the options' values
+// alone; iteration 2 (2, §5.2) keeps the rules' own evaluation noise (the candidate jitter, design, in every published
+// score) in the comparison and in the held noise, and adds only the belief: no temperature on top of it.
 
 /**
  * Diagnostic counters for scripts (not world state; the sim never reads them): RG decisions by outcome, re-decisions by
@@ -235,7 +237,7 @@ export function rgChoice(world: World, c: Chimp, list: Candidate[]): Candidate |
     if (rgTap.fn) rgTap.fn(c, list, [], [], g.keep, g.arrived ? 'arrived' : 'kept');
     return g.keep;
   }
-  const belief = P.choiceBelief === 1, menu = rgMenu(world, c, belief ? byValue(list) : list);
+  const belief = P.choiceBelief >= 1, menu = rgMenu(world, c, P.choiceBelief === 1 ? byValue(list) : list);
   // stage E2c (darkCost; e2c-prereg §8 iteration 2): a night or dusk menu left with one option (the nest, once rest is
   // no longer offered inside it) is that option; the unfiltered argmax would skip the phase menus. Stage E2d
   // (rhythmCircadian) offers no rest inside the nest either, so the same holds there (e2d-prereg §2.4)
@@ -311,10 +313,11 @@ function changedSince(world: World, c: Chimp, it: Intent): string {
 
 /** RG under redecideValue: the keep test in place of the gate's triggers, and a Gumbel-max draw that keeps its noise. */
 function redecide(world: World, c: Chimp, list: Candidate[], P: Params): Candidate | null {
-  const belief = P.choiceBelief === 1, x = ix(c), it = x.rgIntent, menu = rgMenu(world, c, belief ? byValue(list) : list);
+  const belief = P.choiceBelief >= 1, x = ix(c), it = x.rgIntent, menu = rgMenu(world, c, P.choiceBelief === 1 ? byValue(list) : list);
   const byUrgency = P.urgencyChoice === 1, T = belief ? 0 : byUrgency ? urgencyTemperature(urgency(c, menu, P), P) : P.rgTemperature;
-  // stage E3e (choiceBelief): an option's noise is the part of its value drawn from the animal's belief (beliefOffset)
-  const fresh = belief ? (k: Candidate) => beliefOffset(world, c, k, P) : (k: Candidate) => jitOf(k) + T * gumbel(world);
+  // stage E3e (choiceBelief): an option's noise is the part of its value drawn from the animal's belief (beliefOffset);
+  // with 2 the candidate jitter it was scored with as well (the rules' own evaluation noise)
+  const fresh = P.choiceBelief === 1 ? (k: Candidate) => beliefOffset(world, c, k, P) : belief ? (k: Candidate) => jitOf(k) + beliefOffset(world, c, k, P) : (k: Candidate) => jitOf(k) + T * gumbel(world);
   let why = 'no-intent';
   if (it) {
     const L = world.environment.daylight;

@@ -10,6 +10,7 @@ import { fruitRate, leafWorth, needFruit, netRateShare, treeIntake } from './int
 import { heatRestValue, nestValue, shelterValue, sleepPressure, thermalLoad } from './rhythm';
 import { darkOn, tripLight, visionNow, type TripLight } from './light';
 import { circadianOn, circadianSleepiness } from './circadian';
+import { dayPhase } from './environment';
 import { driveOn, milkShare, milkWorth, nurseBoutWorth } from './energy';
 import { drinkWorth, waterOn } from './water';
 import { arrivalLight, brightening, needUnits, raceStake, rivalsAt } from './departure';
@@ -308,8 +309,11 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       : (1 - smoothstep(P.nestMorningDaylightLow, P.nestMorningDaylightHigh, env.daylight)) * P.nestMorningDrive;
   nestDrive += (rS ? 0 : (1 - e) * 0.3) + (night && rain > 0.3 ? 0.3 : 0);
   // stage E2e (nestCompany): staying in its own finished nest keeps the company of its nest-mates (nestCompanyValue)
-  // stage E3e (choiceBelief; docs/staging/e3e-prereg.md §5.1): only the company leaving would lose, that of nest-mates asleep
-  const company = P.nestCompany === 1 && inNest && !caretaker && c.age >= 5 ? nestCompanyValue(world, c, P, P.choiceBelief === 1) : 0;
+  // stage E3e (choiceBelief; docs/staging/e3e-prereg.md §5.1–5.2): only the company leaving would lose. 1: that of nest-mates
+  // asleep. 2: in the day light phase that of nest-mates asleep; in the dark (night, dawn, dusk) an awake nest-mate also
+  // stays behind (it will not walk off into the dark: darkCost), so its company counts as E2e has it
+  const asleepOnly = P.choiceBelief === 1 || (P.choiceBelief === 2 && dayPhase(world) === 'day');
+  const company = P.nestCompany === 1 && inNest && !caretaker && c.age >= 5 ? nestCompanyValue(world, c, P, asleepOnly) : 0;
   if (caretaker) {
     if (caretaker.action === 'nest' && isTreeId(caretaker.targetId)) offer('nest', caretaker.targetId, nestDrive + 0.4, V.MOTHER, caretaker.id);
   } else if (c.age >= 3 && !race) offerOwnNest(world, c, inNest, company ? nestDrive + company : nestDrive, rS ? env.daylight < 1 : hour >= 12 || night);
@@ -411,7 +415,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   };
   // stage E3e (choiceBelief; docs/staging/e3e-prereg.md §5.1): a trip to a tree out of sight carries the animal's belief
   // about its crop (the crop it values the tree at, the hours since it last saw the tree), so rg.ts can draw the crop
-  const cb = fr && P.choiceBelief === 1;
+  const cb = fr && P.choiceBelief >= 1;
   const seenH = (id: number): number => { for (let i = 0; i < c.memory.length; i++) { const m = c.memory[i]; if (m.kind === 'tree' && m.entityId === id) return time - m.seenAt; } return Infinity; };
   if (!caretaker || (c.age >= 1.5 && !carried && caretaker.action === 'forage')) {
     for (let _i1 = 0; _i1 < x.trees.length; _i1++) { const id = x.trees[_i1];
@@ -766,7 +770,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   }
   for (let _i7 = 0; _i7 < order.length; _i7++) { const sl = order[_i7];
     const cand: Candidate = { action: sl.action, targetId: sl.target, score: Math.round(clamp(sl.score, 0, 3) * 1000) / 1000, reason: reasonFor(world, c, sl) };
-    candidateMeta.set(cand, P.choiceBelief === 1 ? (sl.bel ? { v: sl.v, aux: sl.aux, raw: sl.raw, jit: sl.jit, bel: sl.bel } : { v: sl.v, aux: sl.aux, raw: sl.raw, jit: sl.jit })
+    candidateMeta.set(cand, P.choiceBelief >= 1 ? (sl.bel ? { v: sl.v, aux: sl.aux, raw: sl.raw, jit: sl.jit, bel: sl.bel } : { v: sl.v, aux: sl.aux, raw: sl.raw, jit: sl.jit })
       : P.redecideValue >= 1 ? { v: sl.v, aux: sl.aux, raw: sl.raw, jit: sl.jit } : { v: sl.v, aux: sl.aux });
     out.push(cand);
   }

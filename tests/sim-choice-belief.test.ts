@@ -140,3 +140,58 @@ test('rngSalt: 0 leaves the world as it was; a salt changes only the stream (the
   for (let i = 0; i < 2880; i++) { tickWorld(a); tickWorld(b); }
   assert.notEqual(worldHash(a), worldHash(b), 'a different realization');
 });
+
+// Iteration 2 (choiceBelief 2; e3e-prereg.md §5.2): the rules' own evaluation noise (the candidate jitter) stays in the
+// comparison and in the held noise; the nest company counts awake nest-mates while the light is not yet in its day phase.
+test('choiceBelief 2 (field): deterministic, JSON-lossless with and without redecideValue 2; rgTemperature not read; count −1', () => {
+  for (const extra of [{}, { redecideValue: 2 }]) {
+    const T = { ...STACK, choiceBelief: 2, ...extra };
+    const a = createWorld(48, { profile: 'field', params: T }), b = createWorld(48, { profile: 'field', params: T });
+    const read = new Set<string>();
+    traceParamReads(a, read);
+    for (let i = 0; i < 5760; i++) { tickWorld(a); tickWorld(b); }
+    assert.equal(worldHash(a), worldHash(b));
+    assert.ok(!read.has('rgTemperature'), 'rgTemperature is not read');
+    assert.ok(read.has('candidateJitterSpan'));
+    assert.deepEqual(JSON.parse(JSON.stringify(a)), a);
+  }
+  assert.equal(prescriptionCount({ choiceBelief: 2 }).total, prescriptionCount({}).total - 1);
+});
+
+test('choiceBelief 2: a draw among options known now takes the option of highest published score (jitter included)', () => {
+  const w = createWorld(48, { profile: 'field', params: { ...STACK, choiceBelief: 2 } }), P = paramsOf(w);
+  for (let i = 0; i < 5760 + 600; i++) tickWorld(w);
+  let n = 0;
+  for (const c of index(w).alive) {
+    if (c.age < P.rgMinAge || ix(c).finished) continue;
+    const list: Candidate[] = [];
+    computeCandidates(w, c, list);
+    const menu = rgMenu(w, c, list);
+    if (menu.length < 2 || menu.some(k => candidateMeta.get(k)?.bel)) continue;
+    delete ix(c).rgIntent;
+    let taken: Candidate | null = null;
+    rgTap.fn = (_c, _l, _m, _p, k) => { taken = k; };
+    rgChoice(w, c, list);
+    rgTap.fn = null;
+    const best = menu.reduce((a, k) => (k.score > a.score ? k : a), menu[0]);
+    assert.equal(`${taken!.action}:${taken!.targetId}`, `${best.action}:${best.targetId}`);
+    if (++n >= 6) break;
+  }
+  assert.ok(n > 0);
+});
+
+test('choiceBelief 2: an awake nest-mate keeps the animal in its nest in the dark phases, not in the day phase', () => {
+  const w = createWorld(48, { profile: 'field', params: { nestCompany: 1, nestAudience: 1, choiceBelief: 2 } });
+  const [a, b] = index(w).alive.filter(c => c.age >= 15 && c.troopId === 1);
+  for (const c of [a, b]) { c.action = 'nest'; ix(c).phase = 2; c.nest = { treeId: -1, x: c.position[0], y: c.position[1], z: c.position[2], builtAt: w.time } as never; }
+  b.position[0] = a.position[0] + 5; b.position[2] = a.position[2];
+  // the nest option's value with the nest-mate awake and asleep, at one light level (only the company term differs)
+  const stay = (daylight: number, asleep: boolean) => {
+    w.environment.daylight = daylight; ix(b).asl = asleep ? 1 : 0;
+    const list: Candidate[] = [];
+    computeCandidates(w, a, list);
+    return candidateMeta.get(list.find(k => k.action === 'nest')!)!.raw!;
+  };
+  assert.equal(stay(0.5, false), stay(0.5, true), 'in the dark an awake nest-mate counts as a sleeping one does');
+  assert.ok(stay(1, false) < stay(1, true), 'in the day phase only a sleeping nest-mate counts');
+});

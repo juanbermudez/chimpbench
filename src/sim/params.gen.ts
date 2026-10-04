@@ -2,7 +2,7 @@
 /* eslint-disable */
 export const REGISTRY_VERSION = 1;
 /** Content hash of every live default, hard range, profile value and integer flag. Stored with each world. */
-export const REGISTRY_HASH = '8ad6832a26008dc0';
+export const REGISTRY_HASH = '888ce692ae62754b';
 
 /** Registry defaults (the compressed profile). */
 export const DEFAULTS = {
@@ -1144,7 +1144,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   chargeRangeM: [0, 1000000],
   chaseOffM: [0, 1000000],
   chimpGridCellM: [0, 1000000],
-  choiceBelief: [0, 1],
+  choiceBelief: [0, 2],
   circAlpha0: [0.001, 1],
   circAmp: [0, 0.4],
   circBeta: [0.0001, 1],

@@ -482,7 +482,305 @@ switch if A1r passes the keep rule with T-ACT-4 inside its band (≥ 0.30) and n
 the store a day below the S19q mean (S18's confirm costs were rest at 0.288 and reserves 0.02–0.06 %/day lower). Fitted
 rows, bout lengths, travel and reserves are reported against the reference, never used to choose.
 
+### 5.2 Iteration 2 (registered before its run): the animal's uncertainty on top of the rules' own evaluation noise, no temperature (`choiceBelief` 2)
+
+**Why (§6.1).** Iteration 1 took every option the animal knows by its exact value. The variability then followed
+knowledge, but the model's valuation, compared without any noise, lost persistence (acts dropped at every need-bucket
+crossing and, with `redecideValue` 2, at every bout end: 5.7 switches per animal-hour), sent animals to the nearest crown
+(T-FOOD-5 0.57) and, with the nest company of sleeping nest-mates only, out of their nests before sunrise (lactating
+females 0.98 of departures). Two questions follow. (1) Is the counted temperature needed at all, or does the evaluation
+noise the rules already carry suffice? Every rules score carries the candidate jitter (± 0.12, `candidateJitterSpan`,
+design, never fitted to a rate, not counted); C13 added the softmax at `rgTemperature` (counted, set to Jev's 0.77) on top
+of it. Iteration 2 keeps the jitter in the comparison (an option the animal knows is taken by its value give or take
+its evaluation error) and drops only the temperature; under `redecideValue` 2 the jitter of the draw is held with the
+belief, as E3d holds it. (2) Whose company does leaving a nest lose? In the dark an awake nest-mate does not walk off with
+the animal (it would walk and feed at the dark's cost, darkCost), so leaving loses its company as E2e has it; in daylight
+it can come along, so only a sleeping nest-mate's company is lost.
+
+**Change (switch `choiceBelief` 2; rg.ts `rgChoice`, `redecide`; candidates.ts the nest company).** As iteration 1
+(§5.1: the belief offset of trips to trees out of sight, no temperature, `rgTemperature` not read, the same `bel`), and:
+- the menu is the rules' menu (published scores, the jitter included, as on S19) and the option of highest published
+  score plus belief offset is taken; with `redecideValue` the noise held for each option is its jitter at the draw plus
+  its belief offset (E3d's held noise with T × Gumbel replaced by the belief), and the keep test compares value now plus
+  held noise;
+- staying in the nest keeps the company (E2e's `nestCompanyValue`) of nest-mates asleep and, while the light is not yet in
+  its day phase (`dayPhase` night, dawn or dusk), of awake ones too; in the day phase only of nest-mates asleep.
+- No new magnitude: the jitter's span and the light phases (E3d's) exist. Prescriptions as iteration 1 (S19 46 → 45; with
+  `redecideValue` 2 → 43).
+- Tests (tests/sim-choice-belief.test.ts): value 2 deterministic and JSON-lossless with and without `redecideValue` 2;
+  `rgTemperature` not read; count −1; a draw among options known now takes the option of highest published score; the
+  nest company counts an awake nest-mate in the dark phases and not in the day phase.
+
+**Smoke tests with the switch on (seed 48, 1 + 2 days; disclosed; not representative).** Adults ≥ 8 y in a nest by hour:
+06:00 0.79, 07:00 0.39, 08:00 0.01, none from 09:00 to 17:00 (S19 0.60, 0.07, 0.04, 0.03–0.04; iteration 1 0.55, 0.03,
+0); departures before sunrise 0.14 of adults (lactating females 0.23). S19 + `choiceBelief` 2: non-top share of draws
+0.027 by the menu's own ranking, 0.18 by value (the jitter decides near-ties), switches 3.0 per animal-hour, runs median
+feeding 18.8, rest 32.8 min, daylight minutes per 12 h feeding 211, rest 233, travel 88, nest 85; e-bench (`--days 2`)
+T-ACT-1 0.28, T-FOOD-10 0.29, T-FOOD-5 0.30, T-COM-1 0.23, prescriptions 45. With `redecideValue` 2: switches 3.3 per
+animal-hour, runs feeding 17.0, rest 17.8, feeding 212, rest 198, travel 126 min.
+
+**Arms** (from a frozen detached checkout of the commit that adds this section): **A2** = S19 + `choiceBelief` 2; **A2r**
+= S19 + `choiceBelief` 2 + `redecideValue` 2; e-bench `--quick`, energy-diagnose and choice-diagnose each (seeds 48 and
+7, burn-in 30, 30 days; `--workers` 2, 1 above load 8); rhythm-metrics for an arm that is kept.
+
+**Predictions (against the S19q mean ± SD of its four realizations; low confidence unless stated).**
+
+| Quantity | S19q (mean ± SD) | A2 | A2r | Confidence |
+| --- | --- | --- | --- | --- |
+| Prescriptions | 46 | 45 | 43 | high |
+| Viability | pass | pass | pass | moderate |
+| Non-top share of draws, menu's own ranking; by value | 0.379 ± 0.006; — | ≤ 0.08; 0.10–0.25 | ≤ 0.08; 0.10–0.25 | moderate |
+| Switches per animal-hour | 3.46 ± 0.04 | 2.6–3.8 | 2.8–4.2 | moderate |
+| Runs, median min: feeding / rest | 20.9 / 28.1 | 15–22 / 25–36 | 14–22 / 15–28 | low |
+| T-FOOD-10 departures before sunrise | 0.787 ± 0.019 | ≤ 0.70 | ≤ 0.70 | moderate |
+| T-FOOD-5 nearest tree | 0.308 ± 0.014 | 0.30–0.50 | 0.30–0.50 | low |
+| T-ACT-1 feeding | 0.400 ± 0.005 | 0.33–0.40 | 0.33–0.40 | low |
+| T-ACT-4 rest + groom | 0.337 ± 0.025 | up 0.00–0.08 | ± 0.05 | low |
+| T-FOOD-2; T-RNG-4; T-RNG-5 | reference | up 0–0.06; ± 0.4; ± 0.3 | up 0–0.08; up 0–0.6; ± 0.3 | low |
+| T-COM-1 | 0.731 ± 0.068 | lower, possibly below 0.5 | lower | low |
+| Eating minutes, every class | reference | 5–35 min lower | 5–35 min lower | low |
+| Reserves %/day, every class | reference | within ± 0.05 of the mean | within ± 0.05 | low |
+| Fitted; held-out with and without the rare rows | reference mean | inside noise | inside noise | low |
+| Night: adults out of a nest (rhythm-metrics, if kept) | S19 confirm 2.58% | ≤ 3.3% | ≤ 3.3% | moderate |
+
+**Kill criterion and verdict rule:** as iteration 1 (§5.1), unchanged; re-decision holds on this switch if A2r passes the
+keep rule with T-ACT-4 ≥ 0.30 and no class's reserves more than 0.03% of the store a day below the S19q mean.
+
 ## 6. Results
+
+### 6.0 The re-draw lever (`rngSalt`; e-bench `--quick` of S19q + `rngSalt` 1, 2, 3, frozen checkout of a10cdfb)
+
+Generated by `salt_check.py` (session scratch `e3e/tools/`) from the JSON (07:12–07:17, `git.dirty` 0), against the
+integrator's S19q and its three `rgTemperature` re-draws; sums on the rows counted in all seven runs.
+
+```
+S19q ef13aa8 dirty 0 prescriptions 46
+S19q1 ef13aa8 dirty 0 prescriptions 46
+S19q2 ef13aa8 dirty 0 prescriptions 46
+S19q3 ef13aa8 dirty 0 prescriptions 46
+salt1 a10cdfb dirty 0 prescriptions 46
+salt2 a10cdfb dirty 0 prescriptions 46
+salt3 a10cdfb dirty 0 prescriptions 46
+fitted (15 rows): rgTemperature group 0.80 / 1.35 / 1.31 / 1.06 (SD 0.25); rngSalt group 0.80 / 0.95 / 1.66 / 1.64 (SD 0.45); ratio 1.78 inside 0.25–3.93
+   |Δ| from S19q: rgTemperature 0.55 / 0.51 / 0.26; rngSalt 0.15 / 0.86 / 0.84
+held-out (11 rows): rgTemperature group 4.18 / 3.61 / 4.42 / 4.22 (SD 0.35); rngSalt group 4.18 / 4.33 / 5.04 / 3.92 (SD 0.48); ratio 1.38 inside 0.25–3.93
+   |Δ| from S19q: rgTemperature 0.57 / 0.24 / 0.04; rngSalt 0.15 / 0.86 / 0.26
+held-out w/o rare (11 rows): rgTemperature group 4.18 / 3.61 / 4.42 / 4.22 (SD 0.35); rngSalt group 4.18 / 4.33 / 5.04 / 3.92 (SD 0.48); ratio 1.38 inside 0.25–3.93
+   |Δ| from S19q: rgTemperature 0.57 / 0.24 / 0.04; rngSalt 0.15 / 0.86 / 0.26
+S19q1: rows whose value differs from S19q: 26 of 26
+S19q2: rows whose value differs from S19q: 25 of 26
+S19q3: rows whose value differs from S19q: 25 of 26
+salt1: rows whose value differs from S19q: 25 of 26
+salt2: rows whose value differs from S19q: 24 of 26
+salt3: rows whose value differs from S19q: 24 of 26
+```
+
+**Reading (as registered, §4): the lever re-draws like `rgTemperature`.** Every salted run differs from S19q (24–25 of 26
+rows change), and the SD of each sum over S19q and the three salted runs is 1.78 × (fitted) and 1.38 × (held-out, with
+and without the rare rows: T-HUN-4 is not scored in every run, T-BRD-1 and T-IGE-3 in none) that over S19q and its three
+`rgTemperature` re-draws, inside the 95% range of a ratio of two SDs of four runs (0.25–3.93). A stack carrying
+`choiceBelief` reads no temperature, so its replicate references are re-drawn with `rngSalt` 1, 2, 3.
+
+### 6.1 Iteration 1: A1 = S19 + `choiceBelief` 1, A1r = A1 + `redecideValue` 2 (frozen checkout of a10cdfb)
+
+Generated by `e3e_judge.py` (session scratch `e3e/tools/`; the integrator's `judge_vs_reps.py` for the sums, one call per
+arm on the rows each arm and the four references score; his OLS slope convention for reserves) from the JSON: e-bench,
+energy-diagnose and choice-diagnose of each arm (07:04–07:12, load 7–11, `git.dirty` 0, `--workers` 2) against the four
+S19 quick realizations (the integrator's e-bench and energy runs at ef13aa8; this stage's choice-diagnose of the same
+worlds, §2.1).
+
+```
+reference runs: ['S19q', 'S19q1', 'S19q2', 'S19q3']; arms: ['A1', 'A1r']
+  S19q: ef13aa8 dirty 0 prescriptions 46 viability True (seed, start, end, deaths, starvation, causes) [(48, 49, 49, 0, 0, {}), (7, 49, 49, 0, 0, {})]
+  S19q1: ef13aa8 dirty 0 prescriptions 46 viability True (seed, start, end, deaths, starvation, causes) [(48, 49, 49, 0, 0, {}), (7, 49, 49, 0, 0, {})]
+  S19q2: ef13aa8 dirty 0 prescriptions 46 viability True (seed, start, end, deaths, starvation, causes) [(48, 49, 49, 0, 0, {}), (7, 49, 49, 0, 0, {})]
+  S19q3: ef13aa8 dirty 0 prescriptions 46 viability True (seed, start, end, deaths, starvation, causes) [(48, 49, 49, 0, 0, {}), (7, 49, 49, 0, 0, {})]
+  A1: a10cdfb dirty 0 prescriptions 45 viability True (seed, start, end, deaths, starvation, causes) [(48, 49, 49, 0, 0, {}), (7, 49, 49, 0, 0, {})]
+  A1r: a10cdfb dirty 0 prescriptions 43 viability True (seed, start, end, deaths, starvation, causes) [(48, 49, 49, 0, 0, {}), (7, 49, 49, 0, 0, {})]
+
+
+quick, reference custom (4 runs), rows counted in all runs: fitted 17, held-out 13
+  fitted             (17 rows) ref 1.38, 1.60, 1.56, 2.31 (mean 1.71, sd 0.41; used 0.69) | A1.json: 2.24, Δ +0.53, z +0.7 (inside noise)
+  held-out           (13 rows) ref 4.89, 5.34, 7.02, 6.94 (mean 6.05, sd 1.09; used 1.26) | A1.json: 8.71, Δ +2.66, z +1.9 (inside noise)
+  held-out w/o rare  (12 rows) ref 4.51, 3.94, 4.75, 4.55 (mean 4.44, sd 0.35; used 0.48) | A1.json: 7.18, Δ +2.74, z +5.1 RESULT
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-COM-8   fitted   ref 0.12±0.08 | A1.json 0.60 (fail)
+   T-FOOD-10 held-out ref 2.21±0.09 | A1.json 3.03 (fail)
+   T-FOOD-5  held-out ref 0.00±0.00 | A1.json 0.41 (fail)
+   T-HUN-4   held-out ref 1.61±0.93 | A1.json 1.53 (fail)
+   T-RNG-5   held-out ref 0.67±0.24 | A1.json 1.98 (fail)
+quick, reference custom (4 runs), rows counted in all runs: fitted 14, held-out 11
+  fitted             (14 rows) ref 0.80, 1.16, 1.31, 0.47 (mean 0.93, sd 0.38; used 0.69) | A1r.json: 2.26, Δ +1.33, z +1.7 (inside noise)
+  held-out           (11 rows) ref 4.18, 3.61, 4.42, 4.22 (mean 4.11, sd 0.35; used 1.26) | A1r.json: 6.23, Δ +2.12, z +1.5 (inside noise)
+  held-out w/o rare  (11 rows) ref 4.18, 3.61, 4.42, 4.22 (mean 4.11, sd 0.35; used 0.48) | A1r.json: 6.23, Δ +2.12, z +4.0 RESULT
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-COM-8   fitted   ref 0.12±0.08 | A1r.json 0.68 (fail)
+   T-FOOD-10 held-out ref 2.21±0.09 | A1r.json 3.18 (fail)
+   T-FOOD-2  fitted   ref 0.00±0.00 | A1r.json 0.23 (fail)
+   T-FOOD-5  held-out ref 0.00±0.00 | A1r.json 0.11 (fail)
+   T-HUN-1   fitted   ref 0.01±0.03 | A1r.json 0.15 (inconclusive)
+   T-RNG-5   held-out ref 0.67±0.24 | A1r.json 1.29 (fail)
+
+| Reserves ÷ store, % per day (OLS) | S19q runs | S19q mean ± SD | A1 | A1r |
+| --- | --- | --- | --- | --- |
+| adult male | +0.001 / +0.007 / +0.004 / +0.007 | +0.005 ± 0.003 | -0.005 (z -3.0) | -0.001 (z -1.8) |
+| female, other | +0.016 / +0.031 / +0.018 / +0.006 | +0.018 ± 0.010 | +0.017 (z -0.0) | -0.083 (z -8.8) |
+| female, lactating | +0.018 / -0.008 / -0.012 / -0.004 | -0.001 ± 0.014 | +0.014 (z +1.0) | -0.031 (z -2.0) |
+| juvenile 5–12 y | -0.013 / -0.007 / -0.006 / -0.016 | -0.010 ± 0.005 | -0.058 (z -9.0) | -0.066 (z -10.5) |
+| infant 2–5 y | +0.017 / +0.003 / -0.008 / +0.008 | +0.005 ± 0.011 | +0.004 (z -0.1) | -0.027 (z -2.7) |
+| infant 0.5–2 y | +0.017 / -0.018 / -0.016 / -0.005 | -0.006 ± 0.016 | +0.017 (z +1.2) | -0.035 (z -1.6) |
+| infant < 0.5 y | +0.000 / +0.000 / +0.000 / +0.000 | +0.000 ± 0.000 | +0.000 (z +nan) | +0.000 (z +nan) |
+
+| Ground km / eating min / fruit share / daylight hunger (energy-diagnose) | S19q runs | S19q mean ± SD | A1 | A1r |
+| --- | --- | --- | --- | --- |
+| adult male: groundKm | 2.157 / 2.358 / 2.319 / 2.348 | 2.295 ± 0.094 | 1.987 (z -2.9) | 2.593 (z +2.8) |
+| adult male: eatingMin | 253.460 / 253.326 / 253.966 / 254.641 | 253.848 ± 0.596 | 242.407 (z -17.2) | 238.684 (z -22.8) |
+| adult male: fruitShare | 0.780 / 0.783 / 0.792 / 0.788 | 0.786 ± 0.005 | 0.844 (z +10.1) | 0.927 (z +24.4) |
+| adult male: hungerDay | 0.211 / 0.231 / 0.222 / 0.218 | 0.220 ± 0.008 | 0.288 (z +7.3) | 0.280 (z +6.5) |
+| female, other: groundKm | 1.711 / 1.663 / 1.730 / 1.694 | 1.699 ± 0.029 | 1.569 (z -4.1) | 2.256 (z +17.5) |
+| female, other: eatingMin | 275.137 / 270.811 / 267.067 / 267.538 | 270.138 ± 3.725 | 235.897 (z -8.2) | 247.124 (z -5.5) |
+| female, other: fruitShare | 0.517 / 0.546 / 0.521 / 0.534 | 0.529 ± 0.013 | 0.621 (z +6.3) | 0.605 (z +5.2) |
+| female, other: hungerDay | 0.209 / 0.218 / 0.205 / 0.220 | 0.213 ± 0.007 | 0.256 (z +5.3) | 0.260 (z +5.8) |
+| female, lactating: groundKm | 1.913 / 2.088 / 2.097 / 2.003 | 2.025 ± 0.086 | 1.872 (z -1.6) | 2.349 (z +3.4) |
+| female, lactating: eatingMin | 322.919 / 320.680 / 319.279 / 321.688 | 321.141 ± 1.543 | 305.607 (z -9.0) | 305.741 (z -8.9) |
+| female, lactating: fruitShare | 0.604 / 0.607 / 0.611 / 0.602 | 0.606 ± 0.004 | 0.658 (z +10.9) | 0.664 (z +12.4) |
+| female, lactating: hungerDay | 0.275 / 0.282 / 0.281 / 0.276 | 0.278 ± 0.003 | 0.269 (z -2.4) | 0.247 (z -8.0) |
+| juvenile 5–12 y: groundKm | 2.176 / 2.216 / 2.264 / 2.180 | 2.209 ± 0.041 | 2.006 (z -4.4) | 2.656 (z +9.8) |
+| juvenile 5–12 y: eatingMin | 287.821 / 293.001 / 289.113 / 285.872 | 288.952 ± 3.010 | 274.913 (z -4.2) | 276.224 (z -3.8) |
+| juvenile 5–12 y: fruitShare | 0.851 / 0.835 / 0.841 / 0.832 | 0.840 ± 0.009 | 0.845 (z +0.5) | 0.914 (z +7.8) |
+| juvenile 5–12 y: hungerDay | 0.303 / 0.304 / 0.308 / 0.292 | 0.302 ± 0.006 | 0.326 (z +3.3) | 0.339 (z +5.2) |
+
+| Row (pooled) | Band | S19q runs | S19q mean ± SD | A1 | A1r |
+| --- | --- | --- | --- | --- | --- |
+| T-ACT-1 | 0.33–0.5 | 0.401 / 0.400 / 0.406 / 0.394 | 0.400 ± 0.005 | 0.370 (z -5.9) | 0.362 (z -7.5) |
+| T-ACT-2 | 0.12–0.25 | 0.190 / 0.195 / 0.192 / 0.190 | 0.192 ± 0.002 | 0.159 (z -13.2) | 0.209 (z +7.0) |
+| T-ACT-3 | 0.08–0.18 | 0.095 / 0.096 / 0.085 / 0.098 | 0.093 ± 0.006 | 0.096 (z +0.4) | 0.084 (z -1.4) |
+| T-ACT-4 | 0.3–0.47 | 0.347 / 0.321 / 0.367 / 0.311 | 0.337 ± 0.025 | 0.355 (z +0.7) | 0.351 (z +0.5) |
+| T-PTY-1 | 3–9 | 4.409 / 4.178 / 3.923 / 3.861 | 4.093 ± 0.251 | 5.004 (z +3.2) | 4.841 (z +2.7) |
+| T-RNG-4 | 1.5–3.5 | 1.996 / 2.325 / 2.029 / 2.075 | 2.106 ± 0.149 | 1.396 (z -4.3) | 2.077 (z -0.2) |
+| T-RNG-5 | 0.3–0.6 | 0.779 / 0.783 / 0.905 / 0.742 | 0.802 ± 0.071 | 1.194 (z +4.9) | 0.986 (z +2.3) |
+| T-HUN-1 | 5–25 | 7.978 / 7.935 / 3.989 / 7.892 | 6.948 ± 1.973 | 3.925 (z -1.4) | 1.962 (z -2.3) |
+| T-HUN-2 | 0.5–0.8 | 0.400 / 0.500 / 0.667 / 0.200 | 0.442 ± 0.195 | 0.500 (z +0.3) | — |
+| T-HUN-3 | 0.05–0.4 | 0.047 / 0.007 / 0.006 / 0.023 | 0.021 ± 0.019 | 0.009 (z -0.6) | 0.000 (z -1.0) |
+| T-FOOD-2 | 0.6–0.78 | 0.706 / 0.679 / 0.696 / 0.716 | 0.699 ± 0.016 | 0.744 (z +2.6) | 0.821 (z +7.0) |
+| T-FOOD-4 | 4–15 | 8.773 / 8.816 / 7.836 / 8.859 | 8.571 ± 0.491 | 12.172 (z +6.6) | 16.385 (z +14.2) |
+| T-FOOD-5 | 0.15–0.45 | 0.288 / 0.318 / 0.313 / 0.314 | 0.308 ± 0.014 | 0.573 (z +17.3) | 0.484 (z +11.5) |
+| T-FOOD-6 | 2–7 | 4.351 / 4.659 / 4.847 / 4.981 | 4.710 ± 0.273 | 4.406 (z -1.0) | 4.818 (z +0.4) |
+| T-FOOD-10 | 0.08–0.3 | 0.810 / 0.764 / 0.781 / 0.792 | 0.787 ± 0.019 | 0.967 (z +8.3) | 1.000 (z +9.9) |
+| T-IGE-1 | 5–12 | 7.404 / 13.325 / 10.542 / 16.132 | 11.851 ± 3.741 | 3.053 (z -2.1) | 7.317 (z -1.1) |
+| T-PAT-1 | 0.1–0.5 | 0.266 / 0.114 / 0.191 / 0.190 | 0.190 ± 0.062 | 0.113 (z -1.1) | 0.151 (z -0.6) |
+| T-PAT-6 | 0.4–0.7 | 0.067 / 0.462 / 0.333 / 0.400 | 0.315 ± 0.174 | 0.500 (z +0.9) | 0.500 (z +0.9) |
+| T-SOC-5 | 0.2–0.7 | 0.253 / 0.410 / 0.387 / 0.408 | 0.364 ± 0.075 | 0.563 (z +2.4) | 0.691 (z +3.9) |
+| T-SOC-9 | 0.08–0.22 | 0.087 / 0.174 / 0.248 / 0.053 | 0.140 ± 0.088 | 0.080 (z -0.6) | 0.062 (z -0.8) |
+| T-COM-1 | 0.5–1.5 | 0.700 / 0.832 / 0.682 / 0.712 | 0.731 ± 0.068 | 0.778 (z +0.6) | 0.930 (z +2.6) |
+| T-COM-8 | 0.3–0.6 | 0.640 / 0.656 / 0.601 / 0.652 | 0.637 ± 0.025 | 0.781 (z +5.1) | 0.804 (z +5.9) |
+| T-COM-11 | 0.25–0.55 | 0.056 / 0.000 / 0.000 / 0.267 | 0.081 ± 0.127 | 0.000 (z -0.6) | 0.000 (z -0.6) |
+S19q T-ACT-1 by sex {'male': 0.371, 'female': 0.426}; T-ACT-2 {'male': 0.213, 'female': 0.172}; T-ACT-3 {'male': 0.114, 'female': 0.078}
+S19q1 T-ACT-1 by sex {'male': 0.366, 'female': 0.429}; T-ACT-2 {'male': 0.232, 'female': 0.163}; T-ACT-3 {'male': 0.118, 'female': 0.077}
+S19q2 T-ACT-1 by sex {'male': 0.369, 'female': 0.437}; T-ACT-2 {'male': 0.217, 'female': 0.171}; T-ACT-3 {'male': 0.114, 'female': 0.061}
+S19q3 T-ACT-1 by sex {'male': 0.373, 'female': 0.411}; T-ACT-2 {'male': 0.223, 'female': 0.164}; T-ACT-3 {'male': 0.126, 'female': 0.075}
+A1 T-ACT-1 by sex {'male': 0.34, 'female': 0.396}; T-ACT-2 {'male': 0.169, 'female': 0.151}; T-ACT-3 {'male': 0.126, 'female': 0.07}
+A1r T-ACT-1 by sex {'male': 0.33, 'female': 0.391}; T-ACT-2 {'male': 0.211, 'female': 0.208}; T-ACT-3 {'male': 0.111, 'female': 0.061}
+
+| Choices (choice-diagnose) | S19q runs | S19q mean ± SD | A1 | A1r |
+| --- | --- | --- | --- | --- |
+| draws per animal-hour | 4.543 / 4.693 / 4.620 / 4.582 | 4.609 ± 0.064 | 5.584 (z +13.6) | 6.229 (z +22.7) |
+| switches per animal-hour (draws that changed the act) | 3.416 / 3.468 / 3.502 / 3.441 | 3.457 ± 0.037 | 3.903 (z +10.9) | 5.712 (z +54.9) |
+| non-top share of draws (the menu's own ranking) | 0.384 / 0.372 / 0.383 / 0.378 | 0.379 ± 0.006 | 0.034 (z -56.1) | 0.029 (z -57.0) |
+| non-top share of draws, by value | — / — / — / — | — ± — | 0.034 (z +nan) | 0.029 (z +nan) |
+| kept acts not the menu top | 0.533 / 0.520 / 0.529 / 0.531 | 0.528 ± 0.006 | 0.439 (z -13.9) | 0.024 (z -78.6) |
+| choices not the top (draws and keeps) | 0.428 / 0.414 / 0.425 / 0.423 | 0.422 ± 0.006 | 0.137 (z -42.4) | 0.027 (z -58.7) |
+| non-top share, taken rest | 0.378 / 0.384 / 0.383 / 0.380 | 0.381 ± 0.003 | 0.015 (z -119.0) | 0.016 (z -118.6) |
+| non-top share, taken feed: crown | 0.480 / 0.475 / 0.464 / 0.467 | 0.472 ± 0.007 | 0.068 (z -49.3) | 0.083 (z -47.4) |
+| non-top share, taken feed: fallback | 0.696 / 0.695 / 0.702 / 0.691 | 0.696 ± 0.005 | 0.189 (z -99.8) | 0.172 (z -103.1) |
+| non-top share, taken groom | 0.395 / 0.381 / 0.388 / 0.387 | 0.388 ± 0.006 | 0.009 (z -59.0) | 0.010 (z -58.9) |
+| non-top share, taken travel: own trip | 0.386 / 0.362 / 0.385 / 0.386 | 0.380 ± 0.012 | 0.004 (z -28.4) | 0.003 (z -28.5) |
+| non-top share, taken travel: joined trip | 0.225 / 0.199 / 0.227 / 0.201 | 0.213 ± 0.015 | 0.025 (z -11.2) | 0.016 (z -11.7) |
+| non-top share, taken call | 0.817 / 0.802 / 0.781 / 0.810 | 0.802 ± 0.016 | 0.083 (z -41.3) | 0.044 (z -43.5) |
+| non-top share, taken display | 0.742 / 0.740 / 0.753 / 0.753 | 0.747 ± 0.007 | 0.030 (z -91.9) | 0.021 (z -93.1) |
+| non-top share, taken play | 0.489 / 0.518 / 0.518 / 0.520 | 0.511 ± 0.015 | 0.014 (z -29.9) | 0.021 (z -29.5) |
+| feeding: min per 12-h daylight day (RG classes) | 274.007 / 272.862 / 274.044 / 271.896 | 273.202 ± 1.029 | 259.382 (z -12.0) | 264.266 (z -7.8) |
+| feeding: share from non-top draws | 0.461 / 0.462 / 0.456 / 0.455 | 0.459 ± 0.004 | 0.094 (z -92.8) | 0.077 (z -97.2) |
+| rest: min per 12-h daylight day (RG classes) | 179.860 / 176.058 / 175.414 / 177.711 | 177.261 ± 1.985 | 223.404 (z +20.8) | 193.016 (z +7.1) |
+| rest: share from non-top draws | 0.359 / 0.360 / 0.357 / 0.361 | 0.359 ± 0.002 | 0.017 (z -179.2) | 0.013 (z -181.3) |
+| grooming: min per 12-h daylight day (RG classes) | 49.594 / 47.811 / 48.035 / 48.500 | 48.485 ± 0.793 | 43.891 (z -5.2) | 42.582 (z -6.7) |
+| grooming: share from non-top draws | 0.374 / 0.378 / 0.378 / 0.374 | 0.376 ± 0.002 | 0.008 (z -142.5) | 0.008 (z -142.5) |
+| travel: min per 12-h daylight day (RG classes) | 84.106 / 91.373 / 90.269 / 88.844 | 88.648 ± 3.200 | 80.854 (z -2.2) | 105.338 (z +4.7) |
+| travel: share from non-top draws | 0.294 / 0.280 / 0.293 / 0.292 | 0.290 ± 0.007 | 0.017 (z -37.2) | 0.010 (z -38.2) |
+| other: min per 12-h daylight day (RG classes) | 69.310 / 66.370 / 68.297 / 71.388 | 68.841 ± 2.090 | 60.078 (z -3.7) | 61.034 (z -3.3) |
+| other: share from non-top draws | 0.459 / 0.473 / 0.450 / 0.456 | 0.459 ± 0.010 | 0.021 (z -40.2) | 0.014 (z -40.9) |
+
+| Runs (act bouts), minutes, adult and juvenile classes | S19q runs | S19q mean ± SD | A1 | A1r |
+| --- | --- | --- | --- | --- |
+| feeding: medianMin | 21.0 / 21.0 / 20.5 / 21.0 | 20.9 ± 0.2 | 14.0 (z -24.6) | 8.5 (z -44.3) |
+| feeding: meanMin | 23.3 / 23.4 / 22.9 / 23.3 | 23.2 ± 0.2 | 18.9 (z -18.0) | 12.9 (z -42.8) |
+| feeding: p90Min | 43.0 / 43.2 / 42.8 / 43.2 | 43.1 ± 0.2 | 41.0 (z -7.7) | 30.5 (z -46.9) |
+| grooming: medianMin | 13.5 / 13.2 / 13.0 / 13.2 | 13.2 ± 0.2 | 14.2 (z +4.4) | 9.2 (z -17.5) |
+| grooming: meanMin | 15.6 / 15.5 / 15.2 / 15.3 | 15.4 ± 0.2 | 16.6 (z +5.7) | 10.6 (z -22.3) |
+| grooming: p90Min | 33.2 / 32.8 / 32.2 / 33.0 | 32.8 ± 0.4 | 33.2 (z +0.9) | 20.8 (z -25.3) |
+| rest: medianMin | 28.5 / 28.2 / 27.5 / 28.0 | 28.1 ± 0.4 | 21.5 (z -13.7) | 13.2 (z -31.0) |
+| rest: meanMin | 28.4 / 28.4 / 27.7 / 28.2 | 28.2 ± 0.3 | 26.3 (z -5.8) | 15.0 (z -40.2) |
+| rest: p90Min | 48.2 / 48.5 / 47.2 / 48.5 | 48.1 ± 0.6 | 47.0 (z -1.7) | 26.8 (z -32.1) |
+| travel: medianMin | 4.2 / 4.5 / 4.5 / 4.5 | 4.4 ± 0.1 | 3.2 (z -8.5) | 3.0 (z -10.3) |
+| travel: meanMin | 6.1 / 6.3 / 6.3 / 6.2 | 6.2 ± 0.1 | 5.0 (z -10.3) | 4.4 (z -15.7) |
+| travel: p90Min | 14.5 / 14.8 / 15.0 / 15.0 | 14.8 ± 0.2 | 12.5 (z -8.6) | 10.5 (z -16.1) |
+| feed: crown: medianMin | 19.2 / 19.5 / 18.8 / 19.2 | 19.2 ± 0.3 | 12.2 (z -19.7) | 7.8 (z -32.5) |
+| feed: crown: meanMin | 20.8 / 21.0 / 20.5 / 20.8 | 20.8 ± 0.2 | 16.5 (z -16.5) | 11.8 (z -34.3) |
+| feed: fallback: medianMin | 32.0 / 31.2 / 31.8 / 32.0 | 31.8 ± 0.4 | 32.2 (z +1.3) | 21.0 (z -27.2) |
+| feed: fallback: meanMin | 33.1 / 32.1 / 32.6 / 32.6 | 32.6 ± 0.4 | 33.8 (z +2.6) | 20.5 (z -27.1) |
+| travel: own trip: medianMin | 2.8 / 3.0 / 3.0 / 3.0 | 2.9 ± 0.1 | 2.5 (z -3.1) | 2.5 (z -3.1) |
+| travel: own trip: meanMin | 4.7 / 4.9 / 4.9 / 4.9 | 4.8 ± 0.1 | 3.8 (z -7.4) | 3.6 (z -9.2) |
+
+A1 identity: [{'seed': 48, 'menuMismatch': 0, 'probErr': 0, 'checked': 79588}, {'seed': 7, 'menuMismatch': 0, 'probErr': 0, 'checked': 80178}] male {'eatingMin': 242.40654761904761, 'groundKm': 1.986697069899628} verdicts/h {"arrived": 0.422, "ended": 1.681, "hunt": 0.003, "interrupt": 2.223, "kept": 1.902, "light": 0.076, "max-age": 0.305, "need-bucket": 1.116, "patch-poor": 0, "patrol": 0.02, "period": 0.158}
+
+A1r identity: [{'seed': 48, 'menuMismatch': 0, 'probErr': 0, 'checked': 92145}, {'seed': 7, 'menuMismatch': 0, 'probErr': 0, 'checked': 86085}] male {'eatingMin': 238.68363095238095, 'groundKm': 2.5932449468197336} verdicts/h {"arrived": 0.839, "ended": 2.619, "hunt": 0.008, "kept": 2.17, "light": 0.07, "light-phase": 0.113, "need-bucket": 1.281, "outvalued": 2.106, "patrol": 0.031}
+```
+
+Night and departures (rhythm-metrics on A1, seeds 48 and 7, 30 + 30 days, the same frozen checkout; a diagnosis, the
+arm is not kept): adults out of a nest 2.6% of the night (nest 97.4%; T-RHY-5 0.03), none at solar midnight;
+departures before sunrise 0.75 of adults (lactating females 0.98, other females 0.68, males 0.68), median 13 min before
+sunrise.
+
+**What happened.** Options the animal knows were taken when they were the top 99.7–99.9% of the time, and the choices that
+still departed from the top were trips to trees out of sight (taken when the top 0.83–0.84 for trees not seen for a day
+or never seen): the variability now follows knowledge, as built (non-top share of draws 0.38 → 0.03). But the model's
+valuation, compared without noise, behaves differently from the reference in four ways. (i) **No persistence**: at the
+gate's need-bucket draws (0.74 → 1.12 per animal-hour) and at interrupts an act is now dropped whenever another option
+is a little better, so crown bouts fell from 19 to 12 min (median), animals visited more trees (T-FOOD-4 8.6 → 12.2) and
+ate 11–34 min less a day in every class (fruit share up); with `redecideValue` 2 the keep test re-decided near-ties at
+every bout end and interrupt (5.7 switches per animal-hour, feeding runs 8.5 min, rest 13), walking rose (males 2.30 →
+2.59 km, other females 1.70 → 2.26) and other females' and juveniles' reserves fell. (ii) **The nearest tree**: a crown is
+valued for one bout's rate, so the nearest productive tree is the best, and the share of moves to it rose from 0.31 to
+0.57 (T-FOOD-5; Taï 30%, normand2009). (iii) **Leaving the nest**: with only sleeping nest-mates holding (the
+correction of §5.1), adults left before sunrise more (T-FOOD-10 0.79 → 0.97; lactating females 0.98 of departures).
+(iv) **Ranging**: males walked less under the gate (1.99 km; T-RNG-4 1.40, below its band; T-RNG-5 1.19). Food calls at
+crowns were given more often (T-COM-8 0.64 → 0.78), male pant-hoots stayed in band (T-COM-1 0.78; calls were taken half
+as often, but the focal rate did not fall).
+
+**Against the predictions.** A1: prescriptions 45 held; viability held; non-top share ≤ 0.08 held (0.034); switches
+3.0–4.2 held (3.90); runs: feeding 12–20 held (14.0), rest 20–30 held (21.5), grooming 11–17 held (14.2); fallback
+non-top ≤ 0.10 missed (0.19: the fallback is taken when a remembered tree's draw falls below it); T-FOOD-2 up ≥ 0.06 and
+above band missed (+0.045, in band); fruit share up held for adults (juveniles level); T-COM-1 below 0.5 missed (0.78);
+T-ACT-1 and T-ACT-2 within ± 0.04 held (−0.030, −0.033); T-ACT-3 lower missed (+0.003); T-ACT-4 up held (+0.018);
+T-RNG-4 within ± 0.4 missed (−0.71); T-FOOD-4 within ± 1.5 missed (+3.6); reserves within ± 0.03 missed for juveniles
+(−0.048), held for mothers and infants; fitted worse beyond noise missed (z +0.7); held-out inside noise held with the rare
+rows (z +1.9), missed without (z +5.1). A1r: prescriptions 43 held; viability held; non-top ≤ 0.08 held (0.029);
+switches 5–8 held (5.71); runs held (feeding 8.5, rest 13.3, grooming 9.3); T-FOOD-2 up held (0.821, above band);
+T-COM-1 below 0.5 missed (0.93); T-ACT-1 within ± 0.04 held (−0.038), T-ACT-2 up held (+0.017), T-ACT-3 lower held,
+T-ACT-4 held; T-RNG-4 held (−0.03); T-FOOD-4 missed (+7.8); reserves within ± 0.04 missed for juveniles (−0.056) and other
+females (−0.101); fitted worse beyond noise missed (z +1.7); held-out inside noise held with the rare rows (z +1.5), missed
+without (z +4.0).
+
+**Kill criterion.** A1: (c) met (held-out without the rare rows z +5.1: T-RNG-5 +1.30, T-FOOD-10 +0.82, T-FOOD-5 +0.41);
+(a), (b) (largest fall juveniles −0.048, under 0.05) and (d) not. A1r: (b) met (other females −0.101, juveniles −0.056)
+and (c) met (z +4.0).
+
+**Verdict: null; `choiceBelief` 1 recorded, off. Re-decision does not hold on it** (A1r fails the keep rule). The
+softmax's noise did more than stand for ignorance: it supplied persistence (a re-drawn act stays with some probability),
+the non-nearest tree choices of the field (normand2009's 30%), longer meals and an exit from the nest-company lock. Those
+are terms the valuation lacks (a cost or delay of switching an act done in place, a crop's value beyond one bout, meal
+dynamics), and the animal's uncertainty about what it cannot see does not supply them: in this currency a remembered
+crop above one bout's gut room changes nothing, so the belief rarely moves a trip.
 
 ## 7. Known defects in the code under test
 
