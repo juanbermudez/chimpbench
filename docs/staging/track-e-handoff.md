@@ -14,7 +14,7 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 16:30; deploy held by the user).** Agents: **E3g** (re-deciding's cost, on S28), **E4p** (mating
+- **Running now (4 October 16:10; deploy held by the user).** Agents: **E3g** (re-deciding's cost, on S28), **E4p** (mating
   gaps), **E4q** (aggression cooldowns). Integrator: S32 re-draws S32c1–S32c3 (bench-run at 4111971, `…/e/s3132/`,
   `integrator/s32c-group.sh`) as the reference group for confirms on S32. Guide moving to S32 (guide-s5 agent).
 - **S32 is the best integrated candidate (45 on E0b's ledger)** by the registered decision (e-stack2-confirm.md "S31 and
