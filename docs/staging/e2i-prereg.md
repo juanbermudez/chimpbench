@@ -160,8 +160,112 @@ not shorter. The field's phase speed is the stage's check on the pauses (a targe
 
 ## 3. Sources
 
-## 4. Mechanism
+Read 4 October 2026 (research.md and e-sources.md "Addendum: E2i walking speed"; helper report in the stage's scratch
+directory). Inputs:
+- **Walking speed while walking** [nguessan2009] (FT, the publisher's open PDF) citing Hunt 1989 (dissertation, not
+  read) [L]: Mahale, 0.88 m/s males, 0.78 m/s females, 0.75 m/s "for females carrying an infant and for young
+  individuals"; used there as the speed in Taylor's walking-cost equation, so a speed while walking. Hunt's method and
+  sample unknown (secondary). Young individuals = juveniles and adolescents, put at 20 kg.
+- **Size scaling** [alexanderJayes1983] (Abs) and [raichlen2013] (FT): equal Froude numbers across sizes; with geometric
+  similarity (design) speed ∝ mass^⅙. Check (not a fit): 0.72–0.79 m/s at 20 kg against the source's 0.75.
+- **No cost-minimising speed to derive**: chimpanzees' cost per metre is about constant across walking speeds
+  ([luciano2024], FT, re-analysing pontzer2014jhe's five captive chimpanzees, bipedal, 0.45–1.67 m/s); the ledger's net
+  cost (sockol2007) was measured at one speed. So the measured walking speed is the input, not an optimum.
+Targets (never inputs): batesByrne2009's movement phases (1.91–2.21 km/h; 6.5 and 4.5 halts of ≥ 20 min a day) and
+jang2019's travel speeds with rests (Taï females, 0.42–0.44 m/s).
 
-## 5. Predictions and kill criterion
+**Samples of the field rows the arms are scored on** (opened 4 October 2026):
+- T-RNG-4 (fitted), T-RNG-5 (held-out): batesByrne2009 (FT, authors' manuscript): Budongo Sonso, September 2002 –
+  September 2003; 15 adults followed (8 males of four ranks; 7 females: 4 lactating throughout, 1 gestating then
+  lactating, 1 receptive who conceived, pooled as "lactating" (6), and 1 receptive); no masses (wild, unweighed);
+  location every 5 min "when it was travelling" by GPS (error ≤ 14 m) or on the trail grid; day range from focal samples
+  followed ≥ 8 h without loss (27 male, 13 lactating, 3 receptive days): males 2.7 ± 1.5 km, lactating 1.2 ± 0.8 km. The
+  observer (src/field/metrics.ts) sums 5-min fixes on complete follows. jang2019 (Taï females, continuous GPS, 274 days,
+  median 4.03 km) is the row's second population.
+- T-ACT-1, T-ACT-2, T-ACT-3 (fitted): villioth2025 (FT, PMC12701709): Budongo Waibira, October 2016 – June 2017; 10
+  adult males (≥ 16 y), 9 adult females (≥ 14 y; 7 lactating, 2 with a juvenile); no masses; continuous focal follows
+  from the night nest (4.1 ± 2.6 h, 491 h). Definitions quoted: "travelling (terrestrial quadrupedal walking as well as
+  arboreal climbing and movement within the canopy)", "resting (any period > 1 min in which the individual was sitting or
+  lying and not engaging in another behaviour)". Travel 21% (males) and 20% (females). T-ACT-2's second population is
+  Ngogo's 0.14 on non-patrol days (amsler2010, abstract only). The model scores walking, climbing to a crown and
+  approaches as travel (src/field/categories.ts); it has no movement within a crown (an observer mapping difference,
+  §6). T-ACT-1 also uwimbabazi2019 (Kanyawara nursing females, full-day follows).
+- T-ACT-4 (fitted): potts2011 (Ngogo and Kanyawara monthly means, continuous focal, resting includes grooming) and
+  villioth2025.
+- T-FOOD-4 (held-out): janmaat2013b (Taï, 5 adult females with offspring, 275 full days) and normand2009 (Taï, 2
+  females, 28 days).
+- T-PTY-1 (fitted): wilson2012 (Kanyawara party follows 1992–2006) and potts2011 (feeding parties).
+
+**Readouts of the predictions and their definitions.** Bench rows as e-bench scores them (observer). True day range:
+energy-diagnose's ground path per animal-day. Speeds, observer-travel composition, movement phases and valuations:
+`scripts/walk-diagnose.ts` (header; phases follow batesByrne2009's Methods as quoted in research.md: "continuous movement
+ending at a 20+ minute halt", speed "by dividing the distance travelled by travel time"). Reserves: energy-diagnose's
+daily trajectory, OLS slope in % of the store a day. Night safety: rhythm-metrics, adults out of a nest (% of night) and
+T-RHY-5 (the integrator's night.py). All smoke-tested on 2 days with the switch on (walk-diagnose and rhythm-metrics;
+every readout filled; adults out of a nest 1.51% of the smoke night) before any arm.
+
+## 4. Mechanism (iteration 1, A1; registered 4 October 2026 before its run; code at 4d38777)
+
+`walkGait` 1 (src/sim/gait.ts; field profile only, `patchEcology` 1; 0 = today, bit for bit: the field pin and the
+goldens hold):
+- **The speed.** gaitSpeed = the adult walking speed of the sex (`walkGaitMaleMps` 0.88, `walkGaitFemaleMps` 0.78, [L])
+  × (mass ÷ the adult mass of the sex)^`walkGaitSizeExp` (1/6, assumed) below adult mass (ledger mass, `massOf`) ×
+  `walkGaitCarryMps` ÷ `walkGaitFemaleMps` (0.75 / 0.78 [L]) while a dependent rides on the animal (candidates.ts
+  `isCarried`). It replaces `walkMps` in every walking act; today's act multipliers stay (follow 1.15, pair approach 1.1,
+  silent flight 1.8, …). moveTo's factor keeps old age, injury, alertness, rain and light (design; E2c's pace) and drops
+  bodySpeed's life stage below 10 y for walking (the mass carries it); running (`runSpeedOf`) and climbing keep it, so
+  they are unchanged.
+- **The valuations.** Every valuation that charged walking time at walkMps reads `tripSpeed` = gaitSpeed × the body
+  state (old age, injury, alertness): netRateShare and treeIntake (crowns, own, joined and caller trips, the gate's patch
+  test, rg.ts belief draws), tripLight, arrivalLight (dawn race), drinkWorth, the patrol lead's and the incursion's
+  daylight checks, the committed trip's bout, the urgency rates, tripCost. Rain and light keep their own terms.
+- **Defect fixed under the switch:** the hunt's approach is valued at the speed the hunt moves at (`runSpeedOf` × 0.8 ×
+  the body state), not at walkMps.
+- **Pauses:** none added; none removed. The departure wait, the initiator's wait for joiners, listening stops, a
+  follower's stop beside its target and every halt are the decisions that make them.
+- **Prescriptions:** `walkMps` is not read (traced in tests/sim-gait.test.ts): 45 → 44 on S21. The new speeds are
+  classed input (rule 4, locomotion; borderline like `runMps`), the exponent design.
+
+## 5. Predictions and kill criterion (iteration 1; registered before its run)
+
+Arm **G1** = S21 + `walkGait` 1, quick (seeds 48 and 7, burn-in 30, 30 days): e-bench, energy-diagnose, walk-diagnose
+and rhythm-metrics, from a frozen checkout of the commit that registers this section. Judged against the integrator's
+four S21 quick realizations (S21q, S21q1–3; bench-run2 e7d8d8e) by e-noise.md amendment 2 with amendment 3's rare rows.
+Reference values: mean ± SD of the four runs (§2.1 tables and `e2i_table.py`).
+
+Predictions (confidence high for the mechanics, moderate or low for behaviour as marked):
+1. Prescriptions 44 (high).
+2. Moving speed in trips (walk-diagnose): adult males 0.74–0.84 m/s, other and lactating females 0.62–0.74, juveniles
+   0.55–0.72 (high; against 0.29–0.33).
+3. Movement phases 1.2–1.7 km/h for adults (moderate), still below batesByrne2009's 1.91–2.21 (moderate): the model's
+   halts and short stops do not supply the field's pauses.
+4. Adults' observer-travel time in truth falls (males 0.148 → 0.07–0.11 of daylight); T-ACT-2 0.160 ± 0.009 → 0.08–0.12,
+   at or below its band's floor (moderate).
+5. T-RNG-4 1.59 ± 0.10 → 1.7–2.4 km (low): walking time weighs less in every trip's rate, so farther crowns win (the best
+   tree option changed in 11% of decisions at a body speed, §2.1); true day ranges of every adult class up 5–40% (low).
+6. T-RNG-5 inside the reference spread (low); T-ACT-4 up 0.00–0.05 (moderate: the freed travel time goes to rest and
+   grooming); T-ACT-1 within ±0.02, T-ACT-3 0.08–0.12, T-PTY-1 inside the reference spread (low); T-FOOD-4 up 0–25%
+   (low).
+7. Reserves of every class within ±2 SD of the reference (low): a minute of walking costs the activity rate as a minute
+   of rest does, and the added metres cost 3.8 J/kg/m.
+8. Night safety holds: adults out of a nest ≤ 3.3% of the night (moderate). Viability passes (moderate).
+9. Fitted sum up by T-ACT-2's distance (low); held-out sums inside noise (low).
+
+**Kill criterion (G1 is recorded, not a keep candidate, if any holds):** viability fails (a starvation death or the
+bench's viability verdict false); held-out without the rare rows worse beyond noise (z > +2); night safety fails
+(> 3.3%); the count is not 44. T-ACT-2 below its band is a reported cost on a fitted row (the keep rule does not test
+fitted rows), never a reason to change a speed or add a pause. A second iteration is registered only for a defect the
+G1 diagnosis names (for example a wait or a catch-up that was sized for the old speed), never for a speed.
 
 ## 6. Known defects
+
+- Fixed under the switch: the hunt's approach valued at walkMps while hunters move at `RUN × 0.8`
+  (src/sim/huntvalue.ts:32 at 6871f3d); valuations ignoring the movement factor (intake.ts:60, :95; departure.ts:35;
+  light.ts:88; water.ts:125; patrol.ts:101; parties.ts:209; execution.ts:242; urgency.ts:115–129; rg.ts:158, :163).
+- Deferred: walking on fallback food runs at 0.3 × the walking speed (execution.ts `fallbackTick` and the forage walk on
+  the ground; design multiplier), so under the switch it doubles (0.105 → ~0.23 m/s); fallback walking is 8% of fallback
+  ticks and 0.01–0.04 km a day (§2.1).
+- Deferred: `climbMps` (0.22 m/s, stylized) sets climbing, 11% of adults' travel time; nguessan2009 uses 0.5 m/s from
+  pontzerWrangham2004 (secondary, [L]). Out of this stage's scope; listed for a climbing stage.
+- Observer mapping: villioth2025 scores movement within the canopy as travel; the model has no within-crown movement
+  (feeding is scored feed), so the model's travel share omits that part (no correction made).
