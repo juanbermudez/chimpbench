@@ -382,6 +382,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   choiceBelief: { stage: 'E3e', needs: {} },
   leftoverRules: { stage: 'E4m', needs: {} },
   bodyRules: { stage: 'E4o', needs: {} },
+  aggressionGaps: { stage: 'E4q', needs: {} },
   walkGait: { stage: 'E2i', needs: {} },
   youngArrival: { stage: 'E2j', needs: {}, removesNothing: 'gives animals below rgMinAge the arrival rule older animals already follow (rg.ts gate, or redecide under redecideValue 2: a trip that reaches its tree becomes feeding there when legal); every other choice stays the argmax; adds no magnitude and switches no prescription out (e2j-prereg §9-10)' },
   tripBodyCost: { stage: 'E2j', needs: { energyLedger: 1, ledgerDrive: 1, forageRate: 1 }, removesNothing: 'charges a trip\'s climbing time and a riding dependent\'s metres in forageRate\'s net energy rate (the movement\'s and the ledger\'s own speeds and costs); adds no magnitude and switches no prescription out (e2j-prereg §4)' },
@@ -517,6 +518,11 @@ export const LITERAL_OFF: { file: string; has: string; kind?: Literal['kind']; o
   // the terms while redecideValue is 1 or 2 (stage E3d: a bout is kept while it is still the best, rg.ts)
   { file: 'candidates.ts', has: '0.35) : 0) + (1 - c.social) * (0.55', kind: 'bonus', off: P => P.groomDrive !== 1 || P.redecideValue >= 1, why: 'the grooming continuation terms on the need-weighted branch: counted here only while groomDrive is 1, otherwise once on the general branch (with groomNeedDyad 1 mother–offspring pairs run this line too); not applied while redecideValue is 1 or 2 (stage E3d)', same: '0.35) : 0) - femaleOffset + (1 - c.social) * 0.55' },
   { file: 'candidates.ts', has: '0.35) : 0) - femaleOffset + (1 - c.social) * 0.55', kind: 'bonus', off: P => P.groomDrive === 1 || P.redecideValue >= 1, why: 'the grooming continuation terms on the general branch: not reached while groomDrive is 1 (every pair takes the need-weighted branch, which holds the same terms); not applied while redecideValue is 1 or 2 (stage E3d)', same: '0.35) : 0) + (1 - c.social) * (0.55' },
+  // stage E4q (aggressionGaps; docs/staging/e4q-prereg.md §4): each gate reads the bit before the literal, so the literal
+  // is not evaluated while the bit is set (a code read; scripts/param-reads.ts --literals, prereg §4.2)
+  { file: 'candidates.ts', has: 'aggrBit(P, 1) || time - x.lastAgg > 1.5', kind: 'interval', off: P => (P.aggressionGaps & 1) !== 0, why: 'the 1.5-h cooldown after the animal\'s own last aggression: not evaluated while aggressionGaps has bit 1 (e4q-prereg §2.1: it trims; the offers\' own scores and the target\'s answer govern repetition)' },
+  { file: 'candidates.ts', has: 'aggrBit(P, 2) || time - x.lastAgg > 0.2', kind: 'interval', off: P => (P.aggressionGaps & 2) !== 0, why: 'the 0.2-h gap of a charge at strangers: not evaluated while aggressionGaps has bit 2 (e4q-prereg §2.1: inert)' },
+  { file: 'candidates.ts', has: 'aggrBit(P, 4) || time - x.lastDisplay > 0.75', kind: 'interval', off: P => (P.aggressionGaps & 4) !== 0, why: 'the 0.75-h display gap: not evaluated while aggressionGaps has bit 4 (e4q-prereg §2.1: it trims; the display\'s own score against the other options governs it)' },
 ];
 
 const HOUR = /\b(?:world\.)?hour\s*(?:>=|<=|<|>)\s*(\d+(?:\.\d+)?)/g;

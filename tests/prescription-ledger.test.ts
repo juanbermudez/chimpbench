@@ -240,8 +240,8 @@ const HIDDEN_TIMERS: [string, string, string][] = [
   ['candidates.ts', '0.35) : 0) - femaleOffset', 'bonus'],          // grooming continuation terms (general branch)
   ['candidates.ts', 'time - x.lastDisplay > 0.75', 'interval'],     // display gap
   ['candidates.ts', '(time - x.lastCall < 0.03 ? 0.4 : 0)', 'bonus'], // alarm penalty after a call (judgement call)
-  ['candidates.ts', 'const cooled = time - x.lastAgg > 1.5', 'interval'], // aggression cooldown
-  ['candidates.ts', 'own >= str + 2 && time - x.lastAgg > 0.2', 'interval'], // charge at strangers
+  ['candidates.ts', 'aggrBit(P, 1) || time - x.lastAgg > 1.5', 'interval'], // aggression cooldown (E4q: the piece follows the bit's guard)
+  ['candidates.ts', 'aggrBit(P, 2) || time - x.lastAgg > 0.2', 'interval'], // charge at strangers (E4q, as above)
   ['candidates.ts', 'time - x.lastMate > 0.3', 'interval'],         // a female's mating gap
   ['candidates.ts', 'const callReady = time - x.lastCall > 0.5', 'interval'], // food and reunion calls
   ['candidates.ts', '!cv && time - x.lastCall > 1.5', 'interval'],  // chorus gap

@@ -65,6 +65,12 @@ export const quotaTrace: { on: ((kind: QuotaKind, c: Chimp, o: Chimp | undefined
  * callers' distance scale (the approach in the forager's currency), 8 the two charge gaps (no replacement). 0 = today.
  */
 export const socialBit = (P: Params, bit: number): boolean => (P.socialTiming & bit) !== 0;
+/**
+ * Stage E4q (docs/staging/e4q-prereg.md §4): `aggressionGaps` is a sum of bits, one per literal gap after the animal's own
+ * last act that it switches out without replacement (the diagnosis found that none sets its behaviour's rate): 1 the
+ * 1.5-h cooldown after aggression, 2 the 0.2-h gap of a charge at strangers, 4 the 0.75-h display gap. 0 = today.
+ */
+export const aggrBit = (P: Params, bit: number): boolean => (P.aggressionGaps & bit) !== 0;
 
 /**
  * Where a male leads a consortship (execution.ts onStart): a point at 0.85 of the community's range radius from its
@@ -777,7 +783,8 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       if (male && c.age >= 15 && time - at < (fast ? fastSpanH(P) : P.impulseDurationH) && x.lastDisplay < at) { const sc = fast ? rainFastScore(c, x, time, P) : rainScore(c, x, P); if (sc > 0) offer('display', -1, sc, V.RAIN); }
     }
     else if (x.impulse === IMPULSE_RAIN && x.impulseUntil > time && male) offer('display', -1, P.rainDisplayScore, V.RAIN);
-    const dispOpen = male && e > 0.3 && time - x.lastDisplay > 0.75;
+    // stage E4q (aggressionGaps bit 4): the gap is not read; the display's own score against the other options governs it
+    const dispOpen = male && e > 0.3 && (aggrBit(P, 4) || time - x.lastDisplay > 0.75);
     if (dispOpen || (quotaTrace.on && male && e > 0.3)) { // stage E4q diagnosis: the gap's gate, traced with the score the offer has or would have
       const rv = rivalCloseness > 0.3 ? rival : -1;
       const sc = 0.02 + pers.aggression * 0.3 + pers.boldness * 0.12 + rivalCloseness * 0.3 + (x.newcomers > 0 ? 0.25 : 0) + unstable * 0.35
@@ -951,7 +958,9 @@ function aggression(world: World, c: Chimp, rival: number, rivalCloseness: numbe
   const time = world.time;
   const pers = c.personality;
   const h = c.hunger;
-  const cooled = time - x.lastAgg > 1.5;
+  // stage E4q (aggressionGaps bit 1): the cooldown is not read; each offer's own score and the target's answer (E4h)
+  // govern how soon an animal aggresses again
+  const cooled = aggrBit(P, 1) || time - x.lastAgg > 1.5;
   const male = c.sex === 'male';
   // stage E4q diagnosis (quotaTrace; null in every simulation): each offer the cooldown gates is traced with the score it
   // has or would have, whether or not the cooldown blocks it
@@ -1126,7 +1135,7 @@ function intergroup(world: World, c: Chimp): void {
       let charged = false; // stage E4q diagnosis: whether the gap let the charge at strangers through (quotaTrace below)
       if (transferring) { /* keep going */ }
       else if (c.sex === 'male' && immigrantLike) { /* no aggression */ }
-      else if (c.sex === 'male' && own >= 3 && own >= str + 2 && time - x.lastAgg > 0.2) {
+      else if (c.sex === 'male' && own >= 3 && own >= str + 2 && (aggrBit(P, 2) || time - x.lastAgg > 0.2)) { // stage E4q bit 2: no gap
         charged = true;
         offer('charge', s.id, chargeSc, V.STRANGER);
         if (gangT && gangT.alive) offer('attack', gangT.id, gangSc, V.GANG);
