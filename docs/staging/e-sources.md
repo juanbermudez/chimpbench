@@ -1843,3 +1843,16 @@ exploration and an uncertainty bonus, value-only choice fitted worse); decision 
 (costa2019, FT, three males); chimpanzees know distances to remembered trees well and their crop beliefs can be wrong
 (normandBoesch2009, normand2009, ban2014, janmaat2013a/b, already cited). New keys: gershman2018, wilson2014, costa2019.
 Not verified (not searched or fetched this stage): a Weber fraction for food quantity in chimpanzees, Thompson 1933, Krebs et al. 1978.
+
+## Addendum: E2i walking speed (4 October 2026)
+
+Same text as research.md "Addendum: E2i walking speed": wild chimpanzees walk at 0.88 m/s (males), 0.78 m/s (females) and
+0.75 m/s (females carrying an infant, and young individuals of about 20 kg) while walking (nguessan2009, FT, citing Hunt
+1989, a dissertation not read) [L]; batesByrne2009's movement phases (continuous movement between halts of 20 min or
+more) run at 1.91–2.21 km/h with 6.5 (males) and 4.5 (lactating females) such halts a day, a target; Taï females travel at
+a median 0.42–0.44 m/s with rests included (jang2019, FT), context; chimpanzees' cost per metre is about constant across
+walking speeds (luciano2024, FT, re-analysing pontzer2014jhe), so no cost-minimising speed exists to derive; equal Froude
+numbers (alexanderJayes1983, Abs; raichlen2013, FT) scale an immature's speed by (mass ÷ adult mass)^⅙ under geometric
+similarity (design). New keys: hunt1989, jang2019, luciano2024, alexanderJayes1983, raichlen2013. Not verified: how
+sockol2007 chose 1.0 m/s, pontzer2014jhe and Pontzer et al. 2009 full texts, Finestone et al. 2018's speeds, Hunt 1989,
+juvenile great apes' walking speeds by age.

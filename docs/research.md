@@ -3300,3 +3300,67 @@ fetched (the algorithm is quoted from gershman2018).
   PMC6687547).
 - normandBoesch2009, normand2009, ban2014, janmaat2013a and janmaat2013b are already cited; the entries above add
   findings.
+
+### Addendum: E2i walking speed (4 October 2026)
+
+Read for stage E2i ([staging/e2i-prereg.md](staging/e2i-prereg.md)): the speed a chimpanzee walks at while walking, as
+opposed to the travel speed with pauses that `walkMps` copies (2.7 km a day over 21% of the day, 0.31–0.35 m/s).
+research.md was searched first (sockol2007, taylor1982, pontzerWrangham2004/2006, nguessan2009's Mahale speeds,
+batesByrne2009, janmaat2014's approach speeds). Read on 4 October 2026 by the stage and a helper (routes: NCBI BioC,
+publisher pages, abstracts); tags as above.
+
+- **Walking velocity of wild chimpanzees, Mahale** [nguessan2009] (FT, the publisher's open PDF, read here) citing
+  [hunt1989] (PhD dissertation, not read) [L]. "We used the walking velocity of Mahale chimpanzees, estimated as 0.88 m.s
+  for males, 0.78 m · s−1 for females and 0.75 m · s−1 for females carrying an infant and for young individuals (Hunt
+  1989)." The values enter Taylor's walking-cost equation as the speed of walking, so they are speeds while walking, not
+  travel speeds with pauses; Hunt's method and sample are not given. The young individuals of nguessan2009 are juveniles
+  and adolescents, put at 20 kg for Taï (15 kg at Gombe plus 5 kg). Use in E2i: input (the walking speeds by sex and
+  with an infant carried; a check for the young).
+- **Travel speed of movement phases, Budongo Sonso** [batesByrne2009] (FT, the authors' accepted manuscript, already
+  cited) [M]. Methods: a phase is "continuous movement ending at a 20+ minute halt" (halts under 20 min were under 20% of
+  halts, 84% of them inactive); speed = the summed distances between 5-min GPS or trail-grid fixes ÷ travel time.
+  Table 1: males 1.94 ± 1.67 km/h (244 phases, 357 ± 368 m), lactating or gestating females 1.91 ± 1.20 km/h (87, 277 ±
+  266 m), receptive females 2.21 ± 1.91 km/h (33, 319 ± 361 m); halts of 20 min or more 6.5 ± 1.8 a day for males and 4.5
+  ± 1.0 for lactating females, 60 ± 50 and 95 ± 83 min each. Use in E2i: target (the model's movement phases in truth),
+  never an input.
+- **Travel speed with rests, Taï** [jang2019] (FT, PMC6667462) [H as a travel speed]. Five adult females, 274 follow
+  days, GPS: median daily travel 4.03 km; median "walking speed" 0.42 m/s (0.07–7.28; its computation is not defined in
+  the main text); off-trail trajectories to out-of-sight food (626) at a median 0.44 m/s, "Resting times were included
+  when calculating travel duration". Use: context and target (a speed with pauses), never an input.
+- **Cost per metre does not set a walking speed in chimpanzees** [luciano2024] (FT, PMC11026468; a re-analysis of
+  pontzer2014jhe's five captive chimpanzees, 3 F and 2 M, 59.9 ± 19.5 kg, hindlimb 0.46 ± 0.05 m, bipedal on a treadmill
+  over 0.45–1.67 m/s) [L as applied]: for chimpanzees the external work and the metabolic cost per distance "were
+  approximately constant" with speed. With sockol2007's net cost at one speed (the ledger's input), no speed minimising
+  the cost per metre can be derived for a walking chimpanzee: a measured walking speed is the input. Direction only.
+- **Dynamic similarity** [alexanderJayes1983] (Abs) [M as applied]: mammals of different size move in a dynamically
+  similar way at equal Froude numbers (speed² ÷ gravity × leg length), closely for cursorial quadrupeds and roughly for
+  others; [raichlen2013] (FT, PMC3798186) restates the hypothesis and tests it with chimpanzees among other taxa. Use in
+  E2i: an immature animal walks at the adult speed of its sex × (leg length ratio)^½, leg length growing as mass^⅓
+  (geometric similarity, a design assumption): × (mass ÷ adult mass)^⅙. Check (not a fit): 0.72–0.79 m/s at 20 kg against
+  nguessan2009's 0.75 m/s for young individuals of that mass.
+- **Day range and a carried infant, Kanyawara** [pontzerWrangham2006] (abstract, Springer page; already listed) [M]: 200
+  day ranges; adult females' day range rose with the age of their youngest juvenile, and a carried infant had no effect.
+  Context: the model's mothers carry infants with no speed cost other than the Mahale load value.
+
+**Not verified:** sockol2007's methods on how the 1.0 m/s was chosen (BioC: not in the open-access subset this time; the
+publisher bars efetch); pontzer2014jhe and Pontzer, Raichlen & Sockol 2009 (J Hum Evol 56:43–54) full texts (closed);
+Finestone et al. 2018's overground speeds (abstract only: 13 zoo chimpanzees at self-selected speeds, no numbers);
+Hunt 1989 (dissertation); Hoyt & Taylor 1981 beyond its first paragraph; any walking speed of juvenile great apes by age.
+
+**Sources:**
+- *new* hunt1989: Hunt KD 1989. *Positional behavior in Pan troglodytes at the Mahale Mountains and the Gombe Stream
+  National Parks, Tanzania.* PhD dissertation, University of Michigan (not read; cited through nguessan2009).
+- *new* jang2019: Jang H, Boesch C, Mundry R, Ban SD, Janmaat KRL 2019. Travel linearity and speed of human foragers and
+  chimpanzees during their daily search for food in tropical rainforests. *Scientific Reports* 9:11066.
+  [doi:10.1038/s41598-019-47247-9](https://doi.org/10.1038/s41598-019-47247-9) (FT, PMC6667462).
+- *new* luciano2024: Luciano F, Ruggiero L, Minetti AE, Pavei G 2024. The work to swing limbs in humans versus
+  chimpanzees and its relation to the metabolic cost of walking. *Scientific Reports* 14:8970.
+  [doi:10.1038/s41598-024-59171-8](https://doi.org/10.1038/s41598-024-59171-8) (FT, PMC11026468).
+- *new* alexanderJayes1983: Alexander RMcN, Jayes AS 1983. A dynamic similarity hypothesis for the gaits of quadrupedal
+  mammals. *Journal of Zoology* 201(1):135–152.
+  [doi:10.1111/j.1469-7998.1983.tb04266.x](https://doi.org/10.1111/j.1469-7998.1983.tb04266.x) (Abs).
+- *new* raichlen2013: Raichlen DA, Pontzer H, Shapiro LJ 2013. A new look at the Dynamic Similarity Hypothesis: the
+  importance of swing phase. *Biology Open* 2:1032–1036. [doi:10.1242/bio.20135165](https://doi.org/10.1242/bio.20135165)
+  (FT, PMC3798186).
+- nguessan2009, batesByrne2009, sockol2007, pontzer2014jhe and pontzerWrangham2006 are already cited; the entries above
+  add findings.
