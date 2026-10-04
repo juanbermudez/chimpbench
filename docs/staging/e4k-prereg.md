@@ -399,3 +399,17 @@ hunters later in the update order have moved, so against a 2 m standoff their be
 they are heading (the counted hunters stood 1.5–3.5 m from the group's point); (b) the circle is read only at the one
 hashed moment (5–11 min after the start), not whenever the hunters close it during the pursuit, while the field
 picture is a capture when the monkeys are cut off.
+
+- **P2 (iteration 2; registered after P1's results, before any run of its code).** `huntPursuit` 2 (1 stays P1, so P1
+  is reproducible): the pursuit is read at the end of every tick, after every animal has moved (`tick.ts` calls
+  `ecology.ts pursuitStep` after the actions; the 'hunt' action no longer resolves the hunt itself): the hunt ends with
+  captures at the first tick at which the hunters at canopy height close the circle, and with an escape at the existing
+  resolution time if they never do. Cones, kills, the hunters' movement and the valuation are P1's; no new parameter.
+  This removes the two implementation defects of P1 (§9, "Why P1's hunts fail" (a) and (b)); joining (c) is not
+  touched. Same frozen-checkout protocol and the four §6 runs, labels `P2q`, `P2h`, `diag/P2-{48,7}`, `P2q-energy`.
+  **Predictions** (against P1 and S17; moderate confidence): hunts with three or more hunters in the pursuit close in
+  nearly all cases (≥ 6 of 7 at P1's rate; a failure only with cones below 60°, alertness below ~0.57); success (truth)
+  0.45–0.65, limited by joining (about half the hunts get three hunters); hunts per community-year about P1's (9–17);
+  T-HUN-2 up (toward or into its band); T-HUN-7 1.0; T-HUN-3 below its band; T-HUN-4 high (rare); sums inside noise
+  against S17q (with and without the rare rows and T-IGE-3); prescriptions 46; viability passes; juveniles' reserves:
+  no prediction beyond reporting them (P1's −0.014 %/day is unexplained). Kill criterion as §7.
