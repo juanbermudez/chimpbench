@@ -14,7 +14,11 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 04:20; deploy held by the user).** Nothing.
+- **Running now (4 October 04:30; deploy held by the user).** Stage agents **E4k** (`e4k-hunt-success`: hunt success
+  and extra kills from the pursuit instead of a curve and a die) and **E3d** (`e3d-redecide`: rgMaxAgeH, continueBonus,
+  finishedPenalty), both from track-e b3d28c7, briefs `integrator/e4k-prompt.txt`, `e3d-prompt.txt`. Integrator: the
+  S17 quick reference (`integrator/s17q.sh`, outputs `bench-run2/artifacts/validation/e/s17q/`; message both agents when
+  all four exist).
 - **S17 done: now the best integrated candidate** (e-stack2-confirm.md "S17 results"; S16 + `patrolFusion` 1): 49
   prescriptions, viable, night safe, held-out inside noise, fitted better than S16 beyond noise (T-IGE-1 13.2); S16's
   cost removed. Decision guide and hosted copy show S16 (same counts; S17 adds a design correction to patrols).
