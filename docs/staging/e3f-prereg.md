@@ -173,6 +173,11 @@ Field comparison (potts2011, research.md): patch residency 27 (Ngogo) to 46 (Kan
 7.3–8.4, i.e. 3.3–6.5 chimp-hours, about 1,460–2,880 kcal at 443 kcal/h, per party visit; the model's occupancy episode
 takes a median 203 kcal (1.9 visits). The model's median fruiting crown (2,051 kcal) holds about one such party visit.
 
+**Amendment 2 (4 October 2026, after §2.1, before any run it adds; a sensitivity, not an arm and never adopted).** To
+name what `fruitIntakePerH` decides in behaviour, not only in kcal: S27 with `fruitIntakePerH` 0.055 (every crown's
+energy and every unit threshold ×2) and 0.22 (×0.5), quick e-bench plus crop-energy-diagnose, one realization each
+(labels `K2` and `K05`), read against S27's four realizations. Nothing is fitted or chosen from it.
+
 ## 3. Sources
 
 (Pending: docs/research.md and docs/staging/e-sources.md, "Addendum: E3f crop energy".)
