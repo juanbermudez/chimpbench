@@ -224,3 +224,127 @@ S22's own menus (17.4 and 20.6 per community-year above) reproduces S19's level.
    ground, having joined 5 min after the start of a 5.8-min hunt, and three hunters at canopy height whose cones,
    71°, 71° and 48° at their alertness, left a 5° gap); in D0r all three succeeded (one kill each). Meat eaten: 0 and
    1.5 kcal per adult male-day.
+
+### 3.4 Readouts added after the first table (disclosed; computed from the saved draws, no new run)
+
+Written after §3.3's table was read and before these were computed: (1) the knife-edge, the share of hunt draws the hunt
+would top at m times its value; (2) the bands' needs in draws won; (3) **(e)**, the drive without its distension term:
+energy.ts setHunger makes the drive min(1, φ) × (1 − w·fill²), φ = the energy need over the waking time left ÷ the
+feeding capacity over it, w = 1 + reserves ÷ usable store (E1i); (e) values the hunt at 1.6·min(1, φ) + 0.1 (φ recovered
+as h ÷ (1 − w·fill²) from the state recorded at each draw); (4) what sharing a capture buys in the model's own social
+currency.
+
+```
+D0: share of hunt draws the hunt would top (published score above the best other's) at m × its value: ×1: 0.003, ×1.25: 0.042, ×1.5: 0.150, ×2: 0.392, ×2.5: 0.605, ×3: 0.717; won in the run 0.010; under the temperature 0.060; offered draws per community-day 0.79
+   the staged band 4–11 hunts per community-year needs 0.014–0.038 of offered draws won (one hunt per won draw); the registered 5–25 needs 0.017–0.086
+   (e) meat eaten as the gut empties (drive without distension satiation): mean value 0.581; lost draws flipped 0.180
+D0r: share of hunt draws the hunt would top (published score above the best other's) at m × its value: ×1: 0.006, ×1.25: 0.050, ×1.5: 0.172, ×2: 0.410, ×2.5: 0.551, ×3: 0.701; won in the run 0.008; under the temperature 0.056; offered draws per community-day 1.00
+   the staged band 4–11 hunts per community-year needs 0.011–0.030 of offered draws won (one hunt per won draw); the registered 5–25 needs 0.014–0.068
+   (e) meat eaten as the gut empties (drive without distension satiation): mean value 0.583; lost draws flipped 0.148
+```
+
+- **A knife-edge.** The bands need 1.1–3.8% (staged) or 1.4–8.6% (registered) of offered draws won; the hunt tops 0.3–0.6%
+  of them by published score (0.8–1.0% with the belief offsets); 1.25 times its value would give 4–5%, 1.5 times 15–17%.
+  Any unsourced term worth about 0.1 on the hunt's value would therefore set the hunting rate: a design value for one of the
+  debated non-energy reasons (nutrients, social returns) would be a fit, whatever it was called.
+- **What sharing buys, in the model's currency.** A share adds 0.03 to the sharer's bond (execution.ts 'share'); a bond is
+  worth `joinBondW` 0.5 × (1 − social) in a companion's company (companyValue, E5a). Five shares of a carcass (0.2 units
+  each) are worth at most 5 × 0.03 × 0.5 = 0.075 to a male at a full social drive, a sixth of the median gap (0.44–0.51).
+  The model's social returns of meat cannot carry hunting; their field size is not quantified by any source read.
+- **(e) the distension term.** Removing it raises the hunt's mean value by half (0.39 → 0.58) and would top 15–18% of the
+  draws it lost.
+
+**Reading against the registered rule (§3.2).** The term that passes (a) is the drive (h = 1 flips 73–80%; r's ceiling
+3–4%, the need cap 0%). An appetite of 1 is a probe, not a state, so (b) asks which part of the drive the model's own
+physics says is wrong for a hunt. Its distension part: a crown's fruit must be eaten now, so a full foregut rightly
+lowers a crown's worth; a capture is not eaten now. The model holds a carcass (`carryingMeat`) and eats it while awake at
+`meatEatPerH`, whatever the act, taking "only what the gut takes" (life.ts:163–167), and meat brings 0.23 g dry matter
+per kcal with no fibre (`digestaMeatDmGPerKcal`, assumed; energy.ts digesta). Distension now does not limit what a
+capture delivers; the energy deficit over the waking time left (φ) does, as for any food. This correction flips 15–18% of
+the lost draws alone (below the 25% bar, which was set for the binding term; the drive passes it), and with the
+knife-edge above that is enough to move hunting several-fold. It is the only correction of the drive with a physical
+meaning; it adds no magnitude. It does not capture the field's surplus direction (gilbyWrangham2007: more hunting at high
+diet quality): φ is low in surplus. The non-energy reasons remain unbuilt (knife-edge; no magnitude in any source).
+
+## 4. Mechanism, iteration 1 (switch `huntDrive`, 0 = today; acts only with `huntValue` 1, `energyLedger` 1, `ledgerDrive` 1)
+
+With `huntDrive` 1 the hunt lead at a colobus encounter is worth (1.6·min(1, φ) + 0.1) × r instead of (1.6·h + 0.1) × r:
+- r unchanged (huntvalue.ts huntRate: expected meat from the pursuit, approach, chase and eating time, relative to his
+  ripe-fruit rate);
+- φ = energy.ts setHunger's need ratio (the energy need over the waking time left and the fast after it ÷ the feeding
+  capacity over the waking time left; E1e), computed by a new pure function `deficitDrive(c, P)` from the same terms, in
+  place of `c.hunger` = min(1, φ) × (1 − w·fill²): the distension (and E1i's reserve-weighted) satiation is left out
+  because a capture is held and eaten as the gut allows (§3.4);
+- 1.6 and 0.1: the crowns' drive (C13b, design), as today. Joining (hand-set), the pursuit, the offer's gates, the
+  candidates of every other act: unchanged.
+
+Biological reading: a male whose gut is full of fruit still weighs a carcass by the energy he will need before night,
+because he can carry it and eat it over the following hours, as chimpanzees do. Sources: the model's own physics above
+(meat held and eaten as the gut allows; `meatEatPerH` design; `ledgerMeatKcalPerMin` 6.7, hardus2012 [L], 348 g/h, so a
+third of a carcass takes about an hour to eat); direction only, gilbyWrangham2007 (hunting does not fall when the diet is
+rich) [M]. No new magnitude; one new registry id (the switch, design). Removes no counted prescription (a correction, as
+E3b and E1p were): `removesNothing` in the switch registry.
+
+Code: energy.ts `deficitDrive` (exported, pure), candidates.ts (the lead's drive under the switch), the diagnosis tool (the
+identity reads the switch), data/params.json `huntDrive`, docs/simulation.md §17, TRACK_E_SWITCHES in
+tests/sim-track-e.test.ts and scripts/lib/prescriptions.ts. Tests (tests/sim-hunt-drive.test.ts): 0 by default; with the
+ledger's drive on, `deficitDrive` × the satiation term reproduces `c.hunger` for animals across a field day (identity
+with setHunger); deterministic and JSON-lossless over a field day with the switch on (S22's switches).
+
+## 5. Readouts (defined in §3.2; smoke-tested with the switch on before any arm, §9)
+
+e-bench rows T-HUN-1..8 (definitions in `src/field/metrics.ts`, from gilby2015's Methods quoted in §2.1: a hunt attempt
+"instances when a chimpanzee climbs to the height of the lowest monkey"; an encounter "whether colobus can be detected
+within 100 m of the chimpanzees" at 15-min scans), T-ACT-1..4 (focal instantaneous samples, `data/targets.json`
+definitions), sums with and without the rare rows (T-HUN-4, T-BRD-1, T-IGE-3), prescriptions, viability and deaths by
+cause; truth from the diagnosis tool (§3.2: encounters, impulses, offers, draws, draws won, the hunt's value and its
+parts, winners, hunts, success, kills, hunters in the pursuit, meat by class); reserves ÷ store %/day by class from
+`scripts/energy-diagnose.ts` (the integrator's convention, as S22q-energy).
+
+## 6. Arm and predictions (stated before any run of changed code)
+
+**A1** = S22 + `huntDrive` 1, from a frozen detached checkout of the commit that adds the switch: (a) `e-bench --quick`
+(seeds 48, 7; 30 + 30) judged with `judge_vs_reps.py quick custom` against S22q, S22q1–3; (b) `e-bench --seeds 48,7
+--burn-in 30 --days 60` (hunt rows against H0 and H0r); (c) the diagnosis tool, seeds 48 and 7, 30 + 60; (d)
+energy-diagnose, seeds 48 and 7, 30 + 30; (e) `prescription-ledger.ts --count --params`. `--workers` 2, 1 above load 8.
+
+Predictions (against S22's references; moderate confidence unless stated):
+- Truth: the hunt's mean value at draws 0.39–0.42 → 0.52–0.65 (high: §3.4); hunt draws won 1% → 8–20%; hunts 3.0 → 20–60
+  per community-year (the per-draw estimate gives 46–58; hunts in progress and alerted males lower it; low); success
+  0.3–0.7; kills per success 1.0–1.3; meat eaten by adult males up from 0–1.5 to ≥ 10 kcal per male-day.
+- Hunt rows at 30 + 60 days: T-HUN-1 from 2.0–3.0 to 12–40 (above the staged 4–11; low confidence on the registered
+  5–25's top); T-HUN-3 from 0.004 to 0.02–0.07; T-HUN-2 0.3–0.7; T-HUN-7 1.0–1.3; T-HUN-8 ≥ 0.8; T-HUN-4 unresolved.
+- Quick sums against the S22q group: held-out with and without the rare rows inside noise; fitted inside noise (low:
+  T-HUN-1 may cross its band's top); T-ACT-1..4 inside the group's spread; reserves: adult males up or inside spread,
+  every other class inside spread (hunting is under 1% of males' daylight); prescriptions 43 (high); viability passes.
+
+## 7. Kill criterion and verdict rule
+
+`huntDrive` stays off (null, recorded) if viability fails, if held-out without T-HUN-4, T-BRD-1 and T-IGE-3 rises beyond
+noise (z > +2 against the S22q mean), or if the mechanism does not run (truth hunt draws won ≤ 3%, pooled). It removes no
+prescription, so it can only be a correction: recommended for a 5-seed confirm on the stack only if, in addition, the
+fitted sum is not worse beyond noise (z ≤ +2) and the hunting rows at 30 + 60 days (T-HUN-1, -2, -3, -7 distances summed)
+are closer to their bands than the mean of H0 and H0r. If T-HUN-1 rises above its band while T-HUN-3 enters its band, the
+result is E4e's tie of the two rows through the encounter rate (E4f: the observer's 2.5 × Kanyawara), recorded as such: no
+weight is added to bring either down.
+
+## 8. Iterations and known defects
+
+At most 3 iterations, each logged in §9 and committed before its run; a further one only for what A1's readouts
+implicate. Known defects deferred (not fixed here; file:line at b84009f):
+- the timer-energy literal gate `c.energy > 0.35` (src/sim/candidates.ts:1143) holds 8–10% of hunt impulses on S22;
+- the pursuit never expects a capture by one or two hunters (E4k's design ratio 1, src/sim/huntpursuit.ts), against Taï's
+  16% for lone hunters (samuni2018cb) and Mitumba's 53% success with 2.9 adult males (gilby2015): 58–65% of impulses;
+- huntRate charges the meat's eating time (src/sim/huntvalue.ts:33) while carried meat is eaten during any act
+  (src/sim/life.ts:163); the valuation is the field-faithful side (meat eating is an activity of hours), the execution a
+  stylization; not changed;
+- the hunt's E is capped by the need (src/sim/huntvalue.ts:29), a crown's bout by the gut room (E3c): inert (0.3–1.4% of
+  draws);
+- the hand-set join value (src/sim/candidates.ts:1150) and late joiners (E4k's tool on S22 seed 7: five of seven listed
+  hunters below the canopy at a 5.8-min resolution, joined after 5 min).
+
+## 9. Results
+
+### Run log (each entry written before its run)
+
+- **H0, H0r, D0, D0r** (§3.1–§3.2; unchanged code): done, §3.3.
