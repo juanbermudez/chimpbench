@@ -214,6 +214,29 @@
    "notes": "Adoption by an older maternal sibling (8 y or older) for orphans of 3 y and over. Where an older maternal sibling exists, siblings adopt (no unrelated adoption in 16 such cases); at Sonso, 3 older immature siblings (9–11 y) cared for 3 younger ones (4–6 y) (hobaiter2014). Pooled, unrelated adults adopted more often (20 vs 14 of 36), mostly at Taï. The value is design."
   },
   {
+   "id": "aggressionGaps",
+   "group": "social",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    7
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    7
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "computeCandidates (displays), aggression (status, escalated, grudge, coercive and female-dominance charges), intergroup (charge at strangers)",
+   "file": "src/sim/candidates.ts",
+   "integer": true,
+   "notes": "Stage E4q (docs/staging/e4q-prereg.md section 4): a sum of bits, one per literal gap after the animal's own last act, each switched out without replacement; 0 = today (hash-identical). On S27 (quick, simulation truth) none sets its behaviour's rate (e4q-prereg section 2.1): 1: the 1.5-h cooldown after the animal's own last charge or attack at the status challenge, the escalated attack, the grudge, coercive and female-dominance charges is not read (it trims: removed, the five acts x1.22; the challenge's own score, about 0, sets the challenge rate); 2: the 0.2-h gap of a charge at strangers (and the gang attack in its branch) is not read (inert: its condition held at 2 decisions a run); 4: the 0.75-h display gap is not read (it trims: removed, displays x1.42, under the registered x1.5; the display's own score against the other options sets most of the rate); the fatigue gate (energy above 0.3) stays. No magnitude is added. Design, no fitted value."
+  },
+  {
    "id": "alarmSnakeLinkM",
    "group": "communication",
    "value": 25,

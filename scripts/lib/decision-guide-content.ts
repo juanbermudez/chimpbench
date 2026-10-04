@@ -76,7 +76,7 @@ export const LITERALS: { key: string; file: string; kind: 'hour' | 'probability'
   { key: 'lit:alarmPenalty', file: 'candidates.ts', kind: 'bonus', has: '(time - x.lastCall < 0.03 ? 0.4 : 0)', label: 'alarm call −0.4 within 1.8 min of a call', judgement: true },
   { key: 'lit:alarmHoo', file: 'execution.ts', kind: 'interval', has: 'c.actionTime % 60 === 0', label: 'an alarm hoo every 60 s while alarming', judgement: true },
   { key: 'lit:displayGap', file: 'candidates.ts', kind: 'interval', has: 'time - x.lastDisplay > 0.75', label: 'a display at most once per 0.75 h' },
-  { key: 'lit:aggCooldown', file: 'candidates.ts', kind: 'interval', has: 'const cooled = time - x.lastAgg > 1.5', label: 'no status, grudge or coercive charge within 1.5 h of the last aggression' },
+  { key: 'lit:aggCooldown', file: 'candidates.ts', kind: 'interval', has: 'time - x.lastAgg > 1.5', label: 'no status, grudge or coercive charge within 1.5 h of the last aggression' },
   { key: 'lit:strangerGap', file: 'candidates.ts', kind: 'interval', has: 'time - x.lastAgg > 0.2', label: 'no charge at strangers within 0.2 h of the last aggression' },
   { key: 'lit:femaleMateGap', file: 'candidates.ts', kind: 'interval', has: 'time - x.lastMate > 0.3', label: 'a female solicits at most once per 0.3 h after mating' },
   { key: 'lit:mateBlock', file: 'execution.ts', kind: 'interval', has: 'WALK * 1.2, 1)) { if (c.actionTime > P.mateApproachS)', label: 'no mating for 0.5 h after a failed approach' },
