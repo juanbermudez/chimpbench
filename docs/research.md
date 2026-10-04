@@ -3437,7 +3437,7 @@ choice temperature left the stack, and which value a hunt lacks. No input value 
 - gilby2015, mitaniWattsMuller2002, gilbyWrangham2007, mitaniWatts2001, tennie2014 and hardus2012 are already cited; the
   entries above add access notes and the stage's use. No new keys.
 
-### Addendum: E2j climbing (4 October 2026)
+### E.54 Addendum: E2j climbing (4 October 2026)
 
 Read for stage E2j ([staging/e2j-prereg.md](staging/e2j-prereg.md)): what a chimpanzee's climbing costs against its
 walking, and how a trip's time and energy enter the forager's currency. research.md was searched first (pontzerWrangham2004,

@@ -1878,7 +1878,7 @@ only): males and party size (gilby2015, mitaniWattsMuller2002), diet quality (gi
 (mitaniWatts2001), no nutritional data on prey flesh (tennie2014), meat eaten at 348 g/h (hardus2012, secondary). No
 magnitude for a non-energy value of a hunt in any of them. No new keys.
 
-## Addendum: E2j climbing (4 October 2026)
+## 54. Addendum: E2j climbing (4 October 2026)
 
 Same text as research.md "Addendum: E2j climbing": wild Kanyawara chimpanzees spend about ten times more energy per day
 on terrestrial travel than on vertical climbing (pontzerWrangham2004, abstract verified on PubMed, PMID 14984786; distances
