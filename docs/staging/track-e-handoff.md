@@ -14,11 +14,15 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 02:05; deploy held by the user).** No agents. Integrator: S13's confirm group (bench-run3,
-  S13c3 finishing), **S14** (S13 + `socialTiming` 15; bench-run2 26f6ea1) and **S15** (S13 + `patrolValue` 2, with the
-  mothers' reserve line as a registered criterion; bench-run4 721b0fb, `integrator/conf15.sh`, outputs
-  `bench-run4/artifacts/validation/e/s15/`). Judge both with `integrator/judge_s13group.py` (add S15 to `_ARMS` with
-  bench-run4's path).
+- **Running now (4 October 02:40; deploy held by the user).** No agents. Integrator: the **S16** confirm (S13 +
+  `socialTiming` 15 + `patrolValue` 2, 49 prescriptions; registered 027628a) in bench-run4 (721b0fb;
+  `integrator/conf16.sh`, outputs `bench-run4/artifacts/validation/e/s16/`), judged against S13's group with
+  `integrator/judge_s13group.py` (add S16).
+- **S14 and S15 done** (e-stack2-confirm.md): both pass the keep rule against S13's four runs. S14 (`socialTiming` 15,
+  60): sums inside noise, mothers in range; costs: other females' and juveniles' reserves lower, T-HUN-1 28.5. S15
+  (`patrolValue` 2, 54): sums inside noise, the registered mothers' line held (mothers better, −0.051); patrol rows
+  into their bands (T-PAT-1 0.23, T-PAT-6 0.57); costs: T-IGE-1 22.6 (about twice S13's, above band), no violence on
+  patrols (T-PAT-7 0 in every run, S13 too).
 - **S13 done: now the best integrated candidate** (e-stack2-confirm.md "S13 results"; S9 + `huntValue` + `forageRate` +
   `contestAssess`): 65 prescriptions, viable, night safe, sums inside noise against S9's four runs; T-HUN-1 18.9.
   Costs: walking and feeding up (males 2.57 km), males −0.033, mothers −0.077, infants 0.5–2 y −0.093 %/day; T-HUN-3
