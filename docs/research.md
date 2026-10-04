@@ -3533,6 +3533,64 @@ for Kibale chimpanzees; a measured climbing speed of wild chimpanzees.
 - couturier2022, pontzerWrangham2004, wilson2021, hannaSchmitt2011 and nguessan2009 are already cited; the entries above
   add findings.
 
+### E.56 Addendum: E3f what a crown holds (4 October 2026)
+
+Read for stage E3f ([staging/e3f-prereg.md](staging/e3f-prereg.md)): how much energy the ripe crop of a chimpanzee food
+tree holds, by species and size (fruit count × fruit mass × energy, or a crop allometry). research.md and e-sources.md were
+searched first (chapman1992's indexed summary, potts2011, janmaat2016, houle2014, uwimbabazi2019, conklinBrittain1998,
+lambert1999). Routes: Wayback copies of author-hosted PDFs (Deep Blue; indiana.edu/~semliki), OpenAlex records and their
+locations; a research subagent of the stage fetched them and the load-bearing passages were re-read here.
+
+- **Whole-cycle fig crops, Kanyawara** [wrangham1993] (FT, scan, Wayback copy of the Deep Blue PDF) [M]. 33 large focal
+  fig trees, 878 days, November 1987 to September 1989, watched from about when
+  frugivores began removing fruit until most had been removed or had fallen (26.6 ± 17.0 observation days per tree,
+  range 2–56). Ten trees (*F. exasperata* 2, *F. natalensis* 3, *F. sansibarica* subsp. *macrosperma* 5) had total crops
+  of 228–2,052 kg wet weight, reconstructed from the fallen figs (two 0.5-m transects under the crown, counted twice a
+  day) plus the figs each frugivore species removed; chimpanzees removed 0–84.3% of a crop, and smaller crops received
+  relatively less attention (R² 0.42). Table I (species means): fresh fig weight *F. natalensis* 0.9–2.3 g, *F.
+  sansibarica macrosperma* 25 g (type 1) and 9.2–54.5 g (type 2), *Mimusops bagshawei* 3.1 g (*F. mucuso*: not given);
+  pulp 67–73%, 53%, 41–63%, 57% (and *F. mucuso* 65%) of the 60 °C dry matter; mean crown volume of reproductive trees
+  3,153, 882 and 2,656 m³ (*Mimusops* 684). Table II: fig pulp 242.5 ± 45.7 kcal per 100 g dry matter (nine species;
+  complex carbohydrate by difference), *Mimusops* pulp 289.6. No water content, no crop by tree size, no standing ripe
+  crop. Use in E3f: the only measured crop of a model species; whole-cycle totals of large trees, not the ripe stock
+  the model depletes.
+- **One fig tree over three fruiting cycles** [chapman1992] (FT now, scan, Wayback copy of the indiana.edu/~semliki PDF;
+  extends the indexed summary above) [M] (one tree). A *Ficus brachylepis* (*F. sansibarica* subsp. *macrosperma*) tree
+  produced 30,480 figs in 1987, 7,399 in 1988 and 12,494 in 1989; "interannual differences in fruit biomass are even
+  more pronounced than fruit number" (p. 531): 1,146, 56 and 472 kg. Same focal-tree method (fruits eaten plus fallen;
+  watches stopped when frugivores stopped visiting). For *Uvariopsis congensis* DBH predicted the hand-picked crop's
+  biomass and fruit number (Table 1, r² only; the crops themselves are not printed). Use in E3f: one tree's crop varies
+  twentyfold between cycles; no non-fig crop size.
+- **Fibre of Kibale fruits by species** [wrangham1998] (FT, scan, Wayback) [H]: NDF, % dry matter (Table III): *Celtis
+  durandii* 18.9, *F. brachylepis* 30.8, *F. natalensis* 52.3, *Mimusops* 35.5, *Pseudospondias* 44.6, *Uvariopsis* 39.3.
+  Recorded, not used. conklinBrittain1998's full text (same archive) gives food-category means only; not used.
+- **Fig crops elsewhere** [rajiDowns2022] (OpenAlex record text; tables not read) [L]: KwaZulu-Natal, an urban–forest
+  mosaic, at least 10 trees per species by branch counts: 1,780–48,550 figs per tree; ripe fruit lasted 14–20 days.
+  Another region and other species; not used.
+
+**Not verified** (at most two routes each): houleWrangham2021 (*Animal Behaviour* 175:231–246,
+doi:10.1016/j.anbehav.2021.03.003: metabolizable energy per m³ of crown by crown depth, in drupe and fig trees, from its
+abstract; OpenAlex lists it as free to read at the publisher, whose page showed a bot check, not routed around; Wayback
+captures 403): the paper that would give crop energy per crown volume, which a person can open in a browser; Houle et
+al. 2007 (*Int J Primatol* 28:1197–1217) and 2010 (*Behav Ecol Sociobiol* 64:429–441) (closed; publisher challenge); Houle
+et al. 2006's full text (publisher challenge); Chapman & Chapman 1996 (*J Trop Ecol* 12:491–504; the share of the crop
+removed from *Mimusops* and *Uvariopsis*; closed); Tweheyo & Lye 2003 (Budongo fig crops; closed); Peters et al. 1988 and
+Conklin & Wrangham 1994 (closed); Valenta & Nevo 2021 (Dryad doi:10.5061/dryad.79cnp5hvw, CC0: fruit mass of wild
+Ugandan fruits; the download needs a token or shows a bot check, a person can fetch it in a browser); Worman & Chapman
+2005 and Isabirye-Basuta 1988 (abstracts only; no crop sizes).
+
+- *new* wrangham1993: Wrangham RW, Conklin NL, Etot G, Obua J, Hunt KD, Hauser MD, Clark AP 1993. The value of figs to
+  chimpanzees. *International Journal of Primatology* 14(2):243–256.
+  [doi:10.1007/BF02192634](https://doi.org/10.1007/BF02192634) (FT, scan; bibliographic data checked against Crossref and
+  OpenAlex on 4 October 2026).
+- *new* wrangham1998: Wrangham RW, Conklin-Brittain NL, Hunt KD 1998. Dietary response of chimpanzees and cercopithecines
+  to seasonal variation in fruit abundance. I. Antifeedants. *International Journal of Primatology* 19(6):949–970.
+  [doi:10.1023/A:1020318102257](https://doi.org/10.1023/A:1020318102257) (FT, scan).
+- *new* rajiDowns2022: Raji IA, Downs CT 2022. Fruiting phenology and diversity of native *Ficus* species in an
+  urban-forest mosaic landscape in KwaZulu-Natal, South Africa. *African Journal of Ecology* 60(4):1357–1362.
+  [doi:10.1111/aje.13017](https://doi.org/10.1111/aje.13017) (OpenAlex record text; bibliographic data from OpenAlex).
+- chapman1992, conklinBrittain1998 and houle2014 are already cited; the entries above add findings.
+
 ### Addendum: E4o three small rules (4 October 2026)
 
 Read for stage E4o (docs/staging/e4o-prereg.md): the energy of a capture (`meatEatPerH`), the end of protection

@@ -117,7 +117,7 @@ const NON_BEHAVIOUR = new Set(['weather', 'phenology', 'prey', 'disease', 'scale
 const MEASURED = new Set(['H', 'M', 'assumed', 'calibrated']);
 const TARGET = /T-[A-Z]+-\d+/g;
 const FIT_WORD = /\b(re)?(fitted|tuned)\b/i;
-const FIT_NEGATED = /\bnot (re)?(fitted|tuned)\b|\bmay be (re)?(fitted|tuned)\b|\bplanned as fitted\b|\bnothing is fitted\b/i;
+const FIT_NEGATED = /\b(not|never) (re)?(fitted|tuned)\b|\bmay be (re)?(fitted|tuned)\b|\bplanned as fitted\b|\bnothing is fitted\b/i;
 const sentences = (s: string) => s.split(/(?<=\.)\s+/);
 
 /** Sentences of the notes that say the value was fitted or tuned (and do not deny it), with the target rows they name. */
@@ -304,7 +304,7 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   roughPlayP: { when: P => (P.leftoverRules & 1) === 0, why: 'not read while leftoverRules has bit 1: play turns rough when the player\'s acute drive times its mass exceeds the partner\'s mass times (1 − its acute drive) (src/sim/execution.ts roughByForce; no die, no age rule)' },
   patrolStopEveryMin: { when: P => (P.leftoverRules & 2) === 0, why: 'not read while leftoverRules has bit 2: the leader stops at the waypoints and after a stranger chorus heard by a member, outside one caller-counting window (src/sim/parties.ts updatePatrols, chorusHeard)' },
   // stage E4o (bodyRules; docs/staging/e4o-prereg.md §5): a sum of bits, one per entry switched out
-  guardMaxAgeY: { when: P => (P.bodyRules & 2) === 0, why: 'not read while bodyRules has bit 2: a guardian deters a charger and defends its ward while the ward cannot hold its own against that animal (E4h assessOdds below even; src/sim/candidates.ts guarded, wardHoldsOwn); a caretaker stays guardian and coalition kin at any age' },
+  guardMaxAgeY: { when: P => (P.bodyRules & 1) === 0, why: 'not read while bodyRules has bit 1: a guardian deters a charger and defends its ward while the ward cannot hold its own against that animal (E4h assessOdds below even; src/sim/candidates.ts guarded, wardHoldsOwn); a caretaker stays guardian and coalition kin at any age' },
 };
 
 /** One ACTIVE_WHEN rule for several entries. */

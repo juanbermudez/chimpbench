@@ -982,12 +982,12 @@
    "units": "switch",
    "range": [
     0,
-    2
+    1
    ],
    "rangeBasis": "assumed",
    "hardRange": [
     0,
-    2
+    1
    ],
    "calibrate": false,
    "evidence": "design",
@@ -997,7 +997,7 @@
    "symbol": "guarded, guardianOf (candidates.ts), coalitionKin (conflict.ts)",
    "file": "src/sim/candidates.ts",
    "integer": true,
-   "notes": "Stage E4o (docs/staging/e4o-prereg.md section 5): a sum of bits, one per rule; 0 = today (hash-identical). 2: protection follows the ward's own strength instead of guardMaxAgeY: a seen guardian deters a charger, and defends its ward against an aggressor, while the ward cannot hold its own against that animal (its assessed chance against it, E4h assessOdds: strength from the growth curve with condition and wounds, the supporters on each side, the remembered dominance relationship where one exists, below even); an adoptive caretaker stays the guardian and coalition kin at any age, as a mother does; guardMaxAgeY is not read. The even point is the definition of more likely to lose than to win (design, no fitted value). Bits 1 (a carcass's energy from the prey's mass, in place of meatEatPerH) and 4 (copulation from the male's physiology, in place of mateIntervalH) are not defined: no measured immature red colobus mass and no measured male refractory period exist in the reachable literature (e4o-prereg section 2.1)."
+   "notes": "Stage E4o (docs/staging/e4o-prereg.md section 5): a sum of bits, one per rule; 0 = today (hash-identical). 1: protection follows the ward's own strength instead of guardMaxAgeY: a seen guardian deters a charger, and defends its ward against an aggressor, while the ward cannot hold its own against that animal (its assessed chance against it, E4h assessOdds: strength from the growth curve with condition and wounds, the supporters on each side, the remembered dominance relationship where one exists, below even); an adoptive caretaker stays the guardian and coalition kin at any age, as a mother does; guardMaxAgeY is not read. The even point is the definition of more likely to lose than to win (design, no fitted value). Bits 2 (a carcass's energy from the prey's mass, in place of meatEatPerH) and 4 (copulation from the male's physiology, in place of mateIntervalH) are not defined: no measured immature red colobus mass and no measured male refractory period exist in the reachable literature (e4o-prereg section 2.1). The rule ran as bit 2 in A1 (a3283ca) and was renumbered to bit 1 after the run with no change of mechanism (e4o-prereg section 9)."
   },
   {
    "id": "bondBaselineKin",

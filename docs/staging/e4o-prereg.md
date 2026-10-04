@@ -448,8 +448,8 @@ Not predicted: under-12-year-olds who hold their own against the charger now dra
 
 ### Verdict
 
-- **`guardMaxAgeY`: replaced; `bodyRules` 2 a provisional keep candidate** (42 → 41 by the count at this branch's base;
-  41 → 40 after track-e's counting fix). Viable, night safe, every sum inside noise (z −0.6, −0.1, +0.1). Protection now
+- **`guardMaxAgeY`: replaced; `bodyRules` 1 a provisional keep candidate** (the rule ran as bit 2 in A1 and was renumbered
+  to bit 1 after the run, §9; 42 → 41 by the count at this branch's base; 41 → 40 after track-e's counting fix). Viable, night safe, every sum inside noise (z −0.6, −0.1, +0.1). Protection now
   ends where the ward's strength makes it unnecessary: deterred charges at 12–15-year-olds who cannot hold their own fall
   from 31.8 ± 7.6 to 7, defence charges from 15 ± 4.5 to 4 (none for a ward that could hold its own, against 7.2 ± 2.2),
   and under-12-year-olds strong enough to hold their own lose the deterrent. A 5-seed confirm on the stack should decide.
@@ -475,3 +475,17 @@ Not predicted: under-12-year-olds who hold their own against the charger now dra
 - Deferred defects (file:line in §5): the captor's meat overwrite and the share clamp; the female's 0.3-h mating literal
   and the 0.5-h block after a failed approach. Readout: the after-tick odds counted a defending guardian as her ward's
   supporter (corrected, §9).
+
+### Renumbering and final checks (after `git merge --no-ff track-e` at aa2889e)
+
+- **The rule is bit 1, not bit 2 (disclosed; no change of mechanism).** After the merge, `pnpm test` failed two ledger
+  tests (tests/prescription-ledger.test.ts: every Track E switch must switch something out at value 1, and lower the
+  count at value 1): with bit 2 the only defined bit, `bodyRules` 1 did nothing. The rule is renumbered to bit 1 (the
+  first defined bit, as E4m's `leftoverRules` numbers its rules), range 0–1; bits 2 (meat) and 4 (mating) stay undefined.
+  Equivalence: S27 + `bodyRules` 2 at a3283ca (A1's code) and S27 + `bodyRules` 1 at the merged head hash identical after
+  30 days, seed 48 d8436cfab9d63ec9, seed 7 1b076ea54d1cb788 (`scratchpad/e4o/equiv.mts`), so A1's results are the
+  results of `bodyRules` 1. A confirm on the stack uses `bodyRules` 1.
+- Counts after the merge (track-e's "never fitted" fix, 1d177f8): S27 41, S27 + `bodyRules` 1 40; today's model 134,
+  with the bit 133.
+- Final checks (merge state, before the commit): `gen-params --check` clean (0 evidence-tagged literals outside the
+  registry), `tsc --noEmit` clean, `pnpm test` 813 tests, 812 pass, 0 fail, 1 skipped.

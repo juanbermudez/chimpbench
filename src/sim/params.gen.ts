@@ -2,7 +2,7 @@
 /* eslint-disable */
 export const REGISTRY_VERSION = 1;
 /** Content hash of every live default, hard range, profile value and integer flag. Stored with each world. */
-export const REGISTRY_HASH = '2a6370481d5df11b';
+export const REGISTRY_HASH = '134c79040d94b284';
 
 /** Registry defaults (the compressed profile). */
 export const DEFAULTS = {
@@ -1060,7 +1060,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   birthCondFromMother: [0, 1],
   bodyChildBase: [0, 1],
   bodyChildGain: [0, 1],
-  bodyRules: [0, 2],
+  bodyRules: [0, 1],
   bondBaselineKin: [0, 1],
   bondBaselineOther: [0, 1],
   bondRelaxPerDay: [0, 1],

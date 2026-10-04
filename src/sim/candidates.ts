@@ -149,7 +149,7 @@ export function dependentOn(world: World, c: Chimp): Chimp | undefined {
  * A juvenile's guardian (stage C8, docs/staging/early-life-prereg.md §2.1): its mother while she is alive and in its
  * community, else its adoptive caretaker while the ward is under guardMaxAgeY and the caretaker is alive and in the
  * community. With maternalLevers 0 (ablation) only dependents keep one. Pure: no RNG, no perception (callers check it).
- * Stage E4o (bodyRules bit 2): the caretaker stays the guardian at any age, as a mother does; what her protection
+ * Stage E4o (bodyRules bit 1): the caretaker stays the guardian at any age, as a mother does; what her protection
  * covers is decided threat by threat (wardHoldsOwn), not by the ward's age.
  */
 export function guardianOf(world: World, c: Chimp): Chimp | undefined {
@@ -162,10 +162,10 @@ export function guardianOf(world: World, c: Chimp): Chimp | undefined {
   return k && k.alive && k.troopId === c.troopId ? k : undefined;
 }
 
-/** Stage E4o (bodyRules bit 2; docs/staging/e4o-prereg.md §5): protection follows the ward's own strength, not an age. */
-export const guardBySize = (P: Params): boolean => (P.bodyRules & 2) !== 0;
+/** Stage E4o (bodyRules bit 1; docs/staging/e4o-prereg.md §5): protection follows the ward's own strength, not an age. */
+export const guardBySize = (P: Params): boolean => (P.bodyRules & 1) !== 0;
 /**
- * Stage E4o (bodyRules bit 2): whether a ward can hold its own against a threat, by its assessed chance against it (E4h
+ * Stage E4o (bodyRules bit 1): whether a ward can hold its own against a threat, by its assessed chance against it (E4h
  * assessOdds: strength from the growth curve with condition and wounds, the supporters charging on each side, and the
  * remembered dominance relationship where the two keep one) at or above even. A ward that cannot is protected; the
  * age at which protection ends then follows from growth. The even point is the definition of "more likely to lose than
@@ -175,7 +175,7 @@ export const wardHoldsOwn = (world: World, ward: Chimp, threat: Chimp, P: Params
 
 /**
  * The guardian presence test (early-life-prereg §2.2–2.3): o's guardian is seen by c, within defendRangeM of o and not
- * dominated by c. Stage E4o (bodyRules bit 2): no age limit; the guardian deters c while its ward cannot hold its own
+ * dominated by c. Stage E4o (bodyRules bit 1): no age limit; the guardian deters c while its ward cannot hold its own
  * against c (wardHoldsOwn).
  */
 function guarded(world: World, c: Chimp, o: Chimp, seen: number[], P: Params): boolean {
@@ -1009,7 +1009,7 @@ function aggression(world: World, c: Chimp, rival: number, rivalCloseness: numbe
     // adolescent males establishing dominance over females [H]
     if (male && c.age >= 12 && c.age < P.femaleDomMaxAgeY && o.sex === 'female' && o.age >= 15 && dist < P.femaleDomRangeM && cooled && !kin)
       offer('charge', o.id, 0.03 + pers.aggression * 0.3 + (dominates(c, o) ? 0 : 0.1), V.FEMALE_DOM);
-    // guardians (mothers, or caretakers of wards under guardMaxAgeY) defend them; stage E4o (bodyRules bit 2): while the
+    // guardians (mothers, or caretakers of wards under guardMaxAgeY) defend them; stage E4o (bodyRules bit 1): while the
     // ward cannot hold its own against its aggressor (wardHoldsOwn), at any age
     const ox = ix(o);
     if (time - ox.victimAt < 0.05 && guardianOf(world, o) === c) {

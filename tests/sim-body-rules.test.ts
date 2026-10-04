@@ -9,7 +9,7 @@ import { createWorld, tickWorld } from '../src/simulation';
 import { prescriptionCount } from '../scripts/prescription-ledger';
 import { worldHash } from './fixtures/golden';
 
-// Stage E4o (bodyRules; docs/staging/e4o-prereg.md §5), a sum of bits. Bit 2: protection follows the ward's own strength:
+// Stage E4o (bodyRules; docs/staging/e4o-prereg.md §5), a sum of bits. Bit 1: protection follows the ward's own strength:
 // a guardian deters a charger, and defends its ward, while the ward cannot hold its own against that animal (E4h
 // assessOdds below even), at any age; a caretaker stays guardian and coalition kin at any age, as a mother does.
 
@@ -17,8 +17,8 @@ test('bodyRules is 0 by default in both profiles', () => {
   for (const profile of ['field', 'compressed'] as const) assert.equal(paramsOf(createWorld(5, { profile })).bodyRules, 0);
 });
 
-test('bit 2: a ward holds its own when its assessed chance against the threat is at least even', () => {
-  const w = createWorld(48, { profile: 'field', params: { bodyRules: 2 } }), P = paramsOf(w);
+test('bit 1: a ward holds its own when its assessed chance against the threat is at least even', () => {
+  const w = createWorld(48, { profile: 'field', params: { bodyRules: 1 } }), P = paramsOf(w);
   assert.ok(guardBySize(P));
   const alive = index(w).alive;
   const infant = alive.find(c => c.age < 4)!, male = alive.find(c => c.sex === 'male' && c.age >= 20)!;
@@ -28,8 +28,8 @@ test('bit 2: a ward holds its own when its assessed chance against the threat is
   assert.equal(wardHoldsOwn(w, male, infant, P), true, 'an adult male holds its own against an infant');
 });
 
-test('bit 2: an adoptive caretaker stays guardian and coalition kin past guardMaxAgeY; bit 0 keeps the age limit', () => {
-  for (const bodyRules of [0, 2]) {
+test('bit 1: an adoptive caretaker stays guardian and coalition kin past guardMaxAgeY; bit 0 keeps the age limit', () => {
+  for (const bodyRules of [0, 1]) {
     const w = createWorld(48, { profile: 'field', params: { bodyRules } }), P = paramsOf(w);
     const alive = index(w).alive;
     // an orphan of 13 y with a living caretaker in its community (constructed: the mother is marked dead)
@@ -45,8 +45,8 @@ test('bit 2: an adoptive caretaker stays guardian and coalition kin past guardMa
   }
 });
 
-test('bodyRules 2 (field): deterministic over a day, JSON-lossless; guardMaxAgeY is not read; count −1', () => {
-  const T = { contestAssess: 1, bodyRules: 2 };
+test('bodyRules 1 (field): deterministic over a day, JSON-lossless; guardMaxAgeY is not read; count −1', () => {
+  const T = { contestAssess: 1, bodyRules: 1 };
   const a = createWorld(48, { profile: 'field', params: T }), b = createWorld(48, { profile: 'field', params: T });
   const read = new Set<string>();
   traceParamReads(a, read);
@@ -55,7 +55,7 @@ test('bodyRules 2 (field): deterministic over a day, JSON-lossless; guardMaxAgeY
   assert.ok(!read.has('guardMaxAgeY'), 'guardMaxAgeY is not read');
   assert.deepEqual(JSON.parse(JSON.stringify(a)), a);
   const base = prescriptionCount({}).total;
-  assert.equal(prescriptionCount({ bodyRules: 2 }).total, base - 1);
+  assert.equal(prescriptionCount({ bodyRules: 1 }).total, base - 1);
 });
 
 test('bit 0 reads guardMaxAgeY, so the switch is what removes it', () => {
