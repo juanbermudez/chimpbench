@@ -421,3 +421,95 @@ median 1 min after the start; re-launches to the same audience within 2 min 20 o
 **Kill criterion and verdict rule:** as iteration 1 (§3), unchanged. If A1 and A2 both pass, A2 is recommended on the
 registered grounds (no double count of the nest company; transit not taken for company), never on fitted rows; if A2
 fails, A1 stands as recorded with these two defects listed.
+
+## 6. Results
+
+### 6.1 Iteration 1: A1 = S27 + `departValue` 1 (frozen checkout of 368356f, clean)
+
+Printed by the stage's `e5f_judge.py` (copied to `artifacts/validation/e5f/`) from the e-bench, energy-diagnose,
+depart-diagnose and rhythm-metrics JSON of A1 and of the four S27 quick realizations (their e-bench and energy-diagnose
+are the integrator's, bench-run3 28d249e; their depart-diagnose and rhythm-metrics were run here from the same frozen
+checkout with the switch off; identity: each run's T-PTY-1 by the tool equals its e-bench T-PTY-1). The re-launch and
+going-alone readouts are the timer-free ones (§2.2): after each unanswered attempt, the initiator's next own trip; "≤ 13
+min" is the field's window.
+
+```
+S27q: 28d249e dirty 0 prescriptions 42 viability pass
+  S27q1: 28d249e dirty 0 prescriptions 42 viability pass
+  S27q2: 28d249e dirty 0 prescriptions 42 viability pass
+  S27q3: 28d249e dirty 0 prescriptions 42 viability pass
+  A1: 368356f dirty 0 prescriptions 40 viability pass
+
+quick, reference custom (4 runs), rows counted in all runs: fitted 16, held-out 12
+  fitted             (16 rows) ref 1.50, 2.68, 1.04, 2.26 (mean 1.87, sd 0.74; used 0.74) | A1.json: 2.46, Δ +0.59, z +0.7 (inside noise)
+  held-out           (12 rows) ref 4.27, 4.04, 3.73, 3.22 (mean 3.82, sd 0.46; used 1.26) | A1.json: 3.89, Δ +0.08, z +0.1 (inside noise)
+  held-out w/o rare  (11 rows) ref 3.45, 4.04, 3.73, 3.22 (mean 3.61, sd 0.36; used 0.48) | A1.json: 3.75, Δ +0.14, z +0.3 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-COM-8   fitted   ref 0.11±0.02 | A1.json 0.00 (pass)
+   T-HUN-4   held-out ref 0.21±0.41 | A1.json 0.15 (fail)
+   T-HUN-8   held-out ref 0.25±0.17 | A1.json 0.89 (fail)
+
+| readout | S27 runs (S27q, q1, q2, q3) | S27 mean ± SD | A1 |
+| --- | --- | --- | --- |
+| attempts/adult-day | 6.600 / 6.798 / 6.669 / 6.436 | 6.626 ± 0.150 | 6.513 (z -0.7) |
+| success | 0.405 / 0.404 / 0.410 / 0.386 | 0.401 ± 0.010 | 0.376 (z -2.2) |
+| relaunch delay median | 53.500 / 52.250 / 50.750 / 54.000 | 52.625 ± 1.451 | 44.250 (z -5.2) |
+| relaunch delay min | 4.750 / 4.750 / 4.750 / 4.750 | 4.750 ± 0.000 | 1.000 |
+| relaunch delay max | 2809.000 / 2361.000 / 2233.500 / 1605.250 | 2252.187 ± 496.910 | 2398.500 (z +0.3) |
+| relaunch ≤13 min: median | 7.750 / 7.500 / 7.500 / 7.500 | 7.563 ± 0.125 | 2.000 (z -39.8) |
+| relaunch ≤13 min: mean | 7.980 / 7.897 / 7.757 / 7.812 | 7.861 ± 0.098 | 3.941 (z -35.9) |
+| relaunch ≤13 min (share of unanswered) | 0.093 / 0.104 / 0.108 / 0.103 | 0.102 ± 0.006 | 0.176 (z +10.7) |
+| relaunch (share of unanswered) | 0.736 / 0.731 / 0.724 / 0.736 | 0.732 ± 0.006 | 0.708 (z -3.9) |
+| go alone (share of unanswered) | 0.067 / 0.074 / 0.071 / 0.073 | 0.071 ± 0.003 | 0.111 (z +11.9) |
+| go alone delay median | 14.500 / 14.750 / 14.500 / 14.750 | 14.625 ± 0.144 | 1.000 (z -84.4) |
+| no audience next (share) | 0.087 / 0.088 / 0.092 / 0.086 | 0.088 ± 0.002 | 0.083 (z -1.9) |
+| own trip at first decision after the check | 0.025 / 0.030 / 0.031 / 0.031 | 0.029 ± 0.003 | 0.177 (z +47.0) |
+| T-PTY-1 (tool, identity) | 4.781 / 4.630 / 4.487 / 4.448 | 4.586 ± 0.151 | 3.957 (z -3.7) |
+| pair splits/subject-day | 11.320 / 12.508 / 12.309 / 10.831 | 11.742 ± 0.799 | 10.347 (z -1.6) |
+| pair joins/subject-day | 11.352 / 12.515 / 12.335 / 10.850 | 11.763 ± 0.795 | 10.363 (z -1.6) |
+| pair time together | 0.184 / 0.196 / 0.192 / 0.178 | 0.188 ± 0.008 | 0.166 (z -2.4) |
+| splits by own trips alone (share) | 0.026 / 0.029 / 0.024 / 0.025 | 0.026 ± 0.002 | 0.022 (z -1.7) |
+| night out of nest % | 2.473 / 2.286 / 2.308 / 2.357 | 2.356 ± 0.084 | 2.475 (z +1.3) |
+| T-RHY-5 | 0.019 / 0.017 / 0.018 / 0.017 | 0.018 ± 0.001 | 0.019 (z +1.6) |
+| T-PTY-1 | 4.781 / 4.630 / 4.487 / 4.448 | 4.586 ± 0.151 | 3.957 (z -3.7) |
+| T-ACT-2 | 0.116 / 0.121 / 0.125 / 0.103 | 0.116 ± 0.009 | 0.109 (z -0.7) |
+| T-FOOD-10 | 0.599 / 0.643 / 0.607 / 0.503 | 0.588 ± 0.060 | 0.623 (z +0.5) |
+| T-RNG-4 | 2.424 / 2.179 / 2.519 / 1.934 | 2.264 ± 0.262 | 2.170 (z -0.3) |
+| T-ACT-1 | 0.378 / 0.377 / 0.378 / 0.368 | 0.375 ± 0.005 | 0.384 (z +1.6) |
+| T-ACT-3 | 0.099 / 0.088 / 0.102 / 0.104 | 0.098 ± 0.007 | 0.093 (z -0.7) |
+| T-ACT-4 | 0.418 / 0.406 / 0.410 / 0.450 | 0.421 ± 0.020 | 0.422 (z +0.0) |
+| prescriptions | 42 / 42 / 42 / 42 | 42 ± 0.000 | 40 |
+| reserves %/day: adult male | -0.002 / 0.007 / 0.001 / 0.003 | 0.002 ± 0.004 | 0.003 (z +0.1) |
+| reserves %/day: female, lactating | 0.005 / -0.008 / -0.005 / 0.006 | -0.000 ± 0.007 | 0.006 (z +0.8) |
+| reserves %/day: female, other | -0.017 / 0.008 / -0.007 / 0.038 | 0.006 ± 0.024 | 0.023 (z +0.6) |
+| reserves %/day: juvenile 5–12 y | -0.015 / -0.016 / -0.019 / -0.059 | -0.027 ± 0.021 | 0.034 (z +2.6) |
+| reserves %/day: infant 2–5 y | 0.007 / -0.036 / -0.016 / 0.001 | -0.011 ± 0.019 | 0.005 (z +0.7) |
+| reserves %/day: infant 0.5–2 y | 0.012 / 0.011 / 0.006 / 0.007 | 0.009 ± 0.003 | 0.001 (z -2.1) |
+| ground km: adult male | 2.873 / 2.983 / 2.858 / 2.532 | 2.811 ± 0.194 | 2.792 (z -0.1) |
+| ground km: female, lactating | 2.437 / 2.448 / 2.565 / 2.461 | 2.478 ± 0.059 | 2.564 (z +1.3) |
+| ground km: juvenile 5–12 y | 2.747 / 2.879 / 2.962 / 2.738 | 2.831 ± 0.108 | 2.802 (z -0.2) |
+| deaths | 0 / 0 / 0 / 0 | 0 ± 0.000 | 1 |
+```
+
+**Against the predictions (§3).** Prescriptions 40: held. Viability and night: held (one death, an illness; adults out
+of a nest 2.48% of the night, T-RHY-5 0.019). Attempts 5–8 per adult-day: held (6.5). Success 0.35–0.45: held (0.38;
+z −2.2 against the group's narrow spread). Own trip at the first decision after an unanswered check 5–20%: held (17.7%).
+Going alone 3–15%, median below 5 min: held (11.1%, median 1.0 min; S27 7.1%, 14.6 min). Re-launch to the same audience
+within 13 min 5–20%: held (17.6%); shortest below 4.75 min: held (1.0); median of all re-launches 20–80 min: held (44).
+T-PTY-1 4.2–5.0: **missed** (3.96; z −3.7). T-ACT-2 0.10–0.13: held (0.109). T-FOOD-10 0.45–0.70: held (0.62).
+Reserves within 0.03 of the mean: missed for juveniles (+0.061, better) and held for the others. Sums inside noise: held
+(fitted z +0.7, held-out +0.1, without the rare rows +0.3).
+
+**Mechanics.** With nothing held, the decision after an unanswered check goes to an own trip in 18% (continuing the same
+trip 6%: departures alone, a median 1 min after the attempt began), and re-launches come sooner: within 13 min after
+17.6% of unanswered attempts (S27 10.2 ± 0.6%), a median 2.0 min and a mean 3.9 min start to start (S27 7.6 and 7.9:
+the check plus the hold; the field's 9 cases a mean 3.8; not used to judge). Those who leave alone are those with
+little company to lose: at departures alone to another tree (the tap's values; continuing the same trip is not tapped)
+the initiator's social need is 0.23 and the company left 0.17, against 0.48 and 0.55 at unanswered attempts. Parties are
+smaller (T-PTY-1 3.96 against 4.59 ± 0.15; pair time together 0.166 against 0.188 ± 0.008) and more adults set off with
+nobody in reach (2.22 own trips a day without an audience against 1.82 ± 0.14).
+
+**Verdict by the registered rule:** A1 passes the keep rule (viable, held-out inside noise in both row sets, prescriptions
+42 → 40, night safe): a provisional keep candidate. Side effect beyond the group's spread: smaller parties (a fitted row,
+reported, not used to choose). The two defects of its definitions read from these runs (§5.1) are what iteration 2
+addresses.
