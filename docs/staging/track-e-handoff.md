@@ -14,11 +14,10 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 04:30; deploy held by the user).** Stage agents **E4k** (`e4k-hunt-success`: hunt success
-  and extra kills from the pursuit instead of a curve and a die) and **E3d** (`e3d-redecide`: rgMaxAgeH, continueBonus,
-  finishedPenalty), both from track-e b3d28c7, briefs `integrator/e4k-prompt.txt`, `e3d-prompt.txt`. Integrator: the
-  S17 quick reference (`integrator/s17q.sh`, outputs `bench-run2/artifacts/validation/e/s17q/`; message both agents when
-  all four exist).
+- **Running now (4 October 05:20; deploy held by the user).** Stage agent **E4k** (`e4k-hunt-success`). Integrator:
+  S17's confirm group (S17 + S17c1–S17c3 in bench-run2 37f04e8, `integrator/conf17.sh`; S17c3 running) and the **S18**
+  confirm (S17 + `redecideValue` 2; registered 0044bfe) in bench-run3 moved to 0044bfe (`integrator/conf18.sh`, outputs
+  `bench-run3/artifacts/validation/e/s18/`), judged with `integrator/judge_s17group.py`.
 - **S17 done: now the best integrated candidate** (e-stack2-confirm.md "S17 results"; S16 + `patrolFusion` 1): 49
   prescriptions, viable, night safe, held-out inside noise, fitted better than S16 beyond noise (T-IGE-1 13.2); S16's
   cost removed. Decision guide and hosted copy show S16 (same counts; S17 adds a design correction to patrols).
