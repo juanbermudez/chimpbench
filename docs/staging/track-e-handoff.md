@@ -18,8 +18,8 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **S9 done: now the best integrated candidate** (e-stack2-confirm.md "S9 results"; S8 + `groomDrive` + `socialUpkeep` 2 +
   `followMargin`): 74 prescriptions (the social timers out), grooming in band for both sexes (0.101), viable, night safe,
   sums inside noise (held-out without the rare rows z +1.2: E5d's quick-mode failure did not replicate). Costs: T-HUN-1
-  35.5 (above band), juveniles −0.060 and other females −0.045 %/day, +0.1–0.2 km walking. The decision guide and the
-  hosted copy still show S8 (S9 needs STACKS.S9 and Before/Now for the two social timers).
+  35.5 (above band), juveniles −0.060 and other females −0.045 %/day, +0.1–0.2 km walking. Decision guide on **S9**
+  (merged `guide-s9` at f9a01c4; 74 prescribed, 61 replaced); hosted copy on `site` 082c297, build checked.
 - **S8 done: now the best integrated candidate** (e-stack2-confirm.md "S8 results"; S6 + `growYield` + `revisitByCrop`):
   76 prescriptions, viable, night safe; every class's balance up (mothers −0.046%/day, infants −0.067 / −0.030), walking,
   travel and hunting in band, held-out without the rare rows better beyond noise (z −6.9). Costs: grooming (T-ACT-3
@@ -71,8 +71,8 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   3.43 km a day (S3 2.93) and the deficits deepen: E5a interacts with value-based calls; E5b fixed it (S5).
 - **Hosted site, 2 October 14:50:** `site` now also holds the rewritten About page (merged `site-about` 4618daf: first-person
   hero, stale sections cut, What's next) and the decision guide as a hidden page (`docs/decision-guide.html`, a Vite
-  input: unlinked, noindex, at /docs/decision-guide). The guide now shows **S8** (76 prescribed, 59 replaced; merged
-  `guide-s8`; `STACK = STACKS.S8` in scripts/decision-guide.ts) and the site copy is written by
+  input: unlinked, noindex, at /docs/decision-guide). The guide now shows **S9** (74 prescribed, 61 replaced; merged
+  `guide-s9`; `STACK = STACKS.S9` in scripts/decision-guide.ts) and the site copy is written by
   `pnpm exec tsx scripts/decision-guide.ts --hosted <site>/docs/decision-guide.html` (site 149701c from track-e 8f5319e;
   `integrator/hosted_guide.py` retired). Build checked: no console errors, data figures draw, dist 32 MB without audio.
   Still no deploy: the user has not said how to publish.
