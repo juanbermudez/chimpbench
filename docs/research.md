@@ -3285,9 +3285,9 @@ BioC (author manuscripts in PMC). Tags as above; every figure below is a definit
   part of a trip's value; its distance and the value of options in view are not.
 
 **Not verified:** a measurement of how variable a wild primate's choice between two visible foods of known value is (a
-Weber fraction for food quantity in chimpanzees exists in captive tests, e.g. Hanus & Call 2007, not reached here: no
-open copy found in two routes); Thompson 1933 (Biometrika, not open; the algorithm is quoted from gershman2018);
-Krebs, Kacelnik & Taylor 1978 (great tits sampling two patches; Nature, not open).
+Weber fraction for food quantity in chimpanzees, e.g. from captive quantity tests such as Hanus & Call 2007, was not
+searched this stage); Thompson 1933 and Krebs, Kacelnik & Taylor 1978 (great tits sampling two patches) were not
+fetched (the algorithm is quoted from gershman2018).
 
 **Sources:**
 - *new* gershman2018: Gershman SJ 2018. Deconstructing the human algorithms for exploration. *Cognition* 173:34–42.

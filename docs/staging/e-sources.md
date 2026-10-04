@@ -1842,4 +1842,4 @@ exploration and an uncertainty bonus, value-only choice fitted worse); decision 
 (wilson2014, FT, context); rhesus macaques prefer options of unknown value, less when the best known option is better
 (costa2019, FT, three males); chimpanzees know distances to remembered trees well and their crop beliefs can be wrong
 (normandBoesch2009, normand2009, ban2014, janmaat2013a/b, already cited). New keys: gershman2018, wilson2014, costa2019.
-Not verified: a Weber fraction for food quantity in chimpanzees (Hanus & Call 2007), Thompson 1933, Krebs et al. 1978.
+Not verified (not searched or fetched this stage): a Weber fraction for food quantity in chimpanzees, Thompson 1933, Krebs et al. 1978.
