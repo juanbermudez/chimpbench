@@ -252,3 +252,7 @@ model's communities, derivation undocumented). T-FOOD-2 (watts2012a, Ngogo diet 
 - The crop thresholds in fruit units (perception.ts:187–203: 0.06, 0.04, 0.2; execution.ts:1050: 0.02;
   candidates.ts:467/544/583 and `UNKNOWN_CROP`: 0.2; foraging.ts known-tree crops) are design values whose kcal meaning
   `fruitIntakePerH` sets.
+- Valuations convert every crown's crop at the drupe values (intake.ts:66 and :91, `fruitKcalPerUnit(P, false)` and the
+  drupe rate), while feeding uses the fig values in a fig crown (execution.ts:1036): a fig crown is valued at 4,031 kcal
+  per unit and 7.39 kcal/min instead of 4,429 and 8.12. The bout's time (energy ÷ rate) is the same either way; only the
+  energy against the walk's cost differs (about 10%). Recorded, not changed (no switch in this stage).
