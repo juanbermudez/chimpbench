@@ -308,6 +308,120 @@ beyond noise (z > +2); night safety fails (> 3.3% of the night, rhythm-metrics, 
 42; nursing mothers' or infants' 0.5–2 y reserve trend more than 2 SD below S22's mean (the stage's goal: walkGait joins
 without their energy loss). An iteration 2 is registered only for a term B1's diagnosis names.
 
+## 7. Results, iteration 1 (B1 = S22 + `walkGait` 1 + `tripBodyCost` 1; frozen checkout 8978d18, clean; quick, seeds 48 and 7; printed by `table.py`, `compact.py`, `episodes.py` from the JSON in the stage's scratch directory)
+
+```
+  S22q: ea794ff dirty 0 prescriptions 43 viability pass deaths 0 starvation 0
+  S22q1: ea794ff dirty 0 prescriptions 43 viability pass deaths 0 starvation 0
+  S22q2: ea794ff dirty 0 prescriptions 43 viability pass deaths 0 starvation 0
+  S22q3: ea794ff dirty 0 prescriptions 43 viability pass deaths 0 starvation 0
+  W: 7017f22 dirty 0 prescriptions 42 viability pass deaths 0 starvation 0
+  B1: 8978d18 dirty 0 prescriptions 42 viability pass deaths 0 starvation 0
+quick, reference custom (4 runs), rows counted in all runs: fitted 14, held-out 10
+  fitted             (14 rows) ref 1.59, 1.20, 1.69, 1.59 (mean 1.52, sd 0.22; used 0.69) | W.json: 1.24, Δ -0.28, z -0.4 (inside noise) | B1.json: 1.45, Δ -0.07, z -0.1 (inside noise)
+  held-out           (10 rows) ref 3.40, 2.84, 4.08, 3.33 (mean 3.41, sd 0.51; used 1.26) | W.json: 3.13, Δ -0.29, z -0.2 (inside noise) | B1.json: 3.46, Δ +0.05, z +0.0 (inside noise)
+  held-out w/o rare  (10 rows) ref 3.40, 2.84, 4.08, 3.33 (mean 3.41, sd 0.51; used 0.51) | W.json: 3.13, Δ -0.29, z -0.5 (inside noise) | B1.json: 3.46, Δ +0.05, z +0.1 (inside noise)
+   T-FOOD-10 held-out ref 0.83±0.18 | W.json 0.98 (fail) | B1.json 1.47 (fail)
+   T-FOOD-2  fitted   ref 0.08±0.08 | W.json 0.31 (fail) | B1.json 0.03 (fail)
+```
+
+| Readout | S22 runs | S22 mean ± SD | W | B1 |
+| --- | --- | --- | --- | --- |
+| T-RNG-4 | 1.607 / 1.719 / 1.324 / 1.502 | 1.538 ± 0.168 | 2.188 (z +3.5) | 2.173 (z +3.4) |
+| T-RNG-5 | 0.947 / 0.940 / 1.254 / 1.140 | 1.070 ± 0.153 | 1.033 (z -0.2) | 0.980 (z -0.5) |
+| T-ACT-1 | 0.374 / 0.369 / 0.372 / 0.378 | 0.373 ± 0.004 | 0.384 (z +2.6) | 0.392 (z +4.2) |
+| T-ACT-2 | 0.152 / 0.166 / 0.153 / 0.163 | 0.158 ± 0.007 | 0.118 (z -5.4) | 0.111 (z -6.4) |
+| T-ACT-3 | 0.094 / 0.094 / 0.107 / 0.093 | 0.097 ± 0.007 | 0.104 (z +0.9) | 0.096 (z -0.1) |
+| T-ACT-4 | 0.409 / 0.334 / 0.389 / 0.322 | 0.363 ± 0.042 | 0.416 (z +1.1) | 0.407 (z +0.9) |
+| T-FOOD-10 | 0.497 / 0.530 / 0.436 / 0.464 | 0.482 ± 0.041 | 0.517 (z +0.8) | 0.624 (z +3.1) |
+| T-FOOD-4 | 7.783 / 8.543 / 7.922 / 8.217 | 8.116 ± 0.337 | 9.366 (z +3.3) | 8.084 (z -0.1) |
+| T-FOOD-2 | 0.776 / 0.814 / 0.791 / 0.791 | 0.793 ± 0.016 | 0.835 (z +2.4) | 0.786 (z -0.4) |
+| T-PTY-1 | 3.661 / 4.088 / 4.532 / 3.995 | 4.069 ± 0.359 | 4.736 (z +1.7) | 4.041 (z -0.1) |
+| T-HUN-1 | 0.000 / 4.033 / 0.000 / 0.000 | 1.008 ± 2.017 | 0.000 (z -0.4) | 0.000 (z -0.4) |
+| reserves %/day, adult male | 0.009 / -0.000 / 0.010 / 0.004 | 0.006 ± 0.005 | 0.001 (z -1.0) | -0.003 (z -1.8) |
+| reserves %/day, female, other | 0.003 / 0.019 / 0.007 / -0.010 | 0.005 ± 0.012 | 0.010 (z +0.4) | -0.003 (z -0.6) |
+| reserves %/day, female, lactating | 0.006 / -0.003 / -0.013 / 0.014 | 0.001 ± 0.012 | -0.049 (z -3.9) | 0.004 (z +0.2) |
+| reserves %/day, juvenile 5–12 y | 0.004 / -0.009 / 0.009 / 0.015 | 0.005 ± 0.010 | -0.000 (z -0.4) | -0.033 (z -3.2) |
+| reserves %/day, infant 2–5 y | 0.016 / -0.002 / -0.033 / 0.007 | -0.003 ± 0.021 | -0.038 (z -1.5) | 0.029 (z +1.3) |
+| reserves %/day, infant 0.5–2 y | -0.006 / 0.010 / 0.014 / 0.022 | 0.010 ± 0.012 | -0.047 (z -4.3) | -0.024 (z -2.5) |
+| true day range km, adult male | 1.65 / 2.03 / 1.76 / 1.83 | 1.82 ± 0.16 | 2.71 (z +5.0) | 2.91 (z +6.1) |
+| true day range km, female, other | 1.07 / 1.48 / 1.37 / 1.45 | 1.34 ± 0.19 | 2.08 (z +3.5) | 1.99 (z +3.1) |
+| true day range km, female, lactating | 1.63 / 1.68 / 1.70 / 1.63 | 1.66 ± 0.03 | 2.72 (z +27.5) | 2.43 (z +19.9) |
+| true day range km, juvenile 5–12 y | 1.73 / 1.98 / 1.76 / 1.82 | 1.82 ± 0.11 | 2.99 (z +9.3) | 2.93 (z +8.9) |
+| true day range km, infant 2–5 y | 0.27 / 0.27 / 0.30 / 0.28 | 0.28 ± 0.01 | 0.44 (z +9.9) | 0.41 (z +7.6) |
+| true day range km, infant 0.5–2 y | 0.14 / 0.18 / 0.18 / 0.16 | 0.16 ± 0.02 | 0.28 (z +6.2) | 0.28 (z +6.4) |
+| climbing kcal/d, adult male | 49.7 / 61.9 / 56.2 / 55.5 | 55.8 ± 5.0 | 66.2 (z +1.9) | 59.5 (z +0.7) |
+| walking kcal/d, adult male | 59.6 / 73.5 / 63.9 / 66.2 | 65.8 ± 5.8 | 98.2 (z +5.0) | 104.9 (z +6.0) |
+| climbing kcal/d, female, lactating | 33.2 / 34.8 / 35.5 / 35.3 | 34.7 ± 1.0 | 41.3 (z +5.6) | 36.6 (z +1.6) |
+| walking kcal/d, female, lactating | 51.0 / 52.6 / 52.5 / 51.4 | 51.9 ± 0.8 | 82.0 (z +32.7) | 73.9 (z +24.0) |
+| climbing kcal/d, juvenile 5–12 y | 41.4 / 45.5 / 46.5 / 43.6 | 44.3 ± 2.2 | 50.4 (z +2.4) | 46.6 (z +0.9) |
+| walking kcal/d, juvenile 5–12 y | 55.5 / 61.0 / 57.3 / 57.8 | 57.9 ± 2.3 | 87.3 (z +11.5) | 86.8 (z +11.3) |
+| climbing kcal/d, infant 2–5 y | 11.8 / 12.1 / 13.1 / 12.8 | 12.5 ± 0.6 | 14.6 (z +3.2) | 13.5 (z +1.6) |
+| walking kcal/d, infant 2–5 y | 3.6 / 3.7 / 4.0 / 4.0 | 3.8 ± 0.2 | 5.8 (z +8.6) | 5.4 (z +6.8) |
+| held-out sum (all rows) | 5.13 / 4.09 / 6.10 / 3.83 | 4.79 ± 1.04 | 3.63 (z -1.0) | 3.96 (z -0.7) |
+| prescriptions | 43 / 43 / 43 / 43 | 43 ± 0 | 42 | 42 |
+
+| term (kcal/day unless stated): S22 mean of 4 → B1 (Δ; z) | nursing mothers | infants 0.5–2 y | infants 2–5 y | juveniles 5–12 y | adult males |
+| --- | --- | --- | --- | --- | --- |
+| own walking in trips (travel act) | 38.9 → 56.8 (+17.9; z +20.2) | 0 | 0 | 34.7 → 54.1 (+19.4; z +6.4) | 54.1 → 84.0 (+29.9; z +7.8) |
+| own walking, all other acts | 13.0 → 17.1 (+4.1; z +8.3) | 1.9 → 2.8 (+0.9; z +4.2) | 3.8 → 5.4 (+1.5; z +6.8) | 23.1 → 32.7 (+9.5; z +4.5) | 11.7 → 20.9 (+9.2; z +3.1) |
+| own climbing into crowns (forage act) | 26.0 → 27.2 (+1.2; z +1.3) | 0.19 → 0.16 (-0.04; z -2.5) | 1.02 → 0.84 (-0.19; z -1.5) | 27.9 → 28.3 (+0.4; z +0.3) | 40.1 → 43.0 (+2.9; z +1.0) |
+| own climbing behind a carer (follow act) | 0 | 4.1 → 5.0 (+0.9; z +2.0) | 9.0 → 10.1 (+1.1; z +4.5) | 1.9 → 2.7 (+0.9; z +1.9) | 0 |
+| own climbing, all other acts | 8.7 → 9.3 (+0.6; z +1.2) | 1.53 → 1.83 (+0.30; z +2.4) | 2.4 → 2.5 (+0.1; z +0.4) | 14.5 → 15.6 (+1.1; z +1.5) | 15.7 → 16.5 (+0.8; z +0.3) |
+| carrying a dependent (walking + climbing) | 13.6 → 18.8 (+5.2; z +10.4) | 0 | 0 | 0 | 0 |
+| activity (time at 1.25 / 1.38 × resting) | 141.1 → 145.7 (+4.7; z +5.4) | 31.3 → 31.9 (+0.6; z +1.9) | 58.9 → 59.7 (+0.9; z +2.9) | 125.8 → 126.2 (+0.4; z +0.7) | 151.8 → 153.7 (+1.9; z +6.2) |
+| digestion | 168.9 → 171.7 (+2.8; z +3.4) | 36.0 → 36.2 (+0.3; z +1.1) | 61.1 → 61.8 (+0.7; z +2.6) | 123.1 → 125.3 (+2.3; z +4.4) | 152.2 → 156.8 (+4.5; z +4.6) |
+| milk given | 351.6 → 346.0 (-5.6; z -0.8) | 0 | 0 | 0 | 0 |
+| expenditure, all terms | 1688.4 → 1719.1 (+30.6; z +5.0) | 360.0 → 362.4 (+2.4; z +3.2) | 611.0 → 614.8 (+3.8; z +5.9) | 1227.5 → 1261.3 (+33.8; z +7.2) | 1518.1 → 1567.4 (+49.3; z +3.7) |
+| absorbed (kcal in − passed out) | 1689.5 → 1717.1 (+27.6; z +3.6) | 360.0 → 362.4 (+2.4; z +1.2) | 610.4 → 618.5 (+8.1; z +2.6) | 1230.5 → 1253.8 (+23.3; z +5.2) | 1521.6 → 1568.2 (+46.6; z +4.7) |
+| net (absorbed − expenditure) | 1.04 → -1.96 (-3.00; z -0.9) | 0.04 → 0.01 (-0.04; z -0.0) | -0.5 → 3.7 (+4.3; z +1.3) | 3.0 → -7.5 (-10.4; z -1.9) | 3.5 → 0.9 (-2.7; z -0.6) |
+| milk drunk | 0 | 283.0 → 281.6 (-1.4; z -0.3) | 279.6 → 272.0 (-7.6; z -0.8) | 0 | 0 |
+| travel episodes per day (count) | 11.5 → 12.7 (+1.2; z +2.6) | 0 | 0 | 14.0 → 17.3 (+3.3; z +2.9) | 14.9 → 17.4 (+2.5; z +1.7) |
+| … ending fed at their target (count) | 4.4 → 5.2 (+0.8; z +2.4) | 0 | 0 | 2.9 → 3.0 (+0.1; z +0.5) | 5.2 → 6.3 (+1.1; z +1.6) |
+| km/day in travel episodes | 1.36 → 2.00 (+0.63; z +19.7) | 0 | 0 | 1.4 → 2.2 (+0.8; z +6.8) | 1.5 → 2.4 (+0.8; z +7.8) |
+| … of it in episodes not ending fed at the target | 0.83 → 1.16 (+0.33; z +6.3) | 0 | 0 | 1.05 → 1.69 (+0.64; z +7.2) | 0.92 → 1.41 (+0.50; z +8.6) |
+| foregut room at a trip's start (share) | 0.44 → 0.40 (-0.04; z -4.1) | — | — | 0.44 → 0.42 (-0.02; z -4.4) | 0.46 → 0.45 (-0.01; z -0.6) |
+| crown visits per day (count) | 8.1 → 8.3 (+0.1; z +0.6) | 1.10 → 1.09 (-0.01; z -0.3) | 5.0 → 4.9 (-0.1; z -1.4) | 10.3 → 10.3 (-0.0; z -0.1) | 9.7 → 10.2 (+0.5; z +1.0) |
+| kcal eaten per crown visit | 176.6 → 169.8 (-6.8; z -2.4) | 37.1 → 37.3 (+0.2; z +0.1) | 53.4 → 54.5 (+1.2; z +1.0) | 115.8 → 119.0 (+3.1; z +1.0) | 155.4 → 153.4 (-2.0; z -0.3) |
+| visits left for another trip before sated, per day | 1.42 → 1.57 (+0.15; z +1.1) | 0 | 0 | 1.36 → 1.45 (+0.10; z +1.1) | 1.51 → 1.65 (+0.14; z +0.5) |
+| metres climbed per day | 94.6 → 99.6 (+5.1; z +1.6) | 69.4 → 84.4 (+15.0; z +2.1) | 92.7 → 100.7 (+8.1; z +1.6) | 139.6 → 147.5 (+7.9; z +0.9) | 122.1 → 130.2 (+8.1; z +0.7) |
+| eating min per day | 298.3 → 323.3 (+25.0; z +4.9) | 35.5 → 38.4 (+2.9; z +4.0) | 126.5 → 132.3 (+5.9; z +3.3) | 278.2 → 280.6 (+2.4; z +0.7) | 228.1 → 234.5 (+6.4; z +4.1) |
+| fallback food eaten (formula kcal) | 370.0 → 445.1 (+75.1; z +2.1) | 12.4 → 14.6 (+2.3; z +1.7) | 36.3 → 45.0 (+8.7; z +3.7) | 92.4 → 87.7 (-4.8; z -0.4) | 78.8 → 72.9 (-5.9; z -0.6) |
+
+Walking ÷ climbing energy per day (pontzerWrangham2004: about 10): S22 1.18 / 1.50 / 1.31 (males, mothers, juveniles), W
+1.48 / 1.99 / 1.73, B1 1.76 / 2.02 / 1.86.
+
+**Against the predictions (§5).**
+1. Prescriptions 42, viable (no death), sums inside noise (fitted z −0.1, held-out z +0.0 and +0.1 without the rare
+   rows): held.
+2. Travel episodes between S22's and W's: mothers 12.7 (13.5–15.0): missed low, the climb's time removed more of the
+   increase than predicted (S22 11.5, W 15.3); males 17.4 (16.5–18.6): held; crown visits back at S22's (mothers 8.3,
+   males 10.2) and metres climbed between S22's and W's: held.
+3. Mothers' walking in trips 56.8 kcal/day (55–64): held; carrying 18.8 (17–21): held.
+4. Mothers' reserves still beyond 2 SD below S22's mean: **missed** — +0.004 %/day (z +0.2), net −3.0 kcal/day (z −0.9),
+   milk given back near S22's (−5.6 against W's −19.9), infants of 2–5 y drink theirs (−7.6 against −32.1).
+5. Infants 0.5–2 y between W's and S22's: held (−0.024 %/day against W's −0.047; climbing behind their mothers +0.9
+   kcal/day against W's +2.1; net 0.0 kcal/day, z 0.0) — but still beyond 2 SD below S22's mean (z −2.5).
+6. T-RNG-4 2.17 (between 1.54 and 2.19): held; T-ACT-2 0.111 (within ±0.01 of 0.118): held; T-FOOD-10 inside the
+   reference spread: **missed** (0.624, z +3.1: more departures before sunrise).
+
+Not predicted: juveniles' reserves fall (−0.033 %/day, z −3.2; net −10.4 kcal/day, z −1.9): their walking in trips stays
+at W's (+19.4 kcal/day; 17.3 travel episodes a day against 14.0 on S22 and 19.0 on W) while their absorbed gain is half
+W's (+23 against +40 kcal/day).
+
+**Kill criterion (§5): holds** — infants 0.5–2 y 2.5 SD below S22's mean (registered line: more than 2 SD). B1 is recorded,
+not a keep candidate. The climb's time in a trip's rate removes most of the faster walk's added trips for nursing mothers
+(+3.9 → +1.2 a day) and with them their energy loss; infants of 0.5–2 y still pay (half W's loss), juveniles pay in this
+draw.
+
+### 7.1 Replicates B1r and Wr (registered 4 October 2026 before their runs; not iterations)
+
+B1 and W re-drawn with `rngSalt` 1 (the behaviour-free re-draw lever), same settings and frozen code (8978d18; W's code is
+identical at its switch values), e-bench and energy-diagnose for both, climb-diagnose for B1r: do the infants' and the
+juveniles' costs and the mothers' recovery replicate before an iteration 2 is chosen? Expected (low confidence): mothers
+within 2 SD of S22's mean in B1r; infants 0.5–2 y between W and S22 again; juveniles inside S22's spread if B1's fall was
+a draw (E2i's G1r: juveniles −0.057 in one of two W-like draws).
+
 ## 6. Known defects (file:line at 0d08525)
 
 - `netRateShare` (intake.ts :89–96) charges the walk's time and the climb's energy, not the climb's time
