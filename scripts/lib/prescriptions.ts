@@ -361,6 +361,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   contestAssess: { stage: 'E4h', needs: {} },
   socialTiming: { stage: 'E5e', needs: {} },
   patrolValue: { stage: 'E4i', needs: {} },
+  patrolFusion: { stage: 'E4j', needs: { patrolValue: 2 }, removesNothing: 'corrects the occasion on which patrolValue 2 weighs the lead (a fusion of a party holding patrolMinMales adult males, judged by the males seen within reunionH, in place of a flicker of the 35 m view); adds no magnitude and switches no prescription out (e4j-prereg §4)' },
 };
 
 /** Whether an entry is in use: generated (not planned), non-zero under these resolved parameters, and not switched out. */

@@ -16414,6 +16414,32 @@
    "notes": "Patrol members stay with a leader within this distance. Compressed stand-in scaled with sight (field ≈ compressed × 35/15, design)."
   },
   {
+   "id": "patrolFusion",
+   "group": "patrol",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "girardButtoz2022"
+   ],
+   "clock": "none",
+   "symbol": "P.patrolFusion",
+   "file": "src/sim/perception.ts",
+   "integer": true,
+   "notes": "Stage E4j switch (docs/staging/e4j-prereg.md §4): the occasion on which E4i's patrolValue 2 weighs the lead is a fusion of a party holding patrolMinMales adult males, not a flicker of sight inside a party that already held them. With 1, a male's perception raises the patrol impulse only when the adult males of his community he had been with within reunionH before this look (seen within reunionH, himself included) were fewer than patrolMinMales and the males now in view are at least that many; with 0 (today) it is raised whenever his view holds patrolMinMales adult males after fewer at his previous look, so males stepping out of a 35 m view inside one party re-raise it (E4j diagnosis: 38-45% of formings, 39-52% of the formings that led a patrol on S16). reunionH is the model's reunion span and the observer's fusion convention (girardButtoz2022); no new magnitude. Needs patrolValue >= 2. Removes no counted prescription (a correction of the E4i occasion). At 0 bit-identical. Design, not fitted."
+  },
+  {
    "id": "patrolH0",
    "group": "patrol",
    "value": 0.004,

@@ -102,6 +102,11 @@ export function perceive(world: World, c: Chimp): void {
   const greetMem = (P.socialTiming & 1) !== 0;
   x.strangers = 0; x.strangerMales = 0; x.strangerTroop = -1; x.isolated = -1; x.nearestStranger = -1; x.newcomers = 0;
   const prevOwn = x.ownMales; // adult males in view at the last perception (stage E4i iteration 1: a party forming)
+  // stage E4j (patrolFusion; docs/staging/e4j-prereg.md §4): the party a male knows is the adult males of his community he
+  // has been with within reunionH (the model's reunion span), not those inside his 35 m view at this instant; read before
+  // this look updates metAt. A party that already held patrolMinMales adult males is not forming again when one of them
+  // steps out of sight and back.
+  const partyBefore = P.patrolFusion === 1 && P.patrolValue >= 2 && isAdultMale(c) ? knownAdultMales(world, c, x.metAt, time, P.reunionH) : prevOwn;
   x.ownMales = isAdultMale(c) ? 1 : 0; x.visibleOwn = 0;
   const px = c.position[0], pz = c.position[2];
   let nearestD = Infinity;
@@ -228,10 +233,23 @@ export function perceive(world: World, c: Chimp): void {
     x.stims.push(st.id);
     if (st.kind === 'snake-model' && d2 < P.snakeVisualM * P.snakeVisualM) { const a = s.aware[st.id] ?? (s.aware[st.id] = []); if (!a.includes(c.id)) a.push(c.id); }
   }
-  rollImpulses(world, c, metPrey, prevOwn);
+  rollImpulses(world, c, metPrey, partyBefore);
+}
+
+/** Stage E4j (patrolFusion): adult males of `c`'s community seen within `spanH` before `time` (metAt), himself included. Pure. */
+export function knownAdultMales(world: World, c: Chimp, metAt: Record<number, number>, time: number, spanH: number): number {
+  const byId = index(world).byId;
+  let n = 1;
+  for (const key in metAt) {
+    if (time - metAt[+key] > spanH) continue;
+    const o = byId.get(+key);
+    if (o && o !== c && o.alive && o.troopId === c.troopId && isAdultMale(o)) n++;
+  }
+  return n;
 }
 
 /** Rare behaviors start as impulses drawn at perception, so pure candidate scoring stays rng-free. */
+/** `prevOwn`: the adult males in view at the last perception, or with patrolFusion the adult males known in his party before this look (E4j). */
 function rollImpulses(world: World, c: Chimp, metPrey: number, prevOwn: number): void {
   const x = ix(c);
   if (x.impulseUntil > world.time && x.impulse !== 0) return;
@@ -258,6 +276,8 @@ function rollImpulses(world: World, c: Chimp, metPrey: number, prevOwn: number):
   // stage E4i (patrolValue): no hazard, no clock; leading a patrol is an option valued from state (patrol.ts, candidates.ts).
   // Iteration 1 (patrolValue 2): a party that first holds patrolMinMales adult males in his view (fewer at his last
   // perception) is a salient change, and the lead is weighed then, once, as a hunt is at a colobus encounter. Nothing is drawn.
+  // Stage E4j (patrolFusion): "first holds" counts the males he knows in his party (seen within reunionH), so only a fusion
+  // raises it, not a male stepping in and out of his view (prevOwn is then that count, perceive above).
   if (P.patrolValue >= 2 && x.ownMales >= P.patrolMinMales && prevOwn < P.patrolMinMales && !simOf(world).patrols[c.troopId] && world.environment.rain < P.patrolMaxRain) {
     x.impulse = IMPULSE_PATROL; x.impulseTarget = -1; x.impulseUntil = world.time + P.impulseDurationH; return;
   }

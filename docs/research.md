@@ -3143,3 +3143,29 @@ C6 evidence check (docs/patrol-evidence.md, full texts read then).
 
 **Not verified this stage:** amsler2010 (energetic costs of patrols; Wiley, closed; abstract only); mitaniWatts2005,
 wattsMitani2001, watts2006 (closed; as recorded at C6p); any source on the time of day patrols start.
+
+### Addendum: E4j encounters (4 October 2026)
+
+What stage E4j (`patrolFusion`, docs/staging/e4j-prereg.md) reads from sources already listed; every value below is a
+target, a definition or a direction, never an input. Read this stage: wilson2012's Methods and Results in full (author
+copy, downloaded at stage E5a).
+
+- **How Kanyawara's encounters were counted** [wilson2012] (FT) [H]. Encounters were compiled from each day's narrative
+  notes and the field diary, keeping only events the observers inferred to be intergroup encounters and rejecting
+  ambiguous cases; distant calls were taken as foreign when they came from a distance and direction toward or beyond the
+  edge of the community's range; an acoustic encounter is "vocalizations heard from foreign chimpanzees, with or without
+  vocal response"; encounters more than 1 h apart are separate; rates per 100 h of observation on party follows that
+  stay with the larger subgroup. 120 encounters (102 acoustic, 15 visual, 3 physical) on 103 of 5,527 follows (1.9%),
+  nine follows with two; vocal response in 69, none in 47; approach 37, avoidance 36, no movement 37; median start 10:10.
+  Use in E4j: the definition the observer's encounter classifier is checked against (the model keeps one encounter per
+  neighbour community and reads the caller's community from the call; on S13 and S16 both choices change at most 1.3% of
+  encounters).
+- **Contact on patrols** [wattsMitani2001] (19 of 52 Ngogo patrols with contact) and [watts2006] (30 of 95; physical
+  aggression on 12), as recorded at C6p: the direction against which the model's contacts per patrol are read (truth
+  hearing episodes with a patrol member listening, 0.57 per patrol on S16); not a target row.
+- **Party fusion** [girardButtoz2022] (FT; E5e): two parties reuniting after at least 1 h apart. Use in E4j: the span
+  (`reunionH`, already in the registry) within which a male counts the adult males he has been with as his party, so that
+  only a fusion, not a male stepping out of a 35 m view, raises the patrol occasion. No new magnitude.
+
+No new source keys. Not verified this stage: field observers' detection range for pant-hoots (the 1 km audibility stays
+[L], every source secondary); amsler2010, mitaniWatts2005, wattsMitani2001, watts2006 (closed; as recorded at C6p).
