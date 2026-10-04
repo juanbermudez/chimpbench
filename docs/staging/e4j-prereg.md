@@ -53,3 +53,11 @@ of communities, distance, the listener's and the caller's positions relative to 
 observer's party-follow team counted it. Then: encounters per patrol, encounters outside patrols, and the observer's
 definition against wilson2012's Methods. The question to answer with numbers: did more patrols, more contacts per
 patrol, more contacts outside patrols, or the scoring double the encounters?
+
+### Run log (each entry written before its run, unless marked)
+
+- **P16a, P16b (the stage's encounter reference; unchanged code).** `e-bench --seeds 48,7 --burn-in 30 --days 60
+  --workers 1` on S16 (bench-run4 `artifacts/validation/e/s16/S16-params.json`), P16b with `rgTemperature` 0.1641 added,
+  one after the other, from a frozen detached checkout of the commit that adds this entry
+  (`scratchpad/e4j/frozen-p`); outputs `artifacts/validation/e4j/P16{a,b}.json` there. Load ~10–19 at launch (other
+  agents' runs), hence one worker.
