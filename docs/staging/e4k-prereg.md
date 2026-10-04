@@ -108,3 +108,44 @@ any association is the draw's chance). A scene variable is "implicated" for §4 
 enough to change a pursuit's outcome in the field picture (§2.1) and (b) the model carries it with a sourced or
 physical meaning. Expected (moderate confidence): n is small (2–3), the curve gives 0.21–0.36 there, and the model
 has no canopy continuity and no colobus composition to carry.
+
+### 3.3 Diagnosis result (45c6df1 frozen; S17, seeds 48 and 7, 30 + 60 days; `diag_table.py` from `diag/S17-{48,7}.json`)
+
+Tool check: 28 and 18 hunts, 10 and 3 captures-successes on seeds 48 and 7: truth T-HUN-1 46.6 and truth T-HUN-2 0.262
+(mean of seeds), exactly H0's. The diagnosis watched e-bench's hunts.
+
+| readout (truth, both seeds) | S17 |
+| --- | --- |
+| hunts resolved; per community-year | 46; 46.6 |
+| success | 13 of 46 = 0.283 (mean success probability of the draws 0.227) |
+| hunts with 1 hunter counted at the resolution (fail by the n ≥ 2 rule, no draw) | 11 (0.239); in 10 of them nobody else ever joined |
+| hunts decided by the draw (n ≥ 2) | 35 (0.761): 20 with n = 2 (6 successes, P_s 0.207), 8 with 3 (4, 0.361), 6 with 4 (2, 0.475), 1 with 5 (1, 0.559); expected 10.4 successes, observed 13 |
+| hunters per hunt: listed / counted / adult males counted | 2.33 / 2.26 / 2.11; listed hunters dropped at the resolution: 3 of 107 |
+| alerted at the start (community ≥ 12 y within 100 m of the leader) | 3.4 per hunt, 1.8 adult males; about 61% of alerted adult males joined; those who never joined were mostly foraging or resting |
+| captures; per success; extra-capture draws (0.17) | 18; 1.385; 24 draws, 5 extra captures |
+| captures per counted hunter (meat units per hunter-participation) | 0.173 |
+| captors | 16 adult males, 1 adolescent male, 1 female; the most skilled counted hunter in 8 of 18 |
+
+What the scene holds at the resolution (10% / median / 90% over hunts):
+- **Positions:** counted hunters 2.3 m (90%: 3.4 m) from the group's point; their bearings are set by a hash of the
+  hunter's and the group's ids (the approach target), so the arrangement is arbitrary: the group lies inside the
+  hunters' convex hull in 2 of 46 hunts. **Climbing:** 100 of 103 counted hunters sit exactly 2.55 m below the group
+  (0.85 × 17 m, the approach target). **Skill:** 0.54–0.65 (adult males start at 0.63, design, +0.01 per hunt).
+  **Condition:** hunger 0.13–0.37, reserves ÷ store −0.027 to 0.000, injury 0–0.006.
+- **Colobus group:** size 17–34 (literal 14–37, unsourced); no sex or age composition (no males to defend).
+- **Canopy (the model's trees):** crown cover within 25 m of the group 0.025 / 0.085 / 0.151; the group's point lies
+  inside a crown in 5 of 46 hunts (nearest crown edge −1.3 / 10.0 / 19.9 m); in 27 of 46 no other crown lies within 5 m
+  of the edge of the group's nearest crown. These trees are the food patches (feeding-size fruit trees, 9.8 per ha in
+  the community zones, janmaat2016), not the forest canopy: the colobus move freely between them at 17 m, so in the
+  model the canopy is implicitly continuous everywhere and the trees play no part in their movement.
+- Minutes from start to resolution: 5.5 / 8.1 / 10.6 (a hash).
+
+**What the dice decide that the scene could (finding).** The outcome of 35 of 46 hunts (76%) is the draw against
+P_s(n): given n, nothing in the scene enters it, although the scene varies (group size 17–34, hunters' hunger
+0.13–0.37). The other 11 (24%) fail by rule (one hunter left; a solo capture is impossible by construction). Extra
+captures are 24 draws at 0.17. Of the field picture's determinants, the model carries the number of hunters (emergent
+from joining), the colobus group's size and the hunters' condition with a physical meaning; it carries the hunters'
+positions, climbing and skill only as degenerate stand-ins (hash bearings, a fixed height, a near-constant design
+skill), and it does not carry the canopy's continuity (no structure the colobus move in) or the colobus' composition
+and defence. The low success is the design curve at small n (0.21 at 2 hunters against 0.53–0.61 for Kanyawara and
+Mitumba hunts) plus the n ≥ 2 rule on solo hunts.
