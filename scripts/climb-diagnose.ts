@@ -42,12 +42,25 @@
 //   movement phases (batesByrne2009's Methods, walk-diagnose's code): adults ≥ 15 y, daylight fixes every 5 min; halts of
 //     ≥ 20 min within 35 m; phase distance, speed, halts per day and their length.
 //
+//   valuation counterfactual (amendment 2, e2j-prereg.md §2.2; --cf only): at rules decisions in full daylight by animals
+//     ≥ 8 y (walk-diagnose's set: reasons kept, arrived, lead excluded) whose list holds a tree option (a crown in view, an
+//     own or joined trip, a caller's crown), each tree option is re-valued with intake.ts netRateShare's formula and the
+//     inputs walk-diagnose gives it (crop seen or believed, feeders, distance, the climb), (a) as candidates.ts values it
+//     (the walk's time at gait.ts tripSpeed), (b) with the climb's time added (the climb to the crown at climbMps × the life
+//     stage below 10 y × the body state, and the descent from where the animal stands, at 1.4 × that, execution.ts moveTo),
+//     (c) as (b) with a carried infant's mass in the trip's energy (energy.ts rideTick). Each option's score moves by fd ×
+//     Δrate (fd = 1.6 hunger + 0.1); reported: decisions, the share whose top option changes, the share whose top option is
+//     a trip that loses the top, and the mean Δrate of trips and of crowns in view.
 //   pnpm exec tsx scripts/climb-diagnose.ts [--seeds 48,7] [--burn-in 30] [--days 30] [--params '{…}'] [--workers 2] [--json f.json]
 // Development seeds only (AGENTS.md lists the reserved ones); burn-in + days ≤ 90.
 import { writeFileSync } from 'node:fs';
 import { isMainThread, parentPort } from 'node:worker_threads';
-import { dependentOn, isCarried, V } from '../src/sim/candidates';
-import { energyTap, gutCap, gutRoom, locomotionKcal, type EnergyTerm, type FoodKind } from '../src/sim/energy';
+import { candidateMeta, dependentOn, isCarried, V } from '../src/sim/candidates';
+import { boutRoom, energyTap, fruitKcalPerUnit, gutCap, gutRoom, locomotionKcal, type EnergyTerm, type FoodKind } from '../src/sim/energy';
+import { fruitRate } from '../src/sim/intake';
+import { rgTap } from '../src/sim/rg';
+import { bodyState, tripSpeed, youngStage } from '../src/sim/gait';
+import type { Candidate, Tree } from '../src/types';
 import { fruitAt } from '../src/sim/phenology';
 import { paramsOf } from '../src/sim/params';
 import { index, isTreeId, ix, simOf, TICK_HOURS } from '../src/sim/state';
@@ -84,8 +97,10 @@ const HB = 0.025, HN = 160;
 const blankCls = (): ClsAcc => ({ ticks: 0, dayTicks: 0, acts: Object.fromEntries(ACTS.map(a => [a, blankAct()])), tap: Object.fromEntries(TERMS.map(t => [t, 0])), eaten: Object.fromEntries(FOODS.map(f => [f, 0])), suckled: 0,
   ep: {}, visitRoom: [], visitEnd: {}, trips: 0, tripD: [], crowns: 0, ascents: 0, ascentsBy: {}, ascentM: 0, descents: 0, visitEat: [], visitLoc: [], visitWalkM: [], visitUpM: [],
   tbouts: 0, tboutTicks: 0, halts: 0, haltTicks: 0, haltWhy: new Array(WHY.length).fill(0), haltWhyTicks: new Array(WHY.length).fill(0), tripMoveM: 0, tripMoveTicks: 0, tripHist: new Array(HN).fill(0), byAction: {} });
-interface Job { seed: number; burnIn: number; days: number; params: Record<string, number> }
-interface Result { seed: number; days: number; cls: Record<string, ClsAcc>; ids: Record<string, number>; deaths: Record<string, number>; living: [number, number]; phases: { cls: string; m: number; min: number }[]; halts20: { cls: string; n: number; min: number; fixes: number }[] }
+interface Job { seed: number; burnIn: number; days: number; params: Record<string, number>; cf?: boolean }
+/** Amendment 2: per variant (b, c): decisions, top changed, a trip on top that loses it, Σ Δrate of trips and n, Σ Δrate of crowns in view and n. */
+interface Cf { dec: number; top: number[]; tripLost: number[]; dTrip: number[]; nTrip: number; dCrown: number[]; nCrown: number; byCls: Record<string, number[]> }
+interface Result { cf?: Cf; seed: number; days: number; cls: Record<string, ClsAcc>; ids: Record<string, number>; deaths: Record<string, number>; living: [number, number]; phases: { cls: string; m: number; min: number }[]; halts20: { cls: string; n: number; min: number; fixes: number }[] }
 
 function youngest(w: World): Map<number, number> {
   const m = new Map<number, number>();
@@ -165,6 +180,57 @@ export function runSeed(job: Job): Result {
   let wasLight = false;
   // a travel bout still open per animal: ticks so far, halts, the halt being counted
   const tb = new Map<number, { ticks: number; halts: number; haltTicks: number }>();
+  // amendment 2 (--cf): the valuation counterfactual, read at rules decisions (reads only)
+  const CROWN_Y = 0.45 + 0.28 / 2; // candidates.ts CROWN_Y
+  if (job.cf) {
+    const cf: Cf = { dec: 0, top: [0, 0], tripLost: [0, 0], dTrip: [0, 0], nTrip: 0, dCrown: [0, 0], nCrown: 0, byCls: {} };
+    R.cf = cf;
+    rgTap.fn = (c: Chimp, list: Candidate[], _m: Candidate[], _p: number[], _ch: Candidate, why: string) => {
+      if (why === 'kept' || why === 'arrived' || why === 'lead' || c.age < 8 || w.environment.daylight < 1) return;
+      const x = ix(c), idx = index(w), byId = idx.byId, kcal = fruitKcalPerUnit(P, false), Rk = fruitRate(c, P).fruitPerH * kcal;
+      if (!(Rk > 0)) return;
+      const spd = tripSpeed(w, c, P), vUp = P.climbMps * youngStage(c) * bodyState(c), vDown = vUp * 1.4;
+      const fd = c.hunger * 1.6 + 0.1, px = c.position[0], pz = c.position[2], y0 = c.position[1];
+      let rider: Chimp | undefined;
+      for (const k of w.chimps) if (k.alive && k.age < 4 && dependentOn(w, k) === c) { rider = k; break; }
+      const s0: number[] = [], sb: number[] = [], sc: number[] = [];
+      let any = false;
+      for (const k of list) {
+        const meta = candidateMeta.get(k);
+        let t: Tree | undefined, crop = 0, feeders = 0, d = 0, kind = '';
+        if (k.action === 'forage' && isTreeId(k.targetId)) {
+          t = idx.treeById.get(k.targetId); if (t) { kind = 'crown'; crop = fruitAt(w, t); d = Math.hypot(t.position[0] - px, t.position[2] - pz); for (const sid of x.seen) { const o = byId.get(sid); if (o && o.action === 'forage' && o.targetId === t.id) feeders++; } }
+        } else if (k.action === 'travel' && meta && meta.v === V.TREE) {
+          t = idx.treeById.get(k.targetId);
+          if (t) { kind = 'trip'; if (meta.bel) { crop = meta.bel[1]; feeders = meta.bel[3]; d = meta.bel[4]; } else { crop = fruitAt(w, t); d = Math.hypot(t.position[0] - px, t.position[2] - pz); } }
+        } else if (k.action === 'travel' && meta && meta.v === V.CALLER && x.jt !== undefined && x.jt > 0) {
+          t = idx.treeById.get(x.jt);
+          if (t) { kind = 'trip'; if (meta.bel) { crop = meta.bel[1]; feeders = meta.bel[3]; d = meta.bel[4]; } else { crop = fruitAt(w, t); d = Math.hypot(t.position[0] - px, t.position[2] - pz); feeders = 1; } }
+        }
+        let a = k.score, b = k.score, cc = k.score;
+        if (t && kind) {
+          any = true;
+          const crownY = t.height * CROWN_Y, here = c.targetId === t.id && y0 > 0.3, climb = here ? Math.max(0, crownY - y0) : crownY;
+          const E = Math.min(Math.max(0, crop) / (1 + feeders) * kcal, boutRoom(c, P, Rk));
+          const r = (extraS: number, carryK: number) => { if (!(E > 0)) return 0; const C = locomotionKcal(c, P, d, climb) + carryK; return E > C ? (E - C) / ((d / spd + extraS) / 3600 + E / Rk) / Rk : 0; };
+          const r0 = r(0, 0), tClimb = climb / Math.max(1e-6, vUp) + (here ? 0 : y0 / Math.max(1e-6, vDown));
+          const rb = r(tClimb, 0), rc = r(tClimb, rider ? locomotionKcal(rider, P, d, climb) : 0);
+          b = a + fd * (rb - r0); cc = a + fd * (rc - r0);
+          if (kind === 'trip') { cf.dTrip[0] += rb - r0; cf.dTrip[1] += rc - r0; cf.nTrip++; } else { cf.dCrown[0] += rb - r0; cf.dCrown[1] += rc - r0; cf.nCrown++; }
+        }
+        s0.push(a); sb.push(b); sc.push(cc);
+      }
+      if (!any) return;
+      const am = (v: number[]) => { let i = 0; for (let j = 1; j < v.length; j++) if (v[j] > v[i]) i = j; return i; };
+      const t0 = am(s0), tb2 = am(sb), tc = am(sc);
+      const isTrip = (k: Candidate) => k.action === 'travel' && !!candidateMeta.get(k) && (candidateMeta.get(k)!.v === V.TREE || candidateMeta.get(k)!.v === V.CALLER);
+      cf.dec++;
+      const cls = classesOf(c, youngest(w))[0] ?? 'other', bc = (cf.byCls[cls] ??= [0, 0, 0, 0, 0]);
+      bc[0]++;
+      if (t0 !== tb2) { cf.top[0]++; bc[1]++; } if (t0 !== tc) { cf.top[1]++; bc[2]++; }
+      if (isTrip(list[t0]) && !isTrip(list[tb2])) { cf.tripLost[0]++; bc[3]++; } if (isTrip(list[t0]) && !isTrip(list[tc])) { cf.tripLost[1]++; bc[4]++; }
+    };
+  }
   try {
     for (let i = 0; i < days * DAY; i++) {
       const young = youngest(w);
@@ -300,7 +366,7 @@ export function runSeed(job: Job): Result {
       }
     }
     parseDay();
-  } finally { energyTap.fn = null; }
+  } finally { energyTap.fn = null; rgTap.fn = null; }
   for (const n of CLS) R.ids[n] = idSets[n].size;
   for (const c of w.chimps) if (!c.alive && !dead0.has(c.id)) { const k = c.causeOfDeath ?? 'unknown'; R.deaths[k] = (R.deaths[k] ?? 0) + 1; }
   R.living[1] = w.chimps.filter(c => c.alive).length;
@@ -368,6 +434,14 @@ function summarize(res: Result[]) {
       speedKmhPooled: km / Math.max(1e-9, hrs), haltsPerDay: h.reduce((s2, q) => s2 + q.n, 0) / Math.max(1, h.length),
       haltMinMean: h.reduce((s2, q) => s2 + q.min, 0) / Math.max(1, h.reduce((s2, q) => s2 + q.n, 0)), days: h.length }];
   }));
+  if (res.some(r => r.cf)) {
+    const c0: Cf = { dec: 0, top: [0, 0], tripLost: [0, 0], dTrip: [0, 0], nTrip: 0, dCrown: [0, 0], nCrown: 0, byCls: {} };
+    for (const r of res) if (r.cf) { const f = r.cf; c0.dec += f.dec; c0.nTrip += f.nTrip; c0.nCrown += f.nCrown; for (let i = 0; i < 2; i++) { c0.top[i] += f.top[i]; c0.tripLost[i] += f.tripLost[i]; c0.dTrip[i] += f.dTrip[i]; c0.dCrown[i] += f.dCrown[i]; }
+      for (const [k, v] of Object.entries(f.byCls)) { const b = (c0.byCls[k] ??= [0, 0, 0, 0, 0]); for (let i = 0; i < 5; i++) b[i] += v[i]; } }
+    S.cf = { decisions: c0.dec, topChangedClimb: c0.top[0] / Math.max(1, c0.dec), topChangedClimbCarry: c0.top[1] / Math.max(1, c0.dec), tripLostClimb: c0.tripLost[0] / Math.max(1, c0.dec), tripLostClimbCarry: c0.tripLost[1] / Math.max(1, c0.dec),
+      meanDRateTripClimb: c0.dTrip[0] / Math.max(1, c0.nTrip), meanDRateTripClimbCarry: c0.dTrip[1] / Math.max(1, c0.nTrip), meanDRateCrownClimb: c0.dCrown[0] / Math.max(1, c0.nCrown), meanDRateCrownClimbCarry: c0.dCrown[1] / Math.max(1, c0.nCrown),
+      byClass: Object.fromEntries(Object.entries(c0.byCls).map(([k, v]) => [k, { decisions: v[0], topChangedClimb: v[1] / Math.max(1, v[0]), topChangedClimbCarry: v[2] / Math.max(1, v[0]), tripLostClimb: v[3] / Math.max(1, v[0]), tripLostClimbCarry: v[4] / Math.max(1, v[0]) }])) };
+  }
   S.deaths = Object.assign({}, ...res.map(r => r.deaths)); S.living = res.map(r => r.living);
   return S;
 }
@@ -381,7 +455,7 @@ if (!isMainThread) {
   const seeds = arg('seeds', '48,7').split(',').map(Number), burnIn = +arg('burn-in', '30'), days = +arg('days', '30');
   const params = JSON.parse(arg('params', '{}')), jsonOut = arg('json', ''), workers = +arg('workers', '2');
   if (burnIn + days > 90) throw new Error('burn-in + days > 90 (user limit)');
-  const jobs: Job[] = seeds.map(seed => ({ seed, burnIn, days, params }));
+  const jobs: Job[] = seeds.map(seed => ({ seed, burnIn, days, params, cf: process.argv.includes('--cf') }));
   const t0 = performance.now();
   const res = await runPool<Job, Result>(new URL(import.meta.url), jobs, { size: workers, onDone: (i, ms) => console.error(`seed ${jobs[i].seed} in ${(ms / 1000).toFixed(0)} s`) });
   const S = summarize(res);

@@ -121,6 +121,20 @@ and each crown visit's foregut room at arrival and why it ended (sated, emptied,
 W (every readout fills; walk kcal still equal to the ledger's). Run on W and the four S22 parameter sets from a frozen
 checkout of the commit that registers this amendment; the earlier climb-diagnose outputs are kept beside them.
 
+### 2.2 Amendment 2 (registered 4 October 2026 after amendment 1's readouts were read, before this one ran)
+
+Amendment 1's readouts (S22's four runs against W) show the faster walk scales trips of every outcome: travel episodes
++27–36% a day for adults and juveniles, the share of travel km in episodes that end feeding at their target unchanged
+(39% → 36% for nursing mothers, 40% → 39% for males, 25% → 22% for juveniles), mothers setting off with less foregut room
+(0.44 → 0.39 of capacity) and leaving crowns for another trip before they are sated more often (1.42 → 2.09 a day).
+Before a mechanism is chosen for the trip's valuation, one counterfactual readout sizes the two omissions of §6 in it
+(climb-diagnose `--cf`, header): each tree option re-valued (b) with the climb's and the descent's time added at the
+body's climbing speed, and (c) also with a carried infant's mass in the trip's energy; reported as the share of rules
+decisions whose top option changes and whose top trip loses the top (E2i's walking speed changed the top option in 7.1%
+of decisions at a body speed, e2i-prereg.md §2.1). Smoke-tested on 2 days of W. Run on W and S22q from a frozen checkout
+of the commit that registers this amendment. Reading registered now: if the omissions change the top option in under a
+third of the decisions the walking speed changes (under ~2.4%), correcting them cannot by itself undo the trip increase.
+
 ## 6. Known defects (file:line at 0d08525)
 
 - `netRateShare` (intake.ts :89–96) charges the walk's time and the climb's energy, not the climb's time
