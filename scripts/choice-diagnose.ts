@@ -13,7 +13,10 @@
 // rgMinAge (8 y) and over: adult male, female lactating, female other (≥ 15 y), adolescent 12–15 y, juvenile 8–12 y):
 //   draw: an RG decision with a menu choice (the tap's `why` is a draw trigger, not kept, arrived, lead, phase or argmax).
 //     top = the menu option with the highest published score (the rules' score: every term, the candidate jitter and the
-//     continuation terms included; the softmax's own ranking). non-top = the option taken is not the top. pTop, pChosen:
+//     continuation terms included; the softmax's own ranking; under choiceBelief (stage E3e) the menu is built from the
+//     options' values without the jitter, and its scores are those values). non-top = the option taken is not the top;
+//     non-top by value = not the option with the highest value (published score less the jitter and the continuation
+//     terms, reconstructed; under choiceBelief the menu's own score). pTop, pChosen:
 //     the softmax probabilities the tap reports. gap = published score of the top − of the option taken.
 //   kind of an option: feed: crown | feed: fallback | travel: own trip | travel: joined trip | travel: to caller |
 //     travel: home | rest | groom | play | follow: … | drink | nest | the action otherwise (redecide-diagnose's kinds).
@@ -50,7 +53,7 @@ import { writeFileSync } from 'node:fs';
 import { isMainThread, parentPort } from 'node:worker_threads';
 import { CODE, candidateMeta, V } from '../src/sim/candidates';
 import { rulesTap } from '../src/sim/decide';
-import { rgMenu, rgTap } from '../src/sim/rg';
+import { byValue, rgMenu, rgTap } from '../src/sim/rg';
 import { softmax } from '../src/decide/policies';
 import { fruitAt } from '../src/sim/phenology';
 import { hash01 } from '../src/sim/rng';
@@ -86,7 +89,7 @@ const HERE_ACTS = new Set<Action>(['rest', 'nest', 'shelter', 'climb', 'call', '
 
 interface Job { seed: number; burnIn: number; days: number; params: Record<string, number> }
 interface Opt { kind: string; know: Know; dt: number; d: number; err: number }
-interface DrawRec { cls: Cls; why: string; ch: Opt; top: Opt; nonTop: boolean; pTop: number; pCh: number; gap: number; h: number; n: number; sw: boolean; slot: number; slotGap: number }
+interface DrawRec { cls: Cls; why: string; ch: Opt; top: Opt; nonTop: boolean; nonTopRaw: boolean; pTop: number; pCh: number; gap: number; h: number; n: number; sw: boolean; slot: number; slotGap: number }
 interface KeepRec { cls: Cls; kept: string; top: string; isTop: boolean; gap: number; keptKnow: Know; topKnow: Know }
 interface Run { cls: Cls; act: Act; kind: string; min: number; origin: string }
 interface Result {
@@ -184,7 +187,7 @@ export function runSeed(job: Job): Result {
     const ck = key(chosen);
     if (why === 'kept') {
       if (d) {
-        const m = rgMenu(w, c, list);
+        const m = rgMenu(w, c, P.choiceBelief === 1 ? byValue(list) : list);
         if (m.length >= 2) {
           let ti = 0; for (let j = 1; j < m.length; j++) if (m[j].score > m[ti].score) ti = j;
           const ki = m.findIndex(k => key(k) === ck);
@@ -208,7 +211,7 @@ export function runSeed(job: Job): Result {
     if (!d) return;
     if (RG_CLS.includes(cls)) {
       R.identity.checked++;
-      const m = rgMenu(w, c, list);
+      const m = rgMenu(w, c, P.choiceBelief === 1 ? byValue(list) : list);
       if (m.length !== menu.length || m.some((k, i) => key(k) !== key(menu[i]))) R.identity.menuMismatch++;
       else if (probs.length === m.length && !(P.choiceBelief >= 1)) { const p = softmax(m.map(k => k.score), P.rgTemperature); R.identity.probErr = Math.max(R.identity.probErr, ...p.map((v, i) => Math.abs(v - probs[i]))); }
     }
@@ -228,7 +231,9 @@ export function runSeed(job: Job): Result {
       slot = mfl && key(mfl) === key(best) ? 1 : 2;
       slotGap = mfl ? bv - rawOf(c, mfl) : NaN;
     }
-    R.draws.push({ cls, why, ch: cOpt, top: tOpt, nonTop, pTop: probs[ti] ?? NaN, pCh: ci >= 0 ? probs[ci] ?? NaN : NaN, gap: menu[ti].score - (ci >= 0 ? menu[ci].score : chosen.score), h: c.hunger, n: menu.length,
+    // the top by value (published score less the jitter and the continuation terms; the menu's own score under choiceBelief)
+    let ri = 0, rv = -Infinity; for (let j = 0; j < menu.length; j++) { const v = P.choiceBelief === 1 ? menu[j].score : rawOf(c, menu[j]); if (v > rv) { rv = v; ri = j; } }
+    R.draws.push({ cls, why, ch: cOpt, top: tOpt, nonTop, nonTopRaw: key(menu[ri]) !== ck, pTop: probs[ti] ?? NaN, pCh: ci >= 0 ? probs[ci] ?? NaN : NaN, gap: menu[ti].score - (ci >= 0 ? menu[ci].score : chosen.score), h: c.hunger, n: menu.length,
       sw: chosen.action !== c.action || chosen.targetId !== c.targetId, slot, slotGap });
   };
 
@@ -295,7 +300,7 @@ if (!isMainThread) {
   // 1. how often the draw takes an option other than the top
   const nt = draws.filter(d => d.nonTop);
   out.draws = { n: draws.length, perAnimalHour: r3(draws.length / rgH), nonTopShare: share(draws, d => d.nonTop), pTopMedian: r3(med(draws.map(d => d.pTop))), pTopMean: r3(mean(draws.map(d => d.pTop).filter(Number.isFinite))),
-    nonTopPerAnimalHour: r3(nt.length / rgH), switchShare: share(draws, d => d.sw) };
+    nonTopPerAnimalHour: r3(nt.length / rgH), switchShare: share(draws, d => d.sw), switchesPerAnimalHour: r3(draws.filter(d => d.sw).length / rgH), nonTopRawShare: share(draws, d => d.nonTopRaw) };
   out.nonTopByClass = Object.fromEntries(RG_CLS.map(k => { const L = draws.filter(d => d.cls === k); return [k, { n: L.length, nonTopShare: share(L, d => d.nonTop), pTopMedian: r3(med(L.map(d => d.pTop))) }]; }));
   const kinds = [...new Set(draws.map(d => d.ch.kind))].sort();
   out.nonTopByChosenKind = Object.fromEntries(kinds.map(kd => { const L = draws.filter(d => d.ch.kind === kd); return [kd, { n: L.length, nonTopShare: share(L, d => d.nonTop), takenWhenTop: share(draws.filter(d => d.top.kind === kd), d => !d.nonTop) }]; }));

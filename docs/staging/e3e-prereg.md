@@ -321,14 +321,181 @@ fallback picks are such draws. The softmax gives an option the animal knows exac
 days ago, and its noise is the same in daylight's every choice whatever the animal knows; with re-decision the noise is
 held, so these picks last longer (S19rv2).
 
-## 3. Field rows scored here: samples
+## 3. Field rows scored here: samples (written before any arm)
+
+As recorded by the stages that read the sources in full (E3d §3, E3c §3, E4c's evidence pass, E2h); not re-opened here
+except where stated. The sums are the e-bench rows; the rows named below are the ones the predictions name.
+
+| Row | Source | Sample, method (quoted where it decides the readout) | Value, band |
+| --- | --- | --- | --- |
+| T-ACT-1, T-ACT-2, T-ACT-3 (fitted) | villioth2025 (FT, read by E3c and E3d) | Budongo Waibira 2016–17: "ten adult males and nine adult females ... Seven of the females were lactating, while two females were not lactating but travelled with a single juvenile offspring"; continuous focal follows (491 h, median 4 h); feeding, travelling (walking and arboreal movement), grooming (giving or receiving), resting (> 1 min sitting or lying); mass not reported | feeding 0.36 M / 0.37 F (band 0.33–0.5); travel 0.21 / 0.20 (0.12–0.25); grooming 0.15 / 0.12 (0.08–0.18) |
+| T-ACT-4 rest + groom (fitted) | potts2011, villioth2025 | Ngogo 2005–06 (1,059 h) and Kanyawara 2006 (961 h): continuous focal follows of adult males, cycling females and pregnant or lactating females; "resting includes grooming"; monthly means; mass not reported | 0.340 (Ngogo), 0.448 (Kanyawara); band 0.3–0.47 |
+| T-RNG-4 male day range (fitted) | batesByrne2009 | Budongo Sonso 2002–03, 8 adult males, GPS every 5 min while travelling, full-day follows; mass not reported | 2.7 ± 1.5 km/day; band 1.5–3.5 |
+| T-FOOD-2 fruit share (fitted) | watts2012a, emeryThompson2020 | Ngogo 1995–2010, 125 months, focal + 15-min scans; Kanyawara 1994–2018, 240,601 feeding scans; all age-sex classes; mass not reported | 72.1%, 64.0%; band 0.60–0.78 |
+| T-FOOD-4 trees per day (held out, compromised) | janmaat2013b, normand2009 | Taï, 5 adult females with young, 275 full-day follows; two females over 28 days | 7.14; 14.0 and 18.1; band 4–15 |
+| T-COM-1 male pant-hoot rate (fitted, encoded in C6) | wilson2007 (FT, read by E4c), mitaniNishida1993 (record only) | Kanyawara focal males (N = 12): "median 0.76 per hour in the core, 0.19 at the periphery, 0 in crops"; Mahale rates not verified; per focal male-hour, focal continuous | band 0.5–1.5 per male-hour |
+| Bout lengths (no row; context only, never used to choose) | potts2011; batesByrne2009 | patch residency per visit 27.0 min (Ngogo), 46.2 min (Kanyawara); stops ≥ 20 min: males 60 ± 50 min, lactating females 95 ± 83 min | reported beside the model's runs |
+
+**Readouts the predictions need** (each defined in its tool's header; every one smoke-tested on 2 days with the switch
+on before any arm, §5.1): the sums and the rows above, e-bench (the frozen observer, src/field/metrics.ts); the share of
+choices that are not the top option and its parts, draws and switches per animal-hour, bout lengths by activity and kind,
+daylight minutes by the origin of the act: choice-diagnose (§2; under the switch the menu's own scores are the values,
+so "top" is the option of highest value); reserves (% of the store a day, the integrator's OLS slope convention by
+class), eating minutes, ground km, fruit share of eating: energy-diagnose; night (adults out of a nest, share of night
+time; the E2f line 3.3%): rhythm-metrics, on a kept arm.
 
 ## 4. Reference and judging
 
+- Reference **S19** (docs/staging/e-stack2-confirm.md "S19 results"; parameters
+  `bench-run4/artifacts/validation/e/s19q/S19q-params.json`), run by the integrator in quick mode once plus three re-draws
+  (`rgTemperature` 0.1641, 0.1639, 0.16405) at bench-run4 ef13aa8 (simulation code identical to this branch's start for
+  S19), each with energy-diagnose (seeds 48, 7; burn-in 30, 30 days): `bench-run4/artifacts/validation/e/s19q/
+  {S19q,S19q1,S19q2,S19q3}.json` and `…-energy.json`; viability pass in all four, no deaths. Spread on rows counted in
+  all four (integrator): fitted 1.38 / 1.60 / 1.56 / 2.31, held-out 4.89 / 5.34 / 7.02 / 6.94, held-out without T-HUN-4,
+  T-BRD-1 and T-IGE-3 4.51 / 3.94 / 4.75 / 4.55. Not re-run here. The choice-diagnose readouts of the same four worlds:
+  §2.1.
+- Each arm (S19 + this stage's switch, with and without `redecideValue` 2; same quick settings) against the reference
+  mean with the integrator's `judge_vs_reps.py quick custom` (REFS = the four JSON): z = (arm − mean) ÷ (SD × √(1 + 1/n)),
+  the registered quick SD (fitted 0.69, held-out 1.26, without the rare rows 0.48) or the group's own spread if larger;
+  |z| > 2 is a result; sums with all rows and without T-HUN-4, T-BRD-1 and T-IGE-3 (e-noise.md amendment 3). There is no
+  quick reference of S19 + `redecideValue` 2 (integrator): the rV2 arm is judged against S19's group, and read beside
+  S18's quick reading (e3d-prereg.md §6.2, A2 on S17) and this stage's S19rv2 diagnosis (§2.1).
+- Behaviour, energy and the choice readouts against the reference's own spread (mean ± SD of its four runs). Viability
+  must pass. Prescriptions: `scripts/prescription-ledger.ts --count --params` (S19: 46).
+- **The re-draw lever** (`rngSalt`, §5.1): if the switch removes `rgTemperature`, the noise protocol's re-draws (small
+  changes of `rgTemperature`) do nothing on a stack that carries it. Check, on S19 (quick, e-bench only): S19q's
+  parameters + `rngSalt` 1, 2, 3. Registered reading: the lever re-draws like `rgTemperature` if every salted run
+  differs from S19q, and the SD of each sum (fitted, held-out, held-out without the rare rows) over {S19q, salt 1–3}
+  lies within the 95% range of the ratio of two SDs of four runs each (F(3,3): 0.25–3.9 ×) of the same SD over {S19q,
+  S19q1–3}.
+
 ## 5. Iteration log
+
+(Each iteration is logged here and committed before its run; at most 3.)
+
+### 5.1 Iteration 1 (registered before its run): a choice varies only through what the animal does not know (`choiceBelief` 1)
+
+**Why (§2.1).** The softmax at `rgTemperature` takes a non-top option in 38% of draws, and 49% of those are between
+options the animal knows now (rest, the fallback where it stands, a crown or a partner it sees); they make 22% of rest,
+30% of grooming and 18% of feeding time and 70% of the fallback picks. The noise is the same whatever the animal knows:
+options known now are taken when they are the top no more often than options last seen days ago. The uncertainty that
+does exist, a remembered crop, grows with the hours since the tree was seen (D4).
+
+**Principle.** A forager's choices vary because its estimates vary. Choosing by a value drawn from its belief about each
+option and taking the best draw (Thompson sampling) makes the choice vary exactly as much as the animal is uncertain:
+an option it knows is taken by its value, an uncertain one is sometimes taken when a draw favours it (gershman2018: a
+fixed-temperature softmax ignores the chooser's uncertainty; human choices show uncertainty-scaled randomness; costa2019:
+monkeys' choices go to options of unknown value, less when the known alternative is better; research.md "Addendum: E3e
+choice noise"). What a chimpanzee does not know about an option in this model is the crop of a tree out of its sight:
+it remembers where trees are (normandBoesch2009: nearly straight travel to out-of-sight trees), its crop beliefs can be
+wrong and are corrected on arrival (janmaat2013b), and in the model the error of a remembered crop grows with the hours
+since it was seen (D4).
+
+**Change (switch `choiceBelief` 1, 0 = today; src/sim/rg.ts `byValue`, `beliefOffset`, `rgChoice`, `redecide`;
+src/sim/candidates.ts `treeFoodWorth`, the `bel` of trip options, `nestCompanyValue`).**
+- The menu is built from the options' values (every term, the continuation terms included, without the candidate
+  jitter), and the option of highest value plus its belief offset is taken: no softmax, no temperature.
+- Belief offset 0 for every option the animal perceives now: its own state (rest, nest, shelter, calls, displays), the
+  place it stands (the fallback), any target in view (a crown, a partner, prey), a caller located by its call. For a
+  trip to a tree out of sight (an own trip to a remembered or community-known tree, a joined trip whose goal it does not
+  see, an approach to a caller at a crown it does not see): the crop is drawn from its belief, c = max(0, b + s·z), z a
+  standard normal from `world.rng`, b the crop the option is valued at (its memory of the crop, the community list's
+  value, or 0.2, as candidates.ts already values it), s = b·(1 − exp(−ρ·Δt/24)), Δt the hours since it last saw the tree
+  (unbounded when it never has), ρ = `patchRecoverPerDay` (0.7 a day: the rate at which a fed crown's crop returns to its
+  phenology level, the time scale on which a crown changes in this world; design). So a tree just seen carries no spread
+  and a tree never seen a spread equal to its believed crop (design). The offset is the trip's food term at c less its
+  food term at b (forageRate's drive × net rate share, `treeFoodWorth`): a crop above one bout's gut room changes
+  nothing, a crop that may be gone lowers the trip.
+- With `redecideValue`: the offsets are the noise held in the intention (E3d); an option new since the draw gets its
+  own; the keep test compares value now plus held offset.
+- **A consequence of value-based choice, corrected under the switch** (smoke test below; §7): E2e's `nestCompany` adds to
+  staying in a nest the company of the best nest-mate "asleep or awake"; with every option known taken by its value,
+  nest groups held each other in their nests through the day (seed 48: 57% of adults ≥ 8 y in a nest at 08:00, 36% at
+  13:00, against 4% and 3% on S19), because an awake nest-mate's company is counted for staying but not for leaving
+  with it, and the softmax's noise had been what broke the lock. Under the switch staying keeps only the company of
+  nest-mates asleep (the circadian latch, `asl`; departAudience already treats sleeping nest-mates as unable to join): an
+  awake nest-mate can leave with the animal (nestAudience). No magnitude changes.
+- Not read: `rgTemperature` (46 → 45 on S19; with `redecideValue` 2 → 43). Unchanged: the candidate jitter in published
+  scores (young animals' argmax, the model chimps' menus), the gate (without `redecideValue`), animals under `rgMinAge`.
+- **Re-draw lever** (`rngSalt`, design, 0 = none; src/sim/generation.ts): a non-zero integer mixed into `world.rng` once
+  the world is built, so later draws are another realization of the same model; it changes no distribution. Checked on
+  S19 (§4).
+- Tests (tests/sim-choice-belief.test.ts): both 0 by default in both profiles; deterministic over a field day and
+  JSON-lossless with and without `redecideValue` 2 (held offsets finite); `rgTemperature` not read, `patchRecoverPerDay`
+  read; count −1 (−3 with `redecideValue` 2); the menu ranked by value; only trips to trees out of sight carry a belief;
+  a draw among options known now takes the option of highest value and draws no random number; no spread for a tree
+  just seen, a crop drawn for one never seen; nest company counts only nest-mates asleep under the switch; `rngSalt` 0
+  leaves the world unchanged and a salt changes only the stream. Switch off: the field pin (tests/sim-track-e.test.ts)
+  and the compressed goldens hold.
+
+**Smoke tests with the switch on (seed 48, 1 + 2 days; disclosed; not representative, not used below except as
+disclosed context).** choice-diagnose (identity exact: 0 menu mismatches over 4,000–6,500 draws; every readout filled),
+energy-diagnose, rhythm-metrics and e-bench (`--days 2`: every row filled; prescriptions 45) all ran. Seen, before the
+nest-company correction: 40% of daylight in nests (adults ≥ 8 y: 57% in a nest at 08:00, 36% at 13:00; S19 4% and 3%);
+with `nestCompany` 0 the daytime nests vanished (0% from 08:00 to 17:00), so the lock was the company term, and the
+correction above removed it (0% from 08:00 to 17:00, 55% at 06:00 against S19's 60%). After it, S19 + `choiceBelief`:
+non-top share of draws 0.026, switches 3.6 per animal-hour (S19's diagnosis 3.4), daylight minutes per 12 h (RG
+classes) feeding 246, rest 237, grooming 42, travel 84 (S19's one-seed smoke: 237, 203, 50, 94), fruit share of eating
+0.94 / 0.89 (adult males / nursing mothers), e-bench T-FOOD-2 1.00 and T-COM-1 0.25 (S19q 0.70); departures before
+sunrise 0.66, no adult out of a nest at solar midnight. S19 + `choiceBelief` + `redecideValue` 2: switches 6.4 per
+animal-hour, feeding runs median 8.3 min, rest 12.5, grooming 8.5 (the keep test now compares values with no held
+noise for options known now, so near-ties are re-decided at every bout end and interrupt).
+
+**Arms** (S19q's parameters + the switch; from a frozen detached checkout of the commit that adds this section): **A1** =
+S19 + `choiceBelief` 1; **A1r** = S19 + `choiceBelief` 1 + `redecideValue` 2. Each: e-bench `--quick` (seeds 48 and 7,
+burn-in 30, 30 days; `--workers` 2, 1 above load 8), energy-diagnose and choice-diagnose (same seeds and window);
+rhythm-metrics (seeds 48 and 7, 30 + 30) for an arm that is kept. The re-draw check (§4): e-bench `--quick` of S19q +
+`rngSalt` 1, 2, 3.
+
+**Predictions (against the S19q mean ± SD of its four realizations; low confidence unless stated; written knowing the
+smoke tests).**
+
+| Quantity | S19q (mean ± SD) | A1 | A1r | Confidence |
+| --- | --- | --- | --- | --- |
+| Prescriptions | 46 | 45 | 43 | high |
+| Viability | pass | pass | pass | moderate |
+| Non-top share of draws (the menu's own ranking) | 0.379 ± 0.006 | ≤ 0.08 | ≤ 0.08 | high |
+| Switches per animal-hour | 3.42 (S19q diagnosis) | 3.0–4.2 | 5–8 (chatter) | moderate |
+| Runs, median min: feeding / rest / grooming | 20.9 / 28.1 / 13.3 | 12–20 / 20–30 / 11–17 | ≤ 12 / ≤ 16 / ≤ 11 | moderate |
+| Fallback feeding (non-top share of fallback picks) | 0.70 | ≤ 0.10 | ≤ 0.10 | high |
+| T-FOOD-2 fruit share | reference | up by ≥ 0.06, above its band (0.78) | up by ≥ 0.04 | moderate |
+| Fruit share of eating, every class (energy-diagnose) | reference | up | up | moderate |
+| T-COM-1 male pant-hoot rate | 0.70 (S19q) | below 0.5 (calls were 80% non-top picks) | below 0.5 | moderate |
+| T-ACT-1; T-ACT-2; T-ACT-3; T-ACT-4 | reference | ± 0.04; ± 0.04; lower; up 0.00–0.06 | ± 0.04; up 0.00–0.05; lower; ± 0.05 | low |
+| T-RNG-4; T-FOOD-4 | reference | ± 0.4; ± 1.5 | up 0–0.6; ± 1.5 | low |
+| Reserves %/day: mothers, juveniles 5–12 y, infants 0.5–2 y and 2–5 y | reference | each within ± 0.03 of the mean, or above it | each within ± 0.04 | low |
+| Fitted sum | reference mean | worse beyond noise (T-FOOD-2, T-COM-1) | worse beyond noise | low |
+| Held-out sums, with and without the rare rows | reference mean | inside noise | inside noise | low |
+| Night: adults out of a nest (rhythm-metrics, if kept) | S19 confirm 2.58% | ≤ 3.3% | ≤ 3.3% | moderate |
+
+**Kill criterion (registered), per arm.** Null if (a) viability fails (a starvation death, or a seed below 80% of its
+start); (b) any class's reserve slope is more than 0.05% of the store a day below the S19q mean; (c) held-out is worse
+beyond noise (z > +2) with or without the rare rows (T-HUN-4, T-BRD-1, T-IGE-3); (d) the mechanism does not run (the
+non-top share of draws ≥ 0.2, or `rgTemperature` still read); (e) if kept by the rule below, night safety fails on
+rhythm-metrics (adults out of a nest more than 3.3% of the night).
+
+**Verdict rule (registered).** `choiceBelief` removes one counted prescription, so the track's keep rule applies to each
+arm: viability passes, held-out (with and without the rare rows) not worse beyond noise, prescriptions down (A1 46 → 45,
+A1r 46 → 43), night safe. If none of (a)–(e) holds and the keep rule passes, the arm is a **provisional keep candidate**
+for the integrator's 5-seed confirm; otherwise it is recorded and the switch stays off. **Re-decision holds** on this
+switch if A1r passes the keep rule with T-ACT-4 inside its band (≥ 0.30) and no class's reserve slope more than 0.03% of
+the store a day below the S19q mean (S18's confirm costs were rest at 0.288 and reserves 0.02–0.06 %/day lower). Fitted
+rows, bout lengths, travel and reserves are reported against the reference, never used to choose.
 
 ## 6. Results
 
 ## 7. Known defects in the code under test
+
+- **Corrected under the switch (written before A1's run):** E2e's `nestCompanyValue` (src/sim/candidates.ts, the
+  `nestCompany` term of staying in a nest) counts the company of an awake nest-mate, which the animal keeps equally by
+  leaving with it; under value-based choice nest groups held each other in their nests through the day (smoke test,
+  §5.1). Under `choiceBelief` only nest-mates asleep count (`asleepOnly`); with the switch off E2e is unchanged.
+- Deferred: the candidate jitter (`candidateJitterSpan`, design, ± 0.12) still decides the argmax of animals under
+  `rgMinAge` and is in every published score (the model chimps' menus); under the switch RG decisions do not read it.
+- Deferred (E3d §7): a joined trip that arrives at its goal without becoming feeding there is re-chosen at once (a loop
+  of one-tick restarts; src/sim/rg.ts `gate`/`redecide` arrival branch); time lost negligible, decision counts inflated.
+- Deferred: value-based keep tests under `redecideValue` 2 have no persistence for options known now (no held noise),
+  so near-ties are re-decided at every bout end and interrupt (smoke: 6.4 switches per animal-hour); no switching cost
+  exists in the values for acts done in place.
 
 ## 8. Stage verdict

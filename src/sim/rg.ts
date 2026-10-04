@@ -3,7 +3,7 @@ import { bucketOf, periodNow, UNKNOWN_CROP } from '../decide/facts';
 import { GATE, intentOf, type Intent } from '../decide/gate';
 import { drawIndex, softmax } from '../decide/policies';
 import { choiceProbs, stillPaying, urgency, urgencyTemperature } from './urgency';
-import { CODE, candidateMeta, findCandidate, V } from './candidates';
+import { CODE, candidateMeta, findCandidate, treeFoodWorth, V } from './candidates';
 import { fruitRate, leafRate, treeIntake } from './intake';
 import { brightening } from './departure';
 import { dayPhase } from './environment';
@@ -37,6 +37,12 @@ import { index, isChimpId, isTreeId, ix } from './state';
 // with a fresh draw: one of its needs crossing into another state (the gate's need buckets) or the light passing into
 // another phase (dawn, day, dusk, night, by daylight; the gate's midday hours are not read). Below rgMinAge the same:
 // held choice-time jitter, re-opened by a need or light change.
+// Stage E3e (choiceBelief; docs/staging/e3e-prereg.md §5.1): a choice varies only through what the animal does not know.
+// The menu is built from the options' values (every term, without the candidate jitter) and the option with the highest
+// value sampled from the animal's belief is taken (Thompson sampling: gershman2018). What it perceives now (its own
+// state, the place it stands, targets in view) has no spread, so it is taken by its value; a trip to a tree out of sight
+// is valued at a crop drawn from its belief about that tree (beliefOffset). No temperature (rgTemperature is not read);
+// with redecideValue the sampled parts are the noise held in the intention.
 
 /**
  * Diagnostic counters for scripts (not world state; the sim never reads them): RG decisions by outcome, re-decisions by
@@ -85,6 +91,38 @@ function disturbed(world: World, c: Chimp): boolean {
 
 /** The patrol lead option (stage E4i). */
 const isPatrolLead = (k: Candidate) => k.action === 'patrol' && candidateMeta.get(k)?.v === V.LEAD;
+
+/**
+ * Stage E3e (choiceBelief): the candidate list valued without the candidate jitter (each option's meta.raw: every term,
+ * the continuation terms included), best first, so the menu and the choice rank options by their value. Copies keep
+ * their meta; the option taken is mapped back to the list (findCandidate).
+ */
+export function byValue(list: Candidate[]): Candidate[] {
+  const out = list.map(k => { const m = candidateMeta.get(k), copy = { ...k, score: m?.raw ?? k.score }; if (m) candidateMeta.set(copy, m); return copy; });
+  return out.sort((a, b) => b.score - a.score);
+}
+
+/** A standard normal draw from world.rng (Box–Muller, one of the pair). */
+function normal(world: World): number { const u = Math.max(1e-12, random(world)), v = random(world); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+
+/**
+ * Stage E3e (choiceBelief; docs/staging/e3e-prereg.md §5.1): the part of an option's value drawn from the animal's belief.
+ * 0 for every option it perceives now. For a trip to a tree out of sight (meta.bel: the crop b it values the tree at, the
+ * hours Δt since it last saw the tree, the feeders it counts, the distance): a crop c = max(0, b + s·z), z standard
+ * normal from world.rng, s = b·(1 − exp(−patchRecoverPerDay·Δt/24)) (no spread for a tree just seen; the crop itself
+ * when it never saw the tree; design: a crown's crop changes at the rate a fed crown recovers), and the offset is the
+ * trip's food term at c less its food term at b (candidates.ts treeFoodWorth). Draws from world.rng only when s > 0.
+ */
+export function beliefOffset(world: World, c: Chimp, k: Candidate, P: Params): number {
+  const bel = candidateMeta.get(k)?.bel;
+  if (!bel) return 0;
+  const t = index(world).treeById.get(bel[0]);
+  if (!t) return 0;
+  const b = bel[1], s = b * (1 - Math.exp(-P.patchRecoverPerDay * bel[2] / 24));
+  if (!(s > 0)) return 0;
+  const crop = Math.max(0, b + s * normal(world));
+  return treeFoodWorth(world, c, P, t, crop, bel[3], bel[4]) - treeFoodWorth(world, c, P, t, b, bel[3], bel[4]);
+}
 
 /** The bounded menu at this decision point (the same construction as src/decision.ts buildRequest). */
 export function rgMenu(world: World, c: Chimp, all: Candidate[]): Candidate[] {
@@ -197,7 +235,7 @@ export function rgChoice(world: World, c: Chimp, list: Candidate[]): Candidate |
     if (rgTap.fn) rgTap.fn(c, list, [], [], g.keep, g.arrived ? 'arrived' : 'kept');
     return g.keep;
   }
-  const menu = rgMenu(world, c, list);
+  const belief = P.choiceBelief === 1, menu = rgMenu(world, c, belief ? byValue(list) : list);
   // stage E2c (darkCost; e2c-prereg §8 iteration 2): a night or dusk menu left with one option (the nest, once rest is
   // no longer offered inside it) is that option; the unfiltered argmax would skip the phase menus. Stage E2d
   // (rhythmCircadian) offers no rest inside the nest either, so the same holds there (e2d-prereg §2.4)
@@ -212,8 +250,12 @@ export function rgChoice(world: World, c: Chimp, list: Candidate[]): Candidate |
   }
   if (menu.length < 2) { if (rgTally.on) rgTally.argmax++; delete x.rgIntent; if (rgTap.fn && list[0]) rgTap.fn(c, list, menu, [], list[0], 'argmax'); return null; }
   // stage E3 (urgencyChoice): the temperature falls with urgency (src/sim/urgency.ts); one draw either way
-  const byUrgency = P.urgencyChoice === 1, T = byUrgency ? urgencyTemperature(urgency(c, menu, P), P) : P.rgTemperature;
-  const scores = menu.map(k => k.score), probs = byUrgency ? choiceProbs(scores, T) : softmax(scores, T), i = drawIndex(probs, random(world));
+  // stage E3e (choiceBelief): no temperature; the option with the highest value drawn from the animal's belief
+  const byUrgency = P.urgencyChoice === 1, T = belief ? 0 : byUrgency ? urgencyTemperature(urgency(c, menu, P), P) : P.rgTemperature;
+  const scores = menu.map(k => k.score), probs = belief ? [] : byUrgency ? choiceProbs(scores, T) : softmax(scores, T);
+  let i = 0;
+  if (belief) { let best = -Infinity; for (let j = 0; j < menu.length; j++) { const v = scores[j] + beliefOffset(world, c, menu[j], P); if (v > best) { best = v; i = j; } } }
+  else i = drawIndex(probs, random(world));
   if (rgTally.on) {
     const U = urgency(c, menu, P), ph = rgTally.phase[dayPhase(world)];
     ph[0]++; ph[1] += U; if (U < 0.1) ph[2]++;
@@ -246,9 +288,9 @@ function gumbel(world: World): number { const u = Math.min(1 - 1e-12, Math.max(1
  * then gets its own (the jitter it is scored with now and a Gumbel draw from world.rng, drawn for every new option in
  * menu order). The noise kept afterwards is that of the options in view now (the current act and the menu).
  */
-function stillBest(world: World, it: Intent, current: Candidate, menu: Candidate[], T: number): boolean {
+function stillBest(world: World, it: Intent, current: Candidate, menu: Candidate[], fresh: (k: Candidate) => number): boolean {
   const old = it.noise ?? {}, next: Record<string, number> = {};
-  const val = (k: Candidate) => { const key = keyOf(k); let n = next[key] ?? old[key]; if (n === undefined) n = jitOf(k) + T * gumbel(world); next[key] = n; return rawOf(k) + n; };
+  const val = (k: Candidate) => { const key = keyOf(k); let n = next[key] ?? old[key]; if (n === undefined) n = fresh(k); next[key] = n; return rawOf(k) + n; };
   const v = val(current);
   let kept = true;
   for (const k of menu) if ((k.action !== current.action || k.targetId !== current.targetId) && val(k) > v) kept = false;
@@ -269,8 +311,10 @@ function changedSince(world: World, c: Chimp, it: Intent): string {
 
 /** RG under redecideValue: the keep test in place of the gate's triggers, and a Gumbel-max draw that keeps its noise. */
 function redecide(world: World, c: Chimp, list: Candidate[], P: Params): Candidate | null {
-  const x = ix(c), it = x.rgIntent, menu = rgMenu(world, c, list);
-  const byUrgency = P.urgencyChoice === 1, T = byUrgency ? urgencyTemperature(urgency(c, menu, P), P) : P.rgTemperature;
+  const belief = P.choiceBelief === 1, x = ix(c), it = x.rgIntent, menu = rgMenu(world, c, belief ? byValue(list) : list);
+  const byUrgency = P.urgencyChoice === 1, T = belief ? 0 : byUrgency ? urgencyTemperature(urgency(c, menu, P), P) : P.rgTemperature;
+  // stage E3e (choiceBelief): an option's noise is the part of its value drawn from the animal's belief (beliefOffset)
+  const fresh = belief ? (k: Candidate) => beliefOffset(world, c, k, P) : (k: Candidate) => jitOf(k) + T * gumbel(world);
   let why = 'no-intent';
   if (it) {
     const L = world.environment.daylight;
@@ -281,7 +325,7 @@ function redecide(world: World, c: Chimp, list: Candidate[], P: Params): Candida
     else {
       const current = findCandidate(list, it.action, it.targetId);
       if (!x.finished && c.action === it.action && c.targetId === it.targetId && current) {
-        if (stillBest(world, it, current, menu, T)) {
+        if (stillBest(world, it, current, menu, fresh)) {
           if (rgTally.on) rgTally.kept++;
           if (rgTap.fn) rgTap.fn(c, list, [], [], current, 'kept');
           return current;
@@ -320,14 +364,14 @@ function redecide(world: World, c: Chimp, list: Candidate[], P: Params): Candida
   const noise: Record<string, number> = {};
   let i = 0, best = -Infinity;
   for (let j = 0; j < menu.length; j++) {
-    const k = menu[j], n = jitOf(k) + T * gumbel(world), v = rawOf(k) + n;
+    const k = menu[j], n = fresh(k), v = rawOf(k) + n;
     noise[keyOf(k)] = n;
     if (v > best) { best = v; i = j; }
   }
   const o = menu[i], pick = findCandidate(list, o.action, o.targetId)!, meta = candidateMeta.get(pick) ?? { v: V.NONE, aux: -1 };
   x.rgIntent = { ...intentOf(world, c, pick.action, pick.targetId, meta.v, meta.aux), noise };
   if (rgTally.on) { rgTally.drawn++; rgTally.why[why] = (rgTally.why[why] ?? 0) + 1; if (o.score >= Math.max(...menu.map(k => k.score))) rgTally.top++; }
-  if (rgTap.fn) rgTap.fn(c, list, menu, byUrgency ? choiceProbs(menu.map(k => k.score), T) : softmax(menu.map(k => k.score), T), pick, why);
+  if (rgTap.fn) rgTap.fn(c, list, menu, belief ? [] : byUrgency ? choiceProbs(menu.map(k => k.score), T) : softmax(menu.map(k => k.score), T), pick, why);
   return pick;
 }
 
