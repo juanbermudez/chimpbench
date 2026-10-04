@@ -1,4 +1,4 @@
-import type { Chimp, World } from '../types';
+import type { Chimp, PreyGroup, World } from '../types';
 import { addEvent, emitCall, endInteraction, episode, flashInteraction, interrupt } from './events';
 import { preyGroupsOf, spawnPrey } from './generation';
 import { hash01, random } from './rng';
@@ -48,6 +48,14 @@ export function slowPrey(world: World): void {
   for (let i = s.hunts.length - 1; i >= 0; i--) if (world.time > s.hunts[i].resolveAt + 0.25) { endInteraction(world, s.hunts[i].interId); s.hunts.splice(i, 1); }
 }
 
+/**
+ * Diagnosis hook (stage E4k; scripts only, null in the simulation): called inside resolveHunt with the scene the outcome
+ * is decided on, the success probability, the draw (NaN when none is made) and the extra-capture draws. It must not
+ * mutate the world or draw from its RNG.
+ */
+export interface HuntResolution { h: HuntState; prey: PreyGroup; listed: Chimp[]; hunters: Chimp[]; skillsBefore: number[]; pSuccess: number; draw: number; success: boolean; captors: Chimp[]; extraDraws: number[]; sizeBefore: number }
+export const huntTap: { fn: ((world: World, r: HuntResolution) => void) | null } = { fn: null };
+
 /** Success rises with the number of hunters (Mitani & Watts 1999, Ngogo) [M-H]; curve is a design assumption. */
 export function resolveHunt(world: World, h: HuntState): void {
   const s = simOf(world);
@@ -70,7 +78,10 @@ export function resolveHunt(world: World, h: HuntState): void {
   // sites (Ngogo: 73% of all hunts, 78% of red colobus hunts; Mitani & Watts 1999); this design curve gives ~35-45%
   // overall here, below the field range (to be revisited in realism stage C7).
   const P = paramsOf(world);
-  if (n >= 2 && random(world) < P.huntSuccessMax * (1 - Math.exp(-P.huntSuccessRate * (n - 1)))) {
+  const pSuccess = n >= 2 ? P.huntSuccessMax * (1 - Math.exp(-P.huntSuccessRate * (n - 1))) : 0;
+  const draw = n >= 2 ? random(world) : NaN, sizeBefore = p.size; // the same draw, in the same order, as before the hook
+  const tap = huntTap.fn, extraDraws: number[] = [], captors: Chimp[] = [], skillsBefore = tap ? hunters.map(c => c.skills.hunting) : [];
+  if (n >= 2 && draw < pSuccess) {
     let captor = hunters[0], best = -1;
     for (const c of hunters) { const v = c.skills.hunting * 0.6 + hash01(c.id, p.id, world.tick); if (v > best) { best = v; captor = c; } }
     captor.carryingMeat = 1;
@@ -84,10 +95,14 @@ export function resolveHunt(world: World, h: HuntState): void {
     // and not fitted; the binomial form and the use of males present for hunters are design assumptions.
     const others: Chimp[] = [];
     if (P.huntExtraKillP > 0) for (const c of hunters) {
-      if (c === captor || p.size <= 4 || random(world) >= P.huntExtraKillP) continue;
+      if (c === captor || p.size <= 4) continue;
+      const u = random(world);
+      if (tap) extraDraws.push(u);
+      if (u >= P.huntExtraKillP) continue;
       c.carryingMeat = 1; p.size -= 1; others.push(c);
       flashInteraction(world, 'hunt', c, -1, hunters.map(q => q.id), 1);
     }
+    if (tap) captors.push(captor, ...others);
     addEvent(world, others.length ? `${troop?.name ?? ''} hunters (${n}) captured ${others.length + 1} red colobus; ${[captor, ...others].map(c => c.name).join(', ')} hold the meat`
       : `${troop?.name ?? ''} hunters (${n}) captured a red colobus; ${captor.name} holds the meat`, 'hunt', hunters.map(c => c.id), h.troopId, 1);
     for (const c of hunters) { c.skills.hunting = Math.min(1, c.skills.hunting + 0.01); episode(world, c, 'hunt', c === captor || others.includes(c) ? 'Caught a red colobus' : `Hunted colobus with ${captor.name}; he caught one`, captor.id); }
@@ -99,4 +114,5 @@ export function resolveHunt(world: World, h: HuntState): void {
     addEvent(world, `${troop?.name ?? ''} hunters (${n}) chased a red colobus group, which escaped`, 'hunt', hunters.map(c => c.id), h.troopId, 0);
     for (const c of hunters) episode(world, c, 'hunt', 'Hunted colobus; they escaped');
   }
+  if (tap) tap(world, { h, prey: p, listed: h.hunters.map(id => byId.get(id)).filter((c): c is Chimp => !!c), hunters, skillsBefore, pSuccess, draw, success: n >= 2 && draw < pSuccess, captors, extraDraws, sizeBefore });
 }

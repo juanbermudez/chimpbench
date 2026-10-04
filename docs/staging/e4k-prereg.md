@@ -25,13 +25,46 @@ criterion) before any run of changed code; every iteration in the run log (§9) 
   depends on how many hunters there are and where they are (blocking escape routes, climbing), the canopy's
   continuity, the monkeys' group size and adult males' defence, and the hunters' own condition and skill.
 
-## 2. Target audit and sources (step 0; to be filled before §3 runs)
+## 2. Target audit and sources (step 0; written 04:40, before the diagnosis runs)
 
-Rows scored: T-HUN-1..8 (`data/targets.json`). Each row's source is opened and its sample (population, years, sex,
-reproductive state, mass, method) written here before any run. Sources grepped first in `docs/research.md` and
-`docs/staging/e-sources.md`; new sources added there first, as an addendum titled "Addendum: E4k hunt success".
+Rows scored: T-HUN-1..8 (`data/targets.json`; T-HUN-5 and T-HUN-6 need a year and are insufficient under the cap).
+Sources grepped first in `docs/research.md` and `docs/staging/e-sources.md`: gilby2015 (FT, read in full by E4f through
+the PMC article page), mitaniWatts1999 (FT, author PDF, research.md "Ngogo hunting"), mitaniWattsMuller2002 (FT,
+review, E.29), wattsMitani2002 and mitaniWatts2001 (closed; values as recorded in the registry; E4e could not open
+them), stanford1994 (abstract). A search helper is re-opening the success sources now (§2.3, added before §4 is
+written); new sources go into research.md and e-sources.md first, as "Addendum: E4k hunt success".
 
-## 3. Diagnosis plan (step 1; unchanged code; to be committed before it runs)
+### 2.1 Samples of the rows
+
+| Row | Population, years | Sample and method (as recorded unless marked) |
+| --- | --- | --- |
+| T-HUN-1 hunts per community-year | Kanyawara 1996–2014; Ngogo 1995–99 | 194 red colobus hunt attempts in 224 months at 11.4 adult males (gilby2015, FT via E4f: party follows by field assistants; a hunt attempt = a chimpanzee climbs to the height of the lowest monkey); Ngogo 45.1 successful hunts a year at ~24 adult males (wattsMitani2002, not verified). Community-level counts: no sex, reproductive-state or mass restriction. Band 5–25 never scaled to the model's 3–7 males (E4e §2.3; staged 4–11, not applied). |
+| T-HUN-2 success | Kanyawara; Kasekela; Mitumba; Ngogo | Share of hunts with ≥ 1 capture: 0.613 (119 of 194), 0.623 (1,498 hunts), 0.532 (gilby2015, FT via E4f for Kanyawara); Ngogo 0.73 (36/49 all prey), red colobus 0.78 (32/41) (mitaniWatts1999, FT), 0.82 (67/82) (wattsMitani2002). Community level; hunters are mostly adult and adolescent males. |
+| T-HUN-3 hunted share of encounters | as T-HUN-1 | 0.079 of 2,461 encounters (Kanyawara, 100 m, 15-min party scans); Gombe 0.647, 0.480 (50 m, focal); Ngogo 0.37 (61/164, mitaniWatts2001, definition not recorded). The model's observer counts it on focal follows with a change-of-group rule (E4f §2.2; staged scorer fixes not applied). |
+| T-HUN-4 odds per male | the three gilby2015 communities | Logistic regression of hunting per encounter on adult males in the scan (+48%, +8%, +72%). Rare-event row. |
+| T-HUN-7 kills per success | Kanyawara; Kasekela; Mitumba; Ngogo 1995–98 | 1.28 (152 prey in 119 successes, gilby2015 Table 1 via E4f), 1.90, 1.30; Ngogo 3.41 ± 1.79 (n = 32, mitaniWatts1999) with 15.2 adult males present (wattsMitani2002). Band 1.2–2.0 ("3–7 males"). |
+| T-HUN-8 adult males' share of kills | Ngogo 1995–98, 1995–99; Gombe 1982–91 | 0.86 of 90 kills (mitaniWatts1999), 0.90 of 261 (wattsMitani2002), 0.893 (stanford1994, abstract). |
+
+**What success depends on in the field (as recorded; §2.3 re-reads):** party size and the number of male hunters
+predict success (mitaniWatts1999; mitaniWattsMuller2002: "Male chimpanzees appear to swamp red colobus prey defenses
+with strength in numbers"); hunts where the canopy is broken succeed more (Ngogo, success 92% against 55% in tall
+primary forest, wattsMitani2002 via P-HUN-3 in realism-design.md; mitaniWattsMuller2002 states the direction); red
+colobus males mob hunters (mitaniWattsMuller2002 citing Busse 1977 and Stanford 1995). Small communities still succeed
+about half the time (Mitumba 0.532).
+
+### 2.2 What the model's resolution contains (code at b3d28c7)
+
+- Hunters move to a point 2 m from the colobus group's point at a bearing set by a hash of the hunter's and the group's
+  ids, at 0.85 × its height (17 m), running at 2 m/s and climbing at 0.22 m/s (`execution.ts` 'hunt'; `climbMps`
+  stylized). The hunt resolves 5–11 min after it starts (a hash; `huntResolveMinMin`, `huntResolveSpanMin`, design).
+- Counted at the resolution: alive, still in the hunt action on this group, within `huntCaptureRangeM` (30 m field).
+- Success = one draw against the curve (§1); the captor = argmax of 0.6 × skill + a hash; extra captures one draw each
+  at `huntExtraKillP` while the group has more than 4 members.
+- The colobus group is a point with a size (14–37, literal) and an alert level; no sex or age composition, so no males
+  to defend it. The model's trees are food patches (9.8 per ha inside the community zones, 0.5 outside; crown radius
+  2.5–9 m), not the forest canopy: nothing in the model represents canopy continuity.
+
+## 3. Diagnosis plan (step 1; unchanged code; committed before it runs)
 
 ### 3.1 Hunt reference (unchanged code; registered before its runs)
 
@@ -45,3 +78,33 @@ re-draw, as its hunt reference:
   `--workers 2` while the load is below 8 (else 1), one run at a time. Outputs `artifacts/validation/e4k/{H0,H0r}.json`
   in that checkout (copied to this worktree's gitignored `artifacts/validation/e4k/`).
 - Every hunt row of every arm is reported against H0 and H0r (mean of two), beside the quick judgement.
+
+H0 and H0r ran at 04:20–04:27 (b6630b9, `git.dirty` 0). Their seed values equal the integrator's S17 confirm on
+seeds 48 and 7 (T-HUN-1 34.47 / 18.15, T-HUN-2 0.727 / 0.200): the same world.
+
+### 3.2 Diagnosis tool (registered before it runs)
+
+`scripts/e4k-hunt-diagnose.ts` (read-only, sim truth; header lists every readout) on S17, seeds 48 and 7, 30-day
+burn-in + 60 days (the hunt reference's world: createWorld + tickWorld as `src/field/run.ts`), one seed at a time.
+It reads the scene each outcome is decided on through `huntTap` (`src/sim/ecology.ts`), a hook that is null in the
+simulation and draws nothing: `resolveHunt` now computes the success probability and the draw into locals before the
+branch, with the same `random` calls in the same order. **Identity:** S17 after 2 days (seeds 48 and 7) and 25 days
+(seeds 7 and 48, including a successful hunt on seed 7) gives the same world hash with and without the hook
+(8cf9a253bfee1100, 5505c10ab3b8baff; bda608df593f3ab2, 92dbdddf67512f30). **Tool check:** truth hunts and captures per
+seed must equal e-bench's (H0's scorecard counts).
+
+Per hunt: the hunters listed and counted (n), why listed hunters were not counted, each hunter's class, skill, hunger,
+reserves ÷ usable store, foregut fill, energy need, arousal, injury, minutes to join, distance and height below the
+group at the resolution; the largest angular gap between counted hunters around the group; the alerted community
+members ≥ 12 y within `huntAlertM` of the leader at the start and what those who never joined were doing; the model's
+trees around the group (nearest crown edge, crowns within 25 and 50 m, crown cover within 25 m, crowns within 2 and 5 m
+of the group's crown); the success probability, the draw, the outcome, captors and extra-capture draws; group size.
+Table by `artifacts/validation/e4k/diag_table.py` (pooled seeds) from `artifacts/validation/e4k/diag/S17-{48,7}.json`.
+
+**Reading rules, fixed now.** "What the dice decide": among hunts with n ≥ 2 the outcome is the draw against P_s(n);
+reported as the share of hunts decided by the draw, the share failed by n < 2 (and why the listed hunters dropped
+out), and the spread of each scene variable across hunts and by outcome (the scene enters nothing by construction, so
+any association is the draw's chance). A scene variable is "implicated" for §4 only if (a) it varies across hunts
+enough to change a pursuit's outcome in the field picture (§2.1) and (b) the model carries it with a sourced or
+physical meaning. Expected (moderate confidence): n is small (2–3), the curve gives 0.21–0.36 there, and the model
+has no canopy continuity and no colobus composition to carry.
