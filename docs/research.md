@@ -3350,7 +3350,7 @@ the model's escalation rate, never a target.
   PMC8216973).
 - mitaniWatts1999, wattsMitani2001 and wilson2001 are already cited; the entries above add findings.
 
-### Addendum: E2i walking speed (4 October 2026)
+### E.52 Addendum: E2i walking speed (4 October 2026)
 
 Read for stage E2i ([staging/e2i-prereg.md](staging/e2i-prereg.md)): the speed a chimpanzee walks at while walking, as
 opposed to the travel speed with pauses that `walkMps` copies (2.7 km a day over 21% of the day, 0.31–0.35 m/s).

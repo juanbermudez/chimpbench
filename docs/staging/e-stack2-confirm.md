@@ -2438,3 +2438,14 @@ and rhythm-metrics, 5 seeds, 30 + 60 days, from bench-run3 moved to this commit.
 safety pass; T-ACT-4 a little higher than S21's (low); T-PAT-1 lower or unscored (the observer's patrol classifier needs
 two listening stops; low); T-SOC-3 and T-SOC-5 within or just below the group's spread (low); reserves within spread;
 fitted and held-out inside noise.
+
+## S23 confirm (registered 4 October 2026 before its run)
+
+**S23 = S21 + E2i's `walkGait` 1** (walking speed from measured Mahale speeds scaled by body mass; `walkMps` out: 45 →
+44). Judged against S21's confirm group (S21 + S21c1–S21c3 by `rngSalt`, bench-run2) by the standard keep rule with
+amendment 3's rare rows. Bench, energy-diagnose and rhythm-metrics, 5 seeds, 30 + 60 days, from bench-run4 moved to this
+commit.
+
+**Predictions (against the S21 group; moderate confidence unless stated).** Prescriptions 44 (high); viability and night
+safety pass; true day ranges longer (males 2.5–3.0 km); T-RNG-4 2.0–2.6; T-ACT-2 below its band (0.10–0.13; the stage's
+cost); juveniles' reserves within or below the group's spread (low); fitted and held-out inside noise.
