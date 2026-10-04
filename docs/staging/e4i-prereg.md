@@ -106,3 +106,79 @@ integrator's) is not re-run.
   `scratchpad/e4i/frozen-d0`. D0 = `scripts/patrol-diagnose.ts` on S13, seeds 48 and 7 (one process each), 30 + 60 days,
   `artifacts/validation/e4i/D0-{48,7}.json`; P0 = `e-bench --seeds 48,7 --burn-in 30 --days 60 --params <S13>`; P1 =
   the same with `rgTemperature` 0.1641 (`artifacts/validation/e4i/P{0,1}.json`).
+- **D0 note** (logged after the run): D0 (52cafa5) classified every patrol end as "home" (a tool defect: the last
+  non-empty member list was kept). Fixed in 1e61c76 (an end with no member on the patrol is "empty"; releases by end;
+  daylight left at each opportunity) and re-run as **D0b** from a second frozen checkout (`scratchpad/e4i/frozen-d1`
+  at 1e61c76), seeds one after the other (load above 8). P0 and P1 ran from `frozen-d0` (52cafa5; scripts only differ).
+
+### D0b and P0/P1 results (printed by `scratchpad/e4i/diag_table.py` and `patrol_rows.py` from the JSON)
+
+```
+## D0b S13 (tool 1e61c76; seeds 48, 7; 30 + 60 days): 2 seeds, 51.4 community-weeks
+patrols started 38 = 0.74 per community-week (truth)
+daylight opportunities (adult male perception, >= 3 adult males in view, no patrol, rain below the gate): 45268; in the 08:00-15:30 window 27159, outside 18109 (40%)
+expected impulses (sum of roll probabilities): in window 44.1, blocked by the clock 15.2 (26% of the would-be total); impulses fired 39, of which led 38
+  all rolls    : males 3.61, party 6.7, r/R 0.35, periphery 0.12, heard 24 h 0.035, contact 1.59, loss 0.48, border crop 0.84, light left 6.9 h | hunger 0.27, sleep 0.33, thirst 0.047, arousal 0.069, stress 0.12, reserve -0.013
+  fired rolls  : males 3.46, party 6.6, r/R 0.27, periphery 0.03, heard 24 h 0.000, contact 1.44, loss 0.42, border crop 0.77, light left 7.3 h | hunger 0.21, sleep 0.31, thirst 0.023, arousal 0.117, stress 0.15, reserve -0.010
+  clock-blocked: males 3.63, party 6.6, r/R 0.41, periphery 0.21, heard 24 h 0.029, contact 1.08, loss 0.33, border crop 0.83, light left 3.3 h | hunger 0.44, sleep 0.43, thirst 0.138, arousal 0.071, stress 0.16, reserve -0.015
+rolls by adult males in view (n, expected, fired): {3: (16270, 27.4, 25), 4: (6656, 10.5, 11), 5: (3129, 4.3, 2), 6: (815, 1.3, 1), 7: (289, 0.5, 0)}
+start hour: {8: 5, 9: 7, 10: 5, 11: 1, 12: 7, 13: 8, 14: 5}
+duration min: median 162, range 64-272, > 6 h 0; path km median 2.12
+ended by: {'empty': 19, 'home': 19} | release: 11 of 38 | release after contact: 3 of 14
+incursion die true 16/38 (0.42); entered a neighbour 95% isopleth: die true 10/16, die false 0/22; overall 0.26
+contact 0.37, turned back 0.11
+stops: on schedule 273, at waypoints 57
+most adult males at once: {1: 2, 2: 11, 3: 17, 4: 6, 5: 1, 6: 1} | >= 3: 0.66; with females 4/38
+joining (opportunities, joined): {'adultMale': [69, 27], 'adolescentMale': [10, 2], 'adultFemale': [36, 1], 'lactatingFemale': [20, 0]}
+members leaving early, to: {'travel': 62, 'forage': 19, 'flee': 3, 'call': 2, 'drink': 2, 'hunt': 2, 'groom': 1, 'rest': 1, 'charge': 1}
+adult male members at start -> end: hunger 0.19 -> 0.60, sleep 0.31 -> 0.41, thirst 0.026 -> 0.089, arousal 0.092 -> 0.056
+daylight left at start median 6.7 h, at end 4.2 h
+patrol day vs most adult males in one party (truth, per seed): OR [1.7928, 1.5558] | mean max males patrol days [5.5263, 4.1111] other days [3.6087, 3.2407]
+intergroup encounters per community-week (stats): [0.8556, 2.0222] | deaths: [{}, {}]
+```
+
+Observer rows at 30 + 60 days (P0 = S13, P1 = S13 with `rgTemperature` 0.1641; "(x)": below the instrument bar,
+excluded from the sums; "ins": insufficient):
+
+| Row (band) | ref 1 | ref 2 | ref mean |  |
+| --- | --- | --- | --- | --- |
+| T-PAT-1 (0.1–0.5) | 0.116 (x) | 0.0773 (x) | 0.0967 |  |
+| T-PAT-2 (7–18) | 4.33 (x) | 2.6 (x) | 3.47 |  |
+| T-PAT-3 (0.55–0.85) | 0.688 (x) | 0.546 (x) | 0.617 |  |
+| T-PAT-5 (60–240) | 155 (x) | 189 (x) | 172 |  |
+| T-PAT-6 (0.4–0.7) | 0.562 | 0.154 (x) | 0.358 |  |
+| T-PAT-7 (0.15–0.45) | 0 (x) | 0 (x) | 0 |  |
+| T-BRD-1 (0.037–0.107) | — ins | — ins | — |  |
+| T-IGE-1 (5–12) | 18 | 6.7 (x) | 12.3 |  |
+| T-IGE-2 (0.7–0.9) | 0.962 | 1 (x) | 0.981 |  |
+| T-IGE-3 (0.25–0.75) | 0.104 | — (x) ins | 0.104 |  |
+ref 1: git 52cafa5 dirty 0, fitted 2.09, held-out 4.89, prescriptions 65, viability True, deaths 0, starvation 0
+ref 2: git 52cafa5 dirty 0, fitted 2.24, held-out 4.13, prescriptions 65, viability True, deaths 0, starvation 0
+
+**What each prescribed entry decides on S13 (truth, two seeds, 51 community-weeks):**
+- **Start (`patrolH0`, `patrolMaleOddsRatio`, `patrolStartH`/`EndH`).** Every patrol starts from the hazard roll: 39
+  impulses fired, 38 led within the impulse's six minutes, no patrol without a fired roll. The roll ignores the males'
+  state and place: fired rolls look like all rolls (hunger 0.21 against 0.27, sleep pressure 0.31 against 0.33, 3.5
+  against 3.6 males in view, mostly in the core: r/R 0.27, 3% at the periphery). The clock window blocks 40% of daylight
+  opportunities and 26% of the would-be impulses; the blocked hours hold hungrier, sleepier males (hunger 0.44, sleep
+  0.43, 3.3 h of daylight left). Truth rate **0.74 per community-week**, 2.5 × the 0.30 that `patrolH0` was refitted to at
+  C14 (the stack's males spend more time in parties of three or more), while the observer sees 0.08–0.12 per week
+  (T-PAT-1, below the instrument bar).
+- **Incursion (`patrolIncursionP`).** The die decides every incursion: 10 of 16 die-true patrols entered a neighbour's
+  95% isopleth, 0 of 22 die-false ones; truth incursion share 0.26 (observer T-PAT-6 0.56 and 0.15).
+- **Length (`patrolMaxH`).** Never binds: 0 of 38 patrols reached 6 h (longest 272 min). Patrols end when the route
+  comes home (19) or when every member has left (19), members leaving mostly to travel (62) or forage (19) as their
+  hunger rises from 0.19 at the start to 0.60 at the end (sleep pressure 0.31 → 0.41): the end is already the animals'
+  state, through the design continuation score (1.25 − max(0, hunger − 0.6)).
+- **Release (`patrolReleaseP`, `patrolReleaseContactP`).** 11 releases in 38 patrols (3 of 14 after contact: most
+  contact patrols end with no member left, so no release).
+- **Stops (`patrolStopEveryMin`).** 273 of 330 listening stops (83%) come from the 15-min schedule, 57 from waypoints.
+- **Joining (`patrolFemaleJoin`, `patrolFemaleStay`, `patrolLactatingJoin`).** Later opportunities (the leader in view,
+  not on the patrol): adult males joined 27 of 69, adolescent males 2 of 10, adult females 1 of 36, lactating females 0
+  of 20; 4 of 38 patrols had a female (all from the start alert).
+- **Party males.** 66% of patrols reached three adult males at once. The day's most adult males in one party predicts a
+  patrol day (truth odds ratio 1.79 and 1.56 per male; the field's 1.17 is per adult and adolescent male, Ngogo) through
+  the hazard's three-male gate and its own 1.17 factor: encoded.
+- **Rows.** T-PAT-1, -2, -3, -5, -7 sit below the instrument bar in both references; T-PAT-7 is 0 (no classified patrol
+  with a seen encounter); T-BRD-1 is insufficient at two seeds; T-IGE-1 18.0 and 6.7, T-IGE-2 0.96 and 1.00 (encounters
+  heard, almost never seen), T-IGE-3 0.10 and insufficient. No deaths.
