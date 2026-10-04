@@ -450,3 +450,5 @@ Not built: `meatEatPerH` (implicated; the edible energy of an average red colobu
   43–118 of 2,831–4,439 charges, 1.3–2.7%).
 - Deferred readout defect: same-tick defence charges (run log, A1 note); `e4m-diagnose.ts` encounter-impulse valuations
   read none (D0 note).
+- **Final checks** (after merging `track-e` 0986c92 once, at edddf71): `gen-params --check` clean, `tsc --noEmit` clean,
+  `pnpm test` 784 tests, 783 pass, 0 fail, 1 skipped.
