@@ -325,11 +325,11 @@ Field rows, day ranges, reserves and sums (e-bench, energy-diagnose):
   (17%), 18% of bouts end with the crown empty (4.6%) and 10% with a full gut, two thirds of the crowns fed in are
   emptied below 0.02 units (a third). Animals feed and travel more, adult males' observed day range leaves its band
   (3.86 km, band 1.5–3.5), parties shrink, the fruit share falls and returns to a crown space out (T-ACT-1, T-ACT-2,
-  T-RNG-4, T-PTY-1, T-FOOD-2, T-FOOD-6 in the table); every class walks 1.1–1.3 km a day more (true ground path: adult
-  males 4.12 km against 2.81 ± 0.19, nursing mothers 3.59 against 2.48 ± 0.06, juveniles 3.95 against 2.83 ± 0.11) and
-  eats longer (nursing mothers 355 min against 313), nursing mothers take 153 kcal a day less from crowns, and the
-  reserves of nursing mothers (−0.044 %/day), juveniles (−0.108) and infants of 0.5–2 y (−0.070) fall beyond the
-  reference's spread. Sums inside noise (the departures before sunrise, T-FOOD-10, rise to 0.72).
+  T-RNG-4, T-PTY-1, T-FOOD-2, T-FOOD-6 in the table); adult males, nursing mothers and juveniles walk 1.1–1.3 km a day
+  more, other females 0.5 (true ground path: adult males 4.12 km against 2.81 ± 0.19, nursing mothers 3.59 against
+  2.48 ± 0.06, juveniles 3.95 against 2.83 ± 0.11) and eat longer (nursing mothers 355 min against 313); nursing mothers
+  take 153 kcal a day less from crowns, and the reserves of nursing mothers (−0.044 %/day), juveniles (−0.108) and
+  infants of 0.5–2 y (−0.070) fall beyond the reference's spread. Sums inside noise (the departures before sunrise, T-FOOD-10, rise to 0.72).
 - **Double the energy (K2) takes the crop out of nearly every bout** (crop binding 4%, crown empty 0.5%); every class
   walks less (true ground path: adult males 2.05 km against 2.81 ± 0.19, nursing mothers 2.22 against 2.48 ± 0.06,
   juveniles 2.41 against 2.83 ± 0.11) and spends and eats a little less (energy-diagnose); adult males' observed day
@@ -345,11 +345,11 @@ Field rows, day ranges, reserves and sums (e-bench, energy-diagnose):
 **No switch; the stage records and stops (§5).** Under the ledger `fruitIntakePerH` is the energy scale of every crown
 (one unit = 4,031 kcal of drupes, 4,429 of figs; a median fruiting crown 2,051 kcal) and of every crop threshold, not an
 intake rate. Through depletion it sets how far animals travel, how parties split and what mothers and the young can
-store (halving it adds 1.1–1.3 km of walking a day in every class, pushes males' day range out of its band, shrinks
-parties and lowers nursing mothers', juveniles' and young infants' reserves; doubling it shortens every class's path by
-0.25–0.8 km and worsens held-out through T-RNG-5), not how many feed together. No open source gives the crop of the model's crowns: whole-cycle crops of ten large Kanyawara fig
-trees (2–18 × what a model fig crown ripens per cycle at the design turnover), nothing for the non-fig species that are
-84% of the trees. `fruitIntakePerH` stays; prescriptions 42 (unchanged).
+store (halving it adds 1.1–1.3 km of walking a day to males, mothers and juveniles, pushes males' day range out of its
+band, shrinks parties and lowers nursing mothers', juveniles' and young infants' reserves; doubling it shortens every
+class's path by 0.25–0.8 km and worsens held-out through T-RNG-5), not how many feed together. No open source gives the
+crop of the model's crowns: whole-cycle crops of ten large Kanyawara fig trees (2–18 × what a model fig crown ripens per
+cycle at the design turnover), nothing for the non-fig species that are 84% of the trees. `fruitIntakePerH` stays; prescriptions 42 (unchanged).
 
 ## 8. Known defects (file:line at eea2d85)
 
