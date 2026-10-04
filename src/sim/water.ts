@@ -120,9 +120,10 @@ export function drinkTick(c: Chimp, P: Params): boolean {
  * full intake rate a trip delivers, as a food trip is valued under the ledger), with the drink offer's weights (1.5 and
  * the constant 0.05, design, unchanged). Sites hold no stock in the model, so every site can fill the whole deficit.
  */
-export function drinkWorth(c: Chimp, P: Params, d: number): number {
+export function drinkWorth(c: Chimp, P: Params, d: number, speed = P.walkMps): number {
   const W = waterOf(c, P), kg = massOf(c, P);
-  const drinkH = (W.def > 0 ? W.def : 0) / (P.waterDrinkMlPerKgMin * kg * 60), walkH = d / P.walkMps / 3600;
+  // stage E2i (walkGait): `speed` is the animal's walking speed (gait.ts tripSpeed), walkMps by default
+  const drinkH = (W.def > 0 ? W.def : 0) / (P.waterDrinkMlPerKgMin * kg * 60), walkH = d / speed / 3600;
   const share = drinkH > 0 ? drinkH / (drinkH + walkH) : 0;
   return c.thirst * 1.5 * share - 0.05;
 }

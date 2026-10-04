@@ -20,7 +20,7 @@ export const huntValueOn = (P: Params) => P.huntValue === 1 && P.energyLedger ==
  * expected (today fewer than two hunters: resolveHunt needs two; under huntPursuit fewer than can surround the group)
  * or when he needs no energy.
  */
-export function huntRate(c: Chimp, P: Params, distM: number, hunters: number): number {
+export function huntRate(c: Chimp, P: Params, distM: number, hunters: number, approach = P.walkMps): number {
   // stage E4k (huntPursuit; docs/staging/e4k-prereg.md §4.3): the meat he can expect is what the pursuit itself gives
   // (huntpursuit.ts, the function resolveHunt uses): the captures of `hunters` hunters spread evenly around the group,
   // each with his own pursuit cone, shared equally in expectation; no success curve and no extra-capture rate
@@ -29,6 +29,7 @@ export function huntRate(c: Chimp, P: Params, distM: number, hunters: number): n
   const E = Math.min(Math.max(0, energyNeed(c, P)), expected * meatKcalPerUnit(P));
   if (!(E > 0)) return 0;
   const R = fruitRate(c, P).fruitPerH * fruitKcalPerUnit(P, false);
-  const T = distM / P.walkMps / 3600 + (P.huntResolveMinMin + P.huntResolveSpanMin / 2) / 60 + E / (60 * P.ledgerMeatKcalPerMin);
+  // stage E2i (walkGait): `approach` is the speed the hunt moves at (candidates.ts: RUN × 0.8 × the body's state), walkMps by default
+  const T = distM / approach / 3600 + (P.huntResolveMinMin + P.huntResolveSpanMin / 2) / 60 + E / (60 * P.ledgerMeatKcalPerMin);
   return R > 0 && T > 0 ? E / T / R : 0;
 }

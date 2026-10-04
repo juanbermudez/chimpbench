@@ -22880,6 +22880,136 @@
    "notes": "Stage E2c (darkCost): walking pace in near-darkness as a share of the daylight pace: 101 against 110 cm/s at 0.015 against 650 lux at the eye after 20 min of dark adaptation (figueiro2011; 24 older adults on an indoor path). The pace rises linearly with vision to 1 in full daylight (design). Human biomechanics, cross-species; a clear path, so a lower bound on the cost on a forest floor. Assumed."
   },
   {
+   "id": "walkGait",
+   "group": "movement",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.walkGait",
+   "file": "src/sim/gait.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage E2i switch (docs/staging/e2i-prereg.md §4): how fast a chimpanzee walks. With 1 (field profile; patchEcology 1) every walk moves at the speed the body sets while walking (src/sim/gait.ts gaitSpeed): the adult walking speed of its sex (walkGaitMaleMps, walkGaitFemaleMps), below adult mass x (mass / adult mass)^walkGaitSizeExp (equal Froude number, geometric similarity), and while it carries an infant x walkGaitCarryMps / walkGaitFemaleMps; the act multipliers of today (follow 1.15, pair approach 1.1, ...) and the movement factor (old age, injury, alertness, rain, light; design) apply as before, without its life-stage part below 10 y, which the mass carries (running and climbing keep it). Every valuation that charges walking time reads the same speed x the body state (tripSpeed: the net rate of a crown, own, joined and caller trips, the trip light, the dawn race, water, patrol and incursion daylight, the committed trip bout, the urgency rates); the hunt approach is valued at the speed the hunt moves (runMps x 0.8 x the body state), a mismatch fixed under the switch. No pause is added: the stops are the decisions that make them. walkMps is not read (45 -> 44 on S21). 0 = today, bit for bit. Design."
+  },
+  {
+   "id": "walkGaitCarryMps",
+   "group": "movement",
+   "value": 0.75,
+   "units": "m/s",
+   "range": [
+    0.6,
+    0.85
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.05,
+    3
+   ],
+   "calibrate": false,
+   "evidence": "L",
+   "sources": [],
+   "refs": [
+    "nguessan2009 citing hunt1989 (docs/research.md, Addendum: E2i walking speed): Mahale walking velocity while walking"
+   ],
+   "population": "Mahale",
+   "clock": "none",
+   "symbol": "gaitSpeed",
+   "file": "src/sim/gait.ts",
+   "notes": "Stage E2i (walkGait): walking speed of an adult female carrying an infant, Mahale: 0.75 m/s, estimated by Hunt (1989, dissertation, not read) as cited by nguessan2009 (FT), who use it as the speed in the walking-cost equation (a speed while walking, not a travel speed with pauses); the same value is given for young individuals. Read as the share of the female speed kept with a load (0.75 / 0.78 = 0.96), applied to any carrier while an infant rides (candidates.ts isCarried). Secondary, method and sample unknown: [L]. Never set from a day range or a travel share."
+  },
+  {
+   "id": "walkGaitFemaleMps",
+   "group": "movement",
+   "value": 0.78,
+   "units": "m/s",
+   "range": [
+    0.6,
+    0.95
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.05,
+    3
+   ],
+   "calibrate": false,
+   "evidence": "L",
+   "sources": [],
+   "refs": [
+    "nguessan2009 citing hunt1989 (docs/research.md, Addendum: E2i walking speed): Mahale walking velocity while walking"
+   ],
+   "population": "Mahale",
+   "clock": "none",
+   "symbol": "gaitSpeed",
+   "file": "src/sim/gait.ts",
+   "notes": "Stage E2i (walkGait): walking speed of adult females while walking, Mahale: 0.78 m/s (Hunt 1989 as cited by nguessan2009; see walkGaitCarryMps). Applies at the adult female mass (ledgerMassFemaleKg); below it scaled by walkGaitSizeExp. Check, not a fit: at 20 kg the scaling gives 0.72 m/s against the 0.75 m/s the source gives for young individuals (put at 20 kg by nguessan2009). Field travel speeds with pauses (batesByrne2009 movement phases 1.91-2.21 km/h; jang2019 0.42-0.44 m/s) are targets, never this input. [L]."
+  },
+  {
+   "id": "walkGaitMaleMps",
+   "group": "movement",
+   "value": 0.88,
+   "units": "m/s",
+   "range": [
+    0.7,
+    1.05
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.05,
+    3
+   ],
+   "calibrate": false,
+   "evidence": "L",
+   "sources": [],
+   "refs": [
+    "nguessan2009 citing hunt1989 (docs/research.md, Addendum: E2i walking speed): Mahale walking velocity while walking"
+   ],
+   "population": "Mahale",
+   "clock": "none",
+   "symbol": "gaitSpeed",
+   "file": "src/sim/gait.ts",
+   "notes": "Stage E2i (walkGait): walking speed of adult males while walking, Mahale: 0.88 m/s (Hunt 1989 as cited by nguessan2009; see walkGaitCarryMps). Applies at the adult male mass (ledgerMassMaleKg); below it scaled by walkGaitSizeExp. The sexes differ by more than their masses would give at an equal Froude number (13% against 4%); the measured values are kept. [L]."
+  },
+  {
+   "id": "walkGaitSizeExp",
+   "group": "movement",
+   "value": 0.1667,
+   "units": "exponent",
+   "range": [
+    0.12,
+    0.25
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    0.5
+   ],
+   "calibrate": false,
+   "evidence": "assumed",
+   "sources": [],
+   "refs": [
+    "alexanderJayes1983 and raichlen2013 (docs/research.md, Addendum: E2i walking speed): equal Froude numbers (speed squared over gravity x leg length) across sizes"
+   ],
+   "clock": "none",
+   "symbol": "gaitSpeed",
+   "file": "src/sim/gait.ts",
+   "notes": "Stage E2i (walkGait): how walking speed scales with body mass below adult mass: an animal of another size walks dynamically similarly at an equal Froude number (alexanderJayes1983, closely for cursorial quadrupeds and roughly for others; raichlen2013), so speed goes as the square root of leg length, and under geometric similarity leg length goes as mass^(1/3): speed as mass^(1/6). Geometric similarity of growing chimpanzees is a design assumption. Replaces, for walking only, the life-stage factor of bodySpeed (0.55 / 0.7 / 0.88 below 2 / 5 / 10 y, design). Assumed."
+  },
+  {
    "id": "walkMps",
    "group": "movement",
    "value": 0.04,

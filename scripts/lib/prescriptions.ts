@@ -156,6 +156,8 @@ export function classify(p: RegistryEntry): Classified {
   if (p.group === 'reproduction' && /^(cycle|gestation|firstSwell|weanAge|fecundity|amenorrhea)/.test(p.id)) return out('input', 'physiology', '4 reproductive physiology', 'reproductive physiology or life history (cycle, gestation, fecundity, weaning age)');
   if (/^(hear[A-Z]|sight)/.test(p.id) || (p.group === 'perception' && /Sight|Visual/.test(p.id))) return out('input', 'sensory range', '4 sensory range', 'how far a call carries or an animal sees');
   if (p.id === 'climbMps' || p.id === 'runMps') return out('input', 'physics', '4 locomotion', 'locomotion speed');
+  // stage E2i (walkGait): the speed of walking while walking, measured apart from the day range and the travel share it helps produce (pauses are not in it)
+  if (/^walkGait(Male|Female|Carry)Mps$/.test(p.id)) return out('input', 'locomotion', '4 locomotion', 'walking speed while walking (nguessan2009 citing Hunt 1989), not a travel speed with pauses: the day range and the travel share are its outcomes, never its source', [], true);
   if (p.group === 'needs' && (p.evidence === 'H' || p.evidence === 'M') && !TIMER_UNITS.test(p.units)) return out('input', 'physiology', '4 measured physiology', `physiological timing with evidence ${p.evidence}`);
   // 5. prescriptions by unit
   if (/time of day/.test(p.units)) return out('outcome-encoding', 'clock', '5a clock hour', 'an hour of the day written into a rule');
@@ -190,6 +192,8 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   // walk; the C5a cohesion weights tuned to party size are not read (partyOn short-circuits the partyFollowW gate)
   ...same(['partyFollowBase', 'partyFollowW', 'partyFollowMaleW', 'partyFollowHungerW', 'partyStayW', 'joinSocialW'], P => !(P.cohesionValue === 1 && P.partyJoinTrip === 1),
     'not read while cohesionValue (with partyJoinTrip) is 1: following, joining and approaching callers are valued by companyValue and the food at the goal, and leaving costs nothing (src/sim/candidates.ts; execution.ts gates through partyOn)'),
+  // stage E2i (walkGait; docs/staging/e2i-prereg.md §4): the body sets the walking speed and every valuation reads it (gait.ts)
+  walkMps: { when: P => !(P.walkGait === 1 && P.patchEcology === 1), why: 'not read while walkGait is 1 in the field profile: every walk moves at the body\'s speed (gait.ts gaitSpeed) and every valuation reads tripSpeed (execution.ts, candidates.ts, intake.ts, light.ts, departure.ts, water.ts, huntvalue.ts, patrol.ts, parties.ts, urgency.ts, rg.ts). src/decide/facts.ts still copies it into the Jev facts (model arms only)' },
   rgTemperature: { when: P => P.rgOn === 1 && P.urgencyChoice !== 1 && !(P.choiceBelief >= 1), why: 'read only while rgOn is 1 and neither urgencyChoice (stage E3) nor choiceBelief (stage E3e: the option with the highest value drawn from the animal\'s belief is taken; options it perceives are taken by their value, rg.ts) is on' },
   rgMaxAgeH: { when: P => P.rgOn === 1 && P.urgencyPersist !== 1 && !(P.redecideValue >= 1), why: 'read only while rgOn is 1 and neither urgencyPersist (stage E3) nor redecideValue (stage E3d: an act is kept while it is still the best, rg.ts keep tests) is on' },
   continueBonus: { when: P => P.urgencySwitchCost !== 1 && !(P.redecideValue >= 1), why: 'not read while urgencySwitchCost (stage E3) is 1 or redecideValue (stage E3d: no forced draw at an interrupt; the keep test carries persistence, rg.ts) is 1 or 2' },
@@ -367,6 +371,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   redecideValue: { stage: 'E3d', needs: {} },
   huntPursuit: { stage: 'E4k', needs: {} },
   choiceBelief: { stage: 'E3e', needs: {} },
+  walkGait: { stage: 'E2i', needs: {} },
   patrolFusion: { stage: 'E4j', needs: { patrolValue: 2 }, removesNothing: 'corrects the occasion on which patrolValue 2 weighs the lead (a fusion of a party holding patrolMinMales adult males, judged by the males seen within reunionH, in place of a flicker of the 35 m view); adds no magnitude and switches no prescription out (e4j-prereg §4)' },
 };
 

@@ -19,6 +19,7 @@ import { callValueOn, crownOf, pantHootValue } from './calls';
 import { huntRate, huntValueOn } from './huntvalue';
 import { joinShare, leadValue, patrolValueOn } from './patrol';
 import { awakeInNest, byIdIn, index, isTreeId, ix, NEVER, TREE_ID0, treesNear, simOf } from './state';
+import { bodyState, gaitOn, runSpeedOf, tripSpeed } from './gait';
 
 // Variants refine an action's meaning (why a charge happens) for execution and reason text.
 export const V = {
@@ -81,7 +82,7 @@ const _cl: TripLight = { pace: 1, see: 1 };
  */
 export function consortWalkLight(world: World, c: Chimp, o: Chimp, P: Params): number {
   const g = consortGoal(world, c, o, _cg);
-  tripLight(world, P, Math.hypot(g[0] - c.position[0], g[1] - c.position[2]), 0, _cl);
+  tripLight(world, P, Math.hypot(g[0] - c.position[0], g[1] - c.position[2]), 0, _cl, tripSpeed(world, c, P)); // stage E2i (walkGait): gait.ts
   return _cl.pace * _cl.see;
 }
 
@@ -260,6 +261,9 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   const h = c.hunger, e = c.energy;
   const male = c.sex === 'male';
   const pers = c.personality;
+  // stage E2i (walkGait; docs/staging/e2i-prereg.md §4): every walk this decision values takes the speed the animal walks
+  // at (gait.ts tripSpeed: the body's speed × its state); walkMps when the switch is off, so the values are unchanged
+  const spd = tripSpeed(world, c, P);
   const caretaker = dependentOn(world, c);
   const carried = caretaker ? isCarried(c, caretaker) : false;
   // stage E5a (cohesionValue; docs/staging/e5a-prereg.md §3–§3.2, iteration 3): a companion's company is valued by the animal
@@ -381,14 +385,14 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   if (pullOn) for (let _i0 = 0; _i0 < x.seen.length; _i0++) { const v = oestrusOf(byId.get(x.seen[_i0])); if (v > oestrusNear) oestrusNear = v; }
   // stage E1e (ledgerDrive): the share of the full intake rate a trip delivers (energy over the bout ÷ rate × time, walk
   // included), which a gut-limited bout lowers; otherwise the share of the trip spent feeding
-  const tripFrac = (crop: number, feeders: number, d: number) => { const ti = treeIntake(c, P, crop, feeders, d, P.intakeCropOnly !== 1); return drive ? (ti.rateH > 0 ? ti.perHourInclWalk / ti.rateH : 0) : ti.feedH > 0 ? ti.feedH / (ti.walkH + ti.feedH) : 0; };
+  const tripFrac = (crop: number, feeders: number, d: number) => { const ti = treeIntake(c, P, crop, feeders, d, P.intakeCropOnly !== 1, spd); return drive ? (ti.rateH > 0 ? ti.perHourInclWalk / ti.rateH : 0) : ti.feedH > 0 ? ti.feedH / (ti.walkH + ti.feedH) : 0; };
   // stage E2c (darkCost): in poor light the walk takes the light-limited pace and feeding runs at the vision expected in
   // the crown on arrival, so the share of the trip's full-light intake per hour is feedH / (walkH + feedH / see)
   const tripWorth = (t: Tree, crop: number, feeders: number, d: number): number => {
-    if (dark && (tripLight(world, P, d, t.height * CROWN_Y, _tl).pace < 1 || _tl.see < 1)) {
+    if (dark && (tripLight(world, P, d, t.height * CROWN_Y, _tl, spd).pace < 1 || _tl.see < 1)) {
       if (!iv) return _tl.see;
       if (!(_tl.see > 0)) return 0;
-      const ti = treeIntake(c, P, crop, feeders, d / _tl.pace, P.intakeCropOnly !== 1);
+      const ti = treeIntake(c, P, crop, feeders, d / _tl.pace, P.intakeCropOnly !== 1, spd);
       return ti.feedH > 0 ? ti.feedH / (ti.walkH + ti.feedH / _tl.see) : 0;
     }
     return iv ? tripFrac(crop, feeders, d) : 1;
@@ -410,8 +414,8 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   const rateWorth = (t: Tree, crop: number, feeders: number, d: number): number => {
     // the climb: to the crown from the ground, or what is left of it inside this crown
     const crownY = t.height * CROWN_Y, climb = c.targetId === t.id ? crownY - c.position[1] : crownY;
-    if (dark && (tripLight(world, P, d, crownY, _tl).pace < 1 || _tl.see < 1)) return netRateShare(c, P, crop, feeders, d, climb, _tl.pace, _tl.see);
-    return netRateShare(c, P, crop, feeders, d, climb);
+    if (dark && (tripLight(world, P, d, crownY, _tl, spd).pace < 1 || _tl.see < 1)) return netRateShare(c, P, crop, feeders, d, climb, _tl.pace, _tl.see, spd);
+    return netRateShare(c, P, crop, feeders, d, climb, 1, 1, spd);
   };
   // stage E3e (choiceBelief; docs/staging/e3e-prereg.md §5.1): a trip to a tree out of sight carries the animal's belief
   // about its crop (the crop it values the tree at, the hours since it last saw the tree), so rg.ts can draw the crop
@@ -456,14 +460,14 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
         // stage C7a (field): a remembered tree is worth what the animal last saw in it
         const crop = x.treeCrop?.[t.id] ?? 0.2;
         const worth = fr ? fd * rateWorth(t, crop, 0, d) : (P.memCropBelief === 1 ? h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) : h * P.memTravelHungerW) * tripWorth(t, crop, 0, d);
-        if (race) { const nr = rivalsAt(c, t.id); if (nr > 0) raceG = Math.max(raceG, raceStake(worth, crop, nr, need, arrivalLight(env.daylight, dLdt, d, P))); } // stage E2b
-        const tc = fr ? 0 : tripCost(worth, crop, d, h, P, needFruit(c, P, h)); // stage E3c: the walk's energy is in the rate
+        if (race) { const nr = rivalsAt(c, t.id); if (nr > 0) raceG = Math.max(raceG, raceStake(worth, crop, nr, need, arrivalLight(env.daylight, dLdt, d, P, spd))); } // stage E2b
+        const tc = fr ? 0 : tripCost(worth, crop, d, h, P, needFruit(c, P, h), spd); // stage E3c: the walk's energy is in the rate
         if (shortlist) { const rv = revisit(x, t.id, time, P); _mem.push(t, worth - tc - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD)); if (cb) _bl.push(crop, time - m.seenAt, d); continue; }
         if (!held) offer('travel', t.id, worth - tc - revisit(x, t.id, time, P) - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay, V.TREE, -1, cb ? [t.id, crop, time - m.seenAt, 0, d] : null);
       } else if (m.kind === 'water' && c.age >= 3 && (water ? c.thirst > 0 : c.thirst > 0.25)) {
         const d = Math.hypot(m.position[0] - px, m.position[2] - pz);
         // stage E2g (waterLedger): thirst from the water deficit, the trip valued by the share of it spent drinking (water.ts)
-        offer('drink', m.entityId, water ? drinkWorth(c, P, d) : c.thirst * 1.5 - d / P.drinkDistScaleM - 0.05);
+        offer('drink', m.entityId, water ? drinkWorth(c, P, d, spd) : c.thirst * 1.5 - d / P.drinkDistScaleM - 0.05);
       }
     }
     // stage C7a (field): the community's best-known productive trees, valued by expectation unless seen (foraging.ts)
@@ -477,9 +481,9 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       const d = dxz(t, px, pz);
       if (d < P.memoryTreeMinM) continue;
       const crop = x.treeCrop?.[id] ?? known[i + 1], worth = fr ? fd * rateWorth(t, crop, 0, d) : h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) * tripWorth(t, crop, 0, d);
-      if (race) { const nr = rivalsAt(c, id); if (nr > 0) raceG = Math.max(raceG, raceStake(worth, crop, nr, need, arrivalLight(env.daylight, dLdt, d, P))); } // stage E2b
+      if (race) { const nr = rivalsAt(c, id); if (nr > 0) raceG = Math.max(raceG, raceStake(worth, crop, nr, need, arrivalLight(env.daylight, dLdt, d, P, spd))); } // stage E2b
       const rv = revisit(x, id, time, P);
-      _mem.push(t, worth - (fr ? 0 : tripCost(worth, crop, d, h, P, needFruit(c, P, h))) - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD));
+      _mem.push(t, worth - (fr ? 0 : tripCost(worth, crop, d, h, P, needFruit(c, P, h), spd)) - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD));
       if (cb) _bl.push(crop, Infinity, d); // never in its own memory (the loop skips remembered trees)
     }
     // stage C7d (field; c7b-prereg §8.3): route chaining, the nearest unused known resource weighted by value (janson2014) [M]:
@@ -576,7 +580,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     if (cb && !inSight) destBel = [t.id, crop, seenH(t.id), feeders, d];
     if (fr) return fd * rateWorth(t, crop, feeders, d); // stage E3c: the trip's net rate, walk and climb included
     const worth = (P.memCropBelief === 1 ? h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) : h * P.memTravelHungerW) * tripWorth(t, crop, feeders, d);
-    return worth - tripCost(worth, crop, d, h, P, needFruit(c, P, h));
+    return worth - tripCost(worth, crop, d, h, P, needFruit(c, P, h), spd);
   };
   // stage E5d (followMargin; docs/staging/e5d-prereg.md §4.2): a departing companion's company counts only for what it adds
   // over the best companion the animal keeps by staying (E5b's margin for approaches, extended to joining and following);
@@ -793,11 +797,11 @@ function revisit(x: ReturnType<typeof ix>, id: number, time: number, P: Params):
  * the marginal value theorem (charnov1976), worth × Tw / (Tw + Tf): Tw the walk, Tf the feeding the tree offers up to the
  * animal's need (design cap). Only registry values, so no free parameter.
  */
-export function tripCost(worth: number, crop: number, d: number, h: number, P: Params, need = h / P.fruitHungerFactor): number {
+export function tripCost(worth: number, crop: number, d: number, h: number, P: Params, need = h / P.fruitHungerFactor, speed = P.walkMps): number {
   // with the C13b intake valuation the walk time is already in `worth`; only the energetic distance cost remains
   if (P.tripRateValue !== 1 || P.intakeValue === 1) return d / P.travelDistScaleM;
   // `need`: fruit units that meet the need (intake.ts needFruit; the timers' conversion by default)
-  const tf = Math.min(crop, need) / P.fruitIntakePerH, tw = d / P.walkMps / 3600;
+  const tf = Math.min(crop, need) / P.fruitIntakePerH, tw = d / speed / 3600; // stage E2i (walkGait): the animal's walking speed, walkMps by default
   return tf > 0 ? worth * tw / (tw + tf) : worth;
 }
 
@@ -824,8 +828,9 @@ const _tlB: TripLight = { pace: 1, see: 1 };
  */
 export function treeFoodWorth(world: World, c: Chimp, P: Params, t: Tree, crop: number, feeders: number, d: number): number {
   const fd = c.hunger * 1.6 + 0.1, crownY = t.height * CROWN_Y, climb = c.targetId === t.id ? crownY - c.position[1] : crownY;
-  if (darkOn(P) && (tripLight(world, P, d, crownY, _tlB).pace < 1 || _tlB.see < 1)) return fd * netRateShare(c, P, crop, feeders, d, climb, _tlB.pace, _tlB.see);
-  return fd * netRateShare(c, P, crop, feeders, d, climb);
+  const spd = tripSpeed(world, c, P); // stage E2i (walkGait): gait.ts, walkMps when off
+  if (darkOn(P) && (tripLight(world, P, d, crownY, _tlB, spd).pace < 1 || _tlB.see < 1)) return fd * netRateShare(c, P, crop, feeders, d, climb, _tlB.pace, _tlB.see, spd);
+  return fd * netRateShare(c, P, crop, feeders, d, climb, 1, 1, spd);
 }
 /** Party following runs: under cohesionValue, or (before E5a) while partyFollowW > 0, its gate (then partyFollowW is not read). */
 export const partyOn = (P: Params): boolean => cohesionOn(P) || P.partyFollowW > 0;
@@ -1141,7 +1146,8 @@ function meatAndHunting(world: World, c: Chimp): void {
     else if (huntValueOn(P)) {
       if (c.sex === 'male' && (((s.huntDay[c.troopId] ?? NEVER) > time && x.ownMales >= P.huntMinMales)
         || (x.impulse === IMPULSE_HUNT && x.impulseTarget === p.id && x.impulseUntil > time && x.ownMales >= P.huntEncMinMales))) {
-        const r = huntRate(c, P, dist, x.ownMales);
+        // stage E2i (walkGait): the approach at the speed the hunt moves at (execution.ts: RUN × 0.8 × the body's state)
+        const r = huntRate(c, P, dist, x.ownMales, gaitOn(P) ? runSpeedOf(c, P) * 0.8 * bodyState(c) : P.walkMps);
         // stage E3c (forageRate): the walk is in the hunt's rate (huntRate's time), so no separate distance scale
         if (r > 0) offer('hunt', p.id, (c.hunger * 1.6 + 0.1) * r - (forageRateOn(P) ? 0 : dist / P.forageDistScaleM), V.LEAD, x.ownMales);
       }

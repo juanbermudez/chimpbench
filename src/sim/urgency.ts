@@ -9,6 +9,7 @@ import type { Params } from './params';
 import { fruitAt } from './phenology';
 import { sleepPressure } from './rhythm';
 import { index, isTreeId, isWaterId, ix } from './state';
+import { tripSpeed } from './gait';
 
 // Stage E3 (docs/staging/e3-prereg.md): how decisively and how persistently a chimpanzee acts comes from how pressing
 // its deficits are. Frame: homeostatic reinforcement learning (Keramati & Gutkin 2014, eLife 3:e04811; pending
@@ -92,6 +93,7 @@ const frac = (serveH: number, walkH: number) => serveH > 0 ? serveH / (walkH + s
 export function payOf(world: World, c: Chimp, k: Pick<Candidate, 'action' | 'targetId'>, v: number, aux: number, P: Params): number {
   const H = c.hunger, T = c.thirst, F = 1 - c.energy, L = 1 - c.social, S = c.stress;
   const px = c.position[0], pz = c.position[2], x = ix(c), idx = index(world);
+  const spd = tripSpeed(world, c, P); // stage E2i (walkGait): the animal's walking speed (gait.ts), walkMps when off
   const sleepOnly = P.rhythmSleep === 1;
   const restE = sleepOnly ? 0 : P.energyRestPerH + P.energyOtherPerH, walkE = sleepOnly ? 0 : P.energyWalkPerH - P.energyOtherPerH;
   switch (k.action) {
@@ -104,7 +106,7 @@ export function payOf(world: World, c: Chimp, k: Pick<Candidate, 'action' | 'tar
       let feeders = 0;
       if (inView) for (let i = 0; i < x.seen.length; i++) { const o = idx.byId.get(x.seen[i]); if (o && o.alive && o.id !== c.id && o.action === 'forage' && o.targetId === t.id) feeders++; }
       const crop = inView ? (P.patchEcology === 1 ? fruitAt(world, t) : t.fruit) : x.treeCrop?.[t.id] ?? UNKNOWN_CROP;
-      const ti = treeIntake(c, P, crop, feeders, Math.hypot(t.position[0] - px, t.position[2] - pz));
+      const ti = treeIntake(c, P, crop, feeders, Math.hypot(t.position[0] - px, t.position[2] - pz), true, spd);
       return H * ti.perHourInclWalk + T * ti.thirstPerHInclWalk - F * walkE * (1 - frac(ti.feedH, ti.walkH));
     }
     case 'drink': {
@@ -112,7 +114,7 @@ export function payOf(world: World, c: Chimp, k: Pick<Candidate, 'action' | 'tar
       let pos: readonly number[] | undefined = idx.waterById.get(k.targetId)?.position;
       for (let i = 0; i < c.memory.length; i++) { const m = c.memory[i]; if (m.kind === 'water' && m.entityId === k.targetId) { pos = m.position; break; } }
       if (!pos) return 0;
-      const f = frac(T / P.drinkThirstPerH, Math.hypot(pos[0] - px, pos[2] - pz) / P.walkMps / 3600);
+      const f = frac(T / P.drinkThirstPerH, Math.hypot(pos[0] - px, pos[2] - pz) / spd / 3600);
       return T * P.drinkThirstPerH * f - F * walkE * (1 - f);
     }
     case 'rest': case 'shelter': return F * restE;
@@ -120,13 +122,13 @@ export function payOf(world: World, c: Chimp, k: Pick<Candidate, 'action' | 'tar
       const t = idx.treeById.get(k.targetId), s = sleepOnly ? sleepPressure(c) : 0;
       const sleepE = sleepOnly ? (1 - world.environment.daylight) * (s / P.rhythmSleepDecayH + (1 - s) / P.rhythmSleepRiseH) : P.energySleepPerH + P.energyOtherPerH;
       if (!(sleepE > 0)) return 0;
-      const walkH = t ? Math.hypot(t.position[0] - px, t.position[2] - pz) / P.walkMps / 3600 : 0;
+      const walkH = t ? Math.hypot(t.position[0] - px, t.position[2] - pz) / spd / 3600 : 0;
       return F * sleepE * frac(F / sleepE, walkH);
     }
     case 'groom': case 'play': {
       const o = idx.byId.get(k.targetId);
       if (!o || !o.alive) return 0;
-      const walkH = Math.hypot(o.position[0] - px, o.position[2] - pz) / P.walkMps / 3600;
+      const walkH = Math.hypot(o.position[0] - px, o.position[2] - pz) / spd / 3600;
       if (k.action === 'groom') { const f = frac(L / GROOM_SOCIAL_PER_H, walkH); return (L * GROOM_SOCIAL_PER_H + S * GROOM_STRESS_PER_H + F * restE) * f - F * walkE * (1 - f); }
       const f = frac(L / PLAY_SOCIAL_PER_H, walkH);
       return L * PLAY_SOCIAL_PER_H * f - F * (walkE + (sleepOnly ? 0 : PLAY_EXTRA_ENERGY_PER_H) * f);

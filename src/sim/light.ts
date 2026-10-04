@@ -84,8 +84,9 @@ export interface TripLight { pace: number; see: number }
  * the floor) and the vision in the crown on arrival, with the sun where it will be when the animal arrives at the
  * daylight pace under today's cloud. Both 1 when the sun stays above daylightHighDeg until then. Writes into `out`.
  */
-export function tripLight(world: World, P: Params, distM: number, crownY: number, out: TripLight): TripLight {
-  const env = world.environment, walkH = distM / P.walkMps / 3600, hi = P.daylightHighDeg * DEG;
+export function tripLight(world: World, P: Params, distM: number, crownY: number, out: TripLight, speed = P.walkMps): TripLight {
+  // stage E2i (walkGait): the walk at the animal's walking speed (gait.ts tripSpeed), walkMps by default
+  const env = world.environment, walkH = distM / speed / 3600, hi = P.daylightHighDeg * DEG;
   // the sun's altitude changes by at most 15° an hour (the Earth's rotation): full light until arrival
   if (env.sunAltitude >= hi + walkH * (360 / 24) * DEG) { out.pace = 1; out.see = 1; return out; }
   const alt = sunAltitudeAt(world.time + walkH);
