@@ -1946,3 +1946,14 @@ copulation (mullerWrangham2004b). New keys: sanders2003, boeschBoesch1989, watts
 cawthornHoffman2015, miyamoto2013, mitani2000, gomesBoesch2009, furuichiHashimoto2001, watts2007, watts2022,
 robertsRoberts2015, marson1989. Not verified: immature red colobus masses, the edible share's mean, Watts 2007's numbers,
 Tutin 1979, Stumpf & Boesch, Deschner et al. 2004 and Marson et al. 1989 in full.
+
+## Addendum: E4p mating without quotas (4 October 2026)
+
+Same text as research.md "Addendum: E4p mating without quotas": furuichiHashimoto2001's 4.2 (Mahale) and 12.3 (Gombe)
+are the operational sex ratio (adult males per maximally swollen female in the community, from demographic parameters),
+not party counts; Kalinzu's parties held 4.43 adult males and 0.92 oestrous females (16 adult males; largest parties
+followed), and its 0.12 copulations per adult male-hour is per male present with a swollen female. gomesBoesch2009: 5
+adult males, 14 adult females (8 in oestrus), 30 of 39 dyads seen together copulated. robertsRoberts2015: females answered
+a median 0.28 of courtship sequences by approaching to copulate. wilcox1995 (Abs, humans): conception only from
+intercourse in the six days ending on ovulation, 0.10 five days before to 0.33 on the day (E4p iteration 2,
+`spermLifeDays` 4.2 days, [L]). New key: wilcox1995.

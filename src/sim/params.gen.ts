@@ -2,7 +2,7 @@
 /* eslint-disable */
 export const REGISTRY_VERSION = 1;
 /** Content hash of every live default, hard range, profile value and integer flag. Stored with each world. */
-export const REGISTRY_HASH = '3a633cad4928d4fa';
+export const REGISTRY_HASH = 'd75079739293a266';
 
 /** Registry defaults (the compressed profile). */
 export const DEFAULTS = {
@@ -900,6 +900,7 @@ export const DEFAULTS = {
   socialSleepPerH: 0.01,
   socialTiming: 0,
   socialUpkeep: 0,
+  spermLifeDays: 4.2,
   startDoy: 271,
   startHour: 6.5,
   statusTensionW: 0.25,
@@ -1638,7 +1639,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   maternalLevers: [0, 1],
   matingAssocWeight: [0, 1],
   matingSaturation: [0, 1000000],
-  matingValue: [0, 1],
+  matingValue: [0, 2],
   meatAlertM: [0, 1000000],
   meatEatPerH: [0, 1000000],
   meatHungerFactor: [0, 1000000],
@@ -1916,6 +1917,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   socialSleepPerH: [0, 1000000],
   socialTiming: [0, 15],
   socialUpkeep: [0, 2],
+  spermLifeDays: [0.1, 100],
   startDoy: [271, 271],
   startHour: [6.5, 6.5],
   statusTensionW: [-10, 10],

@@ -8,6 +8,7 @@ import { noteEvent } from './relations';
 import { clamp, random } from './rng';
 import { paramsOf, type Params } from './params';
 import { NEVER, index, ix, markAliveChanged, simOf } from './state';
+import { addDecayed, spermDecay, spermDecayOn } from './mating';
 
 // Ovarian cycle mapped onto a 36-day template (registry cycle*): ~10-12 days of maximal swelling, ovulation late in it.
 function templateDay(c: Chimp, P: Params): number { return c.cycleDay / ix(c).cycleLen * P.cycleTemplateDays; }
@@ -51,6 +52,7 @@ export function recordCopulation(world: World, f: Chimp, m: Chimp): void {
   if (u < P.cycleMaxDay - 1 || u >= P.cycleMaxEndDay) return;
   const fx = ix(f);
   fx.cops[m.id] = (fx.cops[m.id] ?? 0) + (u >= P.cyclePeriovulatoryDay ? 2 : 1);
+  if (spermDecayOn(P)) addDecayed(world, f, m, u >= P.cyclePeriovulatoryDay ? 2 : 1, P); // stage E4p iteration 2
 }
 
 /**
@@ -90,14 +92,14 @@ export function reproSlow(world: World, c: Chimp, bioDays: number): void {
     if (c.cycleDay >= x.cycleLen) { c.cycleDay -= x.cycleLen; wrapped = true; }
     const after = templateDay(c, P);
     if ((before < OVULATION && (after >= OVULATION || wrapped)) || (wrapped && after >= OVULATION)) { ovulate(world, c); if (c.pregnancy > 0) x.gestCond = x.cond; }
-    if (wrapped && c.pregnancy === 0) { x.cops = {}; x.coerce = {}; x.near = {}; }
+    if (wrapped && c.pregnancy === 0) { x.cops = {}; x.coerce = {}; x.near = {}; if (x.cd) { x.cd = {}; delete x.cdAt; } }
     if (c.pregnancy === 0 && c.cycleDay >= 0 && c.swelling >= 0.9) recordAssociation(world, c, bioDays);
     if (c.pregnancy === 0) c.swelling = swellingAt(templateDay(c, P), P);
     if (c.age >= 50) { c.cycleDay = -1; c.swelling = 0; }
     return;
   }
   c.swelling = Math.max(0, c.swelling - bioDays / 3);
-  if (c.age >= x.firstSwell && c.age >= x.amenUntil && c.age < 50) { c.cycleDay = 0; x.cops = {}; x.coerce = {}; x.near = {}; }
+  if (c.age >= x.firstSwell && c.age >= x.amenUntil && c.age < 50) { c.cycleDay = 0; x.cops = {}; x.coerce = {}; x.near = {}; if (x.cd) { x.cd = {}; delete x.cdAt; } }
 }
 
 /**
@@ -107,16 +109,19 @@ export function reproSlow(world: World, c: Chimp, bioDays: number): void {
 function ovulate(world: World, c: Chimp): void {
   const x = ix(c);
   let cops = 0, near = 0;
-  for (const k in x.cops) cops += x.cops[k];
-  for (const k in x.near) near += x.near[k];
   const P = paramsOf(world);
+  // stage E4p (matingValue 2): the cycle's copulations as their sperm stand at ovulation (each weight decayed with its age)
+  const decayed = spermDecayOn(P) ? decayedPool(world, x, P) : null;
+  const cp = decayed ?? x.cops;
+  for (const k in cp) cops += cp[k];
+  for (const k in x.near) near += x.near[k];
   const mating = Math.min(1, (cops + near * P.matingAssocWeight) / P.matingSaturation);
   if (mating <= 0) return;
   const living = index(world).alive.length;
   const p = fecundity(c.age, P) * conditionFertility(x.cond, P) * mating * (c.health > 0.6 ? 1 : 0.5) * (living < P.popCap ? 1 : 0);
   if (random(world) >= p) return;
   // paternity follows periovulatory-weighted copulation counts, so mate-guarding alphas sire a disproportionate share [M]
-  const pool = cops > 0 ? x.cops : x.near;
+  const pool = cops > 0 ? cp : x.near;
   let total = 0;
   for (const k in pool) total += pool[k];
   let r = random(world) * total, sire = -1;
@@ -124,6 +129,15 @@ function ovulate(world: World, c: Chimp): void {
   c.pregnancy = 0.01; c.cycleDay = -1; x.sireId = sire;
   const m = index(world).byId.get(sire);
   addEvent(world, `(Genetic record) ${c.name} conceived; sire ${m?.name ?? 'unknown'}`, 'reproduction', [c.id, sire], c.troopId, 0);
+}
+
+/** Stage E4p (matingValue 2): her decayed copulation record as of now (a fresh object; the record is not written). */
+function decayedPool(world: World, x: ReturnType<typeof ix>, P: Params): Record<number, number> {
+  const out: Record<number, number> = {};
+  if (!x.cd || x.cdAt === undefined) return out;
+  const k = spermDecay(world, x.cdAt, P);
+  for (const id in x.cd) out[+id] = x.cd[id] * k;
+  return out;
 }
 
 export function giveBirth(world: World, mother: Chimp): void {
@@ -163,7 +177,7 @@ export function giveBirth(world: World, mother: Chimp): void {
   mother.lactating = true;
   // lactational amenorrhea 3.5-4.5 years; interbirth interval ~5-6 years [M]
   x.amenUntil = mother.age + P.amenorrheaMinY + random(world) * P.amenorrheaSpanY;
-  x.sireId = -1; x.cops = {};
+  x.sireId = -1; x.cops = {}; if (x.cd) { x.cd = {}; delete x.cdAt; }
   const troop = idx.troopById.get(mother.troopId);
   addEvent(world, `${mother.name} (${troop?.name ?? ''}) gave birth to a ${sex} infant, ${baby.name}${father ? `; genetic sire ${father.name}` : ''}`, 'reproduction',
     father ? [mother.id, baby.id, father.id] : [mother.id, baby.id], mother.troopId, 2);
@@ -183,7 +197,7 @@ export function doTransfer(world: World, c: Chimp, destId: number): void {
   for (const k of idx.alive) if (k.alive && k.troopId === destId && rankedFemale(k)) minElo = Math.min(minElo, k.elo);
   c.elo = minElo - 30;
   for (const k in c.bonds) { const o = idx.byId.get(+k); if (o && o.troopId !== destId) c.bonds[+k] *= 0.35; }
-  c.allies.length = 0; c.lastConflict = null; x.coerce = {}; x.cops = {}; x.greet = {};
+  c.allies.length = 0; c.lastConflict = null; x.coerce = {}; x.cops = {}; x.greet = {}; if (x.cd) { x.cd = {}; delete x.cdAt; }
   x.victimAt = NEVER; x.joinCall = -1; x.heardN = 0;
   flashInteraction(world, 'transfer', c, -1, [c.id], 0.6);
   world.stats.transfers++;

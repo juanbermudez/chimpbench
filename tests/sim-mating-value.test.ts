@@ -7,7 +7,7 @@ import { consents, copulationWeight, paternityGain } from '../src/sim/mating';
 import { perceive } from '../src/sim/perception';
 import { recordCopulation } from '../src/sim/reproduction';
 import { ix } from '../src/sim/state';
-import { DEFAULT_PARAMS } from '../src/sim/params';
+import { DEFAULT_PARAMS, paramsOf as paramsOfWorld } from '../src/sim/params';
 import type { Chimp, World } from '../src/types';
 
 const P = DEFAULT_PARAMS;
@@ -74,4 +74,25 @@ test('with matingValue 1 the mate offer is worth the paternity it adds and no qu
       assert.ok(!getEligibleActions(w, m).some(c => c.action === 'mate' && c.targetId === f.id), 'no offer worth nothing');
     }
   }
+});
+
+test('matingValue 2: a copulation\'s fertilizing weight decays with the age of its sperm (spermLifeDays), in the gain and at ovulation alike', () => {
+  const w = createWorld(48, { params: { matingValue: 2 } }), Pw = paramsOfWorld(w), { f, m, r } = pair(w);
+  atDay(f, Pw.cycleMaxDay + 1); ix(f).cops = {}; delete ix(f).cd; delete ix(f).cdAt;
+  for (let i = 0; i < 10; i++) recordCopulation(w, f, r);
+  const fresh = paternityGain(f, m, Pw, w);
+  assert.ok(Math.abs((ix(f).cd ?? {})[r.id] - 10) < 1e-9, 'the record holds the ten weights');
+  w.time += 24 * Pw.spermLifeDays; // one e-folding later, the rival's ten copulations stand at 10 / e
+  const later = paternityGain(f, m, Pw, w);
+  assert.ok(later > fresh, `${fresh} → ${later}`);
+  const C = 10 / Math.E, S = Pw.matingSaturation;
+  const expect = (Math.min(1, (C + 1) / S) * 1 / (C + 1)) / Math.min(1, 1 / S);
+  assert.ok(Math.abs(later - expect) < 1e-9, `${later} vs ${expect}`);
+  // matingValue 1 ignores the decay: the cumulative counts
+  const w1 = createWorld(48, { params: { matingValue: 1 } }), P1 = paramsOfWorld(w1), q = pair(w1);
+  atDay(q.f, P1.cycleMaxDay + 1); ix(q.f).cops = {};
+  for (let i = 0; i < 10; i++) recordCopulation(w1, q.f, q.r);
+  assert.equal(ix(q.f).cd, undefined, 'no decayed record without the switch at 2');
+  const g1 = paternityGain(q.f, q.m, P1, w1); w1.time += 24 * P1.spermLifeDays;
+  assert.equal(paternityGain(q.f, q.m, P1, w1), g1);
 });
