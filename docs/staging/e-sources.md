@@ -1804,7 +1804,7 @@ pant-grunts given by males; the observer counts all pant-grunts). New: girardBut
 wroblewski2009. Not verified: Laporte & Zuberbühler 2010 (two routes failed); a wild per-dyad greeting rate; the hour at
 which consortships begin.
 
-## Addendum: E4i patrols (4 October 2026)
+## 47. Addendum: E4i patrols (4 October 2026)
 
 Same text as research.md "Addendum: E4i patrols": gilbyWilsonPusey2013 (FT: patrol criteria and start-time rule; GEE of a
 patrol day on the day's maximum male party size, +0.1 per male, and distance travelled, +0.43 per km), lemoine2023 (FT:

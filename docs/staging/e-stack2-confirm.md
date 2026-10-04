@@ -1346,3 +1346,19 @@ prescriptions). **Reference group, new:** S13 in confirm mode (S13, ea92d20) plu
 **Predictions (against the S13 group; moderate confidence unless stated).** Prescriptions 60 (high); viability and night
 safety pass; T-ACT-1..4 and T-RNG-4 within the group's spread; T-SOC-5 inside its band; nursing mothers' reserves within
 ± 0.03 %/day of the group's mean (low: E5e's two arms disagreed in sign); fitted and held-out inside noise.
+
+## S15 confirm (registered 4 October 2026 before its run)
+
+**S15 = S13 + E4i's `patrolValue` 2** (the patrol lead weighed once, when a party first holds three adult males, from
+border staleness, the odds against the neighbour's remembered males, daylight left, fatigue and arousal; 11 patrol
+entries out: 65 → 54 prescriptions). E4i recorded it, off: it passed the standard keep rule in quick mode but nursing
+mothers' reserve trend crossed the stage's own line (−3.6 SD against two quick realizations' spread). Judged here against
+S13's confirm group (S13, S13c1–S13c3) by the standard keep rule, **plus, registered now, the stage's concern as a
+criterion:** nursing mothers' reserve slope (%/day) not below the group's mean by more than 2 SD of the group (or 0.02,
+whichever is larger). Bench, energy-diagnose and rhythm-metrics, 5 seeds, 30 + 60 days, from a frozen checkout of this
+commit (`bench-run4`).
+
+**Predictions (against the S13 group; moderate confidence unless stated).** Prescriptions 54 (high); viability and night
+safety pass; patrols per community-week up ~2× (T-PAT-1 inside its band 0.1–0.5, low); incursion share up (T-PAT-6
+0.5–0.7, low); T-IGE-1 up; fitted and held-out inside noise; nursing mothers' slope within the line (low: quick mode
+crossed it, the cause unclear).

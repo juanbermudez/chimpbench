@@ -3105,7 +3105,7 @@ greeting by audience; the repository copy OpenAlex lists returns 410 and the arc
 wild per-dyad pant-grunt rate or interval between greetings of the same dominant; the time of day at which consortships
 begin.
 
-### Addendum: E4i patrols (4 October 2026)
+### E.47 Addendum: E4i patrols (4 October 2026)
 
 What stage E4i (`patrolValue`, docs/staging/e4i-prereg.md) reads from sources already listed above ("Patrols"); every
 value below is a target or a direction, never an input. Read this stage: lemoine2023 and gilbyWilsonPusey2013 in full
