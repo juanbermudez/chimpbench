@@ -3104,3 +3104,42 @@ FT. Bibliographic data Crossref-verified. Tags as above.
 greeting by audience; the repository copy OpenAlex lists returns 410 and the archived copy could not be fetched); any
 wild per-dyad pant-grunt rate or interval between greetings of the same dominant; the time of day at which consortships
 begin.
+
+### Addendum: E4i patrols (4 October 2026)
+
+What stage E4i (`patrolValue`, docs/staging/e4i-prereg.md) reads from sources already listed above ("Patrols"); every
+value below is a target or a direction, never an input. Read this stage: lemoine2023 and gilbyWilsonPusey2013 in full
+(NCBI BioC, PMC10621857 and PMC4231443); langergraber2017 (PMC5514721) and massaro2022 (PMC8977668) are not in the PMC
+open-access subset (BioC: no result; efetch: front matter and abstract only), so their figures stay as recorded at the
+C6 evidence check (docs/patrol-evidence.md, full texts read then).
+
+- **Patrol days follow large male parties travelling far, Gombe** [gilbyWilsonPusey2013] (FT) [M]. Patrols were
+  identified in the narrative notes by two criteria: "(1) chimpanzees travelled cautiously and (2) they appeared to be
+  watching or listening for chimpanzees from neighbouring communities"; the start time was "based on the first instance
+  in which chimpanzees were identified as patrolling". GEE logistic regression of patrolling on a day: maximum male party
+  size +0.1 per male, distance travelled +0.43 per km (both P < 0.0001), a hunt no longer significant once distance is in
+  the model; "Patrolling was most likely to occur on days with large male parties that travelled a long distance."
+  Periphery visits: 896 of 5,217 focal male follows (17.2%). Use in E4i: the direction of the male-party effect and of
+  travel; no value enters the model.
+- **Border movements follow the balance of power and the time of day, Taï** [lemoine2023] (FT, *P. t. verus*) [M]. On
+  the way toward the border chimpanzees stopped at peripheral hills in 57.73% of passes (toward the centre 25.09%); stops
+  (≥ 5 min of rest) lasted 38 ± 65 min on hills and 30 ± 32 min at low places; "traveling towards the border was less
+  likely in late hours of the day (separate GLM: estimate ± SE = −0.069 ± 0.024, df = 1, P = 0.005)" and stops on
+  peripheral hills were less likely later in the day (−0.302 ± 0.105); after a stop the likelihood to advance toward
+  rivals rose with a favourable imbalance of power (own minus rival adults; +0.258 ± 0.093) and during movements toward
+  the border (+0.748 ± 0.104), about 40% at low places. Use in E4i: the direction of the odds rule for the incursion and
+  the retreat (advance when the balance favours the party), and of daylight (no clock): a late-day decline in
+  border-ward travel is a held-out direction, not an input.
+- **Participation falls with the community's male count, Ngogo** [langergraber2017] (as recorded, FT at C6p): number
+  of males in the community −2.21 (CI −3.97 to −1.90) on each male's participation; 33% of patrols on average. Use in
+  E4i: a direction the joining rule (what a joiner adds) can be checked against; no value enters.
+- **Female participation** [samuni2021] (as recorded): Taï, 48% of females took part in active encounters (over 92% after
+  a patrol); maximal swelling raised participation, late gestation lowered it, a young infant (< 2 y) had no clear effect;
+  [massaro2022] Gombe patrols held a median of 3 adult females (0–20); [wattsMitani2001] Ngogo females essentially absent.
+  Use in E4i: why no lactation penalty is written in (the one direct test found no infant effect); female participation
+  is reported against these sites, not scored.
+- **Testosterone and patrols** [sobolewski2012]: still not verified (indexed excerpts only); the arousal gain in E4i is
+  E4b's design convention for a male competitive act, not a value from this source.
+
+**Not verified this stage:** amsler2010 (energetic costs of patrols; Wiley, closed; abstract only); mitaniWatts2005,
+wattsMitani2001, watts2006 (closed; as recorded at C6p); any source on the time of day patrols start.

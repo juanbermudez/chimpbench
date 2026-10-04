@@ -276,6 +276,13 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   // to the daily relaxation of bonds (upkeep.ts), so the awake and asleep timers are not read
   ...same(['socialAwakePerH', 'socialSleepPerH'], P => !(P.socialUpkeep >= 1),
     'copied into the timer rates (src/sim/life.ts needRates) but used only in the timer branch of needs(), not while socialUpkeep is 1 or 2 (upkeep.ts upkeepPerH sets the rise). src/decide/facts.ts still copies them into the Jev facts (model arms only)'),
+  // stage E4i (patrolValue 1 or 2; docs/staging/e4i-prereg.md §4, §7): leading a patrol is an option valued from the males'
+  // state, the incursion follows the patrol's odds, the members leave by their own state, and joining is scored by what a joiner adds
+  ...same(['patrolH0', 'patrolMaleOddsRatio', 'patrolStartH', 'patrolEndH'], P => !(P.patrolValue >= 1), 'no patrol hazard is rolled while patrolValue is 1: the lead is offered at its value (src/sim/patrol.ts leadValue, candidates.ts patrolAndCalls; perception.ts rollImpulses skips the roll)'),
+  patrolIncursionP: { when: P => !(P.patrolValue >= 1), why: 'no incursion die while patrolValue is 1: at the range edge the patrol pushes in by its assessed odds and the daylight left (src/sim/parties.ts updatePatrols)' },
+  patrolMaxH: { when: P => !(P.patrolValue >= 1), why: 'no length cap while patrolValue is 1: a patrol ends when its route comes home or no member is left (src/sim/parties.ts updatePatrols; execution.ts startPatrol does not read it)' },
+  ...same(['patrolReleaseP', 'patrolReleaseContactP'], P => !(P.patrolValue >= 1), 'no release dice while patrolValue is 1: after a patrol the males call by the call rules (src/sim/parties.ts updatePatrols)'),
+  ...same(['patrolFemaleJoin', 'patrolFemaleStay', 'patrolLactatingJoin'], P => !(P.patrolValue >= 1), 'no female site settings while patrolValue is 1: everyone is scored as a male is, times its strength over the patrol\'s average adult male (src/sim/patrol.ts joinShare, candidates.ts patrolAndCalls)'),
   // stage E1n (weanDecide; docs/staging/e1n-prereg.md §3): the mother decides by her drive against the infant's own-food
   // drive (energy.ts ownDrive), so the weaning roll and its ramp are not evaluated
   ...same(['weanRefuseMaxP', 'weanRefuseAgeY', 'weanRefuseRampY'], P => !(P.weanDecide === 1 && P.energyLedger === 1 && P.ledgerDrive === 1),
@@ -353,6 +360,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   followMargin: { stage: 'E5d', needs: { cohesionValue: 1 }, removesNothing: 'values following and joining by the company they add over the best companion kept by staying (E5b\'s margin, extended; E5a\'s companyValue and presentCompany); adds no magnitude and switches no prescription out (e5d-prereg §4.2)' },
   contestAssess: { stage: 'E4h', needs: {} },
   socialTiming: { stage: 'E5e', needs: {} },
+  patrolValue: { stage: 'E4i', needs: {} },
 };
 
 /** Whether an entry is in use: generated (not planned), non-zero under these resolved parameters, and not switched out. */

@@ -108,6 +108,8 @@ export interface ChimpX {
   slide: number;
   /** Last time this male rolled the patrol hazard (territory.ts, perception.ts). */
   patrolRoll: number;
+  /** Stage E4i (patrolValue; patrol.ts): adult males each neighbour community was last seen or heard with at once, by community id. Absent until the first contact with the switch on, so worlds with it off are unchanged. */
+  nbm?: Record<number, number>;
   /** Contact memory (§5.3.1 P2): flat [x, z, contact, loss, eco-hour] per hot spot (contact.ts), and the last time strangers seen were noted. */
   contacts: number[]; contactSeenAt: number;
   /** Stage C6b (field): crowns this individual recently fed in and when it left them (≤ 6, newest last); absent until first used. */
@@ -255,7 +257,7 @@ export type SimWorld = World & { sim: SimState };
  * ChimpX and SimState keys that exist only once their mechanism has fired (so worlds with the switch off keep their
  * shape and hashes). The save check (src/persist/envelope.ts worldShapeProblem) ignores them.
  */
-export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'tryNest', 'en', 'wat', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk', 'cx', 'cxc', 'cn', 'asl', 'phAt', 'phX', 'phZ', 'ard', 'wr', 'upk', 'jt'];
+export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'tryNest', 'en', 'wat', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk', 'cx', 'cxc', 'cn', 'asl', 'phAt', 'phX', 'phZ', 'ard', 'wr', 'upk', 'jt', 'nbm'];
 export const OPTIONAL_SIM: readonly string[] = ['fission', 'stormAt'];
 
 export function newX(): ChimpX {

@@ -1803,3 +1803,12 @@ edge, at least 3 days (wroblewski2009, FT); T-SOC-6's sample (gilby2013, FT: the
 pant-grunts given by males; the observer counts all pant-grunts). New: girardButtoz2022, dunphyLelii2019, nakamura2022,
 wroblewski2009. Not verified: Laporte & Zuberbühler 2010 (two routes failed); a wild per-dyad greeting rate; the hour at
 which consortships begin.
+
+## Addendum: E4i patrols (4 October 2026)
+
+Same text as research.md "Addendum: E4i patrols": gilbyWilsonPusey2013 (FT: patrol criteria and start-time rule; GEE of a
+patrol day on the day's maximum male party size, +0.1 per male, and distance travelled, +0.43 per km), lemoine2023 (FT:
+border-ward travel and hill stops less likely late in the day; advances rise with a favourable imbalance of power and
+toward the border), langergraber2017 (participation falls with the community's male count, as recorded), samuni2021 and
+massaro2022 (female participation; no young-infant effect at Taï), sobolewski2012 still not verified. No new source
+keys. Not verified: amsler2010, mitaniWatts2005, wattsMitani2001, watts2006 (closed; as recorded at C6p).

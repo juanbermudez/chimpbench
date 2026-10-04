@@ -37,6 +37,7 @@ const TRACK_E_SWITCHES = [
   'forageRate', // E3c
   'contestAssess', // E4h
   'socialTiming', // E5e
+  'patrolValue', // E4i
 ] as const;
 
 test('Track E switches are all 0 by default in both profiles', () => {

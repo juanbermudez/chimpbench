@@ -13,6 +13,7 @@ import { endoHeard, endoOn } from './endocrine';
 import { noteFeeders } from './departure';
 import { darkOn, sightAt, visionNow } from './light';
 import { NEVER, aliveNear, awakeInNest, byIdIn, index, isTreeId, ix, simOf, treesNear } from './state';
+import { patrolValueOn, rememberRivals } from './patrol';
 
 export const IMPULSE_TRANSFER = 1, IMPULSE_ESCALATE = 2, IMPULSE_INFANTICIDE = 3, IMPULSE_RAIN = 4, IMPULSE_GANG = 5, IMPULSE_PATROL = 6, IMPULSE_HUNT = 7;
 
@@ -100,6 +101,7 @@ export function perceive(world: World, c: Chimp): void {
   x.seen.length = 0;
   const greetMem = (P.socialTiming & 1) !== 0;
   x.strangers = 0; x.strangerMales = 0; x.strangerTroop = -1; x.isolated = -1; x.nearestStranger = -1; x.newcomers = 0;
+  const prevOwn = x.ownMales; // adult males in view at the last perception (stage E4i iteration 1: a party forming)
   x.ownMales = isAdultMale(c) ? 1 : 0; x.visibleOwn = 0;
   const px = c.position[0], pz = c.position[2];
   let nearestD = Infinity;
@@ -137,6 +139,8 @@ export function perceive(world: World, c: Chimp): void {
       x.metAt[o.id] = time;
     }
   }
+  // stage E4i (patrolValue): the neighbour's males seen together are remembered for the patrol's odds (patrol.ts)
+  if (x.strangerMales > 0 && patrolValueOn(P)) rememberRivals(x, x.strangerTroop, x.strangerMales);
   if (x.strangers > 0) {
     // contact memory (§5.3.1 P2): strangers seen add contact where the nearest one stands, at most once per contactSeenGapH
     const ns = x.nearestStranger >= 0 ? index(world).byId.get(x.nearestStranger) : undefined;
@@ -224,11 +228,11 @@ export function perceive(world: World, c: Chimp): void {
     x.stims.push(st.id);
     if (st.kind === 'snake-model' && d2 < P.snakeVisualM * P.snakeVisualM) { const a = s.aware[st.id] ?? (s.aware[st.id] = []); if (!a.includes(c.id)) a.push(c.id); }
   }
-  rollImpulses(world, c, metPrey);
+  rollImpulses(world, c, metPrey, prevOwn);
 }
 
 /** Rare behaviors start as impulses drawn at perception, so pure candidate scoring stays rng-free. */
-function rollImpulses(world: World, c: Chimp, metPrey: number): void {
+function rollImpulses(world: World, c: Chimp, metPrey: number, prevOwn: number): void {
   const x = ix(c);
   if (x.impulseUntil > world.time && x.impulse !== 0) return;
   x.impulse = 0; x.impulseTarget = -1; x.impulseUntil = NEVER;
@@ -251,7 +255,13 @@ function rollImpulses(world: World, c: Chimp, metPrey: number): void {
   // adult male with >= patrolMinMales adult males in view, 08:00–15:30, no patrol under way. OR from mitaniWatts2005
   // (P-PAT-1: +17% per male) [M]; the staleness and energy forms are design; h0 is fitted to T-PAT-1.
   const hour = world.hour, s = simOf(world);
-  if (P.patrolH0 > 0 && x.ownMales >= P.patrolMinMales && hour >= P.patrolStartH && hour < P.patrolEndH && !s.patrols[c.troopId] && world.environment.rain < P.patrolMaxRain) {
+  // stage E4i (patrolValue): no hazard, no clock; leading a patrol is an option valued from state (patrol.ts, candidates.ts).
+  // Iteration 1 (patrolValue 2): a party that first holds patrolMinMales adult males in his view (fewer at his last
+  // perception) is a salient change, and the lead is weighed then, once, as a hunt is at a colobus encounter. Nothing is drawn.
+  if (P.patrolValue >= 2 && x.ownMales >= P.patrolMinMales && prevOwn < P.patrolMinMales && !simOf(world).patrols[c.troopId] && world.environment.rain < P.patrolMaxRain) {
+    x.impulse = IMPULSE_PATROL; x.impulseTarget = -1; x.impulseUntil = world.time + P.impulseDurationH; return;
+  }
+  if (!patrolValueOn(P) && P.patrolH0 > 0 && x.ownMales >= P.patrolMinMales && hour >= P.patrolStartH && hour < P.patrolEndH && !s.patrols[c.troopId] && world.environment.rain < P.patrolMaxRain) {
     const dt = Math.min(P.patrolRollMaxH, world.time - x.patrolRoll);
     x.patrolRoll = world.time;
     const troop = index(world).troopById.get(c.troopId);
@@ -343,6 +353,7 @@ function hear(world: World, o: Chimp, callId: number, kind: CallKind, caller: Ch
   if (P.patrolContactMemory === 1 && world.time - x.heardAt > P.strangerCallerWindowH) noteContact(world, o, caller.position[0], caller.position[2], 1, 0);
   endoHeard(world, x, P); // stage E4b fix: the start of a hearing episode (before heardAt moves on)
   x.heardN = Math.max(1, n); x.heardAt = world.time; x.heardX = caller.position[0]; x.heardZ = caller.position[2]; x.heardTroop = caller.troopId; x.heardStim = -1;
+  if (patrolValueOn(P)) rememberRivals(x, caller.troopId, x.heardN); // stage E4i: callers heard together
   // most intergroup encounters are acoustic only (Kanyawara: 85% of 120 encounters in 15 y; Wilson et al. 2012) [M]
   const s = simOf(world);
   const key = `${Math.min(o.troopId, caller.troopId)}-${Math.max(o.troopId, caller.troopId)}`;
