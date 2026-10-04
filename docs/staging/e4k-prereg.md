@@ -449,3 +449,22 @@ held-out without T-HUN-4, T-BRD-1 and T-IGE-3 (12 rows): S17q 3.88 / 4.29 / 4.61
 chord per tick" is implemented as halving the turn until the goal lies within 2.8 m of the hunter (the group's own drift
 included), so moveTo never makes him climb down; §4.3's `pursuitCaptures` is `evenCaptures` over `closingSets`
 (`src/sim/huntpursuit.ts`).
+
+#### P2 result: hunt rows at 30 + 60 days (9b8715c frozen, `git.dirty` 0; against H0 and H0r; `report.py P1 P2`)
+
+| hunt rows, 30 + 60 d, seeds 48 and 7 | H0 / H0r | P1h | P2h |
+| --- | --- | --- | --- |
+| T-HUN-1 (n) | 26.3 (26) / 31.2 (31) | 9.07 (9) | 13 (13) |
+| T-HUN-2 (n) | 0.562 (16) / 0.346 (26) | 0.273 (11) | 0.462 (13) |
+| T-HUN-3 (n) | 0.0431 (209) / 0.0566 (265) | 0.019 (315) | 0.0533 (244) |
+| T-HUN-4 (n) | 2.19 (209) / 1.74 (265) | 2.58 (315) | 1.74 (244) |
+| T-HUN-7 (n) | 1.44 (9) / 1.11 (9) | 1 (3) | 1 (6) |
+| T-HUN-8 (n) | 0.923 (13) / 0.9 (10) | 1 (3) | 1 (6) |
+| truth hunts per community-year | 46.6 / 50.7 | 13.2 | 20.3 |
+| truth success | 0.262 / 0.296 | 0.287 | 0.479 |
+
+
+- P1q.json viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}: seed 48 deaths 0 {} starvation 0; seed 7 deaths 0 {} starvation 0
+- P1h.json viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}: seed 48 deaths 0 {} starvation 0; seed 7 deaths 0 {} starvation 0
+- P2q.json viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}: seed 48 deaths 0 {} starvation 0; seed 7 deaths 0 {} starvation 0
+- P2h.json viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}: seed 48 deaths 0 {} starvation 0; seed 7 deaths 0 {} starvation 0
