@@ -147,3 +147,80 @@ sensitivity readouts; the winners' kinds (D3, competition); and truth against ob
 lost draws, and (b) the model carries it with a sourced or physical meaning that the change would correct (a value with
 no source is not a lever). If no term passes (a) and (b), the stage stages nothing new in the model and says whether
 the rate is a scorer or band question.
+
+### 3.3 Diagnosis result (frozen checkouts: H0/H0r at ef07577, D0/D0r at 34f724d; simulation code identical to track-e 0d08525; every table printed by `artifacts/validation/e4n/diag_table.py` and `report.py` from the JSON)
+
+**Tool checks.** The taps leave S22's world hash unchanged (2 days, seeds 48 and 7: e8ed493db46eb3a6 and 644263a5233a5f32 with
+and without them). At all 647 hunt draws the recomputed value equals the option's stored raw value and huntvalue.ts's
+rate exactly (maximum difference 0). Truth hunts per seed equal e-bench's: H0 [0, 3] and D0 [0, 3]; H0r [1, 2] and D0r
+3 in all (the e-bench re-draw and the tool's re-draw share the salt).
+
+| readout (simulation truth, seeds 48 and 7 pooled; 30-day burn-in + 60 days) | D0 | D0r |
+| --- | --- | --- |
+| community-days | 360 | 360 |
+| encounters (adult males) per community-day | 5.21 | 5.64 |
+| hunt impulses per community-day | 2.76 | 3.40 |
+| impulses by adult males in view (2 / 3 / 4 / 5 / 6+) | 646 / 230 / 78 / 34 / 6 | 711 / 321 / 117 / 49 / 27 |
+| impulses with the lead offered | 286 (0.288) | 361 (0.295) |
+| not offered: no capture expected (fewer than 3 males) / timer energy ≤ 0.35 / rain / an ongoing hunt / no need / other | 621 / 77 / 10 / 0 / 0 / 0 | 733 / 126 / 5 / 0 / 0 / 0 |
+| hunt draws (lead on the menu at an RG choice) | 286 | 361 |
+| hunt draws won (hunts led) | 3 | 3 |
+| hunts started (truth); per community-year | 3; 3.04 | 3; 3.04 |
+| hunts the temperature 0.164 would have started (Σ softmax probability); per community-year | 17.14; 17.38 | 20.34; 20.62 |
+| hunt draws by males in view (3 / 4 / 5 / 6+) | 178 / 68 / 34 / 6 | 187 / 104 / 45 / 25 |
+| hunt's expected share of a carcass (captures ÷ n): mean | 0.298 | 0.291 |
+| expected meat E (kcal): mean (10% / 90%) | 342 (230 / 383) | 333 (230 / 383) |
+| E capped by the need (share of draws) | 0.003 | 0.014 |
+| time T (h): approach / chase / eating | 0.069 / 0.133 / 0.850 | 0.066 / 0.133 / 0.829 |
+| meat energy per hour of the hunt E ÷ T (kcal/h) | 323 | 322 |
+| his ripe-fruit rate R (kcal/h); meat-eating rate (kcal/h) | 435; 402 | 435; 402 |
+| r = E ÷ T ÷ R: mean (10% / 90%); ceiling R_meat ÷ R | 0.743 (0.691 / 0.781); 0.925 | 0.741 (0.692 / 0.778); 0.925 |
+| hunger h; drive 1.6 h + 0.1 (mean) | 0.264; 0.523 | 0.291; 0.565 |
+| hunt's value = drive × r: mean (10% / 90%) | 0.390 (0.161 / 0.598) | 0.420 (0.213 / 0.642) |
+| best other option's published score: mean (10% / 90%) | 0.927 (0.430 / 1.497) | 0.994 (0.482 / 1.520) |
+| margin (best other − hunt), median; hunt rank in the menu, median; menu size | 0.437; 4; 7.5 | 0.505; 4; 7.5 |
+| leaders' state at draws: reserves ÷ store, foregut fill, need (kcal) | -0.009 / 0.488 / 1308 | -0.009 / 0.442 / 1340 |
+| lost draws the hunt would win with (a) r at its ceiling / (b) drive 1.7 (h = 1) / (c) E not capped by the need / (d) value 1 | 0.032 / 0.795 / 0.000 / 0.615 | 0.036 / 0.729 / 0.000 / 0.545 |
+
+D0: options that won the 283 lost draws (share; mean published score): travel: joined trip 0.19 (1.33), travel: own trip 0.15 (0.57), nest 0.11 (1.29), feed: crown 0.09 (0.74), rest 0.09 (0.51), groom 0.07 (0.73), patrol 0.07 (1.27), pant-grunt 0.06 (0.78), guard 0.03 (0.88), submit 0.03 (1.56), travel: to caller 0.02 (0.85), display 0.02 (0.49), mate 0.02 (0.85), charge 0.02 (0.80), follow: party 0.01 (0.84), flee 0.01 (0.70), call 0.01 (0.42), drink 0.00 (0.82), console 0.00 (0.51); food options (crown, fallback, trips) 0.43
+D0r: options that won the 358 lost draws (share; mean published score): travel: joined trip 0.18 (1.42), travel: own trip 0.14 (0.61), patrol 0.13 (1.27), feed: crown 0.11 (0.82), nest 0.09 (1.31), groom 0.07 (0.86), rest 0.04 (0.46), pant-grunt 0.04 (0.75), guard 0.04 (0.82), mate 0.04 (0.90), flee 0.03 (0.80), display 0.02 (0.56), drink 0.01 (0.79), charge 0.01 (0.89), call 0.01 (0.52), submit 0.01 (1.53), travel: to caller 0.01 (0.93), follow: party 0.01 (1.08); food options (crown, fallback, trips) 0.43
+
+
+D0: hunts resolved 3, success 0/3, captures 0, kills per success —, hunters in the pursuit 2.00 (listed 3.67), captures per hunter in the pursuit 0.000, leader's males in view {3: 2, 4: 1}
+   meat kcal per animal-day by class: adolescentMale 0.0, adultMale 0.0, femaleLactating 0.0, femaleOther 0.0, infant 0.0, juvenile 0.0; adult males' meat: hunters 0 kcal, other adult males 0 kcal
+   adult males' daylight (mean of seeds): rest 0.333, forage 0.323, travel 0.122, nest 0.090, groom 0.087, guard 0.019, patrol 0.009, drink 0.004
+D0r: hunts resolved 3, success 3/3, captures 3, kills per success 1.00, hunters in the pursuit 3.33 (listed 3.33), captures per hunter in the pursuit 0.306, leader's males in view {3: 1, 4: 2}
+   meat kcal per animal-day by class: adolescentMale 0.6, adultMale 1.5, femaleLactating 0.0, femaleOther 0.6, infant 0.0, juvenile 0.0; adult males' meat: hunters 2490 kcal, other adult males 0 kcal
+   adult males' daylight (mean of seeds): forage 0.325, rest 0.291, travel 0.135, groom 0.088, nest 0.087, guard 0.047, patrol 0.009, drink 0.005
+
+**Hunt rows** (e-bench, 30 + 60 days, seeds 48 and 7; `report.py hunt`): H0 truth hunts [0, 3] (3.0 per community-year),
+2 detected; T-HUN-1 3.03, T-HUN-2 0 (2 observed hunts), T-HUN-3 0.004 (8.45 encounters per 100 follow-hours), T-HUN-4
+6.07 (degenerate), T-HUN-7 and T-HUN-8 insufficient. H0r truth [1, 2] (3.0), 1 detected; T-HUN-1 2.02, T-HUN-2 1 (1
+hunt), T-HUN-3 0.004 (9.00), T-HUN-4 1.29, T-HUN-7 1, T-HUN-8 1. Viability passes (one illness death in H0r).
+
+**Truth hunts on the integrated candidates** (their confirm scorecards, 5 seeds, 30 + 60 days, read now): S19's four runs
+16.2, 17.8, 13.0, 19.1 per community-year; S21's four 8.9, 8.5, 8.9, 6.9; S22 4.5. The temperature's counterfactual on
+S22's own menus (17.4 and 20.6 per community-year above) reproduces S19's level.
+
+**What keeps the hunt from winning (finding).**
+1. **Opportunity.** 58–65% of the hunt impulses (646 of 994 and 711 of 1,225) come with only two adult males in view, for
+   which the pursuit expects no capture (E4k: at equal speeds three hunters must surround the group); with a few more
+   where three males' cones are too narrow to close (a leader's low alertness), the lead is never offered at 621 and 733
+   impulses (62% and 60%); 8–10% more are held by the timer-energy literal (`c.energy > 0.35`, candidates.ts:1143).
+2. **Value.** Offered (286 and 361 draws), the hunt is worth 0.39–0.42 against a best alternative of 0.93–0.99 (median
+   margin 0.44–0.51) and tops the menu in 3 draws of each realization (1%). Its rate is near the model's physics: r = 0.74
+   of the male's own fruit rate, against a ceiling of 0.925 (meat is eaten at 402 kcal/h, ripe fruit at 435); the need
+   cap binds in 0.3–1.4% of draws. What halves it is the appetite weight it borrows from the crowns: the drive 1.6 h + 0.1
+   is 0.52–0.57 at the encounters (h 0.26–0.29). By the sensitivity readouts, with h = 1 the hunt would top 73–80% of the
+   draws it lost; at r's ceiling 3–4%; without the need cap 0%; at a value of 1, 55–62%.
+3. **Competition.** It loses to joined trips (18–19% of lost draws, published scores 1.33–1.42: the companion's company),
+   own trips (14–15%, 0.57–0.61), the morning nest (9–11%, 1.29–1.31, every one at 06:40–07:30), patrols (7–13%, 1.27),
+   crowns (9–11%, 0.74–0.82), grooming, rest and calls; food options win 43%.
+4. **The temperature.** Under S19's softmax (T 0.164) the same menus give the hunt a 5.6–6.0% chance per draw: 17.4–20.6
+   hunts per community-year, S19's level. Under `choiceBelief` 2 the hunt wins only when every alternative is weak (the
+   jitter and belief offsets aside): S19's hunts were the temperature's picks of an option that never tops the menu.
+5. **The hunts that start.** 3 per realization (3.0 per community-year in truth); in D0 all three failed with 2.0 hunters
+   in the pursuit at the resolution (3.67 listed: E4k's tool on seed 7 shows joiners still below the canopy or on the
+   ground, having joined 5 min after the start of a 5.8-min hunt, and three hunters at canopy height whose cones,
+   71°, 71° and 48° at their alertness, left a 5° gap); in D0r all three succeeded (one kill each). Meat eaten: 0 and
+   1.5 kcal per adult male-day.
