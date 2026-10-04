@@ -318,3 +318,15 @@ S13 group's mean.
 
 At most 3, each logged here and committed before its run. An iteration changes the mechanism from first principles
 (a defect, an omitted cost or state), never a weight to move a row.
+
+### Run log, the switch on (each entry written before its run)
+
+- **Smoke** (logged after the run, at b2b998c with the tool's end classification fixed after it): S13 + `patrolValue`,
+  seed 48, 1 + 2 days and 30 + 4 days: every readout produced; 3 patrols in each (starts at 07:17 and 15:21 among them,
+  lead values 0.04–0.16, females on 2 of 6, every patrol entered a neighbour's range with the neighbour's males
+  remembered). Tool fix (scripts only): with the switch on the length cap does not exist, so no end is "cap", and the
+  incursion is read at the end of the patrol (decided at the range edge).
+- **A1** (as registered in §6), from a frozen detached checkout of the commit that adds this entry
+  (`scratchpad/e4i/frozen-a1`): chain X `patrol-diagnose` seeds 48 then 7 (30 + 60) then `e-bench --seeds 48,7
+  --burn-in 30 --days 60`; chain Y `e-bench --quick` then `energy-diagnose` (seeds 48, 7, 30 + 30); `--workers 2` below
+  load 8, else 1. Outputs `artifacts/validation/e4i/A1{d-48,d-7,p,q,q-energy}.json`.

@@ -43,6 +43,7 @@ import { IMPULSE_PATROL } from '../src/sim/perception';
 import { fruitAt } from '../src/sim/phenology';
 import { index, ix, simOf } from '../src/sim/state';
 import { cellAt, gridOf, levels, sectorOf, stalestSector, useLevels, SECTORS } from '../src/sim/territory';
+import { V, candidateMeta } from '../src/sim/candidates';
 import type { Chimp, Troop } from '../src/types';
 
 const arg = (k: string, d: string) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
@@ -129,7 +130,8 @@ for (let i = 0; i < days * DAY; i++) {
       const rec = o.rec, ended = evs.find(e => e.troopId === t.id && e.kind === 'territory' && /patrol ended/.test(e.text));
       rec.release = ended ? /chorus/.test(ended.text) : null;
       // 'empty': no member was on it at the last check (parties.ts ends it with no leader, and no release); 'cap': patrolMaxH
-      rec.end = time > rec.until ? 'cap' : o.nowMembers === 0 ? 'empty' : 'home';
+      rec.end = P.patrolValue !== 1 && time > rec.until ? 'cap' : o.nowMembers === 0 ? 'empty' : 'home';
+      rec.incursionDie = !!(o.obj as { incursion?: boolean }).incursion; // E4i: decided at the range edge (the die's field otherwise)
       rec.endT = time; rec.endHour = r4(hour); rec.lightLeftEnd = daylightLeftH(time);
       rec.endState = stMean(o.lastMembers.filter(isAdultMale).map(stateOf));
       for (const m of rec.members) if (m.leftAt === null) m.leftAt = time;
@@ -139,7 +141,7 @@ for (let i = 0; i < days * DAY; i++) {
       const leader = idx.byId.get(p.leaderId)!;
       const rec: Patrol = { troop: t.id, startT: time, startHour: r4(hour), lightLeftStart: daylightLeftH(time), leader: p.leaderId, malesInView: ix(leader).ownMales, incursionDie: !!p.incursion, sector: p.sector, until: p.until,
         maxAdultMales: 0, maxAdolMales: 0, maxFemales: 0, maxLactating: 0, members: [], pathM: 0, enteredNeighbour: false, contact: false, turnedBack: false, stopsSchedule: 0, stopsWaypoint: 0,
-        leadScore: leader.candidates.find(q => q.action === 'patrol' && q.targetId === -1)?.score ?? null, remembered: ix(leader).nbm?.[p.neighborId] ?? null,
+        leadScore: leader.candidates.find(q => q.action === 'patrol' && candidateMeta.get(q)?.v === V.LEAD)?.score ?? null, remembered: ix(leader).nbm?.[p.neighborId] ?? null,
         end: null, release: null, endT: null, lightLeftEnd: null, endHour: null, startState: stMean([leader, ...ix(leader).seen.map(id => idx.byId.get(id)!).filter(o2 => o2 && o2.alive && o2.troopId === t.id && isAdultMale(o2))].map(stateOf)), endState: null };
       patrols.push(rec);
       open.set(t.id, { rec, obj: p, phase: p.phase, stops: p.stops, lx: leader.position[0], lz: leader.position[2], lastMembers: [leader], nowMembers: 1 });
