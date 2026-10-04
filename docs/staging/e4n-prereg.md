@@ -348,3 +348,15 @@ implicate. Known defects deferred (not fixed here; file:line at b84009f):
 ### Run log (each entry written before its run)
 
 - **H0, H0r, D0, D0r** (§3.1–§3.2; unchanged code): done, §3.3.
+- **S1 (smoke test with the switch on; before any arm).** c8a573d: `tests/sim-hunt-drive.test.ts` 4 pass; S22's 2-day
+  world hash unchanged with `huntDrive` 0 (seeds 48 and 7: e8ed493db46eb3a6, 644263a5233a5f32); prescriptions 43 for S22
+  and for S22 + `huntDrive` 1 (`--count --params`); the diagnosis tool on S22 + `huntDrive` 1, seed 48, 1 + 2 days: 9 draws,
+  value = raw at every draw, the drive = 1.6 × φ + 0.1 with φ = `deficitDrive` (equal to the readout ÷ its satiation
+  term to 1e-4 at every draw: the §3.4 estimate is exact). Every §5 readout is produced.
+- **A1 (iteration 1).** From a frozen detached checkout of the commit that adds this entry: (a) `e-bench --quick --params
+  S22+{"huntDrive":1} --out artifacts/validation/e4n/A1q` and (b) `e-bench --seeds 48,7 --burn-in 30 --days 60 … --out
+  artifacts/validation/e4n/A1h` (one after the other, `--workers` 2 below load 8); (c) `scripts/e4n-hunt-diagnose.ts`
+  seeds 48 and 7, 30 + 60 (`diag/A1-{48,7}.json`) and (d) `scripts/energy-diagnose.ts --seeds 48,7 --burn-in 30 --days 30
+  --json …/A1-energy.json` (one after the other, beside the e-bench chain). Judged per §6–§7: the quick sums against S22q
+  and S22q1–3 (`judge_vs_reps.py quick custom`), the hunt rows against H0 and H0r, the reserves against S22q's four energy
+  runs.
