@@ -1,6 +1,7 @@
 // Stage M3 report (docs/staging/em-prereg.md §M3): the focal animals in the arms R (rules), A (the loop with the rules'
 // argmax), G (the loop with a GLiNER provider) and, iteration 2, AG and GG (the same with RG's gate: the provider replaces
-// RG's draws only), from scripts/em-loop.ts outputs (s<seed>-RA, -G, -AG, -GG); field rows from data/targets.json.
+// RG's draws only), and G2 (G with M1 iteration 2's wording), from scripts/em-loop.ts outputs (s<seed>-RA, -G, -AG, -GG,
+// -G2); field rows from data/targets.json.
 //
 //   pnpm exec tsx scripts/em-loop-report.ts [--dir artifacts/em/m3] [--seeds 48,7]
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -29,11 +30,11 @@ const inBand: Record<string, [number, number]> = {};
 const means: Record<string, Row[]> = {};
 const f2 = (v: number | null | undefined) => v === null || v === undefined || !Number.isFinite(v) ? '–' : v.toFixed(2);
 for (const seed of seeds) {
-  const ra = load(join(dir, `s${seed}-RA.json`)), g = load(join(dir, `s${seed}-G.json`)), ag = load(join(dir, `s${seed}-AG.json`)), gg = load(join(dir, `s${seed}-GG.json`));
+  const ra = load(join(dir, `s${seed}-RA.json`)), g = load(join(dir, `s${seed}-G.json`)), ag = load(join(dir, `s${seed}-AG.json`)), gg = load(join(dir, `s${seed}-GG.json`)), g2 = load(join(dir, `s${seed}-G2.json`));
   if (!ra) continue;
-  for (const [n, f] of [['G', g], ['AG', ag], ['GG', gg]] as const) if (f && f.burnInHash !== ra.burnInHash) throw new Error(`seed ${seed}: ${n}'s burn-in differs from R/A's`);
+  for (const [n, f] of [['G', g], ['AG', ag], ['GG', gg], ['G2', g2]] as const) if (f && f.burnInHash !== ra.burnInHash) throw new Error(`seed ${seed}: ${n}'s burn-in differs from R/A's`);
   const arms: [string, Arm | undefined][] = [['R', ra.results.find(a => a.arm === 'rules')], ['A', ra.results.find(a => a.arm === 'model')], ['G', g?.results.find(a => a.arm === 'model')],
-    ['AG', ag?.results.find(a => a.arm === 'model')], ['GG', gg?.results.find(a => a.arm === 'model')]];
+    ['AG', ag?.results.find(a => a.arm === 'model')], ['GG', gg?.results.find(a => a.arm === 'model')], ['G2', g2?.results.find(a => a.arm === 'model')]];
   md.push(`## Seed ${seed} (${arms.filter(a => a[1]).map(([n, a]) => `${n}: ${a!.provider}, ${a!.days} d, ${a!.seconds} s${a!.calls ? `, ${a!.calls} calls` : ''}`).join('; ')})`, '');
   md.push('| animal | arm | feed | travel | groom | rest+groom | feed min/d | kcal/d | reserve %/d | km/d (fixes) | km/d (ticks) | night out % | alive | decisions (rules agree; fallbacks) |', '|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
   const focal = arms[0][1]!.focal;
@@ -50,7 +51,7 @@ for (const seed of seeds) {
       if (v !== null && v >= b.lo && v <= b.hi) inBand[k][0]++;
     }
   }
-  for (const [name, G] of [arms[2], arms[4]]) {
+  for (const [name, G] of [arms[2], arms[4], arms[5]]) {
     if (!G) continue;
     const picks: Record<string, number> = {}, rules: Record<string, number> = {};
     for (const r of G.focal) { for (const [k, v] of Object.entries(r.picks)) picks[k] = (picks[k] ?? 0) + v; for (const [k, v] of Object.entries(r.rulesPicks)) rules[k] = (rules[k] ?? 0) + v; }
@@ -59,14 +60,14 @@ for (const seed of seeds) {
   }
   md.push('', `Deaths in the window: ${arms.filter(a => a[1]).map(([n, a]) => `${n} ${a!.deaths.length}${a!.deaths.length ? ` (${a!.deaths.map(d => d.cause).join(', ')})` : ''}`).join('; ')}.`, '');
 }
-md.push('## Field rows: focal animals in band', '', '| row (band) | R | A | G | AG | GG |', '|---|---|---|---|---|---|');
+md.push('## Field rows: focal animals in band', '', '| row (band) | R | A | G | AG | GG | G2 |', '|---|---|---|---|---|---|---|');
 for (const [label, id] of ROWS) {
   const b = band(id), cell = (arm: string) => { const v = inBand[`${label}|${arm}`]; return v ? `${v[0]}/${v[1]}` : '–'; };
-  md.push(`| ${label} (${b.lo}–${b.hi}) | ${cell('R')} | ${cell('A')} | ${cell('G')} | ${cell('AG')} | ${cell('GG')} |`);
+  md.push(`| ${label} (${b.lo}–${b.hi}) | ${cell('R')} | ${cell('A')} | ${cell('G')} | ${cell('AG')} | ${cell('GG')} | ${cell('G2')} |`);
 }
 // per arm, the mean over focal animals (both seeds) of the readouts, for a compact comparison
 md.push('', '## Means over the focal animals (both seeds)', '', '| arm | animals | feed | travel | groom | rest+groom | feed min/d | kcal/d | reserve %/d | km/d (fixes) | night out % | deaths |', '|---|---|---|---|---|---|---|---|---|---|---|---|');
-for (const name of ['R', 'A', 'G', 'AG', 'GG']) {
+for (const name of ['R', 'A', 'G', 'AG', 'GG', 'G2']) {
   const rows = means[name];
   if (!rows?.length) continue;
   const m = (fn: (r: Row) => number | null) => { const v = rows.map(fn).filter((x): x is number => x !== null && Number.isFinite(x)); return v.length ? v.reduce((a, c) => a + c, 0) / v.length : NaN; };
