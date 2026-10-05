@@ -391,3 +391,105 @@ double it); its pattern rows (victim composition, numerical odds, who dies, caus
 events; an arm is compared with the reference only if it has at least **5** events of the family itself. A family below
 these counts at 12 months goes to 24 months; below them at 24 months it is recorded as not testable within the ladder
 (more seeds would be the next lever, not more years).
+
+## 12-month results (bench-run and bench-run2 at 63d699a, extended from the 6-month checkpoints with the runner; printed by integrator/judge_c.py and readouts from the JSON)
+
+The overnight stall (≈ 03:00–07:50: the machine slept or was starved, then load ~300 from another session) left each run on its first seed; the runner's rate estimate was poisoned by that seed (≈ 103 s per seed-day) and reset to its prior (2.5) by hand in the eight registries before relaunching; no output was affected (the seeds' worlds resume from checkpoints).
+
+```
+## Part C, M12: S39 against today's model (4 runs each; printed by integrator/judge_c.py from the JSON)
+
+| Run | commit | protocol | prescriptions | viability | deaths by cause (energy readout) | adults out of a nest at night, T-RHY-5 |
+| --- | --- | --- | --- | --- | --- | --- |
+| M12-T0 | 63d699a | 5d4fa5a2a500bce6 | 147 | {'pass': True, 'births': 23, 'deaths': 10, 'ratio': 2.3, 'starvationDeaths': 0, 'minLivingShare': 0.9387755102040817, 'reasons': [], 'fewEvents': False} | {'adult male: illness': 1, 'infant 2–5 y: respiratory illness (outbreak)': 2, 'adult male: respiratory illness (outbreak)': 1, 'adolescent: respiratory illness (outbreak)': 1, 'female, other: respiratory illness (outbreak)': 1, 'female, lactating: respiratory illness (outbreak)': 1, 'female, pregnant: respiratory illness (outbreak)': 1, 'infant 0.5–2 y: orphaned infant, did not survive without its mother': 1, 'juvenile 5–12 y: illness': 1} | adults out of a nest 0.00% of night; T-RHY-5 0.0000; night deaths 3; deaths 10 |
+| M12-T0-s1 | 63d699a | 5d4fa5a2a500bce6 | 147 | {'pass': True, 'births': 27, 'deaths': 14, 'ratio': 1.9285714285714286, 'starvationDeaths': 0, 'minLivingShare': 0.9375, 'reasons': [], 'fewEvents': False} | {'infant < 0.5 y: illness': 2, 'adult male: illness': 6, 'female, other: snare injury': 1, 'female, lactating: respiratory illness (outbreak)': 1, 'infant 0.5–2 y: respiratory illness (outbreak)': 1, 'juvenile 5–12 y: respiratory illness (outbreak)': 1, 'infant 2–5 y: respiratory illness (outbreak)': 1, 'infant < 0.5 y: respiratory illness (outbreak)': 1} | adults out of a nest 0.00% of night; T-RHY-5 0.0000; night deaths 7; deaths 14 |
+| M12-T0-s2 | 63d699a | 5d4fa5a2a500bce6 | 147 | {'pass': True, 'births': 26, 'deaths': 17, 'ratio': 1.5294117647058822, 'starvationDeaths': 0, 'minLivingShare': 0.8979591836734694, 'reasons': [], 'fewEvents': False} | {'adult male: respiratory illness (outbreak)': 6, 'adolescent: respiratory illness (outbreak)': 1, 'female, lactating: respiratory illness (outbreak)': 2, 'infant 0.5–2 y: respiratory illness (outbreak)': 1, 'infant 2–5 y: respiratory illness (outbreak)': 3, 'infant < 0.5 y: illness': 1, 'adult male: illness': 1, 'female, other: respiratory illness (outbreak)': 1, 'female, pregnant: respiratory illness (outbreak)': 1} | adults out of a nest 0.00% of night; T-RHY-5 0.0000; night deaths 4; deaths 17 |
+| M12-T0-s3 | 63d699a | 5d4fa5a2a500bce6 | 147 | {'pass': True, 'births': 31, 'deaths': 14, 'ratio': 2.2142857142857144, 'starvationDeaths': 0, 'minLivingShare': 0.9795918367346939, 'reasons': [], 'fewEvents': False} | {'adult male: illness': 4, 'adult male: respiratory illness (outbreak)': 3, 'infant 2–5 y: respiratory illness (outbreak)': 2, 'infant 0.5–2 y: illness': 2, 'infant 0.5–2 y: respiratory illness (outbreak)': 1, 'juvenile 5–12 y: respiratory illness (outbreak)': 1, 'infant < 0.5 y: illness': 1} | adults out of a nest 0.00% of night; T-RHY-5 0.0000; night deaths 5; deaths 14 |
+| M12-S39 | 63d699a | 5d4fa5a2a500bce6 | 42 | {'pass': False, 'births': 23, 'deaths': 7, 'ratio': 3.2857142857142856, 'starvationDeaths': 2, 'minLivingShare': 1.0408163265306123, 'reasons': ['2 starvation deaths'], 'fewEvents': False} | {'female, lactating: illness': 1, 'infant 0.5–2 y: orphaned infant, did not survive without its mother': 1, 'female, lactating: wounds from a fight with Jambiri': 1, 'adolescent: starvation': 1, 'adolescent: illness': 1, 'female, pregnant: starvation': 1, 'infant < 0.5 y: illness': 1} | adults out of a nest 2.66% of night; T-RHY-5 0.0245; night deaths 5; deaths 7 |
+| M12-S39-s1 | 63d699a | 5d4fa5a2a500bce6 | 42 | {'pass': False, 'births': 26, 'deaths': 18, 'ratio': 1.4444444444444444, 'starvationDeaths': 2, 'minLivingShare': 0.9795918367346939, 'reasons': ['2 starvation deaths'], 'fewEvents': False} | {'infant 0.5–2 y: respiratory illness (outbreak)': 2, 'infant 2–5 y: respiratory illness (outbreak)': 1, 'female, lactating: illness': 2, 'infant 2–5 y: orphaned infant, did not survive without its mother': 3, 'female, lactating: snare injury': 1, 'infant < 0.5 y: respiratory illness (outbreak)': 1, 'adolescent: illness': 1, 'female, other: respiratory illness (outbreak)': 1, 'infant < 0.5 y: illness': 3, 'adult male: illness': 1, 'adolescent: starvation': 1, 'female, pregnant: starvation': 1} | adults out of a nest 2.58% of night; T-RHY-5 0.0242; night deaths 9; deaths 18 |
+| M12-S39-s2 | 63d699a | 5d4fa5a2a500bce6 | 42 | {'pass': False, 'births': 25, 'deaths': 10, 'ratio': 2.5, 'starvationDeaths': 2, 'minLivingShare': 1.0204081632653061, 'reasons': ['2 starvation deaths'], 'fewEvents': False} | {'adult male: illness': 2, 'infant 2–5 y: starvation': 1, 'infant 0.5–2 y: infanticide by Chiriku (East community)': 1, 'infant 0.5–2 y: illness': 1, 'infant < 0.5 y: illness': 3, 'adolescent: starvation': 1, 'female, other: illness': 1} | adults out of a nest 2.58% of night; T-RHY-5 0.0238; night deaths 3; deaths 10 |
+| M12-S39-s3 | 63d699a | 5d4fa5a2a500bce6 | 42 | {'pass': True, 'births': 25, 'deaths': 6, 'ratio': 4.166666666666667, 'starvationDeaths': 0, 'minLivingShare': 1.0408163265306123, 'reasons': [], 'fewEvents': False} | {'juvenile 5–12 y: illness': 2, 'female, other: wounds from a fight with Jambiri': 1, 'infant 2–5 y: illness': 1, 'infant 0.5–2 y: illness': 2} | adults out of a nest 2.59% of night; T-RHY-5 0.0240; night deaths 3; deaths 6 |
+
+### New bands (freeze 5d4fa5a2a500bce6, as run)
+
+| Sum (rows scored in all 8 runs) | today's model: 4 runs | mean ± SD | S39: 4 runs | mean ± SD | S39 run z vs today |
+| --- | --- | --- | --- | --- | --- |
+| fitted (25) | 6.92 / 7.55 / 11.55 / 9.74 | 8.94 ± 2.12 | 4.15 / 4.13 / 4.45 / 3.97 | 4.17 ± 0.20 | -2.0 (SD used 2.12) |
+| held-out (32) | 21.59 / 20.75 / 23.67 / 21.30 | 21.83 ± 1.28 | 15.12 / 14.52 / 14.46 / 16.28 | 15.10 ± 0.84 | -4.1 (SD used 1.45) |
+| held-out w/o rare (29) | 19.33 / 18.79 / 20.92 / 19.11 | 19.53 ± 0.95 | 13.48 / 13.47 / 13.28 / 13.82 | 13.51 ± 0.23 | -5.7 (SD used 0.95) |
+
+### Old bands (data/targets.c8.json, rescored)
+
+| Sum (rows scored in all 8 runs) | today's model: 4 runs | mean ± SD | S39: 4 runs | mean ± SD | S39 run z vs today |
+| --- | --- | --- | --- | --- | --- |
+| fitted (24) | 6.57 / 7.06 / 11.22 / 9.29 | 8.53 ± 2.15 | 4.04 / 4.01 / 4.35 / 3.87 | 4.07 ± 0.20 | -1.9 (SD used 2.15) |
+| held-out (21) | 15.46 / 14.48 / 17.63 / 15.05 | 15.66 ± 1.38 | 17.35 / 16.72 / 16.68 / 18.60 | 17.34 ± 0.90 | +1.0 (SD used 1.45) |
+| held-out w/o rare (18) | 13.21 / 12.52 / 14.88 / 12.86 | 13.37 ± 1.05 | 15.71 / 15.67 / 15.49 / 16.14 | 15.75 ± 0.27 | +2.0 (SD used 1.05) |
+
+### Rows by verdict (new bands; mean of the 4 runs)
+
+Starvation deaths by run and seed (viability), and by class (energy readout):
+  M12-S39: seeds [(5, 1), (11, 1)]; classes {'adolescent: starvation': 1, 'female, pregnant: starvation': 1}
+  M12-S39-s1: seeds [(5, 1), (11, 1)]; classes {'adolescent: starvation': 1, 'female, pregnant: starvation': 1}
+  M12-S39-s2: seeds [(48, 1), (5, 1)]; classes {'infant 2–5 y: starvation': 1, 'adolescent: starvation': 1}
+  M12-S39-s3: seeds none; classes none
+Reserve relative to the store by class, at days 0, 45, 91, 136, 182, 228, 273, 319, 364 of the scored year (energy readout traj):
+  M12-S39
+    adult male         +0.003 -0.001 -0.020 -0.018 -0.001 +0.003 +0.002 -0.001 -0.001
+    female, other      -0.008 -0.019 -0.034 -0.046 -0.038 -0.049 -0.046 -0.034 -0.029
+    female, lactating  -0.021 -0.037 -0.101 -0.129 -0.119 -0.129 -0.075 -0.051 -0.062
+    juvenile 5–12 y    -0.038 -0.049 -0.111 -0.161 -0.189 -0.203 -0.174 -0.175 -0.178
+    infant 2–5 y       -0.021 -0.031 -0.057 -0.070 -0.052 -0.031 -0.025 -0.043 -0.074
+    infant 0.5–2 y     -0.021 -0.050 -0.133 -0.165 -0.170 -0.166 -0.093 -0.072 -0.085
+  M12-S39-s1
+    adult male         +0.002 -0.005 -0.018 -0.013 +0.000 +0.003 +0.004 -0.001 -0.000
+    female, other      -0.005 -0.010 -0.033 -0.062 -0.049 -0.039 -0.023 -0.025 -0.035
+    female, lactating  -0.017 -0.033 -0.092 -0.127 -0.124 -0.125 -0.072 -0.044 -0.055
+    juvenile 5–12 y    -0.034 -0.049 -0.111 -0.152 -0.165 -0.161 -0.130 -0.120 -0.153
+    infant 2–5 y       -0.017 -0.030 -0.055 -0.112 -0.121 -0.103 -0.086 -0.076 -0.119
+    infant 0.5–2 y     -0.020 -0.042 -0.121 -0.129 -0.156 -0.191 -0.089 -0.025 -0.028
+  M12-S39-s2
+    adult male         +0.002 -0.001 -0.017 -0.016 -0.000 +0.003 +0.004 -0.002 -0.003
+    female, other      -0.006 -0.009 -0.030 -0.040 -0.041 -0.037 -0.043 -0.047 -0.038
+    female, lactating  -0.020 -0.037 -0.093 -0.127 -0.113 -0.114 -0.066 -0.049 -0.054
+    juvenile 5–12 y    -0.039 -0.052 -0.117 -0.172 -0.200 -0.221 -0.192 -0.182 -0.211
+    infant 2–5 y       -0.018 -0.033 -0.056 -0.069 -0.056 -0.039 -0.039 -0.063 -0.057
+    infant 0.5–2 y     -0.022 -0.047 -0.120 -0.185 -0.183 -0.177 -0.090 -0.053 -0.066
+  M12-S39-s3
+    adult male         +0.003 -0.004 -0.022 -0.015 -0.001 +0.002 +0.004 -0.000 -0.001
+    female, other      -0.008 -0.014 -0.042 -0.052 -0.038 -0.039 -0.024 -0.008 -0.016
+    female, lactating  -0.018 -0.036 -0.102 -0.129 -0.121 -0.127 -0.065 -0.060 -0.066
+    juvenile 5–12 y    -0.035 -0.058 -0.134 -0.184 -0.240 -0.267 -0.234 -0.222 -0.232
+    infant 2–5 y       -0.016 -0.032 -0.065 -0.075 -0.056 -0.033 -0.027 -0.044 -0.069
+    infant 0.5–2 y     -0.023 -0.044 -0.122 -0.151 -0.167 -0.170 -0.098 -0.073 -0.073
+```
+
+**S39 is not viable at 12 months.** Three of its four runs fail viability with 2 starvation deaths each (three adolescents,
+two pregnant females, one infant of 2–5 y; seeds 5 and 11 twice, 48 once); today's model has none in its four runs (it has
+no energy ledger, so it cannot starve that way). The deaths come after day 210 (none in the 6-month runs). The reserves
+show a lean season: juveniles fall to about −0.20 of their store and nursing mothers to −0.13 between days 45 and 230 of
+the scored year (mid-December to mid-June, with the world's calendar), then partly recover; adult males barely move.
+On the bands, S39 beats today's model on the new bands (fitted z −2.0, held-out −4.1, −5.7 without the rare rows) and is
+worse on the old bands' held-out rows (+1.0; +2.0 without the rare rows).
+
+**What it means.** Every Track E keep decision so far was made on 60-day windows starting in late October, before the
+model's lean season; none could see this. The registered 6-month rule passed S39 because the deaths come later.
+
+## Walk-back at 12 months (registered 5 October 2026, 10:40, before its runs; the user's rule for part C2: "If it fails,
+switch off its latest switches one at a time to find the cause; don't re-run past decisions")
+
+**Arms (one run each, seeds 48, 7, 21, 5, 11; 30 + 365 days; the runner from bench-run and bench-run2 at 63d699a):** the
+earlier stacks, each one switch-step back: S37 (S39 without `tripBeliefs`), S34 (S37 without `callGaps`), S31 (S34 without
+`aggressionGaps`), S27 (S31 without `departValue` and `bodyRules`).
+
+**Readouts:** starvation deaths (count and class), viability, the reserve trajectories by class (each class's minimum over
+the year), the sums against today's 12-month group on the new and old bands.
+
+**Decision rule.** An arm counts as free of the failure if it has no starvation death in its five seeds **and** its
+juveniles' lowest reserve is at least 0.05 above S39's (S39's group: about −0.16 to −0.20). Walking back from S39, the first
+arm free of the failure points to the switch removed at that step; if none of the four is free of it, the cause is older
+than S27 (the energy ledger's response to the lean season), and it goes to a diagnosis stage (monthly energy budget by
+class against the field's seasonal condition data) before any further switch is judged.
+
+**Predictions (low confidence).** None of the four is free of the failure (the lean season meets the ledger in every
+stack); `tripBeliefs` and `departValue` change its size a little, not its sign.
