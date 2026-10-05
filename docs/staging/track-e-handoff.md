@@ -14,13 +14,13 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (5 October 01:45; deploy held by the user).** Part A merged (ed18c1e: freeze 5d4fa5a2a500bce6; 150 rows,
-  40 truth rows; old bands in data/targets.c8.json). Part C registered (docs/staging/e-rebaseline.md, 50ef79c) and running:
-  60-day groups of S39 and today's model (4 runs each) with e-bench's single pass from bench-run3 and bench-run4 at
-  eB-bench 1824a88 (`integrator/rb.sh`, `rb-chain.sh`; outputs `…/e/rb/`); 6-month groups next. Agents: **eB-bench**
-  (final checks), **eR-runs** (runner re-check on the new freeze), **guide-s5** (guide text for the new protocol and the
-  lifted cap). Verified: 27 of S39's 42 prescriptions are rare-event rules (lethal conflict and injury 13, deaths,
-  adoption and bereavement 8, disease and snares 4, dispersal 2).
+- **Running now (5 October 02:30; deploy held by the user).** Merged: part A (ed18c1e: freeze 5d4fa5a2a500bce6; 150 rows,
+  40 truth rows; old bands in data/targets.c8.json), the guide notes (2a0174a; hosted copy `site` 51b33ff, not deployed) and
+  eB-bench (762b187: e-bench single pass, ~3–6× faster per arm with identical outputs; checkpoints and --resume; per-seed
+  --part/--merge; 26 truth rows read, 14 not scorable). Part C (docs/staging/e-rebaseline.md) running: 60-day groups of S39
+  and today's model from bench-run3 and bench-run4 at eB-bench 1f8553b (`integrator/rb.sh`, `rb-chain.sh`; outputs
+  `…/e/rb/`); 6-month groups next. Agent: **eR-runs** (runner re-check on the new freeze). Verified: 27 of S39's 42
+  prescriptions are rare-event rules.
 - **S39 is the best integrated candidate (42)** (e-stack2-confirm.md "S39 results"): S37 + `tripBeliefs` 3; held-out without
   rare rows better beyond noise (z −2.2), every class's reserve better, less walking, T-IGE-1 back in band. Costs: T-ACT-2
   0.115 (band floor 0.12), T-COM-11 0.023 (band 0.25–0.55; snake-trial protocol).
