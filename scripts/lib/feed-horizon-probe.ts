@@ -132,7 +132,7 @@ function onDecision(st: HzState, w: World, c: Chimp): void {
   const left = feedHorizon(c, L, P)[0];
   let alt: number;
   if (P.horizonLived === 1) alt = feedHorizon(c, L, pressureParams(P))[0];
-  else alt = Number.isNaN(r.dayH) || Number.isNaN(r.wokeAt) ? NaN : r.asleep ? r.dayH : Math.max(0, r.dayH - (now - r.wokeAt)); // asleep: the coming day (§6.6)
+  else alt = Number.isNaN(r.dayH) || Number.isNaN(r.wokeAt) ? NaN : Math.max(0, r.dayH - (now - r.wokeAt));
   if (Number.isNaN(alt)) st.res.noAlt++;
   const hour = Math.floor(((w.hour % 24) + 24) % 24);
   const d: Pending = { t: now, left, alt, at1: deficitDrive(c, P) >= 1, day: w.environment.daylight > 0.1, hour, wday: st.curDay, cls: clsOf(c), nest: r.inNest ? 0 : NaN };

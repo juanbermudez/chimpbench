@@ -303,7 +303,7 @@ export function feedHorizon(c: Chimp, L: EnergyLedger, P: Params): [number, numb
  * E1e's pressure at nest entry (sBed) can lie below the day's pressure and its estimate of the waking time left collapses
  * to 0 (em-prereg.md, "Finding for Track E"). Here the animal predicts today's waking day from the days it lived: at each
  * sleep onset the waking day just completed (from the recorded waking) is kept, and the hours since the last waking are
- * counted; while it sleeps they are 0 (the coming day lies ahead: iteration 2). Its sleep is the state in which process S falls: with rhythmCircadian the sleep latch (circadian.ts asl, on when
+ * counted. Its sleep is the state in which process S falls: with rhythmCircadian the sleep latch (circadian.ts asl, on when
  * S reaches the upper threshold, off when it has fallen to the lower one; a nest exit while latched does not end it), without
  * it a finished nest (`inNest`, E1e's bookkeeping above). Called from needs() after the rhythm step, so a waking is recorded
  * in the tick the latch opens, before that tick's decision; once the lived horizon is in use a transition refreshes the
@@ -321,9 +321,7 @@ export function livedDay(world: World, c: Chimp, x: ChimpX, inNest: boolean): vo
   let changed = false;
   if (asleep && !recorded) { if (L.wokeAt !== undefined) L.dayH = now - L.wokeAt; L.sleptAt = now; changed = true; }
   else if (!asleep && recorded) { L.wokeAt = now; changed = true; }
-  // iteration 2 (e1t-prereg.md §6.6): asleep, it has not yet woken on the coming day, so its hours awake are 0 and the
-  // horizon is that day and the fast after it (counting on through sleep left no waking time and saturated the drive)
-  if (L.wokeAt !== undefined) L.awakeH = L.sleptAt !== undefined && L.sleptAt > L.wokeAt ? 0 : now - L.wokeAt;
+  if (L.wokeAt !== undefined) L.awakeH = now - L.wokeAt;
   if (changed && L.dayH !== undefined) setHunger(c, L, P);
 }
 

@@ -252,3 +252,48 @@ M6-S39 world. Every S39 number below is R0's.
   (hunger by hour, the energy readout's night-access table).
 - Expectation (low confidence): daylight results as iteration 1's (the change acts only while asleep and at the moment
   of falling asleep); night hunger and infants' night drinking back near R0's.
+
+### 6.7 Iteration 2: results (5 October 16:05–16:16, 594 s, from the frozen checkout of 05d0867; the same readers)
+
+**Iteration 2 passes conditions 1, 2 and 4 and misses condition 3 by one animal.**
+
+| | S39 (R0) | iteration 1 | iteration 2 |
+| --- | --- | --- | --- |
+| (1) within 1 h of the next sleep onset (daylight) | 4.2% | 99.9% | **99.9%** (48: 99.8%, 7: 99.9%) |
+| (1) drive at 1, daylight; of it with waking time left | 46.9%; 56.5% | 32.1%; 99.9% | 33.1%; **99.9%** |
+| (2) viability | pass (births 4, deaths 0) | pass (4, 5) | **pass** (births 4, deaths 0; 49 → 51 on both) |
+| (3) below −0.3 at scored day 180, 48 + 7 (aged 5 y+) | 11 + 0 (9) | 10 + 0 (8) | **12 + 0 (9): fails** |
+| (3) lowest reserve | −0.683 | −0.801 | −0.627 (s48 id 15, pregnant F 21.6 y) |
+| (4) adults out of a nest, night | 2.6% | 2.7% | **2.8%** |
+
+- The night is S39's again: hunger at 21–04 h, adult females 0.46–0.55 (S39 0.54–0.72, iteration 1 0.88–0.97); infants
+  in their mother's nest at night φ ≥ 0.999 in 7.6–10.5% of night-nest ticks (S39 16.0–54.9%, iteration 1
+  90.6–98.6%); night milk per infant-day 39 / 63 / 107 / 99 / 87 / 35 kcal at 0–0.5 … 4–5 y (S39 44 / 71 / 101 / 90 /
+  86 / 39). Daylight as iteration 1: within 1 h 99.8–100.0% at every hour, drive at 1 6.8% at 06 h to 83.9% at 19 h.
+- Seed 48's animals below −0.3: the same eight in all three arms (ids 12, 15, 17, 18, 19, 32, 35, 51: lactating,
+  pregnant and juvenile females, infants), plus 9, 10, 45 in S39, 9 and 16 in iteration 1, 30, 44, 47, 49 in iteration 2:
+  the margin around −0.3 moves with the trajectory. Iterations 1 and 2 differ only while animals sleep, yet their
+  per-class readouts differ as much as either differs from S39 (juvenile females in Mar–Apr: 380 and 444 eating minutes,
+  S39 382; the adolescent female id 9 at −0.80 in iteration 1 and not depleted in iteration 2): on two seeds, condition 3 and the per-class
+  readouts are inside the trajectories' noise.
+- Reported (iteration 2; S39's values in §6.5; seeds pooled, per animal-day): eating minutes Nov–Dec / Jan–Feb / Mar–Apr: juvenile F 295
+  / 341 / 444, adolescent F 231 / 232 / 329, pregnant 258 / 307 / 381, lactating 300 / 317 / 370, other F 225 / 225 /
+  256, adult males 226 / 238 / 234; fallback share of plant energy over the window: juvenile F 6 → 11%, adolescent F 20
+  → 11%, pregnant 18 → 15%, lactating 14 → 15%, other F 11 → 12%; ground km a day: juvenile F 3.58 → 3.74, pregnant
+  2.79 → 2.85, lactating 3.26 → 3.29, adult males 3.12 → 3.22. Bench headline (two seeds; not judged; other rows
+  scored: 19 fitted): fitted 4.525, held-out 13.784 (8.137 without T-HUN-4 and T-BRD-1; S39 10.968 and 7.737).
+
+### 6.8 Decision (agent): stop after two iterations; iteration 1 passes to the confirm
+
+- By §3's rule iteration 1 passes all four conditions and iteration 2 does not (condition 3, 12 against 11). I name no
+  mechanism reason for a third iteration: condition 3's margin is trajectory noise (§6.7), and condition 1 is settled
+  (99.9% against 4.2%, both iterations).
+- The branch head returns to iteration 1's rule (src/, the readout and the tests as at 6cafd5d, `git diff 6cafd5d -- src`
+  empty; the docs describe iteration 1's rule), so `horizonLived` 1 is the code that passed. Iteration 2's night rule (commit a2a45d4: `awakeH` 0 while
+  the record says asleep) is recorded for the integrator: it removes iteration 1's night saturation (night hunger
+  0.85–0.98, infants drinking to a fuller gut) at no daytime change; if wanted, it needs its own registration or an
+  amendment before the confirm.
+- Recommendation: confirm iteration 1 (moderate confidence that it holds the 6-month keep rule: viable, night safe,
+  prescriptions unchanged; the drive's estimate is fixed beyond doubt). Low confidence that it moves 12-month
+  starvation: where animals are depleted the deficit already fills any horizon (99.9% of the remaining drive-at-1
+  decisions have waking time left), so E1r's trap is untouched.
