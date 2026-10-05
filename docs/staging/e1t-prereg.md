@@ -303,3 +303,21 @@ M6-S39 world. Every S39 number below is R0's.
   node_modules` empty. Outputs (gitignored, this worktree): artifacts/validation/e1t/{ref,it1,it2}/ (bench, scorecard,
   energy, rhythm, parts with per-animal rows and the feed-horizon readout, day-210 checkpoints) and all-horizon.md,
   all-rows.md (the three arms side by side).
+
+## 7. Confirm plan (integrator, 5 October 2026, registered before its runs)
+
+Iteration 1 passed all four development conditions (§6); iteration 2's night change is not part of this confirm (it
+would need its own registration). Code: track-e with E1t merged (4ff4cc4; `pnpm test` 927 pass, 0 fail), run from a
+frozen detached checkout `bench-e1t` at this file's commit. At `horizonLived` 0 the S39 world reproduces the reference
+(the agent's R0 equals M6-S39; E1s's and M1's switches at 0 leave S39's decisions and world hashes unchanged), so S39's
+Part C groups at 63d699a are the references. Prescriptions with `horizonLived` 1: 42 (unchanged).
+
+- **Arms:** S39's four parameter sets (`rngSalt` 0–3) with `horizonLived` 1: runner labels M6-E1t, M6-E1t-s1, -s2, -s3
+  (`e-run.ts plan --m6`, seeds 48, 7, 21, 5, 11, 30 + 180 days), then each extended to 12 months from its checkpoints
+  (`--m12 --from`), labels M12-E1t…; one job per runner while the load is above 8.
+- **6 months (against S39's M6 group, protocol 5d4fa5a2a500bce6):** viability in all four runs; the keep rule on the
+  rngSalt 0 run (e-noise.md amendment 4; |z| > 2 a result): held-out and held-out without the rare rows not worse beyond
+  noise; night safety (adults out of a nest ≤ 3.3% of night, T-RHY-5 ≤ 0.033); prescriptions not up (42).
+- **12 months (against S39's M12 group):** starvation deaths over the 20 seed-runs against S39's 6: kept as a correction
+  with 6 or fewer and the keep rule; 0 makes S39 + E1t viable. Reported: deaths by cause and class, each class's reserve
+  trajectory and lowest monthly mean, the drive-at-1 share, eating minutes by class and month.
