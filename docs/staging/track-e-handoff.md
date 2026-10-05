@@ -24,6 +24,11 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   Part D done (e52e84e). Agent **eM-model** (M1–M3, GLiNER on Track E's state) still running. Separate from Track E:
   agent **ui-minimap** (branch `ui-minimap` from `main`) on the user's minimap and perception-ring request; merging
   into `main` waits for the user.
+- **Next after Track E's fixes: Track R** (Recurrent Decision Models; framing `docs/recurrent-decision-model.md`, stages
+  R0–R6 in IMPLEMENTATION_PLAN.md; R0 done, merged bf6eba0). R1–R6 start only after the gate: the audited targets and
+  scorer fixes under a new freeze; the run-length ladder in place; the best stack re-baselined on the new protocol at 60
+  days and 6 months; the stages running then merged (today E1s and M1–M3 are not). Rare-event stages may continue
+  alongside. No GPU or Jev spend without the user's approval and a cap.
 - **S39 is the best integrated candidate (42)** (e-stack2-confirm.md "S39 results"): S37 + `tripBeliefs` 3; held-out without
   rare rows better beyond noise (z −2.2), every class's reserve better, less walking, T-IGE-1 back in band. Costs: T-ACT-2
   0.115 (band floor 0.12), T-COM-11 0.023 (band 0.25–0.55; snake-trial protocol).
