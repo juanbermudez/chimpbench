@@ -17,6 +17,7 @@ import { IMPULSE_HUNT, IMPULSE_PATROL } from './perception';
 import { index, isChimpId, isTreeId, ix } from './state';
 import { tripSpeed } from './gait';
 import { callerCrownOn } from './tripbelief';
+import { callCrown } from './calltrip';
 
 // Stage C13 (docs/realism-design.md "C13 pre-registration"): the rules decision policy RG. At a decision point a
 // rules-driven chimp aged rgMinAge+ first asks the intention gate of the Jev free arms (src/decide/gate.ts, design A
@@ -213,7 +214,7 @@ export function gate(world: World, c: Chimp, it: Intent | undefined, list: Candi
   const current = findCandidate(list, it.action, it.targetId);
   const ongoing = !x.finished && c.action === it.action && c.targetId === it.targetId && !!current;
   if (!ongoing) {
-    const tree = tripTree(it, x.jt, P);
+    const tree = tripTree(it, callCrown(P, x, it.variant === V.CALLER, it.targetId), P); // stage E3i (callTrip): the trip's own call
     if (tree > 0) {
       const t = x.trees.includes(tree) ? index(world).treeById.get(tree) : undefined, feed = findCandidate(list, 'forage', tree);
       if (t && Math.hypot(t.position[0] - c.position[0], t.position[2] - c.position[2]) <= GATE.arriveM && feed) return { keep: feed, arrived: true };
@@ -369,7 +370,7 @@ function redecide(world: World, c: Chimp, list: Candidate[], P: Params): Candida
         why = 'outvalued';
       } else {
         // a trip that ends at its tree becomes feeding there when that is legal (the gate's arrival), with the trip's noise
-        const tree = tripTree(it, x.jt, P);
+        const tree = tripTree(it, callCrown(P, x, it.variant === V.CALLER, it.targetId), P); // stage E3i (callTrip): the trip's own call
         if (tree > 0) {
           const t = x.trees.includes(tree) ? index(world).treeById.get(tree) : undefined, feed = findCandidate(list, 'forage', tree);
           if (t && Math.hypot(t.position[0] - c.position[0], t.position[2] - c.position[2]) <= GATE.arriveM && feed) {

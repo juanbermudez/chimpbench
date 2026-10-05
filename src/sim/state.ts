@@ -144,6 +144,12 @@ export interface ChimpX {
    * and the first listed crown is seen, so worlds with it off are unchanged.
    */
   ls?: Record<number, number>;
+  /**
+   * Stage E3i (callTrip bit 1; src/sim/calltrip.ts): the call a caller trip was chosen for, kept with the trip:
+   * [call id, caller id, hour heard, x, z, crown id (−1: none)]. Absent until the switch is on and the first caller trip
+   * starts, so worlds with it off are unchanged.
+   */
+  cg?: number[];
   /** Stage E2b (nurseWake): the last tick in which this mother's infant drank milk in her nest at night. Absent until then. */
   nwk?: number;
   /**
@@ -280,7 +286,7 @@ export type SimWorld = World & { sim: SimState };
  * ChimpX and SimState keys that exist only once their mechanism has fired (so worlds with the switch off keep their
  * shape and hashes). The save check (src/persist/envelope.ts worldShapeProblem) ignores them.
  */
-export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'tryNest', 'dfa', 'en', 'wat', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk', 'cx', 'cxc', 'cn', 'asl', 'phAt', 'phX', 'phZ', 'ard', 'wr', 'upk', 'jt', 'nbm', 'jv', 'ty', 'tt', 'cd', 'cdAt', 'ls'];
+export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'tryNest', 'dfa', 'en', 'wat', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk', 'cx', 'cxc', 'cn', 'asl', 'phAt', 'phX', 'phZ', 'ard', 'wr', 'upk', 'jt', 'nbm', 'jv', 'ty', 'tt', 'cd', 'cdAt', 'ls', 'cg'];
 export const OPTIONAL_SIM: readonly string[] = ['fission', 'stormAt'];
 
 export function newX(): ChimpX {
