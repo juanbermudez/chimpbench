@@ -895,3 +895,15 @@ Deferred (found by the diagnosis, not this stage's question; file:line at c90d7b
 - A joined trip's option is offered only while the leader's departure is (candidates.ts, `joinValue` offers): when the
   leader is out of view or arrives, a follower still walking loses the option and the next decision point ends its trip
   (0.14 joined trips per adult-day re-decided en route with their option off the list, 0.020 km; §2.2 D5).
+
+## 9. Merge and final checks
+
+`track-e` merged once (6a1bfe4, at the integrator's word: the protocol freeze has not landed and the switch does not depend
+on it) before the final test run; no conflicts. `docs/decision-guide.html` regenerated (only its file:line references
+moved with the code). `gen-params --check` clean, `tsc --noEmit` clean, `decision-guide --check` up to date, `pnpm test`
+857 tests: 856 pass, 0 fail, 1 skipped; `git ls-files data/raw node_modules` empty. Prescriptions on the merged ledger
+(`prescription-ledger --count`): S39 42, S39 + `callTrip` 1 42 (no counted entry removed, as registered). Outputs (local,
+gitignored, copied from the session scratch `e3i/`): `artifacts/validation/e3i/` holds `diag/` (the four diagnosis runs,
+raw trips gzipped, `diag_table.md`), `diag2/` (amendment 1's runs, `amend_table.md`), `arms/` (A1, D0, D1: e-bench,
+energy, trip and rhythm JSON, logs and tables), `tools/` (`diag_table.py`, `amend_table.py`, `final_table.py`,
+`arm_classes.py`, `report_table.py`, `redecide_cost.py`, the run scripts), `params/`, `smoke/`.
