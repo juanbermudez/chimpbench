@@ -44,7 +44,8 @@ export const candidateMeta = new WeakMap<Candidate, CandidateMeta>();
 
 /** The five gates of stage E5e (docs/staging/e5e-prereg.md §2); stage E4q adds the aggression and display gaps, E4p the female's mating gap. */
 export type QuotaKind = 'greet' | 'feed' | 'immigrant' | 'consort' | 'caller' | 'mate' | 'mateF' | 'mateFgap'
-  | 'challenge' | 'escalate' | 'grudge' | 'coerce' | 'femaleDom' | 'stranger' | 'gang' | 'display';
+  | 'challenge' | 'escalate' | 'grudge' | 'coerce' | 'femaleDom' | 'stranger' | 'gang' | 'display'
+  | 'reunion' | 'alarm';
 /**
  * Stage E5e diagnosis (scripts/quota-diagnose.ts; docs/staging/e5e-prereg.md §2): called at four gates when every other
  * condition of the option holds, with whether the quota or the clock blocked it ('greet': pantGruntRepeatH; 'feed':
@@ -58,8 +59,12 @@ export type QuotaKind = 'greet' | 'feed' | 'immigrant' | 'consort' | 'caller' | 
  * 'femaleDom'), the 0.2-h gap of a charge at strangers ('stranger', and 'gang' for the gang attack inside it) and the
  * 0.75-h display gap ('display'); `a` the hours since the last aggression or display, `b` the offer's score without the
  * jitter. Stage E4p adds 'mateFgap': every offer of a swollen female to a male in range, before her own 0.3-h gap after
- * her last copulation (`a` the hours since it; `blocked` always false: the reader compares `a` with the gap). Null in
- * every simulation; it reads only and draws nothing, so the world is unchanged.
+ * her last copulation (`a` the hours since it; `blocked` always false: the reader compares `a` with the gap). Stage E5g
+ * (docs/staging/e5g-prereg.md §2) adds 'reunion': a male's reunion pant-hoot when newcomers are in view, blocked by the
+ * 0.5-h gap after his own last call (`callReady`; `a` the hours since it, `b` the score without the jitter), and
+ * 'alarm': an aware animal's alarm offer at a snake in range (`blocked` always false; `a` the hours since its own last
+ * call, `b` the score before the repeat penalty). Null in every simulation; it reads only and draws nothing, so the
+ * world is unchanged.
  */
 export const quotaTrace: { on: ((kind: QuotaKind, c: Chimp, o: Chimp | undefined, blocked: boolean, a: number, b: number) => void) | null } = { on: null };
 
@@ -818,6 +823,9 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     if (!aware.includes(c.id)) continue;
     let unaware = 0;
     for (let _i6 = 0; _i6 < x.seen.length; _i6++) { const sid = x.seen[_i6]; const o = byId.get(sid)!; if (o.troopId === c.troopId && o.age >= 1 && !aware.includes(o.id)) unaware++; }
+    // stage E5g diagnosis (quotaTrace; null in every simulation): the alarm offer with its score before the repeat
+    // penalty; `a` the hours since the animal's own last call (the reader compares it with the penalty's window)
+    if (quotaTrace.on && c.age >= 5 && d < P.snakeAlarmRangeM) quotaTrace.on('alarm', c, undefined, false, time - x.lastCall, 0.2 + 0.32 * Math.min(unaware, 5));
     if (c.age >= 5 && d < P.snakeAlarmRangeM) offer('alarm', -1, 0.2 + 0.32 * Math.min(unaware, 5) - (time - x.lastCall < 0.03 ? 0.4 : 0), V.SNAKE, unaware);
     if (d < P.snakeFleeM) offer('flee', -1, 0.55 + (c.age < 10 ? 0.2 : 0), V.SNAKE, st.id);
   }
@@ -1366,6 +1374,9 @@ function patrolAndCalls(world: World, c: Chimp, isAlpha: boolean): void {
   if (!cv && callReady && c.action === 'forage' && x.fruitNear >= 0.6) offer('call', -1, 0.3 + pers.sociability * 0.25 - hush, V.FOODCALL);
   if (!cv && time - x.lastCall > 1.5 && ((hour >= 18 && hour < 19) || (hour >= 6.4 && hour < 7.4)) && env.daylight > 0.05) offer('call', -1, 0.28 + pers.sociability * 0.2 - hush, V.CHORUS);
   if (callReady && x.newcomers > 0 && c.sex === 'male') offer('call', -1, 0.3 + pers.boldness * 0.1 - hush, V.REUNION);
+  // stage E5g diagnosis (quotaTrace; null in every simulation): the reunion pant-hoot's gate (callReady), with the score
+  // the offer has or would have; `a` the hours since the caller's own last call
+  if (quotaTrace.on && !curSilent && x.newcomers > 0 && c.sex === 'male') quotaTrace.on('reunion', c, undefined, !callReady, time - x.lastCall, 0.3 + pers.boldness * 0.1 - hush);
   // field profile: long-distance pant-hoots keep dispersed community members in contact (design; they carry ~1 km, P-SCALE-3)
   if (!cv && P.contactCallW > 0 && time - x.lastCall > P.contactCallGapH && env.daylight > P.contactCallMinDaylight && x.visibleOwn < 2)
     offer('call', -1, P.contactCallBase + (1 - c.social) * P.contactCallW + (c.sex === 'male' ? P.contactCallMaleW : 0) - hush, V.CONTACT);
