@@ -443,3 +443,71 @@ Two independent designs answer the same brief. This one is [docs/decide-jev-desi
 **Success Criteria**: no option is opened by a dice roll; fitted patrol and hunt rows are no worse; held-out distance falls.
 **Tests**: integrator bounds and determinism; each removed probability has an ablation row in `data/proof-ablations.json`.
 **Status**: In Progress. E4a and E4b merged into `track-e` (all off); E4c (`callValue`, calls as value comparisons; `docs/staging/e4c-prereg.md`) merged 2 October, off: iteration 1 (a pant-hoot at a crown weighed against everyone likely within earshot) brings arrival pant-hoots into the field range (0.28) and party size back near the reference, prescriptions −11, held-out inside quick noise: a provisional keep candidate, **confirmed on 5 seeds** (2 October; e4c-prereg.md §10.1: every sum inside noise against R's four realizations, prescriptions 103 → 92, viability passes, calling at 0.59 per adult-male hour; costs: a flatter daily course, fewer travel hoos, more hunting). Open: calls have no daily course (morning ÷ afternoon 1.0, field ≈ 4.3) because the slow arousal state rises through the day while field testosterone falls. E4a pre-registered: three leaky integrators (stress, male arousal, affiliation) replace the escalation and redirect dice and `rainDisplayP` (switches `endoStates`, `endoEscalate`, `endoRedirect`, `endoRainDisplay`). Quick check done (`docs/staging/e4a-prereg.md` §7; one iteration: a defeat is considered once). `endoStates` + `endoEscalate` + `endoRedirect`: provisional keep candidate (viability passes, held-out inside the noise floor, prescriptions 138 → 133, no row moves measurably); `endoRainDisplay`: null (the slow states do not carry the rain display). Open: slow states cannot carry acute reactions; T-END-8 and T-END-12 fail in reverse. **E4b** (branch `e4b-acute`; `docs/staging/e4b-prereg.md`): a fast arousal state (`endoFast`, τ 5 min, kicked at storm onsets and by aggression received) carries the rain display without a roll: provisional keep candidate (prescriptions 133 → 132; the display is 2–5 × the old roll's rate and needs a field row). `endoFastRedirect` (redirect scored from the fast state, no event gate): stays off (no prescription removed; T-SOC-9 out of band on the stack). E4a defects fixed (stranger-call kick once per episode, one aggression kick per interaction, dependent switches need `endoStates`). T-END-8 rescored as fedurek2016 defines it (daily profile within males): still fails, because pant-hoots come from isolation and a fitted travel hazard; T-END-12 has no route that does not encode it (samuni2017's controls).
+
+## Track R: Recurrent decision models (framing: docs/recurrent-decision-model.md; starts after the gate below)
+
+**Direction (user, 5 October 2026): orient the project toward a Recurrent Decision Model, documented now and started later.** A Recurrent Decision Model is a memoryless decision kernel (the rules, GLiNER2.5-Decide, a stand-in or Jev) called at event-driven decision points inside a loop that carries internal state on several timescales and local perception. The name is spelled out every time and never abbreviated. The framing is planned, not a result. Its three claims are still open: (1) mechanistic state beats prescribed behaviour on the same kernel (partly shown by Track E); (2) any kernel works in the loop (not shown); (3) a small kernel in a good loop matches an expensive one (not shown). No stage below may be reported as a result before it has run.
+
+**Start gate (R1–R6):** the audited targets and scorer fixes are applied under a new freeze; the run-length ladder is in place; the best stack is re-baselined on the new protocol at 60 days and 6 months; stages running then are merged. Rare-event stages may continue alongside.
+
+**Gate status at R0 (5 October 2026).** The first three conditions are recorded as met: the audited rows and scorer fixes sit under the freeze `5d4fa5a2a500bce6` (`data/targets.json`, `protocolFreeze`); the run-length ladder is registered (Track E, "Run-length ladder", 4 October); S39 and today's model are re-baselined at 60 days and 6 months, and at 12 months, in `docs/staging/e-rebaseline.md`. The fourth is open: E1s (branch `e1s-gut`) and the decision-model stages M1–M3 (branch `eM-model`), among others, are still running and unmerged. The gate does not ask for a viable stack; R3 and R5 do, and say so in their criteria.
+
+## Stage R0: Framing
+**Goal**: `docs/recurrent-decision-model.md`: the definition, the loop, where the code does each part, state against kernel, the analogy with Recursive Language Models and where it breaks, related work, and the three claims with their evidence status. Sources in `docs/research.md` ("Recurrent decision model framing (Track R, 5 October 2026)"); a "Direction" section in `PRODUCT.md`.
+**Success Criteria**: the definition is in the agreed words and the name is never abbreviated; every code link resolves and every line number was checked at the base commit; each claim carries its status, with numbers taken from `docs/staging/e-rebaseline.md` and the handoff; every source was checked against a primary record or is marked not verified; no code, no run, no spend.
+**Tests**: n/a (review by the integrator: links, numbers, citations).
+**Status**: Complete (5 October 2026, this commit; branch `r0-framing`).
+
+## Stage R1: Kernel contract
+**Goal**: a typed kernel interface (packet and legal options in, one choice out) with four implementations: the rules, a GLiNER adapter, a stand-in and Jev (gated). Start from `DecisionProvider` (`src/providers/types.ts` on the `site` branch) and the free policies in `src/decide/policies.ts`; do not rebuild them. Decide and write down where the intention gate lives (today inside `rgChoice`, `src/sim/rg.ts`; the free arms of the Jev decisive test shared it in the loop) and whether every kernel's menu keeps the rules' pick (today `buildRequest`, `src/decision.ts`, keeps it).
+**Success Criteria** (thresholds registered in `docs/staging/r1-prereg.md` before any run):
+- the rules kernel through the interface is hash-identical to today: the compressed goldens (`tests/fixtures/golden-world.json`) and the field pin (`tests/sim-track-e.test.ts`) are unchanged;
+- every kernel passes the same request validation and the same legality re-check (`applyDecision`);
+- a unit test per kernel.
+**Tests**: `pnpm test` (goldens, field pin, `tests/decision.test.ts`, `tests/sim-rg.test.ts`, the rules equivalence in `tests/ft-field.test.ts`); a new test file with one test per kernel; the Jev kernel is tested against a fake server only (a real call needs the user's approval and a cap).
+**Status**: Not Started (behind the start gate).
+
+## Stage R2: State in the packet (v4)
+**Goal**: add to the packet the Track E state a kernel cannot see today, as text within the budget: energy reserve against the store, gut fullness, sleep pressure and phase, arousal and the other slow states, and the belief behind each option. Local-only: the chimp's own body and beliefs, never an unseen entity. It overlaps M1 (`observeState`, `src/sim/observe-state.ts` on branch `eM-model`, in progress and not yet reviewed): if M1 is merged by then, R2 extends it and does not redo it.
+**Success Criteria** (registered before any run):
+- no packet over the worker's hard limit of 1,280 tokens, and the new typical size reported (today about 500: `AGENTS.md`; median 470 in `docs/decide-finetune.md` §9);
+- `observe()` stays pure and local-only, and with the new fields off the packet is byte-identical to today's;
+- an ablation of each field group (energy, gut, sleep and phase, arousal and slow states, the belief behind an option) on a fixed sample reports which fields change a kernel's choices.
+**Tests**: purity, determinism and goldens as for M1 (`tests/em-observe.test.ts` on `eM-model`); `training/decide_ft/token_audit.py`; request validation in `server/decide.ts`.
+**Status**: Not Started (behind the start gate).
+
+## Stage R3: Does the state matter
+**Goal**: with the rules kernel and the loop fixed, switch one group of Track E state off at a time and read the field benchmark: energy (the ledger family and the water ledger), rhythm (sleep, heat, circadian phase, free night), endocrine (the slow and fast states) and beliefs (`tripBeliefs`, `choiceBelief`). Switching a group off brings back the prescriptions it replaced, and its dependents go with it (for example `waterLedger` is read only with `energyLedger` and `ledgerDigesta`), so each contrast is state against prescription within that group, not state against nothing. Run at the horizon the rows need: 60 days for daily rows, 6 and 12 months for the lean season (S39's starvation deaths came after the 6-month window: scored day 180, one at day 189).
+**Success Criteria** (registered before any run):
+- per group, the change in the fitted and held-out summed band distance, with and without the rare-event rows, against the full stack's group of re-draws (`docs/staging/e-noise.md`, amendment 4), plus the prescription count and viability; a group counts as mattering only past the registered noise threshold;
+- seeds: 48 and 7 for screens, 48, 7, 21, 5, 11 for confirms, never a reserved or retired seed;
+- a viable base: until E1s (or its successor) removes the 12-month starvation, the energy group's contrast is confounded by deaths and R3 is limited to rows that score in 60 days and 6 months.
+**Tests**: `tests/sim-track-e.test.ts` (every switch at 0 leaves the world hash unchanged), `tests/prescription-ledger.test.ts`, determinism.
+**Status**: Not Started (behind the start gate).
+
+## Stage R4: Re-teach the small kernel
+**Goal**: teach GLiNER (adapters) and refit the stand-ins on v4 packets, from labels we own: the Track E rules kernel's decisions and/or the expert rubric (`.claude/skills/chimp-field-expert/`) re-run on v4 packets. No training on Jev outputs: TypeSafe's MCA §2.3(b) bars training a model to imitate Jev's output without written permission, and that question is the user's. Offline evaluation as in Track F.
+**Success Criteria** (registered before any run):
+- each adapter beats the untuned model on its own labels on a held-out split, and token parity with the serving path holds (as in F4);
+- every adapter and stand-in carries its label source in its manifest, and no training file derives from Jev output (checked from the manifests);
+- state probes: on the fixed probe set from R2 (the M2 probe design on branch `eM-model` is the template), the re-taught kernel moves its target option's probability the right way for each state field the packet carries, and no field the wrong way;
+- stand-in agreement with its adapter on held-out contexts reported (as in P4).
+**Tests**: the labeling validator (`training/decide_ft/labeling.py`), token parity (`parity.py`), offline evaluation (`eval_offline.py`), `tests/ft-*.test.ts`. GPU training needs the user's approval and a cap.
+**Status**: Not Started (behind the start gate).
+
+## Stage R5: Kernel swap
+**Goal**: run the same Track E loop with each kernel in {the rules, the re-taught GLiNER, a stand-in, Jev if approved}. Score it on the field benchmark (60 days for daily rows; stand-ins for 6 months and longer) and report the cost and latency per decision beside the score (today about 17 GPU-minutes per population-day on the field map: Stage P2's status and `docs/decide-finetune.md`). State each learned kernel's label source: a kernel trained on the rules' decisions inherits their prescriptions, and the ledger counts the loop and the rules kernel only.
+**Success Criteria** (registered before any run):
+- the comparison metric, the noise threshold and what "matches" means are fixed before any kernel runs;
+- a kernel is compared only on a viable base, with the same menu and gate (R1's decision), and every figure that uses a stand-in says so;
+- cost and latency per decision are reported for every kernel. At the stage P2 rate a 60-day, 5-seed confirm with the real model is about 85 GPU-hours per kernel (17 GPU-minutes × 60 days × 5 seeds: arithmetic, not a measurement), so smaller designs come first (a focal group as in M3, fewer seeds, stand-ins) and any rental needs approval.
+**Tests**: `tests/ft-field.test.ts` (rules equivalence through the interface), R1's kernel tests, `scripts/e-run.ts` for resumable runs.
+**Status**: Not Started (behind the start gate).
+
+## Stage R6: Product orientation
+**Goal**: in the app, choose the kernel per community (today the model roster is per chimp: `chimp.controller`, `src/decision.ts`); extend the Mind tab (`src/ui/mind.ts`, which already shows the packet and the options with model probabilities beside the rules' scores) to show a chimp's state (body, mind, senses) and the kernel's pick beside the rules' pick; add a scorecard view. Update `README.md`, `PRODUCT.md`, the about page and the hosted copy only with claims that R3–R5 support. Target counts are read from `data/targets.json`, not typed (`PRODUCT.md` says 97 today; the file holds 150). The hosted build stays GLiNER-in-browser (`VITE_STATIC=1 VITE_DECISION_PROVIDER=browser`). No deploy without the user's go.
+**Success Criteria**: every public claim is one that R3–R5 support, with its evidence label; no number is typed that a file can supply; the UI writes only control fields (`chimp.controller`, `world.modelPolicy`, `world.ageRate`) through the APIs (`AGENTS.md`).
+**Tests**: `pnpm test`, `pnpm build`, `scripts/verify-browser.mjs`, screenshots with `scripts/shot.mjs`; `tests/decision-guide.test.ts` for any guide copy.
+**Status**: Not Started (behind the start gate).
+
+**Constraints (R1–R6).** Any GPU rental (RunPod: $3.35 of $5 used per the Jev section above; `docs/decide-finetune.md` §11 records about $4.05 of $5, unreconciled) or Jev spend needs the user's explicit approval with a cap. The Jev redesign's open decisions (licensing path, caps, report seeds) stay the user's. All Track E hard rules apply (determinism, seeds, privacy, never commit to main, no deploy; `docs/staging/track-e-handoff.md` §1). Sonnet for documentation and guide work, Opus for design and judging.

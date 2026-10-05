@@ -3865,3 +3865,111 @@ OpenAlex holds no abstract, so it is listed as not verified. Paraphrased, not qu
   selection. *Evolutionary Ecology* 3(3):264–272. [doi:10.1007/BF02270727](https://doi.org/10.1007/BF02270727) (not
   verified).
 - harrisonMarshall2011, wrangham1991 and pontzerWrangham2004 are already listed; the entry above adds findings.
+
+## Recurrent decision model framing (Track R, 5 October 2026)
+
+Read for stage R0 ([recurrent-decision-model.md](recurrent-decision-model.md)): where ChimpBench's loop (a memoryless
+decision kernel called at decision points inside a loop that carries state) sits among related work, and why its name
+is never abbreviated. **Every source here is a method, a theory or a model study. None is evidence about chimpanzees,
+and none is a target or an input: framing only.** Bibliographic data were checked on 5 October 2026: DOIs against
+Crossref; grimm2005, keramatiGutkin2014, kriegeskorte2008 and wang2002 against PubMed; the arXiv papers against their
+arXiv records (the abstract pages of CoALA and of the recursive-language-models paper were also read); hafner2019
+against its PMLR page and the arXiv PDF (section 3 read); mangelClark1988 against the Princeton University Press page.
+Access is the abstract unless marked. Paraphrased, not quoted. A host that showed a bot check (OpenReview, for CoALA's
+journal page) was dropped, not worked around.
+
+**Language-model agents and scaffolds** (a contrast, not evidence):
+- **Generative agents** [park2023] (Abs) method: software agents driven by a language model that keep a memory stream in
+  natural language, condense it into higher-level reflections and plan from retrieved memories; 25 agents in a sandbox
+  town, judged by how believable their behaviour is. Use: contrast. ChimpBench's state is mechanistic (updated by code
+  every tick), its kernel is swappable and need not be a language model, and it is scored against field data.
+- **Cognitive architectures for language agents (CoALA)** [sumers2023] (Abs) theory: a framework that describes a
+  language agent by modular memory, a structured action space and a generalized decision-making process, and uses it to
+  survey earlier agents. Use: vocabulary for the contrast above. In ChimpBench the simulator, not the agent, runs the
+  loop.
+- **Recursive language models** [zhang2025] (Abs) method: an inference method in which a language model treats a long
+  prompt as part of an external environment and examines it, splits it and calls itself on its parts; the authors
+  report that it handles inputs far beyond the model's context window. Use: presentation analogy only. Both wrap a
+  memoryless model in a scaffold; recursion there runs over a context, recurrence here runs over time. Where the
+  analogy breaks is written in the framing document, not here.
+
+**Model-building practice the project already follows** (grimm2005, zurell2010, teBoekhorst1994 and ramosFernandez2006
+are already in the source registry, the source list of [realism-design.md](realism-design.md) and `data/targets.json`;
+their records were re-checked on 5 October 2026 (Crossref; PubMed for grimm2005) and match):
+- **Pattern-oriented modelling** [grimm2005] (Abs; already listed) method: a strategy for designing, testing and
+  analysing bottom-up agent-based models. Use: the fitted and held-out split of the targets follows it, as
+  realism-design.md describes. The framing adds a second axis: the kernel can be swapped under the same patterns.
+- **The virtual ecologist** [zurell2010] (Abs; already listed) method: simulate the data and the observer, analyse the
+  virtual data as if it were real, and compare the result with the simulated truth. Use: the virtual field observer
+  (`src/field`) follows it, and every kernel is scored through it.
+- **Artificial "chimps"** [teBoekhorst1994] (Abs; already listed) model study: agents that do nothing more than search
+  for food and mates produce chimpanzee-like party structure by self-organisation. Use: the closest ancestor in spirit
+  (structure from simple rules and state, no scripted outcome). ChimpBench adds body and mind state on several
+  timescales, a swappable kernel and a field-data scorecard.
+- **Fission–fusion from a simple foraging model** [ramosFernandez2006] (Abs; already listed) model study (spider
+  monkeys): foragers that do not interact, with complete or partial knowledge of resource patches, form groups with
+  fission–fusion statistics. Use: contrast. Here animals share one world and choose among bodily and social options.
+
+**State-dependent behaviour and homeostasis**:
+- **Dynamic modelling in behavioural ecology** [mangelClark1988] (book; metadata only) theory: the best action depends
+  on the animal's state (the press describes stochastic dynamic programming over physiological state). Use: the
+  closest concept ("behaviour is a function of state"). They solve for the optimal policy. Here the policy is a
+  swappable kernel, nothing is optimal by construction, and the test is the match to field data.
+- **Models of adaptive behaviour: an approach based on state** [houstonMcNamara1999] (book; metadata only) theory: the
+  same approach, as the title says. Use: as above. Only its title, authors, publisher and year were checked.
+- **Homeostatic reinforcement learning** [keramatiGutkin2014] (Abs; already listed, §E.7) theory: reward as the
+  reduction of a physiological deficit. Use: Track E already values an option by the deficit it removes. ChimpBench does
+  not learn a policy from reward: its kernels are fixed (rules, or a model fitted offline).
+
+**Name collisions** (why the name is spelled out every time):
+- **Recurrent network models of decision-making** [wang2002] (Abs) theory (neuroscience): a biophysical cortical
+  network model in which slow recurrent excitation and feedback inhibition produce attractor dynamics and a binary
+  choice. The recurrence is inside the circuit. In a Recurrent Decision Model it is outside the kernel.
+- **Recurrent state-space models in reinforcement learning** [hafner2019] (FT, section 3) method: the planning network
+  PlaNet learns a latent state with a deterministic recurrent part and a stochastic part from pixels, and plans through
+  it, with no policy or value network. The loop's memory there is a learned hidden state. Here it is explicit, named and
+  mechanistic, so it can be inspected and ablated.
+- **Representational similarity analysis** [kriegeskorte2008] (Abs) method (neuroscience): compares brain activity and
+  computational models through representational dissimilarity matrices. A different thing whose initials are the
+  initials of the name's short form.
+- **"Recursive Decision Models"**: **not verified.** The brief names it as another use of the same short form. On
+  5 October 2026 arXiv (title and all-field queries) and Crossref (title queries) returned no source with that title,
+  and a web search surfaced only unrelated uses of the short form and "recursive Markov decision processes", a formal
+  model of recursive probabilistic programs. Not cited.
+
+**Not verified or unresolved:**
+- CoALA's venue: the arXiv comment calls v3 (15 March 2024) the *Transactions on Machine Learning Research*
+  camera-ready version; the journal's own page was not read.
+- mangelClark1988's year: library catalogue records mirrored by Open Library (LCCN 88012427) give 1988 for the first
+  edition (308 pp.); the press's page for the paperback gives 21 January 1989 (320 pp.). The key keeps 1988.
+- houstonMcNamara1999: the publisher's page returned HTTP 403 to the fetch tool. The year and ISBN come from Open
+  Library; the title and authors were confirmed by Crossref records of three reviews (*Animal Behaviour* 59(3), *Ecology*
+  81(6), *The Auk* 118(4)).
+
+**Sources:**
+- *new* park2023: Park JS, O'Brien JC, Cai CJ, Morris MR, Liang P, Bernstein MS 2023. Generative agents: interactive
+  simulacra of human behavior. In *Proceedings of the 36th Annual ACM Symposium on User Interface Software and
+  Technology (UIST '23)*, 1–22. [doi:10.1145/3586183.3606763](https://doi.org/10.1145/3586183.3606763) (Abs; preprint
+  [arXiv:2304.03442](https://arxiv.org/abs/2304.03442)); method.
+- *new* sumers2023: Sumers TR, Yao S, Narasimhan K, Griffiths TL 2023. Cognitive architectures for language agents.
+  Preprint [arXiv:2309.02427](https://arxiv.org/abs/2309.02427) (v1 5 September 2023; v3 15 March 2024, marked in its
+  comment as the TMLR camera-ready version) (Abs); theory.
+- *new* zhang2025: Zhang AL, Kraska T, Khattab O 2025. Recursive language models. Preprint
+  [arXiv:2512.24601](https://arxiv.org/abs/2512.24601) (v1 31 December 2025; v3 11 May 2026; the abstract page names no
+  venue) [doi:10.48550/arXiv.2512.24601](https://doi.org/10.48550/arXiv.2512.24601) (Abs); method.
+- *new* mangelClark1988: Mangel M, Clark CW 1988. *Dynamic Modeling in Behavioral Ecology*. Monographs in Behavior and
+  Ecology. Princeton: Princeton University Press. ISBN 978-0-691-08506-7 (paperback, per the press's page)
+  (metadata only); theory.
+- *new* houstonMcNamara1999: Houston AI, McNamara JM 1999. *Models of Adaptive Behaviour: An Approach Based on State*.
+  Cambridge: Cambridge University Press. ISBN 978-0-521-65539-2 (paperback) (metadata only); theory.
+- *new* wang2002: Wang X-J 2002. Probabilistic decision making by slow reverberation in cortical circuits. *Neuron*
+  36(5):955–968. [doi:10.1016/S0896-6273(02)01092-9](https://doi.org/10.1016/S0896-6273(02)01092-9) (Abs); theory.
+- *new* hafner2019: Hafner D, Lillicrap T, Fischer I, Villegas R, Ha D, Lee H, Davidson J 2019. Learning latent dynamics
+  for planning from pixels. In *Proceedings of the 36th International Conference on Machine Learning*, PMLR 97:2555–2565.
+  [PMLR](https://proceedings.mlr.press/v97/hafner19a.html); preprint [arXiv:1811.04551](https://arxiv.org/abs/1811.04551)
+  (FT, section 3); method.
+- *new* kriegeskorte2008: Kriegeskorte N, Mur M, Bandettini P 2008. Representational similarity analysis – connecting the
+  branches of systems neuroscience. *Frontiers in Systems Neuroscience* 2:4.
+  [doi:10.3389/neuro.06.004.2008](https://doi.org/10.3389/neuro.06.004.2008) (Abs); method.
+- grimm2005, zurell2010, teBoekhorst1994, ramosFernandez2006 and keramatiGutkin2014 are already listed; the entries
+  above add a use.
