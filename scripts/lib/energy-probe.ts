@@ -473,6 +473,56 @@ export function energyFinish(st: EnergySeedState, a: EnergyAcc, w: World): void 
   }
 }
 
+/** Absent in a decoded part: undefined, null or a hole. */
+const absent = (v: unknown) => v === undefined || v === null;
+/** Adds the numeric fields of `b` into `a` (min for the listed keys; dicts of counts key by key; lists concatenated). */
+function addInto<T extends object>(a: T, b: T, mins: readonly string[] = []): void {
+  const A = a as Record<string, unknown>, B = b as Record<string, unknown>;
+  for (const k of Object.keys(B)) {
+    const x = A[k], y = B[k];
+    if (absent(y)) continue;
+    if (absent(x)) { A[k] = clone(y); continue; }
+    if (typeof y === 'number') A[k] = mins.includes(k) ? Math.min(x as number, y) : (x as number) + y;
+    else if (y instanceof Set) for (const v of y) (x as Set<unknown>).add(v);
+    else if (Array.isArray(y)) (x as unknown[]).push(...y);
+    else if (typeof y === 'object') addInto(x as object, y as object);
+  }
+}
+const clone = <T>(v: T): T => (v instanceof Set ? new Set(v) : Array.isArray(v) ? v.map(clone) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, clone(x)])) : v) as T;
+/** Per-day sums (arrays with holes or nulls where a day had nothing), added day by day. */
+function addDays<T extends object>(a: (T | null | undefined)[], b: (T | null | undefined)[], add: (x: T, y: T) => void): void {
+  for (let d = 0; d < b.length; d++) { const y = b[d]; if (absent(y)) continue; const x = a[d]; if (absent(x)) a[d] = clone(y); else add(x as T, y as T); }
+}
+
+/** Per-day numbers (holes or nulls where a day had nothing), added day by day. */
+function addNums(a: (number | null | undefined)[], b: (number | null | undefined)[]): void {
+  for (let d = 0; d < b.length; d++) { const y = b[d]; if (absent(y)) continue; const x = a[d]; a[d] = absent(x) ? y : (x as number) + (y as number); }
+}
+
+/**
+ * Pools per-seed accumulators in the order given (e-bench: the run's seed order), as energy-diagnose.ts would have
+ * accumulated them, except that float sums are added seed total by seed total: a multi-seed e-bench run and an
+ * --merge of its per-seed parts pool identically; against energy-diagnose.ts's one accumulator, counts, lists and the
+ * reserve trajectory are identical and float sums agree to the last bits.
+ */
+export function mergeEnergy(parts: EnergyAcc[]): EnergyAcc {
+  const m = newEnergyAcc();
+  for (const p of parts) {
+    m.seeds.push(...p.seeds); m.trajSeeds.push(...p.trajSeeds.map(clone));
+    for (const c of Object.keys(p.acc) as Cls[]) addInto(m.acc[c], p.acc[c]);
+    for (const b of Object.keys(p.inf)) { m.inf[b] ??= blankInf(); addInto(m.inf[b], p.inf[b]); }
+    for (const b of Object.keys(p.wean)) { m.wean[b] ??= blankWean(); addInto(m.wean[b], p.wean[b]); }
+    for (const b of Object.keys(p.e1o)) { m.e1o[b] ??= blankE1o(); addInto(m.e1o[b], p.e1o[b]); }
+    for (const g of Object.keys(p.e1p)) { m.e1p[g] ??= blankE1p(); addInto(m.e1p[g], p.e1p[g], ['condMin', 'resMin']); }
+    for (const g of Object.keys(p.e1pTraj)) { const T = (m.e1pTraj[g] ??= { s: [], n: [] }); addNums(T.s, p.e1pTraj[g].s); addNums(T.n, p.e1pTraj[g].n); }
+    for (const n of Object.keys(p.daily)) addDays((m.daily[n] ??= []) as (Day | null)[], p.daily[n] as (Day | null)[], (x, y) => addInto(x, y));
+    m.juvs.push(...p.juvs.map(clone)); m.dyads.push(...p.dyads.map(clone));
+    addInto(m.deaths, p.deaths); addInto(m.deathsByClass, p.deathsByClass);
+    m.births += p.births; m.livingStart += p.livingStart; m.livingEnd += p.livingEnd;
+  }
+  return m;
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 // Pooling and the report
 // ---------------------------------------------------------------------------------------------------------------------
@@ -488,7 +538,7 @@ function trajOf(ea: EnergyAcc): Record<string, number[]> {
   const traj: Record<string, number[]> = {};
   ea.trajSeeds.forEach((series, j) => {
     const k = ea.seeds.indexOf(ea.seeds[j]);
-    for (const [n, v] of Object.entries(series)) for (let d = 0; d < v.length; d++) if (d in v) (traj[n] ??= [])[d] = ((traj[n][d] ?? 0) * k + v[d]) / (k + 1);
+    for (const [n, v] of Object.entries(series)) for (let d = 0; d < v.length; d++) if (v[d] !== undefined && v[d] !== null) (traj[n] ??= [])[d] = ((traj[n][d] ?? 0) * k + v[d]) / (k + 1);
   });
   return traj;
 }

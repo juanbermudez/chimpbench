@@ -29,14 +29,24 @@
 // the replay. Writes <out>.json, <out>.md, <out>.scorecard.{json,md,log}. Development seeds only (AGENTS.md lists the
 // reserved ones).
 import { execFileSync, spawnSync } from 'node:child_process';
-import { closeSync, existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { createHash } from 'node:crypto';
+import { closeSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { basename, dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { METRICS } from '../src/field/metrics';
+import { gunzipSync, gzipSync } from 'node:zlib';
+import { METRICS, type SeedValue } from '../src/field/metrics';
 import { REGISTRY_HASH, type Overrides } from '../src/sim/params';
 import { openBandDistance, rowDistance, sumDistances, type DistanceSum, type OpenBand, type RowDistance } from './lib/band-distance';
+import type { BenchJob, BenchPart, BenchSeedResult } from './lib/bench-run';
+import { sidecarOf, writeAtomic } from './lib/checkpoint';
+import { energyReport, mergeEnergy } from './lib/energy-probe';
+import { MAX_TOTAL_DAYS } from './lib/horizon';
+import { decodeLossless, encodeLossless } from './lib/lossless-json';
 import { runPool } from './lib/pool';
 import type { PrescriptionCount } from './lib/prescriptions';
+import { protocolHash } from './lib/protocol-hash';
+import { report as rhythmReport, rhythmJsonResult } from './lib/rhythm-probe';
+import { scorecard as buildScorecard } from './lib/scorecard';
 import { MIN_EVENTS, MIN_LIVING_SHARE, viabilityVerdict, type Viability, type ViabilityJob, type ViabilityVerdict } from './lib/viability';
 import { prescriptionCount } from './prescription-ledger';
 
@@ -49,8 +59,8 @@ export const MODES = {
   m12: { days: 365, burnInDays: 30, seeds: [48, 7, 21, 5, 11] },
   m24: { days: 700, burnInDays: 30, seeds: [48, 7, 21, 5, 11] },
 } as const;
-/** Longest simulation, burn-in + scored days (user, 4 October 2026: up to 2 years; it was 90 days from 1 October). */
-export const MAX_TOTAL_DAYS = 730;
+/** Longest simulation, burn-in + scored days (user, 4 October 2026: up to 2 years; it was 90 days from 1 October): scripts/lib/horizon.ts. */
+export { MAX_TOTAL_DAYS };
 /**
  * Rows that need a year of observation, by why. In a shorter run they are reported as insufficient and never summed,
  * whatever value the scorer produced from the short window (a kernel of two months is not an annual range; a rate of
@@ -313,6 +323,8 @@ async function main() {
     return finish(assemble(card, saved.viability?.perSeed ?? null, { label: saved.label, mode: saved.mode, workers: saved.config.workers, timing: saved.timing, scorecard: saved.scorecard, git: saved.git }), out);
   }
 
+  if (has('merge')) return mergeCommand(flag('merge', '').split(',').filter(Boolean).map(x => resolve(x)), resolve(flag('out', '')), { workers: Math.max(1, +flag('workers', '1')), finish, has });
+
   const mode = has('full') ? 'full' : has('m24') ? 'm24' : has('m12') ? 'm12' : has('m6') ? 'm6' : has('confirm') ? 'confirm' : 'quick';
   const days = +flag('days', String(MODES[mode].days)), burnInDays = +flag('burn-in', String(MODES[mode].burnInDays));
   const seeds = flag('seeds', MODES[mode].seeds.join(',')).split(',').map(Number), workers = Math.max(1, +flag('workers', '2'));
@@ -324,7 +336,9 @@ async function main() {
   mkdirSync(dirname(out), { recursive: true });
   const same = (m: { days: number; burnInDays: number; seeds: number[]; params: Overrides }) => m.days === days && m.burnInDays === burnInDays && JSON.stringify(m.seeds) === JSON.stringify(seeds) && JSON.stringify(m.params ?? {}) === JSON.stringify(params);
   const t0 = performance.now();
+  if (!has('legacy')) return singlePass({ flag, has, mode, label, days, burnInDays, seeds, workers, params, out, t0, finish, git, gitInfo });
 
+  // --legacy: the two-step path of 1 October (kept to compare with the single pass)
   // 1. the field scorecard, unchanged, in a child process
   let scorecardS: number | null = null;
   let card = has('reuse') && existsSync(cardFile) ? JSON.parse(readFileSync(cardFile, 'utf8')) as Scorecard : null;
@@ -356,6 +370,161 @@ async function main() {
   const reused = has('reuse') && (scorecardS === null || viabilityS === null);
   const totalS = reused ? null : has('reuse') ? (scorecardS ?? 0) + (viabilityS ?? 0) : Math.round((performance.now() - t0) / 1000);
   finish(assemble(card, viability, { label: flag('out', label).split('/').pop()!, mode: label, workers, timing: { scorecardS, viabilityS, totalS }, scorecard: cardFile, git: gitInfo() }), out);
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Single pass, parts, merge and checkpoints (track E, parts E1 and E2; 5 October 2026)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/**
+ * The long-run runner's contract (agreed with eR-runs, 5 October 2026). `--part` (one seed) writes
+ * `<out>.part.json.gz` last (temporary name, then rename): the per-seed records an arm pools. `--merge p1,p2,…`
+ * (parts in seed order) writes what a multi-seed run writes. `--until-day D` (absolute day, burn-in included) writes
+ * `<out>.ckpt-dD.v8.gz` and its sidecar `<out>.ckpt-dD.json`, then stops; `--resume <ckpt>` continues it. Exit 0 when
+ * the part, the outputs or the checkpoint are written; 2 on a usage error or a refused resume; 1 on a crash.
+ */
+export const RUN_CONTRACT = 1;
+
+/** Code and data a run depends on: git trees at HEAD, a hash of uncommitted changes, the registry and protocol hashes. */
+export type Identity = { trees: Record<string, string>; uncommitted: string | null; registryHash: string; protocolHash: string };
+type Git = (...a: string[]) => string;
+function identityOf(git: Git): Identity {
+  const dirs = ['src', 'scripts', 'data'];
+  const h = createHash('sha256');
+  let any = false;
+  try {
+    const diff = execFileSync('git', ['diff', 'HEAD', '--binary', '--', ...dirs], { cwd: ROOT, maxBuffer: 1 << 30, stdio: ['ignore', 'pipe', 'ignore'] });
+    if (diff.length) { any = true; h.update(diff); }
+    for (const f of git('ls-files', '--others', '--exclude-standard', '--', ...dirs).split('\n').filter(Boolean).sort()) { any = true; h.update(f); h.update(readFileSync(resolve(ROOT, f))); }
+  } catch { any = true; h.update('not a git checkout'); }
+  return { trees: Object.fromEntries(dirs.map(d => [d, git('rev-parse', `HEAD:${d}`)])), uncommitted: any ? h.digest('hex').slice(0, 16) : null, registryHash: REGISTRY_HASH, protocolHash: protocolHash() };
+}
+
+/** A part file: the header the runner reads, then the per-seed records (scripts/lib/bench-run.ts BenchPart). */
+export type PartFile = BenchPart & { mode: string; git: BenchDoc['git']; identity: Identity; protocolHash: string; registryHash: string; date: string };
+const canonJson = (v: unknown): string => JSON.stringify(v, (_k, x) => x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.keys(x).sort().map(k => [k, (x as Record<string, unknown>)[k]])) : x);
+export function readPart(file: string): PartFile {
+  const buf = readFileSync(file);
+  return decodeLossless<PartFile>((file.endsWith('.gz') ? gunzipSync(buf) : buf).toString('utf8'));
+}
+function writePart(file: string, p: PartFile): void { writeAtomic(file, gzipSync(Buffer.from(encodeLossless(p)), { level: 6 })); }
+
+/** The newest checkpoint `<prefix>.s<seed>.ckpt-d<D>.v8.gz` (complete: with its sidecar) at or before day `end`. */
+function findCheckpoint(prefix: string, seed: number, end: number): string | null {
+  const dir = dirname(prefix), base = `${basename(prefix)}.s${seed}.ckpt-d`;
+  if (!existsSync(dir)) return null;
+  const days = readdirSync(dir).filter(f => f.startsWith(base) && f.endsWith('.v8.gz')).map(f => +f.slice(base.length, -'.v8.gz'.length))
+    .filter(d => Number.isFinite(d) && d <= end && existsSync(sidecarOf(resolve(dir, `${base}${d}.v8.gz`)))).sort((a, b) => b - a);
+  return days.length ? resolve(dir, `${base}${days[0]}.v8.gz`) : null;
+}
+
+type Flags = { flag: (name: string, dflt: string) => string; has: (name: string) => boolean };
+interface SinglePassOptions extends Flags {
+  mode: string; label: string; days: number; burnInDays: number; seeds: number[]; workers: number; params: Overrides; out: string; t0: number;
+  finish: (doc: BenchDoc, out: string) => void; git: Git; gitInfo: () => BenchDoc['git'];
+}
+const usage = (msg: string): never => { console.error(`e-bench: ${msg}`); process.exit(2); };
+
+/** One simulation per seed (scripts/lib/bench-run.ts), in a worker pool; then the parts are pooled (writeOutputs). */
+async function singlePass(o: SinglePassOptions): Promise<void> {
+  const { flag, has } = o, part = has('part'), end = o.burnInDays + o.days;
+  if (part && o.seeds.length !== 1) usage('--part runs exactly one seed (--seeds <s>)');
+  const dayList = (v: string) => v.split(',').filter(Boolean).map(Number);
+  const ckDays = new Set(dayList(flag('checkpoint-at', '')));
+  if ((has('checkpoint') || o.mode === 'm6' || o.mode === 'm12') && !has('no-checkpoint')) ckDays.add(end);
+  const stopDay = has('until-day') ? +flag('until-day', '') : null;
+  for (const d of [...ckDays, ...(stopDay === null ? [] : [stopDay])]) if (!Number.isFinite(d) || d <= 0 || d > end || !Number.isInteger(Math.round(d * 5760)) || Math.abs(d * 5760 - Math.round(d * 5760)) > 1e-6) usage(`checkpoint day ${d} must fall on a tick between 0 and ${end}`);
+  if (stopDay !== null && stopDay >= end) usage(`--until-day ${stopDay} is not before the run's end (day ${end}); a run writes its end checkpoint with --checkpoint`);
+  const identity = identityOf(o.git);
+  const prefixFor = (seed: number) => part ? o.out : `${o.out}.s${seed}`;
+  const partFile = (seed: number) => `${prefixFor(seed)}.part.json.gz`;
+  const resumeArg = flag('resume', '');
+  const resumeFor = (seed: number) => {
+    if (!resumeArg) return null;
+    if (part || resumeArg.endsWith('.v8.gz')) return resolve(resumeArg);
+    return findCheckpoint(resolve(resumeArg), seed, end) ?? usage(`--resume ${resumeArg}: no complete checkpoint for seed ${seed} at or before day ${end}`);
+  };
+  const jobs: BenchJob[] = o.seeds.map(seed => ({ seed, profile: 'field', params: o.params, burnInDays: o.burnInDays, days: o.days, observerSeed: 1, experimentEveryDays: 30, truth: true,
+    energy: !has('no-energy'), rhythm: !has('no-rhythm'), checkpointDays: [...ckDays].sort((a, b) => a - b), stopDay, checkpointPrefix: prefixFor(seed), resume: resumeFor(seed), identity }));
+  // --reuse: a seed whose part is on disk with the same settings and code is not run again
+  const settings = (j: Pick<BenchJob, 'params' | 'burnInDays' | 'days' | 'observerSeed' | 'experimentEveryDays' | 'truth' | 'energy' | 'rhythm'>) =>
+    canonJson({ params: j.params, burnInDays: j.burnInDays, days: j.days, observerSeed: j.observerSeed, experimentEveryDays: j.experimentEveryDays, truth: j.truth, energy: j.energy, rhythm: j.rhythm });
+  const reused = new Map<number, string>();
+  if (has('reuse') && stopDay === null) for (const j of jobs) {
+    const f = partFile(j.seed);
+    if (!existsSync(f)) continue;
+    const p = readPart(f);
+    if (p.seed === j.seed && settings(p.config) === settings(j) && canonJson(p.identity) === canonJson(identity)) { reused.set(j.seed, f); console.error(`e-bench: reusing ${f}`); }
+  }
+  const todo = jobs.filter(j => !reused.has(j.seed));
+  console.error(`e-bench: single pass, ${o.days} days after ${o.burnInDays}, seeds ${o.seeds.join(', ')}${reused.size ? ` (${reused.size} reused)` : ''}, ${o.workers} workers`);
+  const p0 = performance.now();
+  type Done = { kind: 'part'; part: string } | Extract<BenchSeedResult, { kind: 'stopped' }>;
+  let results: Done[];
+  try { results = await runPool<BenchJob, Done>(new URL('./lib/bench-worker.ts', import.meta.url), todo, { size: o.workers, onDone: (i, ms) => console.error(`seed ${todo[i].seed}: done in ${(ms / 1000).toFixed(0)} s`) }); }
+  catch (e) { if (String(e).includes('ResumeRefused')) usage(String((e as Error).message ?? e).split('\n')[0]); throw e; }
+  const poolMs = performance.now() - p0;
+  const stopped = results.filter((r): r is Extract<Done, { kind: 'stopped' }> => r.kind === 'stopped');
+  if (stopped.length) { for (const [k, r] of results.entries()) if (r.kind === 'stopped') console.log(`seed ${todo[k].seed}: stopped at day ${r.day}; checkpoint ${r.checkpoint}`); return; }
+  const git = o.gitInfo(), date = new Date().toISOString();
+  results.forEach((r, k) => {
+    if (r.kind !== 'part') return;
+    const p = decodeLossless<BenchPart>(r.part);
+    const head = { tool: p.tool, version: p.version, seed: p.seed, mode: o.mode, config: p.config, git, identity, protocolHash: identity.protocolHash, registryHash: identity.registryHash, date, timing: p.timing };
+    writePart(partFile(todo[k].seed), { ...head, ...p, ...head } as PartFile);
+  });
+  if (part) { console.log(`wrote ${partFile(o.seeds[0])}`); return; }
+  writeOutputs(o.seeds.map(seed => readPart(reused.get(seed) ?? partFile(seed))), o.out, { label: basename(o.out), mode: o.mode, workers: o.workers, poolMs, t0: o.t0, finish: o.finish });
+}
+
+/** `--merge p1,p2,…`: the outputs of a multi-seed run from per-seed parts, in the order given. */
+function mergeCommand(files: string[], out: string, o: { workers: number; finish: (doc: BenchDoc, out: string) => void; has: (name: string) => boolean }): void {
+  if (!files.length) usage('--merge needs part files');
+  if (!out || out === resolve('')) usage('--merge needs --out <dir>/<label>');
+  mkdirSync(dirname(out), { recursive: true });
+  const parts = files.map(readPart);
+  writeOutputs(parts, out, { label: basename(out), mode: parts[0].mode, workers: o.workers, poolMs: parts.reduce((a, p) => a + p.timing.wallMs, 0), t0: performance.now(), finish: o.finish });
+}
+
+/**
+ * Pools per-seed parts in the order given and writes every output of an arm: <out>.scorecard.{json,md,log} (as
+ * scripts/field-metrics.ts writes them), <out>.json and <out>.md (the bench, through `finish`), <out>-energy.{json,log}
+ * (as scripts/energy-diagnose.ts writes them) and <out>-rhythm.{json,md} (as scripts/rhythm-metrics.ts writes them).
+ * The multi-seed run and --merge both come here with parts read from their files, so they write the same bytes
+ * (date, timing and workers aside).
+ */
+function writeOutputs(parts: PartFile[], out: string, o: { label: string; mode: string; workers: number; poolMs: number; t0: number; finish: (doc: BenchDoc, out: string) => void }): void {
+  const seeds = parts.map(p => p.seed), c0 = canonJson({ ...parts[0].config }), id0 = canonJson(parts[0].identity);
+  if (new Set(seeds).size !== seeds.length) usage(`parts repeat a seed (${seeds.join(', ')})`);
+  for (const p of parts) {
+    if (p.tool !== 'e-bench-part') usage(`not an e-bench part (seed ${p.seed})`);
+    if (canonJson({ ...p.config }) !== c0) usage(`part of seed ${p.seed} has other settings than seed ${parts[0].seed}`);
+    if (canonJson(p.identity) !== id0) usage(`part of seed ${p.seed} was made from other code or data than seed ${parts[0].seed}`);
+    if (p.mode !== parts[0].mode) usage(`part of seed ${p.seed} is mode ${p.mode}, seed ${parts[0].seed}'s ${parts[0].mode}`);
+  }
+  const cfg = parts[0].config, cardFile = `${out}.scorecard.json`;
+  const card = buildScorecard(parts.map(p => p.field), { profile: cfg.profile, days: cfg.days, seeds, params: cfg.params as Record<string, number>, burnInDays: cfg.burnInDays, experimentsEvery: cfg.experimentEveryDays, truth: cfg.truth, observerSeed: cfg.observerSeed, workers: o.workers, t0: o.t0, poolMs: o.poolMs });
+  writeFileSync(cardFile, JSON.stringify(card.json, null, 1));
+  writeFileSync(`${out}.scorecard.md`, card.md);
+  writeFileSync(`${out}.scorecard.log`, card.text + '\n');
+  if (cfg.energy) {
+    const r = energyReport(mergeEnergy(parts.map(p => p.energy!)), { profile: cfg.profile, seeds, burnIn: cfg.burnInDays, days: cfg.days, params: cfg.params as Record<string, number>, termBirths: false });
+    writeFileSync(`${out}-energy.json`, JSON.stringify(r.json, null, 1));
+    writeFileSync(`${out}-energy.log`, r.text + '\n');
+  }
+  if (cfg.rhythm) {
+    const rs = parts.map(p => p.rhythm!), job = { burnIn: cfg.burnInDays, days: cfg.days, params: cfg.params as Record<string, number> };
+    writeFileSync(`${out}-rhythm.md`, rhythmReport(rs, job) + '\n');
+    writeFileSync(`${out}-rhythm.json`, JSON.stringify({ seeds, burnIn: job.burnIn, days: job.days, params: job.params, results: rs.map(rhythmJsonResult) }, null, 1));
+  }
+  // simulation-truth rows: one value per seed, in seed order, for every row each seed has a readout for
+  const truth: Record<string, SeedValue[]> = {};
+  for (const id of Object.keys(parts[0].truth ?? {})) if (parts.every(p => p.truth?.[id])) truth[id] = parts.map(p => p.truth[id]);
+  const totalS = Math.round((performance.now() - o.t0) / 1000);
+  const doc = assemble(card.json as unknown as Scorecard, parts.map(p => p.viability), { label: o.label, mode: o.mode, workers: o.workers, timing: { scorecardS: Math.round(o.poolMs / 1000), viabilityS: null, totalS }, scorecard: cardFile, git: parts[0].git });
+  (doc as BenchDoc & { truth?: Record<string, SeedValue[]> }).truth = truth;
+  o.finish(doc, out);
+  console.log(`wrote ${cardFile.replace(/\.json$/, '')}.{json,md,log}${cfg.energy ? `, ${out}-energy.{json,log}` : ''}${cfg.rhythm ? `, ${out}-rhythm.{json,md}` : ''}`);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main().catch(e => { console.error(e); process.exit(1); });
