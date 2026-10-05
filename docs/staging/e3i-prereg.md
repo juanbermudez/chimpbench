@@ -92,6 +92,252 @@ adult males' eating minutes and ground km against the integrator's `S39q*-energy
 - The mechanism (step 2) addresses only a term these name with ≥ 1/4 of unfed trips' walking; a class below that gets no
   mechanism. If D1 holds, D2 decides between an evidence-based belief and a prior.
 
+### 2.2 Diagnosis results (frozen checkout acd7d4f, clean; S39q and its re-draws S39q1–S39q3 by `rngSalt` 1, 2, 3; seeds 48 and 7, 30 + 30 days; simulation truth; printed by the stage's `diag_table.py` from the tool's JSON and raw trips, session scratch `e3i/diag/`)
+
+**Identity:** in all four worlds the tool's adult males' eating minutes and ground km equal the integrator's energy-diagnose
+of the same world to the last digit printed. S39q2's one death is an infanticide by an East community male (none from
+starvation in any run).
+
+```
+Identity (adult males: eating min, ground km), trip-diagnose vs energy-diagnose of the same world:
+  S39q: 228.032 / 2.437 vs 228.032 / 2.437; living [(49, 49, {}), (49, 49, {})]
+  S39q1: 229.33 / 2.802 vs 229.330 / 2.802; living [(49, 49, {}), (49, 49, {})]
+  S39q2: 226.669 / 2.492 vs 226.669 / 2.492; living [(49, 48, {'infanticide by Chiriku (East community)': 1}), (49, 49, {})]
+  S39q3: 227.419 / 2.544 vs 227.419 / 2.544; living [(49, 49, {}), (49, 49, {})]
+
+| Trips (adults, daylight starts) | per adult-day | fed at target | km per trip |
+| --- | --- | --- | --- |
+| remembered crown | 1.922 ± 0.027 | 0.738 ± 0.012 | 0.226 ± 0.005 |
+| departure | 4.998 ± 0.058 | 0.321 ± 0.009 | 0.069 ± 0.003 |
+| crown in view | 1.373 ± 0.067 | 0.982 ± 0.003 | 0.017 ± 0.001 |
+| a companion's trip | 3.596 ± 0.120 | 0.714 ± 0.016 | 0.139 ± 0.005 |
+| a caller | 1.409 ± 0.111 | 0.322 ± 0.004 | 0.327 ± 0.011 |
+| all | 13.30 ± 0.32 | 0.556 ± 0.009 | 0.132 ± 0.004 |
+trips: km per adult-day 1.760 ± 0.094; unfed 0.737 ± 0.055; kcal unfed 25.8 ± 2.0
+
+| Unfed trips by E3i class | per adult-day | share of unfed | km per adult-day | share of unfed km | walk kcal per adult-day | climb kcal per adult-day |
+| --- | --- | --- | --- | --- | --- | --- |
+| re-decided en route | 0.776 ± 0.065 | 0.131 ± 0.007 | 0.216 ± 0.026 | 0.293 ± 0.023 | 6.76 ± 0.81 | 0.21 ± 0.04 |
+| caller stopped short | 0.390 ± 0.038 | 0.066 ± 0.004 | 0.121 ± 0.012 | 0.164 ± 0.007 | 3.89 ± 0.38 | 0.07 ± 0.03 |
+| arrived, crop left | 0.645 ± 0.021 | 0.109 ± 0.002 | 0.119 ± 0.008 | 0.161 ± 0.003 | 3.83 ± 0.24 | 0.38 ± 0.04 |
+| arrived empty: no sighting, the list | 0.337 ± 0.028 | 0.057 ± 0.004 | 0.113 ± 0.011 | 0.154 ± 0.013 | 3.66 ± 0.34 | 0.00 ± 0.00 |
+| caller, no crown | 0.166 ± 0.006 | 0.028 ± 0.001 | 0.052 ± 0.003 | 0.071 ± 0.008 | 1.70 ± 0.07 | 0.03 ± 0.01 |
+| arrived empty: emptied by eating since the sighting | 0.484 ± 0.048 | 0.082 ± 0.005 | 0.050 ± 0.006 | 0.067 ± 0.005 | 1.60 ± 0.20 | 0.01 ± 0.00 |
+| arrived empty: no sighting, a companion's goal | 0.133 ± 0.025 | 0.022 ± 0.003 | 0.033 ± 0.006 | 0.045 ± 0.006 | 1.07 ± 0.19 | 0.00 ± 0.00 |
+| arrived empty: ripening ended since the sighting | 0.202 ± 0.024 | 0.034 ± 0.003 | 0.028 ± 0.004 | 0.038 ± 0.004 | 0.89 ± 0.12 | 0.00 ± 0.00 |
+| arrived empty: emptied during the trip | 0.024 ± 0.007 | 0.004 ± 0.001 | 0.003 ± 0.001 | 0.004 ± 0.002 | 0.10 ± 0.04 | 0.01 ± 0.00 |
+| departure given up | 2.748 ± 0.025 | 0.466 ± 0.015 | 0.002 ± 0.001 | 0.003 ± 0.000 | 0.08 ± 0.01 | 0.05 ± 0.01 |
+| arrived empty: no sighting, other | 0.001 ± 0.001 | 0.000 ± 0.000 | 0.000 ± 0.000 | 0.000 ± 0.000 | 0.00 ± 0.00 | 0.00 ± 0.00 |
+
+D1: emptied by eating since the sighting: share of unfed trips 0.082 ± 0.005, share of unfed km 0.067 ± 0.005 -> NOT SUPPORTED
+  largest share of unfed walking: re-decided en route; most unfed trips: departure given up
+
+emptiedByEating: n [832, 1030, 862, 880]; per adult-day 0.484 ± 0.048
+  cropAtSightingMedian: 0.100 ± 0.007
+  maxFruitMedian: 0.607 ± 0.021
+  cNone0Median: 0.149 ± 0.018
+  near100Mean: 6.329 ± 0.810
+  near300Mean: 10.114 ± 0.542
+  near1000Mean: 13.828 ± 0.297
+  eatenOthersPerTrip: 0.253 ± 0.034
+  eatersMean: 5.087 ± 0.211
+  ownEatersMean: 5.087 ± 0.211
+  evidenceAny: 0.952 ± 0.007
+  evidencePantHoot: 0.565 ± 0.042
+  evidenceSawHeading: 0.842 ± 0.017
+  evidenceSawFeeding: 0.285 ± 0.024
+  evidenceTravelHoo: 0.595 ± 0.039
+  evidenceFoodGrunt50m: 0.279 ± 0.027
+  withEmptier: 0.974 ± 0.012
+  hSightToEmptied: 2.188 ± 0.344
+  hEmptiedToStart: 0.816 ± 0.070
+  kmPerAdultDay: 0.050 ± 0.006
+  walkKcalPerAdultDay: 1.604 ± 0.205
+  climbKcalPerAdultDay: 0.008 ± 0.003
+  kmPerAdultDayWithEvidence: 0.046 ± 0.006
+  kmPerAdultDayNoEvidence: 0.004 ± 0.001
+  hours sighting->start (q25, median, q75): [[1.271, 2.8, 8.583], [1.317, 3.021, 15.721], [1.629, 4.063, 24.737], [1.421, 3.471, 17.829]]
+  by kind: [{'joined': 0.555, 'own, seen': 0.368, 'own, left': 0.071, 'caller': 0.006}, {'joined': 0.531, 'own, seen': 0.383, 'own, left': 0.083, 'caller': 0.003}, {'joined': 0.541, 'own, seen': 0.401, 'own, left': 0.057, 'caller': 0.001}, {'joined': 0.564, 'own, seen': 0.353, 'own, left': 0.081, 'caller': 0.002}]
+  share of fruit eaten in (ts, t0] by evidence class: companion at the sighting 0.095 ± 0.007; food grunt <= 50 m 0.025 ± 0.004; heard pant-hoot 0.178 ± 0.010; heard travel hoo 0.003 ± 0.002; other community 0.000 ± 0.000; own community, none 0.288 ± 0.015; saw feeding 0.059 ± 0.005; saw heading 0.299 ± 0.025; seen feeding at the sighting 0.051 ± 0.005
+  the emptier (eater that took it below 0.06) by class: companion at the sighting 0.108 ± 0.019; food grunt <= 50 m 0.055 ± 0.014; heard pant-hoot 0.155 ± 0.017; heard travel hoo 0.004 ± 0.005; own community, none 0.213 ± 0.022; saw feeding 0.151 ± 0.036; saw heading 0.239 ± 0.033; seen feeding at the sighting 0.074 ± 0.007
+
+fedWithSighting: n [10103, 9962, 9988, 10457]; per adult-day 5.445 ± 0.123
+  cropAtSightingMedian: 0.298 ± 0.017
+  maxFruitMedian: 0.657 ± 0.010
+  cNone0Median: 0.411 ± 0.013
+  near100Mean: 3.508 ± 0.163
+  near300Mean: 6.572 ± 0.317
+  near1000Mean: 11.014 ± 0.402
+  eatenOthersPerTrip: 0.163 ± 0.005
+  eatersMean: 2.513 ± 0.061
+  ownEatersMean: 2.513 ± 0.061
+  evidenceAny: 0.629 ± 0.011
+  evidencePantHoot: 0.233 ± 0.009
+  evidenceSawHeading: 0.552 ± 0.012
+  evidenceSawFeeding: 0.072 ± 0.003
+  evidenceTravelHoo: 0.320 ± 0.009
+  evidenceFoodGrunt50m: 0.092 ± 0.004
+  withEmptier: 0.168 ± 0.013
+  hSightToEmptied: 5.636 ± 0.825
+  hEmptiedToStart: 23.227 ± 1.352
+  kmPerAdultDay: 0.860 ± 0.028
+  walkKcalPerAdultDay: 28.064 ± 0.845
+  climbKcalPerAdultDay: 24.395 ± 0.574
+  kmPerAdultDayWithEvidence: 0.537 ± 0.020
+  kmPerAdultDayNoEvidence: 0.323 ± 0.012
+  hours sighting->start (q25, median, q75): [[0.954, 4.417, 31.275], [0.938, 4.821, 38.325], [1.067, 5.171, 31.188], [0.954, 4.442, 29.533]]
+  by kind: [{'own, seen': 0.468, 'joined': 0.402, 'own, left': 0.065, 'caller': 0.064, 'own, known': 0.001}, {'own, seen': 0.475, 'joined': 0.388, 'caller': 0.07, 'own, left': 0.067, 'own, known': 0.001}, {'own, seen': 0.484, 'joined': 0.398, 'own, left': 0.06, 'caller': 0.058, 'own, known': 0}, {'own, seen': 0.468, 'joined': 0.405, 'caller': 0.065, 'own, left': 0.061, 'own, known': 0.001}]
+  share of fruit eaten in (ts, t0] by evidence class: companion at the sighting 0.103 ± 0.003; food grunt <= 50 m 0.018 ± 0.002; heard pant-hoot 0.146 ± 0.008; heard travel hoo 0.004 ± 0.001; other community 0.000 ± 0.000; own community, none 0.376 ± 0.012; saw feeding 0.033 ± 0.001; saw heading 0.279 ± 0.011; seen feeding at the sighting 0.041 ± 0.002
+  the emptier (eater that took it below 0.06) by class: companion at the sighting 0.112 ± 0.004; food grunt <= 50 m 0.028 ± 0.004; heard pant-hoot 0.184 ± 0.016; heard travel hoo 0.003 ± 0.001; own community, none 0.288 ± 0.025; saw feeding 0.108 ± 0.007; saw heading 0.217 ± 0.022; seen feeding at the sighting 0.059 ± 0.008
+
+D2: share of the fruit eaten by eaters with delivered evidence (saw feeding/heading, heard pant-hoot/travel hoo): 0.541 ± 0.019 -> EVIDENCE implicated; food grunt <= 50 m 0.025 ± 0.004
+
+| hours since the sighting | trips per adult-day | fed at target | emptied by eating | ripening ended (no-eat crop < 0.06) | median b | median c0 | median b - c0 (trips) | others ate (units) | evidence any |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 0-1 | 2.218 ± 0.144 | 0.625 ± 0.012 | 0.065 ± 0.008 | 0.037 ± 0.006 | 0.270 ± 0.019 | 0.262 ± 0.019 | -0.000 ± 0.000 | 0.014 ± 0.001 | 0.484 ± 0.019 |
+| 1-3 | 1.909 ± 0.052 | 0.531 ± 0.013 | 0.132 ± 0.019 | 0.013 ± 0.002 | 0.271 ± 0.015 | 0.243 ± 0.016 | -0.000 ± 0.000 | 0.046 ± 0.001 | 0.598 ± 0.007 |
+| 3-6 | 0.972 ± 0.035 | 0.477 ± 0.006 | 0.171 ± 0.008 | 0.007 ± 0.001 | 0.274 ± 0.018 | 0.222 ± 0.017 | 0.007 ± 0.006 | 0.089 ± 0.006 | 0.692 ± 0.003 |
+| 6-12 | 0.477 ± 0.012 | 0.454 ± 0.016 | 0.161 ± 0.014 | 0.006 ± 0.003 | 0.282 ± 0.026 | 0.220 ± 0.035 | 0.015 ± 0.011 | 0.135 ± 0.009 | 0.709 ± 0.030 |
+| 12-24 | 1.261 ± 0.043 | 0.588 ± 0.018 | 0.041 ± 0.007 | 0.005 ± 0.003 | 0.277 ± 0.014 | 0.333 ± 0.016 | -0.050 ± 0.004 | 0.113 ± 0.007 | 0.678 ± 0.016 |
+| 24-48 | 1.048 ± 0.045 | 0.537 ± 0.013 | 0.065 ± 0.020 | 0.014 ± 0.005 | 0.271 ± 0.025 | 0.335 ± 0.026 | -0.041 ± 0.009 | 0.223 ± 0.009 | 0.736 ± 0.021 |
+| 48-96 | 0.956 ± 0.036 | 0.524 ± 0.011 | 0.065 ± 0.008 | 0.039 ± 0.008 | 0.247 ± 0.015 | 0.365 ± 0.016 | -0.067 ± 0.008 | 0.366 ± 0.010 | 0.769 ± 0.009 |
+| 96-241 | 0.992 ± 0.037 | 0.481 ± 0.011 | 0.068 ± 0.009 | 0.116 ± 0.018 | 0.231 ± 0.008 | 0.357 ± 0.029 | -0.049 ± 0.014 | 0.624 ± 0.031 | 0.790 ± 0.019 |
+D3: youngest bin with emptied-by-eating share > 1/4 per realization: [None, None, None, None]
+
+D4: community stock (mean over days): members, fruit units eaten a day, ripe crowns in range, ripe crop in range, list expectation, lambda = eaten / stock per day
+  community 1: members 22.0 ± 0.1; F 6.56 ± 0.06; crowns 636 ± 17; S 328.6 ± 9.0; list 378.3 ± 11.2; lambda/day 0.0200 ± 0.0008
+  community 2: members 15.2 ± 0.2; F 4.46 ± 0.07; crowns 689 ± 15; S 358.5 ± 7.8; list 407.1 ± 10.0; lambda/day 0.0123 ± 0.0005
+  community 3: members 11.8 ± 0.3; F 3.51 ± 0.09; crowns 610 ± 46; S 314.0 ± 24.1; list 362.4 ± 26.2; lambda/day 0.0112 ± 0.0010
+  realized mean loss (cs - c0)/cs of trips with a sighting by hours bin, against 1 - exp(-lambda * days) at the mean lambda:
+    0-1 h: realized 0.046 ± 0.005; prior 1 - exp(-lambda d) at the bin's middle 0.000 (lambda 0.0145/day)
+    1-3 h: realized 0.099 ± 0.007; prior 1 - exp(-lambda d) at the bin's middle 0.001 (lambda 0.0145/day)
+    3-6 h: realized 0.128 ± 0.027; prior 1 - exp(-lambda d) at the bin's middle 0.003 (lambda 0.0145/day)
+    6-12 h: realized 0.138 ± 0.025; prior 1 - exp(-lambda d) at the bin's middle 0.005 (lambda 0.0145/day)
+    12-24 h: realized -0.623 ± 0.061; prior 1 - exp(-lambda d) at the bin's middle 0.011 (lambda 0.0145/day)
+    24-48 h: realized -0.807 ± 0.029; prior 1 - exp(-lambda d) at the bin's middle 0.022 (lambda 0.0145/day)
+    48-96 h: realized -1.416 ± 0.237; prior 1 - exp(-lambda d) at the bin's middle 0.043 (lambda 0.0145/day)
+    96-241 h: realized -1.863 ± 0.295; prior 1 - exp(-lambda d) at the bin's middle 0.097 (lambda 0.0145/day)
+
+D5 details (per adult-day; mean over realizations):
+  re-decided en route by (kind, trigger, own option still on the list): trips | km
+    ('caller', 'interrupt', 0): 0.172 | 0.048
+    ('joined', 'interrupt', 0): 0.137 | 0.020
+    ('own', 'interrupt', 1): 0.131 | 0.003
+    ('caller', 'ended', 0): 0.125 | 0.082
+    ('own', 'interrupt', 0): 0.071 | 0.012
+    ('joined', 'interrupt', 1): 0.042 | 0.005
+    ('caller', 'need-bucket', 0): 0.038 | 0.024
+    ('caller', 'period', 0): 0.013 | 0.008
+    ('caller', 'interrupt', 1): 0.013 | 0.001
+    ('view', 'interrupt', 1): 0.011 | 0.000
+    ('joined', 'ended', 0): 0.005 | 0.000
+    ('caller', 'max-age', 0): 0.005 | 0.002
+    ('own', 'ended', 0): 0.003 | 0.001
+    ('caller', 'patrol', 0): 0.003 | 0.002
+  caller trips re-decided en route: hours since the call at the close, quartiles 0.04 / 0.12 / 0.27; share past 0.3 h 0.219; own option off the list 0.963
+  arrived, crop left by (kind, trigger, crown in view, forage option on the list, next act): trips
+    ('own', 'need-bucket', 1, 1, 'trip-own'): 0.086
+    ('joined', 'interrupt', 1, 1, 'trip-joined'): 0.054
+    ('joined', 'need-bucket', 1, 1, 'trip-own'): 0.053
+    ('own', 'period', 1, 1, 'trip-own'): 0.022
+    ('own', 'interrupt', 1, 1, 'trip-joined'): 0.019
+    ('joined', 'interrupt', 1, 1, 'pant-grunt'): 0.015
+    ('own', 'need-bucket', 1, 1, 'feed-crown'): 0.014
+    ('own', 'patrol', 1, 1, 'pant-grunt'): 0.013
+    ('own', 'need-bucket', 1, 1, 'trip-caller'): 0.012
+    ('joined', 'need-bucket', 1, 1, 'trip-caller'): 0.012
+    ('own', 'patrol', 1, 1, 'display'): 0.010
+    ('caller', 'interrupt', 1, 1, 'pant-grunt'): 0.010
+  caller stopped short / no crown by (cause, next act, crown in view, c1 >= 0.06): trips | km
+    ('caller, no crown', 'rest', -1, False): 0.064 | 0.024
+    ('caller stopped short', 'pant-grunt', 0, False): 0.048 | 0.012
+    ('caller stopped short', 'pant-grunt', 1, True): 0.048 | 0.014
+    ('caller stopped short', 'trip-own', 0, False): 0.045 | 0.012
+    ('caller stopped short', 'trip-own', 1, True): 0.044 | 0.015
+    ('caller, no crown', 'trip-own', -1, False): 0.030 | 0.008
+    ('caller stopped short', 'trip-own', 0, True): 0.020 | 0.007
+    ('caller, no crown', 'display', -1, False): 0.020 | 0.005
+    ('caller stopped short', 'rest', 0, False): 0.017 | 0.006
+    ('caller stopped short', 'rest', 1, True): 0.015 | 0.007
+  arrived empty with no sighting by (kind, src): trips | km
+    ('own', 'known'): 0.337 | 0.113
+    ('joined', 'unseen'): 0.131 | 0.033
+    ('joined', 'belief'): 0.003 | 0.001
+    ('caller', 'unseen'): 0.001 | 0.000
+    ('own', 'belief'): 0.000 | 0.000
+  joined trips arriving empty: n [928, 1085, 862, 922]; with the leader's sighting 0.712 ± 0.008; emptied by eating since it 0.769 ± 0.029; with own sighting 0.740 ± 0.030
+
+Unfed walking by kind (km per adult-day; share of unfed km) and its classes:
+  caller: 0.346 ± 0.026 (0.470 ± 0.004)
+      re-decided en route: 0.167 ± 0.018
+      caller stopped short: 0.121 ± 0.012
+      caller, no crown: 0.052 ± 0.003
+      arrived, crop left: 0.006 ± 0.002
+      arrived empty: emptied by eating since the sighting: 0.000 ± 0.000
+      arrived empty: emptied during the trip: 0.000 ± 0.000
+      arrived empty: no sighting: 0.000 ± 0.000
+      arrived empty: ripening ended since the sighting: 0.000 ± 0.000
+  joined: 0.147 ± 0.014 (0.199 ± 0.004)
+      arrived, crop left: 0.052 ± 0.004
+      arrived empty: no sighting: 0.033 ± 0.006
+      re-decided en route: 0.027 ± 0.006
+      arrived empty: emptied by eating since the sighting: 0.023 ± 0.003
+      arrived empty: ripening ended since the sighting: 0.010 ± 0.002
+      arrived empty: emptied during the trip: 0.001 ± 0.001
+  remembered crown: 0.145 ± 0.009 (0.197 ± 0.009)
+      arrived empty: no sighting: 0.089 ± 0.008
+      arrived, crop left: 0.030 ± 0.002
+      arrived empty: ripening ended since the sighting: 0.011 ± 0.002
+      arrived empty: emptied by eating since the sighting: 0.009 ± 0.002
+      re-decided en route: 0.005 ± 0.003
+      arrived empty: emptied during the trip: 0.000 ± 0.000
+  departure: 0.098 ± 0.010 (0.133 ± 0.006)
+      arrived, crop left: 0.030 ± 0.004
+      arrived empty: no sighting: 0.025 ± 0.003
+      arrived empty: emptied by eating since the sighting: 0.017 ± 0.002
+      re-decided en route: 0.016 ± 0.004
+      arrived empty: ripening ended since the sighting: 0.007 ± 0.001
+      departure given up: 0.002 ± 0.000
+      arrived empty: emptied during the trip: 0.001 ± 0.001
+  view: 0.000 ± 0.000 (0.000 ± 0.000)
+      arrived, crop left: 0.000 ± 0.000
+      re-decided en route: 0.000 ± 0.000
+```
+
+**Reading by the registered rules.**
+- **D1, the brief's premise: not supported.** Trips that arrive at a crown emptied by eating since the traveller's
+  sighting are 0.48 ± 0.05 per adult-day, 8.2 ± 0.5% of unfed trips and 6.7 ± 0.5% of unfed trips' walking (0.050 of
+  0.737 km per adult-day). Trips fed at their target are 0.556 ± 0.009; of the 44% that do not, nearly half are
+  departures nobody followed (2.75 per adult-day, 47% of unfed trips) that move about 2 m each. **The class with the largest
+  share of unfed walking is re-decided en route** (0.78 ± 0.07 trips and 0.216 ± 0.026 km per adult-day, 29 ± 2% of unfed
+  walking, 6.8 kcal of walking and 0.2 kcal of climbing per adult-day); the most numerous is departures given up.
+- **D2 (reported, D1 not supported):** for the trips that do arrive at a crown emptied by eating since the sighting, 54 ±
+  2% of the fruit eaten there between the sighting and the start was eaten by animals the traveller saw heading there
+  (30%), heard pant-hoot from it (18%) or saw feeding there (6%); 95% of these trips had some such percept; food grunts
+  given there within 50 m (which nobody hears) 2.5%. By the rule, evidence would be implicated; the class is small.
+- **D3: no age.** The emptied-by-eating share peaks at 3–12 h after the sighting (16–17% of those trips) and is never above
+  1/4; the belief is unbiased for sightings under 12 h (median b − c0 0.000–0.015 units) and too low after (−0.04 to −0.07:
+  crowns keep ripening).
+- **D4: a proportional prior predicts almost nothing.** A community eats 1.1–2.0% of its range's ripe crop a day (λ 0.011–
+  0.020), so a proportional-consumption prior predicts a 0.3–0.5% loss within 6 h, while the crowns trips go to lose
+  5–14% of their crop within 12 h: consumption concentrates where animals are (the crowns trips go to are the ones others
+  go to), and after 12 h ripening outweighs it. A prior from community size, known crowns and intake rates would not have
+  the right magnitude without a fitted concentration.
+- **D5, the named class.** Caller trips carry 0.167 ± 0.018 of re-decided en route's 0.216 km (77%); 96% of the caller
+  trips re-decided en route had their own option off the list when they closed (the hours since the latest call at the
+  close: quartiles 0.04 / 0.12 / 0.27 h; 22% past 0.3 h). Own trips re-decided en route mostly kept their option (an
+  interrupt and a draw; 0.003 km); joined trips lost theirs (the leader's departure no longer offered; 0.020 km). Caller
+  trips altogether carry **47% of unfed walking** (0.346 ± 0.026 km per adult-day: re-decided en route 0.167, stopped short
+  at the caller's crown 0.121 (the crown below 0.06 on arrival in ~40%, already at the start in ~26%; otherwise a greeting
+  or another trip chosen), calls not given in a crown 0.052). Other classes: arrived with crop left 16% of unfed walking
+  (closed by a need-bucket, interrupt or period trigger at the crown's foot, then another trip drawn), list crowns not
+  seen 15%, crowns whose ripening ended since the sighting 4%, a companion's goal never seen 5%.
+
+**What this says.** The ~44% of trips that do not feed at their target are not mostly trips to crowns others emptied.
+Half are departures nobody answered, which cost nothing. Of the walking they cost, the largest share is trips to callers
+that end on the way, and the reason (amendment 1) is in the code that holds the call, not in a belief: the call the
+animal walks to sits in a single slot that the next pant-hoot heard overwrites, and the offer lasts 0.3 h.
+
 ### 2.1 Amendment 1 (registered after reading the four realizations' registered readouts, §2.2, before the readouts it adds ran)
 
 By D1 the named term is *re-decided en route* (29% of unfed walking), and 77% of its walking is caller trips whose own
