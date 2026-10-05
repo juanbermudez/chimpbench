@@ -204,3 +204,62 @@ largest change for a ±10% step. Sources and access: research.md "Gut inputs aud
   volume, the hindgut's dry matter, the fibre digestibility and the retention time move it most; the emptying time does
   not move it at or below 3 h (±10%: ≤ 3 kcal/d) and lowers it only when longer; the foregut's dry-matter capacity moves
   it −161 to +49 over its sourced range. The cap is mostly the hindgut's fibre clearance (§5.1).
+
+## 6. Addendum: online search (agent `e1u-gut-audit`, 5 October 2026; requested by the user through the integrator after §5)
+
+The user cannot reach chiversHladik1980 or miltonDemment1988 (paywalled) and asked for their numbers, and the other gaps
+of §5.7, from legitimate open sources only: PubMed and PMC through the NCBI APIs, the Europe PMC REST API, institutional
+repositories, author and project pages, publisher free-access pages, Google Books previews, open theses. No Unpaywall, no
+piracy sites; a host that showed a challenge was dropped at once (this pass: CORE, the NCBI Bookshelf web pages, the
+Biodiversity Heritage Library and several publisher pages). Four search agents ran in parallel; an API rate limit
+stopped all four before they reported, so the agent read their saved texts and re-read every value below. Sources:
+`docs/research.md`, "Gut inputs audit, addendum: online search". "Second-hand" marks a number read only in a secondary
+source.
+
+### 6.1 Found
+1. **Gut volume per kg.** The chiversHladik1980 female's mass was not found (no open copy of it or of Chivers & Hladik
+   1984, Martin et al. 1985, MacLarnon et al. 1986). A new bound only: captive adult female chimpanzees weigh 42.7–55.0
+   kg (nrc2003 Table 9-1, second-hand: four entries from two centres), so if she was a typical captive adult her 3,322 cm³ is 60–78 mL/kg
+   (derived), below 83, which needs 40 kg. The range 57–111 stands; the captive-adult reading favours its lower part.
+2. **miltonDemment1988**, second-hand from nrc2003 (Tables 3-4 and 9-1) and from Milton's own text (milton1999ea):
+   - subjects: 6 captive females, 47.0 ± 4.9 kg;
+   - high-fibre diet 34.5% NDF, 10.0% ADF, 2.8% lignin: 54.3% of NDF and 32.9% of ADF digested; low-fibre diet 15.3% NDF,
+     5.2% ADF, 1.1% lignin: 70.6% and 57.2%. Derived (lignin taken as undigested): hemicellulose 63% and 78%, cellulose
+     46% and 72%;
+   - mean transit, the average time marker particles take to pass: 38 h on the high-fibre and 48 h on the low-fibre diet;
+   - not found: dry-matter intake, dry-matter digestibility, liquid-marker and hindgut turnover times.
+   - Related fibre digestion, second-hand: wild howlers 23% of NDF on wild fruit of 40.6% NDF and 11.4% lignin (about
+     Kibale fruit's lignin) and 41% on wild leaves (miltonEtAl1980 via nrc2003); captive macaques 48.3% at 37.5% NDF and
+     78.0% at 18.0% (nrc2003); gorillas 57.5% and orangutans 59.4% on high-fibre captive diets (harrisonMarshall2011
+     Table III; attribution uncertain).
+3. **Wadging.** No weighed wadge, swallowed share or wadge composition anywhere searched (Kibale, Mahale, Gombe including
+   Wrangham's 1975 thesis, Budongo, Toro-Semliki, Bulindi, Taï). Qualitative only: at Bulindi *Phoenix reclinata* and
+   sugarcane pith are typically wadged and their fibre usually not ingested (mclennanGanzhorn2017); Toro-Semliki pith
+   wadges were measured by length and folds, not mass (mcgrewHunt2011). nguessan2009's wadge method: no open copy.
+4. **Emptying, transit, digesta dry matter.** Nothing new for apes: ardente2011's capsule bounds remain the only
+   chimpanzee data; no ape gut-content dry matter or faecal NDF share was found.
+
+### 6.2 What changed: one range, the rerun, the verdicts
+- Only `digestaNdfDigestibility`'s sourced range changed: from 0.449–0.543 to **0.23–0.543** for fibrous, lignified
+  diets (wild howlers on wild fruit, to chimpanzees on the more fibrous captive diet); chimpanzees reach 0.706 on a
+  low-fibre diet. Rerun (`scripts/e1u-gut-sensitivity.ts`, output `artifacts/validation/e1u/gut-sensitivity-s6.*`):
+  at 0.23 the deficit grows by 275–448 kcal/d; at 0.41 (howlers on wild leaves) by 59–96; at 0.706 it shrinks by
+  324–540. It now ranks first by range (448), ahead of gut volume (423) and hindgut dry matter (392); the rest of
+  §5.4's ranking is unchanged.
+- Verdicts restated:
+  - `digestaNdfDigestibility` 0.449: **unknown for the lean-season diet.** The chimpanzee values (0.543–0.706) come from
+    low-lignin captive diets; the only wild-diet values, from another simple-gut primate, are 0.23–0.41. 0.449 lies
+    inside the sourced span; no correction is proposed. A value per food (pith fibre carries a quarter to a third of
+    fruit fibre's lignin) would matter more than any single number.
+  - `digestaMrtH` 38 h: **supported**, now in Milton's own words (particle mean time on the 34% NDF diet).
+  - `digestaGutMlPerKg` 83: **unknown** (the mass is still missing); typical captive adult masses give 60–78 mL/kg.
+  - `digestaFallbackDmGPerMin`, `digestaFallbackNdf`: unchanged (mass handled; swallowed share unknown).
+  - The other inputs: as §5.2.
+- Proposals unchanged: `digestaFermentKcalPerG` 3.0 → 2.6 (§5.6). None applied.
+
+### 6.3 Still missing
+- chiversHladik1980's specimen table (the 3,322-cm³ female's mass and her segment volumes) and the other Chivers,
+  Hladik, Martin and MacLarnon gut-allometry papers.
+- miltonDemment1988's dry-matter intake per kg, dry-matter digestibility, liquid-marker and hindgut turnover times.
+- Any weighed wadge, swallowed share or wadge composition (nguessan2009 not reached).
+- Ape gastric emptying of digesta, small-intestine transit, gut-content dry matter and faecal NDF share.
