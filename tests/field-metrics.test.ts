@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { CAT_FEED, CAT_REST, CAT_TRAVEL, FEED_FRUIT, FEED_GROUND } from '../src/field/categories';
+import { CAT_FEED, CAT_REST, CAT_TRAVEL, FEED_FRUIT, FEED_GROUND, FEED_MEAT } from '../src/field/categories';
 import { derive } from '../src/field/derive';
 import { METRICS, type SeedValue } from '../src/field/metrics';
 import { hash01 } from '../src/sim/rng';
-import { cellRange, convexHullArea, coreShare, hRef, isoplethArea, isoplethLevels, kde, levelAt } from '../src/field/space';
+import { cellRange, convexHull, convexHullArea, coreShare, hRef, inConvexHull, isoplethArea, isoplethLevels, kde, levelAt } from '../src/field/space';
 import { conciliatoryTendency, dispersion, hwi, kendall, ldaLeaveOneOut, logistic, ols, pearson, quantile, steepness } from '../src/field/stats';
 import { TRUTH_ROW_NOTE, poissonInterval, publicRow, scoreTargets, scoreTruthRow, summarize, unsealRefusal, type TargetFile } from '../src/field/targets';
-import { emptyRecords, type Records } from '../src/field/records';
+import { emptyRecords, type Follow, type Records } from '../src/field/records';
 import { clusterBootstrap, cox, poissonGlm, seededRng, type CoxRow } from '../src/field/survival';
 import { SEALED, letFivePooled, letFiveSeed, type ScenarioCensus } from '../src/field/early-life';
 import { runFieldJob } from '../src/field/run';
@@ -113,7 +113,7 @@ function fixture(): Records {
     { id: 2, sex: 'female', troop: 1, natal: 2, mother: -1, birthEst: -20 * 365.25 * 24, knownAge: false, founder: true, firstSeen: 0 });
   const add = (focal: number, day: number, cats: number[], feed: number[], stepM: number) => {
     r.follows.push({ team: 0, troop: 1, focal, sex: focal === 1 ? 'male' : 'female', lactating: false, start: day * 24 + 1, end: day * 24 + 1 + cats.length / 60, complete: true, lost: false,
-      sunrise: 6.8, sunset: 18.8, truthTicks: [0, 0, 0, 0, 0, 0], nestTree: -1, firstTree: -1 });
+      sunrise: 6.8, sunset: 18.8, truthTicks: [0, 0, 0, 0, 0, 0], nestTree: -1, firstTree: -1, departure: true, mother: false, firstFood: -1, fruitIndex: 0.9, scarce: false });
     cats.forEach((c, k) => {
       const P = r.points;
       P.t.push(Math.round((day * 24 + 1 + k / 60) * 240)); P.team.push(0); P.focal.push(focal); P.cat.push(c); P.action.push(0); P.height.push(0); P.party.push(3); P.partyInd.push(2); P.partyAM.push(1);
@@ -163,7 +163,10 @@ test('encounter, hunt, phenology and reconciliation metrics against hand-compute
   r.hunts.push(hunt(1, true), hunt(2, true), hunt(0, true), hunt(1, false));
   assert.equal(metric('T-HUN-2').compute!(d).value, 2 / 3);
   assert.equal(metric('T-HUN-7').compute!(d).value, 3 / 2);
-  assert.equal(metric('T-HUN-1').compute!(d).value, 3 / 2 * 365);
+  // Track E freeze (e4f-protocol): T-HUN-1 counts hunts matched to a colobus encounter of the followed party (none in this
+  // fixture: it has no scans); every hunt the team detected stays as the part detectedPerYear
+  const h1 = metric('T-HUN-1').compute!(d);
+  assert.equal(h1.value, 0); assert.equal(h1.parts!.detectedPerYear, 3 / 2 * 365);
   // phenology: month 0 has 1 of 4 ripe, month 1 has 2 of 4 → mean 0.375
   for (const [m, ripe] of [[0, 1], [1, 2]]) for (let k = 0; k < 4; k++) r.phenology.push({ month: m, tree: 100001 + k, species: 's', fruit: k < ripe ? 0.5 : 0.01, ripe: k < ripe });
   assert.equal(metric('T-FOOD-1').compute!(derive(r)).value, 0.375);
@@ -309,7 +312,7 @@ test('C6 patrol corrections: T-BRD-1 finds halts in the outer band and classifie
   const r = emptyRecords();
   r.days = 30; r.time0 = 0;
   const T = 240; // ticks per hour
-  const follow = (team: number, troop: number, start: number, end: number) => r.follows.push({ team, troop, focal: team + 1, sex: 'male', lactating: false, start, end, complete: true, lost: false, sunrise: 6.8, sunset: 18.8, truthTicks: [0, 0, 0, 0, 0, 0], nestTree: -1, firstTree: -1 });
+  const follow = (team: number, troop: number, start: number, end: number) => r.follows.push({ team, troop, focal: team + 1, sex: 'male', lactating: false, start, end, complete: true, lost: false, sunrise: 6.8, sunset: 18.8, truthTicks: [0, 0, 0, 0, 0, 0], nestTree: -1, firstTree: -1, departure: true, mother: false, firstFood: -1, fruitIndex: 0.9, scarce: false });
   const pt = (team: number, t: number, x: number, z: number, cat: number) => {
     const P = r.points;
     P.t.push(t); P.team.push(team); P.focal.push(team + 1); P.cat.push(cat); P.action.push(0); P.height.push(0); P.party.push(4); P.partyInd.push(4); P.partyAM.push(3);
@@ -565,7 +568,7 @@ test('C7a review: T-RNG-1 is the median of annual kernels, with years counted fr
   const xs: number[][] = [[], []], zs: number[][] = [[], []];
   for (let y = 0; y < 2; y++) {
     const start = time0 + y * 365 * 24 + 10;
-    r.follows.push({ team: 0, troop: 1, focal: 1, sex: 'male', lactating: false, start, end: start + 300, complete: true, lost: false, sunrise: 6.8, sunset: 18.8, truthTicks: [0, 0, 0, 0, 0, 0], nestTree: -1, firstTree: -1 });
+    r.follows.push({ team: 0, troop: 1, focal: 1, sex: 'male', lactating: false, start, end: start + 300, complete: true, lost: false, sunrise: 6.8, sunset: 18.8, truthTicks: [0, 0, 0, 0, 0, 0], nestTree: -1, firstTree: -1, departure: true, mother: false, firstFood: -1, fruitIndex: 0.9, scarce: false });
     for (let k = 0; k < 600; k++) {
       const x = sig[y] * normal(k, 11 + y), z = sig[y] * normal(k, 21 + y), P = r.points;
       P.t.push(Math.round(start * T) + k * 120); P.team.push(0); P.focal.push(1); P.cat.push(CAT_REST); P.action.push(0); P.height.push(0); P.party.push(3); P.partyInd.push(3); P.partyAM.push(1);
@@ -610,4 +613,97 @@ test('C8 fertility is measured only below 90% of the population cap (T-DEM-10 fe
   assert.ok(Math.abs(f.den! - 1) < 0.01, `uncapped female-years ${f.den}`);
   assert.equal(f.num, 1, 'only the birth below the cap');
   assert.deepEqual(metric('T-DEM-12').compute!(d).raw!.ibi, [], 'the interval overlapping capped days is dropped');
+});
+
+// ------------------------------------------------------------------------------------------------ Track E freeze: observer patches
+/** A follow with the Track E fields (defaults: an observed departure of a male, no food yet, a fruit-rich day). */
+const follow = (o: Partial<Follow> & { start: number; end: number }): Follow => ({ team: 0, troop: 1, focal: 1, sex: 'male', lactating: false, complete: true, lost: false, sunrise: 6.8, sunset: 18.8,
+  truthTicks: [0, 0, 0, 0, 0, 0], nestTree: -1, firstTree: -1, departure: true, mother: false, firstFood: -1, fruitIndex: 0.9, scarce: false, ...o });
+const TICK = 240; // ticks per hour
+/** Appends a 15-min scan of team 0 at hour h. */
+function scanAt(r: Records, h: number, o: { prey?: number; am?: number; size?: number; cx?: number; cz?: number; team?: number }) {
+  const S = r.scans;
+  S.t.push(Math.round(h * TICK)); S.team.push(o.team ?? 0); S.focal.push(1); S.size.push(o.size ?? 3); S.ind.push(o.size ?? 3); S.am.push(o.am ?? 1); S.af.push(0); S.swollen.push(0);
+  S.prey.push(o.prey ?? -1); S.preyDist.push(o.prey !== undefined && o.prey >= 0 ? 50 : -1); S.tree.push(-1); S.canopy.push(0); S.feedN.push(0); S.cx.push(o.cx ?? 0); S.cz.push(o.cz ?? 0);
+  S.memOff.push(S.members.n); S.memN.push(0); S.nearOff.push(S.near.n); S.nearN.push(0);
+}
+
+test('e4f-protocol: colobus encounters by gilby2015\'s run rule; hunts matched to them (T-HUN-1, T-HUN-3, T-HUN-4)', () => {
+  const r = emptyRecords();
+  r.days = 1; r.troops = [1];
+  r.follows.push(follow({ start: 6, end: 18 }));
+  // scans every 15 min from 07:00: prey -, A, B, -, A, A  (the old rule counted A, B, A = 3 encounters; the run rule 2)
+  const A = 300001, B = 300002;
+  [-1, A, B, -1, A, A].forEach((prey, k) => scanAt(r, 7 + k / 4, { prey, am: k + 1 }));
+  // a detected hunt on group B 20 min after the first run started: matched to run 1 (any group scanned in the run)
+  r.hunts.push({ id: 1, team: 0, troop: 1, t0: 7.25 + 20 / 60, t1: 7.8, prey: B, hunters: [1], captures: 0, captors: [], detected: true, partyAM: 2, present: [1] });
+  const d = derive(r);
+  const h3 = metric('T-HUN-3').compute!(d);
+  assert.equal(h3.den, 2, 'two runs'); assert.equal(h3.num, 1, 'the hunt matches run 1 through group B');
+  const h1 = metric('T-HUN-1').compute!(d);
+  assert.equal(h1.num, 1); assert.equal(h1.value, 365, 'one matched hunt on one follow-day');
+  const h4 = metric('T-HUN-4').compute!(d);
+  assert.deepEqual(h4.raw!.am, [2, 5], 'adult males at each run\'s first scan'); assert.deepEqual(h4.raw!.y, [1, 0]);
+});
+
+test('e3b-protocol: distinct trees per follow (T-FOOD-4), returns are not moves (T-FOOD-5), revisits by individual and 30-m resource (T-FOOD-6)', () => {
+  const r = emptyRecords('field'); // field metres: the 30 m resource rule is 0.6 logical m under the compressed profile
+  r.days = 3; r.troops = [1];
+  r.follows.push(follow({ start: 1, end: 13, focal: 1 }), follow({ start: 25, end: 37, focal: 2, team: 0 }), follow({ start: 49, end: 61, focal: 1 }));
+  const v = (focal: number, tree: number, t: number, tx: number, ret: boolean, nearest: boolean) => r.visits.push({ team: 0, focal, tree, t, fromX: 0, fromZ: 0, dist: 10, nearest, outOfSight: false, tx, tz: 0, ret });
+  v(1, 10, 2, 0, false, true); v(1, 11, 3, 100, false, false); v(1, 10, 4, 0, false, true); v(1, 10, 5, 0, true, true);   // day 0, focal 1
+  v(2, 10, 26, 0, false, false);                                                                                             // day 1, focal 2
+  v(1, 12, 50, 20, false, false);                                                                                            // day 2, focal 1: tree 12 is 20 m from tree 10
+  const d = derive(r);
+  const f4 = metric('T-FOOD-4').compute!(d);
+  assert.equal(f4.value, (2 + 1 + 1) / 3, 'distinct trees per complete follow'); assert.equal(f4.parts!.visits, (4 + 1 + 1) / 3);
+  const f5 = metric('T-FOOD-5').compute!(d);
+  assert.equal(f5.den, 5, 'the return to tree 10 is left out'); assert.equal(f5.num, 2);
+  const f6 = metric('T-FOOD-6').compute!(d);
+  // focal 1: resource {10, 12} on day 0 then day 2 → one revisit of 2 days; focal 2's day-1 visit is not a revisit by focal 1
+  assert.equal(f6.value, 2); assert.equal(f6.parts!.individuals, 1); assert.equal(f6.parts!.revisits, 1);
+});
+
+test('e2h-protocol: T-FOOD-10 reads mothers\' observed departures on fruit-breakfast mornings of fruit-scarce days', () => {
+  const r = emptyRecords();
+  r.days = 6; r.troops = [1];
+  const m = { mother: true, sex: 'female' as const, scarce: true, firstFood: FEED_FRUIT };
+  // hours since 06:30 day 0: start 0.2 → 06:42 (before a 6.8 sunrise is 06:48), start 0.5 → 07:00 (after)
+  r.follows.push(follow({ ...m, start: 0.2, end: 10 }), follow({ ...m, start: 24.5, end: 34 }),
+    follow({ ...m, start: 48.2, end: 58, departure: false }),           // out of its nest at 04:00: not a departure
+    follow({ ...m, start: 72.2, end: 82, firstFood: FEED_GROUND }),     // leaf breakfast
+    follow({ ...m, start: 96.2, end: 106, scarce: false }),             // fruit-rich day
+    follow({ start: 120.2, end: 130, firstFood: FEED_MEAT }));          // a male
+  const v = metric('T-FOOD-10').compute!(derive(r));
+  assert.equal(v.den, 2); assert.equal(v.num, 1); assert.equal(v.value, 0.5);
+  assert.equal(v.parts!.scarceFollowDays, 4); assert.equal(v.parts!.allDeparturesBeforeSunrise, 4 / 5);
+  const none = metric('T-FOOD-10').compute!(derive({ ...r, follows: r.follows.map(f => ({ ...f, scarce: false })) }));
+  assert.equal(none.value, null); assert.equal(none.den, 0);
+});
+
+test('e5a S1 and S3: T-PTY-1 is the mean of follow means; T-PTY-3\'s periphery lies outside the night-nest polygon', () => {
+  const r = emptyRecords();
+  r.days = 2; r.troops = [1];
+  r.follows.push(follow({ start: 1, end: 3 }), follow({ start: 25, end: 27 }));
+  for (let k = 0; k < 4; k++) scanAt(r, 1.25 + k / 4, { size: 2 });
+  scanAt(r, 25.25, { size: 8 });
+  const p1 = metric('T-PTY-1').compute!(derive(r));
+  assert.equal(p1.value, 5); assert.equal(p1.parts!.scanMean, 16 / 5); assert.equal(p1.n, 2);
+  // T-PTY-3: nests at the corners of a 100-m square (observed departures), 5 core-only follows (2 males) and 5 reaching
+  // outside the square (4 males): ratio 2
+  assert.ok(inConvexHull(convexHull([[0, 0], [100, 0], [100, 100], [0, 100], [50, 50]]), 50, 99));
+  assert.ok(!inConvexHull(convexHull([[0, 0], [100, 0], [100, 100], [0, 100]]), 101, 50));
+  const q = emptyRecords();
+  q.days = 10; q.troops = [1];
+  const corners = [[0, 0], [100, 0], [100, 100], [0, 100]];
+  for (let f = 0; f < 10; f++) {
+    const start = f * 24 + 1;
+    q.follows.push(follow({ start, end: start + 2, complete: false }));
+    const [x, z] = corners[f % 4], P = q.points;
+    P.t.push(Math.round(start * TICK)); P.team.push(0); P.focal.push(1); P.cat.push(CAT_REST); P.action.push(0); P.height.push(0); P.party.push(3); P.partyInd.push(3); P.partyAM.push(1);
+    P.n5.push(0); P.n10.push(0); P.flags.push(0); P.feed.push(0); P.tree.push(-1); P.x.push(x); P.z.push(z); P.truthPatrol.push(0);
+    scanAt(q, start + 0.5, f < 5 ? { am: 2, cx: 50, cz: 50 } : { am: 4, cx: 150, cz: 50 });
+  }
+  const p3 = metric('T-PTY-3').compute!(derive(q));
+  assert.equal(p3.parts!.core, 2); assert.equal(p3.parts!.periphery, 4); assert.equal(p3.value, 2); assert.equal(p3.pass, true);
 });

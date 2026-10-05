@@ -178,3 +178,56 @@ test('viability: the guard and a replayed world', () => {
   assert.ok(a.livingStart > 20 && a.livingEnd === a.livingStart + a.births - a.deaths);
   assert.ok(a.medianAdultHunger !== null && a.medianAdultHunger >= 0 && a.medianAdultHunger <= 1);
 });
+
+// ------------------------------------------------------------------------------------------------ Track E freeze
+test('truth rows: scored from readouts, else listed as not scorable and never summed; every target is listed', async () => {
+  const { benchRows: br, distances: ds } = await import('../scripts/e-bench');
+  const t = [
+    { id: 'T-ENE-8', role: 'held-out' as const, encoded: false, scoredOn: 'truth' as const, metric: 'expenditure', accept: { lo: 85, hi: 130, units: 'kcal/kg^0.75/d' } },
+    { id: 'T-END-4', role: 'held-out' as const, encoded: true, scoredOn: 'truth' as const, metric: 'stress after aggression', accept: { lo: null, hi: null, units: 'pattern' } },
+    { id: 'T-ENE-1', role: 'held-out' as const, encoded: false, scoredOn: 'truth' as const, contested: true, metric: 'intake', accept: { lo: 1900, hi: 3100, units: 'kcal/d' } },
+    { id: 'T-FOOD-3', role: 'held-out' as const, encoded: false, accept: { lo: 0.3, hi: null, units: '' } },
+  ];
+  // the field scorecard gives the truth rows n/a; T-FOOD-3 is missing from it (registered after the run)
+  const c = [{ id: 'T-ENE-8', metric: 'expenditure', role: 'held-out' as const, encoded: false, band: '85–130', verdict: 'n/a', flags: [] },
+    { id: 'T-END-4', metric: 'stress', role: 'held-out' as const, encoded: true, band: 'x', verdict: 'n/a', flags: [] },
+    { id: 'T-ENE-1', metric: 'intake', role: 'held-out' as const, encoded: false, band: '1900–3100', verdict: 'n/a', flags: [] }];
+  const none = br(c, t, 60), by = Object.fromEntries(none.map(r => [r.id, r]));
+  assert.deepEqual(none.map(r => r.id), ['T-ENE-8', 'T-END-4', 'T-ENE-1', 'T-FOOD-3']);
+  for (const id of ['T-ENE-8', 'T-END-4', 'T-ENE-1']) { assert.equal(by[id].verdict, 'not scorable'); assert.equal(by[id].excluded, true); assert.match(by[id].note!, /no readout/); }
+  assert.equal(by['T-FOOD-3'].verdict, 'n/a');
+  assert.equal(ds(none).heldOut.excluded, 3);
+  const read = br(c, t, 60, { truth: { 'T-ENE-8': [{ value: 140, n: 4 }, { value: 150, n: 4 }], 'T-END-4': [{ value: null, pass: true, n: 9 }, { value: null, pass: false, n: 9 }, { value: null, pass: true, n: 9 }], 'T-ENE-1': [{ value: 2000, n: 3 }] } });
+  const r = Object.fromEntries(read.map(x => [x.id, x]));
+  near(r['T-ENE-8'].distance, 15 / 45); assert.equal(r['T-ENE-8'].excluded, false);
+  assert.deepEqual([r['T-END-4'].verdict, r['T-END-4'].kind], ['pass', 'pattern']);
+  assert.equal(r['T-ENE-1'].excluded, true, 'contested: reported, never summed');
+  near(ds(read).heldOut.sum, 15 / 45);
+});
+
+test('stale rows: revisions of every freeze newer than the run, by hash or else by date', async () => {
+  const { staleRows } = await import('../scripts/e-bench');
+  const chain = { hash: 'new', at: '2026-10-05T12:00:00Z', stage: 'E', observerRevised: { 'T-FOOD-10': 'e2h-protocol' }, previous: { hash: 'old', stage: 'C8', previous: { hash: 'older', stage: 'C8c' } } };
+  assert.deepEqual([...staleRows(chain, 'new').keys()], []);
+  assert.deepEqual([...staleRows(chain, 'old').keys()], ['T-FOOD-10']);
+  assert.deepEqual([...staleRows(chain, 'older').keys()], ['T-FOOD-10']);
+  assert.deepEqual([...staleRows(chain, 'dirty', '2026-10-04T00:00:00Z').keys()], ['T-FOOD-10'], 'an unknown protocol before the freeze');
+  assert.deepEqual([...staleRows(chain, 'dirty', '2026-10-06T00:00:00Z').keys()], [], 'an unknown protocol after it');
+  assert.deepEqual([...staleRows({ hash: 'a2228c2df476680b', stage: 'C8' }, 'x').keys()], [], 'a freeze without revisions');
+});
+
+test('rescore: the scorecard re-scored from its values with the instrument bars of a fresh run', async () => {
+  const { rescoreCard } = await import('../scripts/e-bench');
+  const tf = { targets: [
+    { id: 'T-IGE-2', metric: 'acoustic share', role: 'held-out' as const, encoded: false, evidence: 'M', accept: { lo: 0.4, hi: 0.8, units: '', basis: '' }, observer: { protocol: '', interval_min: null, unit: '' } },
+    { id: 'T-PAT-5', metric: 'duration', role: 'held-out' as const, encoded: false, evidence: 'M', accept: { lo: 60, hi: 240, units: 'min', basis: '' }, observer: { protocol: '', interval_min: null, unit: '' } },
+    { id: 'T-ACT-4', metric: 'rest', role: 'fitted' as const, encoded: false, evidence: 'M', accept: { lo: 0.3, hi: 0.47, units: '', basis: '' }, observer: { protocol: '', interval_min: null, unit: '' } }] };
+  const card = { manifest: { profile: 'field', days: 60, burnInDays: 30, seeds: [48], params: {} }, rows: [], summary: {},
+    values: { 'T-IGE-2': [{ value: 0.5, num: 5, den: 10, n: 10 }], 'T-PAT-5': [{ value: 100, n: 5 }], 'T-ACT-4': [{ value: 0.5, n: 3 }] },
+    accuracy: { patrol: { precision: null, recall: null }, patrolMales: { precision: 1, recall: 1 }, encounter: { precision: 0.5, recall: 0.9, observableTruth: 12 }, encounterParty: { precision: 0.9, recall: 0.9 } } };
+  const r = rescoreCard(card, tf)!, by = Object.fromEntries(r.rows.map(x => [x.id, x]));
+  assert.ok(by['T-IGE-2'].flags!.includes('instrument below bar'), 'encounter bar (focal precision 0.5)');
+  assert.ok(by['T-PAT-5'].flags!.includes('instrument below bar'), 'patrol bar (no classified patrol: precision NaN, saved as null)');
+  assert.deepEqual([by['T-ACT-4'].verdict, by['T-ACT-4'].flags], ['fail', []]);
+  assert.equal(r.summary['held-out'].instrument, 2);
+});

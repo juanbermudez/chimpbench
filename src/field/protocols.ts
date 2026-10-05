@@ -6,7 +6,7 @@ import { leanIndex } from '../sim/hierarchy';
 const _near: number[] = [];
 import { CHANNEL, streamCell } from '../sim/stream';
 import { facingSectors } from '../sim/territory';
-import { ACTION_CODE, CAT_FEED, CAT_NONE, activityCategory, feedType, FEED_FRUIT } from './categories';
+import { ACTION_CODE, CAT_FEED, CAT_NONE, activityCategory, feedType, FEED_FRUIT, FEED_GROUND, FEED_MEAT } from './categories';
 import { ensureIds, ensureTeams, orand, sim, type Observer, type Team } from './observer';
 import { P_CALLED, P_CHANNEL, P_GROUND, P_LACT, P_MEAT, P_SWOLLEN, type CallRec, type ConflictRec, type EncounterRec, type EventRec, type Follow } from './records';
 
@@ -31,6 +31,8 @@ const RUNNING: Record<string, true> = { charge: true, attack: true, flee: true, 
 const RIPE = 0.06; // a crop the chimps treat as worth feeding in (src/sim/perception.ts keeps trees with fruit >= 0.06)
 const MIN = 1 / 60;
 const YEAR_H = 365.25 * 24;
+/** NOAA's sunrise and sunset: the sun's centre at −0.833° (radians). */
+const NOAA_H0 = -0.833 * Math.PI / 180;
 /** A death counts as preceded by illness when respiratory signs were seen in the 30 days before the last sighting (design). */
 const ILL_WINDOW_H = 30 * 24;
 
@@ -79,9 +81,11 @@ function weatherMinute(o: Observer, world: World): void {
   if (world.day !== s.day) { if (s.day > 1) { w.tmin.push(s.min); w.tmax.push(s.max); } s.day = world.day; s.min = 99; s.max = -99; }
   if (env.temperature < s.min) s.min = env.temperature;
   if (env.temperature > s.max) s.max = env.temperature;
+  // Track E freeze (e2h-protocol): sunrise and sunset as NOAA times them, the sun's centre at −0.833° (upper limb with
+  // standard refraction), which janmaat2014 used ("Astronomical sunrise times were retrieved from ... NOAA")
   const alt = env.sunAltitude;
-  if (o.prevAlt <= 0 && alt > 0) o.sunrise = world.hour;
-  if (o.prevAlt > 0 && alt <= 0) o.sunset = world.hour;
+  if (o.prevAlt <= NOAA_H0 && alt > NOAA_H0) o.sunrise = world.hour;
+  if (o.prevAlt > NOAA_H0 && alt <= NOAA_H0) o.sunset = world.hour;
   o.prevAlt = alt;
 }
 
@@ -232,7 +236,7 @@ export function minuteStep(o: Observer, world: World): void {
         ids.indep[c.id] = x.weaned || c.age >= 6 ? 1 : 0;
       }
       const nIds = ids.indep.length;
-      for (const tm of o.teams) while (tm.mark.length < nIds) tm.mark.push(0);
+      for (const tm of o.teams) { while (tm.mark.length < nIds) tm.mark.push(0); while (tm.scanMark.length < nIds) tm.scanMark.push(0); }
     }
   }
   // All-occurrence capture (calls, interactions, counters), encounter and PC–MC bookkeeping and the truth series run
@@ -397,7 +401,10 @@ function followStep(o: Observer, world: World, tm: Team): void {
     if (!c || !c.alive || c.troopId !== tm.troop) { chooseFocal(o, world, tm); c = byId.get(tm.focal); if (!c) return; }
     const x = sim(c)!;
     const asleep = c.action === 'nest' && x.phase === 2;
-    if (hour < 4 || (asleep && hour < 12)) return;
+    if (hour < 4) return;
+    // Track E freeze (e2h-protocol): the team waits under the nest from 04:00, so the follow's start is an observed departure
+    // only if the focal was seen in its nest; a focal already out at 04:00 gives a follow without one
+    if (asleep && hour < 12) { tm.sawNest = true; return; }
     if (hour >= 18) { tm.state = 3; return; }
     startFollow(o, world, tm, c);
   }
@@ -442,11 +449,16 @@ function partyFocal(o: Observer, world: World, tm: Team, c: Chimp): Chimp {
 
 function startFollow(o: Observer, world: World, tm: Team, c: Chimp): void {
   const x = sim(c)!;
+  // Track E freeze (e2h-protocol, janmaat2014's subjects: adult females "all with young offspring (<7 y)", fruit-scarce periods)
+  const mother = isAdultFemale(c) && (c.lactating || index(world).alive.some(k => k.motherId === c.id && k.age < 7));
+  const fruitIndex = world.environment.fruitIndex;
   const f: Follow = { team: tm.index, troop: tm.troop, focal: c.id, sex: c.sex, lactating: c.lactating, start: world.time, end: -1, complete: false, lost: false,
-    sunrise: o.sunrise, sunset: o.sunset, truthTicks: [0, 0, 0, 0, 0, 0], nestTree: x.nestTree, firstTree: -1 };
+    sunrise: o.sunrise, sunset: o.sunset, truthTicks: [0, 0, 0, 0, 0, 0], nestTree: x.nestTree, firstTree: -1,
+    departure: tm.sawNest, mother, firstFood: -1, fruitIndex, scarce: fruitIndex < paramsOf(world).fruitIndexAtMean };
   o.rec.follows.push(f);
-  tm.follow = f; tm.state = 2; tm.x = c.position[0]; tm.z = c.position[2];
+  tm.follow = f; tm.state = 2; tm.x = c.position[0]; tm.z = c.position[2]; tm.sawNest = false;
   tm.visitTree = -1; tm.departX = c.position[0]; tm.departZ = c.position[2]; tm.departT = world.time;
+  tm.scanStamp++; tm.scanValid = false; // e5a S2: no previous scan in a new follow
 }
 
 function endFollow(o: Observer, world: World, tm: Team, complete: boolean, lost: boolean): void {
@@ -486,6 +498,8 @@ function pointSample(o: Observer, world: World, tm: Team, c: Chimp): void {
     P.n5.push(Math.min(255, tm.pN5)); P.n10.push(Math.min(255, tm.pN10)); P.flags.push(flags); P.feed.push(feed); P.tree.push(feed === FEED_FRUIT ? c.targetId : -1);
     P.x.push(cx); P.z.push(cz); P.truthPatrol.push(truthPatrol);
   }
+  // the first food item after waking (T-FOOD-10, e2h-protocol: "the first food item eaten after waking up"; water and milk are not food items)
+  if (tm.follow!.firstFood < 0 && (feed === FEED_FRUIT || feed === FEED_GROUND || feed === FEED_MEAT)) tm.follow!.firstFood = feed;
   // tree visits (T-FOOD-4..7) and the first feeding tree of the day (T-FOOD-10)
   if (feed === FEED_FRUIT) {
     const t = index(world).treeById.get(c.targetId);
@@ -498,7 +512,10 @@ function pointSample(o: Observer, world: World, tm: Team, c: Chimp): void {
       // only trees within `dist` can be nearer: the tree grid gives exactly those (the same answer as scanning all trees)
       const n = treesNear(world, tm.departX, tm.departZ, dist, _near);
       for (let k = 0; k < n; k++) { const u = trees[_near[k]]; if (u !== t && u.fruit >= RIPE && d2(u.position[0], u.position[2], tm.departX, tm.departZ) < lim) { nearest = false; break; } }
-      if (!o.cfg.demography) o.rec.visits.push({ team: tm.index, focal: c.id, tree: t.id, t: time, fromX: tm.departX, fromZ: tm.departZ, dist, nearest, outOfSight: dist > prof.treeDetectM });
+      // e3b-protocol: the tree's position (resources of trees < 30 m apart, T-FOOD-6) and whether this is a return to the
+      // tree of the previous visit, which is not a move to another tree (T-FOOD-5)
+      if (!o.cfg.demography) o.rec.visits.push({ team: tm.index, focal: c.id, tree: t.id, t: time, fromX: tm.departX, fromZ: tm.departZ, dist, nearest, outOfSight: dist > prof.treeDetectM,
+        tx: t.position[0], tz: t.position[2], ret: t.id === tm.visitTree });
     }
     tm.visitTree = c.targetId; tm.departX = cx; tm.departZ = cz; tm.departT = time;
   }
@@ -525,16 +542,18 @@ function partyUpdate(o: Observer, world: World, tm: Team, c: Chimp): void {
   const ps = tm.partyStamp = o.stamp, pmark = tm.mark;
   pmark[c.id] = ps;
   const link2 = prof.partyLinkM * prof.partyLinkM;
+  // e5a S2 (wilson2001): two animals up to partyBorderLinkM apart also link when both were in the party at the follow's previous scan
+  const border2 = tm.scanValid ? prof.partyBorderLinkM * prof.partyBorderLinkM : 0, smark = tm.scanMark, sst = tm.scanStamp;
   const inParty = mark.length >= mates.length ? mark : (mark = new Uint8Array(mates.length * 2));
   inParty.fill(0, 0, mates.length);
   let ind = indep[c.id], am = isAdultMale(c) ? 1 : 0;
   for (let i = 0; i < mates.length; i++) if (mates[i] === c) { inParty[i] = 1; q.push(c); }
   for (let head = 0; head < q.length; head++) {
-    const p = q[head], px = p.position[0], pz = p.position[2];
+    const p = q[head], px = p.position[0], pz = p.position[2], pPrev = border2 > 0 && smark[p.id] === sst;
     for (let i = 0; i < mates.length; i++) {
       if (inParty[i]) continue;
-      const m = mates[i];
-      if (d2(px, pz, m.position[0], m.position[2]) <= link2) { inParty[i] = 1; party.push(m.id); pmark[m.id] = ps; q.push(m); ind += indep[m.id]; if (isAdultMale(m)) am++; }
+      const m = mates[i], dd = d2(px, pz, m.position[0], m.position[2]);
+      if (dd <= link2 || (pPrev && dd <= border2 && smark[m.id] === sst)) { inParty[i] = 1; party.push(m.id); pmark[m.id] = ps; q.push(m); ind += indep[m.id]; if (isAdultMale(m)) am++; }
     }
   }
   // census (every community member within visibility is seen today) and neighbours within 5 and 10 m
@@ -631,8 +650,10 @@ function scan(o: Observer, world: World, tm: Team, c: Chimp, members: Chimp[]): 
   const S = o.rec.scans, prof = o.cfg.profile, indep = o.id.indep;
   let ind = 0, am = 0, af = 0, swollen = 0, sx = 0, sz = 0;
   const memOff = S.members.n;
+  const sst = ++tm.scanStamp; tm.scanValid = true; // e5a S2: this scan's members, for the borderline links until the next scan
   for (let i = 0; i < members.length; i++) {
     const m = members[i];
+    tm.scanMark[m.id] = sst;
     S.members.push(m.id);
     ind += indep[m.id];
     if (isAdultMale(m)) am++;
@@ -940,7 +961,7 @@ function chooseFocal(o: Observer, world: World, tm: Team): void {
     for (let i = 0; i < Math.max(males.length, females.length); i++) { if (i < first.length) tm.rotation.push(first[i]); if (i < second.length) tm.rotation.push(second[i]); }
     tm.rotIdx = 0; tm.blockStart = day;
   }
-  tm.focal = -1; tm.state = 3;
+  tm.focal = -1; tm.state = 3; tm.sawNest = false;
   for (let k = 0; k < tm.rotation.length; k++) {
     const id = tm.rotation[(tm.rotIdx + k) % tm.rotation.length];
     if (eligible(id)) { tm.focal = id; tm.rotIdx = (tm.rotIdx + k + 1) % tm.rotation.length; tm.state = 1; break; }
