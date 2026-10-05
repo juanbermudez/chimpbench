@@ -481,3 +481,11 @@ group's mean, 0.185 per adult-day).
 for corrections): a **provisional keep candidate** if none of (a)–(e) holds, trips fed at their target rise beyond the
 group's spread (z > +2) and unfed trips' walking does not rise beyond it (z ≤ +2); otherwise recorded and off. Walking,
 climbing, rows and reserves are reported against the group, never used to choose.
+
+**Diagnostic arms (registered now, before any of them runs; not candidates, run after the iterations).** D1 = the best arm
+(the qualifying arm with the highest share of trips fed at their target; A1 if it is the only one) + `redecideValue` 2,
+and its comparison on this mode and base, D0 = S39 + `redecideValue` 2 (no S39 + re-deciding run exists); each with
+e-bench `--quick`, energy-diagnose and trip-diagnose, same settings. Read (single runs; a difference smaller than the
+group's SD is noise): re-deciding's cost on the best arm, (D1 − best), against its cost on S39, (D0 − the S39q mean), for
+adults' ground km by class, adults' climbing kcal, trips per adult-day, the share fed at their target, unfed trips' km,
+T-FOOD-4, T-RNG-4, T-HUN-1 and reserves by class.
