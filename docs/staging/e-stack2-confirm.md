@@ -4171,3 +4171,30 @@ days; judged with `integrator/judge_s32group.py`.
 **Predictions (against the S32 group; moderate confidence unless stated).** 42 prescriptions (high). Viability and night
 safety pass. Sums inside noise. Arrival calls at fruit trees (T-COM-8) up (low: E4q's quick run 0.68, above its band).
 Reserves of every class within the group's spread or better (low). Walking within the group's spread.
+
+## E3g's outcome and the fallback to S31 (integrator, 4 October 2026, 21:45)
+
+E3g (docs/staging/e3g-prereg.md) did not remove re-deciding's cost: on S28 the extra walking comes from the keep test at
+every bout end and interrupt (+1.33 km and +31 kcal of climbing per adult-day), and trips deliver 13–31% of the meal they
+are valued at on both stacks (two thirds never feed at their target: departures nobody followed, crowns found empty), so
+the extra trips are what the valuation says; valuing a trip at what trips delivered (`experienceValue` 1 and 3) collapsed
+travel and starved the young. Its iteration 2 (`experienceValue` 2: a colobus group seen within the hour is not met anew)
+is a correction for hunting (47.8 → 29.9 on S28, quick). **By the registered condition ("S31 and S32 results"), the stack
+falls back to S31 (48 on E0b's ledger)**; `redecideValue` stays off the stack until a remembered crown's belief accounts
+for what companions eat and unanswered departures stop turning into walked trips (E3g's open problem). **S33 (S32 +
+`aggressionGaps` 7) is withdrawn before any result** (stopped 15 minutes into its bench run; no output read): its base is
+no longer the stack. It is replaced by S34 below.
+
+## S34 and S35 confirms (registered 4 October 2026 before their runs)
+
+**S34 = S31 + E4q's `aggressionGaps` 7** (45 on the current ledger) and **S35 = S31 + E3g's `experienceValue` 2** (a
+correction: 48). **Reference group:** the S27 confirm group (S27 at 28d249e plus S27c1–S27c3, bench-run3), against which S31
+was judged. S34 runs from bench-run4 and S35 from bench-run2, both moved to this commit. Keep rule: standard for S34 (48 →
+45), for a correction for S35; rare rows per amendment 3; night safe. Bench, energy-diagnose and rhythm-metrics, 5 seeds,
+30 + 60 days; judged with `integrator/judge_s27group.py`.
+
+**Predictions (against the S27 group; moderate confidence unless stated).** S34: 45 (high); viability and night safety
+pass; sums inside noise; parties smaller as on S31 (T-PTY-1 below 4.4); arrival calls at fruit trees (T-COM-8) up (low);
+reserves of every class within the group's spread; walking within the group's spread. S35: 48 (high); viability and night
+safety pass; sums inside noise; hunting (T-HUN-1) below the group's mean 30.6 (low: E3g measured it on S28, where
+re-encounters drove hunting); reserves of every class within the group's spread.
