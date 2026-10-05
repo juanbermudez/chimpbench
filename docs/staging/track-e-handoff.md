@@ -14,10 +14,11 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 22:15; deploy held by the user).** Agents: **E3h** (`e3h-trip-beliefs`: why trips fail; beliefs
-  that expect others' eating; the caller-trip arrival defect) and **E5g** (`e5g-call-gaps`: three call and alarm literals),
-  both from 90aa294 against the S31 quick group (bench-run 4111971, `…/e/s31q/`, running via `integrator/s31q-group.sh`).
-  S36 (S34 + `experienceValue` 2) done: not adopted (other females' reserve z −2.6, as on S35). Disk was nearly full at 22:45 (≈ 0.4 GB free; our files ≈ 4 GB; finished stages' scratch gzipped, reversible); 3.7 GB free at 23:00. Decision guide on S34 (merged `guide-s34`); hosted copy in `site` a771b52, built and checked (S34, 45, 102 replaced, no console errors), not deployed.
+- **Running now (4 October 23:55; deploy held by the user).** No agents. Integrator: **S39** (S37 + `tripBeliefs` 3; bench-run2
+  at c16d3d2, `…/e/s39/`; judge `integrator/judge_s27group.py`). Done: S37 (42) the best candidate; S38 (S34 + `tripBeliefs` 3)
+  passed as a correction with a gain (held-out without rare rows z −4.1, every class's reserve better, less walking).
+  Next stage idea: the remaining ~40% of failed trips (crowns emptied by animals the traveller never saw), then re-deciding
+  on top. Decision guide on S34 (hosted copy in `site` a771b52); not yet moved to S37. Disk: 13.9 GB free at 23:10.
 - **S37 is the best integrated candidate (42)** (e-stack2-confirm.md "S37 results"): S34 + `callGaps` 7; every sum inside
   noise; costs: T-IGE-1 13.3 (band 5–12), T-COM-8 0.619. S38 (S34 + `tripBeliefs` 3) running; then S39 = S37 + `tripBeliefs` 3.
 - **S34 was the best integrated candidate (45)** (e-stack2-confirm.md "S34 results"): S31 + `aggressionGaps` 7; every sum
