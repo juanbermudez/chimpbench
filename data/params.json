@@ -14708,12 +14708,12 @@
    "units": "switch",
    "range": [
     0,
-    2
+    3
    ],
    "rangeBasis": "assumed",
    "hardRange": [
     0,
-    2
+    3
    ],
    "calibrate": false,
    "evidence": "design",
@@ -14723,7 +14723,7 @@
    "symbol": "matingValueOn, paternityGain, consents (src/sim/mating.ts); reproduction (candidates.ts); mateTick, guard, consort (execution.ts)",
    "file": "src/sim/mating.ts",
    "integer": true,
-   "notes": "Stage E4p (docs/staging/e4p-prereg.md section 5): 0 = today (hash-identical). 1: mating without quotas. A copulation needs the partner's choice: the approach interrupts the partner, who accepts by mating back (a male guarding or consorting with her consents by that act), in place of a copulation unless the female flees, charges, attacks or submits; guarding and consorting do not copulate by themselves. A copulation is worth the share of her cycle's paternity it adds by the model's own rule (ovulate: conception min(1, C / matingSaturation), the sire drawn in proportion to the weighted copulations; recordCopulation's weights 0, 1, 2), relative to a first copulation outside the periovulatory days; it scales the value terms of the male's mate offer (mateWorth and the invitation) and of the female's (her presenting terms and the answer to an approach); costs are unchanged. Not read: mateIntervalH, the female's 0.3-h gap after her own last copulation, the 0.5-h block after a failed approach, the guard's 0.25-h gap between chases. No new magnitude: every value term is the existing offer's, the paternity rule is reproduction.ts's (design). 2 (iteration 2): as 1, with each copulation's fertilizing weight decaying with the age of its sperm (spermLifeDays, [L] human), in ovulate (mating factor and sire draw) and in paternityGain alike."
+   "notes": "Stage E4p (docs/staging/e4p-prereg.md section 5): 0 = today (hash-identical). 1: mating without quotas. A copulation needs the partner's choice: the approach interrupts the partner, who accepts by mating back (a male guarding or consorting with her consents by that act), in place of a copulation unless the female flees, charges, attacks or submits; guarding and consorting do not copulate by themselves. A copulation is worth the share of her cycle's paternity it adds by the model's own rule (ovulate: conception min(1, C / matingSaturation), the sire drawn in proportion to the weighted copulations; recordCopulation's weights 0, 1, 2), relative to a first copulation outside the periovulatory days; it scales the value terms of the male's mate offer (mateWorth and the invitation) and of the female's (her presenting terms and the answer to an approach); costs are unchanged. Not read: mateIntervalH, the female's 0.3-h gap after her own last copulation, the 0.5-h block after a failed approach, the guard's 0.25-h gap between chases. No new magnitude: every value term is the existing offer's, the paternity rule is reproduction.ts's (design). 2 (iteration 2, a correction of 1): as 1, and the courted animal is asked again (an urgent interrupt) when the courting one arrives beside it, its own offer now in range. 3 (iteration 3): as 2, with each copulation's fertilizing weight decaying with the age of its sperm (spermLifeDays, [L] human), in ovulate (mating factor and sire draw) and in paternityGain alike."
   },
   {
    "id": "meatAlertM",
@@ -21294,7 +21294,7 @@
    "clock": "bio",
    "symbol": "spermDecay (src/sim/mating.ts)",
    "file": "src/sim/mating.ts",
-   "notes": "Stage E4p (matingValue 2; docs/staging/e4p-prereg.md section 9, iteration 2): e-folding time of a copulation's fertilizing weight, so that the copulations that compete at ovulation (ovulate's mating factor and sire draw) and in each partner's valuation (paternityGain) are those whose sperm still stand. Human, other species [L]: wilcox1995 (221 women, 625 cycles; urinary ovulation estimates): conception only from intercourse in the six days ending on the day of ovulation, its probability 0.33 on that day and 0.10 five days before; 5 / ln(0.33 / 0.10) = 4.2 days (the exponential keeps 0.24 at six days, where the source has none: a simplification). No chimpanzee value found. Read only with matingValue 2."
+   "notes": "Stage E4p (matingValue 3; docs/staging/e4p-prereg.md section 5.2, iteration 3): e-folding time of a copulation's fertilizing weight, so that the copulations that compete at ovulation (ovulate's mating factor and sire draw) and in each partner's valuation (paternityGain) are those whose sperm still stand. Human, other species [L]: wilcox1995 (221 women, 625 cycles; urinary ovulation estimates): conception only from intercourse in the six days ending on the day of ovulation, its probability 0.33 on that day and 0.10 five days before; 5 / ln(0.33 / 0.10) = 4.2 days (the exponential keeps 0.24 at six days, where the source has none: a simplification). No chimpanzee value found. Read only with matingValue 3."
   },
   {
    "id": "startDoy",

@@ -2,7 +2,7 @@
 /* eslint-disable */
 export const REGISTRY_VERSION = 1;
 /** Content hash of every live default, hard range, profile value and integer flag. Stored with each world. */
-export const REGISTRY_HASH = 'd75079739293a266';
+export const REGISTRY_HASH = 'f82cd702d593b4d1';
 
 /** Registry defaults (the compressed profile). */
 export const DEFAULTS = {
@@ -1639,7 +1639,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   maternalLevers: [0, 1],
   matingAssocWeight: [0, 1],
   matingSaturation: [0, 1000000],
-  matingValue: [0, 2],
+  matingValue: [0, 3],
   meatAlertM: [0, 1000000],
   meatEatPerH: [0, 1000000],
   meatHungerFactor: [0, 1000000],

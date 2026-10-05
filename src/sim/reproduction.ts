@@ -52,7 +52,7 @@ export function recordCopulation(world: World, f: Chimp, m: Chimp): void {
   if (u < P.cycleMaxDay - 1 || u >= P.cycleMaxEndDay) return;
   const fx = ix(f);
   fx.cops[m.id] = (fx.cops[m.id] ?? 0) + (u >= P.cyclePeriovulatoryDay ? 2 : 1);
-  if (spermDecayOn(P)) addDecayed(world, f, m, u >= P.cyclePeriovulatoryDay ? 2 : 1, P); // stage E4p iteration 2
+  if (spermDecayOn(P)) addDecayed(world, f, m, u >= P.cyclePeriovulatoryDay ? 2 : 1, P); // stage E4p (matingValue 3)
 }
 
 /**
@@ -110,7 +110,7 @@ function ovulate(world: World, c: Chimp): void {
   const x = ix(c);
   let cops = 0, near = 0;
   const P = paramsOf(world);
-  // stage E4p (matingValue 2): the cycle's copulations as their sperm stand at ovulation (each weight decayed with its age)
+  // stage E4p (matingValue 3): the cycle's copulations as their sperm stand at ovulation (each weight decayed with its age)
   const decayed = spermDecayOn(P) ? decayedPool(world, x, P) : null;
   const cp = decayed ?? x.cops;
   for (const k in cp) cops += cp[k];
@@ -131,7 +131,7 @@ function ovulate(world: World, c: Chimp): void {
   addEvent(world, `(Genetic record) ${c.name} conceived; sire ${m?.name ?? 'unknown'}`, 'reproduction', [c.id, sire], c.troopId, 0);
 }
 
-/** Stage E4p (matingValue 2): her decayed copulation record as of now (a fresh object; the record is not written). */
+/** Stage E4p (matingValue 3): her decayed copulation record as of now (a fresh object; the record is not written). */
 function decayedPool(world: World, x: ReturnType<typeof ix>, P: Params): Record<number, number> {
   const out: Record<number, number> = {};
   if (!x.cd || x.cdAt === undefined) return out;

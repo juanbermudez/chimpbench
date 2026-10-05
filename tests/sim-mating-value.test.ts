@@ -76,8 +76,8 @@ test('with matingValue 1 the mate offer is worth the paternity it adds and no qu
   }
 });
 
-test('matingValue 2: a copulation\'s fertilizing weight decays with the age of its sperm (spermLifeDays), in the gain and at ovulation alike', () => {
-  const w = createWorld(48, { params: { matingValue: 2 } }), Pw = paramsOfWorld(w), { f, m, r } = pair(w);
+test('matingValue 3: a copulation\'s fertilizing weight decays with the age of its sperm (spermLifeDays), in the gain and at ovulation alike', () => {
+  const w = createWorld(48, { params: { matingValue: 3 } }), Pw = paramsOfWorld(w), { f, m, r } = pair(w);
   atDay(f, Pw.cycleMaxDay + 1); ix(f).cops = {}; delete ix(f).cd; delete ix(f).cdAt;
   for (let i = 0; i < 10; i++) recordCopulation(w, f, r);
   const fresh = paternityGain(f, m, Pw, w);
@@ -92,7 +92,22 @@ test('matingValue 2: a copulation\'s fertilizing weight decays with the age of i
   const w1 = createWorld(48, { params: { matingValue: 1 } }), P1 = paramsOfWorld(w1), q = pair(w1);
   atDay(q.f, P1.cycleMaxDay + 1); ix(q.f).cops = {};
   for (let i = 0; i < 10; i++) recordCopulation(w1, q.f, q.r);
-  assert.equal(ix(q.f).cd, undefined, 'no decayed record without the switch at 2');
+  assert.equal(ix(q.f).cd, undefined, 'no decayed record below 3');
   const g1 = paternityGain(q.f, q.m, P1, w1); w1.time += 24 * P1.spermLifeDays;
   assert.equal(paternityGain(q.f, q.m, P1, w1), g1);
+});
+
+test('matingValue 2: the courted animal is asked again when the courting one arrives beside it; 1 asks only at the start', () => {
+  for (const mv of [1, 2]) {
+    const w = createWorld(48, { params: { matingValue: mv } });
+    while (w.time < 3) tickWorld(w);
+    const { f, m } = pair(w);
+    atDay(f, P.cycleMaxDay + 1); ix(f).cops = {}; f.nest = null;
+    m.position = [f.position[0] + 0.3, f.position[1], f.position[2]];
+    m.action = 'mate'; m.targetId = f.id; ix(m).phase = 0; m.actionTime = 0; m.nextDecision = w.time + 1;
+    f.action = 'forage'; f.targetId = -1; ix(f).intr = ''; ix(f).lastIntr = ''; ix(f).lastIntrAt = -1e9;
+    tickWorld(w);
+    const asked = ix(f).lastIntr.includes('beside me to mate');
+    assert.equal(asked, mv === 2, `matingValue ${mv}: ${ix(f).lastIntr}`);
+  }
 });

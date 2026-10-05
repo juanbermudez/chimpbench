@@ -455,6 +455,62 @@ consort, `startAction`):**
   `mateIntervalH` through ACTIVE_WHEN, the three literals through LITERAL_OFF. Switch 0 hash-identical: S27 seed 48
   after 2 days 6005ce06d37e5df1 with the code at this commit (hooks off and on). Tests: `tests/sim-mating-value.test.ts`.
 
+### 5.1 Iteration 2 (A2, `matingValue` 2; a correction of A1, registered after A1's results, §10, before A2's run)
+
+**Why (A1, §10).** 90% of adult males' approaches to a maximally swollen female ended without her consent (71% of them
+beside her, 11% timed out), and her act one tick after an approach began was acceptance in 1.7% of approaches: in A1 the courted
+animal decides only when the approach begins, when the courting male is still up to 50 m away (`mateRangeM`), while her
+own offer exists only within 30 m (`mateFemaleRangeM`); and a second, non-urgent interrupt inside the 2-min interrupt
+spacing would be dropped. So A1's consent mostly failed for want of a decision with the option in reach, not by her
+choice: a defect of A1's implementation of its own rule (§5: "the approach interrupts the partner, who accepts by mating
+back"), not a new mechanism.
+
+**Change (`matingValue` 2 = 1 + this; src/sim/mating.ts `consentOnArrival`, execution.ts `mateTick`):** on the first
+tick the courting animal is beside the partner without its consent, the partner is interrupted (urgent: the courtship is
+beside it) and decides with its own offer in range; the courting animal waits up to 8 ticks, as in A1. Nothing else
+changes; prescriptions 47. Switches 0 and 1 hash-identical with this code (S27 seed 48, 2 days: 6005ce06d37e5df1,
+dba5143146a2b7b4). Test: tests/sim-mating-value.test.ts (asked again at 2, not at 1).
+
+### 5.2 Iteration 3 (A3, `matingValue` 3 = 2 + the sperm's life; registered with A2, before either runs)
+
+**Why (A1, §10).** The paternity value collapsed within the cycle: weighted copulations per completed cycle 12.2 (the
+references 190–195), so mating stopped after the first day or two of maximal swelling and resumed little in the
+periovulatory days (weight-2 share 0.31 against 0.36–0.42). The model's paternity rule credits every copulation of the
+counted window until ovulation, and conception saturates at 3 weighted copulations, so each copulation's gain falls to
+~3/C of a cycle's first within the first day.
+
+**Principle.** Sperm do not last a cycle. In humans, conception follows only intercourse in the six days ending on the
+day of ovulation, its probability falling from 0.33 on that day to 0.10 five days before (wilcox1995, Abs; [L] for
+chimpanzees; research.md "Addendum: E4p mating without quotas"): the copulations that compete at ovulation are recent
+ones, so a copulation keeps value while the earlier ones fade.
+
+**Change (`matingValue` 3; everything else as 2):** each copulation's paternity weight (recordCopulation's 1, or 2 in the
+periovulatory days) decays e-fold every `spermLifeDays` = 4.2 days on the life-history clock (5 / ln(0.33 / 0.10); [L],
+human; a new registry entry read only at 3); `ovulate` takes the decayed weights at ovulation for the mating factor and
+the sire draw (the association term `near` unchanged); `paternityGain` takes the decayed record now, for both partners.
+A female's decayed record by male (`cd`, `cdAt`: lazily added ChimpX keys, listed in `OPTIONAL_X`), cleared with
+`cops` at a new cycle, a birth or a transfer (src/sim/mating.ts `addDecayed`, `spermDecay`; reproduction.ts). No other
+new magnitude; prescriptions 47 (`spermLifeDays` is physiology, [L]). Test: the decay in the gain and the record.
+
+**Arms A2 and A3** = S27 + `matingValue` 2 and 3, each exactly as A1 (`run-arm.sh`: e-bench quick, energy-diagnose,
+e4p-diagnose 30 + 60 with every readout, rhythm-metrics), each from a frozen detached checkout of the commit that
+registers it; run side by side when the load allows (`--workers 1` above 8).
+
+**Predictions (against the references D0m–D1m and the S27q group, and A1; registered before either run).** A2: consent
+binds less (male approaches without consent ≤ 0.6, against A1's 0.90); the paternity value still bounds a cycle's total,
+so the rates stay near A1's (female 0.02–0.08, dyad 0.02–0.08 per daylight hour; weighted copulations per cycle 10–25)
+(moderate). A3: a back-of-envelope estimate written before the run (disclosed; it uses only the registered rule and A1's
+measured cycle total): in A1 mating stopped near 12 weighted copulations; with the decay the decayed count should hover
+near that level, a turnover of about 12 ÷ 4.2 ≈ 3 weighted units a day, 1.5–2.5 copulations a day: female 0.08–0.25 and
+dyad 0.05–0.20 per daylight hour (low confidence), the weight-2 share ≥ 0.35 and weighted copulations per cleared cycle
+above A1's (moderate). Both: prescriptions 47 (high); male → male aggression and guard chases within ±50% of A1 (low);
+adult males with a maximally swollen female between A1's 1.05 and the references' 1.43 (low); sums inside noise,
+T-ACT-1..4, T-PTY-1 and reserves inside the S27q spread or as A1 (moderate); viability and night pass (high).
+
+**Kill criterion and rate line:** as registered for A1 (§8). A switch value replaces the quota as a keep candidate only if
+both rates sit inside the sourced ranges (female 0.14–0.79, dyad 0.03–0.12 per daylight hour). These are the last two
+iterations (three in all).
+
 ## 6. Readouts (defined before any arm; smoke-tested with the switch on, run log)
 
 - Simulation truth from `scripts/e4p-diagnose.ts` (§3 definitions; 30 + 60 days, seeds 48 and 7) against D0–D1 (and
@@ -528,3 +584,73 @@ candidate (a replacement that misses both ranges does not replace what the quota
   diagnosis and rhythm runs never started; D0m, D1m and A1m never started. Nothing finished is re-run: A1's energy and
   rhythm run now from `frozen-a1` (unchanged), its diagnosis as A1m from `frozen-m` (the same world with every readout, as
   registered above), and D0m and D1m from `frozen-m`.
+
+## 10. Results
+
+### 10.1 A1 (S27 + `matingValue` 1; bench 9013ed3, `git.dirty` 0; energy and rhythm from the same frozen checkout; diagnosis A1m from frozen-m 6124697, the same world; printed by `artifacts/validation/e4p/report_table.py`, `diag_table.py`, `judge_e4p.py` and `night.py` from the JSON)
+
+```
+| Readout | S27 reference mean ± SD (n) | A1 | field |
+| --- | --- | --- | --- |
+| adult males in a max-swollen female's party (per daylight h; 30 + 60 d) | 1.427 ± 0.005 (2) | 1.053 (z -55.7) | field: share of community males 0.28 (Kalinzu)
+| copulations per dyad daylight h (30 + 60 d) | 0.591 ± 0.011 (2) | 0.031 (z -42.9) | Kanyawara 0.03–0.064; Kalinzu 0.12
+| copulations per max-swollen female daylight h (30 + 60 d) | 0.844 ± 0.018 (2) | 0.033 (z -35.9) | Taï 0.14; Kalinzu 0.43; Mahale 0.79
+| copulations per adult male daylight h (30 + 60 d) | 0.098 ± 0.006 (2) | 0.004 (z -12.4) |
+| male → male aggression per co-present dyad-hour (30 + 60 d) | 0.1029 ± 0.0023 (2) | 0.1056 (z +1.0) | Kanyawara 0.015 (muller2007)
+|   of which mate-guard chases | 0.0488 ± 0.0005 (2) | 0.0610 (z +18.5) |
+| T-PTY-1 | 4.586 ± 0.151 (4) | 4.204 (z -2.3) |
+| T-ACT-1 | 0.375 ± 0.005 (4) | 0.374 (z -0.2) |
+| T-ACT-2 | 0.116 ± 0.009 (4) | 0.110 (z -0.6) |
+| T-ACT-3 | 0.098 ± 0.007 (4) | 0.090 (z -1.1) |
+| T-ACT-4 | 0.421 ± 0.020 (4) | 0.380 (z -1.8) |
+| reserves %/day, males | +0.002 ± +0.004 (4) | +0.000 (z -0.5) |
+| reserves %/day, nursing mothers | -0.000 ± +0.007 (4) | +0.026 (z +3.4) |
+| reserves %/day, juveniles | -0.027 ± +0.021 (4) | -0.007 (z +0.9) |
+
+quick, reference custom (4 runs), rows counted in all runs: fitted 16, held-out 12
+  fitted             (16 rows) ref 1.50, 2.68, 1.04, 2.26 (mean 1.87, sd 0.74; used 0.74) | A1.json: 1.91, Δ +0.04, z +0.1 (inside noise)
+  held-out           (12 rows) ref 4.27, 4.04, 3.73, 3.22 (mean 3.82, sd 0.46; used 1.26) | A1.json: 3.13, Δ -0.69, z -0.5 (inside noise)
+  held-out w/o rare  (11 rows) ref 3.45, 4.04, 3.73, 3.22 (mean 3.61, sd 0.36; used 0.48) | A1.json: 3.13, Δ -0.48, z -0.9 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-HUN-4   held-out ref 0.21±0.41 | A1.json 0.00 (pass)
+
+A1: 9013ed3 dirty 0 prescriptions 47; viability pass (births 0, deaths 1, starvation 0, min living share 0.9795918367346939; by cause {'illness': 1})
+ref S27q.json: prescriptions 42; viability pass (deaths 0, starvation 0)
+ref S27q1.json: prescriptions 42; viability pass (deaths 0, starvation 0)
+ref S27q2.json: prescriptions 42; viability pass (deaths 0, starvation 0)
+ref S27q3.json: prescriptions 42; viability pass (deaths 0, starvation 0)
+```
+
+Night (rhythm-metrics, seeds 48 and 7, 30 + 30): adults out of a nest 2.21% of the night, T-RHY-5 0.0173 (one death, an
+illness, as in the bench run). The full diagnosis table (D0m, D1m, A1m) is `artifacts/validation/e4p/diagm/A1-table.md`;
+from it (D0m / D1m → A1m): copulations 2,764 / 2,955 → 157; weighted copulations per cleared cycle 195 / 190 → 12.2;
+copulations at weight 2 (periovulatory) 0.36 / 0.42 → 0.31, at weight 0 (outside maximal swelling) 0.14 / 0.11 → 0;
+male approaches 832 / 984 → 293, ending without consent 0.04 → 0.90 (of male acts, 0.71 beside her, 0.11 timed out); her act one tick
+after an approach began: acceptance 0.16 / 0.19 → 0.017; male intervals under 0.25 h 0 → 0.24 (bursts, no refractory);
+adult males with a maximally swollen female 1.42 / 1.43 → 1.05 (anoestrous females 0.68 in all three); guard daylight
+hours 818 / 809 → 645; rival chases 1,362 / 1,313 → 1,490; male → male aggression per co-present dyad-hour 0.104 / 0.101
+→ 0.106 (guard chases 0.049 / 0.048 → 0.061; E4q's S27 group 0.097 ± 0.016 at 30 + 30 days; Kanyawara 0.015).
+
+**Against the predictions (§8).** Prescriptions 47: held. Female rate ≤ 0.07: held (0.033). Dyadic rate ≤ 0.05: held
+(0.031). Weighted copulations per cleared cycle ≤ 12: held, by a hair (12.2). Male intervals under 0.25 h ≥ 0.3: missed
+(0.24). Approaches without consent ≥ 0.3: held (0.90; mostly a defect, §5.1). Adult males with her lower: held (1.05).
+Sums inside noise: held (fitted z +0.1, held-out −0.5, without the rare rows −0.9). T-ACT-1..4, T-PTY-1, reserves inside
+the spread: held for T-ACT-1..3 and males' and juveniles' reserves; T-PTY-1 lower (4.20 against 4.59 ± 0.15, z −2.3) and
+T-ACT-4 lower (0.380 against 0.421 ± 0.020); nursing mothers' reserves better (+0.026 against −0.000 ± 0.007, z +3.4).
+Viability and night: held.
+
+**Kill criterion: not met. Rate line: failed** (the female rate 0.033, below Taï's 0.14; the dyadic rate 0.031 at
+Kanyawara's floor). A1 is a mechanism finding, not a keep candidate: valued by the paternity it adds under the model's own
+rule, a copulation is worth nothing after the first dozen weighted copulations of a cycle, and mating collapses 18×.
+
+## 9b. Run log, continued
+
+- **A1's remaining steps** (logged after the runs): energy 21:29–21:34 and rhythm 21:34–21:37 from frozen-a1 (9013ed3,
+  clean); D0m, D1m, A1m 21:29–21:46 from frozen-m (6124697, clean). D0m and D1m reproduce D0's and D1's copulations
+  (2,764, 2,955).
+- **Smoke, switches 2 and 3** (logged after the runs, at the code of the commit that registers them, scripts and tests
+  beyond it): S27 + `matingValue` 2 and 3, seed 48, 1 + 2 days: every readout produced (8 and 8 copulations; two days
+  cannot show the decay). Unit tests 6 pass; S27 + 3 counts 47.
+- **A2 and A3** (as registered in §5.1–5.2): from `scratchpad/e4p/frozen-a23` (the commit that adds this entry),
+  `run-arm.sh frozen-a23 A2 '{"matingValue":2}'` and `run-arm.sh frozen-a23 A3 '{"matingValue":3}'`, side by side if the
+  load is below 15, else one after the other; outputs `frozen-a23/artifacts/validation/e4p/A2*`, `A3*`.

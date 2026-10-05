@@ -12,7 +12,7 @@ import { drinkTick, waterOn } from './water';
 import { darkOn, paceAt, visionNow } from './light';
 import { noteFeeders } from './departure';
 import { doTransfer, recordCopulation } from './reproduction';
-import { consents, matingValueOn } from './mating';
+import { consentOnArrival, consents, matingValueOn } from './mating';
 import { IMPULSE_HUNT, IMPULSE_PATROL, forget } from './perception';
 import { clamp, hash01, random } from './rng';
 import type { ParamId } from './params.gen';
@@ -1244,6 +1244,8 @@ function mateTick(world: World, c: Chimp, o: Chimp | undefined): void {
     const agree = consents(o, c);
     if (mateTrace.on && f.swelling >= 0.6) mateTrace.on('copMate', c, o, !agree, world.time - ix(m).lastMate); // stage E4p diagnosis
     if (agree && f.swelling >= 0.6) { copulate(world, m, f); if (o.action === 'mate' && o.targetId === c.id) finish(world, o); return finish(world, c); }
+    // matingValue 2: on arriving beside the partner, ask it (again): its own offer is now in range (iteration 2's correction)
+    if (!agree && x.phase === 0 && consentOnArrival(P)) interrupt(world, o, `${c.name} is beside me to mate`, true);
   } else {
   const refusing = f.action === 'flee' || f.action === 'charge' || f.action === 'attack' || f.action === 'submit';
   if (mateTrace.on && !refusing && f.swelling >= 0.6) mateTrace.on('copMate', c, o, !(world.time - ix(m).lastMate > MATE_INTERVAL_H), world.time - ix(m).lastMate); // stage E4p diagnosis

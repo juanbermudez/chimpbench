@@ -67,7 +67,7 @@ export interface ChimpX {
   /** Stage E3d (redecideValue): below rgMinAge, the decision count of the decision that chose the current act (its jitter; rg.ts argmaxKeep). */
   jv?: number;
   /**
-   * Stage E4p (matingValue 2; docs/staging/e4p-prereg.md §9 iteration 2): a female's copulations this cycle by male, each
+   * Stage E4p (matingValue 3; docs/staging/e4p-prereg.md §5.2, iteration 3): a female's copulations this cycle by male, each
    * weighted as recordCopulation weighs it and decaying with the age of its sperm (e-folding spermLifeDays, on the
    * life-history clock), as of `cdAt` (eco hours); absent until the first copulation under the switch.
    */
