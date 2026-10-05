@@ -39,6 +39,8 @@ export interface BenchJob {
   observerSeed: number; experimentEveryDays: number; truth: boolean;
   /** Readouts besides the scorecard and viability. */
   energy: boolean; rhythm: boolean;
+  /** Stage E1r: the energy readout also keeps one row per animal and day (energy-probe.ts ANIMAL_DAY_FIELDS); off when absent. */
+  animalDays?: boolean;
   /** Absolute days (burn-in included) at which to write a checkpoint; at `stopDay` the run writes one and stops. */
   checkpointDays: number[]; stopDay: number | null;
   /** Checkpoint files are `${checkpointPrefix}.ckpt-d${day}.v8.gz` (and their sidecars). */
@@ -52,7 +54,7 @@ export interface BenchJob {
 /** What one seed contributes to an arm: everything the arm's outputs pool, in seed order (e-bench --part writes it). */
 export interface BenchPart {
   tool: 'e-bench-part'; version: 1; seed: number;
-  config: { profile: ProfileName; days: number; burnInDays: number; params: Overrides; observerSeed: number; experimentEveryDays: number; truth: boolean; energy: boolean; rhythm: boolean };
+  config: { profile: ProfileName; days: number; burnInDays: number; params: Overrides; observerSeed: number; experimentEveryDays: number; truth: boolean; energy: boolean; rhythm: boolean; animalDays?: boolean };
   field: FieldResult; viability: Viability; energy: EnergyAcc | null; rhythm: RhythmResult | null;
   /** Simulation-truth target rows (data/targets.json scoredOn "truth"): this seed's value per row that has a readout. */
   truth: Record<string, SeedValue>;
@@ -81,7 +83,8 @@ export interface RunState {
 }
 
 /** The settings a checkpoint must share with a job that continues it (the scored length may differ: the ladder). */
-const settingsOf = (j: BenchJob) => ({ seed: j.seed, profile: j.profile, params: j.params, burnInDays: j.burnInDays, observerSeed: j.observerSeed, experimentEveryDays: j.experimentEveryDays, truth: j.truth, energy: j.energy, rhythm: j.rhythm });
+const settingsOf = (j: BenchJob) => ({ seed: j.seed, profile: j.profile, params: j.params, burnInDays: j.burnInDays, observerSeed: j.observerSeed, experimentEveryDays: j.experimentEveryDays, truth: j.truth, energy: j.energy, rhythm: j.rhythm,
+  ...(j.animalDays ? { animalDays: true } : {}) });
 const canon = (v: unknown): string => JSON.stringify(v, (_k, x) => x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.keys(x).sort().map(k => [k, (x as Record<string, unknown>)[k]])) : x);
 
 export function checkpointFile(prefix: string, day: number): string { return `${prefix}.ckpt-d${day}.v8.gz`; }
@@ -95,7 +98,7 @@ function startObserving(s: RunState, job: BenchJob): void {
   s.trials = trialRng(job.observerSeed);
   s.prevHour = world.hour;
   s.via = viabilityStart(world);
-  if (job.energy) { const acc = newEnergyAcc(); s.en = { st: energyStart(world, acc, job.seed, job.days), acc }; }
+  if (job.energy) { const acc = newEnergyAcc(); s.en = { st: energyStart(world, acc, job.seed, job.days, { animalDays: !!job.animalDays }), acc }; }
   if (job.rhythm) s.rh = rhythmStart(world, job.seed);
   s.tr = truthStart(world);
 }
@@ -200,6 +203,6 @@ export function runBenchSeed(job: BenchJob, log: (msg: string) => void = () => {
     simMs: s.ms.sim, observerMs: s.ms.obs, experimentMs: s.ms.exp, metricsMs, values, s18, accuracy, encounterParty: encounterAccuracy(prec), counts };
   const energy = s.en ? s.en.acc : null;
   const truth = truthValues({ seed: job.seed, days: job.days, viability, energy, rhythm, rhythmState: s.rh, field, truth: s.tr, params: job.params as Record<string, number> });
-  return { kind: 'part', part: { tool: 'e-bench-part', version: 1, seed: job.seed, config: { profile: job.profile, days: job.days, burnInDays: job.burnInDays, params: job.params, observerSeed: job.observerSeed, experimentEveryDays: job.experimentEveryDays, truth: job.truth, energy: job.energy, rhythm: job.rhythm },
+  return { kind: 'part', part: { tool: 'e-bench-part', version: 1, seed: job.seed, config: { profile: job.profile, days: job.days, burnInDays: job.burnInDays, params: job.params, observerSeed: job.observerSeed, experimentEveryDays: job.experimentEveryDays, truth: job.truth, energy: job.energy, rhythm: job.rhythm, ...(job.animalDays ? { animalDays: true } : {}) },
     field, viability, energy, rhythm, truth, timing: { wallMs: field.wallMs, segments: s.segments }, resumedFrom: job.resume, checkpoints: s.checkpoints } };
 }
