@@ -3724,7 +3724,7 @@ Boesch 2005, 2006 and 2010; Deschner et al. 2004 full text (bot check); Emery Th
 - muller2007, mullerWrangham2004b, mitaniWatts1999, hardus2012 and bugir2021 are already cited; the entries above add
   findings.
 
-### Addendum: E4q aggression without cooldowns (4 October 2026)
+### E.59 Addendum: E4q aggression without cooldowns (4 October 2026)
 
 How often adult males display, challenge and charge in wild chimpanzees, per male-hour, for stage E4q
 ([staging/e4q-prereg.md](staging/e4q-prereg.md)). Every number below was read from the saved full texts (Kibale

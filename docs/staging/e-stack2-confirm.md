@@ -4159,3 +4159,15 @@ about 72% of their store in a year on S32 against about 37% on S27; the 90-day c
 E0b's ledger), its costs reported above; **S31 (48) is the cost-free alternative**: every sum inside noise, reserves and
 walking within the group's spread. E3g (why re-deciding adds trips and hunts) continues on S28 and is to be confirmed on
 S32; if it does not remove the cost, the stack should fall back to S31 at the next combined confirm.
+
+## S33 confirm (registered 4 October 2026 before its run)
+
+**S33 = S32 + E4q's `aggressionGaps` 7** (the three literal aggression and display gaps out with no replacement: 42 on
+the current ledger, S32 45). **Reference group:** S32 (bench-run 4111971, `s3132/S32`) plus three re-draws by `rngSalt` 1,
+2, 3 (S32c1–S32c3, `s3132/`). The arm runs from bench-run4 moved to this commit (`aggressionGaps` is 0 in S32). Keep rule:
+standard (45 → 42); rare rows per amendment 3; night safe. Bench, energy-diagnose and rhythm-metrics, 5 seeds, 30 + 60
+days; judged with `integrator/judge_s32group.py`.
+
+**Predictions (against the S32 group; moderate confidence unless stated).** 42 prescriptions (high). Viability and night
+safety pass. Sums inside noise. Arrival calls at fruit trees (T-COM-8) up (low: E4q's quick run 0.68, above its band).
+Reserves of every class within the group's spread or better (low). Walking within the group's spread.

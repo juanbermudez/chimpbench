@@ -1947,7 +1947,7 @@ cawthornHoffman2015, miyamoto2013, mitani2000, gomesBoesch2009, furuichiHashimot
 robertsRoberts2015, marson1989. Not verified: immature red colobus masses, the edible share's mean, Watts 2007's numbers,
 Tutin 1979, Stumpf & Boesch, Deschner et al. 2004 and Marson et al. 1989 in full.
 
-## Addendum: E4q aggression without cooldowns (4 October 2026)
+## 59. Addendum: E4q aggression without cooldowns (4 October 2026)
 
 Same text as research.md "Addendum: E4q aggression without cooldowns": per-male-hour field values for the stage's
 readouts, from full texts already cited. Kanyawara 1998 (mullerWrangham2004b, FT, 40-min group focal follows,
