@@ -583,7 +583,7 @@ function done(run: Run, j: Job): void {
 }
 
 function finalize(run: Run, j: Job): void {
-  const code = +readFileSync(run.exitFile(j), 'utf8').trim();
+  const txt = readFileSync(run.exitFile(j), 'utf8').trim(), code = /^\d+$/.test(txt) ? +txt : NaN;
   j.exit = Number.isFinite(code) ? code : 1; j.finished = now(); j.pid = null;
   j.wallS = j.started ? Math.round((Date.parse(j.finished) - Date.parse(j.started)) / 1000) : null;
   const missing = j.outputs.filter(o => !outputOk(run.path(o)));
