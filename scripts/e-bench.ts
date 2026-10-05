@@ -54,6 +54,10 @@
 //   --animal-days                the energy readout also keeps one row per animal and window day in the part (stage E1r,
 //                                docs/staging/e1r-prereg.md: food by kind, expenditure by term, acts, fill, party size,
 //                                charges received; scripts/lib/energy-probe.ts ANIMAL_DAY_FIELDS); measurement only
+//   --feed-horizon               the energy readout also measures the drive's waking time left at every rules decision against
+//                                the time to the animal's next sleep onset, and the hunger readout by hour (stage E1t,
+//                                docs/staging/e1t-prereg.md §3; scripts/lib/feed-horizon-probe.ts, report scripts/e1t-horizon.ts);
+//                                measurement only
 //   --checkpoint-at d1,d2,…      writes checkpoints on the way; --checkpoint the end one; --m6 and --m12 write their end
 //                                checkpoint by default (the ladder extends them: --m12 --resume <m6 out>), --no-checkpoint not
 // Checkpoints (scripts/lib/checkpoint.ts) hold the world, the observer's three team sets and every readout's state; a
@@ -572,10 +576,10 @@ async function singlePass(o: SinglePassOptions): Promise<void> {
     return findCheckpoint(resolve(resumeArg), seed, end) ?? usage(`--resume ${resumeArg}: no complete checkpoint for seed ${seed} at or before day ${end}`);
   };
   const jobs: BenchJob[] = o.seeds.map(seed => ({ seed, profile: 'field', params: o.params, burnInDays: o.burnInDays, days: o.days, observerSeed: 1, experimentEveryDays: 30, truth: true,
-    energy: !has('no-energy'), rhythm: !has('no-rhythm'), ...(has('animal-days') && !has('no-energy') ? { animalDays: true } : {}), checkpointDays: [...ckDays].sort((a, b) => a - b), stopDay, checkpointPrefix: prefixFor(seed), resume: resumeFor(seed), identity }));
+    energy: !has('no-energy'), rhythm: !has('no-rhythm'), ...(has('animal-days') && !has('no-energy') ? { animalDays: true } : {}), ...(has('feed-horizon') && !has('no-energy') ? { feedHorizon: true } : {}), checkpointDays: [...ckDays].sort((a, b) => a - b), stopDay, checkpointPrefix: prefixFor(seed), resume: resumeFor(seed), identity }));
   // --reuse: a seed whose part is on disk with the same settings and code is not run again
-  const settings = (j: Pick<BenchJob, 'params' | 'burnInDays' | 'days' | 'observerSeed' | 'experimentEveryDays' | 'truth' | 'energy' | 'rhythm' | 'animalDays'>) =>
-    canonJson({ params: j.params, burnInDays: j.burnInDays, days: j.days, observerSeed: j.observerSeed, experimentEveryDays: j.experimentEveryDays, truth: j.truth, energy: j.energy, rhythm: j.rhythm, ...(j.animalDays ? { animalDays: true } : {}) });
+  const settings = (j: Pick<BenchJob, 'params' | 'burnInDays' | 'days' | 'observerSeed' | 'experimentEveryDays' | 'truth' | 'energy' | 'rhythm' | 'animalDays' | 'feedHorizon'>) =>
+    canonJson({ params: j.params, burnInDays: j.burnInDays, days: j.days, observerSeed: j.observerSeed, experimentEveryDays: j.experimentEveryDays, truth: j.truth, energy: j.energy, rhythm: j.rhythm, ...(j.animalDays ? { animalDays: true } : {}), ...(j.feedHorizon ? { feedHorizon: true } : {}) });
   const reused = new Map<number, string>();
   if (has('reuse') && stopDay === null) for (const j of jobs) {
     const f = partFile(j.seed);

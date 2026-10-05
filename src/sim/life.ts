@@ -7,7 +7,7 @@ import { rhythmNeeds } from './rhythm';
 import { waterOn, waterTick } from './water';
 import { expectedEpidemicHazard } from './disease';
 import { endoNeeds } from './endocrine';
-import { eat, energyTick, ledgerSlow, meatKcalPerUnit } from './energy';
+import { eat, energyTick, ledgerSlow, livedDay, meatKcalPerUnit } from './energy';
 import { clamp, random } from './rng';
 import { paramsOf, type Params } from './params';
 import { NEVER, SLOW_HOURS, TICK_HOURS, index, ix, markAliveChanged, simOf, type SimChimp } from './state';
@@ -173,6 +173,7 @@ export function needs(world: World, c: Chimp): void {
   if (c.social > 1) c.social = 1; else if (c.social < 0) c.social = 0;
   if (c.stress > 1) c.stress = 1; else if (c.stress < 0) c.stress = 0;
   { const P = paramsOf(world); if (P.rhythmSleep === 1 || P.rhythmHeat === 1) rhythmNeeds(world, c, sleeping); } // stage E2a: sleep pressure and thermal load
+  if (r.ledger) livedDay(world, c, x, sleeping); // stage E1t (horizonLived): the animal's record of its own sleep, after the latch's step
   if (r.water) waterTick(world, c, x); // stage E2g: the water balance, after the energy books and the heat balance it reads
   if (c.vocal !== null && world.time > c.vocalUntil) c.vocal = null;
   c.mood = moodFor(c, a);
