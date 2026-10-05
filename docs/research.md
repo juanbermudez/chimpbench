@@ -4078,6 +4078,77 @@ entered as an input by this stage.
   miltonDemment1988, lambert2002, remisDierenfeld2004, conklinBrittain1998, potts2011 and nguessan2009 are already
   listed; the entries above add findings or access notes.
 
+### Gut inputs audit, addendum: online search (stage E1u, 5 October 2026)
+
+Requested by the user through the integrator after the audit above: chiversHladik1980 and miltonDemment1988 are
+paywalled, so their numbers and the audit's other gaps were searched for in legitimate open sources only (PubMed and PMC
+through the NCBI APIs, the Europe PMC REST API, institutional repositories, author and project pages, publisher
+free-access pages, Google Books previews, open theses). Never Unpaywall or piracy sites. Hosts that showed a challenge
+in this pass were dropped at once and not retried through any proxy: CORE (Cloudflare), the NCBI Bookshelf web pages
+(reCAPTCHA; the E-utilities API is a separate host), the Biodiversity Heritage Library (Cloudflare), Wiley Online
+Library, the American Physiological Society's journal pages, the zoo Nutrition Advisory Group site and other publisher
+pages (Cloudflare), and one repository page (login wall). Four research subagents searched; an API rate limit
+stopped all four before they reported, so the agent read their saved texts and re-read every value below from them
+("re-checked"). Numbers seen only in a secondary source are marked "second-hand" with that source named. Paraphrased,
+except a few quoted terms.
+
+- **miltonDemment1988's numbers, from a free reference work** [nrc2003] (FT, nap.edu free reading pages; subagent;
+  re-checked) [M] for the values as tabulated, all second-hand from miltonDemment1988 unless stated:
+  - Table 3-4 (fibre fed to captive primates, % of dietary dry matter): chimpanzees on a commercial extruded diet of
+    34.5% NDF, 10.0% ADF, 2.8% lignin digested 54.3% of NDF and 32.9% of ADF; on 15.3% NDF, 5.2% ADF, 1.1% lignin, 70.6%
+    and 57.2%. Derived (hemicellulose = NDF − ADF; lignin taken as undigested): hemicellulose 63% and 78%, cellulose
+    46% and 72% digested on the high- and low-fibre diets.
+  - Same table, other primates (second-hand): wild mantled howlers [miltonEtAl1980] on a wild-fruit diet of 40.6% NDF and
+    11.4% lignin digested 23% of NDF, on wild leaves (39.7% NDF, 10.6% lignin) 41%; captive macaques (Sakaguchi et al.
+    1991) 48.3% of NDF at 37.5% NDF and 78.0% at 18.0%.
+  - Table 9-1 (captive adult body weights): miltonDemment1988's chimpanzees were 6 females of 47.0 ± 4.9 kg (Atlanta);
+    other captive adult female chimpanzees 42.7 kg (n 4, Kumamoto), 47.7 and 55.0 kg (Atlanta) (second-hand).
+  - Not found in the book's chapters read: the trial's dry-matter intake, its dry-matter digestibility, its retention
+    times.
+- **miltonDemment1988's transit times, in Milton's words** [milton1999ea] (metadata only; its text read as quoted line by
+  line on a critical web page, [forti2002]) [M] as second-hand: mean transit time 38 h on the high-fibre (34% NDF) diet
+  and 48 h on the low-fibre (14% NDF) diet, defined as the average time marker particles take to pass the tract;
+  Milton adds that the faster passage of the poorer diet let the chimpanzees eat more per unit time, and cites a human
+  study with 62.4 h on a fibre-free and 40.9 h on a 17.3% fibre diet. Confirms the 37.7 h of harrisonMarshall2011 and
+  the 2.0 d of milton1999 as particle mean retention.
+- **Fibre digestion of other great apes** [harrisonMarshall2011] (FT, already listed; re-checked) [M] second-hand: Table
+  III also lists 57.5% fibre digestion for gorillas (a Remis paper; which one, the numbering does not say) and 59.4% for
+  orangutans (Schmidt et al.), both on high-fibre captive diets. 57.5% is also schmidt2005's value for orangutans on
+  corncobs: the attribution may be mixed.
+- **Pith wadged, fibre not usually swallowed** [mclennanGanzhorn2017] (FT, author manuscript at Oxford Brookes RADAR;
+  subagent; re-checked) [M] qualitative: at Bulindi (Uganda) the pith of *Phoenix reclinata* fronds and of sugarcane is
+  typically wadged, chewed to extract the juice and spat out, so the fibrous portion is usually not ingested (appendix
+  table notes). No masses.
+- **Pith wadges measured by length** [mcgrewHunt2011] (FT, KURENAI hdl:2433/152163; subagent; re-checked) [M]: folded
+  *Phoenix reclinata* pith wadges at Toro-Semliki (Uganda), measured fold to fold and counted by folds; no mass or
+  composition.
+- Searched and not found in this pass: chiversHladik1980's specimen table (the captive female's mass), Chivers & Hladik
+  1984, Martin et al. 1985 and MacLarnon et al. 1986 (no open copy reached; CORE and the Biodiversity Heritage Library
+  challenged); any weighed wadge or wadge composition (Kibale, Mahale, Gombe incl. Wrangham's 1975 thesis, Budongo,
+  Toro-Semliki, Bulindi); nguessan2009's wadge method (no open copy); any ape gastric emptying or small-intestine
+  transit beyond ardente2011; any ape gut-content dry matter or faecal NDF share.
+
+**Sources:**
+- *new* nrc2003: National Research Council 2003. *Nutrient Requirements of Nonhuman Primates*, 2nd revised edition.
+  Washington, DC: The National Academies Press. [doi:10.17226/9826](https://doi.org/10.17226/9826) (FT, nap.edu).
+- *new* miltonEtAl1980: Milton K, Van Soest PJ, Robertson JB 1980. Digestive efficiencies of wild howler monkeys.
+  *Physiological Zoology* 53(4):402–409. [doi:10.1086/physzool.53.4.30157878](https://doi.org/10.1086/physzool.53.4.30157878)
+  (metadata only; values via nrc2003).
+- *new* milton1999ea: Milton K 1999. A hypothesis to explain the role of meat-eating in human evolution. *Evolutionary
+  Anthropology* 8(1):11–21.
+  [doi:10.1002/(SICI)1520-6505(1999)8:1<11::AID-EVAN6>3.0.CO;2-M](https://doi.org/10.1002/(SICI)1520-6505(1999)8:1%3C11::AID-EVAN6%3E3.0.CO;2-M)
+  (metadata only; passages read as quoted in forti2002).
+- *new* forti2002: Forti L 2002. A critique of: A hypothesis to explain the role of meat-eating in human evolution, by
+  Katharine Milton. Web page, [http://www.ecologos.org/meat-eating.htm](http://www.ecologos.org/meat-eating.htm) (read;
+  used only for its verbatim quotes of milton1999ea, not for its own arguments).
+- *new* mclennanGanzhorn2017: McLennan MR, Ganzhorn JU 2017. Nutritional characteristics of wild and cultivated foods for
+  chimpanzees (*Pan troglodytes*) in agricultural landscapes. *International Journal of Primatology* 38:122–150.
+  [doi:10.1007/s10764-016-9940-y](https://doi.org/10.1007/s10764-016-9940-y) (FT, author manuscript).
+- *new* mcgrewHunt2011: McGrew WC, Hunt KD 2011. Chimpanzee pith-folding at Toro-Semliki Wildlife Reserve, Uganda. *Pan
+  Africa News* 18(2). [hdl:2433/152163](http://hdl.handle.net/2433/152163) (FT, KURENAI).
+- harrisonMarshall2011, schmidt2005, milton1999, miltonDemment1988, chiversHladik1980 and nguessan2009 are already
+  listed; the entries above add findings or access notes.
+
 ## Recurrent decision model framing (Track R, 5 October 2026)
 
 Read for stage R0 ([recurrent-decision-model.md](recurrent-decision-model.md)): where ChimpBench's loop (a memoryless
