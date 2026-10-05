@@ -34,18 +34,18 @@ export const NO_READOUT: Readonly<Record<string, string>> = {
   'T-ENE-4': 'no readout of the net balance at urinations against the month\'s fruit index within individuals',
   'T-ENE-5': 'no within-mother readout: energy-diagnose gives the balance by the youngest infant\'s age pooled over mothers, not within mothers',
   'T-ENE-6': 'no readout of a female\'s balance against the adult males in her party',
-  'T-ENE-9': 'no monthly readout of feeding time and day range against fruit (a statistic across months: needs a year)',
+  'T-ENE-9': 'no monthly readout of feeding time and day range against fruit (a statistic across months: NEEDS_YEAR, insufficient below 365 days anyway)',
   'T-RHY-7': 'model water sites have no stream or pool kind (eA-protocol: leave unread)',
-  'T-END-1': 'no readout of male stress in months with rank reversals (a statistic across months: needs a year)',
+  'T-END-1': 'no readout of male stress in months with rank reversals (a statistic across months: NEEDS_YEAR, insufficient below 365 days anyway)',
   'T-END-4': 'no readout of the stress ratio around aggression against rests',
   'T-END-5': 'no readout of relative stress by bond partner and context',
-  'T-END-6': 'no monthly readout of lactating females\' stress against fruit and rank (a statistic across months: needs a year)',
+  'T-END-6': 'no monthly readout of lactating females\' stress against fruit and rank (a statistic across months: NEEDS_YEAR, insufficient below 365 days anyway)',
   'T-END-7': 'no readout of arousal by the swollen female\'s parity',
   'T-END-10': 'no readout of affiliation after grooming by partner',
   'T-END-11': 'no readout of affiliation after food sharing',
   'T-END-12': 'no readout yet in the single pass (scripts/endocrine-diagnose.ts measures its intergroup half on its own world)',
   'T-INF-1': 'the row gives Gombe\'s value for two of its 0.5-y blocks only (1.5-2 y, 4.5-5 y), so "within a factor 1.5 of the Gombe value in each block" cannot be tested',
-  'T-INF-4': 'no mass-for-age readout (life history: needs a year)',
+  'T-INF-4': 'no mass-for-age readout (life history: NEEDS_YEAR, insufficient below 365 days anyway)',
 };
 
 // ---------------------------------------------------------------------------------------------------------------------
