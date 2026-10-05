@@ -26,7 +26,10 @@ export const bodyState = (c: Chimp): number => (c.age < 10 ? 1 : lifeStage(c)) *
 
 // dependents under 4 y by carer, rebuilt once per tick (infants ride only below 4 y: candidates.ts isCarried)
 const deps = new WeakMap<World, { tick: number; by: Map<number, Chimp[]> }>();
+// the world and tick of the last lookup (the WeakMap lookup was most of the cost of a call; performance only)
+let depW: World | null = null, depTick = -1, depBy: Map<number, Chimp[]> | null = null;
 function dependentsOf(world: World, carer: Chimp): Chimp[] | undefined {
+  if (world === depW && world.tick === depTick) return depBy!.get(carer.id);
   let d = deps.get(world);
   if (!d || d.tick !== world.tick) {
     const by = new Map<number, Chimp[]>(), alive = index(world).alive;
@@ -41,6 +44,7 @@ function dependentsOf(world: World, carer: Chimp): Chimp[] | undefined {
     d = { tick: world.tick, by };
     deps.set(world, d);
   }
+  depW = world; depTick = world.tick; depBy = d.by;
   return d.by.get(carer.id);
 }
 
