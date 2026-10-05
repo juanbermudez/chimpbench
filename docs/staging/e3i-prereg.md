@@ -489,3 +489,23 @@ e-bench `--quick`, energy-diagnose and trip-diagnose, same settings. Read (singl
 group's SD is noise): re-deciding's cost on the best arm, (D1 − best), against its cost on S39, (D0 − the S39q mean), for
 adults' ground km by class, adults' climbing kcal, trips per adult-day, the share fed at their target, unfed trips' km,
 T-FOOD-4, T-RNG-4, T-HUN-1 and reserves by class.
+
+## 7. Known defects in the code under test
+
+Deferred (found by the diagnosis, not this stage's question; file:line at c90d7bf):
+- Food grunts are given (execution.ts, `gruntWorth`, `hearFoodGruntM` 50 m) but never heard: events.ts:91 pushes only
+  pant-hoots, drums, alarm hoos, screams and travel hoos to listeners. A food grunt given in a crown carries the place and
+  the act; 2.5% of the fruit eaten from crowns that trips later found emptied was eaten by animals that gave one within 50 m
+  of the traveller (§2.2).
+- A caller's crown the listener has not seen is valued at the unknown crop 0.2 (candidates.ts:615, `UNKNOWN_CROP`'s value),
+  and under `callValue` a pant-hoot at a crown costs the caller nothing when the crown is empty (calls.ts:72, `cropLoss`
+  returns 0 for a crop ≤ 0): 12–14% of caller trips to a crown set out toward a crown already below 0.06 units and almost
+  none of them feed (0.0–1.0%).
+- 'caller, no crown' trips (calls not given in a crown; 0.17 per adult-day, 0.052 km) are approaches to a companion with no
+  food target, but E3h's readout counts them among unfed trips.
+- Departures given up (2.7–2.8 per adult-day) are counted as trips by E3h's readout although they move ~2 m (E3h §7).
+- With `callTrip` 1 the amendment-1 readouts (`cSame`, `jtSame`) compare a caller trip with the listener's slot, not with
+  its own record; they diagnose today's code only.
+- A joined trip's option is offered only while the leader's departure is (candidates.ts, `joinValue` offers): when the
+  leader is out of view or arrives, a follower still walking loses the option and the next decision point ends its trip
+  (0.14 joined trips per adult-day re-decided en route with their option off the list, 0.020 km; §2.2 D5).
