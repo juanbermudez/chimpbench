@@ -64,6 +64,7 @@ import type { PrescriptionCount } from './lib/prescriptions';
 import { protocolHash } from './lib/protocol-hash';
 import { report as rhythmReport, rhythmJsonResult } from './lib/rhythm-probe';
 import { scorecard as buildScorecard } from './lib/scorecard';
+import { NO_READOUT } from './lib/truth-rows';
 import { MIN_EVENTS, MIN_LIVING_SHARE, viabilityVerdict, type Viability, type ViabilityJob, type ViabilityVerdict } from './lib/viability';
 import { prescriptionCount } from './prescription-ledger';
 
@@ -541,6 +542,8 @@ function writeOutputs(parts: PartFile[], out: string, o: { label: string; mode: 
   const doc = assemble(card.json as unknown as Scorecard, parts.map(p => p.viability), { label: o.label, mode: o.mode, workers: o.workers, timing: { scorecardS: Math.round(o.poolMs / 1000), viabilityS: null, totalS }, scorecard: cardFile, git: parts[0].git });
   (doc as BenchDoc & { truth?: Record<string, SeedValue[]> }).truth = truth;
   o.finish(doc, out);
+  const missing = Object.keys(NO_READOUT).filter(id => !(id in truth));
+  console.log(`simulation-truth rows read: ${Object.keys(truth).length} (${Object.keys(truth).join(', ')}); without a readout (not scorable): ${missing.length} (${missing.join(', ')})`);
   console.log(`wrote ${cardFile.replace(/\.json$/, '')}.{json,md,log}${cfg.energy ? `, ${out}-energy.{json,log}` : ''}${cfg.rhythm ? `, ${out}-rhythm.{json,md}` : ''}`);
 }
 
