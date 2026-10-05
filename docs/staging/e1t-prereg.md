@@ -329,3 +329,41 @@ orphan; no starvation), and the condition cannot separate the arms. The 6-month 
 starvation death in any of the four runs**; a run that fails births ≥ deaths is reported with its causes of death, not
 judged. Viability in full (e-bench's rule) is judged at 12 months, where births accumulate. The keep rule, night safety
 and the prescription count at 6 months, and the 12-month rule, are unchanged.
+
+## 8. Confirm results at 6 months (integrator, 5 October 2026; frozen checkout bench-e1t at e1f93e9; printed by integrator/judge_e1t.py M6 from the JSON)
+
+```
+  ## E1t confirm, M6: S39 + horizonLived 1 against S39 (4 runs each; printed by integrator/judge_e1t.py from the JSON)
+  
+  | run | commit | protocol | prescriptions | viability | starvation | births / deaths | deaths by class | night: adults out of a nest, T-RHY-5 |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | M6-S39 | 63d699a | 5d4fa5a2a500bce6 | 42 | pass | 0 | 10 / 1 | {'adolescent: illness': 1} | adults out of a nest 2.71% of night; T-RHY-5 0.0254; night deaths 1; deaths 1 |
+  | M6-S39-s1 | 63d699a | 5d4fa5a2a500bce6 | 42 | FAIL births 10 < deaths 12 | 0 | 10 / 12 | {'infant 0.5–2 y: respiratory illness (outbreak)': 2, 'infant 2–5 y: respiratory illness (outbreak)': 1, 'female, lactating: illness': 2, 'female, lactating: snare injury': 1, 'infant 2–5 y: orphaned infant, did not survive without its mother': 1, 'infant < 0.5 y: respiratory illness (outbreak)': 1, 'adolescent: illness': 1, 'female, other: respiratory illness (outbreak)': 1, 'infant < 0.5 y: illness': 1, 'adult male: illness': 1} | adults out of a nest 2.61% of night; T-RHY-5 0.0252; night death
+  | M6-S39-s2 | 63d699a | 5d4fa5a2a500bce6 | 42 | pass | 0 | 10 / 6 | {'adult male: illness': 2, 'infant 0.5–2 y: infanticide by Chiriku (East community)': 1, 'infant 0.5–2 y: illness': 1, 'infant < 0.5 y: illness': 2} | adults out of a nest 2.60% of night; T-RHY-5 0.0247; night deaths 2; deaths 6 |
+  | M6-S39-s3 | 63d699a | 5d4fa5a2a500bce6 | 42 | pass | 0 | 10 / 3 | {'juvenile 5–12 y: illness': 2, 'infant 0.5–2 y: illness': 1} | adults out of a nest 2.56% of night; T-RHY-5 0.0243; night deaths 1; deaths 3 |
+  | M6-E1t | e1f93e9 | 5d4fa5a2a500bce6 | 42 | pass | 0 | 10 / 6 | {'adult male: illness': 2, 'infant < 0.5 y: illness': 1, 'adult male: respiratory illness (outbreak)': 1, 'female, other: respiratory illness (outbreak)': 1, 'infant 0.5–2 y: respiratory illness (outbreak)': 1} | adults out of a nest 2.83% of night; T-RHY-5 0.0266; night deaths 2; deaths 6 |
+  | M6-E1t-s1 | e1f93e9 | 5d4fa5a2a500bce6 | 42 | pass | 0 | 10 / 5 | {'adult male: illness': 4, 'infant 0.5–2 y: illness': 1} | adults out of a nest 2.80% of night; T-RHY-5 0.0262; night deaths 3; deaths 5 |
+  | M6-E1t-s2 | e1f93e9 | 5d4fa5a2a500bce6 | 42 | pass | 0 | 10 / 3 | {'adult male: illness': 3} | adults out of a nest 2.86% of night; T-RHY-5 0.0267; night deaths 0; deaths 3 |
+  | M6-E1t-s3 | e1f93e9 | 5d4fa5a2a500bce6 | 42 | pass | 0 | 10 / 10 | {'infant 0.5–2 y: illness': 1, 'adult male: respiratory illness (outbreak)': 1, 'female, other: respiratory illness (outbreak)': 1, 'female, lactating: respiratory illness (outbreak)': 1, 'juvenile 5–12 y: respiratory illness (outbreak)': 1, 'infant 2–5 y: respiratory illness (outbreak)': 1, 'infant 0.5–2 y: respiratory illness (outbreak)': 1, 'female, pregnant: illness': 1, 'adult male: illness': 2} | adults out of a nest 2.79% of night; T-RHY-5 0.0261; night deaths 5; deaths 10 |
+  
+  | sum (rows scored in all 8 runs) | S39: 4 runs | mean ± SD | E1t: 4 runs | z of each E1t run (rngSalt 0 first; SD used) |
+  | --- | --- | --- | --- | --- |
+  | fitted (18) | 3.05 / 2.48 / 2.72 / 2.51 | 2.69 ± 0.26 | 2.44 / 2.50 / 3.04 / 2.46 | -0.8 / -0.6 / +1.1 / -0.7 (0.30) |
+  | held-out (27) | 8.98 / 9.11 / 7.79 / 9.39 | 8.82 ± 0.71 | 9.78 / 8.02 / 10.17 / 7.63 | +0.6 / -0.5 / +0.8 / -0.7 (1.45) |
+  | held-out w/o rare (24) | 7.43 / 7.51 / 7.31 / 7.24 | 7.37 ± 0.12 | 7.61 / 7.16 / 7.46 / 7.17 | +1.0 / -0.9 / +0.4 / -0.9 (0.21) |
+  
+  Lowest point of each class's mean reserve trajectory (relative to the store), per run:
+  | class | S39 runs | E1t runs |
+  | --- | --- | --- |
+  | adult male | -0.026 / -0.021 / -0.021 / -0.023 | -0.033 / -0.036 / -0.033 / -0.031 |
+  | female, lactating | -0.131 / -0.128 / -0.128 / -0.130 | -0.130 / -0.139 / -0.132 / -0.138 |
+  | female, other | -0.049 / -0.063 / -0.042 / -0.057 | -0.078 / -0.054 / -0.074 / -0.053 |
+  | infant 0.5–2 y | -0.183 / -0.175 / -0.186 / -0.174 | -0.171 / -0.186 / -0.171 / -0.191 |
+  | infant 2–5 y | -0.073 / -0.148 / -0.071 / -0.079 | -0.089 / -0.090 / -0.089 / -0.091 |
+  | infant < 0.5 y | -0.247 / -0.234 / -0.210 / -0.235 | -0.222 / -0.225 / -0.208 / -0.235 |
+  | juvenile 5–12 y | -0.185 / -0.165 / -0.198 / -0.236 | -0.191 / -0.182 / -0.196 / -0.204 |
+  
+  Starvation deaths over 20 seed-runs: S39 0, E1t 0.
+```
+
+**Verdict at 6 months: pass** (as registered in §7 with its amendment): no starvation death in any run (all four also pass e-bench's full viability); the keep rule holds on the rngSalt 0 run (fitted z −0.8, held-out +0.6, held-out without the rare rows +1.0; every arm run inside noise); night safety holds (adults out of a nest 2.80–2.86% of night, T-RHY-5 0.026–0.027); prescriptions 42. Readouts: adult males' and other females' lowest class reserve a little lower (−0.031 to −0.036 against −0.021 to −0.026; −0.053 to −0.078 against −0.042 to −0.063), juveniles and infants about level. The four runs were extended to 12 months at 17:16 (runner labels M12-E1t, -s1, -s2, -s3).
