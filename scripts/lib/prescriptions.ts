@@ -385,6 +385,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   leftoverRules: { stage: 'E4m', needs: {} },
   bodyRules: { stage: 'E4o', needs: {} },
   aggressionGaps: { stage: 'E4q', needs: {} },
+  callGaps: { stage: 'E5g', needs: { callValue: 1 } },
   matingValue: { stage: 'E4p', needs: {} },
   walkGait: { stage: 'E2i', needs: {} },
   youngArrival: { stage: 'E2j', needs: {}, removesNothing: 'gives animals below rgMinAge the arrival rule older animals already follow (rg.ts gate, or redecide under redecideValue 2: a trip that reaches its tree becomes feeding there when legal); every other choice stays the argmax; adds no magnitude and switches no prescription out (e2j-prereg §9-10)' },
@@ -532,6 +533,11 @@ export const LITERAL_OFF: { file: string; has: string; kind?: Literal['kind']; o
   { file: 'candidates.ts', has: 'time - x.lastMate > 0.3', kind: 'interval', off: P => P.matingValue >= 1, why: 'the female\'s 0.3-h gap after her own last copulation: with matingValue 1 the condition is short-circuited; her offer is worth the paternity share the copulation adds (src/sim/mating.ts paternityGain)' },
   { file: 'execution.ts', has: 'WALK * 1.2, 1)) { if (c.actionTime > P.mateApproachS) { x.lastMate = Math.max(x.lastMate, world.time - MATE_INTERVAL_H + 0.5)', kind: 'interval', off: P => P.matingValue >= 1, why: 'the 0.5-h block after a failed approach backdates lastMate, which nothing reads while matingValue is 1 (no quota; a copulation needs the partner\'s choice, mating.ts consents)' },
   { file: 'execution.ts', has: 'dominates(c, r) && time - x.lastAgg > 0.25', kind: 'interval', off: P => P.matingValue >= 1, why: 'the guard\'s 0.25-h gap between chases: with matingValue 1 the second branch of the line chases while the rival courts her or stays beside her, with no gap' },
+  // stage E5g (callGaps; docs/staging/e5g-prereg.md §4): each literal reads the bit first, so it is not evaluated while the
+  // bit is set (a code read; scripts/param-reads.ts --literals)
+  { file: 'candidates.ts', has: 'callGapOn(P, 1)) || time - x.lastCall > 0.5', kind: 'interval', off: P => P.callValue === 1 && (P.callGaps & 1) !== 0, why: 'the 0.5-h gap after the caller\'s own last call: not evaluated while callGaps has bit 1 under callValue, where it gates only the reunion pant-hoot (e5g-prereg §2.1: it trims; the offer\'s own score sets the rate)' },
+  { file: 'candidates.ts', has: '(time - x.lastCall < 0.03 ? 0.4 : 0)', kind: 'bonus', off: P => (P.callGaps & 2) !== 0, why: 'the snake alarm\'s repeat penalty: not evaluated while callGaps has bit 2 (e5g-prereg §2.1: inert; the alarm\'s own value, which falls as its audience learns, governs repetition)' },
+  { file: 'execution.ts', has: "c.actionTime % 60 === 0 && c.actionTime > 0) emitCall(world, c, 'alarm-hoo')", kind: 'interval', off: P => (P.callGaps & 4) !== 0, why: 'the alarm-hoo every 60 s of an alarm act: not evaluated while callGaps has bit 4, which hoos while an own-community animal in sight has not learnt of the snake (e5g-prereg §2.1: the cadence set the hoo rate; §4)' },
 ];
 
 const HOUR = /\b(?:world\.)?hour\s*(?:>=|<=|<|>)\s*(\d+(?:\.\d+)?)/g;

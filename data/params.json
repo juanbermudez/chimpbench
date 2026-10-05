@@ -2673,6 +2673,29 @@
    "notes": "How long a FoodGrunt call is shown and audible."
   },
   {
+   "id": "callGaps",
+   "group": "communication",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    7
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    7
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "patrolAndCalls (callReady), computeCandidates (snake alarm), executeAction (alarm)",
+   "file": "src/sim/calls.ts",
+   "integer": true,
+   "notes": "Stage E5g (docs/staging/e5g-prereg.md section 4): a sum of bits, one per literal call gap; 0 = today (hash-identical). On S31 (quick, simulation truth, snake trials on cloned worlds; e5g-prereg section 2.1): 1: the 0.5-h gap after the caller's own last call (callReady) is not read under callValue, where it gates only the male reunion pant-hoot (it trims: removed, reunion pant-hoots x1.06; the offer's own score sets the rate); read only with callValue 1. 2: the snake alarm's repeat penalty (-0.4 within 1.8 min of the animal's own last call) is not read (inert: 19 decisions in four runs). 4: the alarm-hoo every 60 s of an alarm act (93% of hoos, 1% of them informing anyone; it set the hoo rate) is replaced: the alarming animal hoos in a tick of the act when an own-community animal of 1 y or more within its sight radius is unaware of the snake, and stops when everyone in sight has heard (schel2013b's stopping rule, crockford2012's receivers' knowledge); the hoo at the act's start stays. No magnitude, weight or interval is added. Design, no fitted value."
+  },
+  {
    "id": "callLaughMin",
    "group": "communication",
    "value": 1,

@@ -1,10 +1,10 @@
-import type { Chimp, Tree, World } from '../types';
+import type { Chimp, Stimulus, Tree, World } from '../types';
 import { UNKNOWN_CROP } from '../decide/facts';
 import { needFruit } from './intake';
 import type { Params } from './params';
 import { fruitAt } from './phenology';
 import { pressureAt } from './territory';
-import { index, isTreeId, ix, NEVER, type ChimpX } from './state';
+import { index, isTreeId, ix, NEVER, simOf, type ChimpX } from './state';
 
 // Stage E4c (docs/staging/e4c-prereg.md; switch callValue): a call is a decision with a gain and a cost to the caller,
 // read from its own perception and memory. No hazard, coin, clock window or quota decides when an animal calls.
@@ -22,6 +22,31 @@ import { index, isTreeId, ix, NEVER, type ChimpX } from './state';
 // contact score; hoos and grunts weigh one unit of bond against the whole need. Everything here is pure (no rng).
 
 export const callValueOn = (P: Params) => P.callValue === 1;
+
+/**
+ * Stage E5g (docs/staging/e5g-prereg.md §4): `callGaps` is a sum of bits, one per literal call gap. 1: the 0.5-h gap after
+ * the caller's own last call (candidates.ts `callReady`) is not read under callValue, where it gates only the male reunion
+ * pant-hoot; 2: the snake alarm's repeat penalty (−0.4 within 1.8 min of the animal's own last call) is not read; 4: the
+ * alarm-hoo every 60 s of an alarm act is replaced by a hoo while an own-community animal in sight has not learnt of the
+ * snake (unawareInSight). 0 = today.
+ */
+export const callGapOn = (P: Params, bit: number): boolean => (P.callGaps & bit) !== 0;
+
+/**
+ * Stage E5g (callGaps bit 4): whether an own-community animal of 1 y or more within the caller's sight radius (the radius
+ * its last look used, perception.ts) has not learnt of the snake model `st`: the audience the alarm's value reads
+ * (candidates.ts), seen as it is in this tick. Pure.
+ */
+export function unawareInSight(world: World, c: Chimp, st: Stimulus): boolean {
+  const aware = simOf(world).aware[st.id] ?? [], r = ix(c).sight, r2 = r * r, alive = index(world).alive;
+  for (let i = 0; i < alive.length; i++) {
+    const o = alive[i];
+    if (o === c || o.troopId !== c.troopId || o.age < 1 || aware.includes(o.id)) continue;
+    const dx = o.position[0] - c.position[0], dz = o.position[2] - c.position[2];
+    if (dx * dx + dz * dz <= r2) return true;
+  }
+  return false;
+}
 
 /** Share of the caller's ally bond weight whose whereabouts it does not know: allies neither seen nor heard pant-hooting within callFixH (0 without allies). */
 export function unlocatedShare(world: World, c: Chimp, x: ChimpX, P: Params): number {

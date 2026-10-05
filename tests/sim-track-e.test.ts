@@ -50,6 +50,7 @@ const TRACK_E_SWITCHES = [
   'departValue', // E5f
   'bodyRules', // E4o
   'aggressionGaps', // E4q
+  'callGaps', // E5g
   'experienceValue', // E3g
   'matingValue', // E4p
   'tripBeliefs', // E3h

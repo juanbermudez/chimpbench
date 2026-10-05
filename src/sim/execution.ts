@@ -20,7 +20,7 @@ import { NEVER, TICK_HOURS, TICK_SECONDS, awakeInNest, byIdIn, huntOf, index, is
 import { resolveHunt } from './ecology';
 import { HUNT_CLIMB, HUNT_STANDOFF_M, bodySpeed, pursuitEachTick, pursuitOn, spreadBearing } from './huntpursuit';
 import { acuteDrive, endoOn, endoShared, endoThreat } from './endocrine';
-import { callValueOn, crownOf, gruntWorth, hooWorth, pantHootValue } from './calls';
+import { callGapOn, callValueOn, crownOf, gruntWorth, hooWorth, pantHootValue, unawareInSight } from './calls';
 import { eatFruit, forageYield, fruitAt } from './phenology';
 import { bestFallbackNear, eatFallback, fallbackOn, fallbackStock, fallbackValue } from './fallback';
 import { recordAggression, recordConsolation, recordGrooming, recordMating, recordMeat, recordReconciliation, recordSupport } from './relations';
@@ -869,7 +869,10 @@ export function executeAction(world: World, c: Chimp): void {
     case 'alarm': {
       const st = world.stimuli.find(q => q.kind === 'snake-model' && q.end > time && x.stims.includes(q.id));
       if (st) face(c, st);
-      if (c.actionTime % 60 === 0 && c.actionTime > 0) emitCall(world, c, 'alarm-hoo');
+      // stage E5g (callGaps bit 4; docs/staging/e5g-prereg.md §4): no fixed cadence. It hoos again while an own-community
+      // animal it can see has not learnt of the snake, and stops when everyone in sight has heard (schel2013b; crockford2012)
+      if (callGapOn(P, 4)) { if (st && unawareInSight(world, c, st)) emitCall(world, c, 'alarm-hoo'); }
+      else if (c.actionTime % 60 === 0 && c.actionTime > 0) emitCall(world, c, 'alarm-hoo');
       return;
     }
     case 'hunt': {
