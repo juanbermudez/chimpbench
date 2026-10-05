@@ -6,12 +6,12 @@ import { clamp, hash01, smoothstep } from './rng';
 import { paramsOf, type Params } from './params';
 import { fruitAt } from './phenology';
 import { bestFallbackNear, fallbackOn } from './fallback';
-import { fruitRate, leafWorth, needFruit, netRateShare, rateMemo, treeIntake } from './intake';
+import { fallbackGutFactor, fruitRate, gutRateShare, leafWorth, needFruit, netRateShare, rateMemo, treeIntake } from './intake';
 import { heatRestValue, nestValue, shelterValue, sleepPressure, thermalLoad } from './rhythm';
 import { darkOn, tripLight, visionNow, type TripLight } from './light';
 import { circadianOn, circadianSleepiness } from './circadian';
 import { dayPhase } from './environment';
-import { deficitDrive, driveOn, milkShare, milkWorth, nurseBoutWorth } from './energy';
+import { deficitDrive, driveOn, fruitKcalPerUnit, milkShare, milkWorth, nurseBoutWorth } from './energy';
 import { drinkWorth, waterOn } from './water';
 import { arrivalLight, brightening, needUnits, raceStake, rivalsAt } from './departure';
 import { acuteDrive, endoOn, escalateScore, fastSpanH, rainFastScore, rainScore, redirectFastScore, redirectScore } from './endocrine';
@@ -286,7 +286,7 @@ const _order: Slot[] = [];
 /** Pure: builds candidates from the chimp's last perception and its body. No rng, no world mutation. */
 export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Candidate[] {
   out.length = 0;
-  n = 0; cur = c; curTime = world.time; _rm.c = null;
+  n = 0; cur = c; curTime = world.time; _rm.c = null; _rm.gc = null;
   const P = paramsOf(world);
   curP = P;
   const x = ix(c);
@@ -455,6 +455,13 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   // rate where. Not read: the crop shape (fruitValueRef), the distance scale of crowns in view (forageDistScaleM), the
   // fallback and trip weights (fallbackForageW, memTravelHungerW) and the trips' energetic distance cost (tripCost).
   const fr = forageRateOn(P), fd = h * 1.6 + 0.1; // fd: the crown's drive
+  // stage E1s (gutValue; docs/staging/e1s-prereg.md §2 and the integrator's ruling below it): every feeding option (a crown in
+  // view, a trip, a joined trip, the fallback here) is worth the energy of the bout the gut allows over the bout's time:
+  // the foregut's room filled at the food's ingestion rate (as forageRate), then the food at the rate a full foregut
+  // passes it while the gut passes what it holds, up to the crop share and the need, each food in its own units (figs as
+  // figs). With an empty gut, today's values (figs at their own rate); at a full gut foods rank by the energy per gram
+  // the gut passes (intake.ts gutRateShare, fallbackGutFactor). Design assumption (verlindenWiley1989, not verified)
+  const gv = fr && gutValueOn(P);
   // stage E2j (tripBodyCost; gait.ts): the climbing's time and a riding dependent's metres in the rate; `travel` false for a
   // crown in view (approached in the feeding act, so only an infant under 1.2 y rides), true for a trip
   const tbc = tripBodyOn(P);
@@ -470,8 +477,9 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     // the climb: to the crown from the ground, or what is left of it inside this crown
     const crownY = t.height * CROWN_Y, climb = c.targetId === t.id || t === inCrown ? crownY - c.position[1] : crownY;
     const xh = tbc ? tripClimbH(c, P, d, climb) : 0, ck = tbc ? riderKcal(world, c, P, d, climb, travel) : 0;
-    if (dark && (tripLight(world, P, d, crownY, _tl, spd).pace < 1 || _tl.see < 1)) return netRateShare(c, P, crop, feeders, d, climb, _tl.pace, _tl.see, spd, xh, ck, yk, _rm);
-    return netRateShare(c, P, crop, feeders, d, climb, 1, 1, spd, xh, ck, yk, _rm);
+    // stage E1s (gutValue; intake.ts gutRateShare): the bout the gut allows, in the crown's own food
+    if (dark && (tripLight(world, P, d, crownY, _tl, spd).pace < 1 || _tl.see < 1)) return gv ? gutRateShare(c, P, t.common === 'fig', crop, feeders, d, climb, _tl.pace, _tl.see, spd, xh, ck, yk, _rm) : netRateShare(c, P, crop, feeders, d, climb, _tl.pace, _tl.see, spd, xh, ck, yk, _rm);
+    return gv ? gutRateShare(c, P, t.common === 'fig', crop, feeders, d, climb, 1, 1, spd, xh, ck, yk, _rm) : netRateShare(c, P, crop, feeders, d, climb, 1, 1, spd, xh, ck, yk, _rm);
   };
   // stage E3e (choiceBelief; docs/staging/e3e-prereg.md §5.1): a trip to a tree out of sight carries the animal's belief
   // about its crop (the crop it values the tree at, the hours since it last saw the tree), so rg.ts can draw the crop
@@ -495,9 +503,13 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   if (!caretaker) {
     // stage C7c (field): fallback is worth the best rate in view, so a depleted patch sends the animal elsewhere (fallback.ts)
     // C13b: leaves are worth their intake rate here relative to ripe fruit (full-stock rate when fallback depletes: the best cell in view scales it)
-    const leafV = (iv ? leafWorth(world, c, px, pz, P, fruitH) : 1) * (dark ? visionNow(world, 0) : 1); // E2c: leaves are found by sight
+    const leafW = iv ? leafWorth(world, c, px, pz, P, fruitH) : 1, leafSee = dark ? visionNow(world, 0) : 1;
+    const leafV = leafW * leafSee; // E2c: leaves are found by sight
     const fbBest = fallbackOn(P) ? bestFallbackNear(world, px, pz, x.sight, _fb) : 1;
-    offer('forage', -1, (fr ? fd * fbBest * leafV : h * P.fallbackForageW * fbBest * leafV + 0.03) - rain * 0.3);
+    // stage E1s (gutValue): the fallback's bout as the gut allows it (its intake at full light: fbBest × leafWorth × the
+    // animal's ripe-fruit rate); a factor of 1 with an empty gut, so the value is then today's exactly
+    if (gv) offer('forage', -1, fd * fbBest * leafV * fallbackGutFactor(c, P, fbBest * leafW * fruitRate(c, P).fruitPerH * fruitKcalPerUnit(P, false), leafSee) - rain * 0.3);
+    else offer('forage', -1, (fr ? fd * fbBest * leafV : h * P.fallbackForageW * fbBest * leafV + 0.03) - rain * 0.3);
     // field profile: leaving companions for a food tree of one's own has a cost (parties travel together; design, T-PTY-1)
     // stage E5a (cohesionValue): none; the companions value the leaver's company in their own choice to come
     const stay = cohesion ? 0 : (P.partyStayW > 0 ? P.partyStayW * Math.min(x.visibleOwn, P.partyStayMaxN) : 0) + oestrusNear;
@@ -918,6 +930,8 @@ export const cohesionOn = (P: Params): boolean => P.cohesionValue === 1 && P.par
 export const crownShareOn = (P: Params): boolean => P.crownShare === 1 && P.energyLedger === 1 && P.ledgerDrive === 1 && P.intakeValue === 1;
 /** Stage E3c (forageRate; docs/staging/e3c-prereg.md §5): feeding options valued by the net energy rate they promise (intake.ts netRateShare), with the ledger's drive and kcal. */
 export const forageRateOn = (P: Params): boolean => P.forageRate === 1 && P.energyLedger === 1 && P.ledgerDrive === 1 && P.intakeValue === 1;
+/** Stage E1s (gutValue; docs/staging/e1s-prereg.md §2): feeding options valued by the bout the gut allows (intake.ts gutRateShare, fallbackGutFactor); read only with forageRate and the gut's digesta. */
+export const gutValueOn = (P: Params): boolean => P.gutValue === 1 && forageRateOn(P) && P.ledgerDigesta === 1;
 
 const _tlB: TripLight = { pace: 1, see: 1 };
 /**
@@ -934,8 +948,9 @@ export function treeFoodWorth(world: World, c: Chimp, P: Params, t: Tree, crop: 
   // stage E2j (tripBodyCost): the climbing's time and a riding dependent's metres, as computeCandidates values a trip
   const tbc = tripBodyOn(P), xh = tbc ? tripClimbH(c, P, d, climb) : 0, ck = tbc ? riderKcal(world, c, P, d, climb, true) : 0;
   const yk = tripYieldOf(c, P) * share; // stage E3g (experienceValue bit 1): a trip at the meal the animal's trips deliver; E3h bit 4: × the chance of fruit
-  if (darkOn(P) && (tripLight(world, P, d, crownY, _tlB, spd).pace < 1 || _tlB.see < 1)) return fd * netRateShare(c, P, crop, feeders, d, climb, _tlB.pace, _tlB.see, spd, xh, ck, yk);
-  return fd * netRateShare(c, P, crop, feeders, d, climb, 1, 1, spd, xh, ck, yk);
+  const gv = gutValueOn(P), fig = t.common === 'fig'; // stage E1s (gutValue): the bout the gut allows, as computeCandidates values it
+  if (darkOn(P) && (tripLight(world, P, d, crownY, _tlB, spd).pace < 1 || _tlB.see < 1)) return fd * (gv ? gutRateShare(c, P, fig, crop, feeders, d, climb, _tlB.pace, _tlB.see, spd, xh, ck, yk) : netRateShare(c, P, crop, feeders, d, climb, _tlB.pace, _tlB.see, spd, xh, ck, yk));
+  return fd * (gv ? gutRateShare(c, P, fig, crop, feeders, d, climb, 1, 1, spd, xh, ck, yk) : netRateShare(c, P, crop, feeders, d, climb, 1, 1, spd, xh, ck, yk));
 }
 /** Party following runs: under cohesionValue, or (before E5a) while partyFollowW > 0, its gate (then partyFollowW is not read). */
 export const partyOn = (P: Params): boolean => cohesionOn(P) || P.partyFollowW > 0;

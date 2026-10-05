@@ -10864,6 +10864,37 @@
    "notes": "A dominant guard within this distance blocks courtship. Compressed stand-in scaled with sight (field ≈ compressed × 35/15, design)."
   },
   {
+   "id": "gutValue",
+   "group": "feeding",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/staging/e1r-prereg.md §9.6, §11-12 (E1r diagnosis, S39 and S31 seed 48): under forageRate a crown is worth a bout capped by the foregut's room counted in drupe units (nothing at a full gut) while the fallback where the animal stands keeps its full rate whatever the gut holds; depleted animals, kept hungry by E1i's reserve-weighted satiation, feed at a full foregut in 76-89% of their eating minutes in March-April and fill the gaps with the food the gut passes least energy from (fallback 1.57 absorbed kcal per g of dry matter, figs 1.83, drupes 2.36)",
+    "docs/research.md, Addendum: E1r lean season: verlindenWiley1989 (the digestive rate model, not verified) [L as read]; harrisonMarshall2011 (figs the main fallback, leaves and pith fillers; the chimpanzee gut poorly adapted to fallback foods) [M]; knott2005 (gut capacity limits feeding longer) [M]; uwimbabazi2019 (each food's energy and dry matter per feeding minute, already the registry's inputs) [H]"
+   ],
+   "clock": "none",
+   "symbol": "P.gutValue",
+   "file": "src/sim/intake.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage E1s switch (docs/staging/e1s-prereg.md §2 and the integrator's ruling below it): with 1 (read only with energyLedger, ledgerDigesta, ledgerDrive and forageRate 1) every feeding option (a crown in view, an own or known-tree trip, a joined or caller trip, the E3e belief draw and the fallback where the animal stands) is worth the energy of the bout the gut allows over the bout's time, each food in its own units (figs as figs): phase 1, the foregut's present room filled at the food's ingestion rate (its kcal per minute at the animal's size and skill, today's boutRoom form), up to the crop share; phase 2, the food at the rate a full foregut passes it (the foregut's dry-matter capacity / ledgerGutEmptyH / the food's dry matter per kcal) for as long as the gut takes to pass what it holds now (fill x ledgerGutEmptyH), while the bout is below the crop share and the animal's need (energyNeed in the food's own kcal, through its absorbed yield: non-fibre energy plus the fermented share of its fibre). Still a share of the animal's own full ripe-fruit rate, walk and climb as forageRate has them (energy.ts gutBout; intake.ts gutRateShare, fallbackGutFactor; candidates.ts). With an empty gut drupe crowns and the fallback keep today's values exactly and figs take their own ingestion rate; at a full gut foods rank by the energy per gram the gut passes, so a drupe crown in reach outranks the fallback here. A correction: no new magnitude, no counted entry switched out. 0 = today, bit for bit. Design."
+  },
+  {
    "id": "hazardBaseFloor",
    "group": "mortality",
    "value": 0.2,

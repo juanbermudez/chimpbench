@@ -331,6 +331,39 @@ export function boutRoom(c: Chimp, P: Params, R: number): number {
   return R > Q ? room * R / (R - Q) : Infinity;
 }
 
+/** Stage E1s (gutValue): the terms of a feeding bout on one food, in that food's own kcal (gutBout). */
+export interface GutBout {
+  /** Ingestion rate (kcal/h of the food) and the food's kcal per fruit unit (0 for the fallback). */ R: number; kcal: number;
+  /** Phase 1: energy taken while the foregut fills (boutRoom's form in the food's units; Infinity when it never fills). */ room: number;
+  /** Phase 2: what the foregut holds now, in the food's units, and the rate a full foregut passes the food (kcal/h). */ held: number; pass: number;
+  /** The animal's need (energyNeed) in the food's own kcal; 0 when it has none. */ need: number;
+}
+/**
+ * Stage E1s (gutValue; docs/staging/e1s-prereg.md §2 and the integrator's ruling below it): what one bout on food `kind`
+ * eaten at `R` kcal/h can take, in the food's own units (figs as figs). Phase 1, `room`: the foregut's present room
+ * filled at the ingestion rate, today's boutRoom form (the room plus what passes meanwhile at the full-gut rate);
+ * Infinity when the gut passes the food faster than it is eaten. Phase 2: the food at `pass`, the rate a full foregut
+ * passes it (dry-matter capacity ÷ the food's dry matter per kcal ÷ ledgerGutEmptyH), for as long as the gut takes to pass
+ * what it holds now (fill × ledgerGutEmptyH), i.e. `held`, those contents in the food's units. `need`: the animal's need
+ * (energyNeed, kcal the body draws) in the food's kcal, through the energy one kcal of the food yields (its non-fibre
+ * energy plus its fibre's fermented share at the fermentation yield, as gutEnergy counts it). Inputs: each food's
+ * measured energy and dry matter per feeding minute [H: uwimbabazi2019] and the model's own gut; the two-phase bout is a
+ * design assumption (the digestive rate model, verlindenWiley1989, not verified). Needs ledgerDigesta and ledgerDrive.
+ * Pure once the ledger and the drive's books are open (as gutRoom and energyNeed).
+ */
+export function gutBout(c: Chimp, P: Params, kind: FoodKind, R: number, out: GutBout): GutBout {
+  const D = rates(P).dig!, L = ledgerOf(c, P), f = D.food[kind];
+  if (L.dm === undefined) openDigesta(c, L, D, P);
+  const cap = D.capF * gutKg(c, P), room = (cap - L.dm!) / f.g, Q = cap / f.g / P.ledgerGutEmptyH;
+  out.R = R;
+  out.room = R > Q ? (room > 0 ? room : 0) * R / (R - Q) : Infinity;
+  out.held = L.dm! > 0 ? L.dm! / f.g : 0;
+  out.pass = Q;
+  const need = energyNeed(c, P);
+  out.need = need > 0 ? need / (f.nf + P.digestaFermentKcalPerG * D.ferm * f.fib) : 0;
+  return out;
+}
+
 /**
  * Stage E1e: the share of a full flow of milk the mother's glands give now (0..1): what they hold plus one tick of
  * synthesis, against one tick of full flow; a dry gland gives the trickle of synthesis. The infant senses the let-down on
