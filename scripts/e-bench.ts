@@ -626,6 +626,10 @@ function writeOutputs(parts: PartFile[], out: string, o: { label: string; mode: 
     if (canonJson(p.identity) !== id0) usage(`part of seed ${p.seed} was made from other code or data than seed ${parts[0].seed}`);
     if (p.mode !== parts[0].mode) usage(`part of seed ${p.seed} is mode ${p.mode}, seed ${parts[0].seed}'s ${parts[0].mode}`);
   }
+  // the scorer, the targets and the registry are this checkout's: parts measured under another protocol or registry would be
+  // scored by rules they were not measured under, so they are merged only from a checkout of their own commit
+  const ph = protocolHash();
+  if (parts[0].protocolHash !== ph || parts[0].registryHash !== REGISTRY_HASH) usage(`the parts were made under protocol ${parts[0].protocolHash} and registry ${parts[0].registryHash}; this checkout has ${ph} and ${REGISTRY_HASH}: merge them from a checkout of their commit (${parts[0].git.commit.slice(0, 10)})`);
   const cfg = parts[0].config, cardFile = `${out}.scorecard.json`;
   const card = buildScorecard(parts.map(p => p.field), { profile: cfg.profile, days: cfg.days, seeds, params: cfg.params as Record<string, number>, burnInDays: cfg.burnInDays, experimentsEvery: cfg.experimentEveryDays, truth: cfg.truth, observerSeed: cfg.observerSeed, workers: o.workers, t0: o.t0, poolMs: o.poolMs });
   writeFileSync(cardFile, JSON.stringify(card.json, null, 1));
