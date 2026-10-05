@@ -22,6 +22,7 @@ import { awakeInNest, byIdIn, index, isTreeId, ix, NEVER, TREE_ID0, treesNear, s
 import { bodyState, crownAt, crownMoveOn, gaitOn, riderKcal, runSpeedOf, tripBodyOn, tripClimbH, tripSpeed } from './gait';
 import { matingValueOn, paternityGain } from './mating';
 import { tripYieldOf } from './experience';
+import { fruitingCrop, listChanceOn, listShare, listSightOn } from './tripbelief';
 
 // Variants refine an action's meaning (why a charge happens) for execution and reason text.
 export const V = {
@@ -458,8 +459,11 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   const inCrown = crownMoveOn(P) ? crownAt(world, px, c.position[1], pz) : undefined;
   // stage E3g (experienceValue bit 1; experience.ts): a trip (travel true) is worth the meal the animal's trips deliver
   const tripK = tripYieldOf(c, P);
-  const rateWorth = (t: Tree, crop: number, feeders: number, d: number, travel = true): number => {
-    const yk = travel ? tripK : 1;
+  // stage E3h (tripBeliefs bit 4): `share` the chance that the crown is in fruit (a listed crown valued from the list alone):
+  // the bout expected there is that share of the bout a fruiting crown gives, its eating time with it (netRateShare's
+  // yieldK), so the trip is worth the long-run rate of an uncertain crown, expected gain over expected time [charnov1976]
+  const rateWorth = (t: Tree, crop: number, feeders: number, d: number, travel = true, share = 1): number => {
+    const yk = (travel ? tripK : 1) * share;
     // the climb: to the crown from the ground, or what is left of it inside this crown
     const crownY = t.height * CROWN_Y, climb = c.targetId === t.id || t === inCrown ? crownY - c.position[1] : crownY;
     const xh = tbc ? tripClimbH(c, P, d, climb) : 0, ck = tbc ? riderKcal(world, c, P, d, climb, travel) : 0;
@@ -518,7 +522,7 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
         const worth = fr ? fd * rateWorth(t, crop, 0, d) : (P.memCropBelief === 1 ? h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) : h * P.memTravelHungerW) * tripWorth(t, crop, 0, d);
         if (race) { const nr = rivalsAt(c, t.id); if (nr > 0) raceG = Math.max(raceG, raceStake(worth, crop, nr, need, arrivalLight(env.daylight, dLdt, d, P, spd))); } // stage E2b
         const tc = fr ? 0 : tripCost(worth, crop, d, h, P, needFruit(c, P, h), spd); // stage E3c: the walk's energy is in the rate
-        if (shortlist) { const rv = revisit(x, t.id, time, P); _mem.push(t, worth - tc - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD)); if (cb) _bl.push(crop, time - m.seenAt, d); continue; }
+        if (shortlist) { const rv = revisit(x, t.id, time, P); _mem.push(t, worth - tc - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD)); if (cb) _bl.push(crop, time - m.seenAt, d, NaN); continue; }
         if (!held) offer('travel', t.id, worth - tc - revisit(x, t.id, time, P) - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay - lost, V.TREE, -1, cb ? [t.id, crop, time - m.seenAt, 0, d] : null);
       } else if (m.kind === 'water' && c.age >= 3 && (water ? c.thirst > 0 : c.thirst > 0.25)) {
         const d = Math.hypot(m.position[0] - px, m.position[2] - pz);
@@ -530,27 +534,40 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     const known = s.knownTrees?.[c.troopId];
     let kt = known && _knownTrees.get(known);
     if (known && !kt) { kt = []; for (let i = 0; i < known.length; i += 2) kt.push(idx.treeById.get(known[i])); _knownTrees.set(known, kt); }
+    // stage E3h (tripBeliefs bit 1; tripbelief.ts): a listed crown the animal saw within memTravelHorizonH is valued by that
+    // sighting (empty included), its belief's age from it; an older sighting no longer stands in for the list
+    // stage E3h (tripBeliefs bit 4): a listed crown valued from the list alone is in fruit with the share the list holds for
+    // it, at the crop a fruiting crown of its capacity holds; it is worth that share of the trip's value there (the expected
+    // bout), and the choice samples it as in fruit or not (rg.ts beliefOffset)
+    const lsOn = listSightOn(P), chanceOn = listChanceOn(P);
     if (known && kt && shortlist && c.age >= 10) for (let i = 0; i < known.length; i += 2) {
       const id = known[i];
       if (stamped(_sight, id, st) || stamped(_mem2, id, st)) continue;
       const t = kt[i >> 1]; if (!t) continue;
       const d = dxz(t, px, pz);
       if (d < P.memoryTreeMinM) continue;
-      const crop = x.treeCrop?.[id] ?? known[i + 1], worth = fr ? fd * rateWorth(t, crop, 0, d) : h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) * tripWorth(t, crop, 0, d);
+      const seenAt = lsOn ? x.ls?.[id] : undefined, own = seenAt !== undefined && time - seenAt < P.memTravelHorizonH;
+      const fromList = (lsOn && seenAt !== undefined && !own) || x.treeCrop?.[id] === undefined;
+      const sh = chanceOn && fromList ? listShare(P, t, known[i + 1]) : NaN, chance = Number.isFinite(sh);
+      const crop = chance ? fruitingCrop(P, t) : fromList ? known[i + 1] : x.treeCrop![id];
+      const worth = fr ? fd * rateWorth(t, crop, 0, d, true, chance ? sh : 1) : (chance ? sh : 1) * h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) * tripWorth(t, crop, 0, d);
       if (race) { const nr = rivalsAt(c, id); if (nr > 0) raceG = Math.max(raceG, raceStake(worth, crop, nr, need, arrivalLight(env.daylight, dLdt, d, P, spd))); } // stage E2b
       const rv = revisit(x, id, time, P);
       _mem.push(t, worth - (fr ? 0 : tripCost(worth, crop, d, h, P, needFruit(c, P, h), spd)) - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD));
-      if (cb) _bl.push(crop, Infinity, d); // never in its own memory (the loop skips remembered trees)
+      if (cb) _bl.push(crop, own ? time - seenAt! : Infinity, d, sh); // never in its own memory (the loop skips remembered trees); E3h bit 1: its own sighting; bit 4: the share in fruit
     }
     // stage C7d (field; c7b-prereg §8.3): route chaining, the nearest unused known resource weighted by value (janson2014) [M]:
     // offer only the tree with the most believed value per metre, at its usual score. Stage C7e (§9): with goalDistScaleM D > 0
     // the rank is value × D / (D + d) instead, between route chaining (D → 0) and no distance preference (D → ∞); fitted (C7e) against Taï
     const D = P.goalDistScaleM;
+    // a shortlisted trip's belief (stage E3e): [tree, crop, hours since seen, feeders, distance] and, for a listed crown valued
+    // as a chance of fruit (E3h bit 4), the share in fruit
+    const belAt = (t: Tree, e: number): number[] => { const b = [t.id, _bl[4 * e], _bl[4 * e + 1], 0, _bl[4 * e + 2]]; if (Number.isFinite(_bl[4 * e + 3])) b.push(_bl[4 * e + 3]); return b; };
     if (shortlist && (D > 0 || P.routeChain === 1) && _rk.length) {
       let bi = -1, br = -Infinity;
       for (let i = 0; i < _rk.length; i++) { const r = D > 0 ? _rk[i] * D / (D + _dk[i]) : _rk[i] / _dk[i]; if (r > br) { br = r; bi = i; } }
       const t = _mem[2 * bi] as Tree, base = _mem[2 * bi + 1] as number;
-      const bel = cb ? [t.id, _bl[3 * bi], _bl[3 * bi + 1], 0, _bl[3 * bi + 2]] : null;
+      const bel = cb ? belAt(t, bi) : null;
       _mem.length = 0; _bl.length = 0;
       if (!held) offer('travel', t.id, base - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay - lost, V.TREE, -1, bel);
     }
@@ -558,8 +575,8 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       let bi = 1;
       for (let i = 3; i < _mem.length; i += 2) if ((_mem[i] as number) > (_mem[bi] as number)) bi = i;
       const t = _mem[bi - 1] as Tree, base = _mem[bi] as number, e = (bi - 1) >> 1;
-      const bel = cb ? [t.id, _bl[3 * e], _bl[3 * e + 1], 0, _bl[3 * e + 2]] : null;
-      _mem.splice(bi - 1, 2); if (cb) _bl.splice(3 * e, 3);
+      const bel = cb ? belAt(t, e) : null;
+      _mem.splice(bi - 1, 2); if (cb) _bl.splice(4 * e, 4);
       if (!held) offer('travel', t.id, base - rain * 0.4 - territoryCost(world, c, t.position[0], t.position[2], P, lv, tg) * 0.8 - coreCostOf(t, coreW, troop, x) + socFruit - stay - lost, V.TREE, -1, bel);
     }
     const callerRate = socialBit(P, 4) && cohesion && fr; // stage E5e: see the branch below
@@ -898,14 +915,14 @@ const _tlB: TripLight = { pace: 1, see: 1 };
  * walk and the climb in it; E2c's light on the way and on arrival), as computeCandidates values it. rg.ts evaluates it
  * at the crop the animal believes and at a crop drawn from that belief. Pure.
  */
-export function treeFoodWorth(world: World, c: Chimp, P: Params, t: Tree, crop: number, feeders: number, d: number): number {
+export function treeFoodWorth(world: World, c: Chimp, P: Params, t: Tree, crop: number, feeders: number, d: number, share = 1): number {
   // stage E1q (crownMove): a crown the animal is in is climbed from its height (moveTo reaches it through the crown)
   const here = c.targetId === t.id || (crownMoveOn(P) && crownAt(world, c.position[0], c.position[1], c.position[2]) === t);
   const fd = c.hunger * 1.6 + 0.1, crownY = t.height * CROWN_Y, climb = here ? crownY - c.position[1] : crownY;
   const spd = tripSpeed(world, c, P); // stage E2i (walkGait): gait.ts, walkMps when off
   // stage E2j (tripBodyCost): the climbing's time and a riding dependent's metres, as computeCandidates values a trip
   const tbc = tripBodyOn(P), xh = tbc ? tripClimbH(c, P, d, climb) : 0, ck = tbc ? riderKcal(world, c, P, d, climb, true) : 0;
-  const yk = tripYieldOf(c, P); // stage E3g (experienceValue bit 1): a trip at the meal the animal's trips deliver
+  const yk = tripYieldOf(c, P) * share; // stage E3g (experienceValue bit 1): a trip at the meal the animal's trips deliver; E3h bit 4: × the chance of fruit
   if (darkOn(P) && (tripLight(world, P, d, crownY, _tlB, spd).pace < 1 || _tlB.see < 1)) return fd * netRateShare(c, P, crop, feeders, d, climb, _tlB.pace, _tlB.see, spd, xh, ck, yk);
   return fd * netRateShare(c, P, crop, feeders, d, climb, 1, 1, spd, xh, ck, yk);
 }

@@ -14,6 +14,7 @@ import { noteFeeders } from './departure';
 import { darkOn, sightAt, visionNow } from './light';
 import { NEVER, aliveNear, awakeInNest, byIdIn, index, isTreeId, ix, simOf, treesNear } from './state';
 import { patrolValueOn, rememberRivals } from './patrol';
+import { listedTrees, listSightOn } from './tripbelief';
 
 export const IMPULSE_TRANSFER = 1, IMPULSE_ESCALATE = 2, IMPULSE_INFANTICIDE = 3, IMPULSE_RAIN = 4, IMPULSE_GANG = 5, IMPULSE_PATROL = 6, IMPULSE_HUNT = 7;
 
@@ -178,12 +179,16 @@ export function perceive(world: World, c: Chimp): void {
   const lazy = P.patchEcology === 1;
   // stage E2b (departRace): who was seen feeding in a crown is kept beside the crop belief (departure.ts)
   const race = P.departRace === 1;
+  // stage E3h (tripBeliefs bit 1; tripbelief.ts): a crown on the community's list that the animal sees is valued by what it
+  // saw, an empty crown included (an empty tree is learned on arrival: janmaat2013b); the hour of the sighting is kept
+  const listed = listSightOn(P) ? listedTrees(world, c.troopId) : null;
   for (let k = 0; k < n; k++) {
     const t = world.trees[_trees[k]];
     const f = lazy ? fruitAt(world, t) : t.fruit;
     if (f > x.fruitNear) x.fruitNear = f;
+    if (listed !== null && listed.has(t.id)) { (x.treeCrop ??= {})[t.id] = Math.round(f * 1000) / 1000; (x.ls ??= {})[t.id] = time; if (race) noteFeeders(c, t.id, byId); }
     // stage C7a (field): what is seen of a remembered crown replaces the belief about it
-    if (x.treeCrop && x.treeCrop[t.id] !== undefined) {
+    else if (x.treeCrop && x.treeCrop[t.id] !== undefined) {
       if (f < 0.04) { delete x.treeCrop[t.id]; if (x.treeFeed) delete x.treeFeed[t.id]; } else { x.treeCrop[t.id] = Math.round(f * 1000) / 1000; if (race) noteFeeders(c, t.id, byId); }
     }
     if (f < 0.06) { if (f < 0.04) forget(c, t.id, 'tree'); continue; }
@@ -422,14 +427,18 @@ setHearHook(hear);
 
 /** Daily (stage C7a, field): drop crop beliefs about trees no longer remembered, so the record stays as small as memory. */
 export function dailyBeliefs(world: World): void {
-  if (paramsOf(world).memCropBelief !== 1) return;
+  const P = paramsOf(world);
+  if (P.memCropBelief !== 1) return;
+  // stage E3h (tripBeliefs bit 1): a sighting of a listed crown is kept as long as a remembered crown is a travel goal
+  const lsOn = listSightOn(P), now = world.time;
   for (const c of index(world).alive) {
-    const b = ix(c).treeCrop;
+    const b = ix(c).treeCrop, ls = lsOn ? ix(c).ls : undefined;
+    if (ls) for (const key in ls) if (now - ls[+key] >= P.memTravelHorizonH) delete ls[key];
     if (!b) continue;
     for (const key in b) {
       const id = +key;
-      let kept = false;
-      for (let i = 0; i < c.memory.length; i++) if (c.memory[i].kind === 'tree' && c.memory[i].entityId === id) { kept = true; break; }
+      let kept = ls !== undefined && ls[id] !== undefined;
+      for (let i = 0; i < c.memory.length && !kept; i++) if (c.memory[i].kind === 'tree' && c.memory[i].entityId === id) { kept = true; break; }
       if (!kept) delete b[key];
     }
     const fd = ix(c).treeFeed; // stage E2b: the feeders record follows the crop belief
