@@ -3866,6 +3866,218 @@ OpenAlex holds no abstract, so it is listed as not verified. Paraphrased, not qu
   verified).
 - harrisonMarshall2011, wrangham1991 and pontzerWrangham2004 are already listed; the entry above adds findings.
 
+### Gut inputs audit (stage E1u, 5 October 2026)
+
+Read for stage E1u (docs/staging/e1u-prereg.md): data for each assumed input of the gut (`digestaGutMlPerKg`,
+`digestaForegutShare`, `digestaForegutDmGPerMl`, `ledgerGutEmptyH`, `digestaHindgutDmGPerMl`, `digestaMrtH`,
+`digestaNdfDigestibility`, `digestaFermentKcalPerG`, `digestaTefFrac`, `ledgerGutCapKcalPerKg`), what the measured
+fallback rates (`digestaFallbackDmGPerMin`, `digestaFallbackNdf`) measure, and wadging. Order of preference:
+chimpanzees, other great apes, other primates with a simple gut, then pigs and humans as labelled cross-species
+fallbacks. Bibliographic data checked against Crossref on 5 October 2026 (FAO 2003 and the Milton 1987 chapter have no
+DOI). Access: NCBI BioC and E-utilities for PMC texts and PubMed abstracts; publisher open-access pages; the Kibale
+Chimpanzee Project site (JSTOR scan of wrangham1991); fao.org; the Cambridge open-access PDF of livesey1992. Hosts that
+answered with a challenge were dropped at the first one and not worked around: hal.science (not retried; barred since
+§E.25), jn.nutrition.org and the publisher page of miltonDemment1988 (Cloudflare), link.springer.com ("client
+challenge"), the Harvard DASH copy of potts2011 (CAPTCHA this time), europepmc.org's PDF renderer and Deep Blue
+(Cloudflare), MPG.PuRe (bot check); academia.edu returned 403. Three research subagents read the sources in full or in
+abstract ("(subagent)"); the agent re-read every load-bearing passage below from the subagents' saved texts or the
+source itself ("re-checked"). Paraphrased, not quoted. Field values stay targets: nothing below is entered as an input
+by this stage.
+
+**Wadging and what the fallback rates measure**
+- **What the pith dry-matter rate measures** [uwimbabazi2019] (FT, author manuscript NIHMS1029101 through NCBI BioC,
+  re-read by the agent) [H] for the method as described. Extends §E.21.
+  - A food unit was set by how the chimpanzees processed the item before ingesting it; for pith and bark, the length
+    picked per minute (their example: 50 cm of *Aframomum angustifolium* pith eaten in 2 min = 25 cm per minute).
+    Young leaves: a strip of leaves picked, counted by its leaves.
+  - Unit mass: at least 30 wet units per item from the plant eaten or a neighbour, processed to mimic the chimpanzees
+    (the example given: seeds spat out are removed), dried and corrected to 105 °C dry matter. Rate = units per minute
+    × wet unit mass × dry ÷ wet ("dry weight ingested per minute"). No wadge was weighed or subtracted.
+  - Discussion: high-fibre parts were often discarded as a wadge or passed in faeces. Figs are normally eaten whole.
+  - Table 2 (% organic matter): pith NDF 58.1, ADF 32.8, lignin 5.1, hemicellulose 25.3, cellulose 27.7; lignin of
+    young leaves 10.4, non-fig fruit 10.9, figs 17.3. Derived lignin ÷ NDF: pith 0.09, young leaves 0.24, non-fig fruit
+    0.29, figs 0.35.
+  - Table 4, NDF intake at the formula's 1.6 kcal/g: non-fig days 638.0 ± 46.7, fig days 722.9 ± 25.5, leaf-and-pith
+    days 534.9 ± 27.8 kcal; derived 399, 452 and 334 g of NDF handled a day.
+  - Reading: the pith rate (1.8 g/min) and its composition are those of the peeled pith picked and chewed, i.e. mass
+    handled; the fibre later spat out as a wadge is inside both. The swallowed share is not measured.
+- **Same data, how pith was processed** [uwimbabazi2021] (FT, PMC8225573 through BioC; subagent; re-checked) [M]: where
+  the chimpanzee removed the outer part of the stem, so did the samplers before weighing a unit; a bout lasted until
+  the animal stopped chewing (up to 5 min). No wadge is mentioned. Confirms mass handled.
+- **Pith at Kanyawara: intake, composition, dung and the published discussion** [wrangham1991] (FT, JSTOR scan on the
+  Kibale Chimpanzee Project site; subagent; re-checked) [M]. Extends §E.21's subagent entry.
+  - Chimpanzees break the tough peel and extract the central pith. Pith intake was measured on 5 occasions (bouts of
+    1–23 min), the amount reconstructed from the remains of the peel: 5–54 g wet per minute. Derived at the table's
+    11.9% dry matter: 0.6–6.4 g of dry matter handled per minute (uwimbabazi2019's pith range is 1.0–3.1).
+  - Table 1 (% of dry matter; parts eaten): Kanyawara pith (8 species) room-temperature dry matter 11.9%, ash 13.4,
+    hemicellulose + cellulose 46.9, NDF 50.5; Kanyawara leaves (4 species) dry matter 24.8%, NDF 41.5. Piths had less
+    lignin than leaves; the authors read them as a source of "fermentable fibre".
+  - Dung: long fibrous strands, assumed to come only from herbaceous piths, in 93.8% of Kanyawara (n 839) and 94.9% of
+    Ngogo dungs (n 416); monthly mean score 0.9–3.8 at Kanyawara (about 0.5–10% of dung wet mass). Green leaf
+    fragments in 28.4% and 18.2% of dungs (about 0.2% of dung wet mass).
+  - Published discussion: Milton suggests that considerable pith may not be swallowed; Conklin answers that it is not
+    yet known what percentage of pith is wadged rather than swallowed, and that chimpanzees wadge pith and fruit.
+- **Pith wadging differs by species** [freymann2024] (FT, PLoS ONE; subagent; re-checked) [M] (Budongo, qualitative):
+  *Marantochloa leucantha* pith was stripped, chewed and spat out once its juice was extracted; *Acanthus
+  polystachyus* pith was stripped, chewed and swallowed. Both are eaten at Kibale.
+- **Decaying Raphia pith** [reynolds2009] (FT, PLoS ONE; subagent; re-checked) [M] (Budongo, a sodium source): the
+  chimpanzees chew the pith, swallow the juice and some woody particles, and spit a fibrous wadge. Qualitative.
+- **Wadging named in a gorilla comparison** [masi2015] (FT, already listed; subagent; re-checked) [L] as an
+  observation: chimpanzees usually make wadges of figs to reject the most fibrous part and discard part of the pith of
+  *Aframomum*, which gorillas swallow (the author's personal observation; site not stated).
+- **Faecal dry matter, and no fig wadging at Kanyawara** [weary2017] (FT, PMC5493990 through BioC; subagent;
+  re-checked) [M].
+  - 130 fresh faecal samples of 38 wild Kanyawara chimpanzees, subsamples dried at 71 °C. Table 2, dry matter (% of
+    wet weight): January, *Ficus natalensis* season, 26.0 ± 2.3 (21.3–29.3; 17 samples, large seeds 0.02 of dry
+    matter); July, *Pseudospondias*, 35.4 ± 11.8; July–August, *Linociera*, 31.7 ± 8.7. Dry matter rose with the share
+    of large seeds (r 0.58); the authors judge the subsamples unreliable for their sieve arithmetic.
+  - Kanyawara chimpanzees do not wadge the figs of *F. natalensis*. The coarsest sieve often held long fibrous strands
+    of stems or whole leaves; seeds of ripe fruit are often swallowed unchewed.
+- Young leaves: no source found that describes chimpanzees wadging young leaves at Kanyawara or Ngogo; leaf fragments
+  are in dung (wrangham1991).
+
+**Gut volume and the dry matter of digesta**
+- **Gut proportions of apes** [milton1987] (metadata only; the values read on a secondary web page [billings]) [L]:
+  Milton's Table 3.2 (p. 99; data from chiversHladik1980 and Hladik 1967; unscaled for body size): orangutans and
+  chimpanzees pooled, stomach 17–20%, small intestine 23–28%, colon 52–54% of gut volume; humans 10–24%, 56–67% and
+  17–23%. Derived: stomach + small intestine 40–48%, caecum at most 8%. One captive female's stomach held 29% of her
+  tract's volume (965 of 3,322 cm³, nakamura2017): the two do not agree.
+- **Digesta dry matter along a simple gut, pigs** [jerezBogota2025] (FT, BMC Microbiology; subagent; re-checked) [M]
+  cross-species: organic pigs three weeks after weaning, fed ad libitum, digesta freeze-dried (Table 3): stomach
+  22.2–27.4%, ileum 12.7–13.7%, caecum 12.9–15.6%, mid-colon 20.8–23.3% dry matter.
+- **What leaves the human small intestine** [highamRead1992] (FT, publisher PDF; subagent; re-checked) [M]
+  cross-species: 5 people with ileostomies on their usual diet passed 526.9 ± 39.6 g wet and 55.80 ± 3.37 g dry
+  effluent a day; water 891 g/kg (about 11% dry matter).
+- **Human stool** [sender2016] (FT, PMC through BioC; subagent; re-checked) [M] cross-species: dry matter 22–31% of
+  stool across studies, mean 27 ± 2% (Table 2).
+- **Human colonic content follows the residue eaten** [bendezu2017] (Abs, PubMed; re-checked) [M] cross-species: by
+  MRI in 10 people, non-gaseous colonic content was 479 ± 36 mL after 3 days on a low-residue diet and 616 ± 55 mL on
+  a high-residue diet (faecal output 145 and 223 mL a day), with about a third turned over daily. Direction: the
+  hindgut's content grows with fibre eaten; it is not a fixed capacity.
+- **Human gastric capacity** [geliebter2013] (FT, PMC through BioC; subagent; re-checked) [M] cross-species: about 1 L
+  for a lean person (a 500-mL balloon is about half of it). No ape or monkey stomach (meal) capacity was found.
+
+**Emptying and passage**
+- **Gastric emptying of a solid meal, humans** [tougas2000] (Abs, PubMed; re-checked) [H] cross-species: 123 healthy
+  volunteers, a low-fat egg meal (255 kcal in the consensus protocol): median gastric retention 69% at 1 h, 24% at 2 h,
+  1.2% at 4 h. Derived: mean gastric residence about 1.6 h.
+- **Small-bowel transit, humans** [szarkaCamilleri2012] (FT, author manuscript through BioC; subagent; re-checked) [M]
+  review: radiopaque markers with a 400-kcal meal, median small-bowel residence 3.2 h (83 healthy subjects); wireless
+  motility capsule, median 276 min (IQR 240–354; 66 healthy subjects). Derived with tougas2000: stomach + small
+  intestine about 4.8 h for a meal marker.
+- **Macaques** (Abs, PubMed; re-checked) [M]: fed cynomolgus monkeys, a liquid marker after a biscuit: gastric
+  half-emptying 143.5 min (CV about 80%), median oro-caecal transit 1.8 h, about 2 h shorter than in humans
+  [kondo2003]; small-intestine transit 2.2–4.2 h fasted and 2.2–3.2 h fed [ikegami2003].
+- **Gastric emptying is regulated in calories** (Abs, PubMed; re-checked) [M]: 4 male rhesus macaques, liquid meals
+  by cannula: glucose, protein and fat meals emptied at about 0.4 kcal/min whatever their concentration
+  [mchughMoran1979]; in humans glucose emptied at 2.13 kcal/min [brener1983] (subjects' masses not in the abstracts).
+- **Ape passage times** [remis2000] (Abs, PubMed; re-checked) [M]: 6 captive gorillas fed 480 plastic markers, adult
+  mean retention 50 h; it cites 31 h for chimpanzees on a similar diet (Lambert's 1997 thesis, not read).
+- **Passage and intake across primates** [clauss2008] (Abs, PubMed; re-checked) [M]: 19 captive primate species with
+  mean retention time and dry-matter intake measured together: retention is not related to body mass but falls with
+  relative intake (g/kg^0.75/d) and varies with diet; species range from an "efficiency" end (low intake, long
+  retention, high fibre digestibility) to an "intake" end (high intake, short retention, low fibre digestibility), and
+  simple-stomached species span the whole range.
+
+**Energy from fibre and diet-induced thermogenesis**
+- **Energy from fermented fibre, food standards** [fao2003] (FT, fao.org chapter 3; subagent; re-checked) [M]
+  cross-species (human nutrition):
+  - Table 3.3: fermentable fibre 11 kJ/g (2.6 kcal/g) metabolisable and 8 kJ/g (1.9) net metabolisable energy;
+    fibre in conventional foods 8 and 6 kJ/g, assumed 70% fermentable (§3.5.2), some energy being lost as gas and
+    as faecal bacteria.
+  - §3.7: requirements measured as heat production (doubly labelled water, calorimetry) include the heat of
+    fermentation and obligatory thermogenesis.
+- **The terms of fibre's energy value** [livesey1992] (FT, Cambridge open-access PDF; subagent; re-checked) [M]
+  cross-species: in mixed human diets unavailable carbohydrate gives 8.4 kJ/g of digestible energy, from a heat of
+  combustion of 17 kJ/g (fruit fibre 16.5), an apparent digestibility of 0.7 and 0.3 kJ of faecal bacterial energy per
+  kJ fermented; net energy = (1 − bacterial loss − heat of fermentation − combustible gases) × the efficiency of
+  short-chain fatty acids (0.85), the heat of fermentation about 0.063–0.07 of the energy fermented (ruminants, in
+  vitro and in vivo). Derived: the fatty-acid energy absorbed per gram of fibre fermented is about 2.4–2.6 kcal; the
+  digestible energy per gram fermented about 2.8–2.9 kcal.
+- **Thermogenesis after a high-fibre meal** [raben1994] (Abs, PubMed; re-checked) [M] cross-species: 10 men; 6-h
+  diet-induced thermogenesis 416.4 ± 28.6 kJ after a high-fibre meal against 498.5 ± 23.1 kJ after an isoenergetic
+  low-fibre one (about 0.84, derived; the difference tracked the meals' palatability). No diet-induced thermogenesis
+  of any non-human primate was found.
+
+**Searched and not found, or not reached (at most three routes per source)**
+- Not found: a stomach or meal capacity of any ape or monkey; the dry matter of ape or monkey gut contents other than
+  faeces; human gastric chyme dry matter after a solid meal; the NDF share of chimpanzee faecal or colonic dry matter;
+  gastric emptying of digesta in chimpanzees (only capsules, ardente2011); a wadge mass or swallowed share of pith or
+  fibrous fruit in any ape (Europe PMC phrase searches for weighed wadges returned none); a fibre digestibility of any
+  wild ape; diet-induced thermogenesis in any non-human primate; within-species (ontogenetic) scaling of a simple
+  gut's capacity.
+- Not reached: chiversHladik1980 full text (HAL only; the captive female's mass and the volume method stay unknown);
+  miltonDemment1988 full text (dry-matter intake, body masses, the low-fibre diet's digestibilities); Lambert 1997
+  thesis, Lambert 1998 (*Evolutionary Anthropology* 7:8–20), lambert2002, Caton et al. 1999 and remisDierenfeld2004 full
+  texts (Springer challenge or closed); the Wrangham, Conklin-Brittain & Hunt 1998 and conklinBrittain1998 full texts (closed); potts2011 (CAPTCHA
+  this time; earlier entries stand); nguessan2009's wadge method (a search snippet only, not used).
+
+**Sources:**
+- *new* billings: Billings T. Overview of digestive system morphology in primates and humans. *Comparative anatomy and
+  physiology brought up to date*, part 6C. beyondveg.com,
+  [https://www.beyondveg.com/billings-t/comp-anat/comp-anat-6c.shtml](https://www.beyondveg.com/billings-t/comp-anat/comp-anat-6c.shtml)
+  (web page, read; secondary, used only for milton1987's table).
+- *new* milton1987: Milton K 1987. Primate diets and gut morphology: implications for hominid evolution. In: Harris M,
+  Ross EB (eds) *Food and Evolution: Toward a Theory of Human Food Habits*. Temple University Press (metadata only;
+  Table 3.2 read through billings).
+- *new* weary2017: Weary TE, Wrangham RW, Clauss M 2017. Applying wet sieving fecal particle size measurement to
+  frugivores: a case study of the eastern chimpanzee (*Pan troglodytes schweinfurthii*). *American Journal of Physical
+  Anthropology* 163(3):510–518. [doi:10.1002/ajpa.23225](https://doi.org/10.1002/ajpa.23225) (FT, PMC5493990).
+- *new* freymann2024: Freymann E, Carvalho S, Garbe LA et al. 2024. Pharmacological and behavioral investigation of
+  putative self-medicative plants in Budongo chimpanzee diets. *PLoS ONE* 19(6):e0305219.
+  [doi:10.1371/journal.pone.0305219](https://doi.org/10.1371/journal.pone.0305219) (FT).
+- *new* reynolds2009: Reynolds V, Lloyd AW, Babweteera F, English CJ 2009. Decaying *Raphia farinifera* palm trees
+  provide a source of sodium for wild chimpanzees in the Budongo Forest, Uganda. *PLoS ONE* 4(7):e6194.
+  [doi:10.1371/journal.pone.0006194](https://doi.org/10.1371/journal.pone.0006194) (FT).
+- *new* jerezBogota2025: Jerez-Bogota K, Jensen M, Højberg O, Canibe N 2025. Effects of supplementation of garlic with
+  apple pomace or blackcurrant on the gastrointestinal microbial ecosystem of organic pigs after weaning. *BMC
+  Microbiology* 25:608. [doi:10.1186/s12866-025-04247-2](https://doi.org/10.1186/s12866-025-04247-2) (FT).
+- *new* highamRead1992: Higham SE, Read NW 1992. The effect of ingestion of guar gum on ileostomy effluent. *British
+  Journal of Nutrition* 67(1):115–122. [doi:10.1079/BJN19920013](https://doi.org/10.1079/BJN19920013) (FT).
+- *new* sender2016: Sender R, Fuchs S, Milo R 2016. Revised estimates for the number of human and bacteria cells in the
+  body. *PLoS Biology* 14(8):e1002533. [doi:10.1371/journal.pbio.1002533](https://doi.org/10.1371/journal.pbio.1002533)
+  (FT).
+- *new* bendezu2017: Bendezú RA, Mego M, Monclus E, Merino X, Accarino A, Malagelada JR, Navazo I, Azpiroz F 2017.
+  Colonic content: effect of diet, meals, and defecation. *Neurogastroenterology & Motility* 29(2):e12930.
+  [doi:10.1111/nmo.12930](https://doi.org/10.1111/nmo.12930) (Abs).
+- *new* geliebter2013: Geliebter A 2013. Neuroimaging of gastric distension and gastric bypass surgery. *Appetite*
+  71:459–465. [doi:10.1016/j.appet.2013.07.002](https://doi.org/10.1016/j.appet.2013.07.002) (FT).
+- *new* tougas2000: Tougas G, Eaker EY, Abell TL et al. 2000. Assessment of gastric emptying using a low fat meal:
+  establishment of international control values. *American Journal of Gastroenterology* 95(6):1456–1462.
+  [doi:10.1111/j.1572-0241.2000.02076.x](https://doi.org/10.1111/j.1572-0241.2000.02076.x) (Abs).
+- *new* szarkaCamilleri2012: Szarka LA, Camilleri M 2012. Methods for the assessment of small-bowel and colonic
+  transit. *Seminars in Nuclear Medicine* 42(2):113–123.
+  [doi:10.1053/j.semnuclmed.2011.10.004](https://doi.org/10.1053/j.semnuclmed.2011.10.004) (FT, author manuscript).
+- *new* kondo2003: Kondo H, Watanabe T, Yokohama S, Watanabe J 2003. Effect of food on gastrointestinal transit of
+  liquids in cynomolgus monkeys. *Biopharmaceutics & Drug Disposition* 24(4):141–151.
+  [doi:10.1002/bdd.349](https://doi.org/10.1002/bdd.349) (Abs).
+- *new* ikegami2003: Ikegami K, Tagawa K, Narisawa S, Osawa T 2003. Suitability of the cynomolgus monkey as an animal
+  model for drug absorption studies of oral dosage forms from the viewpoint of gastrointestinal physiology. *Biological
+  and Pharmaceutical Bulletin* 26(10):1442–1447. [doi:10.1248/bpb.26.1442](https://doi.org/10.1248/bpb.26.1442) (Abs).
+- *new* mchughMoran1979: McHugh PR, Moran TH 1979. Calories and gastric emptying: a regulatory capacity with
+  implications for feeding. *American Journal of Physiology* 236(5):R254–R260.
+  [doi:10.1152/ajpregu.1979.236.5.R254](https://doi.org/10.1152/ajpregu.1979.236.5.R254) (Abs).
+- *new* brener1983: Brener W, Hendrix TR, McHugh PR 1983. Regulation of the gastric emptying of glucose.
+  *Gastroenterology* 85(1):76–82. [doi:10.1016/S0016-5085(83)80232-7](https://doi.org/10.1016/S0016-5085(83)80232-7)
+  (Abs).
+- *new* remis2000: Remis MJ 2000. Initial studies on the contributions of body size and gastrointestinal passage rates
+  to dietary flexibility among gorillas. *American Journal of Physical Anthropology* 112(2):171–180.
+  [doi:10.1002/(SICI)1096-8644(2000)112:2<171::AID-AJPA4>3.0.CO;2-F](https://doi.org/10.1002/(SICI)1096-8644(2000)112:2%3C171::AID-AJPA4%3E3.0.CO;2-F)
+  (Abs).
+- *new* clauss2008: Clauss M, Streich WJ, Nunn CL, Ortmann S, Hohmann G, Schwarm A, Hummel J 2008. The influence of
+  natural diet composition, food intake level, and body size on ingesta passage in primates. *Comparative Biochemistry
+  and Physiology A* 150(3):274–281. [doi:10.1016/j.cbpa.2008.03.012](https://doi.org/10.1016/j.cbpa.2008.03.012) (Abs).
+- *new* fao2003: FAO 2003. *Food energy: methods of analysis and conversion factors.* Report of a technical workshop.
+  FAO Food and Nutrition Paper 77. Rome: Food and Agriculture Organization of the United Nations (FT, fao.org; no DOI).
+- *new* livesey1992: Livesey G 1992. The energy values of dietary fibre and sugar alcohols for man. *Nutrition Research
+  Reviews* 5(1):61–84. [doi:10.1079/NRR19920007](https://doi.org/10.1079/NRR19920007) (FT).
+- *new* raben1994: Raben A, Christensen NJ, Madsen J, Holst JJ, Astrup A 1994. Decreased postprandial thermogenesis
+  and fat oxidation but increased fullness after a high-fiber meal compared with a low-fiber meal. *American Journal of
+  Clinical Nutrition* 59(6):1386–1394. [doi:10.1093/ajcn/59.6.1386](https://doi.org/10.1093/ajcn/59.6.1386) (Abs).
+- uwimbabazi2019, uwimbabazi2021, wrangham1991, masi2015, nakamura2017, chiversHladik1980, ardente2011,
+  miltonDemment1988, lambert2002, remisDierenfeld2004, conklinBrittain1998, potts2011 and nguessan2009 are already
+  listed; the entries above add findings or access notes.
+
 ## Recurrent decision model framing (Track R, 5 October 2026)
 
 Read for stage R0 ([recurrent-decision-model.md](recurrent-decision-model.md)): where ChimpBench's loop (a memoryless
