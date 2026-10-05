@@ -105,6 +105,26 @@ for (const p of providers) {
     cellOut[cell] = { n: set.length, agreeN: agree.length, top: ds };
   }
   res.cells = cellOut;
+  // exploratory (not registered): which food option. Draws with two or more food options whose net rates differ by 50 kcal/h
+  // or more: where the provider's food probability peaks, against the option with the higher rate; the rules' own pick
+  // when it is a food option
+  {
+    const FOODF = ['feed', 'food-trip'];
+    let n = 0, oldHi = 0, newHi = 0, rulesFood = 0, rulesHi = 0;
+    for (const r of draws) {
+      const food = r.options.map((o, i) => i).filter(i => FOODF.includes(r.options[i].family) && r.context.candidates[i]?.value?.kcalH !== undefined);
+      if (food.length < 2) continue;
+      const kc = food.map(i => r.context.candidates[i].value!.kcalH!), best = food[kc.indexOf(Math.max(...kc))];
+      if (Math.max(...kc) - Math.min(...kc) < 50) continue;
+      n++;
+      const peak = (obs: 'Old' | 'New') => { const pr = S.get(r.id)![pk(p, obs)]; return food.reduce((b, i) => pr[i] > pr[b] ? i : b, food[0]); };
+      if (peak('Old') === best) oldHi++;
+      if (peak('New') === best) newHi++;
+      if (food.includes(r.rgIndex)) { rulesFood++; if (r.rgIndex === best) rulesHi++; }
+    }
+    md.push('', `### ${p}: which food (exploratory, not registered)`, '', `Draws with two or more food options whose net rates differ by ≥ 50 kcal/h: ${n}. The provider's food probability peaks on the higher-rate option in ${pct(oldHi / n)} (old) and ${pct(newHi / n)} (new); the rules, when they choose food (${rulesFood}), choose the higher-rate option in ${pct(rulesHi / rulesFood)}.`);
+    res.whichFood = { n, old: oldHi / n, new: newHi / n, rulesFood, rulesHigher: rulesHi / rulesFood };
+  }
   json[p] = res;
   md.push('');
 }
