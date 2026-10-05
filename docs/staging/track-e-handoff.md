@@ -14,7 +14,7 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (5 October 19:05; deploy held by the user).** **S39 is not viable at 12 months** (starvation in 3 of
+- **Running now (5 October 18:52; deploy held by the user).** **S39 is not viable at 12 months** (starvation in 3 of
   4 runs; e-rebaseline.md); E1r found a full-gut valuation trap (merged a9739c3). **E1s** (`gutValue`) stopped after 3 iterations, none passing (merged 1c1bcb2, switch 0): the trap is gone but depleted
   animals walk 2–3× farther and starve sooner (11, 9, 3 deaths on seeds 48 + 7 at 6 months; S39 0); lessons in
   e1s-prereg.md §8.8. **E1t** (`horizonLived`) is **not kept** by its registered 12-month rule (e1t-prereg.md §9: 8 starvation deaths
