@@ -4614,3 +4614,15 @@ noise: held (fitted z −0.1, held-out −0.4, without the rare rows +0.4). Hunt
 2 passes the keep rule for a correction twice but costs other females a little reserve each time (0.011–0.013 %/day); why
 a hunting-encounter correction moves females' energy is not yet known (fewer hunts and less meat shared is one reading, not
 tested).
+
+## S37 confirm (registered 4 October 2026 before its run)
+
+**S37 = S34 + E5g's `callGaps` 7** (the 0.5-h reunion-call gap and the snake-alarm repeat penalty out with no
+replacement; the 60-s alarm-hoo cadence replaced by a hoo whenever the caller sees a community member not yet aware of the
+snake: 42 on the current ledger, S34 45). **Reference group:** the S27 confirm group (against which S34 was judged). The arm
+runs from bench-run4 moved to this commit. Keep rule: standard (45 → 42); rare rows per amendment 3; night safe. Bench,
+energy-diagnose and rhythm-metrics, 5 seeds, 30 + 60 days; judged with `integrator/judge_s27group.py`.
+
+**Predictions (against the S27 group; moderate confidence unless stated).** 42 (high). Viability and night safety pass.
+Sums inside noise. E5g's watch list within the group's spread (low): T-COM-2, T-COM-9, T-SOC-9 and juveniles' eating time
+(E5g's quick z −2.2). T-COM-11 stays below its band (0.25–0.55; no gap causes it, E5g).

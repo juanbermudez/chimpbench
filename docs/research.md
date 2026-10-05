@@ -3793,7 +3793,7 @@ behavioural input; one physiological value (sperm survival, human) enters as [L]
 - furuichiHashimoto2001, gomesBoesch2009 and robertsRoberts2015 are already cited ("Addendum: E4o three small rules");
   the entries above add findings and a correction.
 
-### Addendum: E5g calls and alarms (4 October 2026)
+### E.61 Addendum: E5g calls and alarms (4 October 2026)
 
 Read for stage E5g (docs/staging/e5g-prereg.md): how wild chimpanzees repeat alarm calls at a snake and when they stop,
 against the model's literal alarm cadence (a hoo every 60 s of an alarm act) and repeat penalty (−0.4 within 1.8 min of

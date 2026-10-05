@@ -1969,7 +1969,7 @@ a median 0.28 of courtship sequences by approaching to copulate. wilcox1995 (Abs
 intercourse in the six days ending on ovulation, 0.10 five days before to 0.33 on the day (E4p `matingValue` 3,
 `spermLifeDays` 4.2 days, [L]). New key: wilcox1995.
 
-## Addendum: E5g calls and alarms (4 October 2026)
+## 61. Addendum: E5g calls and alarms (4 October 2026)
 
 Same text as research.md "Addendum: E5g calls and alarms". schel2013b (FT, PMC3797826; Sonso 2010–11, 13 focal
 individuals, 27 trials with a moving python model, 1,273 focal alarm calls): calls within a bout every 2.49 s on average
