@@ -14,14 +14,13 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (5 October 01:00; deploy held by the user).** User decision of 4 October (§1): apply the audited fixes and
-  targets; the 90-day cap is replaced by a 6 → 12 → 24-month ladder (done: plan, handoff, e-bench MAX_TOTAL_DAYS 730 with
-  --m6/--m12/--m24, e-noise amendment 4; b617cf8). Agents: **eA-protocol** (part A: the ten Track E patches under one new
-  freeze, old-band scoring, band-only rescore of S39 and the S27/S39q groups), **eB-bench** (A5 truth rows wired into
-  e-bench; E1 one simulation per arm; E2 6-month checkpoints), **eR-runs** (E3 resumable long-run runner with a registry;
-  E6 disk checks; E7 profiling), all from b617cf8; **E3i** (quick screens on the current protocol; it does not merge
-  track-e until the freeze lands). Next (integrator): C, the new-protocol re-baseline of S39 and today's model at 60 days
-  and 6 months, after the freeze; then D, rare events at 12 months.
+- **Running now (5 October 01:45; deploy held by the user).** Part A merged (ed18c1e: freeze 5d4fa5a2a500bce6; 150 rows,
+  40 truth rows; old bands in data/targets.c8.json). Part C registered (docs/staging/e-rebaseline.md, 50ef79c) and running:
+  60-day groups of S39 and today's model (4 runs each) with e-bench's single pass from bench-run3 and bench-run4 at
+  eB-bench 1824a88 (`integrator/rb.sh`, `rb-chain.sh`; outputs `…/e/rb/`); 6-month groups next. Agents: **eB-bench**
+  (final checks), **eR-runs** (runner re-check on the new freeze), **guide-s5** (guide text for the new protocol and the
+  lifted cap). Verified: 27 of S39's 42 prescriptions are rare-event rules (lethal conflict and injury 13, deaths,
+  adoption and bereavement 8, disease and snares 4, dispersal 2).
 - **S39 is the best integrated candidate (42)** (e-stack2-confirm.md "S39 results"): S37 + `tripBeliefs` 3; held-out without
   rare rows better beyond noise (z −2.2), every class's reserve better, less walking, T-IGE-1 back in band. Costs: T-ACT-2
   0.115 (band floor 0.12), T-COM-11 0.023 (band 0.25–0.55; snake-trial protocol).
