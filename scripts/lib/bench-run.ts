@@ -199,7 +199,7 @@ export function runBenchSeed(job: BenchJob, log: (msg: string) => void = () => {
   const field: FieldResult = { seed: job.seed, days: job.days, profile: job.profile, hash: `${recordsHash(rec)}/${recordsHash(prec)}/${recordsHash(mrec)}`, wallMs: s.ms.wall + (performance.now() - t0),
     simMs: s.ms.sim, observerMs: s.ms.obs, experimentMs: s.ms.exp, metricsMs, values, s18, accuracy, encounterParty: encounterAccuracy(prec), counts };
   const energy = s.en ? s.en.acc : null;
-  const truth = truthValues({ seed: job.seed, days: job.days, viability, energy, rhythm, field, truth: s.tr, params: job.params as Record<string, number> });
+  const truth = truthValues({ seed: job.seed, days: job.days, viability, energy, rhythm, rhythmState: s.rh, field, truth: s.tr, params: job.params as Record<string, number> });
   return { kind: 'part', part: { tool: 'e-bench-part', version: 1, seed: job.seed, config: { profile: job.profile, days: job.days, burnInDays: job.burnInDays, params: job.params, observerSeed: job.observerSeed, experimentEveryDays: job.experimentEveryDays, truth: job.truth, energy: job.energy, rhythm: job.rhythm },
     field, viability, energy, rhythm, truth, timing: { wallMs: field.wallMs, segments: s.segments }, resumedFrom: job.resume, checkpoints: s.checkpoints } };
 }

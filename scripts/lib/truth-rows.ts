@@ -19,10 +19,10 @@ import { sunAltitudeAt } from '../../src/sim/environment';
 import { massOf } from '../../src/sim/energy';
 import { isAdultMale, maternalKin } from '../../src/sim/hierarchy';
 import { paramsOf } from '../../src/sim/params';
-import { index, ix, TICK_HOURS } from '../../src/sim/state';
+import { index, ix, simOf, TICK_HOURS } from '../../src/sim/state';
 import type { Chimp, World } from '../../src/types';
 import type { EnergyAcc } from './energy-probe';
-import type { RhythmResult } from './rhythm-probe';
+import type { RhythmResult, RhythmState } from './rhythm-probe';
 import type { Viability } from './viability';
 
 const DAY = 5760, HOUR = 240;
@@ -34,18 +34,14 @@ export const NO_READOUT: Readonly<Record<string, string>> = {
   'T-ENE-5': 'no within-mother readout: energy-diagnose gives the balance by the youngest infant\'s age pooled over mothers, not within mothers',
   'T-ENE-6': 'no readout of a female\'s balance against the adult males in her party',
   'T-ENE-9': 'no monthly readout of feeding time and day range against fruit (a statistic across months: needs a year)',
-  'T-RHY-2': 'no readout of receptive females\' active day (rhythm-metrics classes adults as male, lactating, other female)',
   'T-RHY-7': 'model water sites have no stream or pool kind (eA-protocol: leave unread)',
   'T-RHY-8': 'no logistic readout of resting and ground use against temperature with hour as a covariate',
   'T-RHY-10': 'no readout of leaf feeding by half of each individual\'s active day',
   'T-END-1': 'no readout of male stress in months with rank reversals (a statistic across months: needs a year)',
-  'T-END-2': 'no readout of mean male stress against Elo rank in the single pass',
-  'T-END-3': 'no readout of male stress on days with a swollen parous female',
   'T-END-4': 'no readout of the stress ratio around aggression against rests',
   'T-END-5': 'no readout of relative stress by bond partner and context',
   'T-END-6': 'no monthly readout of lactating females\' stress against fruit and rank (a statistic across months: needs a year)',
   'T-END-7': 'no readout of arousal by the swollen female\'s parity',
-  'T-END-9': 'no readout of arousal on patrol days',
   'T-END-10': 'no readout of affiliation after grooming by partner',
   'T-END-11': 'no readout of affiliation after food sharing',
   'T-END-12': 'no readout yet in the single pass (scripts/endocrine-diagnose.ts measures its intergroup half on its own world)',
@@ -82,7 +78,9 @@ export interface TruthState {
   r2: Record<string, { n: number; contact: number }>; escalatedAt: Map<string, number>;
   r3: { all: number; coalition: number }; version: Map<number, number>; prevKey: Map<number, string>;
   /** T-ENE-7 (e4p-diagnose.ts item 9): adult males' day so far (daylight forage minutes, awake minutes, a maximally swollen parous / any swollen female in the party); feeding minutes of finished days with and without. */
-  dayFeed: Map<number, { feedMin: number; awakeMin: number; parous: boolean; any: boolean }>; feedWith: number[]; feedWithout: number[];
+  dayFeed: Map<number, { feedMin: number; awakeMin: number; parous: boolean; any: boolean; patrol: boolean; sSum: number; sN: number; aSum: number; aN: number }>; feedWith: number[]; feedWithout: number[];
+  /** T-END-2: per adult male, hourly stress samples and his rank order then; T-END-3 and T-END-9: male-day mean stress on days with a swollen parous female and on other days, mean arousal on days with and without a patrol of his community. */
+  male: Map<number, { s: number; rank: number; n: number }>; stressWith: number[]; stressWithout: number[]; arousalPatrol: number[]; arousalOther: number[];
   /** T-END-8 (endocrine-diagnose.ts, fedurek2016's form): pant-hoots per caller since the last full hour; per adult male, arousal and pant-hoot sums and samples by hour bin. */
   hoots: Map<number, number>; seenCall: number; prof: Map<number, { a: number[]; h: number[]; n: number[] }>;
   tick: number;
@@ -98,7 +96,7 @@ export function truthStart(w: World): TruthState {
     lacTicks: 0, lacFeed: 0, e8: new Map(), prevOut: new Map(), nest: new Map(), builds: [], fDay: 0, fDrink: 0, fEvents: 0, atWater: new Map(),
     infTicks: 0, infNurse: 0, infBouts: 0, lastNurse: new Map(), weanAges: [], weaned: new Map(), mt: [0, 0], mg: [0, 0], it: [0, 0], ig: [0, 0],
     r1: { n: 0, contact: 0 }, pairLast: new Map(), r2: {}, escalatedAt: new Map(), r3: { all: 0, coalition: 0 }, version: new Map(), prevKey: new Map(),
-    dayFeed: new Map(), feedWith: [], feedWithout: [], hoots: new Map(), seenCall: w.nextId, prof: new Map(), tick: 0,
+    dayFeed: new Map(), feedWith: [], feedWithout: [], male: new Map(), stressWith: [], stressWithout: [], arousalPatrol: [], arousalOther: [], hoots: new Map(), seenCall: w.nextId, prof: new Map(), tick: 0,
   };
   for (const c of w.chimps) if (c.alive) {
     st.weaned.set(c.id, ix(c).weaned);
@@ -220,13 +218,28 @@ export function truthStep(st: TruthState, w: World): void {
   const H = TICK_HOURS * 60;
   for (const m of alive) {
     if (!m.alive || m.sex !== 'male' || m.age < 15) continue;
-    let r = st.dayFeed.get(m.id); if (!r) { r = { feedMin: 0, awakeMin: 0, parous: false, any: false }; st.dayFeed.set(m.id, r); }
+    let r = st.dayFeed.get(m.id); if (!r) { r = { feedMin: 0, awakeMin: 0, parous: false, any: false, patrol: false, sSum: 0, sN: 0, aSum: 0, aN: 0 }; st.dayFeed.set(m.id, r); }
+    if (simOf(w).patrols[m.troopId]) r.patrol = true;
     if (!light) continue;
     if (m.action === 'forage') r.feedMin += H;
     if (m.action !== 'nest') r.awakeMin += H;
     for (const f of swollen) if (f.troopId === m.troopId && !maternalKin(m, f) && f.partyId === m.partyId) { r.any = true; if (f.age >= P.endoParousAgeY || ix(f).amenUntil > 0) r.parous = true; }
   }
-  if ((st.tick + 1) % DAY === 0) { for (const r of st.dayFeed.values()) if (r.awakeMin > 300) { if (r.parous) st.feedWith.push(r.feedMin); else if (!r.any) st.feedWithout.push(r.feedMin); } st.dayFeed.clear(); }
+  // T-END-2, -3, -9: each awake adult male's stress and arousal, sampled on the hour in daylight (as endocrine-diagnose.ts samples)
+  if (st.tick % HOUR === 0 && env.daylight > 0.3) for (const m of alive) {
+    if (!m.alive || !isAdultMale(m) || (m.action === 'nest' && ix(m).phase >= 2)) continue;
+    const r = st.dayFeed.get(m.id)!, a = ix(m).arousal;
+    r.sSum += m.stress; r.sN++; if (a !== undefined) { r.aSum += a; r.aN++; }
+    if (m.rankOrder > 0) { const e = st.male.get(m.id) ?? { s: 0, rank: 0, n: 0 }; e.s += m.stress; e.rank += m.rankOrder; e.n++; st.male.set(m.id, e); }
+  }
+  if ((st.tick + 1) % DAY === 0) {
+    for (const r of st.dayFeed.values()) {
+      if (r.awakeMin > 300) { if (r.parous) st.feedWith.push(r.feedMin); else if (!r.any) st.feedWithout.push(r.feedMin); }
+      if (r.sN > 0) (r.parous ? st.stressWith : st.stressWithout).push(r.sSum / r.sN);
+      if (r.aN > 0) (r.patrol ? st.arousalPatrol : st.arousalOther).push(r.aSum / r.aN);
+    }
+    st.dayFeed.clear();
+  }
   // T-END-8 (endocrine-diagnose.ts, fedurek2016's form): each awake adult male's arousal and his pant-hoots in the past
   // hour, sampled on the hour in daylight, binned by the hour the sampled hour started (07-17)
   if (st.tick % HOUR === 0 && env.daylight > 0.3) for (const c of w.chimps) {
@@ -254,7 +267,7 @@ function pearson(a: number[], b: number[]): number | null {
 // Per-seed values
 // ---------------------------------------------------------------------------------------------------------------------
 
-export interface TruthInputs { seed: number; days: number; viability: Viability; energy: EnergyAcc | null; rhythm: RhythmResult | null; field: FieldResult; truth: TruthState | null; params: Record<string, number> }
+export interface TruthInputs { seed: number; days: number; viability: Viability; energy: EnergyAcc | null; rhythm: RhythmResult | null; rhythmState?: RhythmState | null; field: FieldResult; truth: TruthState | null; params: Record<string, number> }
 const median = (v: number[]) => { if (!v.length) return NaN; const s = [...v].sort((a, b) => a - b); return s[Math.min(s.length - 1, Math.floor(0.5 * s.length))]; };
 const mean = (v: number[]) => v.length ? v.reduce((a, b) => a + b, 0) / v.length : NaN;
 const ratio = (num: number, den: number, n: number, parts?: Record<string, number | null>, note?: string): SeedValue => ({ value: den > 0 ? num / den : null, num, den, n, ...(parts ? { parts } : {}), ...(note ? { note } : {}) });
@@ -296,6 +309,14 @@ export function truthValues(x: TruthInputs): Record<string, SeedValue> {
     const at = r.night.adultTicks, night = at.feed + at.travel + at.groom + at.other;
     const allAct = r.hourly.reduce((s, h) => s + h[2] + h[3] + h[4] + h[5], 0);
     out['T-RHY-5'] = ratio(night, allAct, allAct);
+    // T-RHY-2 (pattern): lactating (non-receptive) females' active day shorter than males'; receptive females' (swelling ≥ 0.9 at that day's noon) not shorter
+    const rcp = x.rhythmState?.dayRcp;
+    if (rcp && rcp.length === r.dayRec.length) {
+      const by = (f: (k: number) => boolean) => r.dayRec.filter((_, k) => f(k)).map(d => d.active);
+      const ml = by(k => r.dayRec[k].cls === 'male'), lac = by(k => r.dayRec[k].cls === 'lactating' && !rcp[k]), rc = by(k => rcp[k]);
+      out['T-RHY-2'] = { value: null, pass: ml.length && lac.length && rc.length ? mean(lac) < mean(ml) && mean(rc) >= mean(ml) : null, n: ml.length + lac.length + rc.length,
+        parts: { males: fin(mean(ml)), lactating: fin(mean(lac)), receptive: fin(mean(rc)), receptiveDays: rc.length }, ...(rc.length ? {} : { note: 'no receptive female-day in the window' }) };
+    }
     // T-RHY-9 (pattern): feeding share in the first and last 3 h of the active day above the middle; resting highest in the middle
     const share = (i: number, k: number) => { const p = r.parts[i], s = p.reduce((a, b) => a + b, 0); return s ? p[k] / s : NaN; };
     const FEED = 3, REST = 1, f0 = share(0, FEED), f1 = share(1, FEED), f2 = share(2, FEED), r0 = share(0, REST), r1 = share(1, REST), r2 = share(2, REST);
@@ -334,6 +355,16 @@ export function truthValues(x: TruthInputs): Record<string, SeedValue> {
     const rs: number[] = [];
     for (const p of t.prof.values()) { const bins = [...Array(24).keys()].filter(b => p.n[b] >= 3); const r8 = pearson(bins.map(b => p.a[b] / p.n[b]), bins.map(b => p.h[b] / p.n[b])); if (r8 !== null) rs.push(r8); }
     out['T-END-8'] = { value: null, pass: rs.length ? mean(rs) > 0 : null, n: rs.length, parts: { meanR: fin(mean(rs)), shareMalesPositive: rs.length ? rs.filter(v => v > 0).length / rs.length : null } };
+    // T-END-2 (pattern): mean stress per adult male over the run against his rank (rank order, 1 = top): high-ranking males not
+    // less stressed, i.e. r(−rank, stress) not negative (at least 4 ranked males)
+    const ms = [...t.male.values()].filter(e => e.n > 0), r2 = pearson(ms.map(e => -e.rank / e.n), ms.map(e => e.s / e.n));
+    out['T-END-2'] = { value: null, pass: r2 === null ? null : r2 >= 0, n: ms.length, parts: { r: r2 } };
+    // T-END-3 (pattern): male-day mean stress higher on days with a maximally swollen parous female in the party than on other days
+    out['T-END-3'] = { value: null, pass: t.stressWith.length && t.stressWithout.length ? mean(t.stressWith) > mean(t.stressWithout) : null, n: t.stressWith.length + t.stressWithout.length,
+      parts: { with: fin(mean(t.stressWith)), without: fin(mean(t.stressWithout)), daysWith: t.stressWith.length, daysWithout: t.stressWithout.length } };
+    // T-END-9 (pattern): adult males' mean arousal higher on days with a patrol by their community than on other days
+    out['T-END-9'] = { value: null, pass: t.arousalPatrol.length && t.arousalOther.length ? mean(t.arousalPatrol) > mean(t.arousalOther) : null, n: t.arousalPatrol.length + t.arousalOther.length,
+      parts: { patrolDays: fin(mean(t.arousalPatrol)), otherDays: fin(mean(t.arousalOther)), maleDaysPatrol: t.arousalPatrol.length, maleDaysOther: t.arousalOther.length } };
   }
   return out;
 }

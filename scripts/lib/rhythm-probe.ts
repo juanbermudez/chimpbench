@@ -96,7 +96,9 @@ interface Track { inNest: boolean; nesting: boolean; start: number; lastStart: n
   /** E2d: asleep last tick, first sleep onset and last waking since the last solar noon, ticks asleep, the oscillator's minimum and its time. */
   asleep: boolean; slOn: number; slOff: number; slTicks: number; xMin: number; xMinT: number;
   /** E2f: sleep pressure at the last waking. */
-  slS: number }
+  slS: number;
+  /** Receptive (swelling ≥ 0.9) at the last solar noon (truth row T-RHY-2; not part of rhythm-metrics' outputs). */
+  rcp?: boolean }
 
 /** The probe's whole state (plain data; checkpointed with the world). */
 export interface RhythmState {
@@ -106,6 +108,8 @@ export interface RhythmState {
   births0: number; deaths0: number; dead: Set<number>;
   hungerA: number; hungerAN: number; hungerL: number; hungerLN: number;
   dawnCrop: Map<number, number>;
+  /** Per dayRec record, whether the adult was a receptive female (swelling ≥ 0.9) at that day's noon (truth row T-RHY-2). */
+  dayRcp: boolean[];
 }
 
 const H0 = -0.833 * Math.PI / 180; // apparent sunrise and sunset (refraction and the sun's radius)
@@ -131,7 +135,7 @@ export function rhythmStart(w: World, seed: number): RhythmState {
     // the day's midday and morning tallies are filed under the day type once the midday window has closed
     mid: [0, 0, 0, 0, 0], morn: [0, 0, 0, 0, 0], midT: 0, midRain: 0, midTicks: 0, midHeat: 0, midHeatN: 0,
     births0: w.stats.births, deaths0: w.stats.deaths, dead: new Set(w.chimps.filter(c => !c.alive).map(c => c.id)),
-    hungerA: 0, hungerAN: 0, hungerL: 0, hungerLN: 0, dawnCrop: new Map() };
+    hungerA: 0, hungerAN: 0, hungerL: 0, hungerLN: 0, dawnCrop: new Map(), dayRcp: [] };
 }
 
 /** One measured tick, read after tickWorld (`i` counts ticks from the end of the burn-in). */
@@ -190,7 +194,7 @@ export function rhythmStep(st: RhythmState, w: World, i: number): void {
       if (!adult && x.asl !== undefined && !dependentOn(w, c) && !Number.isNaN(sunrise) && !Number.isNaN(sunset) && !Number.isNaN(t.slOn) && !Number.isNaN(t.slOff) && sunset < sunrise)
         res.juvSleep!.push({ band: c.age < 8 ? '5-8' : '8-15', onset: (t.slOn - sunset) * 60, off: (t.slOff - sunrise) * 60, hours: t.slTicks / 240, s: t.slS });
       t.slOn = NaN; t.slOff = NaN; t.slTicks = 0; t.xMin = Infinity; t.xMinT = NaN; t.slS = NaN;
-      t.cls = adult ? clsOf(c) : null; if (adult) res.sleepAtNoon.push(1 - c.energy);
+      t.cls = adult ? clsOf(c) : null; t.rcp = adult && c.sex === 'female' && c.swelling >= 0.9; if (adult) res.sleepAtNoon.push(1 - c.energy);
       if (adult && !Number.isNaN(t.wake) && !Number.isNaN(sunrise) && t.wake > sunrise - 6) res.deps.push({ cls: clsOf(c), wake: (t.wake - sunrise) * 60, bf: (t.bf < 0 ? 0 : t.bf) as 0 | 1 | 2 | 3, d: t.bd, feeders: t.bn, lux: t.lux, rain: t.wr, heat: t.wh, t: t.wt, x: t.wx, z: t.wz, troop: c.troopId });
     }
     if (predawn && c.age < 8 && !dependentOn(w, c)) { const pd = res.predawn!; pd.youngAll++; if (!nest) pd.youngOut++; pd.youngMetres += Math.hypot(c.position[0] - t.px, c.position[2] - t.pz); }
@@ -202,7 +206,7 @@ export function rhythmStep(st: RhythmState, w: World, i: number): void {
       if (adult) { res.adultNights++; if (!nest) res.outAtMidnight++; }
       else if (c.age < 15) { res.juvNight!.nights++; if (!nest) res.juvNight!.outAtMidnight++; }
       if (t.cls && t.atMid && nest && !Number.isNaN(t.wake) && !Number.isNaN(t.lastEntry) && t.lastEntry > noon && t.wake < noon && !Number.isNaN(sunrise) && !Number.isNaN(sunset))
-        res.dayRec.push({ cls: t.cls, wake: (t.wake - sunrise) * 60, bed: (t.lastEntry - sunset) * 60, build: (sunset - t.lastStart) * 60, active: t.lastEntry - t.wake, entries: t.entries, sWake: t.sWake, sBed: t.sBed });
+      { res.dayRec.push({ cls: t.cls, wake: (t.wake - sunrise) * 60, bed: (t.lastEntry - sunset) * 60, build: (sunset - t.lastStart) * 60, active: t.lastEntry - t.wake, entries: t.entries, sWake: t.sWake, sBed: t.sBed }); st.dayRcp.push(!!t.rcp); }
       t.atMid = nest; t.wake = NaN; t.entries = 0;
     }
     if (night) {
