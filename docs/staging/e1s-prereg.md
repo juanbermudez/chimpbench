@@ -396,3 +396,75 @@ movement."
   trip (an own, known-tree or caller trip), a joined trip, rest, other; ground km per animal-day by reserve band and the
   share of chosen trips over 500 m; ground km per day and the reserves of adult males by calendar month (per-animal
   records; S39 from its class readout).
+
+### 8.8 Iteration 3: results, and the stage's end (run 5 October 14:57–15:08 from the frozen checkout of 3747dae)
+
+**Fails conditions 1, 2 and 4; condition 3 holds. By Amendment 1, E1s stops: `gutValue` stays 0.**
+
+| | S39 (seeds 48 + 7) | iteration 1 | iteration 2 | iteration 3 |
+| --- | --- | --- | --- | --- |
+| (1) starvation deaths | 0 + 0 | 4 + 7 | 4 + 5 | 3 + 0 |
+| (2) below −0.3 at scored day 180 (aged 5 y+) | 11 (9) | 42 (31) | 52 (37) | 25 + 13 = 38 (24) |
+| (2) lowest reserve | −0.683 | −0.930 | −0.959 | −0.936 (s48 id 47, juvenile F 11.6 y) |
+| (3) eating min Nov–Dec → Mar–Apr: juvenile F, adolescent F, pregnant | — | rise | rise | 269 → 362, 251 → 445, 321 → 394: rise |
+| (4) viability | pass | fail | fail | fail (births 4, deaths 4, 3 starvation; few events) |
+| T-RNG-4 (km), seeds 48 / 7 | 2.91 / 2.44 | 5.72 / 6.33 | 5.59 / 5.59 | 4.12 / 3.27 |
+| T-ACT-2 | 0.14 / 0.12 | 0.25 / 0.33 | 0.25 / 0.30 | 0.19 / 0.17 |
+| T-HUN-1 | 11.45 / 10.12 | 35.7 / 47.2 | 33.7 / 27.6 | 8.77 / 10.10 |
+| T-PTY-1 | 4.17 / 4.07 | 4.05 / 4.97 | 4.56 / 4.65 | 3.80 / 3.86 |
+
+- Deaths: seed 48 starvation ids 17 (juvenile F 6.5 y, window day 143), 19 (juvenile F 7.5 y, 146), 14 (F 24.6 y, 179),
+  and a fight (id 10); seed 7 none.
+- The decision mix of animals below −0.3 (12-h samples; S39 and R3 from their day-210 checkpoints): stay and eat (a crown
+  in view or the fallback) / crown trip (own, known-tree or caller) / joined trip / rest / other:
+
+| group | decisions | stay and eat (crown in view / fallback) | crown trip | joined trip | rest | other |
+| --- | ---: | --- | ---: | ---: | ---: | ---: |
+| S39, day 210 (s48 + s7) | 416 | 68% (20% / 47%) | 8% | 2% | 1% | 21% |
+| R3, day 210 (s48) | 516 | 54% (23% / 31%) | 8% | 3% | 1% | 33% |
+| iteration 2, days 60–210 | 31,958 | 18% (16% / 2%) | 19% | 41% | 6% | 16% |
+| iteration 3, days 60–210 | 9,963 | 34% (22% / 12%) | 22% | 8% | 7% | 28% |
+| iteration 3, day 210 | 2,228 | 43% (27% / 16%) | 23% | 10% | 5% | 19% |
+
+- Their crown values (iteration 3): the range across crowns is ≥ 0.2 in 48–68% of decisions by band, the jitter reverses
+  the best crown in 25–36%; chosen trips over 500 m 6–20% (median 165–222 m; R3 23–27%, 192–351 m).
+- Ground km per animal-day by reserve band (seeds pooled; R3 seed 48 in brackets): days 90–179, others aged 5 y+ at
+  −0.3 to −0.5 6.79 (3.55), −0.5 to −0.7 7.00 (2.90), −0.7 to −1 8.78 (none), travelling 21–30% of daylight (7–10%); near
+  the set point adult males 3.73 (3.58), others 3.50 (3.03). Behaviour of those depleted animals (−0.3 to −0.5 / −0.5 to
+  −0.7): 389 / 417 eating min a day (R3 532 / 595), 43 / 58% at a full foregut (82 / 89%), drupe 60 / 62% of plant energy
+  (35 / 47%), fallback 21 / 21% (33 / 34%), 4.47 / 3.67 own-food kcal per eating minute (2.71 / 1.98), net −103 / −101
+  kcal a day (−74 / −98).
+- Adult males by calendar month, ground km per day and reserves ÷ store (per-animal records; S39 from its class readout,
+  whose window mean is 3.12 km): iteration 3 Oct 2.09, 0.001 · Nov 2.62, −0.001 · Dec 3.83, −0.010 · Jan 4.35, −0.022 ·
+  Feb 4.59, −0.053 · Mar 5.22, −0.071 · Apr 3.92, −0.033; iteration 2 Oct 3.28, −0.005 · Nov 4.13, −0.013 · Dec 6.12,
+  −0.043 · Jan 7.69, −0.138 · Feb 7.50, −0.207 · Mar 8.56, −0.269 · Apr 7.54, −0.234; R3 Oct 2.20, 0.002 · Nov 2.53, 0.000 ·
+  Dec 2.69, −0.000 · Jan 4.32, −0.022 · Feb 3.66, −0.053 · Mar 3.90, −0.030 · Apr 2.79, −0.001; S39 (reserves only) 0.003 ·
+  0.002 · −0.003 · −0.015 · −0.032 · −0.017 · −0.002.
+- Per animal-day by phase (Nov–Dec / Jan–Feb / Mar–Apr; R3 in brackets): adult males 3.24 / 4.46 / 4.64 km (2.61 / 4.01 /
+  3.40), net −21 / −36 / +49 (−4 / −37 / +46); juvenile females 5.57 / 6.97 / 7.61 km (2.96 / 4.38 / 3.30), net −112 /
+  −158 / −94 (−17 / −164 / −62), fallback 12 / 16 / 16% of plant energy (13 / 15 / 29%); lactating females 4.23 / 6.03 /
+  6.83 km (2.35 / 4.58 / 3.54), net −68 / −120 / −18 (−16 / −108 / +31), fallback 32 / 25 / 23% (10 / 12 / 23%).
+
+**Lessons for the next design.** What drives the movement and the starvation is the passage phase itself. Once a
+depleted animal's valuation counts the hours the gut needs to pass what it holds, every crown is worth about the passage
+rate of its food and a walk costs only its energy, a few percent of the bout: the valuation stops anchoring the animal at
+food it can eat now. Iteration 3 removed the two biases that made it worse (balanced animals valued with a passage phase;
+crowded and small crops that escaped it), and joined trips fell from 41% to 8% of depleted animals' decisions, but they
+still trade the fallback where they stand for crown trips (22% of decisions against 8%) and walk twice as far (6.8–8.8 km
+a day against 2.9–3.6). The better food per eating minute (3.7–4.5 kcal against 2.0–2.7) does not pay for it: they eat
+140–180 fewer minutes and end no better (−101 to −103 kcal a day against −74 to −98); the walking, not the food, now sets
+their deficit, and seed 48's juvenile females 17 and 19 starve on window days 143 and 146, where on S39 they were
+alive at day 180 (−0.68 and −0.54). This contradicts two
+field directions: when food is scarce chimpanzees feed longer and travel and spend less (vale2020; T-ENE-9's direction,
+nguessan2009), whereas here depleted animals travel farther the more depleted they are (3.5 → 8.8 km a day across the
+reserve bands) and adult males' day range rises from 2.1 km in October to 5.2 km in March; and pith and leaf use rises
+when fruit is scarce (wrangham1991), whereas here depleted animals choose the fallback at 12% of decisions (S39 31–47%)
+and the adult females' fallback share falls from November to April. The digestive rate model ranks foods by energy per
+gram when the gut binds, but in this model a gut-length horizon makes moving almost free, and nothing makes an animal
+that cannot eat faster anywhere stay put: the valuation buys hours of passage at a distant crown that the animal, which
+re-decides about every 8 minutes (86 decisions per animal per 12 h in seed 48's samples) under the candidate jitter,
+never cashes. A next design would need the cost of moving in
+the same currency as a gut-limited gain (the passage is the same wherever the animal is, so a move must pay for itself
+in food quality per gram against its energy) or a commitment that matches the horizon valued (a keep rule or switching
+cost, outside E1s); and E1r's other terms (walking in the fig months, immigrant females' access, conception without an
+energy gain) remain.
