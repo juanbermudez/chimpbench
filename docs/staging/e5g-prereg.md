@@ -487,3 +487,6 @@ the information (80% of animals learn by a hoo) with 13 hoos instead of 1,791 in
   LITERAL_OFF entries), `tests/sim-call-gaps.test.ts`; the `callReady` piece in `tests/prescription-ledger.test.ts` and
   `scripts/lib/decision-guide-content.ts`; `docs/decision-guide.html` regenerated; docs/simulation.md (§17 row and a note);
   research.md and e-sources.md "Addendum: E5g calls and alarms" (schel2013b, crockford2012).
+- After merging `track-e` once (e1e89ea → 392131f; the generated guide's conflict resolved by regenerating it on S34, the
+  stack track-e now shows): `gen-params --check` clean, `tsc --noEmit` clean, `pnpm test` 848 tests: 847 pass, 0 fail,
+  1 skipped; `decision-guide.ts --check` up to date; `git ls-files data/raw node_modules` empty.
