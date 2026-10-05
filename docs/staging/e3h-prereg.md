@@ -938,3 +938,15 @@ Deferred (found by the diagnosis or the arms, not this stage's question; file:li
   animals not seen there). A belief that expects others' visits would need each animal's own estimate of how often crowns
   are visited, a learned rate, which E3g showed collapses travel when applied to every trip; whether the crown's value
   should carry a cost of the time it takes others to find it is the next question.
+
+## 9. Merge and final checks
+
+`track-e` merged once (9af23ec: E5g's `callGaps`, S34–S37 notes) before the final test run; `src/sim/params.gen.ts` taken
+from this branch and regenerated. `gen-params --check` clean, `tsc --noEmit` clean, `pnpm test` 853 tests: 852 pass, 0 fail,
+1 skipped; `git ls-files data/raw node_modules` empty. Prescriptions on the merged ledger (`prescription-ledger --count`):
+S31 48, S31 + `tripBeliefs` 3 48, S31 + `tripBeliefs` 7 48 (no counted entry removed, as registered). Outputs (local,
+gitignored, copied from the session scratch `e3h/`): `artifacts/validation/e3h/` holds `diag/` (the four diagnosis runs, raw
+trips gzipped, `diag_table.md`, `known_split.md`), `arms/` (A1, A2, D0, D1: e-bench, energy, trip and rhythm JSON, logs and
+tables), `tools/` (`diag_table.py`, `known_split.py`, `final_table.py`, `redecide_cost.py`, `report_table.py`), `params/`,
+`smoke/`.
+
