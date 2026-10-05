@@ -527,14 +527,22 @@ were already purged. S39's deaths include 6 starvations (part C).
 
 ## Part D2: staging decisions (5 October 2026, from the rule registered at 977400e, before any rare-event stage)
 
-1. **Judged at 12 months:** the deaths family (T-DEM-4, T-DEM-1; every S39 run has ≥ 5 deaths) and T-PAT-9 as a check.
-   Transfers are counted only (no field row).
-2. **Staged:** the deaths family (8 prescriptions: adoption, bereavement, dependents' survival, dead-infant carrying),
-   judged on T-DEM-4 and T-DEM-1 at 12 months. It starts only on a base that is viable at 12 months (part C), because
-   starvation deaths enter T-DEM-4 and S39's are 6 of 41. T-DEM-4's aggression share also rests on killings, a family
-   that cannot be judged at 12 months; the stage reports it but does not claim it.
+1. **No rare-event family is testable at 12 months on its own outcome rows**, so none is staged at 12 months. The
+   prescriptions by family (S39's ledger, integrator scratch `d2-s39-ledger.md`) against their events:
+   - lethal conflict (13: gang impulses and kills, infanticide, the serious-injury and defence rolls): 3 killings, minimum 10;
+   - deaths, adoption and bereavement (8: five adoption rules, two bereavement rules, `carryDeadP`): their rows are the
+     orphan rows (T-DEM-16, -17, -18, -19, -24), and orphaning is rare: 5 mothers' deaths leaving 5 dependents pooled,
+     minimum 10; dead-infant carrying has no field row;
+   - disease and snares (4: `epidemicArrivalPerY`, `epidemicBetaPerH`, `epidemicFatality`, `snareHazardPerKm`): 5, 4 and 5
+     events, minimum 10; snares not testable as defined (finding 3);
+   - dispersal (2: `dispersalHazardPerY`, `disperserP`): 18 transfers, enough, but no field row to judge them by.
+2. **Rows with enough events at 12 months** (not tied to one family's rules; judged in every 12-month comparison, as
+   now): T-DEM-4 (41 deaths; both stacks off its band: S39 disease 0.66 and aggression 0.07, today 0.96 and 0.00), T-DEM-1
+   (11; both inside), T-PAT-9 (60; a check, both inside).
 3. **To 24 months, on the next viable base (not on S39, which starves):** T-LET-1, T-DEM-5, T-DEM-6, T-DEM-8 (the counter
-   projects 6–13 events each). Measurement findings 1 and 2 are fixed, registered, before T-LET-1 is counted there.
+   projects 6–13 events each) and the orphan rows (about 10 orphanings projected). A 24-month reference is 4 runs × 5
+   seeds × 730 days (about 3 hours at 4 jobs); it waits for the walk-back and, if needed, the diagnosis stage.
+   Measurement findings 1 and 2 are fixed, registered, before T-LET-1 is counted there.
 4. **Projected not testable within the ladder** (need 20; projected well under at 24 months; recorded as such only after
    the 24-month count): T-LET-2, T-LET-3, T-LET-6, T-DEM-7. T-DEM-9 is not testable as defined (finding 3). More seeds,
    not more years, are the lever for these.
