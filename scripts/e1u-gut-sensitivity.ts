@@ -70,6 +70,15 @@ export function wadged(P: Params, w: number): Params {
   else over.ledgerFallbackKcalPerMin = P.ledgerFallbackKcalPerMin - credit;
   return withParams(P, over);
 }
+/**
+ * The fallback as one of its two Kanyawara components (uwimbabazi2019 Tables 1–2; the sugar-based energy by E1h's ratios
+ * in the registry notes: young leaves × 0.730, pith × 0.799): 'leaves' is the fallback type of Ngogo, whose phenology the
+ * field profile reads (potts2011, watts2012b), at Kanyawara's leaf values; 'pith' the other end.
+ */
+export function fallbackAs(P: Params, kind: 'leaves' | 'pith'): Params {
+  const v = kind === 'leaves' ? { dm: 2.1, ndf: 0.431, kcal: 6.2, sugar: 6.2 * 0.730 } : { dm: 1.8, ndf: 0.581, kcal: 3.4, sugar: 3.4 * 0.799 };
+  return withParams(P, { digestaFallbackDmGPerMin: v.dm, digestaFallbackNdf: v.ndf, ledgerFallbackKcalPerMin: v.kcal, ledgerFallbackKcalPerMinSugar: v.sugar });
+}
 /** The diet with the same feeding-time shares under parameters `Q` as `diet` has under `P` (energy shares re-weighted by each food's kcal per minute). */
 export function sameTime(P: Params, Q: Params, diet: Diet): Diet {
   const k = (X: Params, kind: 'drupe' | 'fig' | 'fallback') => plantKcalPerMin(X, kind);
@@ -105,14 +114,18 @@ export function run(o: RunOpts): { md: string; json: unknown } {
 
   // A. the ceiling at today's values
   L.push(`### A. The gut ceiling at today's values (S39's parameters from ${o.ckpt.split('/').pop()}; active day ${o.activeH} h; figs ${o.fig} of fruit energy)`, '');
-  L.push('| animal | diet (Mar–Apr) | dry matter g/d | formula kcal/d | absorbed kcal/d (fermented) | thermogenesis | absorbed − thermogenesis | foregut full | hindgut full | foregut braked by hindgut | hindgut fill dawn / dusk | no hindgut limit: absorbed | eating 60% of active ticks: absorbed |', '| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: | ---: |');
+  L.push('| animal | diet (Mar–Apr) | dry matter g/d | formula kcal/d | absorbed kcal/d (fermented) | thermogenesis | absorbed − thermogenesis | foregut full | hindgut full | foregut braked by hindgut | hindgut fill dawn / dusk | no hindgut limit: absorbed | foregut capacity × 10: absorbed | eating 60% of active ticks: absorbed |', '| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: |');
   const base: Record<string, CeilingDay> = {};
-  const noHind = withParams(P, { digestaHindgutDmGPerMl: 1e3 });
+  const noHind = withParams(P, { digestaHindgutDmGPerMl: 1e3 }), bigFore = withParams(P, { digestaForegutDmGPerMl: 10 * P.digestaForegutDmGPerMl });
   for (const a of animals) for (const s of stacks) {
-    const d = dietFor(a, s), r = gutCeiling(a.c, P, d, opts), nh = gutCeiling(a.c, noHind, d, opts), bout = gutCeiling(a.c, P, d, { ...opts, eatShare: 0.6 });
+    const d = dietFor(a, s), r = gutCeiling(a.c, P, d, opts), nh = gutCeiling(a.c, noHind, d, opts), bf = gutCeiling(a.c, bigFore, d, opts), bout = gutCeiling(a.c, P, d, { ...opts, eatShare: 0.6 });
     base[`${a.cls}.${s}`] = r;
-    L.push(`| ${a.label} | ${s}: fallback ${pc(LEAN[a.cls][s].fallback)} | ${f(r.dm)} | ${f(r.fin)} | ${f(r.absorbed)} (${f(r.fermented)}) | ${f(r.tef)} | ${f(r.net)} | ${pc(r.foreFull)} | ${pc(r.hindFull)} | ${pc(r.braked)} | ${f(r.hindDawn, 2)} / ${f(r.hindDusk, 2)} | ${f(nh.absorbed)} (${sg(nh.absorbed - r.absorbed)}) | ${f(bout.absorbed)} (${sg(bout.absorbed - r.absorbed)}) |`);
+    L.push(`| ${a.label} | ${s}: fallback ${pc(LEAN[a.cls][s].fallback)} | ${f(r.dm)} | ${f(r.fin)} | ${f(r.absorbed)} (${f(r.fermented)}) | ${f(r.tef)} | ${f(r.net)} | ${pc(r.foreFull)} | ${pc(r.hindFull)} | ${pc(r.braked)} | ${f(r.hindDawn, 2)} / ${f(r.hindDusk, 2)} | ${f(nh.absorbed)} (${sg(nh.absorbed - r.absorbed)}) | ${f(bf.absorbed)} (${sg(bf.absorbed - r.absorbed)}) | ${f(bout.absorbed)} (${sg(bout.absorbed - r.absorbed)}) |`);
   }
+  // the hindgut's fibre clearance at capacity, the compound the hindgut inputs set (g of fibre per kg per day)
+  const clear = (X: Params) => 24 * X.digestaGutMlPerKg * (1 - X.digestaForegutShare) * X.digestaHindgutDmGPerMl / Math.max(1e-6, X.digestaMrtH - X.ledgerGutEmptyH) / Math.max(1e-6, 1 - X.digestaNdfDigestibility);
+  L.push('', `The hindgut clears at most ${f(clear(P), 2)} g of fibre per kg per day when full (24 h × digestaGutMlPerKg × (1 − digestaForegutShare) × digestaHindgutDmGPerMl ÷ ((digestaMrtH − ledgerGutEmptyH)(1 − digestaNdfDigestibility))).`);
+  J.clearance = clear(P);
   // the figs' share, a choice of this script (E1r §9.4 gives only the fallback share)
   const figCheck = animals.map(a => [0, 0.4].map(fg => gutCeiling(a.c, P, dietFor(a, 'S39', fg), opts).absorbed - base[`${a.cls}.S39`].absorbed));
   L.push('', `Figs at 0 or 0.4 of fruit energy instead of ${o.fig} (S39 diet): absorbed ${animals.map((a, i) => `${a.cls} ${sg(figCheck[i][0])} / ${sg(figCheck[i][1])}`).join('; ')} kcal/d.`);
@@ -174,6 +187,21 @@ export function run(o: RunOpts): { md: string; json: unknown } {
     L.push(`| ${pc(share)} | ${f(Q.digestaFallbackDmGPerMin, 2)} | ${f(Q.digestaFallbackNdf, 3)} | ${f(plantKcalPerMin(Q, 'fallback'), 2)} | ${cells.join(' | ')} | ${f(last!.dm)}, ${pc(last!.hindFull)} |`);
   }
   J.wadging = wad;
+
+  // E. what the fallback is: Kanyawara's pith-and-leaf mix (today), young leaves (Ngogo's fallback type), pith
+  L.push('', '### E. What the fallback is (feeding time held): today\'s Kanyawara mix of pith and young leaves, young leaves alone (the fallback type of Ngogo, whose phenology the field profile reads), pith alone', '');
+  L.push('| fallback | g DM/min | NDF | kcal/min (sugar-based) | juvenile S39: absorbed (Δ deficit) | juvenile S31 | pregnant S39 | pregnant S31 |', '| --- | ---: | ---: | ---: | --- | --- | --- | --- |');
+  const site: unknown[] = [];
+  for (const [lab, Q] of [['today (pith : leaves 17.4 : 6.9)', P], ['young leaves', fallbackAs(P, 'leaves')], ['pith', fallbackAs(P, 'pith')]] as const) {
+    const cells: string[] = [];
+    for (const a of animals) for (const s of stacks) {
+      const d = sameTime(P, Q, dietFor(a, s)), r = gutCeiling(a.c, Q, d, opts), b = base[`${a.cls}.${s}`];
+      cells.push(`${f(r.absorbed)} (${sg(r.net - b.net)})`);
+      site.push({ fallback: lab, animal: a.cls, stack: s, absorbed: r.absorbed, dNet: r.net - b.net });
+    }
+    L.push(`| ${lab} | ${f(Q.digestaFallbackDmGPerMin, 2)} | ${f(Q.digestaFallbackNdf, 3)} | ${f(plantKcalPerMin(Q, 'fallback'), 2)} | ${cells.join(' | ')} |`);
+  }
+  J.fallbackKind = site;
   return { md: L.join('\n'), json: J };
 }
 
