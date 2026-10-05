@@ -205,3 +205,166 @@ rows need a reference and its runs are cheap.
 
 **Amendment 3 (5 October 2026, 03:00, before any 12-month run).** Both 6-month groups are extended to 12 months with the
 runner (`--m12 --from` each 6-month run's checkpoints) at 63d699a; part D's event counts are taken on S39's 12-month group.
+
+## 60-day results (bench-run3 and bench-run4 at 1f8553b, e-bench's single pass; every number printed by integrator/judge_c.py and a row split from the JSON)
+
+C60-S39-s3 was cut at the 2-hour limit after two seeds overnight and re-run in full at 08:07 (same commit and parameters).
+
+```
+## Part C, C60: S39 against today's model (4 runs each; printed by integrator/judge_c.py from the JSON)
+
+| Run | commit | protocol | prescriptions | viability | deaths by cause (energy readout) | adults out of a nest at night, T-RHY-5 |
+| --- | --- | --- | --- | --- | --- | --- |
+| C60-T0 | 1f8553b | 5d4fa5a2a500bce6 | 147 | {'pass': True, 'births': 0, 'deaths': 1, 'ratio': 0, 'starvationDeaths': 0, 'minLivingShare': 0.9795918367346939, 'reasons': [], 'fewEvents': True} | {'juvenile 5–12 y: illness': 1} | adults out of a nest 0.01% of night; T-RHY-5 0.0001; night deaths 1; deaths 1 |
+| C60-T0-s1 | 1f8553b | 5d4fa5a2a500bce6 | 147 | {'pass': True, 'births': 0, 'deaths': 4, 'ratio': 0, 'starvationDeaths': 0, 'minLivingShare': 0.9375, 'reasons': [], 'fewEvents': True} | {'adult male: illness': 3, 'female, other: snare injury': 1} | adults out of a nest 0.01% of night; T-RHY-5 0.0001; night deaths 2; deaths 4 |
+| C60-T0-s2 | 1f8553b | 5d4fa5a2a500bce6 | 147 | {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True} | — | adults out of a nest 0.01% of night; T-RHY-5 0.0001; night deaths 0; deaths 0 |
+| C60-T0-s3 | 1f8553b | 5d4fa5a2a500bce6 | 147 | {'pass': True, 'births': 0, 'deaths': 1, 'ratio': 0, 'starvationDeaths': 0, 'minLivingShare': 0.9795918367346939, 'reasons': [], 'fewEvents': True} | {'infant 0.5–2 y: illness': 1} | adults out of a nest 0.01% of night; T-RHY-5 0.0001; night deaths 0; deaths 1 |
+| C60-S39 | 1f8553b | 5d4fa5a2a500bce6 | 42 | {'pass': True, 'births': 0, 'deaths': 1, 'ratio': 0, 'starvationDeaths': 0, 'minLivingShare': 0.9795918367346939, 'reasons': [], 'fewEvents': True} | {'adolescent: illness': 1} | adults out of a nest 2.66% of night; T-RHY-5 0.0219; night deaths 1; deaths 1 |
+| C60-S39-s1 | 1f8553b | 5d4fa5a2a500bce6 | 42 | {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True} | — | adults out of a nest 2.57% of night; T-RHY-5 0.0220; night deaths 0; deaths 0 |
+| C60-S39-s2 | 1f8553b | 5d4fa5a2a500bce6 | 42 | {'pass': True, 'births': 0, 'deaths': 2, 'ratio': 0, 'starvationDeaths': 0, 'minLivingShare': 0.9795918367346939, 'reasons': [], 'fewEvents': True} | {'infant 0.5–2 y: infanticide by Chiriku (East community)': 1, 'adult male: illness': 1} | adults out of a nest 2.52% of night; T-RHY-5 0.0220; night deaths 0; deaths 2 |
+| C60-S39-s3 | 1f8553b | 5d4fa5a2a500bce6 | 42 | {'pass': True, 'births': 0, 'deaths': 1, 'ratio': 0, 'starvationDeaths': 0, 'minLivingShare': 0.9795918367346939, 'reasons': [], 'fewEvents': True} | {'juvenile 5–12 y: illness': 1} | adults out of a nest 2.39% of night; T-RHY-5 0.0199; night deaths 0; deaths 1 |
+
+### New bands (freeze 5d4fa5a2a500bce6, as run)
+
+| Sum (rows scored in all 8 runs) | today's model: 4 runs | mean ± SD | S39: 4 runs | mean ± SD | S39 run z vs today |
+| --- | --- | --- | --- | --- | --- |
+| fitted (17) | 3.32 / 3.88 / 3.90 / 3.61 | 3.68 ± 0.27 | 1.84 / 1.57 / 1.28 / 1.41 | 1.52 ± 0.24 | -5.5 (SD used 0.30) |
+| held-out (24) | 11.93 / 12.99 / 11.67 / 11.30 | 11.97 ± 0.73 | 5.16 / 9.17 / 5.28 / 6.98 | 6.65 ± 1.88 | -4.2 (SD used 1.45) |
+| held-out w/o rare (22) | 9.58 / 9.10 / 9.03 / 9.29 | 9.25 ± 0.25 | 4.06 / 4.59 / 4.64 / 4.26 | 4.39 ± 0.28 | -18.7 (SD used 0.25) |
+
+### Old bands (data/targets.c8.json, rescored)
+
+| Sum (rows scored in all 8 runs) | today's model: 4 runs | mean ± SD | S39: 4 runs | mean ± SD | S39 run z vs today |
+| --- | --- | --- | --- | --- | --- |
+| fitted (16) | 2.89 / 3.03 / 3.23 / 3.11 | 3.06 ± 0.14 | 1.73 / 1.44 / 1.09 / 1.32 | 1.40 ± 0.27 | -4.0 (SD used 0.30) |
+| held-out (14) | 5.47 / 6.51 / 5.33 / 4.99 | 5.58 ± 0.65 | 7.29 / 11.10 / 7.34 / 8.82 | 8.64 ± 1.79 | +1.1 (SD used 1.45) |
+| held-out w/o rare (12) | 3.13 / 2.62 / 2.69 / 2.99 | 2.86 ± 0.24 | 6.19 / 6.52 / 6.70 / 6.10 | 6.38 ± 0.28 | +12.3 (SD used 0.24) |
+
+### Rows by verdict (new bands; mean of the 4 runs)
+
+| role · verdict | today's model | S39 |
+| --- | --- | --- |
+| fitted · fail | 7.25 | 7.50 |
+| fitted · inconclusive | 5.75 | 10.25 |
+| fitted · insufficient | 15.00 | 15.00 |
+| fitted · n/a | 1.00 | 1.00 |
+| fitted · pass | 9.00 | 4.25 |
+| held-out · fail | 25.50 | 20.50 |
+| held-out · inconclusive | 8.25 | 10.00 |
+| held-out · insufficient | 22.25 | 21.00 |
+| held-out · n/a | 9.00 | 9.00 |
+| held-out · not scorable | 18.00 | 14.00 |
+| held-out · pass | 15.00 | 23.50 |
+| held-out · scale | 1.00 | 1.00 |
+| held-out · sealed | 12.00 | 12.00 |
+| held-out · structural | 1.00 | 1.00 |
+
+### Simulation-truth rows on C60-S39: 26 scored, 14 not scorable (T-END-1, T-END-10, T-END-11, T-END-12, T-END-4, T-END-5, T-END-6, T-END-7, T-ENE-4, T-ENE-5, T-ENE-6, T-ENE-9, T-INF-4, T-RHY-7)
+
+| row | band | value | verdict |
+| --- | --- | --- | --- |
+| T-END-2 | not negative: high-ranking males are not less stressed than low-ranking males | 0.8 | pass |
+| T-END-3 | higher with a swollen parous female in the party | 1 | pass |
+| T-END-8 | positive association | 0.4 | fail |
+| T-END-9 | higher on patrol days | 0.4 | fail |
+| T-ENE-1 | 1900–3100 | 2524.1102 | pass |
+| T-ENE-2 | 250–370 | 312.8432 | pass |
+| T-ENE-3 | 650–1100 | 834.2482 | pass |
+| T-ENE-7 | feeding time lower on days with a swollen parous female present | 0.2 | fail |
+| T-ENE-8 | 85–130 | 99.0663 | pass |
+| T-INF-1 | rises with age; within a factor 1.5 of the Gombe value in each block from 1 y (e.g. 15-33% at 1.5-2 y, 33-74% at 4.5-5 y) | None | insufficient |
+| T-INF-2 | 1–6 | 11.6 | fail |
+| T-INF-3 | 3.7–5.8 | None | insufficient |
+| T-INF-5 | 0.5–2 | 1.1729 | pass |
+| T-INF-6 | 0.014–0.06 | 0.033 | pass |
+| T-RHY-1 | 10.5–12 | 11.7247 | pass |
+| T-RHY-10 | more than half of leaf feeding in the second half of the active day | 1 | pass |
+| T-RHY-2 | non-receptive (lactating) females shorter than males; receptive females not shorter than males | 0 | fail |
+| T-RHY-3 | -20–15 | -6.7 | pass |
+| T-RHY-4 | -30–90 | 40.35 | pass |
+| T-RHY-5 | 0–0.05 | 0.0219 | pass |
+| T-RHY-6 | 0.3–2 | 0.2951 | inconclusive |
+| T-RHY-8 | positive association of resting with temperature; midday rest follows from the temperature curve | 0.6 | pass |
+| T-RHY-9 | feeding share in the first and last three hours of the active day above the middle hours; resting highest in the middle third | 1 | pass |
+| T-SOC-14 | 0.08–0.37 | 0.0594 | fail |
+| T-SOC-15 | contact share at a large rank difference below the share at small and middle differences; insufficient below 20 conflicts per category | 0.4 | fail |
+| T-SOC-16 | 0.03–0.2 | 0.1839 | inconclusive |
+
+### Biggest misses on C60-S39 (new bands)
+
+| row | role | band | value | distance |
+| --- | --- | --- | --- | --- |
+| T-IGE-3 | held-out | 0.25–0.75 | 18.545 | 35.59 |
+| T-INF-2 | held-out | 1–6 | 11.6 | 1.12 |
+| T-FOOD-6 | held-out | 2–7 | 12.596 | 1.12 |
+| T-HUN-4 | held-out | 1.05–1.8 | 2.625 | 1.10 |
+| T-COM-11 | fitted | 0.25–0.55 | 0.023 | 0.76 |
+| T-RNG-5 | held-out | 0.3–0.75 | 0.972 | 0.49 |
+| T-SOC-6 | held-out | 0.6–0.9 | 0.495 | 0.35 |
+| T-HUN-2 | fitted | 0.5–0.8 | 0.396 | 0.35 |
+| T-IGE-2 | held-out | 0.7–0.9 | 0.958 | 0.29 |
+| T-FOOD-2 | fitted | 0.6–0.78 | 0.826 | 0.25 |
+| T-HUN-7 | fitted | 1.2–2 | 1 | 0.25 |
+| T-FOOD-7 | held-out | 300–800 | 181.117 | 0.24 |
+
+
+=== held-out rows scored in all 8 sixty-day runs, mean distance over 4 runs (S39 minus today's model)
+band unchanged (12 rows)
+  T-BRD-1    band 0.037–0.107        S39    0.073 today   -0.060  distance 1.17 vs 1.39 (-0.21)
+  T-FOOD-6   band 2–7                S39   12.709 today   11.508  distance 1.14 vs 0.90 (+0.24)
+  T-FOOD-7   band 300–800            S39  178.426 today  278.671  distance 0.24 vs 0.04 (+0.20)
+  T-HUN-4    band 1.05–1.8           S39    2.563 today    2.800  distance 1.08 vs 1.33 (-0.25)
+  T-HUN-8    band 0.8–0.95           S39    0.987 today    0.956  distance 0.25 vs 0.17 (+0.08)
+  T-IGE-2    band 0.7–0.9            S39    0.968 today    1.000  distance 0.34 vs 0.50 (-0.16)
+  T-SOC-3    band 0.45–0.8           S39    0.692 today    0.941  distance 0.00 vs 0.40 (-0.40)
+  T-SOC-6    band 0.6–0.9            S39    0.480 today    0.520  distance 0.40 vs 0.27 (+0.13)
+  sum of differences -0.35 (without T-HUN-4, T-BRD-1, T-IGE-3 +0.11); rows with |difference| < 0.05 not listed
+band revised (old → new) (2 rows)
+  T-FOOD-10  band 0.08–0.3 → 0.08–0.78  S39 0.861 today 0.002  distance old 2.55 vs 0.36 (+2.19); new 0.12 vs 0.11 (+0.00)
+  T-RNG-5    band 0.3–0.6 → 0.3–0.75  S39 0.976 today 0.607  distance old 1.25 vs 0.04 (+1.22); new 0.50 vs 0.00 (+0.50)
+  sum of differences +0.51 (without T-HUN-4, T-BRD-1, T-IGE-3 +0.51); rows with |difference| < 0.05 not listed
+new rows (new protocol only) (10 rows)
+  T-INF-2    band 1–6                S39   11.666 today   17.865  distance 1.13 vs 2.37 (-1.24)
+  T-INF-6    band 0.014–0.06         S39    0.033 today    0.256  distance 0.00 vs 4.26 (-4.26)
+  sum of differences -5.48 (without T-HUN-4, T-BRD-1, T-IGE-3 -5.48); rows with |difference| < 0.05 not listed
+
+=== fitted rows scored in all 8 sixty-day runs, mean distance over 4 runs (S39 minus today's model)
+band unchanged (14 rows)
+  T-ACT-3    band 0.08–0.18          S39    0.097 today    0.133  distance 0.06 vs 0.00 (+0.06)
+  T-COM-11   band 0.25–0.55          S39    0.057 today    0.136  distance 0.64 vs 0.38 (+0.26)
+  T-FOOD-2   band 0.6–0.78           S39    0.819 today    0.882  distance 0.22 vs 0.56 (-0.35)
+  T-HUN-2    band 0.5–0.8            S39    0.498 today    0.152  distance 0.13 vs 1.16 (-1.02)
+  T-HUN-7    band 1.2–2              S39    1.000 today    1.159  distance 0.25 vs 0.08 (+0.17)
+  T-SOC-9    band 0.08–0.22          S39    0.119 today    0.105  distance 0.01 vs 0.83 (-0.83)
+  sum of differences -1.63 (without T-HUN-4, T-BRD-1, T-IGE-3 -1.63); rows with |difference| < 0.05 not listed
+band revised (old → new) (2 rows)
+  T-HUN-1    band 5–25 → 4–11  S39 8.358 today 12.978  distance old 0.00 vs 0.00 (+0.00); new 0.02 vs 0.28 (-0.26)
+  T-PTY-1    band 3–9 → 4.5–9.2  S39 4.012 today 2.738  distance old 0.00 vs 0.04 (-0.04); new 0.10 vs 0.37 (-0.27)
+  sum of differences -0.53 (without T-HUN-4, T-BRD-1, T-IGE-3 -0.53); rows with |difference| < 0.05 not listed
+new rows (new protocol only) (1 rows)
+  sum of differences +0.00 (without T-HUN-4, T-BRD-1, T-IGE-3 +0.00); rows with |difference| < 0.05 not listed
+
+Rows the user expected among the biggest misses (S39's own run):
+T-ACT-2 0.12–0.25 0.11482319776183333 fail
+T-PTY-1 4.5–9.2 3.994342318021231 fail
+T-RNG-5 0.3–0.75 0.9717273265076006 fail
+T-FOOD-10 0.08–0.78 0.9084507042253521 fail
+T-HUN-1 4–11 8.05739514348786 inconclusive
+T-HUN-2 0.5–0.8 0.3958333333333333 inconclusive
+T-COM-11 0.25–0.55 0.023255813953488372 fail
+```
+
+**Reading.** As at 6 months: on the new bands S39 beats today's model beyond noise (fitted z −5.5, held-out −4.2, −18.7
+without the rare rows); on the old bands S39 is better on the fitted rows (−4.0) and worse on the held-out rows (+1.1;
++12.3 without the rare rows). On held-out rows whose band did not change the two are about even (−0.35; +0.11 without the
+rare rows); the audits' two widened bands (T-FOOD-10, T-RNG-5) remove +2.9 of S39's old-band deficit; the new infant rows
+give S39 −5.5 (T-INF-6 mothers grooming their own infants: today 25.6% of the day, S39 3.3%; band 1.4–6%; T-INF-2 suckling
+share: today 17.9%, S39 11.7%; band 1–6%). On fitted rows with unchanged bands S39 is genuinely better (−1.63: hunt
+success 0.50 against 0.15, T-SOC-9, the fruit share). Hunting now scores in band on the new protocol (T-HUN-1 8.4, band
+4–11), because e4f's scorer fix counts only encounter-matched hunts (S39's 16.9 was on the old count). All eight runs are
+viable (0–4 deaths, none from starvation). Of the 40 truth rows 26 are scored and 14 not scorable.
+
+**Against the predictions.** Viable: held. Held-out not worse than today's on the new bands: held. Hunting outside 4–11:
+**missed** (8.4, inside, under the corrected count). Travel share below its band: held (T-ACT-2 below 0.12, above). T-COM-11
+below its band: held (0.023). T-FOOD-10 above its band: missed on the new band (0.86 against 0.08–0.78, distance 0.12; it was
+far above the old band 0.08–0.30).
