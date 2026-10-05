@@ -1,5 +1,5 @@
 import type { Chimp, World } from '../types';
-import { boutRoom, energyNeed, fallbackKcalPerH, fruitKcalPerUnit, gutCap, gutRoom, intakeSize, locomotionKcal, refGutCap } from './energy';
+import { boutRoom, energyNeed, fallbackKcalPerH, fruitKcalPerUnit, gutBout, gutCap, gutRoom, intakeSize, locomotionKcal, refGutCap, type GutBout } from './energy';
 import { fallbackOn, fallbackValue } from './fallback';
 import type { Params } from './params';
 import { forageYield } from './phenology';
@@ -82,8 +82,14 @@ export function treeIntake(c: Chimp, P: Params, crop: number, feeders: number, d
  * Valid while the animal's body and gut do not change: computeCandidates resets it at every call (it mutates nothing of
  * the animal; a ledger opened on first use is opened at the first bout room, as without the memo).
  */
-export interface RateMemo { c: Chimp | null; P: Params | null; kcal: number; R: number; room: number; roomSet: boolean }
-export const rateMemo = (): RateMemo => ({ c: null, P: null, kcal: 0, R: 0, room: 0, roomSet: false });
+export interface RateMemo {
+  c: Chimp | null; P: Params | null; kcal: number; R: number; room: number; roomSet: boolean;
+  /** Stage E1s (gutValue): gutBout's terms for drupes and figs, kept for the animal and parameters in `gc`, `gP`. */
+  gc: Chimp | null; gP: Params | null; gd: GutBout; gdSet: boolean; gf: GutBout; gfSet: boolean;
+}
+/** A GutBout to fill (a function declaration: modules that import this one at load time may call it before energy.ts is initialised). */
+function gutSlot(): GutBout { return { R: 0, kcal: 0, room: 0, held: 0, pass: 0, need: 0 }; }
+export const rateMemo = (): RateMemo => ({ c: null, P: null, kcal: 0, R: 0, room: 0, roomSet: false, gc: null, gP: null, gd: gutSlot(), gdSet: false, gf: gutSlot(), gfSet: false });
 
 /**
  * Stage E3c (forageRate; docs/staging/e3c-prereg.md §5): the net energy rate a fruit tree promises, as a share of this
@@ -117,6 +123,72 @@ export function netRateShare(c: Chimp, P: Params, crop: number, feeders: number,
   const C = locomotionKcal(c, P, distM, climbM) + carryK;
   // stage E2i (walkGait): `speed` is the animal's walking speed (gait.ts tripSpeed), walkMps by default
   return E > C ? (E - C) / (distM / (speed * pace) / 3600 + extraH + E / (R * see)) / R : 0;
+}
+
+const _gbD = gutSlot(), _gbF = gutSlot(), _gbB = gutSlot();
+/** gutBout's terms for a crown's food at the animal's full ripe-fruit rate in that food, kept in the memo for this animal when given. */
+function crownBout(c: Chimp, P: Params, fig: boolean, memo?: RateMemo): GutBout {
+  if (memo !== undefined) {
+    if (memo.gc !== c || memo.gP !== P) { memo.gc = c; memo.gP = P; memo.gdSet = false; memo.gfSet = false; }
+    if (fig ? memo.gfSet : memo.gdSet) return fig ? memo.gf : memo.gd;
+    if (fig) memo.gfSet = true; else memo.gdSet = true;
+  }
+  const kcal = fruitKcalPerUnit(P, fig), g = gutBout(c, P, fig ? 'fig' : 'drupe', fruitRate(c, P).fruitPerH * kcal, memo !== undefined ? (fig ? memo.gf : memo.gd) : fig ? _gbF : _gbD);
+  g.kcal = kcal;
+  return g;
+}
+
+/**
+ * Stage E1s (gutValue; docs/staging/e1s-prereg.md §2 and the integrator's ruling below it): netRateShare with the bout the
+ * gut allows, in the crown's own food (figs as figs: their kcal per unit, ingestion rate and dry matter). Phase 1 as
+ * netRateShare: the foregut's room filled at the ingestion rate (boutRoom's form), up to the crop share. Phase 2 (only
+ * for an animal with a reserve deficit, the need a full foregut does not sate; iteration 2): the food at the rate a full
+ * foregut passes it, for as long as the gut takes to pass what it holds now, up to the need beyond the room's bout
+ * (energy.ts gutBout); its duration is the gut's, whatever the crop, and the crop share caps only the energy eaten in it
+ * (Amendment 1, iteration 3: a small or crowded crop no longer escapes the passage phase, so a depleted animal compares
+ * every option over the same gut horizon). The rate is still a share of the animal's own full ripe-fruit rate R
+ * (drupes), walk, climb and the trip's factors as netRateShare has them. A drupe crown whose bout has no second phase (an
+ * empty gut, an animal at or above its set point, a need that the room holds) is netRateShare itself, bit for bit. At a
+ * full gut a depleted animal values a large crop at the passage rate of its food (energy per gram), less its walk.
+ * Design assumption (the digestive rate model, verlindenWiley1989, not verified); no new magnitude. Pure (as
+ * netRateShare).
+ */
+export function gutRateShare(c: Chimp, P: Params, fig: boolean, crop: number, feeders: number, distM: number, climbM: number, pace = 1, see = 1, speed = P.walkMps, extraH = 0, carryK = 0, yieldK = 1, memo?: RateMemo): number {
+  const g = crownBout(c, P, fig, memo);
+  const share = Math.max(0, crop) / (1 + feeders) * g.kcal;
+  // iteration 3 (docs/staging/e1s-prereg.md §8.7): phase 2 lasts as long as the gut takes to pass what it holds, up to the
+  // need beyond the room's bout, whatever the crop: `pass2` the food it could take in that time; the crop share caps only
+  // the energy eaten in it (a crop smaller than the room no longer ends the bout before the passage)
+  const e1 = share < g.room ? share : g.room, beyond = g.need - g.room, pass2 = beyond > 0 ? (beyond < g.held ? beyond : g.held) : 0;
+  if (!fig && !(pass2 > 0)) return netRateShare(c, P, crop, feeders, distM, climbM, pace, see, speed, extraH, carryK, yieldK, memo);
+  const R = fig ? crownBout(c, P, false, memo).R : g.R; // the currency: the animal's own full ripe-fruit (drupe) rate
+  if (!(R > 0) || !(g.R > 0) || !(see > 0)) return 0;
+  const left = share - e1, e2 = pass2 > 0 && left > 0 ? (left < pass2 ? left : pass2) : 0;
+  const E = (e1 + e2) * yieldK;
+  if (!(E > 0)) return 0;
+  const C = locomotionKcal(c, P, distM, climbM) + carryK, r = g.R * see, q = g.pass < r ? g.pass : r;
+  return E > C ? (E - C) / (distM / (speed * pace) / 3600 + extraH + (e1 / r + (pass2 > 0 ? pass2 / q : 0)) * yieldK) / R : 0;
+}
+
+/**
+ * Stage E1s (gutValue): the factor on the fallback's value where the animal stands (computeCandidates: the crown's drive ×
+ * its rate share) that the bout the gut allows keeps: the bout's mean rate over the rate while the room fills. `rateK`
+ * the fallback's intake at full light (kcal/h), `see` the vision it is eaten at. Phase 1 as today (the room filled at that
+ * rate; the fallback has no crop limit), phase 2 the passage rate while the gut passes what it holds, up to the need a
+ * full foregut does not sate (energy.ts gutBout: the reserve deficit). 1 when the bout has no second phase and the gut
+ * has room (an empty gut, an animal at or above its set point, a need the room holds, or a rate the gut passes as fast as
+ * it is eaten: today's value exactly); q ÷ (rate × see) at a full gut, so the fallback is then worth its passage rate
+ * (energy per gram); 0 at a full gut with no need (a sated animal's bout is empty). Pure (as gutBout).
+ */
+export function fallbackGutFactor(c: Chimp, P: Params, rateK: number, see: number): number {
+  const r = rateK * see;
+  if (!(r > 0)) return 1;
+  const g = gutBout(c, P, 'fallback', rateK, _gbB), e1 = g.room;
+  if (e1 === Infinity) return 1;
+  const e2 = g.need > e1 ? (g.need - e1 < g.held ? g.need - e1 : g.held) : 0;
+  if (!(e2 > 0)) return e1 > 0 ? 1 : 0;
+  const q = g.pass < r ? g.pass : r;
+  return (e1 + e2) / (e1 + e2 * r / q);
 }
 
 /**

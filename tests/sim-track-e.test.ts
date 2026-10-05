@@ -56,6 +56,7 @@ const TRACK_E_SWITCHES = [
   'matingValue', // E4p
   'tripBeliefs', // E3h
   'callTrip', // E3i
+  'gutValue', // E1s
 ] as const;
 
 test('Track E switches are all 0 by default in both profiles', () => {

@@ -14,16 +14,15 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (5 October 12:56; deploy held by the user).** **S39 is not viable at 12 months** (starvation in 3 of
-  4 runs; e-rebaseline.md), and the walk-back put the cause before S27. **E1r found it** (merged a9739c3,
-  `docs/staging/e1r-prereg.md` §9–13): in the lean season the small and reproducing females' foregut is full, and a
-  valuation trap (`forageRate` prices a crown by the gut's room, in drupe units, but the fallback at its full rate)
-  keeps depleted animals eating the food the gut passes least energy from; five of S39's six dead are immigrant
-  females. **E1s** (`gutValue`, registered eb2b209, `docs/staging/e1s-prereg.md`) is in development as agent
-  **e1s-gut** (branch `e1s-gut`; seeds 48 and 7 at 6 months); the integrator runs its confirm (4 runs, 6 → 12 months).
-  Part D done (e52e84e). Agent **eM-model** (M1–M3, GLiNER on Track E's state) still running. Separate from Track E:
-  agent **ui-minimap** (branch `ui-minimap` from `main`) on the user's minimap and perception-ring request; merging
-  into `main` waits for the user.
+- **Running now (5 October 15:20; deploy held by the user).** **S39 is not viable at 12 months** (starvation in 3 of
+  4 runs; e-rebaseline.md); E1r found a full-gut valuation trap (merged a9739c3). **E1s** (`gutValue`) stopped after 3 iterations, none passing (merged 1c1bcb2, switch 0): the trap is gone but depleted
+  animals walk 2–3× farther and starve sooner (11, 9, 3 deaths on seeds 48 + 7 at 6 months; S39 0); lessons in
+  e1s-prereg.md §8.8. **E1t** (`horizonLived`, registered 521d96d) fixes the feeding horizon that collapses under `rhythmCircadian` and pins
+  the deficit drive at 1 in 26% of decisions; agent **e1t-horizon**. **M1–M3 merged (a9aa344):** GLiNER cannot choose
+  for the chimps as it is (it ignores the body numbers; on GLiNER focal animals underfeed and sleep out of nests); it
+  needs teaching on the new state (Track R, R4); Jev reads the numbers ($0.20 spent). Part D done (e52e84e). Separate
+  from Track E: the user's minimap and perception-ring work is ready on branch `ui-minimap` (from `main`); merging into
+  `main` waits for the user (the main checkout holds another session's unsaved edits to the same files).
 - **Next after Track E's fixes: Track R** (Recurrent Decision Models; framing `docs/recurrent-decision-model.md`, stages
   R0–R6 in IMPLEMENTATION_PLAN.md; R0 done, merged bf6eba0). R1–R6 start only after the gate: the audited targets and
   scorer fixes under a new freeze; the run-length ladder in place; the best stack re-baselined on the new protocol at 60
