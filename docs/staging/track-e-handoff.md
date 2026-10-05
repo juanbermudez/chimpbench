@@ -14,7 +14,7 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (5 October 11:37; deploy held by the user).** Part C done at 60 days, 6 months and 12 months
+- **Running now (5 October 11:36; deploy held by the user).** Part C done at 60 days, 6 months and 12 months
   (docs/staging/e-rebaseline.md). **S39 is not viable at 12 months:** starvation in 3 of 4 runs (adolescents, pregnant
   females, an infant) after a lean season (days ~45–230 of the scored year) the 60-day windows never saw. **Walk-back
   done (3dd5edf):** S37, S34, S31 and S27 all starve on seed 48 (2–4 deaths; S39 0–1), so the cause is older than S27,
