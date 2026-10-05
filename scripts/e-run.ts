@@ -10,18 +10,20 @@
 //   pnpm exec tsx scripts/e-run.ts plan --label S39-m6 --m6 --params-file p.json [--seeds 48,7,21,5,11] [--days N --burn-in N]
 //        [--out artifacts/validation/e/runs/<label>] [--compare ref.json] [--energy] [--rhythm] [--job-max-min 100]
 //        [--path auto|single|fallback] [--from <out of a shorter single-pass run>/run.json]
-//   pnpm exec tsx scripts/e-run.ts run <out>/run.json [--budget-min 110] [--parallel auto|N] [--retry-failed] [--detach]
+//   pnpm exec tsx scripts/e-run.ts run <out>/run.json [--budget-min 110] [--parallel auto|N] [--retry-failed] [--attached]
 //   pnpm exec tsx scripts/e-run.ts status <out>/run.json
 //   pnpm exec tsx scripts/e-run.ts merge <out>/run.json                 (run merges by itself when every job is done)
 //   pnpm exec tsx scripts/e-run.ts diff <a.json> <b.json>               (two e-bench results or scorecards, ignoring dates, timing, workers)
 //
-// Launch `run` with run_in_background: it starts a job only if the job's estimate fits in what is left of --budget-min
-// (default 110 min, under the 2-hour limit), so it stops cleanly; launch it again (this or a new session) to continue.
-// A job's estimate is its seed-days × the slowest rate (s per seed-day) seen so far for its kind (priors below), so
-// jobs are split before they could reach --job-max-min. --parallel auto runs two jobs while the 1-minute load is below
-// 8 and one above (each job is one simulation thread). Without --detach every job dies with the runner and is re-run
-// next time; with --detach jobs run in their own session and survive the runner: the next `run` adopts a live job and
-// reads its exit file. A job that exits non-zero is marked failed (its log is kept); `run --retry-failed` re-queues it.
+// Launch `run` with run_in_background (timeout 7200000): it starts a job only if the job's estimate fits in what is left
+// of --budget-min (default 110 min, under the 2-hour limit), so it stops cleanly; launch it again (this or a new
+// session) to continue. A job's estimate is its seed-days × the slowest rate (s per seed-day) seen so far for its kind
+// (priors below), so jobs are split before they could reach --job-max-min. --parallel auto runs two jobs while the
+// 1-minute load is below 8 and one above (each job is one simulation thread). Jobs run in their own session and
+// survive the runner (a background limit or a session end that kills the runner leaves them running); each writes its
+// exit code to <out>/run/<job>.exit, and the next `run` adopts a live job or reads that file. A job killed with the
+// runner (--attached, or a machine restart) is queued again. A job that exits non-zero is marked failed (its log is
+// kept); `run --retry-failed` re-queues it.
 //
 // Two paths, chosen at plan time (--path auto: single when scripts/e-bench.ts exports RUN_CONTRACT):
 //  single-pass  (the contract agreed with eB-bench, 5 October 2026): one job per seed,
@@ -390,7 +392,7 @@ function parseArgs(argv: string[]): Args {
   for (let i = 0; i < argv.length; i++) { if (argv[i].startsWith('--')) { if (i + 1 < argv.length && !argv[i + 1].startsWith('--') && !BOOL.has(argv[i])) i++; } else pos.push(argv[i]); }
   return { pos, flag: (k, d = '') => { const i = argv.indexOf(`--${k}`); return i >= 0 && i + 1 < argv.length ? argv[i + 1] : d; }, has: k => argv.includes(`--${k}`) };
 }
-const BOOL = new Set(['--quick', '--confirm', '--m6', '--m12', '--m24', '--full', '--energy', '--rhythm', '--retry-failed', '--detach']);
+const BOOL = new Set(['--quick', '--confirm', '--m6', '--m12', '--m24', '--full', '--energy', '--rhythm', '--retry-failed', '--attached']);
 
 async function plan(a: Args): Promise<void> {
   const label = a.flag('label');
@@ -456,7 +458,7 @@ const SH = 'if [ -n "$E_RUN_OUT" ]; then "$@" > "$E_RUN_OUT" 2>> "$E_RUN_LOG"; e
 
 async function runCmd(file: string, a: Args): Promise<number> {
   const run = new Run(file), r = run.reg;
-  const budgetMin = +a.flag('budget-min', '110'), par = a.flag('parallel', 'auto'), detach = a.has('detach'), t0 = Date.now();
+  const budgetMin = +a.flag('budget-min', '110'), par = a.flag('parallel', 'auto'), detach = !a.has('attached'), t0 = Date.now();
   if (r.root !== ROOT) throw new Error(`this registry runs in ${r.root}; launch e-run from there (this checkout is ${ROOT})`);
   // one runner per registry
   const lockFile = run.path('run.lock');
