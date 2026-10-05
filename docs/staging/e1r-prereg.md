@@ -77,3 +77,47 @@ judges E1s; E1r does not run it.
 
 Feeding time does not rise enough as fruit falls (the decision values do not trade other acts for feeding as reserves
 drop), and the fallbacks supply too little to cover it; expenditure is not the main term.
+
+## 8. Run log (agent `e1r-lean`; sections 1–7 above are the registration, unchanged)
+
+### 8.1 Why a run is needed (5 October 2026, before any run; read from the S39 group's parts and end worlds)
+
+The existing data hold, by class and day: ticks, eating ticks, energy in, passed out, spent (total), dry matter, daylight
+hunger and foregut-full ticks; the reserve trajectory for seven classes; the year's spending by term and fruit share by
+class; and in the end worlds each dead animal's identity, time and cause of death. They cannot give five readouts of §5
+that the verdict needs:
+1. **Food mix by month** for any class (daily records have no food kind; only the year's fruit share exists).
+2. **Spending by term by month** (only the year's sum per term exists).
+3. **Adolescents (12–15 y)**: no class readout holds them (energy-probe.ts `classesOf` returns none for 12–15 y), yet 3
+   of S39's 6 starvation deaths are adolescents (one female of seed 5 in three re-draws). Pregnant females have no
+   reserve trajectory.
+4. **The starved animals' last 60 days**: no readout is per animal; the end worlds keep only identity, time and cause
+   (a dead animal's hidden state is slimmed 30 days after death).
+5. **What caps feeding** by month: eating at a full foregut, the daylight acts, party size and food-competition charges
+   received.
+
+Finding that set the run plan (end worlds, `deathTime`): every starvation death in S39's group and in the walk-back falls
+**after** scored day 180 except one (seed 11, rngSalt 1: day 189): S39 rngSalt 2 seed 48, id 22 at day 342; S31
+rngSalt 0 seed 48, ids 17, 15, 47, 22 at days 235, 258, 339, 354. All are female.
+
+### 8.2 The readout (committed before any run)
+
+`e-bench --animal-days` (scripts/lib/energy-probe.ts `ANIMAL_DAY_FIELDS`, measurement only): one row per living animal
+and window day with food taken by kind (drupe, fig, fallback, meat, milk, plant handed over), eating ticks by kind and
+at a full foregut, spending by term, ground metres, daylight acts, hunger, foregut fill, party size, charges received
+(and those by an actor competing for food), mass, reserves, store, the mother's reserves. Off unless asked; the part of
+a run without it is unchanged. tests/lean-season.test.ts: the world is the same with and without it (field hash and the
+whole energy readout), and the rows add up to the class readout (energy in, spent, passed out, dry matter within 0.1%).
+No src/ or data/ change: compressed goldens, tests/fixtures and tests/sim-track-e.test.ts are untouched.
+
+### 8.3 Runs (each logged here before it starts; seed 48 only; `--workers 1`; one job at a time while the load is above 8)
+
+Frozen detached checkout of the readout commit (scratch worktree), outputs in this worktree's
+`artifacts/validation/e1r/` (gitignored). At most 3 runs; both worlds' deaths fall after day 180, so only one can be
+extended within the cap: S31's (four deaths, every starving class: pregnant female, juvenile, adolescent, and the infant
+of 2–5 y that is also S39 rngSalt 2's only death).
+- **R1**: S31 (WB-S31's parameters, rngSalt 0), `--m6 --seeds 48 --part --animal-days` (30 + 180 days, end checkpoint).
+- **R2**: R1 extended to 12 months (`--m12 --resume` R1's checkpoint). Behaviour check: its field hash and deaths (ids,
+  times) must equal WB-S31's seed-48 part and end world.
+- **R3**: S39 rngSalt 2 (M12-S39-s2's parameters), `--m6 --seeds 48 --part --animal-days`. Behaviour check: its field hash
+  must equal M6-S39-s2's seed-48 part. Its death (day 342) stays outside the window; the same animal starves in R2.

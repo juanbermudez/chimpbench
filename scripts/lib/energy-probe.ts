@@ -13,7 +13,7 @@
 import { digestaCaps, energyTap, fruitKcalPerUnit, growthPotential, intakeSize, massOf, nurseBoutWorth, ownDrive, plantKcalPerMin, reserveCap, gutCap, type EnergyTerm, type FoodKind } from '../../src/sim/energy';
 import { isCarried, V } from '../../src/sim/candidates';
 import { paramsOf, type Params } from '../../src/sim/params';
-import { isTreeId, ix } from '../../src/sim/state';
+import { isTreeId, ix, type ChimpX } from '../../src/sim/state';
 import { nurseTap, type NurseEvent } from '../../src/sim/execution';
 import type { Chimp, World } from '../../src/types';
 
@@ -96,6 +96,11 @@ export interface EnergyAcc {
   births: number; livingStart: number; livingEnd: number;
   /** Seeds measured into this accumulator, in order. */
   seeds: number[];
+  /**
+   * Stage E1r (docs/staging/e1r-prereg.md §5), only when asked (energyStart's `animalDays`): one row per animal and
+   * window day, fields in ANIMAL_DAY_FIELDS order (seed order, then day order, as measured).
+   */
+  animalDays?: number[][];
 }
 export const newEnergyAcc = (): EnergyAcc => ({
   acc: Object.fromEntries(CLASSES.map(c => [c, blank()])) as Record<Cls, Acc>, inf: Object.fromEntries(BINS.map(b => [b, blankInf()])), wean: Object.fromEntries(BINS.map(b => [b, blankWean()])),
@@ -140,6 +145,148 @@ export interface EnergySeedState {
   start: Map<number, { age0: number; kg0: number; res0: number; mRes: number; mN: number }>;
   juv0: Map<number, { age0: number; kg0: number }>;
   prevAct: Map<number, string>; resAtDay: Map<number, number>;
+  /** Stage E1r: the per-animal daily records' state (absent unless asked). */
+  ad?: AnimalDayState;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Stage E1r (docs/staging/e1r-prereg.md §5): per-animal daily records. Measurement only, off unless energyStart is asked
+// (e-bench --animal-days); it reads the world and never writes it (a dead animal's hidden state is read without ix(),
+// which would create it). One row per living animal per window day, pushed at the day's end (06:30, the window's day
+// boundary) or at the window's end; an animal that dies keeps its row to the day's end with `dead` 1.
+//   identity at the day's end   day, id, troop, female, age (y), mother (id), pregnancy (days, 0 none), lactating,
+//                               weaned, dead, kg (ledger mass), res (reserves, kcal), store (usable reserve, kcal),
+//                               motherRes (the living mother's reserves ÷ her store, null without one)
+//   ticks, dayTicks             ticks alive in the day, of them with daylight > 0.1 (as the other readouts)
+//   kin, fec, fin, dm           Δ of the ledger's books over the day: energy in (fibre at its fermentation yield), passed
+//                               out, formula energy eaten (the food's own kcal units), dry matter eaten (g)
+//   eDrupe … eMilk              food taken into the gut by kind (the 'eaten' tap, formula kcal); eShared = fin − their
+//                               sum: plant food handed over by a mother (+) or to an offspring (−)
+//   tDrupe … tMilk              ticks in which food of that kind was swallowed; tEat = ticks with drupe, fig, fallback or
+//                               meat swallowed; tEatFull = of them, ticks ending with the foregut ≥ 95% full
+//   oRest … oDigestion          expenditure by term (the energy tap's terms, kcal; carry and milk paid by the carrier and
+//                               the mother)
+//   walkM                       metres moved on the ground (height < 0.3 m, steps < 100 m, as the class readout)
+//   aCrown … aOther             daylight ticks by act: feeding in a crown (forage at a tree, phase 2), on the way to a
+//                               tree (forage, earlier phases), feeding on the ground (forage without a tree), travel
+//                               (travel, follow, patrol, transfer, consort, climb, flee, hunt), rest (rest, shelter,
+//                               nest), social and agonistic acts, nurse, drink, other
+//   hunger, fill, fullDay       daylight sums of hunger and foregut fill, daylight ticks with the foregut ≥ 95% full
+//   party                       daylight sum of the size of the animal's party (world.parties)
+//   charged, feedCharged        charges, attacks and coalition or intergroup charges aimed at the animal (interactions
+//                               started this tick), of them by an actor competing for food (value code V.FEED)
+// ---------------------------------------------------------------------------------------------------------------------
+export const ANIMAL_DAY_FIELDS = ['day', 'id', 'troop', 'female', 'age', 'mother', 'pregnancy', 'lactating', 'weaned', 'dead', 'kg', 'res', 'store', 'motherRes',
+  'ticks', 'dayTicks', 'kin', 'fec', 'fin', 'dm', 'eDrupe', 'eFig', 'eFallback', 'eMeat', 'eMilk', 'eShared',
+  'tDrupe', 'tFig', 'tFallback', 'tMeat', 'tMilk', 'tEat', 'tEatFull',
+  'oRest', 'oActivity', 'oWild', 'oWalk', 'oClimb', 'oCarry', 'oPregnancy', 'oGrowth', 'oMilk', 'oDigestion', 'walkM',
+  'aCrown', 'aToTree', 'aGround', 'aTravel', 'aRest', 'aSocial', 'aNurse', 'aDrink', 'aOther',
+  'hunger', 'fill', 'fullDay', 'party', 'charged', 'feedCharged'] as const;
+export type AnimalDayField = typeof ANIMAL_DAY_FIELDS[number];
+/** Column of each animal-day field. */
+export const AD = Object.fromEntries(ANIMAL_DAY_FIELDS.map((k, i) => [k, i])) as Record<AnimalDayField, number>;
+/** What the per-animal records carry from tick to tick. */
+export interface AnimalDayState {
+  /** Rows of the day in progress, by animal id. */
+  open: Map<number, number[]>;
+  /** Food kinds swallowed this tick (bits of KIND_BIT), by animal id, from the 'eaten' tap. */
+  kinds: Map<number, number>;
+  /** The ledger's books at the last tick (in, fec, fin, dmIn) and the ground position, by animal id. */
+  books: Map<number, number[]>; pos: Map<number, number[]>;
+  /** The highest interaction id already read. */
+  lastInter: number;
+}
+const KIND_BIT: Record<FoodKind, number> = { drupe: 1, fig: 2, fallback: 4, meat: 8, milk: 16 };
+const KIND_FIELD: Record<FoodKind, number> = { drupe: AD.eDrupe, fig: AD.eFig, fallback: AD.eFallback, meat: AD.eMeat, milk: AD.eMilk };
+const TERM_FIELD: Record<Exclude<EnergyTerm, 'eaten' | 'suckled'>, number> = { rest: AD.oRest, activity: AD.oActivity, wild: AD.oWild, walk: AD.oWalk, climb: AD.oClimb, carry: AD.oCarry,
+  pregnancy: AD.oPregnancy, growth: AD.oGrowth, milk: AD.oMilk, digestion: AD.oDigestion };
+/** The open row of animal `id` for window day `day` (opened on first use). */
+function adRow(ad: AnimalDayState, id: number, day: number): number[] {
+  let r = ad.open.get(id);
+  if (!r) { r = new Array<number>(ANIMAL_DAY_FIELDS.length).fill(0); r[AD.day] = day; r[AD.id] = id; ad.open.set(id, r); }
+  return r;
+}
+/** Daylight act column of an animal (see the block comment above). */
+function actField(c: Chimp, phase: number): number {
+  switch (c.action) {
+    case 'forage': return c.targetId < 0 ? AD.aGround : phase === 2 ? AD.aCrown : AD.aToTree;
+    case 'travel': case 'follow': case 'patrol': case 'transfer': case 'consort': case 'climb': case 'flee': case 'hunt': return AD.aTravel;
+    case 'rest': case 'shelter': case 'nest': return AD.aRest;
+    case 'nurse': return AD.aNurse;
+    case 'drink': return AD.aDrink;
+    case 'groom': case 'play': case 'pant-grunt': case 'reconcile': case 'console': case 'mate': case 'guard': case 'display': case 'call': case 'alarm':
+    case 'charge': case 'attack': case 'submit': case 'beg': case 'share': return AD.aSocial;
+    default: return AD.aOther;
+  }
+}
+/** An energy tap of the measured world, into the animal's open row (milk is booked by its 'eaten' tap). */
+function adTap(st: EnergySeedState, c: Chimp, term: EnergyTerm, kcal: number, kind?: FoodKind): void {
+  if (term === 'suckled') return;
+  const ad = st.ad!, r = adRow(ad, c.id, st.curDay);
+  if (term === 'eaten') { if (kind && kcal > 0) { r[KIND_FIELD[kind]] += kcal; ad.kinds.set(c.id, (ad.kinds.get(c.id) ?? 0) | KIND_BIT[kind]); } return; }
+  r[TERM_FIELD[term]] += kcal;
+}
+/** After each measured tick: the books, eating, acts, fill, party size and charges received of every living animal. */
+function adStep(st: EnergySeedState, w: World, P: Params): void {
+  const ad = st.ad!, day = st.curDay, light = st.light;
+  let byId: Map<number, Chimp> | null = null;
+  let top = ad.lastInter;
+  for (const it of w.interactions) {
+    if (it.id <= ad.lastInter) continue;
+    if (it.id > top) top = it.id;
+    if (!(it.kind === 'charge' || it.kind === 'fight' || it.kind === 'coalition' || it.kind === 'intergroup' || it.kind === 'infanticide') || !(it.targetId > 0 && it.targetId < 100000)) continue;
+    byId ??= new Map(w.chimps.map(k => [k.id, k]));
+    const t = byId.get(it.targetId), a = byId.get(it.actorId);
+    if (!t) continue;
+    const r = adRow(ad, t.id, day); r[AD.charged]++;
+    if (a && a.alive && ix(a).v === V.FEED) r[AD.feedCharged]++;
+  }
+  ad.lastInter = top;
+  const size = new Map<number, number>();
+  if (light) for (const p of w.parties) size.set(p.id, p.members.length);
+  for (const c of w.chimps) {
+    if (!c.alive) continue;
+    const x = ix(c), L = x.en, r = adRow(ad, c.id, day);
+    r[AD.ticks]++;
+    if (L) {
+      const b = ad.books.get(c.id), fec = L.fec ?? 0, fin = L.fin ?? 0, dm = L.dmIn ?? 0;
+      if (b) { r[AD.kin] += L.in - b[0]; r[AD.fec] += fec - b[1]; r[AD.fin] += fin - b[2]; r[AD.dm] += dm - b[3]; b[0] = L.in; b[1] = fec; b[2] = fin; b[3] = dm; }
+      else { r[AD.kin] += L.in; r[AD.fec] += fec; r[AD.fin] += fin; r[AD.dm] += dm; ad.books.set(c.id, [L.in, fec, fin, dm]); } // a ledger opened in the window (a newborn)
+    }
+    const mask = ad.kinds.get(c.id) ?? 0, f = L ? fillOf(c, P) : NaN;
+    if (mask) {
+      if (mask & 1) r[AD.tDrupe]++; if (mask & 2) r[AD.tFig]++; if (mask & 4) r[AD.tFallback]++; if (mask & 8) r[AD.tMeat]++; if (mask & 16) r[AD.tMilk]++;
+      if (mask & 15) { r[AD.tEat]++; if (f >= 0.95) r[AD.tEatFull]++; }
+    }
+    const pp = ad.pos.get(c.id);
+    if (pp) { if (c.position[1] < 0.3) { const s = Math.hypot(c.position[0] - pp[0], c.position[2] - pp[1]); if (s < 100) r[AD.walkM] += s; } pp[0] = c.position[0]; pp[1] = c.position[2]; }
+    else ad.pos.set(c.id, [c.position[0], c.position[2]]);
+    if (light) {
+      r[AD.dayTicks]++; r[actField(c, x.phase)]++; r[AD.hunger] += c.hunger; r[AD.party] += size.get(c.partyId) ?? 1;
+      if (L) { r[AD.fill] += f; if (f >= 0.95) r[AD.fullDay]++; }
+    }
+  }
+  ad.kinds.clear();
+}
+/** Closes the open rows into ea.animalDays (at a day's end and the window's end): the animal's state at that moment. */
+function adFlush(st: EnergySeedState, ea: EnergyAcc, w: World, P: Params): void {
+  const ad = st.ad!, rows = (ea.animalDays ??= []);
+  if (!ad.open.size) return;
+  const byId = new Map(w.chimps.map(k => [k.id, k]));
+  for (const [id, r] of ad.open) {
+    const c = byId.get(id);
+    if (c) {
+      const sx = (c as unknown as { sim?: ChimpX }).sim, L = sx?.en;
+      r[AD.troop] = c.troopId; r[AD.female] = c.sex === 'female' ? 1 : 0; r[AD.age] = c.age; r[AD.mother] = c.motherId; r[AD.pregnancy] = c.pregnancy;
+      r[AD.lactating] = c.lactating ? 1 : 0; r[AD.weaned] = sx?.weaned ? 1 : 0; r[AD.dead] = c.alive ? 0 : 1;
+      if (sx && L) { r[AD.kg] = L.kg ?? massOf(c, P); r[AD.res] = L.res; r[AD.store] = reserveCap(c, P); } else { r[AD.kg] = NaN; r[AD.res] = NaN; r[AD.store] = NaN; }
+      const m = c.motherId > 0 ? byId.get(c.motherId) : undefined, ML = m && m.alive ? ix(m).en : undefined;
+      (r as (number | null)[])[AD.motherRes] = m && ML ? ML.res / reserveCap(m, P) : null;
+    }
+    r[AD.eShared] = r[AD.fin] - r[AD.eDrupe] - r[AD.eFig] - r[AD.eFallback] - r[AD.eMeat] - r[AD.eMilk];
+    rows.push(r);
+  }
+  ad.open.clear();
 }
 
 const fieldPerKcalOf = (P: Params): Record<FoodKind, number> => ({ drupe: P.ledgerFruitKcalPerMin / plantKcalPerMin(P, 'drupe'), fig: P.ledgerFigKcalPerMin / plantKcalPerMin(P, 'fig'),
@@ -149,7 +296,7 @@ const fieldPerKcalOf = (P: Params): Record<FoodKind, number> => ({ drupe: P.ledg
  * Starts measuring a world at the end of its burn-in (after any --term-births scenario): the seed's state, with the
  * living counted into `a`. Install the taps (energyTapsOn) before the first measured tick.
  */
-export function energyStart(w: World, a: EnergyAcc, seed: number, days: number): EnergySeedState {
+export function energyStart(w: World, a: EnergyAcc, seed: number, days: number, opts: { animalDays?: boolean } = {}): EnergySeedState {
   const P = paramsOf(w), on = P.energyLedger === 1;
   // growth, gestation and milk are charged per ecological tick at their natural rate: at ageRate > 1 (life course) the
   // ledger undercounts them by that factor, so its budgets would be wrong (docs/simulation.md, energy ledger)
@@ -169,6 +316,12 @@ export function energyStart(w: World, a: EnergyAcc, seed: number, days: number):
   refreshBins(st, w);
   for (const id of st.binNow.keys()) { const c = w.chimps.find(k => k.id === id)!, L = ix(c).en; st.start.set(id, { age0: c.age, kg0: massOf(c, P), res0: L ? L.res / reserveCap(c, P) : 0, mRes: 0, mN: 0 }); }
   for (const c of w.chimps) if (c.alive && ix(c).weaned && c.age < 12) st.juv0.set(c.id, { age0: c.age, kg0: massOf(c, P) });
+  if (opts.animalDays) {
+    // stage E1r: the books and positions of the living at the window's start, and the interactions already under way
+    st.ad = { open: new Map(), kinds: new Map(), books: new Map(), pos: new Map(), lastInter: w.interactions.reduce((m, it) => it.id > m ? it.id : m, 0) };
+    for (const c of w.chimps) if (c.alive) { const L = ix(c).en; if (L) st.ad.books.set(c.id, [L.in, L.fec ?? 0, L.fin ?? 0, L.dmIn ?? 0]); st.ad.pos.set(c.id, [c.position[0], c.position[2]]); }
+    a.animalDays ??= [];
+  }
   return st;
 }
 
@@ -188,6 +341,7 @@ const storeFull = (m: Chimp, P: Params) => P.ledgerMilkYieldCoef / 24 * Math.pow
 
 /** Energy terms of the measured world's animals, as they are booked during tickWorld. */
 function tapEnergy(st: EnergySeedState, a: EnergyAcc, P: Params, c: Chimp, term: EnergyTerm | 'eaten' | 'suckled', kcal: number, kind?: FoodKind): void {
+  if (st.ad) adTap(st, c, term, kcal, kind); // stage E1r
   const acc = a.acc, inf = a.inf;
   if (term === 'eaten') { const k = st.cls.get(c.id); if (k && kind) for (const n of k) acc[n].fm += kcal * st.fieldPerKcal[kind]; return; }
   if (term === 'suckled') {
@@ -436,6 +590,8 @@ export function energyAfter(st: EnergySeedState, ea: EnergyAcc, w: World, i: num
       st.resAtDay.set(m.id, r);
     }
   }
+  // stage E1r: the per-animal daily records (after the tick; closed at the day's last tick)
+  if (st.ad) { adStep(st, w, P); if (i % DAY === DAY - 1) adFlush(st, ea, w, P); }
   // the reserve trajectory: this seed's daily mean reserves ÷ store by class (energy-diagnose.ts averaged the seeds in
   // place; the report now averages them from the per-seed values with the same arithmetic, in the same order)
   if (on && i % DAY === DAY / 2) for (const n of ['adult male', 'female, other', 'female, lactating', 'juvenile 5–12 y', 'infant 2–5 y', 'infant 0.5–2 y', 'infant < 0.5 y'] as Cls[]) {
@@ -448,6 +604,7 @@ export function energyAfter(st: EnergySeedState, ea: EnergyAcc, w: World, i: num
 /** The end of a seed's window: velocities, juveniles, dyads, births, the living and deaths (reads the world, never writes it). */
 export function energyFinish(st: EnergySeedState, a: EnergyAcc, w: World): void {
   const P = paramsOf(w), e1p = a.e1p, seed = st.seed, days = st.days;
+  if (st.ad) adFlush(st, a, w, P); // stage E1r: a window that ends inside a day
   // stage E1p: velocity (kg per bio-year) and reserve change (÷ store per day) of each tracked animal, in the group it started in
   for (const [id, s0] of st.pStart) {
     const c = w.chimps.find(k => k.id === id)!;
@@ -519,6 +676,7 @@ export function mergeEnergy(parts: EnergyAcc[]): EnergyAcc {
     m.juvs.push(...p.juvs.map(clone)); m.dyads.push(...p.dyads.map(clone));
     addInto(m.deaths, p.deaths); addInto(m.deathsByClass, p.deathsByClass);
     m.births += p.births; m.livingStart += p.livingStart; m.livingEnd += p.livingEnd;
+    if (p.animalDays) { const rows = (m.animalDays ??= []); for (const r of p.animalDays) rows.push(r.slice()); } // stage E1r
   }
   return m;
 }
