@@ -1,7 +1,9 @@
 # E3g pre-registration: why re-deciding adds trips
 
-Status: skeleton committed at the start of the stage (4 October 2026; branch `e3g-redecide-trips`, from `track-e`
-d8417b5), before any run and before any code change. Track E, stage E3g. Rule served: field values of behaviour are
+Status: complete (4 October 2026): diagnosis on four realizations of S27 and S28 (§2.2), two iterations;
+`experienceValue` 2 a provisional keep candidate as a correction (§6.2, §8), 1 and 3 recorded null (§6.1). Skeleton
+committed at the start of the stage (branch `e3g-redecide-trips`, from `track-e` d8417b5), before any run and before any
+code change. Track E, stage E3g. Rule served: field values of behaviour are
 targets to benchmark against, never inputs. No value, bonus or weight is added to hit a travel share, a day range, a
 hunting rate or a feeding-tree count.
 
@@ -631,6 +633,151 @@ it act more often. Bit 2 (an encounter is a group not seen within the hour) acte
 alone next.
 
 
+### 6.2 Iteration 2: Y2 = S28 + `experienceValue` 2 (frozen checkout 8a4d1d8, clean)
+
+Printed by `final_table.py`, `night.py` and the redecide readouts from the JSON (session scratch `e3g/arms/`).
+
+```
+  S28q: 28d249e dirty 0 prescriptions 40 viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}
+  S28q1: 28d249e dirty 0 prescriptions 40 viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}
+  S28q2: 28d249e dirty 0 prescriptions 40 viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}
+  S28q3: 28d249e dirty 0 prescriptions 40 viability {'pass': True, 'births': 0, 'deaths': 1, 'ratio': 0, 'starvationDeaths': 0, 'minLivingShare': 0.9795918367346939, 'reasons': [], 'fewEvents': True}
+  S27q: 28d249e dirty 0 prescriptions 42 viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}
+  S27q1: 28d249e dirty 0 prescriptions 42 viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}
+  S27q2: 28d249e dirty 0 prescriptions 42 viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}
+  S27q3: 28d249e dirty 0 prescriptions 42 viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}
+  Y2: 8a4d1d8 dirty 0 prescriptions 39 viability {'pass': True, 'births': 0, 'deaths': 2, 'ratio': 0, 'starvationDeaths': 0, 'minLivingShare': 0.9795918367346939, 'reasons': [], 'fewEvents': True}
+
+quick, reference custom (4 runs), rows counted in all runs: fitted 17, held-out 13
+  fitted             (17 rows) ref 3.65, 2.16, 2.74, 2.85 (mean 2.85, sd 0.61; used 0.69) | Y2.json: 2.01, Δ -0.84, z -1.1 (inside noise)
+  held-out           (13 rows) ref 3.44, 5.32, 4.64, 3.43 (mean 4.21, sd 0.94; used 1.26) | Y2.json: 5.23, Δ +1.02, z +0.7 (inside noise)
+  held-out w/o rare  (12 rows) ref 3.14, 3.48, 3.88, 3.39 (mean 3.47, sd 0.31; used 0.48) | Y2.json: 3.49, Δ +0.02, z +0.0 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-HUN-1   fitted   ref 1.14±0.31 | Y2.json 0.25 (inconclusive)
+   T-HUN-4   held-out ref 0.73±0.79 | Y2.json 1.73 (fail)
+
+  fitted             (16 rows) ref 1.50, 2.68, 1.04, 2.26 (mean 1.87, sd 0.74; used 0.74) | S28q.json: 2.61, Δ +0.74, z +0.9 (inside noise) | Y2.json: 2.01, Δ +0.14, z +0.2 (inside noise)
+  held-out           (12 rows) ref 4.27, 4.04, 3.73, 3.22 (mean 3.82, sd 0.46; used 1.26) | S28q.json: 3.21, Δ -0.60, z -0.4 (inside noise) | Y2.json: 4.73, Δ +0.91, z +0.6 (inside noise)
+  held-out w/o rare  (11 rows) ref 3.45, 4.04, 3.73, 3.22 (mean 3.61, sd 0.36; used 0.48) | S28q.json: 2.91, Δ -0.69, z -1.3 (inside noise) | Y2.json: 2.99, Δ -0.62, z -1.1 (inside noise)
+| Readout | S28q runs | S28q mean ± SD | S27q mean | Y2 |
+| --- | --- | --- | --- | --- |
+| ground km, adult male | 4.02 / 3.87 / 3.74 / 4.04 | 3.92 ± 0.14 | 2.81 | 3.89 (z -0.2) |
+| ground km, female lactating | 3.66 / 3.62 / 3.51 / 3.65 | 3.61 ± 0.07 | 2.48 | 3.64 (z +0.3) |
+| ground km, female other | 3.09 / 2.68 / 2.68 / 3.01 | 2.87 ± 0.22 | 2.08 | 2.73 (z -0.6) |
+| ground km, juvenile 5–12 y | 3.87 / 3.81 / 3.79 / 3.88 | 3.84 ± 0.05 | 2.83 | 3.69 (z -2.9) |
+| climbing kcal/day, adults (day-weighted) | 73.8 / 73.2 / 70.5 / 79.5 | 74.2 ± 3.8 | 46.0 | 71.4 (z -0.7) |
+| climbing kcal/day, adult male | 96.2 / 97.4 / 92.2 / 106.4 | 98.1 ± 6.0 | 59.0 | 95.4 (z -0.4) |
+| climbing kcal/day, female lactating | 56.8 / 56.6 / 55.1 / 60.0 | 57.1 ± 2.1 | 37.5 | 54.5 (z -1.1) |
+| climbing kcal/day, female other | 56.9 / 51.4 / 50.8 / 59.9 | 54.7 ± 4.4 | 34.2 | 52.4 (z -0.5) |
+| T-FOOD-4 | 13.965 / 13.652 / 13.271 / 13.833 | 13.680 ± 0.301 | 9.312 | 13.623 (z -0.2) |
+| T-HUN-1 | 49.863 / 41.658 / 44.121 / 55.543 | 47.796 ± 6.204 | 25.969 | 29.918 (z -2.6) |
+| T-HUN-3 | 0.069 / 0.138 / 0.064 / 0.074 | 0.086 ± 0.035 | 0.068 | 0.080 (z -0.2) |
+| T-RNG-4 | 3.558 / 3.319 / 2.860 / 2.985 | 3.181 ± 0.318 | 2.264 | 3.116 (z -0.2) |
+| T-ACT-1 | 0.406 / 0.404 / 0.394 / 0.402 | 0.402 ± 0.005 | 0.375 | 0.418 (z +2.8) |
+| T-ACT-2 | 0.158 / 0.155 / 0.154 / 0.167 | 0.158 ± 0.006 | 0.116 | 0.160 (z +0.3) |
+| T-ACT-3 | 0.090 / 0.093 / 0.087 / 0.091 | 0.090 ± 0.003 | 0.098 | 0.090 (z -0.0) |
+| T-ACT-4 | 0.412 / 0.391 / 0.385 / 0.373 | 0.390 ± 0.016 | 0.421 | 0.354 (z -2.0) |
+| T-FOOD-2 | 0.820 / 0.796 / 0.837 / 0.806 | 0.815 ± 0.018 | 0.808 | 0.803 (z -0.6) |
+| T-PTY-1 | 4.944 / 4.631 / 4.489 / 4.776 | 4.710 ± 0.195 | 4.586 | 4.730 (z +0.1) |
+| T-IGE-1 | 19.279 / 3.066 / 10.451 / 9.297 | 10.523 ± 6.678 | 5.644 | 7.648 (z -0.4) |
+| T-FOOD-10 | 0.599 / 0.562 / 0.633 / 0.576 | 0.593 ± 0.031 | 0.588 | 0.599 (z +0.2) |
+| reserves %/day, adult male | 0.003 / 0.005 / -0.001 / 0.011 | 0.004 ± 0.005 | 0.002 | -0.001 (z -1.0) |
+| reserves %/day, female, other | -0.054 / -0.025 / -0.026 / -0.026 | -0.033 ± 0.014 | 0.006 | -0.028 (z +0.3) |
+| reserves %/day, female, lactating | -0.036 / -0.003 / -0.030 / -0.028 | -0.024 ± 0.014 | -0.000 | -0.027 (z -0.2) |
+| reserves %/day, juvenile 5–12 y | -0.086 / -0.069 / -0.076 / -0.082 | -0.078 ± 0.007 | -0.027 | -0.051 (z +3.3) |
+| reserves %/day, infant 2–5 y | -0.016 / 0.035 / -0.017 / -0.040 | -0.010 ± 0.032 | -0.011 | -0.025 (z -0.4) |
+| reserves %/day, infant 0.5–2 y | -0.051 / -0.054 / -0.054 / -0.025 | -0.046 ± 0.014 | 0.009 | -0.025 (z +1.3) |
+| eating min, adult male | 242.4 / 242.1 / 238.4 / 245.4 | 242.1 ± 2.9 | 233.2 | 240.5 (z -0.5) |
+| eating min, female, other | 244.4 / 245.0 / 251.7 / 234.0 | 243.8 ± 7.3 | 230.7 | 230.6 (z -1.6) |
+| eating min, female, lactating | 331.0 / 331.9 / 318.2 / 324.6 | 326.4 ± 6.4 | 313.2 | 328.8 (z +0.3) |
+| eating min, juvenile 5–12 y | 294.2 / 294.3 / 286.5 / 298.0 | 293.2 ± 4.8 | 285.8 | 294.6 (z +0.3) |
+| trips per adult-day (truth) | 27.52 / 26.33 / 25.52 / 28.12 | 26.87 ± 1.17 | 15.38 | 25.63 (z -1.0) |
+| switches per adult-day (truth) | 68.52 / 66.96 / 64.53 / 71.10 | 67.78 ± 2.76 | 42.94 | 64.94 (z -0.9) |
+| truth hunts per community-year | 81.1 / 85.2 / 81.1 / 85.2 | 83.1 ± 2.3 | 43.6 | 71.0 (z -4.6) |
+| trip yield expectation (mean) | — / — / — / — | — ± — | — | 1.000 (z +nan) |
+
+Sums on rows scored in every run listed (fitted / held-out; with rare rows, then without T-HUN-4, T-BRD-1, T-IGE-3):
+  S28q: 2.61 / 3.21; 2.61 / 2.91
+  S28q1: 1.88 / 5.32; 1.88 / 3.48
+  S28q2: 2.74 / 4.48; 2.74 / 3.71
+  S28q3: 2.85 / 2.93; 2.85 / 2.89
+  S27q: 1.50 / 4.27; 1.50 / 3.45
+  S27q1: 2.68 / 4.04; 2.68 / 4.04
+  S27q2: 1.04 / 3.73; 1.04 / 3.73
+  S27q3: 2.26 / 3.22; 2.26 / 3.22
+  Y2: 2.01 / 4.73; 2.01 / 2.99
+Y2-rhythm.json: adults out of a nest 2.06% of night; T-RHY-5 0.0173; night deaths 0; deaths 2
+Y2: identity (adult males' eating min, ground km) 240.466 / 3.886 (energy-diagnose 240.466 / 3.886); trips 25.629 and switches 64.939 per adult-day; truth hunts 70.972 per community-year; deaths {'illness': 1, 'infanticide by Koruza (West community)': 1}
+   hunt impulses 0.173 per male-day, re-sightings 0.136, lead share 0.25, leads 0.043 per male-day
+   trip-own: 11.888 a day, fed at target 0.353; trip-joined: 10.446 a day, fed at target 0.566; trip-caller: 3.296 a day, fed at target 0.035
+```
+
+**What happened.** With a colobus group seen within the hour no longer met anew, adult males' hunt-impulse decisions fall
+from 0.239 ± 0.017 to 0.173 per male-day, re-sightings from 44% of them to 14% (sightings more than an hour apart still
+count), the lead share stays near S28's (0.25 against 0.20), and the observer's hunts fall to T-HUN-1 29.9 (S28q 47.8 ±
+6.2, S27q 26.0; band 5–25): 82% of S28's excess over S27 removed. Truth hunts 71.0 per community-year (83.1 ± 2.3).
+Walking, climbing, crown visits, trips and switching stay at S28's level (males 3.89 km, adults' climbing 71.4 kcal,
+T-FOOD-4 13.6, 25.6 trips per adult-day), as registered; juveniles walk a little less (3.69 against 3.84 ± 0.05) and their
+reserves fall more slowly (−0.051 against −0.078 ± 0.007). The run's two deaths are an illness and an infanticide by a
+West community male, none from starvation.
+
+**Against the predictions.** Prescriptions 39: held. Viability and night safety (2.06%, T-RHY-5 0.0173): held. Hunt
+impulses 0.12–0.17 per male-day: missed narrowly (0.173); re-sighting share ≤ 0.10: missed (0.136). T-HUN-1 22–38: held
+(29.9). Truth hunts 40–65: missed (71.0). Males' km, adults' climbing, T-FOOD-4 and trips within ± 2 SD of S28q: held
+(z −0.2, −0.7, −0.2, −1.0). Reserves within ± 2 SD: held, except juveniles, better (z +3.3). Fitted below the S28q mean:
+held (2.01, z −1.1, inside noise). Held-out inside noise: held (z +0.7; without the rare rows 0.0).
+
+**Kill criterion: not met.** (a) no starvation, no seed below 80% of its start; (b) the largest fall against the S28q mean
+is infants 2–5 y, 0.015% of the store a day; (c) held-out inside noise with and without the rare rows; (d) re-sighting
+impulses 0.024 per male-day, below the S28q group's 0.104 − 2 × 0.008; (e) night safe.
+
+**Verdict: `experienceValue` 2 is a provisional keep candidate as a correction** (no counted prescription removed; T-HUN-1
+29.9 ≤ 36.9, more than half-way from S28q's mean to S27q's): a colobus group the animal saw at one of its decision points
+within the hour does not re-open the hunt decision. It recovers S28's hunting cost, which carried S28's fitted sum on 5
+seeds (z +2.4), and leaves its walking, climbing and trees where they are.
+
 ## 7. Known defects in the code under test
 
+Deferred (found by the diagnosis, not this stage's question; file:line at 8a4d1d8):
+- A trip to a caller stops `joinCallStopM` (25 m) short of the caller and is never turned into feeding at the caller's
+  crown (the arrival rule, src/sim/rg.ts:355–366, converts trips to trees only): 3.5% of caller trips feed at that crown,
+  the rest end in a fresh draw 25–27 m away (amendment-1 readouts, §2.2).
+- Own trips that a departure nobody followed gives up (src/sim/execution.ts:546–575, `departWait` with `departPersist` 1
+  and `departValue` 0) close 60–90 m from their target having barely moved; they are two thirds of unfed own trips and
+  count as trips in every readout (§2.2 A1-b); `departValue` (E5f) changes this, and §2.2 notes how it amplifies the
+  keep test's trips.
+- A remembered crown's crop belief (src/sim/candidates.ts:498, 520, 575, 614: `x.treeCrop`, else 0.2) is the crop last
+  seen, with no expectation of what the companions it left feeding there eat meanwhile: 62–84% of unfed trips that reach
+  their target find it below 0.06 units (§2.2 A1-b). Not changed here (the next lever, §8).
+- E3d §7's joined-trip arrival loop is unchanged.
+
 ## 8. Stage verdict
+
+- **Diagnosis (S28 against S27, quick, four realizations each, simulation truth).** Re-deciding adds trips through the
+  keep test, not through fresh choices at need or light changes: S28's 'outvalued' switches (rg.ts `stillBest` at every
+  bout end and interrupt, 26 per adult-day, 12 of them into trips) carry +1.33 km, +31 kcal of climbing and +6.9 crown
+  visits per adult-day against net changes of +1.03 km, +28 kcal and +5.2 visits; acts that end (a cascade of unfed
+  trips) +0.43 km; need-bucket and light-phase chains +0.34 km, and the switches there that the keep test would have kept
+  only 0.04 km. Most keep-test switches are an option new since the draw whose value alone beats the act held (rest ends
+  for an own trip, 3.4 a day; rest and crown feeding end for a companion's departure, 4.4). The valuation promises far
+  more than trips deliver, in both stacks: 13–31% of the bout energy a trip is valued at is eaten at its target (two
+  thirds of trips never feed there: departures nobody followed, crowns found empty; a fed trip eats about a third), and
+  trips that leave a crown yield less than the rate left. S27's gate, clock and bonus held acts and hid the same error.
+  57% of S28's extra hunt impulses re-sight a colobus group the male perceived within the hour.
+- **Iteration 1, `experienceValue` 1 and 3** (trips valued at the share of that meal the animal's own trips delivered,
+  learned per trip; 3 adds bit 2): null by the kill criterion. The animals learned about a tenth and nearly stopped
+  travelling (4.4 trips a day, males 1.3 km, travel share 0.05, fruit share 0.42), and reserves fell (juveniles −0.22
+  %/day): what makes trips fail is upstream and does not improve when trips are rare, and the measure also charged trips
+  for the satiation shortfall every bout has. On this stack the over-valuation of trips carries foraging.
+- **Iteration 2, `experienceValue` 2** (a colobus group seen at a decision point within `reunionH` is not met anew): a
+  **provisional keep candidate as a correction**: viable, night safe (2.06%), every sum inside noise (fitted z −1.1,
+  held-out +0.7, without the rare rows 0.0), T-HUN-1 47.8 → 29.9 (82% of S28's excess over S27 removed), walking,
+  climbing and trees unchanged, juveniles' reserves better. Prescriptions unchanged (39 on the corrected ledger).
+- **What it means.** The trips re-deciding adds are what the valuation says; the valuation is wrong about trips, but the
+  error is the belief and the departure that make trips fail, not the trip's value term: correcting the value alone
+  starves the animals. The hunts re-deciding adds were mostly the same colobus group counted again.
+- **Open (the biggest problem).** Two thirds of trips never feed at their target. A remembered crown's crop belief takes
+  no account of the companions the animal left feeding there (62–84% of unfed arrivals find it empty), and an unanswered
+  departure ends as a failed trip (`departValue` turns it into a walked one, which is why S32's walking cost is larger).
+  A belief that expects others' eating, from what the animal saw, is the next lever; the keep test should then add fewer
+  and better trips.
