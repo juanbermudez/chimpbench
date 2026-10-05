@@ -14,10 +14,14 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (5 October 00:35; deploy held by the user).** Agent: **E3i** (`e3i-unseen-eaters`, from b6946ac: trips to
-  crowns others emptied; then re-deciding on top), against the S39 quick group (bench-run2 c16d3d2, `…/e/s39q/`, running via
-  `integrator/s39q-group.sh`). Decision guide on S39 (merged `guide-s39`); hosted copy in `site` 46b0aa3, built and checked
-  (S39, 42, 105 replaced, no console errors); nothing deployed.
+- **Running now (5 October 01:00; deploy held by the user).** User decision of 4 October (§1): apply the audited fixes and
+  targets; the 90-day cap is replaced by a 6 → 12 → 24-month ladder (done: plan, handoff, e-bench MAX_TOTAL_DAYS 730 with
+  --m6/--m12/--m24, e-noise amendment 4; b617cf8). Agents: **eA-protocol** (part A: the ten Track E patches under one new
+  freeze, old-band scoring, band-only rescore of S39 and the S27/S39q groups), **eB-bench** (A5 truth rows wired into
+  e-bench; E1 one simulation per arm; E2 6-month checkpoints), **eR-runs** (E3 resumable long-run runner with a registry;
+  E6 disk checks; E7 profiling), all from b617cf8; **E3i** (quick screens on the current protocol; it does not merge
+  track-e until the freeze lands). Next (integrator): C, the new-protocol re-baseline of S39 and today's model at 60 days
+  and 6 months, after the freeze; then D, rare events at 12 months.
 - **S39 is the best integrated candidate (42)** (e-stack2-confirm.md "S39 results"): S37 + `tripBeliefs` 3; held-out without
   rare rows better beyond noise (z −2.2), every class's reserve better, less walking, T-IGE-1 back in band. Costs: T-ACT-2
   0.115 (band floor 0.12), T-COM-11 0.023 (band 0.25–0.55; snake-trial protocol).
