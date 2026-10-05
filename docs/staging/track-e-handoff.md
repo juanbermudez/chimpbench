@@ -20,8 +20,8 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   e1s-prereg.md §8.8. **E1t** (`horizonLived`) passed its development conditions (merged 4ff4cc4; the horizon now predicts the waking
   time left within 1 h in 99.9% of daylight decisions, against 4.2%); its **confirm is running** (frozen checkout
   `bench-e1t` at e1f93e9; runner labels M6-E1t, -s1, -s2, -s3 via `integrator/e1trun.sh <label> 1`; plan and the
-  6-month amendment in e1t-prereg.md §7; judge `integrator/judge_e1t.py M6|M12`). **E1u** (gut-input audit, research
-  only, registered 2081033) is running as agent **e1u-gut-audit**. **M1–M3 merged (a9aa344):** GLiNER cannot choose
+  6-month amendment in e1t-prereg.md §7; judge `integrator/judge_e1t.py M6|M12`). **E1u** (gut-input audit) done and merged (79f78a7): the lean-season cap is mostly the hindgut's fibre
+  clearance, set by inputs nobody has measured (IMPLEMENTATION_PLAN.md, "E1u"). **M1–M3 merged (a9aa344):** GLiNER cannot choose
   for the chimps as it is (it ignores the body numbers; on GLiNER focal animals underfeed and sleep out of nests); it
   needs teaching on the new state (Track R, R4); Jev reads the numbers ($0.20 spent). Part D done (e52e84e). Separate
   from Track E: the user's minimap and perception-ring work is ready on branch `ui-minimap` (from `main`); merging into
