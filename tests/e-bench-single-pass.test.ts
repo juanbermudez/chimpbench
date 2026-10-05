@@ -68,3 +68,15 @@ test('checkpoints: a run stopped and continued is the uninterrupted run (world, 
     assert.equal(JSON.stringify(pooled), JSON.stringify(direct));
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test('ladder: a shorter run\'s end checkpoint, extended to a longer horizon, is the longer run', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ebench-ladder-'));
+  try {
+    const SHORT = 1080 / 5760, cut = BURN + SHORT;
+    part(runBenchSeed(job({ days: SHORT, checkpointDays: [cut], checkpointPrefix: join(dir, 'short') })));
+    const ext = part(runBenchSeed(job({ resume: join(dir, `short.ckpt-d${cut}.v8.gz`) })));
+    const whole = part(runBenchSeed(job()));
+    assert.equal(ext.config.days, DAYS);
+    assert.deepStrictEqual(partOf(ext), partOf(whole));
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});

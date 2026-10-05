@@ -113,6 +113,8 @@ export function runBenchSeed(job: BenchJob, log: (msg: string) => void = () => {
     if (state.done > endTick) throw new ResumeRefused(`checkpoint ${job.resume} is at day ${state.done / TICKS_PER_DAY}, past this run's end (day ${endTick / TICKS_PER_DAY})`);
     s = state; resumedAt = s.done; s.segments++;
     for (const o of [s.obs, s.pobs, s.mobs]) restoreColumns(o);
+    // the ladder continues a shorter run (an m6 checkpoint into m12): the window is this job's (energy-diagnose's juveniles report it)
+    if (s.en) s.en.st.days = job.days;
     log(`seed ${job.seed}: resumed at day ${s.done / TICKS_PER_DAY} from ${job.resume}`);
   } else {
     s = { v: 1, seed: job.seed, done: 0, world: createWorld(job.seed, { profile: job.profile, params: job.params }), obs: null, pobs: null, mobs: null, trials: null, prevHour: 0,
