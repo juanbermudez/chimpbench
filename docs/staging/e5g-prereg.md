@@ -1,8 +1,11 @@
 # E5g pre-registration: calls and alarms without gaps
 
-Status: skeleton committed in the stage's first 15 minutes (branch `e5g-call-gaps`, from `track-e` 90aa294). Track E,
-stage E5, piece g. The diagnosis, readouts, field rows, mechanism (if any), predictions and kill criterion are committed
-here before any run of a switch on.
+Status: complete (4 October 2026). `callGaps` 7 is a provisional keep candidate (S31 48 → 45; §7.2): the reunion gap
+trims and the alarm penalty is inert (both out, nothing in their place); the 60-s alarm cadence set the hoo rate and is
+replaced by a hoo while an own-community animal in sight has not learnt of the snake (§2.1, §4). Skeleton committed in
+the stage's first 15 minutes (branch `e5g-call-gaps`, from `track-e` 90aa294, 4a8a2d3); the diagnosis (8571531), its
+results and the mechanism with A1's predictions and kill criterion (a4c149c), and A1's registration (ee283f2) were each
+committed before the runs they govern. Track E, stage E5, piece g.
 
 Rule served: field values of behaviour are targets, never inputs. No interval, value, bonus or weight is chosen to hit a
 call or alarm rate.
@@ -293,15 +296,6 @@ informed by hoos below half of D0's.
 **Keep rule (standard):** viability passes; held-out not worse beyond noise with and without the rare rows; prescriptions
 48 → 45. Then a provisional keep candidate for the integrator's 5-seed confirm (on S34, as the integrator asked).
 
-## 5. Reference and judging
-
-Reference: S31 quick, run once plus three re-draws (`rngSalt` 1, 2, 3) at bench-run 4111971 (simulation code identical
-to 90aa294 for S31), each with energy-diagnose (seeds 48 and 7, burn-in 30, days 30):
-`bench-run/artifacts/validation/e/s31q/{S31q,S31q1,S31q2,S31q3}.json` and `…-energy.json`; parameters in
-`…/S31q-params.json`. Judged by docs/staging/e-noise.md amendment 2 (`judge_vs_reps.py quick custom`): |z| > 2 is a
-result; sums with and without T-HUN-4, T-BRD-1 and T-IGE-3 (amendment 3). Readouts against the reference's own spread
-(mean ± SD of its 4 runs).
-
 ### 4.2 Code checks before any arm (e2c8ff6, 5a55582)
 
 - Switch 0 leaves the S31 world unchanged (seed 48, 1 day) and bit 1 changes it; bits 2 and 4 change nothing without a
@@ -317,6 +311,15 @@ result; sums with and without T-HUN-4, T-BRD-1 and T-IGE-3 (amendment 3). Readou
 - Readouts smoke-tested with the switch on (S31 + `callGaps` 7, seed 48, 1 + 2 days, 30 trials): no reunion offer
   blocked; one hoo per alarm act (no animal came into sight unaware during an act); trials and exposure read as before.
 
+## 5. Reference and judging
+
+Reference: S31 quick, run once plus three re-draws (`rngSalt` 1, 2, 3) at bench-run 4111971 (simulation code identical
+to 90aa294 for S31), each with energy-diagnose (seeds 48 and 7, burn-in 30, days 30):
+`bench-run/artifacts/validation/e/s31q/{S31q,S31q1,S31q2,S31q3}.json` and `…-energy.json`; parameters in
+`…/S31q-params.json`. Judged by docs/staging/e-noise.md amendment 2 (`judge_vs_reps.py quick custom`): |z| > 2 is a
+result; sums with and without T-HUN-4, T-BRD-1 and T-IGE-3 (amendment 3). Readouts against the reference's own spread
+(mean ± SD of its 4 runs).
+
 ## 6. Iteration log
 
 (each entry written and committed before its run)
@@ -324,7 +327,163 @@ result; sums with and without T-HUN-4, T-BRD-1 and T-IGE-3 (amendment 3). Readou
 - **A1** (§4.1; `callGaps` 7 on S31): registered 4 October 2026 at the commit that adds this line; run from a frozen
   detached checkout of it: `e-bench --quick` (`--workers` 1 above load 8, else 2), `energy-diagnose`, `rhythm-metrics` and
   `call-gaps-diagnose` (seeds 48, 7; 30 + 30 days; trials at 08–16 h), the four in parallel (`run-arm.sh`).
+  Run 22:54–23:01 from a frozen detached checkout of ee283f2 (clean), `--workers` 2 (load 3.8). Result in §7.1: keep rule
+  passed, no kill criterion met.
+- No further iteration (§7.2).
 
 ## 7. Results
 
+### 7.1 A1 (S31 + `callGaps` 7; ee283f2, clean): printed by `e5g_judge.py` (which runs the integrator's `judge_vs_reps.py` and `night.py`) from the e-bench, energy, rhythm and call-gaps-diagnose JSON
+
+```
+bench reference runs: ['S31q', 'S31q1', 'S31q2', 'S31q3']; arms: ['A1']
+  S31q: 4111971 dirty 0 prescriptions (JSON, ledger at its commit) 38; viability pass (births 0, deaths 0, starvation 0, min living share 1)
+  S31q1: 4111971 dirty 0 prescriptions (JSON, ledger at its commit) 38; viability pass (births 0, deaths 0, starvation 0, min living share 1)
+  S31q2: 4111971 dirty 0 prescriptions (JSON, ledger at its commit) 38; viability pass (births 0, deaths 0, starvation 0, min living share 1)
+  S31q3: 4111971 dirty 0 prescriptions (JSON, ledger at its commit) 38; viability pass (births 0, deaths 0, starvation 0, min living share 1)
+  A1: ee283f2 dirty 0 prescriptions (JSON, ledger at its commit) 45; viability pass (births 0, deaths 0, starvation 0, min living share 1)
+
+quick, reference custom (4 runs), rows counted in all runs: fitted 17, held-out 12
+  fitted             (17 rows) ref 1.77, 2.69, 1.84, 1.32 (mean 1.90, sd 0.57; used 0.69) | A1.json: 1.62, Δ -0.29, z -0.4 (inside noise)
+  held-out           (12 rows) ref 9.81, 4.90, 6.68, 5.18 (mean 6.64, sd 2.25; used 2.25) | A1.json: 3.94, Δ -2.71, z -1.1 (inside noise)
+  held-out w/o rare  (11 rows) ref 3.75, 4.90, 3.48, 4.98 (mean 4.28, sd 0.77; used 0.77) | A1.json: 3.36, Δ -0.91, z -1.1 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-HUN-4   held-out ref 2.36±2.86 | A1.json 0.57 (fail)
+
+
+| Reserves ÷ store, % per day (OLS) | S31q runs | S31q mean ± SD | A1 |
+| --- | --- | --- | --- |
+| adult male | -0.003 / +0.002 / -0.005 / +0.006 | -0.000 ± 0.005 | -0.006 (z -1.0) |
+| female, other | +0.015 / -0.004 / -0.014 / +0.002 | -0.000 ± 0.012 | -0.008 (z -0.6) |
+| female, lactating | +0.002 / -0.005 / -0.007 / -0.020 | -0.008 ± 0.009 | -0.019 (z -1.1) |
+| juvenile 5–12 y | -0.052 / +0.001 / -0.027 / +0.009 | -0.017 ± 0.028 | -0.005 (z +0.4) |
+| infant 2–5 y | +0.003 / -0.019 / +0.010 / -0.028 | -0.009 ± 0.018 | -0.010 (z -0.1) |
+| infant 0.5–2 y | +0.003 / +0.004 / -0.024 / -0.013 | -0.007 ± 0.013 | -0.006 (z +0.1) |
+| infant < 0.5 y | +0.000 / +0.000 / +0.000 / +0.000 | +0.000 ± 0.000 | +0.000 (z +nan) |
+
+| Ground km / eating min | S31q runs | S31q mean ± SD | A1 |
+| --- | --- | --- | --- |
+| adult male: groundKm | 2.97 / 2.69 / 2.63 / 2.43 | 2.68 ± 0.22 | 2.96 (z +1.1) |
+| adult male: eatingMin | 232.28 / 228.91 / 228.08 / 227.88 | 229.29 ± 2.04 | 231.05 (z +0.8) |
+| female, other: groundKm | 2.12 / 2.12 / 1.95 / 1.91 | 2.02 ± 0.11 | 1.94 (z -0.7) |
+| female, other: eatingMin | 224.87 / 233.39 / 228.30 / 214.41 | 225.24 ± 8.03 | 230.46 (z +0.6) |
+| female, lactating: groundKm | 2.65 / 2.53 / 2.62 / 2.52 | 2.58 ± 0.07 | 2.50 (z -1.1) |
+| female, lactating: eatingMin | 307.80 / 299.90 / 302.29 / 304.64 | 303.66 ± 3.37 | 300.85 (z -0.7) |
+| juvenile 5–12 y: groundKm | 3.02 / 2.99 / 2.80 / 2.99 | 2.95 ± 0.10 | 3.03 (z +0.8) |
+| juvenile 5–12 y: eatingMin | 294.82 / 283.19 / 295.56 / 285.33 | 289.72 ± 6.38 | 273.74 (z -2.2) |
+
+| Row (pooled; verdict) | Band | S31q runs | S31q mean ± SD | A1 |
+| --- | --- | --- | --- | --- |
+| T-ACT-1 | 0.33–0.5 | 0.369 pass / 0.370 pass / 0.374 pass / 0.360 fail | 0.368 ± 0.006 | 0.361 pass |
+| T-ACT-2 | 0.12–0.25 | 0.126 fail / 0.116 fail / 0.107 fail / 0.100 fail | 0.112 ± 0.011 | 0.118 fail |
+| T-ACT-3 | 0.08–0.18 | 0.096 fail / 0.098 fail / 0.096 fail / 0.104 fail | 0.098 ± 0.004 | 0.098 fail |
+| T-ACT-4 | 0.3–0.47 | 0.470 fail / 0.486 fail / 0.455 pass / 0.455 pass | 0.466 ± 0.015 | 0.427 pass |
+| T-COM-1 | 0.5–1.5 | 0.411 fail / 0.474 fail / 0.490 fail / 0.468 fail | 0.461 ± 0.034 | 0.544 pass |
+| T-COM-8 | 0.3–0.6 | 0.596 pass / 0.556 pass / 0.524 pass / 0.588 pass | 0.566 ± 0.033 | 0.571 pass |
+| T-COM-11 | 0.25–0.55 | 0.000 fail / 0.091 fail / 0.000 fail / 0.125 fail | 0.054 ± 0.064 | 0.000 fail |
+| T-COM-2 | rate falls with rank number | -0.027 fail / 0.105 fail / -0.074 fail / -0.108 pass | -0.026 ± 0.093 | 0.356 fail |
+| T-COM-3 | periphery rate below core rate | -0.150 fail / 0.051 fail / 0.027 fail / -0.143 pass | -0.054 ± 0.108 | -0.097 fail |
+| T-COM-4 | travel most common; fruit > herbs | 0.540 pass / 0.481 pass / 0.446 pass / 0.473 pass | 0.485 ± 0.040 | 0.526 pass |
+| T-COM-7 | less drumming in large parties | 0.185 fail / 0.088 fail / 0.092 fail / 0.129 fail | 0.123 ± 0.045 | 0.102 fail |
+| T-COM-9 | status, not food amount | 0.643 fail / 0.660 fail / 0.703 fail / 0.635 fail | 0.660 ± 0.031 | 0.553 fail |
+| T-PTY-1 | 3–9 | 4.293 pass / 3.892 pass / 3.779 pass / 4.153 pass | 4.029 ± 0.236 | 3.838 pass |
+| T-RNG-4 | 1.5–3.5 | 2.214 fail / 2.222 fail / 1.963 fail / 1.850 fail | 2.063 ± 0.186 | 2.375 fail |
+| T-IGE-1 | 5–12 | 5.995 pass / 3.103 inconclusive / 7.499 pass / 10.377 pass | 6.744 ± 3.033 | 9.137 pass |
+| T-IGE-2 | 0.7–0.9 | 0.500 fail / 1.000 fail / 0.750 pass / 1.000 fail | 0.812 ± 0.239 | 1.000 fail |
+| T-HUN-1 | 5–25 | 28.077 inconclusive / 9.973 pass / 15.956 pass / 22.060 pass | 19.017 ± 7.800 | 15.870 pass |
+| T-FOOD-2 | 0.6–0.78 | 0.849 fail / 0.848 fail / 0.849 fail / 0.806 fail | 0.838 ± 0.021 | 0.832 fail |
+| T-FOOD-10 | 0.08–0.3 | 0.552 fail / 0.643 fail / 0.544 fail / 0.563 fail | 0.575 ± 0.046 | 0.554 fail |
+| T-SOC-5 | 0.2–0.7 | 0.563 pass / 0.338 pass / 0.280 pass / 0.434 pass | 0.403 ± 0.124 | 0.462 pass |
+| T-SOC-9 | 0.08–0.22 | 0.174 pass / 0.226 fail / 0.116 pass / 0.256 fail | 0.193 ± 0.062 | 0.071 fail |
+
+T-COM-11 per seed (quick e-bench, 10:00 on day 40): {'S31q': [None, 0], 'S31q1': [0.2, 0], 'S31q2': [0, 0], 'S31q3': [0.16666666666666666, 0], 'A1': [0, 0]}
+
+| Calls per caller-hour (truth) | D0 runs | D0 mean ± SD | A1 |
+| --- | --- | --- | --- |
+| adult males: pant-hoots | 0.5086 / 0.4696 / 0.5161 / 0.4997 | 0.4985 ± 0.0204 | 0.4879 (×0.98, z -0.5) |
+| adult males: reunion pant-hoots (call/REUNION) | 0.0209 / 0.0188 / 0.0186 / 0.0181 | 0.0191 ± 0.0012 | 0.0202 (×1.06, z +0.8) |
+| males ≥ 12 y: reunion pant-hoots | 0.0186 / 0.0169 / 0.0177 / 0.0171 | 0.0176 ± 0.0008 | 0.0186 (×1.06, z +1.2) |
+| adult males: valued pant-hoots (call/CONTACT) | 0.0693 / 0.0740 / 0.0906 / 0.0855 | 0.0799 ± 0.0099 | 0.0743 (×0.93, z -0.5) |
+| adult males: arrival pant-hoots at a crown | 0.2314 / 0.1900 / 0.2129 / 0.1972 | 0.2079 ± 0.0184 | 0.2073 (×1.00, z -0.0) |
+| adult males: food grunts | 0.5111 / 0.4889 / 0.4618 / 0.5053 | 0.4918 ± 0.0221 | 0.4684 (×0.95, z -0.9) |
+| adult females: food grunts | 0.3537 / 0.3187 / 0.3327 / 0.3446 | 0.3374 ± 0.0152 | 0.3072 (×0.91, z -1.8) |
+| adult males: travel hoos | 0.3605 / 0.3374 / 0.3305 / 0.3485 | 0.3442 ± 0.0131 | 0.3447 (×1.00, z +0.0) |
+| reunion decisions with a pant-hoot (share) | 0.022 / 0.023 / 0.029 / 0.027 | 0.025 ± 0.003 | 0.028 (×1.11, z +0.7) |
+| snake alarm acts per exposure-hour | 0.3572 / 0.3042 / 0.3344 / 0.3380 | 0.3335 ± 0.0219 | 0.3496 (×1.05, z +0.7) |
+| alarm-hoos per exposure-hour | 4.6511 / 4.2322 / 4.9177 / 5.6086 | 4.8524 ± 0.5777 | 0.3803 (×0.08, z -6.9) |
+|   of which by the cadence | 4.2939 / 3.9280 / 4.5833 / 5.2706 | 4.5190 ± 0.5683 | 0.0307 (×0.01, z -7.1) |
+| hoos per alarm act | 13.02 / 13.91 / 14.71 / 16.60 | 14.56 ± 1.52 | 1.09 (×0.07, z -7.9) |
+| alarm act length, min | 12.28 / 13.18 / 13.95 / 15.78 | 13.80 ± 1.49 | 12.86 (×0.93, z -0.6) |
+| T-COM-11 statistic (trials, all hours) | 0.089 / 0.080 / 0.087 / 0.097 | 0.088 ± 0.007 | 0.094 (×1.07, z +0.7) |
+| T-COM-11 statistic (trials, 10 h) | 0.116 / 0.069 / 0.122 / 0.089 | 0.099 ± 0.025 | 0.106 (×1.07, z +0.3) |
+| stopping rule: all safe at an act end | 1.000 / 1.000 / 1.000 / 1.000 | 1.000 ± 0.000 | 1.000 (×1.00, z +nan) |
+| unaware in view at an act start | 2.978 / 2.921 / 2.325 / 2.411 | 2.659 ± 0.338 | 2.473 (×0.93, z -0.5) |
+arms/A1-rhythm.json: adults out of a nest 2.42% of night; T-RHY-5 0.0203; night deaths 0; deaths 0
+```
+
+Beside the table, from the same JSON (`call-gaps-diagnose`, pooled): A1 gave 148 start hoos and 13 hoos for animals that
+came into sight unaware (all 13 informed someone; 1.6 unaware community members within earshot per such hoo), against
+D0's 519 and 7,057 (81 informative; 0.021 per cadence hoo); 80.1% of the animals that learnt of a snake learnt it from a
+hoo (D0 79.4%, D1 81.0%); hoos per act: 1 in 137 acts, 2 in 9, 3 in 2. A1's observed world equals D1's (every observed-
+world readout identical: bits 2 and 4 act only in the trials, and bit 1 equals D1's literal change), so A1's observed rows
+also stand for the reunion gap removed alone.
+
+**Against the predictions (§4.1).** Prescriptions 45: held. Viability and night safety (2.42%, T-RHY-5 0.0203): held.
+Sums inside noise: held (fitted z −0.4, held-out −1.1, without T-HUN-4, T-BRD-1 and T-IGE-3 −1.1). Reunion pant-hoots
+×1.0–1.25: held (×1.06). Adult-male pant-hoots within 2 SD: held (0.488, z −0.5). Alarm-hoos per exposure-hour 0.3–0.8:
+held (0.380). Hoos per act 1.0–1.6: held (1.09). Alarm acts ×0.8–1.25: held (×1.05). T-COM-11's statistic in the trials
+within ±0.02: held (0.094 against 0.088 ± 0.007). Informed by hoos not below half of D0's share: held (80.1% against
+79.4%). Stopping rule 1.0: held. T-COM-11 in e-bench inside the group's range: held (0.00; group 0.00–0.125, 5–6
+encounters a seed). Reserves within 0.03 %/day of the S31q mean: held for every class (nursing mothers −0.019 against
+−0.008 ± 0.009, the furthest). T-ACT-1..4, T-COM-1, T-COM-8 as the group: held for T-ACT-1..3 and T-COM-8; T-ACT-4 0.427
+(group 0.466 ± 0.015, inside its band); **T-COM-1 0.544 passes where the four group runs fail (0.41–0.49)**, while the
+truth rate does not move (0.488 against 0.499 ± 0.020): the observer's focal sample, not calling.
+
+**Kill criterion (§4.1): none met** (viable; held-out z −1.1 and −1.1; no class's reserves 0.05 %/day below the mean;
+night safe; T-COM-11's statistic 0.094 and 80% informed by hoos).
+
+**Readings beyond the predictions (one quick realization each; for the confirm to watch).** T-COM-9 0.553 against the
+group's 0.635–0.703 and T-COM-2 τ +0.36 against −0.11 to +0.11 (both pattern rows, failing in the group too) move with the
+observed world's re-draw, while arrival pant-hoots in truth do not (0.207 against 0.208 ± 0.018 per adult-male hour);
+juveniles eat 274 min a day against 290 ± 6 (z −2.2) with their reserves better (−0.005 against −0.017 %/day); T-SOC-9
+0.071, below its band (group 0.116–0.256).
+
+### 7.2 Stage verdict
+
+**`callGaps` 7: a provisional keep candidate (S31 48 → 45), by the keep rule in quick mode**: viable, every sum inside
+noise against S31's four realizations, night safe, three counted prescriptions out. A 5-seed confirm on the stack (S34,
+as the integrator asked) should decide, watching T-COM-9, T-COM-2, juveniles' eating time and T-SOC-9.
+
+**The brief's premise held for one literal of three.** The reunion gap only trims (×1.06; the reunion offer's own fixed
+score sets that rate) and the alarm penalty is inert (19 decisions in four runs): both go with nothing in their place.
+The 60-s cadence set how often an alarming chimpanzee hoos (93% of hoos), and almost none of its hoos reached anyone who
+did not know; in its place an animal hoos while it sees a community member that has not learnt of the snake, which keeps
+the information (80% of animals learn by a hoo) with 13 hoos instead of 1,791 in the same world.
+
+**No further iteration was run.** A1 meets the keep rule and no kill criterion.
+
+**Open problems (the biggest first):**
+- T-COM-11 sits at 0.09 in truth (0.00–0.13 in quick e-bench) against 0.25–0.55, and no gap sets it: the alarm's own value
+  (0.2 + 0.32 × the unaware in view, literal weights the ledger lists as encoding T-COM-11) meets an audience that almost
+  always knows, because everyone within 8 m sees the model at once (`snakeAwareM`, design) and one hoo informs everyone
+  within 100 m (91% of alarm opportunities have nobody unaware in view). The field's trials met the model one animal at a
+  time on a travel path (schel2013b revealed it within 2 m of the focal). A protocol or perception question, not a call
+  rule; building toward the band would be tuning.
+- The reunion pant-hoot is still a fixed design score that reads nothing of its audience (0.3 + 0.1 × boldness), beside
+  the valued pant-hoot (`pantHootValue`) that does; a male answers about 2.5% of reunions with it (field: 35% of joinings
+  at Sonso, by any pant-hoot).
+- T-COM-1 in truth (0.50 per adult-male hour) is at the bottom of its band; the observer's quick value moves 0.41–0.54
+  between realizations.
+
 ## 8. Files and final checks
+
+- Outputs (local, gitignored): `artifacts/validation/e5g/` (copied from the stage scratch `e5g/`): `diag/` (the four D0
+  diagnoses and the three scratch arms D1–D3, with logs), `arms/` (A1: e-bench, energy, rhythm and call-gaps-diagnose JSON
+  and logs), the tables printed for §2.1 and §7.1 (`diag-table.txt`, `A1-judge.txt`), the table scripts (`diag_table.py`,
+  `e5g_judge.py`), the run scripts (`run-diag.sh`, `run-arm.sh`) and the `param-reads --literals` tables (`lit-*.md`).
+- Code: `src/sim/calls.ts` (`callGapOn`, `unawareInSight`), `src/sim/candidates.ts` (`callReady` and the alarm penalty read
+  the bits; the read-only `quotaTrace` kinds 'reunion' and 'alarm'), `src/sim/execution.ts` (the alarm act's hoo),
+  `data/params.json` (`callGaps`), `scripts/call-gaps-diagnose.ts`, `scripts/lib/prescriptions.ts` (TRACK_E_SWITCHES, three
+  LITERAL_OFF entries), `tests/sim-call-gaps.test.ts`; the `callReady` piece in `tests/prescription-ledger.test.ts` and
+  `scripts/lib/decision-guide-content.ts`; `docs/decision-guide.html` regenerated; docs/simulation.md (§17 row and a note);
+  research.md and e-sources.md "Addendum: E5g calls and alarms" (schel2013b, crockford2012).
