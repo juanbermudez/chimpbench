@@ -297,3 +297,9 @@ M6-S39 world. Every S39 number below is R0's.
   prescriptions unchanged; the drive's estimate is fixed beyond doubt). Low confidence that it moves 12-month
   starvation: where animals are depleted the deficit already fills any horizon (99.9% of the remaining drive-at-1
   decisions have waking time left), so E1r's trap is untouched.
+- Merged `track-e` once (50c766f; E1s and the plan and handoff updates): src now differs from 6cafd5d only by E1s's code
+  (`gutValue`, 0 by default) and the regenerated params.gen.ts. Checks on the merged tree: `pnpm test` 928 tests, 927
+  pass, 0 fail, 1 skipped; tsc, `gen-params --check` and `decision-guide --check` clean; `git ls-files data/raw
+  node_modules` empty. Outputs (gitignored, this worktree): artifacts/validation/e1t/{ref,it1,it2}/ (bench, scorecard,
+  energy, rhythm, parts with per-animal rows and the feed-horizon readout, day-210 checkpoints) and all-horizon.md,
+  all-rows.md (the three arms side by side).
