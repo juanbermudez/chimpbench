@@ -321,3 +321,11 @@ Part C groups at 63d699a are the references. Prescriptions with `horizonLived` 1
 - **12 months (against S39's M12 group):** starvation deaths over the 20 seed-runs against S39's 6: kept as a correction
   with 6 or fewer and the keep rule; 0 makes S39 + E1t viable. Reported: deaths by cause and class, each class's reserve
   trajectory and lowest monthly mean, the drive-at-1 share, eating minutes by class and month.
+
+**Amendment to §7 (integrator, 5 October 2026, written before any confirm output was read).** At 6 months every run's
+births are the 10 founder pregnancies (the salt is applied after the world is built), so "births ≥ deaths" fails on any
+run with an outbreak: S39's own M6-S39-s1 fails it (12 deaths: a respiratory outbreak, other illness, a snare injury, an
+orphan; no starvation), and the condition cannot separate the arms. The 6-month viability condition is therefore: **no
+starvation death in any of the four runs**; a run that fails births ≥ deaths is reported with its causes of death, not
+judged. Viability in full (e-bench's rule) is judged at 12 months, where births accumulate. The keep rule, night safety
+and the prescription count at 6 months, and the 12-month rule, are unchanged.
