@@ -574,6 +574,152 @@ the crown 0.41, above 0.10).
 their target z +23.6): an animal's own sighting of a listed crown, an empty one included, stands for 240 h, and a caller's
 crown is the trip's goal. Reported, not used to choose: rest share down (in band), intergroup encounters up (above band).
 
+### 6.2 Iteration 2: A2 = S31 + `tripBeliefs` 7 (frozen checkout 973df1f, clean; A1 shown beside it)
+
+Printed by `final_table.py`, `night.py` and the trip readouts from the JSON (session scratch `e3h/arms/`). A1's code is
+unchanged at 973df1f (bit 4 is off in it; the belief stride and the share factor of 1 leave its numbers bit for bit).
+
+```
+S31q: 4111971 dirty 0 prescriptions 38 viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}; deaths by seed [(48, 0, 0, {}), (7, 0, 0, {})]
+  S31q1: 4111971 dirty 0 prescriptions 38 viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}; deaths by seed [(48, 0, 0, {}), (7, 0, 0, {})]
+  S31q2: 4111971 dirty 0 prescriptions 38 viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}; deaths by seed [(48, 0, 0, {}), (7, 0, 0, {})]
+  S31q3: 4111971 dirty 0 prescriptions 38 viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}; deaths by seed [(48, 0, 0, {}), (7, 0, 0, {})]
+  A1: d8f8f6e dirty 0 prescriptions 48 viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}; deaths by seed [(48, 0, 0, {}), (7, 0, 0, {})]
+  A2: 973df1f dirty 0 prescriptions 48 viability {'pass': True, 'births': 0, 'deaths': 1, 'ratio': 0, 'starvationDeaths': 0, 'minLivingShare': 0.9795918367346939, 'reasons': [], 'fewEvents': True}; deaths by seed [(48, 1, 0, {'illness': 1}), (7, 0, 0, {})]
+
+quick, reference custom (4 runs), rows counted in all runs: fitted 17, held-out 12
+  fitted             (17 rows) ref 1.77, 2.69, 1.84, 1.32 (mean 1.90, sd 0.57; used 0.69) | A1.json: 1.88, Δ -0.02, z -0.0 (inside noise) | A2.json: 2.38, Δ +0.47, z +0.6 (inside noise)
+  held-out           (12 rows) ref 9.81, 4.90, 6.68, 5.18 (mean 6.64, sd 2.25; used 2.25) | A1.json: 4.71, Δ -1.93, z -0.8 (inside noise) | A2.json: 5.22, Δ -1.42, z -0.6 (inside noise)
+  held-out w/o rare  (11 rows) ref 3.75, 4.90, 3.48, 4.98 (mean 4.28, sd 0.77; used 0.77) | A1.json: 3.98, Δ -0.30, z -0.3 (inside noise) | A2.json: 4.28, Δ -0.00, z -0.0 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-COM-8   fitted   ref 0.00±0.00 | A1.json 0.00 (pass) | A2.json 0.15 (fail)
+   T-HUN-4   held-out ref 2.36±2.86 | A1.json 0.74 (fail) | A2.json 0.95 (fail)
+   T-IGE-1   fitted   ref 0.07±0.14 | A1.json 0.20 (inconclusive) | A2.json 0.51 (inconclusive)
+
+| Readout | S31q runs | S31q mean ± SD | A1 | A2 |
+| --- | --- | --- | --- | --- |
+| trips fed at their target (share, adults) | 0.461 / 0.458 / 0.467 / 0.465 | 0.463 ± 0.004 | 0.569 (z +23.6) | 0.549 (z +19.1) |
+| trips per adult-day | 16.83 / 15.68 / 15.17 / 15.37 | 15.76 ± 0.74 | 12.09 (z -4.4) | 12.89 (z -3.5) |
+|   remembered crown: per adult-day | 2.50 / 2.66 / 2.51 / 2.59 | 2.57 ± 0.08 | 1.95 (z -7.2) | 1.49 (z -12.5) |
+|   remembered crown: fed at target | 0.592 / 0.588 / 0.583 / 0.558 | 0.580 ± 0.015 | 0.729 (z +8.7) | 0.807 (z +13.3) |
+|   departure: per adult-day | 6.11 / 5.70 / 5.66 / 5.72 | 5.80 ± 0.21 | 4.53 (z -5.4) | 5.11 (z -3.0) |
+|   departure: fed at target | 0.290 / 0.272 / 0.282 / 0.274 | 0.279 ± 0.008 | 0.329 (z +5.4) | 0.316 (z +4.0) |
+|   crown in view: per adult-day | 1.58 / 1.51 / 1.53 / 1.60 | 1.55 ± 0.04 | 1.23 (z -6.7) | 1.39 (z -3.4) |
+|   crown in view: fed at target | 0.978 / 0.977 / 0.980 / 0.982 | 0.979 ± 0.002 | 0.982 (z +1.1) | 0.990 (z +4.3) |
+|   a companion's trip: per adult-day | 4.80 / 4.37 / 4.03 / 4.14 | 4.33 ± 0.34 | 3.18 (z -3.0) | 3.57 (z -2.0) |
+|   a companion's trip: fed at target | 0.604 / 0.584 / 0.615 / 0.607 | 0.603 ± 0.013 | 0.740 (z +9.3) | 0.701 (z +6.7) |
+|   a caller: per adult-day | 1.83 / 1.44 / 1.44 / 1.32 | 1.51 ± 0.23 | 1.20 (z -1.2) | 1.34 (z -0.7) |
+|   a caller: fed at target | 0.033 / 0.027 / 0.034 / 0.035 | 0.032 ± 0.004 | 0.339 (z +76.3) | 0.292 (z +64.6) |
+| unfed trips: km per adult-day | 1.097 / 1.041 / 0.978 / 0.948 | 1.016 ± 0.066 | 0.707 (z -4.2) | 0.640 (z -5.1) |
+| unfed trips: kcal per adult-day | 37.9 / 35.8 / 33.6 / 32.6 | 35.0 ± 2.4 | 24.6 (z -4.0) | 22.6 (z -4.7) |
+| trips: km per adult-day | 1.962 / 1.872 / 1.830 / 1.744 | 1.852 ± 0.091 | 1.655 (z -1.9) | 1.664 (z -1.9) |
+| delivered ÷ valued (fruit at target ÷ E0) | 0.215 / 0.217 / 0.221 / 0.218 | 0.218 ± 0.003 | 0.262 (z +15.8) | 0.265 (z +16.9) |
+|   unfed, arrived, empty: per adult-day | 2.881 / 2.991 / 2.582 / 2.728 | 2.796 ± 0.179 | 1.022 (z -8.9) | 1.070 (z -8.6) |
+|   unfed, departure given up: per adult-day | 3.116 / 2.926 / 3.017 / 3.047 | 3.026 ± 0.079 | 2.494 (z -6.0) | 2.768 (z -2.9) |
+|   unfed, caller stopped short: per adult-day | 1.123 / 0.851 / 0.857 / 0.801 | 0.908 ± 0.146 | 0.294 (z -3.8) | 0.454 (z -2.8) |
+|   unfed, re-decided en route: per adult-day | 1.073 / 0.959 / 0.886 / 0.905 | 0.956 ± 0.084 | 0.644 (z -3.3) | 0.744 (z -2.3) |
+|   unfed, arrived, crop left: per adult-day | 0.684 / 0.593 / 0.565 / 0.584 | 0.607 ± 0.053 | 0.616 (z +0.2) | 0.639 (z +0.5) |
+| known-tree trips per adult-day; fed | 2.245 / 2.547 / 2.190 / 2.605 | 2.397 ± 0.210 | 0.883 (z -6.5) | 0.076 (z -9.9) |
+|   known-tree trips fed at target | 0.053 / 0.058 / 0.059 / 0.053 | 0.056 ± 0.003 | 0.126 (z +19.6) | 0.115 (z +16.6) |
+|   known-tree trips back to one found empty (share) | 0.620 / 0.653 / 0.634 / 0.661 | 0.642 ± 0.019 | 0.100 (z -26.2) | 0.022 (z -29.9) |
+| caller trips fed at the caller's crown | 0.038 / 0.033 / 0.040 / 0.042 | 0.038 ± 0.004 | 0.409 (z +85.9) | 0.340 (z +69.9) |
+| ground km, adult male | 2.97 / 2.69 / 2.63 / 2.43 | 2.68 ± 0.22 | 2.50 (z -0.7) | 2.37 (z -1.3) |
+| ground km, female lactating | 2.65 / 2.53 / 2.62 / 2.52 | 2.58 ± 0.07 | 2.38 (z -2.8) | 2.19 (z -5.4) |
+| ground km, female other | 2.12 / 2.12 / 1.95 / 1.91 | 2.02 ± 0.11 | 1.97 (z -0.4) | 1.88 (z -1.2) |
+| ground km, juvenile 5–12 y | 3.02 / 2.99 / 2.80 / 2.99 | 2.95 ± 0.10 | 2.80 (z -1.3) | 2.81 (z -1.2) |
+| climbing kcal/day, adults (day-weighted) | 47.2 / 43.5 / 41.6 / 42.6 | 43.7 ± 2.4 | 42.9 (z -0.3) | 44.4 (z +0.2) |
+| climbing kcal/day, adult male | 60.7 / 55.1 / 52.8 / 53.6 | 55.6 ± 3.5 | 54.2 (z -0.4) | 56.4 (z +0.2) |
+| climbing kcal/day, female lactating | 38.0 / 35.1 / 34.2 / 34.4 | 35.4 ± 1.8 | 35.4 (z -0.0) | 35.5 (z +0.1) |
+| T-FOOD-4 | 9.422 / 9.210 / 9.024 / 8.709 | 9.091 ± 0.302 | 9.271 (z +0.5) | 8.812 (z -0.8) |
+| T-ACT-2 | 0.126 / 0.116 / 0.107 / 0.100 | 0.112 ± 0.011 | 0.103 (z -0.7) | 0.094 (z -1.4) |
+| T-RNG-4 | 2.214 / 2.222 / 1.963 / 1.850 | 2.063 ± 0.186 | 2.293 (z +1.1) | 1.619 (z -2.1) |
+| T-PTY-1 | 4.293 / 3.892 / 3.779 / 4.153 | 4.029 ± 0.236 | 3.898 (z -0.5) | 4.669 (z +2.4) |
+| T-FOOD-2 | 0.849 / 0.848 / 0.849 / 0.806 | 0.838 ± 0.021 | 0.840 (z +0.1) | 0.814 (z -1.0) |
+| T-ACT-1 | 0.369 / 0.370 / 0.374 / 0.360 | 0.368 ± 0.006 | 0.368 (z -0.1) | 0.374 (z +0.9) |
+| T-ACT-3 | 0.096 / 0.098 / 0.096 / 0.104 | 0.098 ± 0.004 | 0.095 (z -0.9) | 0.098 (z -0.1) |
+| T-ACT-4 | 0.470 / 0.486 / 0.455 / 0.455 | 0.466 ± 0.015 | 0.397 (z -4.2) | 0.451 (z -1.0) |
+| T-HUN-1 | 28.077 / 9.973 / 15.956 / 22.060 | 19.017 ± 7.800 | 9.973 (z -1.0) | 21.940 (z +0.3) |
+| T-FOOD-5 | 0.297 / 0.324 / 0.312 / 0.338 | 0.318 ± 0.017 | 0.301 (z -0.9) | 0.307 (z -0.5) |
+| T-FOOD-6 | 4.288 / 4.582 / 4.958 / 4.420 | 4.562 ± 0.290 | 4.769 (z +0.6) | 4.358 (z -0.6) |
+| T-FOOD-10 | 0.552 / 0.643 / 0.544 / 0.563 | 0.575 ± 0.046 | 0.645 (z +1.4) | 0.654 (z +1.5) |
+| T-IGE-1 | 5.995 / 3.103 / 7.499 / 10.377 | 6.744 ± 3.033 | 13.383 (z +2.0) | 1.459 (z -1.6) |
+| reserves %/day, adult male | -0.003 / 0.002 / -0.005 / 0.006 | -0.000 ± 0.005 | -0.003 (z -0.5) | 0.006 (z +1.1) |
+| reserves %/day, female, other | 0.015 / -0.004 / -0.014 / 0.002 | -0.000 ± 0.012 | -0.009 (z -0.7) | 0.001 (z +0.1) |
+| reserves %/day, female, lactating | 0.002 / -0.005 / -0.007 / -0.020 | -0.008 ± 0.009 | -0.009 (z -0.1) | -0.010 (z -0.3) |
+| reserves %/day, juvenile 5–12 y | -0.052 / 0.001 / -0.027 / 0.009 | -0.017 ± 0.028 | 0.001 (z +0.6) | -0.040 (z -0.7) |
+| reserves %/day, infant 2–5 y | 0.003 / -0.019 / 0.010 / -0.028 | -0.009 ± 0.018 | -0.020 (z -0.6) | -0.001 (z +0.4) |
+| reserves %/day, infant 0.5–2 y | 0.003 / 0.004 / -0.024 / -0.013 | -0.007 ± 0.013 | -0.001 (z +0.4) | -0.023 (z -1.0) |
+| eating min, adult male | 232.3 / 228.9 / 228.1 / 227.9 | 229.3 ± 2.0 | 226.8 (z -1.1) | 228.5 (z -0.4) |
+| fruit share (eating), adult male | 0.929 / 0.933 / 0.939 / 0.926 | 0.932 ± 0.006 | 0.931 (z -0.1) | 0.924 (z -1.2) |
+| eating min, female, other | 224.9 / 233.4 / 228.3 / 214.4 | 225.2 ± 8.0 | 223.2 (z -0.2) | 231.4 (z +0.7) |
+| fruit share (eating), female, other | 0.718 / 0.678 / 0.715 / 0.740 | 0.713 ± 0.026 | 0.690 (z -0.8) | 0.664 (z -1.7) |
+| eating min, female, lactating | 307.8 / 299.9 / 302.3 / 304.6 | 303.7 ± 3.4 | 300.1 (z -0.9) | 306.1 (z +0.6) |
+| fruit share (eating), female, lactating | 0.678 / 0.699 / 0.677 / 0.660 | 0.678 ± 0.016 | 0.689 (z +0.6) | 0.661 (z -1.0) |
+| eating min, juvenile 5–12 y | 294.8 / 283.2 / 295.6 / 285.3 | 289.7 ± 6.4 | 269.9 (z -2.8) | 283.5 (z -0.9) |
+| fruit share (eating), juvenile 5–12 y | 0.832 / 0.895 / 0.843 / 0.897 | 0.867 ± 0.034 | 0.912 (z +1.2) | 0.823 (z -1.1) |
+
+Sums on rows scored in every run listed (fitted / held-out; with rare rows, then without T-HUN-4, T-BRD-1, T-IGE-3):
+  S31q: 1.77 / 9.81; 1.77 / 3.75
+  S31q1: 2.69 / 4.90; 2.69 / 4.90
+  S31q2: 1.84 / 6.68; 1.84 / 3.48
+  S31q3: 1.32 / 5.18; 1.32 / 4.98
+  A1: 1.88 / 4.71; 1.88 / 3.98
+  A2: 2.38 / 5.22; 2.38 / 4.28
+/private/tmp/claude-501/-Users-juanbermudez-Desktop-MGOGO/ad60f0c7-2554-45f8-b237-a926b537fae7/scratchpad/e3h/arms/A1-rhythm.json: adults out of a nest 2.31% of night; T-RHY-5 0.0185; night deaths 0; deaths 0
+/private/tmp/claude-501/-Users-juanbermudez-Desktop-MGOGO/ad60f0c7-2554-45f8-b237-a926b537fae7/scratchpad/e3h/arms/A2-rhythm.json: adults out of a nest 2.51% of night; T-RHY-5 0.0178; night deaths 1; deaths 1
+A1: identity (adult males' eating min, ground km) 226.819 / 2.499; energy-diagnose 226.81875 / 2.4987125233707657; living [(49, 49, {}), (49, 49, {})]
+A2: identity (adult males' eating min, ground km) 228.475 / 2.369; energy-diagnose 228.47458622540924 / 2.3690557746821512; living [(49, 48, {'illness': 1}), (49, 49, {})]
+A2-rhythm.json: adults out of a nest 2.51% of night; T-RHY-5 0.0178; night deaths 1 (the illness death, seed 48); deaths 1
+A2 arrivals at empty crowns (both seeds): all 1964, already below 0.06 at the start 1896; by kind remembered crown 293, departure 633, crown in view 0, a companion's trip 1031, a caller 7; own trips by source left 220, seen 658, nobelief 0, known 48
+A2 own trips by belief source (per adult-day, fed at target): left 0.98 (0.381), seen 5.534 (0.439), belief 0.003 (0.4), known 0.076 (0.115)
+A1 own trips by belief source (per adult-day, fed at target): left 0.719 (0.438), seen 4.878 (0.509), belief 0.003 (0.6), known 0.883 (0.126)
+```
+
+**What happened.** Valued at the expected bout of a crown in fruit with the list's own chance, the community's known trees
+are almost never chosen (0.076 trips per adult-day; A1 0.88), but the trips they gave were replaced by trips to crowns the
+animal had seen (own trips on a sighting 6.5 per adult-day against A1's 5.6) that feed less often (seen 0.44, left 0.38;
+A1 0.51, 0.44), and by more companions' trips that arrive empty (1,031 empty arrivals against 723): arrivals at empty crowns
+stay at A1's level (1.07 per adult-day) and the share of trips fed at their target is a little lower than A1's (0.549,
+z +19.1 against the group). Nursing mothers walk less (2.19 km, z −5.4), parties are larger (T-PTY-1 4.67, z +2.4, in band),
+day ranges shorter (T-RNG-4 1.62, z −2.1, in band); juveniles' and young infants' reserves are lower than A1's (−0.040 and
+−0.023 against +0.001 and −0.001 %/day; within the group's spread); every sum inside noise; one death, of illness.
+
+**Against the predictions.** Prescriptions 48: held. Viability and night (2.51%, 0.0178): held. Known-tree trips below 0.25:
+held (0.076). Fed at target 0.58–0.70: **missed** (0.549). Arrivals at empty crowns below 0.7: **missed** (1.07). Unfed trips'
+km 0.45–0.70: held (0.640). Ground km within ± 0.5 km: held (−0.31, −0.39, −0.14). Fruit share of eating within ± 0.05:
+held (males 0.924, mothers 0.661). T-FOOD-4, T-ACT-2, T-RNG-4, T-PTY-1 in the registered ranges: held (8.81, 0.094, 1.62,
+4.67). Reserves at or above the group mean − 0.03: held (lowest: juveniles −0.040 against −0.017). Sums inside noise: held
+(fitted z +0.6, held-out −0.6, without the rare rows 0.0).
+
+**Kill criterion: not met.** (a) one death, of illness, no starvation; (b) the largest fall against the S31q mean is
+juveniles, 0.023% of the store a day; (c) held-out inside noise; (d) night safe; (e) known-tree trips 0.076 per adult-day,
+below 0.5.
+
+**Verdict.** By the registered rule A2 is also a provisional keep candidate as a correction (trips fed at their target
+z +19.1), but **A1 stays the best arm**: A2's share of trips fed at the target is lower than A1's (0.549 against 0.569) and
+its juveniles' reserve slope is 0.041% of the store a day below A1's (registered limit 0.03). Bit 4 is recorded, off: the
+expected-bout valuation is the right long-run rate for an uncertain crown, but on this stack the trips it removes are
+replaced by trips on beliefs that others' eating has made stale, so trips do not find more food. No third iteration: what
+remains (crowns emptied by animals the traveller did not see there, D2) needs an expectation of others' visits that the
+animal would have to learn, which E3g showed collapses travel when applied to every trip.
+
 ## 7. Known defects in the code under test
+
+Deferred (found by the diagnosis or the arms, not this stage's question; file:line at 973df1f):
+- A caller option lasts 0.3 h after the call (src/sim/candidates.ts:578 and :594, `time - x.joinAt < 0.3`, a window after an
+  event, not a counted quota): a caller trip still walking then is no longer on the list and ends at its next decision
+  point ('ended', re-decided en route; A1: 11% of caller trips). With bit 2 the walk is longer (to the crown, not 25 m short
+  of the call point), so more of them end this way.
+- Crowns found empty because animals not feeding there at the animal's last sighting ate them (D2: others ate 1.2–1.5 × the
+  crop lost, the seen feeders 15–17%) have no mechanism: a belief that expects later visitors would need each animal's own
+  estimate of how often others come, a learned rate that E3g's iteration 1 showed collapses travel when it is applied to
+  every trip. Recorded, not built.
+- A joined trip or a caller's crown the follower never saw is valued at the unknown crop 0.2 (candidates.ts:606 and :645),
+  not at the community list's expectation or chance for a listed crown: followers of a leader going to a listed crown
+  inherit its emptiness (D4: 48% of joined trips to a goal the follower never saw arrive at an empty crown).
+- Given-up departure attempts (2.5–3 per adult-day) are counted as trips by this stage's readout although they move ~1 m:
+  they inflate trip counts and the unfed share, not the walking or the energy.
+- trip-diagnose's sightings are the crowns in x.trees (the five best in view, at least 0.06 units) and the crown fed in;
+  a crown in view outside that list whose belief perception updates (0.04–0.06 units) is not a sighting in the readout.
 
 ## 8. Stage verdict
