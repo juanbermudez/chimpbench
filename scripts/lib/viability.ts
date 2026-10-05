@@ -1,10 +1,11 @@
 // Viability of one world on simulation truth, for scripts/e-bench.ts (Track E; the C13 guard and the C8c gate G2):
 // births, deaths, starvation deaths and the living population over the scored window, plus the hunger medians the C13
-// guard read. The world is replayed without the observer: the observer never changes the world and the simulation is
-// deterministic, so this world is tick-for-tick the one scripts/field-metrics.ts scored on the same seed, profile and
-// overrides. (src/field/run.ts does not hand its world out, and editing it would move the frozen protocol hash.)
+// guard read. e-bench's single pass steps it on its own observed world (viabilityStart/Step/Finish); runViability
+// replays a world without the observer (e-bench --legacy): the observer never changes the world and the simulation is
+// deterministic, so both read the same world tick for tick (checked equal on the quick run, 5 October 2026).
 import { createWorld, tickWorld } from '../../src/simulation';
 import type { Overrides, Profile } from '../../src/sim/params';
+import type { World } from '../../src/types';
 
 export interface ViabilityJob { seed: number; profile: Profile; params: Overrides; burnInDays: number; days: number }
 export interface Viability {
@@ -30,16 +31,17 @@ export interface Viability {
 const TICKS_PER_DAY = 5760, SAMPLE_EVERY = 240;
 const median = (v: number[]) => { if (!v.length) return null; const s = [...v].sort((a, b) => a - b); return s[Math.floor(s.length / 2)]; };
 
-export function runViability(j: ViabilityJob): Viability {
-  const t0 = performance.now();
-  const w = createWorld(j.seed, { profile: j.profile, params: j.params });
-  for (let i = 0, n = Math.round(j.burnInDays * TICKS_PER_DAY); i < n; i++) tickWorld(w);
-  const start = w.time, livingStart = w.chimps.filter(c => c.alive).length;
-  const hunger: number[] = [], lact: number[] = [];
-  for (let i = 0, n = Math.round(j.days * TICKS_PER_DAY); i < n; i++) {
-    tickWorld(w);
-    if (i % SAMPLE_EVERY === 0) for (const c of w.chimps) if (c.alive && c.age >= 15) { hunger.push(c.hunger); if (c.lactating) lact.push(c.hunger); }
-  }
+/** What the viability readout carries from tick to tick (plain data; e-bench checkpoints it with the world). */
+export interface ViabilityState { start: number; livingStart: number; hunger: number[]; lact: number[] }
+/** Starts at the end of the burn-in (when the observer would start). */
+export function viabilityStart(w: World): ViabilityState { return { start: w.time, livingStart: w.chimps.filter(c => c.alive).length, hunger: [], lact: [] }; }
+/** After tickWorld of scored tick `i` (0 at the end of the burn-in): the hourly hunger sample. */
+export function viabilityStep(st: ViabilityState, w: World, i: number): void {
+  if (i % SAMPLE_EVERY === 0) for (const c of w.chimps) if (c.alive && c.age >= 15) { st.hunger.push(c.hunger); if (c.lactating) st.lact.push(c.hunger); }
+}
+/** The seed's viability at the end of the scored window. */
+export function viabilityFinish(st: ViabilityState, w: World, seed: number, wallMs: number): Viability {
+  const start = st.start;
   // the dead stay in world.chimps (alive = false) with their time and cause of death
   const dead = w.chimps.filter(c => !c.alive && c.deathTime !== null);
   const inWindow = dead.filter(c => c.deathTime! > start);
@@ -47,12 +49,21 @@ export function runViability(j: ViabilityJob): Viability {
   for (const c of inWindow) { const k = c.causeOfDeath ?? 'unknown'; deathsByCause[k] = (deathsByCause[k] ?? 0) + 1; }
   const births = w.chimps.filter(c => c.birthTime > start).length;
   return {
-    seed: j.seed, livingStart, livingEnd: w.chimps.filter(c => c.alive).length, births, deaths: inWindow.length, ratio: inWindow.length ? births / inWindow.length : null,
+    seed, livingStart: st.livingStart, livingEnd: w.chimps.filter(c => c.alive).length, births, deaths: inWindow.length, ratio: inWindow.length ? births / inWindow.length : null,
     starvationDeaths: deathsByCause.starvation ?? 0,
     orphanInfantDeaths: inWindow.filter(c => (c.causeOfDeath ?? '').startsWith('orphaned infant')).length,
     deathsByCause, burnInStarvationDeaths: dead.filter(c => c.deathTime! <= start && c.causeOfDeath === 'starvation').length,
-    medianAdultHunger: median(hunger), medianLactatingHunger: median(lact), wallMs: performance.now() - t0,
+    medianAdultHunger: median(st.hunger), medianLactatingHunger: median(st.lact), wallMs,
   };
+}
+
+export function runViability(j: ViabilityJob): Viability {
+  const t0 = performance.now();
+  const w = createWorld(j.seed, { profile: j.profile, params: j.params });
+  for (let i = 0, n = Math.round(j.burnInDays * TICKS_PER_DAY); i < n; i++) tickWorld(w);
+  const st = viabilityStart(w);
+  for (let i = 0, n = Math.round(j.days * TICKS_PER_DAY); i < n; i++) { tickWorld(w); viabilityStep(st, w, i); }
+  return viabilityFinish(st, w, j.seed, performance.now() - t0);
 }
 
 export interface ViabilityVerdict { pass: boolean; births: number; deaths: number; ratio: number | null; starvationDeaths: number; minLivingShare: number; reasons: string[]; /** Too few births and deaths to compare them: that criterion was not applied. */ fewEvents: boolean }
