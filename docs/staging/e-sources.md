@@ -1946,3 +1946,14 @@ copulation (mullerWrangham2004b). New keys: sanders2003, boeschBoesch1989, watts
 cawthornHoffman2015, miyamoto2013, mitani2000, gomesBoesch2009, furuichiHashimoto2001, watts2007, watts2022,
 robertsRoberts2015, marson1989. Not verified: immature red colobus masses, the edible share's mean, Watts 2007's numbers,
 Tutin 1979, Stumpf & Boesch, Deschner et al. 2004 and Marson et al. 1989 in full.
+
+## 59. Addendum: E4q aggression without cooldowns (4 October 2026)
+
+Same text as research.md "Addendum: E4q aggression without cooldowns": per-male-hour field values for the stage's
+readouts, from full texts already cited. Kanyawara 1998 (mullerWrangham2004b, FT, 40-min group focal follows,
+all-occurrence, 9 adult males, parties with ≥ 2 adult males only): charging displays 0.259 ± 0.075 (with maximally
+tumescent parous females) and 0.212 ± 0.074 per hour (without); chases and attacks 0.169 ± 0.039 and 0.066 ± 0.017 (mean ±
+SE across males); the alpha displayed 4.5 × the average. Male aggression received by males 0.015 ± 0.003 per dyad-hour
+(muller2007, FT). Contact aggression given 0.027 per male-hour (2,670 per 100,000 h; wranghamWilsonMuller2006, FT; Gombe
+1970–78 0.015–0.030). Gombe, dyadic aggression with the focal male as actor or recipient, median 0.085 per hour
+(mouginot2024, FT; context). No per-male-hour rate of charges at strangers found. No new keys.

@@ -35,8 +35,10 @@ test('redecideValue on (field): deterministic over a day, JSON-lossless; rgMaxAg
   for (const c of held) for (const v of Object.values(ix(c).rgIntent!.noise!)) assert.ok(Number.isFinite(v));
 });
 
-test('redecideValue removes rgMaxAgeH and continueBonus from the prescription count', () => {
-  assert.equal(prescriptionCount({ redecideValue: 1 }).total, prescriptionCount({}).total - 2);
+test('redecideValue removes rgMaxAgeH, continueBonus and the grooming continuation terms from the prescription count', () => {
+  // the grooming bout's +0.35 / −0.25 literals are counted since stage E0b (docs/staging/e0b-prereg.md §3) and not applied
+  // under redecideValue (candidates.ts groom offer)
+  assert.equal(prescriptionCount({ redecideValue: 1 }).total, prescriptionCount({}).total - 3);
 });
 
 // A field world after a day with the switch on; one adult (≥ rgMinAge) resting, its intention set by the test.
@@ -104,7 +106,7 @@ test('redecideValue 2 (field): deterministic over a day, JSON-lossless; rgMaxAge
   for (const id of ['rgMaxAgeH', 'continueBonus']) assert.ok(!read.has(id), `${id} is not read`);
   for (const id of ['finishedPenalty', 'rgTemperature']) assert.ok(read.has(id), `${id} is read`);
   assert.deepEqual(JSON.parse(JSON.stringify(a)), a);
-  assert.equal(prescriptionCount(T).total, prescriptionCount({}).total - 2);
+  assert.equal(prescriptionCount(T).total, prescriptionCount({}).total - 3); // and the grooming continuation terms (stage E0b)
 });
 
 const snapshot2 = (() => { let s = ''; return (): World => { if (!s) { const w = createWorld(48, { profile: 'field', params: { redecideValue: 2 } }); for (let i = 0; i < 5760 + 600; i++) tickWorld(w); s = JSON.stringify(w); } return JSON.parse(s) as World; }; })();

@@ -1,7 +1,8 @@
 // Prescription ledger (Track E, stage E0; IMPLEMENTATION_PLAN.md): classes every entry of data/params.json as input,
 // design or outcome-encoding (rules and judgement calls: scripts/lib/prescriptions.ts), lints src/sim for prescriptions
-// outside the registry (hour-of-day literals, dice against fixed numbers, time-of-day menus), and cross-references the
-// targets flagged `encoded` in data/targets.json to the parameters that encode them.
+// outside the registry (hour-of-day literals, dice against fixed numbers, time-of-day menus; since stage E0b also time
+// literals in the clock's arithmetic and literal bonuses the clock switches on, docs/staging/e0b-prereg.md), and
+// cross-references the targets flagged `encoded` in data/targets.json to the parameters that encode them.
 //
 //   pnpm exec tsx scripts/prescription-ledger.ts                       # writes artifacts/validation/e/e0-ledger.{md,json}
 //   pnpm exec tsx scripts/prescription-ledger.ts --out dir/name        # dir/name.md and dir/name.json
@@ -76,7 +77,7 @@ export function ledgerMarkdown(L: ReturnType<typeof buildLedger>): string {
   const kinds: Record<string, number> = {};
   for (const r of oe.filter(r => r.active)) kinds[r.kind] = (kinds[r.kind] ?? 0) + 1;
   o.push(`Outcome-encoding entries in use, by kind: ${Object.entries(kinds).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k} ${n}`).join(', ')}.`, '');
-  o.push('Limits. The classes follow written rules, so they are reproducible, not certain: entries marked † are judgement calls. Bout lengths (`bout*Min`/`Max`) are classed design (re-decision cadence) except the four tied to clock windows (midday rest, morning nest). Score literals in `src/sim` (weights such as the rest score\'s 0.12) and gap literals (`time - x.lastCall > 1.5`) are outside this lint, which covers hour-of-day comparisons, dice against fixed numbers and the time-of-day menus only.', '');
+  o.push('Limits. The classes follow written rules, so they are reproducible, not certain: entries marked † are judgement calls. Bout lengths (`bout*Min`/`Max`) are classed design (re-decision cadence) except the four tied to clock windows (midday rest, morning nest). The lint covers hour-of-day comparisons, dice against fixed numbers, the time-of-day menus and (stage E0b, docs/staging/e0b-prereg.md) time literals in the clock\'s arithmetic (`time - x.lastCall > 1.5`: counted as a quota unless an allow entry gives the rule that excuses it) and literal bonuses a clock comparison switches on (counted only as the registry\'s judgement counts a bonus). Other score literals (weights such as the rest score\'s 0.12, terms switched by darkness, fixed scores for continuing an act) are outside it.', '');
 
   o.push('## Outcome-encoding registry entries', '');
   o.push('| Id | Group | Field value | Units | Kind | In use | Encodes | Rule | Why |', '| --- | --- | --- | --- | --- | --- | --- | --- | --- |');
@@ -85,7 +86,7 @@ export function ledgerMarkdown(L: ReturnType<typeof buildLedger>): string {
 
   o.push('## Prescriptions outside the registry (src/sim literals)', '');
   o.push('| Where | Kind | Values | Counted | Why | Code |', '| --- | --- | --- | --- | --- | --- |');
-  for (const l of L.literals) o.push(`| src/sim/${l.file}:${l.line} | ${l.kind} | ${l.values.join(', ') || '—'} | ${l.counted ? '**yes**' : 'no'} | ${l.why} | \`${l.text.replace(/\|/g, '\\|').slice(0, 110)}\` |`);
+  for (const l of L.literals) o.push(`| src/sim/${l.file}:${l.line}${l.borderline ? ' †' : ''} | ${l.kind} | ${l.values.join(', ') || '—'}${l.units && l.units !== 'score' ? ` ${l.units}` : ''} | ${l.counted ? '**yes**' : 'no'} | ${l.why} | \`${l.text.replace(/\|/g, '\\|').slice(0, 110)}\` |`);
   o.push('');
 
   o.push('## Encoded targets and what encodes them', '');

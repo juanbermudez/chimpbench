@@ -41,8 +41,9 @@ export const V = {
 export interface CandidateMeta { v: number; aux: number; raw?: number; jit?: number; bel?: number[] }
 export const candidateMeta = new WeakMap<Candidate, CandidateMeta>();
 
-/** The five gates of stage E5e (docs/staging/e5e-prereg.md §2). */
-export type QuotaKind = 'greet' | 'feed' | 'immigrant' | 'consort' | 'caller' | 'mate' | 'mateF';
+/** The five gates of stage E5e (docs/staging/e5e-prereg.md §2); stage E4q adds the aggression and display gaps. */
+export type QuotaKind = 'greet' | 'feed' | 'immigrant' | 'consort' | 'caller' | 'mate' | 'mateF'
+  | 'challenge' | 'escalate' | 'grudge' | 'coerce' | 'femaleDom' | 'stranger' | 'gang' | 'display';
 /**
  * Stage E5e diagnosis (scripts/quota-diagnose.ts; docs/staging/e5e-prereg.md §2): called at four gates when every other
  * condition of the option holds, with whether the quota or the clock blocked it ('greet': pantGruntRepeatH; 'feed':
@@ -50,8 +51,12 @@ export type QuotaKind = 'greet' | 'feed' | 'immigrant' | 'consort' | 'caller' | 
  * (the last greeting of this dominant, the last aggression) or the hour of day, and `b` the score the option has or would
  * have; and at every approach to a caller offered ('caller': `a` the distance, `b` the score). Stage E4o adds the mating
  * quota (mateIntervalH): 'mate' at a male's offer to a swollen female in range, 'mateF' at a swollen female's offer to a
- * male (`a` the hours since the male's last copulation, `b` the offer's score without the jitter). Null in every simulation;
- * it reads only and draws nothing, so the world is unchanged.
+ * male (`a` the hours since the male's last copulation, `b` the offer's score without the jitter). Stage E4q
+ * (docs/staging/e4q-prereg.md §2) adds the three literal gaps after the animal's own last act: the 1.5-h aggression
+ * cooldown at the five offers it gates ('challenge' the status charge, 'escalate' E4a's attack, 'grudge', 'coerce',
+ * 'femaleDom'), the 0.2-h gap of a charge at strangers ('stranger', and 'gang' for the gang attack inside it) and the
+ * 0.75-h display gap ('display'); `a` the hours since the last aggression or display, `b` the offer's score without the
+ * jitter. Null in every simulation; it reads only and draws nothing, so the world is unchanged.
  */
 export const quotaTrace: { on: ((kind: QuotaKind, c: Chimp, o: Chimp | undefined, blocked: boolean, a: number, b: number) => void) | null } = { on: null };
 
@@ -61,6 +66,12 @@ export const quotaTrace: { on: ((kind: QuotaKind, c: Chimp, o: Chimp | undefined
  * callers' distance scale (the approach in the forager's currency), 8 the two charge gaps (no replacement). 0 = today.
  */
 export const socialBit = (P: Params, bit: number): boolean => (P.socialTiming & bit) !== 0;
+/**
+ * Stage E4q (docs/staging/e4q-prereg.md §4): `aggressionGaps` is a sum of bits, one per literal gap after the animal's own
+ * last act that it switches out without replacement (the diagnosis found that none sets its behaviour's rate): 1 the
+ * 1.5-h cooldown after aggression, 2 the 0.2-h gap of a charge at strangers, 4 the 0.75-h display gap. 0 = today.
+ */
+export const aggrBit = (P: Params, bit: number): boolean => (P.aggressionGaps & bit) !== 0;
 
 /**
  * Where a male leads a consortship (execution.ts onStart): a point at 0.85 of the community's range radius from its
@@ -776,10 +787,14 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
       if (male && c.age >= 15 && time - at < (fast ? fastSpanH(P) : P.impulseDurationH) && x.lastDisplay < at) { const sc = fast ? rainFastScore(c, x, time, P) : rainScore(c, x, P); if (sc > 0) offer('display', -1, sc, V.RAIN); }
     }
     else if (x.impulse === IMPULSE_RAIN && x.impulseUntil > time && male) offer('display', -1, P.rainDisplayScore, V.RAIN);
-    if (male && e > 0.3 && time - x.lastDisplay > 0.75) {
+    // stage E4q (aggressionGaps bit 4): the gap is not read; the display's own score against the other options governs it
+    const dispOpen = male && e > 0.3 && (aggrBit(P, 4) || time - x.lastDisplay > 0.75);
+    if (dispOpen || (quotaTrace.on && male && e > 0.3)) { // stage E4q diagnosis: the gap's gate, traced with the score the offer has or would have
       const rv = rivalCloseness > 0.3 ? rival : -1;
-      offer('display', rv, 0.02 + pers.aggression * 0.3 + pers.boldness * 0.12 + rivalCloseness * 0.3 + (x.newcomers > 0 ? 0.25 : 0) + unstable * 0.35
-        + (isAlpha ? 0.1 : 0) - h * 0.3 - rain * 0.2 - (c.age < 15 ? 0.1 : 0), rv > 0 ? V.RIVAL : x.newcomers > 0 ? V.REUNION : V.NONE);
+      const sc = 0.02 + pers.aggression * 0.3 + pers.boldness * 0.12 + rivalCloseness * 0.3 + (x.newcomers > 0 ? 0.25 : 0) + unstable * 0.35
+        + (isAlpha ? 0.1 : 0) - h * 0.3 - rain * 0.2 - (c.age < 15 ? 0.1 : 0);
+      if (quotaTrace.on) quotaTrace.on('display', c, rv > 0 ? byId.get(rv) : undefined, !dispOpen, time - x.lastDisplay, sc);
+      if (dispOpen) offer('display', rv, sc, rv > 0 ? V.RIVAL : x.newcomers > 0 ? V.REUNION : V.NONE);
     }
     aggression(world, c, rival, rivalCloseness, alliesNear, unstable);
   }
@@ -948,15 +963,24 @@ function aggression(world: World, c: Chimp, rival: number, rivalCloseness: numbe
   const time = world.time;
   const pers = c.personality;
   const h = c.hunger;
-  const cooled = time - x.lastAgg > 1.5;
+  // stage E4q (aggressionGaps bit 1): the cooldown is not read; each offer's own score and the target's answer (E4h)
+  // govern how soon an animal aggresses again
+  const cooled = aggrBit(P, 1) || time - x.lastAgg > 1.5;
   const male = c.sex === 'male';
-  if (rival > 0 && rankedMale(c) && cooled) {
+  // stage E4q diagnosis (quotaTrace; null in every simulation): each offer the cooldown gates is traced with the score it
+  // has or would have, whether or not the cooldown blocks it
+  const tr = quotaTrace.on, sinceAgg = time - x.lastAgg;
+  if (rival > 0 && rankedMale(c) && (cooled || tr)) {
     const o = byId.get(rival)!;
     // challenges upward need a strength edge; dominants reassert more readily [M]
     const up = o.elo > c.elo;
     const sc = up ? pers.aggression * 0.3 + (strength(c, P) / Math.max(0.1, strength(o, P)) - 1) * 0.9 + alliesNear * 0.1 + unstable * 0.45 - 0.3
       : pers.aggression * 0.25 + rivalCloseness * 0.15 + unstable * 0.3 - 0.12;
-    if (dcc(c, o) < P.chargeRangeM) offer('charge', o.id, sc + (x.tension[o.id] ?? 0) * P.statusTensionW - h * 0.25 - (guarded(world, c, o, x.seen, P) ? P.guardDeterW : 0), V.STATUS);
+    if (dcc(c, o) < P.chargeRangeM) {
+      const full = sc + (x.tension[o.id] ?? 0) * P.statusTensionW - h * 0.25 - (guarded(world, c, o, x.seen, P) ? P.guardDeterW : 0);
+      if (tr) tr('challenge', c, o, !cooled, sinceAgg, full);
+      if (cooled) offer('charge', o.id, full, V.STATUS);
+    }
   }
   if (x.impulse === IMPULSE_ESCALATE && x.impulseUntil > time) {
     const o = byId.get(x.impulseTarget);
@@ -965,7 +989,7 @@ function aggression(world: World, c: Chimp, rival: number, rivalCloseness: numbe
   // stage E4a (docs/staging/e4a-prereg.md): with the switches on no dice open these options. The escalated attack is on
   // offer whenever the old preconditions of the impulse hold (plus the refractory gate of status aggression), and the
   // redirected charge after every loss for one stress time constant; their scores come from the slow states (endocrine.ts).
-  const endoEsc = endoOn(P, 'endoEscalate') && cooled && isAdultMale(c), escR = Math.min(P.escalateDistM, P.escalateAttackRangeM);
+  const escOn = endoOn(P, 'endoEscalate') && isAdultMale(c), endoEsc = escOn && cooled, escR = Math.min(P.escalateDistM, P.escalateAttackRangeM);
   // stage E4b (endoFastRedirect): open for endoFastSpanTau time constants of the fast state, scored by it (docs/staging/e4b-prereg.md)
   const endoRed = endoOn(P, 'endoRedirect'), fastRed = endoOn(P, 'endoFastRedirect');
   const redirectOpen = time - x.lostAt < (fastRed ? fastSpanH(P) : endoRed ? P.endoStressTauH : P.redirectWindowH) && x.lastAgg < x.lostAt;
@@ -988,13 +1012,22 @@ function aggression(world: World, c: Chimp, rival: number, rivalCloseness: numbe
     // redirected aggression toward a lower-ranked bystander after losing [M], preferably one it already has tension with (design)
     if (redirectOpen && dist < P.redirectRangeM && o.age >= 5 && !kin && dominates(c, o))
       offer('charge', o.id, (fastRed ? redirectFastScore(c, x, tn, time, P) : endoRed ? redirectScore(c, tn, P) : P.redirectBase + pers.aggression * P.redirectAggrW + c.stress * P.redirectStressW + tn * P.redirectTensionW) - deter, V.REDIRECT);
-    if (endoEsc && o.sex === 'male' && o.age >= 15 && Math.abs(o.elo - c.elo) < P.escalateEloGap && dist < escR) { const sc = escalateScore(c, o, x, P); if (sc > 0) offer('attack', o.id, sc, V.ESCALATE); }
+    if ((endoEsc || (tr && escOn)) && o.sex === 'male' && o.age >= 15 && Math.abs(o.elo - c.elo) < P.escalateEloGap && dist < escR) {
+      const sc = escalateScore(c, o, x, P);
+      if (sc > 0) { if (tr) tr('escalate', c, o, !cooled, sinceAgg, sc); if (endoEsc) offer('attack', o.id, sc, V.ESCALATE); }
+    }
     // a grudge: a dominant may charge a subordinate whose own aggression toward it is unrepaired (last incident received) (design) [M: compatibility]
-    if (tn >= P.rivalTension && cooled && dist < P.grudgeRangeM && o.age >= 5 && !kin && dominates(c, o) && (x.incident[o.id]?.[1] ?? 0) % 2 === 1)
-      offer('charge', o.id, P.grudgeTensionW * (tn - P.grudgeTensionFloor) + pers.aggression * P.grudgeAggrW - P.grudgeBase - h * P.grudgeHungerW - deter, V.TENSION);
+    if (tn >= P.rivalTension && (cooled || tr) && dist < P.grudgeRangeM && o.age >= 5 && !kin && dominates(c, o) && (x.incident[o.id]?.[1] ?? 0) % 2 === 1) {
+      const sc = P.grudgeTensionW * (tn - P.grudgeTensionFloor) + pers.aggression * P.grudgeAggrW - P.grudgeBase - h * P.grudgeHungerW - deter;
+      if (tr) tr('grudge', c, o, !cooled, sinceAgg, sc);
+      if (cooled) offer('charge', o.id, sc, V.TENSION);
+    }
     // male aggression toward maximally swollen females; linked to mating success (Muller et al.) [M-H]
-    if (male && c.age >= 15 && o.sex === 'female' && o.swelling >= P.coerceSwellingMin && dist < P.coerceRangeM && !kin && cooled && (ix(o).coerce[c.id] ?? 0) < P.coerceMaxRepeats)
-      offer('charge', o.id, pers.aggression * 0.35 + c.rank * 0.1 - 0.12 - deter, V.COERCE);
+    if (male && c.age >= 15 && o.sex === 'female' && o.swelling >= P.coerceSwellingMin && dist < P.coerceRangeM && !kin && (cooled || tr) && (ix(o).coerce[c.id] ?? 0) < P.coerceMaxRepeats) {
+      const sc = pers.aggression * 0.35 + c.rank * 0.1 - 0.12 - deter;
+      if (tr) tr('coerce', c, o, !cooled, sinceAgg, sc);
+      if (cooled) offer('charge', o.id, sc, V.COERCE);
+    }
     // resident females target recent immigrants [M]
     const immOpen = gapsOff || time - x.lastAgg > P.immigrantChargeGapH;
     if (!male && c.age >= 15 && o.sex === 'female' && dist < P.immigrantChargeRangeM && (immOpen || quotaTrace.on)) {
@@ -1019,8 +1052,11 @@ function aggression(world: World, c: Chimp, rival: number, rivalCloseness: numbe
       }
     }
     // adolescent males establishing dominance over females [H]
-    if (male && c.age >= 12 && c.age < P.femaleDomMaxAgeY && o.sex === 'female' && o.age >= 15 && dist < P.femaleDomRangeM && cooled && !kin)
-      offer('charge', o.id, 0.03 + pers.aggression * 0.3 + (dominates(c, o) ? 0 : 0.1), V.FEMALE_DOM);
+    if (male && c.age >= 12 && c.age < P.femaleDomMaxAgeY && o.sex === 'female' && o.age >= 15 && dist < P.femaleDomRangeM && (cooled || tr) && !kin) {
+      const sc = 0.03 + pers.aggression * 0.3 + (dominates(c, o) ? 0 : 0.1);
+      if (tr) tr('femaleDom', c, o, !cooled, sinceAgg, sc);
+      if (cooled) offer('charge', o.id, sc, V.FEMALE_DOM);
+    }
     // guardians (mothers, or caretakers of wards under guardMaxAgeY) defend them; stage E4o (bodyRules bit 1): while the
     // ward cannot hold its own against its aggressor (wardHoldsOwn), at any age
     const ox = ix(o);
@@ -1098,16 +1134,25 @@ function intergroup(world: World, c: Chimp): void {
       // swollen, childless stranger females are potential immigrants and are tolerated by males [M]
       const immigrantLike = s.sex === 'female' && s.swelling >= P.immigrantLikeSwelling && !s.lactating;
       const transferring = c.action === 'transfer' || (x.transferTo > 0 && c.troopId === c.natalTroopId);
+      const chargeSc = (0.6 + 0.12 * (own - str) + pers.boldness * 0.3 - (c.age < 15 ? 0.3 : 0)) * close;
+      const gangT = x.impulse === IMPULSE_GANG && x.impulseUntil > time ? byId.get(x.impulseTarget) : undefined;
+      const gangSc = 1.05 + 0.1 * (own - 3) + pers.boldness * 0.3 - (c.age < 15 ? 0.5 : 0);
+      let charged = false; // stage E4q diagnosis: whether the gap let the charge at strangers through (quotaTrace below)
       if (transferring) { /* keep going */ }
       else if (c.sex === 'male' && immigrantLike) { /* no aggression */ }
-      else if (c.sex === 'male' && own >= 3 && own >= str + 2 && time - x.lastAgg > 0.2) {
-        offer('charge', s.id, (0.6 + 0.12 * (own - str) + pers.boldness * 0.3 - (c.age < 15 ? 0.3 : 0)) * close, V.STRANGER);
-        if (x.impulse === IMPULSE_GANG && x.impulseUntil > time) { const iso = byId.get(x.impulseTarget); if (iso && iso.alive) offer('attack', iso.id, 1.05 + 0.1 * (own - 3) + pers.boldness * 0.3 - (c.age < 15 ? 0.5 : 0), V.GANG); }
+      else if (c.sex === 'male' && own >= 3 && own >= str + 2 && (aggrBit(P, 2) || time - x.lastAgg > 0.2)) { // stage E4q bit 2: no gap
+        charged = true;
+        offer('charge', s.id, chargeSc, V.STRANGER);
+        if (gangT && gangT.alive) offer('attack', gangT.id, gangSc, V.GANG);
       } else if (own < str + 1 || own < 2 || fear > 0.3) {
         offer('flee', s.id, (0.6 + 0.25 * Math.max(0, str - own) + fear) * close, V.STRANGERS);
       } else {
         if (c.sex === 'male') { offer('display', s.id, 0.5 + pers.boldness * 0.2, V.STRANGER); offer('call', -1, 0.55, V.COUNTERCALL); }
         else offer('flee', s.id, 0.55 + fear, V.STRANGERS);
+      }
+      if (quotaTrace.on && !transferring && c.sex === 'male' && !immigrantLike && own >= 3 && own >= str + 2) {
+        quotaTrace.on('stranger', c, s, !charged, time - x.lastAgg, chargeSc);
+        if (gangT && gangT.alive) quotaTrace.on('gang', c, gangT, !charged, time - x.lastAgg, gangSc);
       }
     }
   }
