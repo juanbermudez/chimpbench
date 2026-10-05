@@ -16,7 +16,7 @@
 // Development seeds only (48, 7).
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { buildJevQuestion, buildLocalQuestion, decisionContextError } from '../server/decide';
+import { bodyFieldError, buildJevQuestion, buildLocalQuestion, decisionContextError } from '../server/decide';
 import { buildRequest } from '../src/decision';
 import { activityCategory, CATEGORIES } from '../src/field/categories';
 import { candidateMeta, getEligibleActions, V } from '../src/sim/candidates';
@@ -119,7 +119,7 @@ export async function runArm(base: World, arm: 'rules' | 'model', days: number, 
         const req = buildRequest(w, c);
         if (req.options.length < 2) { inc(t.fallbacks, 'fewer-than-two-options'); resolveByRules(w, c.id); continue; }
         const bad = decisionContextError(req.context);
-        if (bad !== '') { inc(t.fallbacks, `invalid-context: ${bad}`); resolveByRules(w, c.id); continue; }
+        if (bad !== '') { inc(t.fallbacks, `invalid-context: ${bad}${bad === 'body' ? ` (${bodyFieldError(req.context.body).replace(/=.*/, '')})` : ''}`); resolveByRules(w, c.id); continue; }
         let packet: unknown;
         if (provider === 'jev') { const { keys: _k, ...p } = buildJevQuestion(req.context, { wording }); packet = p; } else packet = buildLocalQuestion(req.context, { wording });
         items.push({ c, req, packet });

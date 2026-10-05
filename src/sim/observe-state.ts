@@ -53,6 +53,9 @@ export function bodyPercept(world: World, c: Chimp, P: Params): BodyPercept {
     if (x.affil !== undefined) b.affiliation = r2(x.affil);
     if (endoOn(P, 'endoFast')) b.acute = r2(fastNow(x, world.time, P));
   }
+  // JSON-safe: a state at an extreme can make a derived value non-finite (an animal that never sleeps in a nest drives
+  // sleep pressure to 1, and the drive's horizon and need with it); such a field is left out rather than sent as null
+  for (const k of Object.keys(b) as (keyof BodyPercept)[]) { const v = b[k]; if (typeof v === 'number' && !Number.isFinite(v)) delete b[k]; }
   return b;
 }
 
@@ -147,6 +150,7 @@ export function withValues(world: World, c: Chimp, list: Candidate[], P: Params,
   const R = fruitRate(c, P).fruitPerH * fruitKcalPerUnit(P, false);
   return list.map(k => {
     const v = optionValue(world, c, k, P, R);
+    if (v) for (const key of Object.keys(v) as (keyof OptionValue)[]) { const n = v[key]; if (typeof n === 'number' && !Number.isFinite(n)) delete v[key]; } // JSON-safe
     if (!v || !Object.keys(v).length) return k;
     const out = copy(k);
     out.value = v;

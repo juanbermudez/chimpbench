@@ -73,6 +73,14 @@ const BODY_RANGES: Record<Exclude<keyof BodyPercept, 'clockRising'>, [number, nu
 function validBody(b: unknown): b is BodyPercept {
   return record(b) && Object.keys(b).every(k => k === 'clockRising' ? bool(b[k]) : Object.hasOwn(BODY_RANGES, k) && num(b[k], ...BODY_RANGES[k as keyof typeof BODY_RANGES]));
 }
+/** The first body field outside its range, as `key=value` (diagnostics; '' when the body is valid). */
+export function bodyFieldError(b: unknown): string {
+  if (!record(b)) return 'not a record';
+  for (const k of Object.keys(b)) {
+    if (k === 'clockRising' ? !bool(b[k]) : !(Object.hasOwn(BODY_RANGES, k) && num(b[k], ...BODY_RANGES[k as keyof typeof BODY_RANGES]))) return `${k}=${String(b[k])}`;
+  }
+  return '';
+}
 /** Stage M1: an option's Track E values (src/types.ts OptionValue). */
 const VALUE_RANGES: Record<keyof OptionValue, [number, number]> = {
   kcalH: [-100_000, 100_000], cropKcal: [0, 10_000_000], seenH: [-1, 100_000], feeders: [0, 500], distM: [0, 100_000], company: [-10, 10] };

@@ -126,3 +126,12 @@ test('M1 iteration 2 (wording 2): purposes follow Track E\'s mechanics; wording 
   }
   assert.ok(rests > 5 && trips > 3, `rest ${rests}, nest ${nests}, trips ${trips}`);
 });
+
+test('an extreme state stays JSON-safe: a body field that would be non-finite is left out', () => {
+  const w = structuredClone(w1), c = w.chimps.find(k => k.alive && k.age > 15)!, x = ix(c);
+  // never slept since waking at full pressure: the drive's horizon and need become non-finite (seen in M3's loop)
+  x.slp = 1; if (x.en) { x.en.sWake = 1; x.en.sBed = 1; }
+  const ctx = observe(w, c);
+  for (const [k, v] of Object.entries(ctx.body ?? {})) if (typeof v === 'number') assert.ok(Number.isFinite(v), `${k} = ${v}`);
+  assert.equal(decisionContextError(buildRequest(w, c).context), '');
+});
