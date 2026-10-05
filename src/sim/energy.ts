@@ -125,6 +125,19 @@ function rates(P: Params): Rates {
   return R;
 }
 
+/**
+ * mass^ledgerRmrExp (Kleiber), kept for the last four masses: every adult of a sex has the same mass, and a ledger tick
+ * asks for it once or more per animal (performance only: Math.pow of the same arguments; 0 is never kept).
+ */
+const RK = new Float64Array(4).fill(NaN), RV = new Float64Array(4);
+let rkP: Params | null = null, rkNext = 0;
+function rmrPow(P: Params, M: number): number {
+  if (P !== rkP) { rkP = P; RK.fill(NaN); }
+  for (let i = 0; i < 4; i++) if (RK[i] === M && M !== 0) return RV[i];
+  const v = Math.pow(M, P.ledgerRmrExp); RK[rkNext] = M; RV[rkNext] = v; rkNext = (rkNext + 1) & 3;
+  return v;
+}
+
 /** Body mass (kg) by age and sex: linear from birth mass to the adult mass at the age growth ends (registry; stylized curve). */
 function curveMass(c: Chimp, P: Params): number {
   const f = c.sex === 'female', adult = f ? P.ledgerMassFemaleKg : P.ledgerMassMaleKg, at = f ? P.ledgerMassMatureFemaleY : P.ledgerMassMatureMaleY;
@@ -188,7 +201,7 @@ function gutKg(c: Chimp, P: Params): number {
   if (P.ledgerLactGut !== 1 || !c.lactating || P.ledgerDigesta !== 1 || !driveOn(P)) return M;
   const E = ix(c).en?.eAvg;
   if (E === undefined) return M;
-  const m = P.ledgerMilkYieldCoef / 24 * Math.pow(M, P.ledgerRmrExp) / P.ledgerMilkEff, o = E - m;
+  const m = P.ledgerMilkYieldCoef / 24 * rmrPow(P, M) / P.ledgerMilkEff, o = E - m;
   return M * (1 + m / (o > m ? o : m));
 }
 /** Gut capacity (kcal of drupes) of an adult female, for rates quoted without an animal. */
@@ -424,7 +437,7 @@ export const energyTap: { fn: ((c: Chimp, term: EnergyTerm, kcal: number, kind?:
 /** One tick of the balance for `c` (called from needs()): absorption, expenditure, and the hunger readout. */
 export function energyTick(world: World, c: Chimp, x: ChimpX, sleeping: boolean): void {
   const P = paramsOf(world), r = rates(P), L = x.en ?? ledgerOf(c, P);
-  const M = massOf(c, P), m75 = Math.pow(M, P.ledgerRmrExp), tap = energyTap.fn, D = r.dig;
+  const M = massOf(c, P), m75 = rmrPow(P, M), tap = energyTap.fn, D = r.dig;
   let absorbed: number, out = 0;
   if (D) {
     if (L.dm === undefined) openDigesta(c, L, D, P);

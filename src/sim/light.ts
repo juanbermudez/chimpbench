@@ -32,10 +32,20 @@ function atmos(hDeg: number): number {
   return Math.exp(-EXT_DIRECT * m) * u + SKY_SHARE * Math.exp(-EXT_SKY * m) * (1 + (hDeg + 90) * u / (180 / Math.PI));
 }
 
-/** Illuminance of the open sky on a horizontal surface (lux): the sun at `alt` (radians, geometric) under `cloud` 0..1. */
-export function skyLux(P: Params, alt: number, cloud: number): number {
+function skyLuxOf(P: Params, alt: number, cloud: number): number {
   const sun = P.skyLuxSun * Math.max(0, atmos(refracted(alt / DEG)));
   return sun * (1 - P.rhythmCloudAtt * Math.pow(cloud, P.rhythmCloudExp)) + P.skyLuxNight;
+}
+// Memos of the last result of the pure functions below (performance only: the same inputs return the stored value,
+// computed by the same expression; NaN inputs never match, and ±0 give the same light). Trips valued in one tick ask
+// for the same sun, sky and canopy light many times.
+let skyP: Params | null = null, skyAlt = NaN, skyCloud = NaN, skyVal = 0;
+/** Illuminance of the open sky on a horizontal surface (lux): the sun at `alt` (radians, geometric) under `cloud` 0..1. */
+export function skyLux(P: Params, alt: number, cloud: number): number {
+  if (P === skyP && alt === skyAlt && cloud === skyCloud) return skyVal;
+  const v = skyLuxOf(P, alt, cloud);
+  skyP = P; skyAlt = alt; skyCloud = cloud; skyVal = v;
+  return v;
 }
 
 /** Share of open-sky light reaching height `y` (m) under the canopy: the E2a profile, linear from the floor to the canopy. */
@@ -57,8 +67,22 @@ export function visionAt(P: Params, alt: number, cloud: number, y: number): numb
   const hi = P.daylightHighDeg * DEG;
   if (alt >= hi) return 1;
   const share = canopyShare(P, y);
-  const v = acuity(P, skyLux(P, alt, cloud) * share) / acuity(P, skyLux(P, hi, cloud) * share);
+  const v = acuity(P, skyLux(P, alt, cloud) * share) / fullDayAcuity(P, hi, cloud, share);
   return v < 1 ? v : 1;
+}
+// visionAt's divisor, acuity in full daylight at the same height under the same sky: the last two shares of light kept
+// (a trip's valuation alternates the floor and a crown; performance only)
+let hiP: Params | null = null, hiCloud = NaN, hiLux = 0;
+let fdP: Params | null = null, fdCloud = NaN, fdShareA = NaN, fdA = 0, fdShareB = NaN, fdB = 0;
+function fullDayAcuity(P: Params, hi: number, cloud: number, share: number): number {
+  if (P === fdP && cloud === fdCloud) {
+    if (share === fdShareA) return fdA;
+    if (share === fdShareB) return fdB;
+  } else { fdP = P; fdCloud = cloud; fdShareA = NaN; fdShareB = NaN; }
+  if (!(P === hiP && cloud === hiCloud)) { hiP = P; hiCloud = cloud; hiLux = skyLuxOf(P, hi, cloud); }
+  const v = acuity(P, hiLux * share);
+  fdShareB = fdShareA; fdB = fdA; fdShareA = share; fdA = v;
+  return v;
 }
 
 /** Vision now at height `y` (1 in full daylight, without computing anything). */
@@ -90,7 +114,10 @@ export function tripLight(world: World, P: Params, distM: number, crownY: number
   // the sun's altitude changes by at most 15° an hour (the Earth's rotation): full light until arrival
   if (env.sunAltitude >= hi + walkH * (360 / 24) * DEG) { out.pace = 1; out.see = 1; return out; }
   const alt = sunAltitudeAt(world.time + walkH);
-  out.pace = (paceAt(P, visionAt(P, env.sunAltitude, env.cloud, 0)) + paceAt(P, visionAt(P, alt, env.cloud, 0))) / 2;
+  // the pace now on the floor is the same for every trip valued under this sun and sky (kept; performance only)
+  if (!(P === nowP && env.sunAltitude === nowAlt && env.cloud === nowCloud)) { nowP = P; nowAlt = env.sunAltitude; nowCloud = env.cloud; nowPace = paceAt(P, visionAt(P, env.sunAltitude, env.cloud, 0)); }
+  out.pace = (nowPace + paceAt(P, visionAt(P, alt, env.cloud, 0))) / 2;
   out.see = visionAt(P, alt, env.cloud, crownY);
   return out;
 }
+let nowP: Params | null = null, nowAlt = NaN, nowCloud = NaN, nowPace = 1;

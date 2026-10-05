@@ -32,15 +32,23 @@ export interface Osc { x: number; xc: number; n: number }
  * × the circadian sensitivity (1 − s·x)(1 − s·x_c). Process P: a van der Pol oscillator whose speed light changes (k).
  */
 export function oscStep(P: Params, o: Osc, lux: number, dtH: number): void {
-  const a = lux > 0 ? P.circAlpha0 * Math.pow(lux / P.circI0, P.circP) : 0;
-  const r = 60 * (a + P.circBeta), nInf = r > 0 ? 60 * a / r : 0;
-  o.n = nInf + (o.n - nInf) * Math.exp(-r * dtH);
+  // the light terms depend on the light alone: kept for the next animal under the same light (most sleep, at 0 lux,
+  // or stand on the floor; performance only, the same expressions)
+  if (!(P === oP && lux === oLux && dtH === oDt)) {
+    const a = lux > 0 ? P.circAlpha0 * Math.pow(lux / P.circI0, P.circP) : 0;
+    const r = 60 * (a + P.circBeta);
+    oP = P; oLux = lux; oDt = dtH; oA = a; oNInf = r > 0 ? 60 * a / r : 0; oDecay = Math.exp(-r * dtH);
+  }
+  const a = oA, nInf = oNInf;
+  o.n = nInf + (o.n - nInf) * oDecay;
   const B = P.circG * (1 - o.n) * a * (1 - P.circSens * o.x) * (1 - P.circSens * o.xc);
   // 0.99669: the model's correction of the intrinsic period for the cubic stiffness (forger1999), part of its structure
   const f = 24 / (0.99669 * P.circTauH), w = Math.PI / 12, x = o.x, xc = o.xc;
   o.x = x + w * (xc + B) * dtH;
   o.xc = xc + w * (P.circMu * (xc - 4 * xc * xc * xc / 3) - x * (f * f + P.circK * B)) * dtH;
 }
+
+let oP: Params | null = null, oLux = NaN, oDt = NaN, oA = 0, oNInf = 0, oDecay = 0;
 
 /**
  * The two thresholds of sleep pressure at oscillator value `x`: [waking, sleep onset]. Stage E2f (sleepChimp,
@@ -50,10 +58,11 @@ export function oscStep(P: Params, o: Osc, lux: number, dtH: number): void {
  * chimpanzee EEG sleep (bert1970, 9.7 h) through the model's own steady state (scripts/sleep-calibrate.ts) [M].
  */
 export function thresholds(P: Params, x: number): [number, number] {
-  if (P.sleepChimp !== 1) return [P.circHLower + P.circAmp * x, P.circHUpper + P.circAmp * x];
-  const d = P.sleepDriveShift;
-  return [P.circHLower - d + P.circAmp * x, P.circHUpper - d + P.circAmp * x];
+  return [thrLower(P, x), thrUpper(P, x)];
 }
+/** thresholds()[0] and [1] without the array (per animal and tick). */
+const thrLower = (P: Params, x: number) => P.sleepChimp !== 1 ? P.circHLower + P.circAmp * x : P.circHLower - P.sleepDriveShift + P.circAmp * x;
+const thrUpper = (P: Params, x: number) => P.sleepChimp !== 1 ? P.circHUpper + P.circAmp * x : P.circHUpper - P.sleepDriveShift + P.circAmp * x;
 
 /**
  * Felt sleepiness 0..1: 1 while the sleep latch is on; otherwise where S stands between the waking and the sleep-onset
@@ -62,7 +71,7 @@ export function thresholds(P: Params, x: number): [number, number] {
  */
 export function sleepinessAt(P: Params, S: number, x: number, latch: boolean): number {
   if (latch) return 1;
-  const [lo, hi] = thresholds(P, x), q = (S - lo) / (hi - lo);
+  const lo = thrLower(P, x), hi = thrUpper(P, x), q = (S - lo) / (hi - lo);
   return q > 1 ? 1 : q < 0 ? 0 : q;
 }
 
@@ -74,8 +83,11 @@ export function circadianSleepiness(P: Params, c: Chimp): number {
 
 /** Two-process step of S (the E2a rates): saturating rise awake, exponential fall asleep. */
 function sStep(P: Params, S: number, asleep: boolean, dtH: number): number {
-  return asleep ? S * Math.exp(-dtH / P.rhythmSleepDecayH) : 1 - (1 - S) * Math.exp(-dtH / P.rhythmSleepRiseH);
+  if (!(P === sP && dtH === sDt)) { sP = P; sDt = dtH; sDecay = Math.exp(-dtH / P.rhythmSleepDecayH); sRise = Math.exp(-dtH / P.rhythmSleepRiseH); }
+  return asleep ? S * sDecay : 1 - (1 - S) * sRise;
 }
+// sStep's two factors for the last parameters and step (performance only, the same expressions)
+let sP: Params | null = null, sDt = NaN, sDecay = 0, sRise = 0;
 
 // The entrainment run that sets an animal's oscillator at its first tick: the same for every animal starting at the same
 // time under the same parameters, so the last one is kept (performance only; a pure function of P and time).
@@ -126,9 +138,8 @@ export function circadianTick(world: World, c: Chimp, inNest: boolean, awakeTick
   x.cx = o.x; x.cxc = o.xc; x.cn = o.n;
   const S = sStep(P, x.slp ?? 1 - c.energy, asleep && !awakeTick, TICK_HOURS);
   x.slp = S;
-  const [lo, hi] = thresholds(P, o.x);
-  if (x.asl !== 1 && S >= hi) x.asl = 1;
-  else if (x.asl === 1 && S <= lo) {
+  if (x.asl !== 1 && S >= thrUpper(P, o.x)) x.asl = 1;
+  else if (x.asl === 1 && S <= thrLower(P, o.x)) {
     x.asl = 0;
     if (inNest) { x.actEnd = world.time; c.nextDecision = world.time; } // waking is a decision point
   }

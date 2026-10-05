@@ -79,6 +79,18 @@ export function insensibleW(P: Params, m: number, pa: number): number {
 /** Ambient water-vapour pressure (Pa) from air temperature (°C) and relative humidity (0..1). */
 export const vapourPa = (t: number, rh: number) => rh * 1000 * Math.exp(SAT_A - SAT_B / (t + SAT_C));
 
+// Kept results for waterTick (performance only, the same expressions): the air's vapour pressure is the same for every
+// animal this tick, and kg^(2/3) the same for every animal of the same mass (adults of a sex; 0 is never kept)
+let paT = NaN, paRh = NaN, paV = 0;
+const airPa = (t: number, rh: number) => { if (!(t === paT && rh === paRh)) { paT = t; paRh = rh; paV = vapourPa(t, rh); } return paV; };
+const SK = new Float64Array(4).fill(NaN), SV = new Float64Array(4);
+let skNext = 0;
+function skinPow(kg: number): number {
+  for (let i = 0; i < 4; i++) if (SK[i] === kg && kg !== 0) return SV[i];
+  const v = Math.pow(kg, 2 / 3); SK[skNext] = kg; SV[skNext] = v; skNext = (skNext + 1) & 3;
+  return v;
+}
+
 /** One tick of the water balance for `c` (from needs(), after the energy ledger and E2a's heat balance): losses, metabolic water, the readout. */
 export function waterTick(world: World, c: Chimp, x: ChimpX): void {
   const P = paramsOf(world), W = x.wat ?? waterOf(c, P), L = x.en ?? ledgerOf(c, P), kg = massOf(c, P), env = world.environment, tap = waterTap.fn;
@@ -90,8 +102,8 @@ export function waterTick(world: World, c: Chimp, x: ChimpX): void {
   const faec = fdm > 0 ? fdm * P.waterFaecalFrac / (1 - P.waterFaecalFrac) : 0;
   // regulated evaporation (E2a heat balance, W/kg) and insensible evaporation (W/m² of skin at this metabolic rate)
   const evap = P.rhythmHeat === 1 ? heatOut.evapW * kg * TICK_SECONDS / P.waterLatentJPerG : 0;
-  const area = P.waterSkinAreaM2 * Math.pow(kg, 2 / 3), m = (spent > 0 ? spent : 0) * J_PER_KCAL / TICK_SECONDS / area;
-  const ins = insensibleW(P, m, vapourPa(env.temperature, env.humidity)) * area * TICK_SECONDS / P.waterLatentJPerG;
+  const area = P.waterSkinAreaM2 * skinPow(kg), m = (spent > 0 ? spent : 0) * J_PER_KCAL / TICK_SECONDS / area;
+  const ins = insensibleW(P, m, airPa(env.temperature, env.humidity)) * area * TICK_SECONDS / P.waterLatentJPerG;
   const urine = P.waterUrineMinMlPerKgD * kg * TICK_HOURS / 24;
   W.in += met; W.out += evap + ins + faec + urine;
   W.def += evap + ins + faec + urine - met;

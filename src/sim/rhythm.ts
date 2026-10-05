@@ -52,11 +52,17 @@ export function massOf(c: Chimp, P: Params): number {
 export const heatOut = { evapW: 0 };
 
 export function heatStep(P: Params, load: number, massKg: number, met: number, moveW: number, exposure: number, rainShare: number, env: Environment, dtS: number): number {
-  const sinAlt = Math.sin(env.sunAltitude);
-  const sun = sinAlt > 0 ? P.rhythmSolarW * sinAlt * (1 - P.rhythmCloudAtt * Math.pow(env.cloud, P.rhythmCloudExp)) * P.rhythmCoatHeat * P.rhythmAreaM2 * exposure / Math.cbrt(massKg) : 0;
-  const gain = P.rhythmRmrW * met / Math.sqrt(Math.sqrt(massKg)) + moveW + sun;
+  // the sky's part of the solar gain is the same for every animal this tick, and the mass terms for every animal of the
+  // same mass (adults of a sex): kept (performance only; the same expressions, multiplied in the same order)
+  if (!(P === skyP && env.sunAltitude === skyAlt && env.cloud === skyCloud)) {
+    skyP = P; skyAlt = env.sunAltitude; skyCloud = env.cloud; skySin = Math.sin(env.sunAltitude);
+    skySun = skySin > 0 ? P.rhythmSolarW * skySin * (1 - P.rhythmCloudAtt * Math.pow(env.cloud, P.rhythmCloudExp)) * P.rhythmCoatHeat * P.rhythmAreaM2 : 0;
+  }
+  const mt = massTerms(P, massKg);
+  const sun = skySin > 0 ? skySun * exposure / mt.cbrt : 0;
+  const gain = P.rhythmRmrW * met / mt.root4 + moveW + sun;
   const reach = env.rain * rainShare, wet = reach / (reach + P.rhythmSoakRain); // 0 dry, half soaked at rhythmSoakRain, → 1
-  const cond = P.rhythmCondW * Math.pow(massKg, -P.rhythmCondExp) * (1 + (P.rhythmWetCond - 1) * wet);
+  const cond = P.rhythmCondW * mt.condPow * (1 + (P.rhythmWetCond - 1) * wet);
   const dT = P.rhythmBodyC - env.temperature;
   const dryMax = cond * P.rhythmVaso * dT, lossMin = cond * dT, lossMax = Math.max(lossMin, dryMax + P.rhythmEvapW);
   const k = dtS * rates(P).perJ;
@@ -68,6 +74,18 @@ export function heatStep(P: Params, load: number, massKg: number, met: number, m
   else if (gain > dryMax) evap = gain - Math.max(lossMin, dryMax);
   heatOut.evapW = evap > 0 ? evap : 0;
   return load > 1 ? 1 : load < -1 ? -1 : load;
+}
+
+let skyP: Params | null = null, skyAlt = NaN, skyCloud = NaN, skySin = 0, skySun = 0;
+interface MassTerms { P: Params | null; kg: number; cbrt: number; root4: number; condPow: number }
+const MT: MassTerms[] = [0, 1, 2, 3].map(() => ({ P: null, kg: NaN, cbrt: 0, root4: 0, condPow: 0 }));
+let mtNext = 0;
+/** heatStep's mass terms (cube root, fourth root, conductance power) for the last four masses (0 is never kept). */
+function massTerms(P: Params, kg: number): MassTerms {
+  for (let i = 0; i < 4; i++) { const m = MT[i]; if (m.P === P && m.kg === kg && kg !== 0) return m; }
+  const m = MT[mtNext]; mtNext = (mtNext + 1) & 3;
+  m.P = P; m.kg = kg; m.cbrt = Math.cbrt(kg); m.root4 = Math.sqrt(Math.sqrt(kg)); m.condPow = Math.pow(kg, -P.rhythmCondExp);
+  return m;
 }
 
 /** One step of sleep pressure (pure): saturating rise awake, exponential fall asleep (two-process model, process S). */
