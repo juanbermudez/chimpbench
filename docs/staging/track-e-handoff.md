@@ -18,7 +18,9 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   that expect others' eating; the caller-trip arrival defect) and **E5g** (`e5g-call-gaps`: three call and alarm literals),
   both from 90aa294 against the S31 quick group (bench-run 4111971, `…/e/s31q/`, running via `integrator/s31q-group.sh`).
   S36 (S34 + `experienceValue` 2) done: not adopted (other females' reserve z −2.6, as on S35). Disk was nearly full at 22:45 (≈ 0.4 GB free; our files ≈ 4 GB; finished stages' scratch gzipped, reversible); 3.7 GB free at 23:00. Decision guide on S34 (merged `guide-s34`); hosted copy in `site` a771b52, built and checked (S34, 45, 102 replaced, no console errors), not deployed.
-- **S34 is the best integrated candidate (45)** (e-stack2-confirm.md "S34 results"): S31 + `aggressionGaps` 7; every sum
+- **S37 is the best integrated candidate (42)** (e-stack2-confirm.md "S37 results"): S34 + `callGaps` 7; every sum inside
+  noise; costs: T-IGE-1 13.3 (band 5–12), T-COM-8 0.619. S38 (S34 + `tripBeliefs` 3) running; then S39 = S37 + `tripBeliefs` 3.
+- **S34 was the best integrated candidate (45)** (e-stack2-confirm.md "S34 results"): S31 + `aggressionGaps` 7; every sum
   inside noise, no cost found, food calls into their band. E4p recorded (the mating quota stays). S35 (the hunting
   correction on S31) passed with no benefit; S36 on S34 likewise, with the same small cost: not adopted.
 - **S31 was the best integrated candidate (48)** after the registered fallback (e-stack2-confirm.md "E3g's outcome and the
