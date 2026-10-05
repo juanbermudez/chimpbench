@@ -302,9 +302,28 @@ to 90aa294 for S31), each with energy-diagnose (seeds 48 and 7, burn-in 30, days
 result; sums with and without T-HUN-4, T-BRD-1 and T-IGE-3 (amendment 3). Readouts against the reference's own spread
 (mean ± SD of its 4 runs).
 
+### 4.2 Code checks before any arm (e2c8ff6, 5a55582)
+
+- Switch 0 leaves the S31 world unchanged (seed 48, 1 day) and bit 1 changes it; bits 2 and 4 change nothing without a
+  snake model (snakes appear only in experiments); bit 1 opens the reunion pant-hoot 0.2 h after the own last call under
+  `callValue` only; bit 2 removes the penalty (the alarm's value 0.2 instead of −0.2 one 0.01 h after a call); bit 4: no
+  hoo on the act's minute with nobody unaware in sight, a hoo when an unaware own-community juvenile comes within sight
+  (which tells it), none after, none for an unaware animal out of sight; the count falls one per bit (S31 48 → 45; today's
+  model 147 → 145, bit 1 needing `callValue`): tests/sim-call-gaps.test.ts (6 pass); tests/prescription-ledger.test.ts and
+  tests/sim-track-e.test.ts pass; `tsc` and `gen-params --check` clean; `decision-guide.ts --check` up to date.
+- `param-reads.ts --literals` (seeds 48 and 7; arms S31 and S31 + `callGaps`): `callReady` moves S31's world 1/2 in 8
+  days and 0/2 with bit 1; the penalty is inert in 1 day with a snake model at 8 h on S31 (0/2) and 0/2 with the bits; the
+  cadence moves S31 1/2 in that day and 0/2 with bit 4. No over-claim.
+- Readouts smoke-tested with the switch on (S31 + `callGaps` 7, seed 48, 1 + 2 days, 30 trials): no reunion offer
+  blocked; one hoo per alarm act (no animal came into sight unaware during an act); trials and exposure read as before.
+
 ## 6. Iteration log
 
 (each entry written and committed before its run)
+
+- **A1** (§4.1; `callGaps` 7 on S31): registered 4 October 2026 at the commit that adds this line; run from a frozen
+  detached checkout of it: `e-bench --quick` (`--workers` 1 above load 8, else 2), `energy-diagnose`, `rhythm-metrics` and
+  `call-gaps-diagnose` (seeds 48, 7; 30 + 30 days; trials at 08–16 h), the four in parallel (`run-arm.sh`).
 
 ## 7. Results
 
