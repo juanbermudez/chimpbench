@@ -23,6 +23,7 @@ import { bodyState, crownAt, crownMoveOn, gaitOn, riderKcal, runSpeedOf, tripBod
 import { matingValueOn, paternityGain } from './mating';
 import { tripYieldOf } from './experience';
 import { fruitingCrop, listChanceOn, listShare, listSightOn } from './tripbelief';
+import { ownCall } from './calltrip';
 
 // Variants refine an action's meaning (why a charge happens) for execution and reason text.
 export const V = {
@@ -598,30 +599,38 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
         if (quotaTrace.on) quotaTrace.on('caller', c, byId.get(x.joinCaller), false, d, sc);
         offer('travel', x.joinCall, sc, V.CALLER, x.joinCaller);
       }
-    } else if (callerRate && x.joinCall > 0 && time - x.joinAt < 0.3 && c.action !== 'patrol') {
-      // stage E5e (socialTiming bit 4; e5e-prereg §4.3): the approach in the forager's currency. A call given in a crown is a
-      // trip to that crown, as E5a's joined trip under E3c (the company the caller adds plus the crown's drive × the trip's
-      // net energy rate, walk and climb in the rate); any other call a move to a companion, as E5a's follow (the company
-      // added less the walk's energy at the ledger's derived scale). The call's design pull and joinCallDistScaleM are not read
-      const d = Math.hypot(x.joinX - px, x.joinZ - pz);
-      if (d > P.joinCallMinM) {
-        const caller = byId.get(x.joinCaller), alive = !!caller && caller.alive;
-        let v = alive ? (P.companyMargin === 1 ? Math.max(0, companyValue(c, caller!, P) - presentCompany(world, c, P)) : companyValue(c, caller!, P)) : 0;
-        const t = x.jt !== undefined && x.jt > 0 ? idx.treeById.get(x.jt) : undefined;
-        let bel: number[] | null = null;
-        if (t) {
-          const inSight = stamped(_sight, t.id, st), crop = inSight ? (P.patchEcology === 1 ? fruitAt(world, t) : t.fruit) : (x.treeCrop?.[t.id] ?? 0.2);
-          let feeders = 1; // the caller, heard feeding there
-          for (let _k = 0; _k < x.seen.length; _k++) { const o = byId.get(x.seen[_k]); if (o && o.alive && o !== c && o !== caller && o.targetId === t.id && (o.action === 'forage' || o.action === 'travel')) feeders++; }
-          v += fd * rateWorth(t, crop, feeders, dxz(t, px, pz));
-          if (cb && !inSight) bel = [t.id, crop, seenH(t.id), feeders, dxz(t, px, pz)]; // stage E3e: the caller's crown is out of sight
-        } else v -= d / P.travelDistScaleM;
-        if (P.assocBondW > 0 && caller) v += P.assocBondW * bond(c, caller); // stage C9 (off by default), as above
-        const sc = v - rain * 0.3;
-        if (quotaTrace.on) quotaTrace.on('caller', c, caller, false, d, sc);
-        offer('travel', x.joinCall, sc, V.CALLER, x.joinCaller, bel);
-      }
     }
+    // stage E5e (socialTiming bit 4; e5e-prereg §4.3): the approach in the forager's currency. A call given in a crown is a
+    // trip to that crown, as E5a's joined trip under E3c (the company the caller adds plus the crown's drive × the trip's
+    // net energy rate, walk and climb in the rate); any other call a move to a companion, as E5a's follow (the company
+    // added less the walk's energy at the ledger's derived scale). The call's design pull and joinCallDistScaleM are not read.
+    // `callId`, `callerId`, the call's place (jx, jz) and crown `jt`: the listener's slot (the latest call heard) or, with
+    // E3i's callTrip, the call a trip in progress was chosen for; `minD` the distance beyond which the call is offered
+    const callerTrip = (callId: number, callerId: number, jx: number, jz: number, jt: number | undefined, minD: number): boolean => {
+      const d = Math.hypot(jx - px, jz - pz);
+      if (!(d > minD)) return false;
+      const caller = byId.get(callerId), alive = !!caller && caller.alive;
+      let v = alive ? (P.companyMargin === 1 ? Math.max(0, companyValue(c, caller!, P) - presentCompany(world, c, P)) : companyValue(c, caller!, P)) : 0;
+      const t = jt !== undefined && jt > 0 ? idx.treeById.get(jt) : undefined;
+      let bel: number[] | null = null;
+      if (t) {
+        const inSight = stamped(_sight, t.id, st), crop = inSight ? (P.patchEcology === 1 ? fruitAt(world, t) : t.fruit) : (x.treeCrop?.[t.id] ?? 0.2);
+        let feeders = 1; // the caller, heard feeding there
+        for (let _k = 0; _k < x.seen.length; _k++) { const o = byId.get(x.seen[_k]); if (o && o.alive && o !== c && o !== caller && o.targetId === t.id && (o.action === 'forage' || o.action === 'travel')) feeders++; }
+        v += fd * rateWorth(t, crop, feeders, dxz(t, px, pz));
+        if (cb && !inSight) bel = [t.id, crop, seenH(t.id), feeders, dxz(t, px, pz)]; // stage E3e: the caller's crown is out of sight
+      } else v -= d / P.travelDistScaleM;
+      if (P.assocBondW > 0 && caller) v += P.assocBondW * bond(c, caller); // stage C9 (off by default), as above
+      const sc = v - rain * 0.3;
+      if (quotaTrace.on) quotaTrace.on('caller', c, caller, false, d, sc);
+      offer('travel', callId, sc, V.CALLER, callerId, bel);
+      return true;
+    };
+    const slotCall = callerRate && x.joinCall > 0 && time - x.joinAt < 0.3 && c.action !== 'patrol' && callerTrip(x.joinCall, x.joinCaller, x.joinX, x.joinZ, x.jt, P.joinCallMinM);
+    // stage E3i (callTrip bit 1; calltrip.ts): a caller trip in progress stays on the list, valued from the call it was chosen
+    // for, until it arrives (its act ends) or is chosen against; the slot's latest call, if another, is a separate option
+    const own = callerRate ? ownCall(P, x, c.action === 'travel' && x.v === V.CALLER, c.targetId) : undefined;
+    if (own && !(slotCall && x.joinCall === own[0])) callerTrip(own[0], own[1], own[3], own[4], own[5], -1);
     // beyond the own range (UD isopleth, stage C6) the pull home grows; the equal-area circle is not the range's shape
     const here = lv[c.troopId]?.[cellAt(tg, px, pz)] ?? 0;
     if (troop && here > P.homeLevel && c.action !== 'patrol' && c.action !== 'consort' && c.action !== 'transfer') offer('travel', -1, P.homeW * (here - P.homeLevel) / (1 - P.homeLevel) + (fromCenter > troop.radius * P.homeFarRadii ? P.homeFarW : 0), V.HOME);
@@ -1455,7 +1464,7 @@ export function reasonFor(world: World, c: Chimp, sl: Slot): string {
       if (!t) return x.fruitNear < 0.1 ? 'Forage on leaves and pith nearby; no ripe fruit in sight' : 'Forage on leaves and pith nearby';
       return cap(`Feed on ripe ${fruitWord(t)} in the ${t.species} ${m(dxz(t, px, pz))} away (crop ${pct(Math.min(1, paramsOf(world).patchEcology === 1 ? fruitAt(world, t) : t.fruit))}${sl.aux > 0 ? `, ${sl.aux} feeding there` : ''})`);
     case 'travel':
-      if (sl.v === V.CALLER) { const dx = x.joinX - px, dz = x.joinZ - pz; return cap(`Travel toward ${aux?.name ?? 'a group member'}'s pant-hoots ${m(Math.hypot(dx, dz))} ${dirWord(dx, dz)}`); }
+      if (sl.v === V.CALLER) { const r = x.cg !== undefined && x.cg[0] === sl.target ? x.cg : undefined; const dx = (r ? r[3] : x.joinX) - px, dz = (r ? r[4] : x.joinZ) - pz; return cap(`Travel toward ${aux?.name ?? 'a group member'}'s pant-hoots ${m(Math.hypot(dx, dz))} ${dirWord(dx, dz)}`); } // E3i: the trip's own call
       if (sl.v === V.HOME) { const tr = idx.troopById.get(c.troopId)!; return `Head back toward the core of our range, ${m(Math.hypot(tr.center[0] - px, tr.center[2] - pz))} ${dirWord(tr.center[0] - px, tr.center[2] - pz)}`; }
       return t ? cap(`Travel ${m(dxz(t, px, pz))} ${dirOf(t, px, pz)} to a ${t.species} I remember with ripe ${fruitWord(t)}`) : 'Travel on';
     case 'drink': { const w = idx.waterById.get(sl.target); return w ? `Drink at the stream ${m(dxz(w, px, pz))} ${dirOf(w, px, pz)} (thirst ${pct(c.thirst)})` : 'Drink'; }
