@@ -523,3 +523,8 @@ candidate (a replacement that misses both ranges does not replace what the quota
   Re-runs on unchanged worlds from `scratchpad/e4p/frozen-m` (the commit that adds this entry): D0m, D1m (S27, S27 +
   `rngSalt` 1) and A1m (A1's parameters; matingValue 1 is hash-identical with the WIP code of iteration 2 present, S27
   seed 48 after 2 days dba5143146a2b7b4), 30 + 60 days, seeds 48 and 7; outputs `scratchpad/e4p/diagm/`.
+- **Stall (logged after it):** the session stalled from about 16:37 to 21:28 and its background jobs were stopped. A1's
+  bench had finished (16:32:57; `A1.json` at 9013ed3, `git.dirty` 0, prescriptions 47); its energy run was cut off and its
+  diagnosis and rhythm runs never started; D0m, D1m and A1m never started. Nothing finished is re-run: A1's energy and
+  rhythm run now from `frozen-a1` (unchanged), its diagnosis as A1m from `frozen-m` (the same world with every readout, as
+  registered above), and D0m and D1m from `frozen-m`.
