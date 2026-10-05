@@ -14,10 +14,14 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 21:45; deploy held by the user).** Agent: **E4p** (mating gaps; resumed). Integrator: **S34**
-  (S31 + `aggressionGaps` 7; bench-run4) and **S35** (S31 + `experienceValue` 2; bench-run2), both at the registration commit,
-  against the S27 group (`integrator/judge_s27group.py`); the S32c3 energy step (bench-run). S33 withdrawn before results.
-- **S31 is the best integrated candidate (48)** after the registered fallback (e-stack2-confirm.md "E3g's outcome and the
+- **Running now (4 October 22:15; deploy held by the user).** Agents: **E3h** (`e3h-trip-beliefs`: why trips fail; beliefs
+  that expect others' eating; the caller-trip arrival defect) and **E5g** (`e5g-call-gaps`: three call and alarm literals),
+  both from 90aa294 against the S31 quick group (bench-run 4111971, `…/e/s31q/`, running via `integrator/s31q-group.sh`).
+  S36 (S34 + `experienceValue` 2) done: not adopted (other females' reserve z −2.6, as on S35). Disk was nearly full at 22:45 (≈ 0.4 GB free; our files ≈ 4 GB; finished stages' scratch gzipped, reversible); 3.7 GB free at 23:00. Decision guide on S34 (merged `guide-s34`); hosted copy in `site` a771b52, built and checked (S34, 45, 102 replaced, no console errors), not deployed.
+- **S34 is the best integrated candidate (45)** (e-stack2-confirm.md "S34 results"): S31 + `aggressionGaps` 7; every sum
+  inside noise, no cost found, food calls into their band. E4p recorded (the mating quota stays). S35 (the hunting
+  correction on S31) passed with no benefit; S36 on S34 likewise, with the same small cost: not adopted.
+- **S31 was the best integrated candidate (48)** after the registered fallback (e-stack2-confirm.md "E3g's outcome and the
   fallback to S31"): E3g found re-deciding's cost is the trip valuation itself, so `redecideValue` stays off the stack.
 - **S32 was the best integrated candidate (45 on E0b's ledger), until the fallback,** by the registered decision (e-stack2-confirm.md "S31 and
   S32 results"): S27 + `departValue` 2 + `bodyRules` 1 + `redecideValue` 2; every sum inside noise; **large energy cost**
