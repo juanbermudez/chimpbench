@@ -171,7 +171,9 @@ export interface SeedCounts {
     strangerActs: number;
     /** Hazard deaths with wounds above 0.5 (life.ts:213; not killings). */
     complicationsOfWounds: number };
-  deaths: { all: number; byCause: Record<string, number>; disease: number; aggression: number; other: number; respiratory: number; firstYear: number; births: number };
+  deaths: { all: number; byCause: Record<string, number>; disease: number; aggression: number; other: number; respiratory: number;
+    /** Outbreak deaths under 5 y and at 30 y or more (T-DEM-7's classes, negrey2019). */
+    respiratoryUnder5: number; respiratory30: number; firstYear: number; births: number };
   family: { motherDeaths: number; motherDeathsWithDependents: number; dependents: number; adopted: number; notAdopted: number; adoptionUnknown: number;
     carryOpportunities: number; carriesRecorded: number; bereaved: number; motherDeathsBereaving: number; sameTickTies: number };
   disease: { arrivals: number; arrivalsDatedWindow: number; arrivalsDatedBurnIn: number; arrivalsUndated: number; outbreaks: OutbreakRow[]; epidemics20: number;
@@ -222,14 +224,14 @@ export function countSeed(inp: SeedInput): SeedCounts {
   // deaths in the window (scripts/lib/viability.ts:46-49 counts deathTime > start)
   const dead = w.chimps.filter(c => !c.alive && inWin(c.deathTime, t0, t1));
   const deathsWorld: Record<string, number> = {}, byCause: Record<string, number> = {};
-  let disease = 0, aggression = 0, other = 0, respiratory = 0, firstYear = 0, complications = 0;
+  let disease = 0, aggression = 0, other = 0, respiratory = 0, respUnder5 = 0, resp30 = 0, firstYear = 0, complications = 0;
   for (const c of dead) {
     const cause = c.causeOfDeath ?? 'unknown';
     deathsWorld[cause] = (deathsWorld[cause] ?? 0) + 1;
     const k = causeKey(cause); byCause[k] = (byCause[k] ?? 0) + 1;
     const n = necropsy(cause); // the observer's necropsy classes (src/field/protocols.ts:44-49), so T-DEM-4 reads alike
     if (n.cause === 'disease') disease++; else if (n.cause === 'aggression') aggression++; else other++;
-    if (n.respiratory) respiratory++;
+    if (n.respiratory) { respiratory++; const a = ageAt(c, c.deathTime!); if (a < 5) respUnder5++; else if (a >= 30) resp30++; }
     if (ageAt(c, c.deathTime!) < 1) firstYear++;
     if (cause === 'complications of wounds') complications++;
   }
@@ -404,7 +406,7 @@ export function countSeed(inp: SeedInput): SeedCounts {
     injury: { serious: serious.size, strangerAttacks: intergroupKills + stranger.size, strangerAttacksNonLethal: stranger.size, woundsCounter: st.injuries - s0.injuries,
       infanticideAttacks: Math.max(0, (T.interactions.infanticide ?? 0) - infKills), strangerActs: T.interactions.intergroup ?? 0,
       complicationsOfWounds: complications },
-    deaths: { all: dead.length, byCause, disease, aggression, other, respiratory, firstYear, births },
+    deaths: { all: dead.length, byCause, disease, aggression, other, respiratory, respiratoryUnder5: respUnder5, respiratory30: resp30, firstYear, births },
     family: { motherDeaths, motherDeathsWithDependents: withDependents, dependents, adopted, notAdopted, adoptionUnknown: unknown, carryOpportunities: carryOpp, carriesRecorded: carries,
       bereaved, motherDeathsBereaving: bereaving, sameTickTies: ties },
     disease: { arrivals, arrivalsDatedWindow: outbreaks.filter(o => o.dated === 'window').length, arrivalsDatedBurnIn: outbreaks.filter(o => o.dated === 'burn-in').length,
@@ -431,7 +433,7 @@ export interface Pool {
   seeds: number; communityYears: number; chimpYears: number; infantYears: number; runCommunityYears: number; runChimpYears: number;
   killings: number; intergroup: number; infanticideBetween: number; infanticideWithin: number; fight: number; intercommunity: number; maleVictims: number; withRecord: number; onPatrol: number; odds: number[];
   serious: number; strangerAttacks: number; strangerAttacksNonLethal: number; woundsCounter: number; infanticideAttacks: number; strangerActs: number; complicationsOfWounds: number;
-  deaths: number; byCause: Record<string, number>; disease: number; aggression: number; other: number; respiratory: number; firstYear: number; births: number;
+  deaths: number; byCause: Record<string, number>; disease: number; aggression: number; other: number; respiratory: number; respiratoryUnder5: number; respiratory30: number; firstYear: number; births: number;
   motherDeaths: number; motherDeathsWithDependents: number; dependents: number; adopted: number; notAdopted: number; adoptionUnknown: number; carryOpportunities: number; carriesRecorded: number; bereaved: number; motherDeathsBereaving: number;
   arrivals: number; arrivalsDatedWindow: number; epidemics20: number; outbreakCases: number; outbreakDeaths: number; attack20: number[]; mortality20: number[];
   snaredRun: number; snareDeaths: number; prevalenceNum: number; prevalenceDen: number;
@@ -442,7 +444,7 @@ export interface Pool {
 export function pool(list: SeedCounts[], label = ''): Pool {
   const p: Pool = { seeds: 0, communityYears: 0, chimpYears: 0, infantYears: 0, runCommunityYears: 0, runChimpYears: 0, killings: 0, intergroup: 0, infanticideBetween: 0, infanticideWithin: 0, fight: 0, intercommunity: 0,
     maleVictims: 0, withRecord: 0, onPatrol: 0, odds: [], serious: 0, strangerAttacks: 0, strangerAttacksNonLethal: 0, woundsCounter: 0, infanticideAttacks: 0, strangerActs: 0, complicationsOfWounds: 0,
-    deaths: 0, byCause: {}, disease: 0, aggression: 0, other: 0, respiratory: 0, firstYear: 0, births: 0, motherDeaths: 0, motherDeathsWithDependents: 0, dependents: 0, adopted: 0, notAdopted: 0,
+    deaths: 0, byCause: {}, disease: 0, aggression: 0, other: 0, respiratory: 0, respiratoryUnder5: 0, respiratory30: 0, firstYear: 0, births: 0, motherDeaths: 0, motherDeathsWithDependents: 0, dependents: 0, adopted: 0, notAdopted: 0,
     adoptionUnknown: 0, carryOpportunities: 0, carriesRecorded: 0, bereaved: 0, motherDeathsBereaving: 0, arrivals: 0, arrivalsDatedWindow: 0, epidemics20: 0, outbreakCases: 0, outbreakDeaths: 0,
     attack20: [], mortality20: [], snaredRun: 0, snareDeaths: 0, prevalenceNum: 0, prevalenceDen: 0, transfers: 0, truthPatrols: 0, pat9ok: [], pat9top: [], observerDuplicates: 0, observedNotKilled: 0, checksFailed: [] };
   for (const s of list) {
@@ -452,7 +454,7 @@ export function pool(list: SeedCounts[], label = ''): Pool {
     p.intercommunity += k.intercommunity; p.maleVictims += k.maleVictims; p.withRecord += k.withRecord; p.onPatrol += k.onPatrol; p.odds.push(...k.odds);
     const i = s.injury; p.serious += i.serious; p.strangerAttacks += i.strangerAttacks; p.strangerAttacksNonLethal += i.strangerAttacksNonLethal; p.woundsCounter += i.woundsCounter;
     p.infanticideAttacks += i.infanticideAttacks; p.strangerActs += i.strangerActs; p.complicationsOfWounds += i.complicationsOfWounds;
-    const d = s.deaths; p.deaths += d.all; p.disease += d.disease; p.aggression += d.aggression; p.other += d.other; p.respiratory += d.respiratory; p.firstYear += d.firstYear; p.births += d.births;
+    const d = s.deaths; p.deaths += d.all; p.disease += d.disease; p.aggression += d.aggression; p.other += d.other; p.respiratory += d.respiratory; p.respiratoryUnder5 += d.respiratoryUnder5; p.respiratory30 += d.respiratory30; p.firstYear += d.firstYear; p.births += d.births;
     for (const [c, n] of Object.entries(d.byCause)) p.byCause[c] = (p.byCause[c] ?? 0) + n;
     const f = s.family; p.motherDeaths += f.motherDeaths; p.motherDeathsWithDependents += f.motherDeathsWithDependents; p.dependents += f.dependents; p.adopted += f.adopted; p.notAdopted += f.notAdopted;
     p.adoptionUnknown += f.adoptionUnknown; p.carryOpportunities += f.carryOpportunities; p.carriesRecorded += f.carriesRecorded; p.bereaved += f.bereaved; p.motherDeathsBereaving += f.motherDeathsBereaving;
@@ -507,6 +509,7 @@ export const ROWS: RowSpec[] = [
   { family: 'disease and snares', event: '  of which ≥ 20% of the community infected', row: 'T-DEM-5', kind: 'rate', count: p => p.epidemics20, value: p => `${f2(p.epidemics20 / p.runCommunityYears, 3)} per community-year` },
   { family: 'disease and snares', event: 'outbreaks ≥ 20%: attack, mortality (means over outbreaks)', row: 'T-DEM-6', kind: 'rate', count: p => p.epidemics20, value: p => `attack ${f2(mean(p.attack20), 2)}, mortality ${f2(mean(p.mortality20), 2)}` },
   { family: 'disease and snares', event: 'respiratory (outbreak) deaths', row: 'T-DEM-8', kind: 'rate', count: p => p.respiratory, value: p => `${f2(p.respiratory / p.chimpYears * 1000, 1)} per 1,000 chimp-years` },
+  { family: 'disease and snares', event: 'who dies in outbreaks (n = outbreak deaths)', row: 'T-DEM-7', kind: 'pattern', count: p => p.respiratory, value: p => `${p.respiratoryUnder5} under 5 y, ${p.respiratory30} aged 30 y or more` },
   { family: 'disease and snares', event: 'snare injuries (whole run)', row: 'T-DEM-9', kind: 'rate', count: p => p.snaredRun, value: p => `prevalence > 3 y at the end ${share(p.prevalenceNum, p.prevalenceDen)}` },
   { family: 'dispersal', event: 'natal transfers', row: '', kind: 'rate', count: p => p.transfers, value: p => `${f2(p.transfers / p.communityYears, 3)} per community-year` },
 ];

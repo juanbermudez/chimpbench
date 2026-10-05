@@ -200,6 +200,9 @@ test('outbreaks: arrivals over the whole run, cases, deaths and dating by an ear
   assert.equal(o2.cases, 0);
   assert.equal(o2.dated, 'window', 'an id at or above the earlier snapshot\'s nextOutbreak arrived after it');
   assert.equal(n.disease.respiratoryDeaths, 1);
+  const a = (east[0].deathTime! - east[0].birthTime) / YEAR_H;
+  assert.equal(n.deaths.respiratoryUnder5, a < 5 ? 1 : 0);
+  assert.equal(n.deaths.respiratory30, a >= 30 ? 1 : 0);
   assert.equal(n.disease.epidemics20, (o1.attack ?? 0) >= 0.2 ? 1 : 0);
   const noMid = countSeed({ seed: 48, world: w, rec, statsStart: stats0, t0, runStart: 0, mids: [], part: null });
   assert.equal(noMid.disease.outbreaks.find(o => o.id === 2)!.dated, 'undated');
