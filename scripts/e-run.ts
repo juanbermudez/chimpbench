@@ -9,7 +9,7 @@
 //
 //   pnpm exec tsx scripts/e-run.ts plan --label S39-m6 --m6 --params-file p.json [--seeds 48,7,21,5,11] [--days N --burn-in N]
 //        [--out artifacts/validation/e/runs/<label>] [--compare ref.json] [--energy] [--rhythm] [--job-max-min 100]
-//        [--path auto|single|fallback] [--from <out of a shorter single-pass run>/run.json] [--segment-days N]
+//        [--path auto|single|fallback] [--from <out of a shorter single-pass run>/run.json] [--segment-days N] [--targets data/targets.c8.json]
 //   pnpm exec tsx scripts/e-run.ts run <out>/run.json [--budget-min 110] [--parallel auto|N] [--retry-failed] [--attached]
 //   pnpm exec tsx scripts/e-run.ts status <out>/run.json
 //   pnpm exec tsx scripts/e-run.ts merge <out>/run.json                 (run merges by itself when every job is done)
@@ -85,6 +85,8 @@ export interface Registry {
   root: string; commit: string; branch: string; path: 'single-pass' | 'fallback';
   mode: string; horizon: { burnInDays: number; days: number; totalDays: number };
   seeds: number[]; params: Overrides; compare: string | null;
+  /** Targets file the result is scored against (e-bench --targets, relative to root); null = e-bench's default (data/targets.json). */
+  targets?: string | null;
   readouts: { energy: boolean; rhythm: boolean };
   limits: { jobMaxMin: number; minFreeGB: number };
   rates: Record<string, number>; command: string;
@@ -134,6 +136,8 @@ export function segmentDays(totalDays: number, sPerDay: number, maxMin: number):
 export interface PlanOpts {
   label: string; out: string; root: string; modeFlag: string; mode: string; days: number; burnInDays: number; seeds: number[]; params: Overrides;
   path: 'single-pass' | 'fallback'; energy: boolean; rhythm: boolean; compare: string | null; jobMaxMin: number; rates: Record<string, number>;
+  /** e-bench --targets for the scoring (passed to every e-bench job and to the merge); undefined = e-bench's default. */
+  targets?: string;
   /** Single-pass: end checkpoints of a shorter run of the same arm, by seed (absolute paths), to resume from. */
   from?: Record<number, { ckpt: string; day: number }>;
   /** Single-pass: at most this many days per job (checkpointed segments), whatever the estimate says. */
@@ -151,7 +155,7 @@ export function planJobs(o: PlanOpts): Job[] {
   const horizon = (custom: boolean) => custom ? ['--days', String(o.days), '--burn-in', String(o.burnInDays)] : [];
   const modeDays = EB.MODES[o.mode as keyof typeof EB.MODES];
   const custom = !modeDays || modeDays.days !== o.days || modeDays.burnInDays !== o.burnInDays;
-  const modeArgs = [`--${o.modeFlag}`, ...horizon(custom)];
+  const modeArgs = [`--${o.modeFlag}`, ...horizon(custom), ...(o.targets ? ['--targets', o.targets] : [])];
   const prefix = (seed: number) => `parts/${o.label}.s${seed}`;
   const seedJobs: string[] = [];
   if (o.path === 'single-pass') {
@@ -173,7 +177,7 @@ export function planJobs(o: PlanOpts): Job[] {
       seedJobs.push(id);
     }
     jobs.push(job({ id: 'merge', kind: 'merge', after: seedJobs, seedDays: 0,
-      argv: ['scripts/e-bench.ts', '--merge', o.seeds.map(s => abs(`${prefix(s)}.part.json.gz`)).join(','), '--out', abs(o.label), ...(o.compare ? ['--compare', o.compare] : [])],
+      argv: ['scripts/e-bench.ts', '--merge', o.seeds.map(s => abs(`${prefix(s)}.part.json.gz`)).join(','), '--out', abs(o.label), ...(o.compare ? ['--compare', o.compare] : []), ...(o.targets ? ['--targets', o.targets] : [])],
       outputs: [`${o.label}.json`, `${o.label}.md`, `${o.label}.scorecard.json`, `${o.label}-energy.json`, `${o.label}-rhythm.json`] }, o.rates));
     return jobs;
   }
@@ -429,16 +433,18 @@ async function plan(a: Args): Promise<void> {
     for (const s of seeds) { const side = prev.path(`parts/${prev.reg.label}.s${s}.ckpt-d${d}.json`), ck = prev.path(`parts/${prev.reg.label}.s${s}.ckpt-d${d}.v8.gz`); if (existsSync(side) && existsSync(ck)) from[s] = { ckpt: ck, day: d }; }
   }
   const compare = a.has('compare') ? resolve(a.flag('compare')) : null;
+  const targets = a.has('targets') ? a.flag('targets') : undefined;
+  if (targets && !existsSync(resolve(ROOT, targets))) throw new Error(`--targets ${targets}: no such file in ${ROOT}`);
   const segDays = a.has('segment-days') ? +a.flag('segment-days') : undefined;
   if (segDays !== undefined && (path !== 'single-pass' || !(segDays >= 1) || !Number.isInteger(segDays))) throw new Error('--segment-days N (a whole number of days) needs the single-pass path');
-  const opts: PlanOpts = { label, out, root: ROOT, modeFlag, mode: modeFlag, days, burnInDays, seeds, params, path, energy: a.has('energy'), rhythm: a.has('rhythm'), compare, jobMaxMin, rates: {}, from, segmentDays: segDays };
+  const opts: PlanOpts = { label, out, root: ROOT, modeFlag, mode: modeFlag, days, burnInDays, seeds, params, path, energy: a.has('energy'), rhythm: a.has('rhythm'), compare, jobMaxMin, rates: {}, from, segmentDays: segDays, targets };
   const jobs = planJobs(opts);
   for (const j of jobs) if (j.estimateMin > jobMaxMin) throw new Error(`job ${j.id} is estimated at ${j.estimateMin} min, over the job limit of ${jobMaxMin} min, and cannot be split on the ${path} path`);
   for (const j of jobs) if (j.argv.some(x => /trace/i.test(x) && x.startsWith('--'))) throw new Error(`job ${j.id} asks for a trace: per-tick traces are never written`);
   for (const d of ['parts', 'done', 'logs', 'run']) mkdirSync(resolve(out, d), { recursive: true });
   writeFileSync(resolve(out, 'params.json'), JSON.stringify(params) + '\n');
   const reg: Registry = { tool: 'e-run', version: 1, label, created: now(), updated: now(), root: ROOT, commit: g.commit, branch: g.branch, path,
-    mode: modeFlag, horizon: { burnInDays, days, totalDays: burnInDays + days }, seeds, params, compare, readouts: { energy: path === 'single-pass' || a.has('energy'), rhythm: path === 'single-pass' || (a.has('rhythm') && burnInDays + days <= 90) },
+    mode: modeFlag, horizon: { burnInDays, days, totalDays: burnInDays + days }, seeds, params, compare, targets: targets ?? null, readouts: { energy: path === 'single-pass' || a.has('energy'), rhythm: path === 'single-pass' || (a.has('rhythm') && burnInDays + days <= 90) },
     limits: { jobMaxMin, minFreeGB: MIN_FREE_GB }, rates: {}, command: `pnpm exec tsx scripts/e-run.ts ${process.argv.slice(2).map(x => (/[\s'"{}]/.test(x) ? `'${x}'` : x)).join(' ')}`,
     jobs, result: null, events: [{ t: now(), msg: `planned ${jobs.length} jobs (${path}) at ${g.commit.slice(0, 10)}${a.has('rhythm') && burnInDays + days > 90 ? '; rhythm-metrics skipped (its limit is 90 days)' : ''}` }] };
   writeJsonAtomic(resolve(out, 'run.json'), reg);
@@ -611,9 +617,12 @@ async function fallbackMerge(run: Run): Promise<void> {
   const m = EB.MODES[r.mode as keyof typeof EB.MODES];
   const mode = m && m.days === r.horizon.days && m.burnInDays === r.horizon.burnInDays && m.seeds.join() === r.seeds.join() ? r.mode : 'custom';
   const sum = (k: 'scorecardS' | 'viabilityS' | 'totalS') => docs.reduce((a, d) => a + (d.timing[k] ?? 0), 0);
-  const doc = EB.assemble(card as unknown as Parameters<typeof EB.assemble>[0], docs.map(d => d.viability!.perSeed[0]), { label: r.label, mode, workers: 1,
-    timing: { scorecardS: sum('scorecardS'), viabilityS: sum('viabilityS'), totalS: sum('totalS') }, scorecard: cardFile, git: docs[0].git });
-  const c = r.compare ? EB.compare(JSON.parse(readFileSync(r.compare, 'utf8')) as EB.BenchDoc, doc) : undefined;
+  const meta = { label: r.label, mode, workers: 1, timing: { scorecardS: sum('scorecardS'), viabilityS: sum('viabilityS'), totalS: sum('totalS') }, scorecard: cardFile, git: docs[0].git, ...(r.targets ? { targetsFile: r.targets } : {}) };
+  const doc = EB.assemble(card as unknown as Parameters<typeof EB.assemble>[0], docs.map(d => d.viability!.perSeed[0]), meta as Parameters<typeof EB.assemble>[2]);
+  // the other run is re-scored on the same targets file, as e-bench's own --compare does (a band change is not model progress)
+  const other = r.compare ? JSON.parse(readFileSync(r.compare, 'utf8')) as EB.BenchDoc : null;
+  const ebx = EB as unknown as { rederive?: (d: EB.BenchDoc, f?: string) => EB.BenchDoc };
+  const c = other ? EB.compare(ebx.rederive ? ebx.rederive(other, r.targets ?? undefined) : other, doc) : undefined;
   writeFileSync(run.path(`${r.label}.json`), JSON.stringify(c ? { ...doc, comparison: { with: r.compare, ...c } } : doc, null, 1) + '\n');
   writeFileSync(run.path(`${r.label}.md`), EB.benchMarkdown(doc, c ? { other: r.compare!, c } : undefined));
   if (r.readouts.rhythm) {

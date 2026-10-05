@@ -126,3 +126,11 @@ test('single pass: --segment-days forces checkpointed segments of at most that m
   assert.deepEqual(jobs[1].after, ['s7-d25']);
   assert.equal(jobs[2].argv[jobs[2].argv.indexOf('--resume') + 1], '/tmp/e-run-test/T/parts/T.s7.ckpt-d50.v8.gz');
 });
+
+test('--targets reaches every e-bench job and the merge', () => {
+  for (const path of ['fallback', 'single-pass'] as const) {
+    const jobs = planJobs(base({ path, targets: 'data/targets.c8.json' }));
+    for (const j of jobs.filter(x => x.argv.length)) assert.equal(j.argv[j.argv.indexOf('--targets') + 1], 'data/targets.c8.json', `${path} ${j.id}`);
+  }
+  assert.ok(!planJobs(base()).some(j => j.argv.includes('--targets')));
+});
