@@ -13,7 +13,7 @@
 // --provider argmax: no model; the focal animals take the rules' argmax at every decision point (the loop's own effect).
 // --gate rg: the focal animals keep RG's gate (an act is held until a salient change), so the provider replaces RG's draws only.
 // Development seeds only (48, 7).
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { buildJevQuestion, buildLocalQuestion, decisionContextError } from '../server/decide';
 import { buildRequest } from '../src/decision';
@@ -166,8 +166,17 @@ if (process.argv[1]?.endsWith('em-loop.ts')) {
   const out = resolve(arg('out', `artifacts/em/m3/s${seed}`));
   const params = { ...JSON.parse(readFileSync(resolve(arg('params-file', 'artifacts/em/S39-params.json')), 'utf8')), observeState: 1 };
   (async () => {
-    const t0 = Date.now(), base = createWorld(seed, { profile: 'field', params });
-    for (let i = 0; i < burnIn * DAY; i++) tickWorld(base);
+    // the burned-in world is kept as JSON (World is JSON-lossless) so later arms continue the same world without a second
+    // burn-in; every output records the burn-in hash, and the report refuses arms whose hashes differ
+    const t0 = Date.now(), cache = resolve(`artifacts/em/m3/burnin-s${seed}-d${burnIn}.json`);
+    let base: World;
+    if (existsSync(cache)) base = JSON.parse(readFileSync(cache, 'utf8')) as World;
+    else {
+      base = createWorld(seed, { profile: 'field', params });
+      for (let i = 0; i < burnIn * DAY; i++) tickWorld(base);
+      mkdirSync(dirname(cache), { recursive: true });
+      writeFileSync(cache, JSON.stringify(base));
+    }
     const focal = focalSet(base), burnInHash = worldHash(base);
     console.log(`seed ${seed}: burn-in ${burnIn} d in ${Math.round((Date.now() - t0) / 1000)} s, hash ${burnInHash}; focal ${JSON.stringify(focal)}`);
     let worker: Worker | null = null;
