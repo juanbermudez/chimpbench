@@ -364,7 +364,9 @@ success 0.50 against 0.15, T-SOC-9, the fruit share). Hunting now scores in band
 4–11), because e4f's scorer fix counts only encounter-matched hunts (S39's 16.9 was on the old count). All eight runs are
 viable (0–4 deaths, none from starvation). Of the 40 truth rows 26 are scored and 14 not scorable.
 
-**Against the predictions.** Viable: held. Held-out not worse than today's on the new bands: held. Hunting outside 4–11:
-**missed** (8.4, inside, under the corrected count). Travel share below its band: held (T-ACT-2 below 0.12, above). T-COM-11
-below its band: held (0.023). T-FOOD-10 above its band: missed on the new band (0.86 against 0.08–0.78, distance 0.12; it was
-far above the old band 0.08–0.30).
+**Against the predictions** (S39's own run, new bands). Viable: held. Held-out not worse than today's: held. Hunting outside
+4–11: **missed** (T-HUN-1 8.06, inside, under the corrected hunt count). Travel share below its band: held (T-ACT-2 0.115;
+band 0.12–0.25). T-COM-11 below its band: held (0.023; band 0.25–0.55). T-FOOD-10 above its band: held (0.908 against the
+new band 0.08–0.78; group mean 0.861). Not predicted: parties now below their revised band (T-PTY-1 3.99; band 4.5–9.2).
+(Integrator correction, before any reader: the first version of this paragraph garbled the travel-share line and called
+T-FOOD-10 a miss.)
