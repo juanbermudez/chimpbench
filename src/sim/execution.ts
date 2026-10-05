@@ -30,6 +30,7 @@ import { cellAt, gridOf, pressureAt, rangeEdge, sectorDir, useLevels } from './t
 import { patrolRoute, patrolValueOn } from './patrol';
 import { bodyState, crownMoveOn, gaitOn, runSpeedOf, sameCrown, tripSpeed, walkSpeedOf, youngStage } from './gait';
 import { tripAct, tripAte, tripYieldOn } from './experience';
+import { callerCrownOn } from './tripbelief';
 import { GROOM_BOND_ACTOR, GROOM_BOND_RECIP, GROOM_SOCIAL_ACTOR, GROOM_SOCIAL_RECIP, upkeepOnly } from './upkeep';
 
 // Bout durations in eco-minutes [min, max] (registry bout*Min / bout*Max).
@@ -677,7 +678,11 @@ export function executeAction(world: World, c: Chimp): void {
     }
     case 'travel': {
       let gx: number, gz: number, stop: number;
-      if (x.v === V.CALLER) { gx = x.joinX; gz = x.joinZ; stop = P.joinCallStopM; }
+      // stage E3h (tripBeliefs bit 2; tripbelief.ts): a call heard from a crown was valued as a trip to that crown, so the
+      // walk goes to it and stops where a trip to a tree stops (the gate's arrival then makes it feeding there)
+      const ct = x.v === V.CALLER && callerCrownOn(P) && x.jt !== undefined && x.jt > 0 ? idx.treeById.get(x.jt) : undefined;
+      if (ct) { gx = ct.position[0]; gz = ct.position[2]; stop = 3; }
+      else if (x.v === V.CALLER) { gx = x.joinX; gz = x.joinZ; stop = P.joinCallStopM; }
       else if (x.v === V.HOME || c.targetId < 0) { const t = idx.troopById.get(c.troopId)!; gx = t.center[0]; gz = t.center[2]; stop = t.radius * 0.6; }
       else { const t = idx.treeById.get(c.targetId); if (!t) return finish(world, c); gx = t.position[0]; gz = t.position[2]; stop = 3; }
       if (x.tryN !== undefined && departWait(world, c)) return;

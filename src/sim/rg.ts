@@ -16,6 +16,7 @@ import { circadianOn } from './circadian';
 import { IMPULSE_HUNT, IMPULSE_PATROL } from './perception';
 import { index, isChimpId, isTreeId, ix } from './state';
 import { tripSpeed } from './gait';
+import { callerCrownOn } from './tripbelief';
 
 // Stage C13 (docs/realism-design.md "C13 pre-registration"): the rules decision policy RG. At a decision point a
 // rules-driven chimp aged rgMinAge+ first asks the intention gate of the Jev free arms (src/decide/gate.ts, design A
@@ -168,6 +169,17 @@ export function patchPoorHere(world: World, c: Chimp, tree: number, P: Params): 
 }
 
 /**
+ * The crown a trip intention walks to, for the gate's arrival rule: a trip to a tree's own target; with tripBeliefs bit 2
+ * (stage E3h; tripbelief.ts) a trip to a caller heard feeding in a crown (x.jt), which was valued as a trip to that crown.
+ * −1 otherwise (today: a caller trip ends in a draw).
+ */
+function tripTree(it: Intent, jt: number | undefined, P: Params): number {
+  if (it.action !== 'travel') return -1;
+  if (it.variant === V.TREE) return isTreeId(it.targetId) ? it.targetId : -1;
+  return it.variant === V.CALLER && callerCrownOn(P) && jt !== undefined && jt > 0 && isTreeId(jt) ? jt : -1;
+}
+
+/**
  * The gate verdict (src/decide/gate.ts gateCheck, which the free arms ran on model-controlled chimps). There a chimp
  * whose act had finished, or had become illegal, was set to rest while it waited, so its intent counted as ended; the
  * rules path keeps the act, so `ended` says so explicitly. A finished trip to a tree in view within GATE.arriveM
@@ -197,8 +209,9 @@ export function gate(world: World, c: Chimp, it: Intent | undefined, list: Candi
   const current = findCandidate(list, it.action, it.targetId);
   const ongoing = !x.finished && c.action === it.action && c.targetId === it.targetId && !!current;
   if (!ongoing) {
-    if (it.action === 'travel' && it.variant === V.TREE && isTreeId(it.targetId)) {
-      const t = x.trees.includes(it.targetId) ? index(world).treeById.get(it.targetId) : undefined, feed = findCandidate(list, 'forage', it.targetId);
+    const tree = tripTree(it, x.jt, P);
+    if (tree > 0) {
+      const t = x.trees.includes(tree) ? index(world).treeById.get(tree) : undefined, feed = findCandidate(list, 'forage', tree);
       if (t && Math.hypot(t.position[0] - c.position[0], t.position[2] - c.position[2]) <= GATE.arriveM && feed) return { keep: feed, arrived: true };
     }
     return 'ended';
@@ -352,8 +365,9 @@ function redecide(world: World, c: Chimp, list: Candidate[], P: Params): Candida
         why = 'outvalued';
       } else {
         // a trip that ends at its tree becomes feeding there when that is legal (the gate's arrival), with the trip's noise
-        if (it.action === 'travel' && it.variant === V.TREE && isTreeId(it.targetId)) {
-          const t = x.trees.includes(it.targetId) ? index(world).treeById.get(it.targetId) : undefined, feed = findCandidate(list, 'forage', it.targetId);
+        const tree = tripTree(it, x.jt, P);
+        if (tree > 0) {
+          const t = x.trees.includes(tree) ? index(world).treeById.get(tree) : undefined, feed = findCandidate(list, 'forage', tree);
           if (t && Math.hypot(t.position[0] - c.position[0], t.position[2] - c.position[2]) <= GATE.arriveM && feed) {
             const noise = { ...(it.noise ?? {}) }, n = noise[keyOf(it)];
             if (n !== undefined) noise[keyOf(feed)] = n;

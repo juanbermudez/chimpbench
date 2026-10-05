@@ -22766,6 +22766,37 @@
    "notes": "Visible fruit trees are ranked by crop / (1 + d / this). Compressed stand-in scaled with sight (field ≈ compressed × 35/15, design)."
   },
   {
+   "id": "tripBeliefs",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    3
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    3
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/staging/e3h-prereg.md (E3h diagnosis, S31 quick, four realizations): trips feed at their target 46%; arrivals at empty crowns carry the largest share of the walking spent on unfed trips, 99% of those crowns were empty when the trip began, and 76-80% of own trips' empty arrivals go to the community's known trees, which feed 5-6%: 62-66% of those trips return to a known tree the same animal reached empty (its sighting is deleted); caller trips feed at the caller's crown 3-4% (they stop 25 m short and are re-decided)",
+    "docs/research.md: janmaat2013b (chimpanzees inspect empty trees of synchronously fruiting species; an empty tree is learned on arrival)"
+   ],
+   "clock": "none",
+   "symbol": "P.tripBeliefs",
+   "file": "src/sim/tripbelief.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage E3h switch (docs/staging/e3h-prereg.md §5), a sum of bits. 1: a crown on the community's known list (foraging.ts dailyKnownTrees, C7a rule 8) that the animal sees is valued by what it saw, an empty crown included (perception.ts keeps the crop seen as its belief and the hour in chimp.sim.ls instead of deleting a belief below 0.04), for as long as a sighting of a remembered crown is a travel goal (memTravelHorizonH); after that, or for a listed crown it has not seen, the list's expectation stands in as today (C7a's design: an individual's own sighting overrides the expectation; janmaat2013b: an empty tree is learned on arrival). 2: a trip to a caller heard feeding in a crown (socialTiming bit 4's x.jt), valued as a trip to that crown, walks to that crown (stopping where a trip to a tree stops) and on arrival becomes feeding there by the gate's own arrival rule (rg.ts), instead of stopping joinCallStopM short of the call point and being re-decided; calls not given in a crown are unchanged. No new magnitude; no counted entry is read less (corrections). 0 = today, bit for bit. Design."
+  },
+  {
    "id": "tripBodyCost",
    "group": "movement",
    "value": 0,

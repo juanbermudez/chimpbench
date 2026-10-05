@@ -22,6 +22,7 @@ import { awakeInNest, byIdIn, index, isTreeId, ix, NEVER, TREE_ID0, treesNear, s
 import { bodyState, crownAt, crownMoveOn, gaitOn, riderKcal, runSpeedOf, tripBodyOn, tripClimbH, tripSpeed } from './gait';
 import { matingValueOn, paternityGain } from './mating';
 import { tripYieldOf } from './experience';
+import { listSightOn } from './tripbelief';
 
 // Variants refine an action's meaning (why a charge happens) for execution and reason text.
 export const V = {
@@ -525,17 +526,21 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     const known = s.knownTrees?.[c.troopId];
     let kt = known && _knownTrees.get(known);
     if (known && !kt) { kt = []; for (let i = 0; i < known.length; i += 2) kt.push(idx.treeById.get(known[i])); _knownTrees.set(known, kt); }
+    // stage E3h (tripBeliefs bit 1; tripbelief.ts): a listed crown the animal saw within memTravelHorizonH is valued by that
+    // sighting (empty included), its belief's age from it; an older sighting no longer stands in for the list
+    const lsOn = listSightOn(P);
     if (known && kt && shortlist && c.age >= 10) for (let i = 0; i < known.length; i += 2) {
       const id = known[i];
       if (stamped(_sight, id, st) || stamped(_mem2, id, st)) continue;
       const t = kt[i >> 1]; if (!t) continue;
       const d = dxz(t, px, pz);
       if (d < P.memoryTreeMinM) continue;
-      const crop = x.treeCrop?.[id] ?? known[i + 1], worth = fr ? fd * rateWorth(t, crop, 0, d) : h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) * tripWorth(t, crop, 0, d);
+      const seenAt = lsOn ? x.ls?.[id] : undefined, own = seenAt !== undefined && time - seenAt < P.memTravelHorizonH;
+      const crop = lsOn && seenAt !== undefined && !own ? known[i + 1] : x.treeCrop?.[id] ?? known[i + 1], worth = fr ? fd * rateWorth(t, crop, 0, d) : h * P.memTravelHungerW * (0.55 + 0.45 * Math.min(1, crop / P.fruitValueRef)) * tripWorth(t, crop, 0, d);
       if (race) { const nr = rivalsAt(c, id); if (nr > 0) raceG = Math.max(raceG, raceStake(worth, crop, nr, need, arrivalLight(env.daylight, dLdt, d, P, spd))); } // stage E2b
       const rv = revisit(x, id, time, P);
       _mem.push(t, worth - (fr ? 0 : tripCost(worth, crop, d, h, P, needFruit(c, P, h), spd)) - rv); _rk.push(worth - rv); _dk.push(Math.max(d, minD));
-      if (cb) _bl.push(crop, Infinity, d); // never in its own memory (the loop skips remembered trees)
+      if (cb) _bl.push(crop, own ? time - seenAt! : Infinity, d); // never in its own memory (the loop skips remembered trees); E3h bit 1: its own sighting
     }
     // stage C7d (field; c7b-prereg §8.3): route chaining, the nearest unused known resource weighted by value (janson2014) [M]:
     // offer only the tree with the most believed value per metre, at its usual score. Stage C7e (§9): with goalDistScaleM D > 0
