@@ -14,7 +14,7 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (5 October 02:30; deploy held by the user).** Merged: part A (ed18c1e: freeze 5d4fa5a2a500bce6; 150 rows,
+- **Running now (5 October 01:52; deploy held by the user).** Merged: part A (ed18c1e: freeze 5d4fa5a2a500bce6; 150 rows,
   40 truth rows; old bands in data/targets.c8.json), the guide notes (2a0174a; hosted copy `site` 51b33ff, not deployed) and
   eB-bench (762b187: e-bench single pass, ~3–6× faster per arm with identical outputs; checkpoints and --resume; per-seed
   --part/--merge; 26 truth rows read, 14 not scorable). Part C (docs/staging/e-rebaseline.md) running: 60-day groups of S39
