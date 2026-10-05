@@ -34,3 +34,7 @@ then `callGaps` 7, then `aggressionGaps` 7, …) to find the cause; past decisio
 **Predictions (low confidence, before any run).** S39 viable at 6 months; its held-out sum not worse than today's (it was
 better than S27 on the old bands); hunting outside the new 4–11 band (16.9 at 60 days on the old protocol); the travel
 share below its band; T-COM-11 below its band; T-FOOD-10 above its band.
+
+**Amendment (5 October 2026, 01:55, before any result).** The first 60-day runs were stopped minutes after starting (no
+output read) and restarted on eB-bench 1f8553b, which adds the T-INF-1 readout (lonsdorf2014's ten Gombe blocks): 26
+truth rows read, 14 not scorable; nothing else in the code path changes.
