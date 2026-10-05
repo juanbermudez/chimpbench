@@ -3826,3 +3826,42 @@ the animal's own last call). Every number below was read in the full text named;
   members of danger. *Current Biology* 22(2):142–146. [doi:10.1016/j.cub.2011.11.053](https://doi.org/10.1016/j.cub.2011.11.053)
   (cited in data/targets.json; full text not re-read this stage).
 - crockford2018 is already cited ("Quiet hoo variants"); the line above adds a finding.
+
+### Addendum: E1r lean season (5 October 2026)
+
+Read for stage E1r (docs/staging/e1r-prereg.md): how chimpanzees use fallback foods, and what is known about foragers
+whose gut, not their time, limits intake. Bibliographic data checked against Crossref on 5 October 2026. Access: NCBI
+BioC for harrisonMarshall2011 (PMC3083508); Europe PMC for altmann1991's abstract (PMC50822 is a scan outside the
+open-access text subset; efetch returned no body); for verlindenWiley1989 the publisher page redirected to a login and
+OpenAlex holds no abstract, so it is listed as not verified. Paraphrased, not quoted. No value below is a model input.
+
+- **Fallback foods of the apes, a review** [harrisonMarshall2011] (FT, PMC3083508 through BioC; extends §E.25) [M]:
+  - for the two long-studied chimpanzee subspecies the authors class figs as the main fallback food, and leaves, stems,
+    pith and bark as "filler" fallback foods; chimpanzees sit toward the preferred-food (harvesting) end of the apes'
+    range, gorillas and orangutans toward the staple-fallback end;
+  - allowing for body size, the chimpanzee gut looks poorly adapted to fallback foods, although chimpanzees still digest
+    fibre fairly well;
+  - wadging (chewing a fibrous food, swallowing the juice and spitting the fibre) is read as a way to eat fallback foods
+    without loading the gut with fibre;
+  - Table III: day range of eastern chimpanzees 3.5 km/d (2.2–4.8); travel cost 0.09 (males) and 0.08 (females) kcal per
+    metre walked; about 15.6% of total energy spent on travel (from pontzerWrangham2004, as cited).
+  - Use in E1r: directions for the field checks (fruit pursued, pith and leaves as fillers, fibre partly kept out of the
+    gut by wadging); no value enters the model. The share of pith wadged rather than swallowed is still unknown
+    (wrangham1991, above), so the model's fallback bulk (all fibre swallowed) stays an assumption.
+- **Young primates' diets fall short of their energy optimum** [altmann1991] (Abs, Europe PMC) [M], cross-species:
+  yearling female baboons (Amboseli): every individual's dietary energy fell well short of its energy-maximizing optimal
+  diet; protein above requirements together with how close energy intake came to the optimum predicted reproductive
+  lifespan, offspring produced and survival to adulthood. Use in E1r: direction only (young primates are energy-limited
+  and the shortfall bears on survival); no magnitude transfers to chimpanzees.
+- **The digestive rate model** [verlindenWiley1989] (not verified: bibliographic record only) [L as read]: a model of diet
+  choice for foragers whose rate of digestion, not search or handling, limits intake. Named as the theory behind the E1s
+  proposal (docs/staging/e1r-prereg.md §11); no statement here rests on its text.
+
+**Sources:**
+- *new* altmann1991: Altmann SA 1991. Diets of yearling female primates (*Papio cynocephalus*) predict lifetime fitness.
+  *Proceedings of the National Academy of Sciences of the USA* 88(2):420–423.
+  [doi:10.1073/pnas.88.2.420](https://doi.org/10.1073/pnas.88.2.420) (Abs; PMC50822).
+- *new* verlindenWiley1989: Verlinden C, Wiley RH 1989. The constraints of digestive rate: an alternative model of diet
+  selection. *Evolutionary Ecology* 3(3):264–272. [doi:10.1007/BF02270727](https://doi.org/10.1007/BF02270727) (not
+  verified).
+- harrisonMarshall2011, wrangham1991 and pontzerWrangham2004 are already listed; the entry above adds findings.
