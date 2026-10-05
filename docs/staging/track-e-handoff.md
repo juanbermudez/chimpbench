@@ -14,12 +14,14 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (5 October 10:21; deploy held by the user).** Part C done at 60 days, 6 months and 12 months
+- **Running now (5 October 10:50; deploy held by the user).** Part C done at 60 days, 6 months and 12 months
   (docs/staging/e-rebaseline.md). **S39 is not viable at 12 months:** starvation in 3 of 4 runs (adolescents, pregnant
   females, an infant) after a lean season (days ~45–230 of the scored year) the 60-day windows never saw. Walk-back
-  running (registered f08ab97): S37, S34, S31, S27 at 12 months with the runner (`integrator/m6run.sh WB-<stack> 2`;
-  plans in bench-run and bench-run2 `…/e/runs/WB-*`). Agents: **eM-model** (M1–M3, GLiNER on Track E's state) and
-  **eD-counts** (part D1, rare-event counts on the 12-month groups).
+  running (registered f08ab97): S37, S34, S31, S27 at 12 months with the runner, **one job per runner while the load is
+  above 8** (`integrator/m6run.sh WB-<stack> 1`; plans in bench-run and bench-run2 `…/e/runs/WB-*`; the four second jobs
+  were stopped at 10:28 when the load reached 13). Part D done (e52e84e): no rare-event family is testable at 12 months
+  on its own rows; T-LET-1, T-DEM-5/6/8 and the orphan rows go to 24 months on the next viable base. Agent: **eM-model**
+  (M1–M3, GLiNER on Track E's state).
 - **S39 is the best integrated candidate (42)** (e-stack2-confirm.md "S39 results"): S37 + `tripBeliefs` 3; held-out without
   rare rows better beyond noise (z −2.2), every class's reserve better, less walking, T-IGE-1 back in band. Costs: T-ACT-2
   0.115 (band floor 0.12), T-COM-11 0.023 (band 0.25–0.55; snake-trial protocol).
