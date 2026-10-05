@@ -43,7 +43,8 @@ const S31_SWITCHES: Record<string, number> = { ...S27_SWITCHES, departValue: 2, 
  *  S19 = S17 + E4k's huntPursuit, S17 = S16 + E4j's patrolFusion, S21 = S19 + E3e's choiceBelief, S22 = S21 + E4m's
  *  leftoverRules, S25 = S22 + E4n's huntDrive, S27 = S25 + E1q's crownMove + E2i's walkGait (S26, S25 + crownMove alone,
  *  passed as a correction and is not shown), S31 = S27 + E5f's departValue + E4o's bodyRules, S32 = S31 + E3d's
- *  redecideValue, which passed but cost every class reserve: the stack fell back to S31 by its registered condition). */
+ *  redecideValue, which passed but cost every class reserve: the stack fell back to S31 by its registered condition,
+ *  S34 = S31 + E4q's aggressionGaps). */
 export const STACKS = {
   S3: { name: 'S3', doc: 'staging/e-stack2-confirm.md', section: 'S3 results', switches: S3_SWITCHES },
   S5: { name: 'S5', doc: 'staging/e-stack2-confirm.md', section: 'S5 results', switches: S5_SWITCHES },
@@ -59,10 +60,11 @@ export const STACKS = {
   S27: { name: 'S27', doc: 'staging/e-stack2-confirm.md', section: 'S26 and S27 results', switches: S27_SWITCHES },
   S31: { name: 'S31', doc: 'staging/e-stack2-confirm.md', section: 'S31 and S32 results', switches: S31_SWITCHES },
   S32: { name: 'S32', doc: 'staging/e-stack2-confirm.md', section: 'S31 and S32 results', switches: { ...S31_SWITCHES, redecideValue: 2 } },
+  S34: { name: 'S34', doc: 'staging/e-stack2-confirm.md', section: 'S34 results', switches: { ...S31_SWITCHES, aggressionGaps: 7 } },
 } satisfies Record<string, Stack>;
 /** The stack this page shows. Moving the page to another stack is this line, plus the prose its results change (the
  *  check names every box and layer that no longer fits). */
-export const STACK: Stack = STACKS.S31;
+export const STACK: Stack = STACKS.S34;
 
 /** Stages outside the stack, each measured on it (handoff §0 and §3, and each stage's pre-registration). `verdict`
  *  replaces the stage's own where the layer is one arm of a stage. A layer whose switches the stack holds is dropped. */
@@ -78,8 +80,9 @@ export const ALL_LAYERS: Layer[] = [
   { key: 'E2j', stage: 'E2j', label: "E2j, a trip's climb and riders; the young's arrival", status: 'recorded, off', on: { tripBodyCost: 1, youngArrival: 1 } },
   { key: 'E2i', stage: 'E2i', label: 'E2i, walking speed from the body', status: 'passes alone as S23; with S22, not adopted', on: { walkGait: 1 } },
   { key: 'E3d', stage: 'E3d', label: 'E3d, an act kept while it is the best', status: 'passed as S28 and S32 with an energy cost; off the stack', on: { redecideValue: 2 } },
-  { key: 'E3g', stage: 'E3g', label: 'E3g, a colobus group seen within the hour is not met anew', status: 'a correction, being confirmed on S31 as S35', on: { experienceValue: 2 } },
-  { key: 'E4q', stage: 'E4q', label: 'E4q, aggression without cooldowns', status: 'being confirmed on S31 as S34', on: { aggressionGaps: 7 } },
+  { key: 'E3g', stage: 'E3g', label: 'E3g, a colobus group seen within the hour is not met anew', status: 'passed twice as a correction, cost other females reserve; not adopted', on: { experienceValue: 2 } },
+  { key: 'E4q', stage: 'E4q', label: 'E4q, aggression without cooldowns', status: 'in the stack since S34', on: { aggressionGaps: 7 } },
+  { key: 'E4p', stage: 'E4p', label: 'E4p, mating by consent and paternity', status: 'recorded, off: the quota stays', verdict: 'matingValue 1, 2 and 3 recorded, off: each passed the keep rule in quick mode, none met the registered rate line; the quota stays', on: { matingValue: 3 } },
   { key: 'E3', stage: 'E3', label: 'E3, urgency', status: 'stopped, off', on: { urgencyChoice: 1, urgencyPersist: 1, urgencySwitchCost: 1 } },
 ];
 export const LAYERS: Layer[] = ALL_LAYERS.filter(l => !Object.keys(l.on).every(s => STACK.switches[s]));
