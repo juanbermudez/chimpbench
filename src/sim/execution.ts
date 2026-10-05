@@ -31,6 +31,7 @@ import { patrolRoute, patrolValueOn } from './patrol';
 import { bodyState, crownMoveOn, gaitOn, runSpeedOf, sameCrown, tripSpeed, walkSpeedOf, youngStage } from './gait';
 import { tripAct, tripAte, tripYieldOn } from './experience';
 import { callerCrownOn } from './tripbelief';
+import { callCrown, callRecord, callTripOn, ownCall } from './calltrip';
 import { GROOM_BOND_ACTOR, GROOM_BOND_RECIP, GROOM_SOCIAL_ACTOR, GROOM_SOCIAL_RECIP, upkeepOnly } from './upkeep';
 
 // Bout durations in eco-minutes [min, max] (registry bout*Min / bout*Max).
@@ -243,6 +244,12 @@ export function startAction(world: World, c: Chimp, cand: Candidate, source: Dec
   c.action = cand.action; c.targetId = cand.targetId; c.reason = cand.reason;
   c.decisionSource = source; c.decisionVersion++; c.awaitingDecisionSince = null;
   x.intr = ''; x.finished = false; x.v = meta.v; x.aux = meta.aux;
+  // stage E3i (callTrip bit 1; calltrip.ts): a caller trip keeps the call it was chosen for (re-chosen from its own record,
+  // it keeps that record; chosen from the listener's call slot, the slot's call becomes its record)
+  if (callTripOn(paramsOf(world))) {
+    if (cand.action === 'travel' && meta.v === V.CALLER) { if (!(x.cg && x.cg[0] === cand.targetId)) x.cg = callRecord(x); }
+    else if (x.cg) delete x.cg;
+  }
   // stage E4a iteration 1 (endoRedirect): a defeat is considered once, at the loser's first choice after it, whatever he
   // chooses (redirection is the reaction to the defeat; docs/staging/e4a-prereg.md §7). The stress load scales the score.
   // stage E4b (endoFastRedirect): dropped; the decay of the fast state closes the option instead
@@ -680,9 +687,11 @@ export function executeAction(world: World, c: Chimp): void {
       let gx: number, gz: number, stop: number;
       // stage E3h (tripBeliefs bit 2; tripbelief.ts): a call heard from a crown was valued as a trip to that crown, so the
       // walk goes to it and stops where a trip to a tree stops (the gate's arrival then makes it feeding there)
-      const ct = x.v === V.CALLER && callerCrownOn(P) && x.jt !== undefined && x.jt > 0 ? idx.treeById.get(x.jt) : undefined;
+      // stage E3i (callTrip bit 1; calltrip.ts): to the crown or place of the call the trip was chosen for, not the latest heard
+      const own = ownCall(P, x, x.v === V.CALLER, c.targetId), jt = callCrown(P, x, x.v === V.CALLER, c.targetId);
+      const ct = x.v === V.CALLER && callerCrownOn(P) && jt !== undefined && jt > 0 ? idx.treeById.get(jt) : undefined;
       if (ct) { gx = ct.position[0]; gz = ct.position[2]; stop = 3; }
-      else if (x.v === V.CALLER) { gx = x.joinX; gz = x.joinZ; stop = P.joinCallStopM; }
+      else if (x.v === V.CALLER) { gx = own ? own[3] : x.joinX; gz = own ? own[4] : x.joinZ; stop = P.joinCallStopM; }
       else if (x.v === V.HOME || c.targetId < 0) { const t = idx.troopById.get(c.troopId)!; gx = t.center[0]; gz = t.center[2]; stop = t.radius * 0.6; }
       else { const t = idx.treeById.get(c.targetId); if (!t) return finish(world, c); gx = t.position[0]; gz = t.position[2]; stop = 3; }
       if (x.tryN !== undefined && departWait(world, c)) return;

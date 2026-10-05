@@ -2851,6 +2851,36 @@
    "notes": "Stage C10: how long a travel hoo is shown and audible (the call itself lasts ~0.125 s; one tick is the shortest display, design)."
   },
   {
+   "id": "callTrip",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/staging/e3i-prereg.md (E3i diagnosis, S39 quick, four realizations): 44% of trips do not feed at their target; crowns emptied by eating since the traveller's sighting are 8% of those trips and 7% of their walking; trips to callers carry 47% of it, the largest class (re-decided en route, 29% of unfed walking) mostly caller trips whose option had left the list: the listener's one call slot overwritten by a later pant-hoot (67% of that walking, amendment 1; the walk redirected to the new caller's crown in 86% of them), the 0.3-h offer passed (27%), within joinCallMinM of the call (5%)"
+   ],
+   "clock": "none",
+   "symbol": "P.callTrip",
+   "file": "src/sim/calltrip.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage E3i switch (docs/staging/e3i-prereg.md §5), a sum of bits. 1: a trip to a caller keeps the call it was chosen for (chimp.sim.cg: the call, the caller, when and where it was heard, the crown the caller fed in): the walk goes to that crown or the call's place (execution.ts), the gate's arrival rule reads that crown (rg.ts), and while the trip runs it stays on the list valued from that record as when chosen (candidates.ts), so it ends by arriving or by a choice at a decision point, instead of turning to the next caller heard (the one call slot is overwritten by every pant-hoot heard) and ending at the next decision point because its option left the list (also when the 0.3-h offer passed or within joinCallMinM of the call). A later call stays a new option. Principle: a trip is executed as it was valued (E3h); a destination chosen from memory is held while the animal travels to it. No new magnitude; no counted entry is read less (a correction). 0 = today, bit for bit. Design."
+  },
+  {
    "id": "callValue",
    "group": "communication",
    "value": 0,

@@ -42,6 +42,14 @@ export interface Follow {
   truthTicks: number[];
   /** First feeding tree and the night-nest tree the focal left (T-FOOD-10). */
   nestTree: number; firstTree: number;
+  /**
+   * Track E freeze (e2h-protocol; janmaat2014's Methods): the team saw the focal in its night nest after 04:00, so the
+   * follow's start is an observed departure (a focal already out of its nest at 04:00 gives none); the focal was an adult
+   * female with a dependent offspring at the start (lactating, or mother of a living offspring under 7 y); the feeding type
+   * of the first food item after waking (fruit, ground food or meat; water and milk are not food items; −1 none); the
+   * habitat fruit index at the start and whether it was below its long-run mean (a fruit-scarce day).
+   */
+  departure: boolean; mother: boolean; firstFood: number; fruitIndex: number; scarce: boolean;
 }
 
 export interface RosterEntry {
@@ -90,7 +98,11 @@ export interface BirthRec { id: number; mother: number; troop: number; tSeen: nu
 export interface TransferRec { id: number; from: number; to: number; tSeen: number; }
 export interface PhenologyRec { month: number; tree: number; species: string; fruit: number; ripe: boolean; }
 export interface TransectRec { month: number; troop: number; lengthM: number; fruiting: number; }
-export interface TreeVisitRec { team: number; focal: number; tree: number; t: number; fromX: number; fromZ: number; dist: number; nearest: boolean; outOfSight: boolean; }
+/**
+ * A feeding-tree visit. Track E freeze (e3b-protocol, normand2009): `tx`, `tz` the tree's position (trees < 30 m apart are one
+ * resource, T-FOOD-6) and `ret` a return to the tree of the focal's previous visit (not a move to another tree, T-FOOD-5).
+ */
+export interface TreeVisitRec { team: number; focal: number; tree: number; t: number; fromX: number; fromZ: number; dist: number; nearest: boolean; outOfSight: boolean; tx: number; tz: number; ret: boolean; }
 export interface ExperimentRec {
   kind: 'playback' | 'snake'; troop: number; day: number; males: number; females: number; size: number; approached: boolean; called: boolean;
   /** Snake trials: individuals of the community that came within detection distance of the model, and those of them that gave alert hoos. */

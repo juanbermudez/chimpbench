@@ -136,8 +136,9 @@ export const S18: S18Def[] = [
     compute: d => { const f = d.rec.follows.filter(x => !x.lost && x.end > x.start); return v(f.length ? f.filter(x => x.complete).length / f.length : null, d.rec.truth.nestFrac.length ? mean(d.rec.truth.nestFrac) : null, 'fraction', f.length); },
   },
   {
-    key: 'wake', label: 'Leave nest vs sunrise, median (min)', field: 'around sunrise', protocol: 'focal nest departure (follow start) − sunrise', truthProtocol: 'all weaned',
-    compute: d => { const w = d.rec.follows.filter(f => f.end > f.start).map(f => (((f.start + 6.5) % 24) - f.sunrise) * 60).filter(x => Math.abs(x) < 240); return v(w.length ? median(w) : null, d.rec.truth.wakeMin.length ? median(d.rec.truth.wakeMin) : null, 'min', w.length); },
+    key: 'wake', label: 'Leave nest vs sunrise, median (min)', field: 'around sunrise', protocol: 'focal nest departure (follow start, observed departures only) − NOAA sunrise (sun\'s centre at −0.833°)', truthProtocol: 'all weaned',
+    // e2h-protocol (Track E freeze): observed departures only; sunrise at NOAA's −0.833°
+    compute: d => { const w = d.rec.follows.filter(f => f.end > f.start && f.departure).map(f => (((f.start + 6.5) % 24) - f.sunrise) * 60).filter(x => Math.abs(x) < 240); return v(w.length ? median(w) : null, d.rec.truth.wakeMin.length ? median(d.rec.truth.wakeMin) : null, 'min', w.length); },
   },
   {
     key: 'settle', label: 'Settle in nest vs sunset, median (min)', field: 'around sunset', protocol: 'focal settling in the night nest (end of a complete follow) − sunset', truthProtocol: 'all weaned',
