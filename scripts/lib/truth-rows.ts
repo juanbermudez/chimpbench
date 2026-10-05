@@ -13,6 +13,7 @@
 import { activityCategory, CAT_FEED } from '../../src/field/categories';
 import type { SeedValue } from '../../src/field/metrics';
 import type { FieldResult } from '../../src/field/run';
+import { logistic } from '../../src/field/stats';
 import { V } from '../../src/sim/candidates';
 import { contestTrace, type ContestTrace } from '../../src/sim/conflict';
 import { sunAltitudeAt } from '../../src/sim/environment';
@@ -35,7 +36,6 @@ export const NO_READOUT: Readonly<Record<string, string>> = {
   'T-ENE-6': 'no readout of a female\'s balance against the adult males in her party',
   'T-ENE-9': 'no monthly readout of feeding time and day range against fruit (a statistic across months: needs a year)',
   'T-RHY-7': 'model water sites have no stream or pool kind (eA-protocol: leave unread)',
-  'T-RHY-8': 'no logistic readout of resting and ground use against temperature with hour as a covariate',
   'T-END-1': 'no readout of male stress in months with rank reversals (a statistic across months: needs a year)',
   'T-END-4': 'no readout of the stress ratio around aggression against rests',
   'T-END-5': 'no readout of relative stress by bond partner and context',
@@ -68,6 +68,8 @@ export interface TruthState {
   nest: Map<number, NestTrack>; builds: number[];
   /** T-RHY-10: ground-food (leaf) feeding ticks within weaned individuals' active days, and those in the second half. */
   leafAll: number; leafLate: number;
+  /** T-RHY-8: adults' 5-min daylight samples outside the night nest, by air temperature (0.1 °C) and clock hour: samples, resting, on the ground. */
+  heat: Record<string, { n: number; rest: number; ground: number }>;
   /** T-RHY-6: adult females' daylight ticks, daylight ticks drinking at the water, drinking events started in daylight; at the water last tick. */
   fDay: number; fDrink: number; fEvents: number; atWater: Map<number, boolean>;
   /** T-INF-2, T-INF-5: unweaned infants' daylight ticks outside the night nest, those in the nurse act, bouts begun; each infant's last nurse tick. */
@@ -96,7 +98,7 @@ const sideOf = (c: Chimp): Side => ({ male: c.sex === 'male', age: c.age, rank: 
 export function truthStart(w: World): TruthState {
   const st: TruthState = {
     prevAlt: w.environment.sunAltitude, prevRise: w.environment.sunAltitude > sunAltitudeBefore(w), sunset: NaN, noon: NaN,
-    lacTicks: 0, lacFeed: 0, e8: new Map(), prevOut: new Map(), nest: new Map(), builds: [], leafAll: 0, leafLate: 0, fDay: 0, fDrink: 0, fEvents: 0, atWater: new Map(),
+    lacTicks: 0, lacFeed: 0, e8: new Map(), prevOut: new Map(), nest: new Map(), builds: [], leafAll: 0, leafLate: 0, heat: {}, fDay: 0, fDrink: 0, fEvents: 0, atWater: new Map(),
     infTicks: 0, infNurse: 0, infBouts: 0, lastNurse: new Map(), weanAges: [], weaned: new Map(), mt: [0, 0], mg: [0, 0], it: [0, 0], ig: [0, 0],
     r1: { n: 0, contact: 0 }, pairLast: new Map(), r2: {}, escalatedAt: new Map(), r3: { all: 0, coalition: 0 }, version: new Map(), prevKey: new Map(),
     dayFeed: new Map(), feedWith: [], feedWithout: [], male: new Map(), stressWith: [], stressWithout: [], arousalPatrol: [], arousalOther: [], hoots: new Map(), seenCall: w.nextId, prof: new Map(), tick: 0,
@@ -160,6 +162,12 @@ export function truthStep(st: TruthState, w: World): void {
       const prev = st.prevOut.get(c.id);
       if (prev !== undefined && c.age >= 15 && c.pregnancy <= 0 && !c.lactating) { const e = st.e8.get(c.id) ?? { out: 0, m75: 0, ticks: 0 }; e.out += L.out - prev; e.m75 += Math.pow(massOf(c, P), P.ledgerRmrExp); e.ticks++; st.e8.set(c.id, e); }
       st.prevOut.set(c.id, L.out);
+    }
+    // T-RHY-8: each adult's 5-min samples in daylight outside the night nest: resting (rest or shelter, rhythm-metrics' rest),
+    // on the ground, the air temperature and the clock hour
+    if (c.age >= 15 && st.tick % 20 === 0 && light && !inNest(c)) {
+      const k = `${Math.round(env.temperature * 10)}|${Math.floor(w.hour)}`, h = (st.heat[k] ??= { n: 0, rest: 0, ground: 0 });
+      h.n++; if (c.action === 'rest' || c.action === 'shelter') h.rest++; if (c.position[1] < 0.3) h.ground++;
     }
     // T-ENE-2: a lactating adult female's tick in the field category feed (the observer's truth category, protocols.ts)
     if (c.sex === 'female' && c.age >= 15 && c.lactating) {
@@ -336,6 +344,18 @@ export function truthValues(x: TruthInputs): Record<string, SeedValue> {
   if (t) {
     // T-RHY-4: median minutes before sunset at which weaned individuals started building their night nest
     out['T-RHY-4'] = { value: fin(median(t.builds)), n: t.builds.length };
+    // T-RHY-8 (pattern): logistic regression of resting (and of being on the ground) on air temperature with the clock hour as
+    // a categorical covariate, over adults' 5-min samples; pass = a positive temperature coefficient for resting
+    const cells = Object.entries(t.heat).map(([k, v]) => { const [tc, hr] = k.split('|').map(Number); return { temp: tc / 10, hour: hr, ...v }; });
+    const hours = [...new Set(cells.map(c => c.hour))].sort((a, b) => a - b);
+    const fit = (get: (c: typeof cells[number]) => number) => {
+      const X: number[][] = [], y: number[] = [], wt: number[] = [];
+      for (const c of cells) { const x = [c.temp, ...hours.slice(1).map(h => (c.hour === h ? 1 : 0))], k1 = get(c); if (k1 > 0) { X.push(x); y.push(1); wt.push(k1); } if (c.n - k1 > 0) { X.push(x); y.push(0); wt.push(c.n - k1); } }
+      if (X.length < 4 || hours.length < 2) return null;
+      const L = logistic(X, y, 50, wt); return L.converged ? { b: L.beta[1], se: L.se[1] } : null;
+    };
+    const fr = fit(c => c.rest), fg = fit(c => c.ground), samples = cells.reduce((a, c) => a + c.n, 0);
+    out['T-RHY-8'] = { value: null, pass: fr ? fr.b > 0 : null, n: samples, parts: { restPerDegC: fr ? fr.b : null, restSe: fr ? fr.se : null, groundPerDegC: fg ? fg.b : null, groundSe: fg ? fg.se : null } };
     // T-RHY-10 (pattern): more than half of weaned individuals' ground-food (leaf) feeding minutes in the second half of their active day
     out['T-RHY-10'] = { value: null, pass: t.leafAll ? t.leafLate / t.leafAll > 0.5 : null, n: Math.round(t.leafAll / 4), parts: { shareSecondHalf: t.leafAll ? t.leafLate / t.leafAll : null } };
     // T-RHY-6: drinking events per adult female per 12 h of daylight; part: share of daylight minutes drinking
