@@ -1978,3 +1978,13 @@ tree) more often than chance (median 100% vs 40.42%, N = 11), not when their own
 after a friend arrived. crockford2018 (FT): alert hoos in bouts of > 1 call in 38 of 40 cases. crockford2012 (T-COM-11's
 source; not re-read: bot check at the publisher, error at the repository): alert hoos in 46 of 111 individual encounters,
 fewer when receivers knew. New keys: schel2013b, crockford2012.
+
+## Addendum: E1r lean season (5 October 2026)
+
+Same text as research.md "Addendum: E1r lean season". harrisonMarshall2011 (FT, PMC3083508): figs are chimpanzees' main
+fallback food, leaves, stems, pith and bark "filler" fallback foods; the chimpanzee gut looks poorly adapted to fallback
+foods for its size though fibre is digested fairly well; wadging keeps fibre out of the gut; eastern chimpanzee day range
+3.5 km/d (2.2–4.8), 0.08–0.09 kcal per metre walked. altmann1991 (Abs): yearling baboons' dietary energy fell short of
+their energy-maximizing optimum, and the shortfall predicted lifetime fitness and survival (cross-species, direction).
+verlindenWiley1989: the digestive rate model, bibliographic record only (not verified). New keys: altmann1991,
+verlindenWiley1989.
