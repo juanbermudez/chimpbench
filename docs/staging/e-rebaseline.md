@@ -546,3 +546,25 @@ were already purged. S39's deaths include 6 starvations (part C).
 4. **Projected not testable within the ladder** (need 20; projected well under at 24 months; recorded as such only after
    the 24-month count): T-LET-2, T-LET-3, T-LET-6, T-DEM-7. T-DEM-9 is not testable as defined (finding 3). More seeds,
    not more years, are the lever for these.
+
+## Walk-back result (5 October 2026, 11:33; stopped after seed 48, declared here)
+
+Every arm starved on its first seed, which settles the registered rule (an arm is free of the failure only with no
+starvation death in all five seeds), so the remaining 16 seed jobs (~5 CPU-hours on a shared machine) were stopped:
+they could not change the decision. Seed 48, 30 + 365 days, runner outputs at 63d699a (`…/e/runs/WB-*/parts`, and
+S39's four runs for comparison; same world for S39 run 1 and the arms, rngSalt 0):
+
+| stack | starvation deaths | by class | births | deaths |
+| --- | --- | --- | --- | --- |
+| S39, run 1 (rngSalt 0) | 0 | — | 4 | 2 |
+| S39, runs 2–4 (rngSalt 1–3) | 0, 1, 0 | infant 2–5 y (run 3) | 7, 6, 6 | 7, 5, 1 |
+| S37 (S39 without `tripBeliefs`) | 3 | pregnant female, juvenile 5–12 y, infant 2–5 y | 4 | 4 |
+| S34 (also without `callGaps`) | 3 | adolescent, juvenile 5–12 y, infant 2–5 y | 2 | 3 |
+| S31 (also without `aggressionGaps`) | 4 | pregnant female, juvenile 5–12 y, infant 2–5 y, adolescent | 3 | 4 |
+| S27 (also without `departValue`, `bodyRules`) | 2 | juvenile 5–12 y, infant 2–5 y | 5 | 3 |
+
+**Verdict by the registered rule:** none of the four is free of the failure, so the cause is older than S27: the energy
+ledger's response to the lean season. It goes to a diagnosis stage (E1r, `docs/staging/e1r-prereg.md`) before any
+further switch is judged. Prediction met (low confidence, registered at f08ab97). Not registered, seen on one seed only:
+the later switches reduce starvation rather than cause it (S39's runs 0.25 per run on seed 48, the arms 2–4). The
+juvenile-reserve readout was not judged (the first clause already fails); the arms' sums were not run.
