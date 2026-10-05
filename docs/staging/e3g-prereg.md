@@ -736,6 +736,16 @@ impulses 0.024 per male-day, below the S28q group's 0.104 − 2 × 0.008; (e) ni
 within the hour does not re-open the hunt decision. It recovers S28's hunting cost, which carried S28's fitted sum on 5
 seeds (z +2.4), and leaves its walking, climbing and trees where they are.
 
+### 6.3 Final checks
+
+After merging `track-e` once (e007b8b: E0b's honest count, E4q), 19ae827: `gen-params --check` clean, `tsc --noEmit` clean,
+`pnpm test` 836 tests: 835 pass, 0 fail, 1 skipped; `git ls-files data/raw node_modules` empty. Prescriptions on the merged
+ledger (`prescription-ledger --count`): S27 51, S28 48, S28 + `experienceValue` 2 48, S28 + `experienceValue` 1 48 (the switch
+removes nothing, as registered). Outputs (local, gitignored, copied from the session scratch `e3g/` to
+`artifacts/validation/e3g/`): `diag/` (the eight diagnosis runs, both tool versions, the tables), `arms/` (X1, X3, Y2:
+e-bench, energy, redecide and rhythm JSON, the tables), `tools/` (`diag_table.py`, `amend_table.py`, `final_table.py`,
+the writers), `params/`, `smoke/`, the run scripts and the final test log.
+
 ## 7. Known defects in the code under test
 
 Deferred (found by the diagnosis, not this stage's question; file:line at 8a4d1d8):
