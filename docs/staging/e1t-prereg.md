@@ -367,3 +367,43 @@ and the prescription count at 6 months, and the 12-month rule, are unchanged.
 ```
 
 **Verdict at 6 months: pass** (as registered in §7 with its amendment): no starvation death in any run (all four also pass e-bench's full viability); the keep rule holds on the rngSalt 0 run (fitted z −0.8, held-out +0.6, held-out without the rare rows +1.0; every arm run inside noise); night safety holds (adults out of a nest 2.80–2.86% of night, T-RHY-5 0.026–0.027); prescriptions 42. Readouts: adult males' and other females' lowest class reserve a little lower (−0.031 to −0.036 against −0.021 to −0.026; −0.053 to −0.078 against −0.042 to −0.063), juveniles and infants about level. The four runs were extended to 12 months at 17:16 (runner labels M12-E1t, -s1, -s2, -s3).
+
+## 9. Confirm results at 12 months (integrator, 5 October 2026; printed by integrator/judge_e1t.py M12 from the JSON)
+
+```
+  ## E1t confirm, M12: S39 + horizonLived 1 against S39 (4 runs each; printed by integrator/judge_e1t.py from the JSON)
+  
+  | run | commit | protocol | prescriptions | viability | starvation | births / deaths | deaths by class | night: adults out of a nest, T-RHY-5 |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | M12-S39 | 63d699a | 5d4fa5a2a500bce6 | 42 | FAIL 2 starvation deaths | 2 | 23 / 7 | {'female, lactating: illness': 1, 'infant 0.5–2 y: orphaned infant, did not survive without its mother': 1, 'female, lactating: wounds from a fight with Jambiri': 1, 'adolescent: starvation': 1, 'adolescent: illness': 1, 'female, pregnant: starvation': 1, 'infant < 0.5 y: illness': 1} | adults out of a nest 2.66% of night; T-RHY-5 0.0245; night deaths 5; deaths 7 |
+  | M12-S39-s1 | 63d699a | 5d4fa5a2a500bce6 | 42 | FAIL 2 starvation deaths | 2 | 26 / 18 | {'infant 0.5–2 y: respiratory illness (outbreak)': 2, 'infant 2–5 y: respiratory illness (outbreak)': 1, 'female, lactating: illness': 2, 'infant 2–5 y: orphaned infant, did not survive without its mother': 3, 'female, lactating: snare injury': 1, 'infant < 0.5 y: respiratory illness (outbreak)': 1, 'adolescent: illness': 1, 'female, other: respiratory illness (outbreak)': 1, 'infant < 0.5 y: illness': 3, 'adult male: illness': 1, 'adolescent: starvation': 1, 'female, pregnant: starvation': 1} | a
+  | M12-S39-s2 | 63d699a | 5d4fa5a2a500bce6 | 42 | FAIL 2 starvation deaths | 2 | 25 / 10 | {'adult male: illness': 2, 'infant 2–5 y: starvation': 1, 'infant 0.5–2 y: infanticide by Chiriku (East community)': 1, 'infant 0.5–2 y: illness': 1, 'infant < 0.5 y: illness': 3, 'adolescent: starvation': 1, 'female, other: illness': 1} | adults out of a nest 2.58% of night; T-RHY-5 0.0238; night deaths 3; deaths 10 |
+  | M12-S39-s3 | 63d699a | 5d4fa5a2a500bce6 | 42 | pass | 0 | 25 / 6 | {'juvenile 5–12 y: illness': 2, 'female, other: wounds from a fight with Jambiri': 1, 'infant 2–5 y: illness': 1, 'infant 0.5–2 y: illness': 2} | adults out of a nest 2.59% of night; T-RHY-5 0.0240; night deaths 3; deaths 6 |
+  | M12-E1t | e1f93e9 | 5d4fa5a2a500bce6 | 42 | FAIL 3 starvation deaths | 3 | 28 / 10 | {'adolescent: starvation': 2, 'adult male: illness': 3, 'infant < 0.5 y: illness': 1, 'adult male: respiratory illness (outbreak)': 1, 'female, other: respiratory illness (outbreak)': 1, 'infant 0.5–2 y: respiratory illness (outbreak)': 1, 'female, pregnant: starvation': 1} | adults out of a nest 2.93% of night; T-RHY-5 0.0277; night deaths 3; deaths 10 |
+  | M12-E1t-s1 | e1f93e9 | 5d4fa5a2a500bce6 | 42 | FAIL 2 starvation deaths | 2 | 27 / 9 | {'infant 2–5 y: starvation': 1, 'adult male: illness': 5, 'infant < 0.5 y: illness': 1, 'infant 0.5–2 y: illness': 1, 'female, pregnant: starvation': 1} | adults out of a nest 2.88% of night; T-RHY-5 0.0269; night deaths 6; deaths 9 |
+  | M12-E1t-s2 | e1f93e9 | 5d4fa5a2a500bce6 | 42 | FAIL 1 starvation death | 1 | 23 / 8 | {'infant 2–5 y: starvation': 1, 'female, pregnant: respiratory illness (outbreak)': 1, 'adult male: illness': 4, 'infant < 0.5 y: illness': 1, 'infant 0.5–2 y: illness': 1} | adults out of a nest 2.93% of night; T-RHY-5 0.0274; night deaths 1; deaths 8 |
+  | M12-E1t-s3 | e1f93e9 | 5d4fa5a2a500bce6 | 42 | FAIL 2 starvation deaths | 2 | 29 / 15 | {'juvenile 5–12 y: starvation': 1, 'infant 2–5 y: starvation': 1, 'adult male: illness': 3, 'infant 0.5–2 y: illness': 1, 'adolescent: illness': 1, 'adult male: respiratory illness (outbreak)': 1, 'female, other: respiratory illness (outbreak)': 1, 'female, lactating: respiratory illness (outbreak)': 1, 'juvenile 5–12 y: respiratory illness (outbreak)': 1, 'infant 2–5 y: respiratory illness (outbreak)': 1, 'infant 0.5–2 y: respiratory illness (outbreak)': 1, 'female, pregnant: illness': 1, '
+  
+  | sum (rows scored in all 8 runs) | S39: 4 runs | mean ± SD | E1t: 4 runs | z of each E1t run (rngSalt 0 first; SD used) |
+  | --- | --- | --- | --- | --- |
+  | fitted (27) | 4.15 / 4.41 / 4.66 / 4.38 | 4.40 ± 0.21 | 3.98 / 5.44 / 5.28 / 3.28 | -1.3 / +3.1 / +2.6 / -3.4 (0.30) |
+  | held-out (35) | 15.19 / 14.52 / 14.51 / 16.38 | 15.15 ± 0.88 | 14.54 / 15.04 / 15.61 / 13.40 | -0.4 / -0.1 / +0.3 / -1.1 (1.45) |
+  | held-out w/o rare (32) | 13.56 / 13.47 / 13.32 / 13.92 | 13.57 ± 0.26 | 13.20 / 13.40 / 13.57 / 12.49 | -1.3 / -0.6 / +0.0 / -3.8 (0.26) |
+  
+  Lowest point of each class's mean reserve trajectory (relative to the store), per run:
+  | class | S39 runs | E1t runs |
+  | --- | --- | --- |
+  | adult male | -0.026 / -0.021 / -0.021 / -0.023 | -0.033 / -0.036 / -0.033 / -0.031 |
+  | female, lactating | -0.141 / -0.134 / -0.128 / -0.142 | -0.130 / -0.140 / -0.133 / -0.138 |
+  | female, other | -0.061 / -0.063 / -0.059 / -0.057 | -0.078 / -0.054 / -0.082 / -0.053 |
+  | infant 0.5–2 y | -0.227 / -0.200 / -0.190 / -0.175 | -0.172 / -0.190 / -0.198 / -0.192 |
+  | infant 2–5 y | -0.074 / -0.148 / -0.084 / -0.079 | -0.090 / -0.090 / -0.098 / -0.104 |
+  | infant < 0.5 y | -0.257 / -0.234 / -0.220 / -0.251 | -0.222 / -0.225 / -0.208 / -0.235 |
+  | juvenile 5–12 y | -0.206 / -0.168 / -0.222 / -0.268 | -0.205 / -0.198 / -0.220 / -0.234 |
+  
+  Starvation deaths over 20 seed-runs: S39 6, E1t 8.
+```
+
+Starvation by seed: E1t seed 48 five (one in each re-draw, two in rngSalt 3), seed 11 two, seed 5 one; S39 seed 5 three, seed 11 two, seed 48 one. If E1t changed nothing, 8 or more of 20 would occur with P = 0.26 (Poisson, mean 6).
+
+**Verdict by the registered rule (§7): not kept.** 8 starvation deaths over the 20 seed-runs against S39's 6 (the rule kept it only at 6 or fewer). The 12-month keep rule itself holds on the rngSalt 0 run (fitted z −1.3, held-out −0.4, held-out without the rare rows −1.3). `horizonLived` stays 0 in the integrated candidate. Integrator's note, not a re-reading: the threshold was a point comparison, stricter than noise (P = 0.26), so the result neither shows harm nor benefit; the bug it fixes (the horizon right within 1 h in 4.2% of daylight decisions on S39, 99.9% with the fix) stays in S39. Starvation moved toward weaned infants (2–5 y: 4 of 8, S39 1 of 6), which fits the night side effect the agent reported (the drive pinned at 1 while asleep; infants drink more at night) but was not measured here. E1u places the lean-season ceiling in the gut's unmeasured inputs, which no horizon fix reaches.
