@@ -99,7 +99,7 @@ byte-identical to today's for the same context.
 
 ### M1 results (5 October 2026)
 
-**Built** (3df70b0, 2ccdcb7 and this commit): `observeState` (registry, switch, 0 in both profiles); `src/sim/observe-state.ts`
+**Built** (3df70b0, 0243158, e89a139): `observeState` (registry, switch, 0 in both profiles); `src/sim/observe-state.ts`
 (`bodyPercept`, `lightPercept`, `optionValue`); observe() adds `body`, `light` and option `value`s at 1; `server/decide.ts`
 validates them (unknown keys and out-of-range numbers rejected) and renders them for GLiNER and Jev. The valuation's own
 function was used: `treeFoodWorth` was split into the crown's drive × a new exported `treeRateShare(…, travel)` with
