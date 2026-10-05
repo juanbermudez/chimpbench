@@ -262,6 +262,10 @@ User, verbatim (1 October 2026):
   only when the question needs it (IMPLEMENTATION_PLAN.md "Run-length ladder"). Track E uses the **rules policy only**:
   no paid model API (Jev).
 
+- The decision model (5 October), verbatim: "but this is where we supposed to use the deiscion model so the chimp bahaved abed on its perception and state ec" and "use gliner or jecv interchangable but do it for gliner as the base". GLiNER is the base decision model on Track E's state;
+  Jev is an interchangeable provider (spend-capped; key never printed or committed). "Rules policy only" still holds for
+  the rules benchmarks (stacks, confirms), which cannot run a whole community on a model at benchmark scale.
+
 Hard rules (AGENTS.md plus this track):
 - Determinism: all sim randomness from `world.rng`; `observe()` and `rulesChoice()` pure; `const P = paramsOf(world)`;
   lazily added `ChimpX` keys go in `OPTIONAL_X` (`src/sim/state.ts`). Params live in `data/params.json` with evidence
