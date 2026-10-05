@@ -396,3 +396,50 @@ Focal animals in the field rows' bands:
 - **Refused contexts.** G and GG ran before the JSON-safety fix (4fa3b84): 240 and 196 decisions had a non-finite need in
   the body (animals that never slept in a nest pinned sleep pressure at 1), were refused and decided by the rules; the
   numbers above include them, so the model's own effect is if anything larger.
+
+
+### M1 iteration 2 results, offline (5 October 2026; `artifacts/em/m2w2/report.md`, tables from `scripts/em-summary.ts`)
+
+Wording 2 against the same old observation (old scores carried over: the old packets are byte-identical). GLiNER `base`
+on every probe and on 1,344 of seed 48's 1,667 records (the queue that scored them hit its two-hour limit; seed 7's
+wording-2 sample was not scored, so the time went to the loop arms; disclosed); Jev on the same capped rows as M2.
+
+| provider | draws | agree old | agree new | new − old, points (95% CI) | kept or arrived: old → new |
+|---|---|---|---|---|---|
+| base | 1198 | 23% | 26% | +3.5 (+1.6, +5.5) | 33% → 39% (n 135) |
+| jev | 300 | 29% | 38% | +9.0 (+4.7, +13.3) | – |
+
+References: the rules' own value without its jitter and belief draw picks RG's option in 81% of draws; chance 19%.
+
+| share of choices (draws) | rules | base old | base new | jev old | jev new |
+|---|---|---|---|---|---|
+| feed | 12% | 3% | 10% | 7% | 13% |
+| food-trip | 14% | 3% | 2% | 2% | 7% |
+| social-move | 10% | 2% | 5% | 2% | 3% |
+| rest | 23% | 21% | 16% | 13% | 16% |
+| nest | 15% | 3% | 5% | 7% | 7% |
+| drink | 2% | 12% | 10% | 11% | 11% |
+| affiliative | 10% | 34% | 33% | 41% | 31% |
+| greet | 6% | 11% | 9% | 7% | 3% |
+| aggression | 5% | 5% | 4% | 3% | 2% |
+
+| probe: Δ target probability, high − low level (verdict) | base old | base new | base isolated | jev old | jev new | jev isolated |
+|---|---|---|---|---|---|---|
+| deficit | 0.280 (right) | 0.161 (right) | -0.004 (wrong) | 0.518 (right) | 0.295 (right) | 0.039 (none) |
+| reserves | -0.000 (none) | -0.005 (wrong) | -0.005 (wrong) | 0.001 (none) | 0.046 (right) | 0.036 (right) |
+| sleep | 0.638 (right) | 0.086 (right) | 0.006 (right) | 0.777 (right) | 0.540 (right) | 0.091 (right) |
+| light | 0.043 (right) | 0.019 (right) | 0.001 (none) | 0.280 (right) | 0.025 (right) | 0.001 (none) |
+| heat | -0.000 (none) | -0.007 (wrong) | -0.007 (wrong) | 0.018 (right) | 0.041 (right) | -0.000 (none) |
+| water | 0.699 (right) | 0.532 (right) | 0.001 (right) | 0.839 (right) | 0.799 (right) | 0.024 (right) |
+
+Right-way probes, old / new (consistent): base 4 / 4; jev 5 / 6. Wrong-way in the new observation: base 2; jev 0; isolated fields with any significant response: base 5; jev 3.
+Which food (exploratory): base peaks on the higher-rate food option in 48% old and 81% new (the rules, choosing food, in 64%).
+Which food (exploratory): jev peaks on the higher-rate food option in 50% old and 71% new (the rules, choosing food, in 78%).
+
+- Wording 2 moves GLiNER's eating up (feed 3% → 10% of draws on seed 48) and its food choice onto the better option (81%),
+  but not its trips to food (2%) or its nesting by day; agreement with the rules +3.5 points, as with wording 1.
+- The sleep probe falls from +0.60 to +0.09 for GLiNER: sleepiness no longer sends it to "rest" (rest no longer claims
+  to ease it), and by day the nest is rarely on the menu. Where the nest is offered (the light probe's afternoon and dusk
+  situations) GLiNER now takes it 89–91% of the time at every light level, so light adds little (+0.02).
+- By the registered rule GLiNER is still *confused* (reserves −0.5 and heat −0.7 points, both wrong-way and tiny) and
+  Jev still *help* (six probes right, agreement +9.0 points, CI +4.7, +13.3).
