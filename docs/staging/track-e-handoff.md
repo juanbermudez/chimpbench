@@ -14,15 +14,16 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (5 October 11:36; deploy held by the user).** Part C done at 60 days, 6 months and 12 months
-  (docs/staging/e-rebaseline.md). **S39 is not viable at 12 months:** starvation in 3 of 4 runs (adolescents, pregnant
-  females, an infant) after a lean season (days ~45–230 of the scored year) the 60-day windows never saw. **Walk-back
-  done (3dd5edf):** S37, S34, S31 and S27 all starve on seed 48 (2–4 deaths; S39 0–1), so the cause is older than S27,
-  the energy ledger's response to the lean season; the remaining seeds were stopped (they could not change the
-  decision). **E1r** (diagnosis, `docs/staging/e1r-prereg.md`, cc41edf) is running as agent **e1r-lean** (branch
-  `e1r-lean`). Part D done (e52e84e): no rare-event family is testable at 12 months on its own rows; T-LET-1,
-  T-DEM-5/6/8 and the orphan rows go to 24 months on the next viable base. Agent **eM-model** (M1–M3, GLiNER on Track
-  E's state) still running.
+- **Running now (5 October 12:57; deploy held by the user).** **S39 is not viable at 12 months** (starvation in 3 of
+  4 runs; e-rebaseline.md), and the walk-back put the cause before S27. **E1r found it** (merged a9739c3,
+  `docs/staging/e1r-prereg.md` §9–13): in the lean season the small and reproducing females' foregut is full, and a
+  valuation trap (`forageRate` prices a crown by the gut's room, in drupe units, but the fallback at its full rate)
+  keeps depleted animals eating the food the gut passes least energy from; five of S39's six dead are immigrant
+  females. **E1s** (`gutValue`, registered eb2b209, `docs/staging/e1s-prereg.md`) is in development as agent
+  **e1s-gut** (branch `e1s-gut`; seeds 48 and 7 at 6 months); the integrator runs its confirm (4 runs, 6 → 12 months).
+  Part D done (e52e84e). Agent **eM-model** (M1–M3, GLiNER on Track E's state) still running. Separate from Track E:
+  agent **ui-minimap** (branch `ui-minimap` from `main`) on the user's minimap and perception-ring request; merging
+  into `main` waits for the user.
 - **S39 is the best integrated candidate (42)** (e-stack2-confirm.md "S39 results"): S37 + `tripBeliefs` 3; held-out without
   rare rows better beyond noise (z −2.2), every class's reserve better, less walking, T-IGE-1 back in band. Costs: T-ACT-2
   0.115 (band floor 0.12), T-COM-11 0.023 (band 0.25–0.55; snake-trial protocol).
