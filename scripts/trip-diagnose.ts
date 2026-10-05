@@ -91,6 +91,10 @@
 //   option at the close: whether the trip's own candidate (its act and target) was still on the list at the decision that
 //     closed it (a trip whose option left the list ends 'ended' at its next decision point, rg.ts gate); a caller trip's hours
 //     since the call it walks to (x.joinAt; the caller option lasts 0.3 h, candidates.ts).
+//   (amendment 1, e3i-prereg.md §2.1) a caller trip at its close: whether its call is still the one in the listener's call
+//     slot (x.joinCall; one slot, overwritten by every own-community pant-hoot heard), the hours since its own call, the
+//     metres to its call point (the option is offered only beyond joinCallMinM), whether the slot's crown (x.jt, which the
+//     walk follows under E3h bit 2) is still its crown.
 //   community stock (daily, at the day's first tick in the window): per community, members, fruit units its members ate
 //     the previous day (truth), crowns with ≥ 0.06 units inside its range (95% UD isopleth, foraging.ts's rule) and their
 //     total crop (truth), and the list's whole-range expectation (Σ capacity × the species' share in fruit × mean fullness
@@ -153,6 +157,8 @@ export interface Trip {
   e3?: E3i | null; lead?: [number, number, number] | null;
   /** stage E3i: the trip's own option (its candidate's act and target) still on the list at the closing decision (1, 0; −1 no list); a caller trip's hours since the call at the close */
   optOn?: number; callAge?: number; _act?: string; _tid?: number;
+  /** stage E3i amendment 1: a caller trip at its close: its call still the one in the listener's slot (x.joinCall), hours since its own call, metres to its call point, the slot's crown still its crown */
+  cSame?: number; cAge?: number; dCall?: number; jtSame?: number; _cAt?: number; _cx?: number; _cz?: number;
   /** internal bookkeeping (not written) */
   _cum0?: number; _selfCum0?: number; _fs?: number[]; _fsCum0?: number[]; _tgtS?: number; _cumT0?: number; _fsCumT0?: number[]; _tgtT0?: number; _gaveUpOpen?: boolean; _post?: boolean;
 }
@@ -334,6 +340,7 @@ export function runSeed(job: Job): Result {
     // stage E3i: what the traveller could have known between its sighting and now, and what emptied the crown
     tr.e3 = t && s ? e3iOf(c, t, s) : null;
     tr._act = k.action; tr._tid = k.targetId;
+    if (kind === 'caller') { tr._cAt = x.joinAt; tr._cx = x.joinX; tr._cz = x.joinZ; } // stage E3i amendment 1
     if (kind === 'joined' && t) { const L = m?.aux ?? -1, ls = L > 0 ? sights.get(L)?.get(target) : undefined; tr.lead = ls ? [w.time - ls.t, ls.crop, noEat(t, ls.t, ls.crop, ls.tgt, w.time)] : null; }
     open.set(c.id, tr);
     return tr;
@@ -387,7 +394,12 @@ export function runSeed(job: Job): Result {
     }
     if (chosen) tr.next = catOf(chosen); else tr.next = why;
     tr.optOn = list && tr._act ? (findCandidate(list, tr._act as Candidate['action'], tr._tid!) ? 1 : 0) : -1; // stage E3i
-    if (tr.kind === 'caller') tr.callAge = w.time - ix(c).joinAt;
+    if (tr.kind === 'caller') {
+      const xc = ix(c); tr.callAge = w.time - xc.joinAt;
+      // stage E3i amendment 1: why a caller trip's own option left the list
+      tr.cSame = xc.joinCall === tr._tid ? 1 : 0; tr.cAge = w.time - (tr._cAt ?? NaN); tr.dCall = Math.hypot(c.position[0] - (tr._cx ?? NaN), c.position[2] - (tr._cz ?? NaN));
+      tr.jtSame = tr.target > 0 && xc.jt === tr.target ? 1 : tr.target > 0 ? 0 : -1;
+    }
     pendNow.push(tr);
   };
   const settle = (tr: Trip) => {
@@ -399,7 +411,7 @@ export function runSeed(job: Job): Result {
     else if (tr.target > 0 && tr.dEnd <= ARRIVE_M) tr.cause = tr.c1 < SEEN_CROP ? 'arrived, empty' : 'arrived, crop left';
     else if (tr.fin) tr.cause = 'ended away';
     else tr.cause = `re-decided en route: ${tr.endWhy}`;
-    delete tr._act; delete tr._tid;
+    delete tr._act; delete tr._tid; delete tr._cAt; delete tr._cx; delete tr._cz;
     delete tr._cum0; delete tr._selfCum0; delete tr._gaveUpOpen; delete tr._fs; delete tr._fsCum0; delete tr._tgtS; delete tr._cumT0; delete tr._fsCumT0; delete tr._tgtT0; delete tr._post;
     if (tr.cls && tr.day) R.trips.push(tr);
   };

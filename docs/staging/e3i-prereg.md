@@ -92,6 +92,20 @@ adult males' eating minutes and ground km against the integrator's `S39q*-energy
 - The mechanism (step 2) addresses only a term these name with ≥ 1/4 of unfed trips' walking; a class below that gets no
   mechanism. If D1 holds, D2 decides between an evidence-based belief and a prior.
 
+### 2.1 Amendment 1 (registered after reading the four realizations' registered readouts, §2.2, before the readouts it adds ran)
+
+By D1 the named term is *re-decided en route* (29% of unfed walking), and 77% of its walking is caller trips whose own
+option was off the list when they closed (96% of them). Three code paths take a caller trip's option off the list while it
+walks: the listener's one call slot (`x.joinCall`, `x.jt`) is overwritten by any later own-community pant-hoot heard (the
+walk then follows the new crown, perception.ts `hear`, execution.ts); the call is offered only for 0.3 h after it
+(candidates.ts); and only beyond `joinCallMinM` (50 m) of the call point. To name which, four readouts are added to the
+tool (header, "amendment 1"; the registered readouts are unchanged, checked on a 2-day smoke): at a caller trip's close,
+whether its call is still the one in the slot, the hours since its own call, the metres to its call point, whether the
+slot's crown is still its crown. **Reading (registered):** the caller trips re-decided en route are split into *overwritten
+by a later call* (slot changed), *0.3 h passed* (same call, ≥ 0.3 h), *within 50 m of the call point* (same call), *other*;
+the split with the largest share of their walking names the code path. **Runs:** the amended tool on the four
+realizations (same settings), from a frozen checkout of the commit that registers this amendment.
+
 ## 3. Field rows scored here: samples (written before any arm)
 
 Every e-bench row is scored (fitted and held-out sums, with and without T-HUN-4, T-BRD-1 and T-IGE-3). The rows this stage's
