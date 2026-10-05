@@ -536,6 +536,7 @@ async function runCmd(file: string, a: Args): Promise<number> {
     if (blocked) run.event(`stopped: ${blocked}`);
     run.event(`${d}/${r.jobs.length} jobs done${r.result ? `; result ${r.result.json}` : ''}`);
     run.save();
+    release();
     status(file);
     return r.jobs.every(j => j.status === 'done') ? 0 : r.jobs.some(j => j.status === 'failed') ? 1 : 2;
   } finally { if (!stopping) release(); }
