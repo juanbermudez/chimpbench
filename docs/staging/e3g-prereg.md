@@ -740,9 +740,9 @@ seeds (z +2.4), and leaves its walking, climbing and trees where they are.
 
 Deferred (found by the diagnosis, not this stage's question; file:line at 8a4d1d8):
 - A trip to a caller stops `joinCallStopM` (25 m) short of the caller and is never turned into feeding at the caller's
-  crown (the arrival rule, src/sim/rg.ts:355–366, converts trips to trees only): 3.5% of caller trips feed at that crown,
+  crown (the arrival rule, src/sim/rg.ts:354–366, converts trips to trees only): 3.5% of caller trips feed at that crown,
   the rest end in a fresh draw 25–27 m away (amendment-1 readouts, §2.2).
-- Own trips that a departure nobody followed gives up (src/sim/execution.ts:546–575, `departWait` with `departPersist` 1
+- Own trips that a departure nobody followed gives up (src/sim/execution.ts:551–580, `departWait` with `departPersist` 1
   and `departValue` 0) close 60–90 m from their target having barely moved; they are two thirds of unfed own trips and
   count as trips in every readout (§2.2 A1-b); `departValue` (E5f) changes this, and §2.2 notes how it amplifies the
   keep test's trips.
