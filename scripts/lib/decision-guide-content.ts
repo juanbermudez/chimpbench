@@ -695,7 +695,7 @@ export const DIAGRAMS: DiagramSpec[] = [
     ],
     notes: [
       'Slow states keep the acts rare and well-timed: redirects come within a minute of the defeat and stay at 2–4% of decided conflicts (<a href="staging/e4a-prereg.md">e4a-prereg.md</a>).',
-      'On S39 the male hierarchy\'s steepness stays inside its band (0.667; band 0.2–0.7). In E4h contact rose as the rank difference shrank, the field\'s direction (flat under the dice); three contest rows (contact share, contact by rank difference, coalitionary share) are staged, not applied (<a href="staging/e4h-prereg.md">e4h-prereg.md</a>, <a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
+      'On S39 the male hierarchy\'s steepness stays inside its band (0.667; band 0.2–0.7). In E4h contact rose as the rank difference shrank, the field\'s direction (flat under the dice); three contest rows (contact share, contact by rank difference, coalitionary share) are registered in the new freeze of 5 October and not yet scored here (<a href="staging/e4h-prereg.md">e4h-prereg.md</a>, <a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>).',
       'Open: slow states cannot carry acute reactions, hence the fast state; the calling–testosterone link still fails because calls have no daily course (<a href="staging/e4b-prereg.md">e4b-prereg.md</a>, <a href="staging/e4d-prereg.md">e4d-prereg.md</a>).',
     ],
   },
@@ -735,9 +735,9 @@ export const DIAGRAMS: DiagramSpec[] = [
       { f: 'prey', t: 'meet', kind: 'side' }, { f: 'pursuit', t: 'end', fs: 'l', ts: 'r', kind: 'side' }, { f: 'appetite', t: 'lead', fs: 'l', ts: 'r', kind: 'side' }, { f: 'e3g', t: 'meet', fs: 'l', ts: 'r', kind: 'lay' },
     ],
     notes: [
-      'On S39 the model hunts 16.9 times per community-year, inside its band of 5–25, where S27\'s four runs hunt 30.6 ± 8.3, above it (the band was never scaled to the model\'s 3–7 males, and a 4–11 band is staged). Hunts succeed 0.396 of the time, below the band of 0.5–0.8, and are 0.056 of colobus encounters (band 0.05–0.4); every success takes one monkey (1.0 against 1.2–2) (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, <a href="staging/e4e-prereg.md">e4e-prereg.md</a>).',
+      'On S39 the model hunts 16.9 times per community-year, inside its band of 5–25, where S27\'s four runs hunt 30.6 ± 8.3, above it (the new freeze scales the band to the model\'s adult males, 4–11, which puts 16.9 outside; the stack is being re-baselined on it). Hunts succeed 0.396 of the time, below the band of 0.5–0.8, and are 0.056 of colobus encounters (band 0.05–0.4); every success takes one monkey (1.0 against 1.2–2) (<a href="staging/e-stack2-confirm.md">e-stack2-confirm.md</a>, <a href="staging/e4e-prereg.md">e4e-prereg.md</a>).',
       'Open: lone hunters and pairs never capture, and about half the adult males a leader sees join him, by a hand-set join value; the three-hunter threshold rests on the design speed ratio (at 0.8 it would take four), not tested. The model has no canopy structure and no colobus composition (<a href="staging/e4k-prereg.md">e4k-prereg.md</a>).',
-      'The observer meets colobus 2.7 times as often per follow-hour as at Kanyawara, mostly a scoring difference; three scorer fixes are staged, not applied (<a href="staging/e4f-prereg.md">e4f-prereg.md</a>).',
+      'The observer meets colobus 2.7 times as often per follow-hour as at Kanyawara, mostly a scoring difference; three scorer fixes are applied in the new freeze of 5 October, not yet to the numbers here (<a href="staging/e4f-prereg.md">e4f-prereg.md</a>).',
       'Open: why chimpanzees hunt beyond energy (meat\'s nutrients, sharing with allies) has a direction and no magnitude in any source read, and the field hunts more when fruit is good, which an energy need does not produce (<a href="staging/e4n-prereg.md">e4n-prereg.md</a> §2.2).',
     ],
   },
