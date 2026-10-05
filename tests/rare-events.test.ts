@@ -107,6 +107,30 @@ test("a mother's death: dependents, bereavement, adoption known from the orphan'
   assert.equal(n.family.adoptionUnknown, 0);
 });
 
+test('deaths at one time are ordered as the tick makes them: by phase, then in world.chimps order', () => {
+  const { w, rec, t0, stats0 } = setup();
+  const P = paramsOf(w);
+  const pos = new Map(w.chimps.map((c, i) => [c.id, i]));
+  // a founder pair whose offspring comes after its mother in world.chimps, and one whose offspring comes before
+  const pairs = w.chimps.filter(k => k.alive && k.age < P.adoptMaxAgeY && w.chimps.some(m => m.id === k.motherId && m.alive)).map(k => ({ k, m: w.chimps.find(m => m.id === k.motherId)! }));
+  const after = pairs.find(p => pos.get(p.m.id)! < pos.get(p.k.id)! && kidsOf(w, p.m).length === 1)!;
+  at(w, t0 + 10 * DAY);
+  killChimp(w, after.m, 'respiratory illness (outbreak)');
+  killChimp(w, after.k, 'respiratory illness (outbreak)');
+  const n = countSeed({ seed: 48, world: w, rec, statsStart: stats0, t0, runStart: 0, mids: [], part: null });
+  assert.equal(n.family.sameTickTies, 1);
+  assert.equal(n.family.dependents, 1, 'one outbreak step: the mother, earlier in world.chimps, died first');
+  // an offspring that died of a slowLife cause at the same time died before its mother's outbreak death
+  const other = pairs.find(p => p !== after && p.m !== after.m && kidsOf(w, p.m).length === 1)!;
+  at(w, t0 + 20 * DAY);
+  killChimp(w, other.m, 'respiratory illness (outbreak)');
+  // the offspring's record as a slowLife death at the same time would leave it (the counter reads only these fields)
+  other.k.alive = false; other.k.deathTime = w.time; other.k.causeOfDeath = 'illness';
+  const n2 = countSeed({ seed: 48, world: w, rec, statsStart: stats0, t0, runStart: 0, mids: [], part: null });
+  assert.equal(n2.family.sameTickTies, 2);
+  assert.equal(n2.family.dependents, 1, 'slowLife runs before the outbreak step, so that offspring was dead first');
+});
+
 test('an orphan slimmed by the end: adoption unknown, then known from an earlier snapshot of the same run', () => {
   const { w, rec, t0, stats0 } = setup();
   const P = paramsOf(w);

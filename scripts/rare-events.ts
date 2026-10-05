@@ -206,6 +206,13 @@ export function countSeed(inp: SeedInput): SeedCounts {
     infantH += overlap(c.birthTime, Math.min(d, c.birthTime + YEAR_H), t0, t1);
   }
   const ageAt = (c: Chimp, t: number) => (t - c.birthTime) / YEAR_H;
+  // Was `a` alive when `b` died? Deaths at one time are ordered as a tick makes them: the slow step first (slowLife's
+  // hazard deaths, then outbreaks, then snares; tick.ts:36, :102-104), then the animals' acts (killings, fight wounds),
+  // and within one step in world.chimps order (index().alive, state.ts:384)
+  const order = new Map(w.chimps.map((c, i) => [c.id, i]));
+  const phase = (c: Chimp) => { const k = c.causeOfDeath ?? ''; return k.startsWith('respiratory illness (outbreak)') ? 2 : k === 'snare injury' ? 3 : killingKind(k) ? 4 : 1; };
+  const aliveAt = (a: Chimp, b: Chimp) => a.deathTime === null || a.deathTime > b.deathTime! ||
+    (a.deathTime === b.deathTime && (phase(a) > phase(b) || (phase(a) === phase(b) && order.get(a.id)! > order.get(b.id)!)));
 
   // deaths in the window (scripts/lib/viability.ts:46-49 counts deathTime > start)
   const dead = w.chimps.filter(c => !c.alive && inWin(c.deathTime, t0, t1));
@@ -272,8 +279,7 @@ export function countSeed(inp: SeedInput): SeedCounts {
     let dep = 0, ber = 0;
     for (const k of kids) {
       if (k.deathTime !== null && k.deathTime === t) ties++;
-      // alive at her death: died later, or at the same tick only as her orphan (life.ts:212 is the one cause that follows her)
-      const alive = k.deathTime === null || k.deathTime > t || (k.deathTime === t && (k.causeOfDeath ?? '').startsWith('orphaned'));
+      const alive = aliveAt(k, m);
       if (!alive) continue;
       const a = ageAt(k, t);
       // community at her death: a natal female transfers only from dispersalMinAgeY (reproduction.ts:86); a later transfer is undone
@@ -299,7 +305,7 @@ export function countSeed(inp: SeedInput): SeedCounts {
   for (const c of dead) {
     const t = c.deathTime!, mother = byId.get(c.motherId);
     if (!mother || ageAt(c, t) >= P.carryDeadMaxAgeY) continue;
-    if (!(mother.deathTime === null || mother.deathTime > t)) continue;      // life.ts:34 (mother alive), :43 (age), then the roll
+    if (!aliveAt(mother, c)) continue;                                       // life.ts:34 (mother alive), :43 (age), then the roll
     carryOpp++;
     const seen = snaps.some(sn => sn.chimps.get(mother.id)?.carryingDeadId === c.id
       || (sn.chimps.get(mother.id)?.episodes.some(e => e.otherId === c.id && e.text.startsWith('Carrying the body of my infant')) ?? false)
