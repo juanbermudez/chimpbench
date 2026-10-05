@@ -55,6 +55,9 @@
 // condGood): growth yields only 29% below the set point); 1 = in proportion to the relative store from the set point
 // (the tissue reserve gives way first and growth follows the depleted state, schoenbuchner2019); 2 = no more than the
 // day-long mean surplus after maintenance pays (aAvg − mAvg; E1f iteration 1's books, a bound).
+// Stage E1t (docs/staging/e1t-prereg.md §2; P.horizonLived, 0 by default, read only with ledgerDrive and rhythmSleep 1): the
+// drive's waking time left is read from the days the animal lived (its recorded waking and sleep onset, livedDay) instead of
+// sleep pressure, whose estimate collapsed to 0 under the circadian gate (em-prereg.md, "Finding for Track E").
 import type { Chimp, World } from '../types';
 import { paramsOf, type Params } from './params';
 import { TICK_HOURS, TICK_SECONDS, index, ix, type ChimpX, type EnergyLedger } from './state';
@@ -280,12 +283,46 @@ function gutFill(c: Chimp, L: EnergyLedger, P: Params, D: Digesta | null): numbe
  * since S = S_wake, S(t) = 1 − (1 − S_wake)·exp(−t/τ), so the hours awake so far and the length of yesterday's waking day
  * (from S_wake to the S at which the animal last fell asleep) follow from S alone; the fast is the rest of the 24-hour day.
  * Without rhythmSleep there is no cue of a coming fast: the horizon is one gut-emptying time and no fast.
+ * Stage E1t (horizonLived 1; docs/staging/e1t-prereg.md §2): the day's length and the hours awake are the animal's own
+ * record of the days it lived (livedDay below) instead of sleep pressure, once a first complete waking day is recorded.
  */
 export function feedHorizon(c: Chimp, L: EnergyLedger, P: Params): [number, number] {
   if (P.rhythmSleep !== 1) return [P.ledgerGutEmptyH, 0];
-  const S = ix(c).slp ?? 1 - c.energy, tau = P.rhythmSleepRiseH, w = 1 - L.sWake!;
-  const day = tau * Math.log(w / Math.max(1e-9, 1 - L.sBed!)), done = tau * Math.log(w / Math.max(1e-9, 1 - S));
+  let day: number, done: number;
+  if (P.horizonLived === 1 && L.dayH !== undefined && L.awakeH !== undefined) { day = L.dayH; done = L.awakeH; }
+  else {
+    const S = ix(c).slp ?? 1 - c.energy, tau = P.rhythmSleepRiseH, w = 1 - L.sWake!;
+    day = tau * Math.log(w / Math.max(1e-9, 1 - L.sBed!)); done = tau * Math.log(w / Math.max(1e-9, 1 - S));
+  }
   return [day > done ? day - done : 0, day < 24 ? 24 - day : 0];
+}
+
+/**
+ * Stage E1t (horizonLived; docs/staging/e1t-prereg.md §2): the animal's record of its own sleep, read by feedHorizon. Under
+ * rhythmCircadian sleep onset is gated by the circadian threshold, not by pressure (and lying in a nest is not sleep), so
+ * E1e's pressure at nest entry (sBed) can lie below the day's pressure and its estimate of the waking time left collapses
+ * to 0 (em-prereg.md, "Finding for Track E"). Here the animal predicts today's waking day from the days it lived: at each
+ * sleep onset the waking day just completed (from the recorded waking) is kept, and the hours since the last waking are
+ * counted. Its sleep is the state in which process S falls: with rhythmCircadian the sleep latch (circadian.ts asl, on when
+ * S reaches the upper threshold, off when it has fallen to the lower one; a nest exit while latched does not end it), without
+ * it a finished nest (`inNest`, E1e's bookkeeping above). Called from needs() after the rhythm step, so a waking is recorded
+ * in the tick the latch opens, before that tick's decision; once the lived horizon is in use a transition refreshes the
+ * tick's hunger readout (before the first complete day nothing is refreshed: E1e's estimate, unchanged). No constant;
+ * nothing unseen enters (its own sleep and the time it has lived). Writes only the ledger's E1t fields and the readout.
+ */
+export function livedDay(world: World, c: Chimp, x: ChimpX, inNest: boolean): void {
+  const P = paramsOf(world);
+  if (P.horizonLived !== 1 || P.rhythmSleep !== 1 || !driveOn(P)) return;
+  const L = x.en;
+  if (!L || L.eAvg === undefined) return;
+  const now = world.time, asleep = P.rhythmCircadian === 1 ? x.asl === 1 : inNest;
+  // the record's state: asleep once a sleep onset is recorded after the last waking
+  const recorded = L.sleptAt !== undefined && (L.wokeAt === undefined || L.sleptAt > L.wokeAt);
+  let changed = false;
+  if (asleep && !recorded) { if (L.wokeAt !== undefined) L.dayH = now - L.wokeAt; L.sleptAt = now; changed = true; }
+  else if (!asleep && recorded) { L.wokeAt = now; changed = true; }
+  if (L.wokeAt !== undefined) L.awakeH = now - L.wokeAt;
+  if (changed && L.dayH !== undefined) setHunger(c, L, P);
 }
 
 /** Intake while feeding (kcal/h): ripe fruit at the animal's skill and size (as intake.ts fruitRate), plus milk while unweaned. */

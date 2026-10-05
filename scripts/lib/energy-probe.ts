@@ -15,6 +15,7 @@ import { isCarried, V } from '../../src/sim/candidates';
 import { paramsOf, type Params } from '../../src/sim/params';
 import { isTreeId, ix, type ChimpX } from '../../src/sim/state';
 import { nurseTap, type NurseEvent } from '../../src/sim/execution';
+import { hzFinish, hzStart, hzStep, hzTapOff, hzTapOn, type HzResult, type HzState } from './feed-horizon-probe';
 import type { Chimp, World } from '../../src/types';
 
 const DAY = 5760;
@@ -101,6 +102,8 @@ export interface EnergyAcc {
    * window day, fields in ANIMAL_DAY_FIELDS order (seed order, then day order, as measured).
    */
   animalDays?: number[][];
+  /** Stage E1t (docs/staging/e1t-prereg.md §3), only when asked (energyStart's `feedHorizon`): one result per seed (feed-horizon-probe.ts). */
+  feedHorizon?: HzResult[];
 }
 export const newEnergyAcc = (): EnergyAcc => ({
   acc: Object.fromEntries(CLASSES.map(c => [c, blank()])) as Record<Cls, Acc>, inf: Object.fromEntries(BINS.map(b => [b, blankInf()])), wean: Object.fromEntries(BINS.map(b => [b, blankWean()])),
@@ -147,6 +150,8 @@ export interface EnergySeedState {
   prevAct: Map<number, string>; resAtDay: Map<number, number>;
   /** Stage E1r: the per-animal daily records' state (absent unless asked). */
   ad?: AnimalDayState;
+  /** Stage E1t: the feeding horizon readout's state (absent unless asked). */
+  hz?: HzState;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -296,7 +301,7 @@ const fieldPerKcalOf = (P: Params): Record<FoodKind, number> => ({ drupe: P.ledg
  * Starts measuring a world at the end of its burn-in (after any --term-births scenario): the seed's state, with the
  * living counted into `a`. Install the taps (energyTapsOn) before the first measured tick.
  */
-export function energyStart(w: World, a: EnergyAcc, seed: number, days: number, opts: { animalDays?: boolean } = {}): EnergySeedState {
+export function energyStart(w: World, a: EnergyAcc, seed: number, days: number, opts: { animalDays?: boolean; feedHorizon?: boolean } = {}): EnergySeedState {
   const P = paramsOf(w), on = P.energyLedger === 1;
   // growth, gestation and milk are charged per ecological tick at their natural rate: at ageRate > 1 (life course) the
   // ledger undercounts them by that factor, so its budgets would be wrong (docs/simulation.md, energy ledger)
@@ -322,6 +327,7 @@ export function energyStart(w: World, a: EnergyAcc, seed: number, days: number, 
     for (const c of w.chimps) if (c.alive) { const L = ix(c).en; if (L) st.ad.books.set(c.id, [L.in, L.fec ?? 0, L.fin ?? 0, L.dmIn ?? 0]); st.ad.pos.set(c.id, [c.position[0], c.position[2]]); }
     a.animalDays ??= [];
   }
+  if (opts.feedHorizon) st.hz = hzStart(w, seed); // stage E1t
   return st;
 }
 
@@ -381,14 +387,16 @@ function tapNurse(st: EnergySeedState, a: EnergyAcc, P: Params, c: Chimp, m: Chi
 export function energyTapsOn(st: EnergySeedState, a: EnergyAcc, w: World): void {
   energyTap.fn = (c, term, kcal, kind) => tapEnergy(st, a, paramsOf(w), c, term as EnergyTerm | 'eaten' | 'suckled', kcal, kind);
   nurseTap.fn = (c, m, ev) => tapNurse(st, a, paramsOf(w), c, m, ev);
+  if (st.hz) hzTapOn(st.hz, w); // stage E1t: the rules tap
 }
 /** Disconnects the taps (while another world is ticked, and at the end). */
-export function energyTapsOff(): void { energyTap.fn = null; nurseTap.fn = null; }
+export function energyTapsOff(): void { energyTap.fn = null; nurseTap.fn = null; hzTapOff(); }
 
 /** Before tickWorld of measured tick `i` (0 at the end of the burn-in): the light and window day the taps file under. */
 export function energyBefore(st: EnergySeedState, w: World, i: number): void {
   st.light = w.environment.daylight > 0.1;
   st.curDay = Math.floor(i / DAY);
+  if (st.hz) st.hz.curDay = st.curDay; // stage E1t
 }
 
 /** After tickWorld of measured tick `i`. */
@@ -592,6 +600,7 @@ export function energyAfter(st: EnergySeedState, ea: EnergyAcc, w: World, i: num
   }
   // stage E1r: the per-animal daily records (after the tick; closed at the day's last tick)
   if (st.ad) { adStep(st, w, P); if (i % DAY === DAY - 1) adFlush(st, ea, w, P); }
+  if (st.hz) hzStep(st.hz, w); // stage E1t
   // the reserve trajectory: this seed's daily mean reserves ÷ store by class (energy-diagnose.ts averaged the seeds in
   // place; the report now averages them from the per-seed values with the same arithmetic, in the same order)
   if (on && i % DAY === DAY / 2) for (const n of ['adult male', 'female, other', 'female, lactating', 'juvenile 5–12 y', 'infant 2–5 y', 'infant 0.5–2 y', 'infant < 0.5 y'] as Cls[]) {
@@ -605,6 +614,7 @@ export function energyAfter(st: EnergySeedState, ea: EnergyAcc, w: World, i: num
 export function energyFinish(st: EnergySeedState, a: EnergyAcc, w: World): void {
   const P = paramsOf(w), e1p = a.e1p, seed = st.seed, days = st.days;
   if (st.ad) adFlush(st, a, w, P); // stage E1r: a window that ends inside a day
+  if (st.hz) (a.feedHorizon ??= []).push(hzFinish(st.hz)); // stage E1t
   // stage E1p: velocity (kg per bio-year) and reserve change (÷ store per day) of each tracked animal, in the group it started in
   for (const [id, s0] of st.pStart) {
     const c = w.chimps.find(k => k.id === id)!;
@@ -677,6 +687,7 @@ export function mergeEnergy(parts: EnergyAcc[]): EnergyAcc {
     addInto(m.deaths, p.deaths); addInto(m.deathsByClass, p.deathsByClass);
     m.births += p.births; m.livingStart += p.livingStart; m.livingEnd += p.livingEnd;
     if (p.animalDays) { const rows = (m.animalDays ??= []); for (const r of p.animalDays) rows.push(r.slice()); } // stage E1r
+    if (p.feedHorizon) (m.feedHorizon ??= []).push(...p.feedHorizon.map(clone)); // stage E1t
   }
   return m;
 }

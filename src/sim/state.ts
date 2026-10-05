@@ -194,6 +194,13 @@ export interface EnergyLedger {
    */
   eAvg?: number; sBed?: number; sWake?: number; slept?: number; outAt?: number;
   /**
+   * Stage E1t (horizonLived; energy.ts livedDay), present only with that switch on, once the animal's sleep has been
+   * recorded: the eco-hour (world.time) of its last waking and of its last sleep onset, the length of its last complete
+   * waking day (h, from a waking to the next sleep onset), and the hours since its last waking as of its last tick (so
+   * the drive's pure readers need no clock). Plain data inside `en`, so chimp.sim's layout is unchanged.
+   */
+  wokeAt?: number; sleptAt?: number; dayH?: number; awakeH?: number;
+  /**
    * Stage E1f (ledgerGrowPotential), present only while the animal is below adult mass with that switch on: the day-long
    * average (kcal/h) of everything spent except growth, and `out` at the last tick.
    */

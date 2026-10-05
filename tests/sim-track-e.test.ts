@@ -20,6 +20,7 @@ const TRACK_E_SWITCHES = [
   'callValue', // E4c
   'endoRhythm', // E4d
   'ledgerSatiationReserve', 'ledgerLactGut', // E1i
+  'horizonLived', // E1t
   'huntValue', // E4e
   'sleepChimp', // E2f
   'preyKanyawara', // E4f
