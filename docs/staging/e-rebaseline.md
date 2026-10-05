@@ -475,7 +475,7 @@ worse on the old bands' held-out rows (+1.0; +2.0 without the rare rows).
 **What it means.** Every Track E keep decision so far was made on 60-day windows starting in late October, before the
 model's lean season; none could see this. The registered 6-month rule passed S39 because the deaths come later.
 
-## Walk-back at 12 months (registered 5 October 2026, 10:40, before its runs; the user's rule for part C2: "If it fails,
+## Walk-back at 12 months (registered 5 October 2026, 10:20, before its runs; the user's rule for part C2: "If it fails,
 switch off its latest switches one at a time to find the cause; don't re-run past decisions")
 
 **Arms (one run each, seeds 48, 7, 21, 5, 11; 30 + 365 days; the runner from bench-run and bench-run2 at 63d699a):** the
