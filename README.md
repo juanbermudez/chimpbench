@@ -78,6 +78,7 @@ Model scores are softmax scores, uncalibrated for chimpanzee behavior. A working
 - **Mouse:** drag to pan, right-drag to orbit, scroll to zoom. Click a chimp, roster entry, event or minimap point to select.
 - **Playback:** Space pauses; `1`–`6` pick speeds.
 - **Camera:** `F` focuses, `C` toggles close view, `V` toggles the cinematic director, `R` returns to the overview (strategy view). The overview shows a map scale bar; Reset camera frames the whole map.
+- **Range map:** the camera menu (views, Reset camera) and the layer toggles run across its top; hover a control for what it does. Scroll or pinch over the map to zoom (1–8×), drag to pan when zoomed; with the map focused, `+` `−` zoom and `0` shows the whole map.
 - **Panels:** `T` opens the society overlay (kinship forest, dominance ladders, bond network, alpha history). `E` opens experiments, `M` the model panel, `I` the inspector. `L` toggles labels. `[` and `]` cycle chimps. Esc closes.
 - **Sound:** starts on your first click or key (browser autoplay rule). `S` or the speaker button mutes; Settings › Sound has Master, Ambience, Animals and Weather volumes.
 - **Simulations:** the name in the menu bar opens Simulations (new, open, rename, duplicate, delete, export, import). `Ctrl`/`⌘`+`S` saves now.

@@ -21,6 +21,8 @@ import { toggleSound } from './sound';
 import { morph, setAttr, setText } from './morph';
 import { createSimulations } from './simulations';
 import { createScaleBar } from './scalebar';
+import { installTooltips } from './tooltip';
+import { menuButton } from './menu';
 
 // UI composition root. Owns UI state and wires components; knows nothing
 // about how the world is simulated or rendered (see UiDeps). main.ts and the
@@ -55,9 +57,14 @@ export interface Ctx {
   refresh(): void;
 }
 
-const LAYERS: { id: Layer; label: string; ic: string; key?: string }[] = [
-  { id: 'canopy', label: 'Canopy', ic: 'canopy' }, { id: 'territory', label: 'Ranges', ic: 'map' }, { id: 'perception', label: 'Perception', ic: 'eye' },
-  { id: 'labels', label: 'Labels', ic: 'tag', key: 'L' }, { id: 'social', label: 'Bonds', ic: 'link' }, { id: 'weather', label: 'Weather', ic: 'rain' },
+// Tips say what each layer draws in the forest (scene.ts setLayer and the render modules it gates).
+const LAYERS: { id: Layer; label: string; ic: string; key?: string; tip: string }[] = [
+  { id: 'canopy', label: 'Canopy', ic: 'canopy', tip: 'Canopy: tree crowns. Turn off to see under the leaves' },
+  { id: 'territory', label: 'Ranges', ic: 'map', tip: 'Ranges: each community’s home range, drawn on the forest floor' },
+  { id: 'perception', label: 'Perception', ic: 'eye', tip: 'Perception: what the selected chimp sees and remembers' },
+  { id: 'labels', label: 'Labels', ic: 'tag', key: 'L', tip: 'Labels: names over every chimp' },
+  { id: 'social', label: 'Bonds', ic: 'link', tip: 'Bonds: arcs from each chimp to its mother, allies and closest partners' },
+  { id: 'weather', label: 'Weather', ic: 'rain', tip: 'Weather: rain, lightning, sun shafts and fireflies' },
 ];
 const VIEWS: { id: ViewMode; label: string; ic: string; key: string }[] = [
   { id: 'rts', label: 'Overview', ic: 'rts', key: 'R' }, { id: 'close', label: 'Close view', ic: 'target', key: 'C' }, { id: 'cinematic', label: 'Cinematic', ic: 'film', key: 'V' },
@@ -83,12 +90,13 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
       <section class="panel glass p-side" data-occluder><div class="side-sec p-feed"></div></section>
       <aside class="dock glass" hidden data-occluder><div data-dock="experiments" role="dialog" aria-label="Field experiments" tabindex="-1"></div><div data-dock="model" role="dialog" aria-label="Decision model" tabindex="-1"></div></aside>
       <section class="panel glass p-map" data-occluder aria-label="Range map, camera and layers">
-        <div class="map-top"><h2 class="eyebrow">Range map</h2>
-          <div class="map-views" role="radiogroup" aria-label="Camera">${VIEWS.map(v => `<button role="radio" data-viewmode="${v.id}" aria-label="${v.label} (${v.key})" title="${v.label} (${v.key})">${icon(v.ic)}</button>`).join('')}<span class="mv-sep"></span><button data-act="reset-camera" aria-label="Reset camera" title="Reset camera">${icon('focus')}</button></div>
+        <div class="map-top">
+          <div class="cam"><button class="cam-btn" data-act="camera-menu" aria-haspopup="menu" aria-expanded="false" aria-controls="cam-menu"></button>
+            <div class="cam-menu" id="cam-menu" role="menu" aria-label="Camera" hidden>${VIEWS.map(v => `<button role="menuitemradio" data-viewmode="${v.id}" aria-checked="false" tabindex="-1">${icon(v.ic)}<span>${v.label}</span><kbd>${v.key}</kbd></button>`).join('')}<div class="cm-sep" role="separator"></div><button role="menuitem" data-act="reset-camera" tabindex="-1">${icon('focus')}<span>Reset camera</span></button></div>
+          </div>
+          <div class="map-layers" role="group" aria-label="Layers">${LAYERS.map(l => `<button data-layer="${l.id}" aria-label="${l.label}${l.key ? ` (${l.key})` : ''}" data-tip="${esc(l.tip)}"${l.key ? ` data-key="${l.key}"` : ''}>${icon(l.ic)}</button>`).join('')}</div>
         </div>
-        <div class="map-body"><div class="map-host"></div>
-          <div class="map-layers" role="group" aria-label="Layers">${LAYERS.map(l => `<button data-layer="${l.id}" aria-label="${l.label}${l.key ? ` (${l.key})` : ''}" title="${l.label}${l.key ? ` (${l.key})` : ''}">${icon(l.ic)}</button>`).join('')}</div>
-        </div>
+        <div class="map-host"></div>
       </section>
     </aside>
     <button class="side-peek glass" data-act="open-sidebar" aria-controls="left-sidebar" aria-keyshortcuts="B" aria-label="Show sidebar: field log and map (B)" title="Show sidebar (B)" data-occluder>${icon('chevronR')}<span>Field log</span><kbd>B</kbd></button>
@@ -252,10 +260,22 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
   const modelPanel = createModelPanel(q('[data-dock="model"]'), ctx);
   const settings = createSettings(q<HTMLDialogElement>('dialog.settings'), ctx);
   const sims = createSimulations(q<HTMLDialogElement>('dialog.sims'), ctx);
+  // Camera views and Reset camera live in one menu at the start of the map card's control row; choices are handled
+  // by the delegated click handler below (data-viewmode, data-act). Every [data-tip] control shares one tooltip.
+  menuButton(q('.cam-btn'), q('#cam-menu'));
+  installTooltips();
   feed.prime();
 
+  let camShown = '';
   function syncDock() {
-    root.querySelectorAll<HTMLElement>('[data-viewmode]').forEach(b => { const on = b.dataset.viewmode === state.view; b.setAttribute('aria-checked', String(on)); b.tabIndex = on ? 0 : -1; });
+    root.querySelectorAll<HTMLElement>('[data-viewmode]').forEach(b => setAttr(b, 'aria-checked', String(b.dataset.viewmode === state.view)));
+    // The camera menu's trigger shows the current view.
+    if (camShown !== state.view) {
+      camShown = state.view;
+      const v = VIEWS.find(x => x.id === state.view) ?? VIEWS[0], b = q('.cam-btn');
+      b.innerHTML = `${icon(v.ic)}${icon('chevron', 'cam-chev')}`;
+      b.setAttribute('aria-label', `Camera: ${v.label}`); b.dataset.tip = `Camera: ${v.label}`;
+    }
     root.querySelectorAll<HTMLElement>('[data-layer]').forEach(b => b.setAttribute('aria-pressed', String(state.layers[b.dataset.layer as Layer])));
   }
   function syncPanels() {
@@ -452,7 +472,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
   });
 
   /** Per-refresh shared state: selection validity, rank moves, night and highlight flags, panel visibility. */
-  const shown = { left: true, insp: true, bar: true };
+  const shown = { left: true, insp: true, bar: true, map: true };
   function prepare() {
     const w = deps.getWorld();
     if (!w.chimps.some(c => c.id === state.selectedId)) state.selectedId = defaultSelection(w);
@@ -470,6 +490,8 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     return {
       bar: !cine,
       left: !covered && !state.dock && (narrow ? leftOpen : state.sidebarOpen),
+      // The range map card stays in its corner when the field log collapses (B) or a dock takes the log's place.
+      map: !covered && (narrow ? leftOpen : true),
       insp: !covered && (narrow ? state.mobileSheet : state.inspectorOpen),
     };
   }
@@ -477,7 +499,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
   const STEPS: ((force: boolean) => void)[] = [
     force => { if (force || visibility().bar) { hud.update(); if (timeOpen) timebar.update(); } },
     force => feed.update(visibility().left, force || !shown.left),
-    () => { const v = visibility().left; if (v) minimap.update(); shown.left = v; },
+    () => { const v = visibility(); if (v.map) minimap.update(); shown.left = v.left; shown.map = v.map; },
     force => { const v = visibility().insp; if (v) updateRight(force || !shown.insp); else if (state.view !== 'cinematic') updatePeek(); shown.insp = v; },
     force => {
       const w = deps.getWorld();
@@ -582,6 +604,8 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     (window as unknown as { __MGOGO_UI__: object }).__MGOGO_UI__ = {
       mutations: () => ({ ...m, seconds: (performance.now() - m.since) / 1000 }),
       reset() { m = zero(); },
+      /** Range map zoom and its habitat-layer build times. */
+      map: () => minimap.debug(),
     };
   }
 
@@ -593,7 +617,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
       if (state.view !== 'cinematic') hud.frame(now);
       scaleBar.frame();
       syncFollow();
-      if (shown.left) minimap.frame();
+      if (shown.map) minimap.frame();
       if (step >= STEPS.length) { if (now - lastUi < 250) return; lastUi = now; prepare(); step = 0; }
       STEPS[step++](false);
     },

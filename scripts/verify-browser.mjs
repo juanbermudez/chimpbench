@@ -188,7 +188,8 @@ try {
   assert.equal((await snap()).view, 'rts');
   const barNear = await page.locator('.scalebar').textContent();
   assert.ok(await page.locator('.scalebar').isVisible() && / m$/.test(barNear), `strategy scale bar (${barNear})`);
-  await page.locator('[data-act="reset-camera"]').click(); await page.waitForTimeout(1500);
+  // Reset camera lives in the range map's camera menu.
+  await page.locator('[data-act="camera-menu"]').click(); await page.locator('[data-act="reset-camera"]').click(); await page.waitForTimeout(1500);
   const barFar = await page.locator('.scalebar').textContent();
   assert.equal(barFar, '1 km', 'whole-map scale bar');
   await shot('e2e-overview');
