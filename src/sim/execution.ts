@@ -28,6 +28,7 @@ import { markDanger, noteContact } from './contact';
 import { cellAt, gridOf, pressureAt, rangeEdge, sectorDir, useLevels } from './territory';
 import { patrolRoute, patrolValueOn } from './patrol';
 import { bodyState, crownMoveOn, gaitOn, runSpeedOf, sameCrown, tripSpeed, walkSpeedOf, youngStage } from './gait';
+import { tripAct, tripAte, tripYieldOn } from './experience';
 import { GROOM_BOND_ACTOR, GROOM_BOND_RECIP, GROOM_SOCIAL_ACTOR, GROOM_SOCIAL_RECIP, upkeepOnly } from './upkeep';
 
 // Bout durations in eco-minutes [min, max] (registry bout*Min / bout*Max).
@@ -228,6 +229,10 @@ export function startAction(world: World, c: Chimp, cand: Candidate, source: Dec
   const x = ix(c);
   const meta = candidateMeta.get(cand) ?? { v: V.NONE, aux: -1 };
   const same = c.action === cand.action && c.targetId === cand.targetId;
+  // stage E3g (experienceValue bit 1; experience.ts): a trip opens an episode, the first act that is neither the trip nor
+  // feeding at its crown closes it, and what the animal ate there teaches it what its trips deliver
+  if (tripYieldOn(paramsOf(world))) tripAct(world, c, paramsOf(world), cand.action, cand.targetId,
+    cand.action === 'travel' ? (meta.v === V.TREE ? cand.targetId : meta.v === V.CALLER ? (x.jt !== undefined && x.jt > 0 ? x.jt : -1) : -1) : -1, (meta as { bel?: number[] | null }).bel);
   // stage E2e (nestAudience, iteration 2): an own trip to a tree from its own finished nest may become an attempt; if it
   // is given up the animal stays in that nest (departWait), so the nest it leaves is kept until departAttempt decides
   const fromNest = paramsOf(world).nestAudience === 1 && !same && c.action === 'nest' && x.phase >= 2 && c.nest !== null
@@ -1077,7 +1082,7 @@ function forageTick(world: World, c: Chimp): void {
   let intake: number;
   if (lazy) intake = eatFruit(world, t, want);
   else { intake = Math.min(t.fruit, want); t.fruit -= intake; }
-  if (led) eat(c, P, intake * kcalPerFruit, fig ? 'fig' : 'drupe');
+  if (led) { const took = eat(c, P, intake * kcalPerFruit, fig ? 'fig' : 'drupe'); if (tripYieldOn(P)) tripAte(c, t.id, took); } // stage E3g
   else c.hunger = clamp(c.hunger - intake * P.fruitHungerFactor);
   if (!waterOn(P)) c.thirst = clamp(c.thirst - intake * P.fruitThirstFactor); // stage E2g: fruit water is booked by eat (water.ts)
   c.skills.foraging = clamp(c.skills.foraging + (1 - c.skills.foraging) * TICK_HOURS * 0.002);

@@ -50,6 +50,7 @@ const TRACK_E_SWITCHES = [
   'departValue', // E5f
   'bodyRules', // E4o
   'aggressionGaps', // E4q
+  'experienceValue', // E3g
 ] as const;
 
 test('Track E switches are all 0 by default in both profiles', () => {

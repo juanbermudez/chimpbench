@@ -8084,6 +8084,37 @@
    "notes": "Digest priority of transfer events (higher is kept first)."
   },
   {
+   "id": "experienceValue",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    3
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    3
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/staging/e3g-prereg.md (E3g diagnosis): under redecideValue 2 the keep test carries S28's extra trips; trips deliver 13-31% of the bout energy they are valued at (two thirds never feed at their target, fed trips eat about a third of it); 57% of the extra hunt impulses are re-sightings of a group perceived within the hour",
+    "docs/research.md: charnov1976 (the marginal value theorem: leaving is judged against the rate the environment yields, an average the forager learns)"
+   ],
+   "clock": "none",
+   "symbol": "P.experienceValue",
+   "file": "src/sim/experience.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage E3g switch (docs/staging/e3g-prereg.md §5), a sum of bits. 1: a trip is worth the meal the animal's trips deliver. Each animal keeps chimp.sim.ty, the share of the bout energy it valued its trips at (intake.ts netRateShare's E: the believed crop's share or the gut room) that they delivered at their target crown (the kcal it ate there before doing something else, capped at the bout energy; 0 for a trip that never fed there), learned at the end of each trip (tripYieldRate); every trip's food term (own and known trees, a joined trip's goal, a caller's crown) is valued at ty times its bout energy (the expected meal and its eating time); crowns in view are valued as before. Starts at 1 (the animal trusts its beliefs). 2: a colobus group the animal perceived at one of its decision points within reunionH is not met anew, so it raises no new hunt impulse (perception.ts; the same group seen again carries no new information for the hunt decision). No counted entry is read less (a correction). Results (e3g-prereg.md §6): 1 and 3 recorded null (trips valued at what they delivered collapsed travel and reserves); 2 a provisional keep candidate as a correction (S28 quick: T-HUN-1 47.8 -> 29.9, sums inside noise). 0 = today, bit for bit. Design."
+  },
+  {
    "id": "fallbackCapH",
    "group": "feeding",
    "value": 0,
@@ -22744,6 +22775,32 @@
     "field": 0
    },
    "notes": "Stage C7b (field; c7b-prereg 3.4): a trip to a remembered or known tree is worth worth x Tf / (Tw + Tf) instead of worth - d / travelDistScaleM, with Tw = d / walkMps and Tf = min(believed crop, hunger / fruitHungerFactor) / fruitIntakePerH: the marginal value theorem's intake rate (charnov1976) with a need cap (design). No free parameter. Replaces the C7a linear cost fitted to 60,000 m (C7a review finding 4). 0 = linear cost. Pre-registered field value 1; off by default after the C7b direction check (c7b-prereg addendum): on C7a it raised straightness (0.19 -> 0.25) and party size (2.38 -> 2.70) but shortened days (30-min path 2,133 -> 1,389 m) and the furthest point of the day (628 -> 454 m)."
+  },
+  {
+   "id": "tripYieldRate",
+   "group": "decision",
+   "value": 0.1,
+   "units": "share per trip",
+   "range": [
+    0.05,
+    0.2
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.tripYieldRate",
+   "file": "src/sim/experience.ts",
+   "profiles": {
+    "compressed": 0.1,
+    "field": 0.1
+   },
+   "notes": "Stage E3g (experienceValue bit 1; docs/staging/e3g-prereg.md §5): the step by which an animal's expectation of what its trips deliver moves toward each trip's outcome (an exponential average over about its last ten trips, a few hours of an adult's trips). Design: a memory length, not fitted; no source gives a chimpanzee's learning rate for patch returns."
   },
   {
    "id": "udCellM",

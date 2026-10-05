@@ -66,6 +66,10 @@ export interface ChimpX {
   rgIntent?: Intent;
   /** Stage E3d (redecideValue): below rgMinAge, the decision count of the decision that chose the current act (its jitter; rg.ts argmaxKeep). */
   jv?: number;
+  /** Stage E3g (experienceValue bit 1; experience.ts): the share of a trip's valued bout energy this animal's trips deliver (absent until its first trip ends). */
+  ty?: number;
+  /** Stage E3g: the open trip episode, [target crown, bout energy valued, kcal eaten there, the trip's own target id] (absent otherwise). */
+  tt?: number[];
   trees: number[]; fruitNear: number; preyId: number; stims: number[];
   newcomers: number;
   // social bookkeeping
@@ -264,7 +268,7 @@ export type SimWorld = World & { sim: SimState };
  * ChimpX and SimState keys that exist only once their mechanism has fired (so worlds with the switch off keep their
  * shape and hashes). The save check (src/persist/envelope.ts worldShapeProblem) ignores them.
  */
-export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'tryNest', 'dfa', 'en', 'wat', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk', 'cx', 'cxc', 'cn', 'asl', 'phAt', 'phX', 'phZ', 'ard', 'wr', 'upk', 'jt', 'nbm', 'jv'];
+export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'tryNest', 'dfa', 'en', 'wat', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk', 'cx', 'cxc', 'cn', 'asl', 'phAt', 'phX', 'phZ', 'ard', 'wr', 'upk', 'jt', 'nbm', 'jv', 'ty', 'tt'];
 export const OPTIONAL_SIM: readonly string[] = ['fission', 'stormAt'];
 
 export function newX(): ChimpX {

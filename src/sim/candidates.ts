@@ -20,6 +20,7 @@ import { huntRate, huntValueOn } from './huntvalue';
 import { joinShare, leadValue, patrolValueOn } from './patrol';
 import { awakeInNest, byIdIn, index, isTreeId, ix, NEVER, TREE_ID0, treesNear, simOf } from './state';
 import { bodyState, crownAt, crownMoveOn, gaitOn, riderKcal, runSpeedOf, tripBodyOn, tripClimbH, tripSpeed } from './gait';
+import { tripYieldOf } from './experience';
 
 // Variants refine an action's meaning (why a charge happens) for execution and reason text.
 export const V = {
@@ -447,12 +448,15 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
   const tbc = tripBodyOn(P);
   // stage E1q (crownMove; gait.ts): the crown the animal is in, reached through it (moveTo), so its climb starts at its height
   const inCrown = crownMoveOn(P) ? crownAt(world, px, c.position[1], pz) : undefined;
+  // stage E3g (experienceValue bit 1; experience.ts): a trip (travel true) is worth the meal the animal's trips deliver
+  const tripK = tripYieldOf(c, P);
   const rateWorth = (t: Tree, crop: number, feeders: number, d: number, travel = true): number => {
+    const yk = travel ? tripK : 1;
     // the climb: to the crown from the ground, or what is left of it inside this crown
     const crownY = t.height * CROWN_Y, climb = c.targetId === t.id || t === inCrown ? crownY - c.position[1] : crownY;
     const xh = tbc ? tripClimbH(c, P, d, climb) : 0, ck = tbc ? riderKcal(world, c, P, d, climb, travel) : 0;
-    if (dark && (tripLight(world, P, d, crownY, _tl, spd).pace < 1 || _tl.see < 1)) return netRateShare(c, P, crop, feeders, d, climb, _tl.pace, _tl.see, spd, xh, ck);
-    return netRateShare(c, P, crop, feeders, d, climb, 1, 1, spd, xh, ck);
+    if (dark && (tripLight(world, P, d, crownY, _tl, spd).pace < 1 || _tl.see < 1)) return netRateShare(c, P, crop, feeders, d, climb, _tl.pace, _tl.see, spd, xh, ck, yk);
+    return netRateShare(c, P, crop, feeders, d, climb, 1, 1, spd, xh, ck, yk);
   };
   // stage E3e (choiceBelief; docs/staging/e3e-prereg.md §5.1): a trip to a tree out of sight carries the animal's belief
   // about its crop (the crop it values the tree at, the hours since it last saw the tree), so rg.ts can draw the crop
@@ -889,8 +893,9 @@ export function treeFoodWorth(world: World, c: Chimp, P: Params, t: Tree, crop: 
   const spd = tripSpeed(world, c, P); // stage E2i (walkGait): gait.ts, walkMps when off
   // stage E2j (tripBodyCost): the climbing's time and a riding dependent's metres, as computeCandidates values a trip
   const tbc = tripBodyOn(P), xh = tbc ? tripClimbH(c, P, d, climb) : 0, ck = tbc ? riderKcal(world, c, P, d, climb, true) : 0;
-  if (darkOn(P) && (tripLight(world, P, d, crownY, _tlB, spd).pace < 1 || _tlB.see < 1)) return fd * netRateShare(c, P, crop, feeders, d, climb, _tlB.pace, _tlB.see, spd, xh, ck);
-  return fd * netRateShare(c, P, crop, feeders, d, climb, 1, 1, spd, xh, ck);
+  const yk = tripYieldOf(c, P); // stage E3g (experienceValue bit 1): a trip at the meal the animal's trips deliver
+  if (darkOn(P) && (tripLight(world, P, d, crownY, _tlB, spd).pace < 1 || _tlB.see < 1)) return fd * netRateShare(c, P, crop, feeders, d, climb, _tlB.pace, _tlB.see, spd, xh, ck, yk);
+  return fd * netRateShare(c, P, crop, feeders, d, climb, 1, 1, spd, xh, ck, yk);
 }
 /** Party following runs: under cohesionValue, or (before E5a) while partyFollowW > 0, its gate (then partyFollowW is not read). */
 export const partyOn = (P: Params): boolean => cohesionOn(P) || P.partyFollowW > 0;
