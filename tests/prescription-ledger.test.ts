@@ -243,7 +243,7 @@ const HIDDEN_TIMERS: [string, string, string][] = [
   ['candidates.ts', 'aggrBit(P, 1) || time - x.lastAgg > 1.5', 'interval'], // aggression cooldown (E4q: the piece follows the bit's guard)
   ['candidates.ts', 'aggrBit(P, 2) || time - x.lastAgg > 0.2', 'interval'], // charge at strangers (E4q, as above)
   ['candidates.ts', 'time - x.lastMate > 0.3', 'interval'],         // a female's mating gap
-  ['candidates.ts', 'const callReady = time - x.lastCall > 0.5', 'interval'], // food and reunion calls
+  ['candidates.ts', 'callGapOn(P, 1)) || time - x.lastCall > 0.5', 'interval'], // food and reunion calls (E5g: the piece follows the bit's guard)
   ['candidates.ts', '!cv && time - x.lastCall > 1.5', 'interval'],  // chorus gap
   ['execution.ts', 'dominates(c, r) && time - x.lastAgg > 0.25', 'interval'], // mate guard's chase
   ['execution.ts', "actionTime % 60 === 0 && c.actionTime > 0) emitCall(world, c, 'alarm-hoo')", 'interval'], // alarm hoos (judgement call)
@@ -266,7 +266,7 @@ test('lint (E0b): callValue takes the call gaps out; redecideValue the grooming 
     assert.equal(has({}, s), 1, s);
     assert.equal(has({ callValue: 1 }, s), 0, `${s} with callValue`);
   }
-  assert.equal(has({ callValue: 1 }, 'const callReady = time - x.lastCall > 0.5'), 1, 'the reunion call keeps its gap under callValue');
+  assert.equal(has({ callValue: 1 }, 'callGapOn(P, 1)) || time - x.lastCall > 0.5'), 1, 'the reunion call keeps its gap under callValue');
   const groom = '(time >= x.actEnd ? -0.25 : 0.35)';
   assert.deepEqual([{}, { groomDrive: 1 }, { groomNeedDyad: 1 }, { redecideValue: 1 }, { redecideValue: 2, groomDrive: 1 }].map(o => has(o as Overrides, groom)), [1, 1, 1, 0, 0]);
   assert.equal(timers({}).length - timers({ redecideValue: 2 }).length, 1);
