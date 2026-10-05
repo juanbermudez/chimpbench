@@ -167,9 +167,9 @@ export function runBenchSeed(job: BenchJob, log: (msg: string) => void = () => {
       }
       s.prevHour = w.hour;
       viabilityStep(s.via!, w, i);
+      if (s.tr) truthStep(s.tr, w, s.en?.st.milkTick); // before energyAfter clears the tick's milk
       if (s.en) energyAfter(s.en.st, s.en.acc, w, i);
       if (s.rh) rhythmStep(s.rh, w, i);
-      if (s.tr) truthStep(s.tr, w);
       s.done++;
     }
   } finally { hooksOff(); }

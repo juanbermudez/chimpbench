@@ -44,7 +44,6 @@ export const NO_READOUT: Readonly<Record<string, string>> = {
   'T-END-10': 'no readout of affiliation after grooming by partner',
   'T-END-11': 'no readout of affiliation after food sharing',
   'T-END-12': 'no readout yet in the single pass (scripts/endocrine-diagnose.ts measures its intergroup half on its own world)',
-  'T-INF-1': 'the row gives Gombe\'s value for two of its 0.5-y blocks only (1.5-2 y, 4.5-5 y), so "within a factor 1.5 of the Gombe value in each block" cannot be tested',
   'T-INF-4': 'no mass-for-age readout (life history: NEEDS_YEAR, insufficient below 365 days anyway)',
 };
 
@@ -74,6 +73,8 @@ export interface TruthState {
   fDay: number; fDrink: number; fEvents: number; atWater: Map<number, boolean>;
   /** T-INF-2, T-INF-5: unweaned infants' daylight ticks outside the night nest, those in the nurse act, bouts begun; each infant's last nurse tick. */
   infTicks: number; infNurse: number; infBouts: number; lastNurse: Map<number, number>;
+  /** T-INF-1: per 0.5-y block (0–5 y), unweaned infants' daylight ticks outside the night nest and those swallowing their own food; each infant's ledger intake at the last tick. */
+  inf1T: number[]; inf1E: number[]; infIn: Map<number, number>;
   /** T-INF-3: ages at weaning of offspring weaned in the window; the weaned flag at the last tick. */
   weanAges: number[]; weaned: Map<number, boolean>;
   /** T-INF-6: mothers' daylight ticks outside the night nest with an unweaned infant of 1–2 y and 2–3 y, those grooming it; those infants' ticks and ticks grooming anyone. */
@@ -99,7 +100,7 @@ export function truthStart(w: World): TruthState {
   const st: TruthState = {
     prevAlt: w.environment.sunAltitude, prevRise: w.environment.sunAltitude > sunAltitudeBefore(w), sunset: NaN, noon: NaN,
     lacTicks: 0, lacFeed: 0, e8: new Map(), prevOut: new Map(), nest: new Map(), builds: [], leafAll: 0, leafLate: 0, heat: {}, fDay: 0, fDrink: 0, fEvents: 0, atWater: new Map(),
-    infTicks: 0, infNurse: 0, infBouts: 0, lastNurse: new Map(), weanAges: [], weaned: new Map(), mt: [0, 0], mg: [0, 0], it: [0, 0], ig: [0, 0],
+    infTicks: 0, infNurse: 0, infBouts: 0, lastNurse: new Map(), inf1T: Array(10).fill(0), inf1E: Array(10).fill(0), infIn: new Map(), weanAges: [], weaned: new Map(), mt: [0, 0], mg: [0, 0], it: [0, 0], ig: [0, 0],
     r1: { n: 0, contact: 0 }, pairLast: new Map(), r2: {}, escalatedAt: new Map(), r3: { all: 0, coalition: 0 }, version: new Map(), prevKey: new Map(),
     dayFeed: new Map(), feedWith: [], feedWithout: [], male: new Map(), stressWith: [], stressWithout: [], arousalPatrol: [], arousalOther: [], hoots: new Map(), seenCall: w.nextId, prof: new Map(), tick: 0,
   };
@@ -144,8 +145,11 @@ function onContest(st: TruthState, w: World, e: ContestTrace): void {
   }
 }
 
-/** One measured tick, after tickWorld (and the observers). */
-export function truthStep(st: TruthState, w: World): void {
+/**
+ * One measured tick, after tickWorld (and the observers). `milk`: the energy readout's milk drunk this tick by infant
+ * (scripts/lib/energy-probe.ts milkTick, before it is cleared), so own food is the ledger's intake less milk (T-INF-1).
+ */
+export function truthStep(st: TruthState, w: World, milk?: Map<number, number>): void {
   const P = paramsOf(w), env = w.environment, alt = env.sunAltitude, rising = alt > st.prevAlt, time = w.time;
   const isSunset = st.prevAlt >= H0 && alt < H0, isNoon = st.prevRise && !rising && alt > 0, isMidnight = !st.prevRise && rising && alt < 0;
   if (isSunset) st.sunset = time;
@@ -205,8 +209,15 @@ export function truthStep(st: TruthState, w: World): void {
     const was = st.weaned.get(c.id);
     if (was === false && x.weaned) st.weanAges.push(c.age);
     st.weaned.set(c.id, x.weaned);
+    // T-INF-1: own food swallowed this tick (the ledger's intake less milk, as energy-diagnose's daytime eating), by 0.5-y block
+    const unw = unweanedWithMother(w, c);
+    if (milk && unw && L) {
+      const prev = st.infIn.get(c.id);
+      if (light && !inNest(c) && c.age < 5) { const b = Math.floor(c.age / 0.5); st.inf1T[b]++; if (prev !== undefined && L.in - prev - (milk.get(c.id) ?? 0) > 1e-9) st.inf1E[b]++; }
+      st.infIn.set(c.id, L.in);
+    }
     // T-INF-2, T-INF-5, T-INF-6: unweaned infants with a living mother, daylight outside the night nest
-    if (light && unweanedWithMother(w, c) && !inNest(c)) {
+    if (light && unw && !inNest(c)) {
       st.infTicks++;
       if (c.action === 'nurse') {
         st.infNurse++;
@@ -362,6 +373,18 @@ export function truthValues(x: TruthInputs): Record<string, SeedValue> {
     out['T-RHY-6'] = ratio(t.fEvents, t.fDay * TICK_HOURS / 12, t.fEvents, { shareMinutesDrinking: t.fDay ? t.fDrink / t.fDay : null });
     // T-INF-2: % of unweaned infants' daylight ticks outside the night nest in the nurse act (the milk-ejection wait included)
     out['T-INF-2'] = ratio(100 * t.infNurse, t.infTicks, Math.round(t.infTicks / HOUR));
+    // T-INF-1 (pattern): own-food share of daylight by 0.5-y block rises with age (a positive least-squares slope over the blocks
+    // with ticks) and lies within ×1.5 of Gombe's value (lonsdorf2014, the row's field entry) in every block from 1 y; a block
+    // from 1 y without infant ticks makes the seed insufficient
+    if (t.inf1T.some(n => n > 0)) {
+      const GOMBE = [0.23, 5.33, 6.67, 21.95, 21.64, 29.74, 32.45, 36.14, 34.43, 49.09];
+      const share = t.inf1T.map((n, b) => (n ? 100 * t.inf1E[b] / n : NaN)), have = share.map((v, b) => [b * 0.5 + 0.25, v] as [number, number]).filter(([, v]) => Number.isFinite(v));
+      const mx = mean(have.map(p => p[0])), my = mean(have.map(p => p[1])), slope = have.length >= 2 ? have.reduce((a, [x0, y0]) => a + (x0 - mx) * (y0 - my), 0) / have.reduce((a, [x0]) => a + (x0 - mx) ** 2, 0) : NaN;
+      const from1 = [2, 3, 4, 5, 6, 7, 8, 9], gap = from1.some(b => !t.inf1T[b]);
+      const within = from1.every(b => share[b] >= GOMBE[b] / 1.5 && share[b] <= GOMBE[b] * 1.5);
+      out['T-INF-1'] = { value: null, pass: gap || !Number.isFinite(slope) ? null : slope > 0 && within, n: Math.round(t.inf1T.reduce((a, b) => a + b, 0) / HOUR),
+        parts: Object.fromEntries(share.map((v, b) => [`${b * 0.5}-${b * 0.5 + 0.5} y`, fin(v)])), ...(gap ? { note: 'a block from 1 y without infant ticks' } : {}) };
+    }
     // T-INF-3: age at weaning of offspring weaned in the window
     out['T-INF-3'] = ratio(t.weanAges.reduce((a, b) => a + b, 0), t.weanAges.length, t.weanAges.length);
     // T-INF-5: nurse bouts (separated by at least 1 min) per daylight hour outside the night nest; part: minutes per bout
