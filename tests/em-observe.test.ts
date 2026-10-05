@@ -106,3 +106,23 @@ test('packets: today\'s layout byte for byte without the parts; with them, light
   }
   assert.ok(checked > 10 && withValues > 5, `packets checked ${checked}, with energy values ${withValues}`);
 });
+
+test('M1 iteration 2 (wording 2): purposes follow Track E\'s mechanics; wording 1 is the default and unchanged', () => {
+  let nests = 0, rests = 0, trips = 0;
+  for (const c of w1.chimps) {
+    if (!c.alive || c.age < 8) continue;
+    const { context } = buildRequest(w1, c);
+    if (context.candidates.length < 2) continue;
+    assert.equal(JSON.stringify(buildLocalQuestion(context, { wording: 1 })), JSON.stringify(buildLocalQuestion(context)), 'wording 1 is the default');
+    assert.equal(JSON.stringify(buildJevQuestion(context, { wording: 1 })), JSON.stringify(buildJevQuestion(context)), 'Jev: wording 1 is the default');
+    const p = buildLocalQuestion(context, { wording: 2 }), texts = Object.values(p.questions.action.criteria);
+    context.candidates.forEach((k, i) => {
+      const t = texts[i];
+      if (k.action === 'nest') { nests++; assert.match(t, /sleep, relieves/); }
+      if (k.action === 'rest') { rests++; assert.doesNotMatch(t, /eases fatigue/); assert.match(t, /cools the body/); }
+      if (k.action === 'travel' && k.targetId > 100_000 && k.targetId < 200_000) { trips++; assert.match(t, /food, eases/); }
+    });
+    assert.doesNotMatch(JSON.stringify(p.state), /\bfatigue\b/, 'the drive is called sleepiness under rhythmSleep');
+  }
+  assert.ok(rests > 5 && trips > 3, `rest ${rests}, nest ${nests}, trips ${trips}`);
+});

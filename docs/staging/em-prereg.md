@@ -133,6 +133,31 @@ process S alone); under `rhythmCircadian` sleep onset is gated by the circadian 
 can lie below today's daytime pressure and the estimate collapses. The rules' hunger readout (drive × satiation) then
 follows gut fill alone for those animals. The model sees the state as it is ("energy shortfall 1.00 … before I sleep").
 
+### M1 iteration 2: wording that follows Track E's mechanics (registered 5 October 2026 after M3's first G arm, before any run of it)
+
+**Why (the loop's evidence, M3 G seed 48; results below).** Untuned GLiNER in the app's loop chose "rest" for 50% of its
+decisions where the rules' argmax was a trip to food (44%) or the nest (28%); the focal animals sat out the night on the
+ground (61–100% of the night out of a nest) and ate 128–1,265 kcal a day. Under Track E the old purposes contradict the
+mechanics the observation now shows: with `rhythmSleep` the "fatigue" gauge is felt sleepiness and only sleep in a nest
+relieves it (rest keeps the rest score without the sleep term), yet rest says "eases fatigue" (and echoes "eases severe
+fatigue — needed now") and the nest "bed down for the night, as chimpanzees do at dusk"; a trip to a remembered crown says
+"moves to another area" although it is valued by its food. GLiNER matches the urgent drive word to the option's purpose
+(M2), so the old words send a sleepy animal to sit on the ground and a hungry one to stay.
+
+**Change (new layout only, `buildLocalQuestion(ctx, { wording: 2 })`, `buildJevQuestion(ctx, { wording: 2 })`; wording 1
+stays the default and unchanged).** With sleep pressure in the body: the drive "fatigue" is named sleepiness in the
+feeling and urgent lines and the instructions ("sleepiness — needs sleep in a nest now"); the nest's purpose is "sleep,
+relieves sleepiness" (with the urgency echo); rest's is "a pause: cools the body, digests, favours wounds" (its value
+under `rhythmHeat`, digestion and wounds). A trip to a crown: "food, eases hunger" (with the hunger echo). Values and
+everything else unchanged. This replaces the compact layout M2 registered as its iteration 2, which the evidence does not
+point to (disclosed; not run).
+
+**Evaluation (GLiNER `base`; Jev on the same capped rows, under the same cap).** The M2 sample's new packets and the
+probes' new and isolated renderings rebuilt in wording 2 (`scripts/em-rewrite.ts`, `scripts/em-probes.ts --wording 2`;
+`artifacts/em/m2w2/`), scored and read with M2's rules (old scores carry over: the old packets are unchanged), and the
+loop: G with wording 2 on both seeds (`s<seed>-G2.json`) beside R, A, G, AG and GG. Expected: nesting and food trips rise
+toward the rules' shares, the night is spent in nests, agreement with the rules rises; the probes keep their directions.
+
 ## M2. Offline check (registered 5 October 2026, before any model scored a packet)
 
 **Sample (made for M1's token check, the same file for M2; no model involved).** `scripts/em-sample.ts`: S39 + `observeState`

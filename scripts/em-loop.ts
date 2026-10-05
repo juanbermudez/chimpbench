@@ -12,6 +12,7 @@
 //   pnpm exec tsx scripts/em-loop.ts --seed 48 [--burn-in 30] [--days 5] [--provider base] [--arms rules,model] [--out artifacts/em/m3/s48]
 // --provider argmax: no model; the focal animals take the rules' argmax at every decision point (the loop's own effect).
 // --gate rg: the focal animals keep RG's gate (an act is held until a salient change), so the provider replaces RG's draws only.
+// --wording 2: the packets use M1 iteration 2's wording (server/decide.ts trackPurpose).
 // Development seeds only (48, 7).
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -87,7 +88,7 @@ function measure(w: World, focal: Tally[], first: boolean): void {
 const argmax = (p: number[]) => p.reduce((b, v, i) => v > p[b] ? i : b, 0);
 const inc = (r: Record<string, number>, k: string) => { r[k] = (r[k] ?? 0) + 1; };
 
-export async function runArm(base: World, arm: 'rules' | 'model', days: number, provider: string, focalIds: { id: number; cls: string }[], worker: Worker | null, gated = false) {
+export async function runArm(base: World, arm: 'rules' | 'model', days: number, provider: string, focalIds: { id: number; cls: string }[], worker: Worker | null, gated = false, wording: 1 | 2 = 1) {
   const w = structuredClone(base), idx0 = index(w), t0 = Date.now();
   const focal: Tally[] = focalIds.map(({ id, cls }) => ({ id, name: idx0.byId.get(id)!.name, cls, dayTicks: 0, cat: CATEGORIES.map(() => 0), nightTicks: 0, nightOut: 0, pathM: 0, px: 0, pz: 0, fixPathM: 0,
     fixX: 0, fixZ: 0, res0: 0, res1: 0, fin0: 0, fin1: 0, cap: 1, alive: true, cause: null, decisions: 0, applied: 0, fallbacks: {}, rulesAgree: 0, picks: {}, rulesPicks: {} }));
@@ -120,7 +121,7 @@ export async function runArm(base: World, arm: 'rules' | 'model', days: number, 
         const bad = decisionContextError(req.context);
         if (bad !== '') { inc(t.fallbacks, `invalid-context: ${bad}`); resolveByRules(w, c.id); continue; }
         let packet: unknown;
-        if (provider === 'jev') { const { keys: _k, ...p } = buildJevQuestion(req.context); packet = p; } else packet = buildLocalQuestion(req.context);
+        if (provider === 'jev') { const { keys: _k, ...p } = buildJevQuestion(req.context, { wording }); packet = p; } else packet = buildLocalQuestion(req.context, { wording });
         items.push({ c, req, packet });
       }
       if (items.length) {
@@ -156,7 +157,7 @@ export async function runArm(base: World, arm: 'rules' | 'model', days: number, 
     decisions: t.decisions, applied: t.applied, fallbacks: t.fallbacks, rulesAgree: t.decisions ? +(t.rulesAgree / t.decisions).toFixed(4) : null, picks: t.picks, rulesPicks: t.rulesPicks,
   }));
   const deaths = w.chimps.filter(c => !c.alive && c.deathTime !== null && c.deathTime >= base.time).map(c => ({ id: c.id, cause: c.causeOfDeath }));
-  return { arm, provider: arm === 'model' ? provider : 'rules', gated, days, seconds: Math.round((Date.now() - t0) / 1000), modelSeconds: Math.round(modelMs / 1000), calls, endHash: worldHash(w), deaths, focal: rows };
+  return { arm, provider: arm === 'model' ? provider : 'rules', gated, wording, days, seconds: Math.round((Date.now() - t0) / 1000), modelSeconds: Math.round(modelMs / 1000), calls, endHash: worldHash(w), deaths, focal: rows };
 }
 
 if (process.argv[1]?.endsWith('em-loop.ts')) {
@@ -183,7 +184,7 @@ if (process.argv[1]?.endsWith('em-loop.ts')) {
     let worker: Worker | null = null;
     if (arms.includes('model') && provider !== 'argmax') { worker = new Worker(arg('device', 'mps')); await worker.start(); console.log(`worker ready ${JSON.stringify(worker.ready)}`); }
     const results = [];
-    for (const arm of arms) results.push(await runArm(base, arm, days, provider, focal, worker, arg('gate', '') === 'rg'));
+    for (const arm of arms) results.push(await runArm(base, arm, days, provider, focal, worker, arg('gate', '') === 'rg', +arg('wording', '1') === 2 ? 2 : 1));
     worker?.stop();
     mkdirSync(dirname(out), { recursive: true });
     writeFileSync(`${out}.json`, JSON.stringify({ seed, burnIn, days, provider, params, burnInHash, focal, worker: worker?.ready ?? null, results }, null, 1) + '\n');

@@ -359,7 +359,7 @@ function memoryLines(ctx: DecisionContext): string[] {
   return ctx.recent.filter((r, i) => ctx.recent.findIndex(o => base(o) === base(r)) === i).slice(0, 5);
 }
 
-export function buildLocalQuestion(ctx: DecisionContext, opts: { staticInstructions?: boolean } = {}): LocalPacket {
+export function buildLocalQuestion(ctx: DecisionContext, opts: { staticInstructions?: boolean; wording?: 1 | 2 } = {}): LocalPacket {
   return hasState(ctx) ? buildStateQuestion(ctx, opts) : localPacket(ctx, opts); // stage M1: Track E's state (observeState 1)
 }
 /** GLiNER's packet: the state lines and the choice question (criteria c0..cN aligned with ctx.candidates). */
@@ -423,8 +423,8 @@ function optionKeys(ctx: DecisionContext): string[] {
  * have descriptive keys with the act and its purpose as separate fields; instructions are structured, and their
  * situational rules apply to this moment only. keys[i] is the criteria key of ctx.candidates[i].
  */
-export function buildJevQuestion(ctx: DecisionContext): JevPacket {
-  return hasState(ctx) ? buildJevStateQuestion(ctx) : jevPacket(ctx); // stage M1: Track E's state (observeState 1)
+export function buildJevQuestion(ctx: DecisionContext, opts: { wording?: 1 | 2 } = {}): JevPacket {
+  return hasState(ctx) ? buildJevStateQuestion(ctx, opts.wording ?? 1) : jevPacket(ctx); // stage M1: Track E's state (observeState 1)
 }
 /** Jev's packet: grouped state, structured instructions, named options (keys[i] is ctx.candidates[i]'s key). */
 export interface JevPacket {
@@ -550,13 +550,30 @@ export function valueWords(v: OptionValue, reason: string, social: boolean): str
 }
 
 /** The option text with its values; the clock leaves the nest reasons (and "dusk is falling" leaves them while the light rises). */
-function stateOptionParts(ctx: DecisionContext, c: Candidate): { phrase: string; purpose: string; values: string } {
+function stateOptionParts(ctx: DecisionContext, c: Candidate, wording: 1 | 2 = 1): { phrase: string; purpose: string; values: string } {
   const parts = optionParts(ctx, c);
   let phrase = parts.phrase.replace(/\s*\(\d{1,2}:\d{2}\)/g, '');
   if (ctx.light && ctx.light.trend > 0.05) phrase = phrase.replace(/; dusk is falling\b/, '');
   const social = ctx.social.some(p => p.id === c.targetId);
-  return { phrase, purpose: parts.purpose, values: c.value ? valueWords(c.value, c.reason, social) : '' };
+  return { phrase, purpose: wording === 2 ? trackPurpose(ctx, c, parts.purpose) : parts.purpose, values: c.value ? valueWords(c.value, c.reason, social) : '' };
 }
+
+// Stage M1 iteration 2 (wording 2; docs/staging/em-prereg.md "M1 iteration 2"): under Track E the old purposes contradict
+// the mechanics the state now shows. With rhythmSleep, felt sleepiness is the "fatigue" gauge and only sleep in a nest
+// relieves it (candidates.ts: rest keeps the rest score without the sleep term), yet the rest option said "eases fatigue"
+// and the nest "bed down for the night"; a trip to a remembered crown said "moves to another area" although it is valued
+// by the food at its end. Wording 2 names what each act does under the mechanisms on (a context with sleep pressure in
+// its body; a tree trip), in the drive words the state uses; the drive "fatigue" is called sleepiness there.
+const SLEEPY = (ctx: DecisionContext) => ctx.body?.sleepPressure !== undefined;
+function trackPurpose(ctx: DecisionContext, c: Candidate, purpose: string): string {
+  const f = ctx.focal, sleepy = 1 - f.energy, hungerEcho = (p: string) => urgentPurpose(f, 'forage', p);
+  if (SLEEPY(ctx) && c.action === 'nest') return sleepy >= 0.7 ? `sleep, relieves ${intensity(sleepy)} sleepiness — needed now` : 'sleep, relieves sleepiness';
+  if (SLEEPY(ctx) && c.action === 'rest') return 'a pause: cools the body, digests, favours wounds';
+  if (c.action === 'travel' && c.targetId > 100_000 && c.targetId < 200_000) return hungerEcho('food, eases hunger');
+  return purpose;
+}
+/** Wording 2's drive word: under rhythmSleep the "fatigue" gauge is felt sleepiness, and what relieves it is sleep in a nest. */
+const sleepWords = (t: string) => t.replace(/\bfatigue — needs rest now\b/g, 'sleepiness — needs sleep in a nest now').replace(/\bfatigue\b/g, 'sleepiness');
 
 function nowWords(ctx: DecisionContext): string {
   const f = ctx.focal, e = ctx.environment;
@@ -570,16 +587,18 @@ function nowWords(ctx: DecisionContext): string {
 }
 
 /** GLiNER's packet for a context with Track E's state (see the section note). */
-function buildStateQuestion(ctx: DecisionContext, opts: { staticInstructions?: boolean }): LocalPacket {
-  const old = localPacket(withoutState(ctx), opts);
+function buildStateQuestion(ctx: DecisionContext, opts: { staticInstructions?: boolean; wording?: 1 | 2 }): LocalPacket {
+  const old = localPacket(withoutState(ctx), opts), w = opts.wording ?? 1;
   const state: Record<string, unknown> = { ...old.state, now: nowWords(ctx) };
   if (ctx.body && Object.keys(ctx.body).length) state.body = bodyWords(ctx.body);
+  if (w === 2 && SLEEPY(ctx)) for (const k of ['feeling', 'urgent'] as const) if (typeof state[k] === 'string') state[k] = sleepWords(state[k] as string);
   const criteria: Record<string, string> = {};
   ctx.candidates.forEach((c, i) => {
-    const { phrase, purpose, values } = stateOptionParts(ctx, c), why = [purpose, values].filter(Boolean).join('; ');
+    const { phrase, purpose, values } = stateOptionParts(ctx, c, w), why = [purpose, values].filter(Boolean).join('; ');
     criteria[`c${i}`] = why ? `${phrase} (${why})` : phrase;
   });
-  const questions = { action: { ...old.questions.action, criteria } };
+  const instructions = w === 2 && SLEEPY(ctx) ? sleepWords(old.questions.action.instructions) : old.questions.action.instructions;
+  const questions = { action: { ...old.questions.action, instructions, criteria } };
   // under the hard limit: the old packet's trimming first, then (rarely) history and the oldest memories again
   for (;;) {
     if (estimateInputTokens(state, questions) <= TOKEN_BUDGET_STATE) break;
@@ -592,9 +611,13 @@ function buildStateQuestion(ctx: DecisionContext, opts: { staticInstructions?: b
 }
 
 /** Jev's packet for a context with Track E's state: named body fields, the light in place of the time, values as option fields. */
-function buildJevStateQuestion(ctx: DecisionContext): JevPacket {
+function buildJevStateQuestion(ctx: DecisionContext, wording: 1 | 2 = 1): JevPacket {
   const old = jevPacket(withoutState(ctx));
   const state = { ...old.state } as Record<string, unknown>;
+  if (wording === 2 && SLEEPY(ctx)) {
+    if (state.needs && typeof state.needs === 'object') state.needs = Object.fromEntries(Object.entries(state.needs as Record<string, unknown>).map(([k, v]) => [k === 'fatigue' ? 'sleepiness' : k, v]));
+    if (Array.isArray(state.urgent)) state.urgent = (state.urgent as string[]).map(u => u.replace(/^fatigue: needs rest$/, 'sleepiness: needs sleep in a nest'));
+  }
   const situation = { ...(state.situation as Record<string, unknown>) };
   delete situation.time;
   if (ctx.light) situation.light = lightWords(ctx.light);
@@ -609,14 +632,16 @@ function buildJevStateQuestion(ctx: DecisionContext): JevPacket {
     stress: b.stress, arousal: b.arousal, affiliation: b.affiliation, acute_arousal: b.acute });
   const keys = old.keys, criteria: JevPacket['questions']['action']['criteria'] = {};
   ctx.candidates.forEach((c, i) => {
-    const { phrase, purpose } = stateOptionParts(ctx, c), v = c.value, social = ctx.social.some(p => p.id === c.targetId);
+    const { phrase, purpose } = stateOptionParts(ctx, c, wording), v = c.value, social = ctx.social.some(p => p.id === c.targetId);
     criteria[keys[i]] = { act: phrase, ...pruned({ purpose: purpose || undefined,
       net_energy_kcal_per_h: v?.kcalH, fruit_kcal: v?.cropKcal,
       fruit_seen: v?.seenH === undefined ? undefined : v.seenH === 0 ? 'in view' : v.seenH < 0 ? 'never, expected' : agoWords(v.seenH),
       others_going: v?.feeders && v.seenH !== 0 ? v.feeders : undefined, company: v?.company,
       distance: v?.distM !== undefined && !social ? meters(v.distM) : undefined }) };
   });
-  const instructions = { ...old.questions.action.instructions, evidence: 'Judge only from `self`, `needs`, `body`, `situation`, `nearby`, `memories` and `events`. Every option is possible now.' };
+  const now = old.questions.action.instructions.now;
+  const instructions = { ...old.questions.action.instructions, evidence: 'Judge only from `self`, `needs`, `body`, `situation`, `nearby`, `memories` and `events`. Every option is possible now.',
+    ...(wording === 2 && SLEEPY(ctx) && Array.isArray(now) ? { now: (now as string[]).map(sleepWords) } : {}) };
   return { state, questions: { action: { type: 'choice' as const, instructions, criteria } }, keys };
 }
 

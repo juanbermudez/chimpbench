@@ -4,7 +4,8 @@
 // social scene and the memories are the situation's own; only the probed state changes. Packets are built by
 // server/decide.ts exactly as for the sample.
 //
-//   pnpm exec tsx scripts/em-probes.ts --in artifacts/em/m2/s48.jsonl,artifacts/em/m2/s7.jsonl [--per 100] --out artifacts/em/m2/probes.jsonl
+//   pnpm exec tsx scripts/em-probes.ts --in artifacts/em/m2/s48.jsonl,artifacts/em/m2/s7.jsonl [--per 100] --out artifacts/em/m2/probes.jsonl [--wording 2]
+// --wording 2: the new and isolated renderings use M1 iteration 2's wording (server/decide.ts trackPurpose); old is unchanged.
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -75,7 +76,7 @@ const h01 = (s: string) => createHash('sha256').update(s).digest().readUInt32BE(
 if (process.argv[1]?.endsWith('em-probes.ts')) {
   const arg = (k: string, d: string) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
   const recs: Rec[] = arg('in', '').split(',').filter(Boolean).flatMap(f => readFileSync(resolve(f), 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l) as Rec));
-  const per = +arg('per', '100'), out: string[] = [], counts: Record<string, number> = {};
+  const per = +arg('per', '100'), out: string[] = [], counts: Record<string, number> = {}, wording = (+arg('wording', '1') === 2 ? 2 : 1) as 1 | 2;
   for (const p of PROBES) {
     const pool = recs.filter(p.eligible).sort((a, b) => h01(`${p.id}:${a.id}`) - h01(`${p.id}:${b.id}`)).slice(0, per);
     counts[p.id] = pool.length;
@@ -86,9 +87,9 @@ if (process.argv[1]?.endsWith('em-probes.ts')) {
       // the old gauge reads the situation's own Track E fields (hungerOf), so apply it on a copy that still has them
       const og = structuredClone(r.context); lv.old(og);
       oc.focal = og.focal; oc.environment = og.environment;
-      const { keys: _a, ...jevNew } = buildJevQuestion(nc), { keys: _b, ...jevIso } = buildJevQuestion(ni), { keys: _c, ...jevOld } = buildJevQuestion(oc);
+      const { keys: _a, ...jevNew } = buildJevQuestion(nc, { wording }), { keys: _b, ...jevIso } = buildJevQuestion(ni, { wording }), { keys: _c, ...jevOld } = buildJevQuestion(oc);
       out.push(JSON.stringify({ id: `${r.id}|${p.id}|${li}`, rec: r.id, seed: r.seed, cls: r.cls, probe: p.id, level: li, levelName: lv.name, target: p.target,
-        options: r.options.map(o => o.family), packets: { glinerOld: buildLocalQuestion(oc), glinerNew: buildLocalQuestion(nc), glinerIso: buildLocalQuestion(ni), jevOld, jevNew, jevIso } }));
+        options: r.options.map(o => o.family), packets: { glinerOld: buildLocalQuestion(oc), glinerNew: buildLocalQuestion(nc, { wording }), glinerIso: buildLocalQuestion(ni, { wording }), jevOld, jevNew, jevIso } }));
     }
   }
   writeFileSync(resolve(arg('out', 'artifacts/em/m2/probes.jsonl')), out.join('\n') + '\n');
