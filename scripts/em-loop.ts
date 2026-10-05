@@ -117,7 +117,8 @@ export async function runArm(base: World, arm: 'rules' | 'model', days: number, 
         }
         const req = buildRequest(w, c);
         if (req.options.length < 2) { inc(t.fallbacks, 'fewer-than-two-options'); resolveByRules(w, c.id); continue; }
-        if (decisionContextError(req.context) !== '') { inc(t.fallbacks, 'invalid-context'); resolveByRules(w, c.id); continue; }
+        const bad = decisionContextError(req.context);
+        if (bad !== '') { inc(t.fallbacks, `invalid-context: ${bad}`); resolveByRules(w, c.id); continue; }
         let packet: unknown;
         if (provider === 'jev') { const { keys: _k, ...p } = buildJevQuestion(req.context); packet = p; } else packet = buildLocalQuestion(req.context);
         items.push({ c, req, packet });
