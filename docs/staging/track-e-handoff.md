@@ -18,7 +18,9 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   4 runs; e-rebaseline.md); E1r found a full-gut valuation trap (merged a9739c3). **E1s** (`gutValue`) stopped after 3 iterations, none passing (merged 1c1bcb2, switch 0): the trap is gone but depleted
   animals walk 2–3× farther and starve sooner (11, 9, 3 deaths on seeds 48 + 7 at 6 months; S39 0); lessons in
   e1s-prereg.md §8.8. **E1t** (`horizonLived`) is **not kept** by its registered 12-month rule (e1t-prereg.md §9: 8 starvation deaths
-  against S39's 6, within noise; it passed at 6 months); the horizon bug stays in S39. **E1u** (gut-input audit) done and merged (79f78a7): the lean-season cap is mostly the hindgut's fibre
+  against S39's 6, within noise; it passed at 6 months); the horizon bug stays in S39. **E1v** (user's decision: wadging as a tested range, `pithFibreSwallowed` 1 / 0.5 / 0.25,
+  registered 137d5aa) is being implemented by agent **e1v-wadge**; the integrator then runs the 0.5 and 0.25 arms (4 runs
+  each, 6 → 12 months). **E1u** (gut-input audit) done and merged (79f78a7): the lean-season cap is mostly the hindgut's fibre
   clearance, set by inputs nobody has measured (IMPLEMENTATION_PLAN.md, "E1u"). **M1–M3 merged (a9aa344):** GLiNER cannot choose
   for the chimps as it is (it ignores the body numbers; on GLiNER focal animals underfeed and sleep out of nests); it
   needs teaching on the new state (Track R, R4); Jev reads the numbers ($0.20 spent). Part D done (e52e84e). Separate
