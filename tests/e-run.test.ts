@@ -118,3 +118,11 @@ test('diffJson reports results, not dates, timings, workers or labels', () => {
   assert.deepEqual(diffJson(a, c, VOLATILE), ['viability.perSeed.0.ratio: 1.5 ≠ 2', 'rows.0.distance: 0.1 ≠ 0.2']);
   assert.deepEqual(diffJson({ v: NaN }, { v: NaN }, VOLATILE), []);
 });
+
+test('single pass: --segment-days forces checkpointed segments of at most that many days', () => {
+  const jobs = planJobs(base({ path: 'single-pass', seeds: [7], segmentDays: 25 }));
+  assert.deepEqual(jobs.map(j => j.id), ['s7-d25', 's7-d50', 's7', 'merge']);
+  assert.deepEqual(jobs.map(j => j.seedDays), [25, 25, 10, 0]);
+  assert.deepEqual(jobs[1].after, ['s7-d25']);
+  assert.equal(jobs[2].argv[jobs[2].argv.indexOf('--resume') + 1], '/tmp/e-run-test/T/parts/T.s7.ckpt-d50.v8.gz');
+});

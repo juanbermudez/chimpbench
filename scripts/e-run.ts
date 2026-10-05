@@ -9,7 +9,7 @@
 //
 //   pnpm exec tsx scripts/e-run.ts plan --label S39-m6 --m6 --params-file p.json [--seeds 48,7,21,5,11] [--days N --burn-in N]
 //        [--out artifacts/validation/e/runs/<label>] [--compare ref.json] [--energy] [--rhythm] [--job-max-min 100]
-//        [--path auto|single|fallback] [--from <out of a shorter single-pass run>/run.json]
+//        [--path auto|single|fallback] [--from <out of a shorter single-pass run>/run.json] [--segment-days N]
 //   pnpm exec tsx scripts/e-run.ts run <out>/run.json [--budget-min 110] [--parallel auto|N] [--retry-failed] [--attached]
 //   pnpm exec tsx scripts/e-run.ts status <out>/run.json
 //   pnpm exec tsx scripts/e-run.ts merge <out>/run.json                 (run merges by itself when every job is done)
@@ -136,6 +136,8 @@ export interface PlanOpts {
   path: 'single-pass' | 'fallback'; energy: boolean; rhythm: boolean; compare: string | null; jobMaxMin: number; rates: Record<string, number>;
   /** Single-pass: end checkpoints of a shorter run of the same arm, by seed (absolute paths), to resume from. */
   from?: Record<number, { ckpt: string; day: number }>;
+  /** Single-pass: at most this many days per job (checkpointed segments), whatever the estimate says. */
+  segmentDays?: number;
 }
 
 const job = (p: Partial<Job> & Pick<Job, 'id' | 'kind' | 'argv' | 'outputs' | 'seedDays'>, rates: Record<string, number>): Job => ({
@@ -157,7 +159,7 @@ export function planJobs(o: PlanOpts): Job[] {
       const base = ['scripts/e-bench.ts', ...modeArgs, '--seeds', String(seed), '--part', '--workers', '1', '--params', pj, '--out', abs(prefix(seed))];
       const from = o.from?.[seed];
       const start = from ? from.day : 0, left = total - start;
-      const stops = segmentDays(left, o.rates.seed ?? RATE_PRIORS.seed, o.jobMaxMin).map(d => d + start);
+      const stops = (o.segmentDays ? Array.from({ length: Math.ceil(left / o.segmentDays) - 1 }, (_, i) => (i + 1) * o.segmentDays!) : segmentDays(left, o.rates.seed ?? RATE_PRIORS.seed, o.jobMaxMin)).map(d => d + start);
       let prev: string | null = from ? from.ckpt : null, prevDay = start;
       for (const d of stops) {
         const id = `s${seed}-d${d}`;
@@ -427,7 +429,9 @@ async function plan(a: Args): Promise<void> {
     for (const s of seeds) { const side = prev.path(`parts/${prev.reg.label}.s${s}.ckpt-d${d}.json`), ck = prev.path(`parts/${prev.reg.label}.s${s}.ckpt-d${d}.v8.gz`); if (existsSync(side) && existsSync(ck)) from[s] = { ckpt: ck, day: d }; }
   }
   const compare = a.has('compare') ? resolve(a.flag('compare')) : null;
-  const opts: PlanOpts = { label, out, root: ROOT, modeFlag, mode: modeFlag, days, burnInDays, seeds, params, path, energy: a.has('energy'), rhythm: a.has('rhythm'), compare, jobMaxMin, rates: {}, from };
+  const segDays = a.has('segment-days') ? +a.flag('segment-days') : undefined;
+  if (segDays !== undefined && (path !== 'single-pass' || !(segDays >= 1) || !Number.isInteger(segDays))) throw new Error('--segment-days N (a whole number of days) needs the single-pass path');
+  const opts: PlanOpts = { label, out, root: ROOT, modeFlag, mode: modeFlag, days, burnInDays, seeds, params, path, energy: a.has('energy'), rhythm: a.has('rhythm'), compare, jobMaxMin, rates: {}, from, segmentDays: segDays };
   const jobs = planJobs(opts);
   for (const j of jobs) if (j.estimateMin > jobMaxMin) throw new Error(`job ${j.id} is estimated at ${j.estimateMin} min, over the job limit of ${jobMaxMin} min, and cannot be split on the ${path} path`);
   for (const j of jobs) if (j.argv.some(x => /trace/i.test(x) && x.startsWith('--'))) throw new Error(`job ${j.id} asks for a trace: per-tick traces are never written`);
