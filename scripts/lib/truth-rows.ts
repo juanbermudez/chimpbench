@@ -36,7 +36,6 @@ export const NO_READOUT: Readonly<Record<string, string>> = {
   'T-ENE-9': 'no monthly readout of feeding time and day range against fruit (a statistic across months: needs a year)',
   'T-RHY-7': 'model water sites have no stream or pool kind (eA-protocol: leave unread)',
   'T-RHY-8': 'no logistic readout of resting and ground use against temperature with hour as a covariate',
-  'T-RHY-10': 'no readout of leaf feeding by half of each individual\'s active day',
   'T-END-1': 'no readout of male stress in months with rank reversals (a statistic across months: needs a year)',
   'T-END-4': 'no readout of the stress ratio around aggression against rests',
   'T-END-5': 'no readout of relative stress by bond partner and context',
@@ -45,7 +44,7 @@ export const NO_READOUT: Readonly<Record<string, string>> = {
   'T-END-10': 'no readout of affiliation after grooming by partner',
   'T-END-11': 'no readout of affiliation after food sharing',
   'T-END-12': 'no readout yet in the single pass (scripts/endocrine-diagnose.ts measures its intergroup half on its own world)',
-  'T-INF-1': 'no readout of infants\' eating share in 0.5-y blocks with the Gombe values per block',
+  'T-INF-1': 'the row gives Gombe\'s value for two of its 0.5-y blocks only (1.5-2 y, 4.5-5 y), so "within a factor 1.5 of the Gombe value in each block" cannot be tested',
   'T-INF-4': 'no mass-for-age readout (life history: needs a year)',
 };
 
@@ -53,7 +52,9 @@ export const NO_READOUT: Readonly<Record<string, string>> = {
 // The probe
 // ---------------------------------------------------------------------------------------------------------------------
 
-interface NestTrack { nesting: boolean; start: number; lastStart: number; inNest: boolean; lastEntry: number }
+interface NestTrack { nesting: boolean; start: number; lastStart: number; inNest: boolean; lastEntry: number;
+  /** T-RHY-10: the last exit from a nest while the sun rises (the day's departure), and the times of today's ground-food feeding ticks. */
+  wake: number; ground: number[] }
 /** A contest as E4h's readouts count it (scripts/contest-diagnose.ts): the two sides at the time, and contact. */
 interface Side { male: boolean; age: number; rank: number; adult: boolean }
 /** The probe's whole state (plain data; checkpointed with the world). */
@@ -65,6 +66,8 @@ export interface TruthState {
   e8: Map<number, { out: number; m75: number; ticks: number }>; prevOut: Map<number, number>;
   /** T-RHY-4: nest tracking of weaned individuals; minutes before sunset at which the night nest's building started. */
   nest: Map<number, NestTrack>; builds: number[];
+  /** T-RHY-10: ground-food (leaf) feeding ticks within weaned individuals' active days, and those in the second half. */
+  leafAll: number; leafLate: number;
   /** T-RHY-6: adult females' daylight ticks, daylight ticks drinking at the water, drinking events started in daylight; at the water last tick. */
   fDay: number; fDrink: number; fEvents: number; atWater: Map<number, boolean>;
   /** T-INF-2, T-INF-5: unweaned infants' daylight ticks outside the night nest, those in the nurse act, bouts begun; each infant's last nurse tick. */
@@ -93,7 +96,7 @@ const sideOf = (c: Chimp): Side => ({ male: c.sex === 'male', age: c.age, rank: 
 export function truthStart(w: World): TruthState {
   const st: TruthState = {
     prevAlt: w.environment.sunAltitude, prevRise: w.environment.sunAltitude > sunAltitudeBefore(w), sunset: NaN, noon: NaN,
-    lacTicks: 0, lacFeed: 0, e8: new Map(), prevOut: new Map(), nest: new Map(), builds: [], fDay: 0, fDrink: 0, fEvents: 0, atWater: new Map(),
+    lacTicks: 0, lacFeed: 0, e8: new Map(), prevOut: new Map(), nest: new Map(), builds: [], leafAll: 0, leafLate: 0, fDay: 0, fDrink: 0, fEvents: 0, atWater: new Map(),
     infTicks: 0, infNurse: 0, infBouts: 0, lastNurse: new Map(), weanAges: [], weaned: new Map(), mt: [0, 0], mg: [0, 0], it: [0, 0], ig: [0, 0],
     r1: { n: 0, contact: 0 }, pairLast: new Map(), r2: {}, escalatedAt: new Map(), r3: { all: 0, coalition: 0 }, version: new Map(), prevKey: new Map(),
     dayFeed: new Map(), feedWith: [], feedWithout: [], male: new Map(), stressWith: [], stressWithout: [], arousalPatrol: [], arousalOther: [], hoots: new Map(), seenCall: w.nextId, prof: new Map(), tick: 0,
@@ -178,10 +181,17 @@ export function truthStep(st: TruthState, w: World): void {
     if (x.weaned) {
       const nest = inNest(c);
       let t = st.nest.get(c.id);
-      if (!t) { t = { nesting: c.action === 'nest', start: NaN, lastStart: NaN, inNest: nest, lastEntry: NaN }; st.nest.set(c.id, t); }
+      if (!t) { t = { nesting: c.action === 'nest', start: NaN, lastStart: NaN, inNest: nest, lastEntry: NaN, wake: NaN, ground: [] }; st.nest.set(c.id, t); }
       if ((c.action === 'nest') !== t.nesting) { t.nesting = c.action === 'nest'; if (t.nesting) t.start = time; }
-      if (nest !== t.inNest) { t.inNest = nest; if (nest) { t.lastEntry = time; t.lastStart = t.start; } }
-      if (isMidnight && nest && t.lastEntry > st.noon && Number.isFinite(t.lastStart) && st.sunset > st.noon) st.builds.push((st.sunset - t.lastStart) * 60);
+      if (nest !== t.inNest) { t.inNest = nest; if (nest) { t.lastEntry = time; t.lastStart = t.start; } else if (rising) t.wake = time; }
+      // T-RHY-10: ground foods (leaves, pith, herbs) eaten: the forage act on the ground (src/field/categories.ts feedType 2)
+      if (c.action === 'forage' && c.targetId < 0) t.ground.push(time);
+      if (isMidnight) {
+        if (nest && t.lastEntry > st.noon && Number.isFinite(t.lastStart) && st.sunset > st.noon) st.builds.push((st.sunset - t.lastStart) * 60);
+        // the day just ended: its active day ran from the morning's departure to the evening's last nest entry
+        if (nest && t.wake < st.noon && t.lastEntry > st.noon) { const mid = (t.wake + t.lastEntry) / 2; for (const g of t.ground) if (g >= t.wake && g <= t.lastEntry) { st.leafAll++; if (g > mid) st.leafLate++; } }
+        t.wake = NaN; t.ground = [];
+      }
     }
     // T-INF-3: weaned in the window
     const was = st.weaned.get(c.id);
@@ -326,6 +336,8 @@ export function truthValues(x: TruthInputs): Record<string, SeedValue> {
   if (t) {
     // T-RHY-4: median minutes before sunset at which weaned individuals started building their night nest
     out['T-RHY-4'] = { value: fin(median(t.builds)), n: t.builds.length };
+    // T-RHY-10 (pattern): more than half of weaned individuals' ground-food (leaf) feeding minutes in the second half of their active day
+    out['T-RHY-10'] = { value: null, pass: t.leafAll ? t.leafLate / t.leafAll > 0.5 : null, n: Math.round(t.leafAll / 4), parts: { shareSecondHalf: t.leafAll ? t.leafLate / t.leafAll : null } };
     // T-RHY-6: drinking events per adult female per 12 h of daylight; part: share of daylight minutes drinking
     out['T-RHY-6'] = ratio(t.fEvents, t.fDay * TICK_HOURS / 12, t.fEvents, { shareMinutesDrinking: t.fDay ? t.fDrink / t.fDay : null });
     // T-INF-2: % of unweaned infants' daylight ticks outside the night nest in the nurse act (the milk-ejection wait included)
