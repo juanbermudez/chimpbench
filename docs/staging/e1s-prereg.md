@@ -192,3 +192,108 @@ crowns 0.49–0.54 against 0.82–0.96) because the bout now includes the time t
   (5–12 y), adolescent females (12–15 y) and pregnant females, seeds pooled, higher in March–April than in
   November–December (per-animal rows); (4) e-bench's viability verdict pass. Reported, not judged: the behaviour-by-reserve
   table, the fallback share of plant energy and of eating time by class, km by phase, the class readout by month.
+
+### 8.4 Iteration 1: results (run 5 October 14:00–14:15 from the frozen checkout of 76a36cf, 866 s; read with the scratch reader and `scripts/lean-season.ts`; outputs in the agent's `artifacts/validation/e1s/`)
+
+**Fails conditions 1, 2 and 4; condition 3 holds.**
+
+| | S39 (M6-S39, seeds 48 + 7) | E1s iteration 1 (seeds 48 + 7) |
+| --- | --- | --- |
+| (1) starvation deaths | 0 + 0 | 4 + 7 |
+| (2) animals below −0.3 of the store at scored day 180 (aged 5 y+) | 11 + 0 = 11 (9) | 16 + 26 = 42 (31) |
+| (2) lowest reserve | −0.683 (s48 id 17, juvenile F 6.6 y) | −0.930 (s7 id 14, lactating F 24.6 y) |
+| (3) eating min, Nov–Dec → Mar–Apr: juvenile F, adolescent F, pregnant | (no per-animal rows) | 238 → 395, 342 → 469, 293 → 396: rise |
+| (4) viability | pass (births 4, deaths 0; few events) | fail (births 3, deaths 27, 11 starvation; seed 48 at 67% of its start) |
+
+- Deaths, iteration 1, window days. Starvation: seed 48 ids 17 (juvenile F 6.3 y, day 73), 19 (juvenile F 7.3 y, 74), 35
+  (juvenile F 5.9 y, 129), 9 (adolescent F 12.5 y, 153); seed 7 ids 19 (juvenile F 7.2 y, 41), 17 (juvenile F 6.2 y, 42),
+  35 (juvenile F 5.8 y, 82), 13 (F 28.4 y, 125), 12 (F 33.5 y, 164), 11 (F 36.6 y, 173), 9 (adolescent F 12.6 y, 178).
+  Other: seed 48 a respiratory outbreak (7, days 21–24), wounds (3), orphaned infants (3); seed 7 orphaned infants (3).
+- The bench (iteration 1 against M6-S39, seeds 48 / 7): adult male day range T-RNG-4 5.72 / 6.33 km (2.91 / 2.44), travel
+  share T-ACT-2 0.25 / 0.33 (0.14 / 0.12), hunts T-HUN-1 35.7 / 47.2 per community-year (11.45 / 10.12), party size
+  T-PTY-1 4.05 / 4.97 (4.17 / 4.07).
+- Per animal-day by phase (Nov–Dec / Jan–Feb / Mar–Apr; seeds 48 + 7 pooled, against E1r's R3, S39 rngSalt 2 seed 48):
+  adult males walk 6.93 / 8.19 / 7.84 km on the ground (R3 2.61 / 4.01 / 3.40), walking and climbing 321 / 379 / 357 kcal
+  (158 / 212 / 175), net −78 / −145 / +75 (−4 / −37 / +46); juvenile females 9.54 / 7.70 / 5.40 km (2.96 / 4.38 / 3.30),
+  net −213 / −198 / −100 (−17 / −164 / −62), fallback 6 / 22 / 31% of plant energy (13 / 15 / 29%), eating at a full
+  foregut 23 / 38 / 58% of eating minutes (35 / 65 / 86%); lactating females 8.15 / 9.38 / 9.56 km (2.35 / 4.58 / 3.54),
+  net −165 / −198 / −34 (−16 / −108 / +31).
+- Depleted animals (aged 5 y+, not adult males, window days 90–179): at −0.3 to −0.5 of the store, 362 eating min a day,
+  43% at a full foregut, 15% of daylight on the ground, plant energy 70% drupe / 16% fig / 14% fallback, net −115 (R3: 532,
+  82%, 39%, 35 / 33 / 33%, −74); at −0.5 to −0.7: 353, 47%, 12%, 78 / 12 / 10%, −93 (R3: 595, 89%, 47%, 47 / 19 / 34%, −98).
+  The trap is gone (drupes, not fallback, and more energy absorbed: juvenile females 1,288 kcal a day in Mar–Apr against
+  1,106), but walking costs more than the gain.
+- By reserve band, seed 48 (ground km per animal-day; R3 in brackets): window days 0–59, adult males at or near the set
+  point 5.73 (2.56), others at or near it 3.94 (2.22), others at −0.1 to −0.3 8.84 (1.70 on 9 animal-days); days
+  60–119, others at −0.5 to −0.7 7.90 km with 27% of daylight travelling.
+- Named causes: (a) the need that capped phase 2 was E1e's energyNeed (the day's expected spending and the night's fast),
+  so balanced animals, whom E1i's satiation sates at a full foregut, were valued with a passage phase at every partial
+  fill: every trip's walk was diluted in its rate, and balanced adult males walked 5.7–5.9 km a day and ran deficits;
+  (b) with a passage phase every crown is worth about the passage rate whatever its distance, so the candidate jitter
+  (±0.12) and the company terms decide between crowns, and depleted animals of seed 48 spend 24–52% of daylight
+  travelling (6.8–14.0 km a day).
+
+### 8.5 Iteration 2 (logged before its run)
+
+Integrator, verbatim (5 October 2026, before the run): "Integrator, 5 October: 'the animal's need' in §2 and the §2 ruling
+is the reserve deficit, not E1e's energyNeed. Phase 2 values continuing to eat at a full gut, which E1i allows only for
+depleted animals. Balanced animals keep today's values."
+
+The integrator's reading of cause (b), verbatim: "I don't accept that (b) is outside E1s. The phase-2 hours sit in the
+bout's denominator, which squeezes every crown toward the passage rate (about 0.2–0.33), so distance moves values by about
+0.02. On that compressed scale the ±0.12 jitter decides. That is a consequence of E1s's valuation. If iteration 2 still
+fails through (b), iteration 3 needs an amendment I approve and register before its run."
+
+- Change (cause a only): `energy.ts` `gutBout`'s `need`, which caps phase 2, is the reserve deficit (−reserves when below
+  the set point, 0 otherwise), in the food's own kcal through its absorbed yield. Under E1i's satiation hunger at a full
+  foregut is min(1, φ) × max(0, −reserves ÷ store), so only a depleted animal keeps eating there. Consequences: an animal at
+  or above its set point keeps today's values for drupe crowns at every fill and for the fallback while its gut has room
+  (at a full gut it is sated and its bout is empty: the fallback is worth nothing to it, today its full rate; its drive
+  is then about 0.1); a depleted animal's values are iteration 1's while its deficit exceeds what its gut holds. Nothing
+  else changes; no constant.
+- Pre-run check (the same offline probe as §8.2, iteration 2's code; "need" in the headers is E1e's energyNeed, printed for
+  reference; female id 33 is at the set point, juvenile id 17 at −0.68):
+
+**id 33**, female, 15.6 y, 31.3 kg, reserves 0.00 of the store, need 779 kcal, foregut 175 g, walk 0.77 m/s, drupe rate 434 kcal/h
+
+| foregut fill | drupe crown today (50 / 150 / 300 m) | drupe crown gutValue | fig crown gutValue | fallback today (yield 0.6 / 1 / 1.3) | fallback gutValue |
+| ---: | --- | --- | --- | --- | --- |
+| 0.00 | 0.98 / 0.95 / 0.91 | 0.98 / 0.95 / 0.91 | 1.07 / 1.02 / 0.96 | 0.27 / 0.45 / 0.58 | 0.27 / 0.45 / 0.58 |
+| 0.50 | 0.96 / 0.91 / 0.84 | 0.96 / 0.91 / 0.84 | 1.03 / 0.95 / 0.84 | 0.27 / 0.45 / 0.58 | 0.27 / 0.45 / 0.58 |
+| 0.90 | 0.82 / 0.64 / 0.47 | 0.82 / 0.64 / 0.47 | 0.82 / 0.57 / 0.37 | 0.27 / 0.45 / 0.58 | 0.27 / 0.45 / 0.58 |
+| 0.95 | 0.68 / 0.44 / 0.25 | 0.68 / 0.44 / 0.25 | 0.61 / 0.33 / 0.15 | 0.27 / 0.45 / 0.58 | 0.27 / 0.45 / 0.58 |
+| 0.98 | 0.38 / 0.14 / 0.01 | 0.38 / 0.14 / 0.01 | 0.24 / 0.03 / 0.00 | 0.27 / 0.45 / 0.58 | 0.27 / 0.45 / 0.58 |
+| 1.00 | 0.00 / 0.00 / 0.00 | 0.00 / 0.00 / 0.00 | 0.00 / 0.00 / 0.00 | 0.27 / 0.45 / 0.58 | 0.00 / 0.00 / 0.00 |
+
+**id 17**, female, 6.6 y, 23.1 kg, reserves -0.68 of the store, need 21245 kcal, foregut 129 g, walk 0.74 m/s, drupe rate 342 kcal/h
+
+| foregut fill | drupe crown today (50 / 150 / 300 m) | drupe crown gutValue | fig crown gutValue | fallback today (yield 0.6 / 1 / 1.3) | fallback gutValue |
+| ---: | --- | --- | --- | --- | --- |
+| 0.00 | 0.98 / 0.95 / 0.90 | 0.98 / 0.95 / 0.90 | 1.06 / 1.01 / 0.94 | 0.27 / 0.45 / 0.59 | 0.27 / 0.45 / 0.59 |
+| 0.50 | 0.96 / 0.90 / 0.82 | 0.51 / 0.50 / 0.49 | 0.42 / 0.41 / 0.40 | 0.27 / 0.45 / 0.59 | 0.26 / 0.33 / 0.35 |
+| 0.90 | 0.81 / 0.61 / 0.44 | 0.34 / 0.33 / 0.32 | 0.26 / 0.26 / 0.25 | 0.27 / 0.45 / 0.59 | 0.23 / 0.24 / 0.24 |
+| 0.95 | 0.65 / 0.41 / 0.23 | 0.32 / 0.31 / 0.31 | 0.25 / 0.25 / 0.24 | 0.27 / 0.45 / 0.59 | 0.22 / 0.23 / 0.23 |
+| 0.98 | 0.35 / 0.12 / 0.00 | 0.31 / 0.30 / 0.30 | 0.24 / 0.24 / 0.23 | 0.27 / 0.45 / 0.59 | 0.22 / 0.22 / 0.22 |
+| 1.00 | 0.00 / 0.00 / 0.00 | 0.30 / 0.30 / 0.29 | 0.24 / 0.23 / 0.23 | 0.27 / 0.45 / 0.59 | 0.22 / 0.22 / 0.22 |
+
+- Tests: tests/sim-gut-value.test.ts, 9 (iteration 1's 7, adapted, plus: an animal at or above its set point keeps
+  today's values at every fill, the fallback while the gut has room; a deficit smaller than what the gut holds caps
+  phase 2, so a crown 100 m away is worth less to the animal than to a deeply depleted one; and the decision sampler
+  below reads only). Before the run: `pnpm test` 910 tests, 909 pass, 0 fail, 1 skipped; tsc, `gen-params --check` and
+  `decision-guide --check` clean.
+- Run: the frozen detached checkout of the commit that adds this entry; S39 + `"gutValue": 1`, rngSalt 0; `pnpm exec tsx
+  scripts/e-bench.ts --m6 --seeds 48,7 --animal-days --workers 1 --checkpoint-at 60,100,130,160,190 --params '<S39 +
+  gutValue 1>' --out <e1s-gut>/artifacts/validation/e1s/it2/parts/E1s-it2`. The extra checkpoints (06:30 of absolute days
+  60, 100, 130, 160, 190: 27 Nov, 6 Jan, 5 Feb, 7 Mar, 6 Apr) only write the world (a continued run is the uninterrupted
+  run, tests/e-bench-single-pass.test.ts); one job at a time while the load is above 8.
+- Judging: as iteration 1 (§8.3), against the same S39 values (11 below −0.3; lowest −0.683; no starvation; viability).
+- The integrator's two readouts (for a possible iteration 3; reported, not judged), with `scripts/e1s-decisions.ts`
+  (committed with this entry; measurement only):
+  1. depleted animals' (below −0.3) crown values at decision points, both seeds: each checkpoint world (days 60–210) is
+     continued 12 h with the rules tap, so the decisions sampled are the run's own; per decision the range of the crown
+     options' values and the gap between the best and the second best (as scored, without the jitter, and their food
+     terms alone), how often the jitter reverses the best crown, how often the other terms (company for joined trips;
+     territory, core, rain) do, and what is chosen; coarse histograms by reserve band. References sampled the same way
+     from the day-210 checkpoints of M6-S39 (seeds 48, 7) and R3 (the only checkpoints they have).
+  2. ground km per animal-day by reserve band from the per-animal records (iteration 2 against R3), and the share of
+     chosen trips over 500 m by reserve band from the samples of readout 1.

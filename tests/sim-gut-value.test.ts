@@ -112,6 +112,25 @@ test('gutValue 1, a full gut: foods rank by the energy per gram the gut passes; 
   assert.equal(fallbackGutFactor(c, P, fallbackRate(w, c, 1), 1), 0);
 });
 
+test('gutValue 1 (iteration 2): the passage phase is capped by the reserve deficit, so an animal at or above its set point keeps today\'s values', () => {
+  const w = load(saved().morning, { gutValue: 1 }), P = paramsOf(w);
+  for (const fill of [0, 0.5, 0.9, 0.98, 1]) {
+    const { c } = animal(w, fill, 0.01);
+    for (const [d, climb] of [[0, 0], [50, 10], [300, 12]]) assert.equal(gutRateShare(c, P, false, 0.5, 0, d, climb, 1, 1, 0.8), netRateShare(c, P, 0.5, 0, d, climb, 1, 1, 0.8), `fill ${fill}, ${d} m`);
+    assert.equal(fallbackGutFactor(c, P, fallbackRate(w, c, 1), 1), fill < 1 ? 1 : 0, `fallback, fill ${fill} (sated at a full gut)`);
+  }
+  // a deficit smaller than what the gut holds caps the passage phase: a crown 100 m away is then worth less than to a
+  // deeply depleted animal (its walk is shared by less food), a crown at hand the same (the passage rate)
+  const { c, R, cap } = animal(w, 1, 0);
+  const L = ledgerOf(c, P), pass = cap / dryMatterPerKcal(P, 'drupe') / P.ledgerGutEmptyH / R;
+  L.res = -100;
+  const atHandSmall = gutRateShare(c, P, false, 0.5, 0, 0, 0), farSmall = gutRateShare(c, P, false, 0.5, 0, 100, 10, 1, 1, 0.8);
+  L.res = -0.5 * reserveCap(c, P);
+  const atHandBig = gutRateShare(c, P, false, 0.5, 0, 0, 0), farBig = gutRateShare(c, P, false, 0.5, 0, 100, 10, 1, 1, 0.8);
+  assert.ok(Math.abs(atHandSmall - pass) < 1e-12 && Math.abs(atHandBig - pass) < 1e-12, `${atHandSmall} ${atHandBig} ${pass}`);
+  assert.ok(farSmall > 0 && farSmall < farBig, `${farSmall} < ${farBig}`);
+});
+
 /** An adult male of the saved world 3 m from the richest drupe crown of his community's core, nothing else in view. */
 function scene(over: Overrides, fill: number) {
   const w = load(saved().morning, over), P = paramsOf(w);
@@ -163,4 +182,13 @@ test('gutValue is read only with forageRate and the gut\'s digesta', () => {
   const a = createWorld(48, { profile: 'field', params: { ...base, gutValue: 1 } }), b = createWorld(48, { profile: 'field', params: base });
   for (let i = 0; i < 1440; i++) { tickWorld(a); tickWorld(b); }
   assert.equal(worldHash(a), worldHash(b), 'without forageRate the switch changes nothing');
+});
+
+test('scripts/e1s-decisions.ts: the decision sampler reads only (the world it continues equals a plain continuation)', async () => {
+  const { sampleWorld } = await import('../scripts/e1s-decisions');
+  const a = load(saved().morning, { gutValue: 1 }), b = load(saved().morning, { gutValue: 1 });
+  const r = sampleWorld(a, 1);
+  for (let i = 0; i < 240; i++) tickWorld(b);
+  assert.equal(worldHash(a), worldHash(b));
+  assert.ok(r.samples.length > 0 && r.samples.some(s => s.crowns.length > 0), `${r.samples.length} decisions sampled`);
 });
