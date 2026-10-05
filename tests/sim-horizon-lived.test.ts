@@ -95,10 +95,11 @@ test('a crafted animal whose bedtime pressure lies below today\'s: the horizon s
   at(t0 + 24, 1); // falls asleep: a waking day of 14.25 h
   assert.ok(Math.abs(L.dayH! - 14.25) < 1e-9, `day ${L.dayH}`);
   const [l0, f0] = feedHorizon(c, L, P);
-  assert.ok(l0 === 0 && Math.abs(f0 - 9.75) < 1e-9, 'asleep: no waking time left, the fast is 24 h less the day');
+  assert.ok(Math.abs(l0 - 14.25) < 1e-9 && Math.abs(f0 - 9.75) < 1e-9, 'asleep: the coming waking day lies ahead, and the fast 24 h less it');
   at(t0 + 30, 1, false); // out of its nest while latched: still asleep (the latch, not the nest, is its sleep)
-  assert.ok(L.sleptAt === t0 + 24 && L.wokeAt === t0 + 9.75);
-  at(t0 + 33.75, 0); // wakes
+  assert.ok(L.sleptAt === t0 + 24 && L.wokeAt === t0 + 9.75 && L.awakeH === 0);
+  at(t0 + 33.75, 0); // wakes: the same horizon as asleep, no jump
+  assert.ok(Math.abs(feedHorizon(c, L, P)[0] - 14.25) < 1e-9);
   at(t0 + 38.75, 0); // five hours awake
   const [left, fast] = feedHorizon(c, L, P);
   assert.ok(Math.abs(left - 9.25) < 1e-9 && Math.abs(fast - 9.75) < 1e-9, `${left} h left, fast ${fast} h`);

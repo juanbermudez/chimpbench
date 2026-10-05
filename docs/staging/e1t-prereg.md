@@ -169,3 +169,86 @@ Condition 1's S39 share and the reported readouts need S39's decisions and per-a
 - Agent's expectation (low confidence, from §6.2): condition 1 holds well above 90%; the daylight drive at 1 falls but not
   under 10% in the lean months, where depleted animals' deficits fill the horizon (offline 47.6% → 27.7% on seed 48 at
   day 211–213); the late-afternoon drive is lower than E1e's, so feeding days may shorten for balanced animals.
+
+### 6.5 Iteration 1 and R0: results (5 October; iteration 1 15:45–15:56, 633 s; R0 15:47–15:57, 554 s, started when the load fell to 6.0; both from the frozen checkout of 6cafd5d; numbers printed by scripts/e1t-horizon.ts, the scratch readers of §6.3 and scripts/lib/lean-season.ts's functions; outputs in this worktree's artifacts/validation/e1t/)
+
+**R0 is M6-S39.** Its field hashes equal M6-S39's on both seeds (seed 48 d485d15872a57eaf/9205780790911de8/1678526f4766a436,
+seed 7 06346f453f3daa10/145efb637ab578cb/7097fd61742f3b87): the readouts move nothing and S39 at this commit is the
+M6-S39 world. Every S39 number below is R0's.
+
+**Iteration 1 passes all four conditions.**
+
+| | S39 (R0, seeds 48 + 7) | E1t iteration 1 |
+| --- | --- | --- |
+| (1) daylight decisions resolved (unresolved) | 1,723,463 (0) | 1,665,577 (149: animals that died) |
+| (1) waking time left within 1 h of the next sleep onset | 4.2% (48: 4.4%, 7: 3.9%) | **99.9%** (99.9%, 99.9%) |
+| (1) error, estimate − actual, q05 / q50 / q95 (h, bin centres) | −8.75 / −1.75 / −1.25 | −0.25 / 0.25 / 0.25 |
+| (1) the other estimator within 1 h (lived day in R0; E1e in E1t) | 100.0% | 2.8% |
+| (1) within 1 h of the next nest entry | 83.2% | 1.8% |
+| (1) waking time left 0 | 21.0% | 0.0% (seed 7 0.1%) |
+| (1) drive at 1, daylight decisions (48 / 7) | 46.9% (55.6 / 37.8) | 32.1% (41.8 / 22.1) |
+| (1) of those, with waking time left (the deficit fills the horizon) | 56.5% | **99.9%** |
+| (1) drive at 1, all decisions | 46.4% | 31.9% |
+| (1) drive at 1 in October (M1's window; M1 sampled 26%) | 28.4% | 11.3% |
+| readout's sleep record against the world's | 0 mismatches | 0 mismatches |
+| (2) viability | pass: births 4, deaths 0 | **pass**: births 4, deaths 5, starvation 0; seed 7 ends at 48 of 49 |
+| (3) below −0.3 of the store at scored day 180 (aged 5 y+), 48 + 7 | 11 + 0 (9) | **10 + 0** (8) |
+| (3) lowest reserve | −0.683 (s48 id 17, F 6.6 y) | −0.801 (s48 id 9, F 12.6 y) |
+| (4) adults out of a nest, share of night time | 2.6% | **2.7%** |
+
+- Deaths, iteration 1 (none starved): seed 48 an infant of 0.08 y (window day 107) and a male of 26.5 y (day 146),
+  "illness" (background hazard); seed 7 one respiratory outbreak (days 148–149: a female of 38.5 y, an infant of 0.99 y, a
+  male of 26.5 y). At death health 0.75–1.00 and reserves −0.01 to −0.06 of the store (the newborn −0.21). The sim's own
+  hazard at S39's day-210 population expects 0.44 (seed 48) and 0.45 (seed 7) background deaths in 180 days; the
+  trajectories diverge from the burn-in, so outbreaks are separate draws. Not attributed to the switch.
+- Drive at 1 by clock hour (daylight decisions, S39 → E1t): 06 h 13.3 → 6.0%, 12 h 37.5 → 24.3%, 17 h 75.9 → 53.0%,
+  18 h 91.6 → 66.4% (left 0: 68.3% → 0.1%), 19 h 95.6 → 84.7% (99.8% → 0.1%). By month: Nov 31.3 → 13.2%, Feb 63.2 →
+  50.7%, Apr 44.0 → 31.8%. By class: adult males 33.5 → 15.7%, adult females 55.5 → 44.3%, 5–15 y 56.2 → 45.0%, infants
+  under 5 y 43.7 → 23.6%. The drive left at 1 is the deficit's: depleted animals in the lean months and everyone near the
+  end of the day.
+- Reported (seeds pooled, per animal-day; S39 → E1t). Eating minutes, Nov–Dec / Jan–Feb / Mar–Apr: juvenile females
+  276 / 324 / 382 → 278 / 330 / 380; adolescent females 235 / 275 / 412 → 340 / 363 / 441 (one or two animals: 112–122
+  animal-days a phase); pregnant 286 / 312 / 406 → 271 / 292 / 350; lactating 297 / 317 / 364 → 296 / 310 / 358; other
+  females 222 / 235 / 266 → 221 / 231 / 302; adult males 227 / 241 / 234 → 226 / 240 / 234. Fallback share of plant
+  energy over the window: juvenile F 6 → 6%, adolescent F 20 → 32%, pregnant 18 → 14% (Mar–Apr 26 → 16%), lactating 14 →
+  14%, other F 11 → 15%, adult males 2 → 2%. Ground km a day: juvenile F 3.58 → 3.78, adolescent F 3.07 → 3.10,
+  pregnant 2.79 → 2.73, lactating 3.26 → 3.30, other F 2.46 → 2.32, adult males 3.12 → 3.19. Reserves ÷ store, window
+  mean: juvenile F −0.144 → −0.160, adolescent F −0.103 → −0.226, pregnant −0.104 → −0.086, lactating −0.083 → −0.086,
+  adult males −0.013 → −0.020, infants 2–5 y −0.055 → −0.073. Behaviour by reserve, window days 90–179, animals of 5 y+
+  other than adult males: at −0.3 to −0.5 418 → 415 animal-days, 534 → 527 eating min, 83 → 82% at a full foregut,
+  fallback 33 → 32%, net −107 → −99 kcal; at −0.5 to −0.7 95 → 122 animal-days, 619 → 603 min, fallback 40 → 42%, net
+  −156 → −123; at −0.7 to −1 none → 25 animal-days (679 min, fallback 64%, net −165; seed 48's adolescent id 9).
+- Hunger readout by clock hour: in daylight (08–17 h) within 0.03 of S39's for adults and 5–15 y, 0.04–0.05 lower for
+  infants under 5 y; **at night (21–04 h) 0.85–0.98 against 0.34–0.68.** Bench headline (two seeds, reported only; the
+  confirm judges it): fitted 4.544 → 3.535, held-out 10.968 → 9.261 (7.737 → 7.598 without T-HUN-4 and T-BRD-1);
+  prescriptions 42 and 42.
+- **Correction to §6.1.** "Night suckling not changed" was wrong. Eligibility (hunger ≥ 0.08) is unchanged, but a night
+  bout runs until hunger falls below 0.08, and with φ pinned at 1 that is a fuller gut: the energy readout's night table
+  (infants in their mother's nest; R0 → iteration 1): φ ≥ 0.999 in 16.0–54.9% → 90.6–98.6% of night-nest ticks, night
+  hunger 0.36–0.69 → 0.72–0.92, drinking in 3.7 → 5.6% (0–0.5 y), 5.8 → 8.5% (0.5–1 y), 23.1 → 42.7% (1–2 y), 19.8 →
+  21.0% (2–3 y), 13.3 → 16.2% (3–4 y) of night-nest ticks; night milk 44 → 73 kcal a day at 0–0.5 y and 101 → 113 at
+  1–2 y (gland-limited: day milk falls about as much; day + night within 4% except at 4–5 y, 228 → 205 kcal).
+
+### 6.6 Iteration 2 (logged before its run): the horizon while the animal sleeps
+
+- **Reason, in the mechanism.** Iteration 1 keeps counting the hours since the last waking through sleep, so the waking
+  time left is 0 all night and the drive's divisor falls to one tick of feeding (energy.ts setHunger, deficitDrive): φ
+  saturates whenever the need is positive (§6.5: night hunger 0.85–0.98; infants drink to a fuller gut at night). E1e's
+  horizon reopened during sleep as S fell; iteration 1 removed that without a replacement. The drive is defined for "the
+  energy the animal still needs before its next chance to feed ... as a share of what it could eat in the waking time
+  left": for a sleeping animal that is the coming waking day.
+- **Change.** While the animal sleeps (its record holds a sleep onset after its last waking) it has not yet woken on the
+  coming day: its hours awake today are 0 (`awakeH` 0), so the horizon is the last complete waking day and the fast after
+  it, the horizon it will have on waking (§2's formula with the hours awake today at 0). No constant; awake, nothing
+  changes. The readout's own lived estimator follows the same rule (its "other" column for a world at 0; R0's was
+  computed with iteration 1's rule, which differs only for decisions taken while the animal's record says asleep, none
+  of them in daylight in R0: 0.0% of the lived estimator's daylight left was 0).
+- Code, tests (the crafted animal asleep: waking time left = the day, the fast 24 h less it; switch 0 still hashes to
+  6a6f269ff10bf7be), docs (simulation.md, params.json note) at the commit that adds this entry; run from a new frozen
+  detached checkout of it.
+- Arm and command as iteration 1 with `--out <e1t-horizon>/artifacts/validation/e1t/it2/E1t-it2`; reference R0 (switch 0
+  is unchanged by this iteration).
+- Judging: as iteration 1 (§6.4), against R0; reported as iteration 1, plus the night readouts against R0 and iteration 1
+  (hunger by hour, the energy readout's night-access table).
+- Expectation (low confidence): daylight results as iteration 1's (the change acts only while asleep and at the moment
+  of falling asleep); night hunger and infants' night drinking back near R0's.
