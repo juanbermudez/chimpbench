@@ -173,7 +173,7 @@ test('patrol classifier on constructed follows: silent travel of >= 2 males beyo
   const rec = emptyRecords();
   const follow = (samples: { am: number; cat: number; called?: boolean; truth?: number; x: number }[]) => {
     const f = rec.follows.length, idx: number[] = [];
-    rec.follows.push({ team: 0, troop: 1, focal: 1, sex: 'male', lactating: false, start: f * 24, end: f * 24 + samples.length / 60, complete: true, lost: false, sunrise: 6.8, sunset: 18.8, truthTicks: [0, 0, 0, 0, 0, 0], nestTree: -1, firstTree: -1 });
+    rec.follows.push({ team: 0, troop: 1, focal: 1, sex: 'male', lactating: false, start: f * 24, end: f * 24 + samples.length / 60, complete: true, lost: false, sunrise: 6.8, sunset: 18.8, truthTicks: [0, 0, 0, 0, 0, 0], nestTree: -1, firstTree: -1, departure: true, mother: false, firstFood: -1, fruitIndex: 0.9, scarce: false });
     samples.forEach((s, k) => {
       const P = rec.points; idx.push(P.t.n);
       P.t.push(Math.round((f * 24 + k / 60) * 240)); P.team.push(0); P.focal.push(1); P.cat.push(s.cat); P.action.push(0); P.height.push(0); P.party.push(4); P.partyInd.push(4); P.partyAM.push(s.am);
@@ -302,7 +302,7 @@ test('C8 neighbour-pressure index against a hand calculation: an encounter at th
   let n = 0;
   for (let day = 0; day < 420; day++) {
     const start = day * 24 + 1;
-    r.follows.push({ team: 0, troop: 1, focal: 1, sex: 'male', lactating: false, start, end: start + 12, complete: true, lost: false, sunrise: 6.8, sunset: 18.8, truthTicks: [0, 0, 0, 0, 0, 0], nestTree: -1, firstTree: -1 });
+    r.follows.push({ team: 0, troop: 1, focal: 1, sex: 'male', lactating: false, start, end: start + 12, complete: true, lost: false, sunrise: 6.8, sunset: 18.8, truthTicks: [0, 0, 0, 0, 0, 0], nestTree: -1, firstTree: -1, departure: true, mother: false, firstFood: -1, fruitIndex: 0.9, scarce: false });
     for (let k = 0; k < 24; k++, n++) {
       P.t.push(Math.round((start + k * 0.5) * perH)); P.team.push(0); P.focal.push(1); P.cat.push(0); P.action.push(0); P.height.push(0); P.party.push(1); P.partyInd.push(1); P.partyAM.push(1);
       P.n5.push(0); P.n10.push(0); P.flags.push(0); P.feed.push(0); P.tree.push(-1); P.x.push(300 * normal(n, 1)); P.z.push(300 * normal(n, 2)); P.truthPatrol.push(0);
@@ -313,4 +313,24 @@ test('C8 neighbour-pressure index against a hand calculation: an encounter at th
   const { npi } = npiTools(derive(r));
   assert.ok(Math.abs(npi(1, 399 * 24, 410 * 24) - (1 * 1 + 0) / 2 / 5) < 0.02, `NPI ${npi(1, 399 * 24, 410 * 24)}`);
   assert.equal(npi(1, 380 * 24, 390 * 24), 0, 'no encounters, no pressure');
+});
+
+test('Track E freeze (e5a S2): the borderline link only adds party members, and the departure flag follows the nest sighting (e2h)', async () => {
+  const { PROFILES } = await import('../src/field/config');
+  const runWith = (border: number) => {
+    const world = createWorld(48);
+    const obs = createObserver(world, { seed: 3, profile: { ...PROFILES.compressed, partyBorderLinkM: border } });
+    for (let i = 0; i < 2 * DAY; i++) { tickWorld(world); observerStep(obs, world); }
+    return finishObserver(obs, world);
+  };
+  const on = runWith(PROFILES.compressed.partyBorderLinkM), off = runWith(0);
+  // the same world and observer draws: the follows and samples coincide, and every party with the rule is at least as large
+  assert.equal(on.points.t.n, off.points.t.n);
+  assert.deepEqual(on.follows.map(f => [f.focal, f.start]), off.follows.map(f => [f.focal, f.start]));
+  let larger = 0;
+  for (let i = 0; i < on.points.t.n; i++) { assert.ok(on.points.party.data[i] >= off.points.party.data[i], `point ${i}`); if (on.points.party.data[i] > off.points.party.data[i]) larger++; }
+  assert.ok(larger > 0, 'the rule links someone in two days (468 of 2,209 points on this seed)');
+  // a follow without an observed departure starts at its first sample after 04:00 (the focal was already out of its nest)
+  for (const f of on.follows) if (!f.departure) assert.ok(((f.start + 6.5) % 24) < 4 + 1 / 60 + 1e-9 || f.start - on.time0 < 0.1, `follow at ${((f.start + 6.5) % 24).toFixed(3)} h`);
+  assert.ok(on.follows.some(f => f.departure), 'some departures are observed');
 });

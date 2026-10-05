@@ -19,10 +19,13 @@ export type FollowMode = 'focal' | 'party-larger' | 'party-males';
 /**
  * Targets scored from a party-follow team because their source followed parties (protocolLog, C5a; the incursion share
  * from Ngogo male-party follows, protocolLog C6; T-PAT-1 reverted to focal follows after the C6 review, because its
- * band comes from Gombe and Taï). Only fitted targets: after the C3 freeze a protocol
- * change would compromise a held-out target (data/targets.json protocolPolicy).
+ * band comes from Gombe and Taï). Until the Track E freeze only fitted targets: a protocol change compromises a held-out
+ * target unless it follows the source's methods (data/targets.json protocolPolicy). Track E freeze (5 October 2026, user
+ * decision, protocolRevisedPostHoc): T-HUN-3 and T-HUN-4 (e4f-protocol: gilby2015's Kanyawara encounters are party scans)
+ * and T-PTY-3 (e5a S3: wilson2007 scored party follows).
  */
-export const TARGET_FOLLOW: Readonly<Record<string, FollowMode>> = { 'T-IGE-1': 'party-larger', 'T-PTY-1': 'party-larger', 'T-HUN-1': 'party-larger', 'T-PAT-6': 'party-males' };
+export const TARGET_FOLLOW: Readonly<Record<string, FollowMode>> = { 'T-IGE-1': 'party-larger', 'T-PTY-1': 'party-larger', 'T-HUN-1': 'party-larger', 'T-PAT-6': 'party-males',
+  'T-HUN-3': 'party-larger', 'T-HUN-4': 'party-larger', 'T-PTY-3': 'party-larger' };
 /**
  * Effort normalization (C3 review, decided in C5a before calibration and logged in data/targets.json): encounter
  * rates are scored per follow-hour and scaled to the source's effort, 35,083 follow-hours in 15 years at Kanyawara
@@ -38,6 +41,12 @@ export interface FieldProfile {
   visibilityM: number;
   /** Party rule: chain of individuals each within this distance of another (m). */
   partyLinkM: number;
+  /**
+   * Track E freeze (e5a S2, wilson2001's borderline rule): two animals up to this far apart (m) also link when both were in the
+   * focal party at the follow's previous 15-min scan ("separated from the rest of the party by 50–60 m but had been together
+   * with other party members in the previous 15 min"). 0 turns the rule off (sensitivity runs).
+   */
+  partyBorderLinkM: number;
   /** Fruiting crowns are visible from further than animals (m): used for transect walks and out-of-sight approaches. */
   treeDetectM: number;
   /** Colobus "encounter": prey within this distance of the focal party (m). */
@@ -58,6 +67,7 @@ export const PROFILES: Readonly<Record<ProfileName, FieldProfile>> = {
     lengthScale: 50,       // field profile = compressed layout × 50 (docs/realism-design.md §5.1)
     visibilityM: 15,       // = SIGHT_DAY (src/sim/state.ts), the compressed stand-in for ~35 m (P-SCALE-2)
     partyLinkM: 9,         // = PARTY_LINK, the compressed stand-in for the 50 m Kanyawara rule (P-SCALE-1)
+    partyBorderLinkM: 10.8, // = partyLinkM × 60 / 50, the stand-in for wilson2001's 50–60 m borderline rule
     treeDetectM: 24,       // = min(1.6 × sight, 26), the chimps' fruit-crown detection (src/sim/perception.ts)
     preyEncounterM: 18,    // = 1.2 × sight, the chimps' prey detection; stand-in for the 100 m field rule (gilby2015)
     loudM: 30,             // = the sim's "the hunt is loud" radius (src/sim/perception.ts)
@@ -70,6 +80,7 @@ export const PROFILES: Readonly<Record<ProfileName, FieldProfile>> = {
     lengthScale: 1,
     visibilityM: 35,       // P-SCALE-2
     partyLinkM: 50,        // P-SCALE-1
+    partyBorderLinkM: 60,  // wilson2001 (e5a S2)
     treeDetectM: 35,       // P-SCALE-2 (fruit-tree detection 31–37 m)
     preyEncounterM: 100,   // gilby2015
     loudM: 500,            // design

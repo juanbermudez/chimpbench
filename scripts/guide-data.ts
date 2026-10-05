@@ -355,7 +355,8 @@ function main() {
     'docs/data/guide-patrols.json': pat,
     'docs/data/guide-validation.json': validation(scoreFile, freshFile, names),
   };
-  const counts = ['rfs', 'monthlyRfs', 'annualRain', 'n', 'males', 'fullDays', 'params', 'targets', 'fitted', 'heldOut', 'encoded', 'sources', 'days', 'burnInDays', 'protocolHash'];
+  // band edges of target rows (`range.lo`, `range.hi`) are field values in their units (kcal/d, g/d since the Track E rows), not coordinates
+  const counts = ['rfs', 'monthlyRfs', 'annualRain', 'n', 'males', 'fullDays', 'params', 'targets', 'fitted', 'heldOut', 'encoded', 'sources', 'days', 'burnInDays', 'protocolHash', 'lo', 'hi'];
   let drift = 0;
   for (const [file, data] of Object.entries(outputs)) {
     // Attribution strings are fixed literals above (author names may coincide with a chimp's name); everything else is guarded.
