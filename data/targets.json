@@ -22,7 +22,7 @@
   "date": "2026-10-05",
   "at": "2026-10-05T05:31:34Z",
   "hash": "5d4fa5a2a500bce6",
-  "registryHash": "7ac2db8a3d058e4d",
+  "registryHash": "16853ddc0f0a7318",
   "observerRevised": {
    "T-PTY-1": "e5a S1: mean of follow means; e5a S2: party chain with the 50-60 m borderline link",
    "T-PTY-2": "e5a S2: party chain with the 50-60 m borderline link",
@@ -83,7 +83,7 @@
    "T-COM-7": "e5a S2: party chain with the 50-60 m borderline link",
    "T-COM-9": "e5a S2: party chain with the 50-60 m borderline link"
   },
-  "note": "scripts/e-bench.ts reads `observerRevised`: a saved run made before this freeze cannot be re-scored on these rows (listed as needing a fresh run, never summed). The previous freeze's targets file is data/targets.c8.json (scripts/targets-snapshot.ts --check), for scoring any run on the old bands with e-bench --targets. --unseal stays refused under this freeze: its stage does not start with 'C8' (src/field/targets.ts unsealRefusal); it was already refused on track-e because the Track E switches changed the registry hash (57903c4cdc400019 -> 7ac2db8a3d058e4d). The C8 combined proof needs its own C8 freeze on main.",
+  "note": "scripts/e-bench.ts reads `observerRevised`: a saved run made before this freeze cannot be re-scored on these rows (listed as needing a fresh run, never summed). The previous freeze's targets file is data/targets.c8.json (scripts/targets-snapshot.ts --check), for scoring any run on the old bands with e-bench --targets. --unseal stays refused under this freeze: its stage does not start with 'C8' (src/field/targets.ts unsealRefusal); it was already refused on track-e because the Track E switches changed the registry hash (57903c4cdc400019 -> 7ac2db8a3d058e4d, then 16853ddc0f0a7318 with E3i). The C8 combined proof needs its own C8 freeze on main.",
   "previous": {
    "stage": "C8 freeze + C8c + C13e + hunting fix + C14 (sealed rows registered)",
    "date": "2026-10-01",
@@ -2260,6 +2260,18 @@
     "all"
    ],
    "verdicts": "every later e-bench run is scored on this protocol; saved runs are re-scored band-only (observer-revised rows need fresh runs)",
+   "class": "freeze"
+  },
+  {
+   "date": "2026-10-05",
+   "by": "eA-protocol (Track E protocol agent; user decision of 4 October 2026, \"apply the audited fixes and targets\", relayed by the integrator)",
+   "seen": "none (bookkeeping)",
+   "param": "freeze record: registryHash 7ac2db8a3d058e4d -> 16853ddc0f0a7318 at the merge of track-e 9cb779f (stage E3i's callTrip parameters, 0 by default); protocol hash unchanged (5d4fa5a2a500bce6: E3i touches no hashed file)",
+   "reason": "the freeze records the registry of the head it lands on",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "none",
    "class": "freeze"
   }
  ],
