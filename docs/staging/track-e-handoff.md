@@ -14,10 +14,11 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (4 October 16:25; deploy held by the user).** Agents: **E3g** (re-deciding's cost, on S28), **E4p** (mating
-  gaps), **E4q** (aggression cooldowns). Integrator: S32 re-draws S32c1–S32c3 (bench-run at 4111971, `…/e/s3132/`,
-  `integrator/s32c-group.sh`) as the reference group for confirms on S32. Decision guide on S32 (merged `guide-s32`,
-  c09d6b1); hosted copy in `site` 0ff7cdc, built and checked (S32, 45, 102 replaced, no console errors), not deployed.
+- **Running now (4 October 21:30; deploy held by the user).** Agents: **E3g** (re-deciding's cost; resumed after a stream
+  stall, iteration 2 run, finishing) and **E4p** (mating gaps; resumed after a stall, A1 run, A2 next). Integrator: **S33**
+  (S32 + `aggressionGaps` 7; bench-run4 at a5ab8f8, `…/e/s33/`; judge `integrator/judge_s32group.py`) and the S32c3 energy
+  step (its first run was cut at the 2-h background limit; S32c1, S32c2 and S32c3's bench are done). E4q merged (830 pass).
+  Decision guide on S32; hosted copy in `site` 0ff7cdc; nothing deployed.
 - **S32 is the best integrated candidate (45 on E0b's ledger)** by the registered decision (e-stack2-confirm.md "S31 and
   S32 results"): S27 + `departValue` 2 + `bodyRules` 1 + `redecideValue` 2; every sum inside noise; **large energy cost**
   (every class's reserve falls faster: mothers −0.132, infants 0.5–2 y −0.198 %/day; adults +1.2–1.3 km a day; hunting
