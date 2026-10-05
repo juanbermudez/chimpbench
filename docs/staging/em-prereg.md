@@ -200,6 +200,79 @@ company) on the same sample and probes.
 `<sample>.<provider>.jsonl`, `jev.jsonl`, `probes.<provider>.jsonl`, the guard's receipts, and `report.md`/`report.json`
 (`scripts/em-report.ts`: every number in the results below comes from it).
 
+### M2 results (5 October 2026; `artifacts/em/m2/report.md`, tables below from `scripts/em-summary.ts` over its JSON)
+
+**What ran.** The sample (3,450 points; 3,067 draws with RG's pick on the menu), the probes (565 situations × 3 levels ×
+3 renderings) and three providers: `base` on everything; `baseline` (adapter sha256 06a8bb3e…, = its round-3 manifest) on
+every probe and on seed 48's sample plus the first 160 records of seed 7 (its seed-7 run was stopped at 320 packets to
+free the one GPU worker for M3 while the machine was swapping at load ~250; disclosed, the run can be completed); `jev`
+(jev-1.13.0, every call settled) on 300 draws and 30 situations per probe. Jev: 2,220 calls, 2.87 M input tokens (median
+1,140 old, 1,368 new; max 1,933), **0.12 USD** of the 5 USD cap (dry-run estimate 0.12–0.17), median latency 0.44 s.
+
+| provider | draws | agree old | agree new | new − old, points (95% CI) | kept or arrived: old → new |
+|---|---|---|---|---|---|
+| base | 3067 | 25% | 28% | +3.3 (+2.2, +4.4) | 41% → 39% (n 343) |
+| baseline | 1629 | 34% | 35% | +1.7 (-0.5, +3.8) | 56% → 42% (n 178) |
+| jev | 300 | 29% | 35% | +6.0 (+2.3, +10.0) | – |
+
+References: the rules' own value without its jitter and belief draw picks RG's option in 81% of draws; chance 19%.
+
+| share of choices (draws) | rules | base old | base new | baseline old | baseline new | jev old | jev new |
+|---|---|---|---|---|---|---|---|
+| feed | 15% | 4% | 7% | 9% | 28% | 7% | 17% |
+| food-trip | 13% | 3% | 5% | 4% | 5% | 2% | 5% |
+| social-move | 10% | 2% | 6% | 6% | 10% | 2% | 2% |
+| rest | 22% | 22% | 16% | 32% | 17% | 13% | 16% |
+| nest | 14% | 4% | 4% | 6% | 6% | 7% | 7% |
+| drink | 1% | 9% | 8% | 12% | 12% | 11% | 11% |
+| affiliative | 11% | 33% | 32% | 22% | 16% | 41% | 32% |
+| greet | 6% | 13% | 12% | 2% | 1% | 7% | 3% |
+| aggression | 4% | 6% | 5% | 1% | 1% | 3% | 2% |
+
+| probe: Δ target probability, high − low level (verdict) | base old | base new | base isolated | baseline old | baseline new | baseline isolated | jev old | jev new | jev isolated |
+|---|---|---|---|---|---|---|---|---|---|
+| deficit | 0.280 (right) | 0.179 (right) | -0.005 (wrong) | 0.554 (right) | 0.411 (right) | -0.005 (wrong) | 0.518 (right) | 0.303 (right) | 0.014 (none) |
+| reserves | -0.000 (none) | -0.004 (wrong) | -0.004 (wrong) | -0.000 (none) | -0.002 (wrong) | -0.002 (wrong) | 0.001 (none) | 0.036 (right) | 0.035 (right) |
+| sleep | 0.638 (right) | 0.600 (right) | 0.005 (right) | 0.694 (right) | 0.790 (right) | 0.011 (right) | 0.777 (right) | 0.754 (right) | 0.143 (right) |
+| light | 0.043 (right) | 0.095 (right) | 0.007 (right) | 0.111 (right) | 0.191 (right) | 0.027 (right) | 0.280 (right) | 0.277 (right) | 0.007 (none) |
+| heat | -0.000 (none) | 0.002 (none) | 0.003 (none) | 0.001 (none) | 0.001 (none) | 0.001 (none) | 0.018 (right) | 0.016 (right) | -0.009 (none) |
+| water | 0.699 (right) | 0.558 (right) | 0.001 (right) | 0.979 (right) | 0.976 (right) | 0.001 (right) | 0.839 (right) | 0.793 (right) | 0.037 (right) |
+
+Right-way probes, old / new (consistent): base 4 / 4; baseline 4 / 4; jev 5 / 6. Wrong-way in the new observation: base 1; baseline 1; jev 0; isolated fields with any significant response: base 5; baseline 5; jev 3.
+Which food (exploratory): base peaks on the higher-rate food option in 49% old and 73% new (the rules, choosing food, in 68%).
+Which food (exploratory): baseline peaks on the higher-rate food option in 70% old and 85% new (the rules, choosing food, in 65%).
+Which food (exploratory): jev peaks on the higher-rate food option in 50% old and 62% new (the rules, choosing food, in 78%).
+
+(The rules column is the full sample's; the adapter's and Jev's subsamples differ from it by one or two points.)
+
+**Reading by the registered rule.** Both GLiNER providers move deficit, sleep, light and water the right way in the new
+observation, as in the old (4 / 4), and the reserves probe the wrong way by 0.2–0.4 points of probability with intervals
+just below 0. So by the letter both are *confused* (one wrong-way probe), neither is *help* (no probe gained) nor *ignored*
+(agreement moved 3.3 points for `base`; tiny but nonzero isolated responses). Jev is *help*: one more probe right
+(reserves, +3.5 points, the same when isolated), agreement +6.0 points (CI +2.3, +10.0), no wrong-way probe.
+
+**What the numbers say (practical reading).**
+- **GLiNER reads words, not Track E's numbers.** Moving a body number alone (isolated: reserves, deficit, sleep pressure,
+  water, heat) changes its target probability by −0.5 to +1.1 points; the light words alone by up to +2.7. The same state moved
+  together with its gauge word ("strong hunger", "strong fatigue — needs rest now", "severe thirst") or its light words
+  moves it 18–98 points. The deficit's numbers dilute the hunger word (base +0.28 old, +0.18 new); the light words help
+  (+0.04 → +0.10 base, +0.11 → +0.19 adapter).
+- **The option values are read, as text beside the other options.** With "about 430 kcal an hour net" on the options,
+  GLiNER's food probability peaks on the higher-rate food option 73% (base; 49% before) and 85% (adapter; 70%) of the
+  time, about as often as the rules take the better option when they eat (65–68%). The adapter also eats far more (feed 9% → 28% of
+  choices, rules 15%; rest 32% → 17%) and agrees less with the rules' kept acts (56% → 42%).
+- **Where GLiNER differs from the rules** (base, new observation; report cells): rest → groom (285 draws; it grooms
+  when fatigue is below the 0.4 at which the packet names it), nest → drink (182; thirsty animals awake in the nest at dawn
+  that the rules hold in the dark), feed → groom (164; hunger below the word's threshold, fuller gut), feed or trip → rest
+  (sleepier). Its choices over-weight grooming (32% against 11%), greeting and drinking, and under-weight eating (7% against
+  15%), trips to food (5% against 13%) and nesting (4% against 14%). Agreement with RG's pick: 28% (chance 19%; the rules'
+  own value 81%).
+- **Jev reads the numbers.** Its isolated responses are real for sleep pressure (+14 points), water (+3.7) and reserves
+  (+3.5), and the new observation lifts its eating toward the rules' (7% → 17%).
+
+**M3 gate.** Passes for `base` (deficit and sleep move the right way); provider `base` by the tie rule (recorded above
+before the G arms ran).
+
 ## M3. In the loop (registered 5 October 2026 while M2's GLiNER scoring runs, before any M3 run)
 
 **Gate and provider (both fixed by M2's registered rules).** The G arms run only if M2's gate passes; their provider is the GLiNER provider M2's rule selects (more probes the right way in the new observation; on a tie `base`). The R and A arms need neither and may run while M2 scores.
