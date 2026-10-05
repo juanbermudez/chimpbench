@@ -44,7 +44,7 @@ export const RANGES: InputRange[] = [
   { id: 'ledgerGutEmptyH', lo: 1.5, hi: 4.8, basis: '−50% (no source); human stomach + small-intestine residence 1.6 + 3.2 h (tougas2000, szarkaCamilleri2012), derived' },
   { id: 'digestaHindgutDmGPerMl', lo: 0.13, hi: 0.26, basis: 'pig caecum 13–16% (jerezBogota2025) to wild chimpanzee faeces 26% (weary2017, fig season)' },
   { id: 'digestaMrtH', lo: 31.5, hi: 48, basis: 'source: 31.5 h (lambert2002 via nakamura2017) to 48 h (miltonDemment1988, low fibre)' },
-  { id: 'digestaNdfDigestibility', lo: 0.449, hi: 0.543, basis: 'source: gorillas (remisDierenfeld2004) to chimpanzees, 34% NDF (miltonDemment1988)' },
+  { id: 'digestaNdfDigestibility', lo: 0.23, hi: 0.543, basis: 'source (§6): wild howlers on wild fruit, 11% lignin (miltonEtAl1980 via nrc2003), to chimpanzees on 34.5% NDF, 2.8% lignin (miltonDemment1988 via nrc2003)' },
   { id: 'digestaFermentKcalPerG', lo: 2.4, hi: 2.9, basis: 'source-derived: absorbed short-chain fatty acids 2.4–2.6 (livesey1992 factors; fao2003 ME 2.6) to digestible energy 2.8–2.9 per g fermented' },
   { id: 'digestaTefFrac', lo: 0.05, hi: 0.15, basis: 'source: humans 5–15% (westerterp2004)' },
   { id: 'ledgerGutCapKcalPerKg', lo: 12.5, hi: 37.5, basis: '±50% (inert with ledgerDigesta 1)' },
@@ -55,6 +55,8 @@ export const RANGES: InputRange[] = [
 export const POINTS: { label: string; over: Partial<Record<keyof Params, number>> }[] = [
   { label: 'digestaFermentKcalPerG 2.6 (fao2003 ME of fermentable fibre)', over: { digestaFermentKcalPerG: 2.6 } },
   { label: 'digestaNdfDigestibility 0.543 (chimpanzees, miltonDemment1988)', over: { digestaNdfDigestibility: 0.543 } },
+  { label: 'digestaNdfDigestibility 0.706 (chimpanzees, 15.3% NDF; §6)', over: { digestaNdfDigestibility: 0.706 } },
+  { label: 'digestaNdfDigestibility 0.41 (wild howlers, wild leaves; §6)', over: { digestaNdfDigestibility: 0.41 } },
   { label: 'digestaMrtH 37.7 (chimpanzees, 34% NDF)', over: { digestaMrtH: 37.7 } },
   { label: 'digestaMrtH 31 (lambert1997 thesis via remis2000)', over: { digestaMrtH: 31 } },
   { label: 'ledgerGutEmptyH 4.8 (human analogue)', over: { ledgerGutEmptyH: 4.8 } },
