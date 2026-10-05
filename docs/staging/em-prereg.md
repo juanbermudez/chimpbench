@@ -355,3 +355,44 @@ rgChoice keeps it), so a provider replaces only RG's draws, the decisions M2 mea
 argmax at the draws) and **GG** (the gate, GLiNER `base` at the draws). Reason: the harness smoke test (disclosed above)
 showed the app's loop, which asks at every decision point, changing walking by itself; A and G answer "the model in the
 app's loop", AG and GG "the model in place of the rules' choice". Outputs `artifacts/em/m3/s<seed>-AGG.json`.
+
+
+### M3 results, iterations 1 and 2 (5 October 2026; `artifacts/em/m3/report.md` from `scripts/em-loop-report.ts`)
+
+Seeds 48 and 7, the same five focal animals per seed (alpha male, median male, lactating female, other female,
+adolescent), 5 days after the 30-day burn-in, every arm on a copy of the same burned-in world (burn-in hashes checked
+equal). Means over the ten animals:
+
+| arm | animals | feed | travel | groom | rest+groom | feed min/d | kcal/d | reserve %/d | km/d (fixes) | night out % | deaths |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| R | 10 | 0.33 | 0.09 | 0.14 | 0.54 | 231 | 1603 | 0.016 | 2.17 | 2.86 | 0 |
+| A | 10 | 0.35 | 0.17 | 0.11 | 0.45 | 247 | 1599 | -0.148 | 3.77 | 0.96 | 0 |
+| G | 10 | 0.18 | 0.04 | 0.21 | 0.65 | 127 | 1028 | -1.050 | 0.93 | 80.46 | 0 |
+| AG | 10 | 0.32 | 0.12 | 0.13 | 0.52 | 226 | 1608 | -0.030 | 3.09 | 2.09 | 0 |
+| GG | 10 | 0.16 | 0.03 | 0.17 | 0.68 | 111 | 862 | -1.326 | 0.68 | 80.68 | 0 |
+
+Focal animals in the field rows' bands:
+
+| row (band) | R | A | G | AG | GG |
+|---|---|---|---|---|---|
+| T-ACT-1 feeding (0.33–0.5) | 5/10 | 5/10 | 0/10 | 5/10 | 0/10 |
+| T-ACT-2 travel (0.12–0.25) | 2/10 | 10/10 | 0/10 | 3/10 | 0/10 |
+| T-ACT-3 grooming (0.08–0.18) | 8/10 | 9/10 | 3/10 | 9/10 | 5/10 |
+| T-ACT-4 rest + groom (0.3–0.47) | 3/10 | 5/10 | 1/10 | 1/10 | 1/10 |
+| T-RNG-4 day range (5-min fixes) (1.5–3.5) | 3/4 | 2/4 | 0/4 | 2/4 | 0/4 |
+| T-ENE-2 feeding min/day (250–370) | 2/2 | 2/2 | 0/2 | 1/2 | 0/2 |
+
+- **The loop alone (A against R).** Asked at every decision point, even the rules' own argmax walks 1.7 times as far
+  (3.77 against 2.17 km a day), travels twice the share and loses reserve (−0.15 against +0.02 % a day). With RG's gate
+  (AG) the loop matches the rules within a few points (travel 0.12, reserves −0.03 % a day). The app's loop lacks the
+  intention a rules animal holds; a model in it re-decides at every bout end.
+- **GLiNER in the loop (G, untuned, the observation of M1 with wording 1).** Unusable: its choices are rest 46%,
+  aggressive acts 30% and grooming 16% (on the same menus the rules' argmax is a trip to food 48%, the nest 26%, eating
+  11%); the animals eat 1,028 kcal a day against 1,603, lose 1.05% of their store a day, walk 0.9 km, and spend 80% of
+  the night out of a nest (rules 2.9%); no focal animal stays in the feeding, travel or day-range bands. No death in five
+  days, but at this rate a lactating female (128 and 859 kcal a day) would starve within weeks.
+- **GLiNER in place of RG's draws (GG).** No better: rest 54%, grooming 24%; 862 kcal a day, −1.33% a day, 81% of the
+  night out of a nest; the gate keeps the acts it chose. The choices, not the loop, are the problem.
+- **Refused contexts.** G and GG ran before the JSON-safety fix (4fa3b84): 240 and 196 decisions had a non-finite need in
+  the body (animals that never slept in a nest pinned sleep pressure at 1), were refused and decided by the rules; the
+  numbers above include them, so the model's own effect is if anything larger.
