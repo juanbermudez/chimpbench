@@ -1968,3 +1968,13 @@ adult males, 14 adult females (8 in oestrus), 30 of 39 dyads seen together copul
 a median 0.28 of courtship sequences by approaching to copulate. wilcox1995 (Abs, humans): conception only from
 intercourse in the six days ending on ovulation, 0.10 five days before to 0.33 on the day (E4p `matingValue` 3,
 `spermLifeDays` 4.2 days, [L]). New key: wilcox1995.
+
+## Addendum: E5g calls and alarms (4 October 2026)
+
+Same text as research.md "Addendum: E5g calls and alarms". schel2013b (FT, PMC3797826; Sonso 2010–11, 13 focal
+individuals, 27 trials with a moving python model, 1,273 focal alarm calls): calls within a bout every 2.49 s on average
+(SD 3.4 s); a bout ends after ≥ 30 s of silence; callers stopped when all recipients were safe (aware, > 10 m away or up a
+tree) more often than chance (median 100% vs 40.42%, N = 11), not when their own risk fell; alarm huus and waa barks rose
+after a friend arrived. crockford2018 (FT): alert hoos in bouts of > 1 call in 38 of 40 cases. crockford2012 (T-COM-11's
+source; not re-read: bot check at the publisher, error at the repository): alert hoos in 46 of 111 individual encounters,
+fewer when receivers knew. New keys: schel2013b, crockford2012.

@@ -112,6 +112,78 @@ switch without replacement (as E4q's `aggressionGaps`), and the arm confirms it.
 through what listeners do with a pant-hoot, party size and contacts (T-PTY-1, T-IGE-1, -2). The two snake literals act
 only in the trials, which run on copies: they can move T-COM-11 and no other scored row.
 
+### 2.1 Diagnosis results (frozen checkout of 8571531, clean, for D0; D1–D3 each one literal changed; S31, seeds 48 and 7, 30 + 30 days; trials at 08–16 h, 900 per run; simulation truth)
+
+Printed by `diag_table.py` (stage scratch `e5g/`, copied to `artifacts/validation/e5g/`) from the call-gaps-diagnose
+JSON; D0 = mean ± SD of S31 and its three re-draws; each scratch arm as its value, its ratio to the D0 mean and z. D2's
+and D3's observed worlds are identical to D0's first run (every observed-world readout equal), and their 900 trials are
+paired with D0's (callers or encounters differ in 1 and 12 of them).
+
+```
+## Binding (pooled over D0)
+reunion gap: decisions 36973, offered 36973, blocked 6589 (share 0.178), compared 5550, held 1039, binds 167 (belief-chosen 51), variant-only 5; open offers chosen as a reunion call 797 of 30384
+  chosen instead at binding: {'rest:NONE': 72, 'travel:TREE': 51, 'display:REUNION': 15, 'forage:NONE': 9, 'pant-grunt:NONE': 6, 'groom:NONE': 3, 'patrol:LEAD': 3, 'play:NONE': 1}
+  blocked: hours since the own last call, bins [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.75, 1, 2] [521, 693, 1404, 1575, 1393, 959, 44, 0, 0, 0]
+alarm penalty: opportunities 18540, penalized 542, compared 182, held 359, binds 19; alarm chosen 4704 (penalized and still chosen 355)
+  chosen instead at binding: {'rest:NONE': 8, 'travel:TREE': 6, 'forage:NONE': 4, 'groom:NONE': 1}
+cadence: start hoos 519, cadence hoos 7057 (share 0.931), informative cadence hoos 81; informed by start hoos 2113, by cadence hoos 136, by sight 582
+  own-community animals within earshot and unaware per hoo: start 3.603, cadence 0.021
+alarm acts 519, continuation decisions 4185; mean act length (min) by run [12.277, 13.178, 13.954, 15.784]; hoos per act [13.022, 13.912, 14.706, 16.596]
+  stopping rule (all safe at an act's end vs chance): [(1, 0.993, 75), (1, 0.996, 64), (1, 0.993, 59), (1, 0.997, 61)]
+  unaware in view / within earshot at an act's start: [(2.978, 4.159), (2.921, 3.912), (2.325, 2.976), (2.411, 3.369)]
+  alarm chosen share by unaware in view (0..5+): ['4206/16897', '149/1005', '141/313', '68/133', '70/99', '71/93']
+
+| Readout | D0 runs | D0 mean ± SD | arms |
+| --- | --- | --- | --- |
+| reunion pant-hoots per male(≥ 12 y)-hour | 0.0186 / 0.0169 / 0.0177 / 0.0171 | 0.0176 ± 0.0008 | D1 0.0186 (×1.06, z +1.2) | D2 0.0186 (×1.06, z +1.2) | D3 0.0186 (×1.06, z +1.2) |
+| pant-hoots per adult-male hour (T-COM-1 truth) | 0.5086 / 0.4696 / 0.5161 / 0.4997 | 0.4985 ± 0.0204 | D1 0.4879 (×0.98, z -0.5) | D2 0.5086 (×1.02, z +0.4) | D3 0.5086 (×1.02, z +0.4) |
+| share of male reunion decisions with a pant-hoot | 0.022 / 0.023 / 0.029 / 0.027 | 0.025 ± 0.003 | D1 0.028 (×1.11, z +0.7) | D2 0.022 (×0.87, z -0.9) | D3 0.022 (×0.87, z -0.9) |
+| adult males: pant-hoot source call/CONTACT per hour | 0.0693 / 0.0740 / 0.0906 / 0.0855 | 0.0799 ± 0.0099 | D1 0.0743 (×0.93, z -0.5) | D2 0.0693 (×0.87, z -1.0) | D3 0.0693 (×0.87, z -1.0) |
+| adult males: pant-hoot source call/REUNION per hour | 0.0209 / 0.0188 / 0.0186 / 0.0181 | 0.0191 ± 0.0012 | D1 0.0202 (×1.06, z +0.8) | D2 0.0209 (×1.09, z +1.3) | D3 0.0209 (×1.09, z +1.3) |
+| adult males: pant-hoot source arrival in a crown per hour | 0.2314 / 0.1900 / 0.2129 / 0.1972 | 0.2079 ± 0.0184 | D1 0.2073 (×1.00, z -0.0) | D2 0.2314 (×1.11, z +1.1) | D3 0.2314 (×1.11, z +1.1) |
+| adult males: food-grunt per hour | 0.5111 / 0.4889 / 0.4618 / 0.5053 | 0.4918 ± 0.0221 | D1 0.4684 (×0.95, z -0.9) | D2 0.5111 (×1.04, z +0.8) | D3 0.5111 (×1.04, z +0.8) |
+| alarm-hoos per exposure-hour | 4.6511 / 4.2322 / 4.9177 / 5.6086 | 4.8524 ± 0.5777 | D1 4.6112 (×0.95, z -0.4) | D2 4.7595 (×0.98, z -0.1) | D3 0.3662 (×0.08, z -6.9) |
+|   start hoos per exposure-hour | 0.3572 / 0.3042 / 0.3344 / 0.3380 | 0.3335 ± 0.0219 | D1 0.3520 (×1.06, z +0.8) | D2 0.3623 (×1.09, z +1.2) | D3 0.3662 (×1.10, z +1.3) |
+|   cadence hoos per exposure-hour | 4.2939 / 3.9280 / 4.5833 / 5.2706 | 4.5190 ± 0.5683 | D1 4.2593 (×0.94, z -0.4) | D2 4.3971 (×0.97, z -0.2) | D3 0.0000 (×0.00, z -7.1) |
+| alarm acts per exposure-hour | 0.3572 / 0.3042 / 0.3344 / 0.3380 | 0.3335 ± 0.0219 | D1 0.3520 (×1.06, z +0.8) | D2 0.3623 (×1.09, z +1.2) | D3 0.3662 (×1.10, z +1.3) |
+| T-COM-11 statistic, all trial hours | 0.089 / 0.080 / 0.087 / 0.097 | 0.088 ± 0.007 | D1 0.095 (×1.07, z +0.8) | D2 0.090 (×1.01, z +0.2) | D3 0.091 (×1.03, z +0.3) |
+| T-COM-11 statistic, 10 h trials | 0.116 / 0.069 / 0.122 / 0.089 | 0.099 ± 0.025 | D1 0.106 (×1.07, z +0.3) | D2 0.116 (×1.17, z +0.6) | D3 0.121 (×1.22, z +0.8) |
+| alarm act length, min | 12.28 / 13.18 / 13.95 / 15.78 | 13.80 ± 1.49 | D1 12.32 (×0.89, z -0.9) | D2 12.38 (×0.90, z -0.8) | D3 12.08 (×0.88, z -1.0) |
+| hoos per alarm act | 13.02 / 13.91 / 14.71 / 16.60 | 14.56 ± 1.52 | D1 13.10 (×0.90, z -0.9) | D2 13.14 (×0.90, z -0.8) | D3 1.00 (×0.07, z -8.0) |
+```
+
+**Reading by the registered rule.**
+- **The reunion gap trims.** With `callValue` it gates one offer, the male reunion pant-hoot, at 6,589 of 36,973 reunion
+  decisions (17.8%, 0.05–0.5 h after the male's own last call); the blocked offer would have won 167 of them (51 against a
+  trip with a belief part). Removed (D1), reunion pant-hoots rise ×1.06 (0.0176 → 0.0186 per male-hour, z +1.2) and all
+  adult-male pant-hoots do not move (×0.98). **What sets the rate is the offer's own score** (0.3 + 0.1 × boldness, design,
+  reading nothing of the audience) against resting, trips and the reunion display: open, it is chosen at 2.6% of reunion
+  decisions (797 of 30,384). At blocked decisions the audience is in reach (1.5 newcomers and 5.3 community members in view,
+  10 likely within earshot; 58% of the caller's ally bond weight unlocated; the valued pant-hoot positive in 40% of them).
+- **The alarm penalty is inert.** It applies at 542 of 18,540 alarm opportunities (2.9%) and would have changed 19
+  decisions in four runs (< 30). It cannot do more: an alarm act sets the stamp only at its start (a re-chosen alarm
+  continues the same act), so the penalty reaches only the first 1.8 min of an act or a fresh act after a pant-hoot, and
+  355 of the 542 penalized opportunities ended with the act kept by the gate anyway. Removed (D2), nothing moves (alarm-hoos
+  ×0.98, T-COM-11 0.090 against 0.088 ± 0.007).
+- **The cadence sets the hoo rate.** It emits 93.1% of alarm-hoos (7,057 of 7,576); 81 of them (1.1%) informed an own-
+  community animal that no start hoo reached; a cadence hoo finds 0.021 unaware community members within earshot against
+  3.6 for a start hoo; hoos informed 2,249 animals, 136 of them (6%) through the cadence (582 learnt by sight). An alarm act
+  lasts 13.8 ± 1.5 min (9 decisions re-choosing it) and gives 14.6 ± 1.5 hoos. Removed (D3: one hoo per act, at its start),
+  alarm-hoos per exposure-hour fall ×0.08 (4.85 → 0.37, z −6.9), and T-COM-11's statistic does not move (0.091). So the
+  cadence, a fixed interval, sets how often an alarming chimpanzee calls, and nearly every hoo it adds goes to an audience
+  that already knows (field: callers stop when all recipients are safe, schel2013b; calling tracks receivers' ignorance,
+  crockford2012).
+- **What sets T-COM-11** (0.088 in truth at all trial hours, 0.099 at 10 h; band 0.25–0.55; S31q scored 0.00 on 5
+  encounters) is none of the three: it is the alarm's own value against the alternatives (chosen at 25% of opportunities
+  with nobody unaware in view, 45–76% with two or more unaware) and the audience the protocol gives it: 91% of alarm
+  opportunities have nobody unaware in view, because everyone within 8 m sees the model at once (`snakeAwareM`, design) and
+  one start hoo informs everyone within 100 m. Not this stage's literals; reported, not changed.
+- **The stopping rule cannot discriminate in the model**: the audience is safe at 100% of act ends and at 99.3–99.7% of
+  the exposed ticks outside acts (field: 100% against 40.42%), because the audience learns at once.
+
+**Step 2 therefore** (the registered consequence): the reunion gap and the penalty are switched out without replacement
+(bits 1 and 2); the cadence, which sets the hoo rate, is replaced by a mechanism (bit 4, §4).
+
 ## 3. Field rows and readouts
 
 Samples of the rows this stage can move, from the sources' texts (E4c read T-COM-1, -4, -8, -9's sources and recorded
@@ -164,9 +236,62 @@ switch's own smoke test follows in §4): pant-hoots per adult-male hour (T-COM-1
 (arrival calls); T-COM-11's statistic in the trials; hoos per alarm act and the act's length against bouts of > 1 call at
 ~2.5-s intervals ending after ≥ 30 s of silence; the stopping rule (all safe at an act's end against chance).
 
-## 4. Mechanism
+## 4. Mechanism: switch `callGaps` (registered after the diagnosis, before any code of it)
 
-(after the diagnosis)
+One switch, 0 = today, bit-identical; a sum of bits, one per literal (as E4q's `aggressionGaps`):
+
+| Bit | Literal switched out (not read) | Replaced by |
+| --- | --- | --- |
+| 1 | the 0.5-h gap after the caller's own last call (`callReady`), which with `callValue` gates only the male reunion pant-hoot | nothing new (it trims ×1.06, §2.1): the reunion offer's own score and its event (newcomers in view at the decision) govern repetition. Read only with `callValue` 1: without it the same gap also gates the timer world's food-call variant, which this stage did not diagnose |
+| 2 | the alarm's repeat penalty (−0.4 within 1.8 min of the animal's own last call) | nothing new (inert, §2.1): the alarm's own value, which already falls as its audience learns (0.2 + 0.32 × the unaware in view), governs repetition |
+| 4 | the alarm-hoo every 60 s of an alarm act | an alarming animal hoos in a tick of its alarm act when an own-community animal of 1 y or more within its sight radius (the radius its last look used) is unaware of the snake: it calls to those it sees who have not learnt, and stops when everyone it sees has heard (schel2013b's stopping rule; crockford2012's receivers' knowledge). The hoo at the act's start stays: choosing to alarm is calling (soft huus at discovery come with or without an audience, schel2013b) |
+
+No magnitude, weight or interval is added. The tick (15 s) is the only time step: one hoo event in a tick stands for a
+bout of calls (repeated every ~2.5 s in the field, schel2013b), and a hoo informs every listener in earshot at once, so a
+second hoo in the same tick would carry nothing. The audience is the alarm's own (own community, 1 y or more, not aware),
+read from the caller's sight radius each tick of the act instead of the attention list of its last decision, so that an
+animal coming into view during the act is seen; nothing else reads it.
+
+Code: calls.ts (`callGapOn`, `unawareInSight`), candidates.ts (`callReady` reads bit 1 under `callValue`; the penalty
+reads bit 2), execution.ts (the alarm act reads bit 4), data/params.json (`callGaps`, design switch, 0–7),
+scripts/lib/prescriptions.ts (TRACK_E_SWITCHES with `needs` `callValue` 1; three LITERAL_OFF entries, verified by a code
+read and `param-reads.ts --literals`), tests/sim-track-e.test.ts (switch list), tests/sim-call-gaps.test.ts (0 by
+default in both profiles; switch 0 leaves the S31 world unchanged; each bit does what its row says; the count on S31
+48 → 45); the `callReady` line changes text, so the ledger test's pieces and the decision guide's `has` follow.
+
+### 4.1 Arm A1, predictions and kill criterion
+
+**A1** = S31 + `callGaps` 7, quick (seeds 48, 7; 30 + 30 days), from a frozen detached checkout of the commit that adds
+the code: `e-bench --quick` (`--workers` 1 above load 8, else 2), `energy-diagnose`, `rhythm-metrics` (night safety: the
+reunion bit changes calls, and listeners walk to calls) and `call-gaps-diagnose` (trials at 08–16 h). Judged against the
+four S31q realizations (e-bench, energy; `judge_vs_reps.py quick custom`, e-noise.md amendment 2, with and without T-HUN-4,
+T-BRD-1 and T-IGE-3) and the four D0 diagnoses (readouts).
+
+| Quantity | S31q / D0 (mean ± SD) | Predicted A1 | Confidence |
+| --- | --- | --- | --- |
+| Prescriptions (current ledger) | 48 | 45 | high |
+| Viability; night safety | pass | pass; ≤ 3.3% of the night, T-RHY-5 ≤ 0.033 | high |
+| Fitted, held-out, held-out without the rare rows | group mean | inside noise (\|z\| ≤ 2) | moderate |
+| Reunion pant-hoots per male(≥ 12 y)-hour | 0.0176 ± 0.0008 | ×1.0–1.25 (D1 ×1.06) | moderate |
+| Pant-hoots per adult-male hour (truth) | 0.499 ± 0.020 | within 2 SD | moderate |
+| Alarm-hoos per exposure-hour | 4.85 ± 0.58 | 0.3–0.8 (D3 0.37, plus hoos for animals coming into view) | moderate |
+| Hoos per alarm act | 14.6 ± 1.5 | 1.0–1.6 | moderate |
+| Alarm acts per exposure-hour | 0.33 ± 0.02 | ×0.8–1.25 | moderate |
+| T-COM-11 statistic in the trials (all hours) | 0.088 ± 0.007 | within ±0.02 of D0's mean; still below its band | moderate |
+| Animals informed by hoos (share of those that became aware) | D0 2,249 of 2,831 | not below half of D0's share | moderate |
+| Stopping rule: all safe at an act's end | 1.0 | 1.0 | high |
+| T-COM-11 in e-bench (one trial day per seed) | S31q runs | inside the group's range (few encounters) | low |
+| Reserves %/day, every class | S31q mean ± SD | within 0.03 of the mean | moderate |
+| T-ACT-1..4, T-COM-1, T-COM-8 | S31q spread | as the group | moderate |
+
+**Kill criterion (the switch stays off and the result is recorded as a null)**: (a) viability fails (a starvation death,
+or a seed below 80% of its start); (b) held-out worse beyond noise (z > +2) with or without the rare rows; (c) any class's
+reserve slope more than 0.05% of the store a day below the S31q mean; (d) night safety fails; (e) the alarm stops
+informing: T-COM-11's statistic in the trials below half of D0's mean, or the share of newly aware own-community animals
+informed by hoos below half of D0's.
+
+**Keep rule (standard):** viability passes; held-out not worse beyond noise with and without the rare rows; prescriptions
+48 → 45. Then a provisional keep candidate for the integrator's 5-seed confirm (on S34, as the integrator asked).
 
 ## 5. Reference and judging
 
