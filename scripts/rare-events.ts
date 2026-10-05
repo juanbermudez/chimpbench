@@ -200,7 +200,6 @@ export function countSeed(inp: SeedInput): SeedCounts {
   const end = snapshotOf(w);
   const snaps = [...inp.mids.filter(s => s.time < end.time), end].sort((a, b) => a.time - b.time);
   const byId = new Map(w.chimps.map(c => [c.id, c]));
-  const troopName = new Map(w.troops.map(t => [t.id, t.name]));
   const st = w.stats, s0 = inp.statsStart;
 
   // time at risk
