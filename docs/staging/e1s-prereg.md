@@ -324,14 +324,15 @@ fails through (b), iteration 3 needs an amendment I approve and register before 
 - The integrator's readout 2 (ground km per animal-day by reserve band; iteration 2, seeds pooled, against R3, seed 48):
   window days 90–179, others aged 5 y+ at −0.3 to −0.5 8.51 km (R3 3.55), −0.5 to −0.7 9.35 (2.90), −0.7 to −1 10.54
   (none), travelling 29 / 33 / 38% of daylight (R3 10 / 7%); days 0–89 near the set point (0.5 to −0.1), adult males 4.87
-  (2.96), others 4.14 (2.52). Chosen trips over 500 m (12-h samples at days 60–210): depleted animals 4–10% (median trip
-  3–89 m), against R3's depleted 23–27% (median 192–351 m) and S39 seed 48's 14–43%: the extra walking is many short
+  (2.96), others 4.14 (2.52). Chosen trips over 500 m (12-h samples at days 60–210): depleted animals 4–19% by band (median trip
+  3–195 m), against R3's depleted 23–27% (median 192–351 m) and S39 seed 48's 14–43%: the extra walking is many short
   moves, not long trips.
 - The integrator's readout 1 (decisions of animals below −0.3, both seeds, 12-h samples from the checkpoints of days 60,
   100, 130, 160, 190 and 210; S39 and R3 from their day-210 checkpoints): crown values are not compressed: their range is
-  ≥ 0.2 in 64–81% of decisions (S39 28–60%, R3 54–73%) and the best leads the second by ≥ 0.2 in 48–65%; the jitter
+  ≥ 0.2 in 54–81% of decisions by band (S39 28–60%, R3 54–73%) and the best leads the second by ≥ 0.2 in 40–63%; the jitter
   reverses the best crown in 13–21% of decisions (S39 22–42%, R3 15–17%). What changes is the choice: depleted animals
-  join a departing companion's trip at 32–62% of their decisions (S39 2%, R3 3%) and eat fallback at 1–3% (S39 43–65%,
+  join a departing companion's trip at 32% (seed 48) and 47% (seed 7) of their decisions (20–62% by band and day; S39 2%,
+  R3 3%) and eat fallback at 1–3% (S39 43–65%,
   R3 30–33%). The joined trips chosen beat the best option of staying (a crown in view, the fallback) by a median 0.75
   (seed 48) and 1.15 (seed 7); their company part is a median 0.23 and 0.51, and their food term alone exceeds the best
   crown in view's by a median 0.22 and 0.14. Many go to a crown 3 m away.
