@@ -1,7 +1,8 @@
 # E3i pre-registration: trips to crowns others emptied
 
-Status: skeleton committed at the start of the stage (branch `e3i-unseen-eaters`, from `track-e` b6946ac), before any run and
-before any code change. Track E, stage E3i. Rule served: field values of behaviour are targets to benchmark against, never
+Status: complete (5 October 2026): diagnosis on four realizations of S39 (§2.2, amendment §2.3); one iteration, `callTrip` 1
+recorded, off (§6.1); diagnostic arms with `redecideValue` 2 (§6.2). Skeleton committed at the start of the stage (branch
+`e3i-unseen-eaters`, from `track-e` b6946ac), before any run and before any code change. Track E, stage E3i. Rule served: field values of behaviour are targets to benchmark against, never
 inputs. No value, bonus or weight is added to hit a travel share, a day range or a feeding-tree count.
 
 ## 0. The problem
@@ -676,6 +677,204 @@ spread, z > +2; A1 gives z −0.1). `callTrip` 1 does what it was built for: a t
 came from, feeds there half the time, and the walking wasted on caller trips falls by a third; the share of all trips
 that feed does not move, because the trips it saves are replaced by departures nobody answers (costing no walking) and
 slightly worse remembered-crown trips.
+
+### 6.2 Diagnostic arms (not candidates): D0 = S39 + `redecideValue` 2, D1 = A1 + `redecideValue` 2 (frozen checkout c90d7bf, clean)
+
+Brief: whether re-deciding's walking cost falls once caller trips keep their call. Printed by the stage's
+`redecide_cost.py`, `final_table.py` and `report_table.py` from the JSON (session scratch `e3i/arms/`). D0 and D1 are
+single runs; re-deciding's cost on S39 is D0 less the S39q group's mean, on A1 it is D1 less A1 (each difference carries
+one run's draw: read differences smaller than the group's SD, 0.13–0.18 km for walking, as noise). D0's one death is an
+illness (seed 48); none from starvation in either.
+
+```
+| Readout | S39q mean | S39 + redecide (D0) | Δ re-deciding on S39 | A1 | A1 + redecide (D1) | Δ re-deciding on A1 |
+| --- | --- | --- | --- | --- | --- | --- |
+| ground km, adult male | 2.569 | 3.276 | +0.707 | 2.409 | 3.472 | +1.063 |
+| ground km, female lactating | 2.373 | 3.227 | +0.853 | 2.334 | 3.241 | +0.908 |
+| ground km, female other | 1.920 | 2.526 | +0.606 | 1.779 | 2.653 | +0.874 |
+| ground km, juvenile 5–12 y | 2.825 | 3.671 | +0.846 | 2.846 | 3.625 | +0.779 |
+| climbing kcal/day, adults | 46.106 | 65.447 | +19.341 | 44.253 | 70.959 | +26.706 |
+| trips per adult-day | 13.300 | 19.481 | +6.181 | 12.928 | 21.380 | +8.452 |
+| trips fed at target | 0.556 | 0.567 | +0.011 | 0.555 | 0.565 | +0.010 |
+| unfed trips km per adult-day | 0.737 | 0.901 | +0.164 | 0.636 | 0.866 | +0.230 |
+| T-FOOD-4 | 9.213 | 13.402 | +4.189 | 9.714 | 13.381 | +3.667 |
+| T-RNG-4 | 2.111 | 2.813 | +0.702 | 2.054 | 3.063 | +1.009 |
+| T-HUN-1 | 21.437 | 17.951 | -3.486 | 12.033 | 35.707 | +23.674 |
+| reserves %/day, adult male | 0.001 | 0.003 | +0.002 | -0.004 | 0.012 | +0.015 |
+| reserves %/day, female, other | 0.013 | 0.001 | -0.012 | 0.006 | -0.014 | -0.021 |
+| reserves %/day, female, lactating | -0.000 | -0.012 | -0.012 | 0.000 | -0.000 | -0.001 |
+| reserves %/day, juvenile 5–12 y | -0.013 | -0.020 | -0.007 | -0.026 | -0.028 | -0.001 |
+| reserves %/day, infant 0.5–2 y | 0.006 | -0.038 | -0.043 | -0.010 | -0.009 | +0.000 |
+
+  S39q: c16d3d2 dirty 0 prescriptions 42 viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}; deaths by seed [(48, 0, 0, {}), (7, 0, 0, {})]
+  S39q1: c16d3d2 dirty 0 prescriptions 42 viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}; deaths by seed [(48, 0, 0, {}), (7, 0, 0, {})]
+  S39q2: c16d3d2 dirty 0 prescriptions 42 viability {'pass': True, 'births': 0, 'deaths': 1, 'ratio': 0, 'starvationDeaths': 0, 'minLivingShare': 0.9795918367346939, 'reasons': [], 'fewEvents': True}; deaths by seed [(48, 1, 0, {'infanticide by Chiriku (East community)': 1}), (7, 0, 0, {})]
+  S39q3: c16d3d2 dirty 0 prescriptions 42 viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}; deaths by seed [(48, 0, 0, {}), (7, 0, 0, {})]
+  D0: c90d7bf dirty 0 prescriptions 39 viability {'pass': True, 'births': 0, 'deaths': 1, 'ratio': 0, 'starvationDeaths': 0, 'minLivingShare': 0.9795918367346939, 'reasons': [], 'fewEvents': True}; deaths by seed [(48, 1, 0, {'illness': 1}), (7, 0, 0, {})]
+  D1: c90d7bf dirty 0 prescriptions 39 viability {'pass': True, 'births': 0, 'deaths': 0, 'ratio': None, 'starvationDeaths': 0, 'minLivingShare': 1, 'reasons': [], 'fewEvents': True}; deaths by seed [(48, 0, 0, {}), (7, 0, 0, {})]
+
+quick, reference custom (4 runs), rows counted in all runs: fitted 16, held-out 13
+  fitted             (16 rows) ref 1.98, 2.24, 1.56, 1.41 (mean 1.80, sd 0.38; used 0.69) | D0.json: 1.02, Δ -0.77, z -1.0 (inside noise) | D1.json: 2.28, Δ +0.48, z +0.6 (inside noise)
+  held-out           (13 rows) ref 4.49, 11.03, 3.72, 5.91 (mean 6.28, sd 3.29; used 3.29) | D0.json: 3.59, Δ -2.69, z -0.7 (inside noise) | D1.json: 3.23, Δ -3.06, z -0.8 (inside noise)
+  held-out w/o rare  (12 rows) ref 4.49, 4.41, 3.66, 3.21 (mean 3.94, sd 0.61; used 0.61) | D0.json: 3.55, Δ -0.40, z -0.6 (inside noise) | D1.json: 3.14, Δ -0.80, z -1.2 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-COM-11  fitted   ref 0.76±0.15 | D0.json 0.25 (fail) | D1.json 0.83 (fail)
+   T-HUN-1   fitted   ref 0.01±0.02 | D0.json 0.00 (pass) | D1.json 0.54 (inconclusive)
+   T-HUN-4   held-out ref 2.34±3.12 | D0.json 0.04 (fail) | D1.json 0.08 (fail)
+   T-IGE-2   held-out ref 0.50±0.00 | D0.json 0.05 (fail) | D1.json 0.00 (pass)
+   T-SOC-6   held-out ref 0.31±0.05 | D0.json 0.38 (fail) | D1.json 0.49 (fail)
+
+| Readout | S39q runs | S39q mean ± SD | D0 | D1 |
+| --- | --- | --- | --- | --- |
+| trips fed at their target (share, adults) | 0.554 / 0.544 / 0.560 / 0.565 | 0.556 ± 0.009 | 0.567 (z +1.1) | 0.565 (z +0.9) |
+| trips per adult-day | 13.23 / 13.66 / 12.90 / 13.40 | 13.30 ± 0.32 | 19.48 (z +17.3) | 21.38 (z +22.7) |
+|   remembered crown: per adult-day | 1.91 / 1.96 / 1.91 / 1.90 | 1.92 ± 0.03 | 2.06 (z +4.5) | 2.05 (z +4.1) |
+|   remembered crown: fed at target | 0.742 / 0.722 / 0.738 / 0.750 | 0.738 ± 0.012 | 0.739 (z +0.1) | 0.738 (z +0.0) |
+|   departure: per adult-day | 4.98 / 5.08 / 4.95 / 4.98 | 5.00 ± 0.06 | 7.25 (z +35.1) | 7.95 (z +45.8) |
+|   departure: fed at target | 0.315 / 0.313 / 0.325 / 0.332 | 0.321 ± 0.009 | 0.384 (z +6.3) | 0.369 (z +4.8) |
+|   crown in view: per adult-day | 1.31 / 1.47 / 1.35 / 1.36 | 1.37 ± 0.07 | 1.59 (z +2.9) | 1.68 (z +4.1) |
+|   crown in view: fed at target | 0.984 / 0.979 / 0.985 / 0.981 | 0.982 ± 0.003 | 0.945 (z -12.1) | 0.932 (z -16.3) |
+|   a companion's trip: per adult-day | 3.61 / 3.63 / 3.43 / 3.71 | 3.60 ± 0.12 | 6.68 (z +23.0) | 7.59 (z +29.8) |
+|   a companion's trip: fed at target | 0.716 / 0.691 / 0.723 / 0.726 | 0.714 ± 0.016 | 0.693 (z -1.2) | 0.673 (z -2.3) |
+|   a caller: per adult-day | 1.42 / 1.51 / 1.25 / 1.46 | 1.41 ± 0.11 | 1.90 (z +4.0) | 2.12 (z +5.7) |
+|   a caller: fed at target | 0.325 / 0.317 / 0.319 / 0.325 | 0.322 ± 0.004 | 0.322 (z +0.1) | 0.459 (z +29.8) |
+| unfed trips: km per adult-day | 0.708 / 0.811 / 0.684 / 0.744 | 0.737 ± 0.055 | 0.901 (z +2.7) | 0.866 (z +2.1) |
+| unfed trips: kcal per adult-day | 24.8 / 28.5 / 23.8 / 26.1 | 25.8 ± 2.0 | 32.2 (z +2.8) | 31.1 (z +2.3) |
+| trips: km per adult-day | 1.702 / 1.885 / 1.676 / 1.775 | 1.760 ± 0.094 | 2.293 (z +5.1) | 2.383 (z +6.0) |
+| delivered ÷ valued (fruit at target ÷ E0) | 0.256 / 0.256 / 0.262 / 0.256 | 0.258 ± 0.003 | 0.227 (z -9.1) | 0.218 (z -11.8) |
+|   unfed, arrived, empty: per adult-day | 1.149 / 1.347 / 1.116 / 1.113 | 1.181 ± 0.112 | 1.586 (z +3.2) | 1.815 (z +5.1) |
+|   unfed, departure given up: per adult-day | 2.769 / 2.770 / 2.735 / 2.719 | 2.748 ± 0.025 | 2.753 (z +0.2) | 3.005 (z +9.0) |
+|   unfed, caller stopped short: per adult-day | 0.399 / 0.435 / 0.344 / 0.381 | 0.390 ± 0.038 | 0.441 (z +1.2) | 0.469 (z +1.9) |
+|   unfed, re-decided en route: per adult-day | 0.759 / 0.849 / 0.696 / 0.800 | 0.776 ± 0.065 | 2.184 (z +19.4) | 2.211 (z +19.8) |
+|   unfed, arrived, crop left: per adult-day | 0.655 / 0.663 / 0.615 / 0.649 | 0.645 ± 0.021 | 1.234 (z +24.9) | 1.510 (z +36.6) |
+| known-tree trips per adult-day; fed | 0.832 / 0.870 / 0.777 / 0.731 | 0.802 ± 0.061 | 0.794 (z -0.1) | 0.702 (z -1.5) |
+|   known-tree trips fed at target | 0.114 / 0.117 / 0.128 / 0.143 | 0.126 ± 0.013 | 0.121 (z -0.3) | 0.133 (z +0.5) |
+|   known-tree trips back to one found empty (share) | 0.093 / 0.106 / 0.110 / 0.081 | 0.098 ± 0.013 | 0.075 (z -1.5) | 0.100 (z +0.2) |
+| caller trips fed at the caller's crown | 0.392 / 0.377 / 0.395 / 0.387 | 0.388 ± 0.008 | 0.389 (z +0.1) | 0.550 (z +18.4) |
+| caller trips: unfed km per adult-day | 0.330 / 0.378 / 0.320 / 0.354 | 0.346 ± 0.026 | 0.395 (z +1.7) | 0.323 (z -0.8) |
+| caller trips re-decided en route per adult-day | 0.347 / 0.409 / 0.326 / 0.399 | 0.370 ± 0.040 | 0.535 (z +3.7) | 0.290 (z -1.8) |
+|   their km per adult-day | 0.150 / 0.189 / 0.154 / 0.174 | 0.167 ± 0.018 | 0.198 (z +1.5) | 0.073 (z -4.6) |
+|   E3i class km per adult-day: re-decided en route | 0.191 / 0.235 / 0.196 / 0.241 | 0.216 ± 0.026 | 0.261 (z +1.6) | 0.141 (z -2.6) |
+|   E3i class km per adult-day: caller stopped short | 0.121 / 0.137 / 0.108 / 0.117 | 0.121 ± 0.012 | 0.122 (z +0.1) | 0.146 (z +1.9) |
+|   E3i class km per adult-day: arrived, crop left | 0.115 / 0.128 / 0.109 / 0.123 | 0.119 ± 0.008 | 0.172 (z +5.7) | 0.213 (z +10.0) |
+|   E3i class km per adult-day: arrived empty: no sighting, the list | 0.118 / 0.126 / 0.108 / 0.101 | 0.113 ± 0.011 | 0.113 (z -0.0) | 0.099 (z -1.2) |
+|   E3i class km per adult-day: arrived empty: emptied by eating since the sighting | 0.044 / 0.058 / 0.049 / 0.047 | 0.050 ± 0.006 | 0.066 (z +2.4) | 0.086 (z +5.4) |
+|   E3i class km per adult-day: caller, no crown | 0.052 / 0.048 / 0.054 / 0.053 | 0.052 ± 0.003 | 0.060 (z +2.8) | 0.079 (z +9.3) |
+|   E3i class km per adult-day: departure given up | 0.002 / 0.003 / 0.002 / 0.002 | 0.002 ± 0.001 | 0.020 (z +31.8) | 0.024 (z +38.9) |
+| ground km, adult male | 2.44 / 2.80 / 2.49 / 2.54 | 2.57 ± 0.16 | 3.28 (z +3.9) | 3.47 (z +5.0) |
+| ground km, female lactating | 2.35 / 2.52 / 2.21 / 2.42 | 2.37 ± 0.13 | 3.23 (z +5.8) | 3.24 (z +5.9) |
+| ground km, female other | 1.85 / 2.06 / 1.82 / 1.95 | 1.92 ± 0.11 | 2.53 (z +5.0) | 2.65 (z +6.0) |
+| ground km, juvenile 5–12 y | 2.71 / 3.09 / 2.71 / 2.79 | 2.82 ± 0.18 | 3.67 (z +4.2) | 3.62 (z +4.0) |
+| climbing kcal/day, adults (day-weighted) | 46.3 / 47.0 / 44.6 / 46.6 | 46.1 ± 1.1 | 65.4 (z +16.3) | 71.0 (z +21.0) |
+| climbing kcal/day, adult male | 59.7 / 60.6 / 56.6 / 59.5 | 59.1 ± 1.7 | 84.7 (z +13.4) | 90.8 (z +16.7) |
+| climbing kcal/day, female lactating | 38.2 / 37.3 / 35.8 / 39.0 | 37.6 ± 1.4 | 51.6 (z +9.0) | 56.0 (z +11.8) |
+| T-FOOD-4 | 9.261 / 9.470 / 8.777 / 9.344 | 9.213 ± 0.303 | 13.402 (z +12.4) | 13.381 (z +12.3) |
+| T-ACT-2 | 0.105 / 0.117 / 0.098 / 0.107 | 0.107 ± 0.008 | 0.142 (z +3.9) | 0.149 (z +4.7) |
+| T-RNG-4 | 1.848 / 2.236 / 1.978 / 2.383 | 2.111 ± 0.243 | 2.813 (z +2.6) | 3.063 (z +3.5) |
+| T-PTY-1 | 4.075 / 4.016 / 4.014 / 3.950 | 4.014 ± 0.051 | 4.219 (z +3.6) | 4.346 (z +5.9) |
+| T-FOOD-2 | 0.839 / 0.836 / 0.801 / 0.866 | 0.836 ± 0.027 | 0.869 (z +1.1) | 0.866 (z +1.0) |
+| T-ACT-1 | 0.373 / 0.371 / 0.370 / 0.358 | 0.368 ± 0.007 | 0.385 (z +2.3) | 0.382 (z +1.9) |
+| T-ACT-3 | 0.104 / 0.101 / 0.105 / 0.106 | 0.104 ± 0.002 | 0.097 (z -3.3) | 0.094 (z -5.0) |
+| T-ACT-4 | 0.437 / 0.426 / 0.427 / 0.457 | 0.437 ± 0.014 | 0.370 (z -4.2) | 0.403 (z -2.2) |
+| T-HUN-1 | 21.940 / 25.788 / 17.853 / 20.166 | 21.437 ± 3.349 | 17.951 (z -0.9) | 35.707 (z +3.8) |
+| T-FOOD-5 | 0.317 / 0.300 / 0.294 / 0.279 | 0.298 ± 0.016 | 0.258 (z -2.3) | 0.228 (z -4.0) |
+| T-FOOD-6 | 4.731 / 4.580 / 4.350 / 4.626 | 4.572 ± 0.160 | 4.229 (z -1.9) | 3.966 (z -3.4) |
+| T-FOOD-10 | 0.552 / 0.593 / 0.579 / 0.533 | 0.565 ± 0.027 | 0.547 (z -0.6) | 0.541 (z -0.8) |
+| T-IGE-1 | 3.100 / 4.552 / 4.603 / 7.583 | 4.960 ± 1.882 | 10.471 (z +2.6) | 17.535 (z +6.0) |
+| reserves %/day, adult male | 0.005 / 0.007 / -0.004 / -0.004 | 0.001 ± 0.006 | 0.003 (z +0.2) | 0.012 (z +1.6) |
+| reserves %/day, female, other | 0.013 / 0.023 / -0.008 / 0.024 | 0.013 ± 0.015 | 0.001 (z -0.7) | -0.014 (z -1.6) |
+| reserves %/day, female, lactating | 0.013 / -0.001 / -0.001 / -0.013 | -0.000 ± 0.011 | -0.012 (z -1.0) | -0.000 (z -0.0) |
+| reserves %/day, juvenile 5–12 y | -0.015 / 0.002 / -0.029 / -0.009 | -0.013 ± 0.013 | -0.020 (z -0.5) | -0.028 (z -1.0) |
+| reserves %/day, infant 2–5 y | 0.020 / -0.001 / -0.001 / -0.024 | -0.002 ± 0.018 | 0.012 (z +0.7) | -0.003 (z -0.1) |
+| reserves %/day, infant 0.5–2 y | 0.010 / -0.000 / 0.004 / 0.010 | 0.006 ± 0.005 | -0.038 (z -7.7) | -0.009 (z -2.7) |
+| eating min, adult male | 228.0 / 229.3 / 226.7 / 227.4 | 227.9 ± 1.1 | 233.6 (z +4.6) | 235.2 (z +5.8) |
+| fruit share (eating), adult male | 0.944 / 0.945 / 0.944 / 0.947 | 0.945 ± 0.001 | 0.959 (z +8.2) | 0.956 (z +6.5) |
+| eating min, female, other | 223.9 / 234.8 / 220.8 / 223.8 | 225.8 ± 6.2 | 230.8 (z +0.7) | 230.5 (z +0.7) |
+| fruit share (eating), female, other | 0.710 / 0.680 / 0.713 / 0.733 | 0.709 ± 0.022 | 0.721 (z +0.5) | 0.736 (z +1.1) |
+| eating min, female, lactating | 302.6 / 300.9 / 292.2 / 291.5 | 296.8 ± 5.8 | 313.9 (z +2.7) | 305.3 (z +1.3) |
+| fruit share (eating), female, lactating | 0.685 / 0.683 / 0.719 / 0.720 | 0.702 ± 0.020 | 0.684 (z -0.8) | 0.703 (z +0.1) |
+| eating min, juvenile 5–12 y | 274.8 / 277.2 / 282.6 / 277.8 | 278.1 ± 3.3 | 290.6 (z +3.4) | 285.5 (z +2.0) |
+| fruit share (eating), juvenile 5–12 y | 0.920 / 0.910 / 0.839 / 0.835 | 0.876 ± 0.045 | 0.929 (z +1.1) | 0.926 (z +1.0) |
+
+Sums on rows scored in every run listed (fitted / held-out; with rare rows, then without T-HUN-4, T-BRD-1, T-IGE-3):
+  S39q: 1.98 / 4.49; 1.98 / 4.49
+  S39q1: 2.24 / 11.03; 2.24 / 4.41
+  S39q2: 1.56 / 3.72; 1.56 / 3.66
+  S39q3: 1.41 / 5.91; 1.41 / 3.21
+  D0: 1.02 / 3.59; 1.02 / 3.55
+  D1: 2.28 / 3.23; 2.28 / 3.14
+D0: identity (adult males' eating min, ground km) 233.624 / 3.276; energy-diagnose 233.6244332563291 / 3.275962432995234; living [(49, 48, {'illness': 1}), (49, 49, {})]
+D1: identity (adult males' eating min, ground km) 235.183 / 3.472; energy-diagnose 235.18303571428572 / 3.472404084594729; living [(49, 49, {}), (49, 49, {})]
+```
+
+**Reading.** Re-deciding's walking cost does not fall with `callTrip` 1: on S39 it adds 0.71 km a day for adult males,
+0.85 for nursing mothers, 0.61 for other females and 0.85 for juveniles, 19 kcal of adults' climbing and 6.2 trips per
+adult-day; on A1 1.06, 0.91, 0.87 and 0.78 km, 27 kcal and 8.5 trips (the males' and other females' differences are about
+2 SD of the group's walking, the others within it). The keep test re-decides caller trips again (0.29 per adult-day
+re-decided en route in D1 against 0.07 in A1), and hunting rises with it on A1 (T-HUN-1 35.7 against 12.0; E3g's
+re-sighting correction is not on the stack). The energy cost moves the other way for nursing mothers and young infants
+(−0.001 and +0.000 %/day on A1 against −0.012 and −0.043 on S39), for other females it is larger (−0.021 against −0.012):
+single runs, inside a draw's reach. So failed caller trips are not what makes re-deciding costly on S39; its cost is the
+keep test's extra trips, as E3g found, and S39's trip corrections (E3h) already halved it from S31's (+1.44 km for males).
+
+### 6.3 The brief's table (S39q group mean ± SD against each arm; z in brackets; sums judged one arm at a time, §6.1, §6.2)
+
+```
+| | S39q mean ± SD | A1 | D0 | D1 |
+| --- | --- | --- | --- | --- |
+| trips fed at target | 0.556 ± 0.009 | 0.555 (-0.1) | 0.567 (+1.1) | 0.565 (+0.9) |
+| ground km, males | 2.57 ± 0.16 | 2.41 (-0.9) | 3.28 (+3.9) | 3.47 (+5.0) |
+| ground km, nursing mothers | 2.37 ± 0.13 | 2.33 (-0.3) | 3.23 (+5.8) | 3.24 (+5.9) |
+| ground km, juveniles 5–12 y | 2.82 ± 0.18 | 2.85 (+0.1) | 3.67 (+4.2) | 3.62 (+4.0) |
+| climbing kcal/day, adults | 46.1 ± 1.1 | 44.3 (-1.6) | 65.4 (+16.3) | 71.0 (+21.0) |
+| T-FOOD-4 | 9.21 ± 0.30 | 9.71 (+1.5) | 13.40 (+12.4) | 13.38 (+12.3) |
+| T-ACT-2 | 0.107 ± 0.008 | 0.103 (-0.4) | 0.142 (+3.9) | 0.149 (+4.7) |
+| T-RNG-4 | 2.11 ± 0.24 | 2.05 (-0.2) | 2.81 (+2.6) | 3.06 (+3.5) |
+| reserves %/day, males | 0.001 ± 0.006 | -0.004 (-0.8) | 0.003 (+0.2) | 0.012 (+1.6) |
+| reserves %/day, nursing mothers | -0.000 ± 0.011 | 0.000 (+0.1) | -0.012 (-1.0) | -0.000 (-0.0) |
+| reserves %/day, juveniles | -0.013 ± 0.013 | -0.026 (-0.9) | -0.020 (-0.5) | -0.028 (-1.0) |
+| reserves %/day, infants 0.5–2 y | 0.006 ± 0.005 | -0.010 (-2.7) | -0.038 (-7.7) | -0.009 (-2.7) |
+| fitted (16 rows; z) | 1.80 | 1.76 (-0.1) | 1.02 (-1.0) | 2.28 (+0.6) |
+| held-out (13 rows; z) | 6.28 | 4.78 (-0.4) | 3.59 (-0.7) | 3.23 (-0.8) |
+| held-out w/o rare (12 rows; z) | 3.94 | 4.06 (+0.2) | 3.55 (-0.6) | 3.14 (-1.2) |
+| prescriptions (JSON; current ledger S39 42) | 42 | 42 | 39 | 39 |
+| viability (deaths; starvation) | 0, 0, 1, 0 | pass (0; 0) | pass (1; 0) | pass (0; 0) |
+```
+
+## 8. Stage verdict
+
+- **Diagnosis (S39, quick, four realizations, simulation truth).** 56% of adults' trips feed at their target crown. Of the
+  44% that do not, half are departures nobody answered, which move about 2 m. **Trips that arrive at a crown emptied by
+  eating since the traveller's sighting are 8% of unfed trips and 7% of their walking: the brief's premise is not
+  supported.** For those trips the animal could have known: 95% had seen or heard the eaters in between (saw them heading
+  there 84%, heard a pant-hoot from the crown 57%, saw them feeding there 29%), and 54% of the fruit taken was eaten by
+  animals it saw heading there, heard calling from there or saw feeding there; food grunts, which no animal hears in the
+  model, 2.5%. A prior from community size and intake rates would predict almost nothing (a community eats 1–2% of its
+  range's ripe crop a day; the crowns trips go to lose 5–14% within 12 h because consumption concentrates where the animals
+  are). The largest share of unfed walking is trips to callers (47%), mostly ended on the way with their option off the
+  list: the listener holds one call, overwritten by every later pant-hoot heard (two thirds of that walking; the walk then
+  follows the new caller's crown, a trip never chosen) or offered for only 0.3 h (a quarter).
+- **Iteration 1, `callTrip` 1** (a caller trip keeps the call it was chosen for: walk, arrival and option from that call;
+  a later call is a new option): **recorded, off** by the registered rule (trips fed at their target 0.555, z −0.1). It
+  works on its target: caller trips feed at their target 47% instead of 32%, re-decided en route 0.07 instead of 0.37 per
+  adult-day, the walking wasted on caller trips −30% (z −3.5), all unfed walking −14% (inside the spread). The share of all
+  trips that feed does not move: departures nobody answers rise as listeners reach their callers and parties grow (T-PTY-1
+  4.34, z +5.7), and remembered-crown trips feed a little less. Viable, night safe (2.21%), every sum inside noise,
+  prescriptions 42; infants 0.5–2 y −0.016 %/day against the group (z −2.7, under the kill line); no juvenile cost of the
+  kind E3h's A2 had.
+- **No iteration 2:** no class of unfed walking reaches the registered 1/4 on S39 or A1.
+- **Diagnostic (A1 + `redecideValue` 2):** re-deciding still adds 0.8–1.1 km a day per class (0.6–0.9 on S39) and more
+  climbing; its cost is the keep test's extra trips, not the failed trips it multiplies.
+- **What it means.** The trips that fail are not mostly trips to crowns others emptied, so a belief about others' eating
+  would act on 7% of the wasted walking. The walking that failed trips cost is spread over several small classes, and the
+  largest one was a memory defect (a call held in one slot), which a correction fixes without changing how often trips
+  feed. Re-deciding's cost is not failed trips.
+- **Open (the biggest problem).** Re-deciding's cost (0.6–1.1 km a day per class) is the keep test acting on a valuation
+  that promises more from a trip than trips deliver: on S39 trips deliver 26% of the bout energy they are valued at
+  (delivered ÷ valued 0.258; 44% do not feed at their target, and a fed trip eats about half the promised bout), so at each
+  keep test a trip beats staying more often than it pays, and under `redecideValue` 2 trips rise from 13 to 19–21 per
+  adult-day at the same fed share. Failed trips are not the lever; E3g's open question (what meal a trip should promise,
+  against a bout in view that ends sated as early) is.
 
 ## 7. Known defects in the code under test
 
