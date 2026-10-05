@@ -297,3 +297,49 @@ fails through (b), iteration 3 needs an amendment I approve and register before 
      from the day-210 checkpoints of M6-S39 (seeds 48, 7) and R3 (the only checkpoints they have).
   2. ground km per animal-day by reserve band from the per-animal records (iteration 2 against R3), and the share of
      chosen trips over 500 m by reserve band from the samples of readout 1.
+
+### 8.6 Iteration 2: results (run 5 October 14:33–14:45 from the frozen checkout of 654ec36, seeds 48 and 7)
+
+**Fails conditions 1, 2 and 4; condition 3 holds.** Against S39 on the same seeds (§8.3's values):
+
+| | S39 (seeds 48 + 7) | iteration 1 | iteration 2 |
+| --- | --- | --- | --- |
+| (1) starvation deaths | 0 + 0 | 4 + 7 | 4 + 5 |
+| (2) below −0.3 of the store at scored day 180 (aged 5 y+) | 11 (9) | 42 (31) | 24 + 28 = 52 (37) |
+| (2) lowest reserve | −0.683 | −0.930 | −0.959 (s7 id 14, lactating F 24.6 y) |
+| (3) eating min Nov–Dec → Mar–Apr: juvenile F, adolescent F, pregnant | — | rise | 237 → 288, 240 → 358, 269 → 367: rise |
+| (4) viability | pass | fail | fail (births 4, deaths 17, 9 starvation; lowest living share 0.82) |
+| T-RNG-4 (adult male day range, km), seeds 48 / 7 | 2.91 / 2.44 | 5.72 / 6.33 | 5.59 / 5.59 |
+| T-ACT-2 (travel share) | 0.14 / 0.12 | 0.25 / 0.33 | 0.25 / 0.30 |
+| T-HUN-1 (hunts per community-year) | 11.45 / 10.12 | 35.7 / 47.2 | 33.7 / 27.6 |
+
+- Starvation: seed 48 ids 19 (juvenile F 7.3 y, window day 91), 17 (juvenile F 6.3 y, 94), 35 (juvenile F 6.0 y, 136), 14
+  (F 24.5 y, 148); seed 7 ids 17 (juvenile F 6.2 y, 51), 19 (juvenile F 7.2 y, 51), 35 (juvenile F 5.9 y, 99), 12 (F
+  33.5 y, 138), 15 (F 21.6 y, 174). Other deaths: seed 48 wounds 3, a respiratory illness 1, orphaned infants 3; seed 7
+  an orphaned infant.
+- Adult males (seeds pooled, Nov–Dec / Jan–Feb / Mar–Apr): 5.15 / 7.60 / 8.10 km on the ground (R3 2.61 / 4.01 / 3.40),
+  net −76 / −128 / +35 kcal a day (R3 −4 / −37 / +46), reserves −0.03 / −0.17 / −0.25 of the store: below the set point
+  from November, they have a passage phase too. Capping phase 2 by the reserve deficit protects only animals at or above
+  the set point; a deficit of 2% of the store already exceeds what the gut holds.
+- The integrator's readout 2 (ground km per animal-day by reserve band; iteration 2, seeds pooled, against R3, seed 48):
+  window days 90–179, others aged 5 y+ at −0.3 to −0.5 8.51 km (R3 3.55), −0.5 to −0.7 9.35 (2.90), −0.7 to −1 10.54
+  (none), travelling 29 / 33 / 38% of daylight (R3 10 / 7%); days 0–89 near the set point (0.5 to −0.1), adult males 4.87
+  (2.96), others 4.14 (2.52). Chosen trips over 500 m (12-h samples at days 60–210): depleted animals 4–10% (median trip
+  3–89 m), against R3's depleted 23–27% (median 192–351 m) and S39 seed 48's 14–43%: the extra walking is many short
+  moves, not long trips.
+- The integrator's readout 1 (decisions of animals below −0.3, both seeds, 12-h samples from the checkpoints of days 60,
+  100, 130, 160, 190 and 210; S39 and R3 from their day-210 checkpoints): crown values are not compressed: their range is
+  ≥ 0.2 in 64–81% of decisions (S39 28–60%, R3 54–73%) and the best leads the second by ≥ 0.2 in 48–65%; the jitter
+  reverses the best crown in 13–21% of decisions (S39 22–42%, R3 15–17%). What changes is the choice: depleted animals
+  join a departing companion's trip at 32–62% of their decisions (S39 2%, R3 3%) and eat fallback at 1–3% (S39 43–65%,
+  R3 30–33%). The joined trips chosen beat the best option of staying (a crown in view, the fallback) by a median 0.75
+  (seed 48) and 1.15 (seed 7); their company part is a median 0.23 and 0.51, and their food term alone exceeds the best
+  crown in view's by a median 0.22 and 0.14. Many go to a crown 3 m away.
+- Why the food term of a joined trip is high: its goal's crop is split among the feeders going there, so its share fits
+  in the foregut's room and its bout has no passage phase: it is valued at the full ingestion rate, while an uncrowded
+  crown's bout includes the passage of what the gut holds. Offline, the depleted juvenile id 17 at half fill on S39 seed
+  48's day-210 world: a 0.05-unit drupe crop is worth 0.98 / 0.95 / 0.80 (3 / 50 / 300 m), a 0.5-unit crop 0.52 / 0.51 /
+  0.49. Under gutValue's bout a crop smaller than the room looks twice as good as a large one, so depleted animals follow
+  companions to crowded crowns, chase small crops and move every few minutes. Cause (b) as named after iteration 1 (the
+  jitter deciding on a compressed scale) is not what the decisions show; the bias toward bouts that end before the
+  passage phase is.
