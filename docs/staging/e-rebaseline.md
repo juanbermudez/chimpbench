@@ -38,3 +38,9 @@ share below its band; T-COM-11 below its band; T-FOOD-10 above its band.
 **Amendment (5 October 2026, 01:55, before any result).** The first 60-day runs were stopped minutes after starting (no
 output read) and restarted on eB-bench 1f8553b, which adds the T-INF-1 readout (lonsdorf2014's ten Gombe blocks): 26
 truth rows read, 14 not scorable; nothing else in the code path changes.
+
+**Amendment 2 (5 October 2026, 02:10, before any 6-month run).** The 6-month groups run with the resumable runner
+(`scripts/e-run.ts`, single pass, one job per seed) from frozen detached checkouts (bench-run for S39, bench-run2 for
+today's model) at track-e 550d08d, which contains eB-bench 1f8553b plus the runner and eR-runs' behaviour-neutral memos
+(2-day and 30-day world hashes identical on S39) and E3i's `callTrip` (0 in both stacks): the simulation of these
+parameters is the same as at 1f8553b. Results at 60 days stay on 1f8553b.
