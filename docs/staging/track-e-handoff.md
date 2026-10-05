@@ -14,11 +14,14 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (5 October 15:20; deploy held by the user).** **S39 is not viable at 12 months** (starvation in 3 of
+- **Running now (5 October 16:33; deploy held by the user).** **S39 is not viable at 12 months** (starvation in 3 of
   4 runs; e-rebaseline.md); E1r found a full-gut valuation trap (merged a9739c3). **E1s** (`gutValue`) stopped after 3 iterations, none passing (merged 1c1bcb2, switch 0): the trap is gone but depleted
   animals walk 2–3× farther and starve sooner (11, 9, 3 deaths on seeds 48 + 7 at 6 months; S39 0); lessons in
-  e1s-prereg.md §8.8. **E1t** (`horizonLived`, registered 521d96d) fixes the feeding horizon that collapses under `rhythmCircadian` and pins
-  the deficit drive at 1 in 26% of decisions; agent **e1t-horizon**. **M1–M3 merged (a9aa344):** GLiNER cannot choose
+  e1s-prereg.md §8.8. **E1t** (`horizonLived`) passed its development conditions (merged 4ff4cc4; the horizon now predicts the waking
+  time left within 1 h in 99.9% of daylight decisions, against 4.2%); its **confirm is running** (frozen checkout
+  `bench-e1t` at e1f93e9; runner labels M6-E1t, -s1, -s2, -s3 via `integrator/e1trun.sh <label> 1`; plan and the
+  6-month amendment in e1t-prereg.md §7; judge `integrator/judge_e1t.py M6|M12`). **E1u** (gut-input audit, research
+  only, registered 2081033) is running as agent **e1u-gut-audit**. **M1–M3 merged (a9aa344):** GLiNER cannot choose
   for the chimps as it is (it ignores the body numbers; on GLiNER focal animals underfeed and sleep out of nests); it
   needs teaching on the new state (Track R, R4); Jev reads the numbers ($0.20 spent). Part D done (e52e84e). Separate
   from Track E: the user's minimap and perception-ring work is ready on branch `ui-minimap` (from `main`); merging into
