@@ -24,6 +24,14 @@ export interface TargetSpec {
   partiallyEncoded?: string;
   /** The real record cannot support the comparison (instrument limitation on the field side): reported, never counted. */
   notScorable?: string;
+  /** The field value itself is contested (a measured bias in its method): reported beside its comparisonBand, never counted (T-ENE-1). */
+  contested?: boolean;
+  /**
+   * Track E rows (registered at the Track E freeze, 5 October 2026): scored by scripts/e-bench.ts from simulation truth,
+   * never by the field observer; `truthDefinition` says what is read and quotes the source's Methods where read.
+   */
+  scoredOn?: 'truth';
+  truthDefinition?: { definition: string; readout: string; methods: { source: string; quote: string; of?: string; where?: string }[]; methodsNote?: string };
   accept: { lo: number | null; hi: number | null; units: string; basis: string };
   observer: { protocol: string; interval_min: number | null; unit: string };
 }
@@ -90,82 +98,123 @@ export function pool(def: MetricDef, seeds: SeedValue[]): SeedValue {
 const inBand = (v: number, lo: number | null, hi: number | null) => (lo === null || v >= lo) && (hi === null || v <= hi);
 const fmtBand = (lo: number | null, hi: number | null) => lo !== null && hi !== null ? `${lo}–${hi}` : lo !== null ? `≥ ${lo}` : hi !== null ? `≤ ${hi}` : 'pattern';
 
+/** Verdict-changing flags of a target as the scorer prints them. */
+function targetFlags(t: TargetSpec): string[] {
+  return [...(t.protocolRevisedPostHoc ? ['revised post hoc'] : []), ...(t.compromised ? ['compromised'] : []), ...(t.tuned ? ['tuned'] : []), ...(t.instrumentWarning ? ['instrument below bar'] : []), ...(t.heldAsFail ? ['held as fail'] : []),
+    ...(t.revisedPostFreeze ? ['model revised post-freeze'] : []), ...(t.partiallyEncoded ? ['partially encoded'] : []),
+    ...(t.notScorable ? ['not scorable'] : []), ...(t.contested ? ['contested'] : [])];
+}
+
+/** The field observer never scores a simulation-truth row (TargetSpec.scoredOn): scripts/e-bench.ts does, from its readouts. */
+export const TRUTH_ROW_NOTE = 'simulation-truth row: scored by scripts/e-bench.ts from simulation truth (truthDefinition), not by the field observer';
+
 /**
  * Scores every target. `values[id]` holds one SeedValue per seed (missing ids are n/a). Under the compressed profile,
  * scale-sensitive targets (lengths and areas reported ×50) get the verdict 'scale': their values are shown but not
- * scored, because walking speeds, sight and party links are not scaled by the same factor (C3 review).
+ * scored, because walking speeds, sight and party links are not scaled by the same factor (C3 review). Simulation-truth
+ * rows (scoredOn 'truth') are n/a here: e-bench scores them with scoreTruthRow.
  */
 export function scoreTargets(file: TargetFile, values: Record<string, SeedValue[]>, profile = 'compressed'): ScoreRow[] {
   const rows: ScoreRow[] = [];
   for (const t of file.targets) {
-    const def = METRICS.find(m => m.id === t.id);
-    const flags = [...(t.protocolRevisedPostHoc ? ['revised post hoc'] : []), ...(t.compromised ? ['compromised'] : []), ...(t.tuned ? ['tuned'] : []), ...(t.instrumentWarning ? ['instrument below bar'] : []), ...(t.heldAsFail ? ['held as fail'] : []),
-      ...(t.revisedPostFreeze ? ['model revised post-freeze'] : []), ...(t.partiallyEncoded ? ['partially encoded'] : []),
-      ...(t.notScorable ? ['not scorable'] : [])];
-    const base = { id: t.id, metric: t.metric, role: t.role, encoded: t.encoded, evidence: t.evidence, units: t.accept.units, protocol: def?.protocol ?? t.observer.protocol, scaleSensitive: !!def?.scaleSensitive, flags };
-    const partBands = PART_BANDS[t.id];
-    const band = partBands ? Object.entries(partBands).map(([k, [a, b]]) => `${k} ${a}–${b}`).join(', ') : t.accept.lo === null && t.accept.hi === null ? t.accept.basis : fmtBand(t.accept.lo, t.accept.hi);
-    const empty = { perSeed: [], seedPass: [], mean: null, sd: null, min: null, max: null, pooled: null, parts: {}, truth: null, n: 0, interval: null };
-    if (!def || def.na) { rows.push({ ...base, ...empty, band, verdict: 'n/a', note: `n/a (mechanism missing${def?.na ? `: ${def.na}` : ''})` }); continue; }
-    if (def.structural) { rows.push({ ...base, ...empty, band, verdict: 'structural', note: def.structural }); continue; }
-    const seeds = values[t.id] ?? [];
-    // stage C8 sealing: a sealed metric has no values unless the run was unsealed; its row carries nothing but the id and metric
-    if (def.sealed && !seeds.length) { rows.push({ ...base, ...empty, protocol: '', band: '', verdict: 'sealed', note: def.sealed }); continue; }
-    const per = seeds.map(s => seedValue(def, s));
-    const perSeed = per.map(s => (s.value !== null && finite(s.value) ? s.value : null));
-    const got = perSeed.filter((x): x is number => x !== null);
-    const p = pool(def, seeds);
-    let verdict: Verdict;
-    let interval: [number, number] | null = null;
-    let note = p.note ?? '';
-    if (p.value === null || !finite(p.value)) verdict = 'insufficient';
-    else if (p.pass === true || p.pass === false) verdict = p.pass ? 'pass' : 'fail';
-    else if (def.pool === 'pattern' || (def.pool === 'custom' && t.accept.lo === null && t.accept.hi === null && !partBands)) verdict = 'insufficient';
-    else if (partBands || def.bandParts) {
-      const pb = partBands ?? Object.fromEntries((def.bandParts ?? []).map(k => [k, [t.accept.lo ?? -Infinity, t.accept.hi ?? Infinity] as [number, number]]));
-      const vals = Object.entries(pb).map(([k, [lo, hi]]) => { const v = p.parts?.[k]; return v === null || v === undefined ? null : v >= lo && v <= hi; });
-      verdict = vals.some(v => v === null) ? 'insufficient' : vals.every(v => v) ? 'pass' : 'fail';
-    } else {
-      verdict = inBand(p.value, t.accept.lo, t.accept.hi) ? 'pass' : 'fail';
-      if (p.interval) interval = p.interval;
-      if (verdict === 'fail' && p.interval && (t.accept.hi === null || p.interval[0] <= t.accept.hi) && (t.accept.lo === null || p.interval[1] >= t.accept.lo)) {
-        verdict = 'inconclusive';
-        note = `${note ? note + '; ' : ''}95% interval ${p.interval[0].toFixed(2)}–${p.interval[1].toFixed(2)} overlaps the band`;
-      }
-      if (def.poisson && p.num !== undefined && p.den) {
-        const [a, b] = poissonInterval(p.num);
-        interval = [a / p.den, b / p.den];
-        if (verdict === 'fail' && (t.accept.hi === null || interval[0] <= t.accept.hi) && (t.accept.lo === null || interval[1] >= t.accept.lo)) {
-          verdict = 'inconclusive';
-          note = `${note ? note + '; ' : ''}${p.num} events; 95% interval ${interval[0].toFixed(2)}–${interval[1].toFixed(2)} overlaps the band`;
-        }
-      }
-      // Seed spread (C3 review): a pass or fail whose 95% interval over seeds crosses a band edge is not established either way.
-      const si = seedInterval(got);
-      const crosses = (e: number | null) => si !== null && e !== null && si[0] < e && si[1] > e;
-      if ((verdict === 'pass' || verdict === 'fail') && (crosses(t.accept.lo) || crosses(t.accept.hi))) {
-        note = `${note ? note + '; ' : ''}would be ${verdict}, but the 95% interval over seeds ${si![0].toFixed(2)}–${si![1].toFixed(2)} crosses the band edge`;
-        verdict = 'inconclusive';
-      }
-    }
-    // cell-based metrics on too few 500 m cells: reported, not scored (C6 review)
-    const cells = seeds.map(s => s.cells).filter((x): x is number => x !== undefined);
-    if (def.cellBased && profile === 'field' && cells.length && Math.min(...cells) < CELL_MIN && verdict !== 'insufficient') {
-      note = `not scored: a community-year used ${Math.min(...cells)} (< ${CELL_MIN}) cells of 500 m, so one cell moves the value (would be ${verdict})${note ? '; ' + note : ''}`;
-      verdict = 'scale';
-    }
-    if (t.heldAsFail && (verdict === 'pass' || verdict === 'inconclusive')) { note = `held as fail: ${t.heldAsFail} (would be ${verdict})${note ? '; ' + note : ''}`; verdict = 'fail'; }
-    if (def.scaleSensitive && profile === 'compressed' && verdict !== 'insufficient') {
-      note = `not scored under the compressed profile (would be ${verdict}; lengths ×50 mix two scales until C5a)${note ? '; ' + note : ''}`;
-      verdict = 'scale';
-    }
-    rows.push({
-      ...base, band, verdict, note, perSeed, seedPass: per.map(s => (s.pass === undefined ? null : s.pass)),
-      mean: got.length ? mean(got) : null, sd: got.length > 1 ? sd(got) : null, min: got.length ? Math.min(...got) : null, max: got.length ? Math.max(...got) : null,
-      pooled: p.value !== null && finite(p.value) ? p.value : null, parts: p.parts ?? {}, truth: p.truth ?? null, n: p.n, interval,
-    });
+    if (t.scoredOn === 'truth') { rows.push(truthPlaceholder(t)); continue; }
+    rows.push(scoreRow(t, METRICS.find(m => m.id === t.id), values[t.id] ?? [], profile));
   }
   return rows;
+}
+
+function bandText(t: TargetSpec): string {
+  const partBands = PART_BANDS[t.id];
+  return partBands ? Object.entries(partBands).map(([k, [a, b]]) => `${k} ${a}–${b}`).join(', ') : t.accept.lo === null && t.accept.hi === null ? t.accept.basis : fmtBand(t.accept.lo, t.accept.hi);
+}
+
+const EMPTY = { perSeed: [], seedPass: [], mean: null, sd: null, min: null, max: null, pooled: null, parts: {}, truth: null, n: 0, interval: null };
+
+/** A simulation-truth row as the field scorer reports it: n/a, with its band and flags. */
+export function truthPlaceholder(t: TargetSpec): ScoreRow {
+  return { id: t.id, metric: t.metric, role: t.role, encoded: t.encoded, evidence: t.evidence, units: t.accept.units, protocol: 'simulation truth', scaleSensitive: false, flags: targetFlags(t), ...EMPTY, band: bandText(t), verdict: 'n/a', note: TRUTH_ROW_NOTE };
+}
+
+/**
+ * Scores one simulation-truth row from its per-seed readouts (one SeedValue per seed, as a metric function returns them)
+ * with the field scorer's own rules: rows without a numeric band pool by majority of the seeds' `pass`; numeric rows pool
+ * Σnum ÷ Σden when every seed gives a ratio, else the mean of the seed values; the seed-interval rule makes a pass or a
+ * fail whose 95% interval over seeds crosses a band edge inconclusive.
+ */
+export function scoreTruthRow(t: TargetSpec, seeds: SeedValue[]): ScoreRow {
+  const pattern = t.accept.lo === null && t.accept.hi === null && !PART_BANDS[t.id];
+  const ratio = !pattern && seeds.length > 0 && seeds.every(s => s.num !== undefined && s.den !== undefined);
+  const def: MetricDef = { id: t.id, protocol: 'simulation truth', pool: pattern ? 'pattern' : ratio ? 'ratio' : 'mean' };
+  // a pattern readout may carry only its verdict: its value is then 1 (shows the pattern) or 0, so the pooled value is
+  // the share of seeds that show it
+  const s = pattern ? seeds.map(v => (v.value === null && (v.pass === true || v.pass === false) ? { ...v, value: v.pass ? 1 : 0 } : v)) : seeds;
+  return { ...scoreRow(t, def, s, 'field'), protocol: 'simulation truth' };
+}
+
+/** Scores one observer target from its metric definition and per-seed values. */
+export function scoreRow(t: TargetSpec, def: MetricDef | undefined, seeds: SeedValue[], profile = 'compressed'): ScoreRow {
+  const flags = targetFlags(t);
+  const base = { id: t.id, metric: t.metric, role: t.role, encoded: t.encoded, evidence: t.evidence, units: t.accept.units, protocol: def?.protocol ?? t.observer.protocol, scaleSensitive: !!def?.scaleSensitive, flags };
+  const partBands = PART_BANDS[t.id];
+  const band = bandText(t);
+  const empty = EMPTY;
+  if (!def || def.na) return { ...base, ...empty, band, verdict: 'n/a', note: `n/a (mechanism missing${def?.na ? `: ${def.na}` : ''})` };
+  if (def.structural) return { ...base, ...empty, band, verdict: 'structural', note: def.structural };
+  // stage C8 sealing: a sealed metric has no values unless the run was unsealed; its row carries nothing but the id and metric
+  if (def.sealed && !seeds.length) return { ...base, ...empty, protocol: '', band: '', verdict: 'sealed', note: def.sealed };
+  const per = seeds.map(s => seedValue(def, s));
+  const perSeed = per.map(s => (s.value !== null && finite(s.value) ? s.value : null));
+  const got = perSeed.filter((x): x is number => x !== null);
+  const p = pool(def, seeds);
+  let verdict: Verdict;
+  let interval: [number, number] | null = null;
+  let note = p.note ?? '';
+  if (p.value === null || !finite(p.value)) verdict = 'insufficient';
+  else if (p.pass === true || p.pass === false) verdict = p.pass ? 'pass' : 'fail';
+  else if (def.pool === 'pattern' || (def.pool === 'custom' && t.accept.lo === null && t.accept.hi === null && !partBands)) verdict = 'insufficient';
+  else if (partBands || def.bandParts) {
+    const pb = partBands ?? Object.fromEntries((def.bandParts ?? []).map(k => [k, [t.accept.lo ?? -Infinity, t.accept.hi ?? Infinity] as [number, number]]));
+    const vals = Object.entries(pb).map(([k, [lo, hi]]) => { const v = p.parts?.[k]; return v === null || v === undefined ? null : v >= lo && v <= hi; });
+    verdict = vals.some(v => v === null) ? 'insufficient' : vals.every(v => v) ? 'pass' : 'fail';
+  } else {
+    verdict = inBand(p.value, t.accept.lo, t.accept.hi) ? 'pass' : 'fail';
+    if (p.interval) interval = p.interval;
+    if (verdict === 'fail' && p.interval && (t.accept.hi === null || p.interval[0] <= t.accept.hi) && (t.accept.lo === null || p.interval[1] >= t.accept.lo)) {
+      verdict = 'inconclusive';
+      note = `${note ? note + '; ' : ''}95% interval ${p.interval[0].toFixed(2)}–${p.interval[1].toFixed(2)} overlaps the band`;
+    }
+    if (def.poisson && p.num !== undefined && p.den) {
+      const [a, b] = poissonInterval(p.num);
+      interval = [a / p.den, b / p.den];
+      if (verdict === 'fail' && (t.accept.hi === null || interval[0] <= t.accept.hi) && (t.accept.lo === null || interval[1] >= t.accept.lo)) {
+        verdict = 'inconclusive';
+        note = `${note ? note + '; ' : ''}${p.num} events; 95% interval ${interval[0].toFixed(2)}–${interval[1].toFixed(2)} overlaps the band`;
+      }
+    }
+    // Seed spread (C3 review): a pass or fail whose 95% interval over seeds crosses a band edge is not established either way.
+    const si = seedInterval(got);
+    const crosses = (e: number | null) => si !== null && e !== null && si[0] < e && si[1] > e;
+    if ((verdict === 'pass' || verdict === 'fail') && (crosses(t.accept.lo) || crosses(t.accept.hi))) {
+      note = `${note ? note + '; ' : ''}would be ${verdict}, but the 95% interval over seeds ${si![0].toFixed(2)}–${si![1].toFixed(2)} crosses the band edge`;
+      verdict = 'inconclusive';
+    }
+  }
+  // cell-based metrics on too few 500 m cells: reported, not scored (C6 review)
+  const cells = seeds.map(s => s.cells).filter((x): x is number => x !== undefined);
+  if (def.cellBased && profile === 'field' && cells.length && Math.min(...cells) < CELL_MIN && verdict !== 'insufficient') {
+    note = `not scored: a community-year used ${Math.min(...cells)} (< ${CELL_MIN}) cells of 500 m, so one cell moves the value (would be ${verdict})${note ? '; ' + note : ''}`;
+    verdict = 'scale';
+  }
+  if (t.heldAsFail && (verdict === 'pass' || verdict === 'inconclusive')) { note = `held as fail: ${t.heldAsFail} (would be ${verdict})${note ? '; ' + note : ''}`; verdict = 'fail'; }
+  if (def.scaleSensitive && profile === 'compressed' && verdict !== 'insufficient') {
+    note = `not scored under the compressed profile (would be ${verdict}; lengths ×50 mix two scales until C5a)${note ? '; ' + note : ''}`;
+    verdict = 'scale';
+  }
+  return {
+    ...base, band, verdict, note, perSeed, seedPass: per.map(s => (s.pass === undefined ? null : s.pass)),
+    mean: got.length ? mean(got) : null, sd: got.length > 1 ? sd(got) : null, min: got.length ? Math.min(...got) : null, max: got.length ? Math.max(...got) : null,
+    pooled: p.value !== null && finite(p.value) ? p.value : null, parts: p.parts ?? {}, truth: p.truth ?? null, n: p.n, interval,
+  };
 }
 
 export type SummaryKey = Verdict | 'compromised' | 'instrument' | 'unscorable' | 'tuned' | 'encoded';

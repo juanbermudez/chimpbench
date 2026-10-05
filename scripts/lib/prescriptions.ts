@@ -666,6 +666,12 @@ export const ENCODED_BY: Record<string, { params: string[]; literal?: { file: st
   'T-DEM-20': { params: ['guardFeedDeterW'], how: 'the feeding deterrence reads dominance relative to the mother, which builds the gradient in' },
   'T-DEM-22': { params: ['birthCondFromMother'], how: 'the prenatal channel exists because of this source' },
   'T-DEM-24': { params: ['selfFeedStartY'], how: 'the self-feeding ramp to each individual\'s weaning age builds the direction in' },
+  // Track E rows registered at the Track E freeze (5 October 2026), encoded on S39's switches (data/targets.json protocolLog)
+  'T-END-4': { params: ['endoStressAggrKick'], how: 'E4a kicks the stress load at aggression given or received: the event is wired straight into the state' },
+  'T-END-7': { params: ['endoArousalOestrusW', 'endoParousAgeY'], how: 'E4a sets an adult male\'s arousal level from a swollen parous (not nulliparous) female in view' },
+  'T-END-10': { params: ['endoAffilTauH'], how: 'E4a pulls affiliation toward the bond with the grooming partner' },
+  'T-END-11': { params: ['endoAffilShareKick'], how: 'E4a kicks affiliation in giver and receiver at food sharing' },
+  'T-INF-3': { params: ['weanAgeMinY', 'weanAgeSpanY'], how: 'each offspring\'s weaned age is drawn from these at birth (from bray2018\'s 4.8 y), with weanDecide too' },
 };
 
 // ---------------------------------------------------------------------------------------------------------------------

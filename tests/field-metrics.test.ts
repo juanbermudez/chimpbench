@@ -6,7 +6,7 @@ import { METRICS, type SeedValue } from '../src/field/metrics';
 import { hash01 } from '../src/sim/rng';
 import { cellRange, convexHullArea, coreShare, hRef, isoplethArea, isoplethLevels, kde, levelAt } from '../src/field/space';
 import { conciliatoryTendency, dispersion, hwi, kendall, ldaLeaveOneOut, logistic, ols, pearson, quantile, steepness } from '../src/field/stats';
-import { poissonInterval, publicRow, scoreTargets, summarize, unsealRefusal, type TargetFile } from '../src/field/targets';
+import { TRUTH_ROW_NOTE, poissonInterval, publicRow, scoreTargets, scoreTruthRow, summarize, unsealRefusal, type TargetFile } from '../src/field/targets';
 import { emptyRecords, type Records } from '../src/field/records';
 import { clusterBootstrap, cox, poissonGlm, seededRng, type CoxRow } from '../src/field/survival';
 import { SEALED, letFivePooled, letFiveSeed, type ScenarioCensus } from '../src/field/early-life';
@@ -199,13 +199,41 @@ test('every target in data/targets.json has a metric definition or an explicit n
   const { readFileSync } = await import('node:fs');
   const file = JSON.parse(readFileSync(new URL('../data/targets.json', import.meta.url), 'utf8')) as TargetFile;
   const ids = new Set(METRICS.map(m => m.id));
-  for (const t of file.targets) assert.ok(ids.has(t.id), `${t.id} is covered`);
+  // Track E rows (scoredOn 'truth') are scored by scripts/e-bench.ts from simulation truth, never by an observer metric
+  for (const t of file.targets) assert.ok(t.scoredOn === 'truth' ? !ids.has(t.id) : ids.has(t.id), `${t.id} is covered`);
   for (const m of METRICS) assert.ok(m.compute || m.na || m.structural || m.sealed, `${m.id} computes or says why not`);
   // stage C8 rows staged in docs/staging/c8-targets.patch.json (registered by the integrator) may precede their rows
   const staged = new Set(Array.from({ length: 9 }, (_, i) => `T-DEM-${16 + i}`));
   const extra = METRICS.filter(m => !file.targets.some(t => t.id === m.id));
   assert.ok(extra.every(m => staged.has(m.id) && m.sealed), `unregistered metrics: ${extra.map(m => m.id)}`);
-  assert.equal(METRICS.length, file.targets.length + extra.length);
+  assert.equal(METRICS.length, file.targets.filter(t => t.scoredOn !== 'truth').length + extra.length);
+});
+
+test('Track E freeze: the simulation-truth rows carry their definition and readout, and the field scorer leaves them n/a', async () => {
+  const { readFileSync } = await import('node:fs');
+  const file = JSON.parse(readFileSync(new URL('../data/targets.json', import.meta.url), 'utf8')) as TargetFile;
+  const truth = file.targets.filter(t => t.scoredOn === 'truth');
+  assert.equal(truth.length, 40);
+  assert.ok(truth.every(t => /^T-(ENE|RHY|END|INF)-\d+$|^T-SOC-1[456]$/.test(t.id)), 'only the Track E families');
+  for (const t of truth) {
+    assert.equal(t.truthDefinition?.definition, (t as unknown as { definition: string }).definition, `${t.id} quotes its own definition`);
+    assert.ok(t.truthDefinition!.readout.length > 20, `${t.id} says what is read`);
+    assert.ok(t.truthDefinition!.methods.length > 0 || (t.truthDefinition!.methodsNote ?? '').length > 0, `${t.id} quotes Methods or says why not`);
+  }
+  const rows = scoreTargets({ targets: truth }, { [truth[0].id]: [{ value: 1, n: 1 }] }, 'field');
+  assert.ok(rows.every(r => r.verdict === 'n/a' && r.note === TRUTH_ROW_NOTE));
+  assert.ok(rows.find(r => r.id === 'T-ENE-1')!.flags.includes('contested'));
+});
+
+test('scoreTruthRow: the field scorer\'s rules on readouts (ratio, mean, pattern by majority, seed interval)', () => {
+  const spec = (id: string, lo: number | null, hi: number | null) => ({ id, metric: id, role: 'held-out' as const, encoded: false, evidence: 'M', scoredOn: 'truth' as const, accept: { lo, hi, units: 'u', basis: 'b' }, observer: { protocol: 'p', interval_min: null, unit: 'u' } });
+  const r = scoreTruthRow(spec('T-SOC-14', 0.08, 0.37), [{ value: 0.2, num: 2, den: 10, n: 10 }, { value: 0.1, num: 3, den: 30, n: 30 }]);
+  assert.equal(r.pooled, 5 / 40); assert.equal(r.verdict, 'pass');
+  assert.equal(scoreTruthRow(spec('T-ENE-8', 85, 130), [{ value: 80, n: 3 }, { value: 70, n: 3 }]).pooled, 75);
+  const p = scoreTruthRow(spec('T-END-4', null, null), [{ value: null, pass: true, n: 5 }, { value: null, pass: true, n: 5 }, { value: null, pass: false, n: 5 }]);
+  assert.equal(p.verdict, 'pass'); assert.equal(p.pooled, 2 / 3);
+  assert.equal(scoreTruthRow(spec('T-ENE-8', 85, 130), [{ value: 60, n: 1 }, { value: 120, n: 1 }, { value: 100, n: 1 }]).verdict, 'inconclusive');
+  assert.equal(scoreTruthRow(spec('T-ENE-8', 85, 130), [{ value: null, n: 0, note: 'no adult' }]).verdict, 'insufficient');
 });
 
 test('C3 review: killings count observed and carcass-inferred cases; violent disappearances are only "suspected" (wilson2014)', () => {
