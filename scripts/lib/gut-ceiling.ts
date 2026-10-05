@@ -135,7 +135,9 @@ export function gutCeiling(c: Chimp, P: Params, diet: Diet, opts: Partial<Ceilin
 }
 
 /** A copy of the parameters with some values replaced (a new object, so the model's per-parameter caches rebuild). */
-export const withParams = (P: Params, over: Partial<Record<keyof Params, number>>): Params => ({ ...P, ...over }) as Params;
+export function withParams(P: Params, over: Partial<Record<keyof Params, number>>): Params {
+  return { ...P, ...over } as Params;
+}
 
 /** Diet shares from a fallback share of plant energy and a fig share of the fruit energy. */
 export const dietOf = (fallback: number, figOfFruit: number): Diet => ({ drupe: (1 - fallback) * (1 - figOfFruit), fig: (1 - fallback) * figOfFruit, fallback });
