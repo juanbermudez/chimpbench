@@ -42,8 +42,8 @@ const S31_SWITCHES: Record<string, number> = { ...S27_SWITCHES, departValue: 2, 
  *  S13 = S9 + E4e's huntValue + E3c's forageRate + E4h's contestAssess, S16 = S13 + E5e's socialTiming + E4i's patrolValue,
  *  S19 = S17 + E4k's huntPursuit, S17 = S16 + E4j's patrolFusion, S21 = S19 + E3e's choiceBelief, S22 = S21 + E4m's
  *  leftoverRules, S25 = S22 + E4n's huntDrive, S27 = S25 + E1q's crownMove + E2i's walkGait (S26, S25 + crownMove alone,
- *  passed as a correction and is not shown), S31 = S27 + E5f's departValue + E4o's bodyRules, the cost-free alternative
- *  the page names, S32 = S31 + E3d's redecideValue). */
+ *  passed as a correction and is not shown), S31 = S27 + E5f's departValue + E4o's bodyRules, S32 = S31 + E3d's
+ *  redecideValue, which passed but cost every class reserve: the stack fell back to S31 by its registered condition). */
 export const STACKS = {
   S3: { name: 'S3', doc: 'staging/e-stack2-confirm.md', section: 'S3 results', switches: S3_SWITCHES },
   S5: { name: 'S5', doc: 'staging/e-stack2-confirm.md', section: 'S5 results', switches: S5_SWITCHES },
@@ -62,7 +62,7 @@ export const STACKS = {
 } satisfies Record<string, Stack>;
 /** The stack this page shows. Moving the page to another stack is this line, plus the prose its results change (the
  *  check names every box and layer that no longer fits). */
-export const STACK: Stack = STACKS.S32;
+export const STACK: Stack = STACKS.S31;
 
 /** Stages outside the stack, each measured on it (handoff §0 and §3, and each stage's pre-registration). `verdict`
  *  replaces the stage's own where the layer is one arm of a stage. A layer whose switches the stack holds is dropped. */
@@ -77,7 +77,9 @@ export const ALL_LAYERS: Layer[] = [
   { key: 'E4d', stage: 'E4d', label: 'E4d, sleep-gated hormone rhythm', status: 'recorded, off', on: { endoRhythm: 1 } },
   { key: 'E2j', stage: 'E2j', label: "E2j, a trip's climb and riders; the young's arrival", status: 'recorded, off', on: { tripBodyCost: 1, youngArrival: 1 } },
   { key: 'E2i', stage: 'E2i', label: 'E2i, walking speed from the body', status: 'passes alone as S23; with S22, not adopted', on: { walkGait: 1 } },
-  { key: 'E3d', stage: 'E3d', label: 'E3d, an act kept while it is the best', status: 'passes alone as S18; with choiceBelief, encounters tripled', on: { redecideValue: 2 } },
+  { key: 'E3d', stage: 'E3d', label: 'E3d, an act kept while it is the best', status: 'passed as S28 and S32 with an energy cost; off the stack', on: { redecideValue: 2 } },
+  { key: 'E3g', stage: 'E3g', label: 'E3g, a colobus group seen within the hour is not met anew', status: 'a correction, being confirmed on S31 as S35', on: { experienceValue: 2 } },
+  { key: 'E4q', stage: 'E4q', label: 'E4q, aggression without cooldowns', status: 'being confirmed on S31 as S34', on: { aggressionGaps: 7 } },
   { key: 'E3', stage: 'E3', label: 'E3, urgency', status: 'stopped, off', on: { urgencyChoice: 1, urgencyPersist: 1, urgencySwitchCost: 1 } },
 ];
 export const LAYERS: Layer[] = ALL_LAYERS.filter(l => !Object.keys(l.on).every(s => STACK.switches[s]));
