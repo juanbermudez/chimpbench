@@ -449,7 +449,9 @@ async function plan(a: Args): Promise<void> {
 
 function status(file: string): void {
   const run = new Run(file), r = run.reg;
-  const lock = run.path('run.lock'), held = existsSync(lock) ? JSON.parse(readFileSync(lock, 'utf8')) as { pid: number; host: string; started: string } : null;
+  const lock = run.path('run.lock');
+  let held: { pid: number; host: string; started: string } | null = null;
+  if (existsSync(lock)) try { held = JSON.parse(readFileSync(lock, 'utf8')) as { pid: number; host: string; started: string }; } catch { held = { pid: 0, host: '', started: '' }; }
   const active = held && held.host === hostname() && alive(held.pid, 'e-run');
   console.log(`${r.label}: ${r.path} path, ${r.seeds.length} seeds × ${r.horizon.totalDays} days (burn-in ${r.horizon.burnInDays}), commit ${r.commit.slice(0, 10)} (${r.branch}), planned ${r.created}`);
   console.log(`runner: ${active ? `active (pid ${held!.pid} since ${held!.started})` : held ? `stale lock (pid ${held.pid}, not running)` : 'none'}; free disk ${(minFree(run.dir).bytes / 1e9).toFixed(1)} GB`);
