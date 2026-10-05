@@ -97,6 +97,42 @@ byte-identical to today's for the same context.
 
 **What M1 does not decide.** Whether the model reads the new fields, and in which direction: M2.
 
+### M1 results (5 October 2026)
+
+**Built** (3df70b0, 2ccdcb7 and this commit): `observeState` (registry, switch, 0 in both profiles); `src/sim/observe-state.ts`
+(`bodyPercept`, `lightPercept`, `optionValue`); observe() adds `body`, `light` and option `value`s at 1; `server/decide.ts`
+validates them (unknown keys and out-of-range numbers rejected) and renders them for GLiNER and Jev. The valuation's own
+function was used: `treeFoodWorth` was split into the crown's drive × a new exported `treeRateShare(…, travel)` with
+unchanged arithmetic (rateWorth's in-view and trip cases), checked bit-identical on S39: world hashes after 2 days, seeds 48
+and 7, equal on 453e9d0 and on the branch.
+
+**Tests** (`tests/em-observe.test.ts`, 6 pass): the switch is 0 in both profiles; the S39 world is hash-identical at 0 and 1;
+at 0 no Track E part; at 1 the observation minus its parts deep-equals the one at 0 for every living animal; pure (no rng
+draw, `JSON.stringify(world)` unchanged), finite, a feeding option's crown in view; the boundary accepts the parts and
+rejects malformed ones; today's packets byte-identical for the context without the parts; new packets carry no "HH:MM" and
+no ids, a body line and the kcal values. The compressed goldens and the field pin are untouched (nothing they run reads the
+switch; full suite at the final check).
+
+**Token check (pass).** Sample: `scripts/em-sample.ts`, 3,450 decision points (seed 48: 1,667; seed 7: 1,783; 3,076 rules
+draws, 374 kept or arrived), the taps checked to leave the world unchanged (`--check`, seed 48). Real GLiNER input tokens
+(`em_score.py --tokens`; `scripts/em-tokens.ts`, `artifacts/em/m1/tokens.md`):
+
+| packets | n | median | p95 | max | over 650 | over 1,280 | estimate − real: median / largest under-estimate |
+|---|---|---|---|---|---|---|---|
+| old (today) | 3,450 | 404 | 550 | 613 | 0 | 0 | 6 / 36 |
+| new (observeState 1) | 3,450 | 510 | 661 | 735 | 232 | 0 | 50 / 5 |
+
+The new parts add 107 tokens at the median (p95 122, max 140); every packet stays under the 1,280 hard limit, so no
+iteration 2. No memory or history line had to be trimmed for them (the new layout keeps the old packet's trimming and its
+estimate stays under its budget of 1,000). Latency is not measured here (GLiNER's cost grows with tokens; ~25% more input).
+
+**Finding for Track E (not changed here).** In 17% of the sampled decisions (12% of daylight ones) the drive's waking time
+left (`feedHorizon`) is 0 and the energy-deficit drive is pinned at 1 (26% of decisions at 1), from mid-morning on for some
+animals. The horizon reads sleep pressure against the pressure at which the animal last fell asleep (E1e, built on E2a's
+process S alone); under `rhythmCircadian` sleep onset is gated by the circadian threshold, so last night's bedtime pressure
+can lie below today's daytime pressure and the estimate collapses. The rules' hunger readout (drive × satiation) then
+follows gut fill alone for those animals. The model sees the state as it is ("energy shortfall 1.00 … before I sleep").
+
 ## M2. Offline check (registered 5 October 2026, before any model scored a packet)
 
 **Sample (made for M1's token check, the same file for M2; no model involved).** `scripts/em-sample.ts`: S39 + `observeState`

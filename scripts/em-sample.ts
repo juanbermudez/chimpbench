@@ -109,7 +109,7 @@ export function sample(o: SampleOpts): { recs: Rec[]; hash: string; decisions: R
     });
     const old = withoutState(p.ctx);
     const { keys: _a, ...jevNew } = buildJevQuestion(p.ctx), { keys: _b, ...jevOld } = buildJevQuestion(old);
-    recs.push({ id: `${o.seed}-${w.tick}-${c.id}`, seed: o.seed, tick: w.tick, time: +w.time.toFixed(4), hour: +w.hour.toFixed(3), phase: dayPhase(w),
+    recs.push({ id: `${o.seed}-${w.tick}-${c.id}-v${p.ctx.version}`, seed: o.seed, tick: w.tick, time: +w.time.toFixed(4), hour: +w.hour.toFixed(3), phase: dayPhase(w),
       daylight: +w.environment.daylight.toFixed(3), chimpId: c.id, name: c.name, cls: classOf(c), age: +c.age.toFixed(2), sex: c.sex,
       why, rgIndex: p.options.findIndex(k => key(k) === key(chosen)), rulesIndex: p.rulesIndex, options, context: p.ctx,
       packets: { glinerNew: buildLocalQuestion(p.ctx), glinerOld: buildLocalQuestion(old), jevNew, jevOld } });
