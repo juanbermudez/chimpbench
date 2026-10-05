@@ -19,7 +19,10 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
   passed as a correction with a gain (held-out without rare rows z −4.1, every class's reserve better, less walking).
   Next stage idea: the remaining ~40% of failed trips (crowns emptied by animals the traveller never saw), then re-deciding
   on top. Decision guide on S34 (hosted copy in `site` a771b52); not yet moved to S37. Disk: 13.9 GB free at 23:10.
-- **S37 is the best integrated candidate (42)** (e-stack2-confirm.md "S37 results"): S34 + `callGaps` 7; every sum inside
+- **S39 is the best integrated candidate (42)** (e-stack2-confirm.md "S39 results"): S37 + `tripBeliefs` 3; held-out without
+  rare rows better beyond noise (z −2.2), every class's reserve better, less walking, T-IGE-1 back in band. Costs: T-ACT-2
+  0.115 (band floor 0.12), T-COM-11 0.023 (band 0.25–0.55; snake-trial protocol).
+- **S37 was the best integrated candidate (42)** (e-stack2-confirm.md "S37 results"): S34 + `callGaps` 7; every sum inside
   noise; costs: T-IGE-1 13.3 (band 5–12), T-COM-8 0.619. S38 (S34 + `tripBeliefs` 3) running; then S39 = S37 + `tripBeliefs` 3.
 - **S34 was the best integrated candidate (45)** (e-stack2-confirm.md "S34 results"): S31 + `aggressionGaps` 7; every sum
   inside noise, no cost found, food calls into their band. E4p recorded (the mating quota stays). S35 (the hunting
