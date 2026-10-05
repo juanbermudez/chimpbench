@@ -53,3 +53,73 @@ test('animal-day records: the world is unchanged, one row per animal and day, su
   const back = decodeLossless<BenchPart>(encodeLossless(on)).energy!;
   assert.deepStrictEqual(mergeEnergy([back]).animalDays, back.animalDays);
 });
+
+// ---------------------------------------------------------------------------------------------------------------------
+// scripts/lib/lean-season.ts on synthetic parts (no simulation)
+// ---------------------------------------------------------------------------------------------------------------------
+import { AD as ADF } from '../scripts/lib/energy-probe';
+import { animalPool, animalSpan, dailyMonthly, deathsInRows, monthOfDay, monthOrder, rowClass, rowMonthly, yearByClass } from '../scripts/lib/lean-season';
+import { newEnergyAcc } from '../scripts/lib/energy-probe';
+
+test('calendar: a 30-day burn-in from 28 September puts window day 0 on 28 October and day 4 in November', () => {
+  assert.equal(monthOfDay(0, 30, 271), 9);
+  assert.equal(monthOfDay(3, 30, 271), 9);
+  assert.equal(monthOfDay(4, 30, 271), 10);
+  assert.equal(monthOfDay(65, 30, 271), 0); // 1 January
+  assert.equal(monthOfDay(364, 30, 271), 9); // 27 October of the next year
+  assert.deepEqual(monthOrder(365, 30, 271), [9, 10, 11, 0, 1, 2, 3, 4, 5, 6, 7, 8]);
+});
+
+test('class readout by month: sums per animal-day, net = absorbed − spent, reserves from the seeds\' trajectories', () => {
+  const a = newEnergyAcc(), b = newEnergyAcc();
+  // two seeds; juveniles: day 4 (November) and day 65 (January)
+  const day = (k: number) => ({ ticks: 5760 * k, dayTicks: 2880 * k, eating: 1200 * k, kin: 1500 * k, fec: 400 * k, out: 1200 * k, dm: 600 * k, hunger: 0.3 * 2880 * k, foreFull: 288 * k });
+  a.daily['juvenile 5–12 y'] = []; a.daily['juvenile 5–12 y'][4] = day(2); a.daily['juvenile 5–12 y'][65] = day(1);
+  b.daily['juvenile 5–12 y'] = []; b.daily['juvenile 5–12 y'][4] = day(1);
+  a.trajSeeds.push({ 'juvenile 5–12 y': Object.assign([], { 4: -0.1, 65: -0.3 }) }); b.trajSeeds.push({ 'juvenile 5–12 y': Object.assign([], { 4: -0.2 }) });
+  a.acc['juvenile 5–12 y'].m75 = 10 * 5760 * 3; a.acc['juvenile 5–12 y'].ticks = 5760 * 3;
+  const t = dailyMonthly([a, b], 30, 271), nov = t['juvenile 5–12 y'][10], jan = t['juvenile 5–12 y'][0];
+  assert.equal(nov.n, 3);
+  assert.equal(nov.eatMin, 300); // 1,200 ticks a day × 15 s
+  assert.equal(nov.kin, 1500); assert.equal(nov.absorbed, 1100); assert.equal(nov.net, -100);
+  assert.equal(nov.kinPerKg75, 150);
+  assert.ok(Math.abs(nov.reserve! - -0.15) < 1e-12, 'the mean of the two seeds\' daily class means');
+  assert.equal(jan.n, 1); assert.ok(Math.abs(jan.reserve! - -0.3) < 1e-12);
+  assert.ok(Math.abs(nov.foreFull - 0.1) < 1e-12 && Math.abs(nov.hunger - 0.3) < 1e-12);
+  // the window by class
+  a.acc['juvenile 5–12 y'].out.walk = 90; a.acc['juvenile 5–12 y'].kin = 1500 * 3; // window sums over 3 animal-days
+  const y = yearByClass([a]);
+  assert.equal(y['juvenile 5–12 y'].n, 3); assert.equal(y['juvenile 5–12 y'].terms.walk, 30); assert.equal(y['juvenile 5–12 y'].kin, 1500); assert.equal(y['juvenile 5–12 y'].m75, 10);
+});
+
+test('per-animal rows: classes, monthly cells, an animal\'s last days and its death', () => {
+  const row = (o: Partial<Record<keyof typeof ADF, number | null>>): (number | null)[] => { const r = new Array(Object.keys(ADF).length).fill(0) as (number | null)[]; for (const [k, v] of Object.entries(o)) r[ADF[k as keyof typeof ADF]] = v; return r; };
+  const base = { ticks: 5760, dayTicks: 2880, kin: 1300, fec: 300, oRest: 800, oWalk: 100, oGrowth: 20, tDrupe: 400, tFallback: 800, tEat: 1200, tEatFull: 600, eDrupe: 700, eFallback: 300, fin: 1000,
+    aCrown: 400, aGround: 800, aTravel: 400, aRest: 1280, hunger: 0.4 * 2880, fill: 0.8 * 2880, fullDay: 1440, party: 4 * 2880, charged: 2, feedCharged: 1, kg: 20, store: 26000 };
+  const rows = [
+    row({ ...base, day: 4, id: 7, female: 1, age: 6, res: -2600, motherRes: -0.2 }),
+    row({ ...base, day: 5, id: 7, female: 1, age: 6, res: -5200, motherRes: -0.3 }),
+    row({ ...base, day: 6, id: 7, female: 1, age: 6, res: -26000, dead: 1, motherRes: null, ticks: 2880, dayTicks: 1440, aCrown: 200, aGround: 400, aTravel: 200, aRest: 640 }),
+    row({ ...base, day: 4, id: 8, female: 0, age: 13, res: 0, store: 50000 }),
+    row({ ...base, day: 4, id: 9, female: 1, age: 20, pregnancy: 100, res: 0, store: 40000 }),
+  ];
+  assert.equal(rowClass(rows[0]), 'juvenile 5–12 y F');
+  assert.equal(rowClass(rows[3]), 'adolescent 12–15 y M');
+  assert.equal(rowClass(rows[4]), 'female, pregnant');
+  const t = rowMonthly(rows, 30, 271), c = t['juvenile 5–12 y F'][10];
+  assert.equal(c.n, 2.5);
+  assert.equal(c.eatMin, 3 * 1200 / 4 / 2.5 - (600 * 0) / 2.5); // every row eats 1,200 ticks
+  assert.equal(c.eatFullShare, 0.5);
+  assert.equal(c.absorbed, 3 * 1000 / 2.5); assert.equal(c.out, 3 * 920 / 2.5); assert.equal(c.net, 3 * 80 / 2.5);
+  assert.ok(Math.abs(c.plantShare.drupe - 0.7) < 1e-12 && Math.abs(c.fallbackTimeShare - 2 / 3) < 1e-12);
+  assert.ok(Math.abs(c.ownPerEatMin - 1000 / 300) < 1e-12);
+  assert.ok(Math.abs(c.acts.ground - 2000 / 7200) < 1e-12 && Math.abs(c.party - 4 * 2880 * 3 / 7200) < 1e-12);
+  assert.ok(Math.abs(c.reserve! - (-0.1 - 0.2 - 1) / 3) < 1e-12, 'mean of the rows\' reserves ÷ store');
+  assert.ok(Math.abs(c.motherReserve! - -0.25) < 1e-12, 'a missing mother is left out');
+  assert.deepEqual(deathsInRows(rows), [{ id: 7, day: 6, cls: 'juvenile 5–12 y F' }]);
+  const span = animalSpan(rows, 7, 5, 6);
+  assert.deepEqual(span.map(s => s.day), [5, 6]);
+  assert.equal(span[1].dead, true);
+  assert.equal(animalPool(rows, 7, 4, 6)!.n, 2.5);
+  assert.equal(animalPool(rows, 7, 10, 20), null);
+});
