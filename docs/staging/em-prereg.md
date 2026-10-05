@@ -245,3 +245,7 @@ file's), and `artifacts/em/m3/report.md` (`scripts/em-loop-report.ts`: every num
 observation, consistent renderings, 95% intervals above 0: `base` moves deficit, sleep, light and water the right way
 (reserves and heat do not respond); `baseline` the same four. Tie → `base`, the served model. The gate (deficit or
 reserves, and sleep or light) passes for `base`, so the G arms run with `--provider base`.
+
+**Amendment 1 (before any paid Jev call).** M2 registered "Jev only while no GLiNER job runs". Jev is a remote API, not a
+local model worker (the rule it guarded: one resident GLiNER worker at a time), so the capped Jev sample runs while the
+adapter scores seed 7. Nothing else changes (same records, probes, ledger, run id and 5 USD cap).
