@@ -1,9 +1,9 @@
 import { SOURCE_EFFORT_H_PER_YEAR } from './config';
 import { CAT_FEED, CAT_GROOM, CAT_REST, CAT_TRAVEL, FEED_FRUIT, FEED_GROUND, FEED_MEAT } from './categories';
 import { MONTH_H, shares, type Derived } from './derive';
-import { P_LACT, type Records } from './records';
+import { P_LACT, type Follow, type Records, type TreeVisitRec } from './records';
 import { EARLY_LIFE_METRICS, SEALED } from './early-life';
-import { cellOf, cellRange, isoplethArea, kde } from './space';
+import { cellOf, cellRange, convexHull, inConvexHull, isoplethArea, kde } from './space';
 import { conciliatoryTendency, dispersion, finite, hwi, kendall, ldaLeaveOneOut, logistic, mean, median, ols, pearson, poissonInterval, spearman, steepness } from './stats';
 
 // One metric function per target id (data/targets.json), each implementing its source's computation on the
@@ -115,23 +115,55 @@ function encounters(d: Derived) { return d.rec.encounters; }
 /** Detected hunts (hunt start seen or heard by a following team). */
 function hunts(d: Derived) { return d.rec.hunts.filter(h => h.detected); }
 
-/** Colobus encounters from scans: prey within range of the focal party; a new encounter when that prey was not in range at the previous scan of the follow. */
+/**
+ * Colobus encounters from the follow's 15-min scans (prey within the profile encounter distance of a party member), by
+ * gilby2015's run rule (Methods: "any 15 min scan when the chimpanzees were within 100 m of colobus that was not immediately
+ * preceded by another 'positive' colobus scan"; Track E freeze, e4f-protocol): a positive scan whose previous scan in the
+ * same follow was not positive starts an encounter; adult males are those at that first scan (T-HUN-4). Hunted ("We matched
+ * every observed hunt attempt to an encounter"): a detected hunt by the follow's community on any group scanned in the run,
+ * or on an unknown group, from 0.25 h before the run's first positive scan to the later of 1 h after it and 0.25 h after its
+ * last positive scan. Before the freeze a change of the nearest group within a run counted as a new encounter.
+ */
 function colobusEncounters(d: Derived): { t: number; troop: number; prey: number; am: number; hunted: boolean }[] {
   const S = d.rec.scans, out: { t: number; troop: number; prey: number; am: number; hunted: boolean }[] = [];
   const hs = hunts(d);
   d.followScans.forEach((idx, f) => {
-    let prev = -1;
-    for (const i of idx) {
-      const prey = S.prey.data[i];
-      if (prey >= 0 && prey !== prev) {
-        const t = H(d, S.t.data[i]), troop = d.rec.follows[f].troop;
-        const hunted = hs.some(h => h.troop === troop && (h.prey === prey || h.prey < 0) && h.t0 >= t - 0.25 && h.t0 <= t + 1);
-        out.push({ t, troop, prey, am: S.am.data[i], hunted });
-      }
-      prev = prey;
+    const troop = d.rec.follows[f].troop;
+    for (let k = 0; k < idx.length; k++) {
+      const i = idx[k];
+      if (S.prey.data[i] < 0 || (k > 0 && S.prey.data[idx[k - 1]] >= 0)) continue;
+      const t = H(d, S.t.data[i]), preys = new Set<number>();
+      let t1 = t;
+      for (let j = k; j < idx.length && S.prey.data[idx[j]] >= 0; j++) { preys.add(S.prey.data[idx[j]]); t1 = H(d, S.t.data[idx[j]]); }
+      const hi = Math.max(t + 1, t1 + 0.25);
+      const hunted = hs.some(h => h.troop === troop && (preys.has(h.prey) || h.prey < 0) && h.t0 >= t - 0.25 && h.t0 <= hi);
+      out.push({ t, troop, prey: S.prey.data[i], am: S.am.data[i], hunted });
     }
   });
   return out;
+}
+
+/**
+ * Feeding resources (normand2009: "The trees located less than 30 m from each other were considered to be the same
+ * resource"; Track E freeze, e3b-protocol): single-linkage clusters of the visited trees at `link` logical metres; a
+ * resource's id is the smallest tree id in it.
+ */
+function resources(visits: TreeVisitRec[], link: number): Map<number, number> {
+  const pos = new Map<number, [number, number]>();
+  for (const v of visits) if (!pos.has(v.tree)) pos.set(v.tree, [v.tx, v.tz]);
+  const ids = [...pos.keys()].sort((a, b) => a - b), par = new Map(ids.map(i => [i, i]));
+  const find = (i: number): number => { let r = i; while (par.get(r) !== r) r = par.get(r)!; par.set(i, r); return r; };
+  const cells = new Map<string, number[]>(), key = (x: number, z: number) => `${Math.floor(x / link)}|${Math.floor(z / link)}`;
+  for (const i of ids) { const [x, z] = pos.get(i)!; const k = key(x, z); (cells.get(k) ?? cells.set(k, []).get(k)!).push(i); }
+  for (const i of ids) {
+    const [x, z] = pos.get(i)!, cx = Math.floor(x / link), cz = Math.floor(z / link);
+    for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (const j of cells.get(`${cx + a}|${cz + b}`) ?? []) {
+      if (j <= i) continue;
+      const [x2, z2] = pos.get(j)!;
+      if (Math.hypot(x - x2, z - z2) < link) { const ri = find(i), rj = find(j); if (ri !== rj) par.set(Math.max(ri, rj), Math.min(ri, rj)); }
+    }
+  }
+  return new Map(ids.map(i => [i, find(i)]));
 }
 
 /** Dominance interactions among adult males per community: decided conflicts (winner beats loser) and, unless `conflictsOnly`, pant-grunts (recipient beats giver). */
@@ -285,8 +317,13 @@ export const METRICS: MetricDef[] = [
 
   // Parties
   {
-    id: 'T-PTY-1', protocol: '15-min scans of the focal party (all individuals, chain rule at the profile party link), mean size (wilson2012)',
-    compute: d => { const S = d.rec.scans; if (!S.t.n) return none('no scans'); return { value: mean(S.size.view()), n: S.t.n }; },
+    id: 'T-PTY-1', protocol: '15-min scans of the focal party on party follows staying with the larger subgroup (all individuals; chain rule at the profile party link, plus wilson2001\'s borderline link: animals up to partyBorderLinkM apart that were in the party at the previous scan); mean over follows with at least one scan of the follow\'s mean scan size (wilson2012: "Parties contained a mean 9.2 ± 7.0 individuals per follow"; Track E freeze, e5a S1 and S2); part scanMean: the mean over all scans (the value before the freeze)',
+    compute: d => {
+      const S = d.rec.scans; if (!S.t.n) return none('no scans');
+      const per: number[] = [];
+      for (const idx of d.followScans) if (idx.length) { let s = 0; for (const i of idx) s += S.size.data[i]; per.push(s / idx.length); }
+      return { value: mean(per), parts: { scanMean: mean(S.size.view()) }, n: per.length };
+    },
   },
   {
     id: 'T-PTY-2', protocol: 'monthly mean scan party size vs the transect phenology index (R²), and feeding-party size vs crown radius (R²) (mitaniWatts2005; potts2011)', pool: 'pattern',
@@ -304,14 +341,23 @@ export const METRICS: MetricDef[] = [
     },
   },
   {
-    id: 'T-PTY-3', protocol: 'follows reaching the periphery (scan centroid beyond the own 85% kernel isopleth) vs core-only follows; median of per-follow mean adult males (wilson2007)', pool: 'pattern',
+    id: 'T-PTY-3', protocol: 'party follows staying with the larger subgroup: follows reaching the periphery (a scan centroid outside the minimum convex polygon of the community\'s night-nest locations, where observed departures started and complete follows ended: wilson2007, "Periphery consisted of all points outside the nesting range but within the park") vs core-only follows; median of per-follow mean adult males (wilson2007; Track E freeze, e5a S3: before it, focal follows and the 85% kernel isopleth)', pool: 'pattern',
     compute: d => {
-      const S = d.rec.scans, per: number[] = [], core: number[] = [];
+      const S = d.rec.scans, P = d.rec.points, per: number[] = [], core: number[] = [];
+      const nests = new Map<number, [number, number][]>();
+      d.rec.follows.forEach((f, fi) => {
+        const pts = d.followPts[fi];
+        if (!pts.length) return;
+        const l = nests.get(f.troop) ?? nests.set(f.troop, []).get(f.troop)!;
+        if (f.departure) l.push([P.x.data[pts[0]], P.z.data[pts[0]]]);
+        if (f.complete) l.push([P.x.data[pts[pts.length - 1]], P.z.data[pts[pts.length - 1]]]);
+      });
+      const hulls = new Map([...nests].map(([t, l]) => [t, convexHull(l)]));
       d.followScans.forEach((idx, f) => {
-        if (!idx.length) return;
-        const troop = d.rec.follows[f].troop;
+        const hull = hulls.get(d.rec.follows[f].troop);
+        if (!idx.length || !hull || hull.length < 3) return;
         let periph = false, am = 0;
-        for (const i of idx) { am += S.am.data[i]; if (d.level(troop, S.cx.data[i], S.cz.data[i]) > 0.85) periph = true; }
+        for (const i of idx) { am += S.am.data[i]; if (!inConvexHull(hull, S.cx.data[i], S.cz.data[i])) periph = true; }
         (periph ? per : core).push(am / idx.length);
       });
       if (per.length < 5 || core.length < 5) return none('needs >= 5 periphery and >= 5 core-only follows', per.length + core.length);
@@ -684,27 +730,27 @@ export const METRICS: MetricDef[] = [
     },
   },
   {
-    id: 'T-FOOD-4', protocol: 'feeding-tree visits per complete follow (focal continuous recording; a return to the same tree after >= 10 min counts again) (janmaat2013b)',
+    id: 'T-FOOD-4', protocol: 'distinct feeding trees per complete follow (focal continuous recording; the row\'s definition "Distinct feeding trees per full-day follow", janmaat2013b; Track E freeze, e3b-protocol); part visits: feeding-tree visits per complete follow, a return to the same tree after >= 10 min counting again (the value before the freeze)',
     compute: d => {
-      const v: number[] = [];
-      for (const f of d.rec.follows) if (f.complete) v.push(d.rec.visits.filter(x => x.team === f.team && x.t >= f.start && x.t <= f.end).length);
-      return v.length ? { value: mean(v), n: v.length } : none('no complete follows');
+      const v: number[] = [], w: number[] = [];
+      for (const f of d.rec.follows) if (f.complete) { const vis = d.rec.visits.filter(x => x.team === f.team && x.t >= f.start && x.t <= f.end); v.push(new Set(vis.map(x => x.tree)).size); w.push(vis.length); }
+      return v.length ? { value: mean(v), parts: { visits: mean(w) }, n: v.length } : none('no complete follows');
     },
   },
   {
-    id: 'T-FOOD-5', protocol: 'share of feeding-tree visits where the tree was the nearest productive tree (fruit >= 0.06) to where the focal left its previous tree (normand2009)', pool: 'ratio',
-    compute: d => { const v = d.rec.visits, n = v.filter(x => x.nearest).length; return v.length ? { value: n / v.length, num: n, den: v.length, n: v.length } : none('no visits'); },
+    id: 'T-FOOD-5', protocol: 'share of moves to another feeding tree where the tree was the nearest productive tree (fruit >= 0.06) to where the focal left its previous tree; a return to the tree of the previous visit is not a move (normand2009; Track E freeze, e3b-protocol)', pool: 'ratio',
+    compute: d => { const v = d.rec.visits.filter(x => !x.ret), n = v.filter(x => x.nearest).length; return v.length ? { value: n / v.length, num: n, den: v.length, n: v.length } : none('no moves to another tree'); },
   },
   {
-    id: 'T-FOOD-6', protocol: 'days between visits to the same tree by followed focals of one community (visits on different days) (normand2009; ban2014)',
+    id: 'T-FOOD-6', protocol: 'days between visits by the same individual to the same resource (trees < 30 m apart are one resource, single linkage), visits on different days (normand2009: "We only considered trees that were revisited by the same individual"; ban2014; Track E freeze, e3b-protocol: before it, any followed focal of the community and single trees); parts: individuals and revisits',
     compute: d => {
-      const last = new Map<string, number>(), gaps: number[] = [];
+      const res = resources(d.rec.visits, 30 / d.profile.lengthScale), last = new Map<string, number>(), gaps: number[] = [], who = new Set<number>();
       for (const v of d.rec.visits) {
-        const k = `${d.troops[v.team]}|${v.tree}`, day = Math.floor((v.t + 6.5) / 24), l = last.get(k);
-        if (l !== undefined && day > l) gaps.push(day - l);
+        const k = `${v.focal}|${res.get(v.tree) ?? v.tree}`, day = Math.floor((v.t + 6.5) / 24), l = last.get(k);
+        if (l !== undefined && day > l) { gaps.push(day - l); who.add(v.focal); }
         last.set(k, day);
       }
-      return gaps.length ? { value: mean(gaps), n: gaps.length } : none('no revisits');
+      return gaps.length ? { value: mean(gaps), parts: { individuals: who.size, revisits: gaps.length }, n: gaps.length } : none('no revisits');
     },
   },
   {
@@ -714,11 +760,15 @@ export const METRICS: MetricDef[] = [
   { id: 'T-FOOD-8', protocol: 'goal-directed inspections of empty trees', na: 'no species phenology beliefs or inspection behaviour (C7)' },
   { id: 'T-FOOD-9', protocol: 'approach speed profile near the goal', na: 'movement speed does not change near a goal (C7 approach kinematics)' },
   {
-    id: 'T-FOOD-10', protocol: 'share of follows whose focal left its night nest before sunrise; part: first feeding tree = nest tree (janmaat2014)', pool: 'ratio',
+    id: 'T-FOOD-10', protocol: 'share of observed departures (the focal seen in its night nest after 04:00) before sunrise (NOAA: the sun\'s centre at −0.833°) by adult females with a dependent offspring (lactating, or mother of a living offspring under 7 y), on mornings whose first food item is fruit, on fruit-scarce days (habitat fruit index below fruitIndexAtMean) (janmaat2014; Track E freeze, e2h-protocol: before it, every follow of either sex on every day); parts: first feeding tree = nest tree, fruit-scarce follow days, and the share before sunrise of all observed departures', pool: 'ratio',
     compute: d => {
-      const f = d.rec.follows.filter(x => x.end > x.start);
-      const early = f.filter(x => ((x.start + 6.5) % 24) < x.sunrise).length, nestTree = f.filter(x => x.firstTree >= 0 && x.firstTree === x.nestTree).length;
-      return f.length ? { value: early / f.length, num: early, den: f.length, parts: { breakfastInNestTree: nestTree / f.length }, n: f.length } : none('no follows');
+      const all = d.rec.follows.filter(x => x.end > x.start), seen = all.filter(x => x.departure);
+      const before = (x: Follow) => ((x.start + 6.5) % 24) < x.sunrise;
+      const f = seen.filter(x => x.mother && x.firstFood === FEED_FRUIT && x.scarce), early = f.filter(before).length;
+      const parts = { breakfastInNestTree: f.length ? f.filter(x => x.firstTree >= 0 && x.firstTree === x.nestTree).length / f.length : null,
+        scarceFollowDays: all.filter(x => x.scarce).length, allDeparturesBeforeSunrise: seen.length ? seen.filter(before).length / seen.length : null };
+      return f.length ? { value: early / f.length, num: early, den: f.length, parts, n: f.length }
+        : { value: null, num: 0, den: 0, parts, n: 0, note: 'no observed departure of a mother on a fruit-scarce day with a fruit breakfast' };
     },
   },
   {
@@ -733,19 +783,22 @@ export const METRICS: MetricDef[] = [
 
   // Hunting
   {
-    id: 'T-HUN-1', protocol: 'hunts seen or heard by a following team ÷ community-days with a follow × 365 (gilby2015); part per 100 follow-hours (Kanyawara ≈ 0.29, derived: 194 hunts, 2,461 encounters at 3.73 per 100 h)', pool: 'ratio', poisson: true,
-    compute: d => { const n = hunts(d).length, fd = followDays(d); return { value: fd ? n / fd * 365 : null, num: n, den: fd / 365, n, truth: d.rec.truth.hunts / d.communityYears, parts: { per100h: per100h(n, d) } }; },
+    id: 'T-HUN-1', protocol: 'hunt attempts matched to a colobus encounter of the followed party (gilby2015: "We matched every observed hunt attempt to an encounter"; encounters by its run rule) ÷ community-days with a follow × 365, on party follows staying with the larger subgroup (Track E freeze, e4f-protocol: before it, every hunt the team saw or heard); parts: per 100 follow-hours (Kanyawara ≈ 0.29, derived: 194 hunts, 2,461 encounters at 3.73 per 100 h) and detectedPerYear, every hunt seen or heard per community-year (the value before the freeze)', pool: 'ratio', poisson: true,
+    compute: d => {
+      const n = colobusEncounters(d).filter(e => e.hunted).length, fd = followDays(d), all = hunts(d).length;
+      return { value: fd ? n / fd * 365 : null, num: n, den: fd / 365, n, truth: d.rec.truth.hunts / d.communityYears, parts: { per100h: per100h(n, d), detectedPerYear: fd ? all / fd * 365 : null } };
+    },
   },
   {
     id: 'T-HUN-2', protocol: 'share of observed hunts with at least one capture (gilby2015)', pool: 'ratio',
     compute: d => { const h = hunts(d), s = h.filter(x => x.captures > 0).length; const T = d.rec.truth; return h.length ? { value: s / h.length, num: s, den: h.length, n: h.length, truth: T.hunts ? T.huntSuccesses / T.hunts : null } : none('no observed hunts'); },
   },
   {
-    id: 'T-HUN-3', protocol: 'colobus encounters = prey within the profile encounter distance of the focal party at a 15-min scan; share followed by an observed hunt on that group within 1 h (gilby2015)', pool: 'ratio',
+    id: 'T-HUN-3', protocol: 'colobus encounters on party follows staying with the larger subgroup, by gilby2015\'s run rule (a 15-min scan with prey within the profile encounter distance of the party, not immediately preceded by such a scan); share matched to an observed hunt (gilby2015; Track E freeze, e4f-protocol: before it, focal follows and a new encounter per change of the nearest group)', pool: 'ratio',
     compute: d => { const e = colobusEncounters(d), h = e.filter(x => x.hunted).length; return e.length ? { value: h / e.length, num: h, den: e.length, n: e.length, parts: { encountersPer100h: per100h(e.length, d) } } : none('no colobus encounters'); },
   },
   {
-    id: 'T-HUN-4', protocol: 'logistic regression of hunting per colobus encounter on adult males in the scan; odds ratio per male (gilby2015)', pool: 'custom',
+    id: 'T-HUN-4', protocol: 'logistic regression of hunting per colobus encounter (gilby2015\'s run rule, party follows staying with the larger subgroup: Track E freeze, e4f-protocol) on adult males at the encounter\'s first scan; odds ratio per male (gilby2015)', pool: 'custom',
     compute: d => { const e = colobusEncounters(d); return { value: null, n: e.length, raw: { am: e.map(x => x.am), y: e.map(x => (x.hunted ? 1 : 0)) } }; },
     pooled: s => {
       const X: number[][] = [], y: number[] = [];

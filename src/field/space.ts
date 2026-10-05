@@ -63,15 +63,29 @@ export function levelAt(g: UdGrid, lv: Float64Array, x: number, z: number): numb
   return lv[cz * g.nx + cx];
 }
 
-/** Convex hull area of points (monotone chain). */
-export function convexHullArea(pts: [number, number][]): number {
-  if (pts.length < 3) return 0;
+const cross = (o: number[], a: number[], b: number[]) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+
+/** Convex hull of points, counter-clockwise (monotone chain); collinear points dropped. */
+export function convexHull(pts: [number, number][]): [number, number][] {
+  if (pts.length < 3) return [...pts];
   const p = [...pts].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-  const cross = (o: number[], a: number[], b: number[]) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
   const lower: [number, number][] = [], upper: [number, number][] = [];
   for (const q of p) { while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], q) <= 0) lower.pop(); lower.push(q); }
   for (let i = p.length - 1; i >= 0; i--) { const q = p[i]; while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], q) <= 0) upper.pop(); upper.push(q); }
-  const hull = [...lower.slice(0, -1), ...upper.slice(0, -1)];
+  return [...lower.slice(0, -1), ...upper.slice(0, -1)];
+}
+
+/** Whether (x, z) lies inside or on a counter-clockwise convex hull of at least three points. */
+export function inConvexHull(hull: [number, number][], x: number, z: number): boolean {
+  if (hull.length < 3) return false;
+  for (let i = 0; i < hull.length; i++) if (cross(hull[i], hull[(i + 1) % hull.length], [x, z]) < 0) return false;
+  return true;
+}
+
+/** Convex hull area of points (monotone chain). */
+export function convexHullArea(pts: [number, number][]): number {
+  if (pts.length < 3) return 0;
+  const hull = convexHull(pts);
   let a = 0;
   for (let i = 0; i < hull.length; i++) { const [x1, z1] = hull[i], [x2, z2] = hull[(i + 1) % hull.length]; a += x1 * z2 - x2 * z1; }
   return Math.abs(a) / 2;

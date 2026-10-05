@@ -65,8 +65,8 @@ test('rules by unit', () => {
 test('the tables name real ids', () => {
   for (const id of [...Object.keys(OVERRIDES), ...Object.keys(ACTIVE_WHEN)]) assert.ok(byId.has(id), id);
   const encoded = targets.filter(t => t.encoded).map(t => t.id).sort();
-  assert.deepEqual(Object.keys(ENCODED_BY).sort(), encoded);        // all 18 encoded targets are cross-referenced
-  assert.equal(encoded.length, 18);
+  assert.deepEqual(Object.keys(ENCODED_BY).sort(), encoded);        // all 23 encoded targets are cross-referenced
+  assert.equal(encoded.length, 23);                                  // 18 before the Track E freeze; + T-END-4, -7, -10, -11, T-INF-3
   for (const [t, e] of Object.entries(ENCODED_BY)) for (const id of e.params) assert.ok(byId.has(id), `${t}: ${id}`);
   for (const e of buildLedger().encoded) if (e.literal) assert.match(e.literal, /^src\/sim\/\w+\.ts:\d+$/, e.target);
 });

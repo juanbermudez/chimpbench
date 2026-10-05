@@ -37,6 +37,13 @@ export interface Team {
   seenToday: number[]; seenMark: number[];
   /** Stage C8: ids seen with respiratory signs today (health monitoring). */
   illToday: number[];
+  /** Track E freeze (e2h-protocol): the focal of the day was seen in its night nest after 04:00, before its follow started. */
+  sawNest: boolean;
+  /**
+   * Track E freeze (e5a S2, wilson2001): members of the focal party at the follow's previous 15-min scan
+   * (`scanMark[id] === scanStamp`); `scanValid` is false until the follow's first scan.
+   */
+  scanMark: number[]; scanStamp: number; scanValid: boolean;
 }
 
 export interface PcState { conflict: number; a: number; b: number; t: number; until: number; }
@@ -170,7 +177,7 @@ export function createObserver(world: World, over: Partial<ObserverConfig> = {})
 
 function addTeam(o: Observer, t: Troop): void {
   o.teams.push({ index: o.teams.length, mark: [], partyStamp: -1, members: [], pInd: 0, pAM: 0, pN5: 0, pN10: 0, troop: t.id, state: 0, focal: -1, follow: null, rotation: [], rotIdx: 0, blockStart: -1e9, x: t.center[0], z: t.center[2], party: [], called: false,
-    encounters: new Map(), heard: [], visitTree: -1, departX: 0, departZ: 0, departT: 0, seenToday: [], seenMark: [], illToday: [] });
+    encounters: new Map(), heard: [], visitTree: -1, departX: 0, departZ: 0, departT: 0, seenToday: [], seenMark: [], illToday: [], sawNest: false, scanMark: [], scanStamp: 0, scanValid: false });
 }
 
 /** Stage C9: a community that split off gets its own following team from then on (the Ngogo researchers followed both groups). */
