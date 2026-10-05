@@ -39,17 +39,27 @@ export interface InputRange { id: keyof Params; lo: number; hi: number; basis: s
  */
 export const RANGES: InputRange[] = [
   { id: 'digestaGutMlPerKg', lo: 57, hi: 111, basis: 'source-derived: 3,322 mL (one captive female, chiversHladik1980 via nakamura2017) ÷ 58.7–30 kg' },
-  { id: 'digestaForegutShare', lo: 0.40, hi: 0.57, basis: 'source-derived: stomach 17–29% + small intestine 23–28%' },
-  { id: 'digestaForegutDmGPerMl', lo: 0.075, hi: 0.225, basis: '±50% (no source)' },
-  { id: 'ledgerGutEmptyH', lo: 1.5, hi: 4.5, basis: '±50% (no source for a lumped stomach + small intestine)' },
-  { id: 'digestaHindgutDmGPerMl', lo: 0.10, hi: 0.30, basis: '±50% (no source)' },
-  { id: 'digestaMrtH', lo: 31.5, hi: 48, basis: 'source: 31.5 h (lambert2002) to 48 h (miltonDemment1988, low fibre)' },
+  { id: 'digestaForegutShare', lo: 0.40, hi: 0.57, basis: 'source-derived: stomach + small intestine 40–48% (milton1987, secondary); stomach 29% (nakamura2017) + small intestine 23–28%' },
+  { id: 'digestaForegutDmGPerMl', lo: 0.11, hi: 0.19, basis: 'cross-species: human ileal outflow 11% (highamRead1992); pig stomach 22–27% and ileum 13% weighted by stomach and small-intestine shares (jerezBogota2025)' },
+  { id: 'ledgerGutEmptyH', lo: 1.5, hi: 4.8, basis: '−50% (no source); human stomach + small-intestine residence 1.6 + 3.2 h (tougas2000, szarkaCamilleri2012), derived' },
+  { id: 'digestaHindgutDmGPerMl', lo: 0.13, hi: 0.26, basis: 'pig caecum 13–16% (jerezBogota2025) to wild chimpanzee faeces 26% (weary2017, fig season)' },
+  { id: 'digestaMrtH', lo: 31.5, hi: 48, basis: 'source: 31.5 h (lambert2002 via nakamura2017) to 48 h (miltonDemment1988, low fibre)' },
   { id: 'digestaNdfDigestibility', lo: 0.449, hi: 0.543, basis: 'source: gorillas (remisDierenfeld2004) to chimpanzees, 34% NDF (miltonDemment1988)' },
-  { id: 'digestaFermentKcalPerG', lo: 1.5, hi: 4.5, basis: '±50% (no measurement)' },
+  { id: 'digestaFermentKcalPerG', lo: 2.4, hi: 2.9, basis: 'source-derived: absorbed short-chain fatty acids 2.4–2.6 (livesey1992 factors; fao2003 ME 2.6) to digestible energy 2.8–2.9 per g fermented' },
   { id: 'digestaTefFrac', lo: 0.05, hi: 0.15, basis: 'source: humans 5–15% (westerterp2004)' },
   { id: 'ledgerGutCapKcalPerKg', lo: 12.5, hi: 37.5, basis: '±50% (inert with ledgerDigesta 1)' },
   { id: 'digestaFallbackDmGPerMin', lo: 1.8, hi: 2.1, basis: 'source: pith to young leaves (uwimbabazi2019)' },
   { id: 'digestaFallbackNdf', lo: 0.431, hi: 0.581, basis: 'source: young leaves to pith (uwimbabazi2019)' },
+];
+/** Single values the sources support for an input, run as points (the proposals and checks of docs/staging/e1u-prereg.md §5). */
+export const POINTS: { label: string; over: Partial<Record<keyof Params, number>> }[] = [
+  { label: 'digestaFermentKcalPerG 2.6 (fao2003 ME of fermentable fibre)', over: { digestaFermentKcalPerG: 2.6 } },
+  { label: 'digestaNdfDigestibility 0.543 (chimpanzees, miltonDemment1988)', over: { digestaNdfDigestibility: 0.543 } },
+  { label: 'digestaMrtH 37.7 (chimpanzees, 34% NDF)', over: { digestaMrtH: 37.7 } },
+  { label: 'digestaMrtH 31 (lambert1997 thesis via remis2000)', over: { digestaMrtH: 31 } },
+  { label: 'ledgerGutEmptyH 4.8 (human analogue)', over: { ledgerGutEmptyH: 4.8 } },
+  { label: 'ledgerGutEmptyH 4.8 with the foregut dry matter × 1.6 (same throughput)', over: { ledgerGutEmptyH: 4.8, digestaForegutDmGPerMl: 0.24 } },
+  { label: 'digestaForegutShare 0.545 (stomach 29% + small intestine 25.5%)', over: { digestaForegutShare: 0.545 } },
 ];
 
 /**
@@ -157,6 +167,17 @@ export function run(o: RunOpts): { md: string; json: unknown } {
   ranked.sort((x, y) => y.maxAbs - x.maxAbs);
   L.push('', `Ranking by the largest |Δ deficit| over the input's range (four animal-diets): ${ranked.map((x, i) => `${i + 1}. ${x.id} ${f(x.maxAbs)}`).join('; ')}.`);
   J.rows = rows; J.ranked = ranked; J.capInert = capSame;
+
+  // B2. single values the sources support
+  L.push('', '### B2. Single values the sources support (change in absorbed − thermogenesis, kcal/d)', '');
+  L.push('| value | juvenile S39 | juvenile S31 | pregnant S39 | pregnant S31 |', '| --- | ---: | ---: | ---: | ---: |');
+  const pts: unknown[] = [];
+  for (const p of POINTS) {
+    const Q = withParams(P, p.over), cells: string[] = [];
+    for (const a of animals) for (const s of stacks) { const r = gutCeiling(a.c, Q, dietFor(a, s), opts), b = base[`${a.cls}.${s}`]; cells.push(sg(r.net - b.net)); pts.push({ label: p.label, animal: a.cls, stack: s, dNet: r.net - b.net, absorbed: r.absorbed }); }
+    L.push(`| ${p.label} | ${cells.join(' | ')} |`);
+  }
+  J.points = pts;
 
   // C. elasticity
   L.push('', '### C. Elasticity: each input ±10% (pregnant female, S31 diet; juvenile, S39 diet), change in absorbed − thermogenesis, kcal/d', '');
