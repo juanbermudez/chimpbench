@@ -91,3 +91,43 @@ adult males' eating minutes and ground km against the integrator's `S39q*-energy
   visits), with its trips, km and climbing per adult-day.
 - The mechanism (step 2) addresses only a term these name with ≥ 1/4 of unfed trips' walking; a class below that gets no
   mechanism. If D1 holds, D2 decides between an evidence-based belief and a prior.
+
+## 3. Field rows scored here: samples (written before any arm)
+
+Every e-bench row is scored (fitted and held-out sums, with and without T-HUN-4, T-BRD-1 and T-IGE-3). The rows this stage's
+readouts lean on are travel, ranging, party size, feeding trees and fruit share; none is fitted by this stage. Samples as
+recorded by E3h §3 (which quotes each source's methods; villioth2025, batesByrne2009, wilson2012 and normand2009 read in
+full there); not re-opened here. The definitions are data/targets.json's.
+
+| Row | Source | Sample, method | Value, band |
+| --- | --- | --- | --- |
+| T-ACT-2 travel share (fitted) | villioth2025 (FT), amsler2010 (Abs) | Budongo Waibira, Oct 2016 – Jun 2017: "ten adult males and nine adult females ... Seven of the females were lactating"; state "recorded continuously"; travelling = "terrestrial quadrupedal walking as well as arboreal climbing and movement within the canopy"; 491 h; mass not reported. Ngogo 0.14 on non-patrol days. Definition: "Share of focal samples scored travel (walking or climbing between locations, including travel to a tree before feeding)." | males 0.21, females 0.20; band 0.12–0.25 |
+| T-RNG-4 day range (fitted) | batesByrne2009 (FT, accepted manuscript) | Budongo Sonso 2002–03, 8 adult males, GPS fixes every 5 min while travelling, full-day follows (≥ 8 h); mass not reported. Definition: "Sum of straight-line distances between successive 5-min fixes while travelling on full-day follows (≥ 8 h)." | 2.7 ± 1.5 km/day; band 1.5–3.5 |
+| T-PTY-1 party size (fitted) | wilson2012 (FT), potts2011 | Kanyawara 1992–2006, community median 47 (11 adult males, 15 adult females), 5,527 party follows, 15-min scans of "the identity of all individuals present"; party = all within about 50 m; every age and sex; mass not reported | 9.2 ± 7.0 per follow; band 3–9 |
+| T-FOOD-2 fruit share (fitted) | watts2012a, emeryThompson2020 | Ngogo 1995–2010 (125 months, focal + 15-min scans); Kanyawara 1994–2018 (240,601 feeding scans); all age-sex classes | 72.1%, 64.0%; band 0.60–0.78 |
+| T-FOOD-4 feeding trees (held-out; flagged compromised) | janmaat2013b, normand2009 (FT, PMC2762532) | Taï, 5 adult females with young, 275 full-day follows; two females "ate in 391 and 506 trees, 13.96 and 18.07 a day" over 28 days; mass and reproductive state not reported. Definition: "Distinct feeding trees per full-day follow." | 7.14; 14.0 and 18.1; band 4–15 |
+| Reserves %/day by class; trips fed at their target | no field row (T-ENE rows staged, e-targets.patch.json) | — | read against the S39q group only |
+
+Known observer defects bearing on these rows (frozen observer; not changed here; E3b §7): T-FOOD-4 counts a return to the
+same crown after ≥ 10 min as another tree (src/field/metrics.ts); T-FOOD-5 counts a return to the crown just left as a
+nearest-tree choice.
+
+**Readouts the predictions need** (each defined in its tool's header): e-bench's observer rows (src/field/metrics.ts) and
+sums; energy-diagnose's ground km, climbing kcal, eating minutes and reserves (%/day: the OLS slope of reserves ÷ store
+over the window, the integrator's convention); trip-diagnose's E3h and E3i readouts (§2); rhythm-metrics' night share
+(adults out of a nest, T-RHY-5) for any arm that changes when animals move. Each arm's switch is smoke-tested with them on
+1–2 days before its run.
+
+## 4. Reference and judging
+
+- Reference **S39** in quick mode, run by the integrator once plus three re-draws (`rngSalt` 1, 2, 3) at bench-run2 c16d3d2
+  (simulation code identical to this branch's start for S39), each with energy-diagnose (seeds 48, 7; burn-in 30, 30 days):
+  `bench-run2/artifacts/validation/e/s39q/{S39q,S39q1,S39q2,S39q3}.json` and `…-energy.json`; parameters
+  `…/s39q/S39q-params.json`. Not re-run here. The group's trip readouts are this stage's diagnosis runs (§2) of the same
+  four worlds (identity checked).
+- Each arm (S39 + this stage's switch, same quick settings) against the S39q mean with the integrator's
+  `judge_vs_reps.py quick custom` (REFS = the four S39q JSON): z = (arm − mean) ÷ (SD × √(1 + 1/n)), the registered quick
+  SD or the group's own spread if larger; |z| > 2 is a result; with and without T-HUN-4, T-BRD-1 and T-IGE-3. Readouts
+  against the group's own spread (mean ± SD of its four runs). Viability must pass; night safety (adults out of a nest
+  ≤ 3.3% of the night, T-RHY-5 ≤ 0.033) for any arm that changes when animals move. Prescriptions:
+  `scripts/prescription-ledger.ts --count --params` (S39 42 on the current ledger).
