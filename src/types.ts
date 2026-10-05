@@ -38,7 +38,55 @@ export type CallKind = 'pant-hoot' | 'pant-grunt' | 'scream' | 'food-grunt' | 'b
   | 'cough'; // C8: coughing while ill in a respiratory outbreak (clinical signs that identify outbreaks: negrey2019, emeryThompson2018)
 export type DecisionSource = 'rules' | 'decide';
 
-export interface Candidate { action: Action; targetId: number; score: number; reason: string; }
+export interface Candidate {
+  action: Action; targetId: number; score: number; reason: string;
+  /**
+   * Optional (stage M1, `observeState` 1; docs/staging/em-prereg.md): what Track E's valuation gives this option, as the
+   * animal can know it. Set only on the copies observe() returns; the simulation's own candidate lists never carry it.
+   */
+  value?: OptionValue;
+}
+/** Stage M1: an option's Track E values (OptionValue on Candidate). Every field optional; finite numbers only. */
+export interface OptionValue {
+  /** Net energy rate the option promises, kcal per hour, the walk and the climb included (feeding, trips to food). */
+  kcalH?: number;
+  /** Ripe fruit in the crown at the crop the option is valued at, kcal (drupe-equivalent, as the valuation counts it). */
+  cropKcal?: number;
+  /** Hours since the animal last saw that crown: 0 in view now, -1 never seen itself (the community's expectation). */
+  seenH?: number;
+  /** Others it counts feeding or going there. */
+  feeders?: number;
+  /** Distance to the option's place, m. */
+  distM?: number;
+  /** The company the move adds (stage E5a's company value, with E5b's or E5d's margin when on), in score units. */
+  company?: number;
+}
+/**
+ * Stage M1 (`observeState` 1): the focal animal's Track E state as it feels it. A field is present only while the
+ * mechanism that keeps the state runs (its switch is on and the animal's books are open); finite numbers only.
+ */
+export interface BodyPercept {
+  /** Body reserves relative to the usual store: -1 the store is gone, 0 the set point, + a surplus (energyLedger). */
+  reserves?: number;
+  /** Energy-deficit drive 0..1: the energy still needed before the next chance to feed over what the waking time left can supply (ledgerDrive). */
+  deficit?: number;
+  /** That need, kcal (negative: a surplus over the horizon). */
+  needKcal?: number;
+  /** Waking hours left, as sleep pressure implies them (rhythmSleep; never the hour). */
+  awakeH?: number;
+  /** Foregut fill 0..1. */
+  gutFill?: number;
+  /** Sleep pressure (process S) 0..1 and felt sleepiness 0..1 (rhythmSleep). */
+  sleepPressure?: number; sleepiness?: number;
+  /** The circadian oscillator's level (high = alert) and whether it is rising (rhythmCircadian). */
+  clock?: number; clockRising?: boolean;
+  /** Body water deficit, % of body mass (waterLedger). */
+  waterDeficitPct?: number;
+  /** Thermal load -1..1: + stored heat, - heat debt (rhythmHeat). */
+  heat?: number;
+  /** Stress load (cortisol-like; the focal's stress), competitive arousal (adult males), affiliation (endoStates), fast arousal now (endoFast); 0..1. */
+  stress?: number; arousal?: number; affiliation?: number; acute?: number;
+}
 export interface Memory { entityId: number; kind: 'chimp' | 'tree' | 'water' | 'prey'; seenAt: number; position: Vec3; }
 /** A short first-person episodic memory used for decision context and the inspector. */
 export interface Episode { time: number; text: string; kind: SimEventKind; otherId: number; }
@@ -362,6 +410,14 @@ export interface DecisionContext {
    * (e.g. "This month: Kato attacked me 3×; Sanaki backed me twice"). Omitted when there is nothing relevant.
    */
   history?: string[];
+  /** Optional (stage M1, `observeState` 1): the focal animal's Track E state (BodyPercept). */
+  body?: BodyPercept;
+  /**
+   * Optional (stage M1, `observeState` 1): the light the animal sees, 0 dark … 1 full daylight (environment.daylight),
+   * and its change per hour over the last tick. A packet built from a context with `light` shows it in place of the
+   * clock hour (`environment.hour` stays for the inspector).
+   */
+  light?: { level: number; trend: number };
 }
 
 // ---------------------------------------------------------------------------
