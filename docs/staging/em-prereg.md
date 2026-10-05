@@ -240,3 +240,8 @@ budget moves from A's the way M2's family shares (draws, new observation) say th
 
 **Outputs.** `artifacts/em/m3/s<seed>-RA.json` (R and A) and `s<seed>-G.json` (G; its burn-in hash must equal the R/A
 file's), and `artifacts/em/m3/report.md` (`scripts/em-loop-report.ts`: every number below comes from it).
+
+**M3 gate and provider, applied before any G run (from M2's probes, `artifacts/em/m2/report.md` when complete).** New
+observation, consistent renderings, 95% intervals above 0: `base` moves deficit, sleep, light and water the right way
+(reserves and heat do not respond); `baseline` the same four. Tie → `base`, the served model. The gate (deficit or
+reserves, and sleep or light) passes for `base`, so the G arms run with `--provider base`.
