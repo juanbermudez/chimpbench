@@ -162,6 +162,8 @@ within 3 y −0.48 (n 10; half below −0.5), other adolescent females −0.12, 
 Phases: Nov–Dec (before), Jan–Feb (fig months), Mar–Apr (fallback months). Columns: absorbed, spent (of which walking and
 climbing), net, eating min, eating at a full foregut, fallback share of plant energy, own food kcal per eating minute, km.
 
+Juvenile females of seed 48 are three of 5–8 y and one immigrant of 11 y (id 47).
+
 | class | stack | Nov–Dec | Jan–Feb | Mar–Apr |
 | --- | --- | --- | --- | --- |
 | juvenile F | S39 | 1,147 / 1,164 (124) / −17; 277 min, 35%, 13%, 4.35, 3.0 km | 1,029 / 1,193 (153) / −164; 346, 65%, 15%, 3.15, 4.4 | 1,106 / 1,169 (105) / −62; 552, 86%, 29%, 2.12, 3.3 |
@@ -176,7 +178,7 @@ climbing), net, eating min, eating at a full foregut, fallback share of plant en
 | adult male | S31 | 1,584 / 1,585 (180) / 0; 232, 2%, 2% | 1,506 / 1,691 (284) / −185; 285, 42%, 6%, 6.0 km | 1,673 / 1,589 (154) / +84; 401, 59%, 15% |
 
 Reading: in the fig months the small and reproducing females lose 50–120 kcal/day of absorbed energy on S39 (120–260 on
-S31) while their walking and climbing add 30–75 (45–125); adult males' absorbed energy changes by +28 (S39) and −78
+S31) while their walking and climbing add 29–74 (44–126); adult males' absorbed energy changes by +28 (S39) and −78
 (S31), and their dry matter rises 20–24% from Nov–Dec to Feb (692–706 to 859 g on S39): they had gut room to spare. The
 female classes' dry matter rises 0–11% (juvenile females 537–548 to 565 g on S39, flat on S31): their foregut was already
 near its passage limit. In the fallback months juvenile, adolescent and pregnant females stay 62–155 kcal/day short,
