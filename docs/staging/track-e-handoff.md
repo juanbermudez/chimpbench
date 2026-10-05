@@ -14,15 +14,21 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (5 October 11:36; deploy held by the user).** Part C done at 60 days, 6 months and 12 months
-  (docs/staging/e-rebaseline.md). **S39 is not viable at 12 months:** starvation in 3 of 4 runs (adolescents, pregnant
-  females, an infant) after a lean season (days ~45–230 of the scored year) the 60-day windows never saw. **Walk-back
-  done (3dd5edf):** S37, S34, S31 and S27 all starve on seed 48 (2–4 deaths; S39 0–1), so the cause is older than S27,
-  the energy ledger's response to the lean season; the remaining seeds were stopped (they could not change the
-  decision). **E1r** (diagnosis, `docs/staging/e1r-prereg.md`, cc41edf) is running as agent **e1r-lean** (branch
-  `e1r-lean`). Part D done (e52e84e): no rare-event family is testable at 12 months on its own rows; T-LET-1,
-  T-DEM-5/6/8 and the orphan rows go to 24 months on the next viable base. Agent **eM-model** (M1–M3, GLiNER on Track
-  E's state) still running.
+- **Running now (5 October 15:06; deploy held by the user).** **S39 is not viable at 12 months** (starvation in 3 of
+  4 runs; e-rebaseline.md); E1r found a full-gut valuation trap (merged a9739c3). **E1s** (`gutValue`) failed iterations
+  1 and 2 (starvation 11 and 9 on seeds 48 + 7 at 6 months against S39's 0: depleted animals joined companions' trips
+  and walked 8–10 km a day); iteration 3 (amendment 1: every option on the gut's horizon) is its last, agent **e1s-gut**.
+  **E1t** (`horizonLived`, registered 521d96d) fixes the feeding horizon that collapses under `rhythmCircadian` and pins
+  the deficit drive at 1 in 26% of decisions; agent **e1t-horizon**. **M1–M3 merged (a9aa344):** GLiNER cannot choose
+  for the chimps as it is (it ignores the body numbers; on GLiNER focal animals underfeed and sleep out of nests); it
+  needs teaching on the new state (Track R, R4); Jev reads the numbers ($0.20 spent). Part D done (e52e84e). Separate
+  from Track E: the user's minimap and perception-ring work is ready on branch `ui-minimap` (from `main`); merging into
+  `main` waits for the user (the main checkout holds another session's unsaved edits to the same files).
+- **Next after Track E's fixes: Track R** (Recurrent Decision Models; framing `docs/recurrent-decision-model.md`, stages
+  R0–R6 in IMPLEMENTATION_PLAN.md; R0 done, merged bf6eba0). R1–R6 start only after the gate: the audited targets and
+  scorer fixes under a new freeze; the run-length ladder in place; the best stack re-baselined on the new protocol at 60
+  days and 6 months; the stages running then merged (today E1s and M1–M3 are not). Rare-event stages may continue
+  alongside. No GPU or Jev spend without the user's approval and a cap.
 - **S39 is the best integrated candidate (42)** (e-stack2-confirm.md "S39 results"): S37 + `tripBeliefs` 3; held-out without
   rare rows better beyond noise (z −2.2), every class's reserve better, less walking, T-IGE-1 back in band. Costs: T-ACT-2
   0.115 (band floor 0.12), T-COM-11 0.023 (band 0.25–0.55; snake-trial protocol).

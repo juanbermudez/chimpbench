@@ -108,6 +108,7 @@ const ALLOW: Record<string, Record<string, string>> = {
   'gait.ts': { dependentsOf: 'E2i walkGait: who rides on whom (the carrying test of tick.ts carryInfants), for the carrier\'s walking speed with a load (no rank, mating or fertility term)' },
   'energy.ts': { energyTick: 'E1o milkInDrive: an unweaned animal\'s drive reads its living mother\'s gland, the milk available to it (no rank, mating or fertility term)' },
   'observe.ts': { observe: 'the existing caretaker perceivability and dependency flag' },
+  'observe-state.ts': { optionValue: 'M1 observeState: a dependent\'s own foraging is not valued as a rate, as computeCandidates values it (an observation; no rank, mating or fertility term)' },
   'rg.ts': { perceivedCandidates: 'C13: the same caretaker perceivability as observe() (who can be on the menu; no rank, mating or fertility term)' },
 };
 

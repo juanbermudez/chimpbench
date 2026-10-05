@@ -3,6 +3,8 @@ import { computeCandidates, dependentOn } from './candidates';
 import { dayPhase } from './environment';
 import { bond, relationOf } from './hierarchy';
 import { historyLines, tensionOf } from './relations';
+import { copyCandidate } from './menu';
+import { bodyPercept, lightPercept, withValues } from './observe-state';
 import { paramsOf } from './params';
 import { index, isChimpId, ix, simOf, TICK_HOURS } from './state';
 
@@ -34,6 +36,8 @@ function dirWord(dx: number, dz: number): string {
 /**
  * The model's view: built only from the focal chimp's last perception, memory and body.
  * Every chimp id used as a candidate target appears in social; candidates that would not fit are dropped.
+ * Stage M1 (observeState 1; docs/staging/em-prereg.md, observe-state.ts): plus the animal's Track E state (`body`), the
+ * light it sees (`light`) and each option's Track E values (`value`, on copies); at 0 the observation is unchanged.
  */
 export function observe(world: World, c: Chimp): DecisionContext {
   const x = ix(c);
@@ -118,6 +122,7 @@ export function observe(world: World, c: Chimp): DecisionContext {
   const dep = world.chimps.some(k => k.alive && k.motherId === c.id && dependentOn(world, k) === c);
   // longer-term memory, only about individuals present in `social`
   const history = historyLines(world, c, chosen);
+  const P = paramsOf(world), track = P.observeState === 1;
   return {
     chimpId: c.id, version: c.decisionVersion, time,
     focal: {
@@ -133,8 +138,9 @@ export function observe(world: World, c: Chimp): DecisionContext {
       fruitNearby: r2(x.fruitNear), partySize, partyAdultMales: x.ownMales,
       nearTerritoryEdge: !!troop && fromCenter > troop.radius * 0.8, strangersSeen: x.strangers, strangersHeard: heard,
     },
-    social, recent, stimuli, candidates,
+    social, recent, stimuli, candidates: track ? withValues(world, c, candidates, P, copyCandidate) : candidates,
     ...(history.length ? { history } : {}),
+    ...(track ? { body: bodyPercept(world, c, P), light: lightPercept(world) } : {}),
   };
 }
 

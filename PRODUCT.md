@@ -37,3 +37,8 @@ Synthetic populations are measured the way field researchers measure wild ones: 
 - Measure synthetic chimps exactly as wild ones are measured, and show the wild band first.
 - Say what each number rests on (window, seeds, real model or stand-in) in the fewest words.
 - Show misses as plainly as matches.
+
+## Direction
+- Planned, not a result: orient ChimpBench toward a Recurrent Decision Model, a memoryless decision kernel (the rules, GLiNER2.5-Decide, a stand-in or Jev) called at decision points inside a loop that carries body and mind state and local perception. Framing: [docs/recurrent-decision-model.md](docs/recurrent-decision-model.md).
+- Partly shown (Track E, rules kernel only): state beats prescribed behaviour on the new bands, is about even on rows whose bands did not change and is worse on the old bands; the best stack is not yet viable at 12 months. Not shown: that another kernel works in the loop, or that a small kernel matches an expensive one.
+- Stages and their start gate: IMPLEMENTATION_PLAN.md, Track R. Product copy changes only with claims those stages support.

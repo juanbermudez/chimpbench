@@ -15909,6 +15909,33 @@
    "notes": "Stage E2b switch (docs/staging/e2b-prereg.md §3.2, §7 iteration 2): a feed at night wakes the mother: a tick in which her infant drinks in her nest (E1c ledgerNightNurse) from a gland that can sustain the suckling rate (E1d's glandEmpty test) is a waking tick for her sleep pressure (it rises instead of falling), as night feeding fragments postpartum sleep in women (montgomeryDowns2010, cross-species, assumed). Draining the synthesis of an empty gland does not count (iteration 1 counted it and mothers were awake 76% of the night). Needs energyLedger, ledgerNightNurse and rhythmSleep; no effect otherwise. 0 = unchanged. Ablation switch."
   },
   {
+   "id": "observeState",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.observeState",
+   "file": "src/sim/observe-state.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage M1 switch (Track E's decision model; docs/staging/em-prereg.md §M1): what the decision model's observation shows. With 1 observe() adds the focal animal's Track E state (body: reserves relative to the usual store, the energy-deficit drive, the energy need and the waking hours left it is read over, gut fill, sleep pressure and felt sleepiness, the circadian oscillator's level and direction, the water deficit, the thermal load, competitive arousal, affiliation and the fast arousal; each only while its mechanism runs), the light it sees and its trend (in place of the clock hour, which the packet then never shows), and on each option the values Track E's valuation gives it (net energy rate, the crop it is valued at and when the crown was last seen, the distance, the company a move adds), computed by the valuation's own functions. Nothing in the simulation reads it: the world is the same at 0 and 1. 0 = today's observation, key for key. Design (an observation layout, not a behaviour)."
+  },
+  {
    "id": "oestrusPullW",
    "group": "social",
    "value": 0,

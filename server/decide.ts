@@ -4,7 +4,7 @@ import { appendFileSync, existsSync, mkdirSync, renameSync, statSync } from 'nod
 import { resolve } from 'node:path';
 import { createHash } from 'node:crypto';
 import { LocalDecideWorker, LOCAL_MODEL, LOCAL_REVISION } from './local-worker';
-import type { Action, Candidate, DecisionContext, SocialPercept } from '../src/types';
+import type { Action, BodyPercept, Candidate, DecisionContext, OptionValue, SocialPercept } from '../src/types';
 
 // The browser may send only one chimpanzee's local percept (DecisionContext).
 // No instructions, model names, worker arguments or world state cross this
@@ -66,9 +66,31 @@ function validPercept(p: unknown, focalId: number): p is SocialPercept {
     && num(p.distance, 0, 1000) && oneOf(p.action, ACTIONS) && num(p.swelling, 0, 1) && bool(p.injured) && bool(p.hasMeat);
 }
 
+/** Stage M1 (observeState 1): the body part, each field optional and in its physical range (src/types.ts BodyPercept). */
+const BODY_RANGES: Record<Exclude<keyof BodyPercept, 'clockRising'>, [number, number]> = {
+  reserves: [-2, 2], deficit: [0, 1], needKcal: [-100_000, 100_000], awakeH: [0, 48], gutFill: [0, 1], sleepPressure: [0, 1], sleepiness: [0, 1],
+  clock: [-5, 5], waterDeficitPct: [0, 100], heat: [-1, 1], stress: [0, 1], arousal: [0, 1], affiliation: [0, 1], acute: [0, 1] };
+function validBody(b: unknown): b is BodyPercept {
+  return record(b) && Object.keys(b).every(k => k === 'clockRising' ? bool(b[k]) : Object.hasOwn(BODY_RANGES, k) && num(b[k], ...BODY_RANGES[k as keyof typeof BODY_RANGES]));
+}
+/** The first body field outside its range, as `key=value` (diagnostics; '' when the body is valid). */
+export function bodyFieldError(b: unknown): string {
+  if (!record(b)) return 'not a record';
+  for (const k of Object.keys(b)) {
+    if (k === 'clockRising' ? !bool(b[k]) : !(Object.hasOwn(BODY_RANGES, k) && num(b[k], ...BODY_RANGES[k as keyof typeof BODY_RANGES]))) return `${k}=${String(b[k])}`;
+  }
+  return '';
+}
+/** Stage M1: an option's Track E values (src/types.ts OptionValue). */
+const VALUE_RANGES: Record<keyof OptionValue, [number, number]> = {
+  kcalH: [-100_000, 100_000], cropKcal: [0, 10_000_000], seenH: [-1, 100_000], feeders: [0, 500], distM: [0, 100_000], company: [-10, 10] };
+function validValue(v: unknown): v is OptionValue {
+  return record(v) && Object.keys(v).every(k => Object.hasOwn(VALUE_RANGES, k) && num(v[k], ...VALUE_RANGES[k as keyof OptionValue])) && (v.feeders === undefined || Number.isInteger(v.feeders));
+}
+
 /** Why a context is rejected, or '' when it is valid. Reasons stay server-side and in receipts. */
 export function decisionContextError(value: unknown): string {
-  if (!record(value) || !keysWith(value, ['chimpId', 'version', 'time', 'focal', 'environment', 'social', 'recent', 'stimuli', 'candidates'], ['history'])) return 'context keys';
+  if (!record(value) || !keysWith(value, ['chimpId', 'version', 'time', 'focal', 'environment', 'social', 'recent', 'stimuli', 'candidates'], ['history', 'body', 'light'])) return 'context keys';
   if (!int(value.chimpId, 1, 99_999) || !int(value.version, 0, 1e12) || !num(value.time, 0, 1e7)) return 'context ids';
   const f = value.focal;
   if (!record(f) || !exactKeys(f, ['name', 'ageYears', 'stage', 'sex', 'community', 'rankOrder', 'rankOf', 'isAlpha', 'hunger', 'thirst', 'energy',
@@ -90,13 +112,15 @@ export function decisionContextError(value: unknown): string {
   if (!Array.isArray(value.recent) || value.recent.length > 5 || !value.recent.every(r => text(r, 160, 1))) return 'recent memories';
   if (!Array.isArray(value.stimuli) || value.stimuli.length > 6 || !value.stimuli.every(s => text(s, 160, 1))) return 'stimuli';
   if (value.history !== undefined && (!Array.isArray(value.history) || value.history.length > MAX_HISTORY || !value.history.every(h => text(h, 120, 1)))) return 'history';
+  if (value.body !== undefined && !validBody(value.body)) return 'body';
+  if (value.light !== undefined && !(record(value.light) && exactKeys(value.light, ['level', 'trend']) && num(value.light.level, 0, 1) && num(value.light.trend, -50, 50))) return 'light';
   const options = value.candidates;
   if (!Array.isArray(options) || options.length < 2 || options.length > MAX_OPTIONS) return 'option count';
   const seen = new Set<string>();
   const immature = f.stage === 'infant' || f.stage === 'juvenile';
   for (const c of options) {
-    if (!record(c) || !exactKeys(c, ['action', 'targetId', 'score', 'reason']) || !oneOf(c.action, ACTIONS) || c.action === 'dead'
-      || !int(c.targetId, -1, 1e9) || !num(c.score, -100, 100) || !text(c.reason, 200)) return 'option shape';
+    if (!record(c) || !keysWith(c, ['action', 'targetId', 'score', 'reason'], ['value']) || !oneOf(c.action, ACTIONS) || c.action === 'dead'
+      || !int(c.targetId, -1, 1e9) || !num(c.score, -100, 100) || !text(c.reason, 200) || (c.value !== undefined && !validValue(c.value))) return 'option shape';
     const key = `${c.action}:${c.targetId}`;
     if (seen.has(key)) return 'duplicate option';
     seen.add(key);
@@ -343,7 +367,13 @@ function memoryLines(ctx: DecisionContext): string[] {
   return ctx.recent.filter((r, i) => ctx.recent.findIndex(o => base(o) === base(r)) === i).slice(0, 5);
 }
 
-export function buildLocalQuestion(ctx: DecisionContext, opts: { staticInstructions?: boolean } = {}) {
+export function buildLocalQuestion(ctx: DecisionContext, opts: { staticInstructions?: boolean; wording?: 1 | 2 } = {}): LocalPacket {
+  return hasState(ctx) ? buildStateQuestion(ctx, opts) : localPacket(ctx, opts); // stage M1: Track E's state (observeState 1)
+}
+/** GLiNER's packet: the state lines and the choice question (criteria c0..cN aligned with ctx.candidates). */
+export interface LocalPacket { state: Record<string, unknown>; questions: { action: { type: 'choice'; instructions: string; criteria: Record<string, string> } } }
+
+function localPacket(ctx: DecisionContext, opts: { staticInstructions?: boolean }): LocalPacket {
   const f = ctx.focal, e = ctx.environment;
   const { hierarchy, personality, status } = selfWords(f);
   const weather = e.weather === 'storm' ? 'thunderstorm' : e.weather === 'rain' ? (e.rain >= 0.6 ? 'heavy rain' : 'light rain') : e.weather;
@@ -401,7 +431,17 @@ function optionKeys(ctx: DecisionContext): string[] {
  * have descriptive keys with the act and its purpose as separate fields; instructions are structured, and their
  * situational rules apply to this moment only. keys[i] is the criteria key of ctx.candidates[i].
  */
-export function buildJevQuestion(ctx: DecisionContext) {
+export function buildJevQuestion(ctx: DecisionContext, opts: { wording?: 1 | 2 } = {}): JevPacket {
+  return hasState(ctx) ? buildJevStateQuestion(ctx, opts.wording ?? 1) : jevPacket(ctx); // stage M1: Track E's state (observeState 1)
+}
+/** Jev's packet: grouped state, structured instructions, named options (keys[i] is ctx.candidates[i]'s key). */
+export interface JevPacket {
+  state: Record<string, unknown>;
+  questions: { action: { type: 'choice'; instructions: Record<string, unknown>; criteria: Record<string, { act: string; purpose?: string; [field: string]: unknown }> } };
+  keys: string[];
+}
+
+function jevPacket(ctx: DecisionContext): JevPacket {
   const f = ctx.focal, e = ctx.environment;
   const { hierarchy, personality, status } = selfWords(f);
   const levels = driveLevels(f);
@@ -455,6 +495,163 @@ export function estimateInputTokens(state: Record<string, unknown>, questions: {
 }
 /** The worker's hard limit is 1,280 tokens; ~650 keeps latency low. Budget = 650 minus the largest observed under-estimate (37). */
 export const TOKEN_BUDGET = 613;
+
+// ---------------------------------------------------------------------------
+// Stage M1 (observeState 1; docs/staging/em-prereg.md §M1): Track E's state in the packet
+// ---------------------------------------------------------------------------
+// A context from observe() at observeState 1 carries `body`, `light` and option `value`s. Its packet is today's packet
+// for the same moment (built from the context without them, so memories and history are trimmed as today) with the light
+// in place of the clock, a `body` line and each option's values. A context without them gets today's packet, byte for
+// byte. The instructions are unchanged, except that Jev's evidence list names the `body` group it may judge from.
+
+/** A context carrying Track E's state (observe() at observeState 1). */
+export const hasState = (ctx: DecisionContext): boolean => ctx.body !== undefined || ctx.light !== undefined;
+/** The same moment as today's observation: the context without `body`, `light` and option values. */
+export function withoutState(ctx: DecisionContext): DecisionContext {
+  const { body: _body, light: _light, ...rest } = ctx;
+  return { ...rest, candidates: ctx.candidates.map(({ value: _value, ...k }) => k) };
+}
+/** The packet's estimate budget for the new layout: the old packet's budget plus room for the new parts, under the 1,280 hard limit (M1 measures the real counts). */
+export const TOKEN_BUDGET_STATE = 1000;
+
+const thousands = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+const kcalWords = (v: number) => thousands(Math.abs(v) >= 1000 ? Math.round(v / 100) * 100 : Math.round(v / 10) * 10);
+const agoWords = (h: number) => h < 1 ? `${Math.max(1, Math.round(h * 60))} min ago` : h < 36 ? `${Math.round(h)} h ago` : `${Math.round(h / 24)} days ago`;
+
+/** The light the animal sees, in words: its level and, between night and full day, whether it rises or falls. */
+export function lightWords(l: NonNullable<DecisionContext['light']>): string {
+  const level = l.level >= 0.97 ? 'full daylight' : l.level >= 0.6 ? 'bright light' : l.level >= 0.2 ? 'dim light' : l.level > 0.03 ? 'very dim light' : 'dark';
+  const trend = l.level >= 0.97 || l.level <= 0.03 ? '' : l.trend > 0.05 ? ', getting lighter' : l.trend < -0.05 ? ', getting darker' : '';
+  return level + trend;
+}
+
+/** The body line: Track E's state in plain words with its numbers. */
+export function bodyWords(b: BodyPercept): string {
+  const p: string[] = [];
+  if (b.reserves !== undefined) { const v = Math.round(b.reserves * 100); p.push(v < 0 ? `reserves ${-v}% below my usual store` : v > 0 ? `reserves ${v}% above my usual store` : 'reserves at my usual store'); }
+  if (b.deficit !== undefined) {
+    const awake = b.awakeH === undefined ? '' : b.awakeH >= 0.5 ? ` in about ${Math.round(b.awakeH)} h awake` : ' before I sleep';
+    const need = b.needKcal === undefined ? '' : b.needKcal > 0 ? ` (about ${kcalWords(b.needKcal)} kcal to find${awake})` : ' (enough eaten for the day)';
+    p.push(`energy shortfall ${b.deficit.toFixed(2)}${need}`);
+  }
+  if (b.gutFill !== undefined) p.push(`stomach ${Math.round(b.gutFill * 100)}% full`);
+  if (b.waterDeficitPct !== undefined) p.push(b.waterDeficitPct >= 0.05 ? `${b.waterDeficitPct.toFixed(1)}% of body mass short of water` : 'fully watered');
+  if (b.heat !== undefined) p.push(b.heat >= 0.05 ? `${b.heat >= 0.4 ? 'hot' : 'warm'} (heat load +${b.heat.toFixed(2)})` : b.heat <= -0.05 ? `${b.heat <= -0.4 ? 'cold' : 'chilled'} (heat debt ${(-b.heat).toFixed(2)})` : 'comfortable temperature');
+  if (b.sleepPressure !== undefined) p.push(`sleep pressure ${b.sleepPressure.toFixed(2)}${b.sleepiness !== undefined ? `, sleepiness ${b.sleepiness.toFixed(2)}` : ''}`);
+  if (b.clock !== undefined) p.push(`body clock ${b.clock >= 0.6 ? 'alert' : b.clock <= -0.6 ? 'at its night low' : 'in between'}, ${b.clockRising ? 'rising' : 'falling'}`);
+  const states = [b.stress !== undefined ? `stress ${b.stress.toFixed(2)}` : '', b.arousal !== undefined ? `arousal ${b.arousal.toFixed(2)}` : '',
+    b.affiliation !== undefined ? `affiliation ${b.affiliation.toFixed(2)}` : '', b.acute !== undefined && b.acute >= 0.05 ? `acute arousal ${b.acute.toFixed(2)}` : ''].filter(Boolean);
+  if (states.length) p.push(states.join(', '));
+  return p.join('; ');
+}
+
+/** An option's Track E values in words (the reason already names a crown in view's crop and feeders, and most distances). */
+export function valueWords(v: OptionValue, reason: string, social: boolean): string {
+  const p: string[] = [];
+  if (v.kcalH !== undefined) p.push(v.kcalH > 0 ? `about ${kcalWords(v.kcalH)} kcal an hour net` : 'no net energy after the walk');
+  if (v.cropKcal !== undefined) p.push(`${kcalWords(v.cropKcal)} kcal of fruit ${v.seenH === 0 ? 'there' : v.seenH !== undefined && v.seenH < 0 ? 'expected there, not seen myself' : `there when I saw it ${agoWords(v.seenH ?? 0)}`}`);
+  if (v.feeders && v.seenH !== 0) p.push(`${v.feeders} other${v.feeders === 1 ? '' : 's'} going there`);
+  if (v.company !== undefined) p.push(`company worth ${v.company.toFixed(2)}`);
+  // a partner's distance is on its line in the state (a second copy pulled the model toward that partner; see optionParts)
+  if (v.distM !== undefined && !social && !/\d+ m\b/.test(reason)) p.push(`${meters(v.distM)} away`);
+  return p.join('; ');
+}
+
+/** The option text with its values; the clock leaves the nest reasons (and "dusk is falling" leaves them while the light rises). */
+function stateOptionParts(ctx: DecisionContext, c: Candidate, wording: 1 | 2 = 1): { phrase: string; purpose: string; values: string } {
+  const parts = optionParts(ctx, c);
+  let phrase = parts.phrase.replace(/\s*\(\d{1,2}:\d{2}\)/g, '');
+  if (ctx.light && ctx.light.trend > 0.05) phrase = phrase.replace(/; dusk is falling\b/, '');
+  const social = ctx.social.some(p => p.id === c.targetId);
+  return { phrase, purpose: wording === 2 ? trackPurpose(ctx, c, parts.purpose) : parts.purpose, values: c.value ? valueWords(c.value, c.reason, social) : '' };
+}
+
+// Stage M1 iteration 2 (wording 2; docs/staging/em-prereg.md "M1 iteration 2"): under Track E the old purposes contradict
+// the mechanics the state now shows. With rhythmSleep, felt sleepiness is the "fatigue" gauge and only sleep in a nest
+// relieves it (candidates.ts: rest keeps the rest score without the sleep term), yet the rest option said "eases fatigue"
+// and the nest "bed down for the night"; a trip to a remembered crown said "moves to another area" although it is valued
+// by the food at its end. Wording 2 names what each act does under the mechanisms on (a context with sleep pressure in
+// its body; a tree trip), in the drive words the state uses; the drive "fatigue" is called sleepiness there.
+const SLEEPY = (ctx: DecisionContext) => ctx.body?.sleepPressure !== undefined;
+function trackPurpose(ctx: DecisionContext, c: Candidate, purpose: string): string {
+  const f = ctx.focal, sleepy = 1 - f.energy, hungerEcho = (p: string) => urgentPurpose(f, 'forage', p);
+  if (SLEEPY(ctx) && c.action === 'nest') return sleepy >= 0.7 ? `sleep, relieves ${intensity(sleepy)} sleepiness — needed now` : 'sleep, relieves sleepiness';
+  if (SLEEPY(ctx) && c.action === 'rest') return 'a pause: cools the body, digests, favours wounds';
+  if (c.action === 'travel' && c.targetId > 100_000 && c.targetId < 200_000) return hungerEcho('food, eases hunger');
+  return purpose;
+}
+/** Wording 2's drive word: under rhythmSleep the "fatigue" gauge is felt sleepiness, and what relieves it is sleep in a nest. */
+const sleepWords = (t: string) => t.replace(/\bfatigue — needs rest now\b/g, 'sleepiness — needs sleep in a nest now').replace(/\bfatigue\b/g, 'sleepiness');
+
+function nowWords(ctx: DecisionContext): string {
+  const f = ctx.focal, e = ctx.environment;
+  const weather = e.weather === 'storm' ? 'thunderstorm' : e.weather === 'rain' ? (e.rain >= 0.6 ? 'heavy rain' : 'light rain') : e.weather;
+  const phase = e.phase === 'dusk' ? 'dusk, night is falling' : e.phase === 'dawn' ? 'dawn' : e.phase === 'night' ? 'night' : 'daytime';
+  const strangers = e.strangersSeen || e.strangersHeard ? `strangers: ${e.strangersSeen} seen, ${e.strangersHeard} heard` : '';
+  const current = CURRENT[f.currentAction] && !ctx.candidates.some(c => c.action === f.currentAction) ? `currently ${CURRENT[f.currentAction]}` : '';
+  const when = ctx.light ? `${phase} (${lightWords(ctx.light)})` : `${clock(e.hour)} ${phase}`;
+  return [current, when, `${weather}, ${Math.round(e.temperature)} °C`, `party of ${e.partySize} with ${e.partyAdultMales} adult males`, fruitWord(e.fruitNearby),
+    e.nearTerritoryEdge ? 'at the territory edge' : '', strangers].filter(Boolean).join('; ');
+}
+
+/** GLiNER's packet for a context with Track E's state (see the section note). */
+function buildStateQuestion(ctx: DecisionContext, opts: { staticInstructions?: boolean; wording?: 1 | 2 }): LocalPacket {
+  const old = localPacket(withoutState(ctx), opts), w = opts.wording ?? 1;
+  const state: Record<string, unknown> = { ...old.state, now: nowWords(ctx) };
+  if (ctx.body && Object.keys(ctx.body).length) state.body = bodyWords(ctx.body);
+  if (w === 2 && SLEEPY(ctx)) for (const k of ['feeling', 'urgent'] as const) if (typeof state[k] === 'string') state[k] = sleepWords(state[k] as string);
+  const criteria: Record<string, string> = {};
+  ctx.candidates.forEach((c, i) => {
+    const { phrase, purpose, values } = stateOptionParts(ctx, c, w), why = [purpose, values].filter(Boolean).join('; ');
+    criteria[`c${i}`] = why ? `${phrase} (${why})` : phrase;
+  });
+  const instructions = w === 2 && SLEEPY(ctx) ? sleepWords(old.questions.action.instructions) : old.questions.action.instructions;
+  const questions = { action: { ...old.questions.action, instructions, criteria } };
+  // under the hard limit: the old packet's trimming first, then (rarely) history and the oldest memories again
+  for (;;) {
+    if (estimateInputTokens(state, questions) <= TOKEN_BUDGET_STATE) break;
+    const history = state.history as string[] | undefined, mems = state.memories as string[] | undefined;
+    if (history?.length) { if (history.length > 1) state.history = history.slice(0, -1); else delete state.history; }
+    else if (mems && mems.length > 1) state.memories = mems.slice(0, -1);
+    else break;
+  }
+  return { state, questions };
+}
+
+/** Jev's packet for a context with Track E's state: named body fields, the light in place of the time, values as option fields. */
+function buildJevStateQuestion(ctx: DecisionContext, wording: 1 | 2 = 1): JevPacket {
+  const old = jevPacket(withoutState(ctx));
+  const state = { ...old.state } as Record<string, unknown>;
+  if (wording === 2 && SLEEPY(ctx)) {
+    if (state.needs && typeof state.needs === 'object') state.needs = Object.fromEntries(Object.entries(state.needs as Record<string, unknown>).map(([k, v]) => [k === 'fatigue' ? 'sleepiness' : k, v]));
+    if (Array.isArray(state.urgent)) state.urgent = (state.urgent as string[]).map(u => u.replace(/^fatigue: needs rest$/, 'sleepiness: needs sleep in a nest'));
+  }
+  const situation = { ...(state.situation as Record<string, unknown>) };
+  delete situation.time;
+  if (ctx.light) situation.light = lightWords(ctx.light);
+  state.situation = situation;
+  const b = ctx.body;
+  if (b && Object.keys(b).length) state.body = pruned({
+    reserves_vs_usual_store: b.reserves !== undefined ? `${b.reserves >= 0 ? '+' : ''}${Math.round(b.reserves * 100)}%` : undefined,
+    energy_shortfall: b.deficit, energy_to_find_kcal: b.needKcal !== undefined ? Math.max(0, Math.round(b.needKcal / 10) * 10) : undefined, awake_hours_left: b.awakeH,
+    stomach_fill: b.gutFill !== undefined ? `${Math.round(b.gutFill * 100)}%` : undefined, water_deficit_pct_body_mass: b.waterDeficitPct, heat_load: b.heat,
+    sleep_pressure: b.sleepPressure, sleepiness: b.sleepiness,
+    body_clock: b.clock !== undefined ? `${b.clock >= 0.6 ? 'alert' : b.clock <= -0.6 ? 'night low' : 'in between'}, ${b.clockRising ? 'rising' : 'falling'}` : undefined,
+    stress: b.stress, arousal: b.arousal, affiliation: b.affiliation, acute_arousal: b.acute });
+  const keys = old.keys, criteria: JevPacket['questions']['action']['criteria'] = {};
+  ctx.candidates.forEach((c, i) => {
+    const { phrase, purpose } = stateOptionParts(ctx, c, wording), v = c.value, social = ctx.social.some(p => p.id === c.targetId);
+    criteria[keys[i]] = { act: phrase, ...pruned({ purpose: purpose || undefined,
+      net_energy_kcal_per_h: v?.kcalH, fruit_kcal: v?.cropKcal,
+      fruit_seen: v?.seenH === undefined ? undefined : v.seenH === 0 ? 'in view' : v.seenH < 0 ? 'never, expected' : agoWords(v.seenH),
+      others_going: v?.feeders && v.seenH !== 0 ? v.feeders : undefined, company: v?.company,
+      distance: v?.distM !== undefined && !social ? meters(v.distM) : undefined }) };
+  });
+  const now = old.questions.action.instructions.now;
+  const instructions = { ...old.questions.action.instructions, evidence: 'Judge only from `self`, `needs`, `body`, `situation`, `nearby`, `memories` and `events`. Every option is possible now.',
+    ...(wording === 2 && SLEEPY(ctx) && Array.isArray(now) ? { now: (now as string[]).map(sleepWords) } : {}) };
+  return { state, questions: { action: { type: 'choice' as const, instructions, criteria } }, keys };
+}
 
 // Only abundance is news; ordinary fruit availability is left to the forage options' own reasons.
 // fruitNearby may be a 0..1 index or a count of fruiting trees in view.
