@@ -2,7 +2,7 @@
 /* eslint-disable */
 export const REGISTRY_VERSION = 1;
 /** Content hash of every live default, hard range, profile value and integer flag. Stored with each world. */
-export const REGISTRY_HASH = '47bd00160fead6d5';
+export const REGISTRY_HASH = '451123f8bdcd73d9';
 
 /** Registry defaults (the compressed profile). */
 export const DEFAULTS = {
@@ -624,6 +624,7 @@ export const DEFAULTS = {
   maternalLevers: 1,
   matingAssocWeight: 0.6,
   matingSaturation: 3,
+  matingValue: 0,
   meatAlertM: 25,
   meatEatPerH: 0.35,
   meatHungerFactor: 1.2,
@@ -901,6 +902,7 @@ export const DEFAULTS = {
   socialSleepPerH: 0.01,
   socialTiming: 0,
   socialUpkeep: 0,
+  spermLifeDays: 4.2,
   startDoy: 271,
   startHour: 6.5,
   statusTensionW: 0.25,
@@ -1642,6 +1644,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   maternalLevers: [0, 1],
   matingAssocWeight: [0, 1],
   matingSaturation: [0, 1000000],
+  matingValue: [0, 3],
   meatAlertM: [0, 1000000],
   meatEatPerH: [0, 1000000],
   meatHungerFactor: [0, 1000000],
@@ -1919,6 +1922,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   socialSleepPerH: [0, 1000000],
   socialTiming: [0, 15],
   socialUpkeep: [0, 2],
+  spermLifeDays: [0.1, 100],
   startDoy: [271, 271],
   startHour: [6.5, 6.5],
   statusTensionW: [-10, 10],
@@ -2039,7 +2043,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
 };
 
 /** Parameters that must stay whole numbers. */
-export const INTEGER_IDS: readonly ParamId[] = ['aggressionGaps', 'allyCount', 'assocMinScans', 'attentionN', 'birthCondFromMother', 'bodyRules', 'callSignatures', 'callValue', 'callerDiscrim', 'chimpGridCellM', 'choiceBelief', 'circEntrainD', 'coerceMaxRepeats', 'cohesionValue', 'companyMargin', 'contactSlots', 'contestAssess', 'crowdByShare', 'crownMove', 'crownShare', 'cycleLenMinDays', 'cycleLenSpanDays', 'darkCost', 'deadSlimDays', 'departCue', 'departPersist', 'departRace', 'departValue', 'endoEscalate', 'endoFast', 'endoFastRedirect', 'endoRainDisplay', 'endoRedirect', 'endoRhythm', 'endoStates', 'energyLedger', 'episodeCap', 'eventCap', 'eventPriorityAlpha', 'eventPriorityBirth', 'eventPriorityDeath', 'eventPriorityInfanticide', 'eventPriorityInjury', 'eventPriorityIntergroup', 'eventPriorityRank', 'eventPriorityTransfer', 'experienceValue', 'fissionMinAdults', 'fissionMonths', 'fissionOn', 'followCarer', 'followCommit', 'followMargin', 'foodCallRule', 'forageRate', 'fordSpacingM', 'gangMinOwnMales', 'groomDrive', 'groomNeedDyad', 'growYield', 'historyFacts', 'historyMaxChars', 'historyMaxLines', 'huntDrive', 'huntEncMinMales', 'huntEncounter', 'huntMinMales', 'huntPursuit', 'huntValue', 'infanticideMaleMargin', 'intakeCropOnly', 'intakeValue', 'joinChoice', 'knownTreesK', 'lactTaper', 'layoutScale', 'ledgerDigesta', 'ledgerDrive', 'ledgerFoodEnergyFix', 'ledgerGrowPotential', 'ledgerGrowSurplus', 'ledgerInfantIntake', 'ledgerLactGut', 'ledgerNightNurse', 'ledgerNurseBout', 'ledgerNurseByMilk', 'ledgerSatiationReserve', 'leftoverRules', 'mapSizeM', 'maternalLevers', 'memCropBelief', 'memKeepMonths', 'memLedgerEvents', 'memMonthEvents', 'memMonthPartners', 'memTreeCap', 'memYearEvents', 'memYearPartners', 'memoryCap', 'memoryMonthDays', 'milkInDrive', 'nestAudience', 'nestCompany', 'nestLightDecide', 'nurseWake', 'partyEveryTicks', 'partyJoinTrip', 'partyLeaderFollow', 'partyStayMaxN', 'patchEcology', 'patrolContactMemory', 'patrolEnergyGate', 'patrolFusion', 'patrolImpulseDecides', 'patrolMinMales', 'patrolSilence', 'patrolSingleFile', 'patrolValue', 'phenologyForcing', 'popCap', 'preyKanyawara', 'preyMinGroups', 'preyMoveEveryTicks', 'redecideValue', 'revisitByCrop', 'rgMinAge', 'rgOn', 'rhythmCircadian', 'rhythmFreeNight', 'rhythmHeat', 'rhythmSleep', 'rngSalt', 'routeChain', 'siteTzH', 'sleepChimp', 'slotsForage', 'slotsMulti', 'slowEveryTicks', 'socialTiming', 'socialUpkeep', 'startDoy', 'streamAnalytic', 'synthYears', 'tickSeconds', 'travelCommit', 'travelHoo', 'treeGridCellM', 'tripBodyCost', 'tripRateValue', 'udCellM', 'udKernelRef', 'urgencyChoice', 'urgencyPersist', 'urgencySwitchCost', 'walkGait', 'waterLedger', 'weanDecide', 'weanDeficit', 'youngArrival'];
+export const INTEGER_IDS: readonly ParamId[] = ['aggressionGaps', 'allyCount', 'assocMinScans', 'attentionN', 'birthCondFromMother', 'bodyRules', 'callSignatures', 'callValue', 'callerDiscrim', 'chimpGridCellM', 'choiceBelief', 'circEntrainD', 'coerceMaxRepeats', 'cohesionValue', 'companyMargin', 'contactSlots', 'contestAssess', 'crowdByShare', 'crownMove', 'crownShare', 'cycleLenMinDays', 'cycleLenSpanDays', 'darkCost', 'deadSlimDays', 'departCue', 'departPersist', 'departRace', 'departValue', 'endoEscalate', 'endoFast', 'endoFastRedirect', 'endoRainDisplay', 'endoRedirect', 'endoRhythm', 'endoStates', 'energyLedger', 'episodeCap', 'eventCap', 'eventPriorityAlpha', 'eventPriorityBirth', 'eventPriorityDeath', 'eventPriorityInfanticide', 'eventPriorityInjury', 'eventPriorityIntergroup', 'eventPriorityRank', 'eventPriorityTransfer', 'experienceValue', 'fissionMinAdults', 'fissionMonths', 'fissionOn', 'followCarer', 'followCommit', 'followMargin', 'foodCallRule', 'forageRate', 'fordSpacingM', 'gangMinOwnMales', 'groomDrive', 'groomNeedDyad', 'growYield', 'historyFacts', 'historyMaxChars', 'historyMaxLines', 'huntDrive', 'huntEncMinMales', 'huntEncounter', 'huntMinMales', 'huntPursuit', 'huntValue', 'infanticideMaleMargin', 'intakeCropOnly', 'intakeValue', 'joinChoice', 'knownTreesK', 'lactTaper', 'layoutScale', 'ledgerDigesta', 'ledgerDrive', 'ledgerFoodEnergyFix', 'ledgerGrowPotential', 'ledgerGrowSurplus', 'ledgerInfantIntake', 'ledgerLactGut', 'ledgerNightNurse', 'ledgerNurseBout', 'ledgerNurseByMilk', 'ledgerSatiationReserve', 'leftoverRules', 'mapSizeM', 'maternalLevers', 'matingValue', 'memCropBelief', 'memKeepMonths', 'memLedgerEvents', 'memMonthEvents', 'memMonthPartners', 'memTreeCap', 'memYearEvents', 'memYearPartners', 'memoryCap', 'memoryMonthDays', 'milkInDrive', 'nestAudience', 'nestCompany', 'nestLightDecide', 'nurseWake', 'partyEveryTicks', 'partyJoinTrip', 'partyLeaderFollow', 'partyStayMaxN', 'patchEcology', 'patrolContactMemory', 'patrolEnergyGate', 'patrolFusion', 'patrolImpulseDecides', 'patrolMinMales', 'patrolSilence', 'patrolSingleFile', 'patrolValue', 'phenologyForcing', 'popCap', 'preyKanyawara', 'preyMinGroups', 'preyMoveEveryTicks', 'redecideValue', 'revisitByCrop', 'rgMinAge', 'rgOn', 'rhythmCircadian', 'rhythmFreeNight', 'rhythmHeat', 'rhythmSleep', 'rngSalt', 'routeChain', 'siteTzH', 'sleepChimp', 'slotsForage', 'slotsMulti', 'slowEveryTicks', 'socialTiming', 'socialUpkeep', 'startDoy', 'streamAnalytic', 'synthYears', 'tickSeconds', 'travelCommit', 'travelHoo', 'treeGridCellM', 'tripBodyCost', 'tripRateValue', 'udCellM', 'udKernelRef', 'urgencyChoice', 'urgencyPersist', 'urgencySwitchCost', 'walkGait', 'waterLedger', 'weanDecide', 'weanDeficit', 'youngArrival'];
 
 /** Scale-profile values that differ from DEFAULTS (docs/realism-design.md §5.1). */
 export const PROFILE_VALUES: { readonly compressed: Partial<Record<ParamId, number>>; readonly field: Partial<Record<ParamId, number>> } = {

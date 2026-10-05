@@ -1,0 +1,913 @@
+# E4p pre-registration: mating without quotas
+
+Branch `e4p-mating` from `track-e` aa698bd. Track E, stage E4p. Rules policy only; development seeds 48 and 7; no run
+longer than 90 days in all. Started 4 October 2026, 15:49.
+
+Rule served: field values of behaviour are targets to benchmark against, never inputs. No value, bonus or weight is
+added or tuned to reach a copulation rate or a party composition.
+
+This file is written in steps, each committed before the step it governs: §0–§1 (problem, plan) at the start; §2–§3
+(rows and samples, diagnosis readouts) before the diagnosis runs on unchanged code; §5–§8 (mechanism, readouts, arms,
+predictions, kill criterion) before any run of changed code; every iteration in the run log (§9) before its run.
+
+## 0. The problem (from the brief; to be verified in §4)
+
+Four counted mating rules are active on S27 (51 prescriptions on the current ledger, E0b):
+
+| Rule (ledger) | Where (aa698bd) | What it does (as read from the code) |
+| --- | --- | --- |
+| `mateIntervalH` 1.5 h (registry, design; quota) | `src/sim/candidates.ts:1137, 1159` (offers), `src/sim/execution.ts:810` (guard), `:822` (consort), `:1216` (mateTick) | a male may copulate again only 1.5 h after his last copulation; it gates his offer, a female's offer to him, and copulation inside guarding, consorting and the mate act |
+| female gap 0.3 h (literal, E0b) | `src/sim/candidates.ts:1158` | a swollen female offers to mate only 0.3 h after her own last copulation |
+| failed-approach block 0.5 h (literal, E0b; with `mateApproachS`) | `src/sim/execution.ts:1212, 1217` (mateTick's two exits) | a male whose approach fails (not reached within `mateApproachS`, or 8 ticks beside her without copulating) is blocked as if he had copulated 1 h ago, i.e. for 0.5 h |
+| rival-chase gap 0.25 h (literal, E0b) | `src/sim/execution.ts:807` | a guarding male interrupts himself to chase a rival only 0.25 h after his own last aggression |
+
+E4o's diagnosis on S27 (e4o-prereg.md §4, 30 + 60 days, seeds 48 and 7, four realizations): ~0.6 copulations per
+hour for each adult male with a maximally swollen female (dyadic rate 0.59 per daylight hour together), 10–20× Kanyawara's
+(0.03–0.064, muller2007) and ~20× Taï's (~0.03, gomesBoesch2009); per adult male-hour 0.12 (Kalinzu 0.12, Mahale
+0.20–0.22) only because males are rarely with a swollen female (most maximally swollen female-hours have 0–2 adult males
+in the party, against 4–12 in the field); without the quota males would choose to mate about 6× as often. No measured
+male refractory physiology exists; captive males ejaculate about hourly (marson1989).
+
+## 1. Plan
+
+1. Sources and samples (§2): every field value the stage reports, opened at its source, with its sample and method.
+2. Diagnosis (§3, registered before its runs) on S27 with unchanged simulation code, 30 + 60 days, seeds 48 and 7
+   (S27 once plus one `rngSalt` re-draw; E4o's D0b–D3b reused where their readouts suffice): maximally swollen
+   female-hours by adult males in her party and why males are absent; attempts, refusals, successes per dyad-hour;
+   which of the four gaps binds each time; guarding and rival chases.
+3. One switch (0 = today), only for what the diagnosis implicates (§5).
+4. Arms on S27 in quick mode against the integrator's S27q group (bench-run3 28d249e, four runs), plus the mating
+   readouts at 30 + 60 days against the mating reference; at most three iterations, each logged in §9 and committed
+   before its run.
+
+## 2. Field values reported, and their samples (written before the diagnosis runs)
+
+No row of `data/targets.json` measures copulation rates or the males with a swollen female; these values are reported as
+simulation truth beside their sources (context, never summed, never inputs). The e-bench rows the arms are judged on
+(T-ACT-1..4, T-PTY-1, T-RNG-4, T-HUN-*, T-SOC-*, T-IGE-*, T-PAT-*, T-FOOD-*) keep the samples recorded by the stages that
+audited them (e4o-prereg.md §2; e5a-prereg.md §1.1; e5b-prereg.md §1). Opened by this stage (BioC full text) or by E4o
+today (its downloads in the session scratch `e4o/src-mate/ft/`, read again here):
+
+| Value | Source, sample, method (quoted where it decides comparability) | Opened |
+| --- | --- | --- |
+| Dyadic rate 0.03–0.064 copulations per hour together | muller2007 (Kanyawara 1998–2005, 13 adult males, 15 parous females; "Copulations ... recorded using all-occurrence sampling"; dyads "observed together for at least 25 h when the female was in oestrus"; per male, median rates with the parous females he was more / less aggressive towards, 0.064 / 0.03 per hour) | E4o FT (e4o-prereg §2) |
+| Per oestrous female-hour 0.14 (Taï) | gomesBoesch2009 (FT, PMC2663035; Taï South 2003–06): "the group consisted of 49 individuals, 5 adult males and 14 adult females. Eight of the 14 adult females were in estrous"; copulations "came from 3000 h of focal target follows"; "We observed a total of 262 copulations during the 1814 h that females were observed in estrous" (oestrus includes partial swelling); "Of the 39 adult male-estrous female dyads that were seen together during the estrous phase of the female, 30 were observed to copulate at least once": 0.144 per female-hour, ≤ 0.029 per male (if all five were present) | this stage, BioC |
+| Per maximally swollen female-hour 0.43 (Kalinzu), 0.79 (Mahale), ≥ 0.52 (Gombe); per adult male-hour 0.12 (Kalinzu), 0.20–0.22 (Mahale) | furuichiHashimoto2001 (FT, Japanese; read in the original by this stage, [L] for figure values). Kalinzu M group, Oct 1997 – Mar 1998, **16 adult males** (≥ 15 y); "each day the largest ranging party possible was chosen and followed as long as possible"; female rate from 1,207 five-minute units of maximally swollen females and 43 copulations; the male rate (Fig. 3) from 4,401 five-minute units and the same 43 copulations, so **per adult male present with a maximally swollen female**, not per male-hour of the day. Mahale 0.79 (Hasegawa 1991, cited); Gombe 0.52 per adult male near the female (Tutin 1979, cited) | this stage (E4o's download) |
+| **"4.2 (Mahale), 12.3 (Gombe) adult males per swollen female" is the operational sex ratio, not party composition** | furuichiHashimoto2001: "性皮最大腫脹期のメス1頭あたりのオトナオスの数である発情性比は, マハレで4.2, ゴンベで12.3" (the oestrous sex ratio, the number of adult males per female in maximal swelling, Mahale 4.2, Gombe 12.3), computed from demographic parameters (Table 1: females in oestrus 6.4% / 4.2% of the interbirth interval), i.e. a community's adult males ÷ its simultaneously maximally swollen females. Party composition is given only for Kalinzu: 61 parties with "on average 4.43 adult males and 0.92 oestrous females" (OSR 4.8), out of 16 adult males (0.28 of the community's adult males), from the largest parties | this stage |
+| Adult males per party, Kanyawara | wilson2012 (via T-PTY-1's record): 3.0 ± 3.0 adult males per party scan, all parties (~11 adult males) | as recorded |
+| Female response to courtship | robertsRoberts2015 (FT, PMC4633128; Sonso 2008, "approximately 75 named individuals, 10 adult males and 22 adult females"; 6 adult focal males): mating gestures 2.60 per hour (median); "following the production of a sequence of gestures, the dominant response type—approach for copulation—occurred in a median proportion of 0.28 of cases (IQ = 0.12–0.75)"; females approached more "when the rival male was absent, or was present and looking away" | this stage, BioC |
+| Males feed less with parous oestrous females | georgiev2014 (Abs; Kanyawara, 12 males, 11 months; staged T-ENE-7, direction only) | as recorded (research.md) |
+| Males in parties rise with receptive females | emeryThompson2014 (Abs; Kanyawara; staged T-ENE-6) | as recorded |
+
+**Correction to the brief's premise (registered before any run).** The field's "4–12 adult males with a swollen female"
+(E4o §2, from furuichiHashimoto2001) is the operational sex ratio of the community, not the adult males in her party.
+The model's communities hold 7, 4 and 3 adult males (smoke test, seed 48), so the comparable party measures are the share
+of the community's adult males in her party (Kalinzu ~0.28 from the largest parties; Kanyawara 3.0 of ~11 in all parties)
+and the model's own operational sex ratio (readout below). The dyadic rate (0.59 against 0.03–0.12 per dyad-hour) stands
+as the discrepancy; Kalinzu's 0.12 per adult male is per male with a swollen female, so the model is ~5× Kalinzu as well.
+
+## 3. Diagnosis (step 1; unchanged simulation code; written and committed before its runs)
+
+Tool: `scripts/e4p-diagnose.ts` (new, read-only). Hooks that draw nothing and write nothing: `quotaTrace` (E4o's 'mate',
+'mateF', plus 'mateFgap': every offer of a swollen female to a male in range, before her own 0.3-h gap, with the hours
+since her last copulation), `mateTrace` (new, execution.ts: 'chase' when a guard sees a qualifying rival, with the hours
+since his last aggression; 'copGuard', 'copConsort', 'copMate' when a copulation is due inside guarding, consorting or the
+mate act, with whether `mateIntervalH` blocks it) and `rulesTap`. The literals stay on their own lines (the trace passes
+elapsed times), so the ledger is unchanged (S27 51). Identity: S27 seed 48 after 2 days hashes 6005ce06d37e5df1 before
+the hooks, after them with the hooks off, and with every hook on.
+
+Definitions: daylight > 0.1 (the field's observation hours); adult male ≥ 15 y; maximally swollen = swelling ≥ 0.999;
+a dyad = an adult male and a maximally swollen female of his community, not maternal kin; "her party" = the same partyId
+(the 50-m chain, the field's party). Readouts:
+
+1. **Party composition**: maximally swollen female daylight hours by adult males in her party (0, 1–2, 3–4, 5–6, 7+);
+   mean adult males with her, and the same for anoestrous adult females (≥ 15 y, swelling 0); by her community: adult
+   males in the community and the share of them in her party; the operational sex ratio (adult males ÷ maximally swollen
+   females at a time, per community).
+2. **Where absent males are**: dyad daylight hours by place (her party; sees her outside it; out of sight < 100, 100–250,
+   250–500, 500–1,000, ≥ 1,000 m), by whether he saw her maximally swollen in the last 24 h, and by his act.
+3. **Splits and joins** of dyads (one party at the previous tick, not at this one, and back): who was moving (travel,
+   follow, patrol, hunt, flee, drink, consort, transfer, charge), his and her acts; median bout together.
+4. **Decisions of adult males in a maximally swollen female's party** (rulesTap, resolved by the act held at the tick's
+   end): chose her (an act targeting her, or her trip), left (travel, follow, patrol, hunt, drink), or stayed; for those who
+   left: whether any option at her was on the list, the state of the mate offer (open; blocked by `mateIntervalH`; blocked
+   only by the failed-approach block; none), the act chosen, the score gap to the best option at her.
+5. **Mate acts**: attempts by adult males at maximally swollen females (per dyad daylight hour), female solicitations;
+   outcome at the act's end (copulated; partner refusing: flee, charge, attack, submit; the failed-approach block, beside
+   her or not; ended otherwise); the female's act at the end of the tick after a male starts an approach (accept, refuse,
+   other).
+6. **Which gap binds**: male offers (open; blocked by `mateIntervalH`; blocked only by the failed-approach block; each
+   also "would top the list", the published score above the decision's best); female offers (her own 0.3-h gap closed;
+   the male's quota closed; would top); copulation gates inside guard, consort and mate acts (tick counts, blocked or open);
+   guard rival checks (every 4 ticks) blocked by the 0.25-h gap or open; backdated stamps (failed approaches).
+7. **Guarding**: guard daylight hours, guard acts started by rank order, rival chases started (charge, variant GUARD).
+8. **Rates**: copulations by adult males with maximally swollen females in daylight per maximally swollen female daylight
+   hour (pooled and by adult males present), per dyad daylight hour (pooled; per-male median of dyadic rates over dyads
+   with ≥ 5 h, as E4o), per adult male daylight hour; attempts per dyad daylight hour; intervals between a male's and a
+   female's copulations.
+9. **Males' feeding with parous oestrous females** (georgiev2014's direction): daylight forage-act minutes per adult-male
+   day (days with ≥ 300 awake daylight minutes), days with a maximally swollen parous female in his party against days
+   without.
+10. Deaths by cause.
+
+Runs (from a frozen detached checkout of the commit that adds this text): smoke (seeds 48 and 7, 1 + 2 days, every
+readout produced: done before this commit at the hooked code, logged in §9); **D0** = S27, **D1** = S27 + `rngSalt` 1
+(the integrator's S27q1), seeds 48 and 7, 30-day burn-in + 60 days, one seed per process, two at a time. E4o's D0b–D3b
+(the same worlds for S27 and `rngSalt` 1–3) supply the spread of the readouts they share (copulations, rates by males
+present, gate counts); D0 and D1 must reproduce D0b's and D1b's copulation counts exactly (2,764 and 2,955), a check that
+the worlds are the same.
+
+**Reading rule (registered).** A gap "binds" where it blocks an offer or a copulation that would otherwise happen (would
+top the list, or a copulation gate reached); the share of male decisions blocked and would-top by each gap, and the share
+of copulation-gate ticks blocked, name what sets the rate. Males are "absent for lack of value" if, at their decisions in
+her party, they leave while the mate offer is blocked and no option at her is on the list; "absent by distance" if most
+absent dyad-hours are out of sight beyond 250 m without having seen her swollen in 24 h.
+
+## 4. Diagnosis result (D0 = S27, D1 = S27 + `rngSalt` 1; seeds 48 and 7, 30 + 60 days; frozen-d at fd5bf77, clean; printed by `artifacts/validation/e4p/diag_table.py` from the JSON)
+
+D0 and D1 reproduce E4o's D0b and D1b exactly (2,764 and 2,955 copulations): the same worlds. One readout defect,
+found reading this table and fixed in the tool before any arm (disclosed): the male inter-copulation interval read 0 h,
+because the in-tick stamp of a copulation (added so that a decision later in the same tick is not read as blocked by a
+failed-approach block) was also the interval's start; intervals now use the copulations seen in the scored window
+(E4o's D0b gives the median, 2.1 h). No other readout reads that stamp.
+
+```
+| Readout (e4p-diagnose, seeds 48 + 7, 30 + 60 days) | D0 | D1 |
+| --- | --- | --- |
+| max-swollen female daylight h | 2385 | 2529 |
+| adult males in her party (per max-swollen daylight h) | 1.423 | 1.431 |
+| adult males with an anoestrous adult female (per daylight h) | 0.676 | 0.680 |
+| party size, max-swollen female | 4.51 | 4.75 |
+| party size, anoestrous adult female | 4.08 | 4.24 |
+|   share of max-swollen daylight h with 0 adult males | 0.307 | 0.303 |
+|   share of max-swollen daylight h with 1-2 adult males | 0.495 | 0.500 |
+|   share of max-swollen daylight h with 3-4 adult males | 0.166 | 0.161 |
+|   share of max-swollen daylight h with 5-6 adult males | 0.030 | 0.032 |
+|   share of max-swollen daylight h with 7+ adult males | 0.001 | 0.004 |
+|   seed 48 community 1: adult males in community / in her party / share / OSR | — | — |
+|   seed 48 community 2: adult males in community / in her party / share / OSR | — | — |
+|   seed 48 community 3: adult males in community / in her party / share / OSR | — | — |
+|   seed 7 community 1: adult males in community / in her party / share / OSR | — | — |
+|   seed 7 community 2: adult males in community / in her party / share / OSR | — | — |
+|   seed 7 community 3: adult males in community / in her party / share / OSR | — | — |
+  D0 seed 48: community 1: 7.0 males, 2.04 with her (0.29), OSR 10.4636, 506 female-h; community 2: 4.0 males, 1.00 with her (0.25), OSR 5.8197, 523 female-h; community 3: 3.0 males, 1.16 with her (0.39), OSR 4.9287, 455 female-h; OSR all 7.1247
+  D0 seed 7: community 1: 7.0 males, 1.81 with her (0.26), OSR 9.4411, 547 female-h; community 2: 4.0 males, 0.94 with her (0.24), OSR 13.1581, 229 female-h; community 3: 3.0 males, 0.88 with her (0.29), OSR 17.7595, 126 female-h; OSR all 11.5287
+  D1 seed 48: community 1: 7.0 males, 2.03 with her (0.29), OSR 12.6131, 425 female-h; community 2: 4.0 males, 1.17 with her (0.29), OSR 5.8197, 523 female-h; community 3: 3.0 males, 1.06 with her (0.35), OSR 4.9287, 455 female-h; OSR all 7.5636
+  D1 seed 7: community 1: 7.0 males, 2.16 with her (0.31), OSR 9.2343, 560 female-h; community 2: 4.0 males, 1.03 with her (0.26), OSR 10.2128, 290 female-h; community 3: 3.0 males, 0.55 with her (0.18), OSR 8.0848, 276 female-h; OSR all 9.2058
+
+| Dyad daylight hours by place (share) | D0 | D1 |
+| --- | --- | --- |
+| her party | 0.309 | 0.323 |
+| out of sight 100-250 m | 0.152 | 0.149 |
+| out of sight 250-500 m | 0.182 | 0.178 |
+| out of sight 500-1000 m | 0.153 | 0.162 |
+| out of sight <100 m | 0.036 | 0.042 |
+| out of sight >=1000 m | 0.158 | 0.134 |
+| sees her, not in her party | 0.011 | 0.011 |
+
+| Dyad daylight hours by place and knowledge (share of all dyad-h) | D0 | D1 |
+| --- | --- | --- |
+| her party | not seen swollen in 24 h | 0.005 | 0.004 |
+| her party | saw her swollen in the last 24 h | 0.305 | 0.320 |
+| out of sight 100-250 m | not seen swollen in 24 h | 0.018 | 0.014 |
+| out of sight 100-250 m | saw her swollen in the last 24 h | 0.134 | 0.136 |
+| out of sight 250-500 m | not seen swollen in 24 h | 0.041 | 0.041 |
+| out of sight 250-500 m | saw her swollen in the last 24 h | 0.141 | 0.137 |
+| out of sight 500-1000 m | not seen swollen in 24 h | 0.058 | 0.087 |
+| out of sight 500-1000 m | saw her swollen in the last 24 h | 0.095 | 0.075 |
+| out of sight <100 m | not seen swollen in 24 h | 0.004 | 0.003 |
+| out of sight <100 m | saw her swollen in the last 24 h | 0.032 | 0.039 |
+| out of sight >=1000 m | not seen swollen in 24 h | 0.111 | 0.095 |
+| out of sight >=1000 m | saw her swollen in the last 24 h | 0.047 | 0.039 |
+| sees her, not in her party | saw her swollen in the last 24 h | 0.011 | 0.011 |
+
+| absence.absentActH: share (top 10) | D0 | D1 |
+| --- | --- | --- |
+| forage | 0.332 | 0.334 |
+| rest | 0.326 | 0.328 |
+| nest | 0.108 | 0.108 |
+| groom | 0.096 | 0.092 |
+| travel:TREE | 0.067 | 0.074 |
+| travel:CALLER | 0.032 | 0.031 |
+| drink | 0.009 | 0.009 |
+| patrol | 0.008 | 0.008 |
+| guard | 0.008 | 0.006 |
+| travel:HOME | 0.003 | 0.000 |
+
+| absence.presentActH: share (top 10) | D0 | D1 |
+| --- | --- | --- |
+| forage | 0.297 | 0.295 |
+| rest | 0.209 | 0.207 |
+| guard | 0.213 | 0.200 |
+| nest | 0.096 | 0.091 |
+| travel:TREE | 0.080 | 0.091 |
+| groom | 0.060 | 0.072 |
+| travel:CALLER | 0.011 | 0.010 |
+| charge | 0.005 | 0.005 |
+| mate | 0.005 | 0.005 |
+| drink | 0.004 | 0.004 |
+
+| splitsJoins.splits: share (top 5) | D0 | D1 |
+| --- | --- | --- |
+| he moved | 0.299 | 0.308 |
+| she moved | 0.307 | 0.288 |
+| neither moving (the chain broke) | 0.244 | 0.252 |
+| both moving | 0.149 | 0.152 |
+
+| splitsJoins.splitMaleAct: share (top 8) | D0 | D1 |
+| --- | --- | --- |
+| travel:TREE | 0.300 | 0.328 |
+| forage | 0.245 | 0.242 |
+| rest | 0.164 | 0.168 |
+| travel:CALLER | 0.080 | 0.071 |
+| groom | 0.071 | 0.057 |
+| nest | 0.050 | 0.061 |
+| drink | 0.052 | 0.036 |
+| hunt | 0.007 | 0.015 |
+
+| splitsJoins.joins: share (top 5) | D0 | D1 |
+| --- | --- | --- |
+| he moved | 0.291 | 0.311 |
+| she moved | 0.300 | 0.285 |
+| neither moving (the chain joined) | 0.244 | 0.260 |
+| both moving | 0.166 | 0.144 |
+
+| splitsJoins.joinMaleAct: share (top 8) | D0 | D1 |
+| --- | --- | --- |
+| forage | 0.250 | 0.255 |
+| travel:TREE | 0.222 | 0.267 |
+| travel:CALLER | 0.183 | 0.155 |
+| rest | 0.155 | 0.164 |
+| groom | 0.063 | 0.050 |
+| nest | 0.031 | 0.035 |
+| drink | 0.031 | 0.024 |
+| guard | 0.018 | 0.013 |
+| median bout together (h), seed mean | 0.33 | 0.30 |
+
+| Decisions of adult males in a max-swollen female's party | D0 | D1 |
+| --- | --- | --- |
+| decisions | 42633 | 47621 |
+|   her (share) | 0.309 | 0.312 |
+|   stay (share) | 0.534 | 0.525 |
+|   leave (share) | 0.156 | 0.164 |
+|   guarded by a dominant (courtship −1) (share) | 0.162 | 0.152 |
+|   leave, mate offer blocked: mateIntervalH (share of leaves) | 0.491 | 0.482 |
+|   leave, mate offer blocked: failed-approach block (share of leaves) | 0.001 | 0.004 |
+|   leave, mate offer open (share of leaves) | 0.207 | 0.175 |
+|   leave, mate offer none: out of mating range (share of leaves) | 0.170 | 0.193 |
+|   leave, mate offer none: night (share of leaves) | 0.003 | 0.002 |
+|   leave, mate offer none: other (share of leaves) | 0.127 | 0.144 |
+|   leave, no option at her (share of leaves) | 0.382 | 0.418 |
+|   leave: top − best option at her, median (seed mean) | 0.351 | 0.372 |
+|   her company value when leaving / staying, median (seed mean) | 1.385 | 1.371 |
+|   (staying) | 1.374 | 1.359 |
+
+| decisions.leave.herOption: share (top 8) | D0 | D1 |
+| --- | --- | --- |
+| no option at her | 0.382 | 0.418 |
+| an option at her (charge:COERCE) | 0.208 | 0.192 |
+| an option at her (guard:NONE) | 0.125 | 0.108 |
+| an option at her (mate:NONE) | 0.110 | 0.101 |
+| an option at her (groom:NONE) | 0.065 | 0.078 |
+| an option at her (travel:TREE) | 0.040 | 0.038 |
+| an option at her (follow:PARTY) | 0.020 | 0.021 |
+| an option at her (charge:FEED) | 0.015 | 0.012 |
+
+| decisions.leave.chosenAct: share (top 5) | D0 | D1 |
+| --- | --- | --- |
+| travel:TREE | 0.838 | 0.867 |
+| travel:CALLER | 0.112 | 0.089 |
+| drink:NONE | 0.039 | 0.031 |
+| hunt:JOIN | 0.005 | 0.006 |
+| hunt:LEAD | 0.001 | 0.003 |
+
+| Mate acts (adult males, max-swollen females) | D0 | D1 |
+| --- | --- | --- |
+| male attempts | 832 | 984 |
+| attempts per dyad daylight h | 0.245 | 0.272 |
+| female solicitations | 421 | 503 |
+
+| mateActs.outcomes: share (top 10) | D0 | D1 |
+| --- | --- | --- |
+| male: copulated | 0.638 | 0.634 |
+| female: copulated | 0.335 | 0.336 |
+| male: ended otherwise | 0.020 | 0.016 |
+| male: partner refusing | 0.005 | 0.007 |
+| male: block: approach timed out | 0.001 | 0.004 |
+| female: ended otherwise | 0.001 | 0.003 |
+| male: block: beside her, no copulation | 0.001 | 0.000 |
+
+| mateActs.femaleAnswer: share (top 10) | D0 | D1 |
+| --- | --- | --- |
+| other (rest) | 0.203 | 0.243 |
+| accept (mate at him) | 0.160 | 0.188 |
+| other (travel) | 0.172 | 0.166 |
+| other (forage) | 0.145 | 0.153 |
+| other (pant-grunt) | 0.085 | 0.064 |
+| refuse (flee) | 0.075 | 0.045 |
+| other (play) | 0.069 | 0.041 |
+| other (groom) | 0.029 | 0.041 |
+| other (mate) | 0.014 | 0.028 |
+| other (drink) | 0.013 | 0.008 |
+
+| Gaps (counts, two seeds) | D0 | D1 |
+| --- | --- | --- |
+| backdates | 6 | 17 |
+| backdatesBeside | 1 | 1 |
+| chase: blocked by the 0.25-h gap | 11032 | 11178 |
+| chase: open | 2299 | 2386 |
+| copConsort: blocked by mateIntervalH | 22 | 25 |
+| copGuard: blocked by mateIntervalH | 187926 | 188818 |
+| copGuard: blocked only by a failed-approach block | 0 | 14 |
+| copGuard: open | 626 | 580 |
+| copMate: blocked by mateIntervalH | 2981 | 3492 |
+| copMate: open | 2138 | 2375 |
+| female offer (own gap open): blocked by the male's mateIntervalH | 16576 | 18374 |
+| female offer (own gap open): blocked by the male's mateIntervalH, would top the list | 5150 | 5632 |
+| female offer (own gap open): open | 9122 | 10033 |
+| female offer: her own 0.3-h gap closed | 22983 | 24438 |
+| female offer: her own 0.3-h gap closed, would top the list | 7165 | 7775 |
+| female offer: her own gap open | 25698 | 28407 |
+| male offer: blocked by mateIntervalH | 39687 | 42612 |
+| male offer: blocked by mateIntervalH, would top the list | 14279 | 15504 |
+| male offer: blocked only by a failed-approach block | 44 | 131 |
+| male offer: blocked only by a failed-approach block, would top the list | 9 | 33 |
+| male offer: open | 16290 | 17470 |
+| male offer: open and on top | 2541 | 2845 |
+
+| Guarding | D0 | D1 |
+| --- | --- | --- |
+| guard daylight h | 818 | 809 |
+| guard acts started | 2530 | 2421 |
+|   by the alpha (rank order 1) | 1449 | 1616 |
+| rival chases started | 1362 | 1313 |
+
+| Rates (daylight; adult males, max-swollen females) | D0 | D1 | field |
+| --- | --- | --- | --- |
+| copulations (all) | 2764 | 2955 | — |
+| per max-swollen female daylight h | 0.831 | 0.857 | Taï 0.14 (oestrous h); Kalinzu 0.43; Mahale 0.79 |
+| per dyad daylight h (pooled) | 0.584 | 0.599 | Kanyawara 0.03–0.064; Kalinzu 0.12 per male with her |
+| per-male median of dyadic rates (seed mean) | 0.586 | 0.611 | Kanyawara 0.03–0.064 |
+| per adult male daylight h | 0.094 | 0.103 | — |
+|   per max-swollen female daylight h, 0 adult males | 0.053 | 0.063 |  |
+|   per max-swollen female daylight h, 1-2 adult males | 0.950 | 0.943 |  |
+|   per max-swollen female daylight h, 3-4 adult males | 2.127 | 2.274 |  |
+|   per max-swollen female daylight h, 5-6 adult males | 3.009 | 3.119 |  |
+|   per max-swollen female daylight h, 7+ adult males | 3.371 | 4.316 |  |
+| male interval median h (seed mean) | 0.00 | 0.00 | — |
+| female interval median h (seed mean) | 0.66 | 0.65 | — |
+
+| rates.copsByMaleAct: share (top 8) | D0 | D1 |
+| --- | --- | --- |
+| mate | 0.345 | 0.381 |
+| forage | 0.216 | 0.216 |
+| guard | 0.219 | 0.188 |
+| rest | 0.085 | 0.080 |
+| groom | 0.036 | 0.040 |
+| travel | 0.029 | 0.031 |
+| nest | 0.024 | 0.023 |
+| submit | 0.012 | 0.012 |
+
+| Males' feeding (forage-act daylight min per adult-male day) | D0 | D1 |
+| --- | --- | --- |
+| days with a max-swollen parous female in his party | 435 | 478 |
+|   feeding min, with | 242.3 | 239.2 |
+|   feeding min, without | 236.9 | 240.6 |
+
+deaths: {'D0': [{}, {}], 'D1': [{}, {}]}
+
+E4o D0b–D3b (same worlds for S27 and rngSalt 1–3; e4o-diagnose): copulations [2764, 2955, 2578, 2543]
+```
+
+**What sets the rates (with numbers from the table).**
+- **`mateIntervalH` sets every copulation path.** Of the male offers to a maximally swollen female in range, 39,687 /
+  42,612 were blocked by it (71%) and 14,279 / 15,504 of those would have topped the list, against 2,541 / 2,845 open
+  offers chosen: without it males would choose to mate ~5.6× as often (E4o: ~6×). Inside guarding the copulation gate was
+  closed 187,926 / 188,818 guard-ticks and open 626 / 580 times (each an in-guard copulation, 22% / 19% of copulations);
+  inside mate acts 2,981 / 3,492 ticks closed, 2,138 / 2,375 open. Males' intervals: 25% end within 0.1 h of the quota
+  (E4o). The dyadic rate is the quota's ceiling: 0.584 / 0.599 per dyad daylight hour (ceiling 1/1.5 = 0.67), 5× Kalinzu's
+  0.12 per male with a swollen female and 9–20× Kanyawara's 0.03–0.064.
+- **The female's own 0.3-h gap binds second**: it closed 22,983 / 24,438 of her offers (47%), 7,165 / 7,775 of which would
+  have topped her list; with her gap open, the male's quota closed 16,576 / 18,374 of her offers (64%; 5,150 / 5,632 would
+  top). Female-initiated copulations are a third of all (0.335 / 0.336 of mate acts ending in copulation).
+- **The failed-approach block hardly acts**: 6 / 17 backdated stamps in 60 days on two seeds; male offers blocked
+  only by it 44 / 131 (9 / 33 would top). It exists because the quota exists (it backdates the quota stamp).
+- **The guard's 0.25-h gap sets the chase rate**: of guard checks finding a qualifying rival (courting or beside her,
+  dominated), 11,032 / 11,178 were blocked by the gap and 2,299 / 2,386 open; 1,362 / 1,313 chases started.
+- **Female choice does not bind**: at a male's approach the female's act one tick later was acceptance (mate at him) in
+  16% / 19% of approaches and a refusal (flee) in 7.5% / 4.5%; the rest went on with what they did (rest, travel, forage,
+  greeting, play), yet 96% of male acts ended in copulation (`mateTick` copulates unless she is fleeing, charging,
+  attacking or submitting). robertsRoberts2015: females approach for copulation after a median 0.28 of courtship
+  sequences.
+
+**Why males are "absent": they are not, measured per community.** Adult males in a maximally swollen female's party:
+1.42 / 1.43 per daylight hour (0 males 31%, 1–2 males 50%, 3–4 males 16%, 5+ males 3%), against 0.68 with an
+anoestrous adult female: receptive females already double the males with them (emeryThompson2014's direction). The
+communities hold 7, 4 and 3 adult males; the share of a community's adult males in her party is 0.18–0.39 by community
+and seed (Kalinzu, from the largest parties: 4.43 of 16, 0.28). The model's operational sex ratio is 7.1–11.5 overall
+(by community 4.9–17.8): between Mahale's 4.2 and Gombe's 12.3, the values the brief read as party counts (§2). Within her
+party, 16% of an adult male's decisions leave her (84% on a trip to a tree); in half of those the quota had closed the
+mate offer and in 38–42% no option at her was on the list at all: the quota removes her value between copulations, so it
+also sends males away. Out of her party, dyad-hours spread over distance (37% of all dyad-hours out of sight within 500 m, 13–16% beyond
+1 km), and 65–67% of the out-of-party hours are by males who saw her maximally swollen within 24 h. Splits are moves by him (30%), by her (29–31%), both (15%)
+or a broken chain (24–25%); median bout together 0.30–0.33 h. Males feed as long on days with a maximally swollen parous
+female in their party as without (242 / 239 against 237 / 241 min): georgiev2014's direction (less) is absent.
+
+**Reading (registered rule, §3).** `mateIntervalH` binds: it sets the dyadic rate at its ceiling and every in-act
+copulation; the female's gap binds second; the failed-approach block exists only as the quota's appendage; the chase gap
+sets how often a guard chases. Males are absent neither for lack of value in the sense of the brief (they leave mostly
+when the quota has removed her value) nor by distance beyond what the field shows per community; the brief's "4–12 males"
+is the operational sex ratio, which the model matches. The discrepancy is the dyadic rate (5–20×) with too few males per
+female to dilute it, and a female whose acceptance is not needed.
+
+## 5. Mechanism (step 2): `matingValue` (one switch; 0 = today, hash-identical)
+
+**Principle.** What limits copulation in the wild is not a male physiology (captive males ejaculate hourly, marson1989)
+but the partners and their competitors (E4o §11; §4 above: the quota sets every path, the female's acceptance never
+binds). Two first principles replace the four gaps: (a) **a copulation needs both partners' choice** (female choice:
+robertsRoberts2015, females answer a median 0.28 of courtship sequences by approaching to copulate; watts2022, females
+rarely refuse outright); (b) **a copulation is worth the paternity it adds**, in the model's own currency of paternity
+(reproduction.ts: conception min(1, C / `matingSaturation`), the sire drawn in proportion to the cycle's weighted
+copulations C, weights 1, and 2 in the periovulatory days, 0 outside maximal swelling): the value of one more falls as
+the cycle's copulations accumulate (the brief's mechanism).
+
+**Iteration 1 (A1, `matingValue` 1; src/sim/mating.ts, candidates.ts `reproduction`, execution.ts `mateTick`, guard,
+consort, `startAction`):**
+- `paternityGain(f, m)` = [E(k + w, C + w) − E(k, C)] ÷ min(1, 1 / S), E(k, C) = min(1, C / S) · k / C, with C her cycle's
+  weighted copulations, k the male's, w the weight now (recordCopulation's rule), S = `matingSaturation` (3, design): 1 for
+  a cycle's first copulation, 2 for a first periovulatory one, falling as C grows, 0 for a sole mate once conception has
+  saturated, 0 outside maximal swelling. Both partners read her counts (design simplification: the female knows her own
+  copulations; males are taken to know them, copulations being conspicuous; an open problem).
+- It scales the value terms of the male's mate offer (`mateWorth` and the 0.6 for her invitation) and of the female's
+  (her presenting terms, his rank, past coercion, the bond, the 0.7 for answering his approach) and her consort
+  acceptance; the costs (distance, hunger, night, a dominant guard's −1) are unchanged; an offer worth nothing (gain 0)
+  is not made.
+- Consent: an approach interrupts the partner whichever sex starts it (today only a male's); a copulation happens when
+  the actor reaches the partner and the partner's own act is mating with the actor, or, for a male, guarding or
+  consorting with her; the partner's mate act ends with it (one agreement, one copulation). Guarding and consorting no
+  longer copulate by themselves: the female presents to the guard or consort.
+- Not read: `mateIntervalH`; the female's 0.3-h gap (short-circuited); the 0.5-h block after a failed approach (the
+  backdated stamp is written but nothing reads `lastMate` under the switch); the guard's 0.25-h gap (a second branch of
+  the same line chases while the rival courts her or stays beside her).
+- Unchanged on purpose (not implicated by §4): who is with her (`companyValue`'s mating term, the guard and consort
+  offers keep today's values), coercion charges, the guard's chase score (1.3).
+- No new magnitude. Prescriptions: S27 51 → 47 (`scripts/prescription-ledger.ts --count`; today's model 147 → 143):
+  `mateIntervalH` through ACTIVE_WHEN, the three literals through LITERAL_OFF. Switch 0 hash-identical: S27 seed 48
+  after 2 days 6005ce06d37e5df1 with the code at this commit (hooks off and on). Tests: `tests/sim-mating-value.test.ts`.
+
+### 5.1 Iteration 2 (A2, `matingValue` 2; a correction of A1, registered after A1's results, §10, before A2's run)
+
+**Why (A1, §10).** 90% of adult males' approaches to a maximally swollen female ended without her consent (71% of them
+beside her, 11% timed out), and her act one tick after an approach began was acceptance in 1.7% of approaches: in A1 the courted
+animal decides only when the approach begins, when the courting male is still up to 50 m away (`mateRangeM`), while her
+own offer exists only within 30 m (`mateFemaleRangeM`); and a second, non-urgent interrupt inside the 2-min interrupt
+spacing would be dropped. So A1's consent mostly failed for want of a decision with the option in reach, not by her
+choice: a defect of A1's implementation of its own rule (§5: "the approach interrupts the partner, who accepts by mating
+back"), not a new mechanism.
+
+**Change (`matingValue` 2 = 1 + this; src/sim/mating.ts `consentOnArrival`, execution.ts `mateTick`):** on the first
+tick the courting animal is beside the partner without its consent, the partner is interrupted (urgent: the courtship is
+beside it) and decides with its own offer in range; the courting animal waits up to 8 ticks, as in A1. Nothing else
+changes; prescriptions 47. Switches 0 and 1 hash-identical with this code (S27 seed 48, 2 days: 6005ce06d37e5df1,
+dba5143146a2b7b4). Test: tests/sim-mating-value.test.ts (asked again at 2, not at 1).
+
+### 5.2 Iteration 3 (A3, `matingValue` 3 = 2 + the sperm's life; registered with A2, before either runs)
+
+**Why (A1, §10).** The paternity value collapsed within the cycle: weighted copulations per completed cycle 12.2 (the
+references 190–195), so mating stopped after the first day or two of maximal swelling and resumed little in the
+periovulatory days (weight-2 share 0.31 against 0.36–0.42). The model's paternity rule credits every copulation of the
+counted window until ovulation, and conception saturates at 3 weighted copulations, so each copulation's gain falls to
+~3/C of a cycle's first within the first day.
+
+**Principle.** Sperm do not last a cycle. In humans, conception follows only intercourse in the six days ending on the
+day of ovulation, its probability falling from 0.33 on that day to 0.10 five days before (wilcox1995, Abs; [L] for
+chimpanzees; research.md "Addendum: E4p mating without quotas"): the copulations that compete at ovulation are recent
+ones, so a copulation keeps value while the earlier ones fade.
+
+**Change (`matingValue` 3; everything else as 2):** each copulation's paternity weight (recordCopulation's 1, or 2 in the
+periovulatory days) decays e-fold every `spermLifeDays` = 4.2 days on the life-history clock (5 / ln(0.33 / 0.10); [L],
+human; a new registry entry read only at 3); `ovulate` takes the decayed weights at ovulation for the mating factor and
+the sire draw (the association term `near` unchanged); `paternityGain` takes the decayed record now, for both partners.
+A female's decayed record by male (`cd`, `cdAt`: lazily added ChimpX keys, listed in `OPTIONAL_X`), cleared with
+`cops` at a new cycle, a birth or a transfer (src/sim/mating.ts `addDecayed`, `spermDecay`; reproduction.ts). No other
+new magnitude; prescriptions 47 (`spermLifeDays` is physiology, [L]). Test: the decay in the gain and the record.
+
+**Arms A2 and A3** = S27 + `matingValue` 2 and 3, each exactly as A1 (`run-arm.sh`: e-bench quick, energy-diagnose,
+e4p-diagnose 30 + 60 with every readout, rhythm-metrics), each from a frozen detached checkout of the commit that
+registers it; run side by side when the load allows (`--workers 1` above 8).
+
+**Predictions (against the references D0m–D1m and the S27q group, and A1; registered before either run).** A2: consent
+binds less (male approaches without consent ≤ 0.6, against A1's 0.90); the paternity value still bounds a cycle's total,
+so the rates stay near A1's (female 0.02–0.08, dyad 0.02–0.08 per daylight hour; weighted copulations per cycle 10–25)
+(moderate). A3: a back-of-envelope estimate written before the run (disclosed; it uses only the registered rule and A1's
+measured cycle total): in A1 mating stopped near 12 weighted copulations; with the decay the decayed count should hover
+near that level, a turnover of about 12 ÷ 4.2 ≈ 3 weighted units a day, 1.5–2.5 copulations a day: female 0.08–0.25 and
+dyad 0.05–0.20 per daylight hour (low confidence), the weight-2 share ≥ 0.35 and weighted copulations per cleared cycle
+above A1's (moderate). Both: prescriptions 47 (high); male → male aggression and guard chases within ±50% of A1 (low);
+adult males with a maximally swollen female between A1's 1.05 and the references' 1.43 (low); sums inside noise,
+T-ACT-1..4, T-PTY-1 and reserves inside the S27q spread or as A1 (moderate); viability and night pass (high).
+
+**Kill criterion and rate line:** as registered for A1 (§8). A switch value replaces the quota as a keep candidate only if
+both rates sit inside the sourced ranges (female 0.14–0.79, dyad 0.03–0.12 per daylight hour). These are the last two
+iterations (three in all).
+
+## 6. Readouts (defined before any arm; smoke-tested with the switch on, run log)
+
+- Simulation truth from `scripts/e4p-diagnose.ts` (§3 definitions; 30 + 60 days, seeds 48 and 7) against D0–D1 (and
+  E4o's D0b–D3b for copulation counts), plus two readouts added with the switch, before any arm: copulations by their
+  paternity weight at the time (0, 1, 2 = periovulatory), and the weighted copulations a female's record held when it was
+  cleared (a cycle's total; not available for D0–D1, which ran before it); under the switch the copulation gates of mate
+  acts are labelled "partner not consenting" instead of "blocked by mateIntervalH".
+- `e-bench --quick` (seeds 48, 7; 30 + 30 days) against S27q and its three re-draws (`judge_vs_reps.py quick custom`,
+  amendment 2; with and without T-HUN-4, T-BRD-1, T-IGE-3); T-PTY-1, T-ACT-1..4; prescription count; viability and deaths
+  by cause. `energy-diagnose` (seeds 48, 7; 30 + 30): reserves ÷ store %/day by class. `rhythm-metrics` (seeds 48, 7;
+  30 + 30): adults out of a nest share of the night, T-RHY-5. All exactly as the integrator ran S27q
+  (`scratchpad/integrator/s27q.sh`) and E4o its arm.
+
+## 7. Arms
+
+- **A1** = S27 + `matingValue` 1, from a frozen detached checkout of the commit that registers its run in §9
+  (`scratchpad/e4p/run-arm.sh`: e-bench quick, energy-diagnose, e4p-diagnose 30 + 60, rhythm-metrics; `--workers 1` above
+  load 8).
+
+## 8. Predictions and kill criterion (A1 against the S27 references)
+
+The smoke test with the switch on (seed 48, 1 + 2 days, run log) was seen before these predictions were written: 5
+copulations in 2 days against 89 at switch 0, females at C = 3–10 weighted copulations within the first day, the gain of
+the next copulation 0.2–0.43 and the mate offers 0.16–0.34 against best options of 0.8–1.6; a sole mate's gain 0.
+
+| Quantity | Reference (D0 / D1; S27q group) | Prediction (A1) |
+| --- | --- | --- |
+| Prescriptions | 51 | 47 (high) |
+| Copulations per maximally swollen female daylight hour | 0.83 / 0.86 | ≤ 0.07, below Taï's 0.14 (high) |
+| Copulations per dyad daylight hour | 0.58 / 0.60 | ≤ 0.05 (high) |
+| Weighted copulations per cleared cycle | (not measured) | ≤ 12 (moderate) |
+| Share of male intervals under 0.25 h | ~0 (the quota) | ≥ 0.3: no refractory, so copulations come in bursts (moderate) |
+| Male approaches ending without consent (share of male mate acts) | ≤ 0.03 | ≥ 0.3 (moderate) |
+| Adult males with a maximally swollen female (per daylight h) | 1.42 / 1.43 | lower, toward the anoestrous 0.68 (moderate: her mating value no longer holds them) |
+| Fitted, held-out, held-out without the rare rows | S27q group | inside noise (moderate) |
+| T-ACT-1..4, T-PTY-1, reserves %/day | S27q group | inside its spread (moderate) |
+| Viability; night (≤ 3.3%, T-RHY-5 ≤ 0.033) | pass | pass (high) |
+
+**Kill criterion (null; the switch stays off, recorded):** viability fails (a starvation death the references lack, or
+a seed below 80% of its start); held-out without the rare rows worse beyond noise (z > +2); the count does not fall to
+47; night unsafe; the mechanism does not run (copulations unchanged within the D spread, or no approach ends without
+consent). **Rate line (the stage's own, registered):** the mechanism replaces the quota as a keep candidate only if the
+rates it produces sit inside the sourced ranges, per maximally swollen female daylight hour 0.14–0.79 (Taï–Mahale) and
+per dyad daylight hour 0.03–0.12 (Kanyawara–Kalinzu); outside them it is recorded as a mechanism finding, not a keep
+candidate (a replacement that misses both ranges does not replace what the quota set).
+
+## 9. Run log (each entry written before its run, unless marked)
+
+- **Smoke** (logged after the run, at the hooked code; scripts only): S27, seeds 48 and 7, 1 + 2 days: every readout
+  produced (89 and 87 copulations; communities of 7, 4 and 3 adult males). The operational-sex-ratio readout registered in
+  §3 was missing from the first version of the tool and was added before any diagnosis run (smoke: 5.0, 4.0, 3.0 by
+  community, seed 48).
+- **D0, D1** (as registered in §3), from `scratchpad/e4p/frozen-d` (a detached checkout of the commit that adds this
+  entry): seeds 48 and 7, two processes at a time (one if the load is above 8); outputs `scratchpad/e4p/diag/D{0,1}-{48,7}.json`.
+- **Smoke, switch on** (logged after the run, at the code of this commit before it was committed; scripts and tests only
+  beyond it): S27 + `matingValue` 1, seed 48, 1 + 2 days, e4p-diagnose and a read-only trace of the mate offers
+  (`scratchpad/e4p/dbg1.mts`): every readout produced; 5 copulations (switch 0: 89); the offers' gains as in §8.
+  Unit tests `tests/sim-mating-value.test.ts` 4 pass; ledger and Track E tests pass; S27 51 → 47.
+- **A1** (as registered in §7): from `scratchpad/e4p/frozen-a1` (the commit that adds this entry),
+  `run-arm.sh frozen-a1 A1 '{"matingValue":1}'`; outputs `frozen-a1/artifacts/validation/e4p/A1*`.
+- **Readout added while A1 ran, before any of its results were read (disclosed; the integrator relayed E4q's request):**
+  male → male aggression per co-present adult-male dyad-hour, E4q's definition (e4q-prereg.md §3: charges and attacks
+  started by adult males at adult males of their community, plus displays aimed at one, per ordered pair of awake adult
+  males of one party in daylight; muller2007's 0.015 per hour at Kanyawara), with the mate guard's chases (variant
+  GUARD) apart. E4q's S27 reference: 0.097 ± 0.016 (30 + 30 days, four runs), 59% of adult males' charges guard chases.
+  Re-runs on unchanged worlds from `scratchpad/e4p/frozen-m` (the commit that adds this entry): D0m, D1m (S27, S27 +
+  `rngSalt` 1) and A1m (A1's parameters; matingValue 1 is hash-identical with the WIP code of iteration 2 present, S27
+  seed 48 after 2 days dba5143146a2b7b4), 30 + 60 days, seeds 48 and 7; outputs `scratchpad/e4p/diagm/`.
+- **Stall (logged after it):** the session stalled from about 16:37 to 21:28 and its background jobs were stopped. A1's
+  bench had finished (16:32:57; `A1.json` at 9013ed3, `git.dirty` 0, prescriptions 47); its energy run was cut off and its
+  diagnosis and rhythm runs never started; D0m, D1m and A1m never started. Nothing finished is re-run: A1's energy and
+  rhythm run now from `frozen-a1` (unchanged), its diagnosis as A1m from `frozen-m` (the same world with every readout, as
+  registered above), and D0m and D1m from `frozen-m`.
+
+## 10. Results
+
+### 10.1 A1 (S27 + `matingValue` 1; bench 9013ed3, `git.dirty` 0; energy and rhythm from the same frozen checkout; diagnosis A1m from frozen-m 6124697, the same world; printed by `artifacts/validation/e4p/report_table.py`, `diag_table.py`, `judge_e4p.py` and `night.py` from the JSON)
+
+```
+| Readout | S27 reference mean ± SD (n) | A1 | field |
+| --- | --- | --- | --- |
+| adult males in a max-swollen female's party (per daylight h; 30 + 60 d) | 1.427 ± 0.005 (2) | 1.053 (z -55.7) | field: share of community males 0.28 (Kalinzu)
+| copulations per dyad daylight h (30 + 60 d) | 0.591 ± 0.011 (2) | 0.031 (z -42.9) | Kanyawara 0.03–0.064; Kalinzu 0.12
+| copulations per max-swollen female daylight h (30 + 60 d) | 0.844 ± 0.018 (2) | 0.033 (z -35.9) | Taï 0.14; Kalinzu 0.43; Mahale 0.79
+| copulations per adult male daylight h (30 + 60 d) | 0.098 ± 0.006 (2) | 0.004 (z -12.4) |
+| male → male aggression per co-present dyad-hour (30 + 60 d) | 0.1029 ± 0.0023 (2) | 0.1056 (z +1.0) | Kanyawara 0.015 (muller2007)
+|   of which mate-guard chases | 0.0488 ± 0.0005 (2) | 0.0610 (z +18.5) |
+| T-PTY-1 | 4.586 ± 0.151 (4) | 4.204 (z -2.3) |
+| T-ACT-1 | 0.375 ± 0.005 (4) | 0.374 (z -0.2) |
+| T-ACT-2 | 0.116 ± 0.009 (4) | 0.110 (z -0.6) |
+| T-ACT-3 | 0.098 ± 0.007 (4) | 0.090 (z -1.1) |
+| T-ACT-4 | 0.421 ± 0.020 (4) | 0.380 (z -1.8) |
+| reserves %/day, males | +0.002 ± +0.004 (4) | +0.000 (z -0.5) |
+| reserves %/day, nursing mothers | -0.000 ± +0.007 (4) | +0.026 (z +3.4) |
+| reserves %/day, juveniles | -0.027 ± +0.021 (4) | -0.007 (z +0.9) |
+
+quick, reference custom (4 runs), rows counted in all runs: fitted 16, held-out 12
+  fitted             (16 rows) ref 1.50, 2.68, 1.04, 2.26 (mean 1.87, sd 0.74; used 0.74) | A1.json: 1.91, Δ +0.04, z +0.1 (inside noise)
+  held-out           (12 rows) ref 4.27, 4.04, 3.73, 3.22 (mean 3.82, sd 0.46; used 1.26) | A1.json: 3.13, Δ -0.69, z -0.5 (inside noise)
+  held-out w/o rare  (11 rows) ref 3.45, 4.04, 3.73, 3.22 (mean 3.61, sd 0.36; used 0.48) | A1.json: 3.13, Δ -0.48, z -0.9 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-HUN-4   held-out ref 0.21±0.41 | A1.json 0.00 (pass)
+
+A1: 9013ed3 dirty 0 prescriptions 47; viability pass (births 0, deaths 1, starvation 0, min living share 0.9795918367346939; by cause {'illness': 1})
+ref S27q.json: prescriptions 42; viability pass (deaths 0, starvation 0)
+ref S27q1.json: prescriptions 42; viability pass (deaths 0, starvation 0)
+ref S27q2.json: prescriptions 42; viability pass (deaths 0, starvation 0)
+ref S27q3.json: prescriptions 42; viability pass (deaths 0, starvation 0)
+```
+
+Night (rhythm-metrics, seeds 48 and 7, 30 + 30): adults out of a nest 2.21% of the night, T-RHY-5 0.0173 (one death, an
+illness, as in the bench run). The full diagnosis table (D0m, D1m, A1m) is `artifacts/validation/e4p/diagm/A1-table.md`;
+from it (D0m / D1m → A1m): copulations 2,764 / 2,955 → 157; weighted copulations per cleared cycle 195 / 190 → 12.2;
+copulations at weight 2 (periovulatory) 0.36 / 0.42 → 0.31, at weight 0 (outside maximal swelling) 0.14 / 0.11 → 0;
+male approaches 832 / 984 → 293, ending without consent 0.04 → 0.90 (of male acts, 0.71 beside her, 0.11 timed out); her act one tick
+after an approach began: acceptance 0.16 / 0.19 → 0.017; male intervals under 0.25 h 0 → 0.24 (bursts, no refractory);
+adult males with a maximally swollen female 1.42 / 1.43 → 1.05 (anoestrous females 0.68 in all three); guard daylight
+hours 818 / 809 → 645; rival chases 1,362 / 1,313 → 1,490; male → male aggression per co-present dyad-hour 0.104 / 0.101
+→ 0.106 (guard chases 0.049 / 0.048 → 0.061; E4q's S27 group 0.097 ± 0.016 at 30 + 30 days; Kanyawara 0.015).
+
+**Against the predictions (§8).** Prescriptions 47: held. Female rate ≤ 0.07: held (0.033). Dyadic rate ≤ 0.05: held
+(0.031). Weighted copulations per cleared cycle ≤ 12: held, by a hair (12.2). Male intervals under 0.25 h ≥ 0.3: missed
+(0.24). Approaches without consent ≥ 0.3: held (0.90; mostly a defect, §5.1). Adult males with her lower: held (1.05).
+Sums inside noise: held (fitted z +0.1, held-out −0.5, without the rare rows −0.9). T-ACT-1..4, T-PTY-1, reserves inside
+the spread: held for T-ACT-1..3 and males' and juveniles' reserves; T-PTY-1 lower (4.20 against 4.59 ± 0.15, z −2.3) and
+T-ACT-4 lower (0.380 against 0.421 ± 0.020); nursing mothers' reserves better (+0.026 against −0.000 ± 0.007, z +3.4).
+Viability and night: held.
+
+**Kill criterion: not met. Rate line: failed** (the female rate 0.033, below Taï's 0.14; the dyadic rate 0.031 at
+Kanyawara's floor). A1 is a mechanism finding, not a keep candidate: valued by the paternity it adds under the model's own
+rule, a copulation is worth nothing after the first dozen weighted copulations of a cycle, and mating collapses 18×.
+
+## 9b. Run log, continued
+
+- **A1's remaining steps** (logged after the runs): energy 21:29–21:34 and rhythm 21:34–21:37 from frozen-a1 (9013ed3,
+  clean); D0m, D1m, A1m 21:29–21:46 from frozen-m (6124697, clean). D0m and D1m reproduce D0's and D1's copulations
+  (2,764, 2,955).
+- **Smoke, switches 2 and 3** (logged after the runs, at the code of the commit that registers them, scripts and tests
+  beyond it): S27 + `matingValue` 2 and 3, seed 48, 1 + 2 days: every readout produced (8 and 8 copulations; two days
+  cannot show the decay). Unit tests 6 pass; S27 + 3 counts 47.
+- **A2 and A3** (as registered in §5.1–5.2): from `scratchpad/e4p/frozen-a23` (the commit that adds this entry),
+  `run-arm.sh frozen-a23 A2 '{"matingValue":2}'` and `run-arm.sh frozen-a23 A3 '{"matingValue":3}'`, side by side if the
+  load is below 15, else one after the other; outputs `frozen-a23/artifacts/validation/e4p/A2*`, `A3*`.
+
+### 10.2 A2 and A3 (S27 + `matingValue` 2 and 3; bench, energy, diagnosis and rhythm all from frozen-a23 at 63d7514, `git.dirty` 0; printed by the same scripts from the JSON)
+
+The fixed table (bench and energy rows against the S27q group; mating rows, 30 + 60 days, against D0m–D1m; A1 beside):
+
+```
+| Readout | S27 reference mean ± SD (n) | A1 | A2 | A3 | field |
+| --- | --- | --- | --- | --- | --- |
+| adult males in a max-swollen female's party (per daylight h; 30 + 60 d) | 1.427 ± 0.005 (2) | 1.053 (z -55.7) | 1.281 (z -21.7) | 1.344 (z -12.4) | field: share of community males 0.28 (Kalinzu)
+| copulations per dyad daylight h (30 + 60 d) | 0.591 ± 0.011 (2) | 0.031 (z -42.9) | 0.028 (z -43.1) | 0.064 (z -40.4) | Kanyawara 0.03–0.064; Kalinzu 0.12
+| copulations per max-swollen female daylight h (30 + 60 d) | 0.844 ± 0.018 (2) | 0.033 (z -35.9) | 0.036 (z -35.7) | 0.086 (z -33.5) | Taï 0.14; Kalinzu 0.43; Mahale 0.79
+| copulations per adult male daylight h (30 + 60 d) | 0.098 ± 0.006 (2) | 0.004 (z -12.4) | 0.004 (z -12.4) | 0.009 (z -11.8) |
+| male → male aggression per co-present dyad-hour (30 + 60 d) | 0.1029 ± 0.0023 (2) | 0.1056 (z +1.0) | 0.1318 (z +10.5) | 0.1212 (z +6.6) | Kanyawara 0.015 (muller2007)
+|   of which mate-guard chases | 0.0488 ± 0.0005 (2) | 0.0610 (z +18.5) | 0.0698 (z +31.7) | 0.0787 (z +45.2) |
+| T-PTY-1 | 4.586 ± 0.151 (4) | 4.204 (z -2.3) | 4.678 (z +0.5) | 4.379 (z -1.2) |
+| T-ACT-1 | 0.375 ± 0.005 (4) | 0.374 (z -0.2) | 0.383 (z +1.5) | 0.376 (z +0.2) |
+| T-ACT-2 | 0.116 ± 0.009 (4) | 0.110 (z -0.6) | 0.106 (z -0.9) | 0.118 (z +0.1) |
+| T-ACT-3 | 0.098 ± 0.007 (4) | 0.090 (z -1.1) | 0.104 (z +0.7) | 0.105 (z +0.8) |
+| T-ACT-4 | 0.421 ± 0.020 (4) | 0.380 (z -1.8) | 0.398 (z -1.0) | 0.449 (z +1.3) |
+| reserves %/day, males | +0.002 ± +0.004 (4) | +0.000 (z -0.5) | +0.015 (z +2.9) | +0.022 (z +4.3) |
+| reserves %/day, nursing mothers | -0.000 ± +0.007 (4) | +0.026 (z +3.4) | -0.006 (z -0.7) | +0.038 (z +4.9) |
+| reserves %/day, juveniles | -0.027 ± +0.021 (4) | -0.007 (z +0.9) | -0.004 (z +1.0) | +0.041 (z +2.9) |
+
+quick, reference custom (4 runs), rows counted in all runs: fitted 16, held-out 12
+  fitted             (16 rows) ref 1.50, 2.68, 1.04, 2.26 (mean 1.87, sd 0.74; used 0.74) | A1.json: 1.91, Δ +0.04, z +0.1 (inside noise) | A2.json: 1.02, Δ -0.85, z -1.0 (inside noise) | A3.json: 1.68, Δ -0.19, z -0.2 (inside noise)
+  held-out           (12 rows) ref 4.27, 4.04, 3.73, 3.22 (mean 3.82, sd 0.46; used 1.26) | A1.json: 3.13, Δ -0.69, z -0.5 (inside noise) | A2.json: 3.61, Δ -0.20, z -0.1 (inside noise) | A3.json: 3.68, Δ -0.14, z -0.1 (inside noise)
+  held-out w/o rare  (11 rows) ref 3.45, 4.04, 3.73, 3.22 (mean 3.61, sd 0.36; used 0.48) | A1.json: 3.13, Δ -0.48, z -0.9 (inside noise) | A2.json: 3.10, Δ -0.51, z -1.0 (inside noise) | A3.json: 3.18, Δ -0.43, z -0.8 (inside noise)
+  rows whose arm value is beyond 2 SD of the reference runs (SD floor 0.05), or rare rows:
+   T-COM-8   fitted   ref 0.11±0.02 | A1.json 0.03 (fail) | A2.json 0.00 (pass) | A3.json 0.00 (pass)
+   T-HUN-4   held-out ref 0.21±0.41 | A1.json 0.00 (pass) | A2.json 0.51 (fail) | A3.json 0.50 (fail)
+   T-SOC-3   held-out ref 0.03±0.06 | A1.json 0.00 (pass) | A2.json 0.22 (fail) | A3.json 0.00 (pass)
+
+A1: 9013ed3 dirty 0 prescriptions 47; viability pass (births 0, deaths 1, starvation 0, min living share 0.9795918367346939; by cause {'illness': 1})
+A2: 63d7514 dirty 0 prescriptions 47; viability pass (births 0, deaths 0, starvation 0, min living share 1; by cause {})
+A3: 63d7514 dirty 0 prescriptions 47; viability pass (births 0, deaths 1, starvation 0, min living share 0.9795918367346939; by cause {'illness': 1})
+ref S27q.json: prescriptions 42; viability pass (deaths 0, starvation 0)
+ref S27q1.json: prescriptions 42; viability pass (deaths 0, starvation 0)
+ref S27q2.json: prescriptions 42; viability pass (deaths 0, starvation 0)
+ref S27q3.json: prescriptions 42; viability pass (deaths 0, starvation 0)
+```
+
+The mating diagnosis (simulation truth, seeds 48 + 7, 30 + 60 days; the full table is
+`artifacts/validation/e4p/diagall/table.md`):
+
+```
+| Mate acts (adult males, max-swollen females) | D0m | D1m | A1 | A2 | A3 |
+| --- | --- | --- | --- | --- | --- |
+| male attempts | 832 | 984 | 293 | 581 | 780 |
+| attempts per dyad daylight h | 0.245 | 0.272 | 0.118 | 0.179 | 0.284 |
+| female solicitations | 421 | 503 | 59 | 66 | 136 |
+
+| mateActs.outcomes: share (top 10) | D0m | D1m | A1 | A2 | A3 |
+| --- | --- | --- | --- | --- | --- |
+| male: copulated | 0.638 | 0.634 | 0.082 | 0.059 | 0.085 |
+| female: copulated | 0.335 | 0.336 | 0.128 | 0.070 | 0.110 |
+| male: block: beside her, no copulation | 0.001 | 0.000 | 0.594 | 0.519 | 0.439 |
+| male: block: approach timed out | 0.001 | 0.004 | 0.091 | 0.243 | 0.207 |
+| male: ended otherwise | 0.020 | 0.016 | 0.048 | 0.071 | 0.083 |
+| male: partner refusing | 0.005 | 0.007 | 0.017 | 0.006 | 0.037 |
+| female: block: beside her, no copulation | 0.000 | 0.000 | 0.026 | 0.020 | 0.017 |
+| female: partner refusing | 0.000 | 0.000 | 0.011 | 0.005 | 0.014 |
+| female: ended otherwise | 0.001 | 0.003 | 0.003 | 0.008 | 0.005 |
+| female: block: approach timed out | 0.000 | 0.000 | 0.000 | 0.000 | 0.001 |
+
+| mateActs.femaleAnswer: share (top 10) | D0m | D1m | A1 | A2 | A3 |
+| --- | --- | --- | --- | --- | --- |
+| other (rest) | 0.203 | 0.243 | 0.208 | 0.205 | 0.213 |
+| other (travel) | 0.172 | 0.166 | 0.164 | 0.222 | 0.201 |
+| other (forage) | 0.145 | 0.153 | 0.205 | 0.208 | 0.173 |
+| other (play) | 0.069 | 0.041 | 0.232 | 0.212 | 0.164 |
+| accept (mate at him) | 0.160 | 0.188 | 0.017 | 0.009 | 0.017 |
+| refuse (flee) | 0.075 | 0.045 | 0.041 | 0.017 | 0.092 |
+| other (pant-grunt) | 0.085 | 0.064 | 0.014 | 0.015 | 0.032 |
+| other (groom) | 0.029 | 0.041 | 0.044 | 0.067 | 0.055 |
+| other (nest) | 0.013 | 0.008 | 0.031 | 0.029 | 0.023 |
+| other (mate) | 0.014 | 0.028 | 0.000 | 0.002 | 0.003 |
+
+| Gaps (counts, two seeds) | D0m | D1m | A1 | A2 | A3 |
+| --- | --- | --- | --- | --- | --- |
+| backdates | 6 | 17 | 13426 | 24438 | 29515 |
+| backdatesBeside | 1 | 1 | 8532 | 14843 | 17992 |
+| chase: blocked by the 0.25-h gap | 11032 | 11178 | 2019 | 2411 | 2463 |
+| chase: open | 2299 | 2386 | 1143 | 1353 | 1307 |
+| copConsort: blocked by mateIntervalH | 22 | 25 | 0 | 0 | 0 |
+| copGuard: blocked by mateIntervalH | 187926 | 188818 | 0 | 0 | 0 |
+| copGuard: blocked only by a failed-approach block | 0 | 14 | 0 | 0 | 0 |
+| copGuard: open | 626 | 580 | 0 | 0 | 0 |
+| copMate: blocked by mateIntervalH | 2981 | 3492 | 0 | 0 | 0 |
+| copMate: open | 2138 | 2375 | 157 | 184 | 258 |
+| copMate: partner not consenting | 0 | 0 | 18190 | 31218 | 37885 |
+| female offer (own gap open): blocked by the male's mateIntervalH | 16576 | 18374 | 0 | 0 | 0 |
+| female offer (own gap open): blocked by the male's mateIntervalH, would top the list | 5150 | 5632 | 0 | 0 | 0 |
+| female offer (own gap open): open | 9122 | 10033 | 34840 | 47400 | 33425 |
+| female offer: her own 0.3-h gap closed | 22983 | 24438 | 1152 | 1672 | 2302 |
+| female offer: her own 0.3-h gap closed, would top the list | 7165 | 7775 | 59 | 68 | 71 |
+| female offer: her own gap open | 25698 | 28407 | 33688 | 45728 | 31123 |
+| male offer: blocked by mateIntervalH | 39687 | 42612 | 0 | 0 | 0 |
+| male offer: blocked by mateIntervalH, would top the list | 14279 | 15504 | 0 | 0 | 0 |
+| male offer: blocked only by a failed-approach block | 44 | 131 | 0 | 0 | 0 |
+| male offer: blocked only by a failed-approach block, would top the list | 9 | 33 | 0 | 0 | 0 |
+| male offer: open | 16290 | 17470 | 55915 | 80562 | 71663 |
+| male offer: open and on top | 2541 | 2845 | 14102 | 25562 | 30926 |
+
+| Guarding | D0m | D1m | A1 | A2 | A3 |
+| --- | --- | --- | --- | --- | --- |
+| guard daylight h | 818 | 809 | 645 | 778 | 718 |
+| guard acts started | 2530 | 2421 | 2385 | 2920 | 2893 |
+|   by the alpha (rank order 1) | 1449 | 1616 | 1501 | 1677 | 1691 |
+| rival chases started | 1362 | 1313 | 1490 | 1798 | 1810 |
+
+| Rates (daylight; adult males, max-swollen females) | D0m | D1m | A1 | A2 | A3 | field |
+| --- | --- | --- | --- | --- | --- | --- |
+| copulations (all) | 2764 | 2955 | 157 | 184 | 258 | — |
+| per max-swollen female daylight h | 0.831 | 0.857 | 0.033 | 0.036 | 0.086 | Taï 0.14 (oestrous h); Kalinzu 0.43; Mahale 0.79 |
+| per dyad daylight h (pooled) | 0.584 | 0.599 | 0.031 | 0.028 | 0.064 | Kanyawara 0.03–0.064; Kalinzu 0.12 per male with her |
+| per-male median of dyadic rates (seed mean) | 0.586 | 0.611 | 0.023 | 0.033 | 0.077 | Kanyawara 0.03–0.064 |
+| per adult male daylight h | 0.094 | 0.103 | 0.004 | 0.004 | 0.009 | — |
+|   per max-swollen female daylight h, 0 adult males | 0.053 | 0.063 | 0.005 | 0.000 | 0.009 |  |
+|   per max-swollen female daylight h, 1-2 adult males | 0.950 | 0.943 | 0.061 | 0.057 | 0.122 |  |
+|   per max-swollen female daylight h, 3-4 adult males | 2.127 | 2.274 | 0.067 | 0.054 | 0.162 |  |
+|   per max-swollen female daylight h, 5-6 adult males | 3.009 | 3.119 | 0.000 | 0.039 | 0.224 |  |
+|   per max-swollen female daylight h, 7+ adult males | 3.371 | 4.316 | 0.000 | 0.000 | 0.000 |  |
+| male interval median h (seed mean) | 2.08 | 2.08 | 52.17 | 55.45 | 49.68 | — |
+| female interval median h (seed mean) | 0.66 | 0.65 | 3.48 | 3.54 | 5.04 | — |
+
+| rates.copsByMaleAct: share (top 8) | D0m | D1m | A1 | A2 | A3 |
+| --- | --- | --- | --- | --- | --- |
+| mate | 0.345 | 0.381 | 0.325 | 0.386 | 0.345 |
+| guard | 0.219 | 0.188 | 0.331 | 0.293 | 0.306 |
+| forage | 0.216 | 0.216 | 0.159 | 0.152 | 0.155 |
+| rest | 0.085 | 0.080 | 0.006 | 0.016 | 0.047 |
+| groom | 0.036 | 0.040 | 0.025 | 0.016 | 0.019 |
+| travel | 0.029 | 0.031 | 0.070 | 0.027 | 0.050 |
+| nest | 0.024 | 0.023 | 0.019 | 0.027 | 0.012 |
+| drink | 0.012 | 0.010 | 0.006 | 0.049 | 0.016 |
+
+| Males' feeding (forage-act daylight min per adult-male day) | D0m | D1m | A1 | A2 | A3 |
+| --- | --- | --- | --- | --- | --- |
+| days with a max-swollen parous female in his party | 435 | 478 | 373 | 463 | 372 |
+|   feeding min, with | 242.3 | 239.2 | 236.5 | 238.5 | 236.8 |
+|   feeding min, without | 236.9 | 240.6 | 236.9 | 238.9 | 238.7 |
+
+| Added readouts | D0m | D1m | A1 | A2 | A3 |
+| --- | --- | --- | --- | --- | --- |
+| male → male aggression per co-present adult-male dyad-hour (E4q; Kanyawara 0.015) | 0.1045 | 0.1013 | 0.1056 | 0.1318 | 0.1212 |
+|   of which mate-guard chases | 0.0492 | 0.0484 | 0.0610 | 0.0698 | 0.0787 |
+|   guard chases, share of male → male aggression | 0.470 | 0.478 | 0.578 | 0.529 | 0.649 |
+| copulations at paternity weight 0 (share) | 0.136 | 0.113 | 0.000 | 0.000 | 0.000 |
+| copulations at paternity weight 1 (share) | 0.505 | 0.468 | 0.694 | 0.734 | 0.632 |
+| copulations at paternity weight 2 (share) | 0.359 | 0.419 | 0.306 | 0.266 | 0.368 |
+| weighted copulations per cleared cycle (median, seed mean) | 194.8 | 190.2 | 12.2 | 13.0 | 28.8 |
+|   cleared cycles | 13 | 11 | 9 | 11 | 9 |
+| male intervals under 0.25 h (share) | 0.000 | 0.000 | 0.244 | 0.205 | 0.133 |
+| male approaches ending without consent (share of male mate acts) | 0.040 | 0.042 | 0.901 | 0.935 | 0.900 |
+
+deaths: {'D0m': [{}, {}], 'D1m': [{}, {}], 'A1': [{'illness': 1}, {}], 'A2': [{}, {}], 'A3': [{'illness': 1}, {}]}
+
+E4o D0b–D3b (same worlds for S27 and rngSalt 1–3; e4o-diagnose): copulations [2764, 2955, 2578, 2543]
+```
+
+Night (rhythm-metrics, seeds 48 and 7, 30 + 30): A2 adults out of a nest 2.23% of the night, T-RHY-5 0.0166; A3 2.43%,
+0.0185 (one death, an illness, as in its bench run).
+
+**A2 against its predictions (§5.2).** Approaches ending without consent ≤ 0.6: **missed** (0.935; A1 0.90). The rates
+near A1's: held (female 0.036, dyad 0.028; weighted copulations per cleared cycle 13.0). Prescriptions 47, sums inside
+noise (fitted z −1.0, held-out −0.1, without the rare rows −1.0), T-ACT-1..4 and T-PTY-1 in the spread, viable, night
+safe: held. Male → male aggression +25% of A1 (0.132): inside the ±50% registered. **Reading:** the correction did what
+it states (the courted animal decides with the courting one beside it; unit-tested), but the failures were not for want
+of a decision in range: they are the female's choice by value. Both partners read the same paternity gain, and once a
+cycle's first copulations are made the gain is small; a male with nothing better to do (resting, his alternatives weak)
+courts at that small value while the female, whose foraging, travel or play is worth more, declines (her answer one tick
+after an approach began: acceptance 0.9%). A1's reading of the failures as a distance defect (§5.1) was wrong.
+
+**A3 against its predictions (§5.2).** Female rate 0.08–0.25: held, at its floor (0.086). Dyad 0.05–0.20: held (0.064;
+per-male median of dyadic rates 0.077). Weight-2 share ≥ 0.35: held (0.368; the references 0.36–0.42). Weighted
+copulations per cleared cycle above A1's: held (28.8 against 12.2). Prescriptions 47; male → male aggression within ±50%
+of A1 (0.121); adult males with a maximally swollen female between A1 and the references (1.34); sums inside noise
+(fitted z −0.2, held-out −0.1, without the rare rows −0.8); T-ACT-1..4 and T-PTY-1 in the spread; viable, night safe:
+held. Reserves inside the spread or as A1: **missed upwards** (males +0.022, nursing mothers +0.038, juveniles +0.041
+%/day against +0.002, −0.000 and −0.027: every class better, z +2.9 to +4.9). A female's copulations now rise with the
+adult males in her party (0.12 per daylight hour with 1–2 males, 0.16 with 3–4, 0.22 with 5–6), each male's share
+falling, the field's shape (watts2007, Abs: rates rise with the males she associates with); mating runs through the
+periovulatory days as in the references.
+
+**Kill criterion: not met by any arm** (viable; held-out without the rare rows z −0.9, −1.0, −0.8; 47 counted; night safe;
+the mechanism runs). **Rate line: failed by every arm** on the female rate (0.033, 0.036, 0.086 against Taï's 0.14 floor);
+the dyadic rate is inside Kanyawara's range for A1 and A3 (0.031, 0.064) and just below it for A2 (0.028).
+
+### 10.3 Stage verdict
+
+- **The quota stays; `matingValue` is recorded, off (0 = today).** No value meets the registered rate line, so none is a
+  keep candidate, although each passes the track's keep rule in quick mode (viable, every sum inside noise, 51 → 47).
+  The best of the three is **3** (consent; a copulation worth the paternity it adds; each copulation's fertilizing weight
+  fading over the sperm's life): the dyadic rate falls from the quota's 0.59 to 0.064 per hour together (Kanyawara
+  0.03–0.064, Kalinzu 0.12), a female's rate from 0.84 to 0.086 per maximally swollen daylight hour (0.6 × Taï's 0.14,
+  which counts partial swelling too; Kalinzu 0.43, Mahale 0.79), with no quota or literal gap, every class's reserves
+  better and the field's rise of a female's copulations with the males present.
+- **What sets the rates (diagnosis).** `mateIntervalH` sets every copulation path (71% of offers blocked, 5.6× as many
+  would have won as the open offers chosen; one copulation per 1.5 h in guarding); the female's 0.3-h gap binds second;
+  the failed-approach block is the quota's appendage; the 0.25-h chase gap sets the guard's chase rate (83% of qualifying
+  rival checks blocked). Female choice never bound (96% of male approaches copulated).
+- **Why males seemed absent: they are not.** The brief's "4–12 adult males with a swollen female" is the operational sex
+  ratio of the community (furuichiHashimoto2001: adult males per maximally swollen female), which the model matches
+  (7.1–11.5 overall, by community 4.9–17.8; Mahale 4.2, Gombe 12.3). In her party 1.42 adult males per daylight hour
+  against 0.68 with an anoestrous female; 0.18–0.39 of the community's adult males (Kalinzu's largest parties: 0.28). Half
+  the leaving decisions of males in her party happened while the quota had closed the mate offer.
+- **What the arms show.** Under the model's own paternity rule (conception saturating at 3 weighted copulations, the sire
+  drawn by weighted counts over the whole counted window), a copulation is worth almost nothing after a dozen weighted
+  copulations of a cycle (A1, A2: 12–13 a cycle against the quota's 190; rates 19–26 × lower). With the sperm's life (A3),
+  value returns as earlier copulations fade, and the rate becomes about (the weighted count at which mating stops) ÷
+  `spermLifeDays`: set by the saturation constant `matingSaturation` (3, design, no source), the decision scale of the
+  mate offers (design) and a human sperm life ([L]). A female rate inside the field's range would need one of those to
+  move, which this stage does not do (it would be tuning to a rate).
+- **Costs and side effects.** Male → male aggression per co-present dyad-hour rises from 0.103 to 0.121–0.132 (guard
+  chases 0.049 → 0.061–0.079: the chase gap is out and more rivals stay near a guarded female), further from Kanyawara's
+  0.015 (E4q's open problem); 90–94% of courtship approaches now end without the partner's consent (robertsRoberts2015:
+  females answer 0.28 of courtship sequences by approaching); copulations come in bursts (13–24% of a male's intervals
+  under 15 min; no refractory period is modelled or sourced).
+
+## 11. Open problems and deferred defects
+
+- **The female rate and the value scale** (the biggest): with the quota gone, a female's copulation rate is set by
+  `matingSaturation` (3 weighted copulations, design, no source) over the sperm's life (4.2 days, human, [L]) at the mate
+  offers' design scale; field females copulate 1.6–9 times a day while maximally swollen (Taï–Mahale), 1.6–9 × the
+  0.086 per daylight hour (about 1 a day) that A3's paternity arithmetic gives at that scale. Inputs that would decide it,
+  none in reachable sources: a chimpanzee measure
+  of conception by day of copulation relative to ovulation (the fertile window), and of how many copulations saturate
+  conception; or a proximate sexual motivation (arousal discharged by ejaculation) with a measured recovery.
+- **Knowledge of a female's copulations:** both partners read her cycle's counts (design simplification, §5); males
+  should know only what they saw or heard (copulation calls).
+- **Consent fails 90%** of approaches, against the field's 0.72 (robertsRoberts2015's 0.28 success per gesture sequence):
+  males court at small values when their alternatives are weak; the model has no cost of courting beyond time, and no
+  male learning from refusals.
+- **Male aggression structure** (E4q): guard chases are about half of male → male aggression in every arm; the guard's
+  chase score is a fixed 1.3 (design), and nothing values a chase by the paternity it protects.
+- **Readout limits:** the female's answer is read one tick after an approach begins (A2's arrival re-ask is not in it);
+  the male → male aggression readout reads the act at the tick's end, not at its start (E4q's tool reads the start).
+- No deferred defect in the code under test. The decision guide's mating box ("Mating quotas") is unchanged: the switch is
+  off and no stack carries it.
+
+## 12. Files and final checks
+
+- Code: `src/sim/mating.ts` (new: `matingValueOn`, `consentOnArrival`, `spermDecayOn`, `copulationWeight`,
+  `paternityGain`, `consents`, `spermDecay`, `addDecayed`), `src/sim/candidates.ts` (the mate offers; the 'mateFgap'
+  trace), `src/sim/execution.ts` (`mateTick`'s consent, guard and consort, the approach's interrupt; the `mateTrace`
+  diagnosis hook), `src/sim/reproduction.ts` (the decayed record in `recordCopulation` and `ovulate`), `src/sim/state.ts`
+  (`cd`, `cdAt` in `OPTIONAL_X`); `data/params.json` (`matingValue`, `spermLifeDays`); `scripts/lib/prescriptions.ts`
+  (ACTIVE_WHEN `mateIntervalH`, three LITERAL_OFF lines, the switch); `scripts/e4p-diagnose.ts`;
+  `tests/sim-mating-value.test.ts`; docs (this file, research.md and e-sources.md "Addendum: E4p mating without quotas",
+  simulation.md note and registry rows). Outputs (gitignored): `artifacts/validation/e4p/`.
+- Merged `track-e` (d74bffd: E4q's `aggressionGaps`, E3g's `experienceValue`, S31–S34 docs) once, before the final checks;
+  conflicts (research.md, e-sources.md, simulation.md, prescriptions.ts, candidates.ts, state.ts, params.gen.ts, the
+  switch list) resolved by keeping both sides, params.gen.ts regenerated. After the merge, S27 seed 48 after 2 days still
+  hashes 6005ce06d37e5df1 (switch 0), dba5143146a2b7b4 (1) and cda0c8e584113dd2 (3); counts S27 51, S27 + `matingValue`
+  1–3 47, today's model 147.
+- Final checks (merge state): `gen-params --check` clean (0 evidence-tagged literals outside the registry);
+  `tsc --noEmit` clean; `pnpm test` 842 tests, 841 pass, 0 fail, 1 skipped.

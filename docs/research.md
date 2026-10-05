@@ -3755,3 +3755,40 @@ arithmetic. No value is a model input: these are the readouts' field values.
   context.
 - mullerWrangham2004b, muller2007, wranghamWilsonMuller2006 and mouginot2024 are already cited; the lines above add
   findings.
+
+### Addendum: E4p mating without quotas (4 October 2026)
+
+Read for stage E4p (docs/staging/e4p-prereg.md): what limits copulation once the mating quota and its three literal
+gaps are gone. Every number below was checked against the downloaded text by the stage. No value is taken as a
+behavioural input; one physiological value (sperm survival, human) enters as [L].
+
+- **"4.2 (Mahale), 12.3 (Gombe) adult males per swollen female" is the operational sex ratio** [furuichiHashimoto2001]
+  (FT, Japanese, read in the original) [L]: 「性皮最大腫脹期のメス1頭あたりのオトナオスの数である発情性比は, マハレで4.2,
+  ゴンベで12.3」 (the oestrous sex ratio, adult males per female in maximal swelling), computed from demographic
+  parameters (females in oestrus 6.4% and 4.2% of the interbirth interval, Table 1): a community's adult males ÷ its
+  simultaneously maximally swollen females, not the males in her party. The only party count is Kalinzu's: 61 parties
+  with "on average 4.43 adult males and 0.92 oestrous females" (OSR 4.8), out of 16 adult males, from "the largest
+  ranging party possible" followed each day. Kalinzu's male rate (0.12 per hour, Fig. 3) comes from 4,401 five-minute
+  units and the same 43 copulations as the female rate (1,207 units, 0.43 per hour): per adult male present with a
+  maximally swollen female. This corrects E4o's reading (research.md "Addendum: E4o three small rules"; e4o-prereg §2).
+- **Taï sample** [gomesBoesch2009] (FT, PMC2663035) [H]: "the group consisted of 49 individuals, 5 adult males and 14
+  adult females. Eight of the 14 adult females were in estrous"; "Of the 39 adult male-estrous female dyads that were seen
+  together during the estrous phase of the female, 30 were observed to copulate at least once".
+- **Female response to courtship** [robertsRoberts2015] (FT, PMC4633128; Sonso 2008, "approximately 75 named
+  individuals, 10 adult males and 22 adult females", 6 adult focal males) [M]: "following the production of a sequence of
+  gestures, the dominant response type—approach for copulation—occurred in a median proportion of 0.28 of cases (IQ =
+  0.12–0.75)"; females approached more "when the rival male was absent, or was present and looking away".
+- **Sperm survival and the fertile window, humans** [wilcox1995] (Abs, PubMed 7477165) [M for humans, L for
+  chimpanzees]: 221 women, 625 cycles with urinary estimates of the day of ovulation: "Conception occurred only when
+  intercourse took place during a six-day period that ended on the estimated day of ovulation. The probability of
+  conception ranged from 0.10 when intercourse occurred five days before ovulation to 0.33 when it occurred on the day of
+  ovulation itself." Use (E4p's `matingValue` 3, `spermLifeDays`): an e-folding time of a copulation's fertilizing weight,
+  5 / ln(0.33 / 0.10) = 4.2 days (the exponential keeps 0.24 at six days where the source has none). No chimpanzee value
+  was searched beyond this stage's sources (Deschner et al. 2003, 2004 on ovulation and swelling: not verified).
+
+**Sources:**
+- *new* wilcox1995: Wilcox AJ, Weinberg CR, Baird DD 1995. Timing of sexual intercourse in relation to ovulation. Effects
+  on the probability of conception, survival of the pregnancy, and sex of the baby. *New England Journal of Medicine*
+  333(23):1517–1521. [doi:10.1056/NEJM199512073332301](https://doi.org/10.1056/NEJM199512073332301) (Abs).
+- furuichiHashimoto2001, gomesBoesch2009 and robertsRoberts2015 are already cited ("Addendum: E4o three small rules");
+  the entries above add findings and a correction.

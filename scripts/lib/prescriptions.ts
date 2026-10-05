@@ -309,6 +309,8 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   patrolStopEveryMin: { when: P => (P.leftoverRules & 2) === 0, why: 'not read while leftoverRules has bit 2: the leader stops at the waypoints and after a stranger chorus heard by a member, outside one caller-counting window (src/sim/parties.ts updatePatrols, chorusHeard)' },
   // stage E4o (bodyRules; docs/staging/e4o-prereg.md §5): a sum of bits, one per entry switched out
   guardMaxAgeY: { when: P => (P.bodyRules & 1) === 0, why: 'not read while bodyRules has bit 1: a guardian deters a charger and defends its ward while the ward cannot hold its own against that animal (E4h assessOdds below even; src/sim/candidates.ts guarded, wardHoldsOwn); a caretaker stays guardian and coalition kin at any age' },
+  // stage E4p (matingValue; docs/staging/e4p-prereg.md §5)
+  mateIntervalH: { when: P => !(P.matingValue >= 1), why: 'not read while matingValue is 1: a copulation needs the partner\'s choice and is worth the share of her cycle\'s paternity it adds (src/sim/mating.ts paternityGain, consents; candidates.ts reproduction; execution.ts mateTick); no time since a male\'s last copulation gates anything' },
 };
 
 /** One ACTIVE_WHEN rule for several entries. */
@@ -383,6 +385,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   leftoverRules: { stage: 'E4m', needs: {} },
   bodyRules: { stage: 'E4o', needs: {} },
   aggressionGaps: { stage: 'E4q', needs: {} },
+  matingValue: { stage: 'E4p', needs: {} },
   walkGait: { stage: 'E2i', needs: {} },
   youngArrival: { stage: 'E2j', needs: {}, removesNothing: 'gives animals below rgMinAge the arrival rule older animals already follow (rg.ts gate, or redecide under redecideValue 2: a trip that reaches its tree becomes feeding there when legal); every other choice stays the argmax; adds no magnitude and switches no prescription out (e2j-prereg §9-10)' },
   tripBodyCost: { stage: 'E2j', needs: { energyLedger: 1, ledgerDrive: 1, forageRate: 1 }, removesNothing: 'charges a trip\'s climbing time and a riding dependent\'s metres in forageRate\'s net energy rate (the movement\'s and the ledger\'s own speeds and costs); adds no magnitude and switches no prescription out (e2j-prereg §4)' },
@@ -524,6 +527,10 @@ export const LITERAL_OFF: { file: string; has: string; kind?: Literal['kind']; o
   { file: 'candidates.ts', has: 'aggrBit(P, 1) || time - x.lastAgg > 1.5', kind: 'interval', off: P => (P.aggressionGaps & 1) !== 0, why: 'the 1.5-h cooldown after the animal\'s own last aggression: not evaluated while aggressionGaps has bit 1 (e4q-prereg §2.1: it trims; the offers\' own scores and the target\'s answer govern repetition)' },
   { file: 'candidates.ts', has: 'aggrBit(P, 2) || time - x.lastAgg > 0.2', kind: 'interval', off: P => (P.aggressionGaps & 2) !== 0, why: 'the 0.2-h gap of a charge at strangers: not evaluated while aggressionGaps has bit 2 (e4q-prereg §2.1: inert)' },
   { file: 'candidates.ts', has: 'aggrBit(P, 4) || time - x.lastDisplay > 0.75', kind: 'interval', off: P => (P.aggressionGaps & 4) !== 0, why: 'the 0.75-h display gap: not evaluated while aggressionGaps has bit 4 (e4q-prereg §2.1: it trims; the display\'s own score against the other options governs it)' },
+  // stage E4p (matingValue; docs/staging/e4p-prereg.md §5): the three mating gaps E0b counted
+  { file: 'candidates.ts', has: 'time - x.lastMate > 0.3', kind: 'interval', off: P => P.matingValue >= 1, why: 'the female\'s 0.3-h gap after her own last copulation: with matingValue 1 the condition is short-circuited; her offer is worth the paternity share the copulation adds (src/sim/mating.ts paternityGain)' },
+  { file: 'execution.ts', has: 'WALK * 1.2, 1)) { if (c.actionTime > P.mateApproachS) { x.lastMate = Math.max(x.lastMate, world.time - MATE_INTERVAL_H + 0.5)', kind: 'interval', off: P => P.matingValue >= 1, why: 'the 0.5-h block after a failed approach backdates lastMate, which nothing reads while matingValue is 1 (no quota; a copulation needs the partner\'s choice, mating.ts consents)' },
+  { file: 'execution.ts', has: 'dominates(c, r) && time - x.lastAgg > 0.25', kind: 'interval', off: P => P.matingValue >= 1, why: 'the guard\'s 0.25-h gap between chases: with matingValue 1 the second branch of the line chases while the rival courts her or stays beside her, with no gap' },
 ];
 
 const HOUR = /\b(?:world\.)?hour\s*(?:>=|<=|<|>)\s*(\d+(?:\.\d+)?)/g;

@@ -12,6 +12,7 @@ import { drinkTick, waterOn } from './water';
 import { darkOn, paceAt, visionNow } from './light';
 import { noteFeeders } from './departure';
 import { doTransfer, recordCopulation } from './reproduction';
+import { consentOnArrival, consents, matingValueOn } from './mating';
 import { IMPULSE_HUNT, IMPULSE_PATROL, forget } from './perception';
 import { clamp, hash01, random } from './rng';
 import type { ParamId } from './params.gen';
@@ -402,7 +403,12 @@ function onStart(world: World, c: Chimp): void {
       break;
     }
     case 'mate':
-      if (o) { const ox = ix(o); ox.mateAsk = c.id; ox.mateAskAt = time; if (c.sex === 'male') interrupt(world, o, `${c.name} approaches to mate`); }
+      if (o) {
+        const ox = ix(o); ox.mateAsk = c.id; ox.mateAskAt = time;
+        if (c.sex === 'male') interrupt(world, o, `${c.name} approaches to mate`);
+        // stage E4p (matingValue): a copulation needs the partner's choice, so a female's presenting asks the male too
+        else if (matingValueOn(paramsOf(world)) && !consents(o, c)) interrupt(world, o, `${c.name} presents to mate`);
+      }
       break;
     case 'guard':
       if (o) { ix(o).guardBy = c.id; x.interId = startInteraction(world, 'guard', c, o.id, [c.id, o.id], 0.4).id; }
@@ -547,6 +553,17 @@ function departAttempt(world: World, c: Chimp): void {
  */
 export const departTap: { fn: ((c: Chimp, ev: 'attempt' | 'alone' | 'free' | 'lapsed' | 'recruited' | 'given-up', n: number) => void) | null } = { fn: null };
 
+/**
+ * Stage E4p diagnosis (scripts/e4p-diagnose.ts; docs/staging/e4p-prereg.md §3): called inside the acts where the mating
+ * gaps bind, when every other condition holds. 'chase': a guarding male sees a rival that qualifies for a chase (courting
+ * or beside the guarded female, dominated by him), `a` the hours since his own last aggression (the 0.25-h gap's literal
+ * stays on its own line: the reader compares). 'copGuard', 'copConsort', 'copMate': a copulation is due inside guarding,
+ * consorting or the mate act (partners close, swelling, no refusal), `blocked` whether the male's mateIntervalH holds it,
+ * `a` the hours since his last copulation; `o` the partner. Null in every simulation; it reads only and draws nothing.
+ */
+export type MateTraceKind = 'chase' | 'copGuard' | 'copConsort' | 'copMate';
+export const mateTrace: { on: ((kind: MateTraceKind, c: Chimp, o: Chimp, blocked: boolean, a: number) => void) | null } = { on: null };
+
 /** The initiator stands and checks; true while the attempt is still open (or was just given up). */
 function departWait(world: World, c: Chimp): boolean {
   const P = paramsOf(world), x = ix(c), alive = index(world).alive;
@@ -627,6 +644,7 @@ function waitForParty(world: World, c: Chimp, gx: number, gz: number): boolean {
 export function executeAction(world: World, c: Chimp): void {
   // stage E2i (walkGait): the body's walking speed and the unchanged running speed (gait.ts; walkMps and runMps when off)
   const P = paramsOf(world), WALK = walkSpeedOf(world, c, P), RUN = runSpeedOf(c, P), MATE_INTERVAL_H = P.mateIntervalH;
+  const mv = matingValueOn(P); // stage E4p: no copulation inside guarding or consorting, no gap on the guard's chase
   const x = ix(c);
   c.actionTime += TICK_SECONDS;
   // males pant-hoot around travel (1.4 calls per male-hour, 43% after travelling; mitaniNishida1993) [M]; fewer where
@@ -809,10 +827,15 @@ export function executeAction(world: World, c: Chimp): void {
           const r = idx.byId.get(sid);
           if (!r || !r.alive || r === c || r.sex !== 'male' || r.age < 10 || r.troopId !== c.troopId) continue;
           const courting = (r.action === 'mate' || r.action === 'follow' || r.action === 'consort' || r.action === 'groom') && r.targetId === o.id;
-          if ((courting || hd(r, o) < 2.5) && dominates(c, r) && time - x.lastAgg > 0.25) { x.rivalId = r.id; interrupt(world, c, `${r.name} is close to ${o.name}`); break; }
+          if (mateTrace.on && (courting || hd(r, o) < 2.5) && dominates(c, r)) mateTrace.on('chase', c, r, false, time - x.lastAgg); // stage E4p diagnosis
+          // stage E4p (matingValue): no gap after his own last aggression; he chases while the rival courts or stays beside her
+          if ((courting || hd(r, o) < 2.5) && dominates(c, r) && time - x.lastAgg > 0.25 || (mv && (courting || hd(r, o) < 2.5) && dominates(c, r))) { x.rivalId = r.id; interrupt(world, c, `${r.name} is close to ${o.name}`); break; }
         }
       }
-      if (hd(c, o) < 2.5 && time - x.lastMate > MATE_INTERVAL_H && o.swelling >= 0.8 && o.action !== 'flee') copulate(world, c, o);
+      if (mateTrace.on && !mv && hd(c, o) < 2.5 && o.swelling >= 0.8 && o.action !== 'flee') mateTrace.on('copGuard', c, o, !(time - x.lastMate > MATE_INTERVAL_H), time - x.lastMate); // stage E4p diagnosis
+      // stage E4p (matingValue): no copulation inside the act; the pair copulates when she presents to him (mateTick: his
+      // guarding is his consent)
+      if (!mv && hd(c, o) < 2.5 && time - x.lastMate > MATE_INTERVAL_H && o.swelling >= 0.8 && o.action !== 'flee') copulate(world, c, o);
       return;
     }
     case 'consort': {
@@ -824,7 +847,8 @@ export function executeAction(world: World, c: Chimp): void {
       } else {
         const d = Math.hypot(x.gx - c.position[0], x.gz - c.position[2]);
         if (hd(c, o) > P.consortWaitM) face(c, o); else moveTo(world, c, x.gx, 0, x.gz, WALK * 0.9, d < 4 ? d : 2);
-        if (hd(c, o) < 2.5 && time - x.lastMate > MATE_INTERVAL_H && o.swelling >= 0.6) copulate(world, c, o);
+        if (mateTrace.on && !mv && hd(c, o) < 2.5 && o.swelling >= 0.6) mateTrace.on('copConsort', c, o, !(time - x.lastMate > MATE_INTERVAL_H), time - x.lastMate); // stage E4p diagnosis
+        if (!mv && hd(c, o) < 2.5 && time - x.lastMate > MATE_INTERVAL_H && o.swelling >= 0.6) copulate(world, c, o); // stage E4p: as in guarding
       }
       return;
     }
@@ -1214,11 +1238,24 @@ function mateTick(world: World, c: Chimp, o: Chimp | undefined): void {
   const P = paramsOf(world), WALK = walkSpeedOf(world, c, P), MATE_INTERVAL_H = P.mateIntervalH; // stage E2i (walkGait)
   if (!o || !o.alive) return finish(world, c);
   const x = ix(c);
+  // (stage E4p, matingValue: the backdated stamp below is not read; nothing gates a male by the time since his last copulation)
   if (!moveTo(world, c, o.position[0], o.position[1], o.position[2], WALK * 1.2, 1)) { if (c.actionTime > P.mateApproachS) { x.lastMate = Math.max(x.lastMate, world.time - MATE_INTERVAL_H + 0.5); finish(world, c); } return; }
   face(c, o);
   const m = c.sex === 'male' ? c : o, f = c.sex === 'male' ? o : c;
+  if (matingValueOn(P)) {
+    // stage E4p (matingValue; docs/staging/e4p-prereg.md §5): a copulation needs the partner's choice (its act is mating
+    // with this animal, or for a male guarding or consorting with her), made when the approach interrupted it; no quota.
+    // The partner's own mate act ends with it, so one agreement is one copulation
+    const agree = consents(o, c);
+    if (mateTrace.on && f.swelling >= 0.6) mateTrace.on('copMate', c, o, !agree, world.time - ix(m).lastMate); // stage E4p diagnosis
+    if (agree && f.swelling >= 0.6) { copulate(world, m, f); if (o.action === 'mate' && o.targetId === c.id) finish(world, o); return finish(world, c); }
+    // matingValue 2: on arriving beside the partner, ask it (again): its own offer is now in range (iteration 2's correction)
+    if (!agree && x.phase === 0 && consentOnArrival(P)) interrupt(world, o, `${c.name} is beside me to mate`, true);
+  } else {
   const refusing = f.action === 'flee' || f.action === 'charge' || f.action === 'attack' || f.action === 'submit';
+  if (mateTrace.on && !refusing && f.swelling >= 0.6) mateTrace.on('copMate', c, o, !(world.time - ix(m).lastMate > MATE_INTERVAL_H), world.time - ix(m).lastMate); // stage E4p diagnosis
   if (!refusing && world.time - ix(m).lastMate > MATE_INTERVAL_H && f.swelling >= 0.6) { copulate(world, m, f); return finish(world, c); }
+  }
   if (c.actionTime > P.mateApproachS || x.phase > 8) { x.lastMate = Math.max(x.lastMate, world.time - MATE_INTERVAL_H + 0.5); finish(world, c); }
   x.phase++;
 }
