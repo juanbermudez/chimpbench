@@ -4626,3 +4626,14 @@ energy-diagnose and rhythm-metrics, 5 seeds, 30 + 60 days; judged with `integrat
 **Predictions (against the S27 group; moderate confidence unless stated).** 42 (high). Viability and night safety pass.
 Sums inside noise. E5g's watch list within the group's spread (low): T-COM-2, T-COM-9, T-SOC-9 and juveniles' eating time
 (E5g's quick z −2.2). T-COM-11 stays below its band (0.25–0.55; no gap causes it, E5g).
+
+## S38 confirm (registered 4 October 2026 before its run)
+
+**S38 = S34 + E3h's `tripBeliefs` 3** (a correction: an empty listed crown the animal has seen is remembered for 240 h
+instead of erased, and a trip to a caller walks to the caller's crown and feeds there; 45). **Reference group:** the S27
+confirm group. The arm runs from bench-run2 moved to this commit. Keep rule: for a correction; rare rows per amendment 3;
+night safe. Bench, energy-diagnose and rhythm-metrics, 5 seeds, 30 + 60 days; judged with `integrator/judge_s27group.py`.
+
+**Predictions (against the S27 group; moderate confidence unless stated).** 45 (high). Viability and night safety pass.
+Sums inside noise. Walking at or below the group's mean for males, nursing mothers and juveniles (E3h's quick run: −0.15
+to −0.20 km on S31). Reserves of every class within the group's spread or better.
