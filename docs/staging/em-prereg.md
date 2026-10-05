@@ -443,3 +443,60 @@ Which food (exploratory): jev peaks on the higher-rate food option in 50% old an
   situations) GLiNER now takes it 89–91% of the time at every light level, so light adds little (+0.02).
 - By the registered rule GLiNER is still *confused* (reserves −0.5 and heat −0.7 points, both wrong-way and tiny) and
   Jev still *help* (six probes right, agreement +9.0 points, CI +4.7, +13.3).
+
+
+### M1 iteration 2 in the loop (G2; both seeds, after the JSON-safety fix: no context refused)
+
+All arms, final (`artifacts/em/m3/report.md`):
+
+| arm | animals | feed | travel | groom | rest+groom | feed min/d | kcal/d | reserve %/d | km/d (fixes) | night out % | deaths |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| R | 10 | 0.33 | 0.09 | 0.14 | 0.54 | 231 | 1603 | 0.016 | 2.17 | 2.86 | 0 |
+| A | 10 | 0.35 | 0.17 | 0.11 | 0.45 | 247 | 1599 | -0.148 | 3.77 | 0.96 | 0 |
+| G | 10 | 0.18 | 0.04 | 0.21 | 0.65 | 127 | 1028 | -1.050 | 0.93 | 80.46 | 0 |
+| AG | 10 | 0.32 | 0.12 | 0.13 | 0.52 | 226 | 1608 | -0.030 | 3.09 | 2.09 | 0 |
+| GG | 10 | 0.16 | 0.03 | 0.17 | 0.68 | 111 | 862 | -1.326 | 0.68 | 80.68 | 0 |
+| G2 | 10 | 0.17 | 0.04 | 0.26 | 0.54 | 122 | 945 | -1.064 | 2.14 | 2.77 | 0 |
+
+| row (band) | R | A | G | AG | GG | G2 |
+|---|---|---|---|---|---|---|
+| T-ACT-1 feeding (0.33–0.5) | 5/10 | 5/10 | 0/10 | 5/10 | 0/10 | 0/10 |
+| T-ACT-2 travel (0.12–0.25) | 2/10 | 10/10 | 0/10 | 3/10 | 0/10 | 0/10 |
+| T-ACT-3 grooming (0.08–0.18) | 8/10 | 9/10 | 3/10 | 9/10 | 5/10 | 1/10 |
+| T-ACT-4 rest + groom (0.3–0.47) | 3/10 | 5/10 | 1/10 | 1/10 | 1/10 | 2/10 |
+| T-RNG-4 day range (5-min fixes) (1.5–3.5) | 3/4 | 2/4 | 0/4 | 2/4 | 0/4 | 2/4 |
+| T-ENE-2 feeding min/day (250–370) | 2/2 | 2/2 | 0/2 | 1/2 | 0/2 | 0/2 |
+
+G2's 8552 decisions: aggression 40%, affiliative 29%, rest 11%, greet 7%, nest 5%, feed 4% (the rules' argmax on the same menus: food-trip 59%, rest 13%, feed 11%, greet 4%).
+
+- **The night is fixed.** With the nest named as sleep and rest as a pause, GLiNER's focal animals spend 2.8% of the
+  night out of a nest (rules 2.9%; wording 1: 80%) and walk as far as the rules' animals (2.1 km a day).
+- **The day is not.** They eat 945 kcal a day against 1,603 and lose 1.06% of their store a day; feeding, travel and
+  feeding minutes stay out of their bands for every animal (the lactating female of seed 7: 231 kcal a day). GLiNER almost
+  never takes a trip to food (1% of choices; the rules' argmax 45–68%), and charges, displays and grooms instead
+  (aggression 29–48% of choices against the rules' 0–1%; the food trips' new purpose "food, eases hunger" did not move it).
+
+## Verdict (5 October 2026)
+
+**GLiNER as it is cannot be the chooser on Track E's state.** Untuned (the served model) it agrees with the rules'
+choice on 26–28% of decision points (chance 19%; the rules' own value 81%). It reads the drive words and the option
+texts, not the body's numbers: moving reserves, deficit, sleep pressure, water or heat alone changes its choice by at
+most about a point. In the app's loop the five focal animals on it ate two thirds of the rules' energy and lost about 1%
+of their store a day (rules: none), with grooming and repeated charges taking the place of trips to food. Wording that
+follows Track E's mechanics (iteration 2) puts them back in their nests at night (out of a nest 2.8% of the night
+against 80%) but does not make them forage (945 kcal a day, −1.06% a day). The round-3 adapter, fine-tuned on the
+old observation, reads the new option values hard (it chooses to eat three times as often: 9% → 28%) but not the numbers either. Jev, behind the
+same provider setting, does read the numbers (reserves +3.5, sleep pressure +14 points) and gains 6–9 points of agreement
+from the new observation.
+
+**What fine-tuning on the new state would take.** (1) Contexts: S39 + `observeState` 1 decision points from
+development worlds with this stage's sampler, about 1,500–2,000 across classes, light phases and the rules' action
+families (feeding, trips, nesting and rest at least at their rules shares; rounds 1–3 drew 85% of their contexts from
+menus with an aggressive or affiliative option and 15% from maintenance-only menus, scripts/ft-contexts.ts QUOTA), in
+wording 2. (2) Labels: the chimp-field-expert labels made with the body and values in view (rounds
+1–3: 1,200 contexts, 10% double-labeled, ceiling about 0.83), plus contrastive state pairs like M2's probes (about 600
+situations at three levels) labeled by the direction the physiology implies, so that the adapter learns to read the
+numbers; Jev's outputs cannot be used (TypeSafe MCA §2.3(b)). (3) Evaluation: M2's sample and probes on held-out seeds and
+M3's loop with RG's gate. Training as round 3 (about 26 minutes for three adapters on an A6000). Independently of the
+model, the app's loop needs an intention: asked at every decision point, even the rules' own argmax walks 1.7 times as
+far (A); with RG's gate it matches the rules (AG).
