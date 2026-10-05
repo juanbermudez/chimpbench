@@ -180,7 +180,12 @@ export interface SeedCounts {
   dispersal: { transfers: number; datedInWindow: number; observed: number | null };
   patrols: { truth: number; pat9: { ok: number[]; top: number[] } | null };
   check: { deathsPart: Record<string, number> | null; deathsWorld: Record<string, number>; deathsMatch: boolean | null;
+    /** Killings by the counter (stats), by death causes in the world, by the observer's truth record (victims) and by the part (T-LET-1 truth × community-years). */
     killingsStats: number; killingsWorld: number; killingsObserver: number; killingsPart: number | null; killingsMatch: boolean;
+    /** Extra entries in the observer's truth.kills beyond one per victim (an infanticidal attack's start recorded as a kill). */
+    observerDuplicates: number;
+    /** Victims of team-detected 'kill'/'infanticide' events (src/field/metrics.ts:1426 counts them as observed killings) who did not die of a killing. */
+    observedNotKilled: number;
     communityYearsPart: number | null; energyDeaths: number | null };
   /** Which counts are lower bounds (records capped or dropped). */
   lower: string[];
@@ -231,7 +236,11 @@ export function countSeed(inp: SeedInput): SeedCounts {
   const births = w.chimps.filter(c => c.birthTime > t0 && c.birthTime <= t1).length;
 
   // killings
-  const truthKill = new Map(T.kills.map(k => [k.victim, k]));
+  // the observer's truth record of each killing, one per victim: it also takes an infanticidal attack's own start
+  // (execution.ts:302 gives it kind 'infanticide'; src/field/protocols.ts:177 keeps every 'infanticide' interaction of the
+  // scan), so one infanticide can appear twice; the kill is the later entry
+  const truthKill = new Map<number, (typeof T.kills)[number]>();
+  for (const k of T.kills) { const had = truthKill.get(k.victim); if (!had || k.t >= had.t) truthKill.set(k.victim, k); }
   const victims: Victim[] = [];
   for (const c of dead) {
     const kind = killingKind(c.causeOfDeath);
@@ -393,7 +402,7 @@ export function countSeed(inp: SeedInput): SeedCounts {
       intercommunity: inter.length, maleVictims: victims.filter(v => v.sex === 'male').length, withRecord: withRec.length,
       onPatrol: inter.filter(v => v.onPatrol).length, odds: withRec.map(v => v.attackers / Math.max(1, v.defenders)), victims },
     injury: { serious: serious.size, strangerAttacks: intergroupKills + stranger.size, strangerAttacksNonLethal: stranger.size, woundsCounter: st.injuries - s0.injuries,
-      infanticideAttacks: Math.max(0, (T.interactions.infanticide ?? 0) - T.kills.filter(k => k.kind === 'infanticide').length), strangerActs: T.interactions.intergroup ?? 0,
+      infanticideAttacks: Math.max(0, (T.interactions.infanticide ?? 0) - infKills), strangerActs: T.interactions.intergroup ?? 0,
       complicationsOfWounds: complications },
     deaths: { all: dead.length, byCause, disease, aggression, other, respiratory, firstYear, births },
     family: { motherDeaths, motherDeathsWithDependents: withDependents, dependents, adopted, notAdopted, adoptionUnknown: unknown, carryOpportunities: carryOpp, carriesRecorded: carries,
@@ -405,7 +414,9 @@ export function countSeed(inp: SeedInput): SeedCounts {
     dispersal: { transfers, datedInWindow: dated.size, observed: inp.part ? inp.part.observedTransfers : null },
     patrols: { truth: T.patrols.length, pat9: inp.part?.pat9 ?? null },
     check: { deathsPart, deathsWorld, deathsMatch: deathsPart ? same(deathsPart, deathsWorld) : null,
-      killingsStats, killingsWorld, killingsObserver: T.kills.length, killingsPart, killingsMatch: killingsWorld === killingsStats && killingsWorld === T.kills.length && (killingsPart === null || killingsPart === killingsWorld),
+      killingsStats, killingsWorld, killingsObserver: truthKill.size, observerDuplicates: T.kills.length - truthKill.size,
+      observedNotKilled: new Set(rec.events.filter(e => (e.kind === 'kill' || e.kind === 'infanticide') && !killingKind(byId.get(e.target)?.causeOfDeath ?? null)).map(e => e.target)).size, killingsPart,
+      killingsMatch: killingsWorld === killingsStats && killingsWorld === truthKill.size && (killingsPart === null || killingsPart === killingsWorld),
       communityYearsPart: inp.part?.let1 ? inp.part.let1.den : null,
       energyDeaths: inp.part?.deathsByClass ? Object.values(inp.part.deathsByClass).reduce((a, b) => a + b, 0) : null },
     lower,
@@ -425,7 +436,7 @@ export interface Pool {
   arrivals: number; arrivalsDatedWindow: number; epidemics20: number; outbreakCases: number; outbreakDeaths: number; attack20: number[]; mortality20: number[];
   snaredRun: number; snareDeaths: number; prevalenceNum: number; prevalenceDen: number;
   transfers: number; truthPatrols: number; pat9ok: number[]; pat9top: number[];
-  checksFailed: string[];
+  observerDuplicates: number; observedNotKilled: number; checksFailed: string[];
 }
 
 export function pool(list: SeedCounts[], label = ''): Pool {
@@ -433,7 +444,7 @@ export function pool(list: SeedCounts[], label = ''): Pool {
     maleVictims: 0, withRecord: 0, onPatrol: 0, odds: [], serious: 0, strangerAttacks: 0, strangerAttacksNonLethal: 0, woundsCounter: 0, infanticideAttacks: 0, strangerActs: 0, complicationsOfWounds: 0,
     deaths: 0, byCause: {}, disease: 0, aggression: 0, other: 0, respiratory: 0, firstYear: 0, births: 0, motherDeaths: 0, motherDeathsWithDependents: 0, dependents: 0, adopted: 0, notAdopted: 0,
     adoptionUnknown: 0, carryOpportunities: 0, carriesRecorded: 0, bereaved: 0, motherDeathsBereaving: 0, arrivals: 0, arrivalsDatedWindow: 0, epidemics20: 0, outbreakCases: 0, outbreakDeaths: 0,
-    attack20: [], mortality20: [], snaredRun: 0, snareDeaths: 0, prevalenceNum: 0, prevalenceDen: 0, transfers: 0, truthPatrols: 0, pat9ok: [], pat9top: [], checksFailed: [] };
+    attack20: [], mortality20: [], snaredRun: 0, snareDeaths: 0, prevalenceNum: 0, prevalenceDen: 0, transfers: 0, truthPatrols: 0, pat9ok: [], pat9top: [], observerDuplicates: 0, observedNotKilled: 0, checksFailed: [] };
   for (const s of list) {
     p.seeds++;
     const e = s.exposure; p.communityYears += e.communityYears; p.chimpYears += e.chimpYears; p.infantYears += e.infantYears; p.runCommunityYears += e.runCommunityYears; p.runChimpYears += e.runChimpYears;
@@ -448,7 +459,7 @@ export function pool(list: SeedCounts[], label = ''): Pool {
     const x = s.disease; p.arrivals += x.arrivals; p.arrivalsDatedWindow += x.arrivalsDatedWindow; p.epidemics20 += x.epidemics20;
     for (const o of x.outbreaks) { p.outbreakCases += o.cases; p.outbreakDeaths += o.deaths; if ((o.attack ?? 0) >= 0.2) { p.attack20.push(o.attack!); p.mortality20.push(o.mortality ?? 0); } }
     p.snaredRun += s.snares.injuredRun; p.snareDeaths += s.snares.deathsWindow; p.prevalenceNum += s.snares.prevalenceNum; p.prevalenceDen += s.snares.prevalenceDen;
-    p.transfers += s.dispersal.transfers; p.truthPatrols += s.patrols.truth;
+    p.transfers += s.dispersal.transfers; p.truthPatrols += s.patrols.truth; p.observerDuplicates += s.check.observerDuplicates; p.observedNotKilled += s.check.observedNotKilled;
     if (s.patrols.pat9) { p.pat9ok.push(...s.patrols.pat9.ok); p.pat9top.push(...s.patrols.pat9.top); }
     if (s.check.deathsMatch === false) p.checksFailed.push(`${label} s${s.seed}: deaths by cause differ between the part and the world`);
     if (!s.check.killingsMatch) p.checksFailed.push(`${label} s${s.seed}: killings differ (stats ${s.check.killingsStats}, world ${s.check.killingsWorld}, observer ${s.check.killingsObserver}, part ${s.check.killingsPart})`);
@@ -547,7 +558,9 @@ export function report(groups: GroupResult[], targets: Parameters<typeof bandOf>
     out.push(`- ${g.label}: deaths by cause, part (viability readout) = world (dead chimps in the window) in ${seeds.filter(s => s.check.deathsMatch).length} of ${seeds.length} seeds;`
       + ` killings, part (T-LET-1 truth × community-years) = world.stats = world causes = observer truth records in ${seeds.filter(s => s.check.killingsMatch).length} of ${seeds.length};`
       + ` energy readout deaths = world in ${seeds.filter(s => s.check.energyDeaths === s.deaths.all).length} of ${seeds.length};`
-      + ` transfers dated from the animals' records = the counter in ${seeds.filter(s => s.dispersal.datedInWindow === s.dispersal.transfers).length} of ${seeds.length}${fails.length ? `. Failures: ${fails.join('; ')}` : ''}`);
+      + ` transfers dated from the animals' records = the counter in ${seeds.filter(s => s.dispersal.datedInWindow === s.dispersal.transfers).length} of ${seeds.length}`
+      + `; the observer's truth.kills holds ${g.pool.observerDuplicates} extra entr${g.pool.observerDuplicates === 1 ? 'y' : 'ies'} (an infanticidal attack's start recorded beside its kill)`
+      + ` and its observed killings include ${g.pool.observedNotKilled} animal${g.pool.observedNotKilled === 1 ? '' : 's'} that did not die of a killing${fails.length ? `. Failures: ${fails.join('; ')}` : ''}`);
   }
   return out.join('\n');
 }

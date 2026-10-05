@@ -39,7 +39,13 @@ test('killings by cause, with the observer truth record, patrols and the second 
   at(w, t0 + 20 * DAY);
   const inf = w.chimps.find(c => c.alive && c.troopId === 3 && c.age < 1.5 && c.motherId > 0)!;
   w.stats.killings++; killChimp(w, inf, 'infanticide by Tavuni (West community)', 3);
+  // the observer also keeps the attack's own start (kind infanticide) as a kill record: one victim, two entries
+  rec.truth.kills.push({ t: w.time - 30 / 3600, victim: inf.id, victimSex: inf.sex, victimAge: inf.age, attackers: [1], defenders: 0, troop: 1, victimTroop: 3, kind: 'infanticide' });
   rec.truth.kills.push({ t: w.time, victim: inf.id, victimSex: inf.sex, victimAge: inf.age, attackers: [1], defenders: 0, troop: 1, victimTroop: 3, kind: 'infanticide' });
+  rec.truth.interactions.infanticide = 3; // two attacks started (one failed), and the kill's flash
+  // a team saw the failed attack's start: the observer's killings() would count its surviving target (metrics.ts:1426)
+  const survivor = w.chimps.find(c => c.alive && c.age < 1.5 && c.motherId > 0)!;
+  rec.events.push({ id: 1, t: w.time, end: -1, kind: 'infanticide', actor: 1, target: survivor.id, parts: [1, survivor.id], troop: 1, team: 0, detect: 1, x: 0, z: 0 });
   // a fight death within the community (no stats.killings, conflict.ts:255)
   at(w, t0 + 30 * DAY);
   const v3 = adultMale(w, 1);
@@ -59,6 +65,10 @@ test('killings by cause, with the observer truth record, patrols and the second 
   assert.equal(n.killings.maleVictims, 2 + (inf.sex === 'male' ? 1 : 0));
   assert.equal(n.check.killingsStats, 2, 'stats.killings counts gang kills and infanticides only');
   assert.equal(n.check.killingsWorld, 2);
+  assert.equal(n.check.killingsObserver, 2, 'one truth record per victim');
+  assert.equal(n.check.observerDuplicates, 1);
+  assert.equal(n.check.observedNotKilled, 1);
+  assert.equal(n.injury.infanticideAttacks, 2, 'interactions of kind infanticide less the kills\' own flash');
   assert.equal(n.check.killingsPart, 2);
   assert.ok(n.check.killingsMatch);
   assert.equal(n.check.deathsMatch, true);
