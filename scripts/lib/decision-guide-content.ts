@@ -72,7 +72,7 @@ export const LITERALS: { key: string; file: string; kind: 'hour' | 'probability'
   { key: 'lit:chorusGap', file: 'candidates.ts', kind: 'interval', has: '!cv && time - x.lastCall > 1.5', label: 'chorus at most once per 1.5 h after a call' },
   { key: 'lit:figCallGap', file: 'execution.ts', kind: 'interval', has: 'c.age >= 12 && time - x.lastCall > 0.75', label: 'arrival pant-hoot at most once per 0.75 h after a call' },
   { key: 'lit:foodGruntGap', file: 'execution.ts', kind: 'interval', has: 'time - x.lastFoodCall > 0.3', label: 'food grunt at most once per 0.3 h' },
-  { key: 'lit:callGap', file: 'candidates.ts', kind: 'interval', has: 'const callReady = time - x.lastCall > 0.5', label: 'food and reunion calls at most once per 0.5 h after a call' },
+  { key: 'lit:callGap', file: 'candidates.ts', kind: 'interval', has: 'callGapOn(P, 1)) || time - x.lastCall > 0.5', label: 'food and reunion calls at most once per 0.5 h after a call' },
   { key: 'lit:alarmPenalty', file: 'candidates.ts', kind: 'bonus', has: '(time - x.lastCall < 0.03 ? 0.4 : 0)', label: 'alarm call −0.4 within 1.8 min of a call', judgement: true },
   { key: 'lit:alarmHoo', file: 'execution.ts', kind: 'interval', has: 'c.actionTime % 60 === 0', label: 'an alarm hoo every 60 s while alarming', judgement: true },
   { key: 'lit:displayGap', file: 'candidates.ts', kind: 'interval', has: 'time - x.lastDisplay > 0.75', label: 'a display at most once per 0.75 h' },

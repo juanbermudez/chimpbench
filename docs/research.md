@@ -3792,3 +3792,37 @@ behavioural input; one physiological value (sperm survival, human) enters as [L]
   333(23):1517–1521. [doi:10.1056/NEJM199512073332301](https://doi.org/10.1056/NEJM199512073332301) (Abs).
 - furuichiHashimoto2001, gomesBoesch2009 and robertsRoberts2015 are already cited ("Addendum: E4o three small rules");
   the entries above add findings and a correction.
+
+### Addendum: E5g calls and alarms (4 October 2026)
+
+Read for stage E5g (docs/staging/e5g-prereg.md): how wild chimpanzees repeat alarm calls at a snake and when they stop,
+against the model's literal alarm cadence (a hoo every 60 s of an alarm act) and repeat penalty (−0.4 within 1.8 min of
+the animal's own last call). Every number below was read in the full text named; none is a model input.
+
+- **Alarm calls at a moving python model, Budongo Sonso** [schel2013b] (FT, PMC3797826, CC BY) [M]: January 2010 –
+  December 2011; community of 73 (11 adult males, 23 adult females, 3 sub-adult males, 11 sub-adult females, 25 juveniles
+  and infants; adults "above 15 years of age"); 13 focal individuals in 27 trials (sexes not in the main text); 1,273
+  focal alarm calls (876 soft huus, 229 alarm huus, 168 waa barks). "Within calling bouts, chimpanzee alarm calls are
+  commonly repeated in sequences, with our data revealing a mean duration of 2.49 s (SD = 3.4 s) between individual
+  calls"; "The end of a calling bout was defined by the last call before a period of at least 30 sec silence". Stopping:
+  "when callers stopped calling, it was significantly more likely that all recipients were safe (aware of snake, more than
+  10 m away from it, or up in a tree ...) compared to chance (median = 100.00% vs. 40.42%; z = 2.54, N = 11, p = .011)";
+  the callers' own risk did not explain stopping (z = 1.07, N = 11, p = .284). Soft huus at discovery came "irrespective of
+  the presence of an audience"; alarm huus and waa barks rose in the 30 s after a friend arrived (9 of 87 caller–arrival
+  dyads; friendship χ² = 9.68, p = 0.002).
+- **Alert hoos come in bouts** [crockford2018] (FT, PMC5990785) [M]: alert hoos (to a viper, a viper model or a snare) were
+  emitted in bouts of more than one call in 38 of 40 cases, at longer inter-call intervals than travel hoos.
+- **Alarm calls track the audience's knowledge, Budongo Sonso** [crockford2012] (cited in data/targets.json for T-COM-11;
+  not re-read: the publisher copy is behind a bot check and the St Andrews repository copy, hdl 10023/4314, returned an
+  error on 4 October 2026) [H, as tagged by the row]: viper model, 2008–2010, 33 individuals, alert hoos in 46 of 111
+  individual encounters; receiver knowledge lowers calling (−0.96, p = 0.030), as recorded in the row.
+
+**Sources:**
+- *new* schel2013b: Schel AM, Townsend SW, Machanda Z, Zuberbühler K, Slocombe KE 2013. Chimpanzee alarm call production
+  meets key criteria for intentionality. *PLoS ONE* 8(10):e76674.
+  [doi:10.1371/journal.pone.0076674](https://doi.org/10.1371/journal.pone.0076674) (FT, PMC3797826). Not the same paper as
+  schel2013 (food calls).
+- *new* crockford2012: Crockford C, Wittig RM, Mundry R, Zuberbühler K 2012. Wild chimpanzees inform ignorant group
+  members of danger. *Current Biology* 22(2):142–146. [doi:10.1016/j.cub.2011.11.053](https://doi.org/10.1016/j.cub.2011.11.053)
+  (cited in data/targets.json; full text not re-read this stage).
+- crockford2018 is already cited ("Quiet hoo variants"); the line above adds a finding.
