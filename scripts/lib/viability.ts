@@ -1,8 +1,8 @@
 // Viability of one world on simulation truth, for scripts/e-bench.ts (Track E; the C13 guard and the C8c gate G2):
 // births, deaths, starvation deaths and the living population over the scored window, plus the hunger medians the C13
-// guard read. The world is replayed without the observer: the observer never changes the world and the simulation is
-// deterministic, so this world is tick-for-tick the one scripts/field-metrics.ts scored on the same seed, profile and
-// overrides. (src/field/run.ts does not hand its world out, and editing it would move the frozen protocol hash.)
+// guard read. e-bench's single pass steps it on its own observed world (viabilityStart/Step/Finish); runViability
+// replays a world without the observer (e-bench --legacy): the observer never changes the world and the simulation is
+// deterministic, so both read the same world tick for tick (checked equal on the quick run, 5 October 2026).
 import { createWorld, tickWorld } from '../../src/simulation';
 import type { Overrides, Profile } from '../../src/sim/params';
 import type { World } from '../../src/types';

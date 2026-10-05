@@ -4,12 +4,16 @@
 //   2. summed band distance on held-out target rows    (how close where it may not)
 //   3. the prescription count                           (how much of that closeness is prescribed; E0 ledger)
 //   plus viability: births, deaths, births ÷ deaths, starvation deaths, living at the end, per seed.
-// It wraps the field scorecard: scripts/field-metrics.ts runs unchanged in a child process (same observer, pool, scorer
-// and instrument bar; sealed rows stay sealed), then each world is replayed without the observer for viability
-// (scripts/lib/viability.ts). Band distance: scripts/lib/band-distance.ts. Prescriptions: scripts/lib/prescriptions.ts.
+// One simulation per seed (track E part E1, 5 October 2026; scripts/lib/bench-run.ts): the field observer's run of
+// src/field/run.ts (same observer, team sets, experiments, metrics, pool, scorer and instrument bar; sealed rows stay
+// sealed), with viability, the energy readouts (energy-diagnose.ts's), the rhythm readouts (rhythm-metrics.ts's) and the
+// simulation-truth target rows (scripts/lib/truth-rows.ts) read from the same world in the same loop. The scorecard is
+// identical to scripts/field-metrics.ts's, viability to the old replay's, rhythm byte-identical to rhythm-metrics.ts's,
+// energy identical per seed to energy-diagnose.ts's (pooled floats to ~1e-10: seed totals are summed after each seed).
+// Band distance: scripts/lib/band-distance.ts. Prescriptions: scripts/lib/prescriptions.ts.
 //
 //   pnpm exec tsx scripts/e-bench.ts --quick   [--params '{"id":v}'] [--workers 2] [--out artifacts/validation/e/<label>] [--compare other.json]
-//   pnpm exec tsx scripts/e-bench.ts --confirm …    # the deciding benchmark for now
+//   pnpm exec tsx scripts/e-bench.ts --confirm …    # the deciding benchmark when the rows score in 60 days
 //   pnpm exec tsx scripts/e-bench.ts --rescore artifacts/validation/e/<label>.json [--compare other.json]   # re-derive from a saved run, no simulation
 //
 // Modes (field profile; user, 4 October 2026: work up from 60 days to 6, 12 and 24 months, a longer horizon only when
@@ -24,10 +28,23 @@
 // Rows that need a year of observation (annual ranges, statistics across months, life tables, rare events per year:
 // NEEDS_YEAR below) are reported as "insufficient" in shorter runs and left out of the sums; their count is printed
 // beside each headline number, so a before and an after run of the same mode sum over the same rows.
-// --seeds, --days N and --burn-in N override a mode (labelled custom). --reuse keeps <out>.scorecard.json and the
-// viability of <out>.json when they were made with the same settings (after an interrupted run). --no-viability skips
-// the replay. Writes <out>.json, <out>.md, <out>.scorecard.{json,md,log}. Development seeds only (AGENTS.md lists the
+// --seeds, --days N and --burn-in N override a mode (labelled custom). Development seeds only (AGENTS.md lists the
 // reserved ones).
+// Outputs: <out>.json and <out>.md (the bench), <out>.scorecard.{json,md,log} (as field-metrics.ts writes them),
+// <out>-energy.{json,log} (as energy-diagnose.ts; --no-energy skips), <out>-rhythm.{json,md} (as rhythm-metrics.ts;
+// --no-rhythm skips), and one part per seed, <out>.s<seed>.part.json.gz (what the seed contributes; --reuse keeps the
+// parts of an interrupted run made with the same settings and code).
+// Long runs (RUN_CONTRACT below; agreed with the long-run runner of eR-runs, 5 October 2026):
+//   --part --seeds <s>           one seed: writes only <out>.part.json.gz (last, atomically)
+//   --merge p1,p2,…  --out x     pools parts in the order given into every output above, as a multi-seed run writes them
+//   --until-day D                writes a checkpoint at absolute day D (burn-in included) and stops (exit 0, no outputs)
+//   --resume <file|prefix>       continues a checkpoint (<out>.ckpt-dD.v8.gz with --part; for a multi-seed run the prefix of
+//                                <prefix>.s<seed>.ckpt-dD.v8.gz, the newest per seed); refused (exit 2) for other settings or code
+//   --checkpoint-at d1,d2,…      writes checkpoints on the way; --checkpoint the end one; --m6 and --m12 write their end
+//                                checkpoint by default (the ladder extends them: --m12 --resume <m6 out>), --no-checkpoint not
+// Checkpoints (scripts/lib/checkpoint.ts) hold the world, the observer's three team sets and every readout's state; a
+// continued run is the uninterrupted run (tests/e-bench-single-pass.test.ts). --legacy runs the two-step path of
+// 1 October (field-metrics.ts in a child process, then a viability replay; --no-viability skips the replay).
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { closeSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
