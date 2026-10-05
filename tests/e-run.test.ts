@@ -134,3 +134,10 @@ test('--targets reaches every e-bench job and the merge', () => {
   }
   assert.ok(!planJobs(base()).some(j => j.argv.includes('--targets')));
 });
+
+test('fallback beside the single pass: e-bench\'s two-step path (--legacy), rhythm-metrics to the lifted limit', () => {
+  const jobs = planJobs(base({ modeFlag: 'm6', mode: 'm6', days: 180, burnInDays: 30, rhythm: true, legacy: true, rhythmMaxDays: 730 }));
+  assert.ok(jobs.filter(j => j.kind === 'bench').every(j => j.argv.includes('--legacy')));
+  assert.deepEqual(jobs.filter(j => j.kind === 'rhythm').map(j => j.id), ['s48-rhythm', 's7-rhythm']);
+  assert.ok(planJobs(base()).every(j => !j.argv.includes('--legacy')), 'no --legacy without the single pass');
+});

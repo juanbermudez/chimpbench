@@ -25,17 +25,19 @@
 // runner (--attached, or a machine restart) is queued again. A job that exits non-zero is marked failed (its log is
 // kept); `run --retry-failed` re-queues it.
 //
-// Two paths, chosen at plan time (--path auto: single when scripts/e-bench.ts exports RUN_CONTRACT):
+// Two paths, chosen at plan time (--path auto, the default: the single pass whenever scripts/e-bench.ts exports
+// RUN_CONTRACT, as on track-e since 762b187; --path fallback forces the second):
 //  single-pass  (the contract agreed with eB-bench, 5 October 2026): one job per seed,
 //               `e-bench --<mode> --seeds <s> --part --workers 1 --params … --out <out>/parts/<label>.s<s>` writes
 //               <prefix>.part.json.gz last (exit 0 iff written); a seed too long for one job runs as segments
 //               (`--until-day D` writes <prefix>.ckpt-d<D>.v8.gz and its sidecar <prefix>.ckpt-d<D>.json last;
 //               `--resume <ckpt>` continues); `e-bench --merge p1,p2,… --out <out>/<label>` merges in seed order into
 //               exactly what a multi-seed run writes (bench, scorecard, energy and rhythm readouts).
-//  fallback     (the tools as they are): per seed `e-bench --seeds <s>` (scorecard then the viability replay; as two
-//               passes, --no-viability then --reuse, when one job would be too long); --energy: energy-diagnose over
-//               all seeds in one job (per seed, unmerged, when too long); --rhythm: rhythm-metrics per seed (≤ 90 days,
-//               the tool's limit). The merge (here) rebuilds the multi-seed scorecard from the per-seed scorecards
+//  fallback     (the separate tools): per seed `e-bench --seeds <s>` (the two-step path, `--legacy` where e-bench has the
+//               single pass: scorecard, then the viability replay; as two passes, --no-viability then --reuse, when one
+//               job would be too long); --energy: energy-diagnose over all seeds in one job (per seed, unmerged, when
+//               too long); --rhythm: rhythm-metrics per seed (≤ 90 days before the single pass lifted its limit). The
+//               merge (here) rebuilds the multi-seed scorecard from the per-seed scorecards
 //               exactly as scripts/field-metrics.ts pools seeds (values in seed order; patrol accuracies from their
 //               per-seed records; encounter accuracies from their integer counts), then e-bench's assemble/compare.
 //
@@ -138,6 +140,10 @@ export interface PlanOpts {
   path: 'single-pass' | 'fallback'; energy: boolean; rhythm: boolean; compare: string | null; jobMaxMin: number; rates: Record<string, number>;
   /** e-bench --targets for the scoring (passed to every e-bench job and to the merge); undefined = e-bench's default. */
   targets?: string;
+  /** Fallback in a checkout whose e-bench has the single pass: its jobs run e-bench's two-step path (--legacy). */
+  legacy?: boolean;
+  /** Longest run rhythm-metrics accepts (90 before the single pass, MAX_TOTAL_DAYS after). */
+  rhythmMaxDays?: number;
   /** Single-pass: end checkpoints of a shorter run of the same arm, by seed (absolute paths), to resume from. */
   from?: Record<number, { ckpt: string; day: number }>;
   /** Single-pass: at most this many days per job (checkpointed segments), whatever the estimate says. */
@@ -183,7 +189,7 @@ export function planJobs(o: PlanOpts): Job[] {
   }
   // fallback: the tools as they are
   for (const seed of o.seeds) {
-    const base = ['scripts/e-bench.ts', ...modeArgs, '--seeds', String(seed), '--workers', '1', '--params', pj, '--out', abs(prefix(seed))];
+    const base = ['scripts/e-bench.ts', ...modeArgs, ...(o.legacy ? ['--legacy'] : []), '--seeds', String(seed), '--workers', '1', '--params', pj, '--out', abs(prefix(seed))];
     const outs = [`${prefix(seed)}.json`, `${prefix(seed)}.scorecard.json`];
     if (estimateMin('bench', total, o.rates) <= o.jobMaxMin) {
       jobs.push(job({ id: `s${seed}`, kind: 'bench', seed, argv: base, outputs: outs, seedDays: total }, o.rates));
@@ -191,7 +197,7 @@ export function planJobs(o: PlanOpts): Job[] {
       jobs.push(job({ id: `s${seed}-card`, kind: 'card', seed, argv: [...base, '--no-viability'], outputs: outs, seedDays: total }, o.rates));
       jobs.push(job({ id: `s${seed}-viab`, kind: 'viab', seed, after: [`s${seed}-card`], argv: [...base, '--reuse'], outputs: outs, seedDays: total }, o.rates));
     }
-    if (o.rhythm && total <= 90) {
+    if (o.rhythm && total <= (o.rhythmMaxDays ?? 90)) {
       jobs.push(job({ id: `s${seed}-rhythm`, kind: 'rhythm', seed, seedDays: total, outputs: [`${prefix(seed)}-rhythm.json`],
         argv: ['scripts/rhythm-metrics.ts', '--seeds', String(seed), '--burn-in', String(o.burnInDays), '--days', String(o.days), '--workers', '1', '--params', pj, '--json', abs(`${prefix(seed)}-rhythm.json`), '--md', abs(`${prefix(seed)}-rhythm.md`)] }, o.rates));
     }
@@ -202,7 +208,7 @@ export function planJobs(o: PlanOpts): Job[] {
     else for (const seed of o.seeds) jobs.push(job({ id: `s${seed}-energy`, kind: 'energy', seed, argv: eArgs([seed], `${prefix(seed)}-energy.json`), stdout: `${prefix(seed)}-energy.log`, outputs: [`${prefix(seed)}-energy.json`, `${prefix(seed)}-energy.log`], seedDays: total, note: 'energy per seed, not merged (one job for all seeds would pass the job limit)' }, o.rates));
   }
   // the merge waits for every job: it gzips parts/ when it is done, so nothing may still be writing there
-  jobs.push(job({ id: 'merge', kind: 'merge', after: jobs.map(j => j.id), seedDays: 0, argv: [], outputs: [`${o.label}.json`, `${o.label}.md`, `${o.label}.scorecard.json`, ...(o.rhythm && total <= 90 ? [`${o.label}-rhythm5.json`] : [])] }, o.rates));
+  jobs.push(job({ id: 'merge', kind: 'merge', after: jobs.map(j => j.id), seedDays: 0, argv: [], outputs: [`${o.label}.json`, `${o.label}.md`, `${o.label}.scorecard.json`, ...(o.rhythm && total <= (o.rhythmMaxDays ?? 90) ? [`${o.label}-rhythm5.json`] : [])] }, o.rates));
   return jobs;
 }
 
@@ -437,16 +443,16 @@ async function plan(a: Args): Promise<void> {
   if (targets && !existsSync(resolve(ROOT, targets))) throw new Error(`--targets ${targets}: no such file in ${ROOT}`);
   const segDays = a.has('segment-days') ? +a.flag('segment-days') : undefined;
   if (segDays !== undefined && (path !== 'single-pass' || !(segDays >= 1) || !Number.isInteger(segDays))) throw new Error('--segment-days N (a whole number of days) needs the single-pass path');
-  const opts: PlanOpts = { label, out, root: ROOT, modeFlag, mode: modeFlag, days, burnInDays, seeds, params, path, energy: a.has('energy'), rhythm: a.has('rhythm'), compare, jobMaxMin, rates: {}, from, segmentDays: segDays, targets };
+  const opts: PlanOpts = { label, out, root: ROOT, modeFlag, mode: modeFlag, days, burnInDays, seeds, params, path, energy: a.has('energy'), rhythm: a.has('rhythm'), compare, jobMaxMin, rates: {}, from, segmentDays: segDays, targets, legacy: path === 'fallback' && contract, rhythmMaxDays: contract ? EB.MAX_TOTAL_DAYS : 90 };
   const jobs = planJobs(opts);
   for (const j of jobs) if (j.estimateMin > jobMaxMin) throw new Error(`job ${j.id} is estimated at ${j.estimateMin} min, over the job limit of ${jobMaxMin} min, and cannot be split on the ${path} path`);
   for (const j of jobs) if (j.argv.some(x => /trace/i.test(x) && x.startsWith('--'))) throw new Error(`job ${j.id} asks for a trace: per-tick traces are never written`);
   for (const d of ['parts', 'done', 'logs', 'run']) mkdirSync(resolve(out, d), { recursive: true });
   writeFileSync(resolve(out, 'params.json'), JSON.stringify(params) + '\n');
   const reg: Registry = { tool: 'e-run', version: 1, label, created: now(), updated: now(), root: ROOT, commit: g.commit, branch: g.branch, path,
-    mode: modeFlag, horizon: { burnInDays, days, totalDays: burnInDays + days }, seeds, params, compare, targets: targets ?? null, readouts: { energy: path === 'single-pass' || a.has('energy'), rhythm: path === 'single-pass' || (a.has('rhythm') && burnInDays + days <= 90) },
+    mode: modeFlag, horizon: { burnInDays, days, totalDays: burnInDays + days }, seeds, params, compare, targets: targets ?? null, readouts: { energy: path === 'single-pass' || a.has('energy'), rhythm: path === 'single-pass' || (a.has('rhythm') && burnInDays + days <= (opts.rhythmMaxDays ?? 90)) },
     limits: { jobMaxMin, minFreeGB: MIN_FREE_GB }, rates: {}, command: `pnpm exec tsx scripts/e-run.ts ${process.argv.slice(2).map(x => (/[\s'"{}]/.test(x) ? `'${x}'` : x)).join(' ')}`,
-    jobs, result: null, events: [{ t: now(), msg: `planned ${jobs.length} jobs (${path}) at ${g.commit.slice(0, 10)}${a.has('rhythm') && burnInDays + days > 90 ? '; rhythm-metrics skipped (its limit is 90 days)' : ''}` }] };
+    jobs, result: null, events: [{ t: now(), msg: `planned ${jobs.length} jobs (${path}) at ${g.commit.slice(0, 10)}${path === 'fallback' && a.has('rhythm') && burnInDays + days > (opts.rhythmMaxDays ?? 90) ? `; rhythm-metrics skipped (its limit is ${opts.rhythmMaxDays ?? 90} days)` : ''}` }] };
   writeJsonAtomic(resolve(out, 'run.json'), reg);
   console.log(`planned ${resolve(out, 'run.json')}: ${jobs.length} jobs on the ${path} path, ${seeds.length} seeds × ${burnInDays + days} days`);
   for (const j of jobs) console.log(`  ${j.id.padEnd(16)} ${j.kind.padEnd(7)} ~${j.estimateMin} min${j.after.length ? `  after ${j.after.join(', ')}` : ''}${j.note ? `  (${j.note})` : ''}`);
