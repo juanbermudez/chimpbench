@@ -1166,7 +1166,7 @@ function reproduction(world: World, c: Chimp, isAlpha: boolean): void {
     // stage E4p diagnosis: every offer of a swollen female to a male in range, before her own gap after her last copulation
     // (`a` the hours since it; the gap's literal stays on the line below, so the trace passes the elapsed time, not a verdict)
     if (quotaTrace.on && c.sex === 'female' && c.swelling >= 0.75 && o.age >= 10 && dist < P.mateFemaleRangeM) quotaTrace.on('mateFgap', c, o, false, time - x.lastMate, femaleMateScore(c, o, x, dist, night, P, mv ? paternityGain(c, o, P, world) : 1));
-    if (c.sex === 'female' && c.swelling >= 0.75 && o.age >= 10 && dist < P.mateFemaleRangeM && (time - x.lastMate > 0.3 || mv)) {
+    if (c.sex === 'female' && c.swelling >= 0.75 && o.age >= 10 && dist < P.mateFemaleRangeM && (mv || time - x.lastMate > 0.3)) {
       const maleOpen = mv || time - ix(o).lastMate > P.mateIntervalH;
       const pg = mv ? paternityGain(c, o, P, world) : 1; // stage E4p: the paternity share the copulation adds to him (her own counts)
       if ((maleOpen && pg > 0) || quotaTrace.on) { // stage E4o diagnosis: the male's quota gates her offer too
