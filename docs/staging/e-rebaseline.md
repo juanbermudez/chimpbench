@@ -493,3 +493,48 @@ class against the field's seasonal condition data) before any further switch is 
 
 **Predictions (low confidence).** None of the four is free of the failure (the lean season meets the ledger in every
 stack); `tripBeliefs` and `departValue` change its size a little, not its sign.
+
+## Part D1 result: rare-event counts at 12 months (eD-counts, merged at 4717cde; `scripts/rare-events.ts` on simulation truth, S39's four 12-month runs against today's model's; 60 community-years and ~1,000 chimp-years per group)
+
+Second route: deaths by cause, killings and transfers agree between the run parts, the end worlds, `world.stats` and the
+observer's truth records in 20 of 20 seeds per group. Full tables: integrator scratch `eD-counts/final-d4eec23.md`.
+
+| family · row | S39 pooled [per run] | S39 value | today's model | band | minimum | reached |
+| --- | --- | --- | --- | --- | --- | --- |
+| lethal · T-LET-1 killings, all | 3 [1/0/1/1] (1 infanticide, 2 fight wounds, 0 intergroup) | 0.050 per community-year | 0 | 0.02–0.36 | 10 | no |
+| lethal · T-LET-2/3/6 (victims, odds, on patrol) | 3 / 0 / 0 | — | 0 | — | 20 | no |
+| patrols · T-PAT-9 | 60 community-years | 0.90 meet both | 59, 1.00 | 0.5–1 | 20 | yes (check only) |
+| deaths · T-DEM-4 causes | 41 [7/18/10/6] | disease 0.66, aggression 0.07 | 55: 0.96, 0.00 | 0.25–0.6, 0.1–0.25 | 20 | yes |
+| deaths · T-DEM-1 first-year deaths | 11 [1/4/4/2] | q1 0.185 | 7, 0.124 | 0.11–0.19 | 10 | yes |
+| disease · T-DEM-5 epidemic arrivals | 5 [0/3/2/0] | 0.077 per community-year | 9, 0.139 | 0.07–0.15 | 10 | no |
+| disease · T-DEM-6 outbreaks ≥ 20% | 4 | mortality 0.07 | 7, 0.26 | ≤ 0.17 | 10 | no |
+| disease · T-DEM-8 respiratory deaths | 5 | 5.0 per 1,000 chimp-years | 34, 34.3 | 5–20 | 10 | no |
+| disease · T-DEM-7 who dies | 5 | — | 34 | — | 20 | no |
+| snares · T-DEM-9 | 7 injuries | — | 5 | 0.1–0.3 | 10 | no |
+| dispersal · natal transfers | 18 [7/3/4/4] | 0.30 per community-year | 20 | no field row | 10 | yes (count only) |
+
+Lower bounds only (no exact record): serious injuries (S39 ≥ 45, today ≥ 1; S39's wound counter 1,604 against 49),
+resolved attacks on strangers (≥ 12, ≥ 4), dead-infant carries (≥ 1 of 16 rolls), adoptions of orphans whose records
+were already purged. S39's deaths include 6 starvations (part C).
+
+**Measurement findings (no score changed here):**
+1. The observer logs an infanticidal attack as a killing when it starts, so failed attacks count: 2 of S39's 4 observed
+   T-LET-1 killings were infants that lived.
+2. Killings in fights within the community (`conflict.ts` fight wounds) are not in `world.stats.killings` nor in the
+   observer's kill events, though T-LET-1's definition counts "all intercommunity and within-community killings".
+3. T-DEM-9's census point (t0 + 365.25 days) falls after a 365-day window, so it never scores at 12 months; founders start
+   without snare injuries, so a 1–2-year run cannot build the field's standing prevalence. Not testable as defined.
+
+## Part D2: staging decisions (5 October 2026, from the rule registered at 977400e, before any rare-event stage)
+
+1. **Judged at 12 months:** the deaths family (T-DEM-4, T-DEM-1; every S39 run has ≥ 5 deaths) and T-PAT-9 as a check.
+   Transfers are counted only (no field row).
+2. **Staged:** the deaths family (8 prescriptions: adoption, bereavement, dependents' survival, dead-infant carrying),
+   judged on T-DEM-4 and T-DEM-1 at 12 months. It starts only on a base that is viable at 12 months (part C), because
+   starvation deaths enter T-DEM-4 and S39's are 6 of 41. T-DEM-4's aggression share also rests on killings, a family
+   that cannot be judged at 12 months; the stage reports it but does not claim it.
+3. **To 24 months, on the next viable base (not on S39, which starves):** T-LET-1, T-DEM-5, T-DEM-6, T-DEM-8 (the counter
+   projects 6–13 events each). Measurement findings 1 and 2 are fixed, registered, before T-LET-1 is counted there.
+4. **Projected not testable within the ladder** (need 20; projected well under at 24 months; recorded as such only after
+   the 24-month count): T-LET-2, T-LET-3, T-LET-6, T-DEM-7. T-DEM-9 is not testable as defined (finding 3). More seeds,
+   not more years, are the lever for these.
