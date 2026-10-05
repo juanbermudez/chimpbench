@@ -18,15 +18,88 @@
   "Instrument validation against truth (sampling accuracy, classifier precision and recall) is allowed at any time, because truth is not a field target; each validation run is logged."
  ],
  "protocolFreeze": {
-  "stage": "C8 freeze + C8c + C13e + hunting fix + C14 (sealed rows registered)",
-  "date": "2026-10-01",
-  "hash": "a2228c2df476680b",
-  "registryHash": "57903c4cdc400019",
-  "previous": {
-   "stage": "C8 freeze + C8c + C13e (join choice; sealed rows registered)",
-   "hash": "7950e457bd02358f"
+  "stage": "Track E freeze (audited target rows and scorer fixes: e-targets, e1j, e1k, e2h, e4e, e4h, e5a; e2h-, e3b-, e4f-protocol; user decision of 4 October 2026), after C8 freeze + C8c + C13e + hunting fix + C14",
+  "date": "2026-10-05",
+  "at": "2026-10-05T05:31:34Z",
+  "hash": "5d4fa5a2a500bce6",
+  "registryHash": "7ac2db8a3d058e4d",
+  "observerRevised": {
+   "T-PTY-1": "e5a S1: mean of follow means; e5a S2: party chain with the 50-60 m borderline link",
+   "T-PTY-2": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-PTY-3": "e5a S2: party chain with the 50-60 m borderline link; e5a S3: party follows, periphery outside the night-nest polygon",
+   "T-PTY-4": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-RNG-2": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-IGE-1": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-IGE-2": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-IGE-3": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-IGE-5": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-PAT-1": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-PAT-2": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-PAT-3": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-PAT-4": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-PAT-5": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-PAT-6": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-PAT-7": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-PAT-8": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-BRD-1": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-LET-1": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-LET-2": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-LET-3": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-LET-6": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-FOOD-4": "e3b-protocol: distinct trees, returns not moves, revisits by individual and 30-m resource",
+   "T-FOOD-5": "e3b-protocol: distinct trees, returns not moves, revisits by individual and 30-m resource",
+   "T-FOOD-6": "e3b-protocol: distinct trees, returns not moves, revisits by individual and 30-m resource",
+   "T-FOOD-10": "e2h-protocol: mothers' observed departures, fruit breakfasts, fruit-scarce days, NOAA sunrise",
+   "T-HUN-1": "e4f-protocol: gilby2015 run rule, party follows, matched hunts; e5a S2: party chain with the 50-60 m borderline link",
+   "T-HUN-2": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-HUN-3": "e4f-protocol: gilby2015 run rule, party follows, matched hunts; e5a S2: party chain with the 50-60 m borderline link",
+   "T-HUN-4": "e4f-protocol: gilby2015 run rule, party follows, matched hunts; e5a S2: party chain with the 50-60 m borderline link",
+   "T-HUN-5": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-HUN-6": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-HUN-7": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-HUN-8": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-HUN-9": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-SOC-3": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-SOC-4": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-SOC-6": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-SOC-9": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-SOC-10": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-SOC-11": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-SOC-12": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-DEM-1": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-DEM-2": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-DEM-3": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-DEM-4": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-DEM-5": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-DEM-6": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-DEM-7": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-DEM-8": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-DEM-9": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-DEM-10": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-DEM-11": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-DEM-12": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-DEM-13": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-COM-2": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-COM-7": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-COM-9": "e5a S2: party chain with the 50-60 m borderline link"
   },
-  "note": "scripts/field-metrics.ts --unseal and field-scenario.ts expansion --unseal refuse unless protocolFreeze.stage starts with 'C8' and hash and registryHash equal the current protocol and registry hashes (src/field/targets.ts unsealRefusal)"
+  "note": "scripts/e-bench.ts reads `observerRevised`: a saved run made before this freeze cannot be re-scored on these rows (listed as needing a fresh run, never summed). The previous freeze's targets file is data/targets.c8.json (scripts/targets-snapshot.ts --check), for scoring any run on the old bands with e-bench --targets. --unseal stays refused under this freeze: its stage does not start with 'C8' (src/field/targets.ts unsealRefusal); it was already refused on track-e because the Track E switches changed the registry hash (57903c4cdc400019 -> 7ac2db8a3d058e4d). The C8 combined proof needs its own C8 freeze on main.",
+  "previous": {
+   "stage": "C8 freeze + C8c + C13e + hunting fix + C14 (sealed rows registered)",
+   "date": "2026-10-01",
+   "hash": "a2228c2df476680b",
+   "registryHash": "57903c4cdc400019",
+   "previous": {
+    "stage": "C8 freeze + C8c + C13e (join choice; sealed rows registered)",
+    "hash": "7950e457bd02358f"
+   },
+   "note": "scripts/field-metrics.ts --unseal and field-scenario.ts expansion --unseal refuse unless protocolFreeze.stage starts with 'C8' and hash and registryHash equal the current protocol and registry hashes (src/field/targets.ts unsealRefusal)",
+   "targetsFile": {
+    "path": "data/targets.c8.json",
+    "commit": "b617cf85b777039b80b2a0d577a0877cea2ace2a",
+    "sha256": "94a57386e478e7c180fea2b794c39dd05de51d91a6cc606499c4a1f26ac2a604"
+   }
+  }
  },
  "protocolLog": [
   {
@@ -2176,6 +2249,18 @@
    ],
    "verdicts": "band-only rescores of saved runs on the new and the old bands",
    "class": "scoring tools"
+  },
+  {
+   "date": "2026-10-05",
+   "by": "eA-protocol (Track E protocol agent; user decision of 4 October 2026, \"apply the audited fixes and targets\", relayed by the integrator)",
+   "seen": "none (bookkeeping)",
+   "param": "freeze: protocol hash a2228c2df476680b -> 5d4fa5a2a500bce6 (the Track E rows, bands, flags and truth definitions; the observer patches e2h-, e3b-, e4f-protocol and e5a S1-S3 in src/field; the fingerprint's new fields); registryHash 57903c4cdc400019 -> 7ac2db8a3d058e4d (the Track E switches merged since the hunting-fix freeze, all 0 by default: compressed goldens and the field pin unchanged). observerRevised lists the 58 rows whose observer code changed. Previous freeze kept under `previous`, with its targets file data/targets.c8.json (sha256 94a57386e478e7c1..., git b617cf85b7).",
+   "reason": "the protocol changed (protocolPolicy: a change after the freeze needs a new freeze hash); stage label without the C8 prefix so that this development freeze cannot unlock the sealed rows",
+   "targets": [
+    "all"
+   ],
+   "verdicts": "every later e-bench run is scored on this protocol; saved runs are re-scored band-only (observer-revised rows need fresh runs)",
+   "class": "freeze"
   }
  ],
  "targets": [

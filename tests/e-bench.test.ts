@@ -231,3 +231,12 @@ test('rescore: the scorecard re-scored from its values with the instrument bars 
   assert.deepEqual([by['T-ACT-4'].verdict, by['T-ACT-4'].flags], ['fail', []]);
   assert.equal(r.summary['held-out'].instrument, 2);
 });
+
+test('the previous freeze\'s targets file is a verbatim snapshot recorded under that freeze (e-bench --targets data/targets.c8.json)', async () => {
+  const { checkSnapshots, recordedSnapshots } = await import('../scripts/targets-snapshot');
+  const { readFileSync } = await import('node:fs');
+  const t = JSON.parse(readFileSync(new URL('../data/targets.json', import.meta.url), 'utf8'));
+  const snaps = recordedSnapshots(t.protocolFreeze);
+  assert.ok(snaps.some(s => s.snap.path === 'data/targets.c8.json' && s.freeze.hash === 'a2228c2df476680b'), 'the C8-line freeze carries its snapshot');
+  assert.deepEqual(checkSnapshots(), []);
+});
