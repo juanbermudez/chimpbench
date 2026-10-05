@@ -9,8 +9,9 @@ pnpm dev                          # app + resident GLiNER worker on http://127.0
 MGOGO_NO_MODEL=1 pnpm exec vite --host 127.0.0.1 --port 5181 --strictPort   # extra server, no model
 pnpm test                         # all unit tests (must stay green)
 pnpm build                        # tsc --noEmit + production build
-pnpm exec tsx scripts/bench-sim.ts [--profile field]   # sim speed; compressed ≤ 0.8 s per eco-day (now ~0.13 s idle); field ≤ 0.3 s, ≤ 0.8 s at 120 living
-pnpm exec tsx scripts/bench-ticks.ts [pop]  # per-tick cost by cadence (plain, party, slow, hourly, daily)
+pnpm exec tsx scripts/bench-sim.ts [--profile field] [--params-file p.json]   # sim speed; compressed ≤ 0.8 s per eco-day (now ~0.13 s idle); field ≤ 0.3 s, ≤ 0.8 s at 120 living; --params(-file) times a Track E stack
+pnpm exec tsx scripts/bench-ticks.ts [pop] [--profile field] [--params-file p.json]  # per-tick cost by cadence (plain, party, slow, hourly, daily), wall and CPU per eco-day
+pnpm exec tsx scripts/e-run.ts plan --label L --m6 --params-file p.json | run <out>/run.json | status <out>/run.json   # long Track E runs as resumable jobs (one per seed, each < 2 h; registry + done markers in <out>, default artifacts/validation/e/runs/L); refuses dirty checkouts and reserved seeds; keeps ≥ 5 GB free; launch `run` in the background and re-launch until done
 node scripts/perf-probe.mjs --url <no-model server> [--scenarios quick|matrix|rts-1d-day,...] [--pop 120] [--profile] [--trace] [--startup] [--hitches] [--motion] [--soak 300] [--query profile=field]
                                             # frame-time distribution, per-phase main-thread ms (?perf=1), long tasks, heap, style/layout; strat-* = strategy view zoomed on the selected party
 node scripts/shot-compare.mjs <beforeUrl> <afterUrl> [outDir]   # visual-regression diff of fixed env-harness scenes
