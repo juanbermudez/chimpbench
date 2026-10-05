@@ -322,3 +322,11 @@ reserves, and sleep or light) passes for `base`, so the G arms run with `--provi
 **Amendment 1 (before any paid Jev call).** M2 registered "Jev only while no GLiNER job runs". Jev is a remote API, not a
 local model worker (the rule it guarded: one resident GLiNER worker at a time), so the capped Jev sample runs while the
 adapter scores seed 7. Nothing else changes (same records, probes, ledger, run id and 5 USD cap).
+
+**M3 iteration 2 (registered before iteration 1's G arms finished; runs after them whatever they show).** The same worlds,
+focal animals, window and readouts with `--gate rg` (`scripts/em-loop.ts`): the focal animals keep RG's own gate (rg.ts
+`gate`: an act is held until a salient change; a finished trip at its crown becomes feeding there; the intention kept as
+rgChoice keeps it), so a provider replaces only RG's draws, the decisions M2 measured. Arms: **AG** (the gate, the rules'
+argmax at the draws) and **GG** (the gate, GLiNER `base` at the draws). Reason: the harness smoke test (disclosed above)
+showed the app's loop, which asks at every decision point, changing walking by itself; A and G answer "the model in the
+app's loop", AG and GG "the model in place of the rules' choice". Outputs `artifacts/em/m3/s<seed>-AGG.json`.
