@@ -131,6 +131,22 @@ test('gutValue 1 (iteration 2): the passage phase is capped by the reserve defic
   assert.ok(farSmall > 0 && farSmall < farBig, `${farSmall} < ${farBig}`);
 });
 
+test('gutValue 1 (iteration 3): phase 2 lasts as long as the gut takes to pass what it holds, so a crop smaller than the room no longer looks faster than a large one', () => {
+  const w = load(saved().morning, { gutValue: 1 }), P = paramsOf(w);
+  for (const fill of [0.5, 0.9, 1]) {
+    const { c } = animal(w, fill, -0.5);
+    for (const d of [3, 50, 300]) {
+      const small = gutRateShare(c, P, false, 0.02, 0, d, 10, 1, 1, 0.8), large = gutRateShare(c, P, false, 0.5, 0, d, 10, 1, 1, 0.8);
+      assert.ok(small < large, `fill ${fill}, ${d} m: a 0.02-unit crop ${small} < a 0.5-unit crop ${large}`);
+    }
+  }
+  // with an empty gut, and for an animal at its set point, the small crop keeps today's value (no passage phase)
+  for (const [fill, rel] of [[0, -0.5], [0.5, 0.01]]) {
+    const { c } = animal(w, fill, rel);
+    assert.equal(gutRateShare(c, P, false, 0.02, 0, 50, 10, 1, 1, 0.8), netRateShare(c, P, 0.02, 0, 50, 10, 1, 1, 0.8), `fill ${fill}, reserves ${rel}`);
+  }
+});
+
 /** An adult male of the saved world 3 m from the richest drupe crown of his community's core, nothing else in view. */
 function scene(over: Overrides, fill: number) {
   const w = load(saved().morning, over), P = paramsOf(w);

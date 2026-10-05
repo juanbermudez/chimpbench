@@ -344,3 +344,55 @@ fails through (b), iteration 3 needs an amendment I approve and register before 
   companions to crowded crowns, chase small crops and move every few minutes. Cause (b) as named after iteration 1 (the
   jitter deciding on a compressed scale) is not what the decisions show; the bias toward bouts that end before the
   passage phase is.
+
+### 8.7 Amendment 1 and iteration 3 (logged before its run)
+
+"Amendment 1 (integrator, 5 October 2026, registered before iteration 3's run). For an animal with a reserve deficit,
+phase 2's duration is the gut's, not the crop's: it lasts min(held, need − room bout) ÷ the passage rate whatever the crop
+share, and the crop share caps only the energy eaten in it. A small or crowded crop no longer escapes the passage phase,
+so for a depleted animal every option is compared over the same gut horizon. Animals at or above the set point, and any
+animal at an empty gut, keep today's values. No new constant. Reason (iteration 2's readout): depleted animals joined
+departing companions' trips in 32–47% of decisions (S39 2%), because a crop split among feeders fits in the room and was
+valued at the full ingestion rate while uncrowded crowns carried the passage phase. Iteration 3 is the stage's last: if
+any of §3's four conditions fails, E1s stops, `gutValue` stays 0, and the stage is recorded with what drives the
+movement."
+
+- Change (`intake.ts` `gutRateShare`; nothing else): phase 2 exists when the need exceeds the room's bout (the bout for an
+  unlimited crop) and lasts min(held, need − room bout) ÷ the phase-2 rate (the passage rate, or the ingestion rate × vision
+  when slower); the crop share caps only the energy eaten in it (min(phase 2's food, crop share − phase 1)). The fallback
+  (no crop limit) is unchanged. No constant.
+- Pre-run check (offline, S39 seed 48's day-210 world; drupe crowns with a 10-m climb at 3 / 50 / 300 m; today →
+  iteration 2 → iteration 3):
+
+**id 17**, reserves -0.68 of the store; drupe crowns at 3 / 50 / 300 m: today → iteration 2 → iteration 3
+
+| foregut fill | 0.05 unit, alone | 0.5 unit, 9 feeders | 0.5 unit, alone |
+| ---: | --- | --- | --- |
+| 0.00 | 0.98 → 0.98 → 0.98 / 0.95 → 0.95 → 0.95 / 0.80 → 0.80 → 0.80 | 0.98 → 0.98 → 0.98 / 0.95 → 0.95 → 0.95 / 0.80 → 0.80 → 0.80 | 0.99 → 0.99 → 0.99 / 0.98 → 0.98 → 0.98 / 0.90 → 0.90 → 0.90 |
+| 0.50 | 0.98 → 0.98 → 0.28 / 0.95 → 0.95 → 0.27 / 0.80 → 0.80 → 0.26 | 0.98 → 0.98 → 0.28 / 0.95 → 0.95 → 0.27 / 0.80 → 0.80 → 0.26 | 0.99 → 0.52 → 0.52 / 0.96 → 0.51 → 0.51 / 0.82 → 0.49 → 0.49 |
+| 0.90 | 0.93 → 0.36 → 0.20 / 0.81 → 0.36 → 0.20 / 0.44 → 0.33 → 0.19 | 0.93 → 0.36 → 0.20 / 0.81 → 0.36 → 0.20 / 0.44 → 0.33 → 0.19 | 0.93 → 0.34 → 0.34 / 0.81 → 0.34 → 0.34 / 0.44 → 0.32 → 0.32 |
+| 1.00 | 0.00 → 0.31 → 0.19 / 0.00 → 0.30 → 0.19 / 0.00 → 0.28 → 0.18 | 0.00 → 0.31 → 0.19 / 0.00 → 0.30 → 0.19 / 0.00 → 0.28 → 0.18 | 0.00 → 0.31 → 0.31 / 0.00 → 0.30 → 0.30 / 0.00 → 0.29 → 0.29 |
+
+**id 33**, reserves 0.00 of the store; drupe crowns at 3 / 50 / 300 m: today → iteration 2 → iteration 3
+
+| foregut fill | 0.05 unit, alone | 0.5 unit, 9 feeders | 0.5 unit, alone |
+| ---: | --- | --- | --- |
+| 0.00 | 0.98 → 0.98 → 0.98 / 0.94 → 0.94 → 0.94 / 0.76 → 0.76 → 0.76 | 0.98 → 0.98 → 0.98 / 0.94 → 0.94 → 0.94 / 0.76 → 0.76 → 0.76 | 0.99 → 0.99 → 0.99 / 0.98 → 0.98 → 0.98 / 0.91 → 0.91 → 0.91 |
+| 0.50 | 0.98 → 0.98 → 0.98 / 0.94 → 0.94 → 0.94 / 0.76 → 0.76 → 0.76 | 0.98 → 0.98 → 0.98 / 0.94 → 0.94 → 0.94 / 0.76 → 0.76 → 0.76 | 0.99 → 0.99 → 0.99 / 0.96 → 0.96 → 0.96 / 0.84 → 0.84 → 0.84 |
+| 0.90 | 0.94 → 0.94 → 0.94 / 0.82 → 0.82 → 0.82 / 0.47 → 0.47 → 0.47 | 0.94 → 0.94 → 0.94 / 0.82 → 0.82 → 0.82 / 0.47 → 0.47 → 0.47 | 0.94 → 0.94 → 0.94 / 0.82 → 0.82 → 0.82 / 0.47 → 0.47 → 0.47 |
+| 1.00 | 0.00 → 0.00 → 0.00 / 0.00 → 0.00 → 0.00 / 0.00 → 0.00 → 0.00 | 0.00 → 0.00 → 0.00 / 0.00 → 0.00 → 0.00 / 0.00 → 0.00 → 0.00 | 0.00 → 0.00 → 0.00 / 0.00 → 0.00 → 0.00 / 0.00 → 0.00 → 0.00 |
+
+- Tests (tests/sim-gut-value.test.ts, 10): iteration 2's 9, and: for a depleted animal at fill 0.5, 0.9 and 1 a 0.02-unit
+  crop is worth less than a 0.5-unit crop at 3, 50 and 300 m; with an empty gut, and for an animal at its set point, the
+  small crop keeps today's value. Before the run: `pnpm test` 911 tests, 910 pass, 0 fail, 1 skipped; tsc and
+  `gen-params --check` clean.
+- Run: the frozen detached checkout of the commit that adds this entry, as iteration 2 (§8.5): S39 + `"gutValue": 1`,
+  rngSalt 0, `e-bench --m6 --seeds 48,7 --animal-days --workers 1 --checkpoint-at 60,100,130,160,190`, out
+  `artifacts/validation/e1s/it3/parts/E1s-it3`; one job at a time while the load is above 8.
+- Judging: §3's four conditions, against S39 on the same seeds (§8.3: 11 below −0.3; lowest −0.683; no starvation;
+  viability). If any fails, E1s stops and `gutValue` stays 0.
+- Readouts (reported, not judged; iteration 2's, beside S39 and iteration 2): the decisions of depleted animals (12-h
+  samples from the checkpoints of days 60–210) with their mix: stay and eat (a crown in view or the fallback), a crown
+  trip (an own, known-tree or caller trip), a joined trip, rest, other; ground km per animal-day by reserve band and the
+  share of chosen trips over 500 m; ground km per day and the reserves of adult males by calendar month (per-animal
+  records; S39 from its class readout).

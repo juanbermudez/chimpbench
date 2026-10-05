@@ -141,27 +141,33 @@ function crownBout(c: Chimp, P: Params, fig: boolean, memo?: RateMemo): GutBout 
 /**
  * Stage E1s (gutValue; docs/staging/e1s-prereg.md §2 and the integrator's ruling below it): netRateShare with the bout the
  * gut allows, in the crown's own food (figs as figs: their kcal per unit, ingestion rate and dry matter). Phase 1 as
- * netRateShare: the foregut's room filled at the ingestion rate (boutRoom's form), up to the crop share. Phase 2: the
- * food at the rate a full foregut passes it, for as long as the gut takes to pass what it holds now (energy.ts gutBout),
- * while the bout is below the crop share and the need a full foregut does not sate (the reserve deficit; iteration 2).
- * The rate is still a share of the animal's own full ripe-fruit rate R (drupes), walk, climb and the trip's factors as
- * netRateShare has them. A drupe crown whose bout has no second phase (an empty gut, an animal at or above its set point,
- * or a crop or need that the room holds) is netRateShare itself, bit for bit. At a full gut a depleted animal values a
- * crown at the passage rate of its food (energy per gram), less its walk. Design assumption (the digestive rate model,
- * verlindenWiley1989, not verified); no new magnitude. Pure (as netRateShare).
+ * netRateShare: the foregut's room filled at the ingestion rate (boutRoom's form), up to the crop share. Phase 2 (only
+ * for an animal with a reserve deficit, the need a full foregut does not sate; iteration 2): the food at the rate a full
+ * foregut passes it, for as long as the gut takes to pass what it holds now, up to the need beyond the room's bout
+ * (energy.ts gutBout); its duration is the gut's, whatever the crop, and the crop share caps only the energy eaten in it
+ * (Amendment 1, iteration 3: a small or crowded crop no longer escapes the passage phase, so a depleted animal compares
+ * every option over the same gut horizon). The rate is still a share of the animal's own full ripe-fruit rate R
+ * (drupes), walk, climb and the trip's factors as netRateShare has them. A drupe crown whose bout has no second phase (an
+ * empty gut, an animal at or above its set point, a need that the room holds) is netRateShare itself, bit for bit. At a
+ * full gut a depleted animal values a large crop at the passage rate of its food (energy per gram), less its walk.
+ * Design assumption (the digestive rate model, verlindenWiley1989, not verified); no new magnitude. Pure (as
+ * netRateShare).
  */
 export function gutRateShare(c: Chimp, P: Params, fig: boolean, crop: number, feeders: number, distM: number, climbM: number, pace = 1, see = 1, speed = P.walkMps, extraH = 0, carryK = 0, yieldK = 1, memo?: RateMemo): number {
   const g = crownBout(c, P, fig, memo);
   const share = Math.max(0, crop) / (1 + feeders) * g.kcal;
-  const e1 = share < g.room ? share : g.room, top = share < g.need ? share : g.need;
-  const e2 = top > e1 ? (top - e1 < g.held ? top - e1 : g.held) : 0;
-  if (!fig && !(e2 > 0)) return netRateShare(c, P, crop, feeders, distM, climbM, pace, see, speed, extraH, carryK, yieldK, memo);
+  // iteration 3 (docs/staging/e1s-prereg.md §8.7): phase 2 lasts as long as the gut takes to pass what it holds, up to the
+  // need beyond the room's bout, whatever the crop: `pass2` the food it could take in that time; the crop share caps only
+  // the energy eaten in it (a crop smaller than the room no longer ends the bout before the passage)
+  const e1 = share < g.room ? share : g.room, beyond = g.need - g.room, pass2 = beyond > 0 ? (beyond < g.held ? beyond : g.held) : 0;
+  if (!fig && !(pass2 > 0)) return netRateShare(c, P, crop, feeders, distM, climbM, pace, see, speed, extraH, carryK, yieldK, memo);
   const R = fig ? crownBout(c, P, false, memo).R : g.R; // the currency: the animal's own full ripe-fruit (drupe) rate
   if (!(R > 0) || !(g.R > 0) || !(see > 0)) return 0;
+  const left = share - e1, e2 = pass2 > 0 && left > 0 ? (left < pass2 ? left : pass2) : 0;
   const E = (e1 + e2) * yieldK;
   if (!(E > 0)) return 0;
   const C = locomotionKcal(c, P, distM, climbM) + carryK, r = g.R * see, q = g.pass < r ? g.pass : r;
-  return E > C ? (E - C) / (distM / (speed * pace) / 3600 + extraH + (e1 / r + (e2 > 0 ? e2 / q : 0)) * yieldK) / R : 0;
+  return E > C ? (E - C) / (distM / (speed * pace) / 3600 + extraH + (e1 / r + (pass2 > 0 ? pass2 / q : 0)) * yieldK) / R : 0;
 }
 
 /**
