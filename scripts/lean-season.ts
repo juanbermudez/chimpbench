@@ -11,8 +11,9 @@
 //     the communities' ranges (troop centre and radius), the figs' share of it, crowns holding ripe fruit per km², the
 //     record's site share of stems in ripe fruit, and the fallback foods' season factor (forageYield's young-leaf term).
 // With --rows LABEL=<part> (a part made with e-bench --animal-days): the per-animal tables by class (adolescents and
-// juveniles by sex) and month (food by kind, spending by term, acts, foregut, party size, charges received), and each
-// animal that starved in the window over its last 60 days.
+// juveniles by sex) and month (food by kind, spending by term, acts, foregut, party size, charges received), what animals
+// aged 5 y or more do by how depleted they are (reserve bins, each half of the window), and each animal that starved in
+// the window over its last 60 days.
 //
 //   pnpm exec tsx scripts/lean-season.ts --group S39=<run dir>,<run dir>,… [--group T0=…] [--rows R2=<part.json.gz>] [--fruit] [--out <prefix>]
 //
@@ -29,7 +30,7 @@ import { fruitKcalPerUnit, reserveCap, massOf } from '../src/sim/energy';
 import type { World } from '../src/types';
 import { readCheckpoint } from './lib/checkpoint';
 import type { EnergyAcc } from './lib/energy-probe';
-import { MONTHS, animalPool, animalSpan, dailyMonthly, deathsInRows, monthOfDay, monthOrder, rowMonthly, yearByClass, ROW_CLASSES, type MonthCell, type RowCell } from './lib/lean-season';
+import { MONTHS, animalPool, animalSpan, byReserve, dailyMonthly, deathsInRows, monthOfDay, monthOrder, rowMonthly, yearByClass, ROW_CLASSES, type MonthCell, type RowCell } from './lib/lean-season';
 import { decodeLossless } from './lib/lossless-json';
 
 interface PartLite { file: string; run: string; seed: number; burnIn: number; days: number; energy: EnergyAcc | null; starvation: number; resumedFrom: string | null; checkpoints: string[] }
@@ -173,7 +174,18 @@ function main(): void {
         L.push(`| ${a}–${b} | ${f0(c.eatMin)} (${f0(c.eatMinByKind.drupe)} / ${f0(c.eatMinByKind.fig)} / ${f0(c.eatMinByKind.fallback)}) | ${pc(c.eatFullShare)} | ${f0(c.ownPerEatMin, 2)} | ${pc(c.plantShare.drupe)} / ${pc(c.plantShare.fig)} / ${pc(c.plantShare.fallback)} | ${f0(c.eaten.milk)}, ${f0(c.eaten.shared)} | ${f0(c.absorbed)} | ${f0(c.out)} | ${f0(c.net)} | ${f0(c.terms.rest + c.terms.activity)} / ${f0(c.terms.walk + c.terms.climb)} / ${f0(c.terms.growth)} / ${f0(c.terms.pregnancy)} | ${pc(c.acts.crown)} / ${pc(c.acts.ground)} / ${pc(c.acts.travel)} / ${pc(c.acts.rest)} / ${pc(c.acts.social)} / ${pc(c.acts.nurse)} | ${f0(c.hunger, 2)} | ${pc(c.fullDay)} | ${f0(c.party, 1)} | ${f0(c.charged, 2)} (${f0(c.feedCharged, 2)}) | ${f0(last?.cell.reserve, 3)} | ${f0(c.motherReserve, 3)} |`);
       }
     }
-    json[`rows:${label}`] = { seed: p.seed, monthly: t, deaths: deaths.map(d => ({ ...d, last60: animalPool(rows, d.id, d.day - 59, d.day), days: animalSpan(rows, d.id, d.day - 59, d.day) })) };
+    // what animals do by how depleted they are, in the window's halves (the lean season falls in the first in seed 48)
+    const half = Math.floor(p.days / 2), parts: [number, number][] = [[0, half - 1], [half, p.days - 1]];
+    const byRes: Record<string, unknown> = {};
+    for (const [a, b] of parts) {
+      const t2 = byReserve(rows, a, b);
+      byRes[`${a}-${b}`] = t2;
+      L.push('', `### ${label}: behaviour by reserve level, window days ${a}–${b} (animals aged 5 y or more; reserves ÷ store at each day's end)`, '',
+        '| group | reserves ÷ store | animal-days | eat min/d | eating at a full foregut % | daylight on the ground % | daylight in crowns % | plant kcal drupe / fig / fallback % | own food kcal per eat min | hunger | absorbed − spent |',
+        '| --- | --- | ---: | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: |');
+      for (const { group, bin, cell: c } of t2) L.push(`| ${group} | ${bin[0]} to ${bin[1] < -1 ? -1 : bin[1]} | ${f0(c.n)} | ${f0(c.eatMin)} | ${pc(c.eatFullShare)} | ${pc(c.acts.ground)} | ${pc(c.acts.crown)} | ${pc(c.plantShare.drupe)} / ${pc(c.plantShare.fig)} / ${pc(c.plantShare.fallback)} | ${f0(c.ownPerEatMin, 2)} | ${f0(c.hunger, 2)} | ${f0(c.net)} |`);
+    }
+    json[`rows:${label}`] = { seed: p.seed, monthly: t, byReserve: byRes, deaths: deaths.map(d => ({ ...d, last60: animalPool(rows, d.id, d.day - 59, d.day), days: animalSpan(rows, d.id, d.day - 59, d.day) })) };
   }
   const text = L.join('\n') + '\n';
   if (outArg) { writeFileSync(`${outArg}.md`, text); writeFileSync(`${outArg}.json`, JSON.stringify(json, (_k, v) => typeof v === 'number' && !Number.isFinite(v) ? null : v) + '\n'); console.log(`wrote ${outArg}.md and ${outArg}.json`); }

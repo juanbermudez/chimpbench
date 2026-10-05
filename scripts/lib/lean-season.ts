@@ -185,3 +185,23 @@ export function animalPool(rows: (number | null)[][], id: number, from: number, 
 export function deathsInRows(rows: (number | null)[][]): { id: number; day: number; cls: string }[] {
   return rows.filter(r => r[AD.dead] === 1).map(r => ({ id: r[AD.id] as number, day: r[AD.day] as number, cls: rowClass(r) }));
 }
+
+/** Reserve bins (reserves ÷ store at the day's end, upper bound inclusive) of byReserve. */
+export const RESERVE_BINS: [number, number][] = [[0.5, -0.1], [-0.1, -0.3], [-0.3, -0.5], [-0.5, -0.7], [-0.7, -1.01]];
+/**
+ * Stage E1r: what animals do by how depleted they are. Rows of window days from..to (inclusive), of animals aged 5 y or
+ * more, pooled by group (adult males, everyone else) and by reserve bin at the day's end.
+ */
+export function byReserve(rows: (number | null)[][], from: number, to: number): { group: string; bin: [number, number]; cell: RowCell }[] {
+  const out: { group: string; bin: [number, number]; cell: RowCell }[] = [];
+  for (const group of ['adult male', 'others aged 5 y or more']) for (const bin of RESERVE_BINS) {
+    const s = blankSum(rows[0]?.length ?? 0);
+    for (const r of rows) {
+      const d = r[AD.day] as number, rel = (r[AD.res] as number) / (r[AD.store] as number);
+      if (d < from || d > to || (r[AD.age] as number) < 5 || (rowClass(r) === 'adult male') !== (group === 'adult male') || !(rel <= bin[0] && rel > bin[1])) continue;
+      addRow(s, r);
+    }
+    if (s.rows) out.push({ group, bin, cell: rowCell(s) });
+  }
+  return out;
+}

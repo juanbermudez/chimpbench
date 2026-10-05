@@ -58,7 +58,7 @@ test('animal-day records: the world is unchanged, one row per animal and day, su
 // scripts/lib/lean-season.ts on synthetic parts (no simulation)
 // ---------------------------------------------------------------------------------------------------------------------
 import { AD as ADF } from '../scripts/lib/energy-probe';
-import { animalPool, animalSpan, dailyMonthly, deathsInRows, monthOfDay, monthOrder, rowClass, rowMonthly, yearByClass } from '../scripts/lib/lean-season';
+import { animalPool, animalSpan, byReserve, dailyMonthly, deathsInRows, monthOfDay, monthOrder, rowClass, rowMonthly, yearByClass } from '../scripts/lib/lean-season';
 import { newEnergyAcc } from '../scripts/lib/energy-probe';
 
 test('calendar: a 30-day burn-in from 28 September puts window day 0 on 28 October and day 4 in November', () => {
@@ -122,4 +122,8 @@ test('per-animal rows: classes, monthly cells, an animal\'s last days and its de
   assert.equal(span[1].dead, true);
   assert.equal(animalPool(rows, 7, 4, 6)!.n, 2.5);
   assert.equal(animalPool(rows, 7, 10, 20), null);
+  // by reserve level (upper bounds inclusive): the juvenile's days at −0.1 and −0.2 fall in the second bin and its last
+  // half day at −1 in the last; the adolescent and the pregnant female (0) in the first; no adult male among the rows
+  const br = byReserve(rows, 0, 10);
+  assert.deepEqual(br.map(b => [b.group, b.bin[0], b.cell.n]), [['others aged 5 y or more', 0.5, 2], ['others aged 5 y or more', -0.1, 2], ['others aged 5 y or more', -0.7, 0.5]]);
 });
