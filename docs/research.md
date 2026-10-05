@@ -3881,8 +3881,8 @@ answered with a challenge were dropped at the first one and not worked around: h
 challenge"), the Harvard DASH copy of potts2011 (CAPTCHA this time), europepmc.org's PDF renderer and Deep Blue
 (Cloudflare), MPG.PuRe (bot check); academia.edu returned 403. Three research subagents read the sources in full or in
 abstract ("(subagent)"); the agent re-read every load-bearing passage below from the subagents' saved texts or the
-source itself ("re-checked"). Paraphrased, not quoted. Field values stay targets: nothing below is entered as an input
-by this stage.
+source itself ("re-checked"). Paraphrased, except a few quoted terms. Field values stay targets: nothing below is
+entered as an input by this stage.
 
 **Wadging and what the fallback rates measure**
 - **What the pith dry-matter rate measures** [uwimbabazi2019] (FT, author manuscript NIHMS1029101 through NCBI BioC,
