@@ -14,14 +14,12 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (5 October 08:00; deploy held by the user).** Part C: the 60-day group of today's model is done
-  (bench-run4 `…/e/rb/C60-T0*`); S39's 60-day group has 3 of 4 (C60-S39-s3 was cut at the 2-hour limit after 2 seeds:
-  re-run `integrator/rb.sh bench-run3 C60-S39-s3 confirm S39 3`). The 6-month groups are done and judged (e-rebaseline.md
-  "6-month results"). The 12-month extensions (M12-*, runner plans in bench-run and bench-run2 `…/e/runs/M12-*`) started
-  ~02:50; the machine then slept or stalled and is now at load ~300 from another session's browser tests, so each is still
-  on seed 48 (alive, detached); their runners were killed by the 2-hour limit: relaunch `integrator/m6run.sh M12-<label>`
-  for each (finished jobs skipped, live ones adopted) once load is below 30 (`integrator/loadwatch.sh` waits for that).
-  Agent: **eM-model** (M1–M3: GLiNER, with Jev interchangeable, on Track E's state).
+- **Running now (5 October 10:25; deploy held by the user).** Part C done at 60 days, 6 months and 12 months
+  (docs/staging/e-rebaseline.md). **S39 is not viable at 12 months:** starvation in 3 of 4 runs (adolescents, pregnant
+  females, an infant) after a lean season (days ~45–230 of the scored year) the 60-day windows never saw. Walk-back
+  running (registered f08ab97): S37, S34, S31, S27 at 12 months with the runner (`integrator/m6run.sh WB-<stack> 2`;
+  plans in bench-run and bench-run2 `…/e/runs/WB-*`). Agents: **eM-model** (M1–M3, GLiNER on Track E's state) and
+  **eD-counts** (part D1, rare-event counts on the 12-month groups).
 - **S39 is the best integrated candidate (42)** (e-stack2-confirm.md "S39 results"): S37 + `tripBeliefs` 3; held-out without
   rare rows better beyond noise (z −2.2), every class's reserve better, less walking, T-IGE-1 back in band. Costs: T-ACT-2
   0.115 (band floor 0.12), T-COM-11 0.023 (band 0.25–0.55; snake-trial protocol).
