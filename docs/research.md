@@ -3756,7 +3756,7 @@ arithmetic. No value is a model input: these are the readouts' field values.
 - mullerWrangham2004b, muller2007, wranghamWilsonMuller2006 and mouginot2024 are already cited; the lines above add
   findings.
 
-### Addendum: E4p mating without quotas (4 October 2026)
+### E.60 Addendum: E4p mating without quotas (4 October 2026)
 
 Read for stage E4p (docs/staging/e4p-prereg.md): what limits copulation once the mating quota and its three literal
 gaps are gone. Every number below was checked against the downloaded text by the stage. No value is taken as a

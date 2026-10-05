@@ -1958,7 +1958,7 @@ SE across males); the alpha displayed 4.5 × the average. Male aggression receiv
 1970–78 0.015–0.030). Gombe, dyadic aggression with the focal male as actor or recipient, median 0.085 per hour
 (mouginot2024, FT; context). No per-male-hour rate of charges at strangers found. No new keys.
 
-## Addendum: E4p mating without quotas (4 October 2026)
+## 60. Addendum: E4p mating without quotas (4 October 2026)
 
 Same text as research.md "Addendum: E4p mating without quotas": furuichiHashimoto2001's 4.2 (Mahale) and 12.3 (Gombe)
 are the operational sex ratio (adult males per maximally swollen female in the community, from demographic parameters),
