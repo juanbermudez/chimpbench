@@ -17,10 +17,10 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Running now (4 October 22:15; deploy held by the user).** Agents: **E3h** (`e3h-trip-beliefs`: why trips fail; beliefs
   that expect others' eating; the caller-trip arrival defect) and **E5g** (`e5g-call-gaps`: three call and alarm literals),
   both from 90aa294 against the S31 quick group (bench-run 4111971, `…/e/s31q/`, running via `integrator/s31q-group.sh`).
-  Integrator: **S36** (S34 + `experienceValue` 2; bench-run2 at a9955d4, `…/e/s36/`; judge `integrator/judge_s27group.py`).
+  S36 (S34 + `experienceValue` 2) done: not adopted (other females' reserve z −2.6, as on S35). **Disk nearly full** (≈ 0.7 GB free at 22:45; our files ≈ 4 GB; finished stages' scratch gzipped): runs may fail until the user frees space.
 - **S34 is the best integrated candidate (45)** (e-stack2-confirm.md "S34 results"): S31 + `aggressionGaps` 7; every sum
   inside noise, no cost found, food calls into their band. E4p recorded (the mating quota stays). S35 (the hunting
-  correction on S31) passed with no benefit; S36 tests it on S34.
+  correction on S31) passed with no benefit; S36 on S34 likewise, with the same small cost: not adopted.
 - **S31 was the best integrated candidate (48)** after the registered fallback (e-stack2-confirm.md "E3g's outcome and the
   fallback to S31"): E3g found re-deciding's cost is the trip valuation itself, so `redecideValue` stays off the stack.
 - **S32 was the best integrated candidate (45 on E0b's ledger), until the fallback,** by the registered decision (e-stack2-confirm.md "S31 and
