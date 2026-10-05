@@ -370,3 +370,24 @@ band 0.12–0.25). T-COM-11 below its band: held (0.023; band 0.25–0.55). T-FO
 new band 0.08–0.78; group mean 0.861). Not predicted: parties now below their revised band (T-PTY-1 3.99; band 4.5–9.2).
 (Integrator correction, before any reader: the first version of this paragraph garbled the travel-share line and called
 T-FOOD-10 a miss.)
+
+## Part D: rare-event families (registered 5 October 2026, 09:15, before any count)
+
+User's brief: count events per family on S39's 12-month reference (simulation truth), compare with T-LET, T-DEM and
+T-PAT-9, and state the minimum count needed to judge before counting; stage only families with enough events; go to 24
+months only for families with too few at 12.
+
+**Families** (S39's 27 rare-event prescriptions, by the ledger): lethal conflict and injury (13: gang impulses and kills,
+infanticide, serious injury, the defence roll), deaths, adoption and bereavement (8), disease and snares (4), dispersal (2).
+
+**Events counted (simulation truth, per run and seed, from the worlds and run outputs):** killings by cause (intergroup,
+infanticide, within the community), serious injuries, coalitionary attacks on strangers; deaths by cause, mothers' deaths
+leaving dependent offspring, adoptions, carrying of dead infants, bereavement episodes; epidemic arrivals, outbreak cases
+and deaths, snare injuries; natal transfers (dispersal). Community-years and chimp-years per run are counted with them.
+
+**Minimum counts to judge (fixed now).** A family's rate rows are judged at a horizon only if S39's 4-run reference group
+pools at least **10** events of that family (Poisson relative standard error ≤ 0.32, enough to tell a rate from half or
+double it); its pattern rows (victim composition, numerical odds, who dies, causes of death) need at least **20** pooled
+events; an arm is compared with the reference only if it has at least **5** events of the family itself. A family below
+these counts at 12 months goes to 24 months; below them at 24 months it is recorded as not testable within the ladder
+(more seeds would be the next lever, not more years).
