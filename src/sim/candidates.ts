@@ -6,7 +6,7 @@ import { clamp, hash01, smoothstep } from './rng';
 import { paramsOf, type Params } from './params';
 import { fruitAt } from './phenology';
 import { bestFallbackNear, fallbackOn } from './fallback';
-import { fruitRate, leafWorth, needFruit, netRateShare, treeIntake } from './intake';
+import { fruitRate, leafWorth, needFruit, netRateShare, rateMemo, treeIntake } from './intake';
 import { heatRestValue, nestValue, shelterValue, sleepPressure, thermalLoad } from './rhythm';
 import { darkOn, tripLight, visionNow, type TripLight } from './light';
 import { circadianOn, circadianSleepiness } from './circadian';
@@ -276,6 +276,8 @@ function remembersChimp(c: Chimp, id: number): boolean {
 /** Stage E2c: mean feeding height in a crown as a share of tree height (execution.ts forageTick draws 0.45–0.73). */
 const CROWN_Y = 0.45 + 0.28 / 2;
 const _tl: TripLight = { pace: 1, see: 1 };
+/** netRateShare's per-animal terms within one computeCandidates call (intake.ts RateMemo; performance only). */
+const _rm = rateMemo();
 /** Slot order: score, then target, then action code (a strict total order, so any correct sort gives the same list). */
 function slotBefore(a: Slot, b: Slot): number { return b.score - a.score || a.target - b.target || CODE[a.action] - CODE[b.action]; }
 const _order: Slot[] = [];
@@ -283,7 +285,7 @@ const _order: Slot[] = [];
 /** Pure: builds candidates from the chimp's last perception and its body. No rng, no world mutation. */
 export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Candidate[] {
   out.length = 0;
-  n = 0; cur = c; curTime = world.time;
+  n = 0; cur = c; curTime = world.time; _rm.c = null;
   const P = paramsOf(world);
   curP = P;
   const x = ix(c);
@@ -467,8 +469,8 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     // the climb: to the crown from the ground, or what is left of it inside this crown
     const crownY = t.height * CROWN_Y, climb = c.targetId === t.id || t === inCrown ? crownY - c.position[1] : crownY;
     const xh = tbc ? tripClimbH(c, P, d, climb) : 0, ck = tbc ? riderKcal(world, c, P, d, climb, travel) : 0;
-    if (dark && (tripLight(world, P, d, crownY, _tl, spd).pace < 1 || _tl.see < 1)) return netRateShare(c, P, crop, feeders, d, climb, _tl.pace, _tl.see, spd, xh, ck, yk);
-    return netRateShare(c, P, crop, feeders, d, climb, 1, 1, spd, xh, ck, yk);
+    if (dark && (tripLight(world, P, d, crownY, _tl, spd).pace < 1 || _tl.see < 1)) return netRateShare(c, P, crop, feeders, d, climb, _tl.pace, _tl.see, spd, xh, ck, yk, _rm);
+    return netRateShare(c, P, crop, feeders, d, climb, 1, 1, spd, xh, ck, yk, _rm);
   };
   // stage E3e (choiceBelief; docs/staging/e3e-prereg.md §5.1): a trip to a tree out of sight carries the animal's belief
   // about its crop (the crop it values the tree at, the hours since it last saw the tree), so rg.ts can draw the crop

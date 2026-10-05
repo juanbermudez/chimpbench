@@ -77,6 +77,15 @@ export function treeIntake(c: Chimp, P: Params, crop: number, feeders: number, d
 }
 
 /**
+ * netRateShare's terms that depend on the animal alone (its full ripe-fruit rate R and its bout room at R), kept across
+ * the many trees of one valuation (performance only: the same values, computed the first time netRateShare needs them).
+ * Valid while the animal's body and gut do not change: computeCandidates resets it at every call (it mutates nothing of
+ * the animal; a ledger opened on first use is opened at the first bout room, as without the memo).
+ */
+export interface RateMemo { c: Chimp | null; P: Params | null; kcal: number; R: number; room: number; roomSet: boolean }
+export const rateMemo = (): RateMemo => ({ c: null, P: null, kcal: 0, R: 0, room: 0, roomSet: false });
+
+/**
  * Stage E3c (forageRate; docs/staging/e3c-prereg.md §5): the net energy rate a fruit tree promises, as a share of this
  * animal's own full ripe-fruit rate R (kcal/h): (E − C) ÷ (walk + E ÷ (R × see)) ÷ R, the long-term average rate of net
  * energy gain of the classical foraging models [charnov1976, stephensKrebs1986]. E is the energy of one bout there: the
@@ -87,12 +96,21 @@ export function treeIntake(c: Chimp, P: Params, crop: number, feeders: number, d
  * bout does not pay its walk is worth 0. Drupe energy, as treeIntake. Stage E2j (tripBodyCost): `extraH` hours of climbing
  * join the walk's time and `carryK` kcal of a riding load join the trip's energy (gait.ts tripClimbH, riderKcal). Pure.
  */
-export function netRateShare(c: Chimp, P: Params, crop: number, feeders: number, distM: number, climbM: number, pace = 1, see = 1, speed = P.walkMps, extraH = 0, carryK = 0, yieldK = 1): number {
-  const kcal = fruitKcalPerUnit(P, false), R = fruitRate(c, P).fruitPerH * kcal;
+export function netRateShare(c: Chimp, P: Params, crop: number, feeders: number, distM: number, climbM: number, pace = 1, see = 1, speed = P.walkMps, extraH = 0, carryK = 0, yieldK = 1, memo?: RateMemo): number {
+  let kcal: number, R: number;
+  if (memo !== undefined && memo.c === c && memo.P === P) { kcal = memo.kcal; R = memo.R; }
+  else {
+    kcal = fruitKcalPerUnit(P, false); R = fruitRate(c, P).fruitPerH * kcal;
+    if (memo !== undefined) { memo.c = c; memo.P = P; memo.kcal = kcal; memo.R = R; memo.roomSet = false; }
+  }
   if (!(R > 0) || !(see > 0)) return 0;
+  // the bout room at R: computed where it always was (its first use may open the animal's ledger), then reused
+  let room: number;
+  if (memo === undefined) room = boutRoom(c, P, R);
+  else { if (!memo.roomSet) { memo.room = boutRoom(c, P, R); memo.roomSet = true; } room = memo.room; }
   // stage E3g (experienceValue bit 1; experience.ts): `yieldK` the share of a trip's bout the animal's trips have
   // delivered, so a trip is worth the meal it is expected to give (1 with the switch off: × 1 leaves today's numbers)
-  const E = Math.min(Math.max(0, crop) / (1 + feeders) * kcal, boutRoom(c, P, R)) * yieldK;
+  const E = Math.min(Math.max(0, crop) / (1 + feeders) * kcal, room) * yieldK;
   if (!(E > 0)) return 0;
   // stage E2j (tripBodyCost; gait.ts): `carryK` the energy of a load riding on the animal, `extraH` the hours spent
   // climbing down and up; both 0 with the switch off (adding 0 leaves today's numbers bit for bit)
