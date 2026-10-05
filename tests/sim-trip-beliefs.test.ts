@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { candidateMeta, computeCandidates, findCandidate, V } from '../src/sim/candidates';
+import { candidateMeta, computeCandidates, findCandidate, treeFoodWorth, V } from '../src/sim/candidates';
 import { executeAction, startAction } from '../src/sim/execution';
 import { cropTarget, fruitAt } from '../src/sim/phenology';
 import { paramsOf } from '../src/sim/params';
 import { dailyBeliefs, perceive } from '../src/sim/perception';
-import { gate } from '../src/sim/rg';
+import { beliefOffset, gate } from '../src/sim/rg';
+import { fruitingCrop } from '../src/sim/tripbelief';
 import { isTreeId, ix, simOf } from '../src/sim/state';
 import { intentOf } from '../src/decide/gate';
 import { createWorld, tickWorld } from '../src/simulation';
@@ -106,8 +107,39 @@ test('tripBeliefs 2: a caller trip heard in a crown walks to that crown and beco
   assert.ok(typeof on.g !== 'string' && on.g.arrived && on.g.keep.action === 'forage' && on.g.keep.targetId === on.t.id, 'and the gate turns the trip into feeding there');
 });
 
-test('tripBeliefs 3 (field, S31): deterministic over 12 h, JSON-lossless; the count is unchanged', () => {
-  const T = { ...S31, tripBeliefs: 3 };
+test('tripBeliefs 4: a listed crown valued from the list alone is a chance of fruit; the draw says in fruit or not', () => {
+  const run = (bits: number) => {
+    const w = morning(bits), P = paramsOf(w), c = adult(w), x = ix(c), s = simOf(w);
+    const t = w.trees.find(q => dist(c, q) > 150 && dist(c, q) < 400 && q.maxFruit > 0.3)!;
+    const share = 0.25, full = fruitingCrop(P, t), expected = Math.round(full * share * 1000) / 1000;
+    s.knownTrees = { ...s.knownTrees, [c.troopId]: [t.id, expected] };
+    c.memory = c.memory.filter(m => m.kind !== 'tree');
+    if (x.treeCrop) delete x.treeCrop[t.id]; if (x.ls) delete x.ls[t.id];
+    perceive(w, c);
+    const k = computeCandidates(w, c, []).find(q => q.action === 'travel' && q.targetId === t.id && candidateMeta.get(q)?.v === V.TREE);
+    return { w, c, P, t, k, m: k ? candidateMeta.get(k) : undefined, share, full, expected };
+  };
+  const off = run(0), on = run(4);
+  assert.ok(off.k && on.k, 'the listed crown is offered in both');
+  assert.equal(off.m!.bel!.length, 5, 'today a listed crown\'s belief is its mean crop');
+  assert.equal(off.m!.bel![1], off.expected);
+  assert.equal(on.m!.bel!.length, 6, 'with bit 4 it carries the share in fruit');
+  assert.ok(Math.abs(on.m!.bel![5] - on.share) < 0.01, `share ${on.m!.bel![5]}`);
+  assert.ok(Math.abs(on.m!.bel![1] - on.full) < 1e-12, 'at the crop a fruiting crown of its capacity holds');
+  assert.ok((on.m!.raw ?? on.k!.score) < (off.m!.raw ?? off.k!.score) - 1e-9, 'valued at the expected bout, below the mean crop\'s value');
+  // the draw: in fruit (the full crop's food term less the expected one) or not (minus the expected one), from world.rng
+  const offs = new Set<number>();
+  for (let i = 0; i < 40; i++) offs.add(Math.round(beliefOffset(on.w, on.c, on.k!, on.P) * 1e9));
+  assert.equal(offs.size, 2, 'two outcomes');
+  const [a, b] = [...offs].sort((p, q) => p - q);
+  assert.ok(a < 0 && b > 0, 'below and above the expectation');
+  const bel = on.m!.bel!, mean = treeFoodWorth(on.w, on.c, on.P, on.t, bel[1], bel[3], bel[4], bel[5]), fruiting = treeFoodWorth(on.w, on.c, on.P, on.t, bel[1], bel[3], bel[4]);
+  assert.ok(mean > 0 && mean < fruiting, 'the expected bout is worth less than a fruiting crown\'s');
+  assert.ok(Math.abs(a / 1e9 + mean) < 1e-6 && Math.abs(b / 1e9 - (fruiting - mean)) < 1e-6, 'not in fruit: nothing; in fruit: a fruiting crown\'s food term');
+});
+
+test('tripBeliefs 7 (field, S31): deterministic over 12 h, JSON-lossless; the count is unchanged', () => {
+  const T = { ...S31, tripBeliefs: 7 };
   const a = createWorld(48, { profile: 'field', params: T }), b = createWorld(48, { profile: 'field', params: T });
   for (let i = 0; i < 2880; i++) { tickWorld(a); tickWorld(b); }
   assert.equal(worldHash(a), worldHash(b));

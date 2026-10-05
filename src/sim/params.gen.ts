@@ -2,7 +2,7 @@
 /* eslint-disable */
 export const REGISTRY_VERSION = 1;
 /** Content hash of every live default, hard range, profile value and integer flag. Stored with each world. */
-export const REGISTRY_HASH = '9774b2ea02f33ec1';
+export const REGISTRY_HASH = 'c6f804983dbb59ce';
 
 /** Registry defaults (the compressed profile). */
 export const DEFAULTS = {
@@ -1984,7 +1984,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   treeSightFactor: [0, 1000000],
   treeSightMaxM: [0, 1000000],
   treeValueDistScaleM: [0, 1000000],
-  tripBeliefs: [0, 3],
+  tripBeliefs: [0, 7],
   tripBodyCost: [0, 1],
   tripRateValue: [0, 1],
   tripYieldRate: [0, 1],

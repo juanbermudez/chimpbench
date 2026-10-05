@@ -22772,12 +22772,12 @@
    "units": "switch",
    "range": [
     0,
-    3
+    7
    ],
    "rangeBasis": "assumed",
    "hardRange": [
     0,
-    3
+    7
    ],
    "calibrate": false,
    "evidence": "design",
@@ -22794,7 +22794,7 @@
     "compressed": 0,
     "field": 0
    },
-   "notes": "Stage E3h switch (docs/staging/e3h-prereg.md §5), a sum of bits. 1: a crown on the community's known list (foraging.ts dailyKnownTrees, C7a rule 8) that the animal sees is valued by what it saw, an empty crown included (perception.ts keeps the crop seen as its belief and the hour in chimp.sim.ls instead of deleting a belief below 0.04), for as long as a sighting of a remembered crown is a travel goal (memTravelHorizonH); after that, or for a listed crown it has not seen, the list's expectation stands in as today (C7a's design: an individual's own sighting overrides the expectation; janmaat2013b: an empty tree is learned on arrival). 2: a trip to a caller heard feeding in a crown (socialTiming bit 4's x.jt), valued as a trip to that crown, walks to that crown (stopping where a trip to a tree stops) and on arrival becomes feeding there by the gate's own arrival rule (rg.ts), instead of stopping joinCallStopM short of the call point and being re-decided; calls not given in a crown are unchanged. No new magnitude; no counted entry is read less (corrections). 0 = today, bit for bit. Design."
+   "notes": "Stage E3h switch (docs/staging/e3h-prereg.md §5), a sum of bits. 1: a crown on the community's known list (foraging.ts dailyKnownTrees, C7a rule 8) that the animal sees is valued by what it saw, an empty crown included (perception.ts keeps the crop seen as its belief and the hour in chimp.sim.ls instead of deleting a belief below 0.04), for as long as a sighting of a remembered crown is a travel goal (memTravelHorizonH); after that, or for a listed crown it has not seen, the list's expectation stands in as today (C7a's design: an individual's own sighting overrides the expectation; janmaat2013b: an empty tree is learned on arrival). 2: a trip to a caller heard feeding in a crown (socialTiming bit 4's x.jt), valued as a trip to that crown, walks to that crown (stopping where a trip to a tree stops) and on arrival becomes feeding there by the gate's own arrival rule (rg.ts), instead of stopping joinCallStopM short of the call point and being re-decided; calls not given in a crown are unchanged. 4 (iteration 2): a listed crown valued from the list alone (not seen within memTravelHorizonH) is in fruit with the chance the list holds for it (its expected crop / the crop a fruiting crown of its capacity holds, capacity x the mean fullness, as dailyKnownTrees computes them), so the trip is worth the long-run rate of an uncertain crown: the bout expected there is that share of a fruiting crown's bout, eating time with it (intake.ts netRateShare's yieldK: expected gain over expected time, charnov1976), and the choice samples the crown as in fruit or not (rg.ts beliefOffset, one draw from world.rng) instead of a normal spread around the mean crop. No new magnitude; no counted entry is read less (corrections). 0 = today, bit for bit. Design."
   },
   {
    "id": "tripBodyCost",

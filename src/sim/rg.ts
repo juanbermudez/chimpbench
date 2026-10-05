@@ -122,6 +122,10 @@ export function beliefOffset(world: World, c: Chimp, k: Candidate, P: Params): n
   if (!bel) return 0;
   const t = index(world).treeById.get(bel[0]);
   if (!t) return 0;
+  // stage E3h (tripBeliefs bit 4; tripbelief.ts): a listed crown valued as a chance of fruit (bel[5], the share in fruit, at
+  // the crop bel[1] if in fruit): one draw from world.rng says whether it is; the offset is the food term then (a fruiting
+  // crown's, or nothing) less the term the trip was valued at (the expected bout, candidates.ts rateWorth's share)
+  if (bel.length > 5) { const mean = treeFoodWorth(world, c, P, t, bel[1], bel[3], bel[4], bel[5]); return (random(world) < bel[5] ? treeFoodWorth(world, c, P, t, bel[1], bel[3], bel[4]) : 0) - mean; }
   const b = bel[1], s = b * (1 - Math.exp(-P.patchRecoverPerDay * bel[2] / 24));
   if (!(s > 0)) return 0;
   const crop = Math.max(0, b + s * normal(world));
