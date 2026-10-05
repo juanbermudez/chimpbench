@@ -893,3 +893,21 @@ the dyadic rate is inside Kanyawara's range for A1 and A3 (0.031, 0.064) and jus
   the male → male aggression readout reads the act at the tick's end, not at its start (E4q's tool reads the start).
 - No deferred defect in the code under test. The decision guide's mating box ("Mating quotas") is unchanged: the switch is
   off and no stack carries it.
+
+## 12. Files and final checks
+
+- Code: `src/sim/mating.ts` (new: `matingValueOn`, `consentOnArrival`, `spermDecayOn`, `copulationWeight`,
+  `paternityGain`, `consents`, `spermDecay`, `addDecayed`), `src/sim/candidates.ts` (the mate offers; the 'mateFgap'
+  trace), `src/sim/execution.ts` (`mateTick`'s consent, guard and consort, the approach's interrupt; the `mateTrace`
+  diagnosis hook), `src/sim/reproduction.ts` (the decayed record in `recordCopulation` and `ovulate`), `src/sim/state.ts`
+  (`cd`, `cdAt` in `OPTIONAL_X`); `data/params.json` (`matingValue`, `spermLifeDays`); `scripts/lib/prescriptions.ts`
+  (ACTIVE_WHEN `mateIntervalH`, three LITERAL_OFF lines, the switch); `scripts/e4p-diagnose.ts`;
+  `tests/sim-mating-value.test.ts`; docs (this file, research.md and e-sources.md "Addendum: E4p mating without quotas",
+  simulation.md note and registry rows). Outputs (gitignored): `artifacts/validation/e4p/`.
+- Merged `track-e` (d74bffd: E4q's `aggressionGaps`, E3g's `experienceValue`, S31–S34 docs) once, before the final checks;
+  conflicts (research.md, e-sources.md, simulation.md, prescriptions.ts, candidates.ts, state.ts, params.gen.ts, the
+  switch list) resolved by keeping both sides, params.gen.ts regenerated. After the merge, S27 seed 48 after 2 days still
+  hashes 6005ce06d37e5df1 (switch 0), dba5143146a2b7b4 (1) and cda0c8e584113dd2 (3); counts S27 51, S27 + `matingValue`
+  1–3 47, today's model 147.
+- Final checks (merge state): `gen-params --check` clean (0 evidence-tagged literals outside the registry);
+  `tsc --noEmit` clean; `pnpm test` 842 tests, 841 pass, 0 fail, 1 skipped.

@@ -3724,6 +3724,38 @@ Boesch 2005, 2006 and 2010; Deschner et al. 2004 full text (bot check); Emery Th
 - muller2007, mullerWrangham2004b, mitaniWatts1999, hardus2012 and bugir2021 are already cited; the entries above add
   findings.
 
+### E.59 Addendum: E4q aggression without cooldowns (4 October 2026)
+
+How often adult males display, challenge and charge in wild chimpanzees, per male-hour, for stage E4q
+([staging/e4q-prereg.md](staging/e4q-prereg.md)). Every number below was read from the saved full texts (Kibale
+Chimpanzee Project copies and PMC; fetched for E4h, research.md "Addendum: E4h contests"); "derived" = this stage's
+arithmetic. No value is a model input: these are the readouts' field values.
+
+- **Charging displays and chases and attacks per male-hour, Kanyawara 1998** [mullerWrangham2004b] (FT) [M]: 40-min group
+  focal follows, all-occurrence; 9 adult males with ≥ 20 observation hours in each condition (37.4 ± 3.6 h with and
+  95 ± 6.5 h without maximally tumescent parous females in the party); "Observations from parties containing fewer than two
+  adult males were excluded from rate calculations". Table 1, mean ± SE across males: charging displays 0.259 ± 0.075 per
+  hour with and 0.212 ± 0.074 without such females ("increased their display rate, on average, by 24%", P = 0.14); chases
+  and attacks 0.169 ± 0.039 and 0.066 ± 0.017 ("almost 2.5 times more frequently", P = 0.002); 46 ± 9% against 29 ± 6% of
+  male agonism was chases and attacks. "Charging displays involved exaggerated locomotion, piloerection and branch shaking.
+  Chases were recorded when an individual pursued a fleeing conspecific ... All incidents of contact aggression were
+  recorded as attacks." Display and attack rates rose with rank (r = 0.75 and 0.71); the alpha displayed 4.5 × the male
+  average. Masses not reported.
+- **Dyadic rates, Kanyawara 1998** [muller2007] (FT) [M]: females received "charges, chases or physical attacks from
+  individual males at a mean rate of 0.017 ± 0.004 (all are ± s.e.) times per hour", "indistinguishable from that of male
+  aggression received by males (0.015 ± 0.003 times h−1 ... N2 = 11 adult males)"; focal data, dyads observed together
+  ≥ 25 h.
+- **Contact aggression given** [wranghamWilsonMuller2006] (FT) [M]: Kanyawara 1998, 11 adult males with ≥ 25 observation
+  hours (median 145 h), "means of individual male rates", excluding time alone or only with dependent offspring, "attacks
+  given, not received": 2,670 per 100,000 h (0.027 per hour); Gombe 1970–78: 1,464–3,030.
+- **Context, Gombe** [mouginot2024] (FT) [M]: 14 males ≥ 12 y, 7,309 focal hours: dyadic aggression (charge, chase, contact)
+  with the focal male as actor or recipient, median 0.085 per hour (0.039–0.13), acts between the same pair within 1 min
+  counted once.
+- **No per-male-hour rate of charges at strangers** was found; the intergroup rows (T-IGE-1..3, wilson2012) carry the
+  context.
+- mullerWrangham2004b, muller2007, wranghamWilsonMuller2006 and mouginot2024 are already cited; the lines above add
+  findings.
+
 ### Addendum: E4p mating without quotas (4 October 2026)
 
 Read for stage E4p (docs/staging/e4p-prereg.md): what limits copulation once the mating quota and its three literal
@@ -3750,7 +3782,7 @@ behavioural input; one physiological value (sperm survival, human) enters as [L]
   chimpanzees]: 221 women, 625 cycles with urinary estimates of the day of ovulation: "Conception occurred only when
   intercourse took place during a six-day period that ended on the estimated day of ovulation. The probability of
   conception ranged from 0.10 when intercourse occurred five days before ovulation to 0.33 when it occurred on the day of
-  ovulation itself." Use (iteration 2 of E4p, `spermLifeDays`): an e-folding time of a copulation's fertilizing weight,
+  ovulation itself." Use (E4p's `matingValue` 3, `spermLifeDays`): an e-folding time of a copulation's fertilizing weight,
   5 / ln(0.33 / 0.10) = 4.2 days (the exponential keeps 0.24 at six days where the source has none). No chimpanzee value
   was searched beyond this stage's sources (Deschner et al. 2003, 2004 on ovulation and swelling: not verified).
 

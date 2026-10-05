@@ -214,6 +214,29 @@
    "notes": "Adoption by an older maternal sibling (8 y or older) for orphans of 3 y and over. Where an older maternal sibling exists, siblings adopt (no unrelated adoption in 16 such cases); at Sonso, 3 older immature siblings (9–11 y) cared for 3 younger ones (4–6 y) (hobaiter2014). Pooled, unrelated adults adopted more often (20 vs 14 of 36), mostly at Taï. The value is design."
   },
   {
+   "id": "aggressionGaps",
+   "group": "social",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    7
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    7
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "computeCandidates (displays), aggression (status, escalated, grudge, coercive and female-dominance charges), intergroup (charge at strangers)",
+   "file": "src/sim/candidates.ts",
+   "integer": true,
+   "notes": "Stage E4q (docs/staging/e4q-prereg.md section 4): a sum of bits, one per literal gap after the animal's own last act, each switched out without replacement; 0 = today (hash-identical). On S27 (quick, simulation truth) none sets its behaviour's rate (e4q-prereg section 2.1): 1: the 1.5-h cooldown after the animal's own last charge or attack at the status challenge, the escalated attack, the grudge, coercive and female-dominance charges is not read (it trims: removed, the five acts x1.22; the challenge's own score, about 0, sets the challenge rate); 2: the 0.2-h gap of a charge at strangers (and the gang attack in its branch) is not read (inert: its condition held at 2 decisions a run); 4: the 0.75-h display gap is not read (it trims: removed, displays x1.42, under the registered x1.5; the display's own score against the other options sets most of the rate); the fatigue gate (energy above 0.3) stays. No magnitude is added. Design, no fitted value."
+  },
+  {
    "id": "alarmSnakeLinkM",
    "group": "communication",
    "value": 25,
@@ -8059,6 +8082,37 @@
    "file": "src/sim/relations.ts",
    "integer": true,
    "notes": "Digest priority of transfer events (higher is kept first)."
+  },
+  {
+   "id": "experienceValue",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    3
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    3
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/staging/e3g-prereg.md (E3g diagnosis): under redecideValue 2 the keep test carries S28's extra trips; trips deliver 13-31% of the bout energy they are valued at (two thirds never feed at their target, fed trips eat about a third of it); 57% of the extra hunt impulses are re-sightings of a group perceived within the hour",
+    "docs/research.md: charnov1976 (the marginal value theorem: leaving is judged against the rate the environment yields, an average the forager learns)"
+   ],
+   "clock": "none",
+   "symbol": "P.experienceValue",
+   "file": "src/sim/experience.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage E3g switch (docs/staging/e3g-prereg.md §5), a sum of bits. 1: a trip is worth the meal the animal's trips deliver. Each animal keeps chimp.sim.ty, the share of the bout energy it valued its trips at (intake.ts netRateShare's E: the believed crop's share or the gut room) that they delivered at their target crown (the kcal it ate there before doing something else, capped at the bout energy; 0 for a trip that never fed there), learned at the end of each trip (tripYieldRate); every trip's food term (own and known trees, a joined trip's goal, a caller's crown) is valued at ty times its bout energy (the expected meal and its eating time); crowns in view are valued as before. Starts at 1 (the animal trusts its beliefs). 2: a colobus group the animal perceived at one of its decision points within reunionH is not met anew, so it raises no new hunt impulse (perception.ts; the same group seen again carries no new information for the hunt decision). No counted entry is read less (a correction). Results (e3g-prereg.md §6): 1 and 3 recorded null (trips valued at what they delivered collapsed travel and reserves); 2 a provisional keep candidate as a correction (S28 quick: T-HUN-1 47.8 -> 29.9, sums inside noise). 0 = today, bit for bit. Design."
   },
   {
    "id": "fallbackCapH",
@@ -22770,6 +22824,32 @@
     "field": 0
    },
    "notes": "Stage C7b (field; c7b-prereg 3.4): a trip to a remembered or known tree is worth worth x Tf / (Tw + Tf) instead of worth - d / travelDistScaleM, with Tw = d / walkMps and Tf = min(believed crop, hunger / fruitHungerFactor) / fruitIntakePerH: the marginal value theorem's intake rate (charnov1976) with a need cap (design). No free parameter. Replaces the C7a linear cost fitted to 60,000 m (C7a review finding 4). 0 = linear cost. Pre-registered field value 1; off by default after the C7b direction check (c7b-prereg addendum): on C7a it raised straightness (0.19 -> 0.25) and party size (2.38 -> 2.70) but shortened days (30-min path 2,133 -> 1,389 m) and the furthest point of the day (628 -> 454 m)."
+  },
+  {
+   "id": "tripYieldRate",
+   "group": "decision",
+   "value": 0.1,
+   "units": "share per trip",
+   "range": [
+    0.05,
+    0.2
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.tripYieldRate",
+   "file": "src/sim/experience.ts",
+   "profiles": {
+    "compressed": 0.1,
+    "field": 0.1
+   },
+   "notes": "Stage E3g (experienceValue bit 1; docs/staging/e3g-prereg.md §5): the step by which an animal's expectation of what its trips deliver moves toward each trip's outcome (an exponential average over about its last ten trips, a few hours of an adult's trips). Design: a memory length, not fitted; no source gives a chimpanzee's learning rate for patch returns."
   },
   {
    "id": "udCellM",

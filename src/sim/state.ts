@@ -66,6 +66,10 @@ export interface ChimpX {
   rgIntent?: Intent;
   /** Stage E3d (redecideValue): below rgMinAge, the decision count of the decision that chose the current act (its jitter; rg.ts argmaxKeep). */
   jv?: number;
+  /** Stage E3g (experienceValue bit 1; experience.ts): the share of a trip's valued bout energy this animal's trips deliver (absent until its first trip ends). */
+  ty?: number;
+  /** Stage E3g: the open trip episode, [target crown, bout energy valued, kcal eaten there, the trip's own target id] (absent otherwise). */
+  tt?: number[];
   /**
    * Stage E4p (matingValue 3; docs/staging/e4p-prereg.md §5.2, iteration 3): a female's copulations this cycle by male, each
    * weighted as recordCopulation weighs it and decaying with the age of its sperm (e-folding spermLifeDays, on the
@@ -270,7 +274,7 @@ export type SimWorld = World & { sim: SimState };
  * ChimpX and SimState keys that exist only once their mechanism has fired (so worlds with the switch off keep their
  * shape and hashes). The save check (src/persist/envelope.ts worldShapeProblem) ignores them.
  */
-export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'tryNest', 'dfa', 'en', 'wat', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk', 'cx', 'cxc', 'cn', 'asl', 'phAt', 'phX', 'phZ', 'ard', 'wr', 'upk', 'jt', 'nbm', 'jv', 'cd', 'cdAt'];
+export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'tryNest', 'dfa', 'en', 'wat', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk', 'cx', 'cxc', 'cn', 'asl', 'phAt', 'phX', 'phZ', 'ard', 'wr', 'upk', 'jt', 'nbm', 'jv', 'ty', 'tt', 'cd', 'cdAt'];
 export const OPTIONAL_SIM: readonly string[] = ['fission', 'stormAt'];
 
 export function newX(): ChimpX {

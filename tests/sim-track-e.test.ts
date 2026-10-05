@@ -49,6 +49,8 @@ const TRACK_E_SWITCHES = [
   'crownMove', // E1q
   'departValue', // E5f
   'bodyRules', // E4o
+  'aggressionGaps', // E4q
+  'experienceValue', // E3g
   'matingValue', // E4p
 ] as const;
 

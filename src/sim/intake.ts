@@ -87,10 +87,12 @@ export function treeIntake(c: Chimp, P: Params, crop: number, feeders: number, d
  * bout does not pay its walk is worth 0. Drupe energy, as treeIntake. Stage E2j (tripBodyCost): `extraH` hours of climbing
  * join the walk's time and `carryK` kcal of a riding load join the trip's energy (gait.ts tripClimbH, riderKcal). Pure.
  */
-export function netRateShare(c: Chimp, P: Params, crop: number, feeders: number, distM: number, climbM: number, pace = 1, see = 1, speed = P.walkMps, extraH = 0, carryK = 0): number {
+export function netRateShare(c: Chimp, P: Params, crop: number, feeders: number, distM: number, climbM: number, pace = 1, see = 1, speed = P.walkMps, extraH = 0, carryK = 0, yieldK = 1): number {
   const kcal = fruitKcalPerUnit(P, false), R = fruitRate(c, P).fruitPerH * kcal;
   if (!(R > 0) || !(see > 0)) return 0;
-  const E = Math.min(Math.max(0, crop) / (1 + feeders) * kcal, boutRoom(c, P, R));
+  // stage E3g (experienceValue bit 1; experience.ts): `yieldK` the share of a trip's bout the animal's trips have
+  // delivered, so a trip is worth the meal it is expected to give (1 with the switch off: × 1 leaves today's numbers)
+  const E = Math.min(Math.max(0, crop) / (1 + feeders) * kcal, boutRoom(c, P, R)) * yieldK;
   if (!(E > 0)) return 0;
   // stage E2j (tripBodyCost; gait.ts): `carryK` the energy of a load riding on the animal, `extraH` the hours spent
   // climbing down and up; both 0 with the switch off (adding 0 leaves today's numbers bit for bit)
