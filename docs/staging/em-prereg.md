@@ -199,3 +199,44 @@ company) on the same sample and probes.
 **Outputs.** `artifacts/em/m2/` (gitignored): `s48.jsonl`, `s7.jsonl` (+ `.meta.json`), `probes.jsonl`, scores
 `<sample>.<provider>.jsonl`, `jev.jsonl`, `probes.<provider>.jsonl`, the guard's receipts, and `report.md`/`report.json`
 (`scripts/em-report.ts`: every number in the results below comes from it).
+
+## M3. In the loop (registered 5 October 2026 while M2's GLiNER scoring runs, before any M3 run)
+
+**Gate and provider (both fixed by M2's registered rules).** The G arms run only if M2's gate passes; their provider is the GLiNER provider M2's rule selects (more probes the right way in the new observation; on a tie `base`). The R and A arms need neither and may run while M2 scores.
+
+**Worlds.** S39 + `observeState` 1, field profile, seeds 48 and 7, a 30-day rules burn-in, then a 5-day window on exact
+copies of the burned-in world (`structuredClone`; World is JSON-lossless). `scripts/em-loop.ts`.
+
+**Focal set (chosen by rule from the burned-in world, the same animals in every arm).** In the community with the most
+adults: its alpha male, the median-ranked other adult male, the first lactating female (by id), the first adult female not
+lactating, the first adolescent (12–15 y).
+
+**Arms (same copies; everyone outside the focal set on the rules in every arm).**
+- R: the focal animals on the rules (RG: the gate keeps an act until a salient change; draws by value and belief).
+- A: the focal animals in the app's lockstep loop (asked at every decision point; the night and dusk menus; fewer than two
+  options or an engine refusal → rules) choosing the rules' argmax on the menu: what the loop does without a model.
+- G: the same loop choosing by the selected GLiNER provider's argmax on the new observation's packet (`training/decide_ft/worker.py`, one resident process).
+
+A smoke test of the harness (seed 48, 2-day burn-in, 1-day window, arms R and A; not a registered run, disclosed here)
+showed A walking far more than R for two of five animals (alpha 7.3 against 2.8 km a day): the loop re-decides at every
+bout end without RG's gate. A is in the design so G is read against the loop it runs in.
+
+**Readouts per focal animal (simulation truth).** Daylight (daylight ≥ 0.5) shares by the field category of
+`src/field/categories.ts` (feed, rest, travel, groom, social, agonistic; rest + groom); feeding minutes per day; formula
+energy eaten per day (kcal, `L.fin`); reserves (% of the usual store per day); ground path per day (per tick) and the
+5-min-fix path (T-RNG-4's method); night (daylight ≤ 0.03) out of a nest (%); alive and cause of death; model decisions,
+fallbacks by reason, agreement with the rules' argmax, picks by family.
+
+**Field rows the individual readouts allow (bands from data/targets.json).** T-ACT-1 feeding 0.33–0.50, T-ACT-2 travel
+0.12–0.25, T-ACT-3 grooming 0.08–0.18, T-ACT-4 rest + groom 0.30–0.47 (daylight shares), T-RNG-4 adult males' day range
+1.5–3.5 km (5-min fixes; the row is held as failed for path inflation, reported), T-ENE-2 lactating females' feeding
+250–370 min a day. Counted per animal: rows in band in R, A and G.
+
+**Viability and night.** No focal death; reserve trend per animal; out of a nest ≤ 3.3% of the night (the stack's line).
+
+**What this can and cannot show.** Two seeds × five animals × five days: directions, each animal against itself in R and
+A; no sums, no keep rule (five animals cannot score community rows). Predictions written now: A walks more than R; G's
+budget moves from A's the way M2's family shares (draws, new observation) say the provider's choices move from the rules': the families it over-picks gain daylight time, those it under-picks lose it.
+
+**Outputs.** `artifacts/em/m3/s<seed>-RA.json` (R and A) and `s<seed>-G.json` (G; its burn-in hash must equal the R/A
+file's), and `artifacts/em/m3/report.md` (`scripts/em-loop-report.ts`: every number below comes from it).
