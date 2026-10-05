@@ -669,6 +669,21 @@ Each behavior calls `offer(action, target, score, variant, aux)`. The rules are:
 
 **On the way to the model** ([server/decide.ts](../server/decide.ts)): the server accepts `history` (≤ 3 lines of ≤ 120 characters, no control characters) and `tension` (0..1) as optional keys and still rejects any other key. The packet names tension only when marked ("tense" from 0.25, "very tense" from 0.5) and adds `history` to the state. An offline token estimate (`estimateInputTokens`: 2.127 × words − 85.8, a least-squares fit on 3,129 real receipts, residual sd 12, worst under-estimate 38) keeps each packet at or under 612 estimated tokens (about 650 real): history lines are dropped first, oldest last, then the oldest memories. Measured on seed 7 at days 2–400, history and tension words add 18–49 tokens on average (at most 81); the largest packet estimated 601 and none needed trimming.
 
+**Track E's state (stage M1, `observeState`, off by default; [staging/em-prereg.md](staging/em-prereg.md) §M1;
+[observe-state.ts](../src/sim/observe-state.ts)).** With `observeState` 1 the context gains three optional parts, and nothing
+in the simulation reads the switch (the world is the same at 0 and 1; at 0 the context is today's, key for key):
+
+| Part | Contents |
+| --- | --- |
+| `body` | The focal animal's Track E state, each field only while its mechanism runs: reserves relative to the usual store (`energyLedger`), the energy-deficit drive with the energy it needs and the waking hours left it is read over (`ledgerDrive`), gut fill, sleep pressure and felt sleepiness (`rhythmSleep`), the circadian oscillator's level and direction (`rhythmCircadian`), the water deficit as % of body mass (`waterLedger`), the thermal load (`rhythmHeat`), stress, competitive arousal and affiliation (`endoStates`), the fast arousal now (`endoFast`). |
+| `light` | `environment.daylight` and its change per hour over the last tick (what E2b's animals perceive). |
+| `candidates[].value` | Under `forageRate`, on copies: the net energy rate a feeding option or trip promises (kcal/h, walk and climb included: `treeRateShare` × the animal's full ripe-fruit rate), the crop it is valued at in kcal and when the crown was last seen (0 in view, −1 never seen itself), feeders, distance, and the company a move adds (E5a's value with E5b/E5d margins). |
+
+The packet built from such a context ([server/decide.ts](../server/decide.ts) `buildStateQuestion`, `buildJevStateQuestion`) is today's
+packet for the same moment with the light words in place of the clock hour (the nest reasons lose their "HH:MM"), a `body`
+line in plain words with its numbers and each option's values appended (GLiNER) or as separate fields (Jev). On S39
+observations it costs 107 tokens at the median (510 against 404; max 735, hard limit 1,280).
+
 `observe` computes its own candidate list rather than reading `chimp.candidates`, so calling it never changes what the chimp will do.
 
 ---
