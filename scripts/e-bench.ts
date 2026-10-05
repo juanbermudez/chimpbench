@@ -12,11 +12,15 @@
 //   pnpm exec tsx scripts/e-bench.ts --confirm …    # the deciding benchmark for now
 //   pnpm exec tsx scripts/e-bench.ts --rescore artifacts/validation/e/<label>.json [--compare other.json]   # re-derive from a saved run, no simulation
 //
-// Modes (field profile; the user's limit of 1 October 2026: no simulation longer than 3 months in total):
+// Modes (field profile; user, 4 October 2026: work up from 60 days to 6, 12 and 24 months, a longer horizon only when
+// a question needs it, at most 730 days in all, burn-in included; IMPLEMENTATION_PLAN.md "Run-length ladder"):
 //   --quick    seeds 48, 7; 30 days after a 30-day burn-in: a direction check.
-//   --confirm  seeds 48, 7, 21, 5, 11; 60 days after a 30-day burn-in (90 days in all): decides keep or drop.
-//   --full     seeds 48, 7, 21, 5, 11; 365 days after a 180-day burn-in: the plan's benchmark. Kept, not to be run for
-//              now: any run longer than 90 days in all is refused without --allow-long.
+//   --confirm  seeds 48, 7, 21, 5, 11; 60 days after a 30-day burn-in: decides keep or drop when the rows score in 60 days.
+//   --m6       seeds 48, 7, 21, 5, 11; 180 days after a 30-day burn-in (6 months).
+//   --m12      seeds 48, 7, 21, 5, 11; 365 days after a 30-day burn-in (12 months: the NEEDS_YEAR rows score).
+//   --m24      seeds 48, 7, 21, 5, 11; 700 days after a 30-day burn-in (730 in all: rare events, life history).
+//   --full     seeds 48, 7, 21, 5, 11; 365 days after a 180-day burn-in: the plan's original benchmark.
+// Any run longer than MAX_TOTAL_DAYS in all is refused.
 // Rows that need a year of observation (annual ranges, statistics across months, life tables, rare events per year:
 // NEEDS_YEAR below) are reported as "insufficient" in shorter runs and left out of the sums; their count is printed
 // beside each headline number, so a before and an after run of the same mode sum over the same rows.
@@ -41,9 +45,12 @@ export const MODES = {
   quick: { days: 30, burnInDays: 30, seeds: [48, 7] },
   confirm: { days: 60, burnInDays: 30, seeds: [48, 7, 21, 5, 11] },
   full: { days: 365, burnInDays: 180, seeds: [48, 7, 21, 5, 11] },
+  m6: { days: 180, burnInDays: 30, seeds: [48, 7, 21, 5, 11] },
+  m12: { days: 365, burnInDays: 30, seeds: [48, 7, 21, 5, 11] },
+  m24: { days: 700, burnInDays: 30, seeds: [48, 7, 21, 5, 11] },
 } as const;
-/** Longest simulation (burn-in + scored days) run without --allow-long (user limit, 1 October 2026). */
-export const MAX_TOTAL_DAYS = 90;
+/** Longest simulation, burn-in + scored days (user, 4 October 2026: up to 2 years; it was 90 days from 1 October). */
+export const MAX_TOTAL_DAYS = 730;
 /**
  * Rows that need a year of observation, by why. In a shorter run they are reported as insufficient and never summed,
  * whatever value the scorer produced from the short window (a kernel of two months is not an annual range; a rate of
@@ -306,11 +313,11 @@ async function main() {
     return finish(assemble(card, saved.viability?.perSeed ?? null, { label: saved.label, mode: saved.mode, workers: saved.config.workers, timing: saved.timing, scorecard: saved.scorecard, git: saved.git }), out);
   }
 
-  const mode = has('full') ? 'full' : has('confirm') ? 'confirm' : 'quick';
+  const mode = has('full') ? 'full' : has('m24') ? 'm24' : has('m12') ? 'm12' : has('m6') ? 'm6' : has('confirm') ? 'confirm' : 'quick';
   const days = +flag('days', String(MODES[mode].days)), burnInDays = +flag('burn-in', String(MODES[mode].burnInDays));
   const seeds = flag('seeds', MODES[mode].seeds.join(',')).split(',').map(Number), workers = Math.max(1, +flag('workers', '2'));
   const label = days === MODES[mode].days && burnInDays === MODES[mode].burnInDays && seeds.join() === MODES[mode].seeds.join() ? mode : 'custom';
-  if (days + burnInDays > MAX_TOTAL_DAYS && !has('allow-long')) { console.error(`e-bench: ${burnInDays} + ${days} days is longer than ${MAX_TOTAL_DAYS} days in all (user limit, 1 October 2026). Use --quick or --confirm; --allow-long lifts the limit once it is withdrawn.`); process.exit(2); }
+  if (days + burnInDays > MAX_TOTAL_DAYS) { console.error(`e-bench: ${burnInDays} + ${days} days is longer than ${MAX_TOTAL_DAYS} days in all (user limit, 4 October 2026: at most two years, burn-in included).`); process.exit(2); }
   const paramsText = flag('params', '{}'), params = JSON.parse(paramsText) as Overrides;
   if (seeds.some(s => !Number.isInteger(s))) { console.error('--seeds must be integers'); process.exit(2); }
   const out = resolve(flag('out', `artifacts/validation/e/${label}`)), cardFile = `${out}.scorecard.json`;

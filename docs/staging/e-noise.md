@@ -121,3 +121,30 @@ rows and without the three rare rows. Reason: the row (approach depends on own m
 intergroup events) scored 20–30 in about one confirm run in six (S5c2 21.6, S8c1 30.5, S8c3 22.3, S17c1 24.7, S20 23.8),
 and one such run in a reference group inflates its held-out SD past any effect a stage can have (S20's reading:
 e-stack2-confirm.md, "S20 results"). Judgements registered before this amendment stand as recorded.
+
+## Amendment 4 (5 October 2026, integrator; registered before any arm is judged at a horizon longer than 60 days)
+
+User decision (4 October 2026, verbatim): "apply the audited fixes and targets. You can run more than 90 days. You can
+run 2 years for biggest tests, but work up from 6 months, 12 months and 24 months is only when you do need to test
+something on a longer horizon." Each horizon has its own reference groups and the rule below, fixed here before its
+first judged arm. Groups run on different protocols (before and after the new freeze) are never mixed in one test.
+
+### 6 months (`e-bench --m6`: seeds 48, 7, 21, 5, 11; burn-in 30, 180 days)
+
+- Reference: 4 runs at one commit and protocol: the reference stack plus three re-draws by `rngSalt` 1, 2, 3.
+- Test: z = (arm − mean) ÷ (SD × √(1 + 1/n)), n = 4; SD = the group's own spread, floored at the confirm mode's
+  registered per-run SD (fitted 0.30, held-out 1.45, held-out without the rare rows 0.21). |z| > 2 is a result.
+- Only rows scored in every reference run and in the arm enter a sum; NEEDS_YEAR rows stay insufficient at 6 months.
+- Rare rows (amendment 3): every decisive held-out sum is reported with and without T-HUN-4, T-BRD-1 and T-IGE-3.
+- Energy and rhythm readouts against the group's own spread; viability and night safety as at 60 days.
+
+### 12 months (`e-bench --m12`: burn-in 30, 365 days)
+
+- As at 6 months. The NEEDS_YEAR rows score and enter the sums; the first 12-month reference group reports which of them
+  are scored and how far each run's value spreads, before any arm is judged on them.
+
+### 24 months (`e-bench --m24`: burn-in 30, 700 days; 730 in all)
+
+- As at 12 months. Rare-event families (lethal conflict and injury, deaths and adoption, disease and snares, dispersal)
+  are judged only where every reference run has at least the minimum event count registered with the family's stage
+  before counting; below it the family's rows are reported, not summed.

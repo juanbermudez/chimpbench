@@ -255,8 +255,10 @@ User, verbatim (1 October 2026):
   quick test to validate, iterate and progress."
 - When measured physiology could not produce the field time budget, the user chose **"Audit field numbers"**
   (question their measurement before adding unmeasured costs).
-- No simulation longer than **3 months in total** (burn-in included). Track E uses the **rules policy only**: no paid
-  model API (Jev).
+- No simulation longer than 3 months in total (1 October), **replaced on 4 October**, verbatim: "apply the audited fixes and targets. You can run more than 90 days. You can run 2 years for biggest tests, but work up from 6 months, 12 months and 24 months is only when you do need to test something on a longer horizon."
+  The ladder: 60 days → 6 months → 12 months → 24 months (≤ 730 days in all, burn-in included), one step at a time and
+  only when the question needs it (IMPLEMENTATION_PLAN.md "Run-length ladder"). Track E uses the **rules policy only**:
+  no paid model API (Jev).
 
 Hard rules (AGENTS.md plus this track):
 - Determinism: all sim randomness from `world.rng`; `observe()` and `rulesChoice()` pure; `const P = paramsOf(world)`;
@@ -739,13 +741,15 @@ name · on pause, tell agents to commit · refresh this handoff every two merges
 Agents: the pre-flight block in §7.
 
 ## 9. Open questions for the user
-1. Lift the 90-day cap for a 365-day confirm of the kept stack?
+1. ~~Lift the 90-day cap for a 365-day confirm of the kept stack?~~ **Answered 4 October** (§1): runs up to 730 days, worked
+   up 6 → 12 → 24 months only when a question needs the longer horizon.
 2. Gut input: the confirm kept the fix conditional on a 111 mL/kg gut, but the sources now lean to ~83 mL/kg or less
    (low confidence) and the daylight readouts point at the appetite instead. Proposal: no change until E1i reports.
-3. May the staged target rows be applied to `data/targets.json` (new freeze)?
+3. ~~May the staged target rows be applied to `data/targets.json` (new freeze)?~~ **Answered 4 October**: "apply the audited
+   fixes and targets" (§1).
 4. May the merged worktrees be removed, and what should happen to the unmerged encounter-fix branch
    (`worktree-agent-a954b443db4b6f22a`)?
-6. May the three staged scorer fixes for colobus encounters and hunting (docs/staging/e4f-protocol.patch.json: gilby2015's
+6. **Answered 4 October** ("apply the audited fixes and targets", §1): may the three staged scorer fixes for colobus encounters and hunting (docs/staging/e4f-protocol.patch.json: gilby2015's
    run rule, T-HUN-3/4 on party follows, T-HUN-1 counting only encounter-matched hunts) be applied? They change the
    frozen observer, so they need a protocolLog entry and a new freeze, like the staged target rows (question 3).
 5. Can you open Chivers & Hladik 1980 on HAL (hal-00561758) in your browser, or supply it and Milton & Demment 1988
