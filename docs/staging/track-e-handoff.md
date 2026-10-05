@@ -14,12 +14,14 @@ Read this before anything else. It replaces `docs/staging/track-e-resume.md`. Th
 - **Decided this session.** E1h's 5-seed confirm: *keep conditional on the gut* (as registered); but nursing mothers
   stop eating with room in the gut, so the limit is the appetite and their day (e1h-prereg.md §9). E2e: recorded, not
   kept. E4c: provisional keep candidate, confirm queued. e-bench reports every sum with and without T-HUN-4 and T-BRD-1.
-- **Running now (5 October 02:05; deploy held by the user).** Parts A and E merged (freeze 5d4fa5a2a500bce6; e-bench single
-  pass; runner `scripts/e-run.ts`; track-e 63d699a). Part C (docs/staging/e-rebaseline.md): 60-day groups of S39 and
-  today's model running from bench-run3 and bench-run4 at 1f8553b (`integrator/rb-chain.sh`, outputs `…/e/rb/`); 6-month
-  groups running with the runner from bench-run (S39) and bench-run2 (today) at 63d699a (`integrator/m6run.sh <label>`;
-  plans in `<checkout>/artifacts/validation/e/runs/M6-*/run.json`; if a runner stops, relaunch `m6run.sh` for that label:
-  finished jobs are skipped). Judge: `integrator/judge_c.py C60|M6` (new and old bands). No agents.
+- **Running now (5 October 08:00; deploy held by the user).** Part C: the 60-day group of today's model is done
+  (bench-run4 `…/e/rb/C60-T0*`); S39's 60-day group has 3 of 4 (C60-S39-s3 was cut at the 2-hour limit after 2 seeds:
+  re-run `integrator/rb.sh bench-run3 C60-S39-s3 confirm S39 3`). The 6-month groups are done and judged (e-rebaseline.md
+  "6-month results"). The 12-month extensions (M12-*, runner plans in bench-run and bench-run2 `…/e/runs/M12-*`) started
+  ~02:50; the machine then slept or stalled and is now at load ~300 from another session's browser tests, so each is still
+  on seed 48 (alive, detached); their runners were killed by the 2-hour limit: relaunch `integrator/m6run.sh M12-<label>`
+  for each (finished jobs skipped, live ones adopted) once load is below 30 (`integrator/loadwatch.sh` waits for that).
+  Agent: **eM-model** (M1–M3: GLiNER, with Jev interchangeable, on Track E's state).
 - **S39 is the best integrated candidate (42)** (e-stack2-confirm.md "S39 results"): S37 + `tripBeliefs` 3; held-out without
   rare rows better beyond noise (z −2.2), every class's reserve better, less walking, T-IGE-1 back in band. Costs: T-ACT-2
   0.115 (band floor 0.12), T-COM-11 0.023 (band 0.25–0.55; snake-trial protocol).
