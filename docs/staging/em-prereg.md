@@ -96,3 +96,70 @@ malformed ones (unknown keys, out-of-range numbers); a new-layout packet has no 
 byte-identical to today's for the same context.
 
 **What M1 does not decide.** Whether the model reads the new fields, and in which direction: M2.
+
+## M2. Offline check (registered 5 October 2026, before any model scored a packet)
+
+**Sample (made for M1's token check, the same file for M2; no model involved).** `scripts/em-sample.ts`: S39 + `observeState`
+1 (the world is S39's; checked with `--check` on seed 48), field profile, seeds 48 and 7, 30-day burn-in, then 3 days. At
+every rules decision of an animal aged 8 y or over the tap builds the request a model-controlled chimp would send there
+(`buildRequest`: observe() and the bounded menu with the night and dusk menus) before the decision is taken, and the RG
+tap records what the rules chose (`rgIndex`; −1 when RG's pick is not on the model's menu, e.g. a night act the night
+menu removes) and why (a draw trigger, or `kept`/`arrived` when the gate held the act). Sampled by a hash of seed, tick
+and animal (never `world.rng`): draws at 0.25, kept or arrived acts at 0.05. Decision points with fewer than two options
+(no model call: rules decide) are not recorded. Each record keeps the new observation, both GLiNER packets and both Jev
+packets, each option's family, class, published rules score and value without the jitter (`meta.raw`).
+
+**Providers (one setting: `training/decide_ft/em_score.py --provider`).**
+- `base`: GLiNER2.5-Decide untuned, as the app serves it (revision 7ee5da4c; fp16 on MPS through the batch path
+  `common.score`, the serving collator). This is "GLiNER (the base)".
+- `baseline`: the same model with the round-3 baseline LoRA adapter (`artifacts/decide-ft/round3/adapters/baseline`,
+  read only from the main checkout, sha256 in the output), fine-tuned on the old observation (docs/decide-finetune.md §11).
+- `jev`: Jev (jev-1.13.0, pinned by the guard) on its native packet, through `jev.py`/`spend_guard.py` with a ledger in
+  `artifacts/em/`, run id `eM-model` and a cap of 5 USD for the whole stage (never raised by this agent). Dry run first
+  (estimated tokens and cost); then a capped sample: 300 draw records (150 per seed, hash order) in both observations,
+  and 30 situations per probe. One model worker at a time; Jev only while no GLiNER job runs.
+
+**Agreement with the rules.** Share of decision points where the provider's argmax is RG's pick (draws and kept or
+arrived acts separately, and by the rules' action family: feed, food-trip, social-move, rest, nest, drink, affiliative,
+greet, aggression, mating, care, call, travel-home, other), old against new observation, paired, with a 95% bootstrap
+interval (2,000 resamples) of the difference; also against the rules' argmax and the share of picks at position c0.
+"Where they differ, which state explains it": for each rules → model family cell with ≥ 20 cases, the four state
+variables (gauges, body fields, light, the rules pick's kcal/h) whose standardized mean difference between those cases
+and the cases of the same rules family where the model agreed is largest.
+
+**State probes (`scripts/em-probes.ts`).** Up to 100 situations per probe (daylight draws, hash order; the light probe
+uses afternoon and dusk draws with a nest option), each at three levels of one state, every other part of the situation
+unchanged. Three renderings per level: old (the gauge the old observation has), new-consistent (the Track E field and its
+readouts), new-isolated (the Track E field alone: is it read at all?). Expected direction (the physiology):
+
+| probe | levels | old observation shows | target options | expected |
+|---|---|---|---|---|
+| deficit | drive 0.05, 0.5, 0.95 (need at 430 kcal/h × waking hours left; hunger = drive × satiation from the situation's gut and reserves; situations with gut fill ≤ 0.6) | hunger | feed, food-trip | up |
+| reserves | +0.02, −0.10, −0.30 of the usual store | nothing (no field) | feed, food-trip | up as reserves fall |
+| sleep | pressure/sleepiness 0.15/0.05, 0.5/0.4, 0.85/0.8 | energy = 1 − sleepiness | rest, nest | up |
+| light | full daylight; dim, falling (dusk); very dim, falling (dusk) | hour 15:30, 18:21, 18:36 and the phase | nest | up as light falls |
+| heat | heat load −0.3, 0, +0.5 (18, 24, 31 °C) | temperature | rest | up with heat |
+| water | deficit 0.3, 1.5, 2.2% of body mass (thirst 0, 0.5, 1) | thirst | drink | up |
+
+Read: Δ = target probability at the high level − at the low level, mean over situations with a 95% bootstrap interval;
+"moves the right way" when the interval lies above 0, "the wrong way" when below, "does not respond" when it includes 0;
+plus the share of situations moving each way (|Δ| > 0.01) and the argmax share on the target.
+
+**Help, ignored or confused (per GLiNER provider).** *Help*: the new observation moves at least one more probe the right
+way than the old one does (new-consistent) and agreement with the rules on draws does not fall beyond its interval.
+*Ignored*: every new-isolated probe "does not respond" and agreement changes by less than 3 points. *Confused*: a probe
+moves the wrong way in the new observation, or agreement on draws falls by 3 points or more with an interval below 0.
+Agreement with the rules is not correctness (the rules are the stack's choices, not wild chimpanzees'); it says how far
+the model chooses as Track E's valuation does.
+
+**M3 gate.** M3 runs only if, for the GLiNER provider taken to the loop, the new observation moves the deficit or the
+reserves probe and the sleep or the light probe the right way (new-consistent). The provider taken: the one with more
+probes moving the right way in the new observation; on a tie the served model (`base`).
+
+**Iterations (at most three, each logged here before it runs).** 1: as registered. If a provider is confused by the new
+layout (above), iteration 2 renders a compact layout (body words only for notable fields, option values only kcal/h and
+company) on the same sample and probes.
+
+**Outputs.** `artifacts/em/m2/` (gitignored): `s48.jsonl`, `s7.jsonl` (+ `.meta.json`), `probes.jsonl`, scores
+`<sample>.<provider>.jsonl`, `jev.jsonl`, `probes.<provider>.jsonl`, the guard's receipts, and `report.md`/`report.json`
+(`scripts/em-report.ts`: every number in the results below comes from it).
