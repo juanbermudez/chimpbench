@@ -30,7 +30,7 @@ import { readCheckpoint, restoreColumns, writeCheckpoint } from './checkpoint';
 import { energyAfter, energyBefore, energyFinish, energyStart, energyTapsOff, energyTapsOn, newEnergyAcc, type EnergyAcc, type EnergySeedState } from './energy-probe';
 import { TICKS_PER_DAY } from './horizon';
 import { rhythmFinish, rhythmStart, rhythmStep, type RhythmResult, type RhythmState } from './rhythm-probe';
-import { truthValues } from './truth-rows';
+import { truthHooksOff, truthHooksOn, truthStart, truthStep, truthValues, type TruthState } from './truth-rows';
 import { viabilityFinish, viabilityStart, viabilityStep, type Viability, type ViabilityState } from './viability';
 
 export interface BenchJob {
@@ -75,6 +75,8 @@ export interface RunState {
   /** Clocks summed over segments (ms): simulation, observers, field experiments, wall. */
   ms: { sim: number; obs: number; exp: number; wall: number }; segments: number;
   via: ViabilityState | null; en: { st: EnergySeedState; acc: EnergyAcc } | null; rh: RhythmState | null;
+  /** Simulation-truth target rows' own readouts (scripts/lib/truth-rows.ts). */
+  tr: TruthState | null;
   checkpoints: string[];
 }
 
@@ -95,6 +97,7 @@ function startObserving(s: RunState, job: BenchJob): void {
   s.via = viabilityStart(world);
   if (job.energy) { const acc = newEnergyAcc(); s.en = { st: energyStart(world, acc, job.seed, job.days), acc }; }
   if (job.rhythm) s.rh = rhythmStart(world, job.seed);
+  s.tr = truthStart(world);
 }
 
 /** Runs (or continues) one seed to its end, or to job.stopDay. */
@@ -113,13 +116,15 @@ export function runBenchSeed(job: BenchJob, log: (msg: string) => void = () => {
     log(`seed ${job.seed}: resumed at day ${s.done / TICKS_PER_DAY} from ${job.resume}`);
   } else {
     s = { v: 1, seed: job.seed, done: 0, world: createWorld(job.seed, { profile: job.profile, params: job.params }), obs: null, pobs: null, mobs: null, trials: null, prevHour: 0,
-      ms: { sim: 0, obs: 0, exp: 0, wall: 0 }, segments: 1, via: null, en: null, rh: null, checkpoints: [] };
+      ms: { sim: 0, obs: 0, exp: 0, wall: 0 }, segments: 1, via: null, en: null, rh: null, tr: null, checkpoints: [] };
   }
   const ckAt = new Map(job.checkpointDays.map(d => [Math.round(d * TICKS_PER_DAY), d]));
   const stopTick = job.stopDay === null ? null : Math.round(job.stopDay * TICKS_PER_DAY);
   if (stopTick !== null && !ckAt.has(stopTick)) ckAt.set(stopTick, job.stopDay!);
   const every = job.experimentEveryDays;
-  if (s.en) energyTapsOn(s.en.st, s.en.acc, s.world);
+  const hooksOn = () => { if (s.en) energyTapsOn(s.en.st, s.en.acc, s.world); if (s.tr) truthHooksOn(s.tr, s.world); };
+  const hooksOff = () => { energyTapsOff(); truthHooksOff(); };
+  hooksOn();
   const save = (day: number) => {
     if (!job.checkpointPrefix) throw new Error('a checkpoint day was given without a checkpoint prefix');
     const file = checkpointFile(job.checkpointPrefix, day);
@@ -133,7 +138,7 @@ export function runBenchSeed(job: BenchJob, log: (msg: string) => void = () => {
   };
   try {
     for (;;) {
-      if (s.done === burnTicks && !s.obs) { startObserving(s, job); if (s.en) energyTapsOn(s.en.st, s.en.acc, s.world); }
+      if (s.done === burnTicks && !s.obs) { startObserving(s, job); hooksOn(); }
       if (ckAt.has(s.done) && s.done !== resumedAt) save(ckAt.get(s.done)!);
       if (stopTick !== null && s.done >= stopTick) {
         const file = s.checkpoints[s.checkpoints.length - 1];
@@ -150,21 +155,22 @@ export function runBenchSeed(job: BenchJob, log: (msg: string) => void = () => {
       observerStep(s.obs!, w); observerStep(s.pobs!, w); observerStep(s.mobs!, w);
       const c = performance.now();
       s.ms.sim += b - a; s.ms.obs += c - b;
-      // field experiments at 10:00 on every `every`-th day, on copies of the world (runFieldJob); the energy taps are
-      // module hooks, so they are off while the copies tick
+      // field experiments at 10:00 on every `every`-th day, on copies of the world (runFieldJob); the energy taps and the
+      // contest hook are module hooks, so they are off while the copies tick
       if (every > 0 && s.prevHour < 10 && w.hour >= 10 && w.day % every === 10 % every) {
-        if (s.en) energyTapsOff();
+        hooksOff();
         s.obs!.rec.experiments.push(...runTrials(w, 'playback', s.trials!, s.obs!.cfg.profile.approachM), ...runTrials(w, 'snake', s.trials!, s.obs!.cfg.profile.approachM));
-        if (s.en) energyTapsOn(s.en.st, s.en.acc, w);
+        hooksOn();
         s.ms.exp += performance.now() - c;
       }
       s.prevHour = w.hour;
       viabilityStep(s.via!, w, i);
       if (s.en) energyAfter(s.en.st, s.en.acc, w, i);
       if (s.rh) rhythmStep(s.rh, w, i);
+      if (s.tr) truthStep(s.tr, w);
       s.done++;
     }
-  } finally { energyTapsOff(); }
+  } finally { hooksOff(); }
 
   // the readouts' ends first (each reads the world as its own tool did), then the observers' (as runFieldJob)
   const w = s.world;
@@ -191,7 +197,7 @@ export function runBenchSeed(job: BenchJob, log: (msg: string) => void = () => {
   const field: FieldResult = { seed: job.seed, days: job.days, profile: job.profile, hash: `${recordsHash(rec)}/${recordsHash(prec)}/${recordsHash(mrec)}`, wallMs: s.ms.wall + (performance.now() - t0),
     simMs: s.ms.sim, observerMs: s.ms.obs, experimentMs: s.ms.exp, metricsMs, values, s18, accuracy, encounterParty: encounterAccuracy(prec), counts };
   const energy = s.en ? s.en.acc : null;
-  const truth = truthValues({ seed: job.seed, days: job.days, viability, energy, rhythm, field });
+  const truth = truthValues({ seed: job.seed, days: job.days, viability, energy, rhythm, field, truth: s.tr, params: job.params as Record<string, number> });
   return { kind: 'part', part: { tool: 'e-bench-part', version: 1, seed: job.seed, config: { profile: job.profile, days: job.days, burnInDays: job.burnInDays, params: job.params, observerSeed: job.observerSeed, experimentEveryDays: job.experimentEveryDays, truth: job.truth, energy: job.energy, rhythm: job.rhythm },
     field, viability, energy, rhythm, truth, timing: { wallMs: field.wallMs, segments: s.segments }, resumedFrom: job.resume, checkpoints: s.checkpoints } };
 }
