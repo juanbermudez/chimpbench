@@ -335,8 +335,7 @@ Unfed walking by kind (km per adult-day; share of unfed km) and its classes:
 
 **What this says.** The ~44% of trips that do not feed at their target are not mostly trips to crowns others emptied.
 Half are departures nobody answered, which cost nothing. Of the walking they cost, the largest share is trips to callers
-that end on the way, and the reason (amendment 1) is in the code that holds the call, not in a belief: the call the
-animal walks to sits in a single slot that the next pant-hoot heard overwrites, and the offer lasts 0.3 h.
+that end on the way (amendment 1, §2.3, names why).
 
 ### 2.1 Amendment 1 (registered after reading the four realizations' registered readouts, §2.2, before the readouts it adds ran)
 
@@ -351,6 +350,24 @@ slot's crown is still its crown. **Reading (registered):** the caller trips re-d
 by a later call* (slot changed), *0.3 h passed* (same call, ≥ 0.3 h), *within 50 m of the call point* (same call), *other*;
 the split with the largest share of their walking names the code path. **Runs:** the amended tool on the four
 realizations (same settings), from a frozen checkout of the commit that registers this amendment.
+
+### 2.3 Amendment 1 results (frozen checkout a6648b6, clean; the same four worlds; printed by the stage's `amend_table.py` from the raw trips, session scratch `e3i/diag2/`)
+
+```
+Caller trips re-decided en route (4 realizations; per adult-day, mean ± SD): trips | km | share of their km
+  overwritten by a later call: 0.228 ± 0.027 | 0.113 ± 0.014 | 0.672 ± 0.021
+  0.3 h passed: 0.075 ± 0.008 | 0.045 ± 0.004 | 0.267 ± 0.022
+  within 50 m of the call point: 0.053 ± 0.011 | 0.009 ± 0.002 | 0.052 ± 0.005
+  other: 0.015 ± 0.004 | 0.001 ± 0.000 | 0.009 ± 0.003
+  all: 0.371 ± 0.040 | 0.167 ± 0.018 | 1.000 ± 0.000
+  overwritten trips whose slot crown is no longer their crown (the walk redirected): 0.862 ± 0.028
+```
+
+**Reading (registered rule): the call slot.** Two thirds (67 ± 2%) of the walking of caller trips re-decided en route is
+trips whose call had been overwritten in the listener's one call slot by a later pant-hoot heard (0.23 trips and 0.11 km
+per adult-day); in 86% of them the walk had already turned to the new caller's crown, a trip that was never chosen. The
+0.3-h offer passing carries 27% (0.08 trips, 0.045 km), the last 50 m 5%. Every path is the same defect: the trip's goal
+lives in a slot that its own valuation does not own.
 
 ## 3. Field rows scored here: samples (written before any arm)
 
@@ -391,3 +408,76 @@ over the window, the integrator's convention); trip-diagnose's E3h and E3i reado
   against the group's own spread (mean ± SD of its four runs). Viability must pass; night safety (adults out of a nest
   ≤ 3.3% of the night, T-RHY-5 ≤ 0.033) for any arm that changes when animals move. Prescriptions:
   `scripts/prescription-ledger.ts --count --params` (S39 42 on the current ledger).
+
+## 5. Iteration log
+
+(Each iteration is logged here and committed before its run; at most 3.)
+
+### 5.1 Iteration 1 (registered before its run): a trip to a caller keeps the call it was chosen for (`callTrip` 1)
+
+**Why (§2.2, §2.3).** The registered rule names *re-decided en route* (29% of unfed trips' walking); 77% of its walking is
+caller trips whose own option had left the list, and two thirds of that is the listener's single call slot overwritten by
+a later pant-hoot (the walk turning to the new caller's crown in 86% of those trips), a quarter the 0.3-h offer passing,
+5% the last 50 m. Caller trips altogether carry 47% of unfed walking. No other class reaches 1/4 of unfed walking, so no
+other mechanism is built (D1: crowns emptied by eating since the sighting are 7% of it; a belief about others' eating would
+act on that 7%).
+
+**Principle.** A trip is executed as it was valued (E3h): a destination chosen from memory, a remembered tree or the place a
+call came from, is held while the animal travels to it, and a new percept is a new option weighed at the next decision
+point (the gate, or under `redecideValue` the keep test), not a silent change of destination. Listeners do travel to
+callers: inquiring pant-hoots at Loango were followed by fusion in 67% of cases, about 5 min later [M: southern2025]; the
+calls a listener hears after setting out are information about other places. Design: the record and its use; no
+magnitude.
+
+**Change (switch `callTrip`, 0 = today; a sum of bits; src/sim/calltrip.ts, candidates.ts, execution.ts, rg.ts).**
+- *Bit 1.* When a caller trip starts, the call it was chosen for (the call, the caller, when and where it was heard, the
+  crown the caller fed in) is kept with the trip (`chimp.sim.cg`, a lazy key in OPTIONAL_X). The walk goes to that crown
+  (E3h bit 2) or the call's place (execution.ts), the gate's arrival rule reads that crown (rg.ts `tripTree`), and while
+  the trip runs its option stays on the list, valued from the record exactly as the slot's call is valued (the caller's
+  company margin plus the crown's drive × the trip's net rate, candidates.ts), beside the slot's latest call when that is
+  another. The 0.3-h window and `joinCallMinM` still decide whether a heard call is a reason to set out; a trip already
+  under way ends by arriving or by a choice at a decision point (with the travel slots, `slotsMulti` 2, two better trips
+  can still crowd it off the list). The record goes when the animal starts any other act.
+- No new magnitude; no counted entry is read less (a correction: the 0.3-h window is an E0b "L6 design" window, not
+  counted): prescriptions 42 with and without the switch (checked with `prescription-ledger --count`). Tests
+  (tests/sim-call-trip.test.ts): 0 by default in both profiles; with bit 1 a later call heard leaves the trip's walk, its
+  option and the gate's keep on its own call (today: the walk turns, the option leaves the list, the gate says 'ended');
+  the trip's option stays past the 0.3-h offer and within `joinCallMinM` (today it leaves); value 1 on S39 deterministic
+  and JSON-lossless over 12 h, the count unchanged. Switch off: the field pin and the compressed goldens hold.
+
+**Smoke test with the switch on (seed 48, 3 + 3 days, against the same days with it off; disclosed; not
+representative):** trips fed at their target 0.58 → 0.61; trips 15.7 → 12.8 per adult-day; unfed trips' walking 0.58 →
+0.44 km per adult-day; caller trips 1.28 → 1.19 per adult-day, fed at their target 0.35 → 0.56, re-decided en route 0.30
+→ 0.09 per adult-day; adult males' ground km 1.98 → 1.84.
+
+**Arm A1** = S39 (S39q-params.json) + `callTrip` 1, from a frozen detached checkout of the commit that adds this section:
+e-bench `--quick`, energy-diagnose, trip-diagnose and rhythm-metrics (seeds 48 and 7, burn-in 30, 30 days; `--workers` 2,
+1 above load 8; no run above load 30).
+
+**Predictions (against the S39q group, mean ± SD of its four runs; low confidence unless stated).**
+
+| Quantity | S39q (mean ± SD) | A1 | Confidence |
+| --- | --- | --- | --- |
+| Prescriptions | 42 | 42 | high |
+| Viability; night (adults out of a nest ≤ 3.3%, T-RHY-5 ≤ 0.033) | pass | pass | moderate |
+| Trips fed at their target (truth, adults) | 0.556 ± 0.009 | 0.58–0.66 | moderate |
+| Caller trips re-decided en route, per adult-day | 0.370 ± 0.040 | ≤ 0.12 | moderate |
+| Caller trips fed at their target | 0.322 ± 0.004 | 0.42–0.60 | moderate |
+| Unfed trips' km per adult-day | 0.737 ± 0.055 | 0.50–0.70 | moderate |
+| Trips per adult-day | 13.30 ± 0.32 | 10.5–13.0 | low |
+| Ground km: adult males; nursing mothers; juveniles 5–12 y | 2.57 ± 0.16; 2.37 ± 0.13; 2.82 ± 0.18 | each within ± 0.4 km of the mean | low |
+| Climbing kcal a day, adults | 46.1 ± 1.1 | 41–51 | low |
+| T-FOOD-4; T-ACT-2; T-RNG-4; T-PTY-1 | 9.21 ± 0.30; 0.107 ± 0.008; 2.11 ± 0.24; 4.01 ± 0.05 | 8.0–10.0; 0.09–0.12; 1.6–2.6; 3.7–4.5 | low |
+| Reserves %/day, every class | S39q group | at or above the mean − 0.03 | low |
+| Fitted; held-out with and without the rare rows | reference mean | inside noise | moderate |
+
+**Kill criterion (registered).** Null if (a) viability fails (a starvation death, or a seed below 80% of its start); (b)
+any class's reserve slope (adult males, other females, nursing mothers, juveniles 5–12 y, infants 2–5 y and 0.5–2 y) is
+more than 0.05% of the store a day below the S39q mean; (c) held-out is worse beyond noise (z > +2) with or without the
+rare rows; (d) night safety fails; (e) the mechanism does not run (caller trips re-decided en route not below half the
+group's mean, 0.185 per adult-day).
+
+**Verdict rule (registered).** `callTrip` removes no counted prescription, so A1 is judged as a correction (the track's rule
+for corrections): a **provisional keep candidate** if none of (a)–(e) holds, trips fed at their target rise beyond the
+group's spread (z > +2) and unfed trips' walking does not rise beyond it (z ≤ +2); otherwise recorded and off. Walking,
+climbing, rows and reserves are reported against the group, never used to choose.

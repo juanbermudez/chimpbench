@@ -114,6 +114,7 @@ import { paramsOf } from '../src/sim/params';
 import { index, isTreeId, ix, TICK_HOURS } from '../src/sim/state';
 import { cellAt, gridOf, levels } from '../src/sim/territory';
 import { callerCrownOn } from '../src/sim/tripbelief';
+import { callCrown } from '../src/sim/calltrip';
 import { createWorld, tickWorld } from '../src/simulation';
 import type { Candidate, Chimp, Tree, World } from '../src/types';
 import { runPool } from './lib/pool';
@@ -211,7 +212,8 @@ export function runSeed(job: Job): Result {
     if (o.action !== 'travel') return -1;
     const x = ix(o);
     if (x.v === V.TREE) return isTreeId(o.targetId) ? o.targetId : -1;
-    return x.v === V.CALLER && callerCrown && x.jt !== undefined && x.jt > 0 && isTreeId(x.jt) ? x.jt : -1;
+    const jt = callCrown(P, x, x.v === V.CALLER, o.targetId); // stage E3i (callTrip): a caller trip's own call when it keeps one
+    return x.v === V.CALLER && callerCrown && jt !== undefined && jt > 0 && isTreeId(jt) ? jt : -1;
   };
   const noteEat = (c: Chimp, tid: number, u: number) => {
     const now = w.time;
