@@ -490,13 +490,16 @@ group's SD is noise): re-deciding's cost on the best arm, (D1 − best), against
 adults' ground km by class, adults' climbing kcal, trips per adult-day, the share fed at their target, unfed trips' km,
 T-FOOD-4, T-RNG-4, T-HUN-1 and reserves by class.
 
-### 5.2 No iteration 2 (decided after A1, by the registered rule; recorded before any further run)
+### 5.2 No iteration 2 (decided after A1, by the registered rule)
 
 The registered rule (§2) builds a mechanism only for a class with at least 1/4 of unfed trips' walking. On S39 only
 re-decided en route qualified, and A1 addressed it. In A1's readouts (§6.1) no class reaches 1/4 either: caller trips
 that arrive and do not feed 22%, list crowns and companions' goals not seen 25% together (two classes, 19% and 6%),
 arrivals with crop left 18%, crowns emptied by eating since the sighting 8.5%. So no second mechanism; the diagnostic arms
-follow, with A1 as the best arm (the only arm; it does not qualify by its verdict rule, disclosed).
+follow, with A1 as the best arm (the only arm; it does not qualify by its verdict rule). Disclosed: D0 ran alongside A1 (it
+depends on no arm), and D1 was started at 01:02, after A1's readouts were read and before this section was committed; it
+follows §5.1's registration of the diagnostic arms (committed before any of them ran: the best arm, A1 if it is the only
+one).
 
 ## 6. Results
 
