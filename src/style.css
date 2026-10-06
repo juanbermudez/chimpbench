@@ -954,6 +954,7 @@ dialog.settings::backdrop { background: rgba(0, 0, 0, .6); }
   .app:not(.chimp-closed) .ch-shot { width: 64px; height: 64px; }
   .app:not(.chimp-closed) .ch-main { flex: 1 1 auto; }
   .ch-tabs { overflow-x: auto; scrollbar-width: none; } .ch-tabs button { padding: 0 9px; }
+  .app:not(.chimp-closed) .ch-actions :is([data-act="prev"], [data-act="next"]) { display: none; }   /* room for the five tabs */
   .app.chimp-closed .ch-who { gap: 10px; } .app.chimp-closed :is(.ch-meta, .ch-now) { display: none; }
   .app.chimp-closed .ch-id { padding: 0 6px 0 8px; gap: 10px; } .app.chimp-closed .ch-shot { width: 34px; height: 34px; }
   .app.left-open .chimp-panel, .app:not(.rside-closed) .chimp-panel { display: none; }
