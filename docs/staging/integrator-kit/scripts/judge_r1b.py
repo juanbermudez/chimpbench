@@ -385,7 +385,11 @@ def main():
             if all(has_value(r) and r['kind'] == 'numeric' for r in rr):
                 lo, hi = t['accept'].get('lo'), t['accept'].get('hi'); sc = hi - lo
                 sd50 = st.stdev([r['pooled'] / sc for r in rr]) if len(rr) > 1 else 0.0
-            R25[i] = judge_row(t, [r25.rows], n25.rows, 1, single=sd50 if sd50 is not None else 0.0)
+            x = judge_row(t, [r25.rows], n25.rows, 1, single=sd50 if sd50 is not None else 0.0)
+            # the registered rule takes the SD from the 0.5 rules group: a numeric row that group does not count has none
+            if x['status'] == 'judged' and x['arm']['kind'] == 'numeric' and sd50 is None:
+                x.update(status='the 0.5 rules group gives no SD for the row (it is not counted there)', z=None, moves=None)
+            R25[i] = x
         J25 = [i for i, x in R25.items() if x['status'] == 'judged']; M25 = [i for i in J25 if R25[i]['moves']]
         print(f"**{len(M25)} of {len(J25)} judged daytime rows move** on the 0.25 base; these are {', '.join(M25) or 'none'}.")
         if 'b' in res:
