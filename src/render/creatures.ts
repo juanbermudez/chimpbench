@@ -21,6 +21,7 @@ import { createLabels } from './creatures/labels';
 import { nearestOnScreen } from './creatures/pick';
 import { createFX } from './creatures/fx';
 import { createNests } from './creatures/nests';
+import { createRemains } from './creatures/remains';
 import { createPrey } from './creatures/prey';
 import { perfEnd, perfNow } from '../perf';
 import { advancePlayback, createPlayback, createTrack, pushSample, relocationJump2, type Track } from './creatures/playback';
@@ -96,7 +97,7 @@ export interface CreatureLayer {
 const CAPACITY = 160;
 const LOD_FADE = 0.25;           // seconds two LOD meshes overlap after a switch (G5 D7)
 const counts = [0, 0, 0, 0];
-const DEAD_VISIBLE_HOURS = 24;   // carcasses stay about one ecological day, then fade
+const DEAD_VISIBLE_HOURS = 24;   // carcasses stay about one ecological day, then fade (a stylization with no source; not used for an animal the simulation tracks a body for: Chimp.remains, stage ED)
 const PLAYBACK_LAG_TICKS = 2;    // motion.ts needs a known sim sample on both sides of the drawn segment
 // Moving-state hysteresis in body lengths per second, and the shortest a clip plays before another replaces it.
 const MOVE_ENTER = 0.3, MOVE_EXIT = 0.18, CLIP_DWELL = 0.35;
@@ -300,6 +301,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   const labels = createLabels(ctx.container);
   const fx = createFX(group, ctx);
   const nests = createNests(group, ctx);
+  const remains = createRemains(group, ctx); // stage ED (deadBody 1): bones; draws nothing with the switch off
   const prey = createPrey(group, ctx);
 
   const pickGeometry = new THREE.SphereGeometry(1, 10, 8);
@@ -661,8 +663,13 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     const c = a.chimp;
     if (!c.alive) {
       // A dead infant its mother still carries (sim contract Chimp.carryingDeadId): held ventrally on her.
-      const m = c.motherId >= 0 ? anims.get(c.motherId) : undefined;
+      let m = c.motherId >= 0 ? anims.get(c.motherId) : undefined;
+      // Stage ED (deadBody 1): the simulation says where the body is (Chimp.remains). Its holder may be an adopter, and a
+      // body put down lies at the simulation's position, where it may be taken up again: no render-only drop, no fade.
+      const tracked = c.remains !== undefined;
+      if (tracked && c.remains === 'body' && !(m && m.chimp.alive && m.chimp.carryingDeadId === c.id)) { m = undefined; for (const o of animList) if (o.chimp.alive && o.chimp.carryingDeadId === c.id) { m = o; break; } }
       if (m && m.chimp.alive && m.chimp.carryingDeadId === c.id) { a.carrierId = m.id; a.deadCarried = true; return 1; }
+      if (tracked) return 0;
       if (a.deadCarried && a.carry !== 0 && !a.deadDrop) {
         // She has left the body: it lies where she put it down (render-only) and fades out.
         a.deadDrop = true; a.dropX = a.bx; a.dropZ = a.bz; a.inited = false;
@@ -1394,8 +1401,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         // Dead: keep about one ecological day, then dither out.
         if (!c.alive || c.action === 'dead') {
           const since = c.deathTime != null ? world.time - c.deathTime : (a.deadAt == null ? (a.deadAt = world.time, 0) : world.time - a.deadAt);
+          // Stage ED (deadBody 1): drawn for as long as the simulation says the body exists; bones are drawn by remains.ts.
+          if (c.remains !== undefined) a.fade = c.remains === 'body' ? 0 : damp(a.fade, 1, 0.8, dt);
           // A carried body stays visible; once put down it fades over a few seconds where it lies.
-          if (a.carry !== 0 && a.deadCarried) a.fade = 0;
+          else if (a.carry !== 0 && a.deadCarried) a.fade = 0;
           else if (a.deadDrop) a.fade = damp(a.fade, smoothstep(DEAD_VISIBLE_HOURS - 4, DEAD_VISIBLE_HOURS, since), 0.8, dt);
           else a.fade = smoothstep(DEAD_VISIBLE_HOURS - 4, DEAD_VISIBLE_HOURS, since);
         } else { a.fade = 0; a.deadAt = null; }
@@ -1510,6 +1519,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     // Overlays.
     const o0 = perfNow();
     nests.update(world, frame, dt);
+    remains.update(world, frame);
     prey.update(world, frame, dt, animClock);
     social.update(frame, animList, anims, dt);
     fx.update(frame, world, anims, dt);
@@ -1618,7 +1628,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     mats.material.dispose(); mats.shell.dispose(); mats.depth.dispose(); mats.texture.dispose();
     if (shellMesh) { shellMesh.geometry.dispose(); shellMesh.dispose(); }
     pickGeometry.dispose(); pickMaterial.dispose();
-    props.dispose(); selection.dispose(); social.dispose(); labels.dispose(); fx.dispose(); nests.dispose(); prey.dispose();
+    props.dispose(); selection.dispose(); social.dispose(); labels.dispose(); fx.dispose(); nests.dispose(); remains.dispose(); prey.dispose();
     picks.length = 0; anims.clear(); animList.length = 0;
     void lastElapsed;
   }

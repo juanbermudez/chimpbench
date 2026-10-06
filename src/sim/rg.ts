@@ -77,7 +77,8 @@ function perceivedCandidates(world: World, c: Chimp, all: Candidate[]): Candidat
     if (chosen.length >= 8) break;
     if (isChimpId(k.targetId) && !chosen.includes(k.targetId) && perceivable(k.targetId) && byId.get(k.targetId)?.alive) chosen.push(k.targetId);
   }
-  return all.filter(k => !isChimpId(k.targetId) || chosen.includes(k.targetId));
+  // stage ED (deadBody): an option about a body in sight is perceived too (observe() keeps it through `bodies`)
+  return all.filter(k => !isChimpId(k.targetId) || chosen.includes(k.targetId) || (x.bd !== undefined && x.bd.includes(k.targetId) && candidateMeta.get(k)?.v === V.BODY));
 }
 
 /**

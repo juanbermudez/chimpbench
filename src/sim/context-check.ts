@@ -1,4 +1,4 @@
-import type { BodyPercept, DecisionContext, OptionValue, SocialPercept } from '../types';
+import type { BodyPercept, BodySight, DecisionContext, OptionValue, SocialPercept } from '../types';
 
 // The request validation every kernel shares (stage R1, docs/staging/r1-prereg.md D5): moved unchanged from
 // server/decide.ts, which re-exports it, so that a kernel deciding inside the tick passes the check the server applies
@@ -87,9 +87,19 @@ function validValue(v: unknown): v is OptionValue {
   return record(v) && Object.keys(v).every(k => Object.hasOwn(VALUE_RANGES, k) && num(v[k], ...VALUE_RANGES[k as keyof OptionValue])) && (v.feeders === undefined || Number.isInteger(v.feeders));
 }
 
+/** Stage ED (deadBody 1): a body in sight (src/types.ts BodySight); at most MAX_BODIES, never the focal, never in `social`. */
+export const MAX_BODIES = 4;
+/** The acts that may take a body as their target (walk up to it; groom it). */
+const BODY_ACTS = new Set<string>(['follow', 'groom']);
+function validSight(b: unknown, focalId: number): b is BodySight {
+  return record(b) && exactKeys(b, ['id', 'name', 'relation', 'ageYears', 'distance', 'deadHours', 'heldBy'])
+    && int(b.id, 1, 99_999) && b.id !== focalId && text(b.name, 40, 1) && oneOf(b.relation, RELATIONS) && num(b.ageYears, 0, 80)
+    && num(b.distance, 0, 1000) && num(b.deadHours, 0, 1e7) && int(b.heldBy, -1, 99_999) && b.heldBy !== 0 && b.heldBy !== b.id;
+}
+
 /** Why a context is rejected, or '' when it is valid. Reasons stay server-side and in receipts. */
 export function decisionContextError(value: unknown, limits: MenuLimits = SIM_LIMITS): string {
-  if (!record(value) || !keysWith(value, ['chimpId', 'version', 'time', 'focal', 'environment', 'social', 'recent', 'stimuli', 'candidates'], ['history', 'body', 'light'])) return 'context keys';
+  if (!record(value) || !keysWith(value, ['chimpId', 'version', 'time', 'focal', 'environment', 'social', 'recent', 'stimuli', 'candidates'], ['history', 'body', 'light', 'bodies'])) return 'context keys';
   if (!int(value.chimpId, 1, 99_999) || !int(value.version, 0, 1e12) || !num(value.time, 0, 1e7)) return 'context ids';
   const f = value.focal;
   if (!record(f) || !exactKeys(f, ['name', 'ageYears', 'stage', 'sex', 'community', 'rankOrder', 'rankOf', 'isAlpha', 'hunger', 'thirst', 'energy',
@@ -113,6 +123,10 @@ export function decisionContextError(value: unknown, limits: MenuLimits = SIM_LI
   if (value.history !== undefined && (!Array.isArray(value.history) || value.history.length > MAX_HISTORY || !value.history.every(h => text(h, 120, 1)))) return 'history';
   if (value.body !== undefined && !validBody(value.body)) return 'body';
   if (value.light !== undefined && !(record(value.light) && exactKeys(value.light, ['level', 'trend']) && num(value.light.level, 0, 1) && num(value.light.trend, -50, 50))) return 'light';
+  if (value.bodies !== undefined && (!Array.isArray(value.bodies) || value.bodies.length < 1 || value.bodies.length > MAX_BODIES
+    || !value.bodies.every(b => validSight(b, value.chimpId as number)) || new Set((value.bodies as BodySight[]).map(b => b.id)).size !== value.bodies.length
+    || (value.bodies as BodySight[]).some(b => social.some(p => p.id === b.id)))) return 'bodies';
+  const sights = (value.bodies ?? []) as BodySight[];
   const options = value.candidates;
   if (!Array.isArray(options) || options.length < 2 || options.length > limits.options) return 'option count';
   const seen = new Set<string>();
@@ -129,6 +143,8 @@ export function decisionContextError(value: unknown, limits: MenuLimits = SIM_LI
     const kind = kindOf(c.targetId);
     if (c.targetId === value.chimpId) return `${c.action} targets self`;
     if (!kind || !TARGETS[c.action]?.includes(kind)) return `${c.action} cannot target ${kind ?? 'that id'}`;
+    // stage ED: a body in sight may be walked up to or groomed, nothing else
+    if (kind === 'chimp' && !target && sights.some(b => b.id === c.targetId)) { if (!BODY_ACTS.has(c.action)) return `${c.action} targets a body`; continue; }
     if (kind === 'chimp' && !target) return `${c.action} targets an unperceived individual`;
     if (immature && IMMATURE_FORBIDDEN.has(c.action)) return `${f.stage} cannot ${c.action}`;
     if (f.stage === 'infant' && INFANT_FORBIDDEN.has(c.action)) return `infant cannot ${c.action}`;

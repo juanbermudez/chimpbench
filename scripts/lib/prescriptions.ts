@@ -314,6 +314,9 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   guardMaxAgeY: { when: P => (P.bodyRules & 1) === 0, why: 'not read while bodyRules has bit 1: a guardian deters a charger and defends its ward while the ward cannot hold its own against that animal (E4h assessOdds below even; src/sim/candidates.ts guarded, wardHoldsOwn); a caretaker stays guardian and coalition kin at any age' },
   // stage E4p (matingValue; docs/staging/e4p-prereg.md §5)
   mateIntervalH: { when: P => !(P.matingValue >= 1), why: 'not read while matingValue is 1: a copulation needs the partner\'s choice and is worth the share of her cycle\'s paternity it adds (src/sim/mating.ts paternityGain, consents; candidates.ts reproduction; execution.ts mateTick); no time since a male\'s last copulation gates anything' },
+  // stage ED (deadCarry; docs/staging/ed-prereg.md §2.2): no carrying roll; a body that was on its carer stays in her hands
+  // and is taken up again by her choice (src/sim/life.ts killChimp, bodyAtDeath; candidates.ts bodyOptions)
+  carryDeadP: { when: P => !(P.deadBody === 1 && P.deadCarry === 1), why: 'no carrying roll is drawn while deadBody and deadCarry are 1: the body stays in the carer\'s hands or is taken up by her choice (src/sim/life.ts killChimp)' },
 };
 
 /** One ACTIVE_WHEN rule for several entries. */
@@ -402,6 +405,9 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   huntDrive: { stage: 'E4n', needs: { energyLedger: 1, ledgerDrive: 1, huntValue: 1 }, removesNothing: 'weighs the hunt lead (huntValue) with the energy-deficit part of the E1e drive instead of the appetite now, which includes the distension satiation: a capture is held and eaten as the gut takes it; adds no magnitude and switches no prescription out (e4n-prereg §4)' },
   patrolFusion: { stage: 'E4j', needs: { patrolValue: 2 }, removesNothing: 'corrects the occasion on which patrolValue 2 weighs the lead (a fusion of a party holding patrolMinMales adult males, judged by the males seen within reunionH, in place of a flicker of the 35 m view); adds no magnitude and switches no prescription out (e4j-prereg §4)' },
   gutValue: { stage: 'E1s', needs: { energyLedger: 1, ledgerDigesta: 1, ledgerDrive: 1, forageRate: 1 }, removesNothing: 'values every feeding option (crowns in view, trips, joined trips, the fallback here) by the bout the gut allows in the food\'s own units: the foregut\'s room at the ingestion rate as forageRate has it, then the passage rate while the gut passes what it holds, up to the crop share and the need (the registry\'s own food composition and gut; the digestive rate model as a design assumption); a correction, no magnitude added, no counted entry switched out (e1s-prereg §2 and the integrator\'s ruling)' },
+  deadBody: { stage: 'ED', needs: {}, removesNothing: 'adds the body of a dead animal as an object of the world (it lies or is held, is bones after bodyFleshDays on the ground and gone after bodyBonesDays more: inputs from other great apes, no chimpanzee figure) and its perception; the carrying roll and timer still decide until deadCarry (ed-prereg §2.1)' },
+  deadCarry: { stage: 'ED', needs: { deadBody: 1 } },
+  deadRespond: { stage: 'ED', needs: { deadBody: 1 }, removesNothing: 'adds options about an infant\'s body in sight for the classes the sources name (walk up and look, once per body; groom it), valued by one design weight and the existing grooming terms; no rate, roll or interval, and no counted entry switched out (ed-prereg §2.3)' },
 };
 
 /** Whether an entry is in use: generated (not planned), non-zero under these resolved parameters, and not switched out. */
