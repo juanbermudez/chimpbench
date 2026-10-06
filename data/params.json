@@ -11194,48 +11194,30 @@
    "integer": true
   },
   {
-   "id": "ledgerActFeed",
+   "id": "ledgerActAwake",
    "group": "needs",
-   "value": 1.38,
+   "value": 1.69,
    "units": "x resting rate",
    "range": [
-    1.2,
-    1.6
+    1.58,
+    1.84
    ],
-   "rangeBasis": "assumed",
+   "rangeBasis": "source",
    "hardRange": [
     1,
     10
    ],
    "calibrate": false,
-   "evidence": "assumed",
+   "evidence": "M",
    "sources": [],
+   "refs": [
+    "pontzer2016 (docs/staging/e-sources.md)",
+    "videan2006 (docs/staging/e-sources.md)"
+   ],
    "clock": "eco",
    "symbol": "energyTick",
    "file": "src/sim/energy.ts",
-   "notes": "Metabolic rate while feeding as a multiple of the resting rate (cross-species primate time-energy budgets: Leonard & Robertson 1997 after Coelho 1974, as used for Tai chimpanzees by N’guessan et al. 2009); locomotion is costed per metre on top. Pending e-sources (not yet in docs/research.md)."
-  },
-  {
-   "id": "ledgerActRest",
-   "group": "needs",
-   "value": 1.25,
-   "units": "x resting rate",
-   "range": [
-    1.1,
-    1.5
-   ],
-   "rangeBasis": "assumed",
-   "hardRange": [
-    1,
-    10
-   ],
-   "calibrate": false,
-   "evidence": "assumed",
-   "sources": [],
-   "clock": "eco",
-   "symbol": "energyTick",
-   "file": "src/sim/energy.ts",
-   "notes": "Metabolic rate while awake and not feeding (resting, grooming, social acts, the postural part of travel) as a multiple of the resting rate (Leonard & Robertson 1997, as used by N’guessan et al. 2009; cross-species). Locomotion is costed per metre on top. Pending e-sources (not yet in docs/research.md)."
+   "notes": "Metabolic rate while awake, without locomotion, as a multiple of the resting rate. Derived (E1b) from the doubly-labelled-water total of captive adult Pan (pontzer2016: females 1,722 kcal/day at basal 1,214; males 2,145 at 1,401), 8.81 h of sleep at the resting rate (videan2006) and an assumed 1 km/day of captive walking at 3.8 J/kg/m: (TEE / basal x 24 - 8.81 - walking / basal x 24) / 15.19 = 1.61 (females) and 1.78 (males). It replaces the cross-species multiples 1.25 and 1.38 of E1, which put total expenditure 13-16% below the measurement. Range: 0 to 3 km of captive walking, and the two sexes. Total expenditure per kg^0.75 (T-ENE-8) is thereby encoded."
   },
   {
    "id": "ledgerActSleep",
@@ -11257,7 +11239,7 @@
    "clock": "eco",
    "symbol": "energyTick",
    "file": "src/sim/energy.ts",
-   "notes": "Metabolic rate asleep as a multiple of the resting rate (sleeping metabolic rate is 0.9-1.0 of basal in humans). Pending e-sources (not yet in docs/research.md)."
+   "notes": "Metabolic rate asleep as a multiple of the resting rate (sleeping metabolic rate is 0.9-1.0 of basal in humans; no source in e-sources). The awake multiple was derived with this value."
   },
   {
    "id": "ledgerAppetiteGain",
@@ -11318,12 +11300,16 @@
     1
    ],
    "calibrate": false,
-   "evidence": "assumed",
+   "evidence": "L",
    "sources": [],
+   "refs": [
+    "hanna2008 (docs/staging/e-sources.md, abstract)",
+    "hannaSchmitt2011 (docs/staging/e-sources.md)"
+   ],
    "clock": "none",
    "symbol": "energyTick",
    "file": "src/sim/energy.ts",
-   "notes": "Efficiency of converting metabolic energy into the potential energy of climbing: cost per metre climbed = mass x g / efficiency = 49 J/kg/m. Muscle efficiency for positive work is at most about 0.25; the small-primate regression of Hanna et al. 2008 extrapolates to about 70 J/kg/m at 35 kg (efficiency 0.14); both are cross-species assumptions. Descent is free (stylized). Pending e-sources (not yet in docs/research.md)."
+   "notes": "Efficiency of converting metabolic energy into the potential energy of climbing: cost per metre climbed = mass x g / efficiency = 49 J/kg/m. Muscle efficiency for positive work is at most about 0.25; the small-primate regression of Hanna et al. 2008 extrapolates to about 70 J/kg/m at 35 kg (efficiency 0.14); both are cross-species assumptions. Descent is free (stylized)."
   },
   {
    "id": "ledgerCondSet",
@@ -11440,7 +11426,7 @@
    "clock": "eco",
    "symbol": "energyTick",
    "file": "src/sim/energy.ts",
-   "notes": "Energy cost of a gram of growth (tissue deposited plus synthesis; human infants: mean 18.7 kJ/g = 4.5 kcal/g, range 2.9-6.0; Roberts & Young 1988, abstract). Charged at the natural daily rate of the mass curve whatever world.ageRate is (physiology runs on the ecological clock). Pending e-sources (not yet in docs/research.md)."
+   "notes": "Energy cost of a gram of growth (tissue deposited plus synthesis; human infants: mean 18.7 kJ/g = 4.5 kcal/g, range 2.9-6.0; Roberts & Young 1988, abstract). Growth runs at the natural daily rate of the mass curve whatever world.ageRate is (physiology runs on the ecological clock), and is made and paid for only at or above the reserve set point (E1b). Key robertsYoung1988 in docs/staging/e-sources.md; human, cross-species."
   },
   {
    "id": "ledgerGutCapKcalPerKg",
@@ -11462,7 +11448,7 @@
    "clock": "none",
    "symbol": "gutCap",
    "file": "src/sim/energy.ts",
-   "notes": "Meal capacity of the gut in metabolisable energy: about 4% of body mass in fresh food x 0.63 kcal/g fresh ripe fruit (10.7 kcal/min at 3.4 g dry matter/min, uwimbabazi2019, at an assumed 20% dry matter). A full gut takes no more food. No ape stomach capacity was found. Pending e-sources (not yet in docs/research.md)."
+   "notes": "Meal capacity of the gut in metabolisable energy: about 4% of body mass in fresh food x 0.63 kcal/g fresh ripe fruit (10.7 kcal/min at 3.4 g dry matter/min, uwimbabazi2019, at an assumed 20% dry matter). A full gut takes no more food. No ape stomach capacity was found. Source in docs/staging/e-sources.md where one exists; the value itself is assumed or cross-species."
   },
   {
    "id": "ledgerGutEmptyH",
@@ -11484,7 +11470,7 @@
    "clock": "eco",
    "symbol": "energyTick",
    "file": "src/sim/energy.ts",
-   "notes": "Time constant of energy absorption from the gut (first order): gastric emptying plus small-intestine absorption (human solid-meal half-emptying about 1.5-2 h; captive chimpanzee stomachs were empty after more than 3 h and less than 16 h, Ardente et al. 2011, abstract: first-order emptying with this constant is 95% complete at 9 h). Not the 38-48 h mean transit time of Milton & Demment 1988: that is the passage of indigestible residue through the whole tract; bulk limitation by residue is not modelled. Pending e-sources (not yet in docs/research.md)."
+   "notes": "Time constant of energy absorption from the gut (first order): gastric emptying plus small-intestine absorption (human solid-meal half-emptying about 1.5-2 h; captive chimpanzee stomachs were empty after more than 3 h and less than 16 h, Ardente et al. 2011, abstract: first-order emptying with this constant is 95% complete at 9 h). Not the 38-48 h mean transit time of Milton & Demment 1988: that is the passage of indigestible residue through the whole tract; bulk limitation by residue is not modelled. Source in docs/staging/e-sources.md where one exists; the value itself is assumed or cross-species."
   },
   {
    "id": "ledgerMassBirthKg",
@@ -11504,9 +11490,9 @@
    "evidence": "assumed",
    "sources": [],
    "clock": "none",
-   "symbol": "massOf",
+   "symbol": "curveMass",
    "file": "src/sim/energy.ts",
-   "notes": "Body mass at birth (captive neonates about 1.7-1.9 kg; no primary source traced). Mass then rises linearly to the adult value at ledgerMassMatureFemaleY / ledgerMassMatureMaleY (stylized growth curve). Pending e-sources (not yet in docs/research.md)."
+   "notes": "Body mass at birth (captive neonates about 1.7-1.9 kg; no primary source traced). Mass then rises linearly to the adult value at ledgerMassMatureFemaleY / ledgerMassMatureMaleY (stylized growth curve). Not verified by e-sources."
   },
   {
    "id": "ledgerMassFemaleKg",
@@ -11523,12 +11509,16 @@
     200
    ],
    "calibrate": false,
-   "evidence": "assumed",
+   "evidence": "H",
    "sources": [],
+   "refs": [
+    "pusey2005 (docs/staging/e-sources.md, abstract)",
+    "ueharaNishida1987 (docs/staging/e-sources.md, abstract)"
+   ],
    "clock": "none",
-   "symbol": "massOf",
+   "symbol": "curveMass",
    "file": "src/sim/energy.ts",
-   "notes": "Adult female body mass: Gombe median (Pusey et al. 2005, P. t. schweinfurthii; Mahale 35.2 kg, Uehara & Nishida 1987); nobody weighs Kibale chimpanzees (C7c used 40 kg as a design value). Pending e-sources (not yet in docs/research.md)."
+   "notes": "Adult female body mass: Gombe median (Pusey et al. 2005, P. t. schweinfurthii; Mahale 35.2 kg, Uehara & Nishida 1987); nobody weighs Kibale chimpanzees (C7c used 40 kg as a design value)."
   },
   {
    "id": "ledgerMassMaleKg",
@@ -11545,12 +11535,16 @@
     200
    ],
    "calibrate": false,
-   "evidence": "assumed",
+   "evidence": "H",
    "sources": [],
+   "refs": [
+    "pusey2005 (docs/staging/e-sources.md, abstract)",
+    "ueharaNishida1987 (docs/staging/e-sources.md, abstract)"
+   ],
    "clock": "none",
-   "symbol": "massOf",
+   "symbol": "curveMass",
    "file": "src/sim/energy.ts",
-   "notes": "Adult male body mass: Gombe median (Pusey et al. 2005; Mahale 42.0 kg, Uehara & Nishida 1987). Pending e-sources (not yet in docs/research.md)."
+   "notes": "Adult male body mass: Gombe median (Pusey et al. 2005; Mahale 42.0 kg, Uehara & Nishida 1987)."
   },
   {
    "id": "ledgerMassMatureFemaleY",
@@ -11567,12 +11561,15 @@
     60
    ],
    "calibrate": false,
-   "evidence": "assumed",
+   "evidence": "M",
    "sources": [],
+   "refs": [
+    "pusey2005 (docs/staging/e-sources.md, abstract)"
+   ],
    "clock": "none",
-   "symbol": "massOf",
+   "symbol": "curveMass",
    "file": "src/sim/energy.ts",
-   "notes": "Age at which female mass reaches the adult value (Gombe: female growth slows at 10 y; Pusey et al. 2005, abstract). Growth is linear from birth (stylized). Pending e-sources (not yet in docs/research.md)."
+   "notes": "Age at which the female mass curve reaches the adult value (Gombe: female growth slows at 10 y; Pusey et al. 2005, abstract). The curve is linear from birth (stylized); an underfed immature falls behind it (E1b)."
   },
   {
    "id": "ledgerMassMatureMaleY",
@@ -11589,12 +11586,15 @@
     60
    ],
    "calibrate": false,
-   "evidence": "assumed",
+   "evidence": "M",
    "sources": [],
+   "refs": [
+    "pusey2005 (docs/staging/e-sources.md, abstract)"
+   ],
    "clock": "none",
-   "symbol": "massOf",
+   "symbol": "curveMass",
    "file": "src/sim/energy.ts",
-   "notes": "Age at which male mass reaches the adult value (Gombe: male growth slows at 13 y; Pusey et al. 2005, abstract). Pending e-sources (not yet in docs/research.md)."
+   "notes": "Age at which the male mass curve reaches the adult value (Gombe: male growth slows at 13 y; Pusey et al. 2005, abstract)."
   },
   {
    "id": "ledgerMeatKcalPerMin",
@@ -11611,12 +11611,15 @@
     1000000.0
    ],
    "calibrate": false,
-   "evidence": "assumed",
+   "evidence": "L",
    "sources": [],
+   "refs": [
+    "hardus2012 (docs/staging/e-sources.md, secondary)"
+   ],
    "clock": "eco",
    "symbol": "meatKcalPerUnit",
    "file": "src/sim/energy.ts",
-   "notes": "Energy intake while eating meat: 348 g/h (Wrangham & Conklin-Brittain 2003; up to 1.9 kg/h, Gilby 2006) x 1.15 kcal/g red colobus, both as cited by Hardus et al. 2012 (secondary). One unit of carryingMeat is worth 60 x this / meatEatPerH kcal. Pending e-sources (not yet in docs/research.md)."
+   "notes": "Energy intake while eating meat: 348 g/h (Wrangham & Conklin-Brittain 2003; up to 1.9 kg/h, Gilby 2006) x 1.15 kcal/g red colobus, both as cited by Hardus et al. 2012 (secondary). One unit of carryingMeat is worth 60 x this / meatEatPerH kcal."
   },
   {
    "id": "ledgerMilkEff",
@@ -11638,7 +11641,7 @@
    "clock": "none",
    "symbol": "nurseTick",
    "file": "src/sim/energy.ts",
-   "notes": "Efficiency of milk synthesis: the mother spends milk energy / this (human value, Butte & King 2005). No chimpanzee magnitude exists for the cost of lactation (docs/research.md, lactation energetics), so the cost follows from what the infant drinks. Pending e-sources (not yet in docs/research.md)."
+   "notes": "Efficiency of milk synthesis: the mother spends milk energy / this (human value, Butte & King 2005). No chimpanzee magnitude exists for the cost of lactation (docs/research.md, lactation energetics), so the cost follows from what the infant drinks. Source in docs/staging/e-sources.md where one exists; the value itself is assumed or cross-species."
   },
   {
    "id": "ledgerMilkKcalPerMin",
@@ -11660,7 +11663,7 @@
    "clock": "eco",
    "symbol": "nurseTick",
    "file": "src/sim/energy.ts",
-   "notes": "Milk energy transferred per minute of nursing: a human value (501 kcal/day, Butte & King 2005, over an assumed 2 h of suckling) scaled by mass^0.75 to a 31 kg mother. Limited by the room in the infant’s gut and by the milk the mother’s glands hold (ledgerMilkYieldCoef). Pending e-sources (not yet in docs/research.md)."
+   "notes": "Milk energy transferred per minute of nursing: a human value (501 kcal/day, Butte & King 2005, over an assumed 2 h of suckling) scaled by mass^0.75 to a 31 kg mother. Limited by the room in the infant’s gut and by the milk the mother’s glands hold (ledgerMilkYieldCoef). Source in docs/staging/e-sources.md where one exists; the value itself is assumed or cross-species."
   },
   {
    "id": "ledgerMilkStoreH",
@@ -11704,7 +11707,7 @@
    "clock": "eco",
    "symbol": "energyTick",
    "file": "src/sim/energy.ts",
-   "notes": "Milk energy a mother can make per day per kg^0.75 of her mass: the human 501 kcal/day (749 g/day x 2.8 kJ/g, Butte & King 2005) at 60 kg; about 307 kcal/day at 31.3 kg. Milk energy output scales with maternal mass^0.74 +- 0.05 across 47 mammal species (Riek 2021, abstract); the coefficient is the human one and no chimpanzee milk yield exists. A value above about 1,000 removes the limit (iteration 1). (E1 iteration 2: without it a larger infant simply drank more.) Pending e-sources (not yet in docs/research.md)."
+   "notes": "Milk energy a mother can make per day per kg^0.75 of her mass: the human 501 kcal/day (749 g/day x 2.8 kJ/g, Butte & King 2005) at 60 kg; about 307 kcal/day at 31.3 kg. Milk energy output scales with maternal mass^0.74 +- 0.05 across 47 mammal species (Riek 2021, abstract); the coefficient is the human one and no chimpanzee milk yield exists. A value above about 1,000 removes the limit (iteration 1). (E1 iteration 2: without it a larger infant simply drank more.) Source in docs/staging/e-sources.md where one exists; the value itself is assumed or cross-species."
   },
   {
    "id": "ledgerPlantShareKcal",
@@ -11748,7 +11751,7 @@
    "clock": "eco",
    "symbol": "energyTick",
    "file": "src/sim/energy.ts",
-   "notes": "Mean daily energy cost of gestation per kg^0.75 of maternal mass, excluding maternal fat gain (which is reserves here): a human value (about 40,000 kcal over 280 days at 60 kg, from the 321 MJ total of Butte & King 2005 less maternal fat; the split is not verified). Rises linearly from 0 at conception to twice the mean at term (stylized). Pending e-sources (not yet in docs/research.md)."
+   "notes": "Mean daily energy cost of gestation per kg^0.75 of maternal mass, excluding maternal fat gain (which is reserves here): a human value (about 40,000 kcal over 280 days at 60 kg, from the 321 MJ total of Butte & King 2005 less maternal fat; the split is not verified). Rises linearly from 0 at conception to twice the mean at term (stylized). Source in docs/staging/e-sources.md where one exists; the value itself is assumed or cross-species."
   },
   {
    "id": "ledgerReserveKcalPerKg",
@@ -11770,29 +11773,33 @@
    "clock": "none",
    "symbol": "reserveCap",
    "file": "src/sim/energy.ts",
-   "notes": "Usable energy reserve at the set point per kg of body mass: about 30% of body mass can be lost before death, at about 4,300 kcal/kg of mixed fat and lean tissue. Captive Pan carry 8-9% fat (Pontzer et al. 2016), about 21,000-26,000 kcal in a 31 kg female, so the rest is lean tissue. Reserves at minus this amount mean death by starvation. Pending e-sources (not yet in docs/research.md)."
+   "notes": "Usable energy reserve at the set point per kg of body mass: about 30% of body mass can be lost before death, at about 4,300 kcal/kg of mixed fat and lean tissue. Captive Pan carry 8-9% fat (Pontzer et al. 2016), about 21,000-26,000 kcal in a 31 kg female, so the rest is lean tissue. Reserves at minus this amount mean death by starvation. Source in docs/staging/e-sources.md where one exists; the value itself is assumed or cross-species."
   },
   {
    "id": "ledgerRmrCoef",
    "group": "needs",
-   "value": 70,
+   "value": 67.5,
    "units": "kcal/day per kg^exp",
    "range": [
-    60,
-    90
+    66.7,
+    70
    ],
-   "rangeBasis": "assumed",
+   "rangeBasis": "source",
    "hardRange": [
     1,
     1000000.0
    ],
    "calibrate": false,
-   "evidence": "assumed",
+   "evidence": "M",
    "sources": [],
+   "refs": [
+    "pontzer2016 (docs/staging/e-sources.md)",
+    "kleiber1947 (docs/staging/e-sources.md)"
+   ],
    "clock": "eco",
    "symbol": "energyTick",
    "file": "src/sim/energy.ts",
-   "notes": "Resting metabolic rate = this x mass^ledgerRmrExp (Kleiber 1947). Pontzer et al. 2016 estimate the basal rate of captive Pan at 0.96 of this (from 1930s respirometry of immatures); their total expenditure by doubly labelled water is a benchmark, not an input. Pending e-sources (not yet in docs/research.md)."
+   "notes": "Resting metabolic rate = this x mass^ledgerRmrExp: the basal rate of captive Pan, 1,214 kcal/day at 46.4 kg and 1,401 at 57.9 kg (pontzer2016; estimated from 1930s respirometry of immatures, not measured in adults), i.e. 68.3 and 66.7 x mass^0.75; Kleiber 1947 gives 70. E1 used 70; E1b uses the Pan value so that the awake multiple, derived from the same paper, is consistent."
   },
   {
    "id": "ledgerRmrExp",
@@ -11809,12 +11816,15 @@
     1.5
    ],
    "calibrate": false,
-   "evidence": "assumed",
+   "evidence": "M",
    "sources": [],
+   "refs": [
+    "kleiber1947 (docs/staging/e-sources.md)"
+   ],
    "clock": "none",
    "symbol": "energyTick",
    "file": "src/sim/energy.ts",
-   "notes": "Mass exponent of the resting metabolic rate (Kleiber 1947). Pending e-sources (not yet in docs/research.md)."
+   "notes": "Mass exponent of the resting metabolic rate (Kleiber 1947; cross-species)."
   },
   {
    "id": "ledgerWalkJPerKgM",
@@ -11831,7 +11841,7 @@
     1000000.0
    ],
    "calibrate": false,
-   "evidence": "M",
+   "evidence": "H",
    "sources": [],
    "refs": [
     "sockol2007 (docs/research.md, C7c travel energetics)"

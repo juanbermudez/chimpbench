@@ -224,3 +224,51 @@ Baseline, same window (`base-60-diag.txt`): lactating females' condition 0.47 an
 3. The self-feeding ramp and the under-5 intake factor (C8 design values on the timer scale) re-derived in kcal.
 
 **Kill criterion.** Viability is not established (infant reserves), fitted rows are worse where predicted (T-ACT-1, 3, 4), held-out rows are not better. The switch stays off.
+
+## 8. E1b: two fixes from first principles (registered 1 October 2026, before any run of them)
+
+Ordered by the integrator after reading §7. Both are physiology correcting physiology; neither is fitted to a behaviour. Sources and keys: `docs/staging/e-sources.md` (merged in the `track-e` worktree); the registry tags are upgraded to its keys and evidence levels where it has them.
+
+### Fix 1: the awake cost comes from the doubly-labelled-water total
+
+**Why.** E1's expenditure closed at 1.2 × resting, 13–16% below the direct measurement in captive Pan (pontzer2016, full text, [H]). A wild animal cannot spend less than a captive one of the same mass. The wrong term is the non-locomotor waking cost: the multiples 1.25 and 1.38 were only seen as used by nguessan2009 (assumed, cross-species). A direct measurement outranks them.
+
+**Balance, captive adult.** TEE = basal × (sleep h × sleep multiple + awake h × awake multiple) ÷ 24 + walking. Solve for the awake multiple.
+
+| | Females | Males |
+| --- | --- | --- |
+| TEE (pontzer2016) | 1,722 kcal/day | 2,145 |
+| Basal (pontzer2016; estimated from immatures) | 1,214 at 46.4 kg = 68.3 × M^0.75 | 1,401 at 57.9 kg = 66.7 × M^0.75 |
+| TEE ÷ basal | 1.4185 | 1.5310 |
+| Sleep (videan2006, 20 captive chimpanzees) | 8.81 h at multiple 1.0 (assumed) | same |
+| Awake | 15.19 h | same |
+| Captive walking, **assumed 1 km/day** at 3.8 J/kg/m (sockol2007) | 42 kcal = 3.5% of basal | 53 kcal = 3.8% |
+| Awake multiple = (TEE ÷ basal × 24 − 8.81 − walking ÷ basal × 24) ÷ 15.19 | (34.04 − 8.81 − 0.83) ÷ 15.19 = **1.61** | (36.74 − 8.81 − 0.90) ÷ 15.19 = **1.78** |
+
+- Value used: the mean of the two sexes, **`ledgerActAwake` 1.69**, for all waking time, feeding included (one measured total gives one unknown, so the separate feeding multiple is dropped: `ledgerActRest` and `ledgerActFeed` leave the registry).
+- The captive walking distance has no source in e-sources. A search result for Ross & Shender 2016 (zoo chimpanzees, 1.18–2.32 m/min) puts it near 1–2 km/day; not read. Sensitivity: 0 km gives 1.75, 3 km gives 1.58 (registry range 1.58–1.84).
+- `ledgerRmrCoef` 70 → 67.5 (the Pan basal rate of the same paper, so that multiple and basal are consistent). Sleep multiple stays 1.0 (assumed).
+- Wild walking and climbing stay metered on top, per metre.
+- **Encoded:** the staged row T-ENE-8 (expenditure ÷ M^0.75, band 85–130) is now set by this input and no longer counts as a test. Daily intake (2,479 kcal) and feeding time (309 min) stay targets and may still miss.
+
+**Expected.** Adult female: 893 basal × (12.5 + 11.5 × 1.69) ÷ 24 = 1,188, + about 60 for walking and climbing = about 1,250 kcal/day (94 × M^0.75). Male about 1,500. Nursing mother about 1,650. Eating time about 150–190 min: still below the 224–394 band, and intake still below 2,479. T-ACT-1 rises a little from 0.25 and stays below 0.33.
+
+### Fix 2: body mass is state; growth is paid only from surplus
+
+**Why.** E1 charged growth (36 kcal/day) along a fixed mass curve whatever the animal's balance, so an underfed infant burned reserves to keep growing. Real animals falter in growth first.
+
+**Mechanism.**
+- The ledger holds the growth not made (`lag`, kg). Body mass = the curve for age and sex − lag. Resting rate, gut capacity, reserve store, locomotion and carrying cost follow actual mass.
+- Each tick an immature is due the curve's gain (at the natural daily rate, as before; none when the life-history clock is stopped). At or above the reserve set point it makes the gain and pays for it; any surplus above the set point also buys back missed growth, at the same cost per gram. Below the set point it makes no gain and pays nothing; the lag grows.
+- Mass never falls. Catch-up ends when the curve does (10 y females, 13 y males), so a stunted adult stays small.
+- No new input: the cost per gram and the curve are E1's. The rule "reserves first, growth second" is the structure being tested.
+- Not changed: C8's growth record `grow` (it still reads condition). Mass ÷ curve is the physical variable that could replace it; that is left for the integrator.
+
+**Night nursing, as done.** An unweaned infant in its mother's night nest (the existing shared-nest state, in contact with her) suckles while its hunger is at or above 0.08, the level at which the daytime `nurse` act ends. No new threshold and no clock: it happens because the infant is on its mother. Weaning refusals are not rolled at night; the mother's daily milk yield still limits what it gets. The milk store stays at 24 h (the sourced 11 h can return in a later piece; changing it here would be a third change in one run).
+
+**Expected.** Fix 1 raises infants' costs too (0.5–2 y: about 307 + 36 for growth against at most 307 of milk; 2–5 y: about 507 + 36 against about 460 eaten). So:
+- Infants of 0.5–2 y: growth largely stops near 1 y, where milk alone no longer covers maintenance and self-feeding is not yet allowed (under 1.2 y) or pays almost nothing. Reserves hover just below the set point instead of falling. Mass falls behind the curve.
+- Infants of 2–5 y: stopping growth saves 36 kcal/day against a gap of about 80. Reserves **may still fall** unless they eat about 50 kcal/day more of their own food.
+- So the registered check (reserves no longer trend down over 60 days at the physiological yield; mass at age near the curve when mothers are well fed) is **expected to hold at best in part**: reserves better than E1 iteration 3, mass below the curve. If so it is reported as a failure of the check, and nothing is moved.
+
+**Run.** One run: 30-day burn-in + 60 days, seeds 48 and 7, 2 workers, ledger arm and the diagnosis; the baseline arm of §7 (`base-60.*`) is unchanged code and is reused.

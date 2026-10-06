@@ -741,6 +741,9 @@ function nestTick(world: World, c: Chimp): void {
     if (!m) return finish(world, c);
     if (m.nest && (!c.nest || c.nest.treeId !== m.nest.treeId)) c.nest = { treeId: m.nest.treeId, position: [m.nest.position[0], m.nest.position[1], m.nest.position[2]] };
     if (!isCarried(c, m)) moveTo(world, c, m.position[0], m.position[1], m.position[2], WALK, 0.4);
+    // stage E1b (energyLedger): an unweaned infant in its mother's nest suckles while it is hungry, down to the level at
+    // which the nurse act ends (no refusals at night; the mother's milk yield still limits it)
+    if (ledgerOn(P) && !x.weaned && m.id === c.motherId && m.action === 'nest' && c.hunger >= 0.08 && (isCarried(c, m) || hd(c, m) <= 1.2)) nurseTick(c, m, P);
     return;
   }
   const t = idx.treeById.get(c.targetId);

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createWorld, stepWorld, tickWorld } from '../src/simulation';
-import { eat, energyTick, gutCap, ledgerOf, ledgerSlow, massOf, nurseTick, reserveCap } from '../src/sim/energy';
+import { curveMass, eat, energyTick, gutCap, ledgerOf, ledgerSlow, massOf, nurseTick, reserveCap } from '../src/sim/energy';
 import { paramsOf, type Overrides } from '../src/sim/params';
 import { ix } from '../src/sim/state';
 import { plainDataProblems, worldShapeProblem } from '../src/persist/envelope';
@@ -75,7 +75,7 @@ test('saves: a world with ledgers is plain data, passes the load-time shape chec
   run(w, 500); run(copy, 500);
   assert.equal(worldHash(copy), worldHash(w), 'the loaded world continues as the saved one');
   const L = ix(w.chimps.find(c => c.alive)!).en!;
-  assert.deepEqual(Object.keys(L).sort(), ['gut', 'in', 'milk', 'out', 'res', 'x', 'y', 'z']);
+  assert.deepEqual(Object.keys(L).sort(), ['gut', 'in', 'lag', 'milk', 'out', 'res', 'x', 'y', 'z']);
   assert.ok(Object.values(L).every(Number.isFinite));
 });
 
@@ -85,10 +85,10 @@ test('a fasting animal loses reserves at its resting cost, grows hungry, and die
   const L = ledgerOf(c, P), M = massOf(c, P);
   L.gut = 0; L.res = 0; L.x = c.position[0]; L.y = c.position[1]; L.z = c.position[2];
   for (let i = 0; i < DAY; i++) energyTick(w, c, x, false);
-  // a day awake at rest: Kleiber × 1.25, nothing else
-  const expected = P.ledgerRmrCoef * M ** P.ledgerRmrExp * P.ledgerActRest;
+  // a day awake at rest: the resting rate × the awake multiple, nothing else
+  const expected = P.ledgerRmrCoef * M ** P.ledgerRmrExp * P.ledgerActAwake;
   assert.ok(Math.abs(-L.res - expected) < 1e-6 * expected, `${-L.res} vs ${expected} kcal`);
-  assert.ok(expected > 900 && expected < 1400, 'an adult female at rest spends about 1,150 kcal a day');
+  assert.ok(expected > 1300 && expected < 1700, 'an adult female awake all day spends about 1,500 kcal');
   assert.ok(c.hunger > 0.5, 'empty gut and a deficit: hungrier than at the set point');
   assert.equal(ledgerSlow(c, x, P), false);
   assert.ok(x.cond < P.ledgerCondSet);
@@ -142,4 +142,27 @@ test('milk: what the infant drinks leaves the mother, at the cost of synthesis; 
   for (let i = 0; i < 100; i++) { c.position[0] += 1; c.position[1] += 0.1; energyTick(w, c, x, false); energyTick(still, sc, sx, false); }
   const extra = (L.out - SL.out) * 4184; // J
   assert.ok(Math.abs(extra - (100 * P.ledgerWalkJPerKgM * M + 10 * M * 9.81 / P.ledgerClimbEff)) < 1e-3 * extra, `${extra} J`);
+});
+
+test('growth is made and paid for only at or above the reserve set point; an underfed immature falls behind the mass curve and catches up on a surplus', () => {
+  const w = createWorld(48, { params: ON }), P = paramsOf(w);
+  const c = w.chimps.find(k => k.alive && k.age > 5 && k.age < 8)!, x = ix(c), L = ledgerOf(c, P);
+  c.action = 'rest';
+  assert.equal(massOf(c, P), curveMass(c, P), 'a founder starts on the curve');
+  const perDay = (c.sex === 'female' ? (P.ledgerMassFemaleKg - P.ledgerMassBirthKg) / P.ledgerMassMatureFemaleY : (P.ledgerMassMaleKg - P.ledgerMassBirthKg) / P.ledgerMassMatureMaleY) / 365.25;
+  // a day in deficit: no growth, no growth cost
+  L.gut = 0; L.res = -100;
+  const m0 = massOf(c, P), out0 = L.out, expectedOut = P.ledgerRmrCoef * m0 ** P.ledgerRmrExp * P.ledgerActAwake;
+  for (let i = 0; i < DAY; i++) energyTick(w, c, x, false);
+  c.age += 1 / 365.25; // the day the slow step would have added
+  assert.ok(Math.abs(L.lag - perDay) < 1e-9, `one day of growth not made (${L.lag} kg)`);
+  assert.ok(Math.abs(massOf(c, P) - m0) < 1e-9, 'mass stands still while the curve moves on');
+  assert.ok(Math.abs((L.out - out0) - expectedOut) < 1e-3 * expectedOut, 'no growth cost in deficit (a day of growth would add 3%)');
+  // a surplus buys the missed growth back, at the cost of growth
+  const lag = L.lag; L.res = 500; const out1 = L.out;
+  energyTick(w, c, x, false);
+  assert.equal(L.lag, 0);
+  const tick = expectedOut / DAY, grown = lag + perDay / DAY;
+  assert.ok(Math.abs((L.out - out1) - tick - grown * 1000 * P.ledgerGrowthKcalPerG) < 1e-3, 'catch-up and the tick\'s own growth are paid for');
+  assert.equal(massOf(c, P), curveMass(c, P));
 });

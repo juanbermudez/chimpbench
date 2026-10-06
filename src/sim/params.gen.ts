@@ -2,7 +2,7 @@
 /* eslint-disable */
 export const REGISTRY_VERSION = 1;
 /** Content hash of every live default, hard range, profile value and integer flag. Stored with each world. */
-export const REGISTRY_HASH = '57578855087d5d95';
+export const REGISTRY_HASH = '2edfefc009d25d9c';
 
 /** Registry defaults (the compressed profile). */
 export const DEFAULTS = {
@@ -473,8 +473,7 @@ export const DEFAULTS = {
   lactTaperFloor: 0.3,
   lactTaperStartY: 0.5,
   layoutScale: 1,
-  ledgerActFeed: 1.38,
-  ledgerActRest: 1.25,
+  ledgerActAwake: 1.69,
   ledgerActSleep: 1,
   ledgerAppetiteGain: 5,
   ledgerAppetiteSet: 0.5,
@@ -499,7 +498,7 @@ export const DEFAULTS = {
   ledgerPlantShareKcal: 50,
   ledgerPregnancyCoef: 7,
   ledgerReserveKcalPerKg: 1300,
-  ledgerRmrCoef: 70,
+  ledgerRmrCoef: 67.5,
   ledgerRmrExp: 0.75,
   ledgerWalkJPerKgM: 3.8,
   maleDriftTauDays: 500,
@@ -1288,8 +1287,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   lactTaperFloor: [0, 1],
   lactTaperStartY: [0, 10],
   layoutScale: [0, 1000000],
-  ledgerActFeed: [1, 10],
-  ledgerActRest: [1, 10],
+  ledgerActAwake: [1, 10],
   ledgerActSleep: [0.5, 10],
   ledgerAppetiteGain: [0, 1000000],
   ledgerAppetiteSet: [0, 1],

@@ -3,8 +3,10 @@
 //   gut      metabolisable energy eaten and not yet absorbed; filled by feeding up to a capacity that scales with body
 //            mass, emptied into the body first-order (ledgerGutEmptyH);
 //   reserves body energy relative to a set point (0); absorbed energy flows in, expenditure flows out.
-// Expenditure per tick = resting rate (Kleiber) × an activity multiple + cost per metre moved on the ground and per metre
-// climbed (a carried infant's mass is charged to its carrier, rideTick) + gestation + growth; a mother also pays for the milk her
+// Expenditure per tick = resting rate × an activity multiple (asleep, awake) + cost per metre moved on the ground and per
+// metre climbed (a carried infant's mass is charged to its carrier, rideTick) + gestation + growth. Body mass is state:
+// an immature grows along the mass curve only while its reserves are at or above the set point, and otherwise falls
+// behind the curve instead of burning reserves (E1b); a mother also pays for the milk her
 // infant drinks. Readouts: c.hunger = gut emptiness × appetite (appetite rises as reserves fall below the set point),
 // C8's cond reads reserves, and reserves at minus the usable store are death by starvation.
 // Every input is physiology or physics from the registry (ids ledger*); the two appetite numbers and the condition set
@@ -23,7 +25,7 @@ interface Rates {
   /** Share of the gut absorbed in one tick. */ absorb: number;
   /** kcal per tick per kg^exp at rest. */ rest: number;
   /** kcal per tick per kg^exp of maternal mass at the mean cost of gestation. */ preg: number;
-  /** kcal per tick per kg of mass gained per bio-year (growth charged at its natural daily rate). */ grow: number;
+  /** Share of a bio-year's growth due in one tick (growth runs at its natural daily rate), and kcal per kg gained. */ growShare: number; kcalPerKg: number;
   /** kcal per kg per metre on the ground, and per metre climbed. */ walk: number; climb: number;
   /** Milk made per tick per kg^exp of maternal mass (kcal), and how many ticks of synthesis the glands hold. */ milk: number; milkTicks: number;
   /** Longest plausible move in one tick (m); a longer jump is a placement, not locomotion. */ maxStep: number;
@@ -37,7 +39,7 @@ function rates(P: Params): Rates {
     absorb: 1 - Math.exp(-TICK_HOURS / P.ledgerGutEmptyH),
     rest: P.ledgerRmrCoef / 24 * TICK_HOURS,
     preg: P.ledgerPregnancyCoef / 24 * TICK_HOURS,
-    grow: 1000 * P.ledgerGrowthKcalPerG / DAYS_PER_YEAR / 24 * TICK_HOURS,
+    growShare: TICK_HOURS / 24 / DAYS_PER_YEAR, kcalPerKg: 1000 * P.ledgerGrowthKcalPerG,
     walk: P.ledgerWalkJPerKgM / J_PER_KCAL,
     climb: G_MPS2 / P.ledgerClimbEff / J_PER_KCAL,
     milk: P.ledgerMilkYieldCoef / 24 * TICK_HOURS, milkTicks: P.ledgerMilkStoreH / TICK_HOURS,
@@ -46,10 +48,15 @@ function rates(P: Params): Rates {
   return R;
 }
 
-/** Body mass (kg) by age and sex: linear from birth mass to the adult mass at the age growth ends (registry; stylized curve). */
-export function massOf(c: Chimp, P: Params): number {
+/** The mass curve (kg) by age and sex: linear from birth mass to the adult mass at the age growth ends (registry; stylized curve). */
+export function curveMass(c: Chimp, P: Params): number {
   const f = c.sex === 'female', adult = f ? P.ledgerMassFemaleKg : P.ledgerMassMaleKg, at = f ? P.ledgerMassMatureFemaleY : P.ledgerMassMatureMaleY;
   return c.age >= at ? adult : P.ledgerMassBirthKg + (adult - P.ledgerMassBirthKg) * c.age / at;
+}
+/** Body mass (kg): the curve less the growth this individual has not made (E1b; on the curve until its ledger says otherwise). */
+export function massOf(c: Chimp, P: Params): number {
+  const L = ix(c).en;
+  return L ? curveMass(c, P) - L.lag : curveMass(c, P);
 }
 /** Mass gained per bio-year (kg) at this age. */
 function growthKgPerY(c: Chimp, P: Params): number {
@@ -70,7 +77,7 @@ export function ledgerOf(c: Chimp, P: Params): EnergyLedger {
   if (x.en) return x.en;
   const dev = x.cond / P.ledgerCondSet - 1; // the inverse of the condition readout
   const p = c.position;
-  return x.en = { gut: gutCap(c, P) * (1 - (c.hunger > 1 ? 1 : c.hunger < 0 ? 0 : c.hunger)), res: reserveCap(c, P) * (dev < -0.9 ? -0.9 : dev > 0.5 ? 0.5 : dev), in: 0, out: 0, x: p[0], y: p[1], z: p[2], milk: 0 };
+  return x.en = { gut: gutCap(c, P) * (1 - (c.hunger > 1 ? 1 : c.hunger < 0 ? 0 : c.hunger)), res: reserveCap(c, P) * (dev < -0.9 ? -0.9 : dev > 0.5 ? 0.5 : dev), in: 0, out: 0, x: p[0], y: p[1], z: p[2], milk: 0, lag: 0 };
 }
 
 /** hunger 0..1 = gut emptiness × appetite; appetite = set − gain × reserves ÷ usable reserve, clamped (readout; design). */
@@ -90,7 +97,7 @@ export function energyTick(world: World, c: Chimp, x: ChimpX, sleeping: boolean)
   const M = massOf(c, P), m75 = Math.pow(M, P.ledgerRmrExp), tap = energyTap.fn;
   const absorbed = L.gut * r.absorb;
   L.gut -= absorbed;
-  const base = r.rest * m75, act = sleeping ? P.ledgerActSleep : c.action === 'forage' ? P.ledgerActFeed : P.ledgerActRest;
+  const base = r.rest * m75, act = sleeping ? P.ledgerActSleep : P.ledgerActAwake;
   let out = base * act;
   if (tap) { tap(c, 'rest', base); tap(c, 'activity', base * (act - 1)); }
   if (c.pregnancy > 0) {
@@ -100,8 +107,17 @@ export function energyTick(world: World, c: Chimp, x: ChimpX, sleeping: boolean)
   }
   // milk synthesis is limited: the store fills at the yield rate and holds ledgerMilkStoreH hours of it
   if (c.lactating) { const y = r.milk * m75, full = y * r.milkTicks; L.milk = L.milk + y < full ? L.milk + y : full; } else if (L.milk !== 0) L.milk = 0;
+  // growth (E1b): the curve's gain for this tick is made, and paid for, only at or above the reserve set point; then any
+  // surplus also buys back growth missed earlier. Below the set point the gain is not made and the animal falls behind.
   const g = growthKgPerY(c, P);
-  if (g > 0) { const k = r.grow * g; out += k; if (tap) tap(c, 'growth', k); }
+  if (g > 0) {
+    const due = g * r.growShare * (world.ageRate < 1 ? Math.max(0, world.ageRate) : 1); // the natural rate, or slower with a slower life-history clock
+    if (L.res >= 0) {
+      let kg = due;
+      if (L.lag > 0) { const back = Math.min(L.lag, L.res / r.kcalPerKg); L.lag -= back; kg += back; }
+      const k = kg * r.kcalPerKg; out += k; if (tap) tap(c, 'growth', k);
+    } else L.lag += due;
+  }
   // locomotion: metres actually moved since the last tick
   const p = c.position, dx = p[0] - L.x, dy = p[1] - L.y, dz = p[2] - L.z;
   L.x = p[0]; L.y = p[1]; L.z = p[2];
