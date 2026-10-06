@@ -7,8 +7,8 @@ import { bindSoundSettings, soundSettingsHtml } from './sound';
 // Settings dialog: render quality, frame-rate cap, biological aging mode, reseed, export, guide, shortcuts.
 
 export const SHORTCUTS: [string, string][] = [
-  ['Space', 'Play / pause'], ['1 – 6', 'Speed presets'], ['F', 'Focus camera on selected'], ['C', 'Close view'], ['V', 'Cinematic view'],
-  ['T', 'Society overview'], ['E', 'Field experiments'], ['M', 'Model panel'], ['L', 'Toggle labels'], ['S', 'Sound on / off'], ['B', 'Show / hide sidebar'], ['I', 'Show / hide inspector'], ['[  ]', 'Previous / next in community'], ['Esc', 'Close overlays'],
+  ['Space', 'Play / pause'], ['1 – 7', 'Speed presets (1 is real time)'], ['F', 'Focus camera on selected'], ['C', 'Close view'], ['V', 'Cinematic view'],
+  ['T', 'Society (right sidebar)'], ['E', 'Field experiments (right sidebar)'], ['M', 'Decision model (right sidebar)'], ['L', 'Toggle labels'], ['S', 'Sound on / off'], ['B', 'Show / hide the field log'], ['⇧ B', 'Show / hide the right sidebar'], ['I', 'Collapse / expand the chimp panel'], ['[  ]', 'Previous / next in community'], ['Esc', 'Back to the communities · close overlays'],
 ];
 
 export function createSettings(dialog: HTMLDialogElement, ctx: Ctx) {
@@ -24,7 +24,7 @@ export function createSettings(dialog: HTMLDialogElement, ctx: Ctx) {
       <div class="set-row"><span><b>World seed</b><i>Same seed and settings replay the same rule-driven world.</i></span>
         <span class="seed"><input id="seed" type="number" inputmode="numeric" min="0" aria-label="Seed"><button type="button" class="btn" data-act="seed">${icon('dice')}New world</button></span></div>
       <div class="set-row"><span><b>Snapshot</b><i>World state plus the last 200 decision traces, as JSON.</i></span><button type="button" class="btn" data-act="export">${icon('download')}Export</button></div>
-      <div class="set-row"><span><b>Science guide</b><i>Model, evidence levels and assumptions.</i></span><a class="btn" href="${esc(ctx.deps.guideUrl)}" target="_blank" rel="noopener">${icon('arrowUR')}Open guide</a></div>
+      <div class="set-row"><span><b>About ChimpBench</b><i>Model, evidence levels and assumptions.</i></span><a class="btn" href="${esc(ctx.deps.guideUrl)}" target="_blank" rel="noopener">${icon('arrowUR')}Open About</a></div>
     </div>
     ${soundSettingsHtml()}
     <p class="honest">Life course mode compresses age, gestation and mortality so a lifetime can be explored; feeding and travel stay on ecological time. This separation of clocks is an experimental control, not a biological claim. Rates, skills and community dynamics are illustrative and need validation against field data.</p>

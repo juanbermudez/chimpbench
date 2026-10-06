@@ -9,6 +9,8 @@ import type { World } from './types';
 export interface SpeedPreset { id: string; label: string; ecoSecondsPerSecond: number; }
 
 export const SPEED_PRESETS: SpeedPreset[] = [
+  // Real time: one 15-s tick every 15 real seconds; rendering interpolates between ticks (subTick), so motion is smooth.
+  { id: 'rt', label: 'Real time', ecoSecondsPerSecond: 1 },        // 1 s/s
   { id: '1x', label: '1×', ecoSecondsPerSecond: 60 },              // 1 min/s
   { id: '10x', label: '10×', ecoSecondsPerSecond: 600 },           // 10 min/s
   { id: '1h', label: '1 h/s', ecoSecondsPerSecond: 3_600 },
@@ -40,6 +42,11 @@ export function setSpeed(clock: Clock, id: string): void {
   clock.speedId = preset.id; clock.ecoSecondsPerSecond = preset.ecoSecondsPerSecond;
   // Backlog earned at the old speed is not owed at the new one.
   clock.accumulator = Math.min(clock.accumulator, TICK_SECONDS);
+  // The reported rate starts at the new target: at real time it is smoothed over 30 s, so decaying from the old
+  // speed would show a stale rate for minutes. A capped speed still settles to what it achieves.
+  if (Number.isFinite(preset.ecoSecondsPerSecond)) {
+    clock.ticksPerSecond = preset.ecoSecondsPerSecond / TICK_SECONDS; clock.effectiveRate = preset.ecoSecondsPerSecond;
+  }
 }
 
 /**
@@ -95,7 +102,10 @@ export function subTick(clock: Clock): number {
 
 function smooth(clock: Clock, ticks: number, dt: number): void {
   if (dt <= 0) return;
-  const k = 1 - Math.exp(-dt / SMOOTHING_SECONDS);
+  // Below about 1 min/s a tick lands only every few real seconds (every 15 s at real time); averaging over two tick
+  // intervals keeps the reported rate steady instead of spiking at each tick and decaying to 0 between them.
+  const rate = clock.ecoSecondsPerSecond, tickGap = Number.isFinite(rate) && rate > 0 ? TICK_SECONDS / rate : 0;
+  const k = 1 - Math.exp(-dt / Math.max(SMOOTHING_SECONDS, 2 * tickGap));
   clock.ticksPerSecond += (ticks / dt - clock.ticksPerSecond) * k;
   clock.effectiveRate = clock.ticksPerSecond * TICK_SECONDS;
 }

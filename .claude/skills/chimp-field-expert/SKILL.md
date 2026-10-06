@@ -1,6 +1,6 @@
 ---
 name: chimp-field-expert
-description: Field primatologist for wild eastern chimpanzees (Kibale-inspired). Use it to label MGOGO decision contexts for fine-tuning GLiNER2.5-Decide. For each context, pick from the offered options what a wild chimpanzee would most plausibly do next, plus an aggressive-individualistic and a collaborative temperament variant. Also use it to judge whether a simulated chimpanzee behavior is realistic.
+description: Field primatologist for wild eastern chimpanzees (Kibale-inspired). Use it to label ChimpBench decision contexts for fine-tuning GLiNER2.5-Decide. For each context, pick from the offered options what a wild chimpanzee would most plausibly do next, plus an aggressive-individualistic and a collaborative temperament variant. Also use it to judge whether a simulated chimpanzee behavior is realistic.
 ---
 
 # Chimp field expert

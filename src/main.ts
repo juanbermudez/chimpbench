@@ -2,7 +2,10 @@ import './style.css';
 import { applyIntervention, createWorld, relationOf, relationshipOf, tickWorld, type Profile } from './simulation';
 import { createScene, type Scene } from './scene';
 import { advance, createClock, frameBudget, SPEED_PRESETS, setSpeed, subTick } from './clock';
-import { cancelDecisionRequests, createDecisionController, isBlocking, pumpDecisions, refreshDecideStatus, setPolicy, setRoster, startLocalModel } from './decision';
+import { cancelDecisionRequests, createDecisionController, isBlocking, pumpDecisions, refreshDecideStatus, setPolicy, setRoster, setDecisionProvider, startLocalModel } from './decision';
+import { DEFAULT_PROVIDER_CONFIG, parseProviderConfig, providerSelection, isProviderId } from './providers/config';
+import { createProvider } from './providers';
+import { createModelLoader } from './ui/model-loader';
 import { createApp, defaultSelection } from './ui/app';
 import { icon } from './ui/icons';
 import type { OlderParamsView, PersistenceView } from './ui/contracts';
@@ -41,9 +44,20 @@ function makeWorld(seed: number, profile: Profile = urlProfile ?? APP_PROFILE): 
 
 let world!: World;
 const clock = createClock();
-const decider = createDecisionController();
+let providerConfig = structuredClone(DEFAULT_PROVIDER_CONFIG), providerConfigError = '';
+try {
+  const response = await fetch(`${import.meta.env.BASE_URL}decision-providers.json`, { cache: 'no-cache' });
+  if (!response.ok) throw new Error(`Provider config returned ${response.status}`);
+  providerConfig = parseProviderConfig(await response.json());
+} catch (error) { providerConfigError = error instanceof Error ? error.message : String(error); }
+let savedProvider: string | null = null;
+try { savedProvider = localStorage.getItem('mgogo.decision-provider'); } catch { /* storage may be blocked */ }
+// A build-fixed provider (VITE_DECISION_PROVIDER) is not overridden by ?provider= either.
+const providerId = providerSelection(providerConfig, import.meta.env.DEV && import.meta.env.VITE_STATIC !== '1', import.meta.env.VITE_DECISION_PROVIDER ? null : params.get('provider'), savedProvider, import.meta.env.VITE_DECISION_PROVIDER);
+const decider = createDecisionController(createProvider(providerId, providerConfig));
+if (providerConfigError) decider.lastError = providerConfigError;
 // Static hosting (VITE_STATIC=1, e.g. a published artifact): no local model server, no save library and no sound
-// files, so rules decide and nothing is fetched that isn't there. VITE_GUIDE_URL points the guide link elsewhere.
+// files; decision providers are configured independently. VITE_GUIDE_URL points the guide link elsewhere.
 const STATIC = import.meta.env.VITE_STATIC === '1';
 let scene: Scene | null = null;
 let audio: AudioEngine | null = null;
@@ -54,6 +68,7 @@ let epoch = 0;
 let captureUi: () => Record<string, unknown> | null = () => null;
 const early: [string, number, (() => void)?, string?][] = [];
 let notifyUi = (text: string, severity = 1, run?: () => void, label?: string) => { early.push([text, severity, run, label]); };
+if (providerConfigError) notifyUi(`Could not load provider configuration: ${providerConfigError}. Using default endpoints.`, 2);
 
 const session = (): PersistedSession => ({ clock: { speedId: clock.speedId, playing: clock.playing }, ui: captureUi() });
 const mutationKey = () => `${epoch}|${world.ageRate}|${world.nextId}|${world.events.length}|${decider.calls}|${decider.applied}|${decider.discarded}|${decider.fallbacks}`;
@@ -162,12 +177,19 @@ const app = createApp(root, {
   setPlaying: playing => { clock.playing = playing; },
   setPolicy: mode => { epoch++; setPolicy(decider, world, mode); },
   setRoster: (roster, selectedId) => { epoch++; setRoster(decider, world, roster, selectedId); },
-  retryModel: async () => { if (STATIC) return; await startLocalModel(decider); void pollReadiness(); },
+  // A build that fixes the provider (VITE_DECISION_PROVIDER, e.g. the hosted GLiNER-only site) offers no picker.
+  setProvider: import.meta.env.VITE_DECISION_PROVIDER ? undefined : id => {
+    if (!isProviderId(id)) return;
+    epoch++; setDecisionProvider(decider, createProvider(id, providerConfig));
+    try { localStorage.setItem('mgogo.decision-provider', id); } catch { /* storage may be blocked */ }
+    void pollReadiness();
+  },
+  retryModel: async () => { await startLocalModel(decider); void pollReadiness(); },
   applyIntervention: (kind, options) => { epoch++; return applyIntervention(world, kind, options); },
   relationOf, relationshipOf,
   newWorld: newSimulation,
   setQuality: quality => scene?.setQuality(quality),
-  guideUrl: import.meta.env.VITE_GUIDE_URL || '/docs/architecture.html',
+  guideUrl: import.meta.env.VITE_GUIDE_URL || '/about',
   persistence: persist.status.mode === 'off' ? undefined : persistenceView,
 });
 captureUi = app.captureUi;
@@ -207,7 +229,6 @@ function startScene(focusId: number, fresh: boolean): Scene | null {
 }
 
 async function pollReadiness() {
-  if (STATIC) { decider.ready = false; decider.phase = 'unavailable'; decider.status = 'Rules decide (the local model runs only in the desktop version)'; return; }
   await refreshDecideStatus(decider);
   if (decider.phase === 'loading') setTimeout(() => { void pollReadiness(); }, 2000);
 }
@@ -236,11 +257,11 @@ function frame(now: number) {
   const selectedId = app.state.selectedId;
   // While a streamed save serializes (a few frames), the clock and the decision pump hold so the slices stay consistent.
   const holding = persist.holdClock;
-  if (!holding) pumpDecisions(decider, world, selectedId);
+  if (!holding && !startupModel?.blocked) pumpDecisions(decider, world, selectedId);
   const t1 = performance.now();
   perfEnd('pump', f0);
   let heldForSave = false;
-  advance(clock, world, realDt, () => { if (isBlocking(decider, world)) return true; if (persist.holdClock) { heldForSave = true; return true; } return false; });
+  if (!startupModel?.blocked) advance(clock, world, realDt, () => { if (isBlocking(decider, world)) return true; if (persist.holdClock) { heldForSave = true; return true; } return false; });
   if (heldForSave) clock.blockedByModel = false; // a save pause is not the model's wait
   const simMs = performance.now() - t1;
   perfAdd('sim', simMs);
@@ -264,7 +285,7 @@ function frame(now: number) {
   perfAdd('frame', workMs);
   perfFrame(now);
   pace(realDt * 1000, workMs, simMs);
-  if (!revealed && scene && (scene.getDiagnostics().drawCalls > 0 || now > revealBy)) { revealed = true; app.ready(); audio?.load(); flushEarly(); }
+  if (!startupModel?.blocked) revealSimulation(now);
   requestAnimationFrame(frame);
 }
 
@@ -274,8 +295,20 @@ scene = startScene(app.state.selectedId, !resumed);
 audio = STATIC ? null : createAudioEngine({ debug: params.get('audiodebug') === '1' });
 // The loading screen stays up until the first frame has rendered, so shader warm-up and first-use GPU uploads
 // happen behind it instead of freezing the revealed forest (the old ~470 ms stall right after load).
+const startupModel = scene && decider.provider === 'browser' ? createModelLoader(root.querySelector<HTMLElement>('.loading')!, {
+  start: () => startLocalModel(decider),
+  status: async () => { await refreshDecideStatus(decider); return { ready: decider.ready, phase: decider.phase, error: decider.lastError, progress: decider.progress ?? undefined }; },
+  skip: () => { setDecisionProvider(decider, createProvider('browser', providerConfig)); notifyUi('Continuing with rules. Load the browser model from the model panel (M).'); },
+  enter: () => revealSimulation(performance.now(), true),
+}) : null;
 let revealed = !scene;
 const revealBy = performance.now() + 8000;
+/** Model completion enters the forest immediately, even when animation frames are throttled. */
+function revealSimulation(now: number, modelFinished = false) {
+  if (revealed || !scene || (!modelFinished && scene.getDiagnostics().drawCalls === 0 && now <= revealBy)) return;
+  revealed = true; app.ready(); audio?.load(); flushEarly();
+  root.querySelector<HTMLElement>('#viewport')?.focus({ preventScroll: true });
+}
 /** Messages from start-up (resume, storage problems) wait for the forest so the loading screen does not hide them. */
 function flushEarly() { for (const [text, severity, run, label] of early.splice(0)) notifyUi(text, severity, run, label); }
 if (revealed) flushEarly();
@@ -303,12 +336,12 @@ if (perf.on) (window as unknown as { __MGOGO_PERF__: object }).__MGOGO_PERF__ = 
     return {
       seed: world.seed, profile: profileOf(world), size: world.size, time: world.time, day: world.day, hour: world.hour, tick: world.tick,
       selectedId: app.state.selectedId, highlightTroopId: app.state.highlightTroopId, tab: app.state.tab, view: app.state.view,
-      societyOpen: app.state.society.open, dock: app.state.dock, ageRate: world.ageRate,
+      societyOpen: app.state.society.open || (app.state.rightOpen && app.state.rightMode === 'society'), rightMode: app.state.rightMode, ageRate: world.ageRate,
       environment: { ...world.environment },
       clock: { playing: clock.playing, speedId: clock.speedId, effectiveRate: clock.effectiveRate, ticksPerSecond: clock.ticksPerSecond, limited: clock.limited, blockedByModel: clock.blockedByModel },
       stats: { ...world.stats },
       model: {
-        enabled: decider.enabled, ready: decider.ready, phase: decider.phase, status: decider.status, policy: world.modelPolicy.mode, roster: decider.roster,
+        provider: decider.provider, model: decider.model, device: decider.device, enabled: decider.enabled, ready: decider.ready, phase: decider.phase, status: decider.status, policy: world.modelPolicy.mode, roster: decider.roster,
         focalIds: [...decider.focalIds], calls: decider.calls, applied: decider.applied, discarded: decider.discarded, fallbacks: decider.fallbacks, waiting: decider.waiting,
         agreement: { ...decider.agreement }, latencyMs: decider.latencyMs, inputTokens: decider.inputTokens, traces: traces.length, modelTraces: modelTraces.length,
         lastTrace: last ? { id: last.id, chimpId: last.chimpId, chimpName: last.chimpName, time: last.time, source: last.source, applied: last.applied, discardedReason: last.discardedReason,
@@ -323,7 +356,7 @@ if (perf.on) (window as unknown as { __MGOGO_PERF__: object }).__MGOGO_PERF__ = 
       stimuli: world.stimuli.map(s => ({ id: s.id, kind: s.kind, troopId: s.troopId, label: s.label })),
       events: world.events.slice(-10).map(e => ({ time: e.time, kind: e.kind, severity: e.severity, text: e.text })),
       chimps: world.chimps.map(c => ({ id: c.id, name: c.name, troopId: c.troopId, action: c.action, alive: c.alive, stage: c.stage, controller: c.controller, source: c.decisionSource, awaiting: c.awaitingDecisionSince !== null, position: [...c.position] })),
-      ui: { toasts: document.querySelectorAll('.toast').length, feedItems: document.querySelectorAll('.feed-list > li').length, inspectorOpen: app.state.inspectorOpen, sidebarOpen: app.state.sidebarOpen, insets: app.insets(), occluders: document.querySelectorAll('[data-occluder]').length, quality: { requested: app.state.quality, effective: scene?.getQuality?.() ?? null } },
+      ui: { toasts: document.querySelectorAll('.toast').length, feedItems: document.querySelectorAll('.feed-list > li').length, rightOpen: app.state.rightOpen, chimpOpen: app.state.chimpOpen, sidebarOpen: app.state.sidebarOpen, insets: app.insets(), occluders: document.querySelectorAll('[data-occluder]').length, quality: { requested: app.state.quality, effective: scene?.getQuality?.() ?? null } },
     };
   },
 };

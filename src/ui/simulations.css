@@ -1,6 +1,6 @@
 /* Saved simulations (src/ui/simulations.ts): menu-bar indicator and the Simulations dialog.
    Same neutral near-black chrome as the rest of the UI: no hue except the shared --warn / --bad status tokens,
-   opaque surfaces, no gradients. Gold stays reserved for the model, the focal individual and the alpha crown. */
+   opaque surfaces, no gradients. Gold stays reserved for the model, the focal individual and the alpha's badge. */
 
 /* ---------- Menu bar: simulation name + save state ---------- */
 .bar-sim { gap: 8px; min-width: 0; }

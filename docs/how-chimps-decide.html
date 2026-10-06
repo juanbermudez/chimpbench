@@ -1,0 +1,674 @@
+<meta charset="utf-8">
+<title>How Chimps Decide</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column of figures that follow the decision loop in order; every box is colour-coded by where its behaviour comes from. */
+:root {
+  color-scheme: dark;
+  --bg: #0a0a0b; --surface: #101012; --surface-2: #17171a; --well: #0c0c0d;
+  --ink: #f2f2f3; --ink-2: #b4b4bb; --ink-3: #8b8b93;
+  --line: rgba(255,255,255,.08); --line-2: rgba(255,255,255,.14);
+  /* Where behaviour comes from */
+  --fixed: #9aadc2;   /* written in code, always the same */
+  --state: #5fc79a;   /* read from body, senses, memory, relationships */
+  --dice: #e2bf79;    /* seeded chance */
+  --model: #77b6e1;   /* the optional model */
+  --user: #e28dae;    /* you, from outside */
+  --up: #5fc79a; --down: #ef7266;
+  --sans: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-inline: 20px; padding-block: 44px 80px; display: grid; gap: 56px; }
+h1, h2, h3, p { margin: 0; }
+h1 { font-weight: 600; font-size: clamp(34px, 6vw, 56px); line-height: 1.02; letter-spacing: -.03em; text-wrap: balance; }
+h2 { font-weight: 600; font-size: clamp(22px, 3vw, 28px); letter-spacing: -.02em; line-height: 1.15; text-wrap: balance; }
+h3 { font-weight: 600; font-size: 15px; letter-spacing: -.005em; }
+b { font-weight: 600; color: var(--ink); }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 6px; }
+
+/* Hero */
+.eyebrow { font: 500 12px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+.hero { display: grid; gap: 22px; }
+.lede { font-size: clamp(18px, 2.4vw, 22px); line-height: 1.4; color: var(--ink-2); max-width: 30em; text-wrap: pretty; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px; }
+.key { display: inline-flex; align-items: center; gap: 9px; padding: 8px 13px 8px 11px; border: 1px solid var(--line-2); border-radius: 999px; font-size: 14px; color: var(--ink-2); background: var(--surface); }
+.key i, .tag i { width: 9px; height: 9px; border-radius: 50%; background: var(--k); flex: none; }
+.key b { font-weight: 500; }
+.k-fixed { --k: var(--fixed); } .k-state { --k: var(--state); } .k-dice { --k: var(--dice); } .k-model { --k: var(--model); } .k-user { --k: var(--user); }
+.toc { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 14px; color: var(--ink-3); border-top: 1px solid var(--line); padding-top: 16px; }
+.toc a { text-decoration: none; color: var(--ink-2); }
+.toc a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
+
+/* Sections and figures */
+section { display: grid; gap: 18px; scroll-margin-top: 20px; }
+.sec-head { display: grid; gap: 8px; }
+.take { color: var(--ink-2); font-size: 17px; max-width: 44em; text-wrap: pretty; }
+.fig { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 22px; display: grid; gap: 18px; min-width: 0; }
+.fig-title { font: 500 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.note { font-size: 13.5px; color: var(--ink-3); max-width: 60em; }
+.scroll { overflow-x: auto; min-width: 0; }
+.scroll > svg { display: block; width: 100%; height: auto; }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.four { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+
+/* Tags */
+.tag { display: inline-flex; align-items: center; gap: 6px; font: 500 11px var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--k); white-space: nowrap; }
+.tag i { width: 7px; height: 7px; }
+.tags { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+
+/* Flow of steps */
+.flow { display: flex; align-items: stretch; gap: 8px; }
+.step { flex: 1 1 0; min-width: 0; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 7px; align-content: start; }
+.step .n { font: 500 12px var(--mono); color: var(--ink-3); }
+.step p { font-size: 13.5px; color: var(--ink-2); line-height: 1.4; }
+.arr { flex: none; align-self: center; color: var(--ink-3); font-size: 18px; line-height: 1; }
+.return { border: 1px dashed var(--line-2); border-top: 0; border-radius: 0 0 14px 14px; margin: -6px 28px 0; padding: 20px 16px 14px; display: grid; gap: 10px; justify-items: center; text-align: center; position: relative; }
+.return::before, .return::after { content: '▲'; position: absolute; top: -9px; font-size: 10px; color: var(--ink-3); }
+.return::before { left: -5px; } .return::after { content: ''; }
+.return p { font-size: 14px; color: var(--ink-2); max-width: 38em; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.chip { font-size: 13px; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-2); }
+.chips.left { justify-content: flex-start; }
+
+/* Tick strip */
+.strip { display: flex; gap: 4px; align-items: stretch; }
+.seg { flex: 1 1 0; min-width: 0; padding: 12px 10px; background: var(--surface-2); border: 1px solid var(--line); font-size: 13px; line-height: 1.3; color: var(--ink-2); display: grid; gap: 4px; align-content: start; }
+.seg:first-child { border-radius: 10px 0 0 10px; } .seg:last-child { border-radius: 0 10px 10px 0; }
+.seg b { font-size: 13.5px; }
+.seg.wide { flex: 2.6 1 0; border-color: var(--line-2); background: #1b1b1f; }
+.seg small { font: 400 11px var(--mono); color: var(--ink-3); }
+.mini { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; }
+.mini span { font-size: 12.5px; padding: 3px 8px; border-radius: 6px; background: var(--well); border: 1px solid var(--line); color: var(--ink); }
+.mini em { font-style: normal; color: var(--ink-3); font-size: 13px; }
+.ladder { display: grid; gap: 9px; }
+.rung { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 14px; align-items: center; font-size: 14px; color: var(--ink-2); }
+.rung .mono { color: var(--ink); font-size: 13px; text-align: right; }
+.rung div { display: grid; gap: 5px; min-width: 0; }
+.rung u { display: block; height: 4px; border-radius: 2px; background: var(--fixed); opacity: .75; text-decoration: none; }
+
+/* Trigger cards */
+.bout { height: 12px; border-radius: 6px; background: var(--well); border: 1px solid var(--line); position: relative; overflow: hidden; }
+.bout u { position: absolute; inset: 0 auto 0 0; background: var(--state); opacity: .8; border-radius: 6px 0 0 6px; }
+.bout s { position: absolute; top: -2px; bottom: -2px; width: 3px; background: var(--ink); }
+.card { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.card p { font-size: 14px; color: var(--ink-2); line-height: 1.45; }
+.card ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 7px; font-size: 14px; color: var(--ink-2); line-height: 1.4; }
+.card li { padding-left: 14px; position: relative; }
+.card li::before { content: ''; position: absolute; left: 0; top: .6em; width: 5px; height: 5px; border-radius: 50%; background: var(--k, var(--ink-3)); }
+
+/* Big numbers */
+.stat { display: grid; gap: 2px; }
+.stat b { font: 500 34px/1 var(--mono); letter-spacing: -.03em; color: var(--state); }
+.stat span { font-size: 13.5px; color: var(--ink-2); line-height: 1.35; }
+
+/* Funnel */
+.funnel { display: grid; gap: 6px; justify-items: center; }
+.fn { width: var(--w); min-width: 0; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; display: grid; gap: 3px; text-align: center; }
+.fn b { font-size: 15px; } .fn span { font-size: 13px; color: var(--ink-2); line-height: 1.4; }
+.fn .mono { color: var(--ink-3); font-size: 12px; }
+.fn.last { border-color: var(--line-2); background: #1b1b1f; }
+.down { color: var(--ink-3); font-size: 13px; line-height: 1; }
+
+/* Score anatomy */
+.bar { display: flex; height: 44px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); }
+.bar > span { display: grid; place-items: center; font: 500 12px var(--mono); color: #0a0a0b; min-width: 0; }
+.bar-legend { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; font-size: 13px; color: var(--ink-2); line-height: 1.35; }
+.bar-legend i { display: block; width: 14px; height: 4px; border-radius: 2px; margin-bottom: 6px; background: var(--c); }
+
+/* Driver matrix */
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+.matrix { min-width: 860px; }
+.matrix th, .matrix td { padding: 7px 6px; text-align: center; border-bottom: 1px solid var(--line); }
+.matrix thead th { font: 500 11.5px var(--mono); color: var(--ink-3); vertical-align: bottom; letter-spacing: .02em; }
+.matrix tbody th { text-align: left; font-weight: 400; color: var(--ink-2); white-space: nowrap; padding-left: 0; }
+.matrix .grp th { font: 500 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); padding-top: 16px; text-align: left; border-bottom-color: var(--line-2); }
+.u { color: var(--up); } .d { color: var(--down); } .g { color: var(--fixed); }
+.matrix td { font-size: 14px; }
+
+/* Choice */
+.probs { display: grid; gap: 8px; }
+.prob { display: grid; grid-template-columns: 110px minmax(0, 1fr) 46px; gap: 12px; align-items: center; font-size: 14px; color: var(--ink-2); }
+.prob u { display: block; height: 16px; border-radius: 4px; background: var(--dice); width: var(--w); text-decoration: none; min-width: 2px; }
+.prob .mono { font-size: 13px; color: var(--ink); text-align: right; }
+.gate { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.25fr); gap: 14px; align-items: center; }
+.branch { display: grid; gap: 10px; }
+.yn { font: 500 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+
+/* Lanes */
+.lanes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 12px; }
+.lane-h { font: 500 11.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; padding-bottom: 8px; border-bottom: 1px solid var(--line-2); color: var(--k); }
+.ls { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; font-size: 13.5px; color: var(--ink-2); line-height: 1.4; display: grid; gap: 4px; }
+.ls .n { font: 500 11.5px var(--mono); color: var(--k); }
+.ls small { display: none; font: 500 10.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--k); }
+.c1 { grid-column: 1; } .c2 { grid-column: 2; } .c3 { grid-column: 3; }
+.packet { font: 400 12.5px/1.7 var(--mono); background: var(--well); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; color: var(--ink-2); overflow-x: auto; white-space: pre; margin: 0; }
+.packet b { color: var(--model); font-weight: 500; }
+
+/* Ripple */
+.chain { display: grid; gap: 8px; }
+.chain .row { display: flex; gap: 8px; align-items: stretch; }
+.when { font: 500 11.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); padding-top: 6px; }
+
+/* Ledger */
+.ledger th, .ledger td { text-align: left; vertical-align: top; padding: 11px 12px 11px 0; border-bottom: 1px solid var(--line); line-height: 1.4; color: var(--ink-2); }
+.ledger { min-width: 760px; }
+.ledger thead th { font: 500 11.5px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+.ledger tbody th { color: var(--ink); font-weight: 600; white-space: nowrap; }
+.foot { font-size: 13.5px; color: var(--ink-3); border-top: 1px solid var(--line); padding-top: 20px; display: grid; gap: 8px; max-width: 62em; }
+.foot code { font: 400 12.5px var(--mono); color: var(--ink-2); }
+
+@media (max-width: 820px) {
+  .flow, .chain .row, .strip { flex-direction: column; }
+  .arr { transform: rotate(90deg); } .arr.sep { transform: none; }
+  .seg:first-child { border-radius: 10px 10px 0 0; } .seg:last-child { border-radius: 0 0 10px 10px; }
+  .two, .three, .four, .gate { grid-template-columns: minmax(0, 1fr); }
+  .gate > .arr { justify-self: center; }
+  .return { margin-inline: 12px; }
+  .bar-legend { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lanes { grid-template-columns: minmax(0, 1fr); }
+  .lane-h { display: none; } .ls small { display: block; }
+  .c1, .c2, .c3 { grid-column: 1; }
+  .fn { width: 100%; }
+  .fig { padding: 16px; }
+}
+@media (max-width: 480px) { .four { grid-template-columns: repeat(2, minmax(0, 1fr)); } .prob { grid-template-columns: 84px minmax(0, 1fr) 40px; } }
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <span class="eyebrow">ChimpBench · simulator guide</span>
+  <h1>How a chimp decides</h1>
+  <p class="lede">Code writes the menu. The chimp's own state sets the scores. A weighted draw, or a model, picks one. No storyline is scripted.</p>
+  <div class="legend" aria-label="Colour key">
+    <span class="key k-fixed"><i></i><b>Fixed</b> written in code</span>
+    <span class="key k-state"><i></i><b>State</b> body, senses, memory, relationships</span>
+    <span class="key k-dice"><i></i><b>Dice</b> seeded chance</span>
+    <span class="key k-model"><i></i><b>Model</b> optional chooser</span>
+    <span class="key k-user"><i></i><b>You</b> outside input</span>
+  </div>
+  <nav class="toc" aria-label="Sections">
+    <a href="#loop">The loop</a><a href="#tick">One tick</a><a href="#when">When they decide</a><a href="#senses">Senses</a><a href="#memory">Memory</a><a href="#menu">The menu</a><a href="#drivers">What drives scores</a><a href="#pick">The pick</a><a href="#model">The model</a><a href="#ripple">Ripple</a><a href="#ledger">Fixed vs emergent</a>
+  </nav>
+</header>
+
+<!-- ============================================================ LOOP -->
+<section id="loop">
+  <div class="sec-head">
+    <h2>The loop every chimp runs</h2>
+    <p class="take">Most of the time a chimp just keeps doing what it is doing. It only chooses again when something ends or something happens.</p>
+  </div>
+  <div class="fig">
+    <div class="flow">
+      <div class="step"><span class="n">1</span><h3>Trigger</h3><p>The act ends, finishes early, or something interrupts it.</p><div class="tags"><span class="tag k-state"><i></i>state</span></div></div>
+      <span class="arr" aria-hidden="true">→</span>
+      <div class="step"><span class="n">2</span><h3>Perceive</h3><p>Looks around. Only what is in sight or earshot counts.</p><div class="tags"><span class="tag k-state"><i></i>state</span></div></div>
+      <span class="arr" aria-hidden="true">→</span>
+      <div class="step"><span class="n">3</span><h3>Build the menu</h3><p>Code lists every legal act and gives each one a score.</p><div class="tags"><span class="tag k-fixed"><i></i>formulas</span><span class="tag k-state"><i></i>inputs</span></div></div>
+      <span class="arr" aria-hidden="true">→</span>
+      <div class="step"><span class="n">4</span><h3>Pick one</h3><p>A weighted draw over the short menu, or a model's choice.</p><div class="tags"><span class="tag k-dice"><i></i>dice</span><span class="tag k-model"><i></i>model</span></div></div>
+      <span class="arr" aria-hidden="true">→</span>
+      <div class="step"><span class="n">5</span><h3>Act</h3><p>A bout of under a minute to over an hour, run tick by tick.</p><div class="tags"><span class="tag k-fixed"><i></i>fixed</span></div></div>
+    </div>
+    <div class="return">
+      <p><b>The act rewrites the state the next choice reads.</b> Others see and hear it too, which can trigger their step 1.</p>
+      <div class="chips">
+        <span class="chip">hunger, thirst, energy</span><span class="chip">stress, injury</span><span class="chip">bonds, tension</span><span class="chip">rank</span><span class="chip">places remembered</span><span class="chip">calls others hear</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ TICK -->
+<section id="tick">
+  <div class="sec-head">
+    <h2>One tick is 15 seconds of forest time</h2>
+    <p class="take">The whole world steps in this order, every tick. Faster playback runs more ticks. It never changes the tick.</p>
+  </div>
+  <div class="fig">
+    <span class="fig-title">Inside one tick, left to right</span>
+    <div class="strip">
+      <div class="seg"><b>Clock, sun, weather</b></div>
+      <div class="seg"><b>Slow step</b><small>every 20th tick</small></div>
+      <div class="seg"><b>Colobus move</b></div>
+      <div class="seg wide"><b>Each living chimp, in list order</b>
+        <div class="mini"><span>needs rise</span><em>→</em><span>decide, if due</span><em>→</em><span>do one tick of the act</span><em>→</em><span>decide again, if it just finished</span></div>
+      </div>
+      <div class="seg"><b>Infants ride</b></div>
+      <div class="seg"><b>Parties, patrols</b><small>every 8th tick</small></div>
+    </div>
+    <span class="fig-title">What runs how often</span>
+    <div class="ladder">
+      <div class="rung"><span class="mono">15 s</span><div><span>Needs, decisions, movement, every act</span><u style="width:18%"></u></div></div>
+      <div class="rung"><span class="mono">2 min</span><div><span>Who is in which party, range use, sightings of neighbours, patrol route</span><u style="width:32%"></u></div></div>
+      <div class="rung"><span class="mono">5 min</span><div><span>Weather shifts, fruit, aging, cycles and pregnancy, deaths, disease, rank drift</span><u style="width:39%"></u></div></div>
+      <div class="rung"><span class="mono">1 h</span><div><span>Allies recomputed, grooming credit fades, news of neighbours spreads in a party</span><u style="width:56%"></u></div></div>
+      <div class="rung"><span class="mono">24 h</span><div><span>Bonds and tension fade, community ranges redrawn from use, fruit crops updated</span><u style="width:77%"></u></div></div>
+      <div class="rung"><span class="mono">30 days</span><div><span>Each chimp's month of social life is folded into one memory digest</span><u style="width:100%"></u></div></div>
+    </div>
+    <p class="note">At 1 min/s the clock runs 4 ticks per real second. At 1 day/s it runs 5,760. Chimps update one after another, so each sees what earlier ones just did.</p>
+  </div>
+</section>
+
+<!-- ============================================================ WHEN -->
+<section id="when">
+  <div class="sec-head">
+    <h2>Three things make a chimp choose again</h2>
+    <p class="take">Between these moments nothing is decided. The current act simply continues.</p>
+  </div>
+  <div class="three">
+    <div class="card"><div class="bout"><u style="width:100%"></u></div><h3>The bout runs out</h3><p>Each act gets a length from a fixed range, for example 20 to 45 min of feeding or about 1 min of charging.</p><span class="tag k-fixed"><i></i>fixed range</span></div>
+    <div class="card"><div class="bout"><u style="width:42%"></u><s style="left:42%"></s></div><h3>Something interrupts</h3><p>An event nearby cuts the bout short and forces a fresh look.</p><span class="tag k-state"><i></i>from the world</span></div>
+    <div class="card"><div class="bout"><u style="width:70%"></u><s style="left:70%"></s></div><h3>The act is done early</h3><p>The tree is empty, the partner left, the thirst is gone.</p><span class="tag k-state"><i></i>from the world</span></div>
+  </div>
+  <div class="two">
+    <div class="card"><h3>Urgent interrupts, always get through</h3>
+      <div class="chips left"><span class="chip">being charged or attacked</span><span class="chip">losing a fight</span><span class="chip">strangers in sight</span><span class="chip">strangers' pant-hoots</span><span class="chip">a snake within 8 m</span></div></div>
+    <div class="card"><h3>Ordinary interrupts, at most one per 2 min</h3>
+      <div class="chips left"><span class="chip">a dominant displaying close by</span><span class="chip">a patrol or hunt starting</span><span class="chip">a capture with meat</span><span class="chip">heavy rain starting</span><span class="chip">a partner grooming, playing or begging</span><span class="chip">an alarm call</span><span class="chip">the scream of offspring or an ally</span><span class="chip">a partner walking away</span></div></div>
+  </div>
+</section>
+
+<!-- ============================================================ SENSES -->
+<section id="senses">
+  <div class="sec-head">
+    <h2>What a chimp can know</h2>
+    <p class="take">There is no global knowledge. A chimp looks only at decision moments, and only this far.</p>
+  </div>
+  <div class="fig">
+    <div class="scroll">
+      <svg viewBox="0 0 760 380" style="min-width:640px" role="img" aria-label="Rings of perception around one chimp: 10 metres at night, 35 metres by day, 42 metres for water and colobus, and hearing far beyond.">
+        <g fill="none">
+          <circle cx="210" cy="190" r="172" stroke="#e2bf79" stroke-opacity=".5" stroke-dasharray="3 6"/>
+          <circle cx="210" cy="190" r="110" stroke="#9aadc2" stroke-opacity=".55" stroke-dasharray="6 5"/>
+          <circle cx="210" cy="190" r="91" stroke="#5fc79a" stroke-width="1.5" fill="#5fc79a" fill-opacity=".07"/>
+          <circle cx="210" cy="190" r="26" stroke="#5fc79a" stroke-width="1.5" fill="#5fc79a" fill-opacity=".16"/>
+        </g>
+        <!-- attended chimps -->
+        <g fill="#5fc79a"><circle cx="246" cy="170" r="4.5"/><circle cx="188" cy="236" r="4.5"/><circle cx="160" cy="160" r="4.5"/><circle cx="252" cy="232" r="4.5"/><circle cx="226" cy="120" r="4.5"/></g>
+        <!-- unseen chimps -->
+        <g fill="none" stroke="#8b8b93" stroke-width="1.3"><circle cx="60" cy="140" r="4.5"/><circle cx="340" cy="300" r="4.5"/><circle cx="96" cy="310" r="4.5"/></g>
+        <!-- trees -->
+        <g fill="#9aadc2"><path d="M278 150l7 12h-14z"/><path d="M150 214l7 12h-14z"/><path d="M236 262l7 12h-14z"/></g>
+        <!-- caller far away -->
+        <g stroke="#e2bf79" fill="none" stroke-width="1.4"><circle cx="96" cy="60" r="4.5" fill="#e2bf79" stroke="none"/><path d="M110 62a14 14 0 0 1 -6 12"/><path d="M119 60a24 24 0 0 1 -11 21"/></g>
+        <!-- self -->
+        <circle cx="210" cy="190" r="6" fill="#f2f2f3"/>
+        <!-- labels -->
+        <g font-family="Instrument Sans, system-ui, sans-serif" font-size="14" fill="#b4b4bb">
+          <g stroke="#8b8b93" stroke-opacity=".5" fill="none"><path d="M342 79L452 64"/><path d="M310 143L452 124"/><path d="M301 190L452 184"/><path d="M230 207L452 244"/></g>
+          <text x="462" y="66" fill="#f2f2f3" font-weight="600">Hearing: far beyond sight</text>
+          <text x="462" y="86">Calls are pushed to listeners by the caller</text>
+          <text x="462" y="126" fill="#f2f2f3" font-weight="600">Water and colobus: 42 m</text>
+          <text x="462" y="146">Colobus only in daylight</text>
+          <text x="462" y="186" fill="#f2f2f3" font-weight="600">Day sight: 35 m</text>
+          <text x="462" y="206">Chimps and fruit trees</text>
+          <text x="462" y="246" fill="#f2f2f3" font-weight="600">Night sight: 10 m</text>
+          <text x="462" y="266">Close companions only</text>
+          <g font-size="12.5" fill="#8b8b93">
+            <circle cx="466" cy="316" r="4.5" fill="#5fc79a"/><text x="478" y="320">seen and attended</text>
+            <circle cx="616" cy="316" r="4.5" fill="none" stroke="#8b8b93" stroke-width="1.3"/><text x="628" y="320">out of range, unknown</text>
+            <text x="462" y="346">Rings to scale, except hearing</text>
+          </g>
+        </g>
+      </svg>
+    </div>
+    <div class="four">
+      <div class="stat"><b>16</b><span>nearest chimps tracked in detail. The rest in view are only counted.</span></div>
+      <div class="stat"><b>5</b><span>best fruit trees in view kept.</span></div>
+      <div class="stat"><b>1</b><span>nearest colobus group noticed.</span></div>
+      <div class="stat"><b>0</b><span>knowledge of anything out of range that it does not remember.</span></div>
+    </div>
+    <div class="chips left"><span class="chip">full rain: sight −30%</span><span class="chip">up in a tree: +15%</span><span class="chip">under 3 years old: −20%</span></div>
+  </div>
+</section>
+
+<!-- ============================================================ MEMORY -->
+<section id="memory">
+  <div class="sec-head">
+    <h2>How long things stay in mind</h2>
+    <p class="take">Where others are is forgotten in minutes. Fruit trees and grudges last weeks. A summary of the social year lasts for life.</p>
+  </div>
+  <div class="fig">
+    <div class="scroll">
+      <svg viewBox="0 0 800 410" style="min-width:680px" role="img" aria-label="Bar chart of memory lifetimes on a log scale from one minute to forty years.">
+        <g stroke="rgba(255,255,255,.08)">
+          <path d="M220 24V362"/><path d="M341.4 24V362"/><path d="M435.7 24V362"/><path d="M536.5 24V362"/><path d="M610.6 24V362"/><path d="M720 24V362"/>
+        </g>
+        <g font-family="JetBrains Mono, ui-monospace, monospace" font-size="11.5" fill="#8b8b93" text-anchor="middle">
+          <text x="220" y="384">1 min</text><text x="341.4" y="384">1 h</text><text x="435.7" y="384">1 day</text><text x="536.5" y="384">30 days</text><text x="610.6" y="384">1 year</text><text x="720" y="384">40 years</text>
+          <text x="470" y="404" fill="#8b8b93">log scale</text>
+        </g>
+        <g font-family="Instrument Sans, system-ui, sans-serif" font-size="13.5" fill="#b4b4bb" text-anchor="end">
+          <text x="208" y="45">What just interrupted it</text>
+          <text x="208" y="75">A rare urge (patrol, attack)</text>
+          <text x="208" y="105">Where other chimps were</text>
+          <text x="208" y="135">Chance to make up after a fight</text>
+          <text x="208" y="165">Where colobus were</text>
+          <text x="208" y="195">Tension toward a partner</text>
+          <text x="208" y="225">A fruit tree and its crop</text>
+          <text x="208" y="255">Last incident with a partner</text>
+          <text x="208" y="285">Monthly social digests</text>
+          <text x="208" y="315">Yearly social digests</text>
+          <text x="208" y="345">Water sites</text>
+        </g>
+        <g>
+          <rect x="220" y="34" width="32.6" height="14" rx="3" fill="#5fc79a"/>
+          <rect x="220" y="64" width="53.1" height="14" rx="3" fill="#e2bf79"/>
+          <rect x="220" y="94" width="80.3" height="14" rx="3" fill="#5fc79a"/>
+          <rect x="220" y="124" width="85.7" height="14" rx="3" fill="#5fc79a"/>
+          <rect x="220" y="154" width="100.9" height="14" rx="3" fill="#5fc79a"/>
+          <rect x="220" y="184" width="305.9" height="14" rx="3" fill="#5fc79a"/>
+          <rect x="220" y="214" width="337.1" height="14" rx="3" fill="#5fc79a"/>
+          <rect x="220" y="244" width="349.1" height="14" rx="3" fill="#5fc79a"/>
+          <rect x="220" y="274" width="390.2" height="14" rx="3" fill="#5fc79a"/>
+          <rect x="220" y="304" width="500" height="14" rx="3" fill="#5fc79a"/>
+          <rect x="220" y="334" width="500" height="14" rx="3" fill="#5fc79a"/>
+        </g>
+        <g font-family="JetBrains Mono, ui-monospace, monospace" font-size="12" fill="#f2f2f3">
+          <text x="259" y="45">3 min</text>
+          <text x="279" y="75">6 min</text>
+          <text x="306" y="105">15 min</text>
+          <text x="312" y="135">18 min</text>
+          <text x="327" y="165">30 min</text>
+          <text x="532" y="195">halves every 21 days</text>
+          <text x="563" y="225">60 days</text>
+          <text x="575" y="255">90 days</text>
+          <text x="616" y="285">12 months</text>
+          <text x="726" y="315">life</text>
+          <text x="726" y="345">for good</text>
+        </g>
+      </svg>
+    </div>
+    <div class="three">
+      <div class="card k-state"><h3>Places</h3><ul><li>Up to 60 fruit trees, each with the crop last seen there</li><li>Up to 48 other things: animals, colobus, water</li><li>Remembered trees are why it travels out of sight</li></ul></div>
+      <div class="card k-state"><h3>Recent events</h3><ul><li>12 short first-person episodes, like "lost a fight with…"</li><li>Shown to the model as "5 min ago: …"</li></ul></div>
+      <div class="card k-state"><h3>Relationships</h3><ul><li>A running tally per partner: grooming hours, support, threats, attacks, make-ups, matings, meat</li><li>Folded into monthly, then yearly digests</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ MENU -->
+<section id="menu">
+  <div class="sec-head">
+    <h2>From 30 possible acts to a short menu</h2>
+    <p class="take">Code decides what is possible. A chimp can never pick something off the menu, and neither can the model.</p>
+  </div>
+  <div class="fig">
+    <div class="funnel">
+      <div class="fn" style="--w:100%"><b>30 acts exist</b><span class="mono">rest · forage · drink · travel · groom · play · follow · climb · patrol · display · flee · hunt · mate · nurse · nest · pant-grunt · charge · attack · submit · reconcile · console · share · beg · guard · consort · shelter · call · transfer · alarm</span></div>
+      <span class="down" aria-hidden="true">▼</span>
+      <div class="fn" style="--w:84%"><b>Legal for this animal, right now</b><span>Age, sex, who is in view, time of day, weather. An infant cannot patrol. Nobody can groom a chimp it cannot see.</span></div>
+      <span class="down" aria-hidden="true">▼</span>
+      <div class="fn" style="--w:68%"><b>Scored</b><span>Each offer gets a number. Anything at −0.4 or lower is dropped. A small repeatable wobble of ±0.12 breaks ties differently each time.</span></div>
+      <span class="down" aria-hidden="true">▼</span>
+      <div class="fn" style="--w:52%"><b>Best targets kept</b><span>3 fruit trees, 2 partners per social act, 1 of everything else. 48 at most.</span></div>
+      <span class="down" aria-hidden="true">▼</span>
+      <div class="fn last" style="--w:38%"><b>Short menu: 8 at most</b><span>The top-scored act, one answer to any disturbance, rest, the best of each kind, then extra partners.</span></div>
+    </div>
+    <div class="two">
+      <div class="card k-fixed"><h3>Night closes the menu</h3><p>After dark only nest, rest, nurse, flee, alarm, shelter and submit stay open, plus self-defence. Dusk keeps a last feed, drink or groom but drops travel, hunts, patrols and play.</p></div>
+      <div class="card k-fixed"><h3>Momentum is built in</h3><p>The act already under way gets +0.25. An act that just finished gets −0.5. So chimps tend to carry on, and do not repeat what they just completed.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ DRIVERS -->
+<section id="drivers">
+  <div class="sec-head">
+    <h2>What pushes each score up or down</h2>
+    <p class="take">The formulas are fixed. The numbers fed into them are the chimp's own, at that moment.</p>
+  </div>
+  <div class="fig">
+    <span class="fig-title">Anatomy of one score: resting at 13:00, half tired, just fed, warm day</span>
+    <div class="bar" role="img" aria-label="Rest score 1.17, made of base 0.12, tiredness 0.45, midday 0.30, not hungry 0.20, warm 0.10">
+      <span style="width:10.3%;background:#9aadc2">.12</span><span style="width:38.5%;background:#5fc79a">.45</span><span style="width:25.6%;background:#8fd9b6">.30</span><span style="width:17.1%;background:#5fc79a">.20</span><span style="width:8.5%;background:#8fd9b6">.10</span>
+    </div>
+    <div class="bar-legend">
+      <span><i style="--c:#9aadc2"></i><b>Base</b><br>always there</span>
+      <span><i style="--c:#5fc79a"></i><b>Tired</b><br>0.9 × missing energy</span>
+      <span><i style="--c:#8fd9b6"></i><b>Midday</b><br>11:30 to 14:30</span>
+      <span><i style="--c:#5fc79a"></i><b>Not hungry</b><br>hunger under 0.2</span>
+      <span><i style="--c:#8fd9b6"></i><b>Warm</b><br>above 23 °C</span>
+    </div>
+    <p class="note">Total 1.17. Injury, night and illness would add more. Every act has a sum like this, competing on the same scale.</p>
+  </div>
+  <div class="fig">
+    <span class="fig-title">Driver × act</span>
+    <div class="tags"><span class="tag" style="--k:var(--up)">▲ raises the score</span><span class="tag" style="--k:var(--down)">▼ lowers it</span><span class="tag k-fixed">◆ hard gate (on or off)</span></div>
+    <div class="scroll">
+      <table class="matrix">
+        <thead><tr><th></th><th>Eat</th><th>Drink</th><th>Rest<br>nest</th><th>Travel</th><th>Groom</th><th>Play</th><th>Display<br>charge</th><th>Make<br>up</th><th>Mate<br>guard</th><th>Patrol<br>hunt</th><th>Flee<br>submit</th></tr></thead>
+        <tbody>
+          <tr class="grp"><th colspan="12">Body</th></tr>
+          <tr><th>Hunger</th><td class="u">▲</td><td></td><td class="d">▼</td><td></td><td class="d">▼</td><td></td><td class="d">▼</td><td></td><td class="d">▼</td><td class="g">◆</td><td></td></tr>
+          <tr><th>Thirst</th><td></td><td class="u">▲</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr><th>Tiredness</th><td></td><td></td><td class="u">▲</td><td></td><td></td><td class="d">▼</td><td class="g">◆</td><td></td><td></td><td class="g">◆</td><td></td></tr>
+          <tr><th>Need for company</th><td></td><td></td><td></td><td></td><td class="u">▲</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr><th>Stress</th><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="d">▼</td><td></td><td></td><td></td></tr>
+          <tr><th>Injury</th><td></td><td></td><td class="u">▲</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr class="grp"><th colspan="12">World</th></tr>
+          <tr><th>Time of day</th><td class="g">◆</td><td></td><td class="u">▲</td><td class="g">◆</td><td class="d">▼</td><td class="g">◆</td><td class="g">◆</td><td></td><td class="g">◆</td><td class="g">◆</td><td></td></tr>
+          <tr><th>Rain</th><td class="d">▼</td><td></td><td class="u">▲</td><td></td><td class="d">▼</td><td></td><td></td><td></td><td></td><td class="g">◆</td><td></td></tr>
+          <tr><th>Fruit quality and supply</th><td class="u">▲</td><td></td><td></td><td class="u">▲</td><td></td><td></td><td class="u">▲</td><td></td><td></td><td></td><td></td></tr>
+          <tr><th>Distance to the target</th><td class="d">▼</td><td class="d">▼</td><td></td><td class="d">▼</td><td></td><td></td><td></td><td class="d">▼</td><td></td><td></td><td></td></tr>
+          <tr><th>Risky ground near neighbours</th><td class="d">▼</td><td></td><td></td><td class="d">▼</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr class="grp"><th colspan="12">Others</th></tr>
+          <tr><th>Bond or kinship</th><td></td><td></td><td></td><td></td><td class="u">▲</td><td></td><td class="u">▲</td><td class="u">▲</td><td class="u">▲</td><td></td><td></td></tr>
+          <tr><th>Tension with them</th><td></td><td></td><td></td><td></td><td class="d">▼</td><td></td><td class="u">▲</td><td class="u">▲</td><td></td><td></td><td class="u">▲</td></tr>
+          <tr><th>Rank gap</th><td></td><td></td><td></td><td></td><td class="u">▲</td><td></td><td class="u">▲</td><td></td><td class="u">▲</td><td></td><td class="u">▲</td></tr>
+          <tr><th>Own adult males in view</th><td class="u">▲</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="g">◆</td><td class="d">▼</td></tr>
+          <tr><th>Strangers seen or heard</th><td></td><td></td><td></td><td></td><td></td><td></td><td class="u">▲</td><td></td><td></td><td class="u">▲</td><td class="u">▲</td></tr>
+          <tr><th>A fertile female nearby</th><td></td><td></td><td></td><td></td><td></td><td></td><td class="u">▲</td><td></td><td class="u">▲</td><td></td><td></td></tr>
+          <tr class="grp"><th colspan="12">Self and memory</th></tr>
+          <tr><th>Personality</th><td></td><td></td><td></td><td></td><td></td><td class="u">▲</td><td class="u">▲</td><td></td><td></td><td></td><td></td></tr>
+          <tr><th>Remembered places</th><td></td><td class="g">◆</td><td></td><td class="u">▲</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr><th>Calls from own community</th><td></td><td></td><td></td><td class="u">▲</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr><th>A fight minutes ago</th><td></td><td></td><td></td><td></td><td></td><td></td><td class="u">▲</td><td class="g">◆</td><td></td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">A reading guide: hunger raises eating and lowers almost everything social. Tension lowers grooming but raises both charging and making up. More of your own males in view makes border ground feel safer and opens patrols and hunts.</p>
+  </div>
+</section>
+
+<!-- ============================================================ PICK -->
+<section id="pick">
+  <div class="sec-head">
+    <h2>How the rules pick</h2>
+    <p class="take">First a check: has anything changed? If not, carry on. If so, draw from the short menu, weighted by score.</p>
+  </div>
+  <div class="fig">
+    <div class="gate">
+      <div class="card"><h3>Has anything changed since the last choice?</h3>
+        <ul>
+          <li>It was interrupted</li>
+          <li>A need crossed a level (mild 0.4, moderate 0.55, strong 0.7, severe 0.88)</li>
+          <li>The part of the day changed</li>
+          <li>30 minutes have passed</li>
+          <li>The act ended or is no longer legal</li>
+          <li>While feeding: a known place pays at least 2× better</li>
+        </ul>
+        <span class="tag k-state"><i></i>state</span>
+      </div>
+      <span class="arr" aria-hidden="true">→</span>
+      <div class="branch">
+        <div class="card"><span class="yn">No</span><h3>Keep the same act and target</h3><p>A trip that reaches its tree turns into feeding there.</p><span class="tag k-fixed"><i></i>fixed</span></div>
+        <div class="card"><span class="yn">Yes</span><h3>Weighted draw from the short menu</h3><p>Higher score, higher odds. The top option wins about 3 times in 4.</p><span class="tag k-dice"><i></i>dice</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="fig">
+    <span class="fig-title">Example draw: four options and their odds</span>
+    <div class="probs">
+      <div class="prob"><span>score <span class="mono">1.20</span></span><u style="--w:66.6%"></u><span class="mono">67%</span></div>
+      <div class="prob"><span>score <span class="mono">1.05</span></span><u style="--w:26.7%"></u><span class="mono">27%</span></div>
+      <div class="prob"><span>score <span class="mono">0.80</span></span><u style="--w:5.8%"></u><span class="mono">6%</span></div>
+      <div class="prob"><span>score <span class="mono">0.50</span></span><u style="--w:0.9%"></u><span class="mono">1%</span></div>
+    </div>
+    <p class="note">Made-up scores, real formula (softmax at temperature 0.164 on the field map). A lead of 0.15 already means 67% against 27%. Chimps under 8 years, and menus with a single option, skip the draw and take the top score.</p>
+  </div>
+</section>
+
+<!-- ============================================================ MODEL -->
+<section id="model">
+  <div class="sec-head">
+    <h2>When a model picks instead</h2>
+    <p class="take">The model replaces step 4 only. It gets the same short menu, sees only what that chimp perceives, and its answer is checked twice before it counts.</p>
+  </div>
+  <div class="fig">
+    <div class="lanes">
+      <span class="lane-h k-fixed">Simulation</span><span class="lane-h k-user">Decision loop</span><span class="lane-h k-model">Model</span>
+      <div class="ls c1 k-fixed"><small>Simulation</small><span class="n">1</span>The chimp reaches a decision moment and waits. It keeps its current act if still legal, otherwise rests.</div>
+      <div class="ls c2 k-user"><small>Decision loop</small><span class="n">2</span>Takes one waiting chimp. The one you selected goes first, then the longest wait. One request at a time.</div>
+      <div class="ls c2 k-user"><small>Decision loop</small><span class="n">3</span>Builds the packet: that chimp's own percept and up to 8 options, in a fixed order that hides the rules' ranking.</div>
+      <div class="ls c3 k-model"><small>Model</small><span class="n">4</span>Returns one probability per option. About 0.25 to 0.4 s on the local server.</div>
+      <div class="ls c2 k-user"><small>Decision loop</small><span class="n">5</span>Checks the answer: a real option, probabilities that match the menu.</div>
+      <div class="ls c1 k-fixed"><small>Simulation</small><span class="n">6</span>Re-checks the option is still legal now, then starts the act. Stale or illegal answers are discarded.</div>
+    </div>
+    <div class="three">
+      <div class="card"><h3>Three modes</h3><ul><li><b>Off.</b> Rules decide for everyone.</li><li><b>Async</b> (default). The world keeps running. After 6 forest-minutes or 6 real seconds of waiting, rules decide.</li><li><b>Lockstep.</b> The clock stops until the answer comes, up to 6 real seconds.</li></ul></div>
+      <div class="card"><h3>Who the model drives</h3><ul><li><b>Selected</b> (default): the one chimp you clicked.</li><li><b>Focal set:</b> up to 6. Selected, each alpha, a mother, a juvenile.</li><li><b>All.</b></li></ul></div>
+      <div class="card"><h3>Rules step in when</h3><ul><li>The model is not loaded or errors</li><li>The answer is invalid</li><li>No answer in time</li><li>Fewer than 2 options</li></ul></div>
+    </div>
+  </div>
+  <div class="two">
+    <div class="fig">
+      <span class="fig-title">What the model is told</span>
+<pre class="packet"><b>me</b>        name, age, sex, community, rank, mood
+<b>drives</b>    only needs above mild
+<b>now</b>       time, weather, party size, fruit, strangers
+<b>nearby</b>    up to 8 individuals, by name and relation
+<b>memories</b>  up to 5 recent episodes
+<b>history</b>   up to 3 lines of long-term memory
+<b>events</b>    what it perceives happening
+<b>options</b>   up to 8 acts, each with its purpose</pre>
+    </div>
+    <div class="fig">
+      <span class="fig-title">What it is never told</span>
+      <div class="card" style="background:none;border:0;padding:0"><ul>
+        <li>Anything the chimp cannot see, hear or remember</li>
+        <li>Ids or world state</li>
+        <li>Which option the rules prefer</li>
+        <li>Instructions from the browser. The prompt is built from checked fields only.</li>
+      </ul></div>
+      <p class="note">Three interchangeable choosers: GLiNER in the browser (default), GLiNER on the local server, or the Jev API. Today the model agrees with the rules' top pick about 40 to 65% of the time and leans social.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ RIPPLE -->
+<section id="ripple">
+  <div class="sec-head">
+    <h2>One act ripples outward</h2>
+    <p class="take">Nothing below is a script. Each box is another chimp reaching its own step 1 because of what it just perceived.</p>
+  </div>
+  <div class="fig">
+    <div class="chain">
+      <span class="when">Second 0</span>
+      <div class="row">
+        <div class="step"><h3>A charges B</h3><p>A's own choice, pushed by rank rivalry and tension.</p><span class="tag k-state"><i></i>state</span></div>
+        <span class="arr" aria-hidden="true">→</span>
+        <div class="step"><h3>B is interrupted</h3><p>Urgent. B's menu now holds submit, flee, counter-charge.</p><span class="tag k-state"><i></i>state</span></div>
+        <span class="arr" aria-hidden="true">→</span>
+        <div class="step"><h3>Allies are alerted</h3><p>Bonded bystanders within 15 m of B may be alerted. Odds: half their bond.</p><span class="tag k-dice"><i></i>dice</span></div>
+      </div>
+      <span class="when">Within a minute</span>
+      <div class="row">
+        <div class="step"><h3>B gives way</h3><p>A wins. Contact is the exception: a brief hit in 12% of cases.</p><span class="tag k-dice"><i></i>dice</span></div>
+        <span class="arr sep" aria-hidden="true">or</span>
+        <div class="step"><h3>B stands and counters</h3><p>A contest: strength cubed, nudged by rank, plus any ally charging the same target.</p><span class="tag k-fixed"><i></i>formula</span><span class="tag k-dice"><i></i>dice</span></div>
+        <span class="arr" aria-hidden="true">→</span>
+        <div class="step"><h3>The books are updated</h3><p>Rank points move. Loser's stress +0.2. B's tension toward A +0.10.</p><span class="tag k-fixed"><i></i>fixed</span></div>
+      </div>
+      <span class="when">Next 18 minutes</span>
+      <div class="row">
+        <div class="step"><h3>Make up?</h3><p>Reconciling appears on both menus. Stronger the closer the bond.</p><span class="tag k-state"><i></i>state</span></div>
+        <span class="arr sep" aria-hidden="true">·</span>
+        <div class="step"><h3>Comfort?</h3><p>A close friend or kin of the victim nearby may console.</p><span class="tag k-state"><i></i>state</span></div>
+        <span class="arr sep" aria-hidden="true">·</span>
+        <div class="step"><h3>Take it out on someone?</h3><p>The loser may be primed to charge a lower-ranked bystander. Odds 8% plus up to 15% for aggressive characters.</p><span class="tag k-dice"><i></i>dice</span></div>
+      </div>
+      <span class="when">Next weeks</span>
+      <div class="row">
+        <div class="step"><h3>If not repaired</h3><p>Less grooming, keeping away from A, a grudge charge if roles allow. Tension halves every 21 days.</p><span class="tag k-state"><i></i>state</span></div>
+        <span class="arr sep" aria-hidden="true">·</span>
+        <div class="step"><h3>If repaired</h3><p>Making up clears 35% of tension, plus up to 45% more for close bonds. Grooming clears 15% per hour.</p><span class="tag k-fixed"><i></i>fixed</span></div>
+        <span class="arr sep" aria-hidden="true">·</span>
+        <div class="step"><h3>Remembered</h3><p>Both tally the threat. The month's digest may read "threatened by A 3×".</p><span class="tag k-state"><i></i>state</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ LEDGER -->
+<section id="ledger">
+  <div class="sec-head">
+    <h2>Fixed, chance, or emergent</h2>
+    <p class="take">The rules of the game are hardcoded. What happens in the game is not.</p>
+  </div>
+  <div class="four">
+    <div class="card k-fixed"><span class="tag k-fixed"><i></i>fixed in code</span><ul>
+      <li>The 15 s tick and its order</li>
+      <li>The 30 possible acts</li>
+      <li>Who may do what: age, sex and situation gates</li>
+      <li>Every score formula and weight</li>
+      <li>Night and dusk menus</li>
+      <li>Bout length ranges</li>
+      <li>How fast needs rise</li>
+      <li>Sense ranges, memory lifetimes</li>
+      <li>How fights, hunts and matings resolve</li>
+    </ul></div>
+    <div class="card k-dice"><span class="tag k-dice"><i></i>seeded dice</span><ul>
+      <li>The pick from the short menu</li>
+      <li>Rare urges that add an option: patrol, gang attack, fight escalation, infanticide, rain display</li>
+      <li>Who wins a contest, who is wounded</li>
+      <li>Weather changes</li>
+      <li>Conception, death, a female leaving home</li>
+    </ul><p>Same seed, same inputs: the same world, every time.</p></div>
+    <div class="card k-state"><span class="tag k-state"><i></i>emerges from state</span><ul>
+      <li>Parties splitting and merging</li>
+      <li>Community ranges: the area actually used, redrawn daily</li>
+      <li>Rank order and alpha changes</li>
+      <li>Alliances: the top 3 partners by bond and support</li>
+      <li>Grudges and avoidance</li>
+      <li>Where a patrol heads: the border left unvisited longest</li>
+      <li>Meetings between communities</li>
+    </ul></div>
+    <div class="card k-user"><span class="tag k-user"><i></i>from outside</span><ul>
+      <li>The model's pick, when it is on</li>
+      <li>Field experiments you trigger: a storm, a snake, played-back calls, removing the alpha</li>
+      <li>Life speed: natural, or one year per day</li>
+    </ul><p>A live model's timing cannot be replayed from the seed alone.</p></div>
+  </div>
+  <div class="fig">
+    <span class="fig-title">Behaviour by behaviour</span>
+    <div class="scroll">
+      <table class="ledger">
+        <thead><tr><th></th><th class="k-fixed" style="color:var(--fixed)">Fixed</th><th style="color:var(--state)">Read from state</th><th style="color:var(--dice)">Dice</th></tr></thead>
+        <tbody>
+          <tr><th>Nesting</th><td>Drive tied to the clock: ramps from 17:54 to 18:54. Night menu.</td><td>Tiredness, rain, which tall tree is near, not last night's.</td><td>The menu draw.</td></tr>
+          <tr><th>Feeding</th><td>Score formula. Intake rates.</td><td>Hunger, crop seen or remembered, walk needed, crowding, risky ground.</td><td>The menu draw.</td></tr>
+          <tr><th>Grooming</th><td>Weights.</td><td>Need for company, bond, kinship, grooming owed, rank, tension.</td><td>The menu draw.</td></tr>
+          <tr><th>Charge and fight</th><td>Contest formula.</td><td>Rank gap, tension, allies near, strength from age, health and wounds.</td><td>Who wins. Wounds.</td></tr>
+          <tr><th>Patrol</th><td>08:00 to 15:30. At least 3 adult males together. Little rain.</td><td>Males in view. How long a border sector went unvisited.</td><td>An hourly roll opens the option.</td></tr>
+          <tr><th>Hunt</th><td>At least 2 adult males. 6 h since the last hunt. Little rain.</td><td>Meeting a colobus group opens the option. Energy.</td><td>The menu draw. Captures.</td></tr>
+          <tr><th>Gang attack</th><td>Needs 3 own males against one lone stranger, on patrol or at the range edge.</td><td>Who is isolated, who is near.</td><td>A 50% roll, at most once per 6 h.</td></tr>
+          <tr><th>Parties</th><td>A party is whoever is chained within 50 m.</td><td>Everything above. Nothing tells chimps to split or join.</td><td>None of its own.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<div class="foot">
+  <p>Numbers are for the field map, the app's default: 8 km across, 3 communities, 49 founding chimps, about 24,000 trees. The small 160 m map uses shorter ranges (day sight 15 m, tree memory 72 h).</p>
+  <p>Weights are design values tagged by evidence level in <code>data/params.json</code>. Sources: <code>src/sim/tick.ts</code>, <code>decide.ts</code>, <code>perception.ts</code>, <code>candidates.ts</code>, <code>rg.ts</code>, <code>menu.ts</code>, <code>src/decision.ts</code>, <code>docs/simulation.md</code>.</p>
+</div>
+
+</div>

@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import type { Chimp, Quality, World } from '../types';
 import { buildChimpGeometry } from './creatures/body';
 import { createChimpMaterials, createSilhouetteMaterial } from './creatures/material';
+import { PORTRAIT_LAYER, type PortraitSubject } from './creatures/portrait';
 import {
   B, PI, PARAM_TEXEL, POSE_SIZE, ROW_TEXELS, boneWorld, computeMorph, copyPose, createFK, createMorph, createPose,
   lowestPoint, quat, solveFK, writeSkin, type FKState, type Morph, type Pose,
@@ -81,6 +82,9 @@ export interface CreatureLayer {
    * climbs, drums on or perches in (hostTree, −1 none). Fills out[] (reused objects) and returns the count. Read-only.
    */
   keepClearCandidates?(out: KeepCandidate[], camera: THREE.Camera): number;
+  /** Optional (the UI's snapshot, creatures/portrait.ts): point the portrait instance at an animal and report its head,
+   * heading and size. False when the animal is not loaded, not posed yet or fading out. */
+  portrait?(id: number, out: PortraitSubject): boolean;
   /** Optional: chimp id whose name label (padded hit box) contains (x, y) in viewport CSS px, else −1. */
   labelAt?(x: number, y: number): number;
   /** Optional: chimp id of the visible animal nearest (x, y) in viewport CSS px within max(radius, its on-screen
@@ -1523,6 +1527,43 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     return true;
   }
   function getScale(id: number) { return anims.get(id)?.morph.size ?? 1; }
+  // --- Portrait (creatures/portrait.ts): one instance of the finest body mesh loaded so far, on its own layer and
+  // outside the creature group (which hides in the field overview). A wrapper geometry shares the LOD's vertex
+  // buffers (never disposed here: they belong to the LOD) and adds a one-instance slot, so the body material's
+  // program and textures serve it unchanged. The hero mesh (LOD 3) is finer than a 176 px picture needs.
+  const portraitSlot = new THREE.InstancedBufferAttribute(new Float32Array(1), 1).setUsage(THREE.DynamicDrawUsage);
+  const portraitFade = new THREE.InstancedBufferAttribute(new Float32Array(1), 1);
+  let portraitMesh: THREE.InstancedMesh | null = null, portraitLevel = -1;
+  const portraitQ = new THREE.Quaternion();
+  function portrait(id: number, out: PortraitSubject): boolean {
+    const a = anims.get(id);
+    if (disposed || !a || a.lastSkinFrame < 0 || a.fade > 0.5) return false;
+    const level = lods[0] ? 0 : lods[1] ? 1 : 2;
+    if (level !== portraitLevel) {
+      const src = lods[level].geometry, g = new THREE.BufferGeometry();
+      for (const name of ['position', 'normal', 'aSkinIndex', 'aSkinWeight', 'aRegA', 'aRegB', 'aRegC']) { const at = src.getAttribute(name); if (at) g.setAttribute(name, at); }
+      g.setIndex(src.getIndex());
+      g.setAttribute('aSlot', portraitSlot); g.setAttribute('aLodFade', portraitFade);
+      if (portraitMesh) portraitMesh.geometry = g;
+      else {
+        portraitMesh = new THREE.InstancedMesh(g, mats.material, 1);
+        portraitMesh.castShadow = false; portraitMesh.receiveShadow = true; portraitMesh.frustumCulled = false;
+        portraitMesh.name = 'chimp-portrait';
+        portraitMesh.layers.set(PORTRAIT_LAYER);
+        scene.add(portraitMesh);
+      }
+      portraitLevel = level;
+    }
+    (portraitSlot.array as Float32Array)[0] = a.slot; portraitSlot.needsUpdate = true;
+    // The head bone's frame (bind pose: +Z out of the face, +Y to the crown): the picture faces the face, head upright.
+    boneWorld(a.fk, a.bodyQ, a.bx, a.by, a.bz, a.lift, B.head, TP, TQ4);
+    portraitQ.set(TQ4[0], TQ4[1], TQ4[2], TQ4[3]);
+    out.face.set(0, 0, 1).applyQuaternion(portraitQ); out.up.set(0, 1, 0).applyQuaternion(portraitQ);
+    const s = a.morph.size, hs = s * a.morph.headScale;
+    out.head.set(TP[0], TP[1], TP[2]).addScaledVector(out.up, 0.035 * hs).addScaledVector(out.face, 0.04 * hs);
+    out.size = s;
+    return true;
+  }
   function keepClearCandidates(out: KeepCandidate[], camera: THREE.Camera): number {
     let n = 0;
     for (const a of animList) {
@@ -1571,6 +1612,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     lodWorker?.terminate(); lodWorker = null;
     pendingLods = [];
     scene.remove(group);
+    if (portraitMesh) { scene.remove(portraitMesh); portraitMesh.dispose(); portraitMesh = null; }
     for (const m of lods) if (m) { m.geometry.dispose(); m.dispose(); }
     loGeometry.dispose(); shadowGeo.dispose(); clipMat.dispose(); shadowProxy.dispose(); xrayGeo.dispose(); xrayFill.dispose(); xrayLine.dispose(); xrayMesh.dispose(); xrayOutline.dispose();
     mats.material.dispose(); mats.shell.dispose(); mats.depth.dispose(); mats.texture.dispose();
@@ -1580,5 +1622,5 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     picks.length = 0; anims.clear(); animList.length = 0;
     void lastElapsed;
   }
-  return { picks, update, getPosition, getScale, bendSources, keepClearCandidates, labelAt: labels.hitTest, nearestAt, dispose, debug } as CreatureLayer & { debug: typeof debug };
+  return { picks, update, getPosition, getScale, bendSources, keepClearCandidates, portrait, labelAt: labels.hitTest, nearestAt, dispose, debug } as CreatureLayer & { debug: typeof debug };
 }

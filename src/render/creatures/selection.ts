@@ -1,10 +1,11 @@
 // Selection ring (compact, depth-tested so it sits under the feet), target
 // tether, and the perception layer: a terrain-conforming vision fan (24 m)
-// in the heading direction plus a handful of salient memory markers.
+// in the heading direction plus a handful of salient memory markers, and a
+// ground spot under the animal while it is up a tree (where the fan starts).
 import * as THREE from 'three';
 import type { Memory, World } from '../../types';
 import type { Anim, CreatureContext, CreatureFrame } from '../creatures';
-import { clamp, preToneMapped } from './util';
+import { clamp, preToneMapped, smoothstep } from './util';
 import { hyp2 } from '../fastmath';
 
 const PERCEPTION_RADIUS = 24;
@@ -80,6 +81,25 @@ export function createSelection(parent: THREE.Object3D, ctx: CreatureContext) {
       }`,
   })));
   fan.frustumCulled = false; fan.renderOrder = 14;
+  // Ground spot: while the animal is up a tree, a soft translucent ring in its community colour on the floor under
+  // it, where the fan starts, so the fan does not seem to begin from nothing. Not depth-tested, like the fan.
+  const spotUniforms = { uColor: { value: new THREE.Color() }, uAlpha: { value: 0 } };
+  const spotGeo = own(new THREE.PlaneGeometry(2, 2));
+  spotGeo.rotateX(-Math.PI / 2);
+  const spot = new THREE.Mesh(spotGeo, own(new THREE.ShaderMaterial({
+    uniforms: spotUniforms, transparent: true, depthWrite: false, depthTest: false, side: THREE.DoubleSide, forceSinglePass: true,
+    vertexShader: `varying vec2 vUv; void main(){ vUv = uv * 2.0 - 1.0; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: `uniform vec3 uColor; uniform float uAlpha; varying vec2 vUv;
+      void main(){
+        float r = length(vUv);
+        float ring = smoothstep(0.2, 0.0, abs(r - 0.74));   // soft-edged band
+        float fill = 0.22 * smoothstep(0.8, 0.35, r);        // faint disc inside it: the spot itself
+        float a = max(ring, fill) * uAlpha;
+        if (a < 0.004 || r > 1.0) discard;
+        gl_FragColor = vec4(uColor, a);
+      }`,
+  })));
+  spot.frustumCulled = false; spot.renderOrder = 15;
   // Memory markers: small diamonds with a stalk; lines only for the top few.
   const markerGeo = own(new THREE.OctahedronGeometry(0.14, 0));
   const markers = new THREE.InstancedMesh(markerGeo, own(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.75, depthTest: false, depthWrite: false, fog: false })), MAX_MARKERS);
@@ -91,11 +111,15 @@ export function createSelection(parent: THREE.Object3D, ctx: CreatureContext) {
   memGeo.setAttribute('color', new THREE.BufferAttribute(memCol, 4).setUsage(THREE.DynamicDrawUsage));
   const memLines = new THREE.LineSegments(memGeo, own(new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, depthTest: false })));
   memLines.frustumCulled = false; memLines.renderOrder = 15;
-  perception.add(fan, markers, memLines);
+  perception.add(fan, spot, markers, memLines);
 
   const KIND: Record<string, THREE.Color> = { chimp: new THREE.Color('#f2e6c9'), tree: new THREE.Color('#8fd46b'), water: new THREE.Color('#6cc4ff'), prey: new THREE.Color('#ff7a5c') };
   const KIND_RANK: Record<string, number> = { chimp: 3, prey: 2.5, water: 1.5, tree: 1 };
   const tmpCol = new THREE.Color(), M = new THREE.Matrix4(), P = new THREE.Vector3(), Q = new THREE.Quaternion(), S = new THREE.Vector3();
+  const N = new THREE.Vector3();
+  // Community colours for the ground spot, compensated for ACES once per colour (preToneMapped iterates 200×).
+  const spotColors = new Map<string, THREE.Color>();
+  let spotHex = '';
   let lastPX = Infinity, lastPZ = Infinity, lastH = Infinity;
   const picked: Memory[] = [];
 
@@ -131,6 +155,24 @@ export function createSelection(parent: THREE.Object3D, ctx: CreatureContext) {
     perception.visible = frame.layers.perception;
     if (!frame.layers.perception) return;
     fanUniforms.uFill.value = frame.closeView ? 0.35 : 1; // close view: edges only, no haze over the foreground
+    // Ground spot under an animal drawn above the terrain, fading in from 0.5 m to 2 m of height so a climb does not
+    // pop. A carried infant uses its carrier's height: on the ground, the carrier itself stands at the fan's origin.
+    const host = a.carry ? anims.get(a.carrierId) ?? a : a;
+    const lift = smoothstep(0.5, 2, host.by - ctx.groundHeight(host.bx, host.bz));
+    spot.visible = lift > 0;
+    if (lift > 0) {
+      if (a.troopColor !== spotHex) {
+        spotHex = a.troopColor;
+        let c = spotColors.get(spotHex);
+        if (!c) { c = preToneMapped(spotHex, new THREE.Color()); spotColors.set(spotHex, c); }
+        spotUniforms.uColor.value.copy(c);
+      }
+      spotUniforms.uAlpha.value = 0.42 * lift;
+      const e = 0.6;   // lie on the slope, as the fan does
+      N.set(ctx.groundHeight(a.bx - e, a.bz) - ctx.groundHeight(a.bx + e, a.bz), 2 * e, ctx.groundHeight(a.bx, a.bz - e) - ctx.groundHeight(a.bx, a.bz + e)).normalize();
+      spot.quaternion.setFromUnitVectors(THREE.Object3D.DEFAULT_UP, N);
+      spot.position.set(a.bx, groundY + 0.2, a.bz); spot.scale.setScalar(r);   // the selection ring's screen-size floor
+    }
     // Rebuild the fan only when the animal moved or turned.
     if (hyp2(a.bx - lastPX, a.bz - lastPZ) > 0.3 || Math.abs(a.heading - lastH) > 0.05) {
       lastPX = a.bx; lastPZ = a.bz; lastH = a.heading;
