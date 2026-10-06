@@ -4344,3 +4344,36 @@ from DataCite (checked 6 October 2026). Access level is stated per entry: FT = f
   the unit of observation, the number of individuals and scans, who the individuals are and the observation effort are
   unknown. From the repository description only: one row per 15-minute scan and one 0/1 column per individual, so the
   party is recorded (the set of animals present) but no chosen partner.
+
+### Kanyawara female relationships and coalition partners [fox2022]
+
+- **Paper** [fox2022] (Abs; PMC9703227 front matter and abstract only; the publisher page showed a Cloudflare bot
+  check and was dropped; no preprint found) [M]. Fox SA, Muller MN, Thompson González N, Enigk DK, Machanda ZP, Otali E,
+  Wrangham R, Emery Thompson M 2022. Weak, but not strong, ties support coalition formation among wild female
+  chimpanzees. *Philosophical Transactions of the Royal Society B* 378(1868):20210427.
+  [doi:10.1098/rstb.2021.0427](https://doi.org/10.1098/rstb.2021.0427). Data: Dryad
+  [doi:10.5061/dryad.44j0zpchh](https://doi.org/10.5061/dryad.44j0zpchh) (identifier confirmed against DataCite and
+  `docs/datasets.md`), version 4, 13 October 2022, CC0 (DataCite), 275.16 KB. Analysis code: Zenodo
+  [doi:10.5281/zenodo.7039524](https://doi.org/10.5281/zenodo.7039524) (not downloaded).
+- **What it measures.** Whether weak affiliative ties predict aggressive coalition formation among adult females,
+  using 10 years of behavioural data (abstract). Three relationship measures (party association, five-metre proximity,
+  whether a dyad groomed) positively predicted coalitions; dyads that groomed frequently formed no more coalitions than
+  dyads that groomed occasionally, and kin cooperated no more than relationship quality predicted. The dataset is
+  thereby about coalition partners, not grooming partners.
+- **Site, species, sample.** Adult female chimpanzees of Kibale National Park, Uganda, 2010–2019 (Dryad Methods; the
+  authors are the Kanyawara Kibale Chimpanzee Project team; the community name and the subspecies, eastern
+  *P. t. schweinfurthii* by location, are not stated in the pages opened). Number of females, dyads and coalitions: not
+  in the abstract (not verified).
+- **Two analysis files (Dryad description).** `analysis1_datashare.csv`: dyadic rates and counts per two-year period
+  (times in the same party, coalitions together, a five-metre association index, a grooming-duration index, whether the
+  dyad ever groomed, combined dyad rank, immigrant involvement, kinship, time in the same party with one of them as
+  focal). `analysis2_datashare.csv` ("partner selection analysis"): one row per dyad at each coalition event with the
+  same dyad information and "which dyad formed the coalition out of all available partners at the time", which makes it
+  a chosen-and-available design by the repository's own description. Plus `README_femalecoal_dryad.docx` (15.24 KB).
+- **Licence.** CC0 1.0 (DataCite). Credit the authors and the DOI anyway.
+- **Evidence level.** [M] for what the deposit is; the paper's methods, sample sizes and definitions of "available" are
+  not read.
+- **Limits.** Females only, one community, a decade. Aggressive coalitions, not grooming or associating: the "choice" is
+  who joined whom against a target. Whether "available partners" means all females present, all in the party or all
+  in earshot is a paper-methods question not yet answered. The rank, relationship and kinship columns are the authors'
+  derived measures. Rates are per two-year period, so analysis 1 is not event-level.
