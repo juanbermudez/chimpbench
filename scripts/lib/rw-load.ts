@@ -38,7 +38,7 @@ export function wildChoices(rows: Row[], part: Part, opts: { opened?: boolean; h
 
 /** Writes the opening of the sealed part to the log, before anything is read. A reason of fewer than 12 characters is refused. */
 export function logOpening(reason: string, kernels: string[], commit: string, log = SEALED_LOG, now = new Date()): string {
-  const why = reason.trim().replace(/\s+/g, ' ').replace(/\|/g, '/');
+  const why = (reason ?? '').trim().replace(/\s+/g, ' ').replace(/\|/g, '/');
   if (why.length < 12 || why.startsWith('--')) throw new Error('--open-sealed needs a reason (a sentence: who decided, for which registered evaluation)');
   const line = `| ${now.toISOString().slice(0, 10)} | ${why} | ${kernels.join(', ')} | ${commit} |`;
   appendFileSync(log, line + '\n');

@@ -204,7 +204,7 @@ Numbers are copied from `docs/staging/rw-bench-numbers.md`, which `scripts/rw-sc
 
 These are floors: reasoning tokens grow with the number of cases and are unknown until the pilot. Almost all of the cost is the per-call overhead, so batching and a lower reasoning effort decide it. How the tool reports tokens is assumed ("tokens used", then a number) and is checked only against the fake.
 
-**Acceptance tests.** `tests/rw-bench.test.ts`: 16 tests, 16 pass (synthetic records; fake worker; fake Codex executable). Section 9's ten items are covered by tests 1 to 13 and 16; amendment A2 by tests 14 and 15.
+**Acceptance tests.** `tests/rw-bench.test.ts`: 16 tests, 16 pass (synthetic records; fake worker; fake Codex executable). Section 9's ten items are covered by tests 1 to 13 and 16; amendment A2 by tests 14 and 15. Full `pnpm test`, run once at the end (1-minute load 19.3 at the start): 986 tests, 985 pass, 0 fail, 1 skipped (the stand-in artifact absent from the worktree, as before); 970 before this stage. `tsc --noEmit -p .` and `gen-params --check` clean; the goldens and the field pin did not move.
 
 **Deviations and limits, stated.**
 - Amendments A1 and A2 (section 11), both before the code they cover.
