@@ -407,3 +407,34 @@ or of any kernel on the working base beyond the tests (R1b and R5 are the integr
    under wording 2). The other direction (the rules take the night and dusk menus) changes the base and was not built.
 3. **`activityFirst` 1 or 2 for the comparisons.** 1 costs nothing and the target is the rules' best (code decides the
    partner); 2 lets the engine choose the partner at about 1.4 calls per decision.
+
+## 10. Wiring after the UI merge (integrator's follow-up, 6 October 2026)
+
+`track-e` 7179af7 (the UI redesign, the in-browser providers, stage ED's `DecisionContext.bodies`) is merged into this
+branch (four conflicts, each resolved by keeping both sides: the context's optional keys `bodies` and `packet`, the
+generated parameters). The two files R2 was kept out of are now free, and their owners changed: the packet text is
+`src/providers/packet.ts`, the app's loop `src/decision.ts`.
+
+- **Iteration 6 (registered before the edits).**
+  (a) `src/providers/packet.ts`: for a context with `packet: 4`, `buildStateQuestion` takes the body line from
+  `bodyWordsV4` and each option's value words from `valueWordsV4`, and the default wording is 2 (§8 iteration 1, c);
+  `withoutState` drops `packet`; Jev's state packet gains `hind_fill`, and per option `rate_share`, `chance_in_fruit`,
+  `crop_uncertainty_kcal`, `win_odds`. A context without `packet` is built exactly as before.
+  (b) `src/decision.ts`: under `activityFirst` 2, after a valid first answer the loop sends `secondRequest` (the
+  options of the chosen kind) to the same provider and applies its answer; the trace shows the second request and
+  notes the kind chosen first; both calls count in `calls`, latency and tokens add. At 0 and 1 the loop is unchanged.
+  (c) **The line for bodies in sight** (stage ED, `deadBody`; `docs/staging/ed-prereg.md` §10 item 5 asks for a line and
+  gives no wording, so this is the wording, a design assumption about words only). A context with `bodies` gets a state
+  entry `bodies`, one line per body in the context's order, no id:
+  "`{name}: dead, {my offspring | my mother | my maternal sibling | my ally | my rival | nothing}, {age as "8 months" or
+  "3 y"}, died {N min ago | N h ago | N days ago}, {I am holding the body | the body lies N m away | {name} holds the
+  body, N m away | another holds the body, N m away}`". Example: "Kato: dead, my offspring, 8 months, died 3 h ago, I am
+  holding the body". The holder is named only if it is on the nearby list. No instruction line is added (nothing tells
+  the model what to do about a body). Jev's packet gets the same facts as named fields under `bodies`, and its evidence
+  list names the group only then. A context without `bodies` (the switch off, or no body in sight) is unchanged.
+  (d) Byte-identity at defaults: the hash script of iteration 1b runs on an extracted copy of `track-e` 7179af7 and on
+  this branch after the edits; requests and both text packets must be equal for the 10 worlds; the request and the text
+  hashes of the compressed worlds are pinned in the test file. (e) `scripts/lib/packet-v4.ts` keeps its composition as an
+  independent check (a test asserts it equals the real builder's packet); the sample measures tokens through the real
+  builder. The sample is re-run once on the merged branch; its numbers may differ from §8's if `track-e` changed the
+  working base's world, and that is said if so.
