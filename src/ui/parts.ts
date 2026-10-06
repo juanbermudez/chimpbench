@@ -53,4 +53,5 @@ export function radar(p: Personality, size = 116): string {
 export const empty = (title: string, body: string, ic = 'info') => `<div class="empty">${icon(ic)}<b>${esc(title)}</b><p>${body}</p></div>`;
 
 /** The alpha's mark: the gold "α" badge of the 3D name tag (render/creatures/labels.ts, .crl-rank.alpha), wherever the UI names an alpha. */
-export const alphaBadge = (title = 'Alpha male') => `<b class="alpha-badge" role="img" aria-label="alpha" title="${esc(title)}">α</b>`;
+// A <mark>, so the panels' own rules for b, i and span inside rows never restyle it.
+export const alphaBadge = (title = 'Alpha male') => `<mark class="alpha-badge" role="img" aria-label="alpha" title="${esc(title)}">α</mark>`;

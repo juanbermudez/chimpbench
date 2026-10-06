@@ -176,7 +176,7 @@ export function familyForestSvg(world: World, troop: Troop, selectedId: number):
       ${sexGlyph(c, x, yy, r, 'class="kn-shape"')}
       <text class="kn-init" x="${x}" y="${yy + 3.2}">${c.alive ? esc(c.name.charAt(0)) : '†'}</text>
       ${imm ? `<g class="kn-imm"><circle cx="${x + r * 0.9}" cy="${yy - r * 0.9}" r="4.2"/><path d="M${x + r * 0.9 - 1.8} ${yy - r * 0.9 - 1.8}l3.6 3.6m0-2.5v2.5h-2.5"/></g>` : ''}
-      ${troop.alphaId === c.id ? `<path class="kn-crown" d="M${x - 6} ${yy - r - 3} l2 -5 2 3 2 -4 2 4 2 -3 2 5Z"/>` : ''}
+      ${troop.alphaId === c.id ? `<g class="kn-alpha"><rect x="${x - 6.5}" y="${yy - r - 14}" width="13" height="11" rx="3"/><text x="${x}" y="${yy - r - 5.4}">α</text></g>` : ''}
       <text class="kn-name" x="${x}" y="${yy + r + 12}">${esc(short(c.name, 8))}</text>
       ${n.emigrant ? `<text class="kn-sub" x="${x}" y="${yy + r + 21}">→ ${esc(troopShort(t))}</text>` : ''}
     </g>`;

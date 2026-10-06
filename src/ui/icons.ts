@@ -7,7 +7,6 @@ const P: Record<string, string> = {
   focus: '<path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/><circle cx="12" cy="12" r="3"/>',
   close: '<path d="m6 6 12 12M18 6 6 18"/>',
   chevron: '<path d="m8 10 4 4 4-4"/>', chevronR: '<path d="m10 8 4 4-4 4"/>', chevronL: '<path d="m14 8-4 4 4 4"/>',
-  crown: '<path d="m3 8 4.5 4L12 5l4.5 7L21 8l-2 11H5Z"/><path d="M5 16h14"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/>',
   moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/>',
   cloud: '<path d="M7 18h10.5a4 4 0 0 0 .6-8A6 6 0 0 0 6.6 11.2 3.5 3.5 0 0 0 7 18Z"/>',
@@ -39,7 +38,7 @@ const P: Record<string, string> = {
   snake: '<path d="M4 18c3 0 3-4 6-4s3 4 6 4 3-6 1-8-6-1-6-4 3-3 5-2"/><circle cx="17.5" cy="4.8" r=".6" fill="currentColor"/>',
   fig: '<path d="M12 5c-4 0-7 4-7 8.5A6.5 6.5 0 0 0 12 20a6.5 6.5 0 0 0 7-6.5C19 9 16 5 12 5Z"/><path d="M12 5V3m0 2c1-1.5 3-2 4-1.5"/><path d="M9.5 14h.01M13 12h.01M14 16h.01"/>',
   drought: '<circle cx="12" cy="9" r="3.5"/><path d="M12 2v1.5M5 9H3.5M20.5 9H19M7 4l1 1M17 4l-1 1"/><path d="M3 17c2-1 4 1 6 0s4-1 6 0 4 1 6 0M5 21h14"/>',
-  noAlpha: '<path d="m3 9 4.5 4L12 6l4.5 7L21 9l-2 10H5Z"/><path d="m3 3 18 18"/>',
+  noAlpha: '<text x="11.5" y="18.5" text-anchor="middle" font-size="19" font-weight="600" fill="currentColor" stroke="none">α</text><path d="m4 3.5 16.5 17"/>',   // a struck-through α: the alpha removed
   monkey: '<circle cx="12" cy="11" r="5"/><circle cx="5.5" cy="10" r="2"/><circle cx="18.5" cy="10" r="2"/><path d="M10 10.5h.01M14 10.5h.01M10.5 13.5c1 .8 2 .8 3 0"/><path d="M12 16v5M9 21h6"/>',
   arrowUR: '<path d="M7 17 17 7M8 7h9v9"/>', download: '<path d="M12 3v12m-5-5 5 5 5-5M4 20h16"/>',
   dice: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8.5 8.5h.01M15.5 15.5h.01M12 12h.01M15.5 8.5h.01M8.5 15.5h.01"/>',

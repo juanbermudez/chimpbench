@@ -24,7 +24,7 @@ const TABS: { id: InspectorTab; label: string }[] = [
 const ACTION_ICON: Partial<Record<Action, string>> = {
   rest: 'zzz', nest: 'zzz', forage: 'fig', drink: 'drop', travel: 'chevronR', follow: 'chevronR', groom: 'heart', play: 'paw', climb: 'canopy',
   patrol: 'flag', display: 'swords', charge: 'swords', attack: 'swords', flee: 'bolt', hunt: 'meat', share: 'meat', beg: 'meat',
-  mate: 'heart', consort: 'heart', guard: 'eye', nurse: 'sprout', 'pant-grunt': 'crown', submit: 'down', reconcile: 'heart', console: 'heart',
+  mate: 'heart', consort: 'heart', guard: 'eye', nurse: 'sprout', 'pant-grunt': 'ladder', submit: 'down', reconcile: 'heart', console: 'heart',
   shelter: 'rain', call: 'speaker', alarm: 'speaker', transfer: 'arrowUR', dead: 'dagger',
 };
 

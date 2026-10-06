@@ -3,7 +3,7 @@ import type { Candidate, Chimp, SocialPercept, World } from '../types';
 import type { DecisionTraceView } from './contracts';
 import { icon } from './icons';
 import { actionLabel, ago, cap, esc, hhmm, pct, RELATION_LABEL, relationClass, stamp } from './format';
-import { bar, empty } from './parts';
+import { alphaBadge, bar, empty } from './parts';
 
 // Mind tab: the decision loop made visible. The exact percept the model saw, options with model probabilities beside
 // rules scores, the pick, agreement, cost, and a scrollable history of past decisions. The latest-decision header
@@ -64,7 +64,7 @@ function contextHtml(world: World, tr: DecisionTraceView): string {
     <div class="ctx-sec"><h4 class="eyebrow">Situation</h4><p class="facts">${facts.map(x => `<span>${x}</span>`).join('')}</p></div>
     ${cx.stimuli.length ? `<div class="ctx-sec stim"><h4 class="eyebrow">Perceived stimuli</h4><ul>${cx.stimuli.map(s => `<li>${icon('flask')}${esc(s)}</li>`).join('')}</ul></div>` : ''}
     <div class="ctx-sec"><h4 class="eyebrow">Nearby · ${cx.social.length} perceived</h4>${cx.social.length ? `<div class="near" role="table">${cx.social.map(s => `<button class="near-row" role="row" data-select="${s.id}" ${world.chimps.some(c => c.id === s.id) ? '' : 'disabled'}>
-        <span class="nr-name" role="cell">${s.sex === 'male' ? '♂' : '♀'} ${esc(s.name)}${s.isAlpha ? ` ${icon('crown')}` : ''}</span>
+        <span class="nr-name" role="cell">${s.sex === 'male' ? '♂' : '♀'} ${esc(s.name)}${s.isAlpha ? alphaBadge() : ''}</span>
         <span role="cell"><span class="rel ${relationClass(s.relation)}">${RELATION_LABEL[s.relation]}</span></span>
         <span class="mono" role="cell">${s.rankOrder ? `#${s.rankOrder}` : '—'}</span>
         <span class="mono" role="cell">${s.distance < 10 ? s.distance.toFixed(1) : Math.round(s.distance)} m</span>

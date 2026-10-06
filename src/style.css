@@ -3,7 +3,7 @@
    no hue. Colour is reserved for data (community identity arrives per element as
    --c, event categories as --k, relations as --rel-*) and for one warm accent,
    gold, which marks the decision model (GLiNER), the focal individual and the
-   alpha crown. Fraunces sets names, titles and the clock; Instrument Sans sets
+   alpha (the "α" badge). Fraunces sets names, titles and the clock; Instrument Sans sets
    the interface; JetBrains Mono is kept for measured data (timestamps, Elo, ms). */
 
 :root {
@@ -21,7 +21,7 @@
   --track: rgba(255, 255, 255, .08);   /* meter tracks */
   --ink: #ececee; --ink-2: #b8b8bd; --ink-3: #97979c; --ink-4: #85858b;
   --line: rgba(255, 255, 255, .07); --line-2: rgba(255, 255, 255, .11); --line-3: rgba(255, 255, 255, .18);
-  /* Accent: the model, the focal individual, the alpha crown. */
+  /* Accent: the model, the focal individual, the alpha's badge. */
   --gold: #e2bf79; --gold-2: #efd6a3; --gold-3: #a88b57; --gold-a: rgba(226, 191, 121, .09); --gold-b: rgba(226, 191, 121, .36);
   --bad: #ef7266; --warn: #e9a557; --focus: #ececee;
   /* Event categories (data). Icons take colour only for notable events (severity 2+). */
@@ -609,7 +609,7 @@ body.preview .viewport { background: #3a3d38; }
 .u-name { max-width: 100%; font-size: 11px; font-weight: 500; line-height: 1.25; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .u-meta { display: flex; align-items: center; gap: 2px; font-size: 10px; line-height: 1.2; color: var(--ink-3); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .u-meta em { font-style: normal; color: var(--ink-4); }
-.unit svg.u-crown { width: 10px; height: 10px; margin-left: 1px; color: var(--gold); }
+.unit .u-alpha { margin-left: 2px; padding: 1px 3px; font-size: 8.5px; vertical-align: 0; }
 
 /* Camera follow (render/env/follow.ts): a quiet pill at the bottom of the open forest while the camera follows. */
 .follow-ind { position: absolute; z-index: 4; bottom: calc(var(--ch-space) + var(--gap)); left: calc((100% + var(--left-w) + var(--gap) - var(--rs-space)) / 2); transform: translateX(-50%); display: flex; align-items: center; gap: 7px;
@@ -725,7 +725,7 @@ body.preview .viewport { background: #3a3d38; }
 .near { display: grid; gap: 1px; }
 .near-row { display: grid; grid-template-columns: minmax(0, 1.3fr) auto 28px 42px minmax(0, 1fr); gap: 8px; align-items: center; padding: 4px 6px; border-radius: var(--r-sm); font-size: 12px; text-align: left; width: 100%; }
 .near-row:not(:disabled):hover { background: var(--hover); } .near-row:disabled { opacity: 1; cursor: default; }
-.nr-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 3px; } .nr-name svg.i { width: 11px; height: 11px; color: var(--gold); }
+.nr-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 3px; } .nr-name .alpha-badge { margin-left: 2px; }
 .near-row .mono { font-size: 10.5px; color: var(--ink-3); text-align: right; }
 .nr-act { color: var(--ink-3); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rel { display: inline-block; padding: 1px 6px; border-radius: 5px; font-size: 10.5px; font-weight: 500; white-space: nowrap; color: var(--ink-3); background: var(--hover); }
@@ -757,7 +757,7 @@ svg.kin text { font-family: var(--font-ui); text-anchor: middle; }
 .kn.focal .kn-name { fill: var(--gold-2); font-weight: 600; }
 .kn.ghost { cursor: default; } .kn.ghost .kn-shape { fill: none; stroke: var(--ink-4); stroke-dasharray: 3 3; } .kn.ghost .kn-name { fill: var(--ink-4); font-style: italic; }
 .kn-imm circle { fill: #141416; stroke: var(--k-life); stroke-width: 1; } .kn-imm path { fill: none; stroke: var(--k-life); stroke-width: 1.1; stroke-linecap: round; }
-.kn-crown { fill: var(--gold); stroke: #141416; stroke-width: .5; }
+.kn-alpha rect { fill: var(--gold); } .kn-alpha text { font-size: 9px; font-weight: 600; fill: #17140e; pointer-events: none; }
 .kl { fill: none; stroke: rgba(255, 255, 255, .28); stroke-width: 1.3; stroke-linejoin: round; }
 /* Genetic sire: neutral dashes; lit in gold when it touches the focal individual. */
 .kl.sire { stroke: rgba(255, 255, 255, .34); stroke-dasharray: 4 3; }
@@ -870,7 +870,7 @@ svg.alpha-tl { display: block; width: 100%; height: auto; overflow: visible; }
 .col-head { display: flex; align-items: center; gap: 12px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
 .col-head > div { display: grid; gap: 3px; min-width: 0; } .col-head b { font-family: var(--font-display); font-size: 18px; font-weight: 500; }
 .col-meta { font-size: 12px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
-.col-meta svg.i { width: 12px; height: 12px; color: var(--gold); vertical-align: -1px; margin-right: 2px; }
+.col-meta .alpha-badge { vertical-align: 1px; }
 .col-sub { font-size: 11.5px; color: var(--ink-4); margin-bottom: 10px; font-family: var(--font-ui); }
 .forest-wrap { overflow: auto; } .forest-wrap svg { display: block; width: calc(var(--w) * var(--s, 1.3)); max-width: none; height: auto; }
 .ladders { display: grid; gap: 18px; } .ladders.split { grid-template-columns: 1fr 1fr; gap: 32px; } .ladders h3 { margin-bottom: 8px; }
