@@ -5,7 +5,7 @@ References: bench-run at 63d699a (Part C) or the group regenerated in bench-e1v;
 Monthly eating minutes and the fruit share by class come from scripts/lean-season.ts (--group), not from here."""
 import json, math, statistics as st, subprocess, sys, os
 
-W = os.environ.get('MGOGO_ROOT', os.path.expanduser('~/Desktop/MGOGO')) + '/.claude/worktrees'
+W = os.environ.get('MGOGO_ROOT', os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../..'))) + '/.claude/worktrees'
 SP = os.path.dirname(os.path.abspath(__file__))
 H = sys.argv[1]
 TAGS = sys.argv[2:] or ['W25', 'W50']

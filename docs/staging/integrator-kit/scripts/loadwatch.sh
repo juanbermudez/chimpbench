@@ -8,4 +8,4 @@ while true; do
   [ $(( $(date +%s) - t0 )) -gt 6300 ] && { echo "LOAD-TIMEOUT $L $(date +%T)"; break; }
   sleep 120
 done
-for s in S39 S39-s1 S39-s2 S39-s3 T0 T0-s1 T0-s2 T0-s3; do case $s in S39*) b=bench-run;; *) b=bench-run2;; esac; ls ${MGOGO_ROOT:-$HOME/Desktop/MGOGO}/.claude/worktrees/$b/artifacts/validation/e/runs/M12-$s/run/*.exit 2>/dev/null | wc -l | tr -d ' ' | sed "s/^/M12-$s exits: /"; done
+for s in S39 S39-s1 S39-s2 S39-s3 T0 T0-s1 T0-s2 T0-s3; do case $s in S39*) b=bench-run;; *) b=bench-run2;; esac; ls ${MGOGO_ROOT:-${0:A:h:h:h:h:h}}/.claude/worktrees/$b/artifacts/validation/e/runs/M12-$s/run/*.exit 2>/dev/null | wc -l | tr -d ' ' | sed "s/^/M12-$s exits: /"; done

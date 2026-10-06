@@ -53,6 +53,16 @@ All work is in git; worktrees were only local copies. **Never commit to `main`**
 
 ## 3. Set up on the new computer
 
+**Where the repo lives (second computer, since 6 October 2026, 01:10): `/Volumes/Drive/chimpbench/MGOGO`** (external
+APFS drive, 700 GB free), not `~/Desktop/MGOGO`. On that Mac `~/Desktop` is synced by iCloud Drive with "Optimise Mac
+Storage": within an hour of the clone macOS had evicted 14,230 of 18,704 files (the git pack and parts of
+`node_modules` among them), reads hung or came back short, `git status` failed ("far too short to be a packfile") and
+every runner stopped. **Never put the repo, a worktree or run outputs under `~/Desktop` or `~/Documents` on a Mac with
+iCloud Desktop & Documents on** (`defaults read com.apple.finder FXICloudDriveDesktop` prints 1; `ls -lO` shows
+`dataless` on evicted files; `brctl download <file>` brings one back). The kit scripts find the repo from their own
+location (`MGOGO_ROOT` overrides).
+
+
 1. Clone https://github.com/juanbermudez/chimpbench and check out `track-e`. **Node 22.22.3 exactly** (`.node-version`;
    with fnm: `fnm install 22.22.3`, then prefix commands with `fnm exec --using=22.22.3 --`), pnpm 8.15.9
    (`packageManager`), then `pnpm install`. Node 22.19.0 passes the tests but breaks every benchmark: tsx's loader does
@@ -90,7 +100,7 @@ All work is in git; worktrees were only local copies. **Never commit to `main`**
 
 `docs/staging/integrator-kit/` (README inside) holds the judge scripts, run drivers, the exact parameter files of
 every recent arm (S39 and its re-draws, today's model, the walk-back, the E1v wadging arms) and the agent prompt
-templates. The scripts take the repo from `MGOGO_ROOT` (default `~/Desktop/MGOGO`).
+templates. The scripts find the repo from their own location (`MGOGO_ROOT` overrides).
 
 ## 5. Next specific tasks, in order
 

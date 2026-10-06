@@ -10,11 +10,11 @@ app or the tests.
 | `params/` | The exact parameter files of every recent arm: `M6-S39{,-s1,-s2,-s3}.json` (the best stack, S39, and its three re-draws by `rngSalt`), `M6-T0…` (today's model), `M6-E1t…`, `WB-S27…S37` (the walk-back), and `M6-W50…` / `M6-W25…` (S39 with `pithFibreSwallowed` 0.5 / 0.25: the E1v arms, not yet run). The same files serve the 12-month extensions. |
 | `prompts/` | Stage-agent prompt templates (`e*-prompt.txt`, `eA`…`eR`), the shared blocks (`hard-block.txt`, `common-block.txt`, `preflight.txt`) and `e1v-prompt.txt` (the prompt that built E1v). Reuse their structure; refresh the facts. |
 
-**Paths.** The scripts take the repo from `MGOGO_ROOT` (default `~/Desktop/MGOGO`), with frozen run checkouts under
+**Paths.** The scripts find the repo from their own location (`MGOGO_ROOT` overrides), with frozen run checkouts under
 `.claude/worktrees/` (`bench-run`, `bench-run2` hold the Part C reference runs where they were copied; `bench-e1v` is
 E1v's run checkout at 1af4543). `judge_e1v.py` reads S39's group from `bench-run` if it is there, else from `bench-e1v`
 (`E1V_REF` names another checkout). The judges find `night.py` beside themselves. Use `/usr/bin/python3` (or any
-Python 3 with the standard library only). Run the drivers under Node 22 (`fnm exec --using=22 -- zsh e1vrun.sh …`).
+Python 3 with the standard library only). Run the drivers under Node 22.22.3 (`fnm exec --using=22.22.3 -- zsh e1vrun.sh …`); `armphase.sh <M6|M12> <TAG>` plans and runs one arm's four runs and waits for them.
 
 **The reference runs are not in git.** `artifacts/` is gitignored, so the S39 and today's-model groups that every 6- and
 12-month comparison uses (`bench-run*/artifacts/validation/e/runs/{M6,M12}-…`, about 2.8 GB) stay on the old computer

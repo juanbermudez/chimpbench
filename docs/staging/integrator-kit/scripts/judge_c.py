@@ -4,7 +4,7 @@ on the new bands (the runs as written) and the old bands (e-bench --rescore --ta
 Usage: judge_c.py <C60|M6|M12> [--no-old]. Every number is read from the JSON."""
 import json, math, os, statistics as st, subprocess, sys
 
-W = os.environ.get('MGOGO_ROOT', os.path.expanduser('~/Desktop/MGOGO')) + '/.claude/worktrees'
+W = os.environ.get('MGOGO_ROOT', os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../..'))) + '/.claude/worktrees'
 SP = os.path.dirname(os.path.abspath(__file__))  # night.py sits beside this script
 PRE = sys.argv[1]
 OLD = '--no-old' not in sys.argv

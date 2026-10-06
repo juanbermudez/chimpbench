@@ -3,7 +3,7 @@
 Usage: judge_e1t.py <M6|M12>. Every number is read from the run JSON (references: bench-run at 63d699a; arms: bench-e1t)."""
 import json, os, math, statistics as st, subprocess, sys
 
-W = os.environ.get('MGOGO_ROOT', os.path.expanduser('~/Desktop/MGOGO')) + '/.claude/worktrees'
+W = os.environ.get('MGOGO_ROOT', os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../..'))) + '/.claude/worktrees'
 SP = os.path.dirname(os.path.abspath(__file__))  # night.py sits beside this script
 H = sys.argv[1]
 REF = {f'{H}-S39{s}': f'{W}/bench-run/artifacts/validation/e/runs/{H}-S39{s}' for s in ('', '-s1', '-s2', '-s3')}

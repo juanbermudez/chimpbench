@@ -190,3 +190,20 @@ decide-ft stand-in run, missing its artifact, as before); `decision-guide --chec
   does not, that is reported first and the arms are judged only against the regenerated group.
 - **Judge.** `docs/staging/integrator-kit/scripts/judge_e1v.py <M6|M12>` (readouts of §4; every number from the run
   JSON), monthly eating minutes and the fruit share from `scripts/lean-season.ts --group`. Nothing is judged as a keep.
+
+### 8.2 Incident before the 12-month results: the repo moved off an iCloud-synced folder (6 October 2026, 01:25)
+- **What happened.** The first clone was in `~/Desktop/MGOGO`, which iCloud Drive syncs on this computer. macOS evicted
+  most of its files while the arms ran. W25's four 6-month runs finished and merged before any failure (00:44–00:45,
+  exit 0). The 12-month extension then stopped: in each of the four runs seed 48 finished (10.9 min), then the runner's
+  `git status` failed on an evicted pack file and the next launches failed on evicted `node_modules` files (00:57–00:59).
+- **What was done.** A fresh clone at `/Volumes/Drive/chimpbench/MGOGO` (external drive, not synced), the unpushed
+  commits fetched from the Desktop copy, a new frozen checkout `bench-e1v` at 1af4543 (`git status --short` empty). The
+  four finished M6-W25 run folders were re-downloaded from iCloud and copied over; all 64 gzip files in them pass
+  `gunzip -t`; their JSON records commit 1af4543, not dirty. The four partial M12-W25 folders were set aside
+  (`artifacts/integrator/desktop-M12-W25-partial/`) and M12-W25 was planned again from the copied M6 checkpoints.
+- **Check registered now, before the new M12 results:** each new M12-W25 seed-48 part must equal the part the Desktop
+  runner wrote for the same run (`e-run.ts diff`, which ignores dates, timing and workers). If any differs, the copied
+  M6-W25 group is discarded and re-run here before anything is judged.
+- **The reference.** The user copied the Part C S39 groups (M6-S39… and M12-S39…, made at 63d699a = dbee12e in the
+  public history) into `.claude/worktrees/bench-run`; SHA-256 of the archive matched. They are the swallowed-1 arm, as
+  registered in §3, so no group is regenerated.

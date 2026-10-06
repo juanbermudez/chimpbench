@@ -4,7 +4,7 @@
 # each, and waits for all four. M12 extends M6 from its checkpoints (--from). A runner that stops on its budget is
 # relaunched (at most 3 times); a failed job is left for a look at its log. Logs: artifacts/integrator/logs/ (gitignored).
 H=$1; TAG=$2; PAR=${3:-1}
-ROOT=${MGOGO_ROOT:-$HOME/Desktop/MGOGO}; KIT=$ROOT/docs/staging/integrator-kit; LOG=$ROOT/artifacts/integrator/logs
+ROOT=${MGOGO_ROOT:-${0:A:h:h:h:h:h}}; KIT=$ROOT/docs/staging/integrator-kit; LOG=$ROOT/artifacts/integrator/logs
 mkdir -p $LOG; cd $ROOT/.claude/worktrees/bench-e1v || exit 1
 [ -z "$(git status --short)" ] || { echo "bench-e1v is dirty"; exit 1; }
 for S in "" -s1 -s2 -s3; do
