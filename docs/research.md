@@ -4386,9 +4386,10 @@ from DataCite (checked 6 October 2026). Access level is stated per entry: FT = f
 
 ### Ngogo fission, full paper and supplement [sandel2026]
 
-- **Paper** [sandel2026] (so far Abs; full text and supplement requested). Sandel A, Mitani J, Langergraber K, Clark IR,
-  Lee K, Ren J, Kei YL, He Y, Reddy RB, Negrey J, Birungi C, Apamaku BA et al. 2026. Lethal conflict after group fission
-  in wild chimpanzees. *Science*. [doi:10.1126/science.adz4944](https://doi.org/10.1126/science.adz4944). Data and code:
+- **Paper** [sandel2026] (Abs only: **full text and supplement not obtained (paywalled)**). Sandel A, Mitani J, Langergraber K,
+  Clark IR, Lee K, Ren J, Kei YL, He Y, Reddy RB, Negrey J, Birungi C, Apamaku BA et al. 2026. Lethal conflict after group
+  fission in wild chimpanzees. *Science* 392(6794):216–220, 9 April 2026 (31 authors in PubMed).
+  [doi:10.1126/science.adz4944](https://doi.org/10.1126/science.adz4944). Data and code:
   Dryad [doi:10.5061/dryad.sf7m0cgkg](https://doi.org/10.5061/dryad.sf7m0cgkg) (version 9, 2026, CC0 per DataCite; in
   `data/raw/dryad-sf7m0cgkg/`, see its `PROVENANCE.md`); space use: Zenodo
   [doi:10.5281/zenodo.18603419](https://doi.org/10.5281/zenodo.18603419) (CC BY 4.0, in `data/raw/zenodo-18603419/`).
@@ -4400,7 +4401,26 @@ from DataCite (checked 6 October 2026). Access level is stated per entry: FT = f
 - **Why the full text matters.** It should settle what a "party" is in the scans, what an empty proximity field means,
   which individuals are in the focal sets (the 77 males of `docs/staging/rw-prereg.md`), the observation effort and the
   definition of the two groups. Those are the main threats to validity named in that document (decision 5).
-- **Licence.** The paper: Science, copyright and access terms to be recorded after the retrieval attempt. The data: CC0.
+- **Retrieval, 6 October 2026 (two routes, then stopped).** Route 1, open copies: Europe PMC lists the paper only as
+  PubMed record 41955363, not in PMC (`inPMC` N, `isOpenAccess` N), and no preprint appeared in the title search.
+  Route 2, the publisher: `https://www.science.org/doi/10.1126/science.adz4944` returned HTTP 403 with a Cloudflare
+  "Just a moment" bot check, so that host was dropped, not worked around (the PDF link Crossref gives is on the same
+  host). Crossref records a free-reuse date of **9 April 2027** (a 365-day delay), so the paper is paywalled now.
+  Crossref also lists a supplement record, `10.1126/science.zi2cekx` (not opened). The entry above is written from the
+  PubMed abstract, which agrees with the Dryad deposit's text apart from wording. **Needs the user:** the article PDF and
+  the Supplementary Materials, saved into `data/raw/science-adz4944/` (never committed).
+- **What the deposited README adds** (`data/raw/dryad-sf7m0cgkg/README.md`, already local; this is the authors' file
+  description, not the paper's Methods). `chimp_behav_data.csv` is "social behavior of mature male chimpanzees sampled at
+  10-minute intervals", from hour-long observation sessions of adult males, 1998–2022; each row carries a scan code and a
+  focal-session code. The `party` field is "other mature males observed during 1 hour following the session", so a
+  party there is a list of mature males only, not all community members, and it is defined over an hour, not at the
+  scan. `prox2` is the others within 2 m of the focal; the README describes `prox5` with the same words ("within 2
+  meters"), which is probably a typing slip (not verified). "NA" means no value for proximity, grooming or association,
+  so an empty field is an absent record, not a stated "nobody near" (the paper's Methods, which would say how an empty
+  scan is recorded, are not read). The 77-individual graphs are the male proximity network; the 219-individual graphs
+  and labels cover everyone in the full network. These answer part of what `docs/staging/rw-prereg.md` decision 5 asks;
+  the observation effort, who the 77 are and how the groups were defined remain unread.
+- **Licence.** The paper: © AAAS, journal terms, free reuse only from 9 April 2027 (Crossref). The data: CC0 (Dryad).
 - **Evidence level.** [M] at abstract level, to be revised once the methods are read. The abstract is a primary
   report of a single, unusual event in one community: a case, not a rate for communities in general.
 - **Limits.** One community and one fission; no claim about how often fissions or such killings occur elsewhere. The
