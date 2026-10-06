@@ -1,5 +1,6 @@
 // obs-fixes (docs/staging/obs-fixes-prereg.md): the rare-event rows count outcomes, as their definitions say.
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { createWorld, tickWorld } from '../src/simulation';
 import { killChimp } from '../src/sim/life';
@@ -294,4 +295,17 @@ test('obs-fixes re-derivation: records saved before the fixes are brought to the
   const wrong = rederiveSeed(21, saved(), world, { ...before, 'T-LET-1': { value: 1, num: 3, den: 3, n: 3 } });
   assert.equal(wrong.status, 'not re-derivable'); assert.equal(wrong.after, null);
   assert.match(wrong.why!, /2 killings by the old rule; the saved run printed 3/);
+});
+
+test('obs-fixes freeze proposal (docs/staging/obs-fixes-protocol.patch.json): taken as a freeze after the Track E one, it lists exactly the revised rows of an older run as needing a fresh run', async () => {
+  const { staleRows, loadTargetFile } = await import('../scripts/e-bench');
+  type Freeze = NonNullable<ReturnType<typeof loadTargetFile>['protocolFreeze']>;
+  const patch = JSON.parse(readFileSync(new URL('../docs/staging/obs-fixes-protocol.patch.json', import.meta.url), 'utf8')) as { protocolFreeze: Freeze; protocolLog: { targets: string[] }[] };
+  let base = loadTargetFile().protocolFreeze;
+  while (base && base.hash !== '5d4fa5a2a500bce6') base = base.previous;
+  assert.ok(base, 'the Track E freeze is in the chain');
+  const chain: Freeze = { ...patch.protocolFreeze, previous: base };
+  assert.deepEqual([...staleRows(chain, '5d4fa5a2a500bce6').keys()].sort(), [...REVISED_ROWS].sort(), 'a run made under the Track E protocol');
+  assert.deepEqual([...staleRows(chain, patch.protocolFreeze.hash!).keys()], [], 'a run made under the new protocol');
+  assert.deepEqual([...patch.protocolLog[0].targets].sort(), [...REVISED_ROWS].sort(), 'the log entry names the same rows');
 });
