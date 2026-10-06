@@ -197,7 +197,7 @@ The renderer animates what the simulation decides; these sources shape how it lo
 - **Arboreal posture.** Arm-hanging and quadrumanous climbing occur; brachiation is rare. *Hunt 1992, "Positional behavior of Pan troglodytes in the Mahale Mountains and Gombe Stream National Parks", Am J Phys Anthropol 87:83–105* ([Wiley](https://onlinelibrary.wiley.com/doi/abs/10.1002/ajpa.1330870108)). **Proposed / moderate**. Used: about half of individuals hold a branch overhead with the free arm while feeding in a crown; no brachiation.
 - **Facial expressions by muscle action.** ChimpFACS-based classification separates expression categories (bared-teeth, scream, pant-hoot, play face, pout, whimper and others) by facial action units. *Parr, Waller, Vick & Bard 2007, "Classifying chimpanzee facial expressions using muscle action", Emotion 7:172–181* ([PubMed](https://pubmed.ncbi.nlm.nih.gov/17352572/)). **Proposed / moderate** (captive animals). Used: brow raise or lower, compressed lips, lip-smacking while grooming, relaxed and full play faces, pout and whimper faces. Intensities are stylized.
 
-**Stylizations (not sourced):** the hair highlight and halo shells (a look, not a measurement), gait cadence curves and caps, the gallop footfall order, transition times, gaze limits, blink intervals (2–10 s, 15% doubles), the grooming partner's posture shifts every 20–60 s, the stream's pool–riffle spacing, and the posture of a mother carrying a dead infant (the simulation's carry itself is tagged [M] in `src/sim/life.ts`).
+**Stylizations (not sourced):** the hair highlight and halo shells (a look, not a measurement), gait cadence curves and caps, the gallop footfall order, transition times, gaze limits, blink intervals (2–10 s, 15% doubles), the grooming partner's posture shifts every 20–60 s, the stream's pool–riffle spacing, the shape, number and scatter of the bones drawn where a body lay (stage ED, `render/creatures/remains.ts`; that bones outlast a body is reported for other great apes only), and the posture of a mother carrying a dead infant (the simulation's carry itself is tagged [M] in `src/sim/life.ts`).
 
 ## Source access and limits
 
@@ -4621,6 +4621,15 @@ of them from disease-outbreak work.
   weeks, and the reported carrying rates when the mother has the body are 71% (Budongo) and every case (Gombe).
 - Nothing in the code has others approach a body; the sources report siblings, immatures and adult males approaching and
   inspecting, with variation between cases.
+
+### Stage ED (built behind switches, 6 October 2026)
+
+`deadBody`, `deadCarry` and `deadRespond` (all 0 by default; docs/staging/ed-prereg.md) build on the entries above and on
+nothing else. Used as inputs: the two decomposition figures of section 3, as a range for a chimpanzee [L]. Used as
+targets only, never as inputs: every carrying duration and share of section 2, and the proportions of section 1.
+Design assumptions, labelled in the code: what ends a carry (not reported by any source opened), which acts need the
+carer's hands, the value and length of an inspection, and that a carried body does not decompose. Not built for want of
+evidence: responses to an adult's body, to bones, and any return to old remains.
 
 ### Summary
 

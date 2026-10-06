@@ -115,9 +115,6 @@ export function seeBodies(world: World, c: Chimp, r2: number): void {
   }
 }
 
-/** Whether `id` is a body the animal saw at its last perception (a legal target of its body options). */
-export function seesBody(c: Chimp, id: number): boolean { const bd = ix(c).bd; return bd !== undefined && bd.includes(id); }
-
 /** The bodies in the animal's decision context (observe.ts): those of its last perception that are still bodies. Pure. */
 export function bodySights(world: World, c: Chimp): BodySight[] {
   const bd = ix(c).bd, out: BodySight[] = [];
