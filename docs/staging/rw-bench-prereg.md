@@ -283,3 +283,26 @@ the model's scores, the interval over focal males, by set size and by what prece
 against the null kernel on the same records. Marks fixed by A5: chance 0.18, the stack 0.49 (Codex 0.49). Prediction
 (integrator, low confidence): between chance and "nearest" (0.18 to 0.32), worse above 8 options, with some
 sensitivity to option order. Nothing is tuned from this result; it is the untuned engine's starting point for R4.
+
+**A7. Result of A6 (6 October 2026; numbers from `artifacts/rw/gliner-dev/summary-development.json` and
+`paired.txt`, written by scripts).** Untuned GLiNER2.5-Decide (base, mps), 448 development records from 30 males. The
+model kernel ran one shuffle (the rule kernels five), so no option-order figure exists for it yet. Three records were
+refused, all with 33 options, and count as wrong.
+
+| | all 448 | 8 or fewer options (253) | more than 8 (195) | 17 and over (60) |
+| --- | --- | --- | --- | --- |
+| null (random) | 0.179 | 0.237 | 0.103 | 0.033 |
+| the three-rule stack | 0.487 | 0.542 | 0.415 | 0.350 |
+| Codex (A5, another shuffle) | 0.493 | 0.573 | | |
+| untuned GLiNER | 0.373 (0.308 to 0.438) | 0.522 | 0.179 | 0.033 |
+
+Paired on the same records: GLiNER minus the stack −0.114 (−0.146 to −0.072) over all records; **−0.020 (−0.083 to
++0.055; sign test p = 0.60) on menus of 8 or fewer, no difference by the registered rule; −0.236 (−0.293 to −0.172) on
+wider menus**, where it falls to chance at 17 and over. GLiNER minus the null kernel +0.194 (+0.127 to +0.276).
+Against Codex on menus of 8 or fewer (same records, different shuffles): −0.051 (−0.102 to +0.014), no difference.
+
+Against the prediction: wrong on the level (0.37, above the predicted 0.18 to 0.32), right that wide menus hurt.
+What it shows: on menus of the size it was built for, the untuned small model reads this packet about as well as the
+rules and the general model; its deficit on this benchmark is entirely the menu width. What it does not show: anything
+about body state or feeding, which these records do not hold. For R4 the measurable target on this benchmark is
+therefore the wide menus (0.18 against the stack's 0.42), by training or by splitting a wide set into rounds of 8.
