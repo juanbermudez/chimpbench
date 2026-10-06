@@ -4377,3 +4377,9 @@ from DataCite (checked 6 October 2026). Access level is stated per entry: FT = f
   who joined whom against a target. Whether "available partners" means all females present, all in the party or all
   in earshot is a paper-methods question not yet answered. The rank, relationship and kinship columns are the authors'
   derived measures. Rates are per two-year period, so analysis 1 is not event-level.
+- **What the files contain: not obtained.** The public per-file links for `analysis1_datashare.csv`
+  (`https://datadryad.org/downloads/file_stream/1869835`), `analysis2_datashare.csv` (`.../1869837`) and
+  `README_femalecoal_dryad.docx` (`.../1869836`) each returned HTTP 403 (bare "403 Forbidden" page,
+  `server: awselb/2.0`) on 6 October 2026. Tried once each, not retried, no header changes. **Needs a manual download
+  by the user** into `data/raw/dryad-44j0zpchh/`. Until then the column names, row counts, number of females and the
+  observation effort are unknown; the only description of the contents is the repository's text above.
