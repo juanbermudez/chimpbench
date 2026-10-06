@@ -4297,3 +4297,13 @@ from DataCite (checked 6 October 2026). Access level is stated per entry: FT = f
   dropped as non-independent. Adults only; the potential-partner set is "adults within visual range", which is a
   party proxy and not everyone in the community. About 20 focal chimpanzees. Elo rank and DDSI are the authors'
   modelled quantities, not direct measurements.
+- **What the files contain: not obtained.** On 6 October 2026 the Dryad landing page (public, HTTP 200) listed three
+  files: `Data Model1.csv` (1.95 MB), `Data Model2.csv` (1.76 MB) and `Script Model 1 and 2.R` (6.81 KB); the paper's Data
+  accessibility statement says they hold the "grooming decision data for all models" and the scripts. The public
+  per-file links `https://datadryad.org/downloads/file_stream/77592`, `/77593` and `/77594` each returned
+  HTTP 403 (a bare "403 Forbidden" page from the load balancer, `server: awselb/2.0`). Tried once, not retried, no
+  header changes. The "Download full dataset" button assembles its zip in the browser (a service worker), so there is no
+  plain URL for it. **Needs a manual download by the user** into `data/raw/dryad-t8c88vh/`. Until then it is unknown
+  whether the file records the chosen partner and the set of available partners; the paper's Methods say the models
+  code each potential partner as chosen or not, with an offset for the number of potential partners (so each decision
+  has one row per potential partner), but that is the paper's description, not a check of the file.
