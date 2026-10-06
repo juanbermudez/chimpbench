@@ -50,6 +50,7 @@ node scripts/audio-probe.mjs [--url <no-model server>] [--only close-vocal,...] 
 | Simulation | `src/simulation.ts` (public API), `src/sim/*` | Only writer of behavior, body and relationship state. |
 | Clock | `src/clock.ts` | Runs whole fixed ticks within a frame budget; lockstep gate. |
 | Decision loop | `src/decision.ts`, `server/decide.ts`, `server/local-worker.ts` | Roster, queue, traces; strict request validation; one resident worker. |
+| Kernel contract (stage R1) | `src/kernel/*` (interface, kernels, answer check, between-tick loop), `src/sim/request.ts` (`buildRequest`), `src/sim/context-check.ts` (request validation), `scripts/lib/kernels.ts` (GLiNER adapter and stand-in behind the batch scorers) | A kernel only chooses: the request in, one option position out; no state, no random generator of its own. Every kernel but the in-simulation rules passes the same request validation, answer check and `applyDecision`. Jev is gated (approval and a call cap) and holds no key. Switches `kernelSim`, `kernelGate`, `kernelNoRulesPick` are 0 by default. |
 | Rendering | `src/scene.ts`, `src/render/env/*`, `src/render/creatures*` | Reads World, never writes it. |
 | Audio | `src/audio/*` (`mix.ts` pure math, `engine.ts` Web Audio) | Reads World and `scene.getListener()`; never writes either. |
 | Persistence | `src/persist/*` (envelope, schema, store worker, controller), `src/ui/simulations.ts` | Serializes World, never mutates it; only `main.ts` swaps the World object (open/new). SQLite WASM + opfs-sahpool in a worker. |
