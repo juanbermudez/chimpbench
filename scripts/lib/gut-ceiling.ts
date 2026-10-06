@@ -2,7 +2,7 @@
 // the gut's own first-order dynamics (src/sim/energy.ts energyTick's digesta block and eat()) are mirrored here for one
 // animal kept eating whenever its foregut has room through an active day, then fasting through the night, until the
 // daily cycle repeats. Every capacity, dry matter per kcal and ingestion rate is read from the model's own exported pure
-// functions (digestaCaps, dryMatterPerKcal, fruitRate, fruitKcalPerUnit, fallbackKcalPerH, intakeSize) at the parameter
+// functions (digestaCaps, swallowedPerKcal, fruitRate, fruitKcalPerUnit, fallbackKcalPerH, intakeSize) at the parameter
 // object given, so a parameter variant is a copy of the world's parameters with one value changed. Measurement only.
 //
 // Mirrored per tick (energy.ts, in the sim's order: needs() → energyTick, then executeAction → eat):
@@ -14,8 +14,9 @@
 //   cost      diet-induced thermogenesis = digestaTefFrac × energy absorbed (charged as spending);
 //   eating    each active tick the animal takes its ingestion rate of the diet's mix, up to the foregut's dry-matter room.
 // A food per formula kcal (energy.ts food()): g = dry matter g/min ÷ kcal/min, fibre = g × NDF share, non-fibre energy =
-// 1 − fibre × digestaNdfCreditKcalPerG.
-import { digestaCaps, dryMatterPerKcal, fallbackKcalPerH, fruitKcalPerUnit, intakeSize, plantKcalPerMin } from '../../src/sim/energy';
+// 1 − fibre × digestaNdfCreditKcalPerG; as swallowed (energy.ts swallowedPerKcal), so the fallback loses the pith fibre
+// spat out at pithFibreSwallowed < 1 (stage E1v).
+import { digestaCaps, fallbackKcalPerH, fruitKcalPerUnit, intakeSize, plantKcalPerMin, swallowedPerKcal } from '../../src/sim/energy';
 import { fruitRate } from '../../src/sim/intake';
 import type { Params } from '../../src/sim/params';
 import { TICK_HOURS } from '../../src/sim/state';
@@ -30,10 +31,14 @@ export type Diet = Record<PlantKind, number>;
 export interface FoodComp { g: number; fib: number; nf: number }
 /** NDF share of a food's dry matter, from the registry (energy.ts digesta(): one value for drupes and figs). */
 export const ndfOf = (P: Params, kind: PlantKind) => kind === 'fallback' ? P.digestaFallbackNdf : P.digestaFruitNdf;
-/** The food's composition per formula kcal, from the model's dry matter per kcal (dryMatterPerKcal) and the registry's NDF share and credit. */
+/**
+ * The food's composition per formula kcal as the gut receives it, the model's own (energy.ts swallowedPerKcal: the dry
+ * matter per kcal, the registry's NDF share and credit, and from stage E1v the fallback's wadge).
+ */
 export function foodComp(P: Params, kind: PlantKind): FoodComp {
-  const g = dryMatterPerKcal(P, kind), fib = g * ndfOf(P, kind);
-  return { g, fib, nf: 1 - fib * P.digestaNdfCreditKcalPerG };
+  const f = swallowedPerKcal(P, kind);
+  if (!f) throw new Error('foodComp: no digesta (ledgerDigesta must be 1)');
+  return { g: f.g, fib: f.fib, nf: f.nf };
 }
 /** Energy the body draws from one formula kcal of the food over the gut's passage (non-fibre + fermented fibre), before diet-induced thermogenesis. */
 export const absorbedPerKcal = (P: Params, f: FoodComp) => f.nf + P.digestaFermentKcalPerG * P.digestaNdfDigestibility * f.fib;
