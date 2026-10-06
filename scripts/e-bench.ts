@@ -458,7 +458,7 @@ async function main() {
   const days = +flag('days', String(MODES[mode].days)), burnInDays = +flag('burn-in', String(MODES[mode].burnInDays));
   const seeds = flag('seeds', MODES[mode].seeds.join(',')).split(',').map(Number), workers = Math.max(1, +flag('workers', '2'));
   const label = days === MODES[mode].days && burnInDays === MODES[mode].burnInDays && seeds.join() === MODES[mode].seeds.join() ? mode : 'custom';
-  if (days + burnInDays > MAX_TOTAL_DAYS) { console.error(`e-bench: ${burnInDays} + ${days} days is longer than ${MAX_TOTAL_DAYS} days in all (user limit, 4 October 2026: at most two years, burn-in included).`); process.exit(2); }
+  if (days + burnInDays > MAX_TOTAL_DAYS) { console.error(`e-bench: ${burnInDays} + ${days} days is longer than ${MAX_TOTAL_DAYS} days in all (user limit, 6 October 2026: at most five years after a 30-day burn-in).`); process.exit(2); }
   const paramsText = flag('params', '{}'), params = JSON.parse(paramsText) as Overrides;
   if (seeds.some(s => !Number.isInteger(s))) { console.error('--seeds must be integers'); process.exit(2); }
   const out = resolve(flag('out', `artifacts/validation/e/${label}`)), cardFile = `${out}.scorecard.json`;

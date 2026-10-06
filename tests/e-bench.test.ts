@@ -99,10 +99,10 @@ test('scorecard rows become benchmark rows: part bands, exclusions, sealed rows'
   assert.deepEqual(furthest(rows).map(r => r.id), ['T-ACT-1', 'T-FOOD-3', 'T-DEM-2']);
 });
 
-test('modes respect the 730-day limit, and rows that need a year are insufficient in shorter runs', () => {
+test('modes respect the run-length limit, and rows that need a year are insufficient in shorter runs', () => {
   assert.deepEqual(MODES.quick, { days: 30, burnInDays: 30, seeds: [48, 7] });
   assert.deepEqual(MODES.confirm, { days: 60, burnInDays: 30, seeds: [48, 7, 21, 5, 11] });
-  assert.equal(MAX_TOTAL_DAYS, 730);                                          // user, 4 October 2026: up to two years in all
+  assert.equal(MAX_TOTAL_DAYS, 1855);                                         // user, 6 October 2026: a few years in one run (5 years + 30 days of burn-in)
   for (const m of [MODES.quick, MODES.confirm, MODES.m6, MODES.m12, MODES.m24, MODES.full]) assert.ok(m.days + m.burnInDays <= MAX_TOTAL_DAYS);
   assert.deepEqual([MODES.m6.days, MODES.m12.days, MODES.m24.days + MODES.m24.burnInDays], [180, 365, 730]);
   assert.ok('T-DEM-2' in NEEDS_YEAR && 'T-RNG-1' in NEEDS_YEAR && !('T-ACT-1' in NEEDS_YEAR));
