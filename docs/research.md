@@ -4307,3 +4307,32 @@ from DataCite (checked 6 October 2026). Access level is stated per entry: FT = f
   whether the file records the chosen partner and the set of available partners; the paper's Methods say the models
   code each potential partner as chosen or not, with an offset for the number of potential partners (so each decision
   has one row per potential partner), but that is the paper's description, not a check of the file.
+
+### Budongo party scans [ramosFernandez2018]
+
+- **Paper** [ramosFernandez2018] (Abs; PMC5998110 front matter and abstract only; the full text was not obtained) [M].
+  Ramos-Fernández G, King AJ, Beehner JC, Bergman TJ, Crofoot MC, Di Fiore A, Lehmann J, Schaffner CM,
+  Snyder-Mackler N, Zuberbühler K, Aureli F, Boyer D 2018. Quantifying uncertainty due to fission–fusion dynamics as a
+  component of social complexity. *Proceedings of the Royal Society B* 285(1879):20180532.
+  [doi:10.1098/rspb.2018.0532](https://doi.org/10.1098/rspb.2018.0532). Data: Dryad
+  [doi:10.5061/dryad.51b68](https://doi.org/10.5061/dryad.51b68) (identifier confirmed against DataCite and
+  `docs/datasets.md`), version 1, 8 May 2018, CC0 (DataCite), 3.01 MB for the whole deposit.
+- **What it measures.** The predictability of subgroup (party) composition: Shannon entropy of who is together, against a
+  random expectation that accounts for subgroup-size variation and sample size, and an estimate of how many subgroups
+  the group is divided into at a time. Three species: spider monkeys, chimpanzees and geladas (abstract). The chimpanzee
+  files are party membership at fixed scan times; the paper's quantity is composition entropy, not grooming or any
+  choice.
+- **Site, species, sample.** The Dryad page (public landing page, read 6 October 2026) describes the chimpanzee files as
+  rows "samples every 15 minutes of the subgroup composition in a group of chimpanzees in the Budongo Forest, Uganda",
+  one file for 2008 and one for 2009, with 1 for presence and 0 for absence in one column per individual. Budongo lies
+  in the range of the eastern subspecies (*P. t. schweinfurthii*); the pages opened do not state the subspecies or the
+  community name (not verified). Number of individuals, number of scans and number of observation days: not stated in
+  anything opened before the download.
+- **Licence.** CC0 1.0 (DataCite). The same deposit holds gelada (Simien Mountains, 2014, 2015) and spider monkey
+  (Yucatán, 2009) files; only the two chimpanzee files are in scope of the approved download.
+- **Evidence level.** [M] for what the deposit is (abstract plus the repository description); the paper's methods and
+  the sampling rules are not read.
+- **Limits.** Party membership only: no behaviour, no partner choice, no rank, sex or age columns are described.
+  A presence matrix at 15-minute scans, so "available partners" would mean "everyone seen in the party", and the
+  observers' definition of a subgroup (distance, visibility) is in the full text, which is not opened. Two years only.
+  Raw coordinates are not in the deposit (no spatial column is described).
