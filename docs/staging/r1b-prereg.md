@@ -371,3 +371,52 @@ rows the scorer never counts.
 
 - **Smoke (logged 6 October 2026, 07:21 EDT, before it runs).** Section 4, from `bench-r1b` at the commit that adds
   this file.
+  **Result (6 October 2026, 07:30 EDT; `bench-r1b` at a137d6c, clean; load average about 12).** S1, S2 and S3 hold: the
+  arms may run. The tables below are the script's output, unedited.
+
+Seed 48, field profile, 1 burn-in day(s) + 1 observed day(s); printed by scripts/r1b-smoke.ts from its JSON.
+
+**Who decided** (pass A, e-bench's seed loop; a decision = one pass of the kernel step or one rules decision):
+
+| arm | kernelSim / kernelGate / kernelNoRulesPick | decisions | null kernel | rules: menu under two options | rules: other refusals | rules: animals under 8 | rules: animals aged 8 and over | kernel pass under age 8 | same counts in the plain loop |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| rules | 0 / 0 / 0 | 8696 | 0 (0.0%) | 0 (0.0%) | 0 (0.0%) | 2342 (26.9%) | 6354 (73.1%) | 0 | yes |
+| b | 1 / 0 / 0 | 10743 | 7776 (72.4%) | 127 (1.2%) | 0 (0.0%) | 2840 (26.4%) | 0 (0.0%) | 0 | yes |
+| c | 1 / 1 / 0 | 6838 | 4228 (61.8%) | 131 (1.9%) | 0 (0.0%) | 2479 (36.3%) | 0 (0.0%) | 0 | yes |
+| d | 1 / 0 / 1 | 10311 | 7358 (71.4%) | 282 (2.7%) | 0 (0.0%) | 2671 (25.9%) | 0 (0.0%) | 0 | yes |
+| e | 1 / 1 / 1 | 7248 | 4468 (61.6%) | 253 (3.5%) | 0 (0.0%) | 2527 (34.9%) | 0 (0.0%) | 0 | yes |
+
+**Animals aged 8 and over only** (pass A): of the decisions made for them, the share the null kernel made and the share that went back to the rules:
+
+| arm | decisions for animals aged 8 and over | null kernel | back to the rules (menu under two options) | back to the rules (other) | rules argmax calls after a refusal (check) |
+| --- | --- | --- | --- | --- | --- |
+| rules | 6354 | 0 (0.0%) | 0 (0.0%) | 0 (0.0%) | 0 |
+| b | 7903 | 7776 (98.4%) | 127 (1.6%) | 0 (0.0%) | 127 |
+| c | 4359 | 4228 (97.0%) | 131 (3.0%) | 0 (0.0%) | 131 |
+| d | 7640 | 7358 (96.3%) | 282 (3.7%) | 0 (0.0%) | 282 |
+| e | 4721 | 4468 (94.6%) | 253 (5.4%) | 0 (0.0%) | 253 |
+
+**By light phase, the gate, the menu** (pass B, the plain loop on the same world):
+
+| arm | null kernel decisions: dawn / day / dusk / night | refused to the rules: dawn / day / dusk / night | decision points the loop's gate held (no kernel asked): total; dawn / day / dusk / night | kernel menus by size | rules' pick on the kernel's menu | kernel took the rules' pick | living at start (aged 8 and over / under 8) | deaths | wall s: benchmark loop / plain loop |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| rules | 0 / 0 / 0 / 0 | 0 / 0 / 0 / 0 | 0; 0 / 0 / 0 / 0 | - | 0 (-) | 0 (-) | 49 (38 / 11) | 0 | 9 / 5 |
+| b | 564 / 6646 / 422 / 144 | 0 / 0 / 0 / 127 | 0; 0 / 0 / 0 / 0 | 2: 195, 3: 717, 4: 1699, 5: 1912, 6: 1233, 7: 896, 8: 1124 | 7715 (99.2%) | 1620 (20.8%) | 49 (38 / 11) | 0 | 10 / 6 |
+| c | 387 / 3432 / 283 / 126 | 0 / 0 / 0 / 131 | 1908; 142 / 1528 / 173 / 65 | 2: 155, 3: 419, 4: 989, 5: 1019, 6: 695, 7: 471, 8: 480 | 4186 (99.0%) | 876 (20.7%) | 49 (38 / 11) | 0 | 7 / 5 |
+| d | 591 / 6412 / 353 / 2 | 0 / 1 / 9 / 272 | 0; 0 / 0 / 0 / 0 | 2: 373, 3: 1021, 4: 1823, 5: 1655, 6: 1149, 7: 690, 8: 647 | 0 (0.0%) | 0 (0.0%) | 49 (38 / 11) | 0 | 10 / 7 |
+| e | 388 / 3807 / 267 / 6 | 0 / 1 / 4 / 248 | 1806; 144 / 1542 / 115 / 5 | 2: 312, 3: 743, 4: 1007, 5: 994, 6: 623, 7: 369, 8: 420 | 0 (0.0%) | 0 (0.0%) | 49 (38 / 11) | 0 | 8 / 6 |
+
+  Read: in arm (b) the null kernel makes the decision at 98.4% of the decision points of animals aged 8 and over; the
+  rest are menus with fewer than two options, all at night, decided by the rules' argmax. Animals under 8 (11 of 49)
+  keep the rules and make about a quarter of all decisions. No request and no answer was refused for any other reason.
+  With the gate on the kernel is asked about half as often and the gate holds about 1,900 decision points. With the
+  pick removed the rules' pick is never on the kernel's menu and more menus fall under two options (3.7% and 5.4% of
+  the older animals' decisions). With the pick kept it is on the menu at 99% of the kernel's decisions and the uniform
+  draw takes it 21% of the time. At night the kernel decides little (2% of its decisions in arm b; almost none with the
+  pick removed, where the night menu is usually left with one option). The benchmark's loop and the plain loop give the
+  same counts in every arm. Wall time: 7 to 10 s for the 2 days in the benchmark's loop, so a 90-day seed job is
+  expected to take 5 to 8 minutes at this load.
+- **Iteration 1 (logged 6 October 2026, 07:31 EDT, before it runs).** The ten runs of section 2 as registered, by
+  `r1brun.sh` from `bench-r1b` moved to the commit that adds this entry (the smoke result and this log are the only
+  changes since a137d6c: documentation, so the code identity of the runs, the git trees of `src`, `scripts` and `data`,
+  is that of the smoke run). Nothing in the design is adjusted after the smoke run.
