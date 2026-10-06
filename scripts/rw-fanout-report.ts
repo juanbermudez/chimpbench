@@ -31,7 +31,7 @@ export function routingReadout(train: { model: RecordScore[]; stack: RecordScore
 }
 
 const fmt = (ci: (number | null)[]) => `${ci[0]} to ${ci[1]}`;
-const pairRow = (name: string, cut: string, p: ReturnType<typeof pairedDifference>) => [name, cut, `${p.records} (${p.animals})`, p.a, p.b, p.difference, fmt(p.ci), p.isDifference ? 'yes' : 'no', `${p.onlyA} / ${p.onlyB}`, p.signP];
+const pairRow = (name: string, cut: string, p: ReturnType<typeof pairedDifference>) => [name, cut, `${p.records} (${p.animals})`, p.a, p.b, p.difference, fmt(p.ci), p.isDifference ? 'yes' : 'no', `${p.onlyA} / ${p.onlyB}`, p.signP < 0.001 ? 'below 0.001' : p.signP];
 
 /** The whole report as markdown (aggregates only). `cost`: wall seconds per kernel and part at shuffle 0, when known. */
 export function fanoutMarkdown(parts: Record<string, Runs>, model: string, cost: Record<string, Record<string, { seconds: number; kernelCalls: number }>> = {}, notes: string[] = [], reps = 2000): string {
@@ -51,16 +51,18 @@ export function fanoutMarkdown(parts: Record<string, Runs>, model: string, cost:
     if (rows.length) { L.push('Paired differences on the same records (A minus B):'); t(['pair', 'records', 'records (males)', 'A', 'B', 'difference', '95% interval', 'a difference', 'only A right / only B right', 'sign test p'], rows); }
     const costly = ids.filter(id => id !== 'null' && id !== 'stack');
     if (costly.length) {
-      L.push('Kernel calls per record (as asked; an identical sub-request is sent to the model once per run) and wall time of the run (a shared machine: upper bounds):');
+      L.push('Kernel calls per record (as asked) and wall time of the run on a shared machine. Read the seconds with care: the first model kernel\'s time includes loading the model, and a later kernel reuses the answers already given to identical packets (every menu of 8 or fewer), so its seconds are for its wide menus only.');
       t(['kernel', ...CUTS.map(c => `calls, ${c[0]}: mean (largest)`), 'calls in all', 'seconds', 'seconds per record', 'seconds per call'], costly.map(id => { const c = callsBySize(first(id)), total = first(id).reduce((a, s) => a + s.calls, 0), k = cost[part]?.[id];
         return [id, ...c.map(x => x.mean === null ? null : `${x.mean} (${x.largest})`), total, k?.seconds ?? null, k ? r3(k.seconds / first(id).length) : null, k && total ? r3(k.seconds / total) : null]; }));
     }
     const ordered = ids.filter(id => runs[id].length > 1);
     if (ordered.length) {
       L.push('Option-order sensitivity: the same records under several shuffles.');
-      t(['kernel', 'shuffles', 'top-1 per shuffle', 'range', 'same male under every shuffle', 'mean relative position of the answer (0.5: none)', 'answers on the first option (expected)', 'top-1 per shuffle, more than 8'],
-        ordered.map(id => { const o = orderSensitivity(runs[id]); return [id, o.shuffles, o.top1PerShuffle.join(', '), o.top1Range, o.sameMaleUnderEveryShuffle, o.meanRelativePosition, `${o.firstOptionShare} (${o.firstOptionShareExpected})`,
-          runs[id].map(r => { const w = r.filter(s => s.setSize > 8); return r3(mean(w.map(s => s.hit))); }).join(', ')]; }));
+      t(['kernel', 'shuffles', 'top-1 per shuffle', 'range', 'same male under every shuffle', 'mean relative position of the answer (0.5: none)', 'answers on the first option (expected)',
+        'more than 8: top-1 per shuffle', 'more than 8: same male under every shuffle', 'more than 8: mean relative position', '8 or fewer: same male under every shuffle', '8 or fewer: answers on the first option (expected)'],
+        ordered.map(id => { const o = orderSensitivity(runs[id]), wide = orderSensitivity(runs[id].map(r => r.filter(s => s.setSize > 8))), narrow = orderSensitivity(runs[id].map(r => r.filter(s => s.setSize <= 8)));
+          return [id, o.shuffles, o.top1PerShuffle.join(', '), o.top1Range, o.sameMaleUnderEveryShuffle, o.meanRelativePosition, `${o.firstOptionShare} (${o.firstOptionShareExpected})`,
+            wide.top1PerShuffle.join(', '), wide.sameMaleUnderEveryShuffle, wide.meanRelativePosition, narrow.sameMaleUnderEveryShuffle, `${narrow.firstOptionShare} (${narrow.firstOptionShareExpected})`]; }));
     }
   }
   const dev = parts.development, train = parts.train;
