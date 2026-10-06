@@ -1,7 +1,10 @@
 # ED pre-registration: the dead (how long a body stays, who responds to it)
 
-Status: registered 6 October 2026, 08:57 EDT, before any code (branch `ed-dead`, from `track-e` e0cf866). A stage
-behind switches that are 0 by default; 0 is today's behaviour bit for bit. No benchmark run belongs to this stage.
+Status: built and tested (6 October 2026; branch `ed-dead`, from `track-e` e0cf866). Registered at 08:57 EDT in commit
+64c73ec, before any code. A stage behind three switches that are 0 by default; 0 is today's behaviour bit for bit (the
+compressed goldens and the field pin did not move). No benchmark run belongs to this stage. No iteration was used: the
+mechanism is the one registered, with the implementation notes of §7. Results of the readout smoke are in §9; the
+decisions left to the user are in §10.
 
 Rule served (user, verbatim): "Field numbers are targets, never inputs; never tune an input to hit a behavioural rate.
 Before building toward a field number that is far off, audit its source: sample, method, formula." The reported carrying
@@ -103,7 +106,7 @@ their own community that is a body (not bones), lying or held by its carer:
 - **Groom or handle** (`groom`, variant `BODY`): the mother or carer and maternal siblings, valued as grooming that
   infant was valued in life (same terms as §2.2). The bout runs as a grooming bout does for the groomer; the body gives
   nothing back and no bond grows.
-- The perceived body is in the decision packet: `DecisionContext.bodies` (at most 2: name, relation, age at death,
+- The perceived body is in the decision packet: `DecisionContext.bodies` (at most 2, raised to 4 in §7: name, relation, age at death,
   distance, hours dead, whether it is held and by whom), and the request check accepts a body as the target of `follow`
   and `groom` only.
 
@@ -175,9 +178,33 @@ Proposed target rows for the user (not added to `data/targets.json`, which is fr
    save made with a body present (JSON round trip) resumes exactly; `worldShapeProblem` accepts it.
 6. Prescription ledger and `gen-params --check` pass.
 
-## 7. Iterations (at most 3 per problem; each logged here before it runs)
+## 7. Log (at most 3 iterations per problem; each logged before it runs)
 
-None yet.
+**Iterations: none.** The mechanism was not changed after any run.
+
+Implementation notes (all written into the code before the first run; none was chosen from a readout):
+- §2.1: the body record is `{ by, exp, carer, insp, grm, acc, held }`: `carer` is fixed at death (the dead animal's own
+  hidden state is dropped after 30 days), `grm` lists who groomed it, `acc` records that its carer had it in her hands
+  or in sight, `held` is the last hour it was held.
+- §2.2, start: a body that was on its carer at death stays in her hands only if she is doing an act that leaves a hand
+  free at that moment; if her hands are busy (she is feeding, grooming) it lies beside her with access, and taking it
+  up is her choice. The carer gets a decision point at the death (an interrupt). The same hands rule as the rest of §2.2.
+- §2.3: at most 4 bodies are attended to and shown in `DecisionContext.bodies` (the registration said 2), the one the
+  animal cared for first, then nearest first, so a carer's own option is never crowded out where several bodies lie.
+- §2.4: bones are drawn (`src/render/creatures/remains.ts`: one instanced mesh, rebuilt at most once a second, no new
+  shader texel, no per-frame allocation). Their shape, number and scatter are a stylization, labelled in the code, in
+  docs/research.md and in docs/simulation.md.
+- The ledger test's switch pattern (`/^Stage E\d/`) now also accepts "Stage ED".
+
+Runs:
+- S1 (09:14 EDT, **not logged before it ran**, an omission): two scratch runs of the registered mechanism to see that it
+  runs, seed 48, three forced infant deaths at 09:00 of day 1, compressed for 4 days and field for 6 days. No number
+  from it is reported; S2 repeats it with the watcher.
+- S2 (started 09:27 EDT; **also logged only after it ran**, at 09:28, the same omission): the readout smoke of §9. Its
+  design was fixed in its script before it started and was not changed. Seeds 48 and 7, both
+  profiles, default parameters and the rules policy, all three switches on; the first four unweaned infants under 3 y
+  with a living mother are killed ("illness") at 09:00 of day 1 and the world runs 5 days with `DeadWatch`. Forced deaths,
+  eight per profile: a check that the readouts read, not a benchmark and not a distribution.
 
 ## 8. Not built, and why
 
@@ -202,3 +229,48 @@ Target rows proposed for the user (to be added to `data/targets.json` only by th
 | T-DED-3 share of carries longer than 10 days | 2 of 30 (Gombe); 3 of 12 (Budongo) | same | small n |
 | T-DED-4 oldest infant carried, years | ≤ 3 | [lonsdorf2020], [bersacola2025] | the code allows under 4 |
 | T-DED-5 who interacts with an infant's body, order | mother, then maternal siblings, then others | [lonsdorf2020] Results | qualitative |
+
+## 9. Readout smoke S2 (table generated from the run's JSON by a script; 5-day watch, forced deaths)
+
+| Profile | Seed | Forced infant deaths | With access | Carried | Share | Carry days (each) | Median | Looked (by class) | Groomed (by class) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| field | 48 | 4 | 4 | 2 | 0.50 | 0.03, 0.21 | 0.12 | adult male 3 | carer 2, maternal sibling 1 |
+| field | 7 | 4 | 4 | 2 | 0.50 | 1.34, 2.24 | 1.79 | adult male 1 | carer 3, maternal sibling 3 |
+| compressed | 48 | 4 | 4 | 3 | 0.75 | 4.31, 4.32, 4.92 | 4.32 | maternal sibling 2, adult male 14 | carer 3, maternal sibling 4 |
+| compressed | 7 | 4 | 4 | 4 | 1.00 | 0.15, 0.24, 2.36, 4.31 | 1.30 | maternal sibling 1, immature 1, adult male 15 | carer 4, maternal sibling 3 |
+| field | both | 8 | 8 | 4 | 0.50 | 0.03, 0.21, 1.34, 2.24 | 0.78 | | |
+| compressed | both | 8 | 8 | 7 | 0.88 | 0.15, 0.24, 2.36, 4.31, 4.31, 4.32, 4.92 | 4.31 | | |
+
+Read plainly:
+- **Field profile: carrying started in 4 of 8 deaths with access (0.50)** against 1.00 at Gombe and 0.71 at Budongo, and
+  the four carries lasted 0.03 to 2.24 days (median 0.78) against a Gombe minimum-duration median of 1.83 days. Below
+  both field figures, on eight forced deaths in two worlds: too few to call a distribution, and not tuned.
+- Compressed profile: longer (median 4.31 days, capped by the 5-day watch), because on a 160 m map the mother rarely
+  leaves the sight of the body. An artefact of the small map; the field profile is the one to compare.
+- The four deaths without a carry are bodies that lay beside a mother whose hands were busy at the death and that she
+  did not take up before her next trip (or took up and put down within one tick: counted as not carried).
+- Who responded: carers and maternal siblings groomed, adult males looked; an immature looked once; no other class
+  did anything (by construction). The order carer, then sibling, then others matches [lonsdorf2020] qualitatively.
+- Known weakness of the rules policy here: it weighs "take the body up" against "walk to a tree" as exclusive
+  alternatives, though taking up a body at her side costs seconds and precludes nothing. A hungry mother therefore
+  leaves on her next food trip. A decision kernel sees both options at every decision and may choose otherwise. This was
+  not changed after the readout (it would have been choosing a mechanism from the number).
+
+## 10. Decisions for the user
+
+1. **What ends a carry.** No opened source says. The stage uses "her hands are needed, and taking the body up again
+   competes with her other options" (§2.2). Alternatives that would lengthen carries: the body stays with her through
+   every act (the reported pockets and mouth free the hands) and only tending it puts it down; or a body at her side
+   goes with her whenever contact with it still has value. Each is a design assumption; which one is the user's call.
+2. **Bones.** Built at the lower end of the reported range (21 days after the flesh, from one gorilla site; an
+   orangutan's skull was visible at two years). Keep 21, choose another value in 21–730, or switch bones off.
+3. **The target rows of §8** (T-DED-1 to 5): add them to `data/targets.json` or not.
+4. **Adult females other than the carer**, and responses to an adult's body: left out for want of evidence; say if the
+   one collapsed-juvenile case ([shimada2023], 3 of 8 adult females) should be enough to add adult females.
+5. **The packet text.** `DecisionContext.bodies` is in the request and passes the shared check, but the text a model
+   reads is built in `server/decide.ts` (on `main`, `src/providers/packet.ts`), which this stage was told not to touch:
+   the options' own wording names the body, the state lines do not yet. One line there is needed.
+6. **The app has no way to open a scratch world with a switch on**, so the screenshot is the creature harness
+   (`/src/render/creatures/harness.html?mode=single&deadcarry&remains=1`), which draws the renderer's three states from
+   the contract fields. A `?params=` debug parameter in `src/main.ts` would allow a full-app check.
+7. The field observer scores grooming a body as grooming (the act is `groom`). Leave it or exclude it.
