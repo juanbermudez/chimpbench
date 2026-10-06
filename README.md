@@ -103,7 +103,7 @@ A purely static deployment has no Jev gateway. To use Jev from it, configure a s
 - **Playback:** Space pauses; `1`–`7` pick speeds (`1` is real time).
 - **Camera:** `F` focuses, `C` toggles close view, `V` toggles the cinematic director, `R` returns to the overview (strategy view). The overview shows a map scale bar; Reset camera frames the whole map.
 - **Range map:** the camera menu (views, Reset camera) and the layer toggles run along its foot; hover a control for what it does. The community key sits in the map's bottom-left corner: hover it to see the map underneath, click a community to highlight it. Scroll or pinch over the map to zoom (1–8×), drag to pan when zoomed; with the map focused, `+` `−` zoom and `0` shows the whole map.
-- **Panels:** `T` opens the society overlay (kinship forest, dominance ladders, bond network, alpha history). `E` opens experiments, `M` the model panel, `I` the inspector. `L` toggles labels. `[` and `]` cycle chimps. Esc closes.
+- **Panels:** three panels frame the forest. Left: the field log (`B` hides it) and the range map. Right: a sidebar that rests on Communities and switches with `T` (Society: kinship, dominance, bonds and alpha history as lists; "Full view" opens the kinship forest and the bond network full screen), `E` (Experiments: hover or focus a row for what it does, click to run it) and `M` (the decision model); the same key or Esc returns to Communities, `Shift`+`B` hides the sidebar. Bottom: the selected chimp, with a snapshot, its community and key details, and the tabs Overview, Log (the field log filtered to that chimp), Mind, Family and Relations; `I` collapses it to a strip. The alpha carries a gold “α” badge everywhere, as on its name tag in the forest. `L` toggles labels. `[` and `]` cycle chimps.
 - **Sound:** starts on your first click or key (browser autoplay rule). `S` or the speaker button mutes; Settings › Sound has Master, Ambience, Animals and Weather volumes.
 - **Simulations:** the name in the menu bar opens Simulations (new, open, rename, duplicate, delete, export, import). `Ctrl`/`⌘`+`S` saves now.
 
@@ -137,7 +137,7 @@ Reloading the page brings back the last simulation where you left it, **paused**
 | `src/decision.ts`, `server/decide.ts`, `server/local-worker.ts` | Roster, queue, traces, validation, prompt packet, resident model process |
 | `src/scene.ts`, `src/render/env/*` | Sky, lighting, weather, terrain, vegetation, stream, territory, cameras, post-processing |
 | `src/render/creatures.ts`, `src/render/creatures/*` | GPU-skinned procedural chimps, poses, FX, labels, nests, colobus, selection |
-| `src/main.ts`, `src/ui/*`, `src/style.css` | HUD, inspector, family trees, hierarchy, society overlay, experiments, model panel |
+| `src/main.ts`, `src/ui/*`, `src/style.css` | HUD, field log and range map, right sidebar (communities, society, experiments, model), bottom chimp panel, full society view |
 | `src/persist/*`, `src/ui/simulations.ts` | Saved simulations: envelope and determinism, SQLite schema, store worker (opfs-sahpool), autosave, Simulations menu |
 | `src/audio/*`, `scripts/build-audio.mjs` | Spatial sound engine (beds, voices, thunder, zoom mix), pure mixing math, synthesized drum/laugh; asset pipeline |
 | `docs/simulation.md` | How the simulation works: tick pipeline, state, actions, mechanisms, parameters, validation, extension recipes |

@@ -79,11 +79,11 @@ try {
   pass(`GLiNER applied ${s2.model.applied} (latency ${Math.round(s2.model.latencyMs)} ms, ${s2.model.inputTokens} tokens)`);
   }
 
-  // Right panel: it opens on the communities, with the selected animal's community and its unit grid. A tile selects
-  // that animal (chimp view, Back button) and the camera follows it; a drag lets go; F takes it back.
-  const rp = () => page.evaluate(() => ({ panel: document.querySelector('.app').dataset.panel, tiles: document.querySelectorAll('.unit').length, current: document.querySelector('.unit[aria-current="true"]')?.dataset.unit ?? null }));
+  // Right sidebar: it rests on the communities, with the selected animal's community and its unit grid. A tile selects
+  // that animal (the bottom chimp panel names it) and the camera follows it; a drag lets go; F takes it back.
+  const rp = () => page.evaluate(() => ({ panel: document.querySelector('.app').dataset.right, tiles: document.querySelectorAll('.unit').length, current: document.querySelector('.unit[aria-current="true"]')?.dataset.unit ?? null, chimp: document.querySelector('.chimp-panel .ch-name span')?.textContent ?? '' }));
   const rp0 = await rp();
-  assert.equal(rp0.panel, 'community', 'the right panel opens on the communities');
+  assert.equal(rp0.panel, 'communities', 'the right sidebar rests on the communities');
   assert.ok(rp0.tiles >= 5 && rp0.current !== null, `unit grid with the selected animal (${JSON.stringify(rp0)})`);
   await key('r'); await page.waitForTimeout(1200);
   const pick = await page.evaluate(() => Number([...document.querySelectorAll('.unit')][1].dataset.unit));
@@ -99,11 +99,11 @@ try {
   }, pick);
   let far = 0;
   for (let i = 0; i < 12; i++) { await page.waitForTimeout(250); far = Math.max(far, (await fol()).d); }
-  assert.equal((await rp()).panel, 'chimp', 'a tile opens the chimp view');
+  assert.equal((await rp()).chimp, (await snap()).chimps.find(c => c.id === pick).name, "the bottom panel shows the tile's animal");
   assert.equal((await fol()).followId, pick, "the camera follows the tile's animal");
   assert.ok(far < 2, `the animal stays within 2 m of the view centre (${far.toFixed(2)} m)`);
   assert.ok(await page.locator('.follow-ind').isVisible(), 'following indicator shown');
-  assert.ok(await page.locator('.rp-back').isVisible(), 'back button shown');
+  assert.ok(await page.locator('.chimp-panel').isVisible(), 'chimp panel shown');
   const vb = await page.locator('#viewport').boundingBox(), x0 = vb.x + vb.width * 0.45, y0 = vb.y + vb.height * 0.5;
   await page.mouse.move(x0, y0); await page.mouse.down(); await page.mouse.move(x0 + 120, y0 + 50, { steps: 8 }); await page.mouse.up();
   await page.waitForTimeout(800);
@@ -157,8 +157,8 @@ try {
   pass(`stranger playback: ${respond} listeners responding`);
   await key('Escape');
 
-  // Accelerated clock: every tick still runs; the achieved rate is reported honestly.
-  await key('5');
+  // Accelerated clock: every tick still runs; the achieved rate is reported honestly. (Key 6: 1 is real time.)
+  await key('6');
   await page.waitForTimeout(4000);
   const s5 = await snap();
   assert.equal(s5.clock.speedId, '1d');
@@ -170,10 +170,10 @@ try {
     const h = window.__MGOGO__.snapshot().hour;
     if (!(h > 21 || h < 4)) return false;
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: '1' }));
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: '2' }));
     return true;
   }, null, 30000);
-  await key('1');
+  await key('2');
   await page.waitForTimeout(2500);
   const night = await snap();
   assert.ok(night.environment.daylight < 0.1, 'night');

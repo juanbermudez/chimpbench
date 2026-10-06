@@ -85,8 +85,8 @@ async function save(name, { clip, width = 1600 } = {}) {
   console.log(`  ${written.at(-1)}`);
 }
 const want = name => !only || only.includes(name);
-// The right panel opens on the communities (with the unit grid); the selected animal's tile opens its chimp view.
-const chimpTab = async tab => { if (await page.locator('.rp-chimp').isHidden()) await page.locator('.unit[aria-current="true"]').click(); await page.locator(`[data-tab="${tab}"]`).click(); await wait(300); };
+// The selected animal lives in the bottom chimp panel; the right sidebar rests on the communities (with the unit grid).
+const chimpTab = async tab => { await page.locator(`.chimp-panel [data-tab="${tab}"]`).click(); await wait(300); };
 const box = async sel => { const b = await page.locator(sel).first().boundingBox(); return b && { x: Math.max(0, b.x - 1), y: Math.max(0, b.y - 1), width: b.width + 2, height: b.height + 2 }; };
 
 try {
@@ -148,7 +148,7 @@ try {
 
   if (want('close-party')) {
     // The close view on a party: pick the largest social or foraging party of the selected community and follow it.
-    if (await page.locator('.rp-comm').isHidden()) { await page.locator('[data-act="panel-back"]').click(); await wait(500); }
+    if (await page.locator('.rp-communities').isHidden()) { await key('Escape'); await wait(500); }
     const idx = await page.evaluate(() => {
       const rows = [...document.querySelectorAll('.cp-party')].map((b, i) => ({ i, kind: b.querySelector('.cp-pk')?.textContent.trim() ?? '', n: Number(b.querySelector('.cp-ps')?.textContent) || 0 }));
       const best = rows.filter(r => /^(Social|Foraging)/.test(r.kind)).sort((a, b) => b.n - a.n)[0] ?? rows.sort((a, b) => b.n - a.n)[0];
