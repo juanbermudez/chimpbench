@@ -123,7 +123,7 @@ function flipped(id: string): string[] {
 }
 
 test('every Track E switch in the registry is listed, with real ids', () => {
-  const inRegistry = entries.filter(e => /^(switch|flag)$/.test(e.units) && /^Stage E\d/.test(e.notes)).map(e => e.id).sort();
+  const inRegistry = entries.filter(e => /^(switch|flag)$/.test(e.units) && /^Stage E(\d|D\b)/.test(e.notes)).map(e => e.id).sort();
   assert.deepEqual(Object.keys(TRACK_E_SWITCHES).sort(), inRegistry);
   for (const s of Object.values(TRACK_E_SWITCHES)) for (const id of Object.keys(s.needs)) assert.ok(TRACK_E_SWITCHES[id] || byId.has(id), id);
 });

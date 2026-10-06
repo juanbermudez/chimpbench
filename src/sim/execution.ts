@@ -33,6 +33,7 @@ import { tripAct, tripAte, tripYieldOn } from './experience';
 import { callerCrownOn } from './tripbelief';
 import { callCrown, callRecord, callTripOn, ownCall } from './calltrip';
 import { GROOM_BOND_ACTOR, GROOM_BOND_RECIP, GROOM_SOCIAL_ACTOR, GROOM_SOCIAL_RECIP, upkeepOnly } from './upkeep';
+import { bodyOf, carryOn, holdThrough, takeUp } from './deadbody';
 
 // Bout durations in eco-minutes [min, max] (registry bout*Min / bout*Max).
 const DUR: Record<Action, [ParamId, ParamId]> = {
@@ -241,6 +242,8 @@ export function startAction(world: World, c: Chimp, cand: Candidate, source: Dec
   const fromNest = paramsOf(world).nestAudience === 1 && !same && c.action === 'nest' && x.phase >= 2 && c.nest !== null
     && cand.action === 'travel' && meta.v === V.TREE && meta.aux <= 0 ? c.nest : null;
   if (!same) { cleanupPrevious(world, c); c.actionTime = 0; x.phase = 0; x.prog = 0; x.flag = 0; x.slide = 0; }
+  // stage ED (deadCarry; deadbody.ts): a carer who starts an act that needs her hands puts the body down where she is
+  if ((c.carryingDeadId ?? -1) >= 0 && carryOn(paramsOf(world))) holdThrough(world, c, cand.action, meta.v === V.BODY && cand.targetId === c.carryingDeadId);
   c.action = cand.action; c.targetId = cand.targetId; c.reason = cand.reason;
   c.decisionSource = source; c.decisionVersion++; c.awaitingDecisionSince = null;
   x.intr = ''; x.finished = false; x.v = meta.v; x.aux = meta.aux;
@@ -700,6 +703,7 @@ export function executeAction(world: World, c: Chimp): void {
       return;
     }
     case 'follow': {
+      if (x.v === V.BODY) return bodyFollowTick(world, c, o);
       if (!o || !o.alive) return finish(world, c);
       const d = hd(c, o);
       if (x.v === V.PARTY && d > x.sight * 1.6) return finish(world, c);
@@ -723,7 +727,7 @@ export function executeAction(world: World, c: Chimp): void {
       moveTo(world, c, cx, t.height * 0.4, cz, WALK, 0.3);
       return;
     }
-    case 'groom': case 'play': case 'reconcile': case 'console': return pairTick(world, c, o);
+    case 'groom': case 'play': case 'reconcile': case 'console': return c.action === 'groom' && x.v === V.BODY ? bodyGroomTick(world, c, o) : pairTick(world, c, o);
     case 'pant-grunt': {
       if (!o || !o.alive) return finish(world, c);
       if (moveTo(world, c, o.position[0], o.position[1], o.position[2], WALK * 1.2, 1.4)) {
@@ -1239,6 +1243,58 @@ function pairTick(world: World, c: Chimp, o: Chimp | undefined): void {
     const ox = ix(o); ox.groomRecv[c.id] = (ox.groomRecv[c.id] ?? 0) + TICK_HOURS;
     c.skills.social = clamp(c.skills.social + (1 - c.skills.social) * TICK_HOURS * 0.002);
   } else if (x.prog >= 60) finish(world, c);
+}
+
+/**
+ * Stage ED (docs/staging/ed-prereg.md §2.2–2.3): walking up to a body. Its carer takes it up on reaching it (deadCarry);
+ * anyone else looks at it for bodyInspectMin (design assumption: an inspection needs an end; no source gives its length
+ * for a dead infant) and is recorded as having inspected it, so the option is not offered to it again for this body.
+ */
+function bodyFollowTick(world: World, c: Chimp, b: Chimp | undefined): void {
+  const P = paramsOf(world), x = ix(c), st = b ? bodyOf(world, b.id) : undefined;
+  if (!b || !st || b.remains !== 'body') return finish(world, c);
+  const mine = st.carer === c.id && carryOn(P);
+  if (mine ? st.by >= 0 : st.by >= 0 && st.by !== st.carer) return finish(world, c);
+  if (x.phase === 0) {
+    if (!moveTo(world, c, b.position[0], b.position[1], b.position[2], walkSpeedOf(world, c, P) * 1.1, 1.05)) { if (c.actionTime > 300) finish(world, c); return; }
+    if (mine) { if ((c.carryingDeadId ?? -1) < 0) takeUp(world, c, b, st); return finish(world, c); }
+    x.phase = 1; x.prog = 0;
+  }
+  if (hd(c, b) > 2.6) return finish(world, c); // carried off
+  face(c, b);
+  x.prog += TICK_SECONDS;
+  if (x.prog < P.bodyInspectMin * 60) return;
+  if (!st.insp.includes(c.id)) {
+    st.insp.push(c.id);
+    episode(world, c, 'social', `Looked closely at the body of ${b.name}`, b.id);
+    if (st.insp.length === 1) addEvent(world, `${c.name} walked up to the body of the infant ${b.name} and inspected it`, 'social', [c.id, b.id], c.troopId, 0);
+  }
+  finish(world, c);
+}
+
+/**
+ * Stage ED (§2.3): grooming or handling a body (its carer, maternal siblings). The groomer's side of a grooming bout
+ * runs as for a living partner (its own social need and stress); the body gives nothing back, no bond grows and no
+ * grooming is recorded between the two. The bout ends at the groomer's next decision, as grooming does.
+ */
+function bodyGroomTick(world: World, c: Chimp, b: Chimp | undefined): void {
+  const P = paramsOf(world), x = ix(c), st = b ? bodyOf(world, b.id) : undefined;
+  if (!b || !st || b.remains !== 'body' || (st.by >= 0 && st.by !== st.carer)) return finish(world, c);
+  if (x.phase === 0) {
+    if (!moveTo(world, c, b.position[0], b.position[1], b.position[2], walkSpeedOf(world, c, P) * 1.1, 1.05)) { if (c.actionTime > 300) finish(world, c); return; }
+    x.phase = 1; x.prog = 0;
+    if (!st.grm.includes(c.id)) {
+      st.grm.push(c.id);
+      episode(world, c, 'social', `Groomed the body of ${b.name}`, b.id);
+      if (st.grm.length === 1) addEvent(world, `${c.name} groomed the body of the infant ${b.name}`, 'social', [c.id, b.id], c.troopId, 0);
+    }
+    return;
+  }
+  if (hd(c, b) > 2.6) return finish(world, c); // carried off
+  face(c, b);
+  x.prog += TICK_SECONDS;
+  c.social = clamp(c.social + GROOM_SOCIAL_ACTOR * TICK_HOURS);
+  c.stress = clamp(c.stress - 0.1 * TICK_HOURS);
 }
 
 function copulate(world: World, m: Chimp, f: Chimp): void {
