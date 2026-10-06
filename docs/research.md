@@ -4256,3 +4256,44 @@ their records were re-checked on 5 October 2026 (Crossref; PubMed for grimm2005)
   [doi:10.3389/neuro.06.004.2008](https://doi.org/10.3389/neuro.06.004.2008) (Abs); method.
 - grimm2005, zurell2010, teBoekhorst1994, ramosFernandez2006 and keramatiGutkin2014 are already listed; the entries
   above add a use.
+
+## Partner-choice and association datasets (downloads approved 6 October 2026)
+
+The user approved four downloads on 6 October 2026: Taï grooming partner choice, Budongo party scans, Kanyawara female
+relationships, and the full Ngogo paper. Each entry was written before its files were fetched; "What the files contain"
+is added after the download and is limited to column names, counts and the README. Raw files stay in `data/raw/`
+(private, never committed). Nothing here is a benchmark design or an analysis of the data. Bibliographic details come
+from DataCite (checked 6 October 2026). Access level is stated per entry: FT = full text read, Abs = abstract only.
+
+### Taï grooming partner choice [mielke2018]
+
+- **Paper** [mielke2018] (FT, PMC6083658 via NCBI BioC) [M]. Mielke A, Preis A, Samuni L, Gogarten JF, Wittig RM,
+  Crockford C 2018. Flexible decision-making in grooming partner choice in sooty mangabeys and chimpanzees. *Royal
+  Society Open Science* 5(7):172143. [doi:10.1098/rsos.172143](https://doi.org/10.1098/rsos.172143). Data: Dryad
+  [doi:10.5061/dryad.t8c88vh](https://doi.org/10.5061/dryad.t8c88vh), version 1, 2018, CC0 (DataCite), about 3.7 MB.
+- **What it measures.** Grooming as a choice among the adults present. Only the first grooming initiated by the focal
+  animal in a session (consecutive grooming within 5 min counts as one session) is kept; every other adult present when
+  grooming started is a potential partner, and all adults present except the focal are its bystanders. Predictors:
+  global and relative dominance rank (modified Elo from pant-grunts), dyadic affiliation (Dynamic Dyadic Sociality
+  Index), the partner's reproductive state, the partner's strongest bond with any bystander, recent aggression, sex.
+- **Site and animals.** Taï National Park, Côte d'Ivoire, 2013–2015: the South and East chimpanzee communities (western
+  chimpanzee, *P. t. verus*) and one sooty mangabey group (*Cercocebus atys atys*). Half- and full-day continuous focal
+  follows; chimpanzee party = individuals within visual range (usually 30–50 m). Adults above 12 years only; subadults
+  and seven adult females with too few focal data were removed (Methods).
+- **Sample (Table 1; Results).** 1,529 decision events in all: 157 mangabey (female initiators only; adult male
+  mangabeys initiated none), 640 East chimpanzee (100 by females, 540 by males) and 732 South chimpanzee (79 and 653),
+  so **1,372 chimpanzee events**. Focal individuals 32 in all (12 mangabeys, 9 East and 11 South chimpanzees); potential
+  partners 52. Unique bystander sets: 438 (East) and 451 (South). Chimpanzee initiation rates 0.09–0.20 per hour for
+  females and about 0.30 for males.
+- **Findings (not used here).** Partner attributes influenced choice; individuals preferred partners of similar global
+  rank, but this was driven by a bias to partners high in relative rank among those present; individuals avoided
+  partners with a strong bond to a bystander; females with infants under 3 months were preferred; female chimpanzees
+  chose closer partners, males weakly so.
+- **Licence.** CC0 1.0 (DataCite). Credit the authors and the DOI anyway.
+- **Evidence level.** [M]: a primary field study of one site over about 3 years with a modest number of focal animals;
+  the DOI and counts are checked, the data file is not yet opened.
+- **Limits.** Western subspecies at Taï, not eastern Kibale. Pools two species in the data and the 1,529; chimpanzee
+  rows must be isolated before any count. Only the first initiation of each session is a choice; later partners are
+  dropped as non-independent. Adults only; the potential-partner set is "adults within visual range", which is a
+  party proxy and not everyone in the community. About 20 focal chimpanzees. Elo rank and DDSI are the authors'
+  modelled quantities, not direct measurements.

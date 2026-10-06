@@ -81,6 +81,7 @@ Marks: "coarse" means only at the file's fix schedule. `*` means an extra layer 
 | 15 | Taï encounter participation (Samuni, Crockford & Wittig 2021, Nat Commun 12:539, doi:10.1038/s41467-020-20709-9) | Taï 1997–2018, 491 encounters | none spatial | T-IGE-1/3 | open (journal CC BY) | low | optional |
 | 16 | Wood et al. 2025 OSF [jg9mb](https://doi.org/10.17605/OSF.IO/JG9MB) | Ngogo, around 2009 | none spatial | T-LET-5 | public, **no licence** | low | optional |
 | 17–20 | Dispersal (§11.4): Ngogo immigrant flags (Zenodo 10032093), Walker 2015 thesis Table 20, Budongo Sonso list, Gombe presence grids (Dryad r4g74) | Ngogo, Gombe, Budongo | none spatial | dispersal | CC BY / copyright / none / CC0 | low–medium | optional |
+| 21 | Taï grooming partner choice (Mielke et al. 2018), [Dryad t8c88vh](https://doi.org/10.5061/dryad.t8c88vh) | Taï South and East communities, 2013–2015 (also sooty mangabeys); 1,529 events, 1,372 of them chimpanzee | none spatial; partner choice among the adults present, with rank and bond covariates (per the paper) | none yet (partner-choice work; see `docs/staging/rw-prereg.md` §10) | open, CC0 (download approved 6 October 2026) | low | approved, not yet downloaded |
 
 Not ranked, because they hold no movement data: the audio (§11.2), camera-trap and occurrence datasets (§11.3), and the earlier non-spatial datasets (§10).
 
