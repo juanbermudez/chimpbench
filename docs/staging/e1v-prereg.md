@@ -47,3 +47,30 @@ determinism. The ledger keeps the entry out of the prescription count (an input,
 
 Swallowing half removes most starvation; a quarter removes it, at the cost of a longer fallback share; band distances
 move inside noise.
+
+## 7. Implementation log (agent `e1v-wadge`, 5 October 2026; §1–6 above are the registration, unchanged)
+
+### 7.1 Before any code (at 137d5aa)
+- **How the fallback composite is defined.** The registry holds it as single values: `digestaFallbackDmGPerMin` 1.89
+  g/min, `digestaFallbackNdf` 0.534, `ledgerFallbackKcalPerMin` 4.2 (and `…Sugar`, which S39 reads). No code or entry
+  weights pith and leaves separately; the entries' notes give the weighting: pith 1.8 and young leaves 2.1 g of dry
+  matter per minute, 58.1% and 43.1% NDF (uwimbabazi2019 Tables 1–2), by Kanyawara feeding time 17.4 : 6.9 (potts2011).
+- **The pith part's fibre** (derived from those notes, as E1u's offline arithmetic takes it, `scripts/e1u-gut-sensitivity.ts`
+  `wadged`): 17.4 ÷ 24.3 × 1.8 g/min × 0.581 = 0.749 g of NDF per feeding minute on the fallback, 0.742 of the
+  composite's 1.89 × 0.534 = 1.009 g/min (pith is 0.716 of the feeding time and 0.684 of the dry matter). The leaves'
+  part, 0.260 g/min, is the rest and never changes. In the model's unit (per formula kcal handled) the wadge is
+  (1 − `pithFibreSwallowed`) × 0.749 ÷ the fallback's kcal per minute (`plantKcalPerMin`), so at 0.5 and 0.25 the
+  fallback swallowed carries 1.516 and 1.328 g of dry matter and 0.635 and 0.448 g of NDF per feeding minute.
+- **Plan.** `energy.ts digesta()`: the fallback's food per formula kcal handled (dry matter, fibre, non-fibre energy)
+  loses the wadge from its dry matter and fibre at `pithFibreSwallowed` < 1; its non-fibre energy is unchanged. What
+  reads the food reads it as swallowed: `eat` (foregut fill, fibre to the hindgut, `in` at the fermentation yield,
+  `dmIn`), `gutRoom`, `gutBout`. Unchanged: intake (`fallbackKcalPerH`, formula kcal handled per feeding minute; the
+  forage cell loses what is handled), `fin` (formula energy handled, the field's measure, which counts the wadge: E1u
+  §5.3; the fallback's share of plant energy keeps its units across arms), the food's water (`water.ts foodWater` reads
+  the dry matter handled: the wadge is taken as fibre only, as E1u did, so the juice is swallowed). Faecal dry matter
+  falls with the fibre not swallowed (a consequence, not an input). At 1 the code path is today's (no RNG, no state).
+  `scripts/lib/gut-ceiling.ts` reads the swallowed food from the model so the offline tool follows the parameter.
+- **Pins on the unchanged code** (scratch script, S39 field seed 48, `tickWorld`): world hashes at ticks 6720 and 8160
+  `be3269e9cc69f676` and `f57cf21e1f863541`; every animal's decision values `93ced3a9df1c66ce` and `0ff4d71478f53323`
+  (E1s's pins at eb2b209); the window resumed from the saved 6720 world gives `f57cf21e1f863541`. Fallback eaten: 2,913
+  kcal by 17 animals before tick 6720 and 698 kcal by 6 animals in the window, so a share below 1 acts within it.
