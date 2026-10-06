@@ -5,3 +5,7 @@ artifacts/
 data/raw/
 .claude/worktrees/
 .DS_Store
+
+# Licensed sound (derived from the user's Epidemic Sound files): never commit or publish it.
+# Rebuild locally with node scripts/build-audio.mjs; the app runs without it (sound off, one console warning).
+public/audio/

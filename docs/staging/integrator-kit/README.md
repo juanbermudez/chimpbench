@@ -12,10 +12,10 @@ app or the tests.
 
 **Paths are absolute.** The scripts assume the repo at `/Users/juanbermudez/Desktop/MGOGO` with frozen run checkouts under
 `.claude/worktrees/` (`bench-run`, `bench-run2` hold the Part C reference runs; `bench-e1v` is E1v's run checkout at
-aecbe0e). On another layout, edit the `W =` line of each judge and the `cd` line of each driver. The judges find
+1af4543). On another layout, edit the `W =` line of each judge and the `cd` line of each driver. The judges find
 `night.py` beside themselves. Use `/usr/bin/python3` (or any Python 3 with the standard library only).
 
 **The reference runs are not in git.** `artifacts/` is gitignored, so the S39 and today's-model groups that every 6- and
 12-month comparison uses (`bench-run*/artifacts/validation/e/runs/{M6,M12}-…`, about 2.8 GB) stay on the old computer
-unless copied by hand. Without them, regenerate the S39 group from `params/M6-S39*.json` at commit 63d699a (see
+unless copied by hand. Without them, regenerate the S39 group from `params/M6-S39*.json` at commit dbee12e (see
 `HANDOFF.md`, "Set up").

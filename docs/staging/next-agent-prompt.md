@@ -8,8 +8,10 @@ agents in git worktrees, run and judge benchmarks, merge, and report. The previo
 5 October 2026 so the project could move to this computer.
 
 SET UP
-1. Clone <REPO_URL> into ~/Desktop/MGOGO (the integrator scripts assume that path; elsewhere, edit their path lines).
-   Check out branch `track-e` (the integration branch). Node 22, pnpm 8.15.9, `pnpm install`.
+1. Clone https://github.com/juanbermudez/chimpbench into ~/Desktop/MGOGO (the integrator scripts assume that path; elsewhere, edit their path lines).
+   Check out branch `track-e` (the integration branch). Node 22, pnpm 8.15.9, `pnpm install`. The public history was
+   rewritten on 5 October (licensed audio removed, every hash changed): translate any older hash quoted in the docs with
+   docs/staging/commit-map.tsv. Sound stays off until rebuilt locally (node scripts/build-audio.mjs; never commit it).
 2. Read, in order: HANDOFF.md (repo root: branch map, set-up details, next tasks with exact commands),
    docs/staging/handoff-2026-10-05.md (the user, the rules, the science, the tools), AGENTS.md (conventions,
    invariants, reserved seeds, gotchas), IMPLEMENTATION_PLAN.md (Track E and Track R), and

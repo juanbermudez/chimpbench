@@ -1,5 +1,13 @@
 # ChimpBench: handoff for the move to a new computer (5 October 2026, 23:00 New York time)
 
+**Repo: https://github.com/juanbermudez/chimpbench (public).** Its history was rewritten on 5 October 2026 before the first push: `public/audio/` (sound
+derived from the user's Epidemic Sound subscription, not licensed for public redistribution) was removed from every
+commit, and the author email was replaced by a GitHub no-reply address. **Every commit hash changed.** Hashes quoted in
+docs written before then refer to the old history: translate them with
+[docs/staging/commit-map.tsv](docs/staging/commit-map.tsv) (old → new, full hashes; match short ones by prefix). The
+hashes in this file are already the new ones. Sound is off until rebuilt locally with `node scripts/build-audio.mjs`
+from the user's own Epidemic Sound downloads; `public/audio/` is gitignored, so it can never be committed again.
+
 Work is **paused** so the project can move to another computer. Nothing is running. This file is the entry point. Then
 read [docs/staging/handoff-2026-10-05.md](docs/staging/handoff-2026-10-05.md) (the full takeover handoff: the user, the
 rules, the science, the tools), [AGENTS.md](AGENTS.md), and [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) (Track E
@@ -32,20 +40,20 @@ All work is in git; worktrees were only local copies. **Never commit to `main`**
 | Branch | Head | What | State |
 | --- | --- | --- | --- |
 | `track-e` | this commit | Integration branch: Track E, Track R docs, this handoff, the integrator kit | 943 tests: 942 pass, 0 fail, 1 skipped |
-| `main` | f24c9ae | Base | Unchanged since 1 October |
-| `main-wip-2026-10-05` | 05aba66 | Snapshot of the main checkout's uncommitted work by other sessions (UI, in-browser GLiNER providers, model loader, Jev gateway and design docs, About page, guide, training changes) | Byte copies; not tested as a set. The LotIQ PDF was left out on purpose |
-| `site` | 51b33ff | Hosted static build (GLiNER in the browser, Real time speed, hidden decision guide) | Deploy is held by the user |
-| `ui-minimap` | 8d3a0b7 | Range-map card: the card is the map, community key inside it (fades on hover), controls along the foot | Done, user-reviewed; from `main` |
-| `ui-redesign` | e7256a1 | UI redesign (bottom chimp panel with a snapshot, flat right sidebar for Experiments and Society, hover popovers, α instead of the crown) | Paused before any redesign code: `site` + `ui-minimap` merged; plan in `docs/staging/ui-redesign-status.md` |
-| `gfx-next` | 9043053 | Graphics "next level" assessment | Paused: partial plan in `docs/graphics-next-level.md` (Status section at the top) |
-| `feat-realtime` | cb6044e | Real time speed (1 s/s) | Done; also inside `site` |
+| `main` | 549d1a4 | Base | Unchanged since 1 October |
+| `main-wip-2026-10-05` | d8b6047 | Snapshot of the main checkout's uncommitted work by other sessions (UI, in-browser GLiNER providers, model loader, Jev gateway and design docs, About page, guide, training changes) | Byte copies; not tested as a set. The LotIQ PDF was left out on purpose |
+| `site` | ff6b548 | Hosted static build (GLiNER in the browser, Real time speed, hidden decision guide) | Deploy is held by the user |
+| `ui-minimap` | 090c728 | Range-map card: the card is the map, community key inside it (fades on hover), controls along the foot | Done, user-reviewed; from `main` |
+| `ui-redesign` | d2dbb46 | UI redesign (bottom chimp panel with a snapshot, flat right sidebar for Experiments and Society, hover popovers, α instead of the crown) | Paused before any redesign code: `site` + `ui-minimap` merged; plan in `docs/staging/ui-redesign-status.md` |
+| `gfx-next` | 1746a1f | Graphics "next level" assessment | Paused: partial plan in `docs/graphics-next-level.md` (Status section at the top) |
+| `feat-realtime` | bd961de | Real time speed (1 s/s) | Done; also inside `site` |
 | `e1v-wadge` and ~100 `e*` stage branches | | Finished Track E stages | All merged into `track-e` |
-| `c15-foraging`, `worktree-agent-ad2ed4f57e19b309a` | fdd0503, b49903a | Older sessions' uncommitted work, saved as WIP commits for the move | Untested; ask the user before using |
+| `c15-foraging`, `worktree-agent-ad2ed4f57e19b309a` | c8a6ac7, 7ac379a | Older sessions' uncommitted work, saved as WIP commits for the move | Untested; ask the user before using |
 | `worktree-agent-a954b443db4b6f22a`, `jev-free-arms`, `c17-fusion`, `c11-calibration`, `c10-communication`, `c13-rg`, `site-about` | | Older or other-session work, not merged into `track-e` | Do not touch without the user |
 
 ## 3. Set up on the new computer
 
-1. Clone the repo and check out `track-e`. Node 22 (22.22.3 used), pnpm 8.15.9 (`packageManager`), then
+1. Clone https://github.com/juanbermudez/chimpbench and check out `track-e`. Node 22 (22.22.3 used), pnpm 8.15.9 (`packageManager`), then
    `pnpm install`. Check with `pnpm test` (on `track-e`: 943 tests, 942 pass, 1 skipped) and `pnpm build`.
 2. **Not in git; copy by hand (USB or AirDrop, never a public place):**
    - `data/raw/` (43 MB, 8 downloaded field datasets with their `PROVENANCE.md`). It holds **location-sensitive raw
@@ -78,9 +86,9 @@ templates. Paths inside are absolute to `/Users/juanbermudez/Desktop/MGOGO`; edi
 
 ## 5. Next specific tasks, in order
 
-1. **E1v: run the wadging arms** (registered in `docs/staging/e1v-prereg.md`; code merged at aecbe0e; the user's
+1. **E1v: run the wadging arms** (registered in `docs/staging/e1v-prereg.md`; code merged at 1af4543; the user's
    decision: test a range, choose no value). Frozen checkout: `git worktree add --detach .claude/worktrees/bench-e1v
-   aecbe0e`, plus the symlinks (`git status --short` must print nothing). From it, for each `S` in "", -s1, -s2, -s3:
+   1af4543`, plus the symlinks (`git status --short` must print nothing). From it, for each `S` in "", -s1, -s2, -s3:
    `pnpm exec tsx scripts/e-run.ts plan --label M6-W25$S --m6 --params-file <kit>/params/M6-W25$S.json --out
    artifacts/validation/e/runs/M6-W25$S`. Then run each plan in the background with `<kit>/scripts/e1vrun.sh
    M6-W25$S 1` (one job per runner while the load is above 8; relaunch any runner that stops on its budget). Then
@@ -109,8 +117,8 @@ templates. Paths inside are absolute to `/Users/juanbermudez/Desktop/MGOGO`; edi
 - Whether to merge `ui-minimap` / `main-wip-2026-10-05` / `feat-realtime` into `main` (their call; never an agent's).
 - GPU or Jev spend for Track R (R4/R5), with a cap.
 - After E1v: adopt a wadging value, or keep "viability depends on wadging".
-- **Repo visibility.** `public/audio/` (57 files) is derived from the user's Epidemic Sound subscription and must not
-  be redistributed publicly. If this repo is public, those files need removing from history first.
+- ~~Repo visibility~~: answered 5 October: public, with `public/audio/` removed from history (see the top of this
+  file).
 - Older branches (§2, last rows) and the stale worktrees on the old computer.
 
 ## 7. Rules in one breath (details: handoff §2 and AGENTS.md)
