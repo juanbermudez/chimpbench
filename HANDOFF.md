@@ -104,6 +104,16 @@ templates. The scripts find the repo from their own location (`MGOGO_ROOT` overr
 
 ## 5. Next specific tasks, in order
 
+**State on 6 October 2026, 05:00 (second computer).** Task 1 is done: 0 starvation deaths in 20 seed-runs at 12 months
+at a swallowed share of 0.5 and of 0.25, against S39's 6 (`docs/staging/e1v-prereg.md` §8.4); adopting a value is the
+user's. Tasks 2 and 3 are done on their branches (`ui-redesign` 31a93fd, `gfx-next` 07401a6; the user's decisions are
+listed in the status files there). Task 4 (R1) is merged, with the research part of a new stage RW (wild choice
+benchmark) and a direction amendment from the user (`IMPLEMENTATION_PLAN.md`, Track R). Running: three years in one
+run (`docs/staging/e-years-prereg.md`, checkout `bench-y3`). Next: the full test suite on the merged head, the user's
+four R1 decisions (`docs/staging/r1-prereg.md` §8), then R1b. Today's local commits before b3bbe90 carry the machine's
+default git identity: re-author them before any push.
+
+
 1. **E1v: run the wadging arms** (registered in `docs/staging/e1v-prereg.md`; code merged at 1af4543; the user's
    decision: test a range, choose no value). Frozen checkout: `git worktree add --detach .claude/worktrees/bench-e1v
    1af4543`, plus the symlinks (`git status --short` must print nothing). From it, for each `S` in "", -s1, -s2, -s3:

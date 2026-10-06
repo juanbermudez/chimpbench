@@ -216,3 +216,158 @@ decide-ft stand-in run, missing its artifact, as before); `decision-guide --chec
   (adolescent 3, pregnant female 2, infant 2–5 y 1; seeds 5, 11 and 48). All four W25 runs pass viability (births /
   deaths 24/10, 26/6, 24/7, 26/14); three of S39's four fail. At 6 months both groups have 0.
 - The full tables (both arms, both horizons) follow in §8.4 once W50 is in.
+
+### 8.4 Result: both arms, 6 and 12 months (6 October 2026, 04:50; every table below is the judge's output, unedited)
+
+**Statement (§4): S39 has no starvation in 20 seed-runs at a swallowed share of 0.5 or less.** Starvation deaths at 12
+months: 6 in 20 seed-runs with all of the pith's fibre swallowed (S39 as it is), 0 in 20 at 0.5 and 0 in 20 at 0.25. At
+6 months all three have 0. All eight 12-month runs of the two arms pass viability; three of S39's four fail. S39's
+viability at 12 months therefore depends on wadging, an input nobody has measured: with no fibre spat out it starves,
+with half or more of the pith's fibre spat out it does not, in this sample. No value is chosen; the default stays 1.
+
+**Against the prediction (§6).** "Swallowing half removes most starvation; a quarter removes it": half removed all of
+it in 20 seed-runs. "At the cost of a longer fallback share": wrong, the non-fruit share of eating time fell or held in
+every class (pregnant females 0.36 → 0.28 and 0.27; juveniles 0.20 → 0.12 and 0.11). "Band distances move inside
+noise": true at 0.25 (largest |z| 2.0, at the threshold, not past it); **not true at 0.5**, where two of the four runs
+have a fitted sum past the rule (z +4.2 and +5.7; one at −2.5) and one a held-out sum without the rare rows at +3.3.
+
+**What drives the 0.5 arm's fitted sums (read from the rows, not judged).** One row, T-DEM-1 (first-year mortality,
+band 0.11–0.19): 0.32 and 0.40 in the two runs, 0.21 and 0.13 in the others (S39: inside the band in three runs of
+four; 0.25 arm: 0.07 to 0.25). The deaths are illness in infants under six months (4 and 6 in those two runs), none of
+them starvation. With about 25 births a run this row moves by 0.04 per death, and the fitted noise floor (0.30) was
+measured on 60-day windows where it does not score. Whether the energy ledger changes an infant's illness risk was not
+checked here; it is an open question, not a finding about wadging.
+
+**What 0 in 20 supports.** If the true rate were S39's (6 in 20 seed-runs), 0 in 20 would have probability about
+0.002 (Poisson, mean 6), so the fall is not noise. It does not show the rate is zero: 0 in 20 is compatible with a true
+rate of up to about 3 in 20 (95% bound). The three-year runs of `e-years-prereg.md` add lean seasons.
+
+**After the move (§8.2).** The check passed for all four runs (§8.3). The 0.5 arm ran wholly on the external drive.
+
+#### 6 months
+##### E1v, M6: S39 with pithFibreSwallowed W25, W50 against S39 (swallowed 1); 4 runs each (rngSalt 0-3); reference group in bench-run; printed by docs/staging/integrator-kit/scripts/judge_e1v.py from the JSON
+
+| run | commit | protocol | prescriptions | viability | starvation | starvation by seed | births / deaths | deaths by class | night: adults out of a nest, T-RHY-5 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| M6-S39 | 63d699a | 5d4fa5a2a500bce6 | 42 | pass | 0 | - | 10 / 1 | {'adolescent: illness': 1} | adults out of a nest 2.71% of night; T-RHY-5 0.0254; night deaths 1; deaths 1 |
+| M6-S39-s1 | 63d699a | 5d4fa5a2a500bce6 | 42 | FAIL births 10 < deaths 12 | 0 | - | 10 / 12 | {'infant 0.5–2 y: respiratory illness (outbreak)': 2, 'infant 2–5 y: respiratory illness (outbreak)': 1, 'female, lactating: illness': 2, 'female, lactating: snare injury': 1, 'infant 2–5 y: orphaned infant, did not survive without its mother': 1, 'infant < 0.5 y: respiratory illness (outbreak)': 1, 'adolescent: illness': 1, 'female, other: respiratory illness (outbreak)': 1, 'infant < 0.5 y: illness': 1, 'adult male: illness': 1} | adults out of a nest 2.61% of night; T-RHY-5 0.0252; night deaths 6; deaths 12 |
+| M6-S39-s2 | 63d699a | 5d4fa5a2a500bce6 | 42 | pass | 0 | - | 10 / 6 | {'adult male: illness': 2, 'infant 0.5–2 y: infanticide by Chiriku (East community)': 1, 'infant 0.5–2 y: illness': 1, 'infant < 0.5 y: illness': 2} | adults out of a nest 2.60% of night; T-RHY-5 0.0247; night deaths 2; deaths 6 |
+| M6-S39-s3 | 63d699a | 5d4fa5a2a500bce6 | 42 | pass | 0 | - | 10 / 3 | {'juvenile 5–12 y: illness': 2, 'infant 0.5–2 y: illness': 1} | adults out of a nest 2.56% of night; T-RHY-5 0.0243; night deaths 1; deaths 3 |
+| M6-W25 | 1af4543 | 5d4fa5a2a500bce6 | 42 | pass | 0 | - | 10 / 2 | {'adult male: illness': 1, 'female, lactating: illness': 1} | adults out of a nest 2.41% of night; T-RHY-5 0.0219; night deaths 1; deaths 2 |
+| M6-W25-s1 | 1af4543 | 5d4fa5a2a500bce6 | 42 | pass | 0 | - | 10 / 5 | {'female, other: illness': 1, 'adult male: illness': 2, 'infant < 0.5 y: illness': 1, 'infant < 0.5 y: infanticide by Koruza (West community)': 1} | adults out of a nest 2.57% of night; T-RHY-5 0.0232; night deaths 2; deaths 5 |
+| M6-W25-s2 | 1af4543 | 5d4fa5a2a500bce6 | 42 | pass | 0 | - | 10 / 2 | {'adult male: illness': 1, 'infant < 0.5 y: illness': 1} | adults out of a nest 2.53% of night; T-RHY-5 0.0229; night deaths 1; deaths 2 |
+| M6-W25-s3 | 1af4543 | 5d4fa5a2a500bce6 | 42 | pass | 0 | - | 10 / 5 | {'adult male: illness': 1, 'infant 2–5 y: illness': 1, 'infant 0.5–2 y: illness': 2, 'infant < 0.5 y: illness': 1} | adults out of a nest 2.44% of night; T-RHY-5 0.0222; night deaths 2; deaths 5 |
+| M6-W50 | 1af4543 | 5d4fa5a2a500bce6 | 42 | pass | 0 | - | 10 / 5 | {'female, other: illness': 1, 'infant < 0.5 y: illness': 2, 'female, other: respiratory illness (outbreak)': 1, 'infant 0.5–2 y: respiratory illness (outbreak)': 1} | adults out of a nest 2.55% of night; T-RHY-5 0.0233; night deaths 1; deaths 5 |
+| M6-W50-s1 | 1af4543 | 5d4fa5a2a500bce6 | 42 | pass | 0 | - | 10 / 9 | {'female, pregnant: illness': 1, 'infant < 0.5 y: infanticide by Koruza (West community)': 1, 'adult male: respiratory illness (outbreak)': 1, 'adult male: illness': 1, 'female, other: respiratory illness (outbreak)': 1, 'female, lactating: respiratory illness (outbreak)': 1, 'infant 2–5 y: respiratory illness (outbreak)': 2, 'infant 0.5–2 y: illness': 1} | adults out of a nest 2.56% of night; T-RHY-5 0.0230; night deaths 4; deaths 9 |
+| M6-W50-s2 | 1af4543 | 5d4fa5a2a500bce6 | 42 | pass | 0 | - | 10 / 0 | - | adults out of a nest 2.52% of night; T-RHY-5 0.0234; night deaths 0; deaths 0 |
+| M6-W50-s3 | 1af4543 | 5d4fa5a2a500bce6 | 42 | FAIL births 10 < deaths 11 | 0 | - | 10 / 11 | {'infant 0.5–2 y: illness': 1, 'adult male: respiratory illness (outbreak)': 3, 'female, lactating: respiratory illness (outbreak)': 1, 'female, pregnant: respiratory illness (outbreak)': 1, 'infant 0.5–2 y: orphaned infant, did not survive without its mother': 1, 'juvenile 5–12 y: respiratory illness (outbreak)': 1, 'infant 2–5 y: respiratory illness (outbreak)': 1, 'adult male: illness': 1, 'infant < 0.5 y: illness': 1} | adults out of a nest 2.54% of night; T-RHY-5 0.0232; night deaths 5; deaths 11 |
+
+**Starvation deaths over the seed-runs, by class** (prereg §4):
+
+| arm | seed-runs | starvation deaths | by class |
+| --- | --- | --- | --- |
+| S39 (swallowed 1) | 20 | 0 | - |
+| W25 (swallowed 0.25) | 20 | 0 | - |
+| W50 (swallowed 0.5) | 20 | 0 | - |
+
+| sum, W25 (rows scored in all 8 runs; for information) | S39: 4 runs | mean ± SD | W25: 4 runs | z of each W25 run (rngSalt 0 first; SD used) |
+| --- | --- | --- | --- | --- |
+| fitted (18) | 3.05 / 2.48 / 2.72 / 2.51 | 2.69 ± 0.26 | 2.87 / 2.79 / 2.91 / 2.86 | +0.5 / +0.3 / +0.7 / +0.5 (0.30) |
+| held-out (27) | 8.98 / 9.11 / 7.79 / 9.39 | 8.82 ± 0.71 | 8.49 / 8.19 / 7.68 / 8.32 | -0.2 / -0.4 / -0.7 / -0.3 (1.45) |
+| held-out w/o rare (24) | 7.43 / 7.51 / 7.31 / 7.24 | 7.37 ± 0.12 | 7.52 / 7.43 / 6.75 / 7.79 | +0.6 / +0.2 / -2.6 / +1.8 (0.21) |
+
+| sum, W50 (rows scored in all 8 runs; for information) | S39: 4 runs | mean ± SD | W50: 4 runs | z of each W50 run (rngSalt 0 first; SD used) |
+| --- | --- | --- | --- | --- |
+| fitted (18) | 3.05 / 2.48 / 2.72 / 2.51 | 2.69 ± 0.26 | 3.02 / 2.40 / 3.37 / 2.62 | +1.0 / -0.9 / +2.0 / -0.2 (0.30) |
+| held-out (27) | 8.98 / 9.11 / 7.79 / 9.39 | 8.82 ± 0.71 | 8.85 / 8.04 / 8.38 / 10.67 | +0.0 / -0.5 / -0.3 / +1.1 (1.45) |
+| held-out w/o rare (24) | 7.43 / 7.51 / 7.31 / 7.24 | 7.37 ± 0.12 | 7.48 / 7.04 / 7.16 / 7.44 | +0.5 / -1.4 / -0.9 / +0.3 (0.21) |
+
+Lowest point of each class's mean reserve trajectory (relative to the store), per run:
+| class | S39 runs | W25 runs | W50 runs |
+| --- | --- | --- | --- |
+| adult male | -0.026 / -0.021 / -0.021 / -0.023 | -0.026 / -0.029 / -0.025 / -0.024 | -0.022 / -0.027 / -0.023 / -0.020 |
+| female, lactating | -0.131 / -0.128 / -0.128 / -0.130 | -0.092 / -0.096 / -0.092 / -0.091 | -0.095 / -0.102 / -0.098 / -0.090 |
+| female, other | -0.049 / -0.063 / -0.042 / -0.057 | -0.039 / -0.046 / -0.040 / -0.044 | -0.036 / -0.042 / -0.043 / -0.038 |
+| infant 0.5–2 y | -0.183 / -0.175 / -0.186 / -0.174 | -0.152 / -0.152 / -0.161 / -0.157 | -0.165 / -0.160 / -0.146 / -0.157 |
+| infant 2–5 y | -0.073 / -0.148 / -0.071 / -0.079 | -0.070 / -0.074 / -0.069 / -0.065 | -0.069 / -0.081 / -0.072 / -0.067 |
+| infant < 0.5 y | -0.247 / -0.234 / -0.210 / -0.235 | -0.113 / -0.103 / -0.099 / -0.104 | -0.099 / -0.120 / -0.114 / -0.086 |
+| juvenile 5–12 y | -0.185 / -0.165 / -0.198 / -0.236 | -0.148 / -0.146 / -0.138 / -0.140 | -0.146 / -0.146 / -0.146 / -0.141 |
+
+Non-fruit share of eating time by class (1 - fruitShare of the class readout: fallback plus meat), mean over runs:
+| class | S39 | W25 | W50 |
+| --- | --- | --- | --- |
+| adult male | 0.07 | 0.07 | 0.07 |
+| female, other | 0.27 | 0.27 | 0.27 |
+| female, pregnant | 0.36 | 0.30 | 0.29 |
+| female, lactating | 0.31 | 0.28 | 0.27 |
+| lact: infant < 0.5 y | 0.54 | 0.33 | 0.35 |
+| lact: infant 0.5–2 y | 0.32 | 0.30 | 0.30 |
+| lact: infant ≥ 2 y | 0.24 | 0.25 | 0.24 |
+| juvenile 5–12 y | 0.15 | 0.11 | 0.11 |
+| infant 2–5 y | 0.20 | 0.18 | 0.18 |
+| infant 0.5–2 y | 0.45 | 0.43 | 0.45 |
+| infant < 0.5 y | nan | nan | nan |
+
+#### 12 months
+##### E1v, M12: S39 with pithFibreSwallowed W25, W50 against S39 (swallowed 1); 4 runs each (rngSalt 0-3); reference group in bench-run; printed by docs/staging/integrator-kit/scripts/judge_e1v.py from the JSON
+
+| run | commit | protocol | prescriptions | viability | starvation | starvation by seed | births / deaths | deaths by class | night: adults out of a nest, T-RHY-5 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| M12-S39 | 63d699a | 5d4fa5a2a500bce6 | 42 | FAIL 2 starvation deaths | 2 | 5:1, 11:1 | 23 / 7 | {'female, lactating: illness': 1, 'infant 0.5–2 y: orphaned infant, did not survive without its mother': 1, 'female, lactating: wounds from a fight with Jambiri': 1, 'adolescent: starvation': 1, 'adolescent: illness': 1, 'female, pregnant: starvation': 1, 'infant < 0.5 y: illness': 1} | adults out of a nest 2.66% of night; T-RHY-5 0.0245; night deaths 5; deaths 7 |
+| M12-S39-s1 | 63d699a | 5d4fa5a2a500bce6 | 42 | FAIL 2 starvation deaths | 2 | 5:1, 11:1 | 26 / 18 | {'infant 0.5–2 y: respiratory illness (outbreak)': 2, 'infant 2–5 y: respiratory illness (outbreak)': 1, 'female, lactating: illness': 2, 'infant 2–5 y: orphaned infant, did not survive without its mother': 3, 'female, lactating: snare injury': 1, 'infant < 0.5 y: respiratory illness (outbreak)': 1, 'adolescent: illness': 1, 'female, other: respiratory illness (outbreak)': 1, 'infant < 0.5 y: illness': 3, 'adult male: illness': 1, 'adolescent: starvation': 1, 'female, pregnant: starvation': 1} | adults out of a nest 2.58% of night; T-RHY-5 0.0242; night deaths 9; deaths 18 |
+| M12-S39-s2 | 63d699a | 5d4fa5a2a500bce6 | 42 | FAIL 2 starvation deaths | 2 | 48:1, 5:1 | 25 / 10 | {'adult male: illness': 2, 'infant 2–5 y: starvation': 1, 'infant 0.5–2 y: infanticide by Chiriku (East community)': 1, 'infant 0.5–2 y: illness': 1, 'infant < 0.5 y: illness': 3, 'adolescent: starvation': 1, 'female, other: illness': 1} | adults out of a nest 2.58% of night; T-RHY-5 0.0238; night deaths 3; deaths 10 |
+| M12-S39-s3 | 63d699a | 5d4fa5a2a500bce6 | 42 | pass | 0 | - | 25 / 6 | {'juvenile 5–12 y: illness': 2, 'female, other: wounds from a fight with Jambiri': 1, 'infant 2–5 y: illness': 1, 'infant 0.5–2 y: illness': 2} | adults out of a nest 2.59% of night; T-RHY-5 0.0240; night deaths 3; deaths 6 |
+| M12-W25 | 1af4543 | 5d4fa5a2a500bce6 | 42 | pass | 0 | - | 24 / 10 | {'adult male: respiratory illness (outbreak)': 2, 'female, other: respiratory illness (outbreak)': 1, 'female, lactating: respiratory illness (outbreak)': 1, 'adult male: illness': 2, 'female, lactating: wounds from a fight with Jambiri': 1, 'infant < 0.5 y: illness': 1, 'female, lactating: illness': 1, 'infant 0.5–2 y: illness': 1} | adults out of a nest 2.44% of night; T-RHY-5 0.0211; night deaths 2; deaths 10 |
+| M12-W25-s1 | 1af4543 | 5d4fa5a2a500bce6 | 42 | pass | 0 | - | 26 / 6 | {'female, other: illness': 1, 'adult male: illness': 3, 'infant < 0.5 y: illness': 1, 'infant < 0.5 y: infanticide by Koruza (West community)': 1} | adults out of a nest 2.56% of night; T-RHY-5 0.0220; night deaths 2; deaths 6 |
+| M12-W25-s2 | 1af4543 | 5d4fa5a2a500bce6 | 42 | pass | 0 | - | 24 / 7 | {'adult male: illness': 4, 'infant < 0.5 y: illness': 2, 'infant < 0.5 y: infanticide by Koruza (West community)': 1} | adults out of a nest 2.52% of night; T-RHY-5 0.0218; night deaths 3; deaths 7 |
+| M12-W25-s3 | 1af4543 | 5d4fa5a2a500bce6 | 42 | pass | 0 | - | 26 / 14 | {'adult male: illness': 3, 'infant < 0.5 y: illness': 3, 'adolescent: snare injury': 1, 'infant 2–5 y: illness': 1, 'infant 0.5–2 y: illness': 2, 'adult male: respiratory illness (outbreak)': 1, 'female, lactating: respiratory illness (outbreak)': 1, 'infant 2–5 y: respiratory illness (outbreak)': 2} | adults out of a nest 2.41% of night; T-RHY-5 0.0207; night deaths 5; deaths 14 |
+| M12-W50 | 1af4543 | 5d4fa5a2a500bce6 | 42 | pass | 0 | - | 26 / 7 | {'female, other: illness': 1, 'infant < 0.5 y: illness': 4, 'female, other: respiratory illness (outbreak)': 1, 'infant 0.5–2 y: respiratory illness (outbreak)': 1} | adults out of a nest 2.53% of night; T-RHY-5 0.0220; night deaths 3; deaths 7 |
+| M12-W50-s1 | 1af4543 | 5d4fa5a2a500bce6 | 42 | pass | 0 | - | 24 / 12 | {'female, pregnant: illness': 1, 'adult male: respiratory illness (outbreak)': 3, 'infant < 0.5 y: infanticide by Koruza (West community)': 1, 'adult male: illness': 1, 'female, other: respiratory illness (outbreak)': 1, 'female, lactating: respiratory illness (outbreak)': 1, 'infant 2–5 y: respiratory illness (outbreak)': 2, 'infant 0.5–2 y: illness': 1, 'infant < 0.5 y: illness': 1} | adults out of a nest 2.52% of night; T-RHY-5 0.0220; night deaths 5; deaths 12 |
+| M12-W50-s2 | 1af4543 | 5d4fa5a2a500bce6 | 42 | pass | 0 | - | 25 / 5 | {'female, lactating: illness': 1, 'infant 0.5–2 y: orphaned infant, did not survive without its mother': 1, 'infant 0.5–2 y: illness': 2, 'female, other: illness': 1} | adults out of a nest 2.52% of night; T-RHY-5 0.0223; night deaths 2; deaths 5 |
+| M12-W50-s3 | 1af4543 | 5d4fa5a2a500bce6 | 42 | pass | 0 | - | 29 / 20 | {'infant < 0.5 y: illness': 6, 'adult male: illness': 3, 'infant 2–5 y: illness': 1, 'infant 0.5–2 y: illness': 2, 'adult male: respiratory illness (outbreak)': 3, 'female, lactating: respiratory illness (outbreak)': 1, 'female, pregnant: respiratory illness (outbreak)': 1, 'infant 0.5–2 y: orphaned infant, did not survive without its mother': 1, 'juvenile 5–12 y: respiratory illness (outbreak)': 1, 'infant 2–5 y: respiratory illness (outbreak)': 1} | adults out of a nest 2.49% of night; T-RHY-5 0.0219; night deaths 9; deaths 20 |
+
+**Starvation deaths over the seed-runs, by class** (prereg §4):
+
+| arm | seed-runs | starvation deaths | by class |
+| --- | --- | --- | --- |
+| S39 (swallowed 1) | 20 | 6 | adolescent 3, female, pregnant 2, infant 2–5 y 1 |
+| W25 (swallowed 0.25) | 20 | 0 | - |
+| W50 (swallowed 0.5) | 20 | 0 | - |
+
+| sum, W25 (rows scored in all 8 runs; for information) | S39: 4 runs | mean ± SD | W25: 4 runs | z of each W25 run (rngSalt 0 first; SD used) |
+| --- | --- | --- | --- | --- |
+| fitted (27) | 4.15 / 4.41 / 4.66 / 4.38 | 4.40 ± 0.21 | 3.75 / 4.48 / 4.25 / 4.80 | -2.0 / +0.2 / -0.4 / +1.2 (0.30) |
+| held-out (35) | 15.19 / 14.52 / 14.51 / 16.38 | 15.15 ± 0.88 | 14.01 / 14.62 / 15.55 / 14.83 | -0.7 / -0.3 / +0.2 / -0.2 (1.45) |
+| held-out w/o rare (32) | 13.56 / 13.47 / 13.32 / 13.92 | 13.57 ± 0.26 | 13.23 / 13.56 / 13.81 / 13.45 | -1.2 / -0.0 / +0.8 / -0.4 (0.26) |
+
+| sum, W50 (rows scored in all 8 runs; for information) | S39: 4 runs | mean ± SD | W50: 4 runs | z of each W50 run (rngSalt 0 first; SD used) |
+| --- | --- | --- | --- | --- |
+| fitted (27) | 4.15 / 4.41 / 4.66 / 4.38 | 4.40 ± 0.21 | 5.82 / 3.56 / 4.23 / 6.32 | +4.2 / -2.5 / -0.5 / +5.7 (0.30) |
+| held-out (35) | 15.19 / 14.52 / 14.51 / 16.38 | 15.15 ± 0.88 | 15.05 / 15.39 / 16.09 / 16.95 | -0.1 / +0.1 / +0.6 / +1.1 (1.45) |
+| held-out w/o rare (32) | 13.56 / 13.47 / 13.32 / 13.92 | 13.57 ± 0.26 | 13.54 / 13.73 / 14.50 / 13.93 | -0.1 / +0.6 / +3.3 / +1.3 (0.26) |
+
+Lowest point of each class's mean reserve trajectory (relative to the store), per run:
+| class | S39 runs | W25 runs | W50 runs |
+| --- | --- | --- | --- |
+| adult male | -0.026 / -0.021 / -0.021 / -0.023 | -0.026 / -0.029 / -0.025 / -0.024 | -0.022 / -0.027 / -0.023 / -0.020 |
+| female, lactating | -0.141 / -0.134 / -0.128 / -0.142 | -0.092 / -0.096 / -0.092 / -0.091 | -0.095 / -0.102 / -0.098 / -0.090 |
+| female, other | -0.061 / -0.063 / -0.059 / -0.057 | -0.039 / -0.046 / -0.040 / -0.044 | -0.036 / -0.042 / -0.043 / -0.038 |
+| infant 0.5–2 y | -0.227 / -0.200 / -0.190 / -0.175 | -0.152 / -0.152 / -0.161 / -0.157 | -0.165 / -0.160 / -0.146 / -0.157 |
+| infant 2–5 y | -0.074 / -0.148 / -0.084 / -0.079 | -0.075 / -0.074 / -0.069 / -0.074 | -0.069 / -0.081 / -0.072 / -0.067 |
+| infant < 0.5 y | -0.257 / -0.234 / -0.220 / -0.251 | -0.113 / -0.103 / -0.099 / -0.104 | -0.099 / -0.120 / -0.114 / -0.086 |
+| juvenile 5–12 y | -0.206 / -0.168 / -0.222 / -0.268 | -0.148 / -0.146 / -0.138 / -0.140 | -0.146 / -0.146 / -0.146 / -0.141 |
+
+Non-fruit share of eating time by class (1 - fruitShare of the class readout: fallback plus meat), mean over runs:
+| class | S39 | W25 | W50 |
+| --- | --- | --- | --- |
+| adult male | 0.06 | 0.06 | 0.06 |
+| female, other | 0.28 | 0.25 | 0.24 |
+| female, pregnant | 0.36 | 0.27 | 0.28 |
+| female, lactating | 0.31 | 0.26 | 0.26 |
+| lact: infant < 0.5 y | 0.47 | 0.30 | 0.30 |
+| lact: infant 0.5–2 y | 0.31 | 0.27 | 0.28 |
+| lact: infant ≥ 2 y | 0.23 | 0.23 | 0.23 |
+| juvenile 5–12 y | 0.20 | 0.11 | 0.12 |
+| infant 2–5 y | 0.20 | 0.18 | 0.18 |
+| infant 0.5–2 y | 0.42 | 0.39 | 0.41 |
+| infant < 0.5 y | 0.77 | 0.77 | nan |
