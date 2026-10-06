@@ -1,4 +1,4 @@
-# EY: three years in one run (registered 6 October 2026, 03:10 New York time, before any run)
+# EY: three years in one run (registered 6 October 2026, 03:00 New York time (first commit 70c699f), before any run)
 
 User, 6 October 2026, verbatim: "you are using gliner? If there is no decider model cost and its just scoring judging,
 and even them go for longer time horizin, try a few years in one swing running it as fast as possible." These runs use
@@ -23,7 +23,7 @@ these runs start from day 0 in a frozen detached checkout of the commit that hol
 | Y3-W50, Y3-W50-s1 | S39 + `pithFibreSwallowed` 0.5 (`M6-W50.json`, `M6-W50-s1.json`) | rngSalt 0 and 1 |
 | Y3-T0 | today's model (`M6-T0.json`, no overrides) | rngSalt 0 |
 
-Seeds 48, 7, 21, 5, 11 (the confirm seeds), burn-in 30 days, 1,095 scored days (`e-run.ts plan --days 1095 --burn-in
+Seeds 48, 7, 21, 5, 11 (the confirm seeds), burn-in 30 days, 1,095 scored days (`e-run.ts plan --seeds 48,7,21,5,11 --days 1095 --burn-in
 30`), natural aging. 25 seed-runs in all. S39 with all the fibre swallowed is not an arm: it starves in the first year
 (6 deaths in 20 seed-runs) and the user asked for speed. W50 runs whatever its 12-month result (not known when this
 was written): if it starves at 12 months, three years show what that does to a population. Up to 10 simulation jobs at
