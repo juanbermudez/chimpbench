@@ -214,6 +214,12 @@ test('the batching scorer gathers calls made at once, keeps answers aligned and 
   assert.deepEqual(scores.map(s => [s.calls, s.refused]), [[8, ''], [4, ''], [1, '']]);
   assert.equal(scorer.stats.sent - sent, 13);
   assert.ok(Math.max(...batches) <= 4);
+  // a worker that refuses a whole batch for one packet (33 criteria, as the real one does): only that packet's record is refused
+  const picky: Scorer = { async score(batch: ScoreItem[]) { const ns = batch.map(b => Object.keys((b.packet as ReturnType<typeof buildWildQuestion>).questions.action.criteria).length); if (ns.some(n => n > 32)) throw new Error('ValueError: invalid decision criteria'); return ns.map(n => Array.from({ length: n }, () => 1 / n)); } };
+  const careful = batchingScorer(picky, 8), mixed = await runKernel(wildGlinerKernel(careful, 'base'), [choice(5, 'p0#1'), choice(33, 'p1#1'), choice(12, 'p2#1'), choice(4, 'p3#1')], { concurrency: 4 });
+  assert.deepEqual(mixed.map(s => s.refused), ['', 'kernel-error: ValueError: invalid decision criteria', '', '']);
+  assert.equal(careful.stats.retried, 4);
+  assert.equal((await runKernel(fanOutKernel(wildGlinerKernel(careful, 'base'), 'fan2', { narrow: narrowWildRequest }), [choice(33, 'p1#1')]))[0].refused, '', 'fanned out, the 33-option record is answered');
   // a failing worker refuses every call of its batch
   const broken = batchingScorer({ async score() { throw new Error('worker died'); } }, 4);
   assert.match((await runKernel(wildGlinerKernel(broken, 'base'), [choice(5)]))[0].refused, /kernel-error: worker died/);
