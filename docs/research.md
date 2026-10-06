@@ -4336,3 +4336,11 @@ from DataCite (checked 6 October 2026). Access level is stated per entry: FT = f
   A presence matrix at 15-minute scans, so "available partners" would mean "everyone seen in the party", and the
   observers' definition of a subgroup (distance, visibility) is in the full text, which is not opened. Two years only.
   Raw coordinates are not in the deposit (no spatial column is described).
+- **What the files contain: not obtained.** The landing page lists the chimpanzee files as
+  `subgroup_composition_chimpanzees_2008.csv` (698.34 KB) and `subgroup_composition_chimpanzees_2009.csv` (882.16 KB).
+  Their public per-file links `https://datadryad.org/downloads/file_stream/74570` and `/74571` each returned HTTP 403
+  (bare "403 Forbidden" page, `server: awselb/2.0`) on 6 October 2026. Tried once each, not retried, no header changes.
+  **Needs a manual download by the user** into `data/raw/dryad-51b68/` (only the two chimpanzee files). Until then
+  the unit of observation, the number of individuals and scans, who the individuals are and the observation effort are
+  unknown. From the repository description only: one row per 15-minute scan and one 0/1 column per individual, so the
+  party is recorded (the set of animals present) but no chosen partner.
