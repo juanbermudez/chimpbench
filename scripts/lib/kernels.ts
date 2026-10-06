@@ -4,8 +4,8 @@
 // thin adapters onto the kernel interface (src/kernel/types.ts), so the same request, answer check and legality
 // re-check apply as for every other kernel (src/kernel/loop.ts answerWaiting). The rules, the null kernel, the HTTP
 // kernel and the gated Jev client need no Node module and live in src/kernel/kernels.ts.
-import { buildLocalQuestion, estimateInputTokens, hasState, TOKEN_BUDGET, TOKEN_BUDGET_STATE } from '../../server/decide';
-import { KernelError, type Kernel } from '../../src/kernel/types';
+import { buildLocalQuestion, estimateInputTokens, hasState, TOKEN_BUDGET, TOKEN_BUDGET_STATE, type LocalPacket } from '../../server/decide';
+import { KernelError, type Kernel, type KernelRequest } from '../../src/kernel/types';
 import { optionFeatures } from '../ft-features';
 import type { Scorer } from '../ft-society';
 
@@ -17,14 +17,16 @@ const argmax = (p: number[]) => p.reduce((b, v, i) => v > p[b] ? i : b, 0);
  * through a batch scorer. The packet is the serving text of server/decide.ts (buildLocalQuestion), built from the
  * request's context and nothing else. A packet over the estimate budget is refused, so the rules decide, as
  * scripts/ft-contexts.ts capture() does (TOKEN_BUDGET; TOKEN_BUDGET_STATE for a context that carries Track E's state).
+ * `opts` (stage RW bench, scripts/lib/rw-serialize.ts): another text packet of the same shape for the request and its own
+ * budget on the estimate; without it this is the serving path, unchanged.
  */
-export function glinerKernel(scorer: Scorer, adapter: string): Kernel {
+export function glinerKernel(scorer: Scorer, adapter: string, opts: { packet?: (request: KernelRequest) => LocalPacket; budget?: number } = {}): Kernel {
   return {
     id: 'gliner', label: `GLiNER2.5-Decide (${adapter})`,
     async decide(request) {
-      const packet = buildLocalQuestion(request.context);
+      const packet = opts.packet ? opts.packet(request) : buildLocalQuestion(request.context);
       const tokens = estimateInputTokens(packet.state, packet.questions);
-      if (tokens > (hasState(request.context) ? TOKEN_BUDGET_STATE : TOKEN_BUDGET)) throw new KernelError(`packet over the token budget (${tokens})`);
+      if (tokens > (opts.budget ?? (hasState(request.context) ? TOKEN_BUDGET_STATE : TOKEN_BUDGET))) throw new KernelError(`packet over the token budget (${tokens})`);
       const [probabilities] = await scorer.score([{ adapter, packet }]);
       const index = argmax(probabilities);
       return { index, choice: `c${index}`, probabilities, inputTokens: tokens, model: adapter };
