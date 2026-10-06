@@ -418,6 +418,8 @@ Accuracy hardly moves with the order (range 0.018), but the answer does: the unt
 - An identical packet was sent to the model once per run and its answer reused. The model's answers were taken as deterministic; the 448 of 448 match with A7 supports that.
 - The null kernel and the stack ran under the harness's five orders, the model under three (development) and one (training).
 
+**Tests.** `tests/rw-fanout.test.ts`: 11 tests, 11 pass (synthetic records, fake kernels, a fake worker). Full `pnpm test`, once at the end (1-minute load 14.7 at the start): 997 tests, 996 pass, 0 fail, 1 skipped (the stand-in artifact absent from the worktree, as before). `tsc --noEmit -p .` and `gen-params --check` clean; the goldens and the field pin did not move. The sealed part was not opened (`docs/staging/rw-sealed-log.md` has no entry).
+
 ## 15. Design note for stage R2: the same wrapper, and "kind first, then target", on the simulation's own menus (no code; nothing here has been run)
 
 **Where the simulation stands.** `buildRequest` (`src/sim/request.ts`) sends at most 8 options, chosen from the legal list by `boundedCandidates`: the rules' pick, a response to a disturbance, rest, then **the best target of each action type by the rules' score**, then other partners. So today the rules choose the target of most acts for every kernel, and partners compete with acts for the 8 places. The project's Jev notes measured what that does to a model (N4: probability on social options rose from 0.27 with one social option to 0.73 with four or more, at a fixed menu size) and proposed one entry per kind of activity with a sub-question per kind that has several concrete options (`docs/research.md`, "Engineering sources").
