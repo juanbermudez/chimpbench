@@ -177,19 +177,22 @@ function onConflicts(o: Observer, world: World, since: number): void {
     const time = lc.time;
     const l = byId.get(lc.opponentId);
     if (!l) continue;
-    let contact = false;
+    let contact = false, fightId = -1;
     const inter = world.interactions;
     for (let i = inter.length - 1, k = 0; i >= 0 && k < 60; i--, k++) {
       const it = inter[i];
-      if (it.kind === 'fight' && (it.end === null || it.end >= time - 2 * MIN) && it.participants.includes(w.id) && it.participants.includes(l.id)) { contact = true; break; }
+      if (it.kind === 'fight' && (it.end === null || it.end >= time - 2 * MIN) && it.participants.includes(w.id) && it.participants.includes(l.id)) { contact = true; fightId = it.id; break; }
     }
-    let detected = false;
+    let detected = false, by: Team | null = null;
     for (const tm of o.teams) {
       if (tm.state !== 2) continue;
-      if (tm.focal === w.id || tm.focal === l.id || d2(tm.x, tm.z, l.position[0], l.position[2]) <= vis * vis || d2(tm.x, tm.z, w.position[0], w.position[2]) <= vis * vis) { detected = true; break; }
+      if (tm.focal === w.id || tm.focal === l.id || d2(tm.x, tm.z, l.position[0], l.position[2]) <= vis * vis || d2(tm.x, tm.z, w.position[0], w.position[2]) <= vis * vis) { detected = true; by = tm; break; }
     }
     const rec: ConflictRec = { t: time, winner: w.id, loser: l.id, troop: w.troopId, contact, detected, pc: -1, mc: -3, thirdToWinner: 0, thirdToLoser: 0 };
     o.rec.conflicts.push(rec);
+    // obs-fixes amendment 1 (prereg §2): the loser died of this contest's wounds and a team saw it decided: an observed
+    // killing, logged here because the two-minute capture can miss the contest's own event (a follow ends when its focal dies)
+    if (by && diedOfFightWounds(l) && l.deathTime === time) logFightKill(o, l, w.id, fightId, by.index, by.focal === w.id || by.focal === l.id ? 3 : 1);
     if (contact) o.rec.truth.fights++;
     if (detected) o.pc.push({ conflict: o.rec.conflicts.length - 1, a: w.id, b: l.id, t: time, until: time + o.cfg.pcWindowMin * MIN });
   }
@@ -407,18 +410,22 @@ function processInteractions(o: Observer, world: World): void {
  * obs-fixes (prereg §2): a team that detected a contest inside a community logs the killing when a participant died of its
  * wounds while it lasted (T-LET-1 counts killings within the community; the sim writes no `kill` interaction for them).
  * Same team and detection as the contest's own event, once per victim; called when the contest's interaction has ended.
+ * Amendment 1: the decided-conflict record is a second route to the same event (onConflicts).
  */
 function fightKill(o: Observer, world: World, it: Interaction, ev: EventRec): void {
-  if (o.cfg.demography || it.end === null) return;
-  const byId = index(world).byId, events = o.rec.events;
+  if (it.end === null) return;
+  const byId = index(world).byId;
   for (const id of fightVictims(byId, it.kind, it.start, it.end, it.participants)) {
-    const v = byId.get(id)!, t = v.deathTime!;
-    let logged = false;
-    for (let i = events.length - 1; i >= 0 && events[i].t >= t - 1 && !logged; i--) logged = events[i].kind === FIGHT_KILL && events[i].target === id;
-    if (logged) continue;
-    const lc = v.lastConflict, killer = lc && lc.time === t ? lc.opponentId : it.participants.find(p => p !== id) ?? -1;
-    events.push({ id: it.id, t, end: t, kind: FIGHT_KILL, actor: killer, target: id, parts: [killer, id], troop: v.troopId, team: ev.team, detect: ev.detect, x: v.position[0], z: v.position[2] });
+    const v = byId.get(id)!, lc = v.lastConflict;
+    logFightKill(o, v, lc && lc.time === v.deathTime ? lc.opponentId : it.participants.find(p => p !== id) ?? -1, it.id, ev.team, ev.detect);
   }
+}
+/** Writes the `fight-kill` event of a victim once (a contest's event and its decided-conflict record can both report it). */
+function logFightKill(o: Observer, v: Chimp, killer: number, contest: number, team: number, detect: number): void {
+  if (o.cfg.demography) return;
+  const events = o.rec.events, t = v.deathTime!;
+  for (let i = events.length - 1; i >= 0 && events[i].t >= t - 1; i--) if (events[i].kind === FIGHT_KILL && events[i].target === v.id) return;
+  events.push({ id: contest, t, end: t, kind: FIGHT_KILL, actor: killer, target: v.id, parts: [killer, v.id], troop: v.troopId, team, detect, x: v.position[0], z: v.position[2] });
 }
 
 function countAM(ids: number[], byId: Map<number, Chimp>): number { let n = 0; for (const id of ids) { const c = byId.get(id); if (c && isAdultMale(c)) n++; } return n; }

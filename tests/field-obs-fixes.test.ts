@@ -152,6 +152,26 @@ test('obs-fixes 2: a fight death no team detected is in the truth value, not in 
   assert.ok(Math.abs(v.truth! * v.den! - (rec.truth.killings + 1)) < 1e-9);
 });
 
+test('obs-fixes 2, amendment 1: a focal that dies in a fight whose own event is never captured is an observed killing (the decided-conflict record)', () => {
+  const { world, obs, tm, focal } = morning(7);
+  const winner = index(world).alive.find(c => c.troopId === tm.troop && c.id !== focal.id && c.age >= 15)!;
+  // the fatal contest is decided inside a tick (src/sim/conflict.ts decided, then the loser's death); its interaction would be
+  // captured only at the next even minute, after the follow has ended with its focal's death, so no event of it exists
+  tickWorld(world);
+  winner.lastConflict = { opponentId: focal.id, time: world.time, won: true }; focal.lastConflict = { opponentId: winner.id, time: world.time, won: false };
+  world.stats.conflicts++;
+  killChimp(world, focal, `wounds from a fight with ${winner.name}`, 2);
+  observerStep(obs, world);
+  stepTo(world, obs, 4 * MINUTE);
+  const rec = finishObserver(obs, world);
+  const c = rec.conflicts.find(x => x.loser === focal.id && x.t === focal.deathTime)!;
+  assert.ok(c && c.detected, 'the team saw the conflict decided (its focal lost it)');
+  const ev = rec.events.filter(e => e.kind === FIGHT_KILL);
+  assert.equal(ev.length, 1);
+  assert.deepEqual([ev[0].target, ev[0].actor, ev[0].t, ev[0].team, ev[0].detect], [focal.id, winner.id, focal.deathTime, tm.index, 3]);
+  assert.equal(metric('T-LET-1').compute!(derive(rec)).num, 1);
+});
+
 test('obs-fixes: the outcome rules (infantKilled, fightVictims) on constructed animals', () => {
   const c = (id: number, over: Partial<Chimp>) => ({ id, alive: true, deathTime: null, causeOfDeath: null, ...over }) as unknown as Chimp;
   const byId = new Map<number, Chimp>([
@@ -265,6 +285,12 @@ test('obs-fixes re-derivation: records saved before the fixes are brought to the
   assert.deepEqual(out.counted.map(c => [c.victim, c.route]).sort(), [[b.id, `event ${FIGHT_KILL}`], [victim.id, 'event infanticide']].sort());
   assert.deepEqual(out.truth, { intergroup: 0, infanticide: 1, fight: 1 });
   assert.deepEqual(Object.keys(out.after!).sort(), [...REVISED_ROWS].sort());
+  // amendment 1: a saved decided-conflict record a team saw gives the event when the contest's own event was never captured
+  const viaConflict = (detected: boolean) => { const r = saved(); r.events = r.events.filter(e => e.kind !== 'fight'); r.conflicts.push({ t: T, winner: a.id, loser: b.id, troop, contact: true, detected, pc: -1, mc: -3, thirdToWinner: 0, thirdToLoser: 0 }); return { r, up: upgradeRecords(r, world) }; };
+  const seen = viaConflict(true);
+  assert.deepEqual([seen.up.fightKills, seen.up.fightVictims], [1, [b.id]]);
+  assert.deepEqual(seen.r.events.filter(e => e.kind === FIGHT_KILL).map(e => [e.target, e.actor, e.t]), [[b.id, a.id, T]]);
+  assert.equal(viaConflict(false).up.fightKills, 0, 'a conflict no team saw gives none');
   const wrong = rederiveSeed(21, saved(), world, { ...before, 'T-LET-1': { value: 1, num: 3, den: 3, n: 3 } });
   assert.equal(wrong.status, 'not re-derivable'); assert.equal(wrong.after, null);
   assert.match(wrong.why!, /2 killings by the old rule; the saved run printed 3/);

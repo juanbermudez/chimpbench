@@ -3,8 +3,8 @@
 // and causes, and the observer's records), so the rows whose observer changed can be re-derived without a simulation.
 // The fixes changed no detection and no random draw, so the upgraded records are those a fresh run would write for these
 // rows: an `infanticide` event whose target did not die in it is an attack (src/field/protocols.ts infantKilled), a
-// detected contest inside a community with a participant dead of its wounds gains a `fight-kill` event (fightVictims),
-// and `truth.kills` keeps one fatal record per victim. Idempotent: records already in the new form are left as they are.
+// contest inside a community that a team detected (its event, fightVictims; or its decided-conflict record, amendment 1)
+// with a participant dead of its wounds gains a `fight-kill` event, and `truth.kills` keeps one fatal record per victim. Idempotent: records already in the new form are left as they are.
 // Outside the protocol hash (scripts/lib); it reads the world and writes the records it is given.
 import { diedOfFightWounds, fightVictims, infantKilled } from '../../src/field/protocols';
 import { FIGHT_KILL, INFANTICIDE_ATTACK, type EventRec, type Records } from '../../src/field/records';
@@ -35,13 +35,23 @@ export function upgradeRecords(rec: Records, world: World): UpgradeCount {
   }
   rec.truth.kills = kept;
   const logged = new Set(rec.events.filter(e => e.kind === FIGHT_KILL).map(e => e.target)), added: EventRec[] = [];
+  const add = (v: Chimp, killer: number, contest: number, team: number, detect: number) => {
+    if (logged.has(v.id)) return;
+    logged.add(v.id);
+    const t = v.deathTime!;
+    added.push({ id: contest, t, end: t, kind: FIGHT_KILL, actor: killer, target: v.id, parts: [killer, v.id], troop: v.troopId, team, detect, x: v.position[0], z: v.position[2] });
+    out.fightKills++; out.fightVictims.push(v.id);
+  };
+  // amendment 1: the decided-conflict record of the fatal contest, when a team saw it (it names no team and no interaction:
+  // the event carries the team of the victim's community and no contest id; no row reads either)
+  for (const c of rec.conflicts) {
+    const v = byId.get(c.loser);
+    if (c.detected && v && diedOfFightWounds(v) && v.deathTime === c.t) add(v, c.winner, -1, Math.max(0, rec.troops.indexOf(v.troopId)), 1);
+  }
   for (const e of rec.events) {
     for (const id of fightVictims(byId, e.kind, e.t, e.end, e.parts)) {
-      if (logged.has(id)) continue;
-      logged.add(id);
-      const v = byId.get(id)!, t = v.deathTime!, lc = v.lastConflict, killer = lc && lc.time === t ? lc.opponentId : e.parts.find(p => p !== id) ?? -1;
-      added.push({ id: e.id, t, end: t, kind: FIGHT_KILL, actor: killer, target: id, parts: [killer, id], troop: v.troopId, team: e.team, detect: e.detect, x: v.position[0], z: v.position[2] });
-      out.fightKills++; out.fightVictims.push(id);
+      const v = byId.get(id)!, lc = v.lastConflict;
+      add(v, lc && lc.time === v.deathTime ? lc.opponentId : e.parts.find(p => p !== id) ?? -1, e.id, e.team, e.detect);
     }
   }
   rec.events.push(...added);
