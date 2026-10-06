@@ -306,3 +306,56 @@ What it shows: on menus of the size it was built for, the untuned small model re
 rules and the general model; its deficit on this benchmark is entirely the menu width. What it does not show: anything
 about body state or feeding, which these records do not hold. For R4 the measurable target on this benchmark is
 therefore the wide menus (0.18 against the stack's 0.42), by training or by splitting a wide set into rounds of 8.
+
+## 14. Amendment A8: fanning a wide menu out to a kernel built for 8 (registered 6 October 2026, before its code and before any model run through it)
+
+**Why.** A7: untuned GLiNER2.5-Decide equals the three-rule stack on menus of 8 or fewer (0.522 against 0.542) and falls to chance on wider ones (0.179 against 0.415; 0.033 from 17 options up; three 33-option records refused). The user (relayed by the integrator): "why dont you install the jev skill, some of the techniqies could be applied to glineer like dfanning out but explore their docs to help you". The skill card was not available; TypeSafe's public documentation and the project's own Jev design notes were read and entered in `docs/research.md` ("Engineering sources: answering a wide menu with a narrow kernel") before this entry. Techniques only: no call to Jev, no key, no Jev output as a label. One thing the reading showed and is stated here: Jev's own documentation tells callers to give Jev the full list (up to 255 options); level-by-level choice with a beam, and one score per candidate, are its answers for hierarchies and re-ranking. Splitting a flat menu is therefore this project's answer to a kernel whose packet and training stop at 8, not a Jev recommendation.
+
+### 14.1 The wrapper
+
+`fanOutKernel(inner, variant)` (`src/kernel/fanout.ts`) is itself a kernel of R1's interface: a request in, one option position and a probability per option out. It knows nothing of the inner kernel but that interface, holds no state, and takes every random draw from the loop (`env.random`), so a run is fixed by the run's seed, shuffle number and record. A menu of **8 or fewer is passed through unchanged, in one call**: on such records every variant is the plain kernel by construction.
+
+- **Groups.** The options still in play are shuffled (Fisher–Yates on the loop's draw) and dealt into ⌈m / 8⌉ groups whose sizes differ by at most one (so no group is a leftover of one). Each group is one sub-menu, asked once, in the dealt order. The seed and shuffle are the run's, written with every result.
+- **The sub-request** is a valid request of the same kind with only the group's options. For a wild packet (`narrowWildRequest`, `src/rw/packet.ts`): the focal male and the party size unchanged; `social` and the options are the group's males, renumbered; the mask follows them; each memory and history line keeps only the group's males, in the same order and with the same ties, and a line left empty is dropped. It passes `wildRequestError` like any wild request. So a sub-packet has the shape of the packets the kernel handles at 8 or fewer, and says nothing about males who are not options in it (the documentation's advice against state unrelated to the question). The alternative, the full lines with a subset of options, is not run. For any other request the default keeps the context and cuts `candidates` and `options` to the group.
+- **Reading a group's answer.** The answer passes R1's answer check. Options are ranked by the kernel's probability, the answered option first; a remaining tie goes to the earlier place in the dealt group, which is random.
+- **Refusals.** A sub-call that throws or fails the answer check refuses the whole record: a miss, counted. No sub-menu is filled in by chance.
+- **Sub-calls are independent**: within a round they may be asked at once; each gets its own draw stream seeded from the loop's draw before any is asked.
+
+**Three variants; `fan2` is primary.**
+
+| variant | rule | kernel calls for a menu of n |
+| --- | --- | --- |
+| **`fan2` (primary)** | rounds: every group sends its best 2 forward; repeat until 8 or fewer remain; then one final choice among them | 9–16: 3; 17–24: 4; 25–32: 5; 33: 8 (5 groups, then 2, then the final); 76: 14 |
+| `fan1` | the same, every group sends its best 1 forward | 9–16: 3; 17–24: 4; 25–32: 5; 33: 6; 76: 12 |
+| `pool3` | no rounds and no final: three independent deals of the whole menu into groups; a male's score in a group is his probability times the group's size (1 is an even share); his score is the mean over the three deals; the highest score is the answer (a tie goes to the earlier option of the request) | 3 × ⌈n / 8⌉: 9–16: 6; 17–24: 9; 25–32: 12; 33: 15 |
+
+- **The answer.** `fan2`, `fan1`: the final call's pick; its finalists carry the final call's probabilities and every other option 0. `pool3`: the scores, scaled to sum to 1. Log loss is not reported for a fanned-out kernel (its probabilities are not a distribution over the menu). The answer also carries the number of calls made and, as **confidence**, the top probability of the final call (`pool3`: the top scaled score).
+- Why 2 as primary: a group round is the plain kernel on a menu of 5 to 8, where its first choice is right about half the time (A7); keeping one loses the partner in the first round about half the time, keeping two gives the final round a chance to correct it. `fan1` is the cheaper control; `pool3` asks whether scores from different groups can be compared at all.
+
+### 14.2 Confidence-gated routing (a separate readout; no extra model call)
+
+For a model kernel K and the three-rule stack on the same records and shuffle: the routed answer is K's when K's confidence is at least t, otherwise the stack's; a refused record routes to the stack. Two thresholds, both fixed before the development part is read: **t = 0.6** (the floor in the documentation's example) and **t\*** chosen on the **training part only**, the value on the grid 0, 0.05, …, 1 that maximises the routed top-1 there (a tie goes to the smaller t, the least routing; t = 0 never routes, t = 1 nearly always). Reported on development for plain GLiNER and for `fan2`: routed top-1 with its interval, the share of records routed, and the paired differences against the stack and against K unrouted. A t\* of 0 or 1 is a finding (routing adds nothing, or the kernel adds nothing), not a failure of the readout.
+
+### 14.3 The runs (untuned GLiNER2.5-Decide, adapter `base`, `mps`; train and development only; the sealed part stays sealed; no Codex; nothing leaves this computer)
+
+- One model process. Before loading: `sysctl -n vm.swapusage` and `uptime`, written into the results.
+- Sub-requests reach the worker through its own batch path, up to 16 packets a batch, and an identical text packet is sent once per run and its answer reused; calls are counted as asked, not as sent. **Check:** plain GLiNER on development, shuffle 0, must give A7's 0.373 (0.522 at 8 or fewer, 0.179 above; three refusals). If it does not, batches are set to 1 and the difference is reported.
+- Development (448 records): plain, `fan2`, `fan1`, `pool3` at shuffle 0; plain and `fan2` also at shuffles 1 and 2 (the option-order check GLiNER lacks). Training (977 records): plain and `fan2` at shuffle 0 (a second sample, and the routing threshold). The null kernel and the stack on the same records and shuffles.
+- Expected cost (arithmetic from 14.1 and the set sizes): about 3,000 kernel calls on development at shuffle 0, about 2,500 for its two further shuffles, about 2,500 on training; at 1 s a call unbatched, about two hours.
+
+### 14.4 Readouts and the rule for calling a difference
+
+Numbers are written by `scripts/rw-fanout-report.ts` from the per-record outputs (aggregates only in git: `docs/staging/rw-fanout-numbers.md`).
+
+- Top-1 of the answered option, with the 95% interval over focal males, for plain GLiNER, each variant, the stack and the null kernel: all records; 8 or fewer; more than 8; 9 to 16; 17 and over.
+- **Primary comparison (development, menus of more than 8, shuffle 0): `fan2` minus plain GLiNER, and `fan2` minus the stack**, paired on the same records: the mean difference with a 95% interval from the same cluster bootstrap over focal males (2,000 draws, seed 20261006), the discordant counts and a two-sided sign test. **A difference is called one only if the paired interval excludes 0.** The same two comparisons on the training part are a second sample, reported beside it, not pooled.
+- Secondary, same form: `fan1` and `pool3` against plain and against `fan2`; `fan2` against the stack over all records.
+- Kernel calls per record (mean, by set size, largest), seconds per record and per call (wall time of the run over its records and calls; the machine is shared, so these are upper bounds).
+- Routing (14.2). Order sensitivity for plain and `fan2`: top-1 per shuffle and its range, the share of records with the same male answered under all three shuffles, the mean relative position of the answer, answers on the first option against expectation.
+- "Closes the gap" means: on development menus of more than 8, `fan2` is above plain GLiNER by the rule above **and** its paired interval against the stack includes 0. Above plain but below the stack is "narrows"; neither is "does not help".
+
+**Prediction (mine, low confidence):** `fan2` reaches 0.28 to 0.36 on development menus of more than 8: above plain (0.18), below the stack (0.42); `fan1` a few points lower; `pool3` no better than `fan1`; routing at t\* lands within 0.02 of the stack.
+
+### 14.5 Tests (`tests/rw-fanout.test.ts`; synthetic records and fake kernels only)
+
+A kernel that is right whenever the partner is on its sub-menu is right through every variant, for sets of 9 to 76; a kernel that ranks him second in group rounds is right through `fan2` and wrong through `fan1`. Call counts as in the table. Every sub-request is a valid wild request of at most 8 options whose lines name only its own males; every option is in exactly one group per round and group sizes differ by at most one. The same seed gives the same groups and answer; another shuffle gives other groups. A menu of 8 or fewer makes one call with the request unchanged. A refused sub-call refuses the record. The routing readout and the threshold choice on hand-made records; the paired difference on hand-made records. The batching scorer against a fake worker.
