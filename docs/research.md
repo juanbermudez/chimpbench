@@ -4383,3 +4383,25 @@ from DataCite (checked 6 October 2026). Access level is stated per entry: FT = f
   `server: awselb/2.0`) on 6 October 2026. Tried once each, not retried, no header changes. **Needs a manual download
   by the user** into `data/raw/dryad-44j0zpchh/`. Until then the column names, row counts, number of females and the
   observation effort are unknown; the only description of the contents is the repository's text above.
+
+### Ngogo fission, full paper and supplement [sandel2026]
+
+- **Paper** [sandel2026] (so far Abs; full text and supplement requested). Sandel A, Mitani J, Langergraber K, Clark IR,
+  Lee K, Ren J, Kei YL, He Y, Reddy RB, Negrey J, Birungi C, Apamaku BA et al. 2026. Lethal conflict after group fission
+  in wild chimpanzees. *Science*. [doi:10.1126/science.adz4944](https://doi.org/10.1126/science.adz4944). Data and code:
+  Dryad [doi:10.5061/dryad.sf7m0cgkg](https://doi.org/10.5061/dryad.sf7m0cgkg) (version 9, 2026, CC0 per DataCite; in
+  `data/raw/dryad-sf7m0cgkg/`, see its `PROVENANCE.md`); space use: Zenodo
+  [doi:10.5281/zenodo.18603419](https://doi.org/10.5281/zenodo.18603419) (CC BY 4.0, in `data/raw/zenodo-18603419/`).
+- **What it measures.** A permanent fission of the Ngogo community, the largest known group of wild chimpanzees, from 30
+  years of behavioural observation and network analysis: an abrupt change from cohesion to polarization in 2015, two
+  distinct groups by 2018, then 24 attacks by one splinter group over seven years that killed at least seven mature
+  males and 17 infants of the other (abstract, as deposited with the data).
+- **Site and animals.** Ngogo, Kibale National Park, Uganda; eastern chimpanzee (*P. t. schweinfurthii*).
+- **Why the full text matters.** It should settle what a "party" is in the scans, what an empty proximity field means,
+  which individuals are in the focal sets (the 77 males of `docs/staging/rw-prereg.md`), the observation effort and the
+  definition of the two groups. Those are the main threats to validity named in that document (decision 5).
+- **Licence.** The paper: Science, copyright and access terms to be recorded after the retrieval attempt. The data: CC0.
+- **Evidence level.** [M] at abstract level, to be revised once the methods are read. The abstract is a primary
+  report of a single, unusual event in one community: a case, not a rate for communities in general.
+- **Limits.** One community and one fission; no claim about how often fissions or such killings occur elsewhere. The
+  count of 24 attacks, 7 males and 17 infants is the authors' (abstract).
