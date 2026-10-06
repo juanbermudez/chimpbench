@@ -1,7 +1,6 @@
 import type { Ctx } from './app';
 import type { Party, Troop, World } from '../types';
 import type { SocietyView } from './contracts';
-import { icon } from './icons';
 import { duration, esc } from './format';
 import { createCommunities, demography } from './communities';
 import { alphaCardHtml, ladderHtml } from './hierarchy';
@@ -9,15 +8,15 @@ import { renderInto } from './inspector';
 import { createUnitGrid } from './units';
 import { memberOrder } from './unit-view';
 
-// Right panel, community view: the communities list on top (communities.ts), the chosen community below (alpha and
-// tenure, parties, dominance ladders, links into the Society overlay) and its members as a unit grid at the bottom
-// (units.ts). Selecting an animal switches the panel to the chimp view (inspector.ts), whose back button returns here.
+// Right sidebar, Communities mode: the communities list on top (communities.ts), the chosen community below (alpha and
+// tenure, parties, dominance ladders, links into the sidebar's Society mode) and its members as a unit grid at the
+// bottom (units.ts). Selecting an animal shows it in the bottom chimp panel (inspector.ts); this sidebar stays put.
 
 const PARTY_WORD: Record<Party['kind'], string> = {
   foraging: 'Foraging', patrol: 'Patrol', hunting: 'Hunting', nesting: 'Nesting', consort: 'Consortship', social: 'Social', traveling: 'Traveling',
 };
-const SOC_LINKS: { view: SocietyView; label: string; ic: string }[] = [
-  { view: 'kinship', label: 'Kinship', ic: 'tree' }, { view: 'alliances', label: 'Bonds', ic: 'network' }, { view: 'alphas', label: 'Alpha history', ic: 'crown' },
+const SOC_LINKS: { view: SocietyView; label: string }[] = [
+  { view: 'kinship', label: 'Kinship' }, { view: 'alliances', label: 'Bonds' }, { view: 'alphas', label: 'Alpha history' },
 ];
 const MAX_PARTIES = 6;
 
@@ -55,7 +54,7 @@ function detailHtml(ctx: Ctx, t: Troop, parties: { p: Party; ids: number[] }[], 
       <details class="cp-lad" data-keep="lad-m-${t.id}"><summary>Males <span class="muted">${t.maleHierarchy.length}</span></summary>${ladderHtml(w, t, 'male', sel, ctx.ranks, true)}</details>
       <details class="cp-lad" data-keep="lad-f-${t.id}"><summary>Females <span class="muted">${t.femaleHierarchy.length}</span></summary>${ladderHtml(w, t, 'female', sel, ctx.ranks, true)}</details>
     </section>
-    <section class="blk"><h3 class="eyebrow">Society</h3><div class="cp-soc">${SOC_LINKS.map(l => `<button class="pal" data-sview="${l.view}">${icon(l.ic)}${l.label}</button>`).join('')}</div></section>
+    <p class="cp-soc"><span class="muted">Society</span>${SOC_LINKS.map(l => `<button class="lnk" data-sview="${l.view}">${l.label}</button>`).join('')}</p>
   </div>`;
 }
 
@@ -71,7 +70,7 @@ export function createCommunityPanel(root: HTMLElement, ctx: Ctx) {
     const p = el.closest<HTMLElement>('[data-party]');
     if (p) { const lead = shownParties.find(x => x.p.id === Number(p.dataset.party))?.ids[0]; if (lead !== undefined) ctx.select(lead, { focus: true }); return; }
     const v = el.closest<HTMLElement>('[data-sview]');
-    if (v) { const t = panelTroop(ctx); ctx.state.society.view = v.dataset.sview as SocietyView; ctx.openSociety(t?.id ?? 'all'); }
+    if (v) { ctx.state.society.view = v.dataset.sview as SocietyView; ctx.openSociety(panelTroop(ctx)?.id); }
   });
   let key = '', renderedAt = -1e9, shownId = -1;
   return {

@@ -1,0 +1,752 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="ChimpBench Primate Decision Simulator: a chimpanzee society simulation based on wild chimps, and an experiment in decision models driven by state and perception.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230c0c0e'/%3E%3Cpath d='M22.5 11.2A8 8 0 1 0 22.5 20.8' fill='none' stroke='%23e2bf79' stroke-width='2.8' stroke-linecap='round'/%3E%3C/svg%3E">
+<title>About · ChimpBench</title>
+<link rel="canonical" href="https://chimpbench.pages.dev/about">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ChimpBench">
+<meta property="og:title" content="About · ChimpBench">
+<meta property="og:description" content="The science, simulation design and decision models behind ChimpBench. Explore the evidence, behavior and validation.">
+<meta property="og:url" content="https://chimpbench.pages.dev/about">
+<meta property="og:image" content="https://chimpbench.pages.dev/social/about.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1600">
+<meta property="og:image:height" content="1000">
+<meta property="og:image:alt" content="ChimpBench rainforest scene demonstrating the camera and environment design.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="About · ChimpBench">
+<meta name="twitter:description" content="The science, simulation design and decision models behind ChimpBench. Explore the evidence, behavior and validation.">
+<meta name="twitter:image" content="https://chimpbench.pages.dev/social/about.jpg">
+<meta name="twitter:image:alt" content="ChimpBench rainforest scene demonstrating the camera and environment design.">
+<link rel="prefetch" data-guide="validation" href="/docs/data/guide-validation.json">
+<link rel="prefetch" data-guide="fruit" href="/docs/data/guide-fruit.json">
+<link rel="stylesheet" href="/docs/guide/fonts.css">
+<link rel="stylesheet" href="/docs/guide/guide.css">
+<style>
+:root {
+  --bg: #0a0a0b; --surface: #101012; --surface-2: #151517; --well: #0c0c0d;
+  --ink: #f2f2f3; --ink-2: #a9a9b0; --ink-3: #87878e;
+  --line: rgba(255,255,255,.07); --line-2: rgba(255,255,255,.1); --line-3: rgba(255,255,255,.17);
+  --gold: #e2bf79; --gold-2: #efd6a3; --gold-3: #8f7747;
+  --west: #ea8b60; --east: #77b6e1; --north: #e28dae; --rival: #ef7266; --warn: #e9a557; --rain: #9aadc2;
+  --sans: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-title: var(--sans);   /* titles and the header name */
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --ease: cubic-bezier(.16, 1, .3, 1);
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; scrollbar-color: rgba(255,255,255,.16) transparent; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.65 var(--sans); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; font-synthesis: none; text-rendering: optimizeLegibility; overflow-x: hidden; }
+h1, h2, h3, h4, p, ul, ol, figure, dl, dd, blockquote { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+b, strong { font-weight: 600; color: var(--ink); }
+img { display: block; max-width: 100%; height: auto; }
+::selection { background: rgba(226,191,121,.28); color: var(--ink); }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 6px; }
+.i { width: 18px; height: 18px; stroke: currentColor; stroke-width: 1.6; fill: none; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.sr { position: absolute !important; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.skip { position: fixed; left: 16px; top: -80px; z-index: 60; padding: 9px 14px; border-radius: 8px; background: var(--ink); color: var(--bg); font-size: 14px; font-weight: 600; text-decoration: none; }
+.skip:focus { top: 10px; }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--ink-3)); flex: none; }
+.west { --c: var(--west); } .east { --c: var(--east); } .north { --c: var(--north); }
+.cite { color: var(--ink-3); font-size: .9em; text-decoration: underline; text-decoration-color: var(--line-3); white-space: nowrap; transition: color .15s, text-decoration-color .15s; }
+.cite:hover { color: var(--ink); text-decoration-color: var(--ink-3); }
+p a:not(.cite) { text-decoration-color: var(--line-3); } p a:not(.cite):hover { text-decoration-color: var(--ink-2); }
+
+
+/* ---------- Frame ---------- */
+.top { position: sticky; top: 0; z-index: 40; height: 52px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 max(24px, calc((100vw - 1160px) / 2 + 32px)); background: rgba(10,10,11,.82); -webkit-backdrop-filter: saturate(140%) blur(14px); backdrop-filter: saturate(140%) blur(14px); border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 12px; text-decoration: none; font-size: 13.5px; color: var(--ink-3); }
+.brand b { font-family: var(--font-title); font-weight: 600; letter-spacing: .16em; font-size: 13px; color: var(--ink); }
+.brand i { width: 1px; height: 14px; background: var(--line-3); }
+.top-link { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 8px; font-size: 13.5px; font-weight: 500; color: var(--ink); text-decoration: none; border: 1px solid var(--line-2); background: var(--surface); transition: border-color .15s, background .15s; }
+.top-link:hover { border-color: var(--line-3); background: var(--surface-2); }
+.top-link .i { width: 15px; height: 15px; color: var(--ink-3); }
+.page { max-width: 1160px; margin: 0 auto; padding: 0 32px; }
+
+/* ---------- Hero ---------- */
+.hero { padding: 104px 0 0; }
+.hero-copy { max-width: 700px; display: grid; gap: 20px; }
+h1 { font: 500 clamp(38px, 5.2vw, 60px)/1.04 var(--font-title); letter-spacing: -.034em; text-wrap: balance; }
+.hero-copy p { font-size: 18px; line-height: 1.6; color: var(--ink-2); max-width: 600px; text-wrap: pretty; }
+.hero-copy p .ai { color: var(--gold-2); }
+.cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 9px; font-size: 14.5px; font-weight: 500; text-decoration: none; color: var(--ink); border: 1px solid var(--line-2); background: var(--surface); transition: border-color .15s, background .15s; }
+.btn:hover { border-color: var(--line-3); background: var(--surface-2); }
+.btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.btn.primary:hover { background: #fff; }
+.btn .i { width: 16px; height: 16px; }
+.hero-shot { margin-top: 64px; }
+@media (prefers-reduced-motion: no-preference) {
+  .hero-copy > * { animation: rise .9s var(--ease) both; }
+  .hero-copy > :nth-child(2) { animation-delay: .06s; } .hero-copy > :nth-child(3) { animation-delay: .12s; } .hero-copy > :nth-child(4) { animation-delay: .18s; }
+  .hero-shot .frame { animation: surface 1.4s var(--ease) both .25s; }
+}
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+@keyframes surface { from { opacity: 0; transform: translateY(24px) scale(.985); filter: blur(6px); } }
+
+/* ---------- Figures ---------- */
+.shot { display: grid; gap: 12px; }
+.frame { position: relative; border-radius: 12px; overflow: hidden; background: #050506; border: 1px solid var(--line-2); box-shadow: 0 1px 0 rgba(255,255,255,.04) inset, 0 24px 60px -28px rgba(0,0,0,.9); }
+.frame img { width: 100%; }
+.shot figcaption { font-size: 13.5px; line-height: 1.55; color: var(--ink-3); max-width: 720px; }
+.shot figcaption b { color: var(--ink-2); font-weight: 500; }
+.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+
+/* ---------- Layout ---------- */
+.layout { display: grid; grid-template-columns: minmax(0, 1fr); }
+main { min-width: 0; }
+.toc { display: none; }
+.jump { margin-top: 56px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); }
+.jump summary { cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; min-height: 44px; padding: 0 14px; font-size: 14.5px; font-weight: 500; }
+.jump summary::-webkit-details-marker { display: none; }
+.jump summary .i { width: 16px; height: 16px; color: var(--ink-3); transition: transform .2s var(--ease); }
+.jump[open] summary .i { transform: rotate(180deg); }
+.jump ol { padding: 2px 6px 8px; display: grid; grid-template-columns: 1fr 1fr; }
+.jump a { display: block; padding: 9px 8px; border-radius: 6px; font-size: 14px; color: var(--ink-2); text-decoration: none; }
+.jump a:hover { background: var(--surface-2); color: var(--ink); }
+@media (min-width: 1200px) {
+  .layout { grid-template-columns: 168px minmax(0, 1fr); gap: 64px; }
+  .jump { display: none; }
+  .toc { display: block; position: sticky; top: 52px; align-self: start; padding: 112px 0 40px; }
+  .toc ol { display: grid; gap: 2px; border-left: 1px solid var(--line); }
+  .toc a { display: block; padding: 5px 0 5px 14px; margin-left: -1px; border-left: 1px solid transparent; font-size: 13.5px; line-height: 1.4; color: var(--ink-3); text-decoration: none; transition: color .15s, border-color .15s; }
+  .toc a:hover { color: var(--ink); }
+  .toc a[aria-current="true"] { color: var(--ink); border-left-color: var(--ink); }
+  .toc a.ai[aria-current="true"] { border-left-color: var(--gold); }
+}
+.sec { padding-top: 72px; margin-top: 104px; border-top: 1px solid var(--line); scroll-margin-top: 52px; }
+.sec.first { margin-top: 0; border-top: 0; padding-top: 112px; }
+.sh { display: grid; gap: 14px; max-width: 640px; margin-bottom: 48px; }
+h2 { font: 500 clamp(27px, 3vw, 34px)/1.15 var(--font-title); letter-spacing: -.026em; text-wrap: balance; }
+.sh p { font-size: 17px; line-height: 1.65; color: var(--ink-2); text-wrap: pretty; }
+h3 { font: 500 16px/1.35 var(--font-title); letter-spacing: -.01em; color: var(--ink); }
+.prose { max-width: 640px; display: grid; gap: 16px; color: var(--ink-2); }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+.muted { color: var(--ink-3); }
+.small { font-size: 14px; }
+.label { font-size: 12.5px; font-weight: 500; color: var(--ink-3); }
+
+/* Hairline rows */
+.rows { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 48px; }
+.row { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 4px 16px; padding: 20px 0; border-top: 1px solid var(--line); align-content: start; }
+.row > .i { color: var(--ink-3); margin-top: 2px; grid-row: span 2; }
+.row h3 { font-size: 15px; font-weight: 500; }
+.row p { font-size: 14.5px; line-height: 1.6; color: var(--ink-2); }
+
+/* ---------- Based on ---------- */
+.origin { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 48px; align-items: start; }
+.site { padding: 24px; }
+.site svg { width: 100%; max-width: 380px; height: auto; display: block; margin: 0 auto; }
+.origin .rows { grid-template-columns: 1fr; }
+.origin .row:first-child { border-top: 0; padding-top: 4px; }
+
+/* ---------- Meet a chimp ---------- */
+.meet { display: grid; gap: 24px; }
+.chimp { overflow: hidden; }
+.chimp-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; padding: 20px 24px; border-bottom: 1px solid var(--line); }
+.chimp-head h3 { font-size: 22px; font-weight: 500; letter-spacing: -.02em; }
+.chimp-head .who { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: 13.5px; color: var(--ink-3); }
+.chimp-head .who span { display: inline-flex; align-items: center; gap: 7px; }
+.now { display: inline-flex; align-items: center; gap: 8px; height: 28px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--line-2); font-size: 13px; color: var(--ink-2); }
+.traits { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.trait { padding: 20px 24px 22px; display: grid; gap: 10px; align-content: start; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.trait:nth-child(3n) { border-right: 0; }
+.trait h4 { font-size: 13.5px; font-weight: 500; color: var(--ink); }
+.trait > p { font-size: 13.5px; color: var(--ink-3); line-height: 1.5; }
+.bars { display: grid; gap: 7px; }
+.bar { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 10px; align-items: center; font-size: 13px; color: var(--ink-2); }
+.bar i { height: 4px; border-radius: 2px; background: var(--line-2); position: relative; overflow: hidden; }
+.bar i::after { content: ''; position: absolute; inset: 0 auto 0 0; width: calc(var(--v) * 100%); border-radius: 2px; background: var(--ink-2); }
+.dial { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 10px; align-items: center; font-size: 13px; color: var(--ink-2); }
+.dial i { height: 1px; background: var(--line-3); position: relative; }
+.dial i::after { content: ''; position: absolute; top: -4px; left: calc(var(--v) * 100% - 4.5px); width: 9px; height: 9px; border-radius: 50%; background: var(--ink); box-shadow: 0 0 0 3px var(--surface); }
+.moods { display: flex; flex-wrap: wrap; gap: 5px; }
+.moods span { font-size: 12.5px; height: 24px; display: inline-flex; align-items: center; padding: 0 9px; border-radius: 6px; border: 1px solid var(--line-2); color: var(--ink-3); }
+.moods .on { color: var(--ink); border-color: var(--line-3); background: var(--surface-2); }
+.ladder { display: grid; gap: 4px; }
+.ladder li { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 10px; align-items: center; height: 26px; padding: 0 8px; border-radius: 6px; font-size: 13px; color: var(--ink-3); }
+.ladder li > span:first-child { color: var(--ink-3); font-variant-numeric: tabular-nums; font-size: 12px; }
+.ladder li em { font-style: normal; font-size: 12px; color: var(--ink-3); }
+.ladder .me { background: var(--surface-2); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line-3); }
+.ladder .i { width: 14px; height: 14px; color: var(--gold); }
+.fam svg { width: 100%; max-width: 220px; height: auto; display: block; }
+.rel { display: grid; gap: 10px; }
+.rel li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 5px 10px; font-size: 13px; color: var(--ink-2); }
+.rel li em { font-style: normal; color: var(--ink-3); }
+.rel .meter { grid-column: 1 / -1; display: grid; grid-template-columns: var(--b) var(--t) 1fr; gap: 3px; height: 4px; }
+.rel .meter i { border-radius: 2px; } .rel .meter i:nth-child(1) { background: var(--ink-2); } .rel .meter i:nth-child(2) { background: var(--rival); } .rel .meter i:nth-child(3) { background: var(--line-2); }
+.key { display: flex; gap: 14px; font-size: 12px; color: var(--ink-3); }
+.key span { display: inline-flex; align-items: center; gap: 6px; } .key span::before { content: ''; width: 10px; height: 3px; border-radius: 2px; background: var(--k); }
+.memory { padding: 22px 24px 24px; display: grid; gap: 16px; }
+.memory-head { display: grid; gap: 4px; max-width: 640px; }
+.memory-head h4 { font-size: 13.5px; font-weight: 500; }
+.memory-head p { font-size: 13.5px; color: var(--ink-3); }
+.tiers { display: grid; grid-template-columns: 1fr 24px 1fr 24px 1fr; }
+.tier { padding: 14px 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--well); display: grid; gap: 8px; align-content: start; }
+.tier .viz { display: flex; gap: 3px; align-items: flex-end; height: 16px; }
+.tier .viz i { background: var(--ink-3); border-radius: 1px; }
+.t1 .viz i { width: 5px; height: 5px; border-radius: 50%; } .t2 .viz i { width: 7px; height: calc(var(--h) * 16px); } .t3 .viz i { width: 24px; height: 16px; border-radius: 3px; opacity: .7; }
+.tier b { font-size: 13.5px; font-weight: 500; display: grid; } .tier b span { font-weight: 400; font-size: 12.5px; color: var(--ink-3); }
+.tier ul { display: grid; gap: 3px; } .tier li { font-size: 13px; color: var(--ink-2); line-height: 1.45; } .tier li span { color: var(--ink-3); }
+.squeeze { display: grid; place-items: center; color: var(--ink-3); } .squeeze .i { width: 14px; height: 14px; }
+.note { font-size: 14px; color: var(--ink-3); max-width: 640px; }
+
+/* ---------- Day ---------- */
+.day { padding: 24px 24px 20px; }
+.tl { display: grid; grid-template-columns: 84px minmax(0, 1fr); row-gap: 10px; }
+.tl-label { font-size: 12.5px; color: var(--ink-3); display: flex; align-items: center; gap: 7px; }
+.tl-label .i { width: 14px; height: 14px; }
+.track { position: relative; height: 32px; }
+.track > li, .sky > .b { position: absolute; top: 0; bottom: 0; left: calc((var(--a) - 5) / 16 * 100%); width: calc((var(--b) - var(--a)) / 16 * 100%); }
+.sky { position: relative; height: 32px; border-radius: 8px; overflow: hidden; }
+.sky .n { background: #0e0e10; } .sky .tw { background: #18181c; } .sky .d { background: #222227; }
+.sky-mark { position: absolute; top: 50%; transform: translate(-50%, -50%); left: calc((var(--a) - 5) / 16 * 100%); color: var(--ink-2); display: flex; align-items: center; font-size: 12px; white-space: nowrap; }
+.sky-mark .i { width: 15px; height: 15px; } .sky-mark.moon { color: var(--ink-3); }
+.track > li { display: flex; align-items: center; padding: 0 10px; margin-right: 2px; border-radius: 7px; background: var(--surface-2); border: 1px solid var(--line-2); font-size: 12.5px; color: var(--ink-2); overflow: hidden; white-space: nowrap; }
+.track > li b { font-weight: 500; color: var(--ink); overflow: hidden; text-overflow: ellipsis; }
+.track > li .t { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.track .sleep, .track .bed { background: transparent; border-style: dashed; } .track .sleep b { color: var(--ink-3); font-weight: 400; } .track .bed b { color: var(--ink-2); }
+.track .call { background: transparent; overflow: visible; border-color: var(--line-3); }
+.track .call b { position: absolute; left: calc(100% + 10px); color: var(--ink-2); font-weight: 500; }
+.track .call.left b { left: auto; right: calc(100% + 10px); }
+.track .maybe { background: transparent; border-style: dashed; border-color: var(--line-3); }
+.track .storm { border-color: rgba(154,173,194,.4); background: rgba(154,173,194,.07); } .track .storm b { color: var(--rain); }
+.hours { position: relative; height: 16px; margin-top: 2px; }
+.hours span { position: absolute; left: calc((var(--a) - 5) / 16 * 100%); transform: translateX(-50%); font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.year { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 48px; align-items: center; margin-top: 56px; }
+.year .prose p { font-size: 15.5px; }
+.temp { display: flex; gap: 32px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-3); }
+.temp div { display: grid; gap: 2px; } .temp b { font: 500 26px/1.1 var(--sans); letter-spacing: -.02em; color: var(--ink); }
+.rainfall { padding: 20px 20px 14px; display: grid; gap: 12px; }
+.rainfall-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 13px; color: var(--ink-3); }
+.rainfall-head b { font-weight: 500; }
+.rkey { display: inline-flex; align-items: center; gap: 7px; } .rkey::before { content: ''; width: 9px; height: 9px; border-radius: 2px; background: var(--rain); }
+.months { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 6px; height: 176px; margin-bottom: 16px; }
+.months li { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 5px; height: 100%; position: relative; }
+.months .col { flex: none; width: 100%; max-width: 26px; height: calc(var(--mm) / 200 * 124px); border-radius: 3px 3px 0 0; background: rgba(255,255,255,.14); }
+.months .wet .col { background: var(--rain); }
+.months .v { font-size: 10.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.months .m { font-size: 12px; color: var(--ink-3); } .months .wet .m { color: var(--ink); }
+.months .start::after { content: '▲ start'; position: absolute; top: 100%; margin-top: 3px; left: 50%; transform: translateX(-50%); font-size: 10.5px; color: var(--ink-2); white-space: nowrap; }
+.day-shots { margin-top: 56px; }
+
+/* ---------- Decide ---------- */
+.decide { display: grid; grid-template-columns: 560px minmax(0, 1fr); gap: 40px; align-items: center; }
+.loop { position: relative; width: 560px; height: 500px; }
+.loop > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.loop .ring { fill: none; stroke: var(--line-3); stroke-width: 1; stroke-dasharray: 2 6; stroke-linecap: round; }
+.loop .chev { fill: none; stroke: var(--ink-3); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.loop .runner { fill: var(--gold); }
+.steps { position: absolute; inset: 0; counter-reset: step; }
+.steps li { position: absolute; left: var(--x); top: var(--y); transform: translate(-50%, -50%); width: 168px; padding: 10px 12px 11px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line-2); display: grid; gap: 2px; }
+.steps li b { font-family: var(--font-title); font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+.steps li b::before { counter-increment: step; content: counter(step); font: 500 11px/1 var(--mono); color: var(--ink-3); }
+.steps li span { font-size: 12.5px; color: var(--ink-3); line-height: 1.4; }
+/* The runner (docs/guide/motion.js) marks the stage the dot is in: a gold hairline on ::before (::after draws the
+   phone layout's connectors) and a slight lift (scale), transform and opacity only. Quick in (.2s) as the dot
+   arrives, slow out (.7s) as it leaves, so a short trail follows it; no card is highlighted otherwise. */
+.steps li { transition: transform .7s var(--ease); }
+.steps li.on { transform: translate(-50%, -50%) scale(1.045); transition-duration: .2s; z-index: 1; }
+.steps li::before { content: ''; position: absolute; inset: -1px; border-radius: 10px; border: 1px solid var(--gold); box-shadow: 0 0 0 4px rgba(226,191,121,.07); opacity: 0; pointer-events: none; transition: opacity .7s var(--ease); }
+.steps li.on::before { opacity: 1; transition-duration: .2s; }
+.steps li b::before { transition: color .7s var(--ease); } .steps li.on b::before { color: var(--gold); transition-duration: .2s; }
+.loop-center { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); text-align: center; font-size: 14px; line-height: 1.5; color: var(--ink-3); width: 190px; }
+.loop-center b { display: block; font-size: 16px; font-weight: 500; color: var(--ink); letter-spacing: -.01em; }
+.again { display: none; }
+.modes { display: grid; gap: 0; }
+.modes li { padding: 18px 0; border-top: 1px solid var(--line); display: grid; gap: 4px; }
+.modes li:last-child { border-bottom: 1px solid var(--line); }
+.modes h3 { font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.modes p { font-size: 14.5px; color: var(--ink-2); }
+
+/* ---------- Society ---------- */
+.mechs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 48px; }
+.mech { padding: 24px 0 26px; border-top: 1px solid var(--line); display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 4px 20px; align-content: start; }
+.mech svg { grid-row: span 2; width: 132px; height: auto; display: block; border-radius: 9px; background: var(--well); border: 1px solid var(--line); }
+.mech h3 { font-size: 15px; } .mech p { font-size: 14px; line-height: 1.6; color: var(--ink-2); }
+.mini-s { fill: none; stroke: var(--ink-3); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.mini-t { font: 500 13px var(--sans); fill: var(--ink-3); }
+.soc-shots { margin-top: 48px; }
+
+/* ---------- Experiments ---------- */
+.exps .row > .i { color: var(--ink-2); }
+
+/* ---------- Footer ---------- */
+footer.end a { color: var(--ink-2); text-decoration-color: var(--line-3); } footer.end a:hover { color: var(--ink); }
+footer.end { width: calc(100% - 64px); max-width: 1096px; margin: 112px auto 0; padding: 24px 0 40px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; font-size: 13px; color: var(--ink-3); border-top: 1px solid var(--line); }
+
+/* ---------- Tabs (the scorecard's seed switch, drawn by docs/guide/guide.js) ---------- */
+.seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; border-radius: 9px; border: 1px solid var(--line-2); background: var(--well); }
+.seg button { font: inherit; font-size: 13px; color: var(--ink-3); background: none; border: 0; border-radius: 6px; padding: 0 12px; min-height: 30px; cursor: pointer; }
+.seg button:hover { color: var(--ink); }
+.seg button[aria-selected="true"] { color: var(--ink); background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line-3); }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1199px) {
+  .decide { grid-template-columns: 1fr; justify-items: center; } .modes { width: 100%; }
+}
+@media (max-width: 999px) {
+  .origin, .year { grid-template-columns: 1fr; gap: 32px; }
+  .traits { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .trait:nth-child(3n) { border-right: 1px solid var(--line); } .trait:nth-child(2n) { border-right: 0; }
+  .tl { grid-template-columns: 1fr; row-gap: 6px; }
+  .tl-label { margin-top: 12px; color: var(--ink-2); font-weight: 500; }
+  .tl-sky, .tl .hours, .tl-hours-spacer { display: none; }
+  .track { height: auto; display: grid; gap: 6px; }
+  .track > li { position: static; width: auto; margin: 0; padding: 8px 12px; white-space: normal; display: grid; gap: 1px; }
+  .track > li .t { position: static; width: auto; height: auto; clip: auto; font-size: 12.5px; color: var(--ink-3); }
+  .track .call b, .track .call.left b { position: static; }
+}
+@media (max-width: 759px) {
+  body { font-size: 15.5px; }
+  .top { padding: 0 16px; } .brand span, .brand i { display: none; }
+  .page { padding: 0 16px; }
+  .hero { padding-top: 64px; } .hero-copy p { font-size: 16.5px; } .hero-shot { margin-top: 40px; }
+  .sec { margin-top: 72px; padding-top: 56px; } .sec.first { padding-top: 72px; }
+  .sh { margin-bottom: 32px; } .sh p { font-size: 16px; }
+  .rows, .mechs, .pair { grid-template-columns: 1fr; }
+  .traits { grid-template-columns: 1fr; } .trait, .trait:nth-child(3n) { border-right: 0; }
+  .tiers { grid-template-columns: 1fr; } .squeeze { height: 22px; } .squeeze .i { transform: rotate(90deg); }
+  .loop { width: 100%; height: auto; } .loop > svg, .loop-center { display: none; }
+  .steps { position: static; display: grid; gap: 18px; }
+  .steps li { position: relative; left: auto; top: auto; transform: none; width: auto; }
+  .steps li.on { transform: scale(1.03); }
+  .steps li:not(:last-child)::after { content: ''; position: absolute; left: 18px; bottom: -15px; width: 1px; height: 12px; background: var(--line-3); }
+  .again { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 13.5px; color: var(--ink-3); } .again .i { width: 15px; height: 15px; }
+  .mech { grid-template-columns: 96px minmax(0, 1fr); gap: 4px 16px; } .mech svg { width: 96px; }
+  .months { gap: 3px; height: 160px; } .months .v { display: none; } .months .col { height: calc(var(--mm) / 200 * 116px); }
+  .jump ol { grid-template-columns: 1fr; }
+  .seg button { padding: 0 9px; font-size: 12.5px; }
+  footer.end { width: calc(100% - 32px); }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .loop .runner { display: none; } .steps li, .steps li::before, .steps li b::before { transition: none; } }
+@media print { .top, .toc, .jump { display: none; } .layout { display: block; } }
+.x-profile { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 6px; }
+.x-profile:hover { color: var(--ink); background: var(--surface); }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4m0 0h11l-2 4 2 4H5"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></symbol>
+  <symbol id="i-monkey" viewBox="0 0 24 24"><circle cx="12" cy="11" r="5"/><circle cx="5.5" cy="10" r="2"/><circle cx="18.5" cy="10" r="2"/><path d="M10 10.5h.01M14 10.5h.01M10.5 13.5c1 .8 2 .8 3 0"/><path d="M12 16v5M9 21h6"/></symbol>
+  <symbol id="i-speaker" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4Z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></symbol>
+  <symbol id="i-speaker-off" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4Z"/><path d="m16.5 9.5 5 5m0-5-5 5"/></symbol>
+  <symbol id="i-snake" viewBox="0 0 24 24"><path d="M4 18c3 0 3-4 6-4s3 4 6 4 3-6 1-8-6-1-6-4 3-3 5-2"/><circle cx="17.5" cy="4.8" r=".6" fill="currentColor"/></symbol>
+  <symbol id="i-fig" viewBox="0 0 24 24"><path d="M12 5c-4 0-7 4-7 8.5A6.5 6.5 0 0 0 12 20a6.5 6.5 0 0 0 7-6.5C19 9 16 5 12 5Z"/><path d="M12 5V3m0 2c1-1.5 3-2 4-1.5"/><path d="M9.5 14h.01M13 12h.01M14 16h.01"/></symbol>
+  <symbol id="i-storm" viewBox="0 0 24 24"><path d="M7 13h10.5a4 4 0 0 0 .6-8A6 6 0 0 0 6.6 6.2 3.5 3.5 0 0 0 7 13Z"/><path d="m12.5 14-2.5 4h3.5L11 22"/></symbol>
+  <symbol id="i-rain" viewBox="0 0 24 24"><path d="M7 14h10.5a4 4 0 0 0 .6-8A6 6 0 0 0 6.6 7.2 3.5 3.5 0 0 0 7 14Z"/><path d="m8 17-1 3M12 17l-1 3M16 17l-1 3"/></symbol>
+  <symbol id="i-drought" viewBox="0 0 24 24"><circle cx="12" cy="9" r="3.5"/><path d="M12 2v1.5M5 9H3.5M20.5 9H19M7 4l1 1M17 4l-1 1"/><path d="M3 17c2-1 4 1 6 0s4-1 6 0 4 1 6 0M5 21h14"/></symbol>
+  <symbol id="i-noalpha" viewBox="0 0 24 24"><path d="m3 9 4.5 4L12 6l4.5 7L21 9l-2 10H5Z"/><path d="m3 3 18 18"/></symbol>
+  <symbol id="i-crown" viewBox="0 0 24 24"><path d="m3 8 4.5 4L12 5l4.5 7L21 8l-2 11H5Z"/><path d="M5 16h14"/></symbol>
+  <symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20v-1.5A5.5 5.5 0 0 1 8.5 13h1a5.5 5.5 0 0 1 5.5 5.5V20"/><path d="M16 5.2a3 3 0 0 1 0 5.6M18 13.3a5 5 0 0 1 3 4.7V20"/></symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M20 4C11 2 3 5 4 13c1 7 10 9 14 2 2-4 2-7 2-11Z"/><path d="M5 20 17 7M9 15l-1-5M12 12l5 1"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m8 10 4 4 4-4"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"/></symbol>
+  <symbol id="i-loop" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v4h-4"/></symbol>
+  <symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6L4.5 18.5A1.7 1.7 0 0 0 6 21h12a1.7 1.7 0 0 0 1.5-2.5L14 9V3"/><path d="M7 15h10"/></symbol>
+</svg>
+
+<a class="skip" href="#main">Skip to About</a>
+
+<header class="top">
+  <a class="brand" href="#top" aria-label="About ChimpBench, back to top"><b>ChimpBench</b><i></i><span>About</span></a>
+  <div class="top-actions">
+    <button class="top-link icon snd-btn" type="button" data-sound-toggle aria-pressed="false" aria-label="Sound off" title="Sound off" hidden><svg class="i" aria-hidden="true"><use href="#i-speaker-off"/></svg></button>
+    <a class="top-link" href="/">Open ChimpBench <svg class="i" aria-hidden="true"><use href="#i-right"/></svg></a>
+  </div>
+</header>
+
+<div class="page">
+  <section class="hero" id="top" aria-labelledby="h-top">
+    <div class="hero-copy">
+      <h1 id="h-top">I built a chimp society you can watch.</h1>
+      <p>It&rsquo;s a 3D forest modeled on Kibale, Uganda, with communities based on decades of field research. I made it to see if <span class="ai">a small AI model</span> can pick a chimp&rsquo;s next move, and it runs right in your browser.</p>
+      <div class="cta"><a class="btn primary" href="/">Open ChimpBench <svg class="i" aria-hidden="true"><use href="#i-right"/></svg></a></div>
+    </div>
+    <figure class="shot hero-shot">
+      <div class="frame"><img src="/docs/img/overview-dawn.webp" width="1600" height="1000" alt="The ChimpBench app at dawn on day one, in the close view. Tavuni, the West alpha, sits in his night nest in a tree crown and pant-hoots; below him Oyaku starts travelling and Yerubi pant-grunts. A pill reads Following Tavuni. On the left are the field log and the range map; on the right, the communities with West selected, its parties, most still nesting, and a grid of its members." fetchpriority="high" decoding="async"></div>
+      <figcaption><b>Dawn, day one.</b> A new forest opens on the West alpha in his night nest, with the camera following him. The field log and range map are on the left; the communities, the selected community's parties and its members are on the right. Colors mark the communities: <span class="dot west"></span> West, <span class="dot east"></span> East and <span class="dot north"></span> North.</figcaption>
+    </figure>
+  </section>
+
+  <div class="layout">
+    <nav class="toc" aria-label="About sections">
+      <ol>
+        <li><a href="#based-on">Background</a></li>
+        <li><a href="#meet">Individual chimps</a></li>
+        <li><a href="#day">Daily routine</a></li>
+        <li><a href="#decide">Decisions</a></li>
+        <li><a href="#society">Society</a></li>
+        <li><a href="#experiments">Field experiments</a></li>
+        <li><a href="#realism">Field data</a></li>
+        <li><a href="#next">What&rsquo;s next</a></li>
+        <li><a href="#sources">Credits and docs</a></li>
+      </ol>
+    </nav>
+
+    <main id="main">
+      <details class="jump">
+        <summary>Jump to a section <svg class="i" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+        <ol>
+          <li><a href="#based-on">Background</a></li>
+          <li><a href="#meet">Individual chimps</a></li>
+          <li><a href="#day">Daily routine</a></li>
+          <li><a href="#decide">Decisions</a></li>
+          <li><a href="#society">Society</a></li>
+          <li><a href="#experiments">Field experiments</a></li>
+          <li><a href="#realism">Field data</a></li>
+          <li><a href="#next">What&rsquo;s next</a></li>
+          <li><a href="#sources">Credits and docs</a></li>
+        </ol>
+      </details>
+
+      <!-- Based on -->
+      <section class="sec first" id="based-on" aria-labelledby="h-based">
+        <header class="sh"><h2 id="h-based">Background</h2><p>The forest is modeled on Kibale National Park in western Uganda, home to Ngogo and Kanyawara, two wild chimpanzee communities studied for decades. The individual chimps and their histories are made up. How they behave comes from what field researchers there, and at other sites, have published.</p></header>
+        <div class="origin">
+          <figure class="panel site">
+            <svg viewBox="0 0 360 250" role="img" aria-label="Sketch of Kibale National Park, a long north–south forest, with the Kanyawara research site in the north and Ngogo in the middle, 12 kilometres apart, just north of the equator.">
+              <defs><pattern id="treedots" width="11" height="11" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="1" fill="#87878e" opacity=".32"/></pattern></defs>
+              <path d="M150,14 C196,10 228,34 234,70 C240,108 258,134 252,172 C246,204 214,220 180,217 C142,214 122,190 120,158 C118,130 102,104 106,70 C110,36 122,18 150,14Z" fill="#131315" stroke="rgba(255,255,255,.18)" stroke-width="1"/>
+              <path d="M150,14 C196,10 228,34 234,70 C240,108 258,134 252,172 C246,204 214,220 180,217 C142,214 122,190 120,158 C118,130 102,104 106,70 C110,36 122,18 150,14Z" fill="url(#treedots)"/>
+              <path d="M162,66 L206,152" stroke="#a9a9b0" stroke-width="1.2" stroke-dasharray="2 5" stroke-linecap="round" fill="none"/>
+              <text x="193" y="104" font-family="Instrument Sans, system-ui, sans-serif" font-size="12.5" font-weight="500" fill="#f2f2f3">12 km</text>
+              <circle cx="162" cy="66" r="4.5" fill="#f2f2f3"/><circle cx="162" cy="66" r="10" fill="none" stroke="#f2f2f3" stroke-opacity=".25"/>
+              <text x="146" y="70" text-anchor="end" font-family="Instrument Sans, system-ui, sans-serif" font-size="13.5" font-weight="500" fill="#f2f2f3">Kanyawara</text>
+              <circle cx="206" cy="152" r="4.5" fill="#f2f2f3"/><circle cx="206" cy="152" r="10" fill="none" stroke="#f2f2f3" stroke-opacity=".25"/>
+              <text x="222" y="156" font-family="Instrument Sans, system-ui, sans-serif" font-size="13.5" font-weight="500" fill="#f2f2f3">Ngogo</text>
+              <path d="M0,238 H360" stroke="#87878e" stroke-opacity=".6" stroke-dasharray="4 5" fill="none"/>
+              <text x="360" y="230" text-anchor="end" font-family="Instrument Sans, system-ui, sans-serif" font-size="11.5" fill="#87878e">equator</text>
+              <g transform="translate(330 30)" fill="none" stroke="#87878e" stroke-width="1.3" stroke-linecap="round"><path d="M0,14 V-8 M-4,-3 L0,-8 L4,-3"/></g>
+              <text x="330" y="60" text-anchor="middle" font-family="Instrument Sans, system-ui, sans-serif" font-size="11.5" fill="#87878e">N</text>
+            </svg>
+          </figure>
+          <ul class="rows">
+            <li class="row"><svg class="i" aria-hidden="true"><use href="#i-users"/></svg><h3>Unevenly matched communities</h3><p>One community starts with more grown males than its neighbours. That's the kind of edge Ngogo, an unusually large community, has over its neighbors, and it grew its territory after a decade of lethal raids (<a class="cite" href="https://doi.org/10.1016/j.cub.2010.04.021">Mitani, Watts &amp; Amsler 2010</a>).</p></li>
+            <li class="row"><svg class="i" aria-hidden="true"><use href="#i-leaf"/></svg><h3>Kibale's trees</h3><p>Ngogo and Kanyawara sit only 12 km apart yet grow noticeably different food trees (<a class="cite" href="https://doi.org/10.1111/j.1365-2656.2009.01578.x">Potts, Chapman &amp; Lwanga 2009</a>). The simulated forest grows several of the species they recorded, giant figs included.</p></li>
+            <li class="row"><svg class="i" aria-hidden="true"><use href="#i-rain"/></svg><h3>Kibale's weather and light</h3><p>Two rainy seasons, afternoon thunderstorms, cool dawns and warm afternoons, and a real equatorial sun and moon.</p></li>
+            <li class="row"><svg class="i" aria-hidden="true"><use href="#i-drop"/></svg><h3>A stream</h3><p>The chimps drink from it and cross it only at shallow fords.</p></li>
+          </ul>
+        </div>
+
+        <figure class="shot" style="margin-top:40px">
+          <div class="frame"><img src="/docs/img/map-scale.webp" width="1600" height="1000" loading="lazy" decoding="async" alt="The whole simulated forest seen from above: three outlined community ranges, West, North and East, with party markers and labels inside them, a stream crossing the map and a scale bar marking 500 m. The communities panel is on the right."></div>
+          <figcaption><b>The whole forest.</b> The three community ranges on the 8 km map, with each party marked and a stream running through. The bar marks 500 m.</figcaption>
+        </figure>
+      </section>
+
+      <!-- Meet -->
+      <section class="sec" id="meet" aria-labelledby="h-meet">
+        <header class="sh"><h2 id="h-meet">Individual chimps</h2><p>Each chimp is a full individual: a body with needs, a mood, a personality, a rank, a family, friendships, grudges and a memory. The inspector shows all of it. Below is an example card for one chimp, Koruza, from one run.</p></header>
+        <div class="meet">
+          <figure class="shot">
+            <div class="frame"><img src="/docs/img/close-party.webp" width="1600" height="1000" loading="lazy" decoding="async" alt="Close view on the forest floor, following Dembiri, an adolescent West male, as he rests beside Nkeru, who is drinking; both are labelled and ringed in the West color. The panel on the right shows Dembiri's Overview: one state line, Resting · 2 min, Calm, then his needs, personality, skills and recent episodes, such as pant-grunting to Nkeru and being groomed by Ugazi."></div>
+            <figcaption><b>Close view.</b> Following Dembiri, a young West male, resting next to Nkeru. His Overview opens with one line, what he's doing and his mood, then his needs, personality, skills and recent episodes. Press <b>C</b> in the app for this view.</figcaption>
+          </figure>
+          <div class="pair">
+            <figure class="shot"><div class="frame"><img src="/docs/img/follow.webp" width="800" height="1000" loading="lazy" decoding="async" alt="The forest from above with Tavuni in the centre, labelled foraging, in the crown of a tree carrying red fruit. A pill at the bottom reads Following Tavuni, and a scale bar marks 10 m."></div><figcaption><b>Following one chimp.</b> Select a chimp and the camera stays on it as it moves. Here Tavuni forages in a fruiting tree; the bar marks 10 m.</figcaption></figure>
+            <figure class="shot"><div class="frame"><img src="/docs/img/community-panel.webp" width="800" height="1000" loading="lazy" decoding="async" alt="The community panel beside the forest: the three communities with West selected, its alpha Tavuni, a list of its current parties (travelling, foraging and social, with their members and sizes) and a grid of member tiles ordered by rank, each with a name, sex and age."></div><figcaption><b>A community and its members.</b> The selected community's alpha, its current parties and what each is doing, and one tile per member, ordered by rank.</figcaption></figure>
+          </div>
+          <article class="panel chimp" aria-label="Example chimp card: Koruza">
+            <div class="chimp-head">
+              <div><h3>Koruza</h3><div class="who"><span><i class="dot west"></i>West community</span><span>Adult male, 24</span><span>Rank 3 of 8 males</span></div></div>
+              <span class="now">Right now: grooming Mbelo</span>
+            </div>
+            <div class="traits">
+              <section class="trait" aria-label="Body">
+                <h4>Body</h4><p>Needs rise and fall all day. Food fixes hunger, grooming fixes loneliness, sleep fixes tiredness.</p>
+                <div class="bars"><div class="bar" style="--v:.58"><span>Hunger</span><i></i></div><div class="bar" style="--v:.3"><span>Thirst</span><i></i></div><div class="bar" style="--v:.8"><span>Energy</span><i></i></div><div class="bar" style="--v:.22"><span>Lonely</span><i></i></div><div class="bar" style="--v:.18"><span>Stress</span><i></i></div><div class="bar" style="--v:.96"><span>Health</span><i></i></div></div>
+              </section>
+              <section class="trait" aria-label="Mood and personality">
+                <h4>Mood and personality</h4><p>Mood comes from what's happening. Personality is set at birth and sticks.</p>
+                <div class="moods"><span class="on">calm</span><span>excited</span><span>playful</span><span>fearful</span><span>aggressive</span><span>distressed</span></div>
+                <div class="bars"><div class="dial" style="--v:.8"><span>Bold</span><i></i></div><div class="dial" style="--v:.5"><span>Sociable</span><i></i></div><div class="dial" style="--v:.64"><span>Aggressive</span><i></i></div><div class="dial" style="--v:.3"><span>Playful</span><i></i></div></div>
+              </section>
+              <section class="trait" aria-label="Skills">
+                <h4>Skills</h4><p>They grow with practice: play builds climbing, feeding builds foraging, hunts build hunting.</p>
+                <div class="bars"><div class="bar" style="--v:.72"><span>Climbing</span><i></i></div><div class="bar" style="--v:.8"><span>Foraging</span><i></i></div><div class="bar" style="--v:.4"><span>Hunting</span><i></i></div><div class="bar" style="--v:.58"><span>Social</span><i></i></div></div>
+              </section>
+              <section class="trait" aria-label="Rank">
+                <h4>Rank</h4><p>Males climb by winning contests. The one on top is the <b>alpha</b>, the boss of the community.</p>
+                <ol class="ladder"><li><span>1</span><span>Tavuni</span><em><svg class="i" aria-label="alpha" role="img"><use href="#i-crown"/></svg></em></li><li><span>2</span><span>Mbelo</span><em></em></li><li class="me"><span>3</span><span>Koruza</span><em>you are here</em></li><li><span>4</span><span>Sanaki</span><em></em></li><li><span>5</span><span>+ 4 more</span><em></em></li></ol>
+              </section>
+              <section class="trait fam" aria-label="Family">
+                <h4>Family</h4><p>Mom and siblings matter most. Dad is in the records, but no chimp knows who he is.</p>
+                <svg viewBox="0 0 200 104" role="img" aria-label="Family tree: mother Fumbira, the top-ranked West female, and her three offspring Koruza, Rukaso and Oyaku.">
+                  <g fill="none" stroke="rgba(255,255,255,.22)" stroke-width="1.2"><path d="M8 22 V70 M8 44 H96 V70 M96 44 H170 V70"/><path d="M112 14 H150" stroke-dasharray="2 4"/></g>
+                  <g font-family="Instrument Sans, system-ui, sans-serif" font-size="13">
+                    <circle cx="8" cy="14" r="5.5" fill="#a9a9b0"/><text x="20" y="18.5" fill="#a9a9b0">Fumbira, mom</text>
+                    <circle cx="162" cy="14" r="7" fill="#101012" stroke="#87878e" stroke-dasharray="2 3"/><text x="162" y="18" text-anchor="middle" fill="#87878e" font-size="10.5">?</text><text x="162" y="38" text-anchor="middle" fill="#87878e" font-size="11.5">dad</text>
+                    <circle cx="8" cy="76" r="6" fill="#ea8b60"/><text x="2" y="98" fill="#f2f2f3" font-weight="500">Koruza</text>
+                    <circle cx="96" cy="76" r="5" fill="#a9a9b0"/><text x="96" y="98" fill="#a9a9b0" text-anchor="middle">Rukaso</text>
+                    <circle cx="170" cy="76" r="4.5" fill="#a9a9b0"/><text x="170" y="98" fill="#a9a9b0" text-anchor="middle">Oyaku</text>
+                  </g>
+                </svg>
+              </section>
+              <section class="trait" aria-label="Friends and rivals">
+                <h4>Friends and rivals</h4><p>Grooming and backing each other up build bonds. A fight leaves tension that fades over a few weeks, faster if they make up.</p>
+                <ul class="rel"><li><span>Mbelo</span><em>ally</em><span class="meter" style="--b:.8fr;--t:0fr"><i></i><i></i><i></i></span></li><li><span>Rukaso</span><em>brother</em><span class="meter" style="--b:.66fr;--t:0fr"><i></i><i></i><i></i></span></li><li><span>Sanaki</span><em>tense, fought yesterday</em><span class="meter" style="--b:.18fr;--t:.46fr"><i></i><i></i><i></i></span></li></ul>
+                <div class="key"><span style="--k:var(--ink-2)">bond</span><span style="--k:var(--rival)">tension</span></div>
+              </section>
+            </div>
+            <div class="memory">
+              <div class="memory-head"><h4>Memory</h4><p>A diary that summarizes itself. Fresh moments stay detailed, months get condensed, and each year becomes one entry kept for life.</p></div>
+              <div class="tiers">
+                <div class="tier t1"><span class="viz" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><b>Recent moments<span>the latest few</span></b><ul><li><span>Just now:</span> started grooming Mbelo</li><li><span>2 h ago:</span> lost a fight with Sanaki</li><li><span>5 h ago:</span> heard strangers to the east</li></ul></div>
+                <span class="squeeze" aria-hidden="true"><svg class="i"><use href="#i-right"/></svg></span>
+                <div class="tier t2"><span class="viz" aria-hidden="true"><i style="--h:.5"></i><i style="--h:.8"></i><i style="--h:.4"></i><i style="--h:.9"></i><i style="--h:.6"></i><i style="--h:.7"></i><i style="--h:.3"></i><i style="--h:.85"></i><i style="--h:.55"></i><i style="--h:.75"></i><i style="--h:.45"></i><i style="--h:1"></i></span><b>Monthly summaries<span>the past year</span></b><ul><li><span>Last month:</span> groomed most with Mbelo; backed by Rukaso 6 times; made up with Sanaki twice</li></ul></div>
+                <span class="squeeze" aria-hidden="true"><svg class="i"><use href="#i-right"/></svg></span>
+                <div class="tier t3"><span class="viz" aria-hidden="true"><i></i><i></i><i></i><i></i></span><b>Yearly summaries<span>kept for life</span></b><ul><li><span>Last year:</span> climbed to rank 3; closest friend Mbelo</li></ul></div>
+              </div>
+            </div>
+          </article>
+          <p class="note">When a model decides for a chimp, it gets a small slice of this: how the chimp feels, who's around, and a few memory lines about them.</p>
+        </div>
+      </section>
+
+      <!-- Day -->
+      <section class="sec" id="day" aria-labelledby="h-day">
+        <header class="sh"><h2 id="h-day">Daily routine</h2><p>The simulation keeps real equatorial time: sunrise and sunset just before seven, about twelve hours of daylight all year. You can watch it in real time or speed it up: keys 1 to 7 go from real time to as fast as your computer allows. The timeline shows what most chimps are doing across a typical day.</p></header>
+        <div class="panel day">
+          <div class="tl">
+            <span class="tl-label tl-sky" aria-hidden="true">Light</span>
+            <div class="sky tl-sky" aria-hidden="true">
+              <span class="b n" style="--a:5;--b:6.35"></span><span class="b tw" style="--a:6.35;--b:7.5"></span><span class="b d" style="--a:7.5;--b:18.2"></span><span class="b tw" style="--a:18.2;--b:19.25"></span><span class="b n" style="--a:19.25;--b:21"></span>
+              <span class="sky-mark" style="--a:6.82"><svg class="i"><use href="#i-sun"/></svg></span><span class="sky-mark" style="--a:12.5">daylight</span><span class="sky-mark" style="--a:18.82"><svg class="i"><use href="#i-sun"/></svg></span><span class="sky-mark moon" style="--a:20.2"><svg class="i"><use href="#i-moon"/></svg></span>
+            </div>
+            <span class="tl-label"><svg class="i" aria-hidden="true"><use href="#i-speaker"/></svg>Calls</span>
+            <ol class="track" aria-label="Calls">
+              <li class="call" style="--a:6.4;--b:7.4"><b>Dawn chorus</b><span class="t">06:24–07:24 · everyone joins in with pant-hoots, their loud rising “hoo-hoo-HOO” that carries far</span></li>
+              <li class="call left" style="--a:18;--b:19"><b>Dusk chorus</b><span class="t">18:00–19:00 · one more round before bed</span></li>
+            </ol>
+            <span class="tl-label"><svg class="i" aria-hidden="true"><use href="#i-leaf"/></svg>Doing</span>
+            <ol class="track" aria-label="What most chimps are doing">
+              <li class="sleep" style="--a:5;--b:6.8"><b>Asleep</b><span class="t">until about 06:50 · still in last night's nests</span></li>
+              <li style="--a:6.8;--b:11.5"><b>Breakfast, mostly fruit</b><span class="t">06:50–11:30 · feeding at fruit trees and moving between them</span></li>
+              <li style="--a:11.5;--b:14.5"><b>Siesta, grooming</b><span class="t">11:30–14:30 · resting through the heat, grooming friends</span></li>
+              <li style="--a:14.5;--b:17.8"><b>More feeding</b><span class="t">14:30–17:50 · back to the trees</span></li>
+              <li class="bed" style="--a:17.8;--b:21"><b>Build a nest, sleep</b><span class="t">from about 17:50 · a fresh nest, then sleep</span></li>
+            </ol>
+            <span class="tl-label"><svg class="i" aria-hidden="true"><use href="#i-flag"/></svg>Patrols</span>
+            <ol class="track" aria-label="Patrols"><li class="maybe" style="--a:8;--b:15.5"><b>A border patrol may set out</b><span class="t">08:00–15:30 · every few weeks, a group of males heads for the border</span></li></ol>
+            <span class="tl-label"><svg class="i" aria-hidden="true"><use href="#i-storm"/></svg>Storms</span>
+            <ol class="track" aria-label="Storms"><li class="storm" style="--a:12.5;--b:19"><b>Thunderstorms most likely</b><span class="t">12:30–19:00 · about two-thirds of the rain falls in the afternoon</span></li></ol>
+            <span class="tl-hours-spacer" aria-hidden="true"></span>
+            <div class="hours" aria-hidden="true"><span style="--a:6">06</span><span style="--a:8">08</span><span style="--a:10">10</span><span style="--a:12">12</span><span style="--a:14">14</span><span style="--a:16">16</span><span style="--a:18">18</span><span style="--a:20">20</span></div>
+          </div>
+        </div>
+        <div class="year">
+          <div class="prose">
+            <h3>Rainy seasons</h3>
+            <p>Kibale gets rain from March to May and again from September to November, with drier spells in between. In the default forest, ripe fruit follows Ngogo&rsquo;s real fruit record, year by year (see <a href="#realism">Field data</a>).</p>
+            <p>Figs are different: each tree fruits on its own schedule, so some figs are usually ripe when little else is.</p>
+            <div class="temp"><div><b>15 °C</b><span>at dawn</span></div><div><b>24 °C</b><span>after lunch</span></div></div>
+          </div>
+          <figure class="panel rainfall">
+            <figcaption class="rainfall-head"><span><b>Rain per month</b>, mm</span><span class="rkey">wet season</span></figcaption>
+            <ol class="months" aria-label="Monthly rainfall in millimetres">
+              <li style="--mm:62"><span class="v">62</span><i class="col"></i><span class="m" aria-label="January">J</span></li>
+              <li style="--mm:78"><span class="v">78</span><i class="col"></i><span class="m" aria-label="February">F</span></li>
+              <li class="wet" style="--mm:150"><span class="v">150</span><i class="col"></i><span class="m" aria-label="March">M</span></li>
+              <li class="wet" style="--mm:185"><span class="v">185</span><i class="col"></i><span class="m" aria-label="April">A</span></li>
+              <li class="wet" style="--mm:160"><span class="v">160</span><i class="col"></i><span class="m" aria-label="May">M</span></li>
+              <li style="--mm:78"><span class="v">78</span><i class="col"></i><span class="m" aria-label="June">J</span></li>
+              <li style="--mm:60"><span class="v">60</span><i class="col"></i><span class="m" aria-label="July">J</span></li>
+              <li style="--mm:110"><span class="v">110</span><i class="col"></i><span class="m" aria-label="August">A</span></li>
+              <li class="wet start" style="--mm:155"><span class="v">155</span><i class="col"></i><span class="m" aria-label="September, where every forest starts">S</span></li>
+              <li class="wet" style="--mm:185"><span class="v">185</span><i class="col"></i><span class="m" aria-label="October">O</span></li>
+              <li class="wet" style="--mm:180"><span class="v">180</span><i class="col"></i><span class="m" aria-label="November">N</span></li>
+              <li style="--mm:95"><span class="v">95</span><i class="col"></i><span class="m" aria-label="December">D</span></li>
+            </ol>
+            <p class="small muted">The weather follows this monthly pattern; a simulated year gets about 1,500 to 1,700 mm. Every new forest opens at 06:30 on 28 September, in the middle of the rains.</p>
+          </figure>
+        </div>
+        <div class="pair day-shots">
+          <figure class="shot"><div class="frame"><img src="/docs/img/night.webp" width="1600" height="1000" loading="lazy" decoding="async" alt="The forest at night from above, following Dembiri, who is labelled nesting in a tree crown. His Overview on the right reads Nesting · 3 h, Calm, In nest. The field log on the left lists the day's events."></div><figcaption><b>Night.</b> Dembiri in his night nest; his Overview shows he has been nesting for three hours.</figcaption></figure>
+          <figure class="shot"><div class="frame"><img src="/docs/img/storm.webp" width="1600" height="1000" loading="lazy" decoding="async" alt="A heavy storm in the close view: rain streaks across the forest floor and Dembiri sits hunched, resting, with a pill reading Following Dembiri. The field log reports that a thunderstorm broke over the forest."></div><figcaption><b>A storm.</b> Dembiri sits hunched in heavy rain, waiting it out. The field log records the thunderstorm.</figcaption></figure>
+        </div>
+      </section>
+
+      <!-- Decide -->
+      <section class="sec" id="decide" aria-labelledby="h-decide">
+        <header class="sh"><h2 id="h-decide">Decisions</h2><p>Nothing is scripted. Whenever a chimp finishes what it was doing, or something interrupts it (a charge, a storm, a stranger's call), it stops and makes a fresh decision. This repeats for every chimp, all day.</p></header>
+        <div class="decide">
+          <div class="loop">
+            <svg viewBox="0 0 560 500" aria-hidden="true">
+              <path id="ring" class="ring" d="M280,70 A190,180 0 1,1 279.9,70"/>
+              <g class="chev">
+                <path transform="translate(375 94) rotate(28.7)" d="M-4,-5 L3,0 L-4,5"/><path transform="translate(470 250) rotate(90)" d="M-4,-5 L3,0 L-4,5"/><path transform="translate(375 406) rotate(151.3)" d="M-4,-5 L3,0 L-4,5"/>
+                <path transform="translate(185 406) rotate(208.7)" d="M-4,-5 L3,0 L-4,5"/><path transform="translate(90 250) rotate(270)" d="M-4,-5 L3,0 L-4,5"/><path transform="translate(185 94) rotate(331.3)" d="M-4,-5 L3,0 L-4,5"/>
+              </g>
+              <circle class="runner" r="3.5" transform="translate(280 70)"/>
+            </svg>
+            <ol class="steps" aria-label="The decision loop">
+              <li style="--x:280px;--y:70px"><b>Sees and hears</b><span>only what's nearby, no peeking at the map</span></li>
+              <li style="--x:444px;--y:160px"><b>Remembers</b><span>friends, fights, fruit trees, water</span></li>
+              <li style="--x:444px;--y:340px"><b>Lists options</b><span>only moves that are possible right now</span></li>
+              <li style="--x:280px;--y:430px"><b>Picks one</b><span>the built-in rules or a decision model</span></li>
+              <li style="--x:116px;--y:340px"><b>Acts</b><span>eats, grooms, charges, naps…</span></li>
+              <li style="--x:116px;--y:160px"><b>World changes</b><span>bellies, bonds, ranks, everyone nearby</span></li>
+            </ol>
+            <p class="loop-center"><b>Every chimp, all day</b>then back to step 1</p>
+            <p class="again"><svg class="i" aria-hidden="true"><use href="#i-loop"/></svg>…and back to step 1.</p>
+          </div>
+          <ul class="modes" aria-label="Who picks">
+            <li><h3>Rules</h3><p>The built-in rules score each option with a simple recipe (hungry plus fruit nearby means go eat). The top score usually wins, but not every time.</p></li>
+            <li><h3>Decision model</h3><p>A small AI model, GLiNER2.5-Decide, can make the pick instead, by default for the chimp you select. It runs in your browser, reads only what that chimp perceives, feels and remembers, and chooses from the same list of possible moves. The first visit downloads it (about 0.9 GB, or 1.7 GB on CPU); you can skip that and continue with rules.</p></li>
+            <li><h3>Checked either way</h3><p>Only the simulation changes the world. Whoever picks, it checks that the move is still possible before the chimp acts.</p></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Society -->
+      <section class="sec" id="society" aria-labelledby="h-society">
+        <header class="sh"><h2 id="h-society">Society</h2><p>Social events are not scripted. Rank, alliances, conflict and reconciliation, territories, hunting, family life and parties each come from a small set of rules that run for every chimp, every day. Where a rule follows a field study, the study is cited.</p></header>
+        <ul class="mechs">
+          <li class="mech">
+            <svg viewBox="0 0 200 104" aria-hidden="true"><g fill="rgba(255,255,255,.12)"><rect x="46" y="16" width="118" height="11" rx="5.5"/><rect x="46" y="38" width="98" height="11" rx="5.5"/><rect x="46" y="60" width="78" height="11" rx="5.5"/><rect x="46" y="82" width="58" height="11" rx="5.5"/></g><g fill="#a9a9b0"><circle cx="57" cy="21.5" r="3.5"/><circle cx="57" cy="65.5" r="3.5"/><circle cx="57" cy="87.5" r="3.5"/></g><circle cx="57" cy="43.5" r="4" fill="#ea8b60"/><path d="m20 17 4 3.5 4-6 4 6 4-3.5-1.6 9h-12.8Z" fill="none" stroke="#e2bf79" stroke-width="1.6" stroke-linejoin="round"/><path class="mini-s" d="M180 60 V30 M174 36 l6-6 6 6"/></svg>
+            <h3>Rank and alphas</h3><p>Males rise by winning contests, scored with Elo ratings (<a class="cite" href="https://doi.org/10.1016/j.anbehav.2011.07.016">Neumann et al. 2011</a>), and lower-ranked chimps greet higher ones with a <b>pant-grunt</b>, a breathy "you're the boss". The alpha usually falls to a rival with friends. Females queue by age and tenure instead (<a class="cite" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5064376/">Foerster et al. 2016</a>).</p>
+          </li>
+          <li class="mech">
+            <svg viewBox="0 0 200 104" aria-hidden="true"><path d="M56 30 L100 78 L142 30 Z" fill="none" stroke="#a9a9b0" stroke-width="3" stroke-linejoin="round"/><path d="M142 30 L178 74" stroke="#ef7266" stroke-width="1.6" stroke-dasharray="4 4" stroke-linecap="round"/><g fill="#ea8b60"><circle cx="56" cy="30" r="8"/><circle cx="100" cy="78" r="8"/><circle cx="142" cy="30" r="8"/><circle cx="178" cy="74" r="6" opacity=".7"/></g></svg>
+            <h3>Alliances</h3><p>Chimps who groom each other, back each other up and share meat become <b>allies</b>. When a friend gets charged, allies may jump in, and that's how a smaller male can topple a stronger one.</p>
+          </li>
+          <li class="mech">
+            <svg viewBox="0 0 200 104" aria-hidden="true"><g fill="none" stroke="rgba(255,255,255,.18)"><circle cx="36" cy="52" r="20"/><circle cx="100" cy="52" r="20"/><circle cx="164" cy="52" r="20"/></g><g transform="translate(24 40)" class="mini-s" style="stroke:#ef7266"><path d="M13 2 4 14h7l-1 8 9-12h-7Z"/></g><g transform="translate(88 40)" class="mini-s"><path d="M5 9l7 7 7-7"/><path d="M5 4l7 7 7-7" opacity=".5"/></g><g transform="translate(152 40)" class="mini-s" style="stroke:#f2f2f3"><path d="M12 20s-7.5-4.6-9-9.3C2 7.4 4.3 4.5 7.4 4.5c2 0 3.4 1.2 4.6 2.8 1.2-1.6 2.6-2.8 4.6-2.8 3.1 0 5.4 2.9 4.4 6.2-1.5 4.7-9 9.3-9 9.3Z"/></g><g class="mini-s" style="stroke:#6f6f76"><path d="M61 52h13m-4-4 4 4-4 4M125 52h13m-4-4 4 4-4 4"/></g></svg>
+            <h3>Fights and making up</h3><p>Most conflicts are charges and bluffs, and few come to blows. Afterwards, rivals often reconcile and friends console the loser (<a class="cite" href="https://doi.org/10.1007/s10329-004-0082-z">Kutsukake &amp; Castles 2004</a>). A fight that never gets patched up leaves <b>tension</b> that fades over a few weeks, modeled on how chimps' relationships vary in value and compatibility (<a class="cite" href="https://doi.org/10.1111/j.1439-0310.2008.01527.x">Fraser, Schino &amp; Aureli 2008</a>).</p>
+          </li>
+          <li class="mech">
+            <svg viewBox="0 0 200 104" aria-hidden="true"><circle cx="58" cy="52" r="38" fill="rgba(234,139,96,.08)" stroke="#ea8b60" stroke-width="1.4"/><circle cx="156" cy="36" r="27" fill="rgba(119,182,225,.08)" stroke="#77b6e1" stroke-width="1.4"/><circle cx="150" cy="84" r="16" fill="rgba(226,141,174,.08)" stroke="#e28dae" stroke-width="1.4"/><path d="M84 22 C100 36 102 60 90 80" fill="none" stroke="#f2f2f3" stroke-width="1.4" stroke-dasharray="1 6" stroke-linecap="round"/><g fill="#f2f2f3"><circle cx="93" cy="36" r="2.8"/><circle cx="97" cy="46" r="2.8"/><circle cx="98" cy="56" r="2.8"/></g><g class="mini-s" style="stroke:#77b6e1"><path d="M122 42 q-5 6 0 12"/><path d="M116 38 q-8 10 0 20" opacity=".6"/></g></svg>
+            <h3>Territories and patrols</h3><p>Every few weeks, a group of males patrols the border in silence (<a class="cite" href="https://sites.lsa.umich.edu/mitani/wp-content/uploads/sites/152/2014/08/watts_and_mitani_2001.pdf">Watts &amp; Mitani 2001</a>). Meeting strangers, they count heads: outnumber them and they charge; outnumbered, they slip quietly home. Most encounters are only heard, not seen (<a class="cite" href="https://doi.org/10.1016/j.anbehav.2011.11.004">Wilson et al. 2012</a>).</p>
+          </li>
+          <li class="mech">
+            <svg viewBox="0 0 200 104" aria-hidden="true"><path d="M0 30 C20 22 36 34 56 26 C76 18 92 32 112 24 C132 16 150 30 170 22 C184 18 194 22 200 24" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="1.4"/><g fill="#a9a9b0"><ellipse cx="124" cy="18" rx="8" ry="5"/><circle cx="133" cy="13" r="3.6"/></g><path d="M116 19 C108 24 106 34 110 42" fill="none" stroke="#a9a9b0" stroke-width="1.6" stroke-linecap="round"/><g fill="#ea8b60"><circle cx="56" cy="86" r="6"/><circle cx="104" cy="92" r="6"/><circle cx="160" cy="84" r="6"/></g><g class="mini-s" style="stroke:#6f6f76"><path d="M62 80 L112 40M105 84 L120 44M156 78 L130 42"/></g></svg>
+            <h3>Hunting and sharing</h3><p>When several males spot red colobus monkeys, a hunt can start. More hunters, better odds, as at Ngogo (<a class="cite" href="https://sites.lsa.umich.edu/mitani/wp-content/uploads/sites/152/2014/08/mitani_and_watts_1999.pdf">Mitani &amp; Watts 1999</a>). The catch gets shared with friends, allies and family who beg.</p>
+          </li>
+          <li class="mech">
+            <svg viewBox="0 0 200 104" aria-hidden="true"><g fill="none" stroke="rgba(255,255,255,.22)" stroke-width="1.2"><path d="M100 24 V42 H44 V60 M100 42 V60 M100 42 H156 V60"/></g><circle cx="100" cy="18" r="7.5" fill="#77b6e1"/><g fill="#77b6e1"><circle cx="44" cy="68" r="6.5"/><circle cx="100" cy="68" r="5"/><circle cx="156" cy="68" r="3.8"/></g><g class="mini-s" style="stroke:#6f6f76"><path d="M52 84 H92 M108 84 H148"/></g></svg>
+            <h3>Babies and families</h3><p>A baby rides on mom's belly, then her back, and nurses until 4 or 5. The next one comes about five years after the last (<a class="cite" href="https://pubmed.ncbi.nlm.nih.gov/9155740/">Wallis 1997</a>). Death rates by age follow Ngogo's (<a class="cite" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5526083/">Wood et al. 2017</a>), and orphans are sometimes adopted by an older sibling.</p>
+          </li>
+          <li class="mech">
+            <svg viewBox="0 0 200 104" aria-hidden="true"><circle cx="52" cy="54" r="36" fill="rgba(226,141,174,.08)" stroke="#e28dae" stroke-width="1.4"/><circle cx="150" cy="54" r="36" fill="rgba(119,182,225,.08)" stroke="#77b6e1" stroke-width="1.4"/><path d="M58 44 C86 18 118 18 140 44" fill="none" stroke="#f2f2f3" stroke-width="1.4" stroke-dasharray="3 5" stroke-linecap="round"/><path d="M132 40 l8 4 -1 -9" fill="none" stroke="#f2f2f3" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="56" cy="50" r="4.5" fill="#e28dae"/><circle cx="144" cy="58" r="4.5" fill="#e28dae"/></svg>
+            <h3>Females change communities</h3><p>In adolescence, most young females move to a neighboring community and start at the bottom of the female pecking order. Males stay home for life.</p>
+          </li>
+          <li class="mech">
+            <svg viewBox="0 0 200 104" aria-hidden="true"><circle cx="60" cy="36" r="26" fill="rgba(255,255,255,.09)"/><path d="M60 62 V80" stroke="rgba(255,255,255,.18)" stroke-width="3"/><g fill="#a9a9b0"><circle cx="48" cy="30" r="2.2"/><circle cx="62" cy="24" r="2.2"/><circle cx="72" cy="36" r="2.2"/><circle cx="54" cy="44" r="2.2"/><circle cx="68" cy="48" r="2.2"/></g><g fill="#ea8b60"><circle cx="30" cy="88" r="4.5"/><circle cx="44" cy="92" r="4.5"/><circle cx="58" cy="88" r="4.5"/><circle cx="72" cy="92" r="4.5"/><circle cx="86" cy="88" r="4.5"/><circle cx="96" cy="94" r="3.5"/></g><circle cx="152" cy="52" r="14" fill="rgba(255,255,255,.09)"/><path d="M152 66 V80" stroke="rgba(255,255,255,.18)" stroke-width="3"/><g fill="#ea8b60"><circle cx="144" cy="90" r="4.5"/><circle cx="162" cy="90" r="4.5"/></g><g transform="translate(140 6)" class="mini-s" style="stroke:#9aadc2"><path d="M7 14h10.5a4 4 0 0 0 .6-8A6 6 0 0 0 6.6 7.2 3.5 3.5 0 0 0 7 14Z"/><path d="m8 17-1 3M12 17l-1 3M16 17l-1 3"/></g></svg>
+            <h3>Food and weather</h3><p>A community splits into <b>parties</b>, temporary subgroups that join and split all day as chimps follow food and each other. Storms send everyone to shelter.</p>
+          </li>
+        </ul>
+        <div class="pair soc-shots">
+          <figure class="shot"><div class="frame"><img src="/docs/img/society-kinship.webp" width="1600" height="1000" loading="lazy" decoding="async" alt="The Society overlay, Kinship view: each West and East matriline drawn as a small tree, such as Fumbira's line with Koruza, Rukaso and Oyaku, plus founders and lone immigrants. A dashed line traces the genetic sire links of the alpha, Tavuni."></div><figcaption><b>Kinship.</b> Every matriline as a tree; dashed lines trace genetic sires.</figcaption></figure>
+          <figure class="shot"><div class="frame"><img src="/docs/img/society-dominance.webp" width="1600" height="1000" loading="lazy" decoding="async" alt="The Society overlay, Dominance view: male and female ladders for West, East and North, each chimp with an Elo score bar; Tavuni tops West's males, followed by Mbelo, Koruza and Sanaki."></div><figcaption><b>Dominance.</b> Male and female ladders by Elo score, per community. Press <b>T</b> in the app.</figcaption></figure>
+        </div>
+      </section>
+
+      <!-- Experiments -->
+      <section class="sec" id="experiments" aria-labelledby="h-exp">
+        <header class="sh"><h2 id="h-exp">Field experiments</h2><p>Field experiments test how chimps react when they perceive or experience a specific event, such as a stranger's call played from the edge of their range or a model snake on a trail. In the app, the Experiments panel places the same kinds of events in the simulated forest, and the Mind tab shows a chimp's choice just before and just after.</p></header>
+        <ul class="rows exps">
+          <li class="row"><svg class="i" aria-hidden="true"><use href="#i-speaker"/></svg><h3>Stranger call playback</h3><p>A hidden speaker plays a strange male's pant-hoot. Do they go look, call back or sneak away? (<a class="cite" href="https://doi.org/10.1006/anbe.2000.1706">Wilson, Hauser &amp; Wrangham 2001</a>)</p></li>
+          <li class="row"><svg class="i" aria-hidden="true"><use href="#i-snake"/></svg><h3>Snake model</h3><p>A fake viper on the trail. Who spots it, and do they warn the ones who haven't? (<a class="cite" href="https://doi.org/10.1016/j.cub.2011.11.053">Crockford et al. 2012</a>)</p></li>
+          <li class="row"><svg class="i" aria-hidden="true"><use href="#i-fig"/></svg><h3>Fig feast</h3><p>A big fig crop ripens all at once and stays for three days. Who finds it?</p></li>
+          <li class="row"><svg class="i" aria-hidden="true"><use href="#i-storm"/></svg><h3>Storm</h3><p>A heavy downpour, right now. Everyone hunkers down; a few males do a rain display.</p></li>
+          <li class="row"><svg class="i" aria-hidden="true"><use href="#i-drought"/></svg><h3>Drought</h3><p>Three days with far less fruit. Do parties shrink?</p></li>
+          <li class="row"><svg class="i" aria-hidden="true"><use href="#i-noalpha"/></svg><h3>Remove the alpha</h3><p>The boss vanishes. Watch the struggle to fill the top spot.</p></li>
+          <li class="row"><svg class="i" aria-hidden="true"><use href="#i-monkey"/></svg><h3>Monkeys arrive</h3><p>A group of red colobus moves in overhead. Hunting chance. (<a class="cite" href="https://sites.lsa.umich.edu/mitani/wp-content/uploads/sites/152/2014/08/watts_and_mitani_2002.pdf">Watts &amp; Mitani 2002</a>)</p></li>
+          <li class="row"><svg class="i" aria-hidden="true"><use href="#i-flask"/></svg><h3>Before and after</h3><p>The Mind tab puts the chimp's choice right before the experiment next to the one right after.</p></li>
+        </ul>
+        <figure class="shot" style="margin-top:40px">
+          <div class="frame"><img src="/docs/img/experiment-shift.webp" width="1600" height="1000" loading="lazy" decoding="async" alt="A stranger pant-hoot playback, following Tavuni, who is labelled fleeing. The experiment card reads Before: Forage, fig, 35%; After: Flee 100%. Below it, the Mind tab's latest decision shows what Tavuni sensed, a stranger male pant-hooting from the north about 300 m away, one stranger heard and fruit nearby; of five options the decision model picked Flee at 100%, and the rules agreed."></div>
+          <figcaption><b>Stranger playback, before and after.</b> In this example run, Tavuni was foraging at a fig (the decision model gave it 35%). After a stranger's call from about 300 m away, the model picks flee at 100% and the rules agree. Field playbacks found a matching pattern: small parties back off, bigger male parties move in (<a href="https://blog.michael-lawrence-wilson.com/wp-content/uploads/2014/01/04.-Wilson-et-al.-2001-Playbacks.pdf">Wilson, Hauser &amp; Wrangham 2001</a>).</figcaption>
+        </figure>
+      </section>
+
+      <!-- Field data. The figures are drawn by docs/guide/guide.js from docs/data/guide-validation.json and guide-fruit.json
+           (scripts/guide-data.ts): the dataset list, the Ngogo phenology record as site-level monthly aggregates (no tree
+           positions), and the scorecard, which joins data/targets.json to the latest field scorecards in artifacts/validation/
+           and dates itself. Static text here stays free of results, so a new run never makes it stale. -->
+      <section class="sec" id="realism" aria-labelledby="h-real">
+        <header class="sh"><h2 id="h-real">Field data</h2><p>Open datasets from long-term studies at Ngogo, Gombe and Taï have two jobs here. Ngogo&rsquo;s fruit record drives the default forest&rsquo;s fruit, year by year. The rest, with published figures from many other studies, set the targets: a virtual field observer follows the simulated chimps the way researchers follow wild ones, and what it records is scored against them.</p></header>
+
+        <figure class="panel gv" data-gv="datasets" aria-labelledby="gv-ds-t">
+          <figcaption class="gv-head"><b id="gv-ds-t">The field data used</b><span class="gv-legend"><span><i class="gv-sq" style="--k:var(--ngogo)"></i>Ngogo</span><span><i class="gv-sq" style="--k:var(--gombe)"></i>Gombe</span><span><i class="gv-sq" style="--k:var(--tai)"></i>Taï</span></span></figcaption>
+          <p class="gv-take">Each bar spans the years a dataset covers. Follow a name to its source.</p>
+          <div class="gv-plot"><p class="ph">Loading the datasets…</p></div>
+          <p class="gv-credit">Each dataset is used under the licence shown and credited wherever its numbers appear. Raw records are never published: this page shows only summaries, never where a chimp was.</p>
+        </figure>
+
+        <figure class="panel gv" data-gv="fruit" aria-labelledby="gv-fruit-t">
+          <figcaption class="gv-head"><b id="gv-fruit-t">Twenty years of ripe fruit at Ngogo</b></figcaption>
+          <p class="gv-take">Ripe fruit comes in pulses, and no two years repeat. The default forest steps through these years in order, month by month.</p>
+          <p class="gv-sub" data-v="sub"></p>
+          <div class="gv-plot" role="img" aria-label="Heat map of Ngogo's monthly ripe-fruit score, 1998 to 2017, with yearly rainfall on the right and median months below."><p class="ph">Loading the phenology record…</p></div>
+          <div class="gv-legend" data-v="ramp"></div>
+          <p class="gv-credit">Data: Ngogo, Kibale National Park, 1998–2017 (<a href="https://doi.org/10.1111/btp.12764">Potts et al. 2020, Biotropica</a>; data <a href="https://doi.org/10.5061/dryad.gf1vhhmk8">Dryad</a>, CC0). The ripe-fruit score is the source's crop-weighted index. Monthly aggregates are derived by ChimpBench; not endorsed by the authors.</p>
+        </figure>
+
+        <figure class="panel gv" data-gv="validation" aria-labelledby="gv-val-t">
+          <figcaption class="gv-head"><b id="gv-val-t">Every target, pass or fail</b></figcaption>
+          <p class="gv-take" data-v="take">Each square is one field target. Fitted targets may have been tuned against; held-out ones never were, so they are the real test.</p>
+          <p class="gv-sub" data-v="runinfo"></p>
+          <div class="gv-plot"><p class="ph">Loading the scorecard…</p></div>
+          <p class="gv-credit">Targets and pass bands come from published field studies (<span class="mono">data/targets.json</span>). Verdicts come from the latest year-long runs of the virtual field observer, dated above. A tuned, encoded or compromised target never counts as a pass.</p>
+        </figure>
+      </section>
+
+      <!-- What's next: the one dated status on the page. Update it when the physiology work is switched on in the app. -->
+      <section class="sec" id="next" aria-labelledby="h-next">
+        <header class="sh"><h2 id="h-next">What&rsquo;s next</h2><p>In the app today, much of a chimp&rsquo;s day still runs on clock hours, dice rolls and scores tuned to match field numbers. I&rsquo;m rebuilding that so behavior comes from the body instead: an energy budget with a gut, sleep pressure and a body clock, a water balance, heat, and hormone-like states such as stress. The rule is that field numbers about behavior are targets to measure against, never settings, and each change is benchmarked against field data before it stays.</p></header>
+        <p class="note"><b>Status, October 2026.</b> Work in progress on a development branch. Some pieces have passed their first tests; none of it is switched on in the app you can open today.</p>
+      </section>
+
+      <!-- Credits and docs: links to the living documents instead of restating them (the Credits page is docs/sources.html,
+           kept at that path so older links still work; simulation.md and research.md are copied into the build by vite.config.ts). -->
+      <section class="sec" id="sources" aria-labelledby="h-src">
+        <header class="sh"><h2 id="h-src">Credits and docs</h2><p>The tools, models, sound and field data behind ChimpBench, and the studies it draws on, each with its licence, are on the <a href="/docs/sources.html">Credits page</a>. For how the simulation works, mechanism by mechanism, read <a href="/docs/simulation.md">simulation.md</a>; for the evidence behind each behavior and how strong it is, read <a href="/docs/research.md">research.md</a>.</p></header>
+      </section>
+    </main>
+  </div>
+</div>
+
+<footer class="end"><span>© <span data-year>2026</span> <a data-x-link href="https://x.com/jbermudez5" target="_blank" rel="noopener">Juan Bermudez</a></span><span><a data-x-link class="x-profile" href="https://x.com/jbermudez5" target="_blank" rel="noopener noreferrer" aria-label="Juan Bermudez on X" title="Juan Bermudez on X"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.64 7.584H.47l8.6-9.835L0 1.154h7.594l5.243 6.932zM17.61 20.644h2.039L6.486 3.24H4.298z"/></svg></a></span></footer>
+
+<script>
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var byId = {}; links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        links.forEach(function (l) { l.removeAttribute('aria-current'); });
+        if (byId[e.target.id]) byId[e.target.id].setAttribute('aria-current', 'true');
+      });
+    }, { rootMargin: '-40% 0px -55% 0px' });
+    document.querySelectorAll('main section[id]').forEach(function (s) { io.observe(s); });
+  }
+  document.querySelectorAll('.jump a').forEach(function (a) { a.addEventListener('click', function () { a.closest('details').open = false; }); });
+  // The data figures (docs/guide/guide.js) are a module that browsers don't run on file:// pages; say so instead of "Loading…".
+  if (location.protocol === 'file:') document.querySelectorAll('.gv .ph').forEach(function (p) { p.textContent = 'This chart is drawn from docs/data/ when the guide is served (pnpm dev or the build); browsers block it on file:// pages.'; });
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.querySelectorAll('svg').forEach(function (s) { if (s.pauseAnimations) s.pauseAnimations(); });
+  }
+})();
+</script>
+<script type="module" src="/docs/guide/guide.js"></script>
+<script type="module" src="/docs/guide/motion.js"></script>
+<script type="module" src="/docs/guide/sound.js"></script>
+<script type="module" src="/docs/guide/site.js"></script>
+</body>
+</html>

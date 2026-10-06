@@ -4,7 +4,7 @@ import { icon } from './icons';
 import { esc, FEED_CATS, feedCat, stamp, troopOf, type FeedCat } from './format';
 
 export const CAT_ICON: Record<FeedCat, string> = {
-  conflict: 'swords', play: 'paw', social: 'heart', territory: 'flag', hierarchy: 'crown', life: 'sprout',
+  conflict: 'swords', play: 'paw', social: 'heart', territory: 'flag', hierarchy: 'ladder', life: 'sprout',
   hunt: 'meat', food: 'fig', weather: 'cloud', model: 'spark', system: 'info',
 };
 

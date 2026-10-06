@@ -21,6 +21,7 @@ import { FADE_CAPACITY, FADE_WIDTH, MARGIN_IN, MAX_TARGETS, classify, createOccl
 import { createGpuTimer, perf, perfEnd, perfNow } from './perf';
 import { hyp2 } from './render/fastmath';
 import { pickRadius } from './render/creatures/pick';
+import { createPortrait } from './render/creatures/portrait';
 import { cameraFootprint, footprintMoved } from './render/env/footprint';
 
 // Scene orchestrator. The environment (terrain, forest, water, sky, weather,
@@ -53,8 +54,11 @@ export interface CameraFootprint {
   /** The animal the camera follows (strategy or close view), or −1 (free camera). */
   followId: number;
 }
-/** followChimp: attach the camera follow without zooming (the UI retargets an attached follow to a new selection). */
-export type Scene = SceneAPI & { getFootprint(): CameraFootprint; followChimp(id: number): void };
+/** followChimp: attach the camera follow without zooming (the UI retargets an attached follow to a new selection).
+ * portrait: a small snapshot of an animal drawn into a canvas of the UI (render/creatures/portrait.ts); request() is
+ * false when none can be taken now (render quality 'low', the cinematic view, no animal layer, or a refresh while
+ * frames run long). */
+export type Scene = SceneAPI & { getFootprint(): CameraFootprint; followChimp(id: number): void; portrait: { request(id: number, canvas: HTMLCanvasElement, refresh?: boolean): boolean } };
 /** Scene options (outside the shared contract), field profile only. focusId: the animal whose party the strategy view
  * frames at start (the whole-map overview when absent, as in the env harness). view 'close': open in the close view on
  * that animal instead, at a low orbit (a new world); the strategy view keeps the party framing for the R key. */
@@ -177,6 +181,9 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
   }
   const creatureRoot = scene.getObjectByName('creatures');
   const post = createPost(renderer, scene, rig.camera);
+  // The UI's chimp snapshot: drawn after the main frame, only when the UI asks (portrait.ts).
+  const portrait = createPortrait(renderer, scene, [sky.key, sky.hemi, sky.flash]);
+  let frameEma = 1 / 60;   // smoothed frame time (s)
   const gpuTimer = perf.gpu ? createGpuTimer(renderer.getContext() as WebGL2RenderingContext) : null;
     // frameCap: 60 Hz on ≥ 100 Hz displays (Settings can turn it off; probes do). fsr: upscale path (A/B only).
   // detail: G5's close-up additions that can be switched at runtime (close-view DoF, litter decals), for A/B probes.
@@ -184,7 +191,7 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
   let internalRatio = 1;
   const keepStats = { targets: 0, ms: 0, classifyMs: 0 };
   const envHandle = (renderer.domElement as HTMLCanvasElement & { __env: Record<string, unknown> }).__env;
-  Object.assign(envHandle, { rig, post, debug, creatures, keepStats, internalRatio: () => internalRatio, setInternalRatio(r: number) { const o = outputSizes(width, height, window.devicePixelRatio || 1, r, debug.fsr); renderer.setPixelRatio(o.fsr ? o.native : o.internal); renderer.setSize(width, height, false); post.setSize(width, height, o.internal); post.setUpscale(o.fsr, o.nativeW, o.nativeH); internalRatio = o.internal; } });
+  Object.assign(envHandle, { rig, post, debug, creatures, portrait, keepStats, internalRatio: () => internalRatio, setInternalRatio(r: number) { const o = outputSizes(width, height, window.devicePixelRatio || 1, r, debug.fsr); renderer.setPixelRatio(o.fsr ? o.native : o.internal); renderer.setSize(width, height, false); post.setSize(width, height, o.internal); post.setUpscale(o.fsr, o.nativeW, o.nativeH); internalRatio = o.internal; } });
   // Live getters: a field window swap replaces these objects.
   Object.defineProperties(envHandle, {
     terrain: { get: () => terrain, configurable: true }, vegetation: { get: () => vegetation, configurable: true },
@@ -435,6 +442,8 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
     gpuTimer?.begin();
     post.render(dt);
     gpuTimer?.end();
+    frameEma += (Math.min(dt, 0.1) - frameEma) * 0.1;
+    portrait.render(creatures);
     perfEnd('render', r0);
     if (renderer.info.programs && renderer.info.programs.length !== linkChecked) checkLinks();
     diagnostics.drawCalls = renderer.info.render.calls;
@@ -770,6 +779,7 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
     renderer.domElement.removeEventListener('pointerup', onPointerUp);
     renderer.domElement.removeEventListener('pointercancel', onPointerCancel);
     renderer.domElement.removeEventListener('contextmenu', onContextMenu);
+    portrait.dispose();
     creatures?.dispose();
     overview?.dispose();
     if (fieldEnv && win) { if (pendingDispose) fieldEnv.dispose(pendingDispose); fieldEnv.dispose(win); }
@@ -804,6 +814,8 @@ export function createScene(container: HTMLElement, world: World, onSelect: (id:
     getListener,
     getZoom() { return rig.zoom(); },
     getFootprint() { return footprint; },
+    // A refresh (the same animal again) waits while frames run long: the readback then costs one long frame (portrait.ts).
+    portrait: { request: (id: number, canvas: HTMLCanvasElement, refresh = false) => !!creatures?.portrait && quality !== 'low' && rig.mode !== 'cinematic' && !(refresh && frameEma > 0.024) && portrait.request(id, canvas) },
     dispose,
   };
 }

@@ -20,6 +20,14 @@ from pathlib import Path
 import numpy as np
 
 
+def layout(out: Path) -> tuple[list[str] | None, int]:
+    """Feature names and layout version from <out>/features.json (`pnpm exec tsx scripts/ft-features.ts`); a bare list is v1."""
+    if not (out / "features.json").exists():
+        return None, 1
+    d = json.loads((out / "features.json").read_text())
+    return (d, 1) if isinstance(d, list) else (d["names"], int(d["version"]))
+
+
 def load(path: Path) -> dict[str, list[dict]]:
     by: dict[str, list[dict]] = {}
     for line in path.read_text().splitlines():
@@ -123,7 +131,9 @@ def evaluate_mlp(rows: list[dict], model: dict) -> dict:
 
 
 def main_mlp(data: Path, out: Path, hidden: int, epochs: int, wd: float) -> None:
-    names = json.loads((out / "features.json").read_text())
+    names, version = layout(out)
+    if names is None:
+        raise SystemExit(f"{out}/features.json is missing: pnpm exec tsx scripts/ft-features.ts > {out}/features.json")
     report = {}
     for adapter, rows in sorted(load(data).items()):
         seeds = sorted({r["seed"] for r in rows})
@@ -132,7 +142,7 @@ def main_mlp(data: Path, out: Path, hidden: int, epochs: int, wd: float) -> None
         m = fit_mlp(train, test, hidden, epochs, wd)
         report[adapter] = {"train": evaluate_mlp(train, m), "held_out": evaluate_mlp(test, m), "held_out_seeds": sorted(held),
                            "decisions": {"train": len(train), "held_out": len(test)}}
-        model = {"adapter": adapter, "kind": "mlp", "features": names, "hidden": hidden,
+        model = {"adapter": adapter, "kind": "mlp", "features": names, "layoutVersion": version, "hidden": hidden,
                  "W1": np.round(m["W1"], 6).tolist(), "b1": np.round(m["b1"], 6).tolist(), "w2": np.round(m["w2"], 6).tolist(), "b2": round(m["b2"], 6),
                  "fit": {"hidden": hidden, "epochs": epochs, "weight_decay": wd, "data": str(data)}}
         (out / f"{adapter}.json").write_text(json.dumps(model) + "\n")
@@ -141,7 +151,7 @@ def main_mlp(data: Path, out: Path, hidden: int, epochs: int, wd: float) -> None
 
 
 def main(data: Path, out: Path, l2: float, steps: int, lr: float) -> None:
-    names = json.loads((out / "features.json").read_text()) if (out / "features.json").exists() else None
+    names, version = layout(out)
     report = {}
     for adapter, rows in sorted(load(data).items()):
         seeds = sorted({r["seed"] for r in rows})
@@ -152,7 +162,7 @@ def main(data: Path, out: Path, l2: float, steps: int, lr: float) -> None:
         rules_agree = sum(int(np.argmax(np.asarray(r["feats"])[:, 1]) == np.argmax(r["probs"])) for r in rules) / max(1, len(rules))
         report[adapter] = {"train": evaluate(train, w, mean, std), "held_out": evaluate(test, w, mean, std),
                            "held_out_seeds": sorted(held), "rules_pick_agreement_held_out": round(rules_agree, 4)}
-        model = {"adapter": adapter, "features": names, "weights": w.round(6).tolist(), "mean": mean.round(6).tolist(),
+        model = {"adapter": adapter, "features": names, "layoutVersion": version, "weights": w.round(6).tolist(), "mean": mean.round(6).tolist(),
                  "std": std.round(6).tolist(), "fit": {"l2": l2, "steps": steps, "lr": lr, "decisions": len(train)}}
         (out / f"{adapter}.json").write_text(json.dumps(model) + "\n")
         print(adapter, json.dumps(report[adapter]), flush=True)

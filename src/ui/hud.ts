@@ -16,7 +16,7 @@ export function modelChipState(ctx: Ctx): { tone: string; text: string } {
   if (mode === 'off') return { tone: 'off', text: 'Rules only' };
   if (!d.ready) return d.phase === 'loading' ? { tone: 'loading', text: 'Model loading' } : { tone: 'warn', text: d.phase === 'unavailable' ? 'Model offline' : 'Model not ready' };
   if (ctx.deps.clock.blockedByModel) return { tone: 'wait', text: 'Awaiting model' };
-  return { tone: d.busy ? 'busy' : 'ok', text: `GLiNER · ${mode}` };
+  return { tone: d.busy ? 'busy' : 'ok', text: `${d.provider === 'jev' ? 'Jev' : 'GLiNER'} · ${mode}` };
 }
 
 export function createHud(root: HTMLElement, ctx: Ctx) {
@@ -33,7 +33,7 @@ export function createHud(root: HTMLElement, ctx: Ctx) {
   <div class="bar-sep" data-sim></div>
   <div class="bar-group bar-clockctl">
     <button class="tc-play" data-k="play" aria-keyshortcuts="Space" aria-label="Pause (Space)" title="Play / pause (Space)">${icon('pause')}</button>
-    <button class="tc-rate" data-act="time" aria-haspopup="dialog" aria-expanded="false" aria-controls="time-drop" title="Time controls and decision model (speeds 1–6)">
+    <button class="tc-rate" data-act="time" aria-haspopup="dialog" aria-expanded="false" aria-controls="time-drop" title="Time controls and decision model (speeds 1–7)">
       <span class="tc-text"><span class="tc-speed" data-k="speed">1 min/s</span><span class="tc-achieved" data-k="achieved">—</span></span>${icon('chevron')}
     </button>
   </div>
@@ -56,19 +56,19 @@ export function createHud(root: HTMLElement, ctx: Ctx) {
   <div class="bar-spacer"></div>
   <div class="bar-group bar-actions">
     <span class="snd-slot" data-slot="sound"></span>
-    <button class="hud-btn" data-act="society" aria-keyshortcuts="T" title="Society overview (T)">${icon('tree')}<span>Society</span></button>
-    <button class="hud-btn" data-act="experiments" aria-keyshortcuts="E" title="Field experiments (E)">${icon('flask')}<span>Experiments</span></button>
+    <button class="hud-btn" data-act="society" aria-keyshortcuts="T" aria-controls="right-sidebar" aria-expanded="false" title="Society: kinship, dominance, bonds, alpha history (T)">${icon('tree')}<span>Society</span></button>
+    <button class="hud-btn" data-act="experiments" aria-keyshortcuts="E" aria-controls="right-sidebar" aria-expanded="false" title="Field experiments (E)">${icon('flask')}<span>Experiments</span></button>
     <div class="bar-sep"></div>
     <button class="hud-btn icon-only" data-act="settings" aria-label="Settings" title="Settings">${icon('gear')}</button>
-    <a class="hud-btn icon-only" href="${esc(ctx.deps.guideUrl)}" target="_blank" rel="noopener noreferrer" data-guide aria-label="Science & design guide (opens in a new tab)" title="Science & design guide (new tab)">${icon('help')}</a>
+    <a class="hud-btn icon-only" href="${esc(ctx.deps.guideUrl)}" target="_blank" rel="noopener noreferrer" data-guide aria-label="About ChimpBench (opens in a new tab)" title="About ChimpBench (new tab)">${icon('help')}</a>
   </div>`;
   const k = (name: string) => root.querySelector<HTMLElement>(`[data-k="${name}"]`)!;
   const el = Object.fromEntries(['alive', 'births', 'deaths', 'day', 'time', 'date', 'season', 'sun', 'moon', 'wxicon', 'temp', 'wxword', 'rain', 'wind', 'play', 'speed', 'achieved'].map(n => [n, k(n)]));
   const weatherEl = root.querySelector<HTMLElement>('.weather')!;
   el.play.onclick = () => { ctx.deps.setPlaying(!ctx.deps.clock.playing); ctx.refresh(); };
   root.querySelector<HTMLButtonElement>('[data-act="time"]')!.onclick = () => ctx.toggleTimePanel();
-  root.querySelector<HTMLButtonElement>('[data-act="experiments"]')!.onclick = () => ctx.setDock(ctx.state.dock === 'experiments' ? null : 'experiments');
-  root.querySelector<HTMLButtonElement>('[data-act="society"]')!.onclick = () => ctx.openSociety();
+  root.querySelector<HTMLButtonElement>('[data-act="experiments"]')!.onclick = () => ctx.toggleSide('experiments');
+  root.querySelector<HTMLButtonElement>('[data-act="society"]')!.onclick = () => ctx.toggleSide('society');
   root.querySelector<HTMLButtonElement>('[data-act="settings"]')!.onclick = () => ctx.openSettings();
   root.querySelector<HTMLButtonElement>('[data-act="sims"]')!.onclick = () => ctx.openSimulations();
   // Saved simulations are optional (absent in the synthetic preview): the name button and indicator hide with them.

@@ -11,7 +11,7 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Open [the forest](http://127.0.0.1:5173) and [the science and architecture guide](http://127.0.0.1:5173/docs/architecture.html). `pnpm dev` starts one resident GLiNER2.5-Decide worker (see below); set `MGOGO_NO_MODEL=1` to run without it.
+Open [the forest](http://127.0.0.1:5173) and [the About page](http://127.0.0.1:5173/about). `pnpm dev` starts one resident GLiNER2.5-Decide worker (see below); set `MGOGO_NO_MODEL=1` to run without it.
 
 ```sh
 pnpm test                      # simulation, clock, decision loop and server validation (node:test)
@@ -31,7 +31,7 @@ pnpm exec tsx scripts/bench-sim.ts
 
 ## Time
 
-Every chimp runs every 15-second ecological tick at every speed. Faster playback runs more ticks per frame; it never enlarges the tick. Presets: 1 min/s, 10 min/s, 1 h/s, 6 h/s, 1 day/s, and Max (as many ticks as fit in the frame: about 65% of the frame, minus render and UI time, adapted to 60 or 120 Hz). The time bar shows the achieved rate and says when the simulation, not the preset, is the limit. The default world simulates a day in about 0.13 s in Node (Apple M3 Pro). Animals are drawn between the last two ticks, so motion stays continuous at every speed.
+Every chimp runs every 15-second ecological tick at every speed. Faster playback runs more ticks per frame; it never enlarges the tick. Presets: real time (1 s/s: one tick every 15 real seconds, with motion interpolated between ticks), 1 min/s, 10 min/s, 1 h/s, 6 h/s, 1 day/s, and Max (as many ticks as fit in the frame: about 65% of the frame, minus render and UI time, adapted to 60 or 120 Hz). The time bar shows the achieved rate and says when the simulation, not the preset, is the limit. The default world simulates a day in about 0.13 s in Node (Apple M3 Pro). Animals are drawn between the last two ticks, so motion stays continuous at every speed.
 
 Settings also offer a life-course clock (one biological year per ecological day) for watching generations. Behavior stays on ecological time; this separation is an experimental control, not a biological claim.
 
@@ -66,6 +66,30 @@ The Mind tab then shows the before/after decision.
 
 Model scores are softmax scores, uncalibrated for chimpanzee behavior. A working inference path is engineering evidence, not biological validity.
 
+## Decision providers
+
+The model panel (`M`) selects **Browser GLiNER**, **Server GLiNER**, or **Jev API**. Policy (Off / Async / Lockstep) and roster stay independent of the provider. Switching aborts the previous caller, invalidates its late answers and releases its browser worker. Every provider returns one choice and a distribution; the same decision loop validates it, checks current legality and falls back to rules.
+
+`public/decision-providers.json` is the public runtime config, copied into `dist/` by the build. Its `default: "browser"` chooses browser GLiNER in both development and static builds. Set `default: "auto"` to use server in development and browser in production. Configure each HTTP provider's `baseUrl` as the prefix for `/status`, `/start` and `/decide`. It can point to a same-origin gateway or a separate service that permits your site's origin (CORS and authentication must be configured there). Never put API keys in this file.
+
+Selection precedence: `?provider=browser|server|jev`, then `VITE_DECISION_PROVIDER`, then the last model-panel selection stored under `mgogo.decision-provider`, then the JSON default. For example, `VITE_DECISION_PROVIDER=server pnpm build` defaults that build to the server endpoint; `?provider=browser` temporarily overrides it. Provider choice is host configuration, not World state; saves preserve policy, roster and trace provenance, not provider credentials/endpoints. Old traces have no provider attribution.
+
+### Browser GLiNER (static-site default)
+
+When browser GLiNER is selected at launch, the opening screen automatically downloads/loads the model and shows progress before revealing the forest. Ecological time stays still while it loads. Model files are reused on later visits when browser storage permits caching. **Continue with rules** cancels the download; failures offer **Retry download**. You can also load it later from the model panel. Switching to browser GLiNER after startup still uses that panel’s **Load browser model** button. The worker loads the Apache-2.0 community classification export `onnx-community/GLiNER2.5-Decide-ONNX`, pinned to revision `2a9b872b5c70ae1105107975a0952a57e0fbba25`, using Transformers.js 4.3.0. It uses WebGPU FP16 when `shader-f16` is available, otherwise WASM/WebGPU FP32. Downloads are approximately 872 MB / 1.74 GB, cached when browser storage permits. `browser.device` and `browser.dtype` in the config can force a backend/precision; `q4` and `q4f16` are available but change probabilities and need separate evaluation. Model files are fetched from Hugging Face, not bundled into the site's deployment.
+
+Tokenization matches the export's classification layout; shared prompt construction retains the local percept and legal options. The browser renders the shared state as readable scalar/list lines. Its model has a 512-token context ceiling, smaller than the local worker's 1280-token limit: oversized contexts fail explicitly and use rules, without silently truncating evidence. Inference runs in a dedicated worker, with one request at a time; the application still waits at most 6 seconds per decision. Browser throughput, memory and coexistence with the 3D renderer depend on the visitor's device. Inference does not send the percept to an API; fetching weights still contacts Hugging Face.
+
+### Server GLiNER
+
+`pnpm dev` retains the existing resident Python/MPS worker and `/api/decide` boundary. Use `server.baseUrl` to point at another compatible gateway. A static host only serves the frontend: it cannot start that Python worker. The external gateway must provide authentication/CORS appropriate to its deployment; the local dev bridge intentionally rejects cross-origin POSTs.
+
+### Jev API
+
+The frontend uses a compatible gateway at `jev.baseUrl` (default `/api/providers/jev`). The local Vite gateway is opt-in: set `TYPESAFE_API_KEY`, `MGOGO_JEV_ENABLED=1`, and optionally `MGOGO_JEV_MODEL` (default `jev-latest`) / `MGOGO_JEV_MAX_CALLS` (default 100 requests per server session). Restart your own server after changing server settings. The gateway accepts loopback clients and same-origin browser requests, validates the percept, builds the existing Jev-specific structured question server-side, and aligns its descriptive labels back to the offered options. Failed upstream attempts count toward the cap; there are no automatic upstream retries. API use may incur charges.
+
+A purely static deployment has no Jev gateway. To use Jev from it, configure a separate authenticated gateway with server-side secrets and persistent rate/budget controls. Do not expose this development gateway as a public paid API proxy.
+
 ## Local GLiNER2.5-Decide
 
 - **Model:** `fastino/GLiNER2.5-Decide`, revision `7ee5da4c2415e32259bcdc0b1a7367c32ce8d6f6`.
@@ -76,9 +100,10 @@ Model scores are softmax scores, uncalibrated for chimpanzee behavior. A working
 ## Controls
 
 - **Mouse:** drag to pan, right-drag to orbit, scroll to zoom. Click a chimp, roster entry, event or minimap point to select.
-- **Playback:** Space pauses; `1`–`6` pick speeds.
+- **Playback:** Space pauses; `1`–`7` pick speeds (`1` is real time).
 - **Camera:** `F` focuses, `C` toggles close view, `V` toggles the cinematic director, `R` returns to the overview (strategy view). The overview shows a map scale bar; Reset camera frames the whole map.
-- **Panels:** `T` opens the society overlay (kinship forest, dominance ladders, bond network, alpha history). `E` opens experiments, `M` the model panel, `I` the inspector. `L` toggles labels. `[` and `]` cycle chimps. Esc closes.
+- **Range map:** the camera menu (views, Reset camera) and the layer toggles run along its foot; hover a control for what it does. The community key sits in the map's bottom-left corner: hover it to see the map underneath, click a community to highlight it. Scroll or pinch over the map to zoom (1–8×), drag to pan when zoomed; with the map focused, `+` `−` zoom and `0` shows the whole map.
+- **Panels:** three panels frame the forest. Left: the field log (`B` hides it) and the range map. Right: a sidebar that rests on Communities and switches with `T` (Society: kinship, dominance, bonds and alpha history as lists; "Full view" opens the kinship forest and the bond network full screen), `E` (Experiments: hover or focus a row for what it does, click to run it) and `M` (the decision model); the same key or Esc returns to Communities, `Shift`+`B` hides the sidebar. Bottom: the selected chimp, with a snapshot, its community and key details, and the tabs Overview, Log (the field log filtered to that chimp), Mind, Family and Relations; `I` collapses it to a strip. The alpha carries a gold “α” badge everywhere, as on its name tag in the forest. `L` toggles labels. `[` and `]` cycle chimps.
 - **Sound:** starts on your first click or key (browser autoplay rule). `S` or the speaker button mutes; Settings › Sound has Master, Ambience, Animals and Weather volumes.
 - **Simulations:** the name in the menu bar opens Simulations (new, open, rename, duplicate, delete, export, import). `Ctrl`/`⌘`+`S` saves now.
 
@@ -112,11 +137,11 @@ Reloading the page brings back the last simulation where you left it, **paused**
 | `src/decision.ts`, `server/decide.ts`, `server/local-worker.ts` | Roster, queue, traces, validation, prompt packet, resident model process |
 | `src/scene.ts`, `src/render/env/*` | Sky, lighting, weather, terrain, vegetation, stream, territory, cameras, post-processing |
 | `src/render/creatures.ts`, `src/render/creatures/*` | GPU-skinned procedural chimps, poses, FX, labels, nests, colobus, selection |
-| `src/main.ts`, `src/ui/*`, `src/style.css` | HUD, inspector, family trees, hierarchy, society overlay, experiments, model panel |
+| `src/main.ts`, `src/ui/*`, `src/style.css` | HUD, field log and range map, right sidebar (communities, society, experiments, model), bottom chimp panel, full society view |
 | `src/persist/*`, `src/ui/simulations.ts` | Saved simulations: envelope and determinism, SQLite schema, store worker (opfs-sahpool), autosave, Simulations menu |
 | `src/audio/*`, `scripts/build-audio.mjs` | Spatial sound engine (beds, voices, thunder, zoom mix), pure mixing math, synthesized drum/laugh; asset pipeline |
 | `docs/simulation.md` | How the simulation works: tick pipeline, state, actions, mechanisms, parameters, validation, extension recipes |
-| `docs/research.md`, `docs/architecture.html` | Evidence, citations, stylizations, validation status; illustrated system guide |
+| `docs/research.md`, `about.html` | Evidence, citations, stylizations, validation status; illustrated system guide |
 | `AGENTS.md` | Working notes for coding agents: commands, invariants, conventions, gotchas |
 
 Harness pages for isolated visual work: `/src/render/env/harness.html`, `/src/render/creatures/harness.html`, `/src/ui/preview.html`.

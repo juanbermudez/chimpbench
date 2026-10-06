@@ -176,7 +176,7 @@ export function familyForestSvg(world: World, troop: Troop, selectedId: number):
       ${sexGlyph(c, x, yy, r, 'class="kn-shape"')}
       <text class="kn-init" x="${x}" y="${yy + 3.2}">${c.alive ? esc(c.name.charAt(0)) : '†'}</text>
       ${imm ? `<g class="kn-imm"><circle cx="${x + r * 0.9}" cy="${yy - r * 0.9}" r="4.2"/><path d="M${x + r * 0.9 - 1.8} ${yy - r * 0.9 - 1.8}l3.6 3.6m0-2.5v2.5h-2.5"/></g>` : ''}
-      ${troop.alphaId === c.id ? `<path class="kn-crown" d="M${x - 6} ${yy - r - 3} l2 -5 2 3 2 -4 2 4 2 -3 2 5Z"/>` : ''}
+      ${troop.alphaId === c.id ? `<g class="kn-alpha"><rect x="${x - 6.5}" y="${yy - r - 14}" width="13" height="11" rx="3"/><text x="${x}" y="${yy - r - 5.4}">α</text></g>` : ''}
       <text class="kn-name" x="${x}" y="${yy + r + 12}">${esc(short(c.name, 8))}</text>
       ${n.emigrant ? `<text class="kn-sub" x="${x}" y="${yy + r + 21}">→ ${esc(troopShort(t))}</text>` : ''}
     </g>`;
@@ -186,4 +186,40 @@ export function familyForestSvg(world: World, troop: Troop, selectedId: number):
   // Names are centred on 40 px slots but can be ~50 px wide, so pad the viewBox or edge names clip.
   const PADX = 10;
   return { W: W + PADX * 2, svg: `<svg class="kin forest" viewBox="${-PADX} 0 ${W + PADX * 2} ${H}" style="--w:${W + PADX * 2}px" role="group" aria-label="${esc(troop.name)} family forest: ${lines.length} matrilines">${bands}<g class="kl-layer">${mat}${sire}</g>${nodes}</svg>`, lines: lines.length, members: members.length };
+}
+
+// ---------------------------------------------------------------------------
+// Matrilines as data: the same grouping as the forest, for the sidebar's lists.
+// ---------------------------------------------------------------------------
+
+export interface KinNode { c: Chimp; kids: KinNode[]; depth: number; emigrant: boolean }
+
+/**
+ * A community's matrilines, largest first (a founding mother with her descendants, the deceased included; offspring
+ * who emigrated stay as leaves under their mother), and the members with neither a mother nor offspring here
+ * (founders and lone immigrants; males first, then oldest first).
+ */
+export function matrilines(world: World, troop: Troop): { lines: KinNode[]; singles: Chimp[]; members: number } {
+  const members = world.chimps.filter(c => c.troopId === troop.id);
+  const inTroop = new Set(members.map(c => c.id));
+  const childrenOf = new Map<number, Chimp[]>();
+  for (const c of world.chimps) if (c.motherId >= 0 && inTroop.has(c.motherId)) {
+    if (!childrenOf.has(c.motherId)) childrenOf.set(c.motherId, []);
+    childrenOf.get(c.motherId)!.push(c);
+  }
+  const roots = members.filter(c => !(c.motherId >= 0 && inTroop.has(c.motherId)));
+  const build = (c: Chimp, depth: number): KinNode => ({ c, depth, emigrant: c.troopId !== troop.id, kids: (c.troopId === troop.id ? childrenOf.get(c.id) ?? [] : []).sort((a, b) => a.birthTime - b.birthTime).map(k => build(k, depth + 1)) });
+  const size = (n: KinNode): number => 1 + n.kids.reduce((a, k) => a + size(k), 0);
+  const lines = roots.map(r => build(r, 0)).filter(n => n.kids.length).sort((a, b) => size(b) - size(a));
+  const heads = new Set(lines.map(l => l.c.id));
+  const singles = roots.filter(r => !heads.has(r.id)).sort((a, b) => (a.sex === b.sex ? b.age - a.age : a.sex === 'male' ? -1 : 1));
+  return { lines, singles, members: members.length };
+}
+
+/** A matriline flattened depth-first (mother before her offspring), for an indented list. */
+export function flattenLine(line: KinNode): KinNode[] {
+  const out: KinNode[] = [];
+  const walk = (n: KinNode) => { out.push(n); n.kids.forEach(walk); };
+  walk(line);
+  return out;
 }
