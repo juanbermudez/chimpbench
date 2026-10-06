@@ -22,6 +22,7 @@ import { slowSnares } from './snares';
 import { random } from './rng';
 import { paramsOf } from './params';
 import { endoKick, endoOn } from './endocrine';
+import { bodyOn, bodyTick } from './deadbody';
 import { PARTY_EVERY, SLOW_EVERY, SLOW_HOURS, TICK_HOURS, TICK_SECONDS, index, ix, simOf } from './state';
 
 const snapshot: Chimp[] = [];
@@ -52,6 +53,7 @@ export function tickWorld(world: World): void {
   }
   pursuitStep(world); // stage E4k iteration 2 (huntPursuit 2): hunts read after every animal has moved; no-op otherwise
   carryInfants(world);
+  if (bodyOn(paramsOf(world))) bodyTick(world); // stage ED (deadBody): held bodies go with their holders, bodies on the ground decompose
   if (world.tick % PARTY_EVERY === 0) { computeParties(world); updatePatrols(world); }
   if (paramsOf(world).fissionOn === 1) fissionStep(world); // stage C9 (off by default)
 }

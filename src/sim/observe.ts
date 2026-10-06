@@ -7,6 +7,7 @@ import { copyCandidate } from './menu';
 import { bodyPercept, lightPercept, withValues } from './observe-state';
 import { paramsOf } from './params';
 import { index, isChimpId, ix, simOf, TICK_HOURS } from './state';
+import { bodySights } from './deadbody';
 
 const r2 = (v: number) => Math.round(v * 100) / 100;
 
@@ -83,7 +84,9 @@ export function observe(world: World, c: Chimp): DecisionContext {
       ...(same ? { tension: r2(tensionOf(c, o)) } : {}),
     };
   });
-  const candidates = all.filter(k => !isChimpId(k.targetId) || chosen.includes(k.targetId));
+  // stage ED (deadBody; deadbody.ts): the bodies in sight, and the options about them (a body is never in `social`)
+  const bodies = paramsOf(world).deadBody === 1 ? bodySights(world, c) : [];
+  const candidates = all.filter(k => !isChimpId(k.targetId) || chosen.includes(k.targetId) || bodies.some(b => b.id === k.targetId));
   const recent: string[] = [];
   const shown = x.lastIntr && time - x.lastIntrAt < 0.05 ? x.lastIntr : '';
   if (shown) recent.push(interruptLine(shown, time - x.lastIntrAt));
@@ -143,6 +146,7 @@ export function observe(world: World, c: Chimp): DecisionContext {
     social, recent, stimuli, candidates: track ? withValues(world, c, candidates, P, copyCandidate, v4) : candidates,
     ...(history.length ? { history } : {}),
     ...(track ? { body: bodyPercept(world, c, P, v4), light: lightPercept(world) } : {}),
+    ...(bodies.length ? { bodies } : {}),
     ...(v4 ? { packet: 4 as const } : {}),
   };
 }

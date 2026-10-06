@@ -341,7 +341,7 @@ function paths(fig, [P]) {
   paint(el, defs + `<div class="dp">${row(P.gombe, 'var(--gombe)', 'Gombe', `r = ${P.gombe.rKm} km`)}${row(P.sim, 'var(--mine)', 'Simulated', `r = ${P.sim.rKm} km`)}</div>` +
     `<div class="gv-fade" style="margin-top:14px"><p class="gv-sub" style="margin-bottom:4px">Straightness of every full day: ${nf.format(P.gombe.fullDays)} at Gombe, ${nf.format(P.sim.fullDays)} simulated (0 = back where it started, 1 = a straight line)</p>${hs}</div>`);
   set(fig, 'sub', `Each tile starts at the ring and ends at the dot, turned so the day's net move points up and snapped to a grid of 0.1 range radius (r) for privacy. Median day: Gombe walks ${num(P.gombe.pathR, 2)} r and ends ${num(P.gombe.netR, 2)} r away; simulated chimps walk ${num(P.sim.pathR, 2)} r and end ${num(P.sim.netR, 2)} r away. The number under each tile is its straightness.`);
-  if (P.sim.status !== 'measured') set(fig, 'simstatus', 'Simulated follows from the C7a build (sim code ' + P.sim.simCodeHash + '); a re-run is due.');
+  if (P.sim.status !== 'measured') set(fig, 'simstatus', 'The simulated days come from an earlier version of the simulation.');
   table(fig, ['Side', 'Day', 'Straightness', 'Walked (r)', 'Net move (r)', 'Hours'], () => [...P.gombe.paths.map((p, i) => ['Gombe', i + 1, p.straight, p.pathR, p.netR, p.hours]), ...P.sim.paths.map((p, i) => ['Simulated', i + 1, p.straight, p.pathR, p.netR, p.hours])]);
 }
 
@@ -427,7 +427,7 @@ function activity(fig, [M]) {
 
 // ---------- Patrols by month of the year, averaged over each site's study years (never matched year to year).
 // Gombe comes from year-round daily follows, so it is the fair seasonal reference; Ngogo's months carry its observers'
-// field seasons. No simulated line is drawn until the patrol proof writes `seasonality.sim`.
+// field seasons. No simulated line is drawn: the data file has none yet.
 function seasonal(fig, [PC]) {
   const el = plotOf(fig), S = PC && PC.seasonality;
   if (!S || !S.gombePatrols || !S.ngogoPatrols) return pending(el, 'The patrol records are not available.');
@@ -485,8 +485,7 @@ function males(fig, [PT]) {
     s += `<line x1="${X(d.median)}" x2="${X(d.median)}" y1="${cy - spans[i] - 4}" y2="${cy + spans[i] + 4}" stroke="var(--ink)" stroke-width="1.5"/><text x="${X(d.median) + 5}" y="${cy - spans[i] - 5}" class="gv-lab hi">median ${pct(d.median)}</text>`;
     y += h + 18;
   });
-  s += `<text x="0" y="${y + 4}" class="gv-lab hi">Simulated</text><rect x="${L}" y="${y - 8}" width="${W - L - R}" height="16" rx="3" fill="none" stroke="var(--line-3)" stroke-dasharray="3 3"/><text x="${L + (W - L - R) / 2}" y="${y + 4}" text-anchor="middle" class="gv-note">pending: the patrol proof has not run</text>`;
-  y += 30;
+  y += 8;
   s += `<line x1="${L}" x2="${W - R}" y1="${y - 10}" y2="${y - 10}" class="gv-axis"/>` + [0, 0.25, 0.5, 0.75, 1].map(v => `<text x="${X(v)}" y="${y + 4}" text-anchor="middle" class="gv-tick">${v * 100}%</text>`).join('');
   paint(el, svgOpen(W, y + 12, `Share of patrols each male joined: Gombe median ${pct(PT.gombe.median)} of ${PT.gombe.males} males, Ngogo median ${pct(PT.ngogo.median)} of ${PT.ngogo.males}.`) + s + '</svg>');
   set(fig, 'sub', `Gombe: ${PT.gombe.rule}, ${PT.gombe.years.join('–')}. Ngogo: ${PT.ngogo.rule}, ${PT.ngogo.years.join('–')}. One dot per male, no names.`);

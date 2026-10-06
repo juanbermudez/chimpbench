@@ -150,6 +150,11 @@ export interface ChimpX {
    * starts, so worlds with it off are unchanged.
    */
   cg?: number[];
+  /**
+   * Stage ED (deadBody; src/sim/deadbody.ts): ids of the bodies of its own community in sight at the last perception,
+   * nearest first. Absent until the switch is on and the first body is seen, so worlds with it off are unchanged.
+   */
+  bd?: number[];
   /** Stage E2b (nurseWake): the last tick in which this mother's infant drank milk in her nest at night. Absent until then. */
   nwk?: number;
   /**
@@ -246,6 +251,15 @@ export interface FissionState {
   parents: Record<number, number>;
 }
 
+/**
+ * Stage ED (deadBody; src/sim/deadbody.ts): one dead animal's body. `by`: the living animal holding it, -1 while it lies
+ * on the ground; `exp`: hours it has lain on the ground (decomposition runs only there); `carer`: the animal it depended
+ * on at death (its mother or adopter; -1 none), the only one who may take it up; `insp`, `grm`: who has walked up and
+ * looked at it, and who has groomed it (ids, in order); `acc`: 1 once its carer has had it in her hands or in sight
+ * (the denominator of the carrying readout); `held`: the last eco-hour it was held (NEVER if never).
+ */
+export interface BodyState { by: number; exp: number; carer: number; insp: number[]; grm: number[]; acc: number; held: number }
+
 /** Hidden world-level state (weather chain, patrols, hunts, counters). Plain data, serializable. */
 export interface SimState {
   carry: number; nextChimpId: number; aliveVersion: number; hierDirty: boolean;
@@ -280,6 +294,8 @@ export interface SimState {
   huntDay: Record<number, number>;
   /** Stage E4a (endoRainDisplay): eco-hour of the last daytime storm onset; absent unless the switch is on. */
   stormAt?: number;
+  /** Stage ED (deadBody; deadbody.ts): the bodies in the world by the dead animal's id; absent until the first death with the switch on. */
+  bodies?: Record<number, BodyState>;
   /** Stage C8 (disease.ts): the respiratory outbreak running in each community (id, start, virulence on the odds scale), and the next id. */
   outbreaks: Record<number, { id: number; start: number; v: number }>; nextOutbreak: number;
   /** Registry hash, scale profile and parameter overrides this world was created with (params.ts). Small plain data. */
@@ -293,8 +309,8 @@ export type SimWorld = World & { sim: SimState };
  * ChimpX and SimState keys that exist only once their mechanism has fired (so worlds with the switch off keep their
  * shape and hashes). The save check (src/persist/envelope.ts worldShapeProblem) ignores them.
  */
-export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'tryNest', 'dfa', 'en', 'wat', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk', 'cx', 'cxc', 'cn', 'asl', 'phAt', 'phX', 'phZ', 'ard', 'wr', 'upk', 'jt', 'nbm', 'jv', 'ty', 'tt', 'cd', 'cdAt', 'ls', 'cg'];
-export const OPTIONAL_SIM: readonly string[] = ['fission', 'stormAt'];
+export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'tryNest', 'dfa', 'en', 'wat', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk', 'cx', 'cxc', 'cn', 'asl', 'phAt', 'phX', 'phZ', 'ard', 'wr', 'upk', 'jt', 'nbm', 'jv', 'ty', 'tt', 'cd', 'cdAt', 'ls', 'cg', 'bd'];
+export const OPTIONAL_SIM: readonly string[] = ['fission', 'stormAt', 'bodies'];
 
 export function newX(): ChimpX {
   return {

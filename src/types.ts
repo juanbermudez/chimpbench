@@ -220,6 +220,12 @@ export interface Chimp {
    */
   carryingDeadId?: number;
   /**
+   * Optional, stage ED (`deadBody` 1; docs/staging/ed-prereg.md): what is left of a dead animal in the world. 'body'
+   * while its body exists (lying at `position`, which the simulation moves while the body is held, or on its carrier:
+   * see `carryingDeadId`), 'bones' after bodyFleshDays on the ground, absent once nothing is left or with the switch off.
+   */
+  remains?: 'body' | 'bones';
+  /**
    * Optional: finalized memory digests, oldest first (sim-owned). Yearly digests are kept for life, monthly ones for
    * the last 12 months; the month in progress is not included (read it through relationshipOf).
    */
@@ -403,6 +409,12 @@ export interface SocialPercept {
 }
 
 /**
+ * Stage ED (`deadBody` 1): a body of the focal animal's own community that it sees. `relation` is to the animal it was;
+ * `heldBy` is the id of the animal holding it (the focal's own id when it holds it), -1 when it lies on the ground.
+ */
+export interface BodySight { id: number; name: string; relation: Relation; ageYears: number; distance: number; deadHours: number; heldBy: number }
+
+/**
  * Everything the model may know when choosing, built only from the focal
  * chimp's own perception, memory and body. No omniscient world state.
  */
@@ -442,6 +454,11 @@ export interface DecisionContext {
   light?: { level: number; trend: number };
   /** Optional (stage R2, `observeV4` 1): the packet version; 4 = `body` and option `value`s carry the v4 fields and a text builder uses the v4 wording (src/kernel/packet-words.ts). */
   packet?: 4;
+  /**
+   * Optional (stage ED, `deadBody` 1): at most 4 bodies in sight, the one the focal cared for first, then nearest first. A body may be the target of a `follow`
+   * (walk up to it; its carer takes it up) or a `groom` option; it is never in `social`.
+   */
+  bodies?: BodySight[];
 }
 
 // ---------------------------------------------------------------------------

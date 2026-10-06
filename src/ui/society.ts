@@ -9,15 +9,16 @@ import { alphaTimelineSvg, ladderHtml, tenureListHtml } from './hierarchy';
 import { demography, emblem } from './communities';
 import { renderInto } from './inspector';
 import { morph, setAttr, setText } from './morph';
+import { alphaBadge } from './parts';
 
-// Full-screen society overlay (key T): kinship forest, dominance ladders,
-// bond network and alpha history, for one community or all three side by side.
+// Full-screen society view (opened from the sidebar's Society pane, "Full view"): kinship forest, dominance ladders,
+// bond network and alpha history, for one community or all three side by side. The sidebar holds the stacked lists.
 
 const VIEWS: { id: SocietyView; label: string; ic: string; blurb: string }[] = [
   { id: 'kinship', label: 'Kinship', ic: 'tree', blurb: 'Every matriline as a tree. Solid lines link mothers to offspring; hover an individual to trace its genetic sire (dashed).' },
   { id: 'dominance', label: 'Dominance', ic: 'ladder', blurb: 'Male and female ladders by Elo score. Arrows mark rank moves over the last three ecological days.' },
   { id: 'alliances', label: 'Bonds', ic: 'network', blurb: 'Each individual’s three strongest bonds. Node size follows rank, line width bond strength, line colour the relation.' },
-  { id: 'alphas', label: 'Alpha history', ic: 'crown', blurb: 'Alpha male tenures across communities, and how each began. Select a tenure to inspect that male.' },
+  { id: 'alphas', label: 'Alpha history', ic: 'history', blurb: 'Alpha male tenures across communities, and how each began. Select a tenure to inspect that male.' },
 ];
 
 export function createSociety(root: HTMLElement, ctx: Ctx) {
@@ -58,7 +59,7 @@ export function createSociety(root: HTMLElement, ctx: Ctx) {
   const forests = new Map<number, ReturnType<typeof familyForestSvg>>();
   function column(t: Troop, single: boolean): string {
     const w = ctx.world(), sel = ctx.state.selectedId, view = ctx.state.society.view, d = demography(w, t);
-    const alpha = t.alphaId >= 0 ? `${icon('crown')}${esc(nameOf(w, t.alphaId))} · ${t.alphaSince < 0 ? '≥ ' : ''}${duration(w.time - t.alphaSince)}` : 'Alpha contested';
+    const alpha = t.alphaId >= 0 ? `${alphaBadge()} ${esc(nameOf(w, t.alphaId))} · ${t.alphaSince < 0 ? '≥ ' : ''}${duration(w.time - t.alphaSince)}` : 'Alpha contested';
     const head = `<header class="col-head" style="--c:${esc(t.color)}">${emblem(t)}<div><b>${esc(t.name)}</b><span class="col-meta">${d.total} living · ${d.am} adult males · ${d.parties} ${d.parties === 1 ? 'party' : 'parties'} · ${alpha}</span></div></header>`;
     if (view === 'kinship') { const f = forests.get(t.id) ?? familyForestSvg(w, t, sel); return `<section class="soc-col">${head}<p class="col-sub">${f.lines} matrilines · ${f.members} individuals, including the deceased</p><div class="forest-wrap">${f.svg}</div></section>`; }
     if (view === 'dominance') return `<section class="soc-col">${head}<div class="ladders ${single ? 'split' : ''}"><div><h3 class="eyebrow">Males</h3>${ladderHtml(w, t, 'male', sel, ctx.ranks)}</div><div><h3 class="eyebrow">Females</h3>${ladderHtml(w, t, 'female', sel, ctx.ranks)}</div></div></section>`;

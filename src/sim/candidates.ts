@@ -24,6 +24,7 @@ import { matingValueOn, paternityGain } from './mating';
 import { tripYieldOf } from './experience';
 import { fruitingCrop, listChanceOn, listShare, listSightOn } from './tripbelief';
 import { ownCall } from './calltrip';
+import { bodyOf, bodyOn, carryOn, respondOn } from './deadbody';
 
 // Variants refine an action's meaning (why a charge happens) for execution and reason text.
 export const V = {
@@ -32,6 +33,7 @@ export const V = {
   LEAD: 19, JOIN: 20, APPROACH: 21, CONTINUE: 22, FOODCALL: 23, CHORUS: 24, COUNTERCALL: 25, REUNION: 26, RAIN: 27,
   MEAT: 28, PLANT: 29, TREE: 30, CALLER: 31, HOME: 32, MOTHER: 33, JUVENILE: 34, PARTY: 35, ACCEPT: 36, RIVAL: 37, FEMALE_DOM: 38, AVOID: 39, TENSION: 40,
   CONTACT: 41,
+  BODY: 42, // stage ED: the target is a body (follow: walk up to it, its carer takes it up; groom: groom or handle it)
 } as const;
 
 /**
@@ -214,6 +216,9 @@ export function isCarried(c: Chimp, mother: Chimp | undefined): boolean {
   if (!mother) return false;
   return c.age < 1.2 || (c.age < 4 && (TRAVELING[mother.action] === true || mother.action === 'nest'));
 }
+
+/** Stage ED (deadCarry): a body its carer could still carry in life, by isCarried's own upper age (no second limit). */
+export const ridesInLife = (c: Chimp): boolean => c.age < 4;
 
 const _near: number[] = [];
 const _mem: (Tree | number)[] = [];
@@ -870,6 +875,8 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     if (c.age >= 5 && d < P.snakeAlarmRangeM) offer('alarm', -1, 0.2 + 0.32 * Math.min(unaware, 5) - (callGapOn(P, 2) ? 0 : (time - x.lastCall < 0.03 ? 0.4 : 0)), V.SNAKE, unaware);
     if (d < P.snakeFleeM) offer('flee', -1, 0.55 + (c.age < 10 ? 0.2 : 0), V.SNAKE, st.id);
   }
+  // stage ED (deadCarry, deadRespond; docs/staging/ed-prereg.md §2.2–2.3): the bodies in sight
+  if (bodyOn(P) && x.bd !== undefined && x.bd.length > 0 && !carried && (carryOn(P) || respondOn(P))) bodyOptions(world, c, P, night);
   const intent = x.transferTo > 0 && c.troopId === c.natalTroopId;
   if ((x.impulse === IMPULSE_TRANSFER && x.impulseUntil > time) || c.action === 'transfer' || intent) offer('transfer', -1, c.action === 'transfer' || intent ? 1.2 : 1.3);
 
@@ -894,6 +901,45 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
 }
 
 /** Stage C6b (field): a crown this individual has just fed in is worth less for a while (the fruit within reach is gone). */
+/**
+ * Stage ED (docs/staging/ed-prereg.md §2.2): what contact with a dead infant is worth to its carer or a maternal
+ * sibling: the partner terms of the grooming valuation above for that infant (the animal's own social need, its bond to
+ * the infant, kinship), with the weights grooming uses and no other. Design assumption: the animal responds to the body
+ * as to the infant; the bond is the simulation's state and relaxes at its daily rate once nothing renews it.
+ */
+function bodyContact(c: Chimp, b: Chimp, P: Params): number {
+  const need = 1 - c.social, bnd = bond(c, b), kin = maternalKin(c, b) ? 0.2 : 0;
+  return P.groomDrive === 1 || (P.groomNeedDyad === 1 && b.motherId === c.id) ? need * (0.55 + bnd * 0.4 + kin) : need * 0.55 + bnd * 0.4 + kin;
+}
+
+/**
+ * Stage ED (docs/staging/ed-prereg.md §2.2–2.3): options about the bodies in sight (chimp.sim.bd), for an infant's body
+ * only. Its carer may walk to it and take it up (deadCarry; a body she could still carry in life, lying on the ground).
+ * With deadRespond its carer and maternal siblings may groom it, and maternal siblings, immatures under 10 y and adult
+ * males who have not yet looked at it may walk up and look (the classes the sources name: lonsdorf2020, soldati2022,
+ * shimada2023). Costs are grooming's (distance, hunger, rain, night, the young groomer's term). Nothing is offered about
+ * an adult's body or about bones.
+ */
+function bodyOptions(world: World, c: Chimp, P: Params, night: boolean): void {
+  const x = ix(c), byId = index(world).byId, px = c.position[0], pz = c.position[2];
+  const carry = carryOn(P), respond = respondOn(P);
+  for (let i = 0; i < x.bd!.length; i++) {
+    const b = byId.get(x.bd![i]), st = bodyOf(world, x.bd![i]);
+    if (!b || !st || b.remains !== 'body' || b.stage !== 'infant') continue;
+    const d = dxz(b, px, pz);
+    const costs = d / P.groomDistScaleM + c.hunger * 0.6 + world.environment.rain * 0.6 + (night ? 1.5 : 0);
+    const carer = st.carer === c.id, sibling = b.motherId > 0 && c.motherId === b.motherId;
+    const withCarer = st.by < 0 || st.by === st.carer; // lying, or in its carer's hands (she does not stop others approaching, soldati2022)
+    if (carer || sibling) {
+      const contact = bodyContact(c, b, P) - costs - (c.age < 5 ? 0.3 : 0);
+      if (carer && carry && st.by < 0 && ridesInLife(b) && (c.carryingDeadId ?? -1) < 0) offer('follow', b.id, contact, V.BODY);
+      if (respond && c.age >= 2 && d < P.groomRangeM && withCarer) offer('groom', b.id, contact, V.BODY);
+    }
+    if (respond && !carer && c.age >= 2 && (sibling || c.age < 10 || isAdultMale(c)) && withCarer && !st.insp.includes(c.id))
+      offer('follow', b.id, P.bodyInterestW - costs, V.BODY);
+  }
+}
+
 function revisit(x: ReturnType<typeof ix>, id: number, time: number, P: Params): number {
   const ft = x.fedTree;
   // stage E5c (crownShare) and stage E3b (revisitByCrop): what it believes is left in the crown carries the depletion it saw
@@ -1496,12 +1542,16 @@ export function reasonFor(world: World, c: Chimp, sl: Slot): string {
     case 'drink': { const w = idx.waterById.get(sl.target); return w ? `Drink at the stream ${m(dxz(w, px, pz))} ${dirOf(w, px, pz)} (thirst ${pct(c.thirst)})` : 'Drink'; }
     case 'climb': return t ? cap(`Climb into the ${t.species} ${m(dxz(t, px, pz))} away`) : 'Climb a tree';
     case 'follow':
+      if (sl.v === V.BODY) return bodyOf(world, sl.target)?.carer === c.id && carryOn(paramsOf(world))
+        ? cap(`Go to the body of ${who} and take it up, ${m(o ? dxz(o, px, pz) : 0)} away`)
+        : cap(`Walk up to the body of ${kw ? who : `the infant ${nm}`} and look at it, ${m(o ? dxz(o, px, pz) : 0)} away`);
       if (sl.v === V.MOTHER) return dependentOn(world, c) && isCarried(c, o) ? `Ride on ${who}` : `Follow ${who}, ${m(o ? dxz(o, px, pz) : 0)} away`;
       if (sl.v === V.JUVENILE) return cap(`Keep up with ${who}, ${m(o ? dxz(o, px, pz) : 0)} ${o ? dirOf(o, px, pz) : ''}`);
       if (sl.aux === 1) return cap(`Stay near ${nm}, an adult male, as a newcomer in this community`);
       return cap(`Follow ${who}, who is moving off ${o ? dirOf(o, px, pz) : ''}`);
     case 'nurse': return `Nurse from ${who} (hunger ${pct(c.hunger)})`;
     case 'groom':
+      if (sl.v === V.BODY) return cap(`Groom the body of ${kw ? who : `the infant ${nm}`}${c.carryingDeadId === sl.target ? ', which I am holding' : ''}`);
       if (sl.v === V.ACCEPT) return cap(`Groom ${who} back; ${o?.sex === 'male' ? 'he' : 'she'} is grooming me now`);
       if (sl.v === V.COALITION) return cap(`Groom my ally ${nm} to keep his support`);
       if (kw) return cap(`Groom ${who}, ${m(o ? dxz(o, px, pz) : 0)} away`);

@@ -9,7 +9,10 @@ import { availableParallelism, loadavg } from 'node:os';
 const { chromium } = await import('./lib/playwright.mjs');
 
 const args = process.argv.slice(2), noModel = args.includes('--no-model');
-const url = args.find(a => !a.startsWith('--')) ?? 'http://127.0.0.1:5173';
+const targetUrl = new URL(args.find(a => !a.startsWith('--')) ?? 'http://127.0.0.1:5173');
+// This harness verifies the resident server; the browser startup loader has its own check.
+if (!targetUrl.searchParams.has('provider')) targetUrl.searchParams.set('provider', 'server');
+const url = targetUrl.href;
 // Speed thresholds only mean something on a machine with headroom. When the 1-minute load average exceeds the core count,
 // they report WARN with the measured value instead of failing; --strict-perf forces hard failures regardless.
 const loaded = () => !args.includes('--strict-perf') && loadavg()[0] > availableParallelism();
@@ -76,11 +79,11 @@ try {
   pass(`GLiNER applied ${s2.model.applied} (latency ${Math.round(s2.model.latencyMs)} ms, ${s2.model.inputTokens} tokens)`);
   }
 
-  // Right panel: it opens on the communities, with the selected animal's community and its unit grid. A tile selects
-  // that animal (chimp view, Back button) and the camera follows it; a drag lets go; F takes it back.
-  const rp = () => page.evaluate(() => ({ panel: document.querySelector('.app').dataset.panel, tiles: document.querySelectorAll('.unit').length, current: document.querySelector('.unit[aria-current="true"]')?.dataset.unit ?? null }));
+  // Right sidebar: it rests on the communities, with the selected animal's community and its unit grid. A tile selects
+  // that animal (the bottom chimp panel names it) and the camera follows it; a drag lets go; F takes it back.
+  const rp = () => page.evaluate(() => ({ panel: document.querySelector('.app').dataset.right, tiles: document.querySelectorAll('.unit').length, current: document.querySelector('.unit[aria-current="true"]')?.dataset.unit ?? null, chimp: document.querySelector('.chimp-panel .ch-name span')?.textContent ?? '' }));
   const rp0 = await rp();
-  assert.equal(rp0.panel, 'community', 'the right panel opens on the communities');
+  assert.equal(rp0.panel, 'communities', 'the right sidebar rests on the communities');
   assert.ok(rp0.tiles >= 5 && rp0.current !== null, `unit grid with the selected animal (${JSON.stringify(rp0)})`);
   await key('r'); await page.waitForTimeout(1200);
   const pick = await page.evaluate(() => Number([...document.querySelectorAll('.unit')][1].dataset.unit));
@@ -96,11 +99,11 @@ try {
   }, pick);
   let far = 0;
   for (let i = 0; i < 12; i++) { await page.waitForTimeout(250); far = Math.max(far, (await fol()).d); }
-  assert.equal((await rp()).panel, 'chimp', 'a tile opens the chimp view');
+  assert.equal((await rp()).chimp, (await snap()).chimps.find(c => c.id === pick).name, "the bottom panel shows the tile's animal");
   assert.equal((await fol()).followId, pick, "the camera follows the tile's animal");
   assert.ok(far < 2, `the animal stays within 2 m of the view centre (${far.toFixed(2)} m)`);
   assert.ok(await page.locator('.follow-ind').isVisible(), 'following indicator shown');
-  assert.ok(await page.locator('.rp-back').isVisible(), 'back button shown');
+  assert.ok(await page.locator('.chimp-panel').isVisible(), 'chimp panel shown');
   const vb = await page.locator('#viewport').boundingBox(), x0 = vb.x + vb.width * 0.45, y0 = vb.y + vb.height * 0.5;
   await page.mouse.move(x0, y0); await page.mouse.down(); await page.mouse.move(x0 + 120, y0 + 50, { steps: 8 }); await page.mouse.up();
   await page.waitForTimeout(800);
@@ -154,15 +157,23 @@ try {
   pass(`stranger playback: ${respond} listeners responding`);
   await key('Escape');
 
-  // Accelerated clock: every tick still runs; the achieved rate is reported honestly.
-  await key('5');
+  // Accelerated clock: every tick still runs; the achieved rate is reported honestly. (Key 6: 1 is real time.)
+  await key('6');
   await page.waitForTimeout(4000);
   const s5 = await snap();
   assert.equal(s5.clock.speedId, '1d');
   perf(s5.clock.effectiveRate > 20000, `1 day/s achieved ${Math.round(s5.clock.effectiveRate)} eco-s/s (want > 20000)`);
   pass(`1 day/s: achieved ${(s5.clock.effectiveRate / 3600).toFixed(1)} eco-h/s, ${Math.round(s5.clock.ticksPerSecond)} ticks/s, limited=${s5.clock.limited}`);
-  await until(() => { const h = window.__MGOGO__.snapshot().hour; return h > 21 || h < 4; }, null, 30000);
-  await key('1');
+  // Stop acceleration in the same browser task that observes night. At 1 day/s a round-trip
+  // to Node can pass through dawn before the next key event, especially on a shared machine.
+  await until(() => {
+    const h = window.__MGOGO__.snapshot().hour;
+    if (!(h > 21 || h < 4)) return false;
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: '2' }));
+    return true;
+  }, null, 30000);
+  await key('2');
   await page.waitForTimeout(2500);
   const night = await snap();
   assert.ok(night.environment.daylight < 0.1, 'night');
@@ -188,7 +199,8 @@ try {
   assert.equal((await snap()).view, 'rts');
   const barNear = await page.locator('.scalebar').textContent();
   assert.ok(await page.locator('.scalebar').isVisible() && / m$/.test(barNear), `strategy scale bar (${barNear})`);
-  await page.locator('[data-act="reset-camera"]').click(); await page.waitForTimeout(1500);
+  // Reset camera lives in the range map's camera menu.
+  await page.locator('[data-act="camera-menu"]').click(); await page.locator('[data-act="reset-camera"]').click(); await page.waitForTimeout(1500);
   const barFar = await page.locator('.scalebar').textContent();
   assert.equal(barFar, '1 km', 'whole-map scale bar');
   await shot('e2e-overview');
@@ -235,7 +247,7 @@ try {
   pass(`saving: ${ls.mode} save ${ls.slices} slices, max ${ls.maxSliceMs.toFixed(1)} ms main thread, ${Math.round(ls.totalMs)} ms total, ${Math.round(ls.bytes / 1024)} KB; reload resumed day ${back.day} paused (load ${Math.round(back.persistence.lastLoad.totalMs)} ms)`);
 
   // Exact resume: save, reload, continue M ticks == the same M ticks without the reload (test hook, rules only).
-  await page.goto(new URL('?test=1', url).href, { waitUntil: 'load' });
+  await page.goto(new URL(`?test=1&provider=${targetUrl.searchParams.get('provider')}`, url).href, { waitUntil: 'load' });
   await loaded();
   const fork = await page.evaluate(() => window.__MGOGO_TEST__.saveAndFork(2000));
   assert.ok(fork.ok, 'test save written');
@@ -277,7 +289,7 @@ try {
   // ?profile=compressed still opens the small map (an unsaved world, in its own context: no save library involved).
   const small = await (await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 })).newPage();
   watch(small);
-  await small.goto(new URL('?profile=compressed', url).href, { waitUntil: 'load' });
+  await small.goto(new URL(`?profile=compressed&provider=${targetUrl.searchParams.get('provider')}`, url).href, { waitUntil: 'load' });
   await small.waitForFunction(() => document.querySelector('.loading')?.classList.contains('done'), null, { timeout: 60000 });
   const c0 = await small.evaluate(() => { const s = window.__MGOGO__.snapshot(); return { profile: s.profile, size: s.size, view: s.view, scratch: s.persistence.scratch, bar: document.querySelector('.scalebar').textContent }; });
   assert.ok(c0.profile === 'compressed' && c0.size === 160 && c0.view === 'rts' && c0.scratch, `?profile=compressed opens the 160 m map (${JSON.stringify(c0)})`);

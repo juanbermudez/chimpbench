@@ -982,6 +982,32 @@
    "notes": "Stage C8 (reproduction.ts giveBirth): 1 = the newborn's condition is the mother's mean condition over the pregnancy and its growth record min(1, gestCond / condGood); 0 = it starts as a founder. Motivation: lemoine2020a's hypothesis (proposed, not measured)."
   },
   {
+   "id": "bodyBonesDays",
+   "group": "mortality",
+   "value": 21,
+   "units": "eco-days",
+   "range": [
+    21,
+    730
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    100000
+   ],
+   "calibrate": false,
+   "evidence": "L",
+   "sources": [],
+   "refs": [
+    "docs/research.md, Addendum: responses to the dead and how long remains persist, section 3: rouquet2005 (gorilla carcasses, Gabon and Congo: after about 3 weeks only a few bones with small-mammal gnaw marks are left) [L for a chimpanzee]; heon2025 (one orangutan carcass, Borneo: the skull still visible two years later) [L for a chimpanzee]",
+    "docs/staging/ed-prereg.md section 3"
+   ],
+   "clock": "eco",
+   "symbol": "bodyTick",
+   "file": "src/sim/deadbody.ts",
+   "notes": "Stage ED (deadBody): eco-days on the ground for which bones stay after the flesh is gone. No chimpanzee figure exists; the value is the lower end of two reports from other great apes (a floor on how long some bones last), a design assumption inside that range. Nothing responds to bones."
+  },
+  {
    "id": "bodyChildBase",
    "group": "needs",
    "value": 0.6,
@@ -1024,6 +1050,82 @@
    "symbol": "needs() body factor",
    "file": "src/sim/life.ts",
    "notes": "Body-size factor gain from birth to 12 y."
+  },
+  {
+   "id": "bodyFleshDays",
+   "group": "mortality",
+   "value": 8,
+   "units": "eco-days",
+   "range": [
+    6,
+    10
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    100000
+   ],
+   "calibrate": false,
+   "evidence": "L",
+   "sources": [],
+   "refs": [
+    "docs/research.md, Addendum: responses to the dead and how long remains persist, section 3: heon2025 (one orangutan of about 30 kg, Borneo: fresh to dry remains in 6 days) [L for a chimpanzee]; rouquet2005 (a gorilla of about 150 kg: a heap of bones and hair in 10 days; maggots remove the flesh in 5 to 10 days) [L for a chimpanzee]",
+    "docs/staging/ed-prereg.md section 3"
+   ],
+   "clock": "eco",
+   "symbol": "bodyTick",
+   "file": "src/sim/deadbody.ts",
+   "notes": "Stage ED (deadBody): eco-days lying on the ground, not held, after which a body is bones. No chimpanzee figure exists; the midpoint of two reports from other great apes, a design assumption inside that range, not scaled by body mass. The count stops while the body is carried (the long carried corpses were mummified, soldati2022; why is not reported)."
+  },
+  {
+   "id": "bodyInspectMin",
+   "group": "social",
+   "value": 3,
+   "units": "eco-min",
+   "range": [
+    2,
+    20
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    100000
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/staging/ed-prereg.md section 3: only durations are reported, none for a dead infant (2 and 5 min at skeletons, second-hand and not verified; 4.5 and 21.9 min at a collapsed juvenile that lived, shimada2023)"
+   ],
+   "clock": "eco",
+   "symbol": "bodyFollowTick",
+   "file": "src/sim/deadbody.ts",
+   "notes": "Stage ED (deadRespond): how long an animal that has walked up to a body looks at it before its inspection is recorded and ends. Design assumption (an inspection needs an end); not taken from a rate of the behaviour."
+  },
+  {
+   "id": "bodyInterestW",
+   "group": "social",
+   "value": 0.4,
+   "units": "score",
+   "range": [
+    0.2,
+    0.8
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    3
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/staging/ed-prereg.md section 2.3, section 3"
+   ],
+   "clock": "none",
+   "symbol": "bodyOptions",
+   "file": "src/sim/candidates.ts",
+   "notes": "Stage ED (deadRespond): the value of walking up to an infant body the animal has not yet inspected (maternal siblings, immatures, adult males), before distance, hunger, rain and night. Design assumption: no source gives it; one weight for every class. The share of each class that approaches is a readout."
   },
   {
    "id": "bodyRules",
@@ -5381,6 +5483,96 @@
    "symbol": "updateSun",
    "file": "src/sim/environment.ts",
    "notes": "Sun altitude at which daylight reaches 0 (end of nautical twilight)."
+  },
+  {
+   "id": "deadBody",
+   "group": "mortality",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/staging/ed-prereg.md section 2.1, 2.4"
+   ],
+   "clock": "none",
+   "symbol": "P.deadBody",
+   "file": "src/sim/deadbody.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage ED (docs/staging/ed-prereg.md): 0 = today (hash-identical). 1: a dead animal leaves a body in the world (world.sim.bodies, Chimp.remains): it lies where the animal died or is put down, is bones after bodyFleshDays on the ground and gone after bodyBonesDays more; animals perceive bodies in sight (chimp.sim.bd), and the renderer draws a body for as long as the simulation says it exists (no 24-hour fade)."
+  },
+  {
+   "id": "deadCarry",
+   "group": "mortality",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/staging/ed-prereg.md section 2.2"
+   ],
+   "clock": "none",
+   "symbol": "P.deadCarry",
+   "file": "src/sim/deadbody.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage ED (docs/staging/ed-prereg.md): 0 = today (hash-identical). 1 (needs deadBody 1): no carrying roll and no carrying timer (carryDeadP, carryDeadMinDays, carryDeadSpanDays, carryDeadMaxAgeY are not read). A body that was on its carer at death stays in her hands; she puts it down for acts that need her hands and may choose to take it up again while she sees it (an ordinary option valued as contact with that infant was in life); a carry ends when she chooses otherwise and moves out of sight."
+  },
+  {
+   "id": "deadRespond",
+   "group": "social",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/staging/ed-prereg.md section 2.3"
+   ],
+   "clock": "none",
+   "symbol": "P.deadRespond",
+   "file": "src/sim/deadbody.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage ED (docs/staging/ed-prereg.md): 0 = today (hash-identical). 1 (needs deadBody 1): maternal siblings, immatures and adult males may walk up to an infant body and look at it (once per body), and its carer and maternal siblings may groom it; the perceived body is in the decision context (DecisionContext.bodies). Nothing responds to an adult body or to bones."
   },
   {
    "id": "deadSlimDays",

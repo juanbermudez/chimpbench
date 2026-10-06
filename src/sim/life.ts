@@ -1,5 +1,5 @@
 import type { Chimp, Mood, World } from '../types';
-import { addEvent, endInteraction, episode } from './events';
+import { addEvent, endInteraction, episode, interrupt } from './events';
 import { bond, femaleQueue, lifeStage } from './hierarchy';
 import { dailyRelations, noteEvent } from './relations';
 import { reproSlow } from './reproduction';
@@ -10,8 +10,29 @@ import { endoNeeds } from './endocrine';
 import { eat, energyTick, ledgerSlow, livedDay, meatKcalPerUnit } from './energy';
 import { clamp, random } from './rng';
 import { paramsOf, type Params } from './params';
-import { NEVER, SLOW_HOURS, TICK_HOURS, index, ix, markAliveChanged, simOf, type SimChimp } from './state';
+import { NEVER, SLOW_HOURS, TICK_HOURS, index, ix, markAliveChanged, simOf, type BodyState, type SimChimp } from './state';
 import { upkeepOn, upkeepPerH } from './upkeep';
+import { HOLDS, bodyOn, carryOn, legacyCarry, takeUp } from './deadbody';
+import { dependentOn, isCarried, ridesInLife } from './candidates';
+
+/**
+ * A death leaves a body (deadBody 1; called by killChimp once the animal is dead). With deadCarry 1 a body that was on
+ * its carer when the animal died stays in her hands if she is doing something that leaves a hand free; otherwise it
+ * lies where it is and she may take it up (candidates.ts bodyOptions). A body killed by another chimpanzee is not in her hands: the
+ * exceptions to carrying were infanticides in which the mother never regained the body (lonsdorf2020 [H]).
+ */
+function bodyAtDeath(world: World, c: Chimp, cause: string): void {
+  const s = simOf(world), P = paramsOf(world);
+  const carer = dependentOn(world, c);
+  const st: BodyState = { by: -1, exp: 0, carer: carer ? carer.id : -1, insp: [], grm: [], acc: 0, held: NEVER };
+  (s.bodies ??= {})[c.id] = st;
+  c.remains = 'body';
+  if (!carer || !carryOn(P)) return;
+  const onHer = ridesInLife(c) && isCarried(c, carer) && !cause.startsWith('infanticide');
+  if (onHer) st.acc = 1;
+  if (onHer && HOLDS[carer.action] && (carer.carryingDeadId ?? -1) < 0) takeUp(world, carer, c, st, true);
+  interrupt(world, carer, `my infant ${c.name} died`);
+}
 
 export function killChimp(world: World, c: Chimp, cause: string, severity = 2, text?: string): void {
   if (!c.alive) return;
@@ -28,6 +49,8 @@ export function killChimp(world: World, c: Chimp, cause: string, severity = 2, t
   if ((c.carryingDeadId ?? -1) >= 0) c.carryingDeadId = -1; // a mother who dies leaves the body she carried
   world.deaths++; world.stats.deaths++;
   markAliveChanged(world);
+  // stage ED (deadBody; deadbody.ts, docs/staging/ed-prereg.md): the death leaves a body in the world
+  if (bodyOn(paramsOf(world))) bodyAtDeath(world, c, cause);
   const age = c.age < 1 ? `${Math.max(1, Math.round(c.age * 12))} months` : `${c.age.toFixed(1)} y`;
   addEvent(world, text ?? `${c.name} (${age}, ${troop?.name ?? 'unknown community'}) died: ${cause}`, 'life', [c.id], c.troopId, severity);
   const mother = idx.byId.get(c.motherId);
@@ -40,9 +63,11 @@ export function killChimp(world: World, c: Chimp, cause: string, severity = 2, t
       mother.lactating = world.chimps.some(k => k.alive && k.motherId === mother.id && !ix(k).weaned);
       // mothers occasionally carry a dead infant for days [M]
       const P = paramsOf(world);
-      if (c.age < P.carryDeadMaxAgeY && random(world) < P.carryDeadP) {
+      // stage ED (deadCarry): no roll and no timer; the body stays in her hands or is taken up by her choice (deadbody.ts)
+      if (!carryOn(P) && c.age < P.carryDeadMaxAgeY && random(world) < P.carryDeadP) {
         mx.carryDead = world.time + 24 * (P.carryDeadMinDays + random(world) * P.carryDeadSpanDays);
         mother.carryingDeadId = c.id; // plain-data mirror of carryDead for the renderer (no extra RNG draw)
+        if (bodyOn(P)) legacyCarry(world, mother, c);
         episode(world, mother, 'life', `Carrying the body of my infant ${c.name}`, c.id);
         addEvent(world, `${mother.name} is carrying the body of her dead infant ${c.name}`, 'life', [mother.id, c.id], mother.troopId, 1);
       }

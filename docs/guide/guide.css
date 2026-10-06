@@ -40,8 +40,6 @@
 .gv-lab.hi { fill: var(--ink); }
 .gv-note { font: 11.5px var(--sans); fill: var(--ink-3); }
 .gv-grid { stroke: var(--grid); } .gv-axis { stroke: var(--axis); }
-.gv-pending { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-3); }
-.gv-pending::before { content: ''; width: 16px; height: 8px; border-radius: 2px; border: 1px dashed var(--line-3); }
 @media (prefers-reduced-motion: no-preference) {
   .gv-plot.drawn > svg, .gv-plot.drawn > .gv-fade { animation: gv-in .5s var(--ease) both; }
 }
@@ -215,34 +213,6 @@
 .snd-btn .i { width: 16px; height: 16px; color: var(--ink-2); transition: color .15s; }
 .snd-btn[aria-pressed="true"] .i { color: var(--gold); }
 @media (max-width: 480px) { .brand b { letter-spacing: .08em; } .top-actions .top-link:last-child .i { display: none; } .top-actions .top-link:last-child { padding: 0 10px; } }
-
-/* ---------- Decision models popover ("How it's built"; docs/guide/motion.js) ----------
-   Opens from the diagram's gold box (click, Enter/Space, or hover with a fine pointer) or, below 1000 px, from the list
-   item. Enters in 240 ms on the page's --ease, scaling from the box; leaves quieter (160 ms). Reduced motion: fade only. */
-.arch-fig { position: relative; }
-.dm-hit { position: absolute; left: 2%; top: 72.83%; width: 22%; height: 21.51%; padding: 0; margin: 0; border: 0; border-radius: 12px; background: transparent; color: transparent; font-size: 0; cursor: pointer; transition: box-shadow .15s; }
-.dm-hit:hover, .dm-hit[aria-expanded="true"] { box-shadow: inset 0 0 0 1px var(--gold); }
-.dm-hit:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
-.dm-pop { z-index: 2; width: 340px; max-width: 100%; padding: 14px 16px 12px; border-radius: 12px; border: 1px solid var(--gold-3); background: var(--surface-2); box-shadow: 0 24px 60px -24px rgba(0,0,0,.95); opacity: 0; transform: scale(.96); transform-origin: 0 100%; transition: opacity .16s var(--ease), transform .16s var(--ease); cursor: auto; }
-.dm-pop.in { opacity: 1; transform: none; transition-duration: .24s; }
-.dm-pop:focus { outline: none; } .dm-pop:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
-.arch-fig .dm-pop { position: absolute; left: 25.2%; bottom: 5.66%; }
-.dm-pop-h { font-size: 12.5px; color: var(--ink-3); margin-bottom: 6px; }
-.dm-pop dl { display: grid; margin: 0; }
-.dm-pop dl div { padding: 8px 0; border-top: 1px solid var(--line); display: grid; gap: 1px; }
-.dm-pop dt { font-size: 13.5px; font-weight: 500; color: var(--gold-2); }
-.dm-pop dd { margin: 0; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
-.arch-list li.ai { padding: 0; }
-.dm-row { display: grid; gap: 2px; width: 100%; padding: 14px 0; margin: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
-.dm-row b { font-size: 15px; font-weight: 500; color: var(--gold-2); }
-.dm-row > span { font-size: 14px; color: var(--ink-2); }
-.dm-row .dm-more { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 13px; color: var(--gold-2); }
-.dm-row .dm-more .i { width: 15px; height: 15px; transition: transform .2s var(--ease); }
-.dm-row[aria-expanded="true"] .dm-more .i { transform: rotate(180deg); }
-.dm-row:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-.arch-list .dm-pop { position: relative; width: 100%; margin: 0 0 14px; transform-origin: 0 0; }
-@media (max-width: 999px) { .dm-hit { display: none; } }
-@media (prefers-reduced-motion: reduce) { .dm-pop, .dm-pop.in { transform: none; transition: opacity .15s linear; } }
 
 /* ---------- Screenshot viewer (docs/guide/motion.js) ----------
    A frameless, near-fullscreen view over a dim scrim. The image flies from its thumbnail with a FLIP transform
