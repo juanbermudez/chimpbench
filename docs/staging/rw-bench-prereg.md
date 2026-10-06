@@ -160,6 +160,68 @@ The simulation's rules on wild records; any outside model or provider; real toke
 - *Pilot.* `--limit N` scores a seeded sample of N records of the part (stream `sample` of the base seed), not the first N, which would all be early years.
 - *Tests* (fake executable only): a well-formed batch, a malformed entry (that case alone refused), a timeout (every case refused, the process killed), the gate, the exact argument list, standard input closed.
 
+## 12. Results (6 October 2026; train and development only; no model, no network, the sealed part not opened)
+
+Numbers are copied from `docs/staging/rw-bench-numbers.md`, which `scripts/rw-score.ts --md` writes (aggregates only). If the two disagree, the generated file is right.
+
+**What the harness scores today.** Any kernel of R1's interface, sync or async, on the 977 training and 448 development choices, through a request that passes `decisionContextError` (wide limits) and its own mask check. Run now: the null kernel and the registered rules as packet-only kernels.
+
+| kernel | train (977 records, 34 males) | development (448 records, 30 males) | registered figure |
+| --- | --- | --- | --- |
+| null, answered option | 0.182 (0.160 to 0.204) | 0.179 (0.125 to 0.226) | chance 0.171 and 0.168: inside both intervals |
+| null, ties split | 0.171 (0.160 to 0.183) | 0.168 (0.151 to 0.180) | reproduced exactly |
+| most frequent past partner, grooming given | 0.389 (0.337 to 0.448) | 0.438 (0.357 to 0.493) | reproduced exactly, with its interval |
+| most frequent past partner, either direction | 0.389 (0.337 to 0.450) | 0.434 (0.355 to 0.489) | reproduced exactly |
+| nearest at the previous scan | 0.314 (0.282 to 0.352) | 0.310 (0.256 to 0.377) | reproduced exactly |
+| stack | 0.452 (0.399 to 0.511) | 0.487 (0.416 to 0.548) | reproduced exactly |
+| also: the male grooming him; most frequent past neighbour | 0.283; 0.347 | 0.261; 0.436 | reproduced exactly |
+
+- The rule kernels' figures are top-1 with ties split, the registration's definition; they match the parser's value on every record (0 records differ in either part), so the packet holds everything the rules use. Their answered option is one draw from the tied set and lands within about 0.015 of it (stack: 0.454 in train, 0.487 in development).
+- **Cut lines.** 45 training and 44 development records have a history line cut to 120 characters. None of them changes a rule's answer here: a cut removes the lowest ranks, and could change the stack's answer only when its tie falls among them. A model reading the packet does lose those ranks on about 5 and 10% of records.
+- **Order.** "Always the first option" scores 0.174 (0.147 to 0.200) in train and 0.147 (0.120 to 0.174) in development: chance. The observer's order scored 0.339 and 0.344. Under five shuffles the rules' top-1 moves by 0.003 to 0.025 (only their tie draws change), the mean relative position of their answers is 0.49 to 0.51, and the stack answers the same male under all five on 0.93 and 0.95 of records.
+- **By set size** (stack, ties split): 0.509 on sets of 8 or fewer and 0.370 on larger ones in train; 0.550 and 0.405 in development. The wide menus are the harder half, so cutting the benchmark to 8 would have flattered every kernel.
+- **Log loss** exists for the null kernel only (1.978 train, 2.019 development: the mean of ln set size). The rules' probabilities only rank.
+
+**Packet sizes.** No tokenizer could be run offline: none is in a cache outside the project, the system Python has no tokenizer library, and the worker's own environment is under a directory this stage may not read. So sizes are characters, with the server's estimate for tokens (fitted on packets of at most 8 options; extrapolated here).
+
+| development, shuffle 0 | median | 90th percentile | largest |
+| --- | --- | --- | --- |
+| options | 8 | 21 | 33 |
+| GLiNER text packet, characters | 1,109 | 1,999 | 2,754 |
+| GLiNER text packet, estimated tokens | 249 | 463 | 664 |
+| Codex prompt, characters per case | 430 | 752 | 1,012 |
+
+- **Development records over the worker's 1,280-token limit: 0 by the estimate, and 0 even if the estimate were low by half** (largest 664; training largest 655). 4 development and 5 training records exceed 613, the serving path's latency budget, which matters for speed only.
+- A set of 76, possible in the sealed part, would be about 1,350 by the same arithmetic (about 14 tokens an option). **Proposal, not built:** first drop the purpose words every option repeats ("eases loneliness, strengthens the bond": about 9 tokens an option, and identical for all, so no information is lost); if a packet is still over, split the set into sub-menus of at most 24 dealt by the record's seed, ask once per sub-menu and once among the winners, and score the final answer. Either rule would be registered before the sealed part is opened. Real token counts need the worker's tokenizer: `--packets` writes the requests to `artifacts/` for that.
+
+**The Codex kernel (amendment A2): built, tested against a fake executable, never run.** Nothing was sent. From the measured prompt sizes (development: 208,333 characters of cases in all, about 60,000 tokens at 3.5 characters a token; the instruction is about 200 tokens a call) and the integrator's one measurement (20,577 tokens and 8.8 s for a one-line question at the default model and effort), the full development part under one shuffle would take about:
+
+| batch size | calls | tokens (overhead + cases) | time at 8.8 s a call |
+| --- | --- | --- | --- |
+| 1 | 448 | about 9.4 million | 66 minutes or more |
+| 8 | 56 | about 1.2 million | 8 minutes or more |
+| 16 | 28 | about 0.65 million | 4 minutes or more |
+
+These are floors: reasoning tokens grow with the number of cases and are unknown until the pilot. Almost all of the cost is the per-call overhead, so batching and a lower reasoning effort decide it. How the tool reports tokens is assumed ("tokens used", then a number) and is checked only against the fake.
+
+**Acceptance tests.** `tests/rw-bench.test.ts`: 16 tests, 16 pass (synthetic records; fake worker; fake Codex executable). Section 9's ten items are covered by tests 1 to 13 and 16; amendment A2 by tests 14 and 15.
+
+**Deviations and limits, stated.**
+- Amendments A1 and A2 (section 11), both before the code they cover.
+- `scripts/rw-ngogo-choices.ts` gained a hook that hands each eligible record's history to a caller, and its preparation step became a function. `rw-numbers.md` regenerates byte for byte.
+- The mask lives on `WildRequest`, beside the context, not inside it; `src/kernel/*` is unchanged. A kernel that reads only `request.context` (the HTTP request path, the stand-in's features) sees neutral values as if they were facts, so only the wild text serializers and the rule kernels are wild paths today. R2 should adopt this mask or replace it.
+- The GLiNER text packet says of a male who groomed the focal both "grooming at the last scan" (his line) and "groomed by" (the memory line). The registration asked for both fields; the serving path's finding that a twice-described partner is favoured applies, and is a thing to test when the model is first run.
+- `--limit N` (a seeded sample) was added for pilots.
+- The GLiNER worker's default interpreter path is the existing harness's (`scripts/ft-society.ts`); `--kernels gliner` refuses without `--load-model` and was not run.
+
+**Not built.** The simulation's rules on wild records (they read the live animal; no world was faked). Real token counts. A simulated packet cut to the wild fields (R2). Any training. The second held-out score is built (`--history open`) and tested on synthetic rows only. The sealed part was not opened: `docs/staging/rw-sealed-log.md` has no entry.
+
+**Decisions for the user.**
+1. Whether the Codex pilot goes ahead as relayed, with which model, reasoning effort, batch size and cap on calls. Suggested pilot: 16 development records in two calls of 8.
+2. Whether the first GLiNER run on development (local, untuned) may load the model, and whether real token counts may be taken with the worker's tokenizer first.
+3. Whether the wide-menu rule for the sealed part (drop the repeated purpose words; split above the limit) is accepted, or sets over a size are reported apart.
+4. Whether a cut history line is acceptable (5 to 10% of records lose their lowest ranks) or the validation's line limits should widen for wild packets too.
+
 ## Privacy
 
 Packets, per-record outputs and record keys go to `artifacts/rw/` (gitignored). Committed: code, this file, the generated aggregate table (`docs/staging/rw-bench-numbers.md`: counts and rates only), the compromised list. Tests use synthetic records.
