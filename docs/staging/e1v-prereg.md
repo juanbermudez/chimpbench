@@ -166,3 +166,27 @@ tables generated from their JSON (`smoke-compare.py` in the agent's scratch).
 decide-ft stand-in run, missing its artifact, as before); `decision-guide --check` up to date and agrees with the ledger;
 `git ls-files data/raw node_modules` prints nothing. For the arms: M6-S39's parameters plus `pithFibreSwallowed` 0.5 or
 0.25; nothing else moves.
+
+## 8. The arms (integrator; §1–6 are the registration, unchanged)
+
+### 8.1 Run log, written before any arm's result (6 October 2026, 00:15 New York time)
+- **Where.** The project moved to a second computer (Apple M4, 10 cores, 16 GB; Node 22.22.3, pnpm 8.15.9). Frozen
+  detached checkout `.claude/worktrees/bench-e1v` at 1af4543 (E1v's merge; the hash aecbe0e of §5 of the handoff, after
+  the history rewrite), `git status --short` empty. On this computer at track-e 60e0028: `pnpm test` 943 tests, 941
+  pass, 0 fail, 2 skipped (the second skip is the scorecard check that needs the hand-copied `c7a-field1y.json`), so the
+  compressed goldens, the field pin and §7.1's S39 pins (ticks 6720 and 8160) reproduce here bit for bit.
+- **A failed first launch, no simulation run.** Under Node 22.19.0 all 20 jobs of M6-W25 exited in 0.1 min with
+  `ERR_MODULE_NOT_FOUND` (tsx's loader does not reach worker threads on that Node). Those four run folders held only the
+  failed logs and were deleted; the plans were made again under Node 22.22.3. Nothing was simulated, so this is not an
+  iteration.
+- **Arms and order.** Parameter files `docs/staging/integrator-kit/params/M6-W25{,-s1,-s2,-s3}.json` and
+  `M6-W50{…}.json` (S39 plus `pithFibreSwallowed` 0.25 / 0.5), seeds 48, 7, 21, 5, 11, one job per runner, four runners
+  at a time. Order: W25 at 6 months, extended to 12 (`--from`); then W50 the same.
+- **The reference (swallowed 1).** The Part C runs (bench-run, 63d699a) were not on this computer when the arms
+  started. Unless the user copies them, S39's group is regenerated in `bench-e1v` at 1af4543 from
+  `params/M6-S39{,-s1,-s2,-s3}.json` (labels M6-S39…, M12-S39…), after the two arms. Every switch added since 63d699a is
+  off in those files and was tested hash-identical at its default, so the regenerated group should reproduce Part C:
+  0 starvation deaths at 6 months and 6 at 12 months in 20 seed-runs (seeds 5, 11 and 48; `e-rebaseline.md`). If it
+  does not, that is reported first and the arms are judged only against the regenerated group.
+- **Judge.** `docs/staging/integrator-kit/scripts/judge_e1v.py <M6|M12>` (readouts of §4; every number from the run
+  JSON), monthly eating minutes and the fruit share from `scripts/lean-season.ts --group`. Nothing is judged as a keep.
