@@ -270,3 +270,16 @@ It does not show that a general model cannot do better with rank, kinship, age o
 records hold. For the stages that follow: 0.49 is the mark an engine must reach to equal a general model here, a small
 engine cannot be shown to beat a general one on this part, and the benchmark separates engines only below that mark
 (an untuned engine against 0.18 chance and 0.49).
+
+**A6. Registered before it runs: untuned GLiNER2.5-Decide on the development part (6 October 2026).** The model
+runtime is now on this computer (HANDOFF.md §3 item 3: the base model at revision 7ee5da4c, the worker's identity check
+passes, `verify-browser.mjs` 20 of 20). Command: `rw-score.ts --part development --kernels null,stack,gliner
+--load-model --adapter base --device mps` with the environment variables of HANDOFF.md, the harness's default five
+shuffles and seed, out `artifacts/rw/gliner-dev`. The packet is the serving path's own text packet (§2.4): its
+instructions were written for menus of at most 8 options and 253 of the 448 records have more, so results are read by
+set size as well as overall. Readouts: top-1 (answered option and ties split), mean reciprocal rank and log loss from
+the model's scores, the interval over focal males, by set size and by what preceded the bout, the option-order check
+(the same male under every shuffle; answers on the first option), and the paired difference against the stack and
+against the null kernel on the same records. Marks fixed by A5: chance 0.18, the stack 0.49 (Codex 0.49). Prediction
+(integrator, low confidence): between chance and "nearest" (0.18 to 0.32), worse above 8 options, with some
+sensitivity to option order. Nothing is tuned from this result; it is the untuned engine's starting point for R4.
