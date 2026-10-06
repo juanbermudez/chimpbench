@@ -24,7 +24,7 @@ import { isChimpId, TICK_HOURS } from '../src/sim/state';
 import { createWorld, tickWorld } from '../src/simulation';
 import type { Chimp, World } from '../src/types';
 import { worldHash } from '../tests/fixtures/golden';
-import { buildV4Question, tokensOf } from './lib/packet-v4';
+import { tokensOf } from './lib/packet-v4';
 
 const RESERVED = new Set([606, 707, 808, 909, 1010, 1013, 1014, 1616, 5101, 5202, 5303, 5404, 5505, 5606, 5707, 7001, 7002, 7003, 9101]);
 const key = (k: { action: string; targetId: number }) => `${k.action}:${k.targetId}`;
@@ -100,13 +100,15 @@ export function sampleR2(o: SampleOpts): { rows: Row[]; hash: string; decisions:
     const pk = p.req.parityKinds, k1 = two(pk, refused.parityKinds, false), k2 = two(pk, refused.parityKinds, true);
     const nullFirst = Math.min(pk.options.length - 1, Math.floor(hash01(o.seed, c.id, V, 0x61) * pk.options.length));
     const beliefs = p.req.parity.options.map(k => k.value).filter(v => v && v.swingLow !== undefined);
-    const tok = (r: KernelRequest, bad: string, v4: boolean) => bad ? -1 : tokensOf(v4 ? buildV4Question(r.context) : buildLocalQuestion(r.context));
+    // the real builder (src/providers/packet.ts): the v4 wording for the context as it is (packet 4), stage M1's rendering (wording 1, numbers) without the marker
+    const m1Of = ({ packet: _p, ...ctx }: KernelRequest['context']) => buildLocalQuestion(ctx);
+    const tok = (r: KernelRequest, bad: string, v4: boolean) => bad ? -1 : tokensOf(v4 ? buildLocalQuestion(r.context) : m1Of(r.context));
     const abl: Row['abl'] = {};
     if (!refused.parity) {
       const base = pickOf(p.req.parity, sample, hashStream(o.seed, c.id, V, 0x71));
       for (const g of GROUPS) {
         const ctx = withoutGroup(p.req.parity.context, g), r: KernelRequest = { ...p.req.parity, context: ctx, options: ctx.candidates };
-        abl[g] = { changed: pickOf(r, sample, hashStream(o.seed, c.id, V, 0x71)) !== base, tok: tokensOf(buildV4Question(ctx)) };
+        abl[g] = { changed: pickOf(r, sample, hashStream(o.seed, c.id, V, 0x71)) !== base, tok: tokensOf(buildLocalQuestion(ctx)) };
       }
     }
     const kinds = pk.options.map(optionKind), dup = new Set(kinds).size !== kinds.length;

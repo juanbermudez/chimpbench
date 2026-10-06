@@ -5,9 +5,11 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { buildLocalQuestion, decisionContextError, estimateInputTokens, TOKEN_BUDGET_STATE, withoutState } from '../server/decide';
-import { buildV4Question, tokensOf } from '../scripts/lib/packet-v4';
+import { buildJevQuestion, buildLocalQuestion, decisionContextError, estimateInputTokens, TOKEN_BUDGET_STATE, withoutState } from '../server/decide';
+import { composeV4Question, tokensOf } from '../scripts/lib/packet-v4';
 import { sampleR2, summarize } from '../scripts/r2-sample';
+import { createDecisionController, pumpDecisions, setPolicy, setRoster } from '../src/decision';
+import type { DecisionProvider } from '../src/providers/types';
 import { nullKernel } from '../src/kernel/kernels';
 import { answerWaiting } from '../src/kernel/loop';
 import { beliefDraw, packetRules, packetRulesKernel } from '../src/kernel/packet-rules';
@@ -66,18 +68,25 @@ test('nothing in a rules-only world reads observeV4, menuParity or activityFirst
   assert.equal(worldHash(on), worldHash(off), 'compressed, seed 48');
 });
 
-test('with every R2 switch 0 the requests are those of track-e e0cf866 (hashes recorded from that commit, compressed seeds 48 and 7)', () => {
-  // docs/staging/r2-prereg.md iteration 1b: the same script ran on an extracted copy of e0cf866 and on this branch and
+test('with every R2 switch 0 the requests and the text packets are those of track-e (hashes recorded from e0cf866 and again from 7179af7; compressed seeds 48 and 7)', () => {
+  // docs/staging/r2-prereg.md iterations 1b and 6: the same script ran on an extracted copy of track-e (e0cf866 before
+  // the build, 7179af7 after the UI merge and the wiring of the packet builder and the app's loop) and on this branch and
   // printed the same hashes for requests and for both text packets (compressed and the field working base, observeState
-  // 0 and 1). The request hashes of the compressed worlds are pinned here; they move only if buildRequest's output does.
-  const PINNED: Record<string, string> = { '48 noon': 'e2a8ceeddecec9ea', '48 dusk': '7eb562dc80143a22', '7 noon': '96d75aa2580993a0', '7 dusk': 'b82e466483971e16' };
+  // 0 and 1). The compressed worlds' hashes are pinned here: [requests, GLiNER and Jev text of every valid request].
+  const PINNED: Record<string, [string, string]> = { '48 noon': ['e2a8ceeddecec9ea', '25c1a437a46f8c26'], '48 dusk': ['7eb562dc80143a22', '73b5649f644be88b'],
+    '7 noon': ['96d75aa2580993a0', '66b58144b90fa1ff'], '7 dusk': ['b82e466483971e16', '4d9762f375854092'] };
   for (const seed of [48, 7]) {
     const w = ticks(createWorld(seed), 1440);
     for (const label of ['noon', 'dusk']) {
       if (label === 'dusk') ticks(w, 1720);
-      const h = createHash('sha256');
-      for (const c of w.chimps) if (c.alive) h.update(JSON.stringify(buildRequest(w, c)));
-      assert.equal(h.digest('hex').slice(0, 16), PINNED[`${seed} ${label}`], `seed ${seed} ${label}`);
+      const h = createHash('sha256'), t = createHash('sha256');
+      for (const c of w.chimps) {
+        if (!c.alive) continue;
+        const r = buildRequest(w, c);
+        h.update(JSON.stringify(r));
+        if (r.options.length >= 2 && decisionContextError(r.context) === '') { t.update(JSON.stringify(buildLocalQuestion(r.context))); t.update(JSON.stringify(buildJevQuestion(r.context))); }
+      }
+      assert.deepEqual([h.digest('hex').slice(0, 16), t.digest('hex').slice(0, 16)], PINNED[`${seed} ${label}`], `seed ${seed} ${label}`);
     }
   }
 });
@@ -210,13 +219,20 @@ test('v4 wording on M2\'s probe design: three levels of one state change only th
   }
 });
 
-test('the v4 text packet: no clock, no ids, no bare valuation numbers; the server\'s option order; inside the hard limit', t => {
+test('the v4 text packet from the real builder (packet 4): no clock, no ids, no bare valuation numbers; equal to the outside composition; inside the hard limit', t => {
   let packets = 0, max = 0;
   const sizes: number[] = [];
   for (const [label, w] of STATES) for (const c of adults(w)) {
     for (const r of [buildRequest(w, c), buildRequest(w, c, { menuParity: 1 }), buildRequest(w, c, { menuParity: 1, activityFirst: 1 })]) {
       if (r.options.length < 2 || decisionContextError(r.context) !== '') continue;
-      const p = buildV4Question(r.context), text = JSON.stringify(p), m1 = buildLocalQuestion(r.context, { wording: 2 });
+      const { packet: _marker, ...plain } = r.context;
+      const p = buildLocalQuestion(r.context), text = JSON.stringify(p), m1 = buildLocalQuestion(plain, { wording: 2 });
+      assert.deepEqual(composeV4Question(r.context), p, 'the builder writes what the outside composition writes');
+      assert.notEqual(JSON.stringify(m1), text, 'and not the stage M1 text');
+      assert.equal(JSON.stringify(buildLocalQuestion(withoutState(r.context))), JSON.stringify(buildLocalQuestion(withoutState(plain))), 'withoutState drops the marker');
+      const jev = buildJevQuestion(r.context);
+      assert.ok(!/swing/i.test(JSON.stringify(jev)), 'the value swings are never sent as text');
+      if (r.context.body?.hindFill !== undefined) assert.ok((jev.state.body as Record<string, unknown>).hind_fill !== undefined);
       assert.deepEqual(Object.keys(p.questions.action.criteria), r.options.map((_, i) => `c${i}`), 'one criterion per option, in order');
       assert.ok(!/\b\d{1,2}:\d{2}\b/.test(text), `${label}: no clock hour`);
       assert.ok(!/\b\d{6,}\b/.test(text.replace(/\d{1,3}(,\d{3})+/g, '')), `${label}: no ids`);
@@ -256,6 +272,41 @@ test('field groups: an ablation removes exactly its group\'s fields', () => {
   // every field of the v4 body and value belongs to a group
   for (const k of Object.keys(context.body!)) assert.ok(all.has(`body.${k}`), `body.${k} is in a group`);
   for (const o of context.candidates) for (const k of Object.keys(o.value ?? {})) assert.ok(all.has(`value.${k}`), `value.${k} is in a group`);
+});
+
+test('bodies in sight (stage ED, deadBody): one line per body in the packet; a context without bodies is unchanged', () => {
+  const c = adults(day).find(k => { const r = buildRequest(day, k); return r.options.length >= 2 && r.context.social.length >= 2; })!;
+  const { context } = buildRequest(day, c), near = context.social[0];
+  const used = new Set([context.chimpId, ...context.social.map(p => p.id)]);
+  const ids = [90_001, 90_002, 90_003, 90_004].filter(id => !used.has(id));
+  const bodies = [
+    { id: ids[0], name: 'Kato', relation: 'offspring' as const, ageYears: 0.7, distance: 0, deadHours: 3.2, heldBy: context.chimpId },
+    { id: ids[1], name: 'Mbelo', relation: 'community' as const, ageYears: 2.4, distance: 12.3, deadHours: 0.4, heldBy: -1 },
+    { id: ids[2], name: 'Sanyu', relation: 'maternal-sibling' as const, ageYears: 1.2, distance: 4, deadHours: 50, heldBy: near.id },
+    { id: ids[3], name: 'Tibu', relation: 'community' as const, ageYears: 0.3, distance: 30, deadHours: 1, heldBy: 89_999 },
+  ];
+  const withBodies: DecisionContext = { ...context, bodies };
+  assert.equal(decisionContextError(withBodies), '', 'the shared validation accepts it');
+  const LINES = ['Kato: dead, my offspring, 8 months, died 3 h ago, I am holding the body', 'Mbelo: dead, 2 y, died 24 min ago, the body lies 10 m away',
+    `Sanyu: dead, my maternal sibling, 1 y, died 2 days ago, ${near.name} holds the body, 4 m away`, 'Tibu: dead, 4 months, died 1 h ago, another holds the body, 30 m away'];
+  for (const ctx of [withBodies, withoutState(withBodies)]) { // the v4 layout and today's layout
+    const p = buildLocalQuestion(ctx), { bodies: _b, ...rest } = ctx, q = buildLocalQuestion(rest);
+    assert.deepEqual(p.state.bodies, LINES);
+    assert.ok(!/\b9\d{4}\b/.test(JSON.stringify(p)), 'no id reaches the model');
+    const { bodies: _lines, ...state } = p.state;
+    if (JSON.stringify(q.state.memories) === JSON.stringify(p.state.memories)) assert.deepEqual(state, q.state, 'the rest of the state is unchanged');
+    assert.deepEqual(p.questions, q.questions, 'no instruction line and no option changes');
+    assert.equal(q.state.bodies, undefined, 'no line without bodies');
+    const j = buildJevQuestion(ctx), jq = buildJevQuestion(rest);
+    assert.deepEqual(j.state.bodies, [{ name: 'Kato', relation: 'my offspring', age: '8 months', died: '3 h ago', where: 'I am holding the body' },
+      { name: 'Mbelo', relation: 'community member', age: '2 y', died: '24 min ago', where: 'the body lies 10 m away' },
+      { name: 'Sanyu', relation: 'my maternal sibling', age: '1 y', died: '2 days ago', where: `${near.name} holds the body, 4 m away` },
+      { name: 'Tibu', relation: 'community member', age: '4 months', died: '1 h ago', where: 'another holds the body, 30 m away' }]);
+    assert.match(String(j.questions.action.instructions.evidence), /`events` and `bodies`\. Every option/);
+    assert.equal(jq.state.bodies, undefined);
+    assert.match(String(jq.questions.action.instructions.evidence), /`memories` and `events`\. Every option/);
+    assert.ok(estimateInputTokens(p.state, p.questions) <= 1280);
+  }
 });
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -385,6 +436,41 @@ test('activityFirst 2 in the loop: a second call settles the target, through the
     assert.doesNotThrow(() => JSON.stringify(w));
   }
   assert.ok(count.kernel > 50);
+});
+
+test('activityFirst 2 in the app\'s loop (src/decision.ts): the provider is asked a second time for the target; at 1 it is asked once', async t => {
+  const flush = () => new Promise(resolve => setTimeout(resolve, 0));
+  for (const mode of [1, 2] as const) {
+    const w = ticks(createWorld(48, { params: { activityFirst: mode, menuParity: 1 } }), 1440);
+    const sent: DecisionContext[] = [];
+    const provider: DecisionProvider = { id: 'server', label: 'fake', status: async () => ({ ready: true, phase: 'ready' }), start: async () => {},
+      decide: async ctx => { sent.push(ctx); const n = ctx.candidates.length, index = sent.length % n; return { index, probabilities: Array.from({ length: n }, (_, i) => i === index ? 0.6 : 0.4 / (n - 1)), inputTokens: 100, latencyMs: 5 }; } };
+    const controller = createDecisionController(provider), selected = w.chimps.find(c => c.alive && c.stage === 'adult')!;
+    setPolicy(controller, w, 'lockstep'); controller.ready = true;
+    setRoster(controller, w, 'all', selected.id);
+    for (let i = 0; i < 400 && controller.traces.filter(x => x.source === 'model').length < 60; i++) {
+      tickWorld(w);
+      for (let k = 0; k < 60 && w.chimps.some(c => c.alive && c.controller === 'model' && c.awaitingDecisionSince !== null); k++) { pumpDecisions(controller, w, selected.id); await flush(); await flush(); }
+    }
+    const model = controller.traces.filter(x => x.source === 'model'), two = model.filter(x => x.note.startsWith('activity chosen first: '));
+    assert.equal(controller.calls, sent.length, 'calls counts every provider call');
+    assert.ok(model.length >= 40, `model decisions ${model.length}`);
+    if (mode === 1) { assert.equal(two.length, 0); assert.equal(sent.length, controller.calls); assert.ok(model.every(x => x.inputTokens === 100)); }
+    else {
+      assert.ok(two.length > 5, `decisions with a second call: ${two.length} of ${model.length}`);
+      for (const x of two) {
+        assert.ok(x.options.length >= 2 && new Set(x.options.map(optionKind)).size === 1, 'the trace shows the second request: the options of one kind');
+        assert.deepEqual(x.context.candidates, x.options);
+        assert.equal(x.inputTokens, 200, 'tokens of both calls'); assert.equal(x.latencyMs, 10);
+        assert.equal(x.probabilities.length, x.options.length);
+        assert.ok(sent.includes(x.context), 'the provider was sent the second request\'s context');
+      }
+      assert.ok(two.some(x => x.applied), 'a second-step answer was applied');
+      assert.ok(controller.agreement.total >= controller.agreement.same && controller.agreement.total > 0);
+    }
+    assert.ok(model.filter(x => x.applied).length > model.length * 0.8, 'answers are applied');
+    t.diagnostic(`activityFirst ${mode}, the app's loop, compressed seed 48: ${model.length} model decisions, ${two.length} with a second call, ${sent.length} provider calls`);
+  }
 });
 
 // ---------------------------------------------------------------------------------------------------------------------

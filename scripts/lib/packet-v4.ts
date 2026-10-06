@@ -1,8 +1,9 @@
-// Stage R2 (docs/staging/r2-prereg.md §1 E, §3, §6): the v4 text packet, composed outside the server while
-// server/decide.ts may not be edited. The server's own builder gives the packet for the context (M1's layout, wording 2:
-// the purposes that follow Track E's mechanics); this replaces the `body` line with the v4 words and each option's value
-// words with the v4 ones (src/kernel/packet-words.ts), then re-applies the server's trimming loop. It is the text the
-// server will build once buildStateQuestion calls the same two functions for a context with `packet: 4`.
+// Stage R2 (docs/staging/r2-prereg.md §1 E, §3, §10): the v4 text packet composed from outside the packet builder, kept
+// as an independent check of it. Since the wiring of §10 the builder itself (src/providers/packet.ts) writes the v4
+// words for a context with `packet: 4`, and that is the text every kernel is sent. This composition takes the builder's
+// stage M1 packet for the same context without the marker (wording 2), replaces the `body` line with the v4 words and
+// each option's value words with the v4 ones (src/kernel/packet-words.ts), and re-applies the trimming loop;
+// tests/r2-packet.test.ts asserts the two are equal.
 import { buildLocalQuestion, estimateInputTokens, TOKEN_BUDGET_STATE, type LocalPacket } from '../../server/decide';
 import { bodyWordsV4, valueWordsV4 } from '../../src/kernel/packet-words';
 import type { DecisionContext } from '../../src/types';
@@ -11,8 +12,9 @@ import type { DecisionContext } from '../../src/types';
 // ("… (purpose; company worth 0.50)"); the v4 words take their place, so the composition is the server's own
 const SENTINEL = { company: 0.5 }, MARK = 'company worth 0.50';
 
-export function buildV4Question(ctx: DecisionContext, opts: { wording?: 1 | 2 } = {}): LocalPacket {
-  const marked: DecisionContext = { ...ctx, candidates: ctx.candidates.map(c => ({ ...c, value: SENTINEL })) };
+export function composeV4Question(ctx: DecisionContext, opts: { wording?: 1 | 2 } = {}): LocalPacket {
+  const { packet: _packet, ...plain } = ctx;
+  const marked: DecisionContext = { ...plain, candidates: ctx.candidates.map(c => ({ ...c, value: SENTINEL })) };
   const base = buildLocalQuestion(marked, { wording: opts.wording ?? 2 });
   const state: Record<string, unknown> = { ...base.state };
   if (ctx.body && Object.keys(ctx.body).length) state.body = bodyWordsV4(ctx.body); else delete state.body;

@@ -1,4 +1,4 @@
-import type { Action, BodyPercept, Candidate, DecisionContext, OptionValue, SocialPercept } from '../types';
+import type { Action, BodyPercept, BodySight, Candidate, DecisionContext, OptionValue, SocialPercept } from '../types';
 
 // Shared, pure prompt construction: the one definition of the packet text every provider and kernel sends a model
 // (the dev server's bridge, the in-browser worker, the Jev gateway, the batch scorers and the wild-choice benchmark).
@@ -7,6 +7,8 @@ import type { Action, BodyPercept, Candidate, DecisionContext, OptionValue, Soci
 // The request validation lives in src/sim/context-check.ts (stage R1) so that every kernel shares it; re-exported here
 // for the providers, and through server/decide.ts for the scripts and tests.
 import { MAX_HISTORY } from '../sim/context-check';
+// Stage R2 (docs/staging/r2-prereg.md §3, §10): the v4 wording of the state (words before numbers), for a context with `packet: 4`.
+import { bodyWordsV4, valueWordsV4 } from '../kernel/packet-words';
 export { MAX_HISTORY, MAX_OPTIONS, bodyFieldError, decisionContextError, validateDecisionContext } from '../sim/context-check';
 
 // ---------------------------------------------------------------------------
@@ -55,6 +57,22 @@ function describePercept(ctx: DecisionContext, p: SocialPercept): string {
   if (p.hasMeat) parts.push('holding meat');
   if (p.sex === 'female' && p.swelling >= 0.8) parts.push('maximally swollen');
   return `${p.name}: ${parts.filter(Boolean).join(', ')}`;
+}
+
+/**
+ * Stage ED's bodies in sight (`deadBody`; DecisionContext.bodies), one line each (docs/staging/r2-prereg.md §10 c): who
+ * it was to the focal animal, its age, how long dead, and where the body is. The holder is named only if it is on the
+ * nearby list; no id reaches the model. The wording is a design assumption; nothing tells the model what to do about it.
+ */
+const diedAgo = (h: number) => h < 1 ? `${Math.max(1, Math.round(h * 60))} min ago` : h < 36 ? `${Math.round(h)} h ago` : `${Math.round(h / 24)} days ago`;
+function bodyPlace(ctx: DecisionContext, b: BodySight): string {
+  if (b.heldBy === ctx.chimpId) return 'I am holding the body';
+  if (b.heldBy < 0) return `the body lies ${meters(b.distance)} away`;
+  const holder = ctx.social.find(p => p.id === b.heldBy);
+  return `${holder ? holder.name : 'another'} holds the body, ${meters(b.distance)} away`;
+}
+function describeBody(ctx: DecisionContext, b: BodySight): string {
+  return `${b.name}: ${['dead', RELATION_TEXT[b.relation], ageText(b.ageYears), `died ${diedAgo(b.deadHours)}`, bodyPlace(ctx, b)].filter(Boolean).join(', ')}`;
 }
 
 /** [phrase with target {t}, phrase without target, what it answers]. The purpose words mirror the drive words in the state. */
@@ -261,6 +279,7 @@ function localPacket(ctx: DecisionContext, opts: { staticInstructions?: boolean 
   if (memories.length) state.memories = memories;
   if (ctx.history?.length) state.history = ctx.history.slice(0, MAX_HISTORY);
   if (ctx.stimuli.length) state.events = ctx.stimuli;
+  if (ctx.bodies?.length) state.bodies = ctx.bodies.map(b => describeBody(ctx, b)); // stage ED (deadBody): bodies in sight
   const criteria: Record<string, string> = {};
   ctx.candidates.forEach((c, i) => { criteria[`c${i}`] = optionText(ctx, c); });
   const questions = { action: { type: 'choice' as const, instructions: opts.staticInstructions ? STATIC_INSTRUCTIONS : actionInstructions(ctx), criteria } };
@@ -299,7 +318,7 @@ function optionKeys(ctx: DecisionContext): string[] {
  * situational rules apply to this moment only. keys[i] is the criteria key of ctx.candidates[i].
  */
 export function buildJevQuestion(ctx: DecisionContext, opts: { wording?: 1 | 2 } = {}): JevPacket {
-  return hasState(ctx) ? buildJevStateQuestion(ctx, opts.wording ?? 1) : jevPacket(ctx); // stage M1: Track E's state (observeState 1)
+  return hasState(ctx) ? buildJevStateQuestion(ctx, opts.wording ?? (ctx.packet === 4 ? 2 : 1)) : jevPacket(ctx); // stage M1: Track E's state (observeState 1); R2: wording 2 for packet 4
 }
 /** Jev's packet: grouped state, structured instructions, named options (keys[i] is ctx.candidates[i]'s key). */
 export interface JevPacket {
@@ -330,6 +349,8 @@ function jevPacket(ctx: DecisionContext): JevPacket {
     memories: memoryLines(ctx),
     history: ctx.history?.slice(0, MAX_HISTORY),
     events: ctx.stimuli,
+    // stage ED (deadBody): bodies in sight, as named fields
+    bodies: ctx.bodies?.map(b => pruned({ name: b.name, relation: RELATION_TEXT[b.relation] || 'community member', age: ageText(b.ageYears), died: diedAgo(b.deadHours), where: bodyPlace(ctx, b) })),
   });
   const keys = optionKeys(ctx);
   const criteria: Record<string, { act: string; purpose?: string }> = {};
@@ -337,7 +358,7 @@ function jevPacket(ctx: DecisionContext): JevPacket {
   const instructions = pruned({
     question: `Which option will ${f.name} most plausibly take next?`,
     judge_as: 'A field primatologist who knows wild eastern chimpanzees (Kibale).',
-    evidence: 'Judge only from `self`, `needs`, `situation`, `nearby`, `memories` and `events`. Every option is possible now.',
+    evidence: `Judge only from \`self\`, \`needs\`, \`situation\`, \`nearby\`, \`memories\`${ctx.bodies?.length ? ', `events` and `bodies`' : ' and `events`'}. Every option is possible now.`,
     now: situationRules(ctx),
     weigh: ACTION_WEIGH,
   });
@@ -375,7 +396,7 @@ export const TOKEN_BUDGET = 613;
 export const hasState = (ctx: DecisionContext): boolean => ctx.body !== undefined || ctx.light !== undefined;
 /** The same moment as today's observation: the context without `body`, `light` and option values. */
 export function withoutState(ctx: DecisionContext): DecisionContext {
-  const { body: _body, light: _light, ...rest } = ctx;
+  const { body: _body, light: _light, packet: _packet, ...rest } = ctx; // (packet: stage R2's marker of the v4 fields)
   return { ...rest, candidates: ctx.candidates.map(({ value: _value, ...k }) => k) };
 }
 /** The packet's estimate budget for the new layout: the old packet's budget plus room for the new parts, under the 1,280 hard limit (M1 measures the real counts). */
@@ -430,7 +451,9 @@ function stateOptionParts(ctx: DecisionContext, c: Candidate, wording: 1 | 2 = 1
   let phrase = parts.phrase.replace(/\s*\(\d{1,2}:\d{2}\)/g, '');
   if (ctx.light && ctx.light.trend > 0.05) phrase = phrase.replace(/; dusk is falling\b/, '');
   const social = ctx.social.some(p => p.id === c.targetId);
-  return { phrase, purpose: wording === 2 ? trackPurpose(ctx, c, parts.purpose) : parts.purpose, values: c.value ? valueWords(c.value, c.reason, social) : '' };
+  // stage R2 (packet 4): the v4 value words (src/kernel/packet-words.ts)
+  const values = !c.value ? '' : ctx.packet === 4 ? valueWordsV4(c.value, c.reason, social, c.action) : valueWords(c.value, c.reason, social);
+  return { phrase, purpose: wording === 2 ? trackPurpose(ctx, c, parts.purpose) : parts.purpose, values };
 }
 
 // Stage M1 iteration 2 (wording 2; docs/staging/em-prereg.md "M1 iteration 2"): under Track E the old purposes contradict
@@ -463,9 +486,10 @@ function nowWords(ctx: DecisionContext): string {
 
 /** GLiNER's packet for a context with Track E's state (see the section note). */
 function buildStateQuestion(ctx: DecisionContext, opts: { staticInstructions?: boolean; wording?: 1 | 2 }): LocalPacket {
-  const old = localPacket(withoutState(ctx), opts), w = opts.wording ?? 1;
+  // stage R2 (packet 4; docs/staging/r2-prereg.md §3): the v4 body line and value words, on wording 2's purposes by default
+  const v4 = ctx.packet === 4, old = localPacket(withoutState(ctx), opts), w = opts.wording ?? (v4 ? 2 : 1);
   const state: Record<string, unknown> = { ...old.state, now: nowWords(ctx) };
-  if (ctx.body && Object.keys(ctx.body).length) state.body = bodyWords(ctx.body);
+  if (ctx.body && Object.keys(ctx.body).length) state.body = v4 ? bodyWordsV4(ctx.body) : bodyWords(ctx.body);
   if (w === 2 && SLEEPY(ctx)) for (const k of ['feeling', 'urgent'] as const) if (typeof state[k] === 'string') state[k] = sleepWords(state[k] as string);
   const criteria: Record<string, string> = {};
   ctx.candidates.forEach((c, i) => {
@@ -504,7 +528,8 @@ function buildJevStateQuestion(ctx: DecisionContext, wording: 1 | 2 = 1): JevPac
     stomach_fill: b.gutFill !== undefined ? `${Math.round(b.gutFill * 100)}%` : undefined, water_deficit_pct_body_mass: b.waterDeficitPct, heat_load: b.heat,
     sleep_pressure: b.sleepPressure, sleepiness: b.sleepiness,
     body_clock: b.clock !== undefined ? `${b.clock >= 0.6 ? 'alert' : b.clock <= -0.6 ? 'night low' : 'in between'}, ${b.clockRising ? 'rising' : 'falling'}` : undefined,
-    stress: b.stress, arousal: b.arousal, affiliation: b.affiliation, acute_arousal: b.acute });
+    stress: b.stress, arousal: b.arousal, affiliation: b.affiliation, acute_arousal: b.acute,
+    hind_fill: b.hindFill !== undefined ? `${Math.round(b.hindFill * 100)}%` : undefined }); // (hind_fill: stage R2, packet 4)
   const keys = old.keys, criteria: JevPacket['questions']['action']['criteria'] = {};
   ctx.candidates.forEach((c, i) => {
     const { phrase, purpose } = stateOptionParts(ctx, c, wording), v = c.value, social = ctx.social.some(p => p.id === c.targetId);
@@ -512,10 +537,12 @@ function buildJevStateQuestion(ctx: DecisionContext, wording: 1 | 2 = 1): JevPac
       net_energy_kcal_per_h: v?.kcalH, fruit_kcal: v?.cropKcal,
       fruit_seen: v?.seenH === undefined ? undefined : v.seenH === 0 ? 'in view' : v.seenH < 0 ? 'never, expected' : agoWords(v.seenH),
       others_going: v?.feeders && v.seenH !== 0 ? v.feeders : undefined, company: v?.company,
-      distance: v?.distM !== undefined && !social ? meters(v.distM) : undefined }) };
+      distance: v?.distM !== undefined && !social ? meters(v.distM) : undefined,
+      // stage R2 (packet 4): the belief behind the option; the value swings are for a kernel and are never sent as text
+      rate_share: v?.share, chance_in_fruit: v?.chance !== undefined ? Math.round(v.chance * 100) / 100 : undefined, crop_uncertainty_kcal: v?.spreadKcal, win_odds: v?.odds }) };
   });
   const now = old.questions.action.instructions.now;
-  const instructions = { ...old.questions.action.instructions, evidence: 'Judge only from `self`, `needs`, `body`, `situation`, `nearby`, `memories` and `events`. Every option is possible now.',
+  const instructions = { ...old.questions.action.instructions, evidence: `Judge only from \`self\`, \`needs\`, \`body\`, \`situation\`, \`nearby\`, \`memories\`${ctx.bodies?.length ? ', `events` and `bodies`' : ' and `events`'}. Every option is possible now.`,
     ...(wording === 2 && SLEEPY(ctx) && Array.isArray(now) ? { now: (now as string[]).map(sleepWords) } : {}) };
   return { state, questions: { action: { type: 'choice' as const, instructions, criteria } }, keys };
 }

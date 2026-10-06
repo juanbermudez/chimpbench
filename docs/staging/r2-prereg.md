@@ -438,3 +438,27 @@ generated parameters). The two files R2 was kept out of are now free, and their 
   independent check (a test asserts it equals the real builder's packet); the sample measures tokens through the real
   builder. The sample is re-run once on the merged branch; its numbers may differ from §8's if `track-e` changed the
   working base's world, and that is said if so.
+
+### Results of the wiring (iteration 6; 6 October 2026)
+
+- **Wired.** `src/providers/packet.ts`: the v4 body line and value words for a context with `packet: 4` (wording 2 by
+  default), `withoutState` drops the marker, Jev's named fields, and the `bodies` line as registered in (c).
+  `src/decision.ts`: the second call under `activityFirst` 2 (the same provider, the same answer check and
+  `applyDecision`; the trace shows the second request and notes the activity chosen first; calls, latency and tokens
+  add; agreement with the rules is counted on the final choice). No change of the registered wording was needed.
+- **Byte-identity at defaults.** The hash script printed the same 10 lines on `track-e` 7179af7 and on this branch
+  (requests and both text packets; compressed seeds 48 and 7, the field working base with `observeState` 0 and 1); they
+  are also the lines of e0cf866. The compressed request and text hashes are pinned in `tests/r2-packet.test.ts`.
+- **Tokens through the real builder** (the fixed sample re-run on the merged branch; the worlds hash as before the merge
+  and every other number of §8 came out the same): v4 (A on) median 572, 90th percentile 685, largest 807; with
+  `activityFirst` 1 (A and C) 585, 716, 853; with all three 589, 718, 853. None over 1,280. They equal the composed
+  packets' sizes of §8, and a test asserts the builder's packet equals the outside composition (304 packets).
+- **Tests.** `tsc` and `gen-params --check` clean (1,042 entries). `tests/r2-packet.test.ts` 19 of 19 (two new: the
+  bodies line; the app's loop at `activityFirst` 1 and 2: 60 model decisions, 25 with a second call, 85 provider calls).
+  `kernel` 15, `decision` 22, `em-observe` 8, `sim-dead` 9, `sim-track-e` 2, `sim-params` (the goldens) 11, `providers` 6,
+  `decision-guide` 4, `prescription-ledger` 20, `rw-bench` 16: all pass. The full suite was not run.
+- **One failure that is not R2's:** `tests/sim-orphan-blind.test.ts` fails 2 of 5 on this branch and equally on
+  `track-e` 7179af7 itself (`life.ts:bodyAtDeath` calls `dependentOn(`, a site stage ED did not add to that lint's
+  allowlist). Left for the integrator; not touched here.
+- **Not done:** the bodies line was tested on a built context (four bodies: held by the focal, lying, held by a named
+  neighbour, held by an animal out of the nearby list), not on a simulated death; no model has read any of the new text.

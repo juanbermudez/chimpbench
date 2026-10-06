@@ -739,8 +739,12 @@ the request, a real choice (two options or more), the request validation ([conte
 - The v4 wording ([src/kernel/packet-words.ts](../src/kernel/packet-words.ts) `bodyWordsV4`, `valueWordsV4`; the exact
   words are registered in the pre-registration §3): a word first wherever a number has no meaning to a reader ("strong
   energy shortfall: about 1,200 kcal still to find, little waking time left"; "a good feed (about 410 kcal an hour
-  net)"; "may have changed"; "I would likely win"). Until the packet-text builder calls these functions,
-  [scripts/lib/packet-v4.ts](../scripts/lib/packet-v4.ts) composes the text from the server's own packet.
+  net)"; "may have changed"; "I would likely win"). The packet-text builder ([src/providers/packet.ts](../src/providers/packet.ts)
+  `buildStateQuestion`) writes them for a context with `packet: 4`, on wording 2's purposes; a context without the marker
+  is built as before. [scripts/lib/packet-v4.ts](../scripts/lib/packet-v4.ts) keeps an outside composition of the same
+  text as a check. The builder also writes one `bodies` line per body in sight for a context that carries
+  `DecisionContext.bodies` (stage ED, `deadBody`): "Kato: dead, my offspring, 8 months, died 3 h ago, I am holding the
+  body"; no instruction line goes with it.
   `withoutGroup` removes one field group (energy, gut, sleep and phase, arousal and slow states, water and heat, the
   belief behind an option) for ablations.
 - `menuParity` 1: `buildRequest` takes its options, in order, from the rules' menu ([rg.ts](../src/sim/rg.ts)
@@ -751,7 +755,9 @@ the request, a real choice (two options or more), the request validation ([conte
   from [src/decide/facts.ts](../src/decide/facts.ts) `kindOf`): the best option of each kind by rules score, at most
   eight kinds (those of the kept picks, rest, then by score). `KernelRequest.groups` holds each kind's options. 1: the
   entry is applied (the rules' best target within the kind; one call). 2: when the chosen kind has two or more options a
-  second request over them goes to the same kernel (`targetRequest`, `secondRequest`; `StepResult.calls` counts calls).
+  second request over them goes to the same kernel (`targetRequest`, `secondRequest`; `StepResult.calls` counts calls);
+  the app's loop ([src/decision.ts](../src/decision.ts)) makes the same second call to its provider and its trace shows
+  the second request.
 - The packet-reading rules ([src/kernel/packet-rules.ts](../src/kernel/packet-rules.ts)): the rules' choice step from the
   request alone: each option's published value (`score`) plus, in mode `sample`, a draw from the belief the v4 packet
   carries; the highest wins. `kernelSim` 2 runs it inside the tick through the shared step. It does not re-derive a
