@@ -134,7 +134,7 @@ Reloading the page brings back the last simulation where you left it, **paused**
 | `src/types.ts` | Shared plain-data contract: World, Chimp, Troop, DecisionContext, SceneAPI |
 | `src/simulation.ts`, `src/sim/*` | Seeded ecology, weather, perception, candidates, hierarchy, conflict, reproduction, parties, calls, stream, interventions, `observe()` |
 | `src/clock.ts` | Fixed ticks, speed presets, frame budget, lockstep gate |
-| `src/decision.ts`, `server/decide.ts`, `server/local-worker.ts` | Roster, queue, traces, validation, prompt packet, resident model process |
+| `src/decision.ts`, `src/providers/*`, `server/decide.ts`, `server/jev.ts`, `server/local-worker.ts` | Roster, queue, traces, provider selection, prompt packet (`src/providers/packet.ts`), validation (`src/sim/context-check.ts`), resident model process |
 | `src/scene.ts`, `src/render/env/*` | Sky, lighting, weather, terrain, vegetation, stream, territory, cameras, post-processing |
 | `src/render/creatures.ts`, `src/render/creatures/*` | GPU-skinned procedural chimps, poses, FX, labels, nests, colobus, selection |
 | `src/main.ts`, `src/ui/*`, `src/style.css` | HUD, field log and range map, right sidebar (communities, society, experiments, model), bottom chimp panel, full society view |
