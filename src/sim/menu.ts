@@ -1,4 +1,5 @@
 import type { Action, Candidate, DecisionContext } from '../types';
+import { kindOf, type Kind } from '../decide/facts';
 import { candidateMeta, V } from './candidates';
 import { isChimpId } from './state';
 
@@ -48,6 +49,40 @@ export function boundedCandidates(candidates: Candidate[], keep: (Candidate | nu
   for (const c of ranked) if (isChimpId(c.targetId) || !chosen.some(o => o.action === c.action)) add(c);
   const order = (c: Candidate) => ACTION_ORDER.indexOf(c.action);
   return chosen.sort((a, b) => order(a) - order(b) || a.targetId - b.targetId);
+}
+
+/** A list in the menu's fixed order (action order, then target id: boundedCandidates' own), so position does not leak the rules' preference. */
+export function menuOrder(list: Candidate[]): Candidate[] {
+  const order = (c: Candidate) => ACTION_ORDER.indexOf(c.action);
+  return [...list].sort((a, b) => order(a) - order(b) || a.targetId - b.targetId);
+}
+
+/** The kind of activity an option belongs to (src/decide/facts.ts kindOf, from its action and variant). */
+export function optionKind(c: Candidate): Kind {
+  const m = candidateMeta.get(c);
+  return kindOf(c.action, m?.v ?? V.NONE, m?.aux ?? -1);
+}
+
+/**
+ * Stage R2 (activityFirst; docs/staging/r2-prereg.md §1 C): one entry per kind of activity, whatever the number of
+ * partners or trees. The entry of a kind is its best option by rules score (ties: the list's order). At most eight
+ * entries: the kinds of the kept picks, rest, then kinds by the score of their entry; returned in the menu's fixed order.
+ * groups[i]: the options of entry i's kind, at most eight, best first (groups[i][0] is the entry). Copies keep their meta.
+ */
+export function kindMenu(candidates: Candidate[], keep: (Candidate | null | undefined)[] = []): { menu: Candidate[]; groups: Candidate[][] } {
+  const legal = candidates.filter(c => c.action !== 'dead');
+  const ranked = [...legal].sort((a, b) => b.score - a.score);
+  const byKind = new Map<Kind, Candidate[]>();
+  for (const c of ranked) { const k = optionKind(c), g = byKind.get(k); if (g) { if (g.length < MAX_OPTIONS) g.push(c); } else byKind.set(k, [c]); }
+  const chosen: Kind[] = [];
+  const add = (k: Kind | undefined) => { if (k && byKind.has(k) && chosen.length < MAX_OPTIONS && !chosen.includes(k)) chosen.push(k); };
+  for (const c of keep) { const match = c && legal.find(l => same(l, c)); if (match) add(optionKind(match)); }
+  add('rest');
+  for (const k of byKind.keys()) add(k); // insertion order: by the score of each kind's best option
+  const groups = chosen.map(k => byKind.get(k)!.map(copyCandidate));
+  const order = (g: Candidate[]) => ACTION_ORDER.indexOf(g[0].action);
+  groups.sort((a, b) => order(a) - order(b) || a[0].targetId - b[0].targetId);
+  return { menu: groups.map(g => g[0]), groups };
 }
 
 /**

@@ -1,5 +1,6 @@
 import { applyDecision, resolveByRules } from './simulation';
 import { buildRequest } from './sim/request';
+import { secondRequest } from './sim/decide';
 import { readAnswer } from './kernel/answer';
 import type { Candidate, Chimp, DecisionContext, ModelPolicy, World } from './types';
 import { httpProvider } from './providers/http';
@@ -286,7 +287,8 @@ type BridgeAnswer = ProviderAnswer;
 
 async function requestDecision(controller: DecisionController, world: World, chimp: Chimp): Promise<void> {
   const state = internal(controller);
-  const { context, options, rulesIndex } = buildRequest(world, chimp);
+  const request = buildRequest(world, chimp), { context } = request;
+  let { options, rulesIndex } = request;
   if (options.length < 2) { fallBack(controller, world, chimp, 'fewer than two options', true); return; }
   const generation = controller.generation;
   const version = context.version;
@@ -300,23 +302,46 @@ async function requestDecision(controller: DecisionController, world: World, chi
   let failure = '';
   let answer: BridgeAnswer = {};
   let status = 0;
-  try {
-    answer = await state.provider.decide(context, abort.signal);
-  } catch (error) {
-    failure = error instanceof Error ? error.message : 'request failed';
-    if (error instanceof ProviderError) { status = error.status; answer.phase = error.phase; }
-  }
-  // Superseded by cancel, timeout or a new world: the answer is not ours to apply.
-  if (controller.generation !== generation) return;
-  controller.busy = false; controller.inflightChimpId = -1; state.abort = null;
-  const clock = Date.now();
-  if (failure) {
-    controller.lastError = failure;
-    if (typeof answer.phase === 'string' && answer.phase !== 'ready') { controller.ready = false; controller.phase = answer.phase; controller.backoffUntil = clock + 2000; }
-    else if (status === 429) { controller.backoffUntil = clock + (controller.provider === 'jev' ? 10000 : 100); return; } // someone else holds the worker; retry soon, timeout still applies
-    else controller.backoffUntil = clock + (status === 400 ? 1000 : 3000);
-    if (chimp.alive && chimp.awaitingDecisionSince !== null && chimp.decisionVersion === version) fallBack(controller, world, chimp, `model error: ${failure}`, true);
-    return;
+  let clock = 0;
+  /** One provider call. False: superseded (the answer is not ours), or it failed and the failure was handled; the flight is over either way. */
+  const ask = async (ctx: DecisionContext, more: (a: BridgeAnswer) => boolean): Promise<boolean> => {
+    failure = ''; answer = {}; status = 0;
+    try {
+      answer = await state.provider.decide(ctx, abort.signal);
+    } catch (error) {
+      failure = error instanceof Error ? error.message : 'request failed';
+      if (error instanceof ProviderError) { status = error.status; answer.phase = error.phase; }
+    }
+    // Superseded by cancel, timeout or a new world: the answer is not ours to apply.
+    if (controller.generation !== generation) return false;
+    // (the flight stays open only while a second call for the same decision follows at once: activityFirst 2)
+    if (failure || !more(answer)) { controller.busy = false; controller.inflightChimpId = -1; state.abort = null; }
+    clock = Date.now();
+    if (failure) {
+      controller.lastError = failure;
+      if (typeof answer.phase === 'string' && answer.phase !== 'ready') { controller.ready = false; controller.phase = answer.phase; controller.backoffUntil = clock + 2000; }
+      else if (status === 429) { controller.backoffUntil = clock + (controller.provider === 'jev' ? 10000 : 100); return false; } // someone else holds the worker; retry soon, timeout still applies
+      else controller.backoffUntil = clock + (status === 400 ? 1000 : 3000);
+      if (chimp.alive && chimp.awaitingDecisionSince !== null && chimp.decisionVersion === version) fallBack(controller, world, chimp, `model error: ${failure}`, true);
+      return false;
+    }
+    return true;
+  };
+  // Stage R2 (activityFirst 2; docs/staging/r2-prereg.md §1 C and §10 b): the menu is one entry per kind of activity, and
+  // when the kind the model chose has two or more options a second request over them settles the target (the same
+  // provider, the same checks). null at activityFirst 0 and 1, where this loop is unchanged.
+  let second: ReturnType<typeof secondRequest> = null;
+  if (!await ask(context, a => (second = secondRequest(world, request, a)) !== null)) return;
+  const sum = (a: unknown, b: unknown): number | undefined => typeof a === 'number' ? (typeof b === 'number' ? a + b : a) : undefined;
+  if (second !== null) {
+    const two: NonNullable<ReturnType<typeof secondRequest>> = second, first = answer, kind = options[readAnswer(first, options.length)!.index];
+    controller.calls++;
+    controller.status = `Deciding for ${chimp.name} · ${two.options.length} options within the chosen activity`;
+    if (!await ask(two.context, () => false)) return;
+    answer = { ...answer, latencyMs: sum(answer.latencyMs, first.latencyMs), inputTokens: sum(answer.inputTokens, first.inputTokens) };
+    // the trace shows the request whose answer is applied; the agreement count is on the final choice
+    trace.context = two.context; trace.options = options = two.options; trace.rulesIndex = rulesIndex = two.rulesIndex; // (-1: the rules' pick is of another kind)
+    trace.note = `activity chosen first: ${describeOption(world, kind)}`;
   }
   // the answer check every kernel shares (src/kernel/answer.ts, stage R1)
   const read = readAnswer(answer, options.length);
@@ -335,7 +360,9 @@ async function requestDecision(controller: DecisionController, world: World, chi
   if (typeof answer.model === 'string' && answer.model) controller.model = answer.model;
   trace.model = controller.model;
   trace.probabilities = probabilities; trace.choiceIndex = index;
-  if (rulesIndex >= 0) { controller.agreement.total++; if (rulesIndex === index) controller.agreement.same++; }
+  // the rules' pick as the first request held it (after a second call it may be of another kind: counted, not agreed)
+  const rulesOption = request.rulesIndex >= 0 ? request.options[request.rulesIndex] : null;
+  if (rulesOption) { controller.agreement.total++; if (rulesIndex === index) controller.agreement.same++; }
   const choice = options[index];
   trace.applied = applyDecision(world, chimp.id, choice, 'decide', version);
   // Minor interrupts (someone approached, rain began) bump the version during the ~350 ms of inference.
@@ -344,13 +371,13 @@ async function requestDecision(controller: DecisionController, world: World, chi
   const stillWaiting = chimp.alive && chimp.controller === 'model' && chimp.awaitingDecisionSince !== null;
   if (!trace.applied && stillWaiting && chimp.decisionVersion !== version) {
     trace.applied = applyDecision(world, chimp.id, choice, 'decide', chimp.decisionVersion);
-    if (trace.applied) { trace.note = 'applied to newer state (still legal)'; controller.revalidated++; }
+    if (trace.applied) { trace.note = `${trace.note ? `${trace.note}; ` : ''}applied to newer state (still legal)`; controller.revalidated++; }
   }
   const verb = describeOption(world, choice);
   const confidence = Math.round(probabilities[index] * 100);
   if (trace.applied) {
     controller.applied++;
-    controller.status = `${chimp.name} → ${verb} (${confidence}%)${rulesIndex < 0 ? '' : rulesIndex === index ? ' · rules agree' : ` · rules: ${describeOption(world, options[rulesIndex])}`}`;
+    controller.status = `${chimp.name} → ${verb} (${confidence}%)${!rulesOption ? '' : rulesIndex === index ? ' · rules agree' : ` · rules: ${describeOption(world, rulesOption)}`}`;
   } else {
     controller.discarded++;
     trace.discardedReason = !chimp.alive ? 'chimp died before the answer'

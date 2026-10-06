@@ -22,6 +22,12 @@ export interface KernelRequest {
   options: Candidate[];
   /** Position of the rules' pick in `options`; -1 when it is not on the menu (or withheld, kernelNoRulesPick). */
   rulesIndex: number;
+  /**
+   * Stage R2 (activityFirst ≥ 1; docs/staging/r2-prereg.md §1 C): `options` holds one entry per kind of activity, and
+   * groups[i] the options of entry i's kind, at most eight, best first by rules score (groups[i][0] is option i). With
+   * activityFirst 2 the loop sends the chosen kind's options to the kernel in a second request (targetRequest).
+   */
+  groups?: Candidate[][];
 }
 
 /** One choice out: `index` (or `choice`, "c{index}") and, from every kernel but the in-simulation rules, a probability per option. The loop validates it (src/kernel/answer.ts). */
@@ -67,7 +73,11 @@ export interface StepResult {
   chimpId: number; kernel: KernelId; by: 'kernel' | 'rules'; refusal: Refusal;
   /** The request's validation error or the kernel's error text; '' otherwise. */
   detail: string;
-  /** The kernel's option position, -1 when it gave no valid answer. */
+  /** The kernel's option position (in the last request it was sent), -1 when it gave no valid answer. */
   index: number;
   request: KernelRequest | null;
+  /** Kernel calls made for this decision: 0 when the rules decided without one, 2 when a second request settled the target (activityFirst 2). */
+  calls: number;
+  /** The second request (activityFirst 2), when one was sent. */
+  second?: KernelRequest;
 }

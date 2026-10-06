@@ -1,5 +1,6 @@
-import { drawUniform } from '../decide/policies';
-import { requestFor, resolveByRules, settleAnswer } from '../sim/decide';
+import { DRAW_SALT, drawUniform } from '../decide/policies';
+import { requestFor, resolveByRules, secondRequest, settleAnswer } from '../sim/decide';
+import { hash01 } from '../sim/rng';
 import type { Chimp, World } from '../types';
 import type { Kernel, KernelEnv, StepResult } from './types';
 
@@ -27,18 +28,27 @@ export async function answerWaiting(world: World, kernelOf: (c: Chimp) => Kernel
     const kernel = kernelOf(c);
     if (!kernel) { resolveByRules(world, c.id); continue; }
     const r = requestFor(world, c);
-    const result: StepResult = { chimpId: c.id, kernel: kernel.id, by: 'rules', refusal: r.refusal, detail: r.refusal ? r.detail : '', index: -1, request: r.request };
+    const result: StepResult = { chimpId: c.id, kernel: kernel.id, by: 'rules', refusal: r.refusal, detail: r.refusal ? r.detail : '', index: -1, request: r.request, calls: 0 };
     out.push(result);
     if (r.refusal === '') asked.push({ c, kernel, result, answer: null }); else resolveByRules(world, c.id);
   }
   for (const a of asked) {
-    const c = a.c, env: KernelEnv = { random: () => drawUniform(world.seed, c.id, c.decisionVersion), signal: opts.signal };
-    try { a.answer = await a.kernel.decide(a.result.request!, env); }
+    // the first draw is drawUniform (as before stage R2); a kernel that asks for more (a second request under
+    // activityFirst 2, the packet-reading rules sampling a belief) gets the next values of the same fixed stream
+    let n = 0;
+    const c = a.c, env: KernelEnv = { random: () => n++ === 0 ? drawUniform(world.seed, c.id, c.decisionVersion) : hash01(world.seed, c.id, c.decisionVersion, DRAW_SALT + n - 1), signal: opts.signal };
+    try {
+      a.answer = await a.kernel.decide(a.result.request!, env);
+      a.result.calls = 1;
+      // stage R2 (activityFirst 2): the target within the chosen kind, by a second call
+      const second = secondRequest(world, a.result.request!, a.answer);
+      if (second) { a.result.second = second; a.answer = await a.kernel.decide(second, env); a.result.calls = 2; }
+    }
     catch (error) { a.result.refusal = 'kernel-error'; a.result.detail = error instanceof Error ? error.message : 'kernel failed'; }
   }
   for (const { c, result, answer } of asked) {
     if (result.refusal === '') {
-      const s = settleAnswer(world, c, result.request!, answer);
+      const s = settleAnswer(world, c, result.second ?? result.request!, answer);
       result.index = s.index; result.refusal = s.refusal;
       if (s.refusal === '') result.by = 'kernel';
     }

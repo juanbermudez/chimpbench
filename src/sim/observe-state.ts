@@ -1,14 +1,17 @@
 import type { BodyPercept, Candidate, Chimp, DecisionContext, OptionValue, World } from '../types';
-import { candidateMeta, cohesionOn, companyValue, dependentOn, forageRateOn, presentCompany, socialBit, treeRateShare, V } from './candidates';
+import { candidateMeta, cohesionOn, companyValue, crownDrive, dependentOn, forageRateOn, nestCompanyValue, presentCompany, socialBit, treeRateShare, V } from './candidates';
 import { circadianOn, circadianSleepiness } from './circadian';
 import { brightening } from './departure';
 import { deficitDrive, digestaCaps, energyNeed, feedHorizon, fruitKcalPerUnit, gutCap, massOf, reserveCap } from './energy';
 import { endoOn, fastNow } from './endocrine';
+import { dayPhase } from './environment';
 import { bestFallbackNear, fallbackOn } from './fallback';
+import { assessOdds } from './hierarchy';
 import { fruitRate, leafWorth } from './intake';
 import { darkOn, visionNow } from './light';
 import type { Params } from './params';
 import { fruitAt } from './phenology';
+import { beliefSpread, beliefSwing } from './rg';
 import { sleepiness } from './rhythm';
 import { index, isChimpId, isTreeId, ix } from './state';
 import { waterOn } from './water';
@@ -25,8 +28,11 @@ const r3 = (v: number) => Math.round(v * 1000) / 1000;
 const clamp01 = (v: number) => v < 0 ? 0 : v > 1 ? 1 : v;
 const dxz = (p: readonly number[], c: Chimp) => Math.hypot(p[0] - c.position[0], p[2] - c.position[2]);
 
-/** The focal animal's Track E state (BodyPercept): each field only while its mechanism runs and the books it reads are open. */
-export function bodyPercept(world: World, c: Chimp, P: Params): BodyPercept {
+/**
+ * The focal animal's Track E state (BodyPercept): each field only while its mechanism runs and the books it reads are open.
+ * Stage R2 (`v4`, observeV4 1; docs/staging/r2-prereg.md §1 A): plus hindgut fill, the crown's drive and the full rate.
+ */
+export function bodyPercept(world: World, c: Chimp, P: Params, v4 = false): BodyPercept {
   const x = ix(c), b: BodyPercept = {};
   const L = P.energyLedger === 1 ? x.en : undefined;
   if (L) {
@@ -39,6 +45,11 @@ export function bodyPercept(world: World, c: Chimp, P: Params): BodyPercept {
     }
     // foregut fill as the drive's satiation reads it (energy.ts gutFill): dry matter with ledgerDigesta, energy without
     b.gutFill = r2(clamp01(L.dm !== undefined && P.ledgerDigesta === 1 ? L.dm / digestaCaps(c, P)[0] : L.gut / gutCap(c, P)));
+    if (v4) {
+      if (L.hind !== undefined && P.ledgerDigesta === 1) { const cap = digestaCaps(c, P)[1]; if (cap > 0) b.hindFill = r2(clamp01(L.hind / cap)); }
+      // under forageRate with open books (as withValues): the drive and the scale of every feeding option's rate
+      if (forageRateOn(P) && L.eAvg !== undefined) { b.feedDrive = r2(crownDrive(c)); b.fullKcalH = Math.round(fruitRate(c, P).fruitPerH * fruitKcalPerUnit(P, false) / 10) * 10; }
+    }
   }
   if (P.rhythmSleep === 1 && x.slp !== undefined) {
     b.sleepPressure = r2(x.slp);
@@ -71,7 +82,7 @@ const _fb: [number, number] = [0, 0];
  * open. Under forageRate only (the valuation is a rate). `R` is the animal's own full ripe-fruit rate in kcal/h (the
  * scale of intake.ts netRateShare); `present` is presentCompany when already computed.
  */
-export function optionValue(world: World, c: Chimp, k: Candidate, P: Params, R: number): OptionValue | undefined {
+export function optionValue(world: World, c: Chimp, k: Candidate, P: Params, R: number, v4 = false): OptionValue | undefined {
   const x = ix(c), idx = index(world), meta = candidateMeta.get(k);
   const unit = fruitKcalPerUnit(P, false); // the valuation counts every crown's crop at a drupe unit (netRateShare)
   const crown = (treeId: number, travel: boolean, bel: number[] | undefined, feedersInView: () => number): OptionValue | undefined => {
@@ -79,14 +90,17 @@ export function optionValue(world: World, c: Chimp, k: Candidate, P: Params, R: 
     if (!t) return undefined;
     // a crown out of sight: the belief the trip was valued at ([tree, crop, hours unseen, feeders, distance, (chance of fruit)])
     if (bel && bel[0] === treeId) {
-      const share = bel.length > 5 ? bel[5] : 1;
-      return { kcalH: Math.round(treeRateShare(world, c, P, t, bel[1], bel[3], bel[4], travel, share) * R / 10) * 10,
-        cropKcal: Math.round(bel[1] * unit / 50) * 50, seenH: Number.isFinite(bel[2]) ? r1(bel[2]) : -1, feeders: bel[3], distM: Math.round(bel[4]) };
+      const share = bel.length > 5 ? bel[5] : 1, q = treeRateShare(world, c, P, t, bel[1], bel[3], bel[4], travel, share);
+      return { kcalH: Math.round(q * R / 10) * 10,
+        cropKcal: Math.round(bel[1] * unit / 50) * 50, seenH: Number.isFinite(bel[2]) ? r1(bel[2]) : -1, feeders: bel[3], distM: Math.round(bel[4]),
+        // stage R2: the rate as a share of the full rate; the chance of fruit (a listed crown), or the spread of the crop believed
+        ...(v4 ? { share: r2(q), ...(bel.length > 5 ? { chance: r2(bel[5]) } : { spreadKcal: Math.round(beliefSpread(bel, P) * unit / 50) * 50 }) } : {}) };
     }
     if (!x.trees.includes(treeId)) return undefined; // neither in view nor believed: nothing the animal knows to show
     const crop = P.patchEcology === 1 ? fruitAt(world, t) : t.fruit, feeders = feedersInView(), d = dxz(t.position, c);
-    return { kcalH: Math.round(treeRateShare(world, c, P, t, crop, feeders, d, travel) * R / 10) * 10,
-      cropKcal: Math.round(crop * unit / 50) * 50, seenH: 0, feeders, distM: Math.round(d) };
+    const q = treeRateShare(world, c, P, t, crop, feeders, d, travel);
+    return { kcalH: Math.round(q * R / 10) * 10,
+      cropKcal: Math.round(crop * unit / 50) * 50, seenH: 0, feeders, distM: Math.round(d), ...(v4 ? { share: r2(q) } : {}) };
   };
   /** Others in view feeding at or walking to crown `id` (computeCandidates' destWorth count), not counting `skip`. */
   const goingTo = (id: number, skip: number) => {
@@ -103,7 +117,7 @@ export function optionValue(world: World, c: Chimp, k: Candidate, P: Params, R: 
       // leaves where it stands: their rate relative to ripe fruit (the best fallback cell in view scales it), by sight in the dark
       const fb = fallbackOn(P) ? bestFallbackNear(world, c.position[0], c.position[2], x.sight, _fb) : 1;
       const leaf = leafWorth(world, c, c.position[0], c.position[2], P, fruitRate(c, P).hungerPerH) * (darkOn(P) ? visionNow(world, 0) : 1);
-      return { kcalH: Math.round(fb * leaf * R / 10) * 10 };
+      return { kcalH: Math.round(fb * leaf * R / 10) * 10, ...(v4 ? { share: r2(fb * leaf) } : {}) };
     }
     case 'travel': {
       const v = meta?.v ?? V.NONE, aux = meta?.aux ?? -1;
@@ -143,13 +157,40 @@ export function optionValue(world: World, c: Chimp, k: Candidate, P: Params, R: 
   }
 }
 
-/** Candidates with their OptionValue (copies keep their meta), for observe() at observeState 1. */
-export function withValues(world: World, c: Chimp, list: Candidate[], P: Params, copy: (k: Candidate) => Candidate): Candidate[] {
-  const L = ix(c).en;
-  if (!forageRateOn(P) || !L || L.eAvg === undefined) return list;
-  const R = fruitRate(c, P).fruitPerH * fruitKcalPerUnit(P, false);
+/**
+ * Stage R2 (observeV4; docs/staging/r2-prereg.md §1 A): the beliefs behind an option that hold outside the rate valuation.
+ * The swing of a sampled belief (rg.ts beliefSwing, at full precision: a kernel adds it to the option's score); the odds
+ * against an aggressor of its own community (candidates.ts threatResponses: assessOdds, contestAssess); the company of
+ * nest-mates on the animal's own finished nest (candidates.ts: nestCompanyValue, nestCompany). Each by the function the
+ * valuation calls, under the conditions it calls it.
+ */
+function beliefValue(world: World, c: Chimp, k: Candidate, P: Params): OptionValue | undefined {
+  const x = ix(c), meta = candidateMeta.get(k);
+  if (P.choiceBelief >= 1 && meta?.bel) { const sw = beliefSwing(world, c, k, P); return sw ? { swingLow: sw[0], swingHigh: sw[1] } : undefined; }
+  if (P.contestAssess === 1 && isChimpId(k.targetId) && k.targetId === x.victimOf
+    && ((meta?.v === V.AGGRESSOR && (k.action === 'submit' || k.action === 'flee')) || (meta?.v === V.COUNTER && k.action === 'charge'))) {
+    const ag = index(world).byId.get(k.targetId);
+    return ag && ag.alive && ag.troopId === c.troopId ? { odds: r2(assessOdds(world, c, ag, P)) } : undefined;
+  }
+  // (the animal's own nest: an animal with a carer is offered only its carer's nest, variant MOTHER)
+  if (k.action === 'nest' && meta?.v !== V.MOTHER && P.nestCompany === 1 && c.action === 'nest' && x.phase >= 2 && c.nest !== null && k.targetId === c.nest.treeId && c.age >= 5) {
+    const company = nestCompanyValue(world, c, P, P.choiceBelief === 1 || (P.choiceBelief === 2 && dayPhase(world) === 'day'));
+    return company ? { company: r2(company) } : undefined;
+  }
+  return undefined;
+}
+
+/**
+ * Candidates with their OptionValue (copies keep their meta), for observe() at observeState 1.
+ * Stage R2 (`v4`): plus the v4 fields; the beliefs outside the rate valuation (beliefValue) need no open books.
+ */
+export function withValues(world: World, c: Chimp, list: Candidate[], P: Params, copy: (k: Candidate) => Candidate, v4 = false): Candidate[] {
+  const L = ix(c).en, rate = forageRateOn(P) && !!L && L.eAvg !== undefined;
+  if (!rate && !v4) return list;
+  const R = rate ? fruitRate(c, P).fruitPerH * fruitKcalPerUnit(P, false) : 0;
   return list.map(k => {
-    const v = optionValue(world, c, k, P, R);
+    let v = rate ? optionValue(world, c, k, P, R, v4) : undefined;
+    if (v4) { const b = beliefValue(world, c, k, P); if (b) v = { ...(v ?? {}), ...b }; }
     if (v) for (const key of Object.keys(v) as (keyof OptionValue)[]) { const n = v[key]; if (typeof n === 'number' && !Number.isFinite(n)) delete v[key]; } // JSON-safe
     if (!v || !Object.keys(v).length) return k;
     const out = copy(k);
