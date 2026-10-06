@@ -124,6 +124,15 @@ asked only when the loop's gate opens (the function the rules policy uses at `re
 guaranteed slot changes nothing, because the menu is built from the rules' ranking. Gap 1 is unchanged: inside the tick
 the rules kernel is still handed the live animal (the interface's one stated exception). Gap 4 is unchanged.
 
+**Stage R2 (6 October 2026; [staging/r2-prereg.md](staging/r2-prereg.md); tests and one fixed sample, no run).** Gap 1 is
+narrowed, not closed. Behind `observeV4` the packet carries more of the body and, per option, the belief behind it; behind
+`menuParity` every kernel's menu is the rules' menu, by day and after dusk; behind `activityFirst` the menu is one entry
+per kind of activity. A rules kernel that reads only the packet ([src/kernel/packet-rules.ts](../src/kernel/packet-rules.ts))
+picks what the live rules pick at 0.981 of draws on the working base (0.978 to 0.985), but it reads the valuation the
+loop computed for each option; the valuation itself still reads the live animal and the world (territory costs, revisit
+history, social timing, power), which no packet field carries. Whether a kernel should be shown that valuation is an
+open question for the user (the pre-registration's §9).
+
 1. **The two kernels do not see the same thing.** The rules score options from the chimp's own body, memory and perception snapshot, Track E's state included (`computeCandidates` reads them live). The model sees only the packet from `observe()`, which carries the old need gauges and the clock hour but not Track E's body state, beliefs or valuations ([IMPLEMENTATION_PLAN.md](../IMPLEMENTATION_PLAN.md), "The decision model on Track E's state"). Until the packet carries that state (stage R2), a kernel swap changes two things at once: the kernel, and what it can see.
 2. **The intention gate lives inside the rules policy.** `rgChoice` holds an act until something salient changes; a model-controlled chimp is asked at every decision point, so the two kernels are not asked equally often. Stage R1 decides whether the gate belongs to the loop, so that every kernel shares it as the free arms of the Jev decisive test did ([jev-decisive-test.md](staging/jev-decisive-test.md)), or to the kernel.
 3. **The rules' own pick is on the model's menu.** `buildRequest` ([src/sim/request.ts](../src/sim/request.ts) since stage R1, re-exported by [src/decision.ts](../src/decision.ts)) keeps the rules' choice, and a response to any perceived disturbance, in the bounded menu when the night or dusk menu allows it (`boundedCandidates(…, [rules, stimulusResponse])`). A fair kernel comparison has to decide whether every kernel's menu gets that.
