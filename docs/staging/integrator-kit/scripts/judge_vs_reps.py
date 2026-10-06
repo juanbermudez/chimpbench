@@ -2,8 +2,8 @@
 """Judge arm runs against the mean of a replicated reference (docs/staging/e-noise.md, amendment 2).
 Usage: judge_vs_reps.py <quick|confirm> <B|R> <arm.json> [<arm2.json> ...]
 SD: the registered per-run SD for the mode, or the reference group's own spread if larger."""
-import json, math, sys
-E = '/Users/juanbermudez/Desktop/MGOGO/.claude/worktrees/bench-run/artifacts/validation/e'; N = E + '/noise'
+import json, math, os, sys
+E = os.environ.get('MGOGO_ROOT', os.path.expanduser('~/Desktop/MGOGO')) + '/.claude/worktrees/bench-run/artifacts/validation/e'; N = E + '/noise'
 RARE = {'T-HUN-4', 'T-BRD-1', 'T-IGE-3'}  # e-noise.md amendment 3 (4 October): T-IGE-3 added
 REG_SD = {'quick': {'fitted': 0.69, 'held-out': 1.26, 'held-out w/o rare': 0.48}, 'confirm': {'fitted': 0.30, 'held-out': 1.45, 'held-out w/o rare': 0.21}}
 REFS = {('confirm', 'B'): [f'{E}/base-head.json'] + [f'{N}/{a}.json' for a in ('NB1c', 'NB2c', 'NB3c')],

@@ -115,10 +115,13 @@ test('no coordinates or field dates finer than a month in the guide data', { ski
   }
 });
 
-test('validation data covers every target and reproduces the scorecard counts', { skip: !have }, () => {
+test('validation data covers every target and reproduces the scorecard counts', { skip: !have }, t => {
   const v = read('docs/data/guide-validation.json'), T = read('data/targets.json');
   assert.equal(v.targets.length, T.targets.length);
   assert.deepEqual(v.targets.map((t: { id: string }) => t.id), T.targets.map((t: { id: string }) => t.id));
+  // The scorecard is a run output (artifacts/ is gitignored; copy it by hand to a new computer): without it the counts
+  // cannot be checked, so the rest of this test is skipped rather than failed.
+  if (!existsSync(new URL(`../${v.runs.standard.file}`, import.meta.url))) { t.skip(`${v.runs.standard.file} is not on this computer`); return; }
   const sc = read(v.runs.standard.file);
   for (const [k, n] of Object.entries(sc.summary.all as Record<string, number>)) assert.equal(v.summary.standard.all[k] ?? 0, n, `summary ${k}`);
   for (const t of v.targets) if (t.key === 'tuned' || t.key === 'encoded' || t.key === 'compromised') assert.notEqual(t.key, 'pass');

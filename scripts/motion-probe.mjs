@@ -7,7 +7,7 @@
 //   node scripts/motion-probe.mjs app [--app http://127.0.0.1:5190] [--rate 60|600] [--seconds 5]   focal-animal smoothness
 //   add --out file.json to keep the raw rows.
 import { writeFileSync } from 'node:fs';
-const { chromium } = await import('/Users/juanbermudez/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs');
+const { chromium } = await import('./lib/playwright.mjs');
 const argv = process.argv.slice(2);
 const mode = argv[0] ?? 'gait';
 const opt = (name, fallback) => { const i = argv.indexOf(`--${name}`); return i >= 0 ? argv[i + 1] : fallback; };

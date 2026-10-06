@@ -7,7 +7,7 @@
 // A13–A16 are the close-up detail scenes of docs/graphics-camera-plan.md §6.1 (DPR 2).
 // Sequences are saved as numbered frames plus a <id>-sheet.png contact sheet. Runs scenes one at a time.
 import { mkdirSync, writeFileSync } from 'node:fs';
-const { chromium } = await import('/Users/juanbermudez/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs');
+const { chromium } = await import('./lib/playwright.mjs');
 
 const argv = process.argv.slice(2);
 const opt = (name, fallback) => { const i = argv.indexOf(`--${name}`); return i >= 0 ? argv[i + 1] : fallback; };

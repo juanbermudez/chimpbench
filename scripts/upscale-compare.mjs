@@ -5,7 +5,7 @@
 // saves the centre crops side by side.
 // Usage: node scripts/upscale-compare.mjs [--app http://127.0.0.1:5192] [--out artifacts/perf/upscale] [--scenes E1,E5,C9]
 import { mkdirSync, writeFileSync } from 'node:fs';
-const { chromium } = await import('/Users/juanbermudez/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs');
+const { chromium } = await import('./lib/playwright.mjs');
 const argv = process.argv.slice(2);
 const opt = (name, fallback) => { const i = argv.indexOf(`--${name}`); return i >= 0 ? argv[i + 1] : fallback; };
 const app = opt('app', 'http://127.0.0.1:5192'), out = opt('out', 'artifacts/perf/upscale');

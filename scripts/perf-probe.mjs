@@ -9,7 +9,7 @@
 // a frame counts as dropped above 17.5 ms (one missed 60 Hz vsync) and as a double drop above 34 ms.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-const { chromium } = await import('/Users/juanbermudez/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs');
+const { chromium } = await import('./lib/playwright.mjs');
 
 const argv = process.argv.slice(2);
 const opt = (name, fallback) => { const i = argv.indexOf(`--${name}`); return i >= 0 ? (argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[i + 1] : true) : fallback; };

@@ -12,7 +12,7 @@
 // devicePixelRatio 2 and are downscaled, so UI text stays crisp.
 import { mkdir, writeFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
-const { chromium } = await import('/Users/juanbermudez/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs');
+const { chromium } = await import('./lib/playwright.mjs');
 
 const args = process.argv.slice(2);
 const flag = name => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : undefined; };

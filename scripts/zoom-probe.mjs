@@ -7,7 +7,7 @@
 //        cuts the camera → subject segment.
 // Usage: node scripts/zoom-probe.mjs [--app http://127.0.0.1:5192] [--scenes A10,A8f] [--shots dir] [--out f.json]
 import { mkdirSync, writeFileSync } from 'node:fs';
-const { chromium } = await import('/Users/juanbermudez/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs');
+const { chromium } = await import('./lib/playwright.mjs');
 const argv = process.argv.slice(2);
 const opt = (name, fallback) => { const i = argv.indexOf(`--${name}`); return i >= 0 ? argv[i + 1] : fallback; };
 const app = opt('app', 'http://127.0.0.1:5192'), shots = opt('shots', ''), out = opt('out', '');

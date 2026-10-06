@@ -53,14 +53,18 @@ All work is in git; worktrees were only local copies. **Never commit to `main`**
 
 ## 3. Set up on the new computer
 
-1. Clone https://github.com/juanbermudez/chimpbench and check out `track-e`. Node 22 (22.22.3 used), pnpm 8.15.9 (`packageManager`), then
-   `pnpm install`. Check with `pnpm test` (on `track-e`: 943 tests, 942 pass, 1 skipped) and `pnpm build`.
+1. Clone https://github.com/juanbermudez/chimpbench and check out `track-e`. **Node 22.22.3 exactly** (`.node-version`;
+   with fnm: `fnm install 22.22.3`, then prefix commands with `fnm exec --using=22.22.3 --`), pnpm 8.15.9
+   (`packageManager`), then `pnpm install`. Node 22.19.0 passes the tests but breaks every benchmark: tsx's loader does
+   not reach worker threads there (`ERR_MODULE_NOT_FOUND … scripts/lib/bench-run` from `bench-worker.ts`; seen
+   6 October 2026 on the second computer). Check with `pnpm test` (on `track-e`: 943 tests, 942 pass, 1 skipped; 941
+   pass and 2 skipped without the hand-copied `c7a-field1y.json`) and `pnpm build`.
 2. **Not in git; copy by hand (USB or AirDrop, never a public place):**
    - `data/raw/` (43 MB, 8 downloaded field datasets with their `PROVENANCE.md`). It holds **location-sensitive raw
      chimpanzee coordinates: never commit or publish them.** The simulation runs without it (phenology is generated
      into `src/sim/phenology.gen.ts`). The `src/compare/*` scripts and `ingest-phenology.ts` need it.
-   - `artifacts/validation/c7a-field1y.json`: `tests/guide-data.test.ts` reads it. Without it that test fails; it
-     should skip instead.
+   - `artifacts/validation/c7a-field1y.json`: `tests/guide-data.test.ts` reads it. Without it that test skips its
+     scorecard check (since 6 October).
    - **Optional:** the Track E reference runs (about 2.8 GB): `.claude/worktrees/bench-run/artifacts/validation/e/runs/`
      (S39 groups) and `bench-run2/…` (today's model). If you skip them, regenerate S39's group before judging E1v
      (§5, task 1).
@@ -69,20 +73,24 @@ All work is in git; worktrees were only local copies. **Never commit to `main`**
 3. **The real model** (`pnpm dev` with GLiNER) needs the private repo `juanbermudez/GHN` at `~/Desktop/GHN` (or set
    `MGOGO_GHN_ROOT`). It is read-only and identity-checked by source hash. Everything else runs with
    `MGOGO_NO_MODEL=1`.
-4. **Browser scripts** (`scripts/shot.mjs`, `verify-browser.mjs`, `gpu-probe.mjs`, `visual-scenes.mjs` and 7 more)
-   import Playwright from an absolute path (`/Users/juanbermudez/.cache/codex-runtimes/…/playwright/index.mjs`) and
-   launch `/Applications/Google Chrome.app`. Install Playwright and fix that import line on the new machine.
+4. **Browser scripts** (`scripts/shot.mjs`, `verify-browser.mjs`, `gpu-probe.mjs`, `visual-scenes.mjs` and 10 more)
+   load Playwright through `scripts/lib/playwright.mjs` and launch `/Applications/Google Chrome.app`. Playwright is not
+   a dependency of the app: install it once outside the repo with
+   `npm install --prefix ~/.cache/chimpbench/playwright playwright-core` (or set `MGOGO_PLAYWRIGHT` to its `index.mjs`).
 5. Use `/usr/bin/python3` (or any Python 3 with the standard library) for the integrator scripts.
 6. **Disk:** the long-run runner (`scripts/e-run.ts`) refuses to start below 5 GB free plus each job's outputs. Plan
    about 8 GB free for one wadging arm at 6 → 12 months. This is why the old computer was paused.
 7. Worktrees for agents: the recipe is in `docs/staging/handoff-2026-10-05.md` §3. `node_modules`, `data/raw` and the
-   c7a file are symlinks; never commit them.
+   c7a file are symlinks; never commit them. A symlinked `node_modules` shows as untracked (`.gitignore` names the
+   directory): add `node_modules` and `data/raw` to `.git/info/exclude` once, or the runner refuses the checkout as
+   dirty. Branches with other dependencies (`ui-redesign`, `site`: `@huggingface/transformers`) need their own
+   `pnpm install` in the worktree instead of the symlink.
 
 ## 4. The integrator kit
 
 `docs/staging/integrator-kit/` (README inside) holds the judge scripts, run drivers, the exact parameter files of
 every recent arm (S39 and its re-draws, today's model, the walk-back, the E1v wadging arms) and the agent prompt
-templates. Paths inside are absolute to `/Users/juanbermudez/Desktop/MGOGO`; edit them if the repo lives elsewhere.
+templates. The scripts take the repo from `MGOGO_ROOT` (default `~/Desktop/MGOGO`).
 
 ## 5. Next specific tasks, in order
 

@@ -3,7 +3,7 @@
 // Renders the same deterministic env-harness scenes (paused world, frozen visual clock) from two servers and
 // reports the mean absolute difference and the share of pixels differing by more than 8/255, with a diff image.
 import { mkdirSync, readFileSync } from 'node:fs';
-const { chromium } = await import('/Users/juanbermudez/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs');
+const { chromium } = await import('./lib/playwright.mjs');
 const [before = 'http://127.0.0.1:5187', after = 'http://127.0.0.1:5186', out = 'artifacts/perf/shots'] = process.argv.slice(2);
 mkdirSync(out, { recursive: true });
 const common = 'pause=1&t=12&hud=0&auto=0&quality=' + (process.env.Q || 'high');

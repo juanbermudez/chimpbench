@@ -1,16 +1,19 @@
 #!/usr/bin/python3
 """E1v judge (docs/staging/e1v-prereg.md §3-4): S39 with pithFibreSwallowed 0.5 (W50) and 0.25 (W25) against S39's group
 (swallowed 1) at one horizon. Usage: judge_e1v.py <M6|M12> [W25 W50]. Every number is read from the run JSON.
-References: bench-run at 63d699a (Part C); arms: bench-e1v (E1v's merge commit). Readouts fixed by §4; nothing is a keep.
+References: bench-run at 63d699a (Part C) or the group regenerated in bench-e1v; arms: bench-e1v (E1v's merge commit). Readouts fixed by §4; nothing is a keep.
 Monthly eating minutes and the fruit share by class come from scripts/lean-season.ts (--group), not from here."""
 import json, math, statistics as st, subprocess, sys, os
 
-W = '/Users/juanbermudez/Desktop/MGOGO/.claude/worktrees'
+W = os.environ.get('MGOGO_ROOT', os.path.expanduser('~/Desktop/MGOGO')) + '/.claude/worktrees'
 SP = os.path.dirname(os.path.abspath(__file__))
 H = sys.argv[1]
 TAGS = sys.argv[2:] or ['W25', 'W50']
 SALTS = ('', '-s1', '-s2', '-s3')
-REF = {f'{H}-S39{s}': f'{W}/bench-run/artifacts/validation/e/runs/{H}-S39{s}' for s in SALTS}
+# S39's group: bench-run (the Part C runs, if they were copied to this computer), else the group regenerated in bench-e1v
+# (HANDOFF.md §5 task 1). E1V_REF names another run checkout.
+REFW = os.environ.get('E1V_REF') or ('bench-run' if os.path.exists(f'{W}/bench-run/artifacts/validation/e/runs/{H}-S39') else 'bench-e1v')
+REF = {f'{H}-S39{s}': f'{W}/{REFW}/artifacts/validation/e/runs/{H}-S39{s}' for s in SALTS}
 ARMS = {t: {f'{H}-{t}{s}': f'{W}/bench-e1v/artifacts/validation/e/runs/{H}-{t}{s}' for s in SALTS} for t in TAGS}
 RARE = {'T-HUN-4', 'T-BRD-1', 'T-IGE-3'}
 FLOOR = {'fitted': 0.30, 'held-out': 1.45, 'held-out w/o rare': 0.21}  # confirm-mode SDs (e-noise.md amendments 2 and 4)
@@ -49,7 +52,7 @@ def lowest(e):
 ref = load(REF)
 arms = {t: load(g) for t, g in ARMS.items()}
 print(f'## E1v, {H}: S39 with pithFibreSwallowed {", ".join(TAGS)} against S39 (swallowed 1); 4 runs each '
-      f'(rngSalt 0-3); printed by artifacts/integrator/judge_e1v.py from the JSON\n')
+      f'(rngSalt 0-3); reference group in {REFW}; printed by docs/staging/integrator-kit/scripts/judge_e1v.py from the JSON\n')
 print('| run | commit | protocol | prescriptions | viability | starvation | starvation by seed | births / deaths | deaths by class | night: adults out of a nest, T-RHY-5 |')
 print('| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |')
 for group in [ref] + [arms[t] for t in TAGS]:
