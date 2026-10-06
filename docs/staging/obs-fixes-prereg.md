@@ -195,13 +195,65 @@ per-seed values. This is reported, not worked around.
   Reported: before and after, per run and pooled, for the 12-month S39 group and the wadging arms.
 - A saved run without an end checkpoint needs a fresh run on those rows; it is listed, not estimated.
 
-## 9. For the user (definitions and sources; no row is changed)
+## 9. For the user (definitions, sources and decisions; no row is changed)
 
-Filled in with the results (§10). Known at registration: T-DEM-9 asks for a standing prevalence, and founders start
-without snare injuries, so a run of one to three years measures the injuries of those years only (Part D finding 3,
-second half); with defect 3 fixed the row will score at 12 months on that footing. Its sources have no entry in
-`docs/research.md`.
+1. **A new freeze.** The fixes move the protocol hash to `aad8c58a00d68e0c` (frozen: `5d4fa5a2a500bce6`). The record is
+   staged, not applied (`docs/staging/obs-fixes-protocol.patch.json`). Until it is taken, `e-bench --rescore` re-scores
+   the old saved values of the five rows without a flag (shown in §10).
+2. **Held-out rows touched after the freeze:** T-LET-2, -3, -6. Policy rule 4 as written compromises them; the Track E
+   freeze re-froze its revised held-out rows by user decision instead. Marking them compromised changes the hash again.
+3. **T-DEM-9 now scores at 12 months and fails for every model** (0.007–0.009 against 0.1–0.3): the band is a standing
+   prevalence and founders start without injuries, so one to three years measure new injuries only. It is a fitted row
+   and enters every fitted sum from 12 months on unless flagged. Its three sources have no entry in `docs/research.md`.
+4. **T-LET-2** scores on one to four victims at 12 months (a single non-male victim gave a held-out distance of 2.4 in
+   M12-W25); its "share intercommunity" is not computed; a victim not on the roster counts as not male.
+5. **T-LET-3** counts one attacker for an infanticide by a stranger (the killer), not the males of his party.
+6. **"Complications of wounds"** deaths are aggression in T-DEM-4 and no killing in T-LET-1.
+7. **T-DEM-4:** an observed killing whose carcass no team reaches has an unknown cause. **T-DEM-6, -7:** every death of an
+   animal seen ill counts as an outbreak death, a carcass with another necropsy cause included.
+8. **A killing a team only heard** (within 500 m in the field profile) counts as "observed", for `kill` events since C3
+   and for the events added here.
+9. **Capture latency:** an interaction that starts in the last two minutes before a follow ends is never logged
+   (amendment 1 met it); it touches every all-occurrence row.
+10. **T-DEM-24** (sealed) needs the loss a full year before the run's end: it cannot close at 12 months, by definition.
+11. The freeze record's `registryHash` (16853ddc0f0a7318) is no longer the head's (68a5290d393a0131). The saved S39
+    runs' bench JSON names its scorecard under the old `~/Desktop` path, so `e-bench --rescore` on them reads there; a
+    copy with the path corrected was used.
 
-## 10. Results
+## 10. Results (6 October 2026, after the commits of the fixes and tests: 375db8e, e12ac7c, e46847c; amendment 1 code 1dce79f)
 
-(Appended after the commits of the fixes and tests.)
+**Defects.** 1: real, fixed. 2: real in the observed route and the truth column (the inferred route already counted
+carcasses), fixed, with amendment 1. 3: real, fixed. Neighbours N1 (T-LET-3) and N2 (T-LET-6): fixed.
+
+**Re-derived from end checkpoints** (`scripts/obs-rederive.ts`; outputs `artifacts/obs-fixes/m12-rederived.{json,md}`;
+20 seed-runs = 60 community-years per group; the old rule on the checkpoint's records reproduced the saved count in 60
+of 60 seeds; no simulation):
+
+| group | T-LET-1 killings before → after | what changed | truth (intergroup / infanticide / fight wounds) | T-LET-2 male | T-LET-3 | T-LET-6 | T-DEM-9 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| S39, 12 months | 4 → 3 (0.067 → 0.050 per community-year) | −2 infants that lived; +1 fight death a team watched | 0 / 1 / 2 | 0/4 → 0/3 | 0.33 (n 2) → insufficient | 0/4 → insufficient | insufficient → 6/869 = 0.007 |
+| wadging 0.5 | 1 → 1 | none | 0 / 1 / 0 | 0/1 → 0/1 | 0.25 (n 2) → insufficient | insufficient → insufficient | insufficient → 6/866 = 0.007 |
+| wadging 0.25 | 4 → 3 (0.067 → 0.050) | −1 infant that lived | 0 / 2 / 1 | 2/4 → 1/3 | 0.5 (n 4) → insufficient | 0/3 → insufficient | insufficient → 8/861 = 0.009 |
+
+After the fixes every truth killing of the three groups is counted (S39 3 of 3, wadging 0.5 1 of 1, wadging 0.25 3 of
+3), by an event (2 infanticides, 1 fight-kill) or a carcass (4). Verdicts: T-LET-1 inconclusive before and after in all
+three; T-LET-3 and T-LET-6 fail → insufficient (their "values" were killings inside a community and attack starts);
+T-DEM-9 insufficient → fail. The first re-derivation, before amendment 1, gave S39 4 → 2
+(`m12-rederived.before-amendment1.*`).
+
+**`e-bench --rescore`** (outputs `artifacts/obs-fixes/rescore/`): it re-scores saved per-seed values and cannot
+re-derive an observer count. Under the current freeze it reproduces the saved sums and flags nothing. Against a copy of
+the targets file carrying the proposed freeze, the five rows of M12-S39, M12-W50 and M12-W25 are listed "needs a fresh
+run" and left out of the sums (fitted 4.146 → 4.088, 5.823 → 5.764, 3.746 → 3.746; held-out 15.193 → 15.193, 15.051 →
+15.051, 16.839 → 14.439, the last being T-LET-2's 2.4 on one victim).
+
+**Runs that need fresh runs on the five rows:** every run without an end checkpoint. The three-year runs in `bench-y3`
+keep none (Y3-T0, Y3-W25, Y3-W25-s1, Y3-W50, Y3-W50-s1: 19 finished seeds read, 0 checkpoints). Their parts give only the
+saved count and the truth deaths by cause, which cannot say which saved killings were attacks: T0 0 saved / 0 truth;
+W25 5 / 5 fight wounds; W25-s1 8 / 2 infanticides + 6 fight wounds; W50 1 / 1; W50-s1 5 / 1 + 4. Their saved T-DEM-9
+has two censuses (365.25 and 730.5 days) and none at the end. The 12-month runs above can be read from the
+re-derivation instead of re-run.
+
+**Tests.** `tsc --noEmit` clean. `tests/field-obs-fixes.test.ts` 10 of 10. With it: field-observer, field-metrics,
+rare-events, e-bench, e-bench-single-pass, ft-field, sim-track-e (field pin) and sim-params (golden hashes): all pass.
+Nothing in `src/sim` or `data/` changed. The full suite was not run (machine load 25–31).
