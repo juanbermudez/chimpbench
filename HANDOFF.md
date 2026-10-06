@@ -80,9 +80,39 @@ location (`MGOGO_ROOT` overrides).
      (§5, task 1).
    - **Optional:** `artifacts/decide-ft/` (1.3 GB: fine-tuned GLiNER adapters and receipts), needed only for Track R's
      R4/R5.
-3. **The real model** (`pnpm dev` with GLiNER) needs the private repo `juanbermudez/GHN` at `~/Desktop/GHN` (or set
-   `MGOGO_GHN_ROOT`). It is read-only and identity-checked by source hash. Everything else runs with
-   `MGOGO_NO_MODEL=1`.
+3. **The real model (installed and verified on this computer, 6 October 2026).** Everything lives under
+   `/Volumes/Drive/chimpbench/` (nothing on the internal disk, nothing under Desktop or Documents):
+   - **GHN:** `/Volumes/Drive/chimpbench/GHN`, a clone of the private repo `juanbermudez/GHN`, read-only. The Decide
+     worker (`experiments/active_perception/decide_provider.py`) is NOT on `main`: it is on the branch
+     `ghn-live/semantic-graph-and-shape-review` (commit c26b0ec), which is checked out. Keep it checked out.
+   - **Environment:** `/Volumes/Drive/chimpbench/decide-env` (uv, CPython 3.12.12, 697 MB), made from GHN's pinned
+     `experiments/active_perception/decide-requirements.txt`: torch 2.14.0 (MPS available), gliner2 2.0.0,
+     transformers 4.57.6, peft 0.21.0, accelerate 1.15.0, huggingface-hub 0.36.2, numpy 2.5.3, pydantic 2.13.5. The
+     worker refuses anything but torch 2.14.0 and a gliner2 source hash of `b46f4aae…7d3d`; both match.
+   - **Model cache:** `/Volumes/Drive/chimpbench/hf-cache` (1.8 GB), `fastino/GLiNER2.5-Decide` at revision
+     `7ee5da4c2415e32259bcdc0b1a7367c32ce8d6f6`. uv cache: `/Volumes/Drive/chimpbench/uv-cache` (722 MB, can be deleted).
+   - **Environment variables** (the worker and `training/decide_ft/common.py` read the model from `HF_HUB_CACHE`, not
+     from `HF_HOME`, so set both, or the model is looked for on the internal disk and not found):
+     `MGOGO_GHN_ROOT=/Volumes/Drive/chimpbench/GHN`, `MGOGO_DECIDE_PYTHON=/Volumes/Drive/chimpbench/decide-env/bin/python`,
+     `HF_HOME=/Volumes/Drive/chimpbench/hf-cache`, `HF_HUB_CACHE=/Volumes/Drive/chimpbench/hf-cache/hub`,
+     `UV_CACHE_DIR=/Volumes/Drive/chimpbench/uv-cache` (only for uv). The offline flags are set by the code.
+   - **Worker alone** (measured with swap at 8.4 GB used and load 8 to 33, so these are pessimistic): ready after 96 s
+     cold (the worker reports 55 s of load and warm-up; the app allows 120 s, so a cold start on a busy machine can
+     fail once: just restart it); fp16 on `mps:0`; 0.8 to 1.3 s per decision (about 400 to 575 tokens; the docs say
+     0.25 to 0.4 s on an idle M3 Pro); memory 1.97 GB at rest, 3.16 GB peak (`footprint`). Command: spawn
+     `PYTHONPATH=$MGOGO_GHN_ROOT $MGOGO_DECIDE_PYTHON -u -m experiments.active_perception.decide_provider --worker
+     --device mps` from the GHN folder with `HF_HUB_OFFLINE=1`, read one JSON line (`ready`, `source_sha256`), then write
+     `{"state":…,"questions":…}` lines (a `packet` from `artifacts/decide-ft/contexts/dev.jsonl`) and read one reply each.
+   - **Through the app:** from the repo, `MGOGO_GHN_ROOT=… MGOGO_DECIDE_PYTHON=… HF_HOME=… HF_HUB_CACHE=… fnm exec
+     --using=22.22.3 -- pnpm exec vite --host 127.0.0.1 --port 5183 --strictPort`, then
+     `fnm exec --using=22.22.3 -- node scripts/verify-browser.mjs http://127.0.0.1:5183`. All 20 checks pass
+     (GLiNER applied 3 decisions, 1125 ms for 449 tokens; lockstep with 6 model-driven chimps).
+   - **Training side:** `MGOGO_GHN_ROOT=… HF_HOME=… HF_HUB_CACHE=… PYTHONDONTWRITEBYTECODE=1
+     /Volumes/Drive/chimpbench/decide-env/bin/python -B training/decide_ft/parity.py --n 12 --device cpu` prints
+     `PARITY OK` (training tokens and probabilities equal the serving path on 12 dev contexts; the token counts also
+     equal the worker's). `import training.decide_ft.common` works (with the repo on `sys.path`). `token_audit.py` was not
+     run: it overwrites `artifacts/decide-ft/tokens/audit.json`.
+   Everything else runs with `MGOGO_NO_MODEL=1`.
 4. **Browser scripts** (`scripts/shot.mjs`, `verify-browser.mjs`, `gpu-probe.mjs`, `visual-scenes.mjs` and 10 more)
    load Playwright through `scripts/lib/playwright.mjs` and launch `/Applications/Google Chrome.app`. Playwright is not
    a dependency of the app: install it once outside the repo with
