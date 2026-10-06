@@ -219,7 +219,7 @@ test('the scorer runs sync and async kernels; a throwing kernel and a bad answer
 });
 
 test('intervals resample focal males, not records', () => {
-  const rec = (focal: string, hit: number, i: number): RecordScore => ({ key: `${focal}${i}`, focal, picked: null, setSize: 4, preceded: 'fresh', partStratum: 'train', refused: '', index: 0, hit, tieHit: hit, rr: hit, nll: null, chance: 0.25, relPos: 0, lineCut: false });
+  const rec = (focal: string, hit: number, i: number): RecordScore => ({ key: `${focal}${i}`, focal, picked: null, setSize: 4, preceded: 'fresh', partStratum: 'train', refused: '', index: 0, hit, tieHit: hit, rr: hit, nll: null, chance: 0.25, relPos: 0, lineCut: false, conf: 0.5, calls: 1 });
   const two = [...Array.from({ length: 50 }, (_, i) => rec('a', 1, i)), ...Array.from({ length: 50 }, (_, i) => rec('b', 0, i))];
   const s = clusterStats(two, { top1: x => x.hit }, 500).stats.top1;
   assert.deepEqual([s.value, s.ci, s.perAnimal], [0.5, [0, 1], 0.5], 'two males: the interval is the whole range; 100 independent records would give about 0.4 to 0.6');

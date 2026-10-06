@@ -38,6 +38,38 @@ export function buildWildQuestion(request: KernelRequest): LocalPacket {
   return { state, questions: { action: { type: 'choice', instructions: actionInstructions(ctx), criteria } } };
 }
 
+/**
+ * A scorer that gathers calls made at once into one batch for the worker's own batch path, and sends an identical
+ * text packet once per run (amendment A8, prereg §14.3: sub-menus of one round, and records asked together, share a
+ * batch; a menu of 8 or fewer is the same packet for the plain kernel and every fan-out variant). Batches go one at a
+ * time. `stats` counts what was asked and what reached the worker.
+ */
+export function batchingScorer(worker: Scorer, max = 16, waitMs = 4): Scorer & { stats: { asked: number; sent: number; batches: number; seconds: number } } {
+  const stats = { asked: 0, sent: 0, batches: 0, seconds: 0 }, cache = new Map<string, Promise<number[]>>();
+  let queue: { item: { adapter: string; packet: unknown }; resolve: (p: number[]) => void; reject: (e: unknown) => void }[] = [], chain: Promise<void> = Promise.resolve(), timer: ReturnType<typeof setTimeout> | null = null;
+  const flush = () => {
+    if (timer) { clearTimeout(timer); timer = null; }
+    while (queue.length) {
+      const batch = queue.slice(0, max); queue = queue.slice(max);
+      chain = chain.then(async () => {
+        const t0 = performance.now();
+        try { const out = await worker.score(batch.map(b => b.item)); batch.forEach((b, i) => b.resolve(out[i])); }
+        catch (e) { batch.forEach(b => b.reject(e)); }
+        stats.batches++; stats.sent += batch.length; stats.seconds += (performance.now() - t0) / 1000;
+      });
+    }
+  };
+  const one = (item: { adapter: string; packet: unknown }): Promise<number[]> => {
+    stats.asked++;
+    const key = `${item.adapter}\u0001${JSON.stringify(item.packet)}`, hit = cache.get(key);
+    if (hit) return hit;
+    const p = new Promise<number[]>((resolve, reject) => { queue.push({ item, resolve, reject }); if (queue.length >= max) flush(); else timer ??= setTimeout(flush, waitMs); });
+    cache.set(key, p);
+    return p;
+  };
+  return { stats, score: batch => Promise.all(batch.map(b => one({ adapter: b.adapter, packet: b.packet }))) };
+}
+
 /** R1's GLiNER adapter on wild packets: the wild text packet and the wild budget; a packet over it is refused. */
 export const wildGlinerKernel = (scorer: Scorer, adapter: string) => glinerKernel(scorer, adapter, { packet: buildWildQuestion, budget: WILD_TOKEN_BUDGET });
 
