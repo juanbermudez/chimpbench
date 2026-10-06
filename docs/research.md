@@ -4442,19 +4442,19 @@ Springer's page for Watts 2020 offered the abstract only (paywall). No code or p
 - **[lonsdorf2020]** (FT, PMC7428235 via BioC) [H for Gombe]. Lonsdorf EV, Wilson ML, Boehm E, Delaney-Soesman J et al.
   2020. Why chimpanzees carry dead infants: an empirical assessment of existing hypotheses. *Royal Society Open Science*
   7:200931. [doi:10.1098/rsos.200931](https://doi.org/10.1098/rsos.200931). **Sample:** Gombe, Kasekela and Mitumba
-  (eastern chimpanzee), records from 1966 on; every birth that died before 5 years (93 cases); a corpse seen directly in
+  (eastern chimpanzee), records from the 1960s on (Table 2 dates run from 1965); every birth that died before 5 years (93 cases); a corpse seen directly in
   42; behavioural descriptions of others' interactions with a corpse in 28 cases (Methods, Results). **Observed (Results,
   Discussion):** after the mother, siblings were the most likely to interact with a corpse; mothers and siblings groomed
   it more than other animals did; inspection with contact (face, body, genitals, manipulation) was done mostly by mothers
   and siblings, but others did it too; others and siblings, not mothers, were seen playing with a corpse or showing sexual
   behaviour towards it; rough handling was reported rarely (one mother threw a corpse down three times in front of
-  others); two mothers ate parts of their own infants killed by other chimpanzees, and in other cases a stillborn infant
-  and an infant dead in a mange epidemic were partly eaten by others (Results). Observers noted that mothers gradually
+  others); one mother ate parts of two of her infants after other chimpanzees killed them, and in other cases a stillborn infant
+  was partly eaten by others and a brother ate a piece of an infant that died in a mange epidemic (Results). Observers noted that mothers gradually
   increased their distance from the corpse as time passed (Discussion). **Does not show:** how long others stayed near
   or attended a body (the descriptions are qualitative and the authors say absences of behaviours cannot be told from
   non-recording, Results); responses to the death of an adult.
 - **[soldati2022]** (FT, PMC9274961 via BioC) [H for the Budongo cases, small n]. Soldati A, Fedurek P, Crockford C,
-  Adue S, Akankwasa J et al. 2022. Dead-infant carrying by chimpanzee mothers in the Budongo Forest. *Primates*.
+  Adue S et al. 2022. Dead-infant carrying by chimpanzee mothers in the Budongo Forest. *Primates*.
   [doi:10.1007/s10329-022-00999-x](https://doi.org/10.1007/s10329-022-00999-x). **Sample:** Sonso (30 years) and
   Waibira (10 years), 191 births, 68 dead by 5 years (Results). **Observed:** in the 18-day carry (an infant of 25 months)
   the other chimpanzees present were "apparently aware" but showed no atypical reaction, and the mother did not stop others
@@ -4465,7 +4465,7 @@ Springer's page for Watts 2020 offered the abstract only (paywall). No code or p
   chimpanzees toward a juvenile that suddenly lost its animacy due to a fall accident. *Scientific Reports*.
   [doi:10.1038/s41598-023-43229-0](https://doi.org/10.1038/s41598-023-43229-0). Mahale (M group, eastern chimpanzee), a
   juvenile male that fell about 7 m, was collapsed and concussed, and **recovered** (seen healthy 45 days later); not a
-  death. **Observed (Results, Discussion):** of the 26 other animals in the party, 14 came within close proximity. By sex
+  death. **Observed (Results, Discussion):** of the 26 other animals observed that day, 14 came within close proximity. By sex
   and age (Results): 8 of 9 adult males (mean 21.9 ± 26.5 min), 3 of 8 adult females (4.5 ± 10.8 min), 1 of 3 young males,
   2 of 3 juvenile males; adult males were in proximity more than adult females (Fisher's exact test p = 0.0498). The
   behaviours were peering, sniffing, touching, grooming and licking blood, alongside displays and rough handling by
@@ -4482,8 +4482,8 @@ Springer's page for Watts 2020 offered the abstract only (paywall). No code or p
   duration, the number of animals in each response and who they were are in the full text, which was not opened.
 - **[watts2020]** (Abs; Springer paywall) [L]. Watts DP 2020. Responses to dead and dying conspecifics and
   heterospecifics by wild mountain gorillas and chimpanzees. *Primates*.
-  [doi:10.1007/s10329-019-00735-y](https://doi.org/10.1007/s10329-019-00735-y). From the abstract: 25 cases (gorillas at
-  Karisoke, eastern chimpanzees at Ngogo) of responses to corpses, skeletons and mortally injured or ill animals,
+  [doi:10.1007/s10329-019-00735-y](https://doi.org/10.1007/s10329-019-00735-y). From the abstract: 25 cases (mountain gorillas and eastern chimpanzees; the chimpanzees are Ngogo's, per
+  [goncalves2022]) of responses to corpses, skeletons and mortally injured or ill animals,
   generally consistent with a "failure to detect animacy" explanation; possible sympathetic concern in one chimpanzee
   case. **Not verified:** every figure in the paper. Two of its chimpanzee skeleton cases are described second-hand in
   [goncalves2022], below.
@@ -4515,12 +4515,12 @@ Springer's page for Watts 2020 offered the abstract only (paywall). No code or p
 - **[soldati2022]** (as above). **Observed (Results, Table 1):** 12 carries by mothers, 23% of the 53 observed
   opportunities; in 9 the minimum carry was 1–3 days, in three it was **18, 56 and 89 days**; excluding deaths with the
   mother, infanticide with cannibalism and the like, 12 of 17 cases where mother and body were seen together involved
-  carrying (71%), and all five that did not were infanticides; 36 mothers reappeared alone and could have carried for
+  carrying (71%), and all five that did not were infanticides; in 36 instances the mother reappeared alone and could have carried for
   an unknown period; the three prolonged corpses were mummified; only infants under one month were carried among those
   under one year (11 of 25 against 0 of 17; Fisher p = 0.010); carrying was equally likely in the wet and dry
   seasons (6 and 6, Results); four of eight repeating mothers carried two infants, three for longer the second time.
   **Does not show:** why a few mothers carry for weeks; no hormone data.
-- **[bersacola2025]** (FT, PMC12231315 via BioC) [M]. Bersacola E, McLennan MR, Bessa JH, Camara H, Jaló J et al. 2025.
+- **[bersacola2025]** (FT, PMC12231315 via BioC) [M]. Bersacola E, McLennan MR, Bessa JH, Camara H et al. 2025.
   Camera traps document infant corpse carrying behaviour in multiple unhabituated chimpanzee populations. *Ecology and
   Evolution*. [doi:10.1002/ece3.71698](https://doi.org/10.1002/ece3.71698). **Sample:** 18 unhabituated communities at
   four sites (Guinea-Bissau, Guinea, Uganda, Tanzania); 10 carrying cases in 7 communities (Results, Table 2).
@@ -4544,13 +4544,13 @@ Springer's page for Watts 2020 offered the abstract only (paywall). No code or p
   context. bioRxiv [doi:10.64898/2026.01.28.702208](https://doi.org/10.64898/2026.01.28.702208). A compilation of 83
   published *Pan* cases (chimpanzees and bonobos, not separated here) with Bayesian models: longer carrying after
   disease-related deaths than after infanticide, and for older infants, and a weaker site-level link with interbirth
-  interval (Results). Its Discussion notes that some chimpanzee mothers carried well past mummification (citing Bossou
-  and other reports). **Does not show:** unbiased durations; the set is what was published, which the authors and
-  [lonsdorf2020] both say favours long cases.
+  interval (Results). Its Discussion notes that some chimpanzee mothers carried well past mummification (citing earlier
+  reports). **Does not show:** unbiased durations; the set is what was published, which [lonsdorf2020] says may favour
+  extremely long cases.
 
 ### 3. How long a great-ape carcass stays recognisable in a tropical forest
 
-No chimpanzee-specific carcass-persistence study was found. The figures below are from other great apes in forest, one
+No chimpanzee-specific carcass-persistence study was found. The figures below are from other great apes in forest, two
 of them from disease-outbreak work.
 
 - **[rouquet2005]** (FT, PMC3320460 via BioC) [M]. Rouquet P, Froment J-M, Bermejo M, Kilbourn A, Karesh W, Reed P et
@@ -4558,10 +4558,10 @@ of them from disease-outbreak work.
   *Emerging Infectious Diseases* 11(2). [doi:10.3201/eid1102.040533](https://doi.org/10.3201/eid1102.040533).
   **Sample:** 98 carcasses found August 2001–June 2003 over about 20,000 km² by hunters and conservation teams, 65 of them
   great apes (50 gorillas, 15 chimpanzees) (Results). **Observed:** only 6% of the carcasses sampled were whole bodies, 57%
-  partial (muscle or skin) and 38% bones only (Results); "an adult male gorilla carcass (about 150 kg) takes only 10 days
-  to decompose entirely, i.e. be reduced to a heap of bones and hair" (Discussion, Figure 5); maggots remove the flesh in
-  5 to 10 days; carcasses seen 3–4 days after death bore few scavenger signs but eggs and maggots; scavengers (mainly
-  mongoose) take pieces and spread them; "after about 3 weeks, only a few bones bearing small-mammal gnaw marks remain"
+  partial (muscle or skin) and 38% bones only (Results); the authors state that an adult male gorilla carcass of about
+  150 kg was reduced to a heap of bones and hair in 10 days (Discussion, Figure 5); maggots remove the flesh in 5 to 10
+  days; carcasses seen 3–4 days after death bore few scavenger signs but eggs and maggots; scavengers (mainly
+  mongoose) take pieces and spread them; after about 3 weeks only a few bones with small-mammal gnaw marks are left
   (Discussion). In the sampling Table, estimated times since death run from 12 hours to 1 month, and skulls and bones
   sampled 2 weeks to 1 month after death were the usual material from older carcasses. **Does not show:** a persistence
   curve or a half-life: found carcasses are those that were found, and no search effort or detection probability is
@@ -4569,10 +4569,10 @@ of them from disease-outbreak work.
 - **[cameron2016]** (FT, PMC4871434 via BioC) [L, as a persistence record]. Cameron KN, Reed P, Morgan DB, Ondzié AI,
   Sanz CM et al. 2016. Spatial and temporal dynamics of a mortality event among Central African great apes. *PLoS ONE*
   11(5):e0154505. [doi:10.1371/journal.pone.0154505](https://doi.org/10.1371/journal.pone.0154505). In the Odzala region
-  (Republic of Congo) the first carcass cluster, a juvenile chimpanzee, was "moderately decomposed" when found on
+  (Republic of Congo) the first carcass cluster, a juvenile chimpanzee, was moderately decomposed when found on
   2 November 2006; five gorilla carcasses were found 20–24 December 2006 and reported on 14 January 2007; of the five,
   a fresh juvenile left only hair and soil staining by the time a veterinary team verified (the verification date is
-  not stated), and two other carcasses found in February 2007 had "only bones remaining" (Introduction, carcass
+  not stated), and two other carcasses found in February 2007 were reduced to bones (Introduction, carcass
   descriptions). **Does not show:** ages of carcasses or any rate; the persistence is read off a narrative.
 - **[heon2025]** (FT, PMC12696665 via BioC) [M, one carcass]. Heon SP, Bernard H, Ewers RM 2025. Decomposition dynamics
   of an orangutan (*Pongo pygmaeus morio*) carcass in a tropical forest: implications for conservation practices.
@@ -4600,16 +4600,16 @@ of them from disease-outbreak work.
   skeletonised conspecific (some hair and ligaments left): in the first they stopped, gave alarm calls, clustered on the
   ground and in trees, looked for about 5 minutes and stayed 3–4 m away; in the second they clustered and peered for
   about 2 minutes, many at 0.5 m, then left. Both victims had been killed by chimpanzees, some of whom took part in the
-  post-mortem interaction. The same paragraph says that "we still know very little" about how wild chimpanzees engage
+  post-mortem interaction. The same paragraph says that very little is known about how wild chimpanzees engage
   with skeletons, and that elephants, by contrast, are reported to attend to bones long after decomposition.
   **Does not show:** repeated visits, handling, carrying or removing bones, or visits to a place of death. The figures
   are second-hand (the original paper is paywalled) and **not verified** against [watts2020].
 - **[soldati2022]**, **[bersacola2025]**, **[lonsdorf2020]** (as above) are the evidence for handling a body over time:
-  carried 18, 26, 28, 56 and 89 days at the extremes, mummified in the long cases; one 56-day carrier then carried a twig
+  the longest minimum carries were 89, 56, 28, 26 and 18 days, mummified in most long cases; one 56-day carrier then carried a twig
   for at least two further weeks ([soldati2022], Results). That is handling by the mother of her own infant, not
   return to a remains site.
 - **No source opened reports a wild chimpanzee returning to an old carcass, a place of death or a skeleton.** The one
-  hint (Anderson et al. 2010: "later avoidance of the place where death occurred") is from an abstract whose setting was
+  hint (Anderson et al. 2010: the group later avoided the place of death) is from an abstract whose setting was
   not stated and is **not verified**.
 
 ### Where the code differs (facts only)
@@ -4624,13 +4624,6 @@ of them from disease-outbreak work.
 
 ### Summary
 
-Well supported: when a mother has the body of her dead infant she usually carries it (every Gombe case with access; 71% of
-such Budongo cases), for a median of about 2 days and sometimes for weeks, with a minority mummified and carried for
-2–13 weeks, in atypical postures within hours, while siblings and others approach, sniff, groom or handle the body, and a
-great-ape body in forest is reduced to bones within about 6–10 days.
-Thin: how others respond to a dead adult (two Gombe accounts that disagree and a few case reports), how long anyone stays
-by a body, any chimpanzee-specific persistence figure, how long bones remain visible (one orangutan, two years) and whether chimpanzees ever
-return to remains (two second-hand Ngogo skeleton encounters of 2 to 5 minutes, none of a return).
-A simulation could defensibly show: a body that stays a body for several days and then bones and a skull, not a 24-hour
-fade; a mother carrying her dead infant for days with a long tail and an atypical hold; nearby siblings, immatures and
-adult males approaching and inspecting for minutes; and not mourning rites, vigils or visits to old bones, which no opened source reports.
+Well supported: a mother with access to her dead infant usually carries it (every such Gombe case, 71% of such Budongo cases), for a median of about 2 days with a tail to weeks (minimum 18 to 89 days in the long cases, mummified), in atypical holds, while siblings, immatures and adult males approach, inspect and sometimes groom or handle the body.
+Thin: how others respond to a dead adult (two Gombe accounts that disagree), how long anyone stays by a body, any chimpanzee-specific persistence figure (the reported ones are one gorilla description and one orangutan, bones within 6–10 days and bones still visible after two years), and whether chimpanzees ever return to remains (two second-hand Ngogo skeleton encounters of 2 to 5 minutes, no return seen).
+A simulation could defensibly show: a body that stays a body for days and then bones and a skull, not a 24-hour fade; a mother carrying her dead infant for days with a long tail; nearby siblings, immatures and adult males approaching and inspecting for minutes; and not mourning rites, vigils or visits to old bones, which no opened source reports.
