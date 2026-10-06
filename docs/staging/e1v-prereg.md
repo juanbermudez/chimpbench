@@ -160,3 +160,9 @@ tables generated from their JSON (`smoke-compare.py` in the agent's scratch).
   flagged by the instrument bar: fitted 2 and 1, held-out 23 and 19); nothing is judged.
 - The arms' code is a7e9439 plus documentation (f84e6d4) and the merge of track-e; nothing in `src/sim`, the registry or
   the ledger changed after the smoke run.
+
+### 7.5 Final checks (after merging track-e 2d5a6e0 once, at 794133d)
+`gen-params --check` valid and lint clean; `tsc --noEmit` clean; `pnpm test` 943 tests, 942 pass, 0 fail, 1 skipped (the
+decide-ft stand-in run, missing its artifact, as before); `decision-guide --check` up to date and agrees with the ledger;
+`git ls-files data/raw node_modules` prints nothing. For the arms: M6-S39's parameters plus `pithFibreSwallowed` 0.5 or
+0.25; nothing else moves.
