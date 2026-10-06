@@ -58,6 +58,9 @@
 // Stage E1t (docs/staging/e1t-prereg.md §2; P.horizonLived, 0 by default, read only with ledgerDrive and rhythmSleep 1): the
 // drive's waking time left is read from the days the animal lived (its recorded waking and sleep onset, livedDay) instead of
 // sleep pressure, whose estimate collapsed to 0 under the circadian gate (em-prereg.md, "Finding for Track E").
+// Stage E1v (docs/staging/e1v-prereg.md §2; P.pithFibreSwallowed, 1 by default, read only with ledgerDigesta 1): wadging.
+// A share 1 − pithFibreSwallowed of the fallback's pith fibre is spat out before the gut (swallowed() below): it leaves
+// the dry matter and fibre swallowed; intake, the formula energy handled (`fin`) and the food's water are unchanged.
 import type { Chimp, World } from '../types';
 import { paramsOf, type Params } from './params';
 import { TICK_HOURS, TICK_SECONDS, index, ix, type ChimpX, type EnergyLedger } from './state';
@@ -79,8 +82,11 @@ interface Rates {
   /** Stage E1b (ledgerDigesta), else null. */ dig: Digesta | null;
   /** Stage E1e: weight of one tick in the day-long average of expenditure. */ avg: number;
 }
-/** A food as digesta: dry matter (g), fibre (g) and non-fibre energy (kcal) per kcal of formula energy eaten. */
-interface Food { g: number; fib: number; nf: number }
+/**
+ * A food as digesta, per kcal of formula energy eaten: dry matter (g), fibre (g) and non-fibre energy (kcal) swallowed,
+ * and dry matter handled (g; more than swallowed only by the fallback's wadge, stage E1v).
+ */
+interface Food { g: number; fib: number; nf: number; gh: number }
 export type FoodKind = 'drupe' | 'fig' | 'fallback' | 'meat' | 'milk';
 interface Digesta {
   food: Record<FoodKind, Food>;
@@ -90,17 +96,38 @@ interface Digesta {
 /** Formula energy (fibre at the formula's credit) split into dry matter, fibre and non-fibre energy, from a feeding rate in kcal/min and g/min. */
 function food(P: Params, kcalPerMin: number, gPerMin: number, ndf: number): Food {
   const g = gPerMin / kcalPerMin, fib = g * ndf;
-  return { g, fib, nf: 1 - fib * P.digestaNdfCreditKcalPerG };
+  return { g, fib, nf: 1 - fib * P.digestaNdfCreditKcalPerG, gh: g };
+}
+/**
+ * Stage E1v: fibre (NDF) of the fallback's pith part, g per feeding minute: 0.749 of the composite's 1.009 g/min. The
+ * registry's fallback is pith and young leaves weighted by Kanyawara feeding time, 17.4 : 6.9 (potts2011), pith at 1.8 g
+ * of dry matter per minute and 58.1% NDF (uwimbabazi2019 Tables 1–2), as the notes of digestaFallbackDmGPerMin and
+ * digestaFallbackNdf give that weighting. [H] (lint-ok: the values the registry's composite is weighted from, no new magnitude)
+ */
+const PITH_NDF_G_PER_MIN = 17.4 / (17.4 + 6.9) * 1.8 * 0.581;
+/**
+ * Stage E1v (pithFibreSwallowed; docs/staging/e1v-prereg.md §2): the fallback as swallowed. Chimpanzees wadge pith: they
+ * chew it, swallow the juice and spit out most of the fibre. A share 1 − pithFibreSwallowed of the pith part's fibre
+ * leaves the swallowed dry matter and fibre, and with it the energy its fermentation would have yielded; the soluble part
+ * of the pith and the leaves are swallowed as before, and intake (formula kcal handled per feeding minute) is unchanged.
+ * Design assumption (wadging described, never measured; e1u-prereg.md §6). 1 = today, the same object.
+ */
+function swallowed(P: Params, f: Food, kcalPerMin: number): Food {
+  const s = P.pithFibreSwallowed;
+  if (!(s < 1)) return f;
+  const w = (1 - s) * PITH_NDF_G_PER_MIN / kcalPerMin;
+  return { g: f.g - w, fib: f.fib - w, nf: f.nf, gh: f.gh };
 }
 function digesta(P: Params): Digesta {
   const kp = 1 / Math.max(1e-6, P.digestaMrtH - P.ledgerGutEmptyH), d = P.digestaNdfDigestibility;
   const k = kp / Math.max(1e-6, 1 - d); // fermentation k·d and passage k·(1 − d): the fermented share is d
-  const nonFibre = (gPerKcal: number): Food => ({ g: gPerKcal, fib: 0, nf: 1 });
+  const nonFibre = (gPerKcal: number): Food => ({ g: gPerKcal, fib: 0, nf: 1, gh: gPerKcal });
+  const fallbackK = plantKcalPerMin(P, 'fallback');
   return {
     food: {
       drupe: food(P, plantKcalPerMin(P, 'drupe'), P.digestaDrupeDmGPerMin, P.digestaFruitNdf),
       fig: food(P, plantKcalPerMin(P, 'fig'), P.digestaFigDmGPerMin, P.digestaFruitNdf),
-      fallback: food(P, plantKcalPerMin(P, 'fallback'), P.digestaFallbackDmGPerMin, P.digestaFallbackNdf),
+      fallback: swallowed(P, food(P, fallbackK, P.digestaFallbackDmGPerMin, P.digestaFallbackNdf), fallbackK),
       meat: nonFibre(P.digestaMeatDmGPerKcal), milk: nonFibre(P.digestaMilkDmGPerKcal),
     },
     capF: P.digestaGutMlPerKg * P.digestaForegutShare * P.digestaForegutDmGPerMl,
@@ -655,10 +682,19 @@ export function gutRoom(c: Chimp, P: Params, kind: FoodKind = 'drupe'): number {
   return room > 0 ? room : 0;
 }
 
-/** Stage E2g (water.ts): dry matter (g) per kcal of formula energy of food `kind` (E1b's digesta; 0 without ledgerDigesta). */
+/**
+ * Stage E2g (water.ts): dry matter (g) per kcal of formula energy of food `kind` as handled (E1b's digesta; 0 without
+ * ledgerDigesta). Stage E1v: the fallback's wadge is taken as fibre only, so its juice and water are swallowed while
+ * its dry matter is not (swallowedPerKcal gives what the gut receives).
+ */
 export function dryMatterPerKcal(P: Params, kind: FoodKind): number {
   const D = rates(P).dig;
-  return D ? D.food[kind].g : 0;
+  return D ? D.food[kind].gh : 0;
+}
+/** Stage E1v: what the gut receives per kcal of formula energy of food `kind`: dry matter (g), fibre (g), non-fibre energy (kcal); null without ledgerDigesta. */
+export function swallowedPerKcal(P: Params, kind: FoodKind): { g: number; fib: number; nf: number } | null {
+  const f = rates(P).dig?.food[kind];
+  return f ? { g: f.g, fib: f.fib, nf: f.nf } : null;
 }
 
 /**

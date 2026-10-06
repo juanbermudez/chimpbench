@@ -2,7 +2,7 @@
 /* eslint-disable */
 export const REGISTRY_VERSION = 1;
 /** Content hash of every live default, hard range, profile value and integer flag. Stored with each world. */
-export const REGISTRY_HASH = '72819703773772c0';
+export const REGISTRY_HASH = '7c159d85f71fe9da';
 
 /** Registry defaults (the compressed profile). */
 export const DEFAULTS = {
@@ -741,6 +741,7 @@ export const DEFAULTS = {
   patrolWaypointM: 5,
   peripheryLevel: 0.8,
   phenologyForcing: 1,
+  pithFibreSwallowed: 1,
   playAdultDistScaleM: 30,
   playDistScaleM: 35,
   playRangeM: 14,
@@ -1767,6 +1768,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   patrolWaypointM: [0, 1000000],
   peripheryLevel: [0, 1],
   phenologyForcing: [0, 1],
+  pithFibreSwallowed: [0, 1],
   playAdultDistScaleM: [0, 1000000],
   playDistScaleM: [0, 1000000],
   playRangeM: [0, 1000000],

@@ -17598,6 +17598,32 @@
    "integer": true
   },
   {
+   "id": "pithFibreSwallowed",
+   "group": "feeding",
+   "value": 1,
+   "units": "fraction of the pith's fibre (NDF)",
+   "range": [
+    0.25,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/research.md (Gut inputs audit, stage E1u, and its addendum: online search): wrangham1991, mclennanGanzhorn2017, freymann2024 and reynolds2009 describe pith wadged (chewed, the juice swallowed, most of the fibre spat out); no wadge weighed and no swallowed share found (docs/staging/e1u-prereg.md §5.3, §6)"
+   ],
+   "clock": "none",
+   "symbol": "swallowed",
+   "file": "src/sim/energy.ts",
+   "calibrationExcluded": "Stage E1v input range: the swallowed share of pith fibre has never been measured (no wadge has been weighed), so the user's three values (1, 0.5, 0.25) are run and reported (docs/staging/e1v-prereg.md), never fitted to a behavioural target.",
+   "notes": "Stage E1v (docs/staging/e1v-prereg.md §2), read only with energyLedger and ledgerDigesta 1: the share of the fallback's pith fibre (NDF) that is swallowed. Chimpanzees wadge pith, but the swallowed share is unknown (see refs). A share 1 - this of the pith part's fibre leaves the fallback's swallowed dry matter and fibre before the gut, and with it the energy its fermentation would have yielded (src/sim/energy.ts swallowed); the soluble part of the pith and the leaves are swallowed as before, and intake (formula kcal handled per feeding minute), the formula energy booked (fin) and the food's water are unchanged. The pith part is the registry composite's own weighting (digestaFallbackDmGPerMin, digestaFallbackNdf: pith 17.4 of 24.3 feeding minutes at 1.8 g of dry matter per minute and 58.1% NDF, uwimbabazi2019 and potts2011), 0.749 of the composite's 1.009 g of NDF per feeding minute. 1 = today (hash-identical). Range: the user's decision of 5 October 2026 to test swallowing all, half and a quarter of the pith's fibre (1, 0.5, 0.25) and report each; an input range, never fitted. Design assumption."
+  },
+  {
    "id": "playAdultDistScaleM",
    "group": "social",
    "value": 30,
