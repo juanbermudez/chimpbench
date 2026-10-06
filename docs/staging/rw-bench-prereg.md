@@ -39,7 +39,7 @@ Input: one eligible record of `scripts/rw-ngogo-choices.ts` (a bout of grooming 
 | `social[i].name`, `sex`, `stage` | pseudonym, male, adult | |
 | `social[i].distance` | 1 (within 2 m) or 3.5 (the 2 to 5 m ring) at the **previous** scan; otherwise masked | `prox2`, `prox5` of the previous scan |
 | `social[i].action` | `groom` if he was in a grooming dyad at the previous scan; otherwise masked | `gdyad` of the previous scan |
-| `recent` (at most 3 lines) | `Last scan: groomed by A, B; I groomed C` · `Last scan: within 2 m: A; 2 to 5 m: B` · `Earlier this hour: I groomed A; groomed by B` (bouts of this session that ended before the previous scan, most recent first) | earlier scans of the session |
+| `recent` (at most 3 lines; 2 after amendment A1) | `Last scan: groomed by A, B; I groomed C` · `Last scan: within 2 m: A; 2 to 5 m: B` (dropped, A1) · `Earlier this hour: I groomed A; groomed by B` (bouts of this session that ended before the previous scan, most recent first) | earlier scans of the session |
 | `history` (at most 3 lines) | `Groomed with, most first: A, B=C, D` (bouts in either direction) · `I groomed, most first: …` (bouts given) · `Often near me, most first: …` (scans within 5 m) | earlier days of the open parts plus earlier scans of the session |
 | `candidates` | the options of 2.1 | |
 
@@ -145,6 +145,20 @@ Also: `tsc --noEmit -p .`, `gen-params --check`, the goldens and the field pin u
 ## 10. Not built
 
 The simulation's rules on wild records; any outside model or provider; real token counts if no offline tokenizer; a simulated packet cut to the wild fields (R2's "RW view"); training; opening the sealed part.
+
+## 11. Amendments (each written before the code it covers, and before any score)
+
+**A1 (6 October 2026, before any packet was built from a field record). The proximity memory line is dropped.** Section 2.2 listed a `recent` line "Last scan: within 2 m: …; 2 to 5 m: …". The same fact is already in `social[i].distance`, and the serving path's own finding is that a partner described twice is favoured (`server/decide.ts optionParts`). So `recent` holds at most 2 lines (the grooming of the last scan; earlier bouts of the hour), and nearness at the last scan is carried by `distance` alone; the text packets print it once, on the individual's line, as "within 2 m at the last scan" or "2 to 5 m at the last scan".
+
+**A2 (6 October 2026, relayed by the integrator; before any code of this kernel). A Codex kernel, built and not run.** The integrator relayed the user's naming of the outside general model: "you can use the local version of codex on my computer." The harness gains a `codex` kernel behind R1's async interface. **This stage sends nothing to it:** it is tested against a fake executable only, and the real binary is not run. The integrator runs the pilot on the development part after reading the serializer.
+
+- *Call.* `codex exec --sandbox read-only --skip-git-repo-check --ephemeral -C <empty scratch directory> --output-schema <schema.json> -o <out.json> [-m <model>] [-c model_reasoning_effort=<effort>] "<prompt>"`, standard input closed, no shell. One call at a time. Options: the binary, the model, the reasoning effort, the batch size, a timeout per call, and a gate as for Jev (an explicit approval flag and a cap on calls; refused without both).
+- *What the prompt contains* (`scripts/lib/rw-serialize.ts buildCodexPrompt`, beside the GLiNER serializer): a fixed instruction, then per case the lines of the GLiNER text packet's state and nothing more — `me` (pseudonym, adult male, the community's name), `now` (the number of adult males in the party), `nearby` (individuals with an unmasked distance or action, in the same coarse words), `memories` (`recent`), `history` — and the options as numbered lines "Groom <pseudonym>". It contains no code, no date, no year, no session or record key, no raw field, no count and no masked field. The instruction states only the task (he now grooms one of the listed males; choose for each case from that case alone; names are dealt afresh per case; the option order is random) and the answer format. It adds no fact about the animals or the protocol that the packet does not hold.
+- *Answer.* The schema forces `{"choices":[{"case":<number>,"choice":<option number>}]}`, one entry per case. Each case is validated on its own: a whole number inside that case's menu becomes an R1 answer (the position, and a probability of 1 on it and 0 elsewhere, so log loss is not reported and the reciprocal rank is that of a single pick), which then passes `readAnswer` like every kernel's; anything else is a refused answer for that case only. A timeout or an unreadable output refuses every case of the call.
+- *Batches.* Several packets may share one prompt (batch size 1 by default). Cases in a batch are not independent calls; the batch size is written with every result.
+- *Accounting.* Per call: seconds, tokens as the tool reports them (read from its output; null when it reports none), the prompt's characters, the number of cases. Prompts and raw answers go to `artifacts/` only.
+- *Pilot.* `--limit N` scores a seeded sample of N records of the part (stream `sample` of the base seed), not the first N, which would all be early years.
+- *Tests* (fake executable only): a well-formed batch, a malformed entry (that case alone refused), a timeout (every case refused, the process killed), the gate, the exact argument list, standard input closed.
 
 ## Privacy
 
