@@ -105,6 +105,14 @@
   "C14": {
    "params": { "patrolImpulseDecides": 0, "patrolH0": 0.004 },
    "note": "C14 off: the patrol lead option is gated and sampled like any other, and the C6 hazard (0.004 per h) applies in the field profile too (hash-identical to before C14)."
+  },
+  "C15a": {
+   "params": { "fallbackBase": 0.03 },
+   "note": "C15a off: the hunger-independent worth of the fallback option is 0.03 again (with C15b off too, hash-identical to before C15: tests/sim-foraging-choices.test.ts)."
+  },
+  "C15b": {
+   "params": { "breakfastPlan": 0 },
+   "note": "C15b off: a far breakfast does not lower the dawn nest drive and fruiting trees are not avoided as night nests."
   }
  }
 }
