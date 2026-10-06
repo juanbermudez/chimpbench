@@ -225,3 +225,23 @@ These are floors: reasoning tokens grow with the number of cases and are unknown
 ## Privacy
 
 Packets, per-record outputs and record keys go to `artifacts/rw/` (gitignored). Committed: code, this file, the generated aggregate table (`docs/staging/rw-bench-numbers.md`: counts and rates only), the compromised list. Tests use synthetic records.
+
+## 13. Integrator's entries (6 October 2026)
+
+**A3. Codex pilot, as run (07:55).** The serializer was read first (`scripts/lib/rw-serialize.ts`: pseudonyms dealt per
+case, nearness and grooming at the last scan, memory and history lines, numbered options; no raw row, no date, no
+individual code). Command: `rw-score.ts --part development --kernels stack,codex --limit 16 --codex-approved
+--codex-max-calls 2 --codex-batch 8 --codex-effort low`. Result, 16 development records from 8 males: Codex top-1 0.438
+(7 of 16), the three-rule stack 0.438 (7 of 16); nothing can be read from 16 records. Cost: 2 calls, 44,361 tokens,
+33 seconds: about 22,000 tokens a call whatever the batch, so the tool's fixed overhead dominates. Model as the tool
+reported it on this computer today: gpt-6.1-sol (provider openai).
+
+**A4. Registered before it runs: Codex on the whole development part.** 448 records, `--codex-batch 8
+--codex-effort low`, the tool's default model, one shuffle (seed as the harness sets it), at most 60 calls; beside the
+null kernel and the three registered rules on the same records and shuffle. Expected cost from A3: 56 calls, about
+1.25 million tokens, about 15 minutes. Readouts: top-1 with its bootstrap interval over focal males, by choice-set
+size and by what preceded the bout, and the paired difference against the stack on the same records (records where
+exactly one of the two is right, with a sign test). It is called a difference only if the interval of the paired
+difference excludes 0; the registered resolution of this part is about 0.07. The sealed part stays sealed. This is the
+general-model arm before any tuning of the prompt: the prompt is not changed after seeing this result without a new
+entry here.
