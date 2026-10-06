@@ -4256,3 +4256,374 @@ their records were re-checked on 5 October 2026 (Crossref; PubMed for grimm2005)
   [doi:10.3389/neuro.06.004.2008](https://doi.org/10.3389/neuro.06.004.2008) (Abs); method.
 - grimm2005, zurell2010, teBoekhorst1994, ramosFernandez2006 and keramatiGutkin2014 are already listed; the entries
   above add a use.
+
+## Partner-choice and association datasets (downloads approved 6 October 2026)
+
+The user approved four downloads on 6 October 2026: Taï grooming partner choice, Budongo party scans, Kanyawara female
+relationships, and the full Ngogo paper. Each entry was written before its files were fetched; "What the files contain"
+is added after the download and is limited to column names, counts and the README. Raw files stay in `data/raw/`
+(private, never committed). Nothing here is a benchmark design or an analysis of the data. Bibliographic details come
+from DataCite (checked 6 October 2026). Access level is stated per entry: FT = full text read, Abs = abstract only.
+
+### Taï grooming partner choice [mielke2018]
+
+- **Paper** [mielke2018] (FT, PMC6083658 via NCBI BioC) [M]. Mielke A, Preis A, Samuni L, Gogarten JF, Wittig RM,
+  Crockford C 2018. Flexible decision-making in grooming partner choice in sooty mangabeys and chimpanzees. *Royal
+  Society Open Science* 5(7):172143. [doi:10.1098/rsos.172143](https://doi.org/10.1098/rsos.172143). Data: Dryad
+  [doi:10.5061/dryad.t8c88vh](https://doi.org/10.5061/dryad.t8c88vh), version 1, 2018, CC0 (DataCite), about 3.7 MB.
+- **What it measures.** Grooming as a choice among the adults present. Only the first grooming initiated by the focal
+  animal in a session (consecutive grooming within 5 min counts as one session) is kept; every other adult present when
+  grooming started is a potential partner, and all adults present except the focal are its bystanders. Predictors:
+  global and relative dominance rank (modified Elo from pant-grunts), dyadic affiliation (Dynamic Dyadic Sociality
+  Index), the partner's reproductive state, the partner's strongest bond with any bystander, recent aggression, sex.
+- **Site and animals.** Taï National Park, Côte d'Ivoire, 2013–2015: the South and East chimpanzee communities (western
+  chimpanzee, *P. t. verus*) and one sooty mangabey group (*Cercocebus atys atys*). Half- and full-day continuous focal
+  follows; chimpanzee party = individuals within visual range (usually 30–50 m). Adults above 12 years only; subadults
+  and seven adult females with too few focal data were removed (Methods).
+- **Sample (Table 1; Results).** 1,529 decision events in all: 157 mangabey (female initiators only; adult male
+  mangabeys initiated none), 640 East chimpanzee (100 by females, 540 by males) and 732 South chimpanzee (79 and 653),
+  so **1,372 chimpanzee events**. Focal individuals 32 in all (12 mangabeys, 9 East and 11 South chimpanzees); potential
+  partners 52. Unique bystander sets: 438 (East) and 451 (South). Chimpanzee initiation rates 0.09–0.20 per hour for
+  females and about 0.30 for males.
+- **Findings (not used here).** Partner attributes influenced choice; individuals preferred partners of similar global
+  rank, but this was driven by a bias to partners high in relative rank among those present; individuals avoided
+  partners with a strong bond to a bystander; females with infants under 3 months were preferred; female chimpanzees
+  chose closer partners, males weakly so.
+- **Licence.** CC0 1.0 (DataCite). Credit the authors and the DOI anyway.
+- **Evidence level.** [M]: a primary field study of one site over about 3 years with a modest number of focal animals;
+  the DOI and counts are checked, the data file is not yet opened.
+- **Limits.** Western subspecies at Taï, not eastern Kibale. Pools two species in the data and the 1,529; chimpanzee
+  rows must be isolated before any count. Only the first initiation of each session is a choice; later partners are
+  dropped as non-independent. Adults only; the potential-partner set is "adults within visual range", which is a
+  party proxy and not everyone in the community. About 20 focal chimpanzees. Elo rank and DDSI are the authors'
+  modelled quantities, not direct measurements.
+- **What the files contain: not obtained.** On 6 October 2026 the Dryad landing page (public, HTTP 200) listed three
+  files: `Data Model1.csv` (1.95 MB), `Data Model2.csv` (1.76 MB) and `Script Model 1 and 2.R` (6.81 KB); the paper's Data
+  accessibility statement says they hold the "grooming decision data for all models" and the scripts. The public
+  per-file links `https://datadryad.org/downloads/file_stream/77592`, `/77593` and `/77594` each returned
+  HTTP 403 (a bare "403 Forbidden" page from the load balancer, `server: awselb/2.0`). Tried once, not retried, no
+  header changes. The "Download full dataset" button assembles its zip in the browser (a service worker), so there is no
+  plain URL for it. **Needs a manual download by the user** into `data/raw/dryad-t8c88vh/`. Until then it is unknown
+  whether the file records the chosen partner and the set of available partners; the paper's Methods say the models
+  code each potential partner as chosen or not, with an offset for the number of potential partners (so each decision
+  has one row per potential partner), but that is the paper's description, not a check of the file.
+
+### Budongo party scans [ramosFernandez2018]
+
+- **Paper** [ramosFernandez2018] (Abs; PMC5998110 front matter and abstract only; the full text was not obtained) [M].
+  Ramos-Fernández G, King AJ, Beehner JC, Bergman TJ, Crofoot MC, Di Fiore A, Lehmann J, Schaffner CM,
+  Snyder-Mackler N, Zuberbühler K, Aureli F, Boyer D 2018. Quantifying uncertainty due to fission–fusion dynamics as a
+  component of social complexity. *Proceedings of the Royal Society B* 285(1879):20180532.
+  [doi:10.1098/rspb.2018.0532](https://doi.org/10.1098/rspb.2018.0532). Data: Dryad
+  [doi:10.5061/dryad.51b68](https://doi.org/10.5061/dryad.51b68) (identifier confirmed against DataCite and
+  `docs/datasets.md`), version 1, 8 May 2018, CC0 (DataCite), 3.01 MB for the whole deposit.
+- **What it measures.** The predictability of subgroup (party) composition: Shannon entropy of who is together, against a
+  random expectation that accounts for subgroup-size variation and sample size, and an estimate of how many subgroups
+  the group is divided into at a time. Three species: spider monkeys, chimpanzees and geladas (abstract). The chimpanzee
+  files are party membership at fixed scan times; the paper's quantity is composition entropy, not grooming or any
+  choice.
+- **Site, species, sample.** The Dryad page (public landing page, read 6 October 2026) describes the chimpanzee files as
+  rows "samples every 15 minutes of the subgroup composition in a group of chimpanzees in the Budongo Forest, Uganda",
+  one file for 2008 and one for 2009, with 1 for presence and 0 for absence in one column per individual. Budongo lies
+  in the range of the eastern subspecies (*P. t. schweinfurthii*); the pages opened do not state the subspecies or the
+  community name (not verified). Number of individuals, number of scans and number of observation days: not stated in
+  anything opened before the download.
+- **Licence.** CC0 1.0 (DataCite). The same deposit holds gelada (Simien Mountains, 2014, 2015) and spider monkey
+  (Yucatán, 2009) files; only the two chimpanzee files are in scope of the approved download.
+- **Evidence level.** [M] for what the deposit is (abstract plus the repository description); the paper's methods and
+  the sampling rules are not read.
+- **Limits.** Party membership only: no behaviour, no partner choice, no rank, sex or age columns are described.
+  A presence matrix at 15-minute scans, so "available partners" would mean "everyone seen in the party", and the
+  observers' definition of a subgroup (distance, visibility) is in the full text, which is not opened. Two years only.
+  Raw coordinates are not in the deposit (no spatial column is described).
+- **What the files contain: not obtained.** The landing page lists the chimpanzee files as
+  `subgroup_composition_chimpanzees_2008.csv` (698.34 KB) and `subgroup_composition_chimpanzees_2009.csv` (882.16 KB).
+  Their public per-file links `https://datadryad.org/downloads/file_stream/74570` and `/74571` each returned HTTP 403
+  (bare "403 Forbidden" page, `server: awselb/2.0`) on 6 October 2026. Tried once each, not retried, no header changes.
+  **Needs a manual download by the user** into `data/raw/dryad-51b68/` (only the two chimpanzee files). Until then
+  the unit of observation, the number of individuals and scans, who the individuals are and the observation effort are
+  unknown. From the repository description only: one row per 15-minute scan and one 0/1 column per individual, so the
+  party is recorded (the set of animals present) but no chosen partner.
+
+### Kanyawara female relationships and coalition partners [fox2022]
+
+- **Paper** [fox2022] (Abs; PMC9703227 front matter and abstract only; the publisher page showed a Cloudflare bot
+  check and was dropped; no preprint found) [M]. Fox SA, Muller MN, Thompson González N, Enigk DK, Machanda ZP, Otali E,
+  Wrangham R, Emery Thompson M 2022. Weak, but not strong, ties support coalition formation among wild female
+  chimpanzees. *Philosophical Transactions of the Royal Society B* 378(1868):20210427.
+  [doi:10.1098/rstb.2021.0427](https://doi.org/10.1098/rstb.2021.0427). Data: Dryad
+  [doi:10.5061/dryad.44j0zpchh](https://doi.org/10.5061/dryad.44j0zpchh) (identifier confirmed against DataCite and
+  `docs/datasets.md`), version 4, 13 October 2022, CC0 (DataCite), 275.16 KB. Analysis code: Zenodo
+  [doi:10.5281/zenodo.7039524](https://doi.org/10.5281/zenodo.7039524) (not downloaded).
+- **What it measures.** Whether weak affiliative ties predict aggressive coalition formation among adult females,
+  using 10 years of behavioural data (abstract). Three relationship measures (party association, five-metre proximity,
+  whether a dyad groomed) positively predicted coalitions; dyads that groomed frequently formed no more coalitions than
+  dyads that groomed occasionally, and kin cooperated no more than relationship quality predicted. The dataset is
+  thereby about coalition partners, not grooming partners.
+- **Site, species, sample.** Adult female chimpanzees of Kibale National Park, Uganda, 2010–2019 (Dryad Methods; the
+  authors are the Kanyawara Kibale Chimpanzee Project team; the community name and the subspecies, eastern
+  *P. t. schweinfurthii* by location, are not stated in the pages opened). Number of females, dyads and coalitions: not
+  in the abstract (not verified).
+- **Two analysis files (Dryad description).** `analysis1_datashare.csv`: dyadic rates and counts per two-year period
+  (times in the same party, coalitions together, a five-metre association index, a grooming-duration index, whether the
+  dyad ever groomed, combined dyad rank, immigrant involvement, kinship, time in the same party with one of them as
+  focal). `analysis2_datashare.csv` ("partner selection analysis"): one row per dyad at each coalition event with the
+  same dyad information and "which dyad formed the coalition out of all available partners at the time", which makes it
+  a chosen-and-available design by the repository's own description. Plus `README_femalecoal_dryad.docx` (15.24 KB).
+- **Licence.** CC0 1.0 (DataCite). Credit the authors and the DOI anyway.
+- **Evidence level.** [M] for what the deposit is; the paper's methods, sample sizes and definitions of "available" are
+  not read.
+- **Limits.** Females only, one community, a decade. Aggressive coalitions, not grooming or associating: the "choice" is
+  who joined whom against a target. Whether "available partners" means all females present, all in the party or all
+  in earshot is a paper-methods question not yet answered. The rank, relationship and kinship columns are the authors'
+  derived measures. Rates are per two-year period, so analysis 1 is not event-level.
+- **What the files contain: not obtained.** The public per-file links for `analysis1_datashare.csv`
+  (`https://datadryad.org/downloads/file_stream/1869835`), `analysis2_datashare.csv` (`.../1869837`) and
+  `README_femalecoal_dryad.docx` (`.../1869836`) each returned HTTP 403 (bare "403 Forbidden" page,
+  `server: awselb/2.0`) on 6 October 2026. Tried once each, not retried, no header changes. **Needs a manual download
+  by the user** into `data/raw/dryad-44j0zpchh/`. Until then the column names, row counts, number of females and the
+  observation effort are unknown; the only description of the contents is the repository's text above.
+
+### Ngogo fission, full paper and supplement [sandel2026]
+
+- **Paper** [sandel2026] (Abs only: **full text and supplement not obtained (paywalled)**). Sandel A, Mitani J, Langergraber K,
+  Clark IR, Lee K, Ren J, Kei YL, He Y, Reddy RB, Negrey J, Birungi C, Apamaku BA et al. 2026. Lethal conflict after group
+  fission in wild chimpanzees. *Science* 392(6794):216–220, 9 April 2026 (31 authors in PubMed).
+  [doi:10.1126/science.adz4944](https://doi.org/10.1126/science.adz4944). Data and code:
+  Dryad [doi:10.5061/dryad.sf7m0cgkg](https://doi.org/10.5061/dryad.sf7m0cgkg) (version 9, 2026, CC0 per DataCite; in
+  `data/raw/dryad-sf7m0cgkg/`, see its `PROVENANCE.md`); space use: Zenodo
+  [doi:10.5281/zenodo.18603419](https://doi.org/10.5281/zenodo.18603419) (CC BY 4.0, in `data/raw/zenodo-18603419/`).
+- **What it measures.** A permanent fission of the Ngogo community, the largest known group of wild chimpanzees, from 30
+  years of behavioural observation and network analysis: an abrupt change from cohesion to polarization in 2015, two
+  distinct groups by 2018, then 24 attacks by one splinter group over seven years that killed at least seven mature
+  males and 17 infants of the other (abstract, as deposited with the data).
+- **Site and animals.** Ngogo, Kibale National Park, Uganda; eastern chimpanzee (*P. t. schweinfurthii*).
+- **Why the full text matters.** It should settle what a "party" is in the scans, what an empty proximity field means,
+  which individuals are in the focal sets (the 77 males of `docs/staging/rw-prereg.md`), the observation effort and the
+  definition of the two groups. Those are the main threats to validity named in that document (decision 5).
+- **Retrieval, 6 October 2026 (two routes, then stopped).** Route 1, open copies: Europe PMC lists the paper only as
+  PubMed record 41955363, not in PMC (`inPMC` N, `isOpenAccess` N), and no preprint appeared in the title search.
+  Route 2, the publisher: `https://www.science.org/doi/10.1126/science.adz4944` returned HTTP 403 with a Cloudflare
+  "Just a moment" bot check, so that host was dropped, not worked around (the PDF link Crossref gives is on the same
+  host). Crossref records a free-reuse date of **9 April 2027** (a 365-day delay), so the paper is paywalled now.
+  Crossref also lists a supplement record, `10.1126/science.zi2cekx` (not opened). The entry above is written from the
+  PubMed abstract, which agrees with the Dryad deposit's text apart from wording. **Needs the user:** the article PDF and
+  the Supplementary Materials, saved into `data/raw/science-adz4944/` (never committed).
+- **What the deposited README adds** (`data/raw/dryad-sf7m0cgkg/README.md`, already local; this is the authors' file
+  description, not the paper's Methods). `chimp_behav_data.csv` is "social behavior of mature male chimpanzees sampled at
+  10-minute intervals", from hour-long observation sessions of adult males, 1998–2022; each row carries a scan code and a
+  focal-session code. The `party` field is "other mature males observed during 1 hour following the session", so a
+  party there is a list of mature males only, not all community members, and it is defined over an hour, not at the
+  scan. `prox2` is the others within 2 m of the focal; the README describes `prox5` with the same words ("within 2
+  meters"), which is probably a typing slip (not verified). "NA" means no value for proximity, grooming or association,
+  so an empty field is an absent record, not a stated "nobody near" (the paper's Methods, which would say how an empty
+  scan is recorded, are not read). The 77-individual graphs are the male proximity network; the 219-individual graphs
+  and labels cover everyone in the full network. These answer part of what `docs/staging/rw-prereg.md` decision 5 asks;
+  the observation effort, who the 77 are and how the groups were defined remain unread.
+- **Licence.** The paper: © AAAS, journal terms, free reuse only from 9 April 2027 (Crossref). The data: CC0 (Dryad).
+- **Evidence level.** [M] at abstract level, to be revised once the methods are read. The abstract is a primary
+  report of a single, unusual event in one community: a case, not a rate for communities in general.
+- **Limits.** One community and one fission; no claim about how often fissions or such killings occur elsewhere. The
+  count of 24 attacks, 7 males and 17 infants is the authors' (abstract).
+
+## Addendum: responses to the dead and how long remains persist
+
+Written 6 October 2026 for one question: the simulation draws a dead animal's body for about 24 hours and then fades it
+(`DEAD_VISIBLE_HOURS`, `src/render/creatures.ts`, a stylization with no source), and nothing responds to a body. What does
+the field literature report? FT = full text read (open copy, opened this session: PMC through NCBI BioC or efetch, or a
+free publisher or preprint page); Abs = abstract only. Numbers are from the section, table or figure named; the open
+copies read here carry no page numbers, so a section or table name is given instead. Where an entry says "not verified"
+the claim was not read in a source that was opened, and it is not stated as fact. Hosts that showed a Cloudflare bot
+check (Current Biology on cell.com, Wiley Online Library, the Royal Society's site) were dropped, not worked around;
+Springer's page for Watts 2020 offered the abstract only (paywall). No code or parameter was changed.
+
+### 1. Others' responses to a dead or collapsed group member
+
+- **[lonsdorf2020]** (FT, PMC7428235 via BioC) [H for Gombe]. Lonsdorf EV, Wilson ML, Boehm E, Delaney-Soesman J et al.
+  2020. Why chimpanzees carry dead infants: an empirical assessment of existing hypotheses. *Royal Society Open Science*
+  7:200931. [doi:10.1098/rsos.200931](https://doi.org/10.1098/rsos.200931). **Sample:** Gombe, Kasekela and Mitumba
+  (eastern chimpanzee), records from the 1960s on (Table 2 dates run from 1965); every birth that died before 5 years (93 cases); a corpse seen directly in
+  42; behavioural descriptions of others' interactions with a corpse in 28 cases (Methods, Results). **Observed (Results,
+  Discussion):** after the mother, siblings were the most likely to interact with a corpse; mothers and siblings groomed
+  it more than other animals did; inspection with contact (face, body, genitals, manipulation) was done mostly by mothers
+  and siblings, but others did it too; others and siblings, not mothers, were seen playing with a corpse or showing sexual
+  behaviour towards it; rough handling was reported rarely (one mother threw a corpse down three times in front of
+  others); one mother ate parts of two of her infants after other chimpanzees killed them, and in other cases a stillborn infant
+  was partly eaten by others and a brother ate a piece of an infant that died in a mange epidemic (Results). Observers noted that mothers gradually
+  increased their distance from the corpse as time passed (Discussion). **Does not show:** how long others stayed near
+  or attended a body (the descriptions are qualitative and the authors say absences of behaviours cannot be told from
+  non-recording, Results); responses to the death of an adult.
+- **[soldati2022]** (FT, PMC9274961 via BioC) [H for the Budongo cases, small n]. Soldati A, Fedurek P, Crockford C,
+  Adue S et al. 2022. Dead-infant carrying by chimpanzee mothers in the Budongo Forest. *Primates*.
+  [doi:10.1007/s10329-022-00999-x](https://doi.org/10.1007/s10329-022-00999-x). **Sample:** Sonso (30 years) and
+  Waibira (10 years), 191 births, 68 dead by 5 years (Results). **Observed:** in the 18-day carry (an infant of 25 months)
+  the other chimpanzees present were "apparently aware" but showed no atypical reaction, and the mother did not stop others
+  approaching; one young nulliparous female briefly carried the body; in a 56-day case only some immatures (under 10 years)
+  inspected the corpse and an adult male showed no interest even while grooming the mother (Results, case descriptions).
+  **Does not show:** responses to a body left behind; any systematic count of who approached.
+- **[shimada2023]** (FT, PMC10550937 via BioC) [M, one case]. Shimada M, Yano W 2023. Behavioral responses of wild
+  chimpanzees toward a juvenile that suddenly lost its animacy due to a fall accident. *Scientific Reports*.
+  [doi:10.1038/s41598-023-43229-0](https://doi.org/10.1038/s41598-023-43229-0). Mahale (M group, eastern chimpanzee), a
+  juvenile male that fell about 7 m, was collapsed and concussed, and **recovered** (seen healthy 45 days later); not a
+  death. **Observed (Results, Discussion):** of the 26 other animals observed that day, 14 came within close proximity. By sex
+  and age (Results): 8 of 9 adult males (mean 21.9 ± 26.5 min), 3 of 8 adult females (4.5 ± 10.8 min), 1 of 3 young males,
+  2 of 3 juvenile males; adult males were in proximity more than adult females (Fisher's exact test p = 0.0498). The
+  behaviours were peering, sniffing, touching, grooming and licking blood, alongside displays and rough handling by
+  males; the party moved off within about 1.5 hours of the alpha male's arrival and the juvenile was left alone by
+  the end of observation (about 5 hours, Results). **Does not show:** a response to a dead body. The authors compare
+  it with earlier reports of collapsed and dead animals and say the responses to a body were an extension of those to a
+  collapsed animal. A single event.
+- **[stewart2012]** (Abs; the Wiley page showed a bot check) [M, one case]. Stewart FA, Piel AK, O'Malley RC 2012.
+  Responses of chimpanzees to a recently dead community member at Gombe National Park, Tanzania. *American Journal of
+  Primatology* 74:1–7. [doi:10.1002/ajp.20994](https://doi.org/10.1002/ajp.20994). From the abstract: 16 Gombe
+  individuals responded to the recently dead body of an adult female, from curious observation and passive investigation
+  (smelling, grooming) to shaking, dragging and "frustrated beating" of the body; the abstract says that in a 1973
+  account by Teleki 16 chimpanzees responded to an accidental death and none touched the body. **Not verified:** the
+  duration, the number of animals in each response and who they were are in the full text, which was not opened.
+- **[watts2020]** (Abs; Springer paywall) [L]. Watts DP 2020. Responses to dead and dying conspecifics and
+  heterospecifics by wild mountain gorillas and chimpanzees. *Primates*.
+  [doi:10.1007/s10329-019-00735-y](https://doi.org/10.1007/s10329-019-00735-y). From the abstract: 25 cases (mountain gorillas and eastern chimpanzees; the chimpanzees are Ngogo's, per
+  [goncalves2022]) of responses to corpses, skeletons and mortally injured or ill animals,
+  generally consistent with a "failure to detect animacy" explanation; possible sympathetic concern in one chimpanzee
+  case. **Not verified:** every figure in the paper. Two of its chimpanzee skeleton cases are described second-hand in
+  [goncalves2022], below.
+- Other reports found and **not verified** (abstract only or not opened): Anderson et al. 2010, Pan thanatology, *Current
+  Biology* ([doi:10.1016/j.cub.2010.02.010](https://doi.org/10.1016/j.cub.2010.02.010)), the abstract describes an
+  elderly female's death in the midst of her group (care before death, inspection, male aggression towards the corpse,
+  an adult daughter's all-night attendance, later avoidance of the place) but does not say where the group lived (I
+  believe a captive group; not verified); van Leeuwen et al. 2016, *American Journal of Primatology*
+  ([doi:10.1002/ajp.22560](https://doi.org/10.1002/ajp.22560)), the abstract reports quiet attendance and close inspection
+  of a 9-year-old's body by adults and juveniles but does not state the setting (not verified).
+
+### 2. Mothers carrying dead infants
+
+- **[lonsdorf2020]** (as above). **Observed (Abstract, Results, Table 2, Discussion):** of 93 infants that died before 5
+  years, 42 corpses were seen; in every case where the mother had access to the body she carried it (the exceptions were
+  seven infanticides where she never regained the body, one unwitnessed infanticide and one infant killed by humans).
+  33 carries, 30 with a measurable minimum duration: **median 1.83 days (IQR 1.03–3.59)**, range 30 minutes to over 15
+  days (one outlier at 15.70 days, Table 2); only two carries exceeded 10 days. The authors give a carrying rate between
+  54% and 100% depending on how the 41 disappearances are counted (Discussion). In 8 of 33 cases the carrier was not the
+  mother (three orphans carried by adopters, five non-orphans taken by others, died and carried); no difference in
+  duration (mothers median 1.75 days, non-mothers 1.83; W = 83, p = 0.922, Results). Nearly all carriers used atypical
+  postures within hours of death (in the mouth, hand, groin pocket, neck pocket, slung over the shoulder, or dragged;
+  Results, Figure 1). No infant over 3 years was seen carried (Discussion). None of the five hypotheses tested
+  (infant age, season, firstborn, mother's age, cause of death) beat the null model (Table 3); season is not a
+  predictor of duration here. **Does not show:** carrying beyond a few weeks (the longest is just over 15 days); the
+  estimate is a **minimum** because mothers are not seen every day (Methods). Second-hand in its Discussion: 14 Mahale
+  cases from 30 minutes to about 126 days, and an earlier cross-primate compilation giving a chimpanzee mean of 32.94
+  days (n = 9, range 2–114); the original sources were not opened (not verified).
+- **[soldati2022]** (as above). **Observed (Results, Table 1):** 12 carries by mothers, 23% of the 53 observed
+  opportunities; in 9 the minimum carry was 1–3 days, in three it was **18, 56 and 89 days**; excluding deaths with the
+  mother, infanticide with cannibalism and the like, 12 of 17 cases where mother and body were seen together involved
+  carrying (71%), and all five that did not were infanticides; in 36 instances the mother reappeared alone and could have carried for
+  an unknown period; the three prolonged corpses were mummified; only infants under one month were carried among those
+  under one year (11 of 25 against 0 of 17; Fisher p = 0.010); carrying was equally likely in the wet and dry
+  seasons (6 and 6, Results); four of eight repeating mothers carried two infants, three for longer the second time.
+  **Does not show:** why a few mothers carry for weeks; no hormone data.
+- **[bersacola2025]** (FT, PMC12231315 via BioC) [M]. Bersacola E, McLennan MR, Bessa JH, Camara H et al. 2025.
+  Camera traps document infant corpse carrying behaviour in multiple unhabituated chimpanzee populations. *Ecology and
+  Evolution*. [doi:10.1002/ece3.71698](https://doi.org/10.1002/ece3.71698). **Sample:** 18 unhabituated communities at
+  four sites (Guinea-Bissau, Guinea, Uganda, Tanzania); 10 carrying cases in 7 communities (Results, Table 2).
+  **Observed:** recorded duration (the days between first and last camera detection, so a minimum) from a day or less to
+  28 days, median 7 days; at least seven of ten were "extended" (a gap of at least 10 days between detections, or a
+  mummified corpse); all ten dead infants were under 3 years (median age bracket 1–1.5 years); corpses ranged from fresh to
+  mummified within a single case (Table 2). Rates (Table 3): camera traps 0.46 cases per year in the seven communities
+  where it was seen (0.18 per year across all 18) against 0.20 per year in published habituated communities
+  (range 0.06–0.54; for example Ngogo 3 cases in 25 years, Kasekela 29 in 54 years, Sonso 11 in 32 years).
+  **Does not show:** the true carry duration (detections are sparse); the rate for a given community, since the camera
+  coverage, not the animals, sets what is seen.
+- **[biro2010]** (Abs; Cell's page showed a bot check) [L]. Biro D, Humle T, Koops K, Sousa C, Hayashi M, Matsuzawa T
+  2010. Chimpanzee mothers at Bossou, Guinea carry the mummified remains of their dead infants. *Current Biology*
+  20(8). [doi:10.1016/j.cub.2010.02.031](https://doi.org/10.1016/j.cub.2010.02.031). From the abstract: a 2.5-year-old's
+  body was carried, mummified, for at least 27 days by its mother in an earlier report, who groomed it and shared
+  her nests with it, and the paper reports two further Bossou cases with similar features. **Not verified:** the durations
+  of the two new cases (the paper's own figures were not read; [bersacola2025] Table 3 lists 3 Bossou cases in 34 years
+  and calls all three extended).
+- **[hammond2026pp]** (FT of a bioRxiv preprint, not peer reviewed; a journal version in *Biology Letters* exists and was
+  not opened) [L–M]. Hammond R, Püschel TA 2026. Infant corpse carrying in *Pan* reflects maternal attachment and death
+  context. bioRxiv [doi:10.64898/2026.01.28.702208](https://doi.org/10.64898/2026.01.28.702208). A compilation of 83
+  published *Pan* cases (chimpanzees and bonobos, not separated here) with Bayesian models: longer carrying after
+  disease-related deaths than after infanticide, and for older infants, and a weaker site-level link with interbirth
+  interval (Results). Its Discussion notes that some chimpanzee mothers carried well past mummification (citing earlier
+  reports). **Does not show:** unbiased durations; the set is what was published, which [lonsdorf2020] says may favour
+  extremely long cases.
+
+### 3. How long a great-ape carcass stays recognisable in a tropical forest
+
+No chimpanzee-specific carcass-persistence study was found. The figures below are from other great apes in forest, two
+of them from disease-outbreak work.
+
+- **[rouquet2005]** (FT, PMC3320460 via BioC) [M]. Rouquet P, Froment J-M, Bermejo M, Kilbourn A, Karesh W, Reed P et
+  al. 2005. Wild animal mortality monitoring and human Ebola outbreaks, Gabon and Republic of Congo, 2001–2003.
+  *Emerging Infectious Diseases* 11(2). [doi:10.3201/eid1102.040533](https://doi.org/10.3201/eid1102.040533).
+  **Sample:** 98 carcasses found August 2001–June 2003 over about 20,000 km² by hunters and conservation teams, 65 of them
+  great apes (50 gorillas, 15 chimpanzees) (Results). **Observed:** only 6% of the carcasses sampled were whole bodies, 57%
+  partial (muscle or skin) and 38% bones only (Results); the authors state that an adult male gorilla carcass of about
+  150 kg was reduced to a heap of bones and hair in 10 days (Discussion, Figure 5); maggots remove the flesh in 5 to 10
+  days; carcasses seen 3–4 days after death bore few scavenger signs but eggs and maggots; scavengers (mainly
+  mongoose) take pieces and spread them; after about 3 weeks only a few bones with small-mammal gnaw marks are left
+  (Discussion). In the sampling Table, estimated times since death run from 12 hours to 1 month, and skulls and bones
+  sampled 2 weeks to 1 month after death were the usual material from older carcasses. **Does not show:** a persistence
+  curve or a half-life: found carcasses are those that were found, and no search effort or detection probability is
+  given. Gorilla (not chimpanzee) and a lowland Congo-basin forest.
+- **[cameron2016]** (FT, PMC4871434 via BioC) [L, as a persistence record]. Cameron KN, Reed P, Morgan DB, Ondzié AI,
+  Sanz CM et al. 2016. Spatial and temporal dynamics of a mortality event among Central African great apes. *PLoS ONE*
+  11(5):e0154505. [doi:10.1371/journal.pone.0154505](https://doi.org/10.1371/journal.pone.0154505). In the Odzala region
+  (Republic of Congo) the first carcass cluster, a juvenile chimpanzee, was moderately decomposed when found on
+  2 November 2006; five gorilla carcasses were found 20–24 December 2006 and reported on 14 January 2007; of the five,
+  a fresh juvenile left only hair and soil staining by the time a veterinary team verified (the verification date is
+  not stated), and two other carcasses found in February 2007 were reduced to bones (Introduction, carcass
+  descriptions). **Does not show:** ages of carcasses or any rate; the persistence is read off a narrative.
+- **[heon2025]** (FT, PMC12696665 via BioC) [M, one carcass]. Heon SP, Bernard H, Ewers RM 2025. Decomposition dynamics
+  of an orangutan (*Pongo pygmaeus morio*) carcass in a tropical forest: implications for conservation practices.
+  *Ecology and Evolution*. [doi:10.1002/ece3.72662](https://doi.org/10.1002/ece3.72662). One wild adult female Bornean
+  orangutan of about 30 kg, found dead on 21 May 2023 in lowland dipterocarp forest at Danum Valley, Sabah, monitored by
+  a camera trap and daily visits (Methods). **Observed (Abstract, Results, Figure 1):** all stages from fresh to dry
+  remains in **6 days**; bloat on days 1–2, active decay on days 2–3; the skull was exposed by day 3; two Asian water
+  monitors removed limbs; by day 6 only bone fragments remained, with the smell gone; **two years later** the bones lay
+  scattered over about 10 m², the skull was still visible and other fragments were partly buried under leaf litter, with
+  no gnawing but algal growth and small cavities (Results). The authors say weekly monitoring of released orangutans
+  would miss a death. **Does not show:** a chimpanzee, Africa, or a rate: one carcass, an opportunistic study, and
+  scavenging (pigs absent after a swine-fever outbreak) that may differ elsewhere; the authors say so (Discussion).
+- **Not found or not opened:** Tappen's work on bone weathering in Kibale (a title search found nothing), Walsh et al. 2003
+  *Nature* and Bermejo et al. 2006 *Science* (ape declines from Ebola; paywalled, not opened, not known to contain a
+  persistence figure).
+
+### 4. Do chimpanzees return to, or handle, old remains?
+
+- **[goncalves2022]** (FT, PMC8941397 via BioC) [L for the field cases, second-hand; M for the experiment]. Gonçalves A,
+  Hattori Y, Adachi I 2022. Staring death in the face: chimpanzees' attention towards conspecific skulls and the
+  implications of a face module guiding their behaviour. *Royal Society Open Science*.
+  [doi:10.1098/rsos.210349](https://doi.org/10.1098/rsos.210349). The paper's own data are a screen test of images, so a
+  captive setting (facility not recorded here); the chimpanzees looked longer at conspecific skulls than at other
+  species' skulls (Abstract). Its Introduction recounts two Ngogo cases from [watts2020] in which the community met a
+  skeletonised conspecific (some hair and ligaments left): in the first they stopped, gave alarm calls, clustered on the
+  ground and in trees, looked for about 5 minutes and stayed 3–4 m away; in the second they clustered and peered for
+  about 2 minutes, many at 0.5 m, then left. Both victims had been killed by chimpanzees, some of whom took part in the
+  post-mortem interaction. The same paragraph says that very little is known about how wild chimpanzees engage
+  with skeletons, and that elephants, by contrast, are reported to attend to bones long after decomposition.
+  **Does not show:** repeated visits, handling, carrying or removing bones, or visits to a place of death. The figures
+  are second-hand (the original paper is paywalled) and **not verified** against [watts2020].
+- **[soldati2022]**, **[bersacola2025]**, **[lonsdorf2020]** (as above) are the evidence for handling a body over time:
+  the longest minimum carries were 89, 56, 28, 26 and 18 days, mummified in most long cases; one 56-day carrier then carried a twig
+  for at least two further weeks ([soldati2022], Results). That is handling by the mother of her own infant, not
+  return to a remains site.
+- **No source opened reports a wild chimpanzee returning to an old carcass, a place of death or a skeleton.** The one
+  hint (Anderson et al. 2010: the group later avoided the place of death) is from an abstract whose setting was
+  not stated and is **not verified**.
+
+### Where the code differs (facts only)
+
+- `DEAD_VISIBLE_HOURS = 24` fades every body at one day. The orangutan carcass was bones by 6 days and the gorilla
+  heap of "bones and hair" by about 10 days, so a recognisable body lasts days, but a skull and some bones stay visible
+  for weeks to years: nothing here supports a body vanishing at 24 hours.
+- `carryDeadP` is 0.35 with 1–4 days (`src/sim/params.gen.ts`): the reported durations are a median near 2 days with a tail to
+  weeks, and the reported carrying rates when the mother has the body are 71% (Budongo) and every case (Gombe).
+- Nothing in the code has others approach a body; the sources report siblings, immatures and adult males approaching and
+  inspecting, with variation between cases.
+
+### Summary
+
+Well supported: a mother with access to her dead infant usually carries it (every such Gombe case, 71% of such Budongo cases), for a median of about 2 days with a tail to weeks (minimum 18 to 89 days in the long cases, mummified), in atypical holds, while siblings, immatures and adult males approach, inspect and sometimes groom or handle the body.
+Thin: how others respond to a dead adult (two Gombe accounts that disagree), how long anyone stays by a body, any chimpanzee-specific persistence figure (the reported ones are one gorilla description and one orangutan, bones within 6–10 days and bones still visible after two years), and whether chimpanzees ever return to remains (two second-hand Ngogo skeleton encounters of 2 to 5 minutes, no return seen).
+A simulation could defensibly show: a body that stays a body for days and then bones and a skull, not a 24-hour fade; a mother carrying her dead infant for days with a long tail; nearby siblings, immatures and adult males approaching and inspecting for minutes; and not mourning rites, vigils or visits to old bones, which no opened source reports.
