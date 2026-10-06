@@ -24,7 +24,7 @@ SET UP
 
 THEN, IN ORDER (HANDOFF.md §5 has the exact commands)
 1. E1v, the wadging arms: S39 with pithFibreSwallowed 0.25 and 0.5 (the user's decision: test a range, choose no value),
-   4 runs x 5 seeds each, 6 then 12 months, from a frozen checkout at aecbe0e, with the parameter files and judge in
+   4 runs x 5 seeds each, 6 then 12 months, from a frozen checkout at 1af4543 (the E1v merge), with the parameter files and judge in
    docs/staging/integrator-kit/. Regenerate S39's reference group there first if the old runs were not copied.
    Write the results into docs/staging/e1v-prereg.md and report.
 2. In parallel, as background agents (Opus for design and judging, Sonnet for documentation): resume the UI redesign
