@@ -256,3 +256,10 @@ Each iteration is logged here before it runs; at most 3 per problem.
   Result of iteration 2: 17 of 17 pass on the first run; no change to the code or the tests.
 - **Iteration 3 (the registered sample, §2).** `scripts/r2-sample.ts --seeds 48,7 --burn-in 2 --days 2` with the hash
   check, as registered; output `artifacts/r2/`. Run once; its numbers go to §8 as printed.
+- **Iteration 4 (one readout added to the sample, registered before it runs).** Iteration 3's numbers are in §8. The
+  packet-reading rules read each option's published value, so their agreement says nothing about how far the *shown
+  state* fixes the choice. One readout that needs no model and no second formula is added: among draws whose live pick
+  is a feeding option with a shown net rate (`kcalH`) and whose menu holds two or more such options, how often the live
+  pick is the one with the highest shown rate (with the chance level, 1 ÷ the number of such options). Everything else
+  in the script is unchanged, the run is deterministic, so iteration 3's numbers must come out the same; the sample is
+  re-run once.

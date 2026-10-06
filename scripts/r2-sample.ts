@@ -55,6 +55,8 @@ export interface Row {
   tok: { today: number; m1: number; a: number; ab: number; ac: number; abc: number };
   /** Ablation on the parity request: does the packet-reading rules' pick (belief sampled, hash draws) change without the group, and the v4 packet's tokens without it. */
   abl: Record<string, { changed: boolean; tok: number }>;
+  /** Feeding options with a shown rate (kcalH) on the parity menu: how many, whether the live pick is one, and whether it is the one with the highest shown rate. */
+  food: { options: number; live: boolean; best: boolean };
 }
 
 export interface SampleOpts { seed: number; burnIn: number; days: number; params: Record<string, number>; check?: boolean; keptEvery?: number; onRow?: (r: Row, requests: Record<string, KernelRequest>, c: Chimp, w: World) => void }
@@ -108,6 +110,7 @@ export function sampleR2(o: SampleOpts): { rows: Row[]; hash: string; decisions:
       }
     }
     const kinds = pk.options.map(optionKind), dup = new Set(kinds).size !== kinds.length;
+    const fed = p.req.parity.options.filter(k => (k.action === 'forage' || k.action === 'travel') && k.value?.kcalH !== undefined), liveFed = fed.find(k => key(k) === live);
     const row: Row = {
       seed: o.seed, tick: w.tick, chimp: c.id, phase: dayPhase(w), why, draw,
       n: { today: p.req.today.options.length, parity: p.req.parity.options.length, kinds: p.req.kinds.options.length, parityKinds: pk.options.length, live: menu.length },
@@ -127,6 +130,7 @@ export function sampleR2(o: SampleOpts): { rows: Row[]; hash: string; decisions:
       tok: { today: refused.today ? -1 : tokensOf(buildLocalQuestion(withoutState(p.req.today.context))), m1: tok(p.req.today, refused.today, false), a: tok(p.req.today, refused.today, true),
         ab: tok(p.req.parity, refused.parity, true), ac: tok(p.req.kinds, refused.kinds, true), abc: tok(pk, refused.parityKinds, true) },
       abl,
+      food: { options: fed.length, live: !!liveFed, best: !!liveFed && fed.every(k => k.value!.kcalH! <= liveFed.value!.kcalH!) },
     };
     rows.push(row);
     o.onRow?.(row, p.req, c, w);
@@ -191,6 +195,9 @@ export function summarize(rows: Row[]) {
       callsUpperBound: 1 + shareCI(draws, r => r.act.anyGroup).share, duplicateKinds: rows.filter(r => r.act.dupKinds).length,
       refusedKinds: shareCI(draws, r => r.refused.parityKinds !== '') },
     tokens, ablation,
+    // what the shown rate alone explains: among draws whose live pick is a feeding option with a rate and whose menu holds two or more such options
+    shownRate: { liveIsFeeding: shareCI(draws, r => r.food.live), liveHasBestRate: shareCI(draws.filter(r => r.food.live && r.food.options >= 2), r => r.food.best),
+      chance: mean(draws.filter(r => r.food.live && r.food.options >= 2).map(r => 1 / r.food.options)) },
   };
 }
 
