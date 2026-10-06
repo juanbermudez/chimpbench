@@ -184,6 +184,36 @@ function partnerPoint(c: PoseCtx, h: number, inset = 0.16, lateral = 0): readonl
 }
 const mouthPoint = [0, 0.78, 0.36] as const; // approximate seated mouth position (unit space)
 
+// Grooming choreography v2 (docs/graphics-next-level.md, prototype 2). Stylization, no source: the work sites, stroke
+// lengths and timings below are design choices made to read as grooming from the strategy camera and up close (the
+// hands travel over the partner's body, the face comes down to the hair, picks go to the mouth, the receiver lies
+// down or presents a limb). Only the lip-smack is sourced (see the clip).
+/** Groomee postures (the `role` of the 'groomee' clip; creatures.ts picks one per pair and bout). */
+export const GROOMEE = { sit: 0, prone: 2, side: 3, present: 4 } as const;
+/** Seconds the groomer works one site before moving on, and the move's duration. */
+const GROOM_SITE_S = 9, GROOM_MOVE_S = 1.4;
+/** Picks taken to the mouth every 6–10 s. Off: with the trunk hunched forward the arm's elbow pole (rig.ts LIMBS, it
+ * rides with the chest) points up, so the folded arm lifts its elbow over the head (three iterations, 6 October). It
+ * needs a per-clip elbow pole in the rig before it can go on. */
+const GROOM_PICK_TO_MOUTH = false;
+// Work sites on the partner as (height fraction along its spine chain, lateral offset in partner sizes): lower back,
+// mid back, left and right shoulder, nape, left and right flank. Mutual grooming (face to face) uses the last three.
+const GROOM_SITES: readonly (readonly [number, number])[] = [[0.2, 0], [0.33, 0.03], [0.43, 0.11], [0.43, -0.11], [0.5, 0], [0.27, 0.1], [0.27, -0.1], [0.4, 0.12], [0.4, -0.12], [0.5, 0.05]];
+function groomSite(c: PoseCtx, n: number, mutual: boolean): readonly [number, number] {
+  const k = Math.abs((n * 7919 + Math.round(c.seed * 977)) % (mutual ? 3 : 7));
+  return GROOM_SITES[mutual ? 7 + k : k];
+}
+/** Lying on the belly, chin on the folded forearms, legs loosely tucked. */
+function lieProne(w: Pw, c: PoseCtx) {
+  w.root(0, 0.115, -0.24);
+  w.r(B.hips, 1.5).r(B.spine, 0.06).r(B.chest, 0.04).r(B.neck, -0.62).r(B.head, -0.42);
+  w.ik(LIMB.armL, 0.15, 0.05, 0.36, 1, 0.3).ik(LIMB.armR, -0.13, 0.05, 0.4, 1, 0.3);
+  w.ik(LIMB.legL, 0.2, 0.06, -0.36, 1, 0.3).ik(LIMB.legR, -0.2, 0.06, -0.32, 1, 0.3);
+  w.r(B.handL, 0.3, 0, -0.5).r(B.handR, 0.3, 0, 0.5).r(B.footL, 0.9, 0.4, 0).r(B.footR, 0.9, -0.4, 0);
+  relaxHands(w);
+  w.a(B.chest, sin(c.time * 1.2 + c.seed * 9) * 0.015);
+}
+
 // ---------------------------------------------------------------------------
 // Locomotion
 // ---------------------------------------------------------------------------
@@ -389,34 +419,62 @@ export const CLIPS: Record<string, Clip> = {
     w.face(0.08 + 0.06 * pulse(c.t * 5), 0.55);
   },
   groom(w, c) {
-    // Groomer: seated close behind (or facing) the partner, leaning in; both hands low on the partner's
-    // back/flank, one slowly parting the hair, the other picking with small, slow movements. Lip-smacking.
+    // Groomer (v2, stylization: see GROOM_SITE_S above): seated close behind (or facing) the partner. The work site
+    // travels over the partner's body every ~9 s; the trunk leans and the head turns down to it; one hand holds the
+    // hair apart while the other combs in 7 cm strokes (picks taken to the mouth are written but off: GROOM_PICK_TO_MOUTH).
     sitBase(w, c, 0.5, 0.25);
-    w.a(B.spine, 0.18).a(B.chest, 0.15).a(B.head, 0.4).a(B.neck, 0.08);
-    const mutual = c.role === 1;
+    const mutual = c.role === 1, T = c.pairT;
+    let lean = 0.5, yaw = 0, toMouth = 0;
     if (c.hasTarget && c.tdist < 2.4) {
-      const [px, py, pz] = partnerPoint(c, mutual ? 0.42 : 0.38, 0.17, 0);
-      const part = sin(c.pairT * 0.45) * 0.035;
-      // Copy the partner point: reach() below calls partnerPoint's shared buffer again only through px/py/pz.
-      const gx = px, gy = py, gz = pz;
-      reach(w, 0, gx + 0.07 + part, gy + 0.02, gz, -1.3, 0, 0.35, 0.35);
-      reach(w, 1, gx - 0.05 + sin(c.pairT * 1.6) * 0.012, gy - 0.03 + sin(c.pairT * 1.1) * 0.01, gz + 0.01, -1.35, 0, -0.35, 0.35);
-      grip(w, 0, 0.25); grip(w, 1, 0.5 + 0.25 * pulse(c.pairT * 1.6));
+      // A lying partner's spine is level: the hair is above the bones, not in front of them.
+      const lying = c.hasBones ? 1 - smooth((c.pb[13] - c.pb[1] - 0.1) / 0.2) : 0;
+      const n = Math.floor(T / GROOM_SITE_S), u = smooth(((T / GROOM_SITE_S) % 1) * GROOM_SITE_S / GROOM_MOVE_S);
+      const s0 = groomSite(c, n - 1, mutual), s1 = groomSite(c, n, mutual);
+      const [px, py, pz] = partnerPoint(c, s0[0] + (s1[0] - s0[0]) * u, 0.17 - 0.13 * lying, (s0[1] + (s1[1] - s0[1]) * u) * c.tsize);
+      // Hands lift off the hair while they move to the next site.
+      const hop = sin(Math.PI * u) * (u < 1 ? 0.05 : 0);
+      const gx = px, gy = py + lying * 0.1 * c.tsize + hop * lying, gz = pz - hop * (1 - lying);
+      // Comb stroke: a slow pull through the hair (down a seated back, along a lying body), a quick return off the hair.
+      const st = (T * 1.5) % 1, pull = st < 0.72 ? smooth(st / 0.72) : 1 - smooth((st - 0.72) / 0.28), back = st < 0.72 ? 0 : sin(Math.PI * (st - 0.72) / 0.28);
+      const P = 6.5 + 4 * c.seed, m = (T + c.seed * 3) % P;
+      toMouth = mutual || !GROOM_PICK_TO_MOUTH ? 0 : m < 0.45 ? smooth(m / 0.45) : m < 0.95 ? 1 : m < 1.45 ? 1 - smooth((m - 0.95) / 0.5) : 0;
+      lean = clamp(0.5 + (0.6 - gy) * 1.2 + (gz - 0.55) * 0.8, 0, 1);
+      yaw = clamp(Math.atan2(gx, Math.max(0.1, gz)), -0.7, 0.7);
+      // Parting hand: rests beside the site, shifting its hold every few seconds.
+      const hold = sin(T * 0.45) * 0.02 + Math.pow(pulse(T * 0.85 + c.seed * 5), 8) * 0.03;
+      reach(w, 0, gx + 0.065 + hold, gy + 0.025, gz, -1.3, 0, 0.35, 0.35);
+      const sx = gx - 0.04 + lying * (pull - 0.5) * 0.07, sy = gy + (0.5 - pull) * 0.07 * (1 - lying) + back * 0.02 * lying, sz = gz + 0.01 - back * 0.025 * (1 - lying);
+      const mx = -0.04, my = 0.72 - 0.08 * lean, mz = 0.36 + 0.1 * lean;
+      reach(w, 1, sx + (mx - sx) * toMouth, sy + (my - sy) * toMouth, sz + (mz - sz) * toMouth, -1.35 - 0.6 * toMouth, 0, -0.35, 0.35);
+      grip(w, 0, 0.25); grip(w, 1, 0.45 + 0.4 * pull + 0.3 * toMouth);
     } else { reach(w, 0, 0.12, 0.38, 0.4, -1.3, 0, 0.3, 0.35); reach(w, 1, -0.06, 0.36, 0.42, -1.35, 0, -0.3, 0.35); }
+    // The trunk leans a little toward a low or far site; the neck and head do most of it (the arms' elbow pole rides
+    // with the chest: a chest pitched far forward sends the elbows up over the head) and lift for a pick taken to the mouth.
+    w.a(B.hips, 0.12 * (lean - 0.5)).a(B.spine, 0.18 + 0.08 * (lean - 0.5), yaw * 0.2).a(B.chest, 0.15 + 0.08 * (lean - 0.5), yaw * 0.25);
+    w.a(B.neck, 0.08 + 0.22 * lean - 0.1 * toMouth, yaw * 0.3).a(B.head, 0.4 + 0.25 * lean - 0.3 * toMouth, yaw * 0.3);
     // Lip-smacking while grooming: quick lip presses with a slightly open jaw [M, Parr et al. 2007 action units].
-    w.face(0.05 + 0.06 * pulse(c.t * 5), 0.2);
-    w.set('press', 0.7 * pulse(c.t * 5.5)).set('brow', 0.15);
+    w.face(0.05 + 0.06 * pulse(c.t * 5) + 0.22 * toMouth, 0.2);
+    w.set('press', 0.7 * pulse(c.t * 5.5) * (1 - toMouth)).set('brow', 0.15);
     w.set('look', 0.35);
   },
   groomee(w, c) {
-    // Receiver: sits relaxed presenting the back or flank, head lowered, eyes half closed. Shifts posture every
-    // 20–60 s (stylization): a slow lean and turn, eased over a second.
+    // Receiver (v2, stylization): by role it sits hunched presenting the back, lies on its belly or side, or sits with
+    // one arm raised to present the flank. Seated postures shift every 20–60 s: a slow lean and turn, eased over a second.
+    if (c.role === GROOMEE.prone) { lieProne(w, c); w.a(B.head, 0.05 * sin(c.time * 0.31 + c.seed * 7), 0.1 * sin(c.time * 0.13 + c.seed * 3)); w.set('eyes', 0.85).set('brow', 0.05); return; }
+    if (c.role === GROOMEE.side) { lieSide(w, c, c.seed > 0.5 ? 1 : -1, 0.55); w.set('eyes', 0.8).set('brow', 0.05); return; }
     sitBase(w, c, 0.9, 0.1);
     w.a(B.head, 0.35).a(B.neck, 0.1);
     { const per = 20 + 40 * c.seed, n = Math.floor(c.pairT / per), u = smooth(((c.pairT / per) % 1) * per / 1.2);
       const pose = (k: number) => (((k * 7919 + Math.round(c.seed * 1000)) % 5) - 2) * 0.12;
       const lean = pose(n - 1) + (pose(n) - pose(n - 1)) * u;
       w.a(B.spine, 0, lean, lean * 0.4).a(B.chest, lean * 0.5, lean * 0.6, 0); }
+    if (c.role === GROOMEE.present) {
+      // One arm raised, the hand resting on the head: the flank and underarm are open to the groomer.
+      const side: 0 | 1 = c.seed > 0.5 ? 1 : 0, sx = side ? -1 : 1;
+      reach(w, side, sx * 0.1, 0.98, 0.02, -2.6, 0, sx * 0.3, 0.2);
+      grip(w, side, 0.4);
+      w.a(B.chest, 0, 0, -sx * 0.12).a(B.head, 0, 0, -sx * 0.18);
+    }
     w.set('eyes', 0.65).set('brow', 0.1);
   },
   play(w, c) {

@@ -12,7 +12,7 @@ import {
   B, PI, PARAM_TEXEL, POSE_SIZE, ROW_TEXELS, boneWorld, computeMorph, copyPose, createFK, createMorph, createPose,
   lowestPoint, quat, solveFK, writeSkin, type FKState, type Morph, type Pose,
 } from './creatures/rig';
-import { CLIPS, PROP, Pw, cradle, cradleFor, gaitFrequency, vocalOverlay, type Gait, type PoseCtx } from './creatures/poses';
+import { CLIPS, GROOMEE, PROP, Pw, cradle, cradleFor, gaitFrequency, vocalOverlay, type Gait, type PoseCtx } from './creatures/poses';
 import { clamp, damp, dampAngle, hash01, linearRGB, mixRGB, pixelSize, preToneMapped, smoothstep, vividColor } from './creatures/util';
 import { createProps } from './creatures/props';
 import { createSelection } from './creatures/selection';
@@ -318,7 +318,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   let disposed = false;
   let frameNo = 0;
   /** Harness-only overrides (not part of the scene contract). */
-  const debug: { clip: string | null; attention: boolean; anim?: (id: number) => Anim | undefined; feet?: (id: number) => unknown; lodSwitches: number; lodBlends: number } = { clip: null, attention: true, anim: id => anims.get(id), lodSwitches: 0, lodBlends: 0 };
+  const debug: { clip: string | null; attention: boolean; /** Harness: forces the groomee posture (GROOMEE). */ groomee?: number; anim?: (id: number) => Anim | undefined; feet?: (id: number) => unknown; lodSwitches: number; lodBlends: number } = { clip: null, attention: true, anim: id => anims.get(id), lodSwitches: 0, lodBlends: 0 };
   // Harness probe (?debug=feet): ankle and wrist world points, stance flags, lock states and counters.
   const FEET = [B.handL, B.handR, B.footL, B.footR];
   debug.feet = (id: number) => {
@@ -459,7 +459,16 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         // Groomer sits behind the groomee (or face to face when mutual) with a clear gap between bodies.
         kind = 'groom'; sep = mutual ? 0.44 : 0.4;
         if (mutual) { clipB = 'groom'; roleA = roleB = 1; bHeading = Math.PI; }
-        else if (PASSIVE.has(bc.action)) { clipB = 'groomee'; roleB = 0; bHeading = hash01(a.id, 21) > 0.35 ? 0 : 0.6 * (hash01(b.id, 5) > 0.5 ? 1 : -1); }
+        else if (PASSIVE.has(bc.action)) {
+          clipB = 'groomee'; bHeading = hash01(a.id, 21) > 0.35 ? 0 : 0.6 * (hash01(b.id, 5) > 0.5 ? 1 : -1);
+          // Groomee posture (grooming v2; stylization, no source): one per pair and bout of 40–70 s. Lying postures
+          // only on the ground; a prone receiver lies across the groomer's front, one on its side turns its back.
+          const period = 40 + 30 * hash01(b.id, 29), bout = Math.floor((animClock + hash01(a.id * 13 + b.id, 31) * period) / period);
+          const pick = hash01(b.id * 7 + bout, 37), ground = (bc.position[1] ?? 0) < 0.5 && b.carry === 0;
+          roleB = debug.groomee ?? (pick < 0.4 ? GROOMEE.sit : pick < 0.6 || !ground ? GROOMEE.present : pick < 0.82 ? GROOMEE.prone : GROOMEE.side);
+          if (roleB === GROOMEE.prone) bHeading = (hash01(b.id, 5) > 0.5 ? 1 : -1) * Math.PI / 2;
+          else if (roleB === GROOMEE.side) bHeading = 0;
+        }
         else return;
         break;
       case 'play':

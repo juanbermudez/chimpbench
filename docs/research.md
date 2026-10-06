@@ -199,6 +199,8 @@ The renderer animates what the simulation decides; these sources shape how it lo
 
 **Stylizations (not sourced):** the hair highlight and halo shells (a look, not a measurement), gait cadence curves and caps, the gallop footfall order, transition times, gaze limits, blink intervals (2–10 s, 15% doubles), the grooming partner's posture shifts every 20–60 s, the stream's pool–riffle spacing, the shape, number and scatter of the bones drawn where a body lay (stage ED, `render/creatures/remains.ts`; that bones outlast a body is reported for other great apes only), and the posture of a mother carrying a dead infant (the simulation's carry itself is tagged [M] in `src/sim/life.ts`).
 
+**Stylization added by stage W5 (grooming choreography; not sourced):** the groomer's work sites, 7 cm strokes, site changes every 9 s and picks taken to the mouth every 6–10 s (written, switched off), and the receiver's postures (seated, prone, on its side, an arm raised). This document holds no source for grooming choreography; only the lip-smack is sourced (Parr et al. 2007, above).
+
 ## Source access and limits
 
 Full text was inspected for the Kibale floristics study, Kanyawara feeding development, Gombe play, and official TypeSafe pages. Other claims here are supported by primary-paper abstracts, indexed excerpts, or author-hosted records where publisher/PMC fetching was limited. No paywalled full-text reconstruction, individual longitudinal dataset, current botanical survey, or field researcher validation was performed. A numerical calibration dataset and physiological rates remain **unknown**.

@@ -481,8 +481,10 @@ function trunkAt(id: number, y: number, out: THREE.Vector4) {
   return true;
 }
 const layer = createCreatures({ scene, world, container: stage, groundHeight, treeAnchor, trunkAt }) as ReturnType<typeof createCreatures> & { debug: { clip: string | null } };
-const dbg = layer.debug as { clip: string | null; attention: boolean };
+const dbg = layer.debug as { clip: string | null; attention: boolean; groomee?: number };
 if (q.get('clip')) dbg.clip = q.get('clip');
+// &groomee=0|2|3|4: forces the receiver's posture in grooming pairs (poses.ts GROOMEE: sit, prone, side, present).
+if (q.has('groomee')) dbg.groomee = Number(q.get('groomee'));
 // Face tiles: seated facing the camera, gaze held forward (&attn=1 lets the attention system move the heads).
 if (mode === 'faces') { dbg.clip = q.get('clip') ?? 'portrait'; dbg.attention = q.has('attn'); }
 if (tiles.length) { for (const t of tiles) captions.push({ x: t.x, y: 0, z: t.z, text: t.text }); document.head.insertAdjacentHTML('beforeend', '<style>.crl-root{display:none}</style>'); }
