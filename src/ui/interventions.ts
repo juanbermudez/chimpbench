@@ -23,7 +23,7 @@ export function createExperiments(root: HTMLElement, ctx: Ctx) {
   <div class="exp-note"></div>
   <ul class="exp-list">${EXPERIMENTS.map(x => `<li><button class="exp" data-kind="${x.kind}"><span class="exp-ic">${icon(x.ic)}</span><span class="exp-txt"><b>${x.label}</b><span>${x.line}</span>${x.cite ? `<i>After ${x.cite}</i>` : ''}</span><span class="exp-scope" title="${x.scope === 'party' ? 'Placed near the selected chimp’s party' : x.scope === 'community' ? 'Acts on the selected chimp’s community' : 'Acts on the whole habitat'}">${x.scope}</span></button></li>`).join('')}</ul>
   <div class="exp-active"></div>
-  <p class="honest">Interventions are simulated analogues of field protocols; responses come from the simulation rules and, for model-controlled chimps, from GLiNER. After firing, the Mind tab of the most affected model-controlled chimp opens.</p>`;
+  <p class="honest">Interventions are simulated analogues of field protocols; responses come from the simulation rules and, for model-controlled chimps, from the selected provider. After firing, the Mind tab of the most affected model-controlled chimp opens.</p>`;
   const target = root.querySelector<HTMLElement>('.exp-target')!, note = root.querySelector<HTMLElement>('.exp-note')!, active = root.querySelector<HTMLElement>('.exp-active')!;
   root.addEventListener('click', e => {
     const el = e.target as HTMLElement;

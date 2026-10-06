@@ -1,0 +1,62 @@
+{
+  "title": "Choose the layout",
+  "question": "Same field-guide look for all three. Pick how the page is organized.",
+  "options": [
+    {
+      "id": "band-ladder",
+      "label": "Band ladder",
+      "kicker": "THE ROLL",
+      "lineage": "the guide's “Behaviour by behaviour” rows, extended to every population",
+      "thesis": "One row per field target: the wild band, and every troop as a dot on it.",
+      "palette": ["#0a0a0b", "#151517", "#f2f2f3", "#e2bf79", "#77b6e1", "#ea8b60"],
+      "materials": ["hairline rows", "band tracks", "pass/fail chips"],
+      "viewport": "A score strip (how many bands each troop hits), then grouped target rows with all troops on each band.",
+      "risk": "Many dots per row; needs a focus toggle to read one troop at a time.",
+      "wireframe": {"cols": 12, "rows": 10, "regions": [
+        {"label": "title + troop toggles", "x": 0, "y": 0, "w": 12, "h": 1},
+        {"label": "bands hit per troop", "x": 0, "y": 1, "w": 12, "h": 2, "accent": true},
+        {"label": "target", "x": 0, "y": 3, "w": 3, "h": 7},
+        {"label": "wild band + troop dots", "x": 3, "y": 3, "w": 7, "h": 7},
+        {"label": "value", "x": 10, "y": 3, "w": 2, "h": 7}
+      ]}
+    },
+    {
+      "id": "story-scroll",
+      "label": "Findings first",
+      "lineage": "science-journal figures: one finding, one figure",
+      "thesis": "Each section is a plain finding with the one chart that proves it.",
+      "palette": ["#0a0a0b", "#101012", "#f2f2f3", "#e2bf79", "#e28dae"],
+      "materials": ["large single figures", "one-line headlines"],
+      "viewport": "Headline finding (“Trained troops barely travel”) over one large chart comparing troops with the wild band.",
+      "risk": "Slower to scan every target; details live below the fold.",
+      "wireframe": {"cols": 12, "rows": 10, "regions": [
+        {"label": "finding 1", "x": 0, "y": 0, "w": 7, "h": 1},
+        {"label": "big figure", "x": 0, "y": 1, "w": 12, "h": 4, "accent": true},
+        {"label": "finding 2", "x": 0, "y": 5, "w": 7, "h": 1},
+        {"label": "figure", "x": 0, "y": 6, "w": 6, "h": 4},
+        {"label": "figure", "x": 6, "y": 6, "w": 6, "h": 4}
+      ]}
+    },
+    {
+      "id": "troop-cards",
+      "label": "Troop cards",
+      "lineage": "a field-station roster: one card per community type",
+      "thesis": "Each troop gets a card: how many wild bands it hits and where it misses.",
+      "palette": ["#0a0a0b", "#151517", "#f2f2f3", "#e2bf79", "#ef7266"],
+      "materials": ["four cards", "profile sparkbars", "shared target table"],
+      "viewport": "Four cards across (rules, untuned, baseline, aggressive, collaborative), each with a big in-band count and a small deviation profile.",
+      "risk": "Comparing one target across troops takes a second look at the table below.",
+      "wireframe": {"cols": 12, "rows": 10, "regions": [
+        {"label": "title", "x": 0, "y": 0, "w": 12, "h": 1},
+        {"label": "troop", "x": 0, "y": 1, "w": 3, "h": 4, "accent": true},
+        {"label": "troop", "x": 3, "y": 1, "w": 3, "h": 4},
+        {"label": "troop", "x": 6, "y": 1, "w": 3, "h": 4},
+        {"label": "troop", "x": 9, "y": 1, "w": 3, "h": 4},
+        {"label": "target × troop table", "x": 0, "y": 5, "w": 12, "h": 5}
+      ]}
+    }
+  ],
+  "reroll": true,
+  "buildPath": {"value": "code"},
+  "steer": true
+}

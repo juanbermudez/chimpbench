@@ -7,11 +7,11 @@
 web
 
 ## Users
-- The MGOGO author and the science work around it (science agent, reviewers), checking how simulated chimpanzee communities compare with wild ones and reporting it in the field guide.
+- The ChimpBench author and the science work around it (science agent, reviewers), checking how simulated chimpanzee communities compare with wild ones and reporting it in the field guide.
 - Readers of the field guide (docs/architecture.html) who want to see, at a glance, where the simulation matches field data and where it does not.
 
 ## Product Purpose
-MGOGO is a 3D eastern-chimpanzee society simulation (Kibale-inspired) and a live demo of a local decision model, GLiNER2.5-Decide, choosing chimp actions from what each chimp perceives. Fine-tuned temperaments (baseline, aggressive, collaborative LoRA adapters) and the untuned model can drive whole communities. The population comparison page shows how those synthetic communities behave against published field values from wild communities (Kanyawara, Ngogo, Sonso, Waibira, Taï, Gombe), scored by the same virtual field observer the science stages use.
+ChimpBench (formerly MGOGO) is a 3D eastern-chimpanzee society simulation (Kibale-inspired) and a live demo of a local decision model, GLiNER2.5-Decide, choosing chimp actions from what each chimp perceives. Fine-tuned temperaments (baseline, aggressive, collaborative LoRA adapters) and the untuned model can drive whole communities. The population comparison page shows how those synthetic communities behave against published field values from wild communities (Kanyawara, Ngogo, Sonso, Waibira, Taï, Gombe), scored by the same virtual field observer the science stages use.
 
 ## Positioning
 Synthetic populations are measured the way field researchers measure wild ones: a virtual observer with focal follows, scans and fixes, scored against 97 cited field targets with acceptance bands, fitted versus held-out roles and evidence levels.
@@ -26,7 +26,7 @@ Synthetic populations are measured the way field researchers measure wild ones: 
 - Evidence levels (H/M/L) and fitted/held-out roles travel with every target.
 
 ## Brand Commitments
-- Visual language of the MGOGO field guide (docs/architecture.html): the user confirmed the comparison page must match it.
+- Visual language of the ChimpBench field guide (docs/architecture.html): the user confirmed the comparison page must match it.
 - Practical language, minimal text (user brief).
 
 ## Evidence on Hand

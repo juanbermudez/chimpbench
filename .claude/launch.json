@@ -36,6 +36,22 @@
         "docs"
       ],
       "port": 5198
+    },
+    {
+      "name": "vite-nomodel",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "MGOGO_NO_MODEL=1",
+        "pnpm",
+        "exec",
+        "vite",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "5181",
+        "--strictPort"
+      ],
+      "port": 5181
     }
   ]
 }

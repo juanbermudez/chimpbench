@@ -9,7 +9,10 @@ import { availableParallelism, loadavg } from 'node:os';
 const { chromium } = await import('/Users/juanbermudez/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs');
 
 const args = process.argv.slice(2), noModel = args.includes('--no-model');
-const url = args.find(a => !a.startsWith('--')) ?? 'http://127.0.0.1:5173';
+const targetUrl = new URL(args.find(a => !a.startsWith('--')) ?? 'http://127.0.0.1:5173');
+// This harness verifies the resident server; the browser startup loader has its own check.
+if (!targetUrl.searchParams.has('provider')) targetUrl.searchParams.set('provider', 'server');
+const url = targetUrl.href;
 // Speed thresholds only mean something on a machine with headroom. When the 1-minute load average exceeds the core count,
 // they report WARN with the measured value instead of failing; --strict-perf forces hard failures regardless.
 const loaded = () => !args.includes('--strict-perf') && loadavg()[0] > availableParallelism();
@@ -161,7 +164,15 @@ try {
   assert.equal(s5.clock.speedId, '1d');
   perf(s5.clock.effectiveRate > 20000, `1 day/s achieved ${Math.round(s5.clock.effectiveRate)} eco-s/s (want > 20000)`);
   pass(`1 day/s: achieved ${(s5.clock.effectiveRate / 3600).toFixed(1)} eco-h/s, ${Math.round(s5.clock.ticksPerSecond)} ticks/s, limited=${s5.clock.limited}`);
-  await until(() => { const h = window.__MGOGO__.snapshot().hour; return h > 21 || h < 4; }, null, 30000);
+  // Stop acceleration in the same browser task that observes night. At 1 day/s a round-trip
+  // to Node can pass through dawn before the next key event, especially on a shared machine.
+  await until(() => {
+    const h = window.__MGOGO__.snapshot().hour;
+    if (!(h > 21 || h < 4)) return false;
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: '1' }));
+    return true;
+  }, null, 30000);
   await key('1');
   await page.waitForTimeout(2500);
   const night = await snap();
@@ -235,7 +246,7 @@ try {
   pass(`saving: ${ls.mode} save ${ls.slices} slices, max ${ls.maxSliceMs.toFixed(1)} ms main thread, ${Math.round(ls.totalMs)} ms total, ${Math.round(ls.bytes / 1024)} KB; reload resumed day ${back.day} paused (load ${Math.round(back.persistence.lastLoad.totalMs)} ms)`);
 
   // Exact resume: save, reload, continue M ticks == the same M ticks without the reload (test hook, rules only).
-  await page.goto(new URL('?test=1', url).href, { waitUntil: 'load' });
+  await page.goto(new URL(`?test=1&provider=${targetUrl.searchParams.get('provider')}`, url).href, { waitUntil: 'load' });
   await loaded();
   const fork = await page.evaluate(() => window.__MGOGO_TEST__.saveAndFork(2000));
   assert.ok(fork.ok, 'test save written');
@@ -277,7 +288,7 @@ try {
   // ?profile=compressed still opens the small map (an unsaved world, in its own context: no save library involved).
   const small = await (await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 })).newPage();
   watch(small);
-  await small.goto(new URL('?profile=compressed', url).href, { waitUntil: 'load' });
+  await small.goto(new URL(`?profile=compressed&provider=${targetUrl.searchParams.get('provider')}`, url).href, { waitUntil: 'load' });
   await small.waitForFunction(() => document.querySelector('.loading')?.classList.contains('done'), null, { timeout: 60000 });
   const c0 = await small.evaluate(() => { const s = window.__MGOGO__.snapshot(); return { profile: s.profile, size: s.size, view: s.view, scratch: s.persistence.scratch, bar: document.querySelector('.scalebar').textContent }; });
   assert.ok(c0.profile === 'compressed' && c0.size === 160 && c0.view === 'rts' && c0.scratch, `?profile=compressed opens the 160 m map (${JSON.stringify(c0)})`);

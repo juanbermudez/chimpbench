@@ -16,7 +16,7 @@ export function modelChipState(ctx: Ctx): { tone: string; text: string } {
   if (mode === 'off') return { tone: 'off', text: 'Rules only' };
   if (!d.ready) return d.phase === 'loading' ? { tone: 'loading', text: 'Model loading' } : { tone: 'warn', text: d.phase === 'unavailable' ? 'Model offline' : 'Model not ready' };
   if (ctx.deps.clock.blockedByModel) return { tone: 'wait', text: 'Awaiting model' };
-  return { tone: d.busy ? 'busy' : 'ok', text: `GLiNER · ${mode}` };
+  return { tone: d.busy ? 'busy' : 'ok', text: `${d.provider === 'jev' ? 'Jev' : 'GLiNER'} · ${mode}` };
 }
 
 export function createHud(root: HTMLElement, ctx: Ctx) {
@@ -60,7 +60,7 @@ export function createHud(root: HTMLElement, ctx: Ctx) {
     <button class="hud-btn" data-act="experiments" aria-keyshortcuts="E" title="Field experiments (E)">${icon('flask')}<span>Experiments</span></button>
     <div class="bar-sep"></div>
     <button class="hud-btn icon-only" data-act="settings" aria-label="Settings" title="Settings">${icon('gear')}</button>
-    <a class="hud-btn icon-only" href="${esc(ctx.deps.guideUrl)}" target="_blank" rel="noopener noreferrer" data-guide aria-label="Science & design guide (opens in a new tab)" title="Science & design guide (new tab)">${icon('help')}</a>
+    <a class="hud-btn icon-only" href="${esc(ctx.deps.guideUrl)}" target="_blank" rel="noopener noreferrer" data-guide aria-label="About ChimpBench (opens in a new tab)" title="About ChimpBench (new tab)">${icon('help')}</a>
   </div>`;
   const k = (name: string) => root.querySelector<HTMLElement>(`[data-k="${name}"]`)!;
   const el = Object.fromEntries(['alive', 'births', 'deaths', 'day', 'time', 'date', 'season', 'sun', 'moon', 'wxicon', 'temp', 'wxword', 'rain', 'wind', 'play', 'speed', 'achieved'].map(n => [n, k(n)]));

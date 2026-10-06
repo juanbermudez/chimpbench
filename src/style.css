@@ -860,3 +860,11 @@ dialog.settings::backdrop { background: rgba(0, 0, 0, .6); }
 .snd-switch input:checked + .sw { background: var(--ink-2); }
 .snd-set .honest { margin-top: 12px; }
 .snd-set .honest a { color: var(--ink-3); text-decoration: underline; text-underline-offset: 2px; }
+
+/* Initial model download uses the existing opening-screen palette and controls. */
+.model-load { width: min(420px, calc(100vw - 48px)); display: grid; gap: 16px; text-align: center; }
+.model-load-title { margin: 0; color: var(--ink); font-size: 14px; }
+.model-load-progress { width: 100%; height: 5px; accent-color: var(--gold-3); }
+.model-load-detail, .model-load-error { margin: 0; line-height: 1.6; font-size: 12px; overflow-wrap: anywhere; }
+.model-load-error { color: var(--ink); }
+.model-load-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; }

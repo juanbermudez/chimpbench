@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -11,12 +11,20 @@ import { simOf } from '../src/sim/state';
 import { boostWest, runScenario, type ScenarioJob, type ScenarioRow } from '../scripts/ft-scenario';
 import type { Scorer } from '../scripts/ft-society';
 import { StandInScorer } from '../scripts/ft-standin';
+import { FEATURE_NAMES, FEATURE_VERSION } from '../scripts/ft-features';
 
 // Field-profile worlds are large: every run here is one or two periods of 0.05 eco-days (288 ticks each).
 const tiny = (over: Partial<ScenarioJob> = {}): ScenarioJob =>
   ({ kind: 'baseline', cond: 'rules', seed: 48, years: 0.1 / 365, periodDays: 0.05, extraMales: 3, params: {}, ...over });
 const root = fileURLToPath(new URL('..', import.meta.url));
-const distill = join(root, 'artifacts/decide-ft/distill');
+/** A stand-in fixture on the current layout: small fixed weights (no fit), so the test does not depend on artifacts. */
+function standInDir(over: Record<string, unknown> = {}): string {
+  const dir = mkdtempSync(join(tmpdir(), 'ft-standin-')), H = 4, n = FEATURE_NAMES.length;
+  const W1 = Array.from({ length: H }, (_, j) => Array.from({ length: n }, (_, i) => ((i * 7 + j * 13) % 11 - 5) / 50));
+  writeFileSync(join(dir, 'baseline.json'), JSON.stringify({ adapter: 'baseline', kind: 'mlp', features: FEATURE_NAMES, layoutVersion: FEATURE_VERSION,
+    W1, b1: [0.1, 0, -0.1, 0.05], w2: [1, -0.5, 0.5, 0.25], b2: 0, ...over }));
+  return dir;
+}
 const tai = (JSON.parse(readFileSync(join(root, 'data/presets/tai-patrols.json'), 'utf8')) as { params: Record<string, number> }).params;
 const ROW_KEYS = ['day', 'area', 'center', 'alive', 'killings', 'encounters', 'births', 'deaths', 'patrols', 'incursions', 'members', 'withFemales', 'maleShare'];
 
@@ -94,9 +102,16 @@ test('tai preset: the CLI passes data/presets/tai-patrols.json as the job params
   } finally { rmSync(out, { recursive: true, force: true }); }
 });
 
+test('a stand-in fitted on an older feature layout is refused', () => {
+  const dir = standInDir({ layoutVersion: undefined });
+  try { assert.throws(() => new StandInScorer(dir, ['baseline']), /feature layout v1; this code needs v2/); }
+  finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
 test('stand-in driven run (all-baseline) decides and writes only aggregate rows', async t => {
-  if (!existsSync(join(distill, 'baseline.json'))) { t.skip('artifacts/decide-ft/distill/baseline.json is missing'); return; }
-  const scorer = new StandInScorer(distill, ['baseline']);
+  const dir = standInDir();
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const scorer = new StandInScorer(dir, ['baseline']);
   const calls = await collect(tiny({ cond: 'all-baseline', years: 0.05 / 365 }), scorer);
   assert.equal(calls.length, 1);
   const { rows, done, extra } = calls[0];

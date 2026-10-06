@@ -1,6 +1,6 @@
 """Jev (TypeSafe System One) as a decision source for society runs and offline evaluation.
 
-Jev gets MGOGO's own packet (buildLocalQuestion in server/decide.ts): the same local percept and legal options the
+Jev gets ChimpBench's own packet (buildLocalQuestion in server/decide.ts): the same local percept and legal options the
 GLiNER worker sees. The state goes as Jev's native JSON object, not the YAML rendering GLiNER needs. The model
 still only chooses: the harness re-checks legality before applying an answer.
 
