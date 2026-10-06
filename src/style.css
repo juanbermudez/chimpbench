@@ -258,31 +258,76 @@ body.preview .viewport { background: #3a3d38; }
 .ev.fresh { animation: evIn .4s var(--ease); }
 @keyframes evIn { from { opacity: 0; transform: translateY(-4px); } }
 
-/* Minimap */
-.p-map { display: grid; gap: 8px; padding: 10px 10px 10px 12px; }
-.map-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 30px; }
-.map-views, .map-layers { display: flex; gap: 2px; padding: 2px; border-radius: 9px; background: var(--well); border: 1px solid var(--line); }
-.map-body { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: start; }
-.map-layers { flex-direction: column; }
-.map-views button, .map-layers button { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 7px; color: var(--ink-3); transition: background .15s, color .15s; }
-.map-views button:hover, .map-layers button:hover { background: var(--hover); color: var(--ink); }
-.map-views button[aria-checked="true"], .map-layers button[aria-pressed="true"] { color: var(--ink); background: var(--pressed); }
-.map-views svg.i, .map-layers svg.i { width: 16px; height: 16px; }
-.mv-sep { width: 1px; margin: 5px 2px; background: var(--line-2); }
-/* The minimap host's frame and legend join the card grid: map + layer column, legend across the bottom. */
-.map-body { grid-template-areas: 'map layers' 'legend legend'; row-gap: 8px; }
+/* Minimap: the card is the map, with the community key inside it and one row of controls (the camera menu, then the
+   layer toggles) underneath; nothing above the map. The row never wraps: the toggles share the width the menu
+   leaves, and a narrow card (--left-w 256 and 236) tightens both. */
+.p-map { display: grid; gap: 6px; padding: 8px; container: map-card / inline-size; }
+.map-bar { display: flex; align-items: center; gap: 6px; }
 .map-host { display: contents; }
-.map-frame { grid-area: map; } .map-layers { grid-area: layers; } .map-legend { grid-area: legend; }
+.cam { position: relative; flex: 0 0 auto; }
+.cam-btn, .map-layers { height: 32px; border-radius: 9px; background: var(--well); border: 1px solid var(--line); }
+.cam-btn { display: inline-flex; align-items: center; justify-content: center; width: 46px; color: var(--ink-2); transition: background .15s, color .15s, border-color .15s; }
+.cam-btn:hover { color: var(--ink); border-color: var(--line-2); }
+.cam-btn[aria-expanded="true"] { color: var(--ink); background: var(--pressed); border-color: var(--line-2); }
+.cam-btn svg.i { width: 16px; height: 16px; }
+.cam-btn .cam-chev { width: 14px; height: 14px; margin-left: -2px; margin-right: -3px; color: var(--ink-3); }
+.map-layers { flex: 1 1 auto; min-width: 0; display: flex; gap: 2px; padding: 2px; }
+.map-layers button { flex: 1 1 0; min-width: 0; display: grid; place-items: center; border-radius: 7px; color: var(--ink-3); transition: background .15s, color .15s; }
+.map-layers button:hover { background: var(--hover); color: var(--ink); }
+.map-layers button[aria-pressed="true"] { color: var(--ink); background: var(--pressed); }
+.map-layers svg.i { width: 16px; height: 16px; }
+@container map-card (max-width: 250px) {
+  .cam-btn, .map-layers { height: 30px; }
+  .cam-btn { width: 40px; }
+  .map-layers { gap: 1px; }
+}
+/* Camera menu: rises over the map from the trigger at the card's foot (the card does not clip it). */
+.cam-menu { position: absolute; z-index: 8; bottom: calc(100% + 6px); left: 0; min-width: 184px; display: grid; gap: 1px; padding: 4px;
+  background: var(--overlay); border: 1px solid var(--line-2); border-radius: 10px; box-shadow: var(--shadow-lg); animation: riseIn .16s var(--ease); }
+@keyframes riseIn { from { opacity: 0; transform: translateY(6px); } }
+.cam-menu [role^="menuitem"] { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; align-items: center; gap: 9px; height: 30px; padding: 0 8px; border-radius: var(--r-sm);
+  font-size: 12.5px; color: var(--ink-2); text-align: left; white-space: nowrap; transition: background .12s, color .12s; }
+.cam-menu [role^="menuitem"]:hover, .cam-menu [role^="menuitem"]:focus-visible { background: var(--hover); color: var(--ink); }
+.cam-menu [role^="menuitem"]:focus-visible { outline: none; box-shadow: inset 0 0 0 1px var(--line-3); }
+.cam-menu [aria-checked="true"] { color: var(--ink); font-weight: 600; background: var(--pressed); }
+.cam-menu svg.i { width: 15px; height: 15px; color: var(--ink-3); }
+.cam-menu [aria-checked="true"] svg.i, .cam-menu [role^="menuitem"]:hover svg.i { color: var(--ink); }
+.cam-menu kbd { justify-self: end; }
+.cm-sep { height: 1px; margin: 3px 6px; background: var(--line); }
 .map-frame { position: relative; aspect-ratio: 1; border-radius: var(--r); overflow: hidden; border: 1px solid var(--line); background: #101012; }
 .map { display: block; width: 100%; height: 100%; cursor: crosshair; }
+.map:focus-visible { outline-offset: -2px; border-radius: var(--r); }   /* inside: the frame clips its overflow */
+/* Zoomed in, a drag pans the map (a plain click still selects or moves the camera). */
+.map-frame[data-zoomed] .map { cursor: grab; touch-action: none; }
+.map-frame[data-drag] .map { cursor: grabbing; }
 .map-view { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .map-n { position: absolute; top: 5px; left: 50%; transform: translateX(-50%); font-size: 9.5px; color: var(--ink-3); pointer-events: none; }
-.map-legend { display: flex; flex-wrap: wrap; gap: 2px 4px; }
-.map-legend button { display: flex; align-items: center; gap: 6px; font-size: 11.5px; padding: 3px 7px; border-radius: var(--r-sm); color: var(--ink-2); border: 1px solid transparent; transition: background .15s, border-color .15s; }
-.map-legend button i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+/* Zoom: a compact stack in the map's bottom-right corner; Fit (the whole map) appears only when zoomed in. */
+.map-zoom { position: absolute; z-index: 2; right: 6px; bottom: 6px; display: flex; flex-direction: column; gap: 1px; padding: 2px; border-radius: 8px;
+  background: color-mix(in srgb, var(--surface) 90%, transparent); border: 1px solid var(--line-2); box-shadow: 0 1px 3px rgba(0, 0, 0, .45); }
+.map-zoom button { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; color: var(--ink-2); transition: background .15s, color .15s; }
+.map-zoom button:hover { background: var(--hover); color: var(--ink); }
+.map-zoom button[aria-disabled="true"] { color: var(--ink-4); background: none; cursor: default; }
+.map-zoom svg.i { width: 13px; height: 13px; stroke-width: 1.8; }
+/* Community key: bottom left inside the map, in the zoom stack's chip style, clear of the stack on the right. Hovering
+   it ghosts it so the map underneath shows; its entries still toggle the highlight (the only place that does), so it
+   fades rather than vanishing, which would leave invisible buttons. Keyboard focus keeps it solid. */
+.map-legend { position: absolute; z-index: 2; left: 6px; bottom: 6px; max-width: calc(100% - 46px); display: flex; flex-wrap: wrap; gap: 1px; padding: 2px; border-radius: 8px;
+  background: color-mix(in srgb, var(--surface) 90%, transparent); border: 1px solid var(--line-2); box-shadow: 0 1px 3px rgba(0, 0, 0, .45); transition: opacity .15s var(--ease); }
+.map-legend:empty { display: none; }
+.map-legend:hover:not(:has(:focus-visible)) { opacity: .14; }
+.map-legend button { display: flex; align-items: center; gap: 5px; height: 22px; padding: 0 7px; font-size: 11px; border-radius: 6px; color: var(--ink-2); border: 1px solid transparent; white-space: nowrap; transition: background .15s, border-color .15s; }
+.map-legend button i { width: 7px; height: 7px; border-radius: 50%; background: var(--c); }
 .map-legend button:hover { background: var(--hover); } .map-legend button[aria-pressed="true"] { border-color: color-mix(in srgb, var(--c) 60%, transparent); background: color-mix(in srgb, var(--c) 8%, transparent); color: var(--ink); }
-.map-key { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-3); padding: 3px 7px; }
-.map-key .stim { width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-bottom: 7px solid var(--gold); }
+@container map-card (max-width: 250px) { .map-legend button { padding: 0 5px; gap: 4px; font-size: 10.5px; } }
+
+/* Tooltip (src/ui/tooltip.ts): one shared chip above the hovered or keyboard-focused control (below it when there is
+   no room). Visual only; it never takes the pointer. */
+.tip { position: fixed; z-index: 1000; left: 0; top: 0; display: flex; align-items: center; gap: 8px; max-width: 248px; padding: 5px 8px; border-radius: 7px;
+  background: var(--overlay); border: 1px solid var(--line-2); box-shadow: var(--shadow); color: var(--ink); font-family: var(--font-ui); font-size: 11.5px; font-weight: 500; line-height: 1.35;
+  text-wrap: pretty; pointer-events: none; opacity: 0; transition: opacity .12s var(--ease); }
+.tip.on { opacity: 1; }
+.tip kbd { flex-shrink: 0; }
 
 /* ---------- Time & model dropdown (under the menu bar's clock control) ---------- */
 .tdrop { position: absolute; z-index: 31; top: calc(var(--hud-h) + 6px); left: 200px; width: 420px; padding: 14px 14px 12px; display: grid; gap: 14px; background: var(--overlay); border-color: var(--line-2); box-shadow: var(--shadow-lg); animation: dropIn .18s var(--ease); }
@@ -330,6 +375,7 @@ body.preview .viewport { background: #3a3d38; }
 .et-hint { font-size: 11.5px; color: var(--gold-2); }
 /* Picking a target: the range map and the forest invite a click. */
 .app.picking .map-frame { outline: 2px solid var(--gold); outline-offset: 2px; }
+.app.picking .map-frame:not([data-drag]) .map { cursor: crosshair; } /* zoomed in too: the click is what is asked for */
 .app.picking .viewport { cursor: crosshair; }
 .tchip { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px 0 7px; border-radius: 11px; font-size: 11.5px; background: color-mix(in srgb, var(--c) 10%, transparent); border: 1px solid color-mix(in srgb, var(--c) 34%, transparent); color: var(--ink); white-space: nowrap; }
 .tchip i { width: 7px; height: 7px; border-radius: 50%; background: var(--c); }

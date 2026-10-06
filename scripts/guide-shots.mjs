@@ -116,7 +116,7 @@ try {
 
   if (want('map-scale')) {
     // Reset camera frames the whole 8 km map: community ranges, party markers and the scale bar.
-    await page.locator('[data-act="reset-camera"]').first().click(); await wait(4000);
+    await page.locator('[data-act="camera-menu"]').click(); await page.locator('[data-act="reset-camera"]').click(); await wait(4000);   // in the camera menu
     await save('map-scale');
   }
 
