@@ -7,7 +7,6 @@ import { bar, chip, empty, meter, radar, rankBadge, troopChip } from './parts';
 import { mindHtml, mindKey } from './mind';
 import { egoTreeSvg } from './family-tree';
 import { egoNetworkSvg, relationLegend } from './graph';
-import { alphaCardHtml, alphaTimelineSvg, ladderHtml, tenureListHtml } from './hierarchy';
 import { emblem } from './communities';
 import { CAT_ICON } from './feed';
 import { morph } from './morph';
@@ -17,7 +16,7 @@ import { morph } from './morph';
 
 const TABS: { id: InspectorTab; label: string; ic: string }[] = [
   { id: 'overview', label: 'Overview', ic: 'person' }, { id: 'mind', label: 'Mind', ic: 'brain' }, { id: 'family', label: 'Family', ic: 'tree' },
-  { id: 'social', label: 'Social', ic: 'network' }, { id: 'hierarchy', label: 'Rank', ic: 'ladder' },
+  { id: 'social', label: 'Relations', ic: 'network' },
 ];
 
 const ACTION_ICON: Partial<Record<Action, string>> = {
@@ -184,18 +183,6 @@ function socialHtml(ctx: Ctx, c: Chimp): string {
   </div>`;
 }
 
-function hierarchyHtml(ctx: Ctx, c: Chimp): string {
-  const w = ctx.world(), t = troopOf(w, c.troopId);
-  if (!t) return empty('No community', 'This individual has no community record.');
-  return `<div class="hier">
-    ${alphaCardHtml(w, t)}
-    <section class="blk"><h3 class="eyebrow">Males <span class="muted">Elo score</span></h3>${ladderHtml(w, t, 'male', c.id, ctx.ranks, true)}</section>
-    <section class="blk"><h3 class="eyebrow">Females <span class="muted">Elo score</span></h3>${ladderHtml(w, t, 'female', c.id, ctx.ranks, true)}</section>
-    <section class="blk"><h3 class="eyebrow">Alpha tenures</h3>${alphaTimelineSvg(w, [t], c.id, 340)}${tenureListHtml(w, t)}</section>
-    <p class="honest">Elo scores update from decided agonistic interactions (progressive Elo). Females' ladders are shallower and less linear in the wild.</p>
-  </div>`;
-}
-
 export function createInspector(root: HTMLElement, ctx: Ctx) {
   root.innerHTML = `<header class="insp-head"></header>
   <div class="tabs" role="tablist" aria-label="Inspector">${TABS.map(t => `<button role="tab" id="tab-${t.id}" data-tab="${t.id}" aria-controls="insp-panel">${icon(t.ic)}<span>${t.label}</span></button>`).join('')}</div>
@@ -216,8 +203,7 @@ export function createInspector(root: HTMLElement, ctx: Ctx) {
     else if (act === 'prev' || act === 'next') ctx.cycle(act === 'next' ? 1 : -1);
     else if (act === 'follow') { ctx.state.pinnedTraceId = null; ctx.refresh(); }
     else if (act === 'clear-exp') { ctx.state.experiment = null; ctx.refresh(); }
-    else if (act === 'close-sheet') { ctx.state.mobileSheet = false; ctx.refresh(); }
-    else if (act === 'collapse') ctx.setInspector(false);
+    else if (act === 'collapse') ctx.setChimpPanel(!ctx.state.chimpOpen);
   });
   root.addEventListener('keydown', e => {
     const g = (e.target as HTMLElement).closest<HTMLElement>('g[data-select]');
@@ -240,7 +226,7 @@ export function createInspector(root: HTMLElement, ctx: Ctx) {
         renderInto(head, `<div class="ih-row">${t ? emblem(t, 'lg') : ''}<div class="ih-id">
           <h2 class="ih-name">${esc(c.name)}${c.alive ? '' : ' <span class="dagger">†</span>'}</h2>
           <p class="ih-meta">${cap(c.stage)} ${c.sex} · ${ageText(c)}${t ? ` · ${esc(troopShort(t))}` : ''}${c.natalTroopId !== c.troopId ? ' · immigrant' : ''}</p></div>
-          <div class="ih-actions"><button class="icon-btn" data-act="prev" aria-label="Previous in community ([)" title="Previous in community ([)">${icon('chevronL')}</button><button class="icon-btn" data-act="next" aria-label="Next in community (])" title="Next in community (])">${icon('chevronR')}</button><button class="icon-btn" data-act="focus" aria-label="Focus camera (F)" title="Focus camera (F)">${icon('focus')}</button><button class="icon-btn insp-collapse" data-act="collapse" aria-label="Collapse inspector (I)" title="Collapse inspector (I)">${icon('chevronR')}</button><button class="icon-btn sheet-close" data-act="close-sheet" aria-label="Close inspector">${icon('down')}</button></div></div>
+          <div class="ih-actions"><button class="icon-btn" data-act="prev" aria-label="Previous in community ([)" title="Previous in community ([)">${icon('chevronL')}</button><button class="icon-btn" data-act="next" aria-label="Next in community (])" title="Next in community (])">${icon('chevronR')}</button><button class="icon-btn" data-act="focus" aria-label="Focus camera (F)" title="Focus camera (F)">${icon('focus')}</button><button class="icon-btn" data-act="collapse" aria-keyshortcuts="I" aria-label="Collapse or expand the panel (I)" title="Collapse or expand the panel (I)">${icon('down')}</button></div></div>
           <div class="ih-badges">${rankBadge(w, c)}<span class="ih-no mono" title="Individual number">#${String(c.id).padStart(3, '0')}</span></div>`);
       }
       const tk = ctx.state.tab;
@@ -250,7 +236,6 @@ export function createInspector(root: HTMLElement, ctx: Ctx) {
         case 'mind': bk = mindKey(ctx, c); html = () => mindHtml(ctx, c); break;
         case 'family': bk = [c.id, w.chimps.length, w.chimps.filter(x => !x.alive).length, Math.floor(w.time / 24)].join('|'); html = () => familyHtml(ctx, c); break;
         case 'social': bk = [c.id, Math.floor(w.time * 4), w.interactions.length, w.events.length, c.digests?.length ?? 0].join('|'); html = () => socialHtml(ctx, c); break;
-        case 'hierarchy': bk = [c.id, w.troops.map(tt => [tt.alphaId, tt.maleHierarchy.join(','), tt.femaleHierarchy.join(',')].join(';')).join('/'), Math.floor(w.time)].join('|'); html = () => hierarchyHtml(ctx, c); break;
         default: bk = [c.id, nowLine(w, c), c.mood, c.alive, Math.round(c.hunger * 50), Math.round(c.thirst * 50), Math.round(c.energy * 50), Math.round(c.social * 50), Math.round(c.stress * 50), Math.round(c.health * 50), Math.round(c.injury * 50), Math.round(c.swelling * 20), c.lactating, c.pregnancy > 0, c.carryingMeat > 0, c.vocal, c.nest !== null, c.episodes?.length].join('|'); html = () => overviewHtml(ctx, c);
       }
       bk = `${tk}:${bk}`;

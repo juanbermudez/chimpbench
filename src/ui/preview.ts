@@ -5,7 +5,7 @@ import { createApp } from './app';
 import { syntheticDecider, syntheticRelation, syntheticWorld } from './synthetic';
 
 // Preview harness: the full UI over a synthetic world, no simulation, decision
-// loop or WebGL. Open /src/ui/preview.html?tab=mind&society=kinship&dock=model.
+// loop or WebGL. Open /src/ui/preview.html?tab=mind&society=kinship&side=model (full=1: the full-screen society view).
 // The forest is replaced by a painted backdrop so glass panels can be judged.
 
 const world = syntheticWorld();
@@ -35,8 +35,8 @@ const deps: UiDeps = {
 const app = createApp(document.getElementById('app')!, deps);
 app.ready();
 const tab = params.get('tab'); if (tab) app.ctx.setTab(tab as never);
-const soc = params.get('society'); if (soc) { app.state.society.view = soc as never; const tr = params.get('troop'); app.ctx.openSociety(tr ? (tr === 'all' ? 'all' : Number(tr)) : 'all'); }
-const dock = params.get('dock'); if (dock) app.ctx.setDock(dock as never);
+const soc = params.get('society'); if (soc) { app.state.society.view = soc as never; const tr = params.get('troop'); app.ctx.openSociety(tr && tr !== 'all' ? Number(tr) : undefined); if (params.get('full')) app.ctx.openSocietyFull(); }
+const dock = params.get('dock') ?? params.get('side'); if (dock) app.ctx.setSide(dock as never);
 if (params.get('hl')) app.ctx.highlight(Number(params.get('hl')));
 if (params.get('night')) { world.hour = 22.3; world.environment.daylight = 0; world.environment.weather = 'clear'; world.environment.rain = 0; }
 if (params.get('exp')) app.ctx.fireExperiment('playback-stranger');

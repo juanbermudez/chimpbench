@@ -18,7 +18,7 @@ export const EXPERIMENTS: { kind: InterventionKind; label: string; ic: string; l
 ];
 
 export function createExperiments(root: HTMLElement, ctx: Ctx) {
-  root.innerHTML = `<header class="dock-head"><div><h2>Field experiments</h2><p>Perturb the forest the way field studies do, then watch the next decision.</p></div><button class="icon-btn" data-act="close" aria-label="Close experiments (Esc)">${icon('close')}</button></header>
+  root.innerHTML = `<p class="pane-blurb">Perturb the forest the way field studies do, then watch the next decision.</p>
   <div class="exp-target"></div>
   <div class="exp-note"></div>
   <ul class="exp-list">${EXPERIMENTS.map(x => `<li><button class="exp" data-kind="${x.kind}"><span class="exp-ic">${icon(x.ic)}</span><span class="exp-txt"><b>${x.label}</b><span>${x.line}</span>${x.cite ? `<i>After ${x.cite}</i>` : ''}</span><span class="exp-scope" title="${x.scope === 'party' ? 'Placed near the selected chimp’s party' : x.scope === 'community' ? 'Acts on the selected chimp’s community' : 'Acts on the whole habitat'}">${x.scope}</span></button></li>`).join('')}</ul>
@@ -27,7 +27,6 @@ export function createExperiments(root: HTMLElement, ctx: Ctx) {
   const target = root.querySelector<HTMLElement>('.exp-target')!, note = root.querySelector<HTMLElement>('.exp-note')!, active = root.querySelector<HTMLElement>('.exp-active')!;
   root.addEventListener('click', e => {
     const el = e.target as HTMLElement;
-    if (el.closest('[data-act="close"]')) { ctx.setDock(null); return; }
     if (el.closest('[data-act="async"]')) { ctx.deps.setPolicy('async'); ctx.refresh(); return; }
     if (el.closest('[data-act="pick"]')) { ctx.setPicking(!ctx.state.picking); return; }
     const tt = el.closest<HTMLElement>('[data-target-troop]');

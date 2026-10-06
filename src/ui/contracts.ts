@@ -42,14 +42,20 @@ export interface DeciderView {
  * the animal the camera follows in the strategy or close view (−1 = free camera). One object, rewritten in place. */
 export interface FootprintView { pts: ArrayLike<number>; fx: number; fz: number; version: number; followId: number; }
 
+/** Optional scene extra: a small rendered snapshot of one animal for the bottom panel. request() asks for a new picture
+ * of animal id drawn into canvas (asynchronously; false when the renderer cannot take one now, e.g. the animal is not
+ * loaded or quality is low). The UI decides when to ask (selection, a new activity, a slow refresh). */
+export interface PortraitView { request(id: number, canvas: HTMLCanvasElement): boolean }
+
 /** Everything the UI needs from the outside world, injected by main.ts (or the preview). */
 export interface UiDeps {
   getWorld(): World;
   clock: ClockView;
   speedPresets: SpeedPresetView[];
   decider: DeciderView;
-  /** followChimp (optional extra): make the camera follow an animal without zooming; focusChimp also zooms in. */
-  getScene(): (SceneAPI & { getFootprint?(): FootprintView; followChimp?(id: number): void }) | null;
+  /** followChimp (optional extra): make the camera follow an animal without zooming; focusChimp also zooms in.
+   * portrait (optional extra): draw the animal's snapshot into the bottom panel's canvas (see PortraitView). */
+  getScene(): (SceneAPI & { getFootprint?(): FootprintView; followChimp?(id: number): void; portrait?: PortraitView }) | null;
   setSpeed(id: string): void;
   setPlaying(playing: boolean): void;
   setPolicy(mode: ModelPolicy['mode']): void;
@@ -122,9 +128,12 @@ export interface SoundControls {
   toggleMute(): void;
 }
 
-export type InspectorTab = 'overview' | 'mind' | 'family' | 'social' | 'hierarchy';
+/** Tabs of the bottom chimp panel: 'log' is the field log filtered to the animal, 'social' its relations. */
+export type InspectorTab = 'overview' | 'log' | 'mind' | 'family' | 'social';
+export const INSPECTOR_TABS: readonly InspectorTab[] = ['overview', 'log', 'mind', 'family', 'social'];
 export type SocietyView = 'kinship' | 'dominance' | 'alliances' | 'alphas';
-export type Dock = 'experiments' | 'model' | null;
+/** What the right sidebar shows. Communities is its resting state; E, T and M switch it. */
+export type RightMode = 'communities' | 'society' | 'experiments' | 'model';
 
 export interface ExperimentMark {
   kind: InterventionKind; label: string; time: number; chimpId: number; troopId: number;
@@ -140,20 +149,21 @@ export interface UiState {
   view: ViewMode;
   layers: Record<Layer, boolean>;
   quality: Quality;
+  /** open: the full-screen society view (kinship forest, bond network), reached from the sidebar's Society mode.
+   * view is shared with the sidebar; troop is the full view's community filter. */
   society: { open: boolean; troop: number | 'all'; view: SocietyView };
-  dock: Dock;
+  /** Right sidebar: what it shows, and whether it is open (closed by default below 1440 px; a sheet on phones). */
+  rightMode: RightMode;
+  rightOpen: boolean;
+  /** Bottom chimp panel expanded (false: collapsed to its one-line strip). I toggles it. Remembered per browser. */
+  chimpOpen: boolean;
   feedMuted: Set<string>;
   /** Trace pinned in the Mind tab history; null follows the latest. */
   pinnedTraceId: string | null;
   experiment: ExperimentMark | null;
-  mobileSheet: boolean;
-  /** Inspector docked open; defaults closed below 1440 px so the forest keeps the frame. */
-  inspectorOpen: boolean;
   /** Left sidebar (field log) shown; B toggles it. The range map stays. Remembered per browser. */
   sidebarOpen: boolean;
-  /** What the right-hand panel shows: the communities (list, the chosen community, its unit grid) or the selected chimp. */
-  panel: 'community' | 'chimp';
-  /** Community shown in the community panel (null: none chosen yet; the selected chimp's is used). */
+  /** Community shown in the right sidebar (null: none chosen yet; the selected chimp's is used). */
   panelTroopId: number | null;
   /** Experiments target picking: the next click on a chimp (forest or range map) aims the experiment. */
   picking: boolean;

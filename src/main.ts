@@ -336,7 +336,7 @@ if (perf.on) (window as unknown as { __MGOGO_PERF__: object }).__MGOGO_PERF__ = 
     return {
       seed: world.seed, profile: profileOf(world), size: world.size, time: world.time, day: world.day, hour: world.hour, tick: world.tick,
       selectedId: app.state.selectedId, highlightTroopId: app.state.highlightTroopId, tab: app.state.tab, view: app.state.view,
-      societyOpen: app.state.society.open, dock: app.state.dock, ageRate: world.ageRate,
+      societyOpen: app.state.society.open || (app.state.rightOpen && app.state.rightMode === 'society'), rightMode: app.state.rightMode, ageRate: world.ageRate,
       environment: { ...world.environment },
       clock: { playing: clock.playing, speedId: clock.speedId, effectiveRate: clock.effectiveRate, ticksPerSecond: clock.ticksPerSecond, limited: clock.limited, blockedByModel: clock.blockedByModel },
       stats: { ...world.stats },
@@ -356,7 +356,7 @@ if (perf.on) (window as unknown as { __MGOGO_PERF__: object }).__MGOGO_PERF__ = 
       stimuli: world.stimuli.map(s => ({ id: s.id, kind: s.kind, troopId: s.troopId, label: s.label })),
       events: world.events.slice(-10).map(e => ({ time: e.time, kind: e.kind, severity: e.severity, text: e.text })),
       chimps: world.chimps.map(c => ({ id: c.id, name: c.name, troopId: c.troopId, action: c.action, alive: c.alive, stage: c.stage, controller: c.controller, source: c.decisionSource, awaiting: c.awaitingDecisionSince !== null, position: [...c.position] })),
-      ui: { toasts: document.querySelectorAll('.toast').length, feedItems: document.querySelectorAll('.feed-list > li').length, inspectorOpen: app.state.inspectorOpen, sidebarOpen: app.state.sidebarOpen, insets: app.insets(), occluders: document.querySelectorAll('[data-occluder]').length, quality: { requested: app.state.quality, effective: scene?.getQuality?.() ?? null } },
+      ui: { toasts: document.querySelectorAll('.toast').length, feedItems: document.querySelectorAll('.feed-list > li').length, rightOpen: app.state.rightOpen, chimpOpen: app.state.chimpOpen, sidebarOpen: app.state.sidebarOpen, insets: app.insets(), occluders: document.querySelectorAll('[data-occluder]').length, quality: { requested: app.state.quality, effective: scene?.getQuality?.() ?? null } },
     };
   },
 };

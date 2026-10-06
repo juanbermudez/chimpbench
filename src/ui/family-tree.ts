@@ -187,3 +187,39 @@ export function familyForestSvg(world: World, troop: Troop, selectedId: number):
   const PADX = 10;
   return { W: W + PADX * 2, svg: `<svg class="kin forest" viewBox="${-PADX} 0 ${W + PADX * 2} ${H}" style="--w:${W + PADX * 2}px" role="group" aria-label="${esc(troop.name)} family forest: ${lines.length} matrilines">${bands}<g class="kl-layer">${mat}${sire}</g>${nodes}</svg>`, lines: lines.length, members: members.length };
 }
+
+// ---------------------------------------------------------------------------
+// Matrilines as data: the same grouping as the forest, for the sidebar's lists.
+// ---------------------------------------------------------------------------
+
+export interface KinNode { c: Chimp; kids: KinNode[]; depth: number; emigrant: boolean }
+
+/**
+ * A community's matrilines, largest first (a founding mother with her descendants, the deceased included; offspring
+ * who emigrated stay as leaves under their mother), and the members with neither a mother nor offspring here
+ * (founders and lone immigrants; males first, then oldest first).
+ */
+export function matrilines(world: World, troop: Troop): { lines: KinNode[]; singles: Chimp[]; members: number } {
+  const members = world.chimps.filter(c => c.troopId === troop.id);
+  const inTroop = new Set(members.map(c => c.id));
+  const childrenOf = new Map<number, Chimp[]>();
+  for (const c of world.chimps) if (c.motherId >= 0 && inTroop.has(c.motherId)) {
+    if (!childrenOf.has(c.motherId)) childrenOf.set(c.motherId, []);
+    childrenOf.get(c.motherId)!.push(c);
+  }
+  const roots = members.filter(c => !(c.motherId >= 0 && inTroop.has(c.motherId)));
+  const build = (c: Chimp, depth: number): KinNode => ({ c, depth, emigrant: c.troopId !== troop.id, kids: (c.troopId === troop.id ? childrenOf.get(c.id) ?? [] : []).sort((a, b) => a.birthTime - b.birthTime).map(k => build(k, depth + 1)) });
+  const size = (n: KinNode): number => 1 + n.kids.reduce((a, k) => a + size(k), 0);
+  const lines = roots.map(r => build(r, 0)).filter(n => n.kids.length).sort((a, b) => size(b) - size(a));
+  const heads = new Set(lines.map(l => l.c.id));
+  const singles = roots.filter(r => !heads.has(r.id)).sort((a, b) => (a.sex === b.sex ? b.age - a.age : a.sex === 'male' ? -1 : 1));
+  return { lines, singles, members: members.length };
+}
+
+/** A matriline flattened depth-first (mother before her offspring), for an indented list. */
+export function flattenLine(line: KinNode): KinNode[] {
+  const out: KinNode[] = [];
+  const walk = (n: KinNode) => { out.push(n); n.kids.forEach(walk); };
+  walk(line);
+  return out;
+}

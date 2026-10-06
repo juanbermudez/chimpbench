@@ -7,7 +7,7 @@ import { esc, nameOf } from './format';
 import { modelChipState } from './hud';
 import { PROVIDERS, type ProviderId } from '../providers/types';
 
-// Decision model panel: policy, roster, readiness and honest statistics.
+// Decision model (right sidebar, M): policy, roster, readiness and honest statistics.
 
 const POLICIES: { id: ModelPolicy['mode']; label: string; line: string }[] = [
   { id: 'off', label: 'Off', line: 'Rules decide for every chimp. No model calls.' },
@@ -23,7 +23,7 @@ const ROSTERS: { id: Roster; label: string; line: string }[] = [
 const median = (xs: number[]) => { if (!xs.length) return NaN; const s = [...xs].sort((a, b) => a - b), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
 
 export function createModelPanel(root: HTMLElement, ctx: Ctx) {
-  root.innerHTML = `<header class="dock-head"><div><h2>Decision model</h2><p>The selected provider picks one action from the legal options a chimp perceives.</p></div><button class="icon-btn" data-act="close" aria-label="Close model panel (Esc)">${icon('close')}</button></header>
+  root.innerHTML = `<p class="pane-blurb">The selected provider picks one action from the legal options a chimp perceives.</p>
   ${ctx.deps.setProvider ? `<fieldset class="radios"><legend class="eyebrow">Provider</legend>${PROVIDERS.map(p => `<label class="radio"><input type="radio" name="provider" value="${p.id}"><span class="r-dot"></span><span><b>${p.label}</b><i>${p.id === 'browser' ? 'Runs on this device. Load downloads and caches the model (872 MB with FP16; 1.74 GB with FP32).' : p.id === 'server' ? 'Uses the configured GLiNER server endpoint.' : 'Uses the configured gateway; API credentials stay on its server.'}</i></span></label>`).join('')}</fieldset>` : ''}
   <div class="mp-status"></div>
   <div class="mp-stats"></div>
@@ -34,7 +34,6 @@ export function createModelPanel(root: HTMLElement, ctx: Ctx) {
   const status = root.querySelector<HTMLElement>('.mp-status')!, stats = root.querySelector<HTMLElement>('.mp-stats')!, roster = root.querySelector<HTMLElement>('.mp-roster')!;
   root.addEventListener('click', e => {
     const el = e.target as HTMLElement;
-    if (el.closest('[data-act="close"]')) { ctx.setDock(null); return; }
     if (el.closest('[data-act="retry"]')) { void ctx.deps.retryModel().then(() => ctx.refresh()); ctx.refresh(); return; }
     const s = el.closest<HTMLElement>('[data-select]'); if (s) ctx.select(Number(s.dataset.select), { tab: 'mind' });
   });

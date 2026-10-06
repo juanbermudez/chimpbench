@@ -4,7 +4,7 @@ import { icon } from './icons';
 import { duration, emblemText, esc, nameOf, troopShort } from './format';
 import { morph } from './morph';
 
-// Three community cards at the top of the right panel: identity, alpha + tenure, demography, strength
+// Three community cards at the top of the right sidebar's Communities mode: identity, alpha + tenure, demography, strength
 // (adult males, the best single predictor of intergroup dominance at Ngogo
 // and Kanyawara) and current party count. A card shows its community in the panel.
 
@@ -26,10 +26,8 @@ export function emblem(t: Troop, cls = '') {
 }
 
 export function createCommunities(root: HTMLElement, ctx: Ctx) {
-  root.innerHTML = `<div class="sec-head"><h2 class="eyebrow">Communities</h2><span class="sec-actions"><button class="link-btn" data-act="society">${icon('tree')}Society<kbd>T</kbd></button><button class="icon-btn sm insp-collapse" data-act="collapse" aria-keyshortcuts="I" aria-label="Collapse panel (I)" title="Collapse panel (I)">${icon('chevronR')}</button></span></div><div class="cards" role="list"></div>`;
+  root.innerHTML = `<div class="sec-head"><h2 class="eyebrow">Communities</h2></div><div class="cards" role="list"></div>`;
   const list = root.querySelector<HTMLElement>('.cards')!;
-  root.querySelector<HTMLButtonElement>('[data-act="society"]')!.onclick = () => ctx.openSociety(ctx.state.panelTroopId ?? 'all');
-  root.querySelector<HTMLButtonElement>('[data-act="collapse"]')!.onclick = () => ctx.setInspector(false);
   // A card shows that community in the panel (details and unit grid); world highlighting stays on the range map legend.
   list.addEventListener('click', e => {
     const b = (e.target as HTMLElement).closest<HTMLElement>('[data-troop]'); if (!b) return;

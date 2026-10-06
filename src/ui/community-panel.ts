@@ -9,9 +9,9 @@ import { renderInto } from './inspector';
 import { createUnitGrid } from './units';
 import { memberOrder } from './unit-view';
 
-// Right panel, community view: the communities list on top (communities.ts), the chosen community below (alpha and
-// tenure, parties, dominance ladders, links into the Society overlay) and its members as a unit grid at the bottom
-// (units.ts). Selecting an animal switches the panel to the chimp view (inspector.ts), whose back button returns here.
+// Right sidebar, Communities mode: the communities list on top (communities.ts), the chosen community below (alpha and
+// tenure, parties, dominance ladders, links into the sidebar's Society mode) and its members as a unit grid at the
+// bottom (units.ts). Selecting an animal shows it in the bottom chimp panel (inspector.ts); this sidebar stays put.
 
 const PARTY_WORD: Record<Party['kind'], string> = {
   foraging: 'Foraging', patrol: 'Patrol', hunting: 'Hunting', nesting: 'Nesting', consort: 'Consortship', social: 'Social', traveling: 'Traveling',
@@ -71,7 +71,7 @@ export function createCommunityPanel(root: HTMLElement, ctx: Ctx) {
     const p = el.closest<HTMLElement>('[data-party]');
     if (p) { const lead = shownParties.find(x => x.p.id === Number(p.dataset.party))?.ids[0]; if (lead !== undefined) ctx.select(lead, { focus: true }); return; }
     const v = el.closest<HTMLElement>('[data-sview]');
-    if (v) { const t = panelTroop(ctx); ctx.state.society.view = v.dataset.sview as SocietyView; ctx.openSociety(t?.id ?? 'all'); }
+    if (v) { ctx.state.society.view = v.dataset.sview as SocietyView; ctx.openSociety(panelTroop(ctx)?.id); }
   });
   let key = '', renderedAt = -1e9, shownId = -1;
   return {

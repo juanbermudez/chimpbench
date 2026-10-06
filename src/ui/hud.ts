@@ -56,8 +56,8 @@ export function createHud(root: HTMLElement, ctx: Ctx) {
   <div class="bar-spacer"></div>
   <div class="bar-group bar-actions">
     <span class="snd-slot" data-slot="sound"></span>
-    <button class="hud-btn" data-act="society" aria-keyshortcuts="T" title="Society overview (T)">${icon('tree')}<span>Society</span></button>
-    <button class="hud-btn" data-act="experiments" aria-keyshortcuts="E" title="Field experiments (E)">${icon('flask')}<span>Experiments</span></button>
+    <button class="hud-btn" data-act="society" aria-keyshortcuts="T" aria-controls="right-sidebar" aria-expanded="false" title="Society: kinship, dominance, bonds, alpha history (T)">${icon('tree')}<span>Society</span></button>
+    <button class="hud-btn" data-act="experiments" aria-keyshortcuts="E" aria-controls="right-sidebar" aria-expanded="false" title="Field experiments (E)">${icon('flask')}<span>Experiments</span></button>
     <div class="bar-sep"></div>
     <button class="hud-btn icon-only" data-act="settings" aria-label="Settings" title="Settings">${icon('gear')}</button>
     <a class="hud-btn icon-only" href="${esc(ctx.deps.guideUrl)}" target="_blank" rel="noopener noreferrer" data-guide aria-label="About ChimpBench (opens in a new tab)" title="About ChimpBench (new tab)">${icon('help')}</a>
@@ -67,8 +67,8 @@ export function createHud(root: HTMLElement, ctx: Ctx) {
   const weatherEl = root.querySelector<HTMLElement>('.weather')!;
   el.play.onclick = () => { ctx.deps.setPlaying(!ctx.deps.clock.playing); ctx.refresh(); };
   root.querySelector<HTMLButtonElement>('[data-act="time"]')!.onclick = () => ctx.toggleTimePanel();
-  root.querySelector<HTMLButtonElement>('[data-act="experiments"]')!.onclick = () => ctx.setDock(ctx.state.dock === 'experiments' ? null : 'experiments');
-  root.querySelector<HTMLButtonElement>('[data-act="society"]')!.onclick = () => ctx.openSociety();
+  root.querySelector<HTMLButtonElement>('[data-act="experiments"]')!.onclick = () => ctx.toggleSide('experiments');
+  root.querySelector<HTMLButtonElement>('[data-act="society"]')!.onclick = () => ctx.toggleSide('society');
   root.querySelector<HTMLButtonElement>('[data-act="settings"]')!.onclick = () => ctx.openSettings();
   root.querySelector<HTMLButtonElement>('[data-act="sims"]')!.onclick = () => ctx.openSimulations();
   // Saved simulations are optional (absent in the synthetic preview): the name button and indicator hide with them.

@@ -1,12 +1,12 @@
 import type { Vec3 } from 'math';
 import type { Chimp, InterventionKind, Layer, ViewMode, World } from '../types';
-import type { Dock, InspectorTab, OlderParamsView, UiDeps, UiState } from './contracts';
+import { INSPECTOR_TABS, type InspectorTab, type OlderParamsView, type RightMode, type UiDeps, type UiState } from './contracts';
 import { icon } from './icons';
 import { actionVerb, cap, esc, hhmm, troopShort, type FeedCat } from './format';
 import { createHud } from './hud';
 import { createTimebar } from './timebar';
-import { emblem } from './communities';
 import { createCommunityPanel, panelTroop } from './community-panel';
+import { createSocietySide } from './society-side';
 import { memberOrder } from './unit-view';
 import { createFeed, CAT_ICON } from './feed';
 import { createMinimap } from './minimap';
@@ -34,18 +34,24 @@ export interface Ctx {
   select(id: number, o?: { focus?: boolean; tab?: InspectorTab }): void;
   highlight(troopId: number | null): void; hoverTroop(troopId: number | null): void;
   setTab(tab: InspectorTab): void;
-  /** Right panel: show a community (list, details, unit grid) instead of the selected chimp. */
+  /** Right sidebar: the community its Communities and Society modes show (details, unit grid, ladders). */
   showCommunity(troopId: number): void;
   /** fromScene: the scene already changed view itself (wheel zoom-through); only the UI follows. */
   setView(v: ViewMode, o?: { fromScene?: boolean }): void; toggleLayer(l: Layer, on?: boolean): void;
-  openSociety(troop?: number | 'all'): void; closeSociety(): void;
-  setDock(d: Dock): void; openSettings(): void;
+  /** Society in the right sidebar (for a community, if given). openSocietyFull: the full-screen forest and network. */
+  openSociety(troop?: number): void; openSocietyFull(): void; closeSociety(): void;
+  /** Right sidebar: show a mode (opening the sidebar); toggleSide returns to Communities when the mode is already shown. */
+  setSide(mode: RightMode): void; toggleSide(mode: RightMode): void;
+  openSettings(): void;
   fireExperiment(kind: InterventionKind): void;
   setModelControl(on: boolean): void;
   cycle(dir: 1 | -1): void;
   /** User-initiated speed change (ends the dawn prologue). */
   setSpeed(id: string): void;
-  setInspector(open: boolean): void;
+  /** Bottom chimp panel: expanded, or collapsed to its strip (I). */
+  setChimpPanel(open: boolean): void;
+  /** Right sidebar shown or hidden (Shift+B). */
+  setRight(open: boolean): void;
   setSidebar(open: boolean): void;
   /** Open or close the time & model dropdown under the menu bar's clock control. */
   toggleTimePanel(open?: boolean): void;
@@ -69,6 +75,14 @@ const LAYERS: { id: Layer; label: string; ic: string; key?: string; tip: string 
 const VIEWS: { id: ViewMode; label: string; ic: string; key: string }[] = [
   { id: 'rts', label: 'Overview', ic: 'rts', key: 'R' }, { id: 'close', label: 'Close view', ic: 'target', key: 'C' }, { id: 'cinematic', label: 'Cinematic', ic: 'film', key: 'V' },
 ];
+// Right sidebar modes, in tab order. Communities is the resting state; the others toggle back to it.
+const MODES: { id: RightMode; label: string; ic: string; key?: string; name: string }[] = [
+  { id: 'communities', label: 'Communities', ic: 'users', name: 'Communities' },
+  { id: 'society', label: 'Society', ic: 'tree', key: 'T', name: 'Society' },
+  { id: 'experiments', label: 'Experiments', ic: 'flask', key: 'E', name: 'Field experiments' },
+  { id: 'model', label: 'Model', ic: 'spark', key: 'M', name: 'Decision model' },
+];
+const isNarrow = () => window.innerWidth <= 720;
 
 /** Per-browser UI preferences; storage can be blocked or absent, so every access is guarded. */
 function readPref(key: string): string | null { try { return localStorage.getItem(key); } catch { return null; } }
@@ -88,7 +102,6 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     <header class="hud" aria-label="Status"></header>
     <aside class="left" id="left-sidebar" aria-label="Field log and map">
       <section class="panel glass p-side" data-occluder><div class="side-sec p-feed"></div></section>
-      <aside class="dock glass" hidden data-occluder><div data-dock="experiments" role="dialog" aria-label="Field experiments" tabindex="-1"></div><div data-dock="model" role="dialog" aria-label="Decision model" tabindex="-1"></div></aside>
       <section class="panel glass p-map" data-occluder aria-label="Range map, camera and layers">
         <div class="map-host"></div>
         <div class="map-bar">
@@ -101,15 +114,21 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     </aside>
     <button class="side-peek glass" data-act="open-sidebar" aria-controls="left-sidebar" aria-keyshortcuts="B" aria-label="Show sidebar: field log and map (B)" title="Show sidebar (B)" data-occluder>${icon('chevronR')}<span>Field log</span><kbd>B</kbd></button>
     <div class="tdrop glass" id="time-drop" role="dialog" aria-label="Time controls and decision model" hidden data-occluder></div>
-    <aside class="inspector glass" aria-label="Communities and the selected chimp" data-occluder><section class="rp-comm" aria-label="Communities"></section><section class="rp-chimp" aria-label="Selected chimp"></section></aside>
-    <button class="rp-back glass" data-act="panel-back" data-occluder>${icon('chevronL')}</button>
+    <aside class="rside glass" id="right-sidebar" aria-label="Communities, society, experiments and the decision model" data-occluder>
+      <header class="rs-head">
+        <div class="rs-tabs" role="tablist" aria-label="Sidebar">${MODES.map(m => `<button role="tab" id="rs-tab-${m.id}" data-mode="${m.id}" aria-controls="rs-pane-${m.id}" aria-selected="false" tabindex="-1"${m.key ? ` aria-keyshortcuts="${m.key}" data-tip="${m.name}" data-key="${m.key}"` : ''}>${m.label}</button>`).join('')}</div>
+        <button class="icon-btn sm rs-collapse" data-act="collapse-right" aria-controls="right-sidebar" aria-keyshortcuts="Shift+B" aria-label="Hide sidebar (Shift+B)" data-tip="Hide sidebar" data-key="⇧B">${icon('chevronR')}</button>
+      </header>
+      ${MODES.map(m => `<section class="rs-pane rp-${m.id}" id="rs-pane-${m.id}" data-pane="${m.id}" role="tabpanel" aria-labelledby="rs-tab-${m.id}" tabindex="-1"${m.id === 'communities' ? '' : ' hidden'}></section>`).join('')}
+    </aside>
+    <button class="rside-peek glass" data-act="open-right" aria-controls="right-sidebar" aria-keyshortcuts="Shift+B" data-occluder></button>
+    <section class="chimp-panel glass" id="chimp-panel" aria-label="Selected chimp" data-occluder></section>
     <div class="follow-ind" role="status" hidden data-occluder><i class="fi-dot" aria-hidden="true"></i><span>Following <b></b></span></div>
-    <button class="insp-peek glass" data-act="open-inspector" aria-keyshortcuts="I" data-occluder></button>
     <div class="cine-cap" aria-live="polite" data-occluder><b class="cine-title"></b><span class="cine-where"></span><span class="cine-meta"></span></div>
     <div class="cine-exit" data-occluder><kbd>Esc</kbd> exit · <kbd>V</kbd> toggle</div>
     <div class="scalebar" role="img" hidden data-occluder><i class="sb-rule" aria-hidden="true"></i><span class="sb-label" aria-hidden="true"></span></div>
     <div class="prologue" hidden data-occluder><b>Dawn in Kibale</b><span>Fast-forwarding at 10 min/s until 07:15</span></div>
-    <div class="mobile-bar" data-occluder><button data-mobile="left">${icon('history')}<span>Field log</span></button><button data-mobile="sheet">${icon('person')}<span>Inspector</span></button></div>
+    <div class="mobile-bar" data-occluder><button data-mobile="left" aria-pressed="false">${icon('history')}<span>Field log</span></button><button data-mobile="right" aria-pressed="false">${icon('users')}<span>Communities</span></button></div>
     <div class="toasts" aria-live="polite"></div>
     <div class="society" hidden data-occluder></div>
     <dialog class="settings glass" data-occluder></dialog>
@@ -121,10 +140,12 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
   const state: UiState = {
     selectedId: defaultSelection(deps.getWorld()), highlightTroopId: null, hoverTroopId: null, tab: 'overview', view: 'rts',
     layers: { canopy: true, territory: false, perception: false, labels: true, social: false, weather: true }, quality: 'high',
-    society: { open: false, troop: 'all', view: 'kinship' }, dock: null, feedMuted: new Set(), pinnedTraceId: null, experiment: null, mobileSheet: false,
-    inspectorOpen: window.innerWidth >= 1440,
+    society: { open: false, troop: 'all', view: 'kinship' }, feedMuted: new Set(), pinnedTraceId: null, experiment: null,
+    // The right sidebar starts open where there is room for it beside the bottom panel; on phones both start closed.
+    rightMode: 'communities', rightOpen: window.innerWidth >= 1440,
+    chimpOpen: readPref('mgogo.chimp') !== '0' && !isNarrow(),
     sidebarOpen: readPref('mgogo.sidebar') !== '0', picking: false,
-    panel: 'community', panelTroopId: null,
+    panelTroopId: null,
   };
   const ranks = createRankTracker();
   let timeOpen = false;
@@ -140,14 +161,14 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
       if (state.picking) { state.picking = false; ctx.notify({ text: `Experiments now aim at ${c.name}’s party`, cat: 'model', title: 'Target' }); }
       if (state.selectedId !== id) state.pinnedTraceId = null;
       state.selectedId = id;
-      if (o.tab) { state.tab = o.tab; state.inspectorOpen = true; }
-      state.panel = 'chimp';
+      // A request for a tab (an experiment's Mind tab, the model roster) expands the bottom panel; a plain selection
+      // leaves it as the user set it (the collapsed strip still names the animal).
+      if (o.tab) { state.tab = o.tab; state.chimpOpen = true; if (isNarrow()) { state.rightOpen = false; leftOpen = false; } }
       // focus: the camera glides to the animal and follows it (F, tiles, the field log). While the camera already
       // follows someone, it follows the new selection too; after the user panned away it stays put.
       const s = deps.getScene();
       if (o.focus || state.view === 'close') s?.focusChimp(id);
       else if (s && (s.getFootprint?.().followId ?? -1) >= 0) s.followChimp?.(id);
-      if (window.matchMedia('(max-width: 720px)').matches && o.tab) state.mobileSheet = true;
       ctx.refresh();
     },
     highlight(id) {
@@ -157,9 +178,9 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
       ctx.refresh();
     },
     hoverTroop(id) { if (state.hoverTroopId !== id) { state.hoverTroopId = id; app.dataset.hoverTroop = id === null ? '' : String(id); minimap.update(); } },
-    setTab(tab) { state.tab = tab; state.panel = 'chimp'; ctx.refresh(); },
+    setTab(tab) { state.tab = tab; ctx.refresh(); },
     showCommunity(troopId) {
-      state.panel = 'community'; state.panelTroopId = troopId;
+      state.panelTroopId = troopId;
       // A world highlight follows the community shown (it never pans the camera from here).
       if (state.highlightTroopId !== null) state.highlightTroopId = troopId;
       ctx.refresh();
@@ -173,12 +194,30 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
       if (v === 'cinematic') updateCaption();
     },
     toggleLayer(l, on) { state.layers[l] = on ?? !state.layers[l]; deps.getScene()?.setLayer(l, state.layers[l]); syncDock(); },
-    openSociety(troop) { state.society.open = true; if (troop !== undefined) state.society.troop = troop; state.dock = null; syncPanels(); society.open(); },
-    closeSociety() { state.society.open = false; society.update(); q('.viewport').focus({ preventScroll: true }); },
-    setDock(d) { state.dock = d; syncPanels(); if (d) requestAnimationFrame(() => q(`[data-dock="${d}"]`).focus({ preventScroll: true })); },
+    openSociety(troop) { if (troop !== undefined) state.panelTroopId = troop; ctx.setSide('society'); },
+    openSocietyFull() { state.society.open = true; state.society.troop = panelTroop(ctx)?.id ?? 'all'; syncPanels(); society.open(); },
+    closeSociety() { state.society.open = false; society.update(); ctx.refresh(); q('.viewport').focus({ preventScroll: true }); },
+    setSide(mode) {
+      state.rightMode = mode; state.rightOpen = true;
+      if (isNarrow()) { leftOpen = false; state.chimpOpen = false; }   // phones: one sheet at a time
+      ctx.refresh();
+      // Keyboard focus follows into the pane just shown (and back to the forest when the sidebar returns to rest).
+      requestAnimationFrame(() => (mode === 'communities' ? q('.viewport') : q(`[data-pane="${mode}"]`)).focus({ preventScroll: true }));
+    },
+    toggleSide(mode) { ctx.setSide(state.rightOpen && state.rightMode === mode ? 'communities' : mode); },
     openSettings() { settings.open(); },
     setSpeed(id) { endPrologue(false); deps.setSpeed(id); if (!deps.clock.playing) deps.setPlaying(true); ctx.refresh(); },
-    setInspector(open) { state.inspectorOpen = open; syncPanels(); if (open) inspector.update(true); },
+    setChimpPanel(open) {
+      state.chimpOpen = open;
+      if (isNarrow()) { if (open) { leftOpen = false; state.rightOpen = false; } } else writePref('mgogo.chimp', open ? '1' : '0');
+      ctx.refresh();
+    },
+    setRight(open) {
+      state.rightOpen = open;
+      if (open && isNarrow()) { leftOpen = false; state.chimpOpen = false; }
+      ctx.refresh();
+      requestAnimationFrame(() => { const f = document.activeElement; if (f && (f.closest('.rside') || f.closest('.rside-peek'))) q<HTMLElement>(open ? '[data-act="collapse-right"]' : '.rside-peek').focus({ preventScroll: true }); });
+    },
     setSidebar(open) {
       state.sidebarOpen = open; writePref('mgogo.sidebar', open ? '1' : '0'); syncPanels();
       if (open) { feed.update(true, true); minimap.update(); }
@@ -253,11 +292,12 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
   const feed = createFeed(q('.p-feed'), ctx);
   const minimap = createMinimap(q('.map-host'), ctx);
   const scaleBar = createScaleBar(q('.scalebar'), q('#viewport'), () => deps.getScene());
-  const inspector = createInspector(q('.rp-chimp'), ctx);
-  const commPanel = createCommunityPanel(q('.rp-comm'), ctx);
+  const inspector = createInspector(q('.chimp-panel'), ctx);
+  const commPanel = createCommunityPanel(q('[data-pane="communities"]'), ctx);
+  const societySide = createSocietySide(q('[data-pane="society"]'), ctx);
   const society = createSociety(q('.society'), ctx);
-  const experiments = createExperiments(q('[data-dock="experiments"]'), ctx);
-  const modelPanel = createModelPanel(q('[data-dock="model"]'), ctx);
+  const experiments = createExperiments(q('[data-pane="experiments"]'), ctx);
+  const modelPanel = createModelPanel(q('[data-pane="model"]'), ctx);
   const settings = createSettings(q<HTMLDialogElement>('dialog.settings'), ctx);
   const sims = createSimulations(q<HTMLDialogElement>('dialog.sims'), ctx);
   // Camera views and Reset camera live in one menu at the start of the map card's control row; choices are handled
@@ -278,22 +318,30 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     }
     root.querySelectorAll<HTMLElement>('[data-layer]').forEach(b => b.setAttribute('aria-pressed', String(state.layers[b.dataset.layer as Layer])));
   }
+  let peekMode = '';
   function syncPanels() {
-    const dock = q('.dock');
-    if (dock.hidden !== !state.dock) dock.hidden = !state.dock;
-    root.querySelectorAll<HTMLElement>('[data-dock]').forEach(d => { const h = d.dataset.dock !== state.dock; if (d.hidden !== h) d.hidden = h; });
-    root.querySelectorAll<HTMLElement>('.hud [data-act="experiments"]').forEach(b => setAttr(b, 'aria-expanded', String(state.dock === 'experiments')));
-    if (state.picking && state.dock !== 'experiments') state.picking = false;
+    const mode = state.rightMode;
+    root.querySelectorAll<HTMLElement>('[data-pane]').forEach(p => { const h = p.dataset.pane !== mode; if (p.hidden !== h) p.hidden = h; });
+    root.querySelectorAll<HTMLElement>('.rs-tabs [data-mode]').forEach(b => { const on = b.dataset.mode === mode; setAttr(b, 'aria-selected', String(on)); if (b.tabIndex !== (on ? 0 : -1)) b.tabIndex = on ? 0 : -1; });
+    for (const m of ['experiments', 'society'] as const) root.querySelectorAll<HTMLElement>(`.hud [data-act="${m}"]`).forEach(b => setAttr(b, 'aria-expanded', String(state.rightOpen && mode === m)));
+    // The collapsed sidebar's tab names what it will show; so does the phone bar's button.
+    if (mode !== peekMode) {
+      peekMode = mode;
+      const m = MODES.find(x => x.id === mode) ?? MODES[0];
+      morph(q('.rside-peek'), `${icon('chevronL')}<span>${m.label}</span><kbd>⇧B</kbd>`);
+      setAttr(q('.rside-peek'), 'aria-label', `Show sidebar: ${m.name} (Shift+B)`);
+      morph(q('[data-mobile="right"]'), `${icon(m.ic)}<span>${m.label}</span>`);
+    }
+    if (state.picking && !(state.rightOpen && mode === 'experiments')) state.picking = false;
     app.classList.toggle('picking', state.picking);
-    app.classList.toggle('sheet-open', state.mobileSheet);
     app.classList.toggle('left-open', leftOpen);
-    app.classList.toggle('insp-closed', !state.inspectorOpen);
+    app.classList.toggle('rside-closed', !state.rightOpen);
     app.classList.toggle('side-closed', !state.sidebarOpen);
+    app.classList.toggle('chimp-closed', !state.chimpOpen);
+    setAttr(app, 'data-right', mode);
     setAttr(q('.left'), 'aria-hidden', String(!state.sidebarOpen && !leftOpen));
-    app.classList.toggle('dock-open', !!state.dock);
-    setAttr(app, 'data-panel', state.panel);
-    setAttr(q('.inspector'), 'aria-hidden', String(!state.inspectorOpen && !state.mobileSheet));
-    setAttr(q('[data-mobile="sheet"]'), 'aria-pressed', String(state.mobileSheet)); setAttr(q('[data-mobile="left"]'), 'aria-pressed', String(leftOpen));
+    setAttr(q('.rside'), 'aria-hidden', String(!state.rightOpen));
+    setAttr(q('[data-mobile="right"]'), 'aria-pressed', String(state.rightOpen)); setAttr(q('[data-mobile="left"]'), 'aria-pressed', String(leftOpen));
     queueLayout();
   }
   // Insets are re-measured only when something that moves or resizes a panel happened:
@@ -313,7 +361,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     if (changed) markLayout();
   }) : null;
   function watchPanels() {
-    for (const el of root.querySelectorAll('.p-side, .dock, .inspector, .hud')) if (!watched.has(el)) { watched.add(el); ro?.observe(el); }
+    for (const el of root.querySelectorAll('.p-side, .rside, .chimp-panel, .hud')) if (!watched.has(el)) { watched.add(el); ro?.observe(el); }
   }
   app.addEventListener('transitionend', e => { if (watched.has(e.target as Element) || (e.target as Element).matches?.('.left')) markLayout(); });
   /**
@@ -321,7 +369,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
    * focus center on the visible forest. Measured from the live DOM after layout.
    */
   function queueLayout() {
-    const key = [state.view, state.inspectorOpen, state.sidebarOpen, state.dock, state.mobileSheet, leftOpen, window.innerWidth, window.innerHeight].join('|');
+    const key = [state.view, state.rightOpen, state.sidebarOpen, state.chimpOpen, leftOpen, window.innerWidth, window.innerHeight].join('|');
     if (key !== layoutKey) { layoutKey = key; layoutDirty = true; }
     if (!layoutDirty || layoutQueued) return; layoutQueued = true;
     requestAnimationFrame(() => {
@@ -334,15 +382,17 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
       const vis = (el: Element) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden' && getComputedStyle(el).opacity !== '0' ? r : null; };
       let left = 0, right = 0, top = 0, bottom = 0;
       // The range map card is a corner instrument that stays when the sidebar collapses; it does not claim the left edge.
-      for (const el of root.querySelectorAll('.p-side, .dock:not([hidden])')) { const r = vis(el); if (r && r.left < W / 3) left = Math.max(left, r.right); }
-      for (const el of root.querySelectorAll('.inspector, .insp-peek')) { const r = vis(el); if (r && r.right > (W * 2) / 3 && r.height > H / 3) right = Math.max(right, W - r.left); }
+      { const r = vis(q('.p-side')); if (r && r.left < W / 3) left = Math.max(left, r.right); }
+      { const r = vis(q('.rside')); if (r && r.right > (W * 2) / 3 && r.height > H / 3) right = Math.max(right, W - r.left); }
+      // The bottom chimp panel (expanded or its strip) covers the foot of the forest between the two columns.
+      { const r = vis(q('.chimp-panel')); if (r && r.width > W / 3 && r.bottom > H - 40) bottom = Math.max(bottom, H - r.top); }
       { const r = vis(q('.hud')); if (r) top = r.bottom; }
       send({ left: Math.round(left), right: Math.round(right), top: Math.round(top), bottom: Math.round(bottom) });
     });
   }
   window.addEventListener('resize', () => {
     const nowWide = window.innerWidth >= 1440;
-    if (nowWide !== wide) { wide = nowWide; state.inspectorOpen = nowWide; syncPanels(); }
+    if (nowWide !== wide) { wide = nowWide; state.rightOpen = nowWide; syncPanels(); }
     markLayout();
   });
 
@@ -413,8 +463,9 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
       if (deps.decider.roster === 'selected' && target.id !== state.selectedId) deps.setRoster('selected', target.id);
       ctx.select(target.id, { tab: 'mind', focus: true });
     }
-    // Close the dock so the world and the Mind tab carry the moment; E reopens it.
-    state.dock = null;
+    // The sidebar stays on Experiments (it lists the active stimuli); on phones its sheet closes so the forest and
+    // the chimp panel's Mind tab carry the moment.
+    if (isNarrow()) state.rightOpen = false;
     syncPanels();
     ctx.notify({ text: `${spec.label}${target ? ` · watching ${target.name}’s next decision` : ''}`, cat: 'model', severity: 2, title: 'Field experiment', actor: target?.id ?? -1 });
   }
@@ -422,17 +473,30 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
   root.addEventListener('click', e => {
     const el = e.target as HTMLElement;
     // Mouse clicks release focus so Space/number shortcuts keep driving the clock; keyboard activation (detail 0) keeps focus.
-    if (e.detail > 0) { const b = el.closest<HTMLElement>('button'); if (b && !b.closest('dialog, .society, .dock')) requestAnimationFrame(() => { if (document.activeElement === b) b.blur(); }); }
+    if (e.detail > 0) { const b = el.closest<HTMLElement>('button'); if (b && !b.closest('dialog, .society')) requestAnimationFrame(() => { if (document.activeElement === b) b.blur(); }); }
     const v = el.closest<HTMLElement>('[data-viewmode]'); if (v) { ctx.setView(v.dataset.viewmode as ViewMode); return; }
     const l = el.closest<HTMLElement>('[data-layer]'); if (l) { ctx.toggleLayer(l.dataset.layer as Layer); return; }
-    if (el.closest('[data-act="open-inspector"]')) { ctx.setInspector(true); return; }
+    const md = el.closest<HTMLElement>('.rs-tabs [data-mode]'); if (md) { setMode(md.dataset.mode as RightMode); return; }
+    if (el.closest('[data-act="open-right"]')) { ctx.setRight(true); return; }
+    if (el.closest('[data-act="collapse-right"]')) { ctx.setRight(false); return; }
     if (el.closest('[data-act="open-sidebar"]')) { ctx.setSidebar(true); return; }
     if (el.closest('[data-act="reset-camera"]')) { ctx.setView('rts'); deps.getScene()?.resetCamera(); return; }
-    if (el.closest('.tdrop [data-act="model"]')) { ctx.toggleTimePanel(false); ctx.setDock(state.dock === 'model' ? null : 'model'); return; }
+    if (el.closest('.tdrop [data-act="model"]')) { ctx.toggleTimePanel(false); ctx.toggleSide('model'); return; }
     if (el.closest('[data-act="collapse-sidebar"]')) { ctx.setSidebar(false); return; }
-    if (el.closest('[data-act="panel-back"]')) { panelBack(e.detail === 0); return; }
     const m = el.closest<HTMLElement>('[data-mobile]');
-    if (m) { if (m.dataset.mobile === 'sheet') { state.mobileSheet = !state.mobileSheet; leftOpen = false; } else { leftOpen = !leftOpen; state.mobileSheet = false; } syncPanels(); }
+    if (m) {
+      // Phones: one sheet at a time (field log, sidebar, expanded chimp panel).
+      if (m.dataset.mobile === 'right') { state.rightOpen = !state.rightOpen; leftOpen = false; } else { leftOpen = !leftOpen; state.rightOpen = false; }
+      if (leftOpen || state.rightOpen) state.chimpOpen = false;
+      ctx.refresh();
+    }
+  });
+  /** A sidebar tab: show its pane, keeping focus on the tab strip (clicks and arrow keys). */
+  function setMode(mode: RightMode) { state.rightMode = mode; state.rightOpen = true; ctx.refresh(); }
+  q('.rs-tabs').addEventListener('keydown', e => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    const i = MODES.findIndex(m => m.id === state.rightMode), n = MODES[(i + (e.key === 'ArrowRight' ? 1 : MODES.length - 1)) % MODES.length];
+    setMode(n.id); q(`.rs-tabs [data-mode="${n.id}"]`).focus(); e.preventDefault();
   });
 
   // The time dropdown is non-modal: any press outside it (or its control) closes it.
@@ -447,7 +511,11 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     if (k === 'Escape') {
       if (timeOpen) { ctx.toggleTimePanel(false); return; }
       if (state.picking) { ctx.setPicking(false); return; }
-      if (state.view === 'cinematic') ctx.setView('rts'); else if (state.society.open) ctx.closeSociety(); else if (state.dock) ctx.setDock(null); else if (state.mobileSheet || leftOpen) { state.mobileSheet = false; leftOpen = false; syncPanels(); } else if (state.highlightTroopId !== null) ctx.highlight(null);
+      if (state.view === 'cinematic') ctx.setView('rts');
+      else if (state.society.open) ctx.closeSociety();
+      else if (isNarrow() && (leftOpen || state.rightOpen || state.chimpOpen)) { leftOpen = false; state.rightOpen = false; state.chimpOpen = false; ctx.refresh(); }
+      else if (state.rightOpen && state.rightMode !== 'communities') ctx.setSide('communities');   // the sidebar returns to rest
+      else if (state.highlightTroopId !== null) ctx.highlight(null);
       return;
     }
     if (k === ' ' && !(tgt.tagName === 'BUTTON' || tgt.getAttribute('role') === 'button' || tgt.tagName === 'A')) { e.preventDefault(); deps.setPlaying(!deps.clock.playing); ctx.refresh(); return; }
@@ -457,13 +525,13 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
       case 'c': ctx.setView(state.view === 'close' ? 'rts' : 'close'); break;
       case 'v': ctx.setView(state.view === 'cinematic' ? 'rts' : 'cinematic'); break;
       case 'r': ctx.setView('rts'); break;
-      case 't': state.society.open ? ctx.closeSociety() : ctx.openSociety(); break;
-      case 'e': ctx.setDock(state.dock === 'experiments' ? null : 'experiments'); break;
-      case 'm': ctx.setDock(state.dock === 'model' ? null : 'model'); break;
+      case 't': state.society.open ? ctx.closeSociety() : ctx.toggleSide('society'); break;
+      case 'e': ctx.toggleSide('experiments'); break;
+      case 'm': ctx.toggleSide('model'); break;
       case 'l': ctx.toggleLayer('labels'); break;
       case 's': toggleSound(ctx, true); break;
-      case 'i': ctx.setInspector(!state.inspectorOpen); break;
-      case 'b': ctx.setSidebar(!state.sidebarOpen); break;
+      case 'i': ctx.setChimpPanel(!state.chimpOpen); break;
+      case 'b': e.shiftKey ? ctx.setRight(!state.rightOpen) : ctx.setSidebar(!state.sidebarOpen); break;
       case '[': ctx.cycle(-1); break;
       case ']': ctx.cycle(1); break;
       default: return;
@@ -472,7 +540,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
   });
 
   /** Per-refresh shared state: selection validity, rank moves, night and highlight flags, panel visibility. */
-  const shown = { left: true, insp: true, bar: true, map: true };
+  const shown = { left: true, right: true, chimp: true, bar: true, map: true };
   function prepare() {
     const w = deps.getWorld();
     if (!w.chimps.some(c => c.id === state.selectedId)) state.selectedId = defaultSelection(w);
@@ -482,17 +550,19 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     if (app.dataset.highlight !== hl) app.dataset.highlight = hl;
   }
   /**
-   * Which panels are on screen. Hidden ones (collapsed drawers, the cinematic view, panels under the society
-   * overlay or the dock) do no DOM work; they refresh in full the moment they come back.
+   * Which panels are on screen. Hidden ones (collapsed drawers, the cinematic view, panels under the full society
+   * view, the sidebar panes that are not showing) do no DOM work; they refresh in full the moment they come back.
    */
   function visibility() {
-    const narrow = window.innerWidth <= 720, cine = state.view === 'cinematic', covered = cine || state.society.open;
+    const narrow = isNarrow(), cine = state.view === 'cinematic', covered = cine || state.society.open;
     return {
       bar: !cine,
-      left: !covered && !state.dock && (narrow ? leftOpen : state.sidebarOpen),
-      // The range map card stays in its corner when the field log collapses (B) or a dock takes the log's place.
+      left: !covered && (narrow ? leftOpen : state.sidebarOpen),
+      // The range map card stays in its corner when the field log collapses (B).
       map: !covered && (narrow ? leftOpen : true),
-      insp: !covered && (narrow ? state.mobileSheet : state.inspectorOpen),
+      right: !covered && state.rightOpen,
+      // The bottom panel's strip always shows; its tab body renders only while the panel is expanded.
+      chimp: !covered && !(narrow && (leftOpen || state.rightOpen)),
     };
   }
   // The 4 Hz refresh is split into steps, one per animation frame, so no single frame pays for every panel.
@@ -500,12 +570,11 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     force => { if (force || visibility().bar) { hud.update(); if (timeOpen) timebar.update(); } },
     force => feed.update(visibility().left, force || !shown.left),
     () => { const v = visibility(); if (v.map) minimap.update(); shown.left = v.left; shown.map = v.map; },
-    force => { const v = visibility().insp; if (v) updateRight(force || !shown.insp); else if (state.view !== 'cinematic') updatePeek(); shown.insp = v; },
+    force => { const v = visibility().right; if (v) updateRight(force || !shown.right); shown.right = v; },
+    force => { const v = visibility().chimp; if (v) inspector.update(force || !shown.chimp); shown.chimp = v; },
     force => {
       const w = deps.getWorld();
       if (state.society.open) society.update(force);
-      if (state.dock === 'experiments') experiments.update();
-      if (state.dock === 'model') modelPanel.update();
       // Field profile: the close view follows the selected animal, and at 10 min/s a travelling party outruns the
       // streamed forest window, so the fast-forward stops once it leaves its nest.
       if (prologue && (w.day > 1 || w.hour >= 7.25 || (w.size > 1000 && ctx.selected()?.action !== 'nest'))) endPrologue(true);
@@ -520,22 +589,14 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     for (const run of STEPS) run(force);
     step = STEPS.length;
   }
-  // Right panel: the community view or the chimp view. A switch renders the incoming view in full at once.
-  let shownPanel = '', backKey = '';
+  // Right sidebar: only the pane that shows is refreshed. A switch renders the incoming pane in full at once.
+  let shownMode = '';
   function updateRight(force: boolean) {
-    const changed = state.panel !== shownPanel; shownPanel = state.panel;
-    if (state.panel === 'chimp') {
-      inspector.update(force || changed);
-      const c = ctx.selected(), t = c ? deps.getWorld().troops.find(x => x.id === c.troopId) : undefined;
-      const k = t ? `Back to the ${troopShort(t)} community` : 'Back to the communities';
-      if (k !== backKey) { backKey = k; setAttr(q('.rp-back'), 'aria-label', k); setAttr(q('.rp-back'), 'title', k); }
-    } else commPanel.update(force || changed);
-  }
-  /** Back (chimp view → community view): the chimp's community, its tile keeps keyboard focus when Back was a key press. */
-  function panelBack(keyboard: boolean) {
-    const c = ctx.selected();
-    ctx.showCommunity(c?.troopId ?? panelTroop(ctx)?.id ?? deps.getWorld().troops[0]?.id ?? 0);
-    if (keyboard && c) requestAnimationFrame(() => commPanel.focusTile(c.id));
+    const f = force || state.rightMode !== shownMode; shownMode = state.rightMode;
+    if (state.rightMode === 'communities') commPanel.update(f);
+    else if (state.rightMode === 'society') societySide.update(f);
+    else if (state.rightMode === 'experiments') experiments.update();
+    else modelPanel.update();
   }
   // "Following …" over the forest while the camera follows an animal (read from the scene each frame, written on change).
   let followShown = -2;
@@ -546,14 +607,6 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     if (c) setText(q('.follow-ind b'), c.name);
     el.hidden = !c;
   }
-  let peekKey = '';
-  function updatePeek() {
-    const c = ctx.selected(), w = deps.getWorld(); if (!c) return;
-    const t = w.troops.find(tt => tt.id === c.troopId);
-    const k = [c.id, c.action, c.alive, t?.alphaId].join('|'); if (k === peekKey) return; peekKey = k;
-    morph(q('.insp-peek'), `${t ? emblem(t) : ''}<span class="pk-txt"><b>${esc(c.name)}${t?.alphaId === c.id ? ` ${icon('crown')}` : ''}</b><i>${esc(c.alive ? actionVerb(c.action) : 'deceased')}</i></span><span class="pk-open">${icon('chevronL')}<kbd>I</kbd></span>`);
-    setAttr(q('.insp-peek'), 'aria-label', `Open inspector for ${c.name} (I)`);
-  }
   // The science & design guide always opens in a new tab without an opener or referrer, wherever it is linked
   // (the Settings dialog builds its own link): fixed at mount, and again at click time in case a panel re-renders it.
   const guideLink = (a: HTMLAnchorElement) => { if (a.getAttribute('href') === deps.guideUrl) { a.target = '_blank'; a.rel = 'noopener noreferrer'; } };
@@ -561,9 +614,9 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
   root.addEventListener('click', e => { const a = (e.target as Element).closest?.('a[href]'); if (a) guideLink(a as HTMLAnchorElement); }, true);
   syncDock(); watchPanels(); syncPanels();
 
-  /** View state worth resuming with a saved simulation. Layout preferences (sidebar, inspector) stay per browser. */
+  /** View state worth resuming with a saved simulation. Layout preferences (sidebars, the chimp panel) stay per browser. */
   function captureUi(): Record<string, unknown> {
-    return { selectedId: state.selectedId, highlightTroopId: state.highlightTroopId, tab: state.tab, view: state.view, layers: { ...state.layers }, panel: state.panel, panelTroopId: state.panelTroopId,
+    return { selectedId: state.selectedId, highlightTroopId: state.highlightTroopId, tab: state.tab, view: state.view, layers: { ...state.layers }, panelTroopId: state.panelTroopId,
       society: { troop: state.society.troop, view: state.society.view }, feedMuted: [...state.feedMuted] };
   }
   /** Applies saved view state defensively: unknown or stale values keep the current ones. */
@@ -573,7 +626,8 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     if (typeof sel === 'number' && w.chimps.some(c => c.id === sel)) state.selectedId = sel;
     const hl = ui.highlightTroopId;
     state.highlightTroopId = typeof hl === 'number' && w.troops.some(t => t.id === hl) ? hl : null;
-    if (typeof ui.tab === 'string' && ['overview', 'mind', 'family', 'social', 'hierarchy'].includes(ui.tab)) state.tab = ui.tab as InspectorTab;
+    // Saves from before the bottom panel may name the old Rank tab; it falls back to the overview.
+    if (typeof ui.tab === 'string' && (INSPECTOR_TABS as readonly string[]).includes(ui.tab)) state.tab = ui.tab as InspectorTab;
     // Cinematic hides the whole interface; a resumed session comes back to the overview instead.
     if (ui.view === 'rts' || ui.view === 'close') { state.view = ui.view; app.dataset.view = ui.view; }
     if (ui.layers && typeof ui.layers === 'object') for (const l of LAYERS) { const v = (ui.layers as Record<string, unknown>)[l.id]; if (typeof v === 'boolean') state.layers[l.id] = v; }
@@ -581,14 +635,13 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     if (soc && (soc.troop === 'all' || w.troops.some(t => t.id === soc.troop))) state.society.troop = soc.troop as number | 'all';
     if (soc && typeof soc.view === 'string' && ['kinship', 'dominance', 'alliances', 'alphas'].includes(soc.view)) state.society.view = soc.view as UiState['society']['view'];
     if (Array.isArray(ui.feedMuted)) state.feedMuted = new Set(ui.feedMuted.filter((x): x is string => typeof x === 'string'));
-    if (ui.panel === 'community' || ui.panel === 'chimp') state.panel = ui.panel;
     const pt = ui.panelTroopId;
     state.panelTroopId = typeof pt === 'number' && w.troops.some(t => t.id === pt) ? pt : null;
   }
   /** After main.ts swapped the world (new or opened simulation): reset UI caches, then apply saved view state if any. */
   function worldReplaced(ui: Record<string, unknown> | null) {
     state.selectedId = defaultSelection(deps.getWorld()); state.highlightTroopId = null; state.experiment = null; state.pinnedTraceId = null;
-    state.society.open = false; state.dock = null; state.panel = 'community'; state.panelTroopId = null;
+    state.society.open = false; state.rightMode = 'communities'; state.panelTroopId = null;
     if (ui) { applyUi(ui); resumed = true; endPrologue(false); }
     ranks.reset(); feed.reset(); feed.prime(); applySceneState(); syncDock(); syncPanels();
     ctx.refresh();
