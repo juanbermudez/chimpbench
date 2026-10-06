@@ -127,3 +127,36 @@ move inside noise.
   reference, by class, from §2 and §7.2: dry matter swallowed per formula kcal eaten (`dmIn` ÷ `formulaIn`) lower, faecal
   fibre energy (`fecal`) lower, hindgut fill and days with a full hindgut lower, wherever fallback is eaten. Nothing
   else is predicted (the window, late October to late November, is not the lean season); nothing is judged.
+
+### 7.4 Smoke run result (a7e9439, frozen detached checkout, clean; seed 48, burn-in 30, 30 days, `--workers 1`)
+Both runs completed (84 s and 71 s for the seed); outputs `artifacts/validation/e1v/smoke-p025*` and `smoke-p1*`;
+tables generated from their JSON (`smoke-compare.py` in the agent's scratch).
+
+| run | viability | living start → end | deaths (starvation) | fitted distance | held-out distance | prescriptions |
+| --- | --- | --- | --- | ---: | ---: | ---: |
+| pithFibreSwallowed 1 | pass | 49 → 49 | 0 (0) | 2.382 | 9.386 | 42 |
+| pithFibreSwallowed 0.25 | pass | 49 → 49 | 0 (0) | 3.634 | 4.603 | 42 |
+
+| class | n | formula kcal/d: 1 → 0.25 | dry matter g/d: 1 → 0.25 | g dry matter per formula kcal: 1 → 0.25 | faecal fibre kcal/d: 1 → 0.25 | hindgut fill: 1 → 0.25 | share of day hindgut full: 1 → 0.25 | energy in kcal/d: 1 → 0.25 | energy in − faecal kcal/d: 1 → 0.25 | eating min/d: 1 → 0.25 | fruit share: 1 → 0.25 | reserves (÷ store): 1 → 0.25 |
+| --- | ---: | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| adult male | 14/14 | 1620 → 1644 | 692 → 696 | 0.427 → 0.424 | 477 → 473 | 0.651 → 0.646 | 0.001 → 0.000 | 2023 → 2035 | 1546 → 1562 | 226 → 230 | 0.958 → 0.945 | 0.002 → 0.001 |
+| female, other | 5/6 | 1329 → 1408 | 592 → 595 | 0.445 → 0.423 | 426 → 393 | 0.725 → 0.668 | 0.035 → 0.003 | 1689 → 1659 | 1263 → 1267 | 212 → 231 | 0.746 → 0.665 | -0.002 → -0.003 |
+| female, pregnant | 4/4 | 1408 → 1479 | 629 → 625 | 0.447 → 0.422 | 456 → 418 | 0.776 → 0.710 | 0.105 → 0.001 | 1795 → 1766 | 1338 → 1348 | 247 → 234 | 0.693 → 0.727 | -0.017 → -0.008 |
+| female, lactating | 8/8 | 1827 → 1919 | 823 → 813 | 0.451 → 0.424 | 598 → 537 | 0.791 → 0.711 | 0.112 → 0.001 | 2333 → 2265 | 1735 → 1728 | 294 → 310 | 0.723 → 0.680 | -0.019 → -0.016 |
+| lact: infant 0.5–2 y | 4/4 | 1826 → 1956 | 825 → 833 | 0.452 → 0.426 | 602 → 543 | 0.796 → 0.720 | 0.116 → 0.001 | 2335 → 2272 | 1733 → 1729 | 297 → 326 | 0.703 → 0.605 | -0.018 → -0.022 |
+| lact: infant ≥ 2 y | 4/4 | 1828 → 1882 | 822 → 794 | 0.450 → 0.422 | 593 → 530 | 0.785 → 0.702 | 0.109 → 0.001 | 2330 → 2258 | 1737 → 1728 | 291 → 293 | 0.743 → 0.764 | -0.019 → -0.010 |
+| juvenile 5–12 y | 6/6 | 1327 → 1332 | 564 → 566 | 0.425 → 0.425 | 391 → 385 | 0.762 → 0.751 | 0.063 → 0.044 | 1658 → 1640 | 1267 → 1255 | 256 → 263 | 0.941 → 0.907 | -0.032 → -0.031 |
+| infant 2–5 y | 4/4 | 638 → 639 | 211 → 201 | 0.331 → 0.315 | 114 → 98 | 0.522 → 0.452 | 0.000 → 0.000 | 734 → 715 | 621 → 617 | 130 → 129 | 0.866 → 0.871 | -0.019 → -0.012 |
+| infant 0.5–2 y | 4/4 | 368 → 369 | 90 → 87 | 0.243 → 0.237 | 26 → 21 | 0.202 → 0.157 | 0.000 → 0.000 | 391 → 385 | 364 → 363 | 38 → 31 | 0.722 → 0.675 | -0.023 → -0.023 |
+
+- As registered (§7.3), against the paired reference: dry matter swallowed per formula kcal falls where fallback is
+  eaten (adult females 0.445–0.452 → 0.422–0.426 g; males and juveniles, 94–96% fruit, about unchanged), faecal fibre
+  energy falls in every class, hindgut fill falls in every class and the share of the day with a full hindgut falls
+  from 0.035–0.116 to 0.001–0.003 in the female classes. Viability passes in both; no death.
+- Not predicted, reported: females handle 3–7% more formula energy a day and absorb about the same (energy in − faecal,
+  which ignores the gut pools' change over the window, within 1%): in late October to November the gut seldom binds,
+  so the drive sets what is absorbed. "Energy in" falls because it counts fibre at its full fermentation yield and less
+  fibre is swallowed. The band distances are not comparable: one seed, and the two sums run over different rows (rows
+  flagged by the instrument bar: fitted 2 and 1, held-out 23 and 19); nothing is judged.
+- The arms' code is a7e9439 plus documentation (f84e6d4) and the merge of track-e; nothing in `src/sim`, the registry or
+  the ledger changed after the smoke run.
