@@ -80,6 +80,30 @@ the truth value counts it; with the carcass also found it is still one killing; 
 the truth value and not in the observed count; a participant who dies of something else during a fight is not a
 killing.
 
+**Amendment 1 to defect 2 (6 October 2026, 09:55 EDT; written after the first re-derivation on the saved 12-month runs,
+before its code; attempt 2 of 3 on this defect).** What was seen: with the fix above, no `fight-kill` event arose in 60
+saved seed-runs (three fight deaths). Two of the three were seen by no team (one carcass found, counted as before).
+The third (M12-S39, seed 7) is a female who was a team's focal animal through ten minutes of charges, fights and
+coalitions, every one logged, and died in the last of them: the observer's own record of that decided conflict says
+`detected: true` (`protocols.ts` `onConflicts`, read every tick), yet the fatal contest has no event. Cause: interactions
+are captured every second minute by the teams following *then* (`minuteStep`, `processInteractions`); the follow ends
+within a minute of the focal's death, so a contest that started after the last capture is never logged. The registered
+rule therefore misses exactly the killing a team watches most closely, against its stated purpose ("a team that watches
+the fight"). This is an instrument error, not a result: the amendment is not chosen by a band (T-LET-1 for the S39
+group reads 2 killings in 60 community-years without it and would read 3 with it; both are inside 0.02–0.36 and both
+score "inconclusive").
+
+Amended rule: a team detected the contest when it logged the contest's event (as registered) **or** when the
+observer's decided-conflict record of the fatal contest is `detected` (a team's focal was the winner or the loser, or a
+team stood within visibility of either, at the tick it was decided; the record every dominance and reconciliation row
+already reads). The `fight-kill` event is written once per victim by whichever comes first. The saved-run upgrade
+applies the same two routes; a decided-conflict record names no team, so an upgraded event carries the team of the
+victim's community (no row reads a `fight-kill`'s team). Tests added: a focal that dies in a fight whose own event is
+never captured is one observed killing; the upgrade adds the event from a saved decided-conflict record.
+
+Found on the way and left alone (it touches every all-occurrence row): an interaction that starts in the last two
+minutes before a follow ends is never logged.
+
 ## 3. Defect 3: T-DEM-9's census point lies outside a 365-day run
 
 **The row.** T-DEM-9, definition: "Share of individuals > 3 y with a snare injury." Observer: "census", unit
