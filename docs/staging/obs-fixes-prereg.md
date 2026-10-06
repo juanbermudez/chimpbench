@@ -1,4 +1,4 @@
-# obs-fixes: three measurement defects in the rare-event rows (registered 6 October 2026, 09:05 EDT, before any code)
+# obs-fixes: three measurement defects in the rare-event rows (registered 6 October 2026, 09:04 EDT, commit 8d0e4ae, before any code)
 
 Branch `obs-fixes` (from `track-e` e0cf866). Owner: agent `obs-fixes`; the integrator merges. Scope: the virtual field
 observer (`src/field/*`) and the benchmark scripts. Nothing in `src/sim` changes; `data/targets.json` is not edited here
@@ -80,7 +80,7 @@ the truth value counts it; with the carcass also found it is still one killing; 
 the truth value and not in the observed count; a participant who dies of something else during a fight is not a
 killing.
 
-**Amendment 1 to defect 2 (6 October 2026, 09:55 EDT; written after the first re-derivation on the saved 12-month runs,
+**Amendment 1 to defect 2 (6 October 2026, 09:29 EDT, commit 74d28a7; written after the first re-derivation on the saved 12-month runs,
 before its code; attempt 2 of 3 on this defect).** What was seen: with the fix above, no `fight-kill` event arose in 60
 saved seed-runs (three fight deaths). Two of the three were seen by no team (one carcass found, counted as before).
 The third (M12-S39, seed 7) is a female who was a team's focal animal through ten minutes of charges, fights and
