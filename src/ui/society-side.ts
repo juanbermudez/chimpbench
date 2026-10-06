@@ -8,7 +8,7 @@ import { bondEdges } from './graph';
 import { alphaCardHtml, alphaTimelineSvg, ladderHtml, tenureListHtml } from './hierarchy';
 import { panelTroop } from './community-panel';
 import { renderInto } from './inspector';
-import { bar } from './parts';
+import { alphaBadge, bar } from './parts';
 import { morph, setAttr } from './morph';
 
 // Right sidebar, Society mode (T): one community at a time, as lists that fit the sidebar's width. Dominance is the
@@ -26,7 +26,7 @@ function kinshipHtml(ctx: Ctx, w: World, t: Troop): string {
   const { lines, singles, members } = matrilines(w, t), sel = ctx.state.selectedId;
   const row = (c: Chimp, depth: number, emigrant: boolean) => {
     const to = emigrant ? w.troops.find(x => x.id === c.troopId) : undefined;
-    return `<li><button class="ml-row${c.id === sel ? ' sel' : ''}${c.alive ? '' : ' dead'}" data-select="${c.id}" data-focus-key="ml-${c.id}" style="--d:${depth}"><em>${c.sex === 'male' ? '♂' : '♀'}</em><span class="ml-name">${esc(c.name)}${t.alphaId === c.id ? ' <b class="alpha-badge" title="Alpha male">α</b>' : ''}</span><span class="ml-note">${
+    return `<li><button class="ml-row${c.id === sel ? ' sel' : ''}${c.alive ? '' : ' dead'}" data-select="${c.id}" data-focus-key="ml-${c.id}" style="--d:${depth}"><em>${c.sex === 'male' ? '♂' : '♀'}</em><span class="ml-name">${esc(c.name)}${t.alphaId === c.id ? alphaBadge() : ''}</span><span class="ml-note">${
       !c.alive ? '† deceased' : to ? `→ ${esc(troopShort(to))}` : `${c.natalTroopId !== c.troopId ? '↘ ' : ''}${ageText(c)}`}</span></button></li>`;
   };
   return `<p class="ss-note">${lines.length} matriline${lines.length === 1 ? '' : 's'} · ${members} individuals, the deceased included. Offspring sit under their mother.</p>

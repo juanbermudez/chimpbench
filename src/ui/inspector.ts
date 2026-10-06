@@ -3,20 +3,22 @@ import type { Action, Chimp, MemoryDigest, Relationship, World } from '../types'
 import type { InspectorTab } from './contracts';
 import { icon } from './icons';
 import { actionVerb, ageText, ago, cap, duration, esc, feedCat, interactionCat, nameOf, pct, RELATION_LABEL, relationClass, stamp, troopOf, troopShort } from './format';
-import { bar, chip, empty, meter, radar, rankBadge, troopChip } from './parts';
+import { alphaBadge, bar, chip, empty, meter, radar, troopChip } from './parts';
 import { mindHtml, mindKey } from './mind';
 import { egoTreeSvg } from './family-tree';
 import { egoNetworkSvg, relationLegend } from './graph';
-import { emblem } from './communities';
 import { CAT_ICON } from './feed';
-import { morph } from './morph';
+import { CHIMP_LOG_MAX, chimpEvents } from './chimp-log';
+import { morph, setAttr, setText } from './morph';
 
-// Right panel, chimp view: identity header + five tabs (the community view, community-panel.ts, shares the panel).
-// Each tab renders only when its content key changes; focus, <details> state and scroll survive.
+// Bottom chimp panel: the selected animal at the foot of the forest, between the left column and the right sidebar.
+// An identity column (a small square snapshot, name, community, key details, what it is doing) beside five tabs:
+// Overview, Log (the field log filtered to this animal), Mind, Family and Relations. I collapses the panel to a
+// one-line strip. Each tab renders only when its content key changes, and only while the panel is expanded; focus,
+// <details> state and scroll survive a refresh.
 
-const TABS: { id: InspectorTab; label: string; ic: string }[] = [
-  { id: 'overview', label: 'Overview', ic: 'person' }, { id: 'mind', label: 'Mind', ic: 'brain' }, { id: 'family', label: 'Family', ic: 'tree' },
-  { id: 'social', label: 'Relations', ic: 'network' },
+const TABS: { id: InspectorTab; label: string }[] = [
+  { id: 'overview', label: 'Overview' }, { id: 'log', label: 'Log' }, { id: 'mind', label: 'Mind' }, { id: 'family', label: 'Family' }, { id: 'social', label: 'Relations' },
 ];
 
 const ACTION_ICON: Partial<Record<Action, string>> = {
@@ -52,10 +54,9 @@ export function nowLine(w: World, c: Chimp): string {
   return `${actionVerb(c.action)} · ${t < 60 ? 'just started' : duration(t / 3600)}`;
 }
 
-function overviewHtml(ctx: Ctx, c: Chimp): string {
-  const w = ctx.world();
-  const status: string[] = [];
-  status.push(chip(cap(c.mood), `mood-${c.mood}`, 'Current mood'));
+/** Tags beside the state meters: mood, cycle, pregnancy, injury, meat, calls, nest. */
+function statusChips(c: Chimp): string[] {
+  const status: string[] = [chip(cap(c.mood), `mood-${c.mood}`, 'Current mood')];
   if (c.sex === 'female' && c.cycleDay >= 0) status.push(chip(`Swelling ${pct(c.swelling)}%${c.swelling > 0.9 ? ' · maximal' : ''}`, c.swelling > 0.9 ? 'swell max' : 'swell', `Anogenital swelling; cycle day ${c.cycleDay}`));
   if (c.pregnancy > 0) status.push(chip(`Pregnant · ${pct(c.pregnancy)}%`, 'life', 'Gestation progress (~7.5 months total)'));
   if (c.lactating) status.push(chip('Lactating', 'life', 'Nursing a dependent infant; cycling suppressed'));
@@ -63,21 +64,31 @@ function overviewHtml(ctx: Ctx, c: Chimp): string {
   if (c.carryingMeat > 0) status.push(chip('Holding meat', 'hunt'));
   if (c.vocal) status.push(chip(`${icon('speaker')}${esc(c.vocal)}`, 'vocal'));
   if (c.nest) status.push(chip('In nest', ''));
+  return status;
+}
+
+/** Overview: state meters and tags, personality, skills and the latest episodes, side by side where the panel is wide. */
+function overviewHtml(ctx: Ctx, c: Chimp): string {
+  const w = ctx.world();
   const needs = [
     meter('Hunger', c.hunger, 'need'), meter('Thirst', c.thirst, 'need'), meter('Energy', c.energy, 'good'), meter('Social need', 1 - c.social, 'need'),
     meter('Stress', c.stress, 'neg'), meter('Health', c.health, 'good'), ...(c.injury > 0.01 ? [meter('Injury', c.injury, 'neg')] : []),
   ];
   const episodes = [...(c.episodes ?? [])].sort((a, b) => b.time - a.time).slice(0, 5);
-  // One line: what the animal is doing and for how long, then its tags (mood, cycle, meat, …).
   return `<div class="ov">
-    <section class="now-line" aria-label="Current state"><b>${icon(ACTION_ICON[c.action] ?? 'leaf')}${esc(nowLine(w, c))}</b>${status.join('')}</section>
-    <section class="blk"><h3 class="eyebrow">Internal state <span class="muted">0–100</span></h3><div class="needs">${needs.join('')}</div></section>
-    <section class="blk two">
-      <div><h3 class="eyebrow">Personality</h3>${radar(c.personality)}</div>
-      <div><h3 class="eyebrow">Skills</h3><div class="skills">${Object.entries(c.skills).map(([k, v]) => meter(cap(k), v, 'skill')).join('')}</div></div>
-    </section>
-    ${episodes.length ? `<section class="blk"><h3 class="eyebrow">Recent episodes</h3><ol class="diary">${episodes.map(e => `<li class="k-${e.kind}"><span class="mono">${ago(w, e.time)}</span>${esc(e.text)}</li>`).join('')}</ol></section>` : ''}
+    <section class="ov-state"><h3 class="eyebrow">State <span class="muted">0–100</span></h3><div class="chips">${statusChips(c).join('')}</div><div class="needs">${needs.join('')}</div></section>
+    <section class="ov-pers"><h3 class="eyebrow">Personality</h3>${radar(c.personality)}</section>
+    <section class="ov-skills"><h3 class="eyebrow">Skills</h3><div class="skills">${Object.entries(c.skills).map(([k, v]) => meter(cap(k), v, 'skill')).join('')}</div></section>
+    <section class="ov-epi"><h3 class="eyebrow">Recent episodes</h3>${episodes.length ? `<ol class="diary">${episodes.map(e => `<li class="k-${e.kind}"><span class="mono">${ago(w, e.time)}</span>${esc(e.text)}</li>`).join('')}</ol>` : '<p class="subtle">Nothing notable yet.</p>'}</section>
   </div>`;
+}
+
+/** Log: the field log filtered to this animal. */
+function logHtml(ctx: Ctx, c: Chimp): string {
+  const w = ctx.world(), evs = chimpEvents(w, c.id);
+  if (!evs.length) return empty(`Nothing in the field log names ${esc(c.name)} yet`, 'Entries appear here as they are recorded: greetings, grooming, conflicts, hunts, births and losses.', 'history');
+  return `<div class="clog-wrap"><h3 class="eyebrow">Activity log <span class="muted">${evs.length}${evs.length === CHIMP_LOG_MAX ? '+' : ''} field-log ${evs.length === 1 ? 'entry' : 'entries'}, newest first</span></h3>
+    <ol class="clog">${evs.map(e => { const cat = feedCat(e.kind); return `<li class="k-${cat} sev-${Math.min(3, e.severity ?? 0)}"><span class="mono cl-when">${stamp(w, e.time)}</span><span class="cl-ic">${icon(CAT_ICON[cat])}</span><span class="cl-text">${esc(e.text)}</span><span class="mono cl-ago">${ago(w, e.time)}</span></li>`; }).join('')}</ol></div>`;
 }
 
 function familyHtml(ctx: Ctx, c: Chimp): string {
@@ -87,16 +98,18 @@ function familyHtml(ctx: Ctx, c: Chimp): string {
   const sibs = c.motherId >= 0 ? w.chimps.filter(x => x.motherId === c.motherId && x.id !== c.id) : [];
   const natal = troopOf(w, c.natalTroopId);
   return `<div class="fam">
-    <div class="kin-wrap">${egoTreeSvg(w, c, 340)}</div>
-    <div class="legend"><span class="lg-shape"><b class="sq"></b>male <b class="ci"></b>female</span><span><i class="ln mat"></i>mother</span><span><i class="ln sire"></i>genetic sire</span><span><b class="dead-mk">†</b>deceased</span><span><b class="imm-mk">↘</b>immigrant</span></div>
-    <dl class="facts-dl">
-      <div><dt>Mother</dt><dd>${mother ? `<button class="lnk" data-select="${mother.id}">${esc(mother.name)}</button>${mother.alive ? '' : ' †'}` : 'Unknown (founder)'}</dd></div>
-      <div><dt>Genetic sire</dt><dd>${sire ? `<button class="lnk" data-select="${sire.id}">${esc(sire.name)}</button>${sire.alive ? '' : ' †'}` : 'Unknown'}</dd></div>
-      <div><dt>Maternal siblings</dt><dd>${sibs.length ? `${sibs.filter(s => s.alive).length} of ${sibs.length} living` : 'None'}</dd></div>
-      <div><dt>Offspring</dt><dd>${offspring.length ? `${offspring.filter(s => s.alive).length} of ${offspring.length} living` : 'None'}</dd></div>
-      <div><dt>Natal community</dt><dd>${natal ? `${troopChip(natal)}${c.natalTroopId !== c.troopId ? ' <span class="muted">immigrated</span>' : ''}` : '—'}</dd></div>
-    </dl>
-    <p class="honest">Chimpanzees recognise maternal kin. The sire is genetic ground truth from the simulation; the chimps themselves do not know paternity.</p>
+    <div class="fam-tree">${egoTreeSvg(w, c, 340)}</div>
+    <div class="fam-facts">
+      <dl class="facts-dl">
+        <div><dt>Mother</dt><dd>${mother ? `<button class="lnk" data-select="${mother.id}">${esc(mother.name)}</button>${mother.alive ? '' : ' †'}` : 'Unknown (founder)'}</dd></div>
+        <div><dt>Genetic sire</dt><dd>${sire ? `<button class="lnk" data-select="${sire.id}">${esc(sire.name)}</button>${sire.alive ? '' : ' †'}` : 'Unknown'}</dd></div>
+        <div><dt>Maternal siblings</dt><dd>${sibs.length ? `${sibs.filter(s => s.alive).length} of ${sibs.length} living` : 'None'}</dd></div>
+        <div><dt>Offspring</dt><dd>${offspring.length ? `${offspring.filter(s => s.alive).length} of ${offspring.length} living` : 'None'}</dd></div>
+        <div><dt>Natal community</dt><dd>${natal ? `${troopChip(natal)}${c.natalTroopId !== c.troopId ? ' <span class="muted">immigrated</span>' : ''}` : '—'}</dd></div>
+      </dl>
+      <div class="legend"><span class="lg-shape"><b class="sq"></b>male <b class="ci"></b>female</span><span><i class="ln mat"></i>mother</span><span><i class="ln sire"></i>genetic sire</span><span><b class="dead-mk">†</b>deceased</span><span><b class="imm-mk">↘</b>immigrant</span></div>
+      <p class="honest">Chimpanzees recognise maternal kin. The sire is genetic ground truth from the simulation; the chimps themselves do not know paternity.</p>
+    </div>
   </div>`;
 }
 
@@ -159,35 +172,58 @@ function memoryHtml(w: World, c: Chimp): string {
   return `<ol class="memtl">${months.map(row).join('')}${years.length ? `<li class="mt-sep">Earlier years</li>${years.map(row).join('')}` : ''}</ol>`;
 }
 
+/** Relations: the ego network, the relationship list, allies and recent interactions, and the social memory. */
 function socialHtml(ctx: Ctx, c: Chimp): string {
   const w = ctx.world();
   const rows = relationshipRows(ctx, c), hasTension = rows.some(r => r.tension !== null);
   const allies = (c.allies ?? []).map(id => w.chimps.find(x => x.id === id)).filter((x): x is Chimp => !!x);
   const inter = w.interactions.filter(i => i.participants?.includes(c.id) || i.actorId === c.id || i.targetId === c.id).sort((a, b) => b.start - a.start).slice(0, 6);
-  const evs = w.events.filter(e => e.actors?.includes(c.id)).slice(-6).reverse();
   const ego = egoNetworkSvg(w, c, ctx.deps.relationOf, 340, 230);
   return `<div class="soc">
-    ${ego ? `<div class="ego-wrap">${ego}</div>${relationLegend()}` : ''}
-    <section class="blk"><h3 class="eyebrow">Relationships <span class="muted">0–100${hasTension ? ` · rival at ${Math.round((rows.find(x => x.r)?.r?.rivalAt ?? RIVAL_TENSION_FALLBACK) * 100)} tension` : ''}</span></h3>${rows.length ? `<div class="bonds-head${hasTension ? ' t' : ''}" aria-hidden="true"><span>Individual</span><span></span><span>Bond</span>${hasTension ? '<span>Tension</span>' : ''}</div><ol class="bonds${hasTension ? ' t' : ''}">${rows.map(b => {
+    ${ego ? `<section class="soc-net">${ego}${relationLegend()}</section>` : ''}
+    <section><h3 class="eyebrow">Relationships <span class="muted">0–100${hasTension ? ` · rival at ${Math.round((rows.find(x => x.r)?.r?.rivalAt ?? RIVAL_TENSION_FALLBACK) * 100)} tension` : ''}</span></h3>${rows.length ? `<div class="bonds-head${hasTension ? ' t' : ''}" aria-hidden="true"><span>Individual</span><span></span><span>Bond</span>${hasTension ? '<span>Tension</span>' : ''}</div><ol class="bonds${hasTension ? ' t' : ''}">${rows.map(b => {
       const rel = ctx.deps.relationOf(w, c, b.o), rival = (b.tension ?? 0) >= (b.r?.rivalAt ?? RIVAL_TENSION_FALLBACK);
       return `<li><button data-select="${b.o.id}" title="${esc(relTitle(ctx, b))}"><span class="b-name"><em>${b.o.sex === 'male' ? '♂' : '♀'}</em>${esc(b.o.name)}</span><span class="rel ${relationClass(rel)}">${RELATION_LABEL[rel]}</span><span class="b-val">${bar(b.bond, `rel-${relationClass(rel)}`, 'Bond')}<b class="mono">${pct(b.bond)}</b></span>${b.tension !== null ? `<span class="b-val tension${rival ? ' rival' : ''}">${bar(b.tension, rival ? 'bad' : 'tension', 'Tension')}<b class="mono">${pct(b.tension)}</b></span>` : ''}</button></li>`;
     }).join('')}</ol>` : '<p class="subtle">No bonds above the noise floor yet. Bonds grow through grooming, play and shared travel.</p>'}</section>
-    ${allies.length ? `<section class="blk"><h3 class="eyebrow">Coalition allies</h3><div class="ally-row">${allies.map(a => `<button class="pal" data-select="${a.id}">${icon('link')}${esc(a.name)}${a.alive ? '' : ' †'}</button>`).join('')}</div></section>` : ''}
-    ${c.lastConflict ? `<section class="blk"><h3 class="eyebrow">Last conflict</h3><p class="conf ${c.lastConflict.won ? 'won' : 'lost'}">${c.lastConflict.won ? 'Won against' : 'Lost to'} <button class="lnk" data-select="${c.lastConflict.opponentId}">${esc(nameOf(w, c.lastConflict.opponentId))}</button> · ${ago(w, c.lastConflict.time)}</p></section>` : ''}
-    <section class="blk"><h3 class="eyebrow">Recent interactions</h3>${inter.length || evs.length ? `<ol class="inter">
-      ${inter.map(i => { const other = i.actorId === c.id ? i.targetId : i.actorId; const cat = interactionCat(i.kind); return `<li class="k-${cat}"><span class="ev-ic">${icon(CAT_ICON[cat])}</span><span>${esc(cap(i.kind.replace('-', ' ')))}${other >= 0 && other !== c.id ? ` ${i.actorId === c.id ? '→' : '←'} <button class="lnk" data-select="${other}">${esc(nameOf(w, other))}</button>` : ''}</span><span class="mono muted">${i.end === null ? 'ongoing' : ago(w, i.start)}</span></li>`; }).join('')}
-      ${evs.map(e => `<li class="k-${feedCat(e.kind)}"><span class="ev-ic">${icon(CAT_ICON[feedCat(e.kind)])}</span><span>${esc(e.text)}</span><span class="mono muted">${ago(w, e.time)}</span></li>`).join('')}
-    </ol>` : '<p class="subtle">No interactions recorded in the recent window.</p>'}</section>
-    ${c.digests !== undefined || ctx.deps.relationshipOf ? `<section class="blk"><h3 class="eyebrow">Social memory <span class="muted">monthly, then yearly</span></h3>${memoryHtml(w, c)}</section>` : ''}
+    <section class="soc-ctx">
+      ${allies.length ? `<h3 class="eyebrow">Coalition allies</h3><div class="ally-row">${allies.map(a => `<button class="pal" data-select="${a.id}">${icon('link')}${esc(a.name)}${a.alive ? '' : ' †'}</button>`).join('')}</div>` : ''}
+      ${c.lastConflict ? `<h3 class="eyebrow">Last conflict</h3><p class="conf ${c.lastConflict.won ? 'won' : 'lost'}">${c.lastConflict.won ? 'Won against' : 'Lost to'} <button class="lnk" data-select="${c.lastConflict.opponentId}">${esc(nameOf(w, c.lastConflict.opponentId))}</button> · ${ago(w, c.lastConflict.time)}</p>` : ''}
+      <h3 class="eyebrow">Recent interactions</h3>${inter.length ? `<ol class="inter">
+      ${inter.map(i => { const other = i.actorId === c.id ? i.targetId : i.actorId; const cat = interactionCat(i.kind); return `<li class="k-${cat}"><span class="cl-ic">${icon(CAT_ICON[cat])}</span><span>${esc(cap(i.kind.replace('-', ' ')))}${other >= 0 && other !== c.id ? ` ${i.actorId === c.id ? '→' : '←'} <button class="lnk" data-select="${other}">${esc(nameOf(w, other))}</button>` : ''}</span><span class="mono muted">${i.end === null ? 'ongoing' : ago(w, i.start)}</span></li>`; }).join('')}
+    </ol>` : '<p class="subtle">None in the recent window. The Log tab lists what the field log recorded.</p>'}
+      ${c.digests !== undefined || ctx.deps.relationshipOf ? `<h3 class="eyebrow">Social memory <span class="muted">monthly, then yearly</span></h3>${memoryHtml(w, c)}` : ''}
+    </section>
     <p class="honest">Bond is relationship value (grooming, support, kinship); tension is recent aggression not yet repaired, fading with a 21-day half-life. Both are simulation state, illustrative and uncalibrated.</p>
   </div>`;
 }
 
-export function createInspector(root: HTMLElement, ctx: Ctx) {
-  root.innerHTML = `<header class="insp-head"></header>
-  <div class="tabs" role="tablist" aria-label="Inspector">${TABS.map(t => `<button role="tab" id="tab-${t.id}" data-tab="${t.id}" aria-controls="insp-panel">${icon(t.ic)}<span>${t.label}</span></button>`).join('')}</div>
-  <div class="insp-body" id="insp-panel" role="tabpanel" tabindex="0"></div>`;
-  const head = root.querySelector<HTMLElement>('.insp-head')!, body = root.querySelector<HTMLElement>('.insp-body')!, tabs = root.querySelector<HTMLElement>('.tabs')!;
+/** "Rank 3 of 7 males", "Alpha · rank 1 of 7 males", or why there is no rank. */
+function rankLine(w: World, c: Chimp): string {
+  const t = troopOf(w, c.troopId);
+  if (!t || !c.alive) return '';
+  const list = c.sex === 'male' ? t.maleHierarchy : t.femaleHierarchy, i = list.indexOf(c.id);
+  if (i < 0) return 'Unranked (immature)';
+  return `${t.alphaId === c.id ? 'Alpha · rank' : 'Rank'} ${i + 1} of ${list.length} ${c.sex === 'male' ? 'males' : 'females'}`;
+}
+
+const SIZE: Record<Chimp['stage'], string> = { infant: 'inf', juvenile: 'juv', adolescent: 'adol', adult: 'ad', elder: 'ad' };
+
+export function createChimpPanel(root: HTMLElement, ctx: Ctx) {
+  // The snapshot slot is static (a canvas the scene draws into, over a chip that stands in when there is no picture);
+  // the text beside it is patched in place.
+  root.innerHTML = `<div class="ch-id">
+    <button class="ch-shot" data-act="focus" aria-keyshortcuts="F" data-tip="Focus the camera on this chimp" data-key="F"><canvas class="ch-photo" width="176" height="176" hidden></canvas><span class="ch-chip" aria-hidden="true"><b></b></span></button>
+    <div class="ch-who"></div>
+  </div>
+  <div class="ch-main">
+    <div class="ch-bar">
+      <div class="tabs ch-tabs" role="tablist" aria-label="Selected chimp">${TABS.map(t => `<button role="tab" id="tab-${t.id}" data-tab="${t.id}" aria-controls="ch-body">${t.label}</button>`).join('')}</div>
+      <div class="ch-actions"><button class="icon-btn sm" data-act="prev" aria-label="Previous in community ([)" data-tip="Previous in community" data-key="[">${icon('chevronL')}</button><button class="icon-btn sm" data-act="next" aria-label="Next in community (])" data-tip="Next in community" data-key="]">${icon('chevronR')}</button><button class="icon-btn sm ch-collapse" data-act="collapse" aria-keyshortcuts="I" aria-controls="ch-body" aria-expanded="true" aria-label="Collapse the chimp panel (I)" data-tip="Collapse" data-key="I">${icon('down')}</button></div>
+    </div>
+    <div class="ch-body" id="ch-body" role="tabpanel" tabindex="0"></div>
+  </div>`;
+  const q = <T extends HTMLElement = HTMLElement>(s: string) => root.querySelector<T>(s)!;
+  const who = q('.ch-who'), body = q('.ch-body'), tabs = q('.ch-tabs'), shot = q('.ch-shot'), chipEl = q('.ch-chip'), collapse = q('.ch-collapse');
   tabs.addEventListener('click', e => { const b = (e.target as HTMLElement).closest<HTMLElement>('[data-tab]'); if (b) ctx.setTab(b.dataset.tab as InspectorTab); });
   tabs.addEventListener('keydown', e => {
     if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
@@ -204,6 +240,8 @@ export function createInspector(root: HTMLElement, ctx: Ctx) {
     else if (act === 'follow') { ctx.state.pinnedTraceId = null; ctx.refresh(); }
     else if (act === 'clear-exp') { ctx.state.experiment = null; ctx.refresh(); }
     else if (act === 'collapse') ctx.setChimpPanel(!ctx.state.chimpOpen);
+    // Collapsed, the strip itself opens the panel (its buttons, handled above, keep their own jobs).
+    else if (!ctx.state.chimpOpen && el.closest('.ch-who')) ctx.setChimpPanel(true);
   });
   root.addEventListener('keydown', e => {
     const g = (e.target as HTMLElement).closest<HTMLElement>('g[data-select]');
@@ -213,35 +251,48 @@ export function createInspector(root: HTMLElement, ctx: Ctx) {
     const el = e.target as HTMLInputElement;
     if (el.dataset.act === 'control') ctx.setModelControl(el.checked);
   });
-  let headKey = '', bodyKey = '', tabKey = '', scrolled = 0, renderedAt = -1e9;
+  let headKey = '', bodyKey = '', tabKey = '', openKey: boolean | null = null, scrolled = 0, renderedAt = -1e9;
   body.addEventListener('scroll', () => { scrolled = body.scrollTop; }, { passive: true });
   return {
     update(force = false) {
-      const w = ctx.world(), c = ctx.selected();
-      if (!c) { renderInto(body, empty('Nobody selected', 'Click a chimp in the forest, the map or the field log.', 'person')); return; }
-      const t = troopOf(w, c.troopId);
-      const hk = [c.id, c.name, c.alive, c.stage, Math.floor(c.age * 10), c.troopId, t?.alphaId, (c.sex === 'male' ? t?.maleHierarchy : t?.femaleHierarchy)?.indexOf(c.id)].join('|');
+      const w = ctx.world(), c = ctx.selected(), open = ctx.state.chimpOpen;
+      if (open !== openKey) {
+        openKey = open;
+        setAttr(collapse, 'aria-expanded', String(open));
+        setAttr(collapse, 'aria-label', `${open ? 'Collapse' : 'Expand'} the chimp panel (I)`); setAttr(collapse, 'data-tip', open ? 'Collapse' : 'Expand');
+        morph(collapse, icon(open ? 'down' : 'up'));
+        bodyKey = '';   // the tab renders in full when the panel opens again
+      }
+      if (!c) { headKey = ''; morph(who, '<h2 class="ch-name"><span>Nobody selected</span></h2><p class="ch-meta">Click a chimp in the forest, on the map or in the field log.</p>'); if (open) renderInto(body, ''); return; }
+      const t = troopOf(w, c.troopId), now = nowLine(w, c);
+      const hk = [c.id, c.name, c.alive, c.stage, ageText(c), c.troopId, c.natalTroopId, t?.alphaId, t?.color, rankLine(w, c), now, c.action].join('|');
       if (force || hk !== headKey) {
         headKey = hk;
-        renderInto(head, `<div class="ih-row">${t ? emblem(t, 'lg') : ''}<div class="ih-id">
-          <h2 class="ih-name">${esc(c.name)}${c.alive ? '' : ' <span class="dagger">†</span>'}</h2>
-          <p class="ih-meta">${cap(c.stage)} ${c.sex} · ${ageText(c)}${t ? ` · ${esc(troopShort(t))}` : ''}${c.natalTroopId !== c.troopId ? ' · immigrant' : ''}</p></div>
-          <div class="ih-actions"><button class="icon-btn" data-act="prev" aria-label="Previous in community ([)" title="Previous in community ([)">${icon('chevronL')}</button><button class="icon-btn" data-act="next" aria-label="Next in community (])" title="Next in community (])">${icon('chevronR')}</button><button class="icon-btn" data-act="focus" aria-label="Focus camera (F)" title="Focus camera (F)">${icon('focus')}</button><button class="icon-btn" data-act="collapse" aria-keyshortcuts="I" aria-label="Collapse or expand the panel (I)" title="Collapse or expand the panel (I)">${icon('down')}</button></div></div>
-          <div class="ih-badges">${rankBadge(w, c)}<span class="ih-no mono" title="Individual number">#${String(c.id).padStart(3, '0')}</span></div>`);
+        renderInto(who, `<h2 class="ch-name"><span>${esc(c.name)}</span>${t?.alphaId === c.id && c.alive ? alphaBadge() : ''}${c.alive ? '' : '<span class="dagger" title="Deceased">†</span>'}</h2>
+          <p class="ch-comm">${troopChip(t)}${c.natalTroopId !== c.troopId ? '<span class="muted">immigrant</span>' : ''}</p>
+          <p class="ch-meta">${cap(c.stage)} ${c.sex} · ${ageText(c)}<span class="mono" title="Individual number">#${String(c.id).padStart(3, '0')}</span></p>
+          <p class="ch-rank">${esc(rankLine(w, c))}</p>
+          <p class="ch-now">${icon(ACTION_ICON[c.action] ?? 'leaf')}<span>${esc(now)}</span></p>`);
+        // Stand-in for the snapshot: the unit chip (square male, circle female, community colour, monogram).
+        setText(chipEl.firstElementChild!, c.name.slice(0, 2)); setAttr(chipEl, 'data-sex', c.sex); setAttr(chipEl, 'data-size', SIZE[c.stage] ?? 'ad');
+        if (t) shot.style.setProperty('--c', t.color);
+        setAttr(shot, 'aria-label', `Focus the camera on ${c.name} (F)`);
       }
+      if (!open) return;   // collapsed: the strip above is all there is to keep fresh
       const tk = ctx.state.tab;
-      if (tk !== tabKey || force) { tabKey = tk; tabs.querySelectorAll<HTMLElement>('[data-tab]').forEach(b => { const on = b.dataset.tab === tk; b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1; }); body.setAttribute('aria-labelledby', `tab-${tk}`); }
+      if (tk !== tabKey || force) { tabKey = tk; tabs.querySelectorAll<HTMLElement>('[data-tab]').forEach(b => { const on = b.dataset.tab === tk; setAttr(b, 'aria-selected', String(on)); b.tabIndex = on ? 0 : -1; }); setAttr(body, 'aria-labelledby', `tab-${tk}`); setAttr(body, 'data-tab', tk); }
       let bk: string, html: () => string;
       switch (tk) {
         case 'mind': bk = mindKey(ctx, c); html = () => mindHtml(ctx, c); break;
         case 'family': bk = [c.id, w.chimps.length, w.chimps.filter(x => !x.alive).length, Math.floor(w.time / 24)].join('|'); html = () => familyHtml(ctx, c); break;
-        case 'social': bk = [c.id, Math.floor(w.time * 4), w.interactions.length, w.events.length, c.digests?.length ?? 0].join('|'); html = () => socialHtml(ctx, c); break;
-        default: bk = [c.id, nowLine(w, c), c.mood, c.alive, Math.round(c.hunger * 50), Math.round(c.thirst * 50), Math.round(c.energy * 50), Math.round(c.social * 50), Math.round(c.stress * 50), Math.round(c.health * 50), Math.round(c.injury * 50), Math.round(c.swelling * 20), c.lactating, c.pregnancy > 0, c.carryingMeat > 0, c.vocal, c.nest !== null, c.episodes?.length].join('|'); html = () => overviewHtml(ctx, c);
+        case 'social': bk = [c.id, Math.floor(w.time * 4), w.interactions.length, c.digests?.length ?? 0].join('|'); html = () => socialHtml(ctx, c); break;
+        case 'log': { const evs = chimpEvents(w, c.id); bk = [c.id, evs.length, evs[0]?.time ?? '', Math.floor(w.time * 12)].join('|'); html = () => logHtml(ctx, c); break; }
+        default: bk = [c.id, c.mood, c.alive, Math.round(c.hunger * 50), Math.round(c.thirst * 50), Math.round(c.energy * 50), Math.round(c.social * 50), Math.round(c.stress * 50), Math.round(c.health * 50), Math.round(c.injury * 50), Math.round(c.swelling * 20), c.lactating, c.pregnancy > 0, c.carryingMeat > 0, c.vocal, c.nest !== null, c.episodes?.length, Math.floor(w.time * 4)].join('|'); html = () => overviewHtml(ctx, c);
       }
       bk = `${tk}:${bk}`;
       if (force || bk !== bodyKey) {
         const sameChimpTab = bodyKey.split(':')[0] === tk && bodyKey.split('|')[0] === bk.split('|')[0];
-        // Dense tabs (trees, networks, ladders, decision history) redraw at most once a second when only
+        // Dense tabs (trees, networks, decision history, the log) redraw at most once a second when only
         // their data moved, the overview twice a second above 1 h/s; a new chimp, tab or user action renders at once.
         const now = performance.now();
         const fast = ctx.deps.clock.playing && ctx.deps.clock.effectiveRate > 3600, gap = tk !== 'overview' ? 1000 : fast ? 500 : 0;

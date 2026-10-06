@@ -1,4 +1,4 @@
-import type { Chimp, Personality, Troop, World } from '../types';
+import type { Chimp, Personality, Troop } from '../types';
 import { clamp01, esc, troopShort } from './format';
 import { icon } from './icons';
 
@@ -52,11 +52,5 @@ export function radar(p: Personality, size = 116): string {
 
 export const empty = (title: string, body: string, ic = 'info') => `<div class="empty">${icon(ic)}<b>${esc(title)}</b><p>${body}</p></div>`;
 
-export function rankBadge(world: World, c: Chimp): string {
-  const t = world.troops.find(tt => tt.id === c.troopId);
-  if (!t || !c.alive) return '';
-  if (t.alphaId === c.id) return `<span class="rank-badge alpha" title="Alpha male">${icon('crown')}Alpha</span>`;
-  const list = c.sex === 'male' ? t.maleHierarchy : t.femaleHierarchy;
-  const i = list.indexOf(c.id);
-  return i >= 0 ? `<span class="rank-badge" title="${c.sex === 'male' ? 'Male' : 'Female'} dominance rank">Rank ${i + 1}<i>of ${list.length} ${c.sex === 'male' ? 'males' : 'females'}</i></span>` : `<span class="rank-badge muted" title="Immatures are not ranked">Unranked</span>`;
-}
+/** The alpha's mark: the gold "α" badge of the 3D name tag (render/creatures/labels.ts, .crl-rank.alpha), wherever the UI names an alpha. */
+export const alphaBadge = (title = 'Alpha male') => `<b class="alpha-badge" role="img" aria-label="alpha" title="${esc(title)}">α</b>`;

@@ -10,7 +10,7 @@ import { createSocietySide } from './society-side';
 import { memberOrder } from './unit-view';
 import { createFeed, CAT_ICON } from './feed';
 import { createMinimap } from './minimap';
-import { createInspector } from './inspector';
+import { createChimpPanel } from './inspector';
 import { createSociety } from './society';
 import { createExperiments, EXPERIMENTS } from './interventions';
 import { createModelPanel } from './model-panel';
@@ -292,7 +292,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
   const feed = createFeed(q('.p-feed'), ctx);
   const minimap = createMinimap(q('.map-host'), ctx);
   const scaleBar = createScaleBar(q('.scalebar'), q('#viewport'), () => deps.getScene());
-  const inspector = createInspector(q('.chimp-panel'), ctx);
+  const chimpPanel = createChimpPanel(q('.chimp-panel'), ctx);
   const commPanel = createCommunityPanel(q('[data-pane="communities"]'), ctx);
   const societySide = createSocietySide(q('[data-pane="society"]'), ctx);
   const society = createSociety(q('.society'), ctx);
@@ -571,7 +571,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
     force => feed.update(visibility().left, force || !shown.left),
     () => { const v = visibility(); if (v.map) minimap.update(); shown.left = v.left; shown.map = v.map; },
     force => { const v = visibility().right; if (v) updateRight(force || !shown.right); shown.right = v; },
-    force => { const v = visibility().chimp; if (v) inspector.update(force || !shown.chimp); shown.chimp = v; },
+    force => { const v = visibility().chimp; if (v) chimpPanel.update(force || !shown.chimp); shown.chimp = v; },
     force => {
       const w = deps.getWorld();
       if (state.society.open) society.update(force);
