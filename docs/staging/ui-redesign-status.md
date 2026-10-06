@@ -103,3 +103,11 @@ quality 'low', cinematic view, dead or unloaded animal, the synthetic preview).
   (about 7% in one of them) and were closed; nothing was sent other than the model file requests.
 - From about 00:50 on 6 Oct the old worktree under `~/Desktop` returned empty reads and hung (iCloud eviction); the
   step 8 and 9 screenshots and checks were retaken in the new worktree, and one phone fix was committed.
+
+## User decision (6 October 2026)
+
+"UI: accept all five decisions." The five put to the user: `I` collapses the chimp panel and `Shift`+`B` hides the right
+sidebar; the Model panel is a fourth tab of the sidebar; the full-screen Society view stays behind "Full view"; the Rank
+tab is removed from the chimp panel; below 1180 px the sidebar stands on top of the chimp panel. Still to do on this
+branch: `docs/architecture.html` describes the old layout; `scripts/guide-shots.mjs` is updated but not run. Merging
+into `main` is the user's.
