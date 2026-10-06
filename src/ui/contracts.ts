@@ -43,9 +43,10 @@ export interface DeciderView {
 export interface FootprintView { pts: ArrayLike<number>; fx: number; fz: number; version: number; followId: number; }
 
 /** Optional scene extra: a small rendered snapshot of one animal for the bottom panel. request() asks for a new picture
- * of animal id drawn into canvas (asynchronously; false when the renderer cannot take one now, e.g. the animal is not
- * loaded or quality is low). The UI decides when to ask (selection, a new activity, a slow refresh). */
-export interface PortraitView { request(id: number, canvas: HTMLCanvasElement): boolean }
+ * of animal id drawn into canvas (asynchronously; false when the renderer will not take one now: quality 'low', the
+ * cinematic view, or a refresh while frames run long). The renderer unhides the canvas when the picture lands and
+ * hides it when the animal cannot be drawn. The UI decides when to ask (a new selection, then a changed activity). */
+export interface PortraitView { request(id: number, canvas: HTMLCanvasElement, refresh?: boolean): boolean }
 
 /** Everything the UI needs from the outside world, injected by main.ts (or the preview). */
 export interface UiDeps {

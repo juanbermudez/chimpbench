@@ -251,7 +251,28 @@ export function createChimpPanel(root: HTMLElement, ctx: Ctx) {
     const el = e.target as HTMLInputElement;
     if (el.dataset.act === 'control') ctx.setModelControl(el.checked);
   });
+  const photo = q<HTMLCanvasElement>('.ch-photo');
   let headKey = '', bodyKey = '', tabKey = '', openKey: boolean | null = null, scrolled = 0, renderedAt = -1e9;
+  // Snapshot: the scene draws the animal into the canvas when asked (render/creatures/portrait.ts). Asked on a new
+  // selection and once more 1.5 s later (the camera has arrived, the pose has settled); after that only when the
+  // animal's activity has changed, at most every 15 s and not above 1 h/s: a readback can cost a long frame.
+  const SHOT_SETTLE = 1500, SHOT_EVERY = 15000;
+  let shotId = -1, shotAction = '', shotAt = -1e9, shotDue = -1;
+  function snapshot(c: Chimp | undefined) {
+    const api = ctx.deps.getScene()?.portrait;
+    if (!c || !c.alive || !api) { if (!photo.hidden) photo.hidden = true; shotId = -1; return; }
+    const now = performance.now();
+    if (c.id !== shotId) {
+      if (!photo.hidden) photo.hidden = true;   // never another animal's face under this name
+      shotId = c.id; shotAction = c.action; shotAt = now; shotDue = now + SHOT_SETTLE;
+      api.request(c.id, photo);
+      return;
+    }
+    const clk = ctx.deps.clock, changed = c.action !== shotAction && now - shotAt >= SHOT_EVERY && !(clk.playing && clk.effectiveRate > 3600);
+    if (!(shotDue >= 0 && now >= shotDue) && !changed) return;
+    if (api.request(c.id, photo, true)) { shotAction = c.action; shotAt = now; shotDue = -1; }
+    else if (shotDue >= 0) shotDue = now + SHOT_SETTLE;   // refused (frames run long, or no picture now): try again shortly
+  }
   body.addEventListener('scroll', () => { scrolled = body.scrollTop; }, { passive: true });
   return {
     update(force = false) {
@@ -263,6 +284,7 @@ export function createChimpPanel(root: HTMLElement, ctx: Ctx) {
         morph(collapse, icon(open ? 'down' : 'up'));
         bodyKey = '';   // the tab renders in full when the panel opens again
       }
+      snapshot(c);
       if (!c) { headKey = ''; morph(who, '<h2 class="ch-name"><span>Nobody selected</span></h2><p class="ch-meta">Click a chimp in the forest, on the map or in the field log.</p>'); if (open) renderInto(body, ''); return; }
       const t = troopOf(w, c.troopId), now = nowLine(w, c);
       const hk = [c.id, c.name, c.alive, c.stage, ageText(c), c.troopId, c.natalTroopId, t?.alphaId, t?.color, rankLine(w, c), now, c.action].join('|');
