@@ -145,6 +145,7 @@ test('baselines see only earlier days and earlier scans of the same session', ()
   assert.equal(r.base!.pastNeighbour, 0, 'Q (day 1) and R (earlier scan) tie ahead of the partner');
   assert.equal(r.base!.pastParty, 1 / 3);
   assert.equal(r.base!.groomedMePrev, 1 / 3, 'nobody groomed him at the previous scan');
+  assert.equal(r.base!.listedFirst, 1, 'the partner happens to be written first in this party list');
   // within a session, earlier bouts count: the second bout of session 3 follows a bout with P
   const again = recs.find(x => x.session === '3' && x.scan === 5)!;
   assert.equal(again.base!.lastPartner, 1);

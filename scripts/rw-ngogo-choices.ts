@@ -159,6 +159,8 @@ export interface ChoiceRecord {
   labelInProx2Now: boolean; labelInProx5Now: boolean;
   /** Filled by score(): expected top-1 accuracy of each baseline (ties split evenly). */
   base?: Record<string, number>;
+  /** Filled by score(): the focal and a male label groomed each other (either direction) before the decision scan. */
+  labelGroomedBefore?: boolean;
 }
 
 /**
@@ -192,7 +194,7 @@ export function extractRecords(s: Session, roster: Set<string>, otherPartSameDay
 // ------------------------------------------------------------------------------------------------ history and baselines
 
 const pair = (a: string, b: string) => a < b ? `${a}|${b}` : `${b}|${a}`;
-export const BASELINES = ['chance', 'pastGiven', 'pastEither', 'lastPartner', 'nearestPrev', 'groomedMePrev', 'pastNeighbour', 'pastParty', 'stack'] as const;
+export const BASELINES = ['chance', 'pastGiven', 'pastEither', 'lastPartner', 'nearestPrev', 'groomedMePrev', 'pastNeighbour', 'pastParty', 'stack', 'listedFirst'] as const;
 
 /** Expected top-1 accuracy of "pick the best-scored member", ties split evenly. Scores compare lexicographically. */
 export function expectedHit(set: string[], labels: string[], score: (b: string) => number[]): number {
@@ -233,7 +235,10 @@ export function score(sessions: Session[], roster: Set<string>, otherPartSameDay
         const hit = (fn: (b: string) => number[]) => expectedHit(S, r.maleLabels, fn);
         r.base = { chance: hit(() => [0]), pastGiven: hit(b => [g(f, b)]), pastEither: hit(b => [g(f, b) + g(b, f)]), lastPartner: hit(b => [last(b)]),
           nearestPrev: hit(b => [dist(b)]), groomedMePrev: hit(b => [invited(b)]), pastNeighbour: hit(b => [nb(b)]), pastParty: hit(b => [together.get(pair(f, b)) ?? 0]),
-          stack: hit(b => [invited(b), dist(b), g(f, b) + g(b, f)]) };
+          stack: hit(b => [invited(b), dist(b), g(f, b) + g(b, f)]),
+          // not a behavioural rule: a check that the order in which the observer wrote the party does not give the answer away
+          listedFirst: hit(b => [-S.indexOf(b)]) };
+        r.labelGroomedBefore = r.maleLabels.some(b => S.includes(b) && g(f, b) + g(b, f) > 0);
       }
     }
     for (const s of today) {
@@ -317,6 +322,8 @@ function taskA(recs: ChoiceRecord[], sessions: Session[], reps: number) {
     diagnosticLabelWithin2mAtDecisionScan: share(maleRecs.filter(r => r.labelInProx2Now).length, maleRecs.length), diagnosticLabelIn5mRingAtDecisionScan: share(maleRecs.filter(r => r.labelInProx5Now).length, maleRecs.length),
     eligible: elig.length, eligibleAnimals: pa.length, eligibleDyads: new Set(elig.flatMap(r => r.maleLabels.map(l => `${r.focal}>${l}`))).size, eligibleDistinctPartners: new Set(elig.flatMap(r => r.maleLabels)).size,
     perAnimal: { ...dist5(pa), animalsWith10: pa.filter(n => n >= 10).length, animalsWith30: pa.filter(n => n >= 30).length, animalsWith100: pa.filter(n => n >= 100).length, shareOfRecordsFromTop5Animals: share([...pa].sort((a, b) => b - a).slice(0, 5).reduce((a, b) => a + b, 0), elig.length) },
+    eligibleWithSetOf8OrFewer: sizes.filter(n => n <= 8).length, eligibleIfSameDayRuleDropped: elig.length + (ex['partner-focal-in-another-part-that-day'] ?? 0),
+    partnerNeverGroomedBefore: share(elig.filter(r => !r.labelGroomedBefore).length, elig.length),
     eligiblePerSession: share(elig.length, sessions.length), sessionsWithEligible: new Set(elig.map(r => r.session)).size, perYear,
     tables: Object.fromEntries(Object.entries(cuts).map(([k, v]) => [k, baselineTable(v, reps)])),
     countingOutsidePartyAsMiss: { records: missIncl.length, chance: r3(mean(missIncl.map(r => r.base?.chance ?? 0))), pastEither: r3(mean(missIncl.map(r => r.base?.pastEither ?? 0))), stack: r3(mean(missIncl.map(r => r.base?.stack ?? 0))) } };
@@ -379,7 +386,7 @@ export function summarize(rows: Row[], unsealed: boolean, reps = 2000) {
 
 // ------------------------------------------------------------------------------------------------ report (aggregates only)
 
-export function markdown(S: ReturnType<typeof summarize>['summary'], leak: Record<string, string[]>): string {
+export function markdown(S: ReturnType<typeof summarize>['summary'], leak: Record<string, string[]>, targetCount?: number): string {
   const L: string[] = [], t = (h: string[], rows: (string | number | null)[][]) => { L.push('', `| ${h.join(' | ')} |`, `| ${h.map(() => '---').join(' | ')} |`, ...rows.map(r => `| ${r.map(v => v ?? 'n/a').join(' | ')} |`), ''); };
   const d = (x: ReturnType<typeof dist5>) => `min ${x.min}, quartiles ${x.q25} / ${x.median} / ${x.q75}, max ${x.max}, mean ${x.mean}`;
   const pooled = S.sealed ? 'Train and development parts, pooled' : 'All parts, pooled';
@@ -397,7 +404,7 @@ export function markdown(S: ReturnType<typeof summarize>['summary'], leak: Recor
     `- The same bout written twice: of ${S.sameBout.recordsWithPartyAndPartnerInIt} bouts with the partner in the party, the partner is himself a focal animal that day in ${S.sameBout.partnerIsFocalThatDay}, and his own session shows the same dyad in ${S.sameBout.andHisSessionShowsTheSameDyad}.`,
     `- Task B. Of ${S.taskB.scansWithAMaleInParty} scans with at least one male in the party (of ${S.taskB.scans} scans): the focal gives grooming on ${S.taskB.givesGrooming}, to a roster male on ${S.taskB.givesToAMale}; he only receives on ${S.taskB.receivesOnly}; grooming among others only on ${S.taskB.groomingAmongOthersOnly}. Scans with a text note but no dyad: ${S.taskB.textButNoDyad}; unparsed dyad parts: ${S.taskB.unparsedDyadParts}; scans stored as more than one row: ${S.taskB.scansWithMoreThanOneRow}.`,
     `- Task C. Proximity is recorded on ${S.taskC.scansWithAnyProximity} of scans; when it is, animals within 2 m: ${d(S.taskC.within2mWhenRecorded)}; in the 2–5 m ring: ${d(S.taskC.ring2to5mWhenRecorded)}. Mean share of the party's males within 5 m at a scan: ${S.taskC.shareOfPartyMalesWithin5m}.`);
-  const names: Record<string, string> = { chance: 'chance (uniform over the set)', pastGiven: 'most frequent past partner (grooming given)', pastEither: 'most frequent past partner (either direction)', lastPartner: 'last partner groomed', nearestPrev: 'nearest at the previous scan', groomedMePrev: 'the male grooming him at the previous scan', pastNeighbour: 'most frequent past neighbour (within 5 m)', pastParty: 'most frequent past party companion', stack: 'stack: groomed me, then nearest, then past partner' };
+  const names: Record<string, string> = { chance: 'chance (uniform over the set)', pastGiven: 'most frequent past partner (grooming given)', pastEither: 'most frequent past partner (either direction)', lastPartner: 'last partner groomed', nearestPrev: 'nearest at the previous scan', groomedMePrev: 'the male grooming him at the previous scan', pastNeighbour: 'most frequent past neighbour (within 5 m)', pastParty: 'most frequent past party companion', stack: 'stack: groomed me, then nearest, then past partner', listedFirst: 'check, not a rule: the male written first in the party list' };
   let n = 3;
   for (const [part, A] of Object.entries(S.taskA)) {
     L.push('', `## ${n++}. Task A (whom the focal grooms), ${part} part`,
@@ -408,6 +415,7 @@ export function markdown(S: ReturnType<typeof summarize>['summary'], leak: Recor
     L.push(`Diagnostic, never an input: at the decision scan itself the partner is listed within 2 m on ${A.diagnosticLabelWithin2mAtDecisionScan} of these bouts and in the 2–5 m ring on ${A.diagnosticLabelIn5mRingAtDecisionScan}.`,
       '', `**Eligible records: ${A.eligible}, from ${A.eligibleAnimals} focal animals and ${A.sessionsWithEligible} sessions** (${A.eligiblePerSession} per session); ${A.eligibleDyads} distinct chooser-partner pairs, ${A.eligibleDistinctPartners} distinct partners.`,
       `- Set size (party males): ${d(A.setSize)}; 10th and 90th percentiles ${A.setSize.q10} and ${A.setSize.q90}; share over 8 (the cap of the simulation's social percept): ${A.setSize.shareOver8}; over 7: ${A.setSize.shareOver7}.`,
+      `- With a set of 8 males or fewer: ${A.eligibleWithSetOf8OrFewer} records. If the same-day rule were dropped: ${A.eligibleIfSameDayRuleDropped} records. Share of eligible records whose partner the focal had never groomed or been groomed by in the record before: ${A.partnerNeverGroomedBefore}.`,
       `- Eligible records per focal animal: ${d(A.perAnimal)}; animals with at least 10: ${A.perAnimal.animalsWith10}, at least 30: ${A.perAnimal.animalsWith30}, at least 100: ${A.perAnimal.animalsWith100}; share of records from the 5 animals with most: ${A.perAnimal.shareOfRecordsFromTop5Animals}.`);
     t(['year', 'sessions', 'scans', 'focal animals', 'bouts given', 'eligible', 'animals with eligible', 'median set', 'chance', 'past partner (either direction)', 'stack'], A.perYear.map(y => [y.year, y.sessions, y.scans, y.animals, y.boutsGiven, y.eligible, y.animalsWithEligible, y.medianSet, y.chance, y.pastEither, y.stack]));
     const P = A.tables['bout (primary)'];
@@ -422,6 +430,8 @@ export function markdown(S: ReturnType<typeof summarize>['summary'], leak: Recor
   if (S.projection) { L.push('', `## ${n++}. Held-out part: projected sample (development rate × held-out sessions; no held-out outcome was read)`); t(['stratum', 'sessions', 'focal animals', 'projected eligible bouts'], Object.entries(S.projection).map(([k, v]) => [k, v.sessions, v.animals, v.projectedEligibleBouts])); }
   L.push('', `## ${n++}. Targets in \`data/targets.json\` that share records or animals with this dataset`, '', 'Compromised for any kernel trained on the training part; flagged for any kernel scored on both.');
   t(['overlap', 'targets'], Object.entries(leak).map(([k, v]) => [k, `${v.length}: ${v.join(', ') || 'none'}`]));
+  const flagged = Object.values(leak).flat();
+  L.push(`Flagged in all: ${flagged.length}${targetCount ? ` of ${targetCount} targets` : ''} (${flagged.filter(x => x.includes('(fitted)')).length} fitted, ${flagged.filter(x => x.includes('(held-out)')).length} held-out by their role in the file).`);
   return L.join('\n').replace(/\n{3,}/g, '\n\n') + '\n';
 }
 
@@ -431,12 +441,12 @@ if (process.argv[1]?.endsWith('rw-ngogo-choices.ts')) {
   if (unsealed) console.error('UNSEALED: held-out outcomes are being read. This is for stage R5 and needs the user\'s go (docs/staging/rw-prereg.md §2).');
   const rows = toRows(parseCsv(readFileSync(arg('--csv', 'data/raw/dryad-sf7m0cgkg/chimp_behav_data.csv'), 'utf8')));
   const { summary, records } = summarize(rows, unsealed);
-  const leak = leakage(JSON.parse(readFileSync('data/targets.json', 'utf8')));
+  const targets = JSON.parse(readFileSync('data/targets.json', 'utf8')), leak = leakage(targets);
   mkdirSync(out, { recursive: true });
   const tag = unsealed ? 'all' : 'sealed';
   writeFileSync(`${out}/ngogo-choices-${tag}-summary.json`, JSON.stringify({ ...summary, leakage: leak }, null, 1) + '\n');
   writeFileSync(`${out}/ngogo-choices-${tag}-records.jsonl`, records.map(r => JSON.stringify(r)).join('\n') + '\n');   // individual-level: private, gitignored
-  const md = markdown(summary, leak);
+  const md = markdown(summary, leak, targets.targets.length);
   if (process.argv.includes('--md')) writeFileSync(arg('--md', ''), md);
   console.log(md);
 }
