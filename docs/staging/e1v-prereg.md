@@ -207,3 +207,12 @@ decide-ft stand-in run, missing its artifact, as before); `decision-guide --chec
 - **The reference.** The user copied the Part C S39 groups (M6-S39… and M12-S39…, made at 63d699a = dbee12e in the
   public history) into `.claude/worktrees/bench-run`; SHA-256 of the archive matched. They are the swallowed-1 arm, as
   registered in §3, so no group is regenerated.
+
+### 8.3 W25 (swallowed 0.25), interim entry (6 October 2026, 02:45; W50 not started when this was written)
+- **§8.2's check passed.** `integrator-kit/scripts/partdiff.py` on the seed-48 part of each of the four M12-W25 runs,
+  redone on the external drive against the part written on the Desktop: 10 leaves differ in each, all of them dates,
+  timings and paths; 0 others. The copied M6-W25 group stands.
+- **Starvation at 12 months (judge_e1v.py M12 W25, from the JSON): 0 deaths in 20 seed-runs at 0.25, against S39's 6**
+  (adolescent 3, pregnant female 2, infant 2–5 y 1; seeds 5, 11 and 48). All four W25 runs pass viability (births /
+  deaths 24/10, 26/6, 24/7, 26/14); three of S39's four fail. At 6 months both groups have 0.
+- The full tables (both arms, both horizons) follow in §8.4 once W50 is in.
