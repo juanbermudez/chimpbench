@@ -245,3 +245,28 @@ exactly one of the two is right, with a sign test). It is called a difference on
 difference excludes 0; the registered resolution of this part is about 0.07. The sealed part stays sealed. This is the
 general-model arm before any tuning of the prompt: the prompt is not changed after seeing this result without a new
 entry here.
+
+**A5. Result of A4 (6 October 2026; numbers from `artifacts/rw/codex-dev/summary-development.json` and `paired.txt`,
+both written by scripts).** The first launch named a kernel the scorer does not have (`past`) and exited before any
+call; the run below used `--kernels null,past-given,nearest,stack,codex`, otherwise as registered. 448 development
+records from 30 focal males, one shuffle.
+
+| kernel | top-1 (95% interval, bootstrap over males) |
+| --- | --- |
+| null (random) | 0.179 (0.125 to 0.226) |
+| nearest at the last scan | 0.315 (0.242 to 0.381) |
+| most frequent past partner | 0.433 (0.345 to 0.488) |
+| the three-rule stack | 0.487 (0.418 to 0.545) |
+| Codex (gpt-6.1-sol as reported by the tool, effort low, batches of 8) | 0.493 (0.424 to 0.556) |
+
+Paired, on the same records: both right 202, only Codex 19, only the stack 16, neither 211; sign test on the 35
+discordant records p = 0.74; Codex minus the stack +0.007 (−0.011 to +0.029). **By the registered rule this is no
+difference.** Codex picks the same male as the stack in 388 of 448 records (0.87). Cost: 56 calls, 928,163 tokens, 575
+seconds; no refusal, no malformed answer.
+
+What it shows and does not: a general model given this packet does what three simple rules do, so on this benchmark
+the limit is what the packet carries (who groomed me, who was near, whom I groomed before), not the kernel reading it.
+It does not show that a general model cannot do better with rank, kinship, age or body state, none of which these
+records hold. For the stages that follow: 0.49 is the mark an engine must reach to equal a general model here, a small
+engine cannot be shown to beat a general one on this part, and the benchmark separates engines only below that mark
+(an untuned engine against 0.18 chance and 0.49).
