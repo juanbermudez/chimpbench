@@ -8,7 +8,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { buildLocalQuestion, decisionContextError, estimateInputTokens, TOKEN_BUDGET } from '../server/decide';
-import { FEATURE_NAMES } from '../scripts/ft-features';
+import { FEATURE_NAMES, FEATURE_VERSION } from '../scripts/ft-features';
 import { answerWaiting as ftAnswerWaiting, type ScoreItem, type Scorer } from '../scripts/ft-society';
 import { StandInScorer } from '../scripts/ft-standin';
 import { glinerKernel, standInKernel } from '../scripts/lib/kernels';
@@ -250,7 +250,7 @@ function tinyStandIn(): { scorer: StandInScorer; dir: string } {
   const dir = mkdtempSync(join(tmpdir(), 'r1-standin-')), rest = FEATURE_NAMES.indexOf('a:rest');
   assert.ok(rest >= 0);
   const W1 = [FEATURE_NAMES.map((_, i) => (i === rest ? 1 : 0)), FEATURE_NAMES.map(() => 0)];
-  writeFileSync(join(dir, 'tiny.json'), JSON.stringify({ adapter: 'tiny', kind: 'mlp', features: FEATURE_NAMES, W1, b1: [0, 0], w2: [5, 0], b2: 0 }));
+  writeFileSync(join(dir, 'tiny.json'), JSON.stringify({ adapter: 'tiny', kind: 'mlp', features: FEATURE_NAMES, layoutVersion: FEATURE_VERSION, W1, b1: [0, 0], w2: [5, 0], b2: 0 }));
   return { scorer: new StandInScorer(dir, ['tiny']), dir };
 }
 
