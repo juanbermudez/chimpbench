@@ -279,7 +279,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
       if (action) {
         const b = document.createElement('button'); b.className = 'toast-act'; b.textContent = action.label;
         b.onclick = () => { el.remove(); action.run(); };
-        el.style.gridTemplateColumns = '26px minmax(0, 1fr) auto'; el.append(b);
+        el.style.gridTemplateColumns = '20px minmax(0, 1fr) auto auto'; el.append(b);
       }
       toastRoot.prepend(el);
       while (toastRoot.children.length > 2) toastRoot.lastElementChild!.remove();

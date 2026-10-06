@@ -15,7 +15,7 @@ const POLICIES: { id: ModelPolicy['mode']; label: string; line: string }[] = [
   { id: 'lockstep', label: 'Lockstep', line: 'The clock stops at each model decision point until the provider answers or times out. Slower, but no decision is skipped.' },
 ];
 const ROSTERS: { id: Roster; label: string; line: string }[] = [
-  { id: 'selected', label: 'Selected', line: 'Only the chimp in the inspector.' },
+  { id: 'selected', label: 'Selected', line: 'Only the selected chimp (the one in the bottom panel).' },
   { id: 'focal-set', label: 'Focal set', line: 'Selected, each alpha, a mother with an infant and a juvenile (≤ 6).' },
   { id: 'all', label: 'All', line: 'Every living chimp. Requests queue; in async, rules fill the gaps.' },
 ];
