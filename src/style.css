@@ -391,8 +391,8 @@ body.preview .viewport { background: #3a3d38; }
 .dock-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .dock-head h2 { font-family: var(--font-display); font-size: 22px; font-weight: 500; line-height: 1.15; letter-spacing: -.01em; }
 .dock-head p { margin-top: 4px; font-size: 12px; line-height: 1.45; color: var(--ink-3); text-wrap: pretty; }
-.exp-target { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--ink-2); padding: 9px 11px; border-radius: var(--r); background: var(--well); border: 1px solid var(--line); margin-bottom: 10px; }
-.exp-target { display: grid; gap: 8px; }
+/* Experiments pane: the target as two plain rows under a hairline, then the list. */
+.exp-target { display: grid; gap: 8px; padding-bottom: 12px; margin-bottom: 4px; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--ink-2); }
 .exp-target b { color: var(--ink); font-weight: 600; }
 .et-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .et-troops button { height: 26px; padding: 0 9px; font-size: 12px; }
@@ -406,20 +406,36 @@ body.preview .viewport { background: #3a3d38; }
 .app.picking .viewport { cursor: crosshair; }
 .tchip { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px 0 7px; border-radius: 11px; font-size: 11.5px; background: color-mix(in srgb, var(--c) 10%, transparent); border: 1px solid color-mix(in srgb, var(--c) 34%, transparent); color: var(--ink); white-space: nowrap; }
 .tchip i { width: 7px; height: 7px; border-radius: 50%; background: var(--c); }
-.warn-note { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; font-size: 12px; color: var(--warn); padding: 9px 11px; border-radius: var(--r); background: rgba(233, 165, 87, .07); border: 1px solid rgba(233, 165, 87, .24); margin-bottom: 10px; }
+.warn-note { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 8px; align-items: start; padding: 10px 0 6px; font-size: 12px; line-height: 1.45; color: var(--warn); }
 .warn-note .lnk { color: var(--ink); }
-.exp-list { display: grid; gap: 6px; }
-.exp { position: relative; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 10px; align-items: start; width: 100%; padding: 12px; border-radius: var(--r); border: 1px solid var(--line); background: var(--raised); text-align: left; transition: border-color .15s, background .15s, transform .1s; }
-.exp:not(:disabled):hover { border-color: var(--line-3); background: var(--hover); }
-.exp:not(:disabled):active { transform: scale(.99); }
-.exp-ic { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 7px; color: var(--ink-2); background: var(--well); border: 1px solid var(--line); }
-.exp-ic svg.i { width: 18px; height: 18px; }
-.exp-txt { display: grid; gap: 4px; } .exp-txt b { font-size: 13px; font-weight: 600; color: var(--ink); }
-.exp-txt span { font-size: 12px; color: var(--ink-2); line-height: 1.45; text-wrap: pretty; }
-.exp-txt i { font-family: var(--font-display); font-size: 12px; color: var(--ink-3); }
-.exp-txt b { padding-right: 60px; }
-.exp-scope { position: absolute; top: 11px; right: 10px; font-family: var(--font-ui); font-size: 10.5px; font-weight: 500; color: var(--ink-3); padding: 2px 7px; border-radius: 5px; border: 1px solid var(--line-2); text-transform: capitalize; }
-.exp-active { margin-top: 14px; } .exp-active:empty { display: none; } .exp-active ul { display: grid; gap: 6px; margin-top: 8px; }
+/* Experiments: a plain list, one line a row, hairlines between. The description lives in the popover (below); in the
+   row it is text for assistive technology only, and shown inline on touch screens, where nothing hovers. */
+.exp-list { display: grid; margin: 0 -8px; }
+.exp-list li + li { border-top: 1px solid var(--line); }
+.exp { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 2px 10px; align-items: center; width: 100%; min-height: 40px; padding: 8px; border-radius: var(--r-sm); text-align: left; transition: background var(--dur-1); }
+.exp:not(:disabled):hover, .exp:focus-visible { background: var(--hover); }
+.exp:focus-visible { outline-offset: -2px; }
+.exp-ic { display: grid; place-items: center; color: var(--ink-3); transition: color var(--dur-1); } .exp-ic svg.i { width: 17px; height: 17px; }
+.exp:not(:disabled):hover .exp-ic, .exp:focus-visible .exp-ic { color: var(--ink); }
+.exp-name { font-size: 13px; font-weight: 500; color: var(--ink); }
+.exp-scope { font-size: 11px; color: var(--ink-4); text-transform: capitalize; }
+.exp-desc { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (hover: none) { .exp-desc { position: static; grid-column: 2 / -1; width: auto; height: auto; overflow: visible; clip-path: none; white-space: normal; font-size: 12px; line-height: 1.45; color: var(--ink-3); text-wrap: pretty; } }
+/* Description popover (src/ui/popover.ts): beside the hovered or keyboard-focused row. It fades and slides in from the
+   row's side, glides to the next row while open, and never takes the pointer. No movement under reduced motion. */
+.popcard { position: fixed; z-index: 1000; left: 0; top: 0; width: 292px; padding: 12px 14px 13px; border-radius: 10px; background: var(--overlay); border: 1px solid var(--line-2); box-shadow: var(--shadow-lg); pointer-events: none;
+  opacity: 0; transform: translateX(8px); transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease), top var(--dur-2) var(--ease), left var(--dur-2) var(--ease); }
+.popcard[data-side="right"] { transform: translateX(-8px); } .popcard[data-side="above"] { transform: translateY(8px); } .popcard[data-side="below"] { transform: translateY(-8px); }
+.popcard.on { opacity: 1; transform: none; }
+.popcard.still { transition: none; }
+.pc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.pc-t { font-family: var(--font-display); font-size: 16px; font-weight: 500; line-height: 1.2; letter-spacing: -.005em; }
+.pc-tag { flex: none; font-size: 10px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
+.pc-b { margin-top: 7px; font-size: 12.5px; line-height: 1.5; color: var(--ink-2); text-wrap: pretty; }
+.pc-c { margin-top: 6px; font-family: var(--font-display); font-style: italic; font-size: 12.5px; color: var(--ink-3); }
+.pc-n { margin-top: 9px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 11.5px; line-height: 1.4; color: var(--ink-3); }
+@media (prefers-reduced-motion: reduce) { .popcard, .popcard[data-side] { transform: none; transition: opacity .001ms; } }
+.exp-active { margin-top: 16px; } .exp-active:empty { display: none; } .exp-active ul { display: grid; gap: 6px; margin-top: 8px; }
 .exp-active li { display: grid; grid-template-columns: 16px 1fr auto; gap: 8px; align-items: center; font-size: 12px; color: var(--ink-2); }
 .exp-active svg.i { width: 14px; height: 14px; color: var(--gold); }
 .mp-status { padding: 12px; border-radius: var(--r); background: var(--well); border: 1px solid var(--line); display: grid; gap: 6px; }

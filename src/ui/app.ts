@@ -22,6 +22,7 @@ import { morph, setAttr, setText } from './morph';
 import { createSimulations } from './simulations';
 import { createScaleBar } from './scalebar';
 import { installTooltips } from './tooltip';
+import { installPopovers } from './popover';
 import { menuButton } from './menu';
 
 // UI composition root. Owns UI state and wires components; knows nothing
@@ -304,6 +305,7 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
   // by the delegated click handler below (data-viewmode, data-act). Every [data-tip] control shares one tooltip.
   menuButton(q('.cam-btn'), q('#cam-menu'));
   installTooltips();
+  installPopovers();
   feed.prime();
 
   let camShown = '';

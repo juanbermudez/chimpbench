@@ -4,8 +4,10 @@ import { icon } from './icons';
 import { morph } from './morph';
 import { duration, esc, troopOf, troopShort } from './format';
 
-// Field experiments: named after the published protocols they imitate. The
-// target is the selected chimp's party (or community / habitat for global ones).
+// Field experiments (right sidebar, E): a plain list named after the published protocols they imitate. A row is one
+// line (icon, name, scope); what the experiment does appears in the shared popover on hover and on keyboard focus
+// (popover.ts), and stays in the row as text for assistive technology and for touch screens, where nothing hovers.
+// The target is the selected chimp's party (or its community, or the whole habitat).
 
 export const EXPERIMENTS: { kind: InterventionKind; label: string; ic: string; line: string; cite?: string; scope: 'party' | 'community' | 'habitat' }[] = [
   { kind: 'playback-stranger', label: 'Stranger pant-hoot playback', ic: 'speaker', scope: 'party', line: 'A hidden speaker plays an unfamiliar male’s pant-hoot near the party. Do they approach, call back, or retreat?', cite: 'Wilson, Hauser & Wrangham 2001' },
@@ -16,14 +18,17 @@ export const EXPERIMENTS: { kind: InterventionKind; label: string; ic: string; l
   { kind: 'drought', label: 'Drought', ic: 'drought', scope: 'habitat', line: 'Several days of fruit scarcity. Parties shrink as feeding competition rises.' },
   { kind: 'remove-alpha', label: 'Remove the alpha', ic: 'noAlpha', scope: 'community', line: 'The alpha male disappears. Watch the ladder destabilise and coalitions form.' },
 ];
+const SCOPE_NOTE = { party: 'Placed near the selected chimp’s party.', community: 'Acts on the selected chimp’s community.', habitat: 'Acts on the whole habitat.' } as const;
 
 export function createExperiments(root: HTMLElement, ctx: Ctx) {
   root.innerHTML = `<p class="pane-blurb">Perturb the forest the way field studies do, then watch the next decision.</p>
   <div class="exp-target"></div>
   <div class="exp-note"></div>
-  <ul class="exp-list">${EXPERIMENTS.map(x => `<li><button class="exp" data-kind="${x.kind}"><span class="exp-ic">${icon(x.ic)}</span><span class="exp-txt"><b>${x.label}</b><span>${x.line}</span>${x.cite ? `<i>After ${x.cite}</i>` : ''}</span><span class="exp-scope" title="${x.scope === 'party' ? 'Placed near the selected chimp’s party' : x.scope === 'community' ? 'Acts on the selected chimp’s community' : 'Acts on the whole habitat'}">${x.scope}</span></button></li>`).join('')}</ul>
+  <ul class="exp-list" aria-label="Experiments">${EXPERIMENTS.map(x => `<li><button class="exp" data-kind="${x.kind}" data-pop-title="${esc(x.label)}" data-pop-tag="${x.scope}" data-pop-body="${esc(x.line)}"${x.cite ? ` data-pop-cite="After ${esc(x.cite)}"` : ''} data-pop-note="${esc(SCOPE_NOTE[x.scope])} Click to run it.">
+    <span class="exp-ic">${icon(x.ic)}</span><span class="exp-name">${x.label}</span><span class="exp-scope">${x.scope}</span>
+    <span class="exp-desc">${x.line}${x.cite ? ` After ${x.cite}.` : ''} ${SCOPE_NOTE[x.scope]}</span></button></li>`).join('')}</ul>
   <div class="exp-active"></div>
-  <p class="honest">Interventions are simulated analogues of field protocols; responses come from the simulation rules and, for model-controlled chimps, from the selected provider. After firing, the Mind tab of the most affected model-controlled chimp opens.</p>`;
+  <p class="honest">Interventions are simulated analogues of field protocols; responses come from the simulation rules and, for model-controlled chimps, from the selected provider. After firing, the chimp panel opens the Mind tab of the most affected model-controlled chimp.</p>`;
   const target = root.querySelector<HTMLElement>('.exp-target')!, note = root.querySelector<HTMLElement>('.exp-note')!, active = root.querySelector<HTMLElement>('.exp-active')!;
   root.addEventListener('click', e => {
     const el = e.target as HTMLElement;
@@ -54,7 +59,7 @@ export function createExperiments(root: HTMLElement, ctx: Ctx) {
       morph(target, `<div class="et-row"><span class="eyebrow">Target</span><span class="seg et-troops" role="radiogroup" aria-label="Target community">${w.troops.map(tt => `<button type="button" role="radio" data-target-troop="${tt.id}" aria-checked="${tt.id === t?.id}" style="--c:${esc(tt.color)}"><i class="tdot"></i>${esc(troopShort(tt))}</button>`).join('')}</span></div>
         <div class="et-row et-who">${c && t ? `<span>Party of <b>${party?.members.length ?? 1}</b> around <b>${esc(c.name)}</b></span>` : '<span class="muted">No chimp selected</span>'}<button type="button" class="btn et-pick" data-act="pick" aria-pressed="${picking}">${icon('target')}${picking ? 'Picking…' : 'Pick on map'}</button></div>
         ${picking ? '<p class="et-hint">Click any chimp in the forest or on the range map. Esc cancels.</p>' : ''}`);
-      morph(note, w.modelPolicy.mode === 'off' ? `<p class="warn-note">${icon('info')}The model is off, so only the rules will respond. <button class="lnk" data-act="async">Turn on Async</button></p>` : '');
+      morph(note, w.modelPolicy.mode === 'off' ? `<p class="warn-note">${icon('info')}<span>The model is off, so only the rules will respond. <button class="lnk" data-act="async">Turn on Async</button></span></p>` : '');
       morph(active, w.stimuli.length ? `<h3 class="eyebrow">Active stimuli</h3><ul>${w.stimuli.map(s => { const tt = troopOf(w, s.troopId); return `<li>${icon(EXPERIMENTS.find(x => x.kind === s.kind)?.ic ?? 'flask')}<span>${esc(s.label)}${tt ? ` · ${esc(troopShort(tt))}` : ''}</span><span class="mono muted">${s.end > w.time ? `${duration(s.end - w.time)} left` : 'ending'}</span></li>`; }).join('')}</ul>` : '');
       root.querySelectorAll<HTMLButtonElement>('[data-kind]').forEach(b => { b.disabled = !c && EXPERIMENTS.find(x => x.kind === b.dataset.kind)?.scope !== 'habitat'; });
     },
