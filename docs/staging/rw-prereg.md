@@ -2,7 +2,7 @@
 
 Stage RW of Track R (`IMPLEMENTATION_PLAN.md`, direction amendment of 6 October 2026). Branch `rw-wild-choice`, from track-e 24cf896.
 
-**Status: version 1, registered before any outcome was computed.** Only these were looked at before this commit: the README and PROVENANCE of the dataset, the column names, the number of rows, sessions and focal animals per year, the punctuation shape of each field on development rows (letters and digits masked), and the number of animals the held-out rule selects. No grooming, proximity or party value has been counted or read. Sections marked *(to fill)* get their numbers from `scripts/rw-ngogo-choices.py` in version 2; nothing is typed by hand.
+**Status: version 2 (three parts after the user's rule change; baselines not yet computed). Version 1 was registered before any outcome was computed.** Only these were looked at before this commit: the README and PROVENANCE of the dataset, the column names, the number of rows, sessions and focal animals per year, the punctuation shape of each field on development rows (letters and digits masked), and the number of animals the held-out rule selects. No grooming, proximity or party value has been counted or read. Sections marked *(to fill)* get their numbers from `scripts/rw-ngogo-choices.py` in version 2; nothing is typed by hand.
 
 This stage runs no model, no simulation and no training. It decides whether a sound benchmark of individual wild choices can be built from data already on this computer, and registers its design.
 
@@ -14,21 +14,31 @@ This stage runs no model, no simulation and no training. It decides whether a so
 - **What `docs/research.md` records.** [sandel2026] was read at abstract level only. The protocol is described for the same site, the same males and the first ten of these years by [mitani2009] (full text): "hour-long focal samples with 10-min scans of partners within 5 m or grooming", adult males of 16 years or more.
 - **Not known (stated, not guessed).** Whether `party` is the party during the session hour or the hour after it; whether it is complete; whether `prox*` lists only mature males; how a grooming direction was assigned at an instantaneous scan; whether mutual grooming has its own code; the clock time of a session (the file has a date and a scan number, no time of day); whether the focal order was random; whether the 77 are all males who were ever adult or a subset. The full text of [sandel2026] and its supplement are **missing** from `docs/research.md`; reading them is a decision for the user (section 12).
 
-## 2. The held-out part: rule fixed now
+## 2. Three parts: rule fixed now (version 2, after the user's rule change)
 
-Fixed in this commit, before any outcome is computed, from structure counts only. A focal session is **held out** if either holds:
+**Rule change (user, 6 October 2026, relayed by the integrator; recorded in `IMPLEMENTATION_PLAN.md` on track-e at 1e052c3):** "yes, i would say field choices are the source of truth, so it should be part of the training data, when we ar eoptimizing the specialized model, and adapting its behavior." Recorded wild choices may now be training labels for the decision kernel. This replaces "test records only" in version 1. The benchmark therefore needs three parts.
 
-1. **Later years.** Its `year` is 2016 or later. Reason given in advance: [sandel2026] reports the network polarized in 2015 and two groups by 2018, so 2016–2022 is the split and its aftermath, a different social regime from the single community. 2,137 of 12,536 sessions.
-2. **Unseen individuals.** Its focal animal is selected by `int(sha256("rw-heldout-v1:" + lowercase(code))[:8], 16) % 5 == 0`. The rule depends on nothing but the code. It selects 15 of the 77 focal animals.
+**What had been looked at when this rule was written.** Version 1 fixed the held-out part (below, unchanged) before any outcome was read. Between version 1 and this version, on the pooled rows that are not held out, only the coding of the fields was examined: how often each field is filled, how `gdyad` writes direction, mutual grooming and several dyads, that such scans are stored as several rows, that `prox2` and `prox5` share no animal, that `party` is written on a session's first scan, and how many names are off the male roster. No baseline, no available-set coverage, no record count per animal or year and no choice-set size had been computed. The split of those rows into train and development below was fixed from structure counts only (rows, sessions, animals).
 
-Everything else is the **development part**: sessions of the other 62 focal animals in 1998–2015; 9,255 sessions, 64,982 scans.
+With `h = int(sha256("rw-heldout-v1:" + lowercase(code))[:8], 16) % 5` for the focal animal of a session:
 
-Rules for the held-out part:
-- The script reads held-out rows only to count rows, sessions and focal animals. It computes no grooming, proximity or party statistic on them unless it is run with `--unseal`, which is for stage R5 and needs the user's go.
-- Held-out sample sizes in this document are **projections** from development rates, labelled as such.
-- The held-out score, when it is unsealed, is reported in three strata, never pooled silently: unseen individuals in 1998–2015 (same regime, the confirmatory stratum); seen individuals in 2016–2022; unseen individuals in 2016–2022.
-- Limit, stated now: an "unseen" animal is unseen as a chooser, not as a partner. He appears in the development sessions of other males, and grooming is dyadic, so this is a weaker split than a new community would be.
-- History is input, not outcome: when a held-out record is finally scored, the kernel may see everything that happened before that scan, including earlier records of either part.
+| part | rule | sessions | focal animals | scans |
+| --- | --- | --- | --- | --- |
+| **held-out (sealed)** | year 2016 or later, or `h == 0` (unchanged from version 1) | 3,281 | 54 | 22,915 |
+| **development** | not held out, and year 2014 or 2015, or `h == 1` | 3,233 | 33 | 22,586 |
+| **train** | the rest: `h` in 2, 3, 4 and year 1998–2013 | 6,022 | 38 | 42,085 |
+
+Development mirrors the held-out part on purpose, so that what is chosen on development says something about the sealed score: it has unseen animals (10, with 2,701 sessions in 1998–2015) and later years of animals seen in training (23 animals, 532 sessions in 2014–2015), as the held-out part has unseen animals in 1998–2015, seen animals in 2016–2022 and unseen animals in 2016–2022.
+
+**Why this prevents leakage, and what it does not prevent (declared).**
+- *The same bout.* A session belongs to one focal animal and one day, so it lies in one part, and a bout is defined inside a session. But two males can be focal animals on the same day, and then one bout can be written in two sessions of different parts. Rule: a record whose partner is the focal animal of a session of another part on the same day is flagged `sameDayOtherPart`, kept in the counts, and left out of training and of the scores (a rule on codes and dates only, so it can be applied against the sealed part without reading its outcomes). Sessions of the same day never enter a record's history either (the file has no clock time).
+- *The same male.* No male is a chooser in more than one of: train, the unseen-animal stratum of development, the unseen-animal strata of the held-out part. A male does appear as a chooser in train and in the later-years strata (that is their point: the same animals later), and every male appears as a partner in every part. So "unseen" means unseen as a chooser, not a new community. Declared.
+- *The same dyad history.* Grooming is dyadic and reciprocal, so A's choices of B in one part and B's choices of A in another are not independent. This cannot be removed with 77 males in one community; it is declared, and it is the main reason the unseen-animal strata are a weaker test than a second community would be. A packet must carry per-record pseudonyms, never the animal's code, so that a trained kernel cannot memorise identities or dyads across parts and can use only what the packet says about history.
+- *History is input, not outcome,* but it must come from the same place for every part. For train and development records it is built from train and development sessions of earlier days and earlier scans of the same session; sealed sessions never enter it. When the held-out part is unsealed its records get history from all earlier sessions, and a second score with history from train and development sessions only is reported beside it, because history counts built from fewer sessions are smaller. Packets should carry history as ranks or coarse words, not raw counts, for the same reason.
+
+**The sealed part.** The script reads held-out rows only to count rows, scans, sessions and animals; every outcome field of a held-out row is blanked at load unless it is run with `--unseal`, which is for stage R5 and needs the user's go. Held-out sample sizes here are **projections** from the development rate, labelled as such. Baselines are computed on train and development only. The sealed score, when it is opened, is reported per stratum, never pooled silently.
+
+**Use of the parts.** Train: labels for adapting a kernel (stage R4), and nothing else is fitted on any other part. Development: choosing among packet wordings, kernels and training settings. Held-out: one final score per kernel.
 
 ## 3. One wild choice record (provisional definitions, fixed before the development numbers)
 
@@ -61,7 +71,7 @@ Session has no usable scan order; scan has no grooming record; focal is not the 
 
 Scan < bout < session < focal-day < individual < year. The record is the bout. Uncertainty is a cluster bootstrap over focal individuals (the independent unit for inference), with the per-individual score as the summary and per-year scores beside it. Sessions and bouts are never treated as independent draws.
 
-## 7. Baselines, development part only *(to fill)*
+## 7. Baselines, train and development parts only *(to fill)*
 
 - **Chance:** uniform over the available set, as the mean of 1/|set| over records.
 - **Most frequent past partner:** the member of the set the focal groomed most often before the decision scan (earlier dates, and earlier scans of the same session); ties and no-history cases fall back to uniform over the tied members.
@@ -88,4 +98,4 @@ Targets in `data/targets.json` and parameters in `data/params.json` whose source
 
 ## Hard rules of this stage
 
-Field records are test records only: nothing here trains or fits a model on them ("field numbers are targets, never inputs"). No download, no network. Only sources already in `docs/research.md` are cited; a missing one is named as missing. No individual-level table, no date finer than a year and no copy of the CSV enters git; outputs go under `artifacts/` (gitignored).
+Since the user's rule change of 6 October field choices of the training part may be training labels for the decision kernel; this stage itself trains nothing. No download, no network. Only sources already in `docs/research.md` are cited; a missing one is named as missing. No individual-level table, no date finer than a year and no copy of the CSV enters git; outputs go under `artifacts/` (gitignored).
