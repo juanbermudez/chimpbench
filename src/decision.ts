@@ -1,6 +1,7 @@
-import { applyDecision, observe, resolveByRules, rulesChoice } from './simulation';
-import { boundedCandidates, phaseMenu, RESPONSE_ACTIONS, same } from './sim/menu';
-import type { Action, Candidate, Chimp, DecisionContext, ModelPolicy, World } from './types';
+import { applyDecision, resolveByRules } from './simulation';
+import { buildRequest } from './sim/request';
+import { readAnswer } from './kernel/answer';
+import type { Candidate, Chimp, DecisionContext, ModelPolicy, World } from './types';
 
 // The decision loop: model-controlled chimps pause at decision points
 // (awaitingDecisionSince), this loop sends one chimp's local percept at a time
@@ -174,42 +175,9 @@ function applyRoster(controller: DecisionController, world: World, ids: number[]
 // The menu itself lives in src/sim/menu.ts: the rules decision policy (stage C13) samples the same bounded menu.
 export { boundedCandidates, copyCandidate, MAX_OPTIONS, nightMenu, phaseMenu } from './sim/menu';
 
-/** The best-scored option that answers a perceived disturbance, if any is perceived. */
-function stimulusResponse(ctx: DecisionContext): Candidate | undefined {
-  const disturbed = ctx.stimuli.length > 0 || ctx.environment.strangersSeen > 0 || ctx.environment.strangersHeard > 0
-    || ctx.environment.weather === 'storm' || ctx.social.some(p => p.action === 'display' || p.action === 'charge' || p.action === 'attack');
-  if (!disturbed) return undefined;
-  return [...ctx.candidates].filter(c => RESPONSE_ACTIONS.has(c.action)).sort((a, b) => b.score - a.score)[0];
-}
-
-const AGO = / (?:(\d+ (?:min|h|days?)) ago|just now)$/;
-/**
- * Repeated episodes become one line with a count ("Mated with Semwai 3 times, most recently 5 min ago").
- * The model matches option text against state text, so three copies of one memory tripled its pull
- * toward repeating that act (measured: single options locked in at 95-99%).
- */
-export function collapseMemories(recent: string[]): string[] {
-  const groups = new Map<string, { line: string; count: number; latest: string }>();
-  for (const line of recent) {
-    const base = line.replace(AGO, '');
-    const group = groups.get(base);
-    if (group) group.count++;
-    else { const m = line.match(AGO); groups.set(base, { line, count: 1, latest: m ? (m[1] ? `${m[1]} ago` : 'just now') : '' }); }
-  }
-  return [...groups].map(([base, g]) => g.count === 1 ? g.line
-    : `${base} ${g.count} times${g.latest ? `, most recently ${g.latest}` : ''}`.slice(0, 160));
-}
-
-/** The request body: the chimp's own percept with the menu bounded for the model. */
-export function buildRequest(world: World, chimp: Chimp, opts: { phaseMenu?: boolean } = {}): { context: DecisionContext; options: Candidate[]; rulesIndex: number } {
-  const seen = observe(world, chimp);
-  // phaseMenu: false gives the unfiltered menu, used only to A/B the night and dusk menus (scripts/ft-contexts.ts).
-  const ctx = opts.phaseMenu === false ? seen : { ...seen, candidates: phaseMenu(seen.candidates, seen.environment.phase) };
-  const rules = rulesChoice(world, chimp);
-  const options = boundedCandidates(ctx.candidates, [rules, stimulusResponse(ctx)]);
-  const context: DecisionContext = { ...ctx, recent: collapseMemories(ctx.recent), candidates: options };
-  return { context, options, rulesIndex: rules ? options.findIndex(o => same(o, rules)) : -1 };
-}
+// The request itself (packet, menu, rules index) lives in src/sim/request.ts (stage R1), so a kernel deciding inside the
+// tick is offered exactly what this loop sends.
+export { buildRequest, collapseMemories } from './sim/request';
 
 // ---------------------------------------------------------------------------
 // Loop
@@ -331,20 +299,20 @@ async function requestDecision(controller: DecisionController, world: World, chi
     if (chimp.alive && chimp.awaitingDecisionSince !== null && chimp.decisionVersion === version) fallBack(controller, world, chimp, `model error: ${failure}`, true);
     return;
   }
-  const probabilities = Array.isArray(answer.probabilities) && answer.probabilities.length === options.length
-    && answer.probabilities.every(p => typeof p === 'number' && Number.isFinite(p) && p >= 0 && p <= 1) ? answer.probabilities as number[] : null;
-  const index = typeof answer.index === 'number' ? answer.index : typeof answer.choice === 'string' && /^c\d+$/.test(answer.choice) ? Number(answer.choice.slice(1)) : -1;
+  // the answer check every kernel shares (src/kernel/answer.ts, stage R1)
+  const read = readAnswer(answer, options.length);
   trace.latencyMs = typeof answer.latencyMs === 'number' ? answer.latencyMs : (typeof performance !== 'undefined' ? performance.now() : Date.now()) - started;
   trace.inputTokens = typeof answer.inputTokens === 'number' ? answer.inputTokens : 0;
   controller.latencyMs = trace.latencyMs; controller.inputTokens = trace.inputTokens;
   if (typeof answer.device === 'string' && answer.device) controller.device = answer.device;
-  if (!probabilities || !Number.isInteger(index) || index < 0 || index >= options.length) {
+  if (!read) {
     controller.lastError = 'Model answer did not match the submitted options'; controller.backoffUntil = clock + 1000;
     trace.discardedReason = 'invalid model answer'; controller.discarded++; pushTrace(controller, trace);
     if (chimp.alive && chimp.awaitingDecisionSince !== null && chimp.decisionVersion === version) fallBack(controller, world, chimp, 'invalid model answer', true);
     return;
   }
   controller.lastError = '';
+  const { probabilities, index } = read;
   trace.probabilities = probabilities; trace.choiceIndex = index;
   if (rulesIndex >= 0) { controller.agreement.total++; if (rulesIndex === index) controller.agreement.same++; }
   const choice = options[index];

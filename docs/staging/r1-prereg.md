@@ -132,7 +132,10 @@ validation, and `server/decide.ts` imports Node modules.
 
 ## 6. Iteration log (each entry written before it runs; at most 3 per problem)
 
-(none yet)
+- **Iteration 1 (the build as registered in §1; logged with the first code commit).** Interface, kernels, the shared
+  step, the three switches and the two moves (D5). Checked so far with single test files only: `gen-params --check`
+  clean, `tsc` clean, `tests/decision.test.ts` and `tests/sim-rg.test.ts` 35 of 35, the compressed goldens and the field
+  pin pass with the rules reached through the interface. The new test file follows in the next commit.
 
 ## 7. Results
 
