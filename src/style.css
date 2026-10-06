@@ -922,8 +922,6 @@ dialog.settings::backdrop { background: rgba(0, 0, 0, .6); }
   .hud { gap: 12px; padding: 0 8px 0 12px; } .bar-time { gap: 10px; }
   .wx-sub, .pop-sub, .season, .bar-brand, .bar-brand + .bar-sep, .wx-main span, .bar-sim .save-ind { display: none; }
   .bar-sim .sim-name { width: 6ch; } .pop-main span { display: none; }
-  .card-demo, .card-strength { display: none; } .card { padding-block: 7px; } .card-body { row-gap: 0; }
-  .emblem { width: 24px; height: 28px; } .emblem b { font-size: 11px; } .card { grid-template-columns: 24px minmax(0, 1fr); }
   .chimp-panel { --ch-id-w: 176px; }
   .opt { grid-template-columns: minmax(0, 1.6fr) minmax(0, .8fr) minmax(0, .8fr); gap: 6px; } .opt-val { grid-template-columns: minmax(0, 1fr) 30px; }
 }
@@ -945,22 +943,33 @@ dialog.settings::backdrop { background: rgba(0, 0, 0, .6); }
   .tb-speeds button { font-size: 10.5px; letter-spacing: -.01em; } .sp-key { display: none; }
   .mobile-bar { position: absolute; z-index: 7; left: var(--gap); right: var(--gap); bottom: var(--gap); display: flex; justify-content: center; gap: 8px; pointer-events: none; }
   .mobile-bar button { pointer-events: auto; display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 18px; font-size: 12.5px; background: var(--surface); border: 1px solid var(--line-2); box-shadow: var(--shadow); }
-  .app:not(.rside-closed) .rside { display: flex !important; position: absolute; left: 0; right: 0; bottom: 0; top: 18vh; width: auto; border-radius: 16px 16px 0 0; z-index: 25; animation: sheetIn .35s var(--ease); }
-  .chimp-panel { left: var(--gap); right: var(--gap); bottom: calc(var(--gap) + 44px); }
-  .app:not(.chimp-closed) .chimp-panel { left: 0; right: 0; bottom: 0; top: 18vh; height: auto; border-radius: 16px 16px 0 0; z-index: 25; animation: sheetIn .35s var(--ease); }
+  /* Phones: the right sidebar and the expanded chimp panel are sheets that stop above the bottom bar; one shows at a
+     time (app.ts). Collapsed, the chimp panel is a strip above the bar. */
+  .app { --sheet-b: calc(var(--gap) * 2 + 36px); --ch-h: calc(100% - 18vh - var(--sheet-b)); }
+  .app.chimp-closed { --ch-h: 52px; }
+  .app:not(.rside-closed) .rside { display: flex !important; position: absolute; left: var(--gap); right: var(--gap); bottom: var(--sheet-b); top: 18vh; width: auto; z-index: 25; animation: sheetIn .35s var(--ease); }
+  .chimp-panel { left: var(--gap); right: var(--gap); bottom: var(--sheet-b); --ch-id-w: auto; }
+  .app:not(.chimp-closed) .chimp-panel { display: flex; flex-direction: column; z-index: 25; animation: sheetIn .35s var(--ease); }
+  .app:not(.chimp-closed) .ch-id { flex: 0 0 auto; flex-direction: row; align-items: center; gap: 12px; padding: 12px 14px; border-right: 0; border-bottom: 1px solid var(--line); }
+  .app:not(.chimp-closed) .ch-shot { width: 64px; height: 64px; }
+  .app:not(.chimp-closed) .ch-main { flex: 1 1 auto; }
+  .ch-tabs { overflow-x: auto; scrollbar-width: none; } .ch-tabs button { padding: 0 9px; }
+  .app.chimp-closed .ch-who { gap: 10px; } .app.chimp-closed :is(.ch-meta, .ch-now) { display: none; }
+  .app.chimp-closed .ch-id { padding: 0 6px 0 8px; gap: 10px; } .app.chimp-closed .ch-shot { width: 34px; height: 34px; }
   .app.left-open .chimp-panel, .app:not(.rside-closed) .chimp-panel { display: none; }
   .app.left-open .left { display: flex !important; transform: none; opacity: 1; visibility: visible; position: absolute; left: 0; right: 0; top: 14vh; bottom: 0; width: auto; z-index: 25; padding: 10px; gap: 8px; overflow-y: auto; background: var(--bg); border-top: 1px solid var(--line-2); border-radius: 16px 16px 0 0; animation: sheetIn .35s var(--ease); }
   .app.left-open .p-feed { min-height: 260px; }
-  .app:not(.rside-closed) .mobile-bar, .app.left-open .mobile-bar, .app:not(.chimp-closed) .mobile-bar { z-index: 27; bottom: var(--gap); }
-  .app:not(.chimp-closed) .ch-body, .app.left-open .left, .rs-pane { padding-bottom: 60px; }
+  .app:not(.rside-closed) .mobile-bar, .app.left-open .mobile-bar, .app:not(.chimp-closed) .mobile-bar { z-index: 27; }
+  .app.left-open .left { padding-bottom: 60px; }
   .mobile-bar button[aria-pressed="true"] { background: var(--overlay); border-color: var(--line-3); }
   .toasts { top: calc(var(--top) + 44px + var(--gap)); }
-  .scalebar { right: var(--gap); bottom: calc(var(--ch-space) + var(--gap) + 44px); }
-  .follow-ind { left: var(--gap); bottom: calc(var(--ch-space) + var(--gap) + 44px); transform: none; }
+  .scalebar { right: var(--gap); bottom: calc(var(--sheet-b) + 52px + var(--gap)); }
+  .follow-ind { left: var(--gap); bottom: calc(var(--sheet-b) + 52px + var(--gap)); transform: none; }
   .soc-panel { width: 100%; height: 100%; border-radius: 0; }
   .soc-head { padding: 12px 12px 6px; gap: 8px; } .soc-title h2 { font-size: 22px; }
   .soc-views button span { display: none; } .soc-body { padding: 0 10px 12px; } .soc-blurb { padding: 0 12px 8px; }
   .soc-cols { grid-template-columns: minmax(0, 1fr); } .ladders.split { grid-template-columns: 1fr; }
+  .soc-cols .soc-col { padding: 4px; } .soc-cols .soc-col + .soc-col { border-left: 0; border-top: 1px solid var(--line); margin-top: 18px; padding-top: 18px; }
   .mp-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @keyframes sheetIn { from { transform: translateY(40px); opacity: 0; } }
