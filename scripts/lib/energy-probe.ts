@@ -651,7 +651,7 @@ function addInto<T extends object>(a: T, b: T, mins: readonly string[] = []): vo
     if (absent(x)) { A[k] = clone(y); continue; }
     if (typeof y === 'number') A[k] = mins.includes(k) ? Math.min(x as number, y) : (x as number) + y;
     else if (y instanceof Set) for (const v of y) (x as Set<unknown>).add(v);
-    else if (Array.isArray(y)) (x as unknown[]).push(...y);
+    else if (Array.isArray(y)) { const out = x as unknown[]; for (const v of y) out.push(v); }   // not push(...y): three years of records overflow the call stack
     else if (typeof y === 'object') addInto(x as object, y as object);
   }
 }

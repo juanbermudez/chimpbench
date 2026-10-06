@@ -134,6 +134,15 @@ templates. The scripts find the repo from their own location (`MGOGO_ROOT` overr
 
 ## 5. Next specific tasks, in order
 
+**Merged into `main` and pushed on 6 October 2026, by the user's instruction** ("merge and push to main, and make sure
+these issues get addresssed and we move faster parelalizing more work to get closer to the real results"). Before the
+push the 50 local commits of the day were re-authored to the GitHub no-reply identity (18 had carried the second
+computer's default identity); files are unchanged and `docs/staging/commit-map-2026-10-06.tsv` maps the old hashes,
+which the day's docs and run registries quote, to the new ones. `main` now equals `track-e`. The UI redesign
+(`ui-redesign`, built on `site`) follows as a separate integration, because it and Track R both rewrote the decision
+request path; the closed-canopy graphics stay on `gfx-next` by the user's decision.
+
+
 **State on 6 October 2026, 04:48 (second computer).** Task 1 is done: 0 starvation deaths in 20 seed-runs at 12 months
 at a swallowed share of 0.5 and of 0.25, against S39's 6 (`docs/staging/e1v-prereg.md` §8.4); adopting a value is the
 user's. Tasks 2 and 3 are done on their branches (`ui-redesign` 31a93fd, `gfx-next` 07401a6; the user's decisions are
