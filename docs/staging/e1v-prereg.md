@@ -371,3 +371,9 @@ Non-fruit share of eating time by class (1 - fruitShare of the class readout: fa
 | infant 2–5 y | 0.20 | 0.18 | 0.18 |
 | infant 0.5–2 y | 0.42 | 0.39 | 0.41 |
 | infant < 0.5 y | 0.77 | 0.77 | nan |
+
+### 8.5 The user's decision (6 October 2026)
+"Wadging: no value adopted as a claim about chimpanzees. Use 0.5 as the declared working base for the engine
+comparisons, 0.25 as the sensitivity check. Revisit after the three-year results." The registry default stays 1. Runs
+that compare decision kernels (Track R) set `pithFibreSwallowed` 0.5 and say so; 0.25 is run beside it where a result
+could depend on the share.
