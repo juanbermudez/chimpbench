@@ -1,9 +1,8 @@
 // Stage R2 fixed sample (docs/staging/r2-prereg.md §2): decision points of a rules-driven world on the working base
 // (S39 with pithFibreSwallowed 0.5) with the requests a kernel would be sent there under each R2 switch, the live rules'
 // pick, the packet-reading rules' picks and the text packets' sizes. Not a benchmark: a few simulated days per seed,
-// inside the unit-test budget; development seeds 48 and 7 only. The world runs on the rules; the taps read only (the
-// R2 switches are set on the world's parameter object only while a request is built, and nothing in the simulation
-// reads them), the sampling and every kernel draw come from hashes, never world.rng, and the tapped world's hash is
+// inside the unit-test budget; development seeds 48 and 7 only. The world runs on the rules; the taps read only (each
+// request is built with the R2 switches given as options of buildRequest, never by changing the world), the sampling and every kernel draw come from hashes, never world.rng, and the tapped world's hash is
 // checked against an untapped run.
 //
 //   pnpm exec tsx scripts/r2-sample.ts [--seeds 48,7] [--burn-in 2] [--days 2] [--params-file docs/staging/integrator-kit/params/M6-W50.json]
@@ -17,26 +16,19 @@ import type { KernelRequest } from '../src/kernel/types';
 import { rulesTap } from '../src/sim/decide';
 import { dayPhase } from '../src/sim/environment';
 import { optionKind } from '../src/sim/menu';
-import { paramsOf, type Params } from '../src/sim/params';
+import { paramsOf } from '../src/sim/params';
 import { buildRequest, targetRequest } from '../src/sim/request';
 import { rgTap } from '../src/sim/rg';
 import { hash01 } from '../src/sim/rng';
 import { isChimpId, TICK_HOURS } from '../src/sim/state';
 import { createWorld, tickWorld } from '../src/simulation';
-import type { Candidate, Chimp, World } from '../src/types';
+import type { Chimp, World } from '../src/types';
 import { worldHash } from '../tests/fixtures/golden';
 import { buildV4Question, tokensOf } from './lib/packet-v4';
 
 const RESERVED = new Set([606, 707, 808, 909, 1010, 1013, 1014, 1616, 5101, 5202, 5303, 5404, 5505, 5606, 5707, 7001, 7002, 7003, 9101]);
 const key = (k: { action: string; targetId: number }) => `${k.action}:${k.targetId}`;
 const GROUPS = Object.keys(FIELD_GROUPS) as FieldGroup[];
-
-/** Build something with R2 switches set for the call only (the world's own parameter object; restored at once). */
-export function withSwitches<T>(world: World, set: Partial<Pick<Params, 'menuParity' | 'activityFirst'>>, fn: () => T): T {
-  const P = paramsOf(world) as unknown as Record<string, number>, old: Record<string, number> = {};
-  for (const [k, v] of Object.entries(set)) { old[k] = P[k]; P[k] = v as number; }
-  try { return fn(); } finally { for (const [k, v] of Object.entries(old)) P[k] = v; }
-}
 
 /** A fixed stream of uniforms from a hash (seed, chimp, decision version, salt): what a kernel between ticks is lent. */
 const hashStream = (seed: number, id: number, version: number, salt: number) => { let n = 0; return () => hash01(seed, id, version, salt + n++); };
@@ -82,10 +74,8 @@ export function sampleR2(o: SampleOpts): { rows: Row[]; hash: string; decisions:
     if (!policy || !c.alive || c.age < P.rgMinAge) return;
     const rng = w.rng; // the state the rules draw from (nothing between here and their draw uses it)
     pending = { c, tick: w.tick, rng, req: {
-      today: withSwitches(w, { menuParity: 0, activityFirst: 0 }, () => buildRequest(w, c)),
-      parity: withSwitches(w, { menuParity: 1, activityFirst: 0 }, () => buildRequest(w, c)),
-      kinds: withSwitches(w, { menuParity: 0, activityFirst: 1 }, () => buildRequest(w, c)),
-      parityKinds: withSwitches(w, { menuParity: 1, activityFirst: 1 }, () => buildRequest(w, c)) } };
+      today: buildRequest(w, c, { menuParity: 0, activityFirst: 0 }), parity: buildRequest(w, c, { menuParity: 1, activityFirst: 0 }),
+      kinds: buildRequest(w, c, { menuParity: 0, activityFirst: 1 }), parityKinds: buildRequest(w, c, { menuParity: 1, activityFirst: 1 }) } };
     if (w.rng !== rng) throw new Error('building a request drew from world.rng');
   };
   rgTap.fn = (c, _list, menu, _probs, chosen, why) => {
@@ -220,5 +210,5 @@ if (process.argv[1]?.endsWith('r2-sample.ts')) {
   }
   const summary = { stage: 'R2', paramsFile: file, params, burnIn, days, seeds, meta, ...summarize(all) };
   writeFileSync(resolve(out, 'summary.json'), JSON.stringify(summary, null, 1) + '\n');
-  console.log(JSON.stringify({ ...summary, params: undefined }, null, 1));
+  console.log(`wrote ${resolve(out, 'summary.json')}: ${summary.records} records, ${summary.draws} draws, ${summary.animals} animals`);
 }

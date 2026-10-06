@@ -243,3 +243,16 @@ Each iteration is logged here before it runs; at most 3 per problem.
   stream (before R2 every draw of a decision returned the same number, which a kernel drawing once never saw).
 - **Iteration 1a (timing only).** `scripts/r2-sample.ts --seeds 48 --burn-in 0.05 --days 0.05 --no-check`: a smoke run
   to read the wall time per simulated day before the registered sample is launched. No number from it is reported.
+- **Iteration 1b (T3, the check against the base commit).** A throwaway script hashes, for the same fixed worlds, every
+  living chimp's request (`buildRequest`: context, options, rules position) and its two text packets (`buildLocalQuestion`,
+  `buildJevQuestion`): compressed seeds 48 and 7 at 12:30 and at about 19:40; field, the working base, seed 48, with
+  `observeState` 0 and 1, at 12:30, 19:00 and 23:00. It runs once on an extracted copy of `track-e` e0cf866 and once on
+  this branch; with every R2 switch 0 the two outputs must be equal line for line. Not a benchmark (16.5 simulated hours
+  of the field map per world). The request hashes it prints for the compressed worlds are then pinned in the test file.
+  Result of 1b: equal line for line (10 of 10 worlds; requests and both text packets), so T3 holds against the base
+  commit for `observeState` 0 and 1.
+- **Iteration 2 (the new test file, first run).** `tests/r2-packet.test.ts` as written against §4; any failure is logged
+  here with whether the test or the code was wrong.
+  Result of iteration 2: 17 of 17 pass on the first run; no change to the code or the tests.
+- **Iteration 3 (the registered sample, §2).** `scripts/r2-sample.ts --seeds 48,7 --burn-in 2 --days 2` with the hash
+  check, as registered; output `artifacts/r2/`. Run once; its numbers go to §8 as printed.
