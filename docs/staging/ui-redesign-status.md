@@ -1,118 +1,105 @@
-# ui-redesign: status (paused 5 Oct 2026)
+# ui-redesign: status (6 Oct 2026, all 11 steps done; nothing merged or pushed)
 
-Branch `ui-redesign` (worktree `.claude/worktrees/ui-redesign`), created from `site` (51b33ff). Paused at the coordinator's request
-before any redesign code was written. Nothing is pushed.
+Branch `ui-redesign`, worktree `/Volumes/Drive/chimpbench/MGOGO/.claude/worktrees/ui-redesign` (the repo moved off the
+iCloud-synced Desktop on 6 Oct; steps 8 and 9 were re-verified here after the move). One commit per plan step, 3 to 11.
 
-## Done
+## What the user asked for, and what was built
 
-- **Merge of `ui-minimap` (8d3a0b7)**: commit b3d9cdb. Git auto-merged it with no conflicts (`site` touched `src/ui/app.ts`
-  around lines 206 and 454 and `src/style.css` `.tb-speeds` / `.model-load`; `ui-minimap` touched other regions). Both sides
-  were checked in the result. `pnpm exec tsc --noEmit -p .` passes; `pnpm test`: 508 tests, 508 pass, 0 fail.
-- Code reading for the redesign (notes below). No source file is changed, so nothing is half-done.
-- BEFORE screenshots: **not taken yet** (they were the next step). No AFTER screenshots.
+1. **Experiments and Society in a right sidebar; chimp details in a bottom panel.**
+   - Right sidebar (`.rside`, `src/ui/app.ts`): four panes, Communities (resting state), Society (`T`), Experiments (`E`),
+     Model (`M`). The same key or `Esc` returns to Communities; `Shift`+`B` hides the sidebar. The left dock is gone.
+   - Society pane (`src/ui/society-side.ts`): one community at a time, stacked lists. Kinship = matrilines as indented
+     lists, Dominance = the two ladders, Bonds = the strongest pairs, Alphas = tenure list and a small timeline.
+   - Bottom chimp panel (`.chimp-panel`, `src/ui/inspector.ts`), between the left column and the right sidebar: a square
+     snapshot, name, α badge, community chip, stage, sex, age, rank, current activity, and the tabs Overview, Log (the
+     field log filtered to that chimp, `src/ui/chimp-log.ts`), Mind, Family, Relations. `I` or the chevron collapses it
+     to a one-line strip. Wide panels lay tab content out side by side (container queries).
+   - Flat cards: community rows, alpha line, ladders, unit tiles, field-log and toast icons, the Mind tab's decision
+     story, the Model pane and the full society view lost their inner boxes (hairlines, type, spacing, colour chips).
+2. **Experiments as a plain list with an animated popover** (`src/ui/interventions.ts`, `src/ui/popover.ts`): one row per
+   experiment; description, citation and scope appear beside the row on hover and on keyboard focus (fade and slide,
+   glide between rows; no movement under `prefers-reduced-motion`, checked). The text stays in the row for assistive
+   technology and shows inline on touch screens.
+3. **α badge instead of the crown** (`parts.ts` `alphaBadge`, styled like `.crl-rank.alpha`): chimp panel, community
+   rows, alpha line, ladders, unit tiles, Mind tab's nearby list, full society view (column heads and the kinship
+   forest). The crown icon is deleted.
 
-## How I read the user's requests
+Snapshot (step 10, `src/render/creatures/portrait.ts`): a real render of the animal's head and shoulders, face front-on
+and upright in any pose, exposed so it reads at night. The unit chip is the stand-in when there is no picture (render
+quality 'low', cinematic view, dead or unloaded animal, the synthetic preview).
 
-1. Experiments and Society each open in a **right sidebar**, in simplified content stacked to fit its width. Cards drop the
-   nested boxes (typography, spacing, hairline dividers and colour chips instead of a box inside a box). Clicking a chimp
-   shows its details in a **bottom panel** (centre, between the left column and the right sidebar, never a sidebar): a small
-   square snapshot of the chimp, its name, its community, key details, and tabs (overview, its activity log = the field log
-   filtered to that chimp, mind, family/relations), reusing the current tab content in simpler form. The panel can collapse.
-2. Experiments: replace the old dock (left column) with a plain list in the right sidebar. Each experiment's description
-   appears in an animated popover on hover and on keyboard focus (respecting `prefers-reduced-motion`).
-3. Alpha: wherever the UI shows a crown for the alpha, use the "α" badge of the 3D chimp tag instead, and remove the crown
-   icon where it becomes unused.
+## Verification (6 Oct, new worktree)
 
-Open question for the next agent: what the `I` key does. Proposal: `I` shows or collapses the bottom chimp panel (today it
-toggles the right inspector, which goes away). The right sidebar then holds Communities by default; `E` and `T` switch it to
-Experiments or Society, and `Esc` returns it to Communities.
+- `tsc --noEmit -p .`: clean. `pnpm build`: passes (183 modules).
+- `pnpm test`: 517 tests, 516 pass, 1 fails only because the gitignored file `artifacts/validation/c7a-field1y.json` is
+  absent from this fresh worktree (`tests/guide-data.test.ts`); with that file linked from the main checkout the test
+  passes (11 of 11 in that file). New tests: `ui-popover`, `ui-chimp-panel`, `render-portrait` (9 tests).
+- `node scripts/verify-browser.mjs http://127.0.0.1:5188 --no-model`: 17 of 17 steps pass, no page or console errors.
+  Its speed keys were stale (1 is real time now); fixed in the script.
+- Screenshots: `/Volumes/Drive/chimpbench/shots/ui-redesign/before/` (12: chimp, experiments, society at 1440×900,
+  1280×800, 880×900, 390×844) and `…/after/` (56: 14 states at the same four sizes). No console errors or warnings
+  in the AFTER run (the "Sound assets unavailable" warning, present before too, is filtered: `public/audio` is not in
+  the worktree).
+- `?perf=1` UI cost, compressed map, 1440×900 at dpr 2, 8 s per state, on a machine shared with four simulation jobs
+  (raw rows in `…/shots/ui-redesign/perf-before.txt` and `perf-after.txt`):
 
-## Code map (what the work touches)
+  | | before | after |
+  | --- | --- | --- |
+  | 1 min/s: mean per frame | 0.05–0.07 ms | 0.07–0.11 ms |
+  | 1 min/s: worst frame | 0.7–1.9 ms | 0.8–1.4 ms |
+  | 1 min/s: DOM nodes per second | 0–0.6 | 0.1–1.0 |
+  | 1 day/s: mean per frame | 0.10–0.15 ms | 0.14–0.18 ms |
+  | 1 day/s: worst frame | 0.8–2.3 ms | 0.9–1.8 ms |
+  | 1 day/s: DOM nodes per second | 4–71 | 62–80 |
 
-- Layout markup: `src/ui/app.ts` 85–118 (left column `.left` with `.p-side` field log, `aside.dock` for Experiments/Model,
-  `.p-map` range map; right `aside.inspector` with `.rp-comm` and `.rp-chimp`; `.insp-peek`, `.rp-back`, `.mobile-bar`).
-  Panel state: `syncPanels` 281–298; refresh steps `STEPS` 499–515 and `visibility()` 488–497 (hidden panels do no DOM work).
-- 3D keep-clear insets: `queueLayout` in `src/ui/app.ts` 323–342 measures `.p-side`, `.dock`, `.inspector`, `.insp-peek` and
-  `.hud`; `watchPanels` 315–317 observes them. The new bottom panel must feed `bottom` (today always 0) and the right
-  sidebar must feed `right`.
-- Keyboard: `src/ui/app.ts` 441–472 (E dock, T society, I inspector, M model, B sidebar, Esc chain at 447–451).
-- Chimp details: `src/ui/inspector.ts` (header + tabs overview/mind/family/social/rank; `renderInto` keeps focus and
-  `<details>` state); `src/ui/mind.ts`, `family-tree.ts`, `graph.ts`, `hierarchy.ts`.
-- Communities: `src/ui/communities.ts` (cards), `src/ui/community-panel.ts` (detail, parties, ladders, Society links),
-  `src/ui/units.ts` (member tiles, keyed and patched in place).
-- Experiments: `src/ui/interventions.ts` (`EXPERIMENTS` list with `line` and `cite`; target picker; active stimuli).
-- Society overlay: `src/ui/society.ts` (views kinship, dominance, bonds network, alpha history; 3 columns or one).
-- Field log: `src/ui/feed.ts` (keyed list; the chimp's activity-log tab can filter `world.events` by `actors`).
-- DOM updates must go through `morph` / `setAttr` / `setText` (`src/ui/morph.ts`); never innerHTML per refresh.
-- Tooltip: `src/ui/tooltip.ts` (one shared, single-line, `aria-hidden` tip for `[data-tip]`); a richer popover for the
-  experiment descriptions is needed (title, body, citation, scope).
-- Motion tokens: `src/style.css` has only `--ease` (line 38); add duration tokens before animating.
-- Crown sites to replace with the α badge: `src/ui/app.ts:554` (peek), `communities.ts:58` (card-alpha),
-  `hierarchy.ts:40` (ladder rung) and `:52` (alpha card), `parts.ts:58` (rank badge), `mind.ts:67` (nearby list),
-  `society.ts:61` (column head), `units.ts:61` (tile `.u-crown`), `family-tree.ts:179` (SVG `.kn-crown` path).
-  Keep as icons (not alpha markers): `feed.ts:7` (hierarchy event category), `inspector.ts:26` (pant-grunt action),
-  `society.ts:20` and `community-panel.ts:20` (the "Alpha history" view icon; decide whether to swap for the badge).
-  CSS: `.unit svg.u-crown` (style.css:526), `.kn-crown` (680).
-- α badge look to match: `src/render/creatures/labels.ts:56` (`.crl-rank.alpha`: background #e2bf79, colour #17140e,
-  font 600 10px/1, padding 2px 4px, radius 4px) and `:290` (the text "α").
+  The mean rose by about 0.03 ms because three panels now show at once (before, the dock replaced the field log and
+  the inspector replaced the communities). Only the sidebar pane that shows and the expanded chimp tab do DOM work.
+- Snapshot cost (same machine): no new shader program (104 before and after); the extra draw takes under 0.2 ms of
+  CPU and causes no long frame with the readback disabled; developing takes 1.2–3.5 ms. The GPU readback is the cost:
+  at a steady 60 fps the picture arrived in 42–50 ms with no long frame; with the GPU saturated it took 230–320 ms and
+  stretched one frame to 67–83 ms. Deferring the read to the next frame's start and an 8-bit target did not help
+  (p99 105–111 ms against 45–50 ms at one snapshot a second). So the panel asks on a new selection, once 1.5 s later,
+  then only for a changed activity at most every 15 s and never above 1 h/s; the scene refuses refreshes while its
+  smoothed frame time is over 24 ms, and draws none at quality 'low' or in the cinematic view.
 
-## Snapshot plan (researched, not implemented)
+## Decisions waiting for the user
 
-- Nothing portrait-like exists in `scene.ts`. The creature harness 'faces' mode (`src/render/creatures/harness.ts` 210–220,
-  536–551) renders tiles with a per-tile camera and calls `layer.update` per camera.
-- The creature layer packs instances only for animals visible to the main camera and picks the LOD from their projected size
-  (`src/render/creatures.ts` 1400–1445), so rendering the main scene from a second camera would draw a coarse LOD or nothing.
-- Plan: in `creatures.ts` add a one-instance portrait `InstancedMesh` that shares the LOD0 geometry attributes (copied the way
-  `makeShells` does, 200–214) and `mats.material` (optionally a 3-instance shell mesh for the fur fringe), on its own layer;
-  enable that layer on every scene light (as `scene.ts` does for its upload layer, around line 499). In `scene.update`, after
-  `post.render`, render it into a small HalfFloat target (4× MSAA) with a perspective camera framed from `a.head`,
-  `a.bx/by/bz`, `a.heading` and `a.morph.size`. Any non-XR render target gets no tone mapping and linear output, like
-  `post.sceneTarget`, so no new program variants should compile (check `renderer.info.programs.length` before and after).
-  Read back with `renderer.readRenderTargetPixelsAsync` (no stall), un-premultiply, tone-map on the CPU, `putImageData` into a
-  canvas in the bottom panel over a CSS backdrop. Expose it as an optional scene extra (`portrait?(id, size)`) in the
-  `UiDeps.getScene` type in `contracts.ts`; the preview has no scene and shows a labelled fallback (the unit chip).
-- Gate: only while the bottom panel is open and not in cinematic view; refresh on selection, on an action change, at most every
-  4 s; no refresh at quality 'low'. Measure the cost on the env harness by forcing a portrait every frame vs never (the
-  throughput-subtraction method in the `scripts/gpu-probe.mjs` header).
-- Rejected: cropping the main canvas (a chimp is ~15–25 px tall in the strategy view and sub-pixel in the overview; drawing a
-  WebGL canvas into a small 2D canvas can force a full-canvas readback).
+1. **Keys.** `I` collapses or expands the bottom chimp panel (the file's proposal). `Shift`+`B` hides the right sidebar
+   (new; `B` still hides the field log). `E`, `T`, `M` switch the sidebar and toggle back to Communities.
+2. **Model panel** moved into the right sidebar as a fourth pane (the alternative was to keep a left dock for it alone).
+3. **Full-screen society view kept**, opened by "Full view" in the Society pane: the kinship forest (with sire links) and
+   the bond network do not fit a 316–432 px sidebar legibly. Delete it if the sidebar lists are enough.
+4. **Rank tab removed** from the chimp panel (the rank is in its identity column; ladders are in the sidebar's
+   Communities and Society panes).
+5. **Crown removed entirely.** Three uses were not alpha markers and got other glyphs: hierarchy events and pant-grunts
+   (ladder), "Alpha history" (history), "Remove the alpha" (a struck-through α).
+6. **Snapshot refresh rate.** Rare by design (see cost above). A live picture would need a different technique (no
+   readback), not tried.
+7. **Below 1180 px** the chimp panel runs to the right edge and the sidebar stands on top of it (there is no room for
+   the panel between two columns). The sidebar starts closed below 1440 px, as the inspector did.
+8. **Phones:** the sidebar and the expanded chimp panel are sheets, one at a time; the collapsed chimp panel is a strip
+   above the bottom bar.
+9. **After an experiment fires** the sidebar stays on Experiments (it lists the active stimuli) and the chimp panel
+   opens the Mind tab; before, the dock closed itself.
 
-## Next steps, in order
+## Known issues
 
-1. Start a private dev server (below), take BEFORE screenshots at 1440×900, 1280×800, 880×900 and 390×844 of: a chimp selected,
-   Experiments open, Society open (`?seed=48&persist=0`; select with `]` then `[`, open with `E` / `T`; below 1440 px open the
-   inspector with `I`, on phones with the mobile bar's Inspector button).
-2. Record the BEFORE `?perf=1` UI cost and DOM churn (`window.__MGOGO_UI__.mutations()`, `scripts/perf-probe.mjs`).
-3. Layout skeleton: bottom panel slot, right sidebar with Communities / Experiments / Society modes; retire `aside.dock` for
-   Experiments (the Model panel `M` still needs a home: keep it in the left dock or move it to the sidebar); update
-   `queueLayout`, `watchPanels`, `visibility()`, `syncPanels`, Esc chain, focus hand-off. Commit.
-4. Bottom chimp panel: header (snapshot slot, name, α badge, community chip, stage/sex/age, now-line) and tabs (Overview,
-   Log, Mind, Family, Relations) reusing `inspector.ts` content, collapsible, `I` toggles. Commit.
-5. Right sidebar content: Communities (flattened cards, unit grid), Experiments (step 6), Society stacked (dominance ladders,
-   alpha history list, kinship as matriline lists, bonds as top-pairs list; the full kinship forest and network graph do not
-   fit a sidebar legibly: say so in the report). Commit.
-6. Experiments list with an animated popover on hover and focus (new `popover.ts` or an extended `tooltip.ts`). Commit.
-7. Flattening pass in `style.css` (drop nested borders and raised backgrounds). Commit.
-8. α badge everywhere (shared helper in `parts.ts`, CSS matching `.crl-rank.alpha`); remove the crown icon if unused. Commit.
-9. Mobile and narrow layouts (≤ 720 px sheet, 880 px): adapt the mobile bar to the new panels. Commit.
-10. Snapshot (plan above), with its measured cost. Commit.
-11. README Controls, `pnpm test`, `pnpm build`, AFTER screenshots at the same sizes, `?perf=1` check, no console errors.
+- The snapshot can cost one long frame (67–83 ms measured) when the GPU is saturated; see the cost above.
+- A snapshot taken at the instant of selection can catch a pose mid-transition; the follow-up 1.5 s later replaces it
+  unless frames run long.
+- Night snapshots of animals curled in a nest can show a small specular speckle at the frame edge.
+- At 1280×800 with the sidebar open, the chimp panel's tab body is 362 px wide: Overview falls back to two columns and
+  scrolls.
+- `scripts/guide-shots.mjs` selectors were updated for the new panels but the script was not run.
+  `docs/architecture.html` still describes the old inspector layout.
+- `scripts/perf-probe.mjs` maps speeds to keys 1–6 from the old presets (1 is real time now); not changed here.
+- Saved view state with the old `hierarchy` tab falls back to Overview; the old `panel` field is ignored.
 
-## Known issues and environment notes
+## Environment notes
 
-- My first start of a plain `vite --port 5188` re-optimized the shared `node_modules/.vite/deps` (22:38; the cache key includes
-  the root path, which differs per worktree). I restarted with a private cache. The private cache folder
-  `/Users/juanbermudez/Desktop/MGOGO/node_modules/.vite-uiredesign-5188` (about 5 MB) is safe to delete.
-- The private server used this wrapper config (it lived in the session scratchpad; recreate it anywhere outside the repo and
-  run `MGOGO_NO_MODEL=1 pnpm exec vite --config <file>` from the worktree):
-
-```ts
-import base from '<worktree>/vite.config.ts';
-import type { ConfigEnv, UserConfig } from 'vite';
-export default (env: ConfigEnv): UserConfig => {
-  const c = (typeof base === 'function' ? (base as (e: ConfigEnv) => UserConfig)(env) : base) as UserConfig;
-  return { ...c, cacheDir: '<shared node_modules>/.vite-uiredesign-5188', server: { ...(c.server ?? {}), port: 5188, strictPort: true, host: '127.0.0.1' } };
-};
-```
-
-- Use `?persist=0` in this worktree (saving logs a known SQLite error through the shared `node_modules` link).
+- Dev server: `MGOGO_NO_MODEL=1 fnm exec --using=22.22.3 -- pnpm exec vite --host 127.0.0.1 --port 5188 --strictPort`.
+  Open pages with `?persist=0&provider=server`: the default provider is `browser`, which starts an 872 MB model
+  download from the Hugging Face hub on load. On 6 Oct, before this was noticed, two page loads began that download
+  (about 7% in one of them) and were closed; nothing was sent other than the model file requests.
+- From about 00:50 on 6 Oct the old worktree under `~/Desktop` returned empty reads and hung (iCloud eviction); the
+  step 8 and 9 screenshots and checks were retaken in the new worktree, and one phone fix was committed.
