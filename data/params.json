@@ -32,6 +32,33 @@
    "notes": "Nest-to-nest active day: males 11 h 34 min, lactating females 10 h 57 min. Today it emerges from the nest drive and daylight."
   },
   {
+   "id": "activityFirst",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    2
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    2
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.activityFirst",
+   "file": "src/sim/request.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage R2 switch (Track R, packet v4; docs/staging/r2-prereg.md §1 C): kind of activity first, then target. With 1 or 2 the menu a kernel other than the rules is offered holds one entry per kind of activity (src/decide/facts.ts kindOf: eat here, go to food, drink, rest, nest, groom, play, keep with the party, ...), whatever the number of partners or trees: the entry of a kind is its best option by rules score, and the request carries the options of each kind (KernelRequest.groups). 1: the target is settled by that registered rule (the entry is applied; one kernel call per decision). 2: when the chosen kind has two or more options a second request over them goes to the same kernel through the same validation (src/sim/decide.ts kernelStep, src/kernel/loop.ts answerWaiting; StepResult.calls counts the calls). It removes the weighting of a choice by how many partners happen to be listed (list-length bias, measured for Jev and on the wild-choice benchmark's wide menus). The rules' own menu and choice are unchanged, so a rules-only world is the same at every value. 0 = today, bit for bit. Design (a menu layout, not a behavioural constant)."
+  },
+  {
    "id": "adoptBondMin",
    "group": "mortality",
    "value": 0.35,
@@ -13315,12 +13342,12 @@
    "units": "switch",
    "range": [
     0,
-    1
+    2
    ],
    "rangeBasis": "assumed",
    "hardRange": [
     0,
-    1
+    2
    ],
    "calibrate": false,
    "evidence": "design",
@@ -13333,7 +13360,7 @@
     "compressed": 0,
     "field": 0
    },
-   "notes": "Stage R1 switch (Track R, kernel contract; docs/staging/r1-prereg.md §1, D4): which kernel decides inside the tick for rules-driven chimps. 0 = the rules (rgChoice, else the argmax): today, bit for bit. 1 = the null kernel: a chimp aged rgMinAge or over takes one option of the menu a model kernel would be offered (buildRequest: at most 8 legal options, night and dusk menus) with equal probability, one draw from world.rng, through the step every kernel shares (the request validated, the answer checked, legality re-checked by applyDecision; fewer than two options or anything refused: the rules' argmax, no draw). Younger animals keep the rules. It is the floor a decision kernel is compared with (stage R1b), not a model of behaviour. Design."
+   "notes": "Stage R1 switch (Track R, kernel contract; docs/staging/r1-prereg.md §1, D4): which kernel decides inside the tick for rules-driven chimps. 0 = the rules (rgChoice, else the argmax): today, bit for bit. 1 = the null kernel: a chimp aged rgMinAge or over takes one option of the menu a model kernel would be offered (buildRequest: at most 8 legal options, night and dusk menus) with equal probability, one draw from world.rng, through the step every kernel shares (the request validated, the answer checked, legality re-checked by applyDecision; fewer than two options or anything refused: the rules' argmax, no draw). Younger animals keep the rules. It is the floor a decision kernel is compared with (stage R1b), not a model of behaviour. Design. Stage R2 (docs/staging/r2-prereg.md §1 D): 2 = the packet-reading rules kernel (src/kernel/packet-rules.ts, mode sample) decides for the same animals through the same step: it reads only the request (each option's published rules value and the belief the v4 packet carries) and draws through world.rng."
   },
   {
    "id": "knownTreesK",
@@ -15487,6 +15514,33 @@
    "notes": "Remembered trees nearer than this are left to the forage candidates (tree detection distance). Field: P-SCALE-2 crown detection (design)."
   },
   {
+   "id": "menuParity",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.menuParity",
+   "file": "src/sim/request.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage R2 switch (Track R, packet v4; docs/staging/r2-prereg.md §1 B; the user, 6 October 2026: fix the night menu in the next stage): one menu for every kernel. With 1 the menu of every kernel other than the rules (buildRequest) is the menu the rules policy draws from (src/sim/rg.ts rgMenu): the same phase rule (the open menu under rhythmFreeNight 1, the night and dusk menus otherwise) and the same kept picks (the best option, a response to a perceived disturbance, a joined trip, a hunt or patrol lead at its impulse), in the same order, so a comparison of kernels does not also compare menus after dusk. The rules' own menu is not changed, so a rules-only world is the same at 0 and 1. 0 = today, bit for bit: buildRequest applies the night and dusk menus whatever rhythmFreeNight says and keeps the rules' argmax and a disturbance response. Design (a menu layout, not a behavioural constant)."
+  },
+  {
    "id": "milkInDrive",
    "group": "needs",
    "value": 0,
@@ -16038,6 +16092,33 @@
     "field": 0
    },
    "notes": "Stage M1 switch (Track E's decision model; docs/staging/em-prereg.md §M1): what the decision model's observation shows. With 1 observe() adds the focal animal's Track E state (body: reserves relative to the usual store, the energy-deficit drive, the energy need and the waking hours left it is read over, gut fill, sleep pressure and felt sleepiness, the circadian oscillator's level and direction, the water deficit, the thermal load, competitive arousal, affiliation and the fast arousal; each only while its mechanism runs), the light it sees and its trend (in place of the clock hour, which the packet then never shows), and on each option the values Track E's valuation gives it (net energy rate, the crop it is valued at and when the crown was last seen, the distance, the company a move adds), computed by the valuation's own functions. Nothing in the simulation reads it: the world is the same at 0 and 1. 0 = today's observation, key for key. Design (an observation layout, not a behaviour)."
+  },
+  {
+   "id": "observeV4",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.observeV4",
+   "file": "src/sim/observe-state.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage R2 switch (Track R, packet v4; docs/staging/r2-prereg.md §1 A): the state a decision kernel sees. With 1 observe() returns the stage M1 observation (as observeState 1: body, light, option values) plus the v4 fields: hindgut fill, the feeding drive and the animal's own full ripe-fruit rate in the body; on an option its net rate as a share of that rate, the chance a listed crown is in fruit, the spread of the animal's belief about a crop out of sight, what the option's value changes by if the crown holds less or more than believed (the form rg.ts beliefOffset samples), the odds of winning a contest the valuation assesses (contestAssess), and the company of nest-mates on its own nest (nestCompany); and the marker packet: 4, which selects the v4 wording (words before numbers; src/kernel/packet-words.ts). Every field is computed by the function the rules' valuation calls, from the animal's own body, perception snapshot, memory or a belief the rules hold it to; pure, no world.rng. Nothing in the simulation reads the switch: the world is the same at 0 and 1. 0 = today, bit for bit. Design (what is shown, not a behavioural constant)."
   },
   {
    "id": "oestrusPullW",

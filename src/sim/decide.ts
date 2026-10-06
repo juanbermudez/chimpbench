@@ -2,6 +2,7 @@ import type { Candidate, Chimp, DecisionSource, World } from '../types';
 import { intentOf } from '../decide/gate';
 import { readAnswer } from '../kernel/answer';
 import { nullKernel, rulesKernel } from '../kernel/kernels';
+import { packetRulesKernel } from '../kernel/packet-rules';
 import type { KernelEnv, KernelRequest, StepResult, SyncKernel } from '../kernel/types';
 import { candidateMeta, findCandidate, getEligibleActions, rulesChoice, V } from './candidates';
 import { decisionContextError } from './context-check';
@@ -9,7 +10,7 @@ import { setRest, startAction } from './execution';
 import { observe } from './observe';
 import { paramsOf } from './params';
 import { perceive } from './perception';
-import { buildRequest } from './request';
+import { buildRequest, targetRequest } from './request';
 import { gate } from './rg';
 import { random } from './rng';
 import { ix, living } from './state';
@@ -42,8 +43,9 @@ export function decisionPoint(world: World, c: Chimp): void {
     c.nextDecision = world.time + 1 / 60;
     return;
   }
-  if (P.kernelSim === 1 && c.age >= P.rgMinAge) {
-    if (!(P.kernelGate === 1 && loopGate(world, c, list))) kernelStep(world, c, nullKernel);
+  // stage R2 (kernelSim 2; docs/staging/r2-prereg.md §1 D): the packet-reading rules through the same step
+  if (P.kernelSim >= 1 && c.age >= P.rgMinAge) {
+    if (!(P.kernelGate === 1 && loopGate(world, c, list))) kernelStep(world, c, P.kernelSim === 2 ? packetRulesKernel : nullKernel);
     return;
   }
   decideByRules(world, c, true);
@@ -165,14 +167,32 @@ export function settleAnswer(world: World, c: Chimp, request: KernelRequest, ans
 }
 
 /**
+ * Stage R2 (activityFirst 2; docs/staging/r2-prereg.md §1 C): after a valid first answer, the second request over the
+ * options of the chosen kind, when that kind has two or more and the request passes the shared validation; else null
+ * (the entry the kernel chose is applied). Pure.
+ */
+export function secondRequest(world: World, request: KernelRequest, answer: unknown): KernelRequest | null {
+  if (paramsOf(world).activityFirst !== 2 || !request.groups) return null;
+  const read = typeof answer === 'object' && answer !== null ? readAnswer(answer, request.options.length) : null;
+  const second = read ? targetRequest(request, read.index) : null;
+  return second && decisionContextError(second.context) === '' ? second : null;
+}
+
+/**
  * One decision by a kernel that answers at once, inside the tick: the request, the kernel, the checks, and the rules'
  * argmax (no draw) for anything refused. The kernel's draw is world.rng, so the run is reproducible from the seed.
+ * Stage R2 (activityFirst 2): a second call settles the target within the kind the kernel chose.
  */
 export function kernelStep(world: World, c: Chimp, kernel: SyncKernel): StepResult {
   const r = requestFor(world, c);
-  const result: StepResult = { chimpId: c.id, kernel: kernel.id, by: 'rules', refusal: r.refusal, detail: r.refusal ? r.detail : '', index: -1, request: r.request };
+  const result: StepResult = { chimpId: c.id, kernel: kernel.id, by: 'rules', refusal: r.refusal, detail: r.refusal ? r.detail : '', index: -1, request: r.request, calls: 0 };
   if (r.refusal === '') {
-    const s = settleAnswer(world, c, r.request, kernel.decide(r.request, { random: () => random(world) }));
+    const env = { random: () => random(world) };
+    let request = r.request, answer = kernel.decide(request, env);
+    result.calls = 1;
+    const second = secondRequest(world, request, answer);
+    if (second) { request = result.second = second; answer = kernel.decide(second, env); result.calls = 2; }
+    const s = settleAnswer(world, c, request, answer);
     result.index = s.index; result.refusal = s.refusal;
     if (s.refusal === '') result.by = 'kernel';
   }

@@ -60,6 +60,21 @@ export interface OptionValue {
   distM?: number;
   /** The company the move adds (stage E5a's company value, with E5b's or E5d's margin when on), in score units. */
   company?: number;
+  // Stage R2 (`observeV4` 1; docs/staging/r2-prereg.md §1 A): the belief behind the option, where the rules use one.
+  /** `kcalH` as a share of the animal's own full ripe-fruit rate (`BodyPercept.fullKcalH`). */
+  share?: number;
+  /** A listed crown valued from the community's list alone: the chance it is in fruit, 0..1 (tripBeliefs bit 4). */
+  chance?: number;
+  /** A crown out of sight: one standard deviation of the animal's belief about its crop, kcal (0: just seen). */
+  spreadKcal?: number;
+  /**
+   * What the option's rules value changes by (score units) if the crown holds less / more than believed: bare / in fruit
+   * with `chance`; the crop one `spreadKcal` below / above otherwise. Only where the rules sample the belief
+   * (choiceBelief); for a kernel, never rendered as text.
+   */
+  swingLow?: number; swingHigh?: number;
+  /** Answering an aggressor of its own community (submit, flee, counter-charge): the chance of winning the valuation assesses, 0..1 (contestAssess). */
+  odds?: number;
 }
 /**
  * Stage M1 (`observeState` 1): the focal animal's Track E state as it feels it. A field is present only while the
@@ -86,6 +101,13 @@ export interface BodyPercept {
   heat?: number;
   /** Stress load (cortisol-like; the focal's stress), competitive arousal (adult males), affiliation (endoStates), fast arousal now (endoFast); 0..1. */
   stress?: number; arousal?: number; affiliation?: number; acute?: number;
+  // Stage R2 (`observeV4` 1; docs/staging/r2-prereg.md §1 A)
+  /** Hindgut fibre against its capacity, 0..1; a full hindgut holds the foregut full (ledgerDigesta). */
+  hindFill?: number;
+  /** The drive every feeding option is multiplied by (candidates.ts crownDrive: 1.6 × hunger + 0.1), under forageRate. */
+  feedDrive?: number;
+  /** The animal's own full ripe-fruit rate, kcal per hour: the scale of every option's `kcalH` (forageRate). */
+  fullKcalH?: number;
 }
 export interface Memory { entityId: number; kind: 'chimp' | 'tree' | 'water' | 'prey'; seenAt: number; position: Vec3; }
 /** A short first-person episodic memory used for decision context and the inspector. */
@@ -418,6 +440,8 @@ export interface DecisionContext {
    * clock hour (`environment.hour` stays for the inspector).
    */
   light?: { level: number; trend: number };
+  /** Optional (stage R2, `observeV4` 1): the packet version; 4 = `body` and option `value`s carry the v4 fields and a text builder uses the v4 wording (src/kernel/packet-words.ts). */
+  packet?: 4;
 }
 
 // ---------------------------------------------------------------------------

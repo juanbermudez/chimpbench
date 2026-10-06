@@ -941,8 +941,10 @@ const _tlB: TripLight = { pace: 1, see: 1 };
  * at the crop the animal believes and at a crop drawn from that belief. Pure.
  */
 export function treeFoodWorth(world: World, c: Chimp, P: Params, t: Tree, crop: number, feeders: number, d: number, share = 1): number {
-  return (c.hunger * 1.6 + 0.1) * treeRateShare(world, c, P, t, crop, feeders, d, true, share);
+  return crownDrive(c) * treeRateShare(world, c, P, t, crop, feeders, d, true, share);
 }
+/** The crown's drive, which every feeding option's rate share is multiplied by under forageRate (computeCandidates' `fd`); stage R2's observation shows it (observe-state.ts). */
+export const crownDrive = (c: Chimp): number => c.hunger * 1.6 + 0.1;
 /**
  * The net energy rate share of one bout at tree `t` (intake.ts netRateShare: a bout's energy less the walk's and the
  * climb's cost, over the walk and the eating, as a share of the animal's own full ripe-fruit rate), as computeCandidates'

@@ -229,3 +229,17 @@ The final text of both changes is written in §8 once the code exists.
 Each iteration is logged here before it runs; at most 3 per problem.
 
 - **Iteration 1 (the build as registered in §1–§3).** Registered with this file, before any code.
+  **Corrections to §1 and §3 found while building, logged before any test or sample ran:**
+  (a) `value.odds`: `contestAssess` values the *answer to an aggressor of the animal's own community* by `assessOdds`
+  (candidates.ts `threatResponses`: submit, flee, counter-charge), not every charge, attack or display; `odds` is attached
+  to those three answers only. (b) `value.chance` is carried at full precision (the rules compare one draw with it), and
+  the words round it. (c) The v4 text is the server's wording 2 packet (M1 iteration 2: purposes that follow Track E's
+  mechanics, "sleepiness" for the drive) with the v4 body line and value words; §3 did not say which of M1's two wordings
+  it extends. (d) The packet-reading rules carry the kernel id `rules` (they are the rules given a packet), so `KERNELS`
+  and R1's test of it are unchanged. (e) `body.feedDrive` reads a one-line export of the valuation's own expression
+  (`crownDrive`, used by `treeFoodWorth`); `beliefOffset`'s spread is likewise one export (`beliefSpread`) and `rgMenu` is
+  split into `rgMenuParts` and the bounding call; none changes a value. (f) Between ticks a kernel's first draw is
+  unchanged (`drawUniform`); a second or later draw in the same decision takes the next value of the same fixed hash
+  stream (before R2 every draw of a decision returned the same number, which a kernel drawing once never saw).
+- **Iteration 1a (timing only).** `scripts/r2-sample.ts --seeds 48 --burn-in 0.05 --days 0.05 --no-check`: a smoke run
+  to read the wall time per simulated day before the registered sample is launched. No number from it is reported.
