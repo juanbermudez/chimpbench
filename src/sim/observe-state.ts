@@ -172,7 +172,8 @@ function beliefValue(world: World, c: Chimp, k: Candidate, P: Params): OptionVal
     const ag = index(world).byId.get(k.targetId);
     return ag && ag.alive && ag.troopId === c.troopId ? { odds: r2(assessOdds(world, c, ag, P)) } : undefined;
   }
-  if (k.action === 'nest' && P.nestCompany === 1 && c.action === 'nest' && x.phase >= 2 && c.nest !== null && k.targetId === c.nest.treeId && c.age >= 5 && !dependentOn(world, c)) {
+  // (the animal's own nest: an animal with a carer is offered only its carer's nest, variant MOTHER)
+  if (k.action === 'nest' && meta?.v !== V.MOTHER && P.nestCompany === 1 && c.action === 'nest' && x.phase >= 2 && c.nest !== null && k.targetId === c.nest.treeId && c.age >= 5) {
     const company = nestCompanyValue(world, c, P, P.choiceBelief === 1 || (P.choiceBelief === 2 && dayPhase(world) === 'day'));
     return company ? { company: r2(company) } : undefined;
   }

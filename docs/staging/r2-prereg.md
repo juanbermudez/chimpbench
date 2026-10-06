@@ -263,3 +263,147 @@ Each iteration is logged here before it runs; at most 3 per problem.
   pick is the one with the highest shown rate (with the chance level, 1 ÷ the number of such options). Everything else
   in the script is unchanged, the run is deterministic, so iteration 3's numbers must come out the same; the sample is
   re-run once.
+  Result of iteration 4: every number of iteration 3 came out the same (the two summaries are equal apart from the new
+  readout and the wall time).
+- **Iteration 5 (one failure in a file outside the brief's list, one fix).** `tests/sim-orphan-blind.test.ts` (run
+  because R2 touched `observe-state.ts`) failed 2 of 5: the nest-company belief called `dependentOn(`, which that lint
+  allows only at listed sites. The call was not needed (an animal with a carer is offered only its carer's nest, variant
+  `MOTHER`); it now reads the option's variant. 5 of 5 after the fix; `tests/r2-packet.test.ts` re-run, 17 of 17, the
+  same field counts. `tests/sim-params.test.ts` failed 1 of 11 until the §17 row of `docs/simulation.md` existed (the
+  registry test asks for it); 11 of 11 with the row. Neither changed a number below.
+
+### Results (6 October 2026; tests and the fixed sample only; no benchmark, no model, no network)
+
+**Thresholds.**
+
+| | Threshold | Result |
+| --- | --- | --- |
+| T1 | no packet over 1,280 tokens by the server's estimate | **met**: largest 807 with A on, 853 with A and C on (and with A, B and C on); all under the estimate budget of 1,000, so nothing was trimmed beyond the server's own trimming |
+| T2 | `observe()` pure and local-only | **met** (no draw, the world's JSON unchanged, finite numbers; every sampled belief is a trip to a crown out of sight, every `odds` an answer to a perceived aggressor) |
+| T3 | every R2 switch 0 = today, byte for byte | **met**: the requests and both text packets of 10 fixed worlds hash the same on `track-e` e0cf866 and on this branch (iteration 1b; compressed seeds 48 and 7, the field working base with `observeState` 0 and 1); the compressed request hashes are pinned in the test file. With `observeV4` 1 the observation minus the v4 fields is the `observeState` 1 observation, and the world is hash-identical |
+| T4 | goldens and the field pin unchanged; rules-only worlds unchanged | **met**: `tests/sim-params.test.ts` (the six golden cases) and `tests/sim-track-e.test.ts` pass, neither fixture edited; the working base after 2 simulated days is hash-identical to e0cf866 for seeds 48 and 7 (R2 touched `beliefOffset`, `treeFoodWorth` and `rgMenu` by one-line exports); `observeV4`, `menuParity`, `activityFirst` on leave a rules-only world hash-identical (field 12 h, seeds 48 and 7; compressed) |
+| T5 | `menuParity` 1: the request's options are `rgMenu`'s, in order | **met**: 9,265 of 9,265 draws on the sample; every animal of 8 y and over at three moments in the test (day, dusk, night), also on a stack with `rhythmFreeNight` 0 |
+| T6 | `activityFirst`: no two entries of one kind; legal options; calls counted | **met**: 0 menus of 9,771 with a repeated kind; every entry and second-step option legal and valid; `StepResult.calls` |
+| T7 | packet-reading rules through the shared step; `kernelSim` 2 deterministic; the mechanics check | **met**: deterministic at 1, 4 and 60 ticks per call (compressed seed 7, 4 h, 989 decisions, none refused). Mechanics: on a copy of `world.rng` with `menuParity`, 452 of 452 draws whose menu carries no belief equal the live pick. **The chance-type belief does not occur on this base** (`tripBeliefs` 3 has no bit 4), so its exactness rests on the unit test alone |
+| T8 | checks | `gen-params --check` clean (1,035 entries); `tsc --noEmit -p .` clean; `tests/r2-packet.test.ts` 17 of 17; `sim-track-e` 2, `sim-params` 11, `kernel` 15, `em-observe` 8, `decision` 22, `sim-rg` 13, `prescription-ledger` 20, `sim-orphan-blind` 5, `sim-choice-belief` 11, `sim-trip-beliefs` 5, `rw-bench` 16, `ft-field` 3, `ft-contexts` 3, `persist-envelope` 14, `decision-guide` 4, `jev-facts` 5, `sim-circadian` 6, `sim-rhythm` 12, `sim-territory` 10: all pass. The full `pnpm test` and `pnpm build` were not run (the integrator's, at the merge) |
+
+**The fixed sample** (`scripts/r2-sample.ts --seeds 48,7 --burn-in 2 --days 2`; `artifacts/r2/summary.json`). 9,771
+decision points of 76 animals aged 8 and over: 9,265 where the rules drew (dawn 981, day 7,439, dusk 572, night 273) and
+506 kept or arrived acts (1 in 10). The tapped worlds hash the same as untapped runs. Wall time 47 s and 30 s per seed
+(plus the untapped run), so the registered size was kept.
+
+*1. The packet-reading rules against the live rules, at draws* (top-1; 95% interval, bootstrap over animals):
+
+| | today's menu | `menuParity` 1 |
+| --- | --- | --- |
+| expected value (mode `mean`) | 0.976 (0.972 to 0.980) of the 9,020 requests asked; 245 draws (2.6%) have no request (fewer than two options under the night or dusk menu) | **0.981 (0.978 to 0.985)** of 9,265: **the registered ceiling** |
+| belief sampled, independent draws (between ticks) | 0.963 (0.958 to 0.967) | 0.967 (0.962 to 0.971) |
+| belief sampled on a copy of `world.rng` (inside the tick, `kernelSim` 2) | 0.983 (0.980 to 0.986) | 0.989 (0.987 to 0.991) |
+| chance (1 ÷ menu size) | 0.184 | 0.178 |
+
+By phase, expected value: today's menu dawn 0.979, day 0.980, dusk 0.928 (0.902 to 0.954), night 0.893 (25 of the 28
+night requests asked, of 273 night draws); with `menuParity` dawn 0.979, day 0.980, dusk 1.000, night 0.989 (0.976 to
+1.000). Menus with no belief (452): 1.000 in every mode with `menuParity`. Menus with a spread-type belief (8,813):
+0.980 expected value, 0.988 on the copy of `world.rng`: the 1.2% left there is the two-point approximation of a rule
+that is not linear in the crop.
+
+**What the ceiling is, and is not.** It is the agreement of a reader of each option's *published rules value* (`score`,
+which the context has always carried and no model's text shows) plus the v4 belief. So 0.98 is what a packet-fed engine
+can reach **if it is given the rules' valuation**; the 2% left is the belief draw. It is not a statement about an engine
+that reads the state words: for that engine the valuation is the thing to be learned, and R2 did not measure how far the
+shown state fixes it (that needs a model, or a second formula of the rules). One readout bears on it (iteration 4): the
+live pick is a feeding option with a shown net rate in 32.4% of draws; where the menu holds two or more such options
+(2,950 draws), **the live pick is the one with the highest shown rate 55.4% of the time (52.2 to 58.5), against 48.7% by
+chance**. So among feeding options the shown rate decides little; the terms the packet does not show (below) decide.
+
+*2. Menus.* The request's option set differs between `menuParity` 0 and 1 at 21.5% of decision points: dawn 2.8%, day
+14.7% (the kept picks differ: the joined trip and the impulse picks; a disturbance counted over every animal in view
+rather than the eight listed), dusk 100%, night 100%. The live pick is on today's menu at 98.3% of draws and on the
+parity menu at 100%.
+
+*3. Activity first* (on the parity menu). Entries per menu: median 6, 90th percentile 8, largest 8, with and without
+it. Entries aimed at a chimp per menu: 1.94 without, 1.58 with. Kernel calls per decision at `activityFirst` 2: 1.37
+for the packet-reading rules, 1.41 for the null kernel, at most 1.98 (98.4% of menus hold a kind with two or more
+options). Agreement of the packet-reading rules with the live rules: 0.981 (0.977 to 0.984) at 1 and at 2, the same
+as without it (the rules' pick is the best of its kind unless a belief draw moves it).
+
+*4. Tokens* (the server's estimate; hard limit 1,280):
+
+| packet | n | median | 90th percentile | largest |
+| --- | --- | --- | --- | --- |
+| today's (`observeState` 0) | 9,519 | 406 | 514 | 612 |
+| M1's rendering of the same context (wording 1, numbers) | 9,519 | 558 | 672 | 776 |
+| v4 (A on) | 9,519 | 572 | 685 | 807 |
+| v4 with `menuParity` (A and B) | 9,771 | 579 | 694 | 852 |
+| v4 with `activityFirst` 1 (A and C) | 9,519 | 585 | 716 | 853 |
+| v4 with both (A, B and C) | 9,771 | 589 | 718 | 853 |
+
+*5. Ablation, with the kernels R2 may run.* Share of draws where the packet-reading rules' pick (belief sampled, hash
+draws) changes without the group, and the v4 tokens the group costs at the median: energy 0% (80 tokens), gut 0% (7),
+sleep and phase 0% (30), arousal and slow states 0% (2), water and heat 0% (9), the belief behind an option 2.6% (2.2
+to 3.0; 37 tokens). The zeros are by construction (this kernel reads the published value, not the state), so **the
+plan's third criterion, which fields change a kernel's choices, is open for a model kernel**: `withoutGroup` and the
+probe renderings are delivered, the model run is the integrator's.
+
+**What the v4 packet still lacks** (from a read of `computeCandidates` and its helpers, `src/sim/candidates.ts`).
+
+For the choice step: the draw (`world.rng`); the food term at a sampled crop beyond the two carried points; the
+intention and what closed it (the loop's gate, R1 D1; the packet shows only the current act); below `rgMinAge` the
+argmax over the full list; under `choiceBelief` 1 the jitter-free value (the request carries the published score).
+
+For the valuation, read live and carried by no packet field:
+- *where*: the territory cost of each place (use levels, the grid, neighbours' pressure) and the distance from the
+  range centre beyond the boolean "at the territory edge"; a female's core area (`coreX`, `coreZ`); the habitat-wide
+  fruit index; the fig-mast tree; the fallback (leaf) stock around the animal; the light on the way and on arrival;
+- *food memory*: the crops believed for remembered and listed crowns that are not on the menu, the revisit history
+  (`fedTree`, `fedAt`), the community's list of known trees, the trip-yield experience, the stake of a race for a crop;
+- *timing of social acts*: last aggression, call, display, mating, greeting, grooming received, consolation and
+  reconciliation (the quotas and gaps of `socialTiming`, `aggressionGaps`, `callGaps`), newcomers to greet, the travel
+  hoo and the call heard (who, where, when, whether at food), a failed departure and its audience;
+- *impulses raised by perception*: hunt, patrol, escalation, gang attack, infanticide, rain display, transfer;
+- *power*: own and others' strength, Elo, continuous rank, allies and supporters in view, the rival, stranger males
+  counted (the packet shows rank order, bond and tension per individual, and the odds only against an aggressor);
+- *valuations of rare acts*: the hunt's rate (prey group, hunters), a patrol's lead and join value, paternity gain,
+  the pant-hoot's value, the endocrine scores behind escalation and redirection (the states are shown, the scores not),
+  milk on offer for a nursing bout, the weaning state;
+- *world state the animal is held to know*: instability after an alpha change, an ongoing patrol or hunt, illness.
+The published `score` is the sum of all of it, plus the evaluation jitter.
+
+**For the integrator after the UI merge (final text).** The main checkout's `AGENTS.md` now names
+`src/providers/packet.ts` as "the one packet-text builder" (re-exported by `server/decide.ts`); the changes below go
+wherever these functions live after the merge.
+1. `buildStateQuestion(ctx, opts)`: `const v4 = ctx.packet === 4, w = opts.wording ?? (v4 ? 2 : 1);` then
+   `state.body = v4 ? bodyWordsV4(ctx.body) : bodyWords(ctx.body)` (import both v4 functions from
+   `src/kernel/packet-words.ts`).
+2. `stateOptionParts(ctx, c, wording)`: `values: c.value ? (ctx.packet === 4 ? valueWordsV4(c.value, c.reason, social,
+   c.action) : valueWords(c.value, c.reason, social)) : ''`.
+3. `withoutState(ctx)`: also drop `packet` (`const { body: _b, light: _l, packet: _p, ...rest } = ctx`).
+4. Then `scripts/lib/packet-v4.ts` `buildV4Question` reduces to `buildLocalQuestion(ctx)`; a test should assert the two
+   equal on `tests/r2-packet.test.ts`'s worlds before the composer is removed. Until then a harness gets the v4 text
+   with `glinerKernel(scorer, adapter, { packet: r => buildV4Question(r.context) })` (`scripts/lib/kernels.ts`, which
+   already takes a packet builder).
+5. Jev's state packet (optional): `hind_fill`, `chance_in_fruit`, `crop_uncertainty`, `win_odds` as named fields.
+6. `src/decision.ts`: nothing for A, B and `activityFirst` 1 (`buildRequest` is re-exported and its entries are concrete
+   options). For `activityFirst` 2 the app's loop must, after a valid first answer with index *i*, send
+   `targetRequest(request, i)` (`src/sim/request.ts`) when it is not null and apply the second answer, counting two
+   calls in the trace (as `src/kernel/loop.ts` `answerWaiting` does). Until then the app supports 0 and 1.
+7. `AGENTS.md`'s kernel-contract row was not edited here (it is changing in the UI merge): add `observeV4`,
+   `menuParity`, `activityFirst` and `kernelSim` 2 to its list of switches.
+
+**Not done** (beyond §7): the model's response to the v4 wording and the model-side ablation; a run of `kernelSim` 2
+or of any kernel on the working base beyond the tests (R1b and R5 are the integrator's); the bench
+(`scripts/bench-sim.ts`): `rgMenu` now returns through one more small object per draw, argued negligible, not measured.
+
+## 9. Open questions for the user
+
+1. **Should a learned engine be shown the rules' valuation of each option?** Today no text shows it. Shown, a small
+   engine could reach about 98% agreement by reading it, and the code would still be deciding (against "correct where
+   we still rely on code"). Hidden, the engine must learn the valuation from the state, and the packet lacks most of
+   what decides between two food options (the shown rate picks the rules' one 55% of the time against 49% by chance).
+   The middle path is to show more of the listed inputs as state (the cost of a place, the revisit history, the
+   company a trip leaves), each as a belief the animal can hold, never the sum.
+2. **The direction of the one menu.** With `menuParity` every kernel follows the rules' menu, so on the working base a
+   model kernel gets the open menu at night (M3: untuned GLiNER left the nest 80% of the night under wording 1, 3%
+   under wording 2). The other direction (the rules take the night and dusk menus) changes the base and was not built.
+3. **`activityFirst` 1 or 2 for the comparisons.** 1 costs nothing and the target is the rules' best (code decides the
+   partner); 2 lets the engine choose the partner at about 1.4 calls per decision.
