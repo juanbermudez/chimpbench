@@ -13255,6 +13255,87 @@
    "notes": "Juvenile follow urgency rises over this distance. Compressed stand-in scaled with sight (field ≈ compressed × 35/15, design)."
   },
   {
+   "id": "kernelGate",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.kernelGate",
+   "file": "src/sim/decide.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage R1 switch (Track R, kernel contract; docs/staging/r1-prereg.md D1): where the intention gate lives. With 1 the loop runs the gate before it asks any kernel other than the rules: at a decision point a chimp whose last choice came from such a kernel (a model-controlled chimp, or one decided by the null kernel under kernelSim) keeps its act and target while nothing salient changed since that choice (rg.ts gate, the function the rules policy uses at redecideValue 0: an interrupt, a hunt or patrol impulse, a need bucket, the period, rgMaxAgeH, the act ended, a poor patch; a finished trip at its tree becomes feeding there), without waiting and without a call; when the gate opens the intention is dropped and the kernel is asked. An applied kernel answer stores the intention in chimp.sim.rgIntent (applyDecision), a rules fallback clears it. The rules policy is unchanged: it keeps its own gate inside rgChoice (the same function at redecideValue 0; at redecideValue 1 or 2 a keep test on its own values, which a kernel without values cannot run). 0 = today, bit for bit: every kernel other than the rules is asked at every decision point. Design (a loop layout, not a behavioural constant)."
+  },
+  {
+   "id": "kernelNoRulesPick",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.kernelNoRulesPick",
+   "file": "src/sim/request.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage R1 switch (Track R, kernel contract; docs/staging/r1-prereg.md D2): whether the rules' pick is on the menu a kernel other than the rules is offered (src/sim/request.ts buildRequest). With 1 the rules' pick (rulesChoice, the top-scored legal option) is withheld: the bounded menu is built by the same construction from the legal list without it, rulesIndex is -1, and a menu left with fewer than two options goes to the rules as today. Dropping only its guaranteed slot would change nothing, because the menu is built from the rules' ranking and their pick is its top option. Nothing in the simulation reads the switch unless a kernel other than the rules decides; the rules' own menu (rg.ts rgMenu) is never changed. 0 = today, bit for bit: the pick stays. Design (a comparison layout, not a behavioural constant)."
+  },
+  {
+   "id": "kernelSim",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.kernelSim",
+   "file": "src/sim/decide.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage R1 switch (Track R, kernel contract; docs/staging/r1-prereg.md §1, D4): which kernel decides inside the tick for rules-driven chimps. 0 = the rules (rgChoice, else the argmax): today, bit for bit. 1 = the null kernel: a chimp aged rgMinAge or over takes one option of the menu a model kernel would be offered (buildRequest: at most 8 legal options, night and dusk menus) with equal probability, one draw from world.rng, through the step every kernel shares (the request validated, the answer checked, legality re-checked by applyDecision; fewer than two options or anything refused: the rules' argmax, no draw). Younger animals keep the rules. It is the floor a decision kernel is compared with (stage R1b), not a model of behaviour. Design."
+  },
+  {
    "id": "knownTreesK",
    "group": "memory",
    "value": 0,
