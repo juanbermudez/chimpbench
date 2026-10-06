@@ -12,7 +12,7 @@
 // Usage: node scripts/gpu-probe.mjs [--app http://127.0.0.1:5192] [--scenes rts-day,close-day,...] [--dpr 2] [--ab] [--apps a,b] [--out f.json]
 //   an app spec may end in "|<harness query>" (e.g. --apps "URL,URL|&profile=field" compares the scale profiles)
 import { writeFileSync } from 'node:fs';
-const { chromium } = await import('/Users/juanbermudez/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs');
+const { chromium } = await import('./lib/playwright.mjs');
 const argv = process.argv.slice(2);
 const opt = (name, fallback) => { const i = argv.indexOf(`--${name}`); return i >= 0 ? (argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[i + 1] : true) : fallback; };
 const app = opt('app', 'http://127.0.0.1:5192'), dpr = Number(opt('dpr', 2));

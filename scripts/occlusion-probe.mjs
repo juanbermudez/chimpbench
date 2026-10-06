@@ -11,7 +11,7 @@
 // Usage: node scripts/occlusion-probe.mjs [--app http://127.0.0.1:5192] [--scenes A1,A2,A5,A6,A9,A11,A12] [--out file.json]
 //        [--shots dir] [--compare before.json] [--quick]   (--quick: A6 at 4 azimuths, A9 for 60 s)
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-const { chromium } = await import('/Users/juanbermudez/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs');
+const { chromium } = await import('./lib/playwright.mjs');
 const argv = process.argv.slice(2);
 const opt = (name, fallback) => { const i = argv.indexOf(`--${name}`); return i >= 0 ? (argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[i + 1] : true) : fallback; };
 const app = opt('app', 'http://127.0.0.1:5192');

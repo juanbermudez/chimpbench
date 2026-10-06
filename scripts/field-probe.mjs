@@ -5,7 +5,7 @@
 // a trunk. Also reports window rebuild times. Needs a no-model server (MGOGO_NO_MODEL=1, never 5173).
 // Usage: node scripts/field-probe.mjs [--url http://127.0.0.1:5192] [--out artifacts/visual/c5b] [--seed 48] [--json f.json]
 import { mkdirSync, writeFileSync } from 'node:fs';
-const { chromium } = await import('/Users/juanbermudez/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs');
+const { chromium } = await import('./lib/playwright.mjs');
 const argv = process.argv.slice(2);
 const opt = (name, fallback) => { const i = argv.indexOf(`--${name}`); return i >= 0 ? argv[i + 1] : fallback; };
 const base = opt('url', 'http://127.0.0.1:5192'), out = opt('out', 'artifacts/visual/c5b'), seed = Number(opt('seed', 48)), json = opt('json', '');

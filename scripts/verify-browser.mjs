@@ -6,7 +6,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import { availableParallelism, loadavg } from 'node:os';
-const { chromium } = await import('/Users/juanbermudez/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs');
+const { chromium } = await import('./lib/playwright.mjs');
 
 const args = process.argv.slice(2), noModel = args.includes('--no-model');
 const targetUrl = new URL(args.find(a => !a.startsWith('--')) ?? 'http://127.0.0.1:5173');
