@@ -1,7 +1,6 @@
 import type { Ctx } from './app';
 import type { Party, Troop, World } from '../types';
 import type { SocietyView } from './contracts';
-import { icon } from './icons';
 import { duration, esc } from './format';
 import { createCommunities, demography } from './communities';
 import { alphaCardHtml, ladderHtml } from './hierarchy';
@@ -16,8 +15,8 @@ import { memberOrder } from './unit-view';
 const PARTY_WORD: Record<Party['kind'], string> = {
   foraging: 'Foraging', patrol: 'Patrol', hunting: 'Hunting', nesting: 'Nesting', consort: 'Consortship', social: 'Social', traveling: 'Traveling',
 };
-const SOC_LINKS: { view: SocietyView; label: string; ic: string }[] = [
-  { view: 'kinship', label: 'Kinship', ic: 'tree' }, { view: 'alliances', label: 'Bonds', ic: 'network' }, { view: 'alphas', label: 'Alpha history', ic: 'crown' },
+const SOC_LINKS: { view: SocietyView; label: string }[] = [
+  { view: 'kinship', label: 'Kinship' }, { view: 'alliances', label: 'Bonds' }, { view: 'alphas', label: 'Alpha history' },
 ];
 const MAX_PARTIES = 6;
 
@@ -55,7 +54,7 @@ function detailHtml(ctx: Ctx, t: Troop, parties: { p: Party; ids: number[] }[], 
       <details class="cp-lad" data-keep="lad-m-${t.id}"><summary>Males <span class="muted">${t.maleHierarchy.length}</span></summary>${ladderHtml(w, t, 'male', sel, ctx.ranks, true)}</details>
       <details class="cp-lad" data-keep="lad-f-${t.id}"><summary>Females <span class="muted">${t.femaleHierarchy.length}</span></summary>${ladderHtml(w, t, 'female', sel, ctx.ranks, true)}</details>
     </section>
-    <section class="blk"><h3 class="eyebrow">Society</h3><div class="cp-soc">${SOC_LINKS.map(l => `<button class="pal" data-sview="${l.view}">${icon(l.ic)}${l.label}</button>`).join('')}</div></section>
+    <p class="cp-soc"><span class="muted">Society</span>${SOC_LINKS.map(l => `<button class="lnk" data-sview="${l.view}">${l.label}</button>`).join('')}</p>
   </div>`;
 }
 

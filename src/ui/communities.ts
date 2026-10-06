@@ -1,12 +1,12 @@
 import type { Ctx } from './app';
 import type { Troop, World } from '../types';
-import { icon } from './icons';
 import { duration, emblemText, esc, nameOf, troopShort } from './format';
 import { morph } from './morph';
+import { alphaBadge } from './parts';
 
-// Three community cards at the top of the right sidebar's Communities mode: identity, alpha + tenure, demography, strength
-// (adult males, the best single predictor of intergroup dominance at Ngogo
-// and Kanyawara) and current party count. A card shows its community in the panel.
+// The communities at the top of the right sidebar's Communities mode, one plain row each: colour chip, name, size,
+// alpha and tenure, then strength (adult males, the best single predictor of intergroup dominance at Ngogo and
+// Kanyawara) as a thin bar and the current party count. A row shows its community below.
 
 export function demography(world: World, t: Troop) {
   const m = world.chimps.filter(c => c.alive && c.troopId === t.id);
@@ -26,7 +26,7 @@ export function emblem(t: Troop, cls = '') {
 }
 
 export function createCommunities(root: HTMLElement, ctx: Ctx) {
-  root.innerHTML = `<div class="sec-head"><h2 class="eyebrow">Communities</h2></div><div class="cards" role="list"></div>`;
+  root.innerHTML = `<div class="cards" role="list" aria-label="Communities"></div>`;
   const list = root.querySelector<HTMLElement>('.cards')!;
   // A card shows that community in the panel (details and unit grid); world highlighting stays on the range map legend.
   list.addEventListener('click', e => {
@@ -50,13 +50,10 @@ export function createCommunities(root: HTMLElement, ctx: Ctx) {
         const on = shownId === t.id, hl = ctx.state.highlightTroopId === t.id;
         const tenure = tenures[ri];
         return `<button class="card ${on ? 'on' : ''} ${hl ? 'hl' : ''}" role="listitem" data-troop="${t.id}" data-focus-key="troop-${t.id}" style="--c:${esc(t.color)}"${on ? ' aria-current="true"' : ''} aria-label="${esc(t.name)}: ${d.total} members, ${d.am} adult males. ${on ? 'Shown below' : 'Show members'}">
-          ${emblem(t)}
-          <span class="card-body">
-            <span class="card-top"><b class="card-name">${esc(troopShort(t))}</b><span class="card-total" title="Living members">${d.total}</span></span>
-            <span class="card-alpha" title="${t.alphaId >= 0 ? `Alpha male, ${tenure}` : 'Alpha position contested'}">${icon('crown')}${t.alphaId >= 0 ? `${esc(nameOf(w, t.alphaId))}<i>${tenure}</i>` : '<i>contested</i>'}</span>
-            <span class="card-demo" title="Adult males · adult females · adolescents · juveniles · infants"><span>${d.am}<em>♂</em></span><span>${d.af}<em>♀</em></span><span>${d.adol}<em>adol</em></span><span>${d.juv}<em>juv</em></span><span>${d.inf}<em>inf</em></span></span>
-            <span class="card-strength" title="Adult males: numerical strength in intergroup encounters"><span class="meter"><i style="width:${(d.am / maxAm) * 100}%"></i></span><span>${d.parties} ${d.parties === 1 ? 'party' : 'parties'}</span></span>
-          </span></button>`;
+          <span class="card-top"><i class="tdot"></i><b class="card-name">${esc(troopShort(t))}</b><span class="card-total" title="Living members">${d.total}</span>
+            <span class="card-alpha" title="${t.alphaId >= 0 ? `Alpha male, ${tenure}` : 'Alpha position contested'}">${t.alphaId >= 0 ? `${alphaBadge()}${esc(nameOf(w, t.alphaId))}<i>${tenure}</i>` : '<i>alpha contested</i>'}</span></span>
+          <span class="card-strength" title="Adult males: numerical strength in intergroup encounters"><span class="meter"><i style="width:${(d.am / maxAm) * 100}%"></i></span><span>${d.am} adult ♂ · ${d.parties} ${d.parties === 1 ? 'party' : 'parties'}</span></span>
+        </button>`;
       }).join(''));
     },
   };

@@ -218,20 +218,22 @@ body.preview .viewport { background: #3a3d38; }
 .side-peek:hover { border-color: var(--line-3); color: var(--ink); }
 .side-peek svg.i { width: 14px; height: 14px; color: var(--ink-3); }
 @keyframes sideIn { from { opacity: 0; transform: translateX(-8px); } }
-.cards { display: grid; gap: 6px; }
-.card { position: relative; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 10px; align-items: center; width: 100%; padding: 9px 10px; border-radius: var(--r); border: 1px solid var(--line); background: var(--raised); transition: border-color .15s, background .15s, opacity .2s; }
-.card:hover { background: var(--hover); border-color: var(--line-2); }
-.card.on { border-color: color-mix(in srgb, var(--c) 60%, transparent); background: color-mix(in srgb, var(--c) 7%, transparent); }
+/* Communities list (right sidebar): plain rows divided by hairlines. The community's colour is a chip and the
+   strength bar; the row that shows below carries a colour bar on its leading edge. No boxes. */
+.cards { display: grid; }
+.card { position: relative; display: grid; gap: 6px; width: 100%; padding: 9px 6px 10px 14px; transition: background var(--dur-1), opacity .2s; }
+.card + .card { border-top: 1px solid var(--line); }
+.card:hover { background: var(--hover); }
+.card.on::before { content: ''; position: absolute; left: 0; top: 9px; bottom: 10px; width: 3px; border-radius: 2px; background: var(--c); }
 .app[data-highlight]:not([data-highlight=""]) .card:not(.hl) { opacity: .55; }
-.card-body { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: 'top alpha' 'demo demo' 'str str'; column-gap: 8px; row-gap: 3px; min-width: 0; }
-.card-top { grid-area: top; display: flex; align-items: baseline; gap: 7px; }
-.card-name { font-family: var(--font-display); font-size: 15px; font-weight: 500; }
+.card-top { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+.card-top .tdot { align-self: center; width: 8px; height: 8px; flex: none; }
+.card-name { font-family: var(--font-display); font-size: 16px; font-weight: 500; }
+.card:not(.on) .card-name { color: var(--ink-2); }
 .card-total { font-size: 11.5px; color: var(--ink-3); font-family: var(--font-ui); font-variant-numeric: tabular-nums; }
-.card-alpha { grid-area: alpha; justify-self: end; display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--ink-2); min-width: 0; overflow: hidden; white-space: nowrap; }
-.card-alpha svg.i { width: 12px; height: 12px; color: var(--gold); } .card-alpha i { font-style: normal; font-size: 11px; color: var(--ink-4); font-variant-numeric: tabular-nums; }
-.card-demo { grid-area: demo; display: flex; gap: 9px; font-family: var(--font-ui); font-size: 11px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
-.card-demo em { font-style: normal; color: var(--ink-4); margin-left: 2px; }
-.card-strength { grid-area: str; display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; font-family: var(--font-ui); font-size: 11px; color: var(--ink-3); }
+.card-alpha { margin-left: auto; display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--ink-2); min-width: 0; overflow: hidden; white-space: nowrap; }
+.card-alpha i { font-style: normal; font-size: 11px; color: var(--ink-4); font-variant-numeric: tabular-nums; }
+.card-strength { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; font-family: var(--font-ui); font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .card-strength .meter { height: 3px; border-radius: 2px; background: var(--track); overflow: hidden; }
 .card-strength .meter i { display: block; height: 100%; background: var(--c); border-radius: 2px; }
 .emblem { position: relative; display: inline-grid; place-items: center; width: 28px; height: 32px; flex-shrink: 0; }
@@ -544,43 +546,41 @@ body.preview .viewport { background: #3a3d38; }
 .soc-net svg { max-width: 340px; margin: 0 auto; }
 
 /* Right sidebar, Communities pane: the list, the chosen community, its unit grid. */
-.rc-top { padding: 14px 14px 12px; }
-.rc-top .cards { gap: 5px; }
-/* In the panel the cards compare strength at a glance; the chosen community's demography sits in its details. */
-.rc-top .card-demo { display: none; }
-.rc-top .card { padding-block: 8px; }
-.cp-demo { display: flex; flex-wrap: wrap; gap: 4px 10px; margin: -6px 0 14px; font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.rc-top { flex: 0 0 auto; padding: 4px 10px 4px; }
+.cp-demo { display: flex; flex-wrap: wrap; gap: 4px 10px; margin: -4px 0 10px; font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .cp-demo em { font-style: normal; margin-left: 2px; color: var(--ink-4); }
 .rc-body { flex: 1 1 0; min-height: 96px; overflow-y: auto; padding: 14px 16px 16px; border-top: 1px solid var(--line); outline: none; }
-.cp-name { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-family: var(--font-display); font-size: 20px; font-weight: 500; letter-spacing: -.01em; font-variation-settings: 'opsz' 144; }
+.rc-body .blk { margin-top: 16px; } .rc-body .blk > h3 { margin-bottom: 6px; }
+.cp-name { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-family: var(--font-display); font-size: 18px; font-weight: 500; letter-spacing: -.01em; font-variation-settings: 'opsz' 144; }
 .cp-name .tdot { width: 8px; height: 8px; }
-.cp-parties { display: grid; gap: 1px; }
-.cp-party { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: baseline; width: 100%; padding: 6px 8px; border-radius: var(--r-sm); font-size: 12px; transition: background .12s; }
+.cp-parties { display: grid; gap: 1px; margin: 0 -8px; }
+.cp-party { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: baseline; width: 100%; padding: 5px 8px; border-radius: var(--r-sm); font-size: 12px; transition: background .12s; }
 .cp-party:hover { background: var(--hover); }
 .cp-pk { font-weight: 600; color: var(--ink); white-space: nowrap; } .cp-pk i { font-style: normal; font-weight: 400; color: var(--ink-3); }
 .cp-pn { min-width: 0; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .cp-pn i { font-style: normal; color: var(--ink-4); }
 .cp-ps { font-size: 11px; font-weight: 500; color: var(--ink-3); }
-.cp-foot { margin-top: 6px; padding: 0 8px; font-size: 11.5px; color: var(--ink-4); }
-.cp-lad { border-radius: var(--r); border: 1px solid var(--line); background: var(--raised); }
-.cp-lad + .cp-lad { margin-top: 6px; }
-.cp-lad summary { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: var(--r); cursor: pointer; font-size: 12.5px; font-weight: 500; list-style: none; }
+.cp-foot { margin-top: 6px; font-size: 11.5px; color: var(--ink-4); }
+/* Ladders fold away behind a plain disclosure row: a hairline above, no box. */
+.cp-lad { border-top: 1px solid var(--line); }
+.cp-lad:last-of-type { border-bottom: 1px solid var(--line); }
+.cp-lad summary { display: flex; align-items: center; gap: 8px; margin: 0 -8px; padding: 7px 8px; border-radius: var(--r-sm); cursor: pointer; font-size: 12.5px; font-weight: 500; list-style: none; }
 .cp-lad summary:hover { background: var(--hover); }
 .cp-lad summary::-webkit-details-marker { display: none; }
 .cp-lad summary::after { content: ''; margin-left: auto; width: 6px; height: 6px; border-right: 1.5px solid var(--ink-3); border-bottom: 1.5px solid var(--ink-3); transform: rotate(45deg); transition: transform .2s; }
 .cp-lad[open] summary::after { transform: rotate(-135deg); }
-.cp-lad .ladder { padding: 0 4px 6px; }
-.cp-soc { display: flex; flex-wrap: wrap; gap: 5px; }
+.cp-lad .ladder { margin: 0 -7px; padding: 0 0 6px; }
+.cp-soc { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin-top: 14px; font-size: 12px; }
 
 /* Unit grid (src/ui/units.ts): members as small tiles along the bottom of the community view, like an RTS unit card.
    Chip: square male, circle female (the kinship convention), size by age class, community colour; the state glyph is a
    CSS mask chosen by data-st, so a new activity is one attribute write. */
-.rc-units { flex: 0 0 auto; max-height: 46%; display: flex; flex-direction: column; padding: 10px 12px 12px; border-top: 1px solid var(--line); background: var(--well); border-radius: 0 0 var(--r-lg) var(--r-lg); }
+.rc-units { flex: 0 0 auto; max-height: 44%; display: flex; flex-direction: column; padding: 10px 12px 12px; border-top: 1px solid var(--line); }
 .rc-units .sec-head { margin-bottom: 8px; padding: 0 2px; }
 .u-key { font-size: 11px; }
-.unit-grid { flex: 0 1 auto; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); gap: 4px; padding: 2px; margin: -2px; }
-.unit { position: relative; display: grid; justify-items: center; align-content: start; gap: 2px; min-width: 0; padding: 6px 3px 5px; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--surface); text-align: center; transition: background .12s, border-color .12s; }
-.unit:hover { background: var(--hover); border-color: var(--line-2); }
-.unit[aria-current="true"] { border-color: var(--gold-b); background: var(--gold-a); }
+.unit-grid { flex: 0 1 auto; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); gap: 2px; padding: 2px; margin: -2px; }
+.unit { position: relative; display: grid; justify-items: center; align-content: start; gap: 2px; min-width: 0; padding: 6px 3px 5px; border-radius: var(--r-sm); text-align: center; transition: background .12s; }
+.unit:hover { background: var(--hover); }
+.unit[aria-current="true"] { background: var(--gold-a); box-shadow: inset 0 0 0 1px var(--gold-b); }
 .unit[aria-current="true"] .u-name { color: var(--gold-2); }
 .u-top { position: relative; display: grid; place-items: center; width: 100%; height: 24px; }
 .u-chip { display: grid; place-items: center; width: 22px; height: 22px; border: 1.3px solid var(--c); background: color-mix(in srgb, var(--c) 24%, #141416); }
@@ -804,13 +804,13 @@ svg.net { display: block; width: 100%; height: auto; overflow: visible; }
 .inter .mono { font-size: 10.5px; white-space: nowrap; }
 
 /* Hierarchy */
-.alpha-card { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 10px; border: 1px solid color-mix(in srgb, var(--c) 34%, transparent); background: var(--raised); }
-.alpha-card > svg.i { width: 24px; height: 24px; color: var(--gold); }
-.alpha-card > div { display: grid; gap: 3px; } .alpha-card b { font-family: var(--font-display); font-size: 19px; font-weight: 500; } .ac-meta { font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.alpha-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 7px; font-size: 13px; }
+.alpha-line .alpha-badge { align-self: center; }
+.alpha-line .lnk, .alpha-line > b { font-weight: 600; } .ac-meta { font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .ladder { display: grid; gap: 1px; }
 .rung { display: grid; grid-template-columns: 20px minmax(0, 1fr) minmax(0, 1.05fr) 36px 24px; gap: 8px; align-items: center; width: 100%; padding: 5px 7px; border-radius: var(--r-sm); border: 1px solid transparent; transition: background .12s; }
 .rung:hover { background: var(--hover); }
-.r-no { font-size: 10.5px; color: var(--ink-4); text-align: center; display: grid; place-items: center; } .r-no svg.i { width: 13px; height: 13px; color: var(--gold); }
+.r-no { font-size: 10.5px; color: var(--ink-4); text-align: center; display: grid; place-items: center; }
 .r-name { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .r-name i { font-style: normal; font-size: 11px; color: var(--ink-4); margin-left: 6px; font-variant-numeric: tabular-nums; }
 .r-bar { height: 5px; border-radius: 3px; background: var(--track); overflow: hidden; }
 .r-bar i { display: block; height: 100%; border-radius: 3px; background: var(--c); opacity: .85; }
