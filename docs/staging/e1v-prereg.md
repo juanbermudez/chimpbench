@@ -74,3 +74,56 @@ move inside noise.
   `be3269e9cc69f676` and `f57cf21e1f863541`; every animal's decision values `93ced3a9df1c66ce` and `0ff4d71478f53323`
   (E1s's pins at eb2b209); the window resumed from the saved 6720 world gives `f57cf21e1f863541`. Fallback eaten: 2,913
   kcal by 17 animals before tick 6720 and 698 kcal by 6 animals in the window, so a share below 1 acts within it.
+
+### 7.2 Implementation and tests (e81c212, bbf2ac6)
+- `data/params.json` `pithFibreSwallowed` (group feeding, default 1, range 0.25–1 by the user's arms, hard range 0–1,
+  evidence design, calibration excluded; refs to research.md's wadging sources), `docs/simulation.md` §17 row.
+- `src/sim/energy.ts`: `swallowed()` builds the fallback's food as the gut receives it (dry matter and fibre less the
+  wadge, non-fibre energy unchanged; at 1 the same object, so today's code path); the pith part's fibre is the constant
+  `PITH_NDF_G_PER_MIN` (0.749 g/min, from the registry composite's own weighting, §7.1; tagged [H] with a `lint-ok:`
+  note, as no second parameter was asked for). `dryMatterPerKcal` returns the dry matter handled (the food's water is
+  unchanged); `swallowedPerKcal` (new) the food swallowed, which `scripts/lib/gut-ceiling.ts` now reads.
+- `scripts/lib/prescriptions.ts`: an override classes it **input** (kind "food handling", marked † as a judgement
+  call; reason "design assumption: … wadging described, never measured …"), read only with `energyLedger` and
+  `ledgerDigesta`. `scripts/prescription-ledger.ts --count --params` on M6-S39's parameters: 42 (37 + 5 literals) at 1,
+  0.5 and 0.25. `docs/decision-guide.html`: only the stamp moves.
+- `tests/sim-wadging.test.ts` (10 tests, all pass): default 1 in both profiles; at 1 the S39 world (ticks 6720 and
+  8160) and every animal's decision values are §7.1's pins, by default and with the parameter set to 1; at 0.5 the
+  saved world's decision values are unchanged until fallback is eaten and the world differs after 6 h; at 0.5 and 0.25
+  dry matter and fibre swallowed fall by (1 − share) × the pith fibre per kcal, the non-fibre energy, the leaves'
+  fibre, the other foods, intake, the dry matter handled and the food's water are unchanged, and the per-minute values
+  are §7.1's (1.516 / 0.635 and 1.328 / 0.448 g); absorbed energy per gram of fibre swallowed rises (per kcal handled it
+  falls by the fermentation of the fibre spat out); `eat` books the dry matter and fibre swallowed and the formula
+  energy handled in full, and more fallback fits in the foregut's room; determinism at 0.25 (tick-by-tick against
+  2-s batches; a save resumes exactly); inert without `ledgerDigesta`; the offline ceiling at each share equals E1u's
+  arithmetic (`wadged` with `sameTime`) to 1e-9; the ledger classes the entry input and the S39 count does not move.
+  Existing suites touched by the change (golden, field pin, params, ledger, digesta, energy, water, gut value, E1u
+  ceiling): 95 tests pass.
+- **Offline check** (`scripts/e1v-wadge-ceiling.ts`, E1u's tool and animals: S39's parameters and M6-S39's seed-48
+  world at day 210; a juvenile female copy at 20 kg and pregnant female id 15, 31.3 kg; E1r's March–April diets, figs
+  0.25 of fruit energy, 12-h active day; feeding time held; output `artifacts/validation/e1v/wadge-ceiling.{json,md}`,
+  gitignored). Change at the ceiling against swallowing all of it, kcal/d (S39 diets: fallback 29% and 25% of plant
+  energy):
+
+| pith fibre swallowed | Δ absorbed, juvenile F 20 kg / pregnant F | Δ (absorbed − thermogenesis), same | four animal-diets (S39 and S31 diets), Δ (absorbed − thermogenesis) | E1u's arithmetic, same share spat out |
+| ---: | --- | --- | --- | --- |
+| 0.5 | +90 / +126 | +81 / +113 | +81 to +175 | +81 to +175 |
+| 0.25 | +146 / +201 | +131 / +181 | +131 to +296 | +131 to +296 |
+
+  E1u's estimate recomputed with the same tool (half to all of the pith's fibre spat out, four animal-diets): +81 to
+  +342. So the two arms sit inside it: 0.5 is its lower end (+81 to +175), 0.25 its 75% row (+131 to +296); swallowing
+  none (+188 to +342) is not an arm. Against E1r's S39 deficits (juvenile −62, pregnant −72 kcal/d) both arms more than
+  cover them at the ceiling (an upper bound: a higher ceiling may stop binding). Fibre swallowed falls only 2–6% (the
+  hindgut is full 51–53% of active ticks at 1, 32–41% at the arms); the gain comes from more food handled per day (943
+  → 1,091 → 1,182 formula kcal for the juvenile).
+
+### 7.3 Smoke run (logged before it runs)
+- From a frozen detached checkout of the commit that adds this entry (node_modules and data/raw symlinked; `git status
+  --short` empty there), `--workers 1`, one job at a time: `scripts/e-bench.ts --quick --seeds 48` (burn-in 30, 30
+  days) with M6-S39's parameters and `pithFibreSwallowed` 0.25; then the same with M6-S39's parameters alone as the
+  paired reference (the same code path at 1 is today's, §7.2). Outputs in this worktree's
+  `artifacts/validation/e1v/smoke-p025*` and `smoke-p1*` (gitignored). Seed 48 only, a development seed.
+- Purpose: the run completes (viability verdict, energy and rhythm readouts written). Expected direction against the
+  reference, by class, from §2 and §7.2: dry matter swallowed per formula kcal eaten (`dmIn` ÷ `formulaIn`) lower, faecal
+  fibre energy (`fecal`) lower, hindgut fill and days with a full hindgut lower, wherever fallback is eaten. Nothing
+  else is predicted (the window, late October to late November, is not the lean season); nothing is judged.
