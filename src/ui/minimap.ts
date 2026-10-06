@@ -40,10 +40,12 @@ function chimpOf(w: World, id: number): Chimp | undefined { const cs = w.chimps;
 function isAlpha(w: World, id: number): boolean { const ts = w.troops; for (let i = 0; i < ts.length; i++) if (ts[i].alphaId === id) return true; return false; }
 
 export function createMinimap(root: HTMLElement, ctx: Ctx) {
-  // The card's control row (camera menu, layer toggles) is built by app.ts above this host (see .p-map).
+  // The card's control row (camera menu, layer toggles) is built by app.ts below this host (see .p-map). The community
+  // key sits inside the map, bottom left; hovering it ghosts it so the map underneath shows (style.css .map-legend).
+  // Its entries carry no tooltip: a tip popping up there would cover the map the hover is meant to reveal.
   root.innerHTML = `<div class="map-frame"><canvas class="map" tabindex="0" role="img" aria-label="Community range map. The outlined area is where the camera looks. Click to select the nearest chimp or move the camera there. Scroll, or press + and −, to zoom; 0 shows the whole map; drag to pan when zoomed."></canvas><canvas class="map-view" aria-hidden="true"></canvas><span class="map-n mono" aria-hidden="true">N</span>
-    <div class="map-zoom" role="group" aria-label="Map zoom"><button data-zoom="fit" aria-label="Show the whole map (0)" data-tip="Show the whole map" data-key="0" hidden>${icon('fit')}</button><button data-zoom="in" aria-label="Zoom in (+)" data-tip="Zoom in" data-key="+">${icon('plus')}</button><button data-zoom="out" aria-label="Zoom out (−)" data-tip="Zoom out" data-key="−" aria-disabled="true">${icon('minus')}</button></div></div>
-  <div class="map-legend"></div>`;
+    <div class="map-zoom" role="group" aria-label="Map zoom"><button data-zoom="fit" aria-label="Show the whole map (0)" data-tip="Show the whole map" data-key="0" hidden>${icon('fit')}</button><button data-zoom="in" aria-label="Zoom in (+)" data-tip="Zoom in" data-key="+">${icon('plus')}</button><button data-zoom="out" aria-label="Zoom out (−)" data-tip="Zoom out" data-key="−" aria-disabled="true">${icon('minus')}</button></div>
+    <div class="map-legend" role="group" aria-label="Communities: press one to highlight it"></div></div>`;
   const frameEl = root.querySelector<HTMLElement>('.map-frame')!;
   const canvas = root.querySelector<HTMLCanvasElement>('canvas.map')!;
   const g = canvas.getContext('2d')!;
@@ -331,7 +333,7 @@ export function createMinimap(root: HTMLElement, ctx: Ctx) {
       const lk = `${hi}:${w.troops.map(t => t.id + t.name).join()}`;
       if (lk !== legendKey) {
         legendKey = lk;
-        legend.innerHTML = w.troops.map(t => `<button data-troop="${t.id}" aria-pressed="${hi === t.id}" style="--c:${esc(t.color)}" data-tip="${hi === t.id ? 'Clear the highlight' : `Highlight ${esc(troopShort(t))} on the map and in the forest`}"><i></i>${esc(troopShort(t))}</button>`).join('');
+        legend.innerHTML = w.troops.map(t => `<button data-troop="${t.id}" aria-pressed="${hi === t.id}" style="--c:${esc(t.color)}"><i></i>${esc(troopShort(t))}</button>`).join('');
       }
     },
     /** Zoom state and habitat-layer build times (perf hook). */

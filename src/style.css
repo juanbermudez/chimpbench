@@ -258,14 +258,14 @@ body.preview .viewport { background: #3a3d38; }
 .ev.fresh { animation: evIn .4s var(--ease); }
 @keyframes evIn { from { opacity: 0; transform: translateY(-4px); } }
 
-/* Minimap: one row of controls (the camera menu, then the layer toggles) over a full-width square map and the
-   community legend. The row never wraps: the toggles share the width the menu leaves, and a narrow card
-   (--left-w 256 and 236) tightens both. */
-.p-map { display: grid; gap: 8px; padding: 10px; container: map-card / inline-size; }
-.map-top { display: flex; align-items: center; gap: 6px; }
+/* Minimap: the card is the map, with the community key inside it and one row of controls (the camera menu, then the
+   layer toggles) underneath; nothing above the map. The row never wraps: the toggles share the width the menu
+   leaves, and a narrow card (--left-w 256 and 236) tightens both. */
+.p-map { display: grid; gap: 6px; padding: 8px; container: map-card / inline-size; }
+.map-bar { display: flex; align-items: center; gap: 6px; }
 .map-host { display: contents; }
 .cam { position: relative; flex: 0 0 auto; }
-.cam-btn, .map-layers { height: 36px; border-radius: 9px; background: var(--well); border: 1px solid var(--line); }
+.cam-btn, .map-layers { height: 32px; border-radius: 9px; background: var(--well); border: 1px solid var(--line); }
 .cam-btn { display: inline-flex; align-items: center; justify-content: center; width: 46px; color: var(--ink-2); transition: background .15s, color .15s, border-color .15s; }
 .cam-btn:hover { color: var(--ink); border-color: var(--line-2); }
 .cam-btn[aria-expanded="true"] { color: var(--ink); background: var(--pressed); border-color: var(--line-2); }
@@ -277,13 +277,14 @@ body.preview .viewport { background: #3a3d38; }
 .map-layers button[aria-pressed="true"] { color: var(--ink); background: var(--pressed); }
 .map-layers svg.i { width: 16px; height: 16px; }
 @container map-card (max-width: 250px) {
-  .cam-btn, .map-layers { height: 34px; }
+  .cam-btn, .map-layers { height: 30px; }
   .cam-btn { width: 40px; }
   .map-layers { gap: 1px; }
 }
-/* Camera menu: drops over the map from the trigger (the card does not clip it). */
-.cam-menu { position: absolute; z-index: 8; top: calc(100% + 4px); left: 0; min-width: 184px; display: grid; gap: 1px; padding: 4px;
-  background: var(--overlay); border: 1px solid var(--line-2); border-radius: 10px; box-shadow: var(--shadow-lg); animation: dropIn .16s var(--ease); }
+/* Camera menu: rises over the map from the trigger at the card's foot (the card does not clip it). */
+.cam-menu { position: absolute; z-index: 8; bottom: calc(100% + 6px); left: 0; min-width: 184px; display: grid; gap: 1px; padding: 4px;
+  background: var(--overlay); border: 1px solid var(--line-2); border-radius: 10px; box-shadow: var(--shadow-lg); animation: riseIn .16s var(--ease); }
+@keyframes riseIn { from { opacity: 0; transform: translateY(6px); } }
 .cam-menu [role^="menuitem"] { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; align-items: center; gap: 9px; height: 30px; padding: 0 8px; border-radius: var(--r-sm);
   font-size: 12.5px; color: var(--ink-2); text-align: left; white-space: nowrap; transition: background .12s, color .12s; }
 .cam-menu [role^="menuitem"]:hover, .cam-menu [role^="menuitem"]:focus-visible { background: var(--hover); color: var(--ink); }
@@ -308,10 +309,17 @@ body.preview .viewport { background: #3a3d38; }
 .map-zoom button:hover { background: var(--hover); color: var(--ink); }
 .map-zoom button[aria-disabled="true"] { color: var(--ink-4); background: none; cursor: default; }
 .map-zoom svg.i { width: 13px; height: 13px; stroke-width: 1.8; }
-.map-legend { display: flex; flex-wrap: wrap; gap: 2px 4px; }
-.map-legend button { display: flex; align-items: center; gap: 6px; font-size: 11.5px; padding: 3px 7px; border-radius: var(--r-sm); color: var(--ink-2); border: 1px solid transparent; transition: background .15s, border-color .15s; }
-.map-legend button i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+/* Community key: bottom left inside the map, in the zoom stack's chip style, clear of the stack on the right. Hovering
+   it ghosts it so the map underneath shows; its entries still toggle the highlight (the only place that does), so it
+   fades rather than vanishing, which would leave invisible buttons. Keyboard focus keeps it solid. */
+.map-legend { position: absolute; z-index: 2; left: 6px; bottom: 6px; max-width: calc(100% - 46px); display: flex; flex-wrap: wrap; gap: 1px; padding: 2px; border-radius: 8px;
+  background: color-mix(in srgb, var(--surface) 90%, transparent); border: 1px solid var(--line-2); box-shadow: 0 1px 3px rgba(0, 0, 0, .45); transition: opacity .15s var(--ease); }
+.map-legend:empty { display: none; }
+.map-legend:hover:not(:has(:focus-visible)) { opacity: .14; }
+.map-legend button { display: flex; align-items: center; gap: 5px; height: 22px; padding: 0 7px; font-size: 11px; border-radius: 6px; color: var(--ink-2); border: 1px solid transparent; white-space: nowrap; transition: background .15s, border-color .15s; }
+.map-legend button i { width: 7px; height: 7px; border-radius: 50%; background: var(--c); }
 .map-legend button:hover { background: var(--hover); } .map-legend button[aria-pressed="true"] { border-color: color-mix(in srgb, var(--c) 60%, transparent); background: color-mix(in srgb, var(--c) 8%, transparent); color: var(--ink); }
+@container map-card (max-width: 250px) { .map-legend button { padding: 0 5px; gap: 4px; font-size: 10.5px; } }
 
 /* Tooltip (src/ui/tooltip.ts): one shared chip above the hovered or keyboard-focused control (below it when there is
    no room). Visual only; it never takes the pointer. */

@@ -90,13 +90,13 @@ export function createApp(root: HTMLElement, deps: UiDeps) {
       <section class="panel glass p-side" data-occluder><div class="side-sec p-feed"></div></section>
       <aside class="dock glass" hidden data-occluder><div data-dock="experiments" role="dialog" aria-label="Field experiments" tabindex="-1"></div><div data-dock="model" role="dialog" aria-label="Decision model" tabindex="-1"></div></aside>
       <section class="panel glass p-map" data-occluder aria-label="Range map, camera and layers">
-        <div class="map-top">
+        <div class="map-host"></div>
+        <div class="map-bar">
           <div class="cam"><button class="cam-btn" data-act="camera-menu" aria-haspopup="menu" aria-expanded="false" aria-controls="cam-menu"></button>
             <div class="cam-menu" id="cam-menu" role="menu" aria-label="Camera" hidden>${VIEWS.map(v => `<button role="menuitemradio" data-viewmode="${v.id}" aria-checked="false" tabindex="-1">${icon(v.ic)}<span>${v.label}</span><kbd>${v.key}</kbd></button>`).join('')}<div class="cm-sep" role="separator"></div><button role="menuitem" data-act="reset-camera" tabindex="-1">${icon('focus')}<span>Reset camera</span></button></div>
           </div>
           <div class="map-layers" role="group" aria-label="Layers">${LAYERS.map(l => `<button data-layer="${l.id}" aria-label="${l.label}${l.key ? ` (${l.key})` : ''}" data-tip="${esc(l.tip)}"${l.key ? ` data-key="${l.key}"` : ''}>${icon(l.ic)}</button>`).join('')}</div>
         </div>
-        <div class="map-host"></div>
       </section>
     </aside>
     <button class="side-peek glass" data-act="open-sidebar" aria-controls="left-sidebar" aria-keyshortcuts="B" aria-label="Show sidebar: field log and map (B)" title="Show sidebar (B)" data-occluder>${icon('chevronR')}<span>Field log</span><kbd>B</kbd></button>
