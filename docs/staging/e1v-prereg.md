@@ -217,7 +217,7 @@ decide-ft stand-in run, missing its artifact, as before); `decision-guide --chec
   deaths 24/10, 26/6, 24/7, 26/14); three of S39's four fail. At 6 months both groups have 0.
 - The full tables (both arms, both horizons) follow in §8.4 once W50 is in.
 
-### 8.4 Result: both arms, 6 and 12 months (6 October 2026, 04:50; every table below is the judge's output, unedited)
+### 8.4 Result: both arms, 6 and 12 months (6 October 2026, 04:48; every table below is the judge's output, unedited)
 
 **Statement (§4): S39 has no starvation in 20 seed-runs at a swallowed share of 0.5 or less.** Starvation deaths at 12
 months: 6 in 20 seed-runs with all of the pith's fibre swallowed (S39 as it is), 0 in 20 at 0.5 and 0 in 20 at 0.25. At
