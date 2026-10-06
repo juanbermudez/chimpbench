@@ -207,12 +207,30 @@ export function expectedHit(set: string[], labels: string[], score: (b: string) 
   return top.length ? top.filter(b => labels.includes(b)).length / top.length : 0;
 }
 
+/** What preceded one eligible record's decision scan, as the baselines read it (the wild packet is built from this; stage RW bench). */
+export interface RecordView {
+  /** The available set (the party's roster males without the focal), in the order the observer wrote it. */
+  set: string[];
+  /** The previous scan of the session, if there is one, and every bout of the session that started before the decision scan. */
+  prev: Scan | undefined; earlier: Run[];
+  /** Bouts of grooming the focal gave to / received from b, and scans with b within 5 m, before the decision scan. */
+  given(b: string): number; received(b: string): number; near(b: string): number;
+  /** At the previous scan: 2 within 2 m, 1 in the 2 to 5 m ring, 0 further or unknown; 1 if b was grooming the focal. */
+  dist(b: string): number; invited(b: string): number;
+}
+export interface ScoreOptions {
+  /** Called once per eligible record, after its baselines are scored. The view's functions are valid only during the call. */
+  onEligible?: (r: ChoiceRecord, view: RecordView) => void;
+  /** Which sessions feed the history of later days (default: all passed in). A session that does not feed is still scored. */
+  feeds?: (s: Session) => boolean;
+}
+
 /**
  * Scores every eligible record with the registered baselines, using only what precedes its decision scan: sessions of
  * earlier DAYS (the file has no clock time, so other sessions of the same day are left out) and earlier scans of its
  * own session. Histories are built from the sessions passed in, so a sealed run uses train and development sessions only.
  */
-export function score(sessions: Session[], roster: Set<string>, otherPartSameDay?: (focal: string, label: string, day: number) => boolean): ChoiceRecord[] {
+export function score(sessions: Session[], roster: Set<string>, otherPartSameDay?: (focal: string, label: string, day: number) => boolean, opts: ScoreOptions = {}): ChoiceRecord[] {
   const given = new Map<string, number>(), lastDay = new Map<string, number>(), near = new Map<string, number>(), together = new Map<string, number>();
   const bump = (m: Map<string, number>, k: string, n = 1) => m.set(k, (m.get(k) ?? 0) + n);
   const all: ChoiceRecord[] = [];
@@ -239,9 +257,11 @@ export function score(sessions: Session[], roster: Set<string>, otherPartSameDay
           // not a behavioural rule: a check that the order in which the observer wrote the party does not give the answer away
           listedFirst: hit(b => [-S.indexOf(b)]) };
         r.labelGroomedBefore = r.maleLabels.some(b => S.includes(b) && g(f, b) + g(b, f) > 0);
+        opts.onEligible?.(r, { set: S, prev, earlier, given: b => g(f, b), received: b => g(b, f), near: nb, dist, invited });
       }
     }
     for (const s of today) {
+      if (opts.feeds && !opts.feeds(s)) continue;
       for (const r of runs(s)) { bump(given, `${r.from}>${r.to}`); lastDay.set(`${r.from}>${r.to}`, s.day); }
       for (const sc of s.scans) for (const b of uniq([...sc.prox2, ...sc.prox5])) bump(near, pair(s.focal, b));
       for (const b of s.party ?? []) bump(together, pair(s.focal, b));
@@ -329,18 +349,27 @@ function taskA(recs: ChoiceRecord[], sessions: Session[], reps: number) {
     countingOutsidePartyAsMiss: { records: missIncl.length, chance: r3(mean(missIncl.map(r => r.base?.chance ?? 0))), pastEither: r3(mean(missIncl.map(r => r.base?.pastEither ?? 0))), stack: r3(mean(missIncl.map(r => r.base?.stack ?? 0))) } };
 }
 
-export function summarize(rows: Row[], unsealed: boolean, reps = 2000) {
+/**
+ * What every reader of the file starts from: the roster, the same-day rule (codes and days of every part, no outcome),
+ * and the sessions that may be read. Without `unsealed` the held-out rows are blanked and dropped, so nothing built
+ * from the result can depend on a held-out outcome.
+ */
+export function prepare(rows: Row[], unsealed: boolean) {
   const roster = new Set(rows.map(r => r.code));
-  const scanKey = (r: Row) => `${r.focalId}#${r.scanId}`;
-  const struct = (rs: Row[]) => ({ rows: rs.length, scans: new Set(rs.map(scanKey)).size, sessions: new Set(rs.map(r => r.focalId)).size, animals: new Set(rs.map(r => r.code)).size });
-  const parts: Record<string, ReturnType<typeof struct>> = {};
-  for (const p of [...PARTS, ...uniq(rows.map(stratumOf)).sort()]) if (!parts[p]) parts[p] = struct(rows.filter(r => partOf(r) === p || stratumOf(r) === p));
   // structure only (codes and days of every part): which animals are focal on which day, and in which part
   const md = dayKeys(rows), focalDayPart = new Map<string, Part>();
   for (const r of rows) focalDayPart.set(`${r.code}@${r.year * 10000 + md.get(r.date)!}`, partOf(r));
   const otherPartSameDay = (focal: string, label: string, day: number) => { const p = focalDayPart.get(`${label}@${day}`); return p !== undefined && p !== focalDayPart.get(`${focal}@${day}`); };
   const used = unsealed ? rows : seal(rows).filter(r => !isHeldOut(r));
-  const sessions = buildSessions(used), scans = sessions.flatMap(s => s.scans.map(sc => ({ s, sc })));
+  return { roster, otherPartSameDay, used, sessions: buildSessions(used) };
+}
+
+export function summarize(rows: Row[], unsealed: boolean, reps = 2000) {
+  const scanKey = (r: Row) => `${r.focalId}#${r.scanId}`;
+  const struct = (rs: Row[]) => ({ rows: rs.length, scans: new Set(rs.map(scanKey)).size, sessions: new Set(rs.map(r => r.focalId)).size, animals: new Set(rs.map(r => r.code)).size });
+  const parts: Record<string, ReturnType<typeof struct>> = {};
+  for (const p of [...PARTS, ...uniq(rows.map(stratumOf)).sort()]) if (!parts[p]) parts[p] = struct(rows.filter(r => partOf(r) === p || stratumOf(r) === p));
+  const { roster, otherPartSameDay, used, sessions } = prepare(rows, unsealed), scans = sessions.flatMap(s => s.scans.map(sc => ({ s, sc })));
   const recs = score(sessions, roster, otherPartSameDay);
 
   // field filling, per row and per session

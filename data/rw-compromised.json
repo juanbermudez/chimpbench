@@ -1,0 +1,17 @@
+{
+  "about": "Scorecard targets (data/targets.json) that count as compromised for a decision kernel trained on wild choice records. data/targets.json is frozen and carries no such mark; reports apply this list through src/rw/manifest.ts (compromisedFor, flagCompromised) for a kernel whose manifest names the label source below. A kernel that is only scored on wild choices is not marked. Registration: docs/staging/rw-prereg.md section 9 (overlaps A and B) and docs/staging/rw-bench-prereg.md section 7.",
+  "labelSource": "field choices, Ngogo male grooming",
+  "decision": "User, 6 October 2026 (IMPLEMENTATION_PLAN.md, Track R, item 3): \"Mark the five overlapping targets as compromised for field-trained engines.\"",
+  "targets": [
+    { "id": "T-SOC-1", "overlap": "B: the same focal protocol and males, 1998-2007, probably the same records (mitani2009)",
+      "reason": "Male bond persistence was measured on the grooming and proximity of these males in these years; a kernel trained to reproduce these males' partner choices is taught the answer." },
+    { "id": "T-SOC-2", "overlap": "B: the same focal protocol and males, 1998-2007, probably the same records (mitani2009)",
+      "reason": "Bonds mostly with non-kin was measured on the grooming and proximity of these males in these years; a kernel trained to reproduce these males' partner choices is taught the answer." },
+    { "id": "T-FIS-1", "overlap": "A: the same data package (sandel2026)",
+      "reason": "The fission result comes from the same data package, and the networks behind it are built from these scans." },
+    { "id": "T-FIS-3", "overlap": "A: the same data package (sandel2026)",
+      "reason": "Lethal violence after the fission comes from the same data package, and the networks behind the fission result are built from these scans." },
+    { "id": "T-FIS-5", "overlap": "A: the same data package (sandel2026)",
+      "reason": "Patrols after the fission come from the same data package (its patrol and population files, which the wild-choice benchmark does not read)." }
+  ]
+}

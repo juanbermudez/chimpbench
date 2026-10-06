@@ -32,6 +32,14 @@ const RELATIONS = new Set(['mother', 'offspring', 'maternal-sibling', 'ally', 'r
 const WEATHERS = new Set(['clear', 'cloudy', 'rain', 'storm']);
 const PHASES = new Set(['dawn', 'day', 'dusk', 'night']);
 export const MAX_OPTIONS = 8;
+/**
+ * How wide a request may be: options on the menu and perceived individuals. The default is the simulation's and the
+ * server's limit of 8 and 8. Wider limits are passed only by the wild-choice benchmark's builder (stage RW,
+ * src/rw/packet.ts; docs/staging/rw-bench-prereg.md §2.1: a partner-choice menu holds every male of the party); no
+ * simulation request and no server route passes them.
+ */
+export interface MenuLimits { options: number; social: number }
+export const SIM_LIMITS: MenuLimits = { options: MAX_OPTIONS, social: 8 };
 /** Longer-term memory lines (ctx.history), each at most 120 characters. */
 export const MAX_HISTORY = 3;
 
@@ -80,7 +88,7 @@ function validValue(v: unknown): v is OptionValue {
 }
 
 /** Why a context is rejected, or '' when it is valid. Reasons stay server-side and in receipts. */
-export function decisionContextError(value: unknown): string {
+export function decisionContextError(value: unknown, limits: MenuLimits = SIM_LIMITS): string {
   if (!record(value) || !keysWith(value, ['chimpId', 'version', 'time', 'focal', 'environment', 'social', 'recent', 'stimuli', 'candidates'], ['history', 'body', 'light'])) return 'context keys';
   if (!int(value.chimpId, 1, 99_999) || !int(value.version, 0, 1e12) || !num(value.time, 0, 1e7)) return 'context ids';
   const f = value.focal;
@@ -97,7 +105,7 @@ export function decisionContextError(value: unknown): string {
     || !num(e.hour, 0, 24) || !oneOf(e.phase, PHASES) || !oneOf(e.weather, WEATHERS) || !num(e.rain, 0, 1) || !num(e.temperature, -10, 50)
     || !num(e.fruitNearby, 0, 1000) || !int(e.partySize, 0, 500) || !int(e.partyAdultMales, 0, 500) || e.partyAdultMales > e.partySize
     || !bool(e.nearTerritoryEdge) || !int(e.strangersSeen, 0, 500) || !int(e.strangersHeard, 0, 500)) return 'environment';
-  if (!Array.isArray(value.social) || value.social.length > 8 || !value.social.every(p => validPercept(p, value.chimpId as number))) return 'social percepts';
+  if (!Array.isArray(value.social) || value.social.length > limits.social || !value.social.every(p => validPercept(p, value.chimpId as number))) return 'social percepts';
   const social = value.social as SocialPercept[];
   if (new Set(social.map(p => p.id)).size !== social.length) return 'duplicate percepts';
   if (!Array.isArray(value.recent) || value.recent.length > 5 || !value.recent.every(r => text(r, 160, 1))) return 'recent memories';
@@ -106,7 +114,7 @@ export function decisionContextError(value: unknown): string {
   if (value.body !== undefined && !validBody(value.body)) return 'body';
   if (value.light !== undefined && !(record(value.light) && exactKeys(value.light, ['level', 'trend']) && num(value.light.level, 0, 1) && num(value.light.trend, -50, 50))) return 'light';
   const options = value.candidates;
-  if (!Array.isArray(options) || options.length < 2 || options.length > MAX_OPTIONS) return 'option count';
+  if (!Array.isArray(options) || options.length < 2 || options.length > limits.options) return 'option count';
   const seen = new Set<string>();
   const immature = f.stage === 'infant' || f.stage === 'juvenile';
   for (const c of options) {
