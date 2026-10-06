@@ -1,0 +1,55 @@
+You are starting stage E4m ("four small rules") of Track E ("Emergence") of ChimpBench, a deterministic wild-chimpanzee simulation in which behaviour must emerge from physiology, perception, memory and social context. Field values of behaviour are targets to benchmark against, never inputs. Never tune a rate, an interval or an age to hit a row.
+
+READ FIRST, in full:
+1. /Users/juanbermudez/Desktop/MGOGO/.claude/worktrees/e4m-leftovers/docs/staging/track-e-handoff.md §0–§8.
+2. AGENTS.md; IMPLEMENTATION_PLAN.md section "Track E"; docs/staging/e-noise.md (all amendments); docs/staging/e-stack2-confirm.md ("S21 results").
+3. docs/staging/e4b-prereg.md (the fast arousal state), e4i-prereg.md and e4j-prereg.md (patrols), e4e-prereg.md and e4k-prereg.md (hunts and meat), e1h-prereg.md (food energy in the ledger), and the play, patrol, meat-eating and caretaking sections of docs/simulation.md and docs/research.md.
+
+WORKTREE: /Users/juanbermudez/Desktop/MGOGO/.claude/worktrees/e4m-leftovers (branch e4m-leftovers, from track-e 6871f3d; symlinks in place). Commit there in small steps. Never commit to main, site or track-e. Never touch other worktrees — not bench-run, bench-run2, bench-run3 or bench-run4 (the integrator's frozen checkouts; you may READ their artifacts), not e2i-walking or guide-s5 (other agents') and not the main checkout at /Users/juanbermudez/Desktop/MGOGO. Never kill processes you did not start. Never use bare `git stash`. Your scratch directory: /private/tmp/claude-501/-Users-juanbermudez-Desktop-MGOGO/ad60f0c7-2554-45f8-b237-a926b537fae7/scratchpad/e4m
+
+THE PROBLEM (four counted prescriptions still active on S21):
+- `roughPlayP` 0.0015 per 15 s: play with a partner more than 2 y younger turns rough by a die (execution.ts:1121; "[H] occurs; rate design").
+- `patrolStopEveryMin` 15 min: a patrol stops to listen on a fixed schedule (parties.ts ~184; a quota).
+- `meatEatPerH` 0.35: meat units eaten per hour (a timer-like rate; energy.ts:605 converts it to kcal through ledgerMeatKcalPerMin; the ledger lists it as encoding T-ACT-1).
+- `guardMaxAgeY` 12: the oldest ward a caretaker protects (candidates.ts:155, 162; conflict.ts:43; a field copy partly encoding T-DEM-15).
+- From first principles, sketches only: rough play from the players' arousal and the size gap (E4b's fast state is in the stack); listening stops where information is worth stopping for (at the range edge, after a sound, when the party is uncertain); meat eaten at the rate the body can chew and digest it (the ledger's intake and gut, with a sourced meat intake rate), not a separate hourly rate; protection that ends when the ward no longer needs it (its own size, rank or the threat it faces) rather than at an age. Add any new source to docs/research.md first.
+
+STEP 1 — DIAGNOSIS (cheapest decisive check first), on S21 in quick mode (seeds 48 and 7; patrol stops may need the 30 + 60-day length, which the cap allows): for each entry, how often it binds and what it decides (rough-play bouts and injuries; listening stops and what they detect; meat eating time and kcal per hunt; protection given to wards by age and what it changes). Name the entries that set their behaviour rather than trim it, with numbers.
+
+STEP 2 — MECHANISM behind one new switch (0 = today; a value per entry if you need to separate them), from first principles, only for the entries the diagnosis implicates; every input sourced or tagged design. Removing entries must lower the prescription count by as many. Then the 3-iteration loop.
+
+REFERENCE (shared with the other stage running now; do not re-run it): S21, the best integrated candidate (docs/staging/e-stack2-confirm.md, "S21 results"), in quick mode, run once plus three re-draws ("rngSalt" 1, 2, 3: the behaviour-free re-draw lever, since rgTemperature is out under choiceBelief) at bench-run2 e7d8d8e (code identical to your start for S21), each with energy-diagnose (seeds 48,7, burn-in 30, days 30): /Users/juanbermudez/Desktop/MGOGO/.claude/worktrees/bench-run2/artifacts/validation/e/s21q/{S21q,S21q1,S21q2,S21q3}.json and …-energy.json; parameters in /Users/juanbermudez/Desktop/MGOGO/.claude/worktrees/bench-run2/artifacts/validation/e/s21q/S21q-params.json. They are running now (about 25 minutes); the integrator messages you when all four exist. Do the diagnosis meanwhile. Your arms add your switch to S21 (same quick settings).
+JUDGING (docs/staging/e-noise.md amendment 2): REFS=<the four .json paths, comma-separated> /usr/bin/python3 /private/tmp/claude-501/-Users-juanbermudez-Desktop-MGOGO/ad60f0c7-2554-45f8-b237-a926b537fae7/scratchpad/integrator/judge_vs_reps.py quick custom <arm.json> (read its header first). |z| > 2 is a result. Readouts against the reference's own spread (mean ± SD of its 4 runs). Viability must pass. Prescriptions: scripts/prescription-ledger.ts --count --params (S21: 45; never run it without --count: that writes files); a switch that removes a named rule must lower it. Report sums with and without the rare rows T-HUN-4, T-BRD-1 and T-IGE-3 (e-noise.md amendment 3; the judge script now drops all three in its 'w/o rare' line).
+
+Report also: play bouts and rough play per immature-day, listening stops per patrol and detections, meat eating minutes and kcal per hunt, protection events by ward age, T-PAT rows, T-HUN rows, T-ACT-1..4, reserves %/day, deaths by cause.
+
+Then: at most 3 iterations, each logged in docs/staging/e4m-prereg.md and committed BEFORE its run; results in the prereg and a brief docs/simulation.md note; merge track-e once just before your final test run (`git merge --no-ff track-e`; conflicts per handoff §6); `pnpm exec tsx scripts/gen-params.ts --check`, `pnpm exec tsc --noEmit -p .`, `pnpm test` (0 fail); commit; `git ls-files data/raw node_modules` must print nothing. The machine's load spikes intermittently from other applications: check uptime before each run, --workers 1 above 8, no runs above 30.
+
+Pre-flight (before the first run):
+- Commit sources and the pre-registration within your first 15 minutes; commit WIP before every long run. An app restart can kill you at any time.
+- Open the source of every field row you will be scored on and write its sample (sex, reproductive state, mass, method) into the prereg.
+- List every readout your predictions need, define each from the source's Methods (quote the sentence), and smoke-test it on 1–2 days with your switch ON before any arm.
+- Fix known defects in the code under test before measuring; any you defer go in the prereg with file:line.
+- If a switch removes a named rule but the prescription count does not fall, the tool is wrong: run scripts/param-reads.ts on it.
+- Worktree: symlinks for node_modules, data/raw, artifacts/validation/c7a-field1y.json. Stage explicit paths, never `git add -A data`.
+- Title new research.md / e-sources.md addenda by stage name ("Addendum: E2e pre-dawn"), not by number; the integrator numbers them.
+Runs:
+- Run from a frozen checkout: `git worktree add --detach <scratch> <your committed head>`, or never edit src/, scripts/ or data/ while a run is queued. Check `git.dirty` in the e-bench JSON (a clean worktree shows 1: the data/raw symlink).
+- Cheapest decisive check first: a 2-day smoke test, then the diagnosis script (energy, rhythm), then e-bench.
+- One simulation per arm where possible. Reuse the reference JSON the integrator gives you; do not re-run it.
+- Launch runs with run_in_background and wait for the notification, or one Monitor until-loop per wait. Never `sleep N`, never `tail -f`. Work on docs while you wait. Stop every monitor before your report.
+- Check `uptime` first; --workers 1 if load > 8.
+Judging:
+- Judge only the --compare figure "on N rows scored in both", with and without T-HUN-4 and T-BRD-1, against the registered noise threshold (§4.5). A difference inside it is not a result: say "inside noise" and recommend a confirm.
+- Generate every number in your tables from the JSON with a script; never type one in.
+Sources:
+- grep docs/research.md and docs/staging/e-sources.md before fetching anything; the full text may already be cited.
+- NCBI BioC first (https://www.ncbi.nlm.nih.gov/research/bionlp/RESTful/pmcoa.cgi/BioC_json/PMC<id>/unicode), then efetch db=pmc, OpenAlex locations, Wayback `id_` URLs.
+- At most 2 routes or 10 minutes per source, then mark it "not verified" and move on. Never guess file names. A Europe PMC fullTextXML 500 means not open access: do not retry.
+- If a host shows a CAPTCHA, WAF or "verify you are human" page, stop using that host. Do not route around it.
+- NEVER send the user's email or any personal data to any external service. Never use Unpaywall.
+- Use your own scratch subdirectory (the session scratchpad is shared between agents and disappears with the session).
+Report: under 250 words, the fixed table, branch head. Details go in the prereg, not the report.
+(Integrator note on the block above: "the registered noise threshold (§4.5)" now means docs/staging/e-noise.md amendment 2, judged against the mean of replicated references.)
+HARD RULES: all sim randomness from world.rng; observe() and rulesChoice() stay pure; `const P = paramsOf(world)`; lazily added ChimpX keys go in OPTIONAL_X (src/sim/state.ts). New switches 0 by default (0 = today's behaviour), registered in TRACK_E_SWITCHES in both tests/sim-track-e.test.ts and scripts/lib/prescriptions.ts; params in data/params.json with evidence tags (insert as text, never a JSON round trip; every new id needs a row in docs/simulation.md §17), then `pnpm exec tsx scripts/gen-params.ts`. Goldens and the field pin must not move. Development seeds 48 and 7 only; never the reserved or retired seeds in AGENTS.md. No run longer than 90 days in total. Rules policy only, no paid model API (Jev). At most 3 attempts per issue, then stop and report. Never run a sim script to read its options; read its header with sed. Use /usr/bin/python3. If the integrator messages you to pause, commit your work in progress at once and reply.
+FINAL REPORT (under 250 words): branch head; the diagnosis in 3 lines (which entries set their behaviour, with numbers); each arm in 2 lines; a table (S21 mean ± SD of its 4 runs vs each arm) of: rough play, listening stops, meat minutes and kcal, protection by ward age, T-PAT and T-HUN rows scored, T-ACT-1..4, reserves %/day, fitted and held-out (z, with and without the rare rows), prescription count, viability; your verdict; the biggest open problem.

@@ -1,0 +1,53 @@
+You are starting stage E1n ("weaning as a decision") of Track E ("Emergence") of ChimpBench, a deterministic wild-chimpanzee simulation in which behaviour must emerge from physiology, perception, memory and social context. Field values of behaviour are targets to benchmark against, never inputs. Never tune a weight to hit a weaning age, a nursing rate or a mother's reserve trend.
+
+READ FIRST, in full:
+1. /Users/juanbermudez/Desktop/MGOGO/.claude/worktrees/e1n-weaning/docs/staging/track-e-handoff.md §1–§8 and §0.
+2. AGENTS.md; IMPLEMENTATION_PLAN.md section "Track E" (the rule, the noise threshold, the integrated confirm); docs/staging/e-noise.md.
+3. docs/staging/e1c-prereg.md, e1d-prereg.md, e1f-prereg.md (infant energetics, nursing bouts, weaning ~6 y vs 4.7, the staged T-INF rows), e1i-prereg.md, e1k-prereg.md (mothers' deficit; the infant grooming loop; the staged T-ENE-5 direction band: mothers' balance depressed for ~6 months, then a net gain), e1m-prereg.md (THE FINDING BELOW), e-stack2-confirm.md (S3), and the infant-feeding sources in docs/research.md (bray2018, badescu2016/2017/2022, emeryThompson2012; grep wean, nursing, suckling, rejection).
+
+WORKTREE: /Users/juanbermudez/Desktop/MGOGO/.claude/worktrees/e1n-weaning (branch e1n-weaning, from track-e 8b53de0; symlinks in place). Commit there in small steps. Never commit to main or track-e. Never touch other worktrees — not `bench-run` (the integrator's frozen checkout; you may READ its artifacts) and not the main checkout at /Users/juanbermudez/Desktop/MGOGO (other sessions' uncommitted work). Never kill processes you did not start. Never use bare `git stash`. Another agent works on party cohesion (candidates.ts party/follow offers); stay out of those parts. Your scratch directory: /private/tmp/claude-501/-Users-juanbermudez-Desktop-MGOGO/ad60f0c7-2554-45f8-b237-a926b537fae7/scratchpad/e1n
+
+THE PROBLEM (E1m, e1m-prereg.md; verify):
+- Infants of 1–4 y drink the full milk cap (about 307 kcal/day) in every arm; at the field's eating minutes they would need 45–196 kcal/day at 1–2 y and none by 3–4 y; after year 1 they eat 0.31–0.57 of the field's eating minutes. So mothers pay a full year-one lactation (about 384 kcal/day) into the infant's fourth year, and on S3 their reserves fall faster the older the infant (−0.10, −0.24, −0.36, −0.37%/day at infants of 0.5–1, 1–2, 2–3, 3–4 y), the opposite of the field's direction (recovery after the first months).
+- Maternal refusal of suckling is a dice roll, a prescription: `weanRefuseMaxP` 0.8 ramped over `weanRefuseRampY` from `weanRefuseAgeY` (src/sim/execution.ts near line 783), with `weanAgeMinY` and `weanAgeSpanY` setting weaning.
+
+STEP 0 — AUDIT (commit within 30 minutes): the field's infant feeding and nursing by age (bray2018 Kanyawara; badescu2022 Ngogo, full text; badescu2017 isotopic weaning; Gombe/Mahale if cited), each with sample and method; whether any measures maternal rejection by infant age; the staged T-INF rows and T-ENE-5. Name the targets (never inputs).
+
+STEP 1 — DIAGNOSIS (cheapest decisive check): on S3 (the integrated candidate stack + `waterLedger`; e-stack2-confirm.md) and on T, quick mode, by infant age: suckling bouts and their outcome (accepted, refused by the roll), the infant's choice between suckling and its own feeding (which option wins and by what margin; its hunger and gut fill), own-food eating minutes and intake per minute against bray2018, and the mother's state when nursing. Name the term that keeps older infants on the full cap.
+
+STEP 2 — MECHANISM behind a new switch (0 = today), from first principles, only for the term the diagnosis implicates. Candidates, none assumed: the mother allows or ends a suckling bout by weighing her own energy state (the ledger's reserves) against what the milk is worth to the infant given its own alternatives (parent–offspring conflict; the value terms the ledger already computes), replacing the refusal roll (the prescription count must fall: ACTIVE_WHEN for `weanRefuseMaxP` and its ramp); the infant's own-food intake per minute or eating time, if the diagnosis shows it is wrong against bray2018 (an input correction, sourced). Every input sourced or tagged design; no tuned constant.
+
+BENCHMARK and JUDGING (docs/staging/e-noise.md amendment 2): base S3 at your committed head (and T if useful), quick mode, run once plus three re-draws (add "rgTemperature" 0.1641, 0.1639, 0.16405), with energy-diagnose for each (reserves by class and infant age, milk drunk by infant age, infants' growth and the indicative weaning age). Judge each arm against the base's mean: z = (arm − mean) ÷ (SD × √(1 + 1/n)); quick per-run SD fitted 0.69, held-out 1.26, held-out without T-HUN-4 and T-BRD-1 0.48 (or the base's own spread if larger); energy readouts against the base's own spread. Viability: no starvation death (infants included); report every class against the 0.05%/day line and the mothers' direction by infant age against the staged T-ENE-5.
+
+Then: at most 3 iterations, each logged in docs/staging/e1n-prereg.md and committed BEFORE its run; results in the prereg and a brief docs/simulation.md note; merge track-e once just before your final test run (`git merge --no-ff track-e`; conflicts per handoff §6); `pnpm exec tsx scripts/gen-params.ts --check`, `pnpm exec tsc --noEmit -p .`, `pnpm test` (0 fail); commit; `git ls-files data/raw node_modules` must print nothing.
+
+Pre-flight (before the first run):
+- Commit sources and the pre-registration within your first 15 minutes; commit WIP before every long run. An app restart can kill you at any time.
+- Open the source of every field row you will be scored on and write its sample (sex, reproductive state, mass, method) into the prereg.
+- List every readout your predictions need, define each from the source's Methods (quote the sentence), and smoke-test it on 1–2 days with your switch ON before any arm.
+- Fix known defects in the code under test before measuring; any you defer go in the prereg with file:line.
+- If a switch removes a named rule but the prescription count does not fall, the tool is wrong: run scripts/param-reads.ts on it.
+- Worktree: symlinks for node_modules, data/raw, artifacts/validation/c7a-field1y.json. Stage explicit paths, never `git add -A data`.
+- Title new research.md / e-sources.md addenda by stage name ("Addendum: E2e pre-dawn"), not by number; the integrator numbers them.
+Runs:
+- Run from a frozen checkout: `git worktree add --detach <scratch> <your committed head>`, or never edit src/, scripts/ or data/ while a run is queued. Check `git.dirty` in the e-bench JSON (a clean worktree shows 1: the data/raw symlink).
+- Cheapest decisive check first: a 2-day smoke test, then the diagnosis script (energy, rhythm), then e-bench.
+- One simulation per arm where possible. Reuse the reference JSON the integrator gives you; do not re-run it.
+- Launch runs with run_in_background and wait for the notification, or one Monitor until-loop per wait. Never `sleep N`, never `tail -f`. Work on docs while you wait. Stop every monitor before your report.
+- Check `uptime` first; --workers 1 if load > 8.
+Judging:
+- Judge only the --compare figure "on N rows scored in both", with and without T-HUN-4 and T-BRD-1, against the registered noise threshold (§4.5). A difference inside it is not a result: say "inside noise" and recommend a confirm.
+- Generate every number in your tables from the JSON with a script; never type one in.
+Sources:
+- grep docs/research.md and docs/staging/e-sources.md before fetching anything; the full text may already be cited.
+- NCBI BioC first (https://www.ncbi.nlm.nih.gov/research/bionlp/RESTful/pmcoa.cgi/BioC_json/PMC<id>/unicode), then efetch db=pmc, OpenAlex locations, Wayback `id_` URLs.
+- At most 2 routes or 10 minutes per source, then mark it "not verified" and move on. Never guess file names. A Europe PMC fullTextXML 500 means not open access: do not retry.
+- If a host shows a CAPTCHA, WAF or "verify you are human" page, stop using that host. Do not route around it.
+- NEVER send the user's email or any personal data to any external service. Never use Unpaywall.
+- Use your own scratch subdirectory (the session scratchpad is shared between agents and disappears with the session).
+Report: under 250 words, the fixed table, branch head. Details go in the prereg, not the report.
+(Integrator note on the block above: "the registered noise threshold (§4.5)" now means docs/staging/e-noise.md amendment 2, judged against the mean of replicated references.)
+
+HARD RULES: all sim randomness from world.rng; observe() and rulesChoice() stay pure; `const P = paramsOf(world)`; lazily added ChimpX keys go in OPTIONAL_X (src/sim/state.ts). New switches 0 by default (0 = today's behaviour), registered in TRACK_E_SWITCHES in both tests/sim-track-e.test.ts and scripts/lib/prescriptions.ts; params in data/params.json with evidence tags (insert as text, never a JSON round trip; every new id needs a row in docs/simulation.md §17), then `pnpm exec tsx scripts/gen-params.ts`. Goldens and the field pin must not move. Development seeds 48 and 7 only; never the reserved or retired seeds in AGENTS.md. No run longer than 90 days in total. Rules policy only, no paid model API (Jev). At most 3 attempts per issue, then stop and report. Never run a sim script to read its options; read its header with sed. Use /usr/bin/python3. If the integrator messages you to pause, commit your work in progress at once and reply.
+
+FINAL REPORT (under 250 words): branch head; the audit in 3 lines; the diagnosis in 2 lines (what keeps older infants on the full cap, with numbers); each arm in 2 lines; a table (base mean ± SD of its 4 runs vs each arm) of: milk drunk and own-food minutes by infant age, refusals by infant age, mothers' reserve %/day by infant age, infants' growth and indicative weaning age, juveniles' reserve %/day, T-ACT-1, T-ACT-3, fitted and held-out (z, with and without T-HUN-4 and T-BRD-1), prescription count, viability; your verdict; the biggest open problem.

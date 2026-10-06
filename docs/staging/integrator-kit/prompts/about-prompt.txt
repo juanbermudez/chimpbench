@@ -1,0 +1,37 @@
+You are updating the /about page of ChimpBench, a 3D wild-chimpanzee society simulation (Kibale-inspired) that also demos a small local decision model, GLiNER2.5-Decide, choosing actions from what a chimp perceives. The page's owner (Juan) wants three things:
+1. The page should reflect the current state of the project.
+2. It should need much less updating from now on ("so we don't have to update so much stuff").
+3. The hero copy should be shorter and read like he wrote it himself: very basic, practical and human, first person, with no AI-sounding phrasing.
+
+WHERE TO WORK
+- Worktree /Users/juanbermudez/Desktop/MGOGO/.claude/worktrees/site-about (branch site-about, from branch `site` 522e8e3: main + the site work + a Real time speed + a GLiNER-only hosted build). node_modules and data symlinks are in place. Edit about.html, and docs/guide/* only if the page needs it. Commit in small steps on site-about. Never commit to main, site or track-e; never touch other worktrees or the main checkout at /Users/juanbermudez/Desktop/MGOGO.
+- Do NOT deploy anything and do not run wrangler. The integrator builds and deploys after the owner says go.
+
+KEEP
+- The existing visual design: layout, colours, typography, motion, components. You are editing content and structure, not restyling. If a section is removed, remove its now-unused markup cleanly.
+- Accuracy: every factual claim must match the code and docs. Read them; never invent.
+
+CURRENT STATE (verify each against the sources named)
+- The hosted site runs the app as a static build with the decision model GLiNER2.5-Decide running in the visitor's browser (ONNX via transformers.js; src/providers/, public/decision-providers.json). The hosted build offers GLiNER only: no Jev or other API providers, and no local model server (src/main.ts, VITE_STATIC=1 and VITE_DECISION_PROVIDER=browser).
+- New in the app: a Real time speed (1 simulated second per real second) below 1 min/s; keys 1–7 (README.md "Controls"; src/clock.ts).
+- Behind the scenes, the simulation's decisions are being rebuilt so behaviour comes from body state (an energy ledger with a gut, sleep pressure and a circadian clock, a water balance, heat, hormone-like states) instead of clock hours, dice rolls and tuned bonuses, and every change is benchmarked against field data. This is called Track E. It lives on a development branch and every one of its switches is OFF in the app you can open today: describe it as work in progress, never as live behaviour. Read /Users/juanbermudez/Desktop/MGOGO/.claude/worktrees/track-e/docs/staging/track-e-handoff.md §0 and §3 and IMPLEMENTATION_PLAN.md "Track E" (in that worktree) for an honest one-paragraph summary: what it is, the rule (field numbers are targets, not inputs), and where it stands. Do not copy internal stage numbers, z-scores or switch names onto the page.
+- Check every other section of the page (the science, the simulation design, the decision models, the validation, the evidence and sources) against README.md, docs/simulation.md, docs/research.md, docs/architecture.html, PRODUCT.md and the code; correct anything out of date, remove what no longer applies.
+
+LOWER MAINTENANCE (the owner's main ask)
+- Remove or rephrase numbers and claims that go stale with every change (test counts, exact parameter counts, per-metric results, dated progress notes). Keep only durable facts, or state numbers with their date or source in one clearly marked place.
+- Prefer linking to the living documents (README, docs/simulation.md, docs/sources.html, the repo) over restating their content.
+- Fewer, shorter sections are better than many detailed ones. Say in your report what you removed and why.
+
+THE HERO (shorter, his voice)
+- First person, from Juan: what he built, why, and what you can do with it. One short headline and at most two short sentences, then the call to action. Plain words a friend would use.
+- Avoid AI-sounding writing: no "delve", "tapestry", "unlock", "harness", "seamless", "cutting-edge", "revolutionize", "journey", "in a world where", "not just X but Y", triplets of adjectives, rhetorical questions, em-dashes, exclamation marks, grand claims. Some precise technical words are fine where they are the right word.
+- Apply your best version. In your report, give two alternative hero versions (headline and sentences), so the owner can choose.
+
+VERIFY BEFORE YOU REPORT
+- `pnpm build` passes (it builds index.html, about.html and docs/sources.html).
+- Look at the page: run a dev server is not needed; build and serve dist statically, e.g. `/usr/bin/python3 -m http.server 5197 --bind 127.0.0.1 --directory dist` in the background, then `node scripts/shot.mjs http://127.0.0.1:5197/about.html <out.png> 3000 1440 900` and the same at 390 844 (read scripts/shot.mjs's header first; it uses the local Chrome). Stop the server afterwards. Check that nothing overlaps, no section is broken by removed markup, and that links resolve.
+- No console errors from the page (shot.mjs can run JS; or read the HTML carefully).
+
+RULES: never edit the main checkout; no deploys; no new npm dependencies; NEVER send the owner's email or any personal data to any external service; if a site shows a CAPTCHA or bot check, stop using it.
+
+FINAL REPORT (under 250 words): branch head; what changed by section (one line each); what you removed for lower maintenance; the hero as applied plus two alternatives; screenshot paths; anything you could not verify.

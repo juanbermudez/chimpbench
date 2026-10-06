@@ -1,0 +1,52 @@
+You are starting stage E2i ("how fast a chimp walks") of Track E ("Emergence") of ChimpBench, a deterministic wild-chimpanzee simulation in which behaviour must emerge from physiology, perception, memory and social context. Field values of behaviour are targets to benchmark against, never inputs. Never set a speed from a day range or a travel share, or tune one to hit them.
+
+READ FIRST, in full:
+1. /Users/juanbermudez/Desktop/MGOGO/.claude/worktrees/e2i-walking/docs/staging/track-e-handoff.md §0–§8.
+2. AGENTS.md; IMPLEMENTATION_PLAN.md section "Track E"; docs/staging/e-noise.md (all amendments); docs/staging/e-stack2-confirm.md ("S21 results").
+3. The movement and energy sections of docs/simulation.md and docs/research.md (sockol2007 and the ledger's cost of transport); docs/staging/e3c-prereg.md (options valued by net energy rate: walking time enters), e1j-prereg.md (day ranges), e2g-prereg.md; src/sim/execution.ts (moveTo and every WALK use), src/sim/departure.ts, src/sim/candidates.ts (~790–810).
+
+WORKTREE: /Users/juanbermudez/Desktop/MGOGO/.claude/worktrees/e2i-walking (branch e2i-walking, from track-e 6871f3d; symlinks in place). Commit there in small steps. Never commit to main, site or track-e. Never touch other worktrees — not bench-run, bench-run2, bench-run3 or bench-run4 (the integrator's frozen checkouts; you may READ their artifacts), not e4m-leftovers or guide-s5 (other agents') and not the main checkout at /Users/juanbermudez/Desktop/MGOGO. Never kill processes you did not start. Never use bare `git stash`. Your scratch directory: /private/tmp/claude-501/-Users-juanbermudez-Desktop-MGOGO/ad60f0c7-2554-45f8-b237-a926b537fae7/scratchpad/e2i
+
+THE PROBLEM:
+- `walkMps` (a counted prescription) is a field copy "derived from the day range (2.7 km) and the travel share (21% of the day), the two outcomes it produces" (an effective speed including pauses). Every walk, every trip-time estimate in the energy-rate valuation (candidates.ts:800), departures (departure.ts:35) and hunts' approach (huntvalue.ts:32) read it. It encodes T-RNG-4 and T-ACT-2.
+- From first principles: a walking animal moves at a speed its body sets (the speed that minimises cost per metre, or a measured preferred speed, by mass and age: locomotion sources; add them to docs/research.md first), and pauses on the way are decisions the model already makes (stopping to feed, rest, wait for companions), not part of the speed.
+
+STEP 1 — DIAGNOSIS (cheapest decisive check first), on S21 in quick mode (seeds 48 and 7), simulation truth: the speeds the model actually moves at by act (walking, travelling with a party, following, approaching, fleeing), how much of travel time is moving and how much is pauses inside an act, how walking time and speed enter each valuation, and what a physiological speed would change in trip times and in the net-rate ranking of options. Name what the effective-speed copy sets, with numbers.
+
+STEP 2 — MECHANISM behind a new switch (0 = today), from first principles, only for what the diagnosis implicates: a walking speed from the body (mass, age, load such as a carried infant, terrain or climbing if the model has it), sourced; pauses left to the decisions that make them; every valuation reading the same speed. Every input sourced or tagged design; no speed chosen to hit a day range. If the switch removes `walkMps`, the count falls by one. Then the 3-iteration loop.
+
+REFERENCE (shared with the other stage running now; do not re-run it): S21, the best integrated candidate (docs/staging/e-stack2-confirm.md, "S21 results"), in quick mode, run once plus three re-draws ("rngSalt" 1, 2, 3: the behaviour-free re-draw lever, since rgTemperature is out under choiceBelief) at bench-run2 e7d8d8e (code identical to your start for S21), each with energy-diagnose (seeds 48,7, burn-in 30, days 30): /Users/juanbermudez/Desktop/MGOGO/.claude/worktrees/bench-run2/artifacts/validation/e/s21q/{S21q,S21q1,S21q2,S21q3}.json and …-energy.json; parameters in /Users/juanbermudez/Desktop/MGOGO/.claude/worktrees/bench-run2/artifacts/validation/e/s21q/S21q-params.json. They are running now (about 25 minutes); the integrator messages you when all four exist. Do the diagnosis meanwhile. Your arms add your switch to S21 (same quick settings).
+JUDGING (docs/staging/e-noise.md amendment 2): REFS=<the four .json paths, comma-separated> /usr/bin/python3 /private/tmp/claude-501/-Users-juanbermudez-Desktop-MGOGO/ad60f0c7-2554-45f8-b237-a926b537fae7/scratchpad/integrator/judge_vs_reps.py quick custom <arm.json> (read its header first). |z| > 2 is a result. Readouts against the reference's own spread (mean ± SD of its 4 runs). Viability must pass. Prescriptions: scripts/prescription-ledger.ts --count --params (S21: 45; never run it without --count: that writes files); a switch that removes a named rule must lower it. Report sums with and without the rare rows T-HUN-4, T-BRD-1 and T-IGE-3 (e-noise.md amendment 3; the judge script now drops all three in its 'w/o rare' line).
+
+Report also: speeds by act and class, true day ranges by class, T-RNG-4, T-RNG-5, T-ACT-1..4, T-FOOD-4, T-PTY-1, mothers', juveniles' and infants' reserves %/day, night safety (scripts/rhythm-metrics.ts on any kept arm).
+
+Then: at most 3 iterations, each logged in docs/staging/e2i-prereg.md and committed BEFORE its run; results in the prereg and a brief docs/simulation.md note; merge track-e once just before your final test run (`git merge --no-ff track-e`; conflicts per handoff §6); `pnpm exec tsx scripts/gen-params.ts --check`, `pnpm exec tsc --noEmit -p .`, `pnpm test` (0 fail); commit; `git ls-files data/raw node_modules` must print nothing. The machine's load spikes intermittently from other applications: check uptime before each run, --workers 1 above 8, no runs above 30.
+
+Pre-flight (before the first run):
+- Commit sources and the pre-registration within your first 15 minutes; commit WIP before every long run. An app restart can kill you at any time.
+- Open the source of every field row you will be scored on and write its sample (sex, reproductive state, mass, method) into the prereg.
+- List every readout your predictions need, define each from the source's Methods (quote the sentence), and smoke-test it on 1–2 days with your switch ON before any arm.
+- Fix known defects in the code under test before measuring; any you defer go in the prereg with file:line.
+- If a switch removes a named rule but the prescription count does not fall, the tool is wrong: run scripts/param-reads.ts on it.
+- Worktree: symlinks for node_modules, data/raw, artifacts/validation/c7a-field1y.json. Stage explicit paths, never `git add -A data`.
+- Title new research.md / e-sources.md addenda by stage name ("Addendum: E2e pre-dawn"), not by number; the integrator numbers them.
+Runs:
+- Run from a frozen checkout: `git worktree add --detach <scratch> <your committed head>`, or never edit src/, scripts/ or data/ while a run is queued. Check `git.dirty` in the e-bench JSON (a clean worktree shows 1: the data/raw symlink).
+- Cheapest decisive check first: a 2-day smoke test, then the diagnosis script (energy, rhythm), then e-bench.
+- One simulation per arm where possible. Reuse the reference JSON the integrator gives you; do not re-run it.
+- Launch runs with run_in_background and wait for the notification, or one Monitor until-loop per wait. Never `sleep N`, never `tail -f`. Work on docs while you wait. Stop every monitor before your report.
+- Check `uptime` first; --workers 1 if load > 8.
+Judging:
+- Judge only the --compare figure "on N rows scored in both", with and without T-HUN-4 and T-BRD-1, against the registered noise threshold (§4.5). A difference inside it is not a result: say "inside noise" and recommend a confirm.
+- Generate every number in your tables from the JSON with a script; never type one in.
+Sources:
+- grep docs/research.md and docs/staging/e-sources.md before fetching anything; the full text may already be cited.
+- NCBI BioC first (https://www.ncbi.nlm.nih.gov/research/bionlp/RESTful/pmcoa.cgi/BioC_json/PMC<id>/unicode), then efetch db=pmc, OpenAlex locations, Wayback `id_` URLs.
+- At most 2 routes or 10 minutes per source, then mark it "not verified" and move on. Never guess file names. A Europe PMC fullTextXML 500 means not open access: do not retry.
+- If a host shows a CAPTCHA, WAF or "verify you are human" page, stop using that host. Do not route around it.
+- NEVER send the user's email or any personal data to any external service. Never use Unpaywall.
+- Use your own scratch subdirectory (the session scratchpad is shared between agents and disappears with the session).
+Report: under 250 words, the fixed table, branch head. Details go in the prereg, not the report.
+(Integrator note on the block above: "the registered noise threshold (§4.5)" now means docs/staging/e-noise.md amendment 2, judged against the mean of replicated references.)
+HARD RULES: all sim randomness from world.rng; observe() and rulesChoice() stay pure; `const P = paramsOf(world)`; lazily added ChimpX keys go in OPTIONAL_X (src/sim/state.ts). New switches 0 by default (0 = today's behaviour), registered in TRACK_E_SWITCHES in both tests/sim-track-e.test.ts and scripts/lib/prescriptions.ts; params in data/params.json with evidence tags (insert as text, never a JSON round trip; every new id needs a row in docs/simulation.md §17), then `pnpm exec tsx scripts/gen-params.ts`. Goldens and the field pin must not move. Development seeds 48 and 7 only; never the reserved or retired seeds in AGENTS.md. No run longer than 90 days in total. Rules policy only, no paid model API (Jev). At most 3 attempts per issue, then stop and report. Never run a sim script to read its options; read its header with sed. Use /usr/bin/python3. If the integrator messages you to pause, commit your work in progress at once and reply.
+FINAL REPORT (under 250 words): branch head; the diagnosis in 3 lines (what the speed copy sets, with numbers); each arm in 2 lines; a table (S21 mean ± SD of its 4 runs vs each arm) of: speeds, day ranges by class, T-RNG-4, T-RNG-5, T-ACT-1..4, reserves %/day, fitted and held-out (z, with and without the rare rows), prescription count, viability; your verdict; the biggest open problem.

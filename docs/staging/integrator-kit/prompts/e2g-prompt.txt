@@ -1,0 +1,53 @@
+You are starting stage E2g ("water balance") of Track E ("Emergence") of ChimpBench, a deterministic wild-chimpanzee simulation in which behaviour must emerge from physiology, perception, memory and social context. Field values of behaviour are targets to benchmark against, never inputs. Physiological inputs (water content of foods, metabolic water per kcal, evaporative and faecal losses) must be sourced; never tune one to hit a drinking rate, a ranging distance or a party size.
+
+READ FIRST, in full:
+1. /Users/juanbermudez/Desktop/MGOGO/.claude/worktrees/e2g-water/docs/staging/track-e-handoff.md §1–§8 and §0.
+2. AGENTS.md; IMPLEMENTATION_PLAN.md section "Track E" (Stage E2 names the thirst timers for removal: "water balance from food water content and drinking, lost through heat and exertion"; and the "Noise threshold" paragraph); docs/staging/e-noise.md.
+3. docs/staging/e2a-prereg.md (the heat balance, `rhythmHeat`: evaporative heat loss), e1-prereg.md and e1b-prereg.md (the energy ledger and the dry-matter gut: food composition, digesta, faecal output), e1j-prereg.md (the finding below), and the water and thirst sections of docs/research.md and docs/simulation.md (grep thirst, drink, water, fruitThirstFactor).
+
+WORKTREE: /Users/juanbermudez/Desktop/MGOGO/.claude/worktrees/e2g-water (branch e2g-water, from track-e f64cf55; symlinks in place). Commit there in small steps. Never commit to main or track-e. Never touch other worktrees — not `bench-run` or `bench-run-2` (the integrator's frozen checkouts; you may READ their artifacts) and not the main checkout at /Users/juanbermudez/Desktop/MGOGO (other sessions' uncommitted work). Never kill processes you did not start. Never use bare `git stash`. Another agent works on nursing mothers' intake and grooming (energy.ts satiation, grooming options); stay out of those parts. Your scratch directory: /private/tmp/claude-501/-Users-juanbermudez-Desktop-MGOGO/ad60f0c7-2554-45f8-b237-a926b537fae7/scratchpad/e2g
+
+THE PROBLEM:
+- Thirst is a set of timers counted as prescriptions: `thirstAwakePerH`, `thirstSleepPerH`, `thirstHotC`/`thirstHotPerH`, `thirstRainRelief`, `fruitThirstFactor`, `drinkThirstPerH` (group "needs", outcome-encoding timers in scripts/lib/prescriptions.ts).
+- E1j's attribution run (e1j-prereg.md): with thirst switched off, males' daily path falls by 0.64 km and mothers' by 0.38 km, and the timers' prescribed walks to water drive party splitting and the regrouping walks they trigger: much of males' ranging rests on a prescription.
+
+STEP 0 — SOURCES AND AUDIT (commit within 30 minutes): (a) the inputs: water content of Kibale chimpanzee foods (ripe fruit, figs, young leaves, pith; from dry-matter fractions such as uwimbabazi2019's or other sources), metabolic water per kcal oxidised, water losses (respiratory and cutaneous evaporation by temperature and activity, faecal water, urine minimum) from primate or, failing that, mammalian physiology, and wild ape water turnover if measured (doubly labelled water studies report it: check the ape DLW literature); (b) the targets: what the field reports on chimpanzee drinking (bouts per day, share of time, by season, Kibale vs dry sites such as Fongoli), each with sample and method. Do not build toward a drinking rate until its source is audited.
+
+STEP 1 — DIAGNOSIS: on R, quick mode (seeds 48, 7; 30 + 30 days): drinking bouts per day and their timing, the share of travel that heads to water, how often a party splits when one member heads to water, thirst at drinking, and the water balance implied by the model's food intake if fruit water were counted (offline arithmetic first).
+
+STEP 2 — MECHANISM behind a new switch (0 = today): a water ledger beside the energy ledger (water in from food, metabolic water and drinking; out by evaporation from E2a's heat balance, faeces and urine), thirst read from the water deficit, and drinking valued like eating (by the water a source can deliver against the deficit), with no hourly thirst rate, no hot-hour bonus and no fruit factor. Removing the timers must lower the prescription count (ACTIVE_WHEN entries; if it does not fall, run scripts/param-reads.ts). Conservation test (water in − out = change in stores, exact), determinism, switch-off identity.
+
+BENCHMARK and JUDGING (docs/staging/e-noise.md amendment 2): reference = R at your committed head. The integrator's R quick realizations (bench-run/artifacts/validation/e/noise/R-quick.json, NR1q, NR2q, NR3q) are valid only if your head leaves R unchanged: check with a quick identity run before reusing them. Judge arms against the reference mean, z = (arm − mean) ÷ (SD × √(1 + 1/n)); quick per-run SD fitted 0.69, held-out 1.26, held-out without T-HUN-4 and T-BRD-1 0.48 (or the reference's own spread if larger); |z| > 2 is a result. Report T-RNG-4, T-RNG-5, T-PTY-1 and the activity rows with R's spread, plus the simulation-truth day ranges (scripts/ranging-diagnose.ts, E1j's) and drinking readouts. Viability must pass (no dehydration or starvation deaths; energy-diagnose reserve slopes not worse than R's beyond its spread).
+
+Then: at most 3 iterations, each logged in docs/staging/e2g-prereg.md and committed BEFORE its run; results in the prereg and a brief docs/simulation.md note; merge track-e once just before your final test run (`git merge --no-ff track-e`; conflicts per handoff §6); `pnpm exec tsx scripts/gen-params.ts --check`, `pnpm exec tsc --noEmit -p .`, `pnpm test` (0 fail); commit; `git ls-files data/raw node_modules` must print nothing.
+
+Pre-flight (before the first run):
+- Commit sources and the pre-registration within your first 15 minutes; commit WIP before every long run. An app restart can kill you at any time.
+- Open the source of every field row you will be scored on and write its sample (sex, reproductive state, mass, method) into the prereg.
+- List every readout your predictions need, define each from the source's Methods (quote the sentence), and smoke-test it on 1–2 days with your switch ON before any arm.
+- Fix known defects in the code under test before measuring; any you defer go in the prereg with file:line.
+- If a switch removes a named rule but the prescription count does not fall, the tool is wrong: run scripts/param-reads.ts on it.
+- Worktree: symlinks for node_modules, data/raw, artifacts/validation/c7a-field1y.json. Stage explicit paths, never `git add -A data`.
+- Title new research.md / e-sources.md addenda by stage name ("Addendum: E2e pre-dawn"), not by number; the integrator numbers them.
+Runs:
+- Run from a frozen checkout: `git worktree add --detach <scratch> <your committed head>`, or never edit src/, scripts/ or data/ while a run is queued. Check `git.dirty` in the e-bench JSON (a clean worktree shows 1: the data/raw symlink).
+- Cheapest decisive check first: a 2-day smoke test, then the diagnosis script (energy, rhythm), then e-bench.
+- One simulation per arm where possible. Reuse the reference JSON the integrator gives you; do not re-run it.
+- Launch runs with run_in_background and wait for the notification, or one Monitor until-loop per wait. Never `sleep N`, never `tail -f`. Work on docs while you wait. Stop every monitor before your report.
+- Check `uptime` first; --workers 1 if load > 8.
+Judging:
+- Judge only the --compare figure "on N rows scored in both", with and without T-HUN-4 and T-BRD-1, against the registered noise threshold (§4.5). A difference inside it is not a result: say "inside noise" and recommend a confirm.
+- Generate every number in your tables from the JSON with a script; never type one in.
+Sources:
+- grep docs/research.md and docs/staging/e-sources.md before fetching anything; the full text may already be cited.
+- NCBI BioC first (https://www.ncbi.nlm.nih.gov/research/bionlp/RESTful/pmcoa.cgi/BioC_json/PMC<id>/unicode), then efetch db=pmc, OpenAlex locations, Wayback `id_` URLs.
+- At most 2 routes or 10 minutes per source, then mark it "not verified" and move on. Never guess file names. A Europe PMC fullTextXML 500 means not open access: do not retry.
+- If a host shows a CAPTCHA, WAF or "verify you are human" page, stop using that host. Do not route around it.
+- NEVER send the user's email or any personal data to any external service. Never use Unpaywall.
+- Use your own scratch subdirectory (the session scratchpad is shared between agents and disappears with the session).
+Report: under 250 words, the fixed table, branch head. Details go in the prereg, not the report.
+(Integrator note on the block above: "the registered noise threshold (§4.5)" now means docs/staging/e-noise.md amendment 2, judged against the mean of replicated references.)
+
+HARD RULES: all sim randomness from world.rng; observe() and rulesChoice() stay pure; `const P = paramsOf(world)`; lazily added ChimpX keys go in OPTIONAL_X (src/sim/state.ts). New switches 0 by default (0 = today's behaviour), registered in TRACK_E_SWITCHES in both tests/sim-track-e.test.ts and scripts/lib/prescriptions.ts; params in data/params.json with evidence tags (insert as text, never a JSON round trip; every new id needs a row in docs/simulation.md §17), then `pnpm exec tsx scripts/gen-params.ts`. Goldens and the field pin must not move. Development seeds 48 and 7 only; never the reserved or retired seeds in AGENTS.md. No run longer than 90 days in total. Rules policy only, no paid model API (Jev). At most 3 attempts per issue, then stop and report. Never run a sim script to read its options; read its header with sed. Use /usr/bin/python3. If the integrator messages you to pause, commit your work in progress at once and reply.
+
+FINAL REPORT (under 250 words): branch head; sources verified vs not (inputs with values and tags; drinking targets with samples); the diagnosis in 2 lines; each arm in 2 lines; a table (R mean ± SD of its 4 runs vs each arm) of: drinking bouts per day, share of travel to water, males' and mothers' true day range, T-RNG-4, T-RNG-5, T-PTY-1, T-ACT-1..4, fitted and held-out (z, with and without T-HUN-4 and T-BRD-1), prescription count, viability; your verdict; the biggest open problem.

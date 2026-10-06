@@ -1,0 +1,53 @@
+You are starting stage E5a ("party cohesion from first principles") of Track E ("Emergence") of ChimpBench, a deterministic wild-chimpanzee simulation in which behaviour must emerge from physiology, perception, memory and social context. Field values of behaviour are targets to benchmark against, never inputs. Never tune a weight to hit a party size, a travel share or a day range: this stage exists to REMOVE weights that were tuned that way.
+
+READ FIRST, in full:
+1. /Users/juanbermudez/Desktop/MGOGO/.claude/worktrees/e5a-cohesion/docs/staging/track-e-handoff.md §1–§8 and §0.
+2. AGENTS.md; IMPLEMENTATION_PLAN.md section "Track E" (the rule, the noise threshold, the integrated confirm); docs/staging/e-noise.md.
+3. docs/staging/e4g-prereg.md (the care-follow defect and why party size falls when it is fixed), e4c-prereg.md (calls and parties), docs/staging/moving-together-prereg.md and party-size-prereg.md if present (the C-track stages that built and tuned party cohesion), e1j-prereg.md (day ranges), e-stack2-confirm.md, and the fission–fusion sections of docs/research.md (grep party, fission, fusion, ecological constraints, wrangham, chapman, mitani, T-PTY).
+
+WORKTREE: /Users/juanbermudez/Desktop/MGOGO/.claude/worktrees/e5a-cohesion (branch e5a-cohesion, from track-e 10c8ded; symlinks in place). Commit there in small steps. Never commit to main or track-e. Never touch other worktrees — not `bench-run` (the integrator's frozen checkout; you may READ its artifacts) and not the main checkout at /Users/juanbermudez/Desktop/MGOGO (other sessions' uncommitted work). Never kill processes you did not start. Never use bare `git stash`. Another agent works on nest departures (rhythm code); stay out of it. Your scratch directory: /private/tmp/claude-501/-Users-juanbermudez-Desktop-MGOGO/ad60f0c7-2554-45f8-b237-a926b537fae7/scratchpad/e5a
+
+THE PROBLEM:
+- In the field profile, party cohesion rests on weights tuned in stage C5a against T-PTY-1, T-ACT-2 and T-RNG-4: `partyFollowBase`, `partyFollowHungerW`, `partyFollowMaleW`, `partyFollowW`, `partyStayW` (registry notes say so), plus `joinHooW` fitted in C13e. They are prescriptions under the Track E rule (check how scripts/lib/prescriptions.ts classes them; if a tuned weight is not counted, that is a tool defect to fix and report).
+- E4g found a defect those weights compensate: adults follow a dependent that is only keeping up with its mother (candidates.ts, the party-follow offer; E4g's switch `followCarer` removes it). With the fix, party size falls (T-PTY-1 z −2.4 on R + callValue), because the tuned weights were fitted with the defect in place.
+
+STEP 0 — AUDIT (commit within 30 minutes): T-PTY-1's band (3–9, "Kanyawara (~45–50 members) scaled down; site-specific": open wilson2012 and potts2011; how was the band scaled to a 22-member community, and is the scaling sound?), the other party rows (grep T-PTY in data/targets.json: definitions, samples), and how the model's observer scores party size (party scans every 15 min, the ~50 m / 90 m chain rule). Stage any corrected band or scorer fix (never applied).
+
+STEP 1 — DIAGNOSIS (cheapest decisive check): on R + `followCarer` (the defect fixed) and on R (quick mode), simulation truth: why parties form and split (who follows whom and for what value term; joins after calls; splits at trips to food), party size against crop size of the current tree, and how much of cohesion each tuned weight carries (zero each in turn, attribution only, no keep).
+
+STEP 2 — MECHANISM behind a new switch (0 = today), from first principles: the classic account of fission–fusion is the ecological-constraints model (party size tracks the size and density of food patches through feeding competition; social benefits — bonds, oestrous females for males, safety in intergroup encounters — pull animals together). Build the value of following or staying with a party from terms the model already computes (the crown share an animal can expect with the feeders present, from the energy ledger's intake; the bond and kin terms; oestrous females for males; the energy cost of the walk from the ledger's cost of transport), switching the tuned weights out (ACTIVE_WHEN; the prescription count must fall). Every new input sourced or tagged design; no new tuned constant.
+
+BENCHMARK and JUDGING (docs/staging/e-noise.md amendment 2): reference = R + `followCarer` at your committed head (the defect fixed first, per the pre-flight rule), run once plus three re-draws (add "rgTemperature" 0.1641, 0.1639, 0.16405), quick mode; also report against the integrator's R quick realizations (bench-run/artifacts/validation/e/noise/R-quick.json, NR1q, NR2q, NR3q; check R's identity at your head first). Judge each arm against the reference mean: z = (arm − mean) ÷ (SD × √(1 + 1/n)); quick per-run SD fitted 0.69, held-out 1.26, held-out without T-HUN-4 and T-BRD-1 0.48 (or the reference's own spread if larger); |z| > 2 is a result. Report T-PTY rows, T-ACT-2, T-RNG-4, T-IGE-1 and true day ranges (scripts/ranging-diagnose.ts) with the reference's spread. Viability must pass.
+
+Then: at most 3 iterations, each logged in docs/staging/e5a-prereg.md and committed BEFORE its run; results in the prereg and a brief docs/simulation.md note; merge track-e once just before your final test run (`git merge --no-ff track-e`; conflicts per handoff §6); `pnpm exec tsx scripts/gen-params.ts --check`, `pnpm exec tsc --noEmit -p .`, `pnpm test` (0 fail); commit; `git ls-files data/raw node_modules` must print nothing.
+
+Pre-flight (before the first run):
+- Commit sources and the pre-registration within your first 15 minutes; commit WIP before every long run. An app restart can kill you at any time.
+- Open the source of every field row you will be scored on and write its sample (sex, reproductive state, mass, method) into the prereg.
+- List every readout your predictions need, define each from the source's Methods (quote the sentence), and smoke-test it on 1–2 days with your switch ON before any arm.
+- Fix known defects in the code under test before measuring; any you defer go in the prereg with file:line.
+- If a switch removes a named rule but the prescription count does not fall, the tool is wrong: run scripts/param-reads.ts on it.
+- Worktree: symlinks for node_modules, data/raw, artifacts/validation/c7a-field1y.json. Stage explicit paths, never `git add -A data`.
+- Title new research.md / e-sources.md addenda by stage name ("Addendum: E2e pre-dawn"), not by number; the integrator numbers them.
+Runs:
+- Run from a frozen checkout: `git worktree add --detach <scratch> <your committed head>`, or never edit src/, scripts/ or data/ while a run is queued. Check `git.dirty` in the e-bench JSON (a clean worktree shows 1: the data/raw symlink).
+- Cheapest decisive check first: a 2-day smoke test, then the diagnosis script (energy, rhythm), then e-bench.
+- One simulation per arm where possible. Reuse the reference JSON the integrator gives you; do not re-run it.
+- Launch runs with run_in_background and wait for the notification, or one Monitor until-loop per wait. Never `sleep N`, never `tail -f`. Work on docs while you wait. Stop every monitor before your report.
+- Check `uptime` first; --workers 1 if load > 8.
+Judging:
+- Judge only the --compare figure "on N rows scored in both", with and without T-HUN-4 and T-BRD-1, against the registered noise threshold (§4.5). A difference inside it is not a result: say "inside noise" and recommend a confirm.
+- Generate every number in your tables from the JSON with a script; never type one in.
+Sources:
+- grep docs/research.md and docs/staging/e-sources.md before fetching anything; the full text may already be cited.
+- NCBI BioC first (https://www.ncbi.nlm.nih.gov/research/bionlp/RESTful/pmcoa.cgi/BioC_json/PMC<id>/unicode), then efetch db=pmc, OpenAlex locations, Wayback `id_` URLs.
+- At most 2 routes or 10 minutes per source, then mark it "not verified" and move on. Never guess file names. A Europe PMC fullTextXML 500 means not open access: do not retry.
+- If a host shows a CAPTCHA, WAF or "verify you are human" page, stop using that host. Do not route around it.
+- NEVER send the user's email or any personal data to any external service. Never use Unpaywall.
+- Use your own scratch subdirectory (the session scratchpad is shared between agents and disappears with the session).
+Report: under 250 words, the fixed table, branch head. Details go in the prereg, not the report.
+(Integrator note on the block above: "the registered noise threshold (§4.5)" now means docs/staging/e-noise.md amendment 2, judged against the mean of replicated references.)
+
+HARD RULES: all sim randomness from world.rng; observe() and rulesChoice() stay pure; `const P = paramsOf(world)`; lazily added ChimpX keys go in OPTIONAL_X (src/sim/state.ts). New switches 0 by default (0 = today's behaviour), registered in TRACK_E_SWITCHES in both tests/sim-track-e.test.ts and scripts/lib/prescriptions.ts; params in data/params.json with evidence tags (insert as text, never a JSON round trip; every new id needs a row in docs/simulation.md §17), then `pnpm exec tsx scripts/gen-params.ts`. Goldens and the field pin must not move. Development seeds 48 and 7 only; never the reserved or retired seeds in AGENTS.md. No run longer than 90 days in total. Rules policy only, no paid model API (Jev). At most 3 attempts per issue, then stop and report. Never run a sim script to read its options; read its header with sed. Use /usr/bin/python3. If the integrator messages you to pause, commit your work in progress at once and reply.
+
+FINAL REPORT (under 250 words): branch head; the audit in 3 lines (T-PTY-1's sample and scaling; the observer; any staged change); the diagnosis in 2 lines (what holds parties together today, by tuned weight); each arm in 2 lines; a table (reference mean ± SD of its 4 runs vs each arm) of: T-PTY-1, the other T-PTY rows, T-ACT-2, T-RNG-4, T-IGE-1, males' and females' true day range, fitted and held-out (z, with and without T-HUN-4 and T-BRD-1), prescription count, viability; your verdict; the biggest open problem.

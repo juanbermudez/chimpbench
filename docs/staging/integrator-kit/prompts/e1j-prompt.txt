@@ -1,0 +1,53 @@
+You are starting stage E1j ("mothers' ranging") of Track E ("Emergence") of ChimpBench, a deterministic wild-chimpanzee simulation in which behaviour must emerge from physiology, perception, memory and social context. Field values of behaviour are targets to benchmark against, never inputs. Never tune a weight or input to hit a day-range ratio.
+
+READ FIRST, in full:
+1. /Users/juanbermudez/Desktop/MGOGO/.claude/worktrees/e1j-ranging/docs/staging/track-e-handoff.md §1–§8 and §0.
+2. AGENTS.md; IMPLEMENTATION_PLAN.md section "Track E" (and its "Noise threshold" paragraph); docs/staging/e-noise.md.
+3. docs/staging/e1i-prereg.md (nursing mothers' intake; its readouts and the finding that mothers range further when they eat more), e1h-prereg.md §9, e4f-prereg.md (an example: most of an apparent behavioural excess was the observer's scoring), and the ranging rows and sources in data/targets.json and docs/research.md (grep batesByrne2009, T-RNG-4, T-RNG-5, day range, lactating).
+
+WORKTREE: /Users/juanbermudez/Desktop/MGOGO/.claude/worktrees/e1j-ranging (branch e1j-ranging, from track-e b0cb6e5; symlinks in place). Commit there in small steps. Never commit to main or track-e. Never touch other worktrees — not `bench-run` or `bench-run-2` (the integrator's frozen checkouts; you may READ their artifacts) and not the main checkout at /Users/juanbermudez/Desktop/MGOGO (other sessions' uncommitted work). Never kill processes you did not start. Never use bare `git stash`. Your scratch directory: /private/tmp/claude-501/-Users-juanbermudez-Desktop-MGOGO/ad60f0c7-2554-45f8-b237-a926b537fae7/scratchpad/e1j
+
+THE PROBLEM:
+- T-RNG-5 (held-out): lactating female day range ÷ adult male day range, band 0.3–0.6, one site (batesByrne2009, Budongo Sonso 2002–2003: lactating 1.2 ± 0.8 km, receptive 2.2 ± 0.8, males 2.7 ± 1.5; 15 adults; GPS fixes every 5 min while travelling on full-day follows).
+- Model (5-seed confirms; single runs unless stated): all switches off (B) 0.61; the reference stack R 0.76 (four realizations: R's T-RNG-5 distance 0.59 on average against B's 0.10); R + corrected food energy (T) 0.70; T with E1i's pair (mothers fed) 0.84 in quick mode. It is the largest held-out row by which the stack R is worse than today's model (+0.49 of +0.79 without the rare-event rows).
+
+STEP 0 — AUDIT THE TARGET AND THE OBSERVER (commit within 30 minutes): open batesByrne2009 (full text is cited in research.md as the authors' accepted manuscript): sample by class (how many lactating females, males, follow-days), how a day range was computed (fixes while travelling, full-day follows), and whether other sites (Kanyawara, Ngogo, Taï, Gombe) report lactating vs male day ranges. Then read how the model's observer scores T-RNG-4 and T-RNG-5 (src/field, the metric's protocol): who is followed, how a follow-day is chosen, how "travelling" and the 5-min fixes are defined, whether mothers and males are sampled alike. If the observer differs from the field method in a way that inflates the ratio (as E4f found for colobus encounters), say so with numbers and stage a scorer fix (docs/staging/*.patch.json), never applied by you.
+
+STEP 1 — DIAGNOSIS (cheapest decisive check): on R, quick mode (seeds 48, 7; 30 + 30 days), simulation truth: mothers' and males' daily path length and its parts (own trips to food, following a party, joining, patrol, other), party membership and party composition of mothers (with males or not), trips per day and trip length, the carrying charge for the infant (does the energy ledger charge it, and does any decision see it?), and stops for nursing. Compare with other adult females. Name what makes mothers range as far as they do.
+
+STEP 2 — MECHANISM behind a new switch (0 = today), from first principles, only for the term the diagnosis implicates. Candidates, none assumed: a trip valued by its net energy, with the cost of walking (and climbing) a metre carrying an infant (the ledger's cost of transport, sockol2007, applied to body plus infant mass) set against the food it delivers; mothers' choice of company (risk from males, if a source supports it); the infant's pace or demands. Every input sourced or tagged design.
+
+BENCHMARK and JUDGING (docs/staging/e-noise.md amendment 2): reference = R at your committed head. The integrator's R quick realizations (bench-run/artifacts/validation/e/noise/R-quick.json, NR1q, NR2q, NR3q) are valid only if your head leaves R unchanged: check with a quick identity run (R quick at your head vs R-quick.json: every row equal) before reusing them. Judge each arm against the reference mean, z = (arm − mean) ÷ (SD × √(1 + 1/n)); quick per-run SD fitted 0.69, held-out 1.26, held-out without T-HUN-4 and T-BRD-1 0.48 (or the reference's own spread if larger); |z| > 2 is a result. Report T-RNG-4 and T-RNG-5 with R's spread over its four runs. If the integrator messages you that E1i's pair is confirmed, also run your best arm on R + ledgerFoodEnergyFix + ledgerSatiationReserve + ledgerLactGut. Viability must pass (energy-diagnose: no starvation, no class falling faster than 0.05% of its store a day beyond R's).
+
+Then: at most 3 iterations, each logged in docs/staging/e1j-prereg.md and committed BEFORE its run; results in the prereg and a brief docs/simulation.md note; merge track-e once just before your final test run (`git merge --no-ff track-e`; conflicts per handoff §6); `pnpm exec tsx scripts/gen-params.ts --check`, `pnpm exec tsc --noEmit -p .`, `pnpm test` (0 fail); commit; `git ls-files data/raw node_modules` must print nothing.
+
+Pre-flight (before the first run):
+- Commit sources and the pre-registration within your first 15 minutes; commit WIP before every long run. An app restart can kill you at any time.
+- Open the source of every field row you will be scored on and write its sample (sex, reproductive state, mass, method) into the prereg.
+- List every readout your predictions need, define each from the source's Methods (quote the sentence), and smoke-test it on 1–2 days with your switch ON before any arm.
+- Fix known defects in the code under test before measuring; any you defer go in the prereg with file:line.
+- If a switch removes a named rule but the prescription count does not fall, the tool is wrong: run scripts/param-reads.ts on it.
+- Worktree: symlinks for node_modules, data/raw, artifacts/validation/c7a-field1y.json. Stage explicit paths, never `git add -A data`.
+- Title new research.md / e-sources.md addenda by stage name ("Addendum: E2e pre-dawn"), not by number; the integrator numbers them.
+Runs:
+- Run from a frozen checkout: `git worktree add --detach <scratch> <your committed head>`, or never edit src/, scripts/ or data/ while a run is queued. Check `git.dirty` in the e-bench JSON (a clean worktree shows 1: the data/raw symlink).
+- Cheapest decisive check first: a 2-day smoke test, then the diagnosis script (energy, rhythm), then e-bench.
+- One simulation per arm where possible. Reuse the reference JSON the integrator gives you; do not re-run it.
+- Launch runs with run_in_background and wait for the notification, or one Monitor until-loop per wait. Never `sleep N`, never `tail -f`. Work on docs while you wait. Stop every monitor before your report.
+- Check `uptime` first; --workers 1 if load > 8.
+Judging:
+- Judge only the --compare figure "on N rows scored in both", with and without T-HUN-4 and T-BRD-1, against the registered noise threshold (§4.5). A difference inside it is not a result: say "inside noise" and recommend a confirm.
+- Generate every number in your tables from the JSON with a script; never type one in.
+Sources:
+- grep docs/research.md and docs/staging/e-sources.md before fetching anything; the full text may already be cited.
+- NCBI BioC first (https://www.ncbi.nlm.nih.gov/research/bionlp/RESTful/pmcoa.cgi/BioC_json/PMC<id>/unicode), then efetch db=pmc, OpenAlex locations, Wayback `id_` URLs.
+- At most 2 routes or 10 minutes per source, then mark it "not verified" and move on. Never guess file names. A Europe PMC fullTextXML 500 means not open access: do not retry.
+- If a host shows a CAPTCHA, WAF or "verify you are human" page, stop using that host. Do not route around it.
+- NEVER send the user's email or any personal data to any external service. Never use Unpaywall.
+- Use your own scratch subdirectory (the session scratchpad is shared between agents and disappears with the session).
+Report: under 250 words, the fixed table, branch head. Details go in the prereg, not the report.
+(Integrator note on the block above: "the registered noise threshold (§4.5)" now means docs/staging/e-noise.md amendment 2, judged against the mean of replicated references.)
+
+HARD RULES: all sim randomness from world.rng; observe() and rulesChoice() stay pure; `const P = paramsOf(world)`; lazily added ChimpX keys go in OPTIONAL_X (src/sim/state.ts). New switches 0 by default (0 = today's behaviour), registered in TRACK_E_SWITCHES in both tests/sim-track-e.test.ts and scripts/lib/prescriptions.ts; params in data/params.json with evidence tags (insert as text, never a JSON round trip; every new id needs a row in docs/simulation.md §17), then `pnpm exec tsx scripts/gen-params.ts`. Goldens and the field pin must not move. Development seeds 48 and 7 only; never the reserved or retired seeds in AGENTS.md. No run longer than 90 days in total. Rules policy only, no paid model API (Jev). At most 3 attempts per issue, then stop and report. Never run a sim script to read its options; read its header with sed. Use /usr/bin/python3. If the integrator messages you to pause, commit your work in progress at once and reply.
+
+FINAL REPORT (under 250 words): branch head; the audit in 3 lines (the field sample and method; the observer's method; any scorer artefact, with a staged fix); the diagnosis in 2 lines; each arm in 2 lines; a table (R mean ± SD of its realizations vs each arm) of: mothers' and males' day range (observer and truth), T-RNG-4, T-RNG-5, mothers' share of time in parties with adult males, trips per day, fitted and held-out (z, with and without T-HUN-4 and T-BRD-1), prescription count, viability; your verdict; the biggest open problem.

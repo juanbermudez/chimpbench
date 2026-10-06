@@ -1,0 +1,53 @@
+You are starting stage E2h ("departure timing: audit first") of Track E ("Emergence") of ChimpBench, a deterministic wild-chimpanzee simulation in which behaviour must emerge from physiology, perception, memory and social context. Field values of behaviour are targets to benchmark against, never inputs. Never tune a weight to hit a departure time or a share of departures before sunrise.
+
+READ FIRST, in full:
+1. /Users/juanbermudez/Desktop/MGOGO/.claude/worktrees/e2h-departure/docs/staging/track-e-handoff.md §1–§8 and §0.
+2. AGENTS.md; IMPLEMENTATION_PLAN.md section "Track E" (Stage E2 and the "Integrated confirm" paragraph); docs/staging/e-noise.md.
+3. The rhythm pre-registrations e2a … e2f (docs/staging/e2a-prereg.md to e2f-prereg.md: what each tried and why each failed to hold awake animals until about sunrise), docs/staging/e-stack2-confirm.md (the integrated stack: the finding below), e1j-prereg.md (an example of a stage that found the target, not the model, was the problem), and the departure sources in docs/research.md (janmaat2014, batesByrne2009, videan2005, and every other nest-departure source cited).
+
+WORKTREE: /Users/juanbermudez/Desktop/MGOGO/.claude/worktrees/e2h-departure (branch e2h-departure, from track-e 702027e; symlinks in place). Commit there in small steps. Never commit to main or track-e. Never touch other worktrees — not `bench-run` or `bench-run-2` (the integrator's frozen checkouts; you may READ their artifacts) and not the main checkout at /Users/juanbermudez/Desktop/MGOGO (other sessions' uncommitted work). Never kill processes you did not start. Never use bare `git stash`. Another agent works on calls and travel (calls.ts, joining); stay out of those files. Your scratch directory: /private/tmp/claude-501/-Users-juanbermudez-Desktop-MGOGO/ad60f0c7-2554-45f8-b237-a926b537fae7/scratchpad/e2h
+
+THE PROBLEM:
+- On the integrated candidate stack (S3, e-stack2-confirm.md) the largest held-out cost is T-FOOD-10 ("breakfast planning": share of nest departures before sunrise in fruit-scarce months; band 0.08–0.30; one site): today's model (B) 0.017 and the reference stack (R) 0 (too late), while the rhythm package (E2b–E2f: `rhythmCircadian`, `departRace`, `nestLightDecide`, `sleepChimp`, `rhythmFreeNight`, `nestCompany`, `nestAudience`, `darkCost`) gives 0.69–0.76 (too early) and costs 1.75–2.11 of distance. The staged T-RHY-3 (share of adult-female departures before sunrise, 0.05–0.35) fails the same way (simulation truth 0.67–0.99 before sunrise on rhythm stacks).
+- Seven stages (E2a–E2g) have not found a physiological holder of an awake animal in its nest until about sunrise; captive chimpanzees under natural light rise 45–60 min before sunrise (videan2005).
+
+STEP 0 — AUDIT THE TARGETS AND THE OBSERVER (commit within 30 minutes): (a) janmaat2014 (read in full before; research.md has it): sample (5 females, 179 or 275 days? resolve which), season (fruit-scarce periods only), how "departure" and "sunrise" were defined (astronomical sunrise? light under the canopy?), and the distribution of departure times, not only the share before sunrise; (b) every other site's nest-departure times (Budongo batesByrne2009 by class; Kibale sites; Gombe; Fongoli; Bossou), each with sample, method and definition; (c) how the model's observer scores T-FOOD-10 (fruit-scarce months? the departure tick? sunrise as astronomical?) and how rhythm-metrics measures departures; whether the observer and the field define "before sunrise" alike. If the band is too narrow for the evidence, or the observer differs from the field method, stage a corrected band or scorer fix (docs/staging/*.patch.json), never applied by you.
+
+STEP 1 — DIAGNOSIS: on the rhythm stack R0 (and on S3 if useful), quick mode: the distribution of departure times relative to sunrise by class and by breakfast distance and type (figs vs other fruit), light at departure, what each animal does in its first 30 min after waking, and what option wins at departure; compare with the field distributions from STEP 0.
+
+STEP 2 — ONLY IF the audit leaves a genuine behavioural miss: a mechanism behind a new switch (0 = today) from first principles (for example the risk or cost of climbing down and travelling in the dark from a nest 10–20 m up; anything the diagnosis points to), every input sourced or tagged design. Ending with the audit and a staged target change, without a mechanism, is a valid result.
+
+BENCHMARK and JUDGING (docs/staging/e-noise.md amendment 2): reference = R0 (rhythmSleep, rhythmHeat, departRace, nestLightDecide, rhythmCircadian) or S3 at your committed head, run once plus three re-draws (add "rgTemperature" 0.1641, 0.1639, 0.16405), quick mode. Judge each arm against the reference mean: z = (arm − mean) ÷ (SD × √(1 + 1/n)); quick per-run SD fitted 0.69, held-out 1.26, held-out without T-HUN-4 and T-BRD-1 0.48 (or the reference's own spread if larger); |z| > 2 is a result. Night safety must hold (adults out of a nest ≤ 3.3% of the night, T-RHY-5 ≤ 0.033, no night deaths, juveniles included).
+
+Then: at most 3 iterations, each logged in docs/staging/e2h-prereg.md and committed BEFORE its run; results in the prereg and a brief docs/simulation.md note; merge track-e once just before your final test run (`git merge --no-ff track-e`; conflicts per handoff §6); `pnpm exec tsx scripts/gen-params.ts --check`, `pnpm exec tsc --noEmit -p .`, `pnpm test` (0 fail); commit; `git ls-files data/raw node_modules` must print nothing.
+
+Pre-flight (before the first run):
+- Commit sources and the pre-registration within your first 15 minutes; commit WIP before every long run. An app restart can kill you at any time.
+- Open the source of every field row you will be scored on and write its sample (sex, reproductive state, mass, method) into the prereg.
+- List every readout your predictions need, define each from the source's Methods (quote the sentence), and smoke-test it on 1–2 days with your switch ON before any arm.
+- Fix known defects in the code under test before measuring; any you defer go in the prereg with file:line.
+- If a switch removes a named rule but the prescription count does not fall, the tool is wrong: run scripts/param-reads.ts on it.
+- Worktree: symlinks for node_modules, data/raw, artifacts/validation/c7a-field1y.json. Stage explicit paths, never `git add -A data`.
+- Title new research.md / e-sources.md addenda by stage name ("Addendum: E2e pre-dawn"), not by number; the integrator numbers them.
+Runs:
+- Run from a frozen checkout: `git worktree add --detach <scratch> <your committed head>`, or never edit src/, scripts/ or data/ while a run is queued. Check `git.dirty` in the e-bench JSON (a clean worktree shows 1: the data/raw symlink).
+- Cheapest decisive check first: a 2-day smoke test, then the diagnosis script (energy, rhythm), then e-bench.
+- One simulation per arm where possible. Reuse the reference JSON the integrator gives you; do not re-run it.
+- Launch runs with run_in_background and wait for the notification, or one Monitor until-loop per wait. Never `sleep N`, never `tail -f`. Work on docs while you wait. Stop every monitor before your report.
+- Check `uptime` first; --workers 1 if load > 8.
+Judging:
+- Judge only the --compare figure "on N rows scored in both", with and without T-HUN-4 and T-BRD-1, against the registered noise threshold (§4.5). A difference inside it is not a result: say "inside noise" and recommend a confirm.
+- Generate every number in your tables from the JSON with a script; never type one in.
+Sources:
+- grep docs/research.md and docs/staging/e-sources.md before fetching anything; the full text may already be cited.
+- NCBI BioC first (https://www.ncbi.nlm.nih.gov/research/bionlp/RESTful/pmcoa.cgi/BioC_json/PMC<id>/unicode), then efetch db=pmc, OpenAlex locations, Wayback `id_` URLs.
+- At most 2 routes or 10 minutes per source, then mark it "not verified" and move on. Never guess file names. A Europe PMC fullTextXML 500 means not open access: do not retry.
+- If a host shows a CAPTCHA, WAF or "verify you are human" page, stop using that host. Do not route around it.
+- NEVER send the user's email or any personal data to any external service. Never use Unpaywall.
+- Use your own scratch subdirectory (the session scratchpad is shared between agents and disappears with the session).
+Report: under 250 words, the fixed table, branch head. Details go in the prereg, not the report.
+(Integrator note on the block above: "the registered noise threshold (§4.5)" now means docs/staging/e-noise.md amendment 2, judged against the mean of replicated references.)
+
+HARD RULES: all sim randomness from world.rng; observe() and rulesChoice() stay pure; `const P = paramsOf(world)`; lazily added ChimpX keys go in OPTIONAL_X (src/sim/state.ts). New switches 0 by default (0 = today's behaviour), registered in TRACK_E_SWITCHES in both tests/sim-track-e.test.ts and scripts/lib/prescriptions.ts; params in data/params.json with evidence tags (insert as text, never a JSON round trip; every new id needs a row in docs/simulation.md §17), then `pnpm exec tsx scripts/gen-params.ts`. Goldens and the field pin must not move. Development seeds 48 and 7 only; never the reserved or retired seeds in AGENTS.md. No run longer than 90 days in total. Rules policy only, no paid model API (Jev). At most 3 attempts per issue, then stop and report. Never run a sim script to read its options; read its header with sed. Use /usr/bin/python3. If the integrator messages you to pause, commit your work in progress at once and reply.
+
+FINAL REPORT (under 250 words): branch head; the audit in 4 lines (each site's departure data with sample and definition; the observer's method; any staged band or scorer fix); the diagnosis in 2 lines; any arm in 2 lines; a table (reference mean ± SD of its 4 runs vs each arm, or vs the audit's corrected scoring) of: departure median vs sunrise by class, share before sunrise (observer and truth), T-FOOD-10, night out-of-nest share, fitted and held-out (z, with and without T-HUN-4 and T-BRD-1), prescription count, viability; your verdict; the biggest open problem.
