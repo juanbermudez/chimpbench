@@ -367,3 +367,11 @@ saved epoch is 3 (lowest dev loss). These are dev numbers; the held-out test is 
 
 - **Iteration 4 (logged before it runs): score every evaluation packet** (`scripts/r4-eval.sh sim base`, then `sim
   r4-rules-state`), one model process at a time; then `scripts/r4-report.ts`.
+  Scoring took 3,690 s for the untuned model's 6,141 packets and 2,680 s for the adapter's 4,641 (0.58 to 0.60 s per
+  packet in batches of 8, fp16 on MPS, the machine shared). **A defect found while joining the scores, fixed before any
+  result was read:** the sampler's record id (seed, base, tick, animal) is shared by two decision points when an animal
+  decides twice in one tick (21 of the 1,500 test rows, 81 of the 3,200 training rows). Training is not affected (the id
+  only seeds the option shuffle). For the evaluation the second of such a pair now gets a suffix and the scores are
+  joined by position with a check of id and option count; the packets scored are byte for byte the same.
+- **Iteration 5 (logged before it runs, 16:45): train `r4-field-groom`** on `field/train.jsonl` (740 records × 4 epochs),
+  validation `field/val.jsonl`, the settings of §4; swap 3,978 MB used of 5,120 MB, load 2.1, no other model process.
