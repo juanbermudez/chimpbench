@@ -212,3 +212,9 @@ Neither change touches the world: the no-model arms are run again at the new hea
 
 - **Iteration 1b (logged before it runs): the no-model arms of iteration 1 again at the new head**, to confirm the
   hashes and to get the split counts and the name of the refused body field.
+  Result (18:36, head 875f370): every arm ended on the hash it had before the change (`rules` 10d4ef4232f7486d,
+  `null` f8e6f47a3103781b, `argmax` 10fcc0bfa1a876ec, `null-nopick` 24a28bf7ca67168e, `null-gate` 78e443c347239686,
+  `argmax-gate` e5fccf2997ba48e8, the three re-draws likewise), and the replay of each of the five kernel arms ended
+  on its run's hash. The refused body field is `awakeH` (hours awake): under random choice with the pick removed the
+  lactating female stayed awake 60 to 80 hours, past the range the request validation accepts, so her requests went
+  to the rules.
