@@ -101,6 +101,12 @@ export interface ChimpX {
    */
   wr?: number;
   /**
+   * Stage E1w (weanOutcome; docs/staging/e1w-prereg.md §2.1): the simulation time (h) at which this animal last drank
+   * milk. Present only once the switch has seen it unweaned with its mother alive (opened at the first slow step,
+   * life.ts; set where milk is drunk, execution.ts); kept after weaning, so a readout can give the age at the last milk.
+   */
+  lm?: number;
+  /**
    * Stage E5d (socialUpkeep; src/sim/upkeep.ts): the bond units per eco-day that this animal's bonds toward living members
    * of its community lost at the last daily relaxation (life.ts dailyLife), which sets its social need's rise for the day.
    * Absent until the switch is on (computed from the bonds present at its first tick, then at every daily step).
@@ -309,7 +315,7 @@ export type SimWorld = World & { sim: SimState };
  * ChimpX and SimState keys that exist only once their mechanism has fired (so worlds with the switch off keep their
  * shape and hashes). The save check (src/persist/envelope.ts worldShapeProblem) ignores them.
  */
-export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'tryNest', 'dfa', 'en', 'wat', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk', 'cx', 'cxc', 'cn', 'asl', 'phAt', 'phX', 'phZ', 'ard', 'wr', 'upk', 'jt', 'nbm', 'jv', 'ty', 'tt', 'cd', 'cdAt', 'ls', 'cg', 'bd'];
+export const OPTIONAL_X: readonly string[] = ['hooFrom', 'hooAt', 'rgIntent', 'tryN', 'trySince', 'tryAt', 'tryNest', 'dfa', 'en', 'wat', 'slp', 'heat', 'hpx', 'hpy', 'hpz', 'arousal', 'affil', 'aggKick', 'heardFrom', 'fast', 'fastAt', 'treeFeed', 'nwk', 'cx', 'cxc', 'cn', 'asl', 'phAt', 'phX', 'phZ', 'ard', 'wr', 'lm', 'upk', 'jt', 'nbm', 'jv', 'ty', 'tt', 'cd', 'cdAt', 'ls', 'cg', 'bd'];
 export const OPTIONAL_SIM: readonly string[] = ['fission', 'stormAt', 'bodies'];
 
 export function newX(): ChimpX {

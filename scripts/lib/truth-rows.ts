@@ -207,7 +207,8 @@ export function truthStep(st: TruthState, w: World, milk?: Map<number, number>):
     }
     // T-INF-3: weaned in the window
     const was = st.weaned.get(c.id);
-    if (was === false && x.weaned) st.weanAges.push(c.age);
+    // stage E1w (weanOutcome): the animal is weaned weanDryDays after its last milk; the row's age is the end of suckling
+    if (was === false && x.weaned) st.weanAges.push(x.lm !== undefined ? c.age - (w.time - x.lm) / 8766 * Math.max(0, w.ageRate) : c.age);
     st.weaned.set(c.id, x.weaned);
     // T-INF-1: own food swallowed this tick (the ledger's intake less milk, as energy-diagnose's daytime eating), by 0.5-y block
     const unw = unweanedWithMother(w, c);

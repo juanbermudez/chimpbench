@@ -58,6 +58,7 @@ const TRACK_E_SWITCHES = [
   'callTrip', // E3i
   'gutValue', // E1s
   'deadBody', 'deadCarry', 'deadRespond', // ED
+  'weanOutcome', // E1w
 ] as const;
 
 test('Track E switches are all 0 by default in both profiles', () => {

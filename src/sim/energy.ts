@@ -69,6 +69,11 @@ import { eatWater, milkWaterOut, waterOn } from './water';
 const J_PER_KCAL = 4184, G_MPS2 = 9.81, DAYS_PER_YEAR = 365.25;
 
 export const ledgerOn = (P: Params) => P.energyLedger === 1;
+/**
+ * Stage E1w (weanOutcome; docs/staging/e1w-prereg.md §2.1): the end of milk is an outcome, not a date. Read only with
+ * the mother's decision in her deficit's currency (weanDeficit on weanDecide, which need the ledger and its drive).
+ */
+export const weanOutcomeOn = (P: Params) => P.weanOutcome === 1 && P.weanDeficit === 1 && P.weanDecide === 1 && P.energyLedger === 1 && P.ledgerDrive === 1;
 
 // Per-tick rates derived from the registry, rebuilt only when the world's parameter object changes (like needRates).
 interface Rates {
