@@ -172,3 +172,17 @@ model process of this agent running.
   and `argmax-gate`; outputs under `artifacts/r5/smoke/` (not a result; never read by the report of the pilot).
   Checked: the runner refuses a dirty tree, receipts are written, the replays' hashes equal the runs', the report
   script reads the outputs.
+  Result (18:31, head 889d421): the runner refused the dirty tree before the commit and ran after it; six arms of one
+  day in 11 s in all (a world-day on the rules takes about a second; 514 to 703 kernel passes a day for the five
+  animals with the gate off, 273 with it on); both replays ended on the run's hash (`null` 907ba13e54ac5377,
+  `argmax-gate` 5edc71db6c87dbe0); the report script printed every table. Two defects were found by the test before
+  this run and fixed in the first code commit (the end hash of a part-day run, and kernel errors missing from the call
+  count). No number of the smoke check is used.
+
+**Amendment A1 (before any arm of the pilot runs).** §1 says the season is named "before any arm runs". The runner
+writes the season readout with each arm's output, from the burned-in world's range, so it is read from the `rules`
+arm's file, before any kernel arm (model or not) is run. The rule for the words is unchanged.
+
+- **Iteration 1 (logged before it runs): seed 48, the 30-day burn-in, then `rules` alone; the season is read and
+  written here; then the no-model arms** `rules-r1`, `rules-r2`, `rules-r3`, `null`, `argmax`, `null-nopick`,
+  `null-gate`, `argmax-gate`, and the replay of `null`. Outputs `artifacts/r5/pilot/s48/`.
