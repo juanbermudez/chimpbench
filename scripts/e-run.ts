@@ -8,7 +8,7 @@
 // gzips finished per-seed outputs once the merged result no longer needs them, and never asks a tool for per-tick traces.
 //
 //   pnpm exec tsx scripts/e-run.ts plan --label S39-m6 --m6 --params-file p.json [--seeds 48,7,21,5,11] [--days N --burn-in N]
-//        [--out artifacts/validation/e/runs/<label>] [--compare ref.json] [--energy] [--rhythm] [--job-max-min 100]
+//        [--out artifacts/validation/e/runs/<label>] [--compare ref.json] [--energy] [--rhythm] [--job-max-min 100] [--animal-days]
 //        [--path auto|single|fallback] [--from <out of a shorter single-pass run>/run.json] [--segment-days N] [--targets data/targets.c8.json]
 //   pnpm exec tsx scripts/e-run.ts run <out>/run.json [--budget-min 110] [--parallel auto|N] [--retry-failed] [--attached]
 //   pnpm exec tsx scripts/e-run.ts status <out>/run.json
@@ -140,6 +140,8 @@ export interface PlanOpts {
   path: 'single-pass' | 'fallback'; energy: boolean; rhythm: boolean; compare: string | null; jobMaxMin: number; rates: Record<string, number>;
   /** e-bench --targets for the scoring (passed to every e-bench job and to the merge); undefined = e-bench's default. */
   targets?: string;
+  /** Single pass only: every seed job keeps e-bench's per-animal rows (--animal-days; measurement only, a setting every segment of a seed shares). */
+  animalDays?: boolean;
   /** Fallback in a checkout whose e-bench has the single pass: its jobs run e-bench's two-step path (--legacy). */
   legacy?: boolean;
   /** Longest run rhythm-metrics accepts (90 before the single pass, MAX_TOTAL_DAYS after). */
@@ -166,7 +168,7 @@ export function planJobs(o: PlanOpts): Job[] {
   const seedJobs: string[] = [];
   if (o.path === 'single-pass') {
     for (const seed of o.seeds) {
-      const base = ['scripts/e-bench.ts', ...modeArgs, '--seeds', String(seed), '--part', '--workers', '1', '--params', pj, '--out', abs(prefix(seed))];
+      const base = ['scripts/e-bench.ts', ...modeArgs, '--seeds', String(seed), '--part', '--workers', '1', ...(o.animalDays ? ['--animal-days'] : []), '--params', pj, '--out', abs(prefix(seed))];
       const from = o.from?.[seed];
       const start = from ? from.day : 0, left = total - start;
       const stops = (o.segmentDays ? Array.from({ length: Math.ceil(left / o.segmentDays) - 1 }, (_, i) => (i + 1) * o.segmentDays!) : segmentDays(left, o.rates.seed ?? RATE_PRIORS.seed, o.jobMaxMin)).map(d => d + start);
@@ -443,7 +445,7 @@ async function plan(a: Args): Promise<void> {
   if (targets && !existsSync(resolve(ROOT, targets))) throw new Error(`--targets ${targets}: no such file in ${ROOT}`);
   const segDays = a.has('segment-days') ? +a.flag('segment-days') : undefined;
   if (segDays !== undefined && (path !== 'single-pass' || !(segDays >= 1) || !Number.isInteger(segDays))) throw new Error('--segment-days N (a whole number of days) needs the single-pass path');
-  const opts: PlanOpts = { label, out, root: ROOT, modeFlag, mode: modeFlag, days, burnInDays, seeds, params, path, energy: a.has('energy'), rhythm: a.has('rhythm'), compare, jobMaxMin, rates: {}, from, segmentDays: segDays, targets, legacy: path === 'fallback' && contract, rhythmMaxDays: contract ? EB.MAX_TOTAL_DAYS : 90 };
+  const opts: PlanOpts = { label, out, root: ROOT, modeFlag, mode: modeFlag, days, burnInDays, seeds, params, path, energy: a.has('energy'), rhythm: a.has('rhythm'), animalDays: a.has('animal-days'), compare, jobMaxMin, rates: {}, from, segmentDays: segDays, targets, legacy: path === 'fallback' && contract, rhythmMaxDays: contract ? EB.MAX_TOTAL_DAYS : 90 };
   const jobs = planJobs(opts);
   for (const j of jobs) if (j.estimateMin > jobMaxMin) throw new Error(`job ${j.id} is estimated at ${j.estimateMin} min, over the job limit of ${jobMaxMin} min, and cannot be split on the ${path} path`);
   for (const j of jobs) if (j.argv.some(x => /trace/i.test(x) && x.startsWith('--'))) throw new Error(`job ${j.id} asks for a trace: per-tick traces are never written`);

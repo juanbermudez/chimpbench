@@ -24482,6 +24482,57 @@
    "notes": "Stage E1o switch, arm B (docs/staging/e1o-prereg.md §2.1), read only with weanDecide, energyLedger and ledgerDrive 1: the mother's decision in her own deficit's currency, day and night. She lets a suckling bout start and go on while her infant's relative reserve deficit (max(0, -reserves / usable store)) is at least hers; ties allow (equal weights from equal relatedness, trivers1974; her cost tied to her energy state, emeryThompson2012; design). While she sleeps her last decision stands: a refusal still pending (the infant's wr equals her decision count) stops night suckling until she starts a new act; awake in her nest she decides by the same comparison. Replaces weanDecide's comparison (ownDrive against her hunger) and its free night suckling while she sleeps. No new number; removes no further rule. 0 = today, bit-identical."
   },
   {
+   "id": "weanDryDays",
+   "group": "reproduction",
+   "value": 90,
+   "units": "days",
+   "range": [
+    30,
+    180
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    1,
+    3650
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/research.md E.14.4: lonsdorf2020 (weaned age from gaps under 90 days), E.12: bray2018 (no suckling in the subsequent 90 days); docs/staging/e1w-prereg.md §2.2"
+   ],
+   "clock": "eco",
+   "symbol": "P.weanDryDays",
+   "file": "src/sim/life.ts",
+   "notes": "Stage E1w (weanOutcome; docs/staging/e1w-prereg.md §2), read only with weanOutcome, weanDeficit, weanDecide, energyLedger and ledgerDrive 1: an offspring whose mother is alive is weaned once it has drunk no milk for this many days of ecological time (ChimpX.lm, the time of its last milk). Design assumption, never fitted: no source measures when a chimpanzee's lactation is over; 90 days is the field's own convention for calling an animal weaned (lonsdorf2020: weaned age from gaps under 90 days; bray2018: no suckling in the subsequent 90 days), so the model's weaned age is counted the way T-INF-3's is. A timer: the prescription ledger counts it while the switch is on. Range 30-180 days (assumed)."
+  },
+  {
+   "id": "weanOutcome",
+   "group": "reproduction",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/research.md E.14.3-E.14.4: lonsdorf2020, bray2018, kent1999, daly1993, wilde1995; docs/staging/e1w-prereg.md §1.4, §2"
+   ],
+   "clock": "none",
+   "symbol": "P.weanOutcome",
+   "file": "src/sim/life.ts",
+   "integer": true,
+   "notes": "Stage E1w switch (docs/staging/e1w-prereg.md §2), read only with weanDeficit, weanDecide, energyLedger and ledgerDrive 1: the end of milk is an outcome, not a date. With 1 an offspring whose mother is alive is no longer weaned when its age passes the weaning age drawn at its creation (weanAgeMinY, weanAgeSpanY; life.ts slowLife): it stays its mother's dependent, with the nurse option on its menu at any age (the weanAge + 0.3 y bounds of candidates.ts and execution.ts are not applied) and the mother deciding each bout in her deficit's currency (weanDeficit), and is weaned once it has drunk no milk for weanDryDays days. The age limit of dependence (no caretaker from 6 y, candidates.ts dependentOn) is unchanged and becomes the last stop. An animal whose mother is dead keeps the stored age, and founders' opening state still reads it. The field's end of suckling ranges from 2.82 to 8.01 y and follows the pair's state (lonsdorf2020); production follows removal (kent1999, daly1993, wilde1995). It does not change the gut, the intake rate or any cost: a small weaned animal's budget is as before. 0 = today, bit-identical."
+  },
+  {
    "id": "weanRefuseAgeY",
    "group": "reproduction",
    "value": 3.2,

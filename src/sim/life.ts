@@ -7,10 +7,10 @@ import { rhythmNeeds } from './rhythm';
 import { waterOn, waterTick } from './water';
 import { expectedEpidemicHazard } from './disease';
 import { endoNeeds } from './endocrine';
-import { eat, energyTick, ledgerSlow, livedDay, meatKcalPerUnit } from './energy';
+import { eat, energyTick, ledgerSlow, livedDay, meatKcalPerUnit, weanOutcomeOn } from './energy';
 import { clamp, random } from './rng';
 import { paramsOf, type Params } from './params';
-import { NEVER, SLOW_HOURS, TICK_HOURS, index, ix, markAliveChanged, simOf, type BodyState, type SimChimp } from './state';
+import { NEVER, SLOW_HOURS, TICK_HOURS, index, ix, markAliveChanged, simOf, type BodyState, type ChimpX, type SimChimp } from './state';
 import { upkeepOn, upkeepPerH } from './upkeep';
 import { HOLDS, bodyOn, carryOn, legacyCarry, takeUp } from './deadbody';
 import { dependentOn, isCarried, ridesInLife } from './candidates';
@@ -242,6 +242,24 @@ function causeFor(c: Chimp, orphan: boolean, starving: boolean): string {
   return 'illness';
 }
 
+/**
+ * Whether an unweaned animal is weaned at this slow step. Today: its age has passed the weaning age drawn at its
+ * creation (weanAgeMinY, weanAgeSpanY) [M for the age; a date].
+ * Stage E1w (weanOutcome; docs/staging/e1w-prereg.md §2.1): while its mother is alive the date is not read. It stays her
+ * dependent, she decides each bout (weanDeficit), and it is weaned once it has drunk no milk for weanDryDays days of
+ * ecological time (x.lm, the time of its last milk, opened here at the first step that sees it: the count starts when
+ * the switch does). The field's end of suckling ranges from 2.82 to 8.01 y and follows the pair's state (lonsdorf2020)
+ * [H]; the 90 days are the field's convention for calling an animal weaned (lonsdorf2020, bray2018), a design assumption
+ * here. An animal whose mother is dead keeps the stored age (the orphan rules of stage C8 are unchanged).
+ */
+function weanedNow(world: World, c: Chimp, x: ChimpX, P: Params): boolean {
+  if (!weanOutcomeOn(P)) return c.age >= x.weanAge;
+  const m = index(world).byId.get(c.motherId);
+  if (!m || !m.alive) return c.age >= x.weanAge;
+  if (x.lm === undefined) { x.lm = world.time; return false; }
+  return world.time - x.lm >= P.weanDryDays * 24;
+}
+
 export function slowLife(world: World): void {
   const bioDays = SLOW_HOURS / 24 * Math.max(0, world.ageRate);
   const ecoDays = SLOW_HOURS / 24;
@@ -274,7 +292,7 @@ export function slowLife(world: World): void {
     if (x.bereft > 0) { x.bereft *= 0.5 ** (bioDays / P.bereaveHalfLifeD); if (x.bereft < 1e-4) x.bereft = 0; }
     c.cooldown = Math.max(0, c.cooldown - bioDays);
     if (c.sex === 'female') { reproSlow(world, c, bioDays); femaleQueue(world, c, bioDays); }
-    if (!x.weaned && c.age >= x.weanAge) {
+    if (!x.weaned && weanedNow(world, c, x, P)) {
       x.weaned = true;
       episode(world, c, 'life', 'Weaned; I now feed myself');
       const m = index(world).byId.get(c.motherId);

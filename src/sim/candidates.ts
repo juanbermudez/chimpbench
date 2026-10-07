@@ -11,7 +11,7 @@ import { heatRestValue, nestValue, shelterValue, sleepPressure, thermalLoad } fr
 import { darkOn, tripLight, visionNow, type TripLight } from './light';
 import { circadianOn, circadianSleepiness } from './circadian';
 import { dayPhase } from './environment';
-import { deficitDrive, driveOn, fruitKcalPerUnit, milkShare, milkWorth, nurseBoutWorth } from './energy';
+import { deficitDrive, driveOn, fruitKcalPerUnit, milkShare, milkWorth, nurseBoutWorth, weanOutcomeOn } from './energy';
 import { drinkWorth, waterOn } from './water';
 import { arrivalLight, brightening, needUnits, raceStake, rivalsAt } from './departure';
 import { acuteDrive, endoOn, escalateScore, fastSpanH, rainFastScore, rainScore, redirectFastScore, redirectScore } from './endocrine';
@@ -392,7 +392,9 @@ export function computeCandidates(world: World, c: Chimp, out: Candidate[]): Can
     // once its mother has started a new act (her decision count moved on since, x.wr): her refusal holds while her
     // situation is unchanged (design; no constant)
     const asked = P.weanDecide === 1 && driveOn(P) && x.wr !== undefined && caretaker.decisionVersion === x.wr;
-    if (isMother && c.age < x.weanAge + 0.3 && !asked) offer('nurse', caretaker.id, P.energyLedger === 1 && P.ledgerNurseBout === 1
+    // stage E1w (weanOutcome; docs/staging/e1w-prereg.md §2.1): no age bound of the nurse option's own; the option ends
+    // with the dependence it belongs to (weaned by the dry rule of life.ts, or no caretaker from 6 y, dependentOn)
+    if (isMother && (weanOutcomeOn(P) || c.age < x.weanAge + 0.3) && !asked) offer('nurse', caretaker.id, P.energyLedger === 1 && P.ledgerNurseBout === 1
       ? (0.25 + h * 1.5 * (c.age < 0.5 ? 1.3 : 1) * (1 - c.age / 7)) * nurseBoutWorth(c, caretaker, P) - (d > P.nurseRangeM ? 0.5 : 0)
       : P.energyLedger === 1 && P.ledgerNurseByMilk === 1
       ? (0.25 + h * 1.5 * (c.age < 0.5 ? 1.3 : 1) * (1 - c.age / 7)) * milkWorth(c, caretaker, P) - (d > P.nurseRangeM ? 0.5 : 0)

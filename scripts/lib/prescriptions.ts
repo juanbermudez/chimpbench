@@ -55,6 +55,8 @@ export const OVERRIDES: Record<string, Override> = {
   patrolStopEveryMin: oe('quota', 'a patrol stops to listen on a fixed schedule', [], true),
   activeDayH: oe('field-copy', 'the nest-to-nest active day is an outcome of the nest drive and daylight (planned entry; a target from stage E2)'),
   colobusOfftakePerY: oe('field-copy', 'annual predation offtake is the outcome of hunting, not an input to it (planned entry)'),
+  // stage E1w (docs/staging/e1w-prereg.md §2.2): a timer, counted while its switch is on (ACTIVE_WHEN)
+  weanDryDays: oe('timer', 'an offspring is weaned after a fixed number of days without milk (weanOutcome): a timer on the animal\'s own record, set to the field\'s convention for a weaned animal (90 days; lonsdorf2020, bray2018), a design assumption that is never fitted; it does not set the age at the last milk, which the pair\'s decisions produce', [], true),
   // inputs the rules would call outcome-encoding
   fallbackRateRatio: { cls: 'input', kind: 'physiology', reason: 'ratio of measured energy intake rates (kcal per minute on pith and young leaves ÷ ripe fruit, uwimbabazi2019)' },
   travelDistScaleM: { cls: 'input', kind: 'physics', borderline: true, reason: 'field value derived from the cost of walking a metre (taylor1982, sockol2007) and a day\'s energy; the earlier tuned value was replaced at C7c. It still contains memTravelHungerW, which is tuned' },
@@ -296,6 +298,9 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
   ...same(['patrolFemaleJoin', 'patrolFemaleStay', 'patrolLactatingJoin'], P => !(P.patrolValue >= 1), 'no female site settings while patrolValue is 1: everyone is scored as a male is, times its strength over the patrol\'s average adult male (src/sim/patrol.ts joinShare, candidates.ts patrolAndCalls)'),
   // stage E1n (weanDecide; docs/staging/e1n-prereg.md §3): the mother decides by her drive against the infant's own-food
   // drive (energy.ts ownDrive), so the weaning roll and its ramp are not evaluated
+  // stage E1w (weanOutcome; docs/staging/e1w-prereg.md §2.2): the dry timer is read only with the switch and its needs
+  weanDryDays: { when: P => P.weanOutcome === 1 && P.weanDeficit === 1 && P.weanDecide === 1 && P.energyLedger === 1 && P.ledgerDrive === 1,
+    why: 'the dry timer of src/sim/life.ts (weanedNow) is read only while weanOutcome, weanDeficit, weanDecide, energyLedger and ledgerDrive are 1' },
   ...same(['weanRefuseMaxP', 'weanRefuseAgeY', 'weanRefuseRampY'], P => !(P.weanDecide === 1 && P.energyLedger === 1 && P.ledgerDrive === 1),
     'the weaning refusal roll in src/sim/execution.ts (nurse act) is not evaluated while weanDecide, energyLedger and ledgerDrive are 1: the mother\'s decision replaces it'),
   // stage E5e (socialTiming; docs/staging/e5e-prereg.md §4): a sum of bits, one per entry switched out
@@ -373,6 +378,7 @@ export const TRACK_E_SWITCHES: Record<string, { stage: string; needs: Record<str
   followCarer: { stage: 'E4g', needs: {}, removesNothing: 'corrects which companions\' acts the party-follow rule reads (a care follow is not a departure); adds no term and switches no prescription out (e4g-prereg §3)' },
   weanDecide: { stage: 'E1n', needs: { energyLedger: 1, ledgerDrive: 1 } },
   milkInDrive: { stage: 'E1o', needs: { energyLedger: 1, ledgerDrive: 1 }, removesNothing: 'counts milk in an unweaned animal\'s drive at what its mother\'s gland delivers instead of the suckling rate all day (a defect of the capacity term, E1n §5); adds no rule and removes none (e1o-prereg §2.1)' },
+  weanOutcome: { stage: 'E1w', needs: { energyLedger: 1, ledgerDrive: 1, weanDecide: 1, weanDeficit: 1 }, removesNothing: 'retires the weaning date for animals with a living mother (weanAgeMinY, weanAgeSpanY: classed input by rule 4 although they encode T-INF-3, e1o-prereg §4, so no counted entry goes out; they are still read for founders\' opening state and for animals whose mother is dead) and adds a dry timer, weanDryDays, which is counted: the count rises by one (e1w-prereg §2.2)' },
   weanDeficit: { stage: 'E1o', needs: { energyLedger: 1, ledgerDrive: 1, weanDecide: 1 }, removesNothing: 'moves weanDecide\'s comparison into the relative reserve deficit and lets her last decision stand while she sleeps; the roll is already switched out by weanDecide, no further registry entry or literal is (e1o-prereg §2.1)' },
   cohesionValue: { stage: 'E5a', needs: {} },
   crownShare: { stage: 'E5c', needs: { energyLedger: 1, ledgerDrive: 1 }, removesNothing: 'switches off two crop-blind design terms (the habitat-index crowding cost, the revisit devaluation of a crown just used); co-feeders then cost their share of the bout through tripWorth and a used crown is worth the crop believed left; no counted prescription is switched out (e5c-prereg §3.2)' },

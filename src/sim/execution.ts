@@ -5,7 +5,7 @@ import { addEvent, emitCall, endInteraction, episode, findInteraction, flashInte
 import { nestPoint } from './generation';
 import { addBond, dominates, eloUpdate, rankedMale } from './hierarchy';
 import { paramsOf, type Params } from './params';
-import { driveOn, eat, fallbackKcalPerH, fruitKcalPerUnit, glandEmpty, gutRoom, intakeSize, ledgerOn, massOf, nurseTick, ownDrive, relDeficit, sharePlant } from './energy';
+import { driveOn, eat, fallbackKcalPerH, fruitKcalPerUnit, glandEmpty, gutRoom, intakeSize, ledgerOn, massOf, nurseTick, ownDrive, relDeficit, sharePlant, weanOutcomeOn } from './energy';
 import { snareIntake } from './snares';
 import { lightArousal } from './rhythm';
 import { drinkTick, waterOn } from './water';
@@ -935,13 +935,14 @@ export function executeAction(world: World, c: Chimp): void {
         x.prog += TICK_SECONDS;
         const k = clamp((x.prog - P.ledgerLetDownS) / TICK_SECONDS);
         const drunk = k > 0 ? nurseTick(c, m, P, k) : 0;
+        if (drunk > 0 && weanOutcomeOn(P)) x.lm = world.time; // stage E1w (weanOutcome): the time of the last milk
         if (k > 0 && !waterOn(P)) c.thirst = clamp(c.thirst - 0.4 * TICK_HOURS * k); // stage E2g: milk water is booked by eat
         if (!upkeepOnly(P)) c.social = clamp(c.social + 0.2 * TICK_HOURS); // stage E5d (socialUpkeep 2): nursing builds no bond, so it meets no relationship need
         m.energy = clamp(m.energy - 0.02 * TICK_HOURS);
         if (c.hunger < NURSE_DONE || (k > 0 && drunk < k * P.ledgerMilkKcalPerMin * 60 * TICK_HOURS * (1 - 1e-9))) { x.prog = 0; finish(world, c); }
         return;
       }
-      if (ledgerOn(P)) nurseTick(c, m, P); // stage E1: milk into the infant's gut, its cost out of the mother's reserves
+      if (ledgerOn(P)) { if (nurseTick(c, m, P) > 0 && weanOutcomeOn(P)) x.lm = world.time; } // stage E1: milk into the infant's gut, its cost out of the mother's reserves (E1w: the time of the last milk)
       else c.hunger = clamp(c.hunger - 0.5 * TICK_HOURS * (1 - c.age / 6));
       if (!waterOn(P)) c.thirst = clamp(c.thirst - 0.4 * TICK_HOURS); // stage E2g: milk water is booked by eat
       if (!upkeepOnly(P)) c.social = clamp(c.social + 0.2 * TICK_HOURS); // stage E5d (socialUpkeep 2), as above
@@ -1027,13 +1028,15 @@ function nestTick(world: World, c: Chimp): void {
     // stage E1n (weanDecide): with the switch, the mother's decision (as in the day act) replaces "no refusal at night"
     // while she is awake in her nest; asleep she makes no decision (iteration 2, e1n-prereg.md §3.6)
     // stage E1o (weanDeficit): her decision in her deficit's currency at night too; asleep, her last decision stands
-    if (P.ledgerNightNurse === 1 && m.action === 'nest' && m.id === c.motherId && c.age < x.weanAge + 0.3 && c.hunger >= NURSE_DONE
+    // stage E1w (weanOutcome): no age bound of night suckling's own, and the time of the last milk is kept (x.lm)
+    if (P.ledgerNightNurse === 1 && m.action === 'nest' && m.id === c.motherId && (weanOutcomeOn(P) || c.age < x.weanAge + 0.3) && c.hunger >= NURSE_DONE
       && (held || hd(c, m) <= 1.2) && ledgerOn(P) && (P.weanDeficit === 1 && P.weanDecide === 1 && driveOn(P) ? nightAllowed(P, c, x, m)
       : !(P.weanDecide === 1 && driveOn(P) && motherDecides(P, m) && ownDrive(c, P) < m.hunger))) {
       // stage E2b (nurseWake): a feed wakes the mother (rhythm.ts rhythmNeeds): a tick in which the infant drinks from a
       // gland that can sustain the suckling rate (E1d's end-of-bout test); draining the synthesis of an empty gland does not
       const feed = P.nurseWake === 1 && !glandEmpty(m, P), before = feed ? ix(m).en?.milk ?? 0 : 0;
-      nurseTick(c, m, P);
+      const drunk = nurseTick(c, m, P);
+      if (drunk > 0 && weanOutcomeOn(P)) x.lm = world.time;
       if (feed && (ix(m).en?.milk ?? 0) < before) ix(m).nwk = world.tick;
     }
     return;
