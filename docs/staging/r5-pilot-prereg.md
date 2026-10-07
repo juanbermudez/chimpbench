@@ -198,3 +198,17 @@ arm's file, before any kernel arm (model or not) is run. The rule for the words 
   process, MPS, the state-only packet, timeout 120 s; then their replays (no model) and the report. Machine just
   before: load averages 4.67, 5.23, 5.85; swap 3,898 MB used of 5,120 MB (under the 6 GB line); the three-year
   simulation's two jobs at about 1.3 GB each; no other model process.
+  Started 18:33 at head 1a593c1 (worker ready with `r4-rules-state`, sha256 e09fd6f4…1932, on MPS).
+
+**Amendment A2 (18:36, while iteration 2 runs; a counter and a label, not the world).** The first no-model arms showed
+two things about the counts. (1) With the gate off the runner counted 38 to 63 "acts kept by the gate". They are not
+acts: an interrupt that reaches an animal while it waits advances its decision version to invalidate the pending
+request (`src/sim/events.ts` `interrupt`). The runner now counts them apart (`interrupts`) and counts a gate keep only
+when the animal is no longer waiting after the tick. (2) With the rules' pick removed, 118 requests of the lactating
+female were refused as invalid ("body") and decided by the rules; the runner now names the field in the receipt.
+Neither change touches the world: the no-model arms are run again at the new head and must end on the same hashes
+(logged below). The two model arms in progress were started before the change; with the gate off their gate count is
+0 by definition, and the report shows their in-tick count as stale requests.
+
+- **Iteration 1b (logged before it runs): the no-model arms of iteration 1 again at the new head**, to confirm the
+  hashes and to get the split counts and the name of the refused body field.

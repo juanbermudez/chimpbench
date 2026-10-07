@@ -116,13 +116,15 @@ if (process.argv[1]?.endsWith('r5-report.ts')) {
   }
 
   md.push('## Who decided (focal animals, summed over the window)', '');
-  md.push('| arm | new acts | decision points sent to the kernel | the kernel\'s choice applied | share of new acts | kept by the gate, not asked | went to the rules | reasons | the kernel took the rules\' pick (when on the menu) |', '|---|---|---|---|---|---|---|---|---|');
+  md.push('New acts: every act a focal animal started. A request an interrupt made stale while the animal waited is not an act; a run made before that count was split (no `interrupts` field) holds it under the gate\'s count, which is 0 by definition with the gate off.', '');
+  md.push('| arm | new acts | decision points sent to the kernel | the kernel\'s choice applied | share of new acts | kept by the gate, not asked | went to the rules | reasons | the kernel took the rules\' pick (when on the menu) | requests made stale by an interrupt |', '|---|---|---|---|---|---|---|---|---|---|');
   for (const [a, fs] of files) {
     const d = fs.flatMap(x => x.result.decisions), sum = (g: (x: typeof d[number]) => number) => d.reduce((s, x) => s + g(x), 0);
-    const points = sum(x => x.points), kernel = sum(x => x.kernel), kept = sum(x => x.gateKept), rules = sum(x => x.rulesDecisions), fb: Record<string, number> = {};
+    const gated = fs[0].result.spec.gate === 1, inTick = sum(x => x.gateKept), split = d.every(x => x.interrupts !== undefined);
+    const points = sum(x => x.points), kernel = sum(x => x.kernel), kept = gated ? inTick : 0, stale = (gated ? 0 : inTick) + sum(x => x.interrupts ?? 0), rules = sum(x => x.rulesDecisions), fb: Record<string, number> = {};
     for (const x of d) for (const [k, v] of Object.entries(x.fallbacks)) fb[k] = (fb[k] ?? 0) + v;
     const fell = Object.values(fb).reduce((s, v) => s + v, 0), acts = points + kept + rules, wp = sum(x => x.withRulesPick);
-    md.push(`| ${WHAT[a] ?? a} | ${acts} | ${points || '–'} | ${points ? kernel : '–'} | ${points ? f(kernel / acts, 3) : '–'} | ${kept || '–'} | ${points ? fell : rules} | ${Object.entries(fb).map(([k, v]) => `${k} ${v}`).join('; ') || (points ? 'none' : 'the rules decide everything')} | ${wp ? `${f(sum(x => x.agree) / wp, 3)} of ${wp}` : '–'} |`);
+    md.push(`| ${WHAT[a] ?? a} | ${acts} | ${points || '–'} | ${points ? kernel : '–'} | ${points ? f(kernel / acts, 3) : '–'} | ${kept || '–'} | ${points ? fell : rules} | ${Object.entries(fb).map(([k, v]) => `${k} ${v}`).join('; ') || (points ? 'none' : 'the rules decide everything')} | ${wp ? `${f(sum(x => x.agree) / wp, 3)} of ${wp}` : '–'} | ${points ? `${stale}${gated && !split ? ' (not split from the gate\'s count)' : ''}` : '–'} |`);
   }
 
   md.push('', '## Time', '', '| arm | seed | wall time, s | time in the kernel step, s | kernel calls | s per decision: median | mean | 95th percentile | timeouts | worker starts |', '|---|---|---|---|---|---|---|---|---|---|');

@@ -27,6 +27,7 @@ import { nullKernel, rulesKernel } from '../src/kernel/kernels';
 import { answerWaiting } from '../src/kernel/loop';
 import { KernelError, type Kernel, type KernelAnswer, type KernelRequest } from '../src/kernel/types';
 import { candidateMeta, V } from '../src/sim/candidates';
+import { bodyFieldError } from '../src/sim/context-check';
 import { reserveCap } from '../src/sim/energy';
 import { paramsOf } from '../src/sim/params';
 import { cropTarget } from '../src/sim/phenology';
@@ -104,6 +105,7 @@ export interface Decisions {
   id: number; name: string; cls: string;
   /** Decision points that reached the loop (one kernel pass each), those the kernel's choice settled, those the rules settled by reason, and acts the loop's gate kept inside the tick without asking (gate arms). */
   points: number; kernel: number; fallbacks: Record<string, number>; gateKept: number;
+  /** Decision versions an interrupt advanced inside the tick while the animal waited (src/sim/events.ts interrupt: it invalidates a pending request); not acts. */ interrupts: number;
   /** Rules arms: the rules' own decisions (every new act). */ rulesDecisions: number;
   /** Among kernel passes with the rules' pick on the menu: how many, and how often the kernel's applied choice was it. */ withRulesPick: number; agree: number;
   picks: Record<string, number>; rulesPicks: Record<string, number>;
@@ -135,7 +137,7 @@ export async function runArm(base: World, name: string, spec: ArmSpec, days: num
   if ((spec.kernel === 'rules') !== (kernel === null)) throw new Error(`arm ${name}: a kernel is needed for every arm but the rules`);
   const w = armWorld(base, spec), P = paramsOf(w), idx0 = index(w), t0 = Date.now(), startHash = worldHash(w);
   const focal = new Map(focalIds.map(f => [f.id, f])), names = new Map(focalIds.map(f => [f.id, idx0.byId.get(f.id)!.name]));
-  const rows: DayRow[] = [], dec = new Map<number, Decisions>(focalIds.map(f => [f.id, { id: f.id, name: names.get(f.id)!, cls: f.cls, points: 0, kernel: 0, fallbacks: {}, gateKept: 0, rulesDecisions: 0, withRulesPick: 0, agree: 0, picks: {}, rulesPicks: {} }]));
+  const rows: DayRow[] = [], dec = new Map<number, Decisions>(focalIds.map(f => [f.id, { id: f.id, name: names.get(f.id)!, cls: f.cls, points: 0, kernel: 0, fallbacks: {}, gateKept: 0, interrupts: 0, rulesDecisions: 0, withRulesPick: 0, agree: 0, picks: {}, rulesPicks: {} }]));
   // running state per focal animal: the ledger at the day's start, the last position and 5-min fix, the day's counters
   const st = new Map(focalIds.map(f => { const c = idx0.byId.get(f.id)!, L = ix(c).en; return [f.id, { in0: L?.in ?? 0, fin0: L?.fin ?? L?.in ?? 0, out0: L?.out ?? 0, res0: L?.res ?? 0, px: c.position[0], pz: c.position[2], fx: c.position[0], fz: c.position[2],
     cat: CATEGORIES.map(() => 0), light: 0, night: 0, nest: 0, m: 0, mf: 0 }]; }));
@@ -154,8 +156,9 @@ export async function runArm(base: World, name: string, spec: ArmSpec, days: num
     for (const c of w.chimps) { if (timed) c.controller = c.alive && focal.has(c.id) ? 'model' : 'rules'; if (focal.has(c.id)) before.set(c.id, c.decisionVersion); }
     tickWorld(w);
     const idx = index(w);
-    // new acts inside the tick: the rules' own decisions (rules arms), or acts the loop's gate kept (a kernel arm with the gate)
-    for (const [id, v] of before) { const c = idx.byId.get(id)!, d = dec.get(id)!, n = c.decisionVersion - v; if (n > 0) { if (timed) d.gateKept += n; else d.rulesDecisions += n; } }
+    // decision versions advanced inside the tick: the rules' own decisions (rules arms); for a kernel arm an act the loop's
+    // gate kept (the animal is not waiting afterwards), or an interrupt that invalidated a pending request (it still waits)
+    for (const [id, v] of before) { const c = idx.byId.get(id)!, d = dec.get(id)!, n = c.decisionVersion - v; if (n > 0) { if (!timed) d.rulesDecisions += n; else if (c.awaitingDecisionSince === null) d.gateKept += n; else d.interrupts += n; } }
     if (timed) {
       const s = performance.now();
       const results = await answerWaiting(w, c => focal.has(c.id) ? timed : null);
@@ -165,10 +168,10 @@ export async function runArm(base: World, name: string, spec: ArmSpec, days: num
         const d = dec.get(r.chimpId)!, req = r.request!, fam = req.options.map(famOf), asked = r.refusal !== 'fewer-than-two-options' && r.refusal !== 'invalid-context', l = asked ? last.get(r.chimpId) : undefined;
         d.points++; if (asked) calls += Math.max(1, r.calls);
         if (r.by === 'kernel') { d.kernel++; inc(d.picks, fam[r.index]); if (req.rulesIndex >= 0) { d.withRulesPick++; inc(d.rulesPicks, fam[req.rulesIndex]); if (r.index === req.rulesIndex) d.agree++; } }
-        else inc(d.fallbacks, r.refusal === 'kernel-error' ? `kernel-error: ${r.detail}` : r.refusal);
+        else inc(d.fallbacks, r.refusal === 'kernel-error' ? `kernel-error: ${r.detail}` : r.refusal === 'invalid-context' ? `invalid-context: ${r.detail}${r.detail === 'body' ? ` (${bodyFieldError(req.context.body).replace(/=.*/, '')})` : ''}` : r.refusal);
         const a = l?.answer ?? null;
         opts.receipts?.({ tick: w.tick, t: +req.context.time.toFixed(6), id: r.chimpId, v: req.context.version, phase: req.context.environment.phase, n: req.options.length, rulesIndex: req.rulesIndex,
-          opts: req.options.map(o => [o.action, o.targetId]), fam, by: r.by, refusal: r.refusal, detail: r.detail,
+          opts: req.options.map(o => [o.action, o.targetId]), fam, by: r.by, refusal: r.refusal, detail: r.refusal === 'invalid-context' && r.detail === 'body' ? `body: ${bodyFieldError(req.context.body)}` : r.detail,
           index: a && typeof a.index === 'number' ? a.index : null, p: a && Array.isArray(a.probabilities) ? a.probabilities as number[] : null, picked: r.by === 'kernel' ? r.index : -1,
           sha: l?.sha ?? '', tokens: l?.tokens ?? 0, ms: l ? +l.ms.toFixed(1) : 0 });
       }
