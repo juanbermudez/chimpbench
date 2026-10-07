@@ -1,5 +1,5 @@
 {
- "about": "Stage obs-fixes: the freeze record its observer changes need (proposal; NOT applied: data/targets.json is frozen and this branch does not edit it). The fixes of docs/staging/obs-fixes-prereg.md change src/field, so the protocol hash moves from the frozen 5d4fa5a2a500bce6. Applying this file means: replace `protocolFreeze` in data/targets.json by `protocolFreeze` below with the current record under `previous`, append `protocolLog` below, and re-read the hash (scripts/field-metrics.ts --protocol-hash) on the commit it lands on. A new freeze is the user's decision; so is the treatment of the held-out rows (`userDecisions`).",
+ "about": "Stage obs-fixes: the freeze record its observer changes need. APPLIED on 7 October 2026 on the user's decision (\"yes rare even as official\", IMPLEMENTATION_PLAN.md Track R, user decisions of 7 October): data/targets.json protocolFreeze 215ed6ab282a57de, with the Track E freeze kept under `previous` and its targets file as data/targets.e.json. Kept as the record of what was staged on 6 October; `applied` says what differs.",
  "protocolFreeze": {
   "stage": "Track E freeze + obs-fixes (rare-event rows counted by outcome: T-LET-1, -2, -3, -6; T-DEM-9 census year)",
   "date": "2026-10-06",
@@ -24,7 +24,13 @@
    "seen": "Part D1's counts on the saved 12-month runs (docs/staging/e-rebaseline.md: S39's group 4 observed killings of which 2 were infants that lived; 3 truth killings: 1 infanticide, 2 fight wounds). Nothing was computed with a fix applied before the fix and its tests were committed. Amendment 1 was written after the first re-derivation (no fight-kill event in 60 seed-runs; one fight death of a followed focal animal with a detected decided-conflict record and no captured event).",
    "param": "src/field/protocols.ts: an `infanticide` interaction is logged as `infanticide` only when its target died in it, else as `infanticide-attack`; truth.kills keeps fatal records, one per victim; a `fight-kill` event when a contest inside a community that a team detected (its all-occurrence event, or its decided-conflict record) leaves a participant dead of its wounds; truth.fightKillings. src/field/metrics.ts: killings() counts `kill`, `infanticide` and `fight-kill` events; T-LET-1's truth = (stats.killings + fightKillings) / community-years; T-LET-3 and T-LET-6 on intercommunity killings, one per victim; T-DEM-9's census year 365.25 -> 365 days.",
    "reason": "bug, against each row's written definition: T-LET-1 'All intercommunity and within-community killings (observed + inferred)' (an attack the infant survived is no killing; a fight death inside a community is one); T-LET-3 'per intercommunity attack'; T-LET-6 'Share of intercommunity killings by patrolling parties'; T-DEM-9 'Share of individuals > 3 y with a snare injury' (census; the observer's year is 365 days everywhere else, so no census closed in a 365-day run).",
-   "targets": ["T-LET-1", "T-LET-2", "T-LET-3", "T-LET-6", "T-DEM-9"],
+   "targets": [
+    "T-LET-1",
+    "T-LET-2",
+    "T-LET-3",
+    "T-LET-6",
+    "T-DEM-9"
+   ],
    "verdicts": "Re-derived from the end checkpoints of the saved 12-month runs (scripts/obs-rederive.ts; 20 seed-runs = 60 community-years per group; before -> after, pooled). S39: T-LET-1 4 -> 3 killings (0.067 -> 0.050, inconclusive both), T-LET-2 0/4 -> 0/3 (fail both), T-LET-3 0.33 (n 2, fail) -> insufficient, T-LET-6 0/4 (fail) -> insufficient, T-DEM-9 insufficient -> 6/869 = 0.007 (fail). Wadging 0.5: T-LET-1 1 -> 1, T-LET-3 0.25 (n 2, fail) -> insufficient, T-DEM-9 insufficient -> 6/866 (fail). Wadging 0.25: T-LET-1 4 -> 3, T-LET-2 2/4 -> 1/3 (inconclusive both), T-LET-3 0.5 (n 4, fail) -> insufficient, T-LET-6 0/3 (fail) -> insufficient, T-DEM-9 insufficient -> 8/861 = 0.009 (fail).",
    "class": "bug + definition text (after the freeze: needs a new freeze; held-out rows T-LET-2, -3, -6 per protocolPolicy rule 4)"
   }
@@ -33,5 +39,12 @@
   "Whether to take the new freeze (hash above) so that e-bench lists the five rows of every older run as needing a fresh run.",
   "Held-out rows T-LET-2, T-LET-3 and T-LET-6 are touched after the freeze. protocolPolicy rule 4 as written compromises them (reported, never counted). The Track E freeze instead re-froze its revised held-out rows by user decision, flagged protocolRevisedPostHoc (all three already carry that flag). Marking them compromised changes the hash again.",
   "T-DEM-9 now scores at 12 months, on one year of new injuries from a start without any (S39's group 6 of 869, against a band of 0.1-0.3 for a standing prevalence). It is a fitted row, so it enters every fitted sum from 12 months on unless it is flagged (for example notScorable below a stated run length). The row itself is left as it is."
- ]
+ ],
+ "applied": {
+  "date": "2026-10-07",
+  "hash": "215ed6ab282a57de",
+  "registryHash": "5ad329ffd64f4b32",
+  "differsFromStaged": "T-LET-2, T-LET-3 and T-LET-6 (held-out) are marked compromised under protocolPolicy rule 4, which changes the fingerprint from the staged aad8c58a00d68e0c; the registry hash is that of the head after merging track-e b6e35dc; the log entry carries the flags and the user's decision.",
+  "previousTargetsFile": "data/targets.e.json (scripts/targets-snapshot.ts --commit ef53a91)"
+ }
 }

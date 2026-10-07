@@ -297,15 +297,100 @@ test('obs-fixes re-derivation: records saved before the fixes are brought to the
   assert.match(wrong.why!, /2 killings by the old rule; the saved run printed 3/);
 });
 
-test('obs-fixes freeze proposal (docs/staging/obs-fixes-protocol.patch.json): taken as a freeze after the Track E one, it lists exactly the revised rows of an older run as needing a fresh run', async () => {
-  const { staleRows, loadTargetFile } = await import('../scripts/e-bench');
-  type Freeze = NonNullable<ReturnType<typeof loadTargetFile>['protocolFreeze']>;
-  const patch = JSON.parse(readFileSync(new URL('../docs/staging/obs-fixes-protocol.patch.json', import.meta.url), 'utf8')) as { protocolFreeze: Freeze; protocolLog: { targets: string[] }[] };
-  let base = loadTargetFile().protocolFreeze;
-  while (base && base.hash !== '5d4fa5a2a500bce6') base = base.previous;
-  assert.ok(base, 'the Track E freeze is in the chain');
-  const chain: Freeze = { ...patch.protocolFreeze, previous: base };
-  assert.deepEqual([...staleRows(chain, '5d4fa5a2a500bce6').keys()].sort(), [...REVISED_ROWS].sort(), 'a run made under the Track E protocol');
-  assert.deepEqual([...staleRows(chain, patch.protocolFreeze.hash!).keys()], [], 'a run made under the new protocol');
-  assert.deepEqual([...patch.protocolLog[0].targets].sort(), [...REVISED_ROWS].sort(), 'the log entry names the same rows');
+// ---------------------------------------------------------------------------------------------------------------------
+// The freeze of 7 October 2026 (user decision; docs/staging/obs-fixes-prereg.md §11)
+// ---------------------------------------------------------------------------------------------------------------------
+
+const TRACK_E_FREEZE = '5d4fa5a2a500bce6';
+/** A saved run's scorecard as e-bench reads it: per-seed values of the five revised rows and one untouched row, made under `protocolHash`. */
+const savedCard = (protocolHash: string) => ({
+  manifest: { profile: 'field', days: 365, burnInDays: 30, seeds: [48], params: {}, protocolHash, date: '2026-10-05T14:18:26.500Z' }, rows: [], summary: {},
+  values: {
+    'T-LET-1': [{ value: 2, num: 6, den: 3, n: 6 }],                       // far above its band: a distance if summed
+    'T-LET-2': [{ value: 0, num: 0, den: 6, n: 6 }],
+    'T-LET-3': [{ value: null, n: 2, raw: { ratio: [1, 1] } }],
+    'T-LET-6': [{ value: 0, num: 0, den: 6, n: 6 }],
+    'T-DEM-9': [{ value: 0.9, num: 9, den: 10, n: 10 }],                   // above its band: a distance if summed
+    'T-ACT-1': [{ value: 0.4, n: 10 }],
+  },
+});
+const META = { label: 'saved', mode: 'm12', workers: 1, timing: { scorecardS: null, viabilityS: null, totalS: null }, scorecard: '', git: { commit: '', branch: '', dirty: 0 } };
+
+test('obs-fixes freeze: data/targets.json records the new freeze after the Track E one, its five revised rows, the rows marked under policy rule 4, and the old freeze\'s targets file', async () => {
+  const { loadTargetFile } = await import('../scripts/e-bench');
+  const { checkSnapshots, recordedSnapshots } = await import('../scripts/targets-snapshot');
+  const tf = loadTargetFile() as ReturnType<typeof loadTargetFile> & { protocolPolicy: string[]; protocolLog: { date: string; targets: string[]; flags?: Record<string, string> }[]; targets: { id: string; role: string; compromised?: boolean; protocolRevisedPostHoc?: boolean }[] };
+  // the obs-fixes freeze stays in the chain when later freezes are taken
+  let fz = tf.protocolFreeze;
+  while (fz && fz.previous?.hash !== TRACK_E_FREEZE) fz = fz.previous;
+  assert.ok(fz, 'a freeze directly after the Track E freeze');
+  assert.equal(fz!.date, '2026-10-07');
+  assert.deepEqual(Object.keys(fz!.observerRevised ?? {}).sort(), [...REVISED_ROWS].sort());
+  const patch = JSON.parse(readFileSync(new URL('../docs/staging/obs-fixes-protocol.patch.json', import.meta.url), 'utf8')) as { protocolFreeze: { observerRevised: Record<string, string> } };
+  assert.deepEqual(fz!.observerRevised, patch.protocolFreeze.observerRevised, 'as staged');
+  // the outgoing freeze's targets file is kept verbatim, as data/targets.c8.json was (scripts/targets-snapshot.ts)
+  assert.ok(recordedSnapshots(tf.protocolFreeze).some(s => s.snap.path === 'data/targets.e.json' && s.freeze.hash === TRACK_E_FREEZE));
+  assert.deepEqual(checkSnapshots(), []);
+  // policy rule 4, as written: held-out rows touched after the freeze are compromised; the fitted ones stay flagged revised post hoc
+  assert.match(tf.protocolPolicy[3], /After the freeze, any change that touches a held-out target compromises it\.$/);
+  const row = (id: string) => tf.targets.find(t => t.id === id)!;
+  for (const id of REVISED_ROWS) {
+    const r = row(id);
+    if (r.role === 'held-out') assert.equal(r.compromised, true, `${id} (held-out) is compromised`);
+    else { assert.ok(!r.compromised, `${id} (fitted) is not`); assert.equal(r.protocolRevisedPostHoc, true, `${id} is flagged revised post hoc`); }
+  }
+  assert.deepEqual(REVISED_ROWS.filter(id => row(id).role === 'held-out'), ['T-LET-2', 'T-LET-3', 'T-LET-6']);
+  const entry = tf.protocolLog.find(e => e.date === '2026-10-07' && [...e.targets].sort().join() === [...REVISED_ROWS].sort().join())!;
+  assert.ok(entry, 'the log entry names the five rows');
+  assert.deepEqual(entry.flags, { 'T-LET-1': 'protocolRevisedPostHoc', 'T-DEM-9': 'protocolRevisedPostHoc', 'T-LET-2': 'compromised', 'T-LET-3': 'compromised', 'T-LET-6': 'compromised' });
+  // nothing else changed against the old freeze's file: no band, definition, role or metric of any row
+  const old = JSON.parse(readFileSync(new URL('../data/targets.e.json', import.meta.url), 'utf8')) as { targets: Record<string, unknown>[] };
+  const core = (t: Record<string, unknown>) => JSON.stringify([t.id, t.metric, t.definition, t.role, t.encoded, t.accept, t.observer, t.field, t.evidence]);
+  const now = new Map((tf.targets as unknown as Record<string, unknown>[]).map(t => [t.id as string, core(t)]));
+  assert.equal(old.targets.length, tf.targets.length);
+  for (const t of old.targets) assert.equal(now.get(t.id as string), core(t), `${t.id}: band, definition and role unchanged`);
+});
+
+test('obs-fixes freeze: a rescore of a run made under the Track E protocol lists the five revised rows as needing a fresh run and never sums them', async () => {
+  const { assemble, staleIds, STALE_FLAG, loadTargetFile } = await import('../scripts/e-bench');
+  const now = loadTargetFile().protocolFreeze!.hash!;
+  const old = assemble(savedCard(TRACK_E_FREEZE) as never, null, META), fresh = assemble(savedCard(now) as never, null, META);
+  assert.deepEqual(staleIds(old).sort(), [...REVISED_ROWS].sort());
+  assert.deepEqual(staleIds(fresh), [], 'a run made under the new protocol has no stale row');
+  for (const id of REVISED_ROWS) {
+    const r = old.rows.find(x => x.id === id)!;
+    assert.ok(r.flags.includes(STALE_FLAG), `${id} is flagged`);
+    assert.equal(r.excluded, true, `${id} is left out of every sum`);
+    assert.match(r.note ?? '', /^needs a fresh run: obs-fixes/, `${id} says why`);
+  }
+  // the old run's saved killings and snare values would add distance if they were re-scored; they add none
+  const fitted = (doc: typeof old, id: string) => doc.rows.find(x => x.id === id)!;
+  assert.ok(fitted(fresh, 'T-LET-1').distance! > 0 && fitted(fresh, 'T-DEM-9').distance! > 0 && !fitted(fresh, 'T-LET-1').excluded && !fitted(fresh, 'T-DEM-9').excluded);
+  assert.ok(Math.abs(fresh.distance.fitted.sum - old.distance.fitted.sum - fitted(fresh, 'T-LET-1').distance! - fitted(fresh, 'T-DEM-9').distance!) < 1e-9, 'the fitted sums differ by exactly the two stale fitted rows');
+  // the held-out three are compromised: reported, never summed, in a fresh run too
+  for (const id of ['T-LET-2', 'T-LET-3', 'T-LET-6']) { const r = fresh.rows.find(x => x.id === id)!; assert.ok(r.flags.includes('compromised') && r.excluded, `${id} compromised`); }
+  assert.equal(fresh.distance.heldOut.sum, old.distance.heldOut.sum);
+  assert.equal(old.rows.find(x => x.id === 'T-ACT-1')!.excluded, false, 'an untouched row is scored as before');
+});
+
+test('obs-fixes freeze: `e-bench --rescore` on a saved run made under the Track E protocol prints the five rows as needing a fresh run (the command, end to end)', async () => {
+  const { spawnSync } = await import('node:child_process');
+  const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const dir = mkdtempSync(join(tmpdir(), 'obs-fixes-rescore-'));
+  try {
+    const cardFile = join(dir, 'saved.scorecard.json'), saved = join(dir, 'saved.json'), out = join(dir, 'rescored');
+    writeFileSync(cardFile, JSON.stringify(savedCard(TRACK_E_FREEZE)));
+    writeFileSync(saved, JSON.stringify({ tool: 'e-bench', version: 1, label: 'saved', mode: 'm12', config: { profile: 'field', days: 365, burnInDays: 30, seeds: [48], params: {}, workers: 1 }, git: META.git, timing: META.timing, viability: null, truth: null, scorecard: cardFile }));
+    const r = spawnSync(process.execPath, ['--import', 'tsx', 'scripts/e-bench.ts', '--rescore', saved, '--out', out], { encoding: 'utf8', timeout: 120000 });
+    assert.equal(r.status, 0, r.stderr);
+    const doc = JSON.parse(readFileSync(`${out}.json`, 'utf8')) as { rows: { id: string; flags: string[]; excluded: boolean; note?: string }[] };
+    const stale = doc.rows.filter(x => x.flags.includes('observer changed after this run'));
+    assert.deepEqual(stale.map(x => x.id).sort(), [...REVISED_ROWS].sort());
+    assert.ok(stale.every(x => x.excluded && /^needs a fresh run/.test(x.note ?? '')));
+    const line = /Rows whose observer code changed after this run \(need a fresh run; listed, never summed\): ([^\n]*)\./.exec(readFileSync(`${out}.md`, 'utf8'));
+    assert.ok(line, 'the report says so in words');
+    assert.deepEqual(line![1].split(', ').sort(), [...REVISED_ROWS].sort());
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });
