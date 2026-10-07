@@ -8,6 +8,8 @@ do need to test something on a longer horizon."
 
 - **Protocol:** freeze 5d4fa5a2a500bce6 (data/targets.json, merged on track-e at ed18c1e); the old bands are scored too,
   from data/targets.c8.json (freeze a2228c2df476680b), for one full cycle, so no band change reads as model progress.
+  (Note, 7 October 2026: a later freeze, 215ed6ab282a57de, recounts the rare-event rows; see the note at the end of
+  Part D1. This file's numbers are under 5d4fa5a2a500bce6, kept as data/targets.e.json.)
 - **Tool:** e-bench's single pass (branch eB-bench at 1824a88, track-e 2a396d3 merged: bench, energy and rhythm readouts
   from one simulation per seed; verified identical to the separate tools on S39 quick and confirm), run from frozen
   detached checkouts (bench-run3, bench-run4) at 1824a88.
@@ -524,6 +526,15 @@ were already purged. S39's deaths include 6 starvations (part C).
    observer's kill events, though T-LET-1's definition counts "all intercommunity and within-community killings".
 3. T-DEM-9's census point (t0 + 365.25 days) falls after a 365-day window, so it never scores at 12 months; founders start
    without snare injuries, so a 1–2-year run cannot build the field's standing prevalence. Not testable as defined.
+
+**Note, 7 October 2026 (added; nothing above is changed).** The three findings are fixed (`docs/staging/obs-fixes-prereg.md`)
+and, on the user's decision of 7 October, official under a new protocol freeze, `215ed6ab282a57de`. Every table in this
+file was scored under the freeze of 5 October (`5d4fa5a2a500bce6`) and stays as run. Under the new freeze, `e-bench
+--rescore` lists T-LET-1, -2, -3, -6 and T-DEM-9 of these runs as needing a fresh run and leaves them out of the sums;
+T-LET-2, -3 and -6 are marked compromised (held-out rows touched after a freeze). Re-derived from the 12-month end
+checkpoints, S39's group has 3 observed or inferred killings in 60 community-years (4 as printed above: two were infants
+that lived, and one fight death a team watched was missing), and T-DEM-9 reads 6 of 869 (obs-fixes-prereg.md §10). The
+previous freeze's targets file is kept as `data/targets.e.json`.
 
 ## Part D2: staging decisions (5 October 2026, from the rule registered at 977400e, before any rare-event stage)
 
