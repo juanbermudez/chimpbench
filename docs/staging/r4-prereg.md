@@ -1,0 +1,244 @@
+# Stage R4: teach the small engine to choose from the animal's state (pre-registration)
+
+Agent r4-train, branch `r4-train` from `track-e` b6e35dc. Registered 7 October 2026, before any code, data generation or
+training. Specification: `IMPLEMENTATION_PLAN.md`, Track R, "Stage R4", the direction amendment of 6 October and the
+user decisions of 6 and 7 October 2026.
+
+The user's decisions that bind this stage, verbatim:
+
+- "yes just state in training" (7 October): the engine's input, in training and in use, holds the animal's own state,
+  perceptions and beliefs. No score, value or ranking computed by the rules, and no mark of which option the rules pick.
+- "no cloud machine run things locally" (7 October): everything runs on this Mac (Apple M4, 10 cores, 16 GB, MPS).
+- "field choices are the source of truth, so it should be part of the training data" and "Field labels go into a
+  separate, small, named adapter, not the main label source." (6 October)
+- Jev outputs are never training labels (TypeSafe MCA §2.3(b)). No outside model's answer (Codex included) is a label.
+
+No benchmark is run here (no `e-bench`, no `e-run`, no `field-metrics`). No network, no paid call. No change under
+`src/sim`, no switch default changes, goldens and the field pin do not move.
+
+## 1. The input: the state-only packet
+
+One text packet, built by one function (`scripts/lib/packet-state.ts`, `buildStateOnlyQuestion`), used for training,
+for every evaluation here and by the command of §8 that puts an adapter in the loop. It is the v4 packet of stage R2
+(`src/providers/packet.ts` for a context with `packet: 4`; `docs/staging/r2-prereg.md` §3) with the parts below removed.
+It is built from the real builder's output, never by a second wording.
+
+World switches where a packet is built: the base parameters plus `observeV4` 1 and `menuParity` 1; `activityFirst` 0
+(its entry per kind is the rules' best target, a ranking); `kernelNoRulesPick` 0 (1 only for the second number of §6.5).
+
+**In, and why.**
+
+| Part | What it is |
+| --- | --- |
+| `me` | who the animal is: name, age, sex, community, rank, reproductive status, mood, temperament (state) |
+| `feeling`, `urgent` | its drives in the packet's degree words (state) |
+| `now` | what it is doing, the light, the weather, the party, fruit in view, strangers (perception) |
+| `body` | the v4 body line: reserves, energy shortfall with the kcal still to find and the waking time left, stomach and hindgut, water, heat, sleepiness and sleep pressure, body clock, stress and arousal words (state) |
+| `nearby` | each animal in view: relation, rank relative to me, notable act, distance, bond, tension (perception, memory) |
+| `memories`, `history`, `events`, `bodies` | what it remembers and perceives (memory, perception) |
+| instruction | the two fixed sentences (`ACTION_BASE`, `ACTION_WEIGH`), the same at every decision |
+| each option: the act and its target | the simulation's own description of the option ("Feed on ripe figs in the Ficus 40 m away (crop 60%, 2 feeding there)"): which act, on what, where. Written from perception and state, not from a score |
+| each option: the purpose | what the act does, a fixed phrase per act (wording 2: "food, eases hunger", "sleep, relieves sleepiness") |
+| each option: beliefs about the world | the crop there and when it was seen (`cropKcal`, `seenH`), whether it may have changed (`spreadKcal`), the chance a listed crown is in fruit (`chance`), others going there (`feeders`), the distance (`distM`), the assessed chance of winning against an aggressor (`odds`). Each is a belief about what is there, not the worth of the option |
+
+**Out, and why.**
+
+| Removed | Why |
+| --- | --- |
+| The net energy rate of an option: "a rich / good / modest / poor feed (about N kcal an hour net)", "no gain after the walk" (`value.kcalH`, `value.share`) | It is the food term of the rules' valuation: one number that already combines crop, feeders, distance, travel cost and the animal's intake rate. The parts stay as beliefs; the sum goes |
+| The company words: "much better / better company than here", "a little more company", "no more company than here", "nest-mates beside me" (`value.company`) | The rules' value of the company an option brings, less the company present: a worth, not a perception. Who is near stays in `nearby` |
+| The situational rule sentences ("It is night: chimpanzees stay in their nests…", "Dusk: chimpanzees build their night nests now.", "Urgent hunger: meeting it comes first…", and the seven others of `situationRules`) | Hand-written advice on what to do now. The engine must get this from the light, the body and the drives |
+| The echo on an option's purpose when a drive is urgent ("eases severe hunger — needed now", "relieves strong sleepiness — needed now") | A mark written by code on the options that answer an urgent drive. The drive itself stays in `feeling` and `urgent` |
+| Never in any text, and not here: each option's rules `score`, `swingLow`, `swingHigh`, `body.feedDrive`, `body.fullKcalH`, the position of the rules' pick | The rules' valuation itself |
+
+**What still comes from the rules, stated plainly.** (1) The menu: which eight options are offered is decided by the
+loop's `rgMenu`, which ranks by the rules' scores and always keeps the rules' pick (the user's decision of 6 October:
+keep it for the main number, report "removed" as a second number). So a menu is not a random sample of the legal
+options. (2) The order of options is the fixed action order, then target id; it does not follow the scores, and in
+training every context is shown in its own order or in a shuffled one. (3) The option descriptions and the belief
+numbers are computed by simulation code from the animal's perception and memory.
+
+**Example packet** (composed by hand from the wording tables before any code exists; it is replaced by a real packet
+from the smoke sample in amendment A1, before the full data generation):
+
+```
+state:
+  me: Kato, adult male, 24 y, West community; rank 4 of 9 males; mood calm; bold
+  feeling: moderate hunger
+  now: daytime (full daylight); clear, 26 °C; party of 5 with 3 adult males
+  body: body reserves a little low (6% below); moderate energy shortfall: about 900 kcal still to find, some hours of waking left; stomach nearly empty; well watered; warm; wide awake; body clock at its daytime high; settled
+  nearby:
+    - Obi: adult male, outranks me, 12 m, friendly
+    - Semwai: adult female, 8 m
+  memories:
+    - Fed in a Ficus 2 h ago
+instructions: You are a field primatologist. Choose what this wild eastern chimpanzee would most plausibly do next, given only what it perceives, feels and remembers. Weigh bodily needs, safety, dominance (subordinates pant-grunt to and avoid dominants), kinship and alliances.
+options:
+  c0: Rest through the midday heat (26 °C) (a pause: cools the body, digests, favours wounds)
+  c1: Feed on ripe figs in the Ficus 40 m away (crop 60%, 2 feeding there) (food, eases hunger; 3,400 kcal of fruit there)
+  c2: Travel 350 m north to a Uvariopsis I remember with ripe fruit (food, eases hunger; 5,200 kcal of fruit there when I saw it 9 h ago, may have changed; 1 other going there)
+  c3: Groom Obi, rank 2 of 9 males (eases loneliness, strengthens the bond)
+```
+
+In the served v4 packet c1 would also read "a good feed (about 210 kcal an hour net)" and the instruction could carry
+"Urgent hunger: meeting it comes first…"; neither is here.
+
+A committed test (`tests/r4-packet.test.ts`) asserts on simulated contexts that the state-only packet holds none of the
+removed wordings, that every other word of it is the v4 packet's, and that the builder is deterministic. A data check
+scans every training and evaluation packet for the removed wordings; its count (which must be 0) goes in the manifest.
+
+## 2. Label sources and adapters
+
+Each adapter is a LoRA adapter for `fastino/GLiNER2.5-Decide` (revision 7ee5da4c) under
+`artifacts/decide-ft/r4/adapters/<name>/` with a `manifest.json` that states its label source, the parts and record
+hashes it was trained on, the packet's check count, and that no label comes from Jev or any outside model.
+
+**a. `r4-rules-state`.** Labels: the rules kernel's own decision (`rgChoice`, read by `rgTap`) at real decision points
+of the Track E stack, for animals aged `rgMinAge` (8) and over. Input: the state-only packet. Half of the contexts
+from each base: `docs/staging/integrator-kit/params/M6-W50.json` and `M6-W25.json`. **This engine inherits the rules'
+judgment through its labels**: it is taught "do what the rules did, from state alone", so it carries the rules'
+prescriptions, and agreement with the rules is not correctness about chimpanzees.
+
+**b. `r4-field-groom`.** Labels: whom a wild adult male groomed, the 977 choices of RW's train part (`src/rw`,
+`scripts/lib/rw-load.ts`; Ngogo focal scans, CC0, private raw rows). Input: the benchmark's own wild packet
+(`scripts/lib/rw-serialize.ts` `buildWildQuestion`, packet `rw-bench-v1`), unchanged, so its scores compare with the
+published untuned ones. **Menus wider than 8 are cut to seeded sub-menus of 8 that contain the groomed male**
+(registered choice; built by the fan-out wrapper's own `narrowWildRequest`, so a training sub-menu has the form of a
+fan-out sub-request). It is named, small and separate. It marks T-SOC-1, T-SOC-2, T-FIS-1, T-FIS-3 and T-FIS-5 as
+compromised for itself: its manifest names the label source "field choices, Ngogo male grooming"
+(`data/rw-compromised.json`, `src/rw/manifest.ts` `compromisedFor`), and a test asserts the five marks.
+
+**c. `r4-mixed` (optional).** Only if a and b and every evaluation of §6 are done and time remains: one adapter trained
+on both sets, labelled as mixed, compromised like b.
+
+No expert-rubric labels are made in this stage (they are generated judgments; the two sources above are a rule's
+decision and a wild animal's choice).
+
+## 3. Contexts, splits and seeds
+
+Sampler: `scripts/r4-contexts.ts`, the tap method of `scripts/em-sample.ts` and `scripts/r2-sample.ts` (the world runs
+on the rules; `rulesTap` builds the request before the decision, `rgTap` records the rules' decision; sampling by a
+hash of seed, tick and animal, never `world.rng`), with the record shape of `scripts/ft-contexts.ts`. Field profile.
+
+| Split | Seed | Base | Burn-in, then sampled days | Animals |
+| --- | --- | --- | --- | --- |
+| train, dev | 48 | M6-W50 | 6, then 4 | dev: animals whose hash of (seed, id) is below 0.12; train: the rest |
+| train, dev | 48 | M6-W25 | 10, then 4 | the same animals |
+| train, dev | 7 | M6-W50 | 6, then 4 | as above |
+| train, dev | 7 | M6-W25 | 10, then 4 | as above |
+| test (held out) | 21 | M6-W50 | 6, then 4 | all |
+| test (held out) | 21 | M6-W25 | 10, then 4 | all |
+
+The two bases of one seed start from the same world, so their windows differ (days 6 to 10 and 10 to 14) to keep their
+decision points apart. Seeds 48 and 7 only for training and dev, 21 only for the test; none is reserved or retired.
+At most 14 simulated days per world, `--workers 2` at most (the sampler runs one world per process), from this
+worktree at a committed head.
+
+Recorded: every sampled decision point with two or more options and a valid context, in natural proportions: the
+rules' draws (the gate open) and the acts the gate kept or that arrived (`why`). A record whose rules decision is not on
+the menu is kept for the readouts and left out of training. Equal numbers from each base (the sampling rate is set per
+world from the smoke run's counts). Target sizes are fixed in amendment A1 from the smoke run: train about 2,400 to
+3,600, dev 300, test 1,500.
+
+Wild choices: RW's parts by its own registered rule (`scripts/rw-ngogo-choices.ts` `PART_RULE`): train 977 (of which
+the focal males whose hash is below 0.15 are the adapter's validation set), development 448 (evaluation only), held-out
+**sealed and never read**.
+
+## 4. Training settings (from `docs/decide-finetune.md` §5 and §6a; no search)
+
+LoRA r 16, alpha 32, dropout 0.05 on the classifier and the top 8 of the 24 encoder layers; bf16 autocast on MPS;
+batch 2 with 4 accumulation steps (effective 8); AdamW, lr 2e-4, no weight decay; 10% linear warm-up then linear decay;
+gradient clip 1.0; seed 7; softmax cross-entropy over the offered options; each epoch shows a context in its own order
+or with its options shuffled (seeded coin). Every example has weight 1. Epochs: 3 for `r4-rules-state`, 4 for
+`r4-field-groom` (each epoch of b deals new option orders, names and sub-menus: shuffles 0 to 3); the saved epoch is the
+one with the lowest validation loss (dev animals for a, validation males for b). Nothing is tuned on the test split, the
+development part or the probes. `training/decide_ft/train_r4.py` reuses `train.py`'s LoRA placement and `common.py`'s
+serving-identical inputs. Environment: `PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.6`, `PYTORCH_MPS_LOW_WATERMARK_RATIO=0.4`,
+the variables of `HANDOFF.md` §3 item 3, `MGOGO_FT_ROOT=artifacts/decide-ft/r4`.
+
+## 5. Sizing for 16 GB
+
+Before each training run `sysctl -n vm.swapusage` and `uptime` are read and logged in §9. One model process at a time.
+Iteration 0 is a smoke training (seed 48, M6-W50, 1 day after 1 of burn-in; 200 examples, 1 epoch, 40 dev contexts): it
+measures seconds per example and peak memory (MPS driver memory and the process footprint). Amendment A1 writes those
+numbers here and fixes the context count so that one adapter trains in at most about 3 hours (training passes plus the
+validation passes).
+
+Stop rules. If the smoke run cannot hold the settings of §4 (the process is killed, or its footprint passes 11 GB, or
+swap in use grows by more than 3 GB, or it takes more than 4 s per example), then, one change per iteration and at most
+3 iterations: (1) top 4 layers instead of 8; (2) batch 1 with 8 accumulation steps; (3) CPU for a 200-example timing
+only. If none holds, training stops and the numbers are reported. No cloud run.
+
+## 6. Evaluations and thresholds (all offline; fixed now)
+
+Models compared everywhere: the untuned model, `r4-rules-state`, `r4-field-groom` (and `r4-mixed` if made), served as
+the worker serves them (fp16 on MPS, `common.score`). Intervals are 95% bootstraps (2,000 resamples, fixed seed) over
+animals (seed and animal id) for simulated contexts and over focal males for wild choices. **A difference is called one
+only if its paired interval excludes 0.**
+
+1. **Agreement with the rules on held-out contexts (seed 21).** Top-1 agreement with the rules' decision, on the
+   state-only packet: on draws (the main number), on kept or arrived acts, on all; with chance (mean of 1 ÷ menu size);
+   by base (W50, W25); **by kind of decision**: feeding (the rules chose to feed, travel to food or drink), travel
+   (any other move: joining, following, heading home), rest (rest, shelter, a nest by day), social (grooming, play,
+   greeting, aggression, mating, care, calls), each for day and dawn decision points, and night (every decision point at
+   dusk or at night). Paired difference of each adapter against the untuned model. Reference row, not a threshold: the
+   untuned model on the v4 packet as served (with the rate, company and rule sentences), to show what removing them
+   costs the untuned model. Also: agreement with the rules' argmax, the share of picks by kind against the rules', and
+   the consistency of the pick when the options are shuffled.
+   **T1 (the plan's first criterion):** `r4-rules-state` minus untuned on draws is positive with an interval above 0.
+2. **Token parity and size.** `training/decide_ft/parity.py --n 12 --device cpu` on r4 dev contexts prints `PARITY OK`
+   (training tokens and probabilities equal the serving path). Real token counts (the worker's count) for every test
+   packet: median, 95th percentile, largest. **T2:** parity holds and no packet is over 1,280 tokens.
+3. **State probes (M2's design, `scripts/em-probes.ts` `PROBES`, the consistent rendering) on held-out contexts.** Six
+   probes, three levels each, up to 100 situations per probe (hash order): deficit, reserves, sleep, light, heat, water.
+   Read as M2: Δ = probability on the target options at the high level minus at the low level, mean and interval over
+   situations; "right way" when the interval is above 0, "wrong way" when below, "does not respond" when it includes 0.
+   **T3 (the plan's third criterion):** for `r4-rules-state` no probe moves the wrong way; the count moving the right
+   way is reported beside the untuned model's on the same packets. The probes are never trained on. Stated limit: a
+   probe changes the state words only; the option descriptions stay those of the real situation.
+4. **Wild-choice benchmark, development part only** (`scripts/rw-score.ts --part development --kernels
+   gliner,gliner+fan2 --load-model --adapter <name>`, shuffle 0; 448 records): top-1 plain and with the fan-out
+   wrapper, for all records, menus of 8 or fewer and wider menus; each adapter minus untuned, paired
+   (`src/rw/score.ts` `pairedDifference`); the rule stack (0.487) beside them. **T4 (the plan's first criterion for b):**
+   `r4-field-groom` minus untuned, plain, all records, is positive with an interval above 0. The sealed part is never
+   opened. `r4-rules-state` on the same records is reported without a threshold (does teaching the rules move the wild
+   score).
+5. **The rules' pick removed (the second number).** The test worlds are run again with `kernelNoRulesPick` 1 (a
+   rules-only world is unchanged by it; the same decision points). There is no rules' pick to agree with, so the
+   readouts are: how often the model picks the best remaining option by the rules' score (with chance), and how often
+   its pick is of the same kind as the rules' removed pick; untuned against `r4-rules-state`, paired.
+6. **Cross readouts, no threshold:** `r4-field-groom` on the simulated held-out contexts (does field training change
+   agreement with the rules, and the share of grooming picks).
+7. **Manifests (the plan's second criterion):** every adapter's manifest carries its label source; a check lists the
+   training files and confirms none derives from Jev or an outside model, and the removed-wording count is 0.
+
+Not in this stage: stand-ins are not refit (see §8); nothing is run in the loop.
+
+## 7. Order of work, and where it stops
+
+1. This registration, committed. 2. Code and tests (the packet builder, the sampler, the trainer, the reports).
+3. Iteration 0, the smoke run; amendment A1 (measured cost, sizes, a real example packet), committed. 4. Contexts for
+all splits. 5. Train `r4-rules-state`. 6. Evaluations 1, 2, 3, 5 for it. 7. Train `r4-field-groom`. 8. Evaluation 4
+(wild choices; all models) and 6. 9. The in-loop command of §8, tested without a model. 10. Results in §9, the plan's
+status line, the full test suite once (no training running).
+
+If time or memory runs out, work stops in this order, and what was not done is said: the mixed adapter first (never
+started unless everything else is done); then evaluation 6; then evaluation 5; then the probes are cut to 50 situations
+each; then `r4-field-groom` and evaluation 4 are left to a later session with their data ready. `r4-rules-state` with
+evaluations 1 and 2 is the minimum. Every iteration is logged in §9 before it runs; at most 3 per problem.
+
+## 8. In the loop: left ready, not run
+
+One command (written in §9 when the code exists) runs M3's focal design (`scripts/em-loop.ts`: a focal set of animals
+driven by a provider in lockstep against the same animals on the rules) with the state-only packet and an r4 adapter.
+It is the integrator's to register and launch. §9 will say, from the measured seconds per decision, how many simulated
+days and animals are feasible on this Mac, and whether a distilled stand-in is needed for an R1b-style run. Known now:
+the stand-in's features (`scripts/ft-features.ts`) include each option's rules score and a flag on the rules' pick, so
+a stand-in for a state-only engine needs a feature layout without them before it is refit.
+
+## 9. Iteration log and results
+
+Machine before any work (7 October 2026, 11:35): swap 2,580 MB used of 4,096 MB; load averages 1.80, 1.64, 1.57;
+another session's simulation (one node process) is running from the main checkout. No model process is running.
+
+- **Iteration 0 (registered above, logged before it runs): the smoke run of §5.**
