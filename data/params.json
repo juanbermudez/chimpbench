@@ -32,6 +32,33 @@
    "notes": "Nest-to-nest active day: males 11 h 34 min, lactating females 10 h 57 min. Today it emerges from the nest drive and daylight."
   },
   {
+   "id": "activityFirst",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    2
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    2
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.activityFirst",
+   "file": "src/sim/request.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage R2 switch (Track R, packet v4; docs/staging/r2-prereg.md §1 C): kind of activity first, then target. With 1 or 2 the menu a kernel other than the rules is offered holds one entry per kind of activity (src/decide/facts.ts kindOf: eat here, go to food, drink, rest, nest, groom, play, keep with the party, ...), whatever the number of partners or trees: the entry of a kind is its best option by rules score, and the request carries the options of each kind (KernelRequest.groups). 1: the target is settled by that registered rule (the entry is applied; one kernel call per decision). 2: when the chosen kind has two or more options a second request over them goes to the same kernel through the same validation (src/sim/decide.ts kernelStep, src/kernel/loop.ts answerWaiting; StepResult.calls counts the calls). It removes the weighting of a choice by how many partners happen to be listed (list-length bias, measured for Jev and on the wild-choice benchmark's wide menus). The rules' own menu and choice are unchanged, so a rules-only world is the same at every value. 0 = today, bit for bit. Design (a menu layout, not a behavioural constant)."
+  },
+  {
    "id": "adoptBondMin",
    "group": "mortality",
    "value": 0.35,
@@ -955,6 +982,32 @@
    "notes": "Stage C8 (reproduction.ts giveBirth): 1 = the newborn's condition is the mother's mean condition over the pregnancy and its growth record min(1, gestCond / condGood); 0 = it starts as a founder. Motivation: lemoine2020a's hypothesis (proposed, not measured)."
   },
   {
+   "id": "bodyBonesDays",
+   "group": "mortality",
+   "value": 21,
+   "units": "eco-days",
+   "range": [
+    21,
+    730
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    100000
+   ],
+   "calibrate": false,
+   "evidence": "L",
+   "sources": [],
+   "refs": [
+    "docs/research.md, Addendum: responses to the dead and how long remains persist, section 3: rouquet2005 (gorilla carcasses, Gabon and Congo: after about 3 weeks only a few bones with small-mammal gnaw marks are left) [L for a chimpanzee]; heon2025 (one orangutan carcass, Borneo: the skull still visible two years later) [L for a chimpanzee]",
+    "docs/staging/ed-prereg.md section 3"
+   ],
+   "clock": "eco",
+   "symbol": "bodyTick",
+   "file": "src/sim/deadbody.ts",
+   "notes": "Stage ED (deadBody): eco-days on the ground for which bones stay after the flesh is gone. No chimpanzee figure exists; the value is the lower end of two reports from other great apes (a floor on how long some bones last), a design assumption inside that range. Nothing responds to bones."
+  },
+  {
    "id": "bodyChildBase",
    "group": "needs",
    "value": 0.6,
@@ -997,6 +1050,82 @@
    "symbol": "needs() body factor",
    "file": "src/sim/life.ts",
    "notes": "Body-size factor gain from birth to 12 y."
+  },
+  {
+   "id": "bodyFleshDays",
+   "group": "mortality",
+   "value": 8,
+   "units": "eco-days",
+   "range": [
+    6,
+    10
+   ],
+   "rangeBasis": "source",
+   "hardRange": [
+    0,
+    100000
+   ],
+   "calibrate": false,
+   "evidence": "L",
+   "sources": [],
+   "refs": [
+    "docs/research.md, Addendum: responses to the dead and how long remains persist, section 3: heon2025 (one orangutan of about 30 kg, Borneo: fresh to dry remains in 6 days) [L for a chimpanzee]; rouquet2005 (a gorilla of about 150 kg: a heap of bones and hair in 10 days; maggots remove the flesh in 5 to 10 days) [L for a chimpanzee]",
+    "docs/staging/ed-prereg.md section 3"
+   ],
+   "clock": "eco",
+   "symbol": "bodyTick",
+   "file": "src/sim/deadbody.ts",
+   "notes": "Stage ED (deadBody): eco-days lying on the ground, not held, after which a body is bones. No chimpanzee figure exists; the midpoint of two reports from other great apes, a design assumption inside that range, not scaled by body mass. The count stops while the body is carried (the long carried corpses were mummified, soldati2022; why is not reported)."
+  },
+  {
+   "id": "bodyInspectMin",
+   "group": "social",
+   "value": 3,
+   "units": "eco-min",
+   "range": [
+    2,
+    20
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    100000
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/staging/ed-prereg.md section 3: only durations are reported, none for a dead infant (2 and 5 min at skeletons, second-hand and not verified; 4.5 and 21.9 min at a collapsed juvenile that lived, shimada2023)"
+   ],
+   "clock": "eco",
+   "symbol": "bodyFollowTick",
+   "file": "src/sim/deadbody.ts",
+   "notes": "Stage ED (deadRespond): how long an animal that has walked up to a body looks at it before its inspection is recorded and ends. Design assumption (an inspection needs an end); not taken from a rate of the behaviour."
+  },
+  {
+   "id": "bodyInterestW",
+   "group": "social",
+   "value": 0.4,
+   "units": "score",
+   "range": [
+    0.2,
+    0.8
+   ],
+   "rangeBasis": "assumed-x2",
+   "hardRange": [
+    0,
+    3
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/staging/ed-prereg.md section 2.3, section 3"
+   ],
+   "clock": "none",
+   "symbol": "bodyOptions",
+   "file": "src/sim/candidates.ts",
+   "notes": "Stage ED (deadRespond): the value of walking up to an infant body the animal has not yet inspected (maternal siblings, immatures, adult males), before distance, hunger, rain and night. Design assumption: no source gives it; one weight for every class. The share of each class that approaches is a readout."
   },
   {
    "id": "bodyRules",
@@ -5354,6 +5483,96 @@
    "symbol": "updateSun",
    "file": "src/sim/environment.ts",
    "notes": "Sun altitude at which daylight reaches 0 (end of nautical twilight)."
+  },
+  {
+   "id": "deadBody",
+   "group": "mortality",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/staging/ed-prereg.md section 2.1, 2.4"
+   ],
+   "clock": "none",
+   "symbol": "P.deadBody",
+   "file": "src/sim/deadbody.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage ED (docs/staging/ed-prereg.md): 0 = today (hash-identical). 1: a dead animal leaves a body in the world (world.sim.bodies, Chimp.remains): it lies where the animal died or is put down, is bones after bodyFleshDays on the ground and gone after bodyBonesDays more; animals perceive bodies in sight (chimp.sim.bd), and the renderer draws a body for as long as the simulation says it exists (no 24-hour fade)."
+  },
+  {
+   "id": "deadCarry",
+   "group": "mortality",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/staging/ed-prereg.md section 2.2"
+   ],
+   "clock": "none",
+   "symbol": "P.deadCarry",
+   "file": "src/sim/deadbody.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage ED (docs/staging/ed-prereg.md): 0 = today (hash-identical). 1 (needs deadBody 1): no carrying roll and no carrying timer (carryDeadP, carryDeadMinDays, carryDeadSpanDays, carryDeadMaxAgeY are not read). A body that was on its carer at death stays in her hands; she puts it down for acts that need her hands and may choose to take it up again while she sees it (an ordinary option valued as contact with that infant was in life); a carry ends when she chooses otherwise and moves out of sight."
+  },
+  {
+   "id": "deadRespond",
+   "group": "social",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/staging/ed-prereg.md section 2.3"
+   ],
+   "clock": "none",
+   "symbol": "P.deadRespond",
+   "file": "src/sim/deadbody.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage ED (docs/staging/ed-prereg.md): 0 = today (hash-identical). 1 (needs deadBody 1): maternal siblings, immatures and adult males may walk up to an infant body and look at it (once per body), and its carer and maternal siblings may groom it; the perceived body is in the decision context (DecisionContext.bodies). Nothing responds to an adult body or to bones."
   },
   {
    "id": "deadSlimDays",
@@ -13315,12 +13534,12 @@
    "units": "switch",
    "range": [
     0,
-    1
+    2
    ],
    "rangeBasis": "assumed",
    "hardRange": [
     0,
-    1
+    2
    ],
    "calibrate": false,
    "evidence": "design",
@@ -13333,7 +13552,7 @@
     "compressed": 0,
     "field": 0
    },
-   "notes": "Stage R1 switch (Track R, kernel contract; docs/staging/r1-prereg.md §1, D4): which kernel decides inside the tick for rules-driven chimps. 0 = the rules (rgChoice, else the argmax): today, bit for bit. 1 = the null kernel: a chimp aged rgMinAge or over takes one option of the menu a model kernel would be offered (buildRequest: at most 8 legal options, night and dusk menus) with equal probability, one draw from world.rng, through the step every kernel shares (the request validated, the answer checked, legality re-checked by applyDecision; fewer than two options or anything refused: the rules' argmax, no draw). Younger animals keep the rules. It is the floor a decision kernel is compared with (stage R1b), not a model of behaviour. Design."
+   "notes": "Stage R1 switch (Track R, kernel contract; docs/staging/r1-prereg.md §1, D4): which kernel decides inside the tick for rules-driven chimps. 0 = the rules (rgChoice, else the argmax): today, bit for bit. 1 = the null kernel: a chimp aged rgMinAge or over takes one option of the menu a model kernel would be offered (buildRequest: at most 8 legal options, night and dusk menus) with equal probability, one draw from world.rng, through the step every kernel shares (the request validated, the answer checked, legality re-checked by applyDecision; fewer than two options or anything refused: the rules' argmax, no draw). Younger animals keep the rules. It is the floor a decision kernel is compared with (stage R1b), not a model of behaviour. Design. Stage R2 (docs/staging/r2-prereg.md §1 D): 2 = the packet-reading rules kernel (src/kernel/packet-rules.ts, mode sample) decides for the same animals through the same step: it reads only the request (each option's published rules value and the belief the v4 packet carries) and draws through world.rng."
   },
   {
    "id": "knownTreesK",
@@ -15487,6 +15706,33 @@
    "notes": "Remembered trees nearer than this are left to the forage candidates (tree detection distance). Field: P-SCALE-2 crown detection (design)."
   },
   {
+   "id": "menuParity",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.menuParity",
+   "file": "src/sim/request.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage R2 switch (Track R, packet v4; docs/staging/r2-prereg.md §1 B; the user, 6 October 2026: fix the night menu in the next stage): one menu for every kernel. With 1 the menu of every kernel other than the rules (buildRequest) is the menu the rules policy draws from (src/sim/rg.ts rgMenu): the same phase rule (the open menu under rhythmFreeNight 1, the night and dusk menus otherwise) and the same kept picks (the best option, a response to a perceived disturbance, a joined trip, a hunt or patrol lead at its impulse), in the same order, so a comparison of kernels does not also compare menus after dusk. The rules' own menu is not changed, so a rules-only world is the same at 0 and 1. 0 = today, bit for bit: buildRequest applies the night and dusk menus whatever rhythmFreeNight says and keeps the rules' argmax and a disturbance response. Design (a menu layout, not a behavioural constant)."
+  },
+  {
    "id": "milkInDrive",
    "group": "needs",
    "value": 0,
@@ -16038,6 +16284,33 @@
     "field": 0
    },
    "notes": "Stage M1 switch (Track E's decision model; docs/staging/em-prereg.md §M1): what the decision model's observation shows. With 1 observe() adds the focal animal's Track E state (body: reserves relative to the usual store, the energy-deficit drive, the energy need and the waking hours left it is read over, gut fill, sleep pressure and felt sleepiness, the circadian oscillator's level and direction, the water deficit, the thermal load, competitive arousal, affiliation and the fast arousal; each only while its mechanism runs), the light it sees and its trend (in place of the clock hour, which the packet then never shows), and on each option the values Track E's valuation gives it (net energy rate, the crop it is valued at and when the crown was last seen, the distance, the company a move adds), computed by the valuation's own functions. Nothing in the simulation reads it: the world is the same at 0 and 1. 0 = today's observation, key for key. Design (an observation layout, not a behaviour)."
+  },
+  {
+   "id": "observeV4",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.observeV4",
+   "file": "src/sim/observe-state.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage R2 switch (Track R, packet v4; docs/staging/r2-prereg.md §1 A): the state a decision kernel sees. With 1 observe() returns the stage M1 observation (as observeState 1: body, light, option values) plus the v4 fields: hindgut fill, the feeding drive and the animal's own full ripe-fruit rate in the body; on an option its net rate as a share of that rate, the chance a listed crown is in fruit, the spread of the animal's belief about a crop out of sight, what the option's value changes by if the crown holds less or more than believed (the form rg.ts beliefOffset samples), the odds of winning a contest the valuation assesses (contestAssess), and the company of nest-mates on its own nest (nestCompany); and the marker packet: 4, which selects the v4 wording (words before numbers; src/kernel/packet-words.ts). Every field is computed by the function the rules' valuation calls, from the animal's own body, perception snapshot, memory or a belief the rules hold it to; pure, no world.rng. Nothing in the simulation reads the switch: the world is the same at 0 and 1. 0 = today, bit for bit. Design (what is shown, not a behavioural constant)."
   },
   {
    "id": "oestrusPullW",

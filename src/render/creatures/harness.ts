@@ -238,6 +238,19 @@ if (mode === 'sheet') {
   if (q.has('moving')) movers.push({ c: m, cx: 0, cz: 0, r: 1.6, speed: 0.9, ang: 0 });
   if (q.has('drop')) setTimeout(() => { m.carryingDeadId = -1; }, Number(q.get('drop')) * 1000);
   camTarget.set(0.4, 0.6, 0); camPos.set(2.8, 2.0, 4.6);
+  if (q.has('remains')) {
+    // Stage ED (deadBody 1): bodies the simulation tracks (Chimp.remains). The carried body, a body lying 60 h after
+    // the death (the old 24-hour fade would have hidden it) and bones (remains.ts; a stylized marker).
+    inf.remains = 'body';
+    const lying = chimp({ age: 2.5, sex: 'female', x: 1.9, z: 0.5, action: 'dead' });
+    lying.deathTime = world.time - 60; lying.remains = 'body';
+    const bones = chimp({ age: 30, sex: 'male', x: -1.7, z: 0.9, action: 'dead' });
+    bones.deathTime = world.time - 240; bones.remains = 'bones';
+    const small = chimp({ age: 1, sex: 'male', x: -0.6, z: 1.7, action: 'dead' });
+    small.deathTime = world.time - 240; small.remains = 'bones';
+    captions.push({ x: 0, y: -0.1, z: 1.0, text: 'carried body' }, { x: 1.9, y: -0.1, z: 1.4, text: 'body, 60 h' }, { x: -1.7, y: -0.1, z: 1.8, text: 'bones (stylized)' });
+    camTarget.set(0.1, 0.4, 0.5); camPos.set(1.2, 2.4, 5.6);
+  }
 } else if (mode === 'single') {
   const act = (q.get('action') ?? 'groom') as Action;
   setupAction(act, 0, 0, q.has('moving'));

@@ -197,7 +197,7 @@ The renderer animates what the simulation decides; these sources shape how it lo
 - **Arboreal posture.** Arm-hanging and quadrumanous climbing occur; brachiation is rare. *Hunt 1992, "Positional behavior of Pan troglodytes in the Mahale Mountains and Gombe Stream National Parks", Am J Phys Anthropol 87:83–105* ([Wiley](https://onlinelibrary.wiley.com/doi/abs/10.1002/ajpa.1330870108)). **Proposed / moderate**. Used: about half of individuals hold a branch overhead with the free arm while feeding in a crown; no brachiation.
 - **Facial expressions by muscle action.** ChimpFACS-based classification separates expression categories (bared-teeth, scream, pant-hoot, play face, pout, whimper and others) by facial action units. *Parr, Waller, Vick & Bard 2007, "Classifying chimpanzee facial expressions using muscle action", Emotion 7:172–181* ([PubMed](https://pubmed.ncbi.nlm.nih.gov/17352572/)). **Proposed / moderate** (captive animals). Used: brow raise or lower, compressed lips, lip-smacking while grooming, relaxed and full play faces, pout and whimper faces. Intensities are stylized.
 
-**Stylizations (not sourced):** the hair highlight and halo shells (a look, not a measurement), gait cadence curves and caps, the gallop footfall order, transition times, gaze limits, blink intervals (2–10 s, 15% doubles), the grooming partner's posture shifts every 20–60 s, the stream's pool–riffle spacing, and the posture of a mother carrying a dead infant (the simulation's carry itself is tagged [M] in `src/sim/life.ts`).
+**Stylizations (not sourced):** the hair highlight and halo shells (a look, not a measurement), gait cadence curves and caps, the gallop footfall order, transition times, gaze limits, blink intervals (2–10 s, 15% doubles), the grooming partner's posture shifts every 20–60 s, the stream's pool–riffle spacing, the shape, number and scatter of the bones drawn where a body lay (stage ED, `render/creatures/remains.ts`; that bones outlast a body is reported for other great apes only), and the posture of a mother carrying a dead infant (the simulation's carry itself is tagged [M] in `src/sim/life.ts`).
 
 ## Source access and limits
 
@@ -4622,8 +4622,71 @@ of them from disease-outbreak work.
 - Nothing in the code has others approach a body; the sources report siblings, immatures and adult males approaching and
   inspecting, with variation between cases.
 
+### Stage ED (built behind switches, 6 October 2026)
+
+`deadBody`, `deadCarry` and `deadRespond` (all 0 by default; docs/staging/ed-prereg.md) build on the entries above and on
+nothing else. Used as inputs: the two decomposition figures of section 3, as a range for a chimpanzee [L]. Used as
+targets only, never as inputs: every carrying duration and share of section 2, and the proportions of section 1.
+Design assumptions, labelled in the code: what ends a carry (not reported by any source opened), which acts need the
+carer's hands, the value and length of an inspection, and that a carried body does not decompose. Not built for want of
+evidence: responses to an adult's body, to bones, and any return to old remains.
+
 ### Summary
 
 Well supported: a mother with access to her dead infant usually carries it (every such Gombe case, 71% of such Budongo cases), for a median of about 2 days with a tail to weeks (minimum 18 to 89 days in the long cases, mummified), in atypical holds, while siblings, immatures and adult males approach, inspect and sometimes groom or handle the body.
 Thin: how others respond to a dead adult (two Gombe accounts that disagree), how long anyone stays by a body, any chimpanzee-specific persistence figure (the reported ones are one gorilla description and one orangutan, bones within 6–10 days and bones still visible after two years), and whether chimpanzees ever return to remains (two second-hand Ngogo skeleton encounters of 2 to 5 minutes, no return seen).
 A simulation could defensibly show: a body that stays a body for days and then bones and a skull, not a 24-hour fade; a mother carrying her dead infant for days with a long tail; nearby siblings, immatures and adult males approaching and inspecting for minutes; and not mourning rites, vigils or visits to old bones, which no opened source reports.
+
+## Engineering sources: answering a wide menu with a narrow kernel (stage RW bench, 6 October 2026)
+
+Read for amendment A8 of [staging/rw-bench-prereg.md](staging/rw-bench-prereg.md): how a decision kernel built for at
+most 8 options can answer a menu of up to 33. **Every source here is engineering documentation of a commercial product
+(TypeSafe's Jev) or this project's own design notes. None is evidence about chimpanzees, none is a target or an input,
+and nothing here was learned by calling Jev: no call was made, no key was used, and no Jev output is or may become a
+label (TypeSafe MCA §2.3(b)).** Techniques only. The official pages were read on 6 October 2026 through a fetch tool
+that returns a summary with quoted sentences, not the raw page, so the quotations below are as that tool gave them
+and were not checked against the page source. Paraphrased otherwise. The Jev skill card was not available; third-party
+write-ups that a search listed were not opened and are not sources.
+
+**Official TypeSafe documentation** (docs.typesafe.ai; index at `/llms.txt`):
+- **Speculative fan-out** [typesafeFanOut] (`/patterns/fan-out`): one request carries every question the caller might
+  need, speculative ones included; the questions share one state and are answered independently and in parallel, and
+  code keeps the answers it turns out to need. Use: the shape of "several questions over one state"; here the
+  questions are sub-menus of one choice.
+- **Choice** [typesafeChoice] (`/primitives/choice`): a Choice takes up to 255 options and returns a probability per
+  option and a confidence computed from how the probabilities are spread; the page advises giving Jev the full list
+  rather than a shortlist, and chaining Choice questions level by level for a hierarchy. Use: a caution. **Jev's own
+  documentation does not recommend splitting a wide flat choice for Jev**; splitting is this project's answer to a
+  kernel whose packet and training stop at 8 options.
+- **Hierarchical classification** [typesafeHierarchical] (`/cookbooks/hierarchical_classification`): a large label set
+  is answered level by level, each set of siblings as one Choice, with a beam search that keeps the best K paths at
+  each level. Use: the model for "rounds, keep the best few, then choose among the survivors".
+- **Re-ranking** [typesafeRerank] (`/cookbooks/rerank_typesafe`): each candidate of a shortlist (30 in the example) gets
+  its own request and its own score, and code sorts by score. Use: the "score candidates independently, then choose"
+  idea. No page of the official documentation names a "two-stage pattern for wide choices"; this cookbook and the one
+  above are the closest official material found.
+- **Confidence-gated routing** [typesafeConfidenceRouting] (`/patterns/confidence-routing`; also `/patterns/intent-routing`):
+  the answer says what, the confidence says whether to act on it; below a threshold set in advance the case goes to a
+  fallback (a person, in the examples; thresholds of 0.6 and 0.85 by the stakes of the action). The page gives no
+  method for choosing a threshold. Use: the routing readout, with the fallback being the three-rule stack and the
+  threshold chosen on the training part only.
+- **Composite scoring** [typesafeCompositeScoring] (`/patterns/composite-scoring`): a judgment is broken into separate
+  scored dimensions that code combines with weights it controls. Use: named for completeness; not applied (the wild
+  packet has one question, and weights would be fitted).
+- **Known weaknesses of Jev 1.13** [typesafeJaggedness] (`/model-jaggedness/jev-1.13`): the order of a Choice's options
+  can change the answer and the model leans to the first option (advice: reorder and check that the answer holds);
+  accuracy falls as the state grows with content unrelated to the decision (advice: filter in code and send only what
+  the question needs). Use: the option-order check for every model kernel, and the choice to give a sub-menu only the
+  state lines about its own options.
+- Also opened, nothing used beyond the above: `/patterns` (the four named patterns: speculative fan-out,
+  confidence-gated routing, composite scoring, intent routing) and `/cookbooks/consistency_choice_cookbook` (the same
+  Choice repeated 15 times to see whether its label holds; options are not reordered there).
+
+**This project's own notes** (branch `origin/main-wip-2026-10-05`; design documents, not results on this branch):
+- `docs/decide-jev-design.md`: finding N4, list-length bias (Jev's probability mass on social options rose from 0.27
+  with one social option to 0.73 with four or more at a fixed menu size; partners were not capped per action, places
+  were), and the packet rule that followed: one entry per kind of activity whatever the number of partners, with a
+  speculative sub-question per kind that has two or more concrete options ("if he grooms, whom?").
+- `docs/decide-jev-design-agent-2.md`: the hierarchical arm, a mode first and a target intention when needed, with code
+  routing inside a mode and the target lists supplied up front; composite scoring kept as an offline ablation with no
+  fitted weights.

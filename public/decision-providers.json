@@ -1,0 +1,11 @@
+{
+  "default": "browser",
+  "server": { "baseUrl": "/api/decide" },
+  "jev": { "baseUrl": "/api/providers/jev" },
+  "browser": {
+    "model": "onnx-community/GLiNER2.5-Decide-ONNX",
+    "revision": "2a9b872b5c70ae1105107975a0952a57e0fbba25",
+    "device": "auto",
+    "dtype": "auto"
+  }
+}

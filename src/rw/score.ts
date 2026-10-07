@@ -23,6 +23,10 @@ export interface RecordScore {
   /** Position of the answered option, 0 first to 1 last. */
   relPos: number | null;
   lineCut: boolean;
+  /** The answer's top probability (the kernel's confidence; amendment A8, §14.2); null when the answer was refused. */
+  conf: number | null;
+  /** Inner-kernel calls the answer took (1 unless the kernel fans out; 0 when refused). */
+  calls: number;
 }
 export interface RunOptions {
   seed?: number; shuffle?: number;
@@ -35,9 +39,10 @@ export interface RunOptions {
 
 const EPS = 1e-12, FLOOR = 1e-9;
 /** The scores of one answer on one packet (exported for tests). */
-export function scoreAnswer(answer: unknown, packet: WildPacket, distribution: boolean): Pick<RecordScore, 'refused' | 'index' | 'hit' | 'tieHit' | 'rr' | 'nll' | 'relPos'> {
+export function scoreAnswer(answer: unknown, packet: WildPacket, distribution: boolean): Pick<RecordScore, 'refused' | 'index' | 'hit' | 'tieHit' | 'rr' | 'nll' | 'relPos' | 'conf' | 'calls'> {
   const n = packet.request.options.length, read = typeof answer === 'object' && answer !== null ? readAnswer(answer as Record<string, unknown>, n) : null;
-  if (!read) return { refused: 'invalid-answer', index: -1, hit: 0, tieHit: 0, rr: 0, nll: null, relPos: null };
+  if (!read) return { refused: 'invalid-answer', index: -1, hit: 0, tieHit: 0, rr: 0, nll: null, relPos: null, conf: null, calls: 0 };
+  const made = (answer as { calls?: unknown }).calls;
   const p = read.probabilities, labels = packet.labels, max = Math.max(...p), top = p.flatMap((v, i) => v >= max - EPS ? [i] : []);
   // the best-placed partner (one partner per record in the data); ties broken at random: the mean of 1/rank over its tied places
   const best = labels.reduce((b, i) => p[i] > p[b] ? i : b, labels[0]), higher = p.filter(v => v > p[best] + EPS).length, tied = p.filter(v => Math.abs(v - p[best]) <= EPS).length;
@@ -45,7 +50,8 @@ export function scoreAnswer(answer: unknown, packet: WildPacket, distribution: b
   for (let j = 1; j <= tied; j++) rr += 1 / (higher + j) / tied;
   const sum = p.reduce((a, b) => a + b, 0), mass = labels.reduce((a, i) => a + p[i], 0);
   return { refused: '', index: read.index, hit: +labels.includes(read.index), tieHit: top.filter(i => labels.includes(i)).length / top.length, rr,
-    nll: distribution && Math.abs(sum - 1) < 0.01 ? -Math.log(Math.max(FLOOR, mass)) : null, relPos: n > 1 ? read.index / (n - 1) : null };
+    nll: distribution && Math.abs(sum - 1) < 0.01 ? -Math.log(Math.max(FLOOR, mass)) : null, relPos: n > 1 ? read.index / (n - 1) : null,
+    conf: max, calls: typeof made === 'number' && Number.isInteger(made) && made > 0 ? made : 1 };
 }
 
 /** Runs a kernel (sync or async) over the choices under one shuffle. Records come back in the order given. */
@@ -59,7 +65,7 @@ export async function runKernel(kernel: WildKernel, choices: WildChoice[], opts:
     const base = { key: choice.key, focal: choice.focal, setSize: packet.order.length, preceded: choice.preceded, partStratum: choice.partStratum, chance: packet.labels.length / packet.order.length, lineCut: packet.cut.length > 0 };
     let s: ReturnType<typeof scoreAnswer>;
     try { s = scoreAnswer(await kernel.decide(packet.request, { random: streamOf(seed, shuffle, 'draw', choice.key) }), packet, !!opts.distribution); }
-    catch (error) { s = { refused: `kernel-error: ${error instanceof Error ? error.message : 'failed'}`.slice(0, 200), index: -1, hit: 0, tieHit: 0, rr: 0, nll: null, relPos: null }; }
+    catch (error) { s = { refused: `kernel-error: ${error instanceof Error ? error.message : 'failed'}`.slice(0, 200), index: -1, hit: 0, tieHit: 0, rr: 0, nll: null, relPos: null, conf: null, calls: 0 }; }
     return { ...base, ...s, picked: s.index >= 0 ? packet.order[s.index] : null };
   };
   for (let i = 0; i < choices.length; i += width) out.push(...await Promise.all(choices.slice(i, i + width).map(one)));
@@ -121,4 +127,41 @@ export function orderSensitivity(runs: RecordScore[][]) {
   return { shuffles: runs.length, top1PerShuffle: top1.map(r3), top1Range: r3(Math.max(...top1) - Math.min(...top1)), top1Mean: r3(top1.reduce((a, b) => a + b, 0) / top1.length),
     sameMaleUnderEveryShuffle: r3(same / n), meanRelativePosition: r3(answered.reduce((a, s) => a + s.relPos!, 0) / answered.length),
     firstOptionShare: r3(answered.filter(s => s.index === 0).length / answered.length), firstOptionShareExpected: r3(answered.reduce((a, s) => a + 1 / s.setSize, 0) / answered.length) };
+}
+
+// ------------------------------------------------------------------------------------------------ paired readouts (amendment A8, prereg §14)
+
+const same = (a: RecordScore[], b: RecordScore[]) => { if (a.length !== b.length || a.some((s, i) => s.key !== b[i].key)) throw new Error('paired readout: the two runs are not the same records in the same order'); };
+/** Two-sided exact sign test on the discordant records. */
+export function signTest(onlyA: number, onlyB: number): number {
+  const n = onlyA + onlyB, k = Math.min(onlyA, onlyB);
+  if (!n) return 1;
+  let tail = 0, c = 1;   // c = C(n, i)
+  for (let i = 0; i <= k; i++) { tail += c; c = c * (n - i) / (i + 1); }
+  return Math.min(1, 2 * tail / 2 ** n);
+}
+/**
+ * A minus B on the same records (top-1 of the answered option): the mean difference with a 95% interval from the cluster
+ * bootstrap over focal males, the four cells and the sign test. A difference is called one only if the interval excludes 0.
+ */
+export function pairedDifference(a: RecordScore[], b: RecordScore[], keep: (s: RecordScore) => boolean = () => true, reps = 2000, seed = 20261006) {
+  same(a, b);
+  const rows = a.map((s, i) => ({ ...s, hit: s.hit - b[i].hit, tieHit: s.hit, rr: b[i].hit })).filter(keep);   // hit: the difference; tieHit and rr carry the two hits
+  const cell = (x: number, y: number) => rows.filter(r => r.tieHit === x && r.rr === y).length, st = clusterStats(rows, { d: r => r.hit, a: r => r.tieHit, b: r => r.rr }, reps, seed);
+  const d = st.stats.d, onlyA = cell(1, 0), onlyB = cell(0, 1);
+  return { records: st.records, animals: st.animals, a: st.stats.a.value, b: st.stats.b.value, difference: d.value, ci: d.ci, bothRight: cell(1, 1), onlyA, onlyB, neither: cell(0, 0),
+    signP: Math.round(signTest(onlyA, onlyB) * 1000) / 1000, isDifference: rows.length > 0 && d.ci[0] !== null && d.ci[1] !== null && (d.ci[0] > 0 || d.ci[1] < 0) };
+}
+/** Confidence-gated routing (prereg §14.2): the kernel's answer when its confidence is at least t, otherwise the fallback's; a refused record routes. */
+export function routed(model: RecordScore[], fallback: RecordScore[], t: number): { scores: RecordScore[]; share: number } {
+  same(model, fallback);
+  const route = (s: RecordScore) => s.conf === null || s.conf < t, scores = model.map((s, i) => route(s) ? { ...fallback[i], conf: s.conf } : s);
+  return { scores, share: model.length ? model.filter(route).length / model.length : 0 };
+}
+export const ROUTE_GRID = Array.from({ length: 21 }, (_, i) => i / 20);
+/** The threshold of the grid with the highest routed top-1 on these (training) records; a tie goes to the smaller threshold. */
+export function chooseThreshold(model: RecordScore[], fallback: RecordScore[], grid = ROUTE_GRID): { t: number; top1: number; curve: { t: number; top1: number; share: number }[] } {
+  const curve = grid.map(t => { const r = routed(model, fallback, t); return { t, top1: r.scores.reduce((a, s) => a + s.hit, 0) / Math.max(1, r.scores.length), share: r.share }; });
+  const best = curve.reduce((b, c) => c.top1 > b.top1 + 1e-12 ? c : b, curve[0]);
+  return { t: best.t, top1: best.top1, curve };
 }

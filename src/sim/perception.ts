@@ -15,6 +15,7 @@ import { darkOn, sightAt, visionNow } from './light';
 import { NEVER, aliveNear, awakeInNest, byIdIn, index, isTreeId, ix, simOf, treesNear } from './state';
 import { patrolValueOn, rememberRivals } from './patrol';
 import { listedTrees, listSightOn } from './tripbelief';
+import { bodyOn, seeBodies } from './deadbody';
 
 export const IMPULSE_TRANSFER = 1, IMPULSE_ESCALATE = 2, IMPULSE_INFANTICIDE = 3, IMPULSE_RAIN = 4, IMPULSE_GANG = 5, IMPULSE_PATROL = 6, IMPULSE_HUNT = 7;
 
@@ -169,6 +170,8 @@ export function perceive(world: World, c: Chimp): void {
       if (alone && dx * dx + dz * dz < bestD) { bestD = dx * dx + dz * dz; x.isolated = id; }
     }
   }
+  // stage ED (deadBody; deadbody.ts): the bodies of its own community in sight
+  if (bodyOn(P)) seeBodies(world, c, r2);
   // Remember the nearest few individuals.
   const byId = index(world).byId;
   for (let i = 0; i < x.seen.length && i < 10; i++) { const o = byId.get(x.seen[i])!; remember(world, c, o.id, 'chimp', o.position); }

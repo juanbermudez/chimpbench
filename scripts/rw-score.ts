@@ -7,6 +7,8 @@
 //            gliner  (needs --load-model; [--adapter base] [--device mps]; starts the local worker; never run in stage RW bench)
 //            codex   (an OUTSIDE model; needs --codex-approved and --codex-max-calls N; [--codex-model m] [--codex-effort e]
 //                     [--codex-batch 1] [--codex-timeout 300] [--codex-bin path]; never run in stage RW bench)
+//   fan-out (amendment A8): <kernel>+fan2 | +fan1 | +pool3 answers a menu wider than 8 by sub-menus of 8 (src/kernel/fanout.ts),
+//            e.g. gliner+fan2; <kernel>@N runs that kernel under N option orders (e.g. gliner@3,gliner+fan2@3)
 //   --part held-out is refused without --open-sealed "<reason>", which first writes a line to docs/staging/rw-sealed-log.md.
 //
 // Any kernel of R1's interface is scored the same way (src/rw/score.ts): top-1, top-1 with ties split, mean reciprocal
@@ -15,13 +17,14 @@
 // Privacy: packets and per-record outputs go to --out (gitignored); --md writes aggregate counts and rates only.
 import { execSync } from 'node:child_process';
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { FAN_VARIANTS, fanOutKernel, type FanVariant } from '../src/kernel/fanout';
 import { nullKernel } from '../src/kernel/kernels';
 import { ruleKernel, WILD_RULES, type WildKernel } from '../src/rw/kernels';
-import { buildWildPacket, DEFAULT_SEED, PACKET_VERSION, shuffled, streamOf, type WildChoice } from '../src/rw/packet';
+import { buildWildPacket, DEFAULT_SEED, narrowWildRequest, PACKET_VERSION, shuffled, streamOf, type WildChoice } from '../src/rw/packet';
 import { clusterStats, orderSensitivity, runKernel, summarizeRun, type RecordScore, type Stat } from '../src/rw/score';
 import { codexKernel, type CodexCall } from './lib/rw-codex';
 import { CSV, logOpening, readRows, recordIdsHash, splitRuleHash, wildChoices } from './lib/rw-load';
-import { HARD_TOKEN_LIMIT, packetSizes, WILD_TOKEN_BUDGET, wildGlinerKernel } from './lib/rw-serialize';
+import { batchingScorer, HARD_TOKEN_LIMIT, packetSizes, WILD_TOKEN_BUDGET, wildGlinerKernel } from './lib/rw-serialize';
 import { PARTS, type Part } from './rw-ngogo-choices';
 
 /** The parser's own figure each local kernel must reproduce with ties split (rw-numbers.md). The order check (first-option) has none: it must score chance within sampling error. */
@@ -43,12 +46,19 @@ export function sizeReport(choices: WildChoice[], seed: number) {
 }
 
 export interface KernelRun { id: string; label: string; distribution: boolean; shuffles: number; summary: ReturnType<typeof summarizeRun>; order: ReturnType<typeof orderSensitivity> | null;
-  registered: null | { rule: string; value: number | null; ci: (number | null)[]; reproduced: boolean; recordsThatDiffer: number; ofThemWithACutLine: number }; calls?: CodexCall[] }
+  registered: null | { rule: string; value: number | null; ci: (number | null)[]; reproduced: boolean; recordsThatDiffer: number; ofThemWithACutLine: number }; calls?: CodexCall[];
+  /** Per shuffle: wall seconds of the run and inner-kernel calls asked (1 a record unless the kernel fans out). */
+  cost: { seconds: number; kernelCalls: number }[] }
 
 /** Scores one kernel on the choices under `shuffles` option orders, and compares a local kernel with the parser's own figure on the same records. */
 export async function scoreKernel(kernel: WildKernel, choices: WildChoice[], o: { seed: number; shuffles: number; reps: number; distribution: boolean; concurrency?: number; keep?: (shuffle: number, scores: RecordScore[]) => void }): Promise<KernelRun> {
-  const runs: RecordScore[][] = [];
-  for (let k = 0; k < o.shuffles; k++) { runs.push(await runKernel(kernel, choices, { seed: o.seed, shuffle: k, distribution: o.distribution, concurrency: o.concurrency })); o.keep?.(k, runs[k]); }
+  const runs: RecordScore[][] = [], cost: KernelRun['cost'] = [];
+  for (let k = 0; k < o.shuffles; k++) {
+    const t0 = performance.now();
+    runs.push(await runKernel(kernel, choices, { seed: o.seed, shuffle: k, distribution: o.distribution, concurrency: o.concurrency }));
+    cost.push({ seconds: Math.round((performance.now() - t0) / 100) / 10, kernelCalls: runs[k].reduce((a, s) => a + s.calls, 0) });
+    o.keep?.(k, runs[k]);
+  }
   const summary = summarizeRun(runs[0], o.reps), rule = REGISTERED[kernel.id];
   let registered: KernelRun['registered'] = null;
   if (rule && choices.every(c => c.base && rule in c.base)) {
@@ -57,7 +67,7 @@ export async function scoreKernel(kernel: WildKernel, choices: WildChoice[], o: 
     const differ = runs[0].filter(s => Math.abs(s.tieHit - base.get(s.key)!) > 1e-9);
     registered = { rule, value: reg.value, ci: reg.ci, reproduced: reg.value === mine.value && reg.ci[0] === mine.ci[0] && reg.ci[1] === mine.ci[1], recordsThatDiffer: differ.length, ofThemWithACutLine: differ.filter(s => s.lineCut).length };
   }
-  return { id: kernel.id, label: kernel.label, distribution: o.distribution, shuffles: o.shuffles, summary, order: o.shuffles > 1 ? orderSensitivity(runs) : null, registered };
+  return { id: kernel.id, label: kernel.label, distribution: o.distribution, shuffles: o.shuffles, summary, order: o.shuffles > 1 ? orderSensitivity(runs) : null, registered, cost };
 }
 
 const ci = (s: Stat | null) => s ? `${s.ci[0]} to ${s.ci[1]}` : 'n/a';
@@ -105,14 +115,28 @@ async function main() {
   mkdirSync(out, { recursive: true });
 
   const closers: (() => void)[] = [];
-  const make = async (id: string): Promise<{ kernel: WildKernel; distribution: boolean; shuffles: number; concurrency?: number }> => {
+  let gliner: ReturnType<typeof batchingScorer> | null = null;   // one model process for the whole run
+  type Made = { kernel: WildKernel; distribution: boolean; shuffles: number; concurrency?: number };
+  const make = async (spec: string): Promise<Made> => {
+    // <kernel>@N: that kernel under N option orders; <kernel>+<variant>: fanned out (amendment A8)
+    const [id, times] = spec.split('@');
+    if (times !== undefined) { const n = Number(times); if (!Number.isInteger(n) || n < 1) throw new Error(`"${spec}": @ needs a whole number of shuffles`); return { ...await make(id), shuffles: n }; }
+    if (id.includes('+')) {
+      const [inner, variant] = id.split('+');
+      if (!(variant in FAN_VARIANTS)) throw new Error(`unknown fan-out variant "${variant}" (${Object.keys(FAN_VARIANTS).join(', ')})`);
+      const k = await make(inner);
+      return { ...k, kernel: fanOutKernel(k.kernel, variant as FanVariant, { narrow: narrowWildRequest }), distribution: false };
+    }
     if (id === 'null') return { kernel: nullKernel, distribution: true, shuffles };
     if (id in WILD_RULES) return { kernel: ruleKernel(id), distribution: false, shuffles };
     if (id === 'gliner') {
       if (!has('--load-model')) throw new Error('the gliner kernel starts the local GLiNER worker: pass --load-model to allow it (not in stage RW bench)');
-      const { Worker } = await import('./ft-society'), worker = new Worker(arg('--device', 'mps'));
-      await worker.start(); closers.push(() => worker.stop());
-      return { kernel: wildGlinerKernel(worker, arg('--adapter', 'base')), distribution: true, shuffles: modelShuffles };
+      if (!gliner) {
+        const { Worker } = await import('./ft-society'), worker = new Worker(arg('--device', 'mps'));
+        await worker.start(); closers.push(() => worker.stop());
+        gliner = batchingScorer(worker, Math.max(1, int('--gliner-batch', 16)));
+      }
+      return { kernel: wildGlinerKernel(gliner, arg('--adapter', 'base')), distribution: true, shuffles: modelShuffles, concurrency: Math.max(1, int('--gliner-concurrency', 8)) };
     }
     if (id === 'codex') {
       const batch = Math.max(1, int('--codex-batch', 1));
@@ -135,11 +159,12 @@ async function main() {
     for (const id of ids) {
       const k = await make(id), t0 = performance.now();
       const run = await scoreKernel(k.kernel, choices, { seed, shuffles: k.shuffles, reps, distribution: k.distribution, concurrency: k.concurrency,
-        keep: (shuffle, scores) => { if (shuffle === 0) writeFileSync(`${out}/${part}-${id}-records.jsonl`, scores.map(s => JSON.stringify(s)).join('\n') + '\n'); } });   // per record: private
+        keep: (shuffle, scores) => writeFileSync(`${out}/${part}-${id.split('@')[0]}${shuffle ? `-k${shuffle}` : ''}-records.jsonl`, scores.map(s => JSON.stringify(s)).join('\n') + '\n') });   // per record: private
       if ('calls' in k.kernel) run.calls = (k.kernel as ReturnType<typeof codexKernel>).calls();
       kernels.push(run);
       const s = run.summary, calls = run.calls ? `; ${run.calls.length} calls, ${run.calls.reduce((a, c) => a + c.seconds, 0).toFixed(0)} s, ${run.calls.reduce((a, c) => a + (c.tokens ?? 0), 0)} tokens reported` : '';
-      console.error(`${part} ${id}: top-1 ${s.top1.value} (${ci(s.top1)}), ties split ${s.top1Ties.value}${run.registered ? `, registered ${run.registered.value}${run.registered.reproduced ? ' reproduced' : ' NOT reproduced'}` : ''}, refused ${s.refused}; ${((performance.now() - t0) / 1000).toFixed(1)} s${calls}`);
+      const asked = run.cost.reduce((a, c) => a + c.kernelCalls, 0), secs = run.cost.reduce((a, c) => a + c.seconds, 0);
+      console.error(`${part} ${id}: top-1 ${s.top1.value} (${ci(s.top1)}), ties split ${s.top1Ties.value}; ${asked} kernel calls, ${secs.toFixed(0)} s over ${run.cost.length} shuffle(s)${gliner ? `; worker so far: ${gliner.stats.sent} packets in ${gliner.stats.batches} batches, ${gliner.stats.seconds.toFixed(0)} s` : ''}${run.registered ? `, registered ${run.registered.value}${run.registered.reproduced ? ' reproduced' : ' NOT reproduced'}` : ''}, refused ${s.refused}; ${((performance.now() - t0) / 1000).toFixed(1)} s${calls}`);
     }
     const animals = new Set(choices.map(c => c.focal)).size;
     report.parts.push({ part, records: choices.length, animals, recordIdsHash: recordIdsHash(choices), sample: take ? choices.length : null, sizes: sizeReport(choices, seed), kernels });

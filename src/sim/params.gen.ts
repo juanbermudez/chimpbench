@@ -2,10 +2,11 @@
 /* eslint-disable */
 export const REGISTRY_VERSION = 1;
 /** Content hash of every live default, hard range, profile value and integer flag. Stored with each world. */
-export const REGISTRY_HASH = '68a5290d393a0131';
+export const REGISTRY_HASH = '5ad329ffd64f4b32';
 
 /** Registry defaults (the compressed profile). */
 export const DEFAULTS = {
+  activityFirst: 0,
   adoptBondMin: 0.35,
   adoptInfantAgeY: 3,
   adoptMaxAgeY: 8,
@@ -45,8 +46,12 @@ export const DEFAULTS = {
   bereaveMaxAgeY: 12,
   bereaveStress: 0.2,
   birthCondFromMother: 1,
+  bodyBonesDays: 21,
   bodyChildBase: 0.6,
   bodyChildGain: 0.4,
+  bodyFleshDays: 8,
+  bodyInspectMin: 3,
+  bodyInterestW: 0.4,
   bodyRules: 0,
   bondBaselineKin: 0.6,
   bondBaselineOther: 0.2,
@@ -235,6 +240,9 @@ export const DEFAULTS = {
   darkCost: 0,
   daylightHighDeg: 12,
   daylightLowDeg: -8,
+  deadBody: 0,
+  deadCarry: 0,
+  deadRespond: 0,
   deadSlimDays: 30,
   defendAggressorNearM: 8,
   defendRangeM: 20,
@@ -653,6 +661,7 @@ export const DEFAULTS = {
   memoryCap: 36,
   memoryMonthDays: 30,
   memoryTreeMinM: 12,
+  menuParity: 0,
   milkInDrive: 0,
   nestAudience: 0,
   nestBuildMinS: 180,
@@ -677,6 +686,7 @@ export const DEFAULTS = {
   nurseRangeM: 5,
   nurseWake: 0,
   observeState: 0,
+  observeV4: 0,
   oestrusPullW: 0,
   pantGruntDistScaleM: 40,
   pantGruntMaleAgeY: 13,
@@ -1036,6 +1046,7 @@ export type ParamId = keyof typeof DEFAULTS;
 
 /** Physical or logical limits; overrides outside them are rejected. */
 export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] } = {
+  activityFirst: [0, 2],
   adoptBondMin: [0, 1],
   adoptInfantAgeY: [0, 60],
   adoptMaxAgeY: [0, 60],
@@ -1075,8 +1086,12 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   bereaveMaxAgeY: [0, 60],
   bereaveStress: [0, 1],
   birthCondFromMother: [0, 1],
+  bodyBonesDays: [0, 100000],
   bodyChildBase: [0, 1],
   bodyChildGain: [0, 1],
+  bodyFleshDays: [0, 100000],
+  bodyInspectMin: [0, 100000],
+  bodyInterestW: [0, 3],
   bodyRules: [0, 1],
   bondBaselineKin: [0, 1],
   bondBaselineOther: [0, 1],
@@ -1265,6 +1280,9 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   darkCost: [0, 1],
   daylightHighDeg: [-90, 90],
   daylightLowDeg: [-90, 90],
+  deadBody: [0, 1],
+  deadCarry: [0, 1],
+  deadRespond: [0, 1],
   deadSlimDays: [1, 1000000],
   defendAggressorNearM: [0, 1000000],
   defendRangeM: [0, 1000000],
@@ -1592,7 +1610,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   juvenileFollowScaleM: [0, 1000000],
   kernelGate: [0, 1],
   kernelNoRulesPick: [0, 1],
-  kernelSim: [0, 1],
+  kernelSim: [0, 2],
   knownTreesK: [0, 10000],
   lactTaper: [0, 1],
   lactTaperEndY: [0, 10],
@@ -1683,6 +1701,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   memoryCap: [1, 1000000],
   memoryMonthDays: [1, 1000000],
   memoryTreeMinM: [0, 1000000],
+  menuParity: [0, 1],
   milkInDrive: [0, 1],
   nestAudience: [0, 1],
   nestBuildMinS: [0, 1000000],
@@ -1707,6 +1726,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   nurseRangeM: [0, 1000000],
   nurseWake: [0, 1],
   observeState: [0, 1],
+  observeV4: [0, 1],
   oestrusPullW: [0, 5],
   pantGruntDistScaleM: [0, 1000000],
   pantGruntMaleAgeY: [0, 1000000],
@@ -2063,10 +2083,10 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
 };
 
 /** Parameters that must stay whole numbers. */
-export const INTEGER_IDS: readonly ParamId[] = ['aggressionGaps', 'allyCount', 'assocMinScans', 'attentionN', 'birthCondFromMother', 'bodyRules', 'callGaps', 'callSignatures', 'callTrip', 'callValue', 'callerDiscrim', 'chimpGridCellM', 'choiceBelief', 'circEntrainD', 'coerceMaxRepeats', 'cohesionValue', 'companyMargin', 'contactSlots', 'contestAssess', 'crowdByShare', 'crownMove', 'crownShare', 'cycleLenMinDays', 'cycleLenSpanDays', 'darkCost', 'deadSlimDays', 'departCue', 'departPersist', 'departRace', 'departValue', 'endoEscalate', 'endoFast', 'endoFastRedirect', 'endoRainDisplay', 'endoRedirect', 'endoRhythm', 'endoStates', 'energyLedger', 'episodeCap', 'eventCap', 'eventPriorityAlpha', 'eventPriorityBirth', 'eventPriorityDeath', 'eventPriorityInfanticide', 'eventPriorityInjury', 'eventPriorityIntergroup', 'eventPriorityRank', 'eventPriorityTransfer', 'experienceValue', 'fissionMinAdults', 'fissionMonths', 'fissionOn', 'followCarer', 'followCommit', 'followMargin', 'foodCallRule', 'forageRate', 'fordSpacingM', 'gangMinOwnMales', 'groomDrive', 'groomNeedDyad', 'growYield', 'gutValue', 'historyFacts', 'historyMaxChars', 'historyMaxLines', 'horizonLived', 'huntDrive', 'huntEncMinMales', 'huntEncounter', 'huntMinMales', 'huntPursuit', 'huntValue', 'infanticideMaleMargin', 'intakeCropOnly', 'intakeValue', 'joinChoice', 'kernelGate', 'kernelNoRulesPick', 'kernelSim', 'knownTreesK', 'lactTaper', 'layoutScale', 'ledgerDigesta', 'ledgerDrive', 'ledgerFoodEnergyFix', 'ledgerGrowPotential', 'ledgerGrowSurplus', 'ledgerInfantIntake', 'ledgerLactGut', 'ledgerNightNurse', 'ledgerNurseBout', 'ledgerNurseByMilk', 'ledgerSatiationReserve', 'leftoverRules', 'mapSizeM', 'maternalLevers', 'matingValue', 'memCropBelief', 'memKeepMonths', 'memLedgerEvents', 'memMonthEvents', 'memMonthPartners', 'memTreeCap', 'memYearEvents', 'memYearPartners', 'memoryCap', 'memoryMonthDays', 'milkInDrive', 'nestAudience', 'nestCompany', 'nestLightDecide', 'nurseWake', 'observeState', 'partyEveryTicks', 'partyJoinTrip', 'partyLeaderFollow', 'partyStayMaxN', 'patchEcology', 'patrolContactMemory', 'patrolEnergyGate', 'patrolFusion', 'patrolImpulseDecides', 'patrolMinMales', 'patrolSilence', 'patrolSingleFile', 'patrolValue', 'phenologyForcing', 'popCap', 'preyKanyawara', 'preyMinGroups', 'preyMoveEveryTicks', 'redecideValue', 'revisitByCrop', 'rgMinAge', 'rgOn', 'rhythmCircadian', 'rhythmFreeNight', 'rhythmHeat', 'rhythmSleep', 'rngSalt', 'routeChain', 'siteTzH', 'sleepChimp', 'slotsForage', 'slotsMulti', 'slowEveryTicks', 'socialTiming', 'socialUpkeep', 'startDoy', 'streamAnalytic', 'synthYears', 'tickSeconds', 'travelCommit', 'travelHoo', 'treeGridCellM', 'tripBeliefs', 'tripBodyCost', 'tripRateValue', 'udCellM', 'udKernelRef', 'urgencyChoice', 'urgencyPersist', 'urgencySwitchCost', 'walkGait', 'waterLedger', 'weanDecide', 'weanDeficit', 'youngArrival'];
+export const INTEGER_IDS: readonly ParamId[] = ['activityFirst', 'aggressionGaps', 'allyCount', 'assocMinScans', 'attentionN', 'birthCondFromMother', 'bodyRules', 'callGaps', 'callSignatures', 'callTrip', 'callValue', 'callerDiscrim', 'chimpGridCellM', 'choiceBelief', 'circEntrainD', 'coerceMaxRepeats', 'cohesionValue', 'companyMargin', 'contactSlots', 'contestAssess', 'crowdByShare', 'crownMove', 'crownShare', 'cycleLenMinDays', 'cycleLenSpanDays', 'darkCost', 'deadBody', 'deadCarry', 'deadRespond', 'deadSlimDays', 'departCue', 'departPersist', 'departRace', 'departValue', 'endoEscalate', 'endoFast', 'endoFastRedirect', 'endoRainDisplay', 'endoRedirect', 'endoRhythm', 'endoStates', 'energyLedger', 'episodeCap', 'eventCap', 'eventPriorityAlpha', 'eventPriorityBirth', 'eventPriorityDeath', 'eventPriorityInfanticide', 'eventPriorityInjury', 'eventPriorityIntergroup', 'eventPriorityRank', 'eventPriorityTransfer', 'experienceValue', 'fissionMinAdults', 'fissionMonths', 'fissionOn', 'followCarer', 'followCommit', 'followMargin', 'foodCallRule', 'forageRate', 'fordSpacingM', 'gangMinOwnMales', 'groomDrive', 'groomNeedDyad', 'growYield', 'gutValue', 'historyFacts', 'historyMaxChars', 'historyMaxLines', 'horizonLived', 'huntDrive', 'huntEncMinMales', 'huntEncounter', 'huntMinMales', 'huntPursuit', 'huntValue', 'infanticideMaleMargin', 'intakeCropOnly', 'intakeValue', 'joinChoice', 'kernelGate', 'kernelNoRulesPick', 'kernelSim', 'knownTreesK', 'lactTaper', 'layoutScale', 'ledgerDigesta', 'ledgerDrive', 'ledgerFoodEnergyFix', 'ledgerGrowPotential', 'ledgerGrowSurplus', 'ledgerInfantIntake', 'ledgerLactGut', 'ledgerNightNurse', 'ledgerNurseBout', 'ledgerNurseByMilk', 'ledgerSatiationReserve', 'leftoverRules', 'mapSizeM', 'maternalLevers', 'matingValue', 'memCropBelief', 'memKeepMonths', 'memLedgerEvents', 'memMonthEvents', 'memMonthPartners', 'memTreeCap', 'memYearEvents', 'memYearPartners', 'memoryCap', 'memoryMonthDays', 'menuParity', 'milkInDrive', 'nestAudience', 'nestCompany', 'nestLightDecide', 'nurseWake', 'observeState', 'observeV4', 'partyEveryTicks', 'partyJoinTrip', 'partyLeaderFollow', 'partyStayMaxN', 'patchEcology', 'patrolContactMemory', 'patrolEnergyGate', 'patrolFusion', 'patrolImpulseDecides', 'patrolMinMales', 'patrolSilence', 'patrolSingleFile', 'patrolValue', 'phenologyForcing', 'popCap', 'preyKanyawara', 'preyMinGroups', 'preyMoveEveryTicks', 'redecideValue', 'revisitByCrop', 'rgMinAge', 'rgOn', 'rhythmCircadian', 'rhythmFreeNight', 'rhythmHeat', 'rhythmSleep', 'rngSalt', 'routeChain', 'siteTzH', 'sleepChimp', 'slotsForage', 'slotsMulti', 'slowEveryTicks', 'socialTiming', 'socialUpkeep', 'startDoy', 'streamAnalytic', 'synthYears', 'tickSeconds', 'travelCommit', 'travelHoo', 'treeGridCellM', 'tripBeliefs', 'tripBodyCost', 'tripRateValue', 'udCellM', 'udKernelRef', 'urgencyChoice', 'urgencyPersist', 'urgencySwitchCost', 'walkGait', 'waterLedger', 'weanDecide', 'weanDeficit', 'youngArrival'];
 
 /** Scale-profile values that differ from DEFAULTS (docs/realism-design.md §5.1). */
 export const PROFILE_VALUES: { readonly compressed: Partial<Record<ParamId, number>>; readonly field: Partial<Record<ParamId, number>> } = {
   compressed: { epidemicBetaPerH: 0.001, rgTemperature: 0.152, snareHazardPerKm: 0.0023 },
-  field: { alarmSnakeLinkM: 25, allyNearM: 35, approachStopM: 25, approachTimeoutS: 3600, assocHistCellM: 400, avoidDoneM: 20, avoidRangeM: 8, bankLookaheadM: 60, begDistScaleM: 90, begMeatRangeM: 25, begPlantRangeM: 5, callTrip: 0, centerScale: 33.63, chargeGiveUpM: 30, chargeRangeM: 45, chaseOffM: 20, chimpGridCellM: 50, choiceBelief: 0, coalitionChargeRangeM: 60, coalitionRangeM: 35, coalitionRangeStrangerM: 60, coerceRangeM: 30, colobusDistM: 50, colobusRadiusM: 100, consoleDistScaleM: 30, consoleRangeM: 6, consortWaitM: 20, contactCallBase: 0.05, contactCallGapH: 0.75, contactCallMaleW: 0.1, contactCallMinDaylight: 0.3, contactCallW: 0.5, cropFullExp: 0, cropFullMin: 0.3, cropSkewExp: 2, crowdByShare: 0, crownMove: 0, defendAggressorNearM: 8, defendRangeM: 45, departCue: 0, departPersist: 1, departValue: 0, displayAlertM: 30, displayNearM: 35, displayRunM: 15, drinkDistScaleM: 2000, encounterPartyMarginM: 300, epidemicBetaPerH: 0.03, escalateAttackRangeM: 35, escalateDistM: 35, experienceValue: 0, fallbackCapH: 0, fallbackForageW: 0.45, fallbackMoveOnFrac: 0.5, fallbackPatchExp: 2, fallbackRateRatio: 0.39, fallbackRegrowDays: 30, familiarFullLevel: 0.95, feedChargeRangeM: 30, feedMaxMin: 0, femaleDomRangeM: 25, figCycleDays: 240, figMastInterruptM: 35, figMastRadiusM: 100, fightBackRangeM: 4, fleeStepM: 40, followCommit: 0, followMotherDistScaleM: 10, forageCellM: 100, forageDistScaleM: 400, forageYieldMax: 1.3, forageYieldMin: 0.6, fordRadiusM: 4, fordSpacingM: 400, fruitHungerFactor: 2.2, fruitIntakePerH: 0.11, fruitThirstFactor: 0.55, fruitValueRef: 1, gangMaxDistM: 35, goalDistScaleM: 0, groomDistScaleM: 105, groomRangeM: 45, grudgeRangeM: 25, guardChaseRangeM: 35, guardRivalRangeM: 30, guardedRangeM: 30, gutValue: 0, hearAlarmHooM: 100, hearBarkM: 300, hearCoughM: 20, hearDrumM: 1000, hearFoodGruntM: 50, hearLaughM: 10, hearPantGruntM: 30, hearPantHootM: 1000, hearScreamM: 300, hearTravelHooM: 50, hearWhimperM: 15, heardResponseRangeM: 1000, huntAlertM: 100, huntCaptureRangeM: 30, huntDistScaleM: 250, huntEarshotM: 500, huntEncounter: 1, huntExtraKillP: 0.17, immigrantChargeRangeM: 25, immigrantFollowMaxM: 35, infanticideAttackRangeM: 45, isolatedStrangerM: 35, joinCallDistScaleM: 1500, joinCallMinM: 50, joinCallStopM: 25, joinChoice: 1, joinMaleW: 0.2, joinSocialInPartyF: 0.4, joinSocialW: 0.55, juvenileFollowM: 15, juvenileFollowScaleM: 35, kernelGate: 0, kernelNoRulesPick: 0, kernelSim: 0, knownTreesK: 40, layoutScale: 50, mapSizeM: 8000, mateApproachS: 240, mateDistScaleM: 75, mateFemaleDistScaleM: 90, mateFemaleRangeM: 30, mateNearM: 25, mateRangeM: 50, meatAlertM: 50, memCropBelief: 1, memTravelHorizonH: 240, memTravelHungerW: 1.25, memTreeCap: 60, memTtlTreeH: 1440, memoryCap: 48, memoryTreeMinM: 35, nestClusterJitterM: 60, nestTreeRadiusM: 60, nurseRangeM: 5, observeState: 0, oestrusPullW: 0, pantGruntDistScaleM: 90, pantGruntRangeM: 20, partyFollowBase: 0.7, partyFollowHungerW: 0, partyFollowMaleW: 0.4, partyFollowMinM: 5, partyFollowSocialW: 0.25, partyFollowW: 1, partyJoinTrip: 1, partyLeaderFollow: 1, partyLinkM: 50, partyStayMaxN: 3, partyStayW: 0.05, partyWaitMaxMin: 5, patchEcology: 1, patchRangeFactor: 1.1, patchRecoverPerDay: 0.7, patchesOutsidePerHa: 0.5, patchesPerHa: 9.8, patrolAlertM: 60, patrolFollowM: 70, patrolH0: 0.0183, patrolWaypointM: 25, playAdultDistScaleM: 70, playDistScaleM: 80, playRangeM: 30, playbackDistM: 300, playbackRadiusM: 1000, preyMinGroups: 159, preyMoveEveryTicks: 1, preySightFactor: 2.86, rangeRadiusEastM: 1350, rangeRadiusNorthM: 1250, rangeRadiusWestM: 1600, reconcileRangeM: 50, redecideValue: 0, redirectRangeM: 25, revisitW: 0.5, rgTemperature: 0.164, ripeRampDays: 7, rngSalt: 0, routeChain: 0, runMps: 2.5, shareRangeM: 5, sightDayM: 35, sightNightM: 10, snakeAlarmRangeM: 20, snakeFleeM: 6, snakeVisualM: 12, snareHazardPerKm: 0.00006, strangerCloseScaleM: 45, streamAnalytic: 1, streamPointSpacingM: 10, supporterNearM: 15, threatResponseRangeM: 45, travelCommit: 1, travelDistScaleM: 62900, treeGridCellM: 64, treeSightFactor: 1, treeSightMaxM: 35, treeValueDistScaleM: 60, tripBeliefs: 0, tripBodyCost: 0, tripRateValue: 0, tripYieldRate: 0.1, udCellM: 100, udKernelM: 400, udKernelRef: 1, udSeedDays: 3, walkGait: 0, walkMps: 0.35, waterSitesPerKm2: 4, youngArrival: 0, youngLeafAmp: 0.25 },
+  field: { activityFirst: 0, alarmSnakeLinkM: 25, allyNearM: 35, approachStopM: 25, approachTimeoutS: 3600, assocHistCellM: 400, avoidDoneM: 20, avoidRangeM: 8, bankLookaheadM: 60, begDistScaleM: 90, begMeatRangeM: 25, begPlantRangeM: 5, callTrip: 0, centerScale: 33.63, chargeGiveUpM: 30, chargeRangeM: 45, chaseOffM: 20, chimpGridCellM: 50, choiceBelief: 0, coalitionChargeRangeM: 60, coalitionRangeM: 35, coalitionRangeStrangerM: 60, coerceRangeM: 30, colobusDistM: 50, colobusRadiusM: 100, consoleDistScaleM: 30, consoleRangeM: 6, consortWaitM: 20, contactCallBase: 0.05, contactCallGapH: 0.75, contactCallMaleW: 0.1, contactCallMinDaylight: 0.3, contactCallW: 0.5, cropFullExp: 0, cropFullMin: 0.3, cropSkewExp: 2, crowdByShare: 0, crownMove: 0, deadBody: 0, deadCarry: 0, deadRespond: 0, defendAggressorNearM: 8, defendRangeM: 45, departCue: 0, departPersist: 1, departValue: 0, displayAlertM: 30, displayNearM: 35, displayRunM: 15, drinkDistScaleM: 2000, encounterPartyMarginM: 300, epidemicBetaPerH: 0.03, escalateAttackRangeM: 35, escalateDistM: 35, experienceValue: 0, fallbackCapH: 0, fallbackForageW: 0.45, fallbackMoveOnFrac: 0.5, fallbackPatchExp: 2, fallbackRateRatio: 0.39, fallbackRegrowDays: 30, familiarFullLevel: 0.95, feedChargeRangeM: 30, feedMaxMin: 0, femaleDomRangeM: 25, figCycleDays: 240, figMastInterruptM: 35, figMastRadiusM: 100, fightBackRangeM: 4, fleeStepM: 40, followCommit: 0, followMotherDistScaleM: 10, forageCellM: 100, forageDistScaleM: 400, forageYieldMax: 1.3, forageYieldMin: 0.6, fordRadiusM: 4, fordSpacingM: 400, fruitHungerFactor: 2.2, fruitIntakePerH: 0.11, fruitThirstFactor: 0.55, fruitValueRef: 1, gangMaxDistM: 35, goalDistScaleM: 0, groomDistScaleM: 105, groomRangeM: 45, grudgeRangeM: 25, guardChaseRangeM: 35, guardRivalRangeM: 30, guardedRangeM: 30, gutValue: 0, hearAlarmHooM: 100, hearBarkM: 300, hearCoughM: 20, hearDrumM: 1000, hearFoodGruntM: 50, hearLaughM: 10, hearPantGruntM: 30, hearPantHootM: 1000, hearScreamM: 300, hearTravelHooM: 50, hearWhimperM: 15, heardResponseRangeM: 1000, huntAlertM: 100, huntCaptureRangeM: 30, huntDistScaleM: 250, huntEarshotM: 500, huntEncounter: 1, huntExtraKillP: 0.17, immigrantChargeRangeM: 25, immigrantFollowMaxM: 35, infanticideAttackRangeM: 45, isolatedStrangerM: 35, joinCallDistScaleM: 1500, joinCallMinM: 50, joinCallStopM: 25, joinChoice: 1, joinMaleW: 0.2, joinSocialInPartyF: 0.4, joinSocialW: 0.55, juvenileFollowM: 15, juvenileFollowScaleM: 35, kernelGate: 0, kernelNoRulesPick: 0, kernelSim: 0, knownTreesK: 40, layoutScale: 50, mapSizeM: 8000, mateApproachS: 240, mateDistScaleM: 75, mateFemaleDistScaleM: 90, mateFemaleRangeM: 30, mateNearM: 25, mateRangeM: 50, meatAlertM: 50, memCropBelief: 1, memTravelHorizonH: 240, memTravelHungerW: 1.25, memTreeCap: 60, memTtlTreeH: 1440, memoryCap: 48, memoryTreeMinM: 35, menuParity: 0, nestClusterJitterM: 60, nestTreeRadiusM: 60, nurseRangeM: 5, observeState: 0, observeV4: 0, oestrusPullW: 0, pantGruntDistScaleM: 90, pantGruntRangeM: 20, partyFollowBase: 0.7, partyFollowHungerW: 0, partyFollowMaleW: 0.4, partyFollowMinM: 5, partyFollowSocialW: 0.25, partyFollowW: 1, partyJoinTrip: 1, partyLeaderFollow: 1, partyLinkM: 50, partyStayMaxN: 3, partyStayW: 0.05, partyWaitMaxMin: 5, patchEcology: 1, patchRangeFactor: 1.1, patchRecoverPerDay: 0.7, patchesOutsidePerHa: 0.5, patchesPerHa: 9.8, patrolAlertM: 60, patrolFollowM: 70, patrolH0: 0.0183, patrolWaypointM: 25, playAdultDistScaleM: 70, playDistScaleM: 80, playRangeM: 30, playbackDistM: 300, playbackRadiusM: 1000, preyMinGroups: 159, preyMoveEveryTicks: 1, preySightFactor: 2.86, rangeRadiusEastM: 1350, rangeRadiusNorthM: 1250, rangeRadiusWestM: 1600, reconcileRangeM: 50, redecideValue: 0, redirectRangeM: 25, revisitW: 0.5, rgTemperature: 0.164, ripeRampDays: 7, rngSalt: 0, routeChain: 0, runMps: 2.5, shareRangeM: 5, sightDayM: 35, sightNightM: 10, snakeAlarmRangeM: 20, snakeFleeM: 6, snakeVisualM: 12, snareHazardPerKm: 0.00006, strangerCloseScaleM: 45, streamAnalytic: 1, streamPointSpacingM: 10, supporterNearM: 15, threatResponseRangeM: 45, travelCommit: 1, travelDistScaleM: 62900, treeGridCellM: 64, treeSightFactor: 1, treeSightMaxM: 35, treeValueDistScaleM: 60, tripBeliefs: 0, tripBodyCost: 0, tripRateValue: 0, tripYieldRate: 0.1, udCellM: 100, udKernelM: 400, udKernelRef: 1, udSeedDays: 3, walkGait: 0, walkMps: 0.35, waterSitesPerKm2: 4, youngArrival: 0, youngLeafAmp: 0.25 },
 };

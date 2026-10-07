@@ -7,6 +7,7 @@ import { copyCandidate } from './menu';
 import { bodyPercept, lightPercept, withValues } from './observe-state';
 import { paramsOf } from './params';
 import { index, isChimpId, ix, simOf, TICK_HOURS } from './state';
+import { bodySights } from './deadbody';
 
 const r2 = (v: number) => Math.round(v * 100) / 100;
 
@@ -38,6 +39,7 @@ function dirWord(dx: number, dz: number): string {
  * Every chimp id used as a candidate target appears in social; candidates that would not fit are dropped.
  * Stage M1 (observeState 1; docs/staging/em-prereg.md, observe-state.ts): plus the animal's Track E state (`body`), the
  * light it sees (`light`) and each option's Track E values (`value`, on copies); at 0 the observation is unchanged.
+ * Stage R2 (observeV4 1; docs/staging/r2-prereg.md): the same, with the v4 fields in `body` and `value` and `packet: 4`.
  */
 export function observe(world: World, c: Chimp): DecisionContext {
   const x = ix(c);
@@ -82,7 +84,9 @@ export function observe(world: World, c: Chimp): DecisionContext {
       ...(same ? { tension: r2(tensionOf(c, o)) } : {}),
     };
   });
-  const candidates = all.filter(k => !isChimpId(k.targetId) || chosen.includes(k.targetId));
+  // stage ED (deadBody; deadbody.ts): the bodies in sight, and the options about them (a body is never in `social`)
+  const bodies = paramsOf(world).deadBody === 1 ? bodySights(world, c) : [];
+  const candidates = all.filter(k => !isChimpId(k.targetId) || chosen.includes(k.targetId) || bodies.some(b => b.id === k.targetId));
   const recent: string[] = [];
   const shown = x.lastIntr && time - x.lastIntrAt < 0.05 ? x.lastIntr : '';
   if (shown) recent.push(interruptLine(shown, time - x.lastIntrAt));
@@ -122,7 +126,8 @@ export function observe(world: World, c: Chimp): DecisionContext {
   const dep = world.chimps.some(k => k.alive && k.motherId === c.id && dependentOn(world, k) === c);
   // longer-term memory, only about individuals present in `social`
   const history = historyLines(world, c, chosen);
-  const P = paramsOf(world), track = P.observeState === 1;
+  // stage R2 (observeV4 1; docs/staging/r2-prereg.md §1 A): the M1 parts plus the v4 fields and the packet marker
+  const P = paramsOf(world), v4 = P.observeV4 === 1, track = v4 || P.observeState === 1;
   return {
     chimpId: c.id, version: c.decisionVersion, time,
     focal: {
@@ -138,9 +143,11 @@ export function observe(world: World, c: Chimp): DecisionContext {
       fruitNearby: r2(x.fruitNear), partySize, partyAdultMales: x.ownMales,
       nearTerritoryEdge: !!troop && fromCenter > troop.radius * 0.8, strangersSeen: x.strangers, strangersHeard: heard,
     },
-    social, recent, stimuli, candidates: track ? withValues(world, c, candidates, P, copyCandidate) : candidates,
+    social, recent, stimuli, candidates: track ? withValues(world, c, candidates, P, copyCandidate, v4) : candidates,
     ...(history.length ? { history } : {}),
-    ...(track ? { body: bodyPercept(world, c, P), light: lightPercept(world) } : {}),
+    ...(track ? { body: bodyPercept(world, c, P, v4), light: lightPercept(world) } : {}),
+    ...(bodies.length ? { bodies } : {}),
+    ...(v4 ? { packet: 4 as const } : {}),
   };
 }
 

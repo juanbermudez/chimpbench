@@ -264,4 +264,5 @@ Change per adult-day against rules (n = 24 community-seed pairs; Jev n = 6):
 
 - GHN and its Python environment are not modified. The live app, `server/*` and `src/sim/*` are unchanged until an optional integration stage.
 - Adapters are identified by sha256 in every result.
+- Seeds: new decide-ft runs use 12001+. Avoid every reserved set: AGENTS.md (1111–2525, 606–1010, 5101–5505, step 101), Jev test (6301–6303, 6501–6905), C11 (7001–7020; 8101–8505, 8606–9010, 9101–9505 step 101) and the science agent's replacements (1013, 5606, 5707, 7021–7023, 9606). Earlier runs on 1010, 5101, 5202, 7001–7003 and 9101 predate those reservations; the collided seeds were swapped by the integrator.
 - New files: `scripts/ft-*.ts`, `training/decide_ft/*`, `.claude/skills/chimp-field-expert/*`, this document, and outputs under `artifacts/decide-ft/`.

@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import type { Chimp, Quality, World } from '../types';
 import { buildChimpGeometry } from './creatures/body';
 import { createChimpMaterials, createSilhouetteMaterial } from './creatures/material';
+import { PORTRAIT_LAYER, type PortraitSubject } from './creatures/portrait';
 import {
   B, PI, PARAM_TEXEL, POSE_SIZE, ROW_TEXELS, boneWorld, computeMorph, copyPose, createFK, createMorph, createPose,
   lowestPoint, quat, solveFK, writeSkin, type FKState, type Morph, type Pose,
@@ -20,6 +21,7 @@ import { createLabels } from './creatures/labels';
 import { nearestOnScreen } from './creatures/pick';
 import { createFX } from './creatures/fx';
 import { createNests } from './creatures/nests';
+import { createRemains } from './creatures/remains';
 import { createPrey } from './creatures/prey';
 import { perfEnd, perfNow } from '../perf';
 import { advancePlayback, createPlayback, createTrack, pushSample, relocationJump2, type Track } from './creatures/playback';
@@ -81,6 +83,9 @@ export interface CreatureLayer {
    * climbs, drums on or perches in (hostTree, −1 none). Fills out[] (reused objects) and returns the count. Read-only.
    */
   keepClearCandidates?(out: KeepCandidate[], camera: THREE.Camera): number;
+  /** Optional (the UI's snapshot, creatures/portrait.ts): point the portrait instance at an animal and report its head,
+   * heading and size. False when the animal is not loaded, not posed yet or fading out. */
+  portrait?(id: number, out: PortraitSubject): boolean;
   /** Optional: chimp id whose name label (padded hit box) contains (x, y) in viewport CSS px, else −1. */
   labelAt?(x: number, y: number): number;
   /** Optional: chimp id of the visible animal nearest (x, y) in viewport CSS px within max(radius, its on-screen
@@ -92,7 +97,7 @@ export interface CreatureLayer {
 const CAPACITY = 160;
 const LOD_FADE = 0.25;           // seconds two LOD meshes overlap after a switch (G5 D7)
 const counts = [0, 0, 0, 0];
-const DEAD_VISIBLE_HOURS = 24;   // carcasses stay about one ecological day, then fade
+const DEAD_VISIBLE_HOURS = 24;   // carcasses stay about one ecological day, then fade (a stylization with no source; not used for an animal the simulation tracks a body for: Chimp.remains, stage ED)
 const PLAYBACK_LAG_TICKS = 2;    // motion.ts needs a known sim sample on both sides of the drawn segment
 // Moving-state hysteresis in body lengths per second, and the shortest a clip plays before another replaces it.
 const MOVE_ENTER = 0.3, MOVE_EXIT = 0.18, CLIP_DWELL = 0.35;
@@ -296,6 +301,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
   const labels = createLabels(ctx.container);
   const fx = createFX(group, ctx);
   const nests = createNests(group, ctx);
+  const remains = createRemains(group, ctx); // stage ED (deadBody 1): bones; draws nothing with the switch off
   const prey = createPrey(group, ctx);
 
   const pickGeometry = new THREE.SphereGeometry(1, 10, 8);
@@ -657,8 +663,13 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     const c = a.chimp;
     if (!c.alive) {
       // A dead infant its mother still carries (sim contract Chimp.carryingDeadId): held ventrally on her.
-      const m = c.motherId >= 0 ? anims.get(c.motherId) : undefined;
+      let m = c.motherId >= 0 ? anims.get(c.motherId) : undefined;
+      // Stage ED (deadBody 1): the simulation says where the body is (Chimp.remains). Its holder may be an adopter, and a
+      // body put down lies at the simulation's position, where it may be taken up again: no render-only drop, no fade.
+      const tracked = c.remains !== undefined;
+      if (tracked && c.remains === 'body' && !(m && m.chimp.alive && m.chimp.carryingDeadId === c.id)) { m = undefined; for (const o of animList) if (o.chimp.alive && o.chimp.carryingDeadId === c.id) { m = o; break; } }
       if (m && m.chimp.alive && m.chimp.carryingDeadId === c.id) { a.carrierId = m.id; a.deadCarried = true; return 1; }
+      if (tracked) return 0;
       if (a.deadCarried && a.carry !== 0 && !a.deadDrop) {
         // She has left the body: it lies where she put it down (render-only) and fades out.
         a.deadDrop = true; a.dropX = a.bx; a.dropZ = a.bz; a.inited = false;
@@ -1390,8 +1401,10 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
         // Dead: keep about one ecological day, then dither out.
         if (!c.alive || c.action === 'dead') {
           const since = c.deathTime != null ? world.time - c.deathTime : (a.deadAt == null ? (a.deadAt = world.time, 0) : world.time - a.deadAt);
+          // Stage ED (deadBody 1): drawn for as long as the simulation says the body exists; bones are drawn by remains.ts.
+          if (c.remains !== undefined) a.fade = c.remains === 'body' ? 0 : damp(a.fade, 1, 0.8, dt);
           // A carried body stays visible; once put down it fades over a few seconds where it lies.
-          if (a.carry !== 0 && a.deadCarried) a.fade = 0;
+          else if (a.carry !== 0 && a.deadCarried) a.fade = 0;
           else if (a.deadDrop) a.fade = damp(a.fade, smoothstep(DEAD_VISIBLE_HOURS - 4, DEAD_VISIBLE_HOURS, since), 0.8, dt);
           else a.fade = smoothstep(DEAD_VISIBLE_HOURS - 4, DEAD_VISIBLE_HOURS, since);
         } else { a.fade = 0; a.deadAt = null; }
@@ -1506,6 +1519,7 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     // Overlays.
     const o0 = perfNow();
     nests.update(world, frame, dt);
+    remains.update(world, frame);
     prey.update(world, frame, dt, animClock);
     social.update(frame, animList, anims, dt);
     fx.update(frame, world, anims, dt);
@@ -1523,6 +1537,43 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     return true;
   }
   function getScale(id: number) { return anims.get(id)?.morph.size ?? 1; }
+  // --- Portrait (creatures/portrait.ts): one instance of the finest body mesh loaded so far, on its own layer and
+  // outside the creature group (which hides in the field overview). A wrapper geometry shares the LOD's vertex
+  // buffers (never disposed here: they belong to the LOD) and adds a one-instance slot, so the body material's
+  // program and textures serve it unchanged. The hero mesh (LOD 3) is finer than a 176 px picture needs.
+  const portraitSlot = new THREE.InstancedBufferAttribute(new Float32Array(1), 1).setUsage(THREE.DynamicDrawUsage);
+  const portraitFade = new THREE.InstancedBufferAttribute(new Float32Array(1), 1);
+  let portraitMesh: THREE.InstancedMesh | null = null, portraitLevel = -1;
+  const portraitQ = new THREE.Quaternion();
+  function portrait(id: number, out: PortraitSubject): boolean {
+    const a = anims.get(id);
+    if (disposed || !a || a.lastSkinFrame < 0 || a.fade > 0.5) return false;
+    const level = lods[0] ? 0 : lods[1] ? 1 : 2;
+    if (level !== portraitLevel) {
+      const src = lods[level].geometry, g = new THREE.BufferGeometry();
+      for (const name of ['position', 'normal', 'aSkinIndex', 'aSkinWeight', 'aRegA', 'aRegB', 'aRegC']) { const at = src.getAttribute(name); if (at) g.setAttribute(name, at); }
+      g.setIndex(src.getIndex());
+      g.setAttribute('aSlot', portraitSlot); g.setAttribute('aLodFade', portraitFade);
+      if (portraitMesh) portraitMesh.geometry = g;
+      else {
+        portraitMesh = new THREE.InstancedMesh(g, mats.material, 1);
+        portraitMesh.castShadow = false; portraitMesh.receiveShadow = true; portraitMesh.frustumCulled = false;
+        portraitMesh.name = 'chimp-portrait';
+        portraitMesh.layers.set(PORTRAIT_LAYER);
+        scene.add(portraitMesh);
+      }
+      portraitLevel = level;
+    }
+    (portraitSlot.array as Float32Array)[0] = a.slot; portraitSlot.needsUpdate = true;
+    // The head bone's frame (bind pose: +Z out of the face, +Y to the crown): the picture faces the face, head upright.
+    boneWorld(a.fk, a.bodyQ, a.bx, a.by, a.bz, a.lift, B.head, TP, TQ4);
+    portraitQ.set(TQ4[0], TQ4[1], TQ4[2], TQ4[3]);
+    out.face.set(0, 0, 1).applyQuaternion(portraitQ); out.up.set(0, 1, 0).applyQuaternion(portraitQ);
+    const s = a.morph.size, hs = s * a.morph.headScale;
+    out.head.set(TP[0], TP[1], TP[2]).addScaledVector(out.up, 0.035 * hs).addScaledVector(out.face, 0.04 * hs);
+    out.size = s;
+    return true;
+  }
   function keepClearCandidates(out: KeepCandidate[], camera: THREE.Camera): number {
     let n = 0;
     for (const a of animList) {
@@ -1571,14 +1622,15 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     lodWorker?.terminate(); lodWorker = null;
     pendingLods = [];
     scene.remove(group);
+    if (portraitMesh) { scene.remove(portraitMesh); portraitMesh.dispose(); portraitMesh = null; }
     for (const m of lods) if (m) { m.geometry.dispose(); m.dispose(); }
     loGeometry.dispose(); shadowGeo.dispose(); clipMat.dispose(); shadowProxy.dispose(); xrayGeo.dispose(); xrayFill.dispose(); xrayLine.dispose(); xrayMesh.dispose(); xrayOutline.dispose();
     mats.material.dispose(); mats.shell.dispose(); mats.depth.dispose(); mats.texture.dispose();
     if (shellMesh) { shellMesh.geometry.dispose(); shellMesh.dispose(); }
     pickGeometry.dispose(); pickMaterial.dispose();
-    props.dispose(); selection.dispose(); social.dispose(); labels.dispose(); fx.dispose(); nests.dispose(); prey.dispose();
+    props.dispose(); selection.dispose(); social.dispose(); labels.dispose(); fx.dispose(); nests.dispose(); remains.dispose(); prey.dispose();
     picks.length = 0; anims.clear(); animList.length = 0;
     void lastElapsed;
   }
-  return { picks, update, getPosition, getScale, bendSources, keepClearCandidates, labelAt: labels.hitTest, nearestAt, dispose, debug } as CreatureLayer & { debug: typeof debug };
+  return { picks, update, getPosition, getScale, bendSources, keepClearCandidates, portrait, labelAt: labels.hitTest, nearestAt, dispose, debug } as CreatureLayer & { debug: typeof debug };
 }

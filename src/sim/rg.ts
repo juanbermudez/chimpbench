@@ -77,7 +77,8 @@ function perceivedCandidates(world: World, c: Chimp, all: Candidate[]): Candidat
     if (chosen.length >= 8) break;
     if (isChimpId(k.targetId) && !chosen.includes(k.targetId) && perceivable(k.targetId) && byId.get(k.targetId)?.alive) chosen.push(k.targetId);
   }
-  return all.filter(k => !isChimpId(k.targetId) || chosen.includes(k.targetId));
+  // stage ED (deadBody): an option about a body in sight is perceived too (observe() keeps it through `bodies`)
+  return all.filter(k => !isChimpId(k.targetId) || chosen.includes(k.targetId) || (x.bd !== undefined && x.bd.includes(k.targetId) && candidateMeta.get(k)?.v === V.BODY));
 }
 
 /**
@@ -127,16 +128,46 @@ export function beliefOffset(world: World, c: Chimp, k: Candidate, P: Params): n
   // the crop bel[1] if in fruit): one draw from world.rng says whether it is; the offset is the food term then (a fruiting
   // crown's, or nothing) less the term the trip was valued at (the expected bout, candidates.ts rateWorth's share)
   if (bel.length > 5) { const mean = treeFoodWorth(world, c, P, t, bel[1], bel[3], bel[4], bel[5]); return (random(world) < bel[5] ? treeFoodWorth(world, c, P, t, bel[1], bel[3], bel[4]) : 0) - mean; }
-  const b = bel[1], s = b * (1 - Math.exp(-P.patchRecoverPerDay * bel[2] / 24));
+  const b = bel[1], s = beliefSpread(bel, P);
   if (!(s > 0)) return 0;
   const crop = Math.max(0, b + s * normal(world));
   return treeFoodWorth(world, c, P, t, crop, bel[3], bel[4]) - treeFoodWorth(world, c, P, t, b, bel[3], bel[4]);
 }
+/** The spread s of a belief about a crop out of sight (beliefOffset's): b × (1 − exp(−patchRecoverPerDay × hours unseen ÷ 24)). */
+export const beliefSpread = (bel: number[], P: Params): number => bel[1] * (1 - Math.exp(-P.patchRecoverPerDay * bel[2] / 24));
+
+/**
+ * Stage R2 (observeV4; docs/staging/r2-prereg.md §1 A): the belief beliefOffset samples, as two numbers a packet can
+ * carry: what the option's value changes by if the crown holds less / more than the animal believes. A listed crown
+ * valued as a chance of fruit (bel[5]): bare / in fruit, beliefOffset's two outcomes exactly. A crop out of sight with a
+ * spread s: the food term at max(0, b − s) / at b + s, each less the term at b. null: no belief, or nothing to sample.
+ * Pure: no draw.
+ */
+export function beliefSwing(world: World, c: Chimp, k: Candidate, P: Params): [number, number] | null {
+  const bel = candidateMeta.get(k)?.bel;
+  if (!bel) return null;
+  const t = index(world).treeById.get(bel[0]);
+  if (!t) return null;
+  if (bel.length > 5) { const mean = treeFoodWorth(world, c, P, t, bel[1], bel[3], bel[4], bel[5]); return [-mean, treeFoodWorth(world, c, P, t, bel[1], bel[3], bel[4]) - mean]; }
+  const b = bel[1], s = beliefSpread(bel, P);
+  if (!(s > 0)) return null;
+  const at = treeFoodWorth(world, c, P, t, b, bel[3], bel[4]);
+  return [treeFoodWorth(world, c, P, t, Math.max(0, b - s), bel[3], bel[4]) - at, treeFoodWorth(world, c, P, t, b + s, bel[3], bel[4]) - at];
+}
 
 /** The bounded menu at this decision point (the same construction as src/decision.ts buildRequest). */
 export function rgMenu(world: World, c: Chimp, all: Candidate[]): Candidate[] {
+  const m = rgMenuParts(world, c, all);
+  return boundedCandidates(m.phased, m.keep);
+}
+/**
+ * What rgMenu bounds: the perceived options the phase rule leaves and the picks kept on the menu. Stage R2 (menuParity;
+ * docs/staging/r2-prereg.md §1 B) builds every other kernel's menu from the same parts (src/sim/request.ts). `open`: no
+ * phase rule (the A/B option of buildRequest). Pure.
+ */
+export function rgMenuParts(world: World, c: Chimp, all: Candidate[], open = false): { phased: Candidate[]; keep: (Candidate | null | undefined)[] } {
   // stage E2a (rhythmFreeNight): rules-driven chimps are not held by the night and dusk menus; sleep pressure and darkness keep them in their nests
-  const phased = phaseMenu(perceivedCandidates(world, c, all), paramsOf(world).rhythmFreeNight === 1 ? 'day' : dayPhase(world));
+  const phased = phaseMenu(perceivedCandidates(world, c, all), open || paramsOf(world).rhythmFreeNight === 1 ? 'day' : dayPhase(world));
   const best = all[0] && all[0].action !== 'dead' ? all[0] : null;
   const response = disturbed(world, c) ? [...phased].filter(k => RESPONSE_ACTIONS.has(k.action)).sort((a, b) => b.score - a.score)[0] : undefined;
   // stage C13e (joinChoice): a noticed departure stays on the menu as its own option (the joint trip), beside the animal's own best trip
@@ -145,7 +176,7 @@ export function rgMenu(world: World, c: Chimp, all: Candidate[]): Candidate[] {
   const x = ix(c), hunt = x.impulse === IMPULSE_HUNT && x.impulseUntil > world.time ? phased.find(k => k.action === 'hunt') : undefined;
   // stage E4i iteration 1 (patrolValue 2): the lead weighed at a party's forming stays on the menu, as the hunt does
   const lead = paramsOf(world).patrolValue >= 2 && x.impulse === IMPULSE_PATROL && x.impulseUntil > world.time ? phased.find(isPatrolLead) : undefined;
-  return boundedCandidates(phased, [best, response, join, hunt, lead]);
+  return { phased, keep: [best, response, join, hunt, lead] };
 }
 
 /**

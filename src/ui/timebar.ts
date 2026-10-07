@@ -1,5 +1,6 @@
 import type { Ctx } from './app';
 import type { SimEvent } from '../types';
+import { TICK_SECONDS } from '../simulation';
 import { feedCat, formatRate, timeParts } from './format';
 import { setAttr, setText } from './morph';
 import { modelChipState } from './hud';
@@ -10,6 +11,7 @@ import { modelChipState } from './hud';
 // Play/pause and the current rate live on the menu bar itself; this panel only updates while it is open.
 
 export function presetLabel(eco: number, label: string): string {
+  if (eco === 1) return 'Real time';
   return Number.isFinite(eco) ? formatRate(eco) : label || 'Max';
 }
 
@@ -20,7 +22,7 @@ export function createTimebar(root: HTMLElement, ctx: Ctx) {
   const { clock, speedPresets } = ctx.deps;
   root.innerHTML = `
   <section class="td-sec" aria-labelledby="td-speed-h">
-    <div class="td-head"><h3 class="eyebrow" id="td-speed-h">Speed <span class="muted">keys 1–6 · Space pauses</span></h3><span class="td-readout" aria-live="off"><b class="tb-rate" data-k="rate">—</b><span class="tb-tps" data-k="tps">0 ticks/s</span></span></div>
+    <div class="td-head"><h3 class="eyebrow" id="td-speed-h">Speed <span class="muted">keys 1–${speedPresets.length} · Space pauses</span></h3><span class="td-readout" aria-live="off"><b class="tb-rate" data-k="rate">—</b><span class="tb-tps" data-k="tps">0 ticks/s</span></span></div>
     <div class="tb-speeds" role="radiogroup" aria-label="Simulation speed">
       ${speedPresets.map((p, i) => `<button role="radio" data-speed="${p.id}" aria-keyshortcuts="${i + 1}" title="${Number.isFinite(p.ecoSecondsPerSecond) ? `${formatRate(p.ecoSecondsPerSecond)} of ecological time per real second` : 'As fast as the CPU budget allows, still one tick at a time'} (key ${i + 1})"><span class="sp-key">${i + 1}</span>${presetLabel(p.ecoSecondsPerSecond, p.label)}</button>`).join('')}
     </div>
@@ -52,11 +54,13 @@ export function createTimebar(root: HTMLElement, ctx: Ctx) {
       if (clock.speedId !== speedKey) { speedKey = clock.speedId; speeds.forEach(b => { const on = b.dataset.speed === clock.speedId; b.setAttribute('aria-checked', String(on)); b.tabIndex = on ? 0 : -1; }); }
       set(rate, clock.playing ? formatRate(clock.effectiveRate) : 'Paused');
       // Paused shows only "Paused": the smoothed tick rate is still decaying and would read as work being done.
-      set(tps, clock.playing ? `${Math.round(clock.ticksPerSecond).toLocaleString()} ticks/s` : '');
+      // Below one tick per second (real time: one 15-s tick every 15 s) a rounded rate would read "0 ticks/s".
+      const slow = clock.ecoSecondsPerSecond < TICK_SECONDS && !clock.limited;
+      set(tps, !clock.playing ? '' : slow ? `1 tick / ${Math.round(TICK_SECONDS / clock.ecoSecondsPerSecond)} s` : `${Math.round(clock.ticksPerSecond).toLocaleString()} ticks/s`);
       let st = 'ok', text = 'Running · every chimp resolves every tick';
       const target = clock.ecoSecondsPerSecond;
       if (!clock.playing) { st = 'paused'; text = 'Paused · Space to resume'; }
-      else if (clock.blockedByModel) { st = 'blocked'; text = 'Waiting on model · lockstep holds the clock until GLiNER answers'; }
+      else if (clock.blockedByModel) { st = 'blocked'; text = 'Waiting on model · lockstep holds the clock until the model answers'; }
       else if (clock.limited) { st = 'limited'; text = `Sim-limited · every tick still runs; capped at ${formatRate(clock.effectiveRate)}${Number.isFinite(target) ? ` of ${formatRate(target)}` : ''}`; }
       if (state.dataset.state !== st) state.dataset.state = st;
       set(state, text);

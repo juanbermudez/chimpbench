@@ -1,17 +1,17 @@
 import type { Ctx } from './app';
 import { troopShort } from './format';
-import { icon, iconMask } from './icons';
+import { iconMask } from './icons';
 import { setAttr, setText } from './morph';
 import { STATE_ICON, U_AGE, U_ALPHA, U_CHIP, U_NAME, U_SEL, U_STATE, U_VERB, memberOrder, sameOrder, unitChanges, unitLabel, unitView, type UnitState, type UnitView } from './unit-view';
 
-// Unit grid (right panel, community view): one small tile per living member, like unit portraits in an RTS. The chip
+// Unit grid (right sidebar, Communities pane): one small tile per living member, like unit portraits in an RTS. The chip
 // follows the kinship diagrams' convention (square male, circle female, community colour) with its size by age class
-// and a two-letter monogram; below it the name and "♂ 24 y". A mask glyph marks what the animal is doing, a gold crown
-// the alpha, a gold edge the selected animal. Dead members are left out (they stay in Family and Society).
+// and a two-letter monogram; below it the name and "♂ 24 y". A mask glyph marks what the animal is doing, the gold
+// α badge the alpha, a gold edge the selected animal. Dead members are left out (they stay in Family and Society).
 // Tiles are keyed by id and patched in place: a refresh writes only the fields that changed, reorders only when the
 // order changed, and the state glyph is an attribute (CSS mask), so a new activity costs no DOM nodes.
 
-interface Tile { el: HTMLButtonElement; chip: HTMLElement; mono: HTMLElement; st: HTMLElement; name: HTMLElement; sex: HTMLElement; age: HTMLElement; crown: Element; v: UnitView | undefined; gen: number }
+interface Tile { el: HTMLButtonElement; chip: HTMLElement; mono: HTMLElement; st: HTMLElement; name: HTMLElement; sex: HTMLElement; age: HTMLElement; alpha: Element; v: UnitView | undefined; gen: number }
 
 let masks = false;
 /** State glyphs as CSS masks, from the shared icon set (one style element for the page). */
@@ -58,9 +58,9 @@ export function createUnitGrid(root: HTMLElement, ctx: Ctx) {
   function make(id: number): Tile {
     const el = document.createElement('button');
     el.type = 'button'; el.className = 'unit'; el.dataset.unit = String(id); el.tabIndex = -1;
-    el.innerHTML = `<span class="u-top"><span class="u-chip"><b></b></span><i class="u-st" aria-hidden="true"></i></span><span class="u-name"></span><span class="u-meta" aria-hidden="true"><em class="u-sex"></em><span class="u-age"></span>${icon('crown', 'u-crown')}</span>`;
+    el.innerHTML = `<span class="u-top"><span class="u-chip"><b></b></span><i class="u-st" aria-hidden="true"></i></span><span class="u-name"></span><span class="u-meta" aria-hidden="true"><em class="u-sex"></em><span class="u-age"></span><mark class="alpha-badge u-alpha" hidden>α</mark></span>`;
     const q = (s: string) => el.querySelector<HTMLElement>(s)!;
-    return { el, chip: q('.u-chip'), mono: q('.u-chip b'), st: q('.u-st'), name: q('.u-name'), sex: q('.u-sex'), age: q('.u-age'), crown: el.querySelector('.u-crown')!, v: undefined, gen };
+    return { el, chip: q('.u-chip'), mono: q('.u-chip b'), st: q('.u-st'), name: q('.u-name'), sex: q('.u-sex'), age: q('.u-age'), alpha: el.querySelector('.u-alpha')!, v: undefined, gen };
   }
   function apply(t: Tile, v: UnitView) {
     const ch = unitChanges(t.v, v);
@@ -69,7 +69,7 @@ export function createUnitGrid(root: HTMLElement, ctx: Ctx) {
     if (ch & U_CHIP) { setText(t.mono, v.mono); setAttr(t.chip, 'data-sex', v.sex); setAttr(t.chip, 'data-size', v.size); setText(t.sex, v.sex === 'male' ? '♂' : '♀'); }
     if (ch & U_AGE) setText(t.age, v.age);
     if (ch & U_STATE) setAttr(t.st, 'data-st', v.state);
-    if (ch & U_ALPHA) { if (v.alpha) t.crown.removeAttribute('hidden'); else t.crown.setAttribute('hidden', ''); }
+    if (ch & U_ALPHA) { if (v.alpha) t.alpha.removeAttribute('hidden'); else t.alpha.setAttribute('hidden', ''); }
     if (ch & U_SEL) { if (v.selected) t.el.setAttribute('aria-current', 'true'); else t.el.removeAttribute('aria-current'); }
     if (ch & (U_NAME | U_CHIP | U_AGE | U_VERB | U_ALPHA)) setAttr(t.el, 'aria-label', unitLabel(v));
     t.v = { ...v };

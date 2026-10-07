@@ -58,10 +58,10 @@ def sha256_file(path: Path) -> str:
 
 
 def serving_input(packet: dict) -> tuple[str, dict]:
-    """(text, tasks) exactly as the GHN worker builds them for MGOGO's single 'action' question."""
+    """(text, tasks) exactly as the GHN worker builds them for ChimpBench's single 'action' question."""
     state_view, question_view, aliases = model_view(packet["state"], packet["questions"])
     if aliases:
-        raise ValueError("MGOGO packets never carry aliased ids; the renderer changed")
+        raise ValueError("ChimpBench packets never carry aliased ids; the renderer changed")
     text = context_text(decision_context(state_view, "action"))
     return text, classification_tasks({"action": question_view["action"]})
 

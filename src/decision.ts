@@ -1,11 +1,14 @@
 import { applyDecision, resolveByRules } from './simulation';
 import { buildRequest } from './sim/request';
+import { secondRequest } from './sim/decide';
 import { readAnswer } from './kernel/answer';
 import type { Candidate, Chimp, DecisionContext, ModelPolicy, World } from './types';
+import { httpProvider } from './providers/http';
+import { ProviderError, type DecisionProvider, type ProviderAnswer } from './providers/types';
 
 // The decision loop: model-controlled chimps pause at decision points
 // (awaitingDecisionSince), this loop sends one chimp's local percept at a time
-// to the resident GLiNER2.5-Decide worker, validates the answer and applies it
+// to the selected decision provider, validates the answer and applies it
 // through the engine. Whenever the model cannot answer in time, rules decide,
 // so lockstep mode can never deadlock the clock.
 
@@ -19,12 +22,15 @@ export interface DecisionTrace {
   applied: boolean; discardedReason: string; latencyMs: number; inputTokens: number; source: 'model' | 'rules-fallback';
   /** '' or how an applied answer was applied, e.g. 'applied to newer state (still legal)'. */
   note: string;
+  /** Provider that produced this trace; absent on older saves. */
+  provider?: string; model?: string;
 }
 
 export type Roster = 'selected' | 'focal-set' | 'all';
 
 export interface DecisionController {
   enabled: boolean; ready: boolean; busy: boolean; phase: string; status: string; lastError: string;
+  provider: string; providerLabel: string; progress: number | null;
   model: string; device: string; latencyMs: number | null; inputTokens: number | null; calls: number;
   /** Model answers applied: fresh (same version) + revalidated (newer version, still legal). */
   applied: number;
@@ -46,11 +52,11 @@ export interface DecisionController {
 }
 
 /** Non-serializable per-controller state kept out of the UI-facing object. */
-interface Internal { world: World | null; abort: AbortController | null; waitingSince: Map<number, number>; statusPollAt: number; }
+interface Internal { provider: DecisionProvider; world: World | null; abort: AbortController | null; waitingSince: Map<number, number>; statusPollAt: number; }
 const internals = new WeakMap<DecisionController, Internal>();
 function internal(controller: DecisionController): Internal {
   let state = internals.get(controller);
-  if (!state) { state = { world: null, abort: null, waitingSince: new Map(), statusPollAt: 0 }; internals.set(controller, state); }
+  if (!state) { state = { provider: httpProvider('server', () => `${controller.baseUrl}/api/decide`), world: null, abort: null, waitingSince: new Map(), statusPollAt: 0 }; internals.set(controller, state); }
   return state;
 }
 
@@ -60,11 +66,23 @@ const MODEL_NAME = 'fastino/GLiNER2.5-Decide';
 const FALLBACK_TRACES_PER_PUMP = 3;
 const STATUS_POLL_MS = 3000;
 
-export function createDecisionController(): DecisionController {
-  return { enabled: false, ready: false, busy: false, phase: 'loading', status: 'Local Decide loading', lastError: '',
-    model: MODEL_NAME, device: '', latencyMs: null, inputTokens: null, calls: 0, applied: 0, revalidated: 0, discarded: 0,
+export function createDecisionController(provider?: DecisionProvider): DecisionController {
+  const controller: DecisionController = { enabled: false, ready: false, busy: false, phase: 'loading', status: 'Local Decide loading', lastError: '',
+    provider: 'server', providerLabel: 'Server GLiNER', progress: null, model: MODEL_NAME, device: '', latencyMs: null, inputTokens: null, calls: 0, applied: 0, revalidated: 0, discarded: 0,
     roster: 'selected', focalIds: [], traces: [], agreement: { same: 0, total: 0 },
     fallbacks: 0, waiting: 0, inflightChimpId: -1, timeoutMs: 6000, baseUrl: '', generation: 0, backoffUntil: 0 };
+  if (provider) setDecisionProvider(controller, provider);
+  return controller;
+}
+
+/** Changing providers fences late inference and readiness replies from the previous provider. */
+export function setDecisionProvider(controller: DecisionController, provider: DecisionProvider): void {
+  const state = internal(controller);
+  cancelDecisionRequests(controller); state.provider.dispose?.(); state.provider = provider; state.statusPollAt = 0;
+  controller.provider = provider.id; controller.providerLabel = provider.label; controller.progress = null;
+  controller.ready = false; controller.phase = provider.id === 'browser' ? 'stopped' : 'loading';
+  controller.model = provider.id === 'jev' ? 'jev-latest' : MODEL_NAME; controller.device = ''; controller.lastError = '';
+  controller.status = idleStatus(controller);
 }
 
 /** Invalidates every in-flight request; late answers are ignored. Use on world regeneration. */
@@ -76,33 +94,38 @@ export function cancelDecisionRequests(controller: DecisionController): void {
 }
 
 export async function refreshDecideStatus(controller: DecisionController): Promise<void> {
+  const provider = internal(controller).provider;
   try {
-    const response = await fetch(`${controller.baseUrl}/api/decide/status`);
-    if (!response.ok) throw new Error(`Local Decide bridge returned ${response.status}`);
-    const body = await response.json() as { ready?: unknown; phase?: string; error?: string; model?: string; identity?: { device?: string } | null };
-    controller.ready = body.ready === true; controller.phase = body.phase ?? 'failed';
-    controller.model = body.model ?? controller.model; controller.device = body.identity?.device ?? controller.device;
-    if (!controller.ready && body.error) controller.lastError = body.error;
+    const body = await provider.status();
+    if (internal(controller).provider !== provider) return;
+    controller.ready = body.ready; controller.phase = body.phase;
+    controller.model = body.model || controller.model; controller.device = body.device ?? controller.device;
+    controller.progress = body.progress ?? null;
+    controller.lastError = body.error ?? '';
     if (!controller.busy) controller.status = idleStatus(controller);
   } catch (error) {
+    if (internal(controller).provider !== provider) return;
     controller.ready = false; controller.phase = 'unavailable';
-    controller.lastError = error instanceof Error ? error.message : 'Local Decide bridge unavailable';
-    controller.status = 'Local Decide bridge unavailable · rules decide';
+    controller.lastError = error instanceof Error ? error.message : 'Decision provider unavailable';
+    controller.status = idleStatus(controller);
   }
 }
 
+/** Historical name kept for existing script consumers; starts whichever provider is selected. */
 export async function startLocalModel(controller: DecisionController): Promise<void> {
-  const response = await fetch(`${controller.baseUrl}/api/decide/start`, { method: 'POST' });
-  if (!response.ok && response.status !== 202) controller.lastError = `Start request returned ${response.status}`;
-  else controller.lastError = '';
-  await refreshDecideStatus(controller);
+  const provider = internal(controller).provider;
+  try { await provider.start(); }
+  catch (error) { if (internal(controller).provider === provider) controller.lastError = error instanceof Error ? error.message : String(error); }
+  if (internal(controller).provider === provider) await refreshDecideStatus(controller);
 }
 
 function idleStatus(controller: DecisionController): string {
+  const label = controller.providerLabel;
   if (!controller.enabled) return 'Rules decide · model off';
-  if (controller.phase === 'unavailable') return 'Local Decide bridge unavailable · rules decide';
-  if (!controller.ready) return controller.phase === 'failed' ? `Local Decide failed · rules decide${controller.lastError ? ` · ${controller.lastError}` : ''}` : 'GLiNER2.5-Decide loading · rules decide meanwhile';
-  return 'GLiNER2.5-Decide ready · local';
+  if (controller.ready) return `${label} ready`;
+  if (controller.phase === 'stopped') return `${label} not loaded · rules decide`;
+  if (controller.phase === 'unavailable' || controller.phase === 'failed') return `${label} ${controller.phase} · rules decide`;
+  return `${label} loading${controller.progress !== null ? ` · downloading file ${Math.round(controller.progress)}%` : ''} · rules decide meanwhile`;
 }
 
 // ---------------------------------------------------------------------------
@@ -211,7 +234,7 @@ function fallBack(controller: DecisionController, world: World, chimp: Chimp, re
   if (recordTrace) {
     const { context, options, rulesIndex } = buildRequest(world, chimp);
     trace = { id: traceId(world, chimp.id), chimpId: chimp.id, chimpName: chimp.name, time: world.time, context, options, probabilities: [],
-      choiceIndex: rulesIndex, rulesIndex, applied: false, discardedReason: reason, latencyMs: 0, inputTokens: 0, source: 'rules-fallback', note: '' };
+      choiceIndex: rulesIndex, rulesIndex, applied: false, discardedReason: reason, latencyMs: 0, inputTokens: 0, source: 'rules-fallback', note: '', provider: controller.provider };
   }
   const applied = resolveByRules(world, chimp.id);
   controller.fallbacks++;
@@ -260,11 +283,12 @@ export function pumpDecisions(controller: DecisionController, world: World, sele
   void requestDecision(controller, world, chimp);
 }
 
-interface BridgeAnswer { choice?: unknown; index?: unknown; probabilities?: unknown; inputTokens?: unknown; latencyMs?: unknown; device?: unknown; model?: unknown; error?: unknown; phase?: unknown }
+type BridgeAnswer = ProviderAnswer;
 
 async function requestDecision(controller: DecisionController, world: World, chimp: Chimp): Promise<void> {
   const state = internal(controller);
-  const { context, options, rulesIndex } = buildRequest(world, chimp);
+  const request = buildRequest(world, chimp), { context } = request;
+  let { options, rulesIndex } = request;
   if (options.length < 2) { fallBack(controller, world, chimp, 'fewer than two options', true); return; }
   const generation = controller.generation;
   const version = context.version;
@@ -274,30 +298,50 @@ async function requestDecision(controller: DecisionController, world: World, chi
   controller.status = `Deciding for ${chimp.name} · ${options.length} options`;
   const started = typeof performance !== 'undefined' ? performance.now() : Date.now();
   const trace: DecisionTrace = { id: traceId(world, chimp.id), chimpId: chimp.id, chimpName: chimp.name, time: world.time, context, options,
-    probabilities: [], choiceIndex: -1, rulesIndex, applied: false, discardedReason: '', latencyMs: 0, inputTokens: 0, source: 'model', note: '' };
+    probabilities: [], choiceIndex: -1, rulesIndex, applied: false, discardedReason: '', latencyMs: 0, inputTokens: 0, source: 'model', note: '', provider: controller.provider };
   let failure = '';
   let answer: BridgeAnswer = {};
   let status = 0;
-  try {
-    const response = await fetch(`${controller.baseUrl}/api/decide/decide`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(context), signal: abort.signal });
-    status = response.status;
-    answer = await response.json() as BridgeAnswer;
-    if (!response.ok) failure = typeof answer.error === 'string' ? answer.error : `bridge returned ${response.status}`;
-  } catch (error) {
-    failure = error instanceof Error ? error.message : 'request failed';
-  }
-  // Superseded by cancel, timeout or a new world: the answer is not ours to apply.
-  if (controller.generation !== generation) return;
-  controller.busy = false; controller.inflightChimpId = -1; state.abort = null;
-  const clock = Date.now();
-  if (failure) {
-    controller.lastError = failure;
-    if (typeof answer.phase === 'string' && answer.phase !== 'ready') { controller.ready = false; controller.phase = answer.phase; controller.backoffUntil = clock + 2000; }
-    else if (status === 429) { controller.backoffUntil = clock + 100; return; } // someone else holds the worker; retry soon, timeout still applies
-    else controller.backoffUntil = clock + (status === 400 ? 1000 : 3000);
-    if (chimp.alive && chimp.awaitingDecisionSince !== null && chimp.decisionVersion === version) fallBack(controller, world, chimp, `model error: ${failure}`, true);
-    return;
+  let clock = 0;
+  /** One provider call. False: superseded (the answer is not ours), or it failed and the failure was handled; the flight is over either way. */
+  const ask = async (ctx: DecisionContext, more: (a: BridgeAnswer) => boolean): Promise<boolean> => {
+    failure = ''; answer = {}; status = 0;
+    try {
+      answer = await state.provider.decide(ctx, abort.signal);
+    } catch (error) {
+      failure = error instanceof Error ? error.message : 'request failed';
+      if (error instanceof ProviderError) { status = error.status; answer.phase = error.phase; }
+    }
+    // Superseded by cancel, timeout or a new world: the answer is not ours to apply.
+    if (controller.generation !== generation) return false;
+    // (the flight stays open only while a second call for the same decision follows at once: activityFirst 2)
+    if (failure || !more(answer)) { controller.busy = false; controller.inflightChimpId = -1; state.abort = null; }
+    clock = Date.now();
+    if (failure) {
+      controller.lastError = failure;
+      if (typeof answer.phase === 'string' && answer.phase !== 'ready') { controller.ready = false; controller.phase = answer.phase; controller.backoffUntil = clock + 2000; }
+      else if (status === 429) { controller.backoffUntil = clock + (controller.provider === 'jev' ? 10000 : 100); return false; } // someone else holds the worker; retry soon, timeout still applies
+      else controller.backoffUntil = clock + (status === 400 ? 1000 : 3000);
+      if (chimp.alive && chimp.awaitingDecisionSince !== null && chimp.decisionVersion === version) fallBack(controller, world, chimp, `model error: ${failure}`, true);
+      return false;
+    }
+    return true;
+  };
+  // Stage R2 (activityFirst 2; docs/staging/r2-prereg.md §1 C and §10 b): the menu is one entry per kind of activity, and
+  // when the kind the model chose has two or more options a second request over them settles the target (the same
+  // provider, the same checks). null at activityFirst 0 and 1, where this loop is unchanged.
+  let second: ReturnType<typeof secondRequest> = null;
+  if (!await ask(context, a => (second = secondRequest(world, request, a)) !== null)) return;
+  const sum = (a: unknown, b: unknown): number | undefined => typeof a === 'number' ? (typeof b === 'number' ? a + b : a) : undefined;
+  if (second !== null) {
+    const two: NonNullable<ReturnType<typeof secondRequest>> = second, first = answer, kind = options[readAnswer(first, options.length)!.index];
+    controller.calls++;
+    controller.status = `Deciding for ${chimp.name} · ${two.options.length} options within the chosen activity`;
+    if (!await ask(two.context, () => false)) return;
+    answer = { ...answer, latencyMs: sum(answer.latencyMs, first.latencyMs), inputTokens: sum(answer.inputTokens, first.inputTokens) };
+    // the trace shows the request whose answer is applied; the agreement count is on the final choice
+    trace.context = two.context; trace.options = options = two.options; trace.rulesIndex = rulesIndex = two.rulesIndex; // (-1: the rules' pick is of another kind)
+    trace.note = `activity chosen first: ${describeOption(world, kind)}`;
   }
   // the answer check every kernel shares (src/kernel/answer.ts, stage R1)
   const read = readAnswer(answer, options.length);
@@ -313,8 +357,12 @@ async function requestDecision(controller: DecisionController, world: World, chi
   }
   controller.lastError = '';
   const { probabilities, index } = read;
+  if (typeof answer.model === 'string' && answer.model) controller.model = answer.model;
+  trace.model = controller.model;
   trace.probabilities = probabilities; trace.choiceIndex = index;
-  if (rulesIndex >= 0) { controller.agreement.total++; if (rulesIndex === index) controller.agreement.same++; }
+  // the rules' pick as the first request held it (after a second call it may be of another kind: counted, not agreed)
+  const rulesOption = request.rulesIndex >= 0 ? request.options[request.rulesIndex] : null;
+  if (rulesOption) { controller.agreement.total++; if (rulesIndex === index) controller.agreement.same++; }
   const choice = options[index];
   trace.applied = applyDecision(world, chimp.id, choice, 'decide', version);
   // Minor interrupts (someone approached, rain began) bump the version during the ~350 ms of inference.
@@ -323,13 +371,13 @@ async function requestDecision(controller: DecisionController, world: World, chi
   const stillWaiting = chimp.alive && chimp.controller === 'model' && chimp.awaitingDecisionSince !== null;
   if (!trace.applied && stillWaiting && chimp.decisionVersion !== version) {
     trace.applied = applyDecision(world, chimp.id, choice, 'decide', chimp.decisionVersion);
-    if (trace.applied) { trace.note = 'applied to newer state (still legal)'; controller.revalidated++; }
+    if (trace.applied) { trace.note = `${trace.note ? `${trace.note}; ` : ''}applied to newer state (still legal)`; controller.revalidated++; }
   }
   const verb = describeOption(world, choice);
   const confidence = Math.round(probabilities[index] * 100);
   if (trace.applied) {
     controller.applied++;
-    controller.status = `${chimp.name} → ${verb} (${confidence}%)${rulesIndex < 0 ? '' : rulesIndex === index ? ' · rules agree' : ` · rules: ${describeOption(world, options[rulesIndex])}`}`;
+    controller.status = `${chimp.name} → ${verb} (${confidence}%)${!rulesOption ? '' : rulesIndex === index ? ' · rules agree' : ` · rules: ${describeOption(world, rulesOption)}`}`;
   } else {
     controller.discarded++;
     trace.discardedReason = !chimp.alive ? 'chimp died before the answer'

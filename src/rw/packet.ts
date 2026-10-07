@@ -231,6 +231,43 @@ export function wildRequestError(request: KernelRequest & { mask?: PacketMask })
   return why;
 }
 
+// ------------------------------------------------------------------------------------------------ a sub-menu
+
+/** A memory or history line with only the named males left: the same order and ties; '' when nobody is left. */
+export function restrictLine(line: string, keep: Set<string>): string {
+  const rank = [P_EITHER, P_GIVEN, P_NEAR].find(p => line.startsWith(p));
+  if (rank) {
+    const cut = line.endsWith(OTHERS), body = line.slice(rank.length, cut ? -OTHERS.length : undefined);
+    const tiers = body.split(', ').map(t => t.split('=').filter(n => keep.has(n)).join('=')).filter(Boolean);
+    return tiers.length ? rank + tiers.join(', ') + (cut ? OTHERS : '') : '';
+  }
+  const groom = [P_LAST, P_EARLIER].find(p => line.startsWith(p));
+  if (!groom) return line;
+  const parts = line.slice(groom.length).split('; ').map(part => {
+    const lead = part.startsWith(P_BY) ? P_BY : P_I, names = part.slice(lead.length).split(', ').filter(n => keep.has(n));
+    return names.length ? lead + names.join(', ') : '';
+  }).filter(Boolean);
+  return parts.length ? groom + parts.join('; ') : '';
+}
+
+/**
+ * The wild request of a sub-menu (amendment A8, prereg §14.1): only the options at `positions`, in that order. The focal
+ * male and the party size are unchanged; the individuals are the sub-menu's, renumbered, with their mask; each memory
+ * and history line keeps only them. The result is a valid wild request (wildRequestError), of the shape a kernel
+ * built for a narrow menu already handles, and says nothing about males who are not options in it.
+ */
+export function narrowWildRequest(request: KernelRequest, positions: number[]): WildRequest {
+  const full = request as WildRequest, ctx = full.context;
+  if (!full.mask) throw new Error('narrowWildRequest takes a wild request (with its mask)');
+  const social = positions.map((p, i) => ({ ...ctx.social[p], id: i + 2 })), keep = new Set(social.map(s => s.name));
+  const individual: Record<number, string[]> = {};
+  positions.forEach((p, i) => { const m = full.mask.individual[ctx.social[p].id]; if (m) individual[i + 2] = [...m]; });
+  const options: Candidate[] = positions.map((p, i) => ({ ...ctx.candidates[p], targetId: i + 2 }));
+  const lines = (a: string[] | undefined) => (a ?? []).map(l => restrictLine(l, keep)).filter(Boolean);
+  const { history: _history, ...rest } = ctx, history = lines(ctx.history);
+  return { context: { ...rest, social, recent: lines(ctx.recent), candidates: options, ...(history.length ? { history } : {}) }, options, rulesIndex: -1, mask: { ...full.mask, individual } };
+}
+
 // ------------------------------------------------------------------------------------------------ reading a packet
 
 /** What a wild packet says about one option's individual, as a kernel may read it (unmasked fields and the lines only). */

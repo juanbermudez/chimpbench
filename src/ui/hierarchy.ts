@@ -1,9 +1,9 @@
 import type { Chimp, Troop, World } from '../types';
 import { ageText, duration, esc, nameOf, sinceText, stamp, troopShort } from './format';
-import { icon } from './icons';
+import { alphaBadge } from './parts';
 
-// Dominance ladders (Elo bars, alpha crown, recent rank moves) and the alpha
-// tenure timeline. Shared by the inspector Hierarchy tab and the Society overlay.
+// Dominance ladders (Elo bars, the alpha's α badge, recent rank moves) and the alpha
+// tenure timeline. Shared by the right sidebar (Communities, Society) and the full society view.
 
 /** Remembers each individual's ladder position so the UI can mark recent ▲▼ moves. */
 export function createRankTracker() {
@@ -37,7 +37,7 @@ export function ladderHtml(world: World, troop: Troop, sex: 'male' | 'female', s
     const d = ranks.recent(world, c.id), alpha = troop.alphaId === c.id;
     const w = 12 + ((c.elo - lo) / span) * 88;
     return `<li><button class="rung ${c.id === selectedId ? 'sel' : ''} ${alpha ? 'alpha' : ''}" data-select="${c.id}" data-focus-key="rung-${c.id}" style="--c:${esc(troop.color)}" aria-label="Rank ${i + 1}: ${esc(c.name)}, Elo ${Math.round(c.elo)}${alpha ? ', alpha' : ''}${d ? `, ${d > 0 ? 'rose' : 'fell'} ${Math.abs(d)}` : ''}">
-      <span class="r-no mono">${alpha ? icon('crown') : i + 1}</span>
+      <span class="r-no mono">${alpha ? alphaBadge() : i + 1}</span>
       <span class="r-name">${esc(c.name)}${compact ? '' : `<i>${ageText(c)}${c.injury > 0.2 ? ' · injured' : ''}</i>`}</span>
       <span class="r-bar"><i style="width:${w.toFixed(1)}%"></i></span>
       <span class="r-elo mono">${Math.round(c.elo)}</span>
@@ -46,10 +46,10 @@ export function ladderHtml(world: World, troop: Troop, sex: 'male' | 'female', s
   }).join('')}</ol>`;
 }
 
-/** The community's alpha male and his tenure (inspector Rank tab, community panel). */
+/** The community's alpha male and his tenure, as one plain line (sidebar: Communities and Society). */
 export function alphaCardHtml(world: World, t: Troop): string {
   const alpha = world.chimps.find(x => x.id === t.alphaId);
-  return `<section class="alpha-card" style="--c:${esc(t.color)}">${icon('crown')}<div><b>${alpha ? `<button class="lnk" data-select="${alpha.id}">${esc(alpha.name)}</button>` : 'Vacant'}</b><span class="ac-meta">${esc(troopShort(t))} alpha${alpha ? ` · ${t.alphaSince < 0 ? '≥ ' : ''}${duration(world.time - t.alphaSince)}, ${sinceText(world, t.alphaSince)}` : ' · contested, no male holds the position'}</span></div></section>`;
+  return `<p class="alpha-line">${alpha ? `${alphaBadge()}<button class="lnk" data-select="${alpha.id}">${esc(alpha.name)}</button>` : '<b>No alpha</b>'}<span class="ac-meta">${alpha ? `${t.alphaSince < 0 ? '≥ ' : ''}${duration(world.time - t.alphaSince)}, ${sinceText(world, t.alphaSince)}` : 'contested, no male holds the position'}</span></p>`;
 }
 
 /** Swimlane timeline of alpha tenures, one lane per community, ending at "now". */

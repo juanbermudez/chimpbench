@@ -3,7 +3,7 @@ import type { Candidate, Chimp, SocialPercept, World } from '../types';
 import type { DecisionTraceView } from './contracts';
 import { icon } from './icons';
 import { actionLabel, ago, cap, esc, hhmm, pct, RELATION_LABEL, relationClass, stamp } from './format';
-import { bar, empty } from './parts';
+import { alphaBadge, bar, empty } from './parts';
 
 // Mind tab: the decision loop made visible. The exact percept the model saw, options with model probabilities beside
 // rules scores, the pick, agreement, cost, and a scrollable history of past decisions. The latest-decision header
@@ -34,11 +34,11 @@ function optionsTable(world: World, tr: DecisionTraceView): string {
   const hasProb = tr.probabilities.length === tr.options.length && tr.source === 'model';
   const order = tr.options.map((_, i) => i).sort((a, b) => hasProb ? tr.probabilities[b] - tr.probabilities[a] : tr.options[b].score - tr.options[a].score);
   return `<div class="opts ${hasProb ? 'by-model' : 'by-rules'}" role="table" aria-label="Options offered to the model">
-    <div class="opt head" role="row"><span role="columnheader">Option</span><span role="columnheader" title="Simulation utility weight (uncalibrated)">Rules</span><span role="columnheader" title="GLiNER softmax over the offered options (uncalibrated)">Model</span></div>
+    <div class="opt head" role="row"><span role="columnheader">Option</span><span role="columnheader" title="Simulation utility weight (uncalibrated)">Rules</span><span role="columnheader" title="Model probabilities over the offered options (uncalibrated)">Model</span></div>
     ${order.map(i => {
       const o = tr.options[i], chosen = i === tr.choiceIndex, rules = i === tr.rulesIndex, p = hasProb ? tr.probabilities[i] : NaN;
       return `<div class="opt ${chosen ? 'chosen' : ''} ${rules ? 'rules' : ''}" role="row" title="${esc(o.reason)}">
-        <span class="opt-name" role="cell"><span class="opt-marks">${chosen ? `<i class="mk-model" title="${hasProb ? 'GLiNER’s pick' : 'Chosen by the rules fallback'}">●</i>` : ''}${rules ? `<i class="mk-rules" title="Rules' pick">◆</i>` : ''}</span>${pickLabel(world, tr, i)}</span>
+        <span class="opt-name" role="cell"><span class="opt-marks">${chosen ? `<i class="mk-model" title="${hasProb ? 'Model’s pick' : 'Chosen by the rules fallback'}">●</i>` : ''}${rules ? `<i class="mk-rules" title="Rules' pick">◆</i>` : ''}</span>${pickLabel(world, tr, i)}</span>
         <span class="opt-val" role="cell">${bar(o.score / maxScore, 'rules')}<b class="mono">${o.score.toFixed(2)}</b></span>
         <span class="opt-val" role="cell">${hasProb ? `${bar(p, 'model')}<b class="mono">${(p * 100).toFixed(0)}%</b>` : '<b class="mono muted">—</b>'}</span>
       </div>`;
@@ -64,7 +64,7 @@ function contextHtml(world: World, tr: DecisionTraceView): string {
     <div class="ctx-sec"><h4 class="eyebrow">Situation</h4><p class="facts">${facts.map(x => `<span>${x}</span>`).join('')}</p></div>
     ${cx.stimuli.length ? `<div class="ctx-sec stim"><h4 class="eyebrow">Perceived stimuli</h4><ul>${cx.stimuli.map(s => `<li>${icon('flask')}${esc(s)}</li>`).join('')}</ul></div>` : ''}
     <div class="ctx-sec"><h4 class="eyebrow">Nearby · ${cx.social.length} perceived</h4>${cx.social.length ? `<div class="near" role="table">${cx.social.map(s => `<button class="near-row" role="row" data-select="${s.id}" ${world.chimps.some(c => c.id === s.id) ? '' : 'disabled'}>
-        <span class="nr-name" role="cell">${s.sex === 'male' ? '♂' : '♀'} ${esc(s.name)}${s.isAlpha ? ` ${icon('crown')}` : ''}</span>
+        <span class="nr-name" role="cell">${s.sex === 'male' ? '♂' : '♀'} ${esc(s.name)}${s.isAlpha ? alphaBadge() : ''}</span>
         <span role="cell"><span class="rel ${relationClass(s.relation)}">${RELATION_LABEL[s.relation]}</span></span>
         <span class="mono" role="cell">${s.rankOrder ? `#${s.rankOrder}` : '—'}</span>
         <span class="mono" role="cell">${s.distance < 10 ? s.distance.toFixed(1) : Math.round(s.distance)} m</span>
@@ -116,7 +116,7 @@ function storyStrip(ctx: Ctx, tr: DecisionTraceView): string {
   return `<ol class="story" aria-label="Decision loop, step by step">
     <li class="st st-saw"><span class="st-k">Saw</span><span class="saw">${sawFacts(tr).map(f => `<b>${esc(f)}</b>`).join('')}</span></li>
     <li class="st"><span class="st-k">Options</span><b class="st-v">${tr.options.length}</b><span class="st-s">${esc(top.join(' · '))}</span></li>${arrow}
-    <li class="st st-pick ${model ? (agree ? 'agree' : 'diverge') : ''}"><span class="st-k">${model ? 'GLiNER pick' : 'Rules pick'}</span><b class="st-v">${pickLabel(w, tr, tr.choiceIndex)}${p !== undefined ? ` <em class="mono">${(p * 100).toFixed(0)}%</em>` : ''}</b><span class="st-s">${model ? (tr.rulesIndex < 0 ? 'rules pick unknown' : agree ? 'rules agree' : `rules chose ${esc(actionLabel(tr.options[tr.rulesIndex]?.action ?? 'rest').toLowerCase())}`) : 'model did not answer'}</span></li>${arrow}
+    <li class="st st-pick ${model ? (agree ? 'agree' : 'diverge') : ''}"><span class="st-k">${model ? 'Model pick' : 'Rules pick'}</span><b class="st-v">${pickLabel(w, tr, tr.choiceIndex)}${p !== undefined ? ` <em class="mono">${(p * 100).toFixed(0)}%</em>` : ''}</b><span class="st-s">${model ? (tr.rulesIndex < 0 ? 'rules pick unknown' : agree ? 'rules agree' : `rules chose ${esc(actionLabel(tr.options[tr.rulesIndex]?.action ?? 'rest').toLowerCase())}`) : 'model did not answer'}</span></li>${arrow}
     <li class="st st-app ${applied.cls}"><span class="st-k">Outcome</span><b class="st-v">${applied.head}</b><span class="st-s">${esc(applied.sub)}${model ? ` · ${Math.round(tr.latencyMs)} ms` : ''}</span></li>
   </ol>`;
 }
@@ -145,7 +145,7 @@ function shiftCard(ctx: Ctx, c: Chimp, traces: DecisionTraceView[]): string {
   return `<section class="shift ${after ? (changed ? 'changed' : 'held') : 'waiting'}" aria-live="polite">
     <header>${icon('flask')}<span><b>${esc(m.label)}</b><i class="mono">Fired ${stamp(w, m.time)}</i></span><button class="icon-btn sm" data-act="clear-exp" aria-label="Dismiss experiment card">${icon('close')}</button></header>
     <div class="shift-row"><div><span class="eyebrow">Before</span><b>${lbl(before)}</b></div><span class="shift-arrow">${icon('chevronR')}</span><div><span class="eyebrow">After</span><b>${after ? lbl(after) : '<span class="pulse">Awaiting the next decision point…</span>'}</b></div></div>
-    ${after ? `<p class="subtle">${changed ? `The choice changed after the perturbation (${after.source === 'model' ? 'GLiNER' : 'rules fallback'}).` : `Same choice after the perturbation (${after.source === 'model' ? 'GLiNER' : 'rules fallback'}).`} Compare the percept below with the earlier trace in History.</p>` : ''}
+    ${after ? `<p class="subtle">${changed ? `The choice changed after the perturbation (${after.source === 'model' ? 'model' : 'rules fallback'}).` : `Same choice after the perturbation (${after.source === 'model' ? 'model' : 'rules fallback'}).`} Compare the percept below with the earlier trace in History.</p>` : ''}
   </section>`;
 }
 

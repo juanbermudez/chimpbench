@@ -21,6 +21,13 @@ const SELF = ['hunger', 'thirst', 'fatigue', 'social', 'stress', 'injury', 'unwe
 const TARGET = [...RELATIONS.map(r => `rel:${r}`), 'bond', 'tension', 'outranksMe', 'tMale', 'tAdult', 'tSwollen', 'tInjured', 'tMeat',
   'logDist', 'tAttacking', 'hasTarget'];
 
+/**
+ * Bumped whenever the same names start carrying different values, so a stand-in fitted on the old meaning is refused.
+ * 2: menu copies keep their variant (src/decision.ts copyCandidate, 5eff134); v1 fits saw every variant as NONE and never
+ * saw the protective or collective classes.
+ */
+export const FEATURE_VERSION = 2;
+
 export const FEATURE_NAMES: string[] = [
   'score', 'rulesPick',
   ...ACTIONS.map(a => `a:${a}`), ...VARIANTS.map(v => `v:${v}`),
@@ -70,9 +77,9 @@ export function optionFeatures(ctx: DecisionContext, options: Candidate[], rules
  * loop). 'mlp' (the default fit): one hidden ReLU layer on raw features, standardization folded into W1 and b1.
  * 'linear': w . standardize(x).
  */
-export type StandIn =
-  | { adapter: string; kind: 'mlp'; features: string[]; W1: number[][]; b1: number[]; w2: number[]; b2: number }
-  | { adapter: string; kind?: 'linear'; features: string[]; weights: number[]; mean: number[]; std: number[] };
+export type StandIn = { adapter: string; features: string[]; layoutVersion?: number } & (
+  | { kind: 'mlp'; W1: number[][]; b1: number[]; w2: number[]; b2: number }
+  | { kind?: 'linear'; weights: number[]; mean: number[]; std: number[] });
 
 export function standInScores(model: StandIn, rows: number[][]): number[] {
   if (model.kind === 'mlp') {
@@ -97,4 +104,9 @@ export function standInScores(model: StandIn, rows: number[][]): number[] {
 export function checkLayout(model: StandIn): void {
   if (model.features.length !== FEATURE_NAMES.length || model.features.some((n, i) => n !== FEATURE_NAMES[i]))
     throw new Error(`stand-in ${model.adapter} was fitted on a different feature layout; refit it (training/decide_ft/distill.py)`);
+  if ((model.layoutVersion ?? 1) !== FEATURE_VERSION)
+    throw new Error(`stand-in ${model.adapter} was fitted on feature layout v${model.layoutVersion ?? 1}; this code needs v${FEATURE_VERSION}: refit it (training/decide_ft/distill.py)`);
 }
+
+// `pnpm exec tsx scripts/ft-features.ts > <distill dir>/features.json`: the layout distill.py fits on and stamps into each stand-in.
+if (process.argv[1]?.endsWith('ft-features.ts')) console.log(JSON.stringify({ version: FEATURE_VERSION, names: FEATURE_NAMES }));
