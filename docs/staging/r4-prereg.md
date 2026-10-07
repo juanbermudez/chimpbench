@@ -356,3 +356,14 @@ agreement it printed before training (0.363 of 292, draws and kept acts together
   gradient is the same sum); the cache is emptied every 10 batches instead of 50; progress is written after every
   epoch. Batch 2 × 4, the top 8 layers, bf16 and the watermark stay. If it fails again, the ladder of §5 applies
   (batch 1 × 8, then the top 4 layers). Same data, same seed, 3 epochs.
+
+**Result of iteration 3: `r4-rules-state` trained (12:35 to 14:58).** 3,122 labelled contexts, 3 epochs, 9,366 examples
+shown: **7,841 s of training (2 h 11 min), 8,593 s of wall time (2 h 23 min) with the load and the four dev passes; 0.84
+s per example; peak MPS driver memory 6.1 GiB, peak process footprint 6.8 GiB**; the cap was never hit again (0 retried
+batches), so emptying the cache more often was enough. Swap in use 5,085 MB before, 4,548 MB after; load about 2 to 3.
+Dev agreement with the rules' decision (292 contexts of 15 animals never trained on, draws and kept acts together,
+chance 0.20): untuned 0.363; after epoch 1 0.620, epoch 2 0.630, epoch 3 0.637 (loss 1.77 → 1.02, 0.96, 0.93). The
+saved epoch is 3 (lowest dev loss). These are dev numbers; the held-out test is below.
+
+- **Iteration 4 (logged before it runs): score every evaluation packet** (`scripts/r4-eval.sh sim base`, then `sim
+  r4-rules-state`), one model process at a time; then `scripts/r4-report.ts`.
