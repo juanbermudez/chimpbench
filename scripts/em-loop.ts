@@ -13,6 +13,9 @@
 // --provider argmax: no model; the focal animals take the rules' argmax at every decision point (the loop's own effect).
 // --gate rg: the focal animals keep RG's gate (an act is held until a salient change), so the provider replaces RG's draws only.
 // --wording 2: the packets use M1 iteration 2's wording (server/decide.ts trackPurpose).
+// --packet state (stage R4; docs/staging/r4-prereg.md §8): the world carries observeV4 1 and menuParity 1 and the provider is
+//   sent the state-only packet (scripts/lib/packet-state.ts), the text the r4 adapters were trained on; --provider names an
+//   adapter under MGOGO_FT_ROOT/adapters listed in MGOGO_FT_ADAPTERS. --cache names the burn-in file (it depends on the parameters).
 // Development seeds only (48, 7).
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -30,6 +33,7 @@ import type { Chimp, World } from '../src/types';
 import { worldHash } from '../tests/fixtures/golden';
 import { familyOf } from './em-sample';
 import { Worker } from './ft-society';
+import { buildStateOnlyQuestion } from './lib/packet-state';
 
 const DAY = Math.round(24 / TICK_HOURS), TICK_MIN = TICK_HOURS * 60;
 
@@ -88,7 +92,7 @@ function measure(w: World, focal: Tally[], first: boolean): void {
 const argmax = (p: number[]) => p.reduce((b, v, i) => v > p[b] ? i : b, 0);
 const inc = (r: Record<string, number>, k: string) => { r[k] = (r[k] ?? 0) + 1; };
 
-export async function runArm(base: World, arm: 'rules' | 'model', days: number, provider: string, focalIds: { id: number; cls: string }[], worker: Worker | null, gated = false, wording: 1 | 2 = 1) {
+export async function runArm(base: World, arm: 'rules' | 'model', days: number, provider: string, focalIds: { id: number; cls: string }[], worker: Worker | null, gated = false, wording: 1 | 2 = 1, statePacket = false) {
   const w = structuredClone(base), idx0 = index(w), t0 = Date.now();
   const focal: Tally[] = focalIds.map(({ id, cls }) => ({ id, name: idx0.byId.get(id)!.name, cls, dayTicks: 0, cat: CATEGORIES.map(() => 0), nightTicks: 0, nightOut: 0, pathM: 0, px: 0, pz: 0, fixPathM: 0,
     fixX: 0, fixZ: 0, res0: 0, res1: 0, fin0: 0, fin1: 0, cap: 1, alive: true, cause: null, decisions: 0, applied: 0, fallbacks: {}, rulesAgree: 0, picks: {}, rulesPicks: {} }));
@@ -121,7 +125,7 @@ export async function runArm(base: World, arm: 'rules' | 'model', days: number, 
         const bad = decisionContextError(req.context);
         if (bad !== '') { inc(t.fallbacks, `invalid-context: ${bad}${bad === 'body' ? ` (${bodyFieldError(req.context.body).replace(/=.*/, '')})` : ''}`); resolveByRules(w, c.id); continue; }
         let packet: unknown;
-        if (provider === 'jev') { const { keys: _k, ...p } = buildJevQuestion(req.context, { wording }); packet = p; } else packet = buildLocalQuestion(req.context, { wording });
+        if (provider === 'jev') { const { keys: _k, ...p } = buildJevQuestion(req.context, { wording }); packet = p; } else packet = statePacket ? buildStateOnlyQuestion(req.context) : buildLocalQuestion(req.context, { wording });
         items.push({ c, req, packet });
       }
       if (items.length) {
@@ -166,11 +170,12 @@ if (process.argv[1]?.endsWith('em-loop.ts')) {
   if (seed !== 48 && seed !== 7) throw new Error('development seeds 48 and 7 only (docs/staging/em-prereg.md)');
   const burnIn = +arg('burn-in', '30'), days = +arg('days', '5'), provider = arg('provider', 'base'), arms = arg('arms', 'rules,model').split(',') as ('rules' | 'model')[];
   const out = resolve(arg('out', `artifacts/em/m3/s${seed}`));
-  const params = { ...JSON.parse(readFileSync(resolve(arg('params-file', 'artifacts/em/S39-params.json')), 'utf8')), observeState: 1 };
+  const statePacket = arg('packet', '') === 'state', paramsFile = arg('params-file', 'artifacts/em/S39-params.json');
+  const params = { ...JSON.parse(readFileSync(resolve(paramsFile), 'utf8')), ...(statePacket ? { observeV4: 1, menuParity: 1 } : { observeState: 1 }) };
   (async () => {
     // the burned-in world is kept as JSON (World is JSON-lossless) so later arms continue the same world without a second
     // burn-in; every output records the burn-in hash, and the report refuses arms whose hashes differ
-    const t0 = Date.now(), cache = resolve(`artifacts/em/m3/burnin-s${seed}-d${burnIn}.json`);
+    const t0 = Date.now(), cache = resolve(arg('cache', statePacket ? `artifacts/decide-ft/r4/loop/burnin-${paramsFile.replace(/^.*\//, '').replace(/\.json$/, '')}-s${seed}-d${burnIn}.json` : `artifacts/em/m3/burnin-s${seed}-d${burnIn}.json`));
     let base: World;
     if (existsSync(cache)) base = JSON.parse(readFileSync(cache, 'utf8')) as World;
     else {
@@ -184,10 +189,10 @@ if (process.argv[1]?.endsWith('em-loop.ts')) {
     let worker: Worker | null = null;
     if (arms.includes('model') && provider !== 'argmax') { worker = new Worker(arg('device', 'mps')); await worker.start(); console.log(`worker ready ${JSON.stringify(worker.ready)}`); }
     const results = [];
-    for (const arm of arms) results.push(await runArm(base, arm, days, provider, focal, worker, arg('gate', '') === 'rg', +arg('wording', '1') === 2 ? 2 : 1));
+    for (const arm of arms) results.push(await runArm(base, arm, days, provider, focal, worker, arg('gate', '') === 'rg', +arg('wording', '1') === 2 ? 2 : 1, statePacket));
     worker?.stop();
     mkdirSync(dirname(out), { recursive: true });
-    writeFileSync(`${out}.json`, JSON.stringify({ seed, burnIn, days, provider, params, burnInHash, focal, worker: worker?.ready ?? null, results }, null, 1) + '\n');
+    writeFileSync(`${out}.json`, JSON.stringify({ seed, burnIn, days, provider, packet: statePacket ? 'state-only (r4-state-1)' : 'served', params, burnInHash, focal, worker: worker?.ready ?? null, results }, null, 1) + '\n');
     console.log(`wrote ${out}.json`);
   })().catch(e => { console.error(e); process.exit(1); });
 }

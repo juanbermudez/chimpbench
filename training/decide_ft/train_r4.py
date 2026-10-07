@@ -97,7 +97,7 @@ def main(args: dict) -> None:
                 assert exs[j][2][target] == pick
                 loss = loss + F.cross_entropy(lg[None], torch.tensor([target], device=lg.device))
             (loss / len(chunk) / args["accum"]).backward()
-            running += float(loss) / len(chunk)
+            running += float(loss.detach()) / len(chunk)
             seen += 1
             examples += len(chunk)
             if seen % args["accum"] == 0 or i + args["batch"] >= len(order):

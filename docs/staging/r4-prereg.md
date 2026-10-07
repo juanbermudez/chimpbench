@@ -242,3 +242,77 @@ Machine before any work (7 October 2026, 11:35): swap 2,580 MB used of 4,096 MB;
 another session's simulation (one node process) is running from the main checkout. No model process is running.
 
 - **Iteration 0 (registered above, logged before it runs): the smoke run of §5.**
+  Result (7 October 2026, 11:46 to 11:52). Sample: seed 48, M6-W50, 1 day after 1 of burn-in, every decision point with
+  probability 0.2: 719 records of 38 animals aged 8 and over (480 draws, 239 kept or arrived; the rules' decision on the
+  menu at 706), 3 s of wall time; the tapped world with `observeV4` and `menuParity` on hashes the same as the base alone
+  without taps (`--check`). So a world gives about 3,600 decision points a simulated day. Packets by the server's
+  estimate: median 517 tokens, largest 719. Smoke training, the settings of §4 unchanged: 197 labelled examples, 1
+  epoch, 38 dev contexts: **0.88 s per example** (174 s of training, 207 s with the load and the two dev passes),
+  **peak MPS driver memory 6.8 GiB, peak process footprint 7.9 GiB**; swap in use went from 2,580 MB to 5,146 MB at its
+  highest (+2.6 GB, under the 3 GB stop rule; the machine was shared: load 3 to 6, another session's simulation
+  running) and was 5,074 MB after. Dev agreement 0.32 untuned → 0.42 after one epoch of 197 examples (chance 0.18; a
+  smoke number on 38 contexts, not a result). No stop rule fired; the settings of §4 stand.
+
+### Amendment A1 (7 October 2026, after the smoke run, before the full data generation and any adapter training)
+
+**Sizes, from the measured cost.** At 0.88 s per example, 3,200 training contexts shown for 3 epochs are 9,600 example
+passes: about 2.4 hours, 2.9 hours if the shared machine slows it to 1.1 s. Fixed: **train 3,200 (800 from each of the
+four training worlds), dev 300 (75 per world), test 1,500 (750 from each of the two test worlds)**, taken in hash order
+from what each world's sampler recorded. Sampling probability per decision point: 0.09 in the training worlds, 0.2 in
+the test worlds (the probes draw their situations from every record of the test worlds, not only the 1,500). If a
+world yields fewer dev contexts than 75 (its dev animals are few), dev is what there is. `r4-field-groom`: about 830
+records × 4 epochs of short packets, well under an hour.
+
+**The evaluation's scoring cost.** One model load per provider over one file of every evaluation packet
+(`scripts/r4-evalset.ts` → `training/decide_ft/em_score.py`): the test packets, a quarter of them again with shuffled
+options, the removed-pick packets, the probe packets (6 probes × up to 100 situations × 3 levels).
+
+**Smoke data and the smoke adapter are not used for anything else** (`artifacts/decide-ft/r4/smoke/`).
+
+**A real example packet** (smoke sample, seed 48, M6-W50, an adult male by day; it replaces the hand-composed one of
+§1; the rules chose c2 here):
+
+```
+state:
+  me: Rukaso, adult male, 17 y, West community; rank 7 of 8 males; mood calm; sociable
+  feeling: mild loneliness
+  now: currently grooming; daytime (full daylight); cloudy, 23 °C; party of 4 with 2 adult males
+  nearby:
+    - Ilobe: elder male, outranks me, 15 m, friendly
+    - Zamiko: infant male, 20 m
+    - Kiboro: adult female, 20 m
+  memories:
+    - Just now: Ilobe gave a travel hoo
+    - Groomed Ilobe 2 times, most recently 40 min ago
+    - Pant-grunted to Ilobe 42 min ago
+    - Pant-grunted to Tavuni 70 min ago
+  history:
+    - This month: groomed with Ilobe 1.1 h; groomed with Kiboro 22 min
+  body: body reserves at my usual store; slight energy shortfall: about 430 kcal still to find, some hours of waking left; stomach mostly full; well watered; comfortable temperature; slightly sleepy; body clock at its daytime high; settled
+instructions: You are a field primatologist. Choose what this wild eastern chimpanzee would most plausibly do next, given only what it perceives, feels and remembers. Weigh bodily needs, safety, dominance (subordinates pant-grunt to and avoid dominants), kinship and alliances.
+options:
+  c0: Sit and digest after feeding (a pause: cools the body, digests, favours wounds)
+  c1: Feed on ripe star apples in the Chrysophyllum albidum 3 m away (crop 38%) (food, eases hunger; 1,600 kcal of fruit there)
+  c2: Travel 531 m northeast to a Chrysophyllum albidum I remember with ripe star apples (food, eases hunger; 1,000 kcal of fruit expected there, not seen myself)
+  c3: Travel 384 m northeast to a Chrysophyllum albidum I remember with ripe star apples (food, eases hunger; 800 kcal of fruit expected there, not seen myself; 1 other going there)
+  c4: Play with the young Zamiko (fun and practice for young chimpanzees)
+  c5: Charging display with branch-dragging (asserts dominance)
+  c6: Charge at Ilobe, to challenge his rank (intimidates a rival)
+  c7: Pant-hoot so my allies out of sight know where I am (contacts allies or answers strangers)
+```
+
+The served v4 packet of the same moment adds to c1, c2 and c3 "a rich feed (about 410 / 320 / 340 kcal an hour net)"
+and to c3 "a little more company"; at a dusk decision of a mother it adds to the instruction "Dusk: chimpanzees build
+their night nests now. Urgent sleepiness: meeting it comes first unless danger is immediate. A dependent infant relies
+on this mother: she stays close, nurses and protects it." and to the nest option "— needed now". None of that is in the
+state-only packet (`tests/r4-packet.test.ts`, 7 tests).
+
+**Code delivered before the full run** (all outside `src/`): `scripts/lib/packet-state.ts`, `scripts/r4-contexts.ts`,
+`r4-assemble.ts`, `r4-evalset.ts`, `r4-probes.ts`, `r4-wild.ts`, `r4-report.ts`, `r4-wild-report.ts`;
+`training/decide_ft/train_r4.py`, `r4_py.sh`; `training/decide_ft/adapters.py` reads `MGOGO_FT_ADAPTERS` (unset: as
+before); `scripts/em-loop.ts --packet state` (unset: as before).
+
+- **Iteration 1 (logged before it runs): the full data generation** (`scripts/r4-contexts.ts` for the six worlds of §3 and
+  the two test worlds again with `--no-rules-pick`; two processes at a time), then `r4-assemble.ts`, then `r4-wild.ts`.
+- **Iteration 2 (logged before it runs): train `r4-rules-state`** on the assembled train file, 3 epochs, the settings
+  of §4; swap and load read just before.
