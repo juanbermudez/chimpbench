@@ -218,3 +218,19 @@ Neither change touches the world: the no-model arms are run again at the new hea
   on its run's hash. The refused body field is `awakeH` (hours awake): under random choice with the pick removed the
   lactating female stayed awake 60 to 80 hours, past the range the request validation accepts, so her requests went
   to the rules.
+
+**Result of iteration 2 (18:33 to 19:35; started at head 1a593c1, clean tree; one worker process, no timeout, no
+restart).** `trained`: 2,362 kernel calls in 1,285 s (21 min). `untuned`: 4,766 calls in 2,424 s (40 min): its animals
+reach twice as many decision points. Median 0.49 and 0.50 s per call. Both replays (no model, 6 and 7 s) ended on the
+run's hash, every day's hash equal (`trained` f81fef0affca7741, `untuned` 7690253de73a465c). Numbers: §7, from the
+report. One infant died in each model world (baseline mortality, labelled illness; neither a focal animal nor a focal
+animal's infant); none in the nine no-model worlds.
+
+- **Iteration 3 (logged before it runs, 19:37): the optional arms, by `scripts/r5-chain.sh`, in the registered order,**
+  one model process at a time, the swap check written to its log before each model load: (a) seed 48 `trained-gate`,
+  `trained-nopick` and their replays; (b) seed 7: the 30-day burn-in, `rules`, the re-draws and the no-model arms and
+  their replays; (c) seed 7 `trained`, `untuned` and their replays; (d) seed 48 `untuned-gate` and its replay. Model
+  time used so far: 61 minutes (the line for starting an optional arm is 3.5 hours). Expected from iteration 2: about
+  15, 25, 21, 40 and 20 minutes of model time. Machine at 19:37: load averages about 3 to 4; swap 3.9 GB in use.
+  Seed 7's season and focal animals are read from its `rules` file afterwards (the chain does not stop between steps;
+  the rule for the words is fixed in §1).
