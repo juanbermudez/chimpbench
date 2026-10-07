@@ -386,3 +386,159 @@ males; the development part is below.
 - **Iteration 6 (logged before it runs, 17:13): the remaining model runs, one process at a time, in this order:**
   `scripts/r4-eval.sh wild base`, `wild r4-rules-state`, `wild r4-field-groom` (development part only), `sim
   r4-field-groom`, `tokens`, `parity`, `latency r4-rules-state`; then the two report scripts.
+
+**Iteration 6 ran as registered (17:13 to 18:10; one model process at a time; swap 3.9 GB in use throughout, load
+about 2).** Then one check that loads no model, logged here as it was made: `scripts/em-loop.ts --packet state
+--provider argmax` for 1 simulated day after 1 (seed 48), to see that the in-loop command's packet path runs.
+
+### Results (7 October 2026; offline only; nothing was run in the loop; every table is a script's output)
+
+Tables: `docs/staging/r4-numbers.md` (simulated contexts, `scripts/r4-report.ts`) and `docs/staging/r4-wild-numbers.md`
+(wild choices, `scripts/r4-wild-report.ts`). Adapters, data and per-record scores: `artifacts/decide-ft/r4/` in this
+worktree (gitignored; the two adapters are 9.8 MB each).
+
+**The answer.** Trained on the animal's state alone, the small model learned to choose much as the rules do: on
+held-out decision points (seed 21, 38 animals, never trained on) it picks the rules' decision at **0.61 of the rules'
+draws (0.57 to 0.65) against 0.29 (0.26 to 0.32) untuned; chance 0.19**; the difference is +0.32 (0.28 to 0.36). It did
+not learn everything: it finds the exact food option the rules chose at 0.37, one state probe still moves the wrong
+way, and the wild-choice score moved little.
+
+**Thresholds.**
+
+| | Threshold | Result |
+| --- | --- | --- |
+| T1 | `r4-rules-state` minus untuned on held-out draws is above 0 | **met**: +0.323 (0.282 to 0.363); 0.609 against 0.286, 954 draws |
+| T2 | token parity; no packet over 1,280 tokens | **met**: `PARITY OK` on 12 dev contexts (equal token ids, probability gap 0); state-only packets median 452 real tokens, 95th percentile 583, largest 646 (the served v4 packet: 493, 639, 718) |
+| T3 | no state probe the wrong way for `r4-rules-state` | **not met**: heat moves the wrong way (rest −0.021, −0.024 to −0.018; the untuned model −0.024). Four move the right way, reserves does not respond |
+| T4 | `r4-field-groom` minus untuned on the wild development part, plain, all records, is above 0 | **not met**: +0.027 (−0.010 to 0.057), 0.400 against 0.373. With the fan-out wrapper it is a difference: +0.045 (0.012 to 0.077), 0.480 against 0.435 |
+
+**1. Agreement with the rules' decision, held-out contexts (state-only packet; 95% intervals over animals).**
+
+| Decision points | n | Chance | Untuned | `r4-rules-state` | Difference |
+| --- | --- | --- | --- | --- | --- |
+| draws (the main number) | 954 | 0.19 | 0.29 (0.26 to 0.32) | 0.61 (0.57 to 0.65) | +0.32 (0.28 to 0.36), yes |
+| kept or arrived acts | 501 | 0.19 | 0.40 (0.35 to 0.45) | 0.66 (0.62 to 0.71) | +0.27 (0.21 to 0.32), yes |
+| draws, base W50 / W25 | 484 / 470 | 0.18 / 0.19 | 0.24 / 0.33 | 0.62 / 0.60 | +0.38 / +0.27, yes / yes |
+| feeding | 279 | 0.19 | 0.08 (0.04 to 0.11) | 0.37 (0.30 to 0.44) | +0.29 (0.23 to 0.36), yes |
+| travel | 88 | 0.18 | 0.10 (0.02 to 0.20) | 0.73 (0.63 to 0.82) | +0.63 (0.47 to 0.76), yes |
+| rest | 287 | 0.19 | 0.31 (0.25 to 0.37) | 0.78 (0.72 to 0.83) | +0.47 (0.39 to 0.54), yes |
+| social | 203 | 0.15 | 0.42 (0.35 to 0.49) | 0.54 (0.44 to 0.64) | +0.12 (0.00 to 0.24), no |
+| night (dusk and night) | 97 | 0.24 | 0.72 (0.63 to 0.82) | 0.84 (0.75 to 0.91) | +0.11 (0.01 to 0.20), yes |
+
+The ceiling for any reader of state is about 0.98 (the rules' argmax against their own decision: they sample a belief).
+The untuned model on the v4 packet as served scores 0.30, so removing the rate, the company words and the rule
+sentences cost it nothing measurable (−0.015, −0.031 to 0.002).
+
+*Where it still differs.* When the rules feed (279 draws), the adapter picks some feeding option at 0.57 (untuned
+0.13) but the same one at 0.37: its commonest miss is to feed where it stands when the rules walk to another crown
+(42 of 279), then to rest (50). Share of picks on draws: feeding 0.20 (the rules 0.29, untuned 0.09), travel 0.14 (0.09,
+0.04), rest 0.36 (0.30, 0.25), social 0.20 (0.21, 0.52). So it no longer leans social (grooming picked when offered:
+0.14, the rules 0.15, untuned 0.51), and **it still feeds less often than the rules**. With its options shuffled it
+picks the same option at 0.89 (untuned 0.75).
+
+**2. The rules' pick removed (the second number; 954 draws, `kernelNoRulesPick` 1).** The adapter picks the best
+remaining option by the rules' score at 0.46 (0.43 to 0.49) against 0.21 untuned (0.18 to 0.24; chance 0.21):
++0.25 (0.21 to 0.29). So what it learned is not only "find the rules' favourite": it ranks the rest as the rules do
+about half the time. Its pick is of the same kind as the removed one at 0.19, as untuned (0.19): the menu keeps one
+place per act, so a second option of the same kind is usually not there.
+
+**3. State probes (M2's design; 100 held-out situations each; Δ = probability on the target at the high level minus the
+low level).**
+
+| Probe → target | Untuned | `r4-rules-state` | `r4-field-groom` |
+| --- | --- | --- | --- |
+| energy deficit → feeding | +0.125, right | **+0.165 (0.144 to 0.190), right** | +0.036, right |
+| reserves falling → feeding | −0.003, wrong | +0.002 (−0.000 to 0.005), does not respond | −0.005, wrong |
+| sleep → rest and nest | +0.152, right | +0.113 (0.094 to 0.134), right | +0.090, right |
+| light falling → nest | +0.020, right | **+0.116 (0.088 to 0.146), right** | +0.022, right |
+| heat → rest | −0.024, wrong | −0.021 (−0.024 to −0.018), **wrong** | −0.022, wrong |
+| water deficit → drink | +0.168, right | **+0.256 (0.228 to 0.286), right** | +0.099, right |
+
+Read plainly: the body state now moves the choice more for hunger, light and water, about as before for sleep, and
+the two states the training data hardly holds are not learned. Of 3,200 training contexts 5 say "hot" (491 "warm") and
+none has reserves below "a little low" (37): the windows are a few cool days in a season of plenty. That explains the
+two failures without excusing them; they need training contexts from the lean season and from hot days.
+
+**4. Wild choices, development part only (448 records of 30 focal males; top-1; the sealed part was not read).**
+
+| Kernel | All | Menus of 8 or fewer (253) | Wider menus (195) |
+| --- | --- | --- | --- |
+| untuned, plain | 0.373 (0.308 to 0.438) | 0.522 | 0.179 |
+| `r4-field-groom`, plain | 0.400 (0.320 to 0.474) | 0.549 | 0.205 |
+| `r4-rules-state`, plain | 0.406 (0.331 to 0.470) | 0.553 | 0.215 |
+| untuned, fan-out | 0.435 (0.371 to 0.511) | 0.522 | 0.323 |
+| `r4-field-groom`, fan-out | 0.480 (0.417 to 0.550) | 0.549 | 0.390 |
+| `r4-rules-state`, fan-out | 0.480 (0.414 to 0.542) | 0.553 | 0.385 |
+| the simple rule stack | 0.487 (0.418 to 0.545) | 0.542 | 0.415 |
+
+The untuned run reproduces the published figures exactly (0.373, 0.435). Paired with the untuned model: field
+adapter plain +0.027 (−0.010 to 0.057), not a difference; with fan-out +0.045 (0.012 to 0.077), a difference, from the
+wide menus (+0.067, 0.004 to 0.133). The rules-labelled adapter, which never saw a wild choice: plain +0.033 (−0.011 to
+0.070) and fan-out +0.045 (−0.009 to 0.092), neither a difference. With fan-out neither adapter differs from the rule
+stack (−0.007, −0.032 to 0.032 for the field adapter); the untuned model did (−0.051). So 740 wild choices bought a
+small gain that shows only with the fan-out wrapper, and the two adapters are indistinguishable here.
+
+**5. The field adapter on simulated contexts (no threshold).** Agreement with the rules on draws 0.29 (untuned 0.29;
++0.005, −0.015 to 0.024). It moved toward rest (+0.11, a difference) and away from night decisions (−0.11, a
+difference) and feeding (−0.03, a difference). Trained on grooming menus alone it is not an engine for the loop.
+
+**6. Manifests.** Both adapters carry their label source, record counts and hashes, `labels_from_jev_or_an_outside_model:
+false` and the trainer's commit; the rules set's check found 0 removed wordings in 5,000 packets; the field adapter's
+manifest names "field choices, Ngogo male grooming" and lists T-SOC-1, T-SOC-2, T-FIS-1, T-FIS-3, T-FIS-5 as compromised
+for itself (a test asserts the helper marks them).
+
+**Cost on this Mac (M4, 16 GB, shared).** `r4-rules-state`: 2 h 11 min of training (0.84 s per example, 9,366 shown),
+6.8 GiB footprint. `r4-field-groom`: 20 min, 5.4 GiB. One failed run before (26 minutes lost at MPS's allocation cap).
+Scoring: about 0.6 s per packet in batches of 8, 0.42 s per decision one packet at a time (36 packets in 15 s after
+warm-up). Training on MPS within 16 GB works; a second model process at the same time would not fit beside it.
+
+**What the engine still cannot do.** (1) Choose among food options as the rules do (0.37), and it feeds less often
+than they do; the packet shows crop, distance and feeders but not the terms the rules add (the cost of a place, the
+revisit history, the rate). (2) Answer to heat and to low reserves. (3) Social choices are not better than untuned by
+the registered rule. (4) Nothing here shows behaviour: agreement is measured at states the rules visited; in the loop
+its own choices change the states it meets (M3 found the untuned model underfed). (5) All of it is one season: days 6
+to 14 from 28 September.
+
+**Not done.** The mixed adapter (optional, not started). Stand-ins were not refit, so the plan's fourth criterion
+(stand-in agreement with its adapter) is open. No in-loop run.
+
+### The in-loop command (ready, not run with a model)
+
+M3's focal design with the state-only packet and an r4 adapter, from this worktree (the adapters are under its
+`artifacts/decide-ft/r4/adapters/`; copy that folder to run elsewhere):
+
+```sh
+MGOGO_GHN_ROOT=/Volumes/Drive/chimpbench/GHN MGOGO_DECIDE_PYTHON=/Volumes/Drive/chimpbench/decide-env/bin/python \
+HF_HOME=/Volumes/Drive/chimpbench/hf-cache HF_HUB_CACHE=/Volumes/Drive/chimpbench/hf-cache/hub \
+MGOGO_FT_ROOT=artifacts/decide-ft/r4 MGOGO_FT_ADAPTERS=r4-rules-state \
+fnm exec --using=22.22.3 -- pnpm exec tsx scripts/em-loop.ts --seed 48 --burn-in 30 --days 5 --provider r4-rules-state \
+  --packet state --params-file docs/staging/integrator-kit/params/M6-W50.json --arms rules,model \
+  --out artifacts/decide-ft/r4/loop/s48-W50-r4-rules-state        # add --gate rg for the gate on
+```
+
+`--packet state` gives the world `observeV4` 1 and `menuParity` 1 and sends the provider the text the adapter was
+trained on (a test asserts the kernel's packet is the training packet). Checked without a model (`--provider argmax`, 1
+day after 1, seed 48): the path runs, 5 focal animals were asked 650 times in a day with the gate off, every answer
+applied. It reads M3's readouts (activity shares, kcal a day, reserves, nights out of a nest, agreement), not R1b's
+scorecard rows; `--seed` takes 48 and 7.
+
+**What is feasible here.** At 0.4 to 0.6 s per decision: the focal design (5 animals, 5 days, about 3,250 decisions with
+the gate off) is about 25 to 35 minutes of model time per arm and seed, so two seeds, both bases and both gate
+settings fit in an afternoon. The whole population aged 8 and over (38 animals) is about 4,900 decisions a simulated day
+with the gate off (about 2,400 with it on): 35 to 50 minutes a day, so **R1b's design (60 days, 5 seeds) is 35 to 50
+hours per seed-run and is not feasible with the real model on this Mac; a whole-population run of about 5 days on one
+seed is (3 to 4 hours per arm)**. An R1b-style run therefore needs a distilled stand-in, and the present stand-in cannot
+be refit as it is: its first two features are each option's rules score and a flag on the rules' pick, and it has no
+feature for the body state or for an option's beliefs. A stand-in for a state-only engine needs a new feature layout
+and its agreement with the adapter measured before any figure uses it.
+
+### Open questions for the user
+
+1. **Is an option's net energy rate ("about 340 kcal an hour net") state or the rules' valuation?** It was removed
+   here as the food term of the rules' valuation. If it counts as a belief the animal can hold, the feeding gap may
+   narrow; retraining takes 2 h 11 min.
+2. **More seasons before the loop?** The reserves and heat failures come from a training window of a few cool days of
+   plenty. Sampling the lean season needs longer simulated runs than "a few days per seed" (rules-driven, cheap: a
+   world-day takes about a second).
+3. **The field adapter's test.** By the registered rule it did not beat the untuned model plain. Opening the sealed
+   part for it would spend a one-time read on a marginal result; it was not opened.
