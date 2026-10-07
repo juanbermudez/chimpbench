@@ -375,3 +375,14 @@ saved epoch is 3 (lowest dev loss). These are dev numbers; the held-out test is 
   joined by position with a check of id and option count; the packets scored are byte for byte the same.
 - **Iteration 5 (logged before it runs, 16:45): train `r4-field-groom`** on `field/train.jsonl` (740 records × 4 epochs),
   validation `field/val.jsonl`, the settings of §4; swap 3,978 MB used of 5,120 MB, load 2.1, no other model process.
+
+**Result of iteration 5: `r4-field-groom` trained (16:45 to 17:12).** 2,960 rows (740 records × 4 epochs): 1,207 s of
+training (20 min), 1,477 s of wall time; 0.41 s per example (the wild packets are short); peak MPS driver memory 5.4
+GiB, footprint 5.4 GiB; no retried batch; swap 3,978 MB before, 3,962 MB after. Validation (237 records of the 5
+validation males, wide menus cut to sub-menus of 8; chance 0.18): untuned 0.540, loss 1.40; epochs 1 to 4: 0.561,
+0.608, 0.574, 0.561, loss 1.32, 1.26, 1.25, 1.26. The saved epoch is 3 (lowest loss). A validation number on five
+males; the development part is below.
+
+- **Iteration 6 (logged before it runs, 17:13): the remaining model runs, one process at a time, in this order:**
+  `scripts/r4-eval.sh wild base`, `wild r4-rules-state`, `wild r4-field-groom` (development part only), `sim
+  r4-field-groom`, `tokens`, `parity`, `latency r4-rules-state`; then the two report scripts.
