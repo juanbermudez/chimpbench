@@ -1,4 +1,4 @@
-// EY juvenile starvation (docs/staging/ey-juvenile-starvation.md §5): a short, measurement-only continuation of a saved
+// EY juvenile starvation (docs/staging/ey-juvenile-starvation.md §8, the run log): a short, measurement-only continuation of a saved
 // 12-month end checkpoint. The world of the checkpoint is ticked on for at most 120 simulated days with e-bench's own
 // per-animal readout (scripts/lib/energy-probe.ts, `animalDays`: stage E1r's `e-bench --animal-days`) started at the
 // checkpoint day. `e-bench --resume … --animal-days` itself refuses these checkpoints (a resume must share the
