@@ -238,5 +238,6 @@ test('the previous freeze\'s targets file is a verbatim snapshot recorded under 
   const t = JSON.parse(readFileSync(new URL('../data/targets.json', import.meta.url), 'utf8'));
   const snaps = recordedSnapshots(t.protocolFreeze);
   assert.ok(snaps.some(s => s.snap.path === 'data/targets.c8.json' && s.freeze.hash === 'a2228c2df476680b'), 'the C8-line freeze carries its snapshot');
+  assert.ok(snaps.some(s => s.snap.path === 'data/targets.e.json' && s.freeze.hash === '5d4fa5a2a500bce6'), 'the Track E freeze carries its snapshot (kept at the obs-fixes freeze of 7 October 2026)');
   assert.deepEqual(checkSnapshots(), []);
 });

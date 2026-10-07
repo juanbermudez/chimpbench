@@ -39,7 +39,7 @@ export const S18: S18Def[] = [
     compute: d => { const m = metric(d, 'T-IGE-2'); return v(m.value, m.truth ?? null, 'fraction', m.n); },
   },
   {
-    key: 'killings', label: 'Killings per community-year', field: '0.02–0.36 (T-LET-1)', protocol: 'observed + census-inferred killings ÷ community-years', truthProtocol: 'stats.killings ÷ community-years',
+    key: 'killings', label: 'Killings per community-year', field: '0.02–0.36 (T-LET-1)', protocol: 'observed + census-inferred killings ÷ community-years', truthProtocol: '(stats.killings + deaths of fight wounds inside a community) ÷ community-years',
     compute: d => { const m = metric(d, 'T-LET-1'); return v(m.value, m.truth ?? null, 'per community-year', m.n); },
   },
   {

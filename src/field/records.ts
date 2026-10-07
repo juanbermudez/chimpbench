@@ -58,7 +58,19 @@ export interface RosterEntry {
   birthEst: number; knownAge: boolean; founder: boolean; firstSeen: number;
 }
 
-/** All-occurrence social interactions detected by a team (detect 1 seen, 2 heard, 3 focal involved). */
+/**
+ * Event kinds that record a killing (obs-fixes, docs/staging/obs-fixes-prereg.md §1, §2), each by its outcome: `kill` a gang
+ * attack on a stranger that killed (src/sim/conflict.ts gangAttack), `infanticide` an attack in which the infant died, and
+ * `fight-kill` a community member dead of the wounds of a contest inside its community that a team detected. An
+ * infanticidal attack the infant survived, or the start of one that killed, is INFANTICIDE_ATTACK: an attack, not a killing.
+ */
+export const KILL_EVENTS: Readonly<Record<string, true>> = { kill: true, infanticide: true, 'fight-kill': true };
+export const FIGHT_KILL = 'fight-kill', INFANTICIDE_ATTACK = 'infanticide-attack';
+
+/**
+ * All-occurrence social interactions detected by a team (detect 1 seen, 2 heard, 3 focal involved). `kind` is the
+ * interaction's own kind, except INFANTICIDE_ATTACK and FIGHT_KILL above (a fight-kill carries its contest's id).
+ */
 export interface EventRec {
   id: number; t: number; end: number; kind: string; actor: number; target: number; parts: number[]; troop: number; team: number; detect: number;
   x: number; z: number;
@@ -126,7 +138,13 @@ export interface TruthRecords {
   conflicts: number; fights: number; reconciliations: number; consolations: number; killings: number; hunts: number; huntSuccesses: number;
   huntHunters: number[]; cycles: number[]; alphaChanges: number;
   popStart: number; popEnd: number; tenseShare: number; rangeShift: number;
+  /** The sim's kill records (gang attacks and infanticides in which the victim died), one per victim: attackers and defenders for T-LET-3. */
   kills: { t: number; victim: number; victimSex: string; victimAge: number; attackers: number[]; defenders: number; troop: number; victimTroop: number; kind: string }[];
+  /**
+   * obs-fixes: deaths of fight wounds inside a community since observation started (src/sim/conflict.ts resolveFight), which
+   * `killings` (the sim's own counter) leaves out and T-LET-1's definition counts. Read from the causes of death at the end.
+   */
+  fightKillings: number;
 }
 
 export interface Weather { rainMm: number; afternoonMm: number; tmin: number[]; tmax: number[]; }
@@ -207,6 +225,6 @@ export function emptyRecords(profile = 'compressed'): Records {
     weather: { rainMm: 0, afternoonMm: 0, tmin: [], tmax: [] },
     truth: { activity: { male: [0, 0, 0, 0, 0, 0], female: [0, 0, 0, 0, 0, 0] }, pathM: {}, largestFrac: [], wholeFrac: [], nestFrac: [], wakeMin: [], settleMin: [], ground: 0, channel: 0, swollenDayHours: 0, mates: 0,
       encounters: 0, encountersHeard: 0, encountersSeen: 0, encounterLog: [], followedEncounters: [], patrols: [], groomMin: [], interactions: {}, conflicts: 0, fights: 0, reconciliations: 0, consolations: 0, killings: 0, hunts: 0, huntSuccesses: 0,
-      huntHunters: [], cycles: [], alphaChanges: 0, popStart: 0, popEnd: 0, tenseShare: 0, rangeShift: 0, kills: [] },
+      huntHunters: [], cycles: [], alphaChanges: 0, popStart: 0, popEnd: 0, tenseShare: 0, rangeShift: 0, kills: [], fightKillings: 0 },
   };
 }

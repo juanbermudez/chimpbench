@@ -1,7 +1,7 @@
 import { SOURCE_EFFORT_H_PER_YEAR } from './config';
 import { CAT_FEED, CAT_GROOM, CAT_REST, CAT_TRAVEL, FEED_FRUIT, FEED_GROUND, FEED_MEAT } from './categories';
 import { MONTH_H, shares, type Derived } from './derive';
-import { P_LACT, type Follow, type Records, type TreeVisitRec } from './records';
+import { KILL_EVENTS, P_LACT, type EventRec, type Follow, type Records, type TreeVisitRec } from './records';
 import { EARLY_LIFE_METRICS, SEALED } from './early-life';
 import { cellOf, cellRange, convexHull, inConvexHull, isoplethArea, kde } from './space';
 import { conciliatoryTendency, dispersion, finite, hwi, kendall, ldaLeaveOneOut, logistic, mean, median, ols, pearson, poissonInterval, spearman, steepness } from './stats';
@@ -677,26 +677,32 @@ export const METRICS: MetricDef[] = [
 
   // Lethal aggression
   {
-    id: 'T-LET-1', protocol: 'observed killings (seen or heard by a team) plus inferred ones (carcasses found by the census with a violent cause; necropsy stand-in), ÷ community-years (wilson2014 "observed + inferred"); part: suspected = 30-day disappearances whose true cause was violent (wilson2014 counts these only as "suspected")',
+    id: 'T-LET-1', protocol: 'observed killings (seen or heard by a team: a gang attack on a stranger that killed, an infanticidal attack in which the infant died, a community member dead of the wounds of a fight the team detected) plus inferred ones (carcasses found by the census with a violent cause; necropsy stand-in), ÷ community-years (wilson2014 "observed + inferred"); an attack the victim survived is no killing; part: suspected = 30-day disappearances whose true cause was violent (wilson2014 counts these only as "suspected"); truth = the sim\'s kill counter plus deaths of fight wounds inside a community',
     pool: 'ratio', poisson: true,
-    compute: d => { const n = killings(d).length, sus = suspectedKillings(d); return { value: n / d.communityYears, num: n, den: d.communityYears, n, truth: d.rec.truth.killings / d.communityYears, parts: { suspectedPerYear: sus / d.communityYears } }; },
+    compute: d => { const n = killings(d).length, sus = suspectedKillings(d), T = d.rec.truth; return { value: n / d.communityYears, num: n, den: d.communityYears, n, truth: (T.killings + T.fightKillings) / d.communityYears, parts: { suspectedPerYear: sus / d.communityYears } }; },
   },
   {
     id: 'T-LET-2', protocol: 'male share of victims of observed and inferred killings (wilson2014)', pool: 'ratio',
     compute: d => { const k = killings(d); const m = k.filter(x => d.roster.get(x.victim)?.sex === 'male').length; return k.length ? { value: m / k.length, num: m, den: k.length, n: k.length } : none('no killings', 0); },
   },
   {
-    id: 'T-LET-3', protocol: 'median attackers ÷ max(1, victim-community adult males within 2× visibility) over observed and inferred killings (wilson2014)', pool: 'custom',
-    compute: d => { const seen = new Set(killings(d).map(k => k.victim)), k = d.rec.truth.kills.filter(x => seen.has(x.victim)); return { value: null, n: k.length, raw: { ratio: k.map(x => x.attackers.length / Math.max(1, x.defenders)) } }; },
-    pooled: s => { const v = s.flatMap(x => x.raw?.ratio ?? []); return v.length ? { value: median(v), n: v.length } : none('no killings'); },
+    id: 'T-LET-3', protocol: 'median attackers ÷ max(1, victim-community adult males within 2× visibility) over observed and inferred intercommunity killings (the killer\'s community is not the victim\'s), one per victim (wilson2014)', pool: 'custom',
+    compute: d => {
+      // obs-fixes N1: the row is "per intercommunity attack": a killing inside a community has no defending community
+      const seen = new Set(killings(d).map(k => k.victim)), once = new Set<number>();
+      const k = d.rec.truth.kills.filter(x => seen.has(x.victim) && x.troop !== x.victimTroop && !once.has(x.victim) && !!once.add(x.victim));
+      return { value: null, n: k.length, raw: { ratio: k.map(x => x.attackers.length / Math.max(1, x.defenders)) } };
+    },
+    pooled: s => { const v = s.flatMap(x => x.raw?.ratio ?? []); return v.length ? { value: median(v), n: v.length } : none('no intercommunity killings'); },
   },
   { id: 'T-LET-4', protocol: 'range gain after killings (scenario)', na: 'ranges are fixed circles that relax back after a killing; living territories and the expansion scenario arrive in C6' },
   { id: 'T-LET-5', protocol: 'scripts/field-scenario.ts expansion --unseal (sealed; early-life.ts letFiveSeed): births and infant deaths before 3 in the 3 years before vs after the winner\'s expansion, against the paired baseline', sealed: SEALED },
   {
-    id: 'T-LET-6', protocol: 'share of observed killings that happened during a classified patrol of the observing team (mitani2010)', pool: 'ratio',
+    id: 'T-LET-6', protocol: 'share of observed intercommunity killings (one per victim) that happened during a classified patrol of the observing team (mitani2010)', pool: 'ratio',
     compute: d => {
-      const k = d.rec.events.filter(e => (e.kind === 'kill' || e.kind === 'infanticide'));
-      if (!k.length) return none('no observed killings');
+      // obs-fixes N2: the row is the "share of intercommunity killings by patrolling parties"
+      const once = new Set<number>(), k = d.rec.events.filter(e => intercommunityKill(d, e) && !once.has(e.target) && !!once.add(e.target));
+      if (!k.length) return none('no observed intercommunity killings');
       const on = k.filter(e => d.patrols.some(p => p.team === e.team && e.t >= p.t0 - 1 / 60 && e.t <= p.t1 + 1 / 60)).length;
       return { value: on / k.length, num: on, den: k.length, n: k.length };
     },
@@ -1137,7 +1143,9 @@ export const METRICS: MetricDef[] = [
   {
     id: 'T-DEM-9', protocol: 'census: at the end of each observation year, share of individuals alive in the roster with estimated age > 3 whose snare injury the teams had recorded (wood2017; emeryThompson2020)', pool: 'ratio',
     compute: d => {
-      const Y = 365.25 * 24, snared = new Map(d.rec.snared.map(x => [x.id, x.t]));
+      // obs-fixes (prereg §3): the census year is the observation year of 365 days, as everywhere in the observer (derive.ts
+      // years, obsYear, T-PAT-9); at 365.25 days a 365-day run ended 6 h before its first census. Ages stay in age-years (ageAt).
+      const Y = 365 * 24, snared = new Map(d.rec.snared.map(x => [x.id, x.t]));
       let num = 0, den = 0;
       for (let t = d.t0 + Y; t <= d.t1 + 1e-6; t += Y) for (const r of d.rec.roster) {
         if (!d.aliveAt(r.id, t) || d.ageAt(r.id, t) <= 3) continue;
@@ -1422,12 +1430,27 @@ function patrolMembers(d: Derived): Map<number, number> {
   return per;
 }
 
-/** Observed and inferred killings (wilson2014): seen or heard, or a carcass with a violent cause. Disappearances are at most "suspected". */
+/**
+ * Observed and inferred killings (wilson2014): seen or heard, or a carcass with a violent cause. Disappearances are at most
+ * "suspected". An observed killing is an event of a kind in KILL_EVENTS (records.ts): each records a death, never an attack
+ * the victim survived, and deaths of fight wounds inside a community are among them (obs-fixes, prereg §1, §2).
+ */
 function killings(d: Derived): { victim: number; t: number }[] {
   const out: { victim: number; t: number }[] = [], seen = new Set<number>();
-  for (const e of d.rec.events) if ((e.kind === 'kill' || e.kind === 'infanticide') && !seen.has(e.target)) { seen.add(e.target); out.push({ victim: e.target, t: e.t }); }
+  for (const e of d.rec.events) if (KILL_EVENTS[e.kind] && !seen.has(e.target)) { seen.add(e.target); out.push({ victim: e.target, t: e.t }); }
   for (const x of d.rec.deaths) if (x.violent && x.how === 'body' && !seen.has(x.id)) { seen.add(x.id); out.push({ victim: x.id, t: x.tEst }); }
   return out;
+}
+/**
+ * An observed killing between communities: a `kill` event always is one (the sim's gang attack is on a stranger); an
+ * `infanticide` event is one when the victim's community on the roster, or failing that its mother's (the kill's third
+ * participant), is not the killer's; a `fight-kill` never is.
+ */
+function intercommunityKill(d: Derived, e: EventRec): boolean {
+  if (e.kind === 'kill') return true;
+  if (e.kind !== 'infanticide') return false;
+  const troop = (d.roster.get(e.target) ?? d.roster.get(e.parts[2]))?.troop;
+  return troop !== undefined && troop !== e.troop;
 }
 function suspectedKillings(d: Derived): number {
   const seen = new Set(killings(d).map(k => k.victim));

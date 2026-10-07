@@ -52,7 +52,7 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { gunzipSync } from 'node:zlib';
 import { necropsy } from '../src/field/protocols';
-import type { Records } from '../src/field/records';
+import { KILL_EVENTS, type Records } from '../src/field/records';
 import { paramsOf } from '../src/sim/params';
 import type { ChimpX, SimState } from '../src/sim/state';
 import type { Chimp, SimEvent, World, WorldStats } from '../src/types';
@@ -186,7 +186,7 @@ export interface SeedCounts {
     killingsStats: number; killingsWorld: number; killingsObserver: number; killingsPart: number | null; killingsMatch: boolean;
     /** Extra entries in the observer's truth.kills beyond one per victim (an infanticidal attack's start recorded as a kill). */
     observerDuplicates: number;
-    /** Victims of team-detected 'kill'/'infanticide' events (src/field/metrics.ts:1426 counts them as observed killings) who did not die of a killing. */
+    /** Victims of the events src/field/metrics.ts `killings` counts as observed killings (records.ts KILL_EVENTS) who did not die of a killing: none since obs-fixes; before it, infants that survived an infanticidal attack. */
     observedNotKilled: number;
     communityYearsPart: number | null; energyDeaths: number | null };
   /** Which counts are lower bounds (records capped or dropped). */
@@ -416,8 +416,9 @@ export function countSeed(inp: SeedInput): SeedCounts {
     patrols: { truth: T.patrols.length, pat9: inp.part?.pat9 ?? null },
     check: { deathsPart, deathsWorld, deathsMatch: deathsPart ? same(deathsPart, deathsWorld) : null,
       killingsStats, killingsWorld, killingsObserver: truthKill.size, observerDuplicates: T.kills.length - truthKill.size,
-      observedNotKilled: new Set(rec.events.filter(e => (e.kind === 'kill' || e.kind === 'infanticide') && !killingKind(byId.get(e.target)?.causeOfDeath ?? null)).map(e => e.target)).size, killingsPart,
-      killingsMatch: killingsWorld === killingsStats && killingsWorld === truthKill.size && (killingsPart === null || killingsPart === killingsWorld),
+      observedNotKilled: new Set(rec.events.filter(e => KILL_EVENTS[e.kind] && !killingKind(byId.get(e.target)?.causeOfDeath ?? null)).map(e => e.target)).size, killingsPart,
+      // a part made after obs-fixes prints T-LET-1's truth with the deaths of fight wounds (every victim); an older one the sim's counter
+      killingsMatch: killingsWorld === killingsStats && killingsWorld === truthKill.size && (killingsPart === null || killingsPart === killingsWorld || killingsPart === victims.length),
       communityYearsPart: inp.part?.let1 ? inp.part.let1.den : null,
       energyDeaths: inp.part?.deathsByClass ? Object.values(inp.part.deathsByClass).reduce((a, b) => a + b, 0) : null },
     lower,

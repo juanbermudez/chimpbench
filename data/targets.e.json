@@ -18,106 +18,86 @@
   "Instrument validation against truth (sampling accuracy, classifier precision and recall) is allowed at any time, because truth is not a field target; each validation run is logged."
  ],
  "protocolFreeze": {
-  "stage": "Track E freeze + obs-fixes (rare-event rows counted by outcome: T-LET-1, -2, -3, -6; T-DEM-9 census year; user decision of 7 October 2026)",
-  "date": "2026-10-07",
-  "at": "2026-10-07T15:37:25Z",
-  "hash": "215ed6ab282a57de",
-  "registryHash": "5ad329ffd64f4b32",
+  "stage": "Track E freeze (audited target rows and scorer fixes: e-targets, e1j, e1k, e2h, e4e, e4h, e5a; e2h-, e3b-, e4f-protocol; user decision of 4 October 2026), after C8 freeze + C8c + C13e + hunting fix + C14",
+  "date": "2026-10-05",
+  "at": "2026-10-05T05:31:34Z",
+  "hash": "5d4fa5a2a500bce6",
+  "registryHash": "16853ddc0f0a7318",
   "observerRevised": {
-   "T-LET-1": "obs-fixes: a failed infanticidal attack is no killing; a fight death inside a community that a team detected is an observed killing; truth counts fight deaths",
-   "T-LET-2": "obs-fixes: victims are those of T-LET-1's killings (a failed infanticidal attack is no killing; detected fight deaths are)",
-   "T-LET-3": "obs-fixes: intercommunity killings only, one truth record per victim (an attack's start is no record)",
-   "T-LET-6": "obs-fixes: intercommunity killings only, one per victim (an attack's start is no killing)",
-   "T-DEM-9": "obs-fixes: census at the end of each 365-day observation year (was 365.25 days: no census in a 365-day run, none at the end of a three-year run)"
+   "T-PTY-1": "e5a S1: mean of follow means; e5a S2: party chain with the 50-60 m borderline link",
+   "T-PTY-2": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-PTY-3": "e5a S2: party chain with the 50-60 m borderline link; e5a S3: party follows, periphery outside the night-nest polygon",
+   "T-PTY-4": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-RNG-2": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-IGE-1": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-IGE-2": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-IGE-3": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-IGE-5": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-PAT-1": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-PAT-2": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-PAT-3": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-PAT-4": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-PAT-5": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-PAT-6": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-PAT-7": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-PAT-8": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-BRD-1": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-LET-1": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-LET-2": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-LET-3": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-LET-6": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-FOOD-4": "e3b-protocol: distinct trees, returns not moves, revisits by individual and 30-m resource",
+   "T-FOOD-5": "e3b-protocol: distinct trees, returns not moves, revisits by individual and 30-m resource",
+   "T-FOOD-6": "e3b-protocol: distinct trees, returns not moves, revisits by individual and 30-m resource",
+   "T-FOOD-10": "e2h-protocol: mothers' observed departures, fruit breakfasts, fruit-scarce days, NOAA sunrise",
+   "T-HUN-1": "e4f-protocol: gilby2015 run rule, party follows, matched hunts; e5a S2: party chain with the 50-60 m borderline link",
+   "T-HUN-2": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-HUN-3": "e4f-protocol: gilby2015 run rule, party follows, matched hunts; e5a S2: party chain with the 50-60 m borderline link",
+   "T-HUN-4": "e4f-protocol: gilby2015 run rule, party follows, matched hunts; e5a S2: party chain with the 50-60 m borderline link",
+   "T-HUN-5": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-HUN-6": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-HUN-7": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-HUN-8": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-HUN-9": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-SOC-3": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-SOC-4": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-SOC-6": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-SOC-9": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-SOC-10": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-SOC-11": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-SOC-12": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-DEM-1": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-DEM-2": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-DEM-3": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-DEM-4": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-DEM-5": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-DEM-6": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-DEM-7": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-DEM-8": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-DEM-9": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-DEM-10": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-DEM-11": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-DEM-12": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-DEM-13": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-COM-2": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-COM-7": "e5a S2: party chain with the 50-60 m borderline link",
+   "T-COM-9": "e5a S2: party chain with the 50-60 m borderline link"
   },
-  "note": "scripts/e-bench.ts reads `observerRevised`: a saved run made under an older protocol is listed as needing a fresh run on these rows and they are never summed. Where a saved run kept its end checkpoint, scripts/obs-rederive.ts re-derives the five rows from it without a simulation (reported beside the run, never written into it). No band, definition or role changed at this freeze; T-LET-2, T-LET-3 and T-LET-6 (held-out, touched after the previous freeze) are compromised under protocolPolicy rule 4. The previous freeze's targets file is data/targets.e.json (scripts/targets-snapshot.ts --check), for reporting any run under the previous protocol's flags and freeze record with e-bench --targets; data/targets.c8.json stays for the C8-line bands. --unseal stays refused (the stage does not start with 'C8').",
+  "note": "scripts/e-bench.ts reads `observerRevised`: a saved run made before this freeze cannot be re-scored on these rows (listed as needing a fresh run, never summed). The previous freeze's targets file is data/targets.c8.json (scripts/targets-snapshot.ts --check), for scoring any run on the old bands with e-bench --targets. --unseal stays refused under this freeze: its stage does not start with 'C8' (src/field/targets.ts unsealRefusal); it was already refused on track-e because the Track E switches changed the registry hash (57903c4cdc400019 -> 7ac2db8a3d058e4d, then 16853ddc0f0a7318 with E3i). The C8 combined proof needs its own C8 freeze on main.",
   "previous": {
-   "stage": "Track E freeze (audited target rows and scorer fixes: e-targets, e1j, e1k, e2h, e4e, e4h, e5a; e2h-, e3b-, e4f-protocol; user decision of 4 October 2026), after C8 freeze + C8c + C13e + hunting fix + C14",
-   "date": "2026-10-05",
-   "at": "2026-10-05T05:31:34Z",
-   "hash": "5d4fa5a2a500bce6",
-   "registryHash": "16853ddc0f0a7318",
-   "observerRevised": {
-    "T-PTY-1": "e5a S1: mean of follow means; e5a S2: party chain with the 50-60 m borderline link",
-    "T-PTY-2": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-PTY-3": "e5a S2: party chain with the 50-60 m borderline link; e5a S3: party follows, periphery outside the night-nest polygon",
-    "T-PTY-4": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-RNG-2": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-IGE-1": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-IGE-2": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-IGE-3": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-IGE-5": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-PAT-1": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-PAT-2": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-PAT-3": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-PAT-4": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-PAT-5": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-PAT-6": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-PAT-7": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-PAT-8": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-BRD-1": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-LET-1": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-LET-2": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-LET-3": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-LET-6": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-FOOD-4": "e3b-protocol: distinct trees, returns not moves, revisits by individual and 30-m resource",
-    "T-FOOD-5": "e3b-protocol: distinct trees, returns not moves, revisits by individual and 30-m resource",
-    "T-FOOD-6": "e3b-protocol: distinct trees, returns not moves, revisits by individual and 30-m resource",
-    "T-FOOD-10": "e2h-protocol: mothers' observed departures, fruit breakfasts, fruit-scarce days, NOAA sunrise",
-    "T-HUN-1": "e4f-protocol: gilby2015 run rule, party follows, matched hunts; e5a S2: party chain with the 50-60 m borderline link",
-    "T-HUN-2": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-HUN-3": "e4f-protocol: gilby2015 run rule, party follows, matched hunts; e5a S2: party chain with the 50-60 m borderline link",
-    "T-HUN-4": "e4f-protocol: gilby2015 run rule, party follows, matched hunts; e5a S2: party chain with the 50-60 m borderline link",
-    "T-HUN-5": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-HUN-6": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-HUN-7": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-HUN-8": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-HUN-9": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-SOC-3": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-SOC-4": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-SOC-6": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-SOC-9": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-SOC-10": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-SOC-11": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-SOC-12": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-DEM-1": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-DEM-2": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-DEM-3": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-DEM-4": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-DEM-5": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-DEM-6": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-DEM-7": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-DEM-8": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-DEM-9": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-DEM-10": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-DEM-11": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-DEM-12": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-DEM-13": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-COM-2": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-COM-7": "e5a S2: party chain with the 50-60 m borderline link",
-    "T-COM-9": "e5a S2: party chain with the 50-60 m borderline link"
-   },
-   "note": "scripts/e-bench.ts reads `observerRevised`: a saved run made before this freeze cannot be re-scored on these rows (listed as needing a fresh run, never summed). The previous freeze's targets file is data/targets.c8.json (scripts/targets-snapshot.ts --check), for scoring any run on the old bands with e-bench --targets. --unseal stays refused under this freeze: its stage does not start with 'C8' (src/field/targets.ts unsealRefusal); it was already refused on track-e because the Track E switches changed the registry hash (57903c4cdc400019 -> 7ac2db8a3d058e4d, then 16853ddc0f0a7318 with E3i). The C8 combined proof needs its own C8 freeze on main.",
+   "stage": "C8 freeze + C8c + C13e + hunting fix + C14 (sealed rows registered)",
+   "date": "2026-10-01",
+   "hash": "a2228c2df476680b",
+   "registryHash": "57903c4cdc400019",
    "previous": {
-    "stage": "C8 freeze + C8c + C13e + hunting fix + C14 (sealed rows registered)",
-    "date": "2026-10-01",
-    "hash": "a2228c2df476680b",
-    "registryHash": "57903c4cdc400019",
-    "previous": {
-     "stage": "C8 freeze + C8c + C13e (join choice; sealed rows registered)",
-     "hash": "7950e457bd02358f"
-    },
-    "note": "scripts/field-metrics.ts --unseal and field-scenario.ts expansion --unseal refuse unless protocolFreeze.stage starts with 'C8' and hash and registryHash equal the current protocol and registry hashes (src/field/targets.ts unsealRefusal)",
-    "targetsFile": {
-     "path": "data/targets.c8.json",
-     "commit": "b617cf85b777039b80b2a0d577a0877cea2ace2a",
-     "sha256": "94a57386e478e7c180fea2b794c39dd05de51d91a6cc606499c4a1f26ac2a604"
-    }
+    "stage": "C8 freeze + C8c + C13e (join choice; sealed rows registered)",
+    "hash": "7950e457bd02358f"
    },
+   "note": "scripts/field-metrics.ts --unseal and field-scenario.ts expansion --unseal refuse unless protocolFreeze.stage starts with 'C8' and hash and registryHash equal the current protocol and registry hashes (src/field/targets.ts unsealRefusal)",
    "targetsFile": {
-    "path": "data/targets.e.json",
-    "commit": "ef53a91a7c1658975c47f57301b68dcdb4427e65",
-    "sha256": "b84d44df194b02cc4f2f0f99be0028a1a5fec5108e5bf9b36daa288b3b8b35a4"
+    "path": "data/targets.c8.json",
+    "commit": "b617cf85b777039b80b2a0d577a0877cea2ace2a",
+    "sha256": "94a57386e478e7c180fea2b794c39dd05de51d91a6cc606499c4a1f26ac2a604"
    }
   }
  },
@@ -2293,29 +2273,6 @@
    ],
    "verdicts": "none",
    "class": "freeze"
-  },
-  {
-   "date": "2026-10-07",
-   "by": "obs-fixes (agent; registered in docs/staging/obs-fixes-prereg.md at 8d0e4ae before any code, amendment 1 at 74d28a7 before its code; applied on the user's decision of 7 October 2026, \"yes rare even as official\", relayed by the integrator and recorded in IMPLEMENTATION_PLAN.md at b6e35dc)",
-   "seen": "Part D1's counts on the saved 12-month runs (docs/staging/e-rebaseline.md: S39's group 4 observed killings of which 2 were infants that lived; 3 truth killings: 1 infanticide, 2 fight wounds). Nothing was computed with a fix applied before the fix and its tests were committed. Amendment 1 was written after the first re-derivation (no fight-kill event in 60 seed-runs; one fight death of a followed focal animal with a detected decided-conflict record and no captured event).",
-   "param": "src/field/protocols.ts: an `infanticide` interaction is logged as `infanticide` only when its target died in it, else as `infanticide-attack`; truth.kills keeps fatal records, one per victim; a `fight-kill` event when a contest inside a community that a team detected (its all-occurrence event, or its decided-conflict record) leaves a participant dead of its wounds; truth.fightKillings. src/field/metrics.ts: killings() counts `kill`, `infanticide` and `fight-kill` events; T-LET-1's truth = (stats.killings + fightKillings) / community-years; T-LET-3 and T-LET-6 on intercommunity killings, one per victim; T-DEM-9's census year 365.25 -> 365 days.",
-   "reason": "bug, against each row's written definition: T-LET-1 'All intercommunity and within-community killings (observed + inferred)' (an attack the infant survived is no killing; a fight death inside a community is one); T-LET-3 'per intercommunity attack'; T-LET-6 'Share of intercommunity killings by patrolling parties'; T-DEM-9 'Share of individuals > 3 y with a snare injury' (census; the observer's year is 365 days everywhere else, so no census closed in a 365-day run).",
-   "targets": [
-    "T-LET-1",
-    "T-LET-2",
-    "T-LET-3",
-    "T-LET-6",
-    "T-DEM-9"
-   ],
-   "verdicts": "Re-derived from the end checkpoints of the saved 12-month runs (scripts/obs-rederive.ts; 20 seed-runs = 60 community-years per group; before -> after, pooled). S39: T-LET-1 4 -> 3 killings (0.067 -> 0.050, inconclusive both), T-LET-2 0/4 -> 0/3 (fail both), T-LET-3 0.33 (n 2, fail) -> insufficient, T-LET-6 0/4 (fail) -> insufficient, T-DEM-9 insufficient -> 6/869 = 0.007 (fail). Wadging 0.5: T-LET-1 1 -> 1, T-LET-3 0.25 (n 2, fail) -> insufficient, T-DEM-9 insufficient -> 6/866 (fail). Wadging 0.25: T-LET-1 4 -> 3, T-LET-2 2/4 -> 1/3 (inconclusive both), T-LET-3 0.5 (n 4, fail) -> insufficient, T-LET-6 0/3 (fail) -> insufficient, T-DEM-9 insufficient -> 8/861 = 0.009 (fail).",
-   "class": "bug + definition text, after the freeze: new freeze; protocolPolicy rule 4 applied as written (the stricter reading: a fix made after the 5 October freeze compromises the held-out rows it touches, bug fix or not)",
-   "flags": {
-    "T-LET-1": "protocolRevisedPostHoc",
-    "T-DEM-9": "protocolRevisedPostHoc",
-    "T-LET-2": "compromised",
-    "T-LET-3": "compromised",
-    "T-LET-6": "compromised"
-   }
   }
  ],
  "targets": [
@@ -3833,9 +3790,7 @@
    "sources": [
     "wilson2014"
    ],
-   "protocolRevisedPostHoc": true,
-   "compromised": true,
-   "compromisedReason": "obs-fixes (7 October 2026): its observer changed after the Track E freeze (its victims are those of T-LET-1's killings: a failed infanticidal attack is no killing, a detected fight death inside a community is one); protocolPolicy rule 4: after the freeze, any change that touches a held-out target compromises it. Reported, never counted."
+   "protocolRevisedPostHoc": true
   },
   {
    "id": "T-LET-3",
@@ -3873,9 +3828,7 @@
    "sources": [
     "wilson2014"
    ],
-   "protocolRevisedPostHoc": true,
-   "compromised": true,
-   "compromisedReason": "obs-fixes (7 October 2026): its observer changed after the Track E freeze (intercommunity killings only, one truth record per victim); protocolPolicy rule 4: after the freeze, any change that touches a held-out target compromises it. Reported, never counted."
+   "protocolRevisedPostHoc": true
   },
   {
    "id": "T-LET-4",
@@ -3990,9 +3943,7 @@
     "mitani2010"
    ],
    "revisedPostFreeze": "C6 patrol corrections (§5.3.1 P1–P4a, Amendment A): model revised post-freeze; re-tested on fresh seeds 707, 808, 909, 1013, 1014; counts as validation only if no parameter was set by looking at it",
-   "protocolRevisedPostHoc": true,
-   "compromised": true,
-   "compromisedReason": "obs-fixes (7 October 2026): its observer changed after the Track E freeze (intercommunity killings only, one per victim; an attack's start is no killing); protocolPolicy rule 4: after the freeze, any change that touches a held-out target compromises it. Reported, never counted."
+   "protocolRevisedPostHoc": true
   },
   {
    "id": "T-FIS-1",

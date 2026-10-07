@@ -1,4 +1,4 @@
-import type { Chimp, World } from '../types';
+import type { Chimp, Interaction, World } from '../types';
 import { paramsOf } from '../sim/params';
 import { TICK_HOURS, index, treesNear, type SimWorld } from '../sim/state';
 import { leanIndex } from '../sim/hierarchy';
@@ -8,7 +8,7 @@ import { CHANNEL, streamCell } from '../sim/stream';
 import { facingSectors } from '../sim/territory';
 import { ACTION_CODE, CAT_FEED, CAT_NONE, activityCategory, feedType, FEED_FRUIT, FEED_GROUND, FEED_MEAT } from './categories';
 import { ensureIds, ensureTeams, orand, sim, type Observer, type Team } from './observer';
-import { P_CALLED, P_CHANNEL, P_GROUND, P_LACT, P_MEAT, P_SWOLLEN, type CallRec, type ConflictRec, type EncounterRec, type EventRec, type Follow } from './records';
+import { FIGHT_KILL, INFANTICIDE_ATTACK, P_CALLED, P_CHANNEL, P_GROUND, P_LACT, P_MEAT, P_SWOLLEN, type CallRec, type ConflictRec, type EncounterRec, type EventRec, type Follow } from './records';
 
 // Field protocols (docs/realism-design.md §3.4–3.5): focal follows with a lost-follow model, 1-min focal point
 // samples, 15-min party scans, all-occurrence capture of interactions and calls within visibility or hearing,
@@ -46,6 +46,31 @@ export function necropsy(cause: string): { cause: 'disease' | 'aggression' | 'ot
   if (cause.startsWith('illness')) return { cause: 'disease', respiratory: false };
   if (cause.startsWith('killed') || cause.startsWith('infanticide') || cause.startsWith('wounds from a fight') || cause.startsWith('complications of wounds')) return { cause: 'aggression', respiratory: false };
   return { cause: 'other', respiratory: false };
+}
+
+/**
+ * obs-fixes (docs/staging/obs-fixes-prereg.md §1): the target of an `infanticide` interaction died in it. The sim writes
+ * that kind twice: when an infanticidal attack starts, whatever its outcome (src/sim/execution.ts onStart), and again with
+ * the death when the attack kills (src/sim/conflict.ts infanticide: the record and the death at one time). Only the second is
+ * a killing; an attack's start is at least 30 s before any death.
+ */
+export function infantKilled(victim: Chimp | undefined, start: number): boolean {
+  return !!victim && !victim.alive && victim.deathTime === start && (victim.causeOfDeath ?? '').startsWith('infanticide');
+}
+
+/** A contest inside a community: an attack on a member is a `fight`, with a supporter a `coalition` (src/sim/execution.ts onStart). */
+const CONTEST: Record<string, true> = { fight: true, coalition: true };
+const FIGHT_WOUNDS = 'wounds from a fight';
+/** Died of the wounds of a fight inside its community (src/sim/conflict.ts resolveFight; the sim counts no killing for it). */
+export const diedOfFightWounds = (c: Chimp) => !c.alive && (c.causeOfDeath ?? '').startsWith(FIGHT_WOUNDS);
+
+/**
+ * obs-fixes (prereg §2): the participants of a contest inside a community who died of its wounds while it lasted (the
+ * loser dies when the fight is resolved, which is when its interaction ends). Empty for any other kind of interaction.
+ */
+export function fightVictims(byId: ReadonlyMap<number, Chimp>, kind: string, start: number, end: number, participants: readonly number[]): number[] {
+  if (!CONTEST[kind] || !(end >= start)) return [];
+  return participants.filter((id, k) => { const v = byId.get(id); return !!v && participants.indexOf(id) === k && diedOfFightWounds(v) && v.deathTime !== null && v.deathTime >= start - 1e-9 && v.deathTime <= end + 1e-9; });
 }
 
 const isAdultMale = (c: Chimp) => c.sex === 'male' && c.age >= 15;
@@ -152,19 +177,22 @@ function onConflicts(o: Observer, world: World, since: number): void {
     const time = lc.time;
     const l = byId.get(lc.opponentId);
     if (!l) continue;
-    let contact = false;
+    let contact = false, fightId = -1;
     const inter = world.interactions;
     for (let i = inter.length - 1, k = 0; i >= 0 && k < 60; i--, k++) {
       const it = inter[i];
-      if (it.kind === 'fight' && (it.end === null || it.end >= time - 2 * MIN) && it.participants.includes(w.id) && it.participants.includes(l.id)) { contact = true; break; }
+      if (it.kind === 'fight' && (it.end === null || it.end >= time - 2 * MIN) && it.participants.includes(w.id) && it.participants.includes(l.id)) { contact = true; fightId = it.id; break; }
     }
-    let detected = false;
+    let detected = false, by: Team | null = null;
     for (const tm of o.teams) {
       if (tm.state !== 2) continue;
-      if (tm.focal === w.id || tm.focal === l.id || d2(tm.x, tm.z, l.position[0], l.position[2]) <= vis * vis || d2(tm.x, tm.z, w.position[0], w.position[2]) <= vis * vis) { detected = true; break; }
+      if (tm.focal === w.id || tm.focal === l.id || d2(tm.x, tm.z, l.position[0], l.position[2]) <= vis * vis || d2(tm.x, tm.z, w.position[0], w.position[2]) <= vis * vis) { detected = true; by = tm; break; }
     }
     const rec: ConflictRec = { t: time, winner: w.id, loser: l.id, troop: w.troopId, contact, detected, pc: -1, mc: -3, thirdToWinner: 0, thirdToLoser: 0 };
     o.rec.conflicts.push(rec);
+    // obs-fixes amendment 1 (prereg §2): the loser died of this contest's wounds and a team saw it decided: an observed
+    // killing, logged here because the two-minute capture can miss the contest's own event (a follow ends when its focal dies)
+    if (by && diedOfFightWounds(l) && l.deathTime === time) logFightKill(o, l, w.id, fightId, by.index, by.focal === w.id || by.focal === l.id ? 3 : 1);
     if (contact) o.rec.truth.fights++;
     if (detected) o.pc.push({ conflict: o.rec.conflicts.length - 1, a: w.id, b: l.id, t: time, until: time + o.cfg.pcWindowMin * MIN });
   }
@@ -177,6 +205,9 @@ function onKillings(o: Observer, world: World, since: number): void {
     if (it.start <= since) break;
     if (it.kind !== 'kill' && it.kind !== 'infanticide') continue;
     const v = byId.get(it.targetId);
+    // obs-fixes: an infanticidal attack's start is no killing, and a victim has one record
+    if (it.kind === 'infanticide' && !infantKilled(v, it.start)) continue;
+    if (o.rec.truth.kills.some(k => k.victim === it.targetId)) continue;
     const attackers = it.kind === 'kill' ? it.participants.filter(id => id !== it.targetId) : [it.actorId];
     // defenders: adult males of the victim's community within twice the visibility of the victim
     let defenders = 0;
@@ -331,10 +362,13 @@ function processInteractions(o: Observer, world: World): void {
     }
     let ev: EventRec | null = null;
     if (detect > 0 && !UNRECORDED[it.kind]) {
-      ev = { id: it.id, t: it.start, end: it.end !== null && it.end <= time ? it.end : -1, kind: it.kind, actor: it.actorId, target: it.targetId, parts: it.participants.slice(), troop: it.troopId, team, detect, x: it.position[0], z: it.position[2] };
+      // obs-fixes: an attack on an infant is logged by its outcome; only one in which the infant died is an `infanticide`
+      const kind = it.kind === 'infanticide' && !infantKilled(byId.get(it.targetId), it.start) ? INFANTICIDE_ATTACK : it.kind;
+      ev = { id: it.id, t: it.start, end: it.end !== null && it.end <= time ? it.end : -1, kind, actor: it.actorId, target: it.targetId, parts: it.participants.slice(), troop: it.troopId, team, detect, x: it.position[0], z: it.position[2] };
       if (!o.cfg.demography) o.rec.events.push(ev);
     }
     if (it.end === null || it.end > time) o.open.push({ it, ev });
+    else if (ev) fightKill(o, world, it, ev);
     if (it.kind === 'hunt') {
       if (it.end === null) {
         const starter = byId.get(it.actorId);
@@ -372,6 +406,28 @@ function processInteractions(o: Observer, world: World): void {
   }
 }
 
+/**
+ * obs-fixes (prereg §2): a team that detected a contest inside a community logs the killing when a participant died of its
+ * wounds while it lasted (T-LET-1 counts killings within the community; the sim writes no `kill` interaction for them).
+ * Same team and detection as the contest's own event, once per victim; called when the contest's interaction has ended.
+ * Amendment 1: the decided-conflict record is a second route to the same event (onConflicts).
+ */
+function fightKill(o: Observer, world: World, it: Interaction, ev: EventRec): void {
+  if (it.end === null) return;
+  const byId = index(world).byId;
+  for (const id of fightVictims(byId, it.kind, it.start, it.end, it.participants)) {
+    const v = byId.get(id)!, lc = v.lastConflict;
+    logFightKill(o, v, lc && lc.time === v.deathTime ? lc.opponentId : it.participants.find(p => p !== id) ?? -1, it.id, ev.team, ev.detect);
+  }
+}
+/** Writes the `fight-kill` event of a victim once (a contest's event and its decided-conflict record can both report it). */
+function logFightKill(o: Observer, v: Chimp, killer: number, contest: number, team: number, detect: number): void {
+  if (o.cfg.demography) return;
+  const events = o.rec.events, t = v.deathTime!;
+  for (let i = events.length - 1; i >= 0 && events[i].t >= t - 1; i--) if (events[i].kind === FIGHT_KILL && events[i].target === v.id) return;
+  events.push({ id: contest, t, end: t, kind: FIGHT_KILL, actor: killer, target: v.id, parts: [killer, v.id], troop: v.troopId, team, detect, x: v.position[0], z: v.position[2] });
+}
+
 function countAM(ids: number[], byId: Map<number, Chimp>): number { let n = 0; for (const id of ids) { const c = byId.get(id); if (c && isAdultMale(c)) n++; } return n; }
 
 function updateOpen(o: Observer, world: World): void {
@@ -380,7 +436,7 @@ function updateOpen(o: Observer, world: World): void {
   for (let i = 0; i < o.open.length; i++) {
     const e = o.open[i], it = e.it;
     if (it.end === null || it.end > time) { o.open[k++] = e; continue; }
-    if (e.ev) { e.ev.end = it.end; e.ev.parts = it.participants.slice(); }
+    if (e.ev) { e.ev.end = it.end; e.ev.parts = it.participants.slice(); fightKill(o, world, it, e.ev); }
     if (it.kind === 'groom') T.groomMin.push((it.end - it.start) * 60);
     else if (it.kind === 'patrol') {
       for (let j = T.patrols.length - 1; j >= 0; j--) if (T.patrols[j].t0 === it.start && T.patrols[j].troop === it.troopId && T.patrols[j].t1 < 0) { T.patrols[j].t1 = it.end; T.patrols[j].parts = it.participants.slice(); break; }
@@ -988,6 +1044,9 @@ export function finishProtocols(o: Observer, world: World): void {
   const s0 = o.statsStart, st = world.stats;
   T.hunts = st.hunts - s0.hunts; T.huntSuccesses = st.huntSuccesses - s0.huntSuccesses; T.killings = st.killings - s0.killings;
   T.conflicts = st.conflicts - s0.conflicts; T.reconciliations = st.reconciliations - s0.reconciliations;
+  // obs-fixes (prereg §2): the sim's counter leaves out deaths of fight wounds inside a community; the dead keep their time and cause
+  T.fightKillings = 0;
+  for (const c of world.chimps) if (diedOfFightWounds(c) && c.deathTime !== null && c.deathTime > o.time0) T.fightKillings++;
   let dyads = 0, tense = 0;
   for (const a of alive) { const x = sim(a); if (!x) continue; for (const b of alive) if (a !== b && a.troopId === b.troopId) { dyads++; if ((x.tension[b.id] ?? 0) >= 0.35) tense++; } }
   T.tenseShare = tense / Math.max(1, dyads);
