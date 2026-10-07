@@ -260,6 +260,15 @@ Change per adult-day against rules (n = 24 community-seed pairs; Jev n = 6):
 
 **Cost:** RunPod about $4.05 of the $5 approved for the whole project (round 3 pod $0.86; long-run CPU pod about $0.3; scenario pods about $0.70).
 
+## 12. Round 4: the state-only engine on Track E (Stage R4)
+
+Registration, method and results: `docs/staging/r4-prereg.md`; tables: `docs/staging/r4-numbers.md`, `r4-wild-numbers.md`.
+
+- **Input:** the state-only packet (`scripts/lib/packet-state.ts`): Track E's v4 packet without the rules' net rate and company value per option, without the situational rule sentences, without the urgency mark on an option.
+- **Labels:** not generated judgments. `r4-rules-state`: the rules kernel's own decisions (3,122 decision points, seeds 48 and 7; held-out seed 21). `r4-field-groom`: 740 wild grooming choices (the wild-choice benchmark's train part).
+- **Trainer:** `training/decide_ft/train_r4.py` (this document's §5 settings, any label file); on the 16 GB M4: 0.84 s per example, 6.8 GiB, 2 h 11 min for 3 epochs of 3,122 contexts. A batch that hits MPS's allocation cap is retried one example at a time.
+- **Result:** agreement with the rules on held-out draws 0.29 untuned → 0.61 trained (chance 0.19); the social lean is gone (grooming picked when offered 0.51 → 0.14; the rules 0.15); it still feeds less often than the rules (0.20 of picks against 0.29). Wild grooming choices: 0.37 → 0.40 plain (not a difference), 0.44 → 0.48 with fan-out.
+
 ## 8. Constraints kept
 
 - GHN and its Python environment are not modified. The live app, `server/*` and `src/sim/*` are unchanged until an optional integration stage.

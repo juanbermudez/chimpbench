@@ -7,6 +7,7 @@ adapters disabled. Serving precision matches the live worker: fp16 on MPS (and C
 from __future__ import annotations
 
 import contextlib
+import os
 
 from common import ADAPTERS, FT, load_base, score, sha256_file
 
@@ -14,8 +15,13 @@ NAMES = ("base", *ADAPTERS)
 
 
 class AdapterModel:
-    def __init__(self, device: str = "mps", names=tuple(ADAPTERS)):
+    def __init__(self, device: str = "mps", names=None):
         from peft import PeftModel
+        # Stage R4: MGOGO_FT_ADAPTERS (comma-separated folder names under MGOGO_FT_ROOT/adapters) names the adapters a
+        # worker loads when its caller names none; unset, the three temperament adapters as before.
+        if names is None:
+            listed = [n for n in os.environ.get("MGOGO_FT_ADAPTERS", "").split(",") if n]
+            names = tuple(listed) if listed else tuple(ADAPTERS)
         half = device in ("mps", "cuda")  # serving precision; CPU stays fp32
         self.base = load_base(device, half=half)
         self.names = [n for n in names if (FT / "adapters" / n / "adapter_model.safetensors").exists()]
