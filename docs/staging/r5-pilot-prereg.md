@@ -166,3 +166,9 @@ model arms, but it has no random arm, no per-day rows, no energy out, no receipt
 
 Machine at registration (7 October 2026, 18:23): load averages 3.27, 8.25, 7.25; swap 3,906 MB used of 5,120 MB; no
 model process of this agent running.
+
+- **Iteration 0 (logged before it runs, 7 October 2026): the smoke check of §5, no model.** Seed 48, burn-in 1 day,
+  window 1 day, arms `rules`, `rules-r1`, `null`, `argmax`, `argmax-gate`, `null-nopick`, then `--replay` of `null`
+  and `argmax-gate`; outputs under `artifacts/r5/smoke/` (not a result; never read by the report of the pilot).
+  Checked: the runner refuses a dirty tree, receipts are written, the replays' hashes equal the runs', the report
+  script reads the outputs.
