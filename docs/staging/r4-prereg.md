@@ -316,3 +316,29 @@ before); `scripts/em-loop.ts --packet state` (unset: as before).
   the two test worlds again with `--no-rules-pick`; two processes at a time), then `r4-assemble.ts`, then `r4-wild.ts`.
 - **Iteration 2 (logged before it runs): train `r4-rules-state`** on the assembled train file, 3 epochs, the settings
   of §4; swap and load read just before.
+
+**Result of iteration 1 (7 October 2026, 11:53 to 11:54; head ab77bdc).** Each world took 8 to 16 s. Records sampled:
+seed 48 W50 1,303, W25 1,456; seed 7 W50 1,225, W25 1,311; seed 21 W50 2,936, W25 2,630 (38 animals aged 8 and over in
+every world). The world of seed 21, W50 with the taps and the packet switches hashes the same as the base alone
+(`--check`). Assembled (`artifacts/decide-ft/r4/contexts/`, removed wordings found: 0):
+
+| Split | Records | Labelled (the rules' decision on the menu) | Draws | Kept or arrived | Animals | Per base |
+| --- | --- | --- | --- | --- | --- | --- |
+| train | 3,200 | 3,122 | 2,091 | 1,109 | 61 | 1,600 and 1,600 |
+| dev | 300 | 292 | 212 | 88 | 15 | 150 and 150 |
+| test (seed 21) | 1,500 | 1,455 | 954 | 546 | 38 | 750 and 750 |
+
+On the test draws the rules' argmax is the rules' decision at 0.98 (the rest is the belief the rules sample), so an
+engine that reads state cannot be asked for more than about that. Evaluation files: 387 test packets also with shuffled
+options, 954 draws with the rules' pick removed, 100 situations for each of the six probes (1,800 probe packets).
+**A limit seen in the data, stated before any model is scored:** in these windows (days 6 to 14 after 28 September, a
+season of plenty) body reserves stay within 2% of the usual store, so the reserves probe (down to 30% below) asks the
+engine about states its training data does not hold.
+
+Wild choices (`artifacts/decide-ft/r4/field/`, private): the train part's 977 records of 34 focal males; by the
+registered rule 5 males (237 records) are the validation set and **740 records of 29 males are trained on** (300 of
+them with a menu wider than 8, cut to sub-menus of 8), 2,960 rows over 4 epochs; no row over the token budget. The
+validation males hold more records than their share of males (24% of records for 15% of males); the rule was fixed
+before the data was read and is kept.
+
+- Iteration 2 began at 11:55 (swap 5,010 MB used of 6,144 MB; load 6.4, 5.5, 5.0; no other model process).
