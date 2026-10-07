@@ -527,3 +527,13 @@ Three years hold few animals that pass 6 y: id 22 from scored day 884, id 37 onl
 rest on about one animal per seed-run, 10 in the two draws; milk per day at 5 to 6 y (ids 22, 37 and 21, from days 519,
 701 and 884) is the wider readout to print beside it, as a description and not as a registered criterion. If the
 user wants F1 settled properly, the run needs a fourth year.
+
+## 7. Integrator: the three-year confirmation, logged before it runs (7 October 2026, 18:19)
+As §6 leaves it: label Y3-W50-wean, `docs/staging/integrator-kit/params/Y3-W50-wean.json` (S39, swallowed share 0.5,
+`weanOutcome` 1), seeds 48, 7, 21, 5, 11, 30 + 1,095 days, `--animal-days`, from a frozen detached checkout of the
+commit that holds this entry (`bench-wean`), two simulation jobs at a time. One run (rngSalt 0); the re-draw
+(`Y3-W50-wean-s1.json`) only if this one leaves the question open. Compared with Y3-W50 (same parameters without the
+switch; `e-years-prereg.md` §7: 7 starvation deaths, all juveniles the run weaned). Readouts as §2.3 and §2.4 fix
+them: when and how milk ends for each animal that reaches a weaning age (by 90 dry days, or by the 6-year limit, which
+is the registered failure), the weaned animals' reserves and growth, their mothers' reserves and next births, starvation
+by class. The death count alone decides nothing.
