@@ -192,3 +192,173 @@ sample of every gut input, of the walking cost and of the intake rates.
 - *Consequence, stated before any run:* removing the date does not give the animal a gut it can live on. If nothing in
   the pair's state ends milk, milk will run to the code's other age limit (6 y). The registration below is written so
   that this outcome counts as the mechanism failing, not as the deaths being fixed.
+
+## 2. Registration (committed before any code of this stage; nothing has been run)
+
+### 2.1 What is registered
+
+**One mechanism, for point 1 of §1.4 only: the end of milk is an outcome, not a date.** Switch `weanOutcome` (0 by
+default in both profiles; read only with `energyLedger`, `ledgerDrive`, `weanDecide` and `weanDeficit` 1, so the
+compressed goldens and the field pin cannot move). Nothing is registered for (a), (b) or (c): §2.9.
+
+**What it replaces** (for an animal whose mother is alive):
+- `life.ts`:277, "weaned when the age passes the stored `weanAge`" → weaned when it has drunk no milk for
+  `weanDryDays` days. Until then it stays what it is today before the clock: its mother's dependent, with the nurse
+  option on its menu and the mother deciding each bout by `weanDeficit` (her relative reserve deficit against its own),
+  by day and at night, and the gland making milk only as it is removed (the existing rule: a full store stops
+  synthesis; kent1999, daly1993, wilde1995).
+- `candidates.ts`:395 and `execution.ts`:1030, "the nurse option until `weanAge` + 0.3 y" → no age bound of its own.
+
+**What it does not touch.** The mother's decision and the infant's nurse score (E1n, E1o; the score's age factor
+1 − age ÷ 7 and its hunger-free part stay). The age limit of dependence (`candidates.ts`:167: no caretaker from 6 y),
+which becomes the last stop if milk has not ended by itself. An animal whose mother is dead: the stored age decides as
+today (the orphan rules of stage C8 and T-DEM-24 are not this stage's subject). Founders: which of them start weaned is
+still read from the stored age at creation (`generation.ts`:113, 388). Births, amenorrhoea, growth, the gut: unchanged.
+A weaned animal never becomes unweaned again (the four Gombe cases of resumed suckling are not modelled).
+
+**State.** One key added lazily to an unweaned animal while the switch is on, `ChimpX.lm`: the simulation time (h) at
+which it last drank milk (set where milk is drunk, `execution.ts` nurse act and night suckling; opened at the first slow
+step that sees the animal, so the count starts when the switch does). Listed in `OPTIONAL_X`. Kept after weaning, so a
+readout can give the age at the last milk (T-INF-3's definition: the end of suckling, not the day the status changes).
+
+### 2.2 Inputs
+
+| id | value | range | label | why this value |
+| --- | --- | --- | --- | --- |
+| `weanOutcome` | 0 (1 = on) | 0–1 | design (switch) | — |
+| `weanDryDays` | 90 d | 30–180 | **design assumption**, never fitted | How long without milk counts as weaned. No source measures when a chimpanzee's lactation is over. 90 days is the field's own convention for calling an animal weaned (lonsdorf2020: "gaps under 90 days"; bray2018: no suckling "in the subsequent 90 days"), so the model's weaned age is counted the way T-INF-3's is. A convention of measurement, not a rate of behaviour; the ecological clock (physiology), like every other ledger term |
+
+Prescription ledger (honest classes, `scripts/lib/prescriptions.ts`): `weanDryDays` is a **timer**, so it is classed
+outcome-encoding (kind `timer`, borderline), active only while the switch and its needs are on: the count of a stack
+that turns the switch on rises by one. The clock it retires (`weanAgeMinY`, `weanAgeSpanY`) is classed *input* by the
+ledger's rule 4 although it encodes T-INF-3 (flagged in e1o-prereg §4, never changed), so the count does not fall for
+it; the switch therefore carries a `removesNothing` note saying exactly that. Reclassing the old clock is the
+integrator's call (it changes every stack's count) and is not done here.
+
+### 2.3 What would count as it working (none of these is the death count)
+
+To be read in the three-year confirmation (§2.8), which this stage does not run. Per seed-run, founders and animals born
+in the run alike; "weaned age" = age at the last milk of an animal weaned by the dry rule.
+- **W1, weaning happens by the pair's state.** Fewer than half of the animals that pass 6 y in the run are still
+  drinking when the age limit of dependence stops them. Weaned ages spread (SD above 0.3 y). Their mean against
+  T-INF-3 (3.7–5.8 y) is reported as a target, no longer encoded.
+- **W2, milk tapers before it ends.** Milk per day at 4–5 y below milk at 3–4 y, and below 100 kcal/d in the 180 days
+  before an animal's last milk (the isotope signal ends at 4–4.5 y, before nipple contact does).
+- **W3, the weaned animal copes like the older juveniles do.** In the 365 days after its last milk: reserve ÷ store
+  never below −0.5 and its mean not below the founder juveniles' of 6–8 y in the same run by more than 0.1; eating
+  minutes and the share of them at a full foregut not above those juveniles' by more than a quarter.
+- **W4, growth.** Mass at 5 y against T-INF-4 (7–13 kg), reported. Expected to stay near 18–20 kg (the captive
+  potential, more milk): this mechanism cannot improve it and may worsen it; said here so it is not read as a surprise.
+- **W5, the mothers and the next infant pay no hidden bill.** Nursing mothers' reserve trend not below the viability
+  line (−0.05% of the store a day) where the base's is above it; births per female-year not below the base's by more
+  than its seed spread; starvation deaths under 0.5 y not above the base's (an older sibling and a newborn can share
+  one gland, and no rule ranks them).
+
+### 2.4 What would count as it failing
+
+Any one of these, and the switch stays off:
+- **F1, one clock for another.** Half or more of the animals that pass 6 y are still drinking at the limit. Then the
+  end of milk is set by `candidates.ts`:167's literal instead of `weanAgeMinY`, the cliff has moved from 16 kg to
+  about 22 kg and nothing has emerged. Expected by the registrant with about 65% confidence, because E1o found nothing
+  in the pair's state that drives milk to zero.
+- **F2.** Starvation deaths under 0.5 y rise, or newborns of mothers with an unweaned older offspring sit lower in
+  reserve than other newborns by more than the base's spread.
+- **F3.** Nursing mothers cross the viability line, or births fall beyond the base's spread.
+- **F4.** Animals weaned by the dry rule sink as today's do (W3 missed). That would say the small body's budget, not
+  the date, is the defect, and that (a) to (c) need a measurement.
+- A lower starvation count with F1 is **not** a pass. It would mean the animals were kept on milk until they were big
+  enough for this gut.
+
+### 2.5 The cheap check (step 4 of the brief): what it can and cannot show
+
+The note's settling check (`ey-juvenile-starvation.md` §3): continue seed 48's day-365 world of M12-W50 (swallowed
+share 0.5, S39) for 120 days twice, switch off and on. In that world id 22 was weaned by the clock on day 222 and stays
+weaned in both arms (the switch never un-weans); id 37 reaches its stored age on day 411, so the off arm weans it there
+and the on arm does not. Then seed 7 the same way: there ids 22 and 37 reach their stored ages on days 533 and 498,
+after the window (T2), so **nobody is weaned in either arm**.
+
+It can show: that the code at switch 0 is the saved run (identity, §2.6); that with the switch on id 37 keeps its milk
+and how its budget, its mother's and the gut-full share then differ from the off arm over 74 days. It cannot show W1,
+W2, F1 or F2: 120 days hold one animal crossing one date, nobody reaches 6 y, and nobody can go 90 days dry.
+
+**Readouts** (per-animal rows of `scripts/lib/energy-probe.ts`, `animalDays`, defined as in the note's T4): reserve ÷
+store at the end of a block (`res` ÷ `store`); absorbed = (`kin` − `fec`) per day; spent = the sum of the expenditure
+terms (`o*`); net; milk (`eMilk`); plant food handed (`eShared`); eating minutes (`tEat` ÷ 4); share of eating ticks
+at a foregut at least 0.95 full (`tEatFull` ÷ `tEat`); walking + climbing (`oWalk` + `oClimb`); km on the ground
+(`walkM`); mass (`kg`). Blocks: days 365–410 (before the stored date) and 411–484 (after it) for id 37; the whole
+window for id 22, for id 37's mother and for the founder juveniles ids 35 and 19.
+
+**Predictions (before any run).**
+- Seed 48, off arm: equal to the note's P1, float for float (every animal-day row and every class trajectory). High.
+- Seed 48, on against off, days 365–410: identical (the arms differ by nothing until the off arm's clock fires). High.
+- Seed 48, on arm, id 37, days 411–484: not weaned; milk 150–310 kcal/d (off: 0 after a few days); eating minutes
+  below 250 a day (off: 292 to 383); foregut full in under 20% of its eating minutes (off: 47 to 61%); net per day
+  higher than the off arm's by 15 kcal or more; reserve ÷ store on day 484 between −0.03 and −0.12 (off: −0.14 in P1).
+  Moderate.
+- Seed 48, on arm, id 37's mother: reserve ÷ store on day 484 lower than in the off arm by 0.01 to 0.06 (she pays for
+  74 more days of milk). Moderate to low.
+- Seed 48, id 22 (weaned since day 222): −0.5 to −0.7 on day 484 in both arms (the switch does nothing for her). High.
+- Seed 48: no animal weaned by the dry rule in the window. High.
+- Seed 7: on = off = the note's P3, float for float, apart from the added key (nobody reaches a stored age). High.
+  This pair is a control of "the switch changes nothing before a date would have fired", not evidence for the mechanism.
+
+**Reading rule.** One animal over 74 days is a direction check, not a result: every difference is reported with its
+size, none is called confirmed. If id 37's on-arm values land outside the predicted ranges the miss is reported as a
+miss. No value of `weanDryDays` or of anything else is changed in response to these runs.
+
+### 2.6 The checkpoint's identity, and what is done about it
+
+A checkpoint records the git tree of `src`, `scripts` and `data` it was made from and its settings (`scripts/lib/checkpoint.ts`;
+`scripts/e-bench.ts` header: `--resume` is "refused (exit 2) for other settings or code"). M12-W50's were made from src
+tree e88a533e; this branch's src differs (90 files since, plus this stage), and the on arm changes a setting. So
+`e-bench --resume` refuses both arms, rightly: neither is a resume of that run.
+
+What is done instead, in the open: the arms are **forks** of the saved world, made by a script of this stage
+(`scripts/e1w/fork-probe.ts`, after the note's `scripts/ey-juv/resume-probe.ts`) that loads the checkpoint's world,
+ticks it with a frozen checkout of this branch's committed head, writes the two src trees and the changed setting into
+its output, and never writes into a saved run. What makes a fork readable is not the identity check it cannot pass but
+a test it can fail: **the off arm must reproduce the note's P1 (seed 48) and P3 (seed 7), which were made with the
+checkpoint's own code, float for float over all 120 days.** If it does, this branch at switch 0 is the saved run's code
+on this world. If it does not, the on arm is not read.
+
+Registered fallbacks, in order: (1) if the off arm differs because `track-e` moved on since the checkpoint (a state key
+the saved world lacks), the arms are run from a frozen checkout of the checkpoint's commit with only this stage's
+`src` patch applied, and the same test applies; (2) if that fails too, no continuation is run. A fresh run from day 0
+cannot replace it inside the limits: the first founder is weaned on scored day 215 (absolute day 245), twice the 120
+days a job may simulate. The check would then be reported as not made.
+
+### 2.7 Iterations and run log (each line written before its run)
+
+At most 3 iterations. An iteration is a change of this stage's `src` code followed by runs; the registered design above
+is iteration 1. Seeds 48 and 7 only, `rngSalt` 0, the saved S39 parameters, at most 120 simulated days a job, one job at
+a time, `uptime` and `sysctl -n vm.swapusage` before each (no launch above 6 GB of swap used). Outputs under this
+worktree's `artifacts/validation/e1w/` (gitignored). (The brief sets 120 days a job; the integrator kit's older 90-day
+line is superseded by it.)
+
+| run | world | arm | days | meant to show |
+| --- | --- | --- | --- | --- |
+| R0 | M12-W50 seed 48, day 395 | off | 1 | smoke: the fork loads and ticks; day 365 equals P1's |
+| R1 | M12-W50 seed 48, day 395 | off | 120 | identity (equal to P1); the reference arm |
+| R2 | M12-W50 seed 48, day 395 | on | 120 | id 37 past its stored date with the switch on |
+| R3 | M12-W50 seed 7, day 395 | off | 120 | identity (equal to P3) |
+| R4 | M12-W50 seed 7, day 395 | on | 120 | control: equal to R3 |
+
+### 2.8 Left for the integrator (not run here)
+
+The three-year confirmation: S39 at a swallowed share of 0.5 with `weanOutcome` 1, seeds 48, 7, 21, 5, 11, against the
+saved Y3-W50 and Y3-W50-s1, with the per-animal readout on (the saved three-year runs have none, which is why the note
+had to infer who died). Parameter file and command are written at the end of this file once the code exists (§6).
+
+### 2.9 Not registered: the small body's budget (a decision for the user)
+
+The audit finds the juvenile's gut, walking cost and intake rate unmeasured, and no source to build on. Two ways
+forward that are not tuning, neither taken here:
+1. **A range, as for wadging** (user, 5 October: "Test a range"). The registry already holds a design form for sizing
+   a capacity to need instead of mass (`ledgerIntakeSizeExp` 0.75 for the intake rate; `ledgerLactGut` for a nursing
+   mother's gut). The same form for a growing animal's gut would be an exponent between 0.75 (capacity follows the
+   resting need) and 1 (today: capacity follows mass), run at both ends and reported at both, never fitted. At 0.75 a
+   16.5 kg female's gut would be 1.17 times today's (derived: (31.3 ÷ 16.5)^0.25). It would be the user's choice to
+   test an unmeasured input as a range; an agent picking it because it closes T9's gap would be breaking the first rule.
+2. **A measurement.** Gut volume or digesta mass by age in any ape, or in a simple-gutted analogue with a growth
+   series (pigs, humans); pusey2005's growth curves (the wild mass at weaning is known only as "a very rough
+   estimation"); intake per minute by age (bray2018's figure 5, never read); a juvenile's daily travel.
