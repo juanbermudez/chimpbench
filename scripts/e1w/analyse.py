@@ -13,7 +13,7 @@ RUNS = {'R1': ('seed 48, switch off', 'P1'), 'R2': ('seed 48, switch on', None),
 R = {k: load(os.path.join(D, k + '.json.gz')) for k in RUNS}
 P = {k: load(os.path.join(REF, k + '.json.gz')) for k in ('P1', 'P3')} if REF else {}
 f = lambda v, d=2: ('%+.*f' % (d, v)) if v is not None else '—'
-out = print
+out = lambda *lines: print('\n'.join(lines))
 
 
 def rows_of(p):
@@ -69,7 +69,7 @@ def block(p, i, a, b):
     wn = [r[ix['weaned']] for r in rs]
     return {'n': n, 'age': last[ix['age']], 'kg': last[ix['kg']], 'res': last[ix['res']] / last[ix['store']], 'abs': absd, 'sp': sp, 'net': absd - sp, 'milk': tot('eMilk') / n, 'shared': tot('eShared') / n,
             'eat': tot('tEat') / n / 4, 'full': tot('tEatFull') / max(1, tot('tEat')), 'walk': (tot('oWalk') + tot('oClimb')) / n, 'km': tot('walkM') / n / 1000, 'grow': tot('oGrowth') / n, 'paidMilk': tot('oMilk') / n,
-            'state': 'weaned' if all(wn) else 'on milk' if not any(wn) else 'weaned on day %d' % (p['day0'] + min(r[ix['day']] for r in rs if r[ix['weaned']]))}
+            'state': 'adult' if last[ix['age']] >= 15 else 'weaned' if all(wn) else 'on milk' if not any(wn) else 'weaned on day %d' % (p['day0'] + min(r[ix['day']] for r in rs if r[ix['weaned']]))}
 
 
 HEAD = '| animal | run | days | age, kg at the block\'s end | state | reserve ÷ store at the block\'s end | absorbed | spent | net | milk drunk | plant food handed | eating min | at a full foregut | walking + climbing | km on the ground | growth paid | milk paid for |'

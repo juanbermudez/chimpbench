@@ -362,3 +362,168 @@ forward that are not tuning, neither taken here:
 2. **A measurement.** Gut volume or digesta mass by age in any ape, or in a simple-gutted analogue with a growth
    series (pigs, humans); pusey2005's growth curves (the wild mass at weaning is known only as "a very rough
    estimation"); intake per minute by age (bray2018's figure 5, never read); a juvenile's daily travel.
+
+
+## 3. Results of the settling check (iteration 1; code bf357f6, runs from a frozen checkout of 5f4649d)
+
+Run on 7 October 2026 between 12:37 and 12:48, one job at a time; swap used before the five jobs 4.9, 4.9, 4.7, 4.7 and
+4.7 GB (limit 6), 1-minute load 3.1 to 4.6. Outputs in `artifacts/validation/e1w/` of this worktree (gitignored). No
+code or value was changed after a run: one iteration of three was used.
+
+### 3.1 What the runs say
+
+- **The forks may be read.** With the switch off this branch reproduces the continuations made with the checkpoints'
+  own code on all 120 days, every animal-day row and every class trajectory (R1 = P1, R3 = P3), although its `src` tree
+  is not the checkpoints'. R0 (one day) had shown the same for day 365 before R1 was launched.
+- **Seed 48: the stored date is what starts id 37's decline** (the note's cause (c), now by experiment in one animal).
+  The two arms are identical to day 410. From day 411, with the date read, id 37 loses its milk (1 kcal/d against 297) and the
+  36 kcal/d of plant food its mother hands it, eats 353 minutes a day against 160 with 57% of them at a full foregut
+  against 2%, walks 4.7 km against 2.4, and runs 39 kcal a day short against 11; on day 484 it stands at −0.14 of its
+  store against −0.05. All eight registered predictions held.
+- **The bill moves to the mother, as registered.** With the date read, id 31 stops paying for milk on day 411: she
+  spends 1,280 kcal/d against 1,739, eats 191 minutes against 268, and ends at −0.013 of her store against −0.044.
+- **Nothing in the window ends milk.** With the switch on id 37 still drinks 297 kcal/d at 4.2 to 4.4 y, close to what a
+  mother can make (307), and every unweaned animal of both seeds drank within the last 7 days of the window (all but
+  two within the last half day; those two 1.0 and 6.7 days before). No animal came near 90 dry days. The check cannot test F1 (§2.4), but what it shows points
+  the way the registration expected: milk does not taper by itself.
+- **Id 22, weaned by the date on day 222, is not helped** (−0.64 and −0.68 on day 484): the switch does not un-wean.
+- **Seed 7 is the control it was registered as**: nobody reaches a stored date, and the on arm equals the off arm on
+  all 120 days.
+- One animal, 74 days: a direction check. Nothing here is a confirmed effect on survival, weaned age or births.
+
+### 3.2 Tables (output of `scripts/e1w/analyse.py`)
+
+#### E1w settling check: forks of the day-365 worlds of M12-W50 (swallowed share 0.5, S39), scored days 365 to 484
+
+#### C0. What was run, and whether a fork may be read
+
+| run | arm | overrides | checkpoint src tree | checkout src tree (head) | wall, s | deaths in the window |
+| --- | --- | --- | --- | --- | --- | --- |
+| R1 | seed 48, switch off | {} | e88a533e | cbb88c7a (5f4649d) | 155 | none |
+| R2 | seed 48, switch on | {"weanOutcome": 1} | e88a533e | cbb88c7a (5f4649d) | 130 | none |
+| R3 | seed 7, switch off | {} | e88a533e | cbb88c7a (5f4649d) | 136 | none |
+| R4 | seed 7, switch on | {"weanOutcome": 1} | e88a533e | cbb88c7a (5f4649d) | 133 | none |
+
+- **R1 (seed 48, switch off) against P1** (the same world continued with the checkpoint's own code, src tree e88a533e): every animal-day row and every class reserve trajectory equal on **120 of 120 days**.
+- **R3 (seed 7, switch off) against P3** (the same world continued with the checkpoint's own code, src tree e88a533e): every animal-day row and every class reserve trajectory equal on **120 of 120 days**.
+- R2 against R1: identical on the first 46 days of the window (scored days 365 to 410); first difference on scored day 411.
+- R4 against R3: identical on the first 120 days of the window (scored days 365 to 484); the two arms never differ.
+
+#### C1. Seed 48: id 37 reaches its stored weaning age on scored day 411
+
+Per animal-day, from the per-animal readout: absorbed = energy in − passed out; spent = every expenditure term (for a mother, the milk she pays for included); "at a full foregut" = share of eating ticks with the foregut at least 0.95 full. Stored weaning ages: id 22 4.19 y (weaned at the window's start, age 4.58 y), id 37 4.21 y (unweaned at the window's start, age 4.08 y).
+
+| animal | run | days | age, kg at the block's end | state | reserve ÷ store at the block's end | absorbed | spent | net | milk drunk | plant food handed | eating min | at a full foregut | walking + climbing | km on the ground | growth paid | milk paid for |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| id 37 (M) | R1 off | 365–410 | 4.21 y, 16.7 | on milk | -0.01 | 841 | 833 | +8 | 313 | 41 | 150 | 3% | 53 | 2.2 | 46 | 0 |
+| id 37 (M) | R2 on | 365–410 | 4.21 y, 16.7 | on milk | -0.01 | 841 | 833 | +8 | 313 | 41 | 150 | 3% | 53 | 2.2 | 46 | 0 |
+| id 37 (M) | R1 off | 411–484 | 4.41 y, 17.4 | weaned | -0.14 | 876 | 915 | -39 | 1 | 0 | 353 | 57% | 100 | 4.7 | 44 | 0 |
+| id 37 (M) | R2 on | 411–484 | 4.41 y, 17.4 | on milk | -0.05 | 855 | 866 | -11 | 297 | 36 | 160 | 2% | 65 | 2.4 | 46 | 0 |
+| id 31 (id 37's mother) | R1 off | 365–410 | 23.21 y, 31.3 | adult | -0.01 | 1750 | 1742 | +8 | 0 | -41 | 311 | 8% | 105 | 2.3 | 0 | 391 |
+| id 31 (id 37's mother) | R2 on | 365–410 | 23.21 y, 31.3 | adult | -0.01 | 1750 | 1742 | +8 | 0 | -41 | 311 | 8% | 105 | 2.3 | 0 | 391 |
+| id 31 (id 37's mother) | R1 off | 411–484 | 23.41 y, 31.3 | adult | -0.01 | 1279 | 1280 | -2 | 0 | 0 | 191 | 4% | 96 | 2.0 | 0 | 2 |
+| id 31 (id 37's mother) | R2 on | 411–484 | 23.41 y, 31.3 | adult | -0.04 | 1722 | 1739 | -17 | 0 | -36 | 268 | 3% | 124 | 2.6 | 0 | 372 |
+| id 22 (F) | R1 off | 365–484 | 4.91 y, 16.6 | weaned | -0.64 | 824 | 854 | -30 | 0 | 0 | 627 | 90% | 72 | 3.8 | 17 | 0 |
+| id 22 (F) | R2 on | 365–484 | 4.91 y, 16.6 | weaned | -0.68 | 808 | 846 | -38 | 0 | 0 | 643 | 91% | 66 | 3.5 | 16 | 0 |
+| id 14 (id 22's mother) | R1 off | 365–484 | 25.41 y, 31.3 | adult | -0.05 | 1679 | 1690 | -11 | 0 | 0 | 309 | 3% | 125 | 3.0 | 0 | 313 |
+| id 14 (id 22's mother) | R2 on | 365–484 | 25.41 y, 31.3 | adult | -0.04 | 1697 | 1705 | -9 | 0 | 0 | 324 | 3% | 135 | 3.1 | 0 | 314 |
+| id 35 (F, founder juvenile) | R1 off | 365–484 | 6.91 y, 24.2 | weaned | -0.07 | 1150 | 1151 | -1 | 0 | 0 | 215 | 26% | 138 | 3.3 | 40 | 0 |
+| id 35 (F, founder juvenile) | R2 on | 365–484 | 6.91 y, 24.2 | weaned | -0.06 | 1149 | 1149 | +0 | 0 | 0 | 224 | 28% | 134 | 3.1 | 40 | 0 |
+| id 19 (F, founder juvenile) | R1 off | 365–484 | 8.41 y, 29.3 | weaned | -0.05 | 1305 | 1311 | -5 | 0 | 0 | 203 | 7% | 146 | 2.7 | 41 | 0 |
+| id 19 (F, founder juvenile) | R2 on | 365–484 | 8.41 y, 29.3 | weaned | -0.04 | 1314 | 1315 | -1 | 0 | 0 | 205 | 7% | 148 | 2.6 | 41 | 0 |
+
+Animals unweaned at the window's start (13): weaned at its end, off arm: id 37; on arm: none. On arm, days since the last milk at the window's end (animals alive and unweaned): id 18: 0.0, id 20: 0.0, id 21: 0.0, id 34: 0.0, id 37: 0.0, id 48: 0.0, id 49: 0.0, id 50: 0.4, id 51: 0.0, id 52: 0.0, id 53: 0.4, id 54: 0.0, id 55: 0.0.
+
+Class mean reserve ÷ store on the window's last day (off / on): adult male -0.005 / -0.005; female, other -0.011 / -0.017; female, lactating -0.044 / -0.041; juvenile 5–12 y -0.049 / -0.039; infant 2–5 y -0.139 / -0.130; infant 0.5–2 y -0.047 / -0.042; infant < 0.5 y +0.000 / +0.000.
+
+**Against the registered predictions (§2.5), seed 48.**
+
+| prediction | registered | off arm | on arm | held? |
+| --- | --- | --- | --- | --- |
+| id 37 not weaned on day 411 with the switch on | not weaned | weaned | on milk | yes |
+| id 37, milk drunk, days 411–484 | 150–310 kcal/d | 1 | 297 | yes |
+| id 37, eating minutes | below 250 | 353 | 160 | yes |
+| id 37, eating ticks at a full foregut | under 20% | 57% | 2% | yes |
+| id 37, net per day, on − off | +15 kcal or more | -39 | -11 | yes (+28) |
+| id 37, reserve ÷ store on day 484 | −0.03 to −0.12 | -0.14 | -0.05 | yes |
+| id 37's mother, reserve ÷ store on day 484, on − off | −0.01 to −0.06 | -0.013 | -0.044 | yes (-0.032) |
+| id 22, reserve ÷ store on day 484, both arms | −0.5 to −0.7 | -0.64 | -0.68 | yes |
+
+#### C2. Seed 7: nobody reaches a stored weaning age in the window (the control)
+
+Per animal-day, from the per-animal readout: absorbed = energy in − passed out; spent = every expenditure term (for a mother, the milk she pays for included); "at a full foregut" = share of eating ticks with the foregut at least 0.95 full. Stored weaning ages: id 22 5.04 y (unweaned at the window's start, age 4.58 y), id 37 4.44 y (unweaned at the window's start, age 4.08 y).
+
+| animal | run | days | age, kg at the block's end | state | reserve ÷ store at the block's end | absorbed | spent | net | milk drunk | plant food handed | eating min | at a full foregut | walking + climbing | km on the ground | growth paid | milk paid for |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| id 37 (M) | R3 off | 365–484 | 4.41 y, 17.4 | on milk | -0.11 | 862 | 870 | -7 | 254 | 108 | 180 | 20% | 77 | 3.7 | 44 | 0 |
+| id 37 (M) | R4 on | 365–484 | 4.41 y, 17.4 | on milk | -0.11 | 862 | 870 | -7 | 254 | 108 | 180 | 20% | 77 | 3.7 | 44 | 0 |
+| id 31 (id 37's mother) | R3 off | 365–484 | 23.41 y, 31.3 | adult | -0.11 | 1716 | 1728 | -12 | 0 | -108 | 345 | 21% | 150 | 3.9 | 0 | 317 |
+| id 31 (id 37's mother) | R4 on | 365–484 | 23.41 y, 31.3 | adult | -0.11 | 1716 | 1728 | -12 | 0 | -108 | 345 | 21% | 150 | 3.9 | 0 | 317 |
+| id 22 (F) | R3 off | 365–484 | 4.91 y, 17.7 | on milk | -0.11 | 906 | 913 | -7 | 226 | 104 | 190 | 35% | 110 | 5.1 | 38 | 0 |
+| id 22 (F) | R4 on | 365–484 | 4.91 y, 17.7 | on milk | -0.11 | 906 | 913 | -7 | 226 | 104 | 190 | 35% | 110 | 5.1 | 38 | 0 |
+| id 14 (id 22's mother) | R3 off | 365–484 | 25.41 y, 31.3 | adult | -0.11 | 1736 | 1750 | -13 | 0 | -104 | 347 | 28% | 216 | 5.5 | 0 | 283 |
+| id 14 (id 22's mother) | R4 on | 365–484 | 25.41 y, 31.3 | adult | -0.11 | 1736 | 1750 | -13 | 0 | -104 | 347 | 28% | 216 | 5.5 | 0 | 283 |
+| id 35 (F, founder juvenile) | R3 off | 365–484 | 6.91 y, 24.4 | weaned | -0.13 | 1148 | 1161 | -13 | 0 | 0 | 302 | 57% | 134 | 4.0 | 39 | 0 |
+| id 35 (F, founder juvenile) | R4 on | 365–484 | 6.91 y, 24.4 | weaned | -0.13 | 1148 | 1161 | -13 | 0 | 0 | 302 | 57% | 134 | 4.0 | 39 | 0 |
+| id 19 (F, founder juvenile) | R3 off | 365–484 | 8.41 y, 29.3 | weaned | -0.15 | 1355 | 1362 | -8 | 0 | 0 | 285 | 46% | 185 | 4.2 | 37 | 0 |
+| id 19 (F, founder juvenile) | R4 on | 365–484 | 8.41 y, 29.3 | weaned | -0.15 | 1355 | 1362 | -8 | 0 | 0 | 285 | 46% | 185 | 4.2 | 37 | 0 |
+
+Animals unweaned at the window's start (12): weaned at its end, off arm: none; on arm: none. On arm, days since the last milk at the window's end (animals alive and unweaned): id 18: 0.0, id 20: 1.0, id 21: 6.7, id 22: 0.0, id 34: 0.0, id 37: 0.0, id 48: 0.0, id 49: 0.0, id 51: 0.0, id 52: 0.0, id 53: 0.0, id 54: 0.0.
+
+Class mean reserve ÷ store on the window's last day (off / on): adult male -0.040 / -0.040; female, other -0.053 / -0.053; female, lactating -0.100 / -0.100; juvenile 5–12 y -0.157 / -0.157; infant 2–5 y -0.089 / -0.089; infant 0.5–2 y -0.093 / -0.093; infant < 0.5 y -0.072 / -0.072.
+
+## 4. Verdict of the stage
+
+- **Audit.** Shown wrong by the field sources: weaning by a date, milk stopping in a day at a quarter to over a third of
+  intake, and every provision ending in one step. Missing: any rule for what ends milk. Unmeasured at this body size:
+  the whole gut rule, the walking cost, the intake rate. The joint outcome of those three (a juvenile of 4 to 6 y that
+  cannot live without milk) contradicts the field.
+- **Built.** `weanOutcome` (off by default), with one design assumption (`weanDryDays`, 90 days, range 30–180, never
+  fitted) and one lazy state key. Goldens and the field pin unmoved; saves resume exactly; the prescription ledger
+  counts the timer (S39: 42 → 43 with the switch on).
+- **What it is and is not.** It removes the date as the cause of the end of milk and makes T-INF-3 an output. It is
+  **not a repair of the small body's budget**: with it on, a 16 kg animal is carried by 297 kcal a day of milk that its
+  mother pays 372 kcal a day for. Whether weaning then happens by the pair's state, or milk simply runs to the 6-year
+  limit, is the three-year question (W1 against F1); the registrant expects F1 (about 70% after this check, 65% before).
+- **Not to be concluded from this stage:** that the starvation deaths are fixed. A lower death count with milk running
+  to 6 y is registered as a failure (§2.4).
+
+## 5. Known limits and deferred defects (file:line at this branch's head)
+
+- `src/sim/candidates.ts`:167 (`dependentOn`): no caretaker from 6 y, a literal age. With the switch it is the last stop
+  of milk; Gombe's latest weaned age is 8.01 y. Not changed (it also bounds the orphan rules).
+- `src/sim/candidates.ts`:398 (the nurse score): the hunger-free part (0.25 × the bout's worth) and the age factor
+  (1 − age ÷ 7) are literal weights; the first is why an infant asks whatever its state (e1o-prereg §1.4).
+- `src/sim/energy.ts`:234–241 (`ledgerLactGut`): a mother's gut is enlarged by her full milk yield while her lactation
+  flag is on, whatever she is asked for. With the switch the flag stays on longer, and so does the larger gut.
+- Two offspring at one gland: no rule ranks them (the mother compares each with herself, `execution.ts`:914–917). The
+  switch makes that state last longer. Read F2 before anything else in the long run.
+- `src/sim/energy.ts`:363 (`feedRate`): an unweaned animal's drive counts milk at the full suckling rate all day
+  (E1n §5, addressed only by `milkInDrive`, which S39 does not use). The switch keeps animals in that state longer.
+- The switch never un-weans, so it does nothing for an animal the date has already weaned in a saved world.
+- `scripts/lib/prescriptions.ts`:160: the old date (`weanAgeMinY`, `weanAgeSpanY`) is classed *input*; not changed.
+
+## 6. For the integrator: the three-year confirmation (not run here)
+
+Parameter files (S39 at a swallowed share of 0.5, as Y3-W50 and Y3-W50-s1, plus `weanOutcome` 1):
+`docs/staging/integrator-kit/params/Y3-W50-wean.json` and `Y3-W50-wean-s1.json` (`rngSalt` 1).
+
+From a frozen detached checkout of the merged head, with the worktree links of AGENTS.md:
+
+```sh
+fnm exec --using=22.22.3 -- pnpm exec tsx scripts/e-run.ts plan --label Y3-W50-wean --seeds 48,7,21,5,11 --days 1095 --burn-in 30 --animal-days \
+  --params-file docs/staging/integrator-kit/params/Y3-W50-wean.json --out artifacts/validation/e/runs/Y3-W50-wean
+fnm exec --using=22.22.3 -- pnpm exec tsx scripts/e-run.ts run artifacts/validation/e/runs/Y3-W50-wean/run.json --budget-min 100 --parallel 1   # in the background; launch again until done
+fnm exec --using=22.22.3 -- pnpm exec tsx scripts/e-run.ts status artifacts/validation/e/runs/Y3-W50-wean/run.json
+```
+
+(The same with `Y3-W50-wean-s1` for the second draw.) `--animal-days` is new in `scripts/e-run.ts` at this stage: it
+passes e-bench's per-animal readout to every seed job, which the saved three-year runs lacked. The comparison is the
+saved Y3-W50 and Y3-W50-s1 (bench-y3, ff25953), not re-run. Judge by §2.3 and §2.4 in this order: F2 (newborns), F1
+(who still drinks at 6 y: per-animal rows, `eMilk` by age), W2 (milk at 4–5 y against 3–4 y: the energy readout's bins),
+W1 and T-INF-3 (the truth row now reads the age at the last milk), W3 (the weaned animals' rows against ids 35 and 17),
+W5 and F3 (nursing mothers' trend, births), W4 (mass at 5 y). The starvation count is read last and decides nothing alone.
+Three years hold few animals that pass 6 y: id 22 from scored day 884, id 37 only from day 1,067 of 1,095. F1 will
+rest on about one animal per seed-run, 10 in the two draws; milk per day at 5 to 6 y (ids 22, 37 and 21, from days 519,
+701 and 884) is the wider readout to print beside it, as a description and not as a registered criterion. If the
+user wants F1 settled properly, the run needs a fourth year.
