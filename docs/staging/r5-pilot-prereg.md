@@ -186,3 +186,15 @@ arm's file, before any kernel arm (model or not) is run. The rule for the words 
 - **Iteration 1 (logged before it runs): seed 48, the 30-day burn-in, then `rules` alone; the season is read and
   written here; then the no-model arms** `rules-r1`, `rules-r2`, `rules-r3`, `null`, `argmax`, `null-nopick`,
   `null-gate`, `argmax-gate`, and the replay of `null`. Outputs `artifacts/r5/pilot/s48/`.
+  Result (18:32 to 18:33, head 15c2193, clean tree). Burn-in 30 days, hash 4b5cc61f8ad797e0. Focal animals (West
+  community): Tavuni (alpha male), Koruza (adult male), Lwazo (lactating female), Fumbira (adult female), Dembiri
+  (adolescent). **Season: a rich stretch.** The window's crop inside the community's range is 1.39 times the year's
+  mean, above 87% of the year's days; the training windows were the same kind (1.41 and 1.36 times; above 90% and 78%).
+  So the pilot does not test lean days. Each no-model arm took 4 to 6 s; 2,750 kernel passes in five days for random
+  choice with the gate off, 3,091 for the rules' top option, 1,517 and 1,699 with the gate on. The replay of `null`
+  ended on the run's hash (f8e6f47a3103781b). Numbers: the report, after the model arms.
+
+- **Iteration 2 (logged before it runs, 18:33): seed 48, the model arms `trained` then `untuned`**, one worker
+  process, MPS, the state-only packet, timeout 120 s; then their replays (no model) and the report. Machine just
+  before: load averages 4.67, 5.23, 5.85; swap 3,898 MB used of 5,120 MB (under the 6 GB line); the three-year
+  simulation's two jobs at about 1.3 GB each; no other model process.
