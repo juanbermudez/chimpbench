@@ -542,3 +542,9 @@ and its agreement with the adapter measured before any figure uses it.
    world-day takes about a second).
 3. **The field adapter's test.** By the registered rule it did not beat the untuned model plain. Opening the sealed
    part for it would spend a one-time read on a marginal result; it was not opened.
+
+### Checks at the end (7 October 2026, 18:13; no model process running)
+
+`tsc --noEmit -p .` clean; `gen-params --check` clean (1,042 entries); `tests/r4-packet.test.ts` 7 of 7; the full
+`pnpm test` once: **1,059 tests, 1,059 pass, 0 fail, 0 skipped** (2 min 32 s). The goldens and the field pin are
+unchanged; no file under `src/` or `data/` was edited; every switch default is as before.
