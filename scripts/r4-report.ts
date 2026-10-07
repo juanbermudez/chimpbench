@@ -50,7 +50,24 @@ if (process.argv[1]?.endsWith('r4-report.ts')) {
   const dir = resolve(arg('dir', 'artifacts/decide-ft/r4/eval')), providers = arg('providers', 'base,r4-rules-state,r4-field-groom').split(',');
   const test = lines<R4Rec & { permOrder?: number[] }>(join(dir, 'test.jsonl')), removed = lines<R4Rec>(join(dir, 'removed.jsonl')), probes = lines<ProbeRow>(join(dir, 'probes.jsonl'));
   const S: Record<string, Scores> = {};
-  for (const p of providers) { const m: Scores = new Map(); for (const row of lines<{ id: string; packet: string; probs: number[] }>(join(dir, `all.${p}.jsonl`))) m.set(`${row.id}|${row.packet}`, row.probs); if (m.size) S[p] = m; }
+  // A score file holds one line per packet in the order of all.jsonl (training/decide_ft/em_score.py: rows in file order,
+  // within a row the packet names in the order below). The join is by position, checked against each line's id and
+  // packet name, so it also reads score files written before the evaluation ids were made unique (r4-evalset.ts).
+  const allRows = lines<{ id: string; packets: Record<string, unknown> }>(join(dir, 'all.jsonl')), ORDER = ['state', 'v4', 'statePerm', 'removed', 'probe'];
+  for (const p of providers) {
+    const scored = lines<{ id: string; packet: string; probs: number[] }>(join(dir, `all.${p}.jsonl`)), names = new Set(scored.map(x => x.packet)), m: Scores = new Map();
+    let i = 0;
+    for (const row of allRows) for (const name of ORDER) {
+      if (!row.packets[name] || !names.has(name)) continue;
+      const line = scored[i++];
+      if (!line) break;
+      if (line.packet !== name || (line.id !== row.id && line.id !== row.id.replace(/~\d+/g, ''))) throw new Error(`${p}: score line ${i} is ${line.id}|${line.packet}, expected ${row.id}|${name}`);
+      if (line.probs.length !== Object.keys((row.packets[name] as { questions: { action: { criteria: object } } }).questions.action.criteria).length) throw new Error(`${p}: score line ${i} has ${line.probs.length} probabilities for ${row.id}|${name}`);
+      m.set(`${row.id}|${name}`, line.probs);
+    }
+    if (i !== scored.length) throw new Error(`${p}: ${scored.length} score lines, ${i} joined`);
+    if (m.size) S[p] = m;
+  }
   const have = providers.filter(p => S[p]), trained = have.filter(p => p !== 'base');
   const md: string[] = ['# R4 numbers: the offline evaluation on simulated contexts (generated)', '',
     'Written by `scripts/r4-report.ts`; do not edit by hand. Registration: `docs/staging/r4-prereg.md` §6. Held-out contexts: seed 21, both bases. The input is the state-only packet unless a row says otherwise. Intervals: 95% bootstraps over animals (2,000 resamples). A difference is called one only if its paired interval excludes 0.', ''];

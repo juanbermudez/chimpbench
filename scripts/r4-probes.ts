@@ -18,7 +18,8 @@ export function probeRows(recs: R4Rec[], per: number): { rows: ProbeRow[]; count
   const rows: ProbeRow[] = [], counts: Record<string, number> = {};
   for (const p of PROBES) {
     // em-probes reads the phase, the verdict, the hour, the option families and the context: the R4 record has them all
-    const pool = recs.filter(r => r.context && p.eligible(r as unknown as Rec)).sort((a, b) => u01(`${p.id}:${a.id}`) - u01(`${p.id}:${b.id}`)).slice(0, per);
+    const key = (r: R4Rec) => u01(`${p.id}:${r.id.replace(/~\d+$/, '')}`);   // the sampler's id (a suffix marks the second decision of one tick)
+    const pool = recs.filter(r => r.context && p.eligible(r as unknown as Rec)).sort((a, b) => key(a) - key(b)).slice(0, per);
     counts[p.id] = pool.length;
     for (const r of pool) for (const [li, lv] of p.levels.entries()) {
       const ctx = structuredClone(r.context!);

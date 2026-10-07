@@ -28,19 +28,24 @@ if (process.argv[1]?.endsWith('r4-evalset.ts')) {
   const read = (f: string) => readFileSync(f, 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l) as R4Rec);
   mkdirSync(out, { recursive: true });
   const all: { id: string; packets: Record<string, unknown> }[] = [];
-  const test = read(`${contexts}/test.jsonl`).map(r => {
+  // The sampler's id (seed, base, tick, animal) is shared by two decision points when an animal decides twice in one tick
+  // (1 to 3% of records). The data that was trained on keeps those ids; here the second one gets a suffix, in file order,
+  // so every evaluation row has its own id. The order of rows is unchanged.
+  const unique = <T extends { id: string }>(rows: T[]): T[] => { const seen = new Map<string, number>(); return rows.map(r => { const n = (seen.get(r.id) ?? 0) + 1; seen.set(r.id, n); return n === 1 ? r : { ...r, id: `${r.id}~${n}` }; }); };
+  const test = unique(read(`${contexts}/test.jsonl`)).map(r => {
     const { context: _c, ...row } = r;   // the context is only needed for the probes
-    if (u01(`r4-perm-pick:${r.id}`) >= PERM_SHARE) return row;
-    const s = shuffledOptions(r.packet, r.id);
+    const sampled = r.id.replace(/~\d+$/, '');   // hashes read the sampler's id, so the packets are those already scored
+    if (u01(`r4-perm-pick:${sampled}`) >= PERM_SHARE) return row;
+    const s = shuffledOptions(r.packet, sampled);
     return { ...row, packets: { ...row.packets, statePerm: s.packet }, permOrder: s.order };
   });
   writeFileSync(`${out}/test.jsonl`, test.map(r => JSON.stringify(r)).join('\n') + '\n');
   for (const r of test) all.push({ id: r.id, packets: r.packets });
-  const ids = new Set(test.map(r => r.id)), files = readdirSync(parts).filter(f => f.endsWith('.jsonl') && TEST_SEEDS.some(s => f.startsWith(`s${s}-`))).sort();
-  const removed = files.filter(f => f.includes('-removed')).flatMap(f => read(`${parts}/${f}`)).filter(r => ids.has(r.id) && r.draw).map(({ context: _c, ...r }) => r);
+  const ids = new Set(test.map(r => r.id.replace(/~\d+$/, ''))), files = readdirSync(parts).filter(f => f.endsWith('.jsonl') && TEST_SEEDS.some(s => f.startsWith(`s${s}-`))).sort();
+  const removed = unique(files.filter(f => f.includes('-removed')).flatMap(f => read(`${parts}/${f}`)).filter(r => ids.has(r.id) && r.draw).map(({ context: _c, ...r }) => r));
   writeFileSync(`${out}/removed.jsonl`, removed.map(r => JSON.stringify(r)).join('\n') + (removed.length ? '\n' : ''));
   for (const r of removed) all.push({ id: `rm|${r.id}`, packets: r.packets });
-  const pool = files.filter(f => !f.includes('-removed')).flatMap(f => read(`${parts}/${f}`)), probes = probeRows(pool, +arg('per', '100'));
+  const pool = unique(files.filter(f => !f.includes('-removed')).flatMap(f => read(`${parts}/${f}`))), probes = probeRows(pool, +arg('per', '100'));
   writeFileSync(`${out}/probes.jsonl`, probes.rows.map(r => JSON.stringify(r)).join('\n') + '\n');
   for (const r of probes.rows) all.push({ id: r.id, packets: r.packets });
   writeFileSync(`${out}/all.jsonl`, all.map(r => JSON.stringify(r)).join('\n') + '\n');
