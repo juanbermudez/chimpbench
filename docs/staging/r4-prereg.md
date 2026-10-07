@@ -342,3 +342,17 @@ validation males hold more records than their share of males (24% of records for
 before the data was read and is kept.
 
 - Iteration 2 began at 11:55 (swap 5,010 MB used of 6,144 MB; load 6.4, 5.5, 5.0; no other model process).
+
+**Result of iteration 2: failed, out of memory at the allocation cap (12:21, after 26 minutes).** The run died at about
+step 245 of 1,173 with "MPS backend out of memory (MPS allocated: 6.54 GiB, other allocations: 539 MiB, max allowed:
+7.10 GiB)": the cap is `PYTORCH_MPS_HIGH_WATERMARK_RATIO` 0.6 on this 16 GB machine, and one batch of two long packets
+passed it (training packets by the server's estimate: median 522 tokens, 95th percentile 662, largest 750; the smoke
+run's 197 examples had not met such a pair). Until then: 0.82 s per example, MPS driver memory 7.0 GiB (at the cap),
+process footprint 8.1 GiB, swap 5.1 to 5.3 GB in use. Nothing was saved; no number from it is used. The untuned dev
+agreement it printed before training (0.363 of 292, draws and kept acts together; chance 0.20) is a dev number.
+
+- **Iteration 3 (memory, 1 of 3; logged before it runs).** One change, in the trainer and not in the settings of §4:
+  when a batch hits the cap, the cache is emptied and that batch is shown one example at a time (the accumulated
+  gradient is the same sum); the cache is emptied every 10 batches instead of 50; progress is written after every
+  epoch. Batch 2 × 4, the top 8 layers, bf16 and the watermark stay. If it fails again, the ladder of §5 applies
+  (batch 1 × 8, then the top 4 layers). Same data, same seed, 3 epochs.

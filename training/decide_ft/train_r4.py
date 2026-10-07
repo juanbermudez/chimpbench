@@ -11,6 +11,7 @@ weight 1. --extra: a JSON file whose fields (the label source, the parts and rec
 """
 from __future__ import annotations
 
+import gc
 import json
 import math
 import os
@@ -80,6 +81,21 @@ def main(args: dict) -> None:
     out = FT / "adapters" / name
     out.mkdir(parents=True, exist_ok=True)
     history, best, step, examples, t0, peak_mps, peak_foot, train_seconds = [], None, 0, 0, time.time(), 0.0, 0.0, 0.0
+    oom = 0
+
+    def backward(chunk: list, share: int) -> float:
+        """Forward and backward of some examples of one batch; returns their summed loss. `share`: the batch's size."""
+        exs = [example(base, packet, pick) for packet, pick in chunk]
+        with autocast(args):
+            logits, batch = action_logits(model, collate(base, exs))
+        loss = 0.0
+        for j, (lg, (_, pick)) in enumerate(zip(logits, chunk)):
+            target = batch.structure_labels[j][0].index(1)
+            assert exs[j][2][target] == pick
+            loss = loss + F.cross_entropy(lg[None], torch.tensor([target], device=lg.device))
+        (loss / share / args["accum"]).backward()
+        return float(loss.detach())
+
     for epoch in range(args["epochs"]):
         model.train()
         shown = [d for d in data if d[4] is None or d[4] == epoch]
@@ -88,16 +104,21 @@ def main(args: dict) -> None:
         running, seen, e0 = 0.0, 0, time.time()
         for i in range(0, len(order), args["batch"]):
             chunk = order[i:i + args["batch"]]
-            exs = [example(base, packet, pick) for packet, pick in chunk]
-            with autocast(args):
-                logits, batch = action_logits(model, collate(base, exs))
-            loss = 0.0
-            for j, (lg, (_, pick)) in enumerate(zip(logits, chunk)):
-                target = batch.structure_labels[j][0].index(1)
-                assert exs[j][2][target] == pick
-                loss = loss + F.cross_entropy(lg[None], torch.tensor([target], device=lg.device))
-            (loss / len(chunk) / args["accum"]).backward()
-            running += float(loss.detach()) / len(chunk)
+            retry = False
+            try:
+                value = backward(chunk, len(chunk))
+            except RuntimeError as exc:
+                # MPS's allocation cap (the high watermark) can be hit by one batch of two long packets (iteration 2 died
+                # of it at step 245). The batch is then shown one example at a time after the cache is emptied: the
+                # accumulated gradient is the same sum. (Retried outside this block, so the failed pass's tensors are freed.)
+                if "out of memory" not in str(exc) or device != "mps":
+                    raise
+                retry = True
+            if retry:
+                oom += 1
+                gc.collect(); torch.mps.empty_cache()
+                value = sum(backward([one], len(chunk)) for one in chunk)
+            running += value / len(chunk)
             seen += 1
             examples += len(chunk)
             if seen % args["accum"] == 0 or i + args["batch"] >= len(order):
@@ -112,7 +133,7 @@ def main(args: dict) -> None:
                     spent = train_seconds + time.time() - e0
                     print(f"[{name}] epoch {epoch + 1} step {step}/{steps} loss {running / seen:.4f} ({time.time() - t0:.0f} s, "
                           f"{spent / examples:.2f} s/example, mps {peak_mps:.1f} GiB, footprint {peak_foot:.1f} GiB)", flush=True)
-            if device == "mps" and seen % 50 == 0:
+            if device == "mps" and seen % 10 == 0:
                 torch.mps.empty_cache()
         train_seconds += time.time() - e0
         peak_foot = max(peak_foot, footprint_gb())
@@ -124,6 +145,7 @@ def main(args: dict) -> None:
         if best is None or dev["nll"] < best["nll"]:
             best = dev
             model.save_pretrained(str(out))
+        (out / "progress.json").write_text(json.dumps({"history": history, "oom_retries": oom, "train_seconds": round(train_seconds)}) + "\n")
     weights = out / "adapter_model.safetensors"
     extra = json.loads((FT / args["extra"]).read_text()) if args["extra"] else {}
     manifest = {
@@ -137,7 +159,7 @@ def main(args: dict) -> None:
         "targets": len(targets), "untuned_dev": before, "best_dev": best, "history": history,
         "cost": {"device": device, "training_seconds": round(train_seconds), "wall_seconds": round(time.time() - t0), "examples_shown": examples,
                  "seconds_per_example": round(train_seconds / max(1, examples), 3), "peak_mps_driver_gib": round(peak_mps, 2),
-                 "peak_footprint_gib": round(peak_foot, 2), "max_rss_gib": round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 2**30, 2)},
+                 "peak_footprint_gib": round(peak_foot, 2), "mps_out_of_memory_retries": oom, "max_rss_gib": round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 2**30, 2)},
     }
     (out / "manifest.json").write_text(json.dumps(manifest, indent=1) + "\n")
     print(f"[{name}] saved {out} (best epoch {best['epoch']}, dev acc {best['acc']} against untuned {before['acc']}); cost {manifest['cost']}", flush=True)
