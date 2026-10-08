@@ -57,14 +57,15 @@ t(['', ...cols], [['records', ...vals(o => o.records, s => s.records)],
   ...words('reserves', ['above my usual store', 'at my usual store', 'a little low', 'run down', 'badly run down', 'nearly gone'], o => o.reserves, s => s.reservesWord),
   ...words('water', ['well watered', 'a little short of water', 'short of water', 'badly short of water'], o => o.water, s => s.waterWord),
   ...SITUATIONS.map(k => [`fits the situation: ${k}`, ...vals(o => o.sit[k] ?? 0, s => s.situations[k] ?? 0)]),
-  ...(old ? [] : [['rain falling at the decision', ...names.map(n => S[n].rainNow)]])]);
+  ['rain falling at the decision', ...(old ? ['–'] : []), ...names.map(n => S[n].rainNow)]]);
 md.push('## What the rules decided (labelled records)');
 const FAMS = ['feed', 'food-trip', 'drink', 'rest', 'nest', 'social-move', 'travel-home', 'affiliative', 'greet', 'aggression', 'mating', 'care', 'call', 'other'];
 const famName: Record<string, string> = { feed: 'feeds where it stands', 'food-trip': 'a trip to a remembered food tree', drink: 'a drink', rest: 'rest or shelter', nest: 'the nest', 'social-move': 'moves with others', 'travel-home': 'heads home' };
 t(['', ...cols], [['labelled records', ...vals(o => o.labelled, s => s.labelled)], ...FAMS.map(f => [famName[f] ?? f, ...vals(o => o.fam[f] ?? 0, s => s.labelFamily[f] ?? 0)]),
   ...['feeding', 'travel', 'rest', 'social'].map(k => [`kind: ${k} (share)`, ...[...(old ? [(old.kind[k] ?? 0) / old.labelled] : []), ...names.map(n => (S[n].labelKind[k] ?? 0) / S[n].labelled)].map(v => v.toFixed(3))]),
   ...['day', 'dawn', 'dusk', 'night'].map(p => [`a drink, by ${p}`, ...vals(o => o.drinkPhase[p] ?? 0, s => s.drinkLabelsByPhase[p] ?? 0)]),
-  ...(old ? [] : [['a trip to food with no ripe fruit in reach', ...names.map(n => S[n].tripLabelsByFruitInReach['no ripe fruit in reach'] ?? 0)], ['a trip to food with ripe fruit in reach (or at dusk or night)', ...names.map(n => S[n].tripLabelsByFruitInReach['ripe fruit in reach, or dusk or night'] ?? 0)]])]);
+  ['a trip to food with no ripe fruit in reach, by day or dawn', ...(old ? ['–'] : []), ...names.map(n => S[n].tripLabelsByFruitInReach['no ripe fruit in reach'] ?? 0)],
+  ['a trip to food with ripe fruit in reach (or at dusk or night)', ...(old ? ['–'] : []), ...names.map(n => S[n].tripLabelsByFruitInReach['ripe fruit in reach, or dusk or night'] ?? 0)]]);
 md.push('## Heat and rest by day (does the data hold the rules\' answer to heat?)', '', 'Daytime records by the body\'s heat word, and the share of them where the rules rest or shelter.');
 t(['heat word', ...names.flatMap(n => [`${n}: daytime records`, `${n}: the rules rest`])], ['hot', 'warm', 'comfortable temperature', 'chilled'].map(wd => [wd, ...names.flatMap(n => { const all = S[n].dayRecordsByHeatWord[wd] ?? 0, rest = S[n].restLabelsByHeatWord[wd] ?? 0; return [all, all ? `${rest} (${(rest / all).toFixed(2)})` : '–']; })]));
 const text = md.join('\n').replace(/\n{3,}/g, '\n\n') + '\n';

@@ -269,3 +269,33 @@ simulation's own state, read before any label or model result. Nothing else in �
 thirds, the situation classes, the proportions and the order of drawing stand. A consequence said now: with no hot
 weather in the simulation, the probe's hot level (31 °C, load 0.5) describes a state the rules' world reaches only
 briefly, in the sun and after exertion; "hot" records are found by the situation class, not by the weather.
+
+**The assembled data (00:47, head 7f48797; tables: `docs/staging/r4b-data.md`, by `scripts/r4b-data-report.ts`).**
+Every place of §2 was filled from its own pool; no shortfall. Train 3,200 (3,121 labelled; 61 animals; 1,246
+world-days of the four training world-years), dev 300 (295; 15 animals), held-out test 1,500 (1,477; 39 animals;
+seed 21). Removed wordings found: 0. Against R4's training file, in the packet's own words:
+
+| In the training set | R4 | R4b |
+| --- | --- | --- |
+| body "hot" | 5 | 261 |
+| reserves below the usual store ("a little low", "run down", "badly run down") | 37, 0, 0 | 747, 197, 44 |
+| "short of water" or worse with a drink on the menu | 254 | 467 |
+| no ripe fruit in reach and a remembered food tree on the menu | 685 | 930 |
+| rain falling at the decision | not counted | 78 |
+| the rules take a trip to a remembered food tree | 309 | 312 |
+| the rules drink (of which at night) | 41 (20) | 78 (40) |
+| the rules feed where they stand | 435 | 447 |
+
+Said plainly before training: **the states are now there; the two under-chosen decisions are not much more
+numerous.** Trips to food are as many as in R4 (312; 170 of them with no ripe fruit in reach), because nothing is
+drawn by its label and the rules set out for food about as often in any season. Drinks doubled to 78, half of them
+at night; that is still a small number to learn from. By day the rules rest or shelter at 0.45 of "hot" records,
+0.28 of "comfortable" ones and 0.24 of "warm" ones, so the data holds an answer to "hot" but not a steady rise with
+heat. Correction to §1 and §3: R4's 41 drink labels hold 20 at night, not 17.
+
+- **Iteration 2 (logged before it runs, 00:49): train `r4b-rules-state`** (`scripts/r4b-eval.sh train`: R4's
+  settings, 3 epochs, 3,121 labelled contexts). Machine: load 2.1, 2.9, 3.4; swap 3,778 MB in use of 5,120 MB; no
+  model process running. While it trains, the loop's arms that load no model are run (iteration 3).
+- **Iteration 3 (logged before it runs; no model): seed 21, the standard window and the lean window**
+  (`scripts/r4b-chain.sh nomodel 21 standard`, then `nomodel 21 lean`): the burn-ins, the lean window named by the
+  rule of §7 before any arm of it runs, the rules arm, its three re-draws, the loop without a model and its replay.
