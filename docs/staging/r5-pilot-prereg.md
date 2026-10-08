@@ -418,3 +418,17 @@ GPU), which is why the log, not a re-run, is the audit trail. A test shows one c
    keeps an animal out of its nest is not silently replaced by the rules?
 5. **One shared random sequence across arms.** A rare draw lands in every arm at the same hour. For comparisons that
    count deaths, arms need their own draws (for example a salt per arm) or several re-draws each.
+
+### Checks at the end (7 October 2026, 22:50; no model process running)
+
+`tsc --noEmit -p .` clean; `gen-params --check` clean (1,044 entries); `tests/r5-pilot.test.ts` 5 of 5, and with
+`tests/kernel.test.ts`, `tests/em-*.test.ts`, `tests/ft-*.test.ts`, `tests/sim-track-e.test.ts`,
+`tests/sim-params.test.ts` (the goldens), `tests/r4-packet.test.ts` and `tests/r2-packet.test.ts`: 81 tests, 81 pass.
+The full suite was not run (by instruction). Against the branch point (a7ed356) the branch changes only `AGENTS.md`,
+`IMPLEMENTATION_PLAN.md`, files under `docs/staging/`, four scripts and one test: nothing under `src/` or `data/`, no
+switch default, no golden. The reports and the deaths file were generated again at the final head and came out byte
+for byte the same. `track-e` has moved since the branch point (the merge of E1x); this branch was not rebased.
+
+After the last no-model runs (head 23025be) the runner changed once more in a counter only (an arm's own timeouts,
+where the worker's counter ran on through the arms of one process); the report takes timeouts from the decisions that
+went to the rules, so its tables do not depend on it. One timeout in all (`trained-gate`).
