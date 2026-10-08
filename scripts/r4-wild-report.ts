@@ -19,7 +19,7 @@ if (process.argv[1]?.endsWith('r4-wild-report.ts')) {
   for (const m of models) for (const k of ['gliner', 'gliner+fan2']) { const r = read(`${dir}/${m}/development-${k}-records.jsonl`); if (r) runs[`${m}|${k}`] = r; }
   for (const k of ['stack', 'null']) { const r = read(`${dir}/base/development-${k}-records.jsonl`); if (r) runs[k] = r; }
   const label = (id: string) => id.replace('base|', 'untuned|').replace('|gliner+fan2', ', fan-out').replace('|gliner', ', plain');
-  const L: string[] = ['# R4 numbers: the wild-choice benchmark, development part (generated)', '',
+  const L: string[] = [`# ${arg('title', 'R4 numbers: the wild-choice benchmark, development part')} (generated)`, '',
     'Written by `scripts/r4-wild-report.ts` from the per-record outputs of `scripts/rw-score.ts`; do not edit by hand. Aggregate counts and rates only. Registration: `docs/staging/r4-prereg.md` §6.4. Whom a wild adult male groomed among the adult males of his party; top-1 of the answered option, shuffle 0; intervals are 95% cluster bootstraps over focal males (2,000 draws). A difference is called one only if its paired interval excludes 0. The held-out part is sealed and was not read.', ''];
   const t = (h: string[], rows: (string | number | null)[][]) => { L.push('', `| ${h.join(' | ')} |`, `| ${h.map(() => '---').join(' | ')} |`, ...rows.map(r => `| ${r.map(v => v ?? 'n/a').join(' | ')} |`), ''); };
   const json: Record<string, unknown> = {};
@@ -41,6 +41,9 @@ if (process.argv[1]?.endsWith('r4-wild-report.ts')) {
   };
   for (const m of models.filter(x => x !== 'base')) { pair(`${m}|gliner`, 'base|gliner'); pair(`${m}|gliner+fan2`, 'base|gliner+fan2'); pair(`${m}|gliner`, 'stack'); pair(`${m}|gliner+fan2`, 'stack'); }
   pair('base|gliner', 'stack'); pair('base|gliner+fan2', 'stack');
+  // stage R4b: --versus names an adapter every other adapter is also paired with
+  const versus = arg('versus', '');
+  if (versus) for (const m of models.filter(x => x !== 'base' && x !== versus)) { pair(`${m}|gliner`, `${versus}|gliner`); pair(`${m}|gliner+fan2`, `${versus}|gliner+fan2`); }
   t(['pair', 'records', 'n', 'A', 'B', 'difference', '95% interval', 'a difference', 'only A right / only B right', 'sign test p'], pairs);
   json.pairs = pj;
   const text = L.join('\n').replace(/\n{3,}/g, '\n\n') + '\n';

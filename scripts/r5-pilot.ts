@@ -55,6 +55,8 @@ export const ARMS: Record<string, ArmSpec> = {
   'trained-nopick': { kernel: 'gliner', adapter: 'r4-rules-state', noPick: 1 }, 'trained-gate': { kernel: 'gliner', adapter: 'r4-rules-state', gate: 1 },
   'null-nopick': { kernel: 'null', noPick: 1 }, 'null-gate': { kernel: 'null', gate: 1 }, 'argmax-gate': { kernel: 'argmax', gate: 1 },
   'untuned-gate': { kernel: 'gliner', adapter: 'base', gate: 1 },
+  // stage R4b (docs/staging/r4b-prereg.md §7): the retrained adapter, the pilot's main setting (gate off, the rules' pick kept)
+  retrained: { kernel: 'gliner', adapter: 'r4b-rules-state' },
 };
 
 /** One kernel pass, as logged. `index` and `p` are the kernel's raw answer (null when it gave none); `picked` is the position applied (-1: the rules decided). */
@@ -65,6 +67,8 @@ export interface Receipt {
 }
 const key = (t: number, id: number, v: number) => `${t.toFixed(6)}:${id}:${v}`;
 const famOf = (o: Candidate) => { const m = candidateMeta.get(o); return familyOf(o.action, m?.v ?? V.NONE, m?.aux ?? -1); };
+/** The kind of the act an animal is in (the families of scripts/em-sample.ts), from its own act state. */
+const famNow = (c: Chimp) => c.alive ? familyOf(c.action, ix(c).v, ix(c).aux) : '';
 
 /** A kernel that answers from a receipt log: the logged answer for the same time, animal and decision version, or the logged failure. */
 export function replayKernel(log: Receipt[], stats: { missing: number; menuDiffers: number }): Kernel {
@@ -102,6 +106,12 @@ export interface DayRow {
   min: Record<string, number>; daylightMin: number; km: number; kmFixes: number; nightMin: number; nestShare: number | null;
   /** Amendment A3 (exploratory, added after the first results): the body water deficit at the day's end, mL (the water ledger's `def`; null without the ledger). */
   waterDefMl?: number | null;
+  /**
+   * Stage R4b (docs/staging/r4b-prereg.md §7), counted over the whole day, light or dark: trips to food begun (the animal
+   * starts travelling to a food tree of its own choice, or changes the tree) and drinks (arrivals at water to drink).
+   * `tripsDone` (exploratory): trips that ended with the animal feeding in the tree it set out for.
+   */
+  trips?: number; drinks?: number; tripsDone?: number;
 }
 export interface Decisions {
   id: number; name: string; cls: string;
@@ -143,7 +153,7 @@ export async function runArm(base: World, name: string, spec: ArmSpec, days: num
   const rows: DayRow[] = [], dec = new Map<number, Decisions>(focalIds.map(f => [f.id, { id: f.id, name: names.get(f.id)!, cls: f.cls, points: 0, kernel: 0, fallbacks: {}, gateKept: 0, interrupts: 0, rulesDecisions: 0, withRulesPick: 0, agree: 0, picks: {}, rulesPicks: {} }]));
   // running state per focal animal: the ledger at the day's start, the last position and 5-min fix, the day's counters
   const st = new Map(focalIds.map(f => { const c = idx0.byId.get(f.id)!, L = ix(c).en; return [f.id, { in0: L?.in ?? 0, fin0: L?.fin ?? L?.in ?? 0, out0: L?.out ?? 0, res0: L?.res ?? 0, px: c.position[0], pz: c.position[2], fx: c.position[0], fz: c.position[2],
-    cat: CATEGORIES.map(() => 0), light: 0, night: 0, nest: 0, m: 0, mf: 0 }]; }));
+    cat: CATEGORIES.map(() => 0), light: 0, night: 0, nest: 0, m: 0, mf: 0, fam: famNow(c), tgt: c.targetId, tripTo: -1, atW: false, trips: 0, drinks: 0, tripsDone: 0 }]; }));
   const ms: number[] = [], last = new Map<number, { ms: number; answer: KernelAnswer | null; sha: string; tokens: number }>();
   // the kernel, timed, with its raw answer kept for the receipt
   const timed: Kernel | null = kernel && { ...kernel, async decide(request, env) {
@@ -196,6 +206,14 @@ export async function runArm(base: World, name: string, spec: ArmSpec, days: num
           if (k < CATEGORIES.length) { s.cat[k]++; s.light++; }
         }
         if (night) { s.night++; if (inNest(c)) s.nest++; }
+        // stage R4b: trips to food begun and drinks, from the act the animal is in after this tick
+        const fam = famNow(c);
+        if (fam === 'food-trip' && (s.fam !== 'food-trip' || c.targetId !== s.tgt)) { s.trips++; s.tripTo = c.targetId; }
+        else if (fam !== 'food-trip' && s.tripTo >= 0) { if (c.action === 'forage' && c.targetId === s.tripTo) s.tripsDone++; s.tripTo = -1; }
+        s.fam = fam; s.tgt = c.targetId;
+        const site = c.action === 'drink' ? idx.waterById.get(c.targetId) : undefined, atW = !!site && (site.position[0] - c.position[0]) ** 2 + (site.position[2] - c.position[2]) ** 2 <= 1.44;
+        if (atW && !s.atW) s.drinks++;
+        s.atW = atW;
       }
       if (endOfDay) {
         const L = ix(c).en, cap = reserveCap(c, P), now = { in: L?.in ?? 0, fin: L?.fin ?? L?.in ?? 0, out: L?.out ?? 0, res: L?.res ?? 0 };
@@ -203,8 +221,8 @@ export async function runArm(base: World, name: string, spec: ArmSpec, days: num
           kcalIn: Math.round(now.in - s.in0), kcalFormula: Math.round(now.fin - s.fin0), kcalOut: Math.round(now.out - s.out0), reserveKcal: Math.round(now.res - s.res0), reservePct: +(100 * (now.res - s.res0) / cap).toFixed(4),
           min: Object.fromEntries(CATEGORIES.map((n, k) => [n, +(s.cat[k] * TICK_MIN).toFixed(2)])), daylightMin: +(s.light * TICK_MIN).toFixed(2),
           km: +(s.m / 1000).toFixed(4), kmFixes: +(s.mf / 1000).toFixed(4), nightMin: +(s.night * TICK_MIN).toFixed(2), nestShare: s.night ? +(s.nest / s.night).toFixed(4) : null,
-          waterDefMl: ix(c).wat ? Math.round(ix(c).wat!.def) : null });
-        Object.assign(s, { in0: now.in, fin0: now.fin, out0: now.out, res0: now.res, cat: CATEGORIES.map(() => 0), light: 0, night: 0, nest: 0, m: 0, mf: 0 });
+          waterDefMl: ix(c).wat ? Math.round(ix(c).wat!.def) : null, trips: s.trips, drinks: s.drinks, tripsDone: s.tripsDone });
+        Object.assign(s, { in0: now.in, fin0: now.fin, out0: now.out, res0: now.res, cat: CATEGORIES.map(() => 0), light: 0, night: 0, nest: 0, m: 0, mf: 0, trips: 0, drinks: 0, tripsDone: 0 });
       }
     }
     if (endOfDay) { dayHashes.push(worldHash(w)); opts.log?.(`${name} day ${day + 1}/${days}: ${Math.round((Date.now() - t0) / 1000)} s (kernel ${Math.round(kernelMs / 1000)} s, ${calls} calls${opts.guard ? `, ${opts.guard.timeouts - timeouts0} timeouts` : ''})`); }

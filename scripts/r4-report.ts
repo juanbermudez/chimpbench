@@ -69,8 +69,10 @@ if (process.argv[1]?.endsWith('r4-report.ts')) {
     if (m.size) S[p] = m;
   }
   const have = providers.filter(p => S[p]), trained = have.filter(p => p !== 'base');
-  const md: string[] = ['# R4 numbers: the offline evaluation on simulated contexts (generated)', '',
-    'Written by `scripts/r4-report.ts`; do not edit by hand. Registration: `docs/staging/r4-prereg.md` §6. Held-out contexts: seed 21, both bases. The input is the state-only packet unless a row says otherwise. Intervals: 95% bootstraps over animals (2,000 resamples). A difference is called one only if its paired interval excludes 0.', ''];
+  // stage R4b: --versus names an adapter every other adapter is also compared with (paired, as against the untuned model); --title and --note head the file
+  const versus = arg('versus', ''), later = versus && S[versus] ? trained.filter(p => p !== versus) : [];
+  const md: string[] = [`# ${arg('title', 'R4 numbers: the offline evaluation on simulated contexts')} (generated)`, '',
+    `Written by \`scripts/r4-report.ts\`; do not edit by hand. Registration: ${arg('note', '`docs/staging/r4-prereg.md` §6. Held-out contexts: seed 21, both bases.')} The input is the state-only packet unless a row says otherwise. Intervals: 95% bootstraps over animals (2,000 resamples). A difference is called one only if its paired interval excludes 0.`, ''];
   const json: Record<string, unknown> = { providers: have };
   const t = (h: string[], rows: (string | number)[][]) => { md.push('', `| ${h.join(' | ')} |`, `| ${h.map(() => '---').join(' | ')} |`, ...rows.map(r => `| ${r.join(' | ')} |`), ''); };
 
@@ -81,6 +83,13 @@ if (process.argv[1]?.endsWith('r4-report.ts')) {
   const sets: [string, R4Rec[]][] = [['draws', on.filter(r => r.draw)], ['kept or arrived', on.filter(r => !r.draw)], ['all', on],
     ['draws, base W50', on.filter(r => r.draw && r.base === 'W50')], ['draws, base W25', on.filter(r => r.draw && r.base === 'W25')],
     ...KINDS.map(k => [`draws: ${k}`, on.filter(r => r.draw && kindOf(r) === k)] as [string, R4Rec[]])];
+  if (versus) {
+    // stage R4b (prereg §6, T5): by what the rules decided, in any light; and by the part of the year-round set a record was drawn for
+    const fam = (r: R4Rec) => r.options[r.rgIndex].family, part = (r: R4Rec) => (r as R4Rec & { part?: string }).part;
+    sets.push(['draws: the rules feed where they stand', on.filter(r => r.draw && fam(r) === 'feed')], ['draws: the rules take a trip to food', on.filter(r => r.draw && fam(r) === 'food-trip')], ['draws: the rules drink', on.filter(r => r.draw && fam(r) === 'drink')],
+      ['all decision points: the rules take a trip to food', on.filter(r => fam(r) === 'food-trip')], ['all decision points: the rules drink', on.filter(r => fam(r) === 'drink')]);
+    for (const p of [...new Set(on.map(part).filter((x): x is string => !!x))].sort()) sets.push([`draws, part: ${p}`, on.filter(r => r.draw && part(r) === p)]);
+  }
   const agree: Record<string, unknown> = {};
   const rowsA: (string | number)[][] = [];
   for (const [name, set] of sets) {
@@ -89,9 +98,10 @@ if (process.argv[1]?.endsWith('r4-report.ts')) {
     const out: Record<string, unknown> = { n: set.length, chance };
     for (const p of have) { const s = clusterMean(set.filter(r => pickOf(p, r) >= 0).map(r => ({ cluster: cluster(r), v: +(pickOf(p, r) === r.rgIndex) }))); cells.push(show(s)); out[p] = s; }
     for (const p of trained) { const d = clusterMean(set.filter(r => pickOf(p, r) >= 0 && pickOf('base', r) >= 0).map(r => ({ cluster: cluster(r), v: +(pickOf(p, r) === r.rgIndex) - +(pickOf('base', r) === r.rgIndex) }))); cells.push(`${show(d)}${isDiff(d) ? ' **yes**' : ' no'}`); out[`${p} minus base`] = { ...d, isDifference: isDiff(d) }; }
+    for (const p of later) { const d = clusterMean(set.filter(r => pickOf(p, r) >= 0 && pickOf(versus, r) >= 0).map(r => ({ cluster: cluster(r), v: +(pickOf(p, r) === r.rgIndex) - +(pickOf(versus, r) === r.rgIndex) }))); cells.push(`${show(d)}${isDiff(d) ? ' **yes**' : ' no'}`); out[`${p} minus ${versus}`] = { ...d, isDifference: isDiff(d) }; }
     rowsA.push(cells); agree[name] = out;
   }
-  t(['decision points', 'n', 'chance', ...have.map(p => p === 'base' ? 'untuned' : p), ...trained.map(p => `${p} minus untuned (a difference?)`)], rowsA);
+  t(['decision points', 'n', 'chance', ...have.map(p => p === 'base' ? 'untuned' : p), ...trained.map(p => `${p} minus untuned (a difference?)`), ...later.map(p => `${p} minus ${versus} (a difference?)`)], rowsA);
   json.agreement = agree;
   // reference rows: the untuned model on the packet as served, and agreement with the rules' argmax
   const draws = on.filter(r => r.draw), refs: (string | number)[][] = [];
@@ -138,10 +148,11 @@ if (process.argv[1]?.endsWith('r4-report.ts')) {
       const b = clusterMean(set.map(r => ({ cluster: cluster(r), v: +(rmPick(p, r) === best(r)) })));
       const k = clusterMean(set.filter(r => r.withheldFamily).map(r => ({ cluster: cluster(r), v: +(kindOfFamily(r.options[rmPick(p, r)].family) === kindOfFamily(r.withheldFamily!)) })));
       const d = p === 'base' ? null : clusterMean(set.filter(r => rmPick('base', r) >= 0).map(r => ({ cluster: cluster(r), v: +(rmPick(p, r) === best(r)) - +(rmPick('base', r) === best(r)) })));
-      rowsR.push([p === 'base' ? 'untuned' : p, set.length, f3(mean(set.map(r => 1 / r.options.length))), show(b), d ? `${show(d)}${isDiff(d) ? ' **yes**' : ' no'}` : '', show(k)]);
-      rj[p] = { n: set.length, bestRemaining: b, minusBase: d, sameKind: k };
+      const dv = later.includes(p) ? clusterMean(set.filter(r => rmPick(versus, r) >= 0).map(r => ({ cluster: cluster(r), v: +(rmPick(p, r) === best(r)) - +(rmPick(versus, r) === best(r)) }))) : null;
+      rowsR.push([p === 'base' ? 'untuned' : p, set.length, f3(mean(set.map(r => 1 / r.options.length))), show(b), d ? `${show(d)}${isDiff(d) ? ' **yes**' : ' no'}` : '', show(k), ...(versus ? [dv ? `${show(dv)}${isDiff(dv) ? ' **yes**' : ' no'}` : ''] : [])]);
+      rj[p] = { n: set.length, bestRemaining: b, minusBase: d, sameKind: k, ...(dv ? { [`minus ${versus}`]: dv } : {}) };
     }
-    t(['model', 'n', 'chance', 'picks the best remaining option', 'minus untuned (a difference?)', 'pick of the same kind as the removed one'], rowsR);
+    t(['model', 'n', 'chance', 'picks the best remaining option', 'minus untuned (a difference?)', 'pick of the same kind as the removed one', ...(versus ? [`minus ${versus} (a difference?)`] : [])], rowsR);
     json.removed = rj;
   }
 
