@@ -138,6 +138,7 @@ export async function runArm(base: World, name: string, spec: ArmSpec, days: num
   if (days > MAX_DAYS) throw new Error(`at most ${MAX_DAYS} days per run (docs/staging/r5-pilot-prereg.md)`);
   if ((spec.kernel === 'rules') !== (kernel === null)) throw new Error(`arm ${name}: a kernel is needed for every arm but the rules`);
   const w = armWorld(base, spec), P = paramsOf(w), idx0 = index(w), t0 = Date.now(), startHash = worldHash(w);
+  const timeouts0 = opts.guard?.timeouts ?? 0, starts0 = opts.guard?.starts ?? 0; // the guard serves every arm of a process: count this arm's own
   const focal = new Map(focalIds.map(f => [f.id, f])), names = new Map(focalIds.map(f => [f.id, idx0.byId.get(f.id)!.name]));
   const rows: DayRow[] = [], dec = new Map<number, Decisions>(focalIds.map(f => [f.id, { id: f.id, name: names.get(f.id)!, cls: f.cls, points: 0, kernel: 0, fallbacks: {}, gateKept: 0, interrupts: 0, rulesDecisions: 0, withRulesPick: 0, agree: 0, picks: {}, rulesPicks: {} }]));
   // running state per focal animal: the ledger at the day's start, the last position and 5-min fix, the day's counters
@@ -206,12 +207,12 @@ export async function runArm(base: World, name: string, spec: ArmSpec, days: num
         Object.assign(s, { in0: now.in, fin0: now.fin, out0: now.out, res0: now.res, cat: CATEGORIES.map(() => 0), light: 0, night: 0, nest: 0, m: 0, mf: 0 });
       }
     }
-    if (endOfDay) { dayHashes.push(worldHash(w)); opts.log?.(`${name} day ${day + 1}/${days}: ${Math.round((Date.now() - t0) / 1000)} s (kernel ${Math.round(kernelMs / 1000)} s, ${calls} calls${opts.guard ? `, ${opts.guard.timeouts} timeouts` : ''})`); }
+    if (endOfDay) { dayHashes.push(worldHash(w)); opts.log?.(`${name} day ${day + 1}/${days}: ${Math.round((Date.now() - t0) / 1000)} s (kernel ${Math.round(kernelMs / 1000)} s, ${calls} calls${opts.guard ? `, ${opts.guard.timeouts - timeouts0} timeouts` : ''})`); }
   }
   const deaths = w.chimps.filter(c => !c.alive && c.deathTime !== null && c.deathTime >= base.time).map(c => ({ id: c.id, cause: c.causeOfDeath }));
   const mean = ms.length ? ms.reduce((a, b) => a + b, 0) / ms.length : null;
   return { arm: name, spec, seed: w.seed, days, replay: !!opts.replay, seconds: Math.round((Date.now() - t0) / 1000), kernelSeconds: Math.round(kernelMs / 1000), calls,
-    msMedian: quantile(ms, 0.5), msMean: mean, msP95: quantile(ms, 0.95), timeouts: opts.guard?.timeouts ?? 0, workerStarts: opts.guard?.starts ?? 0,
+    msMedian: quantile(ms, 0.5), msMean: mean, msP95: quantile(ms, 0.95), timeouts: (opts.guard?.timeouts ?? 0) - timeouts0, workerStarts: (opts.guard?.starts ?? 0) - starts0,
     replayMissing: opts.replay?.missing ?? 0, replayMenuDiffers: opts.replay?.menuDiffers ?? 0, startHash, endHash: worldHash(w), dayHashes, deaths, rows, decisions: [...dec.values()] };
 }
 

@@ -92,6 +92,10 @@ if (process.argv[1]?.endsWith('r5-report.ts')) {
   md.push('## Runs', '');
   md.push('| seed | head | clean tree | burn-in (days) | window (days) | burn-in hash | base | focal animals |', '|---|---|---|---|---|---|---|---|');
   for (const r of ref) md.push(`| ${r.seed} | ${r.head} | ${r.dirty ? 'no' : 'yes'} | ${r.burnIn} | ${r.days} | ${r.burnInHash} | ${r.paramsFile.replace(/^.*\//, '')} | ${r.result.decisions.map(d => `${d.name} (${d.cls})`).join(', ')} |`);
+  // each arm's own commit: model arms cannot be run again, so they keep the head they ran at (replays and no-model arms are re-run at the latest)
+  const byHead = new Map<string, string[]>();
+  for (const [a, fs] of files) for (const x of fs) { const k = `${x.head}${x.dirty ? ' (tree not clean)' : ''}`; byHead.set(k, [...(byHead.get(k) ?? []), `${a} (seed ${x.seed})`]); }
+  md.push('', `Commit each arm ran at (the table above shows the rules arm's): ${[...byHead].map(([h, v]) => `${h}: ${v.join(', ')}`).join('; ')}.`);
   md.push('', '## Season of the window (phenology crop inside the focal community\'s range, before depletion; no simulation)', '');
   md.push('| seed | window | days from the start | mean crop | against the year\'s mean | share of the year\'s days below it | word (thirds of the year) |', '|---|---|---|---|---|---|---|');
   for (const r of ref) for (const [k, w] of Object.entries(r.season.windows)) md.push(`| ${r.seed} | ${k} | ${w.fromDay} to ${w.toDay} | ${w.mean} | ${f(w.relativeToYearMean)} | ${f(w.rankInYear)} | ${w.word} |`);
@@ -149,8 +153,8 @@ if (process.argv[1]?.endsWith('r5-report.ts')) {
     md.push(`| ${WHAT[a] ?? a} | ${acts} | ${points || '–'} | ${points ? kernel : '–'} | ${points ? f(kernel / acts, 3) : '–'} | ${kept || '–'} | ${points ? fell : rules} | ${Object.entries(fb).map(([k, v]) => `${k} ${v}`).join('; ') || (points ? 'none' : 'the rules decide everything')} | ${wp ? `${f(sum(x => x.agree) / wp, 3)} of ${wp}` : '–'} | ${points ? `${stale}${gated && !split ? ' (not split from the gate\'s count)' : ''}` : '–'} |`);
   }
 
-  md.push('', '## Time', '', '| arm | seed | wall time, s | time in the kernel step, s | kernel calls | s per decision: median | mean | 95th percentile | timeouts | worker starts |', '|---|---|---|---|---|---|---|---|---|---|');
-  for (const [a, fs] of files) for (const x of fs) { const r = x.result; md.push(`| ${WHAT[a] ?? a} | ${x.seed} | ${r.seconds} | ${r.kernelSeconds} | ${r.calls} | ${r.msMedian === null ? '–' : f(r.msMedian / 1000, 3)} | ${r.msMean === null ? '–' : f(r.msMean / 1000, 3)} | ${r.msP95 === null ? '–' : f(r.msP95 / 1000, 3)} | ${r.timeouts} | ${r.workerStarts} |`); }
+  md.push('', '## Time', '', 'Timeouts are counted from the decisions that went to the rules for one (the worker\'s own counter runs on through the arms of one process).', '', '| arm | seed | wall time, s | time in the kernel step, s | kernel calls | s per decision: median | mean | 95th percentile | timeouts |', '|---|---|---|---|---|---|---|---|---|');
+  for (const [a, fs] of files) for (const x of fs) { const r = x.result; md.push(`| ${WHAT[a] ?? a} | ${x.seed} | ${r.seconds} | ${r.kernelSeconds} | ${r.calls} | ${r.msMedian === null ? '–' : f(r.msMedian / 1000, 3)} | ${r.msMean === null ? '–' : f(r.msMean / 1000, 3)} | ${r.msP95 === null ? '–' : f(r.msP95 / 1000, 3)} | ${r.decisions.reduce((n, d) => n + (d.fallbacks['kernel-error: timeout'] ?? 0), 0)} |`); }
 
   // what each kernel chose, from the receipts: families of the applied choices against the rules' pick on the same menus
   const receipts = (seed: number, a: string) => { const p = join(dir, `s${seed}`, `${a}.receipts.jsonl`); return existsSync(p) ? readFileSync(p, 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l) as Receipt) : []; };

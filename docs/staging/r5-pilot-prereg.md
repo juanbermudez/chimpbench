@@ -215,9 +215,9 @@ Neither change touches the world: the no-model arms are run again at the new hea
   Result (18:36, head 875f370): every arm ended on the hash it had before the change (`rules` 10d4ef4232f7486d,
   `null` f8e6f47a3103781b, `argmax` 10fcc0bfa1a876ec, `null-nopick` 24a28bf7ca67168e, `null-gate` 78e443c347239686,
   `argmax-gate` e5fccf2997ba48e8, the three re-draws likewise), and the replay of each of the five kernel arms ended
-  on its run's hash. The refused body field is `awakeH` (hours awake): under random choice with the pick removed the
-  lactating female stayed awake 60 to 80 hours, past the range the request validation accepts, so her requests went
-  to the rules.
+  on its run's hash. The refused body field is `awakeH` (waking hours left, as the sleep state implies them): under random choice with the pick removed the
+  lactating female, who did not nest, carried a waking-hours value of 60 to 82 (the validation accepts 0 to 48), so
+  her requests went to the rules.
 
 **Result of iteration 2 (18:33 to 19:35; started at head 1a593c1, clean tree; one worker process, no timeout, no
 restart).** `trained`: 2,362 kernel calls in 1,285 s (21 min). `untuned`: 4,766 calls in 2,424 s (40 min): its animals
@@ -260,3 +260,161 @@ focal animals Tavuni (alpha), Sanaki, Lwazo (lactating), Fumbira, Dembiri of tha
 - **Iteration 4 (logged before it runs; no model): at the new head, both seeds, the rules and no-model arms again and
   the replay of every kernel arm** (the water readout; the hashes must equal those of iteration 3), then
   `scripts/r5-deaths.ts` and the three reports (seed 48, seed 7, both pooled).
+  Result (22:37 to 22:41, head 23025be; no model). All 42 output files ended on the hashes they had before the
+  change; the 17 replays (every kernel arm of both seeds) reproduced their runs' worlds, every day's hash equal, no
+  receipt missing, no menu different. The reports and the deaths diagnostic were written.
+
+## 7. Results (7 October 2026; every number is from `scripts/r5-report.ts` or `scripts/r5-deaths.ts`)
+
+Tables: `docs/staging/r5-pilot-numbers.md` (both seeds, ten animals pooled), `r5-pilot-numbers-s48.md` and
+`r5-pilot-numbers-s7.md` (five animals each), `r5-pilot-deaths.md`. Outputs, receipts and replays:
+`artifacts/r5/pilot/` in this worktree (gitignored; the burn-in worlds are in `artifacts/r5/`).
+
+What ran: seed 48 (the registered pilot) with every arm; seed 7 with the four arms and the no-model references (not
+the gate or pick-removed model arms). 7 model arms, 3 h 58 min of model time, one model process at a time, 1 call of
+27,329 past the 120 s limit.
+
+### 7.1 The answer
+
+**When the trained model chooses, the five animals of each seed live much as the rules-driven ones do, with one
+shortfall: they feed a little less.** The untuned model does not come close, and random choice does not either.
+
+Means over ten focal animals (two seeds, five days each), the rules' pick kept on the menu, the gate off:
+
+| | the rules | random | untuned | trained |
+| --- | --- | --- | --- | --- |
+| energy eaten, kcal a day | 1,660 | 1,682 | 626 | 1,544 |
+| reserves, % of the usual store a day | +0.01 | −0.35 | −1.61 | −0.10 |
+| feeding, daylight minutes a day | 241 | 319 | 79 | 211 |
+| travelling | 70 | 96 | 15 | 89 |
+| resting | 240 | 174 | 304 | 254 |
+| grooming | 90 | 64 | 153 | 96 |
+| agonistic | 2 | 6 | 52 | 0 |
+| distance, km a day | 2.90 | 4.05 | 0.95 | 3.08 |
+| nights in a nest | 50 of 50 | 24 of 50 | 39 of 50 | 50 of 50 |
+
+By the words fixed in §4, against the rules arm on the same animals and days (pooled; "noise" is the largest
+difference of three rules re-draws):
+
+- **Trained, close to the rules:** energy out (−35 kcal), resting (+14 min), grooming (+6 min), other social time,
+  distance (+0.18 km; noise 0.51), nights in a nest (50 of 50).
+- **Trained, differs:** feeding time, **−29 minutes a day (−39 to −20; all ten animals below their rules selves)**;
+  energy eaten, **−116 kcal a day, 7% less (−184 to −48; all ten below)**; reserves, −0.11% of the store a day
+  (−0.22 to −0.01); agonistic time (0 against 2 minutes).
+- **Trained, not resolved:** travelling time (+19 min, −0.2 to +38).
+- On seed 48 alone (the registered pilot, five animals) the intake difference is −79 kcal (−181 to +24) and reads
+  "close"; feeding time differs there too (−22 min, −34 to −10). On seed 7 alone intake differs (−153, −277 to −29).
+- **Untuned differs on almost everything:** it eats 38% of the rules' energy (626 kcal; all ten animals far below),
+  loses 1.6% of its store a day, walks a third as far, grooms and fights instead, and is out of a nest on 11 of 50
+  nights. The lactating female of seed 7 ate nothing for five days (2 feeding minutes a day). This repeats M3.
+- **Random choice** eats as much as the rules in a third more feeding time, rests an hour less, walks 1.2 km further,
+  loses 0.35% of its store a day and nests on 24 of 50 nights. This repeats R1b on five animals.
+
+Predictions written in §4, checked: the trained model feeds less and takes in less (yes); every kernel arm with the
+gate off walks more than the rules (the no-model `argmax` arm does, +1.6 km; **the trained arm does not**, see 7.3);
+trained animals nest (yes); untuned underfeeds and over-chooses social and aggressive acts (yes); random feeds for
+more minutes and rests less (yes).
+
+### 7.2 Who decided
+
+With the pick kept and the gate off the trained model's choice was applied at **4,964 of 5,007 decision points
+(99.1%)**. The other 43 went to the rules because the answer was no longer legal when it was applied (an interrupt had
+made the request stale, or an earlier answer of the same step had changed the menu). No invalid answer, no menu with
+fewer than two options, no timeout in the four main arms. Untuned: 9,971 of 9,997 (its animals reach twice as many
+decision points); random: 5,320 of 5,355. With the gate on (seed 48) the trained model settled 1,678 of 2,285 new acts
+(73%); the gate kept 593 without asking and 14 went to the rules (13 stale, 1 timeout).
+
+Time: a median of 0.49 to 0.54 s per decision. Per arm, seed and five days: trained 21 and 26 minutes, trained with
+the gate 20, trained with the pick removed 34, untuned 40 and 41, untuned with the gate 57. The no-model arms take
+5 s.
+
+### 7.3 What the loop shows that the offline test did not
+
+1. **It rarely sets off for food.** In the loop the trained model takes the rules' pick at 0.53 of its choices
+   (offline: 0.61 on held-out draws; with the gate on, the setting nearest the offline one, 0.58). By the kind the
+   rules picked: the nest 1.00, a social act 0.64, moving with others 0.60, rest 0.54, feeding where it stands 0.42,
+   **a trip to a remembered food tree 0.19** (0.35 with the gate on). When the rules would walk to food it feeds where
+   it is (0.24), grooms (0.20) or rests (0.19) instead. Offline this sat inside "feeding 0.37". In the loop it is the
+   reason the animals feed half an hour less.
+2. **The loop covers much of the gap.** With half its choices different from the rules', the animals still eat 93% of
+   the rules' energy and keep the day's shape: hunger rises, the menu changes, others lead to food (it joins others'
+   moves at 0.63). Agreement understates how close behaviour is; it also hides which misses matter.
+3. **It skips drinking.** When the rules' pick is to drink (227 times), the trained model drinks at 0.13 and goes to,
+   or stays in, the nest at 0.55 (0.78 with the gate on). Exploratory readout (amendment A3): its animals end the day
+   with a water deficit of 742 mL against 573 (+169, +23 to +315; nine of ten above), steady over the five days, not
+   growing. Per seed alone this is not resolved.
+4. **The distance looks right for a mixed reason.** The loop alone (`argmax`: the rules' top option, asked at every
+   decision point, holding no intention) walks 1.6 km a day further than the rules, as M3 found. The trained model
+   with the gate off does not (+0.18 km), because it starts few trips. With the gate on (seed 48) the trained arm and
+   its own no-model reference agree on every measure (energy eaten +3 kcal, feeding −9 min, distance 0.00 km; no
+   interval excludes 0); against the rules it reads as the main arm does (feeding −24 min, differs; the rest close or
+   not resolved). The gate arm is the cleaner comparison.
+5. **Without the rules' pick it loses the night, and the test cannot say why.** With the pick removed (seed 48) the
+   trained animals nest on 7 of 25 nights and walk 5.4 km a day. But the nest was on only 6% of their dusk and night
+   menus (98% on the same seed with the pick kept): at dusk the rules' pick is the nest, and removing the pick removes the nest. So
+   "removed" does not test whether the engine would nest; it takes the option away. By day the trained animals still
+   eat as much as the rules (1,732 kcal), travel far more (+127 min) and spend 273 kcal a day more.
+6. **A validation range can hand an animal back to the rules silently.** An animal that has gone without a night's
+   sleep gets a body field (`awakeH`, the waking hours left as its sleep state implies them) of 60 to 82 hours,
+   outside the 0 to 48 the request validation accepts; every request is then refused and the rules decide. It happened 118 times to the untuned model with the gate on (3 times with it off)
+   and 157 times to random choice with the pick removed; never to the trained model.
+7. **The untuned model doubles the cost**: its animals re-decide constantly (up to 2,000 decision points a day
+   against about 500).
+
+### 7.4 Deaths
+
+No focal animal died in the four main arms. On seed 48 one animal died in each of three worlds on the fourth
+morning: an infant of another community (`trained`), an infant of the focal community that is no focal animal's
+(`untuned`), and **the focal male Koruza (`trained-gate`)**. All three are one event: every arm of a seed continues
+the same random sequence, and its 183,030th draw is 1.3e-7, below the death chance of a healthy animal at one slow
+step (2.3e-7 for that male, 1.4e-6 for an infant). All 14 seed-48 worlds meet that draw on the fourth morning; in
+three it fell on an animal's death check. Each animal was at full health and uninjured the tick before
+(`r5-pilot-deaths.md`). Seed 7's sequence holds no such value in the window and no animal died. So these deaths say
+nothing about the engine. Koruza's last two days are missing from the gate arm (23 nights, not 25); the paired
+comparison uses the days both arms have.
+
+### 7.5 The receipt log
+
+Every kernel pass of every arm is logged. **A replay from the log reproduces the world**: all 17 kernel arms, both
+seeds, end on the run's hash with every day's hash equal, and the three worlds with a death reproduce the death. The
+model's answers themselves are not guaranteed to repeat on another machine or another day (half precision on the
+GPU), which is why the log, not a re-run, is the audit trail. A test shows one changed answer gives another world.
+
+### 7.6 What this pilot is too small to show
+
+- **Size.** Ten animals in two worlds, five days. Pooled, it can show a difference of about 68 kcal a day in intake,
+  9 minutes of feeding, 20 of travel, 0.7 km; on one seed about 100 to 125 kcal, 12 to 15 minutes, 1.3 km. Anything
+  smaller is invisible. "Close" is not "equal".
+- **Time.** Five days cannot show survival, reproduction, growth, or where a 7% intake shortfall and a reserve slope
+  of −0.1% a day lead. Hunts, patrols, encounters and every community-level row are out of reach.
+- **Season.** Seed 48's window is a rich stretch and seed 7's a middle one. No lean stretch, no hot day: the two
+  states the adapter does not answer to offline were not met. (By the same crop index seed 7's training windows fall
+  in the lower third of its year, 0.80 of the mean, though R4 found no run-down animal in them: the word describes
+  the crop, not the body.)
+- **Familiar animals.** Seeds 48 and 7 are the adapter's training seeds; these are animals it saw 16 days earlier.
+- **One base** (swallowed share 0.5); the 0.25 base was not run. The gate and pick-removed model arms are one seed.
+- **The rest of the world is on the rules.** Five model-driven animals among about 120 follow parties the rules lead.
+  A whole community on the model may behave differently; this pilot cannot say.
+
+### 7.7 Confidence
+
+- High: the untuned model cannot drive the animals; the trained one keeps them fed, moving, resting and nesting
+  within about 10% of the rules' animals over five days in good seasons; a replay from the receipts reproduces a run.
+- Moderate: the trained model's animals eat about 7% less, because it rarely starts a trip to food (ten of ten
+  animals, both seeds; one seed alone does not resolve the intake).
+- Low: the water deficit (added after the fact); everything about the gate and pick-removed arms beyond their
+  direction (one seed, five animals); any forecast past five days.
+
+### 7.8 Open for the user
+
+1. **Next step for the engine.** Retrain first (contexts where the rules walk to food or drink, plus lean and hot
+   days), or first run the present adapter longer or on a whole community? A whole community for five days is about
+   3 to 4 hours per arm on this Mac (R4's estimate, consistent with 0.5 s per decision here).
+2. **The second number.** "Removed" takes the nest off the night menu. Keep it for daytime rows only, or redefine it
+   so another option of the same act stays?
+3. **The gate.** With the gate on the trained arm matches its no-model reference and the rules; with it off the loop
+   itself adds walking. Make gate on the standard for engine comparisons?
+4. **Waking hours.** Should the request validation accept (or cap) a waking-hours value above 48, so an engine that
+   keeps an animal out of its nest is not silently replaced by the rules?
+5. **One shared random sequence across arms.** A rare draw lands in every arm at the same hour. For comparisons that
+   count deaths, arms need their own draws (for example a salt per arm) or several re-draws each.
