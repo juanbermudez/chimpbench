@@ -419,7 +419,7 @@ GPU), which is why the log, not a re-run, is the audit trail. A test shows one c
 5. **One shared random sequence across arms.** A rare draw lands in every arm at the same hour. For comparisons that
    count deaths, arms need their own draws (for example a salt per arm) or several re-draws each.
 
-### Checks at the end (7 October 2026, 22:50; no model process running)
+### Checks at the end (7 October 2026, 22:47; no model process running)
 
 `tsc --noEmit -p .` clean; `gen-params --check` clean (1,044 entries); `tests/r5-pilot.test.ts` 5 of 5, and with
 `tests/kernel.test.ts`, `tests/em-*.test.ts`, `tests/ft-*.test.ts`, `tests/sim-track-e.test.ts`,
