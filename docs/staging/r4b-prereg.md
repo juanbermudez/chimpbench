@@ -661,3 +661,14 @@ against trained" and the three-part rule of 11.4 (`r4cVerdict`). `tests/r4b.test
   starting when the one before ends, **iteration C3** (`scripts/r4c-run.sh offline`: A, B, parity, wild) and
   **iteration C4** (`scripts/r4c-run.sh loop 21 standard`, `loop 5 standard`, `loop 21 lean`). The swap check is
   written to each log before each model run.
+
+**Result of iteration C2: `r4c-rules-state` trained (07:38 to 12:14; no memory failure, first attempt).** 6,122
+labelled contexts, 3 epochs, 18,366 examples shown: **15,373 s of training (4 h 16 min), 16,133 s of wall time (4 h
+29 min); 0.84 s per example; peak MPS driver memory 6.0 GiB, peak process footprint 6.8 GiB**; 0 batches retried.
+Swap in use 3,023 MB before, 4,602 MB after (under the 6 GB line). On R4's dev file (292 contexts of 15 animals,
+chance 0.20; untuned 0.363): epoch 1 0.575, epoch 2 0.620, epoch 3 0.586; loss 1.77 → 1.04, 0.92, 0.91. **The saved
+epoch is 3** (the lowest dev loss, the registered rule), although epoch 2 agreed more often; R4 itself ended at 0.637
+and a loss of 0.93 on the same file. Adapter sha256 `f0827af2…9d1d`; the manifest carries the label source, the
+parts and their hashes, 0 removed wordings and `labels_from_jev_or_an_outside_model: false`. The clock times written
+in §11's heading and in the lines of iterations C1 and C2 were a few minutes ahead of the machine's; the logs under
+`artifacts/decide-ft/r4c/logs/` carry the exact ones. Iteration C3 began at 12:14 by itself.
