@@ -20,7 +20,7 @@ import { buildRequest } from '../src/sim/request';
 import { rgTap } from '../src/sim/rg';
 import { TICK_HOURS } from '../src/sim/state';
 import { createWorld, tickWorld } from '../src/simulation';
-import type { Action, Candidate, Chimp, DecisionContext } from '../src/types';
+import type { Action, Candidate, Chimp, DecisionContext, World } from '../src/types';
 import { worldHash } from '../tests/fixtures/golden';
 import { classOf, familyOf } from './em-sample';
 import { buildStateOnlyQuestion, removedWordingsIn, STATE_PACKET_VERSION, tokensOf } from './lib/packet-state';
@@ -66,7 +66,9 @@ export interface R4Rec {
   context?: DecisionContext;
 }
 
-export interface SampleOpts { seed: number; base: string; params: Record<string, number>; burnIn: number; days: number; p: number; keepContext?: boolean; noRulesPick?: boolean; check?: boolean; log?: (s: string) => void }
+export interface SampleOpts { seed: number; base: string; params: Record<string, number>; burnIn: number; days: number; p: number; keepContext?: boolean; noRulesPick?: boolean; check?: boolean; log?: (s: string) => void;
+  /** Stage R4b (scripts/r4b-contexts.ts): each record is handed over with its context instead of being kept (a year's pool does not sit in memory); the served v4 packet is left out; a hook after every sampled tick (the census). All read only. */
+  onRec?: (rec: R4Rec, ctx: DecisionContext) => void; noV4?: boolean; onTick?: (w: World, i: number) => void }
 
 export function sampleR4(o: SampleOpts): { recs: R4Rec[]; hash: string; decisions: Record<string, number>; seconds: number; skipped: Record<string, number> } {
   if (![...TRAIN_SEEDS, ...TEST_SEEDS].includes(o.seed)) throw new Error(`seed ${o.seed}: 48 and 7 (train, dev) and 21 (test) only (docs/staging/r4-prereg.md §3)`);
@@ -100,14 +102,15 @@ export function sampleR4(o: SampleOpts): { recs: R4Rec[]; hash: string; decision
     const packet = buildStateOnlyQuestion(p.req.context), found = removedWordingsIn(packet);
     if (found.length) throw new Error(`a state-only packet holds a removed wording (${found.join(', ')}) at tick ${w.tick}, chimp ${c.id}`);
     const rgIndex = p.req.options.findIndex(k => key(k) === key(chosen));
-    recs.push({ id: `${o.seed}-${o.base}-${w.tick}-${c.id}`, split: splitOf(o.seed, c.id), seed: o.seed, base: o.base, tick: w.tick, time: +w.time.toFixed(4), hour: +w.hour.toFixed(3), phase: dayPhase(w),
+    const rec: R4Rec = { id: `${o.seed}-${o.base}-${w.tick}-${c.id}`, split: splitOf(o.seed, c.id), seed: o.seed, base: o.base, tick: w.tick, time: +w.time.toFixed(4), hour: +w.hour.toFixed(3), phase: dayPhase(w),
       daylight: +w.environment.daylight.toFixed(3), chimpId: c.id, name: c.name, cls: classOf(c), age: +c.age.toFixed(2), sex: c.sex,
       why, draw: why !== 'kept' && why !== 'arrived', rgIndex, pick: rgIndex >= 0 ? `c${rgIndex}` : null, rulesIndex: p.req.rulesIndex,
       ...(p.withheld ? { withheldFamily: fam(all.find(a => key(a) === key(p.withheld!)) ?? p.withheld) } : {}),
-      options, packet, packets: o.noRulesPick ? { removed: packet } : { state: packet, v4: buildLocalQuestion(p.req.context) }, tokens: tokensOf(packet),
-      ...(o.keepContext ? { context: p.req.context } : {}) });
+      options, packet, packets: o.noRulesPick ? { removed: packet } : o.noV4 ? { state: packet } : { state: packet, v4: buildLocalQuestion(p.req.context) }, tokens: tokensOf(packet),
+      ...(o.keepContext ? { context: p.req.context } : {}) };
+    if (o.onRec) o.onRec(rec, p.req.context); else recs.push(rec);
   };
-  try { for (let i = 0; i < Math.round(o.days * DAY); i++) { tickWorld(w); if (o.log && i > 0 && i % DAY === 0) o.log(`sampled day ${i / DAY}: ${recs.length} records`); } }
+  try { for (let i = 0; i < Math.round(o.days * DAY); i++) { tickWorld(w); o.onTick?.(w, i); if (o.log && i > 0 && i % DAY === 0) o.log(`sampled day ${i / DAY}: ${recs.length} records`); } }
   finally { rulesTap.fn = null; rgTap.fn = null; }
   const hash = worldHash(w);
   if (o.check) {

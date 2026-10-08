@@ -224,3 +224,17 @@ B's token counts; the lean window. The adapter with evaluation A and the standar
 
 Machine at registration (8 October 2026, 00:13): load averages 2.84, 2.82, 2.79; swap 3,778 MB used of 5,120 MB; no
 model process running.
+
+**Code delivered before any run** (all outside `src/`): `scripts/r4b-contexts.ts` (the year sampler and census),
+`r4b-assemble.ts` (day and situation classes, the splits, the data manifest), `r4b-evalset.ts`, `r4b-eval.sh`,
+`r4b-loop.ts`; `tests/r4b.test.ts` (4 tests). Changed, with their old behaviour kept when the new options are not
+given: `scripts/r4-contexts.ts` (three read-only hooks for the year sampler), `r4-report.ts` and `r4-wild-report.ts`
+(`--versus`: each adapter also paired with a named one; rows by what the rules decided and by part), `r5-pilot.ts`
+(the arm `retrained`; trips to food begun and drinks counted per animal-day; `tripsDone`, trips that ended feeding in
+the tree set out for, is an extra counter labelled exploratory: with the gate off a model is asked again on the way
+and can "begin" one trip twice), `r5-report.ts` (the new arm and measures, and the table with the words of §7).
+`tsc` clean; `tests/r4b.test.ts`, `tests/r4-packet.test.ts`, `tests/r5-pilot.test.ts`: 16 tests, 16 pass.
+
+- **Iteration 0 (logged before it runs): the smoke check of the sampler.** Seed 48, W50, 2 days after 6 of burn-in,
+  p 0.03, `--check` (the tapped world against the base alone), output under `artifacts/decide-ft/r4b/smoke/`. It gives
+  the seconds per simulated day and the records per day; no number of it is used for anything else. No model.
