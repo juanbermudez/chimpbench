@@ -329,3 +329,16 @@ contexts of 15 animals never trained on, the year-round mix; chance 0.19): untun
 Adapter sha256 `82e329e9…8d0a`; the manifest carries the label source, the parts, 0 removed wordings and
 `labels_from_jev_or_an_outside_model: false`. These are dev numbers; the held-out sets are below.
 Iteration 4 began at 03:25 by itself when the training process ended (swap 3,730 MB in use).
+
+**Result of iteration 4 (03:25 to 05:16; one model process at a time; swap 3.7 GB in use before each, no hold).**
+A: 4,641 packets for `r4b-rules-state` in 2,725 s (0.59 s a packet). B: 1,500 packets each for the untuned model,
+`r4-rules-state` and `r4b-rules-state` in 1,065, 1,090 and 1,126 s. Token counts of B's packets on the CPU: 91 s.
+Parity: `PARITY OK` on 12 r4b dev contexts (equal token ids, probability gap 0). Wild choices, development part,
+`r4b-rules-state` plain and fanned out: 7 minutes. Tables: `docs/staging/r4b-numbers-a.md`, `r4b-numbers-b.md`,
+`r4b-wild-numbers.md`. Results in the section below, after the loop.
+
+- Iteration 5 began at 05:16 at head e610563 (clean tree; the worker loaded `r4-rules-state` e09fd6f4…1932 and
+  `r4b-rules-state` 82e329e9…8d0a on MPS; swap 3,722 MB in use, load 1.9).
+- **Iteration 6 (logged before it runs): seed 5, the standard window** (`scripts/r4b-chain.sh nomodel 5 standard`,
+  then `model 5 standard`), queued to start when iteration 5 ends. Seed 5 was never trained on; it is a development
+  seed (`AGENTS.md`), not reserved or retired. Its window's season is read from its rules arm.
