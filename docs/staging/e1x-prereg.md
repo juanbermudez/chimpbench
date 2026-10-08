@@ -409,3 +409,89 @@ R on fruit only and on the lean-season diet (fallback 29%). "Gap closed" = the c
 | Y3-W50-gut875 (gutSizeExp 0.875) | 1.06 | 1.08 | 1.09 | 1.22 | +52 | 0.98 | 0.99 | 1.01 | 1.12 | −19 | 0.95 |
 | Y3-W50-walk (walkCostSizeExp −0.316) | 0.97 | 1.00 | 1.04 | 1.22 | −28 | 0.89 | 0.92 | 0.96 | 1.12 | −93 | 0.87 |
 | Y3-W50-gut75-walk (gutSizeExp 0.75 and walkCostSizeExp −0.316) | 1.12 | 1.13 | 1.13 | 1.22 | +111 | 1.04 | 1.04 | 1.05 | 1.12 | +33 | 1.01 |
+
+## 6. The build (code 58aed13; iteration 1 of 3)
+
+| id | default | range | hard range | label | read only with | what it scales |
+| --- | --- | --- | --- | --- | --- | --- |
+| `gutSizeExp` | 1 (today) | 0.75 to 1 | 0.5 to 1 | **design assumption**, input range, `calibrationExcluded` | `energyLedger`, `ledgerDigesta` | foregut and hindgut dry-matter capacity = the per-kg capacity × 31.3 × (mass ÷ 31.3)^it below 31.3 kg; × mass at and above |
+| `walkCostSizeExp` | 0 (today) | −0.316 to 0 | −1 to 0 | **design assumption**, input range, `calibrationExcluded` | `energyLedger` | walking cost per kg and metre × (mass ÷ 31.3)^it below 31.3 kg on the animal's own legs; × 1 at and above, for climbing and for a load carried |
+
+- **Code** (`src/sim/energy.ts`): `sizedKg` and `gutSizeKg` (the mass that sizes the gut; `gutKg` multiplies a lactating
+  female's term onto it as before), read by every capacity (`digestaCaps`, `gutCap`, `gutRoom`, `eat`, `gutBout`, the
+  hindgut brake of `energyTick`, the fill readout), and now also by the two places that sized a young animal's gut from
+  its mass directly (`nurseBoutWorth`, `sharePlant`; equal at the default). `walkSize`: the factor on the ground term
+  of `energyTick`, of `locomotionKcal` (the trip cost the forager weighs) and, as the carrier's factor, of `rideTick`
+  and the new `loadKcal`, which `src/sim/gait.ts` `riderKcal` now calls (a carried infant is a load, charged at its
+  carrier's cost; equal to the old call at the default). At the defaults the code path multiplies by 1 or returns the
+  mass itself: no random draw, no state, no new key.
+- **Registry and ledger.** `data/params.json` (two entries, evidence design, `calibrate` false, refs to research.md),
+  `src/sim/params.gen.ts`, `docs/simulation.md` §17 (two rows) and one paragraph. `scripts/lib/prescriptions.ts`: both
+  classed **input** (kind "body scaling", marked as judgement calls; reason "design assumption: …"), each active only
+  with its switches. The count does not move: S39 42 at every value (`decision-guide --check` agrees).
+- **Tests** (`tests/sim-e1x.test.ts`, 10, all pass): the defaults in both profiles; at the defaults, and with both set
+  explicitly to 1 and 0, S39's world and every animal's decision values at ticks 6720 and 8160 are the pins recorded
+  before E1v (`be3269e9cc69f676`, `93ced3a9df1c66ce`, `f57cf21e1f863541`, `0ff4d71478f53323`); at 0.75 and 0.875 both
+  pools and the capacity the intake valuation reads grow by exactly (31.3 ÷ mass)^(1 − exponent) at 16, 18 and 21 kg
+  (× 1.183, 1.148, 1.105 at 0.75) and not at all at 31.3 kg, for an adult of either sex, a male of 35 kg or a lactating
+  female; a 16 kg foregut takes exactly that much more and a hindgut that was full has room; at −0.316 walking costs
+  exactly (mass ÷ 31.3)^−0.316 more per kg and metre at the three masses (4.7, 4.5, 4.3 J), climbing, adults and a load
+  on an adult carrier do not move, and the tick charges it; at both range ends the run is the same whatever the
+  batching, a save resumes exactly and the world differs from today's; each is inert without its switches; the offline
+  tool reads the parameters and equals §5's arithmetic to 1e-9 (S4 below: twelve of twelve equal); the ledger classes
+  both as inputs and the count holds.
+- **Not moved** (run, all pass): `tsc --noEmit`; `gen-params --check` (1,046 entries, lint clean); the compressed golden
+  hashes (`tests/sim-params.test.ts`, `kernel`, `sim-life`, `sim-rg`, `sim-endocrine`), the field pin
+  (`tests/sim-track-e.test.ts`), `tests/prescription-ledger.test.ts`, `tests/sim-wadging.test.ts`, and the gut and energy
+  files (`sim-energy`, `sim-digesta`, `e1u-gut-ceiling`, `sim-gut-value`, `sim-food-energy`, `sim-tripcost`, `sim-water`,
+  `sim-forage-rate`, `sim-e1w`, `sim-e1p`, `persist-envelope`): 217 tests in 20 files, 217 pass. The full suite was
+  not run (the integrator runs it at the merge).
+- **Known limits (deferred, file:line at 58aed13).** `energy.ts` `sizedKg`: one exponent for both pools and one
+  reference mass for both sexes; the offline split says the hindgut's part is about three times the foregut's. `walkSize`:
+  the anchor understates taylor1982's slope from the sample mean (§5.3). `src/sim/gait.ts`:63: walking speed still
+  scales as mass^(1/6) whatever these two are set to. `scripts/forage-rate-diagnose.ts`:120 recomputes the walking cost
+  without the size term (a diagnosis script, not used here).
+
+#### S4. The built parameters against S2's arithmetic (the same animals; fruit only)
+
+| parameter | value | animal | from the model's own functions | S2's arithmetic | equal |
+| --- | ---: | --- | ---: | ---: | --- |
+| gutSizeExp | 0.75 | 16 kg | 1010.648 kcal/d absorbed | 1010.648 | yes |
+| gutSizeExp | 0.75 | 18 kg | 1103.988 kcal/d absorbed | 1103.988 | yes |
+| gutSizeExp | 0.75 | 21 kg | 1239.294 kcal/d absorbed | 1239.294 | yes |
+| gutSizeExp | 0.75 | 31.3 kg | 1676.605 kcal/d absorbed | 1676.605 | yes |
+| gutSizeExp | 0.875 | 16 kg | 930.661 kcal/d absorbed | 930.661 | yes |
+| gutSizeExp | 0.875 | 18 kg | 1031.446 kcal/d absorbed | 1031.446 | yes |
+| gutSizeExp | 0.875 | 21 kg | 1180.011 kcal/d absorbed | 1180.011 | yes |
+| gutSizeExp | 0.875 | 31.3 kg | 1676.605 kcal/d absorbed | 1676.605 | yes |
+| walkCostSizeExp | -0.316 | 16 kg | 71.856 kcal per 4 km | 71.856 | yes |
+| walkCostSizeExp | -0.316 | 18 kg | 77.884 kcal per 4 km | 77.884 | yes |
+| walkCostSizeExp | -0.316 | 21 kg | 86.545 kcal per 4 km | 86.545 | yes |
+| walkCostSizeExp | -0.316 | 31.3 kg | 113.709 kcal per 4 km | 113.709 | yes |
+
+## 7. Smoke runs, logged before they run (7 October 2026, 20:39 EDT)
+
+One short run per built input and one paired reference, as registered in §4. From a frozen detached checkout of the
+commit that adds this section (`.claude/worktrees/bench-e1x`; `node_modules`, `data/raw` and the scorecard file linked,
+`git status --short` empty there), `scripts/e-bench.ts --quick --seeds 48 --workers 1 --animal-days` (seed 48, 30-day
+burn-in, 30 scored days), one job at a time, `uptime` and `sysctl -n vm.swapusage` before each (no launch above 6 GB of
+swap used). Outputs in this worktree's `artifacts/validation/e1x/` (gitignored).
+
+| run | parameters | meant to show |
+| --- | --- | --- |
+| smoke-ref | the working base (`integrator-kit/params/M6-W50.json`) | the paired reference (both inputs at their defaults) |
+| smoke-gut75 | the working base and `gutSizeExp` 0.75 | the run completes; animals under 31.3 kg end fewer of their eating ticks at a full foregut |
+| smoke-walk | the working base and `walkCostSizeExp` −0.316 | the run completes; animals under 31.3 kg are charged more per kg and metre walked, adults the same |
+
+**Registered directions** (read by `scripts/e1x/smoke.py` from the runs' JSON, by body-mass band):
+- smoke-walk: walking energy ÷ (metres on the ground × mass) equals 3.8 × (mass ÷ 31.3)^−0.316 J for animal-days under
+  31.3 kg (above 3.8) and 3.8 at 31.3 kg and over, to three figures. This is exact, not a tendency: the charge is the
+  ledger's own arithmetic.
+- smoke-gut75: in the bands under 31.3 kg the share of eating ticks at a full foregut is lower than in the reference.
+  The window (late October to late November) is not the lean season and the only weaned animals under 21 kg come later
+  (the first is weaned on scored day 222), so the bands under 21 kg hold animals on milk whose gut is seldom full:
+  the fall may be small there; it should show in the 21 to 31.3 kg band (the founder juveniles: 26% of eating minutes
+  at a full foregut in T4). Low confidence on size, moderate on direction.
+- Nothing else is predicted and nothing is judged: no survival, reserve or band-distance statement is read from 30
+  days. No value is changed in response.
+
