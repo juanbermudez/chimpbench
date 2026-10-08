@@ -86,3 +86,38 @@ test('the lean window is the lowest stretch of the curve; the loop names the ret
   assert.deepEqual(ARMS.trained, { kernel: 'gliner', adapter: 'r4-rules-state' });
   for (const id of ['trips', 'drinks']) assert.ok(MEASURES.some(m => m.id === id));
 });
+
+// Stage R4c (docs/staging/r4b-prereg.md §11): the supplement's classes and the rule that decides the round.
+test('R4c: a decision point is a trip or drink taken, one offered and not taken, or neither; equal numbers of a kind, each point once', async () => {
+  const { classOfPoint, takeSupplement, PER_WORLD } = await import('../scripts/r4c-assemble');
+  const opt = (family: string) => ({ alias: 'c', action: 'rest' as const, targetId: -1, variant: 'NONE', family, score: 0 });
+  assert.equal(classOfPoint({ rgIndex: 1, options: [opt('rest'), opt('food-trip')] }), 'trip taken');
+  assert.equal(classOfPoint({ rgIndex: 2, options: [opt('rest'), opt('food-trip'), opt('drink')] }), 'drink taken');
+  assert.equal(classOfPoint({ rgIndex: 0, options: [opt('rest'), opt('food-trip')] }), 'trip offered, not taken');
+  assert.equal(classOfPoint({ rgIndex: 0, options: [opt('feed'), opt('food-trip'), opt('drink')] }), 'drink offered, not taken', 'both offered: a drink negative');
+  assert.equal(classOfPoint({ rgIndex: 0, options: [opt('rest'), opt('affiliative')] }), null);
+  assert.equal(classOfPoint({ rgIndex: -1, options: [opt('rest'), opt('food-trip')] }), null, 'a decision off the menu is no example');
+  // a pool with plenty of trips and negatives, and only 40 drinks: the drink negatives are cut to 40
+  const rows = Array.from({ length: 6000 }, (_, i) => ({ id: `r${i}`, line: i, cls: (i % 150 === 0 ? 'drink taken' : i % 5 === 0 ? 'trip taken' : i % 5 === 1 ? 'trip offered, not taken' : i % 5 === 2 ? 'drink offered, not taken' : null) as ReturnType<typeof classOfPoint> }));
+  const taken = takeSupplement(rows), n = (c: string) => [...taken.values()].filter(v => v === c).length;
+  assert.equal(n('trip taken'), PER_WORLD['trip taken']); assert.equal(n('trip offered, not taken'), PER_WORLD['trip offered, not taken']);
+  assert.equal(n('drink taken'), 40); assert.equal(n('drink offered, not taken'), 40);
+  for (const [line, c] of taken) assert.equal(rows[line].cls, c);
+  assert.deepEqual([...takeSupplement(rows)], [...taken], 'deterministic');
+});
+
+test('R4c: the registered rule needs all three conditions', async () => {
+  const { r4cVerdict } = await import('../scripts/r5-report');
+  // ten animals, two days each: the rules eat 1,600 and walk 2 to 2.9 km; the first adapter eats 100 less
+  const row = (id: number, day: number, kcal: number, km: number, nest: number) => ({ seed: 21, row: { id, name: `a${id}`, cls: 'x', day, alive: true, kcalIn: kcal, kcalFormula: kcal, kcalOut: 0, reserveKcal: 0, reservePct: 0, min: {}, daylightMin: 0, km, kmFixes: km, nightMin: 600, nestShare: nest } });
+  const arm = (dk: (id: number) => number, dkm: number, nest: (id: number, day: number) => number = () => 1) => Array.from({ length: 10 }, (_, id) => [0, 1].map(day => row(id, day, 1600 + dk(id), 2 + id / 10 + dkm, nest(id, day)))).flat();
+  const rules = arm(() => 0, 0), trained = arm(id => -100 - id, 0);
+  assert.equal(r4cVerdict(rules, trained, arm(id => -20 - id * 3, 0.1)).better, true, 'closer on energy, nights kept, distance within the spread');
+  assert.equal(r4cVerdict(rules, trained, arm(id => -100 - id + (id % 2 ? 60 : -60), 0)).energy.holds, false, 'no consistent difference between the adapters');
+  assert.equal(r4cVerdict(rules, trained, arm(id => -250 - id * 3, 0)).energy.holds, false, 'further from the rules');
+  assert.equal(r4cVerdict(rules, trained, arm(id => +150 + id * 3, 0)).energy.holds, false, 'past the rules by more than the first adapter\'s gap');
+  const nights = r4cVerdict(rules, trained, arm(id => -20 - id * 3, 0, (id, day) => id < 3 && day === 0 ? 0.5 : 1));
+  assert.deepEqual([nights.nights.r4c, nights.nights.trained, nights.nights.holds, nights.better], [17, 20, false, false], 'three nights out of a nest is worse');
+  const far = r4cVerdict(rules, trained, arm(id => -20 - id * 3, 1));
+  assert.ok(far.distance.spread > 0.25 && far.distance.spread < 0.35 && !far.distance.holds && !far.better, 'a kilometre past the rules is an overshoot');
+});

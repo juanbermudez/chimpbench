@@ -57,6 +57,8 @@ export const ARMS: Record<string, ArmSpec> = {
   'untuned-gate': { kernel: 'gliner', adapter: 'base', gate: 1 },
   // stage R4b (docs/staging/r4b-prereg.md §7): the retrained adapter, the pilot's main setting (gate off, the rules' pick kept)
   retrained: { kernel: 'gliner', adapter: 'r4b-rules-state' },
+  // stage R4c (docs/staging/r4b-prereg.md §11): R4's training set plus trip and drink decisions; the same setting
+  r4c: { kernel: 'gliner', adapter: 'r4c-rules-state' },
 };
 
 /** One kernel pass, as logged. `index` and `p` are the kernel's raw answer (null when it gave none); `picked` is the position applied (-1: the rules decided). */

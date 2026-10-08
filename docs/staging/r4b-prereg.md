@@ -637,3 +637,12 @@ evaluation A and the two standard windows is the minimum.
 
 Machine at registration (07:33): load averages 4.35, 9.14, 6.53 (the test suite had just run); swap 3,023 MB used of
 4,096 MB; no model process running.
+
+**Code delivered before any run** (outside `src/`): `scripts/r4c-assemble.ts` (the supplement's classes, the training
+file, the manifest and the data table), `scripts/r4c-run.sh` (sample, train, offline, loop; the swap check before each
+model run); `scripts/r5-pilot.ts` gains the arm `r4c`; `scripts/r5-report.ts` gains the arm, the table "Third round
+against trained" and the three-part rule of 11.4 (`r4cVerdict`). `tests/r4b.test.ts` 6 tests (two new). `tsc` clean.
+
+- **Iteration C1 (logged before it runs, 07:50; no model):** `scripts/r4c-run.sh sample` (the four worlds, burn-in 14
+  days, 20 days, p 0.25, two processes at a time), then `scripts/r4c-assemble.ts` on R4's contexts
+  (`.claude/worktrees/r4-train/artifacts/decide-ft/r4/contexts`, read only).
