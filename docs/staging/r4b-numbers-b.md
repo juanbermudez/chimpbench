@@ -57,3 +57,9 @@ Reference rows (draws):
 
 Grooming picked when a grooming option is offered (draws, 461 menus): the rules 0.100; untuned 0.364; r4-rules-state 0.113; r4b-rules-state 0.113.
 
+## 6. Real token counts (the worker's count; hard limit 1,280)
+
+| packet | n | median | 95th percentile | largest | over 1,280 |
+| --- | --- | --- | --- | --- | --- |
+| state | 1500 | 483 | 632 | 701 | 0 |
+
