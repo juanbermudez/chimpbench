@@ -1,6 +1,6 @@
 import type { Chimp, Tree, World } from '../types';
 import { dependentOn, isCarried } from './candidates';
-import { locomotionKcal, massOf } from './energy';
+import { loadKcal, massOf } from './energy';
 import type { Params } from './params';
 import { alertPace, bodySpeed, injuryPace, lifeStage } from './huntpursuit';
 import { index, treesNear } from './state';
@@ -152,7 +152,7 @@ export function riderKcal(world: World, c: Chimp, P: Params, distM: number, clim
     if (!d.alive) continue;
     const always = d.age < 1.2;
     if (!always && !travel) continue;
-    k += locomotionKcal(d, P, distM, always && climbM > 0 ? climbM : 0);
+    k += loadKcal(d, c, P, distM, always && climbM > 0 ? climbM : 0);
   }
   return k;
 }

@@ -4690,3 +4690,39 @@ write-ups that a search listed were not opened and are not sources.
 - `docs/decide-jev-design-agent-2.md`: the hierarchical arm, a mode first and a target intention when needed, with code
   routing inside a mode and the target lists supplied up front; composite scoring kept as an offline ablation with no
   fitted weights.
+
+## Addendum: E1x small body (re-read of clauss2013, 7 October 2026)
+
+Evidence pass for stage E1x (`docs/staging/e1x-prereg.md`): how the inputs of the energy ledger scale to a body of 16 to
+21 kg. research.md and e-sources.md were searched first; every other source the stage uses is already listed (E.3, E.12,
+E.14, E.18, E.21, E.25, "Gut inputs audit (stage E1u)", "Addendum: E2i walking speed"). One source was re-read, once,
+through the NCBI BioC API (PMC3812987, CC BY, full text); nothing else was fetched.
+
+- **Scaling of gut capacity, intake and retention with body mass** [clauss2013] (FT, re-read) [M] cross-species review
+  (herbivorous mammals, birds and reptiles; no primate value; all comparisons are between species). Extends E.25.
+  - Gut capacity: "gut capacity as measured by wet gut contents, which scales approximately linearly … i.e. to BM1.0
+    (Fig. 6a)". Dry matter: "the part of gut capacity that is relevant in terms of nutrient intake, i.e. dry matter gut
+    contents (Fig. 6b), has a slightly lower scaling than one would expect based on wet gut content data. Experimental
+    data from various herbivores in captivity indicate that no statistical difference in the scaling of intake (Fig. 6c)
+    and dry matter gut capacity can be demonstrated, but nevertheless they both scale higher than metabolism in large
+    herbivores." Fig. 6c's caption: for dry-matter intake "a curvature in mammals is evident with a lower scaling in
+    smaller and a steeper scaling in larger species". The review gives no exponent for dry-matter capacity in its text
+    ("we mostly refrain from citing or analysing the magnitude of the exponent"); the coefficients are in Fig. 6 and in
+    Müller et al. 2013 (not read).
+  - Retention: the classical derivation (capacity as mass^1.0 over intake as mass^0.75) predicts retention as mass^0.25
+    (Fig. 4a); empirically "digesta retention time does not scale as predicted … but shows a less clear-cut or no
+    relationship with BM" above "a threshold of about 1–10 kg" (Fig. 5c: "little increase above BM of 1 kg"; Fig. 5d:
+    "the absence of relevant scaling" in three datasets of large herbivores). Retention is shorter at higher relative
+    intake (Fig. 7a), as clauss2008 found for primates. Fibre digestibility shows "no clear scaling" with body mass.
+  - Its caution: exponents from different datasets and methods should not be mixed "or [used] to frame a range of
+    options"; larger animals increasing intake or gut contents more than metabolism may reflect diet quality in the
+    datasets "and not that smaller animals cannot do so".
+  - Use in E1x: the bracket for a gut-capacity exponent, from 0.75 (capacity following intake and need, the lower
+    statement above; with simmen2017's intake exponent of 0.75 ± 0.04 for wild primates) to 1.0 (wet contents; the
+    isometry the registry assumes). Both ends are between species. **Not found: how a simple gut's capacity scales
+    within a species as the animal grows** (unchanged from the E1u audit). For retention: no size term is supported;
+    the quarter power is the derivation the review rejects.
+- Still missing for a body of 16 to 21 kg (named, not read): Bruhn & Benedict 1936 and Bruhn 1934 (the respirometry of
+  immature chimpanzees behind pontzer2016's basal rate); Demment & Van Soest 1985 and Müller et al. 2013 (allometric
+  coefficients); chiversHladik1980's specimen table; any gut volume, digesta mass, retention time, intake in grams per
+  minute or cost of transport measured on an immature ape.

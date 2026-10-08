@@ -72,6 +72,9 @@ export const OVERRIDES: Record<string, Override> = {
   digestaNdfCreditKcalPerG: { cls: 'input', kind: 'food chemistry', reason: 'the fibre credit inside the formula that produced the kcal per minute inputs; used only to split them' },
   // stage E1v (docs/staging/e1v-prereg.md §2): an unmeasured input run as a range by the user's decision, never a prescription
   pithFibreSwallowed: { cls: 'input', kind: 'food handling', borderline: true, reason: 'design assumption: the share of the pith\'s fibre swallowed rather than spat out as a wadge (wadging described, never measured; e1u-prereg.md §6), what the gut receives of a food, not when or how often a behaviour happens; run at 1, 0.5 and 0.25 by the user\'s decision, never fitted' },
+  // stage E1x (docs/staging/e1x-prereg.md §2, §6): two unmeasured scalings of the body with its size, run as ranges, never prescriptions
+  gutSizeExp: { cls: 'input', kind: 'body scaling', borderline: true, reason: 'design assumption: the power of body mass a growing animal\'s gut capacity follows below the adult female mass (no gut of an immature ape has been measured; the cited allometry brackets it between species at 0.75 to 1: clauss2013, simmen2017), a property of the body, not when or how often a behaviour happens; run at 1, 0.875 and 0.75 (e1x-prereg.md), never fitted' },
+  walkCostSizeExp: { cls: 'input', kind: 'body scaling', borderline: true, reason: 'design assumption: the power of body mass the cost of walking per kg and metre follows below the adult female mass (measured on chimpanzees of 33.9 kg and more, sockol2007; the slope across species is taylor1982\'s −0.316), physics of the body, not when or how often a behaviour happens; run at 0 and −0.316 (e1x-prereg.md), never fitted' },
   // stage E1 (Track E audit): rule 7 calls these field values of behaviour; the rule of 1 October names "kcal per minute
   // of a food" and "the cost of walking a metre" as the inputs a parameter may carry
   ledgerFruitKcalPerMin: { cls: 'input', kind: 'physiology', reason: 'energy intake rate of a food: kcal per feeding minute on drupes (uwimbabazi2019), the rule\'s own example of an admissible input' },
@@ -222,6 +225,8 @@ export const ACTIVE_WHEN: Record<string, { when: (P: Record<string, number>) => 
     'digestaFermentKcalPerG', 'digestaNdfDigestibility', 'digestaMrtH', 'digestaGutMlPerKg', 'digestaForegutShare', 'digestaForegutDmGPerMl', 'digestaHindgutDmGPerMl',
     'digestaMeatDmGPerKcal', 'digestaMilkDmGPerKcal', 'digestaTefFrac'].map(id => [id, { when: (P: Record<string, number>) => P.energyLedger === 1 && P.ledgerDigesta === 1, why: 'read only while energyLedger and ledgerDigesta are 1 (stage E1b)' }])),
   pithFibreSwallowed: { when: P => P.energyLedger === 1 && P.ledgerDigesta === 1, why: 'read only while energyLedger and ledgerDigesta are 1: the fallback as swallowed (src/sim/energy.ts swallowed, stage E1v)' },
+  gutSizeExp: { when: P => P.energyLedger === 1 && P.ledgerDigesta === 1, why: 'read only while energyLedger and ledgerDigesta are 1: the mass that sizes the dry-matter gut (src/sim/energy.ts gutSizeKg, stage E1x)' },
+  walkCostSizeExp: { when: P => P.energyLedger === 1, why: 'read only by the energy ledger (src/sim/energy.ts walkSize, stage E1x) while energyLedger is 1' },
   // Track E audit (1 October 2026): what E1 and E2a switch out, each confirmed by reading the code path, after a traced
   // run (scripts/param-reads.ts) listed the candidates and moved each one to see whether it still changes the world
   // stage E1 (docs/staging/e1-prereg.md §1): the energy ledger sets hunger, so the timers and the hunger-unit conversions go

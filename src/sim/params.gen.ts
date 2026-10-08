@@ -2,7 +2,7 @@
 /* eslint-disable */
 export const REGISTRY_VERSION = 1;
 /** Content hash of every live default, hard range, profile value and integer flag. Stored with each world. */
-export const REGISTRY_HASH = 'f227e3fc54772948';
+export const REGISTRY_HASH = '3e4989ed633610aa';
 
 /** Registry defaults (the compressed profile). */
 export const DEFAULTS = {
@@ -473,6 +473,7 @@ export const DEFAULTS = {
   guardRivalRangeM: 14,
   guardSwellingMin: 0.9,
   guardedRangeM: 14,
+  gutSizeExp: 1,
   gutValue: 0,
   hazardBaseFloor: 0.2,
   hazardFemaleAdult: 0.011,
@@ -999,6 +1000,7 @@ export const DEFAULTS = {
   urgencyPersist: 0,
   urgencySwitchCost: 0,
   vacancyEloGap: 100,
+  walkCostSizeExp: 0,
   walkDarkPace: 0.92,
   walkGait: 0,
   walkGaitCarryMps: 0.75,
@@ -1515,6 +1517,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   guardRivalRangeM: [0, 1000000],
   guardSwellingMin: [0, 1],
   guardedRangeM: [0, 1000000],
+  gutSizeExp: [0.5, 1],
   gutValue: [0, 1],
   hazardBaseFloor: [0, 1],
   hazardFemaleAdult: [0, 10],
@@ -2041,6 +2044,7 @@ export const HARD_RANGES: { readonly [K in ParamId]: readonly [number, number] }
   urgencyPersist: [0, 1],
   urgencySwitchCost: [0, 1],
   vacancyEloGap: [0, 1000000],
+  walkCostSizeExp: [-1, 0],
   walkDarkPace: [0.05, 1],
   walkGait: [0, 1],
   walkGaitCarryMps: [0.05, 3],

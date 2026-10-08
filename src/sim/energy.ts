@@ -61,6 +61,9 @@
 // Stage E1v (docs/staging/e1v-prereg.md §2; P.pithFibreSwallowed, 1 by default, read only with ledgerDigesta 1): wadging.
 // A share 1 − pithFibreSwallowed of the fallback's pith fibre is spat out before the gut (swallowed() below): it leaves
 // the dry matter and fibre swallowed; intake, the formula energy handled (`fin`) and the food's water are unchanged.
+// Stage E1x (docs/staging/e1x-prereg.md §2, §6; two input ranges, each at today's value by default): gutSizeExp (1; read
+// only with ledgerDigesta 1) is the power of body mass the gut's capacity follows below the adult female mass (gutSizeKg);
+// walkCostSizeExp (0) the power the cost of walking per kg and metre follows below it (walkSize). No adult moves.
 import type { Chimp, World } from '../types';
 import { paramsOf, type Params } from './params';
 import { TICK_HOURS, TICK_SECONDS, index, ix, type ChimpX, type EnergyLedger } from './state';
@@ -232,12 +235,43 @@ export const reserveCap = (c: Chimp, P: Params) => P.ledgerReserveKcalPerKg * ma
  * with no free parameter; no time course. Everyone else (and the switch at 0): the body mass.
  */
 function gutKg(c: Chimp, P: Params): number {
-  const M = massOf(c, P);
-  if (P.ledgerLactGut !== 1 || !c.lactating || P.ledgerDigesta !== 1 || !driveOn(P)) return M;
+  const M = massOf(c, P), G = P.gutSizeExp === 1 ? M : sizedKg(M, P);
+  if (P.ledgerLactGut !== 1 || !c.lactating || P.ledgerDigesta !== 1 || !driveOn(P)) return G;
   const E = ix(c).en?.eAvg;
-  if (E === undefined) return M;
+  if (E === undefined) return G;
   const m = P.ledgerMilkYieldCoef / 24 * rmrPow(P, M) / P.ledgerMilkEff, o = E - m;
-  return M * (1 + m / (o > m ? o : m));
+  return G * (1 + m / (o > m ? o : m));
+}
+/**
+ * Stage E1x (gutSizeExp; docs/staging/e1x-prereg.md §2.1, §6): the mass that sizes a gut of body mass `M`. The registry's
+ * capacity is the adult's millilitres per kg at every size (isometry, assumed: one adult of unknown mass was measured,
+ * and no gut of a growing ape). Below the adult female mass capacity follows mass^gutSizeExp instead of mass^1:
+ * reference × (M ÷ reference)^gutSizeExp, the reference being ledgerMassFemaleKg, so an animal at or above it is
+ * untouched. 1 = today. The range 0.75 to 1 is the bracket the cited allometry gives between species (clauss2013: wet
+ * gut contents about mass^1.0, dry-matter capacity slightly lower and not different from intake; simmen2017: intake as
+ * mass^0.75); within a species nothing is measured. Design assumption, an input range, never fitted.
+ */
+function sizedKg(M: number, P: Params): number {
+  const ref = P.ledgerMassFemaleKg;
+  return M < ref ? ref * Math.pow(M / ref, P.gutSizeExp) : M;
+}
+/** Stage E1x: the body mass that sizes this animal's gut before lactation's term (gutKg adds it): its mass, or with gutSizeExp below 1 the sized mass. */
+export function gutSizeKg(c: Chimp, P: Params): number {
+  const M = massOf(c, P);
+  return P.gutSizeExp === 1 ? M : sizedKg(M, P);
+}
+/**
+ * Stage E1x (walkCostSizeExp; docs/staging/e1x-prereg.md §2.6, §5.3, §6): the factor on the cost of walking per kg and
+ * metre for an animal of body mass `M` on its own legs. ledgerWalkJPerKgM was measured on chimpanzees of 33.9 to 82.3 kg
+ * (sockol2007); across species the cost per kg rises as bodies get smaller, as mass^−0.316 (taylor1982). Below the adult
+ * female mass the cost is × (M ÷ ledgerMassFemaleKg)^walkCostSizeExp; at or above it, and at 0 (today), × 1. Design
+ * assumption, an input range, never fitted.
+ */
+function walkSize(M: number, P: Params): number {
+  const e = P.walkCostSizeExp;
+  if (e === 0) return 1;
+  const ref = P.ledgerMassFemaleKg;
+  return M < ref ? Math.pow(M / ref, e) : 1;
 }
 /** Gut capacity (kcal of drupes) of an adult female, for rates quoted without an animal. */
 export function refGutCap(P: Params): number {
@@ -472,7 +506,7 @@ function setHunger(c: Chimp, L: EnergyLedger, P: Params): void {
   }
   const M = massOf(c, P), D = rates(P).dig;
   // stage E1b: emptiness is bulk, the foregut's dry matter against its capacity
-  const e = D ? 1 - L.dm! / (D.capF * M) : 1 - L.gut / (P.ledgerGutCapKcalPerKg * M), a = P.ledgerAppetiteSet - P.ledgerAppetiteGain * L.res / (P.ledgerReserveKcalPerKg * M);
+  const e = D ? 1 - L.dm! / (D.capF * (P.gutSizeExp === 1 ? M : sizedKg(M, P))) : 1 - L.gut / (P.ledgerGutCapKcalPerKg * M), a = P.ledgerAppetiteSet - P.ledgerAppetiteGain * L.res / (P.ledgerReserveKcalPerKg * M);
   c.hunger = (e > 1 ? 1 : e < 0 ? 0 : e) * (a > 1 ? 1 : a < 0 ? 0 : a);
 }
 
@@ -618,7 +652,7 @@ export function energyTick(world: World, c: Chimp, x: ChimpX, sleeping: boolean)
   if (dx !== 0 || dz !== 0 || dy > 0) {
     const d = Math.sqrt(dx * dx + dz * dz);
     if (d <= r.maxStep && dy <= r.maxStep) {
-      const walk = d * r.walk * M, climb = dy > 0 ? dy * r.climb * M : 0;
+      const walk = d * r.walk * M * walkSize(M, P), climb = dy > 0 ? dy * r.climb * M : 0; // stage E1x: × the size term (1 today)
       out += walk + climb;
       if (tap) { tap(c, 'walk', walk); tap(c, 'climb', climb); }
     }
@@ -664,7 +698,7 @@ export function rideTick(rider: Chimp, carrier: Chimp, P: Params): void {
   if (!ML || (dx === 0 && dz === 0 && dy <= 0)) return;
   const r = rates(P), d = Math.sqrt(dx * dx + dz * dz);
   if (d > r.maxStep || dy > r.maxStep) return;
-  const cost = (d * r.walk + (dy > 0 ? dy * r.climb : 0)) * massOf(rider, P);
+  const cost = (d * r.walk * walkSize(massOf(carrier, P), P) + (dy > 0 ? dy * r.climb : 0)) * massOf(rider, P); // stage E1x: a load is charged at its carrier's cost per kg
   ML.res -= cost; ML.out += cost;
   if (energyTap.fn) energyTap.fn(carrier, 'carry', cost);
 }
@@ -675,8 +709,17 @@ export function rideTick(rider: Chimp, carrier: Chimp, P: Params): void {
  * sockol2007, and the climbing work at ledgerClimbEff), at its own mass. Pure.
  */
 export function locomotionKcal(c: Chimp, P: Params, distM: number, climbM: number): number {
+  const r = rates(P), M = massOf(c, P);
+  return (distM * r.walk * walkSize(M, P) + (climbM > 0 ? climbM * r.climb : 0)) * M;
+}
+/**
+ * The energy (kcal) `carrier` spends moving `rider` over `distM` metres on the ground and `climbM` metres up, as rideTick
+ * charges it: the rider's mass at the carrier's cost per kg and metre (stage E1x: the size term of walkCostSizeExp is the
+ * carrier's, a load not being a small walker). Pure.
+ */
+export function loadKcal(rider: Chimp, carrier: Chimp, P: Params, distM: number, climbM: number): number {
   const r = rates(P);
-  return (distM * r.walk + (climbM > 0 ? climbM * r.climb : 0)) * massOf(c, P);
+  return (distM * r.walk * walkSize(massOf(carrier, P), P) + (climbM > 0 ? climbM * r.climb : 0)) * massOf(rider, P);
 }
 
 /** Energy the gut can still take (kcal of `kind`; stage E1b: by the food's dry matter per kcal). */
@@ -775,7 +818,7 @@ export function nurseBoutWorth(infant: Chimp, mother: Chimp, P: Params): number 
   const I = ix(infant).en, M = ix(mother).en;
   if (!I || !M) return 1;
   const F = P.ledgerMilkKcalPerMin * 60, y = P.ledgerMilkYieldCoef / 24 * Math.pow(massOf(mother, P), P.ledgerRmrExp), D = rates(P).dig;
-  const room = D && I.dm !== undefined ? (D.capF * massOf(infant, P) - I.dm) / D.food.milk.g : gutCap(infant, P) - I.gut;
+  const room = D && I.dm !== undefined ? (D.capF * gutSizeKg(infant, P) - I.dm) / D.food.milk.g : gutCap(infant, P) - I.gut;
   const gland = F > y ? M.milk * F / (F - y) : Infinity, E = gland < room ? gland : room;
   return E > 0 ? E / (E + F * P.ledgerLetDownS / 3600) : 0;
 }
@@ -808,7 +851,7 @@ export function sharePlant(giver: Chimp, o: Chimp, P: Params): number {
   const pot = G.gut + Y * (D ? G.fib! : 0);
   if (!(pot > 0)) return 0;
   let q = P.ledgerPlantShareKcal < pot ? P.ledgerPlantShareKcal / pot : 1;
-  if (D) { const room = D.capF * massOf(o, P) - O.dm!; if (q * G.dm! > room) q = room > 0 && G.dm! > 0 ? room / G.dm! : 0; }
+  if (D) { const room = D.capF * gutSizeKg(o, P) - O.dm!; if (q * G.dm! > room) q = room > 0 && G.dm! > 0 ? room / G.dm! : 0; }
   else { const room = gutCap(o, P) - O.gut; if (q * G.gut > room) q = room > 0 ? room / G.gut : 0; }
   if (!(q > 0)) return 0;
   const gut = q * G.gut;
