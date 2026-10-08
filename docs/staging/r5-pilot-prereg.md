@@ -240,8 +240,8 @@ animal's infant); none in the nine no-model worlds.
 1,172 s (1,692 calls; one call passed the 120 s limit, went to the rules and the worker was replaced: it fell while
 this agent was type-checking the report script, so the machine was busier), `trained-nopick` 2,023 s (3,999 calls),
 seed 7 `trained` 1,540 s (2,645 calls) and `untuned` 2,431 s (5,228 calls), `untuned-gate` 3,412 s (6,637 calls: the
-untuned model's animals keep reaching decision points). Model time in all, both seeds: 4 h 3 min (the last arm was
-started at 3 h 6 min, under the 3.5 h line). Every replay ended on its run's hash. Seed 7: burn-in hash
+untuned model's animals keep reaching decision points). Model time in all, both seeds: 3 h 58 min (the last arm was
+started at 3 h 1 min, under the 3.5 h line). Every replay ended on its run's hash. Seed 7: burn-in hash
 d9604068dec350b1; the window is a **middle** stretch (crop 1.05 times the year's mean, above 65% of the year's days);
 focal animals Tavuni (alpha), Sanaki, Lwazo (lactating), Fumbira, Dembiri of that world's West community.
 
