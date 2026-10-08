@@ -244,3 +244,168 @@ registered design is iteration 1.
 **What would count as failing.** If no candidate with a sourced range lifts R at 16 kg by 0.03, nothing is built and the
 stage reports that the sources leave the shortfall unexplained. If the offline formula misses the measured spending by
 more than 3% and cannot be made to match from the ledger's own terms, no table is read.
+
+## 5. Offline result (7 October 2026, 20:45 EDT; no simulation, no world tick; §1 to §4 above are the registration, unchanged)
+
+`scripts/e1x-small-body.ts` at the commit that adds this section; output in `artifacts/validation/e1x/small-body.{md,json}`
+(gitignored) and pasted in §5.4. Both registered checks pass: the spending formula is within 1.4% of the measured
+spending of four animals of the saved run (limit 3%), and the tool gives T9's ceilings (868 and 1,677 kcal/d).
+
+### 5.1 The answer
+
+**One candidate can account for most of the shortfall: how gut capacity scales with body mass. None of the others can,
+and three of them can only make it worse.** On fruit alone R (most absorbed ÷ spent on that day) is 0.98 at 16 kg, 1.01
+at 18 kg and 1.05 at 21 kg against 1.22 for an adult female; on the lean-season diet 0.91, 0.93 and 0.97 against 1.12
+(S1). (T9's ratio, which divides by a day the animal actually lived, is reproduced: 1.03 and 1.32.)
+
+| candidate | range for a 16 to 21 kg animal | R at 16 kg, fruit (today 0.98; adult 1.22) | gap closed | size-specific | verdict |
+| --- | --- | --- | --- | --- | --- |
+| gut capacity against mass | exponent 0.75 to 1 (cross-species; within a species unknown) | 1.14 at 0.75, 1.06 at 0.875 | 67%, 33% | yes | **can account**; the hindgut's part is three times the foregut's (+0.09 against +0.03) |
+| retention time | by body mass: unknown; adults' span 31.5–48 h | 1.08 at 31.5 h, 0.83 at 48 h | 40%, −67% | no: the adult goes to 1.33 or 1.03 and the juvenile stays at 0.81 of her | matters, cannot account, not a small-body input |
+| foregut emptying | 1.5–6 h (registry) | 0.99, 0.66 | 2%, −140% | no | only downward |
+| intake rate against mass | 0.57 to 1.0 of the adult's | 0.98 to 0.99 | 0 to 2% | yes | **cannot**: the gut binds, not the bite rate |
+| resting cost | × 0.96 (every size); exponent within the species unknown (registry 0.67–0.76) | 1.02; 0.94 to 0.99 | 13%; −17% to 2% | the coefficient no | cannot |
+| growth demand | 22 to 67 kcal/d (today 42) | 1.01 to 0.96 (1.03 if nothing is paid) | 10% to −12% | yes | cannot; below the registered threshold |
+| walking cost | 3.8 (today) up to 5.8 at 16 kg | 0.95 (slope from 59.8 kg), 0.97 (from 31.3 kg) | −14%, −7% | yes | **cannot: every sourced end lowers R** |
+
+- At an exponent of 0.75 R is 1.14 at all three masses (capacity then follows the same power as the resting need), and
+  the 16 kg animal has 124 kcal a day to spare on fruit and 47 on the lean-season diet, where today it is 14 and 79
+  short. At the midpoint, 0.875, it has 52 to spare on fruit and is 19 short on the lean diet.
+- Even at 0.75 the juvenile stays below the adult (1.14 against 1.22): what is left is its growth (42 kcal/d, 0.05 of
+  R) and its longer walk. No input closes the whole gap.
+- Retention is the only other large lever, and it is not about size: the cited comparisons find no relation with body
+  mass. The quarter power, shown for information, would give +0.09; its source describes it to reject it.
+- The activity multiples (not a candidate) move R by +0.06 to −0.07 for every size.
+
+**Against the prediction (§3).** Held: the gut capacity exponent matters most and alone can account (predicted about
++0.15, found +0.16); the intake rate does nothing; resting cost and growth move R by 0.02 to 0.04; walking by 0.02 to
+0.03 the wrong way. Not held as written: retention moves R less than the gut exponent upward (+0.09) and as much
+downward (−0.16), not "as much or more"; and no input, the gut included, lifts R at 16 kg to the adult's.
+
+### 5.2 What is built, by the registered rules
+
+| candidate | matters (0.03) | size-specific | sourced range for this body | already a registry parameter | built |
+| --- | --- | --- | --- | --- | --- |
+| gut capacity exponent | yes (+0.16) | yes | 0.75 to 1, cross-species | no | **yes: `gutSizeExp`** |
+| walking cost by size | yes at the registered end (−0.03) | yes | taylor1982's slope | no | **yes: `walkCostSizeExp`** (see 5.3) |
+| retention | yes | no | unknown by mass | `digestaMrtH` | no, and no arm |
+| foregut emptying | yes, downward | no | — | `ledgerGutEmptyH` | no |
+| intake rate | no | yes | yes | `ledgerIntakeSizeExp` | no; an arm would show nothing |
+| resting cost | coefficient yes (+0.03), exponent yes (−0.04) | exponent only | coefficient: not about size; exponent: unknown | `ledgerRmrCoef`, `ledgerRmrExp` | no |
+| growth demand | no (+0.02, −0.03 unrounded 0.028) | yes | yes | both entries | no; could be an arm, not proposed |
+
+Two inputs, not three. Neither is built because it stops deaths: the first is the one scaling rule the registry itself
+calls assumed, bracketed by the allometry cited for it; the second makes the juvenile's position worse.
+
+### 5.3 Amendment, logged before any code of the build: where the walking term is anchored
+
+§3 registered the walking end as 3.8 × (M ÷ 59.8)^−0.316, the slope carried down from sockol2007's mean animal. Applied
+to every animal below 59.8 kg it also charges the model's adults more per metre (× 1.23 at 31.3 kg, × 1.14 at 39 kg):
+a statement about wild adults being lighter than the captive sample, not about a small body, and it would move the
+adults the three-year readouts need unchanged. **The built term is anchored at the adult female mass instead (31.3 kg,
+2.6 kg below the lightest animal sockol2007 measured, 33.9 kg): cost per kg and metre × (M ÷ 31.3)^`walkCostSizeExp`
+below 31.3 kg, unchanged at and above it.** At taylor1982's exponent that is 4.7, 4.5 and 4.3 J per kg and metre at 16,
+18 and 21 kg: inside §2.6's range (3.8 to 5.8, 5.6, 5.3), above the all-mammal line (4.5, 4.3, 4.1), below the range's
+top. Its offline effect is half the registered end's: R −0.02 (unrounded 0.015) at 16 kg, under the 0.03 threshold; the
+registered end gives −0.03 and also lowers the adult's R from 1.22 to 1.20. So the built range understates what the
+slope from the sample mean would charge. It is built all the same, because a range tested only at its favourable input
+would be one-sided; whether its arms are worth running is put to the user (§9).
+
+### 5.4 Tables (output of `scripts/e1x-small-body.ts`)
+
+```sh
+fnm exec --using=22.22.3 -- pnpm exec tsx scripts/e1x-small-body.ts [--ckpt <M12-W50.s48.ckpt-d395.v8.gz> --ids 22,10] [--built]
+```
+
+Working base: `docs/staging/integrator-kit/params/M6-W50.json` (pithFibreSwallowed 0.5), seed-48 field world as created, never ticked. Juvenile: a copy of founder id 35 (F, 5.5 y) with its mass set; adult: id 10 (F, 44.0 y, 31.3 kg, not pregnant, not nursing). Active day 12 h, figs 0.25 of fruit energy. Travel: juvenile 4 km and 100 m climbed, adult 2.5 km and 100 m.
+
+#### S0. Checks, read before any table
+
+| animal of the saved run (T4, P1) | kg | eating min | measured spent | formula | difference |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| id 22, weaned, days 365–404 | 16.3 | 635 | 845 | 839 | −0.7% |
+| id 37, on milk, days 365–404 | 16.6 | 150 | 832 | 839 | +0.9% |
+| id 35, founder juvenile, days 365–484 | 24.2 | 215 | 1151 | 1167 | +1.4% |
+| id 19, founder juvenile, days 365–484 | 29.3 | 203 | 1311 | 1325 | +1.1% |
+
+- Spending formula against the measured spending of four animals: largest difference 1.4% (registered limit 3%): **passes**. The formula takes their measured eating minutes, growth paid, walking-plus-climbing energy and absorbed energy; a 12-hour waking day.
+- Tool against T9 (fruit only): 868 kcal/d at 16.2 kg against T9's 868 (−0.1%); 1677 at 31.3 kg against 1677 (−0.0%) (registered limit 1%): **passes**.
+- Saved world M12-W50.s48.ckpt-d395.v8.gz, id 22 (16.2 kg): ceiling on fruit 868 kcal/d there, 865 for this script's animal at the same mass.
+- Saved world M12-W50.s48.ckpt-d395.v8.gz, id 10 (31.3 kg): ceiling on fruit 1677 kcal/d there, 1677 for this script's animal at the same mass.
+
+#### S1. Today's values: the ceiling day by body mass and diet
+
+| diet | animal | absorbed A | spent E | of which resting × activity | thermogenesis | growth | walking + climbing | A − E | **R = A ÷ E** | foregut full | hindgut full |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| fruit only | juvenile F 16 kg | 857 | 871 | 666 | 86 | 42 | 77 | −14 | **0.98** | 91% | 42% |
+| fruit only | juvenile F 18 kg | 964 | 953 | 728 | 96 | 42 | 86 | +11 | **1.01** | 91% | 42% |
+| fruit only | juvenile F 21 kg | 1123 | 1072 | 817 | 112 | 42 | 101 | +51 | **1.05** | 91% | 41% |
+| fruit only | adult F 31.3 kg | 1677 | 1378 | 1102 | 168 | 0 | 108 | +299 | **1.22** | 92% | 42% |
+| lean season, fallback 29% | juvenile F 16 kg | 784 | 864 | 666 | 78 | 42 | 77 | −79 | **0.91** | 89% | 40% |
+| lean season, fallback 29% | juvenile F 18 kg | 882 | 945 | 728 | 88 | 42 | 86 | −63 | **0.93** | 89% | 40% |
+| lean season, fallback 29% | juvenile F 21 kg | 1028 | 1063 | 817 | 103 | 42 | 101 | −35 | **0.97** | 88% | 40% |
+| lean season, fallback 29% | adult F 31.3 kg | 1532 | 1363 | 1102 | 153 | 0 | 108 | +169 | **1.12** | 88% | 40% |
+| lean season, fallback 38% | juvenile F 16 kg | 763 | 861 | 666 | 76 | 42 | 77 | −99 | **0.89** | 88% | 40% |
+| lean season, fallback 38% | juvenile F 18 kg | 857 | 942 | 728 | 86 | 42 | 86 | −85 | **0.91** | 88% | 40% |
+| lean season, fallback 38% | juvenile F 21 kg | 1000 | 1060 | 817 | 100 | 42 | 101 | −60 | **0.94** | 87% | 39% |
+| lean season, fallback 38% | adult F 31.3 kg | 1489 | 1359 | 1102 | 149 | 0 | 108 | +130 | **1.10** | 87% | 39% |
+
+- The gap to explain (fruit only): R 0.98 at 16 kg against 1.22 for the adult female, 0.23 apart. On the lean-season diet (fallback 29%) 0.91 against 1.12.
+- T9's ratio for comparison (the ceiling ÷ the spending of a day the animal actually lived): 1.03 at 16.2 kg and 1.32 for the adult female (T9: 1.03 and 1.32). R is lower for the adult because the ceiling day charges her twelve hours at the feeding multiple and the thermogenesis of all she could absorb; she needs neither.
+- Lean-season diet at the other swallowed shares (today's values otherwise): all of the pith fibre swallowed R 0.83 at 16 kg and 1.03 for the adult; a quarter 0.95 and 1.18.
+
+#### S2. Each candidate at each end of its range, one at a time (the others at today's values)
+
+R on fruit only and on the lean-season diet (fallback 29%). "Gap closed" = the change of R at 16 kg on fruit ÷ the gap of S1; "16 kg ÷ adult" = R at 16 kg over the adult's R under the same change (fruit; today 0.81). Basis: sourced = a cited source or cited allometry gives this end for this body; registry = the registry's range for every size; info = for scale only.
+
+| candidate | end | basis | R at 16 kg | 18 kg | 21 kg | adult | ΔR at 16 kg | A − E at 16 kg | gap closed | 16 kg ÷ adult | lean diet: R at 16 kg (Δ) | adult |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: |
+| today | | | 0.98 | 1.01 | 1.05 | 1.22 | | −14 | | 0.81 | 0.91 | 1.12 |
+| gut capacity | exponent 0.75, both pools | sourced | 1.14 | 1.14 | 1.14 | 1.22 | +0.16 | +124 | 67% | 0.94 | 1.05 (+0.14) | 1.12 |
+| gut capacity | exponent 0.875 (midpoint), both pools | sourced | 1.06 | 1.08 | 1.09 | 1.22 | +0.08 | +52 | 33% | 0.87 | 0.98 (+0.07) | 1.12 |
+| gut capacity | exponent 0.75, foregut alone | info | 1.01 | 1.04 | 1.07 | 1.22 | +0.03 | +11 | 12% | 0.83 | 0.93 (+0.03) | 1.12 |
+| gut capacity | exponent 0.75, hindgut alone | info | 1.08 | 1.11 | 1.12 | 1.22 | +0.09 | +69 | 40% | 0.89 | 0.99 (+0.08) | 1.12 |
+| passage: retention | 31.5 h, every size | registry | 1.08 | 1.11 | 1.15 | 1.33 | +0.09 | +69 | 40% | 0.81 | 0.99 (+0.08) | 1.22 |
+| passage: retention | 48 h, every size | registry | 0.83 | 0.85 | 0.88 | 1.03 | −0.16 | −148 | -67% | 0.81 | 0.76 (−0.14) | 0.95 |
+| passage: retention | 38 h × (M ÷ 31.3)^0.25 (rejected by its source) | info | 1.08 | 1.10 | 1.11 | 1.22 | +0.09 | +69 | 40% | 0.89 | 0.99 (+0.08) | 1.12 |
+| passage: foregut emptying | 1.5 h, every size | registry | 0.99 | 1.02 | 1.05 | 1.22 | +0.00 | −10 | 2% | 0.81 | 0.91 (+0.00) | 1.13 |
+| passage: foregut emptying | 6 h, every size | registry | 0.66 | 0.68 | 0.70 | 0.82 | −0.33 | −288 | -140% | 0.80 | 0.61 (−0.30) | 0.75 |
+| intake rate | the adult rate (exponent 0) | sourced | 0.99 | 1.02 | 1.05 | 1.22 | +0.00 | −10 | 2% | 0.81 | 0.91 (+0.01) | 1.12 |
+| intake rate | exponent 0.5 | registry | 0.99 | 1.01 | 1.05 | 1.22 | +0.00 | −12 | 1% | 0.81 | 0.91 (+0.00) | 1.12 |
+| intake rate | exponent 0.84 (0.57 of the adult rate at 16 kg) | sourced | 0.98 | 1.01 | 1.05 | 1.22 | −0.00 | −15 | 0% | 0.81 | 0.91 (−0.00) | 1.12 |
+| intake rate | exponent 1 | registry | 0.98 | 1.01 | 1.05 | 1.22 | −0.00 | −16 | -1% | 0.81 | 0.91 (−0.00) | 1.12 |
+| resting cost | coefficient × 0.96, every size | sourced | 1.02 | 1.04 | 1.08 | 1.26 | +0.03 | +13 | 13% | 0.81 | 0.94 (+0.03) | 1.16 |
+| resting cost | exponent 0.67 below 31.3 kg | registry | 0.94 | 0.98 | 1.02 | 1.22 | −0.04 | −51 | -17% | 0.78 | 0.87 (−0.04) | 1.12 |
+| resting cost | exponent 0.76 below 31.3 kg | registry | 0.99 | 1.02 | 1.05 | 1.22 | +0.01 | −10 | 2% | 0.81 | 0.91 (+0.00) | 1.12 |
+| growth demand | 2.8 kg/y × 2.9 kcal/g | sourced | 1.01 | 1.03 | 1.07 | 1.22 | +0.02 | +6 | 10% | 0.83 | 0.93 (+0.02) | 1.12 |
+| growth demand | 4.1 kg/y × 6.0 kcal/g | sourced | 0.96 | 0.99 | 1.02 | 1.22 | −0.03 | −39 | -12% | 0.79 | 0.88 (−0.03) | 1.12 |
+| growth demand | growth paid 0 (fully yielded; an outcome, not an input) | info | 1.03 | 1.06 | 1.09 | 1.22 | +0.05 | +28 | 21% | 0.85 | 0.95 (+0.05) | 1.12 |
+| walking cost | 3.8 × (M ÷ 59.8)^−0.316 (adults move too) | sourced | 0.95 | 0.98 | 1.02 | 1.20 | −0.03 | −44 | -14% | 0.79 | 0.88 (−0.03) | 1.11 |
+| walking cost | 3.8 × (M ÷ 31.3)^−0.316 below 31.3 kg (adults fixed) | sourced | 0.97 | 1.00 | 1.04 | 1.22 | −0.02 | −28 | -7% | 0.80 | 0.89 (−0.01) | 1.12 |
+| walking cost | the all-mammal line, 10.7 × M^−0.316 | info | 0.97 | 1.00 | 1.04 | 1.22 | −0.01 | −24 | -5% | 0.80 | 0.90 (−0.01) | 1.13 |
+| walking cost | 2.8, every size (one adult) | info | 1.00 | 1.03 | 1.07 | 1.23 | +0.02 | +1 | 8% | 0.81 | 0.92 (+0.02) | 1.14 |
+| activity multiples (not a candidate) | rest 1.1, feeding 1.2, every size | registry | 1.04 | 1.07 | 1.11 | 1.30 | +0.06 | +36 | 26% | 0.81 | 0.96 (+0.06) | 1.20 |
+| activity multiples (not a candidate) | rest 1.5, feeding 1.6, every size | registry | 0.92 | 0.94 | 0.98 | 1.13 | −0.07 | −76 | -28% | 0.81 | 0.85 (−0.06) | 1.05 |
+
+#### S3. Read by the registered rules (§3): matters = |ΔR| at 16 kg on fruit of 0.03 or more; can account = closes half the gap or more
+
+| candidate | largest ΔR at 16 kg at a sourced or registry end (which) | matters | can account for the shortfall | size-specific | range for this body |
+| --- | --- | --- | --- | --- | --- |
+| gut capacity | up +0.16 (exponent 0.75, both pools); down +0.08 (exponent 0.875 (midpoint), both pools) | yes | yes (67% of the gap) | yes | exponent 0.75, both pools (sourced); exponent 0.875 (midpoint), both pools (sourced) |
+| passage: retention | up +0.09 (31.5 h, every size); down −0.16 (48 h, every size) | yes | no (40% of the gap at best) | no | 31.5 h, every size (registry); 48 h, every size (registry) |
+| passage: foregut emptying | up +0.00 (1.5 h, every size); down −0.33 (6 h, every size) | yes | no (2% of the gap at best) | no | 1.5 h, every size (registry); 6 h, every size (registry) |
+| intake rate | up +0.00 (the adult rate (exponent 0)); down −0.00 (exponent 1) | no | no (2% of the gap at best) | yes | the adult rate (exponent 0) (sourced); exponent 0.5 (registry); exponent 0.84 (0.57 of the adult rate at 16 kg) (sourced); exponent 1 (registry) |
+| resting cost | up +0.03 (coefficient × 0.96, every size); down −0.04 (exponent 0.67 below 31.3 kg) | yes | no (13% of the gap at best) | yes | coefficient × 0.96, every size (sourced); exponent 0.67 below 31.3 kg (registry); exponent 0.76 below 31.3 kg (registry) |
+| growth demand | up +0.02 (2.8 kg/y × 2.9 kcal/g); down −0.03 (4.1 kg/y × 6.0 kcal/g) | no | no (10% of the gap at best) | yes | 2.8 kg/y × 2.9 kcal/g (sourced); 4.1 kg/y × 6.0 kcal/g (sourced) |
+| walking cost | up −0.02 (3.8 × (M ÷ 31.3)^−0.316 below 31.3 kg (adults fixed)); down −0.03 (3.8 × (M ÷ 59.8)^−0.316 (adults move too)) | yes | no (-7% of the gap at best) | yes | 3.8 × (M ÷ 59.8)^−0.316 (adults move too) (sourced); 3.8 × (M ÷ 31.3)^−0.316 below 31.3 kg (adults fixed) (sourced) |
+| activity multiples (not a candidate) | up +0.06 (rest 1.1, feeding 1.2, every size); down −0.07 (rest 1.5, feeding 1.6, every size) | yes | no (26% of the gap at best) | no | rest 1.1, feeding 1.2, every size (registry); rest 1.5, feeding 1.6, every size (registry) |
+
+#### S5. The three-year arms, offline (several inputs at once where the arm sets several)
+
+| arm | fruit only: R at 16 kg | 18 kg | 21 kg | adult | A − E at 16 kg | lean diet (fallback 29%): R at 16 kg | 18 kg | 21 kg | adult | A − E at 16 kg | lean diet (38%): R at 16 kg |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Y3-W50 (the working base, today) | 0.98 | 1.01 | 1.05 | 1.22 | −14 | 0.91 | 0.93 | 0.97 | 1.12 | −79 | 0.89 |
+| Y3-W50-gut75 (gutSizeExp 0.75) | 1.14 | 1.14 | 1.14 | 1.22 | +124 | 1.05 | 1.05 | 1.06 | 1.12 | +47 | 1.03 |
+| Y3-W50-gut875 (gutSizeExp 0.875) | 1.06 | 1.08 | 1.09 | 1.22 | +52 | 0.98 | 0.99 | 1.01 | 1.12 | −19 | 0.95 |
+| Y3-W50-walk (walkCostSizeExp −0.316) | 0.97 | 1.00 | 1.04 | 1.22 | −28 | 0.89 | 0.92 | 0.96 | 1.12 | −93 | 0.87 |
+| Y3-W50-gut75-walk (gutSizeExp 0.75 and walkCostSizeExp −0.316) | 1.12 | 1.13 | 1.13 | 1.22 | +111 | 1.04 | 1.04 | 1.05 | 1.12 | +33 | 1.01 |
