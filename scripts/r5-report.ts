@@ -147,7 +147,8 @@ if (process.argv[1]?.endsWith('r5-report.ts')) {
       const word = (t: ReturnType<typeof tInterval>) => t.lo !== null && (t.lo > 0 || t.hi! < 0) && (noise === null || Math.abs(t.mean) > noise) ? 'differs' : Math.abs(t.mean) <= margin ? 'close' : 'not resolved';
       const tr = tInterval(pairedDiffs(animalMeans(rowsOf('trained'), m.of), refMeans)), re = tInterval(pairedDiffs(animalMeans(rowsOf('retrained'), m.of), refMeans)), d = tInterval(pairedDiffs(animalMeans(rowsOf('retrained'), m.of), animalMeans(rowsOf('trained'), m.of)));
       if (tr.lo === null || re.lo === null || d.lo === null) continue;
-      const toward = (d.lo > 0 && tr.mean < 0) || (d.hi! < 0 && tr.mean > 0), away = (d.lo > 0 && tr.mean > 0) || (d.hi! < 0 && tr.mean < 0);
+      // "on the side of the rules": the two adapters differ and the retrained one sits nearer the rules (a move past the rules to a larger gap on the other side is not one)
+      const differ = d.lo > 0 || d.hi! < 0, toward = differ && Math.abs(re.mean) < Math.abs(tr.mean), away = differ && !toward;
       const reading = toward ? (word(re) === 'close' ? 'gap closed' : word(re) === 'differs' ? 'improved, not closed' : 'improved; against the rules not resolved') : away ? 'no improvement shown (it moved away from the rules)' : 'no improvement shown';
       const iv = (t: ReturnType<typeof tInterval>) => `${signed(t.mean, m.digits + 1)} (${signed(t.lo!, m.digits + 1)} to ${signed(t.hi!, m.digits + 1)})`;
       md.push(`| ${m.label} | ${f(armMean('rules', m.of), m.digits)} | ${iv(tr)} | ${word(tr)} | ${iv(re)} | ${word(re)} | ${iv(d)} | ${reading} |`);

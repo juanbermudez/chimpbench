@@ -342,3 +342,165 @@ Parity: `PARITY OK` on 12 r4b dev contexts (equal token ids, probability gap 0).
 - **Iteration 6 (logged before it runs): seed 5, the standard window** (`scripts/r4b-chain.sh nomodel 5 standard`,
   then `model 5 standard`), queued to start when iteration 5 ends. Seed 5 was never trained on; it is a development
   seed (`AGENTS.md`), not reserved or retired. Its window's season is read from its rules arm.
+
+**Result of iterations 5 and 6 (05:16 to 07:25; one worker process per window, both adapters in it; no timeout, no
+worker restart, no hold for swap: 3.0 to 3.7 GB in use).** Seed 21 standard: `trained` 2,611 calls in 1,515 s,
+`retrained` 2,373 in 1,274 s. Seed 21 lean: 2,378 in 1,429 s and 2,430 in 1,331 s. Seed 5 standard (a **middle**
+stretch: crop 1.02 times the year's mean; burn-in hash b109a6e6e1091f07; focal animals by the same rule): 2,222 in
+1,178 s and 1,922 in 902 s. Median 0.46 to 0.53 s a decision. All six model arms and the three no-model loop arms
+replay from their receipts to the run's hash, every day's hash equal. No death in any arm. Model time in the loop:
+2 h 7 min.
+
+## 10. Results (8 October 2026; every number is from a committed script's output)
+
+Tables: `docs/staging/r4b-data.md` (the data), `r4b-numbers-a.md` and `r4b-numbers-b.md` (offline), `r4b-wild-numbers.md`,
+`r4b-loop-standard.md` (seeds 21 and 5 pooled, ten animals), `r4b-loop-standard-s21.md`, `r4b-loop-standard-s5.md`,
+`r4b-loop-lean-s21.md`. Adapters, data, scores, receipts and replays: `artifacts/decide-ft/r4b/` and `artifacts/r4b/`
+in this worktree (gitignored).
+
+### 10.1 The answer
+
+**No. Retraining on a whole year did not close the feeding and drinking gap; in the simulation it made the feeding
+gap wider.** On two seeds neither adapter was trained on (ten focal animals, five days, the pilot's window and
+setting), per animal and day:
+
+| | the rules | first adapter (`r4-rules-state`) | retrained (`r4b-rules-state`) |
+| --- | --- | --- | --- |
+| energy eaten, kcal | 1,654 | 1,562 (−92; −131 to −54) | 1,289 (−365; −551 to −178) |
+| feeding, daylight minutes | 252 | 211 (−41; −64 to −18) | 177 (−75; −98 to −52) |
+| trips to food begun | 8.3 | 4.2 (−4.1; −5.5 to −2.7) | 2.8 (−5.5; −8.2 to −2.8) |
+| drinks | 0.7 | 0.5 (−0.2; −0.4 to +0.1) | 0.7 (0.0; −0.2 to +0.2) |
+| resting, daylight minutes | 249 | 296 (+47; +17 to +76) | 371 (+122; +70 to +173) |
+| distance, km | 2.63 | 2.47 (−0.16; −0.78 to +0.46) | 1.87 (−0.75; −1.53 to +0.02) |
+| nights in a nest | 50 of 50 | 50 of 50 | 47 of 50 |
+| share of new acts the model's choice settled | – | 99.2% | 99.7% |
+
+(In brackets: the paired difference from the rules on the same animals and days, 95% t interval over ten animals.)
+Retrained minus first, same animals and days: energy eaten **−272 kcal (−438 to −106)**, feeding −34 minutes (−57 to
+−11), rest +75 minutes (+29 to +122), distance −0.60 km (−1.03 to −0.16), trips −1.4 (−3.3 to +0.5), drinks +0.2
+(−0.1 to +0.4). By the words of §7 every one of the registered measures reads **"no improvement shown"**, and intake,
+feeding and rest moved away from the rules. Each seed alone points the same way (seed 21: 1,615 / 1,547 / 1,331 kcal;
+seed 5: 1,693 / 1,576 / 1,248); on seed 5 alone the difference between the adapters is not resolved (−328, −701 to
++45).
+
+Two things the run does establish:
+
+- **The first adapter's shortfall is real on unseen seeds.** On seeds it never trained on it eats 6% less than the
+  rules (−92 kcal, all ten animals below) and feeds 41 minutes less: the pilot's 7% and 29 minutes were not an
+  artefact of familiar animals.
+- **The first adapter is the better engine.** Nothing here is a reason to replace it.
+
+### 10.2 Thresholds
+
+| | Threshold | Result |
+| --- | --- | --- |
+| T1 | on B's draws `r4b` minus `r4` above 0 | **not met**: +0.002 (−0.024 to +0.031); 0.591 against 0.589, 1,036 draws (untuned 0.292) |
+| T1a | on A's draws `r4b` minus `r4` not below 0 | **not met**: −0.037 (−0.061 to −0.010); 0.572 against 0.609, 954 draws. Coverage was bought with the days R4 knew |
+| T2 | parity; no packet over 1,280 tokens | **met**: `PARITY OK`; B's packets median 483 real tokens, 95th percentile 632, largest 701 |
+| T3 | no probe the wrong way; heat and reserves the right way | **not met**: heat still moves rest the wrong way (−0.018, −0.022 to −0.013; first adapter −0.021). Reserves reads "right way" by the rule, at a size that is nothing (+0.002, 0.000 to 0.004; first adapter +0.002, −0.000 to 0.005) |
+| T4 | wild development part not below the first adapter | **met**: plain 0.417 against 0.406 (+0.011, 0 to +0.023); fan-out 0.480 against 0.480 (0.000, −0.018 to +0.016); the rule stack 0.487 |
+| loop (§7) | gap closed, improved, or no improvement shown | **no improvement shown** on energy eaten, feeding minutes, trips to food, drinks, distance and nights in a nest, pooled and on seed 21 alone; in the lean window one measure improved (drinks, below) |
+
+### 10.3 Offline, line by line with R4
+
+**A, R4's own held-out days (954 draws).** Agreement with the rules' decision 0.572 (0.536 to 0.611) against the first
+adapter's 0.609 and 0.286 untuned. By kind (first adapter → retrained): feeding 0.37 → 0.32, travel 0.73 → 0.50, rest
+0.78 → 0.86, social 0.54 → 0.43, night 0.84 → 0.81. Where the rules take a trip to food: 0.20 → 0.11 (−0.09, −0.15 to
+−0.03); where they drink: 0.35 → 0.25 (20 draws, not a difference). Share of picks that are feeding: the rules 0.29,
+first adapter 0.20, retrained 0.17; rest: 0.30, 0.36, **0.46**. With the rules' pick removed it takes the best
+remaining option at 0.41 against 0.46 (−0.05, −0.08 to −0.02). Shuffled options: the same pick at 0.90 (0.89).
+
+**B, the year-round held-out set (1,036 draws).** 0.591 against 0.589: the first adapter, which never saw a lean,
+hot or rainy day, agrees with the rules across the year as well as the one trained on the year. By kind: feeding
+0.44 → 0.42, travel 0.60 → 0.61, rest 0.68 → 0.75 (+0.06, a difference), social 0.53 → 0.45 (−0.08, a difference),
+night 0.83 → 0.86. Trips to food 0.32 → 0.38 (+0.05, 0.01 to 0.10, a difference); drinks 0.48 → 0.41 (29 draws, not
+one). By part: "hot now" 0.39 → 0.52 (+0.13, 0.04 to 0.23), the only part that gained; run down 0.61 → 0.66 and
+every other part within its interval.
+
+**State probes (A's packets; Δ of the target's probability, high minus low).**
+
+| Probe → target | Untuned | First adapter | Retrained |
+| --- | --- | --- | --- |
+| energy deficit → feeding | +0.125 | +0.165 | **+0.251**, right |
+| reserves falling → feeding | −0.003 | +0.002, does not respond | +0.002 (0.000 to 0.004), right by the rule, negligible |
+| sleep → rest and nest | +0.152 | +0.113 | **+0.014 (−0.005 to 0.035), does not respond** |
+| light falling → nest | +0.020 | +0.116 | **+0.013**, right, nine times smaller |
+| heat → rest | −0.024 | −0.021, wrong | −0.018, **wrong** |
+| water deficit → drink | +0.168 | +0.256 | **+0.319**, right |
+
+So it now answers more strongly to hunger and thirst, and it has largely stopped answering to sleepiness and to the
+falling light.
+
+### 10.4 What happened in the loop
+
+- **Standard window (the table of 10.1).** When the rules' pick was a trip to food the retrained adapter took it at
+  0.10 (first adapter 0.17), a drink at 0.09 (0.14), rest at 0.72 (0.50), the nest at 0.76 (0.99). What it chose when
+  the rules chose the nest: the nest 0.76, **feeding 0.22**. By day the nest was on 29% of its menus (12% for the
+  first adapter) and it took it at 0.97; at dusk and by night it took the nest at 0.68 when offered (first adapter
+  1.00; 0.55 on seed 21, 0.91 on seed 5). It stays in the nest into the morning and, mostly on seed 21, feeds in
+  the dark instead of settling: three nights of 50 out of a nest. This is the lost answer to light and sleepiness, seen in behaviour.
+- **Lean window (seed 21, days 119 to 124; five animals).** The rules 1,632 kcal; first adapter **1,712 (+80, +40 to
+  +119: it ate more than the rules; all five above)**; retrained 1,508 (−124, −394 to +145: not resolved, two above
+  and three below). Feeding 254 / 246 / 223 minutes; trips begun 8.1 / 4.2 / 4.9; distance 4.80 / 3.39 / 4.01 km;
+  25 of 25 nights in a nest for all three. **Drinks 0.4 / 0.2 / 0.7 a day: retrained minus first +0.52 (+0.07 to
+  +0.97), the one registered measure that moved toward the rules** (it reads "gap closed": from fewer drinks than
+  the rules to more, both "close" on five animals). So in the lean stretch the first adapter kept its animals fed, with fewer and
+  shorter trips than the rules (1.4 km a day less), and the retrained one did not do better.
+- Trips to food are the stable failure of both adapters: half the rules' trips begun, or fewer, in every window.
+- A correction to the report script, made after the first tables were read (it changes one registered row): "on the
+  side of the rules" is now read as "the adapters differ and the retrained one is nearer the rules". Before, a move
+  past the rules counted: on seed 21 the first adapter walked 0.11 km a day more than the rules and the retrained
+  one 0.55 km less, and the row read "gap closed". It now reads "no improvement shown (it moved away from the
+  rules)".
+
+### 10.5 Why, as far as this stage can say
+
+Measured: the same 3,200 contexts were spread over 1,246 world-days instead of 16; the rare states arrived (hot 5 →
+261, below the usual store 37 → 988) but the two under-chosen decisions did not (trips 309 → 312, drinks 41 → 78).
+The adapter that came out rests more, reads hunger and thirst more and light and sleepiness less. Not measured, and
+so only a reading: with the daily routine thinned out, 3,200 examples were not enough to hold both the routine and
+the year. The saved epoch was the second of three (dev loss 0.959 against 0.965); the third was not evaluated.
+Nothing was retried: one change set was registered, and it failed.
+
+Heat is a separate matter. The simulation has no hot weather (amendment A1: the daily high is 22.9 to 24.2 °C all
+year), so the probe's hot level (31 °C) is a state the rules' world never reaches by weather. By day the rules rest
+at 0.45 of "hot" records against 0.28 of "comfortable" ones and 0.24 of "warm" ones: the labels hold no steady rise
+with heat to learn.
+
+### 10.6 Cost on this Mac (M4, 16 GB)
+
+Training: 2 h 17 min (2 h 31 min of wall time), 0.88 s per example, 6.9 GiB footprint, no memory failure. Six
+world-years of sampling: 16 minutes. Offline scoring: 1 h 51 min. The loop: 2 h 7 min of model time for six model
+arms. About 6 h 30 min of model time in all, one model process at a time; swap in use stayed between 3.0 and 3.8 GB.
+
+### 10.7 What is still wrong
+
+1. Both adapters start about half the rules' trips to food; the first eats 6% less, the retrained 22% less.
+2. Heat still moves rest the wrong way, and reserves do not move feeding by any amount that matters.
+3. The retrained adapter lost most of its answer to sleepiness and to dusk.
+4. Half of the rules' own drinks are at night (40 of 78 in the training set). Both adapters go to the nest instead.
+   Whether that is the engine's fault or the rules' is not settled here.
+5. Limits: five animals a seed, five days, the rest of the world on the rules, the gate off only, one base (0.5); the
+   lean window is one seed. The 0.25 base was sampled for training and for B and not run in the loop.
+
+### 10.8 Confidence
+
+- High: the retrained adapter is not better than the first offline (two held-out sets, 39 animals) and is worse in
+  the loop on intake, feeding and rest (ten of ten animals below the rules, two unseen seeds, every replay
+  reproduced). The first adapter's shortfall holds on unseen seeds.
+- Moderate: that it lost the answer to light and sleepiness (two probes and the loop's nest choices agree; one
+  training run); the lean window's readings (five animals, one seed).
+- Low: the reason (too few examples per kind of situation); anything about heat beyond "the simulation has no hot
+  weather"; any forecast past five days.
+
+### 10.9 Decisions for the user
+
+1. **Keep `r4-rules-state` as the engine; do not use `r4b-rules-state`.** (Recommended.)
+2. **Whether to try once more with more examples, not different ones:** R4's 3,200 contexts plus these 3,200 in one
+   adapter, about 4 h 40 min of training here. It would test the reading of 10.5; it is a second attempt and needs
+   your go.
+3. **Trips to food.** A year of situations did not teach either adapter to set out. The rules decide a trip from a
+   net energy rate, which you ruled out as valuation. Is there something the animal itself knows that may be shown
+   (for example how long the walk is in minutes, or how long it has fed in this tree)?
+4. **Heat.** With no hot weather in the simulation, should the heat probe stay a pass mark for an engine?
+5. **Night drinking.** Should the rules drink at night at all? If not, the "drinking gap" is partly the rules'.

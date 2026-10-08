@@ -278,7 +278,7 @@ Noise: the largest absolute mean difference among the rules re-draws (rules-r1, 
 | grooming, daylight min a day | 88 | -4.4 (-28.2 to +19.3) | close | -17.5 (-24.3 to -10.8) | differs | -13.1 (-32.7 to +6.4) | no improvement shown |
 | other social, daylight min a day | 35 | -12.2 (-73.3 to +48.8) | close | -12.7 (-36.1 to +10.6) | close | -0.5 (-42.6 to +41.6) | no improvement shown |
 | agonistic, daylight min a day | 1 | -1.1 (-3.1 to +0.9) | not resolved | -0.8 (-2.2 to +0.7) | not resolved | +0.3 (-0.4 to +1.1) | no improvement shown |
-| distance, km a day (ground path) | 2.14 | +0.107 (-1.014 to +1.228) | close | -0.551 (-1.690 to +0.587) | close | -0.659 (-1.215 to -0.102) | gap closed |
+| distance, km a day (ground path) | 2.14 | +0.107 (-1.014 to +1.228) | close | -0.551 (-1.690 to +0.587) | close | -0.659 (-1.215 to -0.102) | no improvement shown (it moved away from the rules) |
 | distance, km a day (5-min fixes) | 1.94 | -0.015 (-1.012 to +0.983) | close | -0.522 (-1.617 to +0.573) | close | -0.507 (-1.008 to -0.006) | no improvement shown (it moved away from the rules) |
 | nights in a nest, share of nights | 1.00 | 0.000 (0.000 to 0.000) | close | -0.040 (-0.151 to +0.071) | close | -0.040 (-0.151 to +0.071) | no improvement shown |
 | share of the dark hours in a nest | 0.99 | +0.007 (-0.001 to +0.015) | close | -0.033 (-0.141 to +0.075) | close | -0.040 (-0.151 to +0.071) | no improvement shown |
