@@ -3,9 +3,11 @@
 # Stage E1x (docs/staging/e1x-prereg.md §7): the smoke runs, read. Three e-bench --quick runs of seed 48 (30 + 30 days,
 # --animal-days) on the working base (S39 with pithFibreSwallowed 0.5): the default, gutSizeExp 0.75 and walkCostSizeExp
 # -0.316. Prints, from the runs' JSON only: that each completed (commit, viability, deaths), and by body-mass band the
-# quantities each input is registered to move: the cost of walking per kg and metre the ledger charged (walking energy /
-# metres on the ground / mass), the share of eating ticks at a full foregut, eating minutes, dry matter eaten per kg, and
-# reserves. Nothing is judged.
+# quantities each input is registered to move: walking energy / (metres on the ground x mass), the share of eating ticks
+# at a full foregut, eating minutes, dry matter eaten per kg, and reserves. The per-animal readout counts metres on the
+# ground only (height under 0.3 m) while the ledger charges every horizontal metre, in a crown too, so the walking figure
+# overstates the cost per metre in every run (the default included) and is read as a ratio to the default run, against the
+# registered factor. Nothing is judged.
 #
 #   /usr/bin/python3 scripts/e1x/smoke.py <dir> [ref-label gut-label walk-label]
 import gzip, json, os, sys
@@ -61,11 +63,11 @@ for lab in LABS:
     verdict = via.get('verdict', {})
     print('| %s | %s | %s | %s | %s | %s → %s | %s / %s | %s | %s |' % (NAMES[lab], json.dumps(extra) if extra else 'none', str(git.get('commit', '?'))[:7], git.get('dirty', '?'),
           'pass' if verdict.get('pass', verdict.get('ok')) else 'FAIL' if verdict else '?', s.get('livingStart', '?'), s.get('livingEnd', '?'), s.get('births', '?'), s.get('deaths', '?'),
-          s.get('starvation', s.get('starvationDeaths', '?')), fnum(bench.get('wallS') or bench.get('timing', {}).get('wallS'), 0)))
+          s.get('starvation', s.get('starvationDeaths', '?')), fnum(bench.get('timing', {}).get('totalS'), 0)))
 
-print('\nBy body mass (animal-days of the 30 scored days; an animal-day is counted in the band of its mass that day). "Walking, J per kg and metre" = walking energy charged ÷ (metres on the ground × mass), over animal-days that walked; "registered" = %.1f × (mass ÷ %.1f)^exponent below %.1f kg, the mean over the same animal-days. "At a full foregut" = eating ticks ending with the foregut at least 0.95 full ÷ eating ticks.\n' % (REG['ledgerWalkJPerKgM'], REF_KG, REF_KG))
-print('| body mass | run | animal-days | mean kg | walking, J per kg and metre: charged | registered | km on the ground | eating min | at a full foregut | dry matter eaten, g per kg | mean foregut fill | reserve ÷ store | absorbed − spent, kcal/d |')
-print('| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |')
+print('\nBy body mass (animal-days of the 30 scored days; an animal-day is counted in the band of its mass that day). "Walking energy per kg and ground metre" = walking energy charged ÷ (metres on the ground × mass), J, over animal-days that walked: the readout counts ground metres only and the ledger charges crown metres too, so it is above the ledger\'s %.1f in every run; "÷ default" = that figure over the default run\'s; "registered factor" = (mass ÷ %.1f)^exponent below %.1f kg, the mean over the same animal-days. "At a full foregut" = eating ticks ending with the foregut at least 0.95 full ÷ eating ticks.\n' % (REG['ledgerWalkJPerKgM'], REF_KG, REF_KG))
+print('| body mass | run | animal-days | mean kg | walking energy per kg and ground metre, J | ÷ default | registered factor | km on the ground | eating min | at a full foregut | dry matter eaten, g per kg | mean foregut fill | reserve ÷ store | absorbed − spent, kcal/d | milk drunk, kcal/d |')
+print('| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |')
 out = {}
 for name, lo, hi in BANDS:
     for lab in LABS:
@@ -78,15 +80,17 @@ for name, lo, hi in BANDS:
         wk = [r for r in rs if r['walkM'] > 0]
         den = sum(r['walkM'] * r['kg'] for r in wk)
         charged = sum(r['oWalk'] for r in wk) * 4184 / den if den > 0 else None
-        reg = sum(r['walkM'] * r['kg'] * REG['ledgerWalkJPerKgM'] * ((r['kg'] / REF_KG) ** e if r['kg'] < REF_KG else 1) for r in wk) / den if den > 0 else None
+        reg = sum(r['walkM'] * r['kg'] * ((r['kg'] / REF_KG) ** e if r['kg'] < REF_KG else 1) for r in wk) / den if den > 0 else None
         teat = sum(r['tEat'] for r in rs)
         spent = lambda r: sum(r[k] for k in ('oRest', 'oActivity', 'oWild', 'oWalk', 'oClimb', 'oCarry', 'oPregnancy', 'oGrowth', 'oMilk', 'oDigestion'))
         rec = dict(n=n, kg=sum(r['kg'] for r in rs) / n, charged=charged, registered=reg, km=sum(r['walkM'] for r in rs) / n / 1000, eatMin=teat / 4 / n,
-                   full=sum(r['tEatFull'] for r in rs) / teat if teat > 0 else None, dmPerKg=sum(r['dm'] / r['kg'] for r in rs) / n, fill=sum(r['fill'] for r in rs) / n,
-                   res=sum(r['res'] / r['store'] for r in rs if r['store'] > 0) / n, net=sum(r['kin'] - r['fec'] - spent(r) for r in rs) / n)
+                   full=sum(r['tEatFull'] for r in rs) / teat if teat > 0 else None, dmPerKg=sum(r['dm'] / r['kg'] for r in rs) / n, fill=sum(r['fill'] for r in rs) / max(1, sum(r['dayTicks'] for r in rs)),
+                   res=sum(r['res'] / r['store'] for r in rs if r['store'] > 0) / n, net=sum(r['kin'] - r['fec'] - spent(r) for r in rs) / n, milk=sum(r['eMilk'] for r in rs) / n)
         out[(name, lab)] = rec
-        print('| %s | %s | %d | %.1f | %s | %s | %.1f | %.0f | %s | %.1f | %.2f | %+.3f | %+.0f |' % (name, NAMES[lab], n, rec['kg'], fnum(charged, 3), fnum(reg, 3), rec['km'], rec['eatMin'],
-              '—' if rec['full'] is None else '%d%%' % round(100 * rec['full']), rec['dmPerKg'], rec['fill'], rec['res'], rec['net']))
+        d0 = out[(name, LABS[0])]['charged']
+        rec['ratio'] = charged / d0 if charged and d0 else None
+        print('| %s | %s | %d | %.1f | %s | %s | %s | %.1f | %.0f | %s | %.1f | %.2f | %+.3f | %+.0f | %.0f |' % (name, NAMES[lab], n, rec['kg'], fnum(charged, 2), fnum(rec['ratio'], 3), fnum(reg, 3), rec['km'], rec['eatMin'],
+              '—' if rec['full'] is None else '%d%%' % round(100 * rec['full']), rec['dmPerKg'], rec['fill'], rec['res'], rec['net'], rec['milk']))
 
 ref, gut, walk = LABS
 print('\n**The registered directions (§7), read:**\n')
@@ -95,6 +99,6 @@ for name, lo, hi in BANDS:
     if not (a and g and w):
         continue
     small = hi <= REF_KG
-    print('- %s: at a full foregut %s (default) → %s (gutSizeExp 0.75); walking charged %s → %s J per kg and metre (walkCostSizeExp −0.316; registered %s). %s' % (
-        name, '—' if a['full'] is None else '%d%%' % round(100 * a['full']), '—' if g['full'] is None else '%d%%' % round(100 * g['full']), fnum(a['charged'], 3), fnum(w['charged'], 3), fnum(w['registered'], 3),
+    print('- %s: at a full foregut %s (default) → %s (gutSizeExp 0.75); walking energy per kg and ground metre × %s under walkCostSizeExp −0.316 (registered factor %s). %s' % (
+        name, '—' if a['full'] is None else '%d%%' % round(100 * a['full']), '—' if g['full'] is None else '%d%%' % round(100 * g['full']), fnum(w['ratio'], 3), fnum(w['registered'], 3),
         'Registered: the full-foregut share falls and the walking charge rises.' if small else 'Registered: the walking charge does not move (the full-foregut share may, the world having diverged).'))

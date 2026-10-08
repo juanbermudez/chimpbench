@@ -495,3 +495,152 @@ swap used). Outputs in this worktree's `artifacts/validation/e1x/` (gitignored).
 - Nothing else is predicted and nothing is judged: no survival, reserve or band-distance statement is read from 30
   days. No value is changed in response.
 
+### 7.1 Result (frozen checkout at 133b75f, clean; 7 October 2026, 20:40 to 20:43 EDT)
+
+Three runs, one at a time; swap used 3.8 GB before each (limit 6), 1-minute load 1.9 to 2.7. Outputs
+`artifacts/validation/e1x/smoke-{ref,gut75,walk}*` (gitignored); the tables below are `scripts/e1x/smoke.py`'s output.
+No code or value was changed after a run: one iteration of three used.
+
+- **All three completed** (53, 55 and 56 s), viability passes, 49 animals at the start and the end, no death.
+- **`gutSizeExp` 0.75 moves as registered.** The share of eating ticks at a full foregut falls in every band under
+  31.3 kg: 6% → 1% (under 10 kg), 18% → 5% (10 to 21 kg), 20% → 11% (21 to 31.3 kg); mean foregut fill falls with it
+  (0.47 → 0.31, 0.62 → 0.53, 0.78 → 0.74). Adults: 7% → 5%, in a world that has diverged (their capacity is unchanged:
+  the unit test).
+- **`walkCostSizeExp` −0.316: the direction is as registered; the exact readout I registered was wrong.** I registered
+  that walking energy ÷ (metres on the ground × mass) would equal the ledger's cost to three figures. It cannot: the
+  per-animal readout counts metres on the ground only (height under 0.3 m), and the ledger charges every horizontal
+  metre, in a crown too. In the default run itself that ratio is 4.09 for adults, not 3.8. Read as a ratio to the
+  default run it is × 1.605, × 1.149 and × 1.058 in the three bands under 31.3 kg against registered factors of 1.588,
+  1.176 and 1.091, and × 0.995 for adults against 1.000: the right direction and about the right size, not exact (two
+  diverged worlds, crown metres uncounted). The exact statement stands on the unit test, which reads the tick's own
+  charge. A readout of crown metres would be needed to check it in a run; none was added.
+- **Not predicted, reported, not judged** (one seed, 30 days, outside the lean season). Under `gutSizeExp` 0.75 the 10
+  to 21 kg animals, all on milk, drank 194 against 224 kcal/d and each band under 31.3 kg ended 0.009 to 0.015 higher
+  in reserve. Under `walkCostSizeExp` −0.316 the 21 to 31.3 kg band ate 273 against 245 minutes a day, with 33% against
+  20% of its eating ticks at a full foregut, and ended at −0.061 against −0.046 of its store.
+
+#### E1x smoke runs: seed 48, 30 + 30 days, the working base; printed by `scripts/e1x/smoke.py` from the runs' JSON
+
+| run | parameters beyond the working base | commit | dirty | viability | living start → end | births / deaths | starvation deaths | wall, s |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| default | none | 133b75f | 0 | pass | 49 → 49 | 0 / 0 | 0 | 53 |
+| gutSizeExp 0.75 | {"gutSizeExp": 0.75} | 133b75f | 0 | pass | 49 → 49 | 0 / 0 | 0 | 55 |
+| walkCostSizeExp −0.316 | {"walkCostSizeExp": -0.316} | 133b75f | 0 | pass | 49 → 49 | 0 / 0 | 0 | 56 |
+
+By body mass (animal-days of the 30 scored days; an animal-day is counted in the band of its mass that day). "Walking energy per kg and ground metre" = walking energy charged ÷ (metres on the ground × mass), J, over animal-days that walked: the readout counts ground metres only and the ledger charges crown metres too, so it is above the ledger's 3.8 in every run; "÷ default" = that figure over the default run's; "registered factor" = (mass ÷ 31.3)^exponent below 31.3 kg, the mean over the same animal-days. "At a full foregut" = eating ticks ending with the foregut at least 0.95 full ÷ eating ticks.
+
+| body mass | run | animal-days | mean kg | walking energy per kg and ground metre, J | ÷ default | registered factor | km on the ground | eating min | at a full foregut | dry matter eaten, g per kg | mean foregut fill | reserve ÷ store | absorbed − spent, kcal/d | milk drunk, kcal/d |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| under 10 kg | default | 150 | 6.0 | 6.49 | 1.000 | 1.000 | 0.2 | 47 | 6% | 15.7 | 0.47 | -0.020 | -2 | 292 |
+| under 10 kg | gutSizeExp 0.75 | 150 | 6.0 | 6.77 | 1.044 | 1.000 | 0.3 | 46 | 1% | 15.9 | 0.31 | -0.011 | -2 | 286 |
+| under 10 kg | walkCostSizeExp −0.316 | 150 | 6.0 | 10.41 | 1.605 | 1.588 | 0.3 | 46 | 4% | 15.6 | 0.44 | -0.017 | +0 | 298 |
+| 10 to 21 kg | default | 120 | 14.3 | 4.77 | 1.000 | 1.000 | 1.2 | 178 | 18% | 19.0 | 0.62 | -0.027 | +1 | 224 |
+| 10 to 21 kg | gutSizeExp 0.75 | 120 | 14.3 | 4.61 | 0.967 | 1.000 | 1.3 | 181 | 5% | 19.9 | 0.53 | -0.014 | -0 | 194 |
+| 10 to 21 kg | walkCostSizeExp −0.316 | 120 | 14.3 | 5.48 | 1.149 | 1.176 | 1.3 | 185 | 26% | 18.7 | 0.60 | -0.030 | -5 | 233 |
+| 21 to 31.3 kg | default | 60 | 23.7 | 4.66 | 1.000 | 1.000 | 3.1 | 245 | 20% | 22.0 | 0.78 | -0.046 | -15 | 0 |
+| 21 to 31.3 kg | gutSizeExp 0.75 | 60 | 23.7 | 4.47 | 0.958 | 1.000 | 3.6 | 242 | 11% | 22.3 | 0.74 | -0.031 | -2 | 0 |
+| 21 to 31.3 kg | walkCostSizeExp −0.316 | 60 | 23.7 | 4.93 | 1.058 | 1.091 | 3.6 | 273 | 33% | 22.4 | 0.80 | -0.061 | -6 | 0 |
+| 31.3 kg and over | default | 1140 | 34.9 | 4.09 | 1.000 | 1.000 | 2.3 | 250 | 7% | 20.3 | 0.66 | -0.008 | -2 | 0 |
+| 31.3 kg and over | gutSizeExp 0.75 | 1140 | 34.9 | 4.08 | 0.997 | 1.000 | 2.4 | 245 | 5% | 20.0 | 0.65 | -0.005 | +1 | 0 |
+| 31.3 kg and over | walkCostSizeExp −0.316 | 1140 | 34.9 | 4.07 | 0.995 | 1.000 | 2.4 | 241 | 4% | 20.0 | 0.65 | -0.005 | -2 | 0 |
+
+**The registered directions (§7), read:**
+
+- under 10 kg: at a full foregut 6% (default) → 1% (gutSizeExp 0.75); walking energy per kg and ground metre × 1.605 under walkCostSizeExp −0.316 (registered factor 1.588). Registered: the full-foregut share falls and the walking charge rises.
+- 10 to 21 kg: at a full foregut 18% (default) → 5% (gutSizeExp 0.75); walking energy per kg and ground metre × 1.149 under walkCostSizeExp −0.316 (registered factor 1.176). Registered: the full-foregut share falls and the walking charge rises.
+- 21 to 31.3 kg: at a full foregut 20% (default) → 11% (gutSizeExp 0.75); walking energy per kg and ground metre × 1.058 under walkCostSizeExp −0.316 (registered factor 1.091). Registered: the full-foregut share falls and the walking charge rises.
+- 31.3 kg and over: at a full foregut 7% (default) → 5% (gutSizeExp 0.75); walking energy per kg and ground metre × 0.995 under walkCostSizeExp −0.316 (registered factor 1.000). Registered: the walking charge does not move (the full-foregut share may, the world having diverged).
+
+## 8. For the integrator: the three-year arms (not run here)
+
+Four parameter files on the working base (S39 with `pithFibreSwallowed` 0.5), each the base's file with the values named
+and nothing else: `docs/staging/integrator-kit/params/Y3-W50-<name>.json`. The reference is the saved `Y3-W50` and
+`Y3-W50-s1` (bench-y3, ff25953; both inputs at their defaults are hash-identical to that code on the pinned world, §6).
+
+| arm | parameters beyond the base | offline, 16 kg: A − E on fruit / lean-season diet (today −14 / −79 kcal/d) | order |
+| --- | --- | --- | --- |
+| `Y3-W50-gut75` | `gutSizeExp` 0.75 | +124 / +47 | 1 |
+| `Y3-W50-gut75-walk` | `gutSizeExp` 0.75, `walkCostSizeExp` −0.316 | +111 / +33 | 2 |
+| `Y3-W50-gut875` | `gutSizeExp` 0.875 | +52 / −19 | 3 |
+| `Y3-W50-walk` | `walkCostSizeExp` −0.316 | −28 / −93 | 4 |
+
+From a frozen detached checkout of the merged head, with the worktree links of AGENTS.md (one command per arm; the label
+and the file change):
+
+```sh
+fnm exec --using=22.22.3 -- pnpm exec tsx scripts/e-run.ts plan --label Y3-W50-gut75 --seeds 48,7,21,5,11 --days 1095 --burn-in 30 --animal-days \
+  --params-file docs/staging/integrator-kit/params/Y3-W50-gut75.json --out artifacts/validation/e/runs/Y3-W50-gut75
+fnm exec --using=22.22.3 -- pnpm exec tsx scripts/e-run.ts run artifacts/validation/e/runs/Y3-W50-gut75/run.json --budget-min 100 --parallel 1   # in the background; launch again until done
+fnm exec --using=22.22.3 -- pnpm exec tsx scripts/e-run.ts status artifacts/validation/e/runs/Y3-W50-gut75/run.json
+```
+
+(The same with `Y3-W50-gut75-walk`, `Y3-W50-gut875`, `Y3-W50-walk`.) Cost, from `Y3-W50-wean`'s registry: 34 to 42
+minutes a seed, about 3.1 job-hours an arm. Optional and not an arm: the base itself with the per-animal readout
+(`--label Y3-W50-ad --params-file …/M6-W50.json`), since the saved reference has no per-animal rows; its class readouts
+should equal the saved `Y3-W50`'s (`e-run.ts diff`). Without it the reference's deaths are read as the diagnosis read
+them (T1, T2: inferred from survivor lists).
+
+### 8.1 Readouts, fixed now (in this order; every number from the runs' JSON by a script)
+
+1. **Starvation, by class and by whether the animal was weaned in the run.** Per seed. An animal is "weaned in the
+   run" if it was unweaned on scored day 0 (the founders ids 22, 37, 21, 48, 20, 34, 18, 49) or born in the run, and
+   its `weaned` flag is set on its last living row. A starvation death is read as `e1w/y3.py` reads it (last living row
+   under a fifth of the store, mother alive) and must equal the run's own count by seed. Reference: 12 juvenile
+   starvation deaths in the 10 seed-runs of the two base draws (7 and 5), all founders weaned in the run; 1 newborn.
+2. **The weaned animals' reserves.** For every animal weaned in the run: day, age and mass at weaning; reserve ÷ store
+   30, 90, 180 and 365 days later and at the end; its lowest value; days below −0.5. With them, in 90-day blocks after
+   weaning: absorbed − spent, eating minutes, the share of eating ticks at a full foregut, the fallback's share of plant
+   energy, km on the ground. Against the founder juveniles of 6 to 8 y of the same seed (as e1w §2.3 W3: never below
+   −0.5; mean not below theirs by more than 0.1; eating minutes and full-foregut share not above theirs by more than a
+   quarter).
+3. **Their growth, against the targets already in `data/targets.json`.** Growth paid ÷ the potential after weaning; kg
+   gained in the year after weaning; mass at 5 y by sex against T-INF-4 (the Gombe-derived mass for age; about 10 kg
+   at 5 y, band 7 to 13 kg). Reported as a target. Registered now: an arm that feeds the weaned animal better will
+   move mass at 5 y **further from** this band (toward the captive potential, 18 to 20 kg), not closer.
+4. **Adults unchanged.** Adult males, females without infants, pregnant and nursing females, by run year: eating
+   minutes, absorbed, spent, the share of daylight at a full foregut, the lowest 30-day mean reserve; adult starvation
+   deaths; births per female-year; the nursing females' reserve trend. "Unchanged" = inside the spread of the base's
+   two draws.
+5. **The unweaned.** Animals of 2 to 5 y on milk have a smaller body too, so both inputs act on them: milk drunk per
+   day by age, self-feeding minutes (T-INF-1), reserves; starvation deaths under 2 y.
+6. **The rows that move.** `e-bench --compare` against `Y3-W50`: the fitted and the held-out sums (with and without
+   the rare rows) with z by `e-noise.md` amendment 4 against the base's two draws; and every row whose band distance
+   differs from both base draws by more than they differ from each other, listed with its values. Named in advance as
+   likely: T-INF-1, T-INF-2, T-INF-4, T-INF-5, the juvenile rows of the activity budget, and the first-year mortality row T-DEM-1 only
+   through illness (its noise is one death in about 25 births).
+7. **Viability**: births, deaths by cause, living at the end, per seed.
+
+The death count is read with the reserves and never alone: fewer deaths with the weaned cohort below −0.5 is "slower,
+not viable", as the 0.25 wadging arm was (ey §4). No value of either input is adopted from any arm.
+
+### 8.2 Predictions (before any run)
+
+| arm | what I expect | confidence |
+| --- | --- | --- |
+| `Y3-W50-gut75` | No starvation among animals weaned in the run (0 in 5 seeds; at most 1). Their reserve never below −0.5; mean at the end between −0.05 and −0.2 (base: −0.47 among the survivors). After weaning they eat 300 to 450 minutes a day (base 290 to 635) with under 60% of eating ticks at a full foregut (base up to 91%). Growth paid above 35 of 42 kcal/d; mass at 5 y 18 to 20 kg, outside T-INF-4. Adults unchanged. | moderate to high (75%) for no starvation; moderate (60%) for the reserve range |
+| `Y3-W50-gut75-walk` | As `gut75`, reserves lower by up to 0.05; still no starvation among the weaned. | moderate (65%) |
+| `Y3-W50-gut875` | Between the base and `gut75`, like wadging at 0.25: 0 or 1 starvation death among the weaned in 5 seeds, but at least one of them below −0.5 at some point and a mean end reserve of −0.15 to −0.35: it loses in lean months and recovers after. | low to moderate (50% for 0 deaths; 60% for a trough below −0.5) |
+| `Y3-W50-walk` | Not fewer juvenile starvation deaths than the base (5 or more in 5 seeds; base 7 and 5), and no later. The difference from the base stays inside the difference between its two draws. Adults unchanged. | moderate (65%) that it is not fewer; low that any difference can be told from noise |
+| every arm | Adults' class readouts inside the base's spread; prescription count 42; the unweaned 2 to 5 y drink a little less milk under `gut75` (their own gut holds more), by under 30 kcal/d. | moderate; low for the milk |
+
+What each outcome would say. `gut75` without starvation and with reserves above −0.5: the juvenile's viability in this
+model depends on an unmeasured scaling, as S39's depended on wadging; it does not say the exponent is 0.75. `gut75`
+with starvation: gut capacity within its cited bracket is not enough, and the offline ceiling (which gives the animal
+no time to travel or wait) overstates what it can absorb. `gut875` with starvation and `gut75` without: the model needs
+nearly the whole bracket, a weak position. `gut75-walk` with starvation where `gut75` has none: the result does not
+survive the one sourced correction that goes against the animal.
+
+## 9. Decisions for the user
+
+1. **Run the arms?** Four arms, about 12 job-hours. `gut75` alone answers the main question (about 3 hours).
+2. **The walking term's anchor.** Built at the adult female mass so that adults do not move (4.7 J per kg and metre at
+   16 kg). The slope carried from sockol2007's mean animal (5.8 at 16 kg) would also charge every adult 14 to 23% more
+   per metre. Keep the built anchor, ask for the other, or drop the two walking arms (offline effect −0.02 of R).
+3. **If `gut75` holds:** whether a working value of `gutSizeExp` is declared for the engine comparisons, as 0.5 was for
+   wadging, or the default stays 1 with the dependence stated. Nothing is adopted here.
+4. **A measurement would replace the range.** chiversHladik1980's specimen table (a HAL copy a person can open in a
+   browser; the bot check stops an agent), Müller et al. 2013 (gut-fill allometry with coefficients), Bruhn & Benedict
+   1936 (resting rate of immature chimpanzees), any necropsy series of ape gut volume with body mass.
+5. **Not proposed:** an arm on retention time (31.5 h lifts R by 0.09 for every size; its scaling with mass is
+   unknown and it is not a small-body input), on the resting coefficient (× 0.96, every size) or on growth (below the
+   registered threshold).
