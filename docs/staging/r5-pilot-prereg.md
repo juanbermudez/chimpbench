@@ -234,3 +234,29 @@ animal's infant); none in the nine no-model worlds.
   15, 25, 21, 40 and 20 minutes of model time. Machine at 19:37: load averages about 3 to 4; swap 3.9 GB in use.
   Seed 7's season and focal animals are read from its `rules` file afterwards (the chain does not stop between steps;
   the rule for the words is fixed in §1).
+
+**Result of iteration 3 (19:37 to 22:35; head aea37ce for the model steps; one model process at a time; swap 3.8 to
+3.9 GB in use and load 2.5 to 3.8 before each load, no hold).** Everything registered ran. Model time: `trained-gate`
+1,172 s (1,692 calls; one call passed the 120 s limit, went to the rules and the worker was replaced: it fell while
+this agent was type-checking the report script, so the machine was busier), `trained-nopick` 2,023 s (3,999 calls),
+seed 7 `trained` 1,540 s (2,645 calls) and `untuned` 2,431 s (5,228 calls), `untuned-gate` 3,412 s (6,637 calls: the
+untuned model's animals keep reaching decision points). Model time in all, both seeds: 4 h 3 min (the last arm was
+started at 3 h 6 min, under the 3.5 h line). Every replay ended on its run's hash. Seed 7: burn-in hash
+d9604068dec350b1; the window is a **middle** stretch (crop 1.05 times the year's mean, above 65% of the year's days);
+focal animals Tavuni (alpha), Sanaki, Lwazo (lactating), Fumbira, Dembiri of that world's West community.
+
+**Amendment A3 (22:37, after every model run; exploratory additions, each labelled where it is shown).**
+1. *Water.* The receipts showed that when the rules' pick is to drink, the trained model usually goes to (or stays in)
+   the nest instead. Water was not a registered readout, so one is added after the fact: the body water deficit at
+   the end of each day (the water ledger's `def`, mL). It is read by replaying each model arm from its receipts (the
+   replay is the same world: hashes checked), not by a new model run. Exploratory: chosen after seeing the choices.
+2. *Was the option there?* A table of how often the nest and water were on the menu and taken, because with the
+   rules' pick removed the nest all but disappears from the dusk and night menus (the pick is the nest, and the menu
+   holds one nest), so the "removed" arm cannot say whether an engine would nest.
+3. *Deaths.* Three seed-48 worlds had one death each on the fourth morning, one of them a focal male. A diagnostic
+   (`scripts/r5-deaths.ts`) walks the random sequence every arm shares and replays each arm to see where its very
+   small values fall.
+
+- **Iteration 4 (logged before it runs; no model): at the new head, both seeds, the rules and no-model arms again and
+  the replay of every kernel arm** (the water readout; the hashes must equal those of iteration 3), then
+  `scripts/r5-deaths.ts` and the three reports (seed 48, seed 7, both pooled).

@@ -121,6 +121,7 @@ test('day rows and the report\'s arithmetic', async () => {
     assert.ok(Math.abs(Object.values(r.min).reduce((x, y) => x + y, 0) - r.daylightMin) < 1e-6, 'the six categories fill the daylight minutes');
     assert.ok(r.daylightMin > 500 && r.daylightMin < 900 && r.nightMin > 400, `${r.daylightMin} daylight minutes, ${r.nightMin} dark`);
     assert.ok(r.nestShare !== null && r.nestShare >= 0 && r.nestShare <= 1);
+    assert.ok(typeof r.waterDefMl === 'number' && Number.isFinite(r.waterDefMl) && r.waterDefMl > -100 && r.waterDefMl < 5000, 'the water ledger is open on the working base');
     assert.ok(r.kcalOut > 500 && r.kcalOut < 6000 && Number.isFinite(r.kcalIn) && Number.isFinite(r.reservePct) && r.km >= 0 && r.kmFixes <= r.km + 1e-9);
   }
   assert.equal(run.dayHashes.length, 1);

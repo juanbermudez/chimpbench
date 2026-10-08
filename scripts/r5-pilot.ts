@@ -100,6 +100,8 @@ export interface DayRow {
   id: number; name: string; cls: string; day: number; alive: boolean;
   kcalIn: number; kcalFormula: number; kcalOut: number; reserveKcal: number; reservePct: number;
   min: Record<string, number>; daylightMin: number; km: number; kmFixes: number; nightMin: number; nestShare: number | null;
+  /** Amendment A3 (exploratory, added after the first results): the body water deficit at the day's end, mL (the water ledger's `def`; null without the ledger). */
+  waterDefMl?: number | null;
 }
 export interface Decisions {
   id: number; name: string; cls: string;
@@ -199,7 +201,8 @@ export async function runArm(base: World, name: string, spec: ArmSpec, days: num
         rows.push({ id: f.id, name: names.get(f.id)!, cls: f.cls, day, alive: c.alive,
           kcalIn: Math.round(now.in - s.in0), kcalFormula: Math.round(now.fin - s.fin0), kcalOut: Math.round(now.out - s.out0), reserveKcal: Math.round(now.res - s.res0), reservePct: +(100 * (now.res - s.res0) / cap).toFixed(4),
           min: Object.fromEntries(CATEGORIES.map((n, k) => [n, +(s.cat[k] * TICK_MIN).toFixed(2)])), daylightMin: +(s.light * TICK_MIN).toFixed(2),
-          km: +(s.m / 1000).toFixed(4), kmFixes: +(s.mf / 1000).toFixed(4), nightMin: +(s.night * TICK_MIN).toFixed(2), nestShare: s.night ? +(s.nest / s.night).toFixed(4) : null });
+          km: +(s.m / 1000).toFixed(4), kmFixes: +(s.mf / 1000).toFixed(4), nightMin: +(s.night * TICK_MIN).toFixed(2), nestShare: s.night ? +(s.nest / s.night).toFixed(4) : null,
+          waterDefMl: ix(c).wat ? Math.round(ix(c).wat!.def) : null });
         Object.assign(s, { in0: now.in, fin0: now.fin, out0: now.out, res0: now.res, cat: CATEGORIES.map(() => 0), light: 0, night: 0, nest: 0, m: 0, mf: 0 });
       }
     }
