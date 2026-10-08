@@ -45,7 +45,7 @@ export const MEASURES: { id: string; label: string; digits: number; of: (r: DayR
   // stage R4b (docs/staging/r4b-prereg.md §7); absent from runs made before it
   { id: 'trips', label: 'trips to food begun, a day', digits: 1, of: r => r.trips ?? null },
   { id: 'drinks', label: 'drinks (arrivals at water), a day', digits: 1, of: r => r.drinks ?? null },
-  { id: 'tripsDone', label: 'trips to food that ended feeding in the tree set out for, a day (exploratory)', digits: 1, of: r => r.tripsDone ?? null },
+  { id: 'tripsDone', label: 'trips to food completed (ended feeding in the tree set out for), a day (exploratory in stage R4b; registered in R5-gate)', digits: 1, of: r => r.tripsDone ?? null },
 ];
 
 /** Per animal (key seed:id): the mean of a measure over its days in an arm, on the days both arms have a value. */
@@ -79,6 +79,25 @@ export function r4cVerdict(rules: { seed: number; row: DayRow }[], trained: { se
   return { energy, nights, distance, better: energy.holds && nights.holds && distance.holds };
 }
 
+/**
+ * Stage R5-gate's rule (docs/staging/r5-gate-prereg.md §3): an arm matches the rules on feeding if (1) the paired interval of
+ * energy eaten includes 0 and the mean difference is within 5% of the rules' mean, (2) its nights in a nest are no fewer than
+ * the rules' less one and the paired interval of the share is not wholly below 0, (3) the size of its mean distance difference
+ * is no more than the rules' spread across animals. `weak`: the energy interval's half-width exceeds that 5%.
+ */
+export function matchesRules(rules: { seed: number; row: DayRow }[], arm: { seed: number; row: DayRow }[]) {
+  const M = (id: string) => MEASURES.find(m => m.id === id)!.of, of = (rows: { seed: number; row: DayRow }[], id: string) => animalMeans(rows, M(id));
+  const ruleE = [...of(rules, 'kcalFormula').values()].map(d => mean([...d.values()])), rulesMean = ruleE.length ? mean(ruleE) : NaN, eD = tInterval(pairedDiffs(of(arm, 'kcalFormula'), of(rules, 'kcalFormula')));
+  const energy = { diff: eD, rulesMean, pct: eD.mean / rulesMean, halfPct: (eD.half ?? NaN) / rulesMean, holds: eD.lo !== null && eD.lo <= 0 && eD.hi! >= 0 && Math.abs(eD.mean) <= 0.05 * rulesMean };
+  const nightsOf = (rows: { seed: number; row: DayRow }[]) => { const v = rows.filter(x => x.row.alive && x.row.nestShare !== null); return [v.filter(x => x.row.nestShare! >= NIGHT_IN_NEST).length, v.length]; };
+  const [nA, nAOf] = nightsOf(arm), [nR, nROf] = nightsOf(rules), nD = tInterval(pairedDiffs(of(arm, 'nest'), of(rules, 'nest')));
+  const nights = { arm: nA, armOf: nAOf, rules: nR, rulesOf: nROf, diff: nD, holds: nA >= nR - 1 && !(nD.hi !== null && nD.hi < 0) };
+  const ruleKm = [...of(rules, 'km').values()].map(d => mean([...d.values()])), rm = ruleKm.length ? mean(ruleKm) : NaN, spread = Math.sqrt(ruleKm.reduce((a, b) => a + (b - rm) ** 2, 0) / Math.max(1, ruleKm.length - 1));
+  const dD = pairedDiffs(of(arm, 'km'), of(rules, 'km')), dm = dD.length ? mean(dD) : NaN, distance = { diff: dm, spread, holds: Math.abs(dm) <= spread };
+  const matches = energy.holds && nights.holds && distance.holds;
+  return { energy, nights, distance, matches, weak: matches && energy.halfPct > 0.05 };
+}
+
 type File = { seed: number; burnIn: number; days: number; paramsFile: string; head: string; dirty: boolean; burnInHash: string; focal: { id: number; cls: string }[]; focalTroop: number;
   season: { treesInRange: number; yearMean: number; tercileLow: number; tercileHigh: number; windows: Record<string, { fromDay: number; toDay: number; mean: number; relativeToYearMean: number; rankInYear: number; word: string }> };
   worker: Record<string, unknown> | null; result: ArmResult };
@@ -86,17 +105,18 @@ type File = { seed: number; burnIn: number; days: number; paramsFile: string; he
 if (process.argv[1]?.endsWith('r5-report.ts')) {
   const arg = (k: string, d: string) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
   const dir = resolve(arg('dir', 'artifacts/r5/pilot')), seeds = arg('seeds', '48,7').split(',').map(Number), mdFile = arg('md', '');
-  const ORDER = ['rules', 'rules-r1', 'rules-r2', 'rules-r3', 'null', 'argmax', 'untuned', 'trained', 'retrained', 'r4c', 'trained-nopick', 'null-nopick', 'argmax-gate', 'null-gate', 'untuned-gate', 'trained-gate'];
+  const ORDER = ['rules', 'rules-r1', 'rules-r2', 'rules-r3', 'null', 'argmax', 'untuned', 'trained', 'retrained', 'r4c', 'trained-nopick', 'null-nopick', 'argmax-gate', 'null-gate', 'untuned-gate', 'trained-gate', 'r4c-gate'];
   const WHAT: Record<string, string> = { rules: 'the rules', 'rules-r1': 'the rules, re-draw 1', 'rules-r2': 'the rules, re-draw 2', 'rules-r3': 'the rules, re-draw 3', null: 'random choice', argmax: 'the rules\' top option through the loop (no model)',
     untuned: 'untuned GLiNER', trained: 'trained (`r4-rules-state`)', retrained: 'retrained (`r4b-rules-state`)', r4c: 'third round (`r4c-rules-state`)', 'trained-nopick': 'trained, the rules\' pick removed', 'null-nopick': 'random, the rules\' pick removed', 'argmax-gate': 'the rules\' top option, gate on', 'null-gate': 'random, gate on',
-    'untuned-gate': 'untuned, gate on', 'trained-gate': 'trained, gate on' };
+    'untuned-gate': 'untuned, gate on', 'trained-gate': 'trained (`r4-rules-state`), gate on', 'r4c-gate': 'third round (`r4c-rules-state`), gate on' };
   // An arm run before amendment A3 has no water readout in its rows. Its replay, made after it, has: the replay is the
   // same world (the end hash and every day's hash are checked equal here), so its rows stand in for the run's.
   const load = (seed: number, name: string) => {
     const f = join(dir, `s${seed}`, `${name}.json`), rp = join(dir, `s${seed}`, `${name}.replay.json`);
     if (!existsSync(f)) return null;
     const file = JSON.parse(readFileSync(f, 'utf8')) as File;
-    if (file.result.rows.some(r => r.waterDefMl === undefined) && existsSync(rp)) {
+    // (the same for the readouts of stage R5-gate: a saved arm replayed at a later head carries them, the run does not)
+    if ((file.result.rows.some(r => r.waterDefMl === undefined) || file.result.rows.some(r => r.own === undefined)) && existsSync(rp)) {
       const r = (JSON.parse(readFileSync(rp, 'utf8')) as File).result;
       if (r.endHash === file.result.endHash && r.dayHashes.join() === file.result.dayHashes.join() && r.rows.length === file.result.rows.length) file.result.rows = r.rows;
     }
@@ -185,8 +205,28 @@ if (process.argv[1]?.endsWith('r5-report.ts')) {
       '', `**Verdict: R4c ${v.better ? 'counts as better than' : 'does not count as better than'} the first adapter** (${usedSeeds.length > 1 ? `seeds ${usedSeeds.join(' and ')} pooled` : `seed ${usedSeeds[0]} alone: the registered rule reads the standard window with both seeds pooled`}).`, '');
   }
 
+  // stage R5-gate (docs/staging/r5-gate-prereg.md §2 and §3): the rule, and how much of the day the kernel decided
+  if ([...files.keys()].some(a => files.get(a)![0].result.spec.gate === 1)) {
+    const kernelArms = [...files.keys()].filter(a => !a.startsWith('rules')), spread = matchesRules(rowsOf('rules'), rowsOf('rules')).distance.spread;
+    md.push('## Stage R5-gate: does an arm match the rules on feeding? (the registered rule)', '',
+      `An arm matches if (1) the paired interval of energy eaten, arm minus rules, includes 0 and the mean difference is within 5% of the rules' mean; (2) it has no fewer nights in a nest than the rules less one and the paired interval of the share of nights is not wholly below 0; (3) the size of its mean distance difference is no more than the rules' spread across animals (${f(spread, 2)} km here). "Weakly": the energy interval is wider than the 5% it is judged against, so it cannot tell a match from a 5% shortfall.`, '',
+      '| arm | energy eaten: arm minus rules, kcal (95% interval) | as % of the rules\' mean | half-width as % | 1 | nights in a nest: arm, rules | 2 | distance: arm minus rules, km | 3 | verdict |', '|---|---|---|---|---|---|---|---|---|---|');
+    for (const a of kernelArms) {
+      const v = matchesRules(rowsOf('rules'), rowsOf(a));
+      if (v.energy.diff.lo === null) continue;
+      md.push(`| ${WHAT[a] ?? a} | ${signed(v.energy.diff.mean, 1)} (${signed(v.energy.diff.lo, 1)} to ${signed(v.energy.diff.hi!, 1)}) | ${signed(100 * v.energy.pct, 1)}% | ${f(100 * v.energy.halfPct, 1)}% | ${v.energy.holds ? 'yes' : 'no'} | ${v.nights.arm} of ${v.nights.armOf}, ${v.nights.rules} of ${v.nights.rulesOf} | ${v.nights.holds ? 'yes' : 'no'} | ${signed(v.distance.diff, 2)} | ${v.distance.holds ? 'yes' : 'no'} | ${v.matches ? (v.weak ? 'matches, weakly (the interval is wider than the 5% it is judged against)' : '**matches the rules on feeding**') : 'does not match'} |`);
+    }
+    md.push('', `The rule is registered for the standard window with seeds 21 and 5 pooled; this file holds seed${usedSeeds.length > 1 ? 's' : ''} ${usedSeeds.join(' and ')}.`, '',
+      '## Stage R5-gate: who set the act the animal is in (per focal animal and day; mean, 95% t interval over animals)', '',
+      'Every tick of the 24 hours is credited to who set the act in progress: a fresh choice of the kernel; an intention held by the gate (an act the gate kept or, at the end of a trip, began, without asking: it continues the kernel\'s earlier choice, and the decision to keep it was code\'s); or the rules (a fallback, or an act begun before the window). An arm run before these counters existed shows its replay\'s values, or a dash.', '',
+      '| arm | kernel asked, times a day | new acts held by the gate, a day | new acts the rules settled, a day | share of asked decisions the model\'s choice settled | share of new acts that were a fresh choice of the kernel | share of the day under a fresh choice of the kernel | under an intention held by the gate | under the rules |', '|---|---|---|---|---|---|---|---|---|');
+    const stat = (a: string, of: (r: DayRow) => number | null, d = 1, pct = false) => { const m = [...animalMeans(rowsOf(a), of).values()].map(x => mean([...x.values()])); if (!m.length) return '–'; const t = tInterval(m), k = pct ? 100 : 1, u = pct ? '%' : ''; return t.lo === null ? `${f(k * t.mean, d)}${u}` : `${f(k * t.mean, d)}${u} (${f(k * t.lo, d)} to ${f(k * t.hi!, d)})`; };
+    for (const a of kernelArms) md.push(`| ${WHAT[a] ?? a} | ${stat(a, r => r.asked ?? null)} | ${stat(a, r => r.heldN ?? null)} | ${stat(a, r => r.byRules ?? null)} | ${stat(a, r => r.asked ? r.byModel! / r.asked : null, 1, true)} | ${stat(a, r => r.own === undefined ? null : (r.byModel! + r.heldN! + r.byRules!) ? r.byModel! / (r.byModel! + r.heldN! + r.byRules!) : null, 1, true)} | ${stat(a, r => r.own ? r.own.model / 1440 : null, 1, true)} | ${stat(a, r => r.own ? r.own.held / 1440 : null, 1, true)} | ${stat(a, r => r.own ? r.own.rules / 1440 : null, 1, true)} |`);
+    md.push('');
+  }
+
   // prereg §4: the gate arm and the pick-removed arm also against their own no-model reference, and against the main arm
-  const PAIRS: [string, string][] = [['r4c', 'trained'], ['r4c', 'retrained'], ['r4c', 'argmax'], ['retrained', 'trained'], ['retrained', 'argmax'], ['trained', 'argmax'], ['trained', 'untuned'], ['trained', 'null'], ['trained-gate', 'argmax-gate'], ['trained-gate', 'trained'], ['untuned-gate', 'argmax-gate'], ['trained-gate', 'untuned-gate'], ['trained-nopick', 'null-nopick'], ['trained-nopick', 'trained']];
+  const PAIRS: [string, string][] = [['trained-gate', 'trained'], ['r4c-gate', 'r4c'], ['r4c-gate', 'trained-gate'], ['r4c-gate', 'argmax-gate'], ['r4c', 'trained'], ['r4c', 'retrained'], ['r4c', 'argmax'], ['retrained', 'trained'], ['retrained', 'argmax'], ['trained', 'argmax'], ['trained', 'untuned'], ['trained', 'null'], ['trained-gate', 'argmax-gate'], ['untuned-gate', 'argmax-gate'], ['trained-gate', 'untuned-gate'], ['trained-nopick', 'null-nopick'], ['trained-nopick', 'trained']];
   const pairs = PAIRS.filter(([a, b]) => files.has(a) && files.has(b));
   if (pairs.length) {
     md.push('## Arm against arm, same animals and days (mean paired difference of the first minus the second, 95% t interval over animals; * the interval excludes 0)', '');

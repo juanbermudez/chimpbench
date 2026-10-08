@@ -59,6 +59,8 @@ export const ARMS: Record<string, ArmSpec> = {
   retrained: { kernel: 'gliner', adapter: 'r4b-rules-state' },
   // stage R4c (docs/staging/r4b-prereg.md §11): R4's training set plus trip and drink decisions; the same setting
   r4c: { kernel: 'gliner', adapter: 'r4c-rules-state' },
+  // stage R5-gate (docs/staging/r5-gate-prereg.md): the third adapter with the loop's intention gate on (`trained-gate` is the first adapter's)
+  'r4c-gate': { kernel: 'gliner', adapter: 'r4c-rules-state', gate: 1 },
 };
 
 /** One kernel pass, as logged. `index` and `p` are the kernel's raw answer (null when it gave none); `picked` is the position applied (-1: the rules decided). */
@@ -114,6 +116,14 @@ export interface DayRow {
    * `tripsDone` (exploratory): trips that ended with the animal feeding in the tree it set out for.
    */
   trips?: number; drinks?: number; tripsDone?: number;
+  /**
+   * Stage R5-gate (docs/staging/r5-gate-prereg.md §2), over the whole day. `own`: minutes credited to who set the act the
+   * animal is in: a fresh choice of the kernel (`model`), an intention held by the loop's gate (`held`: an act the gate kept
+   * or, at the end of a trip, began, without asking), or the rules (`rules`: a fallback, the rules arm's own decisions, or an
+   * act begun before the window). `asked`: decision points sent to the kernel that day; `byModel`: those its choice
+   * settled; `heldN`: new acts the gate kept or began without asking; `byRules`: new acts the rules settled.
+   */
+  own?: { model: number; held: number; rules: number }; asked?: number; byModel?: number; heldN?: number; byRules?: number;
 }
 export interface Decisions {
   id: number; name: string; cls: string;
@@ -155,7 +165,8 @@ export async function runArm(base: World, name: string, spec: ArmSpec, days: num
   const rows: DayRow[] = [], dec = new Map<number, Decisions>(focalIds.map(f => [f.id, { id: f.id, name: names.get(f.id)!, cls: f.cls, points: 0, kernel: 0, fallbacks: {}, gateKept: 0, interrupts: 0, rulesDecisions: 0, withRulesPick: 0, agree: 0, picks: {}, rulesPicks: {} }]));
   // running state per focal animal: the ledger at the day's start, the last position and 5-min fix, the day's counters
   const st = new Map(focalIds.map(f => { const c = idx0.byId.get(f.id)!, L = ix(c).en; return [f.id, { in0: L?.in ?? 0, fin0: L?.fin ?? L?.in ?? 0, out0: L?.out ?? 0, res0: L?.res ?? 0, px: c.position[0], pz: c.position[2], fx: c.position[0], fz: c.position[2],
-    cat: CATEGORIES.map(() => 0), light: 0, night: 0, nest: 0, m: 0, mf: 0, fam: famNow(c), tgt: c.targetId, tripTo: -1, atW: false, trips: 0, drinks: 0, tripsDone: 0 }]; }));
+    cat: CATEGORIES.map(() => 0), light: 0, night: 0, nest: 0, m: 0, mf: 0, fam: famNow(c), tgt: c.targetId, tripTo: -1, atW: false, trips: 0, drinks: 0, tripsDone: 0,
+    owner: 'rules' as 'model' | 'held' | 'rules', own: { model: 0, held: 0, rules: 0 }, asked: 0, byModel: 0, heldN: 0, byRules: 0 }]; }));
   const ms: number[] = [], last = new Map<number, { ms: number; answer: KernelAnswer | null; sha: string; tokens: number }>();
   // the kernel, timed, with its raw answer kept for the receipt
   const timed: Kernel | null = kernel && { ...kernel, async decide(request, env) {
@@ -173,7 +184,8 @@ export async function runArm(base: World, name: string, spec: ArmSpec, days: num
     const idx = index(w);
     // decision versions advanced inside the tick: the rules' own decisions (rules arms); for a kernel arm an act the loop's
     // gate kept (the animal is not waiting afterwards), or an interrupt that invalidated a pending request (it still waits)
-    for (const [id, v] of before) { const c = idx.byId.get(id)!, d = dec.get(id)!, n = c.decisionVersion - v; if (n > 0) { if (!timed) d.rulesDecisions += n; else if (c.awaitingDecisionSince === null) d.gateKept += n; else d.interrupts += n; } }
+    for (const [id, v] of before) { const c = idx.byId.get(id)!, d = dec.get(id)!, n = c.decisionVersion - v, s = st.get(id)!;
+      if (n > 0) { if (!timed) { d.rulesDecisions += n; s.byRules += n; s.owner = 'rules'; } else if (c.awaitingDecisionSince === null) { d.gateKept += n; s.heldN += n; s.owner = 'held'; } else d.interrupts += n; } }
     if (timed) {
       const s = performance.now();
       const results = await answerWaiting(w, c => focal.has(c.id) ? timed : null);
@@ -182,6 +194,7 @@ export async function runArm(base: World, name: string, spec: ArmSpec, days: num
         // a pass reached the kernel unless the request itself was refused (a kernel that throws leaves StepResult.calls at 0)
         const d = dec.get(r.chimpId)!, req = r.request!, fam = req.options.map(famOf), asked = r.refusal !== 'fewer-than-two-options' && r.refusal !== 'invalid-context', l = asked ? last.get(r.chimpId) : undefined;
         d.points++; if (asked) calls += Math.max(1, r.calls);
+        { const s = st.get(r.chimpId)!; s.asked++; if (r.by === 'kernel') { s.byModel++; s.owner = 'model'; } else { s.byRules++; s.owner = 'rules'; } }
         if (r.by === 'kernel') { d.kernel++; inc(d.picks, fam[r.index]); if (req.rulesIndex >= 0) { d.withRulesPick++; inc(d.rulesPicks, fam[req.rulesIndex]); if (r.index === req.rulesIndex) d.agree++; } }
         else inc(d.fallbacks, r.refusal === 'kernel-error' ? `kernel-error: ${r.detail}` : r.refusal === 'invalid-context' ? `invalid-context: ${r.detail}${r.detail === 'body' ? ` (${bodyFieldError(req.context.body).replace(/=.*/, '')})` : ''}` : r.refusal);
         const a = l?.answer ?? null;
@@ -213,6 +226,7 @@ export async function runArm(base: World, name: string, spec: ArmSpec, days: num
         if (fam === 'food-trip' && (s.fam !== 'food-trip' || c.targetId !== s.tgt)) { s.trips++; s.tripTo = c.targetId; }
         else if (fam !== 'food-trip' && s.tripTo >= 0) { if (c.action === 'forage' && c.targetId === s.tripTo) s.tripsDone++; s.tripTo = -1; }
         s.fam = fam; s.tgt = c.targetId;
+        s.own[s.owner] += TICK_MIN;
         const site = c.action === 'drink' ? idx.waterById.get(c.targetId) : undefined, atW = !!site && (site.position[0] - c.position[0]) ** 2 + (site.position[2] - c.position[2]) ** 2 <= 1.44;
         if (atW && !s.atW) s.drinks++;
         s.atW = atW;
@@ -223,8 +237,10 @@ export async function runArm(base: World, name: string, spec: ArmSpec, days: num
           kcalIn: Math.round(now.in - s.in0), kcalFormula: Math.round(now.fin - s.fin0), kcalOut: Math.round(now.out - s.out0), reserveKcal: Math.round(now.res - s.res0), reservePct: +(100 * (now.res - s.res0) / cap).toFixed(4),
           min: Object.fromEntries(CATEGORIES.map((n, k) => [n, +(s.cat[k] * TICK_MIN).toFixed(2)])), daylightMin: +(s.light * TICK_MIN).toFixed(2),
           km: +(s.m / 1000).toFixed(4), kmFixes: +(s.mf / 1000).toFixed(4), nightMin: +(s.night * TICK_MIN).toFixed(2), nestShare: s.night ? +(s.nest / s.night).toFixed(4) : null,
-          waterDefMl: ix(c).wat ? Math.round(ix(c).wat!.def) : null, trips: s.trips, drinks: s.drinks, tripsDone: s.tripsDone });
-        Object.assign(s, { in0: now.in, fin0: now.fin, out0: now.out, res0: now.res, cat: CATEGORIES.map(() => 0), light: 0, night: 0, nest: 0, m: 0, mf: 0, trips: 0, drinks: 0, tripsDone: 0 });
+          waterDefMl: ix(c).wat ? Math.round(ix(c).wat!.def) : null, trips: s.trips, drinks: s.drinks, tripsDone: s.tripsDone,
+          own: { model: +s.own.model.toFixed(2), held: +s.own.held.toFixed(2), rules: +s.own.rules.toFixed(2) }, asked: s.asked, byModel: s.byModel, heldN: s.heldN, byRules: s.byRules });
+        Object.assign(s, { in0: now.in, fin0: now.fin, out0: now.out, res0: now.res, cat: CATEGORIES.map(() => 0), light: 0, night: 0, nest: 0, m: 0, mf: 0, trips: 0, drinks: 0, tripsDone: 0,
+          own: { model: 0, held: 0, rules: 0 }, asked: 0, byModel: 0, heldN: 0, byRules: 0 });
       }
     }
     if (endOfDay) { dayHashes.push(worldHash(w)); opts.log?.(`${name} day ${day + 1}/${days}: ${Math.round((Date.now() - t0) / 1000)} s (kernel ${Math.round(kernelMs / 1000)} s, ${calls} calls${opts.guard ? `, ${opts.guard.timeouts - timeouts0} timeouts` : ''})`); }

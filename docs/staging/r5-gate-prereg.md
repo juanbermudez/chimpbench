@@ -98,3 +98,17 @@ for the three, with their replays. 5. Results in §5, the plan's status line, th
 
 Machine at registration (16:25): load averages 5.36, 9.65, 6.51 (the test suite of R4c had just run); swap 4,347 MB
 used of 5,120 MB; no model process running.
+
+**Code delivered before any run** (outside `src/`): `scripts/r5-pilot.ts` (the arm `r4c-gate`; per animal and day
+the minutes credited to the kernel, the gate and the rules, and the day's tallies of asked, settled, held), 
+`scripts/r5-report.ts` (the rule `matchesRules`, the table "who set the act the animal is in", the arm), 
+`scripts/r5-gate.sh`; `tests/r4b.test.ts` 8 tests (two new: the three shares cover the 24 hours, the counters leave
+the world's hash unchanged, only a gate arm holds intentions; the rule's three conditions and "weakly"). `tsc` clean;
+with `tests/r5-pilot.test.ts` 13 tests, 13 pass. `r4-rules-state` was copied beside `r4c-rules-state` (sha256
+e09fd6f4… and f0827af2…).
+
+- **Iteration G1 (logged before it runs; no model):** `scripts/r5-gate.sh nomodel` for seed 21 standard, seed 5
+  standard and seed 21 lean: `argmax-gate` and its replay, and the replays of the saved `argmax`, `trained` and `r4c`
+  arms at this head (each must end on its run's hash).
+- **Iteration G2 (logged before it runs):** `scripts/r5-gate.sh model` for the same three, one after the other:
+  `trained-gate` and `r4c-gate` in one worker process, then their replays. The swap check is written to each log.

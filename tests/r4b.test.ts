@@ -121,3 +121,46 @@ test('R4c: the registered rule needs all three conditions', async () => {
   const far = r4cVerdict(rules, trained, arm(id => -20 - id * 3, 1));
   assert.ok(far.distance.spread > 0.25 && far.distance.spread < 0.35 && !far.distance.holds && !far.better, 'a kilometre past the rules is an overshoot');
 });
+
+// Stage R5-gate (docs/staging/r5-gate-prereg.md): who set each minute of the day, and the rule for matching the rules.
+test('R5-gate: every minute of a day is credited to the kernel, the gate or the rules; only a gate arm holds intentions', async () => {
+  const { runArm, ARMS: A, armWorld } = await import('../scripts/r5-pilot');
+  const { nullKernel } = await import('../src/kernel/kernels');
+  const { focalSet } = await import('../scripts/em-loop');
+  const { createWorld, tickWorld } = await import('../src/simulation');
+  const { worldHash } = await import('./fixtures/golden');
+  const b = createWorld(48, { profile: 'field', params: { ...params, observeV4: 1, menuParity: 1 } });
+  for (let i = 0; i < 240; i++) tickWorld(b);
+  const focal = focalSet(b), plain = structuredClone(b);
+  for (let i = 0; i < 5760; i++) tickWorld(plain);
+  const rules = await runArm(b, 'rules', A.rules, 1, focal, null), off = await runArm(b, 'null', A.null, 1, focal, nullKernel), on = await runArm(b, 'null-gate', A['null-gate'], 1, focal, nullKernel);
+  assert.equal(rules.endHash, worldHash(plain), 'the counters write nothing: the rules arm is the plain world');
+  assert.equal(worldHash(armWorld(b, A.rules)), rules.startHash);
+  assert.deepEqual(A['r4c-gate'], { kernel: 'gliner', adapter: 'r4c-rules-state', gate: 1 });
+  for (const arm of [rules, off, on]) for (const r of arm.rows) {
+    assert.ok(r.own && Math.abs(r.own.model + r.own.held + r.own.rules - 1440) < 0.01, 'the three shares cover the 24 hours');
+    assert.equal(r.asked, r.byModel! + (arm === rules ? 0 : r.byRules!), 'every asked decision is settled by the kernel or by the rules');
+  }
+  assert.ok(rules.rows.every(r => r.own!.rules === 1440 && r.asked === 0 && r.heldN === 0 && r.byRules! > 0));
+  assert.ok(off.rows.every(r => r.heldN === 0 && r.own!.held === 0 && r.own!.model > 1000), 'with the gate off the kernel sets nearly the whole day');
+  assert.ok(on.rows.every(r => r.heldN! > 0 && r.own!.held > 0 && r.own!.model > 0), 'with the gate on part of the day is a held intention');
+  const sum = (arm: typeof on, of: (r: typeof on.rows[number]) => number) => arm.rows.reduce((s, r) => s + of(r), 0);
+  assert.ok(sum(on, r => r.asked!) < sum(off, r => r.asked!), 'the gate asks the kernel less often');
+  assert.equal(sum(on, r => r.heldN!), on.decisions.reduce((s, d) => s + d.gateKept, 0), 'the day tallies are the arm\'s gate count');
+});
+
+test('R5-gate: matching the rules on feeding needs all three conditions, and a wide interval is called weak', async () => {
+  const { matchesRules } = await import('../scripts/r5-report');
+  const row = (id: number, day: number, kcal: number, km: number, nest: number) => ({ seed: 21, row: { id, name: `a${id}`, cls: 'x', day, alive: true, kcalIn: kcal, kcalFormula: kcal, kcalOut: 0, reserveKcal: 0, reservePct: 0, min: {}, daylightMin: 0, km, kmFixes: km, nightMin: 600, nestShare: nest } });
+  const arm = (dk: (id: number) => number, dkm: number, nest: (id: number, day: number) => number = () => 1) => Array.from({ length: 10 }, (_, id) => [0, 1].map(day => row(id, day, 1600 + dk(id), 2 + id / 10 + dkm, nest(id, day)))).flat();
+  const rules = arm(() => 0, 0);
+  const same = matchesRules(rules, arm(id => (id % 2 ? 20 : -20), 0.1));
+  assert.deepEqual([same.matches, same.weak], [true, false], 'a small scatter around the rules matches');
+  const wide = matchesRules(rules, arm(id => (id % 2 ? 200 : -200), 0));
+  assert.deepEqual([wide.matches, wide.weak], [true, true], 'an interval wider than 5% matches only weakly');
+  assert.equal(matchesRules(rules, arm(id => -100 - id, 0)).energy.holds, false, 'a consistent 6% shortfall does not match');
+  assert.equal(matchesRules(rules, arm(id => (id % 2 ? 300 : -100), 0)).energy.holds, false, 'a mean more than 5% off does not match even with an interval over 0');
+  assert.equal(matchesRules(rules, arm(() => 0, 0, (id, day) => id < 2 && day === 0 ? 0.5 : 1)).nights.holds, false, 'two nights out of a nest is worse');
+  const far = matchesRules(rules, arm(() => 0, -0.5));
+  assert.ok(far.distance.spread > 0.25 && far.distance.spread < 0.35 && !far.distance.holds && !far.matches, 'half a kilometre short of the rules is outside their spread here');
+});
