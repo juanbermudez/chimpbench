@@ -504,3 +504,15 @@ arms. About 6 h 30 min of model time in all, one model process at a time; swap i
    (for example how long the walk is in minutes, or how long it has fed in this tree)?
 4. **Heat.** With no hot weather in the simulation, should the heat probe stay a pass mark for an engine?
 5. **Night drinking.** Should the rules drink at night at all? If not, the "drinking gap" is partly the rules'.
+
+### Checks at the end (8 October 2026, 07:30; no model process running)
+
+`tsc --noEmit -p .` clean; `gen-params --check` clean (1,046 entries); `tests/r4b.test.ts` 4 of 4; with
+`tests/r4-packet.test.ts`, `tests/r5-pilot.test.ts`, `tests/ft-*.test.ts`, `tests/em-*.test.ts`,
+`tests/kernel.test.ts`, `tests/rw-bench.test.ts`, `tests/sim-track-e.test.ts`, `tests/sim-params.test.ts` (the
+goldens) and `tests/r2-packet.test.ts`: 101 tests, 101 pass. The full `pnpm test` once, after the last model run:
+**1,096 tests, 1,096 pass, 0 fail, 0 skipped** (2 min 53 s). Against the branch point (bbd8b3e) the branch changes
+`AGENTS.md`, `IMPLEMENTATION_PLAN.md`, files under `docs/staging/`, scripts and one test: nothing under `src/` or
+`data/`, no switch default, no golden, no fixture. Not done: the third training epoch was not evaluated (the saved
+epoch is the registered one); the gate-on and pick-removed settings and the 0.25 base were not run in the loop (not
+registered here).
