@@ -26,11 +26,16 @@ export const QUOTAS: Record<'train' | 'dev' | 'test', Record<Part, number>> = {
 /** Share of a year's days that are hot days, and that are rainy days. */
 export const TENTH = 0.1;
 
-/** The class of each census day (prereg §2): hot (the tenth with the highest air temperature), rainy (of the rest, as many with the most daylight rain), then by the crop index's thirds over the whole census. Ties go to the earlier day. */
+/**
+ * The class of each census day (prereg §2 and amendment A1): hot (the tenth on which the animals spent the largest share of
+ * their daylight time "hot"; ties by the higher air temperature), rainy (of the rest, as many with the most daylight rain),
+ * then by the crop index's thirds over the whole census. Remaining ties go to the earlier day.
+ */
 export function classDays(census: CensusDay[]): Map<number, typeof DAY_CLASSES[number]> {
   const n = Math.round(TENTH * census.length), out = new Map<number, typeof DAY_CLASSES[number]>();
-  const top = (rows: CensusDay[], of: (d: CensusDay) => number) => [...rows].sort((a, b) => of(b) - of(a) || a.day - b.day).slice(0, n);
-  for (const d of top(census, d => d.tMax)) out.set(d.day, 'hot day');
+  const top = (rows: CensusDay[], of: (d: CensusDay) => number, then: (d: CensusDay) => number = () => 0) => [...rows].sort((a, b) => of(b) - of(a) || then(b) - then(a) || a.day - b.day).slice(0, n);
+  // amendment A1: the air temperature's daily high is the same 24.2 °C on about 95 days of a year, so it cannot rank days; the animals' own heat can
+  for (const d of top(census, d => d.hotShare, d => d.tMax)) out.set(d.day, 'hot day');
   for (const d of top(census.filter(d => !out.has(d.day)), d => d.rainShare)) out.set(d.day, 'rainy day');
   const crops = census.map(d => d.crop).sort((a, b) => a - b), lo = crops[Math.floor(crops.length / 3)], hi = crops[Math.floor(2 * crops.length / 3)];
   for (const d of census) if (!out.has(d.day)) out.set(d.day, d.crop < lo ? 'lean-season day' : d.crop > hi ? 'rich day' : 'middle day');

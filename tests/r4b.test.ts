@@ -40,12 +40,13 @@ test('the year sampler is R4\'s sampler: the same records, with the day and the 
   assert.ok(recs.some(r => r.st.foodOutOfSight) && recs.some(r => !r.st.foodOutOfSight));
 });
 
-test('every day gets one class: a tenth hot, a tenth rainy, then the crop index\'s thirds', () => {
-  const census: CensusDay[] = Array.from({ length: 100 }, (_, i) => ({ day: 6 + i, tMax: 20 + (i * 37 % 100) / 10, rainShare: (i * 53 % 100) / 100, crop: 1000 + (i * 71 % 100), reservesMedian: 0, lowShare: 0, hotShare: 0, alive8: 40, records: 10 }));
+test('every day gets one class: a tenth hot (by the animals\' own heat), a tenth rainy, then the crop index\'s thirds', () => {
+  const census: CensusDay[] = Array.from({ length: 100 }, (_, i) => ({ day: 6 + i, tMax: 20 + (i * 37 % 100) / 10, rainShare: (i * 53 % 100) / 100, crop: 1000 + (i * 71 % 100), reservesMedian: 0, lowShare: 0, hotShare: Math.floor((i * 37 % 100) / 20) / 100, alive8: 40, records: 10 }));
   const cls = classDays(census), n = (c: string) => [...cls.values()].filter(v => v === c).length;
   assert.equal(cls.size, 100);
   assert.equal(n('hot day'), 10); assert.equal(n('rainy day'), 10);
-  const hottest = [...census].sort((a, b) => b.tMax - a.tMax).slice(0, 10);
+  // the animals' own heat ranks the days (five levels here, so it ties); the air temperature breaks the ties
+  const hottest = [...census].sort((a, b) => b.hotShare - a.hotShare || b.tMax - a.tMax).slice(0, 10);
   assert.ok(hottest.every(d => cls.get(d.day) === 'hot day'));
   const crops = census.map(d => d.crop).sort((a, b) => a - b);
   for (const d of census) { const c = cls.get(d.day)!; if (c === 'lean-season day') assert.ok(d.crop < crops[33]); if (c === 'rich day') assert.ok(d.crop > crops[66]); }

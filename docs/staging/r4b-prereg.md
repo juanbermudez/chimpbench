@@ -248,3 +248,24 @@ and can "begin" one trip twice), `r5-report.ts` (the new arm and measures, and t
   W50, W25; burn-in 6, 365 days, p 0.03; two processes at a time; `--check` on seed 21 W50), then
   `scripts/r4b-assemble.ts` and `scripts/r4b-evalset.ts`. No model. Machine: load 8.3, 4.2, 3.2 (this agent's
   tests); swap 3,778 MB in use.
+  Result (00:30 to 00:46, head 23b3726 for the last pair; the sampler's code is that of 220776b). Each world-year
+  took 258 to 310 s (498 s with the check). Records: seed 48 W50 36,839, W25 36,387; seed 7 W50 39,535, W25 39,552;
+  seed 21 W50 38,421, W25 38,065; no decision point skipped. Seed 21 W50's tapped world hashes the same as the base
+  alone (63f8d04d2c4d1c02). The year holds a lean season: around days 120 to 160 the crop index falls to a quarter of
+  its high and the animals' median reserves to 4% to 10% below the usual store (lowest day: seed 48 −7.6% and −10.0%,
+  seed 7 −3.8% and −4.4%, seed 21 −6.2% and −6.1%; W50 and W25).
+
+### Amendment A1 (8 October 2026, 00:50; after the census was read, before any record was chosen and before any model ran)
+
+**Hot days cannot be ranked by the air temperature.** The simulation's air temperature has a daily cycle and cooling
+by cloud and rain, and no season: its daily high lies between 22.9 and 24.2 °C in every world, and 90 to 101 of a
+world's 365 days share the same high of 24.21 °C. "The 37 days with the highest air temperature" is therefore a draw
+among about 95 tied days, and the tie-break in the code (the earlier day) would have filled the class with the first
+weeks of the year, the season R4 already used. **Changed:** hot days are the 37 days on which the animals spent the
+largest share of their daylight time "hot" (thermal load 0.4 or more, the packet's own word; the census's `hotShare`,
+read every 5 minutes over the living animals aged 8 and over), ties by the higher air temperature, then the earlier
+day. That share runs from 0 to 4% to 9% of daylight animal-time by world (the 37th day: about 2%). It is the
+simulation's own state, read before any label or model result. Nothing else in §2 changes: rainy days, the crop
+thirds, the situation classes, the proportions and the order of drawing stand. A consequence said now: with no hot
+weather in the simulation, the probe's hot level (31 °C, load 0.5) describes a state the rules' world reaches only
+briefly, in the sun and after exertion; "hot" records are found by the situation class, not by the weather.
