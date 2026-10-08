@@ -646,3 +646,18 @@ against trained" and the three-part rule of 11.4 (`r4cVerdict`). `tests/r4b.test
 - **Iteration C1 (logged before it runs, 07:50; no model):** `scripts/r4c-run.sh sample` (the four worlds, burn-in 14
   days, 20 days, p 0.25, two processes at a time), then `scripts/r4c-assemble.ts` on R4's contexts
   (`.claude/worktrees/r4-train/artifacts/decide-ft/r4/contexts`, read only).
+  Result (07:38 to 07:40, head aaedf7a). Each world took 27 to 30 s: 16,594 to 17,340 records, of which 12,260 to
+  14,733 are decision points of training animals. Every class is available several times over in every world (trips
+  taken 1,032 to 1,542; drinks taken 188 to 264; a trip offered and not taken 6,927 to 8,064; a drink offered and not
+  taken 897 to 1,006), so the registered counts were taken in full: **3,000 supplement records, 1,200 trips taken,
+  300 drinks taken, 1,200 and 300 offered and not taken.** The training set (table: `docs/staging/r4c-data.md`):
+  6,200 records, 6,122 labelled, the same 61 animals as R4; R4's file is first in it byte for byte (sha256
+  aa3fa4b5…, equal to R4's manifest) and the dev file is R4's. The rules take a trip to food at 1,509 of the 6,122
+  labelled contexts (24.6%; R4 309, 9.9%), 93 of them trips the gate kept under way; they drink at 341 (5.6%; R4 41),
+  159 of those at night. Removed wordings found: 0.
+
+- **Iteration C2 (logged before it runs, 07:42): train `r4c-rules-state`** (`scripts/r4c-run.sh train`; R4's
+  settings; 6,122 labelled contexts, 3 epochs, about 4 h 30 min expected), detached from the session; then, each
+  starting when the one before ends, **iteration C3** (`scripts/r4c-run.sh offline`: A, B, parity, wild) and
+  **iteration C4** (`scripts/r4c-run.sh loop 21 standard`, `loop 5 standard`, `loop 21 lean`). The swap check is
+  written to each log before each model run.
