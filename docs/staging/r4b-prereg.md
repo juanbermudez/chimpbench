@@ -238,3 +238,13 @@ and can "begin" one trip twice), `r5-report.ts` (the new arm and measures, and t
 - **Iteration 0 (logged before it runs): the smoke check of the sampler.** Seed 48, W50, 2 days after 6 of burn-in,
   p 0.03, `--check` (the tapped world against the base alone), output under `artifacts/decide-ft/r4b/smoke/`. It gives
   the seconds per simulated day and the records per day; no number of it is used for anything else. No model.
+  Result (8 October 2026, 00:28, head 220776b): 232 records of 38 animals in the 2 days (116 a day at p 0.03; 166
+  draws, the rules' decision on the menu at 227); the tapped world hashes the same as the base alone; 19 s for the
+  two passes of 8 days (about 1.2 s a simulated day, so a world-year is about 7 to 8 minutes and about 42,000
+  records, 190 MB). The two days' census: highest air temperature 24.2 °C on both, no rain, median reserves 0.2%
+  below the usual store, 0.02% to 0.06% of the animals' daylight time "hot". No stop rule; nothing changed.
+
+- **Iteration 1 (logged before it runs, 00:30): the six world-years** (`scripts/r4b-contexts.ts`, seeds 48, 7, 21 ×
+  W50, W25; burn-in 6, 365 days, p 0.03; two processes at a time; `--check` on seed 21 W50), then
+  `scripts/r4b-assemble.ts` and `scripts/r4b-evalset.ts`. No model. Machine: load 8.3, 4.2, 3.2 (this agent's
+  tests); swap 3,778 MB in use.
