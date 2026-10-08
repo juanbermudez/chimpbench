@@ -318,3 +318,14 @@ heat. Correction to §1 and §3: R4's 41 drink labels hold 20 at night, not 17.
 - **Iteration 5 (logged before it runs): the loop's model arms on seed 21** (`scripts/r4b-chain.sh model 21
   standard`, then `model 21 lean`): `trained` and `retrained` in one worker process, then their replays; after
   iteration 4. Seed 5 (iteration 6) only if everything else is done.
+
+**Result of iteration 2: `r4b-rules-state` trained (00:48 to 03:25; no memory failure, first attempt).** 3,121
+labelled contexts, 3 epochs, 9,363 examples shown: **8,197 s of training (2 h 17 min), 9,050 s of wall time (2 h 31
+min) with the load and the four dev passes; 0.88 s per example; peak MPS driver memory 6.1 GiB, peak process footprint
+6.9 GiB**; 0 batches retried at the cap. Swap in use 3,778 MB before, 3,730 MB after; load about 2 (a short
+simulation of this agent ran beside it in its first three minutes). Dev agreement with the rules' decision (295
+contexts of 15 animals never trained on, the year-round mix; chance 0.19): untuned 0.312; after epoch 1 0.525, epoch
+2 0.614, epoch 3 0.607 (loss 1.89 → 1.13, 0.96, 0.96). **The saved epoch is 2** (lowest dev loss; R4's was 3).
+Adapter sha256 `82e329e9…8d0a`; the manifest carries the label source, the parts, 0 removed wordings and
+`labels_from_jev_or_an_outside_model: false`. These are dev numbers; the held-out sets are below.
+Iteration 4 began at 03:25 by itself when the training process ended (swap 3,730 MB in use).
