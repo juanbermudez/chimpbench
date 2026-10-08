@@ -868,6 +868,7 @@ fitted sum moving past the noise rule at 0.75, and the size of the outbreak toll
   count by the condition line (X1).
 - The arms differ from the reference in every random draw after the first tick in which the input acts, so any
   rare-event count (outbreaks, killings, births) differs by chance as well.
+- Final checks after merging track-e (bbd8b3e) into this branch, 8 October 2026: `tsc --noEmit` clean; the full suite run once at four files at a time with no other heavy process on the machine: 1,092 tests, 1,092 pass, 0 fail, 0 skipped.
 - Tables from the saved runs:
 
 ```sh
