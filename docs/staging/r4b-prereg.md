@@ -516,3 +516,300 @@ goldens) and `tests/r2-packet.test.ts`: 101 tests, 101 pass. The full `pnpm test
 `data/`, no switch default, no golden, no fixture. Not done: the third training epoch was not evaluated (the saved
 epoch is the registered one); the gate-on and pick-removed settings and the 0.25 base were not run in the loop (not
 registered here).
+
+## 11. Stage R4c: the third and last round (registered 8 October 2026, 07:40, before any sampling, training or model run)
+
+The integrator merged R4b (track-e 5532dcb; this branch was brought up to it) and asked for one more round, the last
+for this stage: the user's limit is three (R4, R4b, R4c). It aims only at the gap sections 10.1 and 10.4 measured:
+both adapters begin half the rules' trips to food, or fewer, and the year-round sample barely added such decisions
+(trips 309 → 312, drinks 41 → 78). The packet already shows the distance and the fruit expected at a remembered tree;
+what is thin is the number of examples in which the rules set out. The user's decisions of the head of this file bind
+it unchanged. No network, no outside model, nothing under `src/` or `data/`, no whole-population benchmark.
+
+### 11.1 The one change against R4
+
+**Training set = R4's own training file, unchanged (3,200 contexts, 3,122 labelled; sha256 checked against R4's
+manifest), plus a supplement of real decision points at which a trip to food or a drink was the question.** Nothing
+else differs from R4: the state-only packet `r4-state-1`, the labels (the rules' own decision; **the adapter inherits
+the rules' judgment**), the dev file (R4's, unchanged: the same 15 animals choose the saved epoch), the model, every
+training setting. R4b's year-round sample is left out: it made things worse and the cause is not known.
+
+**The supplement.**
+
+- *Worlds and days, by rule:* the four training worlds of R4 (seeds 48 and 7 × `M6-W50`, `M6-W25`), the **20 days
+  that follow R4's last training day: days 14 to 33** of each world (R4 used days 6 to 9 on W50 and 10 to 13 on W25).
+  The days are named by their position, before anything is sampled; none is chosen by what it holds. Sampler:
+  `scripts/r4b-contexts.ts` (R4's tap method), burn-in 14 days, 20 days, every decision point of an animal aged 8 or
+  over with probability 0.25. Only **training animals** (R4's rule: the animals whose hash is 0.12 or above), so no
+  dev animal and no held-out seed enters.
+- *Positives:* decision points at which the rules' decision is **a trip to a remembered food tree** (the family the
+  pilot and section 10 call a trip to food: travel to a food tree the animal is not feeding in, of its own choice) or
+  **a drink**. Points where the rules' gate kept such a trip under way are included in their natural share (R4b's
+  pools put them at about 8% of trip decisions), because with the gate off a model is asked there too.
+- *Negatives, as many:* decision points at which a trip to a remembered food tree, or a drink, **was on the menu and
+  the rules chose neither** (they fed where they stood, rested, groomed, moved with others, nested). They keep the
+  rules' own mix of what was chosen instead. So the adapter is shown when to go and when not to.
+- *Counts, per world:* 300 trip positives, 75 drink positives, 300 negatives with a trip on the menu, 75 negatives with
+  a drink on the menu (a point with both goes to the drink negatives); **3,000 in all: 1,500 positives (1,200 trips,
+  300 drinks) and 1,500 negatives.** Each class is taken in a fixed hash order from the world's pool. If a world's
+  pool is short of a class, what there is is taken and the same world's negatives of that kind are cut to match;
+  nothing is refilled from another class. R4b's pools suggest every class is available several times over.
+- *Natural examples only:* each decision point is used once; nothing is duplicated; every example has weight 1.
+
+**What this does, said plainly.** It moves the share of trip and drink decisions in training away from their natural
+share: trips from 10% of labelled contexts (309 of 3,122) to about 25% (about 1,509 of 6,122), drinks from 1.3% to
+about 5.6%. That is a design choice, not a neutral sample. It can make the adapter set out too often. It is to be
+judged only by the in-the-loop result on unseen seeds (11.4), not by offline agreement.
+
+### 11.2 Training
+
+`r4c-rules-state` under `artifacts/decide-ft/r4c/adapters/`, `training/decide_ft/train_r4.py`, R4's settings (§5 of
+this file lists them), 3 epochs, the saved epoch by the lowest loss on R4's dev file. About 6,122 labelled contexts ×
+3 at 0.88 s: about 4 h 30 min of training, 6.9 GiB expected. Machine rules as §8: one model process at a time; `uptime`
+and `sysctl -n vm.swapusage` before each model run, no start above 6 GB of swap in use; a death at the memory cap is
+logged and the batch reduced (batch 1 × 8, then the top 4 layers), at most 3 iterations.
+
+### 11.3 Offline evaluation, line by line with R4 and R4b
+
+A (R4's own held-out file: agreement overall and by kind, shares of picks, shuffled options, the rules' pick removed,
+the six probes) and B (the year-round held-out set) scored for `r4c-rules-state`; the other models' score files are
+those already made. Parity (`parity.py --n 12 --device cpu` on the dev contexts); the wild-choice development part,
+plain and fanned out (the sealed part is never opened). Tables by `scripts/r4-report.ts` and `r4-wild-report.ts` with
+four models, each adapter also paired with `r4-rules-state`.
+
+Thresholds, fixed now. They are reported, and none of them decides the round (11.4 does):
+
+| | Threshold |
+| --- | --- |
+| C1 | on A's draws `r4c` minus `r4` is not below 0 (its interval is not wholly below 0) |
+| C2 | `PARITY OK`; no packet over 1,280 tokens (the packets are R4's and R4b's, counted already) |
+| C3 | **the heat probe is no longer a pass mark.** The simulation's daily high is 22.9 to 24.2 °C all year (amendment A1), so the probe's hot level (31 °C) is a state the rules' world never reaches and the rules' decisions hold no steady rise of rest with heat to learn; it is still reported. The other five probes stand: none moves the wrong way; **reserves is kept** and is reported as before (it has not moved feeding in two rounds) |
+| C4 | wild development part: `r4c` minus `r4`, plain and fan-out, not wholly below 0 |
+| C5 (reported) | where the rules take a trip to food and where they drink (A and B): `r4c` against `r4`; the share of picks that are trips and that are feeding against the rules' |
+
+### 11.4 In the loop: the readout that decides
+
+R4b's test repeated with one new arm: seeds 21 and 5, the standard window (30 days of burn-in, 5 days), the same ten
+focal animals; and the lean window of seed 21 (days 119 to 124). The gate off, the rules' pick kept, base W50. The
+rules arm, its three re-draws, the no-model loop arm and the first adapter's arm (`trained`) are those of R4b, **not
+run again**: the new arm `r4c` continues the same burned-in worlds (the report refuses an arm whose burn-in hash
+differs) and is replayed from its receipts. Runner `scripts/r4b-loop.ts`, report `scripts/r5-report.ts`.
+
+Measures, each against the rules on the same animal-days with a 95% t interval over animals: energy eaten, feeding
+minutes, trips to food begun, drinks, distance, nights in a nest; and the share of new acts the model's choice settled.
+
+**The rule, fixed before the run. R4c counts as better than R4 only if all three hold on the standard window, the
+ten animals of seeds 21 and 5 pooled:**
+
+1. **energy eaten is closer to the rules'**: `r4c`'s mean difference from the rules is smaller in size than the first
+   adapter's, and `r4c` minus `trained` (same animals and days) has an interval that excludes 0;
+2. **nights in a nest are not worse**: `r4c` has no fewer nights in a nest than the first adapter less one (of 50),
+   and the paired interval of the share of nights is not wholly below 0;
+3. **it does not overshoot the rules' travel distance**: `r4c`'s mean distance a day minus the rules' (paired) is not
+   above the rules' own spread across the ten animals (the standard deviation of the rules arm's per-animal means).
+
+The script prints the three conditions and the verdict. The lean window (five animals) is reported with the same
+measures and cannot decide alone; if it contradicts the standard window, that is said. Offline numbers do not decide.
+
+**What ten animals can show:** the pooled half-width for energy eaten was 39 kcal for the first adapter and 187 for
+R4b. The first adapter's gap is 92 kcal, so condition 1 needs most of that gap closed consistently across animals.
+
+**Written before the run:** more trips begun than the first adapter and more drinks; whether that feeds the animals
+better is open, since the first adapter's trips ended in the tree it set out for less than half as often as the
+rules' (0.7 against 1.7 a day) and a trip abandoned on the way costs energy.
+
+### 11.5 If R4c is not better
+
+Stop. No fourth attempt. Section 13 then says what three rounds have shown about training from the rules' decisions
+on state alone, and what a different approach would need, without starting it.
+
+### 11.6 Order of work
+
+1. This section, committed. 2. Code: `scripts/r4c-assemble.ts`, `scripts/r4c-run.sh`, the arm `r4c` and the verdict
+table in the report; tests. 3. **Iteration C1:** the four supplement samples (a minute each, no model) and the
+assembly; the counts are written in §12 before training. 4. **Iteration C2:** train. 5. **Iteration C3:** A, B,
+parity, wild. 6. **Iteration C4:** the loop, seed 21 standard, seed 5 standard, seed 21 lean, each with its replay.
+7. Results (§12), the conclusion (§13), the plan's status line, the full test suite once with nothing else running.
+If time or memory runs out the order of dropping is: B; the wild-choice check; the lean window. The adapter with
+evaluation A and the two standard windows is the minimum.
+
+## 12. R4c: iteration log and results
+
+Machine at registration (07:33): load averages 4.35, 9.14, 6.53 (the test suite had just run); swap 3,023 MB used of
+4,096 MB; no model process running.
+
+**Code delivered before any run** (outside `src/`): `scripts/r4c-assemble.ts` (the supplement's classes, the training
+file, the manifest and the data table), `scripts/r4c-run.sh` (sample, train, offline, loop; the swap check before each
+model run); `scripts/r5-pilot.ts` gains the arm `r4c`; `scripts/r5-report.ts` gains the arm, the table "Third round
+against trained" and the three-part rule of 11.4 (`r4cVerdict`). `tests/r4b.test.ts` 6 tests (two new). `tsc` clean.
+
+- **Iteration C1 (logged before it runs, 07:50; no model):** `scripts/r4c-run.sh sample` (the four worlds, burn-in 14
+  days, 20 days, p 0.25, two processes at a time), then `scripts/r4c-assemble.ts` on R4's contexts
+  (`.claude/worktrees/r4-train/artifacts/decide-ft/r4/contexts`, read only).
+  Result (07:38 to 07:40, head aaedf7a). Each world took 27 to 30 s: 16,594 to 17,340 records, of which 12,260 to
+  14,733 are decision points of training animals. Every class is available several times over in every world (trips
+  taken 1,032 to 1,542; drinks taken 188 to 264; a trip offered and not taken 6,927 to 8,064; a drink offered and not
+  taken 897 to 1,006), so the registered counts were taken in full: **3,000 supplement records, 1,200 trips taken,
+  300 drinks taken, 1,200 and 300 offered and not taken.** The training set (table: `docs/staging/r4c-data.md`):
+  6,200 records, 6,122 labelled, the same 61 animals as R4; R4's file is first in it byte for byte (sha256
+  aa3fa4b5…, equal to R4's manifest) and the dev file is R4's. The rules take a trip to food at 1,509 of the 6,122
+  labelled contexts (24.6%; R4 309, 9.9%), 93 of them trips the gate kept under way; they drink at 341 (5.6%; R4 41),
+  159 of those at night. Removed wordings found: 0.
+
+- **Iteration C2 (logged before it runs, 07:42): train `r4c-rules-state`** (`scripts/r4c-run.sh train`; R4's
+  settings; 6,122 labelled contexts, 3 epochs, about 4 h 30 min expected), detached from the session; then, each
+  starting when the one before ends, **iteration C3** (`scripts/r4c-run.sh offline`: A, B, parity, wild) and
+  **iteration C4** (`scripts/r4c-run.sh loop 21 standard`, `loop 5 standard`, `loop 21 lean`). The swap check is
+  written to each log before each model run.
+
+**Result of iteration C2: `r4c-rules-state` trained (07:38 to 12:14; no memory failure, first attempt).** 6,122
+labelled contexts, 3 epochs, 18,366 examples shown: **15,373 s of training (4 h 16 min), 16,133 s of wall time (4 h
+29 min); 0.84 s per example; peak MPS driver memory 6.0 GiB, peak process footprint 6.8 GiB**; 0 batches retried.
+Swap in use 3,023 MB before, 4,602 MB after (under the 6 GB line). On R4's dev file (292 contexts of 15 animals,
+chance 0.20; untuned 0.363): epoch 1 0.575, epoch 2 0.620, epoch 3 0.586; loss 1.77 → 1.04, 0.92, 0.91. **The saved
+epoch is 3** (the lowest dev loss, the registered rule), although epoch 2 agreed more often; R4 itself ended at 0.637
+and a loss of 0.93 on the same file. Adapter sha256 `f0827af2…9d1d`; the manifest carries the label source, the
+parts and their hashes, 0 removed wordings and `labels_from_jev_or_an_outside_model: false`. The clock times written
+in §11's heading and in the lines of iterations C1 and C2 were a few minutes ahead of the machine's; the logs under
+`artifacts/decide-ft/r4c/logs/` carry the exact ones. Iteration C3 began at 12:14 by itself.
+
+**Result of iterations C3 and C4 (12:14 to 16:20; one model process at a time; swap 3.9 to 4.6 GB in use before each
+run, no hold).** Offline (12:14 to 13:42): A 4,641 packets in 2,980 s, B 1,500 in 1,232 s, `PARITY OK` on 12 dev
+contexts, the wild-choice development part in 7 minutes. The loop: seed 21 standard 6,198 calls in 3,772 s; seed 5
+standard 4,075 in 3,386 s; seed 21 lean 3,322 in 2,249 s; median 0.53 to 0.60 s a decision. **Ten calls of 13,595
+passed the 120 s limit** (nine in the first twenty minutes of seed 5, one in the lean window; each went to the rules
+and the worker was replaced; another application was busy on the machine then). All three arms replay from their
+receipts to the run's hash. No death in any arm.
+
+### 12.1 The answer
+
+**No. More trip and drink examples did not close the feeding gap; they made the animals walk.** The registered rule
+(11.4), standard window, ten animals of seeds 21 and 5, per animal and day:
+
+| | the rules | first adapter (`r4-rules-state`) | third round (`r4c-rules-state`) |
+| --- | --- | --- | --- |
+| energy eaten, kcal | 1,654 | 1,562 (−92; −131 to −54) | 1,488 (−166; −278 to −55) |
+| feeding, daylight minutes | 252 | 211 (−41; −64 to −18) | 207 (−45; −70 to −21) |
+| trips to food begun | 8.3 | 4.2 (−4.1; −5.5 to −2.7) | **53.9 (+45.7; +31.4 to +60.0)** |
+| drinks | 0.7 | 0.5 (−0.2; −0.4 to +0.1) | 0.9 (+0.2; −0.1 to +0.5) |
+| distance, km | 2.63 | 2.47 (−0.16; −0.78 to +0.46) | **8.00 (+5.38; +4.19 to +6.56)** |
+| nights in a nest | 50 of 50 | 50 of 50 | 50 of 50 |
+| energy spent, kcal | 1,538 | 1,502 | 1,722 (+184; +116 to +252) |
+| reserves, % of the usual store a day | +0.01 | −0.02 | −0.63 (−0.85 to −0.43) |
+| share of new acts the model's choice settled | – | 99.2% | 95.1% |
+
+| Condition | Numbers | Holds |
+| --- | --- | --- |
+| 1. energy eaten closer to the rules', the adapters differing | first −92 kcal from the rules, third −166; third minus first −74 (−166 to +19) | **no** |
+| 2. nights in a nest not worse | 50 of 50 both | yes |
+| 3. no overshoot of the rules' distance beyond the rules' spread across animals (0.84 km) | +5.38 km a day | **no** |
+
+**R4c does not count as better than the first adapter.** Each seed alone reads the same (seed 21: 1,615 / 1,547 /
+1,525 kcal and 2.1 / 2.3 / 7.4 km; seed 5: 1,693 / 1,576 / 1,451 kcal). **Lean window** (seed 21, days 119 to 124,
+five animals): energy eaten 1,632 / 1,712 / **1,365** (third minus rules −267, −422 to −113); distance 4.80 / 3.39 /
+10.74 km; trips begun 8.1 / 4.2 / 25.7; reserves −0.17 / +0.15 / −0.97% a day; 25 of 25 nights in a nest for all.
+It agrees with the standard window and is worse.
+
+What it did learn: in the loop it takes the rules' pick at 0.83 when that is a trip to food (first adapter 0.17) and
+at 0.36 when it is a drink (0.14), and its trips end feeding in the tree it set out for as often as the rules' (2.1 a
+day against 1.7; first adapter 0.7). What it lost: when the rules rest it rests at 0.14 (first adapter 0.50) and
+moves instead; when the rules feed where they stand it does so at 0.21 (0.42) and sets out for another tree
+instead. Asked at every decision point, it begins six times the rules' trips, walks three times as far, spends 184
+kcal a day more and eats no more.
+
+### 12.2 Offline, line by line (thresholds of 11.3; none decides)
+
+| | Threshold | Result |
+| --- | --- | --- |
+| C1 | on A's draws `r4c` minus `r4` not below 0 | **met**: 0.608 against 0.609 (−0.001, −0.037 to +0.035); R4b 0.572 |
+| C2 | parity | **met**: `PARITY OK` |
+| C3 | none of the five probes the wrong way (heat only reported) | **met**: deficit +0.218, sleep +0.077, light +0.322, water +0.448, all the right way; reserves +0.002 (−0.001 to 0.005), does not respond, for the third round running. Heat, reported: −0.018, the wrong way, as every model |
+| C4 | wild development part not below R4 | **met**: plain 0.424 against 0.406 (+0.018, 0.003 to 0.030); fan-out 0.489 against 0.480 (+0.009, −0.012 to 0.034) |
+
+Agreement with the rules' decision on draws, the three rounds side by side:
+
+| | untuned | R4 | R4b | R4c |
+| --- | --- | --- | --- | --- |
+| A (R4's days), all draws | 0.286 | 0.609 | 0.572 | 0.608 |
+| A: feeding / travel / rest / social / night | 0.08 / 0.10 / 0.31 / 0.42 / 0.72 | 0.37 / 0.73 / 0.78 / 0.54 / 0.84 | 0.32 / 0.50 / 0.86 / 0.43 / 0.81 | 0.44 / 0.43 / 0.77 / 0.59 / 0.84 |
+| A: the rules take a trip to food | 0.00 | 0.20 | 0.11 | **0.69** |
+| A: the rules feed where they stand | 0.11 | 0.53 | 0.53 | **0.11** |
+| A: the rules drink (20 draws) | 0.55 | 0.35 | 0.25 | 0.75 |
+| A: acts the gate kept, or arrivals | 0.40 | 0.66 | 0.66 | 0.57 |
+| A: the rules' pick removed, best remaining option | 0.21 | 0.46 | 0.41 | 0.51 |
+| B (the year), all draws | 0.292 | 0.589 | 0.591 | 0.610 |
+| B: the rules take a trip to food | 0.04 | 0.32 | 0.38 | **0.79** |
+| B: the rules feed where they stand | 0.07 | 0.52 | 0.48 | **0.25** |
+| share of picks that are feeding, A (the rules 0.29) | 0.09 | 0.20 | 0.17 | 0.28 |
+
+Offline R4c looks like the best of the three: the same overall agreement as R4, the rules' feeding share at last,
+trips and drinks found. The table also holds the warning: what it gained where the rules set out it lost where they
+stay, almost one for one (0.20 + 0.53 for R4, 0.69 + 0.11 for R4c on A).
+
+### 12.3 Cost
+
+Training 4 h 16 min (4 h 29 min of wall time), 6.8 GiB, no memory failure. Offline scoring 1 h 28 min. The loop
+2 h 37 min for three arms. About 8 h 35 min of model time for the round; with R4b about 15 hours on this Mac in a day.
+
+## 13. What three rounds have shown, and what a different approach would need
+
+The stage stops here (11.5): three rounds were allowed and none is better than the first adapter, which stays.
+
+| Round | Training set (labels: the rules' decisions; input: state only) | Offline agreement (A, B) | In the loop on unseen seeds: energy eaten against the rules | The failure |
+| --- | --- | --- | --- | --- |
+| R4 | 3,200 contexts of four rich days | 0.61, 0.59 | −92 kcal a day (6% less) | begins half the rules' trips to food |
+| R4b | 3,200 spread over a year by state | 0.57, 0.59 | −365 (22% less) | rests more, loses dusk and sleepiness |
+| R4c | R4's 3,200 plus 3,000 trip and drink decisions, half taken and half not | 0.61, 0.61 | −166 (10% less) | begins six times the rules' trips, walks three times as far |
+
+**What is established (high confidence unless said).**
+
+1. **The adapter learns how often, not when.** Shown few trips it under-goes; shown many, with as many refusals
+   beside them, it over-goes. Between "feed here" and "go to another tree" its hits moved from one side to the other
+   and their sum hardly moved. On the state-only packet this model does not separate the two cases the rules
+   separate. The rules separate them by an option's net energy rate, which the user ruled out as valuation; the
+   packet shows the parts (crop here and there, distance, who feeds there) and three training sets did not get the
+   model to combine them.
+2. **Offline agreement does not predict behaviour.** R4 and R4c agree with the rules equally (0.61) and behave in
+   opposite ways in the simulation. Any future round must be judged in the loop.
+3. **Coverage of states was not the limit.** The first adapter, trained on four rich days, agrees with the rules across
+   the whole year as well as the adapter trained on the year (0.59 and 0.59), and kept its animals fed in a lean
+   stretch.
+4. **The loop multiplies a lean.** With the gate off a model is asked at every decision point and holds no intention,
+   so a model a little too ready to set out begins 54 trips a day. The rules keep an act until something changes.
+   R4c's agreement held on fresh draws (0.61) and fell on the acts the rules' gate kept or completed (0.66 → 0.57).
+5. **Two probes are not about the engine.** Reserves have not moved feeding in any round, though round two's
+   training set held 988 run-down contexts; that suggests, and it was not measured, that in the rules' own decisions
+   low reserves barely change what is chosen from a menu. Heat is not a state of this simulation (a daily high of
+   22.9 to 24.2 °C all year).
+6. **This Mac is not the limit either.** Every training run fitted (6.8 to 6.9 GiB, no failure); a round costs 2 to
+   4.5 hours of training and as much again to evaluate.
+
+**What a different approach would need (none of it started).**
+
+- **A. Use the gate, before any more training** (cheapest; no training; about half an hour an arm). The rules decide
+  only when their intention gate opens; every loop test of rounds two and three asked the model at every decision
+  point. The pilot's gate-on arm of the first adapter matched its own no-model reference on every measure. Running
+  the first adapter with the gate on, on seeds 21 and 5, would say how much of the 6% is the engine and how much is
+  the loop asking too often. It needs only a registration.
+- **B. Something in the packet** (needs the user's ruling and a change under `src/`, which this stage could not
+  make). If the rules' rate stays out, the animal's own experience could stand in for it: how fast it is taking in
+  food where it is now, how long it has been in this tree, how many minutes the walk would take. Each is state or
+  perception. Round three says more examples of the same packet will not do it.
+- **C. Labels from the states the model itself reaches** (the standard remedy for an imitator that drifts: run the
+  model in the loop, have the rules label the states it gets into, add them, retrain, repeat). Each turn costs a loop
+  run and a training run, 5 to 9 hours here, and it usually takes several turns: more than a night on this Mac, and
+  the labels are still the rules'.
+- **D. A different label source**: what an option actually yielded (energy gained over the next hour of the
+  simulation) rather than what the rules chose. That stops inheriting the rules' judgment, and it needs a design of
+  its own.
+- Not recommended: a larger set of the same kind. Doubling the set (R4c) changed the lean, not the skill.
+
+### Checks at the end of R4c (8 October 2026; no model process running)
+
+`tsc --noEmit -p .` clean; `gen-params --check` clean (1,046 entries); the full `pnpm test` once, after the last
+model run: **1,098 tests, 1,098 pass, 0 fail, 0 skipped** (3 min 5 s; it holds `tests/r4b.test.ts` 6 of 6 and the
+files of the hard rules). Against track-e 5532dcb the round changes `AGENTS.md`, `IMPLEMENTATION_PLAN.md`, files
+under `docs/staging/`, three scripts, two new ones and one test: nothing under `src/` or `data/`, no switch default,
+no golden, no fixture. The sealed part of the wild-choice benchmark was not read. Not done: the second training
+epoch (dev agreement 0.620 against the saved third's 0.586) was not evaluated, since the registered rule saves by
+dev loss; the gate-on setting was not run (not registered; it is proposal A above).

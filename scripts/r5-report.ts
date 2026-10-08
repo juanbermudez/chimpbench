@@ -61,6 +61,24 @@ export function pairedDiffs(arm: Map<string, Map<number, number>>, ref: Map<stri
   return out;
 }
 
+/**
+ * Stage R4c's rule (docs/staging/r4b-prereg.md §11.4): better than the first adapter only if (1) energy eaten is nearer the
+ * rules' and the two adapters differ (paired interval excludes 0), (2) nights in a nest are no fewer than the first
+ * adapter's less one and the paired interval of the share is not wholly below 0, (3) its distance a day does not exceed
+ * the rules' by more than the rules' own spread across animals (the standard deviation of the rules arm's animal means).
+ */
+export function r4cVerdict(rules: { seed: number; row: DayRow }[], trained: { seed: number; row: DayRow }[], r4c: { seed: number; row: DayRow }[]) {
+  const M = (id: string) => MEASURES.find(m => m.id === id)!.of, of = (rows: { seed: number; row: DayRow }[], id: string) => animalMeans(rows, M(id));
+  const eT = mean(pairedDiffs(of(trained, 'kcalFormula'), of(rules, 'kcalFormula'))), eC = mean(pairedDiffs(of(r4c, 'kcalFormula'), of(rules, 'kcalFormula'))), eD = tInterval(pairedDiffs(of(r4c, 'kcalFormula'), of(trained, 'kcalFormula')));
+  const energy = { trained: eT, r4c: eC, diff: eD, holds: Math.abs(eC) < Math.abs(eT) && eD.lo !== null && (eD.lo > 0 || eD.hi! < 0) };
+  const nightsOf = (rows: { seed: number; row: DayRow }[]) => { const v = rows.filter(x => x.row.alive && x.row.nestShare !== null); return [v.filter(x => x.row.nestShare! >= NIGHT_IN_NEST).length, v.length]; };
+  const [nT, nOf] = nightsOf(trained), [nC, nCOf] = nightsOf(r4c), nD = tInterval(pairedDiffs(of(r4c, 'nest'), of(trained, 'nest')));
+  const nights = { trained: nT, of: nOf, r4c: nC, r4cOf: nCOf, diff: nD, holds: nC >= nT - 1 && !(nD.hi !== null && nD.hi < 0) };
+  const ruleMeans = [...of(rules, 'km').values()].map(d => mean([...d.values()])), rm = mean(ruleMeans), spread = Math.sqrt(ruleMeans.reduce((a, b) => a + (b - rm) ** 2, 0) / Math.max(1, ruleMeans.length - 1));
+  const dC = mean(pairedDiffs(of(r4c, 'km'), of(rules, 'km'))), distance = { r4c: dC, spread, holds: dC <= spread };
+  return { energy, nights, distance, better: energy.holds && nights.holds && distance.holds };
+}
+
 type File = { seed: number; burnIn: number; days: number; paramsFile: string; head: string; dirty: boolean; burnInHash: string; focal: { id: number; cls: string }[]; focalTroop: number;
   season: { treesInRange: number; yearMean: number; tercileLow: number; tercileHigh: number; windows: Record<string, { fromDay: number; toDay: number; mean: number; relativeToYearMean: number; rankInYear: number; word: string }> };
   worker: Record<string, unknown> | null; result: ArmResult };
@@ -68,9 +86,9 @@ type File = { seed: number; burnIn: number; days: number; paramsFile: string; he
 if (process.argv[1]?.endsWith('r5-report.ts')) {
   const arg = (k: string, d: string) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
   const dir = resolve(arg('dir', 'artifacts/r5/pilot')), seeds = arg('seeds', '48,7').split(',').map(Number), mdFile = arg('md', '');
-  const ORDER = ['rules', 'rules-r1', 'rules-r2', 'rules-r3', 'null', 'argmax', 'untuned', 'trained', 'retrained', 'trained-nopick', 'null-nopick', 'argmax-gate', 'null-gate', 'untuned-gate', 'trained-gate'];
+  const ORDER = ['rules', 'rules-r1', 'rules-r2', 'rules-r3', 'null', 'argmax', 'untuned', 'trained', 'retrained', 'r4c', 'trained-nopick', 'null-nopick', 'argmax-gate', 'null-gate', 'untuned-gate', 'trained-gate'];
   const WHAT: Record<string, string> = { rules: 'the rules', 'rules-r1': 'the rules, re-draw 1', 'rules-r2': 'the rules, re-draw 2', 'rules-r3': 'the rules, re-draw 3', null: 'random choice', argmax: 'the rules\' top option through the loop (no model)',
-    untuned: 'untuned GLiNER', trained: 'trained (`r4-rules-state`)', retrained: 'retrained (`r4b-rules-state`)', 'trained-nopick': 'trained, the rules\' pick removed', 'null-nopick': 'random, the rules\' pick removed', 'argmax-gate': 'the rules\' top option, gate on', 'null-gate': 'random, gate on',
+    untuned: 'untuned GLiNER', trained: 'trained (`r4-rules-state`)', retrained: 'retrained (`r4b-rules-state`)', r4c: 'third round (`r4c-rules-state`)', 'trained-nopick': 'trained, the rules\' pick removed', 'null-nopick': 'random, the rules\' pick removed', 'argmax-gate': 'the rules\' top option, gate on', 'null-gate': 'random, gate on',
     'untuned-gate': 'untuned, gate on', 'trained-gate': 'trained, gate on' };
   // An arm run before amendment A3 has no water readout in its rows. Its replay, made after it, has: the replay is the
   // same world (the end hash and every day's hash are checked equal here), so its rows stand in for the run's.
@@ -106,7 +124,7 @@ if (process.argv[1]?.endsWith('r5-report.ts')) {
 
   const rowsOf = (a: string) => (files.get(a) ?? []).flatMap(x => x.result.rows.map(row => ({ seed: x.seed, row })));
   const armMean = (a: string, of: (r: DayRow) => number | null) => { const m = [...animalMeans(rowsOf(a), of).values()].map(d => mean([...d.values()])); return m.length ? mean(m) : null; };
-  const main = ['rules', 'null', 'untuned', 'trained', 'retrained'].filter(a => files.has(a)), others = [...files.keys()].filter(a => !main.includes(a));
+  const main = ['rules', 'null', 'untuned', 'trained', 'retrained', 'r4c'].filter(a => files.has(a)), others = [...files.keys()].filter(a => !main.includes(a));
 
   md.push('', `## Means per arm (mean over ${animalMeans(rowsOf('rules'), r => r.kcalOut).size} focal animals of each animal's mean over its days)`, '');
   for (const group of [main, others]) {
@@ -136,16 +154,17 @@ if (process.argv[1]?.endsWith('r5-report.ts')) {
   }
 
   // stage R4b (docs/staging/r4b-prereg.md §7): the retrained adapter against the first one, with the words fixed there
-  if (files.has('trained') && files.has('retrained')) {
-    md.push('## Retrained against trained (stage R4b): did the gap to the rules close?', '',
+  for (const [cand, heading] of [['retrained', 'Retrained against trained (stage R4b)'], ['r4c', 'Third round against trained (stage R4c)']] as [string, string][]) {
+    if (!files.has('trained') || !files.has(cand)) continue;
+    md.push(`## ${heading}: did the gap to the rules close?`, '',
       '"gap closed": retrained reads "close" to the rules and retrained minus trained (same animals and days) has an interval that excludes 0 on the side of the rules. "improved, not closed": that interval excludes 0 on the side of the rules and retrained still "differs". "no improvement shown": the interval includes 0, or lies on the far side from the rules.', '',
-      '| measure | the rules | trained minus rules | verdict | retrained minus rules | verdict | retrained minus trained | reading |', '|---|---|---|---|---|---|---|---|');
+      `| measure | the rules | trained minus rules | verdict | ${cand} minus rules | verdict | ${cand} minus trained | reading |`, '|---|---|---|---|---|---|---|---|');
     for (const m of MEASURES) {
       const refMeans = animalMeans(rowsOf('rules'), m.of);
       if (!refMeans.size) continue;
       const noise = redraws.length ? Math.max(...redraws.map(a => Math.abs(mean(pairedDiffs(animalMeans(rowsOf(a), m.of), refMeans))))) : null, margin = Math.max(noise ?? 0, 0.15 * Math.abs(armMean('rules', m.of) ?? 0));
       const word = (t: ReturnType<typeof tInterval>) => t.lo !== null && (t.lo > 0 || t.hi! < 0) && (noise === null || Math.abs(t.mean) > noise) ? 'differs' : Math.abs(t.mean) <= margin ? 'close' : 'not resolved';
-      const tr = tInterval(pairedDiffs(animalMeans(rowsOf('trained'), m.of), refMeans)), re = tInterval(pairedDiffs(animalMeans(rowsOf('retrained'), m.of), refMeans)), d = tInterval(pairedDiffs(animalMeans(rowsOf('retrained'), m.of), animalMeans(rowsOf('trained'), m.of)));
+      const tr = tInterval(pairedDiffs(animalMeans(rowsOf('trained'), m.of), refMeans)), re = tInterval(pairedDiffs(animalMeans(rowsOf(cand), m.of), refMeans)), d = tInterval(pairedDiffs(animalMeans(rowsOf(cand), m.of), animalMeans(rowsOf('trained'), m.of)));
       if (tr.lo === null || re.lo === null || d.lo === null) continue;
       // "on the side of the rules": the two adapters differ and the retrained one sits nearer the rules (a move past the rules to a larger gap on the other side is not one)
       const differ = d.lo > 0 || d.hi! < 0, toward = differ && Math.abs(re.mean) < Math.abs(tr.mean), away = differ && !toward;
@@ -156,8 +175,18 @@ if (process.argv[1]?.endsWith('r5-report.ts')) {
     md.push('');
   }
 
+  // stage R4c (docs/staging/r4b-prereg.md §11.4): the rule that decides, fixed before the run
+  if (files.has('trained') && files.has('r4c')) {
+    const v = r4cVerdict(rowsOf('rules'), rowsOf('trained'), rowsOf('r4c'));
+    md.push('## Stage R4c: the registered rule (better than the first adapter only if all three hold)', '', '| condition | numbers | holds |', '|---|---|---|',
+      `| 1. energy eaten closer to the rules', and the two adapters differ | trained minus rules ${signed(v.energy.trained, 1)} kcal; r4c minus rules ${signed(v.energy.r4c, 1)}; r4c minus trained ${signed(v.energy.diff.mean, 1)} (${v.energy.diff.lo === null ? '–' : `${signed(v.energy.diff.lo, 1)} to ${signed(v.energy.diff.hi!, 1)}`}) | ${v.energy.holds ? 'yes' : 'no'} |`,
+      `| 2. nights in a nest not worse | trained ${v.nights.trained} of ${v.nights.of}; r4c ${v.nights.r4c} of ${v.nights.r4cOf}; r4c minus trained, share of nights ${signed(v.nights.diff.mean, 3)} (${v.nights.diff.lo === null ? '–' : `${signed(v.nights.diff.lo, 3)} to ${signed(v.nights.diff.hi!, 3)}`}) | ${v.nights.holds ? 'yes' : 'no'} |`,
+      `| 3. no overshoot of the rules' distance beyond the rules' own spread across animals | r4c minus rules ${signed(v.distance.r4c, 3)} km a day; the rules' spread (standard deviation of the animals' means) ${f(v.distance.spread, 3)} km | ${v.distance.holds ? 'yes' : 'no'} |`,
+      '', `**Verdict: R4c ${v.better ? 'counts as better than' : 'does not count as better than'} the first adapter** (${usedSeeds.length > 1 ? `seeds ${usedSeeds.join(' and ')} pooled` : `seed ${usedSeeds[0]} alone: the registered rule reads the standard window with both seeds pooled`}).`, '');
+  }
+
   // prereg §4: the gate arm and the pick-removed arm also against their own no-model reference, and against the main arm
-  const PAIRS: [string, string][] = [['retrained', 'trained'], ['retrained', 'argmax'], ['trained', 'argmax'], ['trained', 'untuned'], ['trained', 'null'], ['trained-gate', 'argmax-gate'], ['trained-gate', 'trained'], ['untuned-gate', 'argmax-gate'], ['trained-gate', 'untuned-gate'], ['trained-nopick', 'null-nopick'], ['trained-nopick', 'trained']];
+  const PAIRS: [string, string][] = [['r4c', 'trained'], ['r4c', 'retrained'], ['r4c', 'argmax'], ['retrained', 'trained'], ['retrained', 'argmax'], ['trained', 'argmax'], ['trained', 'untuned'], ['trained', 'null'], ['trained-gate', 'argmax-gate'], ['trained-gate', 'trained'], ['untuned-gate', 'argmax-gate'], ['trained-gate', 'untuned-gate'], ['trained-nopick', 'null-nopick'], ['trained-nopick', 'trained']];
   const pairs = PAIRS.filter(([a, b]) => files.has(a) && files.has(b));
   if (pairs.length) {
     md.push('## Arm against arm, same animals and days (mean paired difference of the first minus the second, 95% t interval over animals; * the interval excludes 0)', '');
