@@ -11083,6 +11083,32 @@
    "notes": "A dominant guard within this distance blocks courtship. Compressed stand-in scaled with sight (field ≈ compressed × 35/15, design)."
   },
   {
+   "id": "gutSizeExp",
+   "group": "feeding",
+   "value": 1,
+   "units": "exponent of body mass",
+   "range": [
+    0.75,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0.5,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/research.md E.25 and Addendum: E1x small body: clauss2013 (across herbivorous species wet gut contents scale about as mass^1.0; dry-matter gut capacity slightly lower, not different from intake, above metabolism), simmen2017 (energy input of 17 wild primate species as mass^0.75 +/- 0.04); the one measured chimpanzee gut is an adult of unknown mass (chiversHladik1980 through nakamura2017); no gut volume by age in any ape (docs/staging/e1u-prereg.md §5.7; docs/staging/e1x-prereg.md §2.1)"
+   ],
+   "clock": "none",
+   "symbol": "gutSizeKg",
+   "file": "src/sim/energy.ts",
+   "calibrationExcluded": "Stage E1x input range: how a chimpanzee's gut capacity scales with body mass as it grows has never been measured (one adult of unknown mass), so the ends of the cited cross-species bracket (1 and 0.75) and its midpoint are run and reported (docs/staging/e1x-prereg.md), never fitted to a behavioural target.",
+   "notes": "Stage E1x (docs/staging/e1x-prereg.md §2.1, §6), read only with energyLedger and ledgerDigesta 1: how the foregut's and the hindgut's dry-matter capacity scale with body mass below the adult female mass (ledgerMassFemaleKg). Capacity = digestaGutMlPerKg x the pool's share and density x ledgerMassFemaleKg x (mass / ledgerMassFemaleKg)^this for an animal lighter than an adult female, and x mass, as now, at or above it (so no adult moves; a lactating female's larger gut, ledgerLactGut, multiplies it as before). 1 = today: the adult's millilitres per kg at every size (isometry, which the note of digestaGutMlPerKg calls assumed), hash-identical. 0.75 = capacity follows the power of the resting need and of intake: x 1.183 at 16 kg, x 1.148 at 18 kg, x 1.105 at 21 kg. Range: the bracket the cited allometry gives between species (see refs); within a species, by age, nothing is measured. An input range, never fitted; no value is adopted. Design assumption."
+  },
+  {
    "id": "gutValue",
    "group": "feeding",
    "value": 0,
@@ -23702,6 +23728,32 @@
    "symbol": "recomputeHierarchies",
    "file": "src/sim/hierarchy.ts",
    "notes": "During a contested vacancy the alpha stays open while the top two adult males are within this gap."
+  },
+  {
+   "id": "walkCostSizeExp",
+   "group": "movement",
+   "value": 0,
+   "units": "exponent of body mass",
+   "range": [
+    -0.316,
+    0
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    -1,
+    0
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "refs": [
+    "docs/research.md, C7c travel energetics and E.3: taylor1982 (net cost of transport of 62 bird and mammal species, 10.7 x mass^-0.316 J per kg and metre), sockol2007 (the ledger's 3.8 J per kg and metre: five captive chimpanzees of 33.9-82.3 kg, none the size of a juvenile); no cost of transport of an immature ape (docs/staging/e1x-prereg.md §2.6, §5.3)"
+   ],
+   "clock": "none",
+   "symbol": "walkSize",
+   "file": "src/sim/energy.ts",
+   "calibrationExcluded": "Stage E1x input range: the cost of walking was measured on chimpanzees of 33.9 kg and more, so for a smaller body today's value (0: the same cost per kg) and the all-mammal slope (-0.316) are run and reported (docs/staging/e1x-prereg.md), never fitted to a behavioural target.",
+   "notes": "Stage E1x (docs/staging/e1x-prereg.md §2.6, §5.3, §6), read only with energyLedger 1: how the net cost of walking per kg and metre (ledgerWalkJPerKgM) scales with body mass below the adult female mass (ledgerMassFemaleKg): x (mass / ledgerMassFemaleKg)^this for an animal lighter than an adult female walking on its own legs, x 1 at or above it (so no adult moves) and for a load carried (charged at its carrier's cost). 0 = today: the measured adults' cost per kg at every size, hash-identical. -0.316 = taylor1982's slope across species carried down from the adult female mass: 4.7, 4.5 and 4.3 J per kg and metre at 16, 18 and 21 kg. Climbing is unchanged (no size term is sourced: hannaSchmitt2011). The anchor is the adult female mass, 2.6 kg below the lightest animal measured, so the range understates the slope carried from the sample's mean (59.8 kg: 5.8 at 16 kg), which would also charge every adult more. Every value in the range other than 0 charges a small animal more than today. An input range, never fitted; no value is adopted. Design assumption."
   },
   {
    "id": "walkDarkPace",

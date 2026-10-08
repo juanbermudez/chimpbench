@@ -245,7 +245,7 @@ registered design is iteration 1.
 stage reports that the sources leave the shortfall unexplained. If the offline formula misses the measured spending by
 more than 3% and cannot be made to match from the ledger's own terms, no table is read.
 
-## 5. Offline result (7 October 2026, 20:45 EDT; no simulation, no world tick; §1 to §4 above are the registration, unchanged)
+## 5. Offline result (7 October 2026, 20:31 EDT; no simulation, no world tick; §1 to §4 above are the registration, unchanged)
 
 `scripts/e1x-small-body.ts` at the commit that adds this section; output in `artifacts/validation/e1x/small-body.{md,json}`
 (gitignored) and pasted in §5.4. Both registered checks pass: the spending formula is within 1.4% of the measured
