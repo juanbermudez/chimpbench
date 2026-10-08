@@ -299,3 +299,22 @@ heat. Correction to §1 and §3: R4's 41 drink labels hold 20 at night, not 17.
 - **Iteration 3 (logged before it runs; no model): seed 21, the standard window and the lean window**
   (`scripts/r4b-chain.sh nomodel 21 standard`, then `nomodel 21 lean`): the burn-ins, the lean window named by the
   rule of §7 before any arm of it runs, the rules arm, its three re-draws, the loop without a model and its replay.
+  Iteration 2 began at 00:48 (detached from the session so no tool limit can end it).
+  Result of iteration 3 (00:49 to 00:51, head bb85bd9, clean tree; no model). **Standard window:** burn-in 30 days,
+  hash 689d34e12fcd2948; focal animals Tavuni (alpha), Sanaki, Lwazo (lactating), Fumbira, Dembiri; days 30 to 35 are a
+  **rich** stretch (crop 1.43 times the year's mean, above 80% of the year's days; the census's median reserves 0.1%
+  to 0.4% below the usual store). **Lean window, named before any arm of it ran:** start day 119 (crop 0.38 of the
+  year's mean inside the day-30 focal community's range, below 99% of the year's days); burn-in 119 days, hash
+  504bb50852012623; focal animals Tavuni, Koruza, Lwazo, Fumbira, Dembiri; by the pilot's season rule on that world
+  days 119 to 124 read **lean** (0.37 of the year's mean, above 2% of the year's days), and in the census the
+  animals' median reserves are 4.1% to 4.7% below the usual store on those days, with 74% to 82% of the animals 3% or
+  more below. Each rules arm took 4 to 6 s; the loop without a model was asked 4,417 times in the standard window
+  and 3,623 in the lean one; both replays ended on their run's hash (0805a9c8d92e927b, e712d96ccd7ec649).
+
+- **Iteration 4 (logged before it runs): the offline evaluation's model runs** (`scripts/r4b-offline.sh`, after the
+  training ends): A for `r4b-rules-state`; B for the untuned model, `r4-rules-state` and `r4b-rules-state`; token
+  counts; parity; the wild-choice development part for `r4b-rules-state`. One model process at a time, the swap check
+  before each.
+- **Iteration 5 (logged before it runs): the loop's model arms on seed 21** (`scripts/r4b-chain.sh model 21
+  standard`, then `model 21 lean`): `trained` and `retrained` in one worker process, then their replays; after
+  iteration 4. Seed 5 (iteration 6) only if everything else is done.
