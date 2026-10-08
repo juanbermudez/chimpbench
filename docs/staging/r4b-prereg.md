@@ -332,7 +332,7 @@ Iteration 4 began at 03:25 by itself when the training process ended (swap 3,730
 
 **Result of iteration 4 (03:25 to 05:16; one model process at a time; swap 3.7 GB in use before each, no hold).**
 A: 4,641 packets for `r4b-rules-state` in 2,725 s (0.59 s a packet). B: 1,500 packets each for the untuned model,
-`r4-rules-state` and `r4b-rules-state` in 1,065, 1,090 and 1,126 s. Token counts of B's packets on the CPU: 91 s.
+`r4-rules-state` and `r4b-rules-state` in 1,114, 1,122 and 1,126 s (0.75 s a packet). Token counts of B's packets on the CPU: 91 s.
 Parity: `PARITY OK` on 12 r4b dev contexts (equal token ids, probability gap 0). Wild choices, development part,
 `r4b-rules-state` plain and fanned out: 7 minutes. Tables: `docs/staging/r4b-numbers-a.md`, `r4b-numbers-b.md`,
 `r4b-wild-numbers.md`. Results in the section below, after the loop.
