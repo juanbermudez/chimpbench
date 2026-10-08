@@ -651,3 +651,555 @@ plan command of the section above (30 + 1,095 days, seeds 48, 7, 21, 5, 11, `--a
 a time. Order: `gut75` first (the registered main question), then `gut875`; `gut75-walk` and `walk` only if those two
 leave a question the walking input can answer. Reference: Y3-W50 (`e-years-prereg.md` §7; 7 starvation deaths, all
 juveniles weaned in the run). Readouts and predictions as registered above; no value is adopted from the result.
+
+## 10. Result of the three-year arms, read by the registered readouts (8 October 2026, 00:24 EDT)
+
+Run by the integrator as logged above: `Y3-W50-gut875` and `Y3-W50-gut75` (bench-e1x3, frozen at 7f6b197, clean; seeds
+48, 7, 21, 5, 11; 30 + 1,095 days; `--animal-days`), against the saved `Y3-W50` and its second draw `Y3-W50-s1`
+(bench-y3, ff25953; no per-animal rows). The walking arms were not run. Everything was read only; no simulation was run
+for this section. Every number is printed by `scripts/e1x/y3.py` (§10.7); the prose quotes its tables X0 to X10.
+Nothing was changed in response to the result. **No value of `gutSizeExp` is adopted, and none is proposed.**
+
+### 10.1 The answer
+
+**With gut capacity following mass^0.75 below the adult female mass, no weaned juvenile starved and the weaned cohort
+stayed at its set point; at the midpoint of the range none starved either, but a fifth of them fell below half their
+store.** The integrator's headline is confirmed from the JSON (X0): starvation deaths 7 (reference) and 6 (its second
+draw), 2 at 0.875, 0 at 0.75; viability passes at 0.75 only.
+
+- **Of the 24 animals whose weaning date falls in the run:** in the reference 7 are dead and the 17 alive end at −0.46
+  of their store, 7 of them below −0.5 (second draw: 8 dead, −0.47, 8 below). At 0.875 none starved, 23 are alive at
+  −0.15, 2 below −0.5 at the end, 5 below −0.5 at some point, and one died of illness at −0.53. At 0.75 none starved
+  and the 19 alive end at −0.03 (lowest −0.07); one dipped to −0.51 for 11 days (X3).
+- **The two starvation deaths at 0.875 are newborns, and neither is the small body's gut failing** (§10.3).
+- **Adult males and females without infants are unchanged; nursing females are not.** Every animal under 31.3 kg has
+  the larger gut, the unweaned included: at 1 to 5 y they drink 20 to 28 kcal a day less milk at 0.75, and their
+  mothers spend 2% less (§10.2, readouts 4 and 5).
+- **Growth moves further from the field target, as registered.** Mass at 5 y is 18.0 kg (females) and 19.6 kg (males)
+  at 0.75 against a band of 7 to 13 kg.
+- **The outbreak deaths at 0.75 are the draw** (§10.4): as many outbreaks as the reference had (5), no path in the
+  code from the input to who dies of one, and victims at their set point.
+
+What this shows and does not show is §10.6. It is the wadging result over again: the model's weaned juvenile lives or
+starves by an input nobody has measured.
+
+### 10.2 The registered readouts (§8.1), in order
+
+1. **Starvation by class and by weaning (X1).** Reference: 7 juveniles, all weaned in the run (second draw: 5
+   juveniles and 1 newborn). 0.875: 2, both unweaned newborns, none weaned. 0.75: 0. **The registered reading did not
+   equal the run's count at 0.875** (1 against 2): I registered "last living row under a fifth of the store", and one
+   of the two newborns died at −0.59. The run books as starvation any death by the background hazard while condition
+   is below `condLow` (reserve below −0.57), not only an empty store; X1 counts by that line and then agrees in every
+   seed. My reading rule was too narrow; the run's count stands.
+2. **The weaned animals' reserves (X3, X4).** At 0.75: reserve −0.03 to −0.07 in every block after weaning, and in the
+   first two years 262 to 282 eating minutes a day with 20 to 31% of eating ticks at a full foregut, against 245 minutes and 29% for the founder
+   juveniles of 6 to 8 y. At 0.875: −0.10 to −0.19 in the first year (−0.28 for the two followed past two years), 319
+   to 359 minutes, 49 to 59% at a full foregut, against 264 and 38%. By the registered comparison (never below −0.5,
+   reserve within 0.1 of the founder juveniles', eating and full-foregut share within a quarter) 6 of the 7 animals
+   followed a year pass at 0.75 and 6 of 10 at 0.875. The reference's weaned animals ate 290 to 635 minutes with up
+   to 91% at a full foregut (T4).
+3. **Growth (X5).** Mass at 5 y: 17.9 and 19.4 kg (0.875), 18.0 and 19.6 kg (0.75), females and males; T-INF-4's band
+   is 7 to 13 kg. In the year after weaning they gain 3.2 kg (females) and 3.4 to 3.7 kg (males) of a potential of 3.4
+   and 3.8. The share of the potential paid at 5 to 8 y rises from 0.78 and 0.59 (reference, females and males) to
+   0.90 and 0.83 at 0.875 and 0.94 and 0.92 at 0.75. The reference's slower juvenile growth was nearer the wild
+   figure only because its juveniles were starving.
+4. **Adults (X6).** By the rule I registered ("inside the spread of the base's two draws") about half the cells are
+   outside in both arms (28 and 32 of 57), because the two reference draws lie within a few kcal of each other; the
+   rule says nothing at that resolution, and the sizes are what can be read. Adult males: within 0.4% on every
+   readout. Females without infants: within 0.3% on energy and 3% on eating minutes. Pregnant females: within 1% on
+   energy, eating minutes up to 4.5% higher. **Nursing females change with the input:** at 0.75 they eat 6.7% fewer
+   minutes, absorb and spend 2% less, have a full foregut in 5 points less of the day and their lowest reserve is
+   0.03 higher (0.875: −2.9%, −1.2%, −2.2 points, +0.02). No adult starved in any run. Adult deaths 5 and 19
+   (reference draws), 7 and 23 (arms) follow the outbreaks.
+5. **The unweaned (X7).** Under 1 y: unchanged (milk 204 and 272 kcal/d in every run). From 1 to 5 y milk falls with
+   the input: 281, 272, 257 and 241 kcal/d at 1–2, 2–3, 3–4 and 4–5 y in the reference; 254, 245, 231 and 219 at 0.75;
+   263, 259, 241 and 225 at 0.875. Their reserves are higher by 0.02 to 0.04 and their eating minutes about the same.
+   Deaths under 2 y booked as starvation: 0, 1, 2, 0.
+6. **The rows that move (X8).** For information only: the reference is on the protocol before the freeze of 7
+   October (five revised rows left out) and has two draws. Fitted sum: 4.42 and 4.13 (reference draws), 4.33 at 0.875
+   (z +0.2), **3.40 at 0.75 (z −2.4, past the rule, toward the field)**; held-out: z +0.2 and 0.0; without the rare
+   rows +0.7 and −0.6. By the registered row rule 11 rows move at 0.875 (9 closer to their band, 2 further) and 17 at
+   0.75 (12 closer, 5 further), most by a few hundredths. The ones of a size worth naming: first-year mortality
+   T-DEM-1 (0.25 and 0.22 → 0.17 and 0.20; closer), fallback switching T-FOOD-3 (0.24 → 0.25 and 0.28, band ≥ 0.3;
+   closer), nursing females' day range relative to males T-RNG-5 (1.04 → 1.01 and 0.99, band 0.3–0.75; closer),
+   intergroup encounters T-IGE-1 (20 → 20.5 and 18.5, band 5–12), grooming reciprocity T-SOC-3 (closer at 0.875,
+   further at 0.75), and the two outbreak rows T-DEM-5 and T-DEM-8 (the draw). The fitted z at 0.75 is carried by
+   T-DEM-1 and T-IGE-1, both demographic counts with large chance spread; I would not read it as the input improving
+   the fit without a second draw of the arm. Verdicts with a "pass" involved change in four rows: three lose it, one gains it.
+7. **Viability (X0).** Births 71 and 66 (reference draws), 69, 65. Living at the end 53 to 59, 51 to 56, 54 to 62, 51
+   to 54. Prescription count 42 everywhere.
+
+### 10.3 The two infant deaths at 0.875 (X2)
+
+- **Seed 48, id 62, a female born on scored day 948 (2 June of year 3), dead at 21 days.** Her mother (id 11, 38 y)
+  was pregnant through the leanest stretch of that seed's three years and stood at −0.55 of her own store in the 30
+  days before the birth (lowest −0.63), eating 615 minutes a day with 89% of her eating ticks at a full foregut and
+  59% of her plant energy from fallback. The newborn got no milk for 7 days: under `weanDeficit` a mother lets an
+  infant suckle only when its relative deficit is at least her own (`src/sim/execution.ts`:917, 930, 1009), so a newborn of a
+  mother at −0.59 is refused until it has fallen to −0.59 itself, and is then held there, below the condition line,
+  where the background hazard is raised and the death is booked as starvation. It died at −0.59. This is an adult's
+  lean-season depletion passed to her newborn by the mother's decision rule. The adult's gut is untouched by the
+  input: under 0.75 the same female, not pregnant, stood at −0.29 on the same days with 86% at a full foregut.
+- **Seed 11, id 55, a male born on day 301, dead at 0.46 y at an empty store.** His mother (id 31) was at her set
+  point (−0.02). He shared her gland with a sibling of 3.9 y still on milk until its date on day 507: he drank 159
+  kcal a day and the sibling 148. This is the second dependent at one gland that E1w found (e1w §8: the gland's
+  ceiling is one number for one or two offspring and nothing ranks them). Of the 9 newborns born into that state at
+  0.875 one starved; of the 8 at 0.75 none starved and one ends below −0.5.
+- Neither is a weaned animal and neither death is the input failing. Both are defects already recorded (the adult
+  females' lean season, E1r; two dependents at one gland, E1w). Whether the input makes either more or less likely
+  cannot be read from 2 deaths against 1 in the ten seed-runs of the reference draws.
+
+### 10.4 The two questions the integrator asked to be judged
+
+**(1) Is the higher outbreak mortality at 0.75 connected to the input? No path in the code, and the numbers are those
+of a draw. Confidence: high that it is not through body condition; moderate to high (about 80%) that it is the draw
+altogether.**
+- *The code.* An outbreak arrives by a daily random draw per community that reads nothing but whether one is already
+  running (`src/sim/disease.ts`:17–37). A case ends in death with odds set by age and by one draw of virulence per
+  outbreak (:74); **nothing there reads reserves, condition or body mass.** The only step that reads the animals'
+  behaviour is transmission, inside parties (:46–58). Body condition does feed the *background* hazard
+  (`src/sim/life.ts`:233, through health), and there the input can only lower it.
+- *Arrivals.* 0.75 had 5 outbreaks, the reference 5, the expectation 4.5 (X9). 0.875 had 1 (chance of 1 or fewer:
+  0.06), which is why it has no outbreak deaths: it is the low draw, 0.75 is not a high one.
+- *Deaths per outbreak.* 3.6 at 0.75. The five three-year runs without the input give 1.4, 4.7, 2.8, 2.0 and 3.5, and
+  2 to 14 deaths a run; the reference's second draw has 14. For the five outbreaks of 0.75, the registry's own odds by
+  age for the communities as they stood the day before, at a virulence of 1 with every member infected, give 14.5
+  deaths; 18 died. So 0.75 is at what the mechanism expects, and the reference (7 from 5 outbreaks) is the run below
+  it.
+- *Exposure.* Attack rates are 0.87 to 1.00 in every run that has one (0.99 at 0.75); mean party size 4.20 to 4.33 in
+  all seven runs (4.29 at 0.75); the communities struck had 12 to 24 members, as founded or little more. More animals
+  alive is not it: the juveniles the input saves are 7 in 245.
+- *Condition.* The 18 victims stood at −0.01 to −0.04 of their store on their last day (lowest −0.06).
+- *What it costs the reading.* The outbreaks are why 0.75 has the most deaths (47), the fewest births (65: six nursing
+  females died in them) and the smallest communities at the end, and why its viability ratio is the lowest of the
+  four runs although nothing starved. One draw per arm cannot separate that from the input; a second draw of the arm
+  (`rngSalt` 1) would.
+
+**(2) Does a gut that is larger for its mass change anything for the wrong reason? Not in how much the juveniles eat;
+yes in two side effects that the weaned juvenile's budget did not ask for.**
+- *They do not out-eat the adults beyond their own demand (X10).* A weaned animal under 21 kg eats 24.5 g of dry
+  matter per kg a day at 0.75 against an adult female's 19.9 (1.23 of hers per kg, 1.08 per kg^0.75), absorbs 1.12 of
+  her energy per kg^0.75 and spends 1.12: the excess is its growth and its walking, and it is spent. The ratio is the
+  same at 0.875 (1.23, 1.08, absorbing 1.10 and spending 1.11). For the whole juvenile class dry matter per kg^0.75 is
+  49.1 and 49.0 in the reference draws and 49.3 in both arms. **The larger gut does not raise what a juvenile eats; it
+  lets it eat the same in less time:** 301 and 294 eating minutes in the reference, 261 at 0.875, 242 at 0.75; daylight
+  at a full foregut 24%, 17%, 12%.
+- *No surplus is stored.* Reserves are above the set point on 5% of a weaned animal's days at 0.75 and never by more
+  than 0.02 of the store; growth is capped at the potential by construction.
+- *Side effect 1: growth.* Fed animals grow at the captive potential, so mass at 5 y sits at 18 to 20 kg against 7 to
+  13. The input did not cause this (the potential and the milk before weaning do: 17.9 against 18.0 kg between the
+  arms), but it removes the shortfall that was hiding it after weaning.
+- *Side effect 2: the unweaned and their mothers.* The scaling applies to every body under 31.3 kg. Infants of 1 to
+  5 y drink 20 to 28 kcal a day less milk at 0.75 and their mothers spend 2% less. That is a change in lactation the
+  registration predicted only as "a little less milk" and it is not what the input was built to test. It also bears
+  on E1w's finding that nothing ends milk: with a larger gut milk still runs at 219 kcal/d at 4 to 5 y.
+- *Not checked, because no target exists:* whether 24.5 g of dry matter per kg a day is a plausible intake for a
+  juvenile chimpanzee. research.md holds no intake per kg for an immature ape.
+
+### 10.5 The registered predictions (§8.2) against the result
+
+| arm | prediction | result | held? |
+| --- | --- | --- | --- |
+| `gut75` | no starvation among animals weaned in the run (0 in 5 seeds; at most 1) | 0 of 21 | **yes** |
+| `gut75` | their reserve never below −0.5 | one animal at −0.51 for 11 days; the other 20 never below −0.23 | **no**, narrowly |
+| `gut75` | mean reserve at the end −0.05 to −0.2 | −0.03 | **no**: better than the range |
+| `gut75` | 300 to 450 eating minutes after weaning | 262 to 282 | **no**: fewer |
+| `gut75` | under 60% of eating ticks at a full foregut | 20 to 31% | yes |
+| `gut75` | growth paid above 35 of 42 kcal/d; mass at 5 y 18 to 20 kg, outside T-INF-4 | 0.93 to 0.97 of the potential; 18.0 and 19.6 kg | yes |
+| `gut75` | adults unchanged | males and females without infants yes (under 0.5% on energy); nursing females spend 2% less | **partly** |
+| `gut875` | 0 or 1 starvation death among the weaned | 0 of 24 | yes |
+| `gut875` | at least one below −0.5 at some point | 5 of 24 (lowest −0.77) | yes |
+| `gut875` | mean end reserve −0.15 to −0.35 | −0.15 | yes, at the edge |
+| `gut875` | loses in lean months and recovers after | seed 48's three: lowest −0.70, −0.52, −0.77, ending −0.32, −0.18, −0.51 | yes |
+| every arm | adults inside the base's spread | not by the registered rule (it cannot resolve this); by size as above | **the rule failed** |
+| every arm | prescription count 42 | 42 | yes |
+| every arm | the unweaned 2 to 5 y drink under 30 kcal/d less milk at 0.75 | 20 to 28 less, and from 1 y, not 2 | yes; the age was wrong |
+| rows | likely to move: T-INF-1, -2, -4, -5, juvenile activity rows, T-DEM-1 | only T-DEM-1 moved; T-INF-5 fell 1.26 → 1.18 inside its band; T-INF-1 reads 0 in every run and T-INF-4 is not scorable | **no**, 1 of 6 |
+| `gut75-walk`, `walk` | — | not run | — |
+
+Not predicted at all: the newborn deaths at 0.875 (I named deaths under 2 y as a readout, not as an expectation), the
+fitted sum moving past the noise rule at 0.75, and the size of the outbreak toll.
+
+### 10.6 What the result shows and does not show
+
+**Shows.**
+- The weaned juvenile's starvation in this model turns on one unmeasured scaling rule. With the adult's gut volume
+  per kg (today) 7 of 24 die and the survivors sit at half their store; with capacity following mass^0.75 none dies
+  and they sit at the set point; halfway, none dies and a fifth of them go below half their store.
+- The offline ceiling of §5 predicted the order and roughly the size: +47 kcal a day spare on the lean diet at 0.75
+  and 19 short at 0.875.
+- Most of the cited bracket is needed. The midpoint is not comfortable: 5 of 24 below −0.5, 2 still there at the end,
+  one dead of illness at −0.53, 0.04 above the line where the run would have called it starvation.
+
+**Does not show.**
+- That a growing chimpanzee's gut scales as mass^0.75, or as anything. Both ends of the range are comparisons between
+  species; within a species nothing is measured. The run says what the model needs, not what the animal has.
+- That the model is viable at 0.75. One draw; 0 starved of 21 still allows a risk of up to 13% an animal (X3); two thirds of
+  the cohort was followed for under a year after weaning, and the reference's deaths took 194 to 670 days.
+- That anything else is repaired. A pregnant female fell to −0.55 in a lean season and a second dependent at one
+  gland still starves a newborn; mass at 5 y is further from its target; milk still runs to the weaning date.
+- Anything about the cost of walking: those two arms were not run, so the one sourced correction that goes against
+  the animal is untested. Offline it takes 0.015 of R at 16 kg, about a tenth of what the gut exponent gives.
+- That the fit to the field improved. The fitted sum at 0.75 is past the noise rule on rows that count deaths and
+  encounters, against a reference of two draws on an older protocol.
+
+**What the sources would have to say to narrow the range** (none is in research.md; each is named there as missing):
+- Gut volume or digesta mass against body mass **within a species**, across ages: any ape necropsy series with
+  masses, or a simple-gutted analogue with a growth series. One immature chimpanzee with a known mass would already
+  say which half of the bracket it is in.
+- chiversHladik1980's specimen table: the mass of the one chimpanzee the registry's 83 mL/kg rests on, and whether its
+  117 primates include immatures.
+- The coefficients of the dry-matter gut-fill allometry (Müller et al. 2013; clauss2013's Fig. 6): the review says
+  only "slightly lower" than 1.0. A fitted exponent with its interval would replace 0.75 to 1 by a narrower bracket
+  between species, still not within one.
+- A voluntary dry-matter intake per kg of immature against adult chimpanzees on one diet (captive feeding records).
+  The model at 0.75 says 1.23 of an adult female's per kg (X10); that is a number a record could contradict.
+- Wild body mass at weaning (pusey2005's curves), since the body tested here is the captive potential's 15 to 20 kg
+  and a wild 10 kg animal has a smaller gut for its need under every exponent below 1.
+
+### 10.7 Limits
+
+- One draw of each arm. The reference has two; they differ by 7 and 5 juvenile starvation deaths and by 7 and 14
+  outbreak deaths.
+- The reference runs are at an earlier commit and protocol and have no per-animal rows: for them the weaned animals'
+  fate is read from the survivors' list and the class counts, and five revised rows are left out of X8.
+- The per-animal rows carry no cause of death. Outbreak deaths are found as two or more deaths in a community within
+  four days; they equal the run's count in every seed (X9). The newborn deaths are matched to the run's starvation
+  count by the condition line (X1).
+- The arms differ from the reference in every random draw after the first tick in which the input acts, so any
+  rare-event count (outbreaks, killings, births) differs by chance as well.
+- Final checks after merging track-e (bbd8b3e) into this branch, 8 October 2026: `tsc --noEmit` clean; the full suite run once at four files at a time with no other heavy process on the machine: 1,092 tests, 1,092 pass, 0 fail, 0 skipped.
+- Tables from the saved runs:
+
+```sh
+B=/Volumes/Drive/chimpbench/MGOGO/.claude/worktrees
+/usr/bin/python3 scripts/e1x/y3.py --arms $B/bench-e1x3/artifacts/validation/e/runs --base $B/bench-y3/artifacts/validation/e/runs --wean $B/bench-wean/artifacts/validation/e/runs
+```
+
+#### E1x, the three-year arms: Y3-W50-gut875 and Y3-W50-gut75 against Y3-W50 and its second draw Y3-W50-s1
+
+Printed by `scripts/e1x/y3.py` from the arms' per-animal rows (one row per living animal and scored day; seeds 48, 7, 21, 5, 11) and from every run's bench and merged energy readouts. The reference runs have no per-animal rows. Scored day 0 is 28 October of run year 1 (after the 30-day burn-in); ages in years; kcal per animal-day; reserve = reserves ÷ store (0 the set point, −1 death).
+
+#### X0. The runs and the headline, checked
+
+| | Y3-W50 (reference) | Y3-W50-s1 (reference, second draw) | Y3-W50-gut875 (gutSizeExp 0.875) | Y3-W50-gut75 (gutSizeExp 0.75) |
+| --- | --- | --- | --- | --- |
+| commit, dirty, protocol | ff25953, 0, 5d4fa5a2 | ff25953, 0, 5d4fa5a2 | 7f6b197, 0, 215ed6ab | 7f6b197, 0, 215ed6ab |
+| parameters beyond the working base | {} | {"rngSalt": 1} | {"gutSizeExp": 0.875} | {"gutSizeExp": 0.75} |
+| viability | FAIL: 7 starvation deaths | FAIL: 6 starvation deaths | FAIL: 2 starvation deaths | pass |
+| starvation deaths (by class) | 7 (juvenile 5–12 y 7) | 6 (infant < 0.5 y 1, juvenile 5–12 y 5) | 2 (infant < 0.5 y 2) | 0 (—) |
+| starvation deaths by seed | 3 / 1 / 2 / 0 / 1 | 3 / 0 / 1 / 1 / 1 | 1 / 0 / 0 / 0 / 1 | 0 / 0 / 0 / 0 / 0 |
+| births | 71 (12 / 13 / 17 / 15 / 14) | 66 (12 / 12 / 13 / 14 / 15) | 69 (14 / 14 / 12 / 15 / 14) | 65 (12 / 13 / 12 / 13 / 15) |
+| deaths, all causes | 34 (6 / 9 / 9 / 5 / 5) | 42 (5 / 9 / 7 / 8 / 13) | 23 (1 / 8 / 4 / 3 / 7) | 47 (7 / 11 / 9 / 10 / 10) |
+| of them: respiratory outbreak | 7 (0 / 4 / 0 / 2 / 1) | 14 (0 / 2 / 2 / 5 / 5) | 0 (0 / 0 / 0 / 0 / 0) | 18 (2 / 7 / 0 / 6 / 3) |
+| of them: illness (the background hazard) | 17 | 15 | 14 | 21 |
+| living, start → end, by seed | 49→55 / 49→53 / 49→57 / 49→59 / 49→58 | 49→56 / 49→52 / 49→55 / 49→55 / 49→51 | 49→62 / 48→54 / 49→57 / 49→61 / 49→56 | 49→54 / 49→51 / 49→52 / 49→52 / 49→54 |
+| lowest daily mean reserve, juvenile 5–12 y | −0.24 | −0.21 | −0.12 | −0.09 |
+| target rows with the verdict "pass" (of 150) | 41 | 43 | 41 | 39 |
+| prescription count | 42 | 42 | 42 | 42 |
+
+- The arms ran at one commit and protocol; the reference runs at an earlier commit and the protocol before the freeze of 7 October, which revised the observer of five rows (T-LET-1, T-LET-2, T-LET-3, T-LET-6, T-DEM-9) and changed no band. Those five rows are left out of every comparison below.
+
+#### X1. Starvation by class and by whether the animal was weaned in the run
+
+"Weaned in the run" = unweaned on scored day 0 or born in the run, with the weaned flag set on its last living row. Registered reading of a starvation death (§8.1): last living row under a fifth of the store (reserve ≤ −0.8), mother alive or the animal weaned. The run itself books as starvation any death at an empty store or by the background hazard while condition is below `condLow` (reserve below −0.57; `src/sim/life.ts` slowLife), so the second column counts dead animals whose last living row is below that line.
+
+| run | seed | starvation deaths the run books | registered reading (≤ −0.8) | dead below the condition line | who |
+| --- | --- | ---: | ---: | ---: | --- |
+| gutSizeExp 0.875 | 48 | 1 | 0 | 1 | id 62 (F, 0.06 y, 1.9 kg, unweaned, born in the run, last reserve −0.59, died day 969) |
+| gutSizeExp 0.875 | 7 | 0 | 0 | 0 | — |
+| gutSizeExp 0.875 | 21 | 0 | 0 | 0 | — |
+| gutSizeExp 0.875 | 5 | 0 | 0 | 0 | — |
+| gutSizeExp 0.875 | 11 | 1 | 1 | 1 | id 55 (M, 0.46 y, 2.5 kg, unweaned, born in the run, last reserve −1.00, died day 469) |
+| gutSizeExp 0.75 | 48 | 0 | 0 | 0 | — |
+| gutSizeExp 0.75 | 7 | 0 | 0 | 0 | — |
+| gutSizeExp 0.75 | 21 | 0 | 0 | 0 | — |
+| gutSizeExp 0.75 | 5 | 0 | 0 | 0 | — |
+| gutSizeExp 0.75 | 11 | 0 | 0 | 0 | — |
+- gutSizeExp 0.875: the run books 2; the registered reading finds 1; 2 dead below the condition line, of them weaned 0 (weaned in the run 0), unweaned 2.
+- gutSizeExp 0.75: the run books 0; the registered reading finds 0; 0 dead below the condition line, of them weaned 0 (weaned in the run 0), unweaned 0.
+- Reference (no per-animal rows): 7 and 6 starvation deaths, classes {"juvenile 5–12 y": 7} and {"juvenile 5–12 y": 5, "infant < 0.5 y": 1}; the diagnosis read all 12 juvenile deaths of the two draws as founders weaned in the run (ey-juvenile-starvation.md T1).
+
+#### X2. The animals born in the run, and the two infant deaths at 0.875
+
+"An older sibling still nursing" = at the birth the mother had another unweaned offspring that drank milk in the following 30 days (as e1w-prereg.md Y2).
+
+| run | newborns | born | dead below the condition line | died otherwise | alive at the end | of those, below −0.5 |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| gutSizeExp 0.875 | no older sibling nursing | 60 | 1 | 9 | 50 | 0 |
+| gutSizeExp 0.875 | an older sibling still nursing | 9 | 1 | 1 | 7 | 0 |
+| gutSizeExp 0.75 | no older sibling nursing | 57 | 0 | 11 | 46 | 0 |
+| gutSizeExp 0.75 | an older sibling still nursing | 8 | 0 | 3 | 5 | 1 |
+
+**The deaths below the condition line, traced** (every one in the two arms):
+
+| run | seed | animal | born (date) | died (age) | last reserve | days without milk at the start | milk it drank, kcal/d | mother: reserve in the 30 days before the birth (lowest) | mother then: eating min, at a full foregut, fallback share | older sibling at the birth: age, weaned on day, its milk over the newborn's life |
+| --- | --- | --- | --- | --- | --- | ---: | ---: | --- | --- | --- |
+| gutSizeExp 0.875 | 48 | id 62 (F), mother id 11 | day 948 (Jun 2, year 3) | day 969 (0.06 y) | −0.59 | 7 | 101 | −0.55 (−0.63) | 615, 89%, 59% | id 21: 5.18 y, weaned on day 749, 0 kcal/d |
+| gutSizeExp 0.875 | 11 | id 55 (M), mother id 31 | day 301 (Aug 25, year 1) | day 469 (0.46 y) | −1.00 | 0 | 159 | −0.02 (−0.03) | 280, 4%, 4% | id 37: 3.91 y, weaned on day 507, 148 kcal/d |
+- Mother id 11 of seed 48 on scored days 918 to 947 under gutSizeExp 0.875: reserve −0.55 (lowest −0.63), 615 eating minutes, 89% at a full foregut, fallback 59% of plant energy; pregnant.
+- Mother id 11 of seed 48 on scored days 918 to 947 under gutSizeExp 0.75: reserve −0.29 (lowest −0.31), 573 eating minutes, 86% at a full foregut, fallback 65% of plant energy; neither pregnant nor nursing.
+- Mother id 31 of seed 11 on scored days 271 to 300 under gutSizeExp 0.875: reserve −0.02 (lowest −0.03), 280 eating minutes, 4% at a full foregut, fallback 4% of plant energy; pregnant.
+- Mother id 31 of seed 11 on scored days 271 to 300 under gutSizeExp 0.75: reserve −0.02 (lowest −0.02), 272 eating minutes, 3% at a full foregut, fallback 4% of plant energy; pregnant.
+
+#### X3. Every animal weaned in the run: reserve from the day of weaning
+
+**gutSizeExp 0.875.**
+
+| seed | animal | weaned on day (age, kg) | reserve at weaning | +30 d | +90 d | +180 d | +365 d | at the end | lowest | days below −0.5 | days followed | fate |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---: | ---: | --- |
+| 48 | id 22 (F) | 222 (4.19 y, 15.3 kg) | −0.05 | −0.06 | −0.06 | −0.03 | −0.06 | −0.32 | −0.70 | 120 | 873 | alive |
+| 48 | id 37 (M) | 411 (4.21 y, 16.7 kg) | −0.02 | −0.03 | −0.07 | −0.03 | −0.04 | −0.18 | −0.52 | 24 | 684 | alive |
+| 48 | id 21 (M) | 749 (4.64 y, 18.2 kg) | −0.05 | −0.07 | −0.15 | −0.61 | — | −0.51 | −0.77 | 193 | 346 | alive |
+| 48 | id 48 (F) | 969 (4.74 y, 16.8 kg) | −0.41 | −0.34 | −0.17 | — | — | −0.06 | −0.41 | 0 | 126 | alive |
+| 7 | id 37 (M) | 497 (4.45 y, 17.6 kg) | −0.09 | −0.14 | −0.04 | −0.09 | −0.16 | −0.11 | −0.21 | 0 | 598 | alive |
+| 7 | id 22 (F) | 533 (5.04 y, 18.0 kg) | −0.03 | −0.02 | −0.04 | −0.04 | −0.22 | −0.08 | −0.23 | 0 | 562 | alive |
+| 7 | id 21 (M) | 661 (4.39 y, 17.3 kg) | −0.04 | −0.08 | −0.07 | −0.20 | −0.39 | −0.34 | −0.45 | 0 | 434 | alive |
+| 7 | id 48 (F) | 820 (4.33 y, 15.8 kg) | −0.03 | −0.08 | −0.12 | −0.06 | — | −0.02 | −0.17 | 0 | 275 | alive |
+| 7 | id 20 (M) | 884 (4.31 y, 16.8 kg) | −0.25 | −0.27 | −0.26 | −0.52 | — | −0.51 | −0.53 | 47 | 211 | alive |
+| 21 | id 22 (F) | 383 (4.63 y, 16.8 kg) | −0.02 | −0.02 | −0.16 | −0.47 | — | −0.53 | −0.60 | 153 | 346 | died on day 729 of another cause (reserve −0.53) |
+| 21 | id 37 (M) | 480 (4.40 y, 17.4 kg) | −0.06 | −0.15 | −0.34 | −0.34 | −0.05 | −0.03 | −0.38 | 0 | 615 | alive |
+| 21 | id 21 (M) | 843 (4.89 y, 19.0 kg) | −0.05 | −0.12 | −0.22 | −0.06 | — | −0.10 | −0.23 | 0 | 252 | alive |
+| 21 | id 20 (M) | 866 (4.26 y, 16.7 kg) | −0.05 | −0.07 | −0.20 | −0.13 | — | −0.17 | −0.21 | 0 | 229 | alive |
+| 21 | id 48 (F) | 994 (4.81 y, 17.3 kg) | −0.02 | −0.05 | −0.05 | — | — | −0.03 | −0.07 | 0 | 101 | alive |
+| 5 | id 22 (F) | 463 (4.85 y, 17.4 kg) | −0.16 | −0.24 | −0.23 | −0.05 | −0.08 | −0.16 | −0.32 | 0 | 632 | alive |
+| 5 | id 37 (M) | 542 (4.57 y, 18.0 kg) | −0.05 | −0.03 | −0.05 | −0.03 | −0.15 | −0.10 | −0.22 | 0 | 553 | alive |
+| 5 | id 21 (M) | 743 (4.62 y, 18.2 kg) | −0.06 | −0.07 | −0.13 | −0.30 | — | −0.29 | −0.40 | 0 | 352 | alive |
+| 5 | id 20 (M) | 915 (4.39 y, 17.1 kg) | −0.05 | −0.06 | −0.12 | — | — | −0.24 | −0.29 | 0 | 180 | alive |
+| 5 | id 48 (F) | 963 (4.72 y, 17.1 kg) | −0.02 | −0.06 | −0.17 | — | — | −0.07 | −0.19 | 0 | 132 | alive |
+| 11 | id 22 (F) | 215 (4.17 y, 15.3 kg) | −0.02 | −0.03 | −0.05 | −0.06 | −0.02 | −0.03 | −0.15 | 0 | 880 | alive |
+| 11 | id 37 (M) | 507 (4.47 y, 17.7 kg) | −0.02 | −0.05 | −0.04 | −0.07 | −0.12 | −0.02 | −0.13 | 0 | 588 | alive |
+| 11 | id 21 (M) | 926 (5.12 y, 20.0 kg) | −0.01 | −0.04 | −0.05 | — | — | −0.03 | −0.10 | 0 | 169 | alive |
+| 11 | id 48 (F) | 939 (4.66 y, 16.8 kg) | −0.03 | −0.01 | −0.02 | — | — | −0.02 | −0.04 | 0 | 156 | alive |
+| 11 | id 20 (M) | 946 (4.47 y, 17.5 kg) | −0.02 | −0.04 | −0.11 | — | — | −0.06 | −0.14 | 0 | 149 | alive |
+
+**gutSizeExp 0.75.**
+
+| seed | animal | weaned on day (age, kg) | reserve at weaning | +30 d | +90 d | +180 d | +365 d | at the end | lowest | days below −0.5 | days followed | fate |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---: | ---: | --- |
+| 48 | id 22 (F) | 222 (4.19 y, 15.3 kg) | −0.03 | −0.03 | −0.03 | −0.02 | — | −0.01 | −0.07 | 0 | 286 | died on day 508 of another cause (reserve −0.01) |
+| 48 | id 37 (M) | 411 (4.21 y, 16.7 kg) | −0.01 | −0.01 | −0.03 | −0.01 | −0.02 | −0.02 | −0.23 | 0 | 684 | alive |
+| 48 | id 21 (M) | 749 (4.64 y, 18.2 kg) | −0.02 | −0.03 | −0.10 | −0.43 | — | −0.06 | −0.51 | 11 | 346 | alive |
+| 48 | id 48 (F) | 969 (4.74 y, 17.1 kg) | −0.10 | −0.02 | −0.02 | — | — | −0.02 | −0.10 | 0 | 126 | alive |
+| 7 | id 37 (M) | 497 (4.45 y, 17.5 kg) | −0.08 | −0.04 | −0.01 | −0.03 | −0.10 | −0.03 | −0.14 | 0 | 598 | alive |
+| 7 | id 48 (F) | 820 (4.33 y, 15.8 kg) | −0.02 | −0.03 | −0.00 | +0.02 | — | +0.01 | −0.05 | 0 | 275 | alive |
+| 7 | id 20 (M) | 884 (4.31 y, 17.0 kg) | −0.12 | −0.03 | −0.02 | −0.11 | — | −0.04 | −0.15 | 0 | 211 | alive |
+| 21 | id 22 (F) | 383 (4.63 y, 16.9 kg) | −0.02 | +0.01 | −0.03 | −0.18 | −0.02 | −0.02 | −0.23 | 0 | 712 | alive |
+| 21 | id 37 (M) | 480 (4.40 y, 17.4 kg) | −0.07 | −0.09 | −0.13 | −0.01 | — | −0.04 | −0.16 | 0 | 316 | died on day 796 of another cause (reserve −0.04) |
+| 21 | id 21 (M) | 843 (4.89 y, 19.1 kg) | −0.05 | −0.05 | −0.07 | −0.03 | — | −0.03 | −0.10 | 0 | 252 | alive |
+| 21 | id 20 (M) | 866 (4.26 y, 16.7 kg) | −0.05 | −0.04 | −0.07 | −0.04 | — | −0.02 | −0.09 | 0 | 229 | alive |
+| 5 | id 22 (F) | 463 (4.85 y, 17.6 kg) | −0.04 | −0.12 | −0.04 | −0.06 | −0.04 | −0.02 | −0.19 | 0 | 632 | alive |
+| 5 | id 37 (M) | 542 (4.57 y, 18.0 kg) | −0.01 | −0.02 | −0.03 | −0.01 | −0.03 | −0.01 | −0.13 | 0 | 553 | alive |
+| 5 | id 21 (M) | 743 (4.62 y, 18.2 kg) | −0.02 | −0.03 | −0.07 | −0.11 | — | −0.05 | −0.23 | 0 | 352 | alive |
+| 5 | id 20 (M) | 915 (4.39 y, 17.2 kg) | −0.02 | −0.03 | −0.08 | — | — | −0.07 | −0.22 | 0 | 180 | alive |
+| 5 | id 48 (F) | 963 (4.72 y, 17.1 kg) | −0.02 | −0.03 | −0.09 | — | — | −0.04 | −0.11 | 0 | 132 | alive |
+| 11 | id 22 (F) | 215 (4.17 y, 15.3 kg) | −0.02 | −0.04 | −0.01 | −0.02 | −0.00 | −0.04 | −0.10 | 0 | 880 | alive |
+| 11 | id 37 (M) | 507 (4.47 y, 17.7 kg) | −0.03 | −0.02 | −0.01 | −0.03 | −0.06 | −0.01 | −0.07 | 0 | 588 | alive |
+| 11 | id 21 (M) | 926 (5.12 y, 20.0 kg) | −0.04 | −0.03 | −0.04 | — | — | −0.04 | −0.05 | 0 | 169 | alive |
+| 11 | id 48 (F) | 939 (4.66 y, 16.9 kg) | −0.02 | −0.01 | +0.02 | — | — | +0.01 | −0.03 | 0 | 156 | alive |
+| 11 | id 20 (M) | 946 (4.47 y, 17.6 kg) | −0.02 | −0.03 | −0.07 | — | — | −0.03 | −0.07 | 0 | 149 | alive |
+
+| run | animals weaned in the run | dead below the condition line | died of another cause | alive at the end | their end reserve: mean (lowest) | alive below −0.5 at the end | ever below −0.5 | ever below −0.3 |
+| --- | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: |
+| reference (the 24 animals whose weaning date falls in the run; its saved readout lists the survivors) | 24 | not readable per animal (the run books 7 juvenile starvation deaths) | 7 dead in all | 17 | −0.46 (−0.91) | 7 | — | — |
+| reference, second draw (the 24 animals whose weaning date falls in the run; its saved readout lists the survivors) | 24 | not readable per animal (the run books 5 juvenile starvation deaths) | 8 dead in all | 16 | −0.47 (−0.90) | 8 | — | — |
+| gutSizeExp 0.875 | 24 | 0 | 1 | 23 | −0.15 (−0.51) | 2 | 5 | 10 |
+| gutSizeExp 0.75 | 21 | 0 | 2 | 19 | −0.03 (−0.07) | 0 | 1 | 1 |
+- gutSizeExp 0.875: 0 of 24 weaned animals starved; if each ran the same risk independently, a risk of up to 12% per animal over the days followed would still give 0 with a chance of 5% (1 − 0.05^(1/n)). Days followed after weaning: median 346, 10 of them 365 or more.
+- gutSizeExp 0.75: 0 of 21 weaned animals starved; if each ran the same risk independently, a risk of up to 13% per animal over the days followed would still give 0 with a chance of 5% (1 − 0.05^(1/n)). Days followed after weaning: median 286, 7 of them 365 or more.
+
+#### X4. After weaning, in blocks, against the founder juveniles of 6 to 8 y
+
+Pooled animal-days of the animals weaned in the run, by days since weaning; "founder juveniles" = animals already weaned on day 0, on the days they were 6 to 8 y old. "At a full foregut" = eating ticks ending with the foregut at least 0.95 full ÷ eating ticks; growth paid ÷ the potential (41.9 kcal/d for a female, 46.8 for a male).
+
+| run | days since weaning | animals | animal-days | mean kg | reserve | absorbed − spent | eating min | at a full foregut | fallback share of plant energy | km on the ground | growth paid ÷ potential |
+| --- | --- | ---: | ---: | ---: | --- | --- | ---: | ---: | ---: | ---: | ---: |
+| gutSizeExp 0.875 | 0 to 90 | 24 | 2160 | 17.7 | −0.10 | −15 | 319 | 49% | 5% | 4.4 | 0.90 |
+| gutSizeExp 0.875 | 90 to 180 | 24 | 1913 | 18.5 | −0.15 | −10 | 347 | 55% | 7% | 4.5 | 0.85 |
+| gutSizeExp 0.875 | 180 to 270 | 17 | 1412 | 19.1 | −0.19 | −5 | 359 | 58% | 9% | 4.3 | 0.81 |
+| gutSizeExp 0.875 | 270 to 365 | 14 | 1189 | 19.9 | −0.18 | −3 | 352 | 59% | 6% | 4.3 | 0.82 |
+| gutSizeExp 0.875 | 365 to 730 | 10 | 2476 | 21.3 | −0.14 | −5 | 323 | 54% | 5% | 4.3 | 0.86 |
+| gutSizeExp 0.875 | 730 to the end | 2 | 293 | 22.0 | −0.28 | +28 | 377 | 67% | 8% | 3.9 | 0.72 |
+| gutSizeExp 0.875 | founder juveniles, 6 to 8 y | — | 8830 | 25.1 | −0.08 | −2 | 264 | 38% | 4% | 3.9 | 0.92 |
+| gutSizeExp 0.75 | 0 to 90 | 21 | 1890 | 17.7 | −0.04 | −1 | 264 | 20% | 4% | 4.6 | 0.96 |
+| gutSizeExp 0.75 | 90 to 180 | 21 | 1722 | 18.6 | −0.07 | −6 | 282 | 31% | 5% | 4.5 | 0.93 |
+| gutSizeExp 0.75 | 180 to 270 | 15 | 1232 | 19.3 | −0.07 | +4 | 275 | 29% | 4% | 4.5 | 0.93 |
+| gutSizeExp 0.75 | 270 to 365 | 12 | 890 | 20.2 | −0.06 | +10 | 277 | 31% | 2% | 4.5 | 0.94 |
+| gutSizeExp 0.75 | 365 to 730 | 7 | 1942 | 21.7 | −0.05 | +2 | 262 | 30% | 2% | 4.3 | 0.95 |
+| gutSizeExp 0.75 | 730 to the end | 1 | 150 | 22.6 | −0.03 | −3 | 205 | 10% | 1% | 3.8 | 0.97 |
+| gutSizeExp 0.75 | founder juveniles, 6 to 8 y | — | 8561 | 25.1 | −0.07 | −3 | 245 | 29% | 3% | 4.0 | 0.94 |
+
+**The registered comparison (e1w §2.3 W3), per animal followed 365 days or more after weaning:** reserve never below −0.5 in those 365 days; its mean not below the founder juveniles' of the same seed by more than 0.1; eating minutes and the full-foregut share not above theirs by more than a quarter.
+
+| run | animals followed 365 days | never below −0.5 | reserve within 0.1 | eating minutes within a quarter | full-foregut share within a quarter | all four |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| gutSizeExp 0.875 | 10 | 10 | 8 | 8 | 6 | 6 |
+| gutSizeExp 0.75 | 7 | 7 | 7 | 7 | 6 | 6 |
+
+#### X5. Growth, against the target T-INF-4 (5-y mass 7-13 kg; 10-y mass 16-26 kg (F) and 18-30 kg (M); growth slowing at 9-11 y (F) and 12-14 y (M))
+
+| run | mass at 5 y, females: mean (range, n) | males | kg gained in the 365 days after weaning, females (n) | males (n) | potential, F / M |
+| --- | --- | --- | --- | --- | --- |
+| gutSizeExp 0.875 | 17.9 (17.5 to 18.0, 10) | 19.4 (19.0 to 19.6, 10) | 3.17 (4) | 3.37 (6) | 3.4 / 3.8 kg/y |
+| gutSizeExp 0.75 | 18.0 (17.9 to 18.1, 7) | 19.6 (19.5 to 19.7, 9) | 3.20 (3) | 3.69 (4) | 3.4 / 3.8 kg/y |
+
+From every run's merged growth readout (`e1p`), which the reference runs also hold: the share of the growth potential paid, the growth velocity, the group's mean reserve and the lowest individual reserve reached.
+
+| group | reference: paid share, kg/y, reserve (lowest) | reference, second draw: paid share, kg/y, reserve (lowest) | gutSizeExp 0.875: paid share, kg/y, reserve (lowest) | gutSizeExp 0.75: paid share, kg/y, reserve (lowest) |
+| --- | --- | --- | --- | --- |
+| 3–4 y | 0.96, 3.01, −0.04 (−0.27) | 0.96, 2.73, −0.04 (−0.28) | 0.97, 3.32, −0.03 (−0.21) | 0.98, 3.50, −0.02 (−0.15) |
+| 4–5 y | 0.92, —, −0.07 (−0.53) | 0.92, —, −0.08 (−0.65) | 0.94, —, −0.06 (−0.59) | 0.96, —, −0.04 (−0.26) |
+| juvenile 5–8 y F | 0.78, 2.62, −0.22 (−1.00) | 0.79, 2.67, −0.21 (−1.00) | 0.90, 2.75, −0.10 (−0.70) | 0.94, 2.81, −0.06 (−0.36) |
+| juvenile 5–8 y M | 0.59, —, −0.41 (−1.00) | 0.50, —, −0.50 (−1.00) | 0.83, —, −0.17 (−0.78) | 0.92, —, −0.08 (−0.51) |
+| juvenile 8–12 y F | 0.93, 0.00, −0.05 (−0.45) | 0.93, 0.00, −0.05 (−0.47) | 0.93, 0.00, −0.05 (−0.37) | 0.94, 0.00, −0.04 (−0.32) |
+| juvenile 8–12 y M | 0.98, 1.79, −0.01 (−0.15) | 0.98, 1.86, −0.01 (−0.13) | 0.98, 1.86, −0.01 (−0.14) | 0.98, 1.94, −0.01 (−0.16) |
+
+#### X6. Adults: are they unchanged?
+
+From the class-by-day readout, pooled over the five seeds, by run year. "Outside" marks an arm value that lies beyond the two reference draws by more than the draws differ from each other.
+
+| class | year | eating min: reference / reference, second draw / gutSizeExp 0.875 / gutSizeExp 0.75 | absorbed | spent | daylight at a full foregut | lowest 30-day mean reserve | outside |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| adult male | 1 | 226 / 227 / 225 / 226 | 1564 / 1561 / 1560 / 1565 | 1564 / 1562 / 1560 / 1566 | 3.1% / 3.3% / 3.1% / 3.2% | −0.020 / −0.025 / −0.021 / −0.022 | — |
+| adult male | 2 | 225 / 224 / 225 / 225 | 1568 / 1570 / 1570 / 1574 | 1568 / 1569 / 1570 / 1573 | 2.8% / 2.9% / 3.0% / 3.1% | −0.016 / −0.015 / −0.017 / −0.014 | absorbed at 0.75; spent at 0.75; full foregut at 0.875; full foregut at 0.75; reserve at 0.875; reserve at 0.75 |
+| adult male | 3 | 229 / 228 / 230 / 229 | 1570 / 1570 / 1573 / 1570 | 1569 / 1569 / 1573 / 1570 | 4.3% / 4.3% / 4.6% / 4.5% | −0.027 / −0.027 / −0.030 / −0.025 | absorbed at 0.875; absorbed at 0.75; spent at 0.875; spent at 0.75; full foregut at 0.875; full foregut at 0.75; reserve at 0.875; reserve at 0.75 |
+| female, other | 1 | 218 / 219 / 218 / 219 | 1289 / 1288 / 1285 / 1284 | 1286 / 1287 / 1285 / 1284 | 6.6% / 6.6% / 6.6% / 6.9% | −0.033 / −0.039 / −0.040 / −0.041 | absorbed at 0.875; absorbed at 0.75; spent at 0.75; full foregut at 0.875; full foregut at 0.75 |
+| female, other | 2 | 213 / 214 / 212 / 215 | 1292 / 1294 / 1291 / 1295 | 1291 / 1293 / 1288 / 1294 | 6.5% / 6.8% / 6.4% / 7.4% | −0.030 / −0.031 / −0.034 / −0.031 | spent at 0.875; full foregut at 0.75; reserve at 0.875 |
+| female, other | 3 | 233 / 232 / 229 / 239 | 1307 / 1298 / 1305 / 1303 | 1305 / 1297 / 1300 / 1303 | 10.9% / 10.1% / 9.2% / 11.7% | −0.062 / −0.067 / −0.076 / −0.060 | eating minutes at 0.875; eating minutes at 0.75; full foregut at 0.875; reserve at 0.875 |
+| female, pregnant | 1 | 274 / 267 / 269 / 280 | 1386 / 1384 / 1395 / 1398 | 1407 / 1402 / 1411 / 1417 | 17.0% / 15.7% / 16.5% / 18.2% | — / — / — / — | absorbed at 0.875; absorbed at 0.75; spent at 0.75 |
+| female, pregnant | 2 | 253 / 260 / 263 / 252 | 1386 / 1382 / 1391 / 1378 | 1403 / 1395 / 1410 / 1391 | 13.4% / 13.8% / 15.3% / 13.7% | — / — / — / — | absorbed at 0.875; full foregut at 0.875 |
+| female, pregnant | 3 | 255 / 264 / 259 / 271 | 1397 / 1403 / 1394 / 1386 | 1408 / 1415 / 1423 / 1408 | 14.3% / 15.4% / 15.7% / 16.9% | — / — / — / — | absorbed at 0.75; spent at 0.875; full foregut at 0.75 |
+| female, lactating | 1 | 304 / 307 / 297 / 293 | 1727 / 1724 / 1706 / 1692 | 1724 / 1722 / 1703 / 1687 | 9.4% / 9.6% / 7.3% / 6.5% | −0.092 / −0.097 / −0.076 / −0.064 | eating minutes at 0.875; eating minutes at 0.75; absorbed at 0.875; absorbed at 0.75; spent at 0.875; spent at 0.75; full foregut at 0.875; full foregut at 0.75; reserve at 0.875; reserve at 0.75 |
+| female, lactating | 2 | 301 / 304 / 299 / 294 | 1731 / 1734 / 1719 / 1708 | 1729 / 1733 / 1717 / 1707 | 9.6% / 10.3% / 8.8% / 7.5% | −0.071 / −0.069 / −0.064 / −0.058 | eating minutes at 0.75; absorbed at 0.875; absorbed at 0.75; spent at 0.875; spent at 0.75; full foregut at 0.875; full foregut at 0.75; reserve at 0.875; reserve at 0.75 |
+| female, lactating | 3 | 317 / 311 / 309 / 293 | 1735 / 1732 / 1724 / 1700 | 1735 / 1730 / 1721 / 1696 | 12.8% / 11.7% / 11.1% / 7.3% | −0.099 / −0.092 / −0.087 / −0.063 | eating minutes at 0.75; absorbed at 0.875; absorbed at 0.75; spent at 0.875; spent at 0.75; full foregut at 0.75; reserve at 0.75 |
+
+- Cells outside by that rule: gutSizeExp 0.875 28, gutSizeExp 0.75 32 of 57 each. The two reference draws lie within a few kcal of each other in most cells, so the rule flags differences of any size; their sizes:
+
+| class | run | largest difference from the mean of the two reference draws, over the three years: eating minutes | absorbed | spent | daylight at a full foregut, points | lowest 30-day reserve |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| adult male | gutSizeExp 0.875 | −0.4% | +0.2% | +0.2% | +0.3 | −0.003 |
+| adult male | gutSizeExp 0.75 | +0.3% | +0.3% | +0.3% | +0.2 | +0.002 |
+| female, other | gutSizeExp 0.875 | −1.5% | −0.3% | −0.3% | −1.3 | −0.012 |
+| female, other | gutSizeExp 0.75 | +2.9% | −0.3% | +0.2% | +1.2 | +0.005 |
+| female, pregnant | gutSizeExp 0.875 | +2.6% | +0.7% | +0.8% | +1.7 | — |
+| female, pregnant | gutSizeExp 0.75 | +4.5% | −1.0% | +0.9% | +2.1 | — |
+| female, lactating | gutSizeExp 0.875 | −2.9% | −1.2% | −1.2% | −2.2 | +0.019 |
+| female, lactating | gutSizeExp 0.75 | −6.7% | −2.0% | −2.1% | −5.0 | +0.032 |
+
+- reference: deaths of adults and adolescents 5 (illness 1, respiratory illness (outbreak) 3, wounds from a fight 1); nursing females' reserve trend −0.0021 % of the store a day (viability line −0.05); births 71.
+- reference, second draw: deaths of adults and adolescents 19 (illness 5, respiratory illness (outbreak) 10, wounds from a fight 4); nursing females' reserve trend −0.0010 % of the store a day (viability line −0.05); births 66.
+- gutSizeExp 0.875: deaths of adults and adolescents 7 (illness 4, wounds from a fight 3); nursing females' reserve trend −0.0020 % of the store a day (viability line −0.05); births 69.
+- gutSizeExp 0.75: deaths of adults and adolescents 23 (illness 8, killed in an intergroup attack 1, respiratory illness (outbreak) 10, wounds from a fight 4); nursing females' reserve trend −0.0002 % of the store a day (viability line −0.05); births 65.
+
+#### X7. The unweaned: milk, self-feeding and reserve by age
+
+| age | milk drunk, kcal/d: reference / reference, second draw / gutSizeExp 0.875 / gutSizeExp 0.75 | minutes eating solid food by day | mean reserve | mean kg |
+| --- | --- | --- | --- | --- |
+| 0–0.5 y | 204 / 202 / 204 / 205 | 0 / 0 / 0 / 0 | −0.071 / −0.084 / −0.070 / −0.057 | 2.4 / 2.4 / 2.4 / 2.4 |
+| 0.5–1 y | 272 / 271 / 272 / 273 | 0 / 0 / 0 / 0 | −0.048 / −0.052 / −0.045 / −0.038 | 3.8 / 3.8 / 3.8 / 3.8 |
+| 1–2 y | 281 / 279 / 263 / 254 | 62 / 64 / 66 / 72 | −0.082 / −0.079 / −0.074 / −0.056 | 6.1 / 6.1 / 6.1 / 6.2 |
+| 2–3 y | 272 / 274 / 259 / 245 | 128 / 125 / 126 / 131 | −0.040 / −0.039 / −0.027 / −0.020 | 9.7 / 9.7 / 9.7 / 9.7 |
+| 3–4 y | 257 / 255 / 241 / 231 | 149 / 148 / 149 / 152 | −0.037 / −0.037 / −0.028 / −0.020 | 13.6 / 13.5 / 13.6 / 13.6 |
+| 4–5 y | 241 / 237 / 225 / 219 | 182 / 181 / 177 / 174 | −0.075 / −0.081 / −0.062 / −0.038 | 16.4 / 16.2 / 16.4 / 16.5 |
+- T-INF-2 (Suckling share of observation time; band 1–6): 11.485 / 11.416 / 11.404 / 11.420.
+- T-INF-5 (Nursing bout rate and length; band 0.5–2): 1.263 / 1.259 / 1.199 / 1.181.
+- T-DEM-1 (First-year mortality; band 0.11–0.19): 0.246 / 0.225 / 0.171 / 0.201.
+- Deaths under 2 y booked as starvation: 0 / 1 / 2 / 0.
+
+#### X8. The fitted and held-out rows
+
+Sums of band distance over the rows scored in all four runs (66 rows; the five revised rows left out), with z by e-noise.md amendment 4 against the two reference draws (n = 2; SD floored). The reference is on the earlier protocol, so this is for information.
+
+| sum | rows | reference draws | mean ± SD | gutSizeExp 0.875 (z) | gutSizeExp 0.75 (z) |
+| --- | ---: | --- | --- | --- | --- |
+| fitted | 26 | 4.42 / 4.13 | 4.28 ± 0.20 (used 0.30) | 4.33 (+0.2) | 3.40 (−2.4) |
+| held-out | 40 | 39.47 / 38.32 | 38.90 ± 0.81 (used 1.45) | 39.17 (+0.2) | 38.87 (−0.0) |
+| held-out w/o rare | 37 | 38.33 / 37.64 | 37.98 ± 0.49 (used 0.49) | 38.38 (+0.7) | 37.62 (−0.6) |
+
+**Rows that move** (registered rule: the arm's band distance differs from both reference draws by more than they differ from each other):
+
+| row | role | band | value: reference / reference, second draw / gutSizeExp 0.875 / gutSizeExp 0.75 | band distance | moves at |
+| --- | --- | --- | --- | --- | --- |
+| T-PTY-1 Mean party size | fitted | 4.5–9.2 | 4.272 / 4.234 / 4.330 / 4.288 | 0.048 / 0.057 / 0.036 / 0.045 | 0.875 (closer) |
+| T-RNG-1 Annual home range of a 22-member community | fitted | 5–16 | 5.410 / 5.044 / 5.268 / 4.986 | 0.000 / 0.000 / 0.000 / 0.001 | 0.75 (further) |
+| T-RNG-5 Lactating female day range relative to males | held-out | 0.3–0.75 | 1.035 / 1.040 / 1.011 / 0.988 | 0.634 / 0.643 / 0.579 / 0.530 | 0.875 (closer), 0.75 (closer) |
+| T-RNG-6 Range variability over years | held-out | 1.2–3 | 1.144 / 1.157 / 1.142 / 1.182 | 0.031 / 0.024 / 0.032 / 0.010 | 0.75 (closer) |
+| T-IGE-1 Intergroup encounters per community-year | fitted | 5–12 | 20.359 / 19.875 / 20.455 / 18.538 | 1.194 / 1.125 / 1.208 / 0.934 | 0.75 (closer) |
+| T-IGE-2 Share of encounters that are auditory only | held-out | 0.7–0.9 | 0.948 / 0.943 / 0.950 / 0.936 | 0.239 / 0.215 / 0.250 / 0.181 | 0.75 (closer) |
+| T-FOOD-3 Fallback switching | held-out | ≥ 0.3 | 0.245 / 0.240 / 0.252 / 0.280 | 0.185 / 0.200 / 0.159 / 0.066 | 0.875 (closer), 0.75 (closer) |
+| T-FOOD-5 Nearest-tree choice share | held-out | 0.15–0.45 | 0.091 / 0.091 / 0.092 / 0.093 | 0.195 / 0.198 / 0.195 / 0.192 | 0.75 (closer) |
+| T-FOOD-10 Breakfast planning | held-out | 0.08–0.78 | 0.868 / 0.868 / 0.865 / 0.843 | 0.125 / 0.126 / 0.122 / 0.090 | 0.875 (closer), 0.75 (closer) |
+| T-HUN-4 More males, more hunting | held-out | 1.05–1.8 | 2.284 / 2.210 / 2.160 / 2.362 | 0.646 / 0.546 / 0.480 / 0.750 | 0.75 (further) |
+| T-HUN-7 Kills per successful hunt | fitted | 1.2–2 | 1.000 / 1.000 / 1.000 / 1.002 | 0.250 / 0.250 / 0.250 / 0.248 | 0.75 (closer) |
+| T-HUN-8 Adult males make most kills | held-out | 0.8–0.95 | 0.967 / 0.967 / 0.961 / 0.968 | 0.116 / 0.110 / 0.075 / 0.118 | 0.875 (closer) |
+| T-SOC-3 Grooming reciprocity | held-out | 0.45–0.8 | 0.833 / 0.827 / 0.790 / 0.881 | 0.094 / 0.077 / 0.000 / 0.231 | 0.875 (closer), 0.75 (further) |
+| T-SOC-5 Male hierarchy steepness | held-out | 0.2–0.7 | 0.882 / 0.904 / 0.853 / 0.850 | 0.363 / 0.408 / 0.306 / 0.299 | 0.875 (closer), 0.75 (closer) |
+| T-SOC-7 Alpha tenure | fitted | 3–7 | 3.214 / 3.214 / 3.750 / 2.812 | 0.000 / 0.000 / 0.000 / 0.047 | 0.75 (further) |
+| T-DEM-1 First-year mortality | fitted | 0.11–0.19 | 0.246 / 0.225 / 0.171 / 0.201 | 0.705 / 0.436 / 0.000 / 0.134 | 0.875 (closer), 0.75 (closer) |
+| T-DEM-5 Epidemic frequency | fitted | 0.07–0.15 | 0.111 / 0.067 / 0.022 / 0.111 | 0.000 / 0.042 / 0.597 / 0.000 | 0.875 (further) |
+| T-DEM-8 Respiratory death rate | held-out | 5–20 | 8.769 / 15.541 / 0.000 / 21.844 | 0.000 / 0.000 / 0.333 / 0.123 | 0.875 (further), 0.75 (further) |
+| T-DEM-10 Age-specific fertility | fitted | 0.15–0.25 | 0.282 / 0.290 / 0.290 / 0.272 | 0.324 / 0.403 / 0.400 / 0.222 | 0.75 (closer) |
+| T-COM-11 Alarm calls track audience knowledge | fitted | 0.25–0.55 | 0.087 / 0.079 / 0.075 / 0.098 | 0.542 / 0.571 / 0.584 / 0.506 | 0.75 (closer) |
+| T-SOC-14 Contact share of aggression among individuals of 12 y and over | held-out | 0.08–0.37 | 0.067 / 0.065 / 0.069 / 0.067 | 0.045 / 0.051 / 0.037 / 0.046 | 0.875 (closer) |
+
+- Rows that move: gutSizeExp 0.875: 9 closer to the band, 2 further; gutSizeExp 0.75: 12 closer to the band, 5 further.
+- Rows whose verdict is the same in both reference draws and differs in an arm, a "pass" involved: T-PAT-4 (held-out): pass / pass / fail / pass; T-HUN-1 (fitted): pass / pass / pass / inconclusive; T-SOC-9 (fitted): pass / pass / pass / inconclusive; T-END-9 (held-out): fail / fail / pass / fail.
+
+#### X9. The respiratory outbreaks
+
+An outbreak reaches a community as a random arrival (`epidemicArrivalPerY` 0.10 per community-year, drawn from the world's generator each day), spreads inside parties, and each case ends in death with odds set by age (under 5 y × 5.01, 30 y or more × 3.86, base 0.07) and by one draw of virulence per outbreak (log-normal, SD 0.8 on the odds); nothing in `src/sim/disease.ts` reads reserves, condition or body mass. Expected arrivals in the three scored years of five seeds of three communities: 4.5. Every three-year run on the S39 stack is listed.
+
+| run | outbreaks by seed (total) | outbreak deaths by seed (total) | deaths per outbreak | attack rate | share of the community that died: mean (largest) | respiratory deaths per 1,000 chimp-years | mean party size |
+| --- | --- | --- | ---: | ---: | --- | ---: | ---: |
+| Y3-W50 (reference) | 1 / 1 / 0 / 2 / 1 (5) | 0 / 4 / 0 / 2 / 1 (7) | 1.4 | 0.87 | 0.08 (0.22) | 8.8 | 4.27 |
+| Y3-W50-s1 (reference, second draw) | 0 / 1 / 0 / 1 / 1 (3) | 0 / 2 / 2 / 5 / 5 (14) | 4.7 | 1.00 | 0.20 (0.28) | 15.5 | 4.23 |
+| Y3-W25 (swallowed 0.25) | 1 / 1 / 1 / 0 / 1 (4) | 4 / 4 / 0 / 0 / 3 (11) | 2.8 | 0.92 | 0.17 (0.33) | 14.0 | 4.20 |
+| Y3-W25-s1 (swallowed 0.25, second draw) | 0 / 0 / 0 / 0 / 1 (1) | 0 / 0 / 0 / 0 / 2 (2) | 2.0 | — | — (—) | 2.5 | 4.31 |
+| Y3-W50-wean (weanOutcome 1) | 0 / 0 / 1 / 1 / 0 (2) | 0 / 0 / 5 / 2 / 0 (7) | 3.5 | — | — (—) | 10.0 | 4.25 |
+| Y3-W50-gut875 (gutSizeExp 0.875) | 0 / 0 / 1 / 0 / 0 (1) | 0 / 0 / 0 / 0 / 0 (0) | 0.0 | — | — (—) | 0.0 | 4.33 |
+| Y3-W50-gut75 (gutSizeExp 0.75) | 1 / 2 / 0 / 1 / 1 (5) | 2 / 7 / 0 / 6 / 3 (18) | 3.6 | 0.99 | 0.18 (0.33) | 21.8 | 4.29 |
+
+- Without the input (5 runs): 1 to 5 outbreaks and 2 to 14 outbreak deaths a run; 1.4 / 4.7 / 2.8 / 2.0 / 3.5 deaths per outbreak. With it: 5 outbreaks and 18 deaths at 0.75, 1 and 0 at 0.875.
+- Chance of 1 outbreak or fewer when 4.5 are expected (Poisson): 0.06; of 5 or more: 0.47.
+
+**The outbreaks of the two arms, found in the per-animal rows** (two or more deaths in one community within four days of each other; the per-animal rows carry no cause, so the count is checked against the run's own by seed). "Expected deaths" = the sum over the community's living members of the registry's odds of death by age at a virulence of 1, if every member is infected.
+
+| run | seed | community | days (date) | living in the community the day before | of them under 5 y / 30 y or more | deaths | who (age) | expected deaths at virulence 1 | victims' reserve: mean (lowest) | the run's outbreak deaths in that seed |
+| --- | --- | --- | --- | ---: | --- | ---: | --- | ---: | --- | ---: |
+| gutSizeExp 0.875 | all | | | | | 0 | | 0.0 | | 0 |
+| gutSizeExp 0.75 | 48 | 1 | 506 to 508 (Mar 18, year 2) | 24 | 6 / 5 | 2 | id 15 (22.5), id 22 (5.0) | 3.7 | −0.01 (−0.02) | 2 |
+| gutSizeExp 0.75 | 7 | 1 | 368 to 370 (Oct 31, year 2) | 23 | 6 / 5 | 5 | id 6 (42.1), id 22 (4.6), id 52 (0.4), id 21 (3.6), id 12 (34.1) | 3.6 | −0.04 (−0.06) | 7 |
+| gutSizeExp 0.75 | 7 | 3 | 380 to 384 (Nov 12, year 2) | 12 | 2 / 3 | 2 | id 49 (1.6), id 42 (39.1) | 1.7 | −0.03 (−0.03) | 7 |
+| gutSizeExp 0.75 | 5 | 2 | 613 to 614 (Jul 3, year 2) | 18 | 6 / 3 | 6 | id 23 (30.8), id 29 (31.8), id 31 (23.8), id 58 (0.1), id 28 (42.8), id 35 (7.3) | 2.9 | −0.01 (−0.02) | 6 |
+| gutSizeExp 0.75 | 11 | 2 | 970 to 971 (Jun 24, year 3) | 18 | 4 / 3 | 3 | id 29 (32.7), id 31 (24.7), id 55 (1.7) | 2.5 | −0.01 (−0.01) | 3 |
+| gutSizeExp 0.75 | all | | | | | 18 | | 14.5 | | 18 |
+
+#### X10. Does the larger gut change anything for the wrong reason? Intake by body size
+
+Per animal-day, from the arms' per-animal rows. Dry matter and energy are divided by body mass and by mass^0.75 (the power of the resting need). "Above the set point" = share of animal-days with reserves above 0, and the highest reserve reached.
+
+| run | group | animal-days | mean kg | dry matter, g per kg | g per kg^0.75 | absorbed, kcal per kg^0.75 | spent, kcal per kg^0.75 | eating min | at a full foregut | reserve | above the set point (highest) | growth paid, kcal/d |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | ---: |
+| gutSizeExp 0.875 | weaned in the run, under 21 kg | 7312 | 18.7 | 24.3 | 50.5 | 107.4 | 108.6 | 334 | 54% | −0.14 | 0% (+0.00) | 38 |
+| gutSizeExp 0.875 | weaned in the run, 21 kg and over | 2131 | 21.9 | 23.8 | 51.4 | 108.8 | 108.4 | 348 | 58% | −0.17 | 0% (−0.01) | 37 |
+| gutSizeExp 0.875 | on milk, 2 to 5 y | 29807 | 12.5 | 20.0 | 37.4 | 101.3 | 101.5 | 146 | 10% | −0.04 | 1% (+0.03) | 43 |
+| gutSizeExp 0.875 | founder juveniles under 31.3 kg | 14404 | 26.3 | 22.4 | 50.6 | 107.8 | 107.8 | 257 | 35% | −0.08 | 0% (+0.02) | 39 |
+| gutSizeExp 0.875 | adult females, not pregnant, not nursing | 16661 | 31.3 | 19.7 | 46.7 | 97.6 | 97.5 | 219 | 13% | −0.02 | 18% (+0.02) | 0 |
+| gutSizeExp 0.875 | adult males | 80407 | 39.0 | 18.8 | 46.9 | 100.5 | 100.5 | 227 | 5% | −0.01 | 29% (+0.03) | 0 |
+| gutSizeExp 0.75 | weaned in the run, under 21 kg | 5873 | 18.7 | 24.5 | 50.9 | 109.4 | 109.5 | 268 | 26% | −0.05 | 5% (+0.02) | 42 |
+| gutSizeExp 0.75 | weaned in the run, 21 kg and over | 1953 | 22.1 | 23.6 | 51.2 | 109.0 | 108.5 | 276 | 33% | −0.06 | 0% (+0.00) | 42 |
+| gutSizeExp 0.75 | on milk, 2 to 5 y | 28654 | 12.4 | 20.5 | 38.3 | 101.7 | 101.8 | 153 | 7% | −0.03 | 3% (+0.03) | 44 |
+| gutSizeExp 0.75 | founder juveniles under 31.3 kg | 13857 | 26.3 | 22.4 | 50.5 | 107.7 | 107.8 | 242 | 27% | −0.06 | 1% (+0.02) | 39 |
+| gutSizeExp 0.75 | adult females, not pregnant, not nursing | 17799 | 31.3 | 19.9 | 47.0 | 97.7 | 97.7 | 223 | 16% | −0.02 | 16% (+0.02) | 0 |
+| gutSizeExp 0.75 | adult males | 76803 | 39.0 | 18.8 | 47.0 | 100.6 | 100.6 | 227 | 5% | −0.01 | 29% (+0.03) | 0 |
+- gutSizeExp 0.875: a weaned animal under 21 kg eats 1.23 of an adult female's dry matter per kg and 1.08 per kg^0.75, absorbs 1.10 of her energy per kg^0.75 and spends 1.11; it eats 334 minutes a day against her 219.
+- gutSizeExp 0.75: a weaned animal under 21 kg eats 1.23 of an adult female's dry matter per kg and 1.08 per kg^0.75, absorbs 1.12 of her energy per kg^0.75 and spends 1.12; it eats 268 minutes a day against her 223.
+
+The same from the class readout, which the reference runs also hold (per class-day; m75 = mean mass^0.75):
+
+| class | dry matter, g per kg^0.75: reference / reference, second draw / gutSizeExp 0.875 / gutSizeExp 0.75 | absorbed, kcal per kg^0.75 | eating min | daylight at a full foregut | mean reserve |
+| --- | --- | --- | --- | --- | --- |
+| infant 2–5 y | 38.8 / 38.4 / 39.7 / 40.5 | 101.4 / 101.2 / 102.3 / 102.9 | 189 / 178 / 168 / 166 | 13.5% / 12.0% / 7.6% / 4.2% | −0.079 / −0.070 / −0.045 / −0.029 |
+| juvenile 5–12 y | 49.1 / 49.0 / 49.3 / 49.3 | 104.1 / 103.9 / 105.0 / 104.8 | 301 / 294 / 261 / 242 | 24.2% / 23.0% / 16.8% / 11.7% | −0.124 / −0.120 / −0.066 / −0.041 |
+| female, other | 46.9 / 46.8 / 46.7 / 47.0 | 97.8 / 97.6 / 97.6 / 97.7 | 220 / 221 / 219 / 223 | 7.7% / 7.5% / 7.2% / 8.3% | −0.018 / −0.018 / −0.017 / −0.023 |
+| adult male | 46.9 / 46.9 / 46.9 / 47.0 | 100.4 / 100.4 / 100.5 / 100.6 | 227 / 226 / 227 / 227 | 3.4% / 3.5% / 3.6% / 3.6% | −0.006 / −0.006 / −0.006 / −0.006 |
