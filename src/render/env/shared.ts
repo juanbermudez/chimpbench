@@ -302,6 +302,10 @@ export function installAtmosphere() {
  * orbit ~8–14 m) is never veiled. The fog (sky.ts) and the sun shafts (weather.ts) share it. Design assumption. */
 export const HAZE_START_PERSPECTIVE = 15;
 
+/** Linear scene luminance above which a pixel feeds the bloom pass (post.ts). The sky dome keeps itself under it
+ * (sky.ts), so only highlights on things (sun glints, wet leaves, lightning-lit surfaces) and the sun disc bloom. */
+export const BLOOM_THRESHOLD = 2.2;
+
 export function setAtmosphere(fog: THREE.Fog, density: number, start: number, mist: number) {
   fog.near = density;
   fog.far = Math.max(0, Math.floor(start)) + THREE.MathUtils.clamp(mist, 0, 0.995);

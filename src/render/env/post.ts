@@ -7,7 +7,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { FXAAPass } from 'three/addons/postprocessing/FXAAPass.js';
 import { CopyShader } from 'three/addons/shaders/CopyShader.js';
 import type { Quality } from '../../types';
-import type { EnvState } from './shared';
+import { BLOOM_THRESHOLD, type EnvState } from './shared';
 import { easuConstants } from './output';
 
 // Post chain: MSAA scene render (with a resolved depth texture) → GTAO
@@ -439,8 +439,11 @@ export function createPost(renderer: THREE.WebGLRenderer, scene: THREE.Scene, ca
   const gtaoSetSize = gtao.setSize.bind(gtao);
   gtao.setSize = (w: number, h: number) => gtaoSetSize(Math.max(1, Math.round(w / 2)), Math.max(1, Math.round(h / 2)));
   gtao.blendIntensity = 0.75;
-  // High threshold: only true HDR highlights (sun glints on water, fireflies, lightning) bloom; the sky must not veil the scene.
-  const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.2, 0.35, 2.2);
+  // High threshold: only true HDR highlights (sun glints on water, wet leaves, lightning-lit surfaces) and the sun disc
+  // bloom. The threshold pass keeps a pixel's full value once it is over the line and the widest blur spans the frame,
+  // so anything large above it veils the whole picture: the sky dome therefore limits itself to a ceiling under this
+  // threshold and the sun disc to a fixed value (sky.ts, stage W2). Fireflies (≤ 1.3) and the moon (≤ 0.6) sit under it.
+  const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.2, 0.35, BLOOM_THRESHOLD);
   // Bloom is a soft, low-frequency glow: its chain starts at quarter resolution instead of half (plan G4 item 4).
   const bloomSetSize = bloom.setSize.bind(bloom);
   bloom.setSize = (w: number, h: number) => bloomSetSize(Math.max(1, Math.round(w / 2)), Math.max(1, Math.round(h / 2)));

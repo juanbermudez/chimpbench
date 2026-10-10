@@ -1,12 +1,22 @@
 import * as THREE from 'three';
 import { Sky } from 'three/addons/objects/Sky.js';
-import { HAZE_START_PERSPECTIVE, Owner, setAtmosphere, type EnvFrame, type SharedUniforms } from './shared';
+import { BLOOM_THRESHOLD, HAZE_START_PERSPECTIVE, Owner, setAtmosphere, type EnvFrame, type SharedUniforms } from './shared';
 
 // Sky, sun, moon and ambient light as one rig driven by EnvState. The
 // Preetham sky from three/addons is extended in place with overcast,
 // stars, a phase-correct moon and lightning; the same sky feeds a PMREM
 // environment map so wet leaves, water and fur pick up its reflections.
 
+/**
+ * Bloom guard (stage W2). The Preetham dome reaches 40 to 130 scene units round a low sun and 19,000 on the disc,
+ * against a forest at 0.02 and a bloom threshold of 2.2; the bloom pass spread that over the whole frame (a cream
+ * white-out facing a low sun, a pale veil under bright midday sky). The dome now rolls off to SKY_CEILING, under the
+ * threshold with room for what is drawn over it (sun shafts add up to ~0.1), and the disc to SUN_DISC_CEILING, which
+ * leaves a glow a few degrees wide. Both are far past the tone curve's shoulder at every exposure the rig uses, so the
+ * sky itself looks the same. Stylization: display limits, not a sky model.
+ */
+const SKY_CEILING = BLOOM_THRESHOLD * 0.85;
+const SUN_DISC_CEILING = 40;
 /** Skyglow floor for the strategy view at night (linear irradiance multiplier on albedo). */
 const NIGHT_FLOOR_RTS = 0.08;
 const tmpA = new THREE.Color(); const tmpB = new THREE.Color();
@@ -54,12 +64,16 @@ export function createSky(uniforms: SharedUniforms, owner: Owner): SkyRig {
     uNight: { value: 0 }, uOvercast: { value: 0 }, uOvercastColor: { value: new THREE.Color() },
     uFlash: { value: 0 }, uMoonDir: { value: new THREE.Vector3(0, -1, 0) }, uSunDirW: { value: new THREE.Vector3(0, 1, 0) },
     uMoonLight: { value: 0 }, uNightTint: { value: new THREE.Color('#0b1426') }, uSkyGain: { value: 0.5 },
+    uSkyCeil: { value: SKY_CEILING }, uDiscCeil: { value: SUN_DISC_CEILING },
   });
   material.fragmentShader = material.fragmentShader
     .replace('void main() {', /* glsl */`
       uniform float uNight; uniform float uOvercast; uniform vec3 uOvercastColor; uniform float uFlash;
       uniform vec3 uMoonDir; uniform vec3 uSunDirW; uniform float uMoonLight; uniform vec3 uNightTint; uniform float uSkyGain;
+      uniform float uSkyCeil; uniform float uDiscCeil;
       float starHash( vec3 p ) { p = fract( p * 0.3183099 + 0.1 ); p *= 17.0; return fract( p.x * p.y * p.z * ( p.x + p.y + p.z ) ); }
+      // Per channel: unchanged below 80% of the ceiling m, then an exponential shoulder that never passes m.
+      vec3 skyShoulder( vec3 c, float m ) { float a = m * 0.8, w = m - a; return min( c, vec3( a ) ) + w * ( 1.0 - exp( - max( c - a, 0.0 ) / w ) ); }
       void main() {`)
     .replace('gl_FragColor = vec4( texColor, 1.0 );', /* glsl */`
       // Preetham radiance is several times brighter than the scene's light units; scale it to sit behind the forest.
@@ -99,6 +113,8 @@ export function createSky(uniforms: SharedUniforms, owner: Owner): SkyRig {
       vec3 overcast = uOvercastColor * ( 0.6 + 0.4 * ( 1.0 - smoothstep( -0.05, 0.35, direction.y ) ) );
       col = mix( col, overcast, uOvercast );
       col += vec3( 0.55, 0.6, 0.8 ) * uFlash * ( 0.3 + 0.7 * smoothstep( -0.05, 0.4, direction.y ) );
+      // Bloom guard, last so that nothing the dome adds can pass it: the sky stays under the bloom threshold, the disc at a fixed value.
+      col = skyShoulder( col, mix( uSkyCeil, uDiscCeil, sundisc ) );
       gl_FragColor = vec4( col, 1.0 );`);
 
   const key = new THREE.DirectionalLight('#ffffff', 3);
@@ -240,10 +256,11 @@ export function createSky(uniforms: SharedUniforms, owner: Owner): SkyRig {
       const moved = Math.abs(env.sunDir.y - lastEnv.y) + Math.abs(env.sunDir.x - lastEnv.x) + Math.abs(cloud - lastEnv.z) * 2 + Math.abs(overcast - lastEnv.w);
       if ((moved > 0.02 && frame.elapsed - lastEnvTime > 1.5) || !envTarget) {
         pmrem ??= new THREE.PMREMGenerator(renderer);
-        // The sun disc must stay out of the IBL: the key light already carries it.
-        skyU.showSunDisc.value = 0;
+        // The sun disc must stay out of the IBL: the key light already carries it. The bloom guard is lifted for
+        // this render, so reflections (water, wet leaves) keep the sky's full range as before.
+        skyU.showSunDisc.value = 0; skyU.uSkyCeil.value = 1e6;
         const next = pmrem.fromScene(envScene, 0, 0.1, 1000);
-        skyU.showSunDisc.value = 1;
+        skyU.showSunDisc.value = 1; skyU.uSkyCeil.value = SKY_CEILING;
         envTarget?.dispose();
         envTarget = next;
         scene.environment = envTarget.texture;
