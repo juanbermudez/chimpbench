@@ -13500,6 +13500,33 @@
    "notes": "Juvenile follow urgency rises over this distance. Compressed stand-in scaled with sight (field ≈ compressed × 35/15, design)."
   },
   {
+   "id": "kernelFocal",
+   "group": "decision",
+   "value": 0,
+   "units": "switch",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.kernelFocal",
+   "file": "src/sim/decide.ts",
+   "integer": true,
+   "profiles": {
+    "compressed": 0,
+    "field": 0
+   },
+   "notes": "Stage R7 switch (Track R, instruments and controls; docs/staging/r7-prereg.md §2): whom the in-tick kernel of kernelSim decides for. 0 = every rules-driven chimp aged rgMinAge and over (today, bit for bit). 1 = only chimps whose controller is 'model' while world.modelPolicy.mode is 'off' (nobody waits for an answer): a harness marks a focal group, and everyone else, and every animal under rgMinAge, keeps the rules. It lets a control arm (random choice, or the rules with a share of choices random) drive the same focal animals an engine test drives, with the rules' own policy for the rest. Nothing reads it while kernelSim is 0. Design (a comparison layout, not a behavioural constant)."
+  },
+  {
    "id": "kernelGate",
    "group": "decision",
    "value": 0,
@@ -13552,6 +13579,32 @@
     "field": 0
    },
    "notes": "Stage R1 switch (Track R, kernel contract; docs/staging/r1-prereg.md D2): whether the rules' pick is on the menu a kernel other than the rules is offered (src/sim/request.ts buildRequest). With 1 the rules' pick (rulesChoice, the top-scored legal option) is withheld: the bounded menu is built by the same construction from the legal list without it, rulesIndex is -1, and a menu left with fewer than two options goes to the rules as today. Dropping only its guaranteed slot would change nothing, because the menu is built from the rules' ranking and their pick is its top option. Nothing in the simulation reads the switch unless a kernel other than the rules decides; the rules' own menu (rg.ts rgMenu) is never changed. 0 = today, bit for bit: the pick stays. Design (a comparison layout, not a behavioural constant)."
+  },
+  {
+   "id": "kernelNullShare",
+   "group": "decision",
+   "value": 1,
+   "units": "share of decision points",
+   "range": [
+    0,
+    1
+   ],
+   "rangeBasis": "assumed",
+   "hardRange": [
+    0,
+    1
+   ],
+   "calibrate": false,
+   "evidence": "design",
+   "sources": [],
+   "clock": "none",
+   "symbol": "P.kernelNullShare",
+   "file": "src/sim/decide.ts",
+   "profiles": {
+    "compressed": 1,
+    "field": 1
+   },
+   "notes": "Stage R7 control arm (Track R, instruments and controls; docs/staging/r7-prereg.md §2): the rules with a share of choices random. Read only under kernelSim 1. At each decision point of a chimp the in-tick kernel drives: at 1 (the default) the null kernel decides and no coin is drawn, so every kernelSim 1 run is today's, bit for bit; at 0 the rules decide (decideByRules, their own gate and draw) and no coin is drawn, so the world is the rules world; strictly between, one coin from world.rng: below the share the null kernel decides through the step every kernel shares, otherwise the rules do. After a random choice is applied the rules' held intention is dropped (with kernelGate 0), so their gate does not act on an intention the animal no longer carries out; with kernelGate 1 the random choice becomes the intention, as for any kernel. It is a share of decision points, not of fresh draws. A control an engine must beat (a noisier chooser drifts toward the field numbers), not a model of behaviour; never fitted. Design assumption."
   },
   {
    "id": "kernelSim",
