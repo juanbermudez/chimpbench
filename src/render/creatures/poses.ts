@@ -187,15 +187,16 @@ const mouthPoint = [0, 0.78, 0.36] as const; // approximate seated mouth positio
 // Grooming choreography v2 (stage W5, docs/staging/w5-grooming.md; first built as prototype 2 of the graphics
 // assessment on branch gfx-next). Stylization, no source: the work sites, stroke
 // lengths and timings below are design choices made to read as grooming from the strategy camera and up close (the
-// hands travel over the partner's body, the face comes down to the hair, picks go to the mouth, the receiver lies
-// down or presents a limb). Only the lip-smack is sourced (see the clip).
+// hands travel over the partner's body, the face comes down to the hair, the receiver lies down or folds an arm onto
+// its head; picks taken to the mouth are written but switched off). Only the lip-smack is sourced (see the clip).
 /** Groomee postures (the `role` of the 'groomee' clip; creatures.ts picks one per pair and bout). */
 export const GROOMEE = { sit: 0, prone: 2, side: 3, present: 4 } as const;
 /** Role of the 'groom' clip for an animal grooming the infant it holds on its belly (0 = behind the partner, 1 = mutual). */
 export const GROOM_LAP = 2;
 /**
  * The receiver's posture for one bout (stylization, no source; the shares are design choices): seated 40%, an arm raised
- * 20%, prone 22%, on its side 18%. `pick` is a 0..1 hash per pair and bout; `forced` is the harness override.
+ * 20%, prone 22%, on its side 18%; off the ground, or with an infant on its body, seated 40% and an arm raised 60%.
+ * `pick` is a 0..1 hash per pair and bout; `forced` is the harness override.
  * Lying postures need the ground under the receiver and nothing on its body: `holds` (an infant on it, alive or dead)
  * turns them into the raised arm, and `seated` (it cradles a dead infant in the left arm, or the groomer is the infant
  * it holds) keeps it in the plain seated posture whatever was picked or forced.
@@ -494,7 +495,7 @@ export const CLIPS: Record<string, Clip> = {
   },
   groomee(w, c) {
     // Receiver (v2, stylization): by role it sits hunched presenting the back, lies on its belly or side, or sits with
-    // one arm raised to present the flank. Seated postures shift every 20–60 s: a slow lean and turn, eased over a second.
+    // one arm folded onto its head to present the flank. Seated postures shift every 20–60 s: a slow lean and turn, eased over a second.
     if (c.role === GROOMEE.prone) { lieProne(w, c); w.a(B.head, 0.05 * sin(c.time * 0.31 + c.seed * 7), 0.1 * sin(c.time * 0.13 + c.seed * 3)); w.set('eyes', 0.85).set('brow', 0.05); return; }
     if (c.role === GROOMEE.side) {
       const sx = c.seed > 0.5 ? 1 : -1, down = sx > 0;
