@@ -3,7 +3,9 @@
 // step: src/kernel/loop.ts answerWaiting; the same measures) with four differences: every animal of every community
 // aged MIN_AGE or over is on the kernel (animals under it stay on the rules); a day is a unit that can be checkpointed
 // and resumed; every answer and every receipt goes to a sink as it happens instead of into memory; and each receipt
-// says what opened the ask and what the loop's gate held (src/sim/decide.ts loopTap).
+// says what opened the ask and what the loop's gate held (src/sim/decide.ts loopTap). The decode (how the applied
+// option is taken from the kernel's probabilities) is stage R9's step of the loop (scripts/lib/decoder.ts): its record
+// of every ask is on the receipt and its notes are in every checkpoint.
 //
 // Nothing here writes the world except the step itself: the meter, the taps and the sinks read only, and the tests
 // compare hashes with plain tickWorld runs to show it.
@@ -28,13 +30,19 @@ import { worldHash } from '../../tests/fixtures/golden';
 import { familyOf } from '../em-sample';
 import type { GuardedScorer } from '../r5-pilot';
 import { writeAtomic } from './checkpoint';
+import type { Decoder, DecodeRecord, DecoderState, HarnessDecode } from './decoder';
 import { buildStateOnlyQuestion, tokensOf } from './packet-state';
 
 export const DAY = Math.round(24 / TICK_HOURS), TICK_MIN = TICK_HOURS * 60;
 /** The user's decision of 6 October 2026: an engine drives animals aged 8 and over; younger animals stay on the rules. */
 export const MIN_AGE = 8;
 export const UNDER_AGE = `animals under ${MIN_AGE} years stay on the rules`;
-export const RECEIPT_SCHEMA = 'r10-receipt-1';
+/**
+ * r10-receipt-2 (the merge of 11 October 2026; no night had been run on r10-receipt-1): an ask's `index` is the kernel's
+ * own pick and `picked` the option applied after the loop's decode step, whose record is `dec` (stage R9's fields); a
+ * held line's `v` is the decision version when the gate ran, as an ask's is, not the version after the act was set.
+ */
+export const RECEIPT_SCHEMA = 'r10-receipt-2';
 /** A night counts as spent in a nest at this share of the dark hours (scripts/r5-report.ts NIGHT_IN_NEST). */
 export const NIGHT_IN_NEST = 0.9;
 /**
@@ -63,8 +71,10 @@ export interface AskLine {
   opts: [string, number, number, number][]; fam: string[];
   /** What raised the decision point, the interrupt's words, and the loop's gate ('no-intent', or why a held intention was opened; '' with the gate off). */
   trig: { why: Why; intr: string; gate: string };
-  /** The answer the loop received (after the decode): option position and a probability per option; null when the kernel gave none. */
-  index: number | null; p: number[] | null; dec?: Record<string, unknown>;
+  /** The kernel's own answer: its pick and a probability per option; null when it gave none. The option applied is `picked`. */
+  index: number | null; p: number[] | null;
+  /** What the loop's decode step did at this ask (stage R9, scripts/lib/decoder.ts DecodeRecord: mode, salt, hold, epoch, why it opened, the draw or the noise); only in runs with a decode step. */
+  dec?: DecodeRecord;
   by: 'kernel' | 'rules'; refusal: string; detail: string;
   /** The option position applied (-1: the rules decided) and the act the animal is in after the step, whoever set it. */
   picked: number; act: [string, number];
@@ -73,12 +83,17 @@ export interface AskLine {
   /** 1: the answer came from the journal of an interrupted segment, not from a new call. */
   re?: 1;
 }
-/** An act the loop's gate set without asking the kernel: the same act kept, or feeding begun at the end of a trip. */
+/**
+ * An act the loop's gate set without asking the kernel: the same act kept, or feeding begun at the end of a trip. `v`
+ * is the animal's decision version when the gate ran (before the act was set), the convention of an ask's `v`: between
+ * two lines of one animal the version rises by one for the act the earlier line set, and by one more only for an
+ * interrupt that reached it while it waited for an answer (scripts/lib/who-decided.ts reads the gap).
+ */
 export interface HeldLine { k: 'held'; tick: number; t: number; day: number; id: number; v: number; how: 'kept' | 'arrived'; act: [string, number]; fam: string }
 export type Line = AskLine | HeldLine;
 
 /** A kernel answer as it arrived (the journal): only read by a resume, so that no answer is asked twice. */
-export interface Arrival { t: number; id: number; v: number; sha: string; index: number | null; p: number[] | null; dec?: Record<string, unknown>; err: string | null; ms: number; tokens: number }
+export interface Arrival { t: number; id: number; v: number; sha: string; index: number | null; p: number[] | null; err: string | null; ms: number; tokens: number }
 
 export const keyOf = (t: number, id: number, v: number) => `${t.toFixed(6)}:${id}:${v}`;
 export const sha16 = (text: string) => createHash('sha256').update(text).digest('hex').slice(0, 16);
@@ -188,8 +203,12 @@ function meterDayEnd(w: World, st: MeterState, day: number, kernelArm: boolean, 
 // A day
 // ---------------------------------------------------------------------------------------------------------------------
 
-/** What a run carries from day to day: what a checkpoint holds. `day`: whole days done since the burn-in. */
-export interface Engine { world: World; day: number; meter: MeterState }
+/**
+ * What a run carries from day to day: what a checkpoint holds. `day`: whole days done since the burn-in. `dec`: the
+ * decode step's notes at the end of that day (scripts/lib/decoder.ts snapshot), in runs that have one: a resume hands
+ * them back to a new decoder, or a held draw after the resume would differ from the uninterrupted run's.
+ */
+export interface Engine { world: World; day: number; meter: MeterState; dec?: DecoderState }
 
 /**
  * A read-only readout stepped by a run or a replay (the hook for stage R7's timing card, and how the replay attaches the
@@ -219,7 +238,8 @@ export interface DaySummary {
   withRulesPick: number; agree: number;
   kernelSeconds: number; msMean: number | null; msMedian: number | null; msP95: number | null; tokensMean: number | null;
   wallSeconds: number; rssMB: number;
-  living: number; driven: number; under: number; deaths: { id: number; name: string; age: number; cause: string | null }[];
+  /** `t`: the world time of the death, hours (the "who decided" ledger ends the animal's window there). */
+  living: number; driven: number; under: number; deaths: { id: number; name: string; age: number; cause: string | null; t?: number | null }[];
   /** The stop check's inputs for the day: mean daily reserve change of driven animals (% of the usual store) and their nights in a nest. */
   reservePctDriven: number | null; nights: [number, number]; kcalEatenDriven: number | null;
   started: string; finished: string;
@@ -235,6 +255,12 @@ export interface DayOpts {
   /** Answers of an interrupted segment, by key: reused when the packet hash is the same, so the kernel is not asked again. */
   journal?: Map<string, Arrival>;
   guard?: GuardedScorer;
+  /**
+   * The loop's decode step (stage R9): applied to every kernel answer, its record written on the receipt, its notes left
+   * in `Engine.dec` when the day ends. Absent: the kernel's own pick is applied. The caller makes it from the engine's
+   * notes (newDecoder(spec, engine.dec)), at the first start and at every resume.
+   */
+  decoder?: Decoder;
   /** Asked after every tick; a non-empty answer ends the run there (RunStopped). */
   stop?: () => string;
   minAge?: number; maxErrorsInRow?: number;
@@ -250,7 +276,9 @@ export interface DayOpts {
 export async function runDay(e: Engine, kernel: Kernel | null, o: DayOpts = {}): Promise<{ summary: DaySummary; rows: Row[] }> {
   const w = e.world, minAge = o.minAge ?? MIN_AGE, n = o.ticks ?? DAY, day = e.day + 1, t0 = Date.now(), started = new Date().toISOString(), time0 = w.time;
   if (paramsOf(w).activityFirst === 2) throw new Error('activityFirst 2 (a second request per decision) is not supported by the receipts of stage R10');
-  const ms: number[] = [], tok: number[] = [], last = new Map<number, { ms: number; answer: (KernelAnswer & { dec?: Record<string, unknown> }) | null; sha: string; tokens: number; re: boolean }>();
+  // a held draw does not hold under the kinds-first menu (scripts/lib/r10-decode.ts decodeRefusal): refused here too, for any caller
+  if (o.decoder?.spec.mode === 'held' && paramsOf(w).activityFirst !== 0) throw new Error(`decode "held" cannot run with the kinds-first menu (activityFirst ${paramsOf(w).activityFirst}): a held draw does not hold there`);
+  const ms: number[] = [], tok: number[] = [], last = new Map<number, { ms: number; answer: KernelAnswer | null; sha: string; tokens: number; re: boolean }>();
   const timeouts0 = o.guard?.timeouts ?? 0, starts0 = o.guard?.starts ?? 0;
   let kernelMs = 0, calls = 0, asks = 0, byKernel = 0, heldN = 0, reused = 0, errorsInRow = 0, withRulesPick = 0, agree = 0;
   const fallbacks: Record<string, number> = {};
@@ -262,7 +290,7 @@ export async function runDay(e: Engine, kernel: Kernel | null, o: DayOpts = {}):
     const j = o.journal?.get(keyOf(c.time, c.chimpId, c.version));
     if (j && j.err === null && j.sha === rec.sha) {
       rec.re = true; rec.ms = j.ms; reused++;
-      rec.answer = { index: j.index ?? undefined, choice: j.index === null ? undefined : `c${j.index}`, probabilities: j.p ?? undefined, ...(j.dec ? { dec: j.dec } : {}) } as KernelAnswer;
+      rec.answer = { index: j.index ?? undefined, choice: j.index === null ? undefined : `c${j.index}`, probabilities: j.p ?? undefined } as KernelAnswer;
       o.sink?.arrival?.(j);
       return rec.answer;
     }
@@ -272,23 +300,28 @@ export async function runDay(e: Engine, kernel: Kernel | null, o: DayOpts = {}):
     catch (error) { err = error instanceof Error ? error.message : 'kernel failed'; throw error; }
     finally {
       rec.ms = performance.now() - s; ms.push(rec.ms); tok.push(rec.tokens);
-      const a = rec.answer as (KernelAnswer & { dec?: Record<string, unknown> }) | null;
+      const a = rec.answer;
       o.sink?.arrival?.({ t: +c.time.toFixed(6), id: c.chimpId, v: c.version, sha: rec.sha, index: a && typeof a.index === 'number' ? a.index : null, p: a && Array.isArray(a.probabilities) ? a.probabilities as number[] : null,
-        ...(a?.dec ? { dec: a.dec } : {}), err, ms: +rec.ms.toFixed(1), tokens: rec.tokens });
+        err, ms: +rec.ms.toFixed(1), tokens: rec.tokens });
     }
   } };
   // the taps of src/sim/decide.ts, set around each tick only (they are module-level)
-  const points = new Map<number, { intr: string; finished: boolean }>(), opened = new Map<number, string>();
+  const points = new Map<number, { intr: string; finished: boolean }>(), opened = new Map<number, string>(), pointV = new Map<number, number>();
   let lines: Line[] = [];
-  const onPoint = (c: Chimp, intr: string, finished: boolean) => { if (c.controller === 'model' && c.awaitingDecisionSince === null) points.set(c.id, { intr, finished }); };
+  // the point tap runs at the top of every decision point, before the gate: the version it sees is the one the gate runs at
+  const onPoint = (c: Chimp, intr: string, finished: boolean) => {
+    if (c.controller !== 'model') return;
+    pointV.set(c.id, c.decisionVersion);
+    if (c.awaitingDecisionSince === null) points.set(c.id, { intr, finished });
+  };
   const onGate = (c: Chimp, verdict: string) => {
-    if (verdict === 'kept' || verdict === 'arrived') lines.push({ k: 'held', tick: w.tick, t: +w.time.toFixed(6), day, id: c.id, v: c.decisionVersion, how: verdict, act: [c.action, c.targetId], fam: famNow(c) });
+    if (verdict === 'kept' || verdict === 'arrived') lines.push({ k: 'held', tick: w.tick, t: +w.time.toFixed(6), day, id: c.id, v: pointV.get(c.id) ?? c.decisionVersion - 1, how: verdict, act: [c.action, c.targetId], fam: famNow(c) });
     else if (!opened.has(c.id)) opened.set(c.id, verdict);
   };
   const before = new Map<number, number>();
   for (let k = 0; k < n; k++) {
     const i = e.day * DAY + k, st = e.meter;
-    before.clear(); points.clear(); opened.clear(); lines = [];
+    before.clear(); points.clear(); opened.clear(); pointV.clear(); lines = [];
     for (const c of w.chimps) {
       if (timed) c.controller = isDriven(c, minAge) ? 'model' : 'rules';
       if (c.alive) before.set(c.id, c.decisionVersion);
@@ -309,12 +342,14 @@ export async function runDay(e: Engine, kernel: Kernel | null, o: DayOpts = {}):
     for (const l of lines) { const s = st[l.id]; if (s) { s.heldN++; s.owner = 'held'; } heldN++; }
     if (timed) {
       const s0 = performance.now();
-      const results = await answerWaiting(w, c => isDriven(c, minAge) ? timed : null);
+      const results = await answerWaiting(w, c => isDriven(c, minAge) ? timed : null, o.decoder ? { decode: o.decoder.step(w) } : {});
       kernelMs += performance.now() - s0;
       for (const r of results) {
+        // the decode step's record of this ask (every result, in order: it is how the decoder learns what was applied)
+        const record = o.decoder?.settle(w, r) ?? null;
         // a pass reached the kernel unless the request itself was refused (a kernel that throws leaves StepResult.calls at 0)
         const req = r.request!, c = idx.byId.get(r.chimpId)!, reached = r.refusal !== 'fewer-than-two-options' && r.refusal !== 'invalid-context', l = reached ? last.get(r.chimpId) : undefined;
-        const fam = req.options.map(famOf), s = st[r.chimpId], pt = points.get(r.chimpId), a = l?.answer as (KernelAnswer & { dec?: Record<string, unknown> }) | null | undefined;
+        const fam = req.options.map(famOf), s = st[r.chimpId], pt = points.get(r.chimpId), a = l?.answer;
         asks++; if (reached) calls += Math.max(1, r.calls);
         if (s) { s.asked++; if (r.by === 'kernel') { s.byModel++; s.owner = 'model'; } else { s.byRules++; s.owner = 'rules'; } }
         if (r.by === 'kernel') { byKernel++; if (req.rulesIndex >= 0) { withRulesPick++; if (r.index === req.rulesIndex) agree++; } }
@@ -326,7 +361,7 @@ export async function runDay(e: Engine, kernel: Kernel | null, o: DayOpts = {}):
         lines.push({ k: 'ask', tick: w.tick, t, day, id: r.chimpId, v: req.context.version, phase: req.context.environment.phase, n: req.options.length, rulesIndex: req.rulesIndex,
           opts: req.options.map(opt => { const m = candidateMeta.get(opt); return [opt.action, opt.targetId, m?.v ?? V.NONE, m?.aux ?? -1]; }), fam,
           trig: { why: !pt ? 'waiting' : pt.intr ? 'interrupt' : pt.finished ? 'finished' : 'bout-end', intr: pt?.intr ?? '', gate: opened.get(r.chimpId) ?? '' },
-          index: a && typeof a.index === 'number' ? a.index : null, p: a && Array.isArray(a.probabilities) ? a.probabilities as number[] : null, ...(a?.dec ? { dec: a.dec } : {}),
+          index: a && typeof a.index === 'number' ? a.index : null, p: a && Array.isArray(a.probabilities) ? a.probabilities as number[] : null, ...(record ? { dec: record } : {}),
           by: r.by, refusal: r.refusal, detail: r.refusal === 'invalid-context' && r.detail === 'body' ? `body: ${bodyFieldError(req.context.body)}` : r.detail,
           picked: r.by === 'kernel' ? r.index : -1, act: [c.action, c.targetId], sha: l?.sha ?? '', ctx, tokens: l?.tokens ?? 0, ms: l ? +l.ms.toFixed(1) : 0, ...(l?.re ? { re: 1 as const } : {}) });
         o.sink?.context?.({ t, id: r.chimpId, v: req.context.version, ctx, context: req.context });
@@ -348,6 +383,7 @@ export async function runDay(e: Engine, kernel: Kernel | null, o: DayOpts = {}):
   }
   const rows = meterDayEnd(w, e.meter, day, !!timed, minAge);
   e.day = day;
+  if (o.decoder) e.dec = o.decoder.snapshot();
   for (const tap of o.taps ?? []) tap.dayEnd?.(w, day);
   const drivenRows = rows.filter(r => r.driven && r.alive), mean = (v: number[]) => v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
   const nightRows = drivenRows.filter(r => r.nestShare !== null);
@@ -355,7 +391,7 @@ export async function runDay(e: Engine, kernel: Kernel | null, o: DayOpts = {}):
     withRulesPick, agree, kernelSeconds: +(kernelMs / 1000).toFixed(1), msMean: mean(ms), msMedian: quantile(ms, 0.5), msP95: quantile(ms, 0.95), tokensMean: mean(tok),
     wallSeconds: +((Date.now() - t0) / 1000).toFixed(1), rssMB: Math.round(process.memoryUsage().rss / 1e6),
     living: w.chimps.filter(c => c.alive).length, driven: timed ? w.chimps.filter(c => isDriven(c, minAge)).length : 0, under: w.chimps.filter(c => c.alive && c.age < minAge).length,
-    deaths: w.chimps.filter(c => !c.alive && c.deathTime !== null && c.deathTime > time0).map(c => ({ id: c.id, name: c.name, age: +c.age.toFixed(1), cause: c.causeOfDeath })),
+    deaths: w.chimps.filter(c => !c.alive && c.deathTime !== null && c.deathTime > time0).map(c => ({ id: c.id, name: c.name, age: +c.age.toFixed(1), cause: c.causeOfDeath, t: c.deathTime })),
     reservePctDriven: mean(drivenRows.map(r => r.reservePct)), nights: [nightRows.filter(r => r.nestShare! >= NIGHT_IN_NEST).length, nightRows.length], kcalEatenDriven: mean(drivenRows.map(r => r.kcalFormula)),
     started, finished: new Date().toISOString() };
   return { summary, rows };
@@ -398,24 +434,24 @@ export function stopCheck(rows: Row[], days: DaySummary[]): StopVerdict {
 export const dayName = (day: number) => `d${String(day).padStart(3, '0')}`;
 export interface CkptHeader { tool: 'r10-night-ckpt'; v: 1; day: number; tick: number; hash: string; written: string }
 
-/** Writes a checkpoint: the world and the meter's state, gzipped JSON (World is JSON-lossless), through a temporary name and a rename. */
+/** Writes a checkpoint: the world, the meter's state and the decode step's notes (when the run has one), gzipped JSON (World is JSON-lossless), through a temporary name and a rename. */
 export function writeCkpt(file: string, e: Engine): { bytes: number; hash: string } {
   mkdirSync(dirname(file), { recursive: true });
   const hash = worldHash(e.world), head: CkptHeader = { tool: 'r10-night-ckpt', v: 1, day: e.day, tick: e.world.tick, hash, written: new Date().toISOString() };
-  const gz = gzipSync(Buffer.from(JSON.stringify({ ...head, meter: e.meter, world: e.world })), { level: 1 });
+  const gz = gzipSync(Buffer.from(JSON.stringify({ ...head, meter: e.meter, ...(e.dec ? { dec: e.dec } : {}), world: e.world })), { level: 1 });
   writeAtomic(file, gz);
   return { bytes: gz.length, hash };
 }
 /** Reads a checkpoint back and refuses one whose world does not hash to what its header states, or whose layout this build cannot continue. */
 export function readCkpt(file: string): Engine & { header: CkptHeader } {
-  const doc = JSON.parse(gunzipSync(readFileSync(file)).toString('utf8')) as CkptHeader & { meter: MeterState; world: World };
+  const doc = JSON.parse(gunzipSync(readFileSync(file)).toString('utf8')) as CkptHeader & { meter: MeterState; dec?: DecoderState; world: World };
   if (doc.tool !== 'r10-night-ckpt' || doc.v !== 1) throw new Error(`${file} is not a checkpoint of stage R10`);
   const shape = worldShapeProblem(doc.world);
   if (shape) throw new Error(`${file}: ${shape}`);
   const hash = worldHash(doc.world);
   if (hash !== doc.hash) throw new Error(`${file}: the world hashes to ${hash}, its header says ${doc.hash}`);
-  const { meter, world, ...header } = doc;
-  return { world, day: header.day, meter, header };
+  const { meter, world, dec, ...header } = doc;
+  return { world, day: header.day, meter, ...(dec ? { dec } : {}), header };
 }
 /** The day checkpoints of a run folder, oldest first. */
 export function listCkpts(root: string): { day: number; file: string }[] {
@@ -432,7 +468,7 @@ export function pruneCkpts(root: string, keep = 2): void {
 export function newestCkpt(root: string): { engine: Engine; file: string; skipped: string[] } | null {
   const skipped: string[] = [];
   for (const c of listCkpts(root).reverse()) {
-    try { const r = readCkpt(c.file); return { engine: { world: r.world, day: r.day, meter: r.meter }, file: c.file, skipped }; }
+    try { const r = readCkpt(c.file); return { engine: { world: r.world, day: r.day, meter: r.meter, ...(r.dec ? { dec: r.dec } : {}) }, file: c.file, skipped }; }
     catch (error) { skipped.push(`${c.file}: ${error instanceof Error ? error.message : error}`); }
   }
   return null;
@@ -528,7 +564,12 @@ export function readReceipts(root: string, days: number): Line[] {
   return out;
 }
 
-/** A kernel that answers from receipts: the logged answer for the same time, animal and decision version, or the logged failure. No model. */
+/**
+ * A kernel that answers from receipts: the kernel's logged answer for the same time, animal and decision version (its
+ * own pick and its probabilities), or the logged failure. No model. A run with a decode step is replayed with a new
+ * decoder of the same setting: the draw or the held noise is a hash of what the receipts and the world hold, so the
+ * applied option comes out again and the regenerated record must equal the logged one.
+ */
 export function receiptKernel(lines: Line[], stats: { missing: number; menuDiffers: number }): Kernel {
   const by = new Map<string, AskLine>();
   for (const l of lines) if (l.k === 'ask') by.set(keyOf(l.t, l.id, l.v), l);
@@ -537,7 +578,7 @@ export function receiptKernel(lines: Line[], stats: { missing: number; menuDiffe
     if (!r) { stats.missing++; throw new KernelError('no receipt for this decision'); }
     if (r.opts.length !== request.options.length || r.opts.some(([a, t], i) => request.options[i].action !== a || request.options[i].targetId !== t)) stats.menuDiffers++;
     if (r.refusal === 'kernel-error') throw new KernelError(r.detail);
-    return { index: r.index ?? undefined, choice: r.index === null ? undefined : `c${r.index}`, probabilities: r.p ?? undefined, ...(r.dec ? { dec: r.dec } : {}) } as KernelAnswer;
+    return { index: r.index ?? undefined, choice: r.index === null ? undefined : `c${r.index}`, probabilities: r.p ?? undefined } as KernelAnswer;
   } };
 }
 /** A receipt line without what legitimately differs between a run and its replay (the time taken, the reuse mark). */
@@ -666,7 +707,8 @@ export interface Registry {
   paramsFile: string; paramsSha256: string; params: Record<string, number>;
   /** The loop switches the run is made with (the first two at creation, the last two on the burned-in world: scripts/r5-pilot.ts armWorld). */
   switches: { observeV4: number; menuParity: number; kernelGate: number; kernelNoRulesPick: number };
-  arm: string; kernel: string; adapter: string | null; /** sha256 of the adapter's weights file, read before the worker starts. */ adapterSha256?: string; decode: string; packet: string;
+  arm: string; kernel: string; adapter: string | null; /** sha256 of the adapter's weights file, read before the worker starts. */ adapterSha256?: string;
+  /** The decode in words, and the setting itself (stage R9: mode, salt, epoch rule); null or absent: no decode step. */ decode: string; decodeSpec?: HarnessDecode | null; packet: string;
   /** The name a result of this run must carry (IMPLEMENTATION_PLAN.md, "Names every result must use"). */ name: string;
   minAge: number; /** Who decides for animals under minAge. */ under: string;
   burnInHash: string; startHash: string;

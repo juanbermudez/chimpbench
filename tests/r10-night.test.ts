@@ -7,7 +7,7 @@ import test, { after } from 'node:test';
 import { RESERVED_SEEDS } from '../scripts/e-run';
 import { glinerKernel } from '../scripts/lib/kernels';
 import { buildStateOnlyQuestion } from '../scripts/lib/packet-state';
-import { decode, decodedKernel, decodeRefusal } from '../scripts/lib/r10-decode';
+import { decodeRefusal, decodeWords, defaultSalt, nightDecode } from '../scripts/lib/r10-decode';
 import { BESIDE, replayReport, replayRun, SHORT_ROWS, type FieldReadout } from '../scripts/lib/r10-read';
 import { ancestors, comparable, DAY, DayFiles, dayName, diskRefusal, isDriven, keyOf, listCkpts, meterStart, MIN_AGE, modelProcesses, newestCkpt, pruneCkpts, readCkpt, readLines, readReceipts, receiptKernel, RECEIPT_SCHEMA, runDay, runningModelProcesses, RunStopped, setAside, STOP, stopCheck, venvLaunchers, WARM_UP_LIMIT_MS, warmedWorker,
   writeCkpt, writeRegistry, type Arrival, type AskLine, type DaySummary, type Engine, type HeldLine, type Line, type Registry, type Row, type Tap } from '../scripts/lib/r10-run';
@@ -350,15 +350,15 @@ test('the script itself: a run killed inside day 2 and resumed from its folder i
   assert.deepEqual(listCkpts(dir).map(k => k.day), [1, 2]);
 });
 
-test('the decode is one function: top is the first maximum and changes no answer; draw and held wait for stage R9', async () => {
-  assert.equal(decodeRefusal('top'), ''); assert.match(decodeRefusal('draw'), /stage R9/); assert.match(decodeRefusal('held'), /stage R9/); assert.match(decodeRefusal('warm'), /unknown decode mode/);
-  const req = { context: null as never, options: [{}, {}, {}] as never, rulesIndex: 0 }, env = { random: () => 0.99 };
-  assert.equal(decode('top', [0.2, 0.5, 0.5], req, env).index, 1); assert.equal(decode('top', [0.4, 0.3, 0.3], req, env).index, 0);
-  assert.throws(() => decode('draw', [0.2, 0.8], req, env), /stage R9/); assert.throws(() => decodedKernel(nullKernel, 'held'), /stage R9/);
-  const inner: Kernel = { id: 'gliner', label: 'fake', decide: () => ({ index: 2, choice: 'c2', probabilities: [0.1, 0.6, 0.3], model: 'x' }) };
-  assert.deepEqual(await decodedKernel(inner, 'top').decide(req, env), { index: 1, choice: 'c1', probabilities: [0.1, 0.6, 0.3], model: 'x' }, 'the option is the decode\'s, the probabilities are the kernel\'s');
-  const short: Kernel = { id: 'gliner', label: 'fake', decide: () => ({ index: 0, probabilities: [1, 0] }) };
-  assert.deepEqual(await decodedKernel(short, 'top').decide(req, env), { index: 0, probabilities: [1, 0] }, 'an answer that does not fit the menu is passed on for the answer check to refuse');
+test('the decode setting is stage R9\'s: three modes, a salt and an epoch rule; held is refused with the kinds-first menu', () => {
+  // what the modes do in a night, and that each replays, is in tests/r10-wiring.test.ts; here the setting and its refusals
+  for (const mode of ['top', 'draw', 'held']) assert.equal(decodeRefusal(mode), '');
+  assert.match(decodeRefusal('warm'), /unknown decode mode/); assert.match(decodeRefusal('held', { hold: 'day' }), /unknown epoch rule/); assert.match(decodeRefusal('draw', { salt: 1.5 }), /whole number/);
+  assert.match(decodeRefusal('held', { activityFirst: 1 }), /cannot run with the kinds-first menu \(activityFirst 1\)/); assert.match(decodeRefusal('held', { activityFirst: 2 }), /kinds-first/);
+  assert.equal(decodeRefusal('draw', { activityFirst: 1 }), '', 'a draw is one draw per request: it runs with one request per decision'); assert.equal(decodeRefusal('top', { activityFirst: 1 }), '');
+  assert.deepEqual([defaultSalt('top'), defaultSalt('draw'), defaultSalt('held')], [0, 1, 1]);
+  assert.deepEqual(nightDecode('top'), { mode: 'top', salt: 0, hold: 'act' }); assert.deepEqual(nightDecode('held', 2, 'block'), { mode: 'held', salt: 2, hold: 'block' });
+  assert.match(decodeWords(null), /^none/); assert.match(decodeWords(nightDecode('draw')), /^draw .*salt 1/); assert.match(decodeWords(nightDecode('held', 1, 'block')), /held for the half hour, salt 1/);
 });
 
 test('the stop check after five days: each condition alone ends the run, and a rules-like run goes on', () => {

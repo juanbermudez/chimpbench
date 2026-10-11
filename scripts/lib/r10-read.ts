@@ -15,9 +15,13 @@ import { recordsHash } from '../../src/field/records';
 import { accuracyOf, encounterAccuracy, type FieldResult } from '../../src/field/run';
 import { section18 } from '../../src/field/section18';
 import type { World } from '../../src/types';
+import { newDecoder } from './decoder';
 import { energyAfter, energyBefore, energyFinish, energyStart, energyTapsOff, energyTapsOn, newEnergyAcc, type EnergyAcc, type EnergySeedState } from './energy-probe';
-import { comparable, dayName, DAY, meterStart, MIN_AGE, readCkpt, readLines, readReceipts, readRegistry, receiptKernel, runDay, UNDER_AGE, type AskLine, type DaySummary, type Engine, type Line, type Registry, type Row, type Tap } from './r10-run';
+import type { CardReadout } from './r10-card-tap';
+import { decodeWords } from './r10-decode';
+import { comparable, dayName, DAY, meterStart, MIN_AGE, readCkpt, readLines, readReceipts, readRegistry, receiptKernel, RECEIPT_SCHEMA, runDay, UNDER_AGE, type AskLine, type DaySummary, type Engine, type Line, type Registry, type Row, type Tap } from './r10-run';
 import { rhythmFinish, rhythmStart, rhythmStep, type RhythmState } from './rhythm-probe';
+import { CARD_LABELS, GUARD_ROWS, TIMING_ROWS } from './timing-card';
 import { truthHooksOff, truthHooksOn, truthStart, truthStep, truthValues, type TruthState } from './truth-rows';
 import { viabilityFinish, viabilityStart, viabilityStep, type ViabilityState } from './viability';
 
@@ -102,15 +106,18 @@ export interface ReplayResult {
 
 /**
  * Rebuilds a run from its receipts. `ok`: every day's world hash equals the run's, no receipt is missing, no menu
- * differs, and the regenerated receipts (with each context's hash) and rows equal the run's.
+ * differs, and the regenerated receipts (with each context's hash and, in a run with a decode step, the decode's record
+ * of every ask) and rows equal the run's. A run with a decode step is replayed with a new decoder of the run's setting.
  */
 export async function replayRun(root: string, o: { taps?: Tap[]; field?: boolean; log?: (s: string) => void } = {}): Promise<ReplayResult> {
   const reg = readRegistry(root), t0 = Date.now(), days = reg.days.length;
+  if (reg.receiptSchema !== RECEIPT_SCHEMA) throw new Error(`the run's receipts are "${reg.receiptSchema}" and this checkout reads and writes "${RECEIPT_SCHEMA}": replay it from a checkout of the commit it ran on (${reg.commit.slice(0, 10)})`);
   const start = readCkpt(resolve(root, 'ckpt', 'start.json.gz'));
   if (start.header.hash !== reg.startHash) throw new Error(`the start world hashes to ${start.header.hash}, the registry says ${reg.startHash}`);
   const e: Engine = { world: start.world, day: 0, meter: meterStart(start.world) };
   const logged = readReceipts(root, days), stats = { missing: 0, menuDiffers: 0 };
   const kernel = reg.kernel === 'rules' ? null : receiptKernel(logged, stats);
+  const decoder = kernel && reg.decodeSpec ? newDecoder(reg.decodeSpec) : undefined;
   const taps = [...(o.field === false ? [] : [fieldTap({ seed: reg.seed, profile: reg.profile, days, params: reg.params })]), ...(o.taps ?? [])];
   for (const tap of taps) tap.start?.(e.world);
   const out: ReplayResult = { label: reg.label, arm: reg.arm, name: reg.name, seed: reg.seed, days, ok: true, hashes: [], missing: 0, menuDiffers: 0, linesDiffer: 0, rowsDiffer: 0, lines: logged.length,
@@ -118,7 +125,7 @@ export async function replayRun(root: string, o: { taps?: Tap[]; field?: boolean
   const again: Line[] = [];
   for (let d = 1; d <= days; d++) {
     // no error limit: a replay that has lost its receipts must run to the end and report it, not stop
-    const { summary, rows } = await runDay(e, kernel, { taps, minAge: reg.minAge, maxErrorsInRow: Infinity, sink: { lines: l => { again.push(...l); } } });
+    const { summary, rows } = await runDay(e, kernel, { taps, minAge: reg.minAge, maxErrorsInRow: Infinity, decoder, sink: { lines: l => { again.push(...l); } } });
     out.hashes.push({ day: d, run: reg.days[d - 1].hash, replay: summary.hash });
     out.summaries.push(summary); out.rows.push(...rows);
     const saved = readLines<Row>(resolve(root, 'rows', `${dayName(d)}.jsonl`));
@@ -156,7 +163,7 @@ export function replayReport(reg: Registry, r: ReplayResult): string {
   const deaths = r.summaries.flatMap(d => d.deaths), causes: Record<string, number> = {};
   for (const d of deaths) causes[d.cause ?? 'unknown'] = (causes[d.cause ?? 'unknown'] ?? 0) + 1;
   o.push(`# Stage R10 replay: ${reg.label}`, '');
-  o.push(`\`scripts/r10-night.ts replay\`, ${new Date().toISOString()}. **${reg.name}.** Arm \`${reg.arm}\`${reg.adapter ? ` (adapter \`${reg.adapter}\`)` : ''}, decode \`${reg.decode}\`, gate ${reg.switches.kernelGate ? 'on' : 'off'}, the rules' pick ${reg.switches.kernelNoRulesPick ? 'removed from' : 'kept on'} the menu, packet \`${reg.packet}\`.`);
+  o.push(`\`scripts/r10-night.ts replay\`, ${new Date().toISOString()}. **${reg.name}.** Arm \`${reg.arm}\`${reg.adapter ? ` (adapter \`${reg.adapter}\`)` : ''}, decode: ${decodeWords(reg.decodeSpec)}, gate ${reg.switches.kernelGate ? 'on' : 'off'}, the rules' pick ${reg.switches.kernelNoRulesPick ? 'removed from' : 'kept on'} the menu, packet \`${reg.packet}\`.`);
   o.push(`Seed ${reg.seed} (${reg.seedRole}), ${reg.profile} map, ${reg.burnInDays} days of burn-in on the rules, then **${r.days} simulated days**. Every animal aged ${reg.minAge} and over in every community is on the kernel; **${UNDER_AGE}**. Run at commit ${reg.commit.slice(0, 10)}${reg.dirty ? ' (tree not clean)' : ''}.`, '');
   o.push(`**Replay check: ${r.ok ? 'the receipts reproduce the run' : 'THE RECEIPTS DO NOT REPRODUCE THE RUN'}.** ${r.hashes.filter(h => h.run === h.replay).length} of ${r.hashes.length} day hashes equal (end ${r.hashes[r.hashes.length - 1]?.replay ?? 'none'}); ${r.missing} asks without a receipt; ${r.menuDiffers} menus differ; ${r.linesDiffer} of ${r.lines} receipt lines differ when regenerated (each carries its context's hash); ${r.rowsDiffer} row files differ. No model; ${r.seconds} s.`, '');
   o.push('This is a **level measurement on one seed**. No comparison is counted as a result until a fresh unseen seed has been run.', '');
@@ -190,7 +197,17 @@ export function replayReport(reg: Registry, r: ReplayResult): string {
     const keep = (x: Row) => x.cls === cls, m = (of: (x: Row) => number | null) => animalMean(rows, of, keep), n = rows.filter(x => keep(x) && x.alive && x.nestShare !== null);
     o.push(`| ${cls} | ${[...new Set(rows.filter(keep).map(x => x.decidedBy))].join(', ')} | ${m(x => x.km).animals} | ${f(m(x => x.kcalFormula).mean, 0)} | ${f(m(x => x.kcalOut).mean, 0)} | ${f(m(x => x.reservePct).mean, 3)} | ${f(m(x => x.km).mean, 2)} | ${f(m(x => x.trips).mean, 1)} | ${f(m(x => x.tripsDone).mean, 1)} | ${f(m(x => x.actChanges).mean, 1)} | ${n.filter(x => x.nestShare! >= 0.9).length} of ${n.length} | ${f(m(x => x.asked).mean, 1)} |`);
   }
-  for (const [name, v] of Object.entries(r.taps)) if (name !== 'field') o.push('', `## Tap: ${name}`, '', '```json', JSON.stringify(v, null, 1), '```');
+  const card = r.taps.card as CardReadout | null | undefined;
+  if (card) {
+    // stage R7's timing card on the replayed world (scripts/lib/r10-card-tap.ts): one arm's values, no comparison
+    const v = (k: string) => f(card.summary[k], CARD_LABELS[k]?.[1] ?? 2), label = (k: string) => CARD_LABELS[k]?.[0] ?? k;
+    o.push('', '## The timing card (stage R7), by value', '', `Read on the ${card.counts.animals} animals aged ${card.minAge} and over at the start of the window: ${f(card.counts.animalDays, 0)} animal-days, ${card.counts.halfHourPairs.toLocaleString('en-US')} half-hour pairs, ${card.counts.patchVisits.toLocaleString('en-US')} patch visits. One arm's values; whether they differ from the rules', and in which direction, is read against the control arms of stage R7 at the same unit (\`scripts/r7-report.ts --engine\`).`,
+      '', '| Readout | Value |', '| --- | --- |');
+    for (const k of TIMING_ROWS) o.push(`| ${label(k)} | ${v(k)} |`);
+    for (const k of GUARD_ROWS) if (!(TIMING_ROWS as readonly string[]).includes(k)) o.push(`| guard: ${label(k)} | ${v(k)} |`);
+    o.push(`| ${label('kcalEatenPerDay')} | ${v('kcalEatenPerDay')} |`);
+  }
+  for (const [name, v] of Object.entries(r.taps)) if (name !== 'field' && name !== 'card') o.push('', `## Tap: ${name}`, '', '```json', JSON.stringify(v, null, 1), '```');
   o.push('');
   return o.join('\n');
 }

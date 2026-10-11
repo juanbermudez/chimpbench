@@ -4,11 +4,11 @@
 // 30 days of burn-in on the rules, for N simulated days. scripts/r5-pilot.ts keeps its registered behaviour; this
 // script shares its arms (ARMS, armWorld) and its guarded scorer, and the engine is scripts/lib/r10-run.ts.
 //
-//   pnpm exec tsx scripts/r10-night.ts run --seed 48 --arm trained-gate [--decode top] [--days 40] [--hours 10] [--out artifacts/r10/<label>]
-//       [--label L] [--burn-in 30] [--params-file docs/staging/integrator-kit/params/M6-W50.json] [--profile field|compressed]
+//   pnpm exec tsx scripts/r10-night.ts run --seed 48 --arm trained-gate [--decode top|draw|held] [--decode-salt N] [--hold act|block|whole] [--days 40] [--hours 10]
+//       [--out artifacts/r10/<label>] [--label L] [--burn-in 30] [--params-file docs/staging/integrator-kit/params/M6-W50.json] [--profile field|compressed]
 //       [--timeout-s 120] [--device mps] [--no-contexts] [--no-stop-check] [--allow-dirty] [--burnin-dir artifacts/r10/burnin]
 //   pnpm exec tsx scripts/r10-night.ts run --resume <out> [--days N] [--hours H]
-//   pnpm exec tsx scripts/r10-night.ts replay <out> [--taps a.ts,b.ts] [--no-field]
+//   pnpm exec tsx scripts/r10-night.ts replay <out> [--taps a.ts,b.ts] [--no-field] [--no-card]
 //   pnpm exec tsx scripts/r10-night.ts status <out>
 //   pnpm exec tsx scripts/r10-night.ts plain --seed 48 [--days 2] [--burn-in 30] [--profile field]   # createWorld and tickWorld only: the hashes a rules arm must end each day on
 //
@@ -17,13 +17,21 @@
 // HANDOFF.md §3 item 3 and MGOGO_FT_ROOT (the folder holding adapters/<name>); it refuses to start while another model
 // process is running, and it is launched under `caffeinate -i` (it also holds its own `caffeinate -i -w <pid>`).
 //
+// The decode is stage R9's step of the loop (src/kernel/decode.ts through scripts/lib/decoder.ts): `top` applies the
+// kernel's own pick, `draw` one seeded draw per ask from its probabilities, `held` a draw whose noise is held for an
+// epoch (--hold: the act, the half hour, or the whole act through interrupts). A model arm always has the step (top
+// unless another is named) and every receipt carries its record; a no-model kernel arm has it only when --decode is
+// given (the plumbing check, as stage R9's dry arms: the rules' top option is a certain kernel, the null kernel one
+// with even odds). `held` is refused together with the kinds-first menu (activityFirst), where a held draw does not hold.
+//
 // A run survives a night: every kernel answer is journalled the moment it arrives, every tick's receipts are appended
 // at once (both fsynced every two seconds), a lossless checkpoint is written atomically at the end of every simulated day (the last two are kept),
 // and --resume continues from the newest whole checkpoint, reusing the answers already journalled for the day that was
 // in progress. Exit codes: 0 done, 2 refused, 3 stopped (the stop check after five days, the error limit, low disk),
 // 130 interrupted. `replay` answers from the receipts with no model, must land on every day's hash, and reads the run
-// through the field observer and the truth-row readouts (the short scorecard by value) and any --taps module (the hook
-// for stage R7's timing card: a module whose default export is a function returning a Tap of scripts/lib/r10-run.ts).
+// through the field observer and the truth-row readouts (the short scorecard by value), through stage R7's timing card
+// (scripts/lib/r10-card-tap.ts, attached through the tap hook; --no-card leaves it out) and any --taps module (a module
+// whose default export is a function returning a Tap of scripts/lib/r10-run.ts).
 // --crash-at-tick N kills the process with SIGKILL after N ticks of the window: a crash to test --resume against.
 import { spawn, type ChildProcess } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -35,6 +43,7 @@ import { gunzipSync, gzipSync } from 'node:zlib';
 import { nullKernel, rulesKernel } from '../src/kernel/kernels';
 import type { Kernel } from '../src/kernel/types';
 import { requestFor } from '../src/sim/decide';
+import { DEFAULTS } from '../src/sim/params';
 import { createWorld, tickWorld } from '../src/simulation';
 import type { World } from '../src/types';
 import { worldHash } from '../tests/fixtures/golden';
@@ -43,7 +52,9 @@ import { Worker } from './ft-society';
 import { writeAtomic } from './lib/checkpoint';
 import { glinerKernel } from './lib/kernels';
 import { buildStateOnlyQuestion, STATE_PACKET_VERSION } from './lib/packet-state';
-import { decodedKernel, decodeRefusal, type DecodeMode } from './lib/r10-decode';
+import { HOLDS, newDecoder, type Decoder, type Hold } from './lib/decoder';
+import cardTap from './lib/r10-card-tap';
+import { decodeRefusal, decodeWords, defaultSalt, nightDecode, type DecodeMode } from './lib/r10-decode';
 import { replayReport, replayRun } from './lib/r10-read';
 import { DAY, DayFiles, dayName, diskRefusal, meterStart, MIN_AGE, newestCkpt, pruneCkpts, readCkpt, readLines, readRegistry, RECEIPT_SCHEMA, RunStopped, runDay, runningModelProcesses, setAside, STOP, stopCheck, swapUsedMB, warmedWorker,
   UNDER_AGE, writeCkpt, writeRegistry, type Arrival, type DaySummary, type Engine, type Line, type Registry, type Row, type Tap } from './lib/r10-run';
@@ -97,7 +108,7 @@ function progressLine(reg: Registry, s: DaySummary, startedMs: number, hours: nu
 }
 
 type Args = { pos: string[]; flag: (k: string, d?: string) => string; has: (k: string) => boolean };
-const BOOL = new Set(['--no-contexts', '--no-stop-check', '--allow-dirty', '--no-field', '--caffeinate', '--no-caffeinate']);
+const BOOL = new Set(['--no-contexts', '--no-stop-check', '--allow-dirty', '--no-field', '--no-card', '--caffeinate', '--no-caffeinate']);
 function parseArgs(argv: string[]): Args {
   const pos: string[] = [];
   for (let i = 0; i < argv.length; i++) { if (argv[i].startsWith('--')) { if (i + 1 < argv.length && !argv[i + 1].startsWith('--') && !BOOL.has(argv[i])) i++; } else pos.push(argv[i]); }
@@ -125,8 +136,6 @@ async function run(a: Args): Promise<number> {
     if (!Number.isInteger(seed) || seed < 0) throw new Refused('--seed N is required (a non-negative integer)');
     if (RESERVED_SEEDS.has(seed)) throw new Refused(`seed ${seed} is a reserved or retired seed (AGENTS.md): development seeds only`);
     if (profile !== 'field' && profile !== 'compressed') throw new Refused('--profile field | compressed');
-    const why = decodeRefusal(decode);
-    if (why) throw new Refused(why);
     if (g.dirty.length && !a.has('allow-dirty')) throw new Refused(`the tree is not clean (${g.dirty.length} entries, e.g. ${g.dirty.slice(0, 3).join('; ')}): commit first (--allow-dirty is for smoke checks of a script under edit, and the registry says so)`);
     const label = a.flag('label', `${arm}-s${seed}`);
     if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(label)) throw new Refused('--label: letters, digits, . _ - only');
@@ -136,11 +145,18 @@ async function run(a: Args): Promise<number> {
     if (!Number.isInteger(days) || days < 1 || !Number.isInteger(burnInDays) || burnInDays < 0 || (hours !== null && !(hours > 0))) throw new Refused('--days and --burn-in are whole numbers of days; --hours is positive');
     const paramsFile = a.flag('params-file', 'docs/staging/integrator-kit/params/M6-W50.json'), text = readFileSync(resolve(ROOT, paramsFile), 'utf8');
     const params = { ...JSON.parse(text) as Record<string, number>, observeV4: 1, menuParity: 1 };
+    // the decode (stage R9's step of the loop): a model arm always has one; a no-model kernel arm only when --decode is given
+    const hold = a.flag('hold', 'act'), salt = a.has('decode-salt') ? +a.flag('decode-salt') : undefined;
+    if ((a.has('decode') || a.has('decode-salt') || a.has('hold')) && spec.kernel === 'rules') throw new Refused('the rules arm has no kernel answer to decode: --decode, --decode-salt and --hold are for kernel arms');
+    const why = decodeRefusal(decode, { hold, salt, activityFirst: (params as Record<string, number>).activityFirst ?? DEFAULTS.activityFirst });
+    if (why) throw new Refused(why);
+    if (!(HOLDS as readonly string[]).includes(hold)) throw new Refused(`--hold ${HOLDS.join(' | ')}`);
+    const decodeSpec = spec.kernel === 'gliner' || (spec.kernel !== 'rules' && a.has('decode')) ? nightDecode(decode as DecodeMode, salt ?? defaultSalt(decode as DecodeMode), hold as Hold) : null;
     reg = { tool: 'r10-night', version: 1, receiptSchema: RECEIPT_SCHEMA, label, created: now(), updated: now(), state: 'running', ended: '',
       root: ROOT, commit: g.commit, branch: g.branch, dirty: g.dirty.length > 0, node: process.version, host: hostname(), command: `scripts/r10-night.ts ${process.argv.slice(2).join(' ')}`,
       seed, seedRole: seedRole(seed), profile, burnInDays, daysAsked: days, hours, paramsFile, paramsSha256: createHash('sha256').update(text).digest('hex'), params,
       switches: { observeV4: 1, menuParity: 1, kernelGate: spec.gate ?? 0, kernelNoRulesPick: spec.noPick ?? 0 },
-      arm, kernel: spec.kernel, adapter: spec.adapter ?? null, decode: spec.kernel === 'gliner' ? decode : 'none (no probabilities to decode)', packet: STATE_PACKET_VERSION, name: resultName(spec.kernel, spec.adapter ?? null),
+      arm, kernel: spec.kernel, adapter: spec.adapter ?? null, decode: decodeWords(decodeSpec), decodeSpec, packet: STATE_PACKET_VERSION, name: resultName(spec.kernel, spec.adapter ?? null),
       minAge: MIN_AGE, under: spec.kernel === 'rules' ? 'the rules decide for every animal' : UNDER_AGE, burnInHash: '', startHash: '', worker: null, env: Object.fromEntries(ENV_KEYS.map(k => [k, process.env[k] ?? null])),
       machine: { load: loadavg(), swapUsedMB: swapUsedMB(), freeGB: 0, freeWhere: '' }, contexts: !a.has('no-contexts') && spec.kernel !== 'rules', timeoutS: +a.flag('timeout-s', '120'), stopCheckOn: !a.has('no-stop-check'),
       segments: [], days: [], stopCheck: null, events: [] };
@@ -241,8 +257,12 @@ async function run(a: Args): Promise<number> {
       const adapters = (reg.worker?.adapters ?? {}) as Record<string, string>;
       if (spec.adapter !== 'base' && adapters[spec.adapter!] !== reg.adapterSha256) throw new Refused(`the worker reports adapter "${spec.adapter}" as ${adapters[spec.adapter!] ?? 'absent'}, the file read before the start was ${reg.adapterSha256}`);
       event(`worker ready: ${JSON.stringify(reg.worker)}`);
-      kernel = decodedKernel(glinerKernel(guard, spec.adapter!, { packet: r => buildStateOnlyQuestion(r.context) }), reg.decode as DecodeMode);
+      kernel = glinerKernel(guard, spec.adapter!, { packet: r => buildStateOnlyQuestion(r.context) });
     } else kernel = spec.kernel === 'rules' ? null : spec.kernel === 'null' ? nullKernel : rulesKernel;
+    // the decode step, with the notes of the checkpoint the run starts from (none at the first start): a held draw
+    // after a resume is then the uninterrupted run's
+    const decoder: Decoder | undefined = kernel && reg.decodeSpec ? newDecoder(reg.decodeSpec, e.dec) : undefined;
+    if (decoder) event(`decode: ${decodeWords(reg.decodeSpec)}${e.dec ? `; ${Object.keys(e.dec).length} animals' notes read from the checkpoint` : ''}`);
     writeRegistry(out, reg);
 
     const crashAt = a.has('crash-at-tick') ? +a.flag('crash-at-tick') : -1;
@@ -258,7 +278,7 @@ async function run(a: Args): Promise<number> {
       asked = 0;
       const sink = { arrival: (x: Arrival) => files.arrival(x), lines: (l: Line[]) => { files.lines(l); for (const x of l) if (x.k === 'ask') asked++; }, context: (c: Parameters<DayFiles['context']>[0]) => files.context(c) };
       let res: Awaited<ReturnType<typeof runDay>>;
-      try { res = await runDay(e, kernel, { sink, journal, guard: guard ?? undefined, stop, minAge: reg.minAge }); beat = Date.now(); }
+      try { res = await runDay(e, kernel, { sink, journal, guard: guard ?? undefined, stop, minAge: reg.minAge, decoder }); beat = Date.now(); }
       catch (error) {
         files.close(null);
         if (!(error instanceof RunStopped)) { reg.state = 'interrupted'; reg.ended = `failed inside day ${e.day + 1}: ${error instanceof Error ? error.message : error}; the checkpoint of day ${e.day} stands`; event(reg.ended); writeRegistry(out, reg); throw error; }
@@ -304,6 +324,8 @@ async function run(a: Args): Promise<number> {
 async function replay(a: Args): Promise<number> {
   if (!a.pos[0]) throw new Refused('replay <out>');
   const out = resolve(a.pos[0]), reg = readRegistry(out), taps: Tap[] = [];
+  // stage R7's timing card reads every replay through the tap hook, like a --taps module, unless it is left out
+  if (!a.has('no-card')) taps.push(cardTap(reg));
   for (const p of a.flag('taps').split(',').filter(Boolean)) {
     const mod = await import(pathToFileURL(resolve(p)).href) as { default?: unknown; tap?: unknown }, make = mod.default ?? mod.tap;
     taps.push((typeof make === 'function' ? await (make as (r: Registry) => Tap | Promise<Tap>)(reg) : make) as Tap);
@@ -319,7 +341,7 @@ async function replay(a: Args): Promise<number> {
 function status(a: Args): number {
   if (!a.pos[0]) throw new Refused('status <out>');
   const reg = readRegistry(resolve(a.pos[0])), d = reg.days, sum = (g: (x: DaySummary) => number) => d.reduce((s, x) => s + g(x), 0), asks = sum(x => x.asks);
-  console.log(`${reg.label}: ${reg.name}; arm ${reg.arm}${reg.adapter ? ` (${reg.adapter})` : ''}, decode ${reg.decode}, seed ${reg.seed} (${reg.seedRole}), ${reg.profile} map; ${reg.under}`);
+  console.log(`${reg.label}: ${reg.name}; arm ${reg.arm}${reg.adapter ? ` (${reg.adapter})` : ''}, decode ${decodeWords(reg.decodeSpec)}, seed ${reg.seed} (${reg.seedRole}), ${reg.profile} map; ${reg.under}`);
   console.log(`state: ${reg.state}${reg.ended ? ` (${reg.ended})` : ''}; ${d.length} of ${reg.daysAsked} days; commit ${reg.commit.slice(0, 10)}${reg.dirty ? ' (tree not clean)' : ''}; ${reg.segments.length} segment${reg.segments.length === 1 ? '' : 's'} (${reg.segments.length - 1} resume${reg.segments.length === 2 ? '' : 's'}); updated ${reg.updated}`);
   // a signal to the script's own process is the clean stop; one sent to the whole launch (Ctrl-C, a closed terminal) can
   // kill it in the middle of its close-down, which a resume treats as a crash (docs/staging/r10-prereg.md §10.6)
