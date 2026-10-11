@@ -5,6 +5,7 @@ import { atomIndex, offerSites } from '../scripts/lib/offer-sites';
 import { scanSource } from '../scripts/lib/valuation';
 import { buildTable, callCosts, CALLS_FILE, callsMarkdown, PAGE_WORDS, readBase, readClasses, readSource, SOURCE, tableMarkdown, twoMinutePage, type CallExamples, type Classes } from '../scripts/r12-offer-table';
 import { CANDIDATES_OPTS } from '../scripts/valuation-ledger';
+import { MAX_OPTIONS } from '../src/sim/context-check';
 
 // Stage R12 (docs/staging/r12-prereg.md §2): the reader of offer sites and their gates on a small source text, then
 // the real file with the committed classification. Nothing is simulated.
@@ -163,6 +164,21 @@ test('the two-minute page is short, carries every ruling in one sentence, and sa
   assert.ok(buildTable(src, wrong, base, text).problems.some(p => p.startsWith('"needs" goes with a dropped condition')));
   assert.ok(buildTable(src, classes, { ...base, rgMinAge: 10 }, text).problems.some(p => /kernel that decides from the age of 8/.test(p)));
   assert.ok(buildTable(src, { ...classes, staysShort: '' }, base, text).problems.some(p => /no short form/.test(p)));
+});
+
+test('the thresholds the two-minute page quotes in words are the code\'s', () => {
+  // the page's counts are computed; these are the numbers its sentences quote, each held against the source or the base
+  const page = twoMinutePage(tableMarkdown(T)).text;
+  const quoted: [RegExp, boolean][] = [
+    [/charge only with 3 males and 2 more than theirs/, src.includes('c.sex === \'male\' && own >= 3 && own >= str + 2')],
+    [/guarding only from the top two ranks/, src.includes('(c.rankOrder <= 2 || isAlpha)')],
+    [/mating only 1\.5 hours after his last/, T.params.mateIntervalH === 1.5 && T.facts.mv === false],
+    [/animals under 8/, T.params.rgMinAge === 8],
+    [/the age line of 12/, src.includes('const adolescentOrAdult = c.age >= 12 && !caretaker;')],
+    [/among up to eight/, MAX_OPTIONS === 8],
+    [/no new nest in full daylight/, src.includes('rS ? env.daylight < 1 : hour >= 12 || night') && T.facts.rS === true],
+  ];
+  for (const [re, holds] of quoted) { assert.match(page, re); assert.ok(holds, `${re} no longer matches the code`); }
 });
 
 test('an offer site the classification does not cover, or a changed gate, is a problem', () => {

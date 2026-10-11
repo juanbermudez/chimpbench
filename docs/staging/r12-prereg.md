@@ -3,7 +3,9 @@
 Agent r12-menu-design, branch `r12-menu-design` from `track-e` a11c45c. **Design only: no simulation change, no code
 under `src/`, no model, no training, no simulation run.** Part A (sections 1 to 3) was registered on 11 October 2026,
 03:13 EDT (commit 8e1e8e7), before any condition was classified and before any count by class existed. Part B (the design, sections 4
-onward) is written after the table and is a registration of a design, not of a run.
+onward) is written after the table and is a registration of a design, not of a run. A second agent reviewed and
+repaired the stage on 11 October 2026 from 03:45 EDT: section 14 says what was re-derived, what was wrong and what is
+still open.
 
 Read first: the review of 10 October (`/Volumes/Drive/chimpbench/shots/review-2026-10-10/reports/`:
 `understand-hand_coded_inventory.md`, `understand-loop_and_packet.md` section 3,
@@ -152,7 +154,10 @@ Every figure here is copied from `docs/staging/r12-menu-table.md` (generated; `-
   reported. For (c): a switch flipped under a claim the file states by a base fact is reported as a problem; a switch
   flipped under a legacy status the script derives changes that status, and `--check` then reports the committed table
   as out of date. Pass mark 4: the first page's numbers are computed; its sentences (the rulings, what stays) are
-  the author's and were written before any count by class was seen.
+  the author's and were written before any count by class was seen. *(Review, §14:* as registered, the mark says
+  every number. The sentences quote thresholds from the code (3 males and 2 more, the top two ranks, 1.5 hours, the
+  ages 8 and 12, eight targets): these are typed, and a test now holds each against the source. One figure is neither
+  computed nor checked: "the 25 choices inside execution", the review's own inventory count.*)*
 - **19 sites are legacy, 6 are reached only by animals under 8, 69 are live**, as expected in §2.5.
 - **Of the 69 live sites, 6 are gated by possibility alone**: staying in its finished nest, resting, feeding in a tree
   in view, feeding on leaves where it stands, alarm-calling at a snake and backing away from one. **Two more add only
@@ -163,11 +168,15 @@ Every figure here is copied from `docs/staging/r12-menu-table.md` (generated; `-
   and two carry only a timer: the window of about 2 minutes in which an animal may submit to or flee from the one that
   charged it.
 - **123 distinct advice, quota and dice conditions stand in front of live sites** (92 advice, 28 quota or timer, 3
-  dice) and hold 117 hand-set numbers. Proposed: keep 113, drop 6, leave with the rules 4.
+  dice) and hold 117 numbers by the script's count. Proposed: keep 113, drop 6, leave with the rules 4. *(Review,
+  §14:* the 117 are 76 number literals, each counted once per condition that carries it, and 41 registry values, five
+  of them switches. It is a lexical count, not 117 distinct thresholds.*)*
 - **The six conditions proposed for dropping**: a nest only when its own value is above 0.25; shelter only when the
   body is colder than neutral; a drink only when the thirst gauge is above zero; the trip shortlist of the four trees
   the rules value most; grooming only a partner that is settled; one greeting target, the dominant the rules score
-  highest.
+  highest. *(Review, §14:* only two of the six can go when the menu is built, the trip shortlist and the one greeting
+  target, and for both the teacher is the rules. The three body conditions wait for a ruling the user deferred, and
+  "settled" goes only for the pairs a wild record covers. The table now counts this: 2, 3 and 1.*)*
 
 **What this means for the design.** A menu "by what is possible" is honest for the body's kinds of activity (feed
 here, go to food, drink, rest, nest) and for the choice of a target (which tree, which water, which partner). For the
@@ -217,7 +226,9 @@ into my range; Greet or appease; Make up; Display or charge; Back an ally or def
 Face the strangers; Move away from the strangers; Pant-hoot; Hunt; Get away; Nurse.
 
 While an act of a kind is in progress, that kind's own entry means "a different one" (Feed on something else here;
-Go to food somewhere else; Groom someone else; and so on) and is offered only if another target is possible.
+Go to food somewhere else; Groom someone else; and so on) and is offered only if another target is possible. So the
+hand-set text of the first call is more than the 21 strings: "Carry on" and one "a different one" form for each kind
+that takes a target are text the model reads too, and none of them is written yet. Each is to be counted.
 
 **More than 8 entries.** Kinds first on the rules' menu gave a median of 6 entries and 8 at the 90th percentile
 (`docs/staging/r2-prereg.md`, result 3). When the possibility menu holds more than 8, the entries go through the
@@ -284,7 +295,8 @@ read at exactly these places.
 | Where (`src/sim/candidates.ts`) | Today | With the flag |
 | --- | --- | --- |
 | `offer()`, line 155 | an option at a score of −0.4 or below is dropped | not dropped for forage, an own trip to a tree, drink, rest, nest, shelter and groom; dropped as today for every other action |
-| `offer()`, lines 168-187 (the slot caps; `slotsForage`, `slotsMulti`) and line 144 (a pool of 48) | 3 targets for feeding, 2 for the multi-target acts, 1 otherwise | no cap; a pool of its own, large enough (160) |
+| `offer()`, line 156 (the patrol's silence, `patrolSilence`, on in the working base) | an animal on a silent patrol is offered no call and no display | unchanged: a hand rule on every call and display site that the table does not count per site (it sits inside `offer()`); kept and counted |
+| `offer()`, lines 168-187 (the slot caps; `slotsForage`, `slotsMulti`) and line 144 (a pool of 48) | 3 targets for feeding, 2 for the multi-target acts, 1 otherwise | no cap; a pool of its own, large enough (160: the R7 tap saw at most 67 trees pass the trip conditions and 16 animals in view; an offer refused because the pool is full must fail a test, since the pool fills in the order of the code) |
 | lines 610-630 (route chaining; the four trees with the highest value) | 4 trees reach `offer()` | every remembered tree that passed the trip conditions reaches `offer()`; the community's list (`:591-606`) is skipped |
 | lines 833-845 and 852 (the best dominant) | one greeting target | every dominant the conditions allow is offered |
 | line 759 (`settled`) | a partner that is resting, grooming, sheltering or nursing | any partner in reach, where a wild record covers the pair (§10); otherwise as today |
@@ -346,6 +358,15 @@ four packets of the design are shorter: a fixed cost per call would make the sho
 example is one moment. And the first measured arm of stage R5-gate ran at 0.46 to 0.62 s a decision against 0.44
 offline, so a night will be slower than any of these lines by a like margin.
 
+**Two more, added by the review (§14).** (1) The estimator counts words, not tokens: it gives every word of an option
+the same rate (2.055 tokens). A short target label drops the plain words of the full label ("of fruit there when I
+saw it") and keeps the species names, the numbers and the punctuation, which take several tokens a word. So the gap
+between 481 and 334 tokens is probably too wide, and the short-label call probably longer than 334; stage R8 found
+real over estimated tokens anywhere from 0.82 to 0.90 by wording alone. The design rests on this line, and it is the
+one the estimator is least fit to give. (2) "Less than today's packet" compares with the old state-only packet (0.44 s
+at 467 tokens). The like-for-like comparison is packet 5 short in a single call, 0.30 s on this moment: two calls cost
+more than that on every line of the table. What two calls buy is a choice among up to eight targets, not speed.
+
 ## 7. Draw and hold with two calls (the gap of `docs/staging/r9-prereg.md` §10.4, item 2)
 
 The review of stage R9 found three faults with a kinds-first menu: the key noted for the applied entry stands for a
@@ -387,6 +408,17 @@ is no second call and the act goes on. If another kind wins, its targets are wei
 fixed for the epoch. One thing does change between the ask that chose an act and the next: the model is then asked
 about "Carry on" and no longer about the kind by its name, and may put another probability on it. That is the model's
 odds moving, not the noise, and the registered readouts of §8 measure it.
+
+*Not closed (review, §14).* The set of keys on the first menu follows the act in progress, so "an entry that did not
+exist before" has a third case the list above leaves out. While an animal is in kind K, the plain key `kind:K` is off
+the menu (K appears as "Carry on" and as "a different one", under other keys). If it takes "a different one" and later
+leaves K for another kind, `kind:K` comes back at the next ask with the noise it had when it first won, though the
+entries that stood for K one ask earlier carried other noise. So K can win again at once with nothing changed in the
+animal's state, out of K and straight back: a switch the single-call held draw of stage R9 cannot make without a
+change in the model's odds. Each "a different one" that wins also brings one fresh draw into the epoch. Neither is a
+re-roll by re-asking, and the test below would pass with both. Build step 1 has to count, with the fake kernel, how
+often a kind is left and re-entered within three asks under `held` against `draw`; if `held` does it more often than
+`draw`, the keys are redesigned before any model arm.
 
 **The held kind is still offered and the held target is gone.** Then the act the animal chose can no longer be the
 act it is in: the partner left, the crop is finished, the tree is no longer a legal trip. By the epoch rule the next
@@ -466,7 +498,7 @@ fifth this design adds). The middle and right columns are expectations to be mea
 | 1. Waking minutes whose kind the model picked from a real choice | 54.4% by a fresh choice and 45.0% held by the gate on a no-model night; 34.8% to 63.0% on the saved arms | the same order: the menu does not change how often the gate asks. An ask answered "Carry on" counts as a fresh choice | as step 2 |
 | 2. Acts whose target the model picked | 7.6% of acts; 10.5% of acts with a target (6 of 698 aimed at a tree, 98 of 271 at a partner) | most acts with a target: every trip, every feed with a tree in view, every drink, every social act with two or more animals in reach. On the saved arm's own acts that is between 64% (the 698 aimed at a tree, of 1,085 with a target) and all of them; a different engine makes different acts | as step 2, with the partner part split by teacher |
 | 3. Endings that were its own | none; at most 46.4% were a choice to leave an act still on offer, at a moment the loop set | none. The count "left an act it could have carried on, at a moment the loop set" becomes exact, because "Carry on" is offered only while the act can go on | as step 2 |
-| 4. Hand-set numbers on its path | 17 named entries, and the rules' valuation behind the menu | gone from its path: the slot caps, the trip shortlist of four, one place per action, the cap of 8 as a cut by score, the hash jitter and the continue and finished terms as rankers of which target is shown. Added: the shortlist's numbers of §5.3 (4; 1; 2; three band edges; 8; 4; 8) and 21 kind labels. Still there: the bout ranges, the gate's numbers, the age of 8, the reach radii, and the 113 kept conditions of the table | as step 2 |
+| 4. Hand-set numbers on its path | 17 named entries, and the rules' valuation behind the menu | gone from its path: the slot caps, the trip shortlist of four, one place per action, the cap of 8 as a cut by score, the hash jitter and the continue and finished terms as rankers of which target is shown. Added: the shortlist's numbers of §5.3 (4; 1; 2; three band edges; 8; 4; 8) and the first call's text (21 kind labels, "Carry on" and the "a different one" forms). Still there: the bout ranges, the gate's numbers, the age of 8, the reach radii, and the 113 kept conditions of the table | as step 2 |
 | 5. (new) Possible, not offered: no teacher | not counted | counted by kind at every ask (§10) | fewer for grooming |
 | Name it may carry | rules-taught model on a rules menu | rules-taught model on a possibility menu | the same, "with grooming partners taught on wild choices (adapter X)" |
 
@@ -540,6 +572,8 @@ shortlists.
 9. The packet text of both calls holds none of the rules' wording (stage R8's banned phrases), no score and no
    ranking: with every score changed the text is the same; targets are listed nearest first.
 10. Options with no teacher are not offered and are counted.
+11. (Added by the review.) No offer is refused because the wide pool is full; and under `held` a kind is not left and
+    re-entered within three asks more often than under `draw` (§7, "Not closed").
 
 ## 12. Build steps (at most three), what each proves, when to stop
 
@@ -563,7 +597,9 @@ simulation at a time), and two no-model arms on ten focal animals for five days:
 States sampled under the new menu in a rules world asked at the same decision points (seeds 48 and 7); labels as the
 rules' spread over what is shown, fresh draws only; one adapter for the first call and one for the second, two
 training seeds each. Loop test on fresh seeds (proposal: 4111 and 4222 of `docs/staging/r7-prereg.md` §9, if the user
-and the integrator agree that this is the registered test that opens them), ten animals, five days, the gate on, the
+and the integrator agree that this is the registered test that opens them; that section earmarks the pair for stage
+R9's draw-and-hold test, so if R9 opens it first this step takes the reserve pair, 4333 and 4444, and a seed is never
+read by two tests), ten animals, five days, the gate on, the
 decode stage R9's result names, against the rules, their re-draws, the random chooser of step 1 and a "Carry on" at
 one half.
 
@@ -608,6 +644,81 @@ Not in these steps: removing a group B rule; a stay question; any teacher of end
 - **The design changes what the model is asked, not when.** The 32.0% of asks that follow a hand-set number (a need
   threshold, the 30-minute limit, a clock period) stay.
 
+## 14. Review by a second agent (11 October 2026, 03:45 to 04:07 EDT)
+
+No simulation, no model and no tokenizer were run; one light process at a time, with the load under 5.
+Nothing under `src/` was touched.
+
+**What was re-derived, and how.**
+
+- *The conditions.* `src/sim/candidates.ts` was read in full and held against what the reader extracts for each of
+  the 94 sites: no condition is missing and none is negated wrongly.
+- *The counts.* A separate script (its own rule for legacy, young and live and for what binds, with the base's facts
+  taken from the raw parameters where a plain comparison gives them, and from the simulation's own switch functions
+  for 15 of them) gives every figure of §4: 94 sites over 29 actions; 19, 6 and 69; 6, 2 and 61; 58, 25 and 3; 83 as
+  written; 123 conditions (92, 28, 3); keep 113, drop 6, rules 4; 8, 6, 52 and 3 by site; 39 and 18; the five sites
+  and the two; 62 under the strictest line.
+- *Legacy.* Each of the 19 was read against the base's parameter values. Through the command line, a base with
+  `callValue` 0 makes `--check` exit 1 on a stale table (two more sites live), and a base with `joinChoice` 0 or
+  `endoEscalate` 0 exits 1 on "claimed unreachable".
+- *Dice.* `perception.ts` and `reproduction.ts` were read: on the working base only the gang attack, the attack on an
+  infant and the transfer are opened by a draw. The patrol and hunt impulses are raised without one, and the rolls
+  for escalation and the rain display are switched out.
+- *The cost.* The arithmetic of §6 was redone by hand from the generated tokens and comes out the same. The anchor
+  packet is the one stage R8 printed, with its 362 real tokens.
+- *The design's references.* Every file and line named in §5 to §11 was opened (about 45). All point at what the
+  text says. The figures quoted from stages R2, R7, R8, R9, R10 and RW stand in their documents.
+- *Order.* The registration was committed at 03:13, the classification of all 369 conditions at 03:22 and the table
+  at 03:25. The commit order is as registered. Nine minutes is short for 369 classes, so some of that reading was
+  probably drafted before 03:13; the log cannot say. No pass mark depends on it: the marks are about cover and
+  regeneration, and the expectations of §2.5 were stated as expectations.
+
+**What was wrong, and is repaired** (commit 374749f and the commits after it).
+
+1. *The page for the user was not a two-minute page.* It held 1,516 words under the heading "In two minutes", and each
+   ruling was a paragraph, where the brief asked for one plain sentence with the recommendation. Section 1 of the
+   table now holds the counts, the ten rulings in one sentence each and what stays, in 540 words of running text; the
+   reasons moved to section 2. A test counts the words.
+2. *The page said why rules are dropped, and it was not true.* "Only where something other than the rules could teach
+   the wider choice" fails for the trip shortlist and the greeting target, whose teacher is the rules. Three of the six
+   drops wait for a ruling the user deferred (body outcomes), and one reaches only the pairs a wild record covers. The
+   classification now says what each drop waits for (`needs`) and the script counts it: 2 at once, 1 and 3.
+3. *Ruling 6 and the design disagreed.* The page recommended offering every community member as a grooming partner;
+   §5.4, §10 and build step 3 lift "settled" only where a wild record can teach. The ruling now says what the design
+   does.
+4. *"117 hand-set numbers"* read as 117 thresholds. It is a lexical count and is now described as one (above, §4).
+5. *Rules inside `offer()` were counted nowhere.* The patrol's silence (no call and no display on a silent patrol) is
+   on in the working base and stands in front of seven live sites. It is now in §5.4 and under what stays.
+6. *Pass mark 4* was reworded after the fact from "every number" to "the counts". The quoted thresholds are now held
+   against the source by a test; one figure stays typed (above, §4).
+7. *The cost table leaned on its weakest number* and compared with the slower of two baselines (§6, the two limits
+   added).
+8. *The keys do not close every way to switch* without a change of state (§7, "Not closed").
+9. *The script.* A missing table passed `--check`; a bare `--stub` left a file in the checkout; the age marks of the
+   classification ("always from 8") were not held against the base's `rgMinAge`. All three are fixed, the last with a
+   test.
+10. *Smaller.* Two plain-word lines were written for another site (the age of 3 at the drink, "the body exists" for
+    an opponent). The first call's text is more than 21 strings (§5.2). The fresh seeds proposed for build step 2 are
+    earmarked for stage R9's test (§12).
+
+**Checked and not a defect.** Importing the token estimator through `server/decide` starts no process (the worker is
+spawned only by the dev server's middleware). The lead of a patrol is not dice on the working base. The age line of 12
+is rightly read as structure at the five sites both calls of their helper reach. The social-fact readings follow the
+examples the registration fixed; the weakest is a female's own swelling of 0.75, classed physical where the registered
+wording would also allow advice. No count by site moves either way.
+
+**Still open.**
+
+- The classification is now two readers' judgement and still nobody else's; ruling 1 is the user's.
+- Legacy status is read from switches. No run has counted offers.
+- No real token count and no latency of the two calls exists. Until the tokenizer has counted the short target
+  labels, "two calls cost less than today's packet" is a guess.
+- The two tables of §6 are copies of the generated file; nothing ties them to it but a reader.
+- How often an animal is asked under the new menu is unknown; every line of §6 assumes today's 54 to 57 asks a day.
+- "Carry on" is a stay option taught by the rules, which the sceptic of 10 October asked not to build. It is put to
+  the user as a decision, with a control that takes it half the time.
+- The whole suite and the build were not run (the night's model chain).
+
 ## For the integrator
 
 **What is on the branch** (`r12-menu-design`, from `track-e` a11c45c; new files only, nothing under `src/`):
@@ -620,13 +731,14 @@ Not in these steps: removing a group B rule; a stay question; any teacher of end
 | `scripts/r12-offer-table.ts`, `scripts/lib/offer-sites.ts` | the one read-only script and its reader of gates (it uses `scripts/lib/valuation.ts` and `scripts/valuation-ledger.ts` unchanged) |
 | `data/r12-offer-classes.json` | the classification: 369 conditions, 94 sites, the ten rulings (a reading of the code; edit it, not the table) |
 | `data/r12-call-examples.json` | the example packets and the measured law behind the cost table |
-| `tests/r12-offer-table.test.ts` | 11 tests |
+| `tests/r12-offer-table.test.ts` | 13 tests (11 as built, 2 added by the review) |
 
 **Checks run on this branch** (one light process at a time; the load stayed under 5): `pnpm exec tsx --test
 tests/r12-offer-table.test.ts` (11 of 11); `pnpm exec tsc --noEmit` (clean; it covers `src/` only) and the same strict
 options on the new script, library and test (clean); `scripts/r12-offer-table.ts --check` and `--calls --check` (exit
 0). **Not run:** the whole suite, the build, any simulation, any model, tokenizer or Python process.
-`tests/valuation-ledger.test.ts` was not re-run: no file it covers was edited.
+`tests/valuation-ledger.test.ts` was not re-run: no file it covers was edited. *(Review, §14:* run again after the
+repairs: 13 of 13, and `tests/valuation-ledger.test.ts` 9 of 9; the type-check and both `--check` runs clean.*)*
 
 **To confirm at the merge, in this order.**
 
@@ -638,7 +750,9 @@ options on the new script, library and test (clean); `scripts/r12-offer-table.ts
    reads legacy from switches only.
 3. *The real size and time of the two calls* (needs the model's tokenizer and then the model): count the four design
    packets of `data/r12-call-examples.json` with `training/decide_ft/r4_py.sh r8_tokens.py`, then time them. The law
-   is an extrapolation below 396 tokens.
+   is an extrapolation below 396 tokens. Only after the night's model chain has ended: any process of the model's
+   Python environment makes that chain refuse its next step. Count the two "which place" packets first: the design
+   rests on the gap between full and short labels, and that gap is what the estimator is least fit to give (§6).
 4. Read stage R9's result before choosing the decode for any build step; §7 covers `draw` and `held`.
 
 **Likely conflicts.** None in code: the branch adds files and edits none. But the test reads
@@ -658,26 +772,35 @@ flags to regenerate the table. A change that only moves lines needs the last ste
 > **Success Criteria** (registered in `docs/staging/r12-prereg.md` §2 before any condition was classed): the table's
 > sites are the valuation ledger's; every condition has a class and every hand rule a proposal; the table regenerates
 > to the same text and its check fails on a new site, a changed gate or a legacy claim that stopped holding; every
-> number on its first page is computed; nothing under `src/` changes.
+> count on its first page is computed and every threshold its sentences quote is held against the source by a test;
+> nothing under `src/` changes.
 > **Tests**: `tests/r12-offer-table.test.ts`.
-> **Status**: Designed on branch `r12-menu-design` (11 October 2026; agent-reported, awaiting the integrator's review
-> and merge and the user's rulings; no simulation, no model, nothing under `src/`). The table
+> **Status**: Designed and reviewed on branch `r12-menu-design` (11 October 2026; built by one agent, reviewed and
+> repaired by a second, awaiting the integrator's merge and the user's rulings; no simulation, no model, nothing under
+> `src/`). The table
 > (`docs/staging/r12-menu-table.md`, generated by `scripts/r12-offer-table.ts` from the source and
 > `data/r12-offer-classes.json`): of the 94 offer sites 19 are unreachable on the working base, 6 are reached only by
 > animals under 8 and 69 are live; of the live ones 6 are gated by possibility alone, 2 more by a social fact only,
-> and 61 carry a hand rule (advice 58, a quota or timer 25, dice 3), in 123 distinct conditions that hold 117 hand-set
-> numbers. Proposed: drop 6 conditions (the trip shortlist of four by the rules' value; one greeting target by the
-> rules' score; grooming only a settled partner; and, once a teacher of the body's acts is allowed, the value gates on
-> nest, shelter and drink), keep 113 and count them, leave 3 acts with the rules (gang attack, attack on an infant,
-> transfer). The design (`docs/staging/r12-prereg.md` §5 to §12; not built): one switch, a first call over kinds with
+> and 61 carry a hand rule (advice 58, a quota or timer 25, dice 3), in 123 distinct conditions that hold 117 numbers
+> by a lexical count (76 literals, counted per condition, and 41 registry values). Proposed: drop 6 conditions, of
+> which 2 can go when the menu is built (the trip shortlist of four by the rules' value; one greeting target by the
+> rules' score: the teacher of both is still the rules), 1 only for the pairs a wild record covers (grooming only a
+> settled partner) and 3 only once a teacher of the body's acts is allowed (the value gates on nest, shelter and
+> drink); keep 113 and count them; leave 3 acts with the rules (gang attack, attack on an infant, transfer). The
+> design (`docs/staging/r12-prereg.md` §5 to §12; not built): two switches (the menu; the body's acts, for when a
+> teacher of them is allowed), a first call over kinds with
 > "Carry on", a second over at most 8 targets shortlisted by perception (trees in view, the crown last fed in,
 > companions' goal trees, a random sample of remembered trees by distance band that reads no crop and no score), keys
 > that let a held draw hold across the two calls, a rule that an option with no teacher stays off the menu and is
 > counted, and three build steps. Estimated and not measured, no model having been run
 > (`docs/staging/r12-call-cost.md`): 0.24 s for the first call and 0.13 to 0.27 s for the second on one real decision
-> point, 0.32 to 0.38 s a decision against 0.44 today, 43 to 55 simulated days of a population in a 10-hour night.
+> point, 0.32 to 0.38 s a decision against 0.44 for today's packet and 0.30 for packet 5 short in one call, 43 to 55
+> simulated days of a population in a 10-hour night. The review found that the estimate rests on short target labels
+> whose length a word-counting estimator probably understates, and that the keys leave one way for a held draw to
+> switch without a change in the animal's state (§7, "Not closed").
 > *Open*: the user's ten rulings (the table's first page); legacy status is read from switches, not from a run; the
-> real tokens and latency of the two calls; which decode, after stage R9's result.
+> real tokens and latency of the two calls, the short target label first; which decode, after stage R9's result; the
+> classification is two readers' judgement and no one else's.
 
 In the Status of **Stage R7**, the open item "the 'possible or advisable' table of the 94 offer sites" can read: "now
 `docs/staging/r12-menu-table.md`, awaiting the user's ten rulings".
@@ -685,7 +808,7 @@ In the Status of **Stage R7**, the open item "the 'possible or advisable' table 
 **Lines proposed for `AGENTS.md`.** Commands, after the `valuation-ledger.ts` line:
 
 ```sh
-pnpm exec tsx scripts/r12-offer-table.ts [--check] [--stub out.json] | --calls [--check]   # stage R12 (docs/staging/r12-prereg.md), read-only: docs/staging/r12-menu-table.md, one row per offer() site of src/sim/candidates.ts with the conditions that gate it as written (scripts/lib/offer-sites.ts, a lexical scan) and each condition's class from data/r12-offer-classes.json (a reading of the code, merged by the condition's text); --check exits 1 on an uncovered or changed site, an unclassified condition, a legacy claim that stopped holding or a stale table; --stub lists what the classification does not cover; --calls writes docs/staging/r12-call-cost.md (the project's token estimator on the example packets of data/r12-call-examples.json and the measured time law; no model)
+pnpm exec tsx scripts/r12-offer-table.ts [--check] [--stub [out.json]] | --calls [--check]   # stage R12 (docs/staging/r12-prereg.md), read-only: docs/staging/r12-menu-table.md, one row per offer() site of src/sim/candidates.ts with the conditions that gate it as written (scripts/lib/offer-sites.ts, a lexical scan) and each condition's class from data/r12-offer-classes.json (a reading of the code, merged by the condition's text); --check exits 1 on an uncovered or changed site, an unclassified condition, a legacy claim that stopped holding or a missing or stale table; --stub lists what the classification does not cover; --calls writes docs/staging/r12-call-cost.md (the project's token estimator on the example packets of data/r12-call-examples.json and the measured time law; no model)
 ```
 
 Gotchas, one line:
