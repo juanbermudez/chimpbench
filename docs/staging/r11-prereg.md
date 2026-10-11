@@ -899,7 +899,7 @@ shuffled training packet has the same count as its own order on 6,240 of 6,240.
 | P5a without `doing` (1,340) | 275 | 388 | 472 | 0 |
 | P5a probes (1,080) | 297 | 413 | 491 | 0 |
 
-### 12.2 Three repairs, made before the smoke run
+### 12.2 Four repairs, made before the smoke run
 
 1. **A training cut short could have been read as a trained adapter** (major). The trainer saves the weights of the
    best epoch so far and writes `manifest.json` last. The run script took the weights alone as "trained". Had a
@@ -918,6 +918,14 @@ shuffled training packet has the same count as its own order on 6,240 of 6,240.
    file now stops it before the model loads, not after the last epoch, where it would have cost the manifest. The
    self-check runs on the first example and again on the first example whose label is spread over options, and each
    prints its logits, target and pick, so the loss can be redone by hand from any training's log.
+4. **The swap hold could cost hours of a night for nothing** (major for the time, harmless for the results). Every
+   model step held for up to 30 minutes while swap in use was above 6 GB, then went ahead whatever swap did. On the
+   night of 11 October two steps of stage R9 each waited the whole half hour at an unchanged 6,455 MB
+   (`bench-t1/artifacts/t1-chain`, the lines "machine before model load": 03:48 and 05:34, "waited 30 min"): swap
+   held by other programs does not drain. Night one of this stage has nine model steps and swap stood at 5,333 MB at
+   12:20, before any training. The hold now lasts only while swap keeps falling (50 MB in five minutes), 30 minutes
+   at most, and the step's first line says when it went ahead above the line. Tried with scripted readings: no wait
+   under the line; 5 minutes at an unchanged 6,455 MB; the whole fall when swap drains; 30 minutes at most.
 
 ### 12.3 The smoke run, logged before it runs (12:25 EDT)
 
@@ -943,7 +951,7 @@ model time in all. It is a check of the machinery, never a result: no number fro
   line must carry the adapter with the file's hash; 25 held-out packets asked one at a time (shape, seconds per
   ask), 8 of them also of the untuned model (the answers must differ: the adapter is in use). A copy of the smoke
   adapter under a second name is loaded beside it, as a night's worker holds two adapters: asked of the copy, the
-  same 8 packets must give the same answers, and the first adapter the same again after the switch (added at 13:22,
+  same 8 packets must give the same answers, and the first adapter the same again after the switch (added at 13:21,
   before the run).
 - Afterwards `artifacts/r11/smoke` is deleted. Nothing is written under `artifacts/decide-ft/r11`.
 
