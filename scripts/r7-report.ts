@@ -178,6 +178,18 @@ if (process.argv[1]?.endsWith('r7-report.ts')) {
     cardTable(unit, SHARES);
   }
 
+  // the smallest difference each unit can show, side by side
+  p();
+  p('### The smallest difference each unit can show, side by side');
+  p();
+  p('D for one arm run once against the eight rules re-draws, and D as a share of the rules\' mean (not given where the mean is near zero).');
+  p();
+  p('| Readout or row | Unit F: rules mean | Unit F: D | Unit F: D ÷ mean | Unit P: rules mean | Unit P: D | Unit P: D ÷ mean |');
+  p('| --- | --- | --- | --- | --- | --- | --- |');
+  const rel = (s: Spread | undefined) => (s && s.mean !== null && s.D !== null && Math.abs(s.mean) > 0.05 ? `${f(100 * s.D / Math.abs(s.mean), 0)}%` : '');
+  for (const k of [...TIMING_ROWS, 'reservePctPerDay', 'kmFixPerDay', 'nightsInNest', 'kcalEatenPerDay']) { const a = U.F.spread[k], b = U.P.spread[k], d = digitsOf(k); p(`| ${labelOf(k)} | ${f(a?.mean, d)} | ${f(a?.D, d)} | ${rel(a)} | ${f(b?.mean, d)} | ${f(b?.D, d)} | ${rel(b)} |`); }
+  for (const id of SHORT_ROWS) { const a = U.F.spread[id], b = U.P.spread[id], d = rowDigits(id); p(`| ${id} ${T(id).metric} | ${f(a?.mean, d)} | ${f(a?.D, d)} | ${rel(a)} | ${f(b?.mean, d)} | ${f(b?.D, d)} | ${rel(b)} |`); }
+
   // ------------------------------------------------------------------------------------------------------------------
   // 4. which timing rows tell the rules from the control arms
   // ------------------------------------------------------------------------------------------------------------------
