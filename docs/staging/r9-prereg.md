@@ -440,6 +440,10 @@ changed.** Its commits on this branch are the ones titled "R9 review".
    `draw` or `held` until a kind has a key of its own (`scripts/lib/decoder.ts` says so).
 3. `scripts/r9-run.sh dry` and `report`, and `scripts/r9-seed2.sh offline` and `report`, rewrite committed tables.
    A model step refuses a tree that is not clean, so commit the regenerated tables before the next model step.
+   *Changed at the merge of 11 October 2026:* the run scripts now write the generated tables under
+   `artifacts/r9/tables` (git ignores it; `R9_TABLES` moves it), so the tree stays clean and the launch order below runs
+   from a frozen checkout with no commit in between. `scripts/r9-run.sh publish` copies the tables into `docs/staging`
+   once the runs are over. What is measured, and what each table holds, is unchanged.
 
 ## For the integrator
 
@@ -452,10 +456,11 @@ scripts/r9-run.sh reference 21 && scripts/r9-run.sh reference 5 && scripts/r9-ru
 mkdir -p artifacts/r9/logs
 scripts/r9-run.sh core 21 > artifacts/r9/logs/core-21.log 2>&1    # about 1 h 40 min: r4-draw-1, r4-held, r4c-draw-1, r4c-held, r4-draw-2, r4-block, r4c-block, then their replays
 scripts/r9-run.sh core 5  > artifacts/r9/logs/core-5.log 2>&1
-scripts/r9-run.sh report                        # docs/staging/r9-numbers.md: the tables and the statements of §6; commit it (and r9-seed2-numbers.md after the scoring) before the next model step, which refuses a tree that is not clean
-scripts/r9-seed2.sh prepare && scripts/r9-seed2.sh train > artifacts/r9/logs/seed2-train.log 2>&1 && scripts/r9-seed2.sh offline   # about 2 h 35 min; docs/staging/r9-seed2-numbers.md
+scripts/r9-run.sh report                        # artifacts/r9/tables/r9-numbers.md: the tables and the statements of §6 (the tree stays clean: nothing to commit before the next model step)
+scripts/r9-seed2.sh prepare && scripts/r9-seed2.sh train > artifacts/r9/logs/seed2-train.log 2>&1 && scripts/r9-seed2.sh offline   # about 2 h 35 min; artifacts/r9/tables/r9-seed2-numbers.md
 scripts/r9-run.sh seed2 21 && scripts/r9-run.sh seed2 5 && scripts/r9-run.sh report            # about 1 h
 scripts/r9-run.sh gateoff 21 && scripts/r9-run.sh gateoff 5 && scripts/r9-run.sh report        # optional contrast, about 2 h 45 min
+scripts/r9-run.sh publish                       # once, at the end: the generated tables copied into docs/staging, to be committed
 ```
 
 A shorter night: `scripts/r9-run.sh arms <seed> r4-draw-1,r4-held,r4c-draw-1,r4c-held,r4-draw-2` (about 1 h 12 min a

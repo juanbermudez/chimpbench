@@ -8,10 +8,13 @@
 #   scripts/r9-seed2.sh prepare    no model: copy R4's training files and R4's held-out evaluation folder beside this stage's adapter folder, hashes checked
 #   scripts/r9-seed2.sh train      the training run (about 2 h 11 min and 6.8 GiB for the first seed; refuses to overwrite an adapter)
 #   scripts/r9-seed2.sh offline    score the new adapter on R4's own held-out file (about 11 minutes), then `report`
-#   scripts/r9-seed2.sh report     no model: docs/staging/r9-seed2-numbers.md from the score files on hand
+#   scripts/r9-seed2.sh report     no model: r9-seed2-numbers.md from the score files on hand
 # Then, in the loop: scripts/r9-run.sh seed2 21 and scripts/r9-run.sh seed2 5.
+# The table is written under artifacts/r9/tables (R9_TABLES; git ignores it), so the tree stays clean for the model
+# steps that follow; scripts/r9-run.sh publish copies it to docs/staging when the runs are over.
 cd "$(dirname "$0")/.." || exit 1
 ROOT="$(pwd)"; FT="${R9_FT_ROOT:-artifacts/decide-ft/r9}"; L="$FT/logs"; NAME=r4-rules-state-s2; SEED=11
+TABLES="${R9_TABLES:-artifacts/r9/tables}"
 case "$FT" in /*) AFT="$FT" ;; *) AFT="$ROOT/$FT" ;; esac   # the same folder as an absolute path, for the Python side
 first_dir() { for d in "$@"; do [ -d "$d" ] && { echo "$d"; return; }; done; echo "$1"; }
 WT=/Volumes/Drive/chimpbench/MGOGO/.claude/worktrees
@@ -35,7 +38,7 @@ before_model() {
 }
 step() { echo "R9 start: $* ($(date '+%H:%M'))"; "$@" || { echo "R9 failed: $*"; exit 1; }; }
 prepared() { [ "$(sha "$FT/contexts/train.jsonl" 2>/dev/null)" = "$TRAIN_SHA" ] && [ "$(sha "$FT/contexts/dev.jsonl" 2>/dev/null)" = "$DEV_SHA" ] || { echo "R9: run '$0 prepare' first"; exit 2; }; }
-report() { step fnm exec --using=22.22.3 -- pnpm exec tsx scripts/r9-seed-spread.ts --dir "$FT/evalA" --providers r4-rules-state,$NAME,r4b-rules-state,r4c-rules-state,base --md docs/staging/r9-seed2-numbers.md; }
+report() { mkdir -p "$TABLES"; step fnm exec --using=22.22.3 -- pnpm exec tsx scripts/r9-seed-spread.ts --dir "$FT/evalA" --providers r4-rules-state,$NAME,r4b-rules-state,r4c-rules-state,base --md "$TABLES/r9-seed2-numbers.md"; }
 
 case "$1" in
   prepare)
