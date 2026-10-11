@@ -1306,23 +1306,23 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
       for (let k = 0; k < 3; k++) springStep(a.lk[k], GOAL[k], 0.14, dt);
       return 0.95;
     }
-    // Stage W6: while a model's answer is in flight for this animal it keeps looking about (beat.ts deliberating; a
-    // stylization, not seen with a model): idle directions only, changed every THINK_SCAN_S.
-    const thinking = deliberating(c.controller, c.awaitingDecisionSince, world.modelPolicy.mode);
     candN = 0;
-    if (!thinking) {
-      if (partner) addCand(4, partner.id);
-      for (const call of world.calls) {
-        if (call.callerId === a.id || world.time - call.time > 3 / 60) continue;
-        if ((call.position[0] - a.x) ** 2 + (call.position[2] - a.z) ** 2 < 400 && anims.has(call.callerId)) { addCand(3, call.callerId); break; }
-      }
-      for (const st of world.stimuli) if (st.kind === 'snake-model' && (st.position[0] - a.x) ** 2 + (st.position[2] - a.z) ** 2 < 225) { addCand(5, 900000 + st.id); break; }
-      for (const t of world.troops) if (t.id === c.troopId && t.alphaId >= 0 && t.alphaId !== a.id) {
-        const al = anims.get(t.alphaId);
-        if (al && (al.x - a.x) ** 2 + (al.z - a.z) ** 2 < 36) addCand(1, al.id);
-      }
+    if (partner) addCand(4, partner.id);
+    for (const call of world.calls) {
+      if (call.callerId === a.id || world.time - call.time > 3 / 60) continue;
+      if ((call.position[0] - a.x) ** 2 + (call.position[2] - a.z) ** 2 < 400 && anims.has(call.callerId)) { addCand(3, call.callerId); break; }
+    }
+    for (const st of world.stimuli) if (st.kind === 'snake-model' && (st.position[0] - a.x) ** 2 + (st.position[2] - a.z) ** 2 < 225) { addCand(5, 900000 + st.id); break; }
+    for (const t of world.troops) if (t.id === c.troopId && t.alphaId >= 0 && t.alphaId !== a.id) {
+      const al = anims.get(t.alphaId);
+      if (al && (al.x - a.x) ** 2 + (al.z - a.z) ** 2 < 36) addCand(1, al.id);
     }
     selectAttention(a.attn, cands, candN, animClock, a.id);
+    // Stage W6: while a model's answer is in flight for this animal (beat.ts deliberating; a stylization, not seen with
+    // a model) an idle scan is not held for its usual 1.5 to 6 s: it moves on after THINK_SCAN_S, so an animal with
+    // nothing to look at keeps looking about. A partner, a caller, a snake model and the alpha keep the eyes as always:
+    // a wait can fall in the middle of a grooming bout, and the head must not leave the partner each time one does.
+    const thinking = a.attn.pri === 0 && deliberating(c.controller, c.awaitingDecisionSince, world.modelPolicy.mode);
     if (thinking && a.attn.until > animClock + THINK_SCAN_S) a.attn.until = animClock + THINK_SCAN_S;
     if (!goalOf(a, a.attn.key, GOAL)) { a.attn.until = -1; return 0; }
     if (a.lastSkinFrame < 0 || !Number.isFinite(a.lk[0].x) || Math.abs(a.lk[0].x - GOAL[0]) > 40) for (let k = 0; k < 3; k++) { a.lk[k].x = GOAL[k]; a.lk[k].v = 0; }
