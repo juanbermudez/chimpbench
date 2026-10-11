@@ -8,7 +8,7 @@ import { createBarkNormal, createBarkTexture, createLeafAtlas } from './textures
 import { FADE_CAPACITY, FADE_WIDTH, LIMB_FLAG, OBJ_TREE, addObject, type OccluderTable } from './occluders';
 import { cellOf, type Culler } from './cells';
 import { FIELD_TILE, runSteps, tileRange, tileSeed } from './field';
-import { CLUSTER_MAX_SCALE_PERSPECTIVE, CLUSTER_MAX_SCALE_STRATEGY, CLUSTER_MIN_PX_PERSPECTIVE, CLUSTER_MIN_PX_STRATEGY, CLUSTER_RADIUS, CLUSTER_SCALE_PERSPECTIVE, CLUSTER_SCALE_STRATEGY, LOWER_SLOT_SHARE, clusterColour, clusterLevel, clusterSize, clusterSlots, cropShare, crownTintByte, fruitColour, hexBytes, legacySlots, markColour, toHex } from './fruit';
+import { CLUSTER_MAX_SCALE_PERSPECTIVE, CLUSTER_MAX_SCALE_STRATEGY, CLUSTER_MIN_PX_PERSPECTIVE, CLUSTER_MIN_PX_STRATEGY, CLUSTER_RADIUS, CLUSTER_SCALE_PERSPECTIVE, CLUSTER_SCALE_STRATEGY, LOWER_SLOT_SHARE, TINT_PERSPECTIVE, TINT_STRATEGY, clusterColour, clusterLevel, clusterSize, clusterSlots, cropShare, crownTintByte, fruitColour, hexBytes, legacySlots, tintColour, toHex } from './fruit';
 
 // Multi-tier Kibale forest: emergent and canopy crowns built from lit,
 // alpha-to-coverage leaf cards, buttressed trunks, lianas and aerial fig
@@ -175,6 +175,8 @@ export interface Vegetation {
   /** Cull probe: submitted triangles per pass (k) and every source instance per kind. */
   cullStats(): ReturnType<Culler['stats']>;
   cullSources(): Record<string, { count: number; casts: boolean; matrices: Float32Array }>;
+  /** Stage W7 probe: cluster slots built, clusters drawn, trees with a crown tint, and how often the crop texels and the cluster buffers were re-sent. */
+  fruitStats(): { trees: number; slots: number; drawn: number; tinted: number; texelUploads: number; repacks: number };
 }
 
 /** Stage W7 (fruit you can see): what the fruit layer needs from the view each frame. One object, reused by the scene. */
@@ -243,7 +245,7 @@ export function createVegetationKit(seed: number, uniforms: SharedUniforms, owne
     base.call(leafMaterial, shader, renderer);
     shader.uniforms.uCrop = { value: cropTexture };
     shader.uniforms.uFruitTint = fruitTint;
-    // Per clump, so a tint never swims: a share of a fruiting crown's clumps (10% at a trace to 65% at a full crop,
+    // Per clump, so a tint never swims: a share of a fruiting crown's clumps (a tenth at a trace to 64% at a full crop,
     // picked by a hash of the clump's place) turn most of the way to the fruit colour, the rest only a little, so the
     // crown stays a living green one with masses of fruit colour in it; the upper, sun-side clumps of each lobe shift
     // more than the ones underneath.
@@ -257,20 +259,21 @@ export function createVegetationKit(seed: number, uniforms: SharedUniforms, owne
           vec3 fruitC = instanceMatrix[ 3 ].xyz;
           float fruitH = fract( sin( dot( fruitC, vec3( 91.7, 37.3, 53.1 ) ) ) * 43758.5453 );
           float fruitUp = smoothstep( - 0.5, 0.3, ( fruitC.y - aCrown.y ) / max( aCrown.w, 0.1 ) );
-          float fruitSel = step( fruitH, 0.1 + 0.55 * fruitT.a );
-          float fruitK = mix( 0.22 * fruitT.a, mix( 0.5, 0.86, fruitT.a ), fruitSel ) * mix( 0.6, 1.0, fruitUp );
+          float fruitSel = step( fruitH, 0.04 + 0.6 * fruitT.a );
+          float fruitK = mix( 0.2 * fruitT.a, mix( 0.55, 0.86, fruitT.a ), fruitSel ) * mix( 0.6, 1.0, fruitUp );
           vFruitTint = vec4( fruitT.rgb, fruitK * uFruitTint );
         }
       }
       #endif
       vec4 mvPosition = viewMatrix * envWorld;`);
-    // The leaf keeps its own light and dark (the card's texture and the clump's shade) and takes the fruit's hue at the
-    // same luminance: a dark fruit (purple drupes, brown pods) tints as strongly as an orange fig.
+    // The leaf keeps its own light and dark (the card's texture and the clump's shade) and takes the fruit's hue at a
+    // luminance half way (geometric mean) between its own and the tint colour's: a dark fruit (purple drupes, brown
+    // pods) darkens its crown a little instead of turning it neon.
     shader.fragmentShader = 'varying vec4 vFruitTint;\n' + shader.fragmentShader.replace('#include <color_fragment>', /* glsl */`#include <color_fragment>
       if ( vFruitTint.a > 0.001 ) {
         const vec3 fruitLw = vec3( 0.2126, 0.7152, 0.0722 );
-        vec3 fruitHue = vFruitTint.rgb / max( dot( vFruitTint.rgb, fruitLw ), 0.02 );
-        diffuseColor.rgb = mix( diffuseColor.rgb, fruitHue * dot( diffuseColor.rgb, fruitLw ), vFruitTint.a );
+        float fruitL = max( dot( vFruitTint.rgb, fruitLw ), 0.02 );
+        diffuseColor.rgb = mix( diffuseColor.rgb, vFruitTint.rgb * sqrt( dot( diffuseColor.rgb, fruitLw ) / fruitL ), vFruitTint.a );
       }`);
   })(leafMaterial.onBeforeCompile);
   { const baseKey = leafMaterial.customProgramCacheKey; leafMaterial.customProgramCacheKey = () => baseKey.call(leafMaterial) + ':w7-fruit-tint'; }
@@ -670,7 +673,7 @@ export function* vegetationSteps(world: World, terrain: Terrain, uniforms: Share
       // Cells the crown overlaps: the tree's fruit is packed only while one of them is in view.
       const cells = new Set<number>();
       for (const l of lobes) for (const [ox_, oz_] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) cells.add(cellOf(culler.grid, l.x + ox_ * l.r, l.z + oz_ * l.r));
-      fruitTrees.push({ tree: simTree, start, count: fruitSlots.length - start, level: -1, size: -1, tint: -1, obj: treeObj, rgb: hexBytes(toHex(markColour(fruitColour(simTree.species)))), cells: [...cells] });
+      fruitTrees.push({ tree: simTree, start, count: fruitSlots.length - start, level: -1, size: -1, tint: -1, obj: treeObj, rgb: hexBytes(toHex(tintColour(fruitColour(simTree.species)))), cells: [...cells] });
     }
     const nestLobe = lobes.reduce((best, l) => (l.r > best.r ? l : best), lobes[0]);
     return {
@@ -956,7 +959,7 @@ export function* vegetationSteps(world: World, terrain: Terrain, uniforms: Share
     if (shrubKind.shadow) shrubKind.shadow.visible = quality === 'high';
   }
 
-  let fruitVersion = -1;
+  let fruitVersion = -1, texelUploads = 0, repacks = 0;
   const fruitM = new THREE.Matrix4();
   const { fruitMin, fruitTint, cropData, cropTexture } = kit;
   function update(worldNow: World, _quality: Quality, daylight = 1, perspective = false, view?: FruitView) {
@@ -967,8 +970,9 @@ export function* vegetationSteps(world: World, terrain: Terrain, uniforms: Share
     // Stage W7: the clusters' minimum on-screen size and the crown tint follow the Food layer (off: clusters at their
     // plain size, crowns green). Without a view (harness callers of the old signature) both stay off.
     const on = view?.on === true;
-    fruitTint.value += ((on ? 1 : 0) - fruitTint.value) * 0.15;
-    if (fruitTint.value < 0.002) fruitTint.value = 0; else if (fruitTint.value > 0.998) fruitTint.value = 1;
+    const tintTo = !on ? 0 : perspective ? TINT_PERSPECTIVE : TINT_STRATEGY;
+    fruitTint.value += (tintTo - fruitTint.value) * 0.15;
+    if (Math.abs(fruitTint.value - tintTo) < 0.002) fruitTint.value = tintTo;
     if (on && view) {
       const cam = view.camera as THREE.OrthographicCamera & THREE.PerspectiveCamera, h = Math.max(1, view.viewH);
       if (cam.isPerspectiveCamera) fruitMin.value.set(0, 2 * Math.tan(THREE.MathUtils.degToRad(cam.fov) / 2) / h, CLUSTER_MIN_PX_PERSPECTIVE, CLUSTER_MAX_SCALE_PERSPECTIVE);
@@ -978,15 +982,16 @@ export function* vegetationSteps(world: World, terrain: Terrain, uniforms: Share
     let dirty = culler.version !== fruitVersion;
     fruitVersion = culler.version;
     // The crop texels belong to whichever vegetation is drawn: a field window claims them on its first update.
-    let texels = kit.cropOwner !== fruitTrees;
-    if (texels) { kit.cropOwner = fruitTrees; cropData.fill(0); }
+    const claim = kit.cropOwner !== fruitTrees;
+    if (claim) { kit.cropOwner = fruitTrees; cropData.fill(0); }
+    let texels = claim;
     for (const entry of fruitTrees) {
       const t = entry.tree;
       const live = worldNow.trees === world.trees ? t : worldNow.trees.find(x => x.id === t.id) ?? t;
       const ratio = cropShare(live);
       // Crown tint: the species' fruit colour and the tint byte in the tree's texel (64 steps: an upload only when a step changes).
       const tint = crownTintByte(ratio) & ~3;
-      if (tint !== entry.tint || texels) {
+      if (claim || tint !== entry.tint) {
         entry.tint = tint;
         const o = entry.obj * 4;
         cropData[o] = entry.rgb[0]; cropData[o + 1] = entry.rgb[1]; cropData[o + 2] = entry.rgb[2]; cropData[o + 3] = tint;
@@ -998,8 +1003,9 @@ export function* vegetationSteps(world: World, terrain: Terrain, uniforms: Share
       entry.level = level; entry.size = size;
       dirty = true;
     }
-    if (texels) cropTexture.needsUpdate = true;
+    if (texels) { cropTexture.needsUpdate = true; texelUploads++; }
     if (dirty) {
+      repacks++;
       let n = 0;
       for (const entry of fruitTrees) if (culler.enabled === false || entry.cells.some(c => culler.cameraCells[c] === 1)) {
         const k = entry.size / 20;   // clusters grow with the crop (fruit.ts clusterSize), around their own centres
@@ -1056,6 +1062,7 @@ export function* vegetationSteps(world: World, terrain: Terrain, uniforms: Share
     trunkObj: new Int32Array(trunkObjs),
     objOfTree: treeId => objByTree.get(treeId) ?? -1,
     update, setQuality,
+    fruitStats: () => ({ trees: fruitTrees.length, slots: fruitSlots.length, drawn: fruitMesh.count, tinted: fruitTrees.reduce((n, e) => n + (e.tint > 0 ? 1 : 0), 0), texelUploads, repacks }),
     cullStats: () => culler.stats(),
     cullSources() {
       const out: Record<string, { count: number; casts: boolean; matrices: Float32Array }> = {};

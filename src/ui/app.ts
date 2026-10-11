@@ -74,7 +74,7 @@ const LAYERS: { id: Layer; label: string; ic: string; key?: string; tip: string 
   { id: 'social', label: 'Bonds', ic: 'link', tip: 'Bonds: arcs from each chimp to its mother, allies and closest partners' },
   { id: 'weather', label: 'Weather', ic: 'rain', tip: 'Weather: rain, lightning, sun shafts and fireflies' },
   // Stage W7. Everything this layer draws is a stylization or a map overlay (docs/staging/w7-fruit.md).
-  { id: 'fruit', label: 'Food', ic: 'fig', tip: 'Food (map overlay): crowns in fruit tinted, a diamond per fruiting tree on the map, outlines on the trees the selected chimp remembers' },
+  { id: 'fruit', label: 'Food', ic: 'fig', tip: 'Food: crowns in fruit tinted, a diamond per fruiting tree on the map, outlines on the trees the selected chimp remembers (overlays)' },
 ];
 const VIEWS: { id: ViewMode; label: string; ic: string; key: string }[] = [
   { id: 'rts', label: 'Overview', ic: 'rts', key: 'R' }, { id: 'close', label: 'Close view', ic: 'target', key: 'C' }, { id: 'cinematic', label: 'Cinematic', ic: 'film', key: 'V' },

@@ -3,7 +3,7 @@ import test from 'node:test';
 import {
   CLUSTER_MAX_SCALE_STRATEGY, CLUSTER_MIN_PX_STRATEGY, CLUSTER_RADIUS, FRUIT_CELL_M, FRUIT_COLOURS, FRUIT_COLOUR_DEFAULT, FRUIT_MAP_FULL, FRUIT_MAP_IN, FRUIT_MIN_SHARE, MARK_STRIDE,
   agoWords, beliefAlpha, cellMarkPx, cellWeight, clusterColour, clusterLevel, clusterScale, clusterSize, clusterSlots, collectBeliefs, createBeliefMarks, createFruitMarks, cropShare, cropSignature,
-  crownTint, crownTintByte, fruitColour, fruitMarks, hexBytes, legacySlots, mapLayerWeight, markColour, toHex, treeById, treeMarkPx,
+  crownTint, crownTintByte, fruitColour, fruitMarks, hexBytes, legacySlots, mapLayerWeight, markColour, tintColour, toHex, treeById, treeMarkPx,
 } from '../src/render/env/fruit';
 import { fruitKeyState } from '../src/ui/fruitkey';
 import { createWorld } from '../src/simulation';
@@ -36,11 +36,12 @@ test('display colours keep the hue and reach a readable band (brown pods and pur
   const hue = (c: ArrayLike<number>) => { const mx = Math.max(c[0], c[1], c[2]), mn = Math.min(c[0], c[1], c[2]), d = mx - mn; return d < 1e-6 ? 0 : (mx === c[0] ? ((c[1] - c[2]) / d + 6) % 6 : mx === c[1] ? (c[2] - c[0]) / d + 2 : (c[0] - c[1]) / d + 4) * 60; };
   const light = (c: ArrayLike<number>) => (Math.max(c[0], c[1], c[2]) + Math.min(c[0], c[1], c[2])) / 2;
   for (const [, hex] of FRUIT_COLOURS) {
-    const raw = hexBytes(hex).map(v => v / 255), m = markColour(hex), k = clusterColour(hex);
-    for (const c of [m, k]) { const dh = Math.abs(hue(c) - hue(raw)); assert.ok(Math.min(dh, 360 - dh) < 1.5, `${hex}: hue kept`); }
+    const raw = hexBytes(hex).map(v => v / 255), m = markColour(hex), k = clusterColour(hex), t = tintColour(hex);
+    for (const c of [m, k, t]) { const dh = Math.abs(hue(c) - hue(raw)); assert.ok(Math.min(dh, 360 - dh) < 1.5, `${hex}: hue kept`); }
     assert.ok(light(m) >= 0.46 - 1e-9 && light(m) <= 0.6 + 1e-9, `${hex}: mark lightness ${light(m)}`);
     assert.ok(light(k) >= 0.36 - 1e-9 && light(k) <= 0.5 + 1e-9, `${hex}: cluster lightness ${light(k)}`);
-    assert.ok(light(k) <= light(m) + 1e-9, 'clusters are never lighter than the tint they sit on');
+    assert.ok(light(t) >= 0.36 - 1e-9 && light(t) <= 0.58 + 1e-9, `${hex}: tint lightness ${light(t)}`);
+    assert.ok(light(k) <= light(t) + 1e-9, 'clusters are never lighter than the tint they sit on');
   }
   assert.equal(toHex([1, 0.5, 0]), '#ff8000');
   assert.deepEqual(hexBytes('#7a5a38'), [0x7a, 0x5a, 0x38]);
@@ -49,11 +50,11 @@ test('display colours keep the hue and reach a readable band (brown pods and pur
 test('crown tint: none under the display threshold, rising with the crop, full at a full crop', () => {
   assert.equal(crownTint(0), 0);
   assert.equal(crownTint(FRUIT_MIN_SHARE - 0.001), 0);
-  assert.ok(crownTint(FRUIT_MIN_SHARE) > 0.1, 'a crop that shows clusters also tints');
+  assert.ok(crownTint(FRUIT_MIN_SHARE) >= 0.1, 'a crop that shows clusters also tints');
   let prev = 0;
   for (let s = FRUIT_MIN_SHARE; s <= 1.0001; s += 0.02) { const t = crownTint(s); assert.ok(t >= prev - 1e-12, `monotonic at ${s}`); prev = t; }
   assert.ok(Math.abs(crownTint(1) - 1) < 1e-9);
-  assert.ok(crownTint(0.35) > 0.5, 'a third of a crop already reads');
+  assert.ok(crownTint(0.35) > 0.4 && crownTint(0.35) < 0.6, 'a third of a crop reads, well short of a full one');
   assert.equal(crownTint(5), crownTint(1), 'a share over 1 is a full crop');
   assert.equal(crownTintByte(0.05), 0);
   assert.equal(crownTintByte(1), 255);

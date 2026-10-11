@@ -51,8 +51,10 @@ export function hexBytes(hex: string, out: number[] = [0, 0, 0]): number[] {
 }
 
 /**
- * A fruit colour made readable (sRGB 0..1 into out): its hue, with saturation raised to at least sMin and lightness
- * clamped into [lMin, lMax]. Brown pods and purple-black drupes would vanish on dark green as they are. Stylization.
+ * A fruit colour made readable (sRGB 0..1 into out): its hue, with lightness clamped into [lMin, lMax] and saturation
+ * raised to at least sMin. Brown pods and purple-black drupes would vanish on dark green as they are. A fruit that is
+ * itself dark (lightness under 0.3: the purple-black drupes) keeps its own saturation: lifted in both it turned a
+ * crown neon pink. Stylization.
  */
 export function displayColour(hex: string, sMin: number, lMin: number, lMax: number, out: number[] = [0, 0, 0]): number[] {
   const b = hexBytes(hex, out), r = b[0] / 255, g = b[1] / 255, bl = b[2] / 255;
@@ -60,7 +62,7 @@ export function displayColour(hex: string, sMin: number, lMin: number, lMax: num
   let h = 0;
   if (d > 1e-6) h = mx === r ? ((g - bl) / d + 6) % 6 : mx === g ? (bl - r) / d + 2 : (r - g) / d + 4;
   const l0 = (mx + mn) / 2, s0 = d < 1e-6 ? 0 : d / (1 - Math.abs(2 * l0 - 1));
-  const s = Math.max(sMin, s0), l = Math.min(lMax, Math.max(lMin, l0));
+  const s = l0 < 0.3 ? s0 : Math.max(sMin, s0), l = Math.min(lMax, Math.max(lMin, l0));
   const c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs(h % 2 - 1)), m = l - c / 2;
   const k = Math.floor(h) % 6;
   out[0] = m + (k === 0 || k === 5 ? c : k === 1 || k === 4 ? x : 0);
@@ -68,8 +70,10 @@ export function displayColour(hex: string, sMin: number, lMin: number, lMax: num
   out[2] = m + (k === 3 || k === 4 ? c : k === 2 || k === 5 ? x : 0);
   return out;
 }
-/** Colour of a map mark and of the crown tint (design assumption: saturation ≥ 0.6, lightness 0.46–0.6). */
+/** Colour of a map mark (design assumption: saturation ≥ 0.6, lightness 0.46–0.6). */
 export function markColour(hex: string, out: number[] = [0, 0, 0]): number[] { return displayColour(hex, 0.6, 0.46, 0.6, out); }
+/** Colour the crown tint moves leaves toward: a little calmer and darker than a map mark. Design assumption: saturation ≥ 0.5, lightness 0.36–0.58. */
+export function tintColour(hex: string, out: number[] = [0, 0, 0]): number[] { return displayColour(hex, 0.5, 0.36, 0.58, out); }
 /** Colour of a fruit cluster: deeper than the tint, so fruit reads against its own tinted leaves (design assumption: saturation ≥ 0.7, lightness 0.36–0.5). */
 export function clusterColour(hex: string, out: number[] = [0, 0, 0]): number[] { return displayColour(hex, 0.7, 0.36, 0.5, out); }
 const hex2 = (v: number) => Math.round(Math.min(1, Math.max(0, v)) * 255).toString(16).padStart(2, '0');
@@ -79,15 +83,19 @@ export function toHex(rgb: ArrayLike<number>): string { return `#${hex2(rgb[0])}
 // --- 1. Crown tint ---------------------------------------------------------------------------------------------------
 
 /**
- * How far a crown's leaf clumps shift toward the species' fruit colour, 0..1, from the crop share: nothing below
- * FRUIT_MIN_SHARE, then a concave rise (exponent 0.6: a third of a crop already reads, a full crop is unmistakable).
- * Stylization; the curve is a design assumption.
+ * The crown tint's amount, 0..1, from the crop share: nothing below FRUIT_MIN_SHARE, then a gently concave rise
+ * (exponent 0.75) from 0.1 to 1 at a full crop. The leaf shader (vegetation.ts) turns it into the share of a crown's
+ * leaf clumps that take the fruit colour (4% + 60% × amount) and how far they go (55% to 86%). Stylization; the curve
+ * is a design assumption.
  */
 export function crownTint(share: number): number {
   if (!(share >= FRUIT_MIN_SHARE)) return 0;
   const u = Math.min(1, (share - FRUIT_MIN_SHARE) / (1 - FRUIT_MIN_SHARE));
-  return 0.18 + 0.82 * Math.pow(u, 0.6);
+  return 0.1 + 0.9 * Math.pow(u, 0.75);
 }
+/** Strength of the crown tint by view: full in the strategy view (it must read from 64 to 200 m frames), less in the
+ * perspective views, where the fruit itself is in sight and a strongly coloured crown looks unreal. Design assumption. */
+export const TINT_STRATEGY = 1, TINT_PERSPECTIVE = 0.65;
 /** crownTint as the byte the per-object crop texel carries in its alpha (0: no tint). */
 export function crownTintByte(share: number): number { return Math.round(crownTint(share) * 255); }
 
