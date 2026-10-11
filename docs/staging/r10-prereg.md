@@ -572,7 +572,7 @@ stay on the rules; a level measurement on one training seed; no comparison here 
   food a third as often as the rules, walks a third less (the focal tests inside a rules-driven community showed a
   fifth less: 2.05 against 2.63 km), calls less and eats 7% less. The under-travel of the focal tests is larger when
   every adult is on the kernel, as the sceptic of 10 October expected.
-- **Decision of the integrator (11 October, 14:20).** The remaining seven hours of this night are not run on this
+- **Decision of the integrator (11 October, 14:16 EDT).** The remaining seven hours of this night are not run on this
   adapter. The run served its purposes (the script and the model's path proven on a real worker, viability, the level,
   18,501 states a model-driven population reached, with probabilities), and the wording test of the same morning
   (`docs/staging/r8-prereg.md` §10a) showed that this adapter read more than half of what it knows from the rules' own
