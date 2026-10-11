@@ -4,12 +4,18 @@ import { MAX_TROOPS, Owner, patchMaterial, type SharedUniforms } from './shared'
 import { CANOPY_BROAD, CANOPY_HASH, FIELD_CANOPY_COLOR, createBaseHeight, createCanopyHeight, type RiverInfo } from './terrain';
 import { approach, partyMarkerPx } from './field';
 import { hyp2 } from '../fastmath';
+import { ACTIVITY_NAMES, GOAL_CALL, GOAL_NONE, GOAL_TREE, createPartyMap, heardLevel, updatePartyMap, type PartyMap } from './party-map';
+import { createCallArcs, createGlyphAtlas, createMarkerMaterial, createPartyLines } from './party-marks';
 
 // Field-view overview (C5b; docs/realism-design.md §5.1): the whole ~8 km map at km scale. A canopy surface (the far
 // canopy's Voronoi crowns, no individual trees, so no chimp-tree mismatch) with a hole where the detailed window's
 // canopy ring takes over; community ranges drawn into it with a pixel-wide edge; the stream as a map line; and one
 // marker per party, sized in screen pixels, at a smoothed party anchor. Stylizations (map overlays): the stream line
 // and party markers are drawn above the canopy so they read at km scale. Render-only: reads World, never writes it.
+// Stage W10: a party marker also says what the party is doing (party-map.ts works it out, party-marks.ts draws it:
+// activity, size, heading, a gold rim for a model-driven member, a tick when its members have just heard a call), each
+// party leaves a trail of its last half simulated hour and a dashed line to its goal, and a call draws an arc out to
+// its audible radius. The trails, goal lines and arcs are also drawn in the strategy view (any orthographic frame).
 
 export interface OverviewFrame {
   /** 0..1 how much the overview shows (0: the window only). */
@@ -28,7 +34,17 @@ export interface Overview {
   pick(x: number, y: number, camera: THREE.Camera, viewW: number, viewH: number): number | null;
   /** Party markers drawn (diagnostics and probes). */
   readonly markers: number;
+  /** Stage W10: the tracker behind the marks (read-only), and what the map layer drew last (probes; allocates). */
+  readonly partyMap: PartyMap;
+  readout(): OverviewReadout;
   dispose(): void;
+}
+/** What the map layer drew, for probes and captures (stage W10). */
+export interface OverviewReadout {
+  ortho: boolean; weight: number; markers: number;
+  marks: { id: number; troopId: number; members: number; activity: string; headingDeg: number | null; modelDriven: boolean; goal: { kind: 'tree' | 'call'; id: number; x: number; z: number } | null; heard: number; heardIn: number | null }[];
+  arcs: { id: number; kind: string; x: number; z: number; radius: number; drawn: number; age: number }[];
+  trails: { slots: number; segments: number }; goalLines: number;
 }
 
 const MAX_MARKERS = 256;
@@ -182,51 +198,35 @@ export function createOverview(world: World, river: RiverInfo, uniforms: SharedU
   group.add(stream);
 
   // --- Party markers: one screen-sized disc per party, community colour, dark rim; the selected animal's party ringed.
+  // Stage W10: the disc also carries the party's activity, size, heading, a gold rim and a heard tick (party-marks.ts).
   const quad = owner.own(new THREE.InstancedBufferGeometry());
   quad.setAttribute('position', new THREE.Float32BufferAttribute([-1, -1, 0, 1, -1, 0, -1, 1, 0, 1, 1, 0], 3));
   quad.setIndex([0, 1, 2, 2, 1, 3]);
   const centreData = new Float32Array(MAX_MARKERS * 3), styleData = new Float32Array(MAX_MARKERS * 4), colorData = new Float32Array(MAX_MARKERS * 3);
+  const infoData = new Float32Array(MAX_MARKERS * 4), headData = new Float32Array(MAX_MARKERS * 2);
   const centreAttr = new THREE.InstancedBufferAttribute(centreData, 3).setUsage(THREE.DynamicDrawUsage);
   const styleAttr = new THREE.InstancedBufferAttribute(styleData, 4).setUsage(THREE.DynamicDrawUsage);
   const colorAttr = new THREE.InstancedBufferAttribute(colorData, 3).setUsage(THREE.DynamicDrawUsage);
+  const infoAttr = new THREE.InstancedBufferAttribute(infoData, 4).setUsage(THREE.DynamicDrawUsage);
+  const headAttr = new THREE.InstancedBufferAttribute(headData, 2).setUsage(THREE.DynamicDrawUsage);
   quad.setAttribute('aCentre', centreAttr); quad.setAttribute('aStyle', styleAttr); quad.setAttribute('aColor', colorAttr);
+  quad.setAttribute('aInfo', infoAttr); quad.setAttribute('aHead', headAttr);
   quad.instanceCount = 0;
   const viewport = { value: new THREE.Vector2(1440, 900) };
-  const markerMaterial = owner.own(new THREE.ShaderMaterial({
-    uniforms: { uViewport: viewport, uW: weightU },
-    vertexShader: /* glsl */`
-      attribute vec3 aCentre; attribute vec4 aStyle; attribute vec3 aColor;
-      uniform vec2 uViewport;
-      varying vec2 vQ; varying vec4 vStyle; varying vec3 vColor;
-      void main() {
-        vec4 clip = projectionMatrix * viewMatrix * vec4( aCentre, 1.0 );
-        float R = aStyle.x + 4.0;
-        clip.xy += position.xy * R * 2.0 / uViewport * clip.w;
-        gl_Position = clip;
-        vQ = position.xy * R; vStyle = aStyle; vColor = aColor;
-      }`,
-    fragmentShader: /* glsl */`
-      uniform float uW;
-      varying vec2 vQ; varying vec4 vStyle; varying vec3 vColor;
-      void main() {
-        float r = length( vQ ), R = vStyle.x;
-        float disc = 1.0 - smoothstep( R - 0.8, R + 0.4, r );
-        float rim = smoothstep( R - 2.4, R - 1.4, r );
-        vec3 col = mix( vColor, vec3( 0.03, 0.035, 0.03 ), rim * 0.85 );
-        // Selected party: a light outer ring.
-        float sel = vStyle.y * ( 1.0 - smoothstep( 1.0, 1.9, abs( r - ( R + 2.4 ) ) ) );
-        float a = max( disc * vStyle.z, sel );
-        col = mix( col, vec3( 0.95, 0.96, 0.92 ), sel * ( 1.0 - disc ) );
-        if ( a < 0.01 ) discard;
-        gl_FragColor = vec4( col, a * uW );
-      }`,
-    transparent: true, depthTest: false, depthWrite: false, fog: false,
-  }));
+  const markerMaterial = owner.own(createMarkerMaterial(viewport, weightU, owner.own(createGlyphAtlas())));
   const markerMesh = new THREE.Mesh(quad, markerMaterial);
   markerMesh.name = 'overview-parties';
   markerMesh.frustumCulled = false;
   markerMesh.renderOrder = 9;
   group.add(markerMesh);
+
+  // --- Stage W10: trails and goal lines (one ribbon buffer for every party) and call arcs, under the markers; and the
+  // tracker that works out what they show (party-map.ts). On the ground in the strategy view, above the canopy on the map.
+  const heights = { ground: baseHeight, top: canopyTop };
+  const partyLines = createPartyLines(owner, heights), callArcs = createCallArcs(owner, heights);
+  group.add(partyLines.mesh, callArcs.mesh);
+  const partyMap = createPartyMap();
+  let linesVersion = -1, linesHighlight: number | null = null, lastOrtho = false, lastWeight = 0;
 
   // --- Community names at their range centres (DOM, positioned per frame with transforms; no layout reads).
   const labelRoot = document.createElement('div');
@@ -255,8 +255,8 @@ export function createOverview(world: World, river: RiverInfo, uniforms: SharedU
   const fallbackColour = new THREE.Color('#cccccc');
   const tmp = new THREE.Vector3(), col = new THREE.Color();
   let frameNo = 0, count = 0;
-  const markerIds = new Int32Array(MAX_MARKERS);   // party index into world.parties this frame
-  let lastParties: World['parties'] = [];
+  const markerFirst = new Int32Array(MAX_MARKERS);   // first living member of each marker's party this frame
+  const colourOf = (troopId: number) => colours.get(troopId) ?? fallbackColour;
 
   function update(w: World, f: OverviewFrame) {
     frameNo++;
@@ -271,29 +271,45 @@ export function createOverview(world: World, river: RiverInfo, uniforms: SharedU
     const capAlpha = Math.min(1, Math.max(0, (f.weight - 0.3) / 0.7));
     cap.visible = hole.value.z > 0 && capAlpha > 0.005;
     capMaterial.opacity = capAlpha;
+    // Stage W10: follow the world in every view (so the trails are there when the view zooms out); the marks are
+    // refreshed a few times a second inside, and the line buffer only when they were.
+    const now = performance.now() / 1000;
+    updatePartyMap(partyMap, w, now);
+    const ortho = cam.isOrthographicCamera === true, lift = f.weight;
+    lastOrtho = ortho; lastWeight = f.weight;
+    if (colourKey !== w.troops || colourLen !== w.troops.length) { colourKey = w.troops; colourLen = w.troops.length; colours.clear(); for (const t of w.troops) colours.set(t.id, new THREE.Color(t.color)); }
+    partyLines.uniforms.uPx.value = callArcs.uniforms.uPx.value = pixelWorld.value;
+    partyLines.uniforms.uLift.value = callArcs.uniforms.uLift.value = lift;
+    partyLines.uniforms.uA.value = 0.7 + 0.3 * lift;   // quieter among the animals of the strategy view than on the map
+    if (ortho && (linesVersion !== partyMap.version || linesHighlight !== f.highlightTroopId)) { linesVersion = partyMap.version; linesHighlight = f.highlightTroopId; partyLines.rebuild(partyMap, w.time, colourOf, f.highlightTroopId); }
+    partyLines.mesh.visible = ortho && partyLines.segments > 0;
+    if (ortho) callArcs.update(partyMap.calls, now); else callArcs.mesh.visible = false;
     count = 0;
-    lastParties = w.parties;
     if (f.weight > 0.01) {
-      if (colourKey !== w.troops || colourLen !== w.troops.length) { colourKey = w.troops; colourLen = w.troops.length; colours.clear(); for (const t of w.troops) colours.set(t.id, new THREE.Color(t.color)); }
-      for (let i = 0; i < w.parties.length && count < MAX_MARKERS; i++) {
-        const p = w.parties[i];
-        if (!p.members.length) continue;
-        let a = anchors.get(p.id);
-        if (!a) anchors.set(p.id, a = { x: p.center[0], z: p.center[2], seen: frameNo });
-        a.x = approach(a.x, p.center[0], f.dt, 0.5); a.z = approach(a.z, p.center[2], f.dt, 0.5); a.seen = frameNo;
-        centreData[count * 3] = a.x; centreData[count * 3 + 1] = canopyTop(a.x, a.z) + 4; centreData[count * 3 + 2] = a.z;
-        const selected = f.selectedId !== null && p.members.includes(f.selectedId) ? 1 : 0;
-        const dim = f.highlightTroopId !== null && f.highlightTroopId !== p.troopId ? 0.35 : 1;
-        styleData.set([partyMarkerPx(p.members.length), selected, dim, 0], count * 4);
-        col.copy(colours.get(p.troopId) ?? fallbackColour);
-        colorData.set([col.r, col.g, col.b], count * 3);
-        markerIds[count++] = i;
+      const sc = f.selectedId !== null ? partyMap.byId[f.selectedId] : undefined;
+      for (let i = 0; i < partyMap.n && count < MAX_MARKERS; i++) {
+        const m = partyMap.marks[i];
+        let a = anchors.get(m.id);
+        if (!a) anchors.set(m.id, a = { x: m.x, z: m.z, seen: frameNo });
+        a.x = approach(a.x, m.x, f.dt, 0.5); a.z = approach(a.z, m.z, f.dt, 0.5); a.seen = frameNo;
+        const g = baseHeight(a.x, a.z), top = canopyTop(a.x, a.z) + 4;
+        centreData[count * 3] = a.x; centreData[count * 3 + 1] = g + (top - g) * lift; centreData[count * 3 + 2] = a.z;
+        const selected = sc !== undefined && sc.alive && sc.partyId === m.id && sc.troopId === m.troopId ? 1 : 0;
+        const dim = f.highlightTroopId !== null && f.highlightTroopId !== m.troopId ? 0.35 : 1;
+        styleData[count * 4] = partyMarkerPx(m.count); styleData[count * 4 + 1] = selected; styleData[count * 4 + 2] = dim; styleData[count * 4 + 3] = m.activity;
+        col.copy(colours.get(m.troopId) ?? fallbackColour);
+        colorData[count * 3] = col.r; colorData[count * 3 + 1] = col.g; colorData[count * 3 + 2] = col.b;
+        infoData[count * 4] = m.count; infoData[count * 4 + 1] = m.model ? 1 : 0; infoData[count * 4 + 2] = heardLevel(m.heardAt, now); infoData[count * 4 + 3] = m.goalKind === GOAL_CALL ? 1 : 0;
+        headData[count * 2] = m.headX; headData[count * 2 + 1] = m.headZ;
+        markerFirst[count++] = m.firstId;
       }
-      if (anchors.size > 4 * Math.max(8, w.parties.length)) for (const [id, a] of anchors) if (a.seen !== frameNo) anchors.delete(id);
-      centreAttr.needsUpdate = styleAttr.needsUpdate = colorAttr.needsUpdate = true;
+      if (anchors.size > 4 * Math.max(8, partyMap.n)) for (const [id, a] of anchors) if (a.seen !== frameNo) anchors.delete(id);
+      centreAttr.needsUpdate = styleAttr.needsUpdate = colorAttr.needsUpdate = infoAttr.needsUpdate = headAttr.needsUpdate = true;
       centreAttr.clearUpdateRanges(); centreAttr.addUpdateRange(0, count * 3);
       styleAttr.clearUpdateRanges(); styleAttr.addUpdateRange(0, count * 4);
       colorAttr.clearUpdateRanges(); colorAttr.addUpdateRange(0, count * 3);
+      infoAttr.clearUpdateRanges(); infoAttr.addUpdateRange(0, count * 4);
+      headAttr.clearUpdateRanges(); headAttr.addUpdateRange(0, count * 2);
     }
     quad.instanceCount = count;
 
@@ -320,7 +336,7 @@ export function createOverview(world: World, river: RiverInfo, uniforms: SharedU
       tmp.set(centreData[k * 3], centreData[k * 3 + 1], centreData[k * 3 + 2]).project(camera);
       const sx = (tmp.x * 0.5 + 0.5) * viewW, sy = (-tmp.y * 0.5 + 0.5) * viewH;
       const d = hyp2(sx - x, sy - y), R = styleData[k * 4] + 4;
-      if (d <= R && d < bestD) { bestD = d; const p = lastParties[markerIds[k]]; best = p ? p.members[0] : null; }
+      if (d <= R && d < bestD) { bestD = d; best = markerFirst[k] >= 0 ? markerFirst[k] : null; }
     }
     return best;
   }
@@ -333,6 +349,21 @@ export function createOverview(world: World, river: RiverInfo, uniforms: SharedU
     },
     update, pick,
     get markers() { return count; },
+    partyMap,
+    readout() {
+      const now = performance.now() / 1000, pm = partyMap;
+      let slots = 0;
+      for (let k = 0; k < pm.trails.cap; k++) if (pm.trails.id[k] >= 0) slots++;
+      return {
+        ortho: lastOrtho, weight: lastWeight, markers: count,
+        marks: pm.marks.slice(0, pm.n).map(m => ({ id: m.id, troopId: m.troopId, members: m.count, activity: ACTIVITY_NAMES[m.activity],
+          headingDeg: m.headX || m.headZ ? Math.round((Math.atan2(m.headX, -m.headZ) * 180 / Math.PI + 360) % 360) : null,   // compass: 0 north, 90 east
+          modelDriven: m.model, goal: m.goalKind === GOAL_NONE ? null : { kind: m.goalKind === GOAL_TREE ? 'tree' as const : 'call' as const, id: m.goalId, x: Math.round(m.goalX), z: Math.round(m.goalZ) },
+          heard: +heardLevel(m.heardAt, now).toFixed(2), heardIn: Number.isFinite(m.heardAt) && m.heardAt > now ? +(m.heardAt - now).toFixed(2) : null })),
+        arcs: callArcs.readout(pm.calls, now).map(a => ({ ...a, x: Math.round(a.x), z: Math.round(a.z), drawn: Math.round(a.drawn), age: +a.age.toFixed(2) })),
+        trails: { slots, segments: partyLines.trailSegments }, goalLines: partyLines.goalLines,
+      };
+    },
     dispose() { labelRoot.remove(); },
   };
 }

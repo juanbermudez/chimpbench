@@ -200,8 +200,9 @@ export function trailPoints(tr: Trails, s: number, now: number, out: Float32Arra
 // The tracker: one mark per party, refreshed a few times a second
 // ---------------------------------------------------------------------------------------------------------------
 
-/** Real seconds between refreshes of the marks when nothing else prompts one (design assumption). */
-export const MARK_EVERY_S = 0.25;
+/** Real seconds between refreshes of the marks when nothing else prompts one, and the least time between two refreshes
+ * whatever prompts them (at 1 day/s the parties re-form and calls arrive every frame). Design assumptions. */
+export const MARK_EVERY_S = 0.25, MARK_MIN_S = 0.1;
 /** Real seconds a party's "heard" tick shows after the arc reached it (design assumption: "the last few seconds"). */
 export const HEARD_SHOW_S = 4;
 export const MAX_MARKS = 256;
@@ -223,11 +224,11 @@ export interface PartyMap {
   /** Bumped whenever the marks were refreshed (consumers rebuild their line buffers then, not every frame). */
   version: number;
   // Private state.
-  world: World | null; parties: World['parties'] | null; at: number; sampledAt: number;
+  world: World | null; parties: World['parties'] | null; at: number; sampledAt: number; dirty: boolean;
   byId: (Chimp | undefined)[]; heardAt: Float64Array; lastParty: Int32Array; scratch: Chimp[];
 }
 export function createPartyMap(): PartyMap {
-  return { marks: [], n: 0, trails: createTrails(), calls: createCallLog(), version: 0, world: null, parties: null, at: -Infinity, sampledAt: -Infinity,
+  return { marks: [], n: 0, trails: createTrails(), calls: createCallLog(), version: 0, world: null, parties: null, at: -Infinity, sampledAt: -Infinity, dirty: false,
     byId: [], heardAt: new Float64Array(256).fill(-Infinity), lastParty: new Int32Array(256).fill(-1), scratch: [] };
 }
 function grow(pm: PartyMap, maxId: number): void {
@@ -246,21 +247,17 @@ function index(pm: PartyMap, world: World): void {
 }
 /**
  * Follows the world: notes new calls and who is inside them, and a few times a second (or when the simulation has
- * re-formed the parties, or a call has just been given) refreshes the marks and, once per re-forming, adds a place to
- * each party's trail. `now` is the caller's real clock in seconds. Returns true when the marks were refreshed.
+ * re-formed the parties, or a call has just been given; never more than ten times a second) refreshes the marks and,
+ * once per re-forming, adds a place to each party's trail. `now` is the caller's real clock in seconds. Returns true when the marks were refreshed.
  * Allocation: none in steady state (the mark pool and the id tables grow when the world does).
  */
 export function updatePartyMap(pm: PartyMap, world: World, now: number): boolean {
   if (pm.world !== world) {   // another simulation: start again
-    pm.world = world; pm.parties = null; pm.at = -Infinity; pm.sampledAt = -Infinity; pm.n = 0; pm.byId.length = 0;
+    pm.world = world; pm.parties = null; pm.at = -Infinity; pm.sampledAt = -Infinity; pm.dirty = false; pm.n = 0; pm.byId.length = 0;
     pm.heardAt.fill(-Infinity); pm.lastParty.fill(-1); pm.trails.id.fill(-1); pm.trails.len.fill(0); pm.trails.last.fill(-Infinity); resetCallLog(pm.calls);
   }
   const added = noteCalls(pm.calls, world.calls, world.time, now);
-  const reformed = world.parties !== pm.parties;
-  if (!added && !reformed && now - pm.at < MARK_EVERY_S && now >= pm.at) return false;
-  pm.at = now; pm.parties = world.parties;
-  index(pm, world);
-  // Who is inside each new call: the arc reaches them arrivalDelay() later.
+  // Who is inside each new call: the arc reaches them arrivalDelay() later. Noted at once, whenever the marks refresh.
   for (let k = 0; k < added; k++) {
     const s = logSlot(pm.calls, k), cx = pm.calls.x[s], cz = pm.calls.z[s], r = pm.calls.radius[s], caller = pm.calls.caller[s];
     const cs = world.chimps;
@@ -268,9 +265,17 @@ export function updatePartyMap(pm: PartyMap, world: World, now: number): boolean
       const c = cs[i];
       if (!c.alive || c.id === caller) continue;
       const d = Math.hypot(c.position[0] - cx, c.position[2] - cz);
-      if (d <= r) pm.heardAt[c.id] = pm.calls.at[s] + arrivalDelay(d, r);
+      if (d > r) continue;
+      if (c.id >= pm.heardAt.length) grow(pm, c.id);
+      pm.heardAt[c.id] = pm.calls.at[s] + arrivalDelay(d, r);
     }
+    pm.dirty = true;
   }
+  const reformed = world.parties !== pm.parties, since = now - pm.at;
+  if (since >= 0 && since < MARK_MIN_S) return false;
+  if (!pm.dirty && !reformed && since >= 0 && since < MARK_EVERY_S) return false;
+  pm.at = now; pm.parties = world.parties; pm.dirty = false;
+  index(pm, world);
   // A place per party each time the simulation re-forms them, at most one per TRAIL_STEP_H.
   const sample = reformed && (world.time - pm.sampledAt >= TRAIL_STEP_H * 0.75 || world.time < pm.sampledAt);
   if (sample) pm.sampledAt = world.time;
