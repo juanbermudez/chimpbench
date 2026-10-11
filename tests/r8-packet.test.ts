@@ -222,7 +222,7 @@ test('at decision points: what it is doing, how its act ended, and why it is ask
     kinds[kind(a)] = (kinds[kind(a)] ?? 0) + 1; byWhy[`${r.why}:${kind(a)}`] = (byWhy[`${r.why}:${kind(a)}`] ?? 0) + 1;
     // one reason, and it follows what opened the decision point
     if (r.opened === 1) assert.ok(a?.event && !a.ended && !a.felt, 'an interrupt: the perception is the reason');
-    else if (r.opened === 2) assert.ok(a?.ended === d.ended && !a.event && !a.felt, 'the act\'s own end is the reason');
+    else if (r.opened === 2) assert.ok(a && a.ended === d.ended && !a.event && !a.felt, 'the act\'s own end is the reason');
     else assert.ok(!a || (!a.event && !a.ended && (a.felt?.length || a.light)), 'a scheduled end: nothing, or a change it feels or sees');
     // the loop's own reason: a timer or a clock period never gives a perceived event or a felt change
     // (fear is a drive of the packet's feeling line that the gate's need buckets do not watch: it can move at any decision point)

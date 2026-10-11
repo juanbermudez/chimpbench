@@ -649,13 +649,13 @@ export function lintSource(file: string, text: string, P: Record<string, number>
     const code = line.replace(/`(?:[^`\\]|\\.)*`|'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"/g, s => ' '.repeat(s.length));
     const iv = new Map<number, [number, number]>(), unit = new Map<number, string>();
     for (const re of INTERVAL) for (const m of code.matchAll(re)) {
-      const [a, b] = m.indices![1], named = /[A-Z][A-Z0-9_]*/.exec(m[1]);
+      const [a, b] = m.indices![1]!, named = /[A-Z][A-Z0-9_]*/.exec(m[1]);
       iv.set(a, [a, b]); unit.set(a, /%/.test(m[0]) ? (/actionTime/.test(m[0]) ? 's' : 'ticks') : named ? `× ${named[0]}` : 'h');
     }
     for (const sp of gateSpans(code)) { iv.set(sp[0], sp); unit.set(sp[0], 'h'); }
     if (iv.size) { const sp = [...iv.values()].sort((p, q) => p[0] - q[0]); add('interval', sp.map(([a, b]) => numValue(code.slice(a, b))), sp, unit.get(sp[0][0])); }
     const bonus: [number, number][] = [], bv: number[] = [];
-    for (const m of code.matchAll(BONUS)) for (const g of [2, 4]) { const [a, b] = m.indices![g]; if (+m[g] !== 0) { bonus.push([a, b]); bv.push((m[g - 1] ? -1 : 1) * +m[g]); } }
+    for (const m of code.matchAll(BONUS)) for (const g of [2, 4]) { const [a, b] = m.indices![g]!; if (+m[g] !== 0) { bonus.push([a, b]); bv.push((m[g - 1] ? -1 : 1) * +m[g]); } }
     if (bonus.length) add('bonus', bv, bonus, 'score');
   });
   return found;
