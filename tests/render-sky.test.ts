@@ -78,7 +78,7 @@ test('fog, the dome\'s lowest band and the overcast dome are one colour at every
     const fog = rig.fog.color, band = u.uHorizon.value as THREE.Color, overcast = u.uOvercastColor.value as THREE.Color;
     assert.ok(fog.r > 0 && fog.g > 0 && fog.b > 0, `${name}: a fog colour`);
     assert.deepEqual([band.r, band.g, band.b], [fog.r, fog.g, fog.b], `${name}: the band is the fog colour`);
-    assert.equal(rig.fogColor, fog.equals(rig.fogColor) ? rig.fogColor : null, `${name}: the rig reports the same colour`);
+    assert.ok(fog.equals(rig.fogColor), `${name}: the rig reports the same colour`);
     // The overcast dome is one fixed share of the fog colour, the same in the three channels.
     const k = [overcast.r / fog.r, overcast.g / fog.g, overcast.b / fog.b];
     assert.ok(Math.abs(k[0] - k[1]) < 1e-6 && Math.abs(k[1] - k[2]) < 1e-6, `${name}: same hue (${k.join(', ')})`);
