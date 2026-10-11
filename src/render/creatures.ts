@@ -1705,7 +1705,11 @@ export function createCreatures(ctxIn: CreatureContext): CreatureLayer {
     // Stage W6: which act each drawn body is in, read once a frame (drawn.ts); pairings, poses and tags all use it.
     for (const a of animList) {
       readDrawn(a.acts, playback.renderT - a.late, bodyOf(a), curSimRate, DRAWN);
-      a.act = DRAWN.action; a.actTarget = DRAWN.targetId;
+      // A body that has set off for an act it has not reached (walking, climbing, paused on the way) is in no act: it
+      // is on the move, as after a change of mind (drawn.ts pushAct). Kept in the act before, an animal that left its
+      // nest to feed 20 m away was drawn climbing its nest tree's trunk, and jumped to the feeding tree at the top.
+      const onWay = DRAWN.way >= Way.going;
+      a.act = onWay ? 'travel' : DRAWN.action; a.actTarget = onWay ? -1 : DRAWN.targetId;
       // "Walking to" is said of a body drawn in a walk; one that runs up to its partner is "going to".
       a.way = DRAWN.way === Way.walking && a.fastGait ? Way.going : DRAWN.way;
     }
